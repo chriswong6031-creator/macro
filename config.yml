@@ -5468,16 +5468,15 @@ darkpool:
 # enabled: false → builder skips page + writes noindex stub (darkpool precedent).
 # --------------------------------------------------------------------------- #
 options_screener:
-  enabled: false                   # kill-switch: false → no page, no nav entry (Terminal Options Hub owns the flow surface — operator handoff 2026-07-05)
+  enabled: true                    # re-enabled by operator 2026-07-06 (runs alongside the Terminal Options Hub)
 
 # --------------------------------------------------------------------------- #
 # flow_desk — Market Tide / Group Flow dashboard page (P3.1).
-# DISABLED 2026-07-05: operator handed the flow product surface to the Terminal
-# Options Hub (app.mastermind-x.com/flow, 6-tab suite). The engine/data layers
-# (tape_flow, options_flow rollups) stay live as shared plumbing.
+# Re-enabled by operator 2026-07-06 — EOD dashboard view runs alongside the
+# Terminal Options Hub (which owns the intraday surfaces).
 # --------------------------------------------------------------------------- #
 flow_desk:
-  enabled: false                   # kill-switch: false → noindex stub, no nav entry
+  enabled: true                    # kill-switch: false → noindex stub, no nav entry
 
 # --------------------------------------------------------------------------- #
 # Oracle — Rotation Intelligence Web (engine/oracle/, P5).

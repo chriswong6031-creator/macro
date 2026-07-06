@@ -78,33 +78,12 @@ html[data-theme="dark"][data-lang="zh"]{--blue:#e06464;--r3:#45b873;--bear:#45b8
 .mut{color:var(--muted)} .faint{color:var(--faint)}
 .section-title{font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;
   letter-spacing:.05em;margin:30px 4px 12px}
-/* hero risk headline */
-.hero-state{font-size:64px;font-weight:800;color:var(--ink);line-height:1;letter-spacing:-.03em}
-.hero-state .on{color:var(--blue)} .hero-state .off{color:var(--r3)}
-.hero-dot{display:inline-block;width:18px;height:18px;border-radius:50%;
-  vertical-align:middle;margin-right:14px}
-.dot-on{background:var(--blue)} .dot-off{background:var(--r3)}
-.hero-meta{margin-top:10px;font-size:16px}
-.pill-price{font-weight:700;color:var(--ink)}
 .up{color:var(--blue)} .down{color:var(--r3)}
-/* gradient slider gauge */
-.slider{margin:18px 0 6px}
-.slider .track{position:relative;height:8px;border-radius:6px;
-  background:linear-gradient(90deg,var(--r1),var(--r2),var(--r4),var(--r5))}
-.slider .knob{position:absolute;top:50%;width:18px;height:18px;border-radius:50%;
-  background:#fff;border:3px solid var(--blue);transform:translate(-50%,-50%);box-shadow:0 1px 4px rgba(0,0,0,.15)}
-.slider .labels{display:flex;justify-content:space-between;margin-top:8px;
-  font-size:12px;color:var(--muted);font-weight:600}
-.slider .labels span.cur{color:var(--ink)}
 /* small mini-gauge */
 .mini{margin-top:4px}
 .mini .bar{height:6px;border-radius:4px;background:var(--grid);position:relative;margin:6px 0}
 .mini .fill{position:absolute;height:100%;border-radius:4px;background:var(--blue)}
 .mini .lab{display:flex;justify-content:space-between;font-size:12px;color:var(--muted)}
-.metric-row{display:flex;gap:0;margin-top:18px;border-top:1px solid var(--grid);padding-top:16px}
-.metric-row .m{flex:1;text-align:center}
-.metric-row .m .k{font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.03em}
-.metric-row .m .v{font-size:18px;font-weight:700;color:var(--ink);margin-top:2px}
 /* allocation bar */
 .allocbar{height:46px;border-radius:12px;overflow:hidden;display:flex;font-weight:700;color:#fff;margin-top:6px}
 .allocbar .btc{background:linear-gradient(90deg,var(--r4),var(--blue));display:flex;align-items:center;justify-content:center}
@@ -399,10 +378,26 @@ html[data-theme="dark"] .score .s{background:var(--grid)} /* --bg is near-black 
     .cone-stat{width:84px;flex:none;text-align:right;font-size:10.5px;color:var(--faint);line-height:1.3}
     .cone-stat b{display:block;font-size:14px;font-weight:800;color:var(--ink)}
     .cone-stat b.bull{color:var(--bull)} .cone-stat b.bear{color:var(--bear)}
+    /* collapsed section fold */
+    details.sec-fold{margin-top:18px}
+    details.sec-fold>summary{cursor:pointer;list-style:none;display:flex;align-items:baseline;gap:10px;
+      font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;
+      padding:10px 4px;border-radius:8px;user-select:none}
+    details.sec-fold>summary::-webkit-details-marker{display:none}
+    details.sec-fold>summary::before{content:"▸";font-size:11px;transition:transform .15s;color:var(--muted)}
+    details.sec-fold[open]>summary::before{transform:rotate(90deg)}
+    details.sec-fold>summary:hover{color:var(--ink)}
+    details.sec-fold>summary .hint{font-weight:600;text-transform:none;letter-spacing:0;font-size:12px;color:var(--faint, var(--muted))}
+    /* compact strip absorbed from old market-state hero */
+    .cmd-mini{display:flex;flex-wrap:wrap;gap:10px 20px;margin-top:12px;padding-top:11px;border-top:1px solid var(--grid);align-items:flex-start}
+    .cmd-mini-col{display:flex;flex-direction:column;gap:3px}
+    .cmd-mini-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--faint);margin-bottom:2px}
+    .cmd-mini-chip{font-size:11.5px;font-weight:600;color:var(--muted)}
+    .cmd-mini-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px;vertical-align:middle}
   </style>
   {% set tone_col = {'bull':'var(--blue)','bear':'var(--r3)','neutral':'var(--muted)'} %}
   {% set mcol = tone_col.get(master.tone,'var(--muted)') %}
-  <div class="section-title" style="margin-top:6px">⌖ {{ t('Master Signal · command center', '主信号 · 指挥中心') }}</div>
+  <div class="section-title" style="margin-top:6px">⌖ {{ t("Master Signal · today's verdict", '主信号 · 今日判断') }}</div>
   <div class="cmd">
     <div>
       <div class="cmd-h">{{ t('Strategic regime', '战略格局') }}</div>
@@ -435,6 +430,7 @@ html[data-theme="dark"] .score .s{background:var(--grid)} /* --bg is near-black 
         {% set cs_c = {'ACCUMULATE':'var(--blue)','RISK-ON':'var(--blue)','DISTRIBUTE':'var(--r3)','RISK-OFF':'var(--r3)','NEUTRAL':'var(--muted)'} %}
         {% set cs_z = {'ACCUMULATE':'累积','RISK-ON':'风险偏好','DISTRIBUTE':'派发','RISK-OFF':'风险规避','NEUTRAL':'中性'} %}
         <span class="cmd-stance" style="color:{{ cs_c.get(composite_state,'var(--muted)') }}">{{ t('Stance','立场') }}: {{ t(composite_state, cs_z.get(composite_state, composite_state)) }}</span>
+        {% if composite_context == 'crowded_short' %}<span class="tip" data-tip-en="Crowded shorts can mark capitulation. Context only." data-tip-zh="空头拥挤可能代表投降式抛售。仅背景。" style="font-size:11.5px;font-weight:600;color:var(--blue);border:1px solid var(--blue);border-radius:999px;padding:1px 9px">⚠ {{ t('Crowded shorts · capitulation context', '空头拥挤 · 投降式背景') }}</span>{% elif composite_context == 'froth' %}<span class="tip" data-tip-en="Crowded longs can mark froth. Display-only." data-tip-zh="多头拥挤可能代表过热。仅展示。" style="font-size:11.5px;font-weight:600;color:var(--r3);border:1px solid var(--r3);border-radius:999px;padding:1px 9px">🔥 {{ t('Froth · crowded longs', '过热 · 多头拥挤') }}</span>{% endif %}
         {% if verdict and verdict.grade %}{% set vg = {'CAUTION':'var(--amber)','AVOID':'var(--r3)','TREND-FOLLOW':'var(--blue)','BUY-THE-DIP':'var(--blue)','WAIT':'var(--muted)'} %}
         <span style="font-size:11px;font-weight:800;color:#fff;background:{{ vg.get(verdict.grade,'var(--muted)') }};padding:3px 9px;border-radius:7px">{{ t(verdict.grade, verdict.grade_zh) }}</span>{% endif %}
       </div>
@@ -451,6 +447,41 @@ html[data-theme="dark"] .score .s{background:var(--grid)} /* --bg is near-black 
         <div class="a"><div class="k">{{ t('Risk Index','风险指数') }}</div><div class="v" style="color:{{ 'var(--blue)' if risk_on else 'var(--r3)' }}">{{ risk_index }}</div><div class="h">{{ td(risk_label) }}</div></div>
         {% if env and env.risk and env.risk.tail is not none %}<div class="a"><div class="k">{{ t('Next-7d drawdown','未来7天回撤') }}</div><div class="v" style="color:var(--r3)">{{ env.risk.avg }}%</div><div class="h">{{ t('worst','极端') }} {{ env.risk.tail }}%</div></div>{% else %}<div class="a"><div class="k">{{ t('Momentum','动量') }}</div><div class="v">{{ momentum }}</div><div class="h">{{ td(momentum_state) }}</div></div>{% endif %}
         <div class="a"><div class="k">{{ t('Model allocation','模型仓位') }}</div><div class="v" style="color:{{ 'var(--blue)' if alloc_pct>=50 else 'var(--r3)' }}">{{ alloc_pct }}%</div><div class="h">{% if gate.active %}{{ t('cycle timer','周期计时') }}{% elif sizing %}Kelly {{ sizing.size_pct }}%{% else %}BTC{% endif %}</div></div>
+      </div>
+      {# -- compact strip absorbed from old Market State hero -- #}
+      <div class="cmd-mini">
+        {# trend-by-timeframe dots #}
+        {% if verdict and verdict.headline %}
+        {% set tfc2 = {'up':'var(--blue)','down':'var(--r3)','flat':'var(--muted)'} %}
+        {% set tlab2 = {'D':'D','3D':'3D','W':'W','2W':'2W','ME':'M'} %}
+        <div class="cmd-mini-col">
+          <div class="cmd-mini-label">{{ t('Trend by timeframe','各周期趋势') }}</div>
+          <div style="font-size:12.5px;font-weight:700;color:var(--ink);margin-bottom:4px">{{ t(verdict.headline, verdict.headline_zh) }}</div>
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+            {% for r in mtf_rows %}
+            <span style="display:inline-flex;align-items:center;gap:3px;font-size:11px;color:var(--muted)"><i style="width:8px;height:8px;border-radius:50%;background:{{ tfc2.get(r.trend,'var(--muted)') }}"></i>{{ tlab2.get(r.key, r.key) }}</span>
+            {% endfor %}
+            <span class="faint" style="font-size:10px"> · {{ t('short','短') }} {{ '↑' if verdict.short_sign>0 else ('↓' if verdict.short_sign<0 else '→') }} · {{ t('mid','中') }} {{ '↑' if verdict.mid_sign>0 else ('↓' if verdict.mid_sign<0 else '→') }} · {{ t('long','长') }} {{ '↑' if verdict.long_sign>0 else ('↓' if verdict.long_sign<0 else '→') }}</span>
+          </div>
+        </div>
+        {% endif %}
+        {# cycle stage slider compact #}
+        <div class="cmd-mini-col">
+          <div class="cmd-mini-label">{{ t('Cycle stage','周期阶段') }}</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+            {% for s in ['Defensive','Fragile','Recovery','Expansion'] %}
+            <span style="font-size:11.5px;font-weight:{{ '800' if s==cycle_stage else '500' }};color:{{ 'var(--ink)' if s==cycle_stage else 'var(--faint)' }}">{{ td(s) }}</span>
+            {% endfor %}
+          </div>
+        </div>
+        {# vol + flow chips #}
+        <div class="cmd-mini-col">
+          <div class="cmd-mini-label">{{ t('Vol · Flow','波动 · 流量') }}</div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <span class="cmd-mini-chip">{{ t('Vol','波动') }}: <b>{{ td(vol_state) }}</b>{% if vol_side %} · {{ td(vol_side) }}{% endif %}</span>
+            <span class="cmd-mini-chip">{{ t('Flow','流量') }}: <b>{{ td(flow_state) }}</b></span>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -472,7 +503,7 @@ html[data-theme="dark"] .score .s{background:var(--grid)} /* --bg is near-black 
         <span>· {{ t(rec.horizon_en, rec.horizon_zh) }}</span>
       </div>
       {% if rec.directional %}<div class="reco-meta" style="margin-top:8px;color:var(--bull)"><b>{{ t('Directional call — measured at this extreme','方向性判断 — 该极值经实测') }}</b></div>
-      {% else %}<div class="reco-meta" style="margin-top:8px">{{ t('Direction is a coin-flip here — this is drawdown-managed sizing, not a price call.','此处方向接近抛硬币 — 这是按回撤管理的仓位，而非价格预测。') }}</div>{% endif %}
+      {% else %}<div class="reco-meta" style="margin-top:8px">{{ t('Direction ~coin-flip — this sizes drawdown, not price.','方向近似抛硬币 — 这是回撤管理仓位，而非价格预测。') }}</div>{% endif %}
       <div class="reco-rats" style="margin-top:12px">
         {% for d in rec.rationale %}<span class="rchip"><i class="{{ d.tone }}"></i>{{ t(d.label_en, d.label_zh) }} · {{ t(d.state_en, d.state_zh) }}</span>{% endfor %}
       </div>
@@ -497,7 +528,7 @@ html[data-theme="dark"] .score .s{background:var(--grid)} /* --bg is near-black 
   </div>
   {% endif %}
 
-  {# ---------------- MACRO-REGIME SCORECARD · five-tier composite (DISPLAY-ONLY) ---------------- #}
+  {# ---------------- MACRO-REGIME SCORECARD · five-tier composite (DISPLAY-ONLY) [collapsed] ---------------- #}
   {% if regime and regime.ok %}
   {% set rtone = {'bull':'var(--bull)','bull-soft':'var(--blue)','neutral':'var(--muted)','bear-soft':'var(--amber)','bear':'var(--r3)'} %}
   {% set rcol = rtone.get(regime.band_tone, 'var(--muted)') %}
@@ -516,7 +547,8 @@ html[data-theme="dark"] .score .s{background:var(--grid)} /* --bg is near-black 
   .rgc-cond{display:flex;align-items:center;gap:6px;margin:3px 0;font-size:11.5px}
   .rgc-dot{width:7px;height:7px;border-radius:50%;flex:none}
   </style>
-  <div class="section-title" style="margin-top:18px">🧭 {{ t('Macro-Regime Scorecard · five-tier composite', '宏观格局记分卡 · 五层综合') }}</div>
+  <details class="sec-fold" id="macro-regime-scorecard">
+  <summary>🧭 {{ t('Macro-Regime Scorecard · advanced', '宏观格局记分卡 · 进阶') }} <span class="hint">{{ t('Five-tier composite backdrop · display-only', '五层综合背景 · 仅供参考') }}</span></summary>
   <div class="card" style="padding:18px 22px">
     <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
       <div style="display:flex;align-items:baseline;gap:12px">
@@ -609,67 +641,106 @@ html[data-theme="dark"] .score .s{background:var(--grid)} /* --bg is near-black 
     <div class="sub faint" style="margin-top:12px;font-size:11.5px">{{ t('Fixed weights. This block flags risk, but does not set position size.', '固定权重。本模块提示风险，但不决定仓位。') }}</div>
     {% if regime.ledger and regime.ledger.honesty_note %}<div class="sub faint" style="margin-top:6px;font-size:11.5px">📒 {{ t('Forward ledger','前瞻账本') }}: {{ t(regime.ledger.honesty_note, regime.ledger.honesty_note_zh) }}</div>{% endif %}
   </div>
+  </details>
   {% endif %}
 
-  {# ---------------- FORWARD-RETURN CONES (what happened next, on days like today) ---------------- #}
-  {% if cones and cones.ok and cones.horizons %}
-  {% set ch = cones.horizons %}
-  {% set cvals = [] %}
-  {% for k in ['7d','30d','90d'] %}{% set _h = ch.get(k) %}{% if _h and _h.p95 is not none and _h.p5 is not none %}{% set _ = cvals.append(_h.p95|abs) %}{% set _ = cvals.append(_h.p5|abs) %}{% endif %}{% endfor %}
-  {% set cscale = (cvals|max) if cvals else 50 %}
-  {% macro cpct(v) %}{{ [[(50 + 50*v/cscale), 2]|max, 98]|min }}{% endmacro %}
-  {# which horizons couldn't fill the live-regime cell (thin, or fell back to a wider sample)? surface it honestly #}
-  {% set degraded = [] %}
-  {% for k in ['7d','30d','90d'] %}{% set _h = ch.get(k) %}{% if _h and (_h.thin or (_h.cond and _h.cond != cones.regime)) %}{% set _ = degraded.append(k) %}{% endif %}{% endfor %}
-  <div class="card" style="margin-top:14px;padding:18px 22px">
-    <div style="display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:8px">
-      <h3 style="margin:0">{{ t('What BTC did next · on days like today','类似今日的历史日 · BTC 后续走势') }}</h3>
-      <span class="faint" style="font-size:12px">{{ t('history matched to regime:','匹配格局：') }} <b style="color:var(--ink)">{{ cones.regime or t('all history','全历史') }}</b></span>
-    </div>
-    <div class="cone-sub">{{ t('Take every past day in the same regime as today, then look at what BTC actually did over the next 7 / 30 / 90 days. The bars show the real spread of those outcomes — history, not a forecast.','取历史上与今日格局相同的每一天，看 BTC 在随后 7 / 30 / 90 天的真实表现。柱体显示这些结果的真实分布 —— 是历史，不是预测。') }}</div>
-    <div class="cone-legend">
-      <span><i class="cl-wh"></i>{{ t('5th–95th percentile','5–95 百分位') }}</span>
-      <span><i class="cl-box"></i>{{ t('middle 50% of outcomes','中间 50% 的结果') }}</span>
-      <span><i class="cl-med"></i>{{ t('median','中位数') }}</span>
-    </div>
-    <div class="cone-head">
-      <span class="cone-h"></span>
-      <span class="ch-bar">{{ t('range of next-period returns','下一周期收益区间') }}</span>
-      <span class="ch-s">{{ t('typical','典型') }}</span>
-      <span class="ch-s">{{ t('odds ↑','上涨概率') }}</span>
-    </div>
-    {% for k in ['7d','30d','90d'] %}{% set h = ch.get(k) %}{% if h and h.p50 is not none %}
-      {% set edge = ((h.p_up - h.base_up) * 100) if (h.p_up is not none and h.base_up is not none) else 0 %}
-      {% set tilt = 'flat' if (h.thin or edge|abs < 5) else ('bull' if edge >= 5 else 'bear') %}
-      {% set edgecol = 'var(--muted)' if tilt == 'flat' else ('var(--bull)' if tilt == 'bull' else 'var(--bear)') %}
-      <div class="cone-row" {% if h.thin %}style="opacity:.62"{% endif %}>
-        <span class="cone-h">{{ k }}</span>
-        <div class="cone-bar">
-          <div class="cone-axis"></div>
-          <div class="cone-zero" style="left:{{ cpct(0) }}%"></div>
-          <div class="cone-whisk {{ tilt }}" style="left:{{ cpct(h.p5) }}%;width:{{ cpct(h.p95)|float - cpct(h.p5)|float }}%"></div>
-          <div class="cone-box {{ tilt }}" style="left:{{ cpct(h.p25) }}%;width:{{ cpct(h.p75)|float - cpct(h.p25)|float }}%"></div>
-          <div class="cone-med {{ tilt }}" style="left:{{ cpct(h.p50) }}%"></div>
-        </div>
-        <div class="cone-stat">
-          <b class="{{ tilt }}">{{ '%+.1f'|format(h.p50) }}%</b>
-          {{ '%+.0f'|format(h.p25) }}…{{ '%+.0f'|format(h.p75) }}%
-        </div>
-        <div class="cone-stat">
-          <b style="color:{{ edgecol }}">{{ (h.p_up*100)|round|int }}%</b>
-          {{ t('base','基准') }} {{ (h.base_up*100)|round|int }}%
-        </div>
+  {# ---------------- BTC ALLOCATION + CONES · cols-2 row ---------------- #}
+  {# ALLOCATION CARD (moved up from old Market State grid) #}
+  {# gcol/gcolor must be set here as convcard uses them later #}
+  {% set gcol = {'CAUTION':'var(--amber)','AVOID':'var(--r3)','TREND-FOLLOW':'var(--blue)','BUY-THE-DIP':'var(--blue)','WAIT':'var(--muted)'} %}
+  {% set gcolor = gcol.get(verdict.grade,'var(--muted)') %}
+  <div class="grid cols-2" style="margin-top:18px">
+    <!-- allocation -->
+    <div class="card">
+      <h2>{{ t('BTC Allocation · Optimal strategy', 'BTC 仓位 · 最优策略') }}</h2>
+      {% if gate.active %}
+      <div style="margin:2px 0 12px;padding:11px 13px;border:1px solid var(--amber);border-radius:11px;background:color-mix(in srgb, var(--amber) 9%, transparent)">
+        <div style="font-weight:700;font-size:13.5px;color:var(--amber)">⏳ {{ t('Proprietary cycle timer · holding cash', '专有周期计时器 · 持有现金') }}</div>
+        <div class="sub" style="margin-top:5px;font-size:12.5px">{{ t('Cycle timing flags this as a stay-out window — tactical model overridden to 0%, re-engaging around','周期择时判定为 BTC 回避窗口，战术模型覆盖为 0%，将在以下时间前后重新参与') }} <b>{{ gate.release or '—' }}</b>.</div>
       </div>
-    {% endif %}{% endfor %}
-    <div class="exp-scale" style="margin-top:6px"><span>−{{ cscale|round|int }}%</span><span>0</span><span>+{{ cscale|round|int }}%</span></div>
-    <div class="sub faint" style="margin-top:10px;font-size:11.5px">
-      {{ t('Typical = median. Odds ↑ = how often BTC was higher by then. Small gaps mean no direction edge.','典型 = 中位数。上涨概率 = 到期时 BTC 收高的频率。差距小则无方向优势。') }}
-      {% if degraded %}<br>{{ t('Limited regime-matched history — using a wider sample:','格局匹配样本有限 —— 已采用更宽样本：') }} {% for k in degraded %}{% set _h = ch.get(k) %}<b>{{ k }}</b> {{ _h.cond }} (n={{ _h.n }}){{ ' · ' if not loop.last }}{% endfor %}{% endif %}
+      {% endif %}
+      <div class="allocbar">
+        {% if alloc_pct > 0 %}<div class="btc" style="width:{{ alloc_pct }}%">{{ alloc_pct }}% BTC</div>{% endif %}
+        {% if alloc_pct < 100 %}<div class="cash" style="width:{{ 100-alloc_pct }}%">{{ 100-alloc_pct }}% {{ t('Cash', '现金') }}</div>{% endif %}
+      </div>
+      <div class="sub" style="margin-top:10px">{{ t('Market mode:', '市场模式：') }}
+        <span class="chip {{ 'chip-strategic' if market_mode=='Strategic' else 'chip-tactical' }}">{{ td(market_mode) }}</span>
+        · {{ t('BTC vs Alts leader:', 'BTC vs 山寨币 领先：') }} <b>{{ td(alt_leader) }}</b></div>
+      {% if sizing and not gate.active %}
+      <div class="mini" style="margin-top:12px;border-top:1px solid var(--grid);padding-top:11px"><div class="lab" style="border:none;padding-top:0"><span>{{ t('Risk-budgeted Kelly size','风险预算 Kelly 仓位') }}{{ qmark('Suggested size after capping for drawdown risk.','按回撤风险封顶后的建议仓位。') }} <span class="faint" style="font-size:11px">({{ '½' if sizing.kelly_frac==0.5 else (sizing.kelly_frac|string) }}-Kelly, {{ sizing.dd_budget }}% {{ t('DD budget','回撤预算') }})</span></span><span><b style="font-size:17px;color:{{ 'var(--blue)' if sizing.size_pct>=40 else 'var(--r3)' }}">{{ sizing.size_pct }}%</b></span></div></div>
+      <div class="sub faint" style="margin-top:4px;font-size:12px">{{ t('Sized off a','基于') }} <b>{{ '%+0.0f'|format(sizing.edge_90) }}%/90d</b> {{ t('edge in the','优势，处于') }} {{ td(sizing.stance|capitalize) }} {{ t('regime (σ','格局（σ') }} {{ sizing.vol_90 }}%){% if sizing.binding=='tail' %} · {{ t('held back by the','受限于') }} {{ sizing.tail_90 }}% {{ t('worst-case dip','极端回撤') }}{% endif %}.</div>
+      {% endif %}
+      {% if alloc_sizing and not gate.active %}
+      <div class="mini" style="margin-top:12px;border-top:1px solid var(--grid);padding-top:11px"><div class="lab" style="border:none;padding-top:0"><span>{{ t('Bottom-detector overlay','底部探测叠加') }} <span class="faint" style="font-size:11px">({{ t('adds size at washout lows','洗盘低点加仓') }})</span></span><span><b style="font-size:16px;color:{{ 'var(--blue)' if alloc_sizing.bottom_active else 'var(--muted)' }}">{{ t('Pressure','压力') }} {{ alloc_sizing.bottom_pressure }}/100{% if alloc_sizing.bottom_active %} · +{{ alloc_sizing.bottom_add }}%{% endif %}</b></span></div></div>
+      <div class="sub faint" style="margin-top:4px;font-size:12px">{% if alloc_sizing.bottom_active %}{{ t('Washout bottom forming — overlay adding','洗盘底部正在形成 — 叠加加仓') }} <b>+{{ alloc_sizing.bottom_add }}%</b> {{ t('to buy in lower.','以更低价买入。') }}{% else %}{{ t('Dormant — adds size only at washed-out lows; backtested +15.6% at same Sharpe.','休眠中 — 仅在洗盘低点加仓；回测 +15.6%，夏普持平。') }}{% endif %}</div>
+      {% endif %}
+      {% if catalyst %}
+      <div class="sub" style="margin-top:8px;font-size:12px;color:{{ 'var(--amber)' if catalyst.imminent else 'var(--muted)' }}">{% if catalyst.imminent %}⚠ {% endif %}{{ t('Next macro binary:','下一宏观二元事件：') }} <b>{{ td(catalyst.next_event) }}</b> {{ t('in','还有') }} {{ catalyst.days }} {{ t('day' if catalyst.days==1 else 'days','天') }} ({{ catalyst.next_date }}){% if catalyst.imminent %} — {{ t('expect a vol jump; the Kelly size models neither the gap nor the vol crush, so don\'t size up into it.','预期波动跳升；Kelly 仓位既不计入跳空也不计入波动收敛，故勿在此前加仓。') }}{% endif %}</div>
+      {% endif %}
+      <a href="vector_allocation.html" style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:14px;padding:11px 14px;border:1px solid var(--grid);border-radius:11px;background:var(--bg);text-decoration:none;color:var(--ink);font-weight:600;font-size:13.5px">
+        <span>◎ {{ t('Full allocation strategy — BTC · ETH · alts · cash', '完整仓位策略 — BTC · ETH · 山寨 · 现金') }}</span>
+        <span style="color:var(--blue);font-size:16px">→</span>
+      </a>
     </div>
+    {# -- CONES CARD (moved here from old location after macro-regime scorecard) -- #}
+    {% if cones and cones.ok and cones.horizons %}
+    {% set ch = cones.horizons %}
+    {% set cvals = [] %}
+    {% for k in ['7d','30d','90d'] %}{% set _h = ch.get(k) %}{% if _h and _h.p95 is not none and _h.p5 is not none %}{% set _ = cvals.append(_h.p95|abs) %}{% set _ = cvals.append(_h.p5|abs) %}{% endif %}{% endfor %}
+    {% set cscale = (cvals|max) if cvals else 50 %}
+    {% macro cpct(v) %}{{ [[(50 + 50*v/cscale), 2]|max, 98]|min }}{% endmacro %}
+    {% set degraded = [] %}
+    {% for k in ['7d','30d','90d'] %}{% set _h = ch.get(k) %}{% if _h and (_h.thin or (_h.cond and _h.cond != cones.regime)) %}{% set _ = degraded.append(k) %}{% endif %}{% endfor %}
+    <div class="card" style="padding:18px 22px">
+      <div style="display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:8px">
+        <h3 style="margin:0">{{ t('What BTC did next · on days like today','类似今日的历史日 · BTC 后续走势') }}</h3>
+        <span class="faint" style="font-size:12px">{{ t('history matched to regime:','匹配格局：') }} <b style="color:var(--ink)">{{ cones.regime or t('all history','全历史') }}</b></span>
+      </div>
+      <div class="cone-sub">{{ t('What BTC actually did over the next 7/30/90 days on past days like today — history, not a forecast.','历史上与今日相似的每一天，BTC 在随后 7/30/90 天的真实表现 —— 是历史，不是预测。') }}</div>
+      <div class="cone-legend">
+        <span><i class="cl-wh"></i>{{ t('5th–95th percentile','5–95 百分位') }}</span>
+        <span><i class="cl-box"></i>{{ t('middle 50% of outcomes','中间 50% 的结果') }}</span>
+        <span><i class="cl-med"></i>{{ t('median','中位数') }}</span>
+      </div>
+      <div class="cone-head">
+        <span class="cone-h"></span>
+        <span class="ch-bar">{{ t('range of next-period returns','下一周期收益区间') }}</span>
+        <span class="ch-s">{{ t('typical','典型') }}</span>
+        <span class="ch-s">{{ t('odds ↑','上涨概率') }}</span>
+      </div>
+      {% for k in ['7d','30d','90d'] %}{% set h = ch.get(k) %}{% if h and h.p50 is not none %}
+        {% set edge = ((h.p_up - h.base_up) * 100) if (h.p_up is not none and h.base_up is not none) else 0 %}
+        {% set tilt = 'flat' if (h.thin or edge|abs < 5) else ('bull' if edge >= 5 else 'bear') %}
+        {% set edgecol = 'var(--muted)' if tilt == 'flat' else ('var(--bull)' if tilt == 'bull' else 'var(--bear)') %}
+        <div class="cone-row" {% if h.thin %}style="opacity:.62"{% endif %}>
+          <span class="cone-h">{{ k }}</span>
+          <div class="cone-bar">
+            <div class="cone-axis"></div>
+            <div class="cone-zero" style="left:{{ cpct(0) }}%"></div>
+            <div class="cone-whisk {{ tilt }}" style="left:{{ cpct(h.p5) }}%;width:{{ cpct(h.p95)|float - cpct(h.p5)|float }}%"></div>
+            <div class="cone-box {{ tilt }}" style="left:{{ cpct(h.p25) }}%;width:{{ cpct(h.p75)|float - cpct(h.p25)|float }}%"></div>
+            <div class="cone-med {{ tilt }}" style="left:{{ cpct(h.p50) }}%"></div>
+          </div>
+          <div class="cone-stat">
+            <b class="{{ tilt }}">{{ '%+.1f'|format(h.p50) }}%</b>
+            {{ '%+.0f'|format(h.p25) }}…{{ '%+.0f'|format(h.p75) }}%
+          </div>
+          <div class="cone-stat">
+            <b style="color:{{ edgecol }}">{{ (h.p_up*100)|round|int }}%</b>
+            {{ t('base','基准') }} {{ (h.base_up*100)|round|int }}%
+          </div>
+        </div>
+      {% endif %}{% endfor %}
+      <div class="exp-scale" style="margin-top:6px"><span>−{{ cscale|round|int }}%</span><span>0</span><span>+{{ cscale|round|int }}%</span></div>
+      <div class="sub faint" style="margin-top:10px;font-size:11.5px">
+        {{ t('Typical = median. Odds ↑ = how often BTC was higher by then. Small gaps mean no direction edge.','典型 = 中位数。上涨概率 = 到期时 BTC 收高的频率。差距小则无方向优势。') }}
+        {% if degraded %}<br>{{ t('Limited regime-matched history — using a wider sample:','格局匹配样本有限 —— 已采用更宽样本：') }} {% for k in degraded %}{% set _h = ch.get(k) %}<b>{{ k }}</b> {{ _h.cond }} (n={{ _h.n }}){{ ' · ' if not loop.last }}{% endfor %}{% endif %}
+      </div>
+    </div>
+    {% else %}
+    <div></div>
+    {% endif %}
   </div>
-  {% endif %}
-
-  <div class="sub faint" style="margin:8px 4px 4px;font-size:12px">{{ t('A simple blend of the tested axes below. It is a regime tilt, not a short-term price call.', '下方已测试维度的简单综合。它是格局倾向，不是短线价格判断。') }}</div>
 
   <!-- ===================== SIGNAL BOARD ===================== -->
   <div class="section-title">{{ t('Signal Board · every axis at a glance', '信号面板 · 一览全维度') }}</div>
@@ -700,7 +771,7 @@ html[data-theme="dark"] .score .s{background:var(--grid)} /* --bg is near-black 
   {% set lad_zh = {'quiet':'平静','coiled':'蓄势','warning':'警告','trigger':'触发'} %}
   <div class="card" id="impulse" style="margin-bottom:18px">
     <h2>{{ t('Impulse Radar · forward pressure','脉冲雷达 · 前瞻压力') }}</h2>
-    <div class="sub" style="margin-top:2px">{{ t('Tracks only leading warning-crosses that survive adversarial checks — it spikes on a cross, then fades back to quiet (separate from the standing regime read). Background signals alone can reach only “coiled”; only a real cross hits warning/trigger. Display-only.','只跟踪经对抗验证的领先预警突破 — 突破时升级，随后衰减回平静（独立于当前格局读数）。仅背景信号最高到“蓄势”；只有真正的突破才到警告/触发。仅供展示。') }}</div>
+    <div class="sub" style="margin-top:2px">{{ t('Leading warning-crosses only — it spikes on a cross, then fades; background signals alone can\'t pass "coiled".','仅跟踪领先预警突破 — 突破时升级，随后衰减；仅背景信号无法超过"蓄势"。') }}</div>
     {% if ir.staleness and ir.staleness.stale %}
     <div style="margin-top:10px;padding:8px 12px;border-radius:8px;background:var(--bear-soft);border:1px solid var(--bear);color:var(--bear);font-weight:600;font-size:12.5px">⚠ {{ t('Intraday data STALE — freshest hourly candle','日内数据过期 — 最新小时K线') }} {{ ir.staleness.intraday_asof }} ({{ t('daily close','日线收盘') }} {{ ir.staleness.daily_asof }}). {{ t('An intraday flush could go unseen — check the hourly feed.','日内闪跌可能无法被捕捉 — 请检查小时数据源。') }}</div>
     {% endif %}
@@ -743,104 +814,7 @@ html[data-theme="dark"] .score .s{background:var(--grid)} /* --bg is near-black 
   </div>
   {% endif %}
 
-  <!-- ===================== MARKET STATE HERO ===================== -->
-  <div class="grid cols-2">
-    <div class="card">
-      <h2>{{ t('Market State · Long term', '市场状态 · 长期') }}</h2>
-      <div class="hero-state">
-        <span class="hero-dot {{ 'dot-on' if risk_on else 'dot-off' }}"></span>{{ t('Risk', '风险') }}
-        <span class="{{ 'on' if risk_on else 'off' }}">{{ td(risk_word) }}</span>
-      </div>
-      <div class="hero-meta">
-        <span class="{{ 'up' if risk_on else 'down' }}">{{ t('Risk Index', '风险指数') }} {{ risk_index }}</span>
-        · <b>{{ td(risk_label) }}</b>
-        · <span class="tip" data-tip-en="Momentum score. Above +0.5 is bullish; below -0.5 is bearish." data-tip-zh="动量分数。高于 +0.5 偏多；低于 -0.5 偏空。">{{ t('Momentum', '动量') }} {{ momentum }} ({{ td(momentum_state) }})</span>
-      </div>
-      {% set cs_color = {'ACCUMULATE':'var(--blue)','RISK-ON':'var(--blue)','DISTRIBUTE':'var(--r3)','RISK-OFF':'var(--r3)','NEUTRAL':'var(--muted)'} %}
-      {% set cs_zh = {'ACCUMULATE':'累积','RISK-ON':'风险偏好','DISTRIBUTE':'派发','RISK-OFF':'风险规避','NEUTRAL':'中性'} %}
-      <div class="hero-meta" style="margin-top:6px;font-size:17px">
-        <b style="color:{{ cs_color.get(composite_state,'var(--muted)') }}">{{ t('Stance', '立场') }}: {{ t(composite_state, cs_zh.get(composite_state, composite_state)) }}</b>
-        {% if composite_context == 'crowded_short' %}<span class="tip" data-tip-en="Crowded shorts can mark capitulation. Context only." data-tip-zh="空头拥挤可能代表投降式抛售。仅背景。" style="font-size:12.5px;font-weight:600;color:var(--blue);border:1px solid var(--blue);border-radius:999px;padding:1px 9px;margin-left:8px">⚠ {{ t('Crowded shorts · capitulation context', '空头拥挤 · 投降式背景') }}</span>{% elif composite_context == 'froth' %}<span class="tip" data-tip-en="Crowded longs can mark froth. Display-only." data-tip-zh="多头拥挤可能代表过热。仅展示。" style="font-size:12.5px;font-weight:600;color:var(--r3);border:1px solid var(--r3);border-radius:999px;padding:1px 9px;margin-left:8px">🔥 {{ t('Froth · crowded longs', '过热 · 多头拥挤') }}</span>{% endif %}
-        <span class="faint" style="font-size:13px"> · {{ t('valuation + extremes resolve the risk U-shape into a direction', '估值 + 极值将风险 U 形解析为方向') }}</span>
-      </div>
-
-      {# ---- multi-timeframe CONFLUENCE VERDICT (reconciles short bounce vs bigger picture) ---- #}
-      {% if verdict and verdict.headline %}
-      {% set vg = {'CAUTION':'var(--amber)','AVOID':'var(--r3)','TREND-FOLLOW':'var(--blue)','BUY-THE-DIP':'var(--blue)','WAIT':'var(--muted)'} %}
-      {% set tfc = {'up':'var(--blue)','down':'var(--r3)','flat':'var(--grid)'} %}
-      <div style="margin-top:14px;padding:13px 15px;border:1px solid var(--grid);border-radius:12px;background:var(--bg)">
-        <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap">
-          <span style="font-weight:800;font-size:12px;letter-spacing:.04em;padding:3px 9px;border-radius:7px;color:#fff;background:{{ vg.get(verdict.grade,'var(--muted)') }}">{{ t(verdict.grade, verdict.grade_zh) }}</span>
-          <b style="font-size:16px;color:var(--ink)">{{ t(verdict.headline, verdict.headline_zh) }}</b>
-        </div>
-        <div class="sub" style="margin-top:7px">{{ t(verdict.sub, verdict.sub_zh) }}</div>
-        <div style="display:flex;align-items:center;gap:7px;margin-top:10px;flex-wrap:wrap">
-          <span class="faint" style="font-size:11px;text-transform:uppercase;letter-spacing:.04em">{{ t('Trend by timeframe','各周期趋势') }}</span>
-          {% set tlab = {'D':'D','3D':'3D','W':'W','2W':'2W','ME':'M'} %}
-          {% for r in mtf_rows %}
-          <span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--muted)"><i style="width:9px;height:9px;border-radius:50%;background:{{ tfc.get(r.trend,'var(--grid)') }}"></i>{{ tlab.get(r.key, r.key) }}</span>
-          {% endfor %}
-          <span class="faint" style="font-size:11px"> · {{ t('short','短') }} {{ '↑' if verdict.short_sign>0 else ('↓' if verdict.short_sign<0 else '→') }} · {{ t('mid','中') }} {{ '↑' if verdict.mid_sign>0 else ('↓' if verdict.mid_sign<0 else '→') }} · {{ t('long','长') }} {{ '↑' if verdict.long_sign>0 else ('↓' if verdict.long_sign<0 else '→') }}</span>
-        </div>
-      </div>{% endif %}
-
-      <!-- cycle slider -->
-      <div class="slider">
-        <div class="track"><div class="knob" style="left:{{ cycle_pos }}%"></div></div>
-        <div class="labels">
-          {% for s in ['Defensive','Fragile','Recovery','Expansion'] %}
-          <span class="{{ 'cur' if s==cycle_stage else '' }}">{{ td(s) }}</span>
-          {% endfor %}
-        </div>
-      </div>
-
-      <!-- momentum / volatility / flow -->
-      <div class="metric-row">
-        <div class="m"><div class="k">{{ t('Momentum', '动量') }}</div><div class="v">{{ td(mom_strength) }}</div></div>
-        <div class="m"><div class="k">{{ t('Volatility', '波动率') }}</div><div class="v">{{ td(vol_state) }}</div>
-          <div class="sub">{{ td(vol_side) }}</div></div>
-        <div class="m"><div class="k">{{ t('Flow', '资金流') }}</div><div class="v">{{ td(flow_state) }}</div></div>
-      </div>
-    </div>
-
-    <!-- allocation (next to the long-term scorecard) -->
-    <div class="card">
-      <h2>{{ t('BTC Allocation · Optimal strategy', 'BTC 仓位 · 最优策略') }}</h2>
-      {% if gate.active %}
-      <div style="margin:2px 0 12px;padding:11px 13px;border:1px solid var(--amber);border-radius:11px;background:color-mix(in srgb, var(--amber) 9%, transparent)">
-        <div style="font-weight:700;font-size:13.5px;color:var(--amber)">⏳ {{ t('Proprietary cycle timer · holding cash', '专有周期计时器 · 持有现金') }}</div>
-        <div class="sub" style="margin-top:5px;font-size:12.5px">{{ t('Our cycle timing flags this as a stay-out window for BTC, so the tactical model is overridden to 0% — sitting in cash and re-engaging around', '我们的周期择时判定当前为 BTC 的回避窗口，因此战术模型被覆盖为 0% — 持有现金，并将在以下时间前后重新参与') }} <b>{{ gate.release or '—' }}</b>.</div>
-      </div>
-      {% endif %}
-      <div class="allocbar">
-        {% if alloc_pct > 0 %}<div class="btc" style="width:{{ alloc_pct }}%">{{ alloc_pct }}% BTC</div>{% endif %}
-        {% if alloc_pct < 100 %}<div class="cash" style="width:{{ 100-alloc_pct }}%">{{ 100-alloc_pct }}% {{ t('Cash', '现金') }}</div>{% endif %}
-      </div>
-      <div class="sub" style="margin-top:10px">{{ t('Market mode:', '市场模式：') }}
-        <span class="chip {{ 'chip-strategic' if market_mode=='Strategic' else 'chip-tactical' }}">{{ td(market_mode) }}</span>
-        · {{ t('BTC vs Alts leader:', 'BTC vs 山寨币 领先：') }} <b>{{ td(alt_leader) }}</b></div>
-      {% if sizing and not gate.active %}
-      <div class="mini" style="margin-top:12px;border-top:1px solid var(--grid);padding-top:11px"><div class="lab" style="border:none;padding-top:0"><span>{{ t('Risk-budgeted Kelly size','风险预算 Kelly 仓位') }}{{ qmark('Suggested size after capping for drawdown risk.','按回撤风险封顶后的建议仓位。') }} <span class="faint" style="font-size:11px">({{ '½' if sizing.kelly_frac==0.5 else (sizing.kelly_frac|string) }}-Kelly, {{ sizing.dd_budget }}% {{ t('DD budget','回撤预算') }})</span></span><span><b style="font-size:17px;color:{{ 'var(--blue)' if sizing.size_pct>=40 else 'var(--r3)' }}">{{ sizing.size_pct }}%</b></span></div></div>
-      <div class="sub faint" style="margin-top:4px;font-size:12px">{{ t('Sized off a','基于') }} <b>{{ '%+0.0f'|format(sizing.edge_90) }}%/90d</b> {{ t('edge in the','优势，处于') }} {{ td(sizing.stance|capitalize) }} {{ t('regime (σ','格局（σ') }} {{ sizing.vol_90 }}%){% if sizing.binding=='tail' %} · {{ t('held back by the','受限于') }} {{ sizing.tail_90 }}% {{ t('worst-case dip','极端回撤') }}{% endif %}.</div>
-      {% endif %}
-      {% if alloc_sizing and not gate.active %}
-      <div class="mini" style="margin-top:12px;border-top:1px solid var(--grid);padding-top:11px"><div class="lab" style="border:none;padding-top:0"><span>{{ t('Bottom-detector overlay','底部探测叠加') }} <span class="faint" style="font-size:11px">({{ t('adds size at washout lows','洗盘低点加仓') }})</span></span><span><b style="font-size:16px;color:{{ 'var(--blue)' if alloc_sizing.bottom_active else 'var(--muted)' }}">{{ t('Pressure','压力') }} {{ alloc_sizing.bottom_pressure }}/100{% if alloc_sizing.bottom_active %} · +{{ alloc_sizing.bottom_add }}%{% endif %}</b></span></div></div>
-      <div class="sub faint" style="margin-top:4px;font-size:12px">{% if alloc_sizing.bottom_active %}{{ t('A washout bottom is forming across timeframes — the overlay is adding','多周期洗盘底部正在形成 — 叠加正在加仓') }} <b>+{{ alloc_sizing.bottom_add }}%</b> {{ t('to buy in lower.','以更低价买入。') }}{% else %}{{ t('Dormant. At a deep drawdown with StochRSI washed-out across all timeframes, it buys back the exposure the drawdown brake skips — the brake protects on the way down, this re-enters at the low.','休眠中。在深度回撤、且 StochRSI 跨周期超卖时，叠加会买回回撤刹车跳过的仓位 — 刹车在下跌时保护，本叠加在低点重新入场。') }}{% endif %} {{ t('Backtested +15.6% return at the same Sharpe; passes the same checks.','回测回报 +15.6%，夏普持平；通过相同检验。') }}</div>
-      {% endif %}
-      {% if catalyst %}
-      <div class="sub" style="margin-top:8px;font-size:12px;color:{{ 'var(--amber)' if catalyst.imminent else 'var(--muted)' }}">{% if catalyst.imminent %}⚠ {% endif %}{{ t('Next macro binary:','下一宏观二元事件：') }} <b>{{ td(catalyst.next_event) }}</b> {{ t('in','还有') }} {{ catalyst.days }} {{ t('day' if catalyst.days==1 else 'days','天') }} ({{ catalyst.next_date }}){% if catalyst.imminent %} — {{ t('expect a vol jump; the Kelly size models neither the gap nor the vol crush, so don\'t size up into it.','预期波动跳升；Kelly 仓位既不计入跳空也不计入波动收敛，故勿在此前加仓。') }}{% endif %}</div>
-      {% endif %}
-      <a href="vector_allocation.html" style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:14px;padding:11px 14px;border:1px solid var(--grid);border-radius:11px;background:var(--bg);text-decoration:none;color:var(--ink);font-weight:600;font-size:13.5px">
-        <span>◎ {{ t('Full allocation strategy — BTC · ETH · alts · cash', '完整仓位策略 — BTC · ETH · 山寨 · 现金') }}</span>
-        <span style="color:var(--blue);font-size:16px">→</span>
-      </a>
-      <div class="sub faint" style="margin-top:8px;font-size:12px">{{ t('The deep-dive page sizes ETH and alts by where we sit in the alt-cycle (ETH/BTC ratio, alt-season).', '深度页面按所处山寨周期（ETH/BTC 比率、山寨季）配置 ETH 与山寨币。') }}</div>
-    </div>
-  </div>
-
   {# ---- conviction card macro (shared by mid & short so they are byte-identical "same format") ---- #}
-  {% set gcol = {'CAUTION':'var(--amber)','AVOID':'var(--r3)','TREND-FOLLOW':'var(--blue)','BUY-THE-DIP':'var(--blue)','WAIT':'var(--muted)'} %}
-  {% set gcolor = gcol.get(verdict.grade,'var(--muted)') %}
   {% macro convcard(c, R, title_en, title_zh, vsign, grade, grade_zh, gcolor) %}
     {% set dword = 'bull' if c.dir>0 else 'bear' %}
     {% set dottint = 'var(--muted)' if (c.state=='TOSS-UP' or c.lean<=3) else ('var(--blue)' if (c.state=='EDGE' and c.dir>0) else ('var(--r3)' if (c.state=='EDGE' and c.dir<0) else ('color-mix(in srgb,var(--blue) 58%,var(--grid))' if c.dir>0 else 'color-mix(in srgb,var(--r3) 60%,var(--grid))'))) %}
@@ -901,7 +875,7 @@ html[data-theme="dark"] .score .s{background:var(--grid)} /* --bg is near-black 
   </a>
 
   <!-- ===================== MID & SHORT TERM (side by side, same format) ===================== -->
-  <div class="section-title">{{ t('Mid term & Short term · near-term drawdown risk', '中期与短期 · 近端回撤风险') }}</div>
+  <div class="section-title">{{ t('Next 3–7 days · drawdown risk', '未来 3–7 天 · 回撤风险') }}</div>
   <div class="grid cols-eq">
 
     <!-- mid term · 7-day outlook (risk-led) -->
@@ -946,7 +920,7 @@ html[data-theme="dark"] .score .s{background:var(--grid)} /* --bg is near-black 
       <div class="s"><div class="k">{{ t('Max Drawdown', '最大回撤') }}</div><div class="v" data-m="maxdd">{{ cards.optimal.maxdd }}%</div><div class="h">HODL {{ cards.optimal.hodl_maxdd }}%</div></div>
       <div class="s"><div class="k">{{ t('Time in market', '在场时间') }}</div><div class="v" data-m="in_market">{{ cards.optimal.in_market }}%</div><div class="h" data-m="x_hodl">{{ cards.optimal.x_hodl }}× HODL</div></div>
     </div>
-    <div class="sub" style="margin-top:10px">{{ t('Interactive — switch variant / timeframe / log·linear above and hover for any day’s values. Long-only, acts the day after each signal (no look-ahead). Every variant beats HODL’s Sharpe', '可交互 — 上方切换变体 / 周期 / 对数·线性，悬停查看任一日数值。仅做多，信号次日生效（无前视）。每个变体的 Sharpe 均优于 HODL') }} ({{ cards.optimal.hodl_sharpe }}){{ t(' and cuts max drawdown.', '，且降低了最大回撤。') }}</div>
+    <div class="sub" style="margin-top:10px">{{ t('Long-only, acts the day after each signal — every variant beats HODL Sharpe and cuts max drawdown.', '仅做多，信号次日生效 — 每个变体的 Sharpe 均优于 HODL，且降低最大回撤。') }}</div>
   </div>
 
   <!-- ===================== CYCLE TIME MACHINE ===================== -->
@@ -1000,7 +974,7 @@ html[data-theme="dark"] .score .s{background:var(--grid)} /* --bg is near-black 
 
   <!-- ===================== MULTI-TIMEFRAME TECHNICALS ===================== -->
   {% if mtf_rows %}
-  <div class="section-title">{{ t('Multi-Timeframe Momentum & Technicals · Daily → Monthly', '多周期动量与技术指标 · 日线 → 月线') }}</div>
+  <div class="section-title">{{ t('Technicals · daily → monthly', '技术指标 · 日线 → 月线') }}</div>
   <div class="grid cols-2">
     <div class="card">
       <h3>{{ t('Cycle ladder (shared with the stock analyzer)', '周期阶梯（与个股分析器一致）') }}
@@ -1031,18 +1005,13 @@ html[data-theme="dark"] .score .s{background:var(--grid)} /* --bg is near-black 
     </div>
   </div>{% endif %}
 
-  <!-- ===================== MOMENTUM / STRUCTURE ===================== -->
-  <div class="section-title">{{ t('Momentum & Structure', '动量与结构') }}</div>
+  <!-- ===================== CORE SIGNALS (merged: momentum, structure, impulse, BFI) ===================== -->
+  <div class="section-title">{{ t('Core signals · momentum, structure, impulse, fundamentals', '核心信号 · 动量·结构·脉冲·基本面') }}</div>
   <div class="grid cols-2">
     <div class="card"><h3>{{ t('Momentum', '动量') }} <span class="faint" style="font-size:14px">{{ momentum }}</span></h3>{{ charts.momentum|safe }}
       <div class="sub">{{ t('Bullish above +0.5, bearish below −0.5. State:', '高于 +0.5 看多，低于 −0.5 看空。状态：') }} <b>{{ td(momentum_state) }}</b>.</div></div>
     <div class="card"><h3>{{ t('Structure Shift', '结构转变') }} <span class="faint" style="font-size:14px">{{ structure }}</span></h3>{{ charts.structure|safe }}
       <div class="sub">{{ t('Constructive above +0.5, broken below −0.5. State:', '高于 +0.5 偏多，低于 −0.5 走坏。状态：') }} <b>{{ td(structure_state) }}</b>.</div></div>
-  </div>
-
-  <!-- ===================== IMPULSE ===================== -->
-  <div class="section-title">{{ t('Impulse · acceleration of the move (start & exhaustion)', '脉冲 · 走势加速度（启动与衰竭）') }}</div>
-  <div class="grid cols-2">
     <div class="card">
       <h3>{{ t('Impulse', '脉冲') }}
         {% set ic = {'positive':'var(--blue)','negative':'var(--r3)','neutral':'var(--muted)'} %}
@@ -1053,32 +1022,21 @@ html[data-theme="dark"] .score .s{background:var(--grid)} /* --bg is near-black 
       <div class="mini"><div class="lab"><span>{{ t('Positive participation (14d)','正向占比（14 天）') }}</span><span><b>{{ impulse.pos_pct }}%</b></span></div>
         <div class="bar"><div class="fill" style="width:{{ impulse.pos_pct }}%"></div></div></div>{% endif %}
       <div class="mini"><div class="lab"><span>{{ t('Trend efficiency (chop gate)','趋势效率（震荡过滤）') }}</span><span><b>{{ impulse.er if impulse.er is not none else '—' }}</b> <span class="faint">{{ t('(0 = chop, 1 = clean trend)','（0 = 震荡，1 = 单边）') }}</span></span></div></div>
-      <div class="sub" style="margin-top:10px">{{ t('The acceleration of momentum (the MACD histogram, z-scored), filtered by trend-efficiency so choppy tape reads ~0, plus a funding/open-interest positioning shock. It catches the start of a move and its exhaustion — a valuation says “cheap,” Impulse says “the selling is burning out right now.”', '动量的加速度（MACD 柱状图，标准化），用趋势效率过滤，使震荡行情约为 0，并叠加资金费率/持仓的冲击。它捕捉走势的启动与衰竭 — 估值说“便宜”，脉冲说“抛压此刻正在耗尽”。') }}</div>
+      <div class="sub" style="margin-top:10px">{{ t("Momentum's acceleration, chop-filtered — it flags when a move starts or burns out.",'动量的加速度，经震荡过滤 — 捕捉走势启动或衰竭的时机。') }}</div>
     </div>
-    <div class="card">
-      <h3>{{ t('Why it matters', '为何重要') }}</h3>
-      <div class="sub">{{ t('Impulse helps spot fresh acceleration or exhaustion. It feeds short-term scenario odds.', '脉冲帮助识别刚启动的加速或衰竭，并参与短期情景概率。') }}</div>
-    </div>
-  </div>
-
-  <!-- ===================== BFI ===================== -->
-  <div class="section-title">{{ t('Bitcoin Fundamental Index', '比特币基本面指数（BFI）') }}</div>
-  <div class="grid cols-2">
     <div class="card"><h3>{{ t('BFI = Network Growth × Liquidity', 'BFI = 网络增长 × 流动性') }}</h3>{{ charts.bfi|safe }}
-      <div class="sub">{{ t('Positive above 60, negative below 40. Now:', '高于 60 为正向，低于 40 为负向。当前：') }} <b>{{ bfi }}</b> ({{ td(bfi_zone) }}).</div></div>
-    <div class="card">
-      <h3>{{ t('Fundamental gauges', '基本面指标') }}</h3>
+      <div class="sub">{{ t('Positive above 60, negative below 40. Now:', '高于 60 为正向，低于 40 为负向。当前：') }} <b>{{ bfi }}</b> ({{ td(bfi_zone) }}).</div>
       {% set gauge_zh = {'Network Growth':'网络增长','Liquidity':'流动性','BFI':'BFI'} %}
       {% for nm,val in [('Network Growth',network_growth),('Liquidity',liquidity),('BFI',bfi)] %}
       <div class="mini"><div class="lab"><span>{{ t(nm, gauge_zh[nm]) }}</span><span><b>{{ val if val is not none else '—' }}</b></span></div>
         <div class="bar"><div class="fill" style="width:{{ val if val is not none else 0 }}%"></div></div></div>
       {% endfor %}
-      <div class="sub" style="margin-top:14px">{{ t('Network Growth = active-address momentum percentile. Liquidity = realized-cap + stablecoin + ETF-flow composite. BFI never turned negative through the Feb–Mar 2025 stress — a long-term anchor.', '网络增长 = 活跃地址动量百分位。流动性 = 已实现市值 + 稳定币 + ETF 资金流的综合。BFI 在 2025 年 2 月至 3 月的压力期间从未转负 — 一个长期锚点。') }}</div>
+      <div class="sub" style="margin-top:10px">{{ t('Never turned negative through the 2025 stress — a long-term anchor.','2025 年压力期间从未转负 — 一个长期锚点。') }}</div>
     </div>
   </div>
 
-  <!-- ===================== VALUATION & CYCLE ===================== -->
-  <div class="section-title">{{ t('Valuation & Cycle · where in the cycle', '估值与周期 · 处于周期何处') }}</div>
+  <!-- ===================== CYCLE & VALUATION (merged) ===================== -->
+  <div class="section-title">{{ t('Cycle & valuation', '周期与估值') }}</div>
   <div class="grid cols-2">
     <div class="card">
       <h3>{{ t('Valuation anchors', '估值锚点') }}
@@ -1090,8 +1048,7 @@ html[data-theme="dark"] .score .s{background:var(--grid)} /* --bg is near-black 
       {% endfor %}
       {% if valuation.reserve_risk is not none %}
       <div class="mini"><div class="lab"><span>{{ t('Reserve Risk','储备风险') }}</span><span><b style="color:{{ 'var(--r3)' if valuation.rr_top else ('var(--blue)' if (valuation.reserve_risk_pctile is not none and valuation.reserve_risk_pctile < 25) else 'var(--ink)') }}">{{ '%.4f'|format(valuation.reserve_risk) }}</b>{% if valuation.reserve_risk_pctile is not none %} <span class="faint">({{ valuation.reserve_risk_pctile }}%ile)</span>{% endif %}{% if valuation.rr_top %} <b style="color:var(--r3)"> · {{ t('TOP','顶部') }}</b>{% endif %}</span></div></div>{% endif %}
-      <div class="sub" style="margin-top:10px">{{ t('Valuation anchors the cycle: deep value supports adding; overheated readings support trimming.', '估值锚定周期：深度低估支持加仓；过热读数支持减仓。') }}</div>
-      <div class="sub" style="margin-top:6px">{{ t('Reserve Risk compares price with the cost of holding. Low = accumulation; high = top risk.', '储备风险比较价格与持有成本。低位 = 累积；高位 = 顶部风险。') }}</div>
+      <div class="sub" style="margin-top:10px">{{ t('Deep value supports adding; overheated supports trimming. Reserve Risk low = accumulation, high = top risk.', '深度低估支持加仓；过热支持减仓。储备风险低 = 累积，高 = 顶部风险。') }}</div>
     </div>
     <div class="card">
       <h3>{{ t('Miner cycle & cost basis', '矿工周期与成本基准') }}</h3>
@@ -1099,12 +1056,85 @@ html[data-theme="dark"] .score .s{background:var(--grid)} /* --bg is near-black 
       <div class="mini"><div class="lab"><span>{{ t('Puell Multiple','Puell 倍数') }}</span><span><b>{{ valuation.puell if valuation.puell is not none else '—' }}</b></span></div></div>
       {% if valuation.sth_cb_ratio is not none %}
       <div class="mini"><div class="lab"><span>{{ t('Price vs STH cost basis','价格 vs 短期持有者成本') }}</span><span><b style="color:{{ 'var(--blue)' if valuation.sth_cb_ratio>=0 else 'var(--r3)' }}">{{ '%+0.1f'|format(valuation.sth_cb_ratio) }}%</b></span></div></div>{% endif %}
-      <div class="sub" style="margin-top:10px">{{ t('Hash Ribbons = 30- vs 60-day hashrate (miner capitulation marks bottoms only in hindsight — no average-return edge, so context). The STH cost basis is the bull/bear pivot.', '哈希丝带 = 30 天与 60 天算力对比（矿工投降只能事后标记底部，无平均收益优势，故仅作背景）。短期持有者成本是牛熊分界。') }}</div>
+      <div class="sub" style="margin-top:10px">{{ t('Hash Ribbons mark miner stress (context only). STH cost basis is the bull/bear pivot.', '哈希丝带标记矿工压力（仅背景）。短期持有者成本是牛熊分界。') }}</div>
+    </div>
+    {# merged cycle clock card — halving progress row + phase timer row #}
+    <div class="card">
+      {% set ph = cycle.phase %}
+      {% set ph_color = {'accumulation':'var(--blue)','markup':'var(--blue)','markdown':'var(--r3)','recovery':'var(--ink)'} %}
+      {% set ph_zh = {'accumulation':'累积','markup':'上涨','markdown':'下跌','recovery':'复苏'} %}
+      {% set cp = cycle_phase %}
+      {% set cpc = {'markup':'var(--blue)','markdown':'var(--r3)'} %}
+      {% set cpz = {'markup':'上涨腿','markdown':'下跌腿'} %}
+      {% set kz = {'top':'顶部','bottom':'底部'} %}
+      {% set stz = {'on_track':'按节奏','overdue':'已超期','invalidated':'已失效'} %}
+      {% set stc = {'on_track':'var(--blue)','overdue':'var(--amber)','invalidated':'var(--r3)'} %}
+      {# show phase label — if halving and phase clocks agree, show once; if they differ, both colors #}
+      {% set ph_label = ph or '—' %}
+      {% set cp_label = cp.phase or '—' %}
+      <h3>{{ t('Cycle clock', '周期时钟') }}
+        {% if ph_label == cp_label %}<b style="color:{{ ph_color.get(ph,'var(--muted)') }}"> · {{ t(ph_label|upper, ph_zh.get(ph,'—')) }}</b>
+        {% else %}<b style="color:{{ ph_color.get(ph,'var(--muted)') }}"> · {{ t(ph_label|upper, ph_zh.get(ph,'—')) }}</b><b style="color:{{ cpc.get(cp.phase,'var(--muted)') }}"> / {{ t(cp_label|upper, cpz.get(cp.phase,'—')) }}</b>{% endif %}
+        {% if cp.status and cp.status != 'on_track' %}<b style="color:{{ stc.get(cp.status,'var(--muted)') }}"> · {{ t(cp.status|replace('_',' ')|upper, stz.get(cp.status,'')) }}</b>{% endif %}</h3>
+      {# halving clock row #}
+      <div class="faint" style="font-size:10px;text-transform:uppercase;letter-spacing:.04em;margin-top:4px">{{ t('Halving clock','减半时钟') }}</div>
+      {% if cycle.pct is not none %}
+      <div class="mini"><div class="lab"><span>{{ t('Cycle progress (since halving)','周期进度（自减半起）') }}</span><span><b>{{ cycle.pct }}%</b> <span class="faint">({{ cycle.days }}d)</span></span></div>
+        <div class="bar"><div class="fill" style="width:{{ cycle.pct if cycle.pct<=100 else 100 }}%"></div></div></div>{% endif %}
+      {% if cycle.vdd is not none %}
+      <div class="mini"><div class="lab"><span>{{ t('Spending behaviour · VDD Multiple','支出行为 · VDD 倍数') }}</span><span><b>{{ cycle.vdd }}</b> <span class="faint">({{ cycle.vdd_pctile }}%ile · {{ t('>2.9 distribution, <0.75 dormant','>2.9 派发，<0.75 沉睡') }})</span></span></div></div>{% endif %}
+      {# phase timer row #}
+      <div class="faint" style="font-size:10px;text-transform:uppercase;letter-spacing:.04em;margin-top:10px">{{ t('Phase timer','相位计时') }}</div>
+      {% if cp.pct is not none %}
+      <div class="mini"><div class="lab"><span>{{ t('Phase progress','相位进度') }}</span><span><b>{{ cp.pct }}%</b></span></div>
+        <div class="bar"><div class="fill" style="width:{{ cp.pct if cp.pct<=100 else 100 }}%;background:{{ cpc.get(cp.phase,'var(--blue)') }}"></div></div></div>
+      <div class="mini"><div class="lab"><span>{{ t('Projected next pivot','预计下一转折') }}{% if cp.next_kind %} <span class="faint">{{ t(cp.next_kind, kz.get(cp.next_kind,'')) }}</span>{% endif %}</span><span><b>{{ cp.next_pivot or '—' }}</b>{% if cp.days_left is not none %} <span class="faint">({{ cp.days_left|int }}d)</span>{% endif %}</span></div></div>
+      {% endif %}
+      <div class="sub" style="margin-top:8px">{{ t('Post-halving accumulation phases averaged +48%/90d (81% hit); mid-cycle markdowns +5% (43%) — a soft prior, never a trigger.','减半后累积期平均 +48%/90d（胜率 81%）；周期中段下跌期 +5%（43%）— 软先验，从不触发。') }}</div>
+    </div>
+    {# Cycle Thesis Monitor — W3 house law: keep blackout logic untouched #}
+    <div class="card">
+      {% set ct = cycle_thesis %}
+      {% if ct and ct.ok %}
+      {% set tsc = {'intact':'var(--blue)','watch':'var(--amber)','breaking':'var(--r3)'} %}
+      {% set tsz = {'intact':'成立','watch':'观察','breaking':'破位'} %}
+      {% set flc = {'ok':'var(--blue)','watch':'var(--amber)','alert':'var(--r3)'} %}
+      {% set fli = {'ok':'✓','watch':'▲','alert':'✕'} %}
+      <h3>{{ t('Cycle Thesis Monitor','周期论点监测') }}
+        <b style="color:{{ tsc.get(ct.thesis_status,'var(--muted)') }}"> · {{ t(ct.thesis_status|upper, tsz.get(ct.thesis_status,'—')) }}</b>
+        {#- W3: buy-side badge — suppressed under the gate via the SAME stamped key the rec
+           card uses (build_vector.py), else Oct–Nov 2026 would flash "ACCUMULATION ZONE"
+           beside a forced-flat 0% allocation. #}
+        {% if ct.accumulate and not ct.suppressed_by_blackout %}<b style="color:var(--blue)"> · {{ t('ACCUMULATION ZONE','吸筹区') }}</b>{% endif %}</h3>
+      {% if ct.drawdown_from_peak is not none %}
+      <div class="mini"><div class="lab"><span>{{ t('Drawdown from cycle peak','较周期顶部回撤') }} <span class="faint">({{ ct.peak_date }})</span></span><span><b style="color:var(--r3)">{{ (ct.drawdown_from_peak*100)|round|int }}%</b>{% if ct.prior_bear_mean is not none %} <span class="faint">{{ t('vs','对比') }} {{ (ct.prior_bear_mean*100)|round|int }}% {{ t('prior-bear avg','历史熊市均值') }}</span>{% endif %}</span></div></div>
+      {% endif %}
+      {% if ct.window_start %}
+      <div class="mini"><div class="lab"><span>{{ t('Projected bottom window','预测底部窗口') }}</span><span><b>{{ ct.window_start }} → {{ ct.window_end }}</b></span></div></div>
+      {% endif %}
+      <div style="margin-top:8px;display:flex;flex-direction:column;gap:4px">
+        {% for f in ct.flags %}
+        <div style="display:flex;gap:6px;align-items:flex-start;font-size:11px;line-height:1.35"><span style="color:{{ flc.get(f.level,'var(--muted)') }};font-weight:700;flex:0 0 auto">{{ fli.get(f.level,'·') }}</span><span>{{ t(f.en, f.zh) }}</span></div>
+        {% endfor %}
+      </div>
+      <div class="sub" style="margin-top:8px">{{ t(ct.caveat_en, ct.caveat_zh) }}</div>
+      {% else %}
+      <h3>{{ t('Cycle Thesis Monitor','周期论点监测') }}</h3>
+      <div class="sub">{{ t('Monitor unavailable for this build.','本次构建暂无监测数据。') }}</div>
+      {% endif %}
+    </div>
+    <div class="card">
+      <h3>{{ t('CME positioning & correlation', 'CME 持仓与相关性') }}
+        {% if positioning.crowded %}<b style="color:var(--r3)"> · {{ t('CROWDED LONG','多头拥挤') }}</b>{% endif %}</h3>
+      <div class="mini"><div class="lab"><span>{{ t('CME spec net (z-score)','CME 投机净持仓（z）') }}</span><span><b style="color:{{ 'var(--r3)' if positioning.crowded else 'var(--ink)' }}">{{ positioning.cot_z if positioning.cot_z is not none else '—' }}</b>{% if positioning.cot_net_pct is not none %} <span class="faint">({{ positioning.cot_net_pct }}% of OI)</span>{% endif %}</span></div></div>
+      <div class="mini"><div class="lab"><span>{{ t('BTC↔S&P 500 correlation (90d)','BTC↔标普 500 相关性（90 天）') }}</span><span><b>{{ correlation.spx if correlation.spx is not none else '—' }}</b> <span class="faint">{{ td((correlation.regime or '')|capitalize) }}</span></span></div></div>
+      <div class="mini"><div class="lab"><span>{{ t('BTC↔Gold correlation (90d)','BTC↔黄金 相关性（90 天）') }}</span><span><b>{{ correlation.gold if correlation.gold is not none else '—' }}</b></span></div></div>
+      <div class="sub" style="margin-top:8px">{{ t('Crowded CME longs were contrarian (−5.8%/90d, 35% hit); coupled to equities averaged +13%/90d vs +33% when decoupled.','CME 多头拥挤具反向性（−5.8%/90d，胜率 35%）；与股票耦合时 90 天平均 +13%，脱钩时 +33%。') }}</div>
     </div>
   </div>
 
-  <!-- ===================== OPTIONS STRUCTURE ===================== -->
-  <div class="section-title">{{ t('Options Structure · Deribit (forward-looking vol)', '期权结构 · Deribit（前瞻波动率）') }}</div>
+  <!-- ===================== DERIVATIVES (merged: options + leverage) ===================== -->
+  <div class="section-title">{{ t('Derivatives · volatility & leverage', '衍生品 · 波动率与杠杆') }}</div>
   <div class="grid cols-2">
     <div class="card">
       <h3>{{ t('Implied volatility', '隐含波动率') }}</h3>
@@ -1121,9 +1151,7 @@ html[data-theme="dark"] .score .s{background:var(--grid)} /* --bg is near-black 
       {% if options.gamma_regime %}
       {% set gr = {'long':['Long-gamma (pinning)','正Gamma（黏滞）','var(--blue)'],'short':['Short-gamma (amplifies)','负Gamma（放大）','var(--r3)']} %}
       <div class="mini"><div class="lab"><span>{{ t('Dealer gamma regime / flip','做市商 Gamma 格局 / 翻转位') }}</span><span><b style="color:{{ gr.get(options.gamma_regime,['','','var(--muted)'])[2] }}">{{ t(gr.get(options.gamma_regime,['—'])[0], gr.get(options.gamma_regime,['—','—'])[1]) }}</b> <span class="faint">({{ t('flip','翻转') }} {{ options.gamma_flip|money if options.gamma_flip else '—' }} · {{ '%+0.1f'|format(options.dist_to_flip_pct) if options.dist_to_flip_pct is not none else '—' }}%)</span></span></div></div>{% endif %}
-      <div class="sub" style="margin-top:10px">{{ t('Measured 2021→ (confirmation only): DVOL 70–90 is the bleed zone (−13%/90d); VRP below −5 (realized vol overshooting implied) marked recoveries (+17%/90d).', '实测 2021 起（仅作确认）：DVOL 70–90 为失血区（90 天 −13%）；VRP 低于 −5（已实现波动超过隐含）标记反弹（90 天 +17%）。') }}</div>
-      <div class="sub faint" style="margin-top:6px;font-size:12px">{{ t('Volatility readings describe risk and move size, not direction.', '波动读数描述风险和波动幅度，不判断方向。') }}</div>
-      <div class="sub faint" style="margin-top:6px;font-size:12px">{{ t('Gamma flip is a regime boundary: above it is calmer; below it moves can amplify.', 'Gamma 翻转位是格局边界：其上更平静；其下波动可能放大。') }}</div>
+      <div class="sub" style="margin-top:10px">{{ t('Measured 2021→ (confirmation only): DVOL 70–90 bled −13%/90d; VRP below −5 marked recoveries (+17%/90d). Vol describes size of moves, not direction.', '实测 2021 起（仅作确认）：DVOL 70–90 失血 −13%/90d；VRP 低于 −5 标记反弹（+17%/90d）。波动描述波幅大小，不判断方向。') }}</div>
     </div>
     <div class="card">
       <h3>{{ t('Skew & positioning (snapshot)', '偏斜与持仓（快照）') }}</h3>
@@ -1141,8 +1169,6 @@ html[data-theme="dark"] .score .s{background:var(--grid)} /* --bg is near-black 
     </div>
   </div>
 
-  <!-- ===================== LEVERAGE & POSITIONING ===================== -->
-  <div class="section-title">{{ t('Leverage & Positioning · liquidation risk', '杠杆与持仓 · 清算风险') }}</div>
   <div class="grid cols-2">
     <div class="card">
       <h3>{{ t('Leverage state', '杠杆状态') }}</h3>
@@ -1165,17 +1191,12 @@ html[data-theme="dark"] .score .s{background:var(--grid)} /* --bg is near-black 
       {% set fcs = {'froth':['Froth (longs paying up)','过热（多头付溢价）','var(--r3)'],'stress':['Stress (deleveraging)','承压（去杠杆）','var(--blue)'],'neutral':['Neutral','中性','var(--muted)']} %}
       <div class="mini"><div class="lab"><span>{{ t('Consolidated futures carry','综合期货套利') }}</span><span><b style="color:{{ fcs.get(leverage.carry_state,['','','var(--muted)'])[2] }}">{{ t(fcs.get(leverage.carry_state,['—'])[0], fcs.get(leverage.carry_state,['—','—'])[1]) }}</b>{% if leverage.carry_z is not none %} <span class="faint">(z {{ '%+0.1f'|format(leverage.carry_z) }})</span>{% endif %}</span></div>
         <div class="sub faint" style="margin-top:4px;font-size:11px">{{ t('One blended leverage-cycle read. Context only.', '单一杠杆周期读数。仅背景。') }}</div></div>{% endif %}
-      <div class="sub" style="margin-top:10px">{{ t('Rebuilt from 15-exchange open interest + funding (BGeometrics). Measured 2022→ (confirmation): funding-z below −1 (crowded shorts) was followed by +18%/90d at 70% hit; open interest building faster than price drags forward returns.', '基于 15 家交易所的持仓 + 资金费率重建（BGeometrics）。实测 2022 起（确认）：资金费率 z 低于 −1（空头拥挤）后 90 天 +18%、胜率 70%；持仓增速快于价格则拖累未来收益。') }}</div>
-    </div>
-    <div class="card">
-      <h3>{{ t('How to read it', '如何解读') }}</h3>
-      <div class="sub">{{ t('Leverage is a short-term risk amplifier, not a trend signal. Crowding makes the tape fragile.', '杠杆是短期风险放大器，不是趋势信号。拥挤会让行情更脆弱。') }}</div>
-      <div class="sub faint" style="margin-top:6px;font-size:12px">{{ t('CME basis and OKX flow are positioning context, not predictive signals.', 'CME 基差与 OKX 主动盘是持仓背景，不是预测信号。') }}</div>
+      <div class="sub" style="margin-top:10px">{{ t('Context, not a signal — crowding makes the tape fragile; crowded shorts (funding-z < −1) were followed by +18%/90d at 70% hit.', '背景而非信号 — 拥挤使行情脆弱；空头拥挤（资金费率 z < −1）后 90 天 +18%、胜率 70%。') }}</div>
     </div>
   </div>
 
-  <!-- ===================== MACRO LIQUIDITY & RISK APPETITE ===================== -->
-  <div class="section-title">{{ t('Macro Liquidity & Risk Appetite · strategic backdrop', '宏观流动性与风险偏好 · 战略背景') }}</div>
+  <!-- ===================== THE BACKDROP · LIQUIDITY & BREADTH ===================== -->
+  <div class="section-title">{{ t('The backdrop · liquidity & breadth', '大背景 · 流动性与广度') }}</div>
   <div class="grid cols-2">
     <div class="card">
       {% set mr = macro.regime %}
@@ -1197,22 +1218,11 @@ html[data-theme="dark"] .score .s{background:var(--grid)} /* --bg is near-black 
       <div class="mini"><div class="lab"><span>{{ t('10y real yield','10 年期实际收益率') }}</span><span><b>{{ ('%.2f%%'|format(macro.real_yield)) if macro.real_yield is not none else '—' }}</b></span></div></div>
       <div class="mini"><div class="lab"><span>{{ t('HY credit spread (OAS)','高收益信用利差') }}</span><span><b>{{ ('%.2f%%'|format(macro.hy_oas)) if macro.hy_oas is not none else '—' }}</b></span></div></div>
       <div class="mini"><div class="lab"><span>{{ t('VIX / Dollar (DXY)','VIX / 美元指数') }}</span><span><b>{{ macro.vix if macro.vix is not none else '—' }}</b> / {{ macro.dxy if macro.dxy is not none else '—' }}</span></div></div>
-    </div>
-    <div class="card">
-      <h3>{{ t('Why it matters', '为何重要') }}</h3>
-      <div class="sub">{{ t('BTC tends to follow the change in liquidity, not just the level. Macro is a months-out backdrop.', 'BTC 更跟随流动性变化，而不只是水平。宏观是数月维度背景。') }}</div>
-      <div class="mini" style="margin-top:8px"><div class="lab"><span style="color:var(--r3)">{{ t('Headwind (score < −0.3)','逆风（评分 < −0.3）') }}</span><span><b>+1.4%</b> <span class="faint">/90d · 41% hit</span></span></div></div>
+      <div class="mini" style="margin-top:6px"><div class="lab"><span style="color:var(--r3)">{{ t('Headwind (score < −0.3)','逆风（评分 < −0.3）') }}</span><span><b>+1.4%</b> <span class="faint">/90d · 41% hit</span></span></div></div>
       <div class="mini"><div class="lab"><span style="color:var(--blue)">{{ t('Tailwind (score > +0.3)','顺风（评分 > +0.3）') }}</span><span><b>+48.8%</b> <span class="faint">/90d · 76% hit</span></span></div></div>
-      <div class="sub" style="margin-top:10px">{{ t('Use this as the tide BTC swims in, not as a tactical trigger.', '把它当作 BTC 所处的潮汐，而不是战术触发器。') }}</div>
-      <div class="sub faint" style="margin-top:10px;font-size:12px">{{ t('Stablecoin tide shows whether crypto-native liquidity is expanding or shrinking.', '稳定币潮汐显示加密原生流动性是在扩张还是收缩。') }}</div>
-      <div class="sub faint" style="margin-top:8px;font-size:12px">{{ t('Peg health is collateral risk context, not a directional input.', '锚定健康是抵押品风险背景，不是方向输入。') }}</div>
+      <div class="sub" style="margin-top:10px">{{ t('BTC follows the change in liquidity — a months-out tide, not a trigger.', 'BTC 跟随流动性变化 — 数月维度的潮汐，而非触发器。') }}</div>
     </div>
-  </div>
-
-  <!-- ===================== CRYPTO BREADTH ===================== -->
-  {% if breadth and breadth.bucket and breadth.bucket != '—' %}
-  <div class="section-title">{{ t('Crypto Breadth · risk appetite across the curve', '加密广度 · 风险曲线上的偏好') }}</div>
-  <div class="grid cols-2">
+    {% if breadth and breadth.bucket and breadth.bucket != '—' %}
     <div class="card">
       {% set bkt = breadth.bucket %}
       {% set bk_color = {'Alt season':'var(--blue)','BTC season':'var(--amber)','Mixed':'var(--muted)'} %}
@@ -1232,17 +1242,13 @@ html[data-theme="dark"] .score .s{background:var(--grid)} /* --bg is near-black 
       <div class="mini"><div class="lab"><span>{{ t('SOL/ETH (high-beta appetite)','SOL/ETH（高贝塔偏好）') }} <span class="faint">{{ t('NEW','新增') }}</span></span><span><b>{{ '%.4f'|format(breadth.soleth) }}</b>{% if breadth.soleth_trend %} <span class="faint" style="color:{{ st_color.get(breadth.soleth_trend,'var(--muted)') }}">· {{ t(st_lab.get(breadth.soleth_trend,['—'])[0], st_lab.get(breadth.soleth_trend,['—','—'])[1]) }}</span>{% endif %}{% if breadth.soleth_pctile is not none %} <span class="faint">· {{ breadth.soleth_pctile|int }}%ile</span>{% endif %}</span></div></div>{% endif %}
       {% if breadth.dom is not none %}
       <div class="mini"><div class="lab"><span>{{ t('BTC dominance','BTC 占比') }}</span><span><b>{{ '%.1f%%'|format(breadth.dom) }}</b>{% if breadth.ethdom is not none %} <span class="faint">· ETH {{ '%.1f%%'|format(breadth.ethdom) }}</span>{% endif %}</span></div></div>{% endif %}
+      <div class="sub" style="margin-top:10px">{{ t('Shows how far out the risk curve money is going. Confirms the regime; doesn\'t lead it.', '显示资金在风险曲线上走多远。确认格局，而非领先。') }}</div>
     </div>
-    <div class="card">
-      <h3>{{ t('What breadth tells you', '广度说明什么') }}</h3>
-      <div class="sub">{{ t('Breadth shows how far out the risk curve capital is willing to go.', '广度显示资金愿意在风险曲线上走多远。') }}</div>
-      <div class="sub faint" style="margin-top:10px;font-size:12px">{{ t('Display-only context. Breadth usually confirms the regime; it does not lead it.', '仅作背景。广度通常确认当前格局，而非领先。') }}</div>
-    </div>
+    {% endif %}
   </div>
-  {% endif %}
 
-  <!-- ===================== ON-CHAIN DEMAND ===================== -->
-  <div class="section-title">{{ t('On-Chain Demand · CryptoQuant-style (free reproduction)', '链上需求 · CryptoQuant 风格（免费复刻）') }}</div>
+  <!-- ===================== ON-CHAIN & ETF DEMAND ===================== -->
+  <div class="section-title">{{ t('On-chain & ETF demand', '链上与 ETF 需求') }}</div>
   <div class="grid cols-2">
     <div class="card">
       {% set ps = {'overheated':['OVERHEATED','过热','var(--r3)'],'premium':['PREMIUM · US bid','溢价 · 美国买盘','var(--blue)'],'neutral':['NEUTRAL','中性','var(--muted)'],'discount':['DISCOUNT','折价','var(--amber)'],'deep_discount':['DEEP DISCOUNT','深度折价','var(--r3)']} %}
@@ -1264,7 +1270,6 @@ html[data-theme="dark"] .score .s{background:var(--grid)} /* --bg is near-black 
 
   <!-- ===================== BTC SPOT-ETF NET FLOWS ===================== -->
   {% if etf.present or etf.usd_present %}
-  <div class="section-title">{{ t('Spot-ETF Net Flows · the institutional bid (since 2024)', '现货 ETF 净流入 · 机构买盘（2024 起）') }}</div>
   <div class="card">
     <h3>{{ t('Risk Index & ETF Net Flows', '风险指数与 ETF 净流入') }}
       {% set _st = etf.state %}
@@ -1311,89 +1316,17 @@ html[data-theme="dark"] .score .s{background:var(--grid)} /* --bg is near-black 
         </tbody>
       </table>
     </div>{% endif %}
-    <div class="sub" style="margin-top:10px">{{ t('Per-issuer detail from Farside Investors (US$m, since 2024-01-11) — fresher and fund-by-fund vs. the aggregate above. The ex-GBTC net strips out Grayscale’s one-way unlock outflows; concentration shows how few funds carry the bid (IBIT dominates). ETF-era only (~2.4y) → context, not a both-halves anchor.','按发行人明细，来自 Farside Investors（百万美元，2024-01-11 起）— 较上方汇总更新且分基金。剔除 GBTC 的净额去除了 Grayscale 的单向解锁流出；集中度显示买盘由多少只基金承载（IBIT 主导）。仅 ETF 时代（约 2.4 年）→ 背景，而非双半段锚点。') }}</div>
+    <div class="sub" style="margin-top:10px">{{ t('Per-issuer detail from Farside Investors (US$m, since 2024-01-11) — ETF-era only (~2.4y), context not a both-halves anchor.','按发行人明细，来自 Farside Investors（百万美元，2024-01-11 起）— 仅 ETF 时代（约 2.4 年），作背景参考而非双半段锚点。') }}</div>
     {% endif %}
   </div>
   {% endif %}
 
-  <!-- ===================== CYCLE / POSITIONING / CORRELATION ===================== -->
-  <div class="section-title">{{ t('Cycle Clock · Positioning · Cross-Asset Correlation', '周期时钟 · 持仓 · 跨资产相关性') }}</div>
-  <div class="grid cols-2">
-    <div class="card">
-      {% set ph = cycle.phase %}
-      {% set ph_color = {'accumulation':'var(--blue)','markup':'var(--blue)','markdown':'var(--r3)','recovery':'var(--ink)'} %}
-      {% set ph_zh = {'accumulation':'累积','markup':'上涨','markdown':'下跌','recovery':'复苏'} %}
-      <h3>{{ t('Halving cycle clock', '减半周期时钟') }}
-        <b style="color:{{ ph_color.get(ph,'var(--muted)') }}"> · {{ t((ph or '—')|upper, ph_zh.get(ph,'—')) }}</b></h3>
-      {% if cycle.pct is not none %}
-      <div class="mini"><div class="lab"><span>{{ t('Cycle progress (since halving)','周期进度（自减半起）') }}</span><span><b>{{ cycle.pct }}%</b> <span class="faint">({{ cycle.days }}d)</span></span></div>
-        <div class="bar"><div class="fill" style="width:{{ cycle.pct if cycle.pct<=100 else 100 }}%"></div></div></div>{% endif %}
-      {% if cycle.vdd is not none %}
-      <div class="mini"><div class="lab"><span>{{ t('Spending behaviour · VDD Multiple','支出行为 · VDD 倍数') }}</span><span><b>{{ cycle.vdd }}</b> <span class="faint">({{ cycle.vdd_pctile }}%ile · {{ t('>2.9 distribution, <0.75 dormant','>2.9 派发，<0.75 沉睡') }})</span></span></div></div>{% endif %}
-      <div class="sub" style="margin-top:8px">{{ t('The ~4-year time axis the model was missing. Measured across 3 cycles (a soft prior): the accumulation phase (post-halving) averaged +48%/90d at 81% hit; the markdown phase (mid-cycle) just +5%/90d at 43% hit. It nudges the scenario odds, never triggers.', '模型此前缺失的约 4 年时间轴。基于 3 个周期实测（软先验）：累积期（减半后）90 天平均 +48%、胜率 81%；下跌期（周期中段）仅 +5%、胜率 43%。它微调情景概率，从不触发。') }}</div>
-    </div>
-    <div class="card">
-      {% set cp = cycle_phase %}
-      {% set cpc = {'markup':'var(--blue)','markdown':'var(--r3)'} %}
-      {% set cpz = {'markup':'上涨腿','markdown':'下跌腿'} %}
-      {% set kz = {'top':'顶部','bottom':'底部'} %}
-      {% set stz = {'on_track':'按节奏','overdue':'已超期','invalidated':'已失效'} %}
-      {% set stc = {'on_track':'var(--blue)','overdue':'var(--amber)','invalidated':'var(--r3)'} %}
-      <h3>{{ t('Cycle Phase Clock', '周期相位时钟') }}
-        {% if cp.phase %}<b style="color:{{ cpc.get(cp.phase,'var(--muted)') }}"> · {{ t(cp.phase|upper, cpz.get(cp.phase,'—')) }}</b>{% endif %}
-        {% if cp.status and cp.status != 'on_track' %}<b style="color:{{ stc.get(cp.status,'var(--muted)') }}"> · {{ t(cp.status|replace('_',' ')|upper, stz.get(cp.status,'')) }}</b>{% endif %}</h3>
-      {% if cp.pct is not none %}
-      <div class="mini"><div class="lab"><span>{{ t('Phase progress','相位进度') }}</span><span><b>{{ cp.pct }}%</b></span></div>
-        <div class="bar"><div class="fill" style="width:{{ cp.pct if cp.pct<=100 else 100 }}%;background:{{ cpc.get(cp.phase,'var(--blue)') }}"></div></div></div>
-      <div class="mini"><div class="lab"><span>{{ t('Projected next pivot','预计下一转折') }}{% if cp.next_kind %} <span class="faint">{{ t(cp.next_kind, kz.get(cp.next_kind,'')) }}</span>{% endif %}</span><span><b>{{ cp.next_pivot or '—' }}</b>{% if cp.days_left is not none %} <span class="faint">({{ cp.days_left|int }}d)</span>{% endif %}</span></div></div>
-      {% endif %}
-      <div class="sub" style="margin-top:8px">{{ t('Proprietary cycle timer.', '专有周期计时器。') }}</div>
-    </div>
-    <div class="card">
-      {# Cycle Thesis Monitor (engine/btc_cycle_thesis.py) — the halving/midterm bottom thesis,
-         watched with pre-committed falsifiers (dampening / timing / desync / structure). #}
-      {% set ct = cycle_thesis %}
-      {% if ct and ct.ok %}
-      {% set tsc = {'intact':'var(--blue)','watch':'var(--amber)','breaking':'var(--r3)'} %}
-      {% set tsz = {'intact':'成立','watch':'观察','breaking':'破位'} %}
-      {% set flc = {'ok':'var(--blue)','watch':'var(--amber)','alert':'var(--r3)'} %}
-      {% set fli = {'ok':'✓','watch':'▲','alert':'✕'} %}
-      <h3>{{ t('Cycle Thesis Monitor','周期论点监测') }}
-        <b style="color:{{ tsc.get(ct.thesis_status,'var(--muted)') }}"> · {{ t(ct.thesis_status|upper, tsz.get(ct.thesis_status,'—')) }}</b>
-        {#- W3: buy-side badge — suppressed under the gate via the SAME stamped key the rec
-           card uses (build_vector.py), else Oct–Nov 2026 would flash "ACCUMULATION ZONE"
-           beside a forced-flat 0% allocation. #}
-        {% if ct.accumulate and not ct.suppressed_by_blackout %}<b style="color:var(--blue)"> · {{ t('ACCUMULATION ZONE','吸筹区') }}</b>{% endif %}</h3>
-      {% if ct.drawdown_from_peak is not none %}
-      <div class="mini"><div class="lab"><span>{{ t('Drawdown from cycle peak','较周期顶部回撤') }} <span class="faint">({{ ct.peak_date }})</span></span><span><b style="color:var(--r3)">{{ (ct.drawdown_from_peak*100)|round|int }}%</b>{% if ct.prior_bear_mean is not none %} <span class="faint">{{ t('vs','对比') }} {{ (ct.prior_bear_mean*100)|round|int }}% {{ t('prior-bear avg','历史熊市均值') }}</span>{% endif %}</span></div></div>
-      {% endif %}
-      {% if ct.window_start %}
-      <div class="mini"><div class="lab"><span>{{ t('Projected bottom window','预测底部窗口') }}</span><span><b>{{ ct.window_start }} → {{ ct.window_end }}</b></span></div></div>
-      {% endif %}
-      <div style="margin-top:8px;display:flex;flex-direction:column;gap:4px">
-        {% for f in ct.flags %}
-        <div style="display:flex;gap:6px;align-items:flex-start;font-size:11px;line-height:1.35"><span style="color:{{ flc.get(f.level,'var(--muted)') }};font-weight:700;flex:0 0 auto">{{ fli.get(f.level,'·') }}</span><span>{{ t(f.en, f.zh) }}</span></div>
-        {% endfor %}
-      </div>
-      <div class="sub" style="margin-top:8px">{{ t(ct.caveat_en, ct.caveat_zh) }}</div>
-      {% else %}
-      <h3>{{ t('Cycle Thesis Monitor','周期论点监测') }}</h3>
-      <div class="sub">{{ t('Monitor unavailable for this build.','本次构建暂无监测数据。') }}</div>
-      {% endif %}
-    </div>
-    <div class="card">
-      <h3>{{ t('CME positioning & correlation', 'CME 持仓与相关性') }}
-        {% if positioning.crowded %}<b style="color:var(--r3)"> · {{ t('CROWDED LONG','多头拥挤') }}</b>{% endif %}</h3>
-      <div class="mini"><div class="lab"><span>{{ t('CME spec net (z-score)','CME 投机净持仓（z）') }}</span><span><b style="color:{{ 'var(--r3)' if positioning.crowded else 'var(--ink)' }}">{{ positioning.cot_z if positioning.cot_z is not none else '—' }}</b>{% if positioning.cot_net_pct is not none %} <span class="faint">({{ positioning.cot_net_pct }}% of OI)</span>{% endif %}</span></div></div>
-      <div class="mini"><div class="lab"><span>{{ t('BTC↔S&P 500 correlation (90d)','BTC↔标普 500 相关性（90 天）') }}</span><span><b>{{ correlation.spx if correlation.spx is not none else '—' }}</b> <span class="faint">{{ td((correlation.regime or '')|capitalize) }}</span></span></div></div>
-      <div class="mini"><div class="lab"><span>{{ t('BTC↔Gold correlation (90d)','BTC↔黄金 相关性（90 天）') }}</span><span><b>{{ correlation.gold if correlation.gold is not none else '—' }}</b></span></div></div>
-      <div class="sub" style="margin-top:8px">{{ t('CME net-spec (regulated, weekly) is the only real-money positioning input — crowded long (z>1.5) was followed by −5.8%/90d at 35% hit (contrarian). Correlation tells you what BTC is trading as: coupled to equities (>0.4) averaged +13%/90d vs. +33% when decoupled.', 'CME 投机净持仓（受监管、周度）是唯一的真实资金持仓输入 — 多头拥挤（z>1.5）后 90 天 −5.8%、胜率 35%（反向）。相关性显示 BTC 的交易属性：与股票耦合（>0.4）90 天平均 +13%，脱钩时 +33%。') }}</div>
-    </div>
-  </div>
+  {# Cycle & Valuation section above now contains the merged cycle clock + positioning cards #}
 
   <!-- ===================== MASTERMIND FACTORS (new) ===================== -->
   {% if newf %}
-  <div class="section-title">{{ t('Mastermind Factors · miner margins · downside beta · holder spread · attention · flow', '高阶因子 · 矿工利润 · 下行贝塔 · 持有者价差 · 关注度 · 主动盘') }}</div>
+  <details class="sec-fold" id="mastermind-factors">
+  <summary>{{ t('Advanced factors · miners, beta, holders, attention, flow', '高阶因子 · 矿工·贝塔·持有者·关注度·主动盘') }}</summary>
   <div class="grid cols-2">
     <!-- Miner economics (deep 2010-> margin anchor) -->
     <div class="card">
@@ -1408,7 +1341,7 @@ html[data-theme="dark"] .score .s{background:var(--grid)} /* --bg is near-black 
         <div class="bar"><div class="fill" style="width:{{ newf.miner.hashprice_pctile }}%"></div></div></div>{% endif %}
       <div class="mini"><div class="lab"><span>{{ t('Miner stress','矿工压力') }}</span><span><b>{{ newf.miner.stress if newf.miner.stress is not none else '—' }}/100</b></span></div></div>
       <div class="mini"><div class="lab"><span>{{ t('Hashrate / difficulty shock (14d)','算力 / 难度冲击（14天）') }}</span><span><b style="color:{{ 'var(--r3)' if (newf.miner.hashrate_shock is not none and newf.miner.hashrate_shock<-8) else 'var(--ink)' }}">{{ '%+0.1f'|format(newf.miner.hashrate_shock) if newf.miner.hashrate_shock is not none else '—' }}%</b>{% if newf.miner.difficulty_shock is not none %} <span class="faint">/ {{ '%+0.1f'|format(newf.miner.difficulty_shock) }}%</span>{% endif %}</span></div></div>
-      <div class="sub" style="margin-top:10px">{{ t('Hashprice = USD revenue per unit of hashrate = the miner’s profit margin (the cause Puell/MPI pick up downstream). Deep history (2010→) makes it a real cycle-bottom anchor: a low percentile = squeezed margins = capitulation/bottoming, and a sharp hashrate flush is a precise forced-shutdown trigger.', '哈希价格 = 每单位算力的美元收入 = 矿工利润率（Puell/MPI 在下游观察到的根因）。深度历史（2010 起）使其成为真正的周期底部锚点：低百分位 = 利润被压缩 = 投降/筑底；算力骤降则是被迫关机的精确触发。') }}</div>
+      <div class="sub" style="margin-top:10px">{{ t("Hashprice = USD revenue per unit of hashrate = the miner's profit margin (the cause Puell/MPI pick up downstream). Deep history (2010→) makes it a real cycle-bottom anchor: a low percentile = squeezed margins = capitulation/bottoming, and a sharp hashrate flush is a precise forced-shutdown trigger.", '哈希价格 = 每单位算力的美元收入 = 矿工利润率（Puell/MPI 在下游观察到的根因）。深度历史（2010 起）使其成为真正的周期底部锚点：低百分位 = 利润被压缩 = 投降/筑底；算力骤降则是被迫关机的精确触发。') }}</div>
     </div>
     <!-- Conditional downside/upside beta -->
     <div class="card">
@@ -1422,7 +1355,7 @@ html[data-theme="dark"] .score .s{background:var(--grid)} /* --bg is near-black 
       <div class="mini"><div class="lab"><span>{{ t('Asymmetry (up − down)','不对称（上 − 下）') }}</span><span><b style="color:{{ 'var(--blue)' if (newf.cbeta.asym is not none and newf.cbeta.asym>=0) else 'var(--r3)' }}">{{ '%+0.2f'|format(newf.cbeta.asym) if newf.cbeta.asym is not none else '—' }}</b> <span class="faint">{{ t('(<0 = couples harder down)','（<0 = 下跌时耦合更强）') }}</span></span></div></div>
       {% if newf.cbeta.down_beta_gold is not none %}
       <div class="mini"><div class="lab"><span>{{ t('Downside beta to gold','对黄金的下行贝塔') }}</span><span><b>{{ newf.cbeta.down_beta_gold }}</b></span></div></div>{% endif %}
-      <div class="sub" style="margin-top:10px">{{ t('BTC couples hard to risk assets on the way down and decouples on the way up — a single correlation number hides this, and the downside beta is what predicts forward drawdown. Negative asymmetry + a high downside-beta percentile = a drawdown-amplifier regime (BTC falls with the Nasdaq); a low downside beta = it’s trading as a diversifier. Computed from Yahoo closes.', 'BTC 在下跌时与风险资产强耦合、上涨时脱钩 — 单一相关性数字掩盖了这一点，而下行贝塔才能预测前瞻回撤。负不对称 + 高下行贝塔百分位 = 回撤放大格局（BTC 随纳指下跌）；低下行贝塔 = 其作为分散器交易。基于雅虎收盘价计算。') }}</div>
+      <div class="sub" style="margin-top:10px">{{ t("BTC couples hard to risk assets on the way down and decouples on the way up — a single correlation number hides this, and the downside beta is what predicts forward drawdown. Negative asymmetry + a high downside-beta percentile = a drawdown-amplifier regime (BTC falls with the Nasdaq); a low downside beta = it's trading as a diversifier. Computed from Yahoo closes.", 'BTC 在下跌时与风险资产强耦合、上涨时脱钩 — 单一相关性数字掩盖了这一点，而下行贝塔才能预测前瞻回撤。负不对称 + 高下行贝塔百分位 = 回撤放大格局（BTC 随纳指下跌）；低下行贝塔 = 其作为分散器交易。基于雅虎收盘价计算。') }}</div>
     </div>
   </div>
   <div class="grid cols-3" style="margin-top:18px">
@@ -1460,6 +1393,7 @@ html[data-theme="dark"] .score .s{background:var(--grid)} /* --bg is near-black 
       <div class="sub faint" style="margin-top:8px;font-size:12px">{{ t('Taker flow shows aggressive buying or selling. Display-only.', '主动盘显示主动买入或卖出。仅展示。') }}</div>
     </div>
   </div>
+  </details>
   {% endif %}
 
   <!-- ===================== CROSS-ASSET MAP ===================== -->
@@ -1523,7 +1457,8 @@ html[data-theme="dark"] .score .s{background:var(--grid)} /* --bg is near-black 
   </div>
 
   <!-- ===================== CALIBRATION TRANSPARENCY ===================== -->
-  <div class="section-title">{{ t('How much to trust this · measured records', '可信度如何 · 实测记录') }}</div>
+  <details class="sec-fold" id="calibration">
+  <summary>{{ t('How much to trust this · measured records', '可信度如何 · 实测记录') }} <span class="hint">{{ t('Signal verdicts & ensemble test', '信号评定与集成检验') }}</span></summary>
   <div class="card">
     <h3>{{ t('Signal verdicts', '信号评定') }} <span class="faint" style="font-size:13px;font-weight:600">{{ t('forward outcomes,', '前瞻结果，') }} {{ calib.meta.span }}{{ t(', split-half', '，前后半段分检') }}</span></h3>
     <table class="catbl">
@@ -1546,7 +1481,7 @@ html[data-theme="dark"] .score .s{background:var(--grid)} /* --bg is near-black 
   {% if ep and ep.net_sharpe %}
   <div class="card" style="margin-top:18px">
     <h3>{{ t('Ensemble capstone · does combining beat the hand-tuned stance?', '集成总验 · 组合能否击败手调立场？') }}</h3>
-    <div class="sub">{{ t('We tested a disciplined, fixed-form ensemble (the signals that passed testing, boiled down to 6 independent axes, each oriented by its measured return map, de-correlated and equal-weighted) against the hand-tuned Stance and the single best signal — net of cost, in both halves. The honest result:', '我们用一个有纪律的固定形式集成（将通过检验的信号收敛为 6 个独立轴，各按其实测收益映射定向、去相关、等权）对比手调“立场”与单一最佳信号 — 扣除成本、在历史两半段中检验。诚实结论：') }}</div>
+    <div class="sub">{{ t('Six independent, de-correlated, equal-weighted signals tested net of cost in both halves — the stance stays.', '六个独立去相关等权信号扣除成本后在前后两半段检验 — 立场不变。') }}</div>
     <div class="sub" style="margin-top:8px;font-weight:700;color:var(--ink)">{{ td(ep.verdict) }}</div>
     <table class="catbl" style="margin-top:10px">
       <tr><td class="a">{{ t('Read','读数') }}</td><td>{{ t('Net Sharpe (full)','净夏普（全样本）') }}</td><td>{{ t('pre-2021','2021 前') }}</td><td>{{ t('post-2021','2021 后') }}</td></tr>
@@ -1559,6 +1494,7 @@ html[data-theme="dark"] .score .s{background:var(--grid)} /* --bg is near-black 
     <div class="sub faint" style="margin-top:10px;font-size:12px">{{ t('The ensemble beats any single signal, but not the shipped hand-tuned stance. So the stance stays.', '集成优于任何单一信号，但未超过当前采用的手调立场。因此保留现有立场。') }}</div>
   </div>
   {% endif %}
+  </details>
 
   <div class="foot">
     Bitcoin Vector · {{ t('built', '生成于') }} {{ built }} · {{ t('data as of', '数据截至') }} {{ as_of }}<br>
@@ -1577,6 +1513,25 @@ html[data-theme="dark"] .score .s{background:var(--grid)} /* --bg is near-black 
       d.style.display=any?'':'none';
     });
   });});
+})();
+</script>
+<script>
+/* Anchor-inside-details: open parent <details> when navigating to a hash target */
+(function(){
+  function openParentDetails(el){
+    var p=el;
+    while(p=p.parentElement){
+      if(p.tagName==='DETAILS' && !p.open){ p.open=true; }
+    }
+  }
+  function handleHash(){
+    var h=location.hash; if(!h) return;
+    var el=document.querySelector(h); if(!el) return;
+    openParentDetails(el);
+    setTimeout(function(){ el.scrollIntoView({behavior:'smooth',block:'start'}); },50);
+  }
+  document.addEventListener('DOMContentLoaded', handleHash);
+  window.addEventListener('hashchange', handleHash);
 })();
 </script>
 <script>

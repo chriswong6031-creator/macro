@@ -98,6 +98,10 @@ _READ_TOOLS = frozenset({
     "explain_options_context",
     "query_options_confluence",
     "list_options_contradictions",
+    # Factor Intelligence × Neural Web W2 (RUL-NW3): read-only factor state tools
+    "read_factor_state",
+    "list_factor_contradictions",
+    "explain_factor_context",
 })
 _WRITE_TOOLS = frozenset({
     "flag_attention",
@@ -680,6 +684,191 @@ def _tool_list_options_contradictions(root: Path, _params: dict) -> dict:
             "mandate": "de-escalation context only; never a short signal (RO-3)"}
 
 
+# ---------------------------------------------------------------------------
+# Tool implementations — Factor Intelligence × Neural Web (RUL-NW3)
+# ---------------------------------------------------------------------------
+
+_FACTOR_CONTRADICTIONS_ROW_CAP = 100
+
+
+def _tool_read_factor_state(root: Path, _params: dict) -> dict:
+    """Read data/neuralweb/factor_intelligence_state.json (RUL-NW3).
+
+    Returns the full committed artifact — includes panel health, factor weather,
+    scorecard, contradictions digest, attention track record, hypotheses, and
+    latest_board_coordinates block.  Fails open: returns structured gaps when
+    the file is absent.  is_context_only always true.
+    """
+    p = _data(root, "neuralweb", "factor_intelligence_state.json")
+    if not p.exists():
+        return {
+            "is_context_only": True,
+            "gaps": ["data/neuralweb/factor_intelligence_state.json: absent — "
+                     "factor_panel job has not run yet"],
+            "note": "Factor state not yet built. Run the nightly factor_panel job.",
+        }
+    try:
+        state = json.loads(p.read_text(encoding="utf-8"))
+        # Ensure mandate fields are always present regardless of artifact version
+        state.setdefault("is_context_only", True)
+        state.setdefault("display_only", True)
+        return state
+    except Exception as exc:  # noqa: BLE001
+        return {
+            "is_context_only": True,
+            "gaps": [f"data/neuralweb/factor_intelligence_state.json: unreadable — {exc}"],
+        }
+
+
+def _tool_list_factor_contradictions(root: Path, params: dict) -> dict:
+    """Read data/neuralweb/factor_contradictions.jsonl (RUL-NW3).
+
+    Pair G borrowed-strength contradiction ledger.  Params: ticker (optional),
+    date_from (optional, YYYY-MM-DD), limit (default 25, max 100).
+    Returns records carrying display_only=true.  Fails open when absent.
+    """
+    p = _data(root, "neuralweb", "factor_contradictions.jsonl")
+    if not p.exists():
+        return {
+            "records": [],
+            "total": 0,
+            "is_context_only": True,
+            "display_only": True,
+            "note": "factor_contradictions.jsonl absent — dormant until panel has >=60 distinct dates",
+        }
+    try:
+        rows: list[dict] = []
+        with p.open(encoding="utf-8") as fh:
+            for line in fh:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    rows.append(json.loads(line))
+                except Exception:  # noqa: BLE001
+                    pass
+
+        # Apply filters
+        ticker = str(params.get("ticker") or "").upper()
+        if ticker:
+            rows = [r for r in rows if str(r.get("ticker") or "").upper() == ticker]
+
+        date_from = str(params.get("date_from") or "")
+        if date_from:
+            rows = [r for r in rows
+                    if str(r.get("date") or r.get("as_of") or "") >= date_from]
+
+        total = len(rows)
+        limit = min(int(params.get("limit") or 25), _FACTOR_CONTRADICTIONS_ROW_CAP)
+        # Return most recent rows first (tail slice then reverse)
+        rows = list(reversed(rows[-limit:])) if rows else []
+
+        return {
+            "records": rows,
+            "total_available": total,
+            "returned": len(rows),
+            "is_context_only": True,
+            "display_only": True,
+        }
+    except Exception as exc:  # noqa: BLE001
+        return {
+            "records": [],
+            "error": f"list_factor_contradictions failed: {exc}",
+            "is_context_only": True,
+            "display_only": True,
+        }
+
+
+def _tool_explain_factor_context(root: Path, params: dict) -> dict:
+    """Structured factor context for one ticker (RUL-NW3).
+
+    Reads ONLY committed artifacts: the state artifact's latest_board_coordinates
+    block and recent fire_coordinates.jsonl rows for this ticker.
+
+    Returns a structured context object with an explicit gaps list when data is
+    absent.  Does NOT rank, recommend, or emit directional verbs.
+    """
+    ticker = str(params.get("ticker") or "").upper()
+    if not ticker:
+        return {"error": "ticker parameter is required", "is_context_only": True}
+
+    context: dict = {
+        "ticker": ticker,
+        "is_context_only": True,
+        "display_only": True,
+        "mandate": "display/context only — no rank, no score, no origination (Article 1, RUL-NW3)",
+        "gaps": [],
+    }
+
+    # 1. Fetch board coordinates from committed state artifact
+    state_path = _data(root, "neuralweb", "factor_intelligence_state.json")
+    if not state_path.exists():
+        context["gaps"].append("factor_intelligence_state.json: absent")
+        context["board_coordinates"] = None
+        context["scorecard"] = None
+    else:
+        try:
+            state = json.loads(state_path.read_text(encoding="utf-8"))
+            board_coords = state.get("latest_board_coordinates") or {}
+
+            # Find ticker's coordinates
+            # latest_board_coordinates can be a dict keyed by ticker or a list
+            if isinstance(board_coords, dict):
+                ticker_coords = board_coords.get(ticker)
+            elif isinstance(board_coords, list):
+                ticker_coords = next(
+                    (r for r in board_coords if str(r.get("ticker") or "").upper() == ticker),
+                    None,
+                )
+            else:
+                ticker_coords = None
+
+            if ticker_coords is None:
+                context["gaps"].append(
+                    f"{ticker}: not present in latest_board_coordinates "
+                    f"(not in buy lane or coordinates absent)"
+                )
+            context["board_coordinates"] = ticker_coords
+
+            # Attach scorecard block (factor-wide, not per-ticker)
+            context["scorecard"] = state.get("scorecard")
+            context["factor_weather"] = state.get("factor_weather")
+            context["as_of"] = state.get("as_of")
+        except Exception as exc:  # noqa: BLE001
+            context["gaps"].append(f"factor_intelligence_state.json: unreadable — {exc}")
+            context["board_coordinates"] = None
+            context["scorecard"] = None
+
+    # 2. Fetch recent fire_coordinates rows for this ticker
+    fire_path = _data(root, "factordata", "fire_coordinates.jsonl")
+    if not fire_path.exists():
+        context["gaps"].append("fire_coordinates.jsonl: absent")
+        context["fire_history"] = []
+    else:
+        try:
+            fire_rows: list[dict] = []
+            with fire_path.open(encoding="utf-8") as fh:
+                for line in fh:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    try:
+                        row = json.loads(line)
+                        if str(row.get("ticker") or "").upper() == ticker:
+                            fire_rows.append(row)
+                    except Exception:  # noqa: BLE001
+                        pass
+            # Return up to 10 most recent rows
+            context["fire_history"] = fire_rows[-10:]
+            if not fire_rows:
+                context["gaps"].append(f"{ticker}: no fire_coordinates rows found")
+        except Exception as exc:  # noqa: BLE001
+            context["gaps"].append(f"fire_coordinates.jsonl: unreadable — {exc}")
+            context["fire_history"] = []
+
+    return context
+
+
 def dispatch_tool(
     tool_name: str,
     tool_params: dict,
@@ -718,6 +907,12 @@ def dispatch_tool(
         return _tool_query_options_confluence(root, tool_params)
     elif tool_name == "list_options_contradictions":
         return _tool_list_options_contradictions(root, tool_params)
+    elif tool_name == "read_factor_state":
+        return _tool_read_factor_state(root, tool_params)
+    elif tool_name == "list_factor_contradictions":
+        return _tool_list_factor_contradictions(root, tool_params)
+    elif tool_name == "explain_factor_context":
+        return _tool_explain_factor_context(root, tool_params)
     elif tool_name == "flag_attention":
         return _tool_flag_attention(root, tool_params, now_str)
     elif tool_name == "write_memo":
@@ -839,6 +1034,55 @@ def _tool_schemas() -> list[dict]:
                 "required": ["path"],
             },
         },
+        # --- Factor Intelligence × Neural Web (RUL-NW3) ---
+        {
+            "name": "read_factor_state",
+            "description": (
+                "Read data/neuralweb/factor_intelligence_state.json — the committed factor "
+                "intelligence digest: panel health, factor weather, Pair G contradictions "
+                "digest, attention track record (query_factor_attention folded here per "
+                "RUL-NW3), scorecard, hypotheses h1..h5, and latest_board_coordinates. "
+                "is_context_only: true. Fails open with structured gaps when absent."
+            ),
+            "input_schema": {"type": "object", "properties": {}, "required": []},
+        },
+        {
+            "name": "list_factor_contradictions",
+            "description": (
+                "Read data/neuralweb/factor_contradictions.jsonl — Pair G borrowed-strength "
+                "contradiction ledger. Records carry display_only=true. "
+                "is_context_only: true. Fails open (empty list) when absent (dormant until "
+                "panel has >=60 distinct dates). Params: ticker (optional), "
+                "date_from (optional YYYY-MM-DD), limit (default 25, max 100)."
+            ),
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "ticker": {"type": "string", "description": "Optional: filter by ticker symbol"},
+                    "date_from": {"type": "string", "description": "Optional: filter records on or after this date (YYYY-MM-DD)"},
+                    "limit": {"type": "integer", "description": "Max records to return (default 25, max 100)"},
+                },
+                "required": [],
+            },
+        },
+        {
+            "name": "explain_factor_context",
+            "description": (
+                "Structured factor context for one ticker (RUL-NW3). Reads ONLY committed "
+                "artifacts: the state artifact's latest_board_coordinates block + recent "
+                "data/factordata/fire_coordinates.jsonl rows for that ticker + the scorecard "
+                "block. Returns a structured context object with an explicit gaps list when "
+                "data is absent. Does NOT rank, recommend, or emit directional verbs. "
+                "is_context_only: true."
+            ),
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "ticker": {"type": "string", "description": "Ticker symbol (required)"},
+                },
+                "required": ["ticker"],
+            },
+        },
         {
             "name": "flag_attention",
             "description": "SHADOW-TIER WRITE: Flag items for operator attention. Appends to data/reflexes/cortex_attention/firings.jsonl. is_context_only always true.",
@@ -942,17 +1186,25 @@ WHAT YOU MAY NEVER DO:
 • Influence any ranking outside the three shadow write-tools available to you.
 
 YOUR TOOLS:
-READ (7): read_world_state, query_spine, read_kernel, read_graph, read_contradictions, read_governance, read_artifact
+READ (14): read_world_state, query_spine, read_kernel, read_graph, read_contradictions,
+           read_governance, read_artifact,
+           read_options_entry_state, explain_options_context, query_options_confluence,
+           list_options_contradictions,
+           read_factor_state, list_factor_contradictions, explain_factor_context
 WRITE (3, shadow-tier only): flag_attention, write_memo, stake_hypothesis
 
 DELIBERATION PROTOCOL:
 1. Start by reading world_state to understand the current macro regime.
-2. Query the spine for recently graded claims — look for patterns, contradictions, decaying families.
-3. Read contradictions from the confluence graph.
-4. Read the kernel for regime-conditional reliability of key engines.
-5. Flag any items that deserve operator attention with a pre-committed falsifiable criterion.
-6. Draft hypotheses for metabolism in PR2 (stub only — use stake_hypothesis).
-7. Always finish by calling write_memo summarising what you found.
+2. Read factor state (read_factor_state) — panel health, factor weather, scorecard, attention track record.
+3. Query the spine for recently graded claims — look for patterns, contradictions, decaying families.
+4. Read contradictions from the confluence graph (read_contradictions).
+5. List factor contradictions (list_factor_contradictions) — Pair G borrowed-strength ledger.
+6. Read the kernel for regime-conditional reliability of key engines.
+7. Flag any items that deserve operator attention with a pre-committed falsifiable criterion.
+   NOTE: if you flag a factor contradiction, use the existing flag_attention tool (accrues to
+   cortex probation per masterplan §5.3). Do NOT attempt to write a separate factor record.
+8. Draft hypotheses for metabolism in PR2 (stub only — use stake_hypothesis).
+9. Always finish by calling write_memo summarising what you found.
 
 PROBATION DISCIPLINE:
 • Everything you write carries is_context_only=True.
