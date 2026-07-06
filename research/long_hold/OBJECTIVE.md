@@ -579,3 +579,64 @@ short-horizon features is a form of lookahead contamination. The wall is absolut
 ---
 
 *Document locked on merge. Any change requires a new pre-registration file.*
+
+---
+
+## Amendments
+
+Amendments are additive pre-registrations appended after the base document is locked.
+They must be registered before any feature-vs-outcome statistics are computed.
+Each amendment carries its discovery PR, registration date, and the mandate scope.
+
+---
+
+### Amendment A1 — Sector-benchmark coverage sensitivity (mandatory)
+
+**Registered:** 2026-07-05  
+**Registered before any feature-vs-outcome statistics computed:** YES  
+**Discovering PR:** #1517 (W1 label harness + outputs)  
+**Ruling:** LH-W1-2
+
+#### Background
+
+§2.1 assumed pre-built sector basket candles (`data/baskets/ohlcv/*.parquet`, 11 EW GICS
+sector baskets) would be available for all fire-tape tickers. The W1 label harness (#1517)
+found that only 503 of 2,495 fire-tape tickers map to the 11 EW baskets. As a result,
+3,391 of the 3,409 `sector_laggard_winner` (Label G) fires have no sector benchmark and
+received Label G solely because `sector_rel_252d` was undefined (treated as < 0 under the
+primary algorithm). This is a coverage collapse in the benchmark source, not a signal.
+
+#### Sensitivity run A1 (mandatory, runs in the same wave as the primary W1 kill-test)
+
+Reassign every no-benchmark Label G fire using an **equal-weight all-resolvable-tickers
+market benchmark** in place of the missing sector benchmark:
+
+- Replace `sector_rel_252d` with `market_rel_252d` for every fire where `sector_rel_252d`
+  is null at labeling time.
+- `market_rel_252d` = name's total return over 252 trading days from fire date minus the
+  equal-weight average 252d total return across **all tickers in the fire tape** that have
+  a resolvable price path for that 252d window.
+- The `>= 0` threshold is unchanged: `market_rel_252d >= 0` assigns Label A or B
+  (depending on fundamentals); `market_rel_252d < 0` assigns Label G.
+- All other label logic, tercile cutoffs, fundamentals gates, cohort-year groupings,
+  n-floor rules, and inference gates are **identical** to the primary analysis.
+
+Repeat the **entire primary W1 analysis** (all §6 inference gates, BH-FDR, reshuffle null,
+episode-cluster n-floor) on the A1-reassigned label set. Report results alongside the
+primary results in every table.
+
+#### Interpretation rule (pre-registered, binding)
+
+- If primary and A1 agree on the kill verdict (both kill OR both survive): the agreed
+  verdict stands and is ratifiable.
+- If primary and A1 **disagree** on the kill verdict: neither a kill nor a pass may be
+  ratified. The program routes to **"benchmark-coverage remediation"**: build a fuller
+  sector-to-ticker mapping (covering at minimum the top-fired tickers), re-run label
+  harness with the improved mapping, and re-open the W1 study. W3/W4 remain suspended
+  during this remediation path.
+
+#### Scope
+
+Amendment A1 is **additive only**. The primary analysis and all locked definitions in
+§§2–9 are unchanged. The primary analysis runs first and its outputs are reported
+unconditionally. A1 is an additional mandatory sensitivity run, not a replacement.
