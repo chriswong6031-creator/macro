@@ -727,7 +727,7 @@
   .nb-ax .axf { height: 100%; background: var(--g-cold); border-radius: 2px; }
   .nb-ax.ax-na .axf { background: transparent; }
   /* ---- Caution icon + popover (replaces old pill-row) ---- */
-  .nb-cau { position: relative; display: inline-flex; margin-top: 3px; }
+  .nb-cau { position: relative; display: inline-flex; }
   .nb-cau-btn {
     display: inline-flex; align-items: center; gap: 3px;
     padding: 0 5px 0 4px; height: 18px; border-radius: 9px; border: none; cursor: pointer;
@@ -3027,6 +3027,14 @@
                   data-tip-en="Already moving — vol-squeeze {{ _vs.state if _vs else '' }}{% if n.get('alpha_entry') == 'extended' %} / extended leader (just spiked){% endif %}. The entry window may have already fired; don't chase this entry above the buy zone. Context only — the setup is still valid if it consolidates."
                   data-tip-zh="已在异动——波动{{ _vs.state if _vs else '' }}{% if n.get('alpha_entry') == 'extended' %} / 领涨股过热（刚刚拉升）{% endif %}。入场窗口可能已触发，不要在买入区上方追高。仅为背景——若标的整固，形态仍有效。">💥 <span class="l-en">Moving — don't chase</span><span class="l-zh">已异动，勿追</span></span>
             {% endif %}
+            {# Caution popover — moved INTO the chip row (top of card) so it adds no card height;
+               disclosure-class element, stays at rest per spec §4 + risk.md finding #11.
+               The .nbcard:has(.nb-cau...) overflow rule + placePopCau flip keep the popover visible. #}
+            {% set _gr0 = (_gc.reasons[0] if (_gc_unval_caution and _gc.reasons) else None) %}
+            {% set _ir0 = (_iv.reasons[0] if (_iv_unval_caution and _iv.reasons) else None) %}
+            {% set _has_aw = c and 'accounting watch' in (c.cautions or []) %}
+            {% set _cau_n = ((c.cautions or [])|length if c else 0) - (1 if _has_aw else 0) + (1 if _gc_unval_caution else 0) + (1 if _iv_unval_caution else 0) %}
+            {% if _cau_n > 0 %}<div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes ({{ _cau_n }})"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">{{ _cau_n }}</span></button><div class="nb-cau-pop" role="tooltip">{% for cau in (c.cautions if c else []) %}{% if cau != 'accounting watch' %}<span class="cau-row"><span class="l-en">{{ cau }}</span><span class="l-zh">{{ c.cautions_zh[loop.index0] if (c.cautions_zh and c.cautions_zh|length > loop.index0) else cau }}</span></span>{% endif %}{% endfor %}{% if _gc_unval_caution %}<span class="cau-row cau-unval"><span class="l-en">Options positioning{% if _gr0 %} — {{ _gr0.en }}{% endif %} (unvalidated · not in score)</span><span class="l-zh">期权仓位{% if _gr0 %} — {{ _gr0.zh }}{% endif %}（未验证 · 不计入评分）</span></span>{% endif %}{% if _iv_unval_caution %}<span class="cau-row cau-unval"><span class="l-en">Options IV lean{% if _ir0 %} — {{ _ir0.en }}{% endif %} (unvalidated · not in score)</span><span class="l-zh">期权 IV 偏向{% if _ir0 %} — {{ _ir0.zh }}{% endif %}（未验证 · 不计入评分）</span></span>{% endif %}</div></div>{% endif %}
           </div>
           {# Sub-line: the company NAME (demoted here so row 1 stays ticker · full sector · price,
              the layout the request asked for) + the GICS sector for a REAL narrative theme (adds
@@ -3063,15 +3071,6 @@
             {% endif %}
           </div>
           {% endif %}
-          {# --- Caution popover at rest (disclosure-class element, stays visible per spec §4 +
-             risk.md finding #11). Placement here (before expander) ensures it is always rendered
-             and the .nbcard:has(.nb-cau...) overflow rule fires correctly post div-restructure.
-             HOISTED out of {% if c %}. Vars that need c are guarded inline. #}
-          {% set _gr0 = (_gc.reasons[0] if (_gc_unval_caution and _gc.reasons) else None) %}
-          {% set _ir0 = (_iv.reasons[0] if (_iv_unval_caution and _iv.reasons) else None) %}
-          {% set _has_aw = c and 'accounting watch' in (c.cautions or []) %}
-          {% set _cau_n = ((c.cautions or [])|length if c else 0) - (1 if _has_aw else 0) + (1 if _gc_unval_caution else 0) + (1 if _iv_unval_caution else 0) %}
-          {% if _cau_n > 0 %}<div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes ({{ _cau_n }})"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">{{ _cau_n }}</span></button><div class="nb-cau-pop" role="tooltip">{% for cau in (c.cautions if c else []) %}{% if cau != 'accounting watch' %}<span class="cau-row"><span class="l-en">{{ cau }}</span><span class="l-zh">{{ c.cautions_zh[loop.index0] if (c.cautions_zh and c.cautions_zh|length > loop.index0) else cau }}</span></span>{% endif %}{% endfor %}{% if _gc_unval_caution %}<span class="cau-row cau-unval"><span class="l-en">Options positioning{% if _gr0 %} — {{ _gr0.en }}{% endif %} (unvalidated · not in score)</span><span class="l-zh">期权仓位{% if _gr0 %} — {{ _gr0.zh }}{% endif %}（未验证 · 不计入评分）</span></span>{% endif %}{% if _iv_unval_caution %}<span class="cau-row cau-unval"><span class="l-en">Options IV lean{% if _ir0 %} — {{ _ir0.en }}{% endif %} (unvalidated · not in score)</span><span class="l-zh">期权 IV 偏向{% if _ir0 %} — {{ _ir0.zh }}{% endif %}（未验证 · 不计入评分）</span></span>{% endif %}</div></div>{% endif %}
           {# --- Expander toggle button (≥32px tall per spec, delegated handler below).
              role="button" + aria-expanded per spec §6. l-en/l-zh spans, no CJK in title=.
              HOISTED out of {% if c %}: button always present so layout is consistent. #}
