@@ -839,6 +839,83 @@ def _check_near_dup(
 
 
 # ---------------------------------------------------------------------------
+# Drop persistence helpers (RF-8 — keep-first, content-keyed)
+# ---------------------------------------------------------------------------
+
+
+def _canonical_proposal_hash(cand: dict) -> str:
+    """Deterministic content hash for a proposal/candidate dict (schema_rejected key).
+
+    We exclude fields that change between runs (candidate_id, created_at, as_of)
+    and hash the semantic content: hypothesis, mechanism, entry_rule, domain,
+    candidate_type, source.  This makes the hash stable even when _make_candidate_id
+    produces a different date-stamped id on re-ingest.
+    """
+    stable = {
+        "hypothesis": cand.get("hypothesis") or "",
+        "mechanism": cand.get("mechanism") or "",
+        "domain": cand.get("domain") or "",
+        "candidate_type": cand.get("candidate_type") or "",
+        "source": cand.get("source") or "",
+        "entry_rule": cand.get("artifacts", {}).get("entry_rule")
+            or cand.get("entry_rule"),
+    }
+    return json.dumps(stable, sort_keys=True, separators=(",", ":"))
+
+
+def _load_existing_drop_keys(
+    transitions_path: Path,
+) -> tuple[set[tuple[str, str]], set[str]]:
+    """Load already-persisted drop keys from transitions.jsonl.
+
+    Returns
+    -------
+    dedup_keys  : set of (matched_registry, matched_entity_id) for deduped transitions.
+    schema_keys : set of canonical proposal hashes for schema_rejected transitions.
+    """
+    dedup_keys: set[tuple[str, str]] = set()
+    schema_keys: set[str] = set()
+    if not transitions_path.exists():
+        return dedup_keys, schema_keys
+    for row in rf_ledger.load_jsonl(transitions_path):
+        to_state = row.get("to", "")
+        if to_state == "deduped":
+            reg = row.get("matched_registry") or ""
+            mid = row.get("matched_entity_id") or ""
+            rule_hash = row.get("_entry_rule_hash") or ""
+            if reg and mid:
+                dedup_keys.add((reg, mid))
+            if rule_hash:
+                dedup_keys.add(("_entry_rule_hash", rule_hash))
+        elif to_state == "schema_rejected":
+            phash = row.get("_proposal_hash") or ""
+            if phash:
+                schema_keys.add(phash)
+    return dedup_keys, schema_keys
+
+
+def _write_drop_candidate_and_transition(
+    cand: dict, trans: dict, out_dir: Path
+) -> None:
+    """Append a drop candidate and its transition to the ledgers.
+
+    Drops (deduped, schema_rejected) are persisted exactly like registered
+    candidates — one candidate row + one transition row — so
+    build_research_factory_health.py can compute honest funnel/acceptance rates.
+    """
+    candidates_path = out_dir / "candidates.jsonl"
+    transitions_path = out_dir / "transitions.jsonl"
+    # Candidates schema requires authority; drops carry status in the dict.
+    # Use append_row without validate_fn for drop candidates because
+    # schema_rejected candidates intentionally fail validate_candidate.
+    if cand.get("authority") != "display_only":
+        cand = dict(cand)
+        cand["authority"] = "display_only"
+    rf_ledger.append_row(candidates_path, cand)
+    rf_ledger.append_row(transitions_path, trans, validate_fn=validate_transition)
+
+
+# ---------------------------------------------------------------------------
 # Main ingest pipeline
 # ---------------------------------------------------------------------------
 
@@ -975,6 +1052,13 @@ def run_ingest(
     local_seen_rules: set[str] = set()  # within-batch dedup
     local_seen_hyps: set[str] = set()
 
+    # Load existing drop keys for keep-first persistence (RF-8).
+    # Deduped transitions are keyed by (matched_registry, matched_entity_id);
+    # schema_rejected transitions are keyed by canonical proposal content hash.
+    # These sets grow during the run to also cover within-batch first-write.
+    transitions_path = out_dir / "transitions.jsonl"
+    existing_dedup_keys, existing_schema_keys = _load_existing_drop_keys(transitions_path)
+
     for raw_cand in proposals:
         # Ensure respin_of is set in lineage if requested, enforcing RF-15 gen cap.
         if respin_of:
@@ -1050,12 +1134,51 @@ def run_ingest(
         # --- Schema validation ---
         schema_errs = validate_candidate(cand)
         if schema_errs:
-            result.add_dropped(
-                cand,
-                "schema_rejected",
-                "schema validation failed: " + "; ".join(schema_errs),
-            )
+            reason_text_schema = "schema validation failed: " + "; ".join(schema_errs)
+            result.add_dropped(cand, "schema_rejected", reason_text_schema)
             print(f"  [DROP schema_rejected] {cid}: {schema_errs[:2]}", file=sys.stderr)
+            # Persist schema_rejected drop EXACTLY ONCE, keyed by canonical
+            # content hash of the proposal (RF-8 audit; entry_rule may be
+            # malformed so we hash the stable semantic fields).
+            if not dry_run:
+                proposal_hash = _canonical_proposal_hash(cand)
+                if proposal_hash not in existing_schema_keys:
+                    existing_schema_keys.add(proposal_hash)
+                    # Build a minimal candidate row for the ledger.
+                    drop_cand = {
+                        "schema": "research_factory.candidate.v1",
+                        "authority": "display_only",
+                        "candidate_id": cid,
+                        "created_at": cand.get("created_at") or _now_iso(),
+                        "source": cand.get("source") or "unknown",
+                        "candidate_type": cand.get("candidate_type") or "unknown",
+                        "domain": cand.get("domain") or "unknown",
+                        "status": "schema_rejected",
+                        "hypothesis": cand.get("hypothesis") or "",
+                        "mechanism": cand.get("mechanism") or "",
+                        "claim_shape": None,
+                        "spec_ref": cand.get("spec_ref"),
+                        "expected_failure_modes": [],
+                        "decay_conditions": [],
+                        "falsifiers": [],
+                        "trial_accounting": {"mode": "read_only", "family": None, "declared_at": None},
+                        "evaluation_plan": cand.get("evaluation_plan") or _default_evaluation_plan(),
+                        "lineage": cand.get("lineage") or {"respin_of": None, "superseded_by": None, "refinement_generation": 0},
+                        "flags": ["schema_rejected", "validation_error"],
+                        "artifacts": {},
+                        "transition_log": [],
+                    }
+                    drop_trans = _build_transition(
+                        candidate_id=cid,
+                        from_state="proposed",
+                        to_state="schema_rejected",
+                        reason_code="schema_rejected",
+                        reason_text=reason_text_schema,
+                        actor=actor,
+                        actor_ref=actor_ref,
+                        _proposal_hash=proposal_hash,
+                    )
+                    _write_drop_candidate_and_transition(drop_cand, drop_trans, out_dir)
             continue
 
         # --- Within-batch dedup ---
@@ -1113,15 +1236,36 @@ def run_ingest(
                 print(f"  [DROP transition_rejected(deduped)] {cid}: {exc}", file=sys.stderr)
                 continue
             result.add_dropped(cand, "deduped", reason_text)
-            # Never write deduped rows to disk: the source-of-truth already
-            # lives in the external registry (oracle, species, machine, trial)
-            # or in the factory ledger itself. Writing would cause unbounded
-            # row growth on every re-ingest because date-stamped candidate_ids
-            # (from _make_candidate_id) change daily while the entry_rule stays
-            # constant — so the factory_ledger step-0 guard misses, step-1
-            # oracle_canonical fires, and without this guard a fresh row would
-            # be appended for every run. This applies to ALL registry types,
-            # including oracle_compounds_registry (the primary Oracle source).
+            # Persist deduped drops EXACTLY ONCE, content-keyed keep-first (RF-8).
+            # Key: (matched_registry, matched_entity_id) — stable across re-ingests
+            # even when candidate_id changes (date-stamped ids).
+            # Also key on entry_rule canonical hash so near-daily re-ingests of the
+            # same oracle rule don't accumulate multiple deduped rows.
+            # factory_ledger collisions (step-0) are NOT persisted — those mean the
+            # registered row already exists; no additional audit row is needed.
+            if not dry_run and dup.registry != "factory_ledger":
+                dedup_key = (dup.registry, dup.matched_id)
+                # Also check entry_rule hash as an alternative key
+                entry_rule_for_hash = cand.get("artifacts", {}).get("entry_rule")
+                rule_hash_key = ("_entry_rule_hash", _canonical(entry_rule_for_hash)) if isinstance(entry_rule_for_hash, dict) else None
+
+                already_on_disk = (
+                    dedup_key in existing_dedup_keys
+                    or (rule_hash_key is not None and rule_hash_key in existing_dedup_keys)
+                )
+                if not already_on_disk:
+                    existing_dedup_keys.add(dedup_key)
+                    if rule_hash_key is not None:
+                        existing_dedup_keys.add(rule_hash_key)
+                    drop_cand = dict(cand)
+                    drop_cand["status"] = "deduped"
+                    drop_cand["authority"] = "display_only"
+                    # Embed the entry_rule hash in the transition for future key
+                    # lookup by _load_existing_drop_keys.
+                    trans_with_hash = dict(trans)
+                    if rule_hash_key is not None:
+                        trans_with_hash["_entry_rule_hash"] = rule_hash_key[1]
+                    _write_drop_candidate_and_transition(drop_cand, trans_with_hash, out_dir)
             continue
 
         # --- Structural near-dup flag (RF-14/RF-7) ---

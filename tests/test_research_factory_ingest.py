@@ -1081,6 +1081,60 @@ def test_health_dwell_mixed_tz_offsets():
     assert health["median_dwell_days_by_state"].get("registered") is not None
 
 
+def test_dwell_days_tz_ordering_lexical_vs_chronological():
+    """Dwell must be attributed to the correct from-state when two transitions have
+    different UTC offsets such that lexical and chronological order disagree.
+
+    Scenario
+    --------
+    trans A: '2026-07-05T10:00:00-05:00'  →  UTC 2026-07-05T15:00:00Z  (15:00 UTC)
+    trans B: '2026-07-05T12:00:00+00:00'  →  UTC 2026-07-05T12:00:00Z  (12:00 UTC)
+
+    Lexically A < B (strings compare as '…10:00…' < '…12:00…'), but chronologically
+    B (12:00 UTC) < A (15:00 UTC).  The _parse_iso-based sort in compute_health must
+    use chronological order, so dwell for 'registered' state is attributed to B→A
+    (3 hours = 0.125 days), not A→B (which would be negative and nonsensical).
+
+    Transition sequence under correct chronological sort:
+      B (12:00Z): proposed → registered   (entering 'registered' state)
+      A (15:00Z): registered → screened   (leaving 'registered' state)
+    Dwell in 'registered' = 15:00Z − 12:00Z = 3h = 0.125d
+
+    Under wrong lexical sort:
+      A (string '10:00') would be placed first → proposed → registered at 15:00Z,
+      then B (string '12:00') → registered → screened at 12:00Z,
+      giving a negative time difference that would either return None or produce
+      an incorrect dwell attribution.
+    """
+    from scripts.build_research_factory_health import compute_health
+
+    # B is chronologically first (12:00 UTC), A is chronologically second (15:00 UTC).
+    # Lexically A's string sorts before B's string.
+    ts_A = "2026-07-05T10:00:00-05:00"  # = 15:00 UTC
+    ts_B = "2026-07-05T12:00:00+00:00"  # = 12:00 UTC
+
+    cands = [_make_candidate(candidate_id="rf-tzorder-001", status="screened")]
+    # B fires first (chronologically), A fires second
+    transitions = [
+        _make_transition("rf-tzorder-001", "proposed", "registered", as_of=ts_B),
+        _make_transition("rf-tzorder-001", "registered", "screened", as_of=ts_A),
+    ]
+
+    health = compute_health(cands, transitions, challenges={})
+    dwell = health["median_dwell_days_by_state"]
+
+    # 'registered' dwell must be ~3h = 0.125d (chronological: B→A)
+    assert "registered" in dwell, "registered state must appear in dwell map"
+    registered_dwell = dwell["registered"]
+    assert registered_dwell is not None, "_parse_iso sort must yield a valid dwell"
+    # Under correct chronological sort: 3h / 24 = 0.125d
+    # Allow a small float tolerance
+    assert abs(registered_dwell - 0.125) < 0.01, (
+        f"dwell in 'registered' must be ~0.125d (3h, chronological B→A); "
+        f"got {registered_dwell}d — possible lexical-sort bug"
+    )
+
+
 # ---------------------------------------------------------------------------
 # 27. RF-15 fail-closed: respin with parent absent from non-empty ledger → dropped
 # ---------------------------------------------------------------------------
@@ -1236,16 +1290,18 @@ def test_dedup_oracle_collision_reingest_no_duplicate_rows(tmp_path):
 
 def test_oracle_reingest_idempotent_with_date_stamped_id(tmp_path, monkeypatch):
     """The same Oracle compound re-ingested on two different calendar dates must
-    not accumulate duplicate rows in candidates.jsonl even though
+    not accumulate unbounded rows in candidates.jsonl even though
     _make_candidate_id() embeds datetime.now() and produces a NEW candidate_id
     on each run.
 
     Root cause: when candidate_id changes between runs the factory_ledger step-0
     guard (keyed on candidate_id) misses, and the oracle_canonical_rules step-1
-    guard fires instead.  Before the fix, step-1 would still write a fresh
-    'deduped' row because its disk-write condition was ``registry !=
-    'factory_ledger'``.  After the fix no deduped row is ever written for an
-    external-registry collision, keeping candidates.jsonl at exactly one row.
+    guard fires instead.  With RF-8 keep-first drop persistence, step-1 writes
+    exactly ONE deduped candidate + ONE deduped transition on first sight of the
+    oracle collision, then skips on all subsequent re-ingests (keyed by entry_rule
+    hash).  After two runs candidates.jsonl has exactly 2 rows (1 registered +
+    1 deduped) and transitions.jsonl has 2 rows (1 registered + 1 deduped).
+    A hypothetical run 3 with the same entry_rule would leave counts unchanged.
     """
     import scripts.research_factory_ingest as _ingest_mod
 
@@ -1330,11 +1386,18 @@ def test_oracle_reingest_idempotent_with_date_stamped_id(tmp_path, monkeypatch):
     _, rc2, _ = result2.dropped[0]
     assert rc2 == "deduped", f"expected 'deduped', got {rc2!r}"
 
-    # Key invariant: exactly one candidate row on disk after two runs.
+    # Key invariants after two runs:
+    #   candidates.jsonl: 2 rows (1 registered day-1 + 1 deduped day-2)
+    #   transitions.jsonl: 2 rows (1 registered + 1 deduped)
+    # A run 3 with the same entry_rule would leave counts unchanged (idempotent).
     cands_on_disk = rf_ledger.load_jsonl(rf_dir / "candidates.jsonl")
-    assert len(cands_on_disk) == 1, (
-        f"expected exactly 1 candidate on disk after re-ingest across two dates, "
-        f"got {len(cands_on_disk)}"
+    assert len(cands_on_disk) == 2, (
+        f"expected exactly 2 candidate rows on disk after re-ingest across two dates "
+        f"(1 registered + 1 deduped), got {len(cands_on_disk)}"
+    )
+    registered_cands = [c for c in cands_on_disk if c.get("status") == "registered"]
+    assert len(registered_cands) == 1, (
+        f"expected 1 registered candidate, got {len(registered_cands)}"
     )
     reg_trans_on_disk = [
         t for t in rf_ledger.load_jsonl(rf_dir / "transitions.jsonl")
@@ -1343,13 +1406,27 @@ def test_oracle_reingest_idempotent_with_date_stamped_id(tmp_path, monkeypatch):
     assert len(reg_trans_on_disk) == 1, (
         f"expected exactly 1 registered transition, got {len(reg_trans_on_disk)}"
     )
+    # After run 2 the oracle collision must have persisted exactly ONE deduped
+    # transition row (RF-8 keep-first audit).  The count must be STABLE: a
+    # hypothetical run 3 with the same entry_rule would find the key already
+    # on disk and skip writing, leaving the total at 1.
     deduped_trans_on_disk = [
         t for t in rf_ledger.load_jsonl(rf_dir / "transitions.jsonl")
         if t.get("to") == "deduped"
     ]
-    assert len(deduped_trans_on_disk) == 0, (
-        f"no deduped transition rows should be written to disk for external-registry "
-        f"collisions, got {len(deduped_trans_on_disk)}"
+    assert len(deduped_trans_on_disk) == 1, (
+        f"exactly 1 deduped transition row must be written to disk for the first "
+        f"external-registry collision (RF-8 keep-first audit); "
+        f"got {len(deduped_trans_on_disk)}"
+    )
+    # Also verify a deduped candidate row was written
+    deduped_cands_on_disk = [
+        c for c in rf_ledger.load_jsonl(rf_dir / "candidates.jsonl")
+        if c.get("status") == "deduped"
+    ]
+    assert len(deduped_cands_on_disk) == 1, (
+        f"exactly 1 deduped candidate row must be on disk; "
+        f"got {len(deduped_cands_on_disk)}"
     )
 
 
