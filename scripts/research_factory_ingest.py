@@ -800,6 +800,16 @@ def _check_dedup(
             reason="spec_ref matches trial-ledger family string",
         )
 
+    # 5. Factory ledger (idempotent re-ingest guard, RF-14)
+    cid = cand.get("candidate_id", "")
+    if cid and cid in existing_candidate_ids:
+        return DedupeResult(
+            matched=True,
+            registry="factory_ledger",
+            matched_id=cid[:32],
+            reason="candidate_id already in factory ledger (idempotent re-ingest)",
+        )
+
     return None
 
 
@@ -902,6 +912,17 @@ def run_ingest(
     machine_hyps = _load_machine_registry_hypotheses(machine_reg_path)
     trial_families = _load_trial_ledger_families(trial_led_path)
 
+    # Build a dict of existing candidates for respin lineage + generation cap (RF-15).
+    # Loaded lazily from disk only when respin_of is set and the ledger may exist.
+    existing_cands_by_id: dict[str, dict] = {}
+    if respin_of:
+        candidates_path = out_dir / "candidates.jsonl"
+        if candidates_path.exists():
+            for _ec in rf_ledger.load_jsonl(candidates_path):
+                _cid = _ec.get("candidate_id")
+                if _cid:
+                    existing_cands_by_id[_cid] = _ec
+
     # Handle respin: inject respin_of into lineage + enforce human gate
     if respin_of and actor in ("script", "codex", "sonnet"):
         print(
@@ -919,35 +940,68 @@ def run_ingest(
             )
         return result
 
-    # Declare rf.* family budget BEFORE any writes (RF-6)
+    # Declare rf.* family budget BEFORE any writes (RF-6).
+    # OPERATOR-ONLY ACTION: --declare-family writes a kind:declared_budget row to
+    # data/trial_ledger.jsonl (a domain forward ledger outside data/research_factory/).
+    # The n=1 placeholder is inert (floor semantics) but persists into the audited
+    # ledger.  Re-declare with the real budget at screening (W3) before running trials.
     if declare_family and not dry_run:
         from engine.trial_ledger import TrialLedger
         errs = __import__("engine.research_factory.schema", fromlist=["validate_rf_family"]).validate_rf_family(
             declare_family, trial_led_path
         )
         if errs:
-            print(f"  [ERROR] --declare-family {declare_family!r}: {errs}", file=sys.stderr)
-            sys.exit(1)
+            raise ValueError(
+                f"--declare-family {declare_family!r} failed validation: {errs}"
+            )
         tl = TrialLedger(path=trial_led_path, family=declare_family)
         tl.log_declared_budget(
-            n=1,  # placeholder; operator must set a real budget at screening
+            n=1,  # placeholder; re-declare with real budget at screening (W3)
             family=declare_family,
-            reason="research_factory W2 ingest declaration",
+            reason="research_factory W2 ingest declaration (placeholder; re-declare at screening)",
         )
-        print(f"  Declared rf.* family budget: {declare_family!r}", file=sys.stderr)
+        print(
+            f"  [OPERATOR] Declared rf.* family budget: {declare_family!r} "
+            f"(n=1 placeholder written to {trial_led_path}; re-declare at W3 screening)",
+            file=sys.stderr,
+        )
 
     result = IngestResult()
     local_seen_rules: set[str] = set()  # within-batch dedup
     local_seen_hyps: set[str] = set()
 
     for raw_cand in proposals:
-        # Ensure respin_of is set in lineage if requested
+        # Ensure respin_of is set in lineage if requested, enforcing RF-15 gen cap.
         if respin_of:
             raw_cand = dict(raw_cand)
             lineage = dict(raw_cand.get("lineage") or {})
             lineage["respin_of"] = respin_of
-            lineage["refinement_generation"] = max(1, lineage.get("refinement_generation", 1))
+            # RF-15: child generation = parent.refinement_generation + 1.
+            # Resolve the parent from the factory ledger; default parent gen to 0
+            # (generation-0 parent → generation-1 child, still within the cap of 2).
+            parent_cand = existing_cands_by_id.get(respin_of, {})
+            parent_gen = (parent_cand.get("lineage") or {}).get("refinement_generation", 0)
+            child_gen = parent_gen + 1
+            lineage["refinement_generation"] = child_gen
             raw_cand["lineage"] = lineage
+
+            # RF-15: generation > 2 → terminal rejected (anti-p-hacking rail)
+            if child_gen > 2:
+                cid_for_drop = raw_cand.get("candidate_id") or _make_candidate_id(
+                    raw_cand.get("source", "unknown"), raw_cand.get("hypothesis", "")[:32]
+                )
+                raw_cand["candidate_id"] = cid_for_drop
+                result.add_dropped(
+                    raw_cand,
+                    "rf15_generation_cap",
+                    f"respin of {respin_of!r} is generation {child_gen} (parent gen {parent_gen}); "
+                    f"RF-15 cap is 2 — terminal rejected",
+                )
+                print(
+                    f"  [DROP rf15_generation_cap] {cid_for_drop}: gen {child_gen} > 2 (RF-15)",
+                    file=sys.stderr,
+                )
+                continue
 
         cand = raw_cand
         cid = cand.get("candidate_id") or _make_candidate_id(
@@ -1003,7 +1057,10 @@ def run_ingest(
                 matched_entity_id=dup.matched_id,
             )
             result.add_dropped(cand, "deduped", reason_text)
-            if not dry_run:
+            # Do NOT write to disk for factory_ledger dedups: the candidate row
+            # already exists in candidates.jsonl (idempotent re-ingest guard).
+            # Writing again would create a second row for the same candidate_id.
+            if not dry_run and dup.registry != "factory_ledger":
                 _write_candidate_and_transition(cand_deduped, trans, out_dir)
             continue
 
@@ -1188,20 +1245,24 @@ def main() -> int:
     if existing_ids:
         print(f"Factory ledger: {len(existing_ids)} existing candidates loaded for dedup")
 
-    result = run_ingest(
-        proposals,
-        oracle_registry_path=args.oracle_registry,
-        species_registry_path=args.species_registry,
-        machine_registry_path=args.machine_registry,
-        trial_ledger_path=args.trial_ledger,
-        existing_candidate_ids=existing_ids,
-        respin_of=args.respin_of,
-        actor=args.actor,
-        actor_ref=args.actor_ref,
-        declare_family=args.declare_family,
-        rf_dir=out_dir,
-        dry_run=dry_run,
-    )
+    try:
+        result = run_ingest(
+            proposals,
+            oracle_registry_path=args.oracle_registry,
+            species_registry_path=args.species_registry,
+            machine_registry_path=args.machine_registry,
+            trial_ledger_path=args.trial_ledger,
+            existing_candidate_ids=existing_ids,
+            respin_of=args.respin_of,
+            actor=args.actor,
+            actor_ref=args.actor_ref,
+            declare_family=args.declare_family,
+            rf_dir=out_dir,
+            dry_run=dry_run,
+        )
+    except ValueError as exc:
+        print(f"[ERROR] {exc}", file=sys.stderr)
+        return 1
 
     result.print_summary()
     return 0

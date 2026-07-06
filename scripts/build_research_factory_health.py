@@ -45,12 +45,24 @@ DEFAULT_RF_DIR = ROOT / "data" / "research_factory"
 
 
 def _parse_iso(s: str | None) -> datetime | None:
+    """Parse an ISO-8601 timestamp to a tz-aware UTC datetime.
+
+    Handles Z, +00:00, -05:00, and bare tz-naive strings consistently.
+    All variants are normalised to UTC so dwell-day subtraction never raises
+    TypeError: can't subtract offset-naive and offset-aware datetimes.
+    """
     if not s:
         return None
     try:
-        # Strip trailing Z and parse
-        s2 = s.rstrip("Z").split("+")[0]
-        return datetime.fromisoformat(s2)
+        # Replace trailing Z with +00:00 so fromisoformat always gets a
+        # tz-aware string on Python 3.7+ without stripping negative offsets.
+        dt = datetime.fromisoformat(s.replace("Z", "+00:00"))
+        # Normalise to UTC (converts any offset, including negative, to UTC).
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        else:
+            dt = dt.astimezone(timezone.utc)
+        return dt
     except Exception:
         return None
 

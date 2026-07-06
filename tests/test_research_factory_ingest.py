@@ -912,3 +912,163 @@ def test_ingest_write_commits_to_disk(tmp_path):
     assert len(trans_on_disk) == 1
     assert cands_on_disk[0]["authority"] == "display_only"
     assert trans_on_disk[0]["authority"] == "display_only"
+
+
+# ---------------------------------------------------------------------------
+# 24. Idempotent re-ingest: same candidate_id produces exactly one row (Fix finding 1)
+# ---------------------------------------------------------------------------
+
+
+def test_idempotent_reingest_dedup(tmp_path):
+    """Running --write ingest twice with the same candidate_id must not produce
+    duplicate candidate rows or duplicate proposed→registered transitions.
+    The second run must drop the candidate with reason_code 'deduped' and the
+    factory-ledger drop reason, leaving exactly one candidate and one transition
+    on disk."""
+    rf_dir = tmp_path / "rf"
+
+    cand = _build_candidate(
+        source="human",
+        candidate_type="external_idea",
+        domain="oracle",
+        hypothesis="idempotent reingest hypothesis washout",
+        mechanism="washout idempotent reingest mechanism",
+        spec_ref=None,
+        entry_rule=None,
+    )
+    # Pin the candidate_id so both runs collide
+    cand["candidate_id"] = "rf-idem-test-001"
+
+    common_kwargs = dict(
+        oracle_registry_path=tmp_path / "no_oracle.jsonl",
+        species_registry_path=tmp_path / "no_species.json",
+        machine_registry_path=tmp_path / "no_machine.jsonl",
+        trial_ledger_path=tmp_path / "no_ledger.jsonl",
+        rf_dir=rf_dir,
+    )
+
+    # First ingest: should register
+    result1 = run_ingest([cand], dry_run=False, **common_kwargs)
+    assert len(result1.registered) == 1
+    assert len(result1.dropped) == 0
+
+    # Load existing_ids from disk (as main() does)
+    existing_ids: set[str] = set()
+    for ec in rf_ledger.load_jsonl(rf_dir / "candidates.jsonl"):
+        cid = ec.get("candidate_id")
+        if cid:
+            existing_ids.add(cid)
+    assert "rf-idem-test-001" in existing_ids
+
+    # Second ingest: same candidate_id — must be deduped, not registered again
+    result2 = run_ingest(
+        [cand],
+        dry_run=False,
+        existing_candidate_ids=existing_ids,
+        **common_kwargs,
+    )
+    assert len(result2.registered) == 0, "second run must NOT register a duplicate"
+    assert len(result2.dropped) == 1
+    _, rc2, rt2 = result2.dropped[0]
+    assert rc2 == "deduped"
+    assert "factory ledger" in rt2.lower() or "idempotent" in rt2.lower()
+
+    # Disk must still have exactly one candidate row and one registered transition
+    cands_on_disk = rf_ledger.load_jsonl(rf_dir / "candidates.jsonl")
+    trans_on_disk = rf_ledger.load_jsonl(rf_dir / "transitions.jsonl")
+    reg_trans = [t for t in trans_on_disk if t.get("to") == "registered"]
+    assert len(cands_on_disk) == 1, f"expected 1 candidate on disk, got {len(cands_on_disk)}"
+    assert len(reg_trans) == 1, f"expected 1 registered transition, got {len(reg_trans)}"
+
+
+# ---------------------------------------------------------------------------
+# 25. RF-15 generation cap: respin of a gen-2 parent → rejected, not gen-1 (Fix finding 2)
+# ---------------------------------------------------------------------------
+
+
+def test_rf15_generation_cap_rejects_gen3(tmp_path):
+    """A respin of a generation-2 parent must be dropped as rf15_generation_cap,
+    not registered as generation 1.  This closes the anti-p-hacking rail (RF-15)."""
+    rf_dir = tmp_path / "rf"
+    rf_dir.mkdir()
+
+    # Write a gen-2 parent candidate to the factory ledger
+    parent_id = "rf-gen2-parent-001"
+    parent_cand = _make_candidate(
+        candidate_id=parent_id,
+        status="registered",
+        lineage={
+            "respin_of": "rf-gen1-parent-000",
+            "superseded_by": None,
+            "refinement_generation": 2,
+        },
+    )
+    candidates_path = rf_dir / "candidates.jsonl"
+    candidates_path.write_text(
+        json.dumps(parent_cand) + "\n", encoding="utf-8"
+    )
+
+    # Attempt respin of the gen-2 parent
+    child_cand = _build_candidate(
+        source="human",
+        candidate_type="external_idea",
+        domain="oracle",
+        hypothesis="rf15 cap test child hypothesis washout",
+        mechanism="washout rf15 cap child mechanism",
+        spec_ref=None,
+        entry_rule=None,
+        respin_of=parent_id,
+    )
+
+    result = run_ingest(
+        [child_cand],
+        oracle_registry_path=tmp_path / "no_oracle.jsonl",
+        species_registry_path=tmp_path / "no_species.json",
+        machine_registry_path=tmp_path / "no_machine.jsonl",
+        trial_ledger_path=tmp_path / "no_ledger.jsonl",
+        respin_of=parent_id,
+        actor="fable",
+        actor_ref="session-rf15-cap-test",
+        rf_dir=rf_dir,
+        dry_run=True,
+    )
+
+    assert len(result.registered) == 0, "gen-3 respin must NOT be registered"
+    assert len(result.dropped) == 1
+    _, rc, rt = result.dropped[0]
+    assert rc == "rf15_generation_cap", f"expected rf15_generation_cap, got {rc!r}"
+    assert "3" in rt or "cap" in rt.lower()
+
+
+# ---------------------------------------------------------------------------
+# 26. Health builder: mixed tz as_of values do not raise TypeError (Fix finding 3)
+# ---------------------------------------------------------------------------
+
+
+def test_health_dwell_mixed_tz_offsets():
+    """Dwell-day math must not raise TypeError when transition as_of values carry
+    different timezone offsets (+00:00 vs -05:00 vs bare Z)."""
+    from scripts.build_research_factory_health import _days_between, compute_health
+
+    # Verify the helper itself handles all three formats without raising
+    d1 = _days_between("2026-07-05T10:00:00+00:00", "2026-07-06T10:00:00-05:00")
+    # +00:00 10:00 vs -05:00 10:00 → the -05:00 is actually 15:00 UTC → diff = 29h = 1.208d
+    assert d1 is not None, "_days_between must not return None for valid tz-aware timestamps"
+    assert 1.0 < d1 < 2.0, f"expected ~1.2d, got {d1}"
+
+    d2 = _days_between("2026-07-05T00:00:00Z", "2026-07-06T00:00:00+00:00")
+    assert d2 is not None
+    assert abs(d2 - 1.0) < 0.01, f"Z vs +00:00 should be 1.0 day, got {d2}"
+
+    # Full compute_health must not raise with mixed-tz transitions
+    cands = [_make_candidate(candidate_id="rf-tz-001", status="registered")]
+    transitions = [
+        _make_transition("rf-tz-001", "proposed", "registered",
+                         as_of="2026-07-05T10:00:00+00:00"),
+        _make_transition("rf-tz-001", "registered", "screened",
+                         as_of="2026-07-06T10:00:00-05:00"),
+    ]
+    # Should not raise
+    health = compute_health(cands, transitions, challenges={})
+    assert "median_dwell_days_by_state" in health
+    assert health["median_dwell_days_by_state"].get("registered") is not None
