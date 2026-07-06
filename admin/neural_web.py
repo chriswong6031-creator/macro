@@ -657,6 +657,519 @@ def _section_daily_brief() -> dict:
     }
 
 
+# ---- Lobe Observatory helpers -----------------------------------------------
+
+# Group definitions: (key, label, hue, id-prefix-or-owner-key-list)
+# First-match wins on _assign_group().
+_LOBE_GROUPS: list[tuple[str, str, str]] = [
+    ("core",     "Core",     "#6a8dff"),
+    ("kernel",   "Kernel",   "#b18cff"),
+    ("cortex",   "Cortex",   "#38e0d4"),
+    ("factor",   "Factor",   "#ffb84d"),
+    ("reflexes", "Reflexes", "#ff6b6b"),
+    ("bridge",   "Bridge",   "#4ad6a0"),
+    ("sensors",  "Sensors",  "#f78fff"),
+    ("ops",      "Ops",      "#8b98ad"),
+]
+
+_GROUP_CORE_IDS = frozenset({
+    "world-state", "spine-index", "confluence-graph",
+    "neuralweb-health", "neuralweb-daily-brief",
+    "neuralweb-daily-brief-history",
+    "site-neuralweb-daily-brief", "site-neuralweb-health",
+    "site-neuralweb-mastermind-context", "site-golden-signals",
+    "site-artifact-manifest",
+})
+
+_KNOWN_ACRONYMS = {"NW", "SLA", "FDR", "EV", "IC", "R2", "JSON", "JSONL",
+                   "HTML", "UI", "UX", "ETF", "BTC", "HK", "CN", "CA"}
+
+
+def _assign_group(lobe_id: str, owner_program: str) -> str:
+    """Assign a group key to a lobe by id/owner (first-match wins)."""
+    lid = lobe_id.lower()
+    if lobe_id in _GROUP_CORE_IDS or lid.startswith("site-neuralweb") or lid.startswith("site-golden"):
+        return "core"
+    if lid.startswith("kernel-") or lid in {"lagging-signals", "kernel-half-lives"}:
+        return "kernel"
+    if lid.startswith("cortex-") or lid in {
+        "hypothesis-inbox", "machine-registry", "research-queue", "governance-ledger",
+    }:
+        return "cortex"
+    if lid.startswith("reflex-") or lid.startswith("ops-push-") or lid.startswith("cortex-attention-"):
+        return "reflexes"
+    if lid.startswith("factor-") or lid.startswith("site-factor-"):
+        return "factor"
+    if lid.startswith("neuralweb-mastermind") or lid.startswith("site-neuralweb-mastermind") or lid.startswith("options-entry-"):
+        return "bridge"
+    if lid.startswith("bottom-sensors"):
+        return "sensors"
+    return "ops"
+
+
+def _humanize_label(lobe_id: str) -> str:
+    """Title-case a kebab-case id, preserving known acronyms."""
+    words = lobe_id.replace("-", " ").split()
+    result = []
+    for w in words:
+        upper = w.upper()
+        if upper in _KNOWN_ACRONYMS:
+            result.append(upper)
+        else:
+            result.append(w.title())
+    return " ".join(result)
+
+
+def _short_desc(notes_text: str | None) -> str:
+    """Return first sentence of notes, <=160 chars, whitespace-collapsed."""
+    if not notes_text:
+        return ""
+    text = " ".join(notes_text.split())
+    # Find first sentence end
+    for delim in (".", "!", "?"):
+        idx = text.find(delim)
+        if idx != -1 and idx < 200:
+            sentence = text[: idx + 1].strip()
+            return sentence[:160]
+    return text[:160]
+
+
+def _derive_lobe_status(
+    art_path: str,
+    storage: str | None,
+    freshness_sla_hours,
+    health_lobe: dict | None,
+) -> tuple[str, float | None, bool | None]:
+    """Return (status, age_hours, sla_met).
+
+    When health_lobe is present, use its status directly.
+    Otherwise derive from disk mtime vs SLA.
+    """
+    if health_lobe is not None:
+        status = health_lobe.get("status", "unknown")
+        age_hours = health_lobe.get("age_hours")
+        sla_h = health_lobe.get("freshness_sla_hours") or freshness_sla_hours
+        sla_met: bool | None = None
+        if age_hours is not None and sla_h is not None:
+            sla_met = float(age_hours) <= float(sla_h)
+        return status, age_hours, sla_met
+
+    full_path = _ROOT / art_path
+    exists = full_path.exists()
+    if not exists:
+        if (storage or "").lower() == "git":
+            return "missing", None, None
+        return "not_locally_verifiable", None, None
+
+    age_hours = _mtime_hours_ago(full_path)
+    sla_h = freshness_sla_hours
+    if sla_h is None:
+        sla_met = None
+        status = "fresh"
+    else:
+        try:
+            sla_met = float(age_hours) <= float(sla_h) if age_hours is not None else None
+            status = "fresh" if sla_met else "stale"
+        except (TypeError, ValueError):
+            sla_met = None
+            status = "fresh"
+    return status, age_hours, sla_met
+
+
+def _count_recent_actions(lobe_id: str, owner_program: str) -> int:
+    """Count recent actions attributable to this lobe (quick scan, fail-open)."""
+    count = 0
+    # Reflex firings for reflex-type lobes
+    reflex_dir = _DATA_REFLEXES / lobe_id
+    if reflex_dir.exists():
+        firings = _tail_jsonl(reflex_dir / "firings.jsonl", 10)
+        count += len(firings)
+    # Governance events mentioning this lobe id or producer
+    gov_events = _tail_jsonl(_GOVERNANCE_JSONL, 50)
+    for ev in gov_events:
+        target = str(ev.get("target", ""))
+        if lobe_id in target:
+            count += 1
+    return count
+
+
+def _build_lobe_summary(
+    lobe_id: str,
+    art: dict,
+    health_lobe: dict | None,
+) -> dict:
+    """Build a <lobe_summary> dict."""
+    owner = art.get("owner_program", "")
+    group = _assign_group(lobe_id, owner)
+    consumers = list(art.get("consumers") or [])
+    external = list(art.get("external_consumers") or [])
+    art_path = art.get("path", "")
+    storage = art.get("storage")
+    sla_h = art.get("freshness_sla_hours")
+
+    status, age_hours, sla_met = _derive_lobe_status(art_path, storage, sla_h, health_lobe)
+
+    row_count = health_lobe.get("row_count") if health_lobe else None
+    byte_size = health_lobe.get("byte_size") if health_lobe else None
+
+    n_recent = _count_recent_actions(lobe_id, owner)
+
+    return {
+        "id": lobe_id,
+        "label": _humanize_label(lobe_id),
+        "group": group,
+        "status": status,
+        "tier": art.get("tier", ""),
+        "cadence": art.get("cadence", ""),
+        "horizon_role": art.get("horizon_role", ""),
+        "storage": storage or "",
+        "producer": art.get("producer", ""),
+        "path": art_path,
+        "age_hours": age_hours,
+        "freshness_sla_hours": sla_h,
+        "sla_met": sla_met,
+        "row_count": row_count,
+        "byte_size": byte_size,
+        "n_consumers": len(consumers) + len(external),
+        "n_recent_actions": n_recent,
+        "short_desc": _short_desc(art.get("notes")),
+    }
+
+
+# Ordered group keys for the `groups` list
+_GROUP_ORDER = ["core", "kernel", "cortex", "factor", "reflexes", "bridge", "sensors", "ops"]
+
+
+def lobes_panel() -> dict:
+    """Return the NW observatory summary (GET /api/neural_web/lobes).
+
+    Reads synapse.yml for the canonical lobe registry, enriches with
+    health.json / daily_brief.json / confluence_graph.json when present.
+    Fail-open: missing artifacts return honest nulls.
+    """
+    # --- Synapse registry ---
+    synapse = _parse_yaml_synapse(_SYNAPSE_YML)
+    if not synapse or not isinstance(synapse.get("artifacts"), dict):
+        return {
+            "ok": False,
+            "error": "synapse.yml unreadable or missing (pyyaml required)",
+            "overall_status": "unknown",
+        }
+
+    all_arts = synapse["artifacts"]
+
+    def _is_lobe(k: str, v: dict) -> bool:
+        if v.get("owner_program") == "neural-web":
+            return True
+        p = v.get("path", "")
+        if p.startswith("data/neuralweb/") or p.startswith("site/neuralwebdata/"):
+            return True
+        if "mastermind:context" in (v.get("external_consumers") or []):
+            return True
+        return False
+
+    lobe_arts = {k: v for k, v in all_arts.items() if _is_lobe(k, v)}
+
+    # --- Health.json enrichment ---
+    nw_health = _read_json(_NW_HEALTH_JSON)
+    health_by_id: dict[str, dict] = {}
+    as_of: str | None = None
+    source = "synapse_registry"
+
+    if nw_health and nw_health.get("schema") == "neuralweb.health.v1":
+        source = "health_json"
+        as_of = nw_health.get("as_of")
+        for lh in (nw_health.get("lobes") or []):
+            lid = lh.get("id")
+            if lid:
+                health_by_id[lid] = lh
+
+    # --- Confluence graph ---
+    cg = _read_json(_CONFLUENCE_GRAPH)
+    graph_info: dict = {"n_nodes": None, "n_edges": None, "edge_types": None}
+    if cg:
+        edges = cg.get("edges") or []
+        edge_types: dict[str, int] = {}
+        for e in edges:
+            t = e.get("edge_type", "unknown")
+            edge_types[t] = edge_types.get(t, 0) + 1
+        graph_info = {
+            "n_nodes": len(cg.get("nodes") or []),
+            "n_edges": len(edges),
+            "edge_types": edge_types,
+        }
+
+    # --- Build lobe summaries ---
+    lobes_flat: list[dict] = []
+    for lobe_id, art in lobe_arts.items():
+        health_lobe = health_by_id.get(lobe_id)
+        lobes_flat.append(_build_lobe_summary(lobe_id, art, health_lobe))
+
+    # --- Summary counts ---
+    status_counts: dict[str, int] = {
+        "total": len(lobes_flat),
+        "fresh": 0, "stale": 0, "missing": 0,
+        "degraded": 0, "unknown": 0, "not_locally_verifiable": 0,
+    }
+    for ls in lobes_flat:
+        st = ls["status"]
+        if st in status_counts:
+            status_counts[st] += 1
+        else:
+            status_counts["unknown"] += 1
+
+    # --- Overall status ---
+    git_statuses = [
+        ls["status"] for ls in lobes_flat
+        if ls.get("storage", "").lower() == "git" and ls["group"] == "core"
+    ]
+    if status_counts["missing"] > 0 and any(s == "missing" for s in git_statuses):
+        overall_status = "degraded"
+    elif status_counts["stale"] > 0 or status_counts["degraded"] > 0:
+        overall_status = "warn"
+    elif status_counts["total"] == 0:
+        overall_status = "unknown"
+    else:
+        overall_status = "ok"
+
+    # --- Group structure ---
+    group_map: dict[str, list[dict]] = {k: [] for k in _GROUP_ORDER}
+    for ls in lobes_flat:
+        g = ls["group"]
+        if g in group_map:
+            group_map[g].append(ls)
+        else:
+            group_map["ops"].append(ls)
+
+    group_meta = {key: (label, hue) for key, label, hue in _LOBE_GROUPS}
+    groups = []
+    for key in _GROUP_ORDER:
+        label, hue = group_meta[key]
+        groups.append({
+            "key": key,
+            "label": label,
+            "hue": hue,
+            "lobes": sorted(group_map[key], key=lambda x: x["id"]),
+        })
+
+    return {
+        "ok": True,
+        "source": source,
+        "as_of": as_of,
+        "overall_status": overall_status,
+        "summary_counts": status_counts,
+        "graph": graph_info,
+        "groups": groups,
+        "lobes": lobes_flat,
+    }
+
+
+def lobe_detail(lobe_id: str) -> dict:
+    """Return per-lobe detail (GET /api/neural_web/lobe?id=<id>).
+
+    On unknown id → ok=false with known_ids list.
+    Fail-open on missing artifacts.
+    """
+    # --- Synapse registry ---
+    synapse = _parse_yaml_synapse(_SYNAPSE_YML)
+    if not synapse or not isinstance(synapse.get("artifacts"), dict):
+        return {"ok": False, "error": "synapse.yml unreadable (pyyaml required)", "known_ids": []}
+
+    all_arts = synapse["artifacts"]
+
+    def _is_lobe(k: str, v: dict) -> bool:
+        if v.get("owner_program") == "neural-web":
+            return True
+        p = v.get("path", "")
+        if p.startswith("data/neuralweb/") or p.startswith("site/neuralwebdata/"):
+            return True
+        if "mastermind:context" in (v.get("external_consumers") or []):
+            return True
+        return False
+
+    lobe_arts = {k: v for k, v in all_arts.items() if _is_lobe(k, v)}
+
+    if not lobe_id or lobe_id not in lobe_arts:
+        return {
+            "ok": False,
+            "error": "unknown lobe id",
+            "known_ids": sorted(lobe_arts.keys()),
+        }
+
+    art = lobe_arts[lobe_id]
+    owner = art.get("owner_program", "")
+    group = _assign_group(lobe_id, owner)
+    group_label, hue = next(
+        ((label, h) for key, label, h in _LOBE_GROUPS if key == group),
+        ("Ops", "#8b98ad"),
+    )
+
+    art_path = art.get("path", "")
+    storage = art.get("storage")
+    sla_h = art.get("freshness_sla_hours")
+
+    # --- Health enrichment ---
+    nw_health = _read_json(_NW_HEALTH_JSON)
+    health_lobe: dict | None = None
+    if nw_health and nw_health.get("schema") == "neuralweb.health.v1":
+        for lh in (nw_health.get("lobes") or []):
+            if lh.get("id") == lobe_id:
+                health_lobe = lh
+                break
+
+    status, age_hours, sla_met = _derive_lobe_status(art_path, storage, sla_h, health_lobe)
+
+    full_path = _ROOT / art_path if art_path else None
+    exists_locally = bool(full_path and full_path.exists())
+
+    # Metrics block
+    as_of_m = health_lobe.get("as_of") if health_lobe else None
+    produced_at = health_lobe.get("produced_at") if health_lobe else None
+    row_count = health_lobe.get("row_count") if health_lobe else None
+    byte_size = health_lobe.get("byte_size") if health_lobe else None
+    gaps = health_lobe.get("gaps", []) if health_lobe else []
+
+    metrics = {
+        "age_hours": age_hours,
+        "freshness_sla_hours": sla_h,
+        "sla_met": sla_met,
+        "as_of": as_of_m,
+        "produced_at": produced_at,
+        "row_count": row_count,
+        "byte_size": byte_size,
+        "exists_locally": exists_locally,
+        "gaps": gaps or [],
+    }
+
+    # --- Transmission ---
+    consumers_raw = list(art.get("consumers") or [])
+    external_consumers = list(art.get("external_consumers") or [])
+
+    def _kind(c: str) -> str:
+        if c.startswith("engine/"):
+            return "engine"
+        if c.startswith("module/"):
+            return "module"
+        if c.startswith("scripts/"):
+            return "script"
+        return "program"
+
+    consumers_list = [{"name": c, "kind": _kind(c)} for c in consumers_raw]
+
+    # Confluence edges referencing this lobe
+    cg = _read_json(_CONFLUENCE_GRAPH)
+    edges_list: list[dict] = []
+    if cg:
+        producer_path = art.get("producer", "")
+        for e in (cg.get("edges") or []):
+            src = e.get("src", "")
+            dst = e.get("dst", "")
+            # Match by artifact:<id>, producer module path, or lobe id substring
+            relevant = (
+                f"artifact:{lobe_id}" in (src, dst)
+                or lobe_id in src or lobe_id in dst
+                or (producer_path and (producer_path in src or producer_path in dst))
+            )
+            if relevant:
+                edges_list.append({
+                    "src": src,
+                    "dst": dst,
+                    "edge_type": e.get("edge_type", ""),
+                    "n": e.get("n"),
+                    "note": e.get("note", ""),
+                })
+
+    transmission = {
+        "producer": art.get("producer", ""),
+        "consumers": consumers_list,
+        "external_consumers": external_consumers,
+        "edges": edges_list,
+    }
+
+    # --- Recent actions ---
+    recent_actions: list[dict] = []
+
+    # 1. Reflex firings if this lobe corresponds to a reflex data dir
+    reflex_dir = _DATA_REFLEXES / lobe_id
+    if reflex_dir.exists():
+        for f in _tail_jsonl(reflex_dir / "firings.jsonl", 15):
+            ts = f.get("ts") or f.get("timestamp") or f.get("fired_at") or ""
+            summary = f.get("trigger_key") or f.get("action") or f.get("scope_key") or str(f)[:80]
+            recent_actions.append({
+                "ts": ts,
+                "kind": "reflex_firing",
+                "summary": str(summary)[:120],
+                "source": f"data/reflexes/{lobe_id}/firings.jsonl",
+            })
+
+    # 2. Governance events mentioning this lobe
+    for ev in _tail_jsonl(_GOVERNANCE_JSONL, 50):
+        target = str(ev.get("target", ""))
+        if lobe_id in target or (art.get("producer") and art["producer"] in target):
+            ts = ev.get("ts") or ""
+            recent_actions.append({
+                "ts": ts,
+                "kind": ev.get("event_type", "governance"),
+                "summary": (ev.get("note") or ev.get("article") or "")[:120],
+                "source": "data/neuralweb/governance.jsonl",
+            })
+
+    # 3. Cortex memo what_fired if cortex-type lobe
+    memo = _read_json(_CORTEX_MEMO)
+    if memo and group == "cortex":
+        for fired in (memo.get("what_fired") or []):
+            recent_actions.append({
+                "ts": memo.get("as_of", ""),
+                "kind": "cortex_fired",
+                "summary": str(fired)[:120],
+                "source": "data/neuralweb/cortex/memo.json",
+            })
+
+    # 4. Daily brief what_changed matching this lobe id
+    brief = _read_json(_NW_DAILY_BRIEF_JSON)
+    if brief and brief.get("schema") == "neuralweb.daily_brief.v1":
+        for change in (brief.get("what_changed") or []):
+            if change.get("id") == lobe_id:
+                recent_actions.append({
+                    "ts": brief.get("as_of", ""),
+                    "kind": "daily_brief_change",
+                    "summary": str(change.get("summary", ""))[:120],
+                    "source": "data/neuralweb/daily_brief.json",
+                })
+
+    # Sort newest-first by ts (lexicographic ISO sort), cap at 15
+    recent_actions.sort(key=lambda x: x.get("ts", ""), reverse=True)
+    recent_actions = recent_actions[:15]
+
+    # --- Description (full notes, whitespace-collapsed) ---
+    raw_notes = art.get("notes") or ""
+    description = " ".join(raw_notes.split())
+
+    return {
+        "ok": True,
+        "id": lobe_id,
+        "label": _humanize_label(lobe_id),
+        "group": group,
+        "group_label": group_label,
+        "hue": hue,
+        "status": status,
+        "tier": art.get("tier", ""),
+        "cadence": art.get("cadence", ""),
+        "horizon_role": art.get("horizon_role", ""),
+        "storage": storage or "",
+        "producer": art.get("producer", ""),
+        "path": art_path,
+        "format": art.get("format", ""),
+        "description": description,
+        "purpose_source": "config/synapse.yml",
+        "metrics": metrics,
+        "transmission": transmission,
+        "recent_actions": recent_actions,
+        "health_detail": health_lobe,
+        "missing": not exists_locally,
+    }
+
+
 # ---- Top-level panel entry point -------------------------------------------
 
 def panel() -> dict:

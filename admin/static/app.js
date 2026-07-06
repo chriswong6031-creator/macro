@@ -50,31 +50,80 @@ async function logout() {
   showLogin();
 }
 
-const TABS = [
-  ["overview", "Overview"], ["experiments", "Experiments"], ["vector", "BTC Override"], ["analytics", "Analytics"], ["users", "Users"],
-  ["system", "System"], ["health", "Health"], ["features", "Features"],
-  ["brief", "AI Brief"], ["deploy", "Build & Deploy"], ["cost", "AI Cost"], ["content", "Content"],
-  ["neural_web", "Neural Web"],
+/* ---- sidebar nav + router ----------------------------------------------- */
+const NAV_ICO = (inner) => `<svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${inner}</svg>`;
+const ICONS = {
+  overview:    NAV_ICO('<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>'),
+  neural_web:  NAV_ICO('<circle cx="12" cy="12" r="2.4"/><circle cx="5" cy="6" r="1.7"/><circle cx="19" cy="6" r="1.7"/><circle cx="5" cy="18" r="1.7"/><circle cx="19" cy="18" r="1.7"/><path d="M10 11 6.4 7.2M14 11l3.6-3.8M10 13l-3.6 3.8M14 13l3.6 3.8"/>'),
+  analytics:   NAV_ICO('<path d="M4 20V11M9.5 20V5M15 20v-8M20.5 20V8"/><path d="M2.5 20h19"/>'),
+  users:       NAV_ICO('<circle cx="9" cy="8" r="3"/><path d="M3.5 20a5.5 5.5 0 0 1 11 0"/><path d="M16 5.3a3 3 0 0 1 0 5.4M21 20a5.5 5.5 0 0 0-4-5.3"/>'),
+  experiments: NAV_ICO('<path d="M9 3h6M10 3v5.5L5.4 17.6A2 2 0 0 0 7.2 20.5h9.6a2 2 0 0 0 1.8-2.9L14 8.5V3"/><path d="M8 14h8"/>'),
+  system:      NAV_ICO('<rect x="3" y="4" width="18" height="7" rx="1.5"/><rect x="3" y="13" width="18" height="7" rx="1.5"/><path d="M7 7.5h.01M7 16.5h.01"/>'),
+  health:      NAV_ICO('<path d="M3 12h3.5l2 5 3.5-11 2.5 7 1.5-3H21"/>'),
+  deploy:      NAV_ICO('<path d="M12 2.5s4.5 2.8 4.5 8.5c0 2.8-1.8 4.5-1.8 4.5H9.3S7.5 13.8 7.5 11C7.5 5.3 12 2.5 12 2.5Z"/><circle cx="12" cy="9.5" r="1.5"/><path d="M8.5 17l-2 4M15.5 17l2 4"/>'),
+  cost:        NAV_ICO('<circle cx="12" cy="12" r="9"/><path d="M12 6.5v11M14.6 9a2.6 2 0 0 0-2.6-1.5c-1.6 0-2.7.9-2.7 2.1 0 2.6 5.4 1.3 5.4 4 0 1.3-1.2 2.2-2.7 2.2A2.7 2 0 0 1 9.2 16"/>'),
+  content:     NAV_ICO('<path d="M6 3h8l5 5v13H6z"/><path d="M14 3v5h5M9 13h6M9 17h6"/>'),
+  features:    NAV_ICO('<circle cx="8" cy="8" r="3"/><circle cx="16" cy="16" r="3"/><path d="M11 8h9M4 16h9"/>'),
+  brief:       NAV_ICO('<path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6z"/><path d="M18.5 14.5l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z"/>'),
+  vector:      NAV_ICO('<circle cx="12" cy="12" r="9"/><path d="M9.5 7.5h4.2a2.2 2 0 0 1 0 4H9.5m0 0h4.6a2.2 2 0 0 1 0 4.4H9.5m0-8.4V5.5m0 13v-2m2.4-11v2m0 7.4v2"/>'),
+};
+const NAV_GROUPS = [
+  { label: "", items: [["overview", "Overview"]] },
+  { label: "Neural Web", items: [["neural_web", "Observatory"]] },
+  { label: "Growth", items: [["analytics", "Analytics"], ["users", "Users"], ["experiments", "Experiments"]] },
+  { label: "System", items: [["system", "System"], ["health", "Health"], ["deploy", "Build & Deploy"], ["cost", "AI Cost"], ["content", "Content"]] },
+  { label: "Config", items: [["features", "Features"], ["brief", "AI Brief"], ["vector", "BTC Override"]] },
 ];
+const TAB_LABELS = Object.fromEntries(NAV_GROUPS.flatMap(g => g.items));
 let CURRENT = "overview";
 let SUMMARY = null;
 let RT_TIMER = null;
 
-function renderTabs() {
-  const nav = $("#tabs"); nav.innerHTML = "";
-  TABS.forEach(([id, label]) => {
-    const b = h(`<button data-tab="${id}">${label}</button>`);
-    if (id === CURRENT) b.classList.add("active");
-    b.onclick = () => go(id);
-    nav.appendChild(b);
+function renderSidebar() {
+  const nav = $("#sidenav"); if (!nav) return; nav.innerHTML = "";
+  NAV_GROUPS.forEach(g => {
+    const grp = h(`<div class="nav-group"></div>`);
+    if (g.label) grp.appendChild(h(`<div class="eyebrow">${esc(g.label)}</div>`));
+    g.items.forEach(([id, label]) => {
+      const it = h(`<div class="nav-item" data-tab="${id}">${ICONS[id] || ""}<span>${esc(label)}</span></div>`);
+      if (id === CURRENT) it.classList.add("active");
+      it.onclick = () => go(id);
+      grp.appendChild(it);
+    });
+    nav.appendChild(grp);
   });
 }
+function setActiveNav(id) {
+  const nav = $("#sidenav"); if (!nav) return;
+  nav.querySelectorAll(".nav-item").forEach(el => el.classList.toggle("active", el.dataset.tab === id));
+}
+function setTopbarTitle(t) { const el = $("#topbar-title"); if (el) el.textContent = t; }
+
 function go(id) {
+  if (currentLobeId()) history.replaceState(null, "", location.pathname + location.search);
   CURRENT = id;
   if (RT_TIMER) { clearInterval(RT_TIMER); RT_TIMER = null; }
-  renderTabs();
+  setActiveNav(id);
+  setTopbarTitle(TAB_LABELS[id] || id);
   RENDER[id]();
 }
+
+/* hash router — lobe detail "pages" live at #/lobe/<id> */
+function currentLobeId() {
+  const m = location.hash.match(/^#\/lobe\/(.+)$/);
+  return m ? decodeURIComponent(m[1]) : null;
+}
+function gotoLobe(id) { location.hash = "#/lobe/" + encodeURIComponent(id); }
+function backToObservatory() {
+  if (currentLobeId()) history.replaceState(null, "", location.pathname + location.search);
+  go("neural_web");
+}
+function route() {
+  const id = currentLobeId();
+  if (id) { renderLobeDetail(id); return; }
+  go(CURRENT || "overview");
+}
+window.addEventListener("hashchange", route);
 
 /* ---- header + banner ---------------------------------------------------- */
 function renderHeader() {
@@ -917,30 +966,233 @@ function nwSectionFactorIntelligence(fi) {
   return html;
 }
 
+/* ---- Observatory helpers ------------------------------------------------ */
+const NW_STATUS_WORD = { ok: "Operational", warn: "Attention", degraded: "Degraded", unknown: "Unknown" };
+const NW_STATUS_DOT = { ok: "fresh", warn: "stale", degraded: "degraded", unknown: "unknown" };
+const EDGE_CLS = { feeds: "s-mut", confirms: "s-ok", contradicts: "s-bad", leads: "s-warn", stable: "s-mut" };
+
+function nwEmpty(title, sub) {
+  return `<div class="empty"><div class="empty-icon">◍</div><div class="empty-text">${esc(title)}</div>${sub ? `<div class="empty-sub">${esc(sub)}</div>` : ""}</div>`;
+}
+/* SVG freshness donut — frac = age/SLA (0..1+); colour ok<.75<warn<1<=bad */
+function nwRing(frac, size = 34) {
+  const r = (size - 6) / 2, c = 2 * Math.PI * r, cc = size / 2;
+  const f = frac == null ? 0 : Math.max(0, Math.min(1, frac));
+  const cls = frac == null ? "ok" : frac >= 1 ? "bad" : frac >= 0.75 ? "warn" : "ok";
+  const dash = `${(f * c).toFixed(1)} ${c.toFixed(1)}`;
+  return `<span class="ring"><svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+    <circle class="ring-track" cx="${cc}" cy="${cc}" r="${r}"/>
+    <circle class="ring-fill ${cls}" cx="${cc}" cy="${cc}" r="${r}" stroke-dasharray="${dash}"/></svg></span>`;
+}
+function nwHero(d) {
+  const st = d.overall_status || "unknown";
+  const sc = d.summary_counts || {};
+  const chip = (label, n, cls) => `<span class="pill"><span class="led ${cls}"></span>${n != null ? n : "—"} ${label}</span>`;
+  const note = d.source === "synapse_registry"
+    ? "Lobe map sourced live from the signal registry (config/synapse.yml). Freshness and cortex activity fill in after the nightly pipeline writes health.json."
+    : `Live health as of ${esc(d.as_of || "—")}. Every lobe below is a cross-engine artifact on the Neural Web bus.`;
+  return `<div class="nw-hero">
+    <div class="nw-hero-row">
+      <span class="status-dot" data-status="${esc(NW_STATUS_DOT[st] || "unknown")}" style="width:14px;height:14px"></span>
+      <span class="nw-hero-status-word">${esc(NW_STATUS_WORD[st] || st)}</span>
+      <span class="sub" style="margin-left:2px">${sc.total != null ? sc.total : "—"} lobes across ${(d.groups || []).length} systems · ${(d.graph && d.graph.n_edges) != null ? d.graph.n_edges : "—"} bus links</span>
+    </div>
+    <div class="nw-hero-chips">
+      ${chip("fresh", sc.fresh, "ok")}
+      ${chip("stale", sc.stale, "warn")}
+      ${chip("missing", sc.missing, "bad")}
+      ${sc.not_locally_verifiable ? chip("R2-only", sc.not_locally_verifiable, "") : ""}
+    </div>
+    <div class="nw-hero-note">${note}</div>
+  </div>`;
+}
+/* Signature system map — core → group anchors (on a ring) → lobe nodes */
+function nwSystemMap(d) {
+  const groups = (d.groups || []).filter(g => g.lobes && g.lobes.length);
+  if (!groups.length) return "";
+  const W = 900, H = 480, cx = W / 2, cy = H / 2, R = 155;
+  const N = groups.length;
+  let edges = "", ganchors = "", lnodes = "", labels = "";
+  groups.forEach((g, gi) => {
+    const ang = -Math.PI / 2 + gi * 2 * Math.PI / N;
+    const gx = cx + R * Math.cos(ang), gy = cy + R * Math.sin(ang);
+    edges += `<line class="map-edge" x1="${cx}" y1="${cy}" x2="${gx.toFixed(1)}" y2="${gy.toFixed(1)}" style="stroke-width:1.6"/>`;
+    ganchors += `<circle cx="${gx.toFixed(1)}" cy="${gy.toFixed(1)}" r="7" style="fill:var(--grp-${g.key});opacity:.9"/>`;
+    const lx = cx + (R + 34) * Math.cos(ang), ly = cy + (R + 34) * Math.sin(ang);
+    labels += `<text class="map-label" x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="middle">${esc(g.label)} · ${g.lobes.length}</text>`;
+    const m = g.lobes.length, lr = Math.min(48, 14 + m * 2.2);
+    g.lobes.forEach((l, li) => {
+      const a2 = li * 2 * Math.PI / m;
+      const nx = gx + lr * Math.cos(a2), ny = gy + lr * Math.sin(a2);
+      const stt = l.status === "fresh" ? "fresh" : l.status === "stale" ? "stale" : (l.status === "missing" || l.status === "degraded") ? "missing" : "stale";
+      edges += `<line class="map-edge" x1="${gx.toFixed(1)}" y1="${gy.toFixed(1)}" x2="${nx.toFixed(1)}" y2="${ny.toFixed(1)}"/>`;
+      lnodes += `<circle class="map-node" data-lobe="${esc(l.id)}" data-status="${stt}" cx="${nx.toFixed(1)}" cy="${ny.toFixed(1)}" r="4.2" style="fill:var(--grp-${g.key})"><title>${esc(l.label)} — ${esc(l.status)}</title></circle>`;
+    });
+  });
+  return `<div class="systemmap"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Neural Web system map">
+    <defs><linearGradient id="nw-core-grad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#6a8dff"/><stop offset="1" stop-color="#38e0d4"/></linearGradient></defs>
+    ${edges}${ganchors}${lnodes}${labels}
+    <text x="${cx}" y="${cy - 42}" text-anchor="middle" class="map-label" style="fill:var(--text);font-size:12px;font-weight:600">Neural Web</text>
+    <circle class="map-core" cx="${cx}" cy="${cy}" r="30"/>
+  </svg></div>`;
+}
+function nwLobeCard(l) {
+  const age = l.age_hours, sla = l.freshness_sla_hours;
+  const frac = (age != null && sla) ? age / sla : null;
+  const ageTxt = age == null ? "—" : fmtAge(age);
+  return `<a class="lobe-card" href="#/lobe/${encodeURIComponent(l.id)}" data-lobe="${esc(l.id)}">
+    <div class="lobe-card-top">
+      <span class="lobe-led" data-status="${esc(l.status)}"></span>
+      <span class="lobe-name">${esc(l.label)}</span>
+      <span class="group-chip" data-group="${esc(l.group)}">${esc(l.group)}</span>
+    </div>
+    <div class="short-desc">${esc(l.short_desc || "No description registered.")}</div>
+    <div class="lobe-metrics">
+      ${nwRing(frac, 26)}
+      <span>${ageTxt}${sla ? ` / ${fmtAge(sla)}` : ""}</span>
+      <span class="metric-sep">·</span>
+      <span>${l.n_consumers} consumer${l.n_consumers === 1 ? "" : "s"}</span>
+      <span class="metric-sep">·</span>
+      <span>${esc(l.tier || "—")}</span>
+    </div>
+  </a>`;
+}
+
 RENDER.neural_web = async () => {
   const v = $("#view");
-  v.innerHTML = `<div class="sub" style="margin-bottom:12px">Behind-the-scenes monitor for the signal-generation system (nicknamed the "Neural Web"). Each section shows whether a part is working and up to date. Monitoring only — nothing here changes what the site does.</div>
-    <div class="sub" style="margin-bottom:8px;color:var(--muted)">Loading…</div>`;
-  const d = await api("/api/neural_web");
-  if (!d.ok) {
-    v.innerHTML = card("Neural Web", `<div class="sub" style="color:var(--bad)">${esc(d.error || "panel error")}</div>`);
-    return;
-  }
-  v.innerHTML = `
-    <div class="sub" style="margin-bottom:12px">Read-only. If a section's data hasn't been generated yet, it says so instead of showing an error.</div>
-    ${nwCollapse("engine_health", "A — System health", nwSectionEngineHealth(d.engine_health), true)}
-    ${nwCollapse("reflex_log", "B — Automatic reactions", nwSectionReflexLog(d.reflex_log), true)}
-    ${nwCollapse("bus_graph", "C — How signals agree &amp; disagree", nwSectionBusGraph(d.bus_graph), false)}
-    ${nwCollapse("governance", "D — Permissions &amp; change log", nwSectionGovernance(d.governance), true)}
-    ${nwCollapse("factor_intelligence", "E — Factor intelligence (what a stock's move is made of)", nwSectionFactorIntelligence(d.factor_intelligence), false)}
-  `;
+  v.innerHTML = `<div class="skeleton skeleton-title"></div><div class="skeleton skeleton-card"></div>
+    <div class="lobe-grid">${'<div class="skeleton skeleton-card"></div>'.repeat(8)}</div>`;
+  const d = await api("/api/neural_web/lobes");
+  if (!d.ok) { v.innerHTML = nwEmpty("Could not load the lobe map", d.error || "panel error"); return; }
+  let html = nwHero(d) + nwSystemMap(d);
+  (d.groups || []).forEach(g => {
+    if (!g.lobes || !g.lobes.length) return;
+    html += `<div class="section">${esc(g.label)} <span class="cnt">${g.lobes.length}</span></div>
+      <div class="lobe-grid">${g.lobes.map(nwLobeCard).join("")}</div>`;
+  });
+  html += `<details class="nw-section" style="margin-top:6px">
+      <summary class="section" style="cursor:pointer;user-select:none;list-style:none">▸ Operator HQ — full diagnostic detail</summary>
+      <div id="nw-legacy"><div class="spin">loading…</div></div>
+    </details>`;
+  v.innerHTML = html;
+  v.querySelectorAll(".map-node[data-lobe]").forEach(el => el.addEventListener("click", () => gotoLobe(el.dataset.lobe)));
+  loadLegacyOps();
 };
+async function loadLegacyOps() {
+  const box = $("#nw-legacy"); if (!box) return;
+  const d = await api("/api/neural_web");
+  if (!d || !d.ok) { box.innerHTML = nwEmpty("Diagnostic panel unavailable", (d && d.error) || ""); return; }
+  box.innerHTML = `
+    ${nwCollapse("engine_health", "A — System health", nwSectionEngineHealth(d.engine_health), false)}
+    ${nwCollapse("reflex_log", "B — Automatic reactions", nwSectionReflexLog(d.reflex_log), false)}
+    ${nwCollapse("bus_graph", "C — How signals agree &amp; disagree", nwSectionBusGraph(d.bus_graph), false)}
+    ${nwCollapse("governance", "D — Permissions &amp; change log", nwSectionGovernance(d.governance), false)}
+    ${nwCollapse("factor_intelligence", "E — Factor intelligence (what a stock's move is made of)", nwSectionFactorIntelligence(d.factor_intelligence), false)}`;
+}
+
+/* ---- Lobe detail "page" (#/lobe/<id>) ----------------------------------- */
+function nwCrumbs(current) {
+  return `<div class="crumbs"><a href="#" data-back>← Neural Web</a><span class="crumbs-sep">/</span><span class="crumbs-current">${esc(current)}</span></div>`;
+}
+async function renderLobeDetail(id) {
+  CURRENT = "neural_web"; setActiveNav("neural_web");
+  if (RT_TIMER) { clearInterval(RT_TIMER); RT_TIMER = null; }
+  setTopbarTitle("Neural Web");
+  const v = $("#view");
+  v.innerHTML = nwCrumbs(id) + `<div class="skeleton skeleton-title"></div>
+    <div class="metric-tiles-row">${'<div class="skeleton skeleton-card" style="width:120px;height:70px"></div>'.repeat(4)}</div>
+    <div class="skeleton skeleton-card" style="height:120px"></div>`;
+  const d = await api("/api/neural_web/lobe?id=" + encodeURIComponent(id));
+  const wireBack = () => { const b = v.querySelector("[data-back]"); if (b) b.onclick = (e) => { e.preventDefault(); backToObservatory(); }; };
+  if (!d || !d.ok) {
+    v.innerHTML = nwCrumbs(id) + nwEmpty("Unknown lobe", `No lobe with id “${id}”.`);
+    wireBack(); return;
+  }
+  setTopbarTitle(d.label);
+  const met = d.metrics || {}, tr = d.transmission || {};
+  const frac = (met.age_hours != null && met.freshness_sla_hours) ? met.age_hours / met.freshness_sla_hours : null;
+
+  const tiles = [
+    `<div class="metric-tile"><div class="eyebrow">Freshness</div>
+       <div class="tile-value" style="display:flex;align-items:center;gap:8px">${nwRing(frac, 30)}<span>${met.age_hours == null ? "—" : fmtAge(met.age_hours)}</span></div>
+       <div class="tile-sub">${met.freshness_sla_hours ? "SLA " + fmtAge(met.freshness_sla_hours) + (met.sla_met === false ? " · breached" : met.sla_met ? " · on time" : "") : "no SLA"}</div></div>`,
+    `<div class="metric-tile"><div class="eyebrow">Rows</div><div class="tile-value">${met.row_count == null ? "—" : fmtNum(met.row_count)}</div><div class="tile-sub">records</div></div>`,
+    `<div class="metric-tile"><div class="eyebrow">Size</div><div class="tile-value">${met.byte_size == null ? "—" : fmtBytes(met.byte_size)}</div><div class="tile-sub">on disk</div></div>`,
+    `<div class="metric-tile"><div class="eyebrow">Consumers</div><div class="tile-value">${(tr.consumers || []).length + (tr.external_consumers || []).length}</div><div class="tile-sub">downstream readers</div></div>`,
+    `<div class="metric-tile"><div class="eyebrow">As of</div><div class="tile-value" style="font-size:14px">${esc(met.as_of || met.produced_at || "—")}</div><div class="tile-sub">${esc(d.cadence || "")}</div></div>`,
+  ].join("");
+
+  const consumers = (tr.consumers || []).map(c => `<div class="flow-node" data-kind="${esc(c.kind || "module")}">${esc(c.name)}</div>`).join("") || `<div class="sub">no registered consumers</div>`;
+  const external = (tr.external_consumers || []).length
+    ? `<div class="external-consumers"><div class="flow-col-label">External consumers</div>${tr.external_consumers.map(e => `<span class="external-tag">${esc(e)}</span>`).join("")}</div>` : "";
+  const edges = (tr.edges || []);
+  const edgeList = edges.length
+    ? `<div class="edge-list"><div class="flow-col-label">Confluence edges · ${edges.length}</div>
+       <table><thead><tr><th>From</th><th>Type</th><th>To</th><th>Note</th></tr></thead><tbody>
+       ${edges.slice(0, 40).map(e => `<tr><td class="mono sub" style="max-width:180px;word-break:break-all">${esc(e.src)}</td>
+         <td>${nwPill(e.edge_type, EDGE_CLS[e.edge_type] || "s-mut")}${e.n != null ? ` <span class="sub">×${e.n}</span>` : ""}</td>
+         <td class="mono sub" style="max-width:180px;word-break:break-all">${esc(e.dst)}</td>
+         <td class="sub">${esc(e.note || "")}</td></tr>`).join("")}</tbody></table></div>` : "";
+
+  const recent = (d.recent_actions || []);
+  const timeline = recent.length
+    ? `<div class="timeline">${recent.map(a => `<div class="timeline-item">
+        <div class="timeline-ts">${esc(a.ts || "")}</div>
+        <div class="timeline-header"><span class="timeline-kind">${esc(a.kind || "event")}</span></div>
+        <div class="timeline-summary">${esc(a.summary || "")}</div>
+        ${a.source ? `<div class="timeline-source">${esc(a.source)}</div>` : ""}</div>`).join("")}</div>`
+    : nwEmpty("No recent activity", "No firings, governance events, or brief entries are currently attributable to this lobe.");
+
+  v.innerHTML = `
+    ${nwCrumbs(d.label)}
+    ${d.missing ? `<div class="missing-banner"><span>⚠</span><div>This artifact isn't present on this clone — freshness metrics fill in after the nightly pipeline writes it. Its purpose and data flow (below) come from the signal registry and are always available.</div></div>` : ""}
+    <div style="margin-bottom:18px">
+      <div class="nw-hero-row" style="margin-bottom:10px">
+        <span class="status-dot" data-status="${esc(d.status)}" style="width:14px;height:14px"></span>
+        <span style="font-size:24px;font-weight:700;letter-spacing:-.02em">${esc(d.label)}</span>
+        <span class="group-chip" data-group="${esc(d.group)}">${esc(d.group_label || d.group)}</span>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <span class="badge">${esc(d.tier || "—")}</span>
+        <span class="badge">${esc(d.cadence || "—")}</span>
+        <span class="badge">${esc(d.horizon_role || "—")}</span>
+        <span class="badge">${esc(d.storage || "—")}</span>
+      </div>
+    </div>
+    <div class="metric-tiles-row">${tiles}</div>
+    <div class="card"><h3>What it does</h3>
+      <div style="line-height:1.55">${esc(d.description || "No description registered for this lobe.")}</div>
+      <div class="note muted" style="margin-top:10px">Producer <code>${esc(d.producer || "?")}</code> · artifact <code>${esc(d.path || "?")}</code> · source ${esc(d.purpose_source || "config/synapse.yml")}</div>
+    </div>
+    <div class="section">Data transmission</div>
+    <div class="transmission">
+      <div class="flow-layout">
+        <div class="flow-col">
+          <div class="flow-col-label">Producer</div>
+          <div class="flow-node" data-kind="module">${esc(d.producer || "—")}</div>
+        </div>
+        <div class="flow-col" style="align-items:center;justify-content:center">
+          <div class="flow-hub">${esc(d.label)}</div>
+        </div>
+        <div class="flow-col">
+          <div class="flow-col-label">Consumers · ${(tr.consumers || []).length}</div>
+          ${consumers}
+        </div>
+      </div>
+      ${external}
+      ${edgeList}
+    </div>
+    <div class="section">Recent activity <span class="cnt">${recent.length}</span></div>
+    ${timeline}`;
+  wireBack();
+}
 
 /* ---- boot --------------------------------------------------------------- */
 async function boot() {
-  renderTabs();
+  renderSidebar();
   await refresh();
-  go("overview");
+  route();
 }
 (async function init() {
   SESSION = await fetch("/api/session").then(r => r.json()).catch(() => ({ auth_enabled: false, authenticated: true }));

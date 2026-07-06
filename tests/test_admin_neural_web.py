@@ -896,6 +896,352 @@ def test_cortex_memo_legacy_empty_census_degraded(tmp_repo):
     assert rs.get("degraded") is True
 
 
+# ---------------------------------------------------------------------------
+# ROLE A: lobes_panel() tests
+# ---------------------------------------------------------------------------
+
+def test_lobes_panel_smoke():
+    """lobes_panel() returns ok=True, non-empty lobes, required top-level keys."""
+    from admin import neural_web
+    d = neural_web.lobes_panel()
+    assert d.get("ok") is True
+    assert "lobes" in d
+    assert isinstance(d["lobes"], list)
+    assert len(d["lobes"]) > 0, "Must return at least some lobes"
+    for key in ("source", "as_of", "overall_status", "summary_counts", "graph", "groups"):
+        assert key in d, f"Missing key: {key}"
+
+
+def test_lobes_panel_every_lobe_has_required_keys():
+    """Every lobe in lobes_panel() has the required fields per spec."""
+    from admin import neural_web
+    d = neural_web.lobes_panel()
+    required = {
+        "id", "label", "group", "status", "tier", "cadence",
+        "horizon_role", "storage", "producer", "path",
+        "age_hours", "freshness_sla_hours", "sla_met",
+        "row_count", "byte_size", "n_consumers", "n_recent_actions", "short_desc",
+    }
+    for lobe in d["lobes"]:
+        missing = required - set(lobe.keys())
+        assert not missing, f"Lobe {lobe.get('id')} missing keys: {missing}"
+
+
+def test_lobes_panel_groups_cover_all_lobes():
+    """groups[] in lobes_panel() covers exactly all lobes (no lobes dropped)."""
+    from admin import neural_web
+    d = neural_web.lobes_panel()
+    lobes_in_groups = set()
+    for grp in d["groups"]:
+        assert "key" in grp and "label" in grp and "hue" in grp and "lobes" in grp
+        for ls in grp["lobes"]:
+            lobes_in_groups.add(ls["id"])
+    flat_ids = {ls["id"] for ls in d["lobes"]}
+    assert lobes_in_groups == flat_ids, (
+        f"Groups cover {lobes_in_groups} but flat lobes has {flat_ids}"
+    )
+
+
+def test_lobes_panel_group_order():
+    """groups[] are in the correct order: core,kernel,cortex,factor,reflexes,bridge,sensors,ops."""
+    from admin import neural_web
+    d = neural_web.lobes_panel()
+    expected_order = ["core", "kernel", "cortex", "factor", "reflexes", "bridge", "sensors", "ops"]
+    actual_order = [g["key"] for g in d["groups"]]
+    assert actual_order == expected_order, f"Group order wrong: {actual_order}"
+
+
+def test_lobes_panel_summary_counts_consistent():
+    """summary_counts in lobes_panel() is consistent with actual lobe statuses."""
+    from admin import neural_web
+    d = neural_web.lobes_panel()
+    sc = d["summary_counts"]
+    assert sc["total"] == len(d["lobes"])
+    counted = sc["fresh"] + sc["stale"] + sc["missing"] + sc["degraded"] + sc["unknown"] + sc["not_locally_verifiable"]
+    assert counted == sc["total"], f"Status counts don't add up: {sc}"
+
+
+def test_lobes_panel_world_state_is_core():
+    """world-state lobe is in the 'core' group."""
+    from admin import neural_web
+    d = neural_web.lobes_panel()
+    core_ids = {ls["id"] for grp in d["groups"] if grp["key"] == "core" for ls in grp["lobes"]}
+    assert "world-state" in core_ids, "world-state must be in core group"
+
+
+# ---------------------------------------------------------------------------
+# ROLE A: lobe_detail() tests
+# ---------------------------------------------------------------------------
+
+def test_lobe_detail_world_state_ok():
+    """lobe_detail('world-state') returns ok=True with required keys."""
+    from admin import neural_web
+    d = neural_web.lobe_detail("world-state")
+    assert d.get("ok") is True
+    for key in ("id", "label", "group", "group_label", "hue", "status", "tier",
+                "cadence", "horizon_role", "storage", "producer", "path", "format",
+                "description", "purpose_source", "metrics", "transmission",
+                "recent_actions", "health_detail", "missing"):
+        assert key in d, f"lobe_detail missing key: {key}"
+
+
+def test_lobe_detail_world_state_description():
+    """lobe_detail('world-state') returns a non-empty description."""
+    from admin import neural_web
+    d = neural_web.lobe_detail("world-state")
+    assert d["description"], "description must be non-empty for world-state"
+    assert d["purpose_source"] == "config/synapse.yml"
+
+
+def test_lobe_detail_world_state_transmission_consumers():
+    """lobe_detail('world-state') transmission.consumers is non-empty."""
+    from admin import neural_web
+    d = neural_web.lobe_detail("world-state")
+    tx = d["transmission"]
+    assert "producer" in tx
+    assert "consumers" in tx
+    assert isinstance(tx["consumers"], list)
+    assert len(tx["consumers"]) > 0, "world-state must have at least one consumer"
+
+
+def test_lobe_detail_world_state_metrics():
+    """lobe_detail('world-state') metrics has required fields."""
+    from admin import neural_web
+    d = neural_web.lobe_detail("world-state")
+    m = d["metrics"]
+    for key in ("age_hours", "freshness_sla_hours", "sla_met", "as_of",
+                "produced_at", "row_count", "byte_size", "exists_locally", "gaps"):
+        assert key in m, f"metrics missing key: {key}"
+    assert isinstance(m["gaps"], list)
+
+
+def test_lobe_detail_unknown_id():
+    """lobe_detail on unknown id returns ok=False with error and known_ids."""
+    from admin import neural_web
+    d = neural_web.lobe_detail("__nope__")
+    assert d.get("ok") is False
+    assert "error" in d
+    assert "known_ids" in d
+    assert isinstance(d["known_ids"], list)
+    assert len(d["known_ids"]) > 0
+
+
+def test_lobe_detail_empty_id():
+    """lobe_detail('') returns ok=False (same as unknown id)."""
+    from admin import neural_web
+    d = neural_web.lobe_detail("")
+    assert d.get("ok") is False
+
+
+def test_lobe_detail_fixture(tmp_repo):
+    """lobe_detail with fixture synapse.yml + patched root returns expected shape."""
+    from admin import neural_web
+
+    # Build a richer synapse.yml with neural-web owner and consumers
+    synapse_yaml = """
+meta:
+  schema_version: 1
+artifacts:
+  world-state:
+    path: data/neuralweb/world_state.json
+    format: json
+    producer: engine/neuralweb/world_state.py
+    known_extra_writers: []
+    owner_program: neural-web
+    cadence: daily-engine
+    storage: git
+    freshness_sla_hours: 30
+    tier: infrastructure
+    horizon_role: context
+    consumers:
+      - engine/neuralweb/cortex.py
+      - engine/neuralweb/kernel.py
+    external_consumers:
+      - mastermind:context
+    notes: "The world state artifact is the central hub of the Neural Web."
+"""
+    (tmp_repo / "config" / "synapse.yml").write_text(synapse_yaml)
+    # Create the artifact file
+    (tmp_repo / "data" / "neuralweb" / "world_state.json").write_text(
+        json.dumps({"as_of": "2026-07-06"})
+    )
+
+    old_root = neural_web._ROOT
+    neural_web._ROOT = tmp_repo
+    neural_web._DATA_NW = tmp_repo / "data" / "neuralweb"
+    neural_web._CONFIG = tmp_repo / "config"
+    neural_web._DATA_REFLEXES = tmp_repo / "data" / "reflexes"
+    neural_web._SYNAPSE_YML = neural_web._CONFIG / "synapse.yml"
+    neural_web._CONFLUENCE_GRAPH = neural_web._DATA_NW / "confluence_graph.json"
+    neural_web._GOVERNANCE_JSONL = neural_web._DATA_NW / "governance.jsonl"
+    neural_web._CORTEX_MEMO = neural_web._DATA_NW / "cortex" / "memo.json"
+    neural_web._NW_HEALTH_JSON = neural_web._DATA_NW / "health.json"
+    neural_web._NW_DAILY_BRIEF_JSON = neural_web._DATA_NW / "daily_brief.json"
+
+    try:
+        d = neural_web.lobe_detail("world-state")
+        assert d["ok"] is True
+        assert d["id"] == "world-state"
+        assert d["group"] == "core"
+        assert "Neural Web" in d["description"] or "world state" in d["description"].lower()
+        tx = d["transmission"]
+        assert tx["producer"] == "engine/neuralweb/world_state.py"
+        assert len(tx["consumers"]) == 2
+        assert tx["external_consumers"] == ["mastermind:context"]
+        assert d["metrics"]["exists_locally"] is True
+    finally:
+        neural_web._ROOT = old_root
+        neural_web._DATA_NW = old_root / "data" / "neuralweb"
+        neural_web._CONFIG = old_root / "config"
+        neural_web._DATA_REFLEXES = old_root / "data" / "reflexes"
+        neural_web._SYNAPSE_YML = neural_web._CONFIG / "synapse.yml"
+        neural_web._CONFLUENCE_GRAPH = neural_web._DATA_NW / "confluence_graph.json"
+        neural_web._GOVERNANCE_JSONL = neural_web._DATA_NW / "governance.jsonl"
+        neural_web._CORTEX_MEMO = neural_web._DATA_NW / "cortex" / "memo.json"
+        neural_web._NW_HEALTH_JSON = neural_web._DATA_NW / "health.json"
+        neural_web._NW_DAILY_BRIEF_JSON = neural_web._DATA_NW / "daily_brief.json"
+
+
+def test_lobe_detail_fixture_missing_artifact(tmp_repo):
+    """lobe_detail returns missing=True when artifact file absent (git storage)."""
+    from admin import neural_web
+
+    synapse_yaml = """
+meta:
+  schema_version: 1
+artifacts:
+  world-state:
+    path: data/neuralweb/world_state.json
+    format: json
+    producer: engine/neuralweb/world_state.py
+    known_extra_writers: []
+    owner_program: neural-web
+    cadence: daily-engine
+    storage: git
+    freshness_sla_hours: 30
+    tier: infrastructure
+    horizon_role: context
+    consumers: []
+    external_consumers: []
+    notes: "The world state artifact."
+"""
+    (tmp_repo / "config" / "synapse.yml").write_text(synapse_yaml)
+    # Do NOT create the artifact file
+
+    old_root = neural_web._ROOT
+    neural_web._ROOT = tmp_repo
+    neural_web._DATA_NW = tmp_repo / "data" / "neuralweb"
+    neural_web._CONFIG = tmp_repo / "config"
+    neural_web._DATA_REFLEXES = tmp_repo / "data" / "reflexes"
+    neural_web._SYNAPSE_YML = neural_web._CONFIG / "synapse.yml"
+    neural_web._CONFLUENCE_GRAPH = neural_web._DATA_NW / "confluence_graph.json"
+    neural_web._GOVERNANCE_JSONL = neural_web._DATA_NW / "governance.jsonl"
+    neural_web._CORTEX_MEMO = neural_web._DATA_NW / "cortex" / "memo.json"
+    neural_web._NW_HEALTH_JSON = neural_web._DATA_NW / "health.json"
+    neural_web._NW_DAILY_BRIEF_JSON = neural_web._DATA_NW / "daily_brief.json"
+
+    try:
+        d = neural_web.lobe_detail("world-state")
+        assert d["ok"] is True
+        assert d["missing"] is True
+        assert d["metrics"]["exists_locally"] is False
+        assert d["status"] == "missing"
+    finally:
+        neural_web._ROOT = old_root
+        neural_web._DATA_NW = old_root / "data" / "neuralweb"
+        neural_web._CONFIG = old_root / "config"
+        neural_web._DATA_REFLEXES = old_root / "data" / "reflexes"
+        neural_web._SYNAPSE_YML = neural_web._CONFIG / "synapse.yml"
+        neural_web._CONFLUENCE_GRAPH = neural_web._DATA_NW / "confluence_graph.json"
+        neural_web._GOVERNANCE_JSONL = neural_web._DATA_NW / "governance.jsonl"
+        neural_web._CORTEX_MEMO = neural_web._DATA_NW / "cortex" / "memo.json"
+        neural_web._NW_HEALTH_JSON = neural_web._DATA_NW / "health.json"
+        neural_web._NW_DAILY_BRIEF_JSON = neural_web._DATA_NW / "daily_brief.json"
+
+
+def test_lobes_panel_fixture(tmp_repo):
+    """lobes_panel() with fixture synapse.yml returns expected structure."""
+    from admin import neural_web
+
+    synapse_yaml = """
+meta:
+  schema_version: 1
+artifacts:
+  world-state:
+    path: data/neuralweb/world_state.json
+    format: json
+    producer: engine/neuralweb/world_state.py
+    known_extra_writers: []
+    owner_program: neural-web
+    cadence: daily-engine
+    storage: git
+    freshness_sla_hours: 30
+    tier: infrastructure
+    horizon_role: context
+    consumers:
+      - engine/neuralweb/cortex.py
+    external_consumers:
+      - mastermind:context
+    notes: "The world state artifact is the central hub."
+  kernel-estimates:
+    path: data/neuralweb/kernel_estimates.parquet
+    format: parquet
+    producer: engine/neuralweb/kernel.py
+    known_extra_writers: []
+    owner_program: neural-web
+    cadence: weekly
+    storage: git
+    freshness_sla_hours: 200
+    tier: shadow
+    horizon_role: context
+    consumers: []
+    external_consumers: []
+    notes: "Kernel estimates for signal weights."
+"""
+    (tmp_repo / "config" / "synapse.yml").write_text(synapse_yaml)
+    (tmp_repo / "data" / "neuralweb" / "world_state.json").write_text("{}")
+    (tmp_repo / "data" / "neuralweb" / "kernel_estimates.parquet").write_bytes(b"fake")
+
+    old_root = neural_web._ROOT
+    neural_web._ROOT = tmp_repo
+    neural_web._DATA_NW = tmp_repo / "data" / "neuralweb"
+    neural_web._CONFIG = tmp_repo / "config"
+    neural_web._DATA_REFLEXES = tmp_repo / "data" / "reflexes"
+    neural_web._SYNAPSE_YML = neural_web._CONFIG / "synapse.yml"
+    neural_web._CONFLUENCE_GRAPH = neural_web._DATA_NW / "confluence_graph.json"
+    neural_web._GOVERNANCE_JSONL = neural_web._DATA_NW / "governance.jsonl"
+    neural_web._CORTEX_MEMO = neural_web._DATA_NW / "cortex" / "memo.json"
+    neural_web._NW_HEALTH_JSON = neural_web._DATA_NW / "health.json"
+    neural_web._NW_DAILY_BRIEF_JSON = neural_web._DATA_NW / "daily_brief.json"
+
+    try:
+        d = neural_web.lobes_panel()
+        assert d["ok"] is True
+        assert d["summary_counts"]["total"] == 2
+        flat_ids = {ls["id"] for ls in d["lobes"]}
+        assert "world-state" in flat_ids
+        assert "kernel-estimates" in flat_ids
+        # Groups cover all lobes
+        grp_ids = {ls["id"] for g in d["groups"] for ls in g["lobes"]}
+        assert grp_ids == flat_ids
+        # world-state is core, kernel-estimates is kernel
+        ws = next(ls for ls in d["lobes"] if ls["id"] == "world-state")
+        ke = next(ls for ls in d["lobes"] if ls["id"] == "kernel-estimates")
+        assert ws["group"] == "core"
+        assert ke["group"] == "kernel"
+    finally:
+        neural_web._ROOT = old_root
+        neural_web._DATA_NW = old_root / "data" / "neuralweb"
+        neural_web._CONFIG = old_root / "config"
+        neural_web._DATA_REFLEXES = old_root / "data" / "reflexes"
+        neural_web._SYNAPSE_YML = neural_web._CONFIG / "synapse.yml"
+        neural_web._CONFLUENCE_GRAPH = neural_web._DATA_NW / "confluence_graph.json"
+        neural_web._GOVERNANCE_JSONL = neural_web._DATA_NW / "governance.jsonl"
+        neural_web._CORTEX_MEMO = neural_web._DATA_NW / "cortex" / "memo.json"
+        neural_web._NW_HEALTH_JSON = neural_web._DATA_NW / "health.json"
+        neural_web._NW_DAILY_BRIEF_JSON = neural_web._DATA_NW / "daily_brief.json"
+
+
 if __name__ == "__main__":
     import pytest as _pytest
     _pytest.main([__file__, "-v"])
