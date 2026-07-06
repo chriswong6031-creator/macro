@@ -1,0 +1,638 @@
+{
+  "results": [
+    {
+      "ticker": "AAPL",
+      "cik": 320193,
+      "filing_index_ms": 950,
+      "filing_dates": [
+        "2025-10-31",
+        "2024-11-01"
+      ],
+      "fetch_ms": [
+        1301,
+        1306
+      ],
+      "doc_bytes": [
+        1520208,
+        1503780
+      ],
+      "parse_ms": [
+        12,
+        15
+      ],
+      "doc_words": [
+        32213,
+        31879
+      ],
+      "item1a_available": false,
+      "cosine_whole": 0.9422914839670379,
+      "jaccard_whole": 0.5932513011408679,
+      "len_delta_whole": 0.0103684847732282,
+      "cosine_1a": null,
+      "jaccard_1a": null,
+      "len_delta_1a": null,
+      "sim_compute_ms": 43
+    },
+    {
+      "ticker": "MSFT",
+      "cik": 789019,
+      "filing_index_ms": 912,
+      "filing_dates": [
+        "2025-07-30",
+        "2024-07-30"
+      ],
+      "fetch_ms": [
+        1757,
+        2813
+      ],
+      "doc_bytes": [
+        8158067,
+        6860911
+      ],
+      "parse_ms": [
+        27,
+        32
+      ],
+      "doc_words": [
+        49356,
+        55579
+      ],
+      "item1a_available": false,
+      "cosine_whole": 0.9371489725307783,
+      "jaccard_whole": 0.5911927259761098,
+      "len_delta_whole": 0.1119667500314867,
+      "cosine_1a": null,
+      "jaccard_1a": null,
+      "len_delta_1a": null,
+      "sim_compute_ms": 66
+    },
+    {
+      "ticker": "NVDA",
+      "cik": 1045810,
+      "filing_index_ms": 865,
+      "filing_dates": [
+        "2026-02-25",
+        "2025-02-26"
+      ],
+      "fetch_ms": [
+        1339,
+        1351
+      ],
+      "doc_bytes": [
+        1967816,
+        2067520
+      ],
+      "parse_ms": [
+        17,
+        13
+      ],
+      "doc_words": [
+        53068,
+        54442
+      ],
+      "item1a_available": false,
+      "cosine_whole": 0.935267053334619,
+      "jaccard_whole": 0.6287554079887313,
+      "len_delta_whole": 0.025237867822636935,
+      "cosine_1a": null,
+      "jaccard_1a": null,
+      "len_delta_1a": null,
+      "sim_compute_ms": 67
+    },
+    {
+      "ticker": "AMAT",
+      "cik": 796343,
+      "filing_index_ms": 876,
+      "filing_dates": [
+        "2026-01-15",
+        "2025-01-13"
+      ],
+      "fetch_ms": [
+        2623,
+        1427
+      ],
+      "doc_bytes": [
+        2321176,
+        2405027
+      ],
+      "parse_ms": [
+        18,
+        19
+      ],
+      "doc_words": [
+        53403,
+        58034
+      ],
+      "item1a_available": false,
+      "cosine_whole": 0.9247286532519238,
+      "jaccard_whole": 0.5280098763664991,
+      "len_delta_whole": 0.07979804941930592,
+      "cosine_1a": null,
+      "jaccard_1a": null,
+      "len_delta_1a": null,
+      "sim_compute_ms": 74
+    },
+    {
+      "ticker": "JNJ",
+      "cik": 200406,
+      "filing_index_ms": 918,
+      "filing_dates": [
+        "2026-02-11",
+        "2025-02-13"
+      ],
+      "fetch_ms": [
+        1630,
+        2172
+      ],
+      "doc_bytes": [
+        3701587,
+        3662321
+      ],
+      "parse_ms": [
+        25,
+        27
+      ],
+      "doc_words": [
+        69408,
+        69840
+      ],
+      "item1a_available": true,
+      "cosine_whole": 0.9519052944349305,
+      "jaccard_whole": 0.5738875305623472,
+      "len_delta_whole": 0.006185567010309278,
+      "cosine_1a": 0.9765907766477744,
+      "jaccard_1a": 0.9098474341192788,
+      "len_delta_1a": 0.0513595166163142,
+      "sim_compute_ms": 99
+    },
+    {
+      "ticker": "UNH",
+      "cik": 731766,
+      "filing_index_ms": 912,
+      "filing_dates": [
+        "2026-03-02",
+        "2025-02-27"
+      ],
+      "fetch_ms": [
+        1579,
+        1646
+      ],
+      "doc_bytes": [
+        2870606,
+        2823139
+      ],
+      "parse_ms": [
+        20,
+        17
+      ],
+      "doc_words": [
+        52100,
+        49744
+      ],
+      "item1a_available": false,
+      "cosine_whole": 0.9466099204834163,
+      "jaccard_whole": 0.6146240945799684,
+      "len_delta_whole": 0.04522072936660269,
+      "cosine_1a": null,
+      "jaccard_1a": null,
+      "len_delta_1a": null,
+      "sim_compute_ms": 62
+    },
+    {
+      "ticker": "HOLX",
+      "cik": 859737,
+      "filing_index_ms": 864,
+      "filing_dates": [
+        "2025-11-18",
+        "2024-11-27"
+      ],
+      "fetch_ms": [
+        1776,
+        1651
+      ],
+      "doc_bytes": [
+        3225312,
+        3101710
+      ],
+      "parse_ms": [
+        20,
+        19
+      ],
+      "doc_words": [
+        75441,
+        72862
+      ],
+      "item1a_available": false,
+      "cosine_whole": 0.9551391274747684,
+      "jaccard_whole": 0.6391529411764706,
+      "len_delta_whole": 0.034185655015177424,
+      "cosine_1a": null,
+      "jaccard_1a": null,
+      "len_delta_1a": null,
+      "sim_compute_ms": 88
+    },
+    {
+      "ticker": "JPM",
+      "cik": 19617,
+      "filing_index_ms": 1888,
+      "error": "only 1 10-Ks"
+    },
+    {
+      "ticker": "BRK-B",
+      "cik": 1067983,
+      "filing_index_ms": 928,
+      "filing_dates": [
+        "2026-03-02",
+        "2025-02-24"
+      ],
+      "fetch_ms": [
+        3362,
+        3634
+      ],
+      "doc_bytes": [
+        10396820,
+        10744089
+      ],
+      "parse_ms": [
+        40,
+        41
+      ],
+      "doc_words": [
+        78114,
+        78888
+      ],
+      "item1a_available": false,
+      "cosine_whole": 0.9663442019817382,
+      "jaccard_whole": 0.5583403347767079,
+      "len_delta_whole": 0.009811378156373594,
+      "cosine_1a": null,
+      "jaccard_1a": null,
+      "len_delta_1a": null,
+      "sim_compute_ms": 107
+    },
+    {
+      "ticker": "RF",
+      "cik": 49196,
+      "filing_index_ms": 868,
+      "filing_dates": [
+        "2026-02-13",
+        "2025-02-14"
+      ],
+      "fetch_ms": [
+        2118,
+        3323
+      ],
+      "doc_bytes": [
+        7722706,
+        7353904
+      ],
+      "parse_ms": [
+        36,
+        37
+      ],
+      "doc_words": [
+        103936,
+        95711
+      ],
+      "item1a_available": false,
+      "cosine_whole": 0.9536637046201598,
+      "jaccard_whole": 0.5896481182824795,
+      "len_delta_whole": 0.07913523706896551,
+      "cosine_1a": null,
+      "jaccard_1a": null,
+      "len_delta_1a": null,
+      "sim_compute_ms": 120
+    },
+    {
+      "ticker": "AMZN",
+      "cik": 1018724,
+      "filing_index_ms": 881,
+      "filing_dates": [
+        "2026-02-06",
+        "2025-02-07"
+      ],
+      "fetch_ms": [
+        1438,
+        1359
+      ],
+      "doc_bytes": [
+        1968342,
+        1922355
+      ],
+      "parse_ms": [
+        16,
+        16
+      ],
+      "doc_words": [
+        44517,
+        43952
+      ],
+      "item1a_available": false,
+      "cosine_whole": 0.952361188570697,
+      "jaccard_whole": 0.6686136876410128,
+      "len_delta_whole": 0.012691780668059392,
+      "cosine_1a": null,
+      "jaccard_1a": null,
+      "len_delta_1a": null,
+      "sim_compute_ms": 56
+    },
+    {
+      "ticker": "MCD",
+      "cik": 63754,
+      "filing_index_ms": 783,
+      "filing_dates": [
+        "2026-01-22",
+        "2025-01-23"
+      ],
+      "fetch_ms": [
+        1374,
+        3744
+      ],
+      "doc_bytes": [
+        2544731,
+        2587402
+      ],
+      "parse_ms": [
+        23,
+        19
+      ],
+      "doc_words": [
+        54775,
+        56467
+      ],
+      "item1a_available": true,
+      "cosine_whole": 0.9612250755124352,
+      "jaccard_whole": 0.630563709339244,
+      "len_delta_whole": 0.02996440398817008,
+      "cosine_1a": 0.9641422821198237,
+      "jaccard_1a": 0.8322713035965007,
+      "len_delta_1a": 0.006564993435006565,
+      "sim_compute_ms": 83
+    },
+    {
+      "ticker": "PG",
+      "cik": 80424,
+      "filing_index_ms": 895,
+      "filing_dates": [
+        "2025-08-04",
+        "2024-08-05"
+      ],
+      "fetch_ms": [
+        1909,
+        2197
+      ],
+      "doc_bytes": [
+        2491287,
+        2458121
+      ],
+      "parse_ms": [
+        15,
+        17
+      ],
+      "doc_words": [
+        48468,
+        47884
+      ],
+      "item1a_available": false,
+      "cosine_whole": 0.9607292129099948,
+      "jaccard_whole": 0.6782957416722687,
+      "len_delta_whole": 0.012049187092514648,
+      "cosine_1a": null,
+      "jaccard_1a": null,
+      "len_delta_1a": null,
+      "sim_compute_ms": 64
+    },
+    {
+      "ticker": "KO",
+      "cik": 21344,
+      "filing_index_ms": 930,
+      "filing_dates": [
+        "2026-02-20",
+        "2025-02-20"
+      ],
+      "fetch_ms": [
+        1623,
+        1571
+      ],
+      "doc_bytes": [
+        3758140,
+        3930907
+      ],
+      "parse_ms": [
+        30,
+        28
+      ],
+      "doc_words": [
+        96120,
+        96563
+      ],
+      "item1a_available": false,
+      "cosine_whole": 0.9661352254602584,
+      "jaccard_whole": 0.7075590028978821,
+      "len_delta_whole": 0.004587678510402535,
+      "cosine_1a": null,
+      "jaccard_1a": null,
+      "len_delta_1a": null,
+      "sim_compute_ms": 119
+    },
+    {
+      "ticker": "XOM",
+      "cik": 34088,
+      "filing_index_ms": 798,
+      "filing_dates": [
+        "2026-02-18",
+        "2025-02-19"
+      ],
+      "fetch_ms": [
+        1677,
+        1579
+      ],
+      "doc_bytes": [
+        5591068,
+        5980900
+      ],
+      "parse_ms": [
+        26,
+        30
+      ],
+      "doc_words": [
+        66965,
+        70149
+      ],
+      "item1a_available": false,
+      "cosine_whole": 0.9696802121099624,
+      "jaccard_whole": 0.5819580908772934,
+      "len_delta_whole": 0.04538910034355444,
+      "cosine_1a": null,
+      "jaccard_1a": null,
+      "len_delta_1a": null,
+      "sim_compute_ms": 87
+    },
+    {
+      "ticker": "SLB",
+      "cik": 87347,
+      "filing_index_ms": 714,
+      "filing_dates": [
+        "2026-01-23",
+        "2025-01-22"
+      ],
+      "fetch_ms": [
+        1910,
+        1906
+      ],
+      "doc_bytes": [
+        7331565,
+        6446192
+      ],
+      "parse_ms": [
+        27,
+        22
+      ],
+      "doc_words": [
+        38203,
+        36603
+      ],
+      "item1a_available": false,
+      "cosine_whole": 0.9324305010871573,
+      "jaccard_whole": 0.546763183970054,
+      "len_delta_whole": 0.04188152762872026,
+      "cosine_1a": null,
+      "jaccard_1a": null,
+      "len_delta_1a": null,
+      "sim_compute_ms": 47
+    },
+    {
+      "ticker": "CAT",
+      "cik": 18230,
+      "filing_index_ms": 968,
+      "filing_dates": [
+        "2026-02-13",
+        "2025-02-14"
+      ],
+      "fetch_ms": [
+        2985,
+        2587
+      ],
+      "doc_bytes": [
+        6100469,
+        6101295
+      ],
+      "parse_ms": [
+        28,
+        30
+      ],
+      "doc_words": [
+        72915,
+        72665
+      ],
+      "item1a_available": false,
+      "cosine_whole": 0.9636218506603571,
+      "jaccard_whole": 0.6206577645092727,
+      "len_delta_whole": 0.003428649797709662,
+      "cosine_1a": null,
+      "jaccard_1a": null,
+      "len_delta_1a": null,
+      "sim_compute_ms": 97
+    },
+    {
+      "ticker": "HON",
+      "cik": 773840,
+      "filing_index_ms": 719,
+      "filing_dates": [
+        "2026-02-17",
+        "2025-02-14"
+      ],
+      "fetch_ms": [
+        1779,
+        1618
+      ],
+      "doc_bytes": [
+        5132529,
+        4714491
+      ],
+      "parse_ms": [
+        30,
+        30
+      ],
+      "doc_words": [
+        73236,
+        67992
+      ],
+      "item1a_available": false,
+      "cosine_whole": 0.9329863760175053,
+      "jaccard_whole": 0.5576089954730574,
+      "len_delta_whole": 0.07160412911682779,
+      "cosine_1a": null,
+      "jaccard_1a": null,
+      "len_delta_1a": null,
+      "sim_compute_ms": 86
+    },
+    {
+      "ticker": "LIN",
+      "cik": 1707092,
+      "filing_index_ms": 659,
+      "filing_dates": [
+        "2020-02-13",
+        "2019-02-21"
+      ],
+      "fetch_ms": [
+        2683,
+        1362
+      ],
+      "doc_bytes": [
+        4261477,
+        3152574
+      ],
+      "parse_ms": [
+        22,
+        21
+      ],
+      "doc_words": [
+        61245,
+        59968
+      ],
+      "item1a_available": false,
+      "cosine_whole": 0.9142932844928514,
+      "jaccard_whole": 0.5684255024787671,
+      "len_delta_whole": 0.020850681688301086,
+      "cosine_1a": null,
+      "jaccard_1a": null,
+      "len_delta_1a": null,
+      "sim_compute_ms": 73
+    },
+    {
+      "ticker": "NEE",
+      "cik": 753308,
+      "filing_index_ms": 801,
+      "filing_dates": [
+        "2026-02-13",
+        "2025-02-14"
+      ],
+      "fetch_ms": [
+        1663,
+        1716
+      ],
+      "doc_bytes": [
+        4642182,
+        4559491
+      ],
+      "parse_ms": [
+        25,
+        26
+      ],
+      "doc_words": [
+        87582,
+        86666
+      ],
+      "item1a_available": false,
+      "cosine_whole": 0.9608978956985482,
+      "jaccard_whole": 0.6372557337179379,
+      "len_delta_whole": 0.010458770066908726,
+      "cosine_1a": null,
+      "jaccard_1a": null,
+      "len_delta_1a": null,
+      "sim_compute_ms": 107
+    }
+  ],
+  "total_elapsed_s": 96.23634195327759
+}
