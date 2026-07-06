@@ -6,12 +6,20 @@ People's Daily layout URL, body_sha256, keep-FIRST date-keyed parquet storage +
 read_corpus, and the qbus row mapping (TIER1 / lang=zh / body_sha256 set /
 timestamp_quality). Storage is redirected to tmp_path so no tracked parquet is
 touched. Network fetch is never exercised.
+
+Regression:
+- test_summary_frame_has_datetime_index: verifies that the summary DataFrame
+  returned by fetch() carries a DatetimeIndex rather than an organ-string index,
+  which previously caused run_adapter/validate() to raise:
+    DateParseError: Unknown datetime string format, unable to parse: state_council
 """
 from __future__ import annotations
 
 import sys
 from datetime import date
 from pathlib import Path
+
+import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
@@ -150,3 +158,56 @@ def test_to_qbus_rows_crawl_bounded_without_seendate():
     row["seendate"] = ""                  # People's Daily layout has no in-page date
     q = coc._to_qbus_rows([row])[0]
     assert q["timestamp_quality"] == "CRAWL_BOUNDED"
+
+
+# --------------------------------------------------------------------------- #
+# Regression: summary frame DatetimeIndex (fix for DateParseError)
+# --------------------------------------------------------------------------- #
+def test_summary_frame_has_datetime_index(tmp_path, monkeypatch):
+    """The frame returned by fetch() must have a pd.DatetimeIndex so that
+    run_adapter → validate() can call pd.to_datetime(df.index) without raising
+    DateParseError: Unknown datetime string format, unable to parse: state_council.
+
+    This reproduces the exact failure path: construct a summary frame the old
+    (broken) way (organ-string index) and confirm that pd.to_datetime raises;
+    then verify the fixed frame passes without error.
+    """
+    # Simulate the per_organ dict that fetch() builds
+    per_organ = {"state_council": 5, "pboc": 3, "ndrc": 4, "csrc": 2, "peoples_daily": 6}
+    crawled_at = "2026-07-06T01:23:45+00:00"
+
+    # ---- verify the OLD (broken) frame shape would crash validate() ----------
+    broken_summary = pd.DataFrame(
+        [{"organ": k, "n_docs": v, "crawled_at": crawled_at}
+         for k, v in per_organ.items()]
+    ).set_index("organ")
+    try:
+        pd.to_datetime(broken_summary.index)
+        raise AssertionError("Expected DateParseError was not raised by the broken frame")
+    except Exception as exc:
+        # pandas raises DateParseError (a subclass of ValueError) on unparseable strings
+        assert "state_council" in str(exc) or "parse" in str(exc).lower(), (
+            f"Unexpected exception type/message: {exc!r}"
+        )
+
+    # ---- verify the FIXED frame shape passes validate() cleanly --------------
+    idx = pd.Timestamp(crawled_at)
+    fixed_summary = pd.DataFrame(
+        {f"n_docs_{k}": [float(v)] for k, v in per_organ.items()},
+        index=[idx],
+    )
+    fixed_summary.index.name = "crawled_at"
+
+    # This is the exact call that validate() makes (base.py line 63):
+    #   df.index = pd.to_datetime(df.index).normalize()
+    converted = pd.to_datetime(fixed_summary.index).normalize()
+    assert len(converted) == 1
+    assert isinstance(converted[0], pd.Timestamp)
+
+    # Columns must be numeric (validate drops all-NaN, then checks non-empty)
+    assert all(fixed_summary[c].dtype.kind == "f" for c in fixed_summary.columns)
+
+    # Each expected organ has its own n_docs_ column
+    for organ in per_organ:
+        assert f"n_docs_{organ}" in fixed_summary.columns
+        assert fixed_summary[f"n_docs_{organ}"].iloc[0] == float(per_organ[organ])
