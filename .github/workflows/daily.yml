@@ -955,6 +955,14 @@ jobs:
         # engine-render.yml (express lane) also runs this step — its regime/market_state
         # recompute would otherwise drift ahead of the committed world_state copies.
         run: python -m scripts.build_world_state || echo "::warning::build_world_state failed (non-fatal) — keeping last committed world_state"
+      - name: build mastermind context (NW bridge)
+        if: always()
+        # NW → Mastermind bridge W1: compile data/neuralweb/mastermind_context.json and
+        # site/neuralwebdata/mastermind_context.json from committed NW outputs.
+        # Must run AFTER build world state so world_state.json is fresh.
+        # Resilient: fail-open; kept last committed context on error; never blocks the commit.
+        # Both outputs covered by 'git add data/ site/' in 'commit engine outputs' below.
+        run: python -m scripts.build_nw_mastermind_context || echo "::warning::build_nw_mastermind_context failed (non-fatal) — keeping last committed mastermind_context"
       - name: options_flow_attention reflex trigger (W-D — nightly EOD fold)
         if: always()
         # Neural Web W-D (RO-8): direction-free reflex that fires when an on-board
