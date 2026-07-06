@@ -243,10 +243,20 @@ def _build_scorecard_block(repo: Path, gaps: list[str]) -> dict[str, Any]:
 # ---------------------------------------------------------------------------
 
 def _build_factor_weather_block(repo: Path, gaps: list[str]) -> dict[str, Any]:
-    """Call _compose_factor_weather from engine.neuralweb.world_state (RUL-NW2 reuse)."""
+    """Call _compose_factor_weather from engine.neuralweb.world_state (RUL-NW2 reuse).
+
+    IMPORTANT: always passes prefer_artifact=False so the builder recomputes
+    factor_weather fresh from the panel on every run, rather than reading and
+    re-emitting the prior night's committed artifact verbatim.  The artifact
+    path (prefer_artifact=True, the default) is intentionally reserved for the
+    world_state lobe which consumes the committed state as its canonical source
+    (RUL-NW2).  Using the default here would freeze style_regime, factor_leader,
+    factor_leader_ic, and ETF ratios at day-1 values forever — the circular-
+    staleness freeze caught during Opus review of PR-2.
+    """
     try:
         from engine.neuralweb.world_state import _compose_factor_weather  # type: ignore[import]
-        result = _compose_factor_weather(root=repo)
+        result = _compose_factor_weather(root=repo, prefer_artifact=False)
         return result if isinstance(result, dict) else {}
     except Exception as exc:  # noqa: BLE001
         gaps.append(f"factor_weather: _compose_factor_weather failed: {exc}")

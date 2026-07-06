@@ -2,7 +2,7 @@
 
 **Program:** Factor Intelligence
 **Created:** 2026-07-04
-**Status:** DRAFT — pending Fable merge. Once merged, this document is locked.
+**Status:** LOCKED at merge (PR #1357, 2026-07-05). Administrative status-line correction 2026-07-06 per RUL-NW13 (research/factor_intelligence/NW_INTEGRATION_ADJUDICATION_BY_FABLE.md) — no gate content changed; §0 lock clause governs.
 **Author:** Sonnet subagent under Fable orchestration
 **Cross-reference:** research/FACTOR_INTELLIGENCE_MASTERPLAN_BY_FABLE.md §3 (frozen definitions); masterplan rulings D-1 through D-9.
 

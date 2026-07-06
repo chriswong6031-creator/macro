@@ -416,7 +416,14 @@ class TestRealRegistryFirewallClean:
             # W2 PR-K moat falsifier sensors and great-company-trap overlay
             "moat-falsifier-sensors",
             "great-company-trap",
-            # LT-3a buyback execution reader + capital allocation display block
+            # LT-2a expect_drift feature panel — hold_thesis by design; display-only
+            "long-hold-expect-drift-manifest",
+            "long-hold-expect-drift-panel",
+            # LT-3b insider_sponsor_lh family F4 artifacts — display/research tier only
+            "insider-lh-panel",
+            "insider-lh-panel-manifest",
+            "insider-lh-ruler-p-results",
+            # LT-3a capital allocation display block — hold_thesis by design; display-only
             "capital-allocation-delta",
         }
         reg = load_registry(REPO_ROOT)
