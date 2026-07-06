@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  com.macro.bd_avoid1_stamper.plist — launchd agent for the BD-AVOID-1 Phase-1 stamper.
+
+  Authority: research/short_side/BD_AVOID1_PHASE1_PREREG.md §10
+  Program:   L1 Short-Side Lobe Phase-1 (ops lane, Mac-only — never on CI runners).
+
+  Runs bd_avoid1_stamper on weekdays at 17:00 ET — after the nightly oracle run
+  that refreshes replay_boarded (~16:30 ET finish). This gives oracle_nightly full
+  priority and ensures replay_boarded is current before BD-2 detection reads it.
+
+  INSTALL (as the mac user who runs the Mac Studio — not root):
+    cp ops/launchd/com.macro.bd_avoid1_stamper.plist ~/Library/LaunchAgents/
+    launchctl load ~/Library/LaunchAgents/com.macro.bd_avoid1_stamper.plist
+
+  UNINSTALL:
+    launchctl unload ~/Library/LaunchAgents/com.macro.bd_avoid1_stamper.plist
+    rm ~/Library/LaunchAgents/com.macro.bd_avoid1_stamper.plist
+
+  DO NOT load this plist directly from the repo. Copy first.
+
+  ENV FILE:
+    Sources /Users/chriswong/Documents/Cluade/Macro Dashboard/.env via run_with_env.sh.
+    No R2 credentials required (no upload in this lane).
+
+  LOG TAILING:
+    tail -f /tmp/bd_avoid1_stamper.stdout.log /tmp/bd_avoid1_stamper.stderr.log
+
+  MANUAL RUN (smoke test — dry run):
+    cd '/Users/chriswong/Documents/Cluade/Macro Dashboard'
+    python -m scripts.research.bd_avoid1_stamper --dry-run
+
+  MANUAL RUN (live stamp):
+    cd '/Users/chriswong/Documents/Cluade/Macro Dashboard'
+    python -m scripts.research.bd_avoid1_stamper
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.macro.bd_avoid1_stamper</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Users/chriswong/Documents/Cluade/Macro Dashboard/ops/launchd/run_with_env.sh</string>
+    <string>/Users/chriswong/Documents/Cluade/Macro Dashboard/.env</string>
+    <string>/opt/homebrew/Caskroom/miniconda/base/bin/python</string>
+    <string>-m</string>
+    <string>scripts.research.bd_avoid1_stamper</string>
+  </array>
+
+  <!-- Working directory must be the MAIN checkout (not a worktree). -->
+  <key>WorkingDirectory</key>
+  <string>/Users/chriswong/Documents/Cluade/Macro Dashboard</string>
+
+  <!-- Start weekdays at 17:00 ET (after oracle_nightly ~16:30 ET finish). -->
+  <key>StartCalendarInterval</key>
+  <array>
+    <dict>
+      <key>Weekday</key><integer>1</integer>
+      <key>Hour</key><integer>17</integer>
+      <key>Minute</key><integer>0</integer>
+    </dict>
+    <dict>
+      <key>Weekday</key><integer>2</integer>
+      <key>Hour</key><integer>17</integer>
+      <key>Minute</key><integer>0</integer>
+    </dict>
+    <dict>
+      <key>Weekday</key><integer>3</integer>
+      <key>Hour</key><integer>17</integer>
+      <key>Minute</key><integer>0</integer>
+    </dict>
+    <dict>
+      <key>Weekday</key><integer>4</integer>
+      <key>Hour</key><integer>17</integer>
+      <key>Minute</key><integer>0</integer>
+    </dict>
+    <dict>
+      <key>Weekday</key><integer>5</integer>
+      <key>Hour</key><integer>17</integer>
+      <key>Minute</key><integer>0</integer>
+    </dict>
+  </array>
+
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PYTHONPATH</key>
+    <string>/Users/chriswong/Documents/Cluade/Macro Dashboard</string>
+  </dict>
+
+  <key>StandardOutPath</key>
+  <string>/tmp/bd_avoid1_stamper.stdout.log</string>
+
+  <key>StandardErrorPath</key>
+  <string>/tmp/bd_avoid1_stamper.stderr.log</string>
+
+  <key>KeepAlive</key>
+  <false/>
+
+  <!-- Throttle: if the job crashes in under 10s, wait 60s before retrying. -->
+  <key>ThrottleInterval</key>
+  <integer>60</integer>
+
+</dict>
+</plist>
