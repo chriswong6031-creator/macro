@@ -133,6 +133,31 @@ class TestRulF37Invariant:
                 )
 
 
+    def test_gross_mult_stays_1_with_eigen_block(self):
+        """gross_mult must be 1.0 even when the eigen block is populated.
+
+        RUL-ORTH-6: gross_mult_live = 1.0 unconditionally regardless of eigen findings.
+        """
+        from engine import dispersion
+        returns = self._build_returns_panel()
+        result = dispersion.assess(returns)
+        assert result is not None, "dispersion.assess() returned None on a valid panel"
+        # eigen block presence must not alter gross_mult
+        assert result["gross_mult"] == 1.0, (
+            f"INVARIANT VIOLATED: gross_mult should be 1.0 with eigen block present, "
+            f"got {result['gross_mult']}"
+        )
+        # eigen block should be present (not None) for a valid 300d x 30n panel
+        eigen = result.get("eigen")
+        assert eigen is not None, (
+            "eigen block should not be None for adequate panel (300d x 30n)"
+        )
+        # Confirm display_only flag is set
+        assert eigen.get("display_only") is True, (
+            "eigen block must carry display_only=True"
+        )
+
+
 # ---------------------------------------------------------------------------
 # Test 9: Harness run on synthetic data (absent-file-safe)
 # ---------------------------------------------------------------------------

@@ -233,3 +233,188 @@ def test_no_crash_empty_closes(tmp_path):
     assert result["gross_mult_live"] == 1.0
     out = json.loads((tmp_path / "dispersion" / "regime.json").read_text())
     assert out["gross_mult_live"] == 1.0
+
+
+# ---------------------------------------------------------------------------
+#  Eigen-concentration tests (DISP-EIGEN-1 fields)
+# ---------------------------------------------------------------------------
+
+def _make_returns(n_days: int, n_names: int, seed: int = 42,
+                  factor_loading: float | None = None) -> pd.DataFrame:
+    """Synthetic return panel. factor_loading=None => iid; else one-factor."""
+    rng = np.random.default_rng(seed)
+    if factor_loading is None:
+        data = rng.normal(0, 0.01, size=(n_days, n_names))
+    else:
+        common = rng.normal(0, 0.01, size=(n_days, 1))
+        idio = rng.normal(0, 0.001, size=(n_days, n_names))
+        data = factor_loading * common + idio
+    dates = pd.bdate_range("2020-01-01", periods=n_days)
+    return pd.DataFrame(data, index=dates, columns=[f"N{i}" for i in range(n_names)])
+
+
+def test_eigen_iid_panel():
+    """300d x 30n iid noise: effective_universe_bets_pr well above 5, dominant share low."""
+    returns = _make_returns(300, 30)
+    result = dispersion.assess(returns)
+    assert result is not None
+    eigen = result.get("eigen")
+    assert eigen is not None, "eigen block should not be None for adequate panel"
+    assert eigen["effective_universe_bets_pr"] > 5, (
+        f"iid panel should have ENB > 5, got {eigen['effective_universe_bets_pr']}"
+    )
+    # For iid data dominant share should be low (well under 0.5)
+    assert eigen["dominant_equity_pc_share"] < 0.5, (
+        f"iid dominant share should be low, got {eigen['dominant_equity_pc_share']}"
+    )
+
+
+def test_eigen_one_factor_panel():
+    """One-factor panel: dominant_equity_pc_share > 0.8, ENB < 2."""
+    returns = _make_returns(300, 30, factor_loading=1.0)
+    result = dispersion.assess(returns)
+    assert result is not None
+    eigen = result.get("eigen")
+    assert eigen is not None
+    assert eigen["dominant_equity_pc_share"] > 0.8, (
+        f"one-factor panel should have dominant share > 0.8, got {eigen['dominant_equity_pc_share']}"
+    )
+    assert eigen["effective_universe_bets_pr"] < 2.0, (
+        f"one-factor panel should have ENB < 2, got {eigen['effective_universe_bets_pr']}"
+    )
+
+
+def test_eigen_none_on_tiny_panel():
+    """Eigen block is None when panel has fewer than 20 names."""
+    returns = _make_returns(300, 10)  # 10 names < _EIGEN_MIN_NAMES=20
+    result = dispersion.assess(returns)
+    # assess() itself may return None due to r.shape[1] < 20 guard
+    if result is None:
+        return  # assess() gated out — acceptable, eigen=None by construction
+    eigen = result.get("eigen")
+    assert eigen is None, (
+        f"eigen should be None for panel with only 10 names, got {eigen}"
+    )
+
+
+def test_eigen_excluded_from_history_rows(tmp_path):
+    """eigen block must NOT appear in history list entries."""
+    (tmp_path / "dispersion").mkdir(parents=True, exist_ok=True)
+    fake = _fake_assess_result("lean_in")
+    # Inject a non-None eigen block into the fake assess result
+    fake["eigen"] = {
+        "basis": "trailing_252d_fixed",
+        "n_names_used": 30,
+        "n_days_used": 252,
+        "dominant_equity_pc_share": 0.2345,
+        "effective_universe_bets_pr": 12.34,
+        "idio_dispersion_share": 0.6789,
+        "sector_pc_loadings": None,
+        "note": "test",
+        "display_only": True,
+    }
+
+    with (
+        mock.patch("scripts.build_dispersion_regime._load_closes",
+                   return_value=pd.DataFrame({"A": [1.0, 1.01]})),
+        mock.patch("engine.dispersion.assess", return_value=fake),
+        mock.patch("lib.config.data_dir", return_value=tmp_path),
+    ):
+        result = build()
+
+    # eigen present at top level
+    assert "eigen" in result, "eigen key should be present at top level of output"
+    # eigen absent from every history entry
+    for entry in result.get("history", []):
+        assert "eigen" not in entry, (
+            f"eigen key should NOT appear in history entries; found in: {entry}"
+        )
+
+    # Verify on disk too
+    parsed = json.loads((tmp_path / "dispersion" / "regime.json").read_text())
+    assert "eigen" in parsed
+    for entry in parsed.get("history", []):
+        assert "eigen" not in entry, "eigen key must not be in on-disk history entries"
+
+
+def test_eigen_json_serializable():
+    """The full assess() output including eigen block must be JSON-serializable."""
+    returns = _make_returns(300, 30)
+    result = dispersion.assess(returns)
+    assert result is not None
+    # Must not raise
+    serialized = json.dumps(result, default=str)
+    parsed = json.loads(serialized)
+    assert "eigen" in parsed
+
+
+def test_eigen_block_shape():
+    """Eigen block, when present, must have all required keys with correct basis."""
+    returns = _make_returns(300, 30)
+    result = dispersion.assess(returns)
+    assert result is not None
+    eigen = result.get("eigen")
+    assert eigen is not None
+    required_keys = {
+        "basis", "n_names_used", "n_days_used",
+        "dominant_equity_pc_share", "effective_universe_bets_pr",
+        "idio_dispersion_share", "sector_pc_loadings", "note", "display_only",
+    }
+    for k in required_keys:
+        assert k in eigen, f"eigen block missing key: {k}"
+    assert eigen["basis"] == "trailing_252d_fixed"
+    assert eigen["display_only"] is True
+    assert eigen["sector_pc_loadings"] is None
+
+
+def test_compute_eigen_block_direct_15_name_guard():
+    """_compute_eigen_block directly with a 15-name panel exercises its own <20 guard.
+
+    test_eigen_none_on_tiny_panel is partly vacuous: assess() early-returns None at
+    r.shape[1] < 20, so _compute_eigen_block never sees the panel.  This test calls
+    _compute_eigen_block directly to cover its own minimum-names path.
+    """
+    returns = _make_returns(300, 15)
+    result = dispersion._compute_eigen_block(returns)
+    assert result is None, (
+        f"_compute_eigen_block should return None for 15-name panel, got {result}"
+    )
+
+
+def test_idio_dispersion_share_discriminates_factor_structure():
+    """idio_dispersion_share must be lower for a one-factor panel than for iid.
+
+    This guards against the near-degeneracy bug (whitened returns making the ratio
+    near-constant ~0.92-0.97 regardless of factor structure).  After the fix
+    (variance-share on demeaned returns), a strongly factor-driven panel has much
+    lower idio_dispersion_share than iid noise.
+    """
+    iid_returns = _make_returns(300, 30, seed=42, factor_loading=None)
+    one_factor_returns = _make_returns(300, 30, seed=42, factor_loading=1.0)
+
+    iid_result = dispersion.assess(iid_returns)
+    one_factor_result = dispersion.assess(one_factor_returns)
+
+    assert iid_result is not None
+    assert one_factor_result is not None
+
+    iid_eigen = iid_result.get("eigen")
+    one_factor_eigen = one_factor_result.get("eigen")
+
+    assert iid_eigen is not None, "eigen block should not be None for 300d x 30n iid panel"
+    assert one_factor_eigen is not None, "eigen block should not be None for 300d x 30n one-factor panel"
+
+    iid_idio = iid_eigen["idio_dispersion_share"]
+    one_factor_idio = one_factor_eigen["idio_dispersion_share"]
+
+    assert iid_idio is not None, "idio_dispersion_share should not be None for valid iid panel"
+    assert one_factor_idio is not None, "idio_dispersion_share should not be None for valid one-factor panel"
+
+    # One-factor panel should have substantially lower idio share than iid panel.
+    # With the corrected variance-share definition: one-factor concentrates variance
+    # in the common component, leaving little residual variance → low idio share.
+    # iid panel: no common factor → all variance is residual → high idio share.
+    assert one_factor_idio < iid_idio, (
+        f"idio_dispersion_share should be lower for one-factor panel ({one_factor_idio}) "
+        f"than for iid panel ({iid_idio}); near-equal values indicate near-degeneracy bug"
+    )
