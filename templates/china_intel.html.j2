@@ -724,13 +724,16 @@
       <thead><tr><th>{{ t('Horizon','期限') }}</th><th>P25</th><th>{{ t('Median','中位') }}</th><th>P75</th><th>N</th></tr></thead>
       <tbody>
       {%- for hz in ['h20','h60','h120'] %}
-      {%- set _frow = (_an.fan or {}).get(hz, {}) %}
+      {%- set _frow = (_an.fan or {}).get(hz) or {} %}
       <tr>
         <td>{{ {'h20':'20d','h60':'60d','h120':'120d'}[hz] }}</td>
-        <td>{{ "%+.1f%%"|format(_frow.p25*100) if _frow.p25 is defined else '—' }}</td>
-        <td><b>{{ "%+.1f%%"|format(_frow.median*100) if _frow.median is defined else '—' }}</b></td>
-        <td>{{ "%+.1f%%"|format(_frow.p75*100) if _frow.p75 is defined else '—' }}</td>
-        <td>{{ _frow.n or '—' }}</td>
+        {%- set _p25 = _frow.get('p25') if _frow else none %}
+        {%- set _med = _frow.get('median') if _frow else none %}
+        {%- set _p75 = _frow.get('p75') if _frow else none %}
+        <td>{{ "%+.1f%%"|format(_p25*100) if _p25 is not none else '—' }}</td>
+        <td><b>{{ "%+.1f%%"|format(_med*100) if _med is not none else '—' }}</b></td>
+        <td>{{ "%+.1f%%"|format(_p75*100) if _p75 is not none else '—' }}</td>
+        <td>{{ _frow.get('n') or '—' }}</td>
       </tr>
       {%- endfor %}
       </tbody>
@@ -743,7 +746,7 @@
       {%- for a in _an.analogs[:12] %}
         <span style="font-size:11px;padding:2px 8px;border-radius:7px;background:var(--panel2);border:1px solid var(--line)">
           {{ a.date }} · {{ a.quad or '' }}
-          {%- if a.fwd_shcomp %} · {{ "%+.1f%%"|format(a.fwd_shcomp.h20*100) if a.fwd_shcomp.h20 is defined else '' }}{%- endif %}
+          {%- if a.fwd_shcomp %}{%- set _h20 = a.fwd_shcomp.get('h20') if a.fwd_shcomp else none %} · {{ "%+.1f%%"|format(_h20*100) if _h20 is not none else '' }}{%- endif %}
         </span>
       {%- endfor %}
       </div>

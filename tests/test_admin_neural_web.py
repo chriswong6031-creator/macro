@@ -1083,7 +1083,11 @@ artifacts:
         assert d["ok"] is True
         assert d["id"] == "world-state"
         assert d["group"] == "core"
-        assert "Neural Web" in d["description"] or "world state" in d["description"].lower()
+        # description is now plain-English prose; the raw synapse note is preserved
+        # verbatim under description_technical (never-stale guard).
+        assert "Neural Web" in d["description_technical"]
+        assert isinstance(d["description"], str) and d["description"]
+        assert d["desc_status"] in ("curated", "stale", "auto")
         tx = d["transmission"]
         assert tx["producer"] == "engine/neuralweb/world_state.py"
         assert len(tx["consumers"]) == 2

@@ -3,6 +3,15 @@
 Runs the special-situations desk engine, writes site/chinaspecialdata/special.json,
 renders site/china_special_situations.html. Callable standalone + importable.
 CONTEXT-ONLY · never raises. See research/CHINA_INTEL_HUB_MASTERPLAN.md §W2.
+
+Ordering dependency (data freshness):
+    data/china_filings/filings.parquet freshness is produced by the asia-lane collect
+    step that runs collectors/china_filings.py BEFORE this build script is invoked.
+    There is NO in-build refresh of china_filings by design — the collector is a
+    network-bound step that belongs in the collect phase, not the build phase.
+    If this script is run standalone (outside the asia-lane pipeline), the inquiry
+    block will read whatever filings.parquet was last written by the collector; the
+    asof/status chip will surface staleness honestly.
 """
 from __future__ import annotations
 
@@ -35,7 +44,9 @@ def build() -> dict | None:
     if os.environ.get("CN_LANE", "") == "asia":
         for mod_name, fn_name in (
             ("collectors.china_unlocks",     "refresh"),
-            ("collectors.china_inquiry",     "refresh"),
+            # china_inquiry retired (W4): inquiry letters now read from
+            # collectors/china_filings.py → data/china_filings/filings.parquet
+            # (category=='inquiry_letter'). china_inquiry.py is kept for history.
             ("collectors.china_preannounce", "refresh"),
             ("collectors.china_st",          "refresh"),
         ):

@@ -12,6 +12,72 @@ const getCookie = (name) => { const m = document.cookie.match(new RegExp("(?:^|;
 
 let SESSION = { auth_enabled: false, authenticated: true, deployed: false, integrations: {} };
 
+/* ---- lobe popup (system map hover) -------------------------------------- */
+let NW_LOBE_BY_ID = {};
+let _lobeTip = null;
+function getLobeTip() {
+  if (!_lobeTip) {
+    _lobeTip = document.createElement("div");
+    _lobeTip.className = "lobe-tip";
+    _lobeTip.setAttribute("role", "tooltip");
+    _lobeTip.setAttribute("aria-hidden", "true");
+    document.body.appendChild(_lobeTip);
+  }
+  return _lobeTip;
+}
+function showLobeTip(el) {
+  const id = el.dataset.lobe;
+  const l = NW_LOBE_BY_ID[id];
+  if (!l) return;
+  const tip = getLobeTip();
+  const age = l.age_hours, sla = l.freshness_sla_hours;
+  const ageTxt = age == null ? "—" : fmtAge(age);
+  const slaTxt = sla ? ` / ${fmtAge(sla)}` : "";
+  const stt = l.status === "fresh" ? "fresh" : l.status === "stale" ? "stale" : (l.status === "missing" || l.status === "degraded") ? "missing" : "stale";
+  tip.innerHTML =
+    `<div class="lobe-tip-header">` +
+      `<span class="status-dot" data-status="${esc(stt)}" style="width:8px;height:8px"></span>` +
+      `<span class="lobe-tip-name">${esc(l.label)}</span>` +
+      `<span class="group-chip" data-group="${esc(l.group)}">${esc(l.group_label || l.group)}</span>` +
+    `</div>` +
+    `<div class="lobe-tip-desc">${esc(l.short_desc || "No description registered.")}</div>` +
+    `<div class="lobe-tip-metrics">` +
+      `<span>${ageTxt}${slaTxt}</span>` +
+      `<span class="metric-sep">·</span>` +
+      `<span>${l.n_consumers} consumer${l.n_consumers === 1 ? "" : "s"}</span>` +
+      `<span class="metric-sep">·</span>` +
+      `<span>${esc(l.tier || "—")}</span>` +
+    `</div>`;
+  positionLobeTip(tip, el);
+  tip.classList.add("show");
+}
+function hideLobeTip() {
+  if (_lobeTip) _lobeTip.classList.remove("show");
+}
+function positionLobeTip(tip, el) {
+  /* Position next to the node, clamped to viewport. position:fixed. */
+  const r = el.getBoundingClientRect();
+  const tw = 248, th = 110; /* conservative max tip size */
+  const vw = window.innerWidth, vh = window.innerHeight;
+  const PAD = 8;
+  /* prefer right of node; fall left if no room */
+  let left = r.right + PAD;
+  if (left + tw > vw - PAD) left = r.left - tw - PAD;
+  left = Math.max(PAD, Math.min(left, vw - tw - PAD));
+  /* prefer top-aligned with node center; shift up if clips bottom */
+  let top = r.top + r.height / 2 - 40;
+  if (top + th > vh - PAD) top = vh - th - PAD;
+  top = Math.max(PAD, top);
+  tip.style.left = left + "px";
+  tip.style.top  = top  + "px";
+}
+function wireLobeTipNode(el) {
+  el.addEventListener("mouseenter", () => showLobeTip(el));
+  el.addEventListener("mouseleave", hideLobeTip);
+  el.addEventListener("focus",      () => showLobeTip(el));
+  el.addEventListener("blur",       hideLobeTip);
+}
+
 async function api(path, opts) {
   const r = await fetch(path, opts);
   if (r.status === 401) { showLogin(); throw new Error("auth required"); }
@@ -104,6 +170,7 @@ function go(id) {
   if (currentLobeId()) history.replaceState(null, "", location.pathname + location.search);
   CURRENT = id;
   if (RT_TIMER) { clearInterval(RT_TIMER); RT_TIMER = null; }
+  hideLobeTip();
   setActiveNav(id);
   setTopbarTitle(TAB_LABELS[id] || id);
   RENDER[id]();
@@ -1028,7 +1095,7 @@ function nwSystemMap(d) {
       const nx = gx + lr * Math.cos(a2), ny = gy + lr * Math.sin(a2);
       const stt = l.status === "fresh" ? "fresh" : l.status === "stale" ? "stale" : (l.status === "missing" || l.status === "degraded") ? "missing" : "stale";
       edges += `<line class="map-edge" x1="${gx.toFixed(1)}" y1="${gy.toFixed(1)}" x2="${nx.toFixed(1)}" y2="${ny.toFixed(1)}"/>`;
-      lnodes += `<circle class="map-node" data-lobe="${esc(l.id)}" data-status="${stt}" cx="${nx.toFixed(1)}" cy="${ny.toFixed(1)}" r="4.2" style="fill:var(--grp-${g.key})"><title>${esc(l.label)} — ${esc(l.status)}</title></circle>`;
+      lnodes += `<circle class="map-node" data-lobe="${esc(l.id)}" data-status="${stt}" cx="${nx.toFixed(1)}" cy="${ny.toFixed(1)}" r="4.2" style="fill:var(--grp-${g.key})"></circle>`;
     });
   });
   return `<div class="systemmap"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Neural Web system map">
@@ -1039,6 +1106,15 @@ function nwSystemMap(d) {
     <circle class="map-core" cx="${cx}" cy="${cy}" r="30"/>
   </svg></div>`;
 }
+/* Honest badge for the plain-English description layer.
+   'stale' = the registry note changed since the prose was written; 'auto' = no
+   hand-written prose yet (auto-summary from the registry). 'curated' = no badge. */
+function descBadge(status) {
+  if (status === "stale") return `<span class="desc-badge outdated" title="The signal-registry note for this lobe changed since its plain-English description was written — it may be out of date.">outdated</span>`;
+  if (status === "auto") return `<span class="desc-badge auto" title="Auto-generated summary from the signal registry — a hand-written description hasn't been added yet.">auto</span>`;
+  return "";
+}
+
 function nwLobeCard(l) {
   const age = l.age_hours, sla = l.freshness_sla_hours;
   const frac = (age != null && sla) ? age / sla : null;
@@ -1047,6 +1123,7 @@ function nwLobeCard(l) {
     <div class="lobe-card-top">
       <span class="lobe-led" data-status="${esc(l.status)}"></span>
       <span class="lobe-name">${esc(l.label)}</span>
+      ${descBadge(l.desc_status)}
       <span class="group-chip" data-group="${esc(l.group)}">${esc(l.group)}</span>
     </div>
     <div class="short-desc">${esc(l.short_desc || "No description registered.")}</div>
@@ -1077,8 +1154,15 @@ RENDER.neural_web = async () => {
       <summary class="section" style="cursor:pointer;user-select:none;list-style:none">▸ Operator HQ — full diagnostic detail</summary>
       <div id="nw-legacy"><div class="spin">loading…</div></div>
     </details>`;
+  /* Build id→lobe lookup for popup */
+  NW_LOBE_BY_ID = {};
+  (d.groups || []).forEach(g => (g.lobes || []).forEach(l => { NW_LOBE_BY_ID[l.id] = l; }));
+
   v.innerHTML = html;
-  v.querySelectorAll(".map-node[data-lobe]").forEach(el => el.addEventListener("click", () => gotoLobe(el.dataset.lobe)));
+  v.querySelectorAll(".map-node[data-lobe]").forEach(el => {
+    el.addEventListener("click", () => gotoLobe(el.dataset.lobe));
+    wireLobeTipNode(el);
+  });
   loadLegacyOps();
 };
 async function loadLegacyOps() {
@@ -1099,6 +1183,7 @@ function nwCrumbs(current) {
 }
 async function renderLobeDetail(id) {
   CURRENT = "neural_web"; setActiveNav("neural_web");
+  hideLobeTip();  // clear any map-node hover popup left over from the click that navigated here
   if (RT_TIMER) { clearInterval(RT_TIMER); RT_TIMER = null; }
   setTopbarTitle("Neural Web");
   const v = $("#view");
@@ -1163,8 +1248,11 @@ async function renderLobeDetail(id) {
       </div>
     </div>
     <div class="metric-tiles-row">${tiles}</div>
-    <div class="card"><h3>What it does</h3>
+    <div class="card"><h3 style="display:flex;align-items:center;gap:8px">What it does ${descBadge(d.desc_status)}</h3>
+      ${d.desc_status === "stale" ? `<div class="note" style="color:var(--warn);margin-bottom:8px">⚠ The signal-registry note for this lobe changed since this plain-English summary was written — it may be out of date. (Refresh it and re-stamp with the description audit tool.)</div>` : ""}
+      ${d.desc_status === "auto" ? `<div class="note muted" style="margin-bottom:8px">Auto-generated from the signal registry — a hand-written summary hasn't been added yet.</div>` : ""}
       <div style="line-height:1.55">${esc(d.description || "No description registered for this lobe.")}</div>
+      ${d.description_technical && d.description_technical !== d.description ? `<details style="margin-top:12px"><summary class="note muted" style="cursor:pointer;user-select:none">Technical note (from the signal registry)</summary><div class="note mono muted" style="margin-top:6px;line-height:1.5">${esc(d.description_technical)}</div></details>` : ""}
       <div class="note muted" style="margin-top:10px">Producer <code>${esc(d.producer || "?")}</code> · artifact <code>${esc(d.path || "?")}</code> · source ${esc(d.purpose_source || "config/synapse.yml")}</div>
     </div>
     <div class="section">Data transmission</div>
