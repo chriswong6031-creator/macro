@@ -1,10 +1,10 @@
 {
   "schema": "risk_state.v1",
-  "built": "2026-07-06 20:20:29 UTC",
+  "built": "2026-07-06 21:52:52 UTC",
   "session": {
     "region": "us",
     "open": false,
-    "local_time": "2026-07-06 16:20 EDT"
+    "local_time": "2026-07-06 17:52 EDT"
   },
   "live_active": true,
   "stale": false,
@@ -14,19 +14,15 @@
   "realtime": false,
   "nightly_asof": "2026-07-02",
   "polygon_status": "ok",
-  "n_live_symbols": 11,
+  "n_live_symbols": 4,
   "movers": [
     {
       "sym": "SPY",
-      "chg_pct": 0.88
+      "chg_pct": 0.94
     },
     {
       "sym": "QQQ",
-      "chg_pct": 1.41
-    },
-    {
-      "sym": "VIX",
-      "chg_pct": -3.22
+      "chg_pct": 1.44
     }
   ],
   "display": {
@@ -50,7 +46,7 @@
     "radar": {
       "state": "caution",
       "state_ungated": "risk-off",
-      "top_score": 60,
+      "top_score": 61,
       "label_en": "Bubble / blow-off unwind",
       "label_zh": "\u6ce1\u6cab/\u89c1\u9876\u56de\u5410",
       "context_gate": {
@@ -144,7 +140,7 @@
   ],
   "legs_asof": {
     "tape_trend": "live",
-    "volatility": "live",
+    "volatility": "2026-07-02",
     "radar_fast": "live",
     "credit_hy_oas": "2026-07-02",
     "breadth": "2026-07-02",
