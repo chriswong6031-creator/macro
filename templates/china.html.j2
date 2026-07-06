@@ -17,7 +17,7 @@
 {% include "_seo_head.html.j2" %}
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
-<script src="plotly-2.32.0.min.js"></script>
+{% if mode != 'stocks' %}{% include '_plotly_head.html.j2' %}{% endif %}
 <style>
   * { box-sizing: border-box; }
   body { background: var(--bg); color: var(--text); font: 14px/1.5 -apple-system,
@@ -89,13 +89,19 @@
               color:color-mix(in srgb,var(--up) 72%,var(--muted)); }
   .sbt-legend { margin:0 0 10px; font-size:11px; text-transform:none; }
   /* ---- standout-stock cards (ported from the US dashboard) ------------------- */
-  .nbgrid { display:grid; grid-template-columns:repeat(auto-fill,minmax(212px,1fr)); gap:10px; margin-top:11px; }
-  /* mobile: pack the standout cards 2-up so the list doesn't scroll on and on (paired with the
-     3-row cap via data-showmore-rows + theme.js). Cards are already overflow-guarded + compact. */
+  /* Dynamic columns: ~240px min → ~4-5 cards per row on a normal laptop, more on an ultrawide
+     screen, fewer as the viewport narrows. auto-fill does the responsive work — no fixed count. */
+  .nbgrid { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:10px; margin-top:11px; }
+  /* mobile: 2-up (paired with the 3-row cap via data-showmore-rows + theme.js). Tighter padding
+     buys card width; slightly larger type keeps the ticker / price / verdict readable. */
   @media (max-width:680px){
-    .nbgrid[data-showmore-rows]{ grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
-    .nbgrid[data-showmore-rows] .nb-tk{ font-size:13px; }
-    .nbgrid[data-showmore-rows] .nb-px{ font-size:12px; }
+    .nbgrid[data-showmore-rows]{ grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px; }
+    .nbgrid[data-showmore-rows] .nbcard{ padding:7px 8px 8px; gap:3px; }
+    .nbgrid[data-showmore-rows] .nb-tk{ font-size:15px; }
+    .nbgrid[data-showmore-rows] .nb-px{ font-size:13px; }
+    .nbgrid[data-showmore-rows] .nb-nm{ font-size:10.5px; }
+    .nbgrid[data-showmore-rows] .nb-verdict{ font-size:11px; }
+    .nbgrid[data-showmore-rows] .nb-state{ font-size:10.5px; }
     /* let the header wrap so the signal badge + price drop to a new line instead of being
        clipped by the card's overflow:hidden when the column is this narrow. */
     .nbgrid[data-showmore-rows] .nb-top{ flex-wrap:wrap; row-gap:2px; }
@@ -109,14 +115,6 @@
      the whole auto-fill grid) hundreds of px wide. The single most important rule here. */
   a.nbcard > * { min-width:0; max-width:100%; }
   a.nbcard:hover { transform:translateY(-2px); box-shadow:0 5px 18px rgba(0,0,0,.22); border-color:var(--link); }
-  /* one shared legend under the header — replaces the trust-tier caveat that used to
-     repeat verbatim on every one of the ~110 cards (de-cram, ported from US) */
-  .nb-legend { display:flex; flex-wrap:wrap; align-items:baseline; gap:5px 10px;
-               margin:8px 0 2px; padding:6px 11px; border-radius:9px; font-size:11px;
-               line-height:1.45; color:var(--muted); background:var(--panel); border:1px solid var(--line); }
-  .nb-legend .lg-k { font-weight:800; color:var(--text); letter-spacing:.01em; }
-  .nb-legend b { font-weight:700; color:var(--text); }
-  .nb-legend .lg-sep { color:var(--line); }
   .nbcard.nb-up { border-left-color:var(--up); } .nbcard.nb-down { border-left-color:var(--down); }
   .nbcard.nb-caution { border-left-color:var(--warn); }
   .nb-top { display:flex; align-items:baseline; gap:6px; }
@@ -133,42 +131,12 @@
   .nb-coiled.fire{box-shadow:0 0 6px color-mix(in srgb,var(--up) 45%,transparent);border-color:color-mix(in srgb,var(--up) 55%,transparent);color:var(--up);background:color-mix(in srgb,var(--up) 20%,transparent)}
   .nb-ext { flex:none; font-size:8px; font-weight:800; letter-spacing:.02em; padding:1px 5px; border-radius:6px; white-space:nowrap;
             background:color-mix(in srgb,var(--orange) 15%,transparent); color:var(--orange); border:1px solid color-mix(in srgb,var(--orange) 42%,transparent); }
-  /* W0.1 HOLD chip — basing state after confluence anchor (display-only, mirrors dashboard.html.j2) */
-  .nb-hold{flex:none;font-size:8px;font-weight:800;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap;border:1px solid var(--line);color:var(--muted)}
-  .nb-hold.hold-intact{color:var(--text);border-color:color-mix(in srgb,var(--text) 30%,transparent)}
-  .nb-hold.hold-launched{color:var(--up);background:color-mix(in srgb,var(--up) 10%,transparent);border-color:color-mix(in srgb,var(--up) 36%,transparent)}
-  .nb-hold.hold-broken{color:var(--down);background:color-mix(in srgb,var(--down) 10%,transparent);border-color:color-mix(in srgb,var(--down) 36%,transparent)}
-  .nb-q { flex:none; font-size:8px; font-weight:800; letter-spacing:.02em; padding:1px 5px; border-radius:6px; white-space:nowrap; border:1px solid var(--line); }
-  .nb-q-strong { color:var(--up); border-color:color-mix(in srgb,var(--up) 38%,transparent); }
-  .nb-q-avg { color:var(--muted); }
-  .nb-q-weak { color:var(--down); border-color:color-mix(in srgb,var(--down) 38%,transparent); }
   .nbcard .nch { background:transparent; margin:4px 0 2px; width:100%; height:42px; border-radius:5px; }
   .nb-bot { display:flex; align-items:center; flex-wrap:wrap; gap:5px 6px; margin-top:1px; }
   .nb-state { font-size:10px; font-weight:800; letter-spacing:.02em; padding:1px 7px; border-radius:8px; }
   .nb-up .nb-state { color:var(--up); background:color-mix(in srgb,var(--up) 15%,var(--panel)); }
   .nb-down .nb-state { color:var(--down); background:color-mix(in srgb,var(--down) 15%,var(--panel)); }
   .nb-caution .nb-state { color:var(--warn); background:color-mix(in srgb,var(--warn) 15%,var(--panel)); }
-  .nb-eta { font-weight:700; color:var(--info,var(--link)); font-size:10px; }
-  .nb-conf { margin-left:auto; font-size:10px; font-weight:800; padding:1px 6px; border-radius:7px;
-             color:var(--up); background:color-mix(in srgb,var(--up) 14%,var(--panel));
-             border:1px solid color-mix(in srgb,var(--up) 34%,var(--line)); white-space:nowrap; cursor:help; }
-  .nb-alpha { display:flex; align-items:center; gap:6px; font-size:9.5px; margin-top:2px; flex-wrap:wrap; }
-  .nb-az { font-weight:800; font-variant-numeric:tabular-nums; padding:0 5px; border-radius:7px;
-           background:var(--panel); border:1px solid var(--line); color:var(--muted); }
-  .nb-az.az-up { color:var(--up); border-color:color-mix(in srgb,var(--up) 38%,var(--line)); }
-  .nb-az.az-dn { color:var(--down); border-color:color-mix(in srgb,var(--down) 38%,var(--line)); }
-  .nb-rk { color:var(--muted); font-variant-numeric:tabular-nums; }
-  .nb-ent { font-weight:700; padding:0 5px; border-radius:7px; text-transform:capitalize; }
-  .nb-ent.ent-good { color:var(--up); background:color-mix(in srgb,var(--up) 14%,var(--panel)); }
-  .nb-ent.ent-warn { color:var(--warn); background:color-mix(in srgb,var(--warn) 16%,var(--panel)); }
-  /* ---- vol-managed size chip (engine/risk_sizing — ported from the US dashboard) ---- */
-  .nb-size { font-weight:800; font-variant-numeric:tabular-nums; white-space:nowrap;
-             padding:0 5px; border-radius:7px; background:var(--panel);
-             border:1px solid var(--line); color:var(--muted); cursor:help; margin-left:auto; }
-  .nb-size.sz-up { color:var(--up); border-color:color-mix(in srgb,var(--up) 38%,var(--line));
-                   background:color-mix(in srgb,var(--up) 8%,var(--panel)); }
-  .nb-size.sz-dn { color:var(--warn,#c79a2e); border-color:color-mix(in srgb,var(--warn,#c79a2e) 42%,var(--line));
-                   background:color-mix(in srgb,var(--warn,#c79a2e) 8%,var(--panel)); }
   /* ---- Entry-timing gauge (the SECOND gauge — ported from the US dashboard) ---- */
   .nb-entry { margin:5px 0 1px; padding:5px 7px; border-radius:8px;
               background:var(--panel); border:1px solid var(--line); border-left:3px solid var(--muted); }
@@ -211,21 +179,6 @@
   .nb-cscore.band-low { color:var(--down); border-color:color-mix(in srgb,var(--down) 35%,var(--line)); }
   .nb-verdict { font-size:10.5px; font-weight:700; line-height:1.25; color:var(--text);
                 flex:1 1 auto; min-width:0; overflow-wrap:anywhere; }
-  /* multi-timeframe bottoming-alignment chip (weekly+3d+daily turning up) */
-  .nb-align { display:flex; align-items:center; gap:5px; margin:3px 0 1px; min-width:0;
-              font-size:9.5px; font-weight:700; letter-spacing:.01em;
-              padding:2px 7px; border-radius:7px; border:1px solid var(--line);
-              color:var(--up); background:color-mix(in srgb,var(--up) 9%,var(--panel)); }
-  .nb-align.nba-near { color:var(--warn); background:color-mix(in srgb,var(--warn) 9%,var(--panel)); }
-  .nb-align .nba-line { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .nb-align .nba-tag { margin-left:auto; flex:none; font-size:8px; font-weight:800;
-                       text-transform:uppercase; letter-spacing:.04em; opacity:.85; }
-  .nb-axes { display:flex; gap:4px; margin-top:3px; }
-  .nb-ax { flex:1; }
-  .nb-ax .axl { font-size:8px; color:var(--muted); letter-spacing:.03em; }
-  .nb-ax .axt { height:3px; border-radius:2px; background:var(--line); margin-top:1px; overflow:hidden; }
-  .nb-ax .axf { height:100%; background:var(--g-cold); border-radius:2px; }
-  .nb-ax.ax-na .axf { background:transparent; }
   /* ---- Caution icon + popover (replaces old pill-row; ported from dashboard #1061) ---- */
   .nb-cau { position:relative; display:inline-flex; margin-top:4px; }
   .nb-cau-btn {
@@ -269,21 +222,6 @@
      tall popover is cut off at the card edge */
   a.nbcard:has(.nb-cau:hover), a.nbcard:has(.nb-cau:focus-within),
   a.nbcard:has(.nb-cau-open) { overflow:visible; }
-  /* (.nb-tier removed — the trust tier is now shown once in the shared .nb-legend) */
-  /* volatility black hole + honesty notes (China overhaul) */
-  .nb-vf { display:flex; flex-wrap:wrap; gap:4px; margin-top:3px; }
-  .nb-vchip { font-size:8.5px; font-weight:800; padding:0 5px; border-radius:6px; border:1px solid var(--line);
-              color:var(--muted); white-space:nowrap; }
-  .vf-coil { color:var(--link); border-color:color-mix(in srgb,var(--link) 38%,var(--line));
-             background:color-mix(in srgb,var(--link) 10%,var(--panel)); }
-  .vf-up { color:var(--up); border-color:color-mix(in srgb,var(--up) 45%,var(--line)); }
-  .vf-down { color:var(--down); border-color:color-mix(in srgb,var(--down) 40%,var(--line)); }
-  .vf-exp { color:var(--warn); border-color:color-mix(in srgb,var(--warn) 35%,var(--line)); }
-  .vf-marg { color:var(--warn); border-color:color-mix(in srgb,var(--warn) 35%,var(--line));
-             background:color-mix(in srgb,var(--warn) 9%,var(--panel)); }
-  .nb-note { font-size:8.5px; line-height:1.3; margin-top:3px; padding:2px 5px; border-radius:6px;
-             color:var(--muted); background:color-mix(in srgb,var(--text) 4%,var(--panel)); }
-  .nb-note-anticipation { color:var(--link); background:color-mix(in srgb,var(--link) 8%,var(--panel)); }
   /* ── W1-C: LIFECYCLE SHELF HEADERS + STAGE BADGES ──────────────────────── */
   /* Shelf header — separates ENTRY / RIPENING / RAN shelves visually */
   .nb-shelf-hdr { display:flex; align-items:center; gap:10px; margin:14px 0 6px;
@@ -330,23 +268,6 @@
                  color:var(--warn); background:color-mix(in srgb,var(--warn) 13%,var(--panel));
                  border:1px solid color-mix(in srgb,var(--warn) 38%,var(--line)); }
   .nb-rip-sec { font-size:9px; color:var(--muted); }
-  /* ── W2-B: NARRATIVE CHIP + A-TIER BADGE ─────────────────────────────────── */
-  /* Quiet narrative heat chip — appears under the stage on ENTRY/RIPENING cards */
-  .nb-narr { display:inline-flex; align-items:center; gap:3px; font-size:8px; font-weight:700;
-             padding:1px 6px; border-radius:6px; overflow-wrap:anywhere; max-width:100%; cursor:help;
-             color:var(--link); background:color-mix(in srgb,var(--link) 10%,var(--panel));
-             border:1px solid color-mix(in srgb,var(--link) 30%,var(--line)); }
-  .nb-narr.narr-hot { color:var(--up); background:color-mix(in srgb,var(--up) 10%,var(--panel));
-                      border-color:color-mix(in srgb,var(--up) 35%,var(--line)); }
-  .nb-narr.narr-warming { color:var(--warn); background:color-mix(in srgb,var(--warn) 10%,var(--panel));
-                          border-color:color-mix(in srgb,var(--warn) 35%,var(--line)); }
-  /* A-tier badge — small, next to the why_ranked chip on ENTRY/RIPENING cards only */
-  .nb-atier { font-size:8px; font-weight:800; padding:1px 6px; border-radius:6px;
-              letter-spacing:.04em; cursor:help; white-space:nowrap;
-              color:#fff; background:var(--up);
-              box-shadow:0 0 0 1px color-mix(in srgb,var(--up) 50%,transparent); }
-  .nb-atier.tier-b { color:var(--muted); background:color-mix(in srgb,var(--muted) 14%,var(--panel));
-                     border:1px solid var(--line); box-shadow:none; }
   .grid { display: grid; gap: 14px; grid-template-columns: repeat(12, 1fr); }
   .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 15px 17px; }
   .span12 { grid-column: span 12; } .span8 { grid-column: span 8; }
@@ -457,6 +378,7 @@
   .act-item .an { font-weight: 600; color: var(--text); }
   .act-item .at { font-size: 10.5px; color: var(--muted); }
   .act-now h3 { color: var(--up); } .act-soon h3 { color: var(--info); }
+  .act-run h3 { color: #8b5cf6; }   /* neutral violet — NOT green/buy */
   .act-tp h3 { color: var(--warn); } .act-avoid h3 { color: var(--down); } .act-hold h3 { color: var(--muted); }
 
   /* ---- regime hero: quad map + meaning + regime watch ----------------------- */
@@ -1205,7 +1127,7 @@
       {{ help("Sector ETFs by cycle bucket and relative strength. Sort any column.", '板块ETF按周期分桶与相对强度展示。可点击表头排序。') }}
     </h2>
   <!-- ===================== ACTION BOARD ===================== -->
-  {% if actions and (actions.buy_now or actions.buy_soon or actions.take_profits or actions.hold or actions.avoid) %}
+  {% if actions and (actions.buy_now or actions.buy_soon or actions.get('on_the_run') or actions.take_profits or actions.hold or actions.avoid) %}
   <div class="msec flush">
     <h3 class="msec-h">⚡ {{ t('What to act on now — sectors', '当前可操作 — 板块') }}
       {{ help("The 16 sector ETFs bucketed by the cycle ladder’s entry-timing call (same engine as the US action board). A structure/risk map, not an allocation rule — read alongside the calibration note below.", "16 个板块 ETF 按周期阶梯的入场时机分桶（与美国操作板同一引擎）。这是结构／风险图，而非配置规则 — 请结合下方校准说明阅读。") }}
@@ -1225,6 +1147,7 @@
       {% endmacro %}
       {{ actcol('act-now', 'Buy zone', '买入区', actions.buy_now) }}
       {{ actcol('act-soon', 'Setting up', '即将到位', actions.buy_soon) }}
+      {{ actcol('act-run', "ON THE RUN — don't chase", '顺势运行 — 勿追高', actions.get('on_the_run', [])) }}
       {{ actcol('act-tp', 'Take profits', '止盈', actions.take_profits) }}
       {{ actcol('act-hold', 'Hold', '持有', actions.hold) }}
       {{ actcol('act-avoid', 'Avoid', '回避', actions.avoid) }}
@@ -1300,14 +1223,14 @@
   {% set SECZH = {'Technology':'科技','Industrials':'工业','Basic Materials':'原材料','Financial Services':'金融','Consumer Cyclical':'可选消费','Healthcare':'医疗保健','Utilities':'公用事业','Consumer Defensive':'必需消费','Energy':'能源','Communication Services':'通信服务','Real Estate':'房地产'} %}
 
   {% if mode != 'macro' %}
-  <!-- ===================== STANDOUT STOCKS (cycle-aligned bottoming · weekly+3d+daily) ===================== -->
+  <!-- ===================== STANDOUT STOCKS (washout → base → fresh turn · T1–T4 cascade) ===================== -->
   {% if setups and setups.buy %}
   <div class="panel span12" id="standouts">
     <h2>{{ t('⚡ Standout individual stocks', '⚡ 表现突出的个股') }}
       <span class="note" style="text-transform:none">· {{ t('washout → base → fresh turn · T1–T4 entry cascade', '洗盘 → 筑底 → 新转向 · T1–T4 入场级联') }}</span>
-      {{ help("Washed-out names with a fresh 3D/2D turn. ENTRY is the only actionable shelf; RIPENING is watch-only; RAN/LATE means do not chase. Context, not a buy list.", "洗盘后出现3日/2日新转向的个股。ENTRY为可操作板块；RIPENING仅观察；RAN/LATE表示不要追。仅作背景，非买入清单。") }}
+      {{ help("How to read this board. Each card is a washed-out A-share name that just turned back up. Score 0–100 = buy-readiness: how ready it looks to buy, not a win-rate or a guarantee. Rank puts the cleanest setups first. Two gauges show setup quality and entry timing (buy now vs wait for a pullback). It is a research shortlist, not a buy list — and its track record is still accruing.", "如何看这个榜单。每张卡片都是一只刚刚止跌回升的洗盘A股。评分0–100＝买入就绪度：该股离买点有多近，并非胜率或保证。排序把形态最干净的排在前面。两个量表显示形态质量与入场时机（现在买还是等回调）。这是研究备选清单，而非买入清单——其成绩仍在累积。") }}
     </h2>
-    <p class="note" style="margin:0 0 2px;text-transform:none">{{ t('Washed-out names with a fresh turn. Rank uses cascade tier plus washout/coiled context; score means buy-readiness. Context, not a buy list.', '洗盘后出现新转向的个股。排序基于级联层级与洗盘/蓄势背景；评分表示买入就绪度。仅作背景，非买入清单。') }}</p>
+    <p class="note" style="margin:0 0 2px;text-transform:none">{{ t('Washed-out A-share names with a fresh turn back up — a research shortlist ranked by buy-readiness, not a buy list.', '刚刚止跌回升的洗盘A股——按买入就绪度排序的研究备选清单，而非买入清单。') }}</p>
     {% if setups.qvix_regime %}{% set q = setups.qvix_regime %}
     <div style="margin:6px 0 9px;padding:7px 11px;border-radius:9px;font-size:11.5px;line-height:1.5;border:1px solid var(--line);border-left:3px solid {{ 'var(--warn)' if q.verdict=='caution' else ('var(--link)' if q.verdict=='confirm' else 'var(--muted)') }};background:color-mix(in srgb,{{ 'var(--warn)' if q.verdict=='caution' else 'var(--link)' }} 7%,var(--panel))">
       <span style="font-size:13px">{% if q.regime=='panic' %}🌀{% elif q.regime=='suppressed' %}🧊{% else %}〰{% endif %}</span>
@@ -1315,18 +1238,6 @@
       (z {{ '%+.1f'|format(q.qvix_z) }}{% if q.level is not none %}, {{ q.level }}{% endif %}) — <span class="l-en">{{ q.en }}</span><span class="l-zh">{{ q.zh }}</span>
       {{ help("Market-wide QVIX regime. Uses 60-day z-score, not level. Context, not a per-stock signal.", "全市场QVIX体制。使用60日z分数而非绝对水平。背景，非个股信号。") }}
     </div>{% endif %}
-    {# ONE shared legend — the score's meaning, the two-gauge model, and the edge basis
-       (trust tier) explained once here instead of repeated on every card below. #}
-    {% set _tt = (setups.buy[0].conviction or {}).trust_tier %}
-    <div class="nb-legend">
-      <span class="lg-k">{{ t('Reading the cards', '如何看卡片') }}</span>
-      <span><b>{{ t('Score', '评分') }}</b> = {{ t('buy-readiness 0–100, not an edge probability', '买入就绪度0–100，并非优势概率') }}</span>
-      <span class="lg-sep">·</span>
-      <span><b>{{ t('Rank', '排序') }}</b>: {{ t('cascade tier + washout/coiled context', '级联层级 + 洗盘/蓄势背景') }}</span>
-      <span class="lg-sep">·</span>
-      <span><b>{{ t('Two gauges', '两个量表') }}</b>: {{ t('setup quality + entry timing', '形态质量 + 入场时机') }}</span>
-      {% if _tt %}<span class="lg-sep">·</span><span><b>{{ t('Edge basis', '优势来源') }}</b>: <span class="l-en">{{ _tt.en }}</span><span class="l-zh">{{ _tt.zh }}</span></span>{% endif %}
-    </div>
     {# W0.7 DATA OUTAGE BANNER — rendered when the board-width guard stamps data_outage.flag=true
        (buy-count dropped >40% day-over-day). Never rendered on a normal board. Dual-span i18n. #}
     {% set _do = setups.get('data_outage') %}
@@ -1346,59 +1257,35 @@
     {% if (_entry_rows | length == 0) and (_ran_late_rows | length == 0) and (setups.buy | length > 0) %}
       {% set _entry_rows = setups.buy %}
     {% endif %}
-    {# ── ENTRY shelf header #}
-    {% if _entry_rows or _ran_late_rows %}
-    <div class="nb-shelf-hdr">
-      <span class="nb-shelf-tag st-entry"><span class="l-en">ENTRY</span><span class="l-zh">入场</span></span>
-      <span class="nb-shelf-expl"><span class="l-en">fresh turn inside a live setup — the actionable shelf. RIPENING and RAN shelves follow below.</span><span class="l-zh">活跃形态中的新鲜转向 — 可操作板块。RIPENING 待熟与 RAN 信号已过板块见下方。</span></span>
-    </div>
-    {% endif %}
     <div class="nbgrid" data-showmore-rows="3">
     {% for n in _entry_rows %}
       {% set _d = n.dir or 'caution' %}
       <a class="nbcard nb-{{ _d }}" href="china_lookup.html#{{ n.ticker }}">
-        {# W1-C stage badge — loudest element; green family for ENTRY #}
-        {# W2-B: A/B-tier badge next to why_ranked; narrative chip below (display-only) #}
+        {# stage badge (loudest element) + why_ranked chip #}
         <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
           <span class="nb-stage stg-entry"><span class="l-en">ENTRY</span><span class="l-zh">入场</span></span>
-          {% set _cs = (n.get('stage_detail') or {}).get('cross_sessions_since') %}
-          {% if _cs is not none %}<span class="nb-why" data-tip-en="Gate cross fired {{ _cs }} session(s) ago — the fresh-window reason this name is on the ENTRY shelf" data-tip-zh="信号交叉于{{ _cs }}个交易日前触发 — 新鲜窗口，故列入入场板块">✚ <span class="l-en">crossed {{ _cs }}s ago</span><span class="l-zh">{{ _cs }}日前交叉</span></span>{% endif %}
-          {% if n.get('why_ranked') %}<span class="nb-why" data-tip-en="Why ranked here: {{ n.get('why_ranked','') }}" data-tip-zh="此处排序原因">{{ n.get('why_ranked') }}</span>{% endif %}
-          {% if n.get('ab_tier') == 'A' %}<span class="nb-atier" data-tip-en="A-tier: setup + narrative confluence — the owner playbook strongest case; display-only, forward grades accruing" data-tip-zh="A级：技术形态与叙事共振 — 操作手册中最强案例；仅展示，前瞻评级积累中">A</span>{% elif n.get('ab_tier') == 'B' %}<span class="nb-atier tier-b" data-tip-en="B-tier: setup qualifies but no current narrative heat confirmation" data-tip-zh="B级：形态合格但无当前叙事热度确认">B</span>{% endif %}
+          {% if n.get('why_ranked') %}<span class="nb-why" data-tip-en="Why it ranks here: {{ n.get('why_ranked','') }}" data-tip-zh="此处排序原因：{{ n.get('why_ranked','') }}">{{ n.get('why_ranked') }}</span>{% endif %}
         </div>
-        {% if n.get('narrative') and n.get('narrative').get('theme') %}{% set _nr = n.narrative %}{% set _nlvl = _nr.get('level') %}<span class="nb-narr narr-{{ _nlvl | lower if _nlvl else 'none' }}" data-tip-en="Narrative heat (descriptive positioning lens, NOT validated alpha): {{ _nr.get('theme','') }} {{ _nr.get('source','') }} — rel20 {{ '%+.1f'|format(_nr.get('rel20') or 0) }}pp vs CSI300 / breadth {{ '%.0f'|format((_nr.get('breadth') or 0)*100) }}%.{% if _nr.get('radar') and _nr.get('radar').get('global_ai') %} Radar: {{ (_nr.get('radar').get('global_ai') or {}).get('validated_tag','') }}.{% endif %} · 叙事热度（描述性定仓视角，非经验证的Alpha）：{{ _nr.get('theme','') }} — rel20 {{ '%+.1f'|format(_nr.get('rel20') or 0) }}pp / 面包率{{ '%.0f'|format((_nr.get('breadth') or 0)*100) }}%。"><span class="l-en">{% if _nlvl == 'HOT' %}🔥{% else %}≈{% endif %} {{ _nr.get('theme','') }}{% if _nr.get('radar') and _nr.get('radar').get('global_ai') %} · {{ (_nr.get('radar').get('global_ai') or {}).get('validated_tag','') }}{% endif %}</span><span class="l-zh">{% if _nlvl == 'HOT' %}🔥{% else %}≈{% endif %} {{ _nr.get('theme_zh') or _nr.get('theme','') }}{% if _nr.get('radar') and _nr.get('radar').get('global_ai') %} · {{ (_nr.get('radar').get('global_ai') or {}).get('validated_tag','') }}{% endif %}</span></span>{% endif %}
         <div class="nb-top">
           <span class="nb-tk">{{ n.ticker }}</span>
           <span class="nb-nm">{{ nm(n.name) }}</span>
           {% with sig = n.signal %}{% include "_sig_badge.html.j2" %}{% endwith %}
           {% if n.price is not none %}<span class="nb-px" data-sym="{{ n.ticker }}" data-mkt="cn">{{ '%.2f'|format(n.price) }}</span>{% endif %}
         </div>
-        <div class="nb-sub"><span>{{ t(n.sector, SECZH.get(n.sector, n.sector)) }}</span>{% if n.washout_2w %}<span class="nb-washout" data-tip-en="2-week StochRSI reclaimed the 20 line from oversold — a higher-timeframe washout reversal (likely washed out on the 2W &amp; 1M, so a more durable bottom)." data-tip-zh="2周 StochRSI 从超卖区上穿20线 — 高周期洗盘反转（2周/月线大概率已洗净，底部更稳）。"><span class="l-en">🌊 2W washout</span><span class="l-zh">🌊 2周洗盘</span></span>{% endif %}{% if n.get('coiled') and n.get('coiled').get('coiled') %}{% set _cf = n.get('coiled').get('fire') %}<span class="nb-coiled{% if _cf %} fire{% elif n.get('coiled').get('star') %} star{% endif %}"><span class="l-en">{% if _cf %}⚡ Coiled·FIRE{% else %}⚡ Coiled{% endif %}{% if n.get('coiled').get('star') %} ★{% endif %}</span><span class="l-zh">{% if _cf %}⚡ 蓄势·触发{% else %}⚡ 蓄势{% endif %}{% if n.get('coiled').get('star') %} ★{% endif %}</span></span>{% endif %}{# W0.1 HOLD chip — basing state after anchor; display-only, never a rank input #}{% if n.get('hold') %}{% set _hd = n.hold %}{% set _hs = _hd.get('state','intact') %}<span class="nb-hold hold-{{ _hs }}" data-tip-en="HOLD tracker (display-only) — W6-C basing state after the 3D confluence anchor. INTACT=basing ≤+5% · LAUNCHED=extended or overbought (3D k/d ≥80) · BROKEN=closed below trough×0.97. Anchor: {{ _hd.get('anchor','') }} ({{ _hd.get('anchor_src','') }}). Invalidation: {{ '%.2f'|format(_hd.get('invalidation',0)) }}." data-tip-zh="W6-C 筑底追踪（仅展示）— 锚点后的筑底状态。INTACT=筑底≤+5%·LAUNCHED=已延伸/超买·BROKEN=收盘破位。"><span class="l-en">{% if _hs == 'launched' %}↑ Launched{% elif _hs == 'broken' %}✕ Broken{% else %}Base {{ _hd.get('days_basing',0) }}d{% endif %}</span><span class="l-zh">{% if _hs == 'launched' %}↑ 突破{% elif _hs == 'broken' %}✕ 破位{% else %}筑底{{ _hd.get('days_basing',0) }}天{% endif %}</span></span>{% endif %}{# W0.10 SECTOR FIRST-TICK-UP chip — display-only, never a rank input; approx:true = Yahoo→SW taxonomy join #}{% if n.get('sector_turn') and n.get('sector_turn').get('state') == 'bottoming' %}<span class="nb-coiled" data-tip-en="Sector: bottoming, turning up (display-only, approx) — the Shenwan L1 sector for this name shows phase=Trough and osc_slope&gt;0 in the sector cycle forward_log as of {{ n.sector_turn.get('asof','') }}. The Yahoo→Shenwan taxonomy join is approximate (approx:true). DISPLAY/LEDGER ONLY — no rank change until the ledger matures (F3 discipline)." data-tip-zh="板块：触底转上（仅展示，近似）— 该股所属申万一级行业在板块周期前瞻日志中显示 Trough + osc_slope&gt;0（截至 {{ n.sector_turn.get('asof','') }}）。Yahoo→申万分类近似匹配。仅展示/记录 —— 台账成熟前不调整排序（F3原则）。"><span class="l-en">↑ sector: bottoming</span><span class="l-zh">↑ 板块：触底</span></span>{% endif %}{% if n.extension and n.extension.extended %}<span class="nb-ext" data-tip-en="Already run — {{ n.extension.reason }}. Ranked LOWER on the board (anti-chase): in A-shares a confirmed breakout is often already extended and reverses." data-tip-zh="已大涨 — {{ n.extension.reason }}。已在榜单中降权（防追高）：A股确认突破往往已过热并回落。">⚠ <span class="l-en">extended</span><span class="l-zh">已大涨</span></span>{% endif %}{% if n.quality %}<span class="nb-q nb-q-{{ n.quality.band }}" data-tip-en="Fundamental quality (sector-neutral composite, DISPLAY only — never in the ranking): ROE {{ n.quality.roe }}% · PE {{ n.quality.pe }} · Piotroski {{ n.quality.piotroski }}/9 · composite z {{ n.quality.z }}. Coverage is ~half the universe and A-share value/quality are weak edges, so this only helps weed obvious junk." data-tip-zh="基本面质量（行业中性合成，仅展示，不参与排序）：ROE {{ n.quality.roe }}% · PE {{ n.quality.pe }} · 皮氏 {{ n.quality.piotroski }}/9。覆盖约一半、A股价值/质量为弱因子，仅助剔除明显劣质股。">{{ {'strong':'Q ✓','avg':'Q ~','weak':'Q ✗'}.get(n.quality.band,'Q') }}</span>{% endif %}{% if n.off_high is not none %}<span class="nb-offh">{{ '%+.1f'|format(n.off_high) }}% {{ t('off 52w high', '距52周高') }}</span>{% endif %}</div>
+        <div class="nb-sub"><span>{{ t(n.sector, SECZH.get(n.sector, n.sector)) }}</span>{% if n.washout_2w %}<span class="nb-washout" data-tip-en="Washed out on the 2-week chart and turning back up — usually a more durable bottom than a daily bounce." data-tip-zh="2周线已洗盘并回升——通常比日线反弹更稳的底部。"><span class="l-en">🌊 2W washout</span><span class="l-zh">🌊 2周洗盘</span></span>{% endif %}{% if n.get('coiled') and n.get('coiled').get('coiled') %}{% set _cf = n.get('coiled').get('fire') %}<span class="nb-coiled{% if _cf %} fire{% elif n.get('coiled').get('star') %} star{% endif %}" data-tip-en="Volatility squeezed tight — a big move is loading." data-tip-zh="波动被极度压缩——大行情正在酝酿。"><span class="l-en">{% if _cf %}⚡ Coiled·FIRE{% else %}⚡ Coiled{% endif %}{% if n.get('coiled').get('star') %} ★{% endif %}</span><span class="l-zh">{% if _cf %}⚡ 蓄势·触发{% else %}⚡ 蓄势{% endif %}{% if n.get('coiled').get('star') %} ★{% endif %}</span></span>{% endif %}{% if n.extension and n.extension.extended %}<span class="nb-ext" data-tip-en="Already run up a lot — higher chase risk, so it is ranked lower." data-tip-zh="已经大涨——追高风险较大，故排名靠后。">⚠ <span class="l-en">extended</span><span class="l-zh">已大涨</span></span>{% endif %}{% if n.off_high is not none %}<span class="nb-offh">{{ '%+.1f'|format(n.off_high) }}% {{ t('off 52w high', '距52周高') }}</span>{% endif %}</div>
         {% if n.spark_svg %}{{ n.spark_svg | safe }}{% endif %}
         {% set c = n.conviction %}
         {% if c %}
         <div class="nb-conv">
-          {% if c.score is not none %}<span class="nb-cscore band-{{ c.band }}" data-tip-en="Buy-readiness 0–100 after washout/base/turn. Not an edge probability or rank driver." data-tip-zh="洗盘/筑底/转向后的买入就绪度0–100。不是优势概率，也不驱动排序。"><span class="nb-crank">{{ t('ready','就绪') }}</span>{{ c.score }}</span>{% endif %}
+          {% if c.score is not none %}<span class="nb-cscore band-{{ c.band }}" data-tip-en="Buy-readiness 0–100 — how ready it looks to buy, not a win-rate." data-tip-zh="买入就绪度0–100——看起来离买点有多近，并非胜率。"><span class="nb-crank">{{ t('ready','就绪') }}</span>{{ c.score }}</span>{% endif %}
           <span class="nb-verdict"><span class="l-en">{{ c.verdict }}</span><span class="l-zh">{{ c.verdict_zh }}</span></span>
         </div>
-        {% set al = c.alignment %}
-        {% if al and al.line and n.align_tier in ['aligned','near'] %}
-        {# multi-timeframe ENTRY gate (engine.cycles.mtf_alignment): a low-risk SWING entry
-           must be a FRESH turn from a low — weekly bear-recovering/basing + 3-day cross from
-           oversold (<25) + daily just-crossed. 🟢 Prime/Armed = confirmed; 🟡 Approaching =
-           early backfill (not yet a buy). The reason states WHY it qualifies. #}
-        <div class="nb-align{{ ' nba-near' if n.align_tier == 'near' else '' }}" data-tip-en="{{ al.line }}" data-tip-zh="{{ al.line_zh }}">
-          <span class="nba-mark">{{ '🟡' if n.align_tier == 'near' else '🟢' }}</span>
-          <span class="nba-line"><span class="l-en">{{ al.reason or al.line }}</span><span class="l-zh">{{ al.reason_zh or al.line_zh }}</span></span>
-          {% if al.entry_tier %}<span class="nba-tag">{{ t(al.entry_tier, al.entry_tier_zh) }}</span>{% endif %}
-        </div>
-        {% endif %}
         {% set es = n.entry_signal %}
         {% if es %}
         {# ENTRY-timing gauge (gauge 2): buy now / wait for the pullback / extended, with the
            actual buy-zone price + cycle position. The WHEN/AT-WHAT-PRICE the conviction score
            must never be mistaken for. Market-agnostic (reads the cycle/ladder + vol). #}
-        <div class="nb-entry nbe-{{ es.status }}" data-tip-en="ENTRY timing (gauge 2) — when &amp; at what price to buy. {{ es.action }}" data-tip-zh="入场择时（量表2）— 何时、以何价买入。{{ es.action_zh or es.action }}">
+        <div class="nb-entry nbe-{{ es.status }}" data-tip-en="Entry timing — when and at what price to buy. {{ es.action }}" data-tip-zh="入场时机——何时、以何价买入。{{ es.action_zh or es.action }}">
           <div class="nbe-head">
             <span class="nbe-dot a{{ es.act_level }}"></span>
             <span class="nbe-status"><span class="l-en">{{ es.headline }}</span><span class="l-zh">{{ es.headline_zh }}</span></span>
@@ -1419,48 +1306,14 @@
           {% endif %}
         </div>
         {% endif %}
-        {# the four transparent axes sit UNDER both gauges, so score/verdict + entry timing
-           read as one decision block and the supporting detail follows below #}
-        <div class="nb-axes">
-          {% for ax, lbl, lbl_zh in [('selection','SEL','选股'),('entry','ENT','入场'),('tailwind','TWD','顺风'),('quality','QUAL','质量')] %}
-          {% set a = c.axes[ax] %}
-          <div class="nb-ax{{ ' ax-na' if a.pct is none else '' }}" title="{{ lbl }}{% if a.pct is not none %} {{ a.pct }}/100{% else %} — no data{% endif %}">
-            <div class="axl">{{ t(lbl, lbl_zh) }}</div>
-            <div class="axt"><div class="axf" style="width:{{ a.pct if a.pct is not none else 0 }}%"></div></div>
-          </div>
-          {% endfor %}
-        </div>
         {% endif %}
         <div class="nb-bot">
           <span class="nb-state">{{ td(n.label or n.state) }}</span>
-          {% if n.confluence %}<span class="nb-conf" data-tip-en="In BOTH validated screens — a deep-dip reversal candidate that is ALSO a low-vol defensive name (a structurally safer rebound)." data-tip-zh="同时进入两条已验证筛选 —— 既是深跌反转候选又是低波防御股（结构上更稳健的反弹）。">🛡🔄 {{ t('safer rebound', '稳健反弹') }}</span>{% endif %}
-          {# W0.6 freshness: render signal.asof when it trails the board as_of, so the user sees the
-             signal is from an older bar — never mislead them into thinking the signal is from today #}
+          {# freshness: show the signal's own bar date only when it trails the board date #}
           {% set _sig_asof = (n.signal or {}).get('asof') %}
-          {% if _sig_asof and setups.as_of and _sig_asof < setups.as_of %}<span class="muted" style="font-size:9px" data-tip-en="The confluence signal was computed on {{ _sig_asof }} — one or more bars behind the board date ({{ setups.as_of }}). The underlying close data is current; the signal gate date lags when the 3D bucket is not yet complete on the board date." data-tip-zh="共振信号基于 {{ _sig_asof }}，落后于看板日期（{{ setups.as_of }}）一个或多个交易日。底层收盘数据为最新；当3日周期桶在看板日尚未收盘时，信号日期滞后。"><span class="l-en">signal as of {{ _sig_asof }}</span><span class="l-zh">信号截至 {{ _sig_asof }}</span></span>{% endif %}
-          {% set _rs = n.risk_sizing %}{% if _rs and _rs.size_mult is not none %}<span class="nb-size {{ 'sz-up' if _rs.size_mult >= 1.1 else ('sz-dn' if _rs.size_mult <= 0.9 else '') }}" data-tip-en="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×{{ _rs.size_mult }} of the conviction-base size (forecast vol {{ _rs.vol_ann_pct }}% · inverse-vol ×{{ _rs.inv_vol_mult }} · regime ×{{ _rs.regime_gross }}). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry)." data-tip-zh="波动率管理仓位 — 平静标的加注、波动标的减注。×{{ _rs.size_mult }} 相对确信度基准仓位（预测波动 {{ _rs.vol_ann_pct }}% · 逆波动 ×{{ _rs.inv_vol_mult }} · 区制 ×{{ _rs.regime_gross }}）。已验证的 +0.1-0.15 夏普杠杆 — 持仓多少，独立于持有什么与何时买入。">⚖ {{ '%.2f'|format(_rs.size_mult) }}×</span>{% endif %}
+          {% if _sig_asof and setups.as_of and _sig_asof < setups.as_of %}<span class="muted" style="font-size:9px" data-tip-en="This signal is from {{ _sig_asof }}, a bar or two behind today's board (the 3-day bucket was not complete yet). Prices are current." data-tip-zh="该信号基于 {{ _sig_asof }}，比看板日期早一两个交易日（3日周期桶尚未收盘）。价格为最新。"><span class="l-en">signal as of {{ _sig_asof }}</span><span class="l-zh">信号截至 {{ _sig_asof }}</span></span>{% endif %}
         </div>
-        {% if n.alpha is not none or n.alpha_entry %}
-        <div class="nb-alpha">
-          {% if n.alpha is not none %}<span class="nb-az {{ 'az-up' if n.alpha>0 else ('az-dn' if n.alpha<0 else '') }}" data-tip-en="Sector-neutral residual relative strength (z) — a light quality tiebreaker, not the ranking driver (A-share momentum is not validated)." data-tip-zh="板块中性残差相对强度（z）— 轻量质量加权，非排序主导（A股动量未获验证）。">α {{ '%+.2f'|format(n.alpha) }}</span>{% endif %}
-          {% if n.sector_rank %}<span class="nb-rk" data-tip-en="Rank within its sector by residual relative strength" data-tip-zh="按残差相对强度在其板块内排名">#{{ n.sector_rank }}/{{ n.sector_n }}</span>{% endif %}
-          {% if n.alpha_entry == 'pullback' %}<span class="nb-ent ent-good" data-tip-en="A recent pullback — the constructive mean-reversion entry" data-tip-zh="近期回调 — 建设性的均值回归入场">{{ t('pullback', '回调') }}</span>
-          {% elif n.alpha_entry == 'extended' %}<span class="nb-ent ent-warn" data-tip-en="A recent spike — short-term reversal risk" data-tip-zh="近期急涨 — 短线反转风险">{{ t('extended', '过热') }}</span>{% endif %}
-        </div>
-        {% endif %}
-        {% if c %}
-        {# volatility black hole (vol_squeeze) + margin-crowding chips #}
-        {% set _vs = c.vol_squeeze %}
-        {% if (_vs and _vs.state in ['COILED','FIRED_UP','FIRED_DOWN','EXPANSION']) or c.risk and c.risk.components and c.risk.components.fragility %}
-        <div class="nb-vf">
-          {% if _vs and _vs.state in ['COILED','FIRED_UP','FIRED_DOWN','EXPANSION'] %}
-          <span class="nb-vchip {{ {'COILED':'vf-coil','FIRED_UP':'vf-up','FIRED_DOWN':'vf-down','EXPANSION':'vf-exp'}[_vs.state] }}" data-tip-en="Volatility black hole{% if _vs.days_compressed %} · {{ _vs.days_compressed }}d compressed{% endif %} — {{ _vs.caveat }}" data-tip-zh="波动黑洞 — {{ _vs.caveat_zh }}">{% if _vs.state=='COILED' %}🌀 {{ t('Move loading','蓄势待发') }}{% elif _vs.state=='FIRED_UP' %}🚀 {{ t('Firing↑','向上突破') }}{% elif _vs.state=='FIRED_DOWN' %}🔻 {{ t('Firing↓','向下突破') }}{% else %}💥 {{ t('Already moving','已在异动') }}{% endif %}</span>{% endif %}
-          {% if c.risk and c.risk.components and c.risk.components.fragility %}<span class="nb-vchip vf-marg" data-tip-en="Margin financing balance crowding — a surging leverage balance is the 2015 fire-sale mechanism; a contrarian RISK, sized down." data-tip-zh="融资余额拥挤 — 杠杆快速堆积即2015年踩踏机制；逆向风险，已减仓。">⚠ {{ t('Margin crowded','两融拥挤') }}</span>{% endif %}
-        </div>{% endif %}
-        {% if c.cautions %}<div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes ({{ c.cautions|length }})"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">{{ c.cautions|length }}</span></button><div class="nb-cau-pop" role="tooltip">{% for cau in c.cautions %}<span class="cau-row"><span class="l-en">{{ cau }}</span><span class="l-zh">{{ c.cautions_zh[loop.index0] if (c.cautions_zh and c.cautions_zh|length > loop.index0) else cau }}</span></span>{% endfor %}</div></div>{% endif %}
-        {% if c.notes %}{% for nt in c.notes %}<div class="nb-note nb-note-{{ nt.kind }}"><span class="l-en">ℹ {{ nt.en }}</span><span class="l-zh">ℹ {{ nt.zh }}</span></div>{% endfor %}{% endif %}
-        {# trust tier hoisted to the one .nb-legend above the grid — no longer repeated per card #}
-        {% endif %}
+        {% if c and c.cautions %}<div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes ({{ c.cautions|length }})"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">{{ c.cautions|length }}</span></button><div class="nb-cau-pop" role="tooltip">{% for cau in c.cautions %}<span class="cau-row"><span class="l-en">{{ cau }}</span><span class="l-zh">{{ c.cautions_zh[loop.index0] if (c.cautions_zh and c.cautions_zh|length > loop.index0) else cau }}</span></span>{% endfor %}</div></div>{% endif %}
       </a>
     {% endfor %}
     </div>
@@ -1493,21 +1346,13 @@
         {% if _sl %}
         <div class="nb-ran-detail"><span class="l-en">{{ _sl }}</span><span class="l-zh">{{ n.get('stage_sublabel_zh') or '信号有效但入场时机已过；等待回调' }}</span></div>
         {% endif %}
-        <div class="nb-sub"><span>{{ t(n.sector, SECZH.get(n.sector, n.sector)) }}</span>{% if n.washout_2w %}<span class="nb-washout"><span class="l-en">🌊 2W washout</span><span class="l-zh">🌊 2周洗盘</span></span>{% endif %}{% if n.get('coiled') and n.get('coiled').get('coiled') %}{% set _cf = n.get('coiled').get('fire') %}<span class="nb-coiled{% if _cf %} fire{% elif n.get('coiled').get('star') %} star{% endif %}"><span class="l-en">{% if _cf %}⚡ Coiled·FIRE{% else %}⚡ Coiled{% endif %}</span><span class="l-zh">{% if _cf %}⚡ 蓄势·触发{% else %}⚡ 蓄势{% endif %}</span></span>{% endif %}{% if n.get('hold') %}{% set _hd = n.hold %}{% set _hs = _hd.get('state','intact') %}<span class="nb-hold hold-{{ _hs }}"><span class="l-en">{% if _hs == 'launched' %}↑ Launched{% elif _hs == 'broken' %}✕ Broken{% else %}Base {{ _hd.get('days_basing',0) }}d{% endif %}</span><span class="l-zh">{% if _hs == 'launched' %}↑ 突破{% elif _hs == 'broken' %}✕ 破位{% else %}筑底{{ _hd.get('days_basing',0) }}天{% endif %}</span></span>{% endif %}{% if n.extension and n.extension.extended %}<span class="nb-ext">⚠ <span class="l-en">extended</span><span class="l-zh">已大涨</span></span>{% endif %}</div>
+        <div class="nb-sub"><span>{{ t(n.sector, SECZH.get(n.sector, n.sector)) }}</span>{% if n.washout_2w %}<span class="nb-washout"><span class="l-en">🌊 2W washout</span><span class="l-zh">🌊 2周洗盘</span></span>{% endif %}{% if n.get('coiled') and n.get('coiled').get('coiled') %}{% set _cf = n.get('coiled').get('fire') %}<span class="nb-coiled{% if _cf %} fire{% elif n.get('coiled').get('star') %} star{% endif %}"><span class="l-en">{% if _cf %}⚡ Coiled·FIRE{% else %}⚡ Coiled{% endif %}</span><span class="l-zh">{% if _cf %}⚡ 蓄势·触发{% else %}⚡ 蓄势{% endif %}</span></span>{% endif %}{% if n.extension and n.extension.extended %}<span class="nb-ext">⚠ <span class="l-en">extended</span><span class="l-zh">已大涨</span></span>{% endif %}</div>
         {% set c = n.conviction %}
         {% if c %}
         <div class="nb-conv">
           {% if c.score is not none %}<span class="nb-cscore band-{{ c.band }}" data-tip-en="Score muted — this name is on the RAN/LATE shelf: entry timing passed." data-tip-zh="评分已淡化 — 此股处于信号已过板块，入场时机已过。"><span class="nb-crank">{{ t('ready','就绪') }}</span>{{ c.score }}</span>{% endif %}
           <span class="nb-verdict"><span class="l-en">{{ c.verdict }}</span><span class="l-zh">{{ c.verdict_zh }}</span></span>
         </div>
-        {% set al = c.alignment %}
-        {% if al and al.line and n.align_tier in ['aligned','near'] %}
-        <div class="nb-align{{ ' nba-near' if n.align_tier == 'near' else '' }}" data-tip-en="{{ al.line }}" data-tip-zh="{{ al.line_zh }}">
-          <span class="nba-mark">{{ '🟡' if n.align_tier == 'near' else '🟢' }}</span>
-          <span class="nba-line"><span class="l-en">{{ al.reason or al.line }}</span><span class="l-zh">{{ al.reason_zh or al.line_zh }}</span></span>
-          {% if al.entry_tier %}<span class="nba-tag">{{ t(al.entry_tier, al.entry_tier_zh) }}</span>{% endif %}
-        </div>
-        {% endif %}
         {% set es = n.entry_signal %}
         {% if es %}
         {% if n.get('muted_entry') %}
@@ -1521,7 +1366,7 @@
           </div>
         </div>
         {% else %}
-        <div class="nb-entry nbe-{{ es.status }}" title="ENTRY timing (gauge 2) — {{ es.action }}">
+        <div class="nb-entry nbe-{{ es.status }}" title="Entry timing — {{ es.action }}">
           <div class="nbe-head">
             <span class="nbe-dot a{{ es.act_level }}"></span>
             <span class="nbe-status"><span class="l-en">{{ es.headline }}</span><span class="l-zh">{{ es.headline_zh }}</span></span>
@@ -1529,15 +1374,6 @@
         </div>
         {% endif %}
         {% endif %}
-        <div class="nb-axes">
-          {% for ax, lbl, lbl_zh in [('selection','SEL','选股'),('entry','ENT','入场'),('tailwind','TWD','顺风'),('quality','QUAL','质量')] %}
-          {% set a = c.axes[ax] %}
-          <div class="nb-ax{{ ' ax-na' if a.pct is none else '' }}" title="{{ lbl }}{% if a.pct is not none %} {{ a.pct }}/100{% else %} — no data{% endif %}">
-            <div class="axl">{{ t(lbl, lbl_zh) }}</div>
-            <div class="axt"><div class="axf" style="width:{{ a.pct if a.pct is not none else 0 }}%"></div></div>
-          </div>
-          {% endfor %}
-        </div>
         {% endif %}
         <div class="nb-bot">
           <span class="nb-state">{{ td(n.label or n.state) }}</span>
@@ -1574,9 +1410,6 @@
       </div>
       {% endif %}
       {% if r.get('spot_pct_in_range') is not none %}<span style="font-size:8.5px;color:var(--muted)"><span class="l-en">range {{ '%.0f'|format(r.get('spot_pct_in_range')) }}%</span><span class="l-zh">区间位置{{ '%.0f'|format(r.get('spot_pct_in_range')) }}%</span></span>{% endif %}
-      {# W2-B: narrative chip + A/B-tier badge on RIPENING cards (display-only) #}
-      {% if r.get('narrative') and r.get('narrative').get('theme') %}{% set _rn = r.narrative %}{% set _rnlvl = _rn.get('level') %}<span class="nb-narr narr-{{ _rnlvl | lower if _rnlvl else 'none' }}" data-tip-en="Narrative heat (descriptive positioning lens, NOT validated alpha): {{ _rn.get('theme','') }} — rel20 {{ '%+.1f'|format(_rn.get('rel20') or 0) }}pp vs CSI300 / breadth {{ '%.0f'|format((_rn.get('breadth') or 0)*100) }}%.{% if _rn.get('radar') and _rn.get('radar').get('global_ai') %} Radar: {{ (_rn.get('radar').get('global_ai') or {}).get('validated_tag','') }}.{% endif %} · 叙事热度（描述性定仓视角，非经验证的Alpha）"><span class="l-en">{% if _rnlvl == 'HOT' %}🔥{% else %}≈{% endif %} {{ _rn.get('theme','') }}{% if _rn.get('radar') and _rn.get('radar').get('global_ai') %} · {{ (_rn.get('radar').get('global_ai') or {}).get('validated_tag','') }}{% endif %}</span><span class="l-zh">{% if _rnlvl == 'HOT' %}🔥{% else %}≈{% endif %} {{ _rn.get('theme_zh') or _rn.get('theme','') }}</span></span>{% endif %}
-      {% if r.get('ab_tier') == 'A' %}<span class="nb-atier" data-tip-en="A-tier: setup + narrative confluence — the owner playbook strongest case; display-only, forward grades accruing" data-tip-zh="A级：技术形态与叙事共振 — 操作手册中最强案例；仅展示，前瞻评级积累中">A</span>{% elif r.get('ab_tier') == 'B' %}<span class="nb-atier tier-b" data-tip-en="B-tier: setup qualifies but no current narrative heat confirmation" data-tip-zh="B级：形态合格但无当前叙事热度确认">B</span>{% endif %}
     </div>
     {% endfor %}
     </div>
@@ -1817,42 +1650,7 @@
   </div>
   {% endif %}
 
-  <!-- ===================== ALPHA LEADERS (sector-neutral residual momentum) ===================== -->
-  {% if alpha and alpha.top %}
-  <div class="panel span12" id="alpha-leaders">
-    <h2>{{ t('📊 Sector relative strength — read the mean-reversion flag', '📊 板块相对强度 — 关注均值回归标记') }}
-      <span class="note" style="text-transform:none">· {{ t('sector-neutral residual · vs CSI 300', '板块中性残差 · 相对沪深300') }}{% if alpha.n %} · {{ alpha.n }} {{ t('names', '只') }}{% endif %}</span>
-      {{ help("Sector-neutral relative strength is context. Read the entry flag; high alpha is not a buy signal in A-shares.", "板块中性相对强度仅作背景。请看入场标记；A股高alpha不是买入信号。") }}
-    </h2>
-    <table class="sortable">
-      <thead><tr>
-        <th class="l">{{ t('Stock', '个股') }}</th>
-        <th class="l">{{ t('Sector', '板块') }}</th>
-        <th>{{ t('alpha z', '阿尔法 z') }}</th>
-        <th>{{ t('sector rank', '板块排名') }}</th>
-        <th>{{ t('idio ann', '年化残差') }}</th>
-        <th>{{ t('1-mo', '近一月') }}</th>
-        <th class="l">{{ t('entry', '入场') }}</th>
-      </tr></thead>
-      <tbody>
-      {% for a in alpha.top[:16] %}
-      <tr>
-        <td class="l"><a href="china_lookup.html#{{ a.ticker }}"><b>{{ a.ticker }}</b></a> <span class="note">{{ nm(a.name) }}</span></td>
-        <td class="l note">{{ t(a.sector, SECZH.get(a.sector, a.sector)) }}</td>
-        <td><b class="{{ 'pos' if (a.alpha or 0)>=0 else 'neg' }}">{{ '%+.2f'|format(a.alpha) if a.alpha is not none else '—' }}</b></td>
-        <td class="note">{{ a.sector_rank }}/{{ a.sector_n }}</td>
-        <td class="{{ 'pos' if (a.resid_ann or 0)>=0 else 'neg' }}">{{ '%+.0f'|format(a.resid_ann) ~ '%' if a.resid_ann is not none else '—' }}</td>
-        <td class="{{ 'pos' if (a.rev_1m or 0)>=0 else 'neg' }}">{{ '%+.1f'|format(a.rev_1m) ~ '%' if a.rev_1m is not none else '—' }}</td>
-        <td class="l">{% if a.entry %}{% set _aez = {'pullback':'回调买点','extended':'急涨偏热','intact':'趋势完好','laggard':'落后','neutral':'中性'} %}<span class="alpha-entry ae-{{ a.entry }}">{{ t(a.entry, _aez.get(a.entry, a.entry)) }}</span>{% endif %}</td>
-      </tr>
-      {% endfor %}
-      </tbody>
-    </table>
-    <p class="note" style="margin:6px 0 0;font-size:11px">{{ t('Relative-strength context only. Use the entry flag, not alpha rank, as the cleaner read.', '相对强度仅作背景。更干净的读法是入场标记，而非alpha排名。') }}</p>
-  </div>
-  {% endif %}
-
-  {% endif %}{# /mode != macro — stock block (top setups, mean-reversion watch, alpha leaders) #}
+  {% endif %}{# /mode != macro — stock block (top setups, mean-reversion watch) #}
 
   {% set I = internals or {} %}
 

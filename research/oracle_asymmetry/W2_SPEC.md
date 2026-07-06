@@ -1,0 +1,43 @@
+# OTA W2 — Member Transmission — Build Spec (pre-registered)
+
+**Program:** Oracle Turn Asymmetry ([masterplan](../ORACLE_TURN_ASYMMETRY_MASTERPLAN_BY_FABLE.md) §W2). Authored by Fable 2026-07-05 from the wf_9a6fe056 scouts. Committed BEFORE any computation; frozen (amendments logged + countersigned). DESCRIPTIVE/exploratory; "validated" banned; no nightly/site wiring; modern-track by construction (labeled on every table).
+
+## 0. The question
+The operator's actual trade: a sector turn ARMS the sector; the entry is a MEMBER stock's own trigger with asymmetric risk. Does an Oracle armed window add measurable quality to member entries that already fire on the house triggers? W1/W1b showed sector-level onset features carry no discrimination — this is the member-level test, and the house yardstick applies (~21d absolute, WR + MFE/MAE; 63d/SPY-excess banned).
+
+## 1. Design — a JOIN study (no new trigger computation)
+- **Member fires:** `data/replay/replay_boarded.parquet` (MAIN data dir, READ-ONLY; the EI P0 production-code replay, #1312+#1381). VERDICT-GRADE rows only: `survivor_bias == False`, Massive price source, inside the effective window (≈2022-06-30 → last replay date per the P0 memo v1.1), horizon not censored. Read the BOARDED file ONLY (per-year parts carry null rs_sector_quartile). Never mix yahoo/massive price bases anywhere.
+- **Sector conditions (frozen from the committed W0 catalog `research/oracle_asymmetry/W0_1_events_graded.csv`):** primary = `a15` RAW fires; secondary (registered) = `ep_onset_in` events. **Armed window = [fire_date, fire_date + K sessions], K=10**, per node; overlapping windows on a node merge into one armed-window id (the cluster unit). K ∈ {5, 21} sensitivity = appendix-only, never quoted as findings.
+- **Sector→member map:** fire ticker → us_sector_* basket via the `etf_proxy` field (exact 1:1) → Oracle node. **PIT law:** member must be an SP500-src PIT member at fire date (`data/breadth/sp1500_pit_membership.parquet` interval join). Disclosed limitations printed in the report header: basket membership is a static 2023-05-09 snapshot (hindsight) and no PIT GICS-sector map exists (sector-drift). Tickers absent from the basket map are counted out, never silently dropped (BRK-B filename artifact noted).
+- **Arms:**
+  - **IN:** verdict-grade member fires whose fire date falls inside an armed window of their sector (primary: a15).
+  - **OUT:** verdict-grade member fires outside any armed window of their sector (the trigger-alone baseline — Oracle's marginal value is IN − OUT).
+  - **Ablation (c) — member-trigger value:** for each armed window, ALL PIT-eligible sector members "entered" at the window's first session +1 (next-bar fill), graded identically from `collectors/massive_stock_day.load_ticker()` closes via `engine/grading.py` (`forward_metrics` h∈{5,10,21} + `terminal_state` clean8_21). Reported with CIs, not gating — it measures what the member TRIGGER adds beyond the sector condition.
+- **Metrics (house yardstick, all ABSOLUTE):** WR21 = share with `fwd_ret_21 > 0`; mean/median `fwd_ret_21`; `fwd_mfe_21` / `fwd_mdd_21` distributions; clean8_21 terminal-state distribution; stop5 rate. Metric columns come from the replay artifact where present (introspect schema; grading conventions are the same `grading.py` functions) — recompute only for ablation (c).
+
+## 2. Inference (the P3-R2 lesson at member level — frozen)
+- **Cluster structure:** the unit of independence is the **armed-window id** (member fires inside one window co-move). All IN-arm inference uses a **cluster bootstrap** (resample windows, 2,000 draws); effective n (number of windows, not fires) printed on every table.
+- **Regime-matched placebo (the null for the delta):** 500 draws; each draw re-places every armed window on the SAME node at a random non-armed location matched on VIX regime (vix_pctile ≥/< 0.6 at window start, from panel_s in MAIN data), preserving window length and count; recompute the IN−OUT delta per draw. Pass = observed delta > p95 of the placebo distribution.
+- **Gates (2 registered reads, BH q=0.10 within this family):**
+  - **G-W2-A:** ΔWR21 (IN − OUT) > 0 AND > placebo p95.
+  - **G-W2-B:** Δ mean `fwd_ret_21` (IN − OUT) > 0 AND > placebo p95.
+- **Pre-bound verdicts:** CONDITION-LIFT (both pass; descriptive class — display-only until a formal P3-style registration) / **UNDERPOWERED-ACCRUING** (point estimates positive but CIs/placebo inconclusive — print the MDE@80% given the observed window count) / NULL (else). Secondary condition (ep_onset_in) reported with the same vocabulary, appendix.
+- No other cuts may be quoted as findings. Per-sector splits, K-sensitivity, ablation (c): appendix, labeled.
+
+## 3. Deliverables
+1. `scripts/oracle_member_transmission_w2.py` — offline CLI (`--data-dir` MAIN for replay/massive/panel/PIT parquets; governance from worktree). Fidelity gate FIRST: replay artifact row counts + golden-test flags present; W0 CSV family counts exact; armed-window count printed per node.
+2. `research/oracle_asymmetry/W2_member_trades.csv` — one row per (arm, member fire | ablation entry) with window id, sector, metrics, PIT flags.
+3. `research/oracle_asymmetry/W2_REPORT.md` — arms table, gate verdicts (pre-bound vocabulary), cluster-bootstrap CIs, placebo distribution summary, effective n, disclosed-limitations header, appendices (secondary condition, K-sensitivity, per-sector, ablation (c)).
+4. `tests/test_oracle_member_transmission_w2.py` — synthetic fixtures: window merge/id assignment, IN/OUT arm assignment at boundaries, PIT interval join (member enters/exits index), cluster bootstrap preserves window structure, placebo draw regime-matching, next-bar fill for ablation (c).
+
+## 4. Prohibitions
+No modification of existing engine/scripts files; no writes to MAIN data; no trial-ledger appends; no re-derivation of member triggers (the replay artifact IS the trigger record); no quoting any lift without its cluster-aware CI; the 2 gate reads above are the entire claimed test count.
+
+## Amendment log
+- **2026-07-05/06 — fix-round corrections (builder, from first audit+recompute pass; all four BLOCKERS real):** (B1) pre-2022-06-30 fires were snapping to the replay calendar start creating phantom armed windows — fires now filtered to ≥ effective-window start BEFORE window building (window counts then matched the independent rebuild exactly); (B2) placebo estimator was mean-of-per-node deltas vs a pooled observed statistic — now pooled identically; (B3) placebo pool was un-PIT-filtered vs a PIT-filtered observed population — now PIT; (B4) placebo windows could land on real armed intervals — real intervals now seeded into the forbidden set. Report generated (had been missing — pipeline aborted pre-report on run 1).
+- **2026-07-06 — Adjudicator countersign + rulings (Fable), after a SECOND independent Opus re-audit of the post-fix positive (verdict: SURVIVES-WITH-CAVEATS; all headline numbers reproduced exactly; leave-one-out window and drop-best-quarter both remain above placebo p95):**
+  1. **Join-key substitution RATIFIED as an amendment (was a frozen-spec deviation):** §1 bound the sector→member map to membership.json `etf_proxy`; the implementation keys primary arms on the replay's own GICS sector string via GICS_TO_NODE (the replay carries no etf_proxy column; the GICS string is the same 1:1 mapping in practice). Ablation (c) still uses the basket map. This substitution is hereby logged and countersigned; any formal registration must pre-commit the join key it will use.
+  2. **Placebo OUT-arm asymmetry (minor):** placebo-OUT retains real-IN fires. Verified in BOTH directions by the re-auditor (a symmetric reimplementation strengthens the pass); no verdict impact. The symmetric form is REQUIRED in any formal P3-style registration harness.
+  3. **Delta inference statement:** per §4's CI law, the headline deltas' sole inference is the 500-draw regime-matched placebo distribution (cluster-bootstrap CIs are attached to the IN-arm point estimates); a cluster-bootstrap CI on the delta itself is required in the formal registration.
+  4. **MDE alpha nit:** `mde_at_power` uses BH_Q as the test alpha (category error) — inert this run (gates passed); fix before any UNDERPOWERED verdict is ever quoted from this harness.
+  5. **VERDICT STANDS: CONDITION-LIFT** (pre-bound vocabulary; descriptive class; display-only until a formal P3-style registration). Context caveats carried on every quote: modern-track (≥2022-06-30, effective n=31 windows), growth/cyclical-tilted (XLP/XLU deltas negative from real 2023 defensive selloffs), hindsight membership snapshot + uncontrolled sector drift.

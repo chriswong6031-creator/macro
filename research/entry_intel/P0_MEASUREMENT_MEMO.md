@@ -130,3 +130,16 @@ And the one action worth doing right now: point the replay at the Massive store 
 - [ ] Returns INSUFFICIENT-POWER (honest null) rather than borrowing pre-2021 rows when the unstamped episode-clustered n floor is not met (§2.4.6).
 
 *This memo is LAW for Phase 1 until amended by Fable.*
+
+---
+
+## §6 v1.1 AMENDMENTS — P0.1 v2 substrate rulings (Fable, 2026-07-05, from re-audit CLEAN verdict)
+
+These amend §5 and bind every P1 PREREG in addition to the v1.0 checklist:
+
+1. **Effective verdict window ≈ 2022-06-30 → last-replay-date** (re-audit AF3). Massive series all start 2021-07-06; the gate's 250-bar MTF warmup consumes ~11 months. PREREGs state the effective window, not the nominal 2021-07-06 one. Golden-test fidelity (62==62) is a **yahoo-panel guarantee**; the Massive ledger is internally consistent and PIT-clean but anchors resample buckets on a truncated series.
+2. **Canonical P1 input = `data/replay/replay_boarded.parquet`** (re-audit AF4). The per-year `replay_2*.parquet` parts carry `rs_sector_quartile` as null (populated only by the date-major board post-pass) — a study reading the parts glob gets a silently-null column. No P1 study may read the parts directly.
+3. **Board-selection residual** (fix-pass diagnosis): the shipped buy list is NOT reproducible from close-only PIT slices (conviction composite needs cross-sectional panel scores, entry_signal, coiled, ladder). PIT-computable board-stage reasons (extension_demote / knife_demote / sector_cap_displaced / board_rank_cutoff) are true labels; the residual class `board_rank_unresolved` is a labeled limitation — P1.2's gate-P&L scope is the PIT-computable gates; `board_rank_unresolved` rows are reported descriptively, never given a keep/demote/flip verdict.
+4. **Concordance record** (re-audit AF1/AF2): on-disk price-source concordance = 98.5% (12 names/480 bars, `golden_test.json`); auditor's independent 60-name recomputation ≈95–97%. Cause of residual divergence = **history-length/resample-anchor drift, not dividend adjustment** (falsified on ZS: no dividend, penny-identical prices, divergent verdict; yahoo truncated to Massive's start reproduces Massive exactly). Any P1 PREREG citing concordance cites the on-disk value.
+5. **Universe** (post-merge patch #1381): replay universe = board ∪ current-snapshot panels ∪ **PIT S&P500 membership intervals overlapping 2021-07-06** (1,033 tickers; delisted ex-members ATVI/FRC/SIVB/TWTR/CTLT/NLSN restored). Per-date membership filtering remains study-side (P1.4).
+6. **Power honesty** (re-audit AF5): where the full-universe replay has not yet filled a cell, studies return INSUFFICIENT-POWER; the 57-ticker pilot ledger is never used for verdicts, only for pipeline dry-runs.

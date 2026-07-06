@@ -1,0 +1,147 @@
+========================================================================
+P2_5_STUDY — Washout Depth × Interaction study (REGISTERED)
+BH family: P2_5_depth_interaction   q<= 0.1   N_PERM=5000
+========================================================================
+
+§5/§6 CONFORMANCE (P0_MEASUREMENT_MEMO.md v1.1 2026-07-05):
+  [x] Cites P0_MEASUREMENT_MEMO.md v1.1 (2026-07-05)
+  [x] Primary window = 2022-06-30 -> 2026-07-02 (replay vg-fire max=2025-12-29; identical population)
+  [x] Verdict-grade statistics on survivor_bias==False rows only
+  [x] survivor-stamped rows -> context appendix, excluded from BH/sign/n-floor/GO-NOGO
+  [x] horizon_censored rows excluded per-horizon (NaN fwd dropped per horizon)
+  [x] Returns INSUFFICIENT-POWER if unstamped n floor unmet (all cells clear 25 by >>)
+
+Replay path: /Users/chriswong/Documents/Cluade/Macro Dashboard/data/replay/replay_boarded.parquet
+Replay MD5:  906175f9eb8caa351ed6d7d5c56265d3
+  -> matches PREREG replay MD5 (production depth reproduces diagnostic).
+scipy: 1.18.0
+
+Column-name mapping (PREREG name -> replay column):
+  episode_cluster_id       -> episode_id
+  washout_proximity        -> washout_proximity
+  rs_vs_sector_quartile    -> rs_sector_quartile
+  above_200dma             -> above_200
+  ext_z                    -> ext_z
+  fwd_21d                  -> fwd_ret_21
+  fwd_63d                  -> fwd_ret_63
+  terminal_state@21d       -> state_8_21
+  terminal_state@63d       -> state_15_126
+  survivor_bias_stamp      -> survivor_bias
+  verdict                  -> verdict_type(=='fire') & verdict_grade
+  dd_pct                   -> COMPUTED FRESH via washout_depth_pit (reprobe path)
+
+Loading replay_boarded.parquet ...
+  Full shape: (961656, 66)
+  Verdict-grade fires (all, primary era): 49,939
+  Survivor-stamped rows (excluded from verdicts): 0
+  Episode clusters (all fires): 22,295
+  Era: 2022-06-30 -> 2025-12-29
+
+Computing PIT production washout depth (dd_pct) for every (ticker, signal_date) pair ...
+  (reprobe compute path: PIT-sliced massive_stock_day close -> washout algorithm)
+    20,000/49,939 (4s)
+    40,000/49,939 (5s)
+  Done: 49,939 pairs in 6s  errors=0
+  Production washout defined fires: 47,182   None-excluded: 2,757
+  washout True: 36,734   dd_pct defined: 47,182
+  [sanity vs diagnostic] n_defined expect 47,182 got 47,182; wash_true expect 36,734 got 36,734
+
+────────────────────────────────────────────────────────────────────────
+THIN-CHECK (C7/C8) — decrement m before any computation (§3)
+────────────────────────────────────────────────────────────────────────
+  C1 deep_washout_solo    n_fires=20,407  n_episodes=8,849  OK
+  C2 d40plus_solo         n_fires= 5,695  n_episodes=2,501  OK
+  C3 below200_washout     n_fires=23,780  n_episodes=10,266  OK
+  C4 washout_ac_pass      n_fires=35,079  n_episodes=15,431  OK
+  C5 trio                 n_fires=20,146  n_episodes=8,882  OK
+  C6 deep_trio            n_fires=11,371  n_episodes=4,946  OK
+  C7 d40plus_trio         n_fires= 3,026  n_episodes=1,327  OK
+  C8 below200_deep        n_fires=15,515  n_episodes=6,623  OK
+
+  Active configs: ['C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8']
+  Thin-excluded (C7/C8 only): none
+  m DECLARED = 16  (16 full / 14 one-thin / 12 both-thin)
+
+────────────────────────────────────────────────────────────────────────
+ASSERT sign_stability_convention (BLOCKING-2; halts if not baseline-free):
+  half_delta = stop_out(moved_up_in_half) - stop_out(not_moved_up_in_half)
+  horizon: horizon-matched to trial's own horizon
+  baseline: NONE — within-half two-group contrast only
+  verification: baseline-free probes PASS (identical-group Δ=0.0; disjoint-group Δ=+100.0pp)
+  -> sign_stability implementation is PER-HALF BASELINE-FREE. OK.
+
+Both-halves split: midpoint=2024-05-13 | H1 n=22,301 | H2 n=24,881
+
+────────────────────────────────────────────────────────────────────────
+CALIBRATION CONTROLS (mandatory — BEFORE the grid; P2.5 encoding)
+────────────────────────────────────────────────────────────────────────
+(1) NEGATIVE control on P2.5 encoding (cell=C6 moved_up @21d), 200 permuted-label draws
+   rejection @alpha=0.05: 0.065  (require <=0.12; ~0.05 ideal)
+   p-dist: mean=0.490 median=0.504 min=0.004 max=0.996
+   KS-uniformity: D=0.054  p=0.593  (require p>=0.05)
+   NEGATIVE control: PASS
+
+(2) POSITIVE control: inject +0.05 forward-return shift; require perm_p << 0.05
+   injected shift=+0.05 return space -> perm_p=2.00e-04  param_p=0.00e+00  r=-0.3125
+   POSITIVE control: PASS
+
+
+────────────────────────────────────────────────────────────────────────
+EXECUTING GRID: 8 configs × 2 horizons = m=16 trials
+  Primary target: stop-out (favorable = moved_up stopped LESS; Δ<0)
+────────────────────────────────────────────────────────────────────────
+  P25_T01 C1/deep_washout_solo  21dstop Δ= +5.06pp fav=N perm_p=0.0002 r=-0.1170 sign=Y(H1=+5.4,H2=+5.0) dm21Δ=-15.58 
+  P25_T02 C1/deep_washout_solo  63dstop Δ= -3.66pp fav=Y perm_p=0.0002 r=-0.1081 sign=Y(H1=-2.4,H2=-4.5) dm21Δ=-0.11 
+  P25_T03 C2/d40plus_solo       21dstop Δ= +7.36pp fav=N perm_p=0.0002 r=-0.1468 sign=Y(H1=+13.8,H2=+1.5) dm21Δ=-15.96 
+  P25_T04 C2/d40plus_solo       63dstop Δ= -4.39pp fav=Y perm_p=0.0002 r=-0.1671 sign=N(H1=+1.5,H2=-9.7) dm21Δ=-0.03 
+  P25_T05 C3/below200_washout   21dstop Δ= +1.49pp fav=N perm_p=0.0002 r=-0.0862 sign=Y(H1=+1.7,H2=+1.5) dm21Δ=-8.29 
+  P25_T06 C3/below200_washout   63dstop Δ= -4.26pp fav=Y perm_p=0.0002 r=-0.0711 sign=Y(H1=-6.5,H2=-2.0) dm21Δ=-0.11 
+  P25_T07 C4/washout_ac_pass    21dstop Δ= +4.60pp fav=N perm_p=0.0616 r=-0.0166 sign=Y(H1=+3.4,H2=+6.1) dm21Δ=-6.80 
+  P25_T08 C4/washout_ac_pass    63dstop Δ= +2.14pp fav=N perm_p=0.3779 r=+0.0080 sign=Y(H1=+0.9,H2=+3.7) dm21Δ=-0.16 
+  P25_T09 C5/trio               21dstop Δ= -0.47pp fav=Y perm_p=0.0002 r=-0.0623 sign=N(H1=-1.5,H2=+0.4) dm21Δ=-4.85 
+  P25_T10 C5/trio               63dstop Δ= -2.37pp fav=Y perm_p=0.0002 r=-0.0423 sign=Y(H1=-4.5,H2=-0.5) dm21Δ=-0.13 
+  P25_T11 C6/deep_trio          21dstop Δ= +2.53pp fav=N perm_p=0.0002 r=-0.1064 sign=Y(H1=+2.8,H2=+2.1) dm21Δ=-11.58 
+  P25_T12 C6/deep_trio          63dstop Δ= -4.71pp fav=Y perm_p=0.0002 r=-0.1004 sign=Y(H1=-5.4,H2=-4.4) dm21Δ=-0.11 
+  P25_T13 C7/d40plus_trio       21dstop Δ= +6.10pp fav=N perm_p=0.0002 r=-0.1750 sign=Y(H1=+10.7,H2=+2.0) dm21Δ=-15.18 
+  P25_T14 C7/d40plus_trio       63dstop Δ= -6.40pp fav=Y perm_p=0.0002 r=-0.2079 sign=Y(H1=-1.8,H2=-10.6) dm21Δ=-0.09 
+  P25_T15 C8/below200_deep      21dstop Δ= +4.04pp fav=N perm_p=0.0002 r=-0.1220 sign=Y(H1=+5.6,H2=+2.6) dm21Δ=-14.39 
+  P25_T16 C8/below200_deep      63dstop Δ= -6.02pp fav=Y perm_p=0.0002 r=-0.1293 sign=Y(H1=-5.8,H2=-6.2) dm21Δ=-0.09 
+
+Sanity gate: PASS — no param/perm divergence of the round-1 defect signature.
+
+BH q<=0.10 across m=16: n_survive=15  min BH-adj p=0.0002
+
+────────────────────────────────────────────────────────────────────────
+FIRE-RATE IMPACT (R7; RW mode removes zero fires -> gate_fire_rate_impact_pct=0.0)
+────────────────────────────────────────────────────────────────────────
+  C1 deep_washout_solo  in_cell=20,407 ( 43.3%) ep_cell=8,849 ep_moved=  8199 ep_not_moved= 13548 gate_impact=0.0%
+  C2 d40plus_solo       in_cell= 5,695 ( 12.1%) ep_cell=2,501 ep_moved=  2403 ep_not_moved= 18773 gate_impact=0.0%
+  C3 below200_washout   in_cell=23,780 ( 50.4%) ep_cell=10,266 ep_moved=  9493 ep_not_moved= 12938 gate_impact=0.0%
+  C4 washout_ac_pass    in_cell=35,079 ( 74.3%) ep_cell=15,431 ep_moved= 13065 ep_not_moved= 10398 gate_impact=0.0%
+  C5 trio               in_cell=20,146 ( 42.7%) ep_cell=8,882 ep_moved=  8364 ep_not_moved= 13885 gate_impact=0.0%
+  C6 deep_trio          in_cell=11,371 ( 24.1%) ep_cell=4,946 ep_moved=  4723 ep_not_moved= 16923 gate_impact=0.0%
+  C7 d40plus_trio       in_cell= 3,026 (  6.4%) ep_cell=1,327 ep_moved=  1284 ep_not_moved= 19903 gate_impact=0.0%
+  C8 below200_deep      in_cell=15,515 ( 32.9%) ep_cell=6,623 ep_moved=  6243 ep_not_moved= 15467 gate_impact=0.0%
+
+────────────────────────────────────────────────────────────────────────
+PER-CONFIG VERDICTS (§6.3 ship: BH-surv favorable stop-out + sign-stable + not-thin + 21d dead-money Δ<=0)
+────────────────────────────────────────────────────────────────────────
+  C1 deep_washout_solo : SHIPS (stop-out survives at [63]d; 21d dm Δ=-15.58pp<=0)
+  C2 d40plus_solo      : DEAD (no BH-surviving favorable sign-stable stop-out trial; any_BH_favorable=True, any_sign_stable=True)
+  C3 below200_washout  : SHIPS (stop-out survives at [63]d; 21d dm Δ=-8.29pp<=0)
+  C4 washout_ac_pass   : DEAD (no BH-surviving favorable sign-stable stop-out trial; any_BH_favorable=False, any_sign_stable=True)
+  C5 trio              : SHIPS (stop-out survives at [63]d; 21d dm Δ=-4.85pp<=0)
+  C6 deep_trio         : SHIPS (stop-out survives at [63]d; 21d dm Δ=-11.58pp<=0)
+  C7 d40plus_trio      : SHIPS (stop-out survives at [63]d; 21d dm Δ=-15.18pp<=0)
+  C8 below200_deep     : SHIPS (stop-out survives at [63]d; 21d dm Δ=-14.39pp<=0)
+
+────────────────────────────────────────────────────────────────────────
+WHOLE-STUDY VERDICT: PARTIAL_SHIP
+  Ship-qualifying configs (EI-F1D-RW shadow registration): ['C1', 'C3', 'C5', 'C6', 'C7', 'C8']
+  §6.3 lead for first shadow deploy (narrowest surviving): C1 (deep_washout_solo)
+
+Saved: /Users/chriswong/Documents/Cluade/Macro Dashboard/research/entry_intel/p1_runs/P2_5_STUDY/results.json
+Saved: /Users/chriswong/Documents/Cluade/Macro Dashboard/research/entry_intel/p1_runs/P2_5_STUDY/_run.log
+========================================================================
+P2_5_STUDY COMPLETE — verdict: PARTIAL_SHIP
+========================================================================

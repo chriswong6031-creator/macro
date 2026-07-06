@@ -108,8 +108,8 @@
     </div>
     <p class="story" id="story"></p>
     <p class="tagline">{{ t(
-      'Curated Hong Kong theme baskets. Equal-weighted, monthly rebalanced, benchmarked to HSI. Monitoring context, not a buy list.',
-      '精选香港主题篮子。等权、月度再平衡，对标恒生指数。仅作监测背景，非买入清单。') }}</p>
+      'Equal-weight Hong Kong theme baskets measured against the Hang Seng Index. Use them to see which HK themes are leading or fading.',
+      '等权重香港主题篮子，对标恒生指数。用于观察哪些港股主题在走强或走弱。') }}</p>
   </header>
 
   <!-- prevailing-narrative scorecard → the Narrative Rotation playbook (filled client-side) -->
@@ -125,8 +125,8 @@
     <section id="table-section">
       <h2><span class="idx">01</span>{{ t('Performance table', '表现一览') }}</h2>
       <p class="sub">{{ t(
-        "All baskets in a sortable watchlist. Toggle raw, relative, or own-history z-score.",
-        '全部篮子的可排序观察表。可切换原始、相对或自身历史z分数。') }}</p>
+        "Sortable snapshot of every basket. Toggle between raw return, return versus HSI, and each basket's own z-score. Click a basket to see members.",
+        '所有篮子的可排序快照。可切换原始回报、相对恒指回报和篮子自身 z 分数。点击篮子查看成分。') }}</p>
       <div class="chartbar"><span></span><span class="tabs" id="btbl-mode" role="group"></span></div>
       <div class="panel"><div class="ts"><table id="btable"></table></div></div>
     </section>
@@ -134,8 +134,8 @@
     <section id="chart-section">
       <h2><span class="idx">02</span>{{ t('Performance', '走势对比') }}</h2>
       <p class="sub">{{ t(
-        'Rebased to 0% for the selected window. Click legend entries to show or hide baskets.',
-        '所选窗口起点重设为0%。点击图例显示或隐藏篮子。') }}</p>
+        'Lines are rebased to 0% at the start of the window. Toggle baskets from the legend; "All" covers the available cache history.',
+        '曲线在窗口起点重设为 0%。可在图例中开关篮子；"全部"覆盖可用缓存历史。') }}</p>
       <div class="chartbar">
         <span class="tabs" id="chart-modes" role="group"></span>
         <span class="tabs" id="chart-ranges" role="group"></span>
@@ -153,8 +153,10 @@
   </div>
 
   <footer>
-    {{ t('Generated', '生成于') }} <span id="gen">{{ generated_utc }}</span><br>
-    <span class="made">© 2026 MastermindX Inc</span>
+    {{ t(
+      'Informational only, not investment advice. Baskets are equal-weighted and benchmarked to the Hang Seng Index. Membership is curated, so results are descriptive, not an out-of-sample backtest or buy list. See LIMITATIONS.md.',
+      '仅供参考，非投资建议。篮子等权重，并以恒生指数为基准。成分为人工整理，因此结果是描述性信息，不是样本外回测或买入清单。参见 LIMITATIONS.md。') }}
+    {{ t('Generated', '生成于') }} <span id="gen">{{ generated_utc }}</span>.
   </footer>
 
 <script src="lightweight-charts.js"></script>
@@ -178,7 +180,6 @@ const BENCH_COLOR = () => cssv('--muted') || '#94a3b8';
 const LANG = () => document.documentElement.getAttribute('data-lang')||'en';
 const bn  = b => (LANG()==='zh' && b && b.name_zh) ? b.name_zh : (b?b.name:'');
 const bth = b => (LANG()==='zh' && b && b.thesis_zh) ? b.thesis_zh : (b?b.thesis:'');
-const shortText = (s,n=145) => { s=String(s||''); return s.length>n ? s.slice(0,n).replace(/\s+\S*$/,'')+'...' : s; };
 const BENCH = () => LANG()==='zh' ? (BASKETS.benchmark_label_zh||'恒生指数') : (BASKETS.benchmark_label||'HSI');
 const CAT_ZH = {}; (BASKETS.categories||[]).forEach((c,i)=>CAT_ZH[c]=(BASKETS.categories_zh||[])[i]||c);
 const catLabel = c => (LANG()==='zh' && CAT_ZH[c]) ? CAT_ZH[c] : c;
@@ -301,7 +302,7 @@ function renderCards(){
   const el=document.getElementById('cards');
   el.innerHTML=(BASKETS.categories||[]).map(cat=>{
     const since = LANG()==='zh'?'自':'since';
-    const memberW = LANG()==='zh'?'只 · 等权 · ':' members · equal-weighted · ';
+    const memberW = LANG()==='zh'?'只 · ':' members · ';
     const cards=(BASKETS.baskets||[]).filter(b=>b.category===cat)
       .sort((a,c)=>((c.perf?.[bhz]?.rel)??-9)-((a.perf?.[bhz]?.rel)??-9))
       .map(b=>{ const spk=sparkTail(ratio(CHART.baskets[b.id]));
@@ -309,7 +310,7 @@ function renderCards(){
         return `<div class="card" style="--c:${colorOf[b.id]}" data-id="${b.id}">
           <div class="nm"><span class="dot" style="background:${colorOf[b.id]}"></span>${esc(bn(b))}</div>
           <div class="meta">${b.n_members}${memberW}${since} ${esc(b.created)}${ref}</div>
-          <div class="th">${esc(shortText(bth(b),135))}</div>
+          <div class="th">${esc(bth(b))}</div>
           <div class="perf">${kpi(hzLabel(bhz),b.perf?.[bhz])}${kpi('YTD',b.perf?.ytd)}<span class="spark">${sparkSvg(spk,{w:96,h:30,color:colorOf[b.id]})}</span></div>
         </div>`; }).join('');
     return cards?`<h3 class="cat">${esc(catLabel(cat))}</h3><div class="cards">${cards}</div>`:'';
@@ -322,13 +323,13 @@ function memRows(b){ return (b.members||[]).map(m=>`<tr><td><a href="hk_lookup.h
 function detailSection(b){
   const p=b.perf||{}; const kr=(k,h)=>`<div><div class="k">${k} ${esc(VS())}</div><div class="v ${cls(p[h]?.rel)}">${fmtPct(p[h]?.rel)}</div></div>`;
   const zh=LANG()==='zh';
-	  const ref=b.reference?`<p class="refline">${zh?'对标':'Cross-check'} <b>${esc(b.reference.label)}</b>${b.reference.name?' — '+esc(b.reference.name):''}: r <b>${b.reference.corr.toFixed(2)}</b>, adj <b>${b.reference.rel_corr.toFixed(2)}</b>, ${b.reference.n} ${zh?'日':'sessions'}.</p>`:'';
+  const ref=b.reference?`<p class="refline">${zh?'交叉验证对标':'Cross-checked vs'} <b>${esc(b.reference.label)}</b>${b.reference.name?' — '+esc(b.reference.name):''}: ${zh?'日相关性':'daily correlation'} <b>${b.reference.corr.toFixed(2)}</b>, ${zh?'市场调整后':'market-adjusted'} <b>${b.reference.rel_corr.toFixed(2)}</b> ${zh?'，共':'over'} ${b.reference.n} ${zh?'个交易日':'sessions'}. <span class="muted">(${zh?'市场调整剥离共同的市场Beta — 篮子−基准 vs ETF−基准。':'market-adjusted strips shared market beta — basket−bench vs ETF−bench.'})</span></p>`:'';
   const warns=[]; if((b.missing||[]).length) warns.push(`<span class="warn">${zh?'已剔除（不在缓存）':'excluded (not in free cache)'}: ${b.missing.map(esc).join(', ')}</span>`);
   (b.partial||[]).forEach(pp=>warns.push(`<span class="warn">${esc(pp.symbol)} ${zh?'纳入于':'enters'} ${esc(pp.from)}</span>`));
   const clog=(b.changelog||[]).map(c=>`<li><b>${esc(c.date)}</b> — ${esc(c.action)}: ${esc(c.note)}</li>`).join('');
   const memHdr = zh?['代码','理由','纳入','20d','YTD']:['Symbol','Rationale','Added','20d','YTD'];
   return `<div class="detail" id="b-${b.id}"><h4><span class="dot" style="background:${colorOf[b.id]}"></span>${esc(bn(b))} <span class="chip">${esc(catLabel(b.category))}</span></h4>
-	    <p class="th">${esc(shortText(bth(b),220))}</p>
+    <p class="th">${esc(bth(b))}</p>
     <div class="kpirow">${kr('20d','20d')}${kr('60d','60d')}${kr('MTD','mtd')}${kr('YTD','ytd')}${kr(zh?'全程':'Full','full')}</div>
     ${ref}<div>${warns.join(' ')}</div>
     <details open><summary>${zh?'成分':'Members'} (${b.n_members}) &amp; ${zh?'变更记录':'changelog'}</summary>

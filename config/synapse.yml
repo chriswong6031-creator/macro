@@ -21,6 +21,19 @@ meta:
     - top_setups       # discovery/top-setups page gating
     - attention_queue  # missing-tape attention queue
     - push_floor       # push-notification floor (notify.py)
+  horizon_role_vocabulary:
+    # LH-R1 (Long-Hold Thesis Masterplan W0): every artifact declares its horizon.
+    # The CI gate (check_synapse_registry.py) hard-fails any entry without this field.
+    # check_synapse_reads.py (PR-D) will enforce the firewall bidirectionally.
+    - tactical_entry  # feeds ~days-to-weeks entry/rotation decisions (entry-stack fires,
+                      # gates, boards, alert-triage surfaces, oracle rotation)
+    - hold_thesis     # feeds 12-36mo ownership evidence — NO artifacts stamped here yet;
+                      # first hold_thesis artifacts arrive in W1 after the missed-hold study
+    - dual            # feeds BOTH horizons with SEPARATE calibrations (rare; requires
+                      # a notes field justifying why one artifact serves both clocks)
+    - context         # descriptive/diagnostic, horizon-agnostic (regime, breadth,
+                      # neural-web infrastructure, qualitative desks, cycle data, BTC vector,
+                      # foresight, ops rails, cortex, governance)
 
 # ============================================================
 # DATA-PLANE ARTIFACTS (sorted by descending consumer_count)
@@ -40,6 +53,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: infrastructure
+    horizon_role: context
     weights: none
     scored_path_surfaces:
       - alert_triage
@@ -97,6 +111,7 @@ artifacts:
     freshness_sla_hours: 192
     schema: implicit
     tier: infrastructure
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -135,6 +150,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: infrastructure
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -171,6 +187,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: infrastructure
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -207,6 +224,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: display
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -244,6 +262,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: shadow
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -277,6 +296,7 @@ artifacts:
     freshness_sla_hours: 8760
     schema: implicit
     tier: infrastructure
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -307,6 +327,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: infrastructure
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -336,6 +357,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: display
+    horizon_role: tactical_entry
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -364,6 +386,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: infrastructure
+    horizon_role: tactical_entry
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -375,6 +398,7 @@ artifacts:
       - scripts/build_hk.py
       - scripts/build_hk_library.py
       - scripts/us_board_studies.py
+      - scripts/validate_options_entry.py
     external_consumers: []
     notes: "Producer: scripts/grade_us_board.py:11 append-only per as_of, lane, ticker, horizon."
 
@@ -391,6 +415,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: display
+    horizon_role: tactical_entry
     weights: none
     scored_path_surfaces:
       - board_ordering
@@ -418,6 +443,7 @@ artifacts:
     freshness_sla_hours: 8760
     schema: implicit
     tier: scored
+    horizon_role: context
     weights: measured
     scored_path_surfaces:
       - alert_triage
@@ -447,6 +473,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: display
+    horizon_role: context
     weights: hand
     scored_path_surfaces: []
     consumers:
@@ -473,6 +500,7 @@ artifacts:
     freshness_sla_hours: 8760
     schema: implicit
     tier: infrastructure
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -498,6 +526,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: spine.predictions.v1
     tier: shadow
+    horizon_role: context
     weights: none
     scored_path_surfaces:
       - alert_triage
@@ -524,6 +553,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: display
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -549,6 +579,7 @@ artifacts:
     freshness_sla_hours: 200
     schema: risk_radar_review.v1
     tier: display
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers: []
@@ -572,6 +603,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: china_sector_cycles.grader.v1
     tier: shadow
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -597,6 +629,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: shadow
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -620,6 +653,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: shadow
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -644,6 +678,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: shadow
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -669,6 +704,7 @@ artifacts:
     freshness_sla_hours: 8760
     schema: species_registry.v1
     tier: infrastructure
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -692,6 +728,7 @@ artifacts:
     freshness_sla_hours: 8760
     schema: implicit
     tier: scored
+    horizon_role: context
     weights: measured
     scored_path_surfaces:
       - board_ordering
@@ -716,6 +753,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: display
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -741,6 +779,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: experiments_registry.v1
     tier: infrastructure
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -763,6 +802,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: display
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -785,6 +825,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: display
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -807,6 +848,7 @@ artifacts:
     freshness_sla_hours: 8760
     schema: implicit
     tier: scored
+    horizon_role: tactical_entry
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -829,6 +871,7 @@ artifacts:
     freshness_sla_hours: 8760
     schema: implicit
     tier: scored
+    horizon_role: tactical_entry
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -851,6 +894,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: infrastructure
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -874,6 +918,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: display
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -895,6 +940,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: display
+    horizon_role: tactical_entry
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -915,6 +961,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: display
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -937,6 +984,7 @@ artifacts:
     freshness_sla_hours: 8760
     schema: implicit
     tier: display
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -959,6 +1007,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: display
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -981,6 +1030,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: display
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -1007,6 +1057,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: shadow
+    horizon_role: tactical_entry
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -1035,6 +1086,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: shadow
+    horizon_role: tactical_entry
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -1062,6 +1114,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: shadow
+    horizon_role: tactical_entry
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -1086,6 +1139,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: shadow
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -1115,6 +1169,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: shadow
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -1142,6 +1197,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: shadow
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -1167,6 +1223,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: shadow
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -1194,6 +1251,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: shadow
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -1218,6 +1276,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: shadow
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -1245,6 +1304,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: shadow
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -1271,6 +1331,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: shadow
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -1297,6 +1358,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: shadow
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -1321,6 +1383,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: shadow
+    horizon_role: tactical_entry
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -1346,6 +1409,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: shadow
+    horizon_role: tactical_entry
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -1372,6 +1436,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: shadow
+    horizon_role: tactical_entry
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -1404,6 +1469,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: shadow
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -1435,6 +1501,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: shadow
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -1461,6 +1528,7 @@ artifacts:
     freshness_sla_hours: 8760
     schema: implicit
     tier: shadow
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -1494,6 +1562,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: shadow
+    horizon_role: tactical_entry
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -1522,6 +1591,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: shadow
+    horizon_role: tactical_entry
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -1549,6 +1619,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: shadow
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -1577,6 +1648,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: shadow
+    horizon_role: tactical_entry
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -1608,6 +1680,7 @@ artifacts:
     freshness_sla_hours: 8760
     schema: implicit
     tier: infrastructure
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -1640,6 +1713,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: display
+    horizon_role: tactical_entry
     weights: none
     scored_path_surfaces:
       - board_ordering
@@ -1656,9 +1730,11 @@ artifacts:
       - scripts/build_theme_detail.py
       - scripts/grade_us_board.py
       - scripts/snapshot_shadow_book.py
+      - engine/neuralweb/mastermind_context.py
     external_consumers:
       - mastermind:anchor
       - mastermind:vendored
+      - mastermind:context
       - terminal:screener
     notes: "Producer: scripts/build_stock_library.py:2412 write_text. Mastermind anchor_1 contract; Terminal screener contract per export_signal_contracts.py:171."
 
@@ -1679,6 +1755,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: none
     tier: display
+    horizon_role: tactical_entry
     weights: none
     scored_path_surfaces:
       - board_ordering
@@ -1709,6 +1786,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: altdata.mastermind.v1
     tier: display
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -1719,8 +1797,10 @@ artifacts:
       - engine/china_intel_bus.py
       - engine/signal_sanity.py
       - scripts/build_intelligence.py
+      - engine/neuralweb/mastermind_context.py
     external_consumers:
       - mastermind:vendored
+      - mastermind:context
     qual_ladder_ref: altdata.signal_score
     notes: "Producer: engine/altdata_emit.py:259 write_text. schema=altdata.mastermind.v1 inline constant at altdata_emit.py:65."
 
@@ -1737,6 +1817,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: none
     tier: display
+    horizon_role: tactical_entry
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -1763,6 +1844,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: none
     tier: display
+    horizon_role: tactical_entry
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -1788,6 +1870,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: none
     tier: display
+    horizon_role: tactical_entry
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -1808,6 +1891,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: altdata.by_ticker.v2
     tier: display
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -1836,6 +1920,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: jsonschema:research/signal_engine/SCHEMA.json
     tier: display
+    horizon_role: tactical_entry
     weights: none
     scored_path_surfaces:
       - board_ordering
@@ -1863,6 +1948,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: display
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -1888,6 +1974,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: display
+    horizon_role: tactical_entry
     weights: none
     scored_path_surfaces:
       - top_setups
@@ -1913,6 +2000,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: none
     tier: display
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -1936,6 +2024,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: display
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -1960,6 +2049,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: none
     tier: display
+    horizon_role: tactical_entry
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -1967,7 +2057,9 @@ artifacts:
       - engine/intel_discovery.py
       - engine/radar_ic.py
       - engine/signal_sanity.py
-    external_consumers: []
+      - engine/neuralweb/mastermind_context.py
+    external_consumers:
+      - mastermind:context
     notes: "Producer: scripts/build_radar_plus.py:3 via engine/radar_ticker.py:14."
 
   # --- 4 consumers ---
@@ -1983,6 +2075,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: none
     tier: display
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -2006,6 +2099,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: display
+    horizon_role: tactical_entry
     weights: none
     scored_path_surfaces:
       - board_ordering
@@ -2030,6 +2124,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: oracle_state.v1
     tier: display
+    horizon_role: tactical_entry
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -2039,6 +2134,137 @@ artifacts:
       - scripts/oracle_nightly.py
     external_consumers: []
     notes: "Producer: engine/oracle/live.py:395 write_text. schema=oracle_state.v1 inline constant at live.py:78."
+
+  # --- oracle reversion promotion track (P0+P1) ---
+  # P0: per-compound forward ledger (shadow tier, nightly single-writer)
+  oracle-reversion-forward-ledger:
+    path: data/oracle/reversion_forward/<compound_id>.jsonl
+    format: jsonl
+    producer: scripts/oracle_reversion_forward_ledger.py
+    known_extra_writers: []
+    owner_program: oracle
+    cadence: daily-engine
+    storage: git
+    asof_field: fire_date
+    freshness_sla_hours: 30
+    schema: oracle_reversion_state.v1
+    tier: shadow
+    horizon_role: tactical_entry
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/oracle_reversion_state.py
+      - scripts/oracle_nightly.py
+    external_consumers: []
+    notes: >
+      Nightly single-writer; PIT-graded reversion forward ledger per compound.
+      Grading uses _per_entry_rows from scripts/oracle_reversion_screen.py VERBATIM
+      (live == backtest grading). See research/ORACLE_REVERSION_PROMOTION_PREREG.md
+      for the frozen schema + live promotion floor. Path contains <compound_id>
+      placeholder — one file per compound under data/oracle/reversion_forward/.
+
+  # P1: display-tier sidecar (oracle_reversion_state.v1)
+  oracle-reversion-state:
+    path: site/basketdata/oracle_reversion_state.json
+    format: json
+    producer: scripts/oracle_reversion_state.py
+    known_extra_writers: []
+    owner_program: oracle
+    cadence: daily-engine
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 30
+    schema: oracle_reversion_state.v1
+    tier: display
+    horizon_role: tactical_entry
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/oracle_nightly.py
+    external_consumers: []
+    notes: >
+      Sidecar alongside oracle_state.json — does NOT modify the oracle_state.v1
+      episode contract. authority_level surfaces ratified P2 tiers when present;
+      defaults to 'display' when authority file absent (additive, fail-open wiring).
+      Live block is honest at n=0 (nulls, never fabricated).
+      See research/ORACLE_REVERSION_PROMOTION_TRACK_DESIGN.md §2 (sidecar rationale).
+
+  # P2: reversion promotion queue (infrastructure tier, Fable adjudication)
+  oracle-reversion-promotion-queue:
+    path: data/oracle/reversion_promotion_queue.json
+    format: json
+    producer: scripts/oracle_reversion_promotion_scan.py
+    known_extra_writers: []
+    owner_program: oracle
+    cadence: daily-engine
+    storage: git
+    asof_field: generated_at
+    freshness_sla_hours: 30
+    schema: reversion_promotion_queue.v1
+    tier: infrastructure
+    horizon_role: tactical_entry
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/oracle_reversion_promotion_scan.py
+    external_consumers: []
+    notes: >
+      P2 promotion scan output. NEVER auto-promotes. Candidates require
+      Fable/operator adjudication (ratified_by must be set by a human-committed
+      edit). Lapse proposals also land here.
+      ORACLE_REVERSION_PROMOTION_PREREG.md gates are FROZEN.
+      Source: W4_SPEC.md §W4.a.
+
+  # P2: reversion authority (infrastructure tier, written only by promotion scan)
+  oracle-reversion-authority:
+    path: data/oracle/reversion_authority.json
+    format: json
+    producer: scripts/oracle_reversion_promotion_scan.py
+    known_extra_writers: []
+    owner_program: oracle
+    cadence: daily-engine
+    storage: git
+    asof_field: updated_at
+    freshness_sla_hours: 30
+    schema: reversion_authority.v1
+    tier: infrastructure
+    horizon_role: tactical_entry
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/oracle_reversion_state.py
+    external_consumers: []
+    notes: >
+      Written ONLY by oracle_reversion_promotion_scan.py. Authority entries
+      exist ONLY for compounds with human-ratified queue rows (ratified_by set
+      by human-committed edit). P1 sidecar reads this additively (fail-open).
+      Source: W4_SPEC.md §W4.a.
+
+  # W4.b: reversion kill-requeue registry
+  oracle-reversion-kill-requeue:
+    path: data/oracle/reversion_kill_requeue.jsonl
+    format: jsonl
+    producer: scripts/oracle_reversion_screen.py
+    known_extra_writers: []
+    owner_program: oracle
+    cadence: on-demand
+    storage: git
+    asof_field: killed_at_asof
+    freshness_sla_hours: 9999
+    schema: none
+    tier: infrastructure
+    horizon_role: tactical_entry
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/oracle_reversion_promotion_scan.py
+    external_consumers: []
+    notes: >
+      Append-only kill-requeue registry. Written when oracle_reversion_screen.py
+      detects UNDERPOWERED-ACCRUING (all point estimates positive, power<50%).
+      Keep-first by compound_id. Promotion scan checks for requeue_at_n=2×n_at_kill
+      and prints a REMINDER (never auto-rescreens — counted-trials law).
+      Source: W4_SPEC.md §W4.b.
 
   # --- 3 consumers ---
   site-basket-flow:
@@ -2053,6 +2279,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: none
     tier: display
+    horizon_role: tactical_entry
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -2075,6 +2302,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: none
     tier: display
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -2096,6 +2324,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: none
     tier: display
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -2117,6 +2346,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: china_intel.briefing.v3
     tier: display
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -2139,6 +2369,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: artifact_manifest.v1
     tier: infrastructure
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -2161,6 +2392,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: none
     tier: infrastructure
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -2183,6 +2415,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: none
     tier: display
+    horizon_role: tactical_entry
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -2204,6 +2437,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: none
     tier: display
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers: []
@@ -2225,6 +2459,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: none
     tier: display
+    horizon_role: tactical_entry
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -2245,6 +2480,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: none
     tier: display
+    horizon_role: tactical_entry
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -2265,6 +2501,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: none
     tier: display
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -2287,6 +2524,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: none
     tier: display
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -2308,6 +2546,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: none
     tier: display
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers: []
@@ -2328,6 +2567,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: none
     tier: display
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -2350,6 +2590,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: infrastructure
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -2386,6 +2627,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: infrastructure
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -2419,11 +2661,14 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: infrastructure
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
       - scripts/build_site.py  # copies kernel_families.json to site/neuralwebdata/ for committee pages (display-only)
-    external_consumers: []
+      - engine/neuralweb/mastermind_context.py
+    external_consumers:
+      - mastermind:context
     notes: >
       DISPLAY-FIRST LAW: zero behavior-changing consumers. Per-engine-family decay
       diagnostics: horizon_curve (shrunken_ic per horizon from __all__ marginal cells in
@@ -2434,6 +2679,42 @@ artifacts:
       is the byte_sha256 of kernel_estimates.parquet. Input: kernel_estimates.parquet
       (primary) + spine_index.parquet (recency_trend). Envelope sibling-stamped per
       wrapper-prohibition law.
+
+  # --- Signal Commons W2: measured holding-horizon half-lives ---
+  kernel-half-lives:
+    path: data/neuralweb/half_life.json
+    format: json
+    producer: engine/neuralweb/half_life.py
+    known_extra_writers:
+      - "scripts/build_kernel_half_lives.py — thin CLI wrapper; calls write_half_lives() defined in the producer; no independent write logic"
+    owner_program: signal-commons
+    cadence: daily-engine
+    storage: git
+    asof_field: produced_at
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/build_site.py  # copies half_life.json to site/neuralwebdata/ for committee chips (display-only)
+    external_consumers: []
+    notes: >
+      DISPLAY-FIRST LAW: zero behavior-changing consumers. W2 "Measured Half-Lives":
+      holding-horizon decay curves fitted per engine family from kernel_estimates.parquet
+      (shrunken_ic per horizon) + spine_index.parquet (n_eff counts for bootstrap).
+      HONESTY: staleness half-life is UNMEASURED (fill_offset uniformly=1 across all
+      replay parquets; needs delayed-fill accrual in replay harness — W0-blocked item).
+      decay_kind="horizon" only; staleness never emits a number. outcome_unit mandatory
+      per family (magnitude vs signed_excess) to prevent B3 cross-family conflation.
+      Conservative defaults: family_floor=200, curve_floor=3, cell_floor=WILSON_MIN_N=12,
+      bootstrap=90pct event-block 200 resamples. Monotone-decrease gate is pre-registered
+      hard gate: rising curves emit half_life=null reason="edge_non_decaying". Expected
+      honest outcome: all families null (track_record IC rises; radar/us_board<3 horizons).
+      Sentinel key "status":"fit_ran" distinguishes successful all-null run from crashed job.
+      Envelope sibling-stamped per wrapper-prohibition law. Inputs: kernel_estimates.parquet
+      + spine_index.parquet. Script: scripts/build_kernel_half_lives.py (off render path).
 
   # --- Neural Web W3 PR3: lagging-signal detector ---
   lagging-signals:
@@ -2449,6 +2730,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: infrastructure
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers: []
@@ -2480,6 +2762,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: implicit
     tier: infrastructure
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -2491,7 +2774,9 @@ artifacts:
       - engine/briefing.py
       - engine/neuralweb/read.py
       - engine/neuralweb/cortex.py
-    external_consumers: []
+      - engine/neuralweb/mastermind_context.py
+    external_consumers:
+      - mastermind:context
     notes: >
       Composed one-page truth (Neural Web N1 masterplan). Reads data/market_state/latest.json
       (post-radar resolved verdict), data/regime/latest.json (regime quad, vol_regime,
@@ -2519,11 +2804,14 @@ artifacts:
     freshness_sla_hours: 30
     schema: neuralweb.confluence_graph.v1
     tier: display
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
       - scripts/build_site.py  # copies graph JSON to site/neuralwebdata/ for committee/graph pages (display-only)
-    external_consumers: []
+      - engine/neuralweb/mastermind_context.py
+    external_consumers:
+      - mastermind:context
     notes: >
       DISPLAY-ONLY HARD LAW: confluence never gates, never ranks, never raises a priority.
       All edges carry display_only=True. Cross-engine hard gates require their own
@@ -2560,6 +2848,7 @@ artifacts:
     freshness_sla_hours: 9999
     schema: implicit
     tier: shadow
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -2590,6 +2879,7 @@ artifacts:
     freshness_sla_hours: 9999
     schema: implicit
     tier: infrastructure
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -2613,6 +2903,7 @@ artifacts:
     freshness_sla_hours: 9999
     schema: implicit
     tier: shadow
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -2637,6 +2928,7 @@ artifacts:
     freshness_sla_hours: 9999
     schema: implicit
     tier: infrastructure
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -2666,6 +2958,7 @@ artifacts:
     freshness_sla_hours: 9999
     schema: implicit
     tier: infrastructure
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -2688,6 +2981,7 @@ artifacts:
     freshness_sla_hours: 9999
     schema: implicit
     tier: infrastructure
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -2710,6 +3004,7 @@ artifacts:
     freshness_sla_hours: 9999
     schema: implicit
     tier: infrastructure
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -2735,6 +3030,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: none
     tier: infrastructure
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -2772,6 +3068,7 @@ artifacts:
     freshness_sla_hours: 9999
     schema: neuralweb.governance.v1
     tier: infrastructure
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -2803,10 +3100,13 @@ artifacts:
     freshness_sla_hours: 30
     schema: neuralweb.cortex_memo.v1
     tier: shadow
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
-    consumers: []
-    external_consumers: []
+    consumers:
+      - engine/neuralweb/mastermind_context.py
+    external_consumers:
+      - mastermind:context
     notes: >
       W7b: Nightly committee memo produced by the cortex deliberation loop.
       Schema neuralweb.cortex_memo.v1: {as_of, summary, what_fired,
@@ -2835,6 +3135,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: reflex.cortex_attention
     tier: shadow
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -2862,6 +3163,7 @@ artifacts:
     freshness_sla_hours: 9999
     schema: neuralweb.hypothesis_inbox.v1
     tier: infrastructure
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers: []
@@ -2886,6 +3188,7 @@ artifacts:
     freshness_sla_hours: 9999
     schema: neuralweb.machine_registry.v1
     tier: infrastructure
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -2914,6 +3217,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: reflex.cortex_attention.grade.v1
     tier: shadow
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -2941,11 +3245,14 @@ artifacts:
     freshness_sla_hours: 30
     schema: neuralweb.cortex_probation.v1
     tier: infrastructure
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
       - engine/neuralweb/cortex.py
-    external_consumers: []
+      - engine/neuralweb/mastermind_context.py
+    external_consumers:
+      - mastermind:context
     notes: >
       W7b PR2: Single source of truth for A2 earn-in state (replaces the PR1
       inline evaluation in cortex.py).  Written nightly by grade_cortex_attention.py
@@ -2956,3 +3263,1385 @@ artifacts:
       (refused→granted or granted→refused) to preserve the governance ledger as a
       sparse record of consequential state changes.  Today: granted=False (empty
       attention record — n=0 < 25).  SINGLE-WRITER: grade_cortex_attention.py ONLY.
+
+  # ============================================================
+  # OPTIONS NERVES — P4.1 registration (2026-07-05)
+  # gex_state nerve registered below; options_events deferred (producer not live yet)
+  # ============================================================
+
+  # --- gex_state: reconstructed index dealer-gamma history (P1.1b) ---
+  gex-state-history:
+    path: data/index_gex_history/*.parquet
+    format: parquet
+    producer: scripts/build_index_gex_history.py
+    known_extra_writers:
+      - engine/market_gamma.py
+    owner_program: options-alpha
+    cadence: weekly
+    storage: git
+    asof_field: null
+    freshness_sla_hours: 200
+    schema: implicit
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/market_gamma.py
+      - scripts/build_gex_board.py
+    external_consumers: []
+    provenance:
+      reconstructed: true
+      method: >
+        greeks ⋈ oi join on (root, expiration, strike, right, date) fed to
+        engine.gex_engine.compute_gex — the identical pure function used by the live
+        polygon_gex and cboe/gex paths.  Dealer sign (long-call/short-put), ±25%
+        strike window, ±25% zero-gamma grid, $/1%-move net-GEX scaling, and
+        long-above-flip/short-below regime all inherited verbatim from gex_engine.
+      audit:
+        overlap_window: "2026-06-15 to 2026-07-02 (n=13 trading days per root)"
+        spot_tol_frac: 0.005
+        note: >
+          Raw correlation is diluted by a T-1 settlement-timing lag in the live
+          polygon_gex store (live spot = T-1 close carried forward).  Same-spot
+          filter isolates sessions where both sources report the same underlying
+          price (within 0.5%) — those rows have no timing mismatch and measure
+          pure model agreement.
+        SPY:
+          n_overlap: 13
+          net_gex_corr_raw: 0.8605
+          n_same_spot: 9
+          net_gex_corr_same_spot: 0.9727
+          regime_agreement_same_spot: 0.8889
+        QQQ:
+          n_overlap: 13
+          net_gex_corr_raw: 0.7385
+          n_same_spot: 5
+          net_gex_corr_same_spot: 0.9707
+          regime_agreement_same_spot: 1.0
+        IWM:
+          n_overlap: 13
+          net_gex_corr_raw: 0.3341
+          n_same_spot: 6
+          net_gex_corr_same_spot: 0.9262
+          regime_agreement_same_spot: 1.0
+          fragility_note: >
+            FRAGILE — same-spot corr 0.9262 is tolerance-sensitive:
+            0.2%->0.9977 (n=4), 0.5%->0.9262 (n=6), 1.0%->0.3341 (n=13).
+            Unlike SPY/QQQ/DIA which degrade monotonically (consistent with
+            a timing-lag confound), IWM collapses as rows in the 0.5-1.0%
+            drift band are added, suggesting genuine model divergence at those
+            sessions. regime_agreement_same_spot=1.0 is uninformative: the
+            all-short near-zero cluster (-0.4 to -2.0 bn) means every row
+            trivially agrees. Registration provisional; re-audit once
+            polygon_gex accumulates more IWM overlap days.
+        DIA:
+          n_overlap: 13
+          net_gex_corr_raw: 0.8669
+          n_same_spot: 10
+          net_gex_corr_same_spot: 0.9105
+          regime_agreement_same_spot: 0.8
+        SPX_SPXW: excluded — backfill_state does not list them complete; see
+          roots_excluded_native_index in data/index_gex_history/_manifest.json
+    notes: >
+      Multi-year (2017->) daily dealer-gamma regime and levels series for SPY, QQQ,
+      IWM, DIA.  One row per trading day per root: net_gex_bn, gamma_flip,
+      gamma_regime, dist_to_flip_pct, net_vex, net_cex, charm_anchor, iv30,
+      put_call_oi_ratio, max_pain — plus reconstructed=True flag.
+      SPX/SPXW excluded until backfill_state lists them complete (house mid-write law).
+      Display-only: net-GEX percentile-vs-own-history context surface for the
+      market_gamma engine; MUST NOT feed any scored or arithmetic weight path.
+      Companion live store: data/polygon_gex/summary_*.parquet (short window ~2026-06-15+).
+
+  # --- 1 consumer ---
+  options-flow-index:
+    path: site/flow/index.json
+    format: json
+    producer: scripts/build_options_flow.py
+    known_extra_writers: []
+    owner_program: options-alpha
+    cadence: collect
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 30
+    schema: options_flow.context.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers:
+      - mastermind:flow-board
+    notes: >
+      353-name manifest board written by scripts/build_options_flow.py (line ~176).
+      Companion per-name payloads at site/flow/<KEY>.json and compact bot context
+      at site/flow/mastermind.json (same producer, same cadence).
+      Provenance caveat: DIRECTION is soft — signing_gate root false as of 2026-07-05
+      (tape-scoped ratification not yet passed); MAGNITUDE (net dollar flow,
+      gamma_flow, 0DTE pct) is reliable. Accrual store: data/options_flow/summary_<SYM>.parquet
+      (one row/day per underlying, written via store.upsert). Display-only: this
+      artifact MUST NOT feed any scored surface or arithmetic weight path until
+      signing_gate root is true.
+
+  # --- 4 consumers ---
+  polygon-gex-summaries:
+    path: data/polygon_gex/summary_*.parquet
+    format: parquet
+    producer: scripts/build_polygon_gex.py
+    known_extra_writers: []
+    owner_program: options-alpha
+    cadence: collect
+    storage: gitignored-local
+    asof_field: null
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/options_stamp.py
+      - engine/altdata.py
+      - scripts/validate_gex.py
+      - scripts/audit_options_accrual.py
+    external_consumers: []
+    notes: >
+      Per-underlying IV surface summary: iv30, opt_wall_up, opt_wall_down,
+      put_call_oi_ratio, max_pain, gex — one row per date per name.
+      Companion chain store at data/polygon_gex/chains/<date>.parquet
+      (per-contract OI/volume/iv/delta rows; same producer, same cadence).
+      Coverage: Polygon Standard snapshot since 2026-06-15 (~384 names).
+      Deep vendor IV history (2017+) arrives with the ThetaData universe pass
+      (deferred; iv_surface upgrade wave not yet started). Display-only: iv30
+      consumed via options_stamp for stock-card overlay and gex_board; no
+      scored arithmetic path currently reads this store.
+
+  # --- W-A Options Entry State (options-nw-entry-intelligence, 2026-07-05) ---
+
+  options-entry-state:
+    path: data/options_entry/state.parquet
+    format: parquet
+    producer: scripts/build_options_entry_state.py
+    known_extra_writers: []
+    owner_program: options-nw-entry-intelligence
+    cadence: collect
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: options_entry_state.v1
+    tier: display
+    horizon_role: tactical_entry
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/neuralweb/world_state.py
+      - engine/neuralweb/mastermind_context.py
+    external_consumers:
+      - mastermind:context
+    notes: >
+      Display-only raw-fields fusion table per RO-1 (masterplan W-A).
+      Mandate: display-only raw-fields fusion; composites forbidden per RO-2 /
+      Signal Commons R3. Columns: iv30, ivspread_rel+5d_chg, skew+5d_chg,
+      net_doi/doi_pc/fresh_contracts/fresh_premium_mn/zerodte_share, gamma_regime
+      (with structurally_constant caveat col per audit #29), dist_to_flip_pct,
+      wall_up/down/max_pain dist pcts, opex_days, pin_risk (bool: opex_days<=5 AND
+      long-gamma AND min-wall<=2%), gex_confirm_verdict, evidence_quality, per-source
+      as_of cols. iv_rank_252/iv_rank_5d_chg structurally null until A9 IV-backfill PR.
+      Missing gitignored stores (polygon_gex, options_flow) → null fields + evidence_quality=thin;
+      never fake-neutral. No composite/score columns — any scored use requires gate passage.
+
+  options-entry-gate:
+    path: data/options_entry/gate.json
+    format: json
+    producer: scripts/validate_options_entry.py
+    known_extra_writers: []
+    owner_program: options-nw-entry-intelligence
+    cadence: collect
+    storage: git
+    asof_field: generated_at
+    freshness_sla_hours: 30
+    schema: options_entry.gate.v1
+    tier: shadow
+    horizon_role: tactical_entry
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/neuralweb/mastermind_context.py
+    external_consumers:
+      - mastermind:context
+    notes: >
+      Pre-registered options-entry quality gate (W1.3 machinery). Currently:
+      scored=false, status=building_history (n << 30 per bucket; all gates building).
+      Buckets: S-VOI, S-WALL, S-TOP_RISK (pre-registered; verdicts at n>=30 ~Q4-26).
+      Gate logic: conditioned-vs-unconditioned delta with bootstrap CI on A10 primitives
+      (post_cushion_breach, terminal_state_clean8_21, fwd_mfe_5/21, fwd_ret_5) from
+      us_board_ledger/retro_grades.parquet. Tier=shadow until validation_gate.validated==true.
+
+  options-skew-snapshots:
+    path: data/options_skew/snapshots.parquet
+    format: parquet
+    producer: scripts/build_options_skew.py
+    known_extra_writers: []
+    owner_program: options-alpha
+    cadence: collect
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 30
+    schema: options_skew.snapshots.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/options_entry_state.py
+    external_consumers: []
+    notes: >
+      Per-underlying 25Δ IV skew snapshots (accrual store; 1 row/day/underlying).
+      Mandate: display-only until validation_gate.validated==true (gate path:
+      data/options_skew/validation_gate.json). 13 trading days / 386 tickers as of
+      2026-07-05. 5d change computed in engine/options_entry_state.py from this store;
+      minimum LOOKBACK_TRADING_DAYS+1 rows required for non-null 5d change.
+      No scored arithmetic path reads this store until the skew gate passes.
+
+  options-ivspread-snapshots:
+    path: data/options_ivspread/snapshots.parquet
+    format: parquet
+    producer: scripts/build_options_ivspread.py
+    known_extra_writers: []
+    owner_program: options-alpha
+    cadence: collect
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 30
+    schema: options_ivspread.snapshots.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/options_entry_state.py
+    external_consumers: []
+    notes: >
+      Per-underlying IV spread (call-IV minus put-IV, OI-weighted) snapshots.
+      Mandate: display-only until validation_gate.validated==true (gate path:
+      data/options_ivspread/validation_gate.json). 6 trading days / 355 tickers as of
+      2026-07-05. 5d change computed in engine/options_entry_state.py; minimum
+      LOOKBACK_TRADING_DAYS+1 rows required for non-null 5d change.
+      No scored arithmetic path reads this store until the ivspread gate passes.
+
+  live-options-flow-current:
+    path: live_flow/feed_current.json
+    format: json
+    producer: collectors/live_options_flow_poller.py
+    known_extra_writers: []
+    owner_program: options-nw-entry-intelligence
+    cadence: collect
+    storage: r2
+    asof_field: as_of
+    freshness_sla_hours: 1
+    schema: live_flow.feed_current.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers:
+      - mastermind:flow-desk-terminal
+    notes: >
+      Intraday R2 live options flow feed (feat/flow-desk, currently UNDEPLOYED).
+      Stale-guard: consumers MUST check as_of staleness before display; this feed
+      can be absent or hours-old outside market hours.
+      Mandate: intraday feed — never coupled to any nightly forward ledger (nightly
+      is the sole advancer of forward-accountability ledgers per house law).
+      EOD site/flow/ and intraday R2 live_flow/ remain architecturally distinct.
+      Signing_gate root false as of 2026-07-05 — direction fields are soft-signed
+      (tick-rule / minute-agg; no NBBO). Only magnitude fields (net dollar flow,
+      gamma_flow, 0DTE pct) are reliable per signing_gate sub-gate audit.
+
+  # --- W3 Event Intelligence priors (Signal Commons, 2026-07-05) ---
+  event-priors-clinicaltrials:
+    path: data/special_situations/event_priors/clinicaltrials.json
+    format: json
+    producer: scripts/backtest_event_priors.py
+    known_extra_writers: []
+    owner_program: signal-commons
+    cadence: weekly
+    storage: git
+    asof_field: generated_at
+    freshness_sla_hours: 200
+    schema: ss_event_priors.v2
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/special_situations.py
+      - scripts/build_special_situations.py
+    external_consumers: []
+    notes: >
+      W3 event-study priors for Phase-3 clinical trial starts and clinical halts.
+      HAC/BH-FDR/DSR/split-half harness; survivorship floor included (n_imputed_zero).
+      is_context_only=true — display-only context, no scored arithmetic.
+      Regenerated weekly in special-sits-backfill.yml.
+
+  event-priors-openfda:
+    path: data/special_situations/event_priors/openfda.json
+    format: json
+    producer: scripts/backtest_event_priors.py
+    known_extra_writers: []
+    owner_program: signal-commons
+    cadence: weekly
+    storage: git
+    asof_field: generated_at
+    freshness_sla_hours: 200
+    schema: ss_event_priors.v2
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/special_situations.py
+      - scripts/build_special_situations.py
+    external_consumers: []
+    notes: >
+      W3 event-study priors for FDA approvals and label expansions.
+      HAC/BH-FDR/DSR/split-half harness; survivorship floor included.
+      is_context_only=true — display-only context, no scored arithmetic.
+
+  event-priors-sp-index-changes:
+    path: data/special_situations/event_priors/sp_index_changes.json
+    format: json
+    producer: scripts/backtest_event_priors.py
+    known_extra_writers: []
+    owner_program: signal-commons
+    cadence: weekly
+    storage: git
+    asof_field: generated_at
+    freshness_sla_hours: 200
+    schema: ss_event_priors.v2
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/special_situations.py
+      - scripts/build_special_situations.py
+    external_consumers: []
+    notes: >
+      W3 event-study priors for S&P index additions and removals (announce_date PIT anchor).
+      Currently emits null-print (insufficient history — 28 events as of 2026-07-05, below
+      K>=8 floor). Machinery in place; prior populates once collector accumulates months.
+      is_context_only=true — display-only context, no scored arithmetic.
+
+  event-priors-ipo-lockup:
+    path: data/special_situations/event_priors/ipo_lockup.json
+    format: json
+    producer: scripts/backtest_event_priors.py
+    known_extra_writers: []
+    owner_program: signal-commons
+    cadence: weekly
+    storage: git
+    asof_field: generated_at
+    freshness_sla_hours: 200
+    schema: ss_event_priors.v2
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/special_situations.py
+      - scripts/build_special_situations.py
+    external_consumers: []
+    notes: >
+      W3 event-study priors for IPO lockup expirations (priced_date + per-deal lockup_days).
+      HAC/BH-FDR/DSR/split-half harness; survivorship floor included.
+      is_context_only=true — display-only context, no scored arithmetic.
+
+  event-priors-earnings:
+    path: data/special_situations/event_priors/earnings.json
+    format: json
+    producer: scripts/backtest_event_priors.py
+    known_extra_writers: []
+    owner_program: signal-commons
+    cadence: weekly
+    storage: git
+    asof_field: generated_at
+    freshness_sla_hours: 200
+    schema: ss_event_priors.v2
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/special_situations.py
+      - scripts/build_special_situations.py
+    external_consumers: []
+    notes: >
+      W3 event-study priors for earnings (asof_date from eps_quarterly; overlaid with
+      real SEC filed date where available per edgar_eps collector). SUE-bucketed into
+      quintiles (sue_q1..q5) where engine.sue available.
+      is_context_only=true — display-only context, no scored arithmetic.
+
+  event-priors-gov-contract:
+    path: data/special_situations/event_priors/gov_contract.json
+    format: json
+    producer: scripts/backtest_event_priors.py
+    known_extra_writers: []
+    owner_program: signal-commons
+    cadence: weekly
+    storage: git
+    asof_field: generated_at
+    freshness_sla_hours: 200
+    schema: ss_event_priors.v2
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      W3 gov-contract stub: null-only (insufficient=true). No awardee-ticker mapping
+      available in sam_gov data (theme-level only). Deferred to W6 data-gap pass.
+      Written so the event type is visible as known-but-unbuildable rather than absent.
+
+  # --- Entry-Stack Expansion Amendment 1 Lane B0 (bottom-sensor envelope) ---
+  bottom-sensors-parquet:
+    path: data/neuralweb/bottom_sensors.parquet
+    format: parquet
+    producer: scripts/build_bottom_sensors.py
+    known_extra_writers: []
+    owner_program: entry-stack-expansion
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: bottom_sensors.labels_v1
+    tier: display
+    horizon_role: tactical_entry
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - site/neuralwebdata/bottom_sensors.json
+    external_consumers: []
+    notes: >
+      Amendment 1, Lane B0, PR-1. Bottom-sensor envelope for the US board.
+      is_display_only=true — ranks nothing, gates nothing, alerts nothing.
+      labels_version=labels_v1 (frozen thresholds; any change = new version logged
+      in research/ENTRY_STACK_EXPANSION_AMENDMENT1_BY_FABLE.md).
+      Bind-first: fields from signal_gate.json / us_standouts.json / hold.py outputs.
+      Two new rolling columns (dist_21d_low_pct, dist_126d_high_pct) are the only
+      new price computations. rs_repair_state and sponsorship_state are unavailable
+      until #1302 W0.4 and lane B2 respectively.
+      nw-quant-synthesis item A (FR-9/FR-10): three additive per-ticker columns bound
+      from engine/stock_fundamentals._leverage_ratios() via data/edgar/statements.parquet:
+        interest_coverage, net_debt_to_op_income, net_debt_to_ebitda.
+      All three are None-safe; Financial-sector names and sparse filers produce None.
+      net_debt_to_op_income is an EBITDA proxy (uses operating income as D&A substitute);
+      any future UI surface MUST carry a proxy label for this ratio.
+      net_debt_to_ebitda requires D&A (DepreciationDepletionAndAmortization) which
+      accrues via the collectors/edgar_facts.py weekly drip — mostly None until drip runs.
+
+  bottom-sensors-json:
+    path: site/neuralwebdata/bottom_sensors.json
+    format: json
+    producer: scripts/build_bottom_sensors.py
+    known_extra_writers: []
+    owner_program: entry-stack-expansion
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: bottom_sensors.labels_v1
+    tier: display
+    horizon_role: tactical_entry
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/neuralweb/mastermind_context.py
+    external_consumers:
+      - mastermind:context
+    notes: >
+      QA/debug JSON companion to bottom-sensors-parquet.
+      is_display_only=true — display and debug surface only.
+
+  # ===========================================================================
+  # LONG-HOLD THESIS LAYER — W1 artifacts (horizon_role: hold_thesis)
+  # Firewall enforced: no scored_path_surfaces; no entry-stack consumers.
+  # LH-R1, LH-R3, LH-R7: research/LONG_HOLD_THESIS_MASTERPLAN_BY_FABLE.md
+  # ===========================================================================
+
+  # --- Long-Hold dead-name price store (W1 Phase-1 Polygon build) ---
+  long-hold-dead-name-prices:
+    path: data/edgar/dead_name_prices.parquet
+    format: parquet
+    producer: scripts/research/fetch_dead_name_prices_polygon.py
+    known_extra_writers:
+      - "collectors/edgar_deadname_prices.py — legacy collector (Stooq→Polygon→yfinance); may append rows from CI runs"
+    owner_program: long-hold
+    cadence: on-demand
+    storage: git
+    asof_field: date
+    freshness_sla_hours: 8760
+    schema: dead_name_prices.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/research/long_hold_label_panel.py
+    external_consumers: []
+    notes: >
+      Post-anchor dead-name daily adjusted closes (415/418 post-2021-07-06 dead
+      tickers via Polygon REST, MASSIVE_API_KEY). Columns: ticker, date, close,
+      source. Coverage: 415/1,083 dead universe (38.3%); 756d gate requires >=50%
+      (not yet met). Acquisition skew residual documented in DEAD_NAME_SPIKE.md.
+      This store is the survivorship-correction input for long_hold_label_panel.py
+      — fires resolved here are stamped survivorship_biased=False (outside gap
+      window) instead of being dropped as no_price.
+      Horizon_role=context: this is a raw price store consumed only by the label
+      harness; it has no direct behavioral surface.
+
+  # --- Long-Hold label panel (W1 PR-E) ---
+  long-hold-labels:
+    path: data/research/long_hold_labels.parquet
+    format: parquet
+    producer: scripts/research/long_hold_label_panel.py
+    known_extra_writers: []
+    owner_program: long-hold
+    cadence: on-demand
+    storage: git
+    asof_field: fire_date
+    freshness_sla_hours: 8760
+    schema: long_hold_labels.v1
+    tier: display
+    horizon_role: hold_thesis
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/research/long_hold_label_panel.py
+    external_consumers: []
+    notes: >
+      W1 PR-E: per-fire outcome labels over gate_fires_baskets.parquet (113,542 fires,
+      2014-2026). Labels: compounder / multiple_expansion_only / cheap_trap / tactical_only
+      / sector_laggard_winner / tactical_only_fail / unlabeled. Pre-registration locked in
+      research/long_hold/OBJECTIVE.md. survivorship_biased field stamps pre-2021-07
+      cohorts as UPPER BOUND per LH-R3. Episode-cluster n: 2,414 at 252d (honest cohort),
+      13,586 at 126d — both exceed the n>=25 floor (LH-R4).
+      FIREWALL: horizon_role=hold_thesis. This artifact MUST NOT feed entry-stack
+      z-scores, board ordering, top-setups gates, alert triage, or push floor.
+      LH-R7 (ledger law): nightly is sole advancer of this forward ledger.
+
+  # --- Long-Hold labels manifest (W1 PR-E) ---
+  long-hold-labels-manifest:
+    path: data/research/long_hold_labels_manifest.json
+    format: json
+    producer: scripts/research/long_hold_label_panel.py
+    known_extra_writers: []
+    owner_program: long-hold
+    cadence: on-demand
+    storage: git
+    asof_field: generated_at
+    freshness_sla_hours: 8760
+    schema: long_hold_labels_manifest.v1
+    tier: display
+    horizon_role: hold_thesis
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/research/long_hold_label_panel.py
+    external_consumers: []
+    notes: >
+      Companion manifest for long_hold_labels.parquet. Per-label per-cohort-year
+      counts, coverage fractions, survivorship stamps, episode-cluster counts,
+      gap_period flags, runtime stats. Produced by the same script as long-hold-labels.
+      FIREWALL: hold_thesis — no entry-stack consumers permitted.
+
+  # --- Long-Hold W1 kill-test study results (W1 PR-F) ---
+  long-hold-killtest-results:
+    path: data/research/missed_hold_study_results.parquet
+    format: parquet
+    producer: scripts/research/missed_hold_study.py
+    known_extra_writers: []
+    owner_program: long-hold
+    cadence: on-demand
+    storage: git
+    asof_field: null
+    freshness_sla_hours: 8760
+    schema: missed_hold_study_results.v1
+    tier: display
+    horizon_role: hold_thesis
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/research/missed_hold_study.py
+    external_consumers: []
+    notes: >
+      W1 PR-F: missed-hold kill-test study results. Per-feature Mann-Whitney RBC,
+      BH-FDR q-values, reshuffle-null percentiles, episode-cluster n per split,
+      and G1-condition evaluation across primary (OOS honest), fund_unchecked sensitivity,
+      and Amendment A1 (market-benchmark) sensitivity. Combined routing: DEFERRED
+      (OOS honest n-floor not met: 4 compounder clusters vs required ≥25). Pre-registration
+      locked in research/long_hold/OBJECTIVE.md including Amendment A1.
+      FIREWALL: horizon_role=hold_thesis. This artifact MUST NOT feed entry-stack surfaces.
+      FDR family: long_hold (isolated per LH-R5). No scored_path_surfaces.
+      G1 ratification: PENDING FABLE RULING (see research/long_hold/W1_KILLTEST_RESULTS.md).
+
+  # --- Long-Hold W2 PR-I: compounder feature panel (embedded in per-stock panels) ---
+  # NOTE: compounder features are NOT a standalone parquet — they are a sub-key
+  # ("compounder") inside the existing financials.multiyear block that _multiyear()
+  # already produces and build_stock_library.py already bakes into
+  # site/stockdata/<TICKER>.json.  A dedicated top-level parquet would duplicate
+  # data already in the per-stock JSON pipeline; the registration here is
+  # documentary so the firewall CI can verify the horizon_role stamp.
+  long-hold-compounder-features:
+    path: "embedded: financials.multiyear.compounder inside site/stockdata/<TICKER>.json"
+    format: json
+    producer: engine/stock_fundamentals.py
+    known_extra_writers: []
+    owner_program: long-hold
+    cadence: daily-engine
+    storage: git
+    asof_field: null
+    freshness_sla_hours: 30
+    schema: compounder_features.v1
+    tier: display
+    horizon_role: hold_thesis
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - site/stockdata/<TICKER>.json
+    external_consumers: []
+    notes: >
+      W2 PR-I (Long-Hold Thesis Layer). Compounder feature columns added
+      ADDITIVELY to engine/stock_fundamentals._multiyear() as a sub-dict
+      under key "compounder".  All fields are DISPLAY-ONLY annotation
+      (LH-R1 firewall; G1-DEFERRED ruling 2026-07-06).
+      Features: roic_series, roic_5y_median, roic_5y_stability,
+      gross_margin_5y_stability, fcf_conversion, reinvestment_rate,
+      incremental_rev_per_reinvestment, asset_light_scaling.
+      Tax assumption: 21% US statutory (TCJA 2018), applied uniformly.
+      Per-feature _cov coverage stamps (0–1) ship alongside each value.
+      Depreciation-dependent features blocked with depreciation_gated_blocked=True
+      until PR-H (edgar_facts.py FLOW additions) backfills the D&A series.
+      Firewall annotations embedded in every output dict:
+        _horizon_role = "hold_thesis"
+        _display_only = True
+      FIREWALL: horizon_role=hold_thesis. These fields MUST NOT feed
+      entry-stack z-scores, board ordering, top-setups gates, alert triage,
+      or push floor.  LH-R2 (no fused admission) respected by construction.
+
+  # --- Long-Hold W2 PR-J: two display clocks (entry_clock + thesis_clock) ---
+  # Both clocks are embedded fields in per-stock panel JSON
+  # (site/stockdata/<TICKER>.json) — no standalone parquet.
+  # entry_clock is at top-level rec["entry_clock"] (build_stock_library.py).
+  # thesis_clock is in the per-ticker panel dict from stock_fundamentals.panels()
+  # baked into stockdata JSON at build time.
+  long-hold-clocks:
+    path: "embedded: entry_clock + thesis_clock inside site/stockdata/<TICKER>.json"
+    format: json
+    producer: engine/long_hold_clocks.py
+    known_extra_writers:
+      - "scripts/build_stock_library.py — calls entry_clock() per name after sig_verdict build"
+      - "engine/stock_fundamentals.py — calls thesis_clocks_from_parquet() inside panels()"
+    owner_program: long-hold
+    cadence: daily-engine
+    storage: git
+    asof_field: null
+    freshness_sla_hours: 30
+    schema: long_hold_clocks.v1
+    tier: display
+    horizon_role: hold_thesis
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - site/stockdata/<TICKER>.json
+    external_consumers: []
+    notes: >
+      W2 PR-J (Long-Hold Thesis Layer). Two display-tier clock annotations added
+      ADDITIVELY to per-stock panel JSON. Both are DISPLAY-ONLY (LH-R1 firewall;
+      G1-DEFERRED ruling 2026-07-06). Neither field feeds board ordering, alert
+      triage, top-setups gates, or push floor.
+
+      entry_clock: days since last tactical buy/rebuy marker fire. Source:
+      signal_gate.gate()["last"]["date"] (existing entry-stack state, no new
+      computation). Half-life reference: FRESH_TICKS window from confluence_tiers
+      (~1-6 ticks, ~3-18 days). Clock is calendar days from last fire to today.
+      Fields: date_last_fire (YYYY-MM-DD|null), days_since (int|null),
+      _horizon_role, _display_only, _version.
+
+      thesis_clock (v1): days since latest EDGAR period_end with positive
+      fundamental delta. V1 criterion: ROA improving OR CFO>0 OR revenue growing
+      vs prior year. Source: data/edgar/fundamentals_panel.parquet
+      (period_end + 120d PIT lag from collectors/edgar.py as_of_cross_section).
+      Clock anchored to period_end (fiscal year end), not asof_date (filing date).
+      Fields: date_last_confirmation (YYYY-MM-DD|null), days_since (int|null),
+      definition_version ("v1"), definition_note (str), _horizon_role,
+      _display_only, _version.
+
+      Firewall annotation embedded in every output dict:
+        _horizon_role = "hold_thesis"
+        _display_only = True
+      FIREWALL: horizon_role=hold_thesis. These fields MUST NOT feed
+      entry-stack z-scores, board ordering, top-setups gates, alert triage,
+      or push floor.
+
+  # --- Long-Hold W2 PR-K: Moat Falsifier Sensors ---
+  moat-falsifier-sensors:
+    path: "embedded: per-ticker moat sensor fields inside site/stockdata/<TICKER>.json"
+    format: json
+    producer: engine/moat_falsifiers.py
+    known_extra_writers:
+      - "engine/stock_fundamentals.py — _compute_moat_block() calls compute_moat_falsifiers() inside panels()"
+    owner_program: long-hold
+    cadence: daily-engine
+    storage: git
+    asof_field: null
+    freshness_sla_hours: 30
+    schema: moat_falsifiers.v1
+    tier: display
+    horizon_role: hold_thesis
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - site/stockdata/<TICKER>.json
+    external_consumers: []
+    notes: >
+      W2 PR-K (Long-Hold Thesis Layer). Four moat falsifier sensors computed from
+      data/edgar/statements.parquet: margin_compression_despite_revenue_growth,
+      receivables_stretch, inventory_build, capital_intensity_rising.
+      Each sensor carries a universe-level base rate (live-recomputed per build;
+      NOT a locked control — display context only) so the display layer can show
+      how frequently a sensor fires across the covered universe in that fiscal year.
+      Thresholds pre-registered in research/long_hold/OBJECTIVE.md Amendment A3 §W2-PR-K.
+      DISPLAY-ONLY — G1-DEFERRED ruling 2026-07-06. Per LH-R2: no composite
+      "moat score" is produced. Per LH-R6: no LLM transition logic.
+      FIREWALL: horizon_role=hold_thesis. MUST NOT feed board ordering, alert
+      triage, top-setups gates, or push floor (LH-R1). fdr_family=long_hold (LH-R5).
+      Coverage stamps: sensor_coverage (full|partial|missing), coverage_n_years,
+      base_rate_annual_fy per sensor, _horizon_role, _display_only, _version.
+      POINT-IN-TIME: statements.parquet carries period_end; fiscal rows not yet
+      filed as of the as-of date (period_end + 120d after it) are dropped before
+      any sensor evaluates (per-ticker AND base-rate paths), so a not-yet-filed
+      fiscal year cannot fire. asof_date=None gates against today. Rows lacking
+      period_end are kept (cannot be gated).
+
+  great-company-trap:
+    path: "embedded: great_company_trap fields inside site/stockdata/<TICKER>.json"
+    format: json
+    producer: engine/moat_falsifiers.py
+    known_extra_writers:
+      - "engine/stock_fundamentals.py — _compute_trap_block() calls great_company_trap() inside panels()"
+    owner_program: long-hold
+    cadence: daily-engine
+    storage: git
+    asof_field: null
+    freshness_sla_hours: 30
+    schema: great_company_trap.v1
+    tier: display
+    horizon_role: hold_thesis
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - site/stockdata/<TICKER>.json
+    external_consumers: []
+    notes: >
+      W2 PR-K (Long-Hold Thesis Layer). Great-company-trap de-escalation overlay
+      per LH-R10. Assembled ONLY from existing signals: crowding_z (engine/theme_crowding,
+      basket-level — passed as None in per-ticker panels context; available when
+      caller supplies it), insider_net_usd (engine/equity_factors / sec_insider panel),
+      revision_direction (engine/analyst_revisions). Plain deterministic function; no LLM.
+      MAY ONLY LOWER conviction display context, never raise/rank (LH-R10).
+      Inputs printed verbatim in every output for transparency (Article-1/A3 shape).
+      DISPLAY-ONLY — G1-DEFERRED ruling 2026-07-06.
+      FIREWALL: horizon_role=hold_thesis. MUST NOT feed board ordering, alert
+      triage, top-setups gates, or push floor (LH-R1). fdr_family=long_hold (LH-R5).
+      Fields: trap_signals_present, de_escalation_reason, legs, inputs_used,
+      _horizon_role, _display_only, _version.
+
+  # --- NW quant-synthesis B: research-queue EV-ranker ---
+  research-queue:
+    path: data/neuralweb/research_queue.json
+    format: json
+    producer: engine/neuralweb/research_queue.py
+    known_extra_writers:
+      - "scripts/build_research_queue.py — thin CLI wrapper; calls write_queue() defined in the producer; no independent write logic"
+    owner_program: neural-web
+    cadence: on-demand
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 168
+    schema: research_queue.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      Read-only EV-ranker for the cortex research pipeline (nw-quant-synthesis item B).
+      Ranks candidates from hypothesis_inbox.jsonl, machine_registry.jsonl (absent-file-safe),
+      the species registry, and the trial ledger. Output categories: high_ev_build_now /
+      blocked_by_data / too_sparse / duplicate_of_existing / invalid_shape. Authority law:
+      this artifact is advisory only — metabolism.register_hypothesis() remains the sole
+      budget chokepoint; the ranker has zero write or gating authority over the cortex.
+      NOT on the render path; run manually or via future nightly opt-in.
+      is_display_only=true — no board rank, no alerts, no sizing.
+
+  # --- OTA W6: Rotation Turn Desk ---
+  oracle-turn-desk:
+    path: site/basketdata/oracle_turn_desk.json
+    format: json
+    producer: scripts/oracle_nightly.py
+    known_extra_writers: []
+    owner_program: oracle
+    cadence: daily-engine
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 30
+    schema: oracle_turn_desk.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - templates/subsector_rotation.html.j2
+    external_consumers: []
+    notes: >
+      OTA W6 Rotation Turn Desk — DISPLAY-ONLY under hard law (desk feeds no score,
+      gate, or ordering surface). Armed A15 windows (washout + ≥2 opposite-complex
+      outflow-onset nodes), member T1-T3 cascade fires, and base rates stamped with
+      display_with_edge + lineage #1533. Envelope via stamp_if_changed.
+      Banned-implication keys enforced at write time.
+
+  oracle-turn-desk-ledger:
+    path: data/oracle/turn_desk_ledger.jsonl
+    format: jsonl
+    producer: scripts/oracle_nightly.py
+    known_extra_writers: []
+    owner_program: oracle
+    cadence: daily-engine
+    storage: git
+    asof_field: pit_stamp
+    freshness_sla_hours: 30
+    schema: oracle_turn_desk_ledger.v1
+    tier: shadow
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/oracle_nightly.py
+    external_consumers: []
+    notes: >
+      OTA W6 forward ledger — nightly sole advancer, keep-first.
+      Kinds: window_open (key node::a15::fire_date), member_fire (key window_key::ticker::fire_date).
+      h=21 maturity grading from massive_stock_day closes (absolute return).
+      Accrual instrument for the registered §5 promotion rule (15-window re-evaluation gate).
+      No peeking logic — desk only displays counts.
+
+  # --- OTA W7: Qualitative Filter Registry ---
+  oracle-qual-filter-registry:
+    path: data/oracle/qual_filters/registry.jsonl
+    format: jsonl
+    producer: engine/oracle/qual_filters.py
+    known_extra_writers: []
+    owner_program: oracle
+    cadence: on-demand
+    storage: git
+    asof_field: registered_at
+    freshness_sla_hours: null
+    schema: oracle_qual_filter_registry.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/oracle/qual_filters.py
+    external_consumers: []
+    notes: >
+      OTA W7 Qualitative Filter Registry — governance artifact.
+      One row per filter: id, lane (Q1/Q2/Q3), predicate, source_artifact,
+      registered_at, status (accruing|retired). Append-only; retire-to-add
+      law; max 5 active per quarter. No LLM in any stamp path.
+
+  oracle-qual-filter-stamps:
+    path: data/oracle/qual_filter_stamps.jsonl
+    format: jsonl
+    producer: scripts/oracle_nightly.py
+    known_extra_writers: []
+    owner_program: oracle
+    cadence: daily-engine
+    storage: git
+    asof_field: stamped_asof
+    freshness_sla_hours: 30
+    schema: oracle_qual_filter_stamps.v1
+    tier: shadow
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/oracle_nightly.py
+      - engine/oracle/qual_filters.py
+    external_consumers: []
+    notes: >
+      OTA W7 PIT stamp ledger — keep-first, nightly sole advancer (Step 17).
+      Key: window_key::filter_id. value: true|false|null (null-honest law).
+      Null when source_artifact missing at stamp time. No retro-stamping:
+      only windows in the current night's armed set are stamped.
+      Infrastructure tier: feeds accrual report, never rendered directly.
+
+  oracle-qual-filter-accrual:
+    path: data/oracle/qual_filter_accrual.json
+    format: json
+    producer: scripts/oracle_nightly.py
+    known_extra_writers: []
+    owner_program: oracle
+    cadence: daily-engine
+    storage: git
+    asof_field: produced_at
+    freshness_sla_hours: 30
+    schema: oracle_qual_filter_accrual.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/oracle_nightly.py
+      - templates/subsector_rotation.html.j2
+    external_consumers: []
+    notes: >
+      OTA W7 accrual report — per-filter conditional WR21 true vs false on matured
+      windows. Wilson LBs. DESCRIPTIVE only — "validated" banned. Re-evaluation
+      eligible line printed when n_true >= 15 (operator event, never automatic).
+      Display tier; embedded in oracle_turn_desk.json as qual_accrual_note string.
+
+  # --- NW Rails PR-6 governance artifact ---
+  grading-closure:
+    path: data/governance/grading_closure.json
+    format: json
+    producer: scripts/audit_grading_closure.py
+    known_extra_writers: []
+    owner_program: nw-rails
+    cadence: collect
+    storage: git
+    asof_field: generated_at
+    freshness_sla_hours: 30
+    schema: grading_closure.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - docs/GRADING_CLOSURE.md
+    external_consumers: []
+    notes: >
+      NW Rails PR-6 (RUL-P10 path b) — standing grading-closure audit.
+      Walks 26 declared forward ledgers and classifies each CLOSED / GRADER-STARVED
+      / LOG-ONLY. Single writer: scripts/audit_grading_closure.py run_as_collect_step
+      (end-of-collect, after all graders). Companion markdown table at docs/GRADING_CLOSURE.md.
+      Fixes are per-program follow-ups; this rail makes standing status visible.
+
+  # --- NW Rails R1 (PR-1) ---
+  rule-experiment-registry:
+    path: data/rule_experiments/registry.jsonl
+    format: jsonl
+    producer: scripts/register_rule_experiment.py
+    known_extra_writers: []
+    owner_program: neural-web
+    cadence: on-demand
+    storage: git
+    asof_field: registered_at
+    freshness_sla_hours: 8760
+    schema: rule_experiment_registry.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/register_rule_experiment.py
+      - scripts/run_rule_replay.py
+    external_consumers: []
+    notes: >
+      NW Rails R1 anti-fishing governor registry. Append-only JSONL; single writer is
+      scripts/register_rule_experiment.py. Every entry records exp_id, registered_at,
+      question, spec_hashes (full enumerated grid), n_floor, declared_budget,
+      verdict_criteria, derived_from_surface (RUL-P3 forking-paths stamp), and status
+      (registered→executed→reported). Runner hard-fails on any unregistered or
+      hash-mismatched spec. FDR pooling: all registrations call
+      TrialLedger.log_declared_budget(grid_size, family='replay') — flat pooled family,
+      never sub-scoped. Program §3.3 of NW_RAILS_AND_TIER1_LOBES_PROGRAM_BY_FABLE.md.
+      scripts/run_rule_replay.py added as a consumer (PR-2).
+
+  rule-experiment-summaries:
+    path: data/rule_experiments/results/<EXP_ID>_summary.json
+    format: json
+    producer: scripts/run_rule_replay.py
+    known_extra_writers: []
+    owner_program: neural-web
+    cadence: on-demand
+    storage: git
+    asof_field: null
+    freshness_sla_hours: 8760
+    schema: rule_experiment_summary.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      NW Rails R1 per-experiment results summaries. Small JSON files (per-cell WR,
+      mean/median exit metrics, regret metrics, era-law splits, episode-cluster counts,
+      censoring rates, cumulative pooled replay trial count). Git-committed; written by
+      scripts/run_rule_replay.py (PR-2). The companion *_perfire.parquet files are
+      Mac-local only (gitignored per RUL-P10). All results are display-only; promoting
+      any rule to live behavior requires the standard PREREG gauntlet (§3.3).
+
+  # --- NW Rails W2 PR-4: L3 dispersion regime lens ---
+  dispersion-regime:
+    path: data/dispersion/regime.json
+    format: json
+    producer: scripts/build_dispersion_regime.py
+    known_extra_writers: []
+    owner_program: nw-rails
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: dispersion_regime.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/build_site.py
+      - templates/dashboard.html.j2
+    external_consumers: []
+    notes: >
+      L3 chartered lobe (NW Rails program §5). Promotes engine/dispersion.py output
+      (lean_in/neutral/lean_out + pctile + avg_corr) to a registered nightly artifact.
+      DISPLAY-ONLY hard law: gross_mult_live is permanently 1.0 (clamped per
+      US_BOARD_MEASUREMENT §Study 3 — no measured selection-IR edge). shadow_gross_mult
+      logged as a prior for a future measured promotion. DISP-GATE-1 shadow-ladder
+      question registered in research/dispersion/L3_PREREG.md; verdict gates frozen for
+      a later batch run via R1 governor. No scoring surface, no gate, no rank power.
+
+  # --- NW Rails PR-8: L4 operator action ledger ---
+  operator-action-ledger:
+    path: data/operator/action_ledger.jsonl
+    format: jsonl
+    producer: admin/server.py
+    known_extra_writers: []
+    owner_program: nw-rails
+    cadence: on-demand
+    storage: gitignored-local
+    asof_field: ts
+    freshness_sla_hours: 8760
+    schema: operator_action_ledger.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      NW Rails PR-8 (L4 instrumentation, RUL-P7 + RUL-P10 path a).
+      Gitignored server-local accrual ledger of operator decisions on alerts, experiments,
+      and boards. Schema: ts (server-stamped ISO-8601 UTC), actor="operator", surface
+      (alert id / experiment id / board name), action in {acted, dismissed, overrode,
+      snoozed}, direction_note (free text, capped at 280 chars), latency_s (server-computed
+      from alert_emit_ts when caller supplies it). Single writer: admin/server.py POST
+      /api/actions. Grading harness is a post-Fable wave (template: btc_override_ledger.py
+      Wilson/bootstrap; qledger claims as counterfactual source). Ledger accrues only in
+      calendar time; n>=25 graded actions is the cortex A2 Wilson floor.
+
+  # ============================================================
+  # NW → MASTERMIND BRIDGE (W1)
+  # ============================================================
+
+  kernel-decisions:
+    path: data/neuralweb/kernel_decisions.json
+    format: json
+    producer: scripts/run_kernel_decisions.py
+    known_extra_writers: []
+    owner_program: neural-web
+    cadence: on-demand
+    storage: git
+    asof_field: run_at
+    freshness_sla_hours: 9999
+    schema: implicit
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/neuralweb/mastermind_context.py
+    external_consumers:
+      - mastermind:context
+    notes: >
+      FDR batch-decision record for kernel families (run_kernel_decisions.py).
+      survivors[] is empty until the 2026-10-01 FDR batch. STANDING LAW: kernel
+      'armed' means display-ready, NOT FDR-cleared. Only survivors[] cells may
+      be promoted to behavior-facing use. This artifact is read by the bridge
+      compiler to emit fdr_cleared flags; it is never used for gating or sizing.
+
+  neuralweb-mastermind-context:
+    path: data/neuralweb/mastermind_context.json
+    format: json
+    producer: scripts/build_nw_mastermind_context.py
+    known_extra_writers:
+      - "engine/neuralweb/mastermind_context.py — build_and_write() writes both canonical and site copy"
+    owner_program: nw-mastermind-bridge
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: neural_web_mastermind_context.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers:
+      - mastermind:anchor
+    notes: >
+      NW → Mastermind bridge compiler artifact (canonical copy). Schema
+      neural_web_mastermind_context.v1. Authority: all five booleans false
+      (context-only). Two-tier lobe model: auto-manifest (synapse scan for
+      mastermind:context tags) + registered summarizers (market/reliability/
+      contradictions/bottom_sensors/options_entry/cortex). Candidate universe:
+      us_standouts ∪ altdata/mastermind ∪ radar_ticker (filtered to actionable).
+      Hard cap 250 rows. Envelope sibling-stamped. See NW_MASTERMIND_BRIDGE_PROGRAM.md.
+
+  site-neuralweb-mastermind-context:
+    path: site/neuralwebdata/mastermind_context.json
+    format: json
+    producer: scripts/build_nw_mastermind_context.py
+    known_extra_writers:
+      - "engine/neuralweb/mastermind_context.py — build_and_write() writes both canonical and site copy"
+    owner_program: nw-mastermind-bridge
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: neural_web_mastermind_context.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers:
+      - mastermind:anchor
+    notes: >
+      NW → Mastermind bridge compiler artifact (public site copy, byte-identical to
+      neuralweb-mastermind-context canonical). Transport: Mastermind bot's existing
+      macro_refresh.refresh() sparse checkout of site/ materializes this file at
+      vendor/macro_src/site/neuralwebdata/mastermind_context.json with zero new sync
+      plumbing (site/ is in the sparse set). See NW_MASTERMIND_BRIDGE_PROGRAM.md §3.2.
+
+  # --- Research Factory W1 (RF-11) ---
+  # Three durable orchestration ledgers at display tier, horizon-agnostic context.
+  # Authority ceiling: A0-A2 display-only (no scored-path authority).
+  # scored_path_surfaces: [] — factory outputs must never reach money-path surfaces.
+
+  research-factory-candidates:
+    path: data/research_factory/candidates.jsonl
+    format: jsonl
+    producer: <RESEARCH_FACTORY_INGEST>
+    known_extra_writers:
+      - "scripts/research_factory_ingest.py — W2 ingest writer (planned)"
+    owner_program: research-factory
+    cadence: on-demand
+    storage: git
+    asof_field: created_at
+    freshness_sla_hours: 8760
+    schema: research_factory.candidate.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    notes: >
+      Research Factory W1 (RF-11). Candidate identity ledger — append-only JSONL.
+      Authority ceiling A0-A2 display-only; every row carries authority='display_only'.
+      Producer is the W2 ingest writer (planned: scripts/research_factory_ingest.py);
+      W1 ships the path registration and schemas only — the file is first written at W2.
+      scripts/check_research_factory_authority.py is the read-only authority guard
+      and must NOT be listed as a ledger writer.
+      See research/RESEARCH_FACTORY_MASTERPLAN_BY_FABLE.md §5.1.
+
+  research-factory-transitions:
+    path: data/research_factory/transitions.jsonl
+    format: jsonl
+    producer: <RESEARCH_FACTORY_INGEST>
+    known_extra_writers:
+      - "scripts/research_factory_ingest.py — W2 transition writer (planned)"
+      - "scripts/research_factory_decide.py — W5 decision recorder (planned)"
+    owner_program: research-factory
+    cadence: on-demand
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 8760
+    schema: research_factory.transition.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    notes: >
+      Research Factory W1 (RF-11). State-transition audit log — append-only JSONL.
+      Authority ceiling A0-A2 display-only; every row carries authority='display_only'.
+      This is the sole audit history; rows are never deleted.
+      Producer is the W2 ingest writer (planned: scripts/research_factory_ingest.py).
+      scripts/check_research_factory_authority.py is the read-only authority guard
+      and must NOT be listed as a ledger writer.
+      See research/RESEARCH_FACTORY_MASTERPLAN_BY_FABLE.md §5.2.
+
+  research-factory-paper-monitor:
+    path: data/research_factory/paper_monitor.jsonl
+    format: jsonl
+    producer: <RESEARCH_FACTORY_MONITOR>
+    known_extra_writers:
+      - "scripts/research_factory_monitor.py — W6 nightly monitor writer (planned)"
+    owner_program: research-factory
+    cadence: on-demand
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 8760
+    schema: research_factory.paper_monitor.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    notes: >
+      Research Factory W1 (RF-11). Paper-phase monitor forward ledger — keep-first
+      per (candidate_id, as_of); advanced only by the nightly engine job (W6+).
+      Authority ceiling A0-A2 display-only; cadence flips to daily-engine at W6.
+      Producer is the W6 monitor writer (planned: scripts/research_factory_monitor.py).
+      scripts/check_research_factory_authority.py is the read-only authority guard
+      and must NOT be listed as a ledger writer.
+      See research/RESEARCH_FACTORY_MASTERPLAN_BY_FABLE.md §5.4.
+
+  # ============================================================
+  # FACTOR INTELLIGENCE × NEURAL WEB INTEGRATION (RUL-NW1/NW10/NW11)
+  # §D PR-1: state artifact + long-term factor pool + narrow advancer
+  # ============================================================
+
+  factor-intelligence-state:
+    path: data/neuralweb/factor_intelligence_state.json
+    format: json
+    producer: scripts/build_factor_intelligence_state.py
+    known_extra_writers: []
+    owner_program: factor-intelligence
+    cadence: nightly-factor-panel
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: neuralweb.factor_intelligence_state.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/neuralweb/world_state.py
+    notes: >
+      RUL-NW1 — factor_panel job is sole advancer. Context-only committed
+      digest of factor intelligence state (panel health, factor weather,
+      Pair G, hypotheses h1..h5, scorecard). is_context_only=true,
+      display_only=true. allowed_actions block is a mirror, never a switch
+      (RUL-NW9). No scored-path surfaces — display and admin rendering only.
+      Written by scripts/build_factor_intelligence_state.py after the
+      factor_contradictions step in the factor_panel job.
+
+  site-factor-intelligence-state:
+    path: site/neuralwebdata/factor_intelligence_state.json
+    format: json
+    producer: scripts/build_factor_intelligence_state.py
+    known_extra_writers: []
+    owner_program: factor-intelligence
+    cadence: nightly-factor-panel
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: neuralweb.factor_intelligence_state.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    notes: >
+      Byte-identical site mirror of data/neuralweb/factor_intelligence_state.json.
+      Written atomically with the data copy by scripts/build_factor_intelligence_state.py
+      in the factor_panel job (RUL-NW1).
+
+  factor-state-history:
+    path: data/factordata/factor_state_history.jsonl
+    format: jsonl
+    producer: scripts/build_factor_intelligence_state.py
+    known_extra_writers: []
+    owner_program: factor-intelligence
+    cadence: nightly-factor-panel
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: neuralweb.factor_state_history.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    notes: >
+      RUL-NW10 — append-only daily digest (one row per trading day, keyed as_of).
+      Idempotent: same-day reruns skip if as_of already present. Fields: as_of,
+      style_regime (+pending/hold_days), factor_leader (+IC), ETF ratios, panel
+      health (n_dates, n_tickers, latest_date), pair_g_n_today, cross-sectional
+      alibi stats (median, Q80), dna_distribution dict, gaps_count. Display/analysis
+      only until kernel-FDR 2026-10 sweep. No behavioral conditioning on pooled
+      history before that verdict.
+
+  fire-coordinates:
+    path: data/factordata/fire_coordinates.jsonl
+    format: jsonl
+    producer: scripts/build_factor_intelligence_state.py
+    known_extra_writers: []
+    owner_program: factor-intelligence
+    cadence: nightly-factor-panel
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: neuralweb.fire_coordinates.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    notes: >
+      RUL-NW10 — append-only per-fire panel coordinates, keyed (as_of, ticker).
+      PIT by construction: panel row at exactly the standouts as_of date. Fields:
+      as_of, ticker, tier, dna_class, style_regime, alibi_share_20d, twin_bleed_flag,
+      twin_rel_20d, alpha_z_house, top_contrib_streams (top-3 Block-A |contrib_20d|
+      stream names), factor_model=v1. Standalone artifact — JOINs to replay/board-ledger
+      outcomes at study time. Display/analysis only (no rank/score surfaces).
+
+  factor-contradictions-ledger:
+    path: data/neuralweb/factor_contradictions.jsonl
+    format: jsonl
+    producer: engine/neuralweb/factor_contradictions.py
+    known_extra_writers: []
+    owner_program: factor-intelligence
+    cadence: nightly-factor-panel
+    storage: git
+    asof_field: date
+    freshness_sla_hours: 30
+    schema: neuralweb.factor_contradictions.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    notes: >
+      RUL-NW1 — un-gitignored by this ruling; committed via the factor_panel job's
+      narrow commit step. Pair G borrowed_strength contradiction ledger: append-only,
+      keyed (date, ticker). Severity hardcoded to 'note' until H2 GATE-PASSED.
+      display_only=true unconditionally. Single-writer: engine/neuralweb/factor_contradictions.py.
+      0-20 rows/day; dormant until panel has >= 60 distinct dates.

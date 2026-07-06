@@ -12,29 +12,31 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{{ t('Dark Pool Desk — off-exchange & short volume', '场外暗池台 — 场外成交与融券量') }}</title>
-<meta name="description" content="{{ t('FINRA off-exchange volume, short ratio trends, and ATS venue transparency data. EOD, display-only.', 'FINRA场外成交量、融券比率趋势及ATS场所透明数据。收盘后，仅供展示。') }}">
+<title>Dark Pool Desk - off-exchange and short volume</title>
+<meta name="description" content="FINRA off-exchange volume, short ratio trends, and ATS venue transparency data. EOD, display-only.">
 <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
 <style>
   * { box-sizing:border-box; }
-  body { background:var(--bg); color:var(--text); font:14px/1.5 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px; }
-  @media (min-width:1100px){ body{ padding:26px max(40px,calc((100vw - 1400px)/2)); } }
+  body { background:var(--bg); color:var(--text); font:14px/1.5 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:0; overflow-x:hidden; }
+  .site-nav { width:min(1500px,calc(100% - 36px)); margin-top:18px; }
+  .dp-shell { width:min(1400px,calc(100% - 36px)); margin:0 auto 22px; }
+  .whb { max-width:100%; overflow:hidden; }
   a { text-decoration:none; color:inherit; }
   h1 { font-size:20px; font-weight:700; margin:0; }
   h2 { font-size:13px; margin:0 0 4px; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; font-weight:600; }
   .muted { color:var(--muted); }
   .sm { font-size:12px; }
-  .panel { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:14px 16px; margin-bottom:14px; }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:14px 16px; margin-bottom:14px; min-width:0; overflow-wrap:break-word; }
   .toprow { display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin-bottom:14px; }
-  .chip { display:inline-flex; align-items:center; font-size:11.5px; padding:2px 9px; border-radius:20px; border:1px solid var(--line); background:var(--panel2); color:var(--muted); white-space:nowrap; }
+  .chip { display:inline-flex; align-items:center; font-size:11.5px; padding:2px 9px; border-radius:20px; border:1px solid var(--line); background:var(--panel2); color:var(--muted); white-space:normal; max-width:100%; }
   .chip.warn { background:rgba(255,190,0,.10); border-color:rgba(255,190,0,.35); color:#b8860b; }
   .chip.lag { background:rgba(120,130,180,.10); border-color:rgba(120,130,180,.30); color:var(--muted); }
   .chip.ok { background:rgba(35,134,54,.10); border-color:rgba(35,134,54,.30); color:var(--up); }
-  .honest-box { background:rgba(255,190,0,.07); border:1px solid rgba(255,190,0,.25); border-radius:8px; padding:10px 14px; margin-bottom:14px; font-size:12.5px; line-height:1.6; color:var(--muted); }
+  .honest-box { background:rgba(255,190,0,.07); border:1px solid rgba(255,190,0,.25); border-radius:8px; padding:10px 14px; margin-bottom:14px; font-size:12.5px; line-height:1.6; color:var(--muted); overflow-wrap:break-word; }
   .honest-box strong { color:var(--text); }
   /* Table */
-  .tbl-wrap { overflow-x:auto; margin-top:8px; }
+  .tbl-wrap { overflow-x:auto; margin-top:8px; max-width:100%; -webkit-overflow-scrolling:touch; }
   table.dp-tbl { border-collapse:collapse; width:100%; font-size:12.5px; }
   table.dp-tbl th { color:var(--muted); font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:.04em; padding:6px 8px; border-bottom:1px solid var(--line); text-align:right; white-space:nowrap; }
   table.dp-tbl th:first-child { text-align:left; }
@@ -50,40 +52,45 @@
   .num-neu { color:var(--muted); }
   /* ATS venue table */
   .venue-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:10px; margin-top:10px; }
-  .venue-card { background:var(--panel2); border:1px solid var(--line); border-radius:8px; padding:10px 12px; }
+  .venue-card { background:var(--panel2); border:1px solid var(--line); border-radius:8px; padding:10px 12px; min-width:0; overflow-wrap:break-word; }
   .venue-card .vname { font-size:12.5px; font-weight:600; margin-bottom:2px; }
   .venue-card .vmpid { font-size:11px; color:var(--muted); margin-bottom:6px; }
-  .venue-card .vstat { display:flex; justify-content:space-between; font-size:11.5px; }
+  .venue-card .vstat { display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; font-size:11.5px; }
   .venue-card .vstat .lbl { color:var(--muted); }
   /* search filter */
   #dp-search { background:var(--panel2); border:1px solid var(--line); border-radius:8px; padding:5px 10px; font-size:13px; color:var(--text); width:100%; max-width:260px; outline:none; }
   #dp-search::placeholder { color:var(--muted); }
   /* tip popover */
   .tip-wrap { display:inline-flex; align-items:center; justify-content:center; width:15px; height:15px; border-radius:50%; border:1px solid var(--muted); color:var(--muted); font-size:9px; font-weight:700; cursor:help; position:relative; vertical-align:middle; margin-left:3px; }
-  .tip-pop { display:none; position:absolute; top:140%; left:50%; transform:translateX(-50%); width:260px; background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:9px 12px; z-index:80; font-size:12px; line-height:1.5; color:var(--text); box-shadow:0 4px 16px rgba(0,0,0,.18); pointer-events:none; }
+  .tip-pop { display:none; position:absolute; top:140%; left:50%; transform:translateX(-50%); width:min(260px,calc(100vw - 32px)); background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:9px 12px; z-index:80; font-size:12px; line-height:1.5; color:var(--text); box-shadow:0 4px 16px rgba(0,0,0,.18); pointer-events:none; white-space:normal; overflow-wrap:break-word; }
   .tip-wrap:hover .tip-pop { display:block; }
-  @media (max-width:640px){ table.dp-tbl th,.dp-hide { display:none; } table.dp-tbl th:nth-child(-n+3), table.dp-tbl td:nth-child(-n+3) { display:table-cell; } }
+  @media (max-width:640px){
+    .site-nav,.dp-shell { width:min(1500px,calc(100% - 24px)); }
+    .site-nav { margin-top:12px; }
+    .panel { padding:12px; border-radius:8px; }
+    .toprow { align-items:flex-start; }
+    #dp-search { max-width:none; }
+    table.dp-tbl { font-size:12px; }
+    table.dp-tbl th,.dp-hide { display:none; }
+    table.dp-tbl th:nth-child(-n+3), table.dp-tbl td:nth-child(-n+3) { display:table-cell; }
+    table.dp-tbl th, table.dp-tbl td { padding:6px 7px; }
+  }
 </style>
 </head>
 <body>
-<nav class="site-nav">
-    {% include "_navlinks.html.j2" %}
-  <div class="nav-search">
-    <span class="mag">🔎</span>
-    <input type="text" class="search-box" placeholder="{{ t('Search…','搜索…') }}" autocomplete="off" spellcheck="false">
-    <div class="search-results"></div>
-  </div>
-  {% include "_site_nav.html.j2" ignore missing %}
-</nav>
+{% set nav_search_placeholder_en = 'Search any stock - US, China, HK, Canada and more...' %}
+{% set nav_search_placeholder_zh = '搜索任意股票 - 美股、A股、港股、加股等...' %}
+{% include "_site_nav.html.j2" ignore missing %}
 
+<main class="dp-shell">
 <div class="toprow">
   <h1>🌑 {{ t('Dark Pool Desk', '场外暗池台') }}</h1>
   {{ chip('EOD · display-only', 'EOD · 仅供展示') }}
-  {% if below_floor %}
+{% if below_floor %}
   {{ chip('⚠ thin history (' ~ panel_dates ~ ' dates)', '⚠ 历史数据不足（' ~ panel_dates ~ ' 天）', 'warn') }}
-  {% else %}
+{% else %}
   {{ chip(panel_dates|string ~ ' dates available', panel_dates|string ~ ' 个交易日数据', 'ok') }}
-  {% endif %}
+{% endif %}
   <span class="muted sm">{{ t('as of', '数据截至') }} {{ panel_latest }} · {{ t('built', '构建于') }} {{ built }}</span>
 </div>
 
@@ -255,6 +262,7 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 });
 </script>
+</main>
 <script src="theme.js"></script>
 </body>
 </html>

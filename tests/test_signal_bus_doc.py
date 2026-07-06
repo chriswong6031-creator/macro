@@ -64,7 +64,7 @@ def test_signal_bus_doc_deterministic():
 
 
 # ---------------------------------------------------------------------------
-# (c) All 64 artifact ids appear in the content
+# (c) All artifact ids appear in the content
 # ---------------------------------------------------------------------------
 
 
@@ -73,11 +73,39 @@ def test_all_artifact_ids_present():
     with _SYNAPSE_YML.open(encoding="utf-8") as fh:
         registry = yaml.safe_load(fh)
     artifact_ids = list(registry.get("artifacts", {}).keys())
-    assert len(artifact_ids) == 110, (
-        f"Expected 110 artifacts in synapse.yml, found {len(artifact_ids)}. "
+    assert len(artifact_ids) == 162, (
+        f"Expected 162 artifacts in synapse.yml, found {len(artifact_ids)}. "
         "Update the test if the registry count changed intentionally."
         " (W7b added machine-registry, cortex-attention-grades, cortex-probation = 104->107;"
-        " W6b added ops-push-basket-freeze, ops-push-signal-sanity, ops-push-healthcheck = 107->110)"
+        " W6b added ops-push-basket-freeze, ops-push-signal-sanity, ops-push-healthcheck = 107->110;"
+        " signal bus registry now carries 112 artifacts;"
+        " W3 event-intelligence added 6 event-priors artifacts = 112->118;"
+        " Signal Commons W2 added kernel-half-lives = 118->119;"
+        " entry-stack B0-1 added bottom-sensors-json, bottom-sensors-parquet = 119->121;"
+        " options-nw W-A added options-entry-state, options-entry-gate, options-skew-snapshots,"
+        " options-ivspread-snapshots, live-options-flow-current = 121->126;"
+        " nwqs-B added research-queue = 126->127;"
+        " gex-nerve added gex-state-history = 127->128;"
+        " oracle reversion promo P0+P1 added oracle-reversion-forward-ledger, oracle-reversion-state = 128->130;"
+        " long-hold W1 PR-E added long-hold-labels, long-hold-labels-manifest = 130->132;"
+        " long-hold W1 dead-name build added long-hold-dead-name-prices = 132->133;"
+        " OTA W6 turn desk added oracle-turn-desk, oracle-turn-desk-ledger = 133->135;"
+        " long-hold W1 PR-F killtest added long-hold-killtest-results = 135->136;"
+        " NW-rails PR-4 added dispersion-regime = 136->137;"
+        " long-hold W2 PR-J two clocks added long-hold-clocks = 137->138;"
+        " NW-rails PR-1 added rule-experiment-registry, rule-experiment-summaries = 141->143;"
+        " NW-rails PR-6 added grading-closure = 143->144;"
+        " long-hold W2 PR-I added long-hold-compounder-features = 144->145;"
+        " long-hold W2 PR-K added moat-falsifier-sensors, great-company-trap = 145->147;"
+        " NW-rails PR-8 added operator-action-ledger = 147->148;"
+        " nw-mastermind-bridge W1 added kernel-decisions, neuralweb-mastermind-context,"
+        " site-neuralweb-mastermind-context = 148->151;"
+        " OTA W7 qualitative fusion added oracle-qual-filter-registry, oracle-qual-filter-stamps,"
+        " oracle-qual-filter-accrual = 151->154;"
+        " research-factory W1 added research-factory-candidates, research-factory-transitions,"
+        " research-factory-paper-monitor = 154->157;"
+        " factor-intel NW W1 added factor-intelligence-state, site-factor-intelligence-state,"
+        " factor-state-history, fire-coordinates, factor-contradictions-ledger = 157->162)"
     )
     content = generate(_SYNAPSE_YML)
     missing = [aid for aid in artifact_ids if aid not in content]

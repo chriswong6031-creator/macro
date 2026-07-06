@@ -9,6 +9,7 @@ on:
     paths:
       - "site/**"
       - "scripts/check_inline_js.py"
+      - "scripts/check_site_js.py"
       - "scripts/check_nav_gap.py"
       - "scripts/check_nav_mega.py"
       - "scripts/check_board_contradictions.py"
@@ -109,6 +110,7 @@ on:
       - "scripts/check_synapse_reads.py"
       - "data/neuralweb/read_gate_baseline.json"
       - "tests/test_synapse_read_gate.py"
+      - "tests/test_horizon_firewall.py"
       # neural-web program (W0): synapse.yml registry, gen_signal_bus_doc generator,
       # committed SIGNAL_BUS.md, and the three test files must all trigger the gate so a
       # config edit that produces a stale doc — or an envelope refactor that breaks
@@ -121,6 +123,17 @@ on:
       - "tests/test_signal_bus_doc.py"
       - "tests/test_synapse_registry.py"
       - "tests/test_neuralweb_envelope.py"
+      # NW Rails PR-7 R4 contract governance: schema drift check + test suite.
+      - "scripts/check_contract_drift.py"
+      - "scripts/export_signal_contracts.py"
+      - "site/factordata/contracts/artifact_manifest.json"
+      - "tests/test_contract_drift.py"
+      # Research Factory W1 (RF-11): authority guard, ledger schemas, state machine.
+      - "scripts/research_factory*.py"
+      - "scripts/*research_factory*.py"
+      - "data/research_factory/**"
+      - "tests/test_research_factory*.py"
+      - "config/synapse.yml"
   workflow_dispatch:
 
 permissions:
@@ -133,6 +146,12 @@ jobs:
       - uses: actions/checkout@v4
       - name: inline JS must parse
         run: python3 scripts/check_inline_js.py site
+      # Companion guard: standalone site/*.js bundles are loaded via <script src=...>,
+      # which the inline-JS guard deliberately skips — a syntax error there (e.g. the
+      # smart-quote delimiters that blanked markets.html for ~2 days, PR #1004→#1353)
+      # ships silently. This parses every non-vendor bundle with `node --check`.
+      - name: standalone site JS must parse
+        run: python3 scripts/check_site_js.py site
 
   nav-gap:
     # The shared nav menu (.site-nav / vector-family .topbar) has no built-in top
@@ -424,8 +443,14 @@ jobs:
         run: python3 scripts/check_synapse_registry.py
       - name: synapse read-gate — warn tier + Article-2 hard fail
         run: python3 scripts/check_synapse_reads.py
+      - name: factor boundary guard (RUL-NW9/NW11 — hard fail on Article-2 writes or forbidden fields)
+        run: python3 scripts/check_factor_boundaries.py
+      - name: factor boundary selftest (guard fires on planted violations)
+        run: python3 scripts/check_factor_boundaries.py --selftest
       - name: synapse read-gate unit tests
-        run: python -m pytest tests/test_synapse_read_gate.py -q
+        run: python -m pytest tests/test_synapse_read_gate.py tests/test_horizon_firewall.py -q
+      - name: factor deescalation shadow + boundary guard tests
+        run: python -m pytest tests/test_factor_deescalation_shadow.py -q
 
   neural-web:
     # neural-web program (W0, #1253 post-mortem): three test files were run by ZERO
@@ -480,3 +505,50 @@ jobs:
         run: python scripts/check_dag_conformance.py --verbose
       - name: DAG conformance selftest + live conformance tests
         run: python -m pytest tests/test_dag_conformance.py -q
+
+  research-factory-authority:
+    # RF-11 (Research Factory W1): authority guard — no Article-2 money-path
+    # module (alert_triage / board_ordering / top_setups) may read
+    # data/research_factory/ or import engine.research_factory.  The factory
+    # is display-only (A0-A2 ceiling); factory outputs must never reach the
+    # scored / board-rank / alert pipeline.  Runs alongside synapse-read-gate.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pyyaml
+      - name: authority guard (hard fail on Article-2 forbidden reads)
+        run: python scripts/check_research_factory_authority.py
+      - name: authority guard selftest (gate fires on planted violation)
+        run: python scripts/check_research_factory_authority.py --selftest
+      - name: research-factory state + schema tests
+        run: python -m pytest tests/test_research_factory_state.py tests/test_research_factory_schema.py -q
+
+  contract-drift:
+    # NW Rails PR-7 (R4 contract governance): checks that each artifact in
+    # site/factordata/contracts/artifact_manifest.json has not drifted from the
+    # live artifact's actual top-level JSON fields.  A bot consuming china_standouts
+    # with a stale schema contract has no handshake — this makes drift visible at PR
+    # merge time rather than at trade time.
+    #
+    # Warn-first ratchet: exits 0 even on drift during the initial accrual week so
+    # this never blocks a deploy on its first day.  Flip --warn-only to hard-fail
+    # after one clean week: 2026-07-13.
+    #
+    # Wildcard artifacts (per_stock_intel, per_stock_signal) are skipped when no
+    # live sample is present (normal on CI runners without the full stockdata store).
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml
+      - name: contract drift check (warn-only ratchet — flip to hard-fail 2026-07-13)
+        run: python scripts/check_contract_drift.py --warn-only
+      - name: contract drift unit tests
+        run: python -m pytest tests/test_contract_drift.py -q

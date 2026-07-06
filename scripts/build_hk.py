@@ -26,7 +26,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import plotly.graph_objects as go  # noqa: E402
 from markupsafe import Markup  # noqa: E402
 
-from lib import config, store  # noqa: E402
+from lib import config, site_assets, store  # noqa: E402
 from lib.pages import write_page  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
@@ -152,45 +152,6 @@ def _sector_cards(latest: dict) -> list[dict]:
         })
     cards.sort(key=lambda c: (c["rank"] is None, c["rank"] or 999))
     return cards
-
-
-def _hk_index_health() -> list[dict]:
-    """Health snapshot for the major HK indexes — the 'how is the market itself
-    doing' read that leads the macro page. Price, % off the 52-week high
-    (drawdown), 50/200d trend, RSI(14). Pure price math off the stored daily
-    closes; reuses engine.technicals.rsi. HSI (^HSI, deep history) + HSCEI
-    (^HSCE, H-shares) + Hang Seng TECH (3033.HK ETF — the cleanest stored HSTECH
-    exposure; no raw HSTECH index series in the store)."""
-    from engine.technicals import rsi
-    out = []
-    # 3033.HK is the Hang Seng TECH ETF (no raw HSTECH index series on disk) — label it
-    # as an ETF so its NAV price reads correctly next to the index-level tiles.
-    for tkr, label, zh in [("^HSI", "Hang Seng Index", "恒生指数"),
-                           ("^HSCE", "HSCEI (H-shares)", "国企指数"),
-                           ("3033.HK", "Hang Seng TECH ETF", "恒生科技 ETF")]:
-        df = store.read("hk", tkr)
-        if df is None or df.empty or "close" not in df.columns:
-            continue
-        c = df["close"].astype(float).dropna()
-        if len(c) < 60:
-            continue
-        px = float(c.iloc[-1])
-        hi52 = float(c.tail(252).max())
-        ma50 = float(c.tail(50).mean())
-        ma200 = float(c.tail(200).mean()) if len(c) >= 200 else float("nan")
-        try:
-            r = float(rsi(c).iloc[-1])
-        except Exception:  # noqa: BLE001 — never let one index break the panel
-            r = float("nan")
-        out.append({
-            "ticker": tkr, "label": label, "label_zh": zh, "price": round(px, 2),
-            "chg": round(100 * (px / float(c.iloc[-2]) - 1), 2) if len(c) >= 2 else 0.0,
-            "dd": round(100 * (px / hi52 - 1), 1),
-            "above50": bool(px >= ma50),
-            "above200": (bool(px >= ma200) if ma200 == ma200 else None),
-            "rsi": round(r) if r == r else None,
-        })
-    return out
 
 
 def _benchmark_card() -> dict | None:
@@ -448,8 +409,8 @@ def _hk_signal_stack(latest: dict) -> dict | None:
 def _hk_market_tiles() -> list[dict]:
     """CROSS-ASSET 'market snapshot' tiles — level + 1-day move for the non-index
     instruments that drive HK (the true HS-TECH index, USD/HKD peg, offshore yuan,
-    gold, the dollar, overnight HIBOR). The HSI/HSCEI levels live ONLY in the
-    index-health grid above; this strip is the cross-asset complement."""
+    gold, the dollar, overnight HIBOR). Broad-index confluence and HSI technicals
+    live in the Market State tape; this strip is the cross-asset complement."""
     # (store group, name, column, en, zh, tag_en, tag_zh, decimals, is_rate, invert_tone)
     spec = [
         ("hk", "HSTECH", "close", "HS-TECH", "恒生科技", "growth", "成长", 0, False, False),
@@ -592,7 +553,7 @@ def _hk_southbound_channels_vm() -> dict | None:
 
 
 def _hk_alloc_card() -> dict:
-    """Compact allocation card for the index-health button (graceful — present=False if
+    """Compact allocation card for the HK macro page (graceful — present=False if
     no HK allocation artifact exists yet, so the macro page never depends on it)."""
     try:
         p = config.data_dir() / "hk_regime" / "hk_alloc_latest.json"
@@ -696,7 +657,6 @@ def main() -> int:
             "pref": latest.get("preference_check", {}),
             "gv": latest.get("global_snapshot", {}),
             "vhsi": _vhsi_vm(),
-            "index_health": _hk_index_health(),  # macro-page index-health strip
             "signal_stack": _hk_signal_stack(latest),   # consolidated cross-subsystem read
             "market_tiles": _hk_market_tiles(),         # cross-asset market-snapshot tiles
             "alloc_card": _hk_alloc_card(),             # allocation button (graceful)
@@ -887,7 +847,7 @@ def main() -> int:
         for a in ASSETS:
             src = Path(config.ROOT) / "templates" / a
             if src.exists():
-                (site / a).write_text(src.read_text())
+                site_assets.copy_asset(a, src, site)
         log.info("wrote %s/hk.html (%d KB, %d sectors)", site, len(html) // 1024, len(vm["sectors"]))
 
         # HK Stock & Exposure board — same VM, the "looking for stocks" half.

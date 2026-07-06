@@ -16,6 +16,8 @@ evaluator. Paste returned specs into data/oracle/compounds/registry.jsonl
     python -m scripts.oracle_screen --all-pending --data-dir <MAIN>/data
 
 Usage:  python -m scripts.oracle_brainstorm_pack [--n 10] > /tmp/pack.txt
+        python -m scripts.oracle_brainstorm_pack --reversion [--n 10] > /tmp/rev.txt
+        python -m scripts.oracle_brainstorm_pack --reversion --explore > /tmp/rev_explore.txt
 """
 from __future__ import annotations
 
@@ -66,6 +68,9 @@ _SCREEN_PRIORS = """\
   B4 -1.2%, all n>=290). Buying "healthy participation" is not an edge — that
   participation is already priced. Do not gate on breadth/cohesion state; use
   them at most as a secondary filter behind a genuine flow/washout trigger.
+  (Caveat: these used 2021+-only columns, so the sample is 2021-2026, not
+  all-history — negative on available data, but that is NOT cross-era death;
+  and being 2021+-only they are un-promotable regardless. See HISTORY COVERAGE.)
 - cohesion_rebuild as the PRIMARY trigger: weak/dead on tier-s (round-3 A10
   n=80 & A11 n=77 both era 1; F3 +0.29% era 1; F4 -0.17%). The rebuild flag
   fires too sparsely and doesn't hold across eras — do NOT use it as the
@@ -99,6 +104,151 @@ hit>=55% OR |effect63|>=1%):
 AVOID (screened dead): cohesion_rebuild as the primary trigger; benign-macro-
 only filters on washout; anything in the participation-state basin."""
 
+# ---------------------------------------------------------------------------
+# REVERSION MODE — content blocks
+# ---------------------------------------------------------------------------
+
+_REVERSION_OBJECTIVE = """\
+OBJECTIVE (REVERSION-CAPTURE — NOT the 63-day factor metric):
+
+We are hunting BUY-IN signals that catch a SAFE, HIGH-WIN-RATE reversion off
+a basing low. The entry captures the washed-out / basing low; the ride is the
+bounce; the EXIT is near the momentum top (2D StochRSI roll-over), average
+hold ~20-30 sessions.
+
+Scoring harness: `oracle_reversion_screen.py`, window W=25, exit E=21.
+Per entry — ABSOLUTE (no SPY benchmark):
+  - MFE  : 25-session max up-excursion (gain potential)
+  - MAE  : 25-session max drawdown (safety floor — CRITICAL)
+  - ret_exit: 21-session time-exit return (proxy for StochRSI-top exit)
+  - asym : mean_MFE / |mean_MAE|  (MFE/MAE ratio — the safety criterion)
+
+Regime at entry: risk_off if spy_above_200d==0 OR vix_pctile>=0.70.
+
+PASS gates (ALL must hold):
+  1. n >= 100
+  2. WR >= 0.62 (win-rate primary; 63d WR numbers do NOT transfer)
+  3. asym >= 1.5 (upside excursion at least 1.5x the max drawdown sat through)
+  4. ret_exit >= +1.0% absolute AND > 0 in BOTH risk_on AND risk_off regimes
+  5. OOS holdout WR >= 0.58 AND same sign AND holdout n >= 100
+  6. Timing placebo: real mean ret_exit > 95th pctile of 500 random-timing draws
+
+PRIMARY OBJECTIVES IN ORDER: win-rate first, drawdown-avoidance (asym) second,
+absolute exit-return third, regime-robustness fourth. Drawdown AVOIDANCE matters
+more than gain size. A signal that bounces +7% in 3 weeks then mean-reverts
+is EXACTLY what we want — it scores near-zero at 63d but is a perfect reversion
+entry (demonstrated: A15 = +1.30%/63d endpoint, +7.2% MFE, +3.0% at 21d, 73% WR).
+
+Do NOT benchmark vs SPY. SPY is ~50% mega-cap tech; excess-vs-SPY hides the
+defensive-rotation win. Use absolute return + regime split.
+
+This is the same shape as the operator's proven MACD+StochRSI 2D/3D confluence
+entry engine."""
+
+_REVERSION_PRIORS = """\
+=== REVERSION PRIORS — what is KNOWN on THIS metric ===
+
+IMPORTANT: The 63-day adjudicated nulls and screen priors were measured on the
+WRONG ruler (63d point-to-point excess). They do NOT transfer to the reversion
+metric. This is a FRESH START on the reversion objective. Treat shapes tested
+only on 63d as "reversion score unknown."
+
+WHAT IS KNOWN (reversion metric):
+
+SAFETY: Episode-qualified washout in RISK-OFF + DEFENSIVE sectors:
+  ~2:1 MFE/MAE, ~77% WR, beats a stalled tape (A15 pattern).
+  Bare/cyclical washout without episode conditioning: ~1.2:1 MFE/MAE — a coin
+  flip on safety. The episode qualifier BUYS SAFETY, not more mean return.
+
+PRIORITISE these entry shapes:
+1. OSCILLATOR-TURN entries:
+   - stochrsi_w_k crossing stochrsi_w_d from below (K/D bullish cross)
+   - stochrsi_w_k or stochrsi_w_d rising up through oversold (e.g. <=20 ->
+     crossed_above 20 or 30) — the turn OUT of oversold is the signal
+   - MACD-analog: velocity/acceleration turning from negative to positive
+     (vel_1w crossed_above 0, or accel crossed_above 0 after sustained negative)
+   - accel_z turning (crossed_above -1.0 or 0.0 after being deeply negative)
+
+2. VOLATILITY-COMPRESSION / COILED setups:
+   - After a washout, volatility falls and price bases; coiled entry captures
+     the eventual release
+   - Breadth or oscillator flattening while vel/accel is low-but-turning
+
+3. BASING AFTER WASHOUT:
+   - washout_w>0 (confirmed capitulation) + subsequent oscillator stabilisation
+   - Velocity/accel recovering from a trough while still muted
+
+4. WASHOUT/FLOW CONDITIONED ON REGIME AND SECTOR CHARACTER:
+   - Regime conditioning (spy_above_200d==0 OR vix_pctile>=0.70) is the single
+     biggest safety multiplier — risk-off washouts are structurally safer
+   - Defensive vs cyclical character matters: defensive sectors (utilities,
+     healthcare, staples) hold better downside; cyclical washouts are riskier
+   - Episode-event triggers (out/onset x same-complex or any x within_sessions)
+     are the clearest "something broke and forced sellers" signal
+
+5. MOMENTUM IGNITION OFF THE LOW:
+   - The first upward velocity tick after a base: vel_1w crossed_above 0 while
+     washout_w>0 or stochrsi was oversold
+   - First positive accel after sustained negative accel
+
+SAFETY FIRST — prefer entries whose downside is STRUCTURALLY LIMITED:
+  - Already washed out (washout_w=1) means sellers have been exhausted
+  - At oscillator extremes (stochrsi_w_k <=20) means the tape has priced in
+    the bad news
+  - Combined: washed-out AND oscillator at floor = maximum structural safety
+  Goal: HIGH WR + SHALLOW MAE, not a large mean return.
+
+NOTE ON 63d-SCREENED SHAPES: these were measured on the WRONG ruler. Shapes
+like participation-state gating, plain leadership continuation, cohesion_rebuild
+as primary trigger — these had near-zero or negative 63d scores. Their reversion
+scores are UNKNOWN. They may or may not work here. Do not avoid them because of
+63d scores; but also do not re-propose them just because they are no longer
+"blocked" — propose them only if you have a genuine reversion-mechanism thesis."""
+
+# --explore mode: maximise mechanism DIVERSITY instead of drilling one basin.
+# The goal is a wide, cheap net (200-500 specs accumulated over several runs)
+# that the screen then sorts. This is the OPPOSITE pressure from the focus pack.
+_FOCUS_SLICES = [
+    ("velocity/acceleration microstructure", "vel_1w/vel_1m/vel_3m/accel/accel_z "
+     "crossings, curve relationships (value_col comparisons), turning points"),
+    ("breadth & cohesion structure", "breadth_50/cohesion/cohesion_chg/"
+     "cohesion_rebuild DYNAMICS (changes/crossings), not static-level gates"),
+    ("relative-strength regime & turns", "rs crossings, rs vs velocity, rs "
+     "acceleration/deceleration turning points"),
+    ("turnover & positioning", "turnover_z spikes/cooling/crossings, persistence "
+     "regimes, positioning-stress reads"),
+    ("macro-regime conditioning", "vix_pctile bands, tlt_ret_10d sign/turns, "
+     "spy_above_200d — as GATES on a non-participation trigger, not the trigger"),
+    ("episode-flow routing", "episode_event in/out x onset/confirmed/undeniable x "
+     "same/opposite/any x min_count 1-3 x within 5-20 — the conservation family"),
+    ("oscillator / mean-reversion", "stochrsi_w_k/stochrsi_w_d turns & crossings, "
+     "washout_w used SPARINGLY (basin mapped), oscillator exhaustion"),
+    ("cross-column & multi-leg composites", "column-vs-column value_col rules; "
+     "3-leg rules pairing one novel trigger + a macro gate + a micro filter"),
+]
+
+_DIVERSITY_MANDATE = """\
+MISSION: cast a WIDE net. Across several runs of this prompt the operator wants
+200-500 DIVERSE specs; the mechanical screen then sorts them. Your job this run
+is BREADTH, not depth on any one idea. Do NOT converge on the washout basin
+(already mapped) — spend <=10% of proposals there.
+
+MECHANISM COVERAGE GRID — sample widely across all of it:
+- TRIGGER (the event that fires the entry): use MANY different primitives —
+  every panel column should appear as a trigger somewhere in the batch, via
+  crossings (crossed_above/below a level OR another column) or regime turns;
+  AND episode_event triggers (in/out x tiers x scopes x min_count).
+- CONDITIONER (0-2 secondary filters): macro regime (vix/tlt/spy), microstructure
+  (turnover_z/persistence/accel_z), or a cross-column comparison.
+- Use ALL SIX ops. Use BOTH episode-event and panel-condition triggers. Use BOTH
+  in and out episode directions. Propose genuinely NEW families (NEW:<name>).
+
+DIVERSITY RULES (enforced by review — near-duplicates are wasted volume):
+- <=3 specs may share the same TRIGGER primitive; vary the conditioner/threshold.
+- Each spec must tell a DISTINCT money-flow story (mechanism_en must differ).
+- Mix leg-counts: some 1-leg triggers, many 2-3 leg conditioned rules.
+- Span the grid; do not cluster on the two or three most obvious ideas."""
+
 
 def _jsonl(path: Path) -> list[dict]:
     rows = []
@@ -114,38 +264,175 @@ def _jsonl(path: Path) -> list[dict]:
     return rows
 
 
-def build_pack(n_requested: int = 10) -> str:
+def build_pack(n_requested: int = 10, mode: str = "focus",
+               focus: int | None = None, reversion: bool = False) -> str:
     compounds = _jsonl(REG)
     trials = _jsonl(LEDGER)
     eff_by_id: dict[str, str] = {}
+    eff_num: dict[str, float] = {}
     for t in trials:
         cid = t.get("compound_id")
         e63, h63 = t.get("effect_63d"), t.get("hit_63d")
         if cid and e63 is not None:
             eff_by_id[cid] = (f"screened: effect63={e63*100:+.2f}% "
                               f"hit63={(h63 or 0)*100:.1f}% n={t.get('n')}")
+            eff_num[cid] = e63
 
-    tested_lines = []
+    # Compaction: as the registry grows past ~40, listing every dead compound
+    # bloats the prompt.  The ingest (oracle_ingest_brainstorm) hard-dedups exact
+    # repeats regardless, so the prompt only needs the NOTABLE results verbatim
+    # (|effect63| >= 0.7% either sign, or not-yet-screened) plus a count of the
+    # rest.  Dead SHAPES are already fenced in the screen priors below.
+    #
+    # In reversion mode: the dedup list is for RULE dedup only — the 63d scores
+    # are irrelevant to the reversion metric, so we replace the "(screened: ...)"
+    # tail with a neutral annotation so the LLM does not treat them as dead.
+    _NOTABLE = 0.007
+    tested_lines, noise_n = [], 0
     for c in compounds:
         cid = c.get("id", "?")
+        e = eff_num.get(cid)
+        if reversion:
+            # All compounds are notable for dedup purposes; replace 63d annotation.
+            if cid in eff_by_id:
+                annotation = "63d-screened; reversion score unknown — do not re-propose this exact rule"
+            else:
+                annotation = "not yet screened on any metric"
+            tested_lines.append(
+                f"- [{cid}] {c.get('name','')}: rule={json.dumps(c.get('entry_rule'))} "
+                f"({annotation})")
+        else:
+            if e is None or abs(e) >= _NOTABLE:
+                tested_lines.append(
+                    f"- [{cid}] {c.get('name','')}: rule={json.dumps(c.get('entry_rule'))} "
+                    f"({eff_by_id.get(cid, 'not yet screened')})")
+            else:
+                noise_n += 1
+    if not reversion and noise_n:
         tested_lines.append(
-            f"- [{cid}] {c.get('name','')}: rule={json.dumps(c.get('entry_rule'))} "
-            f"({eff_by_id.get(cid, 'not yet screened')})")
+            f"- (+ {noise_n} more screened as NOISE, |effect63|<0.7% — already "
+            "tested, do not re-propose; the ingest hard-dedups exact repeats.")
 
     episode_fields = ("direction(in|out), tier(onset|confirmed|undeniable), "
                       "complex_scope(same|opposite|any), within_sessions, min_count "
                       "(min_count = DISTINCT nodes)")
 
+    # Mode-dependent sections -------------------------------------------------
+    if reversion:
+        # Reversion objective overrides the 63d factor framing.
+        # --explore / --focus still work for diversity pressure, but the
+        # objective and priors are always the reversion ones.
+        if mode == "explore":
+            role_ask = (
+                f"MAXIMISE mechanism DIVERSITY — propose {n_requested} DISTINCT "
+                "reversion-capture entry compounds spanning as much of the mechanism "
+                "space as you can. Safety and win-rate are the primary criteria.")
+            if focus is not None and 1 <= focus <= len(_FOCUS_SLICES):
+                name, detail = _FOCUS_SLICES[focus - 1]
+                focus_line = (f"\nFOCUS THIS RUN — slice {focus}/{len(_FOCUS_SLICES)}: "
+                              f"{name}.\n  {detail}\n  Spend the majority of this "
+                              "batch here; the operator re-runs other slices separately.")
+            else:
+                slices = "\n".join(f"  {i+1}. {n} — {d}"
+                                   for i, (n, d) in enumerate(_FOCUS_SLICES))
+                focus_line = ("\nSLICES (the operator re-runs this prompt with "
+                              "--focus K to cover each; with none set, span them all):\n"
+                              + slices)
+            extra_rules = (
+                "\n\nEXPLORE MODE: breadth beats depth this run. Return as MANY unique "
+                "reversion-capture specs as you can; each must be a different entry "
+                "mechanism. Safety (MFE/MAE asym) and WR are the sorting criteria.")
+            steer_body = _DIVERSITY_MANDATE + focus_line
+        else:
+            role_ask = (
+                "Safety-first, high-win-rate reversion entries are the mission — "
+                f"propose {n_requested} NEW compounds targeting basing-low entries "
+                "with strong MFE/MAE asymmetry and WR >= 0.62.")
+            extra_rules = ""
+            steer_body = ""  # priors block is already emitted by _REVERSION_PRIORS
+        steer_title = ""  # _REVERSION_PRIORS block carries its own header
+    elif mode == "explore":
+        role_ask = (
+            f"MAXIMISE mechanism DIVERSITY — propose {n_requested} DISTINCT "
+            "compounds spanning as much of the mechanism space as you can.")
+        if focus is not None and 1 <= focus <= len(_FOCUS_SLICES):
+            name, detail = _FOCUS_SLICES[focus - 1]
+            focus_line = (f"\nFOCUS THIS RUN — slice {focus}/{len(_FOCUS_SLICES)}: "
+                          f"{name}.\n  {detail}\n  Spend the majority of this "
+                          "batch here; the operator re-runs other slices separately.")
+        else:
+            slices = "\n".join(f"  {i+1}. {n} — {d}"
+                               for i, (n, d) in enumerate(_FOCUS_SLICES))
+            focus_line = ("\nSLICES (the operator re-runs this prompt with "
+                          "--focus K to cover each; with none set, span them all):\n"
+                          + slices)
+        steer_title = "=== DIVERSITY MANDATE — SPAN THE WHOLE MECHANISM SPACE ==="
+        steer_body = _DIVERSITY_MANDATE + focus_line
+        extra_rules = (
+            "\n\nEXPLORE MODE: breadth beats depth this run. Return as MANY unique "
+            "specs as you can (do not stop at a token few); each must be a "
+            "different mechanism. The screen sorts them — false starts are cheap, "
+            "missed diversity is not.")
+    else:  # focus mode (default): drill the current live basin
+        role_ask = (
+            "Volume and mechanism diversity are what you are good for — propose "
+            f"{n_requested} NEW compounds.")
+        steer_title = ("=== WHERE STRUCTURE HAS ACTUALLY APPEARED — "
+                       "CONCENTRATE PROPOSALS HERE ===")
+        steer_body = _LIVE_REGIONS
+        extra_rules = ""
+
+    mode_tag = f"{mode}+reversion" if reversion else mode
+
+    # Reversion mode: grammar horizons note and output format universe differ.
+    if reversion:
+        horizons_note = (
+            "- Horizons: [21, 63] (kept for format compat; the reversion harness\n"
+            "  uses its own W=25/E=21 window + oscillator exit, ignores the 63d\n"
+            "  excess. The ruler is WR/MFE/MAE, NOT 63d excess vs benchmark).")
+        output_universe = '{"tier": "s"}'
+        output_horizons = "[21, 63]"
+        # In reversion mode the "explored" header is for rule-dedup only.
+        explored_header = (
+            f"=== ALREADY PROPOSED — DO NOT RE-PROPOSE THESE EXACT RULES ===\n"
+            f"(This list is for RULE DEDUP only — the 63d scores shown are from a\n"
+            f"different metric and do NOT indicate these rules are dead on reversion.)\n"
+            f"Specced compounds ({len(compounds)}):")
+        # Screen priors section: replaced with reversion-specific note.
+        screen_priors_section = (
+            "Note on 63d screen priors: the round-1 to round-3 screen priors\n"
+            "(leadership continuation, participation-state gating, cohesion_rebuild\n"
+            "as primary trigger, etc.) were measured on the 63d factor metric — the\n"
+            "WRONG ruler for this objective. They do NOT transfer. Treat those shape\n"
+            "lessons as irrelevant to the reversion task.")
+        # Adjudicated nulls: still blockable at the grammar level; note the caveat.
+        nulls_header = ("Adjudicated 63d dead ends (measured on wrong ruler —\n"
+                        "may or may not apply here; do not re-propose exact grammar anyway):")
+        # Steer block: always the reversion priors.
+        steer_block = _REVERSION_PRIORS
+        if steer_body:  # explore mode appends diversity mandate
+            steer_block = steer_block + "\n\n" + steer_body
+    else:
+        horizons_note = "- Horizons: [21, 63] sessions, excess vs benchmark."
+        output_universe = '{"tier": "s"}'
+        output_horizons = "[21, 63]"
+        explored_header = (f"=== ALREADY EXPLORED — DO NOT RE-PROPOSE THESE OR TRIVIAL VARIANTS ===\n"
+                           f"Specced/screened compounds ({len(compounds)}):")
+        screen_priors_section = (
+            f"Tier-1 screen priors (rounds 1-2 brainstorm; strong priors, NOT gauntleted):\n"
+            f"{_SCREEN_PRIORS}")
+        nulls_header = "Adjudicated dead ends (pre-registered tests; do not re-till):"
+        steer_block = steer_body
+
     return f"""\
-=== ORACLE COMPOUND BRAINSTORM PACK (grammar v{GRAMMAR_VERSION}; generated live) ===
+=== ORACLE COMPOUND BRAINSTORM PACK (grammar v{GRAMMAR_VERSION}; mode={mode_tag}; generated live) ===
 
 ROLE: You are a quantitative idea generator for a sector-rotation research
 factory. You produce COMPOUND SPECS (JSON) — declarative entry rules over a
 daily panel of US sector/subsector rotation features. You NEVER write code,
 never claim validation, and never re-propose tested ground (listed below).
 Your specs are screened mechanically by a causality-safe evaluator; effects
-are measured, counted, and only survivors are promoted. Volume and mechanism
-diversity are what you are good for — propose {n_requested} NEW compounds.
+are measured, counted, and only survivors are promoted. {role_ask}
 
 THE GRAMMAR (your entire vocabulary — specs outside it are rejected):
 - Conditions: {{"col": <column>, "op": <one of {sorted(VALID_OPS)}>, "value": <number>}}
@@ -154,12 +441,51 @@ THE GRAMMAR (your entire vocabulary — specs outside it are rejected):
 - Combine with {{"all": [...]}} / {{"any": [...]}}. Entry = rule true as-of day t,
   executed next daily close. Everything is joined strictly as-of t (no lookahead
   is possible — the evaluator guarantees it).
+- Sequence (v1.2.0+): {{"sequence": {{"first": <rule>, "then": <rule>,
+  "within_sessions": N}}}} — fires at t iff `then` is true at t AND `first`
+  was true on ≥1 day in [t-N, t-1] (strictly before t; both legs causal).
+  `first` may be any v1 rule incl. episode_event/all/any; sequence-inside-
+  sequence is REJECTED. Adds top-level "cooldown_sessions": <int> to suppress
+  re-fires on a node for N sessions after each kept fire.
 - Universe: {{"tier": "s"}} (11 sector ETFs, 1998->, survivorship-clean — claims
   live here) or {{"tier": "m"}} (354 subsectors/themes/baskets, 2021->, watermarked).
-- Horizons: [21, 63] sessions, excess vs benchmark.
+{horizons_note}
 
 AVAILABLE PANEL COLUMNS (per node per day, all causal):
 {", ".join(COLUMN_SCHEMA)}
+
+COLUMN SCALES (wrong scale = a rule that never fires — respect these):
+- 0-100: stochrsi_w_k, stochrsi_w_d (median ~56; use 20/50/80, NOT 0.2/0.8).
+- 0-1: vix_pctile, breadth_50, persistence (~0.23-0.75), cohesion (~0.09-0.78).
+- 0/1 flags: washout_w, spy_above_200d, cohesion_rebuild (use ">value":0 or ge 1).
+- small decimals (daily/rolling returns): ret, vel_1w, vel_1m, vel_3m, accel,
+  tlt_ret_10d, oil_ret_10d, dollar_chg_10d.  z-scores (~ -3..+3, tails to +-8):
+  accel_z, turnover_z.
+- macro spreads/levels (%pts or index units, NOT 0-1): yc_slope (~-1..+3;
+  <0 = curve inverted), hy_oas_chg_10d (~-4..+5, 10d change in HY credit
+  spread; >0 = credit stress rising), fin_conditions (NFCI ~-1..+3; >0 = tight).
+- Do NOT value_col-compare columns of DIFFERENT scales (e.g. stochrsi vs rs,
+  vix_pctile vs turnover_z) — the comparison is degenerate/always-true.
+
+NEW cross-asset regime columns (full-history, just added — the FRESHEST,
+least-explored mechanism space): hy_oas_chg_10d (credit stress), yc_slope
+(yield curve), oil_ret_10d (energy), dollar_chg_10d (USD), fin_conditions
+(NFCI).  Sector rotation is DRIVEN by these — energy<->oil, financials<->curve,
+tech/materials<->dollar+credit.  PRIORITISE this run: novel triggers on them
+(e.g. hy_oas_chg_10d crossed_above 0 = credit stress onset; yc_slope
+crossed_below 0 = inversion) and conditioning the washout/flow edge on these
+regimes.  All clear the era gate.
+
+HISTORY COVERAGE (HARD promotability constraint):
+- FULL history 1998->: ret, rs, vel_*, accel, accel_z, persistence, vix_pctile,
+  tlt_ret_10d, spy_above_200d, washout_w, stochrsi_w_k/d, hy_oas_chg_10d (1999+),
+  yc_slope (1998+), oil_ret_10d (1999+), fin_conditions (1999+),
+  dollar_chg_10d (2006+ — 20y, still clears the gate).
+- 2021+ ONLY (~5yr, ~13.5k rows): breadth_50, cohesion, cohesion_chg,
+  turnover_z, cohesion_rebuild.  A rule CONDITIONED on any of these fires only
+  post-2021, so it CANNOT clear the era-consistency gate (3 of 4 eras) and is
+  NOT promotable.  Use them at most as an optional probe leg, NEVER as the edge.
+  Prefer full-history columns for anything you want promotable.
 
 MECHANISM FAMILIES ALREADY MAPPED (extend them or propose NEW families —
 say which): A conservation/routing (money must go somewhere), B sector
@@ -167,33 +493,31 @@ personality, C velocity-shift microstructure, D macro-regime conditioning,
 E positioning (data still accruing), F information flow. Full prose:
 research/ORACLE_COMPOUND_LIBRARY.md.
 
-=== ALREADY EXPLORED — DO NOT RE-PROPOSE THESE OR TRIVIAL VARIANTS ===
-Specced/screened compounds ({len(compounds)}):
+{explored_header}
 {chr(10).join(tested_lines) if tested_lines else "(none yet)"}
 
-Adjudicated dead ends (pre-registered tests; do not re-till):
+{nulls_header}
 {_KNOWN_NULLS}
 
-Tier-1 screen priors (rounds 1-2 brainstorm; strong priors, NOT gauntleted):
-{_SCREEN_PRIORS}
+{screen_priors_section}
 
-=== WHERE STRUCTURE HAS ACTUALLY APPEARED — CONCENTRATE PROPOSALS HERE ===
-{_LIVE_REGIONS}
+{steer_title}
+{steer_block}
 
 === OUTPUT FORMAT (return ONLY a JSON list of specs) ===
 [{{"id": "<SHORT_UNIQUE_ID>", "family": "<A-F or NEW:<name>>",
   "name": "<what the rule does — plain>",
   "mechanism_en": "<WHY money-flow mechanics make this footprint — must
     describe what the rule EXECUTES, no aspirational claims>",
-  "entry_rule": {{...grammar...}}, "universe": {{"tier": "s"}},
-  "horizons": [21, 63], "status": "exploratory",
+  "entry_rule": {{...grammar...}}, "universe": {output_universe},
+  "horizons": {output_horizons}, "status": "exploratory",
   "lineage": "external-brainstorm <model> <date>"}}]
 
 RULES: mechanism_en must match the rule (truth-in-labeling is enforced by
 review); prefer tier "s" for anything you'd want promotable; conditioning
 compounds (X only-when Y) beat raw signals here — the measured nulls above
 show unconditioned signals are dead; diversity across families beats ten
-variants of one idea.
+variants of one idea.{extra_rules}
 
 COVERAGE FLOOR (hard): only propose rules you expect to TRIGGER >=100 times
 across 11 ETFs over 1998-> (roughly 4+ entries/yr). Rules gated on rare
@@ -208,8 +532,21 @@ fire often enough to measure: broad regime/flow states over rare coincidences.
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--n", type=int, default=10, help="compounds to request")
+    ap.add_argument("--explore", action="store_true",
+                    help="diversity mode: cast a wide net across the whole "
+                         "mechanism space (default is focus mode: drill the live basin)")
+    ap.add_argument("--focus", type=int, default=None,
+                    help=f"explore mode: pin this run to slice 1-{len(_FOCUS_SLICES)} "
+                         "for systematic coverage across re-runs")
+    ap.add_argument("--reversion", action="store_true",
+                    help="retarget objective to short-horizon reversion-capture "
+                         "(win-rate + MFE/MAE safety); replaces the 63d factor "
+                         "framing. May combine with --explore/--focus for diversity.")
     args = ap.parse_args()
-    print(build_pack(args.n))
+    mode = "explore" if args.explore else "focus"
+    n_default = 60 if (args.explore and args.n == 10) else args.n
+    print(build_pack(n_default, mode=mode, focus=args.focus,
+                     reversion=args.reversion))
     return 0
 
 

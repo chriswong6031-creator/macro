@@ -541,11 +541,8 @@ def sizing_overlay(snap: dict | None, cfg: dict | None = None,
         "gross_scalar": 1.0, "mech_scalar": 1.0, "regime_caution": 1.0,
         "regime_caution_shadow": 1.0, "caution_scored": caution_scored, "scored_cut": 1.0,
         "regime": None, "scored_active": False, "active": False, "reasons": [],
-        "note": ("Subtract-only gross-sizing overlay: mechanical vol-target sizing (always-on, "
-                 "validated) is the ONLY lever that binds gross today. The regime-state caution "
-                 "is DISPLAY-ONLY (failed its additive-value gate over vol-target, "
-                 "basket_overlay_gate.json regime_marginal_over_voltarget=false) — shown as a "
-                 "shadow, not applied. NOT alpha; never lifts gross or rank."),
+        "note": ("Size-only volatility overlay. It can reduce basket gross in tougher regimes, "
+                 "but it never changes theme ranks or creates a buy signal."),
         "caution_passport": {
             "basis": "measured", "verdict": ("scored" if caution_scored else "display-only"),
             "validation": {"artifact": "data/vol_regime/basket_overlay_gate.json",

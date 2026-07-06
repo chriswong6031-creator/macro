@@ -116,11 +116,27 @@ def _insider_block(ns: dict, mktcap: pd.Series | None = None) -> dict | None:
     construction validated in research/INSIDER_FACTOR.md (Phase-0 PIT FDR survivor;
     orthogonal to momentum/size). That removes the large-cap dollar bias of a raw
     net-$ sum, so a high-conviction small/mid-cap buy isn't drowned by megacap noise,
-    and adds the distinct-insider CLUSTER count. Falls back to the single-quarter
-    net-$ aggregate when the panel or market caps aren't available."""
+    and adds the distinct-insider CLUSTER count.
+
+    Fallback chain (Amendment 2 §C4 dead-path fix):
+      1. Flat insider_panel.parquet exists → use it (may include intra-quarter data).
+      2. Flat absent → concat data/sec_insider/panel/*.parquet on read (always
+         available on any worktree that ran the backfill; gitignored flat is not).
+      3. Neither panel path works → fall back to single-quarter aggregate (no
+         6-month window, no cluster count, cluster=False in output)."""
     panel_p = config.data_dir() / "sec_insider" / "insider_panel.parquet"
-    if mktcap is not None and panel_p.exists():
-        blk = _insider_block_panel(ns, mktcap, panel_p)
+    panel_dir = config.data_dir() / "sec_insider" / "panel"
+
+    # Resolve the best panel path available: flat file preferred (may be fresher),
+    # per-quarter directory as the worktree-safe fallback.
+    effective_panel_p: object = None
+    if panel_p.exists():
+        effective_panel_p = panel_p
+    elif panel_dir.exists() and any(panel_dir.glob("*.parquet")):
+        effective_panel_p = panel_dir  # sentinel: directory → concat in _insider_block_panel
+
+    if mktcap is not None and effective_panel_p is not None:
+        blk = _insider_block_panel(ns, mktcap, effective_panel_p)
         if blk:
             return blk
     # No panel: still size-normalise the single-quarter aggregate when we have caps
@@ -133,7 +149,20 @@ def _insider_block_panel(ns: dict, mktcap: pd.Series, panel_p) -> dict | None:
     cfg = config.load()["sec_insider"]
     months = int(cfg.get("panel_window_months", 6))
     n = int(cfg["panel_top_n"])
-    df = pd.read_parquet(panel_p, columns=["ticker", "filing_date", "code", "usd", "rptownercik"])
+    # panel_p may be a Path to a flat .parquet file OR a Path to the per-quarter
+    # directory (sent by _insider_block when the flat file is absent).
+    import pathlib
+    _cols = ["ticker", "filing_date", "code", "usd", "rptownercik"]
+    if isinstance(panel_p, pathlib.Path) and panel_p.is_dir():
+        parts = []
+        for qp in sorted(panel_p.glob("*.parquet")):
+            try:
+                parts.append(pd.read_parquet(qp, columns=_cols))
+            except Exception as exc:  # noqa: BLE001
+                log.warning("_insider_block_panel: skipping %s — %s", qp.name, exc)
+        df = pd.concat(parts, ignore_index=True) if parts else pd.DataFrame(columns=_cols)
+    else:
+        df = pd.read_parquet(panel_p, columns=_cols)
     if df.empty:
         return None
     win = df[df["filing_date"] > df["filing_date"].max() - pd.DateOffset(months=months)]
@@ -226,11 +255,23 @@ def insider_signals(mktcap: pd.Series | None, *, months: int | None = None) -> d
     panel→aggregate logic as :func:`_insider_block_panel`. A confirmer leg only —
     orthogonal long-only conviction, NOT a standalone sizer."""
     panel_p = config.data_dir() / "sec_insider" / "insider_panel.parquet"
-    if not panel_p.exists():
-        return {}
+    panel_dir = config.data_dir() / "sec_insider" / "panel"
     cfg = config.load().get("sec_insider", {})
     months = int(cfg.get("panel_window_months", 6)) if months is None else months
-    df = pd.read_parquet(panel_p, columns=["ticker", "filing_date", "code", "usd", "rptownercik"])
+    _cols = ["ticker", "filing_date", "code", "usd", "rptownercik"]
+    if panel_p.exists():
+        df = pd.read_parquet(panel_p, columns=_cols)
+    elif panel_dir.exists() and any(panel_dir.glob("*.parquet")):
+        # Flat file is gitignored — concat per-quarter directory (Amendment 2 §C4 fix).
+        parts = []
+        for qp in sorted(panel_dir.glob("*.parquet")):
+            try:
+                parts.append(pd.read_parquet(qp, columns=_cols))
+            except Exception as exc:  # noqa: BLE001
+                log.warning("insider_signals: skipping %s — %s", qp.name, exc)
+        df = pd.concat(parts, ignore_index=True) if parts else pd.DataFrame(columns=_cols)
+    else:
+        return {}
     if df.empty:
         return {}
     win = df[df["filing_date"] > df["filing_date"].max() - pd.DateOffset(months=months)]

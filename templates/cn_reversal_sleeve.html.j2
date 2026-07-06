@@ -4,7 +4,7 @@
 {#  The validated within-sector 3M reversal edge at its OWN product unit: #}
 {#  a monthly-rebalanced, no-gate, EW, small-per-name BASKET (a PORTFOLIO,#}
 {#  not stock tips). Sleeve-level stats only; per-member context chips    #}
-{#  are DISPLAY ONLY. Standalone page (theme.css only) — no shared nav.   #}
+{#  are DISPLAY ONLY. Uses the shared site menu.                         #}
 {# ===================================================================== #}
 {% macro t(en, zh='') -%}
 <span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
@@ -95,6 +95,27 @@
 </style>
 </head>
 <body>
+<nav class="site-nav">
+    {% include "_navlinks.html.j2" %}
+  <div class="nav-search">
+    <span class="mag">🔎</span>
+    <input type="text" autocomplete="off" aria-label="Search stocks"
+      placeholder="Search any stock, ETF, commodity or crypto…" data-ph-zh="搜索任意股票、ETF、商品或加密货币…">
+    <div class="nav-sugg"></div>
+  </div>
+  <div class="nav-ctrls">
+    <a class="ai-brief-link" href="mastermind.html">🤖 {{ t('Mastermind', '操盘大脑') }}</a>
+    <a class="ai-brief-link terminal-link" href="https://app.mastermind-x.com" target="_blank" rel="noopener">🖥️ {{ t('Terminal', '终端') }}</a>
+    <button class="theme-switch" aria-label="Toggle dark / light mode">
+      <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
+    </button>
+    <div class="lang-toggle" role="group" aria-label="Language">
+      <span class="pill"></span>
+      <span class="opt en-opt" data-l="en">EN</span>
+      <span class="opt zh-opt" data-l="zh">中文</span>
+    </div>
+  </div>
+</nav>
 <h1>{{ t('CN Reversal Sleeve','A股反转组合') }}<span class="shadow-tag">{{ t('beta · accruing grades','Beta · 成绩累积中') }}</span></h1>
 <p class="lead-p">{{ t(
   'The validated A-share edge — deepest-quintile 3-month WITHIN-SECTOR reversal — shipped at its own product unit: a MONTHLY-rebalanced, EQUAL-WEIGHT, small-per-name BASKET with NO confirmation gate (every gate tested flips the edge negative). This is a PORTFOLIO, not stock tips. Sleeve-level stats only.',
@@ -289,5 +310,6 @@
   {{ t('built','构建于') }} {{ built }} ·
   {{ t('W5-B: page promoted from shadow (CONFIRM verdict, 2026-07-03). Honest headline from survivorship-clean(er) raw-plane re-derive; forward ledger is the real record.','W5-B：页面已从影子状态升级（CONFIRM裁决，2026-07-03）。诚实标题数据来自幸存者偏差更小的原始面板再推导；前瞻台账是真实记录。') }}
 </div>
+<script src="theme.js"></script>
 </body>
 </html>

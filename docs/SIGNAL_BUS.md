@@ -14,33 +14,41 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | china-alpha | 7 |
 | cycle-intelligence | 4 |
 | engine-fix | 16 |
+| entry-stack-expansion | 2 |
+| factor-intelligence | 5 |
 | hk-canada | 2 |
 | institutional-sector-intelligence | 2 |
 | intl-fix | 1 |
-| neural-web | 24 |
-| options-alpha | 2 |
-| oracle | 13 |
+| long-hold | 8 |
+| neural-web | 28 |
+| nw-mastermind-bridge | 2 |
+| nw-rails | 3 |
+| options-alpha | 7 |
+| options-nw-entry-intelligence | 3 |
+| oracle | 23 |
 | qualitative-intelligence | 23 |
+| research-factory | 3 |
 | sector-pulse | 3 |
 | setup-species | 6 |
+| signal-commons | 7 |
 | us-stocks-prebreakout | 2 |
 
 ### Artifacts by tier
 
 | tier | count |
 |---|---|
-| display | 44 |
-| infrastructure | 29 |
+| display | 81 |
+| infrastructure | 40 |
 | scored | 4 |
-| shadow | 33 |
+| shadow | 37 |
 
 ### Artifacts by storage
 
 | storage | count |
 |---|---|
-| git | 107 |
-| gitignored-local | 2 |
-| r2 | 1 |
+| git | 156 |
+| gitignored-local | 4 |
+| r2 | 2 |
 
 ## Artifacts by owner_program
 
@@ -96,6 +104,23 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | site-regime-prior-js | `site/regimedata/regime_prior.js` | js | daily-engine | display | 2 | 0 |
 | site-macro-signals | `site/macrodata/macro_signals.json` | json | daily-engine | display | 0 | 1 |
 
+### entry-stack-expansion
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| bottom-sensors-json | `site/neuralwebdata/bottom_sensors.json` | json | daily-engine | display | 1 | 1 |
+| bottom-sensors-parquet | `data/neuralweb/bottom_sensors.parquet` | parquet | daily-engine | display | 1 | 0 |
+
+### factor-intelligence
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| factor-intelligence-state | `data/neuralweb/factor_intelligence_state.json` | json | nightly-factor-panel | display | 1 | 0 |
+| factor-contradictions-ledger | `data/neuralweb/factor_contradictions.jsonl` | jsonl | nightly-factor-panel | display | 0 | 0 |
+| factor-state-history | `data/factordata/factor_state_history.jsonl` | jsonl | nightly-factor-panel | display | 0 | 0 |
+| fire-coordinates | `data/factordata/fire_coordinates.jsonl` | jsonl | nightly-factor-panel | display | 0 | 0 |
+| site-factor-intelligence-state | `site/neuralwebdata/factor_intelligence_state.json` | json | nightly-factor-panel | display | 0 | 0 |
+
 ### hk-canada
 
 | id | path | format | cadence | tier | consumers | external consumers |
@@ -116,41 +141,86 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 |---|---|---|---|---|---|---|
 | intl-bridge-ledger | `data/intl_bridge/ledger.json` | json | on-demand | shadow | 6 | 0 |
 
+### long-hold
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| great-company-trap | `embedded: great_company_trap fields inside site/stockdata/<TICKER>.json` | json | daily-engine | display | 1 | 0 |
+| long-hold-clocks | `embedded: entry_clock + thesis_clock inside site/stockdata/<TICKER>.json` | json | daily-engine | display | 1 | 0 |
+| long-hold-compounder-features | `embedded: financials.multiyear.compounder inside site/stockdata/<TICKER>.json` | json | daily-engine | display | 1 | 0 |
+| long-hold-dead-name-prices | `data/edgar/dead_name_prices.parquet` | parquet | on-demand | infrastructure | 1 | 0 |
+| long-hold-killtest-results | `data/research/missed_hold_study_results.parquet` | parquet | on-demand | display | 1 | 0 |
+| long-hold-labels | `data/research/long_hold_labels.parquet` | parquet | on-demand | display | 1 | 0 |
+| long-hold-labels-manifest | `data/research/long_hold_labels_manifest.json` | json | on-demand | display | 1 | 0 |
+| moat-falsifier-sensors | `embedded: per-ticker moat sensor fields inside site/stockdata/<TICKER>.json` | json | daily-engine | display | 1 | 0 |
+
 ### neural-web
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
-| world-state | `data/neuralweb/world_state.json` | json | daily-engine | infrastructure | 8 | 0 |
+| world-state | `data/neuralweb/world_state.json` | json | daily-engine | infrastructure | 9 | 1 |
+| confluence-graph | `data/neuralweb/confluence_graph.json` | json | daily-engine | display | 2 | 1 |
+| cortex-probation | `data/neuralweb/cortex/probation.json` | json | nightly-cortex | infrastructure | 2 | 1 |
 | feeds-plane | `site/feeds/` | json | daily-engine | infrastructure | 1 | 2 |
+| kernel-families | `data/neuralweb/kernel_families.json` | json | daily-engine | infrastructure | 2 | 1 |
 | site-artifact-manifest | `site/factordata/contracts/artifact_manifest.json` | json | daily-engine | infrastructure | 1 | 2 |
 | site-golden-signals | `site/factordata/contracts/golden_signals.json` | json | daily-engine | infrastructure | 1 | 2 |
 | spine-index | `data/neuralweb/spine_index.parquet` | parquet | daily-engine | infrastructure | 3 | 0 |
+| cortex-memo | `data/neuralweb/cortex/memo.json` | json | nightly-cortex | shadow | 1 | 1 |
+| kernel-decisions | `data/neuralweb/kernel_decisions.json` | json | on-demand | infrastructure | 1 | 1 |
 | machine-registry | `data/neuralweb/machine_registry.jsonl` | jsonl | nightly-cortex | infrastructure | 2 | 0 |
 | reflex-firings-pattern | `data/reflexes/<NAME>/firings.jsonl` | jsonl | on-demand | shadow | 2 | 0 |
-| confluence-graph | `data/neuralweb/confluence_graph.json` | json | daily-engine | display | 1 | 0 |
+| rule-experiment-registry | `data/rule_experiments/registry.jsonl` | jsonl | on-demand | infrastructure | 2 | 0 |
 | cortex-attention-firings | `data/reflexes/cortex_attention/firings.jsonl` | jsonl | nightly-cortex | shadow | 1 | 0 |
 | cortex-attention-grades | `data/reflexes/cortex_attention/grades.jsonl` | jsonl | nightly-cortex | shadow | 1 | 0 |
-| cortex-probation | `data/neuralweb/cortex/probation.json` | json | nightly-cortex | infrastructure | 1 | 0 |
 | governance-ledger | `data/neuralweb/governance.jsonl` | jsonl | daily-engine | infrastructure | 1 | 0 |
 | kernel-estimates | `data/neuralweb/kernel_estimates.parquet` | parquet | daily-engine | infrastructure | 1 | 0 |
-| kernel-families | `data/neuralweb/kernel_families.json` | json | daily-engine | infrastructure | 1 | 0 |
 | ops-push-basket-freeze | `data/alert_triage/push_sent_basket_freeze.jsonl` | jsonl | on-demand | infrastructure | 1 | 0 |
 | ops-push-healthcheck | `data/alert_triage/push_sent_healthcheck.jsonl` | jsonl | on-demand | infrastructure | 1 | 0 |
 | ops-push-signal-sanity | `data/alert_triage/push_sent_signal_sanity.jsonl` | jsonl | on-demand | infrastructure | 1 | 0 |
 | reflex-firings-commodity-shock | `data/reflexes/commodity_shock/firings.jsonl` | jsonl | on-demand | shadow | 1 | 0 |
 | reflex-firings-regime-selfheal | `data/reflexes/regime_stale_selfheal/firings.jsonl` | jsonl | on-demand | infrastructure | 1 | 0 |
 | reflex-push-dedup-store | `data/alert_triage/push_sent.jsonl` | jsonl | on-demand | infrastructure | 1 | 0 |
-| cortex-memo | `data/neuralweb/cortex/memo.json` | json | nightly-cortex | shadow | 0 | 0 |
 | hypothesis-inbox | `data/neuralweb/cortex/hypothesis_inbox.jsonl` | jsonl | nightly-cortex | infrastructure | 0 | 0 |
 | lagging-signals | `data/neuralweb/lagging_signals.json` | json | daily-engine | infrastructure | 0 | 0 |
+| research-queue | `data/neuralweb/research_queue.json` | json | on-demand | infrastructure | 0 | 0 |
 | risk-radar-review-log | `data/risk_radar/review_log.jsonl` | jsonl | weekly | display | 0 | 0 |
+| rule-experiment-summaries | `data/rule_experiments/results/<EXP_ID>_summary.json` | json | on-demand | display | 0 | 0 |
+
+### nw-mastermind-bridge
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| neuralweb-mastermind-context | `data/neuralweb/mastermind_context.json` | json | daily-engine | display | 0 | 1 |
+| site-neuralweb-mastermind-context | `site/neuralwebdata/mastermind_context.json` | json | daily-engine | display | 0 | 1 |
+
+### nw-rails
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| dispersion-regime | `data/dispersion/regime.json` | json | daily-engine | display | 2 | 0 |
+| grading-closure | `data/governance/grading_closure.json` | json | collect | infrastructure | 1 | 0 |
+| operator-action-ledger | `data/operator/action_ledger.jsonl` | jsonl | on-demand | infrastructure | 0 | 0 |
 
 ### options-alpha
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
+| polygon-gex-summaries | `data/polygon_gex/summary_*.parquet` | parquet | collect | display | 4 | 0 |
 | vol-regime-gate | `data/vol_regime/gate.json` | json | on-demand | scored | 3 | 0 |
+| gex-state-history | `data/index_gex_history/*.parquet` | parquet | weekly | display | 2 | 0 |
 | vol-regime-basket-overlay-gate | `data/vol_regime/basket_overlay_gate.json` | json | on-demand | scored | 2 | 0 |
+| options-flow-index | `site/flow/index.json` | json | collect | display | 0 | 1 |
+| options-ivspread-snapshots | `data/options_ivspread/snapshots.parquet` | parquet | collect | display | 1 | 0 |
+| options-skew-snapshots | `data/options_skew/snapshots.parquet` | parquet | collect | display | 1 | 0 |
+
+### options-nw-entry-intelligence
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| options-entry-state | `data/options_entry/state.parquet` | parquet | collect | display | 2 | 1 |
+| options-entry-gate | `data/options_entry/gate.json` | json | collect | shadow | 1 | 1 |
+| live-options-flow-current | `live_flow/feed_current.json` | json | collect | display | 0 | 1 |
 
 ### oracle
 
@@ -159,13 +229,23 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | radar-theses | `data/radar/theses.jsonl` | jsonl | daily-engine | display | 8 | 0 |
 | site-radar-json | `site/basketdata/radar.json` | json | daily-engine | display | 7 | 0 |
 | site-basketdata-radar-enriched | `site/basketdata/radar_enriched.json` | json | daily-engine | display | 6 | 0 |
+| site-radar-ticker | `site/basketdata/radar_ticker.json` | json | daily-engine | display | 5 | 1 |
 | site-basket-oracle-state | `site/basketdata/oracle_state.json` | json | daily-engine | display | 4 | 0 |
-| site-radar-ticker | `site/basketdata/radar_ticker.json` | json | daily-engine | display | 4 | 0 |
 | site-basket-flow | `site/basketdata/flow.json` | json | daily-engine | display | 2 | 1 |
 | index-leadership-snapshots | `data/index_leadership/snapshots.jsonl` | jsonl | daily-engine | shadow | 2 | 0 |
+| oracle-qual-filter-accrual | `data/oracle/qual_filter_accrual.json` | json | daily-engine | display | 2 | 0 |
+| oracle-qual-filter-stamps | `data/oracle/qual_filter_stamps.jsonl` | jsonl | daily-engine | shadow | 2 | 0 |
+| oracle-reversion-forward-ledger | `data/oracle/reversion_forward/<compound_id>.jsonl` | jsonl | daily-engine | shadow | 2 | 0 |
 | radar-track-record | `data/radar/track_record.json` | json | daily-engine | display | 2 | 0 |
 | site-marketdata-subsector-rotation | `site/marketdata/subsector_rotation.json` | json | daily-engine | display | 2 | 0 |
 | subsector-rotation-snapshots | `data/subsector_rotation/snapshots.jsonl` | jsonl | daily-engine | shadow | 2 | 0 |
+| oracle-qual-filter-registry | `data/oracle/qual_filters/registry.jsonl` | jsonl | on-demand | infrastructure | 1 | 0 |
+| oracle-reversion-authority | `data/oracle/reversion_authority.json` | json | daily-engine | infrastructure | 1 | 0 |
+| oracle-reversion-kill-requeue | `data/oracle/reversion_kill_requeue.jsonl` | jsonl | on-demand | infrastructure | 1 | 0 |
+| oracle-reversion-promotion-queue | `data/oracle/reversion_promotion_queue.json` | json | daily-engine | infrastructure | 1 | 0 |
+| oracle-reversion-state | `site/basketdata/oracle_reversion_state.json` | json | daily-engine | display | 1 | 0 |
+| oracle-turn-desk | `site/basketdata/oracle_turn_desk.json` | json | daily-engine | display | 1 | 0 |
+| oracle-turn-desk-ledger | `data/oracle/turn_desk_ledger.jsonl` | jsonl | daily-engine | shadow | 1 | 0 |
 | site-basketdata-radar-news | `site/basketdata/radar_news.json` | json | daily-engine | display | 1 | 0 |
 | site-member-context | `site/basketdata/member_context.json` | json | daily-engine | display | 1 | 0 |
 | site-narrative-brain | `site/basketdata/narrative_brain.json` | json | daily-engine | display | 1 | 0 |
@@ -177,8 +257,8 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | altdata-by-ticker | `data/altdata/by_ticker.json` | json | daily-engine | display | 15 | 0 |
 | qledger-claims | `data/qledger/claims.jsonl` | jsonl | daily-engine | shadow | 13 | 0 |
 | qbus-items | `data/qbus/items.parquet` | parquet | daily-engine | infrastructure | 10 | 0 |
+| site-altdata-mastermind | `site/altdata/mastermind.json` | json | daily-engine | display | 8 | 2 |
 | site-altdata-by-ticker | `site/altdata/by_ticker.json` | json | daily-engine | display | 8 | 0 |
-| site-altdata-mastermind | `site/altdata/mastermind.json` | json | daily-engine | display | 7 | 1 |
 | site-qledger-track-record | `site/qledger/track_record.json` | json | daily-engine | display | 5 | 1 |
 | spine-predictions | `data/spine/predictions.parquet` | parquet | daily-engine | shadow | 6 | 0 |
 | ai-desk-theses | `data/ai_desk/theses.jsonl` | jsonl | daily-engine | shadow | 5 | 0 |
@@ -198,6 +278,14 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | foresight-earliness-log | `data/foresight/earliness_log.jsonl` | jsonl | daily-engine | shadow | 1 | 0 |
 | site-foresight-cascade | `site/basketdata/foresight_cascade.json` | json | daily-engine | display | 0 | 1 |
 
+### research-factory
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| research-factory-candidates | `data/research_factory/candidates.jsonl` | jsonl | on-demand | display | 0 | 0 |
+| research-factory-paper-monitor | `data/research_factory/paper_monitor.jsonl` | jsonl | on-demand | display | 0 | 0 |
+| research-factory-transitions | `data/research_factory/transitions.jsonl` | jsonl | on-demand | display | 0 | 0 |
+
 ### sector-pulse
 
 | id | path | format | cadence | tier | consumers | external consumers |
@@ -210,18 +298,30 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
-| us-board-ledger-retro-grades | `data/us_board_ledger/retro_grades.parquet` | parquet | daily-engine | infrastructure | 8 | 0 |
+| us-board-ledger-retro-grades | `data/us_board_ledger/retro_grades.parquet` | parquet | daily-engine | infrastructure | 9 | 0 |
 | signal-archive-mtf | `data/signal_archive/mtf_signals_latest.json` | json | daily-engine | display | 6 | 0 |
 | site-signals-per-ticker | `site/signals/<SYM>.json` | json | daily-engine | display | 3 | 2 |
 | signal-archive-track-record | `data/signal_archive/track_record.parquet` | parquet | daily-engine | shadow | 4 | 0 |
 | species-registry | `data/species/registry.json` | json | on-demand | infrastructure | 4 | 0 |
 | experiments-registry-seed | `data/experiments/registry_seed.json` | json | daily-engine | infrastructure | 3 | 0 |
 
+### signal-commons
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| event-priors-clinicaltrials | `data/special_situations/event_priors/clinicaltrials.json` | json | weekly | display | 2 | 0 |
+| event-priors-earnings | `data/special_situations/event_priors/earnings.json` | json | weekly | display | 2 | 0 |
+| event-priors-ipo-lockup | `data/special_situations/event_priors/ipo_lockup.json` | json | weekly | display | 2 | 0 |
+| event-priors-openfda | `data/special_situations/event_priors/openfda.json` | json | weekly | display | 2 | 0 |
+| event-priors-sp-index-changes | `data/special_situations/event_priors/sp_index_changes.json` | json | weekly | display | 2 | 0 |
+| kernel-half-lives | `data/neuralweb/half_life.json` | json | daily-engine | infrastructure | 1 | 0 |
+| event-priors-gov-contract | `data/special_situations/event_priors/gov_contract.json` | json | weekly | display | 0 | 0 |
+
 ### us-stocks-prebreakout
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
-| site-us-standouts | `site/factordata/us_standouts.json` | json | daily-engine | display | 11 | 3 |
+| site-us-standouts | `site/factordata/us_standouts.json` | json | daily-engine | display | 12 | 4 |
 | site-signal-gate | `site/factordata/signal_gate.json` | json | daily-engine | display | 5 | 0 |
 
 ## Producer → Artifact → Consumer Graph
@@ -256,19 +356,19 @@ flowchart LR
     C_engine_froth_fragility_py["engine/froth_fragility.py"]
     C_engine_news_common_py["engine/news_common.py"]
     OVF_baskets_membership["...+12 more"]
-    P_engine_altdata_signals_py(("engine/altdata_signals.py"))
-    A_altdata_by_ticker["altdata-by-ticker"]
-    C_engine_altdata_brain_py["engine/altdata_brain.py"]
-    C_engine_altdata_confirmers_py["engine/altdata_confirmers.py"]
-    C_engine_altdata_signals_py["engine/altdata_signals.py"]
-    OVF_altdata_by_ticker["...+11 more"]
     P_scripts_build_stock_library_py(("scripts/build_stock_library.py"))
     A_site_us_standouts["site-us-standouts"]
     C_engine_intelligence_py["engine/intelligence.py"]
     C_engine_risk_brain_py["engine/risk_brain.py"]
     C_engine_signal_sanity_py["engine/signal_sanity.py"]
     C_engine_stock_desk_py["engine/stock_desk.py"]
-    OVF_site_us_standouts["...+10 more"]
+    OVF_site_us_standouts["...+12 more"]
+    P_engine_altdata_signals_py(("engine/altdata_signals.py"))
+    A_altdata_by_ticker["altdata-by-ticker"]
+    C_engine_altdata_brain_py["engine/altdata_brain.py"]
+    C_engine_altdata_confirmers_py["engine/altdata_confirmers.py"]
+    C_engine_altdata_signals_py["engine/altdata_signals.py"]
+    OVF_altdata_by_ticker["...+11 more"]
     P_engine_qledger_py(("engine/qledger.py"))
     A_qledger_claims["qledger-claims"]
     C_engine_communique_diff_py["engine/communique_diff.py"]
@@ -288,6 +388,11 @@ flowchart LR
     C_engine_china_news_intel_py["engine/china_news_intel.py"]
     C_engine_importance_v0_py["engine/importance_v0.py"]
     OVF_qbus_items["...+6 more"]
+    P_engine_altdata_emit_py(("engine/altdata_emit.py"))
+    A_site_altdata_mastermind["site-altdata-mastermind"]
+    C_engine_radar_plus_py["engine/radar_plus.py"]
+    C_engine_radar_ticker_py["engine/radar_ticker.py"]
+    OVF_site_altdata_mastermind["...+6 more"]
     P_scripts_build_baskets_py(("scripts/build_baskets.py"))
     A_site_baskets_json["site-baskets-json"]
     C_engine_conviction_accrual_py["engine/conviction_accrual.py"]
@@ -295,6 +400,19 @@ flowchart LR
     C_engine_oracle_panel_py["engine/oracle/panel.py"]
     C_engine_oracle_timemachine_py["engine/oracle/timemachine.py"]
     OVF_site_baskets_json["...+6 more"]
+    P_engine_neuralweb_world_state_py(("engine/neuralweb/world_state.py"))
+    A_world_state["world-state"]
+    C_scripts_build_feeds_py["scripts/build_feeds.py"]
+    C_scripts_notify_py["scripts/notify.py"]
+    C_scripts_build_impulse_py["scripts/build_impulse.py"]
+    C_engine_etf_pulse_py["engine/etf_pulse.py"]
+    OVF_world_state["...+6 more"]
+    P_scripts_grade_us_board_py(("scripts/grade_us_board.py"))
+    A_us_board_ledger_retro_grades["us-board-ledger-retro-grades"]
+    C_engine_china_standout_track_py["engine/china_standout_track.py"]
+    C_engine_spine_py["engine/spine.py"]
+    C_engine_track_record_py["engine/track_record.py"]
+    OVF_us_board_ledger_retro_grades["...+5 more"]
     P_engine_radar_py(("engine/radar.py"))
     A_radar_theses["radar-theses"]
     C_engine_ai_desk_scorer_py["engine/ai_desk_scorer.py"]
@@ -303,26 +421,8 @@ flowchart LR
     C_engine_qledger_py["engine/qledger.py"]
     OVF_radar_theses["...+4 more"]
     A_site_altdata_by_ticker["site-altdata-by-ticker"]
-    C_engine_radar_plus_py["engine/radar_plus.py"]
-    C_engine_radar_ticker_py["engine/radar_ticker.py"]
     C_engine_foresight_earliness_py["engine/foresight_earliness.py"]
     OVF_site_altdata_by_ticker["...+4 more"]
-    P_engine_altdata_emit_py(("engine/altdata_emit.py"))
-    A_site_altdata_mastermind["site-altdata-mastermind"]
-    OVF_site_altdata_mastermind["...+4 more"]
-    P_scripts_grade_us_board_py(("scripts/grade_us_board.py"))
-    A_us_board_ledger_retro_grades["us-board-ledger-retro-grades"]
-    C_engine_china_standout_track_py["engine/china_standout_track.py"]
-    C_engine_spine_py["engine/spine.py"]
-    C_engine_track_record_py["engine/track_record.py"]
-    OVF_us_board_ledger_retro_grades["...+4 more"]
-    P_engine_neuralweb_world_state_py(("engine/neuralweb/world_state.py"))
-    A_world_state["world-state"]
-    C_scripts_build_feeds_py["scripts/build_feeds.py"]
-    C_scripts_notify_py["scripts/notify.py"]
-    C_scripts_build_impulse_py["scripts/build_impulse.py"]
-    C_engine_etf_pulse_py["engine/etf_pulse.py"]
-    OVF_world_state["...+4 more"]
     P_engine_run_py --> A_regime_latest
     A_regime_latest --> C_engine_alert_triage_py
     A_regime_latest --> C_engine_briefing_py
@@ -347,18 +447,18 @@ flowchart LR
     A_baskets_membership --> C_engine_froth_fragility_py
     A_baskets_membership --> C_engine_news_common_py
     A_baskets_membership --> OVF_baskets_membership
-    P_engine_altdata_signals_py --> A_altdata_by_ticker
-    A_altdata_by_ticker --> C_engine_altdata_brain_py
-    A_altdata_by_ticker --> C_engine_altdata_confirmers_py
-    A_altdata_by_ticker --> C_engine_altdata_signals_py
-    A_altdata_by_ticker --> C_engine_briefing_py
-    A_altdata_by_ticker --> OVF_altdata_by_ticker
     P_scripts_build_stock_library_py --> A_site_us_standouts
     A_site_us_standouts --> C_engine_intelligence_py
     A_site_us_standouts --> C_engine_risk_brain_py
     A_site_us_standouts --> C_engine_signal_sanity_py
     A_site_us_standouts --> C_engine_stock_desk_py
     A_site_us_standouts --> OVF_site_us_standouts
+    P_engine_altdata_signals_py --> A_altdata_by_ticker
+    A_altdata_by_ticker --> C_engine_altdata_brain_py
+    A_altdata_by_ticker --> C_engine_altdata_confirmers_py
+    A_altdata_by_ticker --> C_engine_altdata_signals_py
+    A_altdata_by_ticker --> C_engine_briefing_py
+    A_altdata_by_ticker --> OVF_altdata_by_ticker
     P_engine_qledger_py --> A_qledger_claims
     A_qledger_claims --> C_engine_communique_diff_py
     A_qledger_claims --> C_engine_missing_tape_py
@@ -377,12 +477,30 @@ flowchart LR
     A_qbus_items --> C_engine_financial_news_py
     A_qbus_items --> C_engine_importance_v0_py
     A_qbus_items --> OVF_qbus_items
+    P_engine_altdata_emit_py --> A_site_altdata_mastermind
+    A_site_altdata_mastermind --> C_engine_intelligence_py
+    A_site_altdata_mastermind --> C_engine_radar_plus_py
+    A_site_altdata_mastermind --> C_engine_radar_ticker_py
+    A_site_altdata_mastermind --> C_engine_china_intel_analysis_py
+    A_site_altdata_mastermind --> OVF_site_altdata_mastermind
     P_scripts_build_baskets_py --> A_site_baskets_json
     A_site_baskets_json --> C_engine_conviction_accrual_py
     A_site_baskets_json --> C_engine_group_context_py
     A_site_baskets_json --> C_engine_oracle_panel_py
     A_site_baskets_json --> C_engine_oracle_timemachine_py
     A_site_baskets_json --> OVF_site_baskets_json
+    P_engine_neuralweb_world_state_py --> A_world_state
+    A_world_state --> C_scripts_build_feeds_py
+    A_world_state --> C_scripts_notify_py
+    A_world_state --> C_scripts_build_impulse_py
+    A_world_state --> C_engine_etf_pulse_py
+    A_world_state --> OVF_world_state
+    P_scripts_grade_us_board_py --> A_us_board_ledger_retro_grades
+    A_us_board_ledger_retro_grades --> C_engine_board_ledger_py
+    A_us_board_ledger_retro_grades --> C_engine_china_standout_track_py
+    A_us_board_ledger_retro_grades --> C_engine_spine_py
+    A_us_board_ledger_retro_grades --> C_engine_track_record_py
+    A_us_board_ledger_retro_grades --> OVF_us_board_ledger_retro_grades
     P_engine_radar_py --> A_radar_theses
     A_radar_theses --> C_engine_ai_desk_scorer_py
     A_radar_theses --> C_engine_hub_track_record_py
@@ -395,24 +513,6 @@ flowchart LR
     A_site_altdata_by_ticker --> C_engine_radar_ticker_py
     A_site_altdata_by_ticker --> C_engine_foresight_earliness_py
     A_site_altdata_by_ticker --> OVF_site_altdata_by_ticker
-    P_engine_altdata_emit_py --> A_site_altdata_mastermind
-    A_site_altdata_mastermind --> C_engine_intelligence_py
-    A_site_altdata_mastermind --> C_engine_radar_plus_py
-    A_site_altdata_mastermind --> C_engine_radar_ticker_py
-    A_site_altdata_mastermind --> C_engine_china_intel_analysis_py
-    A_site_altdata_mastermind --> OVF_site_altdata_mastermind
-    P_scripts_grade_us_board_py --> A_us_board_ledger_retro_grades
-    A_us_board_ledger_retro_grades --> C_engine_board_ledger_py
-    A_us_board_ledger_retro_grades --> C_engine_china_standout_track_py
-    A_us_board_ledger_retro_grades --> C_engine_spine_py
-    A_us_board_ledger_retro_grades --> C_engine_track_record_py
-    A_us_board_ledger_retro_grades --> OVF_us_board_ledger_retro_grades
-    P_engine_neuralweb_world_state_py --> A_world_state
-    A_world_state --> C_scripts_build_feeds_py
-    A_world_state --> C_scripts_notify_py
-    A_world_state --> C_scripts_build_impulse_py
-    A_world_state --> C_engine_etf_pulse_py
-    A_world_state --> OVF_world_state
 ```
 
 ## Appendix — Known Extra Writers
@@ -476,6 +576,13 @@ Artifacts below have `known_extra_writers` — additional code paths that write 
   - scripts/backfill_forward_logs.py — additive experiment entries from historical backfill
   - scripts/build_measurement.py — measurement entries; additive, idempotent
 
+### gex-state-history
+
+- **path:** `data/index_gex_history/*.parquet`
+- **declared producer:** `scripts/build_index_gex_history.py`
+- **extra writers:**
+  - engine/market_gamma.py
+
 ### governance-ledger
 
 - **path:** `data/neuralweb/governance.jsonl`
@@ -484,6 +591,13 @@ Artifacts below have `known_extra_writers` — additional code paths that write 
   - engine/risk_radar_intl_audit.py — authority_grant / authority_lapse events when can_force changes
   - engine/market_state_tune.py — a6_auto_apply lane-i events on every tune() call
   - engine/risk_radar_intl_tune.py — a6_auto_apply lane-i events on every tune() call
+
+### great-company-trap
+
+- **path:** `embedded: great_company_trap fields inside site/stockdata/<TICKER>.json`
+- **declared producer:** `engine/moat_falsifiers.py`
+- **extra writers:**
+  - engine/stock_fundamentals.py — _compute_trap_block() calls great_company_trap() inside panels()
 
 ### hub-signal-snapshots
 
@@ -513,12 +627,34 @@ Artifacts below have `known_extra_writers` — additional code paths that write 
 - **extra writers:**
   - scripts/build_kernel_diagnostics.py — thin CLI wrapper; calls write_families() defined in the producer; no independent write logic
 
+### kernel-half-lives
+
+- **path:** `data/neuralweb/half_life.json`
+- **declared producer:** `engine/neuralweb/half_life.py`
+- **extra writers:**
+  - scripts/build_kernel_half_lives.py — thin CLI wrapper; calls write_half_lives() defined in the producer; no independent write logic
+
 ### lagging-signals
 
 - **path:** `data/neuralweb/lagging_signals.json`
 - **declared producer:** `engine/neuralweb/lagging.py`
 - **extra writers:**
   - scripts/build_kernel_diagnostics.py — thin CLI wrapper; calls write_lagging() defined in the producer; no independent write logic
+
+### long-hold-clocks
+
+- **path:** `embedded: entry_clock + thesis_clock inside site/stockdata/<TICKER>.json`
+- **declared producer:** `engine/long_hold_clocks.py`
+- **extra writers:**
+  - scripts/build_stock_library.py — calls entry_clock() per name after sig_verdict build
+  - engine/stock_fundamentals.py — calls thesis_clocks_from_parquet() inside panels()
+
+### long-hold-dead-name-prices
+
+- **path:** `data/edgar/dead_name_prices.parquet`
+- **declared producer:** `scripts/research/fetch_dead_name_prices_polygon.py`
+- **extra writers:**
+  - collectors/edgar_deadname_prices.py — legacy collector (Stooq→Polygon→yfinance); may append rows from CI runs
 
 ### market-state-latest
 
@@ -527,6 +663,13 @@ Artifacts below have `known_extra_writers` — additional code paths that write 
 - **extra writers:**
   - scripts/build_site.py — calls market_state.persist() at line 1700; build_site is the runner, market_state.py is the author
 
+### moat-falsifier-sensors
+
+- **path:** `embedded: per-ticker moat sensor fields inside site/stockdata/<TICKER>.json`
+- **declared producer:** `engine/moat_falsifiers.py`
+- **extra writers:**
+  - engine/stock_fundamentals.py — _compute_moat_block() calls compute_moat_falsifiers() inside panels()
+
 ### name-score-calls
 
 - **path:** `data/name_score/us_calls.parquet`
@@ -534,6 +677,13 @@ Artifacts below have `known_extra_writers` — additional code paths that write 
 - **extra writers:**
   - engine/name_score_grader.py — grade(market) writes per-market: hk_calls.parquet, ca_calls.parquet, intl_calls.parquet
   - data/china_name_score/calls.parquet — CN legacy path; same producer, separate file
+
+### neuralweb-mastermind-context
+
+- **path:** `data/neuralweb/mastermind_context.json`
+- **declared producer:** `scripts/build_nw_mastermind_context.py`
+- **extra writers:**
+  - engine/neuralweb/mastermind_context.py — build_and_write() writes both canonical and site copy
 
 ### qledger-claims
 
@@ -559,6 +709,35 @@ Artifacts below have `known_extra_writers` — additional code paths that write 
 - **extra writers:**
   - engine/run.py — calls regime_vector.py:487 and stores result at line 681; run.py is the orchestrator
 
+### research-factory-candidates
+
+- **path:** `data/research_factory/candidates.jsonl`
+- **declared producer:** `<RESEARCH_FACTORY_INGEST>`
+- **extra writers:**
+  - scripts/research_factory_ingest.py — W2 ingest writer (planned)
+
+### research-factory-paper-monitor
+
+- **path:** `data/research_factory/paper_monitor.jsonl`
+- **declared producer:** `<RESEARCH_FACTORY_MONITOR>`
+- **extra writers:**
+  - scripts/research_factory_monitor.py — W6 nightly monitor writer (planned)
+
+### research-factory-transitions
+
+- **path:** `data/research_factory/transitions.jsonl`
+- **declared producer:** `<RESEARCH_FACTORY_INGEST>`
+- **extra writers:**
+  - scripts/research_factory_ingest.py — W2 transition writer (planned)
+  - scripts/research_factory_decide.py — W5 decision recorder (planned)
+
+### research-queue
+
+- **path:** `data/neuralweb/research_queue.json`
+- **declared producer:** `engine/neuralweb/research_queue.py`
+- **extra writers:**
+  - scripts/build_research_queue.py — thin CLI wrapper; calls write_queue() defined in the producer; no independent write logic
+
 ### sector-central-calls
 
 - **path:** `data/sector_central/calls.parquet`
@@ -582,6 +761,13 @@ Artifacts below have `known_extra_writers` — additional code paths that write 
   - scripts/build_baskets_china.py — writes chinabasketdata/baskets.json (separate path)
   - scripts/build_baskets_hk.py — writes hkbasketdata/baskets.json (separate path)
   - scripts/build_baskets_intl.py — writes intlbasketdata/baskets.json (separate path)
+
+### site-neuralweb-mastermind-context
+
+- **path:** `site/neuralwebdata/mastermind_context.json`
+- **declared producer:** `scripts/build_nw_mastermind_context.py`
+- **extra writers:**
+  - engine/neuralweb/mastermind_context.py — build_and_write() writes both canonical and site copy
 
 ### site-qledger-track-record
 

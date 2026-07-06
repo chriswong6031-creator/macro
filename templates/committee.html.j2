@@ -97,6 +97,36 @@ body { padding-bottom:56px; }
 .fired-list { margin:8px 0; padding-left:18px; }
 .fired-list li { margin:3px 0; font-size:13px; color:var(--muted); }
 
+/* ── Ask the brain ── */
+.ask-box { display:flex; flex-direction:column; gap:12px; }
+.ask-row { display:flex; gap:8px; align-items:flex-start; flex-wrap:wrap; }
+.ask-q { flex:1; min-width:200px; padding:10px 14px; border-radius:10px; border:1px solid var(--line); background:var(--panel2); color:var(--text); font-size:14px; outline:none; resize:vertical; min-height:58px; }
+.ask-q:focus { border-color:var(--link); }
+.ask-ticker { width:110px; padding:10px 12px; border-radius:10px; border:1px solid var(--line); background:var(--panel2); color:var(--text); font-size:13px; outline:none; text-transform:uppercase; }
+.ask-ticker:focus { border-color:var(--link); }
+.ask-ticker::placeholder { text-transform:none; }
+.ask-btn { padding:11px 22px; background:var(--link); color:#fff; border:none; border-radius:10px; font-size:15px; font-weight:700; cursor:pointer; white-space:nowrap; }
+.ask-btn:hover:not(:disabled) { opacity:.88; }
+.ask-btn:disabled { opacity:.45; cursor:default; }
+.ask-charcount { font-size:11px; color:var(--muted); align-self:center; }
+.ask-examples { font-size:12px; color:var(--muted); }
+.ask-examples span { font-style:italic; }
+.ask-state-loading { display:none; padding:14px 0; color:var(--muted); font-size:14px; }
+.ask-state-loading.active { display:block; }
+.ask-answer { display:none; }
+.ask-answer.active { display:block; }
+.ask-mode-badge { display:inline-flex; align-items:center; gap:6px; padding:3px 10px; border-radius:7px; font-size:11px; font-weight:700; letter-spacing:.05em; margin-bottom:10px; }
+.ask-mode-live { background:color-mix(in srgb,var(--up) 16%,var(--panel2)); color:var(--up); }
+.ask-mode-memo { background:color-mix(in srgb,var(--warn) 16%,var(--panel2)); color:var(--warn); }
+.ask-degraded { background:color-mix(in srgb,var(--warn) 12%,var(--panel2)); border:1px solid color-mix(in srgb,var(--warn) 35%,transparent); border-radius:8px; padding:8px 12px; margin-bottom:10px; font-size:13px; color:var(--warn); }
+.ask-answer-text { font-size:14px; line-height:1.7; margin:8px 0 14px; white-space:pre-wrap; }
+.ask-citations { margin:0; padding-left:18px; }
+.ask-citations li { font-size:12.5px; color:var(--muted); margin:3px 0; }
+.ask-citations-head { font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); margin:12px 0 5px; }
+.ask-disclaimer { font-size:11px; color:var(--muted); border-top:1px solid var(--line); margin-top:12px; padding-top:8px; }
+.ask-error { display:none; background:color-mix(in srgb,var(--down) 12%,var(--panel2)); border:1px solid color-mix(in srgb,var(--down) 35%,transparent); border-radius:9px; padding:10px 14px; font-size:13px; color:var(--down); }
+.ask-error.active { display:block; }
+
 /* ── Kernel family cards ── */
 .kf-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:10px; }
 .kf-card { background:var(--panel2); border:1px solid var(--line); border-radius:10px; padding:12px 14px; }
@@ -110,6 +140,10 @@ body { padding-bottom:56px; }
 .kf-armed-yes { background:color-mix(in srgb,var(--up) 16%,var(--panel2)); color:var(--up); }
 .kf-armed-no  { background:var(--panel); color:var(--muted); }
 .kf-stale { font-size:10.5px; color:var(--muted); margin-top:5px; }
+/* W2 half-life chip */
+.kf-hl { font-size:11px; color:var(--muted); margin-top:5px; }
+.kf-hl-val { color:var(--link); font-weight:600; cursor:help; }
+.kf-hl .kf-null { font-style:italic; cursor:help; }
 
 /* ── Plain-English explainer box ── */
 .plain-eng { background:color-mix(in srgb,var(--link) 8%,var(--panel2)); border-left:3px solid var(--link); border-radius:0 9px 9px 0; padding:12px 16px; margin:14px 0; font-size:13.5px; line-height:1.65; }
@@ -122,6 +156,15 @@ body { padding-bottom:56px; }
 /* ── Empty / loading states ── */
 .cm-empty { color:var(--muted); font-style:italic; padding:20px 0; text-align:center; }
 .cm-loading { display:none; color:var(--muted); font-size:13px; padding:10px 0; }
+
+/* ── W1 Role badges (Spine v2) ── */
+/* One badge per provenance row; precedence: veto > alpha > sizing > timing > context */
+.role-badge { display:inline-block; padding:2px 7px; border-radius:5px; font-size:10.5px; font-weight:700; letter-spacing:.04em; cursor:default; }
+.role-veto    { background:color-mix(in srgb,var(--down)  18%,var(--panel2)); color:var(--down); }
+.role-alpha   { background:color-mix(in srgb,var(--up)    18%,var(--panel2)); color:var(--up); }
+.role-sizing  { background:color-mix(in srgb,var(--link)  18%,var(--panel2)); color:var(--link); }
+.role-timing  { background:color-mix(in srgb,var(--warn)  18%,var(--panel2)); color:var(--warn); }
+.role-context { background:var(--panel); color:var(--muted); }
 </style>
 </head>
 <body>
@@ -198,7 +241,62 @@ body { padding-bottom:56px; }
     </div>
   </div>
 
-  <!-- 4. KERNEL FAMILY CARDS -->
+  <!-- 4. ASK THE BRAIN -->
+  <div class="panel section-lazy" id="cm_ask_section">
+    <div class="panel-head">
+      <h1>{{ t('Ask the Brain', '问问大脑') }}</h1>
+      <span class="is-context-badge">{{ t('CONTEXT ONLY', '仅供参考') }}</span>
+    </div>
+    <div class="plain-eng">
+      <strong>{{ t('In plain English:', '用白话说：') }}</strong>
+      {{ t('Ask the Neural Web brain an explanatory question about the signals, regime, or track record shown on this page. The brain reads its own ledgers — spine index, confluence graph, kernel estimates, world state — and replies with cited, graded sources. It never advises on what to buy or sell.',
+      '向神经网络大脑提出关于本页面所示信号、周期或历史记录的解释性问题。大脑会读取自己的账本——脊梁指数、汇聚图、核心估计、市场状态——并以引用的、经过评分的来源回复。它从不建议买卖任何标的。') }}
+    </div>
+    <div class="ask-box" id="ask_box">
+      <div class="ask-row">
+        <textarea id="ask_q" class="ask-q" maxlength="500" rows="2"
+          placeholder="{{ t('Ask an explanatory question…', '提问…') | striptags }}"></textarea>
+        <input id="ask_ticker" class="ask-ticker" type="text" maxlength="12"
+          placeholder="{{ t('Ticker (opt.)', '代码（可选）') | striptags }}" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false">
+        <button id="ask_btn" class="ask-btn">{{ t('Ask', '提问') }}</button>
+      </div>
+      <div class="ask-row" style="align-items:center;gap:14px">
+        <span class="ask-charcount" id="ask_charcount">0 / 500</span>
+        <span class="ask-examples">
+          <span class="l-en">e.g. &ldquo;Why did the radar fire for semis?&rdquo; &nbsp;·&nbsp; &ldquo;What contradicts the current regime read?&rdquo; &nbsp;·&nbsp; &ldquo;What is us_board&rsquo;s track record in Goldilocks?&rdquo;</span>
+          <span class="l-zh">例如：「雷达为何对半导体触发信号？」· 「当前周期判断有哪些矛盾信号？」· 「us_board 在 Goldilocks 周期的历史记录如何？」</span>
+        </span>
+      </div>
+      <div class="ask-state-loading" id="ask_loading">
+        <span class="l-en">The brain is reading its ledgers… (20–30 s)</span>
+        <span class="l-zh">大脑正在读取账本……（约 20–30 秒）</span>
+      </div>
+      <div class="ask-error" id="ask_error">
+        <span class="l-en">Something went wrong. Please try again in a moment — or the live brain may not be armed; the memo-quote fallback gives a partial answer without it.</span>
+        <span class="l-zh">出现错误，请稍后重试——或实时大脑可能未就绪；无实时大脑时备忘录模式可给出部分回答。</span>
+      </div>
+      <div class="ask-answer" id="ask_answer">
+        <div id="ask_mode_badge"></div>
+        <div id="ask_degraded_notice" class="ask-degraded" style="display:none">
+          <span class="l-en"><strong>Memo-quote mode:</strong> the live brain is not armed on this deployment. This answer comes from a matched excerpt of the committed cortex memo — it is context, not a live reasoning session.</span>
+          <span class="l-zh"><strong>备忘录模式：</strong>本次部署中实时大脑未就绪。此回答来自提交的皮层备忘录中的匹配摘录——仅供参考，非实时推理。</span>
+        </div>
+        <div class="ask-answer-text" id="ask_answer_text"></div>
+        <div id="ask_citations_wrap" style="display:none">
+          <div class="ask-citations-head">
+            <span class="l-en">Citations</span><span class="l-zh">引用来源</span>
+          </div>
+          <ul class="ask-citations" id="ask_citations_list"></ul>
+        </div>
+        <div class="ask-disclaimer">
+          <span class="l-en">Research &amp; education only — not investment advice. No signal here is a recommendation to buy or sell any security.</span>
+          <span class="l-zh">仅供研究与教育用途，非投资建议。此处任何信号均不构成买卖任何证券的建议。</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. KERNEL FAMILY CARDS -->
   <div class="panel section-lazy" id="cm_kernel_section">
     <div class="panel-head">
       <h1>{{ t('Kernel Family Estimates', '核心族估计') }}</h1>
@@ -223,11 +321,15 @@ body { padding-bottom:56px; }
   'use strict';
 
   // ── Auth gate ──────────────────────────────────────────────────────────────
+  // Operator ruling 2026-07-05: the page is OPEN for now (no login wall).
+  // Flip REQUIRE_AUTH to true to restore the gate — the ask box keeps its own
+  // server-side auth (/api/ask returns 401 without a Supabase session) either way.
+  var REQUIRE_AUTH = false;
   var authBooted = false;
 
   function showContent() {
     document.getElementById('cm_gate').style.display = 'none';
-    document.getElementById('cm_content').style.display = '';
+    document.getElementById('cm_content').style.display = 'block';
     document.getElementById('disc_bar').style.display = 'flex';
     if (!authBooted) {
       authBooted = true;
@@ -252,7 +354,7 @@ body { padding-bottom:56px; }
     attempts = attempts || 0;
     if (window.MDXAuth) {
       window.MDXAuth.onAuthStateChange(function (session) {
-        if (session) { showContent(); } else { showGate(); }
+        if (session) { showContent(); } else if (REQUIRE_AUTH) { showGate(); }
       });
       // Also check immediately
       window.MDXAuth.getSession(function (session) {
@@ -262,7 +364,12 @@ body { padding-bottom:56px; }
       setTimeout(function () { waitForAuth(attempts + 1); }, 150);
     }
   }
-  waitForAuth();
+  if (REQUIRE_AUTH) {
+    waitForAuth();
+  } else {
+    showContent();          // open access — no gate
+    waitForAuth();          // still wire the session for the ask box
+  }
 
   // ── Page init (runs once after auth confirmed) ─────────────────────────────
   function initPage() {
@@ -355,6 +462,8 @@ body { padding-bottom:56px; }
 
   // ── Load + render ticker committee ────────────────────────────────────────
   function loadTicker(ticker) {
+    // Pre-fill the ask-the-brain ticker context when a ticker is selected
+    if (window._prefillAskTicker) window._prefillAskTicker(ticker);
     var safe = ticker.replace(/=/g, '_').replace(/\^/g, '_');
     var view = document.getElementById('cm_ticker_view');
     view.innerHTML = '<div class="cm-loading" style="display:block">Loading ' + esc(ticker) + '…</div>';
@@ -387,7 +496,7 @@ body { padding-bottom:56px; }
     } else {
       html += '<div style="overflow-x:auto"><table class="prov-table">'
         + '<thead><tr>'
-        + '<th>Source</th><th>Family</th><th>Ladder</th><th data-tip-en="Shrunken information coefficient — correlation scale, typically &lt;1%" data-tip-zh="压缩信息系数——相关系数尺度，通常&lt;1%">Kernel IC</th><th data-tip-en="Wilson hit-rate CI lower bound — probability scale, not the same unit as Kernel IC" data-tip-zh="Wilson命中率置信区间下界——概率尺度，与IC单位不同">Wilson LB<br><small style=\'font-weight:normal;font-size:10px\'>(hit-rate)</small></th><th>Armed</th><th>Staleness</th><th>Direction</th><th>Graded</th><th>Details</th>'
+        + '<th>Source</th><th>Family</th><th>Ladder</th><th data-tip-en="Shrunken information coefficient — correlation scale, typically &lt;1%" data-tip-zh="压缩信息系数——相关系数尺度，通常&lt;1%">Kernel IC</th><th data-tip-en="Wilson hit-rate CI lower bound — probability scale, not the same unit as Kernel IC" data-tip-zh="Wilson命中率置信区间下界——概率尺度，与IC单位不同">Wilson LB<br><small style=\'font-weight:normal;font-size:10px\'>(hit-rate)</small></th><th>Armed</th><th>Staleness</th><th>Direction</th><th data-tip-en="Role: veto=short/avoid, alpha=sized long conviction, sizing=real money, timing=level-vs-timing (W2+), context=graded-but-unsized. Falsifier tooltip available when source carries one." data-tip-zh="角色：否决=做空/回避，阿尔法=有仓位的多头判断，仓位=实际资金，择时=时机判断(W2+)，背景=已评分但无仓位">Role</th><th>Graded</th><th>Details</th>'
         + '</tr></thead><tbody>';
       provRows.forEach(function (row, i) {
         html += renderProvRow(row, i);
@@ -438,6 +547,28 @@ body { padding-bottom:56px; }
                : (dir === 0) ? '<span class="dir-neu">0</span>'
                : '<span class="kernel-null">—</span>';
 
+    // W1 Role badge — precedence: veto > alpha > sizing > timing > context
+    var roleKey = row.role || 'context';
+    var roleEn  = row.role_en || roleKey;
+    var roleZh  = row.role_zh || roleEn;
+    var roleEsc = esc(roleEn);
+    var roleBadge = '<span class="role-badge role-' + esc(roleKey) + '">'
+      + '<span class="l-en">' + roleEsc + '</span>'
+      + '<span class="l-zh">' + esc(roleZh) + '</span>'
+      + '</span>';
+    // Falsifier tooltip — data-tip-en / data-tip-zh, NO title= (CI guard: check_title_i18n.py)
+    // Reuse EN text in ZH when no ZH source (conservative default per open-question ruling).
+    // Attribute-escape the text (& < > " ') to prevent XSS in data-tip attrs.
+    if (row.falsifier) {
+      var ftEsc = String(row.falsifier)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+      roleBadge = '<span class="role-badge role-' + esc(roleKey) + '" data-tip-en="' + ftEsc + '" data-tip-zh="' + ftEsc + '">'
+        + '<span class="l-en">' + roleEsc + '</span>'
+        + '<span class="l-zh">' + esc(roleZh) + '</span>'
+        + '</span>';
+    }
+
     var gradedStr = row.outcome_graded ? '<span class="stale-warn">Yes</span>' : '<span class="kernel-null">No</span>';
 
     // Detail block
@@ -472,6 +603,7 @@ body { padding-bottom:56px; }
       + '<td>' + armedStr + '</td>'
       + '<td>' + staleStr + '</td>'
       + '<td>' + dirStr + '</td>'
+      + '<td>' + roleBadge + '</td>'
       + '<td>' + gradedStr + '</td>'
       + '<td><span class="source-expand">▼ source</span>'
         + '<div class="source-detail">' + detailHtml + '</div></td>'
@@ -773,21 +905,241 @@ body { padding-bottom:56px; }
     el.innerHTML = html;
   }
 
+  // ── Ask the brain ─────────────────────────────────────────────────────────
+  (function () {
+    var qEl     = document.getElementById('ask_q');
+    var tickerEl= document.getElementById('ask_ticker');
+    var btnEl   = document.getElementById('ask_btn');
+    var charEl  = document.getElementById('ask_charcount');
+    var loadEl  = document.getElementById('ask_loading');
+    var errEl   = document.getElementById('ask_error');
+    var ansEl   = document.getElementById('ask_answer');
+    var modeEl  = document.getElementById('ask_mode_badge');
+    var degradEl= document.getElementById('ask_degraded_notice');
+    var textEl  = document.getElementById('ask_answer_text');
+    var citWrap = document.getElementById('ask_citations_wrap');
+    var citList = document.getElementById('ask_citations_list');
+
+    if (!qEl) return;
+
+    // Char counter
+    qEl.addEventListener('input', function () {
+      var n = qEl.value.length;
+      charEl.textContent = n + ' / 500';
+      charEl.style.color = n > 450 ? 'var(--down)' : n > 380 ? 'var(--warn)' : '';
+    });
+
+    // If a ticker is selected in the committee view, pre-fill the ask ticker field
+    // (called from loadTicker() below via prefillAskTicker()).
+    window._prefillAskTicker = function (t) {
+      if (tickerEl) tickerEl.value = t;
+    };
+
+    function setLoading(on) {
+      btnEl.disabled = on;
+      loadEl.classList.toggle('active', on);
+      if (on) {
+        errEl.classList.remove('active');
+        ansEl.classList.remove('active');
+      }
+    }
+
+    function showError() {
+      setLoading(false);
+      errEl.classList.add('active');
+    }
+
+    function showAnswer(data) {
+      setLoading(false);
+
+      // Mode badge
+      var isLive = data.mode === 'live';
+      modeEl.innerHTML = isLive
+        ? '<span class="ask-mode-badge ask-mode-live"><span class="l-en">LIVE brain</span><span class="l-zh">实时大脑</span></span>'
+        : '<span class="ask-mode-badge ask-mode-memo">'
+          + '<span class="l-en">MEMO-QUOTE — the committed cortex memo (no live reasoning)</span>'
+          + '<span class="l-zh">备忘录模式——已提交的皮层备忘录（无实时推理）</span>'
+          + '</span>';
+
+      // Degraded notice
+      degradEl.style.display = data.degraded ? '' : 'none';
+
+      // Answer text (esc plain text)
+      textEl.textContent = data.answer || '';
+
+      // Citations
+      var cits = data.citations || [];
+      if (cits.length) {
+        citList.innerHTML = '';
+        cits.forEach(function (c) {
+          var li = document.createElement('li');
+          li.textContent = typeof c === 'string' ? c : (c.label || c.id || JSON.stringify(c));
+          citList.appendChild(li);
+        });
+        citWrap.style.display = '';
+      } else {
+        citWrap.style.display = 'none';
+      }
+
+      ansEl.classList.add('active');
+    }
+
+    btnEl.addEventListener('click', function () {
+      var q = qEl.value.trim();
+      if (!q) { qEl.focus(); return; }
+      if (q.length > 500) { return; }
+
+      // Fetch the Supabase Bearer token
+      function needSignIn() {
+        if (errEl) {
+          errEl.innerHTML = '<span class="l-en">Sign in (top right) to ask the brain \u2014 the rest of the page is open without an account.</span>' +
+                            '<span class="l-zh">\u767b\u5f55\uff08\u53f3\u4e0a\u89d2\uff09\u540e\u5373\u53ef\u63d0\u95ee \u2014 \u9875\u9762\u5176\u4ed6\u5185\u5bb9\u65e0\u9700\u8d26\u6237\u5373\u53ef\u6d4f\u89c8\u3002</span>';
+          errEl.style.display = '';
+        }
+        if (window.MDXAuth && window.MDXAuth.openAuthModal) { window.MDXAuth.openAuthModal(); }
+      }
+      if (!window.MDXAuth || !window.MDXAuth.getSession) {
+        needSignIn(); return;
+      }
+      window.MDXAuth.getSession(function (session) {
+        if (!session || !session.access_token) { needSignIn(); return; }
+        setLoading(true);
+
+        var body = { question: q };
+        var ticker = tickerEl ? tickerEl.value.trim().toUpperCase() : '';
+        if (ticker) body.context_ticker = ticker;
+
+        fetch('/api/ask', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + session.access_token
+          },
+          body: JSON.stringify(body)
+        })
+        .then(function (r) {
+          if (!r.ok) throw new Error('http ' + r.status);
+          return r.json();
+        })
+        .then(function (data) {
+          showAnswer(data);
+        })
+        .catch(function () {
+          showError();
+        });
+      });
+    });
+
+    // Also submit on Ctrl/Cmd+Enter inside the textarea
+    qEl.addEventListener('keydown', function (e) {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault();
+        btnEl.click();
+      }
+    });
+  })();
+
   // ── Kernel families ───────────────────────────────────────────────────────
+  // W2: load kernel_families.json + half_life.json in parallel; merge for display.
   function loadKernelFamilies() {
     document.getElementById('kf_loading').style.display = 'block';
-    fetch('neuralwebdata/kernel_families.json')
+    var p1 = fetch('neuralwebdata/kernel_families.json').then(function (r) { return r.json(); });
+    // half_life.json is a W2 artifact; fail-open if absent (old builds without W2)
+    var p2 = fetch('neuralwebdata/half_life.json')
       .then(function (r) { return r.json(); })
-      .then(function (d) {
+      .catch(function () { return null; });
+    Promise.all([p1, p2])
+      .then(function (results) {
         document.getElementById('kf_loading').style.display = 'none';
-        renderKernelFamilies(d.families || d);
+        var kf = results[0];
+        var hl = results[1];
+        var hlFamilies = (hl && hl.families) ? hl.families : {};
+        renderKernelFamilies(kf.families || kf, hlFamilies);
       })
       .catch(function () {
         document.getElementById('kf_loading').textContent = 'Kernel data unavailable.';
       });
   }
 
-  function renderKernelFamilies(families) {
+  // Format a half-life entry for display.
+  // Returns an EN string and a ZH string.
+  function _formatHalfLife(hlEntry) {
+    if (!hlEntry) {
+      return {
+        en: '<span class="kf-null" data-tip-en="Half-life data not available for this family." data-tip-zh="该系列半衰期数据暂不可用。">H½ —</span>',
+        zh: '<span class="kf-null">H½ —</span>'
+      };
+    }
+    var hl = hlEntry.half_life;
+    var ciLo = hlEntry.ci_low;
+    var ciHi = hlEntry.ci_high;
+    var reason = hlEntry.reason_null || '';
+    var unit = hlEntry.outcome_unit || '';
+    var kind = hlEntry.decay_kind;
+    var nEff = hlEntry.n_eff;
+
+    // Build caveat for magnitude-type families
+    var magCaveat = (unit === 'magnitude')
+      ? ' ⚠ favorable-excursion magnitude, not signed edge'
+      : '';
+    var magCaveatZh = (unit === 'magnitude')
+      ? ' ⚠ 有利偏移幅度，非有符号预测优势'
+      : '';
+
+    if (hl == null) {
+      // Null cases
+      var tipEn, tipZh, labelEn, labelZh;
+      if (reason === 'edge_non_decaying') {
+        labelEn = 'unmeasured'; labelZh = '未测量';
+        tipEn = 'Edge does not decay over holding horizons (monotone-increase gate failed). Half-life is not defined on a rising curve.' + magCaveat;
+        tipZh = '边际在持有期内不衰减（单调递增门控未通过）。上升曲线无法定义半衰期。' + magCaveatZh;
+      } else if (reason && reason.indexOf('no graded outcomes') !== -1) {
+        labelEn = 'unmeasured'; labelZh = '未测量';
+        tipEn = 'No graded outcomes yet for this family — half-life cannot be estimated.' + magCaveat;
+        tipZh = '该系列尚无已评分结果，无法估算半衰期。' + magCaveatZh;
+      } else if (reason && reason.indexOf('admissible horizon') !== -1) {
+        labelEn = 'unmeasured'; labelZh = '未测量';
+        tipEn = 'Insufficient graded horizons for fitting (need ≥3). ' + esc(reason) + magCaveat;
+        tipZh = '可用的已评分时间跨度不足（需≥3个）。' + esc(reason) + magCaveatZh;
+      } else if (reason && reason.indexOf('n_eff') !== -1) {
+        labelEn = 'unmeasured'; labelZh = '未测量';
+        tipEn = 'Insufficient event count (n=' + nEff + ' < floor=200). ' + magCaveat;
+        tipZh = '事件数量不足（n=' + nEff + ' < 门槛=200）。' + magCaveatZh;
+      } else if (reason === 'unstable_ci') {
+        labelEn = 'unmeasured'; labelZh = '未测量';
+        tipEn = 'Bootstrap CI is unstable (point estimate outside CI, degenerate width, or too few unique event blocks — e.g. all events share one as-of date). CI fitted on raw-mean proxy. Per prereg: unstable fit = unmeasured.' + magCaveat;
+        tipZh = '自举置信区间不稳定（点估计超出CI范围、宽度退化，或唯一事件块过少——例如所有事件共享同一日期）。CI基于原始均值代理拟合。按预注册规则：不稳定拟合=未测量。' + magCaveatZh;
+      } else {
+        labelEn = 'unmeasured'; labelZh = '未测量';
+        tipEn = 'Not measured: ' + esc(reason || 'unknown') + '.' + magCaveat;
+        tipZh = '未测量：' + esc(reason || '未知') + '。' + magCaveatZh;
+      }
+      return {
+        en: '<span class="kf-null" data-tip-en="' + tipEn.replace(/"/g, '&quot;') + '" data-tip-zh="' + tipZh.replace(/"/g, '&quot;') + '">H½ ' + labelEn + '</span>',
+        zh: '<span class="kf-null">H½ ' + labelZh + '</span>'
+      };
+    }
+
+    // Measured — format "≈Xd (horizon)" with optional CI
+    var kindSuffix = kind ? ' (' + kind + ')' : '';
+    var ciStr = (ciLo != null && ciHi != null) ? ' [' + Math.round(ciLo) + '–' + Math.round(ciHi) + 'd]' : '';
+    var labelEn = '≈' + Math.round(hl) + 'd' + ciStr + kindSuffix;
+    var labelZh = '≈' + Math.round(hl) + '天' + ciStr + kindSuffix;
+    var ciBasisNote = (hlEntry.ci_basis === 'raw_mean_proxy' && ciStr)
+      ? ' CI fitted on raw-mean proxy (shrunken-IC not recomputable per resample).'
+      : '';
+    var ciBasisNoteZh = (hlEntry.ci_basis === 'raw_mean_proxy' && ciStr)
+      ? ' 置信区间基于原始均值代理拟合（每次重采样无法重算压缩IC）。'
+      : '';
+    var tipEn = 'Holding-horizon half-life: ~' + Math.round(hl) + 'd for shrunken IC to halve.' + (ciStr ? ' 90% CI' + ciStr + '.' : '') + ciBasisNote + magCaveat;
+    var tipZh = '持有期半衰期：压缩IC减半约需' + Math.round(hl) + '天。' + (ciStr ? '90%置信区间' + ciStr + '。' : '') + ciBasisNoteZh + magCaveatZh;
+    return {
+      en: '<span class="kf-hl-val" data-tip-en="' + tipEn.replace(/"/g, '&quot;') + '" data-tip-zh="' + tipZh.replace(/"/g, '&quot;') + '">H½ ' + labelEn + '</span>',
+      zh: '<span class="kf-hl-val">H½ ' + labelZh + '</span>'
+    };
+  }
+
+  function renderKernelFamilies(families, hlFamilies) {
     var grid = document.getElementById('cm_kf_grid');
     var FAMILY_LABELS = {
       'altdata': 'Altdata', 'radar': 'Divergence Radar', 'us_board': 'US Board',
@@ -812,6 +1164,10 @@ body { padding-bottom:56px; }
       else if (ic > 0) { icStr = '+' + (ic * 100).toFixed(3) + '%'; icClass = 'kf-pos'; }
       else { icStr = (ic * 100).toFixed(3) + '%'; icClass = 'kf-neg'; }
 
+      // W2 half-life chip — bilingual; data-tip-en/zh per CI guard (no title=)
+      var hlEntry = hlFamilies[key] || null;
+      var hlFormatted = _formatHalfLife(hlEntry);
+
       html += '<div class="kf-card">'
         + '<div class="kf-name"><span>' + esc(label) + '</span>'
         + '<span class="kf-armed-badge ' + (armed ? 'kf-armed-yes' : 'kf-armed-no') + '">'
@@ -824,6 +1180,9 @@ body { padding-bottom:56px; }
         + (stale.days_since_last_fire != null
             ? '<div class="kf-stale">Last fired: ' + esc(stale.date_last || '') + ' (' + stale.days_since_last_fire + 'd ago)</div>'
             : '')
+        // W2 half-life chip — bilingual display, NOT staleness (staleness=unmeasured by design)
+        + '<div class="kf-hl"><span class="l-en">' + hlFormatted.en + '</span>'
+        + '<span class="l-zh">' + hlFormatted.zh + '</span></div>'
         + '</div>';
     });
     grid.innerHTML = html || '<p class="cm-empty">No kernel data.</p>';

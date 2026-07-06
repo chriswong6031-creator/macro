@@ -411,9 +411,15 @@ polygon:
                                  # cut a ~16-min serial run to ~3-4 min). 1 => serial.
   gex:
     # ANCHORS — the index-ETF gamma backbone + mega-caps that must always be snapshot
-    # (mirror collectors/cboe.DEFAULT_GEX_SYMBOLS so the two sources stay comparable).
-    # SPX excluded: index spot (I:SPX) is not entitled.
-    symbols: [SPY, QQQ, IWM, DIA, NVDA, AAPL, TSLA, AMD, META, MSFT]
+    # (first 10 mirror collectors/cboe.DEFAULT_GEX_SYMBOLS so the two sources stay
+    # comparable), plus the 15 sector/industry ETFs the Neural Web options_weather lobe
+    # aggregates (OPTIONS_NW masterplan RO-1/W-B; also the W-E1 gauntlet universe).
+    # Cost: ~15 roots × ~3 REST calls/day on the measured ~993/day vs ~14K ceiling
+    # (options-alpha W1.4 probe) — trivial headroom. SPX excluded: index spot (I:SPX)
+    # is not entitled.
+    symbols: [SPY, QQQ, IWM, DIA, NVDA, AAPL, TSLA, AMD, META, MSFT,
+              XLB, XLC, XLE, XLF, XLI, XLK, XLP, XLRE, XLU, XLV, XLY,
+              SMH, SOXX, XBI, KRE]
     # ALSO snapshot every ACTIVE single name in the thematic baskets we trade
     # (data/baskets/membership.json) so the per-name flow / positioning / GEX reads cover
     # the whole optionable set, not just the 10 anchors. Resolved by engine.options_universe.
@@ -421,7 +427,7 @@ polygon:
     # daily raw-chain parquet (committed by build_polygon_gex) grows ~linearly with the
     # universe, so max_underlyings bounds storage/runtime. Set include_baskets:false to revert.
     include_baskets: true
-    max_underlyings: 360         # safety cap on total underlyings per build (anchors kept first)
+    max_underlyings: 375         # safety cap (anchors kept first; +15 with the sector-ETF anchors so no basket name is evicted)
     strike_window_pct: 0.30      # keep contracts within +/-30% of spot (gamma lives here)
     max_expiry_days: 400         # ~13 months; covers the engine's 365d window + buffer
     contract_multiplier: 100
@@ -2442,6 +2448,15 @@ alert_push:
 # CI publish is non-fatal and no-ops without creds, so ONLY this probe notices a dead
 # plane. Folded into the scheduled heartbeat via scripts/healthcheck.py (telegram + red
 # run) and run `--strict --max-age-hours 2` right after each publish in daily/asia CI.
+live_flow:
+  cadence_sec: 120          # target poll interval (seconds between cycle starts)
+  max_concurrent: 2         # HARD LAW — T1 backfill shares the terminal's 8-request cap
+  etf_floor: 1000000        # $ gross premium notability floor for ETF anchors
+  name_floor: 250000        # $ gross premium notability floor for single names
+  retention_hours: 24       # trailing event window in feed_current.json
+  top_names: 100            # single-name roots appended after ETF anchors
+  # etf_anchors: []         # defaults to 22 anchors (see live_flow_poller._resolve_universe)
+
 r2_data_plane:
   public_base: "https://pub-f7ffb4441c5f4ad983ca56ec7c651c61.r2.dev"
   anchors: [stockdata, chinastockdata, feeds]  # freshest of <dir>/_manifest.json (put on EVERY successful publish) / <dir>/index.json; feeds = the bot-consumable contract plane (scripts/build_feeds.py, daily lane)
@@ -5415,6 +5430,11 @@ yahoo:
                   VALE,    # Vale — iron ore / EM growth proxy
                   HSBC,    # HSBC Holdings — HK/global banking stress sensor
                   SONY]    # Sony Group — Japan consumer/tech / Asia-semi adjacent
+    # Invesco S&P 500 Equal Weight Sector ETFs (post-2023 rename; history served under new symbol back to 2006-11).
+    # W0b collect-only; not wired into any engine computation. RSPI (Industrials) fails Yahoo — use legacy RGI instead.
+    # Verified 2026-07-05: RSPH/RSPT/RSPD/RSPS/RSPG/RSPF/RSPU/RSPM 2006-11-07->; RSPC 2018-11-07->; RSPR 2015-08-14->.
+    # RGI (legacy Industrials, pre-rename of RSPI) 2009-01-02->; RSPI not served by Yahoo.
+    ew_sectors: [RSPH, RSPT, RSPD, RSPS, RSPG, RSPF, RSPU, RGI, RSPM, RSPC, RSPR]
 
 
 # --------------------------------------------------------------------------- #
@@ -5439,6 +5459,25 @@ pit:
 # --------------------------------------------------------------------------- #
 darkpool:
   enabled: true                   # kill-switch: false → no page, no nav entry
+
+# --------------------------------------------------------------------------- #
+# options_screener — US Options Screener v1 (P1.4, display-only).
+# Reads polygon_gex summaries + options_flow summaries (EOD, accruing since 2026-06-15).
+# Columns: IV30, IV-rank (young-labelled while <252d), P/C OI, volume, gross premium,
+#   implied-move proxy, max-pain, GEX tier, net-prem tone (labeled heuristic, soft direction).
+# enabled: false → builder skips page + writes noindex stub (darkpool precedent).
+# --------------------------------------------------------------------------- #
+options_screener:
+  enabled: false                   # kill-switch: false → no page, no nav entry (Terminal Options Hub owns the flow surface — operator handoff 2026-07-05)
+
+# --------------------------------------------------------------------------- #
+# flow_desk — Market Tide / Group Flow dashboard page (P3.1).
+# DISABLED 2026-07-05: operator handed the flow product surface to the Terminal
+# Options Hub (app.mastermind-x.com/flow, 6-tab suite). The engine/data layers
+# (tape_flow, options_flow rollups) stay live as shared plumbing.
+# --------------------------------------------------------------------------- #
+flow_desk:
+  enabled: false                   # kill-switch: false → noindex stub, no nav entry
 
 # --------------------------------------------------------------------------- #
 # Oracle — Rotation Intelligence Web (engine/oracle/, P5).

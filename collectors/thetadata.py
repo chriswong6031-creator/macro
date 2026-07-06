@@ -63,7 +63,9 @@ Endpoints implemented (measured live 2026-07-04):
   GET /v3/option/history/eod              → bulk_eod()
   GET /v3/option/history/open_interest    → bulk_open_interest()
   GET /v3/option/history/greeks/eod       → bulk_greeks() (see GREEKS NOTE below)
-  GET /v3/option/history/trade_quote      → trade_quote()
+  GET /v3/option/history/trade_quote      → bulk_trade_quote() (1 right, any date range)
+                                          → bulk_trade_quote_day() (both legs, 1 day)
+                                          → trade_quote() (single-contract, any range)
 
 GREEKS NOTE (v3 doc-vs-live finding, measured 2026-07-04):
   The correct endpoint for EOD greeks is /v3/option/history/greeks/eod (NOT /greeks/all).
@@ -144,7 +146,10 @@ log = logging.getLogger(__name__)
 # Config / connectivity
 # --------------------------------------------------------------------------- #
 
-CONNECT_TIMEOUT = 3       # seconds — fast reachability check (was 2s; bumped for safety)
+CONNECT_TIMEOUT = int(os.environ.get("THETA_CONNECT_TIMEOUT", "3"))
+# THETA_CONNECT_TIMEOUT env override (item 1a): allows the live_flow_poller to
+# widen the connect timeout on per-root retries without affecting backfill callers.
+# Default 3s retained — backfill and all other callers are unaffected.
 READ_TIMEOUT_BETWEEN_BYTES = 90   # seconds — max wait between bytes on a streaming read
 # tuple form (connect, read) passed to requests:
 _TIMEOUTS = (CONNECT_TIMEOUT, READ_TIMEOUT_BETWEEN_BYTES)
@@ -186,15 +191,20 @@ def _session() -> requests.Session:
     return s
 
 
-def reachable() -> bool:
-    """Quick check: can we GET /v3/option/list/symbols within CONNECT_TIMEOUT seconds?
+def reachable(connect_timeout: int | None = None) -> bool:
+    """Quick check: can we GET /v3/option/list/symbols within connect_timeout seconds?
 
     v3 health check endpoint (verified live 2026-07-04).  HTTP 200 = terminal up.
     v2 /v2/list/roots/option is dead (returns 410 Gone) — do NOT use.
+
+    connect_timeout: override in seconds; defaults to CONNECT_TIMEOUT (env-configurable).
+    Used by the live_flow_poller for direct terminal-offline probes with a wider timeout
+    (15s) to distinguish true offline from transient contention.
     """
+    timeout = connect_timeout if connect_timeout is not None else CONNECT_TIMEOUT
     try:
         r = requests.get(f"{_base_url()}/v3/option/list/symbols",
-                         timeout=CONNECT_TIMEOUT)
+                         timeout=timeout)
         return r.status_code == 200
     except Exception:  # noqa: BLE001
         return False
@@ -596,7 +606,21 @@ def bulk_eod(root: str, exp: int | str | date, start_date: date | str | int,
 
 
 def _normalize_eod_df(df: pd.DataFrame, root: str) -> pd.DataFrame:
-    """Normalize a raw v3 EOD CSV DataFrame into the canonical output schema."""
+    """Normalize a raw v3 EOD CSV DataFrame into the canonical output schema.
+
+    API DEDUP (2026-07-05): The ThetaData v3 API, for wildcard-expiration EOD
+    requests, returns each non-expiration-day contract record TWICE within the
+    same response.  Contracts on their expiration day appear once (correct);
+    all other trading-day rows are duplicated byte-for-byte.  Observed: SPY 2018
+    eod returned 2,699,538 rows — 1,191,752 byte-identical full-row duplicates
+    (44%); unique (root, expiration, strike, right, date) keys = 1,507,786.
+    Root cause is in the API response, not the writer (SPY 2018 was written
+    exactly once; the log confirms a single pull_root_year call).
+
+    Fix: full-row drop_duplicates applied here, before the DataFrame is returned
+    to the caller.  Any dup count > 0 is logged at INFO so it appears in the
+    backfill log for observability without being noisy on clean responses.
+    """
     if df.empty:
         return df
 
@@ -640,7 +664,22 @@ def _normalize_eod_df(df: pd.DataFrame, root: str) -> pd.DataFrame:
     keep = ["root", "expiration", "strike", "right", "date",
             "open", "high", "low", "close", "volume", "count", "bid", "ask"]
     available = [c for c in keep if c in df.columns]
-    return df[available].reset_index(drop=True)
+    df = df[available].reset_index(drop=True)
+
+    # API dedup: drop full-row duplicates introduced by the ThetaData v3 API
+    # (see docstring).  Applied after column selection so the comparison covers
+    # exactly the columns that will be written to parquet.
+    n_before = len(df)
+    df = df.drop_duplicates()
+    n_dropped = n_before - len(df)
+    if n_dropped > 0:
+        log.info(
+            "thetadata: _normalize_eod_df(%s) dropped %d full-row API duplicates "
+            "(%d → %d rows)",
+            root, n_dropped, n_before, len(df),
+        )
+
+    return df.reset_index(drop=True)
 
 
 def bulk_open_interest(root: str, exp: int | str | date, start_date: date | str | int,
@@ -858,6 +897,88 @@ def bulk_greeks(root: str, exp: int | str | date, start_date: date | str | int,
     return df[available].reset_index(drop=True)
 
 
+def bulk_trade_quote_day(root: str, target_date: date | str | int) -> pd.DataFrame | None:
+    """Convenience wrapper: pull BOTH call + put legs for one root, one trading day.
+
+    Calls bulk_trade_quote() twice (right=call, right=put), concatenates into one DataFrame.
+    No-partial contract: if either leg fails (None), returns None.
+    Both empty → empty DataFrame (valid: holiday or no options traded for this root).
+
+    Ratified shape (T2A_THROUGHPUT_PROBE.md §7):
+      • wildcard expiration + strike (exp=*, strike=*)
+      • single-day only (multi-day wildcard → HTTP 400)
+      • 2 API requests per root-day total
+
+    Returns a DataFrame with columns:
+      root, expiration, strike (float, $), right ("C"/"P"), trade_timestamp,
+      date, sequence, price, size, bid, ask, exchange
+    or None if the terminal is unreachable or either leg errors.
+    """
+    if not reachable():
+        log.warning("thetadata: terminal not reachable — bulk_trade_quote_day returning None")
+        return None
+
+    frames: list[pd.DataFrame] = []
+    for right_str in ("call", "put"):
+        df = bulk_trade_quote(root, right_str, target_date, target_date)
+        if df is None:
+            log.warning(
+                "thetadata: bulk_trade_quote_day(%s, %s) %s leg failed — returning None",
+                root, target_date, right_str)
+            return None
+        if not df.empty:
+            frames.append(df)
+
+    if not frames:
+        return pd.DataFrame()
+    return pd.concat(frames, ignore_index=True)
+
+
+def _normalize_trade_quote_df(df: pd.DataFrame, root: str) -> pd.DataFrame:
+    """Normalize a raw v3 trade_quote CSV DataFrame into the canonical bulk-tape schema.
+
+    v3 CSV columns:
+      symbol, expiration, strike, right, trade_timestamp, quote_timestamp,
+      sequence, ext_condition1..4, condition, size, exchange,
+      price, bid_size, bid_exchange, bid, bid_condition,
+      ask_size, ask_exchange, ask, ask_condition
+
+    Output columns (typed):
+      root (str), expiration (datetime64), strike (float, $), right ("C"/"P"),
+      trade_timestamp (str, ISO-like), price (float), size (float), bid (float), ask (float)
+    """
+    if df.empty:
+        return df
+
+    for col in ("symbol", "expiration", "right"):
+        if col in df.columns:
+            df[col] = df[col].astype(str).str.strip('"').str.strip()
+
+    # Rename symbol → root
+    if "symbol" in df.columns:
+        df = df.rename(columns={"symbol": "root"})
+    else:
+        df["root"] = root.upper()
+
+    # Parse expiration
+    if "expiration" in df.columns:
+        df["expiration"] = pd.to_datetime(df["expiration"], errors="coerce")
+
+    # Normalize right: "CALL" → "C", "PUT" → "P"
+    if "right" in df.columns:
+        df["right"] = df["right"].map({"CALL": "C", "PUT": "P"}).fillna(df["right"])
+
+    # Numeric columns
+    for col in ("strike", "price", "size", "bid", "ask"):
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors="coerce")
+
+    keep = ["root", "expiration", "strike", "right",
+            "trade_timestamp", "price", "size", "bid", "ask"]
+    available = [c for c in keep if c in df.columns]
+    return df[available].reset_index(drop=True)
+
+
 def trade_quote(root: str, exp: int | str | date, right: str, strike: float,
                 start_date: date | str | int, end_date: date | str | int) -> pd.DataFrame | None:
     """Every trade paired with the prevailing NBBO at execution, for ONE specific contract.
@@ -942,4 +1063,153 @@ def trade_quote(root: str, exp: int | str | date, right: str, strike: float,
     df["strike"] = float(strike)
     df["right"] = right.upper()
     df["root"] = root.upper()
+    return df.reset_index(drop=True)
+
+
+def _time_to_str(t: str | int | None) -> str | None:
+    """Convert a time-of-day value to "HH:MM:SS.000" string (v3 API convention).
+
+    Accepts:
+      - None           → None (param omitted)
+      - int            → treated as ms-of-day; converted to HH:MM:SS.mmm
+      - "HH:MM:SS"     → normalised to "HH:MM:SS.000"
+      - "HH:MM"        → normalised to "HH:MM:00.000"
+      - "HH:MM:SS.mmm" → passed through as-is
+
+    The v3 trade_quote endpoint expects start_time / end_time as "HH:MM:SS.mmm" ET.
+    """
+    if t is None:
+        return None
+    if isinstance(t, int):
+        # ms-of-day → HH:MM:SS.mmm
+        total_ms = int(t)
+        h  =  total_ms // 3_600_000
+        m  = (total_ms % 3_600_000) // 60_000
+        s  = (total_ms % 60_000) // 1_000
+        ms =  total_ms % 1_000
+        return f"{h:02d}:{m:02d}:{s:02d}.{ms:03d}"
+    parts = str(t).split(":")
+    h = int(parts[0])
+    m = int(parts[1]) if len(parts) > 1 else 0
+    sec_parts = parts[2].split(".") if len(parts) > 2 else ["0", "000"]
+    s   = int(sec_parts[0])
+    ms  = int(sec_parts[1]) if len(sec_parts) > 1 else 0
+    return f"{h:02d}:{m:02d}:{s:02d}.{ms:03d}"
+
+
+# Keep an alias for the old name used in tests
+def _time_to_ms(t: str | int | None) -> str | int | None:
+    """Alias for _time_to_str (kept for test compatibility).
+
+    Returns the v3 time string; also accepts int ms-of-day for backwards compat.
+    """
+    return _time_to_str(t)
+
+
+def bulk_trade_quote(root: str, right: str,
+                     start_date: date | str | int,
+                     end_date: date | str | int,
+                     start_time: str | int | None = None,
+                     end_time: str | int | None = None) -> pd.DataFrame | None:
+    """Full-chain trade+NBBO for ONE right (call or put) on a date range.
+
+    Endpoint: GET /v3/option/history/trade_quote with expiration=* and strike=*.
+
+    Live probe (2026-07-04): wildcard expiration AND strike are accepted when
+    right is explicitly "call" or "put". Wildcard right= returns HTTP 400.
+    Two calls per root-day (one per right) cover the entire chain.
+
+    This is the T2a aggregate-then-discard path. Raw rows should be discarded
+    by the caller after aggregation.
+
+    Returns a DataFrame with the same schema as trade_quote() EXCEPT that
+    strike is not fixed (it varies per contract in the response). The 'strike'
+    column is parsed from the response CSV (each row has its own strike).
+    The 'sequence' column is included in the output for dedup / watermark use.
+
+    Optional time-of-day filtering (v3 format "HH:MM:SS.mmm" ET):
+      start_time : "HH:MM:SS", "HH:MM:SS.mmm", "HH:MM", or ms-of-day int.
+                   If provided, only trades at or after this time are returned.
+      end_time   : same formats.  If provided, only trades at or before this
+                   time are returned.
+    Behavior is identical to the no-params call when both are None (additive).
+
+    Returns None on terminal error; empty DataFrame if no trades exist.
+    """
+    if not reachable():
+        log.warning("thetadata: terminal not reachable — bulk_trade_quote returning None")
+        return None
+
+    right_norm = _normalize_right_request(right)   # "call" or "put"
+    params: dict = {
+        "symbol": root.upper(),
+        "expiration": "*",
+        "strike": "*",
+        "right": right_norm,
+        "start_date": _date_int(start_date),
+        "end_date": _date_int(end_date),
+    }
+    st_str = _time_to_str(start_time)
+    et_str = _time_to_str(end_time)
+    if st_str is not None:
+        params["start_time"] = st_str
+    if et_str is not None:
+        params["end_time"] = et_str
+
+    session = _session()
+    rows_all: list[dict] = []
+
+    # CSV header: symbol,expiration,strike,right,trade_timestamp,quote_timestamp,
+    #             sequence,ext_condition1-4,condition,size,exchange,price,
+    #             bid_size,bid_exchange,bid,bid_condition,ask_size,ask_exchange,ask,ask_condition
+    # Indices:    0       1           2      3     4                5
+    #             6       7-10        11     12    13       14
+    #             15      16          17     18    19       20      21    22
+    try:
+        for raw_line in _stream_lines(session, "/v3/option/history/trade_quote", params):
+            if isinstance(raw_line, bytes):
+                line = raw_line.decode("utf-8", errors="replace")
+            else:
+                line = raw_line
+            line = line.strip()
+            if not line:
+                continue
+            if line.startswith("symbol,"):
+                continue
+            parts = [v.strip().strip('"') for v in line.split(",")]
+            if len(parts) < 23:
+                continue
+            rows_all.append({
+                "date":            parts[4][:10] if parts[4] else None,
+                "trade_timestamp": parts[4],
+                "quote_timestamp": parts[5],
+                "sequence":        parts[6],
+                "expiration":      parts[1],
+                "strike":          parts[2],
+                "right":           parts[3],
+                "price":           parts[14],
+                "size":            parts[12],
+                "exchange":        parts[13],
+                "bid":             parts[17],
+                "ask":             parts[21],
+            })
+    except _StreamTruncated as e:
+        log.warning(
+            "thetadata: bulk_trade_quote(%s, %s, %s→%s) truncated — returning None: %s",
+            root, right, start_date, end_date, e)
+        return None
+
+    if not rows_all:
+        return pd.DataFrame()
+
+    df = pd.DataFrame(rows_all)
+    df["date"]     = pd.to_datetime(df["date"], errors="coerce")
+    df["price"]    = pd.to_numeric(df["price"],    errors="coerce")
+    df["size"]     = pd.to_numeric(df["size"],     errors="coerce")
+    df["bid"]      = pd.to_numeric(df["bid"],      errors="coerce")
+    df["ask"]      = pd.to_numeric(df["ask"],      errors="coerce")
+    df["strike"]   = pd.to_numeric(df["strike"],   errors="coerce")
+    df["sequence"] = pd.to_numeric(df["sequence"], errors="coerce")
+    df["right"]    = df["right"].str.upper().str[:1]   # "CALL"→"C", "PUT"→"P"
+    df["root"]     = root.upper()
     return df.reset_index(drop=True)

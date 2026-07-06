@@ -1,27 +1,27 @@
 {
   "schema": "neuralweb.cortex_memo.v1",
-  "as_of": "2026-07-04T12:00:00+00:00",
-  "summary": "[DRY-RUN] Cortex deliberation complete. One contradiction detected in confluence graph. One synthetic attention item flagged for earn-in tracking. Cortex on shadow probation (A0/A1 only).",
-  "what_fired": [
-    "signal_a contradicts signal_b (confluence_graph.json)"
-  ],
-  "contradictions_review": "One contradicting signal pair detected. No further action at A0/A1 probation tier.",
+  "as_of": "2026-07-06T08:48:01+00:00",
+  "summary": "Budget exhausted after 0 tool-call batches (0 individual calls). Partial deliberation only.",
+  "what_fired": [],
+  "contradictions_review": "Incomplete \u2014 budget exhausted before contradictions review.",
   "decaying_families": [],
-  "deserves_operator": [
-    "SYNTHETIC_TICKER \u2014 flagged with horizon_d=5, falsifier pre-committed."
-  ],
+  "deserves_operator": [],
   "probation": {
-    "tier": "A0/A1 shadow",
+    "schema": "neuralweb.cortex_probation.v1",
+    "as_of": "2026-07-05",
     "granted": false,
-    "reason": "insufficient-n: n=0 < min_n=30",
+    "tier": "A0/A1 shadow",
+    "reason": "insufficient-n: n=0 < min_n=25",
     "lift_lb": null,
     "wilson_lb": null,
+    "lapses_at": null,
+    "evidence_asof": null,
     "attention_track_record": {
       "n": 0,
       "hits": 0,
-      "base_rate": 0.01
+      "base_rate": 0.5
     },
-    "lapses_at": null
+    "is_context_only": true
   },
   "tool_call_census": {},
   "is_context_only": true

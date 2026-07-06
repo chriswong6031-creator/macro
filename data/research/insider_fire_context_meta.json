@@ -1,0 +1,202 @@
+{
+  "definition_version": "v1.2",
+  "definition_changelog": "v1.1 (2026-07-05): M1 \u2014 all insider windows converted to trading-day arithmetic (searchsorted on price index; was calendar days); M2 \u2014 I3 percentile base expanded to Form-4-eligible universe at t, not just co-firing tickers; m3 \u2014 PIT mcap from fundamentals_panel.parquet where available, close-price proxy as fallback. v1.2 (2026-07-05): I3 midrank+positive-gate \u2014 (a) fire must have net_usd_mcap > 0 (strict positive gate eliminates non-net-buyers); (b) percentile now uses midrank (average-rank tie-handling via scipy.stats.rankdata method='average') instead of weak-inequality mean, preventing the zero-mass inflation where 61% of zero-net-buy fires incorrectly flagged >= p80; (c) same fix applied to sector-neutral arm; (d) self-inclusive midrank (fire included in its own comparison pool, documented in meta); (e) deleted dead functions _ins_buyers_in_window (calendar-day resurrection hazard) and _compute_net_usd_mcap_for_ticker (superseded by vectorized _build_i3_universe_cache).",
+  "built_date": "2026-07-05T16:47:00.490353",
+  "frozen_thresholds": {
+    "window_basis": "trading_days",
+    "washout_lookback_td": 45,
+    "washout_high_window_td": 126,
+    "washout_threshold": -0.2,
+    "cluster_window_45_td": 45,
+    "cluster_window_20_td": 20,
+    "cluster_post15_td": 15,
+    "cluster_min_buyers_i1_i2": 2,
+    "cluster_min_buyers_i1_3": 3,
+    "i3_net_usd_months": 6,
+    "i3_percentile": 80,
+    "computable_3y_td": 756,
+    "i3_universe_base": "form4_eligible_tickers_at_t",
+    "i3_ranking_method": "midrank_self_inclusive_positive_gate",
+    "i3_positive_gate": "net_usd_mcap_strictly_gt_0",
+    "mcap_method": "pit_shares_x_close_with_fallback_to_close_proxy",
+    "mcap_fallback_fraction": 0.3339
+  },
+  "columns": {
+    "ins_computable": {
+      "source_event_date": "filing_date",
+      "known_date": "filing_date",
+      "pit_basis": "filing_date_leq_t",
+      "pit_at_entry": true,
+      "description": "Ticker present in Form-4 panel with \u22651 filing of any kind in trailing 3y-td at t. All windows are TRADING-DAY counts (v1.1). Computable_mask basis (Amendment 2 \u00a7C2)."
+    },
+    "ins_i3_computable": {
+      "source_event_date": "filing_date",
+      "known_date": "filing_date",
+      "pit_basis": "filing_date_leq_t",
+      "pit_at_entry": true,
+      "description": "I3-specific computable flag: ticker is in the Form-4-eligible universe at t used for I3 percentile ranking (\u22651 filing in trailing 3y-td AND has net_usd_6m and mcap data). Added in v1.1 (M2 fix)."
+    },
+    "washout_flag": {
+      "source_event_date": "price_date",
+      "known_date": "price_date",
+      "pit_basis": "close_history_leq_t",
+      "pit_at_entry": true,
+      "description": "Min (close/rolling126d_high \u2212 1) over [t-45td, t] \u2264 \u22120.20. Uses strictly prior bars for the 126d high (no current-bar lookahead). 45td = trading days."
+    },
+    "ins_buyers_45d": {
+      "source_event_date": "trans_date",
+      "known_date": "filing_date",
+      "pit_basis": "filing_date_leq_t",
+      "pit_at_entry": true,
+      "description": "Distinct buyer CIKs (code=P) with filing_date in [t-45td, t]. 45td = trading days (v1.1 M1 fix; was calendar days in v1)."
+    },
+    "ins_cluster_washout": {
+      "source_event_date": "filing_date",
+      "known_date": "filing_date",
+      "pit_basis": "filing_date_leq_t",
+      "pit_at_entry": true,
+      "description": "I1: washout_flag AND ins_buyers_45d \u2265 2. Both legs span 45 TRADING DAYS (v1.1 M1 fix). Threshold frozen at registration (RUL-26)."
+    },
+    "ins_cluster_washout_3": {
+      "source_event_date": "filing_date",
+      "known_date": "filing_date",
+      "pit_basis": "filing_date_leq_t",
+      "pit_at_entry": true,
+      "description": "I1 sensitivity: washout_flag AND ins_buyers_45d \u2265 3 (RUL-26 pre-registered sensitivity). Both legs span 45 TRADING DAYS (v1.1)."
+    },
+    "ins_cluster_pre20": {
+      "source_event_date": "filing_date",
+      "known_date": "filing_date",
+      "pit_basis": "filing_date_leq_t",
+      "pit_at_entry": true,
+      "description": "I2 PIT stratum: distinct buyers in [t-20td, t] \u2265 2 (filing_date window). 20td = trading days (v1.1 M1 fix)."
+    },
+    "ins_cluster_post15": {
+      "source_event_date": "filing_date",
+      "known_date": "filing_date",
+      "pit_basis": "NOT_PIT_study_time_only",
+      "pit_at_entry": false,
+      "description": "DESCRIPTIVE ONLY \u2014 distinct buyers in (t, t+15td] by filing_date. 15td = trading days (v1.1). This is a STUDY-TIME DESCRIPTIVE, NOT a PIT stratum. NEVER use as a stratum in r1_estimate/grade_fires."
+    },
+    "ins_netusd_mcap_sn_p80": {
+      "source_event_date": "filing_date",
+      "known_date": "filing_date",
+      "pit_basis": "filing_date_leq_t",
+      "pit_at_entry": true,
+      "description": "I3: trailing 6-month net_usd/mcap (FDR-survivor construction), sector-neutral midrank percentile \u2265 80 at t. UNIVERSE BASE = all Form-4-eligible tickers at t (v1.1 M2 fix; was co-firing tickers only in v1). v1.2 fix: (a) fire must have net_usd_mcap > 0 (strict positive gate \u2014 non-net-buyers are excluded, not ranked); (b) percentile uses midrank (average-rank tie handling; self-inclusive pool) instead of weak-inequality mean \u2014 eliminates zero-mass inflation where ~17% zero mass caused 61% of zero-net-buy fires to flag >= p80. mcap = PIT shares \u00d7 close where shares available (fundamentals_panel.parquet); falls back to close-price proxy (see mcap_fallback_fraction in meta). CMP opportunistic filter EXCLUDED (negative-IC prior, RUL-26)."
+    },
+    "ins_i3_sector_neutral": {
+      "source_event_date": "filing_date",
+      "known_date": "filing_date",
+      "pit_basis": "filing_date_leq_t",
+      "pit_at_entry": true,
+      "description": "Bool: True = sector-neutral midrank pctile used for I3 (\u22653 sector peers in UNIVERSE at t); False = universe-wide fallback. None = fire excluded by positive gate (net_usd_mcap <= 0)."
+    }
+  },
+  "panels": {
+    "deep": {
+      "runtime_seconds": 52.1,
+      "panel": "deep",
+      "total_fires": 38250,
+      "n_computable": 17714,
+      "pct_computable": 46.31,
+      "n_i1": 365,
+      "n_i1_3": 175,
+      "n_i2": 310,
+      "n_i3": 1425,
+      "n_i3_computable": 17716,
+      "i3_sector_neutral_frac": 0.0878,
+      "era_breakdown": [
+        {
+          "era": "2012-2015",
+          "n_fires": 3725,
+          "pct_computable": 90.79,
+          "n_i1": 30,
+          "n_i1_3": 12,
+          "n_i2": 33,
+          "n_i3": 194
+        },
+        {
+          "era": "2016-2019",
+          "n_fires": 3715,
+          "pct_computable": 92.57,
+          "n_i1": 71,
+          "n_i1_3": 38,
+          "n_i2": 66,
+          "n_i3": 261
+        },
+        {
+          "era": "2020-2022",
+          "n_fires": 2973,
+          "pct_computable": 94.45,
+          "n_i1": 83,
+          "n_i1_3": 36,
+          "n_i2": 59,
+          "n_i3": 278
+        },
+        {
+          "era": "2023-2026",
+          "n_fires": 3557,
+          "pct_computable": 96.65,
+          "n_i1": 51,
+          "n_i1_3": 26,
+          "n_i2": 40,
+          "n_i3": 299
+        }
+      ],
+      "mcap_fallback_frac": 0.3339
+    },
+    "baskets": {
+      "runtime_seconds": 177.5,
+      "panel": "baskets",
+      "total_fires": 113542,
+      "n_computable": 97740,
+      "pct_computable": 86.08,
+      "n_i1": 3961,
+      "n_i1_3": 1940,
+      "n_i2": 2711,
+      "n_i3": 17424,
+      "n_i3_computable": 97779,
+      "i3_sector_neutral_frac": 0.0212,
+      "era_breakdown": [
+        {
+          "era": "2012-2015",
+          "n_fires": 10880,
+          "pct_computable": 77.73,
+          "n_i1": 269,
+          "n_i1_3": 138,
+          "n_i2": 261,
+          "n_i3": 1544
+        },
+        {
+          "era": "2016-2019",
+          "n_fires": 33191,
+          "pct_computable": 82.77,
+          "n_i1": 973,
+          "n_i1_3": 463,
+          "n_i2": 785,
+          "n_i3": 4649
+        },
+        {
+          "era": "2020-2022",
+          "n_fires": 29794,
+          "pct_computable": 86.53,
+          "n_i1": 1265,
+          "n_i1_3": 649,
+          "n_i2": 760,
+          "n_i3": 4701
+        },
+        {
+          "era": "2023-2026",
+          "n_fires": 39677,
+          "pct_computable": 90.81,
+          "n_i1": 1454,
+          "n_i1_3": 690,
+          "n_i2": 905,
+          "n_i3": 6530
+        }
+      ],
+      "mcap_fallback_frac": 0.5244
+    }
+  }
+}

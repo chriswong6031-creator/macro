@@ -1,14 +1,14 @@
 {
   "schema": "wh_health.v1",
-  "as_of": "2026-07-05T04:19:59.786385+00:00",
-  "posts_seen": 3,
-  "seen_total": 9,
+  "as_of": "2026-07-06T04:38:39.907403+00:00",
+  "posts_seen": 5,
+  "seen_total": 11,
   "evaluated": 1,
   "activated": 0,
   "provider": "Claude claude-opus-4-8 (subscription)",
   "gate_scores": [
     {
-      "id": "wh-2026-07-05-saving-americas-story",
+      "id": "wh-2026-07-05-america-250-presidential-message-on-the-anniversary-of-the-battle-of-chippawa",
       "importance": null,
       "activated": false,
       "degraded_reason": "llm_error"

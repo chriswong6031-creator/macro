@@ -1,0 +1,1686 @@
+{
+  "study_id": "P2_5_DIAGNOSTIC",
+  "label": "DIAGNOSTIC \u2014 IN-SAMPLE, NO VERDICTS; hypotheses feed P2_5 PREREG",
+  "study_date": "2026-07-05",
+  "replay_md5": "906175f9eb8caa351ed6d7d5c56265d3",
+  "replay_md5_matches": true,
+  "population": {
+    "n_verdict_grade_fires": 49939,
+    "n_defined": 47182,
+    "n_none_excluded": 2757,
+    "n_washout_true": 36734,
+    "n_washout_false": 10448,
+    "halves_midpoint": "2024-05-13"
+  },
+  "dd_pct_distribution_washout_true": {
+    "n": 36734,
+    "p25": 0.20419509729593133,
+    "p50": 0.26385442514474766,
+    "p75": 0.346460384435068,
+    "p90": 0.4442772545078186,
+    "p95": 0.5209063493357242
+  },
+  "baseline_unconditioned": {
+    "21d": {
+      "n": 47182,
+      "n_episodes": 21053,
+      "stop_out": 0.384808,
+      "dead_money": 0.182633,
+      "clean_liftoff": 0.302446,
+      "cushioned": 0.130113
+    },
+    "63d": {
+      "n": 47182,
+      "n_episodes": 21053,
+      "stop_out": 0.62314,
+      "dead_money": 0.000848,
+      "clean_liftoff": 0.334683,
+      "cushioned": 0.041329
+    }
+  },
+  "baseline_washout_true": {
+    "21d": {
+      "n": 36734,
+      "n_episodes": 16103,
+      "stop_out": 0.395519,
+      "dead_money": 0.149181,
+      "clean_liftoff": 0.335139,
+      "cushioned": 0.120161
+    },
+    "63d": {
+      "n": 36734,
+      "n_episodes": 16103,
+      "stop_out": 0.621223,
+      "dead_money": 0.000245,
+      "clean_liftoff": 0.346491,
+      "cushioned": 0.032041
+    }
+  },
+  "partition_a_depth_gradient": {
+    "d15_25": {
+      "label": "d15_25",
+      "n_fires": 16326,
+      "n_episodes": 7305,
+      "21d": {
+        "n": 16326,
+        "n_episodes": 7305,
+        "stop_out": 0.370391,
+        "dead_money": 0.223447,
+        "clean_liftoff": 0.259218,
+        "cushioned": 0.146944,
+        "stop_out_delta_pp": -1.442,
+        "dead_money_delta_pp": 4.081,
+        "clean_liftoff_delta_pp": -4.323
+      },
+      "63d": {
+        "n": 16326,
+        "n_episodes": 7305,
+        "stop_out": 0.642778,
+        "dead_money": 0.000368,
+        "clean_liftoff": 0.304361,
+        "cushioned": 0.052493,
+        "stop_out_delta_pp": 1.964,
+        "dead_money_delta_pp": -0.048,
+        "clean_liftoff_delta_pp": -3.032
+      },
+      "halves": {
+        "H1": {
+          "21d": {
+            "n": 8266,
+            "n_episodes": 3732,
+            "stop_out": 0.320832,
+            "dead_money": 0.218727,
+            "clean_liftoff": 0.30946,
+            "cushioned": 0.15098
+          },
+          "63d": {
+            "n": 8266,
+            "n_episodes": 3732,
+            "stop_out": 0.588918,
+            "dead_money": 0.000121,
+            "clean_liftoff": 0.348536,
+            "cushioned": 0.062424
+          }
+        },
+        "H2": {
+          "21d": {
+            "n": 8060,
+            "n_episodes": 3596,
+            "stop_out": 0.421216,
+            "dead_money": 0.228288,
+            "clean_liftoff": 0.207692,
+            "cushioned": 0.142804
+          },
+          "63d": {
+            "n": 8060,
+            "n_episodes": 3596,
+            "stop_out": 0.698015,
+            "dead_money": 0.00062,
+            "clean_liftoff": 0.259057,
+            "cushioned": 0.042308
+          }
+        }
+      }
+    },
+    "d25_40": {
+      "label": "d25_40",
+      "n_fires": 14710,
+      "n_episodes": 6362,
+      "21d": {
+        "n": 14710,
+        "n_episodes": 6362,
+        "stop_out": 0.40068,
+        "dead_money": 0.108362,
+        "clean_liftoff": 0.376343,
+        "cushioned": 0.114616,
+        "stop_out_delta_pp": 1.587,
+        "dead_money_delta_pp": -7.427,
+        "clean_liftoff_delta_pp": 7.39
+      },
+      "63d": {
+        "n": 14710,
+        "n_episodes": 6362,
+        "stop_out": 0.610401,
+        "dead_money": 0.0,
+        "clean_liftoff": 0.370088,
+        "cushioned": 0.019511,
+        "stop_out_delta_pp": -1.274,
+        "dead_money_delta_pp": -0.085,
+        "clean_liftoff_delta_pp": 3.54
+      },
+      "halves": {
+        "H1": {
+          "21d": {
+            "n": 7079,
+            "n_episodes": 3039,
+            "stop_out": 0.34341,
+            "dead_money": 0.106795,
+            "clean_liftoff": 0.442012,
+            "cushioned": 0.107784
+          },
+          "63d": {
+            "n": 7079,
+            "n_episodes": 3039,
+            "stop_out": 0.553751,
+            "dead_money": 0.0,
+            "clean_liftoff": 0.418279,
+            "cushioned": 0.02797
+          }
+        },
+        "H2": {
+          "21d": {
+            "n": 7631,
+            "n_episodes": 3336,
+            "stop_out": 0.453807,
+            "dead_money": 0.109815,
+            "clean_liftoff": 0.315424,
+            "cushioned": 0.120954
+          },
+          "63d": {
+            "n": 7631,
+            "n_episodes": 3336,
+            "stop_out": 0.662954,
+            "dead_money": 0.0,
+            "clean_liftoff": 0.325383,
+            "cushioned": 0.011663
+          }
+        }
+      }
+    },
+    "d40plus": {
+      "label": "d40plus",
+      "n_fires": 5698,
+      "n_episodes": 2503,
+      "21d": {
+        "n": 5698,
+        "n_episodes": 2503,
+        "stop_out": 0.454194,
+        "dead_money": 0.041769,
+        "clean_liftoff": 0.446297,
+        "cushioned": 0.05774,
+        "stop_out_delta_pp": 6.939,
+        "dead_money_delta_pp": -14.086,
+        "clean_liftoff_delta_pp": 14.385
+      },
+      "63d": {
+        "n": 5698,
+        "n_episodes": 2503,
+        "stop_out": 0.587399,
+        "dead_money": 0.000527,
+        "clean_liftoff": 0.406283,
+        "cushioned": 0.005792,
+        "stop_out_delta_pp": -3.574,
+        "dead_money_delta_pp": -0.032,
+        "clean_liftoff_delta_pp": 7.16
+      },
+      "halves": {
+        "H1": {
+          "21d": {
+            "n": 2743,
+            "n_episodes": 1210,
+            "stop_out": 0.467736,
+            "dead_money": 0.032811,
+            "clean_liftoff": 0.449508,
+            "cushioned": 0.049945
+          },
+          "63d": {
+            "n": 2743,
+            "n_episodes": 1210,
+            "stop_out": 0.592782,
+            "dead_money": 0.0,
+            "clean_liftoff": 0.402114,
+            "cushioned": 0.005104
+          }
+        },
+        "H2": {
+          "21d": {
+            "n": 2955,
+            "n_episodes": 1295,
+            "stop_out": 0.441624,
+            "dead_money": 0.050085,
+            "clean_liftoff": 0.443316,
+            "cushioned": 0.064975
+          },
+          "63d": {
+            "n": 2955,
+            "n_episodes": 1295,
+            "stop_out": 0.582403,
+            "dead_money": 0.001015,
+            "clean_liftoff": 0.410152,
+            "cushioned": 0.00643
+          }
+        }
+      }
+    },
+    "proxy_equiv_washout_proximity": {
+      "label": "proxy_washout_proximity",
+      "n_fires": 21099,
+      "n_episodes": 8765,
+      "21d": {
+        "n": 21099,
+        "n_episodes": 8765,
+        "stop_out": 0.400588,
+        "dead_money": 0.112233,
+        "clean_liftoff": 0.379117,
+        "cushioned": 0.108062,
+        "stop_out_delta_pp": 1.578,
+        "dead_money_delta_pp": -7.04,
+        "clean_liftoff_delta_pp": 7.667
+      },
+      "63d": {
+        "n": 21099,
+        "n_episodes": 8765,
+        "stop_out": 0.592587,
+        "dead_money": 0.00019,
+        "clean_liftoff": 0.377174,
+        "cushioned": 0.030049,
+        "stop_out_delta_pp": -3.055,
+        "dead_money_delta_pp": -0.066,
+        "clean_liftoff_delta_pp": 4.249
+      },
+      "halves": {
+        "H1": {
+          "21d": {
+            "n": 10191,
+            "n_episodes": 4232,
+            "stop_out": 0.354921,
+            "dead_money": 0.107251,
+            "clean_liftoff": 0.435188,
+            "cushioned": 0.10264
+          },
+          "63d": {
+            "n": 10191,
+            "n_episodes": 4232,
+            "stop_out": 0.528702,
+            "dead_money": 0.0,
+            "clean_liftoff": 0.430772,
+            "cushioned": 0.040526
+          }
+        },
+        "H2": {
+          "21d": {
+            "n": 10908,
+            "n_episodes": 4552,
+            "stop_out": 0.443253,
+            "dead_money": 0.116887,
+            "clean_liftoff": 0.326733,
+            "cushioned": 0.113128
+          },
+          "63d": {
+            "n": 10908,
+            "n_episodes": 4552,
+            "stop_out": 0.652274,
+            "dead_money": 0.000367,
+            "clean_liftoff": 0.327099,
+            "cushioned": 0.02026
+          }
+        }
+      }
+    }
+  },
+  "partition_b_trend_context": {
+    "washout_true_above_200": {
+      "label": "washout_true_above_200",
+      "n_fires": 12954,
+      "n_episodes": 6487,
+      "21d": {
+        "n": 12954,
+        "n_episodes": 6487,
+        "stop_out": 0.399182,
+        "dead_money": 0.172225,
+        "clean_liftoff": 0.303072,
+        "cushioned": 0.125521,
+        "stop_out_delta_pp": 1.437,
+        "dead_money_delta_pp": -1.041,
+        "clean_liftoff_delta_pp": 0.063
+      },
+      "63d": {
+        "n": 12954,
+        "n_episodes": 6487,
+        "stop_out": 0.658638,
+        "dead_money": 0.000309,
+        "clean_liftoff": 0.311332,
+        "cushioned": 0.029721,
+        "stop_out_delta_pp": 3.55,
+        "dead_money_delta_pp": -0.054,
+        "clean_liftoff_delta_pp": -2.335
+      },
+      "halves": {
+        "H1": {
+          "21d": {
+            "n": 6614,
+            "n_episodes": 3299,
+            "stop_out": 0.352132,
+            "dead_money": 0.172362,
+            "clean_liftoff": 0.343363,
+            "cushioned": 0.132144
+          },
+          "63d": {
+            "n": 6614,
+            "n_episodes": 3299,
+            "stop_out": 0.635017,
+            "dead_money": 0.000151,
+            "clean_liftoff": 0.327941,
+            "cushioned": 0.036891
+          }
+        },
+        "H2": {
+          "21d": {
+            "n": 6340,
+            "n_episodes": 3207,
+            "stop_out": 0.448265,
+            "dead_money": 0.172082,
+            "clean_liftoff": 0.261041,
+            "cushioned": 0.118612
+          },
+          "63d": {
+            "n": 6340,
+            "n_episodes": 3207,
+            "stop_out": 0.683281,
+            "dead_money": 0.000473,
+            "clean_liftoff": 0.294006,
+            "cushioned": 0.02224
+          }
+        }
+      }
+    },
+    "washout_true_below_200": {
+      "label": "washout_true_below_200",
+      "n_fires": 23780,
+      "n_episodes": 10266,
+      "21d": {
+        "n": 23780,
+        "n_episodes": 10266,
+        "stop_out": 0.393524,
+        "dead_money": 0.136627,
+        "clean_liftoff": 0.352607,
+        "cushioned": 0.117241,
+        "stop_out_delta_pp": 0.872,
+        "dead_money_delta_pp": -4.601,
+        "clean_liftoff_delta_pp": 5.016
+      },
+      "63d": {
+        "n": 23780,
+        "n_episodes": 10266,
+        "stop_out": 0.600841,
+        "dead_money": 0.00021,
+        "clean_liftoff": 0.365643,
+        "cushioned": 0.033305,
+        "stop_out_delta_pp": -2.23,
+        "dead_money_delta_pp": -0.064,
+        "clean_liftoff_delta_pp": 3.096
+      },
+      "halves": {
+        "H1": {
+          "21d": {
+            "n": 11474,
+            "n_episodes": 4945,
+            "stop_out": 0.351839,
+            "dead_money": 0.13195,
+            "clean_liftoff": 0.405177,
+            "cushioned": 0.111034
+          },
+          "63d": {
+            "n": 11474,
+            "n_episodes": 4945,
+            "stop_out": 0.541572,
+            "dead_money": 0.0,
+            "clean_liftoff": 0.416245,
+            "cushioned": 0.042182
+          }
+        },
+        "H2": {
+          "21d": {
+            "n": 12306,
+            "n_episodes": 5337,
+            "stop_out": 0.432391,
+            "dead_money": 0.140988,
+            "clean_liftoff": 0.303592,
+            "cushioned": 0.123029
+          },
+          "63d": {
+            "n": 12306,
+            "n_episodes": 5337,
+            "stop_out": 0.656103,
+            "dead_money": 0.000406,
+            "clean_liftoff": 0.318463,
+            "cushioned": 0.025028
+          }
+        }
+      }
+    },
+    "washout_false_above_200": {
+      "label": "washout_false_above_200",
+      "n_fires": 9083,
+      "n_episodes": 4475,
+      "21d": {
+        "n": 9083,
+        "n_episodes": 4475,
+        "stop_out": 0.348343,
+        "dead_money": 0.282726,
+        "clean_liftoff": 0.200374,
+        "cushioned": 0.168557,
+        "stop_out_delta_pp": -3.646,
+        "dead_money_delta_pp": 10.009,
+        "clean_liftoff_delta_pp": -10.207
+      },
+      "63d": {
+        "n": 9083,
+        "n_episodes": 4475,
+        "stop_out": 0.629638,
+        "dead_money": 0.001321,
+        "clean_liftoff": 0.298249,
+        "cushioned": 0.070792,
+        "stop_out_delta_pp": 0.65,
+        "dead_money_delta_pp": 0.047,
+        "clean_liftoff_delta_pp": -3.643
+      },
+      "halves": {
+        "H1": {
+          "21d": {
+            "n": 3523,
+            "n_episodes": 1745,
+            "stop_out": 0.294919,
+            "dead_money": 0.305705,
+            "clean_liftoff": 0.214022,
+            "cushioned": 0.185353
+          },
+          "63d": {
+            "n": 3523,
+            "n_episodes": 1745,
+            "stop_out": 0.564292,
+            "dead_money": 0.001419,
+            "clean_liftoff": 0.357366,
+            "cushioned": 0.076923
+          }
+        },
+        "H2": {
+          "21d": {
+            "n": 5560,
+            "n_episodes": 2751,
+            "stop_out": 0.382194,
+            "dead_money": 0.268165,
+            "clean_liftoff": 0.191727,
+            "cushioned": 0.157914
+          },
+          "63d": {
+            "n": 5560,
+            "n_episodes": 2751,
+            "stop_out": 0.671043,
+            "dead_money": 0.001259,
+            "clean_liftoff": 0.260791,
+            "cushioned": 0.066906
+          }
+        }
+      }
+    },
+    "washout_false_below_200": {
+      "label": "washout_false_below_200",
+      "n_fires": 1365,
+      "n_episodes": 661,
+      "21d": {
+        "n": 1365,
+        "n_episodes": 661,
+        "stop_out": 0.339194,
+        "dead_money": 0.41685,
+        "clean_liftoff": 0.101832,
+        "cushioned": 0.142125,
+        "stop_out_delta_pp": -4.561,
+        "dead_money_delta_pp": 23.422,
+        "clean_liftoff_delta_pp": -20.061
+      },
+      "63d": {
+        "n": 1365,
+        "n_episodes": 661,
+        "stop_out": 0.631502,
+        "dead_money": 0.013919,
+        "clean_liftoff": 0.259341,
+        "cushioned": 0.095238,
+        "stop_out_delta_pp": 0.836,
+        "dead_money_delta_pp": 1.307,
+        "clean_liftoff_delta_pp": -7.534
+      },
+      "halves": {
+        "H1": {
+          "21d": {
+            "n": 690,
+            "n_episodes": 329,
+            "stop_out": 0.318841,
+            "dead_money": 0.443478,
+            "clean_liftoff": 0.094203,
+            "cushioned": 0.143478
+          },
+          "63d": {
+            "n": 690,
+            "n_episodes": 329,
+            "stop_out": 0.627536,
+            "dead_money": 0.021739,
+            "clean_liftoff": 0.276812,
+            "cushioned": 0.073913
+          }
+        },
+        "H2": {
+          "21d": {
+            "n": 675,
+            "n_episodes": 341,
+            "stop_out": 0.36,
+            "dead_money": 0.38963,
+            "clean_liftoff": 0.10963,
+            "cushioned": 0.140741
+          },
+          "63d": {
+            "n": 675,
+            "n_episodes": 341,
+            "stop_out": 0.635556,
+            "dead_money": 0.005926,
+            "clean_liftoff": 0.241481,
+            "cushioned": 0.117037
+          }
+        }
+      }
+    }
+  },
+  "partition_c_pairlets": {
+    "wash_T_ac_pass": {
+      "label": "wash_T_ac_pass",
+      "n_fires": 35079,
+      "n_episodes": 15431,
+      "21d": {
+        "n": 35079,
+        "n_episodes": 15431,
+        "stop_out": 0.394766,
+        "dead_money": 0.149092,
+        "clean_liftoff": 0.336184,
+        "cushioned": 0.119958,
+        "stop_out_delta_pp": 0.996,
+        "dead_money_delta_pp": -3.354,
+        "clean_liftoff_delta_pp": 3.374
+      },
+      "63d": {
+        "n": 35079,
+        "n_episodes": 15431,
+        "stop_out": 0.618176,
+        "dead_money": 0.000257,
+        "clean_liftoff": 0.34924,
+        "cushioned": 0.032327,
+        "stop_out_delta_pp": -0.496,
+        "dead_money_delta_pp": -0.059,
+        "clean_liftoff_delta_pp": 1.456
+      },
+      "halves": {
+        "H1": {
+          "21d": {
+            "n": 17095,
+            "n_episodes": 7548,
+            "stop_out": 0.35174,
+            "dead_money": 0.146125,
+            "clean_liftoff": 0.384849,
+            "cushioned": 0.117286
+          },
+          "63d": {
+            "n": 17095,
+            "n_episodes": 7548,
+            "stop_out": 0.570108,
+            "dead_money": 5.8e-05,
+            "clean_liftoff": 0.389412,
+            "cushioned": 0.040421
+          }
+        },
+        "H2": {
+          "21d": {
+            "n": 17984,
+            "n_episodes": 7920,
+            "stop_out": 0.435665,
+            "dead_money": 0.151913,
+            "clean_liftoff": 0.289924,
+            "cushioned": 0.122498
+          },
+          "63d": {
+            "n": 17984,
+            "n_episodes": 7920,
+            "stop_out": 0.663868,
+            "dead_money": 0.000445,
+            "clean_liftoff": 0.311054,
+            "cushioned": 0.024633
+          }
+        }
+      }
+    },
+    "wash_T_ac_fail": {
+      "label": "wash_T_ac_fail",
+      "n_fires": 1655,
+      "n_episodes": 915,
+      "21d": {
+        "n": 1655,
+        "n_episodes": 915,
+        "stop_out": 0.41148,
+        "dead_money": 0.151057,
+        "clean_liftoff": 0.312991,
+        "cushioned": 0.124471,
+        "stop_out_delta_pp": 2.667,
+        "dead_money_delta_pp": -3.158,
+        "clean_liftoff_delta_pp": 1.055
+      },
+      "63d": {
+        "n": 1655,
+        "n_episodes": 915,
+        "stop_out": 0.685801,
+        "dead_money": 0.0,
+        "clean_liftoff": 0.288218,
+        "cushioned": 0.025982,
+        "stop_out_delta_pp": 6.266,
+        "dead_money_delta_pp": -0.085,
+        "clean_liftoff_delta_pp": -4.647
+      },
+      "halves": {
+        "H1": {
+          "21d": {
+            "n": 993,
+            "n_episodes": 538,
+            "stop_out": 0.355488,
+            "dead_money": 0.1571,
+            "clean_liftoff": 0.343404,
+            "cushioned": 0.144008
+          },
+          "63d": {
+            "n": 993,
+            "n_episodes": 538,
+            "stop_out": 0.672709,
+            "dead_money": 0.0,
+            "clean_liftoff": 0.29003,
+            "cushioned": 0.037261
+          }
+        },
+        "H2": {
+          "21d": {
+            "n": 662,
+            "n_episodes": 378,
+            "stop_out": 0.495468,
+            "dead_money": 0.141994,
+            "clean_liftoff": 0.267372,
+            "cushioned": 0.095166
+          },
+          "63d": {
+            "n": 662,
+            "n_episodes": 378,
+            "stop_out": 0.705438,
+            "dead_money": 0.0,
+            "clean_liftoff": 0.285498,
+            "cushioned": 0.009063
+          }
+        }
+      }
+    },
+    "wash_F_ac_pass": {
+      "label": "wash_F_ac_pass",
+      "n_fires": 9854,
+      "n_episodes": 4772,
+      "21d": {
+        "n": 9854,
+        "n_episodes": 4772,
+        "stop_out": 0.349401,
+        "dead_money": 0.295007,
+        "clean_liftoff": 0.191394,
+        "cushioned": 0.164197,
+        "stop_out_delta_pp": -3.541,
+        "dead_money_delta_pp": 11.237,
+        "clean_liftoff_delta_pp": -11.105
+      },
+      "63d": {
+        "n": 9854,
+        "n_episodes": 4772,
+        "stop_out": 0.62878,
+        "dead_money": 0.003146,
+        "clean_liftoff": 0.294906,
+        "cushioned": 0.073168,
+        "stop_out_delta_pp": 0.564,
+        "dead_money_delta_pp": 0.23,
+        "clean_liftoff_delta_pp": -3.978
+      },
+      "halves": {
+        "H1": {
+          "21d": {
+            "n": 3992,
+            "n_episodes": 1945,
+            "stop_out": 0.302605,
+            "dead_money": 0.322144,
+            "clean_liftoff": 0.199399,
+            "cushioned": 0.175852
+          },
+          "63d": {
+            "n": 3992,
+            "n_episodes": 1945,
+            "stop_out": 0.574399,
+            "dead_money": 0.00501,
+            "clean_liftoff": 0.347445,
+            "cushioned": 0.073146
+          }
+        },
+        "H2": {
+          "21d": {
+            "n": 5862,
+            "n_episodes": 2855,
+            "stop_out": 0.381269,
+            "dead_money": 0.276527,
+            "clean_liftoff": 0.185943,
+            "cushioned": 0.156261
+          },
+          "63d": {
+            "n": 5862,
+            "n_episodes": 2855,
+            "stop_out": 0.665814,
+            "dead_money": 0.001876,
+            "clean_liftoff": 0.259127,
+            "cushioned": 0.073183
+          }
+        }
+      }
+    },
+    "wash_F_ac_fail": {
+      "label": "wash_F_ac_fail",
+      "n_fires": 594,
+      "n_episodes": 327,
+      "21d": {
+        "n": 594,
+        "n_episodes": 327,
+        "stop_out": 0.309764,
+        "dead_money": 0.387205,
+        "clean_liftoff": 0.122896,
+        "cushioned": 0.180135,
+        "stop_out_delta_pp": -7.504,
+        "dead_money_delta_pp": 20.457,
+        "clean_liftoff_delta_pp": -17.955
+      },
+      "63d": {
+        "n": 594,
+        "n_episodes": 327,
+        "stop_out": 0.648148,
+        "dead_money": 0.0,
+        "clean_liftoff": 0.26431,
+        "cushioned": 0.087542,
+        "stop_out_delta_pp": 2.501,
+        "dead_money_delta_pp": -0.085,
+        "clean_liftoff_delta_pp": -7.037
+      },
+      "halves": {
+        "H1": {
+          "21d": {
+            "n": 221,
+            "n_episodes": 121,
+            "stop_out": 0.230769,
+            "dead_money": 0.438914,
+            "clean_liftoff": 0.104072,
+            "cushioned": 0.226244
+          },
+          "63d": {
+            "n": 221,
+            "n_episodes": 121,
+            "stop_out": 0.579186,
+            "dead_money": 0.0,
+            "clean_liftoff": 0.285068,
+            "cushioned": 0.135747
+          }
+        },
+        "H2": {
+          "21d": {
+            "n": 373,
+            "n_episodes": 208,
+            "stop_out": 0.356568,
+            "dead_money": 0.356568,
+            "clean_liftoff": 0.134048,
+            "cushioned": 0.152815
+          },
+          "63d": {
+            "n": 373,
+            "n_episodes": 208,
+            "stop_out": 0.689008,
+            "dead_money": 0.0,
+            "clean_liftoff": 0.252011,
+            "cushioned": 0.058981
+          }
+        }
+      }
+    },
+    "wash_T_rs_Q1Q2": {
+      "label": "wash_T_rs_Q1Q2",
+      "n_fires": 20146,
+      "n_episodes": 8882,
+      "21d": {
+        "n": 20146,
+        "n_episodes": 8882,
+        "stop_out": 0.38499,
+        "dead_money": 0.153331,
+        "clean_liftoff": 0.33421,
+        "cushioned": 0.127469,
+        "stop_out_delta_pp": 0.018,
+        "dead_money_delta_pp": -2.93,
+        "clean_liftoff_delta_pp": 3.176
+      },
+      "63d": {
+        "n": 20146,
+        "n_episodes": 8882,
+        "stop_out": 0.612181,
+        "dead_money": 5e-05,
+        "clean_liftoff": 0.355753,
+        "cushioned": 0.032016,
+        "stop_out_delta_pp": -1.096,
+        "dead_money_delta_pp": -0.08,
+        "clean_liftoff_delta_pp": 2.107
+      },
+      "halves": {
+        "H1": {
+          "21d": {
+            "n": 9562,
+            "n_episodes": 4227,
+            "stop_out": 0.339364,
+            "dead_money": 0.150178,
+            "clean_liftoff": 0.391654,
+            "cushioned": 0.118804
+          },
+          "63d": {
+            "n": 9562,
+            "n_episodes": 4227,
+            "stop_out": 0.555532,
+            "dead_money": 0.000105,
+            "clean_liftoff": 0.403995,
+            "cushioned": 0.040368
+          }
+        },
+        "H2": {
+          "21d": {
+            "n": 10584,
+            "n_episodes": 4670,
+            "stop_out": 0.426209,
+            "dead_money": 0.156179,
+            "clean_liftoff": 0.282313,
+            "cushioned": 0.135299
+          },
+          "63d": {
+            "n": 10584,
+            "n_episodes": 4670,
+            "stop_out": 0.66336,
+            "dead_money": 0.0,
+            "clean_liftoff": 0.312169,
+            "cushioned": 0.024471
+          }
+        }
+      }
+    },
+    "wash_T_rs_Q3Q4": {
+      "label": "wash_T_rs_Q3Q4",
+      "n_fires": 16588,
+      "n_episodes": 7943,
+      "21d": {
+        "n": 16588,
+        "n_episodes": 7943,
+        "stop_out": 0.408307,
+        "dead_money": 0.14414,
+        "clean_liftoff": 0.336267,
+        "cushioned": 0.111285,
+        "stop_out_delta_pp": 2.35,
+        "dead_money_delta_pp": -3.849,
+        "clean_liftoff_delta_pp": 3.382
+      },
+      "63d": {
+        "n": 16588,
+        "n_episodes": 7943,
+        "stop_out": 0.632204,
+        "dead_money": 0.000482,
+        "clean_liftoff": 0.335242,
+        "cushioned": 0.032071,
+        "stop_out_delta_pp": 0.906,
+        "dead_money_delta_pp": -0.037,
+        "clean_liftoff_delta_pp": 0.056
+      },
+      "halves": {
+        "H1": {
+          "21d": {
+            "n": 8526,
+            "n_episodes": 4065,
+            "stop_out": 0.366057,
+            "dead_money": 0.142857,
+            "clean_liftoff": 0.37239,
+            "cushioned": 0.118696
+          },
+          "63d": {
+            "n": 8526,
+            "n_episodes": 4065,
+            "stop_out": 0.598405,
+            "dead_money": 0.0,
+            "clean_liftoff": 0.361483,
+            "cushioned": 0.040113
+          }
+        },
+        "H2": {
+          "21d": {
+            "n": 8062,
+            "n_episodes": 3901,
+            "stop_out": 0.452989,
+            "dead_money": 0.145497,
+            "clean_liftoff": 0.298065,
+            "cushioned": 0.103448
+          },
+          "63d": {
+            "n": 8062,
+            "n_episodes": 3901,
+            "stop_out": 0.667948,
+            "dead_money": 0.000992,
+            "clean_liftoff": 0.307492,
+            "cushioned": 0.023567
+          }
+        }
+      }
+    },
+    "wash_F_rs_Q1Q2": {
+      "label": "wash_F_rs_Q1Q2",
+      "n_fires": 4042,
+      "n_episodes": 2002,
+      "21d": {
+        "n": 4042,
+        "n_episodes": 2002,
+        "stop_out": 0.344384,
+        "dead_money": 0.323355,
+        "clean_liftoff": 0.171697,
+        "cushioned": 0.160564,
+        "stop_out_delta_pp": -4.042,
+        "dead_money_delta_pp": 14.072,
+        "clean_liftoff_delta_pp": -13.075
+      },
+      "63d": {
+        "n": 4042,
+        "n_episodes": 2002,
+        "stop_out": 0.62766,
+        "dead_money": 0.001979,
+        "clean_liftoff": 0.287729,
+        "cushioned": 0.082632,
+        "stop_out_delta_pp": 0.452,
+        "dead_money_delta_pp": 0.113,
+        "clean_liftoff_delta_pp": -4.695
+      },
+      "halves": {
+        "H1": {
+          "21d": {
+            "n": 1504,
+            "n_episodes": 765,
+            "stop_out": 0.319149,
+            "dead_money": 0.361702,
+            "clean_liftoff": 0.164894,
+            "cushioned": 0.154255
+          },
+          "63d": {
+            "n": 1504,
+            "n_episodes": 765,
+            "stop_out": 0.597739,
+            "dead_money": 0.0,
+            "clean_liftoff": 0.325798,
+            "cushioned": 0.076463
+          }
+        },
+        "H2": {
+          "21d": {
+            "n": 2538,
+            "n_episodes": 1253,
+            "stop_out": 0.359338,
+            "dead_money": 0.30063,
+            "clean_liftoff": 0.175729,
+            "cushioned": 0.164303
+          },
+          "63d": {
+            "n": 2538,
+            "n_episodes": 1253,
+            "stop_out": 0.64539,
+            "dead_money": 0.003152,
+            "clean_liftoff": 0.265169,
+            "cushioned": 0.086288
+          }
+        }
+      }
+    },
+    "wash_F_rs_Q3Q4": {
+      "label": "wash_F_rs_Q3Q4",
+      "n_fires": 6406,
+      "n_episodes": 3265,
+      "21d": {
+        "n": 6406,
+        "n_episodes": 3265,
+        "stop_out": 0.348892,
+        "dead_money": 0.28567,
+        "clean_liftoff": 0.197471,
+        "cushioned": 0.167968,
+        "stop_out_delta_pp": -3.592,
+        "dead_money_delta_pp": 10.304,
+        "clean_liftoff_delta_pp": -10.497
+      },
+      "63d": {
+        "n": 6406,
+        "n_episodes": 3265,
+        "stop_out": 0.631283,
+        "dead_money": 0.00359,
+        "clean_liftoff": 0.296597,
+        "cushioned": 0.06853,
+        "stop_out_delta_pp": 0.814,
+        "dead_money_delta_pp": 0.274,
+        "clean_liftoff_delta_pp": -3.809
+      },
+      "halves": {
+        "H1": {
+          "21d": {
+            "n": 2709,
+            "n_episodes": 1366,
+            "stop_out": 0.28756,
+            "dead_money": 0.309708,
+            "clean_liftoff": 0.210779,
+            "cushioned": 0.191953
+          },
+          "63d": {
+            "n": 2709,
+            "n_episodes": 1366,
+            "stop_out": 0.561831,
+            "dead_money": 0.007383,
+            "clean_liftoff": 0.354374,
+            "cushioned": 0.076412
+          }
+        },
+        "H2": {
+          "21d": {
+            "n": 3697,
+            "n_episodes": 1912,
+            "stop_out": 0.393833,
+            "dead_money": 0.268055,
+            "clean_liftoff": 0.18772,
+            "cushioned": 0.150392
+          },
+          "63d": {
+            "n": 3697,
+            "n_episodes": 1912,
+            "stop_out": 0.682175,
+            "dead_money": 0.000811,
+            "clean_liftoff": 0.25426,
+            "cushioned": 0.062754
+          }
+        }
+      }
+    },
+    "deep_washout_ac_pass": {
+      "label": "deep_washout_ac_pass",
+      "n_fires": 25077,
+      "n_episodes": 10759,
+      "21d": {
+        "n": 25077,
+        "n_episodes": 10759,
+        "stop_out": 0.401324,
+        "dead_money": 0.115604,
+        "clean_liftoff": 0.373928,
+        "cushioned": 0.109144,
+        "stop_out_delta_pp": 1.652,
+        "dead_money_delta_pp": -6.703,
+        "clean_liftoff_delta_pp": 7.148
+      },
+      "63d": {
+        "n": 25077,
+        "n_episodes": 10759,
+        "stop_out": 0.603701,
+        "dead_money": 0.00016,
+        "clean_liftoff": 0.368545,
+        "cushioned": 0.027595,
+        "stop_out_delta_pp": -1.944,
+        "dead_money_delta_pp": -0.069,
+        "clean_liftoff_delta_pp": 3.386
+      },
+      "halves": {
+        "H1": {
+          "21d": {
+            "n": 12137,
+            "n_episodes": 5209,
+            "stop_out": 0.35676,
+            "dead_money": 0.110159,
+            "clean_liftoff": 0.429843,
+            "cushioned": 0.103238
+          },
+          "63d": {
+            "n": 12137,
+            "n_episodes": 5209,
+            "stop_out": 0.547499,
+            "dead_money": 0.0,
+            "clean_liftoff": 0.416001,
+            "cushioned": 0.0365
+          }
+        },
+        "H2": {
+          "21d": {
+            "n": 12940,
+            "n_episodes": 5572,
+            "stop_out": 0.443122,
+            "dead_money": 0.120711,
+            "clean_liftoff": 0.321484,
+            "cushioned": 0.114683
+          },
+          "63d": {
+            "n": 12940,
+            "n_episodes": 5572,
+            "stop_out": 0.656414,
+            "dead_money": 0.000309,
+            "clean_liftoff": 0.324034,
+            "cushioned": 0.019243
+          }
+        }
+      }
+    },
+    "deep_washout_ac_fail": {
+      "label": "deep_washout_ac_fail",
+      "n_fires": 991,
+      "n_episodes": 550,
+      "21d": {
+        "n": 991,
+        "n_episodes": 550,
+        "stop_out": 0.432896,
+        "dead_money": 0.09889,
+        "clean_liftoff": 0.363269,
+        "cushioned": 0.104945,
+        "stop_out_delta_pp": 4.809,
+        "dead_money_delta_pp": -8.374,
+        "clean_liftoff_delta_pp": 6.082
+      },
+      "63d": {
+        "n": 991,
+        "n_episodes": 550,
+        "stop_out": 0.676085,
+        "dead_money": 0.0,
+        "clean_liftoff": 0.305752,
+        "cushioned": 0.018163,
+        "stop_out_delta_pp": 5.295,
+        "dead_money_delta_pp": -0.085,
+        "clean_liftoff_delta_pp": -2.893
+      },
+      "halves": {
+        "H1": {
+          "21d": {
+            "n": 588,
+            "n_episodes": 307,
+            "stop_out": 0.37585,
+            "dead_money": 0.10034,
+            "clean_liftoff": 0.397959,
+            "cushioned": 0.12585
+          },
+          "63d": {
+            "n": 588,
+            "n_episodes": 307,
+            "stop_out": 0.654762,
+            "dead_money": 0.0,
+            "clean_liftoff": 0.316327,
+            "cushioned": 0.028912
+          }
+        },
+        "H2": {
+          "21d": {
+            "n": 403,
+            "n_episodes": 243,
+            "stop_out": 0.516129,
+            "dead_money": 0.096774,
+            "clean_liftoff": 0.312655,
+            "cushioned": 0.074442
+          },
+          "63d": {
+            "n": 403,
+            "n_episodes": 243,
+            "stop_out": 0.707196,
+            "dead_money": 0.0,
+            "clean_liftoff": 0.290323,
+            "cushioned": 0.002481
+          }
+        }
+      }
+    }
+  },
+  "partition_d_trio": {
+    "washout_ac_pass_rs_fav": {
+      "label": "washout_ac_pass_rs_fav",
+      "n_fires": 20146,
+      "n_episodes": 8882,
+      "21d": {
+        "n": 20146,
+        "n_episodes": 8882,
+        "stop_out": 0.38499,
+        "dead_money": 0.153331,
+        "clean_liftoff": 0.33421,
+        "cushioned": 0.127469,
+        "stop_out_delta_pp": 0.018,
+        "dead_money_delta_pp": -2.93,
+        "clean_liftoff_delta_pp": 3.176
+      },
+      "63d": {
+        "n": 20146,
+        "n_episodes": 8882,
+        "stop_out": 0.612181,
+        "dead_money": 5e-05,
+        "clean_liftoff": 0.355753,
+        "cushioned": 0.032016,
+        "stop_out_delta_pp": -1.096,
+        "dead_money_delta_pp": -0.08,
+        "clean_liftoff_delta_pp": 2.107
+      },
+      "halves": {
+        "H1": {
+          "21d": {
+            "n": 9562,
+            "n_episodes": 4227,
+            "stop_out": 0.339364,
+            "dead_money": 0.150178,
+            "clean_liftoff": 0.391654,
+            "cushioned": 0.118804
+          },
+          "63d": {
+            "n": 9562,
+            "n_episodes": 4227,
+            "stop_out": 0.555532,
+            "dead_money": 0.000105,
+            "clean_liftoff": 0.403995,
+            "cushioned": 0.040368
+          }
+        },
+        "H2": {
+          "21d": {
+            "n": 10584,
+            "n_episodes": 4670,
+            "stop_out": 0.426209,
+            "dead_money": 0.156179,
+            "clean_liftoff": 0.282313,
+            "cushioned": 0.135299
+          },
+          "63d": {
+            "n": 10584,
+            "n_episodes": 4670,
+            "stop_out": 0.66336,
+            "dead_money": 0.0,
+            "clean_liftoff": 0.312169,
+            "cushioned": 0.024471
+          }
+        }
+      }
+    },
+    "deep_washout_ac_pass_rs_fav": {
+      "label": "deep_washout_ac_pass_rs_fav",
+      "n_fires": 11371,
+      "n_episodes": 4946,
+      "21d": {
+        "n": 11371,
+        "n_episodes": 4946,
+        "stop_out": 0.404802,
+        "dead_money": 0.094275,
+        "clean_liftoff": 0.395216,
+        "cushioned": 0.105708,
+        "stop_out_delta_pp": 1.999,
+        "dead_money_delta_pp": -8.836,
+        "clean_liftoff_delta_pp": 9.277
+      },
+      "63d": {
+        "n": 11371,
+        "n_episodes": 4946,
+        "stop_out": 0.590098,
+        "dead_money": 0.0,
+        "clean_liftoff": 0.393633,
+        "cushioned": 0.016269,
+        "stop_out_delta_pp": -3.304,
+        "dead_money_delta_pp": -0.085,
+        "clean_liftoff_delta_pp": 5.895
+      },
+      "halves": {
+        "H1": {
+          "21d": {
+            "n": 5249,
+            "n_episodes": 2286,
+            "stop_out": 0.367118,
+            "dead_money": 0.087064,
+            "clean_liftoff": 0.452277,
+            "cushioned": 0.093542
+          },
+          "63d": {
+            "n": 5249,
+            "n_episodes": 2286,
+            "stop_out": 0.541055,
+            "dead_money": 0.0,
+            "clean_liftoff": 0.435702,
+            "cushioned": 0.023243
+          }
+        },
+        "H2": {
+          "21d": {
+            "n": 6122,
+            "n_episodes": 2667,
+            "stop_out": 0.437112,
+            "dead_money": 0.100457,
+            "clean_liftoff": 0.346292,
+            "cushioned": 0.116139
+          },
+          "63d": {
+            "n": 6122,
+            "n_episodes": 2667,
+            "stop_out": 0.632146,
+            "dead_money": 0.0,
+            "clean_liftoff": 0.357563,
+            "cushioned": 0.010291
+          }
+        }
+      }
+    },
+    "trio_complement": {
+      "label": "trio_complement",
+      "n_fires": 27036,
+      "n_episodes": 12914,
+      "21d": {
+        "n": 27036,
+        "n_episodes": 12914,
+        "stop_out": 0.384672,
+        "dead_money": 0.204468,
+        "clean_liftoff": 0.278776,
+        "cushioned": 0.132083,
+        "stop_out_delta_pp": -0.014,
+        "dead_money_delta_pp": 2.184,
+        "clean_liftoff_delta_pp": -2.367
+      },
+      "63d": {
+        "n": 27036,
+        "n_episodes": 12914,
+        "stop_out": 0.631306,
+        "dead_money": 0.001443,
+        "clean_liftoff": 0.318982,
+        "cushioned": 0.048269,
+        "stop_out_delta_pp": 0.817,
+        "dead_money_delta_pp": 0.06,
+        "clean_liftoff_delta_pp": -1.57
+      },
+      "halves": {
+        "H1": {
+          "21d": {
+            "n": 12739,
+            "n_episodes": 6075,
+            "stop_out": 0.343826,
+            "dead_money": 0.204176,
+            "clean_liftoff": 0.313525,
+            "cushioned": 0.138472
+          },
+          "63d": {
+            "n": 12739,
+            "n_episodes": 6075,
+            "stop_out": 0.590549,
+            "dead_money": 0.00157,
+            "clean_liftoff": 0.355758,
+            "cushioned": 0.052123
+          }
+        },
+        "H2": {
+          "21d": {
+            "n": 14297,
+            "n_episodes": 6892,
+            "stop_out": 0.421067,
+            "dead_money": 0.204728,
+            "clean_liftoff": 0.247814,
+            "cushioned": 0.12639
+          },
+          "63d": {
+            "n": 14297,
+            "n_episodes": 6892,
+            "stop_out": 0.667623,
+            "dead_money": 0.001329,
+            "clean_liftoff": 0.286214,
+            "cushioned": 0.044835
+          }
+        }
+      }
+    }
+  },
+  "ranking": [
+    {
+      "cell": "wash_F_ac_fail",
+      "n": 594,
+      "n_ep": 327,
+      "so21_delta_pp": -7.504,
+      "so63_delta_pp": 2.501,
+      "dm63_delta_pp": -0.085,
+      "abs_so_max": 7.504,
+      "sc21": true,
+      "sc63": true,
+      "dm_survives": true
+    },
+    {
+      "cell": "d40plus",
+      "n": 5698,
+      "n_ep": 2503,
+      "so21_delta_pp": 6.939,
+      "so63_delta_pp": -3.574,
+      "dm63_delta_pp": -0.032,
+      "abs_so_max": 6.939,
+      "sc21": true,
+      "sc63": true,
+      "dm_survives": true
+    },
+    {
+      "cell": "wash_T_ac_fail",
+      "n": 1655,
+      "n_ep": 915,
+      "so21_delta_pp": 2.667,
+      "so63_delta_pp": 6.266,
+      "dm63_delta_pp": -0.085,
+      "abs_so_max": 6.266,
+      "sc21": false,
+      "sc63": true,
+      "dm_survives": true
+    },
+    {
+      "cell": "deep_washout_ac_fail",
+      "n": 991,
+      "n_ep": 550,
+      "so21_delta_pp": 4.809,
+      "so63_delta_pp": 5.295,
+      "dm63_delta_pp": -0.085,
+      "abs_so_max": 5.295,
+      "sc21": false,
+      "sc63": true,
+      "dm_survives": true
+    },
+    {
+      "cell": "washout_false_below_200",
+      "n": 1365,
+      "n_ep": 661,
+      "so21_delta_pp": -4.561,
+      "so63_delta_pp": 0.836,
+      "dm63_delta_pp": 1.307,
+      "abs_so_max": 4.561,
+      "sc21": true,
+      "sc63": true,
+      "dm_survives": false
+    },
+    {
+      "cell": "wash_F_rs_Q1Q2",
+      "n": 4042,
+      "n_ep": 2002,
+      "so21_delta_pp": -4.042,
+      "so63_delta_pp": 0.452,
+      "dm63_delta_pp": 0.113,
+      "abs_so_max": 4.042,
+      "sc21": true,
+      "sc63": true,
+      "dm_survives": false
+    },
+    {
+      "cell": "washout_false_above_200",
+      "n": 9083,
+      "n_ep": 4475,
+      "so21_delta_pp": -3.646,
+      "so63_delta_pp": 0.65,
+      "dm63_delta_pp": 0.047,
+      "abs_so_max": 3.646,
+      "sc21": true,
+      "sc63": true,
+      "dm_survives": false
+    },
+    {
+      "cell": "wash_F_rs_Q3Q4",
+      "n": 6406,
+      "n_ep": 3265,
+      "so21_delta_pp": -3.592,
+      "so63_delta_pp": 0.814,
+      "dm63_delta_pp": 0.274,
+      "abs_so_max": 3.592,
+      "sc21": false,
+      "sc63": true,
+      "dm_survives": false
+    },
+    {
+      "cell": "washout_true_above_200",
+      "n": 12954,
+      "n_ep": 6487,
+      "so21_delta_pp": 1.437,
+      "so63_delta_pp": 3.55,
+      "dm63_delta_pp": -0.054,
+      "abs_so_max": 3.55,
+      "sc21": false,
+      "sc63": true,
+      "dm_survives": true
+    },
+    {
+      "cell": "wash_F_ac_pass",
+      "n": 9854,
+      "n_ep": 4772,
+      "so21_delta_pp": -3.541,
+      "so63_delta_pp": 0.564,
+      "dm63_delta_pp": 0.23,
+      "abs_so_max": 3.541,
+      "sc21": true,
+      "sc63": true,
+      "dm_survives": false
+    },
+    {
+      "cell": "deep_washout_ac_pass_rs_fav",
+      "n": 11371,
+      "n_ep": 4946,
+      "so21_delta_pp": 1.999,
+      "so63_delta_pp": -3.304,
+      "dm63_delta_pp": -0.085,
+      "abs_so_max": 3.304,
+      "sc21": false,
+      "sc63": true,
+      "dm_survives": true
+    },
+    {
+      "cell": "proxy_equiv_washout_proximity",
+      "n": 21099,
+      "n_ep": 8765,
+      "so21_delta_pp": 1.578,
+      "so63_delta_pp": -3.055,
+      "dm63_delta_pp": -0.066,
+      "abs_so_max": 3.055,
+      "sc21": false,
+      "sc63": true,
+      "dm_survives": true
+    },
+    {
+      "cell": "wash_T_rs_Q3Q4",
+      "n": 16588,
+      "n_ep": 7943,
+      "so21_delta_pp": 2.35,
+      "so63_delta_pp": 0.906,
+      "dm63_delta_pp": -0.037,
+      "abs_so_max": 2.35,
+      "sc21": false,
+      "sc63": true,
+      "dm_survives": true
+    },
+    {
+      "cell": "washout_true_below_200",
+      "n": 23780,
+      "n_ep": 10266,
+      "so21_delta_pp": 0.872,
+      "so63_delta_pp": -2.23,
+      "dm63_delta_pp": -0.064,
+      "abs_so_max": 2.23,
+      "sc21": false,
+      "sc63": true,
+      "dm_survives": true
+    },
+    {
+      "cell": "d15_25",
+      "n": 16326,
+      "n_ep": 7305,
+      "so21_delta_pp": -1.442,
+      "so63_delta_pp": 1.964,
+      "dm63_delta_pp": -0.048,
+      "abs_so_max": 1.964,
+      "sc21": false,
+      "sc63": true,
+      "dm_survives": true
+    },
+    {
+      "cell": "deep_washout_ac_pass",
+      "n": 25077,
+      "n_ep": 10759,
+      "so21_delta_pp": 1.652,
+      "so63_delta_pp": -1.944,
+      "dm63_delta_pp": -0.069,
+      "abs_so_max": 1.944,
+      "sc21": false,
+      "sc63": true,
+      "dm_survives": true
+    },
+    {
+      "cell": "d25_40",
+      "n": 14710,
+      "n_ep": 6362,
+      "so21_delta_pp": 1.587,
+      "so63_delta_pp": -1.274,
+      "dm63_delta_pp": -0.085,
+      "abs_so_max": 1.587,
+      "sc21": false,
+      "sc63": true,
+      "dm_survives": true
+    },
+    {
+      "cell": "wash_T_rs_Q1Q2",
+      "n": 20146,
+      "n_ep": 8882,
+      "so21_delta_pp": 0.018,
+      "so63_delta_pp": -1.096,
+      "dm63_delta_pp": -0.08,
+      "abs_so_max": 1.096,
+      "sc21": false,
+      "sc63": true,
+      "dm_survives": true
+    },
+    {
+      "cell": "washout_ac_pass_rs_fav",
+      "n": 20146,
+      "n_ep": 8882,
+      "so21_delta_pp": 0.018,
+      "so63_delta_pp": -1.096,
+      "dm63_delta_pp": -0.08,
+      "abs_so_max": 1.096,
+      "sc21": false,
+      "sc63": true,
+      "dm_survives": true
+    },
+    {
+      "cell": "wash_T_ac_pass",
+      "n": 35079,
+      "n_ep": 15431,
+      "so21_delta_pp": 0.996,
+      "so63_delta_pp": -0.496,
+      "dm63_delta_pp": -0.059,
+      "abs_so_max": 0.996,
+      "sc21": false,
+      "sc63": true,
+      "dm_survives": true
+    },
+    {
+      "cell": "trio_complement",
+      "n": 27036,
+      "n_ep": 12914,
+      "so21_delta_pp": -0.014,
+      "so63_delta_pp": 0.817,
+      "dm63_delta_pp": 0.06,
+      "abs_so_max": 0.817,
+      "sc21": false,
+      "sc63": true,
+      "dm_survives": false
+    }
+  ]
+}

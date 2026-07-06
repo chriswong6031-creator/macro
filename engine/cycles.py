@@ -666,13 +666,8 @@ def entry_timing(state: str, cyc: dict, mtf: dict) -> dict:
     if state == "COUNTERTREND BOUNCE":
         inval = cyc.get("cand_price") or cyc.get("dcl_price")
         return {"tag": "UNCONFIRMED — HIGH RISK", "tag_zh": "未确认 — 高风险", "urgency": "caution",
-                "text": "An unconfirmed turn: a daily low is forming while the bigger picture is "
-                        f"still bearish. Nimble traders only — small size, defined stop below {inval}. "
-                        "Not an investment buy until the weekly confirms; most of these fail, a "
-                        "minority start a new cycle.",
-                "text_zh": "未确认转向：日线低点正在形成，但大局仍偏空。仅限灵活交易者——小仓位、"
-                           f"止损设于 {inval} 下方。在周线确认前并非投资性买入；多数最终失败，"
-                           "少数则开启新周期。"}
+                "text": f"Daily low forming, but the bigger trend is still bearish. Small size only; stop below {inval}.",
+                "text_zh": f"日线低点正在形成，但大趋势仍偏空。只适合小仓位；止损设于 {inval} 下方。"}
     if state == "FRESH BUY":
         if cyc.get("dc_phase") == "stretched":
             # the count is stretched well past the band — an UNCONFIRMED new cycle, not a
@@ -1328,6 +1323,49 @@ def ladder_state(cyc: dict, mtf: dict, early: dict | None = None,
                           "10-day average or the next cycle low. Hold if already long."),
                  "text_zh": (f"已错过筑底入场——低点已经形成，目前价格已拉伸（{caveat_zh}）。"
                              "不要追高；等待回调至 10 日均线或下一个周期低点。若已持有则继续持有。")}
+
+    # ── Below-MA10 TURN SIGNALED de-escalation gate ──────────────────────────
+    # The branch at ~line 929 fires when price is LATE in the cycle, a swing low
+    # is printed, but price has NOT reclaimed the 10-day average (above_ma10=False).
+    # This produces state=TURN SIGNALED + entry.urgency="imminent" (BUY SOON).
+    # The upstream extension gate (line 1083) is gated on `above_ma10` so it skips
+    # this branch entirely, even when rollover_veto is True (daily MACD near/at a
+    # bearish cross, late) or when oscillators flag the move as overextended.
+    # De-escalation ONLY (house law): when the buy-side state landed here AND
+    # rollover_veto OR oscillator overextension is True, downgrade urgency to
+    # "caution" (bucketer → take_profits / hold) and tag to "BOTTOMING · EXTENDED — WAIT".
+    # State label is kept as-is (TURN SIGNALED / BOTTOMING). Never escalates.
+    if (state in ("FRESH BUY", "TURN SIGNALED")
+            and not cyc.get("above_ma10")
+            and (rollover_veto or _overextended(mtf))
+            and entry.get("urgency") in ("now", "imminent", "soon")):
+        if _overextended(mtf):
+            # Oscillators genuinely overbought — price has run too far, not a safe entry.
+            entry = {"tag": "BOTTOMING · EXTENDED — WAIT",
+                     "tag_zh": "筑底 · 已过热 — 等待",
+                     "urgency": "caution",
+                     "text": ("The bottoming setup is not yet confirmed (price still below the 10-day "
+                              "average) and oscillators are already extended/overbought — not a safe "
+                              "entry. Wait for price to reclaim the 10-day average with momentum "
+                              "stabilising before sizing in."),
+                     "text_zh": ("筑底形态尚未确认（价格仍位于 10 日均线下方），且摆动指标已过热——"
+                                 "此处入场风险较高。等待价格收复 10 日均线且动量趋于稳定后再考虑建仓。")}
+        else:
+            # Fired via rollover_veto only — higher-TF momentum is rolling over, but
+            # oscillators are not overbought. The setup is unconfirmed, not "extended".
+            tf_word = ("the 3-day/weekly momentum has crossed down" if htf_rollover
+                       else "the daily momentum is already rolling over")
+            tf_word_zh = ("3 日/周线动量已向下交叉" if htf_rollover
+                          else "日线动量已开始掉头向下")
+            entry = {"tag": "BOTTOMING · UNCONFIRMED — WAIT",
+                     "tag_zh": "筑底 · 未确认 — 等待",
+                     "urgency": "caution",
+                     "text": ("The bottoming setup is not yet confirmed (price still below the 10-day "
+                              f"average) and {tf_word} — momentum is fading before the setup has "
+                              "completed. Wait for price to reclaim the 10-day average with momentum "
+                              "stabilising before sizing in."),
+                     "text_zh": (f"筑底形态尚未确认（价格仍位于 10 日均线下方），且{tf_word_zh}——"
+                                 "动量在形态完成前已开始衰竭。等待价格收复 10 日均线且动量趋于稳定后再考虑建仓。")}
 
     # ── Two-axis summary: TACTICAL (this daily state) vs REGIME (bigger picture),
     # plus how long the current move has been running ("ongoing" context).

@@ -79,14 +79,61 @@ __all__ = [
     "rebuild_from_adapters",
 ]
 
-SCHEMA = "spine.predictions.v1"
+SCHEMA = "spine.predictions.v2"
 
 # The canonical row contract. Every adapter and every direct emitter yields exactly these.
+# W1 adds: is_sizing, is_veto, is_alpha, is_timing, is_context, falsifier, half_life
+# appended at the END to preserve positional compatibility with any legacy reader.
 COLUMNS = [
     "signal_id", "engine", "version", "family", "as_of", "symbol", "universe",
     "horizon", "score", "size_binding", "direction", "event_key", "outcome_excess",
     "outcome_graded", "graded_at", "meta",
+    # W1 Spine v2 — descriptive role flags (additive; no consumer uses them to gate money)
+    "is_sizing",    # True iff this row sized real (paper) money  (= size_binding)
+    "is_veto",      # True iff this is a short/avoid lane (direction < 0 and not size_binding)
+    "is_alpha",     # True iff directional long conviction that was sized (size_binding and direction > 0)
+    "is_timing",    # Left False this wave — no mechanical source; see open questions
+    "is_context",   # Catch-all default: True when none of the above apply
+    "falsifier",    # Human-facing falsifier text (nullable str); machine `check` stays in meta
+    "half_life",    # Decay half-life in trading days (nullable float); filled by W2
 ]
+
+# Conservative defaults for the 5 flag columns on read (old parquet backfill).
+# is_context must be True for old rows (they were context before the flag existed).
+_FLAG_DEFAULTS: dict[str, object] = {
+    "is_sizing":  False,
+    "is_veto":    False,
+    "is_alpha":   False,
+    "is_timing":  False,
+    "is_context": True,
+}
+
+
+def _derive_role_flags(size_binding: bool, direction: int) -> dict:
+    """Derive the 5 descriptive role flags from mechanical spine fields.
+
+    Derivation (R8 conservative):
+      is_sizing  = size_binding
+      is_veto    = (direction < 0) and not size_binding
+      is_alpha   = size_binding and (direction > 0)
+      is_timing  = False  (no mechanical source this wave — open question)
+      is_context = not (is_sizing or is_veto or is_alpha)  # catch-all default
+
+    Badge precedence for one-badge display: veto > alpha > sizing > timing > context.
+    Flags are non-exclusive (buy rows have is_sizing AND is_alpha both True).
+    """
+    is_sizing  = bool(size_binding)
+    is_veto    = bool((direction < 0) and not size_binding)
+    is_alpha   = bool(is_sizing and (direction > 0))
+    is_timing  = False
+    is_context = not (is_sizing or is_veto or is_alpha)
+    return {
+        "is_sizing":  is_sizing,
+        "is_veto":    is_veto,
+        "is_alpha":   is_alpha,
+        "is_timing":  is_timing,
+        "is_context": is_context,
+    }
 
 
 @dataclass
@@ -112,14 +159,42 @@ class SpinePrediction:
     outcome_graded: bool = False
     graded_at: str | None = None
     meta: dict = field(default_factory=dict)
+    # W1 Spine v2 — descriptive role flags (descriptive-only; never gate a money path)
+    is_sizing:  bool = False    # derived from size_binding
+    is_veto:    bool = False    # derived from direction < 0 and not size_binding
+    is_alpha:   bool = False    # derived from size_binding and direction > 0
+    is_timing:  bool = False    # always False this wave (no mechanical source)
+    is_context: bool = True     # catch-all default
+    falsifier:  str | None = None   # human-facing falsifier text (nullable)
+    half_life:  float | None = None  # decay half-life in trading days; filled by W2
 
     def __post_init__(self):
         if not self.event_key:
             self.event_key = f"{self.symbol}:{self.as_of}"
+        # Auto-derive role flags from size_binding / direction if caller left them at defaults.
+        # Flags are derivation-cached: if the caller explicitly set them we respect that.
+        # Conservative guard: only overwrite if all 5 are at factory defaults (all False / is_context True).
+        _all_default = (
+            not self.is_sizing and not self.is_veto and not self.is_alpha
+            and not self.is_timing and self.is_context
+        )
+        if _all_default:
+            flags = _derive_role_flags(self.size_binding, self.direction)
+            self.is_sizing  = flags["is_sizing"]
+            self.is_veto    = flags["is_veto"]
+            self.is_alpha   = flags["is_alpha"]
+            self.is_timing  = flags["is_timing"]
+            self.is_context = flags["is_context"]
 
     def as_row(self) -> dict:
         d = asdict(self)
         d["meta"] = json.dumps(d.get("meta") or {}, default=str)
+        # Ensure flag values are native Python bool (guard against np.bool_ poisoning json)
+        for flag in ("is_sizing", "is_veto", "is_alpha", "is_timing", "is_context"):
+            d[flag] = bool(d[flag])
+        # half_life must be Python float or None (not np.float64)
+        hl = d.get("half_life")
+        d["half_life"] = float(hl) if hl is not None else None
         return d
 
 
@@ -140,7 +215,11 @@ def _empty() -> pd.DataFrame:
 
 
 def load(root=None) -> pd.DataFrame:
-    """The full predictions frame (canonical columns), or an empty frame. Never raises."""
+    """The full predictions frame (canonical columns), or an empty frame. Never raises.
+
+    W1 R8 backfill: old 16-col parquet loads with conservative flag defaults so
+    is_context=True (not null) for pre-W1 rows.  falsifier=None, half_life=NaN.
+    """
     p = spine_path(root)
     if not p.exists():
         return _empty()
@@ -148,8 +227,19 @@ def load(root=None) -> pd.DataFrame:
         df = pd.read_parquet(p)
         for c in COLUMNS:
             if c not in df.columns:
-                df[c] = None
-        return df[COLUMNS]
+                # Apply R8 conservative defaults (not None) for the 5 role flags
+                default = _FLAG_DEFAULTS.get(c, None)
+                df[c] = default
+        df = df[COLUMNS]
+        # Backfill flag columns for rows where they are None/NaN (old parquet rows).
+        for flag, default_val in _FLAG_DEFAULTS.items():
+            if flag in df.columns:
+                df[flag] = df[flag].fillna(default_val)
+        # Cast flag columns to Python bool (nullable object → bool-safe)
+        for flag in _FLAG_DEFAULTS:
+            if flag in df.columns:
+                df[flag] = df[flag].astype(bool)
+        return df
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("spine.load failed: %s", e)
         return _empty()
@@ -256,7 +346,11 @@ def adapt_us_board(root=None) -> list[SpinePrediction]:
     """US board ledger → spine rows. Reads data/us_board_ledger/retro_grades.parquet (already
     next-bar-filled and excess-vs-SPY graded by scripts/grade_us_board.py). BOTH lanes: the
     ``buy`` lane is size-binding (direction +1), ``watch``/``laggards`` are context (0) so
-    they still accrue IC but never claim to have sized money."""
+    they still accrue IC but never claim to have sized money.
+
+    W1: role flags derived mechanically; falsifier=None for all us_board rows (retro_grades.parquet
+    carries no falsifier field — correct null story, not a gap to fill).
+    """
     from lib import config
     base = config.data_dir() if root is None else (Path(root) / "data")
     p = base / "us_board_ledger" / "retro_grades.parquet"
@@ -279,17 +373,27 @@ def adapt_us_board(root=None) -> list[SpinePrediction]:
         # laggards is a SHORT-lean lane (we expect it to underperform) → direction -1 so a
         # correctly-avoided loser earns positive credit; buy/watch are long-lean.
         direction = -1 if lane in ("laggards", "laggard") else 1
+        sb = (lane == "buy")
+        flags = _derive_role_flags(sb, direction)
         out.append(SpinePrediction(
             signal_id=f"us_board:{as_of}:{tk}:{lane}:{int(h)}",
             engine="us_board", family=f"us_board:{('laggards' if direction < 0 else lane)}",
             as_of=as_of, symbol=tk, horizon=int(h),
             score=float(r["composite_z"]) if pd.notna(r.get("composite_z")) else 0.0,
             direction=direction,
-            size_binding=(lane == "buy"),
+            size_binding=sb,
             universe="us_1500",
             outcome_excess=float(ex) if pd.notna(ex) else None,
             outcome_graded=pd.notna(ex),
             meta={"lane": lane, "position": _num(r.get("position"))},
+            # W1 Spine v2 flags — descriptive-only, never gate a money path
+            is_sizing=flags["is_sizing"],
+            is_veto=flags["is_veto"],
+            is_alpha=flags["is_alpha"],
+            is_timing=flags["is_timing"],
+            is_context=flags["is_context"],
+            falsifier=None,  # retro_grades.parquet carries no falsifier — correct null story
+            half_life=None,  # filled by W2
         ))
     return out
 
@@ -298,13 +402,19 @@ def adapt_altdata(root=None) -> list[SpinePrediction]:
     """Alt-data convergence ledger → spine rows carrying the co-firing channel set. Reads the
     theses (channels, entry) and the matured outcomes (scored.jsonl). ``event_key`` is the
     THESIS id — every channel that co-fired on the same name/day is one event, so downstream
-    can penalise same-event correlation (#23) instead of counting channels as independent."""
+    can penalise same-event correlation (#23) instead of counting channels as independent.
+
+    W1: falsifier text mapped from thesis["falsifier"]["text"] (available on all 134 rows).
+    Role flags: altdata is always context-only (size_binding=False, direction=1).
+    """
     from engine.altdata_ledger import _LEDGER, _SCORED, _p
     from engine.desk_scorer import load_jsonl, dedupe_by_id
     from lib import config
     r = Path(root) if root else config.ROOT
     theses = dedupe_by_id(load_jsonl(_p(r, _LEDGER)))
     scored = dedupe_by_id(load_jsonl(_p(r, _SCORED)))
+    # altdata: size_binding=False, direction=1 → always is_context=True per R8
+    _flags = _derive_role_flags(False, 1)
     out: list[SpinePrediction] = []
     for tid, th in theses.items():
         sc = scored.get(tid) or {}
@@ -315,6 +425,9 @@ def adapt_altdata(root=None) -> list[SpinePrediction]:
         tk = th.get("ticker") or ""
         as_of = th.get("state_asof") or ""
         score = float(th.get("convergence_score") or len(chans))
+        # Extract falsifier text (the machine check dict stays in meta)
+        falsifier_obj = th.get("falsifier") or {}
+        falsifier_text: str | None = falsifier_obj.get("text") if isinstance(falsifier_obj, dict) else None
         # For a convergence thesis the realized number is the rel_return vs SPY; 'miss' means
         # it UNDERperformed. outcome_excess carries the signed realized excess directly.
         out.append(SpinePrediction(
@@ -326,7 +439,16 @@ def adapt_altdata(root=None) -> list[SpinePrediction]:
             outcome_excess=float(realized) if graded else None,
             outcome_graded=bool(graded),
             meta={"channels": list(chans), "trump_linked": bool(th.get("trump_linked")),
-                  "convergence_score": int(score)},
+                  "convergence_score": int(score),
+                  "falsifier_check": falsifier_obj.get("check") if isinstance(falsifier_obj, dict) else None},
+            # W1 Spine v2 flags
+            is_sizing=_flags["is_sizing"],
+            is_veto=_flags["is_veto"],
+            is_alpha=_flags["is_alpha"],
+            is_timing=_flags["is_timing"],
+            is_context=_flags["is_context"],
+            falsifier=falsifier_text,
+            half_life=None,
         ))
     return out
 
@@ -349,14 +471,34 @@ def adapt_desk_scorer(root=None, desks: dict | None = None) -> list[SpinePredict
     desk 'family' is what engine.desk_scorer pools toward the cross-desk mean so a cold desk
     (n=5) shrinks to the family prior instead of keeping full equal-weight (#13/#19). The
     realized rel_return becomes outcome_excess; a 'miss' is a negative-signed outcome so a
-    reliably-wrong desk's pooled weight can go NEGATIVE (sign-safety)."""
+    reliably-wrong desk's pooled weight can go NEGATIVE (sign-safety).
+
+    W1: falsifier text joined from sibling theses.jsonl (same dir as scored.jsonl) keyed by id.
+    scored.jsonl does NOT carry falsifier — theses.jsonl does.  Join is nullable: rows whose
+    id is absent from theses.jsonl get falsifier=None.
+    Role flags: desks are always context-only (size_binding=False, direction=1).
+    """
     from lib import config
     from engine.desk_scorer import load_jsonl
     r = Path(root) if root else config.ROOT
     desks = desks or _DESK_SCORED
+    # Desks are context-only: size_binding=False, direction=1 → is_context=True
+    _flags = _derive_role_flags(False, 1)
     out: list[SpinePrediction] = []
     for name, parts in desks.items():
-        rows = load_jsonl(Path(r).joinpath(*parts))
+        scored_path = Path(r).joinpath(*parts)
+        rows = load_jsonl(scored_path)
+        # Load theses.jsonl for falsifier join (sibling file at same dir as scored.jsonl)
+        theses_path = scored_path.parent / "theses.jsonl"
+        theses_by_id: dict[str, dict] = {}
+        if theses_path.exists():
+            try:
+                for th in load_jsonl(theses_path):
+                    tid = th.get("id")
+                    if tid:
+                        theses_by_id[str(tid)] = th
+            except Exception as e:  # noqa: BLE001
+                log.debug("adapt_desk_scorer: theses.jsonl read failed for %s: %s", name, e)
         for sr in rows:
             outcome = sr.get("outcome")
             if outcome not in ("hit", "miss"):
@@ -372,6 +514,12 @@ def adapt_desk_scorer(root=None, desks: dict | None = None) -> list[SpinePredict
                 excess = 1.0 if outcome == "hit" else -1.0
             else:
                 excess = float(realized) if outcome == "hit" else -abs(float(realized))
+            # Falsifier join: look up thesis by id; extract text only (machine check stays in meta)
+            thesis = theses_by_id.get(str(sid))
+            falsifier_obj = (thesis or {}).get("falsifier") or {}
+            falsifier_text: str | None = (
+                falsifier_obj.get("text") if isinstance(falsifier_obj, dict) else None
+            )
             out.append(SpinePrediction(
                 signal_id=f"desk:{name}:{sid}",
                 engine=f"desk:{name}", family=f"desk:{name}",
@@ -382,6 +530,14 @@ def adapt_desk_scorer(root=None, desks: dict | None = None) -> list[SpinePredict
                 meta={"conviction": sr.get("conviction"), "lean": sr.get("lean"),
                       "kind": sr.get("kind"), "outcome": outcome,
                       "dir_ok": sr.get("directionally_correct")},
+                # W1 Spine v2 flags
+                is_sizing=_flags["is_sizing"],
+                is_veto=_flags["is_veto"],
+                is_alpha=_flags["is_alpha"],
+                is_timing=_flags["is_timing"],
+                is_context=_flags["is_context"],
+                falsifier=falsifier_text,
+                half_life=None,
             ))
     return out
 

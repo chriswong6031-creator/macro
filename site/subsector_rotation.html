@@ -21,54 +21,74 @@
   .sr-foot { color:var(--muted); font-size:11px; margin:16px 2px 0; line-height:1.6; }
 
   /* ── Time Machine ── */
-  .tm-section { margin:40px 2px 0; }
-  .tm-section h2 { font-size:18px; font-weight:800; letter-spacing:-.01em; margin:0 0 4px; }
-  .tm-sub { color:var(--muted); font-size:12.5px; margin-bottom:18px; }
+  .tm-section { margin:44px 2px 0; }
+  .tm-section h2 { font-size:19px; font-weight:800; letter-spacing:-.015em; margin:0 0 5px; }
+  .tm-sub { color:var(--muted); font-size:12.5px; margin-bottom:16px; max-width:82ch; line-height:1.55; }
 
-  /* Unit toggle row */
-  .tm-unit-row { margin-bottom:10px; }
-  .tm-tier-btns { display:flex; gap:4px; flex-wrap:wrap; }
-  .tm-tier-btn { padding:4px 11px; border-radius:20px; border:1px solid var(--line); background:transparent;
-    color:var(--muted); font:inherit; font-size:12px; cursor:pointer; transition:background .15s,color .15s,border-color .15s; }
-  .tm-tier-btn.active { background:var(--text); color:var(--bg); border-color:var(--text); }
+  /* Unit toggle — segmented control */
+  .tm-unit-row { margin-bottom:11px; }
+  .tm-tier-btns { display:inline-flex; gap:3px; background:var(--panel2); border:1px solid var(--line); border-radius:11px; padding:3px; }
+  .tm-tier-btn { padding:5px 13px; border-radius:8px; border:1px solid transparent; background:transparent;
+    color:var(--muted); font:inherit; font-size:12px; font-weight:600; cursor:pointer; white-space:nowrap;
+    transition:background .16s,color .16s,box-shadow .16s; }
+  .tm-tier-btn:hover { color:var(--text); }
+  .tm-tier-btn.active { background:var(--panel); color:var(--text); box-shadow:0 1px 3px rgba(0,0,0,.18); }
 
   /* Year chip row */
-  .tm-year-row { margin-bottom:10px; overflow-x:auto; -webkit-overflow-scrolling:touch; }
-  .tm-year-chips { display:flex; gap:5px; padding-bottom:2px; min-width:max-content; }
-  .tm-year-chip { padding:3px 10px; border-radius:16px; border:1px solid var(--line); background:transparent;
-    color:var(--muted); font:inherit; font-size:11.5px; cursor:pointer; white-space:nowrap;
+  .tm-year-row { margin-bottom:12px; overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:thin; }
+  .tm-year-chips { display:flex; gap:4px; padding-bottom:3px; min-width:max-content; }
+  .tm-year-chip { padding:3px 11px; border-radius:8px; border:1px solid var(--line); background:transparent;
+    color:var(--muted); font:inherit; font-size:11.5px; font-variant-numeric:tabular-nums; cursor:pointer; white-space:nowrap;
     transition:background .12s,color .12s,border-color .12s; }
-  .tm-year-chip:hover { background:var(--panel2); color:var(--text); }
-  .tm-year-chip.active { background:var(--link); color:#fff; border-color:var(--link); }
+  .tm-year-chip:hover { background:var(--panel2); color:var(--text); border-color:color-mix(in srgb,var(--text) 20%,var(--line)); }
+  .tm-year-chip.active { background:var(--link); color:#fff; border-color:var(--link); box-shadow:0 2px 8px color-mix(in srgb,var(--link) 38%,transparent); }
   .tm-year-now { font-style:italic; }
 
-  /* Playback controls */
-  .tm-controls { display:flex; flex-wrap:wrap; align-items:center; gap:8px 14px; margin-bottom:12px; }
-  .tm-play-btn { width:30px; height:30px; border-radius:50%; border:1px solid var(--line); background:transparent;
-    color:var(--text); font:inherit; font-size:14px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
-  .tm-play-btn:hover { background:var(--panel2); }
-  .tm-speed-sel { background:var(--panel); color:var(--text); border:1px solid var(--line); border-radius:6px;
-    padding:3px 7px; font:inherit; font-size:12px; cursor:pointer; }
-  .tm-date-lbl { font-size:13px; font-weight:600; min-width:80px; }
+  /* Playback controls — a compact media bar */
+  .tm-controls { display:flex; flex-wrap:wrap; align-items:center; gap:10px 12px; margin-bottom:10px;
+    padding:7px 11px; background:var(--panel2); border:1px solid var(--line); border-radius:12px; }
+  .tm-play-btn { width:34px; height:34px; border-radius:50%; border:none; background:var(--link);
+    color:#fff; font:inherit; font-size:14px; cursor:pointer; display:flex; align-items:center; justify-content:center;
+    box-shadow:0 2px 10px color-mix(in srgb,var(--link) 45%,transparent); transition:transform .12s,filter .16s; }
+  .tm-play-btn:hover { transform:scale(1.08); filter:brightness(1.07); }
+  .tm-play-btn:active { transform:scale(.95); }
+  .tm-speed-sel { background:var(--panel); color:var(--text); border:1px solid var(--line); border-radius:8px;
+    padding:5px 26px 5px 10px; font:inherit; font-size:12px; font-weight:600; cursor:pointer; -webkit-appearance:none; appearance:none;
+    background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);
+    background-position:calc(100% - 14px) 52%,calc(100% - 9px) 52%; background-size:5px 5px,5px 5px; background-repeat:no-repeat; }
+  .tm-speed-sel:hover { border-color:color-mix(in srgb,var(--text) 24%,var(--line)); }
+  .tm-date-lbl { font-size:14px; font-weight:700; min-width:96px; font-variant-numeric:tabular-nums; letter-spacing:.01em; color:var(--text); }
   .tm-kb-hint { font-size:10.5px; color:var(--muted); margin-left:auto; }
-  .tm-slider-wrap { width:100%; margin-bottom:8px; }
-  .tm-slider { width:100%; accent-color:var(--up); }
+  .tm-slider-wrap { width:100%; margin:2px 0 10px; }
+  .tm-slider { width:100%; height:20px; -webkit-appearance:none; appearance:none; background:transparent; cursor:pointer; }
+  .tm-slider::-webkit-slider-runnable-track { height:5px; border-radius:3px; background:var(--panel2); border:1px solid var(--line); }
+  .tm-slider::-moz-range-track { height:5px; border-radius:3px; background:var(--panel2); border:1px solid var(--line); }
+  .tm-slider::-webkit-slider-thumb { -webkit-appearance:none; appearance:none; width:16px; height:16px; margin-top:-6.5px; border-radius:50%;
+    background:var(--link); border:2px solid var(--panel); box-shadow:0 1px 5px rgba(0,0,0,.3); transition:transform .1s; }
+  .tm-slider::-moz-range-thumb { width:16px; height:16px; border-radius:50%; background:var(--link); border:2px solid var(--panel); box-shadow:0 1px 5px rgba(0,0,0,.3); }
+  .tm-slider:hover::-webkit-slider-thumb { transform:scale(1.14); }
+  .tm-slider:focus-visible { outline:none; }
+  .tm-slider:focus-visible::-webkit-slider-thumb { box-shadow:0 0 0 4px color-mix(in srgb,var(--link) 35%,transparent); }
 
   /* Map + episodes layout */
-  .tm-scatter-wrap { display:flex; flex-wrap:wrap; gap:12px; }
-  .tm-map-box { flex:1 1 340px; min-width:280px; min-height:300px;
-    border-radius:12px; border:1px solid var(--line); background:var(--panel); overflow:hidden; }
+  .tm-scatter-wrap { display:flex; flex-wrap:wrap; gap:14px; }
+  .tm-map-box { flex:1 1 360px; min-width:280px; min-height:300px; position:relative;
+    border-radius:16px; border:1px solid var(--line); overflow:hidden;
+    background:radial-gradient(120% 120% at 50% 0%, color-mix(in srgb,var(--text) 4%,var(--panel)) 0%, var(--panel) 62%);
+    box-shadow:inset 0 1px 0 color-mix(in srgb,var(--text) 8%,transparent), 0 4px 18px rgba(0,0,0,.10); }
   .tm-map-box .sr-map { border-radius:0; border:none; }
-  .tm-episodes-panel { flex:0 0 240px; min-width:220px; max-height:420px; overflow-y:auto; }
-  .tm-ep-hd { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.06em;
-    color:var(--muted); margin:0 0 8px; }
-  .tm-ep-item { margin-bottom:8px; padding:7px 10px; border-radius:6px; background:var(--panel2);
-    border:1px solid var(--line); font-size:12px; line-height:1.5; }
+  .tm-episodes-panel { flex:0 0 244px; min-width:220px; max-height:440px; overflow-y:auto; scrollbar-width:thin;
+    border-radius:14px; border:1px solid var(--line); background:var(--panel); padding:12px; }
+  .tm-ep-hd { font-size:10.5px; font-weight:800; text-transform:uppercase; letter-spacing:.07em;
+    color:var(--muted); margin:0 0 9px; }
+  .tm-ep-item { margin-bottom:7px; padding:8px 11px; border-radius:9px; background:var(--panel2);
+    border:1px solid var(--line); font-size:12px; line-height:1.5; transition:border-color .12s; }
+  .tm-ep-item:hover { border-color:color-mix(in srgb,var(--text) 18%,var(--line)); }
   .tm-ep-dir-in  { border-left:3px solid var(--up); }
   .tm-ep-dir-out { border-left:3px solid var(--down); }
-  .tm-ep-node { font-weight:600; }
-  .tm-ep-badge { display:inline-block; font-size:10px; font-weight:600; text-transform:uppercase;
-    padding:1px 5px; border-radius:4px; margin-left:4px; vertical-align:middle;
+  .tm-ep-node { font-weight:700; }
+  .tm-ep-badge { display:inline-block; font-size:9.5px; font-weight:700; text-transform:uppercase;
+    padding:1px 6px; border-radius:5px; margin-left:4px; vertical-align:middle; letter-spacing:.03em;
     background:color-mix(in srgb, var(--muted) 15%, transparent); color:var(--muted); }
   .tm-ep-badge.onset     { background:color-mix(in srgb, var(--warn) 18%, transparent); color:var(--warn); }
   .tm-ep-badge.confirmed { background:color-mix(in srgb, var(--up) 18%, transparent); color:var(--up); }
@@ -76,11 +96,21 @@
   .tm-ep-pair { font-size:11px; color:var(--muted); margin-top:2px; }
   .tm-ep-empty { color:var(--muted); font-size:12px; }
   .tm-presets { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:14px; align-items:center; }
-  .tm-preset-btn { padding:4px 10px; border-radius:16px; border:1px solid var(--line); background:transparent;
-    color:var(--muted); font:inherit; font-size:11.5px; cursor:pointer; transition:background .15s,color .15s; }
-  .tm-preset-btn:hover { background:var(--panel2); color:var(--text); }
-  .tm-watermark { font-size:11px; color:var(--muted); margin-top:4px; margin-bottom:4px; }
-  .tm-loading { color:var(--muted); font-size:13px; padding:32px 0; text-align:center; }
+  .tm-preset-btn { padding:5px 12px; border-radius:9px; border:1px solid var(--line); background:var(--panel);
+    color:var(--muted); font:inherit; font-size:11.5px; font-weight:600; cursor:pointer; transition:background .15s,color .15s,border-color .15s; }
+  .tm-preset-btn:hover { background:var(--panel2); color:var(--text); border-color:color-mix(in srgb,var(--link) 45%,var(--line)); }
+  .tm-watermark { font-size:11px; color:var(--muted); margin-top:8px; margin-bottom:4px; }
+  .tm-loading { color:var(--muted); font-size:13px; padding:40px 0; text-align:center; }
+
+  /* Strength gauge (shown in the hover tooltip) */
+  .sr-tip-score { margin-top:8px; padding-top:8px; border-top:1px solid var(--line); }
+  .sr-tip-score-hd { display:flex; align-items:baseline; gap:5px; font-size:10.5px; color:var(--muted);
+    text-transform:uppercase; letter-spacing:.05em; font-weight:700; }
+  .sr-tip-score-hd b { margin-left:auto; font-size:15px; color:var(--text); font-variant-numeric:tabular-nums; }
+  .sr-tip-score-hd i { font-style:normal; font-size:10px; color:var(--muted); }
+  .sr-tip-gauge { margin-top:4px; height:6px; border-radius:4px; background:var(--panel2); border:1px solid var(--line); overflow:hidden; }
+  .sr-tip-gauge span { display:block; height:100%; border-radius:4px; transition:width .2s; }
+  .sr-tip-cap { margin-top:5px; font-size:9.5px; color:var(--muted); font-style:italic; }
   @media (max-width:520px) {
     .tm-scatter-wrap { flex-direction:column; }
     .tm-episodes-panel { max-height:220px; flex:none; width:100%; }
@@ -139,6 +169,9 @@
         <a href="news.html">📰 <span class="l-en">News Feed</span><span class="l-zh">新闻流</span><span class="d"><span class="l-en">Macro headlines · catalysts · sentiment</span><span class="l-zh">宏观头条 · 日程 · 情绪</span></span></a>
         <a href="alerts.html">🚨 <span class="l-en">Alert Center</span><span class="l-zh">警报中心</span><span class="d"><span class="l-en">Ranked & triaged alerts</span><span class="l-zh">分级分诊的警报</span></span></a>
         <a href="gex.html">🧲 <span class="l-en">Options Desk</span><span class="l-zh">期权台</span><span class="d"><span class="l-en">GEX · walls · vol surface</span><span class="l-zh">GEX · 墙 · 波动率曲面</span></span></a>
+        <a href="flow_desk.html">🌊 <span class="l-en">Group Flow Heatmap</span><span class="l-zh">板块资金流热力图</span><span class="d"><span class="l-en">Market tide · sector premium z · top movers · ETF proxy</span><span class="l-zh">资金潮汐 · 板块权利金Z · 净额排行 · ETF代理</span></span></a>
+        <a href="options_screener.html">📊 <span class="l-en">Options Screener</span><span class="l-zh">期权筛选台</span><span class="d"><span class="l-en">IV · IV-rank · GEX tier · flow · max-pain · 350+ names</span><span class="l-zh">IV · IV分位 · GEX层级 · 期权流量 · 最大痛点 · 350+标的</span></span></a>
+        <a href="darkpool.html">🌑 <span class="l-en">Dark Pool Desk</span><span class="l-zh">场外暗池台</span><span class="d"><span class="l-en">Off-exchange volume · short ratio · ATS venues</span><span class="l-zh">场外成交量 · 融券比率 · ATS场所</span></span></a>
       </div>
     </div>
     <div class="nav-dd">
@@ -332,6 +365,7 @@
           
           <div class="nav-mega-col">
             <div class="nav-mega-h"><span class="l-en">Policy & Quant Lab</span><span class="l-zh">政策与量化</span></div>
+            <a class="nav-mega-item" href="committee.html"><span class="nm-ic">🧬</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Committee View</span><span class="l-zh">委员会视图</span></span><span class="d"><span class="l-en">Every signal traced to its graded source · kernel · ladder · staleness</span><span class="l-zh">每条信号溯源 · 核心估计 · 阶梯状态 · 时效性</span></span></span></a>
             <a class="nav-mega-item" href="policy_watch.html"><span class="nm-ic">🏦</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Fed & Policy Watch</span><span class="l-zh">美联储与政策观察</span></span><span class="d"><span class="l-en">Fed + Administration intent & capital rotation</span><span class="l-zh">美联储+政府意图与资本轮动</span></span></span></a>
             <a class="nav-mega-item" href="whitehouse.html"><span class="nm-ic">🏛️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">White House Watch</span><span class="l-zh">白宫快讯</span></span><span class="d"><span class="l-en">Policy alerts · sector head/tailwinds · exposed names</span><span class="l-zh">政策快讯 · 行业顺逆风 · 受影响标的</span></span></span></a>
             <a class="nav-mega-item" href="signal_lab.html"><span class="nm-ic">🔬</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Signal Lab</span><span class="l-zh">信号实验室</span></span><span class="d"><span class="l-en">Consolidated validation scorecard</span><span class="l-zh">验证记分卡汇总</span></span></span></a>
@@ -377,7 +411,7 @@
   <div id="rotation-app"></div>
 
   <div class="sr-foot">
-    <span class="l-en">Performance is a broad-universe multi-horizon snapshot (1D–1Y), refreshed nightly. Relative strength is measured cross-sectionally vs the median subsector. On the rotation map the horizontal axis is strength vs. the market (right = stronger) and the vertical axis is whether that strength is heating up or cooling (up = heating); each trail traces where a subsector has been and the arrow points where it is heading, so a longer trail is a faster mover. Click a quadrant to zoom in. Under the hood these are RS-Ratio (medium-term leadership) and RS-Momentum (is that leadership improving); acceleration compares the latest weekly pace to the 3-month pace. Research context only — not investment advice.</span><span class="l-zh">业绩为全市场多周期快照（1天–1年），每晚刷新。相对强度以横截面方式相对中位数子行业衡量。轮动图中，横轴为相对大盘的强弱（越靠右越强），纵轴为该强度在升温还是降温（越靠上越热）；每条轨迹描绘子行业的来路，箭头指向去向，轨迹越长移动越快。点击象限可放大。底层对应 RS-Ratio（中期领先度）与 RS-Momentum（领先度是否改善）；加速度比较最近一周与三个月的节奏。仅供研究参考，非投资建议。</span>
+    <span class="l-en">Built</span><span class="l-zh">生成于</span> 
   </div>
 </div>
 
@@ -385,7 +419,7 @@
 <div class="wrap">
   <section class="tm-section" id="tm-section" aria-label="Time Machine">
     <h2>⏱ <span class="l-en">Rotation Time Machine</span><span class="l-zh">轮动时光机</span></h2>
-    <p class="tm-sub"><span class="l-en">Replay the full measured history of sector &amp; subsector relative rotation. Each dot is a sector or subsector; horizontal axis = relative strength (right = stronger vs peers), vertical = whether that strength is heating up or cooling (up = accelerating). Trails show the last 15 dates. Episode annotations mark measured rotation events from the catalog. No predictive claim — this replays measured history.</span><span class="l-zh">回放板块与子行业相对轮动的完整实测历史。每个点代表一个板块或子行业；横轴 = 相对强度（越靠右越强），纵轴 = 该强度是在升温还是降温（越靠上越热）。轨迹显示近15个交易日。情节注释标记了来自数据库的实际轮动事件。无预测性主张——仅回放实测历史。</span></p>
+    <p class="tm-sub"><span class="l-en">Replay the full measured history of sector &amp; subsector relative rotation. Each dot is a sector or subsector; horizontal axis = relative strength (right = stronger vs peers), vertical = whether that strength is heating up or cooling (up = gaining momentum). Short trails show the last 6 dates so each path stays readable. Episode annotations mark measured rotation events from the catalog. No predictive claim — this replays measured history.</span><span class="l-zh">回放板块与子行业相对轮动的完整实测历史。每个点代表一个板块或子行业；横轴 = 相对强度（越靠右越强），纵轴 = 该强度是在升温还是降温（越靠上越热）。短轨迹显示近6个交易日，令每条路径清晰可辨。情节注释标记了来自数据库的实际轮动事件。无预测性主张——仅回放实测历史。</span></p>
 
     <!-- Preset playlist -->
     <div class="tm-presets" id="tm-presets">
@@ -400,10 +434,10 @@
           <span class="l-en">Sectors 1998→</span><span class="l-zh">板块 1998→</span>
         </button>
         <button class="tm-tier-btn" data-tmunit="subsectors" id="tm-btn-subsectors">
-          <span class="l-en">Subsectors 2022→</span><span class="l-zh">子行业 2022→</span>
+          <span class="l-en">Subsectors 2021→</span><span class="l-zh">子行业 2021→</span>
         </button>
         <button class="tm-tier-btn" data-tmunit="themes" id="tm-btn-themes">
-          <span class="l-en">Themes 2022→</span><span class="l-zh">主题 2022→</span>
+          <span class="l-en">Themes 2021→</span><span class="l-zh">主题 2021→</span>
         </button>
       </div>
     </div>
@@ -458,6 +492,195 @@
   </section>
 </div>
 
+<!-- ── Rotation Turn Desk (W6) ─────────────────────────────────────────────── -->
+<div class="wrap">
+  <section class="td-section" id="td-section" aria-label="Rotation Turn Desk">
+<style>
+  .td-section { margin:44px 2px 0; }
+  .td-section h2 { font-size:19px; font-weight:800; letter-spacing:-.015em; margin:0 0 5px; }
+  .td-sub { color:var(--muted); font-size:12.5px; margin-bottom:14px; max-width:82ch; line-height:1.55; }
+  .td-quiet { color:var(--muted); font-size:13px; padding:18px 0; }
+  .td-armed-grid { display:flex; flex-wrap:wrap; gap:12px; margin-bottom:18px; }
+  .td-sector-card { flex:1 1 280px; min-width:240px; border-radius:13px; border:1px solid var(--line);
+    background:var(--panel); padding:14px 16px; }
+  .td-card-hd { display:flex; align-items:baseline; gap:8px; margin-bottom:8px; }
+  .td-sector-name { font-weight:800; font-size:14px; }
+  .td-window-badge { font-size:10px; font-weight:700; text-transform:uppercase; padding:2px 7px;
+    border-radius:6px; background:color-mix(in srgb,var(--link) 16%,transparent); color:var(--link); }
+  .td-sessions-left { font-size:11px; color:var(--muted); margin-left:auto; }
+  .td-member-list { list-style:none; margin:0; padding:0; }
+  .td-member-item { display:flex; align-items:baseline; gap:6px; font-size:12px; padding:4px 0;
+    border-bottom:1px solid var(--line); }
+  .td-member-item:last-child { border-bottom:none; }
+  .td-member-ticker { font-weight:700; min-width:52px; }
+  .td-tier-tag { font-size:9.5px; font-weight:700; text-transform:uppercase; padding:1px 6px;
+    border-radius:5px; background:color-mix(in srgb,var(--up) 14%,transparent); color:var(--up); }
+  .td-tier-tag.t3 { background:color-mix(in srgb,var(--warn) 16%,transparent); color:var(--warn); }
+  .td-provisional-note { font-size:9.5px; color:var(--warn); margin-left:2px; }
+  .td-no-fires { color:var(--muted); font-size:11.5px; font-style:italic; }
+  .td-staleness-note { font-size:11px; color:var(--warn); margin-bottom:8px; }
+  .td-caveats { margin-top:18px; padding:12px 15px; border-radius:11px;
+    background:color-mix(in srgb,var(--muted) 6%,transparent); border:1px solid var(--line);
+    font-size:11.5px; color:var(--muted); line-height:1.6; }
+  .td-caveats strong { color:var(--text); }
+  .td-promotion-clock { margin-top:10px; font-size:11px; color:var(--muted); }
+</style>
+
+    <h2>🎯 <span class="l-en">Rotation Turn Desk</span><span class="l-zh">轮动入场台</span></h2>
+    <p class="td-sub"><span class="l-en">When A15 fires (washout + ≥2 opposite-complex sectors rotating out), the armed window opens for up to 10 sessions. This desk shows today's armed sectors and which member stocks from those sectors currently have a T1–T3 cascade signal. DISPLAY-ONLY — feeds no score, gate, or ordering surface.</span><span class="l-zh">当A15触发（洗盘 + ≥2个对立复合板块轮出），入场窗口开启，持续最多10个交易日。此台显示当前处于入场窗口的板块，以及这些板块中当前有T1–T3级联信号的成员股票。仅供展示——不驱动任何评分、门控或排序。</span></p>
+
+    <div id="td-content">
+      <p class="td-quiet">
+        <span class="l-en">Loading…</span><span class="l-zh">加载中…</span>
+      </p>
+    </div>
+
+    <script>
+    (function(){
+    'use strict';
+    function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+    function isZh(){return document.documentElement.getAttribute('data-lang')==='zh';}
+    function t(en,zh){return isZh()&&zh?zh:en;}
+
+    var ARTIFACT = 'basketdata/oracle_turn_desk.json';
+
+    function render(d){
+      var el = document.getElementById('td-content');
+      if(!el) return;
+      var armed = d.armed || [];
+      var br    = d.base_rates || {};
+      var pc    = d.promotion_clock || {};
+
+      // Staleness note when asof differs
+      var staleHtml = '';
+      if(d.asof && d.member_fires_asof && d.asof !== d.member_fires_asof){
+        staleHtml = '<p class="td-staleness-note">'
+          + t('Note: panel asof ','注意：面板日期')
+          + esc(d.asof)
+          + t(' / member signals asof ','，成员信号日期')
+          + esc(d.member_fires_asof)
+          + '</p>';
+      }
+
+      if(!armed.length){
+        el.innerHTML = staleHtml
+          + '<p class="td-quiet">'
+          + t('No sectors currently armed — A15 has not fired in the last 10 sessions. Quiet state is a valid state.',
+              '当前无板块处于入场窗口——A15在过去10个交易日内未触发。安静状态是有效状态。')
+          + '</p>'
+          + _caveatsHtml(br, pc);
+        return;
+      }
+
+      var cardsHtml = '<div class="td-armed-grid">';
+      armed.forEach(function(sec){
+        var name = isZh() ? (sec.name_zh||sec.node) : (sec.name_en||sec.node);
+        var mfires = sec.member_fires || [];
+        var firesHtml = '';
+        if(mfires.length){
+          firesHtml = '<ul class="td-member-list">';
+          mfires.forEach(function(m){
+            var tierCls = m.tier==='T3' ? ' t3' : '';
+            var provNote = m.provisional
+              ? '<span class="td-provisional-note">'
+                + t('(repaint ~23.8%)', '（约23.8%重绘）')
+                + '</span>'
+              : '';
+            firesHtml += '<li class="td-member-item">'
+              + '<span class="td-member-ticker">'+esc(m.ticker)+'</span>'
+              + '<span class="td-tier-tag'+tierCls+'">'+esc(m.tier)+'</span>'
+              + provNote
+              + '</li>';
+          });
+          firesHtml += '</ul>';
+        } else {
+          firesHtml = '<p class="td-no-fires">'
+            + t('No cascade fires in this sector today','此板块今日暂无级联信号')
+            + '</p>';
+        }
+        cardsHtml += '<div class="td-sector-card">'
+          + '<div class="td-card-hd">'
+          + '<span class="td-sector-name">'+esc(name)+'</span>'
+          + '<span class="td-window-badge">'
+          + t('ARMED', '已激活')
+          + '</span>'
+          + '<span class="td-sessions-left">'
+          + esc(sec.sessions_remaining)
+          + t(' sessions left', ' 日剩余')
+          + '</span>'
+          + '</div>'
+          + firesHtml
+          + '</div>';
+      });
+      cardsHtml += '</div>';
+
+      el.innerHTML = staleHtml + cardsHtml + _caveatsHtml(br, pc);
+    }
+
+    function _caveatsHtml(br, pc){
+      var wrIn  = br.in_window_wr21  != null ? (br.in_window_wr21*100).toFixed(1)+'%' : '65.2%';
+      var wrOut = br.outside_window_wr21 != null ? (br.outside_window_wr21*100).toFixed(1)+'%' : '53.6%';
+      var delta = br.holdout_delta_pp != null ? '+'+br.holdout_delta_pp.toFixed(1)+'pp' : '+10.7pp';
+      var ciLo  = br.holdout_ci_lo_pp != null ? br.holdout_ci_lo_pp.toFixed(1) : '3.8';
+      var ciHi  = br.holdout_ci_hi_pp != null ? br.holdout_ci_hi_pp.toFixed(1) : '17.9';
+      var nw    = br.n_windows || 31;
+      var from  = br.modern_track_from || '2022-06-30';
+      var accrued  = pc.windows_accrued || 0;
+      var required = pc.windows_required || 15;
+
+      return '<div class="td-caveats">'
+        + '<strong>'
+        + t('Base rates (display-with-edge, lineage: #1533):', '基础胜率（展示边缘级，来源：#1533）：')
+        + '</strong> '
+        + t('IN-window member fires WR21 ', '窗口内成员触发WR21 ')
+        + wrIn
+        + t(' vs ', ' vs ')
+        + wrOut
+        + t(' outside; holdout Δ', '（窗口外）；持出集Δ')
+        + delta
+        + ' CI [+'+ciLo+', +'+ciHi+'pp]. '
+        + nw + t(' modern-track windows (holdout n=15)', '个现代追踪窗口（持出集n=15）') + ', ≥' + from + '. '
+        + t('Growth/cyclical tilt; defensive sectors negative.', '成长/周期偏向；防御性板块为负。')
+        + ' <em>'
+        + t('Not a forecast.', '非预测。')
+        + '</em><br>'
+        + '<span class="td-promotion-clock">'
+        + t('Promotion clock: ', '晋升计数：')
+        + accrued + ' / ' + required
+        + t(' windows accrued (re-evaluation gate at 15).', ' 个窗口已累积（15个触发复评）。')
+        + '</span>'
+        + '</div>';
+    }
+
+    fetch(ARTIFACT, {cache:'no-cache'})
+      .then(function(r){ return r.ok ? r.json() : null; })
+      .then(function(d){
+        if(!d){ throw new Error('no data'); }
+        render(d);
+      })
+      .catch(function(){
+        var el = document.getElementById('td-content');
+        if(el) el.innerHTML = '<p class="td-quiet">'
+          + '<span class="l-en">Turn Desk data unavailable.</span>'
+          + '<span class="l-zh">入场台数据暂不可用。</span>'
+          + '</p>';
+      });
+
+    // Re-render on lang/theme change
+    var _obs = new MutationObserver(function(){
+      fetch(ARTIFACT, {cache:'no-cache'})
+        .then(function(r){ return r.ok ? r.json() : null; })
+        .then(function(d){ if(d) render(d); })
+        .catch(function(){});
+    });
+    _obs.observe(document.documentElement, {attributes:true, attributeFilter:['data-lang','data-theme']});
+
+    })();
+    </script>
+
+  </section>
+</div>
+
 <footer class="site-footer">
   <span class="made">© 2026 MastermindX Inc</span>
 </footer>
@@ -491,9 +714,9 @@ var _yearChunkKeys = [];      // chunk keys needed for selected year (+ prev bou
 var _pos       = 0;           // index into _yearDates
 var _playing   = false;
 var _playTimer = null;
-// Per-node trail buffer: _trailBuf[nodeId] = [[rs,az], ...] last 15 frames
+// Per-node trail buffer: _trailBuf[nodeId] = [[rs,az], ...] last 6 frames
 var _trailBuf  = {};
-var TRAIL_LEN  = 15;
+var TRAIL_LEN  = 6;   // short, readable path (was 15 — too long to trace)
 // Stable domain for the current (unit, year) combination
 var _domain    = null;        // {xMin,xMax,yMin,yMax} or null (auto first frame)
 var _domainSet = false;
@@ -504,6 +727,37 @@ var _tmHasFocus = false;
 
 function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function isZh(){return document.documentElement.getAttribute('data-lang')==='zh';}
+
+// Sector ETF tickers → plain sector names (matches the live rotation map above).
+// Keyed on the manifest node id (the ticker); the ticker stays the node key,
+// only the DISPLAYED label changes, so episodes/tooltips keep working.
+var TM_SEC_NAMES = {
+  XLB:{en:'Materials',zh:'材料'},          XLC:{en:'Comm Services',zh:'通信'},
+  XLE:{en:'Energy',zh:'能源'},              XLF:{en:'Financials',zh:'金融'},
+  XLI:{en:'Industrials',zh:'工业'},         XLK:{en:'Technology',zh:'科技'},
+  XLP:{en:'Cons Staples',zh:'必需消费'},    XLRE:{en:'Real Estate',zh:'房地产'},
+  XLU:{en:'Utilities',zh:'公用事业'},       XLV:{en:'Health Care',zh:'医疗保健'},
+  XLY:{en:'Cons Discretionary',zh:'可选消费'}
+};
+function _tmName(name, name_zh){
+  var m = TM_SEC_NAMES[name];
+  if(m) return isZh() ? m.zh : m.en;
+  return (isZh() && name_zh) ? name_zh : name;
+}
+// Strength = where a dot sits on the grid, combining X (relative strength) and
+// Y (momentum) with equal weight → 0 (deep Lagging) · 50 (centre) · 100 (deep
+// Leading). It reads the SAME per-year domain the chart is drawn with, so the
+// two very-different-scale axes are already normalised. Display-only: a readout
+// of on-screen position, NOT a trade signal.
+function _posScore(rs, az){
+  var d = _domain;
+  if(!d) return null;
+  var xw = (d.xMax - d.xMin) || 1, yw = (d.yMax - d.yMin) || 1;
+  var xf = (rs - d.xMin) / xw, yf = (az - d.yMin) / yw;
+  xf = xf < 0 ? 0 : xf > 1 ? 1 : xf;
+  yf = yf < 0 ? 0 : yf > 1 ? 1 : yf;
+  return Math.round(100 * (xf + yf) / 2);
+}
 
 /* ── boot via IntersectionObserver ── */
 document.addEventListener('DOMContentLoaded', function(){
@@ -897,7 +1151,7 @@ function _renderFrame(){
     var ep = activeEpNodes[pt.name];
     var ring = ep ? ep.dir : null;
     var ringWeight = ep ? (ep.stage==='undeniable'?2.5:ep.stage==='confirmed'?1.8:1.2) : 1.5;
-    var name = (isZh() && pt.name_zh) ? pt.name_zh : pt.name;
+    var name = _tmName(pt.name, pt.name_zh);
     var showLabel;
     if(showAll){ showLabel = true; }
     else if(ep){ showLabel = true; }
@@ -967,7 +1221,7 @@ function _showTmTip(key, pts, cx, cy){
   var q = _quadrant(pt.rs, pt.az);
   var QMAP = {leading:{en:'Leading',zh:'领先',cls:'q-lead'},weakening:{en:'Weakening',zh:'走弱',cls:'q-weak'},improving:{en:'Improving',zh:'改善',cls:'q-impr'},lagging:{en:'Lagging',zh:'落后',cls:'q-lag'}};
   var qd = QMAP[q] || QMAP.lagging;
-  var name = (isZh()&&pt.name_zh)?pt.name_zh:pt.name;
+  var name = _tmName(pt.name, pt.name_zh);
   // Check for active episode
   var dateStr = _yearDates[_pos];
   var ep = null;
@@ -994,9 +1248,22 @@ function _showTmTip(key, pts, cx, cy){
   var epLine = ep ? '<div class="sr-tip-mt">'
     +(ep.dir==='in'?'<span class="l-en">Rotating in</span><span class="l-zh">轮入</span>':'<span class="l-en">Rotating out</span><span class="l-zh">轮出</span>')
     +' <b class="'+(ep.stage==='undeniable'?'up':ep.stage==='confirmed'?'up':'')+'">'+( TIP_STAGE[ep.stage]||esc(ep.stage) )+'</b></div>' : '';
+  // Strength = combined X+Y position on the grid (display-only readout, not a signal)
+  var scoreV = _posScore(pt.rs, pt.az);
+  var qCol = {leading:'--up',weakening:'--warn',improving:'--link',lagging:'--down'}[q] || '--muted';
+  var scoreRow = scoreV==null ? '' : '<div class="sr-tip-score">'
+    +'<div class="sr-tip-score-hd"><span class="l-en">Strength</span><span class="l-zh">强度</span>'
+    +'<b>'+scoreV+'</b><i>/100</i></div>'
+    +'<div class="sr-tip-gauge"><span style="width:'+scoreV+'%;background:var('+qCol+')"></span></div>'
+    +'<div class="sr-tip-cap"><span class="l-en">position on the grid (X+Y) · not a trade signal</span><span class="l-zh">图上位置（X+Y）· 非交易信号</span></div>'
+    +'</div>';
+  var thLine = _unit==='sectors'
+    ? '<span class="l-en">Sector ETF · </span><span class="l-zh">行业ETF · </span>'+esc(pt.name)
+    : esc(pt.theme||'');
   el.innerHTML = '<div class="sr-tip-hd"><b>'+esc(name)+'</b><span class="sr-q '+qd.cls+'">'+(isZh()?qd.zh:qd.en)+'</span></div>'
-    +'<div class="sr-tip-th">'+(_unit==='sectors'?'<span class="l-en">Sector ETF</span><span class="l-zh">行业ETF</span>':esc(pt.theme||''))+'</div>'
-    +'<div class="sr-tip-mt"><span class="l-en">RS</span><span class="l-zh">相对强度</span> <b>'+rsStr+'</b> · <span class="l-en">Accel</span><span class="l-zh">加速</span> <b class="'+(pt.az>=0?'up':'dn')+'">'+azStr+'</b></div>'
+    +'<div class="sr-tip-th">'+thLine+'</div>'
+    +'<div class="sr-tip-mt"><span class="l-en">RS</span><span class="l-zh">相对强度</span> <b>'+rsStr+'</b> · <span class="l-en">Mom</span><span class="l-zh">动量</span> <b class="'+(pt.az>=0?'up':'dn')+'">'+azStr+'</b></div>'
+    +scoreRow
     +epLine;
   el.classList.add('on');
   var w=el.offsetWidth, h=el.offsetHeight, x=cx+14, y=cy+14;
@@ -1051,7 +1318,7 @@ function _updateEpPanel(){
       ? '<span class="l-en">Rotating in</span><span class="l-zh">轮入</span>'
       : '<span class="l-en">Rotating out</span><span class="l-zh">轮出</span>';
     return '<div class="tm-ep-item '+dirClass+'">'
-      +'<div class="tm-ep-node">'+esc(ep.node)+'</div>'
+      +'<div class="tm-ep-node">'+esc(_tmName(ep.node))+'</div>'
       +'<div>'+dirLabel+' <span class="tm-ep-badge '+stage+'">'+(STAGE_HTML[stage]||stage)+'</span></div>'
       +(ep.paired_episode_id?'<div class="tm-ep-pair"><span class="l-en">Pair: </span><span class="l-zh">配对：</span>'+esc(ep.paired_episode_id)+'</div>':'')
       +'</div>';
@@ -1171,8 +1438,11 @@ function _wireControls(){
 
 function _tick(){
   if(!_playing) return;
+  // Recalibrated 4× slower and smoother: advance ONE date per tick (every date
+  // is rendered, no skipping) and vary the delay by speed instead of the step.
+  // 1× = 800ms/date (0.25× the old pace) · 2× = 400ms · 4× = 200ms (old 1×).
   var speed = parseInt((document.getElementById('tm-speed')||{}).value||1, 10);
-  _pos = Math.min(_yearDates.length - 1, _pos + speed);
+  _pos = Math.min(_yearDates.length - 1, _pos + 1);
   if(_pos >= _yearDates.length - 1){
     _playing = false;
     var p = document.getElementById('tm-play'); if(p) p.textContent = '▶';
@@ -1180,7 +1450,7 @@ function _tick(){
   _syncSlider();
   _updateDateLabel();
   _ensureChunksForPos(_pos, function(){ _renderFrame(); _updateEpPanel(); });
-  if(_playing) _playTimer = setTimeout(_tick, 200);
+  if(_playing) _playTimer = setTimeout(_tick, Math.round(800 / speed));
 }
 
 /* ── theme/lang change: re-render current frame ── */
@@ -1189,5 +1459,6 @@ _themeObs.observe(document.documentElement, {attributes:true, attributeFilter:['
 
 })();
 </script>
+<script defer data-whb data-root="" src="wh_banner.js"></script>
 </body>
 </html>

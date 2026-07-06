@@ -1,15 +1,15 @@
 {
   "schema": "stock_desk.v1",
-  "as_of": "2026-07-04",
-  "scored_total": 0,
-  "open": 83,
-  "unscored_neutral": 40,
+  "as_of": "2026-07-06",
+  "scored_total": 2,
+  "open": 88,
+  "unscored_neutral": 44,
   "overall": {
-    "n": 0,
-    "hits": 0,
-    "misses": 0,
-    "hit_rate": null,
-    "dir_accuracy": null
+    "n": 2,
+    "hits": 1,
+    "misses": 1,
+    "hit_rate": 0.5,
+    "dir_accuracy": 0.0
   },
   "by_lean": {
     "constructive": {
@@ -27,11 +27,11 @@
       "dir_accuracy": null
     },
     "cautious": {
-      "n": 0,
-      "hits": 0,
-      "misses": 0,
-      "hit_rate": null,
-      "dir_accuracy": null
+      "n": 2,
+      "hits": 1,
+      "misses": 1,
+      "hit_rate": 0.5,
+      "dir_accuracy": 0.0
     },
     "avoid": {
       "n": 0,
@@ -43,11 +43,11 @@
   },
   "by_conviction": {
     "low": {
-      "n": 0,
-      "hits": 0,
-      "misses": 0,
-      "hit_rate": null,
-      "dir_accuracy": null
+      "n": 2,
+      "hits": 1,
+      "misses": 1,
+      "hit_rate": 0.5,
+      "dir_accuracy": 0.0
     },
     "medium": {
       "n": 0,
@@ -64,6 +64,25 @@
       "dir_accuracy": null
     }
   },
-  "calibration_note": "No stock leans scored yet \u2014 the track record begins once the first check-by dates pass. Until then every lean is a provisional hypothesis, and the honest prior is no exploitable cross-sectional edge.",
-  "recent": []
+  "calibration_note": "2 leans scored, hit-rate 0.5 (directional accuracy 0.0). Small sample \u2014 treat conviction as provisional; the prior remains no validated forward edge (this layer is accountability, not alpha).",
+  "recent": [
+    {
+      "id": "2026-06-18-OFG-4",
+      "ticker": "OFG",
+      "lean": "cautious",
+      "conviction": "low",
+      "outcome": "miss",
+      "realized": 0.0631,
+      "check_by": "2026-07-02"
+    },
+    {
+      "id": "2026-06-18-ATO-5",
+      "ticker": "ATO",
+      "lean": "cautious",
+      "conviction": "low",
+      "outcome": "hit",
+      "realized": 0.0424,
+      "check_by": "2026-07-02"
+    }
+  ]
 }

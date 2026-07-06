@@ -29,6 +29,8 @@ DESIGN (adjudicated W1 PR1)
 * alerts       — summary counts from site/factordata/alerts_triage.json
 * qi           — null (pending joint QI border ruling)
 * live_overlay — best-effort regime freshness stamp
+* factor_weather — factor panel lobe (§5.4 + RULING-B); data loaded inside
+                   _compose_factor_weather, wired as one line in build_world_state.
 
 BORDER LAW (§9)
 ---------------
@@ -41,17 +43,66 @@ ENVELOPE
 --------
 The output is stamped with engine.neuralweb.envelope.stamp() — the first
 producer adoption of the envelope on the Neural Web bus.
+
+factor_weather lobe (§5.4): composed by _compose_factor_weather() below; panel
+calibration notes and nightly-bounds law live in scripts/build_factor_panel.py.
 """
 from __future__ import annotations
 
 import copy
 import json
 import logging
+import math
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 log = logging.getLogger(__name__)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# JSON-safety helpers (FIX-5)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _clean(v: Any) -> Any:
+    """Coerce a value to a JSON-safe Python native type.
+
+    Rules (FIX-5, RULING-B):
+    - None → None
+    - float NaN or Inf → None  (prevents 'NaN' literal in JSON output)
+    - numpy scalar types → coerce to native float/int/str
+    - everything else → returned as-is
+
+    This must be applied to every value read from panel rows into the lobe dict
+    before the dict is returned.  The house has shipped invalid JSON ('NaN'
+    literal) and silently-zeroed ledgers from numpy types before.
+    """
+    if v is None:
+        return None
+    # NaN / Inf guard for floats and numpy-float-like objects:
+    if isinstance(v, float):
+        if math.isnan(v) or math.isinf(v):
+            return None
+        return v
+    # numpy scalar detection without importing numpy at module level:
+    type_name = type(v).__name__
+    module_name = getattr(type(v), "__module__", "") or ""
+    if "numpy" in module_name:
+        # numpy integer types → int
+        if type_name.startswith("int") or type_name.startswith("uint"):
+            return int(v)
+        # numpy float types → float, then apply NaN/Inf guard
+        if type_name.startswith("float"):
+            fv = float(v)
+            if math.isnan(fv) or math.isinf(fv):
+                return None
+            return fv
+        # numpy bool_ → bool
+        if type_name.startswith("bool"):
+            return bool(v)
+        # numpy string/bytes → str
+        return str(v)
+    return v
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Internal helpers
@@ -309,6 +360,417 @@ def _compose_live_overlay(reg: dict) -> dict | None:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# Factor weather lobe (§5.4 + RULING-B)
+# ─────────────────────────────────────────────────────────────────────────────
+
+_OPTIONS_WEATHER_ROOTS = {
+    "SPY", "QQQ", "IWM", "DIA",
+    "XLB", "XLC", "XLE", "XLF", "XLI", "XLK", "XLP", "XLRE", "XLU", "XLV", "XLY",
+    "SMH", "SOXX", "XBI", "KRE",
+}
+_OPTIONS_WEATHER_MIN_ROOTS = 5
+
+
+def _compose_options_weather(
+    root: "Path | str | None" = None,
+) -> dict:
+    """Compose the options_weather sub-block (Options→NW W-B, RO-1/RO-6).
+
+    Follows the _compose_factor_weather discipline exactly: all data loading
+    internal, _clean() on every value, display_only=True, try/except at the
+    wiring site returns a null-filled fallback.
+
+    Reads data/options_entry/state.parquet and aggregates ONLY over the
+    deep-liquidity sector-ETF/index roots (the set with 15y ThetaData history —
+    the W-E1 gauntlet's universe). Raw aggregate fields only — NO composite
+    score (RO-2). Aggregates suppress to null below
+    _OPTIONS_WEATHER_MIN_ROOTS contributing roots.
+
+    W-E1 context baked into the field notes: gamma regime stratifies realized
+    vol with an ERA-DEPENDENT sign (regime context, not direction).
+    """
+    repo = _repo_root(root)
+    path = repo / "data" / "options_entry" / "state.parquet"
+
+    out: dict[str, Any] = {
+        "as_of": None,
+        "n_roots": None,
+        "median_iv30": None,
+        "median_skew": None,
+        "median_skew_5d_chg": None,
+        "share_skew_rising": None,
+        "median_ivspread_rel": None,
+        "share_pin_risk": None,
+        "opex_days": None,
+        "note": (
+            "sector-ETF/index options weather (raw aggregates; no composite — RO-2). "
+            "Gamma-regime evidence is vol-conditioning with era-dependent sign (W-E1); "
+            "never directional."
+        ),
+        "display_only": True,
+    }
+    if not path.exists():
+        return out
+    try:
+        import pandas as pd  # noqa: PLC0415
+        df = pd.read_parquet(path)
+        df = df[df["ticker"].isin(_OPTIONS_WEATHER_ROOTS)]
+        if df.empty:
+            return out
+
+        def _med(col: str):
+            s = df[col].dropna() if col in df.columns else None
+            return float(s.median()) if s is not None and len(s) >= _OPTIONS_WEATHER_MIN_ROOTS else None
+
+        def _share(col: str, pred):
+            s = df[col].dropna() if col in df.columns else None
+            if s is None or len(s) < _OPTIONS_WEATHER_MIN_ROOTS:
+                return None
+            return float(pred(s).mean())
+
+        out["as_of"] = _clean(df["as_of"].max())
+        out["n_roots"] = int(len(df))
+        out["median_iv30"] = _clean(_med("iv30"))
+        out["median_skew"] = _clean(_med("skew"))
+        out["median_skew_5d_chg"] = _clean(_med("skew_5d_chg"))
+        out["share_skew_rising"] = _clean(_share("skew_5d_chg", lambda s: s > 0))
+        out["median_ivspread_rel"] = _clean(_med("ivspread_rel"))
+        out["share_pin_risk"] = _clean(_share("pin_risk", lambda s: s.astype(bool)))
+        od = df["opex_days"].dropna()
+        out["opex_days"] = int(od.iloc[0]) if len(od) else None
+    except Exception as exc:  # noqa: BLE001
+        log.warning("options_weather: compose failed — %s", exc)
+    return out
+
+
+def _compose_factor_weather(
+    root: "Path | str | None" = None,
+    prefer_artifact: bool = True,
+) -> dict:
+    """Compose the factor_weather sub-block for world_state (§5.4).
+
+    Parameters
+    ----------
+    root:
+        Repo root override (defaults to _repo_root()).
+    prefer_artifact:
+        When True (default, world_state lobe path): attempt to read
+        data/neuralweb/factor_intelligence_state.json as canonical
+        (RUL-NW2).  If the artifact is present, parseable, and contains a
+        ``factor_weather`` block, that block is returned AUGMENTED with a
+        ``factor_state_as_of`` key carrying the artifact's top-level
+        ``as_of`` value (staleness visibility, RUL-NW2).
+
+        When False (builder path): the artifact read is skipped entirely
+        and the function goes directly to the legacy direct-panel-read
+        branch.  Pass ``prefer_artifact=False`` from
+        ``build_factor_intelligence_state._build_factor_weather_block``
+        to guarantee a fresh recompute every night — preventing the
+        circular-freeze where the builder reads last night's committed
+        artifact and re-emits it verbatim without touching the panel
+        (regression: RUL-NW10 history tape would freeze at day-1 values).
+
+    Fallback / legacy path (artifact absent/corrupt/missing factor_weather,
+    OR prefer_artifact=False):
+        the legacy direct-panel-read logic (below) runs unchanged.  The
+        returned dict carries ``factor_state_as_of: null``.  Staleness is
+        signalled solely by this null value — no additional gap-note entry
+        is appended.
+
+    RULING-B fold (FIX-1): all data loading is done inside this function.
+    The wiring line in build_world_state is:
+        "factor_weather": _compose_factor_weather(root=root)
+    No panel_latest or factor_series arguments are passed from build_world_state.
+
+    Data sources read internally (all fail-open):
+    - data/neuralweb/factor_intelligence_state.json  (canonical — RUL-NW2)
+    - data/factordata/panel/ — latest-date row, via max-date selection (FIX-9)
+    - site/factordata/factor_series.json — rotation leader
+    - data/edgar/ic_scorecard.json — leader IC (FIX-2)
+    - data/yahoo/{IWF,IWD,QQQ,SPY,IWM}.parquet — real 20d ETF ratios (FIX-3)
+
+    FIX-4: style_regime_hold_days computed from panel tail (trailing consecutive
+    days of confirmed state), not a panel column.
+
+    FIX-5: all values passed through _clean() before the dict is returned to
+    prevent 'NaN' literals and numpy scalar types in the output JSON.
+
+    Returns
+    -------
+    dict
+        Keys: style_regime, style_regime_pending, style_regime_hold_days,
+        factor_leader, factor_leader_ic, etf_pulse_summary, display_only,
+        factor_state_as_of (11th key, RUL-NW2 staleness stamp).
+        display_only is ALWAYS True — §5.4 mandates it.
+    """
+    repo = _repo_root(root)
+
+    # ── RUL-NW2: try canonical committed state artifact first ─────────────────
+    # Skipped when prefer_artifact=False (builder fresh-compute path — see docstring).
+    _state_artifact_path = repo / "data" / "neuralweb" / "factor_intelligence_state.json"
+    if prefer_artifact:
+        try:
+            if _state_artifact_path.exists():
+                _state = json.loads(_state_artifact_path.read_text(encoding="utf-8"))
+                if isinstance(_state, dict):
+                    _fw_block = _state.get("factor_weather")
+                    if isinstance(_fw_block, dict) and _fw_block:
+                        # Canonical path: augment with staleness stamp and return.
+                        _artifact_as_of = _state.get("as_of")
+                        out = dict(_fw_block)
+                        out["factor_state_as_of"] = _artifact_as_of
+                        # Ensure display_only is always True regardless of artifact content.
+                        out["display_only"] = True
+                        log.info(
+                            "factor_weather: canonical artifact path (RUL-NW2) — as_of=%s",
+                            _artifact_as_of,
+                        )
+                        return out
+                    else:
+                        log.info(
+                            "factor_weather: artifact present but factor_weather block "
+                            "missing or empty — falling back to direct panel read"
+                        )
+                else:
+                    log.warning(
+                        "factor_weather: artifact at %s is not a dict — falling back",
+                        _state_artifact_path,
+                    )
+            else:
+                log.info(
+                    "factor_weather: state artifact absent (%s) — falling back to "
+                    "direct panel read",
+                    _state_artifact_path,
+                )
+        except Exception as exc:  # noqa: BLE001
+            log.warning(
+                "factor_weather: artifact read/parse failed (%s) — falling back: %s",
+                _state_artifact_path,
+                exc,
+            )
+    else:
+        log.info(
+            "factor_weather: prefer_artifact=False — skipping artifact, fresh recompute from panel"
+        )
+
+    # ── Legacy fallback: direct panel / ETF / scorecard read ─────────────────
+    # (unchanged from the pre-RUL-NW2 implementation; runs only when the
+    # committed artifact is absent, corrupt, or missing the factor_weather block)
+    data_dir = repo / "data"
+    site_dir = repo / "site"
+
+    style_regime: str | None = None
+    style_regime_pending: str | None = None
+    style_regime_hold_days: int | None = None
+    factor_leader: str | None = None
+    factor_leader_ic: float | None = None
+    # etf_pulse_summary: three 20d ratios (IWF/IWD, QQQ/SPY, IWM/SPY) — FIX-3
+    ratio_iwf_iwd: float | None = None
+    ratio_qqq_spy: float | None = None
+    ratio_iwm_spy: float | None = None
+
+    gaps: list[str] = []
+
+    # ── 1. Read latest panel row (FIX-1 data loading + FIX-9 max-date) ──────
+    try:
+        import pandas as _pd  # lazy import — world_state has no hard pandas dep
+
+        panel_dir = data_dir / "factordata" / "panel"
+        _panel_latest_row: dict | None = None
+        _style_series: list[tuple[str, str]] = []  # [(date_str, confirmed_state), ...]
+
+        if panel_dir.exists():
+            # FIX-9: explicit max-date selection rather than sorted[-1] + iloc[-1]
+            _parquet_files = list(panel_dir.rglob("panel.parquet"))
+            if _parquet_files:
+                # Read only last few partitions (last 2 sorted by path) for efficiency:
+                _sorted_files = sorted(_parquet_files)
+                _tail_files = _sorted_files[-2:]  # last 2 monthly partitions
+                _frames = []
+                for _pf in _tail_files:
+                    try:
+                        _frames.append(_pd.read_parquet(_pf,
+                                                         columns=["date", "ticker",
+                                                                  "style_regime",
+                                                                  "style_regime_pending"]))
+                    except Exception as _exc:
+                        log.warning("factor_weather: panel partition unreadable %s — %s",
+                                    _pf, _exc)
+                if _frames:
+                    _pdf = _pd.concat(_frames, ignore_index=True)
+                    if not _pdf.empty:
+                        # FIX-9: take rows at max date (not iloc[-1])
+                        _max_date = _pdf["date"].max()
+                        _latest_rows = _pdf[_pdf["date"] == _max_date]
+                        if not _latest_rows.empty:
+                            # Use first row for market-level fields (same for all tickers)
+                            _panel_latest_row = _latest_rows.iloc[0].to_dict()
+
+                        # FIX-4: compute hold_days from date-deduplicated style_regime series
+                        # (market-level: same confirmed state for all tickers on a date)
+                        _by_date = (
+                            _pdf[["date", "style_regime"]]
+                            .drop_duplicates(subset=["date"])
+                            .sort_values("date")
+                        )
+                        _style_series = list(
+                            zip(_by_date["date"].tolist(),
+                                _by_date["style_regime"].tolist())
+                        )
+
+        # Extract style_regime + pending from latest row:
+        if isinstance(_panel_latest_row, dict):
+            style_regime = _clean(_panel_latest_row.get("style_regime")) or None
+            style_regime_pending = (
+                _clean(_panel_latest_row.get("style_regime_pending")) or None
+            )
+
+        # FIX-4: count trailing consecutive dates equal to current confirmed state:
+        if style_regime and _style_series:
+            _hold = 0
+            for _d, _s in reversed(_style_series):
+                if _s == style_regime:
+                    _hold += 1
+                else:
+                    break
+            style_regime_hold_days = _hold if _hold > 0 else None
+
+    except Exception as exc:  # noqa: BLE001
+        log.warning("factor_weather: panel read failed — %s", exc)
+        gaps.append(f"panel: {exc}")
+
+    # ── 2. Factor leader from factor_series.json + IC from scorecard (FIX-2) ─
+    _fs_path = site_dir / "factordata" / "factor_series.json"
+    _factor_series_json = _read_json(_fs_path)
+    if isinstance(_factor_series_json, dict):
+        try:
+            rotation = _factor_series_json.get("rotation") or {}
+            if isinstance(rotation, dict):
+                factor_leader = _clean(
+                    rotation.get("leader") or rotation.get("confirmed_leader")
+                )
+
+            # FIX-2: resolve IC from ic_scorecard.json (key 'mean_ic', lowercase factor)
+            # NOT from the rotation dict — that is the panel-computed snapshot-day IC.
+            if factor_leader:
+                _sc_path = data_dir / "edgar" / "ic_scorecard.json"
+                _scorecard = _read_json(_sc_path)
+                if isinstance(_scorecard, dict):
+                    _factors_block = _scorecard.get("factors") or {}
+                    _leader_lower = str(factor_leader).lower()
+                    _sc_entry = (
+                        _factors_block.get(factor_leader)
+                        or _factors_block.get(_leader_lower)
+                    )
+                    if isinstance(_sc_entry, dict) and _sc_entry.get("mean_ic") is not None:
+                        _ic_raw = _sc_entry["mean_ic"]
+                        factor_leader_ic = _clean(float(_ic_raw))
+                        log.info(
+                            "factor_weather: leader=%s mean_ic=%.4f (from ic_scorecard.json)",
+                            factor_leader,
+                            factor_leader_ic if factor_leader_ic is not None else float("nan"),
+                        )
+                    else:
+                        log.info(
+                            "factor_weather: leader=%s not found in ic_scorecard.json — "
+                            "factor_leader_ic=None (scorecard absent or entry missing)",
+                            factor_leader,
+                        )
+                else:
+                    log.info(
+                        "factor_weather: ic_scorecard.json unreadable — "
+                        "factor_leader_ic=None"
+                    )
+
+        except Exception as exc:  # noqa: BLE001
+            log.warning("factor_weather: factor_series/scorecard parse error — %s", exc)
+            gaps.append(f"factor_series: {exc}")
+    else:
+        gaps.append("site/factordata/factor_series.json: missing or unreadable")
+
+    # ── 3. Real 20d ETF ratios from data/yahoo/ closes (FIX-3 + RULING-D) ───
+    # NOT from etf_pulse.json (does not exist in this repo — RULING-D).
+    # ratio = 20d compounded return of A minus 20d compounded return of B (PIT).
+    try:
+        import pandas as _pd2  # may already be imported above; harmless re-import
+
+        def _etf_close_series(sym: str) -> "_pd2.Series | None":  # type: ignore[name-defined]
+            _p = data_dir / "yahoo" / f"{sym}.parquet"
+            if not _p.exists():
+                log.warning("factor_weather: ETF parquet missing: %s", _p)
+                return None
+            _df = _pd2.read_parquet(_p)
+            if "close" not in _df.columns:
+                return None
+            _s = _df["close"].astype(float)
+            _s.index = _pd2.to_datetime(_s.index)
+            return _s.sort_index()
+
+        def _ratio_20d(sym_a: str, sym_b: str) -> "float | None":
+            _a = _etf_close_series(sym_a)
+            _b = _etf_close_series(sym_b)
+            if _a is None or _b is None:
+                return None
+            _ret_a = _a.pct_change(fill_method=None)
+            _ret_b = _b.pct_change(fill_method=None)
+            _roll_a = _ret_a.rolling(20, min_periods=10).apply(
+                lambda x: (1 + x).prod() - 1, raw=True)
+            _roll_b = _ret_b.rolling(20, min_periods=10).apply(
+                lambda x: (1 + x).prod() - 1, raw=True)
+            _diff = (_roll_a - _roll_b).dropna()
+            if _diff.empty:
+                return None
+            # FIX-9: take last value at max date
+            _max_d = _diff.index.max()
+            _val = float(_diff.loc[_max_d])
+            return None if (math.isnan(_val) or math.isinf(_val)) else _val
+
+        ratio_iwf_iwd = _ratio_20d("IWF", "IWD")
+        ratio_qqq_spy = _ratio_20d("QQQ", "SPY")
+        ratio_iwm_spy = _ratio_20d("IWM", "SPY")
+
+    except Exception as exc:  # noqa: BLE001
+        log.warning("factor_weather: ETF ratio computation failed — %s", exc)
+        gaps.append(f"etf_ratios: {exc}")
+
+    # Build etf_pulse_summary from real ratios (FIX-3):
+    if ratio_iwf_iwd is not None and ratio_qqq_spy is not None and ratio_iwm_spy is not None:
+        etf_pulse_summary = (
+            f"IWF/IWD_20d={ratio_iwf_iwd:+.4f}; "
+            f"QQQ/SPY_20d={ratio_qqq_spy:+.4f}; "
+            f"IWM/SPY_20d={ratio_iwm_spy:+.4f}"
+        )
+    else:
+        _avail = [
+            v for v in [ratio_iwf_iwd, ratio_qqq_spy, ratio_iwm_spy]
+            if v is not None
+        ]
+        etf_pulse_summary = (
+            "partial ETF data — some ratios unavailable" if _avail else None
+        )
+    if gaps:
+        log.info("factor_weather gaps: %s", gaps)
+
+    # RUL-NW2 fallback path: factor_state_as_of is null (artifact was absent/
+    # corrupt/missing factor_weather block, or prefer_artifact=False was passed).
+    # Staleness is signalled solely by the factor_state_as_of: null value —
+    # no additional gap-note entry is emitted here.
+    return {
+        "style_regime": _clean(style_regime),
+        "style_regime_pending": _clean(style_regime_pending),
+        "style_regime_hold_days": _clean(style_regime_hold_days),
+        "factor_leader": _clean(factor_leader),
+        "factor_leader_ic": _clean(factor_leader_ic),
+        "etf_pulse_summary": _clean(etf_pulse_summary),
+        "ratio_iwf_iwd_20d": _clean(ratio_iwf_iwd),
+        "ratio_qqq_spy_20d": _clean(ratio_qqq_spy),
+        "ratio_iwm_spy_20d": _clean(ratio_iwm_spy),
+        "display_only": True,
+        "factor_state_as_of": None,  # null on legacy fallback path (RUL-NW2)
+    }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Public API
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -418,6 +880,39 @@ def build_world_state(
         alerts_block = _compose_alerts(at)
     sources[str(at_path.relative_to(repo))] = (at or {}).get("asof")
 
+    # ── 6b. factor_weather lobe (§5.4 + RULING-B fold) ──────────────────────
+    # RULING-B: one wiring line; all data loading is inside _compose_factor_weather.
+    try:
+        factor_weather_block: dict = _compose_factor_weather(root=repo)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("world_state: factor_weather lobe failed — %s", exc)
+        gaps.append(f"factor_weather: {exc}")
+        factor_weather_block = {
+            "style_regime": None,
+            "style_regime_pending": None,
+            "style_regime_hold_days": None,
+            "factor_leader": None,
+            "factor_leader_ic": None,
+            "etf_pulse_summary": None,
+            "ratio_iwf_iwd_20d": None,
+            "ratio_qqq_spy_20d": None,
+            "ratio_iwm_spy_20d": None,
+            "display_only": True,
+            "factor_state_as_of": None,  # null on lobe failure (RUL-NW2)
+        }
+    try:
+        options_weather_block: dict = _compose_options_weather(root=repo)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("world_state: options_weather lobe failed — %s", exc)
+        gaps.append(f"options_weather: {exc}")
+        options_weather_block = {
+            "as_of": None, "n_roots": None, "median_iv30": None,
+            "median_skew": None, "median_skew_5d_chg": None,
+            "share_skew_rising": None, "median_ivspread_rel": None,
+            "share_pin_risk": None, "opex_days": None,
+            "note": "lobe failed — null fallback", "display_only": True,
+        }
+
     # ── 7. Contradictions summary (W4) ───────────────────────────────────────
     contradictions_block: dict | None = None
     try:
@@ -460,6 +955,8 @@ def build_world_state(
         "liquidity": liquidity_block,
         "data_health": data_health_block,
         "alerts": alerts_block,
+        "factor_weather": factor_weather_block,  # §5.4 wiring line (RULING-B)
+        "options_weather": options_weather_block,  # Options→NW W-B wiring line (RO-1)
         "qi": None,
         "qi_note": (
             "pending joint QI border ruling (masterplan W1) — "

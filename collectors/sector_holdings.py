@@ -73,6 +73,35 @@ class SectorHoldingsAdapter(Adapter):
             old = old[old.index != snap.index[0]]  # replace same-day snapshot
             snap = pd.concat([old, snap]).sort_index()
         snap.to_parquet(p)
+        # PIT history archiver: append-mode dated store for dispersion analysis.
+        # Columns: as_of (date), etf (str), ticker, name, weight_pct, rank.
+        # Idempotent per (as_of, etf): same-day re-runs drop the old rows first.
+        # Pass only today's rows (last date in the now-merged snap).
+        today_date = snap.index.max()
+        self._append_history(fund, snap.loc[[today_date]])
+
+    def _append_history(self, fund: str, snap: pd.DataFrame) -> None:
+        """Append today's snapshot for *fund* to data/sector_holdings/history.parquet.
+
+        Idempotent: if a row for (as_of, etf) already exists it is replaced, not
+        duplicated.  ``snap`` carries the per-holding rows indexed by as_of date.
+        """
+        d = config.data_dir() / self.group
+        as_of = snap.index[0].date()
+        rows = snap.reset_index(drop=True).copy()
+        rows.insert(0, "as_of", as_of)
+        rows.insert(1, "etf", fund)
+        hist_path = d / "history.parquet"
+        if hist_path.exists():
+            old = pd.read_parquet(hist_path)
+            old["as_of"] = pd.to_datetime(old["as_of"]).dt.date
+            # Drop rows for same (as_of, etf) to ensure idempotency
+            mask = ~((old["as_of"] == as_of) & (old["etf"] == fund))
+            old = old[mask]
+            rows = pd.concat([old, rows], ignore_index=True)
+        rows["as_of"] = pd.to_datetime(rows["as_of"])
+        rows = rows.sort_values(["as_of", "etf", "rank"]).reset_index(drop=True)
+        rows.to_parquet(hist_path, index=False)
 
     def _fetch_fund(self, fund: str) -> pd.DataFrame:
         r = self.http_get(SSGA_XLSX.format(fund=fund.lower()), retries=3, timeout=60,

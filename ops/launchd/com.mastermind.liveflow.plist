@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  com.mastermind.liveflow.plist — launchd agent for the live options-flow poller.
+
+  Autostart on weekdays at 09:25 ET. The poller runs --rth-only so it self-exits
+  after 16:05 ET.  launchd fires it again at 09:25 the next weekday.
+
+  INSTALL (as the mac user who runs Theta Terminal — not root):
+    cp ops/launchd/com.mastermind.liveflow.plist ~/Library/LaunchAgents/
+    launchctl load ~/Library/LaunchAgents/com.mastermind.liveflow.plist
+
+  UNINSTALL:
+    launchctl unload ~/Library/LaunchAgents/com.mastermind.liveflow.plist
+    rm ~/Library/LaunchAgents/com.mastermind.liveflow.plist
+
+  DO NOT load this plist directly from the repo. Copy first — the repo path
+  may not match the deployment path, and launchd requires the exact plist path
+  when unloading.
+
+  THETA TERMINAL DEPENDENCY:
+    The poller calls collectors.thetadata.reachable() on startup; if Theta
+    Terminal v3 (ThetaTerminalApp) is not running on port 25503 the poller
+    exits with code 1.  Start ThetaTerminalApp before 09:25 ET.
+    Recommended: add ThetaTerminalApp to Login Items so it launches at boot.
+
+  ENV FILE:
+    R2 credentials and other secrets are read from /etc/macro-api.env
+    (or the path in EnvironmentVariables below).  Required vars:
+      R2_ENDPOINT, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET
+
+  STATE WIPE (smoke / retention reset):
+    rm data/live_flow_state/day_state_YYYY-MM-DD.json
+    Then relaunch or run:
+      python -m scripts.live_flow_poller --once --date YYYY-MM-DD --retention-hours 96
+
+  LOG TAILING:
+    tail -f /tmp/liveflow.stdout.log /tmp/liveflow.stderr.log
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.mastermind.liveflow</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <!--
+      run_with_env.sh sources .env (R2 creds + THETADATA_STORE) before launching Python.
+      Adjust python path to match your conda/venv activation.
+    -->
+    <string>/Users/chriswong/Documents/Cluade/Macro Dashboard/ops/launchd/run_with_env.sh</string>
+    <string>/Users/chriswong/Documents/Cluade/Macro Dashboard/.env</string>
+    <string>/opt/homebrew/Caskroom/miniconda/base/bin/python</string>
+    <string>-m</string>
+    <string>scripts.live_flow_poller</string>
+    <string>--rth-only</string>
+  </array>
+
+  <!-- Working directory must be the MAIN checkout (not a worktree). -->
+  <key>WorkingDirectory</key>
+  <string>/Users/chriswong/Documents/Cluade/Macro Dashboard</string>
+
+  <!--
+    run_with_env.sh sources the .env file before executing the poller.
+    Secrets (R2 creds, THETADATA_STORE) are loaded from .env — never inlined here.
+  -->
+
+  <!--
+    Start weekdays at 09:25 ET (UTC-4 summer / UTC-5 winter).
+    Summer (EDT, UTC-4): 09:25 ET = 13:25 UTC
+    Winter (EST, UTC-5): 09:25 ET = 14:25 UTC
+    Add both so the agent fires correctly year-round.
+    launchd uses local system time; ensure system timezone = UTC and NTP is on,
+    OR switch to Hour/Minute in the local America/New_York timezone if the Mac
+    is set to ET.  The safest setup: set system timezone to America/New_York.
+  -->
+  <key>StartCalendarInterval</key>
+  <array>
+    <!-- Monday=1 ... Friday=5 -->
+    <dict>
+      <key>Weekday</key><integer>1</integer>
+      <key>Hour</key><integer>9</integer>
+      <key>Minute</key><integer>25</integer>
+    </dict>
+    <dict>
+      <key>Weekday</key><integer>2</integer>
+      <key>Hour</key><integer>9</integer>
+      <key>Minute</key><integer>25</integer>
+    </dict>
+    <dict>
+      <key>Weekday</key><integer>3</integer>
+      <key>Hour</key><integer>9</integer>
+      <key>Minute</key><integer>25</integer>
+    </dict>
+    <dict>
+      <key>Weekday</key><integer>4</integer>
+      <key>Hour</key><integer>9</integer>
+      <key>Minute</key><integer>25</integer>
+    </dict>
+    <dict>
+      <key>Weekday</key><integer>5</integer>
+      <key>Hour</key><integer>9</integer>
+      <key>Minute</key><integer>25</integer>
+    </dict>
+  </array>
+
+  <key>EnvironmentVariables</key>
+  <dict>
+    <!--
+      Secrets (R2_ENDPOINT / R2_ACCESS_KEY_ID / R2_SECRET_ACCESS_KEY / R2_BUCKET /
+      THETADATA_STORE) are loaded from .env by run_with_env.sh above.
+      Do NOT set secrets here — they would appear in the plist on disk.
+    -->
+    <key>PYTHONPATH</key>
+    <string>/Users/chriswong/Documents/Cluade/Macro Dashboard</string>
+  </dict>
+
+  <key>StandardOutPath</key>
+  <string>/tmp/liveflow.stdout.log</string>
+
+  <key>StandardErrorPath</key>
+  <string>/tmp/liveflow.stderr.log</string>
+
+  <!-- Do NOT set KeepAlive: the poller self-exits via --rth-only; launchd
+       respawns at the next StartCalendarInterval. -->
+  <key>KeepAlive</key>
+  <false/>
+
+  <!-- Throttle: if the job exits in under 10s (crash), wait 60s before retrying. -->
+  <key>ThrottleInterval</key>
+  <integer>60</integer>
+
+</dict>
+</plist>

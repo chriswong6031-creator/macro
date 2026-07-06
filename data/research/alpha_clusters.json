@@ -1,0 +1,1249 @@
+{
+  "clusters": [
+    {
+      "cluster_label": "C0",
+      "representative_alpha_id": "4b3d088452dd",
+      "members": [
+        {
+          "alpha_id": "4b3d088452dd",
+          "dsr": 0.5794,
+          "net_new_info": 1.0
+        },
+        {
+          "alpha_id": "07063b26d440",
+          "dsr": 0.5538,
+          "net_new_info": 0.079822713294053
+        },
+        {
+          "alpha_id": "5362f2fd5e77",
+          "dsr": 0.4555,
+          "net_new_info": 0.12353149101666294
+        },
+        {
+          "alpha_id": "2d39b0dd252b",
+          "dsr": 0.4252,
+          "net_new_info": 0.20662047122363614
+        },
+        {
+          "alpha_id": "497800be9f22",
+          "dsr": 0.373,
+          "net_new_info": 0.1121782852198363
+        },
+        {
+          "alpha_id": "b393db1f7c47",
+          "dsr": 0.3327,
+          "net_new_info": 0.2910022807447795
+        },
+        {
+          "alpha_id": "5583f73c9ce6",
+          "dsr": 0.3289,
+          "net_new_info": 0.12316425743407167
+        },
+        {
+          "alpha_id": "718894f8f56e",
+          "dsr": 0.328,
+          "net_new_info": 0.09588019061227882
+        },
+        {
+          "alpha_id": "9d9270a3f224",
+          "dsr": 0.2885,
+          "net_new_info": 0.19457035571802994
+        },
+        {
+          "alpha_id": "8f2db8046ae8",
+          "dsr": 0.2674,
+          "net_new_info": 0.4110559847164803
+        },
+        {
+          "alpha_id": "811cdca1da3d",
+          "dsr": 0.2555,
+          "net_new_info": 0.18562234782801657
+        },
+        {
+          "alpha_id": "bd803e699fae",
+          "dsr": 0.1811,
+          "net_new_info": 0.1765964461067434
+        },
+        {
+          "alpha_id": "46b115beb4da",
+          "dsr": 0.1049,
+          "net_new_info": 0.36424823846418186
+        },
+        {
+          "alpha_id": "496b19c0d082",
+          "dsr": 0.0793,
+          "net_new_info": 0.497441540618182
+        },
+        {
+          "alpha_id": "045f4b88857b",
+          "dsr": 0.0723,
+          "net_new_info": 0.5020251127998305
+        },
+        {
+          "alpha_id": "b008b0581282",
+          "dsr": 0.0538,
+          "net_new_info": 0.46512132021440133
+        }
+      ]
+    },
+    {
+      "cluster_label": "C1",
+      "representative_alpha_id": "ca021afa6f54",
+      "members": [
+        {
+          "alpha_id": "ca021afa6f54",
+          "dsr": 0.0852,
+          "net_new_info": 1.0
+        },
+        {
+          "alpha_id": "f8dd4de1eec6",
+          "dsr": 0.0809,
+          "net_new_info": 0.46842201337275535
+        },
+        {
+          "alpha_id": "661e42b47ea4",
+          "dsr": 0.0691,
+          "net_new_info": 0.20878135920296526
+        },
+        {
+          "alpha_id": "4a354b5a0391",
+          "dsr": 0.0287,
+          "net_new_info": 0.3115516588820595
+        },
+        {
+          "alpha_id": "f14487e87e76",
+          "dsr": 0.023,
+          "net_new_info": 0.45058818954335567
+        },
+        {
+          "alpha_id": "b78a7845fdeb",
+          "dsr": 0.0126,
+          "net_new_info": 0.4783835829793748
+        },
+        {
+          "alpha_id": "c1eb77d143dd",
+          "dsr": 0.0122,
+          "net_new_info": 0.3833905483146509
+        },
+        {
+          "alpha_id": "58f5c3347ab4",
+          "dsr": 0.0087,
+          "net_new_info": 0.3337085363250275
+        },
+        {
+          "alpha_id": "37a702f44e87",
+          "dsr": 0.006,
+          "net_new_info": 0.1775057916346353
+        },
+        {
+          "alpha_id": "1102370ba721",
+          "dsr": 0.0034,
+          "net_new_info": 0.40359041034976184
+        },
+        {
+          "alpha_id": "0edf37109da6",
+          "dsr": 0.0024,
+          "net_new_info": 0.3783393079264701
+        },
+        {
+          "alpha_id": "355a7d56f779",
+          "dsr": 0.0017,
+          "net_new_info": 0.383382784946687
+        },
+        {
+          "alpha_id": "b398ce3f9086",
+          "dsr": 0.0017,
+          "net_new_info": 0.37504718521706115
+        },
+        {
+          "alpha_id": "e8868ccd6734",
+          "dsr": 0.0012,
+          "net_new_info": 0.4060411376618691
+        }
+      ]
+    },
+    {
+      "cluster_label": "C2",
+      "representative_alpha_id": "e590239790a4",
+      "members": [
+        {
+          "alpha_id": "e590239790a4",
+          "dsr": 0.0831,
+          "net_new_info": 1.0
+        },
+        {
+          "alpha_id": "cbf088319a21",
+          "dsr": 0.0804,
+          "net_new_info": 0.04126307599854906
+        },
+        {
+          "alpha_id": "e831afb31d09",
+          "dsr": 0.0756,
+          "net_new_info": 0.06783976291685823
+        },
+        {
+          "alpha_id": "6965a9618e22",
+          "dsr": 0.0736,
+          "net_new_info": 0.1387683217797615
+        },
+        {
+          "alpha_id": "6115ce0c2403",
+          "dsr": 0.0725,
+          "net_new_info": 0.14774758931681498
+        },
+        {
+          "alpha_id": "851314cd3c57",
+          "dsr": 0.0665,
+          "net_new_info": 0.013781674070854955
+        },
+        {
+          "alpha_id": "b5b29ea29a95",
+          "dsr": 0.0532,
+          "net_new_info": 0.14716303953974552
+        },
+        {
+          "alpha_id": "32cad92be032",
+          "dsr": 0.0522,
+          "net_new_info": 0.1818142325680675
+        },
+        {
+          "alpha_id": "8c83f086434b",
+          "dsr": 0.0501,
+          "net_new_info": 0.014572043488894737
+        },
+        {
+          "alpha_id": "0a6afea6cfbb",
+          "dsr": 0.0411,
+          "net_new_info": 0.20499684878524982
+        },
+        {
+          "alpha_id": "28a07ceeda3f",
+          "dsr": 0.0387,
+          "net_new_info": 0.15421311241442104
+        },
+        {
+          "alpha_id": "dc8462313552",
+          "dsr": 0.0377,
+          "net_new_info": 0.07027815030224671
+        },
+        {
+          "alpha_id": "b028902e2243",
+          "dsr": 0.0323,
+          "net_new_info": 0.0788576073249434
+        },
+        {
+          "alpha_id": "ecb4b2c7a3e4",
+          "dsr": 0.0303,
+          "net_new_info": 0.15638571643530264
+        },
+        {
+          "alpha_id": "8296e393c72d",
+          "dsr": 0.0281,
+          "net_new_info": 0.08825809524066419
+        },
+        {
+          "alpha_id": "1224b1db66b3",
+          "dsr": 0.0236,
+          "net_new_info": 0.08226466635652507
+        },
+        {
+          "alpha_id": "5019d7a1347e",
+          "dsr": 0.0236,
+          "net_new_info": 0.508213469909345
+        },
+        {
+          "alpha_id": "99d3a094174e",
+          "dsr": 0.0236,
+          "net_new_info": 0.14488093350947295
+        },
+        {
+          "alpha_id": "7a28915acfae",
+          "dsr": 0.0234,
+          "net_new_info": 0.28978400845233954
+        },
+        {
+          "alpha_id": "98c8da286647",
+          "dsr": 0.0179,
+          "net_new_info": 0.15824991822892387
+        },
+        {
+          "alpha_id": "47c368ac4bc9",
+          "dsr": 0.0137,
+          "net_new_info": 0.25077720735743547
+        },
+        {
+          "alpha_id": "50e6d6d49c8d",
+          "dsr": 0.0133,
+          "net_new_info": 0.2552426636712698
+        },
+        {
+          "alpha_id": "91f549ad3a85",
+          "dsr": 0.0126,
+          "net_new_info": 0.21413642026701196
+        },
+        {
+          "alpha_id": "fa25a581be17",
+          "dsr": 0.0081,
+          "net_new_info": 0.17488718135521064
+        },
+        {
+          "alpha_id": "39ef73083bb2",
+          "dsr": 0.0067,
+          "net_new_info": 0.2080655961738742
+        },
+        {
+          "alpha_id": "249f4d9e644b",
+          "dsr": 0.0066,
+          "net_new_info": 0.29230084189926053
+        },
+        {
+          "alpha_id": "3d196e46c8d9",
+          "dsr": 0.0049,
+          "net_new_info": 0.2949729955727558
+        },
+        {
+          "alpha_id": "e3e2dd59e5f7",
+          "dsr": 0.0049,
+          "net_new_info": 0.2611667596568319
+        },
+        {
+          "alpha_id": "e54917e8d7ea",
+          "dsr": 0.0045,
+          "net_new_info": 0.2873984615854366
+        },
+        {
+          "alpha_id": "dd60d9888ff3",
+          "dsr": 0.0039,
+          "net_new_info": 0.3359562733507395
+        },
+        {
+          "alpha_id": "4ec7a90ced5f",
+          "dsr": 0.0031,
+          "net_new_info": 0.3525361684104569
+        },
+        {
+          "alpha_id": "660632a48f93",
+          "dsr": 0.0025,
+          "net_new_info": 0.31318803363638126
+        },
+        {
+          "alpha_id": "4a0ee021f7be",
+          "dsr": 0.0023,
+          "net_new_info": 0.38337025719868967
+        },
+        {
+          "alpha_id": "cb665caf32f3",
+          "dsr": 0.0023,
+          "net_new_info": 0.3697209088128163
+        },
+        {
+          "alpha_id": "3892b41268dc",
+          "dsr": 0.0022,
+          "net_new_info": 0.3220784160230794
+        },
+        {
+          "alpha_id": "cac63e7d8350",
+          "dsr": 0.0019,
+          "net_new_info": 0.2991202695499333
+        },
+        {
+          "alpha_id": "8a048fdb776a",
+          "dsr": 0.0011,
+          "net_new_info": 0.3324158020599608
+        },
+        {
+          "alpha_id": "d5add9389b29",
+          "dsr": 0.0011,
+          "net_new_info": 0.5002213511270287
+        },
+        {
+          "alpha_id": "f5f47bf21aa6",
+          "dsr": 0.0009,
+          "net_new_info": 0.48865089711392073
+        }
+      ]
+    },
+    {
+      "cluster_label": "C3",
+      "representative_alpha_id": "79025bde5848",
+      "members": [
+        {
+          "alpha_id": "79025bde5848",
+          "dsr": 0.0707,
+          "net_new_info": 1.0
+        }
+      ]
+    },
+    {
+      "cluster_label": "C4",
+      "representative_alpha_id": "c285c6e66043",
+      "members": [
+        {
+          "alpha_id": "c285c6e66043",
+          "dsr": 0.0689,
+          "net_new_info": 1.0
+        },
+        {
+          "alpha_id": "fd7af2731805",
+          "dsr": 0.0689,
+          "net_new_info": 0.0
+        },
+        {
+          "alpha_id": "4a23a1c2823c",
+          "dsr": 0.0027,
+          "net_new_info": 0.4284204796726676
+        }
+      ]
+    },
+    {
+      "cluster_label": "C5",
+      "representative_alpha_id": "a56bab318ea6",
+      "members": [
+        {
+          "alpha_id": "a56bab318ea6",
+          "dsr": 0.058,
+          "net_new_info": 1.0
+        },
+        {
+          "alpha_id": "fb1b022fe345",
+          "dsr": 0.058,
+          "net_new_info": 0.0
+        },
+        {
+          "alpha_id": "d5d9886fc6c4",
+          "dsr": 0.0517,
+          "net_new_info": 0.04432587792330933
+        },
+        {
+          "alpha_id": "f1118a0f0f6b",
+          "dsr": 0.0517,
+          "net_new_info": 0.04432587792330933
+        },
+        {
+          "alpha_id": "13da6cc3d8bc",
+          "dsr": 0.0304,
+          "net_new_info": 0.3352998055992682
+        },
+        {
+          "alpha_id": "5c3e9faee7d4",
+          "dsr": 0.0304,
+          "net_new_info": 0.3352998055992682
+        },
+        {
+          "alpha_id": "758ba27b0c6e",
+          "dsr": 0.024,
+          "net_new_info": 0.17341209911221545
+        },
+        {
+          "alpha_id": "a0a02d1611b6",
+          "dsr": 0.024,
+          "net_new_info": 0.17341209911221533
+        },
+        {
+          "alpha_id": "aa6e57c63868",
+          "dsr": 0.0138,
+          "net_new_info": 0.22852753405235782
+        },
+        {
+          "alpha_id": "1d6941bcae29",
+          "dsr": 0.0083,
+          "net_new_info": 0.5048366762186344
+        },
+        {
+          "alpha_id": "80a55bb37c0f",
+          "dsr": 0.0083,
+          "net_new_info": 0.5048366762186344
+        },
+        {
+          "alpha_id": "7a713516e174",
+          "dsr": 0.0028,
+          "net_new_info": 0.273990242956486
+        },
+        {
+          "alpha_id": "0960fef8f090",
+          "dsr": 0.0015,
+          "net_new_info": 0.222183784581509
+        }
+      ]
+    },
+    {
+      "cluster_label": "C6",
+      "representative_alpha_id": "d65c6cab97e3",
+      "members": [
+        {
+          "alpha_id": "d65c6cab97e3",
+          "dsr": 0.041,
+          "net_new_info": 1.0
+        },
+        {
+          "alpha_id": "ff5b75b24a8a",
+          "dsr": 0.041,
+          "net_new_info": 0.0
+        },
+        {
+          "alpha_id": "961f5f5106ba",
+          "dsr": 0.0202,
+          "net_new_info": 0.182244446130974
+        },
+        {
+          "alpha_id": "a6ab12b1a849",
+          "dsr": 0.0202,
+          "net_new_info": 0.182244446130974
+        },
+        {
+          "alpha_id": "7432784911b5",
+          "dsr": 0.006,
+          "net_new_info": 0.5065007607259593
+        }
+      ]
+    },
+    {
+      "cluster_label": "C7",
+      "representative_alpha_id": "d0bcfc0619bc",
+      "members": [
+        {
+          "alpha_id": "d0bcfc0619bc",
+          "dsr": 0.035,
+          "net_new_info": 1.0
+        },
+        {
+          "alpha_id": "c5278b3df6ef",
+          "dsr": 0.0234,
+          "net_new_info": 0.05624827473390415
+        },
+        {
+          "alpha_id": "5cdf6095997b",
+          "dsr": 0.011,
+          "net_new_info": 0.4289577372356774
+        },
+        {
+          "alpha_id": "054928b35771",
+          "dsr": 0.0081,
+          "net_new_info": 0.10011721848823363
+        },
+        {
+          "alpha_id": "b20dbd102e57",
+          "dsr": 0.0078,
+          "net_new_info": 0.16511001567067496
+        },
+        {
+          "alpha_id": "b2917ff0c702",
+          "dsr": 0.005,
+          "net_new_info": 0.3792860767741679
+        },
+        {
+          "alpha_id": "3fb9399791b1",
+          "dsr": 0.0035,
+          "net_new_info": 0.16872519202826963
+        },
+        {
+          "alpha_id": "7944051372d1",
+          "dsr": 0.0021,
+          "net_new_info": 0.24472048487737386
+        },
+        {
+          "alpha_id": "beea5deb1cc8",
+          "dsr": 0.002,
+          "net_new_info": 0.26514811908457914
+        },
+        {
+          "alpha_id": "efe8d77bd1e8",
+          "dsr": 0.0019,
+          "net_new_info": 0.5077615531878624
+        }
+      ]
+    },
+    {
+      "cluster_label": "C8",
+      "representative_alpha_id": "2e500ed701a0",
+      "members": [
+        {
+          "alpha_id": "2e500ed701a0",
+          "dsr": 0.029,
+          "net_new_info": 1.0
+        },
+        {
+          "alpha_id": "66581c783061",
+          "dsr": 0.029,
+          "net_new_info": 0.0
+        }
+      ]
+    },
+    {
+      "cluster_label": "C9",
+      "representative_alpha_id": "19fe12a419e8",
+      "members": [
+        {
+          "alpha_id": "19fe12a419e8",
+          "dsr": 0.021,
+          "net_new_info": 1.0
+        },
+        {
+          "alpha_id": "e776c68f1f11",
+          "dsr": 0.021,
+          "net_new_info": 0.0
+        },
+        {
+          "alpha_id": "1212e3191f55",
+          "dsr": 0.0192,
+          "net_new_info": 0.09706502080421253
+        },
+        {
+          "alpha_id": "d322f6440eb6",
+          "dsr": 0.0192,
+          "net_new_info": 0.09706502080421253
+        },
+        {
+          "alpha_id": "07faacf5a6ea",
+          "dsr": 0.0001,
+          "net_new_info": 0.36184551764436956
+        },
+        {
+          "alpha_id": "8c22250a4535",
+          "dsr": 0.0001,
+          "net_new_info": 0.4852410894208701
+        },
+        {
+          "alpha_id": "b3cd72a51ff7",
+          "dsr": 0.0001,
+          "net_new_info": 0.4729300714201683
+        },
+        {
+          "alpha_id": "f4a84c6295fe",
+          "dsr": 0.0001,
+          "net_new_info": 0.36184551764436945
+        }
+      ]
+    },
+    {
+      "cluster_label": "C10",
+      "representative_alpha_id": "218d2e1738fd",
+      "members": [
+        {
+          "alpha_id": "218d2e1738fd",
+          "dsr": 0.0189,
+          "net_new_info": 1.0
+        },
+        {
+          "alpha_id": "de966a5acacf",
+          "dsr": 0.0135,
+          "net_new_info": 0.14170017141711988
+        },
+        {
+          "alpha_id": "57bdaa6c4843",
+          "dsr": 0.009,
+          "net_new_info": 0.051700335581104206
+        }
+      ]
+    },
+    {
+      "cluster_label": "C11",
+      "representative_alpha_id": "e8efd909fb72",
+      "members": [
+        {
+          "alpha_id": "e8efd909fb72",
+          "dsr": 0.0178,
+          "net_new_info": 1.0
+        }
+      ]
+    },
+    {
+      "cluster_label": "C12",
+      "representative_alpha_id": "7ed37594df8c",
+      "members": [
+        {
+          "alpha_id": "7ed37594df8c",
+          "dsr": 0.0123,
+          "net_new_info": 1.0
+        }
+      ]
+    },
+    {
+      "cluster_label": "C13",
+      "representative_alpha_id": "74015b720de4",
+      "members": [
+        {
+          "alpha_id": "74015b720de4",
+          "dsr": 0.0109,
+          "net_new_info": 1.0
+        },
+        {
+          "alpha_id": "eb43c5812e41",
+          "dsr": 0.0069,
+          "net_new_info": 0.3204683397995318
+        },
+        {
+          "alpha_id": "f16daf629bb5",
+          "dsr": 0.0023,
+          "net_new_info": 0.40937653600568513
+        },
+        {
+          "alpha_id": "9d8e7fdbbf3b",
+          "dsr": 0.0002,
+          "net_new_info": 0.42117304504390995
+        }
+      ]
+    },
+    {
+      "cluster_label": "C14",
+      "representative_alpha_id": "535ffb279349",
+      "members": [
+        {
+          "alpha_id": "535ffb279349",
+          "dsr": 0.0106,
+          "net_new_info": 1.0
+        }
+      ]
+    },
+    {
+      "cluster_label": "C15",
+      "representative_alpha_id": "95d311a9087a",
+      "members": [
+        {
+          "alpha_id": "95d311a9087a",
+          "dsr": 0.0071,
+          "net_new_info": 1.0
+        },
+        {
+          "alpha_id": "ba579a40452d",
+          "dsr": 0.0071,
+          "net_new_info": 0.0
+        }
+      ]
+    },
+    {
+      "cluster_label": "C16",
+      "representative_alpha_id": "7d497510d4a4",
+      "members": [
+        {
+          "alpha_id": "7d497510d4a4",
+          "dsr": 0.0054,
+          "net_new_info": 1.0
+        },
+        {
+          "alpha_id": "9541fee3a118",
+          "dsr": 0.0043,
+          "net_new_info": 0.05466702803016876
+        },
+        {
+          "alpha_id": "377a1607e4f6",
+          "dsr": 0.0037,
+          "net_new_info": 0.319769012041736
+        },
+        {
+          "alpha_id": "30e019a4a3d1",
+          "dsr": 0.0031,
+          "net_new_info": 0.14882643919788574
+        },
+        {
+          "alpha_id": "e6c822afb6b2",
+          "dsr": 0.0018,
+          "net_new_info": 0.19019821979224938
+        },
+        {
+          "alpha_id": "4c9f2b11ad1f",
+          "dsr": 0.0015,
+          "net_new_info": 0.13773537220178467
+        },
+        {
+          "alpha_id": "5ed14298a1aa",
+          "dsr": 0.0009,
+          "net_new_info": 0.11517456326007225
+        },
+        {
+          "alpha_id": "c116d0969fc2",
+          "dsr": 0.0009,
+          "net_new_info": 0.15923507151897076
+        },
+        {
+          "alpha_id": "2d398ee62938",
+          "dsr": 0.0006,
+          "net_new_info": 0.2321710634218388
+        },
+        {
+          "alpha_id": "1cfc745595b4",
+          "dsr": 0.0005,
+          "net_new_info": 0.36944448608610725
+        },
+        {
+          "alpha_id": "e1e40c734b06",
+          "dsr": 0.0003,
+          "net_new_info": 0.27587180702231606
+        },
+        {
+          "alpha_id": "eaa66a60a09f",
+          "dsr": 0.0003,
+          "net_new_info": 0.21932201440682975
+        }
+      ]
+    },
+    {
+      "cluster_label": "C17",
+      "representative_alpha_id": "1a02303ad255",
+      "members": [
+        {
+          "alpha_id": "1a02303ad255",
+          "dsr": 0.005,
+          "net_new_info": 1.0
+        }
+      ]
+    },
+    {
+      "cluster_label": "C18",
+      "representative_alpha_id": "f7be4a9dea6a",
+      "members": [
+        {
+          "alpha_id": "f7be4a9dea6a",
+          "dsr": 0.0048,
+          "net_new_info": 1.0
+        },
+        {
+          "alpha_id": "91a82ebf3348",
+          "dsr": 0.0039,
+          "net_new_info": 0.16011890909513726
+        },
+        {
+          "alpha_id": "59b5bdb8ec90",
+          "dsr": 0.0036,
+          "net_new_info": 0.2369019243328372
+        },
+        {
+          "alpha_id": "874b623849e1",
+          "dsr": 0.0035,
+          "net_new_info": 0.19126535492226338
+        },
+        {
+          "alpha_id": "453c63159e0c",
+          "dsr": 0.0025,
+          "net_new_info": 0.22402157141079782
+        },
+        {
+          "alpha_id": "493d9f263827",
+          "dsr": 0.0013,
+          "net_new_info": 0.1642182730957087
+        },
+        {
+          "alpha_id": "99ac2d67fb99",
+          "dsr": 0.0011,
+          "net_new_info": 0.1086165445474262
+        },
+        {
+          "alpha_id": "d5764795a9a0",
+          "dsr": 0.001,
+          "net_new_info": 0.07230949712605828
+        },
+        {
+          "alpha_id": "54f5c99867d6",
+          "dsr": 0.0007,
+          "net_new_info": 0.3064813750836983
+        },
+        {
+          "alpha_id": "adec0487132f",
+          "dsr": 0.0007,
+          "net_new_info": 0.3653622902871808
+        },
+        {
+          "alpha_id": "916a20c4ba48",
+          "dsr": 0.0005,
+          "net_new_info": 0.3183268137080001
+        }
+      ]
+    },
+    {
+      "cluster_label": "C19",
+      "representative_alpha_id": "5213e555722b",
+      "members": [
+        {
+          "alpha_id": "5213e555722b",
+          "dsr": 0.0045,
+          "net_new_info": 1.0
+        },
+        {
+          "alpha_id": "c54fb8fbe6a4",
+          "dsr": 0.001,
+          "net_new_info": 0.44481334750160917
+        },
+        {
+          "alpha_id": "7c5ecb8aa0c8",
+          "dsr": 0.0,
+          "net_new_info": 0.3015166690955191
+        }
+      ]
+    },
+    {
+      "cluster_label": "C20",
+      "representative_alpha_id": "6bbebdfa7bd5",
+      "members": [
+        {
+          "alpha_id": "6bbebdfa7bd5",
+          "dsr": 0.0037,
+          "net_new_info": 1.0
+        }
+      ]
+    },
+    {
+      "cluster_label": "C21",
+      "representative_alpha_id": "a2fc10989e56",
+      "members": [
+        {
+          "alpha_id": "a2fc10989e56",
+          "dsr": 0.0036,
+          "net_new_info": 1.0
+        }
+      ]
+    },
+    {
+      "cluster_label": "C22",
+      "representative_alpha_id": "735ab05062be",
+      "members": [
+        {
+          "alpha_id": "735ab05062be",
+          "dsr": 0.0034,
+          "net_new_info": 1.0
+        },
+        {
+          "alpha_id": "57a62307f070",
+          "dsr": 0.001,
+          "net_new_info": 0.35277179234416556
+        },
+        {
+          "alpha_id": "50f14d6083be",
+          "dsr": 0.0007,
+          "net_new_info": 0.4459527585474512
+        }
+      ]
+    },
+    {
+      "cluster_label": "C23",
+      "representative_alpha_id": "de1576ea207a",
+      "members": [
+        {
+          "alpha_id": "de1576ea207a",
+          "dsr": 0.0033,
+          "net_new_info": 1.0
+        },
+        {
+          "alpha_id": "3cdcb4aeaf83",
+          "dsr": 0.0027,
+          "net_new_info": 0.4873642080749173
+        }
+      ]
+    },
+    {
+      "cluster_label": "C24",
+      "representative_alpha_id": "903356e17412",
+      "members": [
+        {
+          "alpha_id": "903356e17412",
+          "dsr": 0.0031,
+          "net_new_info": 1.0
+        },
+        {
+          "alpha_id": "a18c41b6487c",
+          "dsr": 0.0031,
+          "net_new_info": 0.0
+        }
+      ]
+    },
+    {
+      "cluster_label": "C25",
+      "representative_alpha_id": "9ddc7184d241",
+      "members": [
+        {
+          "alpha_id": "9ddc7184d241",
+          "dsr": 0.0031,
+          "net_new_info": 1.0
+        }
+      ]
+    },
+    {
+      "cluster_label": "C26",
+      "representative_alpha_id": "7f05f4bd4b2a",
+      "members": [
+        {
+          "alpha_id": "7f05f4bd4b2a",
+          "dsr": 0.0028,
+          "net_new_info": 1.0
+        },
+        {
+          "alpha_id": "828331e70536",
+          "dsr": 0.0028,
+          "net_new_info": 0.0
+        }
+      ]
+    },
+    {
+      "cluster_label": "C27",
+      "representative_alpha_id": "2040f1472eb7",
+      "members": [
+        {
+          "alpha_id": "2040f1472eb7",
+          "dsr": 0.0025,
+          "net_new_info": 1.0
+        }
+      ]
+    },
+    {
+      "cluster_label": "C28",
+      "representative_alpha_id": "9164b2bdf5cd",
+      "members": [
+        {
+          "alpha_id": "9164b2bdf5cd",
+          "dsr": 0.0023,
+          "net_new_info": 1.0
+        }
+      ]
+    },
+    {
+      "cluster_label": "C29",
+      "representative_alpha_id": "4896cba58b87",
+      "members": [
+        {
+          "alpha_id": "4896cba58b87",
+          "dsr": 0.002,
+          "net_new_info": 1.0
+        },
+        {
+          "alpha_id": "d7795c83bd10",
+          "dsr": 0.002,
+          "net_new_info": 0.0
+        },
+        {
+          "alpha_id": "aa841c48ba7a",
+          "dsr": 0.0004,
+          "net_new_info": 0.18427724350369645
+        },
+        {
+          "alpha_id": "e026299dde8e",
+          "dsr": 0.0004,
+          "net_new_info": 0.18427724350369645
+        },
+        {
+          "alpha_id": "3307948eb55b",
+          "dsr": 0.0,
+          "net_new_info": 0.3944412090203576
+        },
+        {
+          "alpha_id": "b460b013f33c",
+          "dsr": 0.0,
+          "net_new_info": 0.3944412090203575
+        }
+      ]
+    },
+    {
+      "cluster_label": "C30",
+      "representative_alpha_id": "a26486747140",
+      "members": [
+        {
+          "alpha_id": "a26486747140",
+          "dsr": 0.0016,
+          "net_new_info": 1.0
+        },
+        {
+          "alpha_id": "b86501a65ed3",
+          "dsr": 0.0016,
+          "net_new_info": 0.0
+        }
+      ]
+    },
+    {
+      "cluster_label": "C31",
+      "representative_alpha_id": "9502b4107179",
+      "members": [
+        {
+          "alpha_id": "9502b4107179",
+          "dsr": 0.0013,
+          "net_new_info": 1.0
+        }
+      ]
+    },
+    {
+      "cluster_label": "C32",
+      "representative_alpha_id": "4f69b2e9f12b",
+      "members": [
+        {
+          "alpha_id": "4f69b2e9f12b",
+          "dsr": 0.0007,
+          "net_new_info": 1.0
+        },
+        {
+          "alpha_id": "f96c20348b11",
+          "dsr": 0.0007,
+          "net_new_info": 0.0
+        },
+        {
+          "alpha_id": "a77d571574d0",
+          "dsr": 0.0002,
+          "net_new_info": 0.18558207674889748
+        },
+        {
+          "alpha_id": "f957f72e088a",
+          "dsr": 0.0002,
+          "net_new_info": 0.18558207674889748
+        },
+        {
+          "alpha_id": "d76fec939071",
+          "dsr": 0.0001,
+          "net_new_info": 0.4629941706806743
+        },
+        {
+          "alpha_id": "f6bfc12f7a01",
+          "dsr": 0.0001,
+          "net_new_info": 0.4629941706806744
+        }
+      ]
+    },
+    {
+      "cluster_label": "C33",
+      "representative_alpha_id": "4ee1d2c7a830",
+      "members": [
+        {
+          "alpha_id": "4ee1d2c7a830",
+          "dsr": 0.0005,
+          "net_new_info": 1.0
+        },
+        {
+          "alpha_id": "c3678ef05078",
+          "dsr": 0.0004,
+          "net_new_info": 0.3515023946754269
+        },
+        {
+          "alpha_id": "4895d1ae9573",
+          "dsr": 0.0003,
+          "net_new_info": 0.48433056922906337
+        }
+      ]
+    },
+    {
+      "cluster_label": "C34",
+      "representative_alpha_id": "af64978f7dbe",
+      "members": [
+        {
+          "alpha_id": "af64978f7dbe",
+          "dsr": 0.0005,
+          "net_new_info": 1.0
+        }
+      ]
+    },
+    {
+      "cluster_label": "C35",
+      "representative_alpha_id": "8aa737c29f88",
+      "members": [
+        {
+          "alpha_id": "8aa737c29f88",
+          "dsr": 0.0001,
+          "net_new_info": 1.0
+        }
+      ]
+    },
+    {
+      "cluster_label": "C36",
+      "representative_alpha_id": "25b9708fd488",
+      "members": [
+        {
+          "alpha_id": "25b9708fd488",
+          "dsr": 0.0,
+          "net_new_info": 1.0
+        },
+        {
+          "alpha_id": "5d6005bee2ef",
+          "dsr": 0.0,
+          "net_new_info": 0.0931748459412366
+        },
+        {
+          "alpha_id": "6433df94fc6b",
+          "dsr": 0.0,
+          "net_new_info": 0.0289229265329618
+        },
+        {
+          "alpha_id": "b53dcd5208ba",
+          "dsr": 0.0,
+          "net_new_info": 0.0289229265329618
+        },
+        {
+          "alpha_id": "b9c868008749",
+          "dsr": 0.0,
+          "net_new_info": 0.3660346942636521
+        },
+        {
+          "alpha_id": "c8d1f412530e",
+          "dsr": 0.0,
+          "net_new_info": 0.12319254480785924
+        },
+        {
+          "alpha_id": "cc0b2567e59d",
+          "dsr": 0.0,
+          "net_new_info": 0.0
+        },
+        {
+          "alpha_id": "de05731f02ff",
+          "dsr": 0.0,
+          "net_new_info": 0.07167022802646295
+        },
+        {
+          "alpha_id": "f83c9b105e8e",
+          "dsr": 0.0,
+          "net_new_info": 0.0931748459412366
+        }
+      ]
+    },
+    {
+      "cluster_label": "C37",
+      "representative_alpha_id": "48bb87524a58",
+      "members": [
+        {
+          "alpha_id": "48bb87524a58",
+          "dsr": 0.0,
+          "net_new_info": 1.0
+        }
+      ]
+    },
+    {
+      "cluster_label": "C38",
+      "representative_alpha_id": "544634212fa1",
+      "members": [
+        {
+          "alpha_id": "544634212fa1",
+          "dsr": 0.0,
+          "net_new_info": 1.0
+        },
+        {
+          "alpha_id": "7c1e2d83c73b",
+          "dsr": 0.0,
+          "net_new_info": 0.0
+        },
+        {
+          "alpha_id": "8392ea451359",
+          "dsr": 0.0,
+          "net_new_info": 0.14344579261889523
+        },
+        {
+          "alpha_id": "9ef6e0e1c2fc",
+          "dsr": 0.0,
+          "net_new_info": 0.14344579261889523
+        }
+      ]
+    },
+    {
+      "cluster_label": "C39",
+      "representative_alpha_id": "9ba5d1b0dbf9",
+      "members": [
+        {
+          "alpha_id": "9ba5d1b0dbf9",
+          "dsr": 0.0,
+          "net_new_info": 1.0
+        },
+        {
+          "alpha_id": "cacbf733e540",
+          "dsr": 0.0,
+          "net_new_info": 0.0
+        }
+      ]
+    }
+  ],
+  "meta": {
+    "n_clusters": 40,
+    "n_candidates": 200,
+    "cluster_threshold": 0.7
+  }
+}

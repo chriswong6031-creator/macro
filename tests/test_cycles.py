@@ -442,6 +442,132 @@ def test_weekly_cross_while_weekly_overbought_does_not_veto() -> None:
     assert ladder_state(cyc, mtf)["state"] == "TOP WATCH"
 
 
+# ── De-escalation gate: below-MA10 TURN SIGNALED + rollover_veto / overextended ──
+
+def _below_ma10_turn_signaled_snapshot(rsi_d: float = 48.0,
+                                       curl_dn: bool = True,
+                                       approaching_dn: bool = False,
+                                       stoch: float = 55.0) -> tuple[dict, dict]:
+    """Snapshot that fires the bug branch: late cycle, swing low in, price BELOW the
+    10-day average (above_ma10=False). curl_dn/approaching_dn arm daily rollover so
+    rollover_veto fires when combined with late=True. stoch knob exercises the
+    _overextended() oscillator path."""
+    cyc = {
+        "dc_day": 38, "dc_band": (36, 42), "dc_early": 12, "dc_phase": "in_band",
+        "last_dcl": "2026-06-01", "dcl_price": 4.20,
+        "cand_dcl": "2026-07-02", "cand_price": 4.20, "cand_swing": True, "cand_age": 1,
+        "cand_depth_pct": 8.7,
+        "translation": "right", "failed_cycle": False, "failed_age": None,
+        "swing_low": True, "above_ma10": False, "ma10_rising": False,
+        "ic_week": 12, "ic_band": (16, 26), "ic_phase": "in_band", "ic_failed": False,
+        "n_troughs": 3,
+    }
+    mtf = {
+        "D": {"rsi14": rsi_d, "rsi5": rsi_d, "stoch": stoch,
+              "macd_pos": True, "macd_cross_up": False, "macd_cross_dn": False,
+              "macd_approaching_up": True, "macd_approaching_dn": approaching_dn,
+              "macd_curl_up": False, "macd_curl_dn": curl_dn,
+              "macd_bars_to_cross": 2.0,
+              "stoch_cross_up": False, "stoch_cross_dn": False},
+        "3D": {"rsi14": 50.0, "rsi5": 50.0, "stoch": 50.0,
+               "macd_pos": False, "macd_cross_up": False, "macd_cross_dn": False,
+               "macd_approaching_up": False, "macd_approaching_dn": False,
+               "macd_curl_up": False, "macd_curl_dn": False, "macd_bars_to_cross": None,
+               "stoch_cross_up": False, "stoch_cross_dn": False},
+        "W": {"rsi14": 45.0, "rsi5": 45.0, "stoch": 40.0,
+              "macd_pos": False, "macd_cross_up": False, "macd_cross_dn": False,
+              "macd_approaching_up": False, "macd_approaching_dn": False,
+              "macd_curl_up": False, "macd_curl_dn": False, "macd_bars_to_cross": None,
+              "stoch_cross_up": False, "stoch_cross_dn": False},
+    }
+    return cyc, mtf
+
+
+def test_below_ma10_turn_signaled_with_rollover_veto_does_not_buy() -> None:
+    """512760.SS pathology (2026-07-02): price −8.7% off high, above_ma10 flipped
+    False, rollover_veto=True (daily MACD curling down + late in cycle).
+    The bug produced urgency='imminent' / BUY SOON — must now be de-escalated to
+    urgency='caution' so the action-board bucketer places it in take_profits/hold,
+    NOT buy_soon. State label (TURN SIGNALED / BOTTOMING) is intentionally preserved."""
+    cyc, mtf = _below_ma10_turn_signaled_snapshot(curl_dn=True)
+    lad = ladder_state(cyc, mtf)
+    assert lad["state"] == "TURN SIGNALED", (
+        f"expected TURN SIGNALED got {lad['state']!r} — bug path may have changed")
+    entry = lad["entry"]
+    assert entry["urgency"] not in ("now", "imminent", "soon"), (
+        f"entry still maps to buy bucket: urgency={entry['urgency']!r}  tag={entry['tag']!r}")
+    assert entry["urgency"] == "caution", entry
+    assert "WAIT" in entry["tag"], entry
+    # state label preserved: still says BOTTOMING at the display layer
+    assert lad["label"] == "BOTTOMING", lad["label"]
+
+
+def test_below_ma10_turn_signaled_with_stoch_overextended_does_not_buy() -> None:
+    """Same de-escalation fires via the _overextended(mtf) oscillator path even
+    when rollover_veto is False — a very high 3D StochRSI (>80) should trigger it."""
+    cyc, mtf = _below_ma10_turn_signaled_snapshot(curl_dn=False, approaching_dn=False)
+    # force 3D StochRSI overbought so _overextended(mtf) returns True
+    mtf["3D"]["stoch"] = 85.0
+    lad = ladder_state(cyc, mtf)
+    assert lad["state"] == "TURN SIGNALED", lad["state"]
+    entry = lad["entry"]
+    assert entry["urgency"] not in ("now", "imminent", "soon"), entry
+    assert "WAIT" in entry["tag"], entry
+
+
+def test_below_ma10_turn_signaled_clean_bottom_still_buys() -> None:
+    """Guard: a genuine fresh non-extended bottom below the 10-day average
+    (rollover_veto=False, oscillators mid-range) MUST still get urgency='imminent'
+    (BUY SOON). The fix must be discriminating — not a blanket suppression."""
+    cyc, mtf = _below_ma10_turn_signaled_snapshot(curl_dn=False, approaching_dn=False,
+                                                   rsi_d=42.0, stoch=45.0)
+    lad = ladder_state(cyc, mtf)
+    assert lad["state"] == "TURN SIGNALED", lad["state"]
+    entry = lad["entry"]
+    assert entry["urgency"] in ("imminent", "soon"), (
+        f"clean bottom was suppressed — urgency={entry['urgency']!r}  tag={entry['tag']!r}")
+    assert "BUY" in entry["tag"], entry
+
+
+def test_below_ma10_near_low_daily_rollover_only_gets_unconfirmed_not_extended() -> None:
+    """XLK profile: price near cycle low, oscillators deeply oversold (D/3D StochRSI=3),
+    _overextended(mtf)=False. Gate fires via daily macd_curl_dn + late-cycle
+    (rollover_veto=True via daily path), NOT via oscillator overextension.
+    This is the copy-defect case: the old code unconditionally labelled the entry
+    'EXTENDED / 已过热' even though oscillators were oversold, not overbought.
+    Asserts: (a) urgency='caution' (still de-escalated), (b) tag/text uses the
+    'momentum rolling over / UNCONFIRMED' variant and does NOT contain
+    'EXTENDED', '过热', or 'overheated'."""
+    cyc, mtf = _below_ma10_turn_signaled_snapshot(curl_dn=True, approaching_dn=False,
+                                                   rsi_d=38.0, stoch=3.0)
+    # Confirm oscillators are oversold (not overbought) — _overextended must be False
+    mtf["3D"]["stoch"] = 3.0  # deeply oversold on the 3-day too
+
+    lad = ladder_state(cyc, mtf)
+    assert lad["state"] == "TURN SIGNALED", (
+        f"expected TURN SIGNALED got {lad['state']!r}")
+    entry = lad["entry"]
+
+    # (a) de-escalated to caution (not a buy-bucket urgency)
+    assert entry["urgency"] == "caution", (
+        f"expected caution, got urgency={entry['urgency']!r}  tag={entry['tag']!r}")
+    assert entry["urgency"] not in ("now", "imminent", "soon"), entry
+
+    # (b) copy is the 'unconfirmed / momentum rolling over' variant —
+    # must NOT claim 'EXTENDED' or 'overheated' for an oversold ticker
+    assert "WAIT" in entry["tag"], (
+        f"expected WAIT in tag, got {entry['tag']!r}")
+    for forbidden in ("EXTENDED", "过热", "overheated"):
+        assert forbidden not in entry["tag"], (
+            f"tag falsely claims '{forbidden}' for an oversold ticker: {entry['tag']!r}")
+        assert forbidden not in entry.get("tag_zh", ""), (
+            f"tag_zh falsely claims '{forbidden}': {entry.get('tag_zh')!r}")
+        assert forbidden not in entry.get("text", ""), (
+            f"text falsely claims '{forbidden}': {entry.get('text', '')[:120]!r}")
+        assert forbidden not in entry.get("text_zh", ""), (
+            f"text_zh falsely claims '{forbidden}': {entry.get('text_zh', '')[:120]!r}")
+
+
 if __name__ == "__main__":
     for fn in [test_trough_spacing, test_translation_right, test_translation_left,
                test_failed_cycle_flag, test_ladder_states_sane, test_decline_on_breakdown,
@@ -461,7 +587,11 @@ if __name__ == "__main__":
                test_washout_knife_tempers_bottom_confidence,
                test_fresh_weekly_cross_vetoes_take_profits,
                test_take_profits_stands_without_a_fresh_weekly_cross,
-               test_weekly_cross_while_weekly_overbought_does_not_veto]:
+               test_weekly_cross_while_weekly_overbought_does_not_veto,
+               test_below_ma10_turn_signaled_with_rollover_veto_does_not_buy,
+               test_below_ma10_turn_signaled_with_stoch_overextended_does_not_buy,
+               test_below_ma10_turn_signaled_clean_bottom_still_buys,
+               test_below_ma10_near_low_daily_rollover_only_gets_unconfirmed_not_extended]:
         fn()
         print(f"PASS {fn.__name__}")
     print("all cycle tests passed")

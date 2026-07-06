@@ -114,3 +114,84 @@ Golden test soft check: **0/31** live gate-fires appear in the committed `us_sta
 The harness's **price-time PIT discipline is genuinely clean** — no same-bar fill, no future-bar leak into past verdicts, no marker-date grading, engine untouched. That part earns a pass and was proven, not assumed.
 
 But it **fails the P0.1 merge gate on two counts**: (F1) the tractability prefilter silently drops real production fires via resample-anchor drift, and its soundness control is structurally blind to that failure; (F2) the golden test — the R8 hard gate — has never actually run (no replay parts exist) and passes vacuously by design when replay data is absent. Both must be fixed and the golden test re-run for real (with F1's fix so latest-date fires are all captured) before merge. F3–F7 are fidelity/completeness issues to fold into the same fix PR; none is a lookahead, but F5 leaves the study feature set half-empty and F6 makes the rejection histogram unreliable for P1.2.
+
+---
+---
+
+# P0.1 Replay Harness — PIT AUDIT v2 (fresh adversarial re-audit of the repair PR)
+
+**Artifact re-audited:** PR #1312 branch `ei/p0-1-replay-harness` @ `c60f2d3cec` (repair of the v1-BLOCKED harness). Same single file `scripts/replay_standout_pipeline.py`, now **1,588 lines** (was 1,142; +446 additive, engine still untouched — `git diff origin/main...ei/p0-1-replay-harness -- engine/` empty).
+**Auditor:** Opus (PIT audit delegate, §7). **Method:** read PR diff via `git show origin/ei/p0-1-replay-harness:…` (no shared-checkout mutation); loaded the harness by absolute path and **re-ran the load-bearing checks empirically** against `data/massive_stock_day/`, `data/yahoo/`, and the on-disk `data/replay/` parts. Default skeptical — every regression claim independently reproduced, not read from the fix agent's report.
+**Date:** 2026-07-05.
+
+## VERDICT v2: CLEAN (mergeable under R8) — 0 BLOCKING, 5 ADVISORY
+
+Both v1 blockers are **genuinely dead** (verified four independent ways below, not by reading the report). The core price-time PIT discipline from v1 still holds and the new Massive rewiring introduces **no lookahead** — the one theoretically-concerning path (future-split back-adjustment leaking into a past PIT slice) was tested and proven verdict-neutral because the leak is a *uniform scalar* on the slice and every gate indicator is scale-invariant. The harness is mergeable. Five ADVISORY items remain; none blocks, but **AF1 (concordance mis-diagnosis)** and **AF2 (report/artifact number mismatch)** should be corrected in the PR text before P1 studies cite them, and **AF3 (Massive-truncated-history anchor divergence)** must be surfaced in the P1 PREREGs as a known measurement property.
+
+> First-sentence claim, strongest true form: **F1 and F2 are fixed and I reproduced both fixes from scratch; the Massive path is PIT-clean; the residual issues are a wrong prose diagnosis of a real ~3–5% yahoo-vs-Massive gate divergence and a report number that isn't on disk — advisory, not blocking.**
+
+---
+
+## REGRESSION CHECKS (each verified empirically)
+
+### RC1 — F1 dead (recall). **PASS.**
+- **Mechanism of the fix is structural, not a patched heuristic.** `candidate_dates()` (harness L320-350) returns **every** sufficient-history bar (≥250-bar warm-up, ≥`MASSIVE_ERA_START`), and `main()` wires exactly this into the ledger (L1488) — the lossy prefilter is quarantined into `prefilter_candidates_fast()` explicitly marked "EXPLORATION ONLY … must never feed the ledger" (L353-359) and is used only inside the diagnostic concordance sampler. Since the gate runs on every bar, **candidate ⊇ every fire trivially**; the v1 resample-anchor drop is impossible by construction.
+- **The exhaustive recall assertion exists, runs, and passes.** `run_recall_assertion()` (L786-878) calls the *production* `signal_gate.gate()` on the PIT-truncated slice at every bar and halts on the first `fire ∉ candidate`. The on-disk `data/replay/_recall.log` shows a real run: **20 tickers, 20,100 bars gated, 1,197 fires, 0 candidate_misses, 100% coverage, "RECALL PASSED"** (23:42→00:04, 22 min — consistent with the ~0.11 s/bar cost). Not a random sample; exhaustive per-ticker with halt-on-miss.
+- **ZS 2024-05-10 (the v1 witness) is a genuine T1/ticks=0 fire and the harness reproduces it.** I re-ran it independently: `signal_gate.gate('ZS', yahoo.loc[:2024-05-10])` → `buyable=True, tier=T1, ticks=0`; `replay_ticker('ZS', …)` → `fire, tier=T1`. The golden test asserts this in code with `raise AssertionError` on failure (L985) and records `passed:true`.
+- **Caveat (see AF3):** ZS is **not** in the 57-ticker primary cohort, so the regeneration proof of ZS lives in the golden test's yahoo path, **not** in the primary parquet parts — and on the *Massive* panel the same date is **not** buyable (tier=None, ticks=43). That divergence is AF3, not an F1 regression.
+
+### RC2 — F2 dead (golden). **PASS.**
+- `golden_test_passed = bool(replay_exists and exact_match)` (L964) — the v1 vacuous `exact_match or not replay_exists` is **gone**, and `replay_exists` now requires the replay path to have actually produced fires (L952).
+- The stored `data/replay/golden_test.json` shows a **real diff run in yahoo-fidelity mode**: `prod_fire_count=62`, `replay_fire_count=62`, `in_prod_not_replay=[]`, `in_replay_not_prod=[]`, `tier_mismatches=[]`, `exact_match=true`. The test drives the harness's OWN `replay_ticker()` path (L945) against the production `_gate_fires_on_date()` on the same yahoo panel — apples-to-apples, exact. This is the design contract ("must match ticker-by-ticker exactly") genuinely exercised.
+- The v1 "no parts exist" condition is resolved: `data/replay/replay_2022..2026.parquet` exist with real content (see RC-DATA).
+
+### RC3 — Board-stage post-pass (F6/F7). **PASS (with honest, convincing diagnosis for the non-reproducible part).**
+- **F6 fixed:** the `tier_cutoff` catch-all is **eliminated** from `_classify_verdict()` (L566-602). Gate rejections now carry true causes; the on-disk histogram is `no_signal 42,510 / not_topped_veto 5,988 / board_rank_cutoff 932 / hygiene_screen 486`. `no_signal` dominating is *honest* (most bars have no cross), not a laundered catch-all. `board_post_pass()` (L1098-1194) adds PIT-computable board reasons — `knife_demote 1,459`, `board_rank_unresolved 1,208`, `extension_demote 728` — using the **production** `STRETCHED_Z` threshold for the extension brake.
+- **F7 (0/62 board overlap) is diagnosed, not hand-waved, and the diagnosis is correct.** The board buy list is produced by `build_stock_library.py` L1900-2083 from `stock_score.conviction_profile()→composite_z` (needs cross-sectional PEAD/quality/tailwind axes) + `entry_signal.assess()` + coiled cohort-washout + `ladder.state` — none derivable from a close-only PIT slice. Forcing reproduction would be verification theater; the harness correctly stamps the non-reconstructable residual `board_rank_unresolved` rather than inventing a reason. **This is the right call under §4.2/§4.4 (boring-baseline / quarantine).**
+
+### RC-DATA — parts exist, counts match the report's headline. **PASS.**
+- `data/replay/replay_2022..2026.parquet` = **54,361 rows** total (2022:6,466 / 2023:13,010 / 2024:13,783 / 2025:14,000 / 2026:7,102), **3,395 fires** (`verdict_type=="fire"`, byte-equal to `eligible & tier∈BUYABLE`), 1,050 near-miss, 49,916 rejection. Matches the report's `primary_window_rows:54361 / fires_primary_window:3395` **exactly**.
+- The report/log figure `rows=108722 fires=6790` is the **pre-fix double-count** (the summary glob matched `replay_boarded.parquet`); commit `c60f2d3c` fixed it and the current `print_summary`/`board_post_pass` globs (`replay_2*.parquet`) correctly exclude the boarded file. The 54,361 figure is the deduplicated truth. Reconciled.
+- Grading integrity intact: `fill_offset==1` on all 3,394 fillable fires (1 last-bar fire correctly unfilled), `fwd_ret_21` populated 3,009/3,009 on non-censored fires, terminal states populated.
+
+---
+
+## NEW-SCOPE (Massive rewiring) — LOOKAHEAD & VALIDITY
+
+### NS1 — Massive split-adjust PIT-safety. **PASS (proven verdict-neutral).**
+Concern: `load_universe()` applies `split_adjust()` **once to the full series** (L257), then `replay_ticker` slices the already-adjusted series (L647). A **future** split therefore back-multiplies the *past* bars inside a PIT slice — I confirmed this directly (AVGO 10:1 2024-07-15: past bars in a 2024-07-10 slice sit at ~174 = post-split scale, a 9× shift vs a true-PIT re-adjust). **But this is verdict-neutral**: because a future split is at a full-series position *after the entire slice*, its factor is a **uniform scalar** on every bar of `close_pit` (measured scale-ratio spread = `1.00000000`), and every gate indicator (RSI/MACD/StochRSI/SMA ratios) is scale-invariant. Empirical proof: `gate(full-adjust-then-slice)` == `gate(adjust-only-close_pit)` on AVGO at 4 pre-split dates — identical `tier`/`ticks`/`buyable`. **No lookahead reaches the fire verdict or forward *returns* (ratios).** *Cosmetic only:* absolute `entry_price`/`adv_dollar_21d` recorded for a pre-split fire are on the post-split scale — irrelevant to any ratio-based study statistic, but P1 should not read raw `entry_price` levels across a split without normalizing.
+`split_adjust()` reconstruction verified vs yahoo shape: PANW/ZS **0.00%**, NVDA **0.34%** max deviation — the panels are equivalent in shape.
+
+### NS2 — Stamp rules S1/S2/S3 per the memo (default-true on ambiguity). **PASS.**
+`survivor_bias = not(s1_era and s2_source)` with `s1_era = sd≥2021-07-06`, `s2_source = price_source=="massive"` (L660-665) — strict/default-true, exactly §2.1/§2.2. On disk: **all 54,361 rows** `survivor_bias=False`, `price_source=massive`, min signal_date 2022-06-30 (250-bar warm-up from Massive's 2021-07-06 start — correct, not a bug). `verdict_grade == (¬survivor_bias ∧ ¬horizon_censored)` holds for **every** row; 47,147 verdict-grade / 7,214 horizon_censored — matches the report. No pre-2021 row is unstamped (0 exist to test, vacuously satisfied). Memo-conformant.
+
+### NS3 — Feature completeness actually populated in the parts (not just coded). **PARTIAL — see AF4.**
+Verified by reading the parquet, not the code: on the **per-year parts**, fires carry `ext_z / near_52wh / ext_grade` (production `extension_signals`, **100%**), `adv_dollar_21d` (**100%**, `proxy=False` — F5's "volume unavailable" error is fixed, volume read from both stores), `ext_atr/knife_z/washout_proximity` (**100%**, correctly stamped harness-local). Features are **PIT-invariant** (re-verified: feature values on `close.loc[:t]` are identical regardless of trailing data). **BUT `rs_sector_quartile` is 0% on the per-year parts** and only filled (1,806/3,395 = **53%**) in `replay_boarded.parquet` by the date-major post-pass. P1 studies MUST read `replay_boarded.parquet` (67 cols, adds `board_reason/board_verdict/sd`) for that column, not the raw parts — see AF4.
+
+---
+
+## ADVISORY FINDINGS (v2)
+
+### AF1 — ADVISORY: concordance residual is **mis-diagnosed** (resample-anchor/history-length, NOT dividends).
+The report claims the yahoo-vs-Massive concordance residual is "dividend adjustment (yahoo is total-return), diagnosed as non-systematic." **This is falsified.** Decisive test: ZS pays no dividend and its yahoo and Massive-split-adjusted prices are **penny-identical** around 2024-05-10, yet `gate(yahoo-full)` = T1/ticks=0 while `gate(Massive)` = None/ticks=43. Truncating the *yahoo* series to Massive's start date (2021-07-06) reproduces the Massive verdict **exactly** (None/ticks=43). The divergence is therefore driven by **series start/length shifting the 3D/2D resample-bucket anchoring** — the same mechanism as the original F1 — **not** dividends. Prevalence on identical-price names: ~**5%** buyable-disagreement for long-history names, ~**3%** even for names with no truncation confound (residual tail-alignment sensitivity). Not blocking (concordance still >95%), but the PR's causal prose is wrong and would mislead P1.
+
+### AF2 — ADVISORY: the report's concordance numbers are **not on disk**.
+The fix agent's report states concordance "95.6% over 50 names/1960 bars (98.5% in-harness cohort)." Only the **98.5% over 12 names / 480 bars** figure exists in `golden_test.json`; "95.6 / 50 names / 1960 bars" appears in **no** artifact (grepped all `data/replay/*.json` and `*.log`). Both exceed the 95% STOP threshold and my independent broad recomputation (~95–97% on a 60-name random sample) confirms the real number is genuinely above threshold and **not hiding a sub-95% result** — so this is accuracy, not a gate breach. Fix the report to cite the on-disk 98.5%/12-names value (or re-run and persist the 50-name computation) before any P1 PREREG cites a concordance number.
+
+### AF3 — ADVISORY: Massive's 2021-07-06 truncated start systematically anchor-shifts every ledger verdict vs full-history production.
+Because the verdict-grade ledger reads Massive (every name starts 2021-07-06), the gate's resample buckets are anchored on a warm-up-truncated series. The ledger is **internally consistent and PIT-clean** (all names share the same basis; the gate is deterministic on it), so this does not corrupt within-ledger P1 statistics. But it means: (a) the golden-test 62==62 match is proven on the **yahoo** panel, which is a *different detector* from the Massive ledger for names whose true history predates 2021-07-06 (~40% divergence-prone bars near the window's leading edge); (b) the earliest ~1 year of the window can't produce candidates (250-bar warm-up), so the ledger effectively starts 2022-06-30 not 2021-07-06 — the memo's "2021-07-06 →" primary window is ~11 months narrower in practice. **P1 PREREGs must state the effective window as ~2022-06-30 → last-replay-date** and treat the golden-test fidelity as a yahoo-panel guarantee, not a Massive-panel one. Honest measurement property, not a lookahead.
+
+### AF4 — ADVISORY: two-artifact split (`rs_sector_quartile` only in `replay_boarded.parquet`) is a footgun.
+`rs_sector_quartile` (a §4-mandated feature P1.1 separability reads) is **null in the per-year parts** and only populated (53%) in `replay_boarded.parquet`. A P1 study that reads the natural `replay_2*.parquet` glob gets an all-null column with no error. Document loudly that `replay_boarded.parquet` is the canonical P1 input, or backfill the column into the parts. The 53% fill is honestly limited by the 57-ticker cohort's thin same-sector cross-section (cohorts with <4 peers stay null) — a fuller universe raises it. Not a bug; a consumption hazard.
+
+### AF5 — ADVISORY: primary replay ran on a 57-ticker board-priority cohort, not the full 927-name universe.
+`--max-universe 60` capped the run (all-bars gating at ~0.11 s/bar makes the full 927-name universe ~28 h). The parts are per-year resumable and the code path is identical, so extending is a plumbing re-run with no code change — but **the current ledger is a 57-name slice**, and P1 episode-clustered n-floors (memo §2.4.6) will be thin on it. Not a correctness issue; a coverage/power caveat the P1 studies must inherit and, per the memo, honor with INSUFFICIENT-POWER rather than borrowing. (S&P500 membership also uses the current snapshot, not PIT-historical — memo §3 already parks this; delisted names still enter via Massive + donor lists.)
+
+---
+
+## Bottom line for Fable (v2)
+
+**The repair is real and the harness is mergeable under R8.** F1 is dead by construction (candidate = every bar) with an exhaustive halt-on-miss recall assertion that ran and passed (1,197 fires, 0 misses); F2 is dead (`golden_test_passed = replay_exists ∧ exact_match`, 62==62 exact diff on the yahoo panel, ZS 2024-05-10 T1 asserted in code); F3/F5/F6 fixed (production `extension_signals`, `adv_dollar_21d` from volume, gate taxonomy with no `tier_cutoff` catch-all); stamps memo-conformant; grading next-bar-clean. The new Massive path is **not** a lookahead — the only concerning route (future-split adjustment) is a uniform scalar the scale-invariant gate ignores, proven verdict-identical.
+
+The residual work is **prose and consumption discipline, not code correctness**: the PR mis-diagnoses a real ~3–5% yahoo-vs-Massive gate divergence as "dividends" when it is resample-anchor/history-length (AF1); the report cites a concordance number that isn't on disk though the true value clears the threshold (AF2); and P1 must be told that the effective window is ~2022-06-30 (not 2021-07-06), that the fidelity guarantee is yahoo-panel not Massive-panel (AF3), that `replay_boarded.parquet` is the canonical input (AF4), and that the ledger is a 57-name power-limited slice (AF5). Fix AF1/AF2 in the PR text and carry AF3–AF5 into the P1 PREREGs. **CLEAN.**
+

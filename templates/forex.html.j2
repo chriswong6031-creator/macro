@@ -13,7 +13,7 @@
 <title>Forex Vector — {{ as_of }}</title>
 {% set seo_title = 'Forex Vector — US Dollar Regime and FX Transmission | Mastermind' %}{% set seo_desc = 'An FX hub tracking the US dollar regime, major currency crosses and how currency moves transmit into equities and macro.' %}{% set seo_path = 'forex.html' %}
 {% include "_seo_head.html.j2" %}
-<script src="plotly-2.32.0.min.js"></script>
+{% include '_plotly_head.html.j2' %}
 <style>
 :root{
   --blue:{{C.blue}}; --indigo:{{C.indigo}}; --r1:{{C.r1}}; --r2:{{C.r2}}; --r3:{{C.r3}};

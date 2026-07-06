@@ -10,7 +10,7 @@
 #}
 {% set NP = nav_prefix if (nav_prefix is defined and nav_prefix) else '' %}
 <nav class="site-nav">
-  {% include "_navlinks.html.j2" %}
+{% include "_navlinks.html.j2" %}
   <div class="nav-search">
     <span class="mag">🔎</span>
     <input type="text" autocomplete="off" aria-label="Search stocks"

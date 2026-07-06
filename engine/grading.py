@@ -91,6 +91,12 @@ __all__ = [
     "DEAD_MONEY_BAND",
     "DEAD_MONEY_CAP",
     "SPINE_HORIZONS",
+    # PR-5 (L1 short-side) addition — direction-aware short-side grader
+    "TerminalStateShort",
+    "terminal_state_short",
+    "SHORT_ADVERSE_MULT",
+    "SHORT_FAVORABLE_MULT_21",
+    "SHORT_FAVORABLE_MULT_126",
 ]
 
 # W0.2 Stage C — the CLOSED near-miss rejection taxonomy (masterplan Appendix A).
@@ -418,6 +424,160 @@ def terminal_state(
         "cushion_at_bar":  cushion_at,
         "ret_at_read":     ret_at_read,
         "note":            note,
+    }
+
+
+# --------------------------------------------------------------------------- #
+# PR-5 — L1 short-side: direction-aware short-side grader                      #
+# --------------------------------------------------------------------------- #
+# Barrier constants for the short-side mirror (pre-registered; BD_PHASE0_PREREG §4).
+# The asymmetry-is-a-question ruling (RUL-P6) mandates running BOTH graders on the
+# same events for a paired within-event contrast — these are NOT the same as the long-
+# side barriers.  The liftoff_mult<1 trap: calling terminal_state() with a liftoff_mult
+# below 1 fires liftoff immediately at entry (entry*<1 < entry on bar 0 of the window),
+# making the entire cohort "CLEAN_LIFTOFF" before seeing a single forward bar — this
+# function reverses the inequality directions explicitly to avoid that trap.
+
+SHORT_ADVERSE_MULT      = 1.05   # price UP ≥5%: the adverse move (the short "stop-out")
+SHORT_FAVORABLE_MULT_21  = 0.92  # price DOWN ≥8% within 21 bars: favorable @21 horizon
+SHORT_FAVORABLE_MULT_126 = 0.85  # price DOWN ≥15% within 126 bars: favorable @126 horizon
+
+
+class TerminalStateShort:
+    """Named terminal-state constants for the short-side grader.
+
+    ADVERSE_TRIGGERED — close >= entry * adverse_mult BEFORE favorable barrier.
+    FAVORABLE_TRIGGERED — close <= entry * favorable_mult BEFORE adverse barrier.
+    UNREMARKABLE — neither barrier triggered within the horizon window.
+    (No DEAD_MONEY / CUSHIONED split on short side; the prereg §4 does not define them.)
+    """
+    ADVERSE_TRIGGERED   = "ADVERSE_TRIGGERED"    # price UP against the thesis
+    FAVORABLE_TRIGGERED = "FAVORABLE_TRIGGERED"  # price DOWN, the short-thesis confirmation
+    UNREMARKABLE        = "UNREMARKABLE"          # neither barrier reached by horizon end
+
+
+def terminal_state_short(
+    close: pd.Series,
+    signal_date,
+    *,
+    adverse_mult: float = SHORT_ADVERSE_MULT,
+    favorable_mult: float = SHORT_FAVORABLE_MULT_21,
+    horizon: int = LIFTOFF_HORIZON_21,
+    same_bar: bool = False,
+) -> dict[str, Any]:
+    """Short-side terminal-state grader (PR-5, L1 short-side).
+
+    Reverses all barrier inequality directions relative to ``terminal_state()``:
+      - ADVERSE_TRIGGERED : close >= entry * adverse_mult  BEFORE favorable barrier.
+                            This is the short-thesis "stop-out" — price rose against us.
+                            Tie rule: if adverse AND favorable fire on the same bar,
+                            ADVERSE wins (symmetric to long-side STOP-wins rule; conservative).
+      - FAVORABLE_TRIGGERED: close <= entry * favorable_mult BEFORE adverse barrier.
+                            This is the short-thesis confirmation — price fell.
+      - UNREMARKABLE: neither barrier triggered within the window.
+
+    The liftoff_mult<1 trap (§0.5.5 of the program spec): calling ``terminal_state()``
+    with ``liftoff_mult < 1`` fires CLEAN_LIFTOFF at bar 1 because entry*<1 < entry.
+    This function does NOT call ``terminal_state()`` — it implements the reversed-barrier
+    scan directly using the fill_index/forward-window plumbing.
+
+    Parameters
+    ----------
+    close          : split-adjusted close series (same basis as terminal_state).
+    signal_date    : signal/event bar date.
+    adverse_mult   : multiplier for the adverse barrier (>1; default SHORT_ADVERSE_MULT=1.05).
+    favorable_mult : multiplier for the favorable barrier (<1; default SHORT_FAVORABLE_MULT_21=0.92).
+    horizon        : forward window length in bars (default LIFTOFF_HORIZON_21=21).
+    same_bar       : same-bar-fill override for shadow A/B tests (mirrors terminal_state).
+
+    Returns a dict:
+      ``state``         — one of TerminalStateShort.{ADVERSE_TRIGGERED,FAVORABLE_TRIGGERED,
+                          UNREMARKABLE} or None when not yet matured.
+      ``entry_price``   — fill-bar close.
+      ``fill_date``     — ISO date string of the fill bar.
+      ``adverse_at_bar`` — 1-indexed bar offset when adverse triggered, or None.
+      ``favorable_at_bar`` — 1-indexed bar offset when favorable triggered, or None.
+      ``ret_at_read``   — close[fill+horizon] / entry − 1, or None if not matured.
+      ``note``          — human-readable summary.
+
+    Note: the favorable_mult must be < 1 and the adverse_mult must be > 1 to avoid
+    immediate triggering at entry.  If favorable_mult >= 1 or adverse_mult <= 1, a
+    ValueError is raised (the caller misrouted to this function instead of terminal_state).
+    """
+    if adverse_mult <= 1.0:
+        raise ValueError(
+            f"terminal_state_short: adverse_mult must be >1 (got {adverse_mult}); "
+            "use terminal_state() for long-side grading"
+        )
+    if favorable_mult >= 1.0:
+        raise ValueError(
+            f"terminal_state_short: favorable_mult must be <1 (got {favorable_mult}); "
+            "a value >=1 would fire favorable immediately at entry (the liftoff_mult<1 trap, mirrored)"
+        )
+
+    _null = {"state": None, "entry_price": None, "fill_date": None,
+             "adverse_at_bar": None, "favorable_at_bar": None,
+             "ret_at_read": None, "note": ""}
+
+    fill = fill_index(close, signal_date) if not same_bar else _snap_loc(close.index, signal_date)
+    if fill is None:
+        return {**_null, "note": "fill bar not found or no next bar"}
+
+    entry_price = float(close.iloc[fill])
+    if not np.isfinite(entry_price) or entry_price <= 0:
+        return {**_null, "note": "invalid entry price"}
+
+    fill_date_str = str(close.index[fill].date())
+    adverse_barrier  = entry_price * adverse_mult    # e.g. entry * 1.05
+    favorable_barrier = entry_price * favorable_mult  # e.g. entry * 0.92
+
+    fwd = close.iloc[fill + 1: fill + horizon + 1]
+    n_fwd = len(fwd)
+
+    if n_fwd < horizon:
+        return {"state": None, "entry_price": entry_price, "fill_date": fill_date_str,
+                "adverse_at_bar": None, "favorable_at_bar": None, "ret_at_read": None,
+                "note": f"not yet matured: only {n_fwd}/{horizon} bars available"}
+
+    arr = fwd.to_numpy()
+
+    # Barrier race: close-basis sequential; tie rule: adverse wins (conservative,
+    # symmetric to long-side STOP-wins rule).
+    adverse_at:   int | None = None
+    favorable_at: int | None = None
+
+    for k, cl in enumerate(arr, start=1):
+        # Adverse check first (tie: adverse wins)
+        if cl >= adverse_barrier:
+            adverse_at = k
+            break
+        if cl <= favorable_barrier:
+            favorable_at = k
+            break
+
+    ret_at_read = float(arr[-1]) / entry_price - 1.0
+
+    if adverse_at is not None:
+        state = TerminalStateShort.ADVERSE_TRIGGERED
+        note = (f"adverse at bar +{adverse_at} "
+                f"({arr[adverse_at-1]:.4f} >= {adverse_barrier:.4f})")
+    elif favorable_at is not None:
+        state = TerminalStateShort.FAVORABLE_TRIGGERED
+        note = (f"favorable at bar +{favorable_at} "
+                f"({arr[favorable_at-1]:.4f} <= {favorable_barrier:.4f})")
+    else:
+        state = TerminalStateShort.UNREMARKABLE
+        note = (f"no barrier reached in {horizon} bars; "
+                f"ret_at_read={ret_at_read:+.3f}")
+
+    return {
+        "state":            state,
+        "entry_price":      entry_price,
+        "fill_date":        fill_date_str,
+        "adverse_at_bar":   adverse_at,
+        "favorable_at_bar": favorable_at,
+        "ret_at_read":      ret_at_read,
+        "note":             note,
     }
 
 

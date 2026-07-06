@@ -140,21 +140,24 @@
         var tip=[s2[0]-(r+2)*ddx, s2[1]-(r+2)*ddy];
         // Build gradient from oldest to tip
         defs+='<linearGradient id="'+gid+'" gradientUnits="userSpaceOnUse" x1="'+s0[0].toFixed(1)+'" y1="'+s0[1].toFixed(1)+'" x2="'+tip[0].toFixed(1)+'" y2="'+tip[1].toFixed(1)+'">'
-          +'<stop offset="0" stop-color="'+col+'" stop-opacity="0.06"></stop>'
-          +'<stop offset="0.5" stop-color="'+col+'" stop-opacity="0.38"></stop>'
-          +'<stop offset="1" stop-color="'+col+'" stop-opacity="0.95"></stop></linearGradient>';
+          +'<stop offset="0" stop-color="'+col+'" stop-opacity="0"></stop>'
+          +'<stop offset="0.45" stop-color="'+col+'" stop-opacity="0.20"></stop>'
+          +'<stop offset="0.8" stop-color="'+col+'" stop-opacity="0.62"></stop>'
+          +'<stop offset="1" stop-color="'+col+'" stop-opacity="1"></stop></linearGradient>';
         // Build path from all trail points to tip
         var pathD = 'M'+s0[0].toFixed(1)+' '+s0[1].toFixed(1);
         for(var ti=1;ti<allTPs.length-1;ti++){
           pathD+=' L'+X(allTPs[ti][0]).toFixed(1)+' '+Y(allTPs[ti][1]).toFixed(1);
         }
         pathD+=' L'+tip[0].toFixed(1)+' '+tip[1].toFixed(1);
-        tails+='<path d="'+pathD+'" stroke="url(#'+gid+')" stroke-width="2.8" fill="none" stroke-linecap="round" stroke-linejoin="round"></path>';
-        var ang=Math.atan2(ddy,ddx), al=13, aw=0.46;
+        // soft under-halo for a gentle glow, then the crisp fading trail on top
+        tails+='<path d="'+pathD+'" stroke="'+col+'" stroke-opacity="0.09" stroke-width="5.4" fill="none" stroke-linecap="round" stroke-linejoin="round"></path>';
+        tails+='<path d="'+pathD+'" stroke="url(#'+gid+')" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"></path>';
+        var ang=Math.atan2(ddy,ddx), al=14, aw=0.44;
         tails+='<path d="M'+tip[0].toFixed(1)+' '+tip[1].toFixed(1)
           +' L'+(tip[0]-al*Math.cos(ang-aw)).toFixed(1)+' '+(tip[1]-al*Math.sin(ang-aw)).toFixed(1)
           +' L'+(tip[0]-al*Math.cos(ang+aw)).toFixed(1)+' '+(tip[1]-al*Math.sin(ang+aw)).toFixed(1)
-          +' Z" fill="'+col+'" fill-opacity="0.95"></path>';
+          +' Z" fill="'+col+'" fill-opacity="1"></path>';
       }
       // ring (episode)
       if (p.ring) {
@@ -162,7 +165,8 @@
         var rw = p.ringWeight||1.5;
         dots+='<circle cx="'+px.toFixed(1)+'" cy="'+py.toFixed(1)+'" r="'+(r+4.5).toFixed(1)+'" fill="none" stroke="'+ringCol+'" stroke-width="'+rw+'" stroke-opacity=".9"></circle>';
       }
-      dots+='<circle class="sr-dot" cx="'+px.toFixed(1)+'" cy="'+py.toFixed(1)+'" r="'+r.toFixed(1)+'" fill="'+_qFill(q,p.hot?84:58)+'" stroke="'+col+'" stroke-opacity=".82" stroke-width="1.3" data-k="'+_esc(p.key)+'"></circle>';
+      dots+='<circle cx="'+px.toFixed(1)+'" cy="'+py.toFixed(1)+'" r="'+(r+2.6).toFixed(1)+'" fill="'+_qFill(q,p.hot?26:15)+'" stroke="none"></circle>';
+      dots+='<circle class="sr-dot" cx="'+px.toFixed(1)+'" cy="'+py.toFixed(1)+'" r="'+r.toFixed(1)+'" fill="'+_qFill(q,p.hot?90:64)+'" stroke="'+col+'" stroke-opacity=".9" stroke-width="1.4" data-k="'+_esc(p.key)+'"></circle>';
       if (p.showLabel) {
         cands.push({key:p.key, x:px, y:py, r:r, txt:p.label||p.key, hot:!!p.hot});
       }
@@ -619,24 +623,27 @@
         +'<b class="sr-vs-k '+pcCls(key)+'">'+kt+'</b>'
       +'</div>';
     }
+    // each side owns its header so it stays glued to its own list — on mobile the
+    // columns stack as [in header + list] · VS · [out header + list], not a shared
+    // header banner sitting above two orphaned lists.
+    function sideHd(side){
+      return side==='in'
+        ? '<div class="sr-vs-side in"><span class="sr-vs-ttl">▲ '+L('Rotating in','正在轮入')+'</span><span class="sr-vs-sub">'+L('money accelerating in','资金加速流入')+'</span></div>'
+        : '<div class="sr-vs-side out"><span class="sr-vs-ttl">'+L('Rotating out','正在轮出')+' ▼</span><span class="sr-vs-sub">'+L('leaders rolling over','龙头走弱')+'</span></div>';
+    }
     function col(list,side){
       var head='<div class="sr-vs-chd"><span></span><span></span><span></span>'
         +'<span>1W</span><span>1M</span><span>'+L('trend','趋势')+'</span></div>';
       var body=list.length?list.map(function(d,i){return row(d,i);}).join('')
         :'<div class="sr-vs-empty">'+(side==='in'?L('nothing rotating in right now','暂无轮入'):L('nothing rotating out right now','暂无轮出'))+'</div>';
-      return '<div class="sr-vs-col '+side+'">'+head+body+'</div>';
+      return '<div class="sr-vs-col '+side+'">'+sideHd(side)+head+body+'</div>';
     }
     el.innerHTML='<div class="sr-versus">'
-      +'<div class="sr-vs-hd">'
-        +'<div class="sr-vs-side in"><span class="sr-vs-ttl">▲ '+L('Rotating in','正在轮入')+'</span>'
-          +'<span class="sr-vs-sub">'+L('money accelerating in','资金加速流入')+'</span></div>'
-        +'<div class="sr-vs-vs">'+L('vs','对决')+'</div>'
-        +'<div class="sr-vs-side out"><span class="sr-vs-ttl">'+L('Rotating out','正在轮出')+' ▼</span>'
-          +'<span class="sr-vs-sub">'+L('leaders rolling over','龙头走弱')+'</span></div>'
-      +'</div>'
       +'<div class="sr-vs-key">'+L('1W · 1M = return · trend = heating (+) or cooling (−), the map\'s vertical axis',
                                     '1周 · 1月 = 涨跌 · 趋势 = 升温(+)/降温(−)，即图中纵轴')+'</div>'
-      +'<div class="sr-vs-body">'+col(em.slice(0,N),'in')+'<div class="sr-vs-spine"></div>'+col(fa.slice(0,N),'out')+'</div>'
+      +'<div class="sr-vs-body">'+col(em.slice(0,N),'in')
+        +'<div class="sr-vs-mid"><span class="sr-vs-vs">'+L('vs','对决')+'</span></div>'
+        +col(fa.slice(0,N),'out')+'</div>'
       +((em.length>6||fa.length>6)?'<button type="button" class="sr-vs-more">'+(_vsMore?L('See less','收起')+' ↑':L('See more','查看更多')+' ↓')+'</button>':'')
     +'</div>';
     Array.prototype.forEach.call(el.querySelectorAll('.sr-vs-row'),function(c){
@@ -763,11 +770,11 @@
     +'.sr-axc{font:700 11px Inter,sans-serif;fill:color-mix(in srgb,var(--text) 52%,transparent);letter-spacing:.02em;pointer-events:none;} .sr-ax-up{font:800 12.5px Inter,sans-serif;fill:var(--up);letter-spacing:.06em;} .sr-ax-dn{font:800 12.5px Inter,sans-serif;fill:var(--down);letter-spacing:.06em;}'
     // ---- head-to-head scorecard ----
     +'.sr-versus{margin-top:14px;padding:12px 15px 14px;}'
-    +'.sr-vs-hd{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;padding-bottom:9px;border-bottom:1px solid var(--line);}'
-    +'.sr-vs-side{display:flex;flex-direction:column;min-width:0;} .sr-vs-side.out{align-items:flex-end;text-align:right;} .sr-vs-ttl{font-weight:800;font-size:13.5px;white-space:nowrap;} .sr-vs-side.in .sr-vs-ttl{color:var(--up);} .sr-vs-side.out .sr-vs-ttl{color:var(--down);} .sr-vs-sub{font-size:10.5px;color:var(--muted);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}'
-    +'.sr-vs-vs{font-weight:900;font-size:11px;color:var(--muted);border:1px solid var(--line);border-radius:20px;padding:3px 10px;background:var(--panel2);text-transform:uppercase;letter-spacing:.05em;}'
-    +'.sr-vs-key{font-size:10px;color:var(--muted);text-align:center;margin-top:8px;line-height:1.4;}'
-    +'.sr-vs-body{display:grid;grid-template-columns:1fr 1px 1fr;gap:0 18px;margin-top:8px;} .sr-vs-spine{background:var(--line);}'
+    +'.sr-vs-key{font-size:10px;color:var(--muted);text-align:center;margin:0 0 10px;line-height:1.4;}'
+    +'.sr-vs-side{display:flex;flex-direction:column;min-width:0;padding-bottom:8px;margin-bottom:3px;border-bottom:1px solid var(--line);} .sr-vs-ttl{font-weight:800;font-size:13.5px;white-space:nowrap;} .sr-vs-side.in .sr-vs-ttl{color:var(--up);} .sr-vs-side.out .sr-vs-ttl{color:var(--down);} .sr-vs-sub{font-size:10.5px;color:var(--muted);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}'
+    +'.sr-vs-body{display:grid;grid-template-columns:1fr auto 1fr;gap:0 14px;}'
+    +'.sr-vs-mid{position:relative;display:flex;align-items:center;justify-content:center;min-width:34px;} .sr-vs-mid::before{content:"";position:absolute;top:6px;bottom:6px;left:50%;transform:translateX(-50%);width:1px;background:var(--line);}'
+    +'.sr-vs-vs{position:relative;z-index:1;font-weight:900;font-size:11px;color:var(--muted);border:1px solid var(--line);border-radius:20px;padding:3px 10px;background:var(--panel2);text-transform:uppercase;letter-spacing:.05em;}'
     +'.sr-vs-empty{padding:16px 6px;text-align:center;font-size:11px;color:var(--muted);}'
     +'.sr-vs-more{display:block;margin:12px auto 0;font:700 12px Inter,sans-serif;color:var(--link);background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:7px 18px;cursor:pointer;} .sr-vs-more:hover{border-color:color-mix(in srgb,var(--link) 55%,var(--line));background:color-mix(in srgb,var(--link) 8%,transparent);}'
     +'.sr-vs-col{min-width:0;}'
@@ -779,7 +786,7 @@
     +'.sr-vs-main{min-width:0;display:flex;flex-direction:column;line-height:1.14;} .sr-vs-nm{font-weight:700;font-size:12.5px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;} a.sr-vs-nm:hover{color:var(--link);text-decoration:underline;} .sr-vs-th{font-size:9.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}'
     +'.sr-t-link{color:var(--text);} .sr-t-link:hover{color:var(--link);text-decoration:underline;}'
     +'.sr-vs-row>b{font-size:11px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;} .sr-vs-k{font-weight:800;}'
-    +'@media (max-width:640px){.sr-vs-body{grid-template-columns:1fr;gap:0;} .sr-vs-spine{display:none;} .sr-vs-col.out{margin-top:10px;padding-top:9px;border-top:1px solid var(--line);} .sr-vs-chd,.sr-vs-row{grid-template-columns:16px 9px minmax(0,1fr) 48px 48px 44px;gap:7px;}}'
+    +'@media (max-width:640px){.sr-vs-body{grid-template-columns:1fr;gap:0;} .sr-vs-mid{min-width:0;padding:14px 0;} .sr-vs-mid::before{top:50%;bottom:auto;left:0;right:0;transform:translateY(-50%);width:auto;height:1px;} .sr-vs-chd,.sr-vs-row{grid-template-columns:16px 9px minmax(0,1fr) 48px 48px 44px;gap:7px;}}'
     +'.sr-q{font-size:10px;font-weight:800;padding:1px 7px;border-radius:6px;white-space:nowrap;}'
     +'.sr-q.q-lead{color:var(--up);background:color-mix(in srgb,var(--up) 15%,transparent);} .sr-q.q-weak{color:var(--warn);background:color-mix(in srgb,var(--warn) 15%,transparent);} .sr-q.q-impr{color:var(--link);background:color-mix(in srgb,var(--link) 15%,transparent);} .sr-q.q-lag{color:var(--down);background:color-mix(in srgb,var(--down) 15%,transparent);}'
     +'.sr-table-wrap{margin-top:14px;overflow:auto;max-height:640px;}'

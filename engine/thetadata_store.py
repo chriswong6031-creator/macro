@@ -97,6 +97,14 @@ def _load_parquets(tier: str, root: str, years: list[int] | None,
     This means consecutive chain() calls for different dates in the same year pay
     one disk read, not N reads.  Call clear_parquet_cache() after a batch run to
     release memory.
+
+    Defensive dedup: full-row drop_duplicates() is applied to each parquet frame
+    before caching.  This protects downstream consumers (Phase-B gate runs, backtest
+    loops) against parquets written before the 2026-07-05 API-dedup fix landed in
+    _normalize_eod_df.  Any rows dropped are logged at WARN level with a pointer to
+    the repair script.  The cache stores the already-deduped frame so repeated calls
+    pay the dedup cost only once per (tier, root, year) file.  Call
+    clear_parquet_cache() after running the repair script to force fresh reads.
     """
     base = store_root(store) / tier / root
     if not base.exists():
@@ -115,6 +123,20 @@ def _load_parquets(tier: str, root: str, years: list[int] | None,
             continue
         try:
             df = pd.read_parquet(f)
+            # Defensive dedup before caching: drop full-row duplicates introduced by the
+            # ThetaData v3 API (see collectors/thetadata.py _normalize_eod_df docstring).
+            # Parquets written before 2026-07-05 may contain duplicates; this ensures all
+            # reads are clean regardless of when the file was written.
+            n_before = len(df)
+            df = df.drop_duplicates()
+            n_dropped = n_before - len(df)
+            if n_dropped > 0:
+                log.warning(
+                    "thetadata_store: %s/%s/%s — dropped %d full-row duplicates on load "
+                    "(%d → %d rows); run scripts/repair_thetadata_dedup.py --apply to fix "
+                    "the parquet on disk",
+                    tier, root, f.name, n_dropped, n_before, len(df),
+                )
             _PARQUET_CACHE[key] = df
             frames.append(df)
         except Exception as e:  # noqa: BLE001
