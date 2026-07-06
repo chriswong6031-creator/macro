@@ -85,6 +85,9 @@ _OUT_MANIFEST = _DATA / "research" / "long_hold_labels_manifest.json"
 _MASSIVE_DIR_LOCAL = _DATA / "massive_stock_day"
 _MASSIVE_DIR_MAC = Path("/Users/chriswong/Documents/Cluade/Macro Dashboard/data/massive_stock_day")
 
+# Dead-name price store (W1 Phase-1 build; post-anchor dead names via Polygon REST)
+_DEAD_NAME_PRICES_PATH = _DATA / "edgar" / "dead_name_prices.parquet"
+
 # ---------------------------------------------------------------------------
 # Constants (OBJECTIVE.md §3)
 # ---------------------------------------------------------------------------
@@ -195,16 +198,45 @@ def _load_massive_closes(massive_dir: Path) -> dict[str, pd.Series]:
     return closes
 
 
+def _load_dead_name_closes() -> dict[str, pd.Series]:
+    """Load dead-name price store (data/edgar/dead_name_prices.parquet).
+
+    Returns {ticker -> close Series}. This store covers post-2021-07-06 dead names
+    via Polygon REST (adjusted closes). Source: W1 Phase-1 build.
+    """
+    closes: dict[str, pd.Series] = {}
+    if not _DEAD_NAME_PRICES_PATH.exists():
+        log.info("Dead-name price store not found: %s", _DEAD_NAME_PRICES_PATH)
+        return closes
+    try:
+        df = pd.read_parquet(_DEAD_NAME_PRICES_PATH)
+        if df.empty or "ticker" not in df.columns or "close" not in df.columns:
+            return closes
+        # Normalize dates to midnight to match massive_stock_day convention
+        df["date"] = pd.to_datetime(df["date"]).dt.normalize()
+        for ticker, grp in df.groupby("ticker"):
+            s = grp.set_index("date")["close"].sort_index()
+            s = s[~s.index.duplicated(keep="last")]
+            if len(s) >= 2:
+                closes[str(ticker)] = s
+    except Exception as exc:  # noqa: BLE001
+        log.warning("Dead-name price store load fail: %s", exc)
+    log.info("Loaded %d dead-name closes from %s", len(closes), _DEAD_NAME_PRICES_PATH)
+    return closes
+
+
 def resolve_price(
     ticker: str,
     yahoo_closes: dict[str, pd.Series],
     stocks_closes: dict[str, pd.Series],
     massive_closes: dict[str, pd.Series],
+    dead_name_closes: dict[str, pd.Series] | None = None,
 ) -> tuple[pd.Series | None, str]:
     """Resolve close series for ticker. Returns (series, source_label).
 
-    Priority: yahoo (adjusted TR) > massive (raw; post-2021) > stocks (survivor-only).
-    source_label: 'yahoo' | 'massive' | 'stocks' | 'none'
+    Priority: yahoo (adjusted TR) > massive (raw; post-2021) > dead_name (Polygon
+    adjusted; post-anchor dead names) > stocks (survivor-only).
+    source_label: 'yahoo' | 'massive' | 'dead_name' | 'stocks' | 'none'
     """
     s = yahoo_closes.get(ticker)
     if s is not None and not s.empty:
@@ -212,6 +244,10 @@ def resolve_price(
     s = massive_closes.get(ticker)
     if s is not None and not s.empty:
         return s, "massive"
+    if dead_name_closes is not None:
+        s = dead_name_closes.get(ticker)
+        if s is not None and not s.empty:
+            return s, "dead_name"
     s = stocks_closes.get(ticker)
     if s is not None and not s.empty:
         return s, "stocks"
@@ -564,10 +600,19 @@ def _is_survivorship_biased(fire_date: pd.Timestamp, price_source: str) -> bool:
     resolved from those stores is stamped survivorship_biased=True regardless
     of fire date.  Gap-period massive fires (2021-10-25 → 2025-01-02) are also
     biased because the store has an entitlement gap across that window.
+
+    dead_name (Polygon REST, post-anchor): covers post-2021-07-06 dead tickers;
+    these fires ARE survivorship-correct by construction for post-anchor dates
+    (dead names are explicitly present). The bias caveat (acquisition skew) is
+    documented but does not affect the survivorship_biased flag.
     """
     if price_source in ("yahoo", "stocks"):
         return True  # survivor-only stores — biased at any date
     if price_source == "massive":
+        return _is_gap_period(fire_date)
+    if price_source == "dead_name":
+        # Post-anchor Polygon-sourced dead-name prices: survivorship-correct at fire date
+        # (the dead name is explicitly present). Gap period fires still flagged.
         return _is_gap_period(fire_date)
     return True
 
@@ -655,6 +700,7 @@ def compute_labels(
     ticker_sector_map: dict[str, str],
     qp_by_ticker: dict[str, list[dict]],
     *,
+    dead_name_closes: dict[str, pd.Series] | None = None,
     limit: int | None = None,
     verbose: bool = True,
 ) -> pd.DataFrame:
@@ -725,7 +771,8 @@ def compute_labels(
 
         # --- Step 1: resolve price path ---
         close, price_source = resolve_price(
-            ticker, yahoo_closes, stocks_closes, massive_closes)
+            ticker, yahoo_closes, stocks_closes, massive_closes,
+            dead_name_closes=dead_name_closes)
         rec["price_source"] = price_source
         rec["resolvable"] = close is not None
 
@@ -740,6 +787,8 @@ def compute_labels(
         rec["survivorship_biased"] = _is_survivorship_biased(fire_date, price_source)
         if price_source == "massive" and not _is_gap_period(fire_date) and fire_date >= HONEST_COHORT_START:
             rec["cohort_description"] = "post-2021-07 massive (honest)"
+        elif price_source == "dead_name" and not _is_gap_period(fire_date) and fire_date >= HONEST_COHORT_START:
+            rec["cohort_description"] = "post-2021-07 dead_name Polygon (honest)"
         else:
             rec["cohort_description"] = "survivor-only (UPPER BOUND)"
 
@@ -950,7 +999,7 @@ def compute_episode_cluster_counts(
     honest_252 = labeled[
         (labeled["fire_date"] >= HONEST_COHORT_START) &
         (~labeled["gap_period"].fillna(False)) &
-        (labeled["price_source"] == "massive") &
+        (labeled["price_source"].isin(["massive", "dead_name"])) &
         (labeled["total_return_252d"].notna())
     ].copy()
 
@@ -964,13 +1013,12 @@ def compute_episode_cluster_counts(
     honest_252_all = pd.concat([honest_252, yahoo_2025_plus]).drop_duplicates(
         subset=["ticker", "fire_date"])
 
-    # 126d honest cohort: same massive-only filter as 252d for consistency
-    # (§4.1 designates only the Massive whole-market store as survivorship-correct;
-    # yahoo/stocks are survivor-only regardless of date — must not inflate honest n)
+    # 126d honest cohort: post-2021-07 massive + dead_name (survivorship-correct sources)
+    # dead_name fires are post-anchor Polygon-sourced; valid for 126d forward labels
     honest_126 = labeled[
         (labeled["fire_date"] >= HONEST_COHORT_START) &
         (~labeled["gap_period"].fillna(False)) &
-        (labeled["price_source"] == "massive") &
+        (labeled["price_source"].isin(["massive", "dead_name"])) &
         (labeled["total_return_126d"].notna())
     ].copy()
 
@@ -1066,14 +1114,16 @@ def build_manifest(
     unlabeled_n = int((labeled["label"] == "unlabeled").sum())
 
     # -----------------------------------------------------------------------
-    # OOS honest-cohort subset (§8: 2020-2023, massive-only, non-gap, 252d)
+    # OOS honest-cohort subset (§8: 2020-2023, massive+dead_name, non-gap, 252d)
     # This is the number that governs G1 runnability — surfaced here per reviewer.
+    # dead_name (Polygon-sourced) fires are included as a survivorship-correct source
+    # for post-anchor dead tickers (LH-W1-3: auditor must verify forward path source).
     # -----------------------------------------------------------------------
     oos_honest_252 = labeled[
         (labeled["fire_date"] >= pd.Timestamp("2020-01-01")) &
         (labeled["fire_date"] <= pd.Timestamp("2023-12-31")) &
         (~labeled["gap_period"].fillna(False)) &
-        (labeled["price_source"] == "massive") &
+        (labeled["price_source"].isin(["massive", "dead_name"])) &
         (labeled["total_return_252d"].notna())
     ].copy()
     n_oos_honest_252_fires = len(oos_honest_252)
@@ -1128,7 +1178,7 @@ def build_manifest(
 
     manifest = {
         "artifact": "long_hold_labels",
-        "version": "W1-PR-E-r1",  # r1 = post-reviewer fixes
+        "version": "W1-PR-E-r2",  # r2 = dead-name Polygon prices integrated (Phase-1)
         "generated_at": pd.Timestamp.now(tz="UTC").isoformat(),
         "runtime_seconds": round(runtime_seconds, 1),
         "population": {
@@ -1216,14 +1266,18 @@ def build_manifest(
                 "outside the gap period."
             ),
             "coverage_frac": "resolvable fires / total fires in cohort-year",
-            "cohort_description": "post-2021-07 massive (honest) | survivor-only (UPPER BOUND) | no_price",
+            "cohort_description": "post-2021-07 massive (honest) | post-2021-07 dead_name Polygon (honest) | survivor-only (UPPER BOUND) | no_price",
             "horizon_status": "primary_126d | primary_252d | caveat_504d | refused_756d",
         },
         "lh_r3_stamp": (
             "UPPER BOUND — survivor-only cohort applies to all yahoo/stocks-sourced fires and "
             "pre-2021-07 massive fires. Post-2021-07 massive-store fires (outside the gap "
             "2021-10-25 → 2025-01-02) are survivorship-correct per day. "
-            "756d results are REFUSED until dead_name_prices.parquet achieves >=50% coverage."
+            "Post-2021-07 dead_name (Polygon-sourced) fires are also honest for dead names "
+            "explicitly present in the data (acquisition skew residual exists; see "
+            "DEAD_NAME_SPIKE.md §Deviations). "
+            "756d results are REFUSED until dead_name_prices.parquet achieves >=50% coverage "
+            "(current 38.3%, gate requires 50.0%)."
         ),
         "conservative_choices": conservative_choices,
         "firewall": (
@@ -1298,6 +1352,24 @@ def run(
 
     stocks_closes = _load_stocks_closes()
 
+    # --- Load dead-name price store (W1 Phase-1 Polygon build) ---
+    log.info("Loading dead-name price store (data/edgar/dead_name_prices.parquet)...")
+    dead_name_closes_map = _load_dead_name_closes()
+    if dead_name_closes_map:
+        log.info(
+            "Dead-name price store loaded: %d tickers (Polygon REST, post-2021-07-06)",
+            len(dead_name_closes_map),
+        )
+        conservative_choices.append(
+            f"Dead-name price store loaded: {len(dead_name_closes_map)} tickers "
+            "(W1 Phase-1 Polygon build). These are post-2021-07-06 dead names "
+            "resolved via REST adjusted aggregates. Acquisition skew residual exists "
+            "(see DEAD_NAME_SPIKE.md). Fires resolved via dead_name source stamped "
+            "survivorship_biased=True if gap_period, otherwise False (honest)."
+        )
+    else:
+        log.info("Dead-name price store unavailable — dead-name fires will be no_price")
+
     # --- Load sector baskets ---
     log.info("Building sector EW benchmark series from member closes...")
     sector_closes = _build_sector_closes()
@@ -1334,6 +1406,7 @@ def run(
         sector_closes=sector_closes,
         ticker_sector_map=ticker_sector_map,
         qp_by_ticker=qp_by_ticker,
+        dead_name_closes=dead_name_closes_map,
         limit=limit,
         verbose=verbose,
     )

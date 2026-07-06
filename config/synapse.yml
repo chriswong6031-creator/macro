@@ -3616,6 +3616,37 @@ artifacts:
   # LH-R1, LH-R3, LH-R7: research/LONG_HOLD_THESIS_MASTERPLAN_BY_FABLE.md
   # ===========================================================================
 
+  # --- Long-Hold dead-name price store (W1 Phase-1 Polygon build) ---
+  long-hold-dead-name-prices:
+    path: data/edgar/dead_name_prices.parquet
+    format: parquet
+    producer: scripts/research/fetch_dead_name_prices_polygon.py
+    known_extra_writers:
+      - "collectors/edgar_deadname_prices.py — legacy collector (Stooq→Polygon→yfinance); may append rows from CI runs"
+    owner_program: long-hold
+    cadence: on-demand
+    storage: git
+    asof_field: date
+    freshness_sla_hours: 8760
+    schema: dead_name_prices.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/research/long_hold_label_panel.py
+    external_consumers: []
+    notes: >
+      Post-anchor dead-name daily adjusted closes (415/418 post-2021-07-06 dead
+      tickers via Polygon REST, MASSIVE_API_KEY). Columns: ticker, date, close,
+      source. Coverage: 415/1,083 dead universe (38.3%); 756d gate requires >=50%
+      (not yet met). Acquisition skew residual documented in DEAD_NAME_SPIKE.md.
+      This store is the survivorship-correction input for long_hold_label_panel.py
+      — fires resolved here are stamped survivorship_biased=False (outside gap
+      window) instead of being dropped as no_price.
+      Horizon_role=context: this is a raw price store consumed only by the label
+      harness; it has no direct behavioral surface.
+
   # --- Long-Hold label panel (W1 PR-E) ---
   long-hold-labels:
     path: data/research/long_hold_labels.parquet

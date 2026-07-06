@@ -1,8 +1,8 @@
 {
   "artifact": "long_hold_labels",
-  "version": "W1-PR-E-r1",
-  "generated_at": "2026-07-06T02:24:49.560441+00:00",
-  "runtime_seconds": 63.3,
+  "version": "W1-PR-E-r2",
+  "generated_at": "2026-07-06T03:19:36.713307+00:00",
+  "runtime_seconds": 75.1,
   "population": {
     "source": "data/research/gate_fires_baskets.parquet",
     "n_fires_total": 113542,
@@ -225,17 +225,18 @@
   "survivorship_fields": {
     "survivorship_biased": "bool per fire \u2014 True for all yahoo/stocks-sourced fires (survivor-only stores; delisted names absent) and for massive-store fires in the gap period (2021-10-25 \u2192 2025-01-02). False ONLY for massive-store fires post-2021-07-06 outside the gap period.",
     "coverage_frac": "resolvable fires / total fires in cohort-year",
-    "cohort_description": "post-2021-07 massive (honest) | survivor-only (UPPER BOUND) | no_price",
+    "cohort_description": "post-2021-07 massive (honest) | post-2021-07 dead_name Polygon (honest) | survivor-only (UPPER BOUND) | no_price",
     "horizon_status": "primary_126d | primary_252d | caveat_504d | refused_756d"
   },
-  "lh_r3_stamp": "UPPER BOUND \u2014 survivor-only cohort applies to all yahoo/stocks-sourced fires and pre-2021-07 massive fires. Post-2021-07 massive-store fires (outside the gap 2021-10-25 \u2192 2025-01-02) are survivorship-correct per day. 756d results are REFUSED until dead_name_prices.parquet achieves >=50% coverage.",
+  "lh_r3_stamp": "UPPER BOUND \u2014 survivor-only cohort applies to all yahoo/stocks-sourced fires and pre-2021-07 massive fires. Post-2021-07 massive-store fires (outside the gap 2021-10-25 \u2192 2025-01-02) are survivorship-correct per day. Post-2021-07 dead_name (Polygon-sourced) fires are also honest for dead names explicitly present in the data (acquisition skew residual exists; see DEAD_NAME_SPIKE.md \u00a7Deviations). 756d results are REFUSED until dead_name_prices.parquet achieves >=50% coverage (current 38.3%, gate requires 50.0%).",
   "conservative_choices": [
     "tercile_rank: computed as fraction of cohort-year tactical-win+252d-matured fires strictly below current fire; ties get same rank (no interpolation).",
     "sector_rel_252d=None treated as sector_laggard_winner (top tercile) rather than compounder/multiple_expansion_only \u2014 cannot confirm beats sector without benchmark.",
     "coverage_waived denominator includes only fires with tactical_win=True AND total_return_252d not None (as per locked \u00a72.4 formula).",
     "Gap-period fires (2021-10-25 to 2025-01-02) labeled but flagged gap_period=True; included in output for coverage accounting but excluded from honest-cohort counts.",
     "Regime data unavailable from regime/latest.json (current-only snapshot); episode-cluster de-dup uses name-only blocks (conservative \u2014 more de-duplication).",
-    "Piotroski F computed from fundamentals_panel.parquet via simplified 8-test variant (panel lacks cur_assets/cur_liab) as in run_w2_sql.py."
+    "Piotroski F computed from fundamentals_panel.parquet via simplified 8-test variant (panel lacks cur_assets/cur_liab) as in run_w2_sql.py.",
+    "Dead-name price store loaded: 415 tickers (W1 Phase-1 Polygon build). These are post-2021-07-06 dead names resolved via REST adjusted aggregates. Acquisition skew residual exists (see DEAD_NAME_SPIKE.md). Fires resolved via dead_name source stamped survivorship_biased=True if gap_period, otherwise False (honest)."
   ],
   "firewall": "This artifact has horizon_role=hold_thesis. It must NEVER feed entry-stack z-scores, board ordering, top-setups gates, alert triage, or push floor. Enforced by check_synapse_reads.py (CI)."
 }
