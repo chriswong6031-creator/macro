@@ -433,6 +433,10 @@ class TestRealRegistryFirewallClean:
             "long-hold-thesis-funnel-states",
             "long-hold-thesis-funnel-states-manifest",
             "long-hold-thesis-funnel-panel",
+            # LT-4 thesis funnel forward history — hold_thesis by design; display tier only
+            "long-hold-thesis-funnel-history",
+            # A1 per-fire sector benchmark (#1694) — hold_thesis by design; display tier only
+            "per-fire-sector-benchmark",
         }
         reg = load_registry(REPO_ROOT)
         hold_arts = {
