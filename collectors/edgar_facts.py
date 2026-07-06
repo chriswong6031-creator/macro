@@ -156,7 +156,16 @@ def _annual(entries: list, instant: bool = False) -> dict[int, tuple[float, str]
     `period_end` (the winning entry's `end` date) is carried out so consumers can
     gate not-yet-filed fiscal rows: statements.parquet previously kept no filing/
     period column, so a row for a fiscal year whose 10-K is not yet filed was
-    indistinguishable from a filed one (point-in-time leak — engine/moat_falsifiers)."""
+    indistinguishable from a filed one (point-in-time leak — engine/moat_falsifiers).
+
+    Instant-concept guard (LT-1b bug fix): some filers (e.g. PMT) tag debt maturity
+    schedules using XBRL instant concepts like LongTermDebt with fy=<current_fy> but
+    end=<future_maturity_year> (up to fy+6). These are NOT balance-sheet period-end
+    values; they corrupt the period_end accumulator and trigger the future-FY guard
+    to silently drop valid fiscal rows. We reject instant entries where end year >
+    fy+1 — all valid balance-sheet dates (current period or prior-year comparative)
+    satisfy end_year ≤ fy+1 (January-FYE filers use fy+1, e.g. DPZ FY2020 ends
+    2021-01-03; all other filers use fy or fy-1)."""
     best: dict[int, tuple[tuple, float, str]] = {}
     for e in entries or []:
         if e.get("fp") != "FY" or e.get("form") not in ANNUAL_FORMS:
@@ -174,6 +183,29 @@ def _annual(entries: list, instant: bool = False) -> dict[int, tuple[float, str]
                 continue
             if not (300 <= days <= 400):       # full fiscal year only (skip quarters)
                 continue
+        else:
+            # Reject debt-maturity-schedule entries: end year must be ≤ fy+1.
+            # Valid balance-sheet dates: end_year = fy (Dec-FYE), fy+1 (Jan-FYE),
+            # or fy-1 (prior-year comparative). end_year > fy+1 → maturity projection
+            # (e.g. PMT LongTermDebt files future maturities with fy=current_fy but
+            # end=maturity_year up to fy+6, corrupting the period_end accumulator).
+            try:
+                end_year = int(end[:4])
+            except (ValueError, TypeError):
+                end_year = fy
+            if end_year > fy + 1:
+                continue
+        # Rank: (filed desc, end desc) — latest restatement wins; for identical
+        # filings, prefer the current-period entry (end closest to fy) over a
+        # prior-year comparative. For instant concepts we clip end to fy+1 above;
+        # within that window, the entry whose end_year ≤ fy should win over fy+1
+        # (current period-end vs Jan-carry-forward; the Jan-FYE comparatives use
+        # end_year=fy+1 so we can't simply exclude them — they ARE the primary entry
+        # for January-fiscal-year-end filers like DPZ). Since both filed values are
+        # equal for the same 10-K accession, end lexicographic order still picks
+        # end_year=fy+1 over fy — that is acceptable for Jan-FYE filers (their
+        # true period_end is in January of fy+1) and for Dec-FYE filers there is no
+        # fy+1 entry in window after the maturity-schedule clip above.
         rank = (e.get("filed", ""), end)       # latest filing, then latest period-end
         if fy not in best or rank > best[fy][0]:
             best[fy] = (rank, float(val), end)
@@ -216,27 +248,46 @@ def _statements_for(cik: int) -> list[dict]:
         return []
     series: dict[str, dict[int, float]] = {}
     period_ends: dict[int, str] = {}
+    # Separate accumulator for balance-concept ends (fallback only — see note below).
+    _balance_ends: dict[int, str] = {}
 
-    def _absorb(ends: dict[int, str]) -> None:
+    def _absorb(ends: dict[int, str], balance: bool = False) -> None:
+        """Accumulate period_end per fiscal year.
+
+        FLOW concepts (balance=False) use their ``end`` date as the authoritative
+        period-end; these are the true fiscal year-end dates and are preferred.
+        BALANCE/instant concepts (balance=True) contribute to a separate fallback
+        accumulator: their ``end`` values are only used when a fiscal year has no
+        flow-concept data at all.  This prevents debt-maturity-schedule XBRL entries
+        (e.g. PMT's LongTermDebt with fy=2021 but end=2022-12-31 representing the
+        1-year maturity bucket) from overriding the correct period_end that was set
+        by the ni/cfo/etc. flow series.  The _annual instant-guard above already
+        clips out_year > fy+1; this layered accumulator handles the remaining fy+1
+        false-positive (maturity bucket at fy+1) for December-FYE filers."""
+        target = _balance_ends if balance else period_ends
         for fy, end in ends.items():
-            if end and (fy not in period_ends or end > period_ends[fy]):
-                period_ends[fy] = end
+            if end and (fy not in target or end > target[fy]):
+                target[fy] = end
 
     for key, names in FLOW.items():
         series[key], _ends = _concept(usgaap, names, instant=False)
         _absorb(_ends)
     for key, names in BALANCE.items():
         series[key], _ends = _concept(usgaap, names, instant=True)
-        _absorb(_ends)
+        _absorb(_ends, balance=True)
     # Shares are in the "shares" XBRL unit (not USD) — must be extracted separately.
     # us-gaap:CommonStockSharesOutstanding is the fiscal-year-end balance-sheet share
     # count (instant concept). The BALANCE loop above uses unit="USD" (default) so
     # it returns an empty dict for shares → was always None before this fix.
     for key, names in BALANCE_SHARES.items():
         series[key], _ends = _concept(usgaap, names, unit="shares", instant=True)
-        _absorb(_ends)
+        _absorb(_ends, balance=True)
     series["eps_diluted"], _ends = _concept(usgaap, EPS, unit="USD/shares", instant=False)
     _absorb(_ends)
+    # Merge balance fallback: years with no flow period_end get the balance-concept end.
+    for fy, end in _balance_ends.items():
+        if fy not in period_ends:
+            period_ends[fy] = end
 
     years = sorted({fy for s in series.values() for fy in s}, reverse=True)[:KEEP_YEARS]
     today_iso = date.today().isoformat()
