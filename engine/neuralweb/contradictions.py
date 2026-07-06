@@ -2,7 +2,7 @@
 
 PURPOSE
 -------
-detect_contradictions(root) scans six typed signal pairs across the committed bus
+detect_contradictions(root) scans seven typed signal pairs across the committed bus
 artifacts and returns a list of typed contradiction records.
 
 HARD LAW — encoded here per design adjudication:
@@ -47,7 +47,7 @@ Scale fields (growth_score, inflation_score, flip_margin, transition_state, conf
 are ALWAYS included in pair-a's a.reading so the graph/world_state surfaces the scale
 rather than just the label.
 
-SIX v1 PAIRS
+SEVEN v1 PAIRS
 ------------
 a. regime quad vs market_state verdict
    Q1/Q2 growth labels vs RISK_OFF/caution verdicts from world_state.json (which
@@ -73,6 +73,13 @@ e. briefing divergences ingestion
 f. cross_asset_confirm verdict as macro edge
    Reads the cross_asset_confirm block from data/regime/latest.json.  A 'diverge'
    verdict is a macro-level bonds+FX vs equity contradiction.
+
+g. oracle complex out-rotation vs entry buy-list member
+   oracle_state.json complexes[].direction=='out'|'decelerating' while a ticker on
+   the site/factordata/us_standouts.json buy list belongs to that complex.
+   Ticker→complex mapping: data/oracle/rotation_groups.json members (basket ids)
+   cross-referenced with data/baskets/membership.json active tickers.  Unmappable
+   tickers skip silently (fail-open).  severity='tension' max; purely descriptive.
 
 RECORD SCHEMA
 -------------
@@ -631,6 +638,169 @@ def _pair_f_cross_asset_confirm(
     return records
 
 
+def _pair_g_oracle_out_vs_entry_buy(
+    oracle_state: dict | None,
+    rotation_groups: list[dict],
+    standouts: dict | None,
+    gaps: list[str],
+) -> list[dict]:
+    """Pair G: oracle complex out-rotation vs entry buy-list member (PR-A4).
+
+    When a complex has direction 'out' or 'decelerating' in oracle_state.json AND
+    a ticker on the us_standouts.json buy list belongs to that complex via the
+    rotation_groups basket membership, emit a 'tension' annotation.
+
+    Ticker→complex mapping:
+        rotation_groups[].members (basket ids)
+        → data/baskets/membership.json active tickers (removed is None/absent)
+
+    HARD LAWS (encoded per adjudication):
+    - severity: 'tension' max
+    - display_only: True always
+    - records NEVER gate, NEVER suppress, NEVER reorder the board
+    - unmappable tickers: skip silently (fail-open)
+    - NO winner field, NO alert escalation
+    - annotation text is purely descriptive: naming complex, direction, ticker, lane
+    """
+    records: list[dict] = []
+    try:
+        if oracle_state is None:
+            gaps.append(
+                "pair-g: oracle_state unavailable — "
+                "site/basketdata/oracle_state.json absent"
+            )
+            return records
+        if standouts is None:
+            gaps.append(
+                "pair-g: us_standouts unavailable — "
+                "site/factordata/us_standouts.json absent"
+            )
+            return records
+
+        # ── Build ticker → set[complex_id] from rotation_groups ──────────────
+        # rotation_groups[].members = basket ids (strings like "aicompute",
+        # "us_sector_energy").  We need basket membership files for ticker lists.
+        # Those are passed in as a pre-built map via the caller.
+        # We build the map inline if rotation_groups is available.
+        complex_basket_members: dict[str, list[str]] = {}
+        for grp in rotation_groups:
+            cid = grp.get("id") or ""
+            members = grp.get("members") or []
+            if cid:
+                complex_basket_members[cid] = [str(m) for m in members]
+
+        if not complex_basket_members:
+            gaps.append(
+                "pair-g: rotation_groups empty — "
+                "ticker→complex mapping unavailable; pair-g skipped"
+            )
+            return records
+
+        # ── Identify out-direction complexes from oracle_state ────────────────
+        oracle_complexes = oracle_state.get("complexes") or []
+        asof_oracle = oracle_state.get("asof") or "unknown"
+
+        out_complexes: dict[str, dict] = {}
+        for cx in oracle_complexes:
+            cx_id = cx.get("id") or ""
+            direction = cx.get("direction") or ""
+            if direction in _BEARISH_DIRECTIONS and cx_id:
+                out_complexes[cx_id] = cx
+
+        if not out_complexes:
+            return records  # no out-direction complexes → nothing to check
+
+        # ── Read buy list from standouts ──────────────────────────────────────
+        buy_rows = standouts.get("buy") or []
+        asof_standouts = standouts.get("as_of") or "unknown"
+
+        if not buy_rows:
+            return records  # empty buy list → nothing to check
+
+        # ── pair-g needs basket_tickers map — passed in via caller ────────────
+        # (The caller is responsible for loading baskets/membership.json and
+        # building the basket_id → set[ticker] map.  If absent, we skip silently.)
+        # We receive it via a kwarg injected by detect_contradictions().
+        # Here we use a closure-captured dict populated below in the public API.
+        # To avoid changing the function signature mid-stream, the caller passes
+        # basket_tickers_map via the 'rotation_groups' parameter extended schema,
+        # OR we re-read it here fail-open from the repo path passed via oracle_state.
+        # Per the task spec: fail-open on unmappable — we build the map from
+        # _basket_tickers_cache if present on the function object (injected by
+        # detect_contradictions before calling us), else emit a gap.
+        basket_tickers_map: dict[str, set[str]] = getattr(
+            _pair_g_oracle_out_vs_entry_buy, "_basket_tickers_cache", {}
+        )
+
+        if not basket_tickers_map:
+            gaps.append(
+                "pair-g: basket_tickers_map not injected — "
+                "ticker→complex mapping unavailable; pair-g skipped"
+            )
+            return records
+
+        # Build ticker → frozenset[complex_id] once
+        ticker_to_out_complexes: dict[str, list[str]] = {}
+        for cx_id, basket_ids in complex_basket_members.items():
+            if cx_id not in out_complexes:
+                continue
+            for basket_id in basket_ids:
+                for ticker in basket_tickers_map.get(basket_id, set()):
+                    ticker_to_out_complexes.setdefault(ticker, []).append(cx_id)
+
+        # ── Scan buy list for members of out complexes ────────────────────────
+        seen: set[tuple[str, str]] = set()  # (ticker, cx_id) dedupe
+        as_of = str(max(str(asof_oracle), str(asof_standouts)))
+
+        for row in buy_rows:
+            ticker = row.get("ticker") or ""
+            if not ticker:
+                continue
+            lane = row.get("lane") or "unknown"
+            cx_ids = ticker_to_out_complexes.get(ticker, [])
+
+            for cx_id in set(cx_ids):
+                key = (ticker, cx_id)
+                if key in seen:
+                    continue
+                seen.add(key)
+
+                cx_info = out_complexes[cx_id]
+                cx_name = cx_info.get("name") or cx_id
+                cx_name_zh = cx_info.get("name_zh") or cx_name
+                cx_direction = cx_info.get("direction") or "out"
+                cx_tier = cx_info.get("tier") or ""
+
+                records.append(_record(
+                    pair_id=f"oracle-out-vs-entry-buy:{cx_id}:{ticker}",
+                    a_artifact="site/basketdata/oracle_state.json",
+                    a_reading=(
+                        f"complex={cx_id} ({cx_name}) direction={cx_direction} "
+                        f"tier={cx_tier}"
+                    ),
+                    b_artifact="site/factordata/us_standouts.json",
+                    b_reading=(
+                        f"ticker={ticker} on buy list lane={lane}"
+                    ),
+                    kind="directional-opposition",
+                    severity="tension",
+                    as_of=as_of,
+                    note=(
+                        f"Oracle: {cx_name} rotating {cx_direction}; "
+                        f"Entry: {ticker} on buy list (lane={lane}).  "
+                        f"Oracle marks complex '{cx_id}' as {cx_direction} while "
+                        f"entry board shows {ticker} as a buy (lane={lane}).  "
+                        "Rotation direction and entry signal disagree at the complex level.  "
+                        "Display-only context; neither cancels the other — the entry signal "
+                        "is ticker-level while rotation is complex-level."
+                    ),
+                ))
+    except Exception as exc:  # noqa: BLE001
+        log.warning("contradictions pair-g failed: %s", exc)
+        gaps.append(f"pair-g: {exc}")
+    return records
+
+
 # ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
@@ -638,7 +808,7 @@ def _pair_f_cross_asset_confirm(
 def detect_contradictions(
     root: Path | str | None = None,
 ) -> tuple[list[dict], list[str]]:
-    """Detect typed contradiction records across six bus-artifact pairs.
+    """Detect typed contradiction records across seven bus-artifact pairs.
 
     Parameters
     ----------
@@ -740,7 +910,43 @@ def detect_contradictions(
     if regime_latest is None:
         gaps.append("data/regime/latest.json absent — pair-f skipped")
 
-    # ── Run six pairs ────────────────────────────────────────────────────────
+    # ── Read us_standouts.json for pair-g ────────────────────────────────────
+    standouts_path = site_dir / "factordata" / "us_standouts.json"
+    standouts = _read_json(standouts_path)
+    if standouts is None:
+        gaps.append(
+            "site/factordata/us_standouts.json absent — pair-g skipped"
+        )
+
+    # ── Build basket_tickers_map for pair-g (basket_id → set[active ticker]) ─
+    # Uses data/baskets/membership.json.  Fail-open: missing → empty map.
+    basket_tickers_map: dict[str, set[str]] = {}
+    baskets_mb_path = data_dir / "baskets" / "membership.json"
+    baskets_raw = _read_json(baskets_mb_path) or {}
+    baskets_dict = baskets_raw.get("baskets") or {}
+    if baskets_dict:
+        for basket_id, info in baskets_dict.items():
+            members = info.get("members") or []
+            active: set[str] = set()
+            for m in members:
+                if isinstance(m, dict):
+                    if m.get("removed") is None:
+                        t = m.get("ticker")
+                        if t:
+                            active.add(str(t))
+                elif isinstance(m, str):
+                    active.add(m)
+            basket_tickers_map[basket_id] = active
+    else:
+        gaps.append(
+            "data/baskets/membership.json absent or empty — "
+            "pair-g ticker→complex mapping partially unavailable"
+        )
+
+    # Inject basket_tickers_map into pair-g via function attribute (fail-open)
+    _pair_g_oracle_out_vs_entry_buy._basket_tickers_cache = basket_tickers_map  # type: ignore[attr-defined]
+
+    # ── Run seven pairs ───────────────────────────────────────────────────────
     records.extend(_pair_a_regime_vs_market_state(world_state, gaps))
     records.extend(_pair_b_regime_vector_vs_risk_radar(world_state, gaps))
     records.extend(_pair_c_oracle_vs_sector_central(
@@ -749,5 +955,8 @@ def detect_contradictions(
     records.extend(_pair_d_vol_regime_vs_market_state(world_state, gaps))
     records.extend(_pair_e_briefing_divergences(briefing, gaps))
     records.extend(_pair_f_cross_asset_confirm(regime_latest, gaps))
+    records.extend(_pair_g_oracle_out_vs_entry_buy(
+        oracle_state, rotation_groups, standouts, gaps
+    ))
 
     return records, gaps
