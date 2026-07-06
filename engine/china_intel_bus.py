@@ -1,15 +1,22 @@
-"""China Intelligence transmission bus — the connector to the (future) China Mastermind.
+"""China Intelligence transmission bus — hub-display surfaces; digest summary travels to Mastermind.
 
 LEAF · CONTEXT-ONLY · NEVER A SCORE/SIZE. The China sibling of the macro master_brain brief:
 it fans the FIVE China intelligence surfaces — News, Central-Bank/Policy, Alternative Data,
 Divergence Radar, and the central-intelligence Analysis — into ONE schema-versioned,
-machine-readable rollup (`china_intel.briefing.v2`) that the China Mastermind reads as
-CONTEXT. It DECOUPLES by reading each surface's already-emitted JSON off disk (build-order is
-the only dependency); every reader degrades to None and NOTHING here raises into a build.
+machine-readable rollup (`china_intel.briefing.v4`) for hub display. The blocks assembled here
+are hub-display surfaces only; they reach the China Mastermind only via the digest summary
+line (see `_digest_text`). It DECOUPLES by reading each surface's already-emitted JSON off disk
+(build-order is the only dependency); every reader degrades to None and NOTHING here raises
+into a build.
 
 v2 carries the upgrade: importance-ranked + ticker-flagged news, conviction-scored cross-
 surface reads, flagged tickers, "what changed", staleness per surface, and a synthesis-led
 digest. Additive over v1 (legacy keys preserved). See research/CHINA_INTEL_POWERHOUSE.md §5.
+
+v4 (additive over v3): policy_phrase block (communique_diff APPEARED/DROPPED/LEAD_SHIFT
+events from site/communique_diff/latest.json) + narrative_divergence block (GDELT onshore/
+offshore tone divergence z-score from data/missing_tape/tone_divergence.parquet). Both blocks
+degrade cleanly to None when their artifacts are absent. Schema bumped to v4.
 """
 from __future__ import annotations
 
@@ -22,7 +29,7 @@ from lib import config
 
 log = logging.getLogger(__name__)
 
-SCHEMA = "china_intel.briefing.v3"
+SCHEMA = "china_intel.briefing.v4"
 MAX_STALE_OK = 35
 
 DISCLAIMER = (
@@ -197,6 +204,106 @@ def _discovery_block() -> dict | None:
         return None
 
 
+def _policy_phrase_block() -> dict | None:
+    """Policy-phrase shift events from communique_diff (APPEARED/DROPPED/LEAD_SHIFT).
+
+    Reads site/communique_diff/latest.json — built by engine/communique_diff.py.
+    Returns None if the file is absent or has no events.  Salience-only context;
+    direction=0.  The 14d recency window filters to recent events only.
+    """
+    try:
+        from datetime import date, timedelta
+        raw = _read_json("communique_diff/latest.json")
+        if not isinstance(raw, dict):
+            return None
+        asof = raw.get("asof") or ""
+        events = raw.get("events") or []
+        cold_start_organs = raw.get("cold_start_organs") or []
+        # Defensive 14d recency filter — communique_diff stamps all events with the run asof,
+        # so in practice all events already share the top-level asof and this filter is a no-op.
+        # Kept as a defensive guard in case a future producer emits per-event asof values.
+        cutoff = ""
+        try:
+            cutoff = (date.fromisoformat(str(asof)[:10]) - timedelta(days=14)).isoformat()
+        except (ValueError, TypeError):
+            pass
+        recent = [e for e in events if not cutoff or str(e.get("asof", ""))[:10] >= cutoff]
+        if not recent and not asof:
+            return None
+        # counts by type
+        type_counts = {}
+        organs_seen = set()
+        for e in recent:
+            kind = e.get("kind", "")
+            type_counts[kind] = type_counts.get(kind, 0) + 1
+            org = e.get("organ", "")
+            if org:
+                organs_seen.add(org)
+        return {
+            "asof": asof,  # "last diff run" — communique_diff stamps run day, not corpus freshness
+            "n_events_recent": len(recent),
+            "n_appeared": type_counts.get("APPEARED", 0),
+            "n_dropped": type_counts.get("DROPPED", 0),
+            "n_lead_shift": type_counts.get("LEAD_SHIFT", 0),
+            "organs_covered": sorted(organs_seen),
+            "cold_start_organs": cold_start_organs,
+            "recent_events": recent[:8],   # cap for transport
+            "is_context_only": True,
+            "claim_family": "communique_diff",
+            "note_en": "Salience-only — direction unproven (accruing)",
+            "note_zh": "仅显著性——方向未验证（台账积累中）",
+        }
+    except Exception as e:  # noqa: BLE001
+        log.debug("china_intel_bus: policy_phrase block failed (%s)", e)
+        return None
+
+
+def _narrative_divergence_block() -> dict | None:
+    """Onshore/offshore GDELT tone divergence z-score from tone_divergence.parquet.
+
+    Reads data/missing_tape/tone_divergence.parquet.  Degrades cleanly to None
+    if parquet is absent or unreadable.  Direction=0 — this is a RISK FLAG only;
+    the directionality of the divergence is unproven.
+    """
+    try:
+        import pandas as pd
+        p = config.ROOT / "data" / "missing_tape" / "tone_divergence.parquet"
+        if not p.exists():
+            return None
+        df = pd.read_parquet(p)
+        if df.empty:
+            return None
+        df = df.sort_values("date").reset_index(drop=True)
+        # latest row
+        last = df.iloc[-1]
+        latest_z = last.get("spread_expanding_z")
+        latest_date = str(last.get("date", ""))[:10]
+        # 5d trend: last 5 rows z-score direction
+        trend_dir = None
+        if len(df) >= 6:
+            recent5 = df["spread_expanding_z"].dropna().tail(5)
+            if len(recent5) >= 2:
+                delta = float(recent5.iloc[-1]) - float(recent5.iloc[0])
+                trend_dir = "rising" if delta > 0.1 else ("falling" if delta < -0.1 else "flat")
+        import math
+        z_val = float(latest_z) if latest_z is not None and not (isinstance(latest_z, float) and math.isnan(latest_z)) else None
+        if z_val is None:
+            return None
+        return {
+            "asof": latest_date,
+            "divergence_z": round(z_val, 3),
+            "trend_5d": trend_dir,
+            "risk_flag": z_val > 1.5,  # one-sided: high z = suppression-suspect; negative z is not a flag
+            "is_context_only": True,
+            "direction_proven": False,
+            "note_en": "Risk flag only — direction unproven (direction=0). High z suggests domestic tape quieter than offshore coverage.",
+            "note_zh": "仅风险标志——方向未验证（direction=0）。高z值提示境内报道可能较境外更平静。",
+        }
+    except Exception as e:  # noqa: BLE001
+        log.debug("china_intel_bus: narrative_divergence block failed (%s)", e)
+        return None
+
+
 def _analysis_block() -> dict | None:
     a = _read_json("china_intel_analysis/analysis.json")
     if not isinstance(a, dict):
@@ -272,6 +379,28 @@ def _digest_text(b: dict) -> str:
             lines.append(f"{key} {d.get('sign')}")
         parts.append("Radar divergences: " + "; ".join(lines[:5])
                      + f" (ledger: {r.get('ledger',{}).get('grade','?')})")
+    pp = b.get("policy_phrase")
+    if pp and pp.get("n_events_recent"):
+        n_total = pp.get("n_events_recent", 0)
+        appeared = pp.get("n_appeared", 0)
+        dropped = pp.get("n_dropped", 0)
+        lead_shift = pp.get("n_lead_shift", 0)
+        organs = ", ".join((pp.get("organs_covered") or [])[:3])
+        parts.append(
+            f"Policy phrase shifts (14d): {n_total} events"
+            + (f" ({appeared} appeared" if appeared else "")
+            + (f" / {dropped} dropped" if dropped else "")
+            + (f" / {lead_shift} lead-shift" if lead_shift else "")
+            + (")" if appeared or dropped or lead_shift else "")
+            + (f" — organs: {organs}" if organs else "")
+            + " [salience-only, accruing]"
+        )
+    nd = b.get("narrative_divergence")
+    if nd and nd.get("divergence_z") is not None:
+        z = nd["divergence_z"]
+        risk = " [RISK FLAG]" if nd.get("risk_flag") else ""
+        trend = f" trend: {nd.get('trend_5d')}" if nd.get("trend_5d") else ""
+        parts.append(f"Onshore/offshore tone divergence z={z:+.2f}{trend}{risk} (direction=0, accruing)")
     if not parts:
         return "China intelligence bus: no surfaces built yet."
     return "\n".join(parts)
@@ -282,7 +411,8 @@ def _digest_text(b: dict) -> str:
 # --------------------------------------------------------------------------- #
 def _staleness(b: dict) -> tuple[dict, int]:
     sa, worst = {}, 0
-    for k in ("news", "policy", "altdata", "radar", "analysis"):
+    for k in ("news", "policy", "altdata", "radar", "analysis",
+              "policy_phrase", "narrative_divergence"):
         d = (b.get(k) or {}).get("asof") if isinstance(b.get(k), dict) else None
         sa[k] = d
         if d:
@@ -302,12 +432,15 @@ def briefing(asof: date | str | None = None) -> dict:
         "asof": str(asof) if asof else str(date.today()),
         "news": None, "policy": None, "altdata": None, "radar": None, "analysis": None,
         "regime": None, "discovery": None,
+        "policy_phrase": None, "narrative_divergence": None,
         "disclaimer": DISCLAIMER, "disclaimer_zh": DISCLAIMER_ZH,
     }
     for key, fn in (("news", _news_block), ("policy", _policy_block),
                     ("altdata", _altdata_block), ("radar", _radar_block),
                     ("analysis", _analysis_block), ("regime", _regime_block),
-                    ("discovery", _discovery_block)):
+                    ("discovery", _discovery_block),
+                    ("policy_phrase", _policy_phrase_block),
+                    ("narrative_divergence", _narrative_divergence_block)):
         try:
             b[key] = fn()
         except Exception as e:  # noqa: BLE001
@@ -320,7 +453,8 @@ def briefing(asof: date | str | None = None) -> dict:
     b["flagged_tickers"] = a.get("flagged_tickers") or []
     b["what_changed"] = a.get("what_changed") or {}
     b["salience"] = a.get("what_matters") or []
-    b["surfaces_present"] = [k for k in ("news", "policy", "altdata", "radar", "analysis") if b.get(k)]
+    b["surfaces_present"] = [k for k in ("news", "policy", "altdata", "radar", "analysis",
+                                        "policy_phrase", "narrative_divergence") if b.get(k)]
     b["surface_asof"], b["max_staleness_days"] = _staleness(b)
     b["digest"] = _digest_text(b)
     return b
@@ -340,7 +474,7 @@ def build() -> dict | None:
              "surfaces_present": b["surfaces_present"],
              "max_staleness_days": b["max_staleness_days"], "text": b["digest"]},
             ensure_ascii=False, separators=(",", ":"), default=str))
-        log.info("china_intel_bus: wrote briefing v3 (%d surfaces, %d conviction)",
+        log.info("china_intel_bus: wrote briefing v4 (%d surfaces, %d conviction)",
                  len(b["surfaces_present"]), len(b["conviction"]))
         return b
     except Exception as e:  # noqa: BLE001

@@ -2344,7 +2344,7 @@ artifacts:
     storage: git
     asof_field: asof
     freshness_sla_hours: 30
-    schema: china_intel.briefing.v3
+    schema: china_intel.briefing.v4
     tier: display
     horizon_role: context
     weights: none
@@ -2353,7 +2353,7 @@ artifacts:
       - engine/master_brain.py
     external_consumers:
       - mastermind:vendored
-    notes: "Producer: engine/china_intel_bus.py:335 write_text. schema=china_intel.briefing.v3 constant at china_intel_bus.py:25."
+    notes: "Producer: engine/china_intel_bus.py write_text. schema=china_intel.briefing.v4 constant at china_intel_bus.py. v4 adds policy_phrase (communique_diff) + narrative_divergence (GDELT tone) blocks (additive)."
     qual_ladder_ref: china_intel.news_dir
 
   # --- 3 consumers ---

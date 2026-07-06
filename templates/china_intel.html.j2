@@ -9,27 +9,90 @@
 {% block title %}{{ t('China Intelligence', '中国情报中心') }} — {{ t('Macro Dashboard', '宏观仪表盘') }}{% endblock %}
 
 {% block base_css %}
+  /* ── layout ── */
+  .ci-wrap { max-width:1060px; margin:0 auto; padding:0 0 60px; }
+  /* ── hero ── */
   .ci-hero { max-width:1060px; margin:18px auto 0; }
   .ci-hero .eyebrow { font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--link); font-weight:600; margin:0 0 8px; }
   .ci-hero h1 { font-size:30px; margin:0 0 8px; letter-spacing:-.01em; }
   html[data-lang="zh"] .ci-hero h1 { letter-spacing:0; }
   .ci-hero .lens { font-size:12px; color:var(--muted); }
-  .ci-wrap { max-width:1060px; margin:0 auto; }
+  /* ── command bar ── */
+  .cmdbar { display:flex; flex-wrap:wrap; gap:8px; margin:14px 0 4px; }
+  .cmdbar .mc { font-size:12px; font-weight:600; padding:6px 12px; border-radius:10px;
+    display:inline-flex; gap:7px; align-items:center;
+    background:color-mix(in srgb,var(--panel) 72%,transparent);
+    border:1px solid color-mix(in srgb,var(--line) 75%,transparent); }
+  .cmdbar .mc b { color:var(--text); font-weight:700; }
+  .cmdbar .mc span { color:var(--muted); }
+  .cmdbar .mc.hot { border-color:color-mix(in srgb,var(--link) 50%,var(--line)); color:var(--link); }
+  .cmdbar .mc.warn { border-color:color-mix(in srgb,#e0973a 50%,var(--line)); color:#e0973a; }
+  .mode-badge { font-size:10px; font-weight:700; padding:3px 9px; border-radius:999px;
+    background:color-mix(in srgb,var(--muted) 15%,transparent);
+    border:1px solid color-mix(in srgb,var(--muted) 30%,transparent); color:var(--muted); }
+  .stale-chip { font-size:10px; font-weight:700; padding:3px 9px; border-radius:999px;
+    background:color-mix(in srgb,#e0973a 15%,transparent);
+    border:1px solid color-mix(in srgb,#e0973a 35%,transparent); color:#e0973a; }
+  /* ── desk status board ── */
+  .desks { display:grid; gap:11px; grid-template-columns:repeat(auto-fit,minmax(145px,1fr)); margin:16px 0 6px; }
+  .desk { padding:12px 14px; border-radius:14px; text-decoration:none; display:block; transition:.16s ease;
+    background:color-mix(in srgb,var(--panel) 80%,transparent);
+    border:1px solid color-mix(in srgb,var(--line) 80%,transparent); }
+  .desk:hover { transform:translateY(-3px); border-color:color-mix(in srgb,var(--link) 45%,var(--line)); }
+  .desk .dh { display:flex; align-items:center; gap:7px; font-size:13px; font-weight:700; color:var(--text); }
+  .desk .dh .dot { width:7px; height:7px; border-radius:50%; margin-left:auto; background:var(--muted); }
+  .desk .dh .dot.on { background:var(--ok); box-shadow:0 0 8px color-mix(in srgb,var(--ok) 70%,transparent); }
+  .desk small { display:block; margin-top:4px; color:var(--muted); font-size:11px; }
+  .desk .desk-asof { font-size:10px; color:var(--muted); margin-top:3px; }
+  .desk .desk-chips { display:flex; align-items:center; gap:5px; flex-wrap:wrap; margin-top:5px; }
+  /* ── qledger honesty chips ── */
+  .ql-chip { display:inline-flex; align-items:center; font:700 9px/1 ui-monospace,Menlo,monospace;
+    letter-spacing:.05em; text-transform:uppercase; padding:2px 7px; border-radius:6px;
+    border:1px solid; white-space:nowrap; vertical-align:middle; }
+  .ql-chip-ungraded { background:color-mix(in srgb,var(--muted) 12%,transparent); color:var(--muted); border-color:color-mix(in srgb,var(--muted) 28%,transparent); }
+  .ql-chip-accruing { background:color-mix(in srgb,#e0973a 14%,transparent); color:#e0973a; border-color:color-mix(in srgb,#e0973a 35%,transparent); }
+  .ql-chip-graded-pos { background:color-mix(in srgb,var(--up) 14%,transparent); color:var(--up); border-color:color-mix(in srgb,var(--up) 35%,transparent); }
+  .ql-chip-graded-neg { background:color-mix(in srgb,var(--down) 14%,transparent); color:var(--down); border-color:color-mix(in srgb,var(--down) 35%,transparent); }
+  /* ── section headers ── */
   h2.sec { font-size:18px; margin:26px 0 8px; border-top:1px solid var(--line); padding-top:16px; display:flex; align-items:baseline; gap:9px; }
-  /* what matters / changed strip */
+  /* ── what matters / changed ── */
   .matters { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:14px 16px; margin:16px 0; }
   .matters ol { margin:6px 0 0; padding-left:20px; }
   .matters li { font-size:13.5px; line-height:1.6; margin:4px 0; }
   .matters .kind { font-size:9.5px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; padding:1px 6px; border-radius:5px; background:var(--panel2); color:var(--muted); margin-right:6px; }
   .changed { display:flex; flex-wrap:wrap; gap:7px; margin-top:10px; }
   .changed .ch { font-size:11.5px; padding:3px 9px; border-radius:999px; background:color-mix(in srgb,#e0973a 12%,var(--panel2)); border:1px solid #e0973a44; color:var(--text); }
-  /* synthesis table */
+  /* ── policy phrase card ── */
+  .pp-card { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:14px 16px; margin:12px 0; }
+  .pp-event-list { list-style:none; margin:8px 0 0; padding:0; }
+  .pp-event-list li { display:flex; align-items:flex-start; gap:9px; padding:8px 0; border-bottom:1px solid var(--line); font-size:12.5px; }
+  .pp-event-list li:last-child { border-bottom:none; }
+  .pp-kind { font-size:9px; font-weight:800; letter-spacing:.04em; text-transform:uppercase; padding:2px 7px; border-radius:6px; white-space:nowrap; }
+  .pp-kind.APPEARED { background:color-mix(in srgb,#1f9a55 18%,transparent); color:#1f9a55; }
+  .pp-kind.DROPPED { background:color-mix(in srgb,#888 16%,transparent); color:#888; }
+  .pp-kind.LEAD_SHIFT { background:color-mix(in srgb,#8b5cf6 18%,transparent); color:#a78bfa; }
+  .pp-phrase { font-weight:700; font-size:13px; }
+  .pp-gloss { font-size:11px; color:var(--muted); margin-top:2px; }
+  .pp-meta { font-size:10px; color:var(--muted); margin-left:auto; white-space:nowrap; }
+  .pp-cold { font-size:11px; color:var(--muted); padding:6px 0; font-style:italic; }
+  .pp-more > summary { cursor:pointer; font-size:11px; color:var(--link); margin-top:6px; list-style:none; }
+  .pp-more > summary::-webkit-details-marker { display:none; }
+  /* ── narrative divergence chip ── */
+  .nd-chip { display:flex; align-items:center; gap:10px; background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:11px 14px; margin:12px 0; font-size:13px; flex-wrap:wrap; }
+  .nd-z { font-size:20px; font-weight:800; font-variant-numeric:tabular-nums; }
+  .nd-z.risk { color:#e0973a; }
+  .nd-z.ok { color:var(--muted); }
+  .nd-label { font-size:11.5px; color:var(--muted); line-height:1.5; flex:1; }
+  .nd-badge { font-size:9px; font-weight:800; letter-spacing:.04em; text-transform:uppercase; padding:2px 8px; border-radius:6px;
+    background:color-mix(in srgb,#e0973a 15%,transparent); border:1px solid color-mix(in srgb,#e0973a 35%,transparent); color:#e0973a; white-space:nowrap; }
+  /* ── synthesis table ── */
   table.syn { border-collapse:collapse; width:100%; font-size:12.5px; margin:8px 0; }
   table.syn th { text-align:left; padding:7px 9px; background:var(--panel2); color:var(--muted); font-weight:600; border-bottom:2px solid var(--line); }
   table.syn td { padding:8px 9px; border-bottom:1px solid var(--line); vertical-align:top; }
   .cc { font-weight:800; font-variant-numeric:tabular-nums; }
   .strength { height:5px; border-radius:3px; background:var(--panel2); overflow:hidden; display:inline-block; vertical-align:middle; margin-right:4px; }
   .strength > i { display:block; height:100%; background:var(--link); }
+  /* ── regime overlay ── */
   .regime { display:flex; flex-wrap:wrap; gap:14px; align-items:center; background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:11px 15px; margin:14px 0; font-size:13px; }
   .regime .rk { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
   .regime .on { color:#1f9a55; font-weight:700; } .regime .off { color:#d23f3f; font-weight:700; } .regime .neu { color:var(--muted); font-weight:700; }
@@ -37,15 +100,15 @@
   .b-high{color:#1f9a55;background:color-mix(in srgb,#1f9a55 13%,transparent)}
   .b-elevated{color:#5b8def;background:color-mix(in srgb,#5b8def 13%,transparent)}
   .b-moderate,.b-low,.b-none{color:var(--muted);background:var(--panel2)}
+  /* ── surfaces/flags ── */
   .surf { font-size:9.5px; font-weight:700; padding:1px 6px; border-radius:5px; background:var(--panel2); color:var(--link); margin-right:3px; }
   .sgn-pos{color:#1f9a55} .sgn-neg{color:#d23f3f}
-  /* flagged tickers */
   .flags { display:flex; flex-wrap:wrap; gap:8px; margin:10px 0; }
   .tk { display:inline-flex; flex-direction:column; gap:2px; padding:7px 12px; border-radius:10px; background:var(--panel); border:1px solid var(--line); }
   .tk .nm { font-weight:700; font-size:13px; }
   .tk .cd { font-size:10px; color:var(--muted); font-family:ui-monospace,Menlo,monospace; }
   .tk.long { border-left:3px solid #1f9a55; } .tk.short { border-left:3px solid #d23f3f; }
-  /* chains */
+  /* ── chains ── */
   .chain { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:12px 15px; margin:10px 0; }
   .chain .hd { display:flex; align-items:center; gap:9px; font-weight:700; font-size:13.5px; }
   .chband { font-size:10px; font-weight:700; padding:2px 8px; border-radius:999px; }
@@ -55,55 +118,212 @@
   .legs { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
   .leg { font-size:11px; padding:3px 8px; border-radius:7px; background:var(--panel2); border:1px solid var(--line); }
   .leg.on { color:#1f9a55; border-color:#1f9a5544; } .leg.off { color:var(--muted); opacity:.6; }
+  /* ── misc ── */
   .digest { white-space:pre-wrap; font:12px/1.55 ui-monospace,Menlo,monospace; background:var(--panel2); border:1px solid var(--line); border-left:4px solid var(--link); border-radius:12px; padding:13px 15px; margin:12px 0; }
+  .xmit { border-radius:12px; padding:13px 16px; margin:16px 0; border:1px solid var(--line); background:var(--panel2); font-size:13px; line-height:1.6; }
+  .xmit code { font-family:ui-monospace,Menlo,monospace; font-size:11.5px; color:var(--link); }
+  .strip { display:flex; flex-wrap:wrap; gap:8px; margin:8px 0; }
+  .sx { font-size:11.5px; padding:4px 10px; border-radius:8px; background:var(--panel2); border:1px solid var(--line); }
+  .sx b { color:#e0973a; }
+  .band { display:inline-block; font-size:13px; font-weight:700; padding:2px 9px; border-radius:999px; }
+  .band.supportive,.band.easing { color:#1f9a55; background:color-mix(in srgb,#1f9a55 13%,transparent); }
+  .band.cautious,.band.tightening { color:#d23f3f; background:color-mix(in srgb,#d23f3f 13%,transparent); }
+  .band.steady,.band.building,.band.neutral,.band.unknown { color:var(--muted); background:var(--panel2); }
+  .disc { font-size:11.5px; color:var(--muted); margin-top:14px; line-height:1.55; }
+  /* ── surface cards (spoke links) ── */
   .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(232px,1fr)); gap:14px; margin:14px 0; }
-  a.scard { display:block; background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:15px 17px; color:var(--text); transition:border-color .15s, transform .15s; }
+  a.scard { display:block; background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:15px 17px; color:var(--text); transition:border-color .15s, transform .15s; text-decoration:none; }
   a.scard:hover { border-color:var(--link); transform:translateY(-2px); }
   a.scard .ic { font-size:20px; } a.scard .nm { font-weight:700; font-size:14.5px; margin:5px 0 2px; }
   a.scard .v { font-size:20px; font-weight:800; margin-top:5px; }
   a.scard .s { font-size:11.5px; color:var(--muted); margin-top:3px; }
   a.scard .age { font-size:10px; color:var(--muted); margin-top:6px; }
   a.scard .go { font-size:11px; color:var(--link); margin-top:7px; }
-  .band { display:inline-block; font-size:13px; font-weight:700; padding:2px 9px; border-radius:999px; }
-  .band.supportive,.band.easing { color:#1f9a55; background:color-mix(in srgb,#1f9a55 13%,transparent); }
-  .band.cautious,.band.tightening { color:#d23f3f; background:color-mix(in srgb,#d23f3f 13%,transparent); }
-  .band.steady,.band.building,.band.neutral,.band.unknown { color:var(--muted); background:var(--panel2); }
-  .strip { display:flex; flex-wrap:wrap; gap:8px; margin:8px 0; }
-  .sx { font-size:11.5px; padding:4px 10px; border-radius:8px; background:var(--panel2); border:1px solid var(--line); }
-  .sx b { color:#e0973a; }
-  .xmit { border-radius:12px; padding:13px 16px; margin:16px 0; border:1px solid var(--line); background:var(--panel2); font-size:13px; line-height:1.6; }
-  .xmit code { font-family:ui-monospace,Menlo,monospace; font-size:11.5px; color:var(--link); }
-  .disc { font-size:11.5px; color:var(--muted); margin-top:14px; line-height:1.55; }
+  /* ── suite directory ── */
+  .suite { margin:14px 0 20px; }
+  .suite-group { margin-bottom:18px; }
+  .suite-group-title { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin:0 0 8px; display:flex; align-items:center; gap:8px; }
+  .suite-group-title::after { content:""; flex:1; height:1px; background:var(--line); }
+  .suite-links { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:8px; }
+  a.slink { display:flex; align-items:flex-start; gap:9px; background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:10px 12px; color:var(--text); text-decoration:none; transition:border-color .15s; }
+  a.slink:hover { border-color:var(--link); }
+  a.slink .sl-name { font-size:12.5px; font-weight:700; }
+  a.slink .sl-desc { font-size:11px; color:var(--muted); margin-top:2px; line-height:1.4; }
 {% endblock %}
 
 {% block content %}
-<section class="ci-hero">
-  <p class="eyebrow">🧠 {{ t('China Intelligence', '中国情报中心') }}</p>
-  <h1>{{ t('China Intelligence Hub', '中国情报中心') }}</h1>
-  <p class="lens">{{ t('Central synthesis of five China surfaces — what matters most, cross-surface conviction, flagged tickers · context only · as of', '五个中国面板的中央综合——最重要的事、跨面板共振、标记个股 · 仅供参考 · 截至') }} {{ b.asof }}
-  {% if b.max_staleness_days is not none %} · {{ t('freshest data', '最新数据') }} {{ b.max_staleness_days }}{{ t('d old', '天') }}{% endif %}</p>
-</section>
-
-<div class="ci-wrap">
 {% set KIND_ZH = {'chain':'链条','news':'新闻','radar':'雷达','scheduled':'日程','policy':'政策','altdata':'另类数据'} %}
 {% set STANCE_ZH = {'easing':'宽松','neutral':'中性','tightening':'收紧'} %}
 {% set BAND_ZH = {'supportive':'偏积极','cautious':'偏谨慎','steady':'平稳','building':'积累中','unknown':'未知'} %}
+{% set _STG = {'emerging':['Emerging','萌芽'],'early':['Early','早期'],'consensus':['Consensus','共识'],'exhausted':['Exhausted','见顶'],'distribution':['Distribution','派发'],'building':['Building','酝酿']} %}
 
-  <!-- A2. RISK-APPETITE / REGIME OVERLAY -->
+<section class="ci-hero">
+  <p class="eyebrow">🧠 {{ t('China Intelligence', '中国情报中心') }}</p>
+  <h1>{{ t('China Intelligence Hub', '中国情报中心') }}</h1>
+  <p class="lens">{{ t('Central synthesis of five China surfaces — what matters most, cross-surface conviction, flagged tickers · context only · as of', '五个中国面板的中央综合——最重要的事、跨面板共振、标记个股 · 仅供参考 · 截至') }} {{ b.asof }}</p>
+</section>
+
+<div class="ci-wrap">
+
+  {# ── A. COMMAND BAR ── #}
+  <div class="cmdbar">
+    {%- if b.regime and b.regime.roro is not none %}
+      {%- set _rt = b.regime.risk_tilt %}
+      <span class="mc {{ 'hot' if _rt > 0 else 'warn' if _rt < 0 else '' }}">
+        <b>{{ t('Risk-on','偏好风险') if _rt > 0 else (t('Risk-off','避险') if _rt < 0 else t('Neutral','中性')) }}</b>
+        <span>RORO {{ '%+.2f'|format(b.regime.roro) }}</span>
+      </span>
+    {%- endif %}
+    {%- set _reg = b.regime %}
+    {%- if _reg and _reg.band_en %}
+      <span class="mc"><span>{{ t('Fear/Euphoria','恐惧/亢奋') }}</span> <b>{{ bl(_reg.band_en, _reg.band_zh or _reg.band_en) }}</b></span>
+    {%- endif %}
+    {%- if b.policy and b.policy.pboc_stance %}
+      <span class="mc"><span>{{ t('PBoC','央行') }}</span> <b>{{ bl(b.policy.stance_label_en or (b.policy.pboc_stance|capitalize), b.policy.stance_label_zh or b.policy.pboc_stance) }}</b></span>
+    {%- endif %}
+    {%- if b.news and b.news.band %}
+      <span class="mc"><span>{{ t('Media','媒体') }}</span> <b>{{ bl(b.news.band_label_en or (b.news.band|capitalize), b.news.band_label_zh or b.news.band) }}</b></span>
+    {%- endif %}
+    {%- if b.max_staleness_days is not none and b.max_staleness_days > 2 %}
+      <span class="mc warn"><span>{{ t('Freshest data','最新数据') }}</span> <b>{{ b.max_staleness_days }}{{ t('d old','天') }}</b></span>
+    {%- endif %}
+    <span class="mode-badge">{{ t('Context only','仅供参考') }}</span>
+  </div>
+
+  {# ── B. DESK STATUS BOARD ── #}
+  {%- set _DESKS = [
+    ('news',    '📰', t('News','新闻'),        'china_news.html',         t('China news tape','中国财经新闻')),
+    ('policy',  '🏛️', t('Policy','政策'),      'china_policy_watch.html', t('PBoC & policy watch','央行与政策观察')),
+    ('altdata', '🛰️', t('Alt-Data','另类数据'), 'china_altdata.html',      t('Smart-money convergence','聪明钱共振')),
+    ('radar',   '📡', t('Radar','雷达'),        'china_radar.html',        t('Divergence signals','背离信号')),
+    ('stocks',  '📊', t('Stocks Board','个股板'), 'china_stocks.html',      t('China stocks board','中国个股板')),
+    ('sector',  '🗂️', t('Sector Desk','板块台'), 'china_sector_desk.html', t('Sector momentum desk','板块动能台'))
+  ] %}
+  {%- set _DESK_SURF_KEY = {'news':'news','policy':'policy','altdata':'altdata','radar':'radar'} %}
+  <h2 class="sec">🖥️ {{ t('Desk Status Board', '面板状态') }}</h2>
+  <div class="desks">
+    {%- for key, icon, label, href, desc in _DESKS %}
+      {%- set _surf_key = _DESK_SURF_KEY.get(key) %}
+      {%- set _live = _surf_key and b.surfaces_present is defined and _surf_key in b.surfaces_present %}
+      {%- set _asof = (b.surface_asof or {}).get(_surf_key) if _surf_key else none %}
+      <a class="desk" href="{{ href }}">
+        <div class="dh">{{ icon }} {{ label }}{% if _surf_key %}<span class="dot {{ 'on' if _live else '' }}"></span>{% endif %}</div>
+        <small>{{ desc }}{% if not _live and _surf_key %} · {{ t('offline','离线') }}{% endif %}</small>
+        {%- if _asof %}<div class="desk-asof">{{ _asof }}</div>{%- endif %}
+        {%- if key == 'policy' and b.policy_phrase %}
+          <div class="desk-chips"><span class="ql-chip ql-chip-accruing"><span class="l-en">ACCRUING</span><span class="l-zh">累积中</span></span></div>
+        {%- elif key == 'news' and b.news %}
+          <div class="desk-chips">{# no qledger family for china_news yet — show nothing #}</div>
+        {%- endif %}
+      </a>
+    {%- endfor %}
+  </div>
+
+  {# ── A2. RISK-APPETITE / REGIME OVERLAY ── #}
   {% if b.regime %}
   <div class="regime">
-    <span><span class="rk">{{ t('Risk appetite', '风险偏好') }}</span>
-      <span class="{{ 'on' if b.regime.risk_tilt>0 else ('off' if b.regime.risk_tilt<0 else 'neu') }}">{{ t('Risk-on', '偏好风险') if b.regime.risk_tilt>0 else (t('Risk-off', '避险') if b.regime.risk_tilt<0 else t('Neutral', '中性')) }}</span></span>
-    {% if b.regime.band_en %}<span><span class="rk">{{ t('Fear↔Euphoria', '恐惧↔亢奋') }}</span> {{ bl(b.regime.band_en, b.regime.band_zh or b.regime.band_en) }}</span>{% endif %}
+    <span><span class="rk">{{ t('Risk appetite','风险偏好') }}</span>
+      <span class="{{ 'on' if b.regime.risk_tilt>0 else ('off' if b.regime.risk_tilt<0 else 'neu') }}">{{ t('Risk-on','偏好风险') if b.regime.risk_tilt>0 else (t('Risk-off','避险') if b.regime.risk_tilt<0 else t('Neutral','中性')) }}</span></span>
+    {% if b.regime.band_en %}<span><span class="rk">{{ t('Fear↔Euphoria','恐惧↔亢奋') }}</span> {{ bl(b.regime.band_en, b.regime.band_zh or b.regime.band_en) }}</span>{% endif %}
     {% if b.regime.roro is not none %}<span><span class="rk">RORO</span> {{ '%+.2f'|format(b.regime.roro) }}</span>{% endif %}
-    <span class="mut" style="font-size:11px">{{ t('soft overlay — context, not a score leg', '软性叠加——背景，非评分腿') }}</span>
+    <span class="mut" style="font-size:11px">{{ t('soft overlay — context, not a score leg','软性叠加——背景，非评分腿') }}</span>
   </div>
   {% endif %}
 
-  <!-- B. WHAT MATTERS MOST + CHANGED TODAY -->
+  {# ── C. POLICY PHRASE SHIFTS CARD (new v4) ── #}
+  {% if b.policy_phrase %}
+  {%- set _pp = b.policy_phrase %}
+  <h2 class="sec">📜 {{ t('Policy Phrase Shifts', '政策表述变化') }}</h2>
+  <div class="pp-card">
+    <div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:8px">
+      <span style="font-size:12px;color:var(--muted)">
+        {{ t('Official language APPEARED / DROPPED / LEAD_SHIFT events, last 14d','官方文件 14 天内新增/消失/头版转向事件') }}
+        · <b>{{ _pp.n_events_recent }}</b> {{ t('events','条') }}
+      </span>
+      <span class="ql-chip ql-chip-accruing"><span class="l-en">ACCRUING · salience-only</span><span class="l-zh">累积中 · 仅显著性</span></span>
+      <a href="china_policy_watch.html" style="font-size:11px;color:var(--link);text-decoration:none;margin-left:auto">{{ t('See policy watch →','查看政策观察 →') }}</a>
+    </div>
+    {%- if _pp.cold_start_organs %}
+    <p class="pp-cold">{{ t('Cold-start organs (no prior window yet — cannot detect APPEARED/DROPPED):','冷启动器官（尚无先验窗口——无法检测新增/消失）：') }} {{ _pp.cold_start_organs | join(', ') }}</p>
+    {%- endif %}
+    {%- if _pp.recent_events %}
+    {%- set _pp_all = _pp.recent_events[:24] %}
+    <ul class="pp-event-list">
+      {%- for ev in _pp_all[:8] %}
+      <li>
+        <span class="pp-kind {{ ev.get('kind','') }}">{{ ev.get('kind','') }}</span>
+        <div style="flex:1">
+          {%- if ev.get('kind') == 'LEAD_SHIFT' %}
+            <div class="pp-phrase">{{ t('Front-page lead domain','头版领衔议题') }}: {{ ev.get('from_domain','?') }} → {{ ev.get('to_domain','?') }}</div>
+            <div class="pp-gloss">{{ ev.get('organ','') }}</div>
+          {%- else %}
+            <div class="pp-phrase">{{ ev.get('phrase','') }}</div>
+            {%- if ev.get('gloss') %}<div class="pp-gloss">{{ ev.get('gloss','') }}</div>{%- endif %}
+            <div class="pp-gloss">{{ ev.get('organ','') }}</div>
+          {%- endif %}
+        </div>
+        <div class="pp-meta">{{ ev.get('asof','') }}</div>
+      </li>
+      {%- endfor %}
+    </ul>
+    {%- if _pp_all|length > 8 %}
+    <details class="pp-more">
+      <summary>{{ t('Show ' ~ (_pp_all|length - 8) ~ ' more', '显示更多 ' ~ (_pp_all|length - 8) ~ ' 条') }}</summary>
+      <ul class="pp-event-list">
+        {%- for ev in _pp_all[8:] %}
+        <li>
+          <span class="pp-kind {{ ev.get('kind','') }}">{{ ev.get('kind','') }}</span>
+          <div style="flex:1">
+            {%- if ev.get('kind') == 'LEAD_SHIFT' %}
+              <div class="pp-phrase">{{ t('Front-page lead domain','头版领衔议题') }}: {{ ev.get('from_domain','?') }} → {{ ev.get('to_domain','?') }}</div>
+              <div class="pp-gloss">{{ ev.get('organ','') }}</div>
+            {%- else %}
+              <div class="pp-phrase">{{ ev.get('phrase','') }}</div>
+              {%- if ev.get('gloss') %}<div class="pp-gloss">{{ ev.get('gloss','') }}</div>{%- endif %}
+              <div class="pp-gloss">{{ ev.get('organ','') }}</div>
+            {%- endif %}
+          </div>
+          <div class="pp-meta">{{ ev.get('asof','') }}</div>
+        </li>
+        {%- endfor %}
+      </ul>
+    </details>
+    {%- endif %}
+    {%- else %}
+    <p class="pp-cold">{{ t('No recent phrase-shift events in the last 14 days.','最近 14 天内无政策表述变化事件。') }}</p>
+    {%- endif %}
+    <p style="font-size:10.5px;color:var(--muted);margin-top:8px">⚠ {{ t(_pp.note_en, _pp.note_zh) }}</p>
+  </div>
+  {% endif %}
+
+  {# ── D. NARRATIVE DIVERGENCE CHIP (new v4) ── #}
+  {% if b.narrative_divergence %}
+  {%- set _nd = b.narrative_divergence %}
+  <h2 class="sec">🌐 {{ t('Onshore / Offshore Narrative Divergence', '境内/境外叙事背离') }}</h2>
+  <div class="nd-chip">
+    <div>
+      <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px">{{ t('Tone divergence z','语调背离z值') }}</div>
+      <div class="nd-z {{ 'risk' if _nd.risk_flag else 'ok' }}">{{ '%+.2f'|format(_nd.divergence_z) }}</div>
+      {%- if _nd.trend_5d %}<div style="font-size:10px;color:var(--muted)">{{ t('5d trend','5日趋势') }}: {{ _nd.trend_5d }}</div>{%- endif %}
+    </div>
+    <div class="nd-label">
+      {%- if _nd.risk_flag and _nd.divergence_z > 0 %}
+        {{ t('Domestic tape appears quieter than offshore coverage — potential suppression signal. Risk flag only.', '境内报道较境外覆盖更平静——潜在信息抑制信号。仅风险标志。') }}
+      {%- else %}
+        {{ t('Onshore and offshore tone divergence within normal range.', '境内外报道语调差异在正常范围内。') }}
+      {%- endif %}
+    </div>
+    <div style="display:flex;flex-direction:column;gap:4px">
+      <span class="nd-badge">{{ t('RISK FLAG ONLY · direction=0','仅风险标志 · 方向=0') }}</span>
+      <span style="font-size:10px;color:var(--muted)">{{ _nd.asof }}</span>
+    </div>
+  </div>
+  {% endif %}
+
+  {# ── E. WHAT MATTERS MOST + CHANGED TODAY ── #}
   {% if b.salience %}
   <div class="matters">
-    <b>🎯 {{ t('What matters most today', '今日要点') }}</b>
+    <b>🎯 {{ t('What matters most today','今日要点') }}</b>
     <ol>
       {% for w in b.salience %}
       <li><span class="kind">{{ bl(w.kind, KIND_ZH.get(w.kind, w.kind)) }}</span>{{ bl(w.label_en, w.label_zh) }}{% if w.detail_en %} — <span class="mut">{{ bl(w.detail_en, w.detail_zh) }}</span>{% endif %}</li>
@@ -112,22 +332,21 @@
     {% set wc = b.what_changed %}
     {% if wc and (wc.stance_change or wc.sentiment_band_change or wc.new_radar_fires or wc.new_accumulation) %}
     <div class="changed">
-      {% if wc.stance_change %}<span class="ch">{{ t('PBoC stance', '央行立场') }}: {{ bl(wc.stance_change.from, STANCE_ZH.get(wc.stance_change.from, wc.stance_change.from)) }} → {{ bl(wc.stance_change.to, STANCE_ZH.get(wc.stance_change.to, wc.stance_change.to)) }}</span>{% endif %}
-      {% if wc.sentiment_band_change %}<span class="ch">{{ t('News mood', '新闻情绪') }}: {{ bl(wc.sentiment_band_change.from, BAND_ZH.get(wc.sentiment_band_change.from, wc.sentiment_band_change.from)) }} → {{ bl(wc.sentiment_band_change.to, BAND_ZH.get(wc.sentiment_band_change.to, wc.sentiment_band_change.to)) }}</span>{% endif %}
-      {% if wc.new_radar_fires %}<span class="ch">{{ t('New radar', '新增雷达') }}: {{ wc.new_radar_fires|length }}</span>{% endif %}
-      {% if wc.new_accumulation %}<span class="ch">{{ t('New accumulation', '新增吸筹') }}: {{ wc.new_accumulation|length }}</span>{% endif %}
+      {% if wc.stance_change %}<span class="ch">{{ t('PBoC stance','央行立场') }}: {{ bl(wc.stance_change.from, STANCE_ZH.get(wc.stance_change.from, wc.stance_change.from)) }} → {{ bl(wc.stance_change.to, STANCE_ZH.get(wc.stance_change.to, wc.stance_change.to)) }}</span>{% endif %}
+      {% if wc.sentiment_band_change %}<span class="ch">{{ t('News mood','新闻情绪') }}: {{ bl(wc.sentiment_band_change.from, BAND_ZH.get(wc.sentiment_band_change.from, wc.sentiment_band_change.from)) }} → {{ bl(wc.sentiment_band_change.to, BAND_ZH.get(wc.sentiment_band_change.to, wc.sentiment_band_change.to)) }}</span>{% endif %}
+      {% if wc.new_radar_fires %}<span class="ch">{{ t('New radar','新增雷达') }}: {{ wc.new_radar_fires|length }}</span>{% endif %}
+      {% if wc.new_accumulation %}<span class="ch">{{ t('New accumulation','新增吸筹') }}: {{ wc.new_accumulation|length }}</span>{% endif %}
     </div>
     {% endif %}
   </div>
   {% endif %}
 
-  <!-- C. CENTRAL SYNTHESIS -->
+  {# ── F. CENTRAL SYNTHESIS ── #}
   {% if b.conviction %}
-  <h2 class="sec">🧩 {{ t('Cross-surface conviction', '跨面板共振') }}</h2>
-  <p style="font-size:12px;color:var(--muted);margin:2px 0 6px">{{ t('Independence-weighted confluence across radar · alt-data · news · policy · risk-appetite, ranked by OPPORTUNITY (edge-remaining × leading-gap) — leading ideas promoted, priced/confirmed ones demoted. Context salience, never a position size.', '跨雷达·另类数据·新闻·政策·风险偏好的独立性加权共振，按机会度（剩余空间×领先差）排序——领先的提升、已定价的降级。仅为显著性，绝非仓位。') }}</p>
-  {% set _STG = {'emerging':['Emerging','萌芽'],'early':['Early','早期'],'consensus':['Consensus','共识'],'exhausted':['Exhausted','见顶'],'distribution':['Distribution','派发'],'building':['Building','酝酿']} %}
+  <h2 class="sec">🧩 {{ t('Cross-surface conviction','跨面板共振') }}</h2>
+  <p style="font-size:12px;color:var(--muted);margin:2px 0 6px">{{ t('Independence-weighted confluence across radar · alt-data · news · policy · risk-appetite, ranked by OPPORTUNITY (edge-remaining × leading-gap) — leading ideas promoted, priced/confirmed ones demoted. Context salience, never a position size.','跨雷达·另类数据·新闻·政策·风险偏好的独立性加权共振，按机会度（剩余空间×领先差）排序——领先的提升、已定价的降级。仅为显著性，绝非仓位。') }}</p>
   <table class="syn">
-    <thead><tr><th>{{ t('Sector', '板块') }}</th><th>{{ t('Opportunity', '机会度') }}</th><th>{{ t('Stage', '阶段') }}</th><th>{{ t('Conviction', '置信') }}</th><th>{{ t('Edge left', '剩余空间') }}</th><th>{{ t('Surfaces', '面板') }}</th><th>{{ t('Read', '解读') }}</th></tr></thead>
+    <thead><tr><th>{{ t('Sector','板块') }}</th><th>{{ t('Opportunity','机会度') }}</th><th>{{ t('Stage','阶段') }}</th><th>{{ t('Conviction','置信') }}</th><th>{{ t('Edge left','剩余空间') }}</th><th>{{ t('Surfaces','面板') }}</th><th>{{ t('Read','解读') }}</th></tr></thead>
     <tbody>
     {% for c in b.conviction %}
       {% set st = c.stage or 'consensus' %}
@@ -136,9 +355,9 @@
         <td><span class="cc">{{ c.opportunity_score if c.opportunity_score is not none else c.context_conviction }}</span></td>
         <td><span class="bandpill b-{{ 'high' if st=='emerging' else ('elevated' if st=='early' else ('none' if st=='consensus' else 'low')) }}">{{ bl((_STG.get(st) or [st,st])[0], (_STG.get(st) or [st,st])[1]) }}</span>{% if c.leading_gap and c.leading_gap > 0 %} <span class="sgn-pos">↑{{ c.leading_gap }}</span>{% endif %}</td>
         <td><span class="cc">{{ c.composite_conviction if c.composite_conviction is not none else c.context_conviction }}</span> <span class="bandpill b-{{ (c.conviction_band[0]|lower) if c.conviction_band else 'none' }}">{{ bl(c.conviction_band[0], c.conviction_band[1]) }}</span></td>
-        <td>{% if c.edge_remaining is not none %}<div class="strength" style="width:64px" title="relative room vs crowd — not a % upside forecast"><i style="width:{{ (c.edge_remaining*100)|round|int }}%"></i></div>{% else %}—{% endif %}</td>
+        <td>{% if c.edge_remaining is not none %}<div class="strength" style="width:64px"><i style="width:{{ (c.edge_remaining*100)|round|int }}%"></i></div>{% else %}—{% endif %}</td>
         <td>{% for s in c.surfaces_confirming %}<span class="surf">{{ s }}</span>{% endfor %}
-          {% if c.sign_unproven and c.news_hits %}<br><span style="font-size:9.5px;color:var(--muted);font-style:italic">{{ t('news: magnitude-only — sign unproven (validation accruing)', '新闻：仅幅度——方向未验证（台账积累中）') }}</span>{% endif %}</td>
+          {% if c.sign_unproven and c.news_hits %}<br><span style="font-size:9.5px;color:var(--muted);font-style:italic">{{ t('news: magnitude-only — sign unproven (accruing)','新闻：仅幅度——方向未验证（台账积累中）') }}</span>{% endif %}</td>
         <td>{{ bl(c.rationale_en, c.rationale_zh) }}{% if c.members %}<br><span class="mut" style="font-size:11px">{% for m in c.members %}{{ m.name }} ({{ m.ticker }}){% if not loop.last %} · {% endif %}{% endfor %}</span>{% endif %}</td>
       </tr>
     {% endfor %}
@@ -146,25 +365,22 @@
   </table>
   {% endif %}
 
-  <!-- C1. LLM SYNTHESIS STATE — render explicitly when degraded (spec §2.4) -->
-  {# brain_usable = llm_synthesis is not None AND no llm_synthesis_degraded_reason #}
+  {# ── F1. LLM SYNTHESIS STATE ── #}
   {% set _syn = b.analysis.llm_synthesis if b.analysis else none %}
   {% set _syn_deg = b.analysis.llm_synthesis_degraded_reason if b.analysis else none %}
   {% if _syn %}
-  {# Future: render the LLM cross-surface synthesis here when wired #}
   <div class="ci-synthesis">🧠 {{ bl(_syn.summary, _syn.summary_zh or _syn.summary) }}</div>
   {% elif _syn_deg %}
-  {# Degraded: render state explicitly rather than staying silent #}
   <p class="ci-syn-deg mut" style="font-size:11.5px;margin:4px 0 8px">
-    🧠 {{ t('AI cross-surface synthesis', 'AI 跨面板综合') }}
-    <span>({{ t('deterministic only — AI read unavailable', '仅确定性——AI解读不可用') }} · {{ _syn_deg }})</span>
+    🧠 {{ t('AI cross-surface synthesis','AI 跨面板综合') }}
+    <span>({{ t('deterministic only — AI read unavailable','仅确定性——AI解读不可用') }} · {{ _syn_deg }})</span>
   </p>
   {% endif %}
 
-  <!-- D. FLAGGED TICKERS -->
+  {# ── G. FLAGGED TICKERS ── #}
   {% if b.flagged_tickers %}
-  <h2 class="sec">🏷️ {{ t('Flagged tickers', '标记个股') }}</h2>
-  <p style="font-size:12px;color:var(--muted);margin:2px 0 4px">{{ t('Names lit by ≥2 surfaces (alt-data accumulation inside a radar-lit, news-covered theme). Context watchlist, not a recommendation.', '被≥2个面板点亮的个股（位于雷达点亮、新闻覆盖主题内的另类数据吸筹）。背景自选，非推荐。') }}</p>
+  <h2 class="sec">🏷️ {{ t('Flagged tickers','标记个股') }}</h2>
+  <p style="font-size:12px;color:var(--muted);margin:2px 0 4px">{{ t('Names lit by ≥2 surfaces (alt-data accumulation inside a radar-lit, news-covered theme). Context watchlist, not a recommendation.','被≥2个面板点亮的个股（位于雷达点亮、新闻覆盖主题内的另类数据吸筹）。背景自选，非推荐。') }}</p>
   <div class="flags">
     {% for f in b.flagged_tickers %}
     <span class="tk {{ 'long' if f.side=='long-context' else 'short' }}">
@@ -175,9 +391,9 @@
   </div>
   {% endif %}
 
-  <!-- E. CAUSAL CHAINS -->
+  {# ── H. CAUSAL CHAINS ── #}
   {% if b.analysis and b.analysis.chains %}
-  <h2 class="sec">🔗 {{ t('Transmission chains', '传导链条') }}</h2>
+  <h2 class="sec">🔗 {{ t('Transmission chains','传导链条') }}</h2>
   {% for ch in b.analysis.chains %}
   <div class="chain">
     <div class="hd"><span class="chband ch-{{ ch.band }}">{{ t(ch.band|capitalize, ({'aligned':'一致','forming':'形成中','dormant':'休眠'}).get(ch.band, ch.band)) }}</span> {{ bl(ch.label_en, ch.label_zh) }} <span class="mut" style="font-weight:400">{{ ch.k }}/{{ ch.n }}</span></div>
@@ -193,60 +409,113 @@
   {% endif %}
   {% endif %}
 
-  <!-- F. DIGEST -->
-  {% if b.digest %}<details><summary style="cursor:pointer;font-size:12px;color:var(--muted);margin:8px 0">{{ t('Machine digest (what the Mastermind reads)', '机器摘要（Mastermind 读取的内容）') }}</summary><div class="digest">{{ b.digest }}</div></details>{% endif %}
-
-  <!-- G. SURFACE CARDS -->
-  <h2 class="sec">🗂️ {{ t('Surfaces', '情报面板') }}</h2>
+  {# ── I. INTELLIGENCE SPOKE CARDS ── #}
+  <h2 class="sec">🗂️ {{ t('Intelligence Surfaces','情报面板') }}</h2>
   <div class="cards">
     <a class="scard" href="china_news.html">
-      <div class="ic">📰</div><div class="nm">{{ t('China News', '中国财经新闻') }}</div>
+      <div class="ic">📰</div><div class="nm">{{ t('China News','中国财经新闻') }}</div>
       {% if b.news %}<div class="v"><span class="band {{ b.news.band }}">{{ bl(b.news.band_label_en or (b.news.band|capitalize), b.news.band_label_zh or '') }}</span></div>
-      <div class="s">{% if b.news.n_events_7d %}{{ b.news.n_events_7d }} {{ t('events/7d', '事件/7天') }}{% endif %}{% if b.news.flagged_baskets %} · {{ b.news.flagged_baskets|length }} {{ t('themes', '主题') }}{% endif %}</div>
+      <div class="s">{% if b.news.n_events_7d %}{{ b.news.n_events_7d }} {{ t('events/7d','事件/7天') }}{% endif %}{% if b.news.flagged_baskets %} · {{ b.news.flagged_baskets|length }} {{ t('themes','主题') }}{% endif %}</div>
       <div class="age">{{ b.surface_asof.news }}</div>{% else %}<div class="v">—</div>{% endif %}
-      <div class="go">{{ t('Open news tape →', '打开新闻脉搏 →') }}</div>
+      <div class="go">{{ t('Open news tape →','打开新闻脉搏 →') }}</div>
     </a>
     <a class="scard" href="china_policy_watch.html">
-      <div class="ic">🏛️</div><div class="nm">{{ t('PBoC & Policy', '央行与政策') }}</div>
+      <div class="ic">🏛️</div><div class="nm">{{ t('PBoC & Policy','央行与政策') }}</div>
       {% if b.policy %}<div class="v"><span class="band {{ b.policy.pboc_stance }}">{{ bl(b.policy.stance_label_en or (b.policy.pboc_stance|capitalize), b.policy.stance_label_zh or '') }}</span></div>
-      <div class="s">LPR {{ b.policy.lpr_1y }}/{{ b.policy.lpr_5y }} · RRR {{ b.policy.rrr }}{% if b.policy.impulse %} · {{ t('easing impulse', '宽松动能') }}{% endif %}</div>
-      <div class="age">{{ b.surface_asof.policy }}{% if b.policy.stale %} · {{ t('stale', '偏旧') }}{% endif %}</div>{% else %}<div class="v">—</div>{% endif %}
-      <div class="go">{{ t('Open policy watch →', '打开政策观察 →') }}</div>
+      <div class="s">LPR {{ b.policy.lpr_1y }}/{{ b.policy.lpr_5y }} · RRR {{ b.policy.rrr }}{% if b.policy.impulse %} · {{ t('easing impulse','宽松动能') }}{% endif %}</div>
+      <div class="age">{{ b.surface_asof.policy }}{% if b.policy.stale %} · {{ t('stale','偏旧') }}{% endif %}</div>{% else %}<div class="v">—</div>{% endif %}
+      <div class="go">{{ t('Open policy watch →','打开政策观察 →') }}</div>
     </a>
     <a class="scard" href="china_altdata.html">
-      <div class="ic">🛰️</div><div class="nm">{{ t('Alternative Data', '另类数据') }}</div>
+      <div class="ic">🛰️</div><div class="nm">{{ t('Alternative Data','另类数据') }}</div>
       {% if b.altdata %}<div class="v">{{ b.altdata.accumulate|length if b.altdata.accumulate else (b.altdata.convergence_top|length) }}</div>
-      <div class="s">{{ t('convergence watchlist', '共振自选') }}{% if b.altdata.n_triple %} · {{ b.altdata.n_triple }} {{ t('full-coverage', '三源齐全') }}{% endif %}</div>
+      <div class="s">{{ t('convergence watchlist','共振自选') }}{% if b.altdata.n_triple %} · {{ b.altdata.n_triple }} {{ t('full-coverage','三源齐全') }}{% endif %}</div>
       <div class="age">{{ b.surface_asof.altdata }}</div>{% else %}<div class="v">—</div>{% endif %}
-      <div class="go">{{ t('Open alt-data desk →', '打开另类数据台 →') }}</div>
+      <div class="go">{{ t('Open alt-data desk →','打开另类数据台 →') }}</div>
     </a>
     <a class="scard" href="china_radar.html">
-      <div class="ic">📡</div><div class="nm">{{ t('Divergence Radar', '背离雷达') }}</div>
+      <div class="ic">📡</div><div class="nm">{{ t('Divergence Radar','背离雷达') }}</div>
       {% if b.radar %}<div class="v">{{ b.radar.divergences|length }}</div>
-      <div class="s">{{ t('active divergences', '活跃背离') }} · {{ t('ledger', '台账') }} {{ t((b.radar.ledger.grade or 'unproven')|capitalize, ({'unproven':'未验证','reliable':'可靠','weak':'偏弱'}).get(b.radar.ledger.grade, b.radar.ledger.grade)) }}</div>
+      <div class="s">{{ t('active divergences','活跃背离') }} · {{ t('ledger','台账') }} {{ t((b.radar.ledger.grade or 'unproven')|capitalize, ({'unproven':'未验证','reliable':'可靠','weak':'偏弱'}).get(b.radar.ledger.grade, b.radar.ledger.grade)) }}</div>
       <div class="age">{{ b.surface_asof.radar }}</div>{% else %}<div class="v">—</div>{% endif %}
-      <div class="go">{{ t('Open radar →', '打开雷达 →') }}</div>
+      <div class="go">{{ t('Open radar →','打开雷达 →') }}</div>
     </a>
   </div>
 
-  <!-- H. NEXT CATALYSTS + STANDING CALLS -->
+  {# ── J. NEXT CATALYSTS + STANDING CALLS ── #}
   {% if b.news and b.news.scheduled_ahead %}
-  <h2 class="sec">📅 {{ t('Next catalysts', '即将催化') }}</h2>
+  <h2 class="sec">📅 {{ t('Next catalysts','即将催化') }}</h2>
   <div class="strip">
     {% for ev in b.news.scheduled_ahead %}<span class="sx"><b>{{ ev.md }}</b> · {{ bl(ev.name_en, ev.name_zh) }}</span>{% endfor %}
   </div>
   {% endif %}
   {% if b.policy and b.policy.predictions %}
-  <h2 class="sec">🔮 {{ t('Standing policy calls', '政策预测') }}</h2>
+  <h2 class="sec">🔮 {{ t('Standing policy calls','政策预测') }}</h2>
   <div class="strip">
     {% for p in b.policy.predictions %}<span class="sx">{{ p }}</span>{% endfor %}
   </div>
   {% endif %}
 
-  <!-- I. MASTERMIND CONTRACT -->
+  {# ── K. DIGEST ── #}
+  {% if b.digest %}<details><summary style="cursor:pointer;font-size:12px;color:var(--muted);margin:8px 0">{{ t('Machine digest (what the Mastermind reads)','机器摘要（Mastermind 读取的内容）') }}</summary><div class="digest">{{ b.digest }}</div></details>{% endif %}
+
+  {# ── L. CHINA SUITE DIRECTORY ── #}
+  <h2 class="sec">🗺️ {{ t('China Suite Directory','中国页面目录') }}</h2>
+  <div class="suite">
+
+    <div class="suite-group">
+      <div class="suite-group-title">{{ t('Intelligence Spokes','情报分支') }}</div>
+      <div class="suite-links">
+        <a class="slink" href="china_news.html"><div><div class="sl-name">📰 {{ t('China News','中国财经新闻') }}</div><div class="sl-desc">{{ t('News tape · media sentiment · themed headlines','新闻脉搏 · 媒体情绪 · 主题头条') }}</div></div></a>
+        <a class="slink" href="china_policy_watch.html"><div><div class="sl-name">🏛️ {{ t('Policy Watch','政策观察') }}</div><div class="sl-desc">{{ t('PBoC rate corridor · phrase shifts · predictions','央行利率走廊 · 表述变化 · 政策预测') }}</div></div></a>
+        <a class="slink" href="china_altdata.html"><div><div class="sl-name">🛰️ {{ t('Alternative Data','另类数据') }}</div><div class="sl-desc">{{ t('Smart-money convergence · margin velocity · positioning','聪明钱共振 · 融资速度 · 资金定位') }}</div></div></a>
+        <a class="slink" href="china_radar.html"><div><div class="sl-name">📡 {{ t('Divergence Radar','背离雷达') }}</div><div class="sl-desc">{{ t('Cross-signal divergence tracking · dated ledger','跨信号背离追踪 · 台账记录') }}</div></div></a>
+      </div>
+    </div>
+
+    <div class="suite-group">
+      <div class="suite-group-title">{{ t('Market Boards','市场板') }}</div>
+      <div class="suite-links">
+        <a class="slink" href="china.html"><div><div class="sl-name">🇨🇳 {{ t('China Overview','中国总览') }}</div><div class="sl-desc">{{ t('Main China market dashboard','中国市场主仪表盘') }}</div></div></a>
+        <a class="slink" href="china_stocks.html"><div><div class="sl-name">📊 {{ t('China Stocks Board','中国个股板') }}</div><div class="sl-desc">{{ t('A-share bottoming-alignment + lifecycle states','A股底部共振 + 生命周期状态') }}</div></div></a>
+        <a class="slink" href="china_heatmap.html"><div><div class="sl-name">🔥 {{ t('China Heatmap','中国热力图') }}</div><div class="sl-desc">{{ t('Sector/stock treemap · turnover-weighted HK','板块/个股树图 · 成交额权重港股') }}</div></div></a>
+        <a class="slink" href="china_lookup.html"><div><div class="sl-name">🔍 {{ t('China Lookup','中国个股查询') }}</div><div class="sl-desc">{{ t('Per-stock analyzer for CN/HK names','A股/港股个股分析器') }}</div></div></a>
+      </div>
+    </div>
+
+    <div class="suite-group">
+      <div class="suite-group-title">{{ t('Sectors','板块') }}</div>
+      <div class="suite-links">
+        <a class="slink" href="china_sector_desk.html"><div><div class="sl-name">🗂️ {{ t('Sector Desk','板块台') }}</div><div class="sl-desc">{{ t('China sector momentum and rotation','中国板块动能与轮动') }}</div></div></a>
+        <a class="slink" href="sector_central_china.html"><div><div class="sl-name">📐 {{ t('Sector Central (China)','板块中枢 (中国)') }}</div><div class="sl-desc">{{ t('Central-angle sector positioning view','中枢视角板块定位') }}</div></div></a>
+        <a class="slink" href="sector_cycles_china.html"><div><div class="sl-name">🔄 {{ t('Sector Cycles (China)','板块周期 (中国)') }}</div><div class="sl-desc">{{ t('Cycle phase per sector · rotation clock','各板块周期阶段 · 轮动时钟') }}</div></div></a>
+      </div>
+    </div>
+
+    <div class="suite-group">
+      <div class="suite-group-title">{{ t('Themes & Rotation','主题与轮动') }}</div>
+      <div class="suite-links">
+        <a class="slink" href="baskets_china.html"><div><div class="sl-name">🧺 {{ t('China Baskets','中国主题篮') }}</div><div class="sl-desc">{{ t('Thematic baskets · allocation desk','主题篮 · 配置台') }}</div></div></a>
+        <a class="slink" href="baskets_china_ths.html"><div><div class="sl-name">🧺 {{ t('China Baskets (THS)','中国主题篮 (同花顺)') }}</div><div class="sl-desc">{{ t('THS-derived thematic basket view','同花顺主题篮视图') }}</div></div></a>
+        <a class="slink" href="subsector_rotation_china.html"><div><div class="sl-name">🔀 {{ t('Subsector Rotation (China)','子板块轮动 (中国)') }}</div><div class="sl-desc">{{ t('Fine-grained subsector rotation signals','细粒度子板块轮动信号') }}</div></div></a>
+        <a class="slink" href="subsectors_china.html"><div><div class="sl-name">📌 {{ t('Subsectors (China)','子板块 (中国)') }}</div><div class="sl-desc">{{ t('NDX/RUT subsector confluence · China tab','子板块共振 · 中国标签页') }}</div></div></a>
+      </div>
+    </div>
+
+    <div class="suite-group">
+      <div class="suite-group-title">{{ t('Strategy & Allocation','策略与配置') }}</div>
+      <div class="suite-links">
+        <a class="slink" href="china_strategies.html"><div><div class="sl-name">🎯 {{ t('China Strategies','中国策略') }}</div><div class="sl-desc">{{ t('Strategy backtests and live-tracking','策略回测与实时追踪') }}</div></div></a>
+        <a class="slink" href="china_allocation.html"><div><div class="sl-name">⚖️ {{ t('China Allocation','中国配置') }}</div><div class="sl-desc">{{ t('China sleeve allocation desk','中国仓位配置台') }}</div></div></a>
+        <a class="slink" href="allocation_china.html"><div><div class="sl-name">📋 {{ t('Allocation China','配置 (中国)') }}</div><div class="sl-desc">{{ t('Allocation summary for China markets','中国市场配置摘要') }}</div></div></a>
+      </div>
+    </div>
+  </div>
+
+  {# ── M. MASTERMIND CONTRACT ── #}
   <div class="xmit">
-    🔌 <b>{{ t('Transmission to Mastermind', '通往 Mastermind 的传导') }}</b> — {{ t('these surfaces + the cross-surface synthesis are bundled, schema-versioned and machine-readable at', '这些面板＋跨面板综合被打包为带版本的机读契约：') }} <code>site/china_intel/briefing.json</code> (<code>{{ b.schema }}</code>) {{ t('and', '与') }} <code>digest.json</code>. {{ t('The future China Mastermind reads them as context — never a size or a trade.', '未来的中国 Mastermind 将其作为背景读取——绝非仓位或交易。') }}
-    {% if b.surfaces_present %}<br><span class="s" style="color:var(--muted)">{{ t('Surfaces present', '已就绪面板') }}: {{ b.surfaces_present|join(' · ') }}</span>{% endif %}
+    🔌 <b>{{ t('Transmission to Mastermind','通往 Mastermind 的传导') }}</b> — {{ t('these surfaces + the cross-surface synthesis are bundled, schema-versioned and machine-readable at','这些面板＋跨面板综合被打包为带版本的机读契约：') }} <code>site/china_intel/briefing.json</code> (<code>{{ b.schema }}</code>) {{ t('and','与') }} <code>digest.json</code>. {{ t('The future China Mastermind reads them as context — never a size or a trade.','未来的中国 Mastermind 将其作为背景读取——绝非仓位或交易。') }}
+    {% if b.surfaces_present %}<br><span class="s" style="color:var(--muted)">{{ t('Surfaces present','已就绪面板') }}: {{ b.surfaces_present|join(' · ') }}</span>{% endif %}
   </div>
 
   <p class="disc">{{ t(b.disclaimer, b.disclaimer_zh) }}</p>
