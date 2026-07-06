@@ -407,6 +407,8 @@ class TestRealRegistryFirewallClean:
         _EXPECTED_HOLD_THESIS_ARTIFACTS = {
             "long-hold-labels",
             "long-hold-labels-manifest",
+            # W1 PR-F kill-test results (#1544, G1-DEFERRED ruling) — hold_thesis by design
+            "long-hold-killtest-results",
         }
         reg = load_registry(REPO_ROOT)
         hold_arts = {
