@@ -288,6 +288,49 @@ def build_cross_root(
 
 
 # --------------------------------------------------------------------------- #
+# Completeness guard helper (pure — testable without main())
+# --------------------------------------------------------------------------- #
+
+def _gex_publish_decision(
+    gex_payload: dict,
+    root: str,
+    asof: str,
+    theta_store,
+) -> tuple[bool, dict, bool]:
+    """Decide whether to publish gex_payload to R2.
+
+    Returns (gex_publish, gex_payload, is_guarded):
+      - gex_publish:  True  → upload to R2; False → skip upload (preserve last-good)
+      - gex_payload:  possibly mutated (no_data_reason added for genuine empty store)
+      - is_guarded:   True when upload was suppressed by the mid-backfill guard
+    """
+    if gex_payload.get("by_strike"):
+        return True, gex_payload, False
+
+    oi_check = _load_oi_for_date(root, asof, theta_store)
+    if not oi_check.empty:
+        # Store has contracts but compute produced empty by_strike —
+        # suppressing R2 upload to keep last-good object.
+        log.warning(
+            "options_hub_builder: GEX GUARD triggered for %s on %s — "
+            "by_strike is empty but theta store has %d OI rows; "
+            "skipping R2 upload to preserve last-good object",
+            root, asof, len(oi_check),
+        )
+        return False, gex_payload, True
+    else:
+        # Store genuinely has no data — mark the payload explicitly.
+        gex_payload = dict(gex_payload)
+        gex_payload["no_data_reason"] = f"no_oi_in_store:{asof}"
+        log.info(
+            "options_hub_builder: %s has no OI in store for %s — "
+            "publishing with no_data_reason",
+            root, asof,
+        )
+        return True, gex_payload, False
+
+
+# --------------------------------------------------------------------------- #
 # CLI entry point
 # --------------------------------------------------------------------------- #
 
@@ -395,35 +438,11 @@ def main() -> None:
             vol_payload, gex_payload = build_root(root, asof, theta_store)
 
             # ── COMPLETENESS GUARD (CONTRACT) ────────────────────────────────────
-            # If by_strike is empty, check whether the theta store actually has
-            # contracts for this root on asof.  If it does, the empty payload is a
-            # mid-backfill artifact — skip the R2 upload to preserve the last-good
-            # object.  Only allow publishing an empty by_strike when the store
-            # genuinely has no data (no_data_reason must be set in that case).
-            gex_publish = True  # default: upload
-            if not gex_payload.get("by_strike"):
-                oi_check = _load_oi_for_date(root, asof, theta_store)
-                if not oi_check.empty:
-                    # Store has contracts but compute produced empty by_strike —
-                    # suppressing R2 upload to keep last-good object.
-                    log.warning(
-                        "options_hub_builder: GEX GUARD triggered for %s on %s — "
-                        "by_strike is empty but theta store has %d OI rows; "
-                        "skipping R2 upload to preserve last-good object",
-                        root, asof, len(oi_check),
-                    )
-                    gex_publish = False
-                    roots_gex_skipped.append(root)
-                else:
-                    # Store genuinely has no data — mark the payload explicitly.
-                    gex_payload["no_data_reason"] = (
-                        f"no_oi_in_store:{asof}"
-                    )
-                    log.info(
-                        "options_hub_builder: %s has no OI in store for %s — "
-                        "publishing with no_data_reason",
-                        root, asof,
-                    )
+            gex_publish, gex_payload, is_guarded = _gex_publish_decision(
+                gex_payload, root, asof, theta_store
+            )
+            if is_guarded:
+                roots_gex_skipped.append(root)
 
             # write locally (always — local file reflects what was computed)
             vol_path = out_dir / "vol" / f"{root}.json"

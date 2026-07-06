@@ -593,9 +593,10 @@ def _empty_gex(root: str, asof: str) -> dict:
         "call_wall": None,
         "put_wall": None,
         "by_strike": [],
+        "by_strike_full_n": 0,
         "by_expiry": [],
         "convention": "dealer-sign per engine/gex_model (long-call/short-put)",
-        "coverage": {"n_contracts": 0, "asof": asof, "oi_date": "t-1"},
+        "coverage": {"n_contracts": 0, "asof": asof, "oi_date": "t-1", "n_days": 0, "since": asof},
     }
 
 

@@ -862,94 +862,57 @@ class TestCompletenessGuard:
                          "n_days": 0, "since": asof},
         }
 
-    def test_guard_skips_r2_when_store_has_contracts(self, tmp_path):
-        """Empty by_strike + non-empty OI store → gex R2 upload suppressed."""
-        import importlib
-        import sys
+    def test_guard_skips_r2_when_store_has_contracts(self):
+        """Empty by_strike + non-empty OI store → gex R2 upload suppressed.
 
-        # Import the builder module directly from the worktree
-        wt = Path("/tmp/ohub-bugfix-wt")
-        if str(wt) not in sys.path:
-            sys.path.insert(0, str(wt))
-
+        Calls _gex_publish_decision() directly (the real helper) so inverting the
+        guard logic in the helper will cause this test to fail.
+        """
         import scripts.build_options_hub_nightly as builder
 
         asof = "2025-01-10"
         empty_gex = self._gex_payload_empty(asof)
-        non_empty_vol = {"schema": "options_hub.vol/v1", "root": "SPY", "asof": asof}
         non_empty_oi = pd.DataFrame([{
             "expiration": "2025-03-21", "strike": 500.0, "right": "C",
             "open_interest": 1000.0, "date": asof,
         }])
 
-        uploaded_keys: list[str] = []
-
-        def fake_upload(s3, bucket, local_path, r2_key):
-            uploaded_keys.append(r2_key)
-            return True
-
-        def fake_build_root(root, asof_, theta_store):
-            return non_empty_vol, empty_gex
-
-        def fake_load_oi(root, date_str, theta_store):
-            return non_empty_oi  # store has contracts
-
-        fake_s3 = object()
-
-        # Patch the builder's helpers
-        orig_build = builder.build_root
-        orig_oi    = builder._load_oi_for_date
-        orig_write = builder._write_json
+        orig_oi = builder._load_oi_for_date
         try:
-            builder.build_root         = fake_build_root
-            builder._load_oi_for_date  = fake_load_oi
-            builder._write_json        = lambda path, data: None  # noop
+            builder._load_oi_for_date = lambda root, date_str, theta_store: non_empty_oi
 
-            # Run the loop body manually (replicate main() per-root logic)
-            roots_gex_skipped: list[str] = []
-            gex_publish = True
-            vol_payload, gex_payload = builder.build_root("SPY", asof, None)
-
-            if not gex_payload.get("by_strike"):
-                oi_check = builder._load_oi_for_date("SPY", asof, None)
-                if not oi_check.empty:
-                    gex_publish = False
-                    roots_gex_skipped.append("SPY")
-
-            # Simulate upload decision
-            if gex_publish:
-                uploaded_keys.append("options_hub/gex/SPY.json")
+            gex_publish, out_payload, is_guarded = builder._gex_publish_decision(
+                empty_gex, "SPY", asof, None
+            )
 
             assert not gex_publish, "Guard should have suppressed upload"
-            assert "SPY" in roots_gex_skipped
-            assert "options_hub/gex/SPY.json" not in uploaded_keys
+            assert is_guarded, "is_guarded must be True when store has contracts"
+            assert "no_data_reason" not in out_payload
         finally:
-            builder.build_root        = orig_build
             builder._load_oi_for_date = orig_oi
-            builder._write_json       = orig_write
 
     def test_guard_publishes_with_no_data_reason_when_store_empty(self):
-        """Empty by_strike + empty OI store → publish with no_data_reason set."""
-        import sys
-        wt = Path("/tmp/ohub-bugfix-wt")
-        if str(wt) not in sys.path:
-            sys.path.insert(0, str(wt))
+        """Empty by_strike + empty OI store → publish with no_data_reason set.
+
+        Calls _gex_publish_decision() directly so inverting the guard logic will
+        cause this test to fail.
+        """
         import scripts.build_options_hub_nightly as builder
 
         asof = "2025-01-10"
         empty_gex = self._gex_payload_empty(asof)
-        empty_oi  = pd.DataFrame()
 
-        gex_publish = True
-        payload = dict(empty_gex)
+        orig_oi = builder._load_oi_for_date
+        try:
+            builder._load_oi_for_date = lambda root, date_str, theta_store: pd.DataFrame()
 
-        if not payload.get("by_strike"):
-            oi_check = empty_oi
-            if not oi_check.empty:
-                gex_publish = False
-            else:
-                payload["no_data_reason"] = f"no_oi_in_store:{asof}"
+            gex_publish, out_payload, is_guarded = builder._gex_publish_decision(
+                empty_gex, "SPY", asof, None
+            )
 
-        assert gex_publish, "Empty store: guard should allow publish"
-        assert "no_data_reason" in payload, "Empty store: no_data_reason must be set"
-        assert asof in payload["no_data_reason"]
+            assert gex_publish, "Empty store: guard should allow publish"
+            assert not is_guarded
+            assert "no_data_reason" in out_payload, "Empty store: no_data_reason must be set"
+            assert asof in out_payload["no_data_reason"]
+        finally:
+            builder._load_oi_for_date = orig_oi
