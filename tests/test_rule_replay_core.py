@@ -356,11 +356,11 @@ class TestGovernorRefusal:
         result = replay_spec(spec, fires, closes, registry_hashes={h})
         assert isinstance(result, pd.DataFrame)
 
-    def test_no_registry_hashes_skips_check(self):
+    def test_registry_hashes_is_required(self):
+        """registry_hashes is now a required parameter — no bypass mode exists."""
         spec, fires, closes = self._make_minimal_setup()
-        # No registry_hashes argument: governor is bypassed (for dev use only)
-        result = replay_spec(spec, fires, closes)
-        assert isinstance(result, pd.DataFrame)
+        with pytest.raises(TypeError):
+            replay_spec(spec, fires, closes)  # type: ignore[call-arg]
 
 
 # ---------------------------------------------------------------------------
@@ -423,7 +423,7 @@ class TestEMA8Parity:
             exit=ExitPolicy.ema_trail(),
             horizons_ref=(126,),
         )
-        result = replay_spec(spec, fires, closes)
+        result = replay_spec(spec, fires, closes, registry_hashes={spec.content_hash()})
         assert len(result) == 1
         # Result exists (not all-None due to close coverage)
         row = result.iloc[0]
@@ -459,7 +459,7 @@ class TestBarrierPolicy:
             exit=ExitPolicy.barrier(-5.0, 15.0),
             horizons_ref=(126,),
         )
-        result = replay_spec(spec, fires, {"BAR": close})
+        result = replay_spec(spec, fires, {"BAR": close}, registry_hashes={spec.content_hash()})
         row = result.iloc[0]
         # Should not be censored — path is long enough
         assert row["censored"] is False or row["censored"] == False  # noqa: E712
@@ -492,7 +492,7 @@ class TestBarrierPolicy:
             exit=ExitPolicy.barrier(-8.0, 20.0),
             horizons_ref=(126,),
         )
-        result = replay_spec(spec, fires, {"STP": close})
+        result = replay_spec(spec, fires, {"STP": close}, registry_hashes={spec.content_hash()})
         row = result.iloc[0]
         assert row["exit_ret"] is not None
         # Should hit stop (negative return)
@@ -531,7 +531,7 @@ class TestTrailStop:
             exit=ExitPolicy.trail_stop(20),
             horizons_ref=(126,),
         )
-        result = replay_spec(spec, fires, {"TRL": close})
+        result = replay_spec(spec, fires, {"TRL": close}, registry_hashes={spec.content_hash()})
         row = result.iloc[0]
         # Should exit when price drops 20% from HWM=120, i.e. at ~96
         # HWM=120 reached at bar 21 (0-indexed from fill), stop = 120 * 0.8 = 96
@@ -558,7 +558,7 @@ class TestHoldPolicy:
             exit=ExitPolicy.hold(21),
             horizons_ref=(126,),
         )
-        result = replay_spec(spec, fires, {"HLD": close})
+        result = replay_spec(spec, fires, {"HLD": close}, registry_hashes={spec.content_hash()})
         row = result.iloc[0]
         # Should exit at bar offset 21 (hold for 21 bars from fill)
         if not row["censored"]:
@@ -579,7 +579,7 @@ class TestHoldPolicy:
             exit=ExitPolicy.hold(63),
             horizons_ref=(63,),
         )
-        result = replay_spec(spec, fires, {"CEN": close})
+        result = replay_spec(spec, fires, {"CEN": close}, registry_hashes={spec.content_hash()})
         assert bool(result.iloc[0]["censored"]) is True
 
 
@@ -596,7 +596,7 @@ class TestCensoring:
             horizons_ref=(126,),
         )
         # Pass empty closes dict — all fires should be censored
-        result = replay_spec(spec, fires, {})
+        result = replay_spec(spec, fires, {}, registry_hashes={spec.content_hash()})
         assert result["censored"].all()
 
     def test_foregone_mfe_is_null_when_censored(self):
@@ -613,7 +613,7 @@ class TestCensoring:
             exit=ExitPolicy.hold(126),
             horizons_ref=(126,),
         )
-        result = replay_spec(spec, fires, {"C": close})
+        result = replay_spec(spec, fires, {"C": close}, registry_hashes={spec.content_hash()})
         row = result.iloc[0]
         assert bool(row["censored"]) is True
         # foregone_mfe and avoided_mae are null for censored fires
@@ -653,10 +653,20 @@ class TestEraLawSplit:
         assert len(sb) == 1
 
     def test_no_date_col_all_survivor(self):
-        df = pd.DataFrame({"ticker": ["A", "B"], "no_date": [1, 2]})
+        """No date column → all rows go to survivor_biased (safe fallback)."""
+        df = pd.DataFrame({"ticker": ["A", "B"], "no_date": [1, 2], "verdict_grade": [True, True]})
         vg, sb = era_law_split(df)
         assert len(vg) == 0
         assert len(sb) == 2
+
+    def test_no_verdict_grade_col_raises(self):
+        """verdict_grade column absent → raise ValueError (over-claiming guard)."""
+        df = pd.DataFrame({
+            "ticker": ["A", "B"],
+            "fire_date": pd.to_datetime(["2022-01-01", "2022-06-01"]),
+        })
+        with pytest.raises(ValueError, match="verdict_grade"):
+            era_law_split(df)
 
 
 # ---------------------------------------------------------------------------
@@ -673,7 +683,7 @@ class TestSerializeResults:
             horizons_ref=(126,),
         )
         closes = {t: close for t in fires["ticker"]}
-        result = replay_spec(spec, fires, closes)
+        result = replay_spec(spec, fires, closes, registry_hashes={spec.content_hash()})
         with pytest.raises(StampRefusal):
             serialize_results(result, spec, vintage=None)
 
@@ -687,7 +697,7 @@ class TestSerializeResults:
             horizons_ref=(126,),
         )
         closes = {t: close for t in fires["ticker"]}
-        result = replay_spec(spec, fires, closes)
+        result = replay_spec(spec, fires, closes, registry_hashes={spec.content_hash()})
         stamp = vintage_stamp(
             price_plane_id="test", adjustment_mode="split_adj",
             universe_as_of="2026-07-06", frame="pit",
@@ -845,10 +855,71 @@ class TestRegistryRoundTrip:
 
 
 # ---------------------------------------------------------------------------
-# 15. pooled_replay_trial_count accumulates across registrations
+# 15. pooled_replay_trial_count accumulates across registrations (B1 fix)
 # ---------------------------------------------------------------------------
 class TestPooledTrialCount:
-    def test_accumulates(self, tmp_path):
+    def test_exact_sum_across_registrations(self, tmp_path):
+        """pooled_replay_trial_count must return the SUM of declared budgets (15+8+4=27),
+        NOT the max (15).  B1 fix: reads the registry, not the TrialLedger."""
+        ledger_path = tmp_path / "trial_ledger.jsonl"
+        registry_path = tmp_path / "registry.jsonl"
+
+        def _make_spec(hold_h: int) -> RuleSpec:
+            return RuleSpec(
+                spec_id=f"b1_test/hold_{hold_h}",
+                cohort=CohortFilter(),
+                exit=ExitPolicy.hold(hold_h),
+                horizons_ref=(126,),
+            )
+
+        # Register three experiments with distinct budgets: 15, 8, 4
+        # Build enough distinct spec hashes (we can reuse for test purposes)
+        specs_15 = [_make_spec(h) for h in [21, 63, 126, 5, 10, 21, 42] * 3][:15]
+        # deduplicate hashes if needed — just need 15 distinct entries
+        hashes_15 = list({s.content_hash() for s in specs_15})[:15]
+        # If we can't get 15 distinct hashes (collision), pad with fake ones
+        while len(hashes_15) < 15:
+            hashes_15.append(f"fakehash{len(hashes_15):04d}")
+
+        hashes_8 = [f"exp2hash{i:04d}" for i in range(8)]
+        hashes_4 = [f"exp3hash{i:04d}" for i in range(4)]
+
+        register_experiment(
+            exp_id="b1-exp-1",
+            question="B1 sum test experiment 1 (grid=15)",
+            spec_hashes=hashes_15,
+            declared_budget=15,
+            verdict_criteria="descriptive-only",
+            registry_path=registry_path,
+            ledger_path=ledger_path,
+        )
+        register_experiment(
+            exp_id="b1-exp-2",
+            question="B1 sum test experiment 2 (grid=8)",
+            spec_hashes=hashes_8,
+            declared_budget=8,
+            verdict_criteria="descriptive-only",
+            registry_path=registry_path,
+            ledger_path=ledger_path,
+        )
+        register_experiment(
+            exp_id="b1-exp-3",
+            question="B1 sum test experiment 3 (grid=4)",
+            spec_hashes=hashes_4,
+            declared_budget=4,
+            verdict_criteria="descriptive-only",
+            registry_path=registry_path,
+            ledger_path=ledger_path,
+        )
+
+        count = pooled_replay_trial_count(registry_path)
+        assert count == 27, (
+            f"Expected cumulative sum 15+8+4=27, got {count}. "
+            "pooled_replay_trial_count must SUM declared_budget, not take max."
+        )
+
+    def test_simple_two_reg_exact_sum(self, tmp_path):
+        """Simple 2-registration case: sum of 2+1=3, not max(2,1)=2."""
         ledger_path = tmp_path / "trial_ledger.jsonl"
         registry_path = tmp_path / "registry.jsonl"
 
@@ -884,10 +955,183 @@ class TestPooledTrialCount:
             ledger_path=ledger_path,
         )
 
-        count = pooled_replay_trial_count(ledger_path)
-        # Must be >= 3 (the declared budgets: 2 + 1 = 3 but ledger takes max,
-        # since budgets are recorded separately per registration,
-        # effective_n returns max(literal_n, declared_floor))
-        # Two registrations with budget 2 and 1: literal_n includes both unique spec hashes (3)
-        # and declared budget max is max(2, 3) = 3
-        assert count >= 2, f"Expected cumulative count >= 2, got {count}"
+        count = pooled_replay_trial_count(registry_path)
+        assert count == 3, (
+            f"Expected 2+1=3, got {count}. "
+            "The TrialLedger's max() semantics would give 2, not 3 — "
+            "pooled_replay_trial_count must read the registry and SUM."
+        )
+
+
+# ---------------------------------------------------------------------------
+# 16. B2 — governor persists spec_hashes through lifecycle status updates
+# ---------------------------------------------------------------------------
+class TestStatusUpdateGovernorMerge:
+    """B2: update_experiment_status appends records without spec_hashes.
+    load_experiment must merge fields across ALL records so that spec_hashes
+    from the original registration is never lost after a status update.
+    """
+
+    def _register_and_get_hashes(self, tmp_path) -> tuple:
+        registry_path = tmp_path / "registry.jsonl"
+        ledger_path = tmp_path / "trial_ledger.jsonl"
+        spec = RuleSpec(
+            spec_id="b2_test/hold_21",
+            cohort=CohortFilter(),
+            exit=ExitPolicy.hold(21),
+            horizons_ref=(126,),
+        )
+        register_experiment(
+            exp_id="b2-lifecycle-test",
+            question="B2 governor merge test (grid=1)",
+            spec_hashes=[spec.content_hash()],
+            declared_budget=1,
+            verdict_criteria="descriptive-only",
+            registry_path=registry_path,
+            ledger_path=ledger_path,
+        )
+        return registry_path, ledger_path, spec
+
+    def test_verify_spec_hashes_passes_after_executed_update(self, tmp_path):
+        """register → update to executed → verify_spec_hashes passes (B2 fix)."""
+        from engine.rule_experiments import update_experiment_status
+        registry_path, ledger_path, spec = self._register_and_get_hashes(tmp_path)
+
+        update_experiment_status(
+            "b2-lifecycle-test",
+            "executed",
+            registry_path=registry_path,
+        )
+        entry = load_experiment("b2-lifecycle-test", registry_path)
+        assert entry["status"] == "executed", f"Expected executed, got {entry['status']}"
+        # spec_hashes must still be present after the status update
+        assert "spec_hashes" in entry, (
+            "spec_hashes was lost after status update — load_experiment must merge records"
+        )
+        # verify_spec_hashes must not raise (this is the key B2 assertion)
+        verify_spec_hashes(entry, [spec])  # should not raise GovernorRefusal
+
+    def test_verify_spec_hashes_passes_after_reported_update(self, tmp_path):
+        """register → executed → reported → verify_spec_hashes still passes."""
+        from engine.rule_experiments import update_experiment_status
+        registry_path, ledger_path, spec = self._register_and_get_hashes(tmp_path)
+
+        update_experiment_status(
+            "b2-lifecycle-test", "executed", registry_path=registry_path
+        )
+        update_experiment_status(
+            "b2-lifecycle-test", "reported", registry_path=registry_path
+        )
+        entry = load_experiment("b2-lifecycle-test", registry_path)
+        assert entry["status"] == "reported"
+        assert "spec_hashes" in entry
+        verify_spec_hashes(entry, [spec])  # must not raise
+
+
+# ---------------------------------------------------------------------------
+# 17. B3 — EMA trail uses full close history (not censored forward slice)
+# ---------------------------------------------------------------------------
+class TestEMATrailFullHistory:
+    """B3: _compute_ema_trail_series must be called on the FULL close history,
+    not on close.iloc[fill_idx:], to avoid systematically censoring fires
+    because the forward slice is shorter than 90 3B-bars.
+    """
+
+    def test_ema_trail_noncensored_at_known_breach_bar(self):
+        """Synthetic multi-year series: uptrend then breakdown.
+
+        The fire occurs within the first 400 bars (uptrend phase).  The series
+        has 750+ daily bars (>= 250 3B-bars >> 90 minimum).  With the full-history
+        fix the exit_bar_offset should be a concrete positive integer (the breach
+        bar in the breakdown leg), NOT censored.
+
+        Without the fix, close.iloc[fill_idx:] would have only ~350 bars (~117 3B
+        bars) — passing the 90 minimum, so this specific test might not catch the
+        boundary case.  We instead test the structural fix directly: fire near bar
+        400, series has 750 bars total.  The forward slice from bar 350 has 400 bars
+        = 133 3B-bars; the full series has 750 bars = 250 3B-bars.  Both exceed 90,
+        but only the full-history path computes the correct global trail series.
+        """
+        # Build a series that trends strongly up (400 bars), then crashes (350 bars)
+        n_up = 400
+        n_down = 350
+        n = n_up + n_down
+        idx = pd.bdate_range("2019-01-02", periods=n)
+
+        rng_up = np.random.default_rng(42)
+        up_returns = rng_up.normal(0.0015, 0.008, n_up)
+        up_prices = 100.0 * np.cumprod(1 + up_returns)
+        peak = float(up_prices[-1])
+
+        rng_down = np.random.default_rng(99)
+        down_returns = rng_down.normal(-0.004, 0.01, n_down)
+        down_prices = peak * np.cumprod(1 + down_returns)
+
+        prices = np.concatenate([up_prices, down_prices])
+        close = pd.Series(prices, index=idx)
+
+        # Fire near bar 350 (deep in uptrend, 400 bars to end of uptrend)
+        fire_date = idx[350]
+        fires = pd.DataFrame({
+            "ticker": ["B3_TEST"],
+            "fire_date": [fire_date],
+            "verdict_grade": [True],
+        })
+        closes = {"B3_TEST": close}
+
+        spec = RuleSpec(
+            spec_id="b3_test/ema_trail",
+            cohort=CohortFilter(),
+            exit=ExitPolicy.ema_trail(),
+            horizons_ref=(126,),
+        )
+
+        result = replay_spec(spec, fires, closes, registry_hashes={spec.content_hash()})
+        assert len(result) == 1
+        row = result.iloc[0]
+
+        # The series crashes hard in the down leg — the EMA trail MUST fire.
+        # With the full-history fix, the breach is found; without it the pre-fix
+        # code could still find it (slice > 90), but the trail reference is wrong
+        # (computed only from fill_idx onward, not anchored to full history).
+        # Key assertion: NOT censored — the breakdown generates a breach.
+        assert not bool(row["censored"]), (
+            f"EMA trail should fire in the crash leg but got censored=True. "
+            f"exit_bar_offset={row.get('exit_bar_offset')}"
+        )
+        assert row["exit_bar_offset"] is not None
+        assert isinstance(row["exit_bar_offset"], (int, np.integer))
+
+    def test_ema_trail_parity_full_vs_signal_quality_analyze(self):
+        """Parity test: replay_spec EMA trail exit matches signal_quality.analyze() semantics.
+
+        Verifies that the full-history path and the signal_quality reference agree on
+        the first fresh-breach date for the same close series.
+        """
+        from engine.signal_quality import signal_frame
+        from engine.rule_replay import _compute_ema_trail_series
+
+        # Use a 600-bar series (well above 90 3B-bar floor)
+        close = _make_close(600, seed=17)
+        trail, fresh_breach = _compute_ema_trail_series(close)
+        sig = signal_frame(close)
+
+        if trail.empty or sig.empty:
+            pytest.skip("Series too short for signal_frame (unexpected)")
+
+        # The ema_trail values must match signal_quality's output on common bars
+        common = sig.index.intersection(trail.index)
+        assert len(common) > 20, "Too few common bars for parity check"
+
+        mismatches = []
+        for dt in common:
+            expected = sig.loc[dt, "ema_trail"]
+            got = trail.loc[dt]
+            if pd.isna(expected) and pd.isna(got):
+                continue
+            if not (pd.isna(expected) or pd.isna(got)) and abs(expected - got) > 1e-10:
+                mismatches.append((dt, expected, got))
+        assert not mismatches, (
+            f"EMA trail mismatch between _compute_ema_trail_series and signal_quality "
+            f"on {len(mismatches)} bars (first: {mismatches[0]})"
+        )

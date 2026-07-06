@@ -14,7 +14,8 @@ Per §3.4 of NW_RAILS_AND_TIER1_LOBES_PROGRAM_BY_FABLE.md:
   era_law_cohort      — which cohort split (e.g. "verdict_grade_2021plus")
 
 The result is a plain dict, fully JSON-serializable. Callers that fail to pass a
-valid stamp receive a TypeError — the contract is: no stamp, no serialization.
+valid stamp receive a StampRefusal (ValueError subclass) — the contract is: no stamp,
+no serialization.
 
 ``dead_name_coverage_pct`` reads ``data/edgar/_dead_name_coverage.json`` (key
 ``"coverage_pct"``) when present; on absence it writes null with

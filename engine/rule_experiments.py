@@ -71,21 +71,38 @@ def _load_registry_raw(registry_path: Path) -> list[dict]:
 
 
 def load_experiment(exp_id: str, registry_path: Path | None = None) -> dict:
-    """Load a single experiment entry by exp_id.
+    """Load a single experiment entry by exp_id, merging fields across all records.
+
+    Lifecycle updates (update_experiment_status) append records that only contain
+    the updated fields (e.g. status, status_updated_at) without repeating fields
+    like spec_hashes.  A naïve "return the latest record" approach would lose
+    spec_hashes after the first status update, causing verify_spec_hashes to raise
+    GovernorRefusal every time after register → executed.
+
+    This function merges ALL records for the exp_id in JSONL order (earliest first)
+    so later records overwrite earlier ones on a per-field basis, but fields absent
+    in a later record are NOT erased by it.  The result is the union of all fields
+    with latest-wins semantics for fields that appear in multiple records.
 
     Raises KeyError if not found.
     """
     rp = registry_path or _default_registry_path()
     records = _load_registry_raw(rp)
-    # latest entry for the exp_id wins (lifecycle updates may re-write the same id)
     matches = [r for r in records if r.get("exp_id") == exp_id]
     if not matches:
         raise KeyError(
             f"Experiment {exp_id!r} not found in registry at {rp}. "
             "Register it via scripts/register_rule_experiment.py before running."
         )
-    # Return the most recent entry (latest registered_at)
-    return sorted(matches, key=lambda r: r.get("registered_at", ""))[-1]
+    # Sort by registered_at (earliest first), then merge fields: later records
+    # overwrite earlier ones per field, absent fields do NOT erase earlier values.
+    sorted_matches = sorted(matches, key=lambda r: r.get("registered_at", ""))
+    merged: dict = {}
+    for record in sorted_matches:
+        for k, v in record.items():
+            # Only overwrite if the new record actually carries this key
+            merged[k] = v
+    return merged
 
 
 def list_experiments(registry_path: Path | None = None) -> list[dict]:
@@ -283,25 +300,42 @@ def update_experiment_status(
 # ---------------------------------------------------------------------------
 # Cumulative pooled trial count summary helper
 # ---------------------------------------------------------------------------
-def pooled_replay_trial_count(ledger_path: Path | None = None) -> int:
-    """Return the cumulative pooled replay trial count from the TrialLedger.
+def pooled_replay_trial_count(registry_path: Path | None = None) -> int:
+    """Return the cumulative pooled replay trial count across all registered experiments.
 
-    This is the sum of declared budgets in the 'replay' family — the docket's
-    "force the number to be stated" requirement. Every results summary MUST
-    include this number (§3.3).
+    This is the SUM of declared_budget over all registered experiments in the
+    registry — the docket's "force the number to be stated" requirement. Every
+    results summary MUST include this number (§3.3).
 
-    The TrialLedger.effective_n() returns max(literal_n, declared_floor), which
-    is the honest, conservative number for deflation.
+    The registry is the source of truth for cumulative replay trials. Using the
+    TrialLedger's effective_n() would be WRONG because the ledger uses max()
+    semantics for declared budgets (anti-gaming: largest budget wins), so
+    budgets of 15, 8, 4 would report 15, not 27. The honest cumulative count
+    is the SUM of declared budgets across distinct experiments.
     """
-    lp = ledger_path or _default_ledger_path()
-    led = TrialLedger(lp, family=REGISTRY_FAMILY)
-    return led.effective_n(REGISTRY_FAMILY)
+    rp = registry_path or _default_registry_path()
+    records = _load_registry_raw(rp)
+    # Sum declared_budget across all registered experiments.
+    # Each registration record has a declared_budget; status-update records do not.
+    # De-duplicate by exp_id: use the latest (highest registered_at) entry that
+    # carries a declared_budget, so re-registrations are counted once at their
+    # latest declared budget.
+    latest: dict[str, tuple[str, int]] = {}  # eid -> (registered_at, budget)
+    for r in records:
+        eid = r.get("exp_id", "")
+        budget = r.get("declared_budget")
+        if not eid or budget is None:
+            continue
+        ts = r.get("registered_at", "")
+        if eid not in latest or ts >= latest[eid][0]:
+            latest[eid] = (ts, int(budget))
+    return sum(v[1] for v in latest.values())
 
 
-def results_summary_header(ledger_path: Path | None = None) -> str:
+def results_summary_header(registry_path: Path | None = None) -> str:
     """One-line header string for inclusion in every results summary."""
-    n = pooled_replay_trial_count(ledger_path)
+    n = pooled_replay_trial_count(registry_path)
     return (
-        f"Cumulative pooled replay trial count (family='replay'): {n} cells declared. "
+        f"Cumulative pooled replay trial count: {n} cells declared. "
         "Any promotion prereg on this tape must account for this full N."
     )

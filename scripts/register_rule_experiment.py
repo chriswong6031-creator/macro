@@ -72,8 +72,7 @@ def cmd_register(args: argparse.Namespace) -> int:
     if entry.get("derived_from_surface"):
         print(f"  derived_from_surface: {entry['derived_from_surface']}")
     print()
-    print(f"  TrialLedger family='replay' budget recorded.")
-    n = pooled_replay_trial_count()
+    n = pooled_replay_trial_count(registry_path)
     print(f"  Cumulative pooled replay trial count: {n}")
     return 0
 
@@ -95,16 +94,17 @@ def cmd_list(args: argparse.Namespace) -> int:
         q = e.get("question", "")[:60]
         print(f"{eid:<30} {status:<12} {str(budget):>8}  {q}")
 
-    n = pooled_replay_trial_count()
+    n = pooled_replay_trial_count(registry_path)
     print()
-    print(f"Cumulative pooled replay trial count (family='replay'): {n}")
+    print(f"Cumulative pooled replay trial count: {n}")
     return 0
 
 
-def cmd_trial_count(_args: argparse.Namespace) -> int:
+def cmd_trial_count(args: argparse.Namespace) -> int:
     """Print pooled replay trial count."""
-    n = pooled_replay_trial_count()
-    print(f"Cumulative pooled replay trial count (family='replay'): {n}")
+    registry_path = Path(args.registry) if args.registry else None
+    n = pooled_replay_trial_count(registry_path)
+    print(f"Cumulative pooled replay trial count: {n}")
     return 0
 
 
@@ -142,10 +142,12 @@ def main() -> int:
         help="Override registry file path (default: data/rule_experiments/registry.jsonl)",
     )
 
+    _REGISTRY_HELP = "Override registry file path (default: data/rule_experiments/registry.jsonl)"
     sub = parser.add_subparsers(dest="cmd")
 
     # --- register ---
     p_reg = sub.add_parser("register", help="Register a new experiment")
+    p_reg.add_argument("--registry", metavar="PATH", help=_REGISTRY_HELP)
     p_reg.add_argument("--exp-id", required=True, help="Kebab-slug experiment ID")
     p_reg.add_argument("--question", required=True, help="One-sentence research question")
     p_reg.add_argument(
@@ -176,14 +178,17 @@ def main() -> int:
 
     # --- list ---
     p_list = sub.add_parser("list", help="List all registered experiments")
+    p_list.add_argument("--registry", metavar="PATH", help=_REGISTRY_HELP)
     p_list.set_defaults(func=cmd_list)
 
     # --- trial-count ---
     p_tc = sub.add_parser("trial-count", help="Show cumulative pooled replay trial count")
+    p_tc.add_argument("--registry", metavar="PATH", help=_REGISTRY_HELP)
     p_tc.set_defaults(func=cmd_trial_count)
 
     # --- update-status ---
     p_upd = sub.add_parser("update-status", help="Update experiment lifecycle status")
+    p_upd.add_argument("--registry", metavar="PATH", help=_REGISTRY_HELP)
     p_upd.add_argument("exp_id", help="Experiment ID to update")
     p_upd.add_argument(
         "new_status",
@@ -192,33 +197,9 @@ def main() -> int:
     )
     p_upd.set_defaults(func=cmd_update_status)
 
-    # Legacy flat flags for backwards compat with direct invocation in tests/scripts
-    parser.add_argument("--list", action="store_true", help="Alias for 'list' subcommand")
-    parser.add_argument("--trial-count", action="store_true", help="Alias for 'trial-count' subcommand")
-    parser.add_argument("--update-status", nargs=2, metavar=("EXP_ID", "STATUS"),
-                        help="Alias for 'update-status' subcommand")
-    parser.add_argument("--exp-id", help="(for legacy register)")
-    parser.add_argument("--question", help="(for legacy register)")
-    parser.add_argument("--spec-hashes", nargs="+", metavar="HASH", help="(for legacy register)")
-    parser.add_argument("--verdict-criteria", help="(for legacy register)")
-    parser.add_argument("--n-floor", type=int, default=300)
-    parser.add_argument("--derived-from-surface", default=None)
-
     args = parser.parse_args()
 
-    # Handle legacy flat flags
     if args.cmd is None:
-        if getattr(args, "list", False):
-            return cmd_list(args)
-        if getattr(args, "trial_count", False):
-            return cmd_trial_count(args)
-        if getattr(args, "update_status", None):
-            eid, status = args.update_status
-            args.exp_id = eid
-            args.new_status = status
-            return cmd_update_status(args)
-        if args.exp_id and args.question and args.spec_hashes and args.verdict_criteria:
-            return cmd_register(args)
         parser.print_help()
         return 0
 

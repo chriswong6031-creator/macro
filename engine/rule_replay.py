@@ -368,20 +368,26 @@ def _compute_per_fire(
             exit_offset = len(fwd_slice) - 1
 
     elif exit_policy.kind == ExitKind.EMA_TRAIL:
-        # Build a close series from fill_idx onward (including the fill bar as anchor)
-        anchor_slice = close.iloc[fill_idx:]
+        # Compute signal_frame ONCE over the FULL close history so that there are
+        # always enough bars for the 90 3B-bar minimum required by signal_quality.
+        # A per-fire forward-only slice would silently censor most fires (the slice
+        # would be too short to satisfy the 90-bar floor even when the full series
+        # easily exceeds it).
+        fill_date = close.index[fill_idx]
         trail_series, fresh_breach = _compute_ema_trail_series(
-            anchor_slice, span=exit_policy.ema_span or 8, resample=exit_policy.ema_resample or "3B"
+            close, span=exit_policy.ema_span or 8, resample=exit_policy.ema_resample or "3B"
         )
-        # Map trail breach dates back to daily close dates
+        # Find the first fresh-breach bar STRICTLY AFTER the fill date
         exit_date: pd.Timestamp | None = None
-        for breach_date in fresh_breach[fresh_breach].index:
-            # Find the corresponding daily bar
-            matching = anchor_slice.index[anchor_slice.index >= breach_date]
-            if len(matching) > 0:
-                exit_date = matching[0]
-                break
-        if exit_date is not None and exit_date > close.index[fill_idx]:
+        if not fresh_breach.empty:
+            post_fill_breaches = fresh_breach[fresh_breach & (fresh_breach.index > fill_date)]
+            if not post_fill_breaches.empty:
+                breach_date = post_fill_breaches.index[0]
+                # Map the 3B-resampled breach date to the nearest daily bar >= breach date
+                matching = close.index[close.index >= breach_date]
+                if len(matching) > 0:
+                    exit_date = matching[0]
+        if exit_date is not None and exit_date > fill_date:
             # find offset in fwd_slice
             fwd_dates_arr = dates.to_numpy()
             exit_date_np = np.datetime64(exit_date)
@@ -389,6 +395,7 @@ def _compute_per_fire(
             if len(idxs) > 0:
                 exit_offset = int(idxs[0])
             else:
+                # Breach is beyond fwd_slice window — censor
                 exit_offset = len(fwd_slice) - 1
                 result["censored"] = True
         else:
@@ -478,20 +485,23 @@ def era_law_split(fires_df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
         verdict_grade             — boolean flag
     """
     date_col = "fire_date" if "fire_date" in fires_df.columns else "signal_date"
-    has_vg = "verdict_grade" in fires_df.columns
 
     if date_col not in fires_df.columns:
         log.warning("era_law_split: no date column found; treating all as survivor-biased")
         return fires_df.iloc[0:0].copy(), fires_df.copy()
 
+    if "verdict_grade" not in fires_df.columns:
+        raise ValueError(
+            "era_law_split: 'verdict_grade' column is required but absent. "
+            "Without it, all in-era rows would be treated as verdict_grade=True, "
+            "which over-claims absolute rates on potentially survivor-biased rows. "
+            "Add a verdict_grade column (True/False) to the fires DataFrame before splitting."
+        )
+
     fire_dates = pd.to_datetime(fires_df[date_col], errors="coerce")
     in_era = fire_dates >= MASSIVE_ERA_START
-
-    if has_vg:
-        vg_flag = fires_df["verdict_grade"].fillna(False).astype(bool)
-        verdict_mask = in_era & vg_flag
-    else:
-        verdict_mask = in_era
+    vg_flag = fires_df["verdict_grade"].fillna(False).astype(bool)
+    verdict_mask = in_era & vg_flag
 
     verdict_grade = fires_df[verdict_mask].copy()
     survivor_biased = fires_df[~verdict_mask].copy()
@@ -506,18 +516,20 @@ def replay_spec(
     fires_df: pd.DataFrame,
     closes: dict[str, pd.Series],
     *,
-    registry_hashes: set[str] | None = None,
+    registry_hashes: set[str],
 ) -> pd.DataFrame:
     """Replay a single RuleSpec over the fire tape.
 
     Parameters
     ----------
-    spec           : RuleSpec (must be registered; hash checked if registry_hashes given)
+    spec           : RuleSpec (must be registered; hash is always checked)
     fires_df       : replay_boarded DataFrame (columns include ticker, fire_date, etc.)
     closes         : {ticker: split-adjusted close Series}; callers are responsible for
                      calling split_adjust() before passing (§3.2 contract)
-    registry_hashes: if provided, the spec's content_hash must be in this set or
-                     GovernorRefusal is raised (enforces anti-fishing governor law)
+    registry_hashes: the set of registered content hashes from the rule-experiment
+                     registry.  The spec's content_hash MUST be in this set or
+                     GovernorRefusal is raised.  This parameter is REQUIRED — there
+                     is no bypass mode (§3.3 anti-fishing governor law).
 
     Returns
     -------
@@ -527,14 +539,13 @@ def replay_spec(
         foregone_mfe_{H}, avoided_mae_{H} for each H in spec.horizons_ref,
         survivorship_biased, era_cohort
     """
-    if registry_hashes is not None:
-        h = spec.content_hash()
-        if h not in registry_hashes:
-            raise GovernorRefusal(
-                f"RuleSpec {spec.spec_id!r} (hash {h}) is not registered in the "
-                "rule-experiment registry. Register it via scripts/register_rule_experiment.py "
-                "before running any replay. No --adhoc mode exists (house-law violation)."
-            )
+    h = spec.content_hash()
+    if h not in registry_hashes:
+        raise GovernorRefusal(
+            f"RuleSpec {spec.spec_id!r} (hash {h}) is not registered in the "
+            "rule-experiment registry. Register it via scripts/register_rule_experiment.py "
+            "before running any replay. No --adhoc mode exists (house-law violation)."
+        )
 
     # Apply cohort filter
     mask = spec.cohort.apply(fires_df)
@@ -685,14 +696,16 @@ def serialize_results(
     def _safe(v: Any) -> Any:
         if v is None or (isinstance(v, float) and np.isnan(v)):
             return None
+        if isinstance(v, (np.bool_,)):
+            return bool(v)
+        if isinstance(v, bool):
+            return bool(v)
         if isinstance(v, (np.integer,)):
             return int(v)
         if isinstance(v, (np.floating,)):
             return float(v)
         if isinstance(v, pd.Timestamp):
             return str(v.date())
-        if isinstance(v, bool):
-            return bool(v)
         return v
 
     if not results_df.empty:
