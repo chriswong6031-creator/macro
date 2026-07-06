@@ -974,6 +974,13 @@ jobs:
         # Resilient: fail-open; kept last committed context on error; never blocks the commit.
         # Both outputs covered by 'git add data/ site/' in 'commit engine outputs' below.
         run: python -m scripts.build_nw_mastermind_context || echo "::warning::build_nw_mastermind_context failed (non-fatal) — keeping last committed mastermind_context"
+      - name: build neuralweb health (PR-C — NW lobe-status surface)
+        if: always()
+        # PR-C two-phase health: engine job builds lobe records with cortex_source='previous_run'
+        # (last committed cortex memo). Cortex job runs --refresh-cortex after cortex deliberation.
+        # Fail-open: per-lobe exceptions produce status='unknown'; missing synapse.yml exits 0.
+        # Both outputs covered by 'git add data/ site/' in 'commit engine outputs' below.
+        run: python -m scripts.build_neuralweb_health || echo "::warning::build_neuralweb_health failed (non-fatal) — keeping last committed health.json"
       - name: research_factory_monitor (W6 — paper monitor + nightly ledger)
         if: always()
         # Research Factory W6 (RF-8/RF-9/RF-10): paper monitor over all 'paper',
@@ -1409,6 +1416,14 @@ jobs:
           cat /tmp/cortex_eval.log
           [ "$rc" -ne 0 ] && echo "::warning title=cortex_eval::rc=$rc (non-fatal)"
           exit 0
+      - name: refresh neuralweb health — cortex section (PR-C)
+        if: always()
+        run: |
+          set +e
+          python -m scripts.build_neuralweb_health --refresh-cortex > /tmp/nw_health_refresh.log 2>&1; rc=$?
+          cat /tmp/nw_health_refresh.log
+          [ "$rc" -ne 0 ] && echo "::warning title=nw_health_refresh::rc=$rc (non-fatal — keeping previous health.json)"
+          exit 0
       - name: commit cortex outputs
         run: |
           git config user.name "dashboard-bot"
@@ -1425,6 +1440,9 @@ jobs:
           # and the DSR haircut undercounts.
           git add data/trial_ledger.jsonl 2>/dev/null || true
           git add site/neuralweb/ 2>/dev/null || true
+          # PR-C: NW health refresh (cortex_source=current_run) — two-phase health surface
+          git add data/neuralweb/health.json 2>/dev/null || true
+          git add site/neuralwebdata/health.json 2>/dev/null || true
           if git diff --cached --quiet; then echo "no cortex output changes"; exit 0; fi
           git commit -m "cortex: attention grades + A2 earn-in + hypothesis metabolism $(date -u +%F)"
           # Retry-rebase push loop (stock_briefs pattern)
