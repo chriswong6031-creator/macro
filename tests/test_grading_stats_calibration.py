@@ -201,6 +201,17 @@ def test_brier_decomposition_mismatched_lengths_raises():
         gs.brier_decomposition(np.array([0.5]), np.array([1, 0]))
 
 
+def test_brier_decomposition_empty_probs_mismatched_outcomes_raises():
+    """Empty probs with non-empty outcomes must raise before the n==0 early return.
+
+    Regression for the ordering bug: length-mismatch validation must happen BEFORE
+    the n==0 guard so that brier_decomposition([], [1, 0]) raises ValueError rather
+    than silently returning all-None (matching reliability_curve behaviour).
+    """
+    with pytest.raises(ValueError, match="same length"):
+        gs.brier_decomposition(np.array([]), np.array([1, 0]))
+
+
 def test_brier_decomposition_skilled_forecaster_has_negative_refinement():
     """Skilled forecaster (calibrated + decisive) should have refinement < 0."""
     # Create a skilled forecaster: probs well-separated and calibrated.
@@ -245,15 +256,21 @@ def test_era_split_stability_sign_flip_on_continuous():
 
 
 def test_era_split_stability_consistent_verdict():
-    """Both eras have similar positive means → verdict = 'consistent'."""
+    """Both eras have identical means (0.7) → verdict = 'consistent'.
+
+    Fixture is decisive: era means are exactly equal (spread=0), so the 2-σ gate
+    always passes regardless of pooled_se. No ambiguity between 'consistent' and
+    'inconclusive'.
+    """
     n_per_era = 60
     dates = np.array([f"2020-{i:04d}" for i in range(n_per_era)] +
                      [f"2021-{i:04d}" for i in range(n_per_era)])
-    # Era 1 and Era 2 both have mean ≈ 0.7 (both positive, very close).
+    # Era 1 and Era 2 both have EXACTLY mean = 0.7 (42 ones + 18 zeros in each).
+    # spread = 0 → always consistent regardless of pooled_se.
     values = np.array([1.0] * 42 + [0.0] * 18 + [1.0] * 42 + [0.0] * 18, dtype=float)
     result = gs.era_split_stability(dates, values, n_splits=2)
-    assert result["verdict"] in ("consistent", "inconclusive"), (
-        f"Expected 'consistent' or 'inconclusive' for similar era means; got {result['verdict']!r}"
+    assert result["verdict"] == "consistent", (
+        f"Expected 'consistent' for identical era means 0.7 vs 0.7; got {result['verdict']!r}"
     )
 
 
@@ -293,9 +310,11 @@ def test_era_split_stability_explicit_split_date():
     assert era0["mean"] == pytest.approx(1.0)
     assert era1["mean"] == pytest.approx(0.0)
     # mean=0.0 has sign=0 so no sign_flip (0 is not a negative sign).
-    # The era means are far apart (1.0 vs 0.0) so verdict is inconclusive, not consistent.
-    assert result["verdict"] in ("inconsistent", "inconclusive", "consistent"), (
-        f"Unexpected verdict: {result['verdict']!r}"
+    # Both eras have constant values → std=0 → pooled_se=0.
+    # spread = 1.0 - 0.0 = 1.0, which exceeds 1e-12 → verdict = 'inconclusive'.
+    assert result["verdict"] == "inconclusive", (
+        f"Expected 'inconclusive' for era means 1.0 vs 0.0 with zero within-era variance; "
+        f"got {result['verdict']!r}"
     )
 
     # Now test with negative era 2 to confirm sign_flip works with explicit split.
@@ -361,6 +380,26 @@ def test_era_split_stability_n_splits_below_2_raises():
 def test_era_split_stability_mismatched_lengths_raises():
     with pytest.raises(ValueError, match="same length"):
         gs.era_split_stability(np.array(["2020-01", "2020-02"]), np.array([1.0]))
+
+
+def test_era_split_stability_zero_variance_different_means_is_not_consistent():
+    """Regression: 0.2 vs 0.9 with zero within-era variance must NOT be 'consistent'.
+
+    The bug: when pooled_se == 0.0, the old short-circuit forced verdict='consistent'
+    regardless of how different the era means were. This test pins the correct behaviour:
+    era means 0.2 vs 0.9 (zero variance, but spread=0.7) must give 'inconclusive'.
+    """
+    # Each era has constant value → within-era std = 0 → pooled_se = 0.
+    # Era 0 mean = 0.2, Era 1 mean = 0.9 → spread = 0.7, sign same (+).
+    n_per_era = 50
+    dates = np.array([f"2020-{i:04d}" for i in range(n_per_era)] +
+                     [f"2021-{i:04d}" for i in range(n_per_era)])
+    values = np.array([0.2] * n_per_era + [0.9] * n_per_era)
+    result = gs.era_split_stability(dates, values, n_splits=2, min_n=1)
+    assert result["verdict"] == "inconclusive", (
+        f"Era means 0.2 vs 0.9 with zero variance should be 'inconclusive', "
+        f"not 'consistent'; got {result['verdict']!r}"
+    )
 
 
 # ══════════════════════════════════════════════ 4 · eb_shrink ════════════════════
@@ -465,6 +504,16 @@ def test_eb_shrink_too_few_cells_warns_and_falls_back():
     assert result["fit_warning"] is not None
     # Fallback = Beta(1,1), prior_mean = 0.5.
     assert result["prior_mean"] == pytest.approx(0.5, abs=1e-6)
+
+
+def test_eb_shrink_k_exceeds_n_raises():
+    """k > n elementwise must raise ValueError (rate primitive cannot emit > 1).
+
+    Regression for fix-2: before this guard, eb_shrink would silently produce
+    posterior means above 1.0 when k_i > n_i.
+    """
+    with pytest.raises(ValueError, match="k must be ≤ n"):
+        gs.eb_shrink(np.array([5, 11]), np.array([10, 10]), prior_alpha=1.0, prior_beta=1.0)
 
 
 def test_eb_shrink_only_one_prior_raises():

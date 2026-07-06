@@ -970,6 +970,11 @@ def brier_decomposition(
     """
     probs = np.asarray(probs, dtype=float)
     outcomes = np.asarray(outcomes, dtype=float)
+    if len(probs) != len(outcomes):
+        raise ValueError(
+            f"brier_decomposition: probs and outcomes must have the same length "
+            f"(got {len(probs)} vs {len(outcomes)})."
+        )
     n = len(probs)
     if n == 0:
         return {
@@ -977,11 +982,6 @@ def brier_decomposition(
             "uncertainty": None, "refinement": None, "base_rate": None,
             "n": 0, "n_bins_used": 0,
         }
-    if len(probs) != len(outcomes):
-        raise ValueError(
-            f"brier_decomposition: probs and outcomes must have the same length "
-            f"(got {len(probs)} vs {len(outcomes)})."
-        )
 
     brier_score = float(np.mean((probs - outcomes) ** 2))
     base_rate = float(np.mean(outcomes))
@@ -1180,7 +1180,15 @@ def era_split_stability(
             pooled_std = float(np.mean([r["std"] for r in era_records if r["std"] is not None]))
             pooled_se = pooled_std / math.sqrt(max(1, min(era_ns)))
             spread = float(np.max(era_means) - np.min(era_means))
-            if spread <= 2.0 * pooled_se or pooled_se == 0.0:
+            if pooled_se == 0.0:
+                # Zero within-era variance: consistent only when era means are equal.
+                # Do NOT force 'consistent' just because pooled_se == 0 — era means may
+                # still differ wildly (e.g. 0.2 vs 0.9 with constant within-era values).
+                if spread <= 1e-12:
+                    verdict = "consistent"
+                else:
+                    verdict = "inconclusive"
+            elif spread <= 2.0 * pooled_se:
                 verdict = "consistent"
             else:
                 verdict = "inconclusive"
@@ -1261,6 +1269,15 @@ def eb_shrink(
     n_cells = len(k_arr.ravel())
     k_flat = k_arr.ravel()
     n_flat = n_arr.ravel()
+
+    # Guard: a rate primitive must never emit a value > 1.  Catch k > n early.
+    if np.any(k_flat > n_flat):
+        bad = np.where(k_flat > n_flat)[0].tolist()
+        raise ValueError(
+            f"eb_shrink: k must be ≤ n elementwise (rate primitive cannot emit > 1). "
+            f"Offending cell index(es): {bad} — "
+            f"k={k_flat[bad].tolist()}, n={n_flat[bad].tolist()}."
+        )
 
     fit_warning: str | None = None
     is_fitted = False
