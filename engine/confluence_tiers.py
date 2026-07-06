@@ -67,6 +67,20 @@ def _veto_confirm() -> int:
         return 1
 
 
+def _t3_persist() -> int:
+    """Persistence window for T3 firing (env ``CONFLUENCE_T3_PERSIST``). Unset/2 = the T3 raw
+    condition must hold on N=2 consecutive evaluable sessions before T3 fires (the repaint-
+    hardening default). N=1 restores the legacy single-session behaviour. Measured at N=2 on a
+    2026-07-06 backtest (110 held-out US + CN names): repaint US 15.5%->9.4% / CN 16%->0%,
+    mean 21d excess +0.16%->+0.41%, median lead 11.0->10.5 sessions, event count -35%.
+    This is a DE-ESCALATION (strictly fewer fires). Calibration/provisional_replay repaint
+    figures (23.8% US / 15.1% CN) and the T3 tooltip copy predate this change."""
+    try:
+        return max(1, int(os.environ.get("CONFLUENCE_T3_PERSIST", "2")))
+    except (TypeError, ValueError):
+        return 2
+
+
 def _ema(s, span):
     return s.ewm(span=span, min_periods=span).mean()
 
@@ -238,7 +252,21 @@ def cascade(daily_close: pd.Series, *, take_active: bool = False,
         t2_ticks = _ticks_since(smk, di[int(idx2[-1])]) if len(idx2) else None
         t2_active = bool(t2_ticks is not None and t2_ticks <= FRESH_TICKS and long_bias)
         # T3 = 2D MACD projected <=1-2d AND 3D stoch already crossed (ABOUT TO cross — anticipation)
-        t3_active = bool((imm2_d & recent3_d & confirm3 & rsi_ok).iloc[last])
+        # Persistence hardening (CONFLUENCE_T3_PERSIST, default 2): T3 only fires when the 2D
+        # imminence condition (imm2) holds for at least N consecutive 2D-bucket evaluations (the
+        # repainting component). The stable legs (recent3/confirm3/rsi_ok) are checked on the
+        # current daily bar only. N=1 restores legacy single-bucket firing. Cuts repaint
+        # US 15.5%->9.4% / CN 16%->0% at the cost of ~0.5 sessions median lead (DE-ESCALATION).
+        _t3_n = _t3_persist()
+        if _t3_n <= 1:
+            t3_active = bool((imm2_d & recent3_d & confirm3 & rsi_ok).iloc[last])
+        else:
+            # imm2 is a 2D-frequency series; check the last N buckets are ALL True, then verify
+            # the stable daily-level legs hold on today's bar. Rolling min over the 2D-TF imm2
+            # and map to the last daily bar via imm2_d (ffill from 2D known-dates).
+            imm2_persist = imm2.rolling(_t3_n, min_periods=_t3_n).min().fillna(False)
+            imm2_persist_d = td(imm2_persist.astype(float), smk).fillna(0).astype(bool)
+            t3_active = bool((imm2_persist_d & recent3_d & confirm3 & rsi_ok).iloc[last])
         # T4 = 2D MACD projected AND 2D stoch crossed AND above the 200MA (earliest about-to-cross)
         confirm2 = (wbull_d | fromos2_d)
         t4_active = bool((imm2_d & recent2_d & above200 & confirm2 & rsi_ok).iloc[last])
@@ -395,7 +423,17 @@ def tier_stream(daily_close: pd.Series, *, fresh_ticks: int | None = None) -> pd
 
         t1_fresh = (last_cross3 >= 0) & (t1_ticks <= ft)                    # raw-cross T1 fallback
         t2_active = (last_t2 >= 0) & (t2_ticks <= ft) & long_bias_np
-        t3_active = imm2_np & recent3_np & confirm3_np & rsi_ok_np
+        # T3 persistence hardening (CONFLUENCE_T3_PERSIST, default 2): apply rolling all-True
+        # over N consecutive 2D-bucket evaluations of imm2 (the repainting component) before
+        # mapping to daily — matching cascade()'s 2D-TF rolling-min approach. N=1 = legacy.
+        _t3_n = _t3_persist()
+        if _t3_n <= 1:
+            imm2_persist_d = imm2_d.fillna(False)
+        else:
+            imm2_persist_tf = imm2.rolling(_t3_n, min_periods=_t3_n).min().fillna(False)
+            imm2_persist_d = td(imm2_persist_tf.astype(float), smk).fillna(0).astype(bool)
+        imm2_persist_np = imm2_persist_d.to_numpy().astype(bool)
+        t3_active = imm2_persist_np & recent3_np & confirm3_np & rsi_ok_np
         t4_active = imm2_np & recent2_np & above200_np & confirm2_np & rsi_ok_np
 
         tier = np.array([None] * n, dtype=object)
