@@ -639,13 +639,6 @@ Artifacts below have `known_extra_writers` — additional code paths that write 
 - **extra writers:**
   - scripts/build_confluence_graph.py — thin CLI wrapper; calls build_and_write() defined in the producer; no independent write logic
 
-### covariance-spine
-
-- **path:** `data/neuralweb/covariance_spine.json`
-- **declared producer:** `scripts/build_covariance_spine.py`
-- **extra writers:**
-  - site/neuralwebdata/covariance_spine.json
-
 ### experiments-registry-seed
 
 - **path:** `data/experiments/registry_seed.json`

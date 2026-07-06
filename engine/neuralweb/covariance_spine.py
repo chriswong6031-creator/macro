@@ -536,39 +536,55 @@ def _build_lobes_block(root: Path, missing_inputs: list[str]) -> dict | None:
         effective_independent_lobes = round(eil_pr, 4) if eil_pr is not None else None
 
         # --- Null reference (RUL-ORTH-8): deterministic circular-shift null ---
-        # For each engine, use its own active-week net_direction sequence
-        engine_series: dict[str, list[float]] = {}
+        # Build null using the SAME iso-week-indexed pivot_z used for the observed
+        # matrix.  Each engine's column is circularly shifted on the common week
+        # index, then pairwise correlations use the identical shared-week dropna
+        # path (pivot_z[[ea,eb]].dropna()), so the null and observed statistics
+        # are computed with exactly the same estimator.
+        #
+        # Build per-engine arrays ordered by the global week index so that the
+        # circular shift operates on a consistent calendar-ordered sequence.
+        all_weeks = pivot_z.index.tolist()  # already sorted (DatetimeIndex or sorted str)
+        engine_null_arrays: dict[str, list[float | None]] = {}
         for e in measurable_engines:
-            weeks_sorted = sorted(pivot.index[pivot[e].notna()].tolist())
-            engine_series[e] = [float(pivot.loc[w, e]) for w in weeks_sorted]
+            engine_null_arrays[e] = [
+                float(pivot_z.loc[w, e]) if pd.notna(pivot_z.loc[w, e]) else None
+                for w in all_weeks
+            ]
 
         null_pr_values: list[float] = []
         for d in range(_NULL_DRAWS):
             null_corr_mat = np.zeros((n_m, n_m))
-            shifted: dict[str, list[float]] = {}
+            # Build a shifted DataFrame so dropna on pairs works identically
+            shifted_cols: dict[str, list[float | None]] = {}
             for i, e in enumerate(measurable_engines):
-                seq = engine_series[e]
+                seq = engine_null_arrays[e]
                 n_w = len(seq)
                 shift = ((d + 1) * (i + 1) * 7) % n_w
-                shifted[e] = seq[shift:] + seq[:shift]
+                shifted_cols[e] = seq[shift:] + seq[:shift]
 
-            # Build pivot with shifted series — align by position (circular shift)
-            # Use the ISO-week index ordering from the original series
+            # Construct a DataFrame with the same week index, shifted values
+            null_pivot_z = pd.DataFrame(shifted_cols, index=all_weeks)
+
             for i, ea in enumerate(measurable_engines):
                 for j, eb in enumerate(measurable_engines):
                     if i == j:
                         null_corr_mat[i, j] = 1.0
                         continue
-                    # Shared length = min of both (since circularly shifted, all are same n_w)
-                    n_a = len(shifted[ea])
-                    n_b = len(shifted[eb])
-                    n_use = min(n_a, n_b)
-                    if n_use < _LOBE_MIN_SHARED_WEEKS:
+                    # Use the identical dropna path as the observed matrix
+                    null_shared = null_pivot_z[[ea, eb]].dropna()
+                    n_null_shared = len(null_shared)
+                    if n_null_shared < _LOBE_MIN_SHARED_WEEKS:
                         null_corr_mat[i, j] = 0.0
                     else:
-                        arr_a = np.array(shifted[ea][:n_use])
-                        arr_b = np.array(shifted[eb][:n_use])
-                        c = float(np.corrcoef(arr_a, arr_b)[0, 1])
+                        arr_a = null_shared[ea].values
+                        arr_b = null_shared[eb].values
+                        std_a = float(np.std(arr_a, ddof=1))
+                        std_b = float(np.std(arr_b, ddof=1))
+                        if std_a == 0 or std_b == 0:
+                            c = 0.0
+                        else:
+                            c = float(np.corrcoef(arr_a, arr_b)[0, 1])
                         null_corr_mat[i, j] = c if not math.isnan(c) else 0.0
 
             null_eigvals = np.linalg.eigvalsh(null_corr_mat)[::-1]
@@ -653,6 +669,12 @@ def _build_lobes_block(root: Path, missing_inputs: list[str]) -> dict | None:
                 "measurable": measurable_engines,
                 "unmeasurable": unmeasurable_details,
                 "pairs_below_floor": pairs_below_floor,
+                "pairs_below_floor_assumption": (
+                    "below-floor pairs (n_shared < 30) are treated as 0.0 "
+                    "(independence assumption) in the effective_independent_lobes "
+                    "matrix; this biases the estimate toward more diversification "
+                    "when unmeasured pairs exist"
+                ),
                 "placebo_excluded": placebo_excluded_note,
             },
         }
@@ -754,6 +776,7 @@ def build_state(root: Path = _ROOT) -> dict:
         "Lobes block: effective_independent_lobes derived from participation-ratio of measurable-engine correlation matrix.",
         "Factors block: composite factor excluded — linear blend would double-count shared variance.",
         "Null reference: 200 deterministic circular-shift draws; pctile_vs_null in [0,1].",
+        "Below-floor pairs (n_shared<30) treated as 0.0 (independence) in effective_independent_lobes matrix — biases estimate toward more diversification.",
     ]
 
     blocks: dict[str, Any] = {}

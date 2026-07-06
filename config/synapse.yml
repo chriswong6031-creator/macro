@@ -5820,8 +5820,7 @@ artifacts:
     path: data/neuralweb/covariance_spine.json
     format: json
     producer: scripts/build_covariance_spine.py
-    known_extra_writers:
-      - site/neuralwebdata/covariance_spine.json  # site mirror written atomically by same producer
+    known_extra_writers: []
     owner_program: nw-rails
     cadence: daily-engine
     storage: git
@@ -5846,7 +5845,8 @@ artifacts:
       weeks floor; RUL-ORTH-8 null via 200 deterministic circular-shift draws).
       same_bet_warning fires when largest cluster has >=3 engines with mean
       intra-cluster |corr|>0.60. Site mirror site/neuralwebdata/covariance_spine.json
-      is a known secondary write path by the same producer (atomic temp+rename).
+      is owned by the separate site-covariance-spine artifact (same producer,
+      atomic temp+rename).
 
   site-covariance-spine:
     path: site/neuralwebdata/covariance_spine.json
