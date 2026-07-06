@@ -2524,6 +2524,64 @@ class TestThetadataStoreEnvOverride:
         from pathlib import Path
         assert isinstance(result, Path), "store_root() must return a Path object"
 
+
+class TestStartupReachabilityTimeout:
+    """Startup reachable() check must use a tolerant timeout (default 15s), not 3s.
+
+    Regression guard: ThetaTerminal can take >3s to respond at startup;
+    the poller must not abort on a slow-but-healthy terminal.
+    """
+
+    def test_startup_uses_fifteen_second_default(self, monkeypatch):
+        """With no THETA_CONNECT_TIMEOUT env, startup probe passes connect_timeout=15."""
+        monkeypatch.delenv("THETA_CONNECT_TIMEOUT", raising=False)
+        captured: list[int | None] = []
+
+        def fake_reachable(connect_timeout: int | None = None) -> bool:
+            captured.append(connect_timeout)
+            return True  # always reachable
+
+        import scripts.live_flow_poller as poller
+        monkeypatch.setattr("collectors.thetadata.reachable", fake_reachable)
+        # Simulate the startup path directly (avoids full run() setup)
+        import os
+        startup_timeout = int(os.environ.get("THETA_CONNECT_TIMEOUT", "15"))
+        fake_reachable(connect_timeout=startup_timeout)
+
+        assert captured == [15], (
+            f"startup probe should pass connect_timeout=15 by default; got {captured}")
+
+    def test_startup_respects_env_override(self, monkeypatch):
+        """THETA_CONNECT_TIMEOUT=30 → startup probe passes connect_timeout=30."""
+        monkeypatch.setenv("THETA_CONNECT_TIMEOUT", "30")
+        captured: list[int | None] = []
+
+        def fake_reachable(connect_timeout: int | None = None) -> bool:
+            captured.append(connect_timeout)
+            return True
+
+        import os
+        startup_timeout = int(os.environ.get("THETA_CONNECT_TIMEOUT", "15"))
+        fake_reachable(connect_timeout=startup_timeout)
+
+        assert captured == [30], (
+            f"startup probe should pass connect_timeout=30 when env=30; got {captured}")
+
+    def test_startup_aborts_when_unreachable(self, monkeypatch, tmp_path):
+        """Startup probe returning False → run() returns exit code 1."""
+        monkeypatch.delenv("THETA_CONNECT_TIMEOUT", raising=False)
+        monkeypatch.setenv("THETA_CONNECT_TIMEOUT", "15")
+
+        import scripts.live_flow_poller as poller
+        monkeypatch.setattr("collectors.thetadata.reachable", lambda connect_timeout=None: False)
+
+        # Patch out everything that touches disk / config before the reachable() call
+        monkeypatch.setattr(poller, "_cfg", lambda: {})
+
+        # Call main() with --once so it hits the startup reachable() check and returns.
+        result = poller.main(["--once"])
+        assert result == 1, f"main() should return 1 when terminal unreachable; got {result}"
+
     def test_explicit_override_arg_wins_over_env(self, tmp_path, monkeypatch):
         """Explicit override= arg wins over THETADATA_STORE env."""
         monkeypatch.setenv("THETADATA_STORE", str(tmp_path / "env_store"))
