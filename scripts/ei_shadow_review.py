@@ -648,6 +648,341 @@ def _write_json(result: dict[str, Any], out_path: Path) -> None:
     log.info("Written: %s", out_path)
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# 8.  EI-F1D-RW SHADOW SECTION
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# Spec:   research/entry_intel/P2_5_INTERACTION_PREREG.md
+# Study:  research/entry_intel/p1_runs/P2_5_STUDY/RESULTS.md
+# Registry: data/species/registry.json (entry: EI-F1D-RW)
+#
+# Reads the F1D shadow ledger and computes:
+#   - D_f per config (six columns): stop_out(moved_up) - stop_out(not_moved_up)
+#     where moved_up = row had f1d_shadow_bonus > 0 for that config
+#   - C1/C2/C3-style scoreboard against the registry entry
+#   - Absent-ledger graceful path (exits 0 with clear message)
+#
+# The anti-chase section above is untouched.
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Canonical F1D ledger path
+F1D_LEDGER_PATH = CANONICAL_DATA / "signal_archive" / "f1d_shadow_ledger.parquet"
+
+# Pre-registered config names and their ledger boolean column
+F1D_CONFIGS: dict[str, str] = {
+    "C1": "c1_qual",
+    "C3": "c3_qual",
+    "C5": "c5_qual",
+    "C6": "c6_qual",  # primary
+    "C7": "c7_qual",
+    "C8": "c8_qual",
+}
+
+# Required ledger columns for the F1D section
+F1D_REQUIRED_COLUMNS = {
+    "asof", "ticker", "board_name",
+    "washout_active", "dd_pct", "ext_z", "rs_sector_quartile",
+    "above_200", "blend_sorted", "f1d_shadow_bonus", "f1d_shadow_rank",
+    "c1_qual", "c3_qual", "c5_qual", "c6_qual", "c7_qual", "c8_qual",
+    "gate_state", "logged_at",
+}
+
+# Flip criterion constants (registry entry EI-F1D-RW)
+F1D_MIN_CLUSTERS = 25          # minimum independent episode clusters
+F1D_MIN_QUARTERS = 2           # minimum calendar quarters elapsed
+F1D_FALSIFICATION_DF = 3.34    # D_f >= +3.34pp at 63d = flat-binary reprobe tripwire
+F1D_PRIMARY_CONFIG = "C6"
+F1D_A1_WATCHLIST = {"C5", "C7"}  # half-concentrated; monitor for instability
+
+
+def load_f1d_ledger() -> "pd.DataFrame | None":
+    """Load the F1D shadow ledger; return None with a clear message if absent/empty.
+
+    Mirrors the anti-chase load_and_validate_ledger() pattern exactly.
+    Exits cleanly (code 0) when ledger is absent — accrual not started.
+    """
+    _f1d_banner()
+    if not F1D_LEDGER_PATH.exists():
+        print("LEDGER STATUS: ABSENT")
+        print()
+        print(f"Path:    {F1D_LEDGER_PATH}")
+        print("Reason:  Accrual not started — the F1D shadow ledger is written by")
+        print("         build_stock_library Step I on the first nightly build")
+        print("         after the P2.5 PR is merged to main.")
+        print()
+        print("Action:  No action required. Re-run after the next nightly build.")
+        print()
+        print(f"Cluster floor: 0 / {F1D_MIN_CLUSTERS} clusters  |  0 / {F1D_MIN_QUARTERS} quarters")
+        print("D_f status:    N/A (no data)")
+        print()
+        print("FLIP ELIGIBLE: NO (ledger absent)")
+        return None
+
+    try:
+        df = pd.read_parquet(F1D_LEDGER_PATH)
+    except Exception as exc:
+        print(f"LEDGER STATUS: READ ERROR — {exc}")
+        print(f"Path:    {F1D_LEDGER_PATH}")
+        print("Action:  Check file integrity; the nightly writer may have crashed.")
+        return None
+
+    if df.empty:
+        print("LEDGER STATUS: EMPTY")
+        print()
+        print(f"Path:    {F1D_LEDGER_PATH}")
+        print("Reason:  File exists but contains no rows.")
+        print()
+        print(f"Cluster floor: 0 / {F1D_MIN_CLUSTERS} clusters  |  0 / {F1D_MIN_QUARTERS} quarters")
+        print("FLIP ELIGIBLE: NO (ledger empty)")
+        return None
+
+    missing = F1D_REQUIRED_COLUMNS - set(df.columns)
+    if missing:
+        print("LEDGER STATUS: SCHEMA MISMATCH")
+        print()
+        print(f"Missing columns: {sorted(missing)}")
+        print(f"Present columns: {sorted(df.columns.tolist())}")
+        print()
+        print("Action:  The ledger writer (build_stock_library Step I) may have")
+        print("         changed its schema. Update F1D_REQUIRED_COLUMNS in this script.")
+        return None
+
+    if not pd.api.types.is_datetime64_any_dtype(df["asof"]):
+        df["asof"] = pd.to_datetime(df["asof"])
+
+    log.info("F1D ledger loaded: %d rows, %d tickers, %s to %s",
+             len(df), df["ticker"].nunique(),
+             df["asof"].min().date(), df["asof"].max().date())
+    return df
+
+
+def _f1d_banner() -> None:
+    print()
+    print("=" * 68)
+    print("  EI P2.5 — F1D-RW SHADOW REVIEW (Washout Depth × Interaction)")
+    print("  Primary: C6 (deep_trio = dd>25% × ac × rs)")
+    print("  Spec: P2_5_INTERACTION_PREREG.md | Registry: EI-F1D-RW")
+    print("=" * 68)
+    print()
+
+
+def evaluate_f1d_shadow(df: pd.DataFrame) -> "dict[str, Any]":
+    """Compute D_f per config and scoreboard against registry flip criterion.
+
+    D_f = stop_out_rate(moved_up) - stop_out_rate(not_moved_up) at 63d horizon
+    where moved_up means c{N}_qual == True (bonus > 0) for that config row.
+
+    The flip criterion (corrected D_f machinery):
+      Wilson_upper(D_f) < 0 at z=1.645 (one-sided 95% on the improvement)
+      => D_f < 0 (stop-out lower for moved-up) AND Wilson upper bound < 0.
+
+    Falsification tripwire: D_f >= +3.34pp at 63d (flat-binary reprobe T09).
+    """
+    result: "dict[str, Any]" = {
+        "generated_at": date.today().isoformat(),
+        "ledger_rows_total": len(df),
+        "ledger_date_min": df["asof"].min().date().isoformat() if not df.empty else None,
+        "ledger_date_max": df["asof"].max().date().isoformat() if not df.empty else None,
+        "primary_config": F1D_PRIMARY_CONFIG,
+        "a1_watchlist_configs": sorted(F1D_A1_WATCHLIST),
+    }
+
+    # Cluster count for C1 (using asof ISO week, same as anti-chase C1)
+    df = df.copy()
+    df["cluster"] = df["asof"].dt.to_period("W").astype(str)
+
+    # Overall cluster stats
+    first_date = df["asof"].min().date()
+    last_date = df["asof"].max().date()
+    quarters_elapsed = max(0.0, (last_date - first_date).days / 91.25)
+    n_total_clusters = df["cluster"].nunique()
+
+    result["accrual"] = {
+        "first_date": first_date.isoformat(),
+        "last_date": last_date.isoformat(),
+        "quarters_elapsed": round(quarters_elapsed, 2),
+        "total_clusters": n_total_clusters,
+        "min_clusters_threshold": F1D_MIN_CLUSTERS,
+        "min_quarters_threshold": F1D_MIN_QUARTERS,
+        "clusters_pass": n_total_clusters >= F1D_MIN_CLUSTERS,
+        "quarters_pass": quarters_elapsed >= F1D_MIN_QUARTERS,
+    }
+
+    # Forward outcome join: mirrors anti-chase join but uses f1d_shadow_rank as
+    # the "moved_up" indicator per config. For each row, moved_up for config CN
+    # = c{N}_qual is True. The forward outcomes (stopped_21d, stopped_63d) are
+    # loaded from price stores exactly as in the anti-chase section.
+    # For now: if no matured rows exist, report absent-data gracefully.
+    # (Full forward join happens once horizons have matured.)
+
+    config_results: "dict[str, Any]" = {}
+
+    for cid, qual_col in F1D_CONFIGS.items():
+        qual_mask = df[qual_col].astype(bool)
+        n_qual = int(qual_mask.sum())
+        n_total = len(df)
+        n_clusters_qual = df.loc[qual_mask, "cluster"].nunique()
+        qual_pct = round(100.0 * n_qual / n_total, 2) if n_total > 0 else 0.0
+
+        # Forward stop-out computation: requires matured rows
+        # Maturation happens at 21d and 63d horizons.
+        # Until then, report counts only (graceful absent-data path).
+        has_matured_21 = "stopped_21d" in df.columns and df["stopped_21d"].notna().any()
+        has_matured_63 = "stopped_63d" in df.columns and df["stopped_63d"].notna().any()
+
+        d_f_21: "float | None" = None
+        d_f_63: "float | None" = None
+        wilson_upper_63: "float | None" = None
+        falsification_tripped = False
+        flip_eligible_this_config = False
+
+        if has_matured_63:
+            mat63 = df["matured_63d"].astype(bool) if "matured_63d" in df.columns else df["stopped_63d"].notna()
+            qual_mat63 = df[qual_mask & mat63]
+            notqual_mat63 = df[(~qual_mask) & mat63]
+
+            if len(qual_mat63) > 0 and len(notqual_mat63) > 0:
+                rate_qual = qual_mat63["stopped_63d"].astype(float).mean()
+                rate_notqual = notqual_mat63["stopped_63d"].astype(float).mean()
+                d_f_63 = float((rate_qual - rate_notqual) * 100.0)
+
+                # Wilson upper bound on D_f (episode-clustered bootstrap, 1000 resamples)
+                # Mirrors _wilson_cluster_bootstrap but for moved_up vs not_moved_up.
+                try:
+                    _q_labels = qual_mat63["stopped_63d"].astype(float).to_numpy()
+                    _q_clusters = qual_mat63["cluster"].to_numpy()
+                    _nq_labels = notqual_mat63["stopped_63d"].astype(float).to_numpy()
+                    _nq_clusters = notqual_mat63["cluster"].to_numpy()
+                    # A1b fix: the registered flip criterion (registry EI-F1D-RW
+                    # flip_criterion + P2_5_INTERACTION_PREREG.md §6.3) specifies
+                    # one-sided 95% (z=1.645). _wilson_cluster_bootstrap uses
+                    # two-sided idiom (alpha/2, 1-alpha/2 quantiles), so the
+                    # one-sided 95th percentile requires alpha=0.10 here, which
+                    # returns the 5th and 95th percentiles. D_upper is the
+                    # relevant bound for the flip criterion (Wilson_upper < 0).
+                    # NOTE: the anti-chase sibling uses alpha=0.05 (two-sided 95%,
+                    # z≈1.96) per its own registered convention — do not touch it.
+                    _w = _wilson_cluster_bootstrap(
+                        _q_labels, _q_clusters,
+                        _nq_labels, _nq_clusters,
+                        alpha=0.10,  # one-sided 95th percentile (z=1.645) per §6.3
+                        n_bootstrap=N_BOOTSTRAP,
+                    )
+                    wilson_upper_63 = _w.get("D_upper")
+                except Exception as _exc:
+                    log.debug("F1D Wilson bootstrap failed for %s: %s", cid, _exc)
+
+                falsification_tripped = bool(d_f_63 >= F1D_FALSIFICATION_DF)
+                # Flip eligible: D_f < 0 AND Wilson upper < 0
+                # AND cluster floor AND quarter floor
+                flip_eligible_this_config = bool(
+                    d_f_63 is not None and d_f_63 < 0
+                    and wilson_upper_63 is not None and wilson_upper_63 < 0
+                    and n_clusters_qual >= F1D_MIN_CLUSTERS
+                    and quarters_elapsed >= F1D_MIN_QUARTERS
+                    and not falsification_tripped
+                )
+
+        if has_matured_21:
+            mat21 = df["matured_21d"].astype(bool) if "matured_21d" in df.columns else df["stopped_21d"].notna()
+            qual_mat21 = df[qual_mask & mat21]
+            notqual_mat21 = df[(~qual_mask) & mat21]
+            if len(qual_mat21) > 0 and len(notqual_mat21) > 0:
+                rate_q21 = qual_mat21["stopped_21d"].astype(float).mean()
+                rate_nq21 = notqual_mat21["stopped_21d"].astype(float).mean()
+                d_f_21 = float((rate_q21 - rate_nq21) * 100.0)
+
+        config_results[cid] = {
+            "config": cid,
+            "qual_col": qual_col,
+            "is_primary": cid == F1D_PRIMARY_CONFIG,
+            "a1_watchlist": cid in F1D_A1_WATCHLIST,
+            "n_qualified_rows": n_qual,
+            "n_total_rows": n_total,
+            "qual_pct": qual_pct,
+            "n_clusters_qualified": n_clusters_qual,
+            "D_f_21d_pp": d_f_21,
+            "D_f_63d_pp": d_f_63,
+            "wilson_upper_63d": wilson_upper_63,
+            "falsification_tripped": falsification_tripped,
+            "falsification_threshold_pp": F1D_FALSIFICATION_DF,
+            "flip_eligible": flip_eligible_this_config,
+            "data_note": (
+                "matured forward outcomes available" if has_matured_63
+                else "no matured 63d outcomes yet — counts only"
+            ),
+        }
+
+    result["configs"] = config_results
+
+    # Overall flip eligibility: primary config C6 must meet criterion
+    primary = config_results.get(F1D_PRIMARY_CONFIG, {})
+    result["flip_eligible"] = primary.get("flip_eligible", False)
+    result["falsification_tripped"] = primary.get("falsification_tripped", False)
+    result["flip_verdict"] = (
+        "FLIP ELIGIBLE — C6 Wilson_upper(D_f) < 0 AND n_floor AND quarter_floor met; Fable ruling required"
+        if result["flip_eligible"]
+        else "NOT FLIP ELIGIBLE — forward ledger criteria not yet met (see config detail)"
+    )
+    if result["falsification_tripped"]:
+        result["flip_verdict"] = (
+            "FALSIFICATION TRIGGERED — C6 D_f >= +3.34pp (flat-binary reprobe tripwire); "
+            "shadow must be reviewed for withdrawal"
+        )
+
+    return result
+
+
+def print_f1d_report(result: "dict[str, Any]") -> None:
+    """Print human-readable F1D scoreboard to stdout."""
+    print(f"Generated:   {result.get('generated_at', 'N/A')}")
+    print(f"Ledger rows: {result.get('ledger_rows_total', 'N/A')}")
+    print(f"Date range:  {result.get('ledger_date_min', 'N/A')}  →  {result.get('ledger_date_max', 'N/A')}")
+    print()
+
+    acc = result.get("accrual", {})
+    c_pass = acc.get("clusters_pass", False)
+    q_pass = acc.get("quarters_pass", False)
+    print(f"{'[PASS]' if c_pass else '[FAIL]'}  Cluster floor: "
+          f"{acc.get('total_clusters', 0)} / {F1D_MIN_CLUSTERS} required")
+    print(f"{'[PASS]' if q_pass else '[FAIL]'}  Quarter floor: "
+          f"{acc.get('quarters_elapsed', 0.0):.2f} / {F1D_MIN_QUARTERS} required")
+    print()
+
+    print("Per-config D_f scoreboard (D_f = stop_rate(qualified) - stop_rate(not-qualified)):")
+    print(f"  {'Config':<6} {'%board':>7} {'n_clust':>8} {'D_f@21d':>9} {'D_f@63d':>9} "
+          f"{'W_upper63':>10} {'Flip?':>7} {'Falsif?':>8} {'Note'}")
+    print("  " + "-" * 78)
+    for cid, cr in result.get("configs", {}).items():
+        is_primary = "* " if cr.get("is_primary") else "  "
+        a1 = "[A1]" if cr.get("a1_watchlist") else "    "
+        d21_str = f"{cr['D_f_21d_pp']:+.2f}pp" if cr.get("D_f_21d_pp") is not None else "N/A"
+        d63_str = f"{cr['D_f_63d_pp']:+.2f}pp" if cr.get("D_f_63d_pp") is not None else "N/A"
+        wu_str = f"{cr['wilson_upper_63d']:+.4f}" if cr.get("wilson_upper_63d") is not None else "N/A"
+        flip_str = "YES" if cr.get("flip_eligible") else "no"
+        fals_str = "TRIP!" if cr.get("falsification_tripped") else "ok"
+        print(f"  {is_primary}{cid:<4} {a1} "
+              f"{cr.get('qual_pct', 0):6.1f}% "
+              f"{cr.get('n_clusters_qualified', 0):7d} "
+              f"{d21_str:>9} {d63_str:>9} {wu_str:>10} "
+              f"{flip_str:>7} {fals_str:>8}  {cr.get('data_note', '')}")
+    print()
+    print("  * = primary config (C6 deep_trio). [A1] = watchlist (half-concentrated)")
+    print()
+
+    # Overall
+    flip = result.get("flip_eligible", False)
+    fals = result.get("falsification_tripped", False)
+    print("─" * 68)
+    if fals:
+        print("FALSIFICATION TRIPPED — review required")
+    else:
+        print(f"FLIP ELIGIBLE:  {'YES' if flip else 'NO'}")
+    print(result.get("flip_verdict", ""))
+    print("─" * 68)
+    print()
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         description=__doc__,
@@ -677,7 +1012,7 @@ def main(argv: list[str] | None = None) -> int:
         format="%(levelname)s %(name)s %(message)s",
     )
 
-    # ── Step 1: load and validate ledger ─────────────────────────────────────
+    # ── Step 1: load and validate ledger (anti-chase) ─────────────────────────
     df = load_and_validate_ledger()
     if df is None:
         # Absent/empty ledger: clean exit with code 0 (accrual not started).
@@ -688,22 +1023,48 @@ def main(argv: list[str] | None = None) -> int:
             "flip_verdict": "NOT FLIP ELIGIBLE — ledger absent or empty; accrual not started",
         }
         _write_json(result, args.out)
-        return 0
+        # Still run F1D section even if anti-chase ledger is absent
+    else:
+        # ── Step 2: join forward outcomes ─────────────────────────────────────
+        log.info("Joining forward outcomes (horizons=%s)...", HORIZONS)
+        df = join_forward_outcomes(df, horizons=HORIZONS)
 
-    # ── Step 2: join forward outcomes ─────────────────────────────────────────
-    log.info("Joining forward outcomes (horizons=%s)...", HORIZONS)
-    df = join_forward_outcomes(df, horizons=HORIZONS)
+        # ── Step 3: evaluate flip criteria ────────────────────────────────────
+        log.info("Evaluating flip criteria...")
+        result = evaluate_flip_criteria(df, n_bootstrap=args.n_bootstrap)
 
-    # ── Step 3: evaluate flip criteria ────────────────────────────────────────
-    log.info("Evaluating flip criteria...")
-    result = evaluate_flip_criteria(df, n_bootstrap=args.n_bootstrap)
+        # ── Step 4: print report ──────────────────────────────────────────────
+        print_report(result)
 
-    # ── Step 4: print report ──────────────────────────────────────────────────
-    print_report(result)
+        # ── Step 5: write JSON ────────────────────────────────────────────────
+        _write_json(result, args.out)
+        print(f"JSON written: {args.out}")
 
-    # ── Step 5: write JSON ────────────────────────────────────────────────────
-    _write_json(result, args.out)
-    print(f"JSON written: {args.out}")
+    # ── Step 6: EI-F1D-RW section (independent of anti-chase; always runs) ───
+    f1d_df = load_f1d_ledger()
+    if f1d_df is None:
+        f1d_result: "dict[str, Any]" = {
+            "generated_at": date.today().isoformat(),
+            "ledger_status": "absent_or_empty",
+            "flip_eligible": False,
+            "flip_verdict": "NOT FLIP ELIGIBLE — F1D ledger absent or empty; accrual not started",
+        }
+    else:
+        # A1 fix: join forward outcomes to the F1D ledger before evaluating.
+        # Without this join, stopped_63d/matured_63d columns never exist on the
+        # F1D frame, so D_f, Wilson bounds, the +3.34pp falsification tripwire,
+        # and flip_eligible are permanently None/False. Mirror the anti-chase
+        # call exactly — same horizons, same join helper.
+        log.info("Joining forward outcomes for F1D ledger (horizons=%s)...", HORIZONS)
+        f1d_df = join_forward_outcomes(f1d_df, horizons=HORIZONS)
+        log.info("Evaluating F1D shadow criteria...")
+        f1d_result = evaluate_f1d_shadow(f1d_df)
+        print_f1d_report(f1d_result)
+
+    # Write F1D result to a separate JSON sidecar
+    _f1d_out = args.out.parent / "f1d_shadow_review_latest.json"
+    _write_json(f1d_result, _f1d_out)
+    print(f"F1D JSON written: {_f1d_out}")
 
     return 0
 

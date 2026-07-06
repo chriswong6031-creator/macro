@@ -2740,6 +2740,220 @@ def main() -> int:
         except Exception as _ac_e:  # noqa: BLE001 — shadow ledger is never fatal
             log.debug("P2.1a antichase shadow ledger write skipped: %s", _ac_e)
 
+        # P2.5 Step I: EI-F1D-RW shadow ledger writer.
+        # Appends per-ticker rows to data/signal_archive/f1d_shadow_ledger.parquet.
+        # Records EVERY board row (qualified and not-qualified) so the control group
+        # (f1d_shadow_bonus=0) is tracked for the forward flip criterion.
+        #
+        # Spec: research/entry_intel/P2_5_INTERACTION_PREREG.md
+        # Study: research/entry_intel/p1_runs/P2_5_STUDY/RESULTS.md
+        # Registry: data/species/registry.json (entry: EI-F1D-RW)
+        #
+        # SIX ship configs (from study): C1, C3, C5, C6, C7, C8.
+        # Primary = C6 (deep_trio: dd_pct>25% AND ac_pass AND rs_fav).
+        # Dead configs C2/C4 are NOT tracked — they are listed for reference only.
+        #
+        # dd_pct computation: byte-faithful to washout_depth_pit in run_P2_5_study.py.
+        #   _WASH_CTX_B=91, _WASH_CTX_A=217; window=close[-91:]; capit_pos=argmin(window);
+        #   prior_max=nanmax(close[capit_pos-126:capit_pos]); dd_pos=-dd (positive fraction).
+        # PIT discipline: only price index <= as_of is used.
+        #
+        # rs_sector_quartile: within-sector ext_z rank; Q1 (lowest ext_z) = most washed-out
+        #   relative to peers = RS-favorable for a reversal context. Quartiles 1,2 = rs_fav.
+        #   Computed from ext_map (same source as Step D/G) and _coil_sector (sector map).
+        #
+        # blend_sorted: min-max normalized composite_z across all board rows this day.
+        # f1d_shadow_bonus: +0.10 if C6 qualifies, else 0.0.
+        # f1d_shadow_rank: percentile of (blend_sorted + bonus) within-day (0..1).
+        #
+        # Pattern: append-only parquet; keep-FIRST per (asof, ticker); never fatal.
+        try:
+            import pandas as _f1d_pd
+            import numpy as _f1d_np
+            _F1D_LEDGER_PATH = config.data_dir() / "signal_archive" / "f1d_shadow_ledger.parquet"
+            _F1D_LEDGER_PATH.parent.mkdir(parents=True, exist_ok=True)
+            _f1d_asof_s = wide.get("as_of")
+            if _f1d_asof_s:
+                _f1d_asof_str = str(_f1d_pd.Timestamp(_f1d_asof_s).date())
+                _f1d_asof_ts = _f1d_pd.Timestamp(_f1d_asof_s)
+
+                # ── 1. Compute per-ticker dd_pct (byte-faithful to washout_depth_pit) ──
+                # _WASH_CTX_B / _WASH_CTX_A match run_P2_5_study.py constants exactly.
+                _F1D_WASH_B = 91
+                _F1D_WASH_A = 217
+
+                def _f1d_dd_pct(ticker_close: "_f1d_pd.Series") -> "float | None":
+                    """PIT depth computation — mirrors washout_depth_pit in study script."""
+                    try:
+                        _c = ticker_close.dropna()
+                        if not isinstance(_c.index, _f1d_pd.DatetimeIndex):
+                            _c = _c.copy()
+                            _c.index = _f1d_pd.to_datetime(_c.index)
+                        _arr = _c.to_numpy()
+                        _n = len(_arr)
+                        if _n < _F1D_WASH_A + _F1D_WASH_B:
+                            return None
+                        _window = _arr[_n - _F1D_WASH_B:]
+                        _local_min = int(_f1d_np.argmin(_window))
+                        _capit_pos = (_n - _F1D_WASH_B) + _local_min
+                        if _capit_pos < 126:
+                            return None
+                        _prior_max = float(_f1d_np.nanmax(_arr[_capit_pos - 126: _capit_pos]))
+                        if _prior_max <= 0:
+                            return None
+                        _dd = _arr[_capit_pos] / _prior_max - 1.0
+                        return float(-_dd)   # positive fraction (e.g. 0.31 = 31% down)
+                    except Exception:
+                        return None
+
+                # ── 2. Compute sector-level rs_sector_quartile from ext_map ──
+                # Group tickers by sector (from _coil_sector); rank each ticker's ext_z
+                # within sector; quartile 1 = bottom ext_z (most washed-out = rs_fav).
+                # Mirrors replay_standout_pipeline.py lines 573-586 (F5 fix).
+                _f1d_sector_ext: "dict[str, list[float]]" = {}
+                for _f1d_t, _f1d_sec in (_coil_sector or {}).items():
+                    if _f1d_sec is None:
+                        continue
+                    _f1d_ez = (ext_map.get(_f1d_t) or {}).get("ext_z")
+                    if _f1d_ez is not None:
+                        _f1d_sector_ext.setdefault(str(_f1d_sec), []).append(float(_f1d_ez))
+
+                def _f1d_rs_quartile(ticker: "str") -> "int | None":
+                    """Return sector-relative ext_z quartile (1=lowest=rs_fav, 4=highest)."""
+                    _sec = (_coil_sector or {}).get(ticker)
+                    if _sec is None:
+                        return None
+                    _my_ez = (ext_map.get(ticker) or {}).get("ext_z")
+                    if _my_ez is None:
+                        return None
+                    _peers = _f1d_sector_ext.get(str(_sec), [])
+                    if len(_peers) < 4:
+                        return None
+                    _below = sum(1 for _v in _peers if _v < _my_ez)
+                    _pctile = _below / len(_peers)
+                    return int(min(4, max(1, _f1d_np.floor(_pctile * 4) + 1)))
+
+                # ── 3. Compute blend_sorted (min-max normalized composite_z) for all rows ──
+                _f1d_all_rows = wide["buy"] + wide["watch"]
+                _f1d_czs = [
+                    float((profiles.get(_r.get("ticker")) or {}).get("composite_z") or 0.0)
+                    for _r in _f1d_all_rows
+                ]
+                _f1d_cz_min = min(_f1d_czs) if _f1d_czs else 0.0
+                _f1d_cz_max = max(_f1d_czs) if _f1d_czs else 1.0
+                _f1d_cz_range = _f1d_cz_max - _f1d_cz_min if _f1d_cz_max != _f1d_cz_min else 1.0
+
+                def _f1d_blend_sorted(ticker: "str") -> "float":
+                    _cz = float((profiles.get(ticker) or {}).get("composite_z") or 0.0)
+                    return (_cz - _f1d_cz_min) / _f1d_cz_range
+
+                # ── 4. Deduplicate against existing ledger ──
+                _f1d_old = _f1d_pd.read_parquet(_F1D_LEDGER_PATH) if _F1D_LEDGER_PATH.exists() else None
+                _f1d_seen: "set[tuple[str, str]]" = set()
+                if _f1d_old is not None and "asof" in _f1d_old.columns and "ticker" in _f1d_old.columns:
+                    _f1d_seen = set(zip(_f1d_old["asof"].astype(str), _f1d_old["ticker"].astype(str)))
+
+                # ── 5. Build shadow rows with per-config booleans ──
+                _f1d_new_rows = []
+                for _f1d_bname, _f1d_section_rows in [("us_buy", wide["buy"]), ("us_watch", wide["watch"])]:
+                    for _f1d_r in _f1d_section_rows:
+                        _f1d_t = _f1d_r.get("ticker")
+                        if _f1d_t is None or (_f1d_asof_str, _f1d_t) in _f1d_seen:
+                            continue
+                        # washout state (from _coil_wash, already computed in per-ticker loop)
+                        _f1d_wash_active = bool(_coil_wash.get(_f1d_t) is True)
+                        # dd_pct: PIT-sliced computation on massive_stock_day close
+                        _f1d_dd: "float | None" = None
+                        try:
+                            _f1d_close_raw = _f1d_pd.read_parquet(
+                                config.data_dir() / "massive_stock_day" / f"{_f1d_t}.parquet"
+                            )["close"]
+                            _f1d_pit_close = _f1d_close_raw[_f1d_close_raw.index <= _f1d_asof_ts]
+                            _f1d_dd = _f1d_dd_pct(_f1d_pit_close)
+                        except Exception:
+                            pass
+                        # above_200 from signal verdict (same source as Step D above)
+                        _f1d_above200 = bool((sig_verdict.get(_f1d_t) or {}).get("above200"))
+                        # ext_z from ext_map (same source as Step D/G)
+                        _f1d_extz = _f1d_r.get("ext_z")  # already populated by Step D
+                        _f1d_ac_pass = (_f1d_extz is not None) and (float(_f1d_extz) <= 2.0)
+                        # rs_sector_quartile
+                        _f1d_rs_q = _f1d_rs_quartile(_f1d_t)
+                        _f1d_rs_fav = (_f1d_rs_q is not None) and (_f1d_rs_q in (1, 2))
+                        # blend_sorted
+                        _f1d_bs = _f1d_blend_sorted(_f1d_t)
+                        # Per-config booleans (six ship-qualifying configs only; C2/C4 DEAD)
+                        _f1d_c1 = _f1d_wash_active and (_f1d_dd is not None) and (_f1d_dd > 0.25)
+                        _f1d_c3 = _f1d_wash_active and (not _f1d_above200)
+                        _f1d_c5 = _f1d_wash_active and _f1d_ac_pass and _f1d_rs_fav
+                        _f1d_c6 = _f1d_c1 and _f1d_ac_pass and _f1d_rs_fav   # deep_trio (primary)
+                        _f1d_c7 = _f1d_wash_active and (_f1d_dd is not None) and (_f1d_dd > 0.40) and _f1d_ac_pass and _f1d_rs_fav
+                        _f1d_c8 = _f1d_wash_active and (not _f1d_above200) and (_f1d_dd is not None) and (_f1d_dd > 0.25)
+                        # Bonus: +0.10 if primary C6 qualifies
+                        _f1d_bonus = 0.10 if _f1d_c6 else 0.0
+                        _f1d_new_rows.append({
+                            "asof": _f1d_asof_str,
+                            "ticker": _f1d_t,
+                            "board_name": _f1d_bname,
+                            "washout_active": _f1d_wash_active,
+                            "dd_pct": _f1d_dd,
+                            "ext_z": _f1d_extz,
+                            "rs_sector_quartile": float(_f1d_rs_q) if _f1d_rs_q is not None else None,
+                            "above_200": _f1d_above200,
+                            "blend_sorted": round(_f1d_bs, 6),
+                            "f1d_shadow_bonus": _f1d_bonus,
+                            # f1d_shadow_rank filled below after all rows assembled
+                            "c1_qual": _f1d_c1,
+                            "c3_qual": _f1d_c3,
+                            "c5_qual": _f1d_c5,
+                            "c6_qual": _f1d_c6,
+                            "c7_qual": _f1d_c7,
+                            "c8_qual": _f1d_c8,
+                            "gate_state": "shadow",
+                            "logged_at": str(_f1d_pd.Timestamp.now(tz="UTC").isoformat()),
+                        })
+
+                # ── 6. Compute f1d_shadow_rank (within-day re-percentile) ──
+                if _f1d_new_rows:
+                    _f1d_scores = [r["blend_sorted"] + r["f1d_shadow_bonus"] for r in _f1d_new_rows]
+                    _f1d_n = len(_f1d_scores)
+                    for _f1d_i, _f1d_row in enumerate(_f1d_new_rows):
+                        _below_n = sum(1 for _s in _f1d_scores if _s < _f1d_scores[_f1d_i])
+                        _f1d_row["f1d_shadow_rank"] = round(_below_n / _f1d_n, 6) if _f1d_n > 1 else 0.5
+
+                    # ── 7. Write ledger (append-only; keep-first dedup) ──
+                    _f1d_new_df = _f1d_pd.DataFrame(_f1d_new_rows)
+                    _f1d_merged = _f1d_pd.concat([_f1d_old, _f1d_new_df], ignore_index=True) \
+                        if _f1d_old is not None else _f1d_new_df
+                    _f1d_merged.to_parquet(_F1D_LEDGER_PATH, index=False)
+                    _f1d_n_c6 = sum(1 for _r in _f1d_new_rows if _r["c6_qual"])
+                    _f1d_n_c1 = sum(1 for _r in _f1d_new_rows if _r["c1_qual"])
+                    log.info(
+                        "P2.5 F1D shadow ledger: %d rows appended (C6=%d C1=%d C3=%d C5=%d C7=%d C8=%d) for %s",
+                        len(_f1d_new_rows), _f1d_n_c6, _f1d_n_c1,
+                        sum(1 for _r in _f1d_new_rows if _r["c3_qual"]),
+                        sum(1 for _r in _f1d_new_rows if _r["c5_qual"]),
+                        sum(1 for _r in _f1d_new_rows if _r["c7_qual"]),
+                        sum(1 for _r in _f1d_new_rows if _r["c8_qual"]),
+                        _f1d_asof_str,
+                    )
+                    # ── 8. Attach shadow fields to board rows (ADDITIVE; production order UNTOUCHED) ──
+                    # Per spec: shadow columns on JSON rows only; no template ordering change.
+                    # Display chip: f1d_shadow_c6=True row gets data-tip chip in template.
+                    _f1d_row_by_t = {_r["ticker"]: _r for _r in _f1d_new_rows}
+                    for _f1d_brd in wide["buy"] + wide["watch"]:
+                        _f1d_lr = _f1d_row_by_t.get(_f1d_brd.get("ticker"))
+                        if _f1d_lr is not None:
+                            _f1d_brd["washout_active"] = _f1d_lr["washout_active"]
+                            _f1d_brd["dd_pct"] = _f1d_lr["dd_pct"]
+                            _f1d_brd["f1d_shadow_bonus"] = _f1d_lr["f1d_shadow_bonus"]
+                            _f1d_brd["f1d_shadow_rank"] = _f1d_lr["f1d_shadow_rank"]
+                            _f1d_brd["f1d_shadow_c6"] = _f1d_lr["c6_qual"]
+                else:
+                    log.debug("P2.5 F1D shadow ledger: no new rows for %s (all already logged)", _f1d_asof_str)
+        except Exception as _f1d_e:  # noqa: BLE001 — shadow ledger is never fatal
+            log.debug("P2.5 F1D shadow ledger write skipped: %s", _f1d_e)
+
         # P2.4 Step F: setups.json lane backfill — same taxonomy, shared lane labels.
         # The setups object is still in memory (written initially at L1948). Update it
         # with lane values from the standout board and re-write to ensure shared taxonomy.

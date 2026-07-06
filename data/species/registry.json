@@ -1925,6 +1925,181 @@
       "deployment_status_path": "chip -> ledger_fields -> gate_weight (shadow) -> gate_weight (enforcing)",
       "prereg_doc": "research/entry_intel/P2_1A_ANTICHASE_GATE_PREREG.md",
       "registered": "2026-07-05"
+    },
+    {
+      "species_id": "EI-F1D-RW",
+      "version": "1.0",
+      "name": "Washout Depth × Interaction Rank-Weight Shadow",
+      "validation_status": "shadow",
+      "deployment_status": "shadow_ledger",
+      "mechanism": "Deep washout stocks (drawdown > 25% from prior 126-day high, within the 91-bar washout context window) combined with anti-chase pass (ext_z <= 2.0) and RS-favorable (sector quartile Q1 or Q2) receive a +0.10 bonus on the blend_sorted rank scale. The bonus is re-percentiled within-day to produce a shadow rank. Production ordering is UNTOUCHED — the shadow fields are additive ledger columns only. Primary config C6 (deep_trio = dd>25% AND ac-pass AND rs-favorable). Six ship-qualifying configs accrued: C1 (dd>25% solo), C3 (below-200DMA × washout), C5 (washout × ac × rs), C6 (dd>25% × ac × rs), C7 (dd>40% × ac × rs), C8 (below-200DMA × dd>25%). The depth gradient recovered the washout-as-rank-input line that the flat-binary reprobe killed: the flat binary pooled shallow (<25%) and deep (>25%) categories and the harmful shallow bulk cancelled the favorable deep tail.",
+      "horizon_class": "positional",
+      "primary_config": "C6",
+      "tracked_variants": [
+        {
+          "id": "C1",
+          "name": "deep_washout_solo",
+          "definition": "washout_true AND dd_pct > 0.25",
+          "study_63d_stop_delta_pp": -3.66,
+          "study_21d_dm_delta_pp": -15.58,
+          "ship_status": "ship-qualifying"
+        },
+        {
+          "id": "C3",
+          "name": "below200_washout",
+          "definition": "washout_true AND above_200 == False",
+          "study_63d_stop_delta_pp": -4.26,
+          "study_21d_dm_delta_pp": -8.29,
+          "ship_status": "ship-qualifying"
+        },
+        {
+          "id": "C5",
+          "name": "trio",
+          "definition": "washout_true AND ext_z <= 2.0 AND rs_sector_quartile in [1, 2]",
+          "study_63d_stop_delta_pp": -2.37,
+          "study_21d_dm_delta_pp": -4.85,
+          "ship_status": "ship-qualifying"
+        },
+        {
+          "id": "C6",
+          "name": "deep_trio",
+          "definition": "washout_true AND dd_pct > 0.25 AND ext_z <= 2.0 AND rs_sector_quartile in [1, 2]",
+          "study_63d_stop_delta_pp": -4.71,
+          "study_21d_dm_delta_pp": -11.58,
+          "ship_status": "ship-qualifying (PRIMARY)"
+        },
+        {
+          "id": "C7",
+          "name": "d40plus_trio",
+          "definition": "washout_true AND dd_pct > 0.40 AND ext_z <= 2.0 AND rs_sector_quartile in [1, 2]",
+          "study_63d_stop_delta_pp": -6.4,
+          "study_21d_dm_delta_pp": -15.18,
+          "ship_status": "ship-qualifying (A1 watchlist — half-concentrated, n_ep=1327)",
+          "a1_watchlist_note": "C7 carries the largest 63d effect but rests on the smallest episode count (1,327 episodes). Monitor for half-instability in forward ledger."
+        },
+        {
+          "id": "C8",
+          "name": "below200_deep",
+          "definition": "washout_true AND above_200 == False AND dd_pct > 0.25",
+          "study_63d_stop_delta_pp": -6.02,
+          "study_21d_dm_delta_pp": -14.39,
+          "ship_status": "ship-qualifying"
+        },
+        {
+          "id": "C2",
+          "name": "d40plus_solo",
+          "definition": "washout_true AND dd_pct > 0.40",
+          "study_63d_stop_delta_pp": -4.39,
+          "study_21d_dm_delta_pp": -15.96,
+          "ship_status": "DEAD (sign-unstable: H1=+1.50pp, H2=-9.67pp — edge lives entirely in back half)"
+        },
+        {
+          "id": "C4",
+          "name": "washout_ac_pass",
+          "definition": "washout_true AND ext_z <= 2.0",
+          "study_63d_stop_delta_pp": 2.14,
+          "study_21d_dm_delta_pp": -6.8,
+          "ship_status": "DEAD (unfavorable at both horizons — shallow bulk cancels deep-tail edge)"
+        }
+      ],
+      "evidence_stack": [
+        {
+          "condition": "washout_true: drawdown >= 15% from 126-day prior max within the 91-bar argmin window (engine.coiled washout_ctx path)",
+          "tag": "arming"
+        },
+        {
+          "condition": "dd_pct > 0.25: continuous depth of drawdown at capitulation point exceeds 25% (primary depth threshold — C6/C1 configs)",
+          "tag": "trigger"
+        },
+        {
+          "condition": "ext_z <= 2.0: anti-chase pass (extension z-score at most 2 own-history SDs above 200DMA — C6/C5 configs)",
+          "tag": "trigger"
+        },
+        {
+          "condition": "rs_sector_quartile in [1, 2]: RS-favorable — stock in top half of sector peers (C6/C5 configs)",
+          "tag": "trigger"
+        },
+        {
+          "condition": "+0.10 blend_sorted bonus re-percentiled within signal_date: shadow rank is the additive-lanes law realization — zero fires removed",
+          "tag": "context"
+        }
+      ],
+      "rejection_rules": [
+        {
+          "rule": "C2 (d40plus_solo) is DEAD — sign-unstable across temporal halves; not tracked in shadow bonus",
+          "prevents": "shipping a half-concentrated edge that lives only in the recent era"
+        },
+        {
+          "rule": "C4 (washout_ac_pass) is DEAD — unfavorable at both horizons; not tracked",
+          "prevents": "conflating the shallow-bulk harm with the deep-tail edge"
+        },
+        {
+          "rule": "Flat binary washout flag (no depth cut) is NOT a favorable rank input (reprobe T09 D_f = +3.34pp): falsification boundary",
+          "prevents": "regressing to the pooled washout signal that the reprobe killed"
+        },
+        {
+          "rule": "Production blend_sorted ordering is UNTOUCHED — shadow fields are additive JSON columns only; no template ordering change",
+          "prevents": "live board enforcement before forward-ledger flip criterion fires"
+        }
+      ],
+      "flip_criterion": {
+        "description": "corrected D_f machinery: Wilson_upper(D_f) < 0 at z=1.645, where D_f = stop_out_rate(moved_up_in_shadow) - stop_out_rate(not_moved_up_in_shadow) at 63d horizon",
+        "n_floor_clusters": 25,
+        "n_floor_quarters": 2,
+        "note": "Both floors required simultaneously: >= 25 independent forward-ledger episode clusters AND >= 2 calendar quarters of accrual. Clusters are ISO calendar weeks of asof.",
+        "falsification_signature": "D_f >= +3.34pp at 63d — the flat-binary reprobe T09 tripwire. If C6 forward D_f meets or exceeds +3.34pp, the mechanism has regressed to the flat-binary regime and the shadow must be withdrawn.",
+        "reprobe_anchor": "T09 RW 63d stop production delta_pp = +3.34pp (P2_1B_F1_REPROBE sealed number — the harmful flat-binary effect; depth conditioning must clear this tripwire in the opposite direction)"
+      },
+      "adjacent_falsified": [
+        {
+          "id": "flat_binary_washout_rw",
+          "source": "P2_1B_F1_REPROBE T09: RW 63d stop Δ = +3.34pp (unfavorable)",
+          "mechanical_difference": "EI-F1D-RW conditions on depth (dd_pct > 25%). The flat binary pools shallow and deep washout together; the shallow bulk carries the harm. Depth stratification recovers the edge. The +3.34pp is the falsification tripwire for the forward ledger."
+        },
+        {
+          "id": "below200_continuation",
+          "source": "VERIFY_P2_4_REALBUILD.md findings",
+          "mechanical_difference": "C8 (below200 × deep washout) is a reversal/capitulation config, not a continuation play. The below-200DMA condition pairs with washout depth as a context-of-distress marker, not a trend filter."
+        }
+      ],
+      "fixtures": [],
+      "ledger_binding": {
+        "ledger": "data/signal_archive/f1d_shadow_ledger.parquet",
+        "since": "2026-07-06",
+        "schema": {
+          "asof": "date string",
+          "ticker": "string",
+          "board_name": "string (us_buy/us_watch)",
+          "washout_active": "bool",
+          "dd_pct": "float (positive drawdown fraction, e.g. 0.31 = 31% down)",
+          "ext_z": "float",
+          "rs_sector_quartile": "float (1.0/2.0/3.0/4.0 or null)",
+          "above_200": "bool",
+          "blend_sorted": "float [0..1] min-max normalized weight within-day",
+          "f1d_shadow_bonus": "float (0.10 if qualifying for primary C6, else 0.0)",
+          "f1d_shadow_rank": "float [0..1] re-percentile of blend_sorted+bonus within signal_date",
+          "c1_qual": "bool",
+          "c3_qual": "bool",
+          "c5_qual": "bool",
+          "c6_qual": "bool",
+          "c7_qual": "bool",
+          "c8_qual": "bool",
+          "gate_state": "string ('shadow')",
+          "logged_at": "ISO UTC timestamp"
+        },
+        "dedup": "keep-first per (asof, ticker)",
+        "provenance": "in-sample grid; forward ledger + cross-market passports are true OOS"
+      },
+      "gating": {
+        "come_back_on": "monthly species review",
+        "cadence": "monthly",
+        "maturation": "Shadow ledger accrual to flip criterion (>= 25 forward-ledger episode clusters AND >= 2 calendar quarters). At ~24% bonus-cell coverage (C6) the episode-cluster count should accrue faster than the anti-chase gate (~5% coverage). Flip is Fable-adjudicated."
+      },
+      "prereg_doc": "research/entry_intel/P2_5_INTERACTION_PREREG.md",
+      "study_doc": "research/entry_intel/p1_runs/P2_5_STUDY/RESULTS.md",
+      "registered": "2026-07-06",
+      "whole_study_verdict": "PARTIAL_SHIP (6/8 configs ship-qualifying; C2 sign-unstable; C4 unfavorable)",
+      "deferred_items": "A3: washout_active/above_200 source asymmetry vs dd_pct (massive_stock_day) — low impact (20/20 boolean agreement spot-check), parity fix deferred; A4: rank-neutrality two-build proof artifact deferred (structural verification in REVIEW_F1D_SHADOW.md; first-nightly scheduled check covers production sanity)."
     }
   ]
 }
