@@ -130,7 +130,7 @@ PAPER_ACTIONS = frozenset({"continue", "review", "retire_recommended"})
 
 # RF-6: rf.* trial-family regex — must match and be <40 chars.
 # Production family names read from data/trial_ledger.jsonl at validation time.
-_RF_FAMILY_RE = re.compile(r"^rf\.[a-z_]+\.[a-z0-9_]+$")
+_RF_FAMILY_RE = re.compile(r"^rf\.[a-z_]+\.[a-z0-9_]+\Z")
 
 # ---------------------------------------------------------------------------
 # rf.* family helpers
@@ -236,12 +236,15 @@ def validate_candidate(row: dict) -> list[str]:
     _req(row, "candidate_id", errs, label)
     _req(row, "created_at", errs, label)
     _req(row, "hypothesis", errs, label)
+    _req(row, "mechanism", errs, label)
 
-    source = row.get("source")
+    # source is required (§4 proposed row); must be a known enum value when present.
+    source = _req(row, "source", errs, label)
     if source is not None and source not in SOURCES:
         errs.append(f"{label}: source {source!r} not in {sorted(SOURCES)}")
 
-    ctype = row.get("candidate_type")
+    # candidate_type is required (§4 proposed row); must be a known enum value when present.
+    ctype = _req(row, "candidate_type", errs, label)
     if ctype is not None and ctype not in CANDIDATE_TYPES:
         errs.append(f"{label}: candidate_type {ctype!r} not in {sorted(CANDIDATE_TYPES)}")
 

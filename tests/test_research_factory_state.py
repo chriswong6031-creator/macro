@@ -512,6 +512,182 @@ class TestMandatoryFields:
 
 
 # ---------------------------------------------------------------------------
+# 4b. Monotonic as_of enforcement
+# ---------------------------------------------------------------------------
+
+class TestMonotonicAsOf:
+
+    def test_non_monotonic_as_of_raises(self):
+        """A transition as_of earlier than the last log entry must raise."""
+        candidate = _make_candidate(transition_log=[
+            {"as_of": "2026-07-06T12:00:00Z", "from": "proposed", "to": "registered"},
+        ])
+        row = _make_transition_row(**{
+            "from": "registered",
+            "to": "screened",
+            "actor": "script",
+            "artifact_refs": ["data/oracle/compounds/registry.jsonl"],
+            "as_of": "2026-07-06T10:00:00Z",  # earlier than last log
+        })
+        with pytest.raises(IllegalTransition, match="non-monotonic as_of"):
+            transition("registered", "screened", "script", row,
+                       candidate=candidate)
+
+    def test_same_as_of_passes(self):
+        """Same as_of as last log entry is allowed (>=)."""
+        candidate = _make_candidate(trial_accounting={"mode": "read_only", "family": None},
+                                    transition_log=[
+                                        {"as_of": "2026-07-06T12:00:00Z"},
+                                    ])
+        row = _make_transition_row(**{
+            "from": "registered",
+            "to": "screened",
+            "actor": "script",
+            "artifact_refs": ["data/oracle/compounds/registry.jsonl"],
+            "as_of": "2026-07-06T12:00:00Z",  # same — allowed
+        })
+        transition("registered", "screened", "script", row, candidate=candidate)
+
+    def test_later_as_of_passes(self):
+        """A later as_of is always allowed."""
+        candidate = _make_candidate(trial_accounting={"mode": "read_only", "family": None},
+                                    transition_log=[
+                                        {"as_of": "2026-07-06T00:00:00Z"},
+                                    ])
+        row = _make_transition_row(**{
+            "from": "registered",
+            "to": "screened",
+            "actor": "script",
+            "artifact_refs": ["data/oracle/compounds/registry.jsonl"],
+            "as_of": "2026-07-07T00:00:00Z",  # later — allowed
+        })
+        transition("registered", "screened", "script", row, candidate=candidate)
+
+    def test_empty_transition_log_skips_check(self):
+        """Empty transition_log means no monotonic constraint."""
+        candidate = _make_candidate(trial_accounting={"mode": "read_only", "family": None},
+                                    transition_log=[])
+        row = _make_transition_row(**{
+            "from": "registered",
+            "to": "screened",
+            "actor": "script",
+            "artifact_refs": ["x"],
+            "as_of": "2020-01-01T00:00:00Z",  # very old — no prior log to compare
+        })
+        transition("registered", "screened", "script", row, candidate=candidate)
+
+
+# ---------------------------------------------------------------------------
+# 4c. Respin human-gate (RF-5/RF-15)
+# ---------------------------------------------------------------------------
+
+class TestRespinHumanGate:
+
+    def test_script_actor_respin_registration_raises(self):
+        """A script actor may not register a respin candidate (lineage.respin_of set)."""
+        candidate = _make_candidate(
+            lineage={"respin_of": "rf-test-parent-001", "superseded_by": None,
+                     "refinement_generation": 1},
+        )
+        row = _make_transition_row(**{
+            "from": "proposed",
+            "to": "registered",
+            "actor": "script",
+        })
+        with pytest.raises(IllegalTransition, match="respin"):
+            transition("proposed", "registered", "script", row, candidate=candidate)
+
+    @pytest.mark.parametrize("script_actor", ["codex", "sonnet"])
+    def test_codex_sonnet_respin_registration_raises(self, script_actor):
+        """codex/sonnet are also script-class and must not register respins."""
+        candidate = _make_candidate(
+            lineage={"respin_of": "rf-test-parent-001", "superseded_by": None,
+                     "refinement_generation": 1},
+        )
+        row = _make_transition_row(**{
+            "from": "proposed",
+            "to": "registered",
+            "actor": script_actor,
+        })
+        with pytest.raises(IllegalTransition, match="respin"):
+            transition("proposed", "registered", script_actor, row, candidate=candidate)
+
+    def test_human_actor_respin_registration_with_actor_ref_passes(self):
+        """fable actor with actor_ref may register a respin candidate."""
+        candidate = _make_candidate(
+            lineage={"respin_of": "rf-test-parent-001", "superseded_by": None,
+                     "refinement_generation": 1},
+        )
+        row = _make_transition_row(**{
+            "from": "proposed",
+            "to": "registered",
+            "actor": "fable",
+            "actor_ref": "session/PR-9999",
+        })
+        # Should not raise
+        transition("proposed", "registered", "fable", row, candidate=candidate)
+
+    def test_operator_actor_respin_registration_with_actor_ref_passes(self):
+        """operator actor with actor_ref may register a respin candidate."""
+        candidate = _make_candidate(
+            lineage={"respin_of": "rf-test-parent-001", "superseded_by": None,
+                     "refinement_generation": 1},
+        )
+        row = _make_transition_row(**{
+            "from": "proposed",
+            "to": "registered",
+            "actor": "operator",
+            "actor_ref": "PR-8888",
+        })
+        transition("proposed", "registered", "operator", row, candidate=candidate)
+
+    def test_script_non_respin_registration_passes(self):
+        """A script actor may register a non-respin candidate (respin_of=None)."""
+        candidate = _make_candidate(
+            lineage={"respin_of": None, "superseded_by": None, "refinement_generation": 0},
+        )
+        row = _make_transition_row(**{
+            "from": "proposed",
+            "to": "registered",
+            "actor": "script",
+        })
+        # Should not raise
+        transition("proposed", "registered", "script", row, candidate=candidate)
+
+    def test_deferred_to_human_review_script_allowed(self):
+        """deferred→human_review is clock resurfacing — script is allowed."""
+        row = _make_transition_row(**{
+            "from": "deferred",
+            "to": "human_review",
+            "actor": "script",
+            "review_packet_ref": "data/research_factory/review/test.json",
+        })
+        # Should not raise — clock resurfacing is mechanical A2 attention-routing
+        transition("deferred", "human_review", "script", row)
+
+    def test_awaiting_data_to_registered_script_allowed(self):
+        """awaiting_data→registered is clock resurfacing — script is allowed."""
+        row = _make_transition_row(**{
+            "from": "awaiting_data",
+            "to": "registered",
+            "actor": "script",
+        })
+        # Should not raise — clock resurfacing is mechanical
+        transition("awaiting_data", "registered", "script", row)
+
+    def test_awaiting_data_to_screened_script_allowed(self):
+        """awaiting_data→screened is clock resurfacing — script is allowed."""
+        candidate = _make_candidate(trial_accounting={"mode": "read_only", "family": None})
+        row = _make_transition_row(**{
+            "from": "awaiting_data",
+            "to": "screened",
+            "actor": "script",
+            "artifact_refs": ["data/oracle/compounds/registry.jsonl"],
+        })
+        transition("awaiting_data", "screened", "script", row, candidate=candidate)
+
+
+# ---------------------------------------------------------------------------
 # 6. Smoke: all allowed transitions in the matrix pass validation (no false positives)
 # ---------------------------------------------------------------------------
 

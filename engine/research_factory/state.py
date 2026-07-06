@@ -1,14 +1,12 @@
 """engine.research_factory.state — §4 state machine.
 
 Enforces: allowed-pair matrix, actor-class allowlist, mandatory-field
-presence, and the screened-without-trial-accounting refusal gate.
+presence, monotonic as_of, and the respin human-gate.
 
 All logic is pure (no I/O except the one optional ledger existence check for
 the 'screened' gate).  Callers do the I/O; this module just validates.
 
-Note: this module does NOT enforce append-only or monotonic as_of ordering
-on the transitions ledger — those properties are upheld by the caller
-(engine.research_factory.ledger) and the nightly-writer law (RF-8).
+Note: the on-disk append-only discipline lives in ledger.py (RF-8).
 
 State machine source: research/RESEARCH_FACTORY_MASTERPLAN_BY_FABLE.md §4.
 Actor law source: §3 RF-5.
@@ -202,14 +200,16 @@ def transition(
     to_state        : Requested next state.
     actor           : Who is performing the transition.
     transition_row  : The full transition dict (for mandatory-field checks).
-    candidate       : Optional current candidate dict (for screened gate, RF-6).
+    candidate       : Optional current candidate dict (for screened gate, RF-6,
+                      respin gate, and monotonic as_of check).
     ledger_path     : Optional override for trial_ledger.jsonl path.
 
     Raises
     ------
     IllegalTransition
         On any violation: disallowed pair, actor-class violation, missing
-        mandatory fields, or screened-without-accounting.
+        mandatory fields, screened-without-accounting, non-monotonic as_of,
+        or respin registration by a script actor.
     """
     # 1. Both states must be known.
     if from_state not in ALLOWED_TRANSITIONS:
@@ -269,5 +269,35 @@ def transition(
         err = _check_screened_gate(candidate, ledger_path)
         if err:
             raise IllegalTransition(err)
+
+    # 8. Monotonic as_of: the new transition's as_of must be >= the last logged as_of.
+    # Only checked when a candidate with a non-empty transition_log is provided.
+    if candidate is not None:
+        transition_log = candidate.get("transition_log") or []
+        if transition_log:
+            last_as_of = transition_log[-1].get("as_of", "")
+            new_as_of = transition_row.get("as_of", "")
+            if last_as_of and new_as_of and new_as_of < last_as_of:
+                raise IllegalTransition(
+                    f"non-monotonic as_of: transition as_of={new_as_of!r} is earlier "
+                    f"than last logged as_of={last_as_of!r} — transitions must be "
+                    f"appended in chronological order"
+                )
+
+    # 9. Respin human-gate (RF-5/RF-10/RF-15): registration of a respin candidate
+    # (lineage.respin_of non-null, proposed→registered) requires a human actor.
+    # Clock resurfacing (deferred→human_review, awaiting_data→registered|screened)
+    # is mechanical A2 attention-routing and is NOT gated here.
+    if to_state == "registered" and from_state == "proposed":
+        lineage = (candidate or {}).get("lineage") or {}
+        respin_of = lineage.get("respin_of")
+        if respin_of:
+            if actor in SCRIPT_ACTORS:
+                raise IllegalTransition(
+                    f"actor={actor!r} (script class) is not permitted to register a "
+                    f"respin candidate (lineage.respin_of={respin_of!r}) — respin "
+                    f"registration re-spends trials and requires a human actor "
+                    f"(fable/operator) with actor_ref (RF-5)"
+                )
 
     # Passed all checks.

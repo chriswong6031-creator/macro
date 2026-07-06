@@ -16,17 +16,19 @@ Exit codes
 
 Allowlist
 ---------
-``data/research_factory/authority_allowlist.json`` (shipped empty).  Each
-entry has the form::
+``data/research_factory/authority_allowlist.json`` (shipped pre-seeded with
+the factory's own non-Article-2 self-reference modules).  Each entry has the
+form::
 
   {"module": "engine/foo.py", "reason": "..."}
 
 An absent allowlist file is treated as empty (no failure — no exit-1).
-A module listed in the allowlist has any Article-2 HARD finding downgraded to
-WARN so the read remains visible in CI output.  The allowlist is NOT a silent
-bypass: the finding is always printed as a WARN, ensuring allowlisted
-money-path reads stay visible and the allowlist cannot silently suppress a
-violation.
+A module listed in the allowlist is ONLY silenced at WARN level — the finding
+is still printed.  The allowlist CANNOT exempt Article-2 modules: any module
+in ``_ARTICLE2_MODULES`` that reads factory data yields a HARD finding
+regardless of allowlist membership.  This ensures that money-path Article-2
+violations always fail CI, while the allowlist can only silence noise from
+non-Article-2 self-reference modules.
 
 Pattern
 -------
@@ -159,6 +161,7 @@ def scan(root: Path,
 
     for rel_path, source_text in file_iter:
         mod = rel_path.replace("\\", "/")
+        is_article2 = mod in _ARTICLE2_MODULES
         is_allowlisted = mod in allowlist
 
         for pat in _PATTERNS:
@@ -168,14 +171,15 @@ def scan(root: Path,
             lines = source_text.splitlines()
             for i, line in enumerate(lines, start=1):
                 if pat in line:
-                    if is_allowlisted:
-                        # Allowlisted modules are downgraded to WARN regardless
-                        # of Article-2 status, so the bypass remains visible in
-                        # CI output and the allowlist cannot silently suppress
-                        # an Article-2 money-path read (RF-11 guard contract).
+                    # Article-2 modules are ALWAYS HARD, even if allowlisted.
+                    # The allowlist may only silence WARN-level noise from
+                    # non-Article-2 modules (RF-11 guard contract).
+                    if is_article2:
+                        severity = "HARD"
+                    elif is_allowlisted:
                         severity = "WARN"
                     else:
-                        severity = "HARD" if mod in _ARTICLE2_MODULES else "WARN"
+                        severity = "WARN"
                     findings.append({
                         "module": mod,
                         "line_no": i,
@@ -256,6 +260,40 @@ def _run_selftest(root: Path) -> int:
         all_passed = False
     print(f"  selftest [{status}] clean module → no finding")
 
+    # Test 4: an Article-2 module in the allowlist with a factory read → still HARD
+    # The allowlist CANNOT exempt Article-2 modules (RF-11 guard contract).
+    article2_mod_allowlisted = "engine/alert_triage.py"
+    # Build a synthetic root with an allowlist that lists the Article-2 module
+    import tempfile
+    import json as _json_mod
+    with tempfile.TemporaryDirectory() as tmp_root_str:
+        tmp_root = Path(tmp_root_str)
+        allowlist_dir = tmp_root / "data" / "research_factory"
+        allowlist_dir.mkdir(parents=True)
+        (allowlist_dir / "authority_allowlist.json").write_text(
+            _json_mod.dumps({"allow": [
+                {"module": article2_mod_allowlisted, "reason": "selftest — must not exempt"}
+            ]})
+        )
+        synthetic_hard_allowlisted = {
+            article2_mod_allowlisted: (
+                '# synthetic Article-2 module in allowlist — must still be HARD\n'
+                'import json\n'
+                'path = "data/research_factory/candidates.jsonl"\n'
+                'data = json.load(open(path))\n'
+            ),
+        }
+        hard_allowlisted_findings = scan(tmp_root, extra_files=synthetic_hard_allowlisted)
+    hard_allowlisted_match = any(
+        f["module"] == article2_mod_allowlisted
+        and f["severity"] == "HARD"
+        for f in hard_allowlisted_findings
+    )
+    status = "PASS" if hard_allowlisted_match else "FAIL"
+    if not hard_allowlisted_match:
+        all_passed = False
+    print(f"  selftest [{status}] Article-2 module in allowlist → still HARD (allowlist cannot exempt)")
+
     print()
     if all_passed:
         print("selftest PASSED — all synthetic cases handled correctly")
@@ -294,8 +332,8 @@ def main() -> int:
             if f.get("allowlisted"):
                 print(
                     f"  [WARN/allowlisted] {f['module']}:{f['line_no']} — "
-                    f"reads factory data ({f['pattern']!r}); Article-2 HARD downgraded "
-                    f"to WARN because module is in authority_allowlist.json"
+                    f"reads factory data ({f['pattern']!r}); non-Article-2 module is "
+                    f"in authority_allowlist.json (finding remains visible per RF-11)"
                 )
             else:
                 print(

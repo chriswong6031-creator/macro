@@ -287,6 +287,74 @@ class TestSchemaRoundTrips:
 
 
 # ---------------------------------------------------------------------------
+# 3b. rf.* family regex rejects trailing newline (Fix 5 — \Z anchor)
+# ---------------------------------------------------------------------------
+
+class TestRfFamilyRegexTrailingNewline:
+
+    def test_trailing_newline_rejected(self):
+        """'rf.foo.bar\\n' must be rejected — \\Z anchor does not allow trailing newline."""
+        assert not is_valid_rf_family_name("rf.foo.bar\n"), (
+            "Family name with trailing newline must be invalid"
+        )
+
+    def test_valid_name_without_newline_passes(self):
+        assert is_valid_rf_family_name("rf.foo.bar")
+
+
+# ---------------------------------------------------------------------------
+# 3c. Required fields: source, candidate_type, mechanism (Fix 4)
+# ---------------------------------------------------------------------------
+
+class TestCandidateRequiredFields:
+
+    def test_missing_source_rejected(self):
+        row = _base_candidate()
+        del row["source"]
+        errs = validate_candidate(row)
+        assert any("source" in e for e in errs), (
+            f"Expected source required error; got: {errs}"
+        )
+
+    def test_missing_candidate_type_rejected(self):
+        row = _base_candidate()
+        del row["candidate_type"]
+        errs = validate_candidate(row)
+        assert any("candidate_type" in e for e in errs), (
+            f"Expected candidate_type required error; got: {errs}"
+        )
+
+    def test_missing_mechanism_rejected(self):
+        row = _base_candidate()
+        del row["mechanism"]
+        errs = validate_candidate(row)
+        assert any("mechanism" in e for e in errs), (
+            f"Expected mechanism required error; got: {errs}"
+        )
+
+    def test_null_source_rejected(self):
+        row = _base_candidate(source=None)
+        errs = validate_candidate(row)
+        assert any("source" in e for e in errs), (
+            f"Expected source required error for None value; got: {errs}"
+        )
+
+    def test_null_candidate_type_rejected(self):
+        row = _base_candidate(candidate_type=None)
+        errs = validate_candidate(row)
+        assert any("candidate_type" in e for e in errs), (
+            f"Expected candidate_type required error for None value; got: {errs}"
+        )
+
+    def test_null_mechanism_rejected(self):
+        row = _base_candidate(mechanism=None)
+        errs = validate_candidate(row)
+        assert any("mechanism" in e for e in errs), (
+            f"Expected mechanism required error for None value; got: {errs}"
+        )
+
+
+# ---------------------------------------------------------------------------
 # 4. Invalid candidate_type rejected
 # ---------------------------------------------------------------------------
 
@@ -499,20 +567,20 @@ class TestAuthorityGuardPlantedViolation:
             "Expected HARD finding for import of engine.research_factory in Article-2 module"
         )
 
-    def test_allowlisted_module_emits_warn_not_hard(self, tmp_path):
-        """A module in the allowlist has its Article-2 HARD downgraded to WARN.
+    def test_allowlisted_article2_module_still_emits_hard(self, tmp_path):
+        """An Article-2 module in the allowlist must still produce a HARD finding.
 
-        The guard must NOT silently skip allowlisted modules: a WARN finding
-        must still be emitted so the allowlisted read remains visible in CI
-        output (RF-11 guard contract).
+        The allowlist CANNOT exempt Article-2 modules (RF-11 guard contract).
+        Only non-Article-2 self-reference modules can be silenced to WARN via
+        the allowlist.
         """
         from scripts.check_research_factory_authority import scan
 
-        # Write an allowlist that exempts engine/alert_triage.py
+        # Write an allowlist that tries to exempt engine/alert_triage.py (Article-2)
         allowlist_path = tmp_path / "data" / "research_factory" / "authority_allowlist.json"
         allowlist_path.parent.mkdir(parents=True, exist_ok=True)
         allowlist_path.write_text(
-            json.dumps({"allow": [{"module": "engine/alert_triage.py", "reason": "test"}]})
+            json.dumps({"allow": [{"module": "engine/alert_triage.py", "reason": "test — must not exempt"}]})
         )
 
         synthetic = {
@@ -523,16 +591,44 @@ class TestAuthorityGuardPlantedViolation:
             ),
         }
         findings = scan(tmp_path, extra_files=synthetic)
-        # Must emit a finding (visible in CI), but severity must be WARN not HARD
+        # Must still emit a HARD finding — allowlist cannot exempt Article-2 modules
+        hard = [f for f in findings if f["severity"] == "HARD"]
+        assert hard, (
+            "Expected HARD finding for allowlisted Article-2 module; "
+            f"allowlist must not exempt Article-2 money-path reads; got: {findings}"
+        )
+        assert any(f["module"] == "engine/alert_triage.py" for f in hard)
+
+    def test_allowlisted_non_article2_module_emits_warn(self, tmp_path):
+        """A non-Article-2 module in the allowlist is silenced to WARN (not suppressed).
+
+        The finding must still be printed so allowlisted reads remain visible in CI.
+        """
+        from scripts.check_research_factory_authority import scan
+
+        # Write an allowlist that exempts a non-Article-2 module
+        allowlist_path = tmp_path / "data" / "research_factory" / "authority_allowlist.json"
+        allowlist_path.parent.mkdir(parents=True, exist_ok=True)
+        allowlist_path.write_text(
+            json.dumps({"allow": [{"module": "engine/display_module.py", "reason": "test display"}]})
+        )
+
+        synthetic = {
+            "engine/display_module.py": (
+                "import json\n"
+                'path = "data/research_factory/candidates.jsonl"\n'
+                "data = json.load(open(path))\n"
+            ),
+        }
+        findings = scan(tmp_path, extra_files=synthetic)
+        # Must emit a WARN finding (visible in CI), not silently suppressed, not HARD
         assert findings, (
-            "Expected a WARN finding for allowlisted module; "
+            "Expected a WARN finding for allowlisted non-Article-2 module; "
             "allowlist must not silently suppress the read"
         )
         hard = [f for f in findings if f["severity"] == "HARD"]
         warn = [f for f in findings if f["severity"] == "WARN"]
-        assert not hard, (
-            f"Allowlisted Article-2 module must not produce HARD finding; got: {hard}"
-        )
+        assert not hard, f"Non-Article-2 allowlisted module must not produce HARD; got: {hard}"
         assert warn, f"Expected WARN finding for allowlisted module; got: {findings}"
         assert all(f.get("allowlisted") for f in warn), (
             "WARN findings for allowlisted module must carry allowlisted=True"
