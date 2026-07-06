@@ -240,8 +240,14 @@ def compute_health(
 
     state_dwells: dict[str, list[float]] = defaultdict(list)
     for cid, ts_list in by_candidate.items():
-        # Sort by as_of
-        ts_sorted = sorted(ts_list, key=lambda x: x.get("as_of", ""))
+        # Sort by parsed UTC datetime to correctly handle mixed timezone offsets.
+        # Lexical sort of ISO-8601 strings with differing offsets is not
+        # chronological (e.g. '…T10:00:00-05:00' [15:00Z] sorts before
+        # '…T12:00:00+00:00' [12:00Z] lexically but is chronologically later).
+        ts_sorted = sorted(
+            ts_list,
+            key=lambda x: _parse_iso(x.get("as_of")) or datetime.min.replace(tzinfo=timezone.utc),
+        )
         for i in range(len(ts_sorted) - 1):
             curr = ts_sorted[i]
             nxt = ts_sorted[i + 1]

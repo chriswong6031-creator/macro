@@ -1230,6 +1230,130 @@ def test_dedup_oracle_collision_reingest_no_duplicate_rows(tmp_path):
 
 
 # ---------------------------------------------------------------------------
+# 28b. Re-ingest idempotency when candidate_id is date-stamped (not pinned)
+# ---------------------------------------------------------------------------
+
+
+def test_oracle_reingest_idempotent_with_date_stamped_id(tmp_path, monkeypatch):
+    """The same Oracle compound re-ingested on two different calendar dates must
+    not accumulate duplicate rows in candidates.jsonl even though
+    _make_candidate_id() embeds datetime.now() and produces a NEW candidate_id
+    on each run.
+
+    Root cause: when candidate_id changes between runs the factory_ledger step-0
+    guard (keyed on candidate_id) misses, and the oracle_canonical_rules step-1
+    guard fires instead.  Before the fix, step-1 would still write a fresh
+    'deduped' row because its disk-write condition was ``registry !=
+    'factory_ledger'``.  After the fix no deduped row is ever written for an
+    external-registry collision, keeping candidates.jsonl at exactly one row.
+    """
+    import scripts.research_factory_ingest as _ingest_mod
+
+    rf_dir = tmp_path / "rf"
+
+    entry_rule = {"col": "date_stamped_oracle_col", "op": "gt", "value": 0}
+
+    # Oracle registry already contains this entry_rule.
+    oracle_path = tmp_path / "oracle_registry.jsonl"
+    oracle_path.write_text(
+        json.dumps({"id": "C-DATESTAMP", "entry_rule": entry_rule, "status": "screened"}) + "\n",
+        encoding="utf-8",
+    )
+
+    def _make_proposal_with_id(candidate_id_suffix: str) -> dict:
+        """Build a candidate with a specific date-stamped candidate_id,
+        simulating what _make_candidate_id produces on different calendar days.
+        The id is NOT pinned via the external caller — it is injected via
+        monkeypatching _make_candidate_id so _build_candidate mints it."""
+        _original = _ingest_mod._make_candidate_id
+
+        def _patched(source_tag: str, slug: str) -> str:
+            return f"rf-{candidate_id_suffix}-{source_tag}-datestamptest"
+
+        monkeypatch.setattr(_ingest_mod, "_make_candidate_id", _patched)
+        cand = _build_candidate(
+            source="oracle_brainstorm",
+            candidate_type="oracle_compound",
+            domain="oracle",
+            hypothesis="date-stamped oracle reingest idempotency test hypothesis",
+            mechanism="date-stamped oracle reingest idempotency mechanism",
+            spec_ref="C-DATESTAMP",
+            entry_rule=entry_rule,
+        )
+        monkeypatch.setattr(_ingest_mod, "_make_candidate_id", _original)
+        cand["artifacts"]["entry_rule"] = entry_rule
+        return cand
+
+    # Run 1: day 1 — no oracle registry, so it registers normally.
+    cand_day1 = _make_proposal_with_id("20260705")
+    assert "20260705" in cand_day1["candidate_id"], "day-1 id must embed the date"
+
+    result1 = run_ingest(
+        [cand_day1],
+        oracle_registry_path=tmp_path / "no_oracle.jsonl",
+        species_registry_path=tmp_path / "no_species.json",
+        machine_registry_path=tmp_path / "no_machine.jsonl",
+        trial_ledger_path=tmp_path / "no_ledger.jsonl",
+        rf_dir=rf_dir,
+        dry_run=False,
+    )
+    assert len(result1.registered) == 1, "day-1 ingest must register the candidate"
+
+    # Collect existing ids from disk (as the CLI does between runs)
+    existing_ids: set[str] = set()
+    for ec in rf_ledger.load_jsonl(rf_dir / "candidates.jsonl"):
+        eid = ec.get("candidate_id")
+        if eid:
+            existing_ids.add(eid)
+    assert any("20260705" in cid for cid in existing_ids)
+
+    # Run 2: day 2 — a new date-stamped id ("20260706-…") but same entry_rule.
+    # oracle_canonical_rules step-1 should fire and dedup it without writing.
+    cand_day2 = _make_proposal_with_id("20260706")
+    assert "20260706" in cand_day2["candidate_id"], "day-2 id must embed the new date"
+    assert cand_day2["candidate_id"] not in existing_ids, (
+        "day-2 candidate_id must differ from day-1 (date-stamped ids change daily)"
+    )
+
+    result2 = run_ingest(
+        [cand_day2],
+        oracle_registry_path=oracle_path,
+        species_registry_path=tmp_path / "no_species.json",
+        machine_registry_path=tmp_path / "no_machine.jsonl",
+        trial_ledger_path=tmp_path / "no_ledger.jsonl",
+        existing_candidate_ids=existing_ids,
+        rf_dir=rf_dir,
+        dry_run=False,
+    )
+    assert len(result2.registered) == 0, "day-2 re-ingest must not register a duplicate"
+    assert len(result2.dropped) == 1, "day-2 re-ingest must drop the candidate as deduped"
+    _, rc2, _ = result2.dropped[0]
+    assert rc2 == "deduped", f"expected 'deduped', got {rc2!r}"
+
+    # Key invariant: exactly one candidate row on disk after two runs.
+    cands_on_disk = rf_ledger.load_jsonl(rf_dir / "candidates.jsonl")
+    assert len(cands_on_disk) == 1, (
+        f"expected exactly 1 candidate on disk after re-ingest across two dates, "
+        f"got {len(cands_on_disk)}"
+    )
+    reg_trans_on_disk = [
+        t for t in rf_ledger.load_jsonl(rf_dir / "transitions.jsonl")
+        if t.get("to") == "registered"
+    ]
+    assert len(reg_trans_on_disk) == 1, (
+        f"expected exactly 1 registered transition, got {len(reg_trans_on_disk)}"
+    )
+    deduped_trans_on_disk = [
+        t for t in rf_ledger.load_jsonl(rf_dir / "transitions.jsonl")
+        if t.get("to") == "deduped"
+    ]
+    assert len(deduped_trans_on_disk) == 0, (
+        f"no deduped transition rows should be written to disk for external-registry "
+        f"collisions, got {len(deduped_trans_on_disk)}"
+    )
+
+
+# ---------------------------------------------------------------------------
 # 29. Divergence: ADVISORY_REVIEW + human reject does NOT count as divergence
 # ---------------------------------------------------------------------------
 

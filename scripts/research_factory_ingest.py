@@ -1094,12 +1094,34 @@ def run_ingest(
                 matched_registry=dup.registry,
                 matched_entity_id=dup.matched_id,
             )
+            # Validate the deduped transition through the state machine for
+            # symmetry with the registered path; deduped has no mandatory fields
+            # and no human-gate, so this is a no-op enforcement check today but
+            # ensures future mandatory-field or actor rules on 'deduped' are
+            # enforced rather than silently bypassed.
+            try:
+                state_transition(
+                    from_state="proposed",
+                    to_state="deduped",
+                    actor=actor,
+                    transition_row=trans,
+                    candidate=cand_deduped,
+                    ledger_path=trial_led_path,
+                )
+            except IllegalTransition as exc:
+                result.add_dropped(cand, "transition_rejected", str(exc))
+                print(f"  [DROP transition_rejected(deduped)] {cid}: {exc}", file=sys.stderr)
+                continue
             result.add_dropped(cand, "deduped", reason_text)
-            # Do NOT write to disk for factory_ledger dedups: the candidate row
-            # already exists in candidates.jsonl (idempotent re-ingest guard).
-            # Writing again would create a second row for the same candidate_id.
-            if not dry_run and dup.registry != "factory_ledger":
-                _write_candidate_and_transition(cand_deduped, trans, out_dir)
+            # Never write deduped rows to disk: the source-of-truth already
+            # lives in the external registry (oracle, species, machine, trial)
+            # or in the factory ledger itself. Writing would cause unbounded
+            # row growth on every re-ingest because date-stamped candidate_ids
+            # (from _make_candidate_id) change daily while the entry_rule stays
+            # constant — so the factory_ledger step-0 guard misses, step-1
+            # oracle_canonical fires, and without this guard a fresh row would
+            # be appended for every run. This applies to ALL registry types,
+            # including oracle_compounds_registry (the primary Oracle source).
             continue
 
         # --- Structural near-dup flag (RF-14/RF-7) ---
