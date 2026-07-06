@@ -13,6 +13,7 @@ No production data required.
 """
 from __future__ import annotations
 
+import logging
 import sys
 from pathlib import Path
 
@@ -664,3 +665,81 @@ class TestConstantsSanity:
     def test_fwd_mdd_21_in_outcome_cols(self):
         """fwd_mdd_21 (mae21) must be in OUTCOME_COLS — it is the RUL-13 co-primary."""
         assert "fwd_mdd_21" in OUTCOME_COLS, "fwd_mdd_21 must be in OUTCOME_COLS (RUL-13 mandate)"
+
+
+# ---------------------------------------------------------------------------
+# TestDegenerateCrossSection
+# ---------------------------------------------------------------------------
+
+class TestDegenerateCrossSection:
+    """Degenerate cross-sections (all-identical proxy values → p33 >= p67) must log
+    a warning and leave bands as NaN — never raise a NameError or crash.
+
+    This regression test covers the branch fixed by the fire_date rename in
+    run_w2_slq.py lines 519-524 (degenerate guard) and 544-552 (>50% capture guard).
+    The NameError was latent because normal cross-sections never hit p33 >= p67.
+    """
+
+    def _build_identical_proxy_store(
+        self,
+        n_bars: int = 300,
+        n_tickers: int = 4,
+    ) -> tuple[dict[str, pd.DataFrame], pd.Timestamp]:
+        """Build a store where ALL tickers have IDENTICAL volume → identical Amihud ILLIQ.
+
+        Identical proxy values force p33 == p67 (degenerate cross-section).
+        """
+        idx = _bdate(n_bars)
+        fire_date = idx[-1]
+        close = 50.0 + np.arange(n_bars) * 0.01
+        # All tickers share the exact same close and volume → same Amihud series
+        store = {}
+        for i in range(n_tickers):
+            label = f"TK{i}"
+            store[label] = pd.DataFrame(
+                {
+                    "close": close,
+                    "high": close * 1.01,
+                    "low": close * 0.99,
+                    "volume": np.full(n_bars, 1_000_000.0),  # identical
+                },
+                index=idx,
+            )
+        return store, fire_date
+
+    def test_degenerate_cross_section_does_not_raise(self):
+        """All-identical proxy values → p33 >= p67; should log a warning, not raise."""
+        import logging
+
+        store, fire_date = self._build_identical_proxy_store(n_tickers=4)
+        tickers = list(store.keys())
+        fires = _build_fires_at_date(tickers, fire_date)
+
+        # Must not raise any exception (NameError was the latent bug pre-fix)
+        try:
+            result = assign_lq_bands(fires, store, PROXY_AMIHUD)
+        except Exception as exc:  # noqa: BLE001
+            raise AssertionError(
+                f"assign_lq_bands raised {type(exc).__name__} on degenerate cross-section: {exc}"
+            ) from exc
+
+        # All bands must be NaN — degenerate cross-section is left unassigned
+        assert result["lq_band"].isna().all(), (
+            "Degenerate cross-section (p33 >= p67) should leave all bands as NaN, "
+            f"got: {result['lq_band'].tolist()}"
+        )
+
+    def test_degenerate_cross_section_emits_warning(self, caplog):
+        """assign_lq_bands must emit a WARNING log for the degenerate date."""
+        store, fire_date = self._build_identical_proxy_store(n_tickers=4)
+        tickers = list(store.keys())
+        fires = _build_fires_at_date(tickers, fire_date)
+
+        with caplog.at_level(logging.WARNING, logger="run_w2_slq"):
+            assign_lq_bands(fires, store, PROXY_AMIHUD)
+
+        warning_msgs = [r.message for r in caplog.records if r.levelno >= logging.WARNING]
+        assert any("degenerate" in m.lower() for m in warning_msgs), (
+            f"Expected a 'degenerate' warning log for all-identical proxy cross-section; "
+            f"got: {warning_msgs}"
+        )
