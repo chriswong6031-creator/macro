@@ -74,11 +74,11 @@ _GROSS_FLOOR = 0.50
 # engine.risk_state._STATE_ORDER — the vocabulary we unify ON.
 STATE_ORDER = ["risk-on", "neutral", "caution", "elevated", "risk-off"]
 STATE_LABEL = {
-    "risk-on":  ("Risk-on (regime supportive)", "偏risk-on（体制支持）"),
+    "risk-on":  ("Risk-on (regime supportive)", "偏风险偏好（体制支持）"),
     "neutral":  ("Neutral", "中性"),
     "caution":  ("Caution", "留意"),
     "elevated": ("Elevated risk", "风险偏高"),
-    "risk-off": ("Risk-off", "risk-off"),
+    "risk-off": ("Risk-off", "避险"),
 }
 
 # Quad -> base risk state prior. Q1/Q2 (growth accelerating) are supportive; Q3

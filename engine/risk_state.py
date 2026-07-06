@@ -90,11 +90,11 @@ _DEFAULT_CONJUNCTION = {"threshold": 0.6, "floor_2": "caution", "floor_3": "elev
 
 _STATE_ORDER = ["risk-on", "neutral", "caution", "elevated", "risk-off"]
 _LABEL = {
-    "risk-on": ("Risk-on (calm)", "偏risk-on（平静）"),
+    "risk-on": ("Risk-on (calm)", "偏风险偏好（平静）"),
     "neutral": ("Neutral", "中性"),
     "caution": ("Caution", "留意"),
     "elevated": ("Elevated drawdown risk", "回撤风险偏高"),
-    "risk-off": ("Risk-off (high drawdown risk)", "risk-off（回撤风险高）"),
+    "risk-off": ("Risk-off (high drawdown risk)", "避险（回撤风险高）"),
 }
 
 
