@@ -1,99 +1,20 @@
 {
   "schema": "ai_desk.v1",
   "is_context_only": true,
-  "generated_at": "2026-07-05T08:09:18.881650+00:00",
+  "generated_at": "2026-07-06T08:34:12.540980+00:00",
   "state_asof": "2026-07-02",
   "model": "deepseek-v4-pro",
-  "regime_context": "Flow detectors are display-only with no forward edge; VIX is low (16.1, 28.7th pctile). The dominant cluster links Industrials, Consumer Discretionary, Real Estate, and Financials, with Industrials anchoring the co-movement. Flow lens shows emerging concentration in Real Estate and cooling in Information Technology, while Health Care exhibits extreme relative strength driven by outliers with no cohesive backing. Regime snap is dormant with no relief signal.",
-  "theses": [
-    {
-      "id": "2026-07-02-1",
-      "subject": "Industrials",
-      "lean": "overweight",
-      "conviction": "low",
-      "horizon_d": 20,
-      "thesis": "Industrials leads the dominant cyclical cluster (top pair Industrials-Consumer Discretionary corr 0.81) with broad, low-concentration leadership (HHI 0.008, n=254) and a confirmed stage. The structural co-movement suggests relative resilience if the cluster persists, even in a display-only flow regime.",
-      "evidence": [
-        "Structural analyst: Industrials is the anchor of the dominant cluster with broad, non-concentrated leadership.",
-        "Detector flow.cluster: dominant_cluster includes Industrials, Real Estate, Financials, Consumer Discretionary; top_pair (Industrials, Consumer Discretionary) corr 0.81.",
-        "Flow sector Industrials: stage confirmed, rs_pctile 0.865, leadership HHI 0.008, breadth broad."
-      ],
-      "dissent": "Skeptic: The flow lens is display-only with no forward edge, and the low-VIX regime makes any signal unreliable. Cluster membership is a correlation observation, not a predictive edge; a macro shock can decouple the sectors instantly.",
-      "falsifier": {
-        "text": "The Industrials-Consumer Discretionary pairwise correlation breaks below 0.5, or Industrials relative strength percentile drops below 0.5 while the cluster members diverge.",
-        "check": {
-          "kind": "rel_return",
-          "subject_ticker": "XLI",
-          "vs": "SPY",
-          "op": "<",
-          "threshold": -0.05,
-          "horizon_d": 20
-        }
-      },
-      "check_by": "2026-07-30"
-    },
-    {
-      "id": "2026-07-02-2",
-      "subject": "Real Estate",
-      "lean": "overweight",
-      "conviction": "low",
-      "horizon_d": 20,
-      "thesis": "Real Estate is emerging with a cohering gate (true) and rising cohesion, and it belongs to the dominant cyclical cluster. Even in a display-only flow environment, the structural cluster membership supports a relative overweight if the rotation continues.",
-      "evidence": [
-        "Opportunity analyst: emerging flow with true cohering gate, rising cohesion, cluster membership.",
-        "Structural analyst: weak overweight, part of dominant cluster.",
-        "Flow sector Real Estate: stage emerging, cohesion 0.394, cohesion_chg +0.055, cohesion_gate cohering true, rs_pctile 0.766."
-      ],
-      "dissent": "Skeptic: The flow lens has no forward edge; the cohering gate is low-tier and does not predict returns. The cluster membership is descriptive, and a calm VIX environment diminishes any marginal stress-era signal that might exist.",
-      "falsifier": {
-        "text": "Real Estate's cohesion turns negative, or it decouples from the dominant cluster (pairwise correlations with Industrials drop below 0.5), or its relative strength percentile falls below 0.5.",
-        "check": {
-          "kind": "rel_return",
-          "subject_ticker": "XLRE",
-          "vs": "SPY",
-          "op": "<",
-          "threshold": -0.05,
-          "horizon_d": 20
-        }
-      },
-      "check_by": "2026-07-30"
-    },
-    {
-      "id": "2026-07-02-3",
-      "subject": "Health Care",
-      "lean": "underweight",
-      "conviction": "low",
-      "horizon_d": 20,
-      "thesis": "Health Care's extreme relative strength (rs_pctile 0.996) is driven by single-stock outliers (MRNA +62.6%) with minimal cohesion (0.173) and no broad theme. The lack of breadth suggests the move is fragile and prone to mean reversion, absent a genuine sector-wide catalyst.",
-      "evidence": [
-        "Skeptic: RS 99.6% from single-stock outliers, cohesion extremely low, mean reversion likely.",
-        "Flow sector Health Care: rs_pctile 0.996, cohesion 0.173, leadership includes MRNA with 0.626 ret_20d, cohesion_gate cohering false.",
-        "Base-rate: high rs_pctile is coincident; flow_score has no directional edge, reinforcing the view of no durable trend."
-      ],
-      "dissent": "A VIX spike could change the flow lens from noise to predictive, nullifying the fade-the-strength call. Moreover, the thesis relies on mean reversion which may not occur if the outlier stocks continue to benefit from fundamental shifts and draw in broader participation.",
-      "falsifier": {
-        "text": "Health Care's cohesion rises above 0.4 and the number of advancing members broadens, or MRNA continues to lead and the sector RS percentile reaches new highs, suggesting a genuine fundamental repricing.",
-        "check": {
-          "kind": "rel_return",
-          "subject_ticker": "XLV",
-          "vs": "SPY",
-          "op": ">",
-          "threshold": 0.05,
-          "horizon_d": 20
-        }
-      },
-      "check_by": "2026-07-30"
-    }
-  ],
+  "regime_context": "Flow detectors are display-only with no validated forward edge; the dominant absorption cluster shows co-movement among Industrials, Financials, Real Estate, and Consumer Discretionary, with Industrials holding the best relative strength and a confirmed stage. The VIX regime is dormant, no relief snap is active, and fear is not rebuilding.",
+  "theses": [],
   "source_verdicts": {
     "flow": "display_only",
     "regime_snap": "coincident"
   },
   "track_record": {
     "schema": "ai_desk_track_record.v1",
-    "as_of": "2026-07-05",
+    "as_of": "2026-07-06",
     "scored_total": 2,
-    "open": 23,
+    "open": 24,
     "unscored_soft": 0,
     "expired": 0,
     "overall": {
@@ -179,105 +100,129 @@
     "tooltip_en": "Earned from a matured forward track record (spine-graded)."
   },
   "confidence": "low",
-  "raw_text": "{\n  \"regime_context\": \"Flow detectors are display-only with no forward edge; VIX is low (16.1, 28.7th pctile). The dominant cluster links Industrials, Consumer Discretionary, Real Estate, and Financials, with Industrials anchoring the co-movement. Flow lens shows emerging concentration in Real Estate and cooling in Information Technology, while Health Care exhibits extreme relative strength driven by outliers with no cohesive backing. Regime snap is dormant with no relief signal.\",\n  \"theses\": [\n    {\n      \"subject\": \"Industrials\",\n      \"lean\": \"overweight\",\n      \"conviction\": \"low\",\n      \"horizon_d\": 20,\n      \"thesis\": \"Industrials leads the dominant cyclical cluster (top pair Industrials-Consumer Discretionary corr 0.81) with broad, low-concentration leadership (HHI 0.008, n=254) and a confirmed stage. The structural co-movement suggests relative resilience if the cluster persists, even in a display-only flow regime.\",\n      \"evidence\": [\n        \"Structural analyst: Industrials is the anchor of the dominant cluster with broad, non-concentrated leadership.\",\n        \"Detector flow.cluster: dominant_cluster includes Industrials, Real Estate, Financials, Consumer Discretionary; top_pair (Industrials, Consumer Discretionary) corr 0.81.\",\n        \"Flow sector Industrials: stage confirmed, rs_pctile 0.865, leadership HHI 0.008, breadth broad.\"\n      ],\n      \"dissent\": \"Skeptic: The flow lens is display-only with no forward edge, and the low-VIX regime makes any signal unreliable. Cluster membership is a correlation observation, not a predictive edge; a macro shock can decouple the sectors instantly.\",\n      \"falsifier_text\": \"The Industrials-Consumer Discretionary pairwise correlation breaks below 0.5, or Industrials relative strength percentile drops below 0.5 while the cluster members diverge.\"\n    },\n    {\n      \"subject\": \"Real Estate\",\n      \"lean\": \"overweight\",\n      \"conviction\": \"low\",\n      \"horizon_d\": 20,\n      \"thesis\": \"Real Estate is emerging with a cohering gate (true) and rising cohesion, and it belongs to the dominant cyclical cluster. Even in a display-only flow environment, the structural cluster membership supports a relative overweight if the rotation continues.\",\n      \"evidence\": [\n        \"Opportunity analyst: emerging flow with true cohering gate, rising cohesion, cluster membership.\",\n        \"Structural analyst: weak overweight, part of dominant cluster.\",\n        \"Flow sector Real Estate: stage emerging, cohesion 0.394, cohesion_chg +0.055, cohesion_gate cohering true, rs_pctile 0.766.\"\n      ],\n      \"dissent\": \"Skeptic: The flow lens has no forward edge; the cohering gate is low-tier and does not predict returns. The cluster membership is descriptive, and a calm VIX environment diminishes any marginal stress-era signal that might exist.\",\n      \"falsifier_text\": \"Real Estate's cohesion turns negative, or it decouples from the dominant cluster (pairwise correlations with Industrials drop below 0.5), or its relative strength percentile falls below 0.5.\"\n    },\n    {\n      \"subject\": \"Health Care\",\n      \"lean\": \"underweight\",\n      \"conviction\": \"low\",\n      \"horizon_d\": 20,\n      \"thesis\": \"Health Care's extreme relative strength (rs_pctile 0.996) is driven by single-stock outliers (MRNA +62.6%) with minimal cohesion (0.173) and no broad theme. The lack of breadth suggests the move is fragile and prone to mean reversion, absent a genuine sector-wide catalyst.\",\n      \"evidence\": [\n        \"Skeptic: RS 99.6% from single-stock outliers, cohesion extremely low, mean reversion likely.\",\n        \"Flow sector Health Care: rs_pctile 0.996, cohesion 0.173, leadership includes MRNA with 0.626 ret_20d, cohesion_gate cohering false.\",\n        \"Base-rate: high rs_pctile is coincident; flow_score has no directional edge, reinforcing the view of no durable trend.\"\n      ],\n      \"dissent\": \"A VIX spike could change the flow lens from noise to predictive, nullifying the fade-the-strength call. Moreover, the thesis relies on mean reversion which may not occur if the outlier stocks continue to benefit from fundamental shifts and draw in broader participation.\",\n      \"falsifier_text\": \"Health Care's cohesion rises above 0.4 and the number of advancing members broadens, or MRNA continues to lead and the sector RS percentile reaches new highs, suggesting a genuine fundamental repricing.\"\n    }\n  ],\n  \"confidence\": \"low\"\n}",
+  "raw_text": "{\n  \"regime_context\": \"Flow detectors are display-only with no validated forward edge; the dominant absorption cluster shows co-movement among Industrials, Financials, Real Estate, and Consumer Discretionary, with Industrials holding the best relative strength and a confirmed stage. The VIX regime is dormant, no relief snap is active, and fear is not rebuilding.\",\n  \"theses\": [],\n  \"confidence\": \"low\"\n}",
   "degraded_reason": null,
   "disclaimer": "AI desk note \u2014 context only, never scored or sized. The detectors it reads are DISPLAY-ONLY (flow has no validated forward edge; the relief snap is coincident). Each lean is a fallible, FALSIFIABLE judgement with a check-by date, not a trade recommendation or a position size.",
   "panel": {
     "opportunity": {
-      "stance": "Flow concentrates in Real Estate and Consumer Staples with cohering price action, while Information Technology cools, but the lens has no forward edge and the low-VIX regime weakens any signal.",
+      "stance": "Flow concentrates in Financials and Real Estate within a cyclically-oriented dominant cluster, while Tech cools and no relief snap is active. The lens suggests overweighting those cyclicals on the view that the recent concentration persists despite no validated forward edge.",
       "candidates": [
+        {
+          "subject": "Financials",
+          "lean": "overweight",
+          "rationale": "Financials show the strongest flow concentration (flow_score 1.74, emerging stage, broad leadership) and sit inside the dominant absorption cluster with Real Estate and Industrials.",
+          "strength": "weak"
+        },
         {
           "subject": "Real Estate",
           "lean": "overweight",
-          "rationale": "Emerging flow with true cohering gate, rising cohesion, and cluster membership suggests broadening participation, but the lens is display-only with no forward edge.",
-          "strength": "weak"
-        },
-        {
-          "subject": "Consumer Staples",
-          "lean": "overweight",
-          "rationale": "Concentrating flow with cohering price action and low relative strength, indicating the move is not extended, though low read quality and calm VIX limit conviction.",
+          "rationale": "Real Estate flow concentration is high (flow_score 1.41, cohering true) and it belongs to the same cluster, supporting coordinated reallocation into cyclicals.",
           "strength": "weak"
         },
         {
           "subject": "Information Technology",
           "lean": "underweight",
-          "rationale": "Cooling flow with negative score, high RS pctile, and fragmented cohesion suggests distribution; however, the signal is not validated for forward returns.",
+          "rationale": "Tech is in cooling stage with negative flow_score and decelerating breadth, suggesting outflow concentration even as absolute RS remains elevated.",
           "strength": "weak"
         }
       ],
-      "key_risk": "The flow lens has no proven forward edge (rank-IC ~0) and its marginal stress-conditional signal is absent in the current low-VIX (16.1, 28.7th pctile) environment."
+      "key_risk": "The flow lens has no empirically validated forward edge; any macro shock or VIX spike could abruptly reverse the concentration patterns and break this read."
     },
     "skeptic": {
-      "stance": "The flow lens has no forward edge in this calm VIX regime; high relative-strength sectors like Health Care are driven by idiosyncratic outliers and lack cohesion, making them coincident traps rather than opportunities.",
+      "stance": "Flow concentration in emerging sectors lacks forward edge; extreme RS percentiles and single-name outliers make the apparent strength a mean-reversion trap.",
       "candidates": [
         {
           "subject": "Health Care",
           "lean": "underweight",
-          "rationale": "RS percentile of 99.6% is largely from single-stock outliers (MRNA +62.6%); cohesion of 0.173 is extremely low, indicating no broad theme, so the move is likely mean-reverting.",
-          "strength": "moderate"
+          "rationale": "RS percentile 0.996, extreme; leadership driven by ALHC +67% and MRNA +63%, likely to mean-revert.",
+          "strength": "weak"
         },
         {
           "subject": "Financials",
-          "lean": "avoid",
-          "rationale": "Emerging strength is concentrated in micro-cap fintech (SEZL, DAVE) with no cohesive sector-wide follow-through; narrow leadership makes a durable trend unlikely.",
-          "strength": "moderate"
+          "lean": "underweight",
+          "rationale": "Flow score 1.735 but driven by single-name outliers SEZL +62%, DAVE +55%; not a broad theme, coincident noise.",
+          "strength": "weak"
         },
         {
-          "subject": "Information Technology",
+          "subject": "Consumer Discretionary",
           "lean": "underweight",
-          "rationale": "Cooling stage with negative flow_score and low cohesion; high RS is already priced-in and the internal dispersion suggests fading momentum.",
+          "rationale": "Leadership from NWL +68.5%, CBRL +61.5% with low cohesion; narrow, likely survivorship artifact.",
           "strength": "weak"
         }
       ],
-      "key_risk": "A sudden spike in VIX into stress territory (e.g., above 25) would switch the flow lens from noise to potentially predictive, invalidating the fade-the-strength call."
+      "key_risk": "A macro catalyst that sustains or accelerates these sector trends would break the mean-reversion thesis."
     },
     "base_rate": {
-      "stance": "Flow lens is display-only with rank-IC ~0 and no directional signal; regime snap is dormant with no relief event. No actionable edge exists from these detectors.",
+      "stance": "Flow lens is display-only with no validated forward edge (rank-IC ~0); the regime snap is dormant with no fear signal. Unconditionally, sector relative returns are noise, so the base-rate read is no tilt.",
       "candidates": [
         {
-          "subject": "Health Care",
+          "subject": "Financials",
           "lean": "none",
-          "rationale": "High rs_pctile (0.996) is coincident and flow_score has no forward edge; base rate is random.",
+          "rationale": "Flow is concentrating here per the descriptive lens, but no predictive edge exists; base-rate expectation is zero outperformance.",
           "strength": "weak"
         },
         {
-          "subject": "Information Technology",
+          "subject": "Health Care",
           "lean": "none",
-          "rationale": "Cooling stage with rs_pctile 0.917, but flow_score IC ~0 and guardrails forbid directional calls.",
+          "rationale": "High RS percentile and confirmed stage are descriptive only without forward validity; base rates imply no reliable tilt.",
+          "strength": "weak"
+        },
+        {
+          "subject": "Industrials",
+          "lean": "none",
+          "rationale": "Part of the dominant cluster but the lens lacks directional edge; unconditional expectation is flat relative return.",
           "strength": "weak"
         },
         {
           "subject": "Consumer Discretionary",
           "lean": "none",
-          "rationale": "Low rs_pctile (0.302) and mixed cluster; display-only lens gives no predictive signal.",
+          "rationale": "Co-movement with Industrials is a correlation observation, not a forecast; base rates give no reason to overweight.",
+          "strength": "weak"
+        },
+        {
+          "subject": "Real Estate",
+          "lean": "none",
+          "rationale": "Emerging stage and cohesion gate true are descriptive; no forward edge means no actionable tilt.",
           "strength": "weak"
         },
         {
           "subject": "VIX",
           "lean": "none",
-          "rationale": "Fear built at 0.504 with dormant snap and no relief magnitude; no fade-fear edge without a validated snap signal.",
+          "rationale": "Regime snap dormant, no relief signal; fear built at 0.504 but not triggered. Base rates do not support a fade-fear call here.",
           "strength": "weak"
         }
       ],
-      "key_risk": "A regime shift that retrospectively validates flow_score as predictive, or an unanticipated volatility event creating a snap signal missed by the coincident regime snap."
+      "key_risk": "The flow lens could exhibit stress-conditional edge (IC ~0.236 in high-VIX) not captured in the unconditional base-rate; a sudden VIX spike would invalidate the current no-signal read and could make concentration patterns temporarily informative."
     },
     "structural": {
-      "stance": "The cross-group cluster map reveals a genuine cyclical co-movement bloc led by Industrials, with broad, low-concentration leadership across Consumer Discretionary, Real Estate, and Financials\u2014no narrow, single-name mirage detected. Industrials anchors this theme with the highest pairwise correlation to Consumer Discretionary (0.81) and maintained strong relative strength.",
+      "stance": "The cyclical cluster (Industrials, Financials, Real Estate, Consumer Discretionary) is co-moving with broad, low-HHI leadership across all four\u2014confirming genuine theme spread, not a single-name mirage. Industrials anchors this cluster with the highest relative strength (rs_pctile=0.865) and a 'confirmed' stage, making it the most durable leader on this structural read.",
       "candidates": [
         {
           "subject": "Industrials",
           "lean": "overweight",
-          "rationale": "Leader of the dominant cyclical cluster; broad leadership (HHI 0.008, n=254) and confirmed stage confirm genuine, non-concentrated co-movement with Consumer Discretionary.",
+          "rationale": "Highest RS in the cyclical cluster, confirmed stage, broad 254-member low-HHI (0.008) leadership\u2014genuine anchor of the cross-group co-movement.",
           "strength": "moderate"
+        },
+        {
+          "subject": "Financials",
+          "lean": "overweight",
+          "rationale": "Part of the dominant cluster with extremely broad, low-HHI (0.006) leadership and above-median RS, though stage is only emerging and cohesion is low.",
+          "strength": "weak"
         },
         {
           "subject": "Real Estate",
           "lean": "overweight",
-          "rationale": "Part of the dominant cluster and cohering internally, but secondary to Industrials in driving the cross-group correlation.",
+          "rationale": "Cohering (true) within the cluster with healthy RS and broad leadership; cohesion tier is low, but the genuine group spread supports participation.",
+          "strength": "weak"
+        },
+        {
+          "subject": "Consumer Discretionary",
+          "lean": "avoid",
+          "rationale": "Despite being in the top pair (corr 0.82 with Industrials), its RS is weak (0.302) and it acts as a lagging leg; negative momentum trap risk.",
           "strength": "weak"
         }
       ],
-      "key_risk": "A sharp relative strength reversal in Industrials that decouples the cluster, or a macro shock that breaks the cyclical co-movement among these four sectors."
+      "key_risk": "If macro rates or recession fears break the common factor driving the cluster's elevated cross-correlation, all four sectors could unwind simultaneously despite the broad leadership."
     }
   }
 }

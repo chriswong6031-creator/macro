@@ -4543,6 +4543,7 @@ artifacts:
     weights: none
     scored_path_surfaces: []
     consumers:
+      - engine/neuralweb/world_state.py
       - scripts/build_site.py
       - admin/neural_web.py
     notes: >

@@ -1,0 +1,320 @@
+{
+  "schema": "oracle_reversion_state.v1",
+  "asof": "2026-07-06",
+  "n_signals": 11,
+  "signals": [
+    {
+      "id": "A15_WASHOUT_OPP_OUT_2NODE",
+      "name": "Washout during two-node opposite-complex outflow",
+      "mechanism": "washout_w>0 while >=2 opposite-complex nodes have recent onset outflow, pairing local capitulation with broader displacement away from another complex.",
+      "cluster": null,
+      "universe_tier": "s",
+      "operating_regime": "dual",
+      "authority_level": "display",
+      "article2_surface": "display",
+      "fired_today": [],
+      "backtest": {
+        "asym": 1.835,
+        "wr": 0.737,
+        "ret_exit": 0.0305,
+        "n": 2357,
+        "mfe": 0.0715,
+        "mae": -0.039
+      },
+      "live": {
+        "n_matured": 0,
+        "hits": 0,
+        "wr": null,
+        "wilson_lower": null,
+        "base_rate": null,
+        "lift_lb": null
+      },
+      "ledger_n_total": 0
+    },
+    {
+      "id": "B4_WASHOUT_DOLLAR_RELIEF",
+      "name": "Washout with dollar relief",
+      "mechanism": "Weekly washout (washout_w>0) coincides with the dollar's 10-day change turning down (dollar_chg_10d crosses below 0) while relative strength is not yet broken (rs>-0.04): buys a pressure-release reversion in globally-sensitive sectors as the dollar headwind relents.",
+      "cluster": null,
+      "universe_tier": "s",
+      "operating_regime": "dual",
+      "authority_level": "display",
+      "article2_surface": "display",
+      "fired_today": [],
+      "backtest": {
+        "asym": 1.549,
+        "wr": 0.683,
+        "ret_exit": 0.0207,
+        "n": 641,
+        "mfe": 0.0547,
+        "mae": -0.0353
+      },
+      "live": {
+        "n_matured": 0,
+        "hits": 0,
+        "wr": null,
+        "wilson_lower": null,
+        "base_rate": null,
+        "lift_lb": null
+      },
+      "ledger_n_total": 0
+    },
+    {
+      "id": "B4_EP_SAME_OUT_CREDIT_EASE",
+      "name": "Same-complex outflow after credit stress eases",
+      "mechanism": "A same-complex onset outflow (forced selling) coincides with high-yield credit spreads ceasing to widen (hy_oas_chg_10d crosses below 0) while StochRSI K is still sub-60: buys the reversion once macro credit pressure stops accelerating.",
+      "cluster": null,
+      "universe_tier": "s",
+      "operating_regime": "dual",
+      "authority_level": "display",
+      "article2_surface": "display",
+      "fired_today": [],
+      "backtest": {
+        "asym": 1.561,
+        "wr": 0.724,
+        "ret_exit": 0.0212,
+        "n": 392,
+        "mfe": 0.0512,
+        "mae": -0.0328
+      },
+      "live": {
+        "n_matured": 0,
+        "hits": 0,
+        "wr": null,
+        "wilson_lower": null,
+        "base_rate": null,
+        "lift_lb": null
+      },
+      "ledger_n_total": 0
+    },
+    {
+      "id": "R16_VBOT_ACCELZ_NEG2_K_LOW",
+      "name": "V-bottom: acceleration repair from extreme with oscillator oversold",
+      "mechanism": "Trend acceleration repairs from a statistical extreme (accel_z crosses above -2) while StochRSI K remains oversold (<30): the second derivative heals before price momentum turns, catching a V-bottom without relying on washout or outflow (a mechanism distinct from the washout family).",
+      "cluster": null,
+      "universe_tier": "s",
+      "operating_regime": "dual",
+      "authority_level": "display",
+      "article2_surface": "display",
+      "fired_today": [],
+      "backtest": {
+        "asym": 1.579,
+        "wr": 0.683,
+        "ret_exit": 0.027,
+        "n": 442,
+        "mfe": 0.0742,
+        "mae": -0.047
+      },
+      "live": {
+        "n_matured": 0,
+        "hits": 0,
+        "wr": null,
+        "wilson_lower": null,
+        "base_rate": null,
+        "lift_lb": null
+      },
+      "ledger_n_total": 0
+    },
+    {
+      "id": "E_DOLLAR_EASE_TLT_POS_K25",
+      "name": "Dual cross-asset relief with oscillator oversold",
+      "mechanism": "Dual cross-asset relief while the sector oscillator is still oversold: the dollar's 10-day change turns down (dollar_chg_10d crosses below 0) AND long bonds rally (tlt_ret_10d>0, i.e. rates falling) with StochRSI K<25. Both macro headwinds relent at once as the sector sits at an oscillator extreme. NOTE: ~67% entry-overlap with B4_WASHOUT_DOLLAR_RELIEF (shared dollar-relief root) \u2014 a correlated member of the dollar-relief cluster, additive via the ~33% non-washout entries, not an independent signal.",
+      "cluster": "dollar-relief",
+      "universe_tier": "s",
+      "operating_regime": "dual",
+      "authority_level": "display",
+      "article2_surface": "display",
+      "fired_today": [],
+      "backtest": {
+        "asym": 1.838,
+        "wr": 0.692,
+        "ret_exit": 0.0231,
+        "n": 416,
+        "mfe": 0.055,
+        "mae": -0.0299
+      },
+      "live": {
+        "n_matured": 0,
+        "hits": 0,
+        "wr": null,
+        "wilson_lower": null,
+        "base_rate": null,
+        "lift_lb": null
+      },
+      "ledger_n_total": 0
+    },
+    {
+      "id": "R3_B2_ACCELZ_NEG15_K20",
+      "name": "V-bottom: accel repair from moderate extreme, deep oversold",
+      "mechanism": "V-bottom sibling of R16: trend acceleration repairs from a moderate extreme (accel_z crosses above -1.5) while StochRSI K is DEEPLY oversold (<20, vs R16's <30). The deeper oscillator gate offsets the looser accel threshold, selecting the highest-conviction oversold entries in the V-bottom family. ~42% entry-overlap with R16, ~46% novel entries: an additive sibling, not a subset.",
+      "cluster": "v-bottom-accel",
+      "universe_tier": "s",
+      "operating_regime": "dual",
+      "authority_level": "display",
+      "article2_surface": "display",
+      "fired_today": [],
+      "backtest": {
+        "asym": 1.688,
+        "wr": 0.71,
+        "ret_exit": 0.0279,
+        "n": 565,
+        "mfe": 0.0699,
+        "mae": -0.0414
+      },
+      "live": {
+        "n_matured": 0,
+        "hits": 0,
+        "wr": null,
+        "wilson_lower": null,
+        "base_rate": null,
+        "lift_lb": null
+      },
+      "ledger_n_total": 0
+    },
+    {
+      "id": "R4_E10_OIL_EASE_K30_VIX40",
+      "name": "Oil-cost relief with oscillator oversold in stress",
+      "mechanism": "Oil-cost relief in a stressed, oversold sector: oil's 10-day return crosses from positive to negative (cost pressure reversing, relieving for cost-sensitive industrials/transports/consumers) while StochRSI K<30 (oversold) and VIX at/above the 40th pctile (stress context). The mild VIX>=0.40 gate is the design win \u2014 it lifts asym over the 1.5 floor while keeping n large. First oil-channel signal in the base; ~79% novel entries (max 14.1% overlap with A15) \u2014 a genuinely orthogonal 5th mechanism. Boundary asym (1.52) with the safety edge risk-off-concentrated (asym 1.55 off vs 1.34 on): the weakest-safety member, watch under costs.",
+      "cluster": "oil-relief",
+      "universe_tier": "s",
+      "operating_regime": "dual",
+      "authority_level": "display",
+      "article2_surface": "display",
+      "fired_today": [],
+      "backtest": {
+        "asym": 1.516,
+        "wr": 0.685,
+        "ret_exit": 0.027,
+        "n": 765,
+        "mfe": 0.0591,
+        "mae": -0.039
+      },
+      "live": {
+        "n_matured": 0,
+        "hits": 0,
+        "wr": null,
+        "wilson_lower": null,
+        "base_rate": null,
+        "lift_lb": null
+      },
+      "ledger_n_total": 0
+    },
+    {
+      "id": "M1_OIL_DOWN_K30_RS_NEG",
+      "name": "tier-M oil-relief rotation into oversold RS-laggards",
+      "mechanism": "Tier-M (354 subsector/theme nodes) oil-relief rotation: a subsector with sustained oil-cost relief (oil_ret_10d<0), oversold oscillator (stochrsi_w_k<30), AND still lagging the market on relative strength (rs<-0.04) \u2014 the RS-lag selects catch-up laggards that underperformed during the oil-high regime and are bottoming as oil eases. Genuinely rotational: median 2 nodes/date across 143 distinct holdout dates (not cross-sectional replication). Oil leg is load-bearing (baseline without oil fails the WR gate). Same oil-relief mechanism as tier-S R4_E10 at finer resolution. Caveat: tier-M 2021-2026 era + survivorship inflate magnitudes; haircut before live weight.",
+      "cluster": "tier-m-oil (siblings M1_OIL_DOWN_WASHOUT n=38k, M1_OIL_CROSS_K25 \u2014 validated+attributed, not separately published; 62-72% overlap)",
+      "universe_tier": "m",
+      "operating_regime": "dual",
+      "authority_level": "display",
+      "article2_surface": "display",
+      "fired_today": [],
+      "backtest": {
+        "asym": 3.397,
+        "wr": 0.69,
+        "ret_exit": 0.1224,
+        "n": 674,
+        "mfe": 0.217,
+        "mae": -0.0639
+      },
+      "live": {
+        "n_matured": 0,
+        "hits": 0,
+        "wr": null,
+        "wilson_lower": null,
+        "base_rate": null,
+        "lift_lb": null
+      },
+      "ledger_n_total": 0
+    },
+    {
+      "id": "SRM_BEARTAPE_ACCEL_K20",
+      "name": "single-regime: bear-tape V-bottom rotation (tier-M)",
+      "mechanism": "SINGLE-REGIME (Amendment 1) tier-M defensive rotation: in a BEAR TAPE (spy_above_200d==0), buy a subsector whose acceleration is repairing from a moderate extreme (accel_z crossed_above -1.5) while deeply oversold (stochrsi_w_k<20). Validates the operator's core thesis \u2014 rotating into oversold accel-repair names DURING a downtape is drawdown-safe (asym 1.86) and high-WR (.80 OOS). ATTRIBUTION: the bear-tape gate is load-bearing \u2014 plain V-bottom (both regimes) FAILS the WR gate at 0.617; confining to the bear tape lifts WR to 0.679, asym 1.75->1.86 (the deepest downtape washouts carry the most reversion). Evaluated on the single-regime path: Leg 4' (risk-off only, n=1403) + REGIME-MATCHED placebo (beats random within-bear-tape timing, 5.57%>3.18%). CAVEAT: OOS rests on 23 distinct risk-off dates (~11 nodes/date) in the 2021-2026 survivorship-y era; haircut before live weight.",
+      "cluster": null,
+      "universe_tier": "m",
+      "operating_regime": "risk_off",
+      "authority_level": "display",
+      "article2_surface": "display",
+      "fired_today": [],
+      "backtest": {
+        "asym": 1.864,
+        "wr": 0.679,
+        "ret_exit": 0.0557,
+        "n": 1403,
+        "mfe": 0.1288,
+        "mae": -0.0691
+      },
+      "live": {
+        "n_matured": 0,
+        "hits": 0,
+        "wr": null,
+        "wilson_lower": null,
+        "base_rate": null,
+        "lift_lb": null
+      },
+      "ledger_n_total": 0
+    },
+    {
+      "id": "RSLAG_OVERSOLD_K20",
+      "name": "oversold relative-laggard reversion (tier-M, dual-regime)",
+      "mechanism": "tier-M dual-regime oversold relative-laggard reversion: buy a subsector that is BOTH a relative underperformer (rs<-0.04, lagging the cross-section) AND deeply oversold (stochrsi_w_k<20). Works equally in risk-on and risk-off (WR .625 vs .626) \u2014 a genuine DUAL-regime mechanism (the bear-tape confinement tested in SR-M1 was decorative; the pure laggard passes the standard gate). Genuinely rotational: median 2 nodes/date across 210 distinct holdout dates. Forms an rs-laggard cluster with M1_OIL_DOWN_K30_RS_NEG (48% overlap; this is the purer, oil-free, deeper-oversold member). CAVEAT: tier-M 2021-2026 era + survivorship inflate magnitudes (asym 2.74, ret +9.79%); OOS 2024+ holds and placebo clears wide; haircut before live weight.",
+      "cluster": "rs-laggard {this, M1_OIL_DOWN_K30_RS_NEG} \u2014 48% entry-overlap (shared rs<-0.04 core); ~1.5 independent bets. This is the purer, oil-free, deeper-oversold member.",
+      "universe_tier": "m",
+      "operating_regime": "dual",
+      "authority_level": "display",
+      "article2_surface": "display",
+      "fired_today": [],
+      "backtest": {
+        "asym": 2.742,
+        "wr": 0.625,
+        "ret_exit": 0.0979,
+        "n": 1004,
+        "mfe": 0.2064,
+        "mae": -0.0753
+      },
+      "live": {
+        "n_matured": 0,
+        "hits": 0,
+        "wr": null,
+        "wilson_lower": null,
+        "base_rate": null,
+        "lift_lb": null
+      },
+      "ledger_n_total": 0
+    },
+    {
+      "id": "SEQ_TLT_RELIEF_WASHOUT",
+      "name": "Rate relief then sector washout",
+      "mechanism": "Rates rally first (tlt_ret_10d crosses above 0), THEN a sector weekly washout appears within 10 sessions: buys rate-sensitive capitulations after the rate headwind has already relented. Sequence-native (grammar v1.2.0) \u2014 the causal ordering is the mechanism; the simultaneous-AND form is a different, weaker signal.",
+      "cluster": null,
+      "universe_tier": "s",
+      "operating_regime": "dual",
+      "authority_level": "display",
+      "article2_surface": "display",
+      "fired_today": [],
+      "backtest": {
+        "asym": 1.747,
+        "wr": 0.672,
+        "ret_exit": 0.0237,
+        "n": 745,
+        "mfe": 0.0569,
+        "mae": -0.0326
+      },
+      "live": {
+        "n_matured": 0,
+        "hits": 0,
+        "wr": null,
+        "wilson_lower": null,
+        "base_rate": null,
+        "lift_lb": null
+      },
+      "ledger_n_total": 0
+    }
+  ],
+  "schema_version": 1,
+  "produced_by": "scripts/oracle_reversion_state.py",
+  "produced_at": "2026-07-06T08:39:29Z",
+  "inputs_hash": "sha256:4d6f323ec9590de606898a5e336f743c180638784e03b082fbcce62f7d5bdbf4",
+  "tier": "display"
+}

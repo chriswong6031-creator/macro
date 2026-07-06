@@ -104,7 +104,7 @@ function renderBanner() {
   // In deployed mode, flag edits commit straight to main via GitHub — no local banner.
   if (m.deployed || !g.config_dirty) { b.className = "banner"; b.innerHTML = ""; return; }
   b.className = "banner show";
-  b.innerHTML = `<span>⚠︎ <b>config.yml changed</b> in the working tree — not live until committed to <code>main</code> and rebuilt.</span>`;
+  b.innerHTML = `<span>⚠︎ <b>You have unsaved feature changes</b> — they won't affect the live site until you commit and rebuild.</span>`;
   const sp = h(`<span class="spacer"></span>`); b.appendChild(sp);
   const commit = h(`<button class="btn">Commit locally</button>`); commit.onclick = () => doCommit(false); b.appendChild(commit);
   if (g.can_push_live) { const cp = h(`<button class="btn primary">Commit &amp; push to main</button>`); cp.onclick = () => doCommit(true); b.appendChild(cp); }
@@ -143,10 +143,10 @@ RENDER.overview = async () => {
     <div class="grid">
       ${card("Pipeline", `<div class="big" style="color:${hh.healthy ? "var(--ok)" : "var(--warn)"}">${hh.healthy ? "Healthy" : "Attention"}</div>
         <div class="sub">last run ${fmtAge(hh.age_hours)} ago · ${(hh.sources || {}).ok || 0}/${(hh.sources || {}).total || 0} sources</div>`)}
-      ${card("Services", sv.available ? `<div class="big" style="color:${sv.healthy ? "var(--ok)" : "var(--bad)"}">${sv.ok_count}/${sv.total}</div><div class="sub">systemd units up</div>` : `<div class="big">—</div><div class="sub">off-VPS</div>`)}
-      ${card("Server", sys.available ? `<div class="big">${mem.used_pct != null ? mem.used_pct + "%" : "—"}<span class="sub"> mem</span></div><div class="sub">disk ${disk.used_pct != null ? disk.used_pct + "%" : "—"} · load ${sys.cpu && sys.cpu.load1 != null ? sys.cpu.load1.toFixed(2) : "—"}</div>` : `<div class="big">—</div><div class="sub">off-VPS</div>`)}
+      ${card("Services", sv.available ? `<div class="big" style="color:${sv.healthy ? "var(--ok)" : "var(--bad)"}">${sv.ok_count}/${sv.total}</div><div class="sub">background services running</div>` : `<div class="big">—</div><div class="sub">server only</div>`)}
+      ${card("Server", sys.available ? `<div class="big">${mem.used_pct != null ? mem.used_pct + "%" : "—"}<span class="sub"> memory</span></div><div class="sub">disk ${disk.used_pct != null ? disk.used_pct + "%" : "—"} · load ${sys.cpu && sys.cpu.load1 != null ? sys.cpu.load1.toFixed(2) : "—"}</div>` : `<div class="big">—</div><div class="sub">server only</div>`)}
       ${card("Est. AI cost", `<div class="big">${fmtUSD(c.monthly_usd)}<span class="sub"> /mo</span></div><div class="sub">${fmtUSD(c.effective_daily_usd)}/day</div>`)}
-      ${card("Features on", `<div class="big">${flagsOn}</div><div class="sub">managed flags</div>`)}
+      ${card("Features on", `<div class="big">${flagsOn}</div><div class="sub">of your feature switches</div>`)}
       ${card("Analytics", `<div class="big" style="color:var(--ok);font-size:18px">Umami live</div><div class="sub">${m.integrations && m.integrations.umami ? "API connected" : "tag on every page"}</div>`)}
       ${card("Experiments", `<div class="big" style="color:${(s.experiments && s.experiments.ready_count) ? "var(--ok)" : "var(--text)"}">${(s.experiments && s.experiments.ready_count) || 0}<span class="sub"> ready</span></div><div class="sub">${s.experiments && s.experiments.soonest ? "next in " + s.experiments.soonest.days_until + "d" : (s.experiments && s.experiments.n ? s.experiments.n + " tracked" : "—")}</div>`)}
     </div>
@@ -157,9 +157,9 @@ RENDER.overview = async () => {
   rebuild.onclick = () => dispatch("daily.yml"); rebuild.disabled = !m.has_token; qa.appendChild(rebuild);
   const redeploy = h(`<button class="btn" style="margin-left:8px">⟳ Redeploy site only</button>`);
   redeploy.onclick = () => dispatch("pages.yml"); redeploy.disabled = !m.has_token; qa.appendChild(redeploy);
-  const probe = h(`<button class="btn" style="margin-left:8px">◎ Probe all endpoints</button>`);
+  const probe = h(`<button class="btn" style="margin-left:8px">◎ Check all sites are up</button>`);
   probe.onclick = () => go("system"); qa.appendChild(probe);
-  if (!m.has_token) qa.appendChild(h(`<div class="sub" style="margin-top:8px">Set <code>GH_TOKEN</code> (Actions: write) in the service env to enable rebuild/deploy.</div>`));
+  if (!m.has_token) qa.appendChild(h(`<div class="sub" style="margin-top:8px">The rebuild/deploy buttons need a GitHub access token (<code>GH_TOKEN</code>, with Actions-write permission) set on the server.</div>`));
 };
 
 /* ---- EXPERIMENTS & DATA COLLECTION -------------------------------------- */
@@ -183,11 +183,11 @@ RENDER.experiments = async () => {
   }
   const exps = d.experiments || [];
   const ready = exps.filter(e => e.ready);
-  let html = `<div class="sub" style="margin-bottom:10px">Running experiments & long-horizon data collection — each with the exact date to come back for the next step. The macro build re-computes this nightly (<code>engine.experiments_registry</code>).</div>
+  let html = `<div class="sub" style="margin-bottom:10px">Ongoing experiments and long-running data collections. Each one shows the exact date to come back and take the next step. This list is refreshed automatically every night.</div>
     <div class="grid">
-      ${card("Tracked", `<div class="big">${d.n}</div><div class="sub">experiments & accruals</div>`)}
+      ${card("Tracked", `<div class="big">${d.n}</div><div class="sub">experiments running</div>`)}
       ${card("Results ready", `<div class="big" style="color:${d.ready_count ? "var(--ok)" : "var(--text)"}">${d.ready_count}</div><div class="sub">come back for the next step</div>`)}
-      ${card("Registry as of", `<div class="big" style="font-size:18px" class="mono">${esc(d.as_of || "—")}</div><div class="sub">today ${esc(d.today || "")}</div>`)}
+      ${card("Last updated", `<div class="big" style="font-size:18px" class="mono">${esc(d.as_of || "—")}</div><div class="sub">today ${esc(d.today || "")}</div>`)}
     </div>`;
   if (ready.length) {
     html += `<div class="section">🔔 Ready for review <span class="cnt">${ready.length}</span></div>
@@ -200,7 +200,7 @@ RENDER.experiments = async () => {
         ${e.surfaced ? `<div class="note mono muted">↳ ${esc(e.surfaced)}</div>` : ""}</div>`).join("")}</div>`;
   }
   html += `<div class="section">All experiments <span class="cnt">${exps.length}</span></div>
-    <table><thead><tr><th>Experiment</th><th>Kind</th><th>Status</th><th>Cadence</th><th class="r">Come back</th><th>Next step</th><th>Log action</th></tr></thead><tbody>
+    <table><thead><tr><th>Experiment</th><th>Type</th><th>Status</th><th>How often</th><th class="r">Come back</th><th>Next step</th><th>Your action</th></tr></thead><tbody>
     ${exps.map(e => `<tr${e.ready ? ' class="hl"' : ""}>
       <td><b>${esc(e.name)}</b><div class="sub">${esc(e.what || "")}</div><div class="note mono muted">${esc(e.source || "")}</div></td>
       <td class="sub">${esc(e.kind || "")}</td>
@@ -235,7 +235,7 @@ RENDER.experiments = async () => {
    OWNER-ONLY (D2). Both-sides framing, numbers only, NO action affordances (D3). */
 const EVAL_PILL = (s) => {
   const cls = s === "evaluable" ? "s-ok" : s === "in_window" ? "s-warn" : "s-bad";
-  const lbl = s === "evaluable" ? "evaluable" : s === "in_window" ? "evaluable in-window" : "cannot fire (W2)";
+  const lbl = s === "evaluable" ? "can trigger" : s === "in_window" ? "can trigger (in window)" : "can't trigger yet";
   return `<span class="statpill ${cls}">${esc(lbl)}</span>`;
 };
 const LEVEL_PILL = (l) => `<span class="statpill ${l === "ok" ? "s-ok" : l === "watch" ? "s-warn" : "s-bad"}">${esc(l || "?")}</span>`;
@@ -251,8 +251,8 @@ function shadowSvg(series) {
     <polyline points="${line("raw")}" fill="none" stroke="var(--warn)" stroke-width="1.8"/>
     <polyline points="${line("gated")}" fill="none" stroke="var(--ok)" stroke-width="1.8"/>
   </svg>
-  <div class="sub" style="display:flex;gap:14px"><span><i style="display:inline-block;width:10px;height:3px;background:var(--ok);vertical-align:middle"></i> gated (live, 0%)</span>
-  <span><i style="display:inline-block;width:10px;height:3px;background:var(--warn);vertical-align:middle"></i> ungated engine</span></div>`;
+  <div class="sub" style="display:flex;gap:14px"><span><i style="display:inline-block;width:10px;height:3px;background:var(--ok);vertical-align:middle"></i> our actual position</span>
+  <span><i style="display:inline-block;width:10px;height:3px;background:var(--warn);vertical-align:middle"></i> what the model wanted</span></div>`;
 }
 RENDER.vector = async () => {
   const v = $("#view");
@@ -266,66 +266,66 @@ RENDER.vector = async () => {
   // ALERT only — never a sleeve, never sizing. Banner + numbers, no buttons (D3).
   const d5Banner = re && re.pre_window_mvrv_fire ? `
     <div class="card" style="border-color:var(--warn);margin-bottom:10px">
-      <div class="big" style="color:var(--warn)">D5 OWNER ALERT — pre-window MVRV-Z&lt;0 fired ${esc(re.pre_window_mvrv_fire)}</div>
-      <div class="sub">Before the re-entry window opens (${esc(re.window_start || "?")}). Per D5: alert only — no pre-window sleeve, sizing stays 100% cash until the calendar spine. Class-2 remains shadow-graded.</div>
+      <div class="big" style="color:var(--warn)">ALERT — an early "cheap Bitcoin" signal fired ${esc(re.pre_window_mvrv_fire)}</div>
+      <div class="sub">This happened before the planned buy-back window opens (${esc(re.window_start || "?")}). It's a heads-up only — nothing is bought early; the position stays 100% in cash until the scheduled dates. This early signal is still only being tracked, not acted on.</div>
     </div>` : "";
   const reSection = re ? `
-    <div class="section">Staged re-entry (W4, D4) — calendar spine + accelerators</div>
+    <div class="section">Planned buy-back schedule</div>
     <div class="card">
-      <div class="kv"><span>State</span><b><span class="statpill ${re.state === "fully_released" ? "s-ok" : re.state === "window_open_filling" ? "s-warn" : re.state === "armed_pending_window" ? "s-ok" : "s-bad"}">${esc(re.state || "?")}</span></b></div>
-      <div class="kv"><span>Window</span><b>${esc(re.window_start || "—")} → ${esc(re.window_end || "—")}</b></div>
-      <div class="kv"><span>Release fraction</span><b>${re.release_frac == null ? "—" : Math.round(100 * re.release_frac) + "%"}</b></div>
-      ${re.halt_from ? `<div class="kv"><span>OWNER HALT</span><b style="color:var(--bad)">frozen from ${esc(re.halt_from)}</b></div>` : ""}
-      <table style="margin-top:8px"><thead><tr><th>Tranche</th><th>Weight</th><th>Scheduled</th><th>Filled</th><th>Cause</th></tr></thead><tbody>
-        ${(re.schedule || []).map(t => `<tr><td>T${t.tranche}</td><td>${Math.round(100 * t.weight)}%</td><td class="mono">${esc(t.scheduled || "—")}</td>
-          <td>${t.filled ? `<span class="statpill s-ok">${esc(t.fill_date || "filled")}</span>` : `<span class="statpill s-warn">pending</span>`}</td>
+      <div class="kv"><span>Status</span><b><span class="statpill ${re.state === "fully_released" ? "s-ok" : re.state === "window_open_filling" ? "s-warn" : re.state === "armed_pending_window" ? "s-ok" : "s-bad"}">${esc(re.state || "?")}</span></b></div>
+      <div class="kv"><span>Buy-back window</span><b>${esc(re.window_start || "—")} → ${esc(re.window_end || "—")}</b></div>
+      <div class="kv"><span>Amount released so far</span><b>${re.release_frac == null ? "—" : Math.round(100 * re.release_frac) + "%"}</b></div>
+      ${re.halt_from ? `<div class="kv"><span>MANUALLY PAUSED</span><b style="color:var(--bad)">paused since ${esc(re.halt_from)}</b></div>` : ""}
+      <table style="margin-top:8px"><thead><tr><th>Step</th><th>Size</th><th>Planned date</th><th>Done?</th><th>Trigger</th></tr></thead><tbody>
+        ${(re.schedule || []).map(t => `<tr><td>${t.tranche}</td><td>${Math.round(100 * t.weight)}%</td><td class="mono">${esc(t.scheduled || "—")}</td>
+          <td>${t.filled ? `<span class="statpill s-ok">${esc(t.fill_date || "done")}</span>` : `<span class="statpill s-warn">pending</span>`}</td>
           <td class="sub">${esc(t.cause || "")}</td></tr>`).join("")}
       </tbody></table>
-      <div class="sub" style="margin-top:8px">Accelerator ${re.accelerator && re.accelerator.enabled ? "armed" : "off"} · MVRV-Z ${re.accelerator ? re.accelerator.mvrv_z_last ?? "—" : "—"} · bottom-pressure ${re.accelerator ? re.accelerator.bottom_pressure_last ?? "—" : "—"}</div>
-      ${re.dat_advisory ? `<div class="sub">DAT forced-sell distance ${re.dat_advisory.forced_sell_distance_pct ?? "—"}% · advisory only${re.dat_advisory.stale ? ` · <b style="color:var(--warn)">feed stale (${re.dat_advisory.age_days ?? "?"}d)</b>` : ""}</div>` : ""}
+      <div class="sub" style="margin-top:8px">Early buy-back speed-up: ${re.accelerator && re.accelerator.enabled ? "on" : "off"} · valuation score (MVRV-Z) ${re.accelerator ? re.accelerator.mvrv_z_last ?? "—" : "—"} · bottoming pressure ${re.accelerator ? re.accelerator.bottom_pressure_last ?? "—" : "—"}</div>
+      ${re.dat_advisory ? `<div class="sub">Distance to forced selling by Bitcoin-treasury companies: ${re.dat_advisory.forced_sell_distance_pct ?? "—"}% · info only${re.dat_advisory.stale ? ` · <b style="color:var(--warn)">data is stale (${re.dat_advisory.age_days ?? "?"}d old)</b>` : ""}</div>` : ""}
       <div class="note" style="margin-top:6px">${esc(re.owner_note || "")}</div>
-      <div class="note mono muted">as-of ${esc(re.asof || "?")} · halt switch: config vector.allocation.midterm_gate.reentry.halt_from (numbers only here — D3)</div>
+      <div class="note mono muted">as of ${esc(re.asof || "?")} · to pause buy-backs, edit the halt switch in config (this page only shows numbers)</div>
     </div>` : "";
   v.innerHTML = `
-    <div class="sub" style="margin-bottom:10px">Owner view (D2) — subscribers keep the "Proprietary cycle timer" scrub. Everything below is the payload that scrub hides. Both-sides framing, no actions (D3).${d.stub ? ` <span class="statpill s-warn">W3 stub — W1 replaces with measured artifacts</span>` : ""}</div>
+    <div class="sub" style="margin-bottom:10px">Your private view of the Bitcoin allocation override. Subscribers only see a "Proprietary cycle timer" label — this page shows the full honest picture behind it: the numbers both for and against the call. Read-only (no buttons to act on here).${d.stub ? ` <span class="statpill s-warn">placeholder data — will be replaced with measured results</span>` : ""}</div>
     ${d5Banner}
     <div class="grid">
       ${card("Override status", `<div class="big" style="color:${o.active ? "var(--warn)" : "var(--ok)"}">${o.active ? "ACTIVE" : "off"}</div>
-        <div class="sub">${esc(o.id || "?")} · ${o.active ? `releases ${esc(o.release || "?")}` : "not engaged"} · <b>${o.graded ? "graded" : "never graded"}</b></div>
+        <div class="sub">${esc(o.id || "?")} · ${o.active ? `unlocks ${esc(o.release || "?")}` : "not engaged"} · <b>${o.graded ? "scored" : "never scored yet"}</b></div>
         <div class="note">${esc(o.status || "")}</div>`)}
-      ${card("Engine wants vs gate", `<div class="big">${rawOpt == null ? "—" : rawOpt + "%"}<span class="sub"> vs ${gatedOpt == null ? "—" : gatedOpt + "%"}</span></div>
-        <div class="sub">ungated optimal vs live gated · YTD ungated mean ${cf.ytd_raw_mean_pct == null ? "—" : cf.ytd_raw_mean_pct + "%"} · &gt;0 on ${cf.ytd_raw_days_gt0 ?? "—"}/${cf.ytd_days ?? "—"} days</div>
-        <div class="note">${esc(cf.raw_source || "")}${cf.parity_ok === false ? ' · <b style="color:var(--bad)">PARITY BROKEN — recompute drifted from the live engine</b>' : ""}</div>`)}
-      ${card("Falsifier health", `<div class="big" style="color:${fl.evaluable === fl.total ? "var(--ok)" : "var(--warn)"}">${esc(fl.headline || "—")}</div>
-        <div class="sub">${(fl.items || []).filter(i => i.level !== "ok").length ? (fl.items || []).filter(i => i.level !== "ok").length + " flag(s) non-green" : "all shown flags green"} — but green on a falsifier that cannot fire is vacuous</div>`)}
-      ${card("Thesis basis", `<div class="big">n=${pv.basis_n ?? "?"}</div>
-        <div class="sub">dampening ${esc(damp || "—")} · pivot-fit MAE ${pv.pivot_fit_mae_days ?? "—"}d <b>(in-sample)</b></div>`)}
+      ${card("Model vs. what we allow", `<div class="big">${rawOpt == null ? "—" : rawOpt + "%"}<span class="sub"> vs ${gatedOpt == null ? "—" : gatedOpt + "%"}</span></div>
+        <div class="sub">what the model would hold vs what we actually allow · this year the model averaged ${cf.ytd_raw_mean_pct == null ? "—" : cf.ytd_raw_mean_pct + "%"} · it wanted more than 0% on ${cf.ytd_raw_days_gt0 ?? "—"} of ${cf.ytd_days ?? "—"} days</div>
+        <div class="note">${esc(cf.raw_source || "")}${cf.parity_ok === false ? ' · <b style="color:var(--bad)">MISMATCH — this recalculation no longer matches the live model</b>' : ""}</div>`)}
+      ${card("Warning signs", `<div class="big" style="color:${fl.evaluable === fl.total ? "var(--ok)" : "var(--warn)"}">${esc(fl.headline || "—")}</div>
+        <div class="sub">${(fl.items || []).filter(i => i.level !== "ok").length ? (fl.items || []).filter(i => i.level !== "ok").length + " warning(s) active" : "all clear"} — but a warning sign that can't actually trigger tells you nothing</div>`)}
+      ${card("Evidence behind the call", `<div class="big">${pv.basis_n ?? "?"} cases</div>
+        <div class="sub">confidence trimmed by ${esc(damp || "—")} · timing fit ±${pv.pivot_fit_mae_days ?? "—"} days <b>(fitted on past data)</b></div>`)}
     </div>
-    <div class="section">Live shadow — gated vs ungated equity ${sh.since ? `since ${esc(sh.since)}` : ""}</div>
+    <div class="section">Live tracking — what we hold vs what the model wanted ${sh.since ? `since ${esc(sh.since)}` : ""}</div>
     <div class="card">
       ${sh.ok ? `
         ${shadowSvg(sh.series)}
-        <div class="kv"><span>Gated (live) return</span><b>${sh.gated_return_pct}%</b></div>
-        <div class="kv"><span>Ungated engine return</span><b>${sh.raw_return_pct}%</b></div>
-        <div class="kv"><span>Regret (ungated − gated)</span><b style="color:${(sh.regret_pp || 0) > 0 ? "var(--warn)" : "var(--ok)"}">${sh.regret_pp > 0 ? "+" : ""}${sh.regret_pp}pp</b></div>
-        ${(sh.prior_cycles || []).map(p => `<div class="kv"><span>${p.year} at same elapsed / by release</span><b>${p.raw_at_same_elapsed_pct > 0 ? "+" : ""}${p.raw_at_same_elapsed_pct}% / ${p.raw_by_release_pct > 0 ? "+" : ""}${p.raw_by_release_pct}%</b></div>`).join("")}
+        <div class="kv"><span>Our actual return</span><b>${sh.gated_return_pct}%</b></div>
+        <div class="kv"><span>Model's return (if we'd followed it)</span><b>${sh.raw_return_pct}%</b></div>
+        <div class="kv"><span>Cost of the override (what we gave up)</span><b style="color:${(sh.regret_pp || 0) > 0 ? "var(--warn)" : "var(--ok)"}">${sh.regret_pp > 0 ? "+" : ""}${sh.regret_pp}pp</b></div>
+        ${(sh.prior_cycles || []).map(p => `<div class="kv"><span>${p.year} at this point / by unlock date</span><b>${p.raw_at_same_elapsed_pct > 0 ? "+" : ""}${p.raw_at_same_elapsed_pct}% / ${p.raw_by_release_pct > 0 ? "+" : ""}${p.raw_by_release_pct}%</b></div>`).join("")}
         <div class="note" style="margin-top:8px">${esc(sh.framing || "")}</div>
       ` : `<div class="sub">${esc(sh.reason || "no shadow data")}</div>`}
     </div>
     ${reSection}
-    <div class="section">Falsifiers — health × evaluability</div>
-    <table><thead><tr><th>Falsifier</th><th>Level</th><th>Can it fire?</th><th>Reading</th></tr></thead><tbody>
+    <div class="section">Warning signs — status, and whether they can even trigger</div>
+    <table><thead><tr><th>Warning sign</th><th>Status</th><th>Can it trigger?</th><th>What it says</th></tr></thead><tbody>
       ${(fl.items || []).map(i => `<tr><td><b>${esc(i.key)}</b></td><td>${LEVEL_PILL(i.level)}</td><td>${EVAL_PILL(i.evaluability)}<div class="note" style="max-width:340px">${esc(i.why || "")}</div></td>
         <td class="sub" style="max-width:380px">${esc(i.text || "")}</td></tr>`).join("")}
     </tbody></table>
     <div class="sub" style="margin-top:8px">${esc(fl.note || "")}</div>
-    <div class="section">Provenance</div>
+    <div class="section">Where these numbers come from</div>
     <div class="grid">
-      ${card("Prior midterm-year bears", `${(pv.prior_bears || []).map(b => `<div class="kv"><span class="mono">${esc(b.top)} → ${esc(b.bottom)}</span><b>${Math.round(100 * b.depth)}% · ${b.down_days}d</b></div>`).join("") || "<span class='muted'>—</span>"}
+      ${card("Past midterm-election-year selloffs", `${(pv.prior_bears || []).map(b => `<div class="kv"><span class="mono">${esc(b.top)} → ${esc(b.bottom)}</span><b>${Math.round(100 * b.depth)}% drop · ${b.down_days} days</b></div>`).join("") || "<span class='muted'>—</span>"}
         <div class="note" style="margin-top:6px">${esc(pv.basis || "")}</div>`)}
-      ${card("Honesty notes", `<div class="note">${esc(pv.dampening_note || "")}</div><div class="note" style="margin-top:6px">${esc(pv.pivot_fit_note || "")}</div>
+      ${card("Caveats", `<div class="note">${esc(pv.dampening_note || "")}</div><div class="note" style="margin-top:6px">${esc(pv.pivot_fit_note || "")}</div>
         <div class="note" style="margin-top:6px">${esc(d.stub_note || "")}</div>
-        <div class="note mono muted" style="margin-top:6px">artifact ${esc(d.generated_at || "?")} · ${fmtAge(d.age_hours)} old · ${esc(o.declared_in || "")}</div>`)}
+        <div class="note mono muted" style="margin-top:6px">generated ${esc(d.generated_at || "?")} · ${fmtAge(d.age_hours)} old · defined in ${esc(o.declared_in || "")}</div>`)}
     </div>`;
 };
 
@@ -337,11 +337,11 @@ RENDER.analytics = async () => {
   if (!st.configured) {
     v.innerHTML = `
       <div class="grid">
-        ${card("Tracking tag", `<div class="big" style="color:var(--ok);font-size:20px">● Live</div><div class="sub">on every page · website <code>${esc((st.website_id || "").slice(0, 8))}…</code></div>`)}
-        ${card("In-panel API", `<div class="big" style="color:var(--warn);font-size:18px">Not connected</div><div class="sub">${esc(st.reason || "")}</div>`)}
-        ${card("Dashboard", `<div style="margin-top:6px"><a class="btn primary" href="${esc(dash)}" target="_blank" rel="noopener">Open Umami ↗</a></div>`)}
+        ${card("Visitor tracking", `<div class="big" style="color:var(--ok);font-size:20px">● Live</div><div class="sub">running on every page · site ID <code>${esc((st.website_id || "").slice(0, 8))}…</code></div>`)}
+        ${card("Live charts here", `<div class="big" style="color:var(--warn);font-size:18px">Not connected</div><div class="sub">${esc(st.reason || "")}</div>`)}
+        ${card("Full dashboard", `<div style="margin-top:6px"><a class="btn primary" href="${esc(dash)}" target="_blank" rel="noopener">Open Umami ↗</a></div>`)}
       </div>
-      <div class="section">Light up in-panel charts</div>
+      <div class="section">Show live charts on this page</div>
       <div class="card"><ol class="steps">${(st.setup_steps || []).map(x => `<li>${esc(x)}</li>`).join("")}</ol></div>`;
     return;
   }
@@ -388,7 +388,7 @@ RENDER.users = async () => {
       ${card("Total users", `<div class="big">${fmtNum(s.total)}</div><div class="sub">${fmtNum(s.confirmed)} confirmed</div>`)}
       ${card("New", `<div class="big">${fmtNum(s.new_7d)}<span class="sub"> /7d</span></div><div class="sub">${fmtNum(s.new_24h)} today · ${fmtNum(s.new_30d)}/30d</div>`)}
       ${card("Active sign-ins", `<div class="big">${fmtNum(s.active_7d)}<span class="sub"> /7d</span></div><div class="sub">${fmtNum(s.active_24h)} in 24h</div>`)}
-      ${card("Providers", `${(d.providers || []).map(p => `<div class="kv"><span>${esc(p.provider)}</span><b>${fmtNum(p.n)}</b></div>`).join("") || "<span class='muted'>—</span>"}`)}
+      ${card("Sign-in methods", `${(d.providers || []).map(p => `<div class="kv"><span>${esc(p.provider)}</span><b>${fmtNum(p.n)}</b></div>`).join("") || "<span class='muted'>—</span>"}`)}
     </div>
     <div class="section">Signups (30d)</div>
     <div class="card"><div class="spark">${series.map(x => `<i style="height:${Math.round(x.n / maxN * 100)}%" title="${esc(x.day)}: ${x.n}"></i>`).join("") || "<span class='muted'>no signups in 30d</span>"}</div></div>
@@ -412,18 +412,18 @@ RENDER.system = async () => {
   const up = sys.uptime_s != null ? `${Math.floor(sys.uptime_s / 86400)}d ${Math.floor(sys.uptime_s % 86400 / 3600)}h` : "—";
   v.innerHTML = `
     <div class="grid">
-      <div class="card"><h3>Host resources</h3>
+      <div class="card"><h3>Server resources</h3>
         ${sys.available ? `
-        ${meter("CPU load (1m)", cpu.load1_pct, (cpu.load1 != null ? cpu.load1.toFixed(2) : "—") + ` / ${cpu.count} cores`)}
+        ${meter("CPU load (last 1 min)", cpu.load1_pct, (cpu.load1 != null ? cpu.load1.toFixed(2) : "—") + ` / ${cpu.count} cores`)}
         ${meter("Memory", mem.used_pct, fmtBytes(mem.used) + " / " + fmtBytes(mem.total))}
         ${swap ? meter("Swap", swap.used_pct, fmtBytes(swap.used) + " / " + fmtBytes(swap.total)) : ""}
-        ${meter("Disk /", disk.used_pct, fmtBytes(disk.used) + " / " + fmtBytes(disk.total))}
-        <div class="sub">uptime ${up} · load 5m/15m ${cpu.load5 != null ? cpu.load5.toFixed(2) : "—"} / ${cpu.load15 != null ? cpu.load15.toFixed(2) : "—"}</div>
-        ` : `<div class="sub">Host metrics are read from /proc — only available when the console runs on the VPS.</div>`}
+        ${meter("Disk", disk.used_pct, fmtBytes(disk.used) + " / " + fmtBytes(disk.total))}
+        <div class="sub">running for ${up} · load 5m/15m ${cpu.load5 != null ? cpu.load5.toFixed(2) : "—"} / ${cpu.load15 != null ? cpu.load15.toFixed(2) : "—"}</div>
+        ` : `<div class="sub">Server stats are only available when this console is running on the server itself.</div>`}
       </div>
-      <div class="card"><h3>Endpoint uptime</h3><div id="upBoard"><button class="btn" id="upBtn">Probe all endpoints</button></div></div>
+      <div class="card"><h3>Site uptime</h3><div id="upBoard"><button class="btn" id="upBtn">Check all sites are up</button></div></div>
     </div>
-    <div class="section">Services <span class="cnt">${sv.available ? sv.ok_count + "/" + sv.total + " up" : "off-VPS"}</span></div>
+    <div class="section">Background services <span class="cnt">${sv.available ? sv.ok_count + "/" + sv.total + " up" : "server only"}</span></div>
     <div id="svcs"></div>`;
   const svcs = $("#svcs");
   if (!sv.available) svcs.innerHTML = `<div class="card sub">${esc(sv.reason || "systemctl unavailable")}</div>`;
@@ -450,9 +450,9 @@ RENDER.features = async () => {
   const writable = !meta.deployed || (meta.integrations && meta.integrations.github_write);
   const note = meta.deployed
     ? (writable
-        ? `Toggles commit straight to <code>main</code> on GitHub; the VPS pulls the change within minutes.`
-        : `Read-only: set <code>GH_TOKEN</code> (Contents: write) in the service env to toggle flags from here.`)
-    : `Toggle features in <code>config.yml</code>. Changes edit the working tree and go live on the next build.`;
+        ? `Turning a switch on or off saves it straight to the live site's settings; the change takes effect within a few minutes.`
+        : `Read-only. To change switches from here, a GitHub access token (<code>GH_TOKEN</code>, with Contents-write permission) must be set on the server.`)
+    : `Turn features on or off. Changes are saved locally and go live on the next build.`;
   let html = `<div class="sub" style="margin-bottom:12px">${note}</div>`;
   data.order.forEach(cat => { html += `<div class="section">${esc(cat)} <span class="cnt">${data.groups[cat].length}</span></div><div id="g-${cat.replace(/\W/g, "")}"></div>`; });
   v.innerHTML = html;
@@ -468,7 +468,7 @@ function flagRow(f, writable) {
     else { cb.checked = !cb.checked; toast(r.error || "toggle failed", true); }
   };
   row.appendChild(sw);
-  row.appendChild(h(`<div><div class="lab">${esc(f.label)} ${f.master ? '<span class="tag master">kill-switch</span>' : ""} <span class="rowtags"></span></div><div class="note">${esc(f.note)} <code class="muted">${esc(f.path)}</code></div></div>`));
+  row.appendChild(h(`<div><div class="lab">${esc(f.label)} ${f.master ? '<span class="tag master">main switch</span>' : ""} <span class="rowtags"></span></div><div class="note">${esc(f.note)} <code class="muted">${esc(f.path)}</code></div></div>`));
   refreshRowTags(row, f, f.value === true);
   return row;
 }
@@ -485,22 +485,22 @@ RENDER.brief = async () => {
   const mb = d.master_brain, ad = d.ai_desk;
   const intervalSel = (target, cur) => `<select data-int="${target}" data-prev="${cur}">${[1, 2, 3, 4, 5, 6, 7].map(n => `<option value="${n}" ${n === cur ? "selected" : ""}>every ${n} day${n > 1 ? "s" : ""}</option>`).join("")}</select>`;
   v.innerHTML = `
-    ${!d.deepseek_key ? `<div class="banner show" style="position:static">⚠︎ <code>DEEPSEEK_API_KEY</code> not set — briefs are a no-op even when enabled.</div>` : ""}
-    <div class="section">AI Daily Brief (Master Brain)</div>
+    ${!d.deepseek_key ? `<div class="banner show" style="position:static">⚠︎ No AI key set (<code>DEEPSEEK_API_KEY</code>) — briefs won't generate even if turned on.</div>` : ""}
+    <div class="section">AI morning briefs</div>
     <div class="row"><label class="switch"><input type="checkbox" id="mbEn" ${mb.enabled ? "checked" : ""}><span class="slider"></span></label>
-      <div><div class="lab">Generate the morning briefs</div><div class="note">${(mb.lenses || []).join(", ")} · model <code>${esc(mb.model || "?")}</code></div></div>
+      <div><div class="lab">Generate the morning briefs</div><div class="note">topics: ${(mb.lenses || []).join(", ")} · AI model <code>${esc(mb.model || "?")}</code></div></div>
       <span class="spacer"></span>${intervalSel("master_brain", mb.interval_days)}</div>
     <div class="row"><label class="switch"><input type="checkbox" id="mbZh" ${mb.translate_zh ? "checked" : ""}><span class="slider"></span></label>
-      <div><div class="lab">Chinese translation (中文)</div><div class="note">extra cheap LLM pass per brief</div></div></div>
-    <div class="section">Last generated <span class="cnt">per lens</span></div>
-    <table><thead><tr><th>Lens</th><th>Generated</th><th class="r">Age</th><th>Model</th><th>Status</th></tr></thead><tbody>
+      <div><div class="lab">Chinese version (中文)</div><div class="note">adds a low-cost AI translation to each brief</div></div></div>
+    <div class="section">Last generated <span class="cnt">per topic</span></div>
+    <table><thead><tr><th>Topic</th><th>Generated</th><th class="r">Age</th><th>Model</th><th>Status</th></tr></thead><tbody>
       ${(mb.items || []).map(it => `<tr><td><b>${esc(it.lens)}</b></td><td class="mono">${esc((it.generated_at || "—").replace("T", " ").slice(0, 16))}</td>
         <td class="r">${it.age_days == null ? "—" : it.age_days + "d"}</td><td class="mono">${esc(it.model || "—")}</td>
         <td>${it.degraded_reason ? `<span class="statpill s-warn">${esc(it.degraded_reason)}</span>` : `<span class="statpill s-ok">ok</span>`}</td></tr>`).join("")}
     </tbody></table>
-    <div class="section">AI Desk (accountable analyst)</div>
+    <div class="section">AI analyst desk</div>
     <div class="row"><label class="switch"><input type="checkbox" id="adEn" ${ad.enabled ? "checked" : ""}><span class="slider"></span></label>
-      <div><div class="lab">Generate the desk note</div><div class="note">${ad.panel_enabled ? "4-analyst panel" : "single analyst"} · last ${ad.age_days == null ? "—" : ad.age_days + "d ago"} · ${ad.theses} theses</div></div>
+      <div><div class="lab">Generate the desk note</div><div class="note">${ad.panel_enabled ? "4-analyst debate panel" : "single analyst"} · last ${ad.age_days == null ? "—" : ad.age_days + "d ago"} · ${ad.theses} calls on record</div></div>
       <span class="spacer"></span>${intervalSel("ai_desk", ad.interval_days)}</div>`;
   const meta = SUMMARY.meta || {};
   const writable = !meta.deployed || (meta.integrations && meta.integrations.github_write);
@@ -536,15 +536,15 @@ const STATUS_PILL = (r) => {
 };
 RENDER.deploy = async () => {
   const v = $("#view"); const hasTok = SUMMARY.meta && SUMMARY.meta.has_token;
-  v.innerHTML = `<div id="depActions"></div><div class="section">Recent workflow runs</div><div id="runs"><div class="spin">loading…</div></div>`;
+  v.innerHTML = `<div id="depActions"></div><div class="section">Recent build runs</div><div id="runs"><div class="spin">loading…</div></div>`;
   const a = $("#depActions");
   [["daily.yml", "▶ Rebuild & deploy", "primary"], ["pages.yml", "⟳ Redeploy site only", ""], ["weekly.yml", "↻ Weekly deep build", ""]].forEach(([wf, label, cls]) => {
     const b = h(`<button class="btn ${cls}" style="margin-right:8px">${label}</button>`); b.disabled = !hasTok; b.onclick = () => dispatch(wf); a.appendChild(b);
   });
-  if (!hasTok) a.appendChild(h(`<div class="sub" style="margin-top:8px">Set <code>GH_TOKEN</code> (Actions: write) to trigger runs. (Run status below works without a token.)</div>`));
+  if (!hasTok) a.appendChild(h(`<div class="sub" style="margin-top:8px">The buttons above need a GitHub access token (<code>GH_TOKEN</code>, Actions-write) set on the server. The run history below works without one.</div>`));
   const data = await api("/api/deploy"); const runs = $("#runs");
   if (!data.ok) { runs.innerHTML = `<div class="card sub">Could not load runs: ${esc(data.error || "?")}</div>`; return; }
-  runs.innerHTML = `<table><thead><tr><th>Workflow</th><th>Event</th><th>Status</th><th>Branch</th><th>Started</th><th></th></tr></thead><tbody>
+  runs.innerHTML = `<table><thead><tr><th>Build</th><th>Trigger</th><th>Status</th><th>Branch</th><th>Started</th><th></th></tr></thead><tbody>
     ${data.runs.map(r => `<tr><td><b>${esc(r.workflow || r.name)}</b></td><td class="sub">${esc(r.event)}</td><td>${STATUS_PILL(r)}</td>
       <td class="mono">${esc(r.branch)}</td><td class="sub mono">${esc((r.run_started_at || r.created_at || "").replace("T", " ").slice(0, 16))}</td>
       <td><a href="${esc(r.html_url)}" target="_blank" rel="noopener">open ↗</a></td></tr>`).join("")}
@@ -556,17 +556,18 @@ RENDER.health = async () => {
   const v = $("#view"); const d = await api("/api/health");
   if (d.error) { v.innerHTML = card("Error", `<div class="sub" style="color:var(--bad)">${esc(d.error)}</div>`); return; }
   const src = d.sources || {};
-  const sp = (s) => `<span class="statpill ${s === "ok" ? "s-ok" : s === "stale" ? "s-warn" : s === "dead" ? "s-bad" : "s-mut"}">${esc(s)}</span>`;
+  const sp = (s) => { const lbl = s === "stale" ? "out of date" : s === "dead" ? "down" : s; return `<span class="statpill ${s === "ok" ? "s-ok" : s === "stale" ? "s-warn" : s === "dead" ? "s-bad" : "s-mut"}">${esc(lbl)}</span>`; };
   v.innerHTML = `
+    <div class="sub" style="margin-bottom:10px">Health of the nightly data pipeline and each data feed it pulls from.</div>
     <div class="grid">
-      ${card("Pipeline", `<div class="big" style="color:${d.healthy ? "var(--ok)" : "var(--warn)"}">${d.healthy ? "Healthy" : "Attention"}</div><div class="sub">last run ${fmtAge(d.age_hours)} ago${d.stale ? " · STALE" : ""}</div>`)}
-      ${card("Sources", `<div class="big">${src.ok}/${src.total}</div><div class="sub">${src.stale} stale · ${src.dead} dead</div>`)}
-      ${card("Circuit breakers", `<div class="big" style="color:${d.broad_outage ? "var(--bad)" : "var(--text)"}">${d.breaker_tripped}</div><div class="sub">tripped${d.broad_outage ? " · BROAD OUTAGE" : ""}</div>`)}
+      ${card("Nightly pipeline", `<div class="big" style="color:${d.healthy ? "var(--ok)" : "var(--warn)"}">${d.healthy ? "Healthy" : "Attention"}</div><div class="sub">last run ${fmtAge(d.age_hours)} ago${d.stale ? " · OUT OF DATE" : ""}</div>`)}
+      ${card("Data feeds", `<div class="big">${src.ok}/${src.total}</div><div class="sub">${src.stale} out of date · ${src.dead} down</div>`)}
+      ${card("Auto-paused feeds", `<div class="big" style="color:${d.broad_outage ? "var(--bad)" : "var(--text)"}">${d.breaker_tripped}</div><div class="sub">paused after repeated errors${d.broad_outage ? " · MANY FEEDS DOWN" : ""}</div>`)}
     </div>
     <div class="section">Dashboard freshness</div>
     <div class="grid">${(d.markets || []).map(m => `<div class="card"><h3>${esc(m.label)}</h3><div class="big" style="font-size:18px">${m.exists ? fmtAge(m.age_hours) + " ago" : "<span style='color:var(--bad)'>missing</span>"}</div><div class="sub">${esc(m.date || "")}</div></div>`).join("")}</div>
-    <div class="section">Data sources <span class="cnt">${(d.source_rows || []).length}</span></div>
-    <table><thead><tr><th>Source</th><th>Status</th><th class="r">Rows</th><th>Last date</th><th class="r">Breaker</th><th>Error</th></tr></thead><tbody>
+    <div class="section">Data feeds <span class="cnt">${(d.source_rows || []).length}</span></div>
+    <table><thead><tr><th>Feed</th><th>Status</th><th class="r">Rows</th><th>Last date</th><th class="r">Auto-pause</th><th>Error</th></tr></thead><tbody>
       ${(d.source_rows || []).map(s => `<tr><td class="mono">${esc(s.name)}</td><td>${sp(s.status)}</td><td class="r">${s.rows ?? "—"}</td>
         <td class="mono sub">${esc(s.last_date || "—")}</td><td class="r">${s.breaker || 0}</td><td class="sub" style="max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(s.error || "")}">${esc(s.error || "")}</td></tr>`).join("")}
     </tbody></table>`;
@@ -581,11 +582,11 @@ RENDER.cost = async () => {
     <div class="grid">
       ${card("Est. monthly", `<div class="big">${fmtUSD(d.monthly_usd)}</div><div class="sub">~${d.assumptions.build_days_per_month} build-days/mo</div>`)}
       ${card("Per build", `<div class="big">${fmtUSD(d.per_build_usd)}</div><div class="sub">${fmtUSD(d.effective_daily_usd)}/day effective</div>`)}
-      ${card("Realized", `<div class="big">${r.stockbrief_files || 0}</div><div class="sub">stock briefs · ${r.ai_desk_theses_logged || 0} theses</div>`)}
+      ${card("Actually generated", `<div class="big">${r.stockbrief_files || 0}</div><div class="sub">stock briefs · ${r.ai_desk_theses_logged || 0} analyst calls</div>`)}
     </div>
-    ${!d.deepseek_key ? `<div class="card sub" style="margin-top:12px;color:var(--warn)">DEEPSEEK_API_KEY not set — actual spend is $0.</div>` : ""}
-    <div class="section">Components</div>
-    <table><thead><tr><th>Component</th><th>On</th><th>Model</th><th class="r">Calls/build</th><th class="r">$/build</th><th>Cadence</th></tr></thead><tbody>
+    ${!d.deepseek_key ? `<div class="card sub" style="margin-top:12px;color:var(--warn)">No AI key set — actual spend is $0.</div>` : ""}
+    <div class="section">What's using AI</div>
+    <table><thead><tr><th>Feature</th><th>On</th><th>Model</th><th class="r">Calls/build</th><th class="r">$/build</th><th>How often</th></tr></thead><tbody>
       ${(d.components || []).map(c => `<tr><td><b>${esc(c.name)}</b><div class="sub">${esc(c.note)}</div></td>
         <td>${c.enabled ? "<span class='statpill s-ok'>yes</span>" : "<span class='statpill s-mut'>no</span>"}</td>
         <td class="mono">${esc(c.model)}</td><td class="r">${c.calls_per_build}</td><td class="r">${fmtUSD(c.cost_per_build)}</td><td class="sub">every ${c.interval_days}d</td></tr>`).join("")}
@@ -597,9 +598,9 @@ RENDER.content = async () => {
   const v = $("#view"); const d = await api("/api/content");
   v.innerHTML = `
     <div class="grid">
-      ${card("Pages", `<div class="big">${d.total_pages}</div><div class="sub">deployed *.html</div>`)}
+      ${card("Pages", `<div class="big">${d.total_pages}</div><div class="sub">published pages</div>`)}
       ${card("Total size", `<div class="big">${d.total_mb} MB</div><div class="sub">${d.total_kb} KB</div>`)}
-      ${card("Live probe", `<div id="upBox"><button class="btn" id="upBtn2">Probe live site</button></div>`)}
+      ${card("Is the site up?", `<div id="upBox"><button class="btn" id="upBtn2">Check live site</button></div>`)}
       ${card("Links", `<div id="lkBox"><button class="btn" id="lkBtn">Check internal links</button></div>`)}
     </div>
     <div class="section">All pages <span class="cnt">${d.total_pages}</span></div>
@@ -635,7 +636,7 @@ function nwCollapse(id, title, bodyHtml, open = true) {
 }
 
 function nwMissing(note) {
-  return `<div class="card"><div class="sub" style="color:var(--warn)">${esc(note || "artifact not yet written")}</div></div>`;
+  return `<div class="card"><div class="sub" style="color:var(--warn)">${esc(note || "not generated yet")}</div></div>`;
 }
 
 function nwFmtAge(hrs) {
@@ -655,57 +656,57 @@ function nwSectionEngineHealth(eh) {
 
   // Spine index card
   const sp = eh.spine || {};
-  html += card("Spine Index", sp.missing
+  html += card("Daily data snapshot", sp.missing
     ? `<div class="sub" style="color:var(--warn)">${esc(sp.note)}</div>`
-    : `<div class="kv"><span>Produced</span><b>${nwFmtAge(sp.age_hours)} ago</b></div>
-       <div class="kv"><span>Timestamp</span><span class="mono sub">${esc(sp.produced_at || "—")}</span></div>
-       <div class="kv"><span>Hash</span><span class="mono sub">${esc(sp.inputs_hash || "—")}</span></div>`);
+    : `<div class="kv"><span>Built</span><b>${nwFmtAge(sp.age_hours)} ago</b></div>
+       <div class="kv"><span>At</span><span class="mono sub">${esc(sp.produced_at || "—")}</span></div>
+       <div class="kv"><span>Fingerprint</span><span class="mono sub">${esc(sp.inputs_hash || "—")}</span></div>`);
 
   // Kernel decisions card
   const kd = eh.kernel || {};
-  html += card("Kernel Decisions", kd.missing
+  html += card("Signal test results", kd.missing
     ? `<div class="sub" style="color:var(--warn)">${esc(kd.note)}</div>`
-    : `<div class="kv"><span>Batch run</span><b>${kd.display_only ? nwPill("none yet — display-only", "s-warn") : nwPill("run", "s-ok")}</b></div>
-       <div class="kv"><span>Next batch due</span><b>${esc(kd.next_batch_due || "—")}</b></div>
-       <div class="kv"><span>Survivors</span><b>${kd.n_survivors != null ? kd.n_survivors : "—"}</b></div>
+    : `<div class="kv"><span>Test run</span><b>${kd.display_only ? nwPill("none yet — view-only", "s-warn") : nwPill("done", "s-ok")}</b></div>
+       <div class="kv"><span>Next test due</span><b>${esc(kd.next_batch_due || "—")}</b></div>
+       <div class="kv"><span>Signals that passed</span><b>${kd.n_survivors != null ? kd.n_survivors : "—"}</b></div>
        <div class="note muted" style="margin-top:6px">${esc(kd.note || "")}</div>`);
 
   // SLA compliance card
   const sla = eh.sla || {};
   const slaColor = sla.missing ? "warn" : sla.n_breaches === 0 ? "ok" : sla.n_breaches < 5 ? "warn" : "bad";
-  html += card("SLA Compliance", sla.missing
+  html += card("On-time data", sla.missing
     ? `<div class="sub" style="color:var(--warn)">${esc(sla.note)}</div>`
-    : `<div class="big" style="color:var(--${slaColor})">${sla.n_breaches}<span class="sub"> breaches</span></div>
-       <div class="sub">${sla.total} artifacts registered · ${sla.n_no_mtime || 0} on-VPS-only (no local mtime)</div>`);
+    : `<div class="big" style="color:var(--${slaColor})">${sla.n_breaches}<span class="sub"> late</span></div>
+       <div class="sub">${sla.total} data files tracked · ${sla.n_no_mtime || 0} only on the server</div>`);
 
   // Kernel families armed
   const kf = eh.kernel_families || {};
-  html += card("Kernel Families", kf.missing
+  html += card("Signal groups active", kf.missing
     ? `<div class="sub" style="color:var(--warn)">${esc(kf.note)}</div>`
-    : `<div class="big">${kf.n_armed}<span class="sub">/${kf.n_total} armed</span></div>
-       <div class="sub">${kf.n_armed === 0 ? "No families armed yet" : kf.armed_names.join(", ")}</div>`);
+    : `<div class="big">${kf.n_armed}<span class="sub"> of ${kf.n_total} on</span></div>
+       <div class="sub">${kf.n_armed === 0 ? "None turned on yet" : kf.armed_names.join(", ")}</div>`);
 
   // Lagging signal families
   const lg = eh.lagging || {};
-  html += card("Lagging Signal Families", lg.missing
+  html += card("Slow / stale signal groups", lg.missing
     ? `<div class="sub" style="color:var(--warn)">${esc(lg.note)}</div>`
     : `<div class="big" style="color:${lg.n_flagged > 0 ? "var(--warn)" : "var(--ok)"}">${lg.n_flagged}<span class="sub"> flagged</span></div>
-       <div class="sub">${lg.n_families} total families${lg.n_flagged ? " — " + lg.flagged_names.slice(0, 4).join(", ") + (lg.flagged_names.length > 4 ? "…" : "") : " — all clear"}</div>`);
+       <div class="sub">${lg.n_families} groups total${lg.n_flagged ? " — " + lg.flagged_names.slice(0, 4).join(", ") + (lg.flagged_names.length > 4 ? "…" : "") : " — all clear"}</div>`);
 
   // Read-gate baseline
   const rg = eh.read_gate || {};
-  html += card("Read-Gate Baseline", rg.missing
+  html += card("Data-access check", rg.missing
     ? `<div class="sub" style="color:var(--warn)">${esc(rg.note)}</div>`
-    : `<div class="big">${rg.n_undeclared}<span class="sub"> undeclared readers</span></div>
-       <div class="sub">only-shrinks ratchet — new entries block CI</div>`);
+    : `<div class="big">${rg.n_undeclared}<span class="sub"> unexpected readers</span></div>
+       <div class="sub">new unexpected data readers block the build</div>`);
 
   html += `</div>`;
 
   // SLA breach table (if any)
   if (!sla.missing && sla.n_breaches > 0) {
     const breaches = sla.breaches || [];
-    html += `<div class="section" style="margin-top:14px">SLA Breaches — sorted worst-first <span class="cnt">${breaches.length}</span></div>
-      <table><thead><tr><th>Artifact</th><th>Tier</th><th>Owner</th><th class="r">SLA (h)</th><th class="r">Age (h)</th><th class="r">Overdue (h)</th><th>Path</th></tr></thead><tbody>
+    html += `<div class="section" style="margin-top:14px">Late data files — worst first <span class="cnt">${breaches.length}</span></div>
+      <table><thead><tr><th>File</th><th>Tier</th><th>Owner</th><th class="r">Target (h)</th><th class="r">Age (h)</th><th class="r">Overdue (h)</th><th>Location</th></tr></thead><tbody>
       ${breaches.map(b => `<tr>
         <td><b>${esc(b.id)}</b></td>
         <td class="sub">${esc(b.tier)}</td>
@@ -720,11 +721,11 @@ function nwSectionEngineHealth(eh) {
 
   // Kernel families detail table
   if (!kf.missing && kf.families && kf.families.length) {
-    html += `<div class="section" style="margin-top:14px">Kernel Families Detail <span class="cnt">${kf.families.length}</span></div>
-      <table><thead><tr><th>Family</th><th>Armed</th><th>Days since last fire</th><th>Last fire date</th><th>Horizons</th><th>n_eff</th></tr></thead><tbody>
+    html += `<div class="section" style="margin-top:14px">Signal groups — detail <span class="cnt">${kf.families.length}</span></div>
+      <table><thead><tr><th>Group</th><th>On</th><th>Days since last signal</th><th>Last signal</th><th>Time-frames</th><th>Sample size</th></tr></thead><tbody>
       ${kf.families.map(f => `<tr>
         <td><b>${esc(f.name)}</b></td>
-        <td>${f.armed ? nwPill("armed", "s-ok") : nwPill("not armed", "s-mut")}</td>
+        <td>${f.armed ? nwPill("on", "s-ok") : nwPill("off", "s-mut")}</td>
         <td class="r">${f.staleness_days != null ? f.staleness_days : "—"}</td>
         <td class="mono sub">${esc(f.date_last || "—")}</td>
         <td class="sub">${esc((f.horizon_keys || []).join(", ") || "—")}</td>
@@ -741,22 +742,23 @@ function nwSectionReflexLog(rl) {
   if (!rl) return nwMissing("reflex_log missing");
   if (rl.missing) return nwMissing(rl.note);
 
-  let html = `<div class="grid">
-    ${card("Registered Reflexes", `<div class="big">${rl.n_registered}</div><div class="sub">in config/reflexes.yml</div>`)}
-    ${card("Mirroring (firings.jsonl live)", `<div class="big" style="color:${rl.n_mirroring > 0 ? "var(--ok)" : "var(--muted)"}">${rl.n_mirroring}</div><div class="sub">of ${rl.n_registered} have firings.jsonl</div>`)}
+  let html = `<div class="sub" style="margin-bottom:10px">Small automatic rules that watch for a condition and react. This shows which ones exist and how often they've triggered.</div>
+    <div class="grid">
+    ${card("Set-up reactions", `<div class="big">${rl.n_registered}</div><div class="sub">rules defined</div>`)}
+    ${card("Actively logging", `<div class="big" style="color:${rl.n_mirroring > 0 ? "var(--ok)" : "var(--muted)"}">${rl.n_mirroring}</div><div class="sub">of ${rl.n_registered} are recording activity</div>`)}
   </div>`;
 
-  html += `<div class="section" style="margin-top:14px">All Reflexes <span class="cnt">${(rl.per_reflex || []).length}</span></div>
-    <table><thead><tr><th>Reflex</th><th>Status</th><th>Firings (7d)</th><th>Last fired</th><th>Push-tier candidate</th><th>Claim family</th></tr></thead><tbody>
+  html += `<div class="section" style="margin-top:14px">All reactions <span class="cnt">${(rl.per_reflex || []).length}</span></div>
+    <table><thead><tr><th>Reaction</th><th>Status</th><th>Times fired (7d)</th><th>Last fired</th><th>Alert candidate</th><th>Category</th></tr></thead><tbody>
     ${(rl.per_reflex || []).map(r => `<tr>
       <td><b>${esc(r.name)}</b><div class="note sub" style="max-width:280px">${esc(r.description || "")}</div></td>
-      <td>${r.mirroring ? nwPill("mirroring", "s-ok") : nwPill("registered", "s-mut")}</td>
+      <td>${r.mirroring ? nwPill("logging", "s-ok") : nwPill("set up", "s-mut")}</td>
       <td class="r">${r.n_firings_7d}</td>
       <td class="mono sub">${r.last_fired ? nwFmtAge(r.last_fired_age_hours) + " ago" : "—"}</td>
-      <td>${r.push_tier_candidate ? nwPill("W6b candidate", "s-warn") : nwPill("sub-hour lane", "s-mut")}</td>
+      <td>${r.push_tier_candidate ? nwPill("alert candidate", "s-warn") : nwPill("background", "s-mut")}</td>
       <td class="mono sub" style="font-size:11px">${esc(r.claim_family || "—")}</td>
     </tr>${(r.recent_firings || []).length ? `<tr style="background:var(--line)"><td colspan="6" style="padding:4px 8px">
-      <span class="muted sub">Recent firings: </span>
+      <span class="muted sub">Recently fired: </span>
       ${r.recent_firings.map(f => `<span class="mono sub" style="margin-right:12px">${esc(f.ts || f.timestamp || f.fired_at || "?")} · ${esc(f.trigger_key || f.action || f.scope_key || "")}</span>`).join("")}
     </td></tr>` : ""}`).join("")}
     </tbody></table>`;
@@ -770,19 +772,19 @@ function nwSectionBusGraph(bg) {
   if (bg.missing) return nwMissing(bg.note);
 
   let html = `<div class="card" style="margin-bottom:10px"><div class="sub" style="color:var(--warn)">
-    Confluence is <b>display_only=true</b> — no edge gates or ranks any consumer. Numbers below are informational only.
+    This section is <b>view-only</b> — it doesn't change or rank anything the site does. The numbers below are for information only.
   </div></div>`;
 
   html += `<div class="grid">
-    ${card("Nodes", `<div class="big">${bg.n_nodes}</div><div class="sub">signal nodes in graph</div>`)}
-    ${card("Edges", `<div class="big">${bg.n_edges}</div><div class="sub">${Object.entries(bg.edge_types || {}).map(([t, n]) => `${n} ${t}`).join(" · ") || "—"}</div>`)}
-    ${card("Contradictions", `<div class="big" style="color:${bg.n_contradictions > 0 ? "var(--warn)" : "var(--ok)"}">${bg.n_contradictions}</div>
+    ${card("Signals", `<div class="big">${bg.n_nodes}</div><div class="sub">individual signals tracked</div>`)}
+    ${card("Links", `<div class="big">${bg.n_edges}</div><div class="sub">${Object.entries(bg.edge_types || {}).map(([t, n]) => `${n} ${t}`).join(" · ") || "—"}</div>`)}
+    ${card("Disagreements", `<div class="big" style="color:${bg.n_contradictions > 0 ? "var(--warn)" : "var(--ok)"}">${bg.n_contradictions}</div>
       <div class="sub">${Object.entries(bg.by_severity || {}).map(([s, n]) => `${n} ${s}`).join(" · ") || "none"}</div>`)}
   </div>`;
 
   if (bg.top_pair_ids && bg.top_pair_ids.length) {
-    html += `<div class="section" style="margin-top:14px">Top Contradiction Pairs</div>
-      <table><thead><tr><th>Pair ID</th><th>Details</th></tr></thead><tbody>
+    html += `<div class="section" style="margin-top:14px">Biggest disagreements</div>
+      <table><thead><tr><th>Signals</th><th>Details</th></tr></thead><tbody>
       ${bg.top_pair_ids.map(pid => {
         const rec = (bg.top_contradictions || []).find(r => r.pair_id === pid);
         return `<tr><td class="mono"><b>${esc(pid)}</b></td><td class="sub">${rec
@@ -792,7 +794,7 @@ function nwSectionBusGraph(bg) {
       </tbody></table>`;
   }
 
-  html += `<div class="sub muted" style="margin-top:8px">as-of ${esc(bg.asof || "—")} · display_only enforced by hard law in graph schema</div>`;
+  html += `<div class="sub muted" style="margin-top:8px">as of ${esc(bg.asof || "—")} · view-only by design</div>`;
   return html;
 }
 
@@ -805,29 +807,29 @@ function nwSectionGovernance(gov) {
   const prob = gov.probation || {};
   html += `<div class="grid">`;
   if (prob.missing) {
-    html += card("Cortex Probation", `<div class="sub" style="color:var(--warn)">${esc(prob.note)}</div>`);
+    html += card("AI \"cortex\" trial status", `<div class="sub" style="color:var(--warn)">${esc(prob.note)}</div>`);
   } else {
-    html += card("Cortex Probation", `
-      <div class="kv"><span>Tier</span><b>${nwPill(prob.tier || "?", prob.granted ? "s-ok" : "s-warn")}</b></div>
-      <div class="kv"><span>A2 granted</span><b style="color:${prob.granted ? "var(--ok)" : "var(--warn)"}">${prob.granted ? "YES" : "NO"}</b></div>
+    html += card("AI \"cortex\" trial status", `
+      <div class="kv"><span>Level</span><b>${nwPill(prob.tier || "?", prob.granted ? "s-ok" : "s-warn")}</b></div>
+      <div class="kv"><span>Authority granted?</span><b style="color:${prob.granted ? "var(--ok)" : "var(--warn)"}">${prob.granted ? "YES" : "NO"}</b></div>
       <div class="kv"><span>Reason</span><span class="sub">${esc(prob.reason || "—")}</span></div>
-      <div class="kv"><span>Graded / min_n</span><b>${prob.n_graded != null ? prob.n_graded : "—"} / ${prob.min_n}</b></div>
-      <div class="kv"><span>Hits / min_events</span><b>${prob.hits != null ? prob.hits : "—"} / ${prob.min_events}</b></div>
-      ${prob.lapses_at ? `<div class="kv"><span>Lapses at</span><b>${esc(prob.lapses_at)}</b></div>` : ""}`);
+      <div class="kv"><span>Scored so far / needed</span><b>${prob.n_graded != null ? prob.n_graded : "—"} / ${prob.min_n}</b></div>
+      <div class="kv"><span>Correct hits / needed</span><b>${prob.hits != null ? prob.hits : "—"} / ${prob.min_events}</b></div>
+      ${prob.lapses_at ? `<div class="kv"><span>Trial ends</span><b>${esc(prob.lapses_at)}</b></div>` : ""}`);
   }
 
   // Cortex memo card
   const cm = gov.cortex_memo || {};
   if (cm.missing) {
-    html += card("Cortex Memo", `<div class="sub" style="color:var(--warn)">${esc(cm.note)}</div>`);
+    html += card("AI \"cortex\" latest note", `<div class="sub" style="color:var(--warn)">${esc(cm.note)}</div>`);
   } else {
-    html += card("Cortex Memo", `
+    html += card("AI \"cortex\" latest note", `
       <div class="kv"><span>As of</span><span class="mono sub">${esc(cm.as_of || "—")}</span></div>
       <div class="note" style="margin-top:6px">${esc(cm.summary || "—")}</div>
-      ${cm.what_fired && cm.what_fired.length ? `<div class="kv" style="margin-top:8px"><span>Fired</span><span class="sub">${cm.what_fired.map(s => esc(s)).join("; ")}</span></div>` : ""}
-      ${cm.deserves_operator && cm.deserves_operator.length ? `<div class="kv"><span>Operator items</span><span class="sub">${cm.deserves_operator.map(s => esc(s)).join("; ")}</span></div>` : ""}
+      ${cm.what_fired && cm.what_fired.length ? `<div class="kv" style="margin-top:8px"><span>What it flagged</span><span class="sub">${cm.what_fired.map(s => esc(s)).join("; ")}</span></div>` : ""}
+      ${cm.deserves_operator && cm.deserves_operator.length ? `<div class="kv"><span>For you to review</span><span class="sub">${cm.deserves_operator.map(s => esc(s)).join("; ")}</span></div>` : ""}
       <div class="kv" style="margin-top:6px"><span>Tool calls</span><span class="mono sub">${Object.entries(cm.tool_call_census || {}).map(([k, n]) => `${k}×${n}`).join(", ") || "—"}</span></div>
-      ${cm.is_context_only ? `<div class="note muted" style="margin-top:4px">context-only — no live agent authority</div>` : ""}`);
+      ${cm.is_context_only ? `<div class="note muted" style="margin-top:4px">background context only — it can't act on its own</div>` : ""}`);
   }
 
   html += `</div>`;
@@ -835,11 +837,11 @@ function nwSectionGovernance(gov) {
   // Governance ledger table
   const evts = gov.recent_events || [];
   const EVT_CLS = { authority_grant: "s-ok", authority_lapse: "s-bad", tier_promotion: "s-ok", tier_demotion: "s-bad", article3_review: "s-warn", article6_review: "s-warn", a6_auto_apply: "s-warn", a6_llm_proposed: "s-warn", config_arm: "s-ok", config_disarm: "s-bad", operator_override: "s-warn" };
-  html += `<div class="section" style="margin-top:14px">Governance Ledger — last ${evts.length} events (newest first)</div>`;
+  html += `<div class="section" style="margin-top:14px">Permissions &amp; changes — last ${evts.length} events (newest first)</div>`;
   if (!evts.length) {
-    html += `<div class="card"><div class="sub muted">No governance events yet.</div></div>`;
+    html += `<div class="card"><div class="sub muted">No changes recorded yet.</div></div>`;
   } else {
-    html += `<table><thead><tr><th>Timestamp</th><th>Event type</th><th>Target</th><th>Art.</th><th>Author</th><th>Note</th></tr></thead><tbody>
+    html += `<table><thead><tr><th>When</th><th>What happened</th><th>Target</th><th>Rule</th><th>By</th><th>Note</th></tr></thead><tbody>
       ${evts.map(e => `<tr>
         <td class="mono sub" style="font-size:11px;white-space:nowrap">${esc((e.ts || "?").slice(0, 19))}</td>
         <td>${nwPill(e.event_type || "?", EVT_CLS[e.event_type] || "s-mut")}</td>
@@ -917,20 +919,20 @@ function nwSectionFactorIntelligence(fi) {
 
 RENDER.neural_web = async () => {
   const v = $("#view");
-  v.innerHTML = `<div class="sub" style="margin-bottom:12px">Neural Web operator HQ — committed artifacts only (VPS-clone model). Sections collapse/expand. Deployed = auto-updates on git pull.</div>
-    <div class="sub" style="margin-bottom:8px;color:var(--muted)">Loading Neural Web…</div>`;
+  v.innerHTML = `<div class="sub" style="margin-bottom:12px">Behind-the-scenes monitor for the signal-generation system (nicknamed the "Neural Web"). Each section shows whether a part is working and up to date. Monitoring only — nothing here changes what the site does.</div>
+    <div class="sub" style="margin-bottom:8px;color:var(--muted)">Loading…</div>`;
   const d = await api("/api/neural_web");
   if (!d.ok) {
     v.innerHTML = card("Neural Web", `<div class="sub" style="color:var(--bad)">${esc(d.error || "panel error")}</div>`);
     return;
   }
   v.innerHTML = `
-    <div class="sub" style="margin-bottom:12px">Committed artifacts only · no engine imports · fail-open per section</div>
-    ${nwCollapse("engine_health", "A — Engine-Health Board", nwSectionEngineHealth(d.engine_health), true)}
-    ${nwCollapse("reflex_log", "B — Reflexes &amp; Firings", nwSectionReflexLog(d.reflex_log), true)}
-    ${nwCollapse("bus_graph", "C — Bus Graph (Confluence)", nwSectionBusGraph(d.bus_graph), false)}
-    ${nwCollapse("governance", "D — Governance Ledger", nwSectionGovernance(d.governance), true)}
-    ${nwCollapse("factor_intelligence", "E — Factor Intelligence (NW W2)", nwSectionFactorIntelligence(d.factor_intelligence), false)}
+    <div class="sub" style="margin-bottom:12px">Read-only. If a section's data hasn't been generated yet, it says so instead of showing an error.</div>
+    ${nwCollapse("engine_health", "A — System health", nwSectionEngineHealth(d.engine_health), true)}
+    ${nwCollapse("reflex_log", "B — Automatic reactions", nwSectionReflexLog(d.reflex_log), true)}
+    ${nwCollapse("bus_graph", "C — How signals agree &amp; disagree", nwSectionBusGraph(d.bus_graph), false)}
+    ${nwCollapse("governance", "D — Permissions &amp; change log", nwSectionGovernance(d.governance), true)}
+    ${nwCollapse("factor_intelligence", "E — Factor intelligence (what a stock's move is made of)", nwSectionFactorIntelligence(d.factor_intelligence), false)}
   `;
 };
 
