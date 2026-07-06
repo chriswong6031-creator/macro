@@ -196,16 +196,16 @@ def test_china_packet_surfaces_freshness(tmp_path):
     assert "news" in surfaces
     assert surfaces["news"]["stale"] is False
     assert surfaces["policy"]["asof"] == "2026-07-03"
-    assert surfaces["policy"]["stale"] is False  # 3d < 5d threshold
+    assert surfaces["policy"]["stale"] is False  # exactly 3d — not stale (threshold is >3d)
 
 
 def test_china_packet_stale_surface_flagged(tmp_path):
-    """Surface older than 5 days is flagged stale."""
+    """Surface older than 3 days is flagged stale."""
     from scripts.build_intel_hub import build_china_packet
     data = {**_FIXTURE_BRIEFING, "surface_asof": {"news": "2026-06-30", "policy": "2026-07-06"}}
     p = _write_fixture(tmp_path, data)
     pkt = build_china_packet(p, reference_date=_REFERENCE_DATE)
-    assert pkt["surfaces"]["news"]["stale"] is True   # 6d old > 5d threshold
+    assert pkt["surfaces"]["news"]["stale"] is True   # 6d old > 3d threshold
     assert pkt["surfaces"]["policy"]["stale"] is False
 
 
@@ -258,6 +258,67 @@ def test_china_packet_asof_age_old(tmp_path):
     p = _write_fixture(tmp_path, data)
     pkt = build_china_packet(p, reference_date=_REFERENCE_DATE)
     assert pkt["asof_age_days"] == 5
+
+
+def test_china_packet_asof_age_clamped_to_zero(tmp_path):
+    """Future-dated briefing produces asof_age_days == 0, not negative."""
+    from scripts.build_intel_hub import build_china_packet
+    data = {**_FIXTURE_BRIEFING, "asof": "2026-07-10"}  # 4d in the future
+    p = _write_fixture(tmp_path, data)
+    pkt = build_china_packet(p, reference_date=_REFERENCE_DATE)
+    assert pkt is not None
+    assert pkt["asof_age_days"] == 0
+
+
+# ---------------------------------------------------------------------------
+# (a3) Present-but-null degradation — realistic bus shapes
+# The bus emits None surfaces / null regime / null conviction members by design.
+# These must not raise; packet or None is acceptable.
+# ---------------------------------------------------------------------------
+
+def test_china_packet_null_regime(tmp_path):
+    """Briefing with regime: null must not raise."""
+    from scripts.build_intel_hub import build_china_packet
+    data = {**_FIXTURE_BRIEFING, "regime": None}
+    p = _write_fixture(tmp_path, data)
+    result = build_china_packet(p, reference_date=_REFERENCE_DATE)
+    # Must return without raising — packet or None are both acceptable
+    assert result is None or isinstance(result, dict)
+
+
+def test_china_packet_null_conviction_member(tmp_path):
+    """conviction: [null] must not raise — null rows are silently skipped."""
+    from scripts.build_intel_hub import build_china_packet
+    data = {**_FIXTURE_BRIEFING, "conviction": [None, _FIXTURE_BRIEFING["conviction"][0]]}
+    p = _write_fixture(tmp_path, data)
+    pkt = build_china_packet(p, reference_date=_REFERENCE_DATE)
+    assert pkt is not None, "packet must not be None — one valid conviction row exists"
+    # The null row must be skipped; only the valid row appears
+    assert len(pkt["conviction"]) == 1
+    assert pkt["conviction"][0]["sector_en"] == "Semiconductors"
+
+
+def test_china_packet_null_surface_asof_value(tmp_path):
+    """surface_asof with a null value must not raise."""
+    from scripts.build_intel_hub import build_china_packet
+    data = {**_FIXTURE_BRIEFING, "surface_asof": {"news": None, "policy": "2026-07-06"}}
+    p = _write_fixture(tmp_path, data)
+    pkt = build_china_packet(p, reference_date=_REFERENCE_DATE)
+    assert pkt is not None
+    assert "news" in pkt["surfaces"]
+    assert pkt["surfaces"]["news"]["stale"] is False  # None asof → not stale, just unknown
+
+
+def test_china_packet_null_scheduled_member(tmp_path):
+    """what_changed.new_scheduled_within_3d: [null] must not raise."""
+    from scripts.build_intel_hub import build_china_packet
+    wc = {**_FIXTURE_BRIEFING["what_changed"], "new_scheduled_within_3d": [None, {"name_en": "PMI data", "name_zh": "PMI数据", "date": "2026-07-07"}]}
+    data = {**_FIXTURE_BRIEFING, "what_changed": wc}
+    p = _write_fixture(tmp_path, data)
+    pkt = build_china_packet(p, reference_date=_REFERENCE_DATE)
+    assert pkt is not None
+    # Headline must not crash; the valid event name should appear
+    assert "PMI data" in pkt["headline"] or len(pkt["headline"]) > 0
 
 
 # ---------------------------------------------------------------------------

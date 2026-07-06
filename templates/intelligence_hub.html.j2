@@ -423,8 +423,8 @@
       <span class="cl-fresh-label">{{ t('surfaces:', '数据面：') }}</span>
       {% for sname, sinfo in china.surfaces.items() %}
       <span class="cl-dot {{ 'cl-dot-stale' if sinfo.stale else 'cl-dot-ok' }}"
-        data-tip-en="{{ sname }}: {{ sinfo.asof }}{{ ' (stale >5d)' if sinfo.stale else '' }}"
-        data-tip-zh="{{ sname }}：{{ sinfo.asof }}{{ '（数据偏旧，超5天）' if sinfo.stale else '' }}">{{ sname }}</span>
+        data-tip-en="{{ sname }}: {{ sinfo.asof }}{{ ' (stale >3d)' if sinfo.stale else '' }}"
+        data-tip-zh="{{ sname }}：{{ sinfo.asof }}{{ '（数据偏旧，超过3天）' if sinfo.stale else '' }}">{{ sname }}</span>
       {% endfor %}
     </div>
     {% endif %}
