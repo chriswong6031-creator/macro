@@ -19,7 +19,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | hk-canada | 2 |
 | institutional-sector-intelligence | 2 |
 | intl-fix | 1 |
-| long-hold | 8 |
+| long-hold | 9 |
 | neural-web | 28 |
 | nw-mastermind-bridge | 2 |
 | nw-rails | 3 |
@@ -37,7 +37,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 81 |
+| display | 82 |
 | infrastructure | 40 |
 | scored | 4 |
 | shadow | 37 |
@@ -46,7 +46,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 156 |
+| git | 157 |
 | gitignored-local | 4 |
 | r2 | 2 |
 
@@ -145,6 +145,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
+| capital-allocation-delta | `embedded: capital_allocation block inside site/stockdata/<TICKER>.json` | json | daily-engine | display | 1 | 0 |
 | great-company-trap | `embedded: great_company_trap fields inside site/stockdata/<TICKER>.json` | json | daily-engine | display | 1 | 0 |
 | long-hold-clocks | `embedded: entry_clock + thesis_clock inside site/stockdata/<TICKER>.json` | json | daily-engine | display | 1 | 0 |
 | long-hold-compounder-features | `embedded: financials.multiyear.compounder inside site/stockdata/<TICKER>.json` | json | daily-engine | display | 1 | 0 |
@@ -546,6 +547,13 @@ Artifacts below have `known_extra_writers` — additional code paths that write 
 - **declared producer:** `engine/board_ledger.py`
 - **extra writers:**
   - engine/hk_run.py — calls board_ledger via lane='HK'; store_df.to_parquet L44
+
+### capital-allocation-delta
+
+- **path:** `embedded: capital_allocation block inside site/stockdata/<TICKER>.json`
+- **declared producer:** `engine/capital_allocation.py`
+- **extra writers:**
+  - engine/stock_fundamentals.py — _compute_capital_allocation_block() calls compute_capital_allocation() inside panels()
 
 ### china-sector-central-calls
 
