@@ -286,3 +286,11 @@ data/replay/*.parquet
 # Admin server is the single intraday writer; MUST NOT be staged by the nightly
 # blanket `git add data/` sweep. Off-band backup rides the admin host's path.
 data/operator/
+
+# SLF-001 SEC FTD collector (feat/slf001-sec-ftd-collector-phase0).
+# panel.parquet is 184MB / 22.4M rows — R2 data-plane law: must NOT enter git.
+# Mirrors pattern: data/massive_stock_day/*.parquet above.
+# The store dir (data/sec_ftd/) itself is a real tracked dir; parquets are excluded.
+# _manifest.json (freshness anchor, if created) is kept via negation.
+data/sec_ftd/*.parquet
+!data/sec_ftd/_manifest.json

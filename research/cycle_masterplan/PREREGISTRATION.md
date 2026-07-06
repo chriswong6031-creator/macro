@@ -300,3 +300,67 @@ seed=7. Script: `scripts/collinearity_phase0.py`. Full tables in artifact JSON.
 
 **Skipped legs (disclosed):** macro-regime quad/liquidity (no PIT backfill; P-D5-1
 revision leak); age-in-phase (deferred to D5-W1 hazard panel).
+
+---
+
+## 12 · CPI feature-trial gates — family `cycle_pattern_ft` (registered 2026-07-06, PRE-RUN)
+
+**Two-commit discipline (as W5.1):** this section + the frozen runner
+(`scripts/build_cycle_pattern_ft_phase0.py`) + the trial-budget declaration are committed BEFORE the
+study runs. The results commit appends a results block below WITHOUT moving any criterion. Program
+context: masterplan §4 (the information program) — the CPI thesis that new orthogonal covariates,
+not deeper mining of existing columns, move turn-prediction accuracy.
+
+**Design (frozen).** Harness = the W4.2 harness verbatim: discrete-time L2 logistic per direction on
+the person-period panel `data/hazard/panel_price_c4414dcb.parquet`, expanding-origin ANNUAL date-block
+walk-forward (first test year 2010, 6-month embargo), leak-free out-of-fold PAV calibration, paired
+ΔBrier month-block bootstrap (800 draws, seed 7), BH-FDR q=0.10 within the family. **Baseline = the
+current shipped W2.5-bound feature set refit under the identical folds inside this runner** — NOT the
+KM prior: a covariate block must add information beyond what already ships. **Holdout embargo:** rows
+with date ≥ 2024-01-01 are excluded from all fitting AND from the gate (stricter than W4.2's own span;
+preserves the untouched confirmatory window; test years 2010–2023, 14 blocks). Sign-stability bar:
+ΔBrier(base − base+X) > 0 in ≥ 60% of test years (≥ 9 of 14).
+
+**Frozen feature blocks — no per-feature selection permitted after this commit:**
+
+- **FT-1 breadth block** (4 features, PIT-pure from member tapes of the instrument's own panel family):
+  `fam_pct_above_200d`, `fam_pct_above_50d`, `breadth_div_own` (= fam_pct_above_200d − own
+  above-200d indicator), `breadth_thrust_3m` (= Δ over 3 month-ends of fam_pct_above_50d).
+- **FT-4 structure block** (4 features, PIT-pure from the panel cross-section at t):
+  `sync_family` (= 1 − circular variance of family `pos_osc`, the W5.1 statistic), `phase_breadth_late`
+  (fraction of family members with pos_osc ≥ 70), `phase_breadth_early` (fraction ≤ 30),
+  `pos_dispersion` (cross-sectional std of family pos_osc / 100).
+
+Continuous features standardized by train-fold mean/sd, as W4.2.
+
+| id | claim | success criterion | judged by | E[pass\|null] | FDR family |
+|---|---|---|---|---|---|
+| **FT1-{up,dn}-{1m,3m,6m}** | the breadth block adds OOS turn-hazard skill beyond the shipped feature set | paired ΔBrier(base − base+block) month-block bootstrap 90% CI excludes 0 on the positive side AND survives BH-FDR q=0.10 within `cycle_pattern_ft` AND sign-stability ≥ 9/14 years | `data/cycle_pattern/ft_trials/ft1_breadth.json` → `ledger.<dir>.<h>` | 0.05/cell | `cycle_pattern_ft` (q=0.10) |
+| **FT4-{up,dn}-{1m,3m,6m}** | the cross-entity structure block adds OOS turn-hazard skill beyond the shipped feature set | same | `data/cycle_pattern/ft_trials/ft4_structure.json` → `ledger.<dir>.<h>` | 0.05/cell | `cycle_pattern_ft` (q=0.10) |
+
+**Trial budget:** 12 cells (2 blocks × 2 directions × 3 horizons), declared as family
+`rf.cycle_pattern.ft_v0` in `data/trial_ledger.jsonl` at criteria-commit time. No other cells, blocks,
+horizons, or feature substitutions may be evaluated under this registration.
+
+**Outcome handling (frozen):** failing cells → the block does NOT enter the shipped model; a null
+truth artifact scoped to the block is appended to `data/cycle_pattern/truths.jsonl`. Passing cells →
+eligibility for a shipped-model refit is a SEPARATE follow-on wave (promotion still requires the truth
+layer + Signal Bus notes); no page/UI change this wave regardless of outcome. The stated bounty is the
+up-3m/up-6m PRIOR cells: any block that unlocks multi-month peak hazard matters more than any lattice cell.
+
+### FT results (2026-07-06 — criteria above UNCHANGED; two-commit discipline observed)
+
+| id | result | date |
+|---|---|---|
+| **FT1-up-{1m,3m,6m}** | **FAIL** — ΔBrier +0.0026 / +0.0028 / +0.0021, all CI₉₀ straddle 0 (lower bounds −0.0005/−0.0004/−0.0003); years+ 10/7/8 of 14; none survive BH. Directionally positive but not claimable. | 2026-07-06 |
+| **FT1-dn-1m** | **FAIL (harmful)** — ΔBrier **−0.0056**, CI₉₀ [−0.0099, −0.0016] excludes 0 on the NEGATIVE side: the breadth block actively degrades the strongest shipped cell. | 2026-07-06 |
+| **FT1-dn-{3m,6m}** | **FAIL** — ΔBrier −0.0018 / −0.0006, CIs straddle 0. | 2026-07-06 |
+| **FT4-{up,dn}-{1m,3m,6m}** | **FAIL** — all six cells: ΔBrier −0.0036 … +0.0010, every CI₉₀ straddles 0 (up/6m lower −0.0077), no BH survivor. | 2026-07-06 |
+
+**Verdict: 0 of 12 cells pass.** Per frozen outcome handling: neither block enters the shipped model;
+null truth artifacts CPI-016 (breadth block) and CPI-017 (structure block) appended to
+`data/cycle_pattern/truths.jsonl`, scoped to these exact block definitions and this harness. Full
+adjudication: `research/cycle_masterplan/CPI_FT1_FT4_VERDICT.md`. Reopening either block requires a
+NEW preregistered trial naming the null it challenges (dead-stays-dead). Artifacts:
+`data/cycle_pattern/ft_trials/ft{1,4}_*.json`; budget line `rf.cycle_pattern.ft_v0` n=12 in
+`data/trial_ledger.jsonl`.
