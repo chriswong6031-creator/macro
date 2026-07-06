@@ -131,3 +131,23 @@ Routing: Sonnet builders in isolated worktrees, Opus reviewers, Fable merges ser
 - Census lanes (Sonnet ×7): claim verification vs live artifacts + git history (long-hold parquets recovered from commits 948d9aa1fc / c2a171c95c / 90d9c8fc89), redundancy sweeps vs masterplans/amendments/preregs, rails inventory.
 - Adversarial lanes (Opus ×5): frame + build-order critique, per-lobe statistical review (episode counts, cell-explosion arithmetic, degenerate targets, PIT legality), gap-hunt (M1-M7).
 - Fable: rulings, corrections ledger, phased plans, docket ratification.
+
+---
+
+## 8.1 Outcome log (same-day execution, 2026-07-06)
+
+All docket items shipped or resolved same-day. Fleet: 8 Sonnet builders (isolated worktrees) + 8 Opus reviewers + 5 Sonnet fixers; Fable merged serially against a fast-moving main (4 parallel-session PRs landed mid-program).
+
+| PR | Item | Outcome |
+|---|---|---|
+| #1684 | PR-0 docs | MERGED |
+| #1687 | PR-A1 onset baselines | MERGED (review APPROVE). Root cause was sharper than the docket text: p3_results.json was explicitly gitignored ("regenerate via script") and never committed — the decay monitor for the program's only two live onset edges was blind since P3 shipped. Baselines transcribed with provenance; conformance test now makes unpublished-edge-cell blindness a CI failure. |
+| #1691 | PR-A2 funnel longitudinal history | MERGED (review APPROVE + 2 minors fixed: --smoke × --write-history rejected; bool() drift flag). Clock opened: nightly append-only store live. |
+| #1692 | PR-A3 operator-tape outcomes | MERGED after FIX round (synapse notes-block corruption repaired; duplicate-pending append fixed — one pending row per tape_id, one final row at maturation; resolver now prefers the write-time system_state_snapshot with system_state_source recorded). Clock opened. |
+| #1688 | PR-A4 contradiction pair-g | MERGED (review APPROVE; 3 minors noted for future hygiene: stale 6-pair consumer note, mutable-attribute plumbing, as_of 'unknown' lexicographic edge). |
+| #1694 | PR-B1 S(f) benchmark + dead-name probe | MERGED after FIX round (calendar-continuity guard now matches long_hold_label_panel._total_return per LH-W1-3; A2 §4 contact-freeze enforced with fire_date ≤ 2023-12-31 hard filter + exclusion counts printed; sample runs write to _SAMPLE path). Full S(f) run is a Mac-local on-demand job — script shipped, run pending operator window. |
+| #1689 | PR-B2 A2 freeze-anchor script | MERGED after FIX round (program_fdr_marginal = within-family-pass AND program-fail per LH-R11.2; roster SHA-256 pinned literally: b52165f8…30bcbc; no-run gate enforced inside the contact function; refusal tests assert specific reasons). **Roster freeze anchor is committed — LH-R11.1 satisfied.** |
+| #1690 | PR-B4 grading_stats calibration helpers | MERGED after FIX round (zero-variance era comparison no longer forced 'consistent'; eb_shrink validates k ≤ n; brier length-check ordering). |
+| #1697 | PR-B3 bottom_sensors split | **CLOSED — superseded by #1682** (parallel session's PR-C1 R2 panel publish/fetch path; sponsorship_state now live on main: 886 tailwind / 392 neutral / 301 headwind / 143 unavailable). rs_repair_state half honestly BLOCKED per RUL-15: W0.4 cohort-metrics series began accruing 2026-07-04, needs ≥20 trading days (~early Aug 2026) + Fable ratification of the state taxonomy before binding read-only. |
+
+Open ops (W-OPS): verify `data/oracle/reversion_forward/` materializes on the next nightly and oracle_state freshness (asof was 2026-07-01 across the long weekend); rs_repair bind clock ~2026-08.
