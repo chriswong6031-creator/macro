@@ -26,9 +26,16 @@ Field sources (source_artifacts column in output):
   dist_21d_low_pct                  → computed here (rolling 21d; close series from data/stocks/*.parquet)
   dist_126d_high_pct                → computed here (rolling 126d; close series from data/stocks/*.parquet)
   sponsorship_state                 → computed here (Amendment §C3); reads data/oracle/panel_s.parquet
-                                       and data/oracle/panel_m.parquet; stock→sector/subsector map
-                                       from engine/neuralweb/sector_map.py (existing repo stores only)
-  rs_repair_state                   → stamped unavailable (W0.4 of #1302 not yet shipped)
+                                       and data/oracle/panel_m.parquet (full parquets, R2-stored,
+                                       gitignored); falls back to committed compact snapshot
+                                       data/oracle/oracle_panels_snapshot.json when parquets absent
+                                       (CI runners / worktrees without R2 fetch); stock→sector/subsector
+                                       map from engine/neuralweb/sector_map.py (existing repo stores).
+                                       PR-B3: snapshot fallback un-starves sponsorship_state on CI;
+                                       coverage: 1,489/1,722 sector-mapped + 233 legitimately unmapped.
+  rs_repair_state                   → stamped unavailable (W0.4 within-cohort RS-rank series has
+                                       only 3 days of history; frozen STATE taxonomy required —
+                                       see PR-B3 blocker in structured report)
 
 KNIFE condition binding law (Amendment §C2):
   The _ALIGN_KNIFE_BLOCK constant (cycles.py: _ALIGN_KNIFE_BLOCK = 0.7) defines the
@@ -258,6 +265,70 @@ def _data_oracle(root: Path) -> Path:
     return root / "data" / "oracle"
 
 
+# ── Compact oracle snapshot (PR-B3 sponsorship un-starvation) ─────────────────
+#
+# panel_s.parquet / panel_m.parquet are gitignored and R2-stored; on CI runners
+# (virtualized FS) they are absent every nightly run, starving sponsorship_state.
+# The committed fallback oracle_panels_snapshot.json stores the latest vel_1m/accel
+# per node (11 sector + 354 subsector nodes, ~41 KB) so the C3 connector can
+# produce real states even without the full parquets.
+#
+# Updated on the Mac write path by: python -m scripts.update_oracle_panels_snapshot
+# The snapshot is intentionally one-row-per-node (latest date only); staleness is
+# gated by the as_of date in each node record (same _SPONSORSHIP_STALE_TRADING_DAYS
+# threshold applies via today argument).
+
+_SNAPSHOT_FILENAME = "oracle_panels_snapshot.json"
+
+
+def _load_oracle_panel_snapshot(root: Path) -> tuple[pd.DataFrame | None, pd.DataFrame | None]:
+    """Load the compact oracle panels snapshot as two panel DataFrames.
+
+    Returns (panel_s_df, panel_m_df) — each with MultiIndex[node, date]
+    containing vel_1m and accel columns, shaped identically to a single-row
+    slice from the full parquets.  Returns (None, None) on failure.
+
+    The snapshot stores only the latest row per node, so each returned
+    DataFrame has exactly one date per node.  _sponsorship_state() works
+    identically: it calls xs(node, level='node') then .index.max().
+    """
+    path = _data_oracle(root) / _SNAPSHOT_FILENAME
+    if not path.exists():
+        return None, None
+    try:
+        with open(path) as fh:
+            raw = json.load(fh)
+
+        def _build_panel(node_dict: dict) -> pd.DataFrame | None:
+            if not node_dict:
+                return None
+            rows: list[dict] = []
+            for node, entry in node_dict.items():
+                as_of_str = entry.get("as_of")
+                vel_1m = entry.get("vel_1m")
+                accel = entry.get("accel")
+                if as_of_str is None:
+                    continue
+                rows.append({
+                    "node": node,
+                    "date": pd.Timestamp(as_of_str),
+                    "vel_1m": float(vel_1m) if vel_1m is not None else float("nan"),
+                    "accel": float(accel) if accel is not None else float("nan"),
+                })
+            if not rows:
+                return None
+            df = pd.DataFrame(rows)
+            df = df.set_index(["node", "date"])
+            return df
+
+        snap_s = _build_panel(raw.get("panel_s") or {})
+        snap_m = _build_panel(raw.get("panel_m") or {})
+        return snap_s, snap_m
+    except Exception as exc:  # noqa: BLE001
+        log.warning("oracle snapshot load failed: %s", exc)
+        return None, None
+
+
 # ── Oracle panel loading (read-only; sponsorship connector) ───────────────────
 
 def _load_oracle_panel(root: Path, filename: str) -> pd.DataFrame | None:
@@ -266,6 +337,10 @@ def _load_oracle_panel(root: Path, filename: str) -> pd.DataFrame | None:
 
     The panels are loaded once per assemble() call and passed through; this function
     is the single load path so callers never need to handle IOErrors directly.
+
+    No snapshot fallback here — the snapshot is loaded once in assemble() and
+    applied selectively: full parquet is used when present; snapshot substitutes
+    only for absent parquets (avoids reading the snapshot file twice).
     """
     path = _data_oracle(root) / filename
     try:
@@ -788,9 +863,35 @@ def assemble(
     # build_sector_map is fast (parquet reads from existing stores, cached on disk).
     # Oracle panels are loaded once and reused across all ticker rows.
     # All failures degrade to sponsorship_state="unavailable" gracefully.
+    #
+    # PR-B3 snapshot fallback: panel_s.parquet / panel_m.parquet are gitignored
+    # and R2-stored; on CI runners they are absent.  When either parquet is missing,
+    # fall back to the committed compact snapshot (oracle_panels_snapshot.json).
+    # The snapshot contains only the latest vel_1m/accel per node (~41 KB committed).
+    # Full parquet always wins over snapshot when present (more history = better
+    # staleness detection).
     sector_map_dict = build_sector_map(root)
     panel_s = _load_oracle_panel(root, "panel_s.parquet")
     panel_m = _load_oracle_panel(root, "panel_m.parquet")
+
+    snap_s: pd.DataFrame | None = None
+    snap_m: pd.DataFrame | None = None
+    _snapshot_loaded = False
+
+    if panel_s is None or panel_m is None:
+        snap_s, snap_m = _load_oracle_panel_snapshot(root)
+        _snapshot_loaded = snap_s is not None or snap_m is not None
+        if _snapshot_loaded:
+            log.info(
+                "sponsorship: full parquets absent — using committed snapshot "
+                "(panel_s=%s nodes, panel_m=%s nodes)",
+                len(snap_s) if snap_s is not None else 0,
+                len(snap_m) if snap_m is not None else 0,
+            )
+
+    # Resolve effective panels: full parquet > snapshot
+    effective_panel_s = panel_s if panel_s is not None else snap_s
+    effective_panel_m = panel_m if panel_m is not None else snap_m
 
     # Build per-ticker dicts from standouts
     buy_rows: dict[str, dict] = {}
@@ -827,8 +928,8 @@ def assemble(
                 root=root,
                 sg_asof=sg_asof,
                 sector_mapping=s_mapping,
-                panel_s=panel_s,
-                panel_m=panel_m,
+                panel_s=effective_panel_s,
+                panel_m=effective_panel_m,
             )
             # ── Bottom-survival-quality leverage ratios (FR-9/FR-10) ──────────
             # Additive per-ticker columns: None when statements absent or ratio

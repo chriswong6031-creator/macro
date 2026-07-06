@@ -1,0 +1,1833 @@
+{
+  "schema": "oracle_panels_snapshot_v1",
+  "description": "Compact snapshot of oracle panel latest-row vel_1m/accel per node. Committed fallback for CI runners where panel_s.parquet/panel_m.parquet are unavailable (R2-stored). Updated by scripts/update_oracle_panels_snapshot.py on the Mac-local write path.",
+  "panel_s": {
+    "XLB": {
+      "as_of": "2026-07-01",
+      "vel_1m": 0.001314,
+      "accel": -0.004348
+    },
+    "XLC": {
+      "as_of": "2026-07-01",
+      "vel_1m": -0.011117,
+      "accel": 0.03081
+    },
+    "XLE": {
+      "as_of": "2026-07-01",
+      "vel_1m": -0.016505,
+      "accel": -0.003609
+    },
+    "XLF": {
+      "as_of": "2026-07-01",
+      "vel_1m": 0.01585,
+      "accel": 0.011328
+    },
+    "XLI": {
+      "as_of": "2026-07-01",
+      "vel_1m": 0.015234,
+      "accel": 0.007223
+    },
+    "XLK": {
+      "as_of": "2026-07-01",
+      "vel_1m": -0.011661,
+      "accel": -0.016381
+    },
+    "XLP": {
+      "as_of": "2026-07-01",
+      "vel_1m": 0.005185,
+      "accel": -0.014735
+    },
+    "XLRE": {
+      "as_of": "2026-07-01",
+      "vel_1m": 0.006899,
+      "accel": -0.013706
+    },
+    "XLU": {
+      "as_of": "2026-07-01",
+      "vel_1m": 0.010444,
+      "accel": -0.015037
+    },
+    "XLV": {
+      "as_of": "2026-07-01",
+      "vel_1m": 0.019309,
+      "accel": 0.033602
+    },
+    "XLY": {
+      "as_of": "2026-07-01",
+      "vel_1m": 0.000263,
+      "accel": 0.019834
+    }
+  },
+  "panel_m": {
+    "Aging Population & Longevity": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.023982,
+      "accel": 0.04461
+    },
+    "Agriculture & FoodTech": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.009191,
+      "accel": 0.023299
+    },
+    "Artificial Intelligence": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.021846,
+      "accel": 0.003485
+    },
+    "Autonomous Systems": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.012737,
+      "accel": 0.043209
+    },
+    "Big Data": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.019289,
+      "accel": 0.042372
+    },
+    "Biometrics": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.015823,
+      "accel": 0.030327
+    },
+    "Cloud Computing": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.024577,
+      "accel": 0.014399
+    },
+    "Commodities Agriculture": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.01033,
+      "accel": 0.036031
+    },
+    "Commodities Energy": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.022634,
+      "accel": 0.012314
+    },
+    "Commodities Metals": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.040087,
+      "accel": 0.011294
+    },
+    "Consumer Goods": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.011193,
+      "accel": 0.024846
+    },
+    "Crypto & Blockchain": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.023944,
+      "accel": -0.025778
+    },
+    "Cybersecurity": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.011937,
+      "accel": 0.058893
+    },
+    "Defense & Aerospace": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.010841,
+      "accel": 0.086908
+    },
+    "Digital Entertainment": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.001045,
+      "accel": 0.035393
+    },
+    "E-commerce": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.009727,
+      "accel": 0.039662
+    },
+    "Education Technology": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.001478,
+      "accel": 0.061024
+    },
+    "Electric Vehicles": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.032649,
+      "accel": 0.004219
+    },
+    "Energy Renewable": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.027488,
+      "accel": -0.013872
+    },
+    "Energy Traditional": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.019346,
+      "accel": -0.01654
+    },
+    "Environmental Sustainability": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.011383,
+      "accel": 0.007083
+    },
+    "FinTech": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.031134,
+      "accel": 0.128209
+    },
+    "Hardware": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.026041,
+      "accel": -0.040775
+    },
+    "Healthcare & Biotech": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.035676,
+      "accel": 0.062582
+    },
+    "Healthy Food & Nutrition": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.010641,
+      "accel": 0.048535
+    },
+    "Industrial Automation": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.009431,
+      "accel": -0.00138
+    },
+    "Internet of Things": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.015428,
+      "accel": -0.013926
+    },
+    "Nanotechnology": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.006638,
+      "accel": -0.020447
+    },
+    "Quantum Computing": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.020073,
+      "accel": -0.037946
+    },
+    "Real Estate & REITs": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.011399,
+      "accel": -0.001901
+    },
+    "Robotics": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.161327,
+      "accel": -0.057023
+    },
+    "Semiconductors": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.029283,
+      "accel": -0.151557
+    },
+    "Smart Home": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.02018,
+      "accel": -0.004723
+    },
+    "Social Media": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.004936,
+      "accel": 0.108343
+    },
+    "Software": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.013483,
+      "accel": 0.094029
+    },
+    "Space Tech": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.036816,
+      "accel": 0.105679
+    },
+    "Telecommunications": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.023244,
+      "accel": 0.005891
+    },
+    "Transportation & Logistics": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.003028,
+      "accel": 0.005461
+    },
+    "Virtual & Augmented Reality": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.019966,
+      "accel": 0.03859
+    },
+    "Wearables": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.011095,
+      "accel": -0.025933
+    },
+    "agriculturealtprotein": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.000922,
+      "accel": 0.016246
+    },
+    "agriculturecropinputs": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.016837,
+      "accel": 0.043094
+    },
+    "agricultureindoorfarming": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.041373,
+      "accel": 0.032728
+    },
+    "agricultureprocessing": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.001157,
+      "accel": 0.012942
+    },
+    "agriculturesmartfarming": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.009792,
+      "accel": 0.003459
+    },
+    "ai_agents": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.017232,
+      "accel": 0.124354
+    },
+    "ai_infra": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.036605,
+      "accel": -0.130242
+    },
+    "ai_neoclouds": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.055979,
+      "accel": -0.218047
+    },
+    "ai_semiconductors": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.032066,
+      "accel": -0.104551
+    },
+    "ai_software": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.032593,
+      "accel": 0.05966
+    },
+    "aiadssearch": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.003333,
+      "accel": 0.104214
+    },
+    "aiagi": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.013686,
+      "accel": 0.034688
+    },
+    "aiapplications": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.026419,
+      "accel": 0.061653
+    },
+    "aicloud": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.037994,
+      "accel": -0.047754
+    },
+    "aicompute": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.026384,
+      "accel": -0.10124
+    },
+    "aidata": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.029724,
+      "accel": 0.080137
+    },
+    "aiedge": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.023222,
+      "accel": -0.080283
+    },
+    "aienergy": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.031347,
+      "accel": 0.001534
+    },
+    "aienterprise": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.034867,
+      "accel": 0.105221
+    },
+    "aimodels": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.023997,
+      "accel": 0.075757
+    },
+    "ainetworking": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.040702,
+      "accel": -0.053507
+    },
+    "airobotics": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.004422,
+      "accel": 0.055664
+    },
+    "aisecurity": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.018186,
+      "accel": -0.002863
+    },
+    "automationautomation": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.002991,
+      "accel": -0.035753
+    },
+    "automationdprinting": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.006903,
+      "accel": -0.03481
+    },
+    "automationiot": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.001968,
+      "accel": 0.038483
+    },
+    "automationlogistics": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.012853,
+      "accel": 0.01908
+    },
+    "automationmachinevision": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.004426,
+      "accel": -0.014925
+    },
+    "automationrobotics": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.00994,
+      "accel": -0.029848
+    },
+    "automationsoftware": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.024998,
+      "accel": 0.05316
+    },
+    "autonomousavmobility": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.014967,
+      "accel": 0.038849
+    },
+    "autonomousdefense": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.019665,
+      "accel": 0.148451
+    },
+    "autonomousindustrial": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.003256,
+      "accel": 0.015912
+    },
+    "autonomousmachinevision": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.019304,
+      "accel": 0.019408
+    },
+    "autonomoussoftware": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.032125,
+      "accel": 0.051944
+    },
+    "autonomousspecialized": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.004476,
+      "accel": -0.006607
+    },
+    "big_pharma": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.026022,
+      "accel": 0.058131
+    },
+    "bigdataaiplatforms": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.023027,
+      "accel": 0.074352
+    },
+    "bigdataanalyticsbi": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.035113,
+      "accel": 0.10976
+    },
+    "bigdatainfrastructure": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.031782,
+      "accel": -0.06002
+    },
+    "bigdataproviders": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.002369,
+      "accel": 0.103139
+    },
+    "biometricsgovdefense": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.010449,
+      "accel": 0.02673
+    },
+    "biometricshardware": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.0188,
+      "accel": -0.099887
+    },
+    "biometricsidentity": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.00541,
+      "accel": -0.021029
+    },
+    "biometricssoftware": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.018488,
+      "accel": 0.063397
+    },
+    "blockchainenterprise": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.039516,
+      "accel": 0.054378
+    },
+    "blockchaininfrastructure": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.00876,
+      "accel": 0.091161
+    },
+    "blockchainmining": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.053891,
+      "accel": -0.187138
+    },
+    "blockchainpayments": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.016523,
+      "accel": 0.07231
+    },
+    "blockchainplatforms": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.006959,
+      "accel": 0.096926
+    },
+    "blockchaintokenization": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.005313,
+      "accel": 0.079411
+    },
+    "clouddatabases": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.029582,
+      "accel": 0.067206
+    },
+    "clouddatacenters": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.012608,
+      "accel": -0.073585
+    },
+    "clouddevops": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.019397,
+      "accel": 0.062597
+    },
+    "cloudedge": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.012817,
+      "accel": 0.073873
+    },
+    "cloudhardware": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.032713,
+      "accel": -0.120776
+    },
+    "cloudhsaas": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.02966,
+      "accel": 0.116199
+    },
+    "cloudhybridcloud": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.039471,
+      "accel": -0.019254
+    },
+    "cloudhyperscalers": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.040159,
+      "accel": 0.039792
+    },
+    "cloudmulticloud": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.022768,
+      "accel": 0.036825
+    },
+    "cloudpaas": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.038246,
+      "accel": 0.036548
+    },
+    "cloudsecurity": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.016906,
+      "accel": 0.008361
+    },
+    "cloudserverless": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.026122,
+      "accel": 0.075258
+    },
+    "commagribiofuels": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.021134,
+      "accel": 0.040072
+    },
+    "commagrifertilizers": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.008981,
+      "accel": 0.040414
+    },
+    "commagrigrains": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.032352,
+      "accel": -0.008073
+    },
+    "commagrilivestock": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.010231,
+      "accel": 0.037149
+    },
+    "commagrisofts": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.007302,
+      "accel": 0.037311
+    },
+    "commenergybiofuels": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.021254,
+      "accel": 0.069092
+    },
+    "commenergygaslng": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.000478,
+      "accel": 0.008755
+    },
+    "commenergyoil": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.023454,
+      "accel": -0.006396
+    },
+    "commenergyuranium": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.050683,
+      "accel": -0.008689
+    },
+    "commmetalsbattery": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.045884,
+      "accel": 0.00907
+    },
+    "commmetalsgold": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.024713,
+      "accel": 0.048557
+    },
+    "commmetalsindustrial": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.048349,
+      "accel": -0.054699
+    },
+    "commmetalsprecious": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.024705,
+      "accel": 0.046007
+    },
+    "commmetalsrareearth": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.056537,
+      "accel": 0.005954
+    },
+    "commmetalsrecycling": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.034847,
+      "accel": -0.083096
+    },
+    "commmetalssilver": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.032895,
+      "accel": 0.050951
+    },
+    "consumerapparel": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.01138,
+      "accel": 0.018479
+    },
+    "consumerfarmdirect": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.005756,
+      "accel": 0.027376
+    },
+    "consumerfood": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.003682,
+      "accel": 0.033175
+    },
+    "consumerhousehold": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.00771,
+      "accel": 0.024736
+    },
+    "consumerluxury": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.013609,
+      "accel": 0.002577
+    },
+    "consumersecondhand": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.024637,
+      "accel": 0.023789
+    },
+    "critical_minerals": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.059421,
+      "accel": -0.009203
+    },
+    "crypto": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.042165,
+      "accel": -0.025287
+    },
+    "crypto_rails": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.004121,
+      "accel": 0.096433
+    },
+    "cybersecurity": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.001529,
+      "accel": 0.049315
+    },
+    "cybersecurityappsecurity": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.007871,
+      "accel": 0.011317
+    },
+    "cybersecuritycloud": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.007684,
+      "accel": 0.054734
+    },
+    "cybersecurityendpoint": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.025643,
+      "accel": -0.038468
+    },
+    "cybersecurityidentityiam": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.02025,
+      "accel": 0.059729
+    },
+    "cybersecuritynetwork": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.003988,
+      "accel": 0.026942
+    },
+    "cybersecuritysiem": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.025651,
+      "accel": -0.034166
+    },
+    "cybersecuritythreatops": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.026528,
+      "accel": -0.040699
+    },
+    "cybersecurityzerotrust": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.023268,
+      "accel": -0.029369
+    },
+    "data_center_power": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.016302,
+      "accel": -0.089445
+    },
+    "defense": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.00211,
+      "accel": 0.089648
+    },
+    "defenseaviation": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.018585,
+      "accel": 0.04636
+    },
+    "defensecyberdefense": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.004815,
+      "accel": 0.117073
+    },
+    "defensedrones": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.017903,
+      "accel": 0.112115
+    },
+    "defensemanufacturing": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.01569,
+      "accel": 0.009163
+    },
+    "defensemissiles": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.012577,
+      "accel": 0.053563
+    },
+    "defensespacetech": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.013681,
+      "accel": 0.145294
+    },
+    "defenseweapons": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.00178,
+      "accel": 0.095309
+    },
+    "defensives": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.016898,
+      "accel": 0.02635
+    },
+    "ecommerceadsmedia": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.018833,
+      "accel": 0.033072
+    },
+    "ecommercedtc": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.012588,
+      "accel": 0.002299
+    },
+    "ecommercegrocery": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.011828,
+      "accel": 0.0237
+    },
+    "ecommercelogistics": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.000699,
+      "accel": 0.037627
+    },
+    "ecommercemarketplaces": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.008004,
+      "accel": 0.015331
+    },
+    "ecommerceomnichannel": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.006698,
+      "accel": -0.00133
+    },
+    "ecommerceplatforms": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.008021,
+      "accel": 0.120929
+    },
+    "ecommercesecondhand": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.050166,
+      "accel": -0.02914
+    },
+    "ecommercesocial": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.001571,
+      "accel": 0.059744
+    },
+    "educationcurriculum": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.013316,
+      "accel": 0.051961
+    },
+    "educationinfrastructure": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.022835,
+      "accel": 0.054266
+    },
+    "educationplatforms": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.007646,
+      "accel": 0.029669
+    },
+    "educationworkforce": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.010763,
+      "accel": 0.069278
+    },
+    "energy_complex": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.014947,
+      "accel": -0.008261
+    },
+    "energybasemajors": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.027862,
+      "accel": 0.008966
+    },
+    "energybasenuclear": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.02946,
+      "accel": -0.032329
+    },
+    "energybaseoilproduction": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.027006,
+      "accel": -0.013676
+    },
+    "energybaseoilrefining": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.000418,
+      "accel": 0.005646
+    },
+    "energybaseoilservices": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.032969,
+      "accel": -0.046344
+    },
+    "energybasethermal": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.025268,
+      "accel": -0.023032
+    },
+    "energybaseutilities": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.007204,
+      "accel": -0.018685
+    },
+    "energycleanbatteries": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.046883,
+      "accel": -0.052846
+    },
+    "energycleanbiofuels": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.019944,
+      "accel": 0.058789
+    },
+    "energycleangeothermal": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.041393,
+      "accel": -0.067271
+    },
+    "energycleanhydrogen": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.021305,
+      "accel": 0.009467
+    },
+    "energycleanmaterials": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.042698,
+      "accel": -0.015214
+    },
+    "energycleansmartgrid": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.000183,
+      "accel": -0.031261
+    },
+    "energycleansolar": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.0571,
+      "accel": -0.035158
+    },
+    "energycleanutilities": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.001865,
+      "accel": -0.021351
+    },
+    "energycleanwind": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.011176,
+      "accel": -0.022785
+    },
+    "entertainmentbetting": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.013644,
+      "accel": 0.051523
+    },
+    "entertainmentgambling": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.016601,
+      "accel": 0.024784
+    },
+    "entertainmentgaming": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.011191,
+      "accel": 0.068859
+    },
+    "entertainmentinfrastructure": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.020218,
+      "accel": -0.012033
+    },
+    "entertainmentmusic": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.008783,
+      "accel": 0.072048
+    },
+    "entertainmentvideo": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.002226,
+      "accel": 0.044127
+    },
+    "environmentalagriculture": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.011199,
+      "accel": 0.0104
+    },
+    "environmentalairquality": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.016982,
+      "accel": -0.03012
+    },
+    "environmentalclimate": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.011199,
+      "accel": 0.0104
+    },
+    "environmentalwaste": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.030586,
+      "accel": 0.041354
+    },
+    "environmentalwater": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.021024,
+      "accel": 0.02569
+    },
+    "evsbatteries": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.062794,
+      "accel": -0.022871
+    },
+    "evscharging": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.014037,
+      "accel": 0.043567
+    },
+    "evschips": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.051775,
+      "accel": -0.169444
+    },
+    "evsfleets": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.004915,
+      "accel": 0.078864
+    },
+    "evsmanufacturers": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.02256,
+      "accel": 0.071111
+    },
+    "evsselfdriving": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.030779,
+      "accel": 0.047771
+    },
+    "evssuppliers": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.031724,
+      "accel": -0.013139
+    },
+    "fintechblockchain": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.03141,
+      "accel": -0.04257
+    },
+    "fintechexchanges": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.009243,
+      "accel": 0.093249
+    },
+    "fintechinsurance": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.029888,
+      "accel": 0.100103
+    },
+    "fintechlending": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.021457,
+      "accel": 0.042618
+    },
+    "fintechneobanks": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.161889,
+      "accel": 0.553474
+    },
+    "fintechpayments": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.028631,
+      "accel": 0.098857
+    },
+    "fintechtrading": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.024476,
+      "accel": 0.042587
+    },
+    "hardwaredatacenters": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.041806,
+      "accel": -0.127053
+    },
+    "hardwareelectronics": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.025645,
+      "accel": 0.007552
+    },
+    "hardwaregaming": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.025388,
+      "accel": 0.012209
+    },
+    "hardwareindustrialiot": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.005632,
+      "accel": 0.003241
+    },
+    "hardwarenetworking": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.03143,
+      "accel": -0.097249
+    },
+    "hardwarenextgen": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.02765,
+      "accel": 0.031646
+    },
+    "hardwarepcsdevices": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.024317,
+      "accel": -0.083575
+    },
+    "hardwareprinting": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.036836,
+      "accel": -0.055414
+    },
+    "hardwareservers": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.041751,
+      "accel": -0.080336
+    },
+    "hardwarestorage": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.041777,
+      "accel": -0.176205
+    },
+    "hardwaretelecom": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.042297,
+      "accel": -0.095935
+    },
+    "healthcaredevices": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.010383,
+      "accel": 0.034895
+    },
+    "healthcarediagnostics": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.04063,
+      "accel": 0.06753
+    },
+    "healthcaregenomics": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.047155,
+      "accel": 0.037292
+    },
+    "healthcareitdata": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.02067,
+      "accel": 0.095189
+    },
+    "healthcaremetabolic": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.037908,
+      "accel": 0.05152
+    },
+    "healthcarenextgen": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.055378,
+      "accel": 0.091425
+    },
+    "healthcareoncology": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.035402,
+      "accel": 0.047417
+    },
+    "healthcaretelemedicine": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.039128,
+      "accel": 0.06618
+    },
+    "healthcaretherapeutics": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.032458,
+      "accel": 0.068873
+    },
+    "housing": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.02932,
+      "accel": -0.016644
+    },
+    "industrial_distribution": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.010835,
+      "accel": -0.035934
+    },
+    "insurance": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.034013,
+      "accel": 0.077479
+    },
+    "iotedgedevices": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.019599,
+      "accel": -0.098339
+    },
+    "iotenterprise": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.004677,
+      "accel": 0.006513
+    },
+    "iothardware": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.035116,
+      "accel": -0.12563
+    },
+    "iotnetworking": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.016311,
+      "accel": -0.012859
+    },
+    "iotsecurity": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.012724,
+      "accel": -0.019475
+    },
+    "iotsoftware": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.028082,
+      "accel": 0.076841
+    },
+    "longevityagingpharma": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.028475,
+      "accel": 0.048577
+    },
+    "longevityhealthcare": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.016175,
+      "accel": 0.022008
+    },
+    "longevityhealthyaging": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.016402,
+      "accel": 0.068018
+    },
+    "longevityseniorliving": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.029061,
+      "accel": 0.035644
+    },
+    "mag7": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.01301,
+      "accel": 0.058215
+    },
+    "managed_care": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.057942,
+      "accel": -0.000877
+    },
+    "memory_storage": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.010498,
+      "accel": -0.306548
+    },
+    "nanotechelectronics": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.019838,
+      "accel": -0.091944
+    },
+    "nanotechenergy": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.004081,
+      "accel": -0.0499
+    },
+    "nanotechmaterials": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.065821,
+      "accel": -0.023052
+    },
+    "nanotechmedicine": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.032567,
+      "accel": 0.062616
+    },
+    "nanotechproducts": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.084778,
+      "accel": -0.010272
+    },
+    "nanotechresearchtools": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.007743,
+      "accel": -0.085436
+    },
+    "non_ai_software": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.027011,
+      "accel": 0.141028
+    },
+    "non_ai_tech": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.026445,
+      "accel": -0.116396
+    },
+    "nuclear_power": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.025868,
+      "accel": -0.055334
+    },
+    "nutritionaltprotein": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.00379,
+      "accel": 0.041896
+    },
+    "nutritionmealdelivery": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.011354,
+      "accel": 0.037415
+    },
+    "nutritionretailers": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.001954,
+      "accel": 0.012811
+    },
+    "nutritionsupplements": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.026196,
+      "accel": 0.094363
+    },
+    "obesity_glp1": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.040215,
+      "accel": 0.048099
+    },
+    "payments_fintech": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.055154,
+      "accel": 0.218752
+    },
+    "power_grid": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.009503,
+      "accel": -0.057862
+    },
+    "quantum_computing": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.037467,
+      "accel": -0.006786
+    },
+    "quantumapplications": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.028358,
+      "accel": 0.020082
+    },
+    "quantumcloud": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.037642,
+      "accel": 0.013285
+    },
+    "quantumenablingtech": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.01831,
+      "accel": -0.086931
+    },
+    "quantumhardware": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.042725,
+      "accel": -0.010883
+    },
+    "quantumnetworking": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.003679,
+      "accel": 0.007097
+    },
+    "quantumsoftware": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.038392,
+      "accel": 0.010271
+    },
+    "realestatehealthcare": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.02093,
+      "accel": 0.031443
+    },
+    "realestatehousing": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.013493,
+      "accel": 0.024973
+    },
+    "realestateittelecom": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.018906,
+      "accel": -0.056581
+    },
+    "realestateoffice": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.03105,
+      "accel": 0.02121
+    },
+    "realestateretail": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.015218,
+      "accel": -0.010074
+    },
+    "realestatetourism": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.005463,
+      "accel": -0.024666
+    },
+    "realestatewarehousing": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.011256,
+      "accel": 0.017009
+    },
+    "regional_banks": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.020672,
+      "accel": -0.008798
+    },
+    "reshoring": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.007409,
+      "accel": -0.048832
+    },
+    "retail": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.006601,
+      "accel": 0.00596
+    },
+    "robotics_automation": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.001658,
+      "accel": -0.003659
+    },
+    "roboticsautomation": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.006578,
+      "accel": -0.027321
+    },
+    "roboticsavmobility": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.029799,
+      "accel": 0.005395
+    },
+    "roboticsconsumer": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.729129,
+      "accel": -0.132547
+    },
+    "roboticslogistics": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.004193,
+      "accel": -0.014639
+    },
+    "roboticsmachinevision": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.01913,
+      "accel": -0.010817
+    },
+    "roboticsmedical": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.002749,
+      "accel": -0.008222
+    },
+    "semicap_equipment": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.002473,
+      "accel": -0.156273
+    },
+    "semisanalog": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.035211,
+      "accel": -0.140673
+    },
+    "semiscompute": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.027195,
+      "accel": -0.124637
+    },
+    "semisdesigntools": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.030863,
+      "accel": -0.11102
+    },
+    "semisfoundries": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.000101,
+      "accel": -0.176911
+    },
+    "semislithography": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.02847,
+      "accel": -0.129233
+    },
+    "semismemory": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.031975,
+      "accel": -0.2403
+    },
+    "semisnextgen": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.040264,
+      "accel": -0.16671
+    },
+    "semispackaging": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.010728,
+      "accel": -0.172448
+    },
+    "semiswireless": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.044503,
+      "accel": -0.129234
+    },
+    "smarthomeautomation": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.003772,
+      "accel": 0.019105
+    },
+    "smarthomedevices": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.009172,
+      "accel": 0.033721
+    },
+    "smarthomeenergy": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.033585,
+      "accel": -0.048442
+    },
+    "smarthomenetworking": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.030953,
+      "accel": -0.011793
+    },
+    "smarthomesecurity": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.00194,
+      "accel": 0.044474
+    },
+    "smarthomevoiceai": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.021229,
+      "accel": 0.070208
+    },
+    "socialadvertising": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.003803,
+      "accel": 0.120106
+    },
+    "socialgaming": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.001236,
+      "accel": 0.090086
+    },
+    "socialnetworks": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.003629,
+      "accel": 0.10638
+    },
+    "socialniche": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.011245,
+      "accel": 0.121321
+    },
+    "socialvisualcontent": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.008235,
+      "accel": 0.079216
+    },
+    "softwarecollaboration": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.031947,
+      "accel": 0.065852
+    },
+    "softwarecrm": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.035806,
+      "accel": 0.10044
+    },
+    "softwaredataanalytics": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.02944,
+      "accel": 0.103796
+    },
+    "softwaredesign": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.023457,
+      "accel": 0.091756
+    },
+    "softwaredevops": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.015305,
+      "accel": 0.085308
+    },
+    "softwareecommerce": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.002545,
+      "accel": 0.049748
+    },
+    "softwareenterprise": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.035558,
+      "accel": 0.087972
+    },
+    "softwaregaming": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.005228,
+      "accel": 0.085203
+    },
+    "softwarehsaas": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.037447,
+      "accel": 0.094548
+    },
+    "softwareos": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.010611,
+      "accel": 0.079942
+    },
+    "softwaresecurity": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.011706,
+      "accel": 0.03998
+    },
+    "softwarevsaas": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.005691,
+      "accel": 0.140345
+    },
+    "space_economy": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.052367,
+      "accel": 0.169539
+    },
+    "spacedataanalytics": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.061925,
+      "accel": 0.131155
+    },
+    "spacedefense": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.000366,
+      "accel": 0.117693
+    },
+    "spaceinfrastructure": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.071733,
+      "accel": 0.070062
+    },
+    "spacelaunch": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.048506,
+      "accel": 0.07977
+    },
+    "spacesatellites": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.005983,
+      "accel": 0.186256
+    },
+    "telecomcloudedge": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.0256,
+      "accel": 0.012259
+    },
+    "telecomenterprise": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.033795,
+      "accel": 0.046505
+    },
+    "telecomg": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.033874,
+      "accel": -0.13749
+    },
+    "telecominfrastructure": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.021176,
+      "accel": -0.044642
+    },
+    "telecomsatcom": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.006783,
+      "accel": 0.164533
+    },
+    "telecomwireless": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.018058,
+      "accel": 0.001633
+    },
+    "transportationaircargo": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.028659,
+      "accel": -0.031009
+    },
+    "transportationairtravel": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.019403,
+      "accel": -0.022249
+    },
+    "transportationinfrastructure": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.011578,
+      "accel": -0.00122
+    },
+    "transportationmaritime": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.003103,
+      "accel": -0.006365
+    },
+    "transportationnextgen": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.020094,
+      "accel": 0.069181
+    },
+    "transportationrail": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.005558,
+      "accel": 0.000267
+    },
+    "transportationtrucking": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.007535,
+      "accel": -0.03004
+    },
+    "transportationwarehousing": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.015544,
+      "accel": 0.023643
+    },
+    "travel": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.020026,
+      "accel": -0.008892
+    },
+    "uranium_miners": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.058091,
+      "accel": -0.00844
+    },
+    "us_sector_comm": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.00661,
+      "accel": 0.044718
+    },
+    "us_sector_discretionary": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.007954,
+      "accel": 0.011957
+    },
+    "us_sector_energy": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.015581,
+      "accel": -0.011046
+    },
+    "us_sector_financials": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.018724,
+      "accel": 0.046738
+    },
+    "us_sector_health": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.029021,
+      "accel": 0.040803
+    },
+    "us_sector_industrials": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.011595,
+      "accel": -0.002312
+    },
+    "us_sector_materials": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.019346,
+      "accel": -0.008232
+    },
+    "us_sector_realestate": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.007542,
+      "accel": -0.004563
+    },
+    "us_sector_staples": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.013004,
+      "accel": 0.013624
+    },
+    "us_sector_tech": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.02725,
+      "accel": -0.048445
+    },
+    "us_sector_utilities": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.012836,
+      "accel": 0.000345
+    },
+    "varealityapplications": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.001304,
+      "accel": 0.114821
+    },
+    "varealityenterprise": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.0067,
+      "accel": 0.099456
+    },
+    "varealityhardware": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.041993,
+      "accel": -0.044961
+    },
+    "varealityinfrastructure": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.023957,
+      "accel": 0.030475
+    },
+    "varealitysoftware": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.014477,
+      "accel": 0.083211
+    },
+    "wearablesimmersive": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.039735,
+      "accel": -0.13404
+    },
+    "wearablesmedical": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.013139,
+      "accel": 0.047244
+    },
+    "wearablessmartwatches": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.00023,
+      "accel": 0.05378
+    },
+    "wearablessoftware": {
+      "as_of": "2026-07-02",
+      "vel_1m": -0.014893,
+      "accel": 0.008887
+    },
+    "wearablessport": {
+      "as_of": "2026-07-02",
+      "vel_1m": 0.001382,
+      "accel": 0.053385
+    }
+  }
+}

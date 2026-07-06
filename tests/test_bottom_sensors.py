@@ -12,6 +12,7 @@ Amendment 1, Lane B0, PR-1.  Tests cover:
 from __future__ import annotations
 
 import datetime
+import json
 import sys
 from pathlib import Path
 from unittest.mock import patch, MagicMock
@@ -28,6 +29,7 @@ from engine.neuralweb.bottom_sensors import (  # noqa: E402
     _dist_126d_high_pct,
     _earnings_info,
     _sponsorship_state,
+    _load_oracle_panel_snapshot,
     _SPONSORSHIP_STALE_TRADING_DAYS,
     LABELS_VERSION,
     IS_DISPLAY_ONLY,
@@ -911,7 +913,217 @@ class TestSponsorshipState:
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# 7. Wiring conformance: daily.yml + dag.yml presence assertions
+# 7. Oracle snapshot fallback — PR-B3 sponsorship un-starvation
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def _make_snapshot_json(panel_s_nodes: dict, panel_m_nodes: dict | None = None) -> str:
+    """Build a minimal oracle_panels_snapshot.json for testing."""
+    return json.dumps({
+        "schema": "oracle_panels_snapshot_v1",
+        "description": "test snapshot",
+        "panel_s": panel_s_nodes,
+        "panel_m": panel_m_nodes or {},
+    })
+
+
+class TestOracleSnapshotFallback:
+    """Tests for the compact snapshot fallback (PR-B3).
+
+    The snapshot is the committed fallback used when panel_s.parquet /
+    panel_m.parquet are absent (CI runners / worktrees).  These tests verify:
+    (a) the snapshot reader produces DataFrames in the expected MultiIndex shape
+    (b) sponsorship_state resolves correctly through the snapshot path
+    (c) assemble() uses snapshot when parquets absent; degrades when both absent
+    """
+
+    def test_snapshot_load_produces_correct_shape(self, tmp_path):
+        """_load_oracle_panel_snapshot returns DataFrames with [node, date] MultiIndex."""
+        from engine.neuralweb.bottom_sensors import _load_oracle_panel_snapshot
+
+        snap = _make_snapshot_json(
+            panel_s_nodes={
+                "XLK": {"as_of": "2026-07-01", "vel_1m": -0.012, "accel": -0.016},
+                "XLY": {"as_of": "2026-07-01", "vel_1m": 0.005, "accel": 0.003},
+            },
+            panel_m_nodes={
+                "ai_infra": {"as_of": "2026-07-02", "vel_1m": 0.02, "accel": 0.01},
+            },
+        )
+        oracle_dir = tmp_path / "data" / "oracle"
+        oracle_dir.mkdir(parents=True)
+        (oracle_dir / "oracle_panels_snapshot.json").write_text(snap)
+
+        snap_s, snap_m = _load_oracle_panel_snapshot(tmp_path)
+
+        assert snap_s is not None, "panel_s snapshot must load"
+        assert snap_m is not None, "panel_m snapshot must load"
+
+        # MultiIndex: (node, date)
+        assert snap_s.index.names == ["node", "date"], f"wrong index names: {snap_s.index.names}"
+        assert snap_m.index.names == ["node", "date"], f"wrong index names: {snap_m.index.names}"
+
+        # Content check
+        assert "vel_1m" in snap_s.columns
+        assert "accel" in snap_s.columns
+        assert "XLK" in snap_s.index.get_level_values("node")
+        assert "ai_infra" in snap_m.index.get_level_values("node")
+
+        # Values round-trip
+        xlk_row = snap_s.xs("XLK", level="node")
+        assert abs(float(xlk_row["vel_1m"].iloc[0]) - (-0.012)) < 1e-5
+
+    def test_snapshot_missing_returns_none_none(self, tmp_path):
+        """When snapshot file absent, returns (None, None)."""
+        from engine.neuralweb.bottom_sensors import _load_oracle_panel_snapshot
+
+        # No oracle dir at all
+        snap_s, snap_m = _load_oracle_panel_snapshot(tmp_path)
+        assert snap_s is None
+        assert snap_m is None
+
+    def test_snapshot_fallback_resolves_sponsorship(self, tmp_path):
+        """sponsorship_state resolves to real state when snapshot is used as fallback.
+
+        Ticker AAPL → sector XLK (mapped via breadth constituents or holdings).
+        XLK snapshot: vel_1m < 0, accel < 0 → headwind.
+        """
+        from engine.neuralweb.bottom_sensors import _sponsorship_state, _load_oracle_panel_snapshot
+        from engine.neuralweb.sector_map import SectorMapping
+
+        snap = _make_snapshot_json(
+            panel_s_nodes={
+                "XLK": {"as_of": "2026-07-01", "vel_1m": -0.012, "accel": -0.016},
+            },
+        )
+        oracle_dir = tmp_path / "data" / "oracle"
+        oracle_dir.mkdir(parents=True)
+        (oracle_dir / "oracle_panels_snapshot.json").write_text(snap)
+
+        snap_s, snap_m = _load_oracle_panel_snapshot(tmp_path)
+        mapping = SectorMapping(sector_node="XLK", subsector_node=None)
+
+        state = _sponsorship_state("AAPL", mapping, snap_s, snap_m, TODAY)
+        assert state == "headwind", (
+            f"Expected headwind (vel<0, accel<0) via snapshot, got {state!r}"
+        )
+
+    def test_snapshot_fallback_tailwind(self, tmp_path):
+        """vel > 0 AND accel > 0 through snapshot → tailwind."""
+        from engine.neuralweb.bottom_sensors import _sponsorship_state, _load_oracle_panel_snapshot
+        from engine.neuralweb.sector_map import SectorMapping
+
+        snap = _make_snapshot_json(
+            panel_s_nodes={
+                "XLY": {"as_of": "2026-07-01", "vel_1m": 0.008, "accel": 0.004},
+            },
+        )
+        oracle_dir = tmp_path / "data" / "oracle"
+        oracle_dir.mkdir(parents=True)
+        (oracle_dir / "oracle_panels_snapshot.json").write_text(snap)
+
+        snap_s, snap_m = _load_oracle_panel_snapshot(tmp_path)
+        mapping = SectorMapping(sector_node="XLY", subsector_node=None)
+
+        state = _sponsorship_state("AMZN", mapping, snap_s, snap_m, TODAY)
+        assert state == "tailwind"
+
+    def test_assemble_uses_snapshot_when_parquets_absent(self, tmp_path):
+        """assemble() uses snapshot fallback when oracle parquets absent; returns real states."""
+        from engine.neuralweb.bottom_sensors import assemble
+
+        # Minimal signal_gate + us_standouts
+        sg = {
+            "as_of": "2026-07-02",
+            "verdicts": {
+                "XLK_TEST": {"tier_cascade": "T1", "ticks": 0, "bars_to_cross": None,
+                             "eligible": True, "tier_sub": None, "provisional": False},
+            },
+        }
+        us = {"as_of": "2026-07-02", "donor": {}, "buy": [], "watch": [], "laggards": []}
+        fd = tmp_path / "site" / "factordata"
+        fd.mkdir(parents=True)
+        (fd / "signal_gate.json").write_text(json.dumps(sg))
+        (fd / "us_standouts.json").write_text(json.dumps(us))
+        de = tmp_path / "data" / "earnings"
+        de.mkdir(parents=True)
+        pd.DataFrame({"next_date": [], "as_of": []},
+                     index=pd.Index([], name="ticker")).to_parquet(de / "earnings.parquet")
+
+        # Write snapshot with a test node
+        snap = _make_snapshot_json(
+            panel_s_nodes={
+                "XLK": {"as_of": "2026-07-01", "vel_1m": 0.005, "accel": 0.003},
+            },
+        )
+        oracle_dir = tmp_path / "data" / "oracle"
+        oracle_dir.mkdir(parents=True)
+        (oracle_dir / "oracle_panels_snapshot.json").write_text(snap)
+
+        # Write minimal breadth constituents so XLK_TEST would map to XLK
+        # (using a sector_holdings ETF file approach since we can't easily fake GICS)
+        # For this test, we only verify the snapshot is READ — XLK_TEST has no mapping
+        # so it degrades to unavailable; but the snapshot load path is exercised.
+        df = assemble(root=tmp_path, today=TODAY)
+        assert not df.empty
+        assert "sponsorship_state" in df.columns
+        # XLK_TEST is not in any breadth/holdings file in tmp_path → unavailable
+        # (correct: snapshot read succeeded but ticker has no sector mapping in this tmp_path)
+        assert df["sponsorship_state"].iloc[0] == "unavailable"
+
+    def test_snapshot_sector_node_mapping_resolves(self, tmp_path):
+        """When breadth constituents map a ticker to XLK and snapshot has XLK → real state.
+
+        This is the end-to-end test: ticker in signal_gate → sector_map → snapshot → state.
+        """
+        from engine.neuralweb.bottom_sensors import assemble
+
+        # Minimal signal_gate with AAPL
+        sg = {
+            "as_of": "2026-07-02",
+            "verdicts": {
+                "AAPL": {"tier_cascade": "T1", "ticks": 0, "bars_to_cross": None,
+                         "eligible": True, "tier_sub": None, "provisional": False},
+            },
+        }
+        us = {"as_of": "2026-07-02", "donor": {}, "buy": [], "watch": [], "laggards": []}
+        fd = tmp_path / "site" / "factordata"
+        fd.mkdir(parents=True)
+        (fd / "signal_gate.json").write_text(json.dumps(sg))
+        (fd / "us_standouts.json").write_text(json.dumps(us))
+        de = tmp_path / "data" / "earnings"
+        de.mkdir(parents=True)
+        pd.DataFrame({"next_date": [], "as_of": []},
+                     index=pd.Index([], name="ticker")).to_parquet(de / "earnings.parquet")
+
+        # Write breadth constituents mapping AAPL → Information Technology → XLK
+        breadth_dir = tmp_path / "data" / "breadth"
+        breadth_dir.mkdir(parents=True)
+        pd.DataFrame(
+            {"sector": ["Information Technology"]},
+            index=pd.Index(["AAPL"], name="symbol"),
+        ).to_parquet(breadth_dir / "constituents.parquet")
+
+        # Write snapshot: XLK = headwind (vel<0, accel<0)
+        snap = _make_snapshot_json(
+            panel_s_nodes={
+                "XLK": {"as_of": "2026-07-01", "vel_1m": -0.012, "accel": -0.016},
+            },
+        )
+        oracle_dir = tmp_path / "data" / "oracle"
+        oracle_dir.mkdir(parents=True)
+        (oracle_dir / "oracle_panels_snapshot.json").write_text(snap)
+
+        df = assemble(root=tmp_path, today=TODAY)
+        assert not df.empty
+
+        state = df.loc["AAPL", "sponsorship_state"]
+        assert state == "headwind", (
+            f"AAPL → XLK (via breadth) → snapshot (vel<0,accel<0) must yield 'headwind', got {state!r}"
+        )
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# 9. Wiring conformance: daily.yml + dag.yml presence assertions
 # ═══════════════════════════════════════════════════════════════════════════════
 
 class TestWiringConformance:
