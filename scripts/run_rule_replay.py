@@ -277,6 +277,10 @@ def _cell_stats(
         return {
             "n_fires": 0,
             "n_censored": 0,
+            "n_short_path": 0,
+            "n_held_to_reference": 0,
+            "short_path_pct": None,
+            "held_to_reference_pct": None,
             "censoring_rate": None,
             "episode_clusters": 0,
             "wr": None,
@@ -287,8 +291,21 @@ def _cell_stats(
             "regret_ratio": None,
         }
 
+    # short_path: genuine truncated window (fire near end of data) — exclude from aggregates.
+    # held_to_reference: trail_stop/barrier ran full window without triggering — include.
+    # censored (legacy): for HOLD/EMA policies that exceeded the window — legacy exclude.
+    n_short_path = int(perfire["short_path"].sum()) if "short_path" in perfire.columns else 0
+    n_held_to_reference = int(perfire["held_to_reference"].sum()) if "held_to_reference" in perfire.columns else 0
     n_censored = int(perfire["censored"].sum()) if "censored" in perfire.columns else 0
-    uncensored = perfire[~perfire.get("censored", pd.Series(False, index=perfire.index)).astype(bool)]
+
+    # Exclude ONLY short_path rows (plus legacy censored) from WR/return aggregates.
+    # held_to_reference rows are included — their exit_ret is the reference-horizon return.
+    exclude_mask = pd.Series(False, index=perfire.index)
+    if "short_path" in perfire.columns:
+        exclude_mask |= perfire["short_path"].astype(bool)
+    if "censored" in perfire.columns:
+        exclude_mask |= perfire["censored"].astype(bool)
+    included = perfire[~exclude_mask]
 
     # Episode clusters: count distinct clusters in the perfire results
     n_clusters = 0
@@ -299,16 +316,17 @@ def _cell_stats(
         synthetic = perfire["ticker"].astype(str) + "_" + year_s
         n_clusters = int(synthetic.nunique())
 
-    # Win rate on uncensored fires
-    if len(uncensored) > 0 and "exit_ret" in uncensored.columns:
-        exit_rets = pd.to_numeric(uncensored["exit_ret"], errors="coerce").dropna()
+    # Win rate and returns computed over all included fires (short_path and censored excluded).
+    if len(included) > 0 and "exit_ret" in included.columns:
+        exit_rets = pd.to_numeric(included["exit_ret"], errors="coerce").dropna()
         wr = float((exit_rets > 0).mean()) if len(exit_rets) > 0 else None
         mean_exit_ret = float(exit_rets.mean()) if len(exit_rets) > 0 else None
         median_exit_ret = float(exit_rets.median()) if len(exit_rets) > 0 else None
     else:
         wr = mean_exit_ret = median_exit_ret = None
 
-    # Regret metrics
+    # Regret metrics computed over all fires (not just included — regret vs reference is
+    # meaningful for all fires with a valid forward path, including held_to_reference).
     mean_foregone = None
     if "foregone_mfe_126" in perfire.columns:
         fm = pd.to_numeric(perfire["foregone_mfe_126"], errors="coerce").dropna()
@@ -329,6 +347,10 @@ def _cell_stats(
     return {
         "n_fires": n_total,
         "n_censored": n_censored,
+        "n_short_path": n_short_path,
+        "n_held_to_reference": n_held_to_reference,
+        "short_path_pct": round(n_short_path / n_total, 4) if n_total > 0 else None,
+        "held_to_reference_pct": round(n_held_to_reference / n_total, 4) if n_total > 0 else None,
         "censoring_rate": round(n_censored / n_total, 4) if n_total > 0 else None,
         "episode_clusters": n_clusters,
         "wr": round(wr, 4) if wr is not None else None,

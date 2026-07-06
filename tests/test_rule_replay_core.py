@@ -141,6 +141,47 @@ class TestVintageStamp:
         assert s["dead_name_coverage_pct"] == pytest.approx(38.3)
         assert "stamp_degraded" not in s
 
+    def test_reads_dead_name_json_price_coverage_frac(self, tmp_path):
+        """B2 fix: price_coverage_frac (v2 schema key) is converted frac→pct correctly."""
+        p = tmp_path / "dead_v2.json"
+        # Mirrors the actual data/edgar/_dead_name_coverage.json schema
+        p.write_text(json.dumps({
+            "schema": "dead_name_coverage.v2",
+            "price_coverage_frac": 0.3832,
+        }))
+        s = vintage_stamp(
+            price_plane_id="test_plane",
+            adjustment_mode="raw",
+            universe_as_of="2026-01-01",
+            frame="test",
+            survivorship_biased=False,
+            coverage_frac=1.0,
+            dead_name_coverage_pct=None,
+            era_law_cohort="test_cohort",
+            _dead_name_path=p,
+        )
+        # 0.3832 * 100 = 38.32 pct
+        assert s["dead_name_coverage_pct"] == pytest.approx(38.32, abs=0.01)
+        assert "stamp_degraded" not in s
+
+    def test_reads_dead_name_json_coverage_frac(self, tmp_path):
+        """B2 fix: coverage_frac key (generic fraction) is also converted frac→pct."""
+        p = tmp_path / "dead_frac.json"
+        p.write_text(json.dumps({"coverage_frac": 0.50}))
+        s = vintage_stamp(
+            price_plane_id="test_plane",
+            adjustment_mode="raw",
+            universe_as_of="2026-01-01",
+            frame="test",
+            survivorship_biased=False,
+            coverage_frac=1.0,
+            dead_name_coverage_pct=None,
+            era_law_cohort="test_cohort",
+            _dead_name_path=p,
+        )
+        assert s["dead_name_coverage_pct"] == pytest.approx(50.0)
+        assert "stamp_degraded" not in s
+
     def test_coverage_frac_bounds(self):
         with pytest.raises(ValueError, match="coverage_frac"):
             vintage_stamp(
@@ -538,6 +579,56 @@ class TestTrailStop:
         # That happens around bar 37-38 in the path
         assert row["exit_ret"] is not None
         assert row["mfe_to_exit"] > 0.10  # MFE > 10% (it ran to 120)
+
+    def test_trail_stop_never_triggered_full_window_is_held_to_reference(self):
+        """B1 fix: a wide stop that never fires over a FULL window is the policy
+        outcome (held to reference), NOT censored data — it must carry the
+        reference-horizon return and enter aggregates."""
+        n = 200  # full 126-bar forward window available
+        idx = pd.bdate_range("2022-01-03", periods=n)
+        # Monotone riser: never gives back 20% from its high-watermark
+        close = pd.Series([100.0 + i * 0.5 for i in range(n)], index=idx)
+        fire_date = close.index[0]
+        fires = pd.DataFrame({
+            "ticker": ["RUN"],
+            "fire_date": [fire_date],
+            "verdict_grade": [True],
+        })
+        spec = RuleSpec(
+            spec_id="trail_test/never_fires",
+            cohort=CohortFilter(),
+            exit=ExitPolicy.trail_stop(20),
+            horizons_ref=(126,),
+        )
+        result = replay_spec(spec, fires, {"RUN": close}, registry_hashes={spec.content_hash()})
+        row = result.iloc[0]
+        assert bool(row["held_to_reference"]) is True
+        assert bool(row["short_path"]) is False
+        assert bool(row["censored"]) is False
+        # exit_ret equals the reference-horizon (bar-126) return, a winner
+        assert row["exit_ret"] > 0.4
+
+    def test_trail_stop_never_triggered_short_window_is_short_path(self):
+        """A never-triggered stop over a TRUNCATED window is a genuine censor."""
+        n = 60  # < 126-bar reference window
+        idx = pd.bdate_range("2022-01-03", periods=n)
+        close = pd.Series([100.0 + i * 0.5 for i in range(n)], index=idx)
+        fires = pd.DataFrame({
+            "ticker": ["SHT"],
+            "fire_date": [close.index[0]],
+            "verdict_grade": [True],
+        })
+        spec = RuleSpec(
+            spec_id="trail_test/short_window",
+            cohort=CohortFilter(),
+            exit=ExitPolicy.trail_stop(20),
+            horizons_ref=(126,),
+        )
+        result = replay_spec(spec, fires, {"SHT": close}, registry_hashes={spec.content_hash()})
+        row = result.iloc[0]
+        assert bool(row["short_path"]) is True
+        assert bool(row["censored"]) is True
+        assert bool(row["held_to_reference"]) is False
 
 
 # ---------------------------------------------------------------------------
