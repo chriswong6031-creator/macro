@@ -1,10 +1,10 @@
 {
   "schema": "risk_state.v1",
-  "built": "2026-07-06 16:13:36 UTC",
+  "built": "2026-07-06 18:24:10 UTC",
   "session": {
     "region": "us",
     "open": true,
-    "local_time": "2026-07-06 12:13 EDT"
+    "local_time": "2026-07-06 14:24 EDT"
   },
   "live_active": true,
   "stale": false,
@@ -18,15 +18,15 @@
   "movers": [
     {
       "sym": "SPY",
-      "chg_pct": 0.81
+      "chg_pct": 0.85
     },
     {
       "sym": "QQQ",
-      "chg_pct": 1.83
+      "chg_pct": 1.47
     },
     {
       "sym": "VIX",
-      "chg_pct": -1.55
+      "chg_pct": -2.23
     }
   ],
   "display": {
@@ -50,7 +50,7 @@
     "radar": {
       "state": "caution",
       "state_ungated": "elevated",
-      "top_score": 59,
+      "top_score": 60,
       "label_en": "Bubble / blow-off unwind",
       "label_zh": "\u6ce1\u6cab/\u89c1\u9876\u56de\u5410",
       "context_gate": {
@@ -102,7 +102,7 @@
     {
       "key": "trend",
       "label_en": "Trend & technicals",
-      "score": 92,
+      "score": 90,
       "basis": "live",
       "asof": "live"
     },
