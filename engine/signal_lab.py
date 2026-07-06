@@ -263,6 +263,26 @@ REGISTRY: list[dict] = [
          extra=[("Q1/Q2 loose vs tight hit", "74.8% vs 38.3%"), ("HAC t (loosening)", "+7.0"),
                 ("caveat", "tight fires ~5% days, 0 post-2012")]),
 
+    _row("Repo/SOFR tail stress (p99 dispersion)",
+         "回购/SOFR尾部压力（p99分散度）", "US macro", "confirmer",
+         why="p99-dispersion composite of SOFR/repo spreads predicts S&P ≥5% drawdown onset "
+             "with AUC 0.61 at 21d horizon — above the 0.50 coin-flip baseline and above a "
+             "VIX-matching baseline. LOO-stable across sub-periods (leave-one-out subsample "
+             "consistency). Study produces a drawdown predictor, not a cross-sectional "
+             "return predictor: ic/t_hac/q_fdr are not defined for this study design and are "
+             "left None. No score impact; recommended for risk-radar de-escalation panel "
+             "candidacy pending program review.",
+         why_zh="SOFR/回购利差 p99 分散度综合指标在 21 日期限内预测标普≥5% 回撤，AUC=0.61，"
+                "高于掷硬币基线（0.50）和 VIX 匹配基线，且剔除子区间后保持稳健（LOO一致）。"
+                "本研究为回撤预测设计，非横截面收益研究，故 ic/t_hac/q_fdr 均留 None。"
+                "无评分影响；待项目审议后纳入风险雷达降级面板候选。",
+         source="reports/slf056-funding-tail-phase0.md", horizon="21d drawdown onset",
+         wired="none — risk-radar de-escalation panel candidacy pending program review",
+         dsr_family="slf056_funding_tail",
+         extra=[("AUC (21d drawdown ≥5%)", "0.61"), ("LOO-stable", "yes"),
+                ("vs VIX baseline", "beats"), ("n trials in ledger", "14"),
+                ("score impact", "none — display-only")]),
+
     # ---- DISPLAY-ONLY -------------------------------------------------------
     _row("Impulse Tracker (early-ignition screen)",
          "冲量追踪（早期点火扫描）", "US S&P1500", "display",
@@ -1402,4 +1422,73 @@ def build_scorecard() -> dict:
         "factor_meta": factor_meta,
         "frontier_rows": FRONTIER + page_frontier_rows(),
         "frontier_phase0_summary": phase0_summary(),
+        "waves_adjudication": _waves_adjudication_block(),
+    }
+
+
+def _waves_adjudication_block() -> dict:
+    """Compact waves 2-4 adjudication summary — display-only metadata.
+    Moratorium in force until wave-1 + spike verdicts booked and queue < 3.
+    Sources: research/SIGNAL_LAB_FRONTIER_WAVE{2,3,4}_FABLE_ADJUDICATION_2026-07-06.md
+    """
+    return {
+        "date": "2026-07-06",
+        "waves": [
+            {
+                "wave": 2,
+                "screened": 200,
+                "advanced": 58,
+                "result_label": "2 spikes + 5 queued",
+                "result_label_zh": "2个尖峰候选 + 5个排队",
+                "detail": (
+                    "200 screened / 58 template advances collapsed to 7 actionable: "
+                    "2 spikes (KEV vendor-shock NULL #1656; NHTSA safety-recall in flight), "
+                    "5 queued for post-moratorium adjudication."
+                ),
+                "detail_zh": (
+                    "200个筛选 / 58个模板候选合并为7个可操作：2个尖峰候选（KEV供应商冲击 NULL #1656；"
+                    "NHTSA安全召回进行中），5个排队等待暂停期后裁决。"
+                ),
+                "doc": "research/SIGNAL_LAB_FRONTIER_WAVE2_FABLE_ADJUDICATION_2026-07-06.md",
+            },
+            {
+                "wave": 3,
+                "screened": 500,
+                "advanced": 48,
+                "result_label": "1 family queued (FFIEC bank stress)",
+                "result_label_zh": "1个家族排队（FFIEC银行压力）",
+                "detail": (
+                    "500 screened / 48 template advances collapsed to 4 feeds / "
+                    "1 family queued: FFIEC bank-stress call-report ratios."
+                ),
+                "detail_zh": (
+                    "500个筛选 / 48个模板候选合并为4个数据流 / 1个家族排队：FFIEC银行压力报告比率。"
+                ),
+                "doc": "research/SIGNAL_LAB_FRONTIER_WAVE3_FABLE_ADJUDICATION_2026-07-06.md",
+            },
+            {
+                "wave": 4,
+                "screened": 500,
+                "advanced": 8,
+                "result_label": "1 family queued + 1 park + 2 kills",
+                "result_label_zh": "1个家族排队 + 1个暂存 + 2个否决",
+                "detail": (
+                    "500 screened / 8 advanced / 1 consolidated family queued "
+                    "(multi-state gaming tape) + 1 park + 2 kills."
+                ),
+                "detail_zh": (
+                    "500个筛选 / 8个候选 / 1个合并家族排队（多州博彩数据）+ 1个暂存 + 2个否决。"
+                ),
+                "doc": "research/SIGNAL_LAB_FRONTIER_WAVE4_FABLE_ADJUDICATION_2026-07-06.md",
+            },
+        ],
+        "moratorium": True,
+        "moratorium_note": (
+            "Generation moratorium in force: no new wave authorized until wave-1 + "
+            "spike verdicts are booked and the queued family count drops below 3."
+        ),
+        "moratorium_note_zh": (
+            "生成暂停令生效：在第一波 + 尖峰候选裁决登记、排队家族数降至3以下之前，"
+            "不授权新一波筛选。"
+        ),
     }

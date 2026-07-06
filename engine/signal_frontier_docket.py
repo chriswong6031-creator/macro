@@ -430,16 +430,25 @@ FABLE_VERDICTS: dict[str, dict] = {
     "SLF-036": {"verdict": "ACCRUE", "note": "Come back ≥2027-01-15: equity_revisions store began 2026-06-16 (~12 daily snapshots), no PIT history to backtest; forward store accruing the right fields."},
     # QUEUED (1)
     "SLF-038": {"verdict": "QUEUED", "note": "Legitimate pairlet on statements_quarterly (2009+, PIT via filed date); runs when factor-family budget opens — not a frontier family."},
-    # AUTHORIZED — BUILD (7)
-    "SLF-001": {"verdict": "BUILD", "note": "New SEC FTD collector (2004→, semi-monthly) + panel + 21/63d rank-IC phase-0 with T+35 cyclicality, publication-lag, ETF-exclusion pre-reg confounds."},
-    "SLF-006": {"verdict": "BUILD", "note": "Event-study of existing treasury_supply.absorption_z (681 auctions, 2016→2026); tail leg struck (paid when-issued required); no new engine."},
-    "SLF-048": {"verdict": "BUILD", "note": "Wikipedia attention backfill 2015-07→now + wiki_attention_phase0: attention z-shock → 5/21d forward; pre-registered direction = fade in small-cap no-news shocks."},
-    "SLF-051": {"verdict": "BUILD", "note": "Market-level China margin ROC impulse on 16y aggregate balance (2010→2026); de-escalation/conditioning framing only; leave-one-cycle-out incl. 2015."},
-    "SLF-053": {"verdict": "BUILD", "note": "Execute H3 as pre-registered (research/HK_CANADA_H3_PREREG.md); 25-pair A/H panel, 2001→2026; merged into HK/Canada program, not a new family."},
-    "SLF-055": {"verdict": "BUILD", "note": "New NY Fed primary-dealer collector (1998→, weekly, era-aware splice) + inventory/fails z confirmer vs MOVE/term-slope/absorption_z baselines."},
-    "SLF-056": {"verdict": "BUILD", "note": "AUC/event phase-0 of existing funding_stress composite (OFR SOFR 2018→2026; ~3 stress episodes, leave-one-episode-out); tests CONTEXT→de-escalation upgrade."},
-    # AUTHORIZED — PROBE (1)
-    "SLF-052": {"verdict": "PROBE", "note": "Data probe only: attempt akshare zt_pool historical backfill; harden to append-only. No signal test — display-only ruling until PIT history exists (~5 dates on disk)."},
+    # TESTED — W1 phase-0 results (2026-07-06). 'tested' verdicts append to BUILD;
+    # they do NOT overwrite history. Source: reports/slf*-phase0.md.
+    "SLF-001": {"verdict": "TESTED-NULL(G3)", "note": "SEC FTD collector built; 22M-row panel live. Phase-0: all 6 variants null at 21/63d (rank-IC ≈ 0, none survive BH-FDR). G3 confound confirmed: T+30 lag concentrates at quarter-end + redemption cycles. Panel ships for sector-level tracking; signal barred.",
+                "phase0_report": "reports/slf001-sec-ftd-phase0.md"},
+    "SLF-006": {"verdict": "TESTED-NULL", "note": "Event-study of treasury_supply.absorption_z: 12 tested variants (belly/front/long, 1/5/21d, quintile-contrast/continuous-IC). All null. Auction tail leg struck (paid when-issued required). No engine change.",
+                "phase0_report": "reports/slf006-auction-absorption-phase0.md"},
+    "SLF-048": {"verdict": "TESTED-NULL", "note": "Wikipedia attention backfill 2015-07→2026 (966 tickers). Phase-0: attention z-shock predicts neither fade nor confirm direction at 5/21d in any cap tercile. Pre-registered fade gate not met. Backfill ships; signal display-only.",
+                "phase0_report": "reports/slf048-wiki-attention-phase0.md"},
+    "SLF-051": {"verdict": "TESTED-NULL", "note": "China margin ROC impulse: 8 trials (4 signals × 2 horizons), all null at 21/63d on CSI300_ETF_510300. De-escalation/conditioning framing confirmed wrong-ruler; market-level null holds across 2015 crisis.",
+                "phase0_report": "reports/slf051-cn-margin-impulse-phase0.md"},
+    "SLF-053": {"verdict": "TESTED-ACCRUE", "note": "A/H premium dislocation: 25-pair panel 2001→2026 (hk_canada_h3 family, 11 trial rows). Phase-0 shows spreads and pairlet structure viable; directional gate requires further accrual under HK/Canada program clock.",
+                "phase0_report": "reports/hk-canada-h3-phase0.md"},
+    "SLF-055": {"verdict": "TESTED-PARTIAL", "note": "NY Fed PD data built (1998→, weekly, era-aware). Phase-0: z-score legs partially signal vs MOVE/term-slope at TLT horizon (T3 alignment undefined → skipped). 15 trial rows. De-escalation candidacy partial; T3 gate deferred.",
+                "phase0_report": "reports/slf055-dealer-stress-phase0.md"},
+    "SLF-056": {"verdict": "TESTED-PASS", "note": "Repo/SOFR p99-dispersion AUC 0.61 vs SPY ≥5% drawdown at 21d; LOO-stable; beats VIX baseline. Promoted to confirmer tier (display-only). De-escalation panel candidacy pending program review.",
+                "phase0_report": "reports/slf056-funding-tail-phase0.md"},
+    # AUTHORIZED — PROBE (1) → result: ACCRUE-CONFIRMED (history unmanufacturable)
+    "SLF-052": {"verdict": "ACCRUE-CONFIRMED", "note": "zt_pool akshare backfill: only ~5 snapshots exist historically — full PIT history unmanufacturable. Append-only going forward. Display-only ruling confirmed; no signal test possible until ≥2y of daily data.",
+                "phase0_report": "reports/slf052-ztpool-backfill-probe.md"},
     # AUTHORIZED — PILOT (1)
     "SLF-031": {"verdict": "PILOT", "note": "Feasibility pilot: 20-ticker lazy-prices spike (EDGAR full text, 10 req/s law, similarity metrics, cost model) + design doc + draft pre-registration. No signal claims."},
 }

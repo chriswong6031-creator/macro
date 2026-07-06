@@ -96,6 +96,10 @@
   .fable-chip.accrue { background:color-mix(in srgb,#aaf 25%,transparent); color:#44c; border:1px solid #44c; }
   .fable-chip.queued { background:color-mix(in srgb,#aaa 25%,transparent); color:#666; border:1px solid #999; }
   .fable-chip.pending { background:color-mix(in srgb,#999 15%,transparent); color:var(--muted); border:1px solid var(--line); }
+  .fable-chip.tested-null { background:color-mix(in srgb,#f80 15%,transparent); color:#a50; border:1px solid #c70; }
+  .fable-chip.tested-pass { background:color-mix(in srgb,#2d8 25%,transparent); color:#196; border:1px solid #1a7; }
+  .fable-chip.tested-partial { background:color-mix(in srgb,#fb0 20%,transparent); color:#860; border:1px solid #a80; }
+  .fable-chip.tested-accrue { background:color-mix(in srgb,#aaf 20%,transparent); color:#33a; border:1px solid #55c; }
 </style>
 </head>
 <body>
@@ -180,6 +184,7 @@
             <a href="china_altdata.html">🛰️ <span class="l-en">Alternative Data</span><span class="l-zh">另类数据</span><span class="d"><span class="l-en">Smart-money convergence · signal lab</span><span class="l-zh">主力共振 · 信号实验室</span></span></a>
             <a href="china_policy_watch.html">🏛️ <span class="l-en">PBoC & Policy Watch</span><span class="l-zh">央行与政策观察</span><span class="d"><span class="l-en">Rate corridor · liquidity · sector policy</span><span class="l-zh">利率走廊 · 流动性 · 行业政策</span></span></a>
             <a href="china_radar.html">📡 <span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span><span class="d"><span class="l-en">Policy/flow signal vs sector price</span><span class="l-zh">政策/资金信号 vs 板块价格</span></span></a>
+            <a href="china_special_situations.html">⚡ <span class="l-en">Special Situations</span><span class="l-zh">特殊事件</span><span class="d"><span class="l-en">Unlocks · inquiry letters · preannouncements · pledge stress</span><span class="l-zh">解禁 · 问询函 · 业绩预告 · 质押风险</span></span></a>
             <a href="narrative_radar.html">🧭 <span class="l-en">Narrative Basket Radar</span><span class="l-zh">主题篮子雷达</span><span class="d"><span class="l-en">Which THS theme is running · global driver · member entries</span><span class="l-zh">哪个同花顺主题正在运行 · 全球驱动 · 成员入场</span></span></a>
           </div>
         </div>
@@ -387,7 +392,7 @@
   <p class="lead" style="margin:10px 0 0"><span class="l-en">What separates a dashboard from a model is honest validation. Every signal here goes through the same battery before it earns a place: rank-IC, a Newey-West (HAC) t-stat that respects overlapping windows, a Benjamini-Hochberg FDR q that controls for trying many ideas, and a Deflated Sharpe that haircuts for the same data-snooping. The point of this page is the graveyard: the signals we measured and refused to ship.</span><span class="l-zh">把仪表盘和模型区分开的，是诚实的验证。这里每个信号在获得位置前都经过同一套检验：秩相关 IC、尊重重叠窗口的 Newey-West (HAC) t 值、控制多重尝试的 Benjamini-Hochberg FDR q，以及为同样的数据窥探打折的去偏夏普 (DSR)。本页的重点是“信号墓地”：那些我们测量后拒绝上线的信号。</span></p>
   <div class="chips">
     <span class="chip"><span class="dot d-scored"></span><b>6</b> <span class="l-en">scored</span><span class="l-zh">已计分</span></span>
-    <span class="chip"><span class="dot d-confirmer"></span><b>20</b> <span class="l-en">confirmer</span><span class="l-zh">确认项</span></span>
+    <span class="chip"><span class="dot d-confirmer"></span><b>21</b> <span class="l-en">confirmer</span><span class="l-zh">确认项</span></span>
     <span class="chip"><span class="dot d-display"></span><b>27</b> <span class="l-en">display-only</span><span class="l-zh">仅展示</span></span>
     <span class="chip"><span class="dot d-killed"></span><b>9</b> <span class="l-en">killed (NO-GO)</span><span class="l-zh">已否决</span></span>
     <span class="chip"><span class="dot d-pending"></span><b>0</b> <span class="l-en">pending</span><span class="l-zh">待接入</span></span>
@@ -406,7 +411,23 @@
     <span class="bl"><span class="l-en">Candidates worth testing next. None of these affect a score until a pre-registered Phase-0 run earns a normal Signal Lab row.</span><span class="l-zh">下一批值得测试的候选。除非预注册 Phase-0 运行让它获得正常 Signal Lab 条目，否则不会影响任何分数。</span></span>
   </div>
   <p class="frontier-note"><span class="l-en">The search is data-first: borrow pressure, FTDs, option-informed flow, EDGAR attention, auction absorption, positioning exhaustion, and time-of-day market microstructure.</span><span class="l-zh">这轮搜索以数据为先：借券压力、交割失败、期权知情流、EDGAR 关注、拍卖吸收、仓位耗尽与日内/隔夜微结构。</span></p>
-  <p class="frontier-note"><span class="l-en">Expanded docket (60 candidates) adjudicated 2026-07-06: 9 authorized for testing (7 build / 1 probe / 1 pilot), 11 killed. See </span><span class="l-zh">扩展清单（60个候选）于2026-07-06完成裁决：9个授权测试（7 构建 / 1 探针 / 1 试点），11个已否决。详见 </span><a href="/research/SIGNAL_LAB_FRONTIER_FABLE_ADJUDICATION_2026-07-06.md" style="font-size:inherit">research/SIGNAL_LAB_FRONTIER_FABLE_ADJUDICATION_2026-07-06.md</a>.</p>
+  <p class="frontier-note"><span class="l-en">Expanded docket (60 candidates) adjudicated 2026-07-06: 9 authorized for testing (0 build / 0 probe / 1 pilot), 11 killed. See </span><span class="l-zh">扩展清单（60个候选）于2026-07-06完成裁决：9个授权测试（0 构建 / 0 探针 / 1 试点），11个已否决。详见 </span><a href="/research/SIGNAL_LAB_FRONTIER_FABLE_ADJUDICATION_2026-07-06.md" style="font-size:inherit">research/SIGNAL_LAB_FRONTIER_FABLE_ADJUDICATION_2026-07-06.md</a>.</p>
+  <div class="frontier-note" style="border-left:3px solid var(--line);padding-left:10px;margin-top:10px">
+    <strong><span class="l-en">Waves 2–4 adjudicated 2026-07-06</span><span class="l-zh">第2–4波 2026-07-06裁决</span>:</strong>
+    <span style="display:inline-block;margin:2px 8px 2px 0">
+      <a href="/research/SIGNAL_LAB_FRONTIER_WAVE2_FABLE_ADJUDICATION_2026-07-06.md" style="color:inherit;text-decoration:underline dotted"><span class="l-en">W2</span><span class="l-zh">W2</span></a>
+      <span class="l-en">200 screened / 58 advanced → 2 spikes + 5 queued</span><span class="l-zh">200筛选 / 58候选 → 2个尖峰候选 + 5个排队</span>;
+    </span>
+    <span style="display:inline-block;margin:2px 8px 2px 0">
+      <a href="/research/SIGNAL_LAB_FRONTIER_WAVE3_FABLE_ADJUDICATION_2026-07-06.md" style="color:inherit;text-decoration:underline dotted"><span class="l-en">W3</span><span class="l-zh">W3</span></a>
+      <span class="l-en">500 screened / 48 advanced → 1 family queued (FFIEC bank stress)</span><span class="l-zh">500筛选 / 48候选 → 1个家族排队（FFIEC银行压力）</span>;
+    </span>
+    <span style="display:inline-block;margin:2px 8px 2px 0">
+      <a href="/research/SIGNAL_LAB_FRONTIER_WAVE4_FABLE_ADJUDICATION_2026-07-06.md" style="color:inherit;text-decoration:underline dotted"><span class="l-en">W4</span><span class="l-zh">W4</span></a>
+      <span class="l-en">500 screened / 8 advanced → 1 family queued + 1 park + 2 kills</span><span class="l-zh">500筛选 / 8候选 → 1个家族排队 + 1个暂存 + 2个否决</span>;
+    </span>
+    <span style="color:var(--muted)"><span class="l-en">generation moratorium in force until wave-1 + spike verdicts booked and queue &lt; 3</span><span class="l-zh">生成暂停令生效——第一波+尖峰候选裁决登记且排队数降至3以下前不启动新波次</span>.</span>
+  </div>
   <div class="scroll"><table class="frontier-table">
     <thead><tr>
       <th><span class="l-en">Candidate</span><span class="l-zh">候选</span></th>
@@ -673,7 +694,7 @@
         <td class="road"><span class="l-en">Existing China margin collectors.</span><span class="l-zh">现有中国融资数据采集器。</span></td>
         <td class="gate"><span class="l-en">Forward IC and crash-risk test; separate informed leverage from sentiment leverage.</span><span class="l-zh">前向IC与崩盘风险检验；区分理性杠杆与情绪杠杆。</span></td>
         <td>
-          <span class="fable-chip build"><span class="l-en">BUILD</span><span class="l-zh">已授权测试</span></span>
+          <span class="fable-chip tested-null"><span class="l-en">TESTED-NULL</span><span class="l-zh">已测试—空</span></span>
         </td>
       </tr>
       <tr>
@@ -686,7 +707,7 @@
         <td class="road"><span class="l-en">Existing HK A-H panel.</span><span class="l-zh">现有HK A-H面板。</span></td>
         <td class="gate"><span class="l-en">Pair convergence IC; forbid broad-market claim unless portfolio construction works.</span><span class="l-zh">配对收敛IC；除非组合构建可行，否则禁止宽市场主张。</span></td>
         <td>
-          <span class="fable-chip build"><span class="l-en">BUILD</span><span class="l-zh">已授权测试</span></span>
+          <span class="fable-chip tested-accrue"><span class="l-en">TESTED-ACCRUE</span><span class="l-zh">已测试—累积</span></span>
         </td>
       </tr>
       <tr>
@@ -699,7 +720,7 @@
         <td class="road"><span class="l-en">NY Fed Primary Dealer Statistics; OFR mirror possible.</span><span class="l-zh">纽约联储一级交易商统计；OFR镜像可用。</span></td>
         <td class="gate"><span class="l-en">Rates/curve event study and SPY/TLT drawdown context; likely confirmer.</span><span class="l-zh">利率/曲线事件研究与SPY/TLT回撤背景；可能作为辅助确认因子。</span></td>
         <td>
-          <span class="fable-chip build"><span class="l-en">BUILD</span><span class="l-zh">已授权测试</span></span>
+          <span class="fable-chip tested-partial"><span class="l-en">TESTED-PARTIAL</span><span class="l-zh">已测试—部分</span></span>
         </td>
       </tr>
       <tr>
@@ -712,7 +733,7 @@
         <td class="road"><span class="l-en">Existing OFR short-term funding monitor collector.</span><span class="l-zh">现有OFR短期资金监控采集器。</span></td>
         <td class="gate"><span class="l-en">Forward drawdown AUC and event study; likely display/confirmer.</span><span class="l-zh">前向回撤AUC与事件研究；可能作为展示/辅助确认因子。</span></td>
         <td>
-          <span class="fable-chip build"><span class="l-en">BUILD</span><span class="l-zh">已授权测试</span></span>
+          <span class="fable-chip tested-pass"><span class="l-en">TESTED-PASS</span><span class="l-zh">已测试—通过</span></span>
         </td>
       </tr>
       <tr>
@@ -1074,7 +1095,7 @@
 <div class="panel tier-panel ">
   <div class="tierhead">
     <span class="dot d-confirmer" style="align-self:center"></span>
-    <h2><span class="l-en">Confirmer / context — validated, but not a standalone sizer</span><span class="l-zh">确认/背景 — 已验证，但非独立定量信号</span> · 20</h2>
+    <h2><span class="l-en">Confirmer / context — validated, but not a standalone sizer</span><span class="l-zh">确认/背景 — 已验证，但非独立定量信号</span> · 21</h2>
     <span class="bl"><span class="l-en">A measured forward edge used as context or a tiebreaker — never sized on its own.</span><span class="l-zh">有可测的前瞻性边际，用作背景或加分项 — 但不单独定仓。</span></span>
   </div>
   
@@ -1276,6 +1297,29 @@
           <span class="muted sm"><span class="l-en">Conditioning forward SPY odds on the regime quad × NFCI direction reproduces the measured split: Q1/Q2 with NFCI looseni…</span><span class="l-zh">按宏观四象限×NFCI方向条件化前瞻标普胜率，复现既测分化：Q1/Q2 且 NFCI 宽松命中 74.8%/63日 +3.18%，紧缩则 38.3%/−5.69…</span></span>
           <span class="help">?<span class="tip"><span class="l-en">Conditioning forward SPY odds on the regime quad × NFCI direction reproduces the measured split: Q1/Q2 with NFCI loosening 74.8% hit / +3.18% fwd-63d vs tightening 38.3% / −5.69% (HAC t on the loosening leg +7.0). A flat-when-tight overlay shows DSR 0.9991 and cuts MaxDD −55%→−49% — BUT NFCI tight-and-tightening fires on ~5% of days and ZERO times post-2012, so the effective-N is ~2 pre-2012 crises. Already half-wired as the dial's NFCI rule; shipped as a scenario-odds CONFIRMER, not a high-confidence standalone.  [quad-nfci-phase0.md]</span><span class="l-zh">按宏观四象限×NFCI方向条件化前瞻标普胜率，复现既测分化：Q1/Q2 且 NFCI 宽松命中 74.8%/63日 +3.18%，紧缩则 38.3%/−5.69%（宽松腿 HAC t +7.0）。但 NFCI 紧且收紧仅约5%交易日触发，2012年后从未触发 → 有效样本仅约2次危机。已部分接入仪表盘 NFCI 规则；作为情景胜率确认项上线，而非高置信独立信号。  [quad-nfci-phase0.md]</span></span></span>
           <div class="src">quad-nfci-phase0.md</div>
+        </td>
+      </tr>
+    
+      <tr class="sl-row" data-tier="confirmer" data-mkt="US macro"
+          data-text="repo/sofr tail stress (p99 dispersion) 回购/sofr尾部压力（p99分散度） us macro p99-dispersion composite of sofr/repo spreads predicts s&p ≥5% drawdown onset with auc 0.61 at 21d horizon — above the 0.50 coin-flip baseline and above a vix-matching baseline. loo-stable across sub-periods (leave-one-out subsample consistency). study produces a drawdown predictor, not a cross-sectional return predictor: ic/t_hac/q_fdr are not defined for this study design and are left none. no score impact; recommended for risk-radar de-escalation panel candidacy pending program review.">
+        <td>
+          <div class="sig"><span class="l-en">Repo/SOFR tail stress (p99 dispersion)</span><span class="l-zh">回购/SOFR尾部压力（p99分散度）</span>
+            </div>
+          <div class="mkt">US macro · 21d drawdown onset · none — risk-radar de-escalation panel candidacy pending program review</div>
+          <div class="extra">AUC (21d drawdown ≥5%) 0.61 · LOO-stable yes · vs VIX baseline beats · n trials in ledger 14 · score impact none — display-only</div>
+        </td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r"><span class="muted">—</span></td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r"><span class="muted">—</span></td>
+        <td class="r">—</td>
+        <td><span class="pill v-confirmer"><span class="l-en">CONFIRMER</span><span class="l-zh">确认项</span></span></td>
+        <td style="max-width:34ch">
+          <span class="muted sm"><span class="l-en">p99-dispersion composite of SOFR/repo spreads predicts S&P ≥5% drawdown onset with AUC 0.61 at 21d horizon — above the 0…</span><span class="l-zh">SOFR/回购利差 p99 分散度综合指标在 21 日期限内预测标普≥5% 回撤，AUC=0.61，高于掷硬币基线（0.50）和 VIX 匹配基线，且剔除子区间…</span></span>
+          <span class="help">?<span class="tip"><span class="l-en">p99-dispersion composite of SOFR/repo spreads predicts S&P ≥5% drawdown onset with AUC 0.61 at 21d horizon — above the 0.50 coin-flip baseline and above a VIX-matching baseline. LOO-stable across sub-periods (leave-one-out subsample consistency). Study produces a drawdown predictor, not a cross-sectional return predictor: ic/t_hac/q_fdr are not defined for this study design and are left None. No score impact; recommended for risk-radar de-escalation panel candidacy pending program review.  [reports/slf056-funding-tail-phase0.md]</span><span class="l-zh">SOFR/回购利差 p99 分散度综合指标在 21 日期限内预测标普≥5% 回撤，AUC=0.61，高于掷硬币基线（0.50）和 VIX 匹配基线，且剔除子区间后保持稳健（LOO一致）。本研究为回撤预测设计，非横截面收益研究，故 ic/t_hac/q_fdr 均留 None。无评分影响；待项目审议后纳入风险雷达降级面板候选。  [reports/slf056-funding-tail-phase0.md]</span></span></span>
+          <div class="src">reports/slf056-funding-tail-phase0.md</div>
         </td>
       </tr>
     
@@ -2462,8 +2506,8 @@
   <p class="muted sm" style="margin:0"><span class="l-en">Validation toolkit: engine/validation.py (deflated Sharpe, purged k-fold + embargo, block bootstrap, Newey-West HAC, Benjamini-Hochberg FDR, Brier/Platt calibration, cost-aware backtest). Verdicts are quoted from the named reports in reports/. The factor cross-section reads live from data/edgar/ic_scorecard.json.</span><span class="l-zh">验证工具：engine/validation.py（去偏夏普、净化 k 折+隔离、分块自助、Newey-West HAC、Benjamini-Hochberg FDR、Brier/Platt 校准、含成本回测）。结论引自 reports/ 中具名报告；因子横截面实时读取 data/edgar/ic_scorecard.json。</span></p>
   <p class="src" style="margin:8px 0 0">
     <span class="l-en">data span</span><span class="l-zh">数据区间</span> 2011-03-31..2025-12-31 ·
-    <span class="l-en">dashboard updated</span><span class="l-zh">仪表盘更新</span> 2026-07-06 11:53 UTC ·
-    <span class="l-en">rendered</span><span class="l-zh">生成</span> 2026-07-06 11:53 UTC</p>
+    <span class="l-en">dashboard updated</span><span class="l-zh">仪表盘更新</span> 2026-07-06T13:02:54.416557Z UTC ·
+    <span class="l-en">rendered</span><span class="l-zh">生成</span> 2026-07-06T13:02:54.416557Z UTC</p>
 </div>
 
 <script src="theme.js"></script>

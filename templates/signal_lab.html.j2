@@ -103,6 +103,10 @@
   .fable-chip.accrue { background:color-mix(in srgb,#aaf 25%,transparent); color:#44c; border:1px solid #44c; }
   .fable-chip.queued { background:color-mix(in srgb,#aaa 25%,transparent); color:#666; border:1px solid #999; }
   .fable-chip.pending { background:color-mix(in srgb,#999 15%,transparent); color:var(--muted); border:1px solid var(--line); }
+  .fable-chip.tested-null { background:color-mix(in srgb,#f80 15%,transparent); color:#a50; border:1px solid #c70; }
+  .fable-chip.tested-pass { background:color-mix(in srgb,#2d8 25%,transparent); color:#196; border:1px solid #1a7; }
+  .fable-chip.tested-partial { background:color-mix(in srgb,#fb0 20%,transparent); color:#860; border:1px solid #a80; }
+  .fable-chip.tested-accrue { background:color-mix(in srgb,#aaf 20%,transparent); color:#33a; border:1px solid #55c; }
 </style>
 </head>
 <body>
@@ -174,6 +178,21 @@
     'Expanded docket (60 candidates) adjudicated 2026-07-06: 9 authorized for testing (' ~ frontier_phase0_summary.build_count ~ ' build / ' ~ frontier_phase0_summary.probe_count ~ ' probe / ' ~ frontier_phase0_summary.pilot_count ~ ' pilot), 11 killed. See ',
     '扩展清单（60个候选）于2026-07-06完成裁决：9个授权测试（' ~ frontier_phase0_summary.build_count ~ ' 构建 / ' ~ frontier_phase0_summary.probe_count ~ ' 探针 / ' ~ frontier_phase0_summary.pilot_count ~ ' 试点），11个已否决。详见 ') }}<a href="/research/SIGNAL_LAB_FRONTIER_FABLE_ADJUDICATION_2026-07-06.md" style="font-size:inherit">research/SIGNAL_LAB_FRONTIER_FABLE_ADJUDICATION_2026-07-06.md</a>.</p>
   {%- endif %}
+  {%- if waves_adjudication and waves_adjudication.waves %}
+  <div class="frontier-note" style="border-left:3px solid var(--line);padding-left:10px;margin-top:10px">
+    <strong>{{ t('Waves 2–4 adjudicated 2026-07-06','第2–4波 2026-07-06裁决') }}:</strong>
+    {%- for w in waves_adjudication.waves %}
+    <span style="display:inline-block;margin:2px 8px 2px 0">
+      <a href="/{{ w.doc }}" style="color:inherit;text-decoration:underline dotted">{{ t('W'~w.wave, 'W'~w.wave) }}</a>
+      {{ t(w.screened~' screened / '~w.advanced~' advanced → '~w.result_label,
+           w.screened~'筛选 / '~w.advanced~'候选 → '~w.result_label_zh) }};
+    </span>
+    {%- endfor %}
+    {%- if waves_adjudication.moratorium %}
+    <span style="color:var(--muted)">{{ t('generation moratorium in force until wave-1 + spike verdicts booked and queue &lt; 3','生成暂停令生效——第一波+尖峰候选裁决登记且排队数降至3以下前不启动新波次') }}.</span>
+    {%- endif %}
+  </div>
+  {%- endif %}
   <div class="scroll"><table class="frontier-table">
     <thead><tr>
       <th>{{ t('Candidate','候选') }}</th>
@@ -204,6 +223,12 @@
             'PROBE': ('probe', '数据探针', 'PROBE'),
             'PILOT': ('pilot', '试点', 'PILOT'),
             'PENDING': ('pending', '待审', 'PENDING'),
+            'TESTED-NULL': ('tested-null', '已测试—空', 'TESTED-NULL'),
+            'TESTED-NULL(G3)': ('tested-null', '已测试—空(G3)', 'TESTED-NULL'),
+            'TESTED-PASS': ('tested-pass', '已测试—通过', 'TESTED-PASS'),
+            'TESTED-PARTIAL': ('tested-partial', '已测试—部分', 'TESTED-PARTIAL'),
+            'TESTED-ACCRUE': ('tested-accrue', '已测试—累积', 'TESTED-ACCRUE'),
+            'ACCRUE-CONFIRMED': ('accrue', '累积已确认', 'ACCRUE-CONFIRMED'),
           } %}
           {%- set cdata = chip_map.get(verdict, ('pending', '待审', verdict)) %}
           <span class="fable-chip {{ cdata[0] }}">{{ t(cdata[2], cdata[1]) }}</span>
