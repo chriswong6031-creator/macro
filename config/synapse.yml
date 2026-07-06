@@ -3794,7 +3794,7 @@ artifacts:
   # documentary so the firewall CI can verify the horizon_role stamp.
   long-hold-compounder-features:
     path: "embedded: financials.multiyear.compounder inside site/stockdata/<TICKER>.json"
-    format: json-embedded
+    format: json
     producer: engine/stock_fundamentals.py
     known_extra_writers: []
     owner_program: long-hold

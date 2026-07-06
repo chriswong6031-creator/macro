@@ -667,7 +667,11 @@ def _compounders(rows: list[dict]) -> dict:
             roic_series.append(None)
             continue
         ic = e + dl + (dc if dc is not None else 0.0) - ca
-        if abs(ic) < 1e-6:          # guard zero denominator
+        if ic <= 0:                 # guard zero/negative IC (net-cash companies)
+            # Negative invested capital produces wrong-sign ROIC for profitable
+            # net-cash names (e.g. BKNG, FTNT). Suppress rather than display a
+            # misleading deeply-negative number on what is actually a high-quality
+            # compounder.  Display-tier annotation; None is the correct signal.
             roic_series.append(None)
             continue
         roic_series.append(round(oi * (1.0 - _TAX) / ic * 100.0, 2))
@@ -736,21 +740,22 @@ def _compounders(rows: list[dict]) -> dict:
         out["reinvestment_rate_cov"] = rr_cov
 
     # ── Incremental revenue per reinvestment dollar ───────────────────────────
-    # sum(Δrevenue) / sum(capex) over the available rows
-    # Requires ≥ 2 non-None adjacent rev pairs and ≥ 2 non-None capex values.
+    # sum(Δrevenue) / sum(capex) over the intersecting year set.
+    # Both the adjacent-year revenue delta AND the capex for year i must be
+    # present for a pair to be included — ensures numerator and denominator
+    # span the same years (avoids mismatch when rev or capex has spotty coverage).
     rev_deltas, capex_accum = [], []
     for i in range(1, n):
         r0, r1, cx = rev[i - 1], rev[i], capex[i]
-        if r0 is not None and r1 is not None:
+        if r0 is not None and r1 is not None and cx is not None:
             rev_deltas.append(r1 - r0)
-        if cx is not None:
             capex_accum.append(cx)
     if len(rev_deltas) >= 2 and len(capex_accum) >= 2:
         total_capex = sum(capex_accum)
         if abs(total_capex) > 1e-6:
             out["incremental_rev_per_reinvestment"]     = round(sum(rev_deltas) / total_capex, 3)
             out["incremental_rev_per_reinvestment_cov"] = round(
-                min(len(rev_deltas), len(capex_accum)) / max(n - 1, 1), 3
+                len(rev_deltas) / max(n - 1, 1), 3
             )
 
     # ── Asset-light scaling (rev growth vs asset growth) ─────────────────────
