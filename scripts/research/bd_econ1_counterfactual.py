@@ -1132,6 +1132,38 @@ def _write_report_md(results: dict[str, Any], repo_root: Path) -> Path:
         lines.append(f"- Unflagged fires (contrast arm): {d.get('n_unflagged_fires', 'N/A'):,}")
         lines.append("")
 
+        # C3 for BD-2 — co-primary per prereg §3 and RUL-U3; report LEADS with C3.
+        # BD-2's confound is by-construction (its events derive from stopped fires),
+        # so C3 (the increment over generic post-stop damage) is the headline result.
+        # C1 is secondary context printed after C3.
+        if defn == "BD-2":
+            c3 = d.get("c3_result")
+            lines.append("### C3 (co-primary) — BD-2 Flagged vs Recent-Stop-Without-BD")
+            lines.append("")
+            if c3 is None or c3.get("status") == "P0-DEFER":
+                n_rs = (c3 or {}).get("n_recent_stop_cohort", "N/A")
+                lines.append(f"**P0-DEFER**: recent-stop cohort floor not met.")
+                lines.append(f"- Recent-stop cohort size: {n_rs} (floor: ≥{FLOOR_RECENT_STOP})")
+                lines.append(f"- No C3 statistics computed.")
+            else:
+                n_rs = c3.get("n_recent_stop_cohort", "N/A")
+                lines.append(f"- Recent-stop cohort size: {n_rs:,}")
+                ep_a3 = c3.get("endpoint_a_stop_rate", {})
+                lines.append("**Endpoint (a) — Stop-rate delta:**")
+                lines.append(f"- Delta (BD-2 flagged − recent-stop): {_fmt(ep_a3.get('delta'))}")
+                lines.append(f"- 95% CI: [{_fmt(ep_a3.get('ci95_lo'))}, {_fmt(ep_a3.get('ci95_hi'))}]")
+                lines.append(f"- CI excludes zero: {ep_a3.get('ci_excludes_zero', 'N/A')}")
+                ep_b3 = c3.get("endpoint_b_fwd_ret21", {})
+                lines.append("**Endpoint (b) — fwd_ret_21 delta:**")
+                lines.append(f"- Delta (BD-2 flagged − recent-stop): {_fmt(ep_b3.get('delta'), '.5f')}")
+                lines.append(f"- 95% CI: [{_fmt(ep_b3.get('ci95_lo'), '.5f')}, {_fmt(ep_b3.get('ci95_hi'), '.5f')}]")
+                lines.append(f"- CI excludes zero: {ep_b3.get('ci_excludes_zero', 'N/A')}")
+                lines.append("")
+                lines.append("**C3 interpretation**: if C1 delta is real but C3 delta ~0, "
+                             "BD-2 adds nothing beyond 'the name just stopped' (INCREMENT-NULL). "
+                             "If C3 also real, BD-2 has board value beyond generic post-stop damage.")
+            lines.append("")
+
         contrast_key = "C1_result" if defn == "BD-2" else "C2_result"
         contrast_label = "C1" if defn == "BD-2" else "C2"
         cr = d.get(contrast_key, {})
@@ -1162,35 +1194,6 @@ def _write_report_md(results: dict[str, Any], repo_root: Path) -> Path:
         lines.append(f"- Censored (NaN fwd_ret_21): flagged={cens.get('n_flagged_ret21_nan', 0)} "
                      f"unflagged={cens.get('n_unflagged_ret21_nan', 0)}")
         lines.append("")
-
-        # C3 for BD-2
-        if defn == "BD-2":
-            c3 = d.get("c3_result")
-            lines.append("### C3 (co-primary) — BD-2 Flagged vs Recent-Stop-Without-BD")
-            lines.append("")
-            if c3 is None or c3.get("status") == "P0-DEFER":
-                n_rs = (c3 or {}).get("n_recent_stop_cohort", "N/A")
-                lines.append(f"**P0-DEFER**: recent-stop cohort floor not met.")
-                lines.append(f"- Recent-stop cohort size: {n_rs} (floor: ≥{FLOOR_RECENT_STOP})")
-                lines.append(f"- No C3 statistics computed.")
-            else:
-                n_rs = c3.get("n_recent_stop_cohort", "N/A")
-                lines.append(f"- Recent-stop cohort size: {n_rs:,}")
-                ep_a3 = c3.get("endpoint_a_stop_rate", {})
-                lines.append("**Endpoint (a) — Stop-rate delta:**")
-                lines.append(f"- Delta (BD-2 flagged − recent-stop): {_fmt(ep_a3.get('delta'))}")
-                lines.append(f"- 95% CI: [{_fmt(ep_a3.get('ci95_lo'))}, {_fmt(ep_a3.get('ci95_hi'))}]")
-                lines.append(f"- CI excludes zero: {ep_a3.get('ci_excludes_zero', 'N/A')}")
-                ep_b3 = c3.get("endpoint_b_fwd_ret21", {})
-                lines.append("**Endpoint (b) — fwd_ret_21 delta:**")
-                lines.append(f"- Delta (BD-2 flagged − recent-stop): {_fmt(ep_b3.get('delta'), '.5f')}")
-                lines.append(f"- 95% CI: [{_fmt(ep_b3.get('ci95_lo'), '.5f')}, {_fmt(ep_b3.get('ci95_hi'), '.5f')}]")
-                lines.append(f"- CI excludes zero: {ep_b3.get('ci_excludes_zero', 'N/A')}")
-                lines.append("")
-                lines.append("**C3 interpretation**: if C1 delta is real but C3 delta ~0, "
-                             "BD-2 adds nothing beyond 'the name just stopped' (INCREMENT-NULL). "
-                             "If C3 also real, BD-2 has board value beyond generic post-stop damage.")
-            lines.append("")
 
         # Economics block
         econ = d.get("economics_block", {})

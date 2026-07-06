@@ -43,6 +43,20 @@ No gate, threshold, or endpoint in the prereg was changed in response.
 - Contributing episodes: 7,228
 - Unflagged fires (contrast arm): 24,664
 
+### C3 (co-primary) — BD-2 Flagged vs Recent-Stop-Without-BD
+
+- Recent-stop cohort size: 1,966
+**Endpoint (a) — Stop-rate delta:**
+- Delta (BD-2 flagged − recent-stop): 0.0171
+- 95% CI: [-0.0781, 0.1166]
+- CI excludes zero: False
+**Endpoint (b) — fwd_ret_21 delta:**
+- Delta (BD-2 flagged − recent-stop): -0.00072
+- 95% CI: [-0.02848, 0.02780]
+- CI excludes zero: False
+
+**C3 interpretation**: if C1 delta is real but C3 delta ~0, BD-2 adds nothing beyond 'the name just stopped' (INCREMENT-NULL). If C3 also real, BD-2 has board value beyond generic post-stop damage.
+
 ### C1 — Flagged vs All Unflagged
 
 **Endpoint (a) — Stop-rate delta at h21:**
@@ -61,20 +75,6 @@ No gate, threshold, or endpoint in the prereg was changed in response.
 - 95% CI: [-0.01870, 0.02503]
 - CI excludes zero: False
 - Censored (NaN fwd_ret_21): flagged=0 unflagged=0
-
-### C3 (co-primary) — BD-2 Flagged vs Recent-Stop-Without-BD
-
-- Recent-stop cohort size: 1,966
-**Endpoint (a) — Stop-rate delta:**
-- Delta (BD-2 flagged − recent-stop): 0.0171
-- 95% CI: [-0.0781, 0.1166]
-- CI excludes zero: False
-**Endpoint (b) — fwd_ret_21 delta:**
-- Delta (BD-2 flagged − recent-stop): -0.00072
-- 95% CI: [-0.02848, 0.02780]
-- CI excludes zero: False
-
-**C3 interpretation**: if C1 delta is real but C3 delta ~0, BD-2 adds nothing beyond 'the name just stopped' (INCREMENT-NULL). If C3 also real, BD-2 has board value beyond generic post-stop damage.
 
 ### Economics block (§4 — arithmetic on flagged cohort)
 
