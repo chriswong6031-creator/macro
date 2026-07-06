@@ -21,7 +21,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | institutional-sector-intelligence | 2 |
 | intl-fix | 1 |
 | long-hold | 20 |
-| neural-web | 33 |
+| neural-web | 34 |
 | nw-mastermind-bridge | 2 |
 | nw-rails | 4 |
 | options-alpha | 7 |
@@ -40,7 +40,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | tier | count |
 |---|---|
 | display | 99 |
-| infrastructure | 49 |
+| infrastructure | 50 |
 | scored | 4 |
 | shadow | 37 |
 
@@ -48,7 +48,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 183 |
+| git | 184 |
 | gitignored-local | 4 |
 | r2 | 2 |
 
@@ -199,6 +199,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | neuralweb-health | `data/neuralweb/health.json` | json | daily-engine | infrastructure | 2 | 0 |
 | reflex-firings-pattern | `data/reflexes/<NAME>/firings.jsonl` | jsonl | on-demand | shadow | 2 | 0 |
 | rule-experiment-registry | `data/rule_experiments/registry.jsonl` | jsonl | on-demand | infrastructure | 2 | 0 |
+| claim-accountability | `data/governance/claim_accountability.json` | json | collect | infrastructure | 1 | 0 |
 | cortex-attention-firings | `data/reflexes/cortex_attention/firings.jsonl` | jsonl | nightly-cortex | shadow | 1 | 0 |
 | cortex-attention-grades | `data/reflexes/cortex_attention/grades.jsonl` | jsonl | nightly-cortex | shadow | 1 | 0 |
 | governance-ledger | `data/neuralweb/governance.jsonl` | jsonl | daily-engine | infrastructure | 1 | 0 |
