@@ -5023,7 +5023,7 @@ artifacts:
     producer: scripts/build_operator_exposure_log.py
     known_extra_writers: []
     owner_program: next3
-    cadence: daily
+    cadence: collect
     storage: gitignored-local
     asof_field: as_of
     freshness_sla_hours: 36
@@ -5054,7 +5054,7 @@ artifacts:
     producer: scripts/build_operator_exposure_log.py
     known_extra_writers: []
     owner_program: next3
-    cadence: daily
+    cadence: collect
     storage: git
     asof_field: generated_at
     freshness_sla_hours: 36
