@@ -314,3 +314,59 @@ def test_empty_snapshot_returns_zero_counts(tmp_path):
     assert result["n_written"] == 0
     assert result["n_tickers"] == 0
     assert not hist.exists()
+
+
+# ── Fix: drift_detected is always bool, never dict ───────────────────────────
+
+def test_drift_detected_is_bool_in_noop_branch(tmp_path):
+    """When all tickers are already logged (no-op branch), drift_detected must be
+    a Python bool, not a dict (prior_proportions is a dict; `dict and any(...)` can
+    short-circuit to the dict itself when prior_proportions is empty, returning {}
+    instead of False)."""
+    hist = tmp_path / "thesis_funnel_history.parquet"
+
+    # Day 1 — initial write
+    snap1 = _make_snapshot(["AAPL", "MSFT"], ["watch_for_thesis", "not_eligible"])
+    append_history(snap1, snapshot_date="2026-07-05", history_path=hist)
+
+    # Day 2 — same tickers: triggers the no-op branch (n_new == 0)
+    result = append_history(snap1, snapshot_date="2026-07-05", history_path=hist)
+    assert result["n_written"] == 0
+    assert isinstance(result["drift_detected"], bool), (
+        f"drift_detected must be bool, got {type(result['drift_detected'])}: "
+        f"{result['drift_detected']!r}"
+    )
+
+
+def test_drift_detected_is_bool_when_prior_proportions_empty(tmp_path):
+    """No-op branch with empty prior_proportions (first-ever snapshot re-run) must
+    return drift_detected=False (bool), not {} (empty dict)."""
+    hist = tmp_path / "thesis_funnel_history.parquet"
+
+    # Write once, then call again on the same date with same tickers (no-op).
+    # On the first call there is no prior, so prior_proportions = {}.
+    # The no-op branch is triggered on the second call (all already logged).
+    snap = _make_snapshot(["AAPL"], ["watch_for_thesis"])
+    append_history(snap, snapshot_date="2026-07-06", history_path=hist)
+    result = append_history(snap, snapshot_date="2026-07-06", history_path=hist)
+
+    assert result["n_written"] == 0
+    assert result["drift_detected"] is False
+    assert isinstance(result["drift_detected"], bool)
+
+
+# ── Fix: --smoke + --write-history are mutually exclusive ────────────────────
+
+def test_smoke_and_write_history_rejected():
+    """Passing both --smoke and --write-history to main() must exit with code 2.
+
+    A truncated 200-ticker smoke cross-section must never be written to the
+    history store — keep-FIRST semantics would freeze it permanently at a
+    partial universe, corrupting all longitudinal analysis.
+    """
+    from scripts.research.build_thesis_funnel_snapshot import main as snapshot_main
+
+    rc = snapshot_main(["--smoke", "--write-history"])
+    assert rc == 2, (
+        f"Expected exit code 2 when --smoke and --write-history are both passed, got {rc}"
+    )

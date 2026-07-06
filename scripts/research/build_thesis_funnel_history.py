@@ -259,9 +259,11 @@ def append_history(
             "thesis_funnel_history: all %d tickers already logged for %s (keep-first, no-op)",
             len(already_logged), snapshot_date,
         )
-        drift_detected = prior_proportions and any(
-            abs(curr_proportions.get(s, 0.0) - prior_proportions.get(s, 0.0)) >= _DRIFT_THRESHOLD_PP
-            for s in set(curr_proportions) | set(prior_proportions)
+        drift_detected = bool(
+            prior_proportions and any(
+                abs(curr_proportions.get(s, 0.0) - prior_proportions.get(s, 0.0)) >= _DRIFT_THRESHOLD_PP
+                for s in set(curr_proportions) | set(prior_proportions)
+            )
         )
         return {
             "snapshot_date": snapshot_date,

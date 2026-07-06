@@ -277,6 +277,18 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
 
+    # Reject --smoke + --write-history together: a truncated 200-ticker cross-section
+    # must never be appended to the history store (keep-FIRST semantics would freeze
+    # it permanently at a partial universe, corrupting all longitudinal comparisons).
+    if args.smoke and args.write_history:
+        sys.stderr.write(
+            "ERROR: --smoke and --write-history are mutually exclusive.\n"
+            "A truncated 200-ticker smoke cross-section must never be written to the\n"
+            "history store — keep-FIRST semantics would freeze it permanently at a\n"
+            "partial universe, corrupting all longitudinal analysis.\n"
+        )
+        return 2
+
     logging.basicConfig(
         level=logging.INFO,
         format="%(levelname)s %(name)s %(message)s",
