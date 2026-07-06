@@ -1,1 +1,14 @@
-{"built": "2026-07-06T07:34:39.315303+00:00", "fy_min": 2009, "fy_max": 2025, "reporting_lag_days": 120, "n_rows": 22014, "n_tickers": 1503}
+{
+  "built": "2026-07-06T10:25:08.729321+00:00",
+  "fy_min": 2009,
+  "fy_max": 2025,
+  "reporting_lag_days": 120,
+  "n_rows": 22014,
+  "n_tickers": 1503,
+  "statements_join_fields": [
+    "capex"
+  ],
+  "capex_coverage": 7246,
+  "pit_gate_applied": true,
+  "pit_gate_rows_nulled": 54
+}

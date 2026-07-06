@@ -81,6 +81,12 @@ _REGIME_LATEST = _DATA / "regime" / "latest.json"
 _OUT_PARQUET = _DATA / "research" / "long_hold_labels.parquet"
 _OUT_MANIFEST = _DATA / "research" / "long_hold_labels_manifest.json"
 
+# LT-1c: expanded sector map (scripts/build_sector_map.py).
+# Preferred over the baskets/membership.json-derived map because it covers
+# ~1,500 tickers (GICS from all 3 S&P constituent files + SIC-mapped) vs 503
+# from baskets alone.  Falls back to the old membership.json path if not found.
+_TICKER_SECTORS_PATH = _DATA / "breadth" / "ticker_sectors.parquet"
+
 # Massive store: probed at repo-local and Mac-system paths
 _MASSIVE_DIR_LOCAL = _DATA / "massive_stock_day"
 _MASSIVE_DIR_MAC = Path("/Users/chriswong/Documents/Cluade/Macro Dashboard/data/massive_stock_day")
@@ -358,18 +364,65 @@ def _build_sector_closes(
 
 
 def _build_ticker_sector_map() -> dict[str, str]:
-    """Build ticker -> sector_basket_key from baskets/membership.json."""
+    """Build ticker -> sector_basket_key for use with the EW sector benchmark closes.
+
+    LT-1c: PREFER data/breadth/ticker_sectors.parquet (scripts/build_sector_map.py)
+    which covers ~1,500 tickers (GICS from all 3 S&P constituent files + SIC-mapped)
+    vs 503 from baskets/membership.json alone.  Falls back to the old membership.json
+    path for tickers not in the expanded map.
+
+    Returns {ticker: basket_key} where basket_key is one of the 11 US Sectors (EW)
+    basket identifiers from baskets/membership.json (e.g. 'us_sector_tech').
+    """
+    # --- LT-1c: GICS name → basket key translation table ---
+    # Maps the 11 GICS-style strings used in ticker_sectors.parquet to the
+    # corresponding 'us_sector_*' basket keys in baskets/membership.json.
+    _GICS_TO_BASKET: dict[str, str] = {
+        "Communication Services": "us_sector_comm",
+        "Consumer Discretionary":  "us_sector_discretionary",
+        "Consumer Staples":        "us_sector_staples",
+        "Energy":                  "us_sector_energy",
+        "Financials":              "us_sector_financials",
+        "Health Care":             "us_sector_health",
+        "Industrials":             "us_sector_industrials",
+        "Information Technology":  "us_sector_tech",
+        "Materials":               "us_sector_materials",
+        "Real Estate":             "us_sector_realestate",
+        "Utilities":               "us_sector_utilities",
+    }
+
+    sector_map: dict[str, str] = {}
+
+    # --- Step 1: load the expanded ticker_sectors map (preferred) ---
+    if _TICKER_SECTORS_PATH.exists():
+        try:
+            ts_df = pd.read_parquet(_TICKER_SECTORS_PATH)
+            for _, row in ts_df.iterrows():
+                ticker = str(row["ticker"])
+                gics = str(row.get("sector", "") or "")
+                basket_key = _GICS_TO_BASKET.get(gics)
+                if basket_key and ticker:
+                    sector_map[ticker] = basket_key
+            log.info("Sector map (ticker_sectors.parquet): %d tickers", len(sector_map))
+        except Exception as exc:  # noqa: BLE001
+            log.warning("ticker_sectors.parquet load failed (%s); falling back to membership.json",
+                        exc)
+            sector_map = {}
+
+    # --- Step 2: fill remaining gaps from baskets/membership.json ---
     membership_path = _DATA / "baskets" / "membership.json"
     if not membership_path.exists():
-        log.warning("baskets/membership.json not found; sector map empty")
-        return {}
+        if not sector_map:
+            log.warning("baskets/membership.json not found and ticker_sectors unavailable; "
+                        "sector map empty")
+        return sector_map
     try:
         bm = json.loads(membership_path.read_text())
     except Exception as exc:  # noqa: BLE001
         log.warning("Failed to load membership.json: %s", exc)
-        return {}
+        return sector_map
     baskets = bm.get("baskets", {})
-    sector_map: dict[str, str] = {}
+    added_from_membership = 0
     for key, val in baskets.items():
         if not isinstance(val, dict):
             continue
@@ -377,9 +430,11 @@ def _build_ticker_sector_map() -> dict[str, str]:
             continue
         for m in val.get("members", []):
             ticker = m.get("ticker", "") if isinstance(m, dict) else str(m)
-            if ticker:
+            if ticker and ticker not in sector_map:
                 sector_map[ticker] = key
-    log.info("Sector map built: %d tickers", len(sector_map))
+                added_from_membership += 1
+    log.info("Sector map final: %d tickers (%d from membership.json fill)",
+             len(sector_map), added_from_membership)
     return sector_map
 
 
