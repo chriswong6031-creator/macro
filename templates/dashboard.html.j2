@@ -3055,8 +3055,9 @@
           {# unvalidated caution: show a muted "unvalidated — accruing" chip only when caution #}
           {% set _gc_unval_caution = _gc and not _gc_scored and _gc.verdict == 'caution' %}
           {% set _iv_unval_caution = _iv and not _iv_scored and _iv.verdict == 'caution' %}
-          {# verifier row keeps ONLY validated/scored content now; the unvalidated Options/IV
-             positioning cautions were folded into the one Caution popover below (declutter). #}
+          {# verifier row keeps ONLY scored (gate_scored=True) content now; the unvalidated
+             Options/IV positioning cautions were folded into the one Caution popover below
+             (declutter). #}
           {% if _gc_scored or _sqshow or _ivshow %}
           <div class="nb-vf">
             {# GEX chip: only when gate is scored=True (validated) #}
