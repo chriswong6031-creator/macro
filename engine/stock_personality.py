@@ -84,13 +84,11 @@ CHART_PRECEDENCE = [
 
 # ---- MICROSTRUCTURE ----
 
-# tight_spread_absorber: liquid, deep
+# tight_spread_absorber: liquid, deep (ADV + CS-spread only)
+# amihud_252 passes through into base.microstructure as a raw value for W2b
+# cross-sectional percentile ranking — no absolute threshold here.
 MICRO_TIGHT_ADV_THRESHOLD = 50_000_000.0   # dollar_adv_21d >= $50M
 MICRO_TIGHT_CS_SPREAD_THRESHOLD = 0.006    # cs_spread_252 <= this
-# amihud_252 in bottom 40th pctile is expressed as a relative check;
-# since we have no cross-sectional reference here, we use a simple absolute:
-# Amihud low = amihud_252 <= MICRO_TIGHT_AMIHUD_ABS (set small — institutional names)
-MICRO_TIGHT_AMIHUD_ABS = 0.10              # amihud_252 <= this (low impact)
 
 # wide_spread_impact: illiquid / thin
 MICRO_WIDE_ADV_THRESHOLD = 5_000_000.0     # dollar_adv_21d <= $5M
@@ -162,8 +160,9 @@ MODE_FORCED_LIQ_REL_VOL_THRESHOLD = 2.0     # rel_volume >= this
 MODE_SQUEEZE_SHORT_PCT_THRESHOLD = 15.0     # short_pct_float >= this
 MODE_SQUEEZE_RET_21D_THRESHOLD = 0.25       # ret_21d >= this (upside)
 
-# options_pin
-MODE_PIN_FLIP_DIST_THRESHOLD = 2.0          # flip_distance_pct <= this (tight pin)
+# options_pin — gex_engine emits dist_to_flip_pct as signed (spot−flip)/spot·100;
+# |dist_to_flip_pct| <= threshold means spot is within 2% of the gamma flip level.
+MODE_PIN_FLIP_DIST_THRESHOLD = 2.0          # abs(dist_to_flip_pct) <= this (tight pin)
 
 # post_news_attention
 MODE_POST_NEWS_ATTENTION_Z = 3.0            # attention_z >= this
@@ -178,7 +177,9 @@ MODE_ACCUM_VOL_SQUEEZE_STATES = frozenset({"COILED", "COMPRESSED"})
 MODE_ACCUM_TREND_PERSIST_MIN = 0.0   # trend_persist_20 >= 0
 
 # distribution
-MODE_DIST_OFF_52W_HIGH_THRESHOLD = 10.0    # off_52w_high_pct <= this (near high)
+# off_52w_high_pct is signed (spot/52w_high - 1)*100 — NEGATIVE value, e.g., -8.5 = 8.5% below high.
+# "Near high" means value is close to 0 from below: off_52w_high_pct >= -MODE_DIST_OFF_52W_HIGH_THRESHOLD.
+MODE_DIST_OFF_52W_HIGH_THRESHOLD = 10.0    # off_52w_high_pct >= -this (near high, within 10%)
 MODE_DIST_FAILED_BO_THRESHOLD = 0.50       # failed_breakout_rate_63 >= this
 
 # Expiry (days) per mode
@@ -197,6 +198,15 @@ MODE_EXPIRY = {
 }
 
 MODE_MAX_LABELS = 3
+
+# ---- CHART MUTUAL-EXCLUSION PAIRS ----
+# Within each pair, once the first label is assigned the second cannot co-fire.
+# This prevents conflicting characterisations: a smooth grinder is not also a
+# volatile momentum vehicle; a stair-step leader is not also a mean reverter.
+CHART_EXCLUSIONS: tuple[frozenset[str], ...] = (
+    frozenset({"smooth_compounder_grind", "volatile_momentum_vehicle"}),
+    frozenset({"mean_reversion_rubber_band", "stair_step_leader"}),
+)
 
 CURRENT_MODE_PRECEDENCE = [
     "event_override",
@@ -332,17 +342,20 @@ def _classify_chart(
     labels: list[str] = []
 
     def _add(label: str) -> bool:
-        """Add label if cap not reached; return True if added."""
-        if len(labels) < CHART_MAX_LABELS:
-            labels.append(label)
-            return True
-        return False
+        """Add label if cap not reached and no mutual-exclusion conflict; return True if added."""
+        if len(labels) >= CHART_MAX_LABELS:
+            return False
+        # Enforce CHART_EXCLUSIONS: skip if this label is paired with an already-assigned label
+        for excl_set in CHART_EXCLUSIONS:
+            if label in excl_set and any(existing in excl_set for existing in labels):
+                return False
+        labels.append(label)
+        return True
 
     # 1. event_gapper
     if (event_gap_contrib is not None and event_gap_contrib >= CHART_EVENT_GAP_CONTRIB_THRESHOLD) or \
        (gap_share is not None and gap_share >= CHART_GAP_SHARE_THRESHOLD):
-        if event_gap_contrib is not None or gap_share is not None:
-            _add("event_gapper")
+        _add("event_gapper")
 
     # 2. failed_breakout_trap
     if len(labels) < CHART_MAX_LABELS:
@@ -425,8 +438,10 @@ def _classify_microstructure(
     gap_share = _pf(path_features, "gap_share_252")
     reversal_hl = _pf(path_features, "reversal_half_life")
 
+    # §2-shape microstructure sub-dict: adv_usd_21d / amihud_252 / cs_spread_252
+    # amihud_252 = raw |ret|/(close·volume) ≈ 1e-12..1e-8; W2b converts to pctile.
     snapshot = {
-        "dollar_adv_21d": dollar_adv,
+        "adv_usd_21d": dollar_adv,
         "cs_spread_252": cs_spread,
         "amihud_252": amihud,
         "extreme_bar_freq_252": extreme_bar_freq,
@@ -434,8 +449,10 @@ def _classify_microstructure(
         "reversal_half_life": reversal_hl,
     }
 
-    # Volume-less histories → None
-    if dollar_adv is None and cs_spread is None and amihud is None:
+    # Return None only when ALL six micro inputs are None — gap_discontinuity_risk
+    # and slow_mean_reversion_liquidity remain evaluable on OHLC-only (no-volume) histories.
+    if (dollar_adv is None and cs_spread is None and amihud is None and
+            extreme_bar_freq is None and gap_share is None and reversal_hl is None):
         missing.append("path_features.volume_missing")
         return None, missing, snapshot
 
@@ -447,10 +464,10 @@ def _classify_microstructure(
             return True
         return False
 
-    # 1. tight_spread_absorber
+    # 1. tight_spread_absorber — ADV + CS-spread only; amihud passes through
+    # as a raw value (amihud_252) for W2b cross-sectional percentile ranking.
     if (dollar_adv is not None and dollar_adv >= MICRO_TIGHT_ADV_THRESHOLD and
-            cs_spread is not None and cs_spread <= MICRO_TIGHT_CS_SPREAD_THRESHOLD and
-            amihud is not None and amihud <= MICRO_TIGHT_AMIHUD_ABS):
+            cs_spread is not None and cs_spread <= MICRO_TIGHT_CS_SPREAD_THRESHOLD):
         _add("tight_spread_absorber")
 
     # 2. wide_spread_impact
@@ -598,7 +615,12 @@ def _classify_current_mode(
     oracle_episode_active: bool | None,
     path_features: dict | None,
 ) -> tuple[list[str] | None, list[str], dict, int]:
-    """Return (modes_or_None, missing_inputs, evidence_dict, expires_after_days)."""
+    """Return (modes_or_None, missing_inputs, evidence_dict, expires_after_days).
+
+    Multi-mode expiry rule: when multiple modes fire, expires_after_days is the
+    MINIMUM expiry across all assigned modes (shortest-lived mode governs).
+    Schema stays a scalar per masterplan §2 — the scalar is min(MODE_EXPIRY[m] for m in modes).
+    """
     missing: list[str] = []
 
     pos = positioning or {}
@@ -606,7 +628,9 @@ def _classify_current_mode(
 
     _gex = gex or {}
     gamma_regime = _gex.get("gamma_regime")
-    flip_dist = _safe_float(_gex.get("flip_distance_pct"))
+    # dist_to_flip_pct is signed (spot−flip)/spot·100 from gex_engine;
+    # use abs() so tight-pin fires regardless of whether spot is above or below flip.
+    flip_dist = _safe_float(_gex.get("dist_to_flip_pct"))
 
     _ev = events or {}
     days_to_earnings = _safe_int(_ev.get("days_to_earnings"))
@@ -673,18 +697,19 @@ def _classify_current_mode(
                 "ret_21d": ret_21d,
             })
 
-    # 4. options_pin
+    # 4. options_pin — gex_engine "long" = dealers net long gamma (pin/dampen behavior).
+    # dist_to_flip_pct is signed; abs() <= threshold means spot is near the flip level.
     if len(modes) < MODE_MAX_LABELS:
-        if (gamma_regime == "positive" and
-                flip_dist is not None and flip_dist <= MODE_PIN_FLIP_DIST_THRESHOLD):
+        if (gamma_regime == "long" and
+                flip_dist is not None and abs(flip_dist) <= MODE_PIN_FLIP_DIST_THRESHOLD):
             _add_mode("options_pin", {
                 "gamma_regime": gamma_regime,
-                "flip_distance_pct": flip_dist,
+                "dist_to_flip_pct": flip_dist,
             })
 
-    # 5. negative_gamma_trend
+    # 5. negative_gamma_trend — gex_engine "short" = dealers net short gamma (amplify/trend).
     if len(modes) < MODE_MAX_LABELS:
-        if gamma_regime == "negative":
+        if gamma_regime == "short":
             _add_mode("negative_gamma_trend", {"gamma_regime": gamma_regime})
 
     # 6. sector_rotation_feeder
@@ -719,9 +744,10 @@ def _classify_current_mode(
                 "trend_persist_20": trend_persist_20,
             })
 
-    # 10. distribution
+    # 10. distribution — near 52-week high (off_52w_high_pct is negative, e.g., -8.5 = 8.5% below high;
+    # "within 10% of high" means off_52w_high_pct >= -MODE_DIST_OFF_52W_HIGH_THRESHOLD)
     if len(modes) < MODE_MAX_LABELS:
-        if (off_52w_high_pct is not None and off_52w_high_pct <= MODE_DIST_OFF_52W_HIGH_THRESHOLD and
+        if (off_52w_high_pct is not None and off_52w_high_pct >= -MODE_DIST_OFF_52W_HIGH_THRESHOLD and
                 failed_breakout_rate is not None and failed_breakout_rate >= MODE_DIST_FAILED_BO_THRESHOLD and
                 obv_slope_up is False):
             _add_mode("distribution", {
@@ -856,14 +882,36 @@ def assess(
     bo_regime : str | None
         Beneficial-ownership regime: "activist"|"flip"|"passive"|"custodial"|"none".
     gex : dict | None
-        {"gamma_regime": "positive"|"negative"|None, "flip_distance_pct": float|None}.
+        {"gamma_regime": "long"|"short"|None,  ← gex_engine canonical values
+         "dist_to_flip_pct": float|None}.       ← signed (spot−flip)/spot·100
     events : dict | None
         {"days_to_earnings": int|None, "event_window_active": bool|None}.
     tech : dict | None
-        {"hv_pctile": float|None, "rel_volume": float|None, "obv_slope_up": bool|None,
-         "off_52w_high_pct": float|None, "ret_21d": float|None,
-         "months_underwater": float|None, "vol_squeeze_state": str|None,
+        {"hv_pctile": float|None,          ← 0-100 from engine.stock_technicals.hv_pctile
+         "rel_volume": float|None,          ← ratio; 1.0 = normal
+         "obv_slope_up": bool|None,
+         "off_52w_high_pct": float|None,    ← SIGNED negative pct: (px/52w_high−1)*100
+                                               e.g. -15.0 = 15% below high; 0.0 = at high
+         "ret_21d": float|None,             ← FRACTION e.g. -0.30 (not percent)
+         "months_underwater": float|None,   ← derived from entry_primitives.time_underwater_series (bars)/21
+         "vol_squeeze_state": str|None,     ← rec["vol_squeeze"]["state"] (NOT rec["tech"])
          "ladder_state": str|None}.
+
+    W2b caller sourcing contract
+    ----------------------------
+    vol_squeeze_state  ← rec["vol_squeeze"]["state"]
+    ret_21d            ← close.pct_change(21) as a fraction (e.g. -0.30)
+    months_underwater  ← engine.entry_primitives.time_underwater_series (bars) / 21.0
+    hv_pctile          ← tech.hv_pctile (0-100 scale)
+    rel_volume         ← tech.rel_volume (ratio, 1.0 = normal)
+    obv_slope_up       ← tech.obv_slope_up (bool)
+    off_52w_high_pct   ← tech.off_52w_high_pct — SIGNED NEGATIVE percent below high
+                         (stock_technicals: (px/52w_high−1)*100);
+                         "near high" means off_52w_high_pct >= −10 (within 10% of high)
+    gex.gamma_regime   ← gex_engine "long"|"short" (NOT "positive"/"negative")
+    gex.dist_to_flip_pct ← gex_engine signed percent; options_pin uses abs(dist) <= threshold
+    short_pct_float    ← positioning.short.pct_float (PERCENT 0-100)
+    days_to_cover      ← positioning.short.days_to_cover
     oracle_episode_active : bool | None
         Whether the ticker's sector has an active Oracle episode.
     market_cap : float | None

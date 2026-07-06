@@ -67,7 +67,8 @@ def _make_path_features(
         "extreme_bar_freq_252": 0.01,
         "range_compression_pct": 40.0,
         "dollar_adv_21d": 10_000_000.0,
-        "amihud_252": 0.05,
+        # amihud_252: raw |ret|/(close·volume) — typical liquid stock ≈ 1e-9..1e-8
+        "amihud_252": 5e-9,
         "cs_spread_252": 0.008,
         "coverage": {
             "n_bars": n_bars,
@@ -352,20 +353,36 @@ class TestChartNoneOnInsufficientBars:
 
 class TestMicroTightSpreadAbsorber:
     def test_positive(self):
+        """High ADV + tight CS spread → tight_spread_absorber; amihud is irrelevant to the gate."""
         pf = _make_path_features(
             dollar_adv_21d=100_000_000.0,
             cs_spread_252=0.003,
-            amihud_252=0.05,
+            amihud_252=2e-9,  # real-scale: liquid stock ≈ 1e-9..1e-8
         )
-        labels, _, _ = _classify_microstructure(pf)
+        labels, _, snapshot = _classify_microstructure(pf)
         assert labels is not None
         assert "tight_spread_absorber" in labels
+        # amihud_252 must pass through into snapshot under key 'amihud_252'
+        assert "amihud_252" in snapshot
+        assert snapshot["amihud_252"] == pytest.approx(2e-9)
+        # adv key is now adv_usd_21d
+        assert "adv_usd_21d" in snapshot
+
+    def test_positive_missing_amihud_still_fires(self):
+        """Missing amihud_252 must NOT block tight_spread_absorber — gate is ADV+spread only."""
+        pf = _make_path_features(
+            dollar_adv_21d=100_000_000.0,
+            cs_spread_252=0.003,
+            amihud_252=None,
+        )
+        labels, _, _ = _classify_microstructure(pf)
+        assert "tight_spread_absorber" in (labels or [])
 
     def test_negative_adv_too_low(self):
         pf = _make_path_features(
             dollar_adv_21d=10_000_000.0,  # below $50M threshold
             cs_spread_252=0.003,
-            amihud_252=0.05,
+            amihud_252=2e-9,
         )
         labels, _, _ = _classify_microstructure(pf)
         assert "tight_spread_absorber" not in (labels or [])
@@ -374,7 +391,7 @@ class TestMicroTightSpreadAbsorber:
         pf = _make_path_features(
             dollar_adv_21d=100_000_000.0,
             cs_spread_252=0.010,  # above threshold
-            amihud_252=0.05,
+            amihud_252=2e-9,
         )
         labels, _, _ = _classify_microstructure(pf)
         assert "tight_spread_absorber" not in (labels or [])
@@ -385,7 +402,7 @@ class TestMicroWideSpreadImpact:
         pf = _make_path_features(
             dollar_adv_21d=2_000_000.0,
             cs_spread_252=0.008,
-            amihud_252=0.5,
+            amihud_252=1e-7,  # real-scale: illiquid micro-cap
             reversal_half_life=10.0,
         )
         labels, _, _ = _classify_microstructure(pf)
@@ -396,7 +413,7 @@ class TestMicroWideSpreadImpact:
         pf = _make_path_features(
             dollar_adv_21d=20_000_000.0,
             cs_spread_252=0.020,
-            amihud_252=0.5,
+            amihud_252=1e-7,
             reversal_half_life=10.0,
         )
         labels, _, _ = _classify_microstructure(pf)
@@ -406,7 +423,7 @@ class TestMicroWideSpreadImpact:
         pf = _make_path_features(
             dollar_adv_21d=20_000_000.0,
             cs_spread_252=0.008,
-            amihud_252=0.05,
+            amihud_252=5e-9,
         )
         labels, _, _ = _classify_microstructure(pf)
         assert "wide_spread_impact" not in (labels or [])
@@ -417,7 +434,7 @@ class TestMicroGapDiscontinuity:
         pf = _make_path_features(
             dollar_adv_21d=10_000_000.0,
             cs_spread_252=0.009,
-            amihud_252=0.3,
+            amihud_252=3e-8,
             extreme_bar_freq_252=0.05,
             gap_share_252=0.20,
             reversal_half_life=10.0,
@@ -429,7 +446,7 @@ class TestMicroGapDiscontinuity:
         pf = _make_path_features(
             dollar_adv_21d=10_000_000.0,
             cs_spread_252=0.009,
-            amihud_252=0.3,
+            amihud_252=3e-8,
             extreme_bar_freq_252=0.01,
             gap_share_252=0.65,
             reversal_half_life=10.0,
@@ -441,7 +458,7 @@ class TestMicroGapDiscontinuity:
         pf = _make_path_features(
             dollar_adv_21d=10_000_000.0,
             cs_spread_252=0.009,
-            amihud_252=0.3,
+            amihud_252=3e-8,
             extreme_bar_freq_252=0.01,
             gap_share_252=0.20,
         )
@@ -454,7 +471,7 @@ class TestMicroSlowMeanReversionLiquidity:
         pf = _make_path_features(
             dollar_adv_21d=10_000_000.0,
             cs_spread_252=0.009,
-            amihud_252=0.3,
+            amihud_252=3e-8,
             extreme_bar_freq_252=0.01,
             gap_share_252=0.20,
             reversal_half_life=3.0,
@@ -469,8 +486,8 @@ class TestMicroSlowMeanReversionLiquidity:
 
 
 class TestMicroNoneOnVolumelessHistory:
-    def test_none_when_no_volume_features(self):
-        # All volume-dependent micro inputs None
+    def test_none_when_all_six_inputs_none(self):
+        """Returns None only when ALL SIX micro inputs are None."""
         pf = _make_path_features(
             dollar_adv_21d=None,
             cs_spread_252=None,
@@ -483,13 +500,28 @@ class TestMicroNoneOnVolumelessHistory:
         assert labels is None
         assert any("volume" in m.lower() for m in missing)
 
+    def test_ohlc_only_history_still_evaluable(self):
+        """With volume inputs None but OHLC-derived inputs present, axis must NOT be None.
+        gap_discontinuity_risk and slow_mean_reversion_liquidity use OHLC-only inputs."""
+        pf = _make_path_features(
+            dollar_adv_21d=None,
+            cs_spread_252=None,
+            amihud_252=None,
+            reversal_half_life=3.0,        # OHLC-derived — slow MR should fire
+            extreme_bar_freq_252=0.05,     # OHLC-derived — gap disc should fire
+            gap_share_252=None,
+        )
+        labels, _, _ = _classify_microstructure(pf)
+        assert labels is not None  # axis must be evaluable
+        assert "slow_mean_reversion_liquidity" in (labels or [])
+
 
 class TestMicroMixedFallback:
     def test_mixed_when_nothing_matches(self):
         pf = _make_path_features(
             dollar_adv_21d=10_000_000.0,  # not tight ($50M), not thin ($5M)
             cs_spread_252=0.009,           # not tight (≤0.006), not wide (≥0.015)
-            amihud_252=0.3,
+            amihud_252=3e-8,               # real-scale; passes through, not gating
             extreme_bar_freq_252=0.01,
             gap_share_252=0.20,
             reversal_half_life=8.0,        # > 5, so no slow_mr
@@ -678,27 +710,47 @@ class TestModeSqueeze:
 
 class TestModeOptionsPin:
     def test_positive(self):
-        gex = {"gamma_regime": "positive", "flip_distance_pct": 1.5}
+        # gex_engine emits "long"/"short" (NOT "positive"/"negative") and dist_to_flip_pct (NOT flip_distance_pct)
+        gex = {"gamma_regime": "long", "dist_to_flip_pct": 1.5}
         tech = _make_tech()
         modes, _, ev, expiry = _classify_current_mode(None, gex, None, tech, None, None, None)
         assert "options_pin" in (modes or [])
         assert expiry == 7
 
+    def test_positive_negative_dist(self):
+        """Signed dist_to_flip_pct can be negative (spot below flip); abs() gate."""
+        gex = {"gamma_regime": "long", "dist_to_flip_pct": -1.2}
+        modes, _, _, _ = _classify_current_mode(None, gex, None, _make_tech(), None, None, None)
+        assert "options_pin" in (modes or [])
+
     def test_negative_flip_too_far(self):
-        gex = {"gamma_regime": "positive", "flip_distance_pct": 5.0}
+        gex = {"gamma_regime": "long", "dist_to_flip_pct": 5.0}
+        modes, _, _, _ = _classify_current_mode(None, gex, None, _make_tech(), None, None, None)
+        assert "options_pin" not in (modes or [])
+
+    def test_wrong_regime_key_does_not_fire(self):
+        """Old 'positive' value — must NOT match the canonical 'long' regime."""
+        gex = {"gamma_regime": "positive", "dist_to_flip_pct": 1.5}
         modes, _, _, _ = _classify_current_mode(None, gex, None, _make_tech(), None, None, None)
         assert "options_pin" not in (modes or [])
 
 
 class TestModeNegativeGammaTrend:
     def test_positive(self):
-        gex = {"gamma_regime": "negative", "flip_distance_pct": 10.0}
+        # gex_engine emits "short" for net-short-gamma dealers
+        gex = {"gamma_regime": "short", "dist_to_flip_pct": 10.0}
         modes, _, _, expiry = _classify_current_mode(None, gex, None, _make_tech(), None, None, None)
         assert "negative_gamma_trend" in (modes or [])
         assert expiry == 7
 
-    def test_negative_regime_positive(self):
-        gex = {"gamma_regime": "positive", "flip_distance_pct": 10.0}
+    def test_negative_regime_long(self):
+        gex = {"gamma_regime": "long", "dist_to_flip_pct": 10.0}
+        modes, _, _, _ = _classify_current_mode(None, gex, None, _make_tech(), None, None, None)
+        assert "negative_gamma_trend" not in (modes or [])
+
+    def test_wrong_regime_key_does_not_fire(self):
+        """Old 'negative' value — must NOT match the canonical 'short' regime."""
+        gex = {"gamma_regime": "negative", "dist_to_flip_pct": 10.0}
         modes, _, _, _ = _classify_current_mode(None, gex, None, _make_tech(), None, None, None)
         assert "negative_gamma_trend" not in (modes or [])
 
@@ -762,13 +814,28 @@ class TestModeAccumulation:
 
 class TestModeDistribution:
     def test_positive(self):
-        tech = _make_tech(off_52w_high_pct=5.0, obv_slope_up=False)
+        # off_52w_high_pct is signed negative: -5.0 = 5% below high (near high → distribution risk)
+        tech = _make_tech(off_52w_high_pct=-5.0, obv_slope_up=False)
         pf = _make_path_features(failed_breakout_rate_63=0.60)
         modes, _, _, _ = _classify_current_mode(None, None, None, tech, None, None, pf)
         assert "distribution" in (modes or [])
 
+    def test_positive_boundary(self):
+        """Exactly at -10.0 (10% below high) should fire."""
+        tech = _make_tech(off_52w_high_pct=-10.0, obv_slope_up=False)
+        pf = _make_path_features(failed_breakout_rate_63=0.60)
+        modes, _, _, _ = _classify_current_mode(None, None, None, tech, None, None, pf)
+        assert "distribution" in (modes or [])
+
+    def test_negative_too_far_from_high(self):
+        """Off by -25% from high — not near high, distribution should NOT fire."""
+        tech = _make_tech(off_52w_high_pct=-25.0, obv_slope_up=False)
+        pf = _make_path_features(failed_breakout_rate_63=0.60)
+        modes, _, _, _ = _classify_current_mode(None, None, None, tech, None, None, pf)
+        assert "distribution" not in (modes or [])
+
     def test_negative_obv_up(self):
-        tech = _make_tech(off_52w_high_pct=5.0, obv_slope_up=True)
+        tech = _make_tech(off_52w_high_pct=-5.0, obv_slope_up=True)
         pf = _make_path_features(failed_breakout_rate_63=0.60)
         modes, _, _, _ = _classify_current_mode(None, None, None, tech, None, None, pf)
         assert "distribution" not in (modes or [])
@@ -842,14 +909,14 @@ class TestModePrecedence:
         """Modes list never exceeds MODE_MAX_LABELS."""
         ev = {"days_to_earnings": 3, "event_window_active": True}
         pos = _make_positioning(short_pct_float=20.0)
-        gex = {"gamma_regime": "negative", "flip_distance_pct": 5.0}
+        gex = {"gamma_regime": "short", "dist_to_flip_pct": 5.0}
         tech = _make_tech(ret_21d=0.30)
         modes, _, _, _ = _classify_current_mode(pos, gex, ev, tech, 4.0, True, None)
         assert modes is not None
         assert len(modes) <= MODE_MAX_LABELS
 
     def test_options_pin_expiry_7(self):
-        gex = {"gamma_regime": "positive", "flip_distance_pct": 1.0}
+        gex = {"gamma_regime": "long", "dist_to_flip_pct": 1.0}
         modes, _, _, expiry = _classify_current_mode(None, gex, None, _make_tech(), None, None, None)
         assert "options_pin" in (modes or [])
         assert expiry == 7
@@ -1110,6 +1177,240 @@ class TestSetupCompatibility:
 
 
 # ---------------------------------------------------------------------------
+# GOLDEN TESTS — feed from ACTUAL producer output shapes
+# These tests are designed to FAIL on the pre-fix code.
+# ---------------------------------------------------------------------------
+
+
+class TestGoldenAmihudRealScale:
+    """Item 1: tight_spread_absorber uses ADV+CS-spread only; amihud passes through raw."""
+
+    def _compute_synthetic_amihud(self) -> float:
+        """Simulate engine.entry_primitives.amihud_series output for a liquid stock.
+
+        amihud = |pct_change(close)| / (close * volume)
+        For a liquid large-cap: close~$150, volume~5M shares, |ret|~0.01
+        → raw ≈ 0.01 / (150 * 5_000_000) ≈ 1.33e-11
+        """
+        import math
+        close = 150.0
+        volume = 5_000_000.0
+        abs_ret = 0.01
+        return abs_ret / (close * volume)
+
+    def test_real_scale_amihud_tight_spread_fires(self):
+        """High ADV + tight spread → tight_spread_absorber fires regardless of amihud scale."""
+        real_amihud = self._compute_synthetic_amihud()
+        # Confirm the scale is far below any fantasy 0.10 absolute threshold
+        assert real_amihud < 1e-8, f"Expected real-scale amihud << 1e-8, got {real_amihud}"
+        pf = _make_path_features(
+            dollar_adv_21d=200_000_000.0,
+            cs_spread_252=0.004,
+            amihud_252=real_amihud,
+        )
+        labels, _, snapshot = _classify_microstructure(pf)
+        assert "tight_spread_absorber" in (labels or [])
+        # amihud passes through in snapshot
+        assert snapshot.get("amihud_252") == pytest.approx(real_amihud)
+        # adv key is adv_usd_21d not dollar_adv_21d
+        assert "adv_usd_21d" in snapshot
+        assert "dollar_adv_21d" not in snapshot
+
+    def test_missing_amihud_does_not_block_tight_spread(self):
+        """Missing 252-bar amihud window must not demote liquid names — ADV+spread only."""
+        pf = _make_path_features(
+            dollar_adv_21d=200_000_000.0,
+            cs_spread_252=0.004,
+            amihud_252=None,  # missing window (e.g., new listing)
+        )
+        labels, _, _ = _classify_microstructure(pf)
+        assert "tight_spread_absorber" in (labels or [])
+
+
+class TestGoldenGexCanonicalValues:
+    """Item 2/3: gex_engine emits 'long'/'short' and dist_to_flip_pct (signed)."""
+
+    def test_long_gamma_near_flip_options_pin(self):
+        """gamma_regime='long' + |dist_to_flip_pct| <= 2 → options_pin."""
+        gex = {"gamma_regime": "long", "dist_to_flip_pct": -1.2}
+        modes, _, ev, _ = _classify_current_mode(None, gex, None, _make_tech(), None, None, None)
+        assert "options_pin" in (modes or [])
+        assert ev.get("dist_to_flip_pct") == pytest.approx(-1.2)
+
+    def test_short_gamma_negative_gamma_trend(self):
+        """gamma_regime='short' → negative_gamma_trend regardless of dist."""
+        gex = {"gamma_regime": "short", "dist_to_flip_pct": 15.0}
+        modes, _, _, _ = _classify_current_mode(None, gex, None, _make_tech(), None, None, None)
+        assert "negative_gamma_trend" in (modes or [])
+        assert "options_pin" not in (modes or [])
+
+    def test_old_positive_regime_does_not_fire(self):
+        """Pre-fix 'positive' regime must NOT trigger options_pin on fixed code."""
+        gex = {"gamma_regime": "positive", "dist_to_flip_pct": 1.0}
+        modes, _, _, _ = _classify_current_mode(None, gex, None, _make_tech(), None, None, None)
+        assert "options_pin" not in (modes or [])
+
+    def test_old_negative_regime_does_not_fire(self):
+        """Pre-fix 'negative' regime must NOT trigger negative_gamma_trend on fixed code."""
+        gex = {"gamma_regime": "negative", "dist_to_flip_pct": 10.0}
+        modes, _, _, _ = _classify_current_mode(None, gex, None, _make_tech(), None, None, None)
+        assert "negative_gamma_trend" not in (modes or [])
+
+    def test_old_flip_distance_key_ignored(self):
+        """Old key 'flip_distance_pct' (not 'dist_to_flip_pct') must not trigger options_pin."""
+        gex = {"gamma_regime": "long", "flip_distance_pct": 1.0}  # wrong key
+        modes, _, _, _ = _classify_current_mode(None, gex, None, _make_tech(), None, None, None)
+        assert "options_pin" not in (modes or [])
+
+
+# ---------------------------------------------------------------------------
+# CHART MUTUAL-EXCLUSION tests (item 6)
+# ---------------------------------------------------------------------------
+
+
+class TestChartMutualExclusion:
+    """smooth_compounder_grind and volatile_momentum_vehicle cannot co-fire;
+    mean_reversion_rubber_band and stair_step_leader cannot co-fire."""
+
+    def test_smooth_compounder_blocks_volatile_momentum(self):
+        """If smooth_compounder_grind fires first, volatile_momentum_vehicle must be blocked."""
+        tech = _make_tech(hv_pctile=90.0)  # would satisfy VMV threshold
+        pf = _make_path_features(
+            trend_persist_126=0.10,
+            pullback_median_252=0.03,
+            extreme_bar_freq_252=0.01,    # smooth fires
+            trend_persist_20=0.10,         # VMV also satisfied
+            # ensure event_gapper, failed_breakout, mean_reversion don't fire
+            event_gap_contrib_252=0.05,
+            gap_share_252=0.10,
+            failed_breakout_rate_63=0.30,
+            trend_persist_60=0.05,
+        )
+        labels, _, _ = _classify_chart(pf, tech)
+        assert "smooth_compounder_grind" in (labels or [])
+        assert "volatile_momentum_vehicle" not in (labels or [])
+
+    def test_volatile_momentum_blocks_smooth_compounder(self):
+        """If volatile_momentum_vehicle fires first (higher precedence would need earlier trigger),
+        smooth_compounder_grind must be blocked by mutual exclusion."""
+        # smooth_compounder_grind has HIGHER precedence than volatile_momentum_vehicle
+        # in CHART_PRECEDENCE. So if both conditions are met, smooth fires first,
+        # then VMV is blocked. Reverse test: confirm both can't appear together.
+        tech = _make_tech(hv_pctile=85.0)
+        pf = _make_path_features(
+            trend_persist_126=0.10,
+            pullback_median_252=0.03,
+            extreme_bar_freq_252=0.01,
+            trend_persist_20=0.10,
+            event_gap_contrib_252=0.05,
+            gap_share_252=0.10,
+            failed_breakout_rate_63=0.30,
+            trend_persist_60=0.05,
+        )
+        labels, _, _ = _classify_chart(pf, tech)
+        assert labels is not None
+        assert not ("smooth_compounder_grind" in labels and "volatile_momentum_vehicle" in labels)
+
+    def test_mean_reversion_blocks_stair_step(self):
+        """mean_reversion_rubber_band and stair_step_leader cannot co-fire."""
+        pf = _make_path_features(
+            trend_persist_60=-0.15,        # mean_reversion fires
+            breakout_ft_rate_63=0.65,      # stair_step conditions met
+            slope_stability_126=0.70,
+            event_gap_contrib_252=0.05,
+            gap_share_252=0.10,
+            failed_breakout_rate_63=0.30,
+        )
+        labels, _, _ = _classify_chart(pf, {})
+        assert labels is not None
+        assert not ("mean_reversion_rubber_band" in labels and "stair_step_leader" in labels)
+
+    def test_exclusions_constant_has_two_pairs(self):
+        """CHART_EXCLUSIONS contains exactly the two documented exclusion pairs."""
+        from engine.stock_personality import CHART_EXCLUSIONS
+        assert len(CHART_EXCLUSIONS) == 2
+        flat = frozenset().union(*CHART_EXCLUSIONS)
+        assert "smooth_compounder_grind" in flat
+        assert "volatile_momentum_vehicle" in flat
+        assert "mean_reversion_rubber_band" in flat
+        assert "stair_step_leader" in flat
+
+
+# ---------------------------------------------------------------------------
+# MICRO AXIS NONE-GATE tests (item 7)
+# ---------------------------------------------------------------------------
+
+
+class TestMicroAxisNoneGate:
+    """Micro axis returns None only when ALL SIX inputs are None."""
+
+    def test_none_requires_all_six_missing(self):
+        pf = _make_path_features(
+            dollar_adv_21d=None,
+            cs_spread_252=None,
+            amihud_252=None,
+            extreme_bar_freq_252=None,
+            gap_share_252=None,
+            reversal_half_life=None,
+        )
+        labels, _, _ = _classify_microstructure(pf)
+        assert labels is None
+
+    def test_extreme_bar_freq_alone_keeps_axis_alive(self):
+        """OHLC-only: only extreme_bar_freq_252 present → axis must not be None."""
+        pf = _make_path_features(
+            dollar_adv_21d=None,
+            cs_spread_252=None,
+            amihud_252=None,
+            extreme_bar_freq_252=0.06,
+            gap_share_252=None,
+            reversal_half_life=None,
+        )
+        labels, _, _ = _classify_microstructure(pf)
+        assert labels is not None
+        assert "gap_discontinuity_risk" in (labels or [])
+
+    def test_gap_share_alone_keeps_axis_alive(self):
+        pf = _make_path_features(
+            dollar_adv_21d=None,
+            cs_spread_252=None,
+            amihud_252=None,
+            extreme_bar_freq_252=None,
+            gap_share_252=0.65,
+            reversal_half_life=None,
+        )
+        labels, _, _ = _classify_microstructure(pf)
+        assert labels is not None
+        assert "gap_discontinuity_risk" in (labels or [])
+
+    def test_reversal_half_life_alone_keeps_axis_alive(self):
+        pf = _make_path_features(
+            dollar_adv_21d=None,
+            cs_spread_252=None,
+            amihud_252=None,
+            extreme_bar_freq_252=None,
+            gap_share_252=None,
+            reversal_half_life=3.0,
+        )
+        labels, _, _ = _classify_microstructure(pf)
+        assert labels is not None
+        assert "slow_mean_reversion_liquidity" in (labels or [])
+
+    def test_only_volume_missing_still_evaluable(self):
+        """Volume inputs None but OHLC inputs present → axis evaluable."""
+        pf = _make_path_features(
+            dollar_adv_21d=None,
+            cs_spread_252=None,
+            amihud_252=None,
+            extreme_bar_freq_252=0.05,
+            gap_share_252=0.30,
+            reversal_half_life=3.0,
+        )
+        labels, _, _ = _classify_microstructure(pf)
+        assert labels is not None
+
+
+# ---------------------------------------------------------------------------
 # DETERMINISM tests
 # ---------------------------------------------------------------------------
 
@@ -1174,7 +1475,7 @@ class TestAssessIntegration:
             etf_weight_max=0.8,
             attention_z=1.5,
             bo_regime="none",
-            gex={"gamma_regime": "positive", "flip_distance_pct": 5.0},
+            gex={"gamma_regime": "long", "dist_to_flip_pct": 5.0},
             events={"days_to_earnings": 30, "event_window_active": False},
             tech=_make_tech(hv_pctile=75.0, rel_volume=1.2),
             oracle_episode_active=False,
