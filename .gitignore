@@ -228,9 +228,11 @@ data/oracle/manifest.json
 # Oracle graph outputs (O1) — heavy JSON artifacts; published to R2 per D5
 data/oracle/graph_s.json
 data/oracle/graph_m.json
-# Oracle P3 gauntlet outputs — heavy JSON artifacts; results MD is committed, JSON is not
-# p3_results.json is NOT committed (regenerate via: python scripts/oracle_gauntlet_p3.py --data-dir <DATA_DIR>)
+# Oracle P3 gauntlet outputs — results MD is committed; p3_results.json is ALSO committed
+# (as of PR-A1 feat/oracle-onset-baselines): it carries the adjudicated episode baselines
+# required by the sentinel decay monitor. The negation below overrides the gitignore.
 data/oracle/gauntlet/p3_results.json
+!data/oracle/gauntlet/p3_results.json
 # p3_trial_ledger.json IS committed: it is the registration record and must be in git.
 # The negation below overrides the gitignore for that specific file only.
 data/oracle/gauntlet/p3_trial_ledger.json
