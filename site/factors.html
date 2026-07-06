@@ -111,6 +111,28 @@
   .lchip .lv { color:var(--muted); font-variant-numeric:tabular-nums; }
   #sector-monitor td.hzc { font-variant-numeric:tabular-nums; text-align:center; }
   #sector-monitor .zc { font-size:12.5px; font-weight:600; } #sector-monitor .rr { font-size:10px; opacity:.7; display:block; }
+  /* NW status chips */
+  .nw-chip { display:inline-block; font-size:10.5px; font-weight:600; padding:2px 8px; margin:0 4px 4px 0;
+             border-radius:7px; border:1px solid var(--line); background:var(--panel2); color:var(--muted);
+             white-space:nowrap; letter-spacing:.02em; }
+  .nw-chip.live      { color:var(--ok);   border-color:color-mix(in srgb,var(--ok) 55%,transparent);
+                       background:color-mix(in srgb,var(--ok) 10%,transparent); }
+  .nw-chip.dormant   { color:var(--muted); }
+  .nw-chip.shadow    { color:var(--act);  border-color:color-mix(in srgb,var(--act) 45%,transparent);
+                       background:color-mix(in srgb,var(--act) 8%,transparent); }
+  .nw-chip.accruing  { color:var(--act);  border-color:color-mix(in srgb,var(--act) 45%,transparent);
+                       background:color-mix(in srgb,var(--act) 8%,transparent); }
+  .nw-chip.bh-withheld { color:var(--down); border-color:color-mix(in srgb,var(--down) 50%,transparent);
+                          background:color-mix(in srgb,var(--down) 8%,transparent); }
+  .nw-chip.null      { color:var(--muted); }
+  .nw-chip.gate-passed { color:var(--ok);  border-color:color-mix(in srgb,var(--ok) 55%,transparent);
+                          background:color-mix(in srgb,var(--ok) 10%,transparent); }
+  .nw-chip.pre-fdr   { color:var(--muted); font-style:italic; }
+  .nw-status-grid { display:grid; grid-template-columns:minmax(130px,auto) 1fr; gap:4px 12px;
+                    font-size:12.5px; align-items:start; margin-top:10px; }
+  .nw-status-grid .nw-lab { color:var(--muted); padding-top:2px; }
+  .nw-influence { display:flex; flex-wrap:wrap; gap:4px 0; margin-top:4px; }
+  .nw-influence .nw-chip { margin-bottom:0; }
 </style>
 <script src="lightweight-charts.js"></script>
 </head>
@@ -401,6 +423,33 @@
       <span class="muted sm"><span class="l-en">value · quality · profitability · investment · payout · low-vol — across the S&P 1500</span><span class="l-zh">价值 · 质量 · 盈利 · 投资 · 派息 · 低波动 — 覆盖标普 1500</span></span>
     </div>
     <p class="muted sm" style="margin:10px 0 0"><span class="l-en">The cross-sectional factors quant equity desks actually trade — computed from SEC EDGAR fundamentals joined to prices, not proxied by an ETF. Each factor is a winsorized cross-sectional z-score (higher = more attractive on that factor); the composite is their equal-weight blend. These are RANKS and context, not a backtested alpha: factors decay and crowd, free fundamentals are sparse for some tags, book/price is weak for intangible-heavy firms, and every value is lagged to the filing period (no look-ahead).</span><span class="l-zh">量化股票交易台真正使用的横截面因子 — 由 SEC EDGAR 基本面与价格计算，而非用 ETF 代理。每个因子为去极值后的横截面 z 分数（越高 = 在该因子上越有吸引力）；综合为等权混合。这些是排名与背景，而非回测出的超额收益：因子会衰减与拥挤，免费基本面在部分科目上稀疏，市净率对无形资产密集的公司较弱，且所有数值滞后至申报期（无前视）。</span></p>
+  </div>
+
+  <!-- Neural Web integration status (RUL-NW7/NW8 §D PR-4) — fail-open: nw_state absent → DORMANT panel -->
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <div class="panel" style="font-size:12.5px">
+    <div class="topline" style="margin-bottom:8px">
+      <h2 style="margin:0"><span class="l-en">Neural Web integration</span><span class="l-zh">神经网络集成状态</span>
+        <span class="help">?<span class="tip"><span class="l-en">Factor intelligence is context-only inside the Neural Web: it explains regime context and flags attention candidates for the cortex to consider, but it never ranks, scores, or originates signals (RUL-NW7). The BH-WITHHELD chip is mandatory until the 5-hypothesis family FDR sweep completes (per RUL-NW7, display-only interim).</span><span class="l-zh">因子智能在神经网络中仅作为背景：解释市场体制背景，为皮层标记关注候选项，但从不排名、评分或发起信号（RUL-NW7）。BH-WITHHELD 标签为必须项，直至五假设家族 FDR 整体检验完成。</span></span></span>
+      </h2>
+      
+        <span class="nw-chip dormant"><span class="l-en">DORMANT — state artifact absent</span><span class="l-zh">DORMANT — 状态文件缺失</span></span>
+      
+    </div>
+
+    
+    <p class="muted sm" style="margin:4px 0 0"><span class="l-en">data/neuralweb/factor_intelligence_state.json has not been written yet (factor_panel job not yet run). This panel will populate after the next nightly build.</span><span class="l-zh">data/neuralweb/factor_intelligence_state.json 尚未生成（factor_panel 作业尚未运行）。该面板将在下次夜间构建后填充。</span></p>
+    
   </div>
 
   <!-- Factor leadership -->
@@ -2139,7 +2188,7 @@
 
   <div class="panel">
     <p class="muted" style="font-size:12px;margin:0"><span class="l-en">Source: SEC EDGAR XBRL 'frames' API (free, keyless) for FY2025 fundamentals, joined to the S&P 1500 price universe; 1495 names with a full composite as of 2026-07-02. Fundamentals refresh weekly; ranks recompute daily with prices. Factors are decayed/crowded and free fundamentals are imperfect — treat as a research lens, not a buy list. See research/QUANT_FACTOR_EXPANSION.md and LIMITATIONS.md.</span><span class="l-zh">来源：SEC EDGAR XBRL ‘frames’ API（免费、无需密钥）的 FY2025 基本面，与标普 1500 价格域连接；截至 2026-07-02 有 1495 只具备完整综合分。基本面每周刷新，排名随价格每日重算。因子已衰减／拥挤且免费基本面并不完美 — 视作研究视角，而非买入清单。</span>
-      <span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-07-06 09:08 UTC</p>
+      <span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-07-06 10:00 UTC</p>
   </div>
   <script>
     (function(){

@@ -238,6 +238,13 @@
   .gchip .gk { color:var(--muted); display:block; font-size:10px; text-transform:uppercase; letter-spacing:.05em; }
   .gchip .gv { font-weight:700; font-size:14px; }
   .gchip.dashed { border-style:dashed; opacity:.7; }
+  /* ---- Neural Web sponsorship chip (SRSS Phase 4, shadow tier) ---- */
+  .spo-chip { display:inline-flex; align-items:center; gap:5px; padding:5px 11px; border-radius:9px;
+              background:var(--panel2); border:1px dashed var(--line); font-size:12px; line-height:1.35;
+              max-width:100%; cursor:help; }
+  .spo-chip.spo-tailwind, .spo-chip.spo-early_repair { border-color:color-mix(in srgb,var(--up) 40%,var(--line)); }
+  .spo-chip.spo-headwind, .spo-chip.spo-rollover { border-color:color-mix(in srgb,var(--down) 40%,var(--line)); }
+  .spo-chip.spo-confirmed_leadership { border-color:color-mix(in srgb,var(--link) 40%,var(--line)); }
   /* ---- unified Conviction Profile hero ---- */
   .conv { margin:8px 0 4px; padding:11px 13px; border-radius:11px; background:var(--panel2);
           border:1px solid var(--line); }
@@ -497,6 +504,18 @@
   #panel_earn .earn-fwd-h { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; margin-bottom:6px; }
   #panel_earn .earn-fwd-row { display:flex; flex-wrap:wrap; gap:8px; font-size:13px; align-items:center; }
   #panel_earn .earn-fwd-row .dot { color:var(--muted); }
+  /* LT-2c: expectation state block (display-only, hold_thesis) */
+  .es-block { margin-top:10px; background:var(--panel2); border-radius:11px; padding:10px 13px; }
+  .es-block-h { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; margin-bottom:7px; }
+  .es-chips { display:flex; flex-wrap:wrap; gap:6px; }
+  .es-chip { display:inline-flex; align-items:center; gap:5px; padding:3px 9px;
+             border-radius:9px; font-size:12px; font-weight:600; border:1px solid var(--line);
+             background:var(--panel); cursor:help; }
+  .es-chip.es-pos { color:var(--up); border-color:color-mix(in srgb,var(--up) 35%,transparent);
+                    background:color-mix(in srgb,var(--up) 9%,transparent); }
+  .es-chip.es-neg { color:var(--down); border-color:color-mix(in srgb,var(--down) 35%,transparent);
+                    background:color-mix(in srgb,var(--down) 9%,transparent); }
+  .es-chip.es-neu { color:var(--muted); }
   /* GEX — vol "hole" strip */
   #panel_gex .gex-hole { margin:8px 0 2px; font-size:12.5px; color:var(--text);
     background:var(--panel2); border-radius:10px; padding:8px 12px; }
@@ -1097,6 +1116,12 @@
       <p id="r_profile_desc" style="margin:0 0 8px"></p>
       <div id="r_profile_chips" class="chips"></div>
       <p id="r_profile_src" class="srcline"></p>
+      <!-- Neural Web sponsorship chip (SRSS Phase 4, shadow tier) — subsector rotation
+           context for THIS name, only shown when today's ledger has a live match.
+           Display-only, never scored; see subsector_rotation.html for the full desk. -->
+      <div id="r_sponsorship_wrap" style="display:none;margin-top:8px">
+        <div id="r_sponsorship" class="chips"></div>
+      </div>
     </div>
 
     <div class="panel" id="panel_demand" style="display:none">
@@ -1128,16 +1153,12 @@
       <div id="r_aq"></div>
     </div>
 
-    <div class="panel" id="panel_capalloc" style="display:none">
-      <h2>💸 <span class="l-en">Capital allocation</span><span class="l-zh">资本配置</span>
-        <span class="help">?<span class="tip"><span class="l-en">How management is deploying cash relative to shares outstanding. Buyback yield = trailing-12-month repurchases ÷ market cap (SEC EDGAR quarterly filings, point-in-time: only rows with a filed date are counted). Net buyback after SBC = (buybacks − stock-based compensation) ÷ market cap — only shown when annual SBC data is available. Debt-funded flag fires when long-term debt rose while the company was buying back stock. Share count trend is year-over-year from annual EDGAR data. DISPLAY-ONLY research context — these are accounting observations, not a buy/sell signal and not part of any score or ranking.</span><span class="l-zh">管理层相对流通股的现金部署情况。回购收益率＝过去12个月回购额÷市值（来自SEC EDGAR季度申报，仅计入有申报日期的记录，点位时间口径）。扣除股权激励后净回购＝（回购－股权激励）÷市值，仅在年度SBC数据可用时显示。当公司在回购股票的同时长期债务上升时，债务融资标志触发。股份数量趋势为年度EDGAR数据的同比变化。仅作背景展示——这些为会计层面观测，并非买卖信号，也不计入任何评分或排名。</span></span></span></h2>
-      <div id="r_capalloc"></div>
-    </div>
-
     <div class="panel" id="panel_earn" style="display:none">
       <h2>📅 <span class="l-en">Earnings</span><span class="l-zh">财报</span>
         <span class="help">?<span class="tip"><span class="l-en">Next reported earnings date and the recent beat/miss history (SEC + Nasdaq, keyless), plus the SUE earnings-momentum z. SUE (standardized unexpected earnings) measures how far the latest quarter beat its year-ago seasonal expectation, standardized by the company's own history — the post-earnings-announcement-drift (PEAD) effect. It was the strongest factor and lone false-discovery-rate survivor on the shallow 2023-2025 window, but a deep 2011-2026 re-test (survivorship-biased, an optimistic bound) collapses its CROSS-SECTIONAL edge to ~zero (see the factors page) — so it is shown as earnings-momentum / PEAD context, not a validated standalone alpha; the z is RELATIVE to the S&P 1500 (0 = average, +2 = top of the pack). Context, not a standalone buy signal.</span><span class="l-zh">下次财报日与近期超预期/不及预期历史（SEC＋纳斯达克，免密钥），以及SUE盈利动量z值。SUE（标准化超预期盈利）衡量最新季度相对去年同期季节性预期超出多少，并以公司自身历史标准化——即盈利公布后漂移（PEAD）效应。它在浅窗口（2023-2025）曾是最强正向因子且唯一通过无泄漏错误发现率检验，但 2011-2026 深度复检（含幸存者偏差，乐观上界）使其横截面优势崩塌至约零（见因子页）——故仅作盈利动量／PEAD 背景展示，并非已验证的独立超额收益；该z为相对标普1500的排名（0＝平均，+2＝领先）。仅供参考，并非独立买入信号。</span></span></span></h2>
       <div id="r_earn"></div>
+      <!-- LT-2c expectation state (display-only, hold_thesis) rendered when present -->
+      <div id="r_expect_state" style="display:none"></div>
     </div>
 
     <div class="panel" id="panel_fac" style="display:none">
@@ -1645,6 +1666,39 @@
     return '<div class="fc-grid">' + revBox + epsBox + '</div>';
   }
 
+  // Neural Web sponsorship chip (SRSS Phase 4, shadow tier) — cross-references THIS
+  // ticker against today's subsector-rotation state. d.sponsorship is absent/null
+  // whenever the ticker has no live match (no chip shown; never a fabricated read).
+  // Display-only, never scored: see engine.subsector_sponsorship / engine.spine
+  // (adapt_subsector_sponsorship) for the join this reads from.
+  var SPO_STATE_WORD = {
+    TAILWIND:            ['Group tailwind', '板块顺风'],
+    EARLY_REPAIR:        ['Group repair', '板块修复'],
+    CONFIRMED_LEADERSHIP:['Confirmed group leadership', '确认板块领先'],
+    HEADWIND:            ['Group headwind', '板块逆风'],
+    ROLLOVER:            ['Group rolling over', '板块转向下行'],
+    NEUTRAL:             ['Group neutral', '板块中性']
+  };
+  function fmtSigned(n, nd) {
+    return n == null ? '—' : (n > 0 ? '+' : '') + n.toFixed(nd == null ? 2 : nd);
+  }
+  function renderSponsorship(sp) {
+    var wrap = el('r_sponsorship_wrap'), box = el('r_sponsorship');
+    if (!wrap || !box) return;
+    if (!sp || !sp.sponsorship_state) { wrap.style.display = 'none'; box.innerHTML = ''; return; }
+    var plainText = lz(sp.plain_en, sp.plain_zh) || lz.apply(null, SPO_STATE_WORD[sp.sponsorship_state] || SPO_STATE_WORD.NEUTRAL);
+    var tipEn = (sp.plain_en || '') + ' · rs mom ' + fmtSigned(sp.rs_mom) + ' · accel ' + fmtSigned(sp.accel) +
+      ' · score ' + fmtSigned(sp.sponsorship_score) + ' · ' + (sp.n_members != null ? sp.n_members : '—') +
+      ' members · as of ' + (sp.rotation_asof || '—') + ' · supporting evidence only, not validated';
+    var tipZh = (sp.plain_zh || '') + ' · 相对强度动量 ' + fmtSigned(sp.rs_mom) + ' · 加速度 ' + fmtSigned(sp.accel) +
+      ' · 评分 ' + fmtSigned(sp.sponsorship_score) + ' · 成分股 ' + (sp.n_members != null ? sp.n_members : '—') +
+      ' · 截至 ' + (sp.rotation_asof || '—') + ' · 仅作辅助参考，尚未验证';
+    var cls = 'spo-' + String(sp.sponsorship_state).toLowerCase();
+    box.innerHTML = '<span class="spo-chip ' + cls + '" data-tip-en="' + esc(tipEn) + '" data-tip-zh="' + esc(tipZh) + '">' +
+      '🕸️ ' + esc(plainText) + '</span>';
+    wrap.style.display = '';
+  }
+
   function renderFundamentals(d) {
     var prof = d.profile, val = d.valuation, fin = d.financials, fac = d.factors, pos = d.positioning, an = d.analyst;
     var isEquity = !!(prof || val || fin || fac);
@@ -1691,8 +1745,12 @@
       if (prof.sic_description) pc.push('<span class="chip">' + esc(prof.sic_description) + '</span>');
       if (prof.exchange) pc.push('<span class="chip">' + esc(prof.exchange) + '</span>');
       el('r_profile_chips').innerHTML = pc.join('');
-      show('panel_profile', true);
-    } else show('panel_profile', false);
+    } else {
+      el('r_profile_desc').textContent = '';
+      el('r_profile_chips').innerHTML = '';
+    }
+    renderSponsorship(d.sponsorship);
+    show('panel_profile', !!(prof || d.sponsorship));
 
     if (val) {
       el('r_valbars').innerHTML = VROWS.map(function (r) { return valbar(lz(r.en, r.zh), val[r.k], r.kind); }).join('');
@@ -1755,56 +1813,6 @@
         '<p class="aq-foot">' + esc(lz(aq.caveat, aq.caveat_zh)) + '</p>';
       show('panel_aq', true);
     } else show('panel_aq', false);
-
-    // Capital allocation chip (LT-3a; display-only; hold_thesis)
-    if (d.capital_allocation) {
-      var ca = d.capital_allocation;
-      var caHtml = '';
-      // Delta chip: accretive / dilutive / neutral / unavailable
-      var delta = ca.capital_allocation_delta;
-      if (delta && delta !== 'unavailable') {
-        var dCol = delta === 'accretive' ? 'var(--up)' : delta === 'dilutive' ? 'var(--down)' : 'var(--muted)';
-        var dEn = delta === 'accretive' ? 'Share count shrinking' : delta === 'dilutive' ? 'Share count diluting' : 'Neutral';
-        var dZh = delta === 'accretive' ? '股本缩减中' : delta === 'dilutive' ? '股本稀释中' : '中性';
-        var dTipEn = delta === 'accretive' ? 'Shares outstanding down ≥0.5% YoY with active buybacks — company returning cash to holders by reducing the share count' : delta === 'dilutive' ? 'Shares outstanding up ≥3% YoY — equity issuance or heavy SBC is outpacing any buybacks' : 'Share count change between -0.5% and +3% YoY — neither clearly shrinking nor expanding';
-        var dTipZh = delta === 'accretive' ? '股本同比减少≥0.5%且有回购——公司通过减少股数向股东回报现金' : delta === 'dilutive' ? '股本同比增加≥3%——股权发行或大量股权激励超过回购规模' : '股本同比变化介于-0.5%至+3%之间——既未明显缩减也未明显扩张';
-        caHtml += '<span class="hchip" style="color:' + dCol + ';background:color-mix(in srgb,' + dCol + ' 14%,transparent)" data-tip-en="' + esc(dTipEn) + '" data-tip-zh="' + esc(dTipZh) + '">' + lz(dEn, dZh) + '</span> ';
-      }
-      // Buyback yield chip
-      if (ca.buyback_yield != null) {
-        var byPct = (ca.buyback_yield * 100).toFixed(2) + '%';
-        caHtml += '<span class="hchip" data-tip-en="Buyback yield: trailing-12-month repurchases ÷ market cap (SEC EDGAR quarterly filings)" data-tip-zh="回购收益率：过去12个月回购额÷市值（SEC EDGAR季度申报）">' + lz('Buyback yld','回购率') + ' ' + byPct + '</span> ';
-      }
-      // Net buyback after SBC chip (only when available)
-      if (ca.net_buyback_after_sbc != null) {
-        var nbPct = (ca.net_buyback_after_sbc * 100).toFixed(2) + '%';
-        var nbCol = ca.net_buyback_after_sbc >= 0 ? 'var(--up)' : 'var(--down)';
-        caHtml += '<span class="hchip" style="color:' + nbCol + ';background:color-mix(in srgb,' + nbCol + ' 14%,transparent)" data-tip-en="Net buyback after stock-based compensation ÷ market cap — negative means SBC exceeds buybacks (dilutive net)" data-tip-zh="扣除股权激励后净回购÷市值——负值表示SBC超过回购（净稀释）">' + lz('Net buyback','净回购') + ' ' + nbPct + '</span> ';
-      }
-      // Debt-funded flag
-      if (ca.debt_funded_buyback_flag === true) {
-        caHtml += '<span class="hchip" style="color:var(--down);background:color-mix(in srgb,var(--down) 14%,transparent)" data-tip-en="Long-term debt rose while the company was buying back stock — buybacks may be debt-funded" data-tip-zh="公司回购股票的同时长期债务上升——回购可能由债务融资">' + lz('Debt-funded buyback','债务融资回购') + '</span> ';
-      }
-      // Share count info line
-      var caLines = [];
-      if (ca.shares_yoy_change_pct != null) {
-        var scSign = ca.shares_yoy_change_pct > 0 ? '+' : '';
-        caLines.push(lz('Shares YoY','股本同比') + ' ' + scSign + ca.shares_yoy_change_pct.toFixed(2) + '%');
-      }
-      if (ca.repurch_ttm != null) {
-        var rttmStr = ca.repurch_ttm >= 1e9 ? '$' + (ca.repurch_ttm / 1e9).toFixed(1) + 'B' :
-                      ca.repurch_ttm >= 1e6 ? '$' + (ca.repurch_ttm / 1e6).toFixed(0) + 'M' : '$' + ca.repurch_ttm.toFixed(0);
-        caLines.push(lz('Repurch TTM','TTM回购') + ' ' + rttmStr + (ca.repurch_coverage === 'partial' ? ' (' + lz('partial','部分') + ')' : ''));
-      }
-      if (ca.dividends_latest != null && ca.dividends_latest > 0) {
-        var divStr = ca.dividends_latest >= 1e9 ? '$' + (ca.dividends_latest / 1e9).toFixed(1) + 'B' :
-                     ca.dividends_latest >= 1e6 ? '$' + (ca.dividends_latest / 1e6).toFixed(0) + 'M' : '$' + ca.dividends_latest.toFixed(0);
-        caLines.push(lz('Dividends','股息') + ' ' + divStr);
-      }
-      if (caLines.length) caHtml += '<p class="muted" style="font-size:12px;margin:6px 0 0">' + caLines.join(' · ') + '</p>';
-      if (caHtml) { el('r_capalloc').innerHTML = caHtml; show('panel_capalloc', true); }
-      else show('panel_capalloc', false);
-    } else show('panel_capalloc', false);
 
     if (d.earnings) {
       var ev = d.earnings, eh = '', rv2 = d.revisions || {};
@@ -1921,6 +1929,85 @@
       if (ar.length) { el('r_analyst').innerHTML = '<div class="posbox">' + ar.join('') + '</div>'; show('panel_analyst', true); }
       else show('panel_analyst', false);
     } else show('panel_analyst', false);
+
+    // LT-2c: expectation state — earnings-momentum context block (display-only, hold_thesis).
+    // Renders last earnings date, SUE beat streak, post-event drift, and absorption flags
+    // in plain language.  No 'validated' language.  Tooltips via data-tip-en/zh only.
+    renderExpectationState(d.expectation_state);
+  }
+
+  function renderExpectationState(es) {
+    var box = el('r_expect_state');
+    if (!box) return;
+    if (!es || (es.sue_latest == null && es.sue_streak == null && !es.last_event_date)) {
+      box.style.display = 'none'; return;
+    }
+    var chips = [];
+
+    // Last event date chip
+    if (es.last_event_date) {
+      var daysSince = Math.round((new Date() - new Date(es.last_event_date + 'T00:00:00')) / 86400000);
+      var dsStr = daysSince <= 1 ? lz('today', '今天') : daysSince + lz('d ago', '天前');
+      chips.push('<span class="es-chip es-neu"' +
+        ' data-tip-en="Most recent earnings filing date (8-K item 2.02, SEC EDGAR)"' +
+        ' data-tip-zh="最近一次财报披露日（8-K 第2.02项，SEC EDGAR）">' +
+        lz('Last earnings: ', '最近财报：') + es.last_event_date + ' · ' + dsStr + '</span>');
+    }
+
+    // SUE latest chip
+    if (es.sue_latest != null) {
+      var suVal = es.sue_latest, suCls = suVal >= 0.5 ? 'es-pos' : suVal <= -0.5 ? 'es-neg' : 'es-neu';
+      var suLabel = suVal >= 0.5 ? lz('beat trend', '超预期趋势') : suVal <= -0.5 ? lz('miss trend', '不及预期趋势') : lz('flat trend', '趋势持平');
+      chips.push('<span class="es-chip ' + suCls + '"' +
+        ' data-tip-en="SUE (standardized unexpected earnings): how far the latest quarter beat its year-ago seasonal expectation, standardized by the company\'s own history. Research context — cross-sectional edge does not persist on deep history."' +
+        ' data-tip-zh="SUE（标准化超预期盈利）：最新季度相对去年同期超出多少，以公司历史标准化。研究背景——横截面优势在深度历史中不持续。">' +
+        lz('SUE ', 'SUE ') + (suVal > 0 ? '+' : '') + suVal.toFixed(2) + ' · ' + suLabel + '</span>');
+    }
+
+    // Streak chip
+    if (es.sue_streak != null && es.sue_streak > 0) {
+      var strk = es.sue_streak, strkCls = strk >= 3 ? 'es-pos' : 'es-neu';
+      chips.push('<span class="es-chip ' + strkCls + '"' +
+        ' data-tip-en="Consecutive quarters where the earnings beat matched the year-ago quarter (d_q > 0), capped at 8."' +
+        ' data-tip-zh="连续季度中，盈利超过去年同期的季数（d_q>0），最多计8季。">' +
+        strk + lz('-qtr beat streak', '季连续超预期') + '</span>');
+    } else if (es.sue_streak === 0) {
+      chips.push('<span class="es-chip es-neg"' +
+        ' data-tip-en="No consecutive beat streak — the most recent quarter did not beat its year-ago seasonal level."' +
+        ' data-tip-zh="无连续超预期——最近一季未超去年同期水平。">' +
+        lz('No beat streak', '无连续超预期') + '</span>');
+    }
+
+    // PEAD drift chip
+    if (es.pead_drift_20d != null) {
+      var pd = es.pead_drift_20d, pdPct = Math.round(pd * 1000) / 10;
+      var pdCls = pd > 0.01 ? 'es-pos' : pd < -0.01 ? 'es-neg' : 'es-neu';
+      var pdLabel = pd > 0.01 ? lz('held gains', '守住涨幅') : pd < -0.01 ? lz('faded', '回吐') : lz('flat', '走平');
+      chips.push('<span class="es-chip ' + pdCls + '"' +
+        ' data-tip-en="Post-event drift: cumulative stock-minus-market return since last earnings (up to 20 sessions). Positive = held its gains vs the market after reporting. Research context only."' +
+        ' data-tip-zh="事件后漂移：最近财报后（最多20个交易日）相对市场的累计超额收益。正数=公告后相对市场守住涨幅。仅作研究背景。">' +
+        lz('Post-earnings drift: ', '财报后漂移：') + (pdPct > 0 ? '+' : '') + pdPct + '% · ' + pdLabel + '</span>');
+    }
+
+    // Absorption / hold flags
+    if (es.bad_news_absorption === true) {
+      chips.push('<span class="es-chip es-pos"' +
+        ' data-tip-en="Bad-news absorption: the stock reported a miss (d_q < 0) but did not break below its pre-event lows in the next 10 sessions, and held its ground vs the market over the following 5 sessions."' +
+        ' data-tip-zh="坏消息吸收：股票公告不及预期（d_q<0），但在后续10个交易日内未跌破事件前低点，且5日内相对市场守住。">' +
+        lz('Absorbed bad news', '消化坏消息') + '</span>');
+    }
+    if (es.good_news_hold === true) {
+      chips.push('<span class="es-chip es-pos"' +
+        ' data-tip-en="Good-news hold: the stock reported a beat (d_q > 0), gapped up ≥ 2% the next session, and the close 10 sessions later was at least as high as the post-earnings open."' +
+        ' data-tip-zh="好消息守住：股票超预期（d_q>0），次日跳空上涨≥2%，且10日后收盘仍不低于财报后首日开盘。">' +
+        lz('Beat, held its gains', '超预期并守住涨幅') + '</span>');
+    }
+
+    if (!chips.length) { box.style.display = 'none'; return; }
+    box.innerHTML = '<div class="es-block">' +
+      '<div class="es-block-h">' + lz('Earnings momentum context (display only)', '盈利动量背景（仅供展示）') + '</div>' +
+      '<div class="es-chips">' + chips.join('') + '</div></div>';
+    box.style.display = '';
   }
   // internal state -> friendly "LABEL · ACTION" (mirrors engine/cycles.STATE_DISPLAY)
   var DISP = {"DECLINE": {"label": "DOWNTREND", "action": "AVOID", "dir": "down", "label_zh": "\u4e0b\u8dcc\u8d8b\u52bf", "action_zh": "\u56de\u907f"}, "BOTTOM WATCH": {"label": "NEARING A LOW", "action": "GET READY", "dir": "down", "label_zh": "\u63a5\u8fd1\u4f4e\u70b9", "action_zh": "\u51c6\u5907"}, "TURN SIGNALED": {"label": "BOTTOMING", "action": "BUY SETUP", "dir": "up", "label_zh": "\u7b51\u5e95\u4e2d", "action_zh": "\u4e70\u5165\u9884\u5907"}, "FRESH BUY": {"label": "BUY ZONE", "action": "BUY", "dir": "up", "label_zh": "\u4e70\u5165\u533a", "action_zh": "\u4e70\u5165"}, "RALLY ON": {"label": "UPTREND", "action": "HOLD", "dir": "up", "label_zh": "\u4e0a\u6da8\u8d8b\u52bf", "action_zh": "\u6301\u6709"}, "TOP WATCH": {"label": "NEARING A HIGH", "action": "TAKE PROFITS", "dir": "caution", "label_zh": "\u63a5\u8fd1\u9ad8\u70b9", "action_zh": "\u6b62\u76c8"}, "ROLLING OVER": {"label": "TOPPING", "action": "SELL SETUP", "dir": "down", "label_zh": "\u505a\u9876\u4e2d", "action_zh": "\u5356\u51fa\u9884\u5907"}, "COUNTERTREND BOUNCE": {"label": "UNCONFIRMED TURN", "action": "HIGH-RISK \u00b7 NIMBLE ONLY", "dir": "caution", "label_zh": "\u672a\u786e\u8ba4\u8f6c\u5411", "action_zh": "\u9ad8\u98ce\u9669 \u00b7 \u4ec5\u9650\u7075\u6d3b\u64cd\u4f5c"}};
@@ -2631,7 +2718,7 @@
   window.addEventListener('hashchange',load); load();
 })();
 </script>
-<p class="muted" style="font-size:12px">Generated 2026-07-06 09:08 UTC · charts rendered in-house with
+<p class="muted" style="font-size:12px">Generated 2026-07-06 10:00 UTC · charts rendered in-house with
 Lightweight Charts™ on our own price data · methodology &amp; caveats: see any sector page footer.</p>
 <footer class="site-footer">
   <span class="made">© 2026 MastermindX Inc</span>

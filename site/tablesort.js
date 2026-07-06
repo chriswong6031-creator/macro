@@ -13,7 +13,8 @@
   // parse a number out of "+3.2%", "1,240", "12.5×", "—" → number | null
   function num(s) {
     if (s == null) return null;
-    var m = String(s).replace(/[,%×$\s ]/g, '').replace(/[^0-9.+\-eE]/g, '');
+    s = String(s).replace(/−/g, '-');
+    var m = s.replace(/[,%×$\s ]/g, '').replace(/[^0-9.+\-eE]/g, '');
     if (m === '' || m === '+' || m === '-' || m === '.') return null;
     var n = parseFloat(m);
     return isFinite(n) ? n : null;

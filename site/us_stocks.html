@@ -12,6 +12,8 @@
 
 
 
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -53,6 +55,8 @@
   .grid { display: grid; gap: 14px; grid-template-columns: repeat(12, 1fr); }
   .panel { background: var(--panel); border: 1px solid var(--line);
            border-radius: 10px; padding: 14px 16px; }
+  .sb-section-lbl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin:16px 0 6px;border-top:1px solid var(--line);padding-top:10px}
+  .sb-section-lbl:first-child{border-top:none;margin-top:0;padding-top:0}
   .span12 { grid-column: span 12; } .span8 { grid-column: span 8; }
   .span6 { grid-column: span 6; } .span4 { grid-column: span 4; }
   @media (max-width: 900px) { .span8, .span6, .span4 { grid-column: span 12; } }
@@ -422,7 +426,7 @@
   .ew-chip.ew-gate { border-color: var(--up); color: var(--up); font-weight: 700; }
   .acth { font-size: 11.5px; font-weight: 700; letter-spacing: .03em; margin-bottom: 7px; }
   .actitem { display: flex; align-items: center; gap: 6px; padding: 5px 0;
-             border-bottom: 1px solid var(--line); font-size: 13px; }
+             border-bottom: 1px solid var(--line); font-size: 13px; min-width: 0; }
   .actitem:last-child { border-bottom: none; }
   .actitem b { color: var(--text); }
   .acttag { margin-left: auto; font-size: 10.5px; color: var(--muted); }
@@ -673,7 +677,7 @@
   /* head-link: the anchor inside the div card; wraps nb-top so Terminal interceptor still fires */
   .nb-head-link { display: block; text-decoration: none; color: inherit; }
   .nb-head-link:hover { text-decoration: none; }
-  /* lane sub-heading separators (additive — lane_counts pill row stays above) */
+  /* lane sub-heading separators (additive) */
   .nb-lane-hd { grid-column: 1 / -1; margin: 6px 0 2px; font-size: 10px; font-weight: 800;
                 letter-spacing: .05em; text-transform: uppercase; color: var(--muted);
                 padding: 3px 6px; border-bottom: 1px solid var(--line); }
@@ -861,7 +865,7 @@
   .nb-ax .axf { height: 100%; background: var(--g-cold); border-radius: 2px; }
   .nb-ax.ax-na .axf { background: transparent; }
   /* ---- Caution icon + popover (replaces old pill-row) ---- */
-  .nb-cau { position: relative; display: inline-flex; margin-top: 3px; }
+  .nb-cau { position: relative; display: inline-flex; }
   .nb-cau-btn {
     display: inline-flex; align-items: center; gap: 3px;
     padding: 0 5px 0 4px; height: 18px; border-radius: 9px; border: none; cursor: pointer;
@@ -993,13 +997,12 @@
   .nb-dmnd.dmnd-rk { color: var(--down); border-color: color-mix(in srgb, var(--down) 38%, var(--line));
              background: color-mix(in srgb, var(--down) 11%, var(--panel)); }
   /* G6a donor-sector context chip (display-only, US standouts header area) */
-  .nb-donor{display:flex;align-items:center;gap:7px;padding:5px 11px;margin:6px 0 4px;border-radius:8px;font-size:11px;border:1px solid var(--line);background:var(--panel2)}
+  .nb-donor{display:inline-flex;width:fit-content;align-items:center;gap:7px;padding:5px 11px;margin:6px 0 4px;border-radius:8px;font-size:11px;border:1px solid var(--line);background:var(--panel2)}
   .nb-donor.donor-cracking{border-color:color-mix(in srgb,var(--warn) 45%,var(--line));background:color-mix(in srgb,var(--warn) 8%,var(--panel2))}
   .nb-donor.donor-intact{border-color:color-mix(in srgb,var(--up) 35%,var(--line));background:color-mix(in srgb,var(--up) 6%,var(--panel2))}
   .nb-donor .donor-ic{font-size:12px;flex:none}
   .nb-donor.donor-cracking .donor-ic{color:var(--warn)}
   .nb-donor.donor-intact .donor-ic{color:var(--up)}
-  .nb-donor .donor-meta{font-size:9.5px;margin-left:auto}
   /* COILED wave-2-validated cohort-washout ranking bonus chip (display-only, US standouts) */
   .nb-coiled{flex:none;font-size:8px;font-weight:800;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap;background:color-mix(in srgb,var(--link) 14%,transparent);color:var(--link);border:1px solid color-mix(in srgb,var(--link) 36%,transparent)}
   .nb-coiled.star{background:color-mix(in srgb,var(--up) 16%,transparent);color:var(--up);border-color:color-mix(in srgb,var(--up) 40%,transparent)}
@@ -1008,7 +1011,16 @@
   .nb-hold{flex:none;font-size:8px;font-weight:700;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap;background:var(--panel);color:var(--muted);border:1px solid var(--line)}
   .nb-hold.hold-launched{color:var(--up);background:color-mix(in srgb,var(--up) 10%,transparent);border-color:color-mix(in srgb,var(--up) 35%,transparent)}
   .nb-hold.hold-broken{color:var(--down);background:color-mix(in srgb,var(--down) 10%,transparent);border-color:color-mix(in srgb,var(--down) 35%,transparent)}
-  /* W2 outcomes strip — recently surfaced → outcome */
+  /* W2 outcomes strip — recently surfaced → outcome (pinned toggle) */
+  .board-track-toggle{display:inline-flex;align-items:center;gap:5px;font:inherit;font-size:11px;font-weight:600;
+    padding:3px 10px;border-radius:999px;border:1px solid var(--line);background:var(--panel2);color:var(--muted);
+    cursor:pointer;white-space:nowrap;-webkit-tap-highlight-color:transparent;
+    transition:border-color .15s ease,color .15s ease}
+  .board-track-toggle:hover{border-color:var(--link);color:var(--link)}
+  .board-track-toggle.is-open{border-color:var(--link);color:var(--link)}
+  /* when relocated into the show-more bar, pin it to the left edge and keep the
+     "Showing X of Y" / show-more controls in their centered positions */
+  .sm-bar>.board-track-toggle{order:-1;margin-right:auto}
   .board-outcomes{margin-top:12px;border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:var(--panel)}
   .board-outcomes-hdr{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:5px}
   .board-outcomes-title{font-weight:700;font-size:12px}
@@ -1042,9 +1054,6 @@
   .nb-extz.extz-warn{background:color-mix(in srgb,var(--warn) 10%,transparent);color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 30%,transparent)}
   /* P2.1a Anti-Chase Watch chip (shadow gate, R7 additive-lanes law) */
   .nb-antichase{flex:none;font-size:8px;font-weight:700;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap;cursor:help;background:color-mix(in srgb,var(--warn) 8%,transparent);color:var(--warn);border:1px dashed color-mix(in srgb,var(--warn) 40%,transparent)}
-  /* P2.4 lane_counts pill row (monitoring display) */
-  .lane-counts-row{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 8px;align-items:center}
-  .lc-pill{font-size:10px;font-weight:700;padding:2px 8px;border-radius:8px;border:1px solid var(--line);color:var(--muted)}
   /* α laggard chip (alpha_entry=laggard, honest copy) */
   .ent-lag{background:color-mix(in srgb,var(--down) 10%,transparent);color:var(--down);border:1px solid color-mix(in srgb,var(--down) 28%,transparent);font-size:8px;font-weight:700;padding:1px 5px;border-radius:6px;white-space:nowrap}
   /* W8-B postcross lifecycle chip (SHAKEN; ARMED display removed per W8-A-OOS FAIL) */
@@ -1054,9 +1063,8 @@
   .nb-sector-cap{flex:none;font-size:8px;font-weight:700;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap;background:color-mix(in srgb,var(--warn) 8%,transparent);color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 22%,transparent)}
   /* W1.5 earnings-blackout chip (display-only; no rank power; hygiene context) */
   .nb-earn-soon{flex:none;font-size:8px;font-weight:700;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap;cursor:help;background:color-mix(in srgb,var(--warn) 10%,transparent);color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 28%,transparent)}
-  /* W1.5 board-level suppressed-today note + stale-store warning */
+  /* W1.5 board-level suppressed-today note */
   .nb-eb-note{font-size:11px;padding:5px 11px;margin:4px 0;border-radius:6px;color:var(--warn);border:1px dashed color-mix(in srgb,var(--warn) 35%,var(--line));background:color-mix(in srgb,var(--warn) 5%,transparent);cursor:help}
-  .nb-eb-stale{color:var(--muted);border-color:var(--line);background:transparent}
   /* W5b liquidity chip (display-only; no rank/gate power) */
   .nb-liq{flex:none;font-size:8px;font-weight:700;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap;cursor:help}
   .nb-liq.liq-deep{color:var(--up);background:color-mix(in srgb,var(--up) 9%,transparent);border:1px solid color-mix(in srgb,var(--up) 28%,transparent)}
@@ -1806,15 +1814,15 @@
       <div class="actcol act-buy">
         <div class="acth">🟢 <span class="l-en">BUY ZONE — confirmed now</span><span class="l-zh">买入区 — 已确认</span></div>
         
-          <a class="actitem ai-theme" href="basket/insurance.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b><span class="l-en">Insurance & Brokers</span><span class="l-zh">保险与经纪</span></b><span class="ai-lens" data-tip-en="Leadership LENS — descriptive (cross-sectional momentum rank-IC ≈ 0 on the clean backtest); a focus aid, not a return forecast" data-tip-zh="领先度透镜 — 描述性（横截面动量 rank-IC≈0），聚焦工具而非收益预测">≈</span></a>
+          <a class="actitem ai-theme" href="basket/insurance.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b title="Insurance &amp; Brokers"><span class="l-en">Insurance &amp; Brokers</span><span class="l-zh">保险与经纪</span></b><span class="ai-lens" data-tip-en="Leadership LENS — descriptive (cross-sectional momentum rank-IC ≈ 0 on the clean backtest); a focus aid, not a return forecast" data-tip-zh="领先度透镜 — 描述性（横截面动量 rank-IC≈0），聚焦工具而非收益预测">≈</span></a>
         
-          <a class="actitem ai-theme" href="basket/big_pharma.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b><span class="l-en">Big Pharma</span><span class="l-zh">大型药企</span></b><span class="ai-lens" data-tip-en="Leadership LENS — descriptive (cross-sectional momentum rank-IC ≈ 0 on the clean backtest); a focus aid, not a return forecast" data-tip-zh="领先度透镜 — 描述性（横截面动量 rank-IC≈0），聚焦工具而非收益预测">≈</span></a>
+          <a class="actitem ai-theme" href="basket/big_pharma.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b title="Big Pharma"><span class="l-en">Big Pharma</span><span class="l-zh">大型药企</span></b><span class="ai-lens" data-tip-en="Leadership LENS — descriptive (cross-sectional momentum rank-IC ≈ 0 on the clean backtest); a focus aid, not a return forecast" data-tip-zh="领先度透镜 — 描述性（横截面动量 rank-IC≈0），聚焦工具而非收益预测">≈</span></a>
         
-          <a class="actitem ai-theme" href="basket/payments_fintech.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b><span class="l-en">Payments & Fintech</span><span class="l-zh">支付与金融科技</span></b><span class="ai-lens" data-tip-en="Leadership LENS — descriptive (cross-sectional momentum rank-IC ≈ 0 on the clean backtest); a focus aid, not a return forecast" data-tip-zh="领先度透镜 — 描述性（横截面动量 rank-IC≈0），聚焦工具而非收益预测">≈</span></a>
+          <a class="actitem ai-theme" href="basket/payments_fintech.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b title="Payments &amp; Fintech"><span class="l-en">Payments &amp; Fintech</span><span class="l-zh">支付与金融科技</span></b><span class="ai-lens" data-tip-en="Leadership LENS — descriptive (cross-sectional momentum rank-IC ≈ 0 on the clean backtest); a focus aid, not a return forecast" data-tip-zh="领先度透镜 — 描述性（横截面动量 rank-IC≈0），聚焦工具而非收益预测">≈</span></a>
         
-          <a class="actitem" href="basket/us_sector_industrials.html"><span class="ai-bdg" data-tip-en="GICS sector — cap-weighted cycle timing read" data-tip-zh="GICS板块 — 市值加权周期判读">🏛</span><b><span class="l-en">Industrials</span><span class="l-zh">工业</span></b> <span class="muted">XLI</span><span class="actage">⏱ <span class="l-en">today</span><span class="l-zh">今日</span></span><span class="eqmini eq-up" data-tip-en="How well-timed & low-risk THIS entry is — near the cycle low, a fresh momentum turn, and with-trend. Measured: entries near the pivot drew ~30% smaller drawdowns than chasers far above it — risk control, NOT a return forecast." data-tip-zh="How well-timed & low-risk THIS entry is — near the cycle low, a fresh momentum turn, and with-trend. Measured: entries near the pivot drew ~30% smaller drawdowns than chasers far above it — risk control, NOT a return forecast.">▲ +77</span><span class="acttag"><span class="l-en">BUY ZONE</span><span class="l-zh">买入区</span></span></a>
+          <a class="actitem" href="basket/us_sector_industrials.html"><span class="ai-bdg" data-tip-en="GICS sector — cap-weighted cycle timing read" data-tip-zh="GICS板块 — 市值加权周期判读">🏛</span><b title="Industrials"><span class="l-en">Industrials</span><span class="l-zh">工业</span></b> <span class="muted">XLI</span><span class="actage">⏱ <span class="l-en">today</span><span class="l-zh">今日</span></span><span class="eqmini eq-up" data-tip-en="How well-timed & low-risk THIS entry is — near the cycle low, a fresh momentum turn, and with-trend. Measured: entries near the pivot drew ~30% smaller drawdowns than chasers far above it — risk control, NOT a return forecast." data-tip-zh="How well-timed & low-risk THIS entry is — near the cycle low, a fresh momentum turn, and with-trend. Measured: entries near the pivot drew ~30% smaller drawdowns than chasers far above it — risk control, NOT a return forecast.">▲ +77</span><span class="acttag"><span class="l-en">BUY ZONE</span><span class="l-zh">买入区</span></span></a>
         
-          <a class="actitem" href="basket/us_sector_staples.html"><span class="ai-bdg" data-tip-en="GICS sector — cap-weighted cycle timing read" data-tip-zh="GICS板块 — 市值加权周期判读">🏛</span><b><span class="l-en">Consumer Staples</span><span class="l-zh">必需消费</span></b> <span class="muted">XLP</span><span class="actage">⏱ <span class="l-en">today</span><span class="l-zh">今日</span></span><span class="eqmini eq-up" data-tip-en="How well-timed & low-risk THIS entry is — near the cycle low, a fresh momentum turn, and with-trend. Measured: entries near the pivot drew ~30% smaller drawdowns than chasers far above it — risk control, NOT a return forecast." data-tip-zh="How well-timed & low-risk THIS entry is — near the cycle low, a fresh momentum turn, and with-trend. Measured: entries near the pivot drew ~30% smaller drawdowns than chasers far above it — risk control, NOT a return forecast.">▲ +75</span><span class="acttag"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span></a>
+          <a class="actitem" href="basket/us_sector_staples.html"><span class="ai-bdg" data-tip-en="GICS sector — cap-weighted cycle timing read" data-tip-zh="GICS板块 — 市值加权周期判读">🏛</span><b title="Consumer Staples"><span class="l-en">Cons Staples</span><span class="l-zh">必需消费</span></b> <span class="muted">XLP</span><span class="actage">⏱ <span class="l-en">today</span><span class="l-zh">今日</span></span><span class="eqmini eq-up" data-tip-en="How well-timed & low-risk THIS entry is — near the cycle low, a fresh momentum turn, and with-trend. Measured: entries near the pivot drew ~30% smaller drawdowns than chasers far above it — risk control, NOT a return forecast." data-tip-zh="How well-timed & low-risk THIS entry is — near the cycle low, a fresh momentum turn, and with-trend. Measured: entries near the pivot drew ~30% smaller drawdowns than chasers far above it — risk control, NOT a return forecast.">▲ +75</span><span class="acttag"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span></a>
         
       </div>
       <div class="actcol act-soon">
@@ -1825,21 +1833,21 @@
         <div class="acth">🏃 <span class="l-en">ON THE RUN — do not chase</span><span class="l-zh">顺势运行 — 勿追高</span></div>
         
         
-          <a class="actitem" href="basket/us_sector_financials.html"><span class="ai-bdg" data-tip-en="GICS sector — in uptrend but extended, no clean entry" data-tip-zh="GICS板块 — 上升趋势中但已延伸，无干净入场">🏛</span><b><span class="l-en">Financials</span><span class="l-zh">金融</span></b> <span class="muted">XLF</span><span class="actage">⏱ <span class="l-en">today</span><span class="l-zh">今日</span></span><span class="eqmini eq-down" data-tip-en="How well-timed & low-risk THIS entry is — near the cycle high, a fresh momentum turn, and with-trend. Measured: entries near the pivot drew ~30% smaller drawdowns than chasers far above it — risk control, NOT a return forecast." data-tip-zh="How well-timed & low-risk THIS entry is — near the cycle high, a fresh momentum turn, and with-trend. Measured: entries near the pivot drew ~30% smaller drawdowns than chasers far above it — risk control, NOT a return forecast.">▼ -21</span><span class="acttag"><span class="l-en">NEARING A HIGH</span><span class="l-zh">接近高点</span></span></a><span class="ew-chip" data-tip-en="EW basket: ACCUMULATE — equal-weight (breadth) vs cap-weighted cycle" data-tip-zh="等权篮子: 加仓 — 等权广度 vs 市值加权"><span class="l-en">&#x1F9E9; ACCUMULATE</span><span class="l-zh">&#x1F9E9; 加仓</span></span>
+          <a class="actitem" href="basket/us_sector_financials.html"><span class="ai-bdg" data-tip-en="GICS sector — in uptrend but extended, no clean entry" data-tip-zh="GICS板块 — 上升趋势中但已延伸，无干净入场">🏛</span><b title="Financials"><span class="l-en">Financials</span><span class="l-zh">金融</span></b> <span class="muted">XLF</span><span class="actage">⏱ <span class="l-en">today</span><span class="l-zh">今日</span></span><span class="eqmini eq-down" data-tip-en="How well-timed & low-risk THIS entry is — near the cycle high, a fresh momentum turn, and with-trend. Measured: entries near the pivot drew ~30% smaller drawdowns than chasers far above it — risk control, NOT a return forecast." data-tip-zh="How well-timed & low-risk THIS entry is — near the cycle high, a fresh momentum turn, and with-trend. Measured: entries near the pivot drew ~30% smaller drawdowns than chasers far above it — risk control, NOT a return forecast.">▼ -21</span><span class="acttag"><span class="l-en">NEARING A HIGH</span><span class="l-zh">接近高点</span></span></a><span class="ew-chip" data-tip-en="EW basket: ACCUMULATE — equal-weight (breadth) vs cap-weighted cycle" data-tip-zh="等权篮子: 加仓 — 等权广度 vs 市值加权"><span class="l-en">&#x1F9E9; ACCUMULATE</span><span class="l-zh">&#x1F9E9; 加仓</span></span>
         
-          <a class="actitem" href="basket/us_sector_utilities.html"><span class="ai-bdg" data-tip-en="GICS sector — in uptrend but extended, no clean entry" data-tip-zh="GICS板块 — 上升趋势中但已延伸，无干净入场">🏛</span><b><span class="l-en">Utilities</span><span class="l-zh">公用事业</span></b> <span class="muted">XLU</span><span class="actage">⏱ <span class="l-en">today</span><span class="l-zh">今日</span></span><span class="eqmini eq-down" data-tip-en="How well-timed & low-risk THIS entry is — near the cycle high, a fresh momentum turn, and with-trend. Measured: entries near the pivot drew ~30% smaller drawdowns than chasers far above it — risk control, NOT a return forecast." data-tip-zh="How well-timed & low-risk THIS entry is — near the cycle high, a fresh momentum turn, and with-trend. Measured: entries near the pivot drew ~30% smaller drawdowns than chasers far above it — risk control, NOT a return forecast.">▼ -35</span><span class="acttag"><span class="l-en">NEARING A HIGH</span><span class="l-zh">接近高点</span></span></a><span class="ew-chip" data-tip-en="EW basket: ACCUMULATE — equal-weight (breadth) vs cap-weighted cycle" data-tip-zh="等权篮子: 加仓 — 等权广度 vs 市值加权"><span class="l-en">&#x1F9E9; ACCUMULATE</span><span class="l-zh">&#x1F9E9; 加仓</span></span>
+          <a class="actitem" href="basket/us_sector_utilities.html"><span class="ai-bdg" data-tip-en="GICS sector — in uptrend but extended, no clean entry" data-tip-zh="GICS板块 — 上升趋势中但已延伸，无干净入场">🏛</span><b title="Utilities"><span class="l-en">Utilities</span><span class="l-zh">公用事业</span></b> <span class="muted">XLU</span><span class="actage">⏱ <span class="l-en">today</span><span class="l-zh">今日</span></span><span class="eqmini eq-down" data-tip-en="How well-timed & low-risk THIS entry is — near the cycle high, a fresh momentum turn, and with-trend. Measured: entries near the pivot drew ~30% smaller drawdowns than chasers far above it — risk control, NOT a return forecast." data-tip-zh="How well-timed & low-risk THIS entry is — near the cycle high, a fresh momentum turn, and with-trend. Measured: entries near the pivot drew ~30% smaller drawdowns than chasers far above it — risk control, NOT a return forecast.">▼ -35</span><span class="acttag"><span class="l-en">NEARING A HIGH</span><span class="l-zh">接近高点</span></span></a><span class="ew-chip" data-tip-en="EW basket: ACCUMULATE — equal-weight (breadth) vs cap-weighted cycle" data-tip-zh="等权篮子: 加仓 — 等权广度 vs 市值加权"><span class="l-en">&#x1F9E9; ACCUMULATE</span><span class="l-zh">&#x1F9E9; 加仓</span></span>
         
-          <a class="actitem" href="basket/us_sector_health.html"><span class="ai-bdg" data-tip-en="GICS sector — in uptrend but extended, no clean entry" data-tip-zh="GICS板块 — 上升趋势中但已延伸，无干净入场">🏛</span><b><span class="l-en">Health Care</span><span class="l-zh">医疗保健</span></b> <span class="muted">XLV</span><span class="actage">⏱ <span class="l-en">today</span><span class="l-zh">今日</span></span><span class="eqmini eq-down" data-tip-en="How well-timed & low-risk THIS entry is — near the cycle high, a fresh momentum turn, and with-trend. Measured: entries near the pivot drew ~30% smaller drawdowns than chasers far above it — risk control, NOT a return forecast." data-tip-zh="How well-timed & low-risk THIS entry is — near the cycle high, a fresh momentum turn, and with-trend. Measured: entries near the pivot drew ~30% smaller drawdowns than chasers far above it — risk control, NOT a return forecast.">▼ -21</span><span class="acttag"><span class="l-en">NEARING A HIGH</span><span class="l-zh">接近高点</span></span></a><span class="ew-chip" data-tip-en="EW basket: ACCUMULATE — equal-weight (breadth) vs cap-weighted cycle" data-tip-zh="等权篮子: 加仓 — 等权广度 vs 市值加权"><span class="l-en">&#x1F9E9; ACCUMULATE</span><span class="l-zh">&#x1F9E9; 加仓</span></span>
+          <a class="actitem" href="basket/us_sector_health.html"><span class="ai-bdg" data-tip-en="GICS sector — in uptrend but extended, no clean entry" data-tip-zh="GICS板块 — 上升趋势中但已延伸，无干净入场">🏛</span><b title="Health Care"><span class="l-en">Health Care</span><span class="l-zh">医疗保健</span></b> <span class="muted">XLV</span><span class="actage">⏱ <span class="l-en">today</span><span class="l-zh">今日</span></span><span class="eqmini eq-down" data-tip-en="How well-timed & low-risk THIS entry is — near the cycle high, a fresh momentum turn, and with-trend. Measured: entries near the pivot drew ~30% smaller drawdowns than chasers far above it — risk control, NOT a return forecast." data-tip-zh="How well-timed & low-risk THIS entry is — near the cycle high, a fresh momentum turn, and with-trend. Measured: entries near the pivot drew ~30% smaller drawdowns than chasers far above it — risk control, NOT a return forecast.">▼ -21</span><span class="acttag"><span class="l-en">NEARING A HIGH</span><span class="l-zh">接近高点</span></span></a><span class="ew-chip" data-tip-en="EW basket: ACCUMULATE — equal-weight (breadth) vs cap-weighted cycle" data-tip-zh="等权篮子: 加仓 — 等权广度 vs 市值加权"><span class="l-en">&#x1F9E9; ACCUMULATE</span><span class="l-zh">&#x1F9E9; 加仓</span></span>
         
       </div>
       <div class="actcol act-trim">
         <div class="acth">🟠 <span class="l-en">TAKE PROFITS / topping</span><span class="l-zh">止盈／做顶</span></div>
         
-          <a class="actitem" href="basket/us_sector_materials.html"><span class="ai-bdg" data-tip-en="GICS sector — cap-weighted cycle timing read" data-tip-zh="GICS板块 — 市值加权周期判读">🏛</span><b><span class="l-en">Materials</span><span class="l-zh">原材料</span></b> <span class="muted">XLB</span><span class="actage">⏱ <span class="l-en">today</span><span class="l-zh">今日</span></span><span class="eqmini eq-down" data-tip-en="How well-timed & low-risk THIS entry is — near the cycle high, a fresh momentum turn, and with-trend. Measured: entries near the pivot drew ~30% smaller drawdowns than chasers far above it — risk control, NOT a return forecast." data-tip-zh="How well-timed & low-risk THIS entry is — near the cycle high, a fresh momentum turn, and with-trend. Measured: entries near the pivot drew ~30% smaller drawdowns than chasers far above it — risk control, NOT a return forecast.">▼ -53</span><span class="acttag"><span class="l-en">NEARING A HIGH</span><span class="l-zh">接近高点</span></span></a><span class="ew-chip" data-tip-en="EW basket: HOLD — equal-weight (breadth) vs cap-weighted cycle" data-tip-zh="等权篮子: 持有 — 等权广度 vs 市值加权"><span class="l-en">&#x1F9E9; HOLD</span><span class="l-zh">&#x1F9E9; 持有</span></span>
+          <a class="actitem" href="basket/us_sector_materials.html"><span class="ai-bdg" data-tip-en="GICS sector — cap-weighted cycle timing read" data-tip-zh="GICS板块 — 市值加权周期判读">🏛</span><b title="Materials"><span class="l-en">Materials</span><span class="l-zh">原材料</span></b> <span class="muted">XLB</span><span class="actage">⏱ <span class="l-en">today</span><span class="l-zh">今日</span></span><span class="eqmini eq-down" data-tip-en="How well-timed & low-risk THIS entry is — near the cycle high, a fresh momentum turn, and with-trend. Measured: entries near the pivot drew ~30% smaller drawdowns than chasers far above it — risk control, NOT a return forecast." data-tip-zh="How well-timed & low-risk THIS entry is — near the cycle high, a fresh momentum turn, and with-trend. Measured: entries near the pivot drew ~30% smaller drawdowns than chasers far above it — risk control, NOT a return forecast.">▼ -53</span><span class="acttag"><span class="l-en">NEARING A HIGH</span><span class="l-zh">接近高点</span></span></a><span class="ew-chip" data-tip-en="EW basket: HOLD — equal-weight (breadth) vs cap-weighted cycle" data-tip-zh="等权篮子: 持有 — 等权广度 vs 市值加权"><span class="l-en">&#x1F9E9; HOLD</span><span class="l-zh">&#x1F9E9; 持有</span></span>
         
-          <a class="actitem" href="basket/us_sector_tech.html"><span class="ai-bdg" data-tip-en="GICS sector — cap-weighted cycle timing read" data-tip-zh="GICS板块 — 市值加权周期判读">🏛</span><b><span class="l-en">Technology</span><span class="l-zh">科技</span></b> <span class="muted">XLK</span><span class="actage">⏱ <span class="l-en">today</span><span class="l-zh">今日</span></span><span class="eqmini eq-up" data-tip-en="How well-timed & low-risk THIS entry is — near the cycle low, a fresh momentum turn, and with-trend. Measured: entries near the pivot drew ~30% smaller drawdowns than chasers far above it — risk control, NOT a return forecast." data-tip-zh="How well-timed & low-risk THIS entry is — near the cycle low, a fresh momentum turn, and with-trend. Measured: entries near the pivot drew ~30% smaller drawdowns than chasers far above it — risk control, NOT a return forecast.">▲ +37</span><span class="acttag"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span></a><span class="ew-chip" data-tip-en="EW basket: AVOID — equal-weight (breadth) vs cap-weighted cycle" data-tip-zh="等权篮子: 回避 — 等权广度 vs 市值加权"><span class="l-en">&#x1F9E9; AVOID</span><span class="l-zh">&#x1F9E9; 回避</span></span>
+          <a class="actitem" href="basket/us_sector_tech.html"><span class="ai-bdg" data-tip-en="GICS sector — cap-weighted cycle timing read" data-tip-zh="GICS板块 — 市值加权周期判读">🏛</span><b title="Technology"><span class="l-en">Technology</span><span class="l-zh">科技</span></b> <span class="muted">XLK</span><span class="actage">⏱ <span class="l-en">today</span><span class="l-zh">今日</span></span><span class="eqmini eq-up" data-tip-en="How well-timed & low-risk THIS entry is — near the cycle low, a fresh momentum turn, and with-trend. Measured: entries near the pivot drew ~30% smaller drawdowns than chasers far above it — risk control, NOT a return forecast." data-tip-zh="How well-timed & low-risk THIS entry is — near the cycle low, a fresh momentum turn, and with-trend. Measured: entries near the pivot drew ~30% smaller drawdowns than chasers far above it — risk control, NOT a return forecast.">▲ +37</span><span class="acttag"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span></a><span class="ew-chip" data-tip-en="EW basket: AVOID — equal-weight (breadth) vs cap-weighted cycle" data-tip-zh="等权篮子: 回避 — 等权广度 vs 市值加权"><span class="l-en">&#x1F9E9; AVOID</span><span class="l-zh">&#x1F9E9; 回避</span></span>
         
-          <a class="actitem" href="basket/us_sector_realestate.html"><span class="ai-bdg" data-tip-en="GICS sector — cap-weighted cycle timing read" data-tip-zh="GICS板块 — 市值加权周期判读">🏛</span><b><span class="l-en">Real Estate</span><span class="l-zh">房地产</span></b> <span class="muted">XLRE</span><span class="actage">⏱ <span class="l-en">today</span><span class="l-zh">今日</span></span><span class="eqmini eq-down" data-tip-en="How well-timed & low-risk THIS entry is — near the cycle high, a fresh momentum turn, and with-trend. Measured: entries near the pivot drew ~30% smaller drawdowns than chasers far above it — risk control, NOT a return forecast." data-tip-zh="How well-timed & low-risk THIS entry is — near the cycle high, a fresh momentum turn, and with-trend. Measured: entries near the pivot drew ~30% smaller drawdowns than chasers far above it — risk control, NOT a return forecast.">▼ -43</span><span class="acttag"><span class="l-en">NEARING A HIGH</span><span class="l-zh">接近高点</span></span></a><span class="ew-chip" data-tip-en="EW basket: ACCUMULATE — equal-weight (breadth) vs cap-weighted cycle" data-tip-zh="等权篮子: 加仓 — 等权广度 vs 市值加权"><span class="l-en">&#x1F9E9; ACCUMULATE</span><span class="l-zh">&#x1F9E9; 加仓</span></span>
+          <a class="actitem" href="basket/us_sector_realestate.html"><span class="ai-bdg" data-tip-en="GICS sector — cap-weighted cycle timing read" data-tip-zh="GICS板块 — 市值加权周期判读">🏛</span><b title="Real Estate"><span class="l-en">Real Estate</span><span class="l-zh">房地产</span></b> <span class="muted">XLRE</span><span class="actage">⏱ <span class="l-en">today</span><span class="l-zh">今日</span></span><span class="eqmini eq-down" data-tip-en="How well-timed & low-risk THIS entry is — near the cycle high, a fresh momentum turn, and with-trend. Measured: entries near the pivot drew ~30% smaller drawdowns than chasers far above it — risk control, NOT a return forecast." data-tip-zh="How well-timed & low-risk THIS entry is — near the cycle high, a fresh momentum turn, and with-trend. Measured: entries near the pivot drew ~30% smaller drawdowns than chasers far above it — risk control, NOT a return forecast.">▼ -43</span><span class="acttag"><span class="l-en">NEARING A HIGH</span><span class="l-zh">接近高点</span></span></a><span class="ew-chip" data-tip-en="EW basket: ACCUMULATE — equal-weight (breadth) vs cap-weighted cycle" data-tip-zh="等权篮子: 加仓 — 等权广度 vs 市值加权"><span class="l-en">&#x1F9E9; ACCUMULATE</span><span class="l-zh">&#x1F9E9; 加仓</span></span>
         
       </div>
       <div class="actcol act-hold lst-wrap">
@@ -1847,44 +1855,44 @@
         
         <div class="lst-collapse lst-cap6 is-collapsed">
         
-          <a class="actitem ai-theme" href="basket/obesity_glp1.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b><span class="l-en">GLP-1 & Obesity</span><span class="l-zh">GLP-1 与减肥药</span></b><span class="ai-lens" data-tip-en="Leadership LENS — descriptive (cross-sectional momentum rank-IC ≈ 0 on the clean backtest); a focus aid, not a return forecast" data-tip-zh="领先度透镜 — 描述性（横截面动量 rank-IC≈0），聚焦工具而非收益预测">≈</span></a>
+          <a class="actitem ai-theme" href="basket/obesity_glp1.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b title="GLP-1 &amp; Obesity"><span class="l-en">GLP-1 &amp; Obesity</span><span class="l-zh">GLP-1 与减肥药</span></b><span class="ai-lens" data-tip-en="Leadership LENS — descriptive (cross-sectional momentum rank-IC ≈ 0 on the clean backtest); a focus aid, not a return forecast" data-tip-zh="领先度透镜 — 描述性（横截面动量 rank-IC≈0），聚焦工具而非收益预测">≈</span></a>
         
-          <a class="actitem ai-theme" href="basket/managed_care.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b><span class="l-en">Managed Care & Insurers</span><span class="l-zh">管理式医疗与保险</span></b><span class="ai-book" data-tip-en="In the narrative-rotation model book at 25% — clears the backtested absolute-trend gate" data-tip-zh="已在叙事轮动模型组合中，权重 25%，通过经回测的绝对趋势门槛">★25%</span><span class="ai-lens" data-tip-en="Leadership LENS — descriptive (cross-sectional momentum rank-IC ≈ 0 on the clean backtest); a focus aid, not a return forecast" data-tip-zh="领先度透镜 — 描述性（横截面动量 rank-IC≈0），聚焦工具而非收益预测">≈</span></a>
+          <a class="actitem ai-theme" href="basket/managed_care.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b title="Managed Care &amp; Insurers"><span class="l-en">Managed Care &amp; Insurers</span><span class="l-zh">管理式医疗与保险</span></b><span class="ai-book" data-tip-en="In the narrative-rotation model book at 25% — clears the backtested absolute-trend gate" data-tip-zh="已在叙事轮动模型组合中，权重 25%，通过经回测的绝对趋势门槛">★25%</span><span class="ai-lens" data-tip-en="Leadership LENS — descriptive (cross-sectional momentum rank-IC ≈ 0 on the clean backtest); a focus aid, not a return forecast" data-tip-zh="领先度透镜 — 描述性（横截面动量 rank-IC≈0），聚焦工具而非收益预测">≈</span></a>
         
-          <a class="actitem ai-theme" href="basket/cybersecurity.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b><span class="l-en">Cybersecurity</span><span class="l-zh">网络安全</span></b><span class="ai-book" data-tip-en="In the narrative-rotation model book at 25% — clears the backtested absolute-trend gate" data-tip-zh="已在叙事轮动模型组合中，权重 25%，通过经回测的绝对趋势门槛">★25%</span><span class="ai-lens" data-tip-en="Leadership LENS — descriptive (cross-sectional momentum rank-IC ≈ 0 on the clean backtest); a focus aid, not a return forecast" data-tip-zh="领先度透镜 — 描述性（横截面动量 rank-IC≈0），聚焦工具而非收益预测">≈</span></a>
+          <a class="actitem ai-theme" href="basket/cybersecurity.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b title="Cybersecurity"><span class="l-en">Cybersecurity</span><span class="l-zh">网络安全</span></b><span class="ai-book" data-tip-en="In the narrative-rotation model book at 25% — clears the backtested absolute-trend gate" data-tip-zh="已在叙事轮动模型组合中，权重 25%，通过经回测的绝对趋势门槛">★25%</span><span class="ai-lens" data-tip-en="Leadership LENS — descriptive (cross-sectional momentum rank-IC ≈ 0 on the clean backtest); a focus aid, not a return forecast" data-tip-zh="领先度透镜 — 描述性（横截面动量 rank-IC≈0），聚焦工具而非收益预测">≈</span></a>
         
-          <a class="actitem ai-theme" href="basket/regional_banks.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b><span class="l-en">Regional Banks</span><span class="l-zh">区域银行</span></b><span class="ai-lens" data-tip-en="Leadership LENS — descriptive (cross-sectional momentum rank-IC ≈ 0 on the clean backtest); a focus aid, not a return forecast" data-tip-zh="领先度透镜 — 描述性（横截面动量 rank-IC≈0），聚焦工具而非收益预测">≈</span></a>
+          <a class="actitem ai-theme" href="basket/regional_banks.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b title="Regional Banks"><span class="l-en">Regional Banks</span><span class="l-zh">区域银行</span></b><span class="ai-lens" data-tip-en="Leadership LENS — descriptive (cross-sectional momentum rank-IC ≈ 0 on the clean backtest); a focus aid, not a return forecast" data-tip-zh="领先度透镜 — 描述性（横截面动量 rank-IC≈0），聚焦工具而非收益预测">≈</span></a>
         
-          <a class="actitem ai-theme" href="basket/travel.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b><span class="l-en">Travel & Experiences</span><span class="l-zh">旅行与体验</span></b><span class="ai-lens" data-tip-en="Leadership LENS — descriptive (cross-sectional momentum rank-IC ≈ 0 on the clean backtest); a focus aid, not a return forecast" data-tip-zh="领先度透镜 — 描述性（横截面动量 rank-IC≈0），聚焦工具而非收益预测">≈</span></a>
+          <a class="actitem ai-theme" href="basket/travel.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b title="Travel &amp; Experiences"><span class="l-en">Travel &amp; Experiences</span><span class="l-zh">旅行与体验</span></b><span class="ai-lens" data-tip-en="Leadership LENS — descriptive (cross-sectional momentum rank-IC ≈ 0 on the clean backtest); a focus aid, not a return forecast" data-tip-zh="领先度透镜 — 描述性（横截面动量 rank-IC≈0），聚焦工具而非收益预测">≈</span></a>
         
-          <a class="actitem ai-theme" href="basket/reshoring.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b><span class="l-en">Reshoring & Industrial Capex</span><span class="l-zh">回流与工业资本开支</span></b><span class="ai-lens" data-tip-en="Leadership LENS — descriptive (cross-sectional momentum rank-IC ≈ 0 on the clean backtest); a focus aid, not a return forecast" data-tip-zh="领先度透镜 — 描述性（横截面动量 rank-IC≈0），聚焦工具而非收益预测">≈</span></a>
+          <a class="actitem ai-theme" href="basket/reshoring.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b title="Reshoring &amp; Industrial Capex"><span class="l-en">Industrial Capex</span><span class="l-zh">回流与工业资本开支</span></b><span class="ai-lens" data-tip-en="Leadership LENS — descriptive (cross-sectional momentum rank-IC ≈ 0 on the clean backtest); a focus aid, not a return forecast" data-tip-zh="领先度透镜 — 描述性（横截面动量 rank-IC≈0），聚焦工具而非收益预测">≈</span></a>
         
-          <a class="actitem ai-theme" href="basket/defensives.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b><span class="l-en">Defensives</span><span class="l-zh">防御板块</span></b><span class="ai-lens" data-tip-en="Leadership LENS — descriptive (cross-sectional momentum rank-IC ≈ 0 on the clean backtest); a focus aid, not a return forecast" data-tip-zh="领先度透镜 — 描述性（横截面动量 rank-IC≈0），聚焦工具而非收益预测">≈</span></a>
+          <a class="actitem ai-theme" href="basket/defensives.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b title="Defensives"><span class="l-en">Defensives</span><span class="l-zh">防御板块</span></b><span class="ai-lens" data-tip-en="Leadership LENS — descriptive (cross-sectional momentum rank-IC ≈ 0 on the clean backtest); a focus aid, not a return forecast" data-tip-zh="领先度透镜 — 描述性（横截面动量 rank-IC≈0），聚焦工具而非收益预测">≈</span></a>
         
-          <a class="actitem ai-theme" href="basket/industrial_distribution.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b><span class="l-en">Industrial Distribution & Capital Goods</span><span class="l-zh">工业分销与资本品</span></b><span class="ai-lens" data-tip-en="Leadership LENS — descriptive (cross-sectional momentum rank-IC ≈ 0 on the clean backtest); a focus aid, not a return forecast" data-tip-zh="领先度透镜 — 描述性（横截面动量 rank-IC≈0），聚焦工具而非收益预测">≈</span></a>
+          <a class="actitem ai-theme" href="basket/industrial_distribution.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b title="Industrial Distribution &amp; Capital Goods"><span class="l-en">Industrial Distribution &amp; Capital Goods</span><span class="l-zh">工业分销与资本品</span></b><span class="ai-lens" data-tip-en="Leadership LENS — descriptive (cross-sectional momentum rank-IC ≈ 0 on the clean backtest); a focus aid, not a return forecast" data-tip-zh="领先度透镜 — 描述性（横截面动量 rank-IC≈0），聚焦工具而非收益预测">≈</span></a>
         
         
-          <a class="actitem ai-theme" href="basket/uranium_miners.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b><span class="l-en">Uranium & Nuclear Fuel</span><span class="l-zh">铀矿与核燃料</span></b><span class="ai-val" data-tip-en="Backtested risk side — rides the absolute-trend / fading-deteriorating drawdown gate, the one multi-decade-measured edge" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">✓</span></a>
+          <a class="actitem ai-theme" href="basket/uranium_miners.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b title="Uranium &amp; Nuclear Fuel"><span class="l-en">Uranium &amp; Nuclear Fuel</span><span class="l-zh">铀矿与核燃料</span></b><span class="ai-val" data-tip-en="Backtested risk side — rides the absolute-trend / fading-deteriorating drawdown gate, the one multi-decade-measured edge" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">✓</span></a>
         
-          <a class="actitem ai-theme" href="basket/nuclear_power.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b><span class="l-en">Nuclear & SMR Power</span><span class="l-zh">核电与小型模块化反应堆</span></b><span class="ai-val" data-tip-en="Backtested risk side — rides the absolute-trend / fading-deteriorating drawdown gate, the one multi-decade-measured edge" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">✓</span></a>
+          <a class="actitem ai-theme" href="basket/nuclear_power.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b title="Nuclear &amp; SMR Power"><span class="l-en">Nuclear &amp; SMR Power</span><span class="l-zh">核电与小型模块化反应堆</span></b><span class="ai-val" data-tip-en="Backtested risk side — rides the absolute-trend / fading-deteriorating drawdown gate, the one multi-decade-measured edge" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">✓</span></a>
         
-          <a class="actitem ai-theme" href="basket/critical_minerals.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b><span class="l-en">Critical Minerals & Rare Earths</span><span class="l-zh">关键矿产与稀土</span></b><span class="ai-val" data-tip-en="Backtested risk side — rides the absolute-trend / fading-deteriorating drawdown gate, the one multi-decade-measured edge" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">✓</span></a>
+          <a class="actitem ai-theme" href="basket/critical_minerals.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b title="Critical Minerals &amp; Rare Earths"><span class="l-en">Critical Minerals &amp; Rare Earths</span><span class="l-zh">关键矿产与稀土</span></b><span class="ai-val" data-tip-en="Backtested risk side — rides the absolute-trend / fading-deteriorating drawdown gate, the one multi-decade-measured edge" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">✓</span></a>
         
-          <a class="actitem ai-theme" href="basket/ai_neoclouds.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b><span class="l-en">AI Neoclouds & HPC Hosting</span><span class="l-zh">AI 新云与高性能算力托管</span></b><span class="ai-val" data-tip-en="Backtested risk side — rides the absolute-trend / fading-deteriorating drawdown gate, the one multi-decade-measured edge" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">✓</span></a>
+          <a class="actitem ai-theme" href="basket/ai_neoclouds.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b title="AI Neoclouds &amp; HPC Hosting"><span class="l-en">AI Neoclouds &amp; HPC Hosting</span><span class="l-zh">AI 新云与高性能算力托管</span></b><span class="ai-val" data-tip-en="Backtested risk side — rides the absolute-trend / fading-deteriorating drawdown gate, the one multi-decade-measured edge" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">✓</span></a>
         
-          <a class="actitem ai-theme" href="basket/data_center_power.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b><span class="l-en">Data-Center Power & Cooling</span><span class="l-zh">数据中心电力与散热</span></b><span class="ai-val" data-tip-en="Backtested risk side — rides the absolute-trend / fading-deteriorating drawdown gate, the one multi-decade-measured edge" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">✓</span></a>
+          <a class="actitem ai-theme" href="basket/data_center_power.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b title="Data-Center Power &amp; Cooling"><span class="l-en">Data-Center Power &amp; Cooling</span><span class="l-zh">数据中心电力与散热</span></b><span class="ai-val" data-tip-en="Backtested risk side — rides the absolute-trend / fading-deteriorating drawdown gate, the one multi-decade-measured edge" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">✓</span></a>
         
-          <a class="actitem ai-theme" href="basket/quantum_computing.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b><span class="l-en">Quantum Computing</span><span class="l-zh">量子计算</span></b><span class="ai-val" data-tip-en="Backtested risk side — rides the absolute-trend / fading-deteriorating drawdown gate, the one multi-decade-measured edge" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">✓</span></a>
+          <a class="actitem ai-theme" href="basket/quantum_computing.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b title="Quantum Computing"><span class="l-en">Quantum Computing</span><span class="l-zh">量子计算</span></b><span class="ai-val" data-tip-en="Backtested risk side — rides the absolute-trend / fading-deteriorating drawdown gate, the one multi-decade-measured edge" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">✓</span></a>
         
-          <a class="actitem ai-theme" href="basket/energy_complex.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b><span class="l-en">US Energy Complex</span><span class="l-zh">美国能源综合</span></b><span class="ai-val" data-tip-en="Backtested risk side — rides the absolute-trend / fading-deteriorating drawdown gate, the one multi-decade-measured edge" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">✓</span></a>
+          <a class="actitem ai-theme" href="basket/energy_complex.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b title="US Energy Complex"><span class="l-en">US Energy Complex</span><span class="l-zh">美国能源综合</span></b><span class="ai-val" data-tip-en="Backtested risk side — rides the absolute-trend / fading-deteriorating drawdown gate, the one multi-decade-measured edge" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">✓</span></a>
         
-          <a class="actitem ai-theme" href="basket/crypto.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b><span class="l-en">Crypto & Digital Assets</span><span class="l-zh">加密与数字资产</span></b><span class="ai-val" data-tip-en="Backtested risk side — rides the absolute-trend / fading-deteriorating drawdown gate, the one multi-decade-measured edge" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">✓</span></a>
+          <a class="actitem ai-theme" href="basket/crypto.html"><span class="ai-bdg" data-tip-en="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector" data-tip-zh="叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b title="Crypto &amp; Digital Assets"><span class="l-en">Crypto &amp; Digital Assets</span><span class="l-zh">加密与数字资产</span></b><span class="ai-val" data-tip-en="Backtested risk side — rides the absolute-trend / fading-deteriorating drawdown gate, the one multi-decade-measured edge" data-tip-zh="经回测的风险侧 — 绝对趋势／衰退-恶化回撤门槛">✓</span></a>
         
-          <a class="actitem" href="basket/us_sector_comm.html"><span class="ai-bdg" data-tip-en="GICS sector — cap-weighted cycle timing read" data-tip-zh="GICS板块 — 市值加权周期判读">🏛</span><b><span class="l-en">Communications</span><span class="l-zh">通讯</span></b> <span class="muted"><span class="l-en">avoid</span><span class="l-zh">回避</span></span></a>
+          <a class="actitem" href="basket/us_sector_comm.html"><span class="ai-bdg" data-tip-en="GICS sector — cap-weighted cycle timing read" data-tip-zh="GICS板块 — 市值加权周期判读">🏛</span><b title="Communications"><span class="l-en">Communications</span><span class="l-zh">通讯</span></b> <span class="muted"><span class="l-en">avoid</span><span class="l-zh">回避</span></span></a>
         
-          <a class="actitem" href="basket/us_sector_energy.html"><span class="ai-bdg" data-tip-en="GICS sector — cap-weighted cycle timing read" data-tip-zh="GICS板块 — 市值加权周期判读">🏛</span><b><span class="l-en">Energy</span><span class="l-zh">能源</span></b> <span class="muted"><span class="l-en">avoid</span><span class="l-zh">回避</span></span></a>
+          <a class="actitem" href="basket/us_sector_energy.html"><span class="ai-bdg" data-tip-en="GICS sector — cap-weighted cycle timing read" data-tip-zh="GICS板块 — 市值加权周期判读">🏛</span><b title="Energy"><span class="l-en">Energy</span><span class="l-zh">能源</span></b> <span class="muted"><span class="l-en">avoid</span><span class="l-zh">回避</span></span></a>
         
-          <a class="actitem" href="basket/us_sector_discretionary.html"><span class="ai-bdg" data-tip-en="GICS sector — cap-weighted cycle timing read" data-tip-zh="GICS板块 — 市值加权周期判读">🏛</span><b><span class="l-en">Consumer Discretionary</span><span class="l-zh">可选消费</span></b> <span class="muted"><span class="l-en">avoid</span><span class="l-zh">回避</span></span></a>
+          <a class="actitem" href="basket/us_sector_discretionary.html"><span class="ai-bdg" data-tip-en="GICS sector — cap-weighted cycle timing read" data-tip-zh="GICS板块 — 市值加权周期判读">🏛</span><b title="Consumer Discretionary"><span class="l-en">Cons Disc</span><span class="l-zh">可选消费</span></b> <span class="muted"><span class="l-en">avoid</span><span class="l-zh">回避</span></span></a>
         
         </div>
         
@@ -1911,59 +1919,15 @@
       </div>
       
       
-      <div class="nb-disp disp-neutral" data-tip-en="Cross-sectional dispersion regime — the read for WHEN stock-selection tends to pay. When names fan out (high dispersion / low pairwise correlation) selection historically earns more; a macro-driven tape (low dispersion / high correlation) mutes it. DISPLAY-ONLY: the state does NOT move the book's gross (live ×1.0). The suggested tilt (shadow ×1.0) is a hand-picked prior with no measured edge on this universe and would gross UP into high-VIX stress — clamped off until a survivorship-clean selection-IR edge is measured (US_BOARD_MEASUREMENT §Study 3). Dispersion percentile 0.64 · avg pairwise corr 0.17." data-tip-zh="横截面离散度状态 — 仅供参考，不影响仓位。">
-        <span class="disp-ic">⚖️</span>
-        <b><span class="l-en">Mixed selection backdrop</span><span class="l-zh">选股环境中性</span></b>
-        <span class="disp-meta"><span class="l-en">context</span><span class="l-zh">参考</span> · <span class="l-en">avg corr</span><span class="l-zh">平均相关</span> 0.17 · <span class="disp-shadow" title="shadow prior — not applied to sizing"><span class="l-en">suggested</span><span class="l-zh">建议倾向</span> ×1.0</span></span>
-      </div>
-      
-      
-      
-      
-      <div class="nb-conc muted" data-tip-en="Concentration note — a soft per-sector cap (5 names) is applied to prevent bottoming-alignment from flooding the board with one washed-out sector. Overflow names appear in the watch strip. Effective bets ≈ the number of distinct sectors." data-tip-zh="集中度说明——应用软性单板块上限（5个标的），防止筑底共振选出同一行业大量名称。超出上限的标的出现在观察名单中。有效押注 ≈ 不同行业数量。">
-        <span class="l-en">Board</span><span class="l-zh">榜单</span>: 19 <span class="l-en">names across</span><span class="l-zh">个标的分布在</span> 7 <span class="l-en">sectors</span><span class="l-zh">个行业</span> — <span class="l-en">effective bets ≈</span><span class="l-zh">有效押注 ≈</span> 7. <span class="l-en">Top-2 sectors:</span><span class="l-zh">前两大行业：</span> 42% <span class="l-en">of board.</span><span class="l-zh">的榜单。</span>
-      </div>
-      
-      
       
       <div class="nb-donor donor-intact" data-tip-en="Rotation: the leading GICS sector (Industrials, top-126d equal-weight return across 11 sectors) is intact — no fresh weekly RSI-MACD bearish cross in the last 4 completed weeks and its 20-day EW return is positive. The rotation leader is still running. DISPLAY-ONLY: context only, not a signal. · intact · Industrials · as of 2026-07-02" data-tip-zh="轮动：领涨GICS板块（Industrials，全市场126日等权收益最高，共11个板块）运行稳健——过去4个已完结周内无周线RSI-MACD看跌交叉，且20日等权收益为正。轮动领涨板块仍在运行。仅供参考：非交易信号。 · intact · Industrials · as of 2026-07-02">
         <span class="donor-ic">✓</span>
-        <b><span class="l-en">Rotation: leader intact (Industrials)</span><span class="l-zh">轮动：领先板块稳健（Industrials）</span></b>
-        <span class="donor-meta muted"><span class="l-en">display-only · G6a context</span><span class="l-zh">仅供参考 · G6a 情境</span></span>
-      </div>
-      
-      
-      
-      <div class="lane-counts-row">
-        
-        <span class="lc-pill lc-continuation"
-              data-tip-en="P2.4 board count: 12 continuation rows (buy+watch combined)"
-              data-tip-zh="P2.4 看板数量：12 个延续行（买入+观察合计）">
-          <span class="l-en">Continuation: 12</span><span class="l-zh">延续: 12</span>
-        </span>
-        
-        <span class="lc-pill lc-bottoming"
-              data-tip-en="P2.4 board count: 7 bottoming rows (buy+watch combined)"
-              data-tip-zh="P2.4 看板数量：7 个筑底行（买入+观察合计）">
-          <span class="l-en">Bottoming: 7</span><span class="l-zh">筑底: 7</span>
-        </span>
-        
-        <span class="lc-pill lc-watch"
-              data-tip-en="P2.4 board count: 24 watch rows (buy+watch combined)"
-              data-tip-zh="P2.4 看板数量：24 个观察行（买入+观察合计）">
-          <span class="l-en">Watch: 24</span><span class="l-zh">观察: 24</span>
-        </span>
-        
+        <b><span class="l-en">Sector leader: Industrials — still going strong</span><span class="l-zh">领涨板块：Industrials — 依然强势</span></b>
       </div>
       
       
       
       
-      
-      <div class="nb-eb-note nb-eb-stale"
-        data-tip-en="W1.5 earnings calendar is stale (last updated >10 trading days ago). Earnings-blackout hygiene gate is inactive — no setups are suppressed."
-        data-tip-zh="W1.5 财报日历数据陈旧（超过10个交易日未更新）。财报屏蔽门控未激活——未屏蔽任何形态。"
-      ><span class="l-en">📅 Earnings calendar stale — blackout gate inactive</span><span class="l-zh">📅 财报日历陈旧——屏蔽门控未激活</span></div>
       
       
       <div class="nbgrid" data-showmore-rows="3">
@@ -2033,6 +1997,12 @@
             
             
             
+            
+            
+            
+            
+            
+            <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (2)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">2</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row"><span class="l-en">accounting warn</span><span class="l-zh">财务质量警示</span></span><span class="cau-row cau-unval"><span class="l-en">Options positioning — deep long-gamma (+5.1% over the flip) — dealers pin & fade breakouts (unvalidated · not in score)</span><span class="l-zh">期权仓位 — 深度多头 Gamma（高于翻转位 +5.1%）— 做市商钉价、压制突破（未验证 · 不计入评分）</span></span></div></div>
           </div>
           
           
@@ -2062,12 +2032,6 @@
             
           </div>
           
-          
-          
-          
-          
-          
-          <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (2)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">2</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row"><span class="l-en">accounting warn</span><span class="l-zh">财务质量警示</span></span><span class="cau-row cau-unval"><span class="l-en">Options positioning — deep long-gamma (+5.3% over the flip) — dealers pin & fade breakouts (unvalidated · not in score)</span><span class="l-zh">期权仓位 — 深度多头 Gamma（高于翻转位 +5.3%）— 做市商钉价、压制突破（未验证 · 不计入评分）</span></span></div></div>
           
           <button class="nb-more-btn" type="button" role="button" aria-expanded="false"
                   aria-label="Show details">
@@ -2227,6 +2191,12 @@
                   data-tip-en="Already moving — vol-squeeze EXPANSION. The entry window may have already fired; don't chase this entry above the buy zone. Context only — the setup is still valid if it consolidates."
                   data-tip-zh="已在异动——波动EXPANSION。入场窗口可能已触发，不要在买入区上方追高。仅为背景——若标的整固，形态仍有效。">💥 <span class="l-en">Moving — don't chase</span><span class="l-zh">已异动，勿追</span></span>
             
+            
+            
+            
+            
+            
+            
           </div>
           
           
@@ -2255,12 +2225,6 @@
             </div>
             
           </div>
-          
-          
-          
-          
-          
-          
           
           
           <button class="nb-more-btn" type="button" role="button" aria-expanded="false"
@@ -2418,6 +2382,12 @@
                   data-tip-en="Already moving — vol-squeeze EXPANSION. The entry window may have already fired; don't chase this entry above the buy zone. Context only — the setup is still valid if it consolidates."
                   data-tip-zh="已在异动——波动EXPANSION。入场窗口可能已触发，不要在买入区上方追高。仅为背景——若标的整固，形态仍有效。">💥 <span class="l-en">Moving — don't chase</span><span class="l-zh">已异动，勿追</span></span>
             
+            
+            
+            
+            
+            
+            <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (1)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">1</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row cau-unval"><span class="l-en">Options positioning — deep long-gamma (+3.0% over the flip) — dealers pin & fade breakouts (unvalidated · not in score)</span><span class="l-zh">期权仓位 — 深度多头 Gamma（高于翻转位 +3.0%）— 做市商钉价、压制突破（未验证 · 不计入评分）</span></span></div></div>
           </div>
           
           
@@ -2447,12 +2417,6 @@
             
           </div>
           
-          
-          
-          
-          
-          
-          <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (1)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">1</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row cau-unval"><span class="l-en">Options positioning — deep long-gamma (+3.1% over the flip) — dealers pin & fade breakouts (unvalidated · not in score)</span><span class="l-zh">期权仓位 — 深度多头 Gamma（高于翻转位 +3.1%）— 做市商钉价、压制突破（未验证 · 不计入评分）</span></span></div></div>
           
           <button class="nb-more-btn" type="button" role="button" aria-expanded="false"
                   aria-label="Show details">
@@ -2614,6 +2578,12 @@
             
             
             
+            
+            
+            
+            
+            
+            
           </div>
           
           
@@ -2642,12 +2612,6 @@
             </div>
             
           </div>
-          
-          
-          
-          
-          
-          
           
           
           <button class="nb-more-btn" type="button" role="button" aria-expanded="false"
@@ -2798,6 +2762,12 @@
                   data-tip-en="Already moving — vol-squeeze EXPANSION. The entry window may have already fired; don't chase this entry above the buy zone. Context only — the setup is still valid if it consolidates."
                   data-tip-zh="已在异动——波动EXPANSION。入场窗口可能已触发，不要在买入区上方追高。仅为背景——若标的整固，形态仍有效。">💥 <span class="l-en">Moving — don't chase</span><span class="l-zh">已异动，勿追</span></span>
             
+            
+            
+            
+            
+            
+            
           </div>
           
           
@@ -2826,12 +2796,6 @@
             </div>
             
           </div>
-          
-          
-          
-          
-          
-          
           
           
           <button class="nb-more-btn" type="button" role="button" aria-expanded="false"
@@ -2980,6 +2944,12 @@
             
             
             
+            
+            
+            
+            
+            
+            
           </div>
           
           
@@ -3008,12 +2978,6 @@
             </div>
             
           </div>
-          
-          
-          
-          
-          
-          
           
           
           <button class="nb-more-btn" type="button" role="button" aria-expanded="false"
@@ -3164,6 +3128,12 @@
                   data-tip-en="Already moving — vol-squeeze EXPANSION. The entry window may have already fired; don't chase this entry above the buy zone. Context only — the setup is still valid if it consolidates."
                   data-tip-zh="已在异动——波动EXPANSION。入场窗口可能已触发，不要在买入区上方追高。仅为背景——若标的整固，形态仍有效。">💥 <span class="l-en">Moving — don't chase</span><span class="l-zh">已异动，勿追</span></span>
             
+            
+            
+            
+            
+            
+            
           </div>
           
           
@@ -3192,12 +3162,6 @@
             </div>
             
           </div>
-          
-          
-          
-          
-          
-          
           
           
           <button class="nb-more-btn" type="button" role="button" aria-expanded="false"
@@ -3364,6 +3328,12 @@
                   data-tip-en="Already moving — vol-squeeze EXPANSION. The entry window may have already fired; don't chase this entry above the buy zone. Context only — the setup is still valid if it consolidates."
                   data-tip-zh="已在异动——波动EXPANSION。入场窗口可能已触发，不要在买入区上方追高。仅为背景——若标的整固，形态仍有效。">💥 <span class="l-en">Moving — don't chase</span><span class="l-zh">已异动，勿追</span></span>
             
+            
+            
+            
+            
+            
+            
           </div>
           
           
@@ -3392,12 +3362,6 @@
             </div>
             
           </div>
-          
-          
-          
-          
-          
-          
           
           
           <button class="nb-more-btn" type="button" role="button" aria-expanded="false"
@@ -3564,6 +3528,12 @@
             
             
             
+            
+            
+            
+            
+            
+            <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (2)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">2</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row"><span class="l-en">Narrative basket (Crypto & Digital Assets) is deteriorating — validated risk gate: trim / size down.</span><span class="l-zh">所属叙事篮子（加密与数字资产）正在恶化 — 已验证风险门槛：减仓。</span></span><span class="cau-row cau-unval"><span class="l-en">Options positioning — deep long-gamma (+6.3% over the flip) — dealers pin & fade breakouts (unvalidated · not in score)</span><span class="l-zh">期权仓位 — 深度多头 Gamma（高于翻转位 +6.3%）— 做市商钉价、压制突破（未验证 · 不计入评分）</span></span></div></div>
           </div>
           
           
@@ -3593,12 +3563,6 @@
             
           </div>
           
-          
-          
-          
-          
-          
-          <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (2)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">2</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row"><span class="l-en">Narrative basket (Crypto & Digital Assets) is deteriorating — validated risk gate: trim / size down.</span><span class="l-zh">所属叙事篮子（加密与数字资产）正在恶化 — 已验证风险门槛：减仓。</span></span><span class="cau-row cau-unval"><span class="l-en">Options positioning — deep long-gamma (+6.7% over the flip) — dealers pin & fade breakouts (unvalidated · not in score)</span><span class="l-zh">期权仓位 — 深度多头 Gamma（高于翻转位 +6.7%）— 做市商钉价、压制突破（未验证 · 不计入评分）</span></span></div></div>
           
           <button class="nb-more-btn" type="button" role="button" aria-expanded="false"
                   aria-label="Show details">
@@ -3747,6 +3711,12 @@
             
             
             
+            
+            
+            
+            
+            
+            
           </div>
           
           
@@ -3775,12 +3745,6 @@
             </div>
             
           </div>
-          
-          
-          
-          
-          
-          
           
           
           <button class="nb-more-btn" type="button" role="button" aria-expanded="false"
@@ -3931,6 +3895,12 @@
             
             
             
+            
+            
+            
+            
+            
+            
           </div>
           
           
@@ -3959,12 +3929,6 @@
             </div>
             
           </div>
-          
-          
-          
-          
-          
-          
           
           
           <button class="nb-more-btn" type="button" role="button" aria-expanded="false"
@@ -4115,6 +4079,12 @@
             
             
             
+            
+            
+            
+            
+            
+            
           </div>
           
           
@@ -4143,12 +4113,6 @@
             </div>
             
           </div>
-          
-          
-          
-          
-          
-          
           
           
           <button class="nb-more-btn" type="button" role="button" aria-expanded="false"
@@ -4300,6 +4264,12 @@
             
             
             
+            
+            
+            
+            
+            
+            <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (1)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">1</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row cau-unval"><span class="l-en">Options positioning — deep long-gamma (+6.3% over the flip) — dealers pin & fade breakouts (unvalidated · not in score)</span><span class="l-zh">期权仓位 — 深度多头 Gamma（高于翻转位 +6.3%）— 做市商钉价、压制突破（未验证 · 不计入评分）</span></span></div></div>
           </div>
           
           
@@ -4329,12 +4299,6 @@
             
           </div>
           
-          
-          
-          
-          
-          
-          <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (1)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">1</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row cau-unval"><span class="l-en">Options positioning — deep long-gamma (+6.5% over the flip) — dealers pin & fade breakouts (unvalidated · not in score)</span><span class="l-zh">期权仓位 — 深度多头 Gamma（高于翻转位 +6.5%）— 做市商钉价、压制突破（未验证 · 不计入评分）</span></span></div></div>
           
           <button class="nb-more-btn" type="button" role="button" aria-expanded="false"
                   aria-label="Show details">
@@ -4488,6 +4452,12 @@
                   data-tip-en="Already moving — vol-squeeze EXPANSION. The entry window may have already fired; don't chase this entry above the buy zone. Context only — the setup is still valid if it consolidates."
                   data-tip-zh="已在异动——波动EXPANSION。入场窗口可能已触发，不要在买入区上方追高。仅为背景——若标的整固，形态仍有效。">💥 <span class="l-en">Moving — don't chase</span><span class="l-zh">已异动，勿追</span></span>
             
+            
+            
+            
+            
+            
+            
           </div>
           
           
@@ -4516,12 +4486,6 @@
             </div>
             
           </div>
-          
-          
-          
-          
-          
-          
           
           
           <button class="nb-more-btn" type="button" role="button" aria-expanded="false"
@@ -4680,6 +4644,12 @@
             
             
             
+            
+            
+            
+            
+            
+            
           </div>
           
           
@@ -4708,12 +4678,6 @@
             </div>
             
           </div>
-          
-          
-          
-          
-          
-          
           
           
           <button class="nb-more-btn" type="button" role="button" aria-expanded="false"
@@ -4868,6 +4832,12 @@
                   data-tip-en="Already moving — vol-squeeze EXPANSION. The entry window may have already fired; don't chase this entry above the buy zone. Context only — the setup is still valid if it consolidates."
                   data-tip-zh="已在异动——波动EXPANSION。入场窗口可能已触发，不要在买入区上方追高。仅为背景——若标的整固，形态仍有效。">💥 <span class="l-en">Moving — don't chase</span><span class="l-zh">已异动，勿追</span></span>
             
+            
+            
+            
+            
+            
+            <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (1)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">1</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row"><span class="l-en">Narrative basket (Communication Services (Equal-Weight)) is below its long-term trend — validated drawdown gate: size down (the AI-buildout tape is rewarding leaders, not this one).</span><span class="l-zh">所属叙事篮子（通信服务（等权））已跌破长期趋势 — 已验证的回撤门槛：减小仓位。</span></span></div></div>
           </div>
           
           
@@ -4897,12 +4867,6 @@
             
           </div>
           
-          
-          
-          
-          
-          
-          <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (1)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">1</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row"><span class="l-en">Narrative basket (Communication Services (Equal-Weight)) is below its long-term trend — validated drawdown gate: size down (the AI-buildout tape is rewarding leaders, not this one).</span><span class="l-zh">所属叙事篮子（通信服务（等权））已跌破长期趋势 — 已验证的回撤门槛：减小仓位。</span></span></div></div>
           
           <button class="nb-more-btn" type="button" role="button" aria-expanded="false"
                   aria-label="Show details">
@@ -5075,6 +5039,12 @@
                   data-tip-en="Already moving — vol-squeeze EXPANSION. The entry window may have already fired; don't chase this entry above the buy zone. Context only — the setup is still valid if it consolidates."
                   data-tip-zh="已在异动——波动EXPANSION。入场窗口可能已触发，不要在买入区上方追高。仅为背景——若标的整固，形态仍有效。">💥 <span class="l-en">Moving — don't chase</span><span class="l-zh">已异动，勿追</span></span>
             
+            
+            
+            
+            
+            
+            <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (1)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">1</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row"><span class="l-en">accounting warn</span><span class="l-zh">财务质量警示</span></span></div></div>
           </div>
           
           
@@ -5104,12 +5074,6 @@
             
           </div>
           
-          
-          
-          
-          
-          
-          <div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes (1)"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">1</span></button><div class="nb-cau-pop" role="tooltip"><span class="cau-row"><span class="l-en">accounting warn</span><span class="l-zh">财务质量警示</span></span></div></div>
           
           <button class="nb-more-btn" type="button" role="button" aria-expanded="false"
                   aria-label="Show details">
@@ -5266,6 +5230,12 @@
             
             
             
+            
+            
+            
+            
+            
+            
           </div>
           
           
@@ -5294,12 +5264,6 @@
             </div>
             
           </div>
-          
-          
-          
-          
-          
-          
           
           
           <button class="nb-more-btn" type="button" role="button" aria-expanded="false"
@@ -5463,6 +5427,12 @@
                   data-tip-en="Already moving — vol-squeeze EXPANSION. The entry window may have already fired; don't chase this entry above the buy zone. Context only — the setup is still valid if it consolidates."
                   data-tip-zh="已在异动——波动EXPANSION。入场窗口可能已触发，不要在买入区上方追高。仅为背景——若标的整固，形态仍有效。">💥 <span class="l-en">Moving — don't chase</span><span class="l-zh">已异动，勿追</span></span>
             
+            
+            
+            
+            
+            
+            
           </div>
           
           
@@ -5491,12 +5461,6 @@
             </div>
             
           </div>
-          
-          
-          
-          
-          
-          
           
           
           <button class="nb-more-btn" type="button" role="button" aria-expanded="false"
@@ -5613,10 +5577,22 @@
       </div>
       
       
-      <div class="board-outcomes">
+      
+      
+      
+      
+        
+        
+        
+      
+      
+        
+        
+      
+      <button type="button" id="board-track-toggle" class="board-track-toggle" aria-controls="board-track-record" aria-expanded="false" onclick="var _p=document.getElementById('board-track-record'); if(_p){var _h=_p.hasAttribute('hidden'); if(_h){_p.removeAttribute('hidden');}else{_p.setAttribute('hidden','');} this.setAttribute('aria-expanded', _h?'true':'false'); this.classList.toggle('is-open', _h);}"><span class="l-en">📊 Track record: 73% win · +2.3% avg</span><span class="l-zh">📊 往绩：胜率 73% · 平均 +2.3%</span></button>
+      <div class="board-outcomes" id="board-track-record" hidden>
         <div class="board-outcomes-hdr">
-          <span class="board-outcomes-title"><span class="l-en">Recently surfaced → outcome</span><span class="l-zh">近期上榜 → 结果</span></span>
-          
+          <span class="board-outcomes-title"><span class="l-en">Track record — names that recently left the buy board</span><span class="l-zh">往绩 — 近期离开买入榜的标的</span></span>
           <span class="board-outcomes-sub"><span class="l-en">names that left the buy board in the last 21 sessions</span><span class="l-zh">21个交易日内离开买入榜的标的</span> · <span class="l-en">as of</span><span class="l-zh">截至</span> 2026-07-02 · <span class="az-up">11 <span class="l-en">running</span><span class="l-zh">上涨</span></span> · <span class="az-dn">4 <span class="l-en">stopped</span><span class="l-zh">止损</span></span></span>
         </div>
         <table class="outcomes-tbl">
@@ -5907,11 +5883,14 @@
 
 
   
-  <!-- ===================== US EQUITY SIZE & STYLE ===================== -->
-  <div class="panel span6" id="size-style">
-    <h2><span class="l-en">US equity — size &amp; style</span><span class="l-zh">美股 — 规模与风格</span>
-      <span class="help">?<span class="tip"><span class="l-en">Is the advance broad or narrow? Small caps (Russell 2000) and mid caps measured against the large-cap S&P 500: rising = participation broadening (risk-on); falling = a narrow, mega-cap-led tape. Growth vs value is the style rotation — growth tends to lead in disinflation and slowdowns, value in reflation. Direction over the last 20 trading days; size ratios are coloured by risk-on direction, growth/value is left neutral (no inherently good side).</span><span class="l-zh">上涨是广泛还是狭窄？小盘（罗素2000）与中盘对大盘标普500衡量：上行 = 参与度扩散（风险偏好）；下行 = 狭窄、由超大盘主导的盘面。成长对价值是风格轮动 — 成长在去通胀与放缓中领先，价值在再通胀中领先。看过去20个交易日的方向；规模比率按风险偏好方向着色，成长／价值保持中性（无天然的好坏方向）。</span></span></span>
+  <!-- ===================== US EQUITY SCOREBOARD (size + breadth + internals) ===================== -->
+  <div class="panel span12" id="equity-scoreboard">
+    <span id="size-style"></span><span id="breadth"></span><span id="advanced-breadth"></span>
+    <h2><span class="l-en">US equity scoreboard — size, breadth &amp; internals</span><span class="l-zh">美股计分板 — 规模、广度与内部结构</span>
+      <span class="help">?<span class="tip"><span class="l-en">Three reads of how broad the US equity advance is, in one board. (1) SIZE & STYLE — small caps (Russell 2000) and mid caps measured against the large-cap S&P 500 (rising = participation broadening/risk-on, falling = a narrow mega-cap-led tape) plus the growth-vs-value style rotation; direction over the last 20 trading days, size ratios coloured by risk-on direction, growth/value left neutral. (2) MARKET BREADTH — across the full S&P Composite 1500 (large = S&P 500, mid = S&P 400, small = S&P 600): how many stocks are advancing, how many hold above their 50- and 200-day lines, and net new 52-week highs; the % above the 50-day line also feeds the regime model's growth axis, so this is the same breadth the model reads, just made legible. (3) MARKET INTERNALS — the classic desk internals beyond the %-above-MA snapshot: the McClellan Oscillator & Summation Index (breadth momentum), the Zweig Breadth Thrust gauge, the High-Low Index, whether the advance/decline line confirms price, and where participation sits in its own multi-decade history; computed on the DEEP S&P 500 breadth series (1962-). Internals are SECOND-DERIVATIVE, display-only reads — coincident with price by construction, they explain the tape, they do not forecast it (survivorship caveat: the deep series is rebuilt from today's members, so percentile context is over the mature-universe window only).</span><span class="l-zh">把美股上涨的广度用三种读数汇于一板。(1) 规模与风格 —— 小盘（罗素2000）与中盘对大盘标普500衡量（上行 = 参与度扩散／风险偏好，下行 = 狭窄、由超大盘主导的盘面），并含成长对价值的风格轮动；看过去20个交易日的方向，规模比率按风险偏好方向着色，成长／价值保持中性。(2) 市场广度 —— 覆盖整个标普综合1500（大盘=标普500、中盘=标普400、小盘=标普600）：多少股票上涨、多少守在其50日与200日均线之上，以及净创52周新高；高于50日线的占比也进入周期模型的增长轴，与模型读取的是同一广度，只是更直观。(3) 市场内部结构 —— 超越「高于均线占比」快照的经典桌面内部指标：麦克莱伦振荡指标与累积指标（广度动量）、兹威格广度脉冲、新高—新低指数、腾落线是否确认价格，以及当前参与度在其数十年历史中的分位；基于标普500深度广度序列（1962年起）计算。内部结构是二阶、仅作展示的读数 —— 与价格同步，用于解释盘面而非预测（幸存者偏差提示：深度序列以当前成分股重建，故分位背景仅取成熟样本区间）。</span></span></span>
     </h2>
+
+    <div class="sb-section-lbl"><span class="l-en">Size &amp; style</span><span class="l-zh">规模与风格</span></div>
     <table>
       <tr><th class="l"><span class="l-en">lens</span><span class="l-zh">维度</span></th><th><span class="l-en">past month</span><span class="l-zh">过去一月</span></th><th class="l"><span class="l-en">what it's saying</span><span class="l-zh">它在说什么</span></th></tr>
       
@@ -5934,23 +5913,9 @@
       </tr>
       
     </table>
-    
-    <p class="muted" style="margin:10px 2px 0; font-size:13px; line-height:1.45">
-      <span class="l-en">Small-cap participation</span><span class="l-zh">小盘参与度</span>:
-      <b>71%</b>
-      <span class="l-en">of S&P 600 small caps are above their 50-day line, vs</span><span class="l-zh">的标普600小盘股高于其50日均线，对比</span>
-      <b>67%</b>
-      <span class="l-en">for the S&P 500</span><span class="l-zh">的标普500</span> — <span class="l-en">small- and large-cap participation roughly in line</span><span class="l-zh">小盘与大盘参与度大致一致</span>.
-    </p>
-    
-  </div>
 
-  <!-- ===================== MARKET BREADTH ===================== -->
-  
-  <div class="panel span6" id="breadth">
-    <h2><span class="l-en">Market breadth — who is participating</span><span class="l-zh">市场广度 — 谁在参与</span>
-      <span class="help">?<span class="tip"><span class="l-en">Breadth across the full S&P Composite 1500 (large = S&P 500, mid = S&P 400, small = S&P 600): how many stocks are advancing, how many hold above their 50- and 200-day lines, and net new 52-week highs. A strong index riding on a shrinking number of stocks is fragile — broad participation confirms a move, thinning breadth is an early warning. The % above the 50-day line also feeds the regime model's growth axis, so this is the same breadth the model reads, just made legible.</span><span class="l-zh">覆盖整个标普综合 1500（大盘 = 标普500、中盘 = 标普400、小盘 = 标普600）的广度：多少股票上涨、多少守在其 50 日与 200 日均线之上，以及净创 52 周新高。指数走强却只靠越来越少的股票支撑则脆弱 — 广泛参与确认走势，广度变薄是早期预警。高于 50 日线的占比也进入周期模型的增长轴，因此这与模型读取的是同一广度，只是更直观。</span></span></span>
-    </h2>
+    
+    <div class="sb-section-lbl"><span class="l-en">Market breadth</span><span class="l-zh">市场广度</span></div>
     <p class="pos" style="margin:0 2px 10px; font-size:12.5px; line-height:1.5">
       <span class="l-en">Participation looks</span><span class="l-zh">参与度看起来</span> <b><span class="l-en">broad</span><span class="l-zh">广泛</span></b> —
       <b>69%</b> <span class="l-en">of the 1,500 above their 50-day</span><span class="l-zh">的 1500 只高于 50 日均线</span>,
@@ -6003,16 +5968,11 @@
       
     </table>
     <p class="muted" style="margin:8px 2px 0; font-size:11px"><span class="l-en">The advance is well-supported across the full 1,500</span><span class="l-zh">上涨在整个 1500 只股票中获得良好支撑</span> · <span class="l-en">as of</span><span class="l-zh">截至</span> 2026-07-02</p>
-  </div>
-  
+    
 
-  <!-- ===================== ADVANCED BREADTH TRACKER ===================== -->
-  
-  
-  <div class="panel span12" id="advanced-breadth">
-    <h2><span class="l-en">Advanced breadth — the market internals under the tape</span><span class="l-zh">高级广度 — 盘面之下的市场内部结构</span>
-      <span class="help">?<span class="tip"><span class="l-en">The classic 'market internals' a desk watches beyond today's %-above-MA snapshot: the McClellan Oscillator & Summation Index (breadth momentum), the Zweig Breadth Thrust gauge, the High-Low Index, whether the advance/decline line confirms price, and where participation sits in its own multi-decade history. Computed on the DEEP S&P 500 breadth series (1962-). These are SECOND-DERIVATIVE reads of the same breadth — they describe the QUALITY of the move (broad vs narrow, accelerating vs rolling over). Display-only: breadth internals are a function of price, so they're coincident with it by construction — this explains the tape, it does not forecast it. Survivorship caveat: the deep series is rebuilt from today's members, so the percentile context is taken over the mature-universe window only.</span><span class="l-zh">盘面之下、超越「高于均线占比」快照的经典「市场内部结构」：麦克莱伦振荡指标与累积指标（广度动量）、兹威格广度脉冲、新高—新低指数、腾落线是否确认价格，以及当前参与度在其数十年历史中的分位。基于标普500深度广度序列（1962年起）计算。这些是同一广度的二阶读数 — 描述走势的「质量」（广泛或狭窄、加速或回落）。仅作展示：内部结构是价格的函数、与价格同步，用于解释盘面而非预测。幸存者偏差提示：深度序列以当前成分股重建，故分位背景仅取成熟样本区间。</span></span></span>
-    </h2>
+    
+    
+    <div class="sb-section-lbl"><span class="l-en">Market internals</span><span class="l-zh">市场内部结构</span></div>
     <details class="jarg" style="margin-top:0">
     <summary><span class="l-en">Show market internals — McClellan, breadth thrust, highs/lows, divergence</span><span class="l-zh">展开市场内部 — 麦克莱伦、广度推力、新高新低、背离</span></summary>
     <p class="pos" style="margin:10px 2px 14px; font-size:14px; line-height:1.5">
@@ -6109,29 +6069,11 @@
       </div>
       
 
-      <!-- Cross-tier participation gap -->
-      
-      <div style="border:1px solid var(--line); border-radius:10px; padding:12px 13px; background:var(--panel2)">
-        <div class="muted" style="font-size:11px; letter-spacing:.02em"><span class="l-en">Large / mid / small gap</span><span class="l-zh">大／中／小盘差</span>
-          <span class="help">?<span class="tip"><span class="l-en">The % > 50-day line for each S&P size tier (500 / 400 / 600), and the small-minus-large gap. Small caps participating MORE than large = a healthy, broad-based tape; small lagging = a narrow, mega-cap-led advance that's more fragile.</span><span class="l-zh">标普各规模层级（500／400／600）高于50日均线的占比，以及「小盘减大盘」之差。小盘参与度高于大盘 = 健康、广泛的盘面；小盘落后 = 狭窄、由超大盘主导、更脆弱的上涨。</span></span></span></div>
-        <div style="display:flex; align-items:baseline; gap:8px; margin:4px 0 2px">
-          <b class="muted" style="font-size:22px">+3.9</b>
-          <span class="pill muted" style="background:var(--panel)"><span class="l-en">in line</span><span class="l-zh">一致</span></span>
-        </div>
-        <div style="display:flex; gap:10px; margin:8px 0 4px; font-size:12px">
-          <span><span class="l-en">L</span><span class="l-zh">大</span> <b>67%</b></span>
-          <span class="muted"><span class="l-en">M</span><span class="l-zh">中</span> <b>67%</b></span>
-          <span><span class="l-en">S</span><span class="l-zh">小</span> <b>71%</b></span>
-        </div>
-        <div class="muted" style="font-size:11px; margin-top:3px"><span class="l-en">small- and large-cap participation roughly in line</span><span class="l-zh">小盘与大盘参与度大致一致</span>.</div>
-      </div>
-      
-
     </div>
     <p class="muted" style="margin:10px 2px 0; font-size:11px"><span class="l-en">As of</span><span class="l-zh">截至</span> 2026-07-02 · <span class="l-en">computed on the deep S&P 500 breadth series</span><span class="l-zh">基于标普500深度广度序列计算</span> (1962–) · <span class="l-en">display-only market internals, never scored</span><span class="l-zh">仅作展示的市场内部结构，不计入评分</span></p>
     </details>
+    
   </div>
-  
 
   <!-- ============ SECTOR BUY/SELL SETUPS — confluence engine ============ -->
   
@@ -6474,7 +6416,7 @@
           <td class="l"><a href="stock.html#META"><b>META</b></a> <span class="muted">Meta Platforms Inc Class A</span></td>
           <td class="neg">-1.65pp</td>
           <td class="neg"><b>-3.18pp</b></td>
-          <td class="muted">−$739M</td>
+          <td class="muted" data-sort="-739.2968432200001">−$739M</td>
           <td class="l">
             <span class="pill st-COUNTERTREND_BOUNCE"><span class="l-en">UNCONFIRMED TURN</span><span class="l-zh">未确认转向</span></span>
           </td>
@@ -6485,7 +6427,7 @@
           <td class="l"><a href="stock.html#NVDA"><b>NVDA</b></a> <span class="muted">Nvidia Corp</span></td>
           <td class="neg">-1.97pp</td>
           <td class="neg"><b>-1.99pp</b></td>
-          <td class="muted">−$2.4B</td>
+          <td class="muted" data-sort="-2396.57184856">−$2.4B</td>
           <td class="l">
             <span class="pill st-DECLINE"><span class="l-en">DOWNTREND</span><span class="l-zh">下跌趋势</span></span>
           </td>
@@ -6496,7 +6438,7 @@
           <td class="l"><a href="stock.html#GOOGL"><b>GOOGL</b></a> <span class="muted">Alphabet Inc Cl A</span></td>
           <td class="neg">-1.49pp</td>
           <td class="neg"><b>-1.94pp</b></td>
-          <td class="muted">−$451M</td>
+          <td class="muted" data-sort="-450.96339106000005">−$451M</td>
           <td class="l">
             <span class="pill st-COUNTERTREND_BOUNCE"><span class="l-en">UNCONFIRMED TURN</span><span class="l-zh">未确认转向</span></span>
           </td>
@@ -6507,7 +6449,7 @@
           <td class="l"><a href="stock.html#AAPL"><b>AAPL</b></a> <span class="muted">Apple Inc</span></td>
           <td class="neg">-1.64pp</td>
           <td class="neg"><b>-1.80pp</b></td>
-          <td class="muted">−$2.2B</td>
+          <td class="muted" data-sort="-2169.46859426">−$2.2B</td>
           <td class="l">
             <span class="pill st-TURN_SIGNALED"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span>
           </td>
@@ -6518,7 +6460,7 @@
           <td class="l"><a href="stock.html#CVX"><b>CVX</b></a> <span class="muted">Chevron Corp</span></td>
           <td class="neg">-1.89pp</td>
           <td class="neg"><b>-1.69pp</b></td>
-          <td class="muted">−$598M</td>
+          <td class="muted" data-sort="-597.50350088">−$598M</td>
           <td class="l">
             <span class="pill st-DECLINE"><span class="l-en">DOWNTREND</span><span class="l-zh">下跌趋势</span></span>
           </td>
@@ -6529,7 +6471,7 @@
           <td class="l"><a href="stock.html#GOOG"><b>GOOG</b></a> <span class="muted">Alphabet Inc Cl C</span></td>
           <td class="neg">-1.21pp</td>
           <td class="neg"><b>-1.56pp</b></td>
-          <td class="muted">−$362M</td>
+          <td class="muted" data-sort="-362.11645522">−$362M</td>
           <td class="l">
             <span class="pill st-COUNTERTREND_BOUNCE"><span class="l-en">UNCONFIRMED TURN</span><span class="l-zh">未确认转向</span></span>
           </td>
@@ -6540,7 +6482,7 @@
           <td class="l"><a href="stock.html#OMC"><b>OMC</b></a> <span class="muted">Omnicom Group</span></td>
           <td class="pos">+1.41pp</td>
           <td class="pos"><b>+1.39pp</b></td>
-          <td class="muted">+$324M</td>
+          <td class="muted" data-sort="323.83963066">+$324M</td>
           <td class="l">
             <span class="pill st-FRESH_BUY"><span class="l-en">BUY ZONE</span><span class="l-zh">买入区</span></span> ✅
           </td>
@@ -6551,7 +6493,7 @@
           <td class="l"><a href="stock.html#MSFT"><b>MSFT</b></a> <span class="muted">Microsoft Corp</span></td>
           <td class="neg">-1.14pp</td>
           <td class="neg"><b>-1.19pp</b></td>
-          <td class="muted">−$1.4B</td>
+          <td class="muted" data-sort="-1429.4854707">−$1.4B</td>
           <td class="l">
             <span class="pill st-TURN_SIGNALED"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span>
           </td>
@@ -6562,7 +6504,7 @@
           <td class="l"><a href="stock.html#LYV"><b>LYV</b></a> <span class="muted">Live Nation Entertainment In</span></td>
           <td class="pos">+1.00pp</td>
           <td class="pos"><b>+1.03pp</b></td>
-          <td class="muted">+$239M</td>
+          <td class="muted" data-sort="239.32328446000002">+$239M</td>
           <td class="l">
             <span class="pill st-TOP_WATCH"><span class="l-en">NEARING A HIGH</span><span class="l-zh">接近高点</span></span>
           </td>
@@ -6573,7 +6515,7 @@
           <td class="l"><a href="stock.html#ECHO"><b>ECHO</b></a> <span class="muted">Echostar Corp A</span></td>
           <td class="pos">+0.89pp</td>
           <td class="pos"><b>+0.88pp</b></td>
-          <td class="muted">+$206M</td>
+          <td class="muted" data-sort="206.02896626000003">+$206M</td>
           <td class="l">
             <span class="pill st-DECLINE"><span class="l-en">DOWNTREND</span><span class="l-zh">下跌趋势</span></span>
           </td>
@@ -6584,7 +6526,7 @@
           <td class="l"><a href="stock.html#TKO"><b>TKO</b></a> <span class="muted">Tko Group Holdings Inc</span></td>
           <td class="pos">+0.66pp</td>
           <td class="pos"><b>+0.81pp</b></td>
-          <td class="muted">+$189M</td>
+          <td class="muted" data-sort="189.49822086000003">+$189M</td>
           <td class="l">
             <span class="pill st-BOTTOM_WATCH"><span class="l-en">NEARING A LOW</span><span class="l-zh">接近低点</span></span> ✅
           </td>
@@ -6595,7 +6537,7 @@
           <td class="l"><a href="stock.html#CHTR"><b>CHTR</b></a> <span class="muted">Charter Communications Inc A</span></td>
           <td class="pos">+0.77pp</td>
           <td class="pos"><b>+0.75pp</b></td>
-          <td class="muted">+$175M</td>
+          <td class="muted" data-sort="175.34231494">+$175M</td>
           <td class="l">
             <span class="pill st-COUNTERTREND_BOUNCE"><span class="l-en">UNCONFIRMED TURN</span><span class="l-zh">未确认转向</span></span>
           </td>
@@ -6702,6 +6644,7 @@
         
       </table>
     
+    <p class="muted" style="font-size:11px;margin:6px 0 0"><span class="l-en">Data window ending</span><span class="l-zh">数据窗口截至</span> 2026-07-06</p>
 
     <p class="muted" style="font-size:12px;margin-top:10px"><span class="l-en">Looking for where sector-ETF money is rotating (1D / 3D / 1W / 2W / 1M creation-redemption flow)? It now lives on</span><span class="l-zh">想看板块 ETF 资金的轮动去向（1D / 3D / 1W / 2W / 1M 申购赎回资金流）？已移至</span> <a href="sector_central.html#sc-flows"><span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span> →</a></p>
   </div>

@@ -400,7 +400,7 @@
 
 <footer>
   <span class="l-en">Read-only analytics, not investment advice. Theme scores organize what to study; they are descriptive, not a validated buy list. Member ratings reuse the stock dashboard Conviction Profile and trust tier. Treat them as a focus list, never an order.</span><span class="l-zh">只读分析，非投资建议。主题评分用于整理研究重点；它是描述性读数，不是已验证买入清单。成分股评分复用股票看板的信念档案与信任层级。请把它当作关注清单，绝非下单指令。</span>
-  <span class="l-en">Generated</span><span class="l-zh">生成于</span> <span>2026-07-06 10:00 UTC</span>.
+  <span class="l-en">Generated</span><span class="l-zh">生成于</span> <span>2026-07-06 10:54 UTC</span>.
 </footer>
 
 <script>
@@ -748,8 +748,8 @@ function render(){
   const recommendScore=(m)=>{const c=m.conviction||{}, entry=c.entry||{};
     return verdictScore(c)*100 + ((c.score==null?-25:+c.score)||0) + ((entry.act_level||0)*8) + (m.on_board?12:0);
   };
-  // confluence cascade tier (T1 master -> T4 earliest): weight for the sort, badge for the row.
-  const TIER_W={T1:1.0,T2:0.8,T3:0.6,T4:0.4};
+  // confluence cascade tier weights (operator re-ranked 2026-07-06: T2 above T1 for entry quality).
+  const TIER_W={T1:0.9,T2:1.0,T3:0.6,T4:0.4};
   const tierW=(c)=>{const s=c&&c.signal; return (s&&s.tier&&TIER_W[s.tier])||0;};
   const tierBadge=(c)=>{const s=c&&c.signal; if(!s||!s.tier) return '';
     const tip={T1:'T1 — 3D MACD-RSI × 3D StochRSI confluence, buy-filter endorsed (master confirmation).',
