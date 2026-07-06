@@ -34,6 +34,7 @@ def _vm() -> dict:
                      "label": "UPTREND", "state": "UPTREND", "mom20": 2.1, "mom60": 5.4,
                      "pctile": 80.0, "above200": True, "mtf_json": mtf, "entry": {"urgency": "now", "tag": "BUY NOW"}}],
         "actions": {"buy_now": [{"name": "Energy", "ticker": "XEG.TO"}], "buy_soon": [],
+                    "on_the_run": [{"name": "Financials", "ticker": "XFN.TO"}],
                     "take_profits": [], "hold": [], "avoid": []},
         # Branch-B ripe-list row (the fields scripts/build_canada_library._branch_b_order stamps):
         # group, board_pos (rank pill), lead_en/lead_zh, oil_tailwind. Composite is suppressed.
@@ -103,6 +104,7 @@ def test_canada_macro_template_renders():
     assert "Risk-off" in html
     assert "Commodity / CAD" in html
     assert "XEG.TO" in html                            # sector rotation stays on macro
+    assert "ON THE RUN" in html and "XFN.TO" in html   # #1513 lane split ported (violet lane)
     assert "TD Bank" not in html                       # standouts moved to the stock dashboard
     assert "canada_stocks.html" in html                # cross-link to the stock dashboard
     # nav search moved into the shared multi-market lib (theme.js) — assert the page

@@ -378,6 +378,7 @@
   .act-item .an { font-weight: 600; color: var(--text); }
   .act-item .at { font-size: 10.5px; color: var(--muted); }
   .act-now h3 { color: var(--up); } .act-soon h3 { color: var(--info); }
+  .act-run h3 { color: #8b5cf6; }   /* neutral violet — NOT green/buy */
   .act-tp h3 { color: var(--warn); } .act-avoid h3 { color: var(--down); } .act-hold h3 { color: var(--muted); }
 
   /* ---- regime hero: quad map + meaning + regime watch ----------------------- */
@@ -1126,7 +1127,7 @@
       {{ help("Sector ETFs by cycle bucket and relative strength. Sort any column.", '板块ETF按周期分桶与相对强度展示。可点击表头排序。') }}
     </h2>
   <!-- ===================== ACTION BOARD ===================== -->
-  {% if actions and (actions.buy_now or actions.buy_soon or actions.take_profits or actions.hold or actions.avoid) %}
+  {% if actions and (actions.buy_now or actions.buy_soon or actions.get('on_the_run') or actions.take_profits or actions.hold or actions.avoid) %}
   <div class="msec flush">
     <h3 class="msec-h">⚡ {{ t('What to act on now — sectors', '当前可操作 — 板块') }}
       {{ help("The 16 sector ETFs bucketed by the cycle ladder’s entry-timing call (same engine as the US action board). A structure/risk map, not an allocation rule — read alongside the calibration note below.", "16 个板块 ETF 按周期阶梯的入场时机分桶（与美国操作板同一引擎）。这是结构／风险图，而非配置规则 — 请结合下方校准说明阅读。") }}
@@ -1146,6 +1147,7 @@
       {% endmacro %}
       {{ actcol('act-now', 'Buy zone', '买入区', actions.buy_now) }}
       {{ actcol('act-soon', 'Setting up', '即将到位', actions.buy_soon) }}
+      {{ actcol('act-run', "ON THE RUN — don't chase", '顺势运行 — 勿追高', actions.get('on_the_run', [])) }}
       {{ actcol('act-tp', 'Take profits', '止盈', actions.take_profits) }}
       {{ actcol('act-hold', 'Hold', '持有', actions.hold) }}
       {{ actcol('act-avoid', 'Avoid', '回避', actions.avoid) }}
