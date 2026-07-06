@@ -1497,3 +1497,154 @@ class TestContextStale:
         # Memo must be unchanged
         after_memo = json.loads(memo_path.read_text())
         assert after_memo["summary"] == "prior memo — must survive staleness skip"
+
+
+# ---------------------------------------------------------------------------
+# 16. Degraded-memo gate: last_run_state.json must NOT be written on degraded runs
+# ---------------------------------------------------------------------------
+
+class TestDegradedGate:
+    """Regression guard for the sticky-failure bug.
+
+    When a cortex run produces a memo with run_status.status == 'degraded', the
+    staleness gate file (last_run_state.json) must NOT be written.  Leaving it
+    absent means the next nightly sees inputs as still-stale and retries the LLM
+    rather than skipping it indefinitely.
+
+    Conversely, a run with status 'ok' MUST write last_run_state.json.
+    """
+
+    def test_degraded_memo_does_not_write_last_run_state(self, repo):
+        """run() with a degraded memo must NOT write last_run_state.json."""
+        from engine.neuralweb.cortex import run
+
+        last_run_path = repo / "data" / "neuralweb" / "cortex" / "last_run_state.json"
+
+        # Patch _build_providers to return a single mock provider whose tool loop
+        # will call end_turn immediately (0 tool calls → degraded status).
+        mock_client = MagicMock()
+        mock_client.messages.create.return_value = _make_end_turn_resp()
+        provider = {"name": "oauth", "env_var": "X", "cred": "tok",
+                    "client": mock_client, "model": "claude-opus-4-8"}
+
+        with patch("engine.neuralweb.cortex._build_providers", return_value=[provider]):
+            rc = run(root=repo, force=True)
+
+        assert rc == 0
+
+        # Confirm memo was written with degraded status (validates our fixture assumption)
+        memo_path = repo / "data" / "neuralweb" / "cortex" / "memo.json"
+        assert memo_path.exists(), "memo.json must exist after run"
+        memo = json.loads(memo_path.read_text())
+        rs = memo.get("run_status", {})
+        assert rs.get("status") == "degraded", (
+            f"Expected run_status.status='degraded' for 0-tool-call run; got {rs.get('status')!r}"
+        )
+
+        # The gate file must NOT have been written
+        assert not last_run_path.exists(), (
+            "last_run_state.json must NOT be written when memo run_status=degraded — "
+            "the gate must stay open so the next nightly retries the LLM"
+        )
+
+    def test_ok_memo_writes_last_run_state(self, repo):
+        """run() with an ok memo MUST write last_run_state.json."""
+        from engine.neuralweb.cortex import run
+
+        last_run_path = repo / "data" / "neuralweb" / "cortex" / "last_run_state.json"
+
+        # Scripted provider: read_world_state → write_memo → end_turn → status=ok
+        sequence = [
+            ("tool_use", "read_world_state", {}, "tu_1"),
+            ("tool_use", "write_memo",
+             {"summary": "ok-status test", "what_fired": [],
+              "contradictions_review": "", "decaying_families": [],
+              "deserves_operator": []}, "tu_2"),
+            ("end_turn", None, None, None),
+        ]
+        seq_iter = iter(sequence)
+
+        mock_client = MagicMock()
+        def _side(**kwargs):
+            kind, name, inp, tid = next(seq_iter)
+            if kind == "end_turn":
+                return _make_end_turn_resp()
+            block = MagicMock()
+            block.type = "tool_use"
+            block.name = name
+            block.input = inp
+            block.id = tid
+            resp = MagicMock()
+            resp.stop_reason = "tool_use"
+            resp.content = [block]
+            return resp
+        mock_client.messages.create.side_effect = _side
+
+        provider = {"name": "oauth", "env_var": "X", "cred": "tok",
+                    "client": mock_client, "model": "claude-opus-4-8"}
+
+        with patch("engine.neuralweb.cortex._build_providers", return_value=[provider]):
+            rc = run(root=repo, force=True)
+
+        assert rc == 0
+
+        # Confirm memo has ok or warn status (warn when world_state is stale relative to run date;
+        # both are non-degraded and must trigger the gate save).
+        memo_path = repo / "data" / "neuralweb" / "cortex" / "memo.json"
+        assert memo_path.exists()
+        memo = json.loads(memo_path.read_text())
+        rs = memo.get("run_status", {})
+        assert rs.get("status") in ("ok", "warn"), (
+            f"Expected run_status.status in ('ok','warn') for a successful tool-loop run; "
+            f"got {rs.get('status')!r}"
+        )
+        assert rs.get("degraded") is False, "degraded must be False for ok/warn run"
+
+        # Gate file MUST have been written
+        assert last_run_path.exists(), (
+            "last_run_state.json must be written when memo run_status is ok or warn"
+        )
+        gate = json.loads(last_run_path.read_text())
+        assert "ws_inputs_hash" in gate, "last_run_state.json must contain ws_inputs_hash"
+
+    def test_degraded_run_allows_second_run_to_attempt_llm(self, repo):
+        """After a degraded run, a second run() call attempts the LLM again.
+
+        This is the end-to-end regression test for the sticky-failure bug:
+        if last_run_state.json is NOT written after a degraded run, the staleness
+        gate does not fire on the second call (inputs are still 'changed') and the
+        LLM is attempted again.
+        """
+        from engine.neuralweb.cortex import run
+
+        call_count = [0]
+
+        # Provider that always returns end_turn (→ degraded memo)
+        mock_client = MagicMock()
+        mock_client.messages.create.side_effect = lambda **kwargs: (
+            call_count.__setitem__(0, call_count[0] + 1) or _make_end_turn_resp()
+        )
+        provider = {"name": "oauth", "env_var": "X", "cred": "tok",
+                    "client": mock_client, "model": "claude-opus-4-8"}
+
+        with patch("engine.neuralweb.cortex._build_providers", return_value=[provider]):
+            run(root=repo, force=True)   # first run → degraded, gate NOT saved
+            calls_after_first = call_count[0]
+
+        # Reset mock so the second run can also be detected
+        mock_client2 = MagicMock()
+        second_call_count = [0]
+        mock_client2.messages.create.side_effect = lambda **kwargs: (
+            second_call_count.__setitem__(0, second_call_count[0] + 1)
+            or _make_end_turn_resp()
+        )
+        provider2 = {"name": "oauth", "env_var": "X", "cred": "tok",
+                     "client": mock_client2, "model": "claude-opus-4-8"}
+
+        with patch("engine.neuralweb.cortex._build_providers", return_value=[provider2]):
+            run(root=repo, force=False)  # second run — must NOT skip via staleness gate
+
+        assert second_call_count[0] >= 1, (
+            "Second run must attempt the LLM (staleness gate must not fire after a "
+            "degraded run) — sticky-failure bug regression"
+        )
