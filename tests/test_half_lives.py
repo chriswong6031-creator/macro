@@ -372,17 +372,22 @@ def test_old_schema_parquet_loads_with_nan(tmp_path: Path):
 
 
 # ---------------------------------------------------------------------------
-# (8) CI-pin — artifact count == 113; "kernel-half-lives" in registry
+# (8) CI-pin — "kernel-half-lives" in registry
 # ---------------------------------------------------------------------------
 
 def test_artifact_count_and_new_id():
-    """synapse.yml must have exactly 113 artifacts including 'kernel-half-lives'."""
+    """synapse.yml must parse and include 'kernel-half-lives'.
+
+    The exact artifact count is pinned in test_signal_bus_doc.py only — a
+    duplicate pin here drifted stale on every registry addition (113 vs 168
+    by 2026-07-06) because PRs updated one pin and missed the other.
+    """
     with _SYNAPSE_YML.open(encoding="utf-8") as fh:
         registry = yaml.safe_load(fh)
     artifact_ids = list(registry.get("artifacts", {}).keys())
-    assert len(artifact_ids) == 113, (
-        f"Expected 113 artifacts in synapse.yml, found {len(artifact_ids)}. "
-        "Update test_signal_bus_doc.py:76 if count changed intentionally."
+    assert len(artifact_ids) >= 113, (
+        f"synapse.yml registry shrank below 113 artifacts ({len(artifact_ids)}) — "
+        "the registry only grows; a shrink means a parse or merge accident."
     )
     assert "kernel-half-lives" in artifact_ids, (
         "'kernel-half-lives' must be registered in config/synapse.yml"
