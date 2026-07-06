@@ -441,6 +441,12 @@ THE GRAMMAR (your entire vocabulary — specs outside it are rejected):
 - Combine with {{"all": [...]}} / {{"any": [...]}}. Entry = rule true as-of day t,
   executed next daily close. Everything is joined strictly as-of t (no lookahead
   is possible — the evaluator guarantees it).
+- Sequence (v1.2.0+): {{"sequence": {{"first": <rule>, "then": <rule>,
+  "within_sessions": N}}}} — fires at t iff `then` is true at t AND `first`
+  was true on ≥1 day in [t-N, t-1] (strictly before t; both legs causal).
+  `first` may be any v1 rule incl. episode_event/all/any; sequence-inside-
+  sequence is REJECTED. Adds top-level "cooldown_sessions": <int> to suppress
+  re-fires on a node for N sessions after each kept fire.
 - Universe: {{"tier": "s"}} (11 sector ETFs, 1998->, survivorship-clean — claims
   live here) or {{"tier": "m"}} (354 subsectors/themes/baskets, 2021->, watermarked).
 {horizons_note}

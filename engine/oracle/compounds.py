@@ -30,10 +30,27 @@ A rule is one of:
     {"all": [<rule>, ...]}    # AND
     {"any": [<rule>, ...]}    # OR
 
+  Sequence (v1.2.0+):
+    {"sequence": {
+        "first": <rule>,            # any v1 rule incl. episode_event/all/any
+        "then": <rule>,             # evaluated at day t
+        "within_sessions": <int>    # lookback window N; first must fire in
+                                    # [t-N, t-1] (strictly before t)
+    }}
+    CAUSALITY LAW: first fires strictly BEFORE t (never on t itself).
+    NESTING LAW: sequence-inside-sequence is REJECTED at validation.
+    Both legs are causal on the node's own rows.
+
 Operators (op):
   gt, lt, ge, le — numeric comparison
   crossed_above, crossed_below — today's value crossed vs yesterday's value;
       uses value_col if present, otherwise a scalar value
+
+Top-level compound fields:
+  cooldown_sessions: <int>  — after a fire on a node, suppress that node's
+      fires for the next N sessions (deterministic left-to-right scan).
+      Applied inside get_entry_dates so all consumers (screens, gauntlets,
+      ledgers) inherit it.
 
 Unknown column → compound gets status "blocked_missing_column"; evaluator
 never raises — always returns an empty Series.
@@ -55,6 +72,8 @@ Version history:
   1.1.0  — W-B4 fix: breadth semantics corrected to nunique (distinct nodes)
             in _eval_episode_event; old keep-first rows under 1.0.0 stand as
             counted historical trials — append, never rewrite.
+  1.2.0  — W3 grammar: sequence rule (causal ordered pair with strict-before
+            lookback) + cooldown_sessions top-level suppression.
 """
 from __future__ import annotations
 
@@ -81,7 +100,9 @@ log = logging.getLogger(__name__)
 #:   1.0.0 — initial release (breadth counted by row-count, not distinct nodes)
 #:   1.1.0 — breadth semantics corrected to nunique (distinct nodes) in
 #:            _eval_episode_event; this was the A2 distinct-node semantics fix.
-GRAMMAR_VERSION: str = "1.1.0"
+#:   1.2.0 — W3: sequence rule (causal ordered pair, strict-before lookback) +
+#:            cooldown_sessions top-level suppression in get_entry_dates.
+GRAMMAR_VERSION: str = "1.2.0"
 
 #: Valid operators.  Additions require an explicit code change (the firewall).
 VALID_OPS: frozenset[str] = frozenset(
@@ -164,14 +185,37 @@ def _validate_op(op: str) -> None:
         )
 
 
-def validate_rule(rule: dict) -> None:
-    """Validate a rule dict against the grammar.  Raises ValueError on unknown ops."""
+def validate_rule(rule: dict, _inside_sequence: bool = False) -> None:
+    """Validate a rule dict against the grammar.  Raises ValueError on unknown ops.
+
+    _inside_sequence: internal flag — callers should NOT pass this.
+    Sequence-inside-sequence is REJECTED loudly (v1.2 nesting law).
+    """
     if "all" in rule:
         for sub in rule["all"]:
-            validate_rule(sub)
+            validate_rule(sub, _inside_sequence=_inside_sequence)
     elif "any" in rule:
         for sub in rule["any"]:
-            validate_rule(sub)
+            validate_rule(sub, _inside_sequence=_inside_sequence)
+    elif "sequence" in rule:
+        if _inside_sequence:
+            raise ValueError(
+                "sequence-inside-sequence is REJECTED (v1.2 nesting law). "
+                "The 'first' and 'then' legs of a sequence must be v1 rules "
+                "(col/episode_event/all/any), never another sequence."
+            )
+        seq = rule["sequence"]
+        for k in ("first", "then", "within_sessions"):
+            if k not in seq:
+                raise ValueError(f"sequence missing required key '{k}'")
+        if not isinstance(seq["within_sessions"], int) or seq["within_sessions"] < 1:
+            raise ValueError(
+                f"sequence.within_sessions must be a positive integer, "
+                f"got: {seq['within_sessions']!r}"
+            )
+        # Validate legs with _inside_sequence=True so nesting is caught
+        validate_rule(seq["first"], _inside_sequence=True)
+        validate_rule(seq["then"], _inside_sequence=True)
     elif "episode_event" in rule:
         ev = rule["episode_event"]
         for k in ("direction", "tier", "complex_scope", "within_sessions"):
@@ -383,6 +427,61 @@ def _eval_episode_event(
 
 
 # ---------------------------------------------------------------------------
+# Sequence evaluator helper
+# ---------------------------------------------------------------------------
+
+def _eval_sequence(
+    seq: dict,
+    node: str,
+    panel_node: pd.DataFrame,
+    episodes_df: pd.DataFrame,
+    node_to_complex: dict[str, str],
+    complex_risk_sign: dict[str, str],
+    missing_cols: set[str],
+) -> pd.Series:
+    """Evaluate a sequence rule over all dates in panel_node.
+
+    Fires at t iff:
+      - `then` is true at t, AND
+      - `first` was true on at least one day s in [t-N, t-1]  (strictly before t)
+
+    CAUSALITY LAW: first lookback never includes t.
+
+    Returns a boolean Series indexed by date.
+    """
+    panel_dates = panel_node.index
+    within_sessions = int(seq["within_sessions"])
+
+    # Evaluate both legs over the full panel
+    first_mask = evaluate_rule(
+        seq["first"], node, panel_node, episodes_df,
+        node_to_complex, complex_risk_sign, missing_cols,
+    )
+    then_mask = evaluate_rule(
+        seq["then"], node, panel_node, episodes_df,
+        node_to_complex, complex_risk_sign, missing_cols,
+    )
+
+    result = pd.Series(False, index=panel_dates)
+
+    # For each day t where then_mask is True, check if first fired in [t-N, t-1]
+    then_true_positions = then_mask.values.nonzero()[0]
+    first_values = first_mask.values  # numpy array for fast slicing
+
+    for pos in then_true_positions:
+        # Lookback window: positions [pos-within_sessions, pos-1] (strictly before pos)
+        lo = max(0, pos - within_sessions)
+        hi = pos  # exclusive — does NOT include pos (strict before)
+        if lo >= hi:
+            # No positions strictly before t in the window (t is the first row)
+            continue
+        if first_values[lo:hi].any():
+            result.iloc[pos] = True
+
+    return result
+
+
+# ---------------------------------------------------------------------------
 # Main rule evaluator
 # ---------------------------------------------------------------------------
 
@@ -419,6 +518,12 @@ def evaluate_rule(
                 node_to_complex, complex_risk_sign, missing_cols,
             )
         return result
+
+    elif "sequence" in rule:
+        return _eval_sequence(
+            rule["sequence"], node, panel_node, episodes_df,
+            node_to_complex, complex_risk_sign, missing_cols,
+        )
 
     elif "episode_event" in rule:
         ev = rule["episode_event"]
@@ -540,6 +645,50 @@ def get_entry_dates(
         if len(entry_dates) > 0:
             result[node] = entry_dates
 
+    # Apply cooldown_sessions: after a kept fire on a node, suppress that
+    # node's fires for the next N sessions.  Deterministic left-to-right scan.
+    cooldown_n = compound.get("cooldown_sessions")
+    if cooldown_n and isinstance(cooldown_n, int) and cooldown_n > 0:
+        result = _apply_cooldown(result, cooldown_n)
+
+    return result
+
+
+def _apply_cooldown(
+    entries: dict[str, pd.DatetimeIndex],
+    cooldown_sessions: int,
+) -> dict[str, pd.DatetimeIndex]:
+    """Apply per-node cooldown suppression to an entry-dates dict.
+
+    After a kept fire on a node, suppresses that node's subsequent fires
+    within cooldown_sessions trading days (chronological, left-to-right).
+    Returns a new dict with the same keys but filtered DatetimeIndex values.
+    """
+    result: dict[str, pd.DatetimeIndex] = {}
+    for node, dates in entries.items():
+        if node == "__blocked__":
+            result[node] = dates
+            continue
+        sorted_dates = dates.sort_values()
+        kept: list[pd.Timestamp] = []
+        last_fire: pd.Timestamp | None = None
+        for d in sorted_dates:
+            if last_fire is None:
+                kept.append(d)
+                last_fire = d
+            else:
+                # Count trading-day gap: number of dates in [last_fire+1, d]
+                # Use positional difference on the sorted list
+                gap = int((d - last_fire) / pd.Timedelta("1D"))
+                # Approximate trading-day gap: use calendar days / 1.4
+                # More precisely: count business days between last_fire and d
+                bdays = len(pd.bdate_range(last_fire, d)) - 1  # -1: start exclusive
+                if bdays >= cooldown_sessions:
+                    kept.append(d)
+                    last_fire = d
+                # else: suppressed
+        if kept:
+            result[node] = pd.DatetimeIndex(kept)
     return result
 
 
