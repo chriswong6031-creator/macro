@@ -227,7 +227,10 @@ def km_predict(train: pd.DataFrame, test: pd.DataFrame) -> dict:
 
 def walk_forward(panel_d: pd.DataFrame, direction: str,
                  first_test_year: int = FIRST_TEST_YEAR,
-                 embargo_m: int = EMBARGO_M):
+                 embargo_m: int = EMBARGO_M,
+                 *, design: list[str] | None = None,
+                 cont_features: list[str] | None = None,
+                 l2_exempt: set[str] | None = None):
     """Expanding-origin annual walk-forward for one direction.
 
     For each test year Y ≥ first_test_year: fit on rows with date ≤ Dec(Y-1) − embargo,
@@ -236,7 +239,16 @@ def walk_forward(panel_d: pd.DataFrame, direction: str,
     Returns a DataFrame of pooled OOS predictions with columns
     [date, id, family, direction, test_year, p1_raw, y1, y3, y6, km1, km3, km6],
     plus the list of per-fold fitted (w, b, mu, sd) for the coefficient artifact.
+
+    The optional ``design`` / ``cont_features`` / ``l2_exempt`` keyword args let a
+    caller (e.g. the CPI FT feature-trial runner) fit a DIFFERENT feature list under the
+    SAME folds without forking any of this function's math — they default to the module
+    globals ``DESIGN`` / ``CONT_FEATURES`` / ``L2_MASK_EXEMPT``, so the W4.2 call
+    ``walk_forward(panel, "up")`` is byte-for-byte unchanged.
     """
+    design = DESIGN if design is None else design
+    cont_features = CONT_FEATURES if cont_features is None else cont_features
+    l2_exempt = L2_MASK_EXEMPT if l2_exempt is None else l2_exempt
     sub = panel_d[panel_d["direction"] == direction].copy()
     sub = sub.sort_values("date").reset_index(drop=True)
     years = sorted(sub["date"].dt.year.unique())
@@ -252,19 +264,19 @@ def walk_forward(panel_d: pd.DataFrame, direction: str,
             continue
 
         # Standardize continuous features by TRAIN-fold mean/sd (stored)
-        mu = train[CONT_FEATURES].mean()
-        sd = train[CONT_FEATURES].replace(0, np.nan).std(ddof=0).fillna(1.0)
+        mu = train[cont_features].mean()
+        sd = train[cont_features].replace(0, np.nan).std(ddof=0).fillna(1.0)
         sd = sd.replace(0, 1.0)
 
         def _mat(df):
-            m = df[DESIGN].copy()
-            for c in CONT_FEATURES:
+            m = df[design].copy()
+            for c in cont_features:
                 m[c] = (df[c] - mu[c]) / sd[c]
-            return m[DESIGN].to_numpy(dtype=float)
+            return m[design].to_numpy(dtype=float)
 
         Xtr, ytr = _mat(train), train["y1"].to_numpy(float)
         Xte = _mat(test)
-        l2_mask = np.array([c not in L2_MASK_EXEMPT for c in DESIGN])
+        l2_mask = np.array([c not in l2_exempt for c in design])
         w, b = fit_logistic_l2(Xtr, ytr, l2_mask)
 
         p1 = _sigmoid(Xte @ w + b)
@@ -299,10 +311,10 @@ def walk_forward(panel_d: pd.DataFrame, direction: str,
         oos_rows.append(fold)
         fold_fits.append({
             "test_year": Y, "n_train": int(len(train)), "n_test": int(len(test)),
-            "w": {c: round(float(wi), 5) for c, wi in zip(DESIGN, w)},
+            "w": {c: round(float(wi), 5) for c, wi in zip(design, w)},
             "b": round(float(b), 5),
-            "mu": {c: round(float(mu[c]), 5) for c in CONT_FEATURES},
-            "sd": {c: round(float(sd[c]), 5) for c in CONT_FEATURES},
+            "mu": {c: round(float(mu[c]), 5) for c in cont_features},
+            "sd": {c: round(float(sd[c]), 5) for c in cont_features},
         })
 
     if not oos_rows:
