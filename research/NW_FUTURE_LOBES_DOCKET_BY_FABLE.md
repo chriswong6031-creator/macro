@@ -76,6 +76,7 @@ Raw-price-plane loss (auto_adjust seams), retroactive universe deletion, and adj
 ### L6 — Macro Transmission Fingerprints (green-field; honest costing)
 **Killer question:** "What macro must be true for this name — measured rate/USD/oil/inflation pass-through per name, PIT?"
 **Reality check:** nothing per-name exists; the only precedent is a sector-level SHADOW artifact kept display-only for noise (`canon.py`). This is a large regression build whose nearest ancestor was demoted — charter only with a Phase-0 that must beat the noisy-sector precedent OOS before any per-name expansion. Feeds long-hold "what must be true" cards + radar conditioning if it survives.
+**2026-07-06 P0 stamp:** L6-P0 ran under `research/macro_tx/L6_PHASE0_PREREG.md` (fdr_family='macro_tx', budget 12) — A1 rates PASS (both OOS halves, survives corrected stratification + honest bootstrap; modern cohort stronger), A2 USD / A3 credit / A4 fin-conditions FAIL. **Charter question re-opened with conditions C1–C4** (see report §Fable adjudication); the two-lobe cap still binds.
 
 ### L7 — Cash / Patience opportunity-cost ledger (consumer of R1)
 **Killer question:** "When the board shows N eligible fires in a hostile regime, what has DEPLOYING vs WAITING a week historically cost?" The system grades entries exhaustively and has never graded the do-nothing counterfactual. Pure measurement; on-thesis for a drawdown-identity operator; needs R1's rule-replay to exist.
