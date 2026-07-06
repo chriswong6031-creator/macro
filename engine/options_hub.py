@@ -1216,12 +1216,17 @@ def build_oi_confirmed(
         return []
 
     # ── intersect on (root, right, exp, strike) key ──────────────────────────
+    # Normalise `right` to single-char upper ("C"/"P") on both sides so that
+    # mixed conventions ("call"/"put" vs "C"/"P") never silently empty the join.
+    def _norm_right(v) -> str:
+        return str(v).upper()[:1]
+
     # Build a lookup from today's oi_movers
     mover_idx: dict[tuple, int] = {}  # key -> d_oi
     for m in movers_list[:top_n]:
         key = (
             str(m.get("root", "")),
-            str(m.get("right", "")),
+            _norm_right(m.get("right", "")),
             str(m.get("exp", "")),
             _f(float(m["strike"]), 2) if m.get("strike") is not None else None,
         )
@@ -1229,16 +1234,17 @@ def build_oi_confirmed(
 
     confirmed: list[dict] = []
     for c in prev_contracts:
+        right_norm = _norm_right(c.get("right", ""))
         key = (
             str(c.get("root", "")),
-            str(c.get("right", "")),
+            right_norm,
             str(c.get("exp", "")),
             _f(float(c["strike"]), 2) if c.get("strike") is not None else None,
         )
         if key in mover_idx:
             confirmed.append({
                 "root": c["root"],
-                "right": c["right"],
+                "right": right_norm,
                 "exp": c["exp"],
                 "strike": _f(float(c["strike"]), 2) if c.get("strike") is not None else None,
                 "prev_premium": _f(c.get("prev_premium"), 2),
