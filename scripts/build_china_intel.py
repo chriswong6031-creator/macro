@@ -26,6 +26,23 @@ def _site_dir() -> Path:
     return sd if sd.is_absolute() else (config.ROOT / sd)
 
 
+def _load_cmd_full(site: Path) -> dict | None:
+    """Load the full command artifact from site/china_intel/command.json.
+
+    Passed to the template as a SEPARATE var `cmd_full` (not embedded in the bus
+    briefing) so template K2/K3 can read cmd_full.command / cmd_full.discovery
+    with their proper full arrays.  Returns None when the artifact is absent.
+    """
+    import json as _json
+    p = site / "china_intel" / "command.json"
+    try:
+        if p.exists():
+            return _json.loads(p.read_text(encoding="utf-8"))
+    except Exception as e:  # noqa: BLE001
+        log.debug("build_china_intel: cmd_full load failed (%s)", e)
+    return None
+
+
 def build() -> dict | None:
     from engine import china_intel_bus
 
@@ -36,11 +53,16 @@ def build() -> dict | None:
 
     site = _site_dir()
     site.mkdir(parents=True, exist_ok=True)
+
+    # Load the full command artifact separately so the template gets real arrays
+    # (the bus block only carries a compact top-10 for Mastermind transport)
+    cmd_full = _load_cmd_full(site)
+
     env = Environment(
         loader=FileSystemLoader(str(config.ROOT / "templates")), autoescape=False)
     from engine import i18n
     env.globals.update(td=i18n.td, tr=i18n.tr, t=i18n.t)
-    html = env.get_template("china_intel.html.j2").render(b=b)
+    html = env.get_template("china_intel.html.j2").render(b=b, cmd_full=cmd_full)
     write_page(site / "china_intel.html", html)
     for a in ASSETS:
         src = config.ROOT / "templates" / a

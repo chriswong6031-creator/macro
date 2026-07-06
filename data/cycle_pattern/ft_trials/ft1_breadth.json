@@ -1,0 +1,265 @@
+{
+  "schema": "cycle_pattern_ft_trial.v1",
+  "registered_ref": "PREREGISTRATION.md \u00a712",
+  "run_at": "2026-07-06T12:13:18.322359+00:00",
+  "embargo": "date<2024-01-01",
+  "panel_epoch": "price_c4414dcb",
+  "n_rows": 16429,
+  "n_test_years": 14,
+  "candidate_count_printed": 12,
+  "trial_family": "rf.cycle_pattern.ft_v0",
+  "config": {
+    "first_test_year": 2010,
+    "embargo_m": 6,
+    "boot_draws": 800,
+    "boot_seed": 7,
+    "fdr_q": 0.1,
+    "sign_stability_min": 9,
+    "n_cells_family": 12,
+    "base_design": [
+      "age_b1",
+      "age_b2",
+      "age_b3",
+      "age_b4",
+      "age_b5",
+      "log_age_ratio",
+      "amp_proxy",
+      "pos_osc_s",
+      "osc_slope_s",
+      "trend_pass",
+      "mom_score",
+      "rs_63d",
+      "vol_pctile",
+      "quad_Q2",
+      "quad_Q3",
+      "quad_Q4",
+      "liq_expanding",
+      "fam_country",
+      "fam_cn"
+    ]
+  },
+  "feature_block": {
+    "features": [
+      "fam_pct_above_200d",
+      "fam_pct_above_50d",
+      "breadth_div_own",
+      "breadth_thrust_3m"
+    ],
+    "fam_pct_above_200d": "fraction of family members with close > own 200d SMA at t (PIT, close_price/cn basis)",
+    "fam_pct_above_50d": "fraction of family members with close > own 50d SMA at t (PIT)",
+    "breadth_div_own": "fam_pct_above_200d \u2212 own trend_pass (panel 0/1 above-200d indicator)",
+    "breadth_thrust_3m": "fam_pct_above_50d(t) \u2212 fam_pct_above_50d(3 month-ends prior)"
+  },
+  "per_fold": {
+    "up": {
+      "n_folds": 14,
+      "test_years": [
+        2010,
+        2011,
+        2012,
+        2013,
+        2014,
+        2015,
+        2016,
+        2017,
+        2018,
+        2019,
+        2020,
+        2021,
+        2022,
+        2023
+      ],
+      "n_train_per_fold": [
+        3674,
+        4151,
+        4669,
+        5032,
+        5532,
+        6091,
+        6611,
+        7047,
+        7775,
+        8375,
+        8804,
+        9405,
+        10115,
+        10594
+      ],
+      "n_test_per_fold": [
+        446,
+        384,
+        446,
+        576,
+        547,
+        446,
+        601,
+        708,
+        374,
+        590,
+        696,
+        630,
+        410,
+        625
+      ]
+    },
+    "down": {
+      "n_folds": 14,
+      "test_years": [
+        2010,
+        2011,
+        2012,
+        2013,
+        2014,
+        2015,
+        2016,
+        2017,
+        2018,
+        2019,
+        2020,
+        2021,
+        2022,
+        2023
+      ],
+      "n_train_per_fold": [
+        1643,
+        1790,
+        1914,
+        2210,
+        2382,
+        2495,
+        2678,
+        3058,
+        3154,
+        3382,
+        3787,
+        4026,
+        4156,
+        4521
+      ],
+      "n_test_per_fold": [
+        184,
+        269,
+        220,
+        96,
+        135,
+        319,
+        217,
+        120,
+        454,
+        250,
+        144,
+        210,
+        452,
+        251
+      ]
+    }
+  },
+  "ledger": {
+    "up": {
+      "1m": {
+        "delta_brier": 0.002554,
+        "ci90": [
+          -0.000474,
+          0.005736
+        ],
+        "boot_p": 0.0762,
+        "years_positive": 10,
+        "n_years": 14,
+        "bh_pass": false,
+        "verdict": "FAIL",
+        "brier_base": 0.233536,
+        "brier_block": 0.230983,
+        "ci_excludes_zero": false,
+        "sign_stable": true,
+        "n_oos": 7479
+      },
+      "3m": {
+        "delta_brier": 0.0028,
+        "ci90": [
+          -0.00036,
+          0.006046
+        ],
+        "boot_p": 0.0749,
+        "years_positive": 7,
+        "n_years": 14,
+        "bh_pass": false,
+        "verdict": "FAIL",
+        "brier_base": 0.253071,
+        "brier_block": 0.250271,
+        "ci_excludes_zero": false,
+        "sign_stable": false,
+        "n_oos": 7479
+      },
+      "6m": {
+        "delta_brier": 0.002069,
+        "ci90": [
+          -0.000277,
+          0.004609
+        ],
+        "boot_p": 0.0811,
+        "years_positive": 8,
+        "n_years": 14,
+        "bh_pass": false,
+        "verdict": "FAIL",
+        "brier_base": 0.24026,
+        "brier_block": 0.238191,
+        "ci_excludes_zero": false,
+        "sign_stable": false,
+        "n_oos": 7479
+      }
+    },
+    "down": {
+      "1m": {
+        "delta_brier": -0.005622,
+        "ci90": [
+          -0.009918,
+          -0.001614
+        ],
+        "boot_p": 0.99,
+        "years_positive": 4,
+        "n_years": 14,
+        "bh_pass": false,
+        "verdict": "FAIL",
+        "brier_base": 0.229743,
+        "brier_block": 0.235365,
+        "ci_excludes_zero": false,
+        "sign_stable": false,
+        "n_oos": 3321
+      },
+      "3m": {
+        "delta_brier": -0.001846,
+        "ci90": [
+          -0.004124,
+          0.00027
+        ],
+        "boot_p": 0.9176,
+        "years_positive": 7,
+        "n_years": 14,
+        "bh_pass": false,
+        "verdict": "FAIL",
+        "brier_base": 0.17712,
+        "brier_block": 0.178966,
+        "ci_excludes_zero": false,
+        "sign_stable": false,
+        "n_oos": 3321
+      },
+      "6m": {
+        "delta_brier": -0.000557,
+        "ci90": [
+          -0.001369,
+          0.000337
+        ],
+        "boot_p": 0.8414,
+        "years_positive": 6,
+        "n_years": 14,
+        "bh_pass": false,
+        "verdict": "FAIL",
+        "brier_base": 0.100733,
+        "brier_block": 0.10129,
+        "ci_excludes_zero": false,
+        "sign_stable": false,
+        "n_oos": 3321
+      }
+    }
+  }
+}

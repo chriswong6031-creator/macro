@@ -220,13 +220,149 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
   .mh-gate-table,.mh-exp-table{font-size:.73rem}
   .mh-gate-table td,.mh-exp-table td{padding:7px 8px}
 }
+
+/* ── Hub v2: Pattern Memory / Truth Ledger ──────────────────────────────── */
+.pm-unavail{padding:14px;border-radius:8px;
+  background:color-mix(in srgb,var(--muted) 10%,transparent);
+  border:1px solid var(--border,rgba(255,255,255,.06));
+  font-size:.85rem;color:var(--muted,#8899aa)}
+.pm-status-row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px}
+.pm-status-chip{padding:5px 12px;border-radius:6px;font-size:.78rem;font-weight:700;
+  border:1px solid var(--border,rgba(255,255,255,.1))}
+.pm-chip-promoted_null{background:color-mix(in srgb,var(--muted,#8899aa) 12%,transparent);
+  color:var(--muted,#8899aa);border-color:color-mix(in srgb,var(--muted) 30%,transparent)}
+.pm-chip-display{background:color-mix(in srgb,var(--blue,#3b82f6) 12%,transparent);
+  color:var(--blue,#3b82f6);border-color:color-mix(in srgb,var(--blue) 30%,transparent)}
+.pm-chip-candidate{background:color-mix(in srgb,var(--warn,#f59e0b) 12%,transparent);
+  color:var(--warn,#f59e0b);border-color:color-mix(in srgb,var(--warn) 30%,transparent)}
+.pm-chip-structural{background:color-mix(in srgb,var(--text,#e2e8f0) 8%,transparent);
+  color:var(--text,#e2e8f0);border-color:color-mix(in srgb,var(--text) 20%,transparent)}
+.pm-truth-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%}
+.pm-truth-table{width:100%;min-width:600px;border-collapse:collapse;font-size:.8rem}
+.pm-truth-table th{text-align:left;padding:8px 12px;font-size:.72rem;font-weight:700;
+  color:var(--muted,#8899aa);border-bottom:1px solid var(--border,rgba(255,255,255,.08));
+  text-transform:uppercase;letter-spacing:.08em}
+.pm-truth-table td{padding:8px 12px;border-bottom:1px solid var(--border,rgba(255,255,255,.04));
+  vertical-align:top;line-height:1.4}
+.pm-truth-table tr:last-child td{border-bottom:none}
+.pm-truth-id{font-family:monospace;font-size:.75rem;font-weight:700;white-space:nowrap;
+  color:var(--text,#e2e8f0)}
+.pm-stmt{font-size:.78rem;color:var(--text,#e2e8f0);line-height:1.4;max-width:400px}
+.pm-status-null{color:var(--muted,#8899aa);font-size:.72rem;font-weight:700}
+.pm-status-display{color:var(--blue,#3b82f6);font-size:.72rem;font-weight:700}
+.pm-status-candidate{color:var(--warn,#f59e0b);font-size:.72rem;font-weight:700}
+.pm-status-other{color:var(--text,#e2e8f0);font-size:.72rem;font-weight:700}
+.pm-meta{font-size:.7rem;color:var(--muted,#8899aa)}
+
+/* ── Hub v2: Null Library ───────────────────────────────────────────────── */
+.nl-wrap{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:16px;margin-top:8px}
+.nl-card{border:1px solid color-mix(in srgb,var(--muted,#8899aa) 20%,transparent);
+  border-radius:10px;padding:16px;
+  background:color-mix(in srgb,var(--muted,#8899aa) 5%,transparent)}
+.nl-card-hd{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.nl-card-id{font-family:monospace;font-size:.75rem;font-weight:700;color:var(--muted,#8899aa)}
+.nl-ruled-badge{font-size:.68rem;font-weight:700;letter-spacing:.05em;padding:2px 7px;
+  border-radius:4px;
+  background:color-mix(in srgb,var(--muted,#8899aa) 12%,transparent);
+  color:var(--muted,#8899aa);
+  border:1px solid color-mix(in srgb,var(--muted) 25%,transparent)}
+.nl-stmt{font-size:.8rem;color:var(--text,#e2e8f0);line-height:1.5;margin-bottom:10px}
+.nl-ci{font-size:.75rem;color:var(--muted,#8899aa);margin-bottom:10px;line-height:1.4}
+.nl-refs-label{font-size:.68rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--muted,#8899aa);margin-bottom:4px}
+.nl-refs-list{list-style:none;padding:0;margin:0}
+.nl-refs-list li{font-family:monospace;font-size:.7rem;color:var(--muted,#8899aa);
+  padding:2px 0;word-break:break-all;line-height:1.4}
+.nl-due{font-size:.68rem;color:var(--muted,#8899aa);margin-top:8px}
+@media(max-width:600px){
+  .nl-wrap{grid-template-columns:1fr}
+}
+
+/* ── Hub v2: Accrual Clocks ─────────────────────────────────────────────── */
+.ac-note{font-size:.82rem;color:var(--muted,#8899aa);max-width:720px;margin:0 0 16px;line-height:1.6}
+.ac-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%}
+.ac-table{width:100%;min-width:640px;border-collapse:collapse;font-size:.8rem}
+.ac-table th{text-align:left;padding:8px 12px;font-size:.72rem;font-weight:700;
+  color:var(--muted,#8899aa);border-bottom:1px solid var(--border,rgba(255,255,255,.08));
+  text-transform:uppercase;letter-spacing:.08em}
+.ac-table td{padding:9px 12px;border-bottom:1px solid var(--border,rgba(255,255,255,.04));
+  color:var(--text,#e2e8f0);vertical-align:top;line-height:1.4}
+.ac-table tr:last-child td{border-bottom:none}
+.ac-ledger-name{font-size:.82rem;font-weight:600;color:var(--text,#e2e8f0)}
+.ac-ledger-sub{font-size:.7rem;color:var(--muted,#8899aa);margin-top:2px}
+.ac-num{font-family:monospace;font-size:.82rem;font-weight:700;color:var(--text,#e2e8f0)}
+.ac-na{color:var(--muted,#8899aa);font-size:.82rem}
+.ac-proj{font-family:monospace;font-size:.82rem;font-weight:700}
+.ac-proj-future{color:var(--blue,#3b82f6)}
+.ac-proj-done{color:var(--up,#22c55e)}
+.ac-proj-none{color:var(--muted,#8899aa)}
+
+/* ── Hub v2: Prediction Layer ───────────────────────────────────────────── */
+.pl-unavail{padding:14px;border-radius:8px;
+  background:color-mix(in srgb,var(--muted) 10%,transparent);
+  border:1px solid var(--border,rgba(255,255,255,.06));
+  font-size:.85rem;color:var(--muted,#8899aa)}
+.pl-meta-row{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:20px;align-items:center}
+.pl-meta-chip{font-size:.75rem;padding:4px 10px;border-radius:5px;
+  border:1px solid var(--border,rgba(255,255,255,.1));color:var(--muted,#8899aa)}
+.pl-meta-chip strong{color:var(--text,#e2e8f0)}
+.pl-stale-note{font-size:.78rem;color:var(--muted,#8899aa);font-style:italic}
+.pl-revopt-warn{font-size:.78rem;color:var(--warn,#f59e0b);margin-left:4px}
+.pl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:28px}
+.pl-cell{border-radius:8px;padding:14px;border:1px solid var(--border,rgba(255,255,255,.08));
+  background:color-mix(in srgb,var(--surface,#0f1629) 60%,transparent)}
+.pl-cell-pass{border-color:color-mix(in srgb,var(--up,#22c55e) 30%,transparent);
+  background:color-mix(in srgb,var(--up,#22c55e) 5%,transparent)}
+.pl-cell-prior{border-color:color-mix(in srgb,var(--muted,#8899aa) 20%,transparent)}
+.pl-cell-dir{font-size:.68rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--muted,#8899aa);margin-bottom:4px}
+.pl-cell-horizon{font-size:.95rem;font-weight:800;color:var(--text,#e2e8f0);margin-bottom:8px}
+.pl-badge{display:inline-block;font-size:.72rem;font-weight:700;padding:3px 8px;
+  border-radius:4px;margin-bottom:8px}
+.pl-badge-pass{background:color-mix(in srgb,var(--up,#22c55e) 18%,transparent);
+  color:var(--up,#22c55e);border:1px solid color-mix(in srgb,var(--up) 30%,transparent)}
+.pl-badge-prior{background:color-mix(in srgb,var(--muted,#8899aa) 12%,transparent);
+  color:var(--muted,#8899aa);border:1px solid color-mix(in srgb,var(--muted) 25%,transparent)}
+.pl-cell-stat{font-size:.72rem;color:var(--muted,#8899aa);line-height:1.5}
+.pl-cell-stat strong{color:var(--text,#e2e8f0)}
+/* Adoption gaps */
+.pl-gaps-section{margin-top:8px}
+.pl-gaps-title{font-size:.75rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--muted,#8899aa);margin-bottom:12px}
+.pl-gap-list{list-style:none;padding:0;margin:0 0 20px;display:flex;flex-direction:column;gap:10px}
+.pl-gap-item{padding:12px 16px;border-radius:8px;border:1px solid var(--border,rgba(255,255,255,.07));
+  background:color-mix(in srgb,var(--warn,#f59e0b) 4%,transparent);font-size:.8rem}
+.pl-gap-item.pl-gap-allnull{background:color-mix(in srgb,var(--fail,#ef4444) 5%,transparent);
+  border-color:color-mix(in srgb,var(--fail,#ef4444) 20%,transparent)}
+.pl-gap-hd{font-weight:700;color:var(--text,#e2e8f0);margin-bottom:5px}
+.pl-gap-note{color:var(--muted,#8899aa);line-height:1.5}
+.pl-gap-meta{font-size:.7rem;color:var(--muted,#8899aa);margin-top:5px;font-family:monospace}
+.pl-gap-tag{display:inline-block;font-size:.65rem;padding:1px 6px;border-radius:3px;margin-left:6px;
+  background:color-mix(in srgb,var(--muted) 12%,transparent);color:var(--muted,#8899aa)}
+
+/* ── Hub v2: Coverage Matrix ────────────────────────────────────────────── */
+.cm-note{font-size:.82rem;color:var(--muted,#8899aa);max-width:720px;margin:0 0 16px;line-height:1.6}
+.cm-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%}
+.cm-table{width:100%;min-width:700px;border-collapse:collapse;font-size:.8rem}
+.cm-table th{text-align:left;padding:8px 12px;font-size:.7rem;font-weight:700;
+  color:var(--muted,#8899aa);border-bottom:1px solid var(--border,rgba(255,255,255,.08));
+  text-transform:uppercase;letter-spacing:.06em}
+.cm-table td{padding:9px 12px;border-bottom:1px solid var(--border,rgba(255,255,255,.04));
+  color:var(--text,#e2e8f0);vertical-align:middle;line-height:1.4}
+.cm-table tr:last-child td{border-bottom:none}
+.cm-page{font-size:.8rem;font-weight:600;color:var(--text,#e2e8f0);font-family:monospace}
+.cm-yes{font-weight:700;color:var(--up,#22c55e)}
+.cm-partial{font-weight:700;color:var(--warn,#f59e0b)}
+.cm-no{color:var(--muted,#8899aa);font-size:.75rem}
+.cm-hint{font-size:.65rem;color:var(--muted,#8899aa);display:block;margin-top:2px;font-family:monospace}
+.cm-audit{font-size:.72rem;color:var(--muted,#8899aa);font-style:italic;margin-top:8px}
 </style>
 </head>
 <body>
 
 
 <nav class="site-nav">
-  
+
 
 
     <div class="nav-links">
@@ -274,6 +410,9 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
         <a href="news.html">📰 <span class="l-en">News Feed</span><span class="l-zh">新闻流</span><span class="d"><span class="l-en">Macro headlines · catalysts · sentiment</span><span class="l-zh">宏观头条 · 日程 · 情绪</span></span></a>
         <a href="alerts.html">🚨 <span class="l-en">Alert Center</span><span class="l-zh">警报中心</span><span class="d"><span class="l-en">Ranked & triaged alerts</span><span class="l-zh">分级分诊的警报</span></span></a>
         <a href="gex.html">🧲 <span class="l-en">Options Desk</span><span class="l-zh">期权台</span><span class="d"><span class="l-en">GEX · walls · vol surface</span><span class="l-zh">GEX · 墙 · 波动率曲面</span></span></a>
+        <a href="flow_desk.html">🌊 <span class="l-en">Group Flow Heatmap</span><span class="l-zh">板块资金流热力图</span><span class="d"><span class="l-en">Market tide · sector premium z · top movers · ETF proxy</span><span class="l-zh">资金潮汐 · 板块权利金Z · 净额排行 · ETF代理</span></span></a>
+        <a href="options_screener.html">📊 <span class="l-en">Options Screener</span><span class="l-zh">期权筛选台</span><span class="d"><span class="l-en">IV · IV-rank · GEX tier · flow · max-pain · 350+ names</span><span class="l-zh">IV · IV分位 · GEX层级 · 期权流量 · 最大痛点 · 350+标的</span></span></a>
+        <a href="darkpool.html">🌑 <span class="l-en">Dark Pool Desk</span><span class="l-zh">场外暗池台</span><span class="d"><span class="l-en">Off-exchange volume · short ratio · ATS venues</span><span class="l-zh">场外成交量 · 融券比率 · ATS场所</span></span></a>
       </div>
     </div>
     <div class="nav-dd">
@@ -286,6 +425,7 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
           <div class="nav-dd-menu" role="menu">
             <a href="sector_central_china.html">🧠 <span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">Live desk · cycle map · one gated read per sector & theme · graded</span><span class="l-zh">实时看板 · 周期图谱 · 每行业与主题门控研判 · 自评分</span></span></a>
             <a href="baskets_china.html">🧺 <span class="l-en">Thematic Baskets & Rotation</span><span class="l-zh">主题篮子与轮动</span><span class="d"><span class="l-en">Equal-weight theme baskets vs CSI 300 · which theme to hold & when to rotate</span><span class="l-zh">等权主题篮子 vs 沪深300 · 持有哪个主题及何时轮动</span></span></a>
+            <a href="subsector_rotation_china.html">🌀 <span class="l-en">Subsector Rotation</span><span class="l-zh">子行业轮动</span><span class="d"><span class="l-en">233 同花顺 concepts + curated themes · rotation map · velocity screen · catch emerging themes early</span><span class="l-zh">233 同花顺概念 + 精选主题 · 轮动图 · 速度筛选 · 提前捕捉升温主题</span></span></a>
             <a href="subsectors_china.html">💫 <span class="l-en">Subsector Confluence</span><span class="l-zh">子行业汇聚</span><span class="d"><span class="l-en">Entry-now 同花顺 concepts · T1-T4 confluence · double-gated A-share funnel · synthetic index charts</span><span class="l-zh">同花顺现可入场概念 · T1-T4 汇聚 · 双重闸门选股 · 合成指数图</span></span></a>
             <a href="china_heatmap.html">🔥 <span class="l-en">Market Heatmap</span><span class="l-zh">市场热力图</span><span class="d"><span class="l-en">Every A-share · sector treemap · market-cap</span><span class="l-zh">全部A股 · 板块树图 · 按市值</span></span></a>
           </div>
@@ -339,7 +479,7 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
       <a class="nav-link" href="javascript:void(0)">💠 <span class="l-en">Other Assets</span><span class="l-zh">其他资产</span> <span class="caret">▾</span></a>
       <div class="nav-dd-menu" role="menu">
         <div class="nav-dd nav-sub">
-          <a class="nav-sub-trig" href="vector.html">₿ <span class="l-en">Bitcoin Vector</span><span class="l-zh">比特币向量</span> <span class="caret-r">▸</span></a>
+          <a class="nav-sub-trig" href="vector.html">₿ <span class="nav-sub-text"><span class="l-en">Bitcoin Vector</span><span class="l-zh">比特币向量</span><span class="d"><span class="l-en">Market state · risk · cycle</span><span class="l-zh">市场状态 · 风险 · 周期</span></span></span><span class="caret-r">▸</span></a>
           <div class="nav-dd-menu" role="menu">
             <a href="vector.html">📊 <span class="l-en">Overview</span><span class="l-zh">总览</span><span class="d"><span class="l-en">Market state · risk · momentum</span><span class="l-zh">市场状态 · 风险 · 动量</span></span></a>
             <a href="vector_allocation.html">◎ <span class="l-en">Allocation Strategy</span><span class="l-zh">仓位策略</span><span class="d"><span class="l-en">BTC · ETH · alts · cash</span><span class="l-zh">BTC · ETH · 山寨 · 现金</span></span></a>
@@ -347,7 +487,7 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
           </div>
         </div>
         <div class="nav-dd nav-sub">
-          <a class="nav-sub-trig" href="commodities.html">🛢 <span class="l-en">Commodities</span><span class="l-zh">大宗商品</span> <span class="caret-r">▸</span></a>
+          <a class="nav-sub-trig" href="commodities.html">🛢 <span class="nav-sub-text"><span class="l-en">Commodities</span><span class="l-zh">大宗商品</span><span class="d"><span class="l-en">Gold · oil · silver · copper</span><span class="l-zh">黄金 · 原油 · 白银 · 铜</span></span></span><span class="caret-r">▸</span></a>
           <div class="nav-dd-menu" role="menu">
             <a href="commodities.html">📊 <span class="l-en">Commodity Dashboard</span><span class="l-zh">商品仪表盘</span><span class="d"><span class="l-en">Gold · silver · copper · oil · complex</span><span class="l-zh">金 · 银 · 铜 · 油 · 综合</span></span></a>
             <a href="commodity_strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Per-commodity tactical strategies</span><span class="l-zh">分品种战术策略</span></span></a>
@@ -466,6 +606,7 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
           
           <div class="nav-mega-col">
             <div class="nav-mega-h"><span class="l-en">Policy & Quant Lab</span><span class="l-zh">政策与量化</span></div>
+            <a class="nav-mega-item" href="committee.html"><span class="nm-ic">🧬</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Committee View</span><span class="l-zh">委员会视图</span></span><span class="d"><span class="l-en">Every signal traced to its graded source · kernel · ladder · staleness</span><span class="l-zh">每条信号溯源 · 核心估计 · 阶梯状态 · 时效性</span></span></span></a>
             <a class="nav-mega-item" href="policy_watch.html"><span class="nm-ic">🏦</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Fed & Policy Watch</span><span class="l-zh">美联储与政策观察</span></span><span class="d"><span class="l-en">Fed + Administration intent & capital rotation</span><span class="l-zh">美联储+政府意图与资本轮动</span></span></span></a>
             <a class="nav-mega-item" href="whitehouse.html"><span class="nm-ic">🏛️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">White House Watch</span><span class="l-zh">白宫快讯</span></span><span class="d"><span class="l-en">Policy alerts · sector head/tailwinds · exposed names</span><span class="l-zh">政策快讯 · 行业顺逆风 · 受影响标的</span></span></span></a>
             <a class="nav-mega-item" href="signal_lab.html"><span class="nm-ic">🔬</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Signal Lab</span><span class="l-zh">信号实验室</span></span><span class="d"><span class="l-en">Consolidated validation scorecard</span><span class="l-zh">验证记分卡汇总</span></span></span></a>
@@ -2056,6 +2197,20 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
           <td style="font-size:.76rem;color:var(--muted,#8899aa)">Monthly re-grade via scripts/grade_promises.py in cycle-calibration.yml. LIVE cohort promotes when n_eff ≥ 40. If gate clears, badge moves from ACCRUING to MEASURED.</td>
         </tr>
         
+        <tr>
+          <td>
+            <div class="mh-exp-name">Market State — hand weights vs equal-weight Brier (h21 drawdown-concordance)</div>
+            <div class="mh-exp-what">Pre-registered measurement: do market_state's hand weights (trend .24/risk .18/vol .16/breadth .16/liquidity .14/stress .12) beat equal-weight-renormalized on h21 drawdown-concordance (any_dd5_within_h21 Brier skill vs intercept-only base rate)? Primary metric: Brier skill score for hand-weighted raw_score vs equal-weight counterfactual recomputed from the SAME logged per-component scores. N floor: 250 trading days of component-logged forward_log.jsonl entries. Verdict printed either way — do-no-harm gate: if hand weights fail (Brier_hand < Brier_equal OR fp_hand > fp_equal), print 'equal-weight baseline meets or beats hand weights', no reweighting. Component history does not exist pre-2026-07-04 (4 entries, no components logged); logger patched in W3 PR2 to accrue per-component scores nightly from today.</div>
+          </td>
+          <td>
+            
+            <span class="verdict verdict-accruing"><span class="l-en">ACCRUING</span><span class="l-zh">积累中</span></span>
+            
+          </td>
+          <td class="mh-exp-cb">2027-05-01</td>
+          <td style="font-size:.76rem;color:var(--muted,#8899aa)">Return 2027-05-01: load forward_log.jsonl rows with 'components' key + graded, compute Brier skill hand vs equal-weight, print verdict either way, update this registry note with the outcome.</td>
+        </tr>
+        
       </tbody>
     </table>
     </div>
@@ -2095,27 +2250,27 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
       <div class="sg-family">
         <div class="sg-fam-hd">
           <span class="sg-fam-name"><span class="l-en">US Sector</span><span class="l-zh">美国板块</span></span>
-          <span class="sg-fam-date">2026-06-30</span>
+          <span class="sg-fam-date">2026-07-31</span>
         </div>
         <div class="sg-sync-val" style="color:var(--down,#ef4444)">
-          0.315
+          0.234
         </div>
         <div class="sg-sync-bar">
-          <div class="sg-sync-fill" style="width:31%"></div>
+          <div class="sg-sync-fill" style="width:23%"></div>
         </div>
         
         <div class="sg-frac-row">
           
           
-          <span class="sg-frac-chip"><strong>Trough</strong> 9%</span>
+          <span class="sg-frac-chip"><strong>Trough</strong> 18%</span>
           
           
           
-          <span class="sg-frac-chip"><strong>Advance</strong> 46%</span>
+          <span class="sg-frac-chip"><strong>Advance</strong> 27%</span>
           
           
           
-          <span class="sg-frac-chip"><strong>Peak</strong> 27%</span>
+          <span class="sg-frac-chip"><strong>Peak</strong> 36%</span>
           
           
           
@@ -2126,15 +2281,15 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
         
         <div class="sg-hist-stats">
           
-          <span><span class="l-en">Mean</span><span class="l-zh">均值</span> 0.532</span>
+          <span><span class="l-en">Mean</span><span class="l-zh">均值</span> 0.531</span>
           
           
-          <span>P10 0.250</span>
+          <span>P10 0.247</span>
           
           
-          <span>P90 0.818</span>
+          <span>P90 0.817</span>
           
-          <span><span class="l-en">n</span><span class="l-zh">n</span>=322</span>
+          <span><span class="l-en">n</span><span class="l-zh">n</span>=323</span>
         </div>
         <svg class="sg-sparkline" data-fam="us_sector" viewBox="0 0 280 52" preserveAspectRatio="none" aria-hidden="true">
           <path class="sg-spark-line" fill="none" stroke="var(--blue,#3b82f6)" stroke-width="1.5" opacity="0.8" d="" data-key="us_sector"/>
@@ -2144,46 +2299,46 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
       <div class="sg-family">
         <div class="sg-fam-hd">
           <span class="sg-fam-name"><span class="l-en">Country ETF</span><span class="l-zh">国家ETF</span></span>
-          <span class="sg-fam-date">2026-06-30</span>
+          <span class="sg-fam-date">2026-07-31</span>
         </div>
         <div class="sg-sync-val" style="color:var(--down,#ef4444)">
-          0.223
+          0.129
         </div>
         <div class="sg-sync-bar">
-          <div class="sg-sync-fill" style="width:22%"></div>
+          <div class="sg-sync-fill" style="width:12%"></div>
         </div>
         
         <div class="sg-frac-row">
           
           
-          <span class="sg-frac-chip"><strong>Trough</strong> 21%</span>
+          <span class="sg-frac-chip"><strong>Trough</strong> 33%</span>
           
           
           
-          <span class="sg-frac-chip"><strong>Advance</strong> 21%</span>
+          <span class="sg-frac-chip"><strong>Advance</strong> 25%</span>
           
           
           
-          <span class="sg-frac-chip"><strong>Peak</strong> 42%</span>
+          <span class="sg-frac-chip"><strong>Peak</strong> 19%</span>
           
           
           
-          <span class="sg-frac-chip"><strong>Decline</strong> 17%</span>
+          <span class="sg-frac-chip"><strong>Decline</strong> 23%</span>
           
           
         </div>
         
         <div class="sg-hist-stats">
           
-          <span><span class="l-en">Mean</span><span class="l-zh">均值</span> 0.599</span>
+          <span><span class="l-en">Mean</span><span class="l-zh">均值</span> 0.597</span>
           
           
-          <span>P10 0.314</span>
+          <span>P10 0.313</span>
           
           
-          <span>P90 0.845</span>
+          <span>P90 0.844</span>
           
-          <span><span class="l-en">n</span><span class="l-zh">n</span>=354</span>
+          <span><span class="l-en">n</span><span class="l-zh">n</span>=355</span>
         </div>
         <svg class="sg-sparkline" data-fam="country" viewBox="0 0 280 52" preserveAspectRatio="none" aria-hidden="true">
           <path class="sg-spark-line" fill="none" stroke="var(--blue,#3b82f6)" stroke-width="1.5" opacity="0.8" d="" data-key="country"/>
@@ -2193,27 +2348,25 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
       <div class="sg-family">
         <div class="sg-fam-hd">
           <span class="sg-fam-name"><span class="l-en">China Sector (Shenwan)</span><span class="l-zh">中国申万板块</span></span>
-          <span class="sg-fam-date">2026-06-30</span>
+          <span class="sg-fam-date">2026-07-31</span>
         </div>
-        <div class="sg-sync-val" style="color:var(--warn,#f59e0b)">
-          0.524
+        <div class="sg-sync-val" style="color:var(--up,#22c55e)">
+          0.822
         </div>
         <div class="sg-sync-bar">
-          <div class="sg-sync-fill" style="width:52%"></div>
+          <div class="sg-sync-fill" style="width:82%"></div>
         </div>
         
         <div class="sg-frac-row">
           
           
-          <span class="sg-frac-chip"><strong>Trough</strong> 58%</span>
+          <span class="sg-frac-chip"><strong>Trough</strong> 81%</span>
           
           
           
-          <span class="sg-frac-chip"><strong>Advance</strong> 23%</span>
+          <span class="sg-frac-chip"><strong>Advance</strong> 6%</span>
           
           
-          
-          <span class="sg-frac-chip"><strong>Peak</strong> 6%</span>
           
           
           
@@ -2227,12 +2380,12 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
           <span><span class="l-en">Mean</span><span class="l-zh">均值</span> 0.701</span>
           
           
-          <span>P10 0.436</span>
+          <span>P10 0.453</span>
           
           
           <span>P90 0.979</span>
           
-          <span><span class="l-en">n</span><span class="l-zh">n</span>=300</span>
+          <span><span class="l-en">n</span><span class="l-zh">n</span>=301</span>
         </div>
         <svg class="sg-sparkline" data-fam="cn_sector" viewBox="0 0 280 52" preserveAspectRatio="none" aria-hidden="true">
           <path class="sg-spark-line" fill="none" stroke="var(--blue,#3b82f6)" stroke-width="1.5" opacity="0.8" d="" data-key="cn_sector"/>
@@ -2290,16 +2443,1524 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
   
 
   
+  <section class="mh-section" id="pm-section">
+    <div class="mh-sh">
+      <h2><span class="l-en">Pattern Memory v0 — What Cycle Has Learned</span><span class="l-zh">模式记忆 v0 — 周期已发现的规律</span></h2>
+      <span class="mh-sh-sub"><span class="l-en">Adjudicated findings — append-only registry, PIT-pure</span><span class="l-zh">已裁定发现 — 追加式注册表，时点纯净</span></span>
+    </div>
+    <p style="font-size:.82rem;color:var(--muted,#8899aa);max-width:700px;margin:0 0 16px;line-height:1.6">
+      <span class="l-en">Each row is an adjudicated finding stored in <code>data/cycle_pattern/truths.jsonl</code>.
+      <strong>Null findings are guardrails</strong>: they rule out approaches that have been tried and found to carry no edge,
+      so they should not be rebuilt. Displaying them prominently is the honesty contract.</span>
+      <span class="l-zh">每一行均为存储于 <code>data/cycle_pattern/truths.jsonl</code> 的已裁定发现。
+      <strong>零效应发现是护栏</strong>：它们排除了已尝试且无优势的路径，不应被重建。
+      将其显著呈现正是诚实契约的体现。</span>
+    </p>
+
+    
+
+    
+    <div class="pm-status-row">
+      
+      <div class="pm-status-chip pm-chip-candidate">
+        candidate: 1
+      </div>
+      
+      <div class="pm-status-chip pm-chip-display">
+        display: 7
+      </div>
+      
+      <div class="pm-status-chip pm-chip-promoted_null">
+        promoted_null: 9
+      </div>
+      
+      <div class="pm-status-chip pm-chip-structural" style="font-weight:400;background:none;border:none;padding-left:0">
+        <span class="l-en">17 active total</span><span class="l-zh">共 17 条有效</span>
+      </div>
+    </div>
+
+    
+    <div class="pm-truth-wrap">
+    <table class="pm-truth-table">
+      <thead>
+        <tr>
+          <th><span class="l-en">ID</span><span class="l-zh">编号</span></th>
+          <th><span class="l-en">Statement</span><span class="l-zh">陈述</span></th>
+          <th><span class="l-en">Status</span><span class="l-zh">状态</span></th>
+          <th><span class="l-en">Effect class</span><span class="l-zh">效应类别</span></th>
+          <th><span class="l-en">PIT class</span><span class="l-zh">PIT类别</span></th>
+          <th><span class="l-en">Next review</span><span class="l-zh">下次复查</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        
+        <tr>
+          <td class="pm-truth-id">CPI-001</td>
+          <td class="pm-stmt">Cycle position deciles carry no forward drawdown-adjusted return signal at 21-, 63-, or 126-day horizons on the membership-free US-sector and country-ETF universe (8,344 PIT stamps, 2005–2026): every decile return-gap CI straddles zero.</td>
+          <td>
+            
+            <span class="pm-status-null">NULL</span>
+            
+          </td>
+          <td class="pm-meta">null</td>
+          <td class="pm-meta">pit_pure</td>
+          <td class="pm-meta">2026-10-06</td>
+        </tr>
+        
+        <tr>
+          <td class="pm-truth-id">CPI-002</td>
+          <td class="pm-stmt">Cycle phase carries a risk-only, sign-inverted drawdown signal: Peak phase precedes shallower forward 63-day drawdowns (gap-CI [+1.2%, +5.0%]) and Trough phase precedes deeper drawdowns (CI [−10.0%, −1.9%]); this signal decays post-2018 and must be treated as regime-fragile, never as a return lever.</td>
+          <td>
+            
+            <span class="pm-status-display">DISPLAY</span>
+            
+          </td>
+          <td class="pm-meta">risk_only</td>
+          <td class="pm-meta">pit_pure</td>
+          <td class="pm-meta">2026-10-06</td>
+        </tr>
+        
+        <tr>
+          <td class="pm-truth-id">CPI-003</td>
+          <td class="pm-stmt">The ladder inversion hypothesis — that low-position/DECLINE states outperform high-position/FRESH-BUY states on the drawdown-adjusted lens — is not confirmed on PIT data: all 9 era × horizon cells are INCONCLUSIVE and the full-sample point estimate leans the opposite direction.</td>
+          <td>
+            
+            <span class="pm-status-null">NULL</span>
+            
+          </td>
+          <td class="pm-meta">null</td>
+          <td class="pm-meta">pit_pure</td>
+          <td class="pm-meta">2026-10-06</td>
+        </tr>
+        
+        <tr>
+          <td class="pm-truth-id">CPI-004</td>
+          <td class="pm-stmt">The 1-month up-leg peak-hazard model beats the family-stratified KM prior on Brier score (gap +0.014, 90% CI [+0.007, +0.021], p=0.001) across 17 OOS year-blocks (14/17 positive); this is the only robust cell in the 6-cell hazard family.</td>
+          <td>
+            
+            <span class="pm-status-display">DISPLAY</span>
+            
+          </td>
+          <td class="pm-meta">risk_only</td>
+          <td class="pm-meta">mixed</td>
+          <td class="pm-meta">2026-10-06</td>
+        </tr>
+        
+        <tr>
+          <td class="pm-truth-id">CPI-005</td>
+          <td class="pm-stmt">Down-leg trough-hazard beats KM at 1m (gap +0.014, 90% CI [+0.003, +0.025]) and marginally at 3m (gap +0.008, CI [+0.001, +0.016]) and 6m (gap +0.004, CI [+0.001, +0.008]); down-side hazard is horizon-persistent but weakens at longer windows and must not be wired to position sizing.</td>
+          <td>
+            
+            <span class="pm-status-display">DISPLAY</span>
+            
+          </td>
+          <td class="pm-meta">risk_only</td>
+          <td class="pm-meta">mixed</td>
+          <td class="pm-meta">2026-10-06</td>
+        </tr>
+        
+        <tr>
+          <td class="pm-truth-id">CPI-006</td>
+          <td class="pm-stmt">Up-leg hazard at 3-month and 6-month horizons shows no skill beyond the family-stratified KM prior: up/3m CI [−0.000, +0.014] touches zero (p=0.061); up/6m gap ≈ 0 (p=0.52). Both ship PRIOR.</td>
+          <td>
+            
+            <span class="pm-status-null">NULL</span>
+            
+          </td>
+          <td class="pm-meta">null</td>
+          <td class="pm-meta">mixed</td>
+          <td class="pm-meta">2026-10-06</td>
+        </tr>
+        
+        <tr>
+          <td class="pm-truth-id">CPI-007</td>
+          <td class="pm-stmt">After vol-residualizing forward max-drawdowns, no ladder state × family × horizon cell survives BH-FDR (q=0.10): 2 nominal hits of 48 cells are consistent with chance; every state ships risk_size_mult=1.0.</td>
+          <td>
+            
+            <span class="pm-status-null">NULL</span>
+            
+          </td>
+          <td class="pm-meta">null</td>
+          <td class="pm-meta">pit_pure</td>
+          <td class="pm-meta">2026-10-06</td>
+        </tr>
+        
+        <tr>
+          <td class="pm-truth-id">CPI-008</td>
+          <td class="pm-stmt">136 in-sample FDR-surviving cross-lagged pair correlations yield zero out-of-sample Brier improvement (rel improvement 0.029%, 90% CI spanning zero, 3/9 year-blocks positive): the lead-lag interaction layer is a NO-GO and must not be built on this evidence.</td>
+          <td>
+            
+            <span class="pm-status-null">NULL</span>
+            
+          </td>
+          <td class="pm-meta">null</td>
+          <td class="pm-meta">pit_pure</td>
+          <td class="pm-meta">2026-10-06</td>
+        </tr>
+        
+        <tr>
+          <td class="pm-truth-id">CPI-009</td>
+          <td class="pm-stmt">39 of 240 phase × quad × family cell combinations show forward-return or vol-residualized drawdown CIs excluding the phase-pooled baseline, with the strongest signal at cn_sector|Peak|Q1 (shrunk 63d return +14.3%, CI [+7.3%, +19.3%]); ALL are revision_optimistic until a PIT-correct macro-regime spine is built.</td>
+          <td>
+            
+            <span class="pm-status-candidate">CANDIDATE</span>
+            
+          </td>
+          <td class="pm-meta">positive</td>
+          <td class="pm-meta">revision_optimistic</td>
+          <td class="pm-meta">2026-10-06</td>
+        </tr>
+        
+        <tr>
+          <td class="pm-truth-id">CPI-010</td>
+          <td class="pm-stmt">Turn-projection precision is falsified against the pre-registered 0.5 bar: sector_cycles 0.075 [0.05, 0.10], country_cycles 0.109 [0.09, 0.13], china_sector_cycles 0.230 [0.20, 0.26] — all Wilson lower bounds far below 0.5.</td>
+          <td>
+            
+            <span class="pm-status-null">NULL</span>
+            
+          </td>
+          <td class="pm-meta">null</td>
+          <td class="pm-meta">pit_pure</td>
+          <td class="pm-meta">2026-10-06</td>
+        </tr>
+        
+        <tr>
+          <td class="pm-truth-id">CPI-011</td>
+          <td class="pm-stmt">Cycle projection cones are severely miscalibrated toward too-tight: empirical coverage 0.188/0.283/0.359 vs 0.80 nominal; recalibration multipliers are 8.19× (sector), 3.57× (country), 3.12× (china sector).</td>
+          <td>
+            
+            <span class="pm-status-display">DISPLAY</span>
+            
+          </td>
+          <td class="pm-meta">structural</td>
+          <td class="pm-meta">pit_pure</td>
+          <td class="pm-meta">2026-10-06</td>
+        </tr>
+        
+        <tr>
+          <td class="pm-truth-id">CPI-012</td>
+          <td class="pm-stmt">Directional signal and stance labels carry negative Brier skill vs the instrument base rate over 63 days: sector −1.538 / −1.309, country −1.198 / −1.191, china −1.159 — the labels do not beat an always-predict-majority-direction coin on the backfill cohort.</td>
+          <td>
+            
+            <span class="pm-status-null">NULL</span>
+            
+          </td>
+          <td class="pm-meta">null</td>
+          <td class="pm-meta">pit_pure</td>
+          <td class="pm-meta">2026-10-06</td>
+        </tr>
+        
+        <tr>
+          <td class="pm-truth-id">CPI-013</td>
+          <td class="pm-stmt">Basket cycle histories are hindsight-curated (membership frozen at a single curated date, pit=False per sector_cycles.py:409): any backtest or grading that uses basket series is survivorship-biased and MUST be labeled descriptive only until a membership-freeze audit creates a point-in-time membership archive.</td>
+          <td>
+            
+            <span class="pm-status-display">DISPLAY</span>
+            
+          </td>
+          <td class="pm-meta">structural</td>
+          <td class="pm-meta">pit_pure</td>
+          <td class="pm-meta">2026-10-06</td>
+        </tr>
+        
+        <tr>
+          <td class="pm-truth-id">CPI-014</td>
+          <td class="pm-stmt">Forward-log cohorts are too young to overrule backfill verdicts: sector_cycles and country_cycles have 2 unique live dates, china_sector_cycles has 5; a minimum of 40 matured observations is required before any live badge can displace a backfill finding.</td>
+          <td>
+            
+            <span class="pm-status-display">DISPLAY</span>
+            
+          </td>
+          <td class="pm-meta">structural</td>
+          <td class="pm-meta">pit_pure</td>
+          <td class="pm-meta">2026-10-06</td>
+        </tr>
+        
+        <tr>
+          <td class="pm-truth-id">CPI-015</td>
+          <td class="pm-stmt">Cycle narrative and DNA files (cycle_dna.json, narratives.json, leg_context.json) are mechanism-description material and CANNOT serve as statistical evidence for graded truths until they are normalized into a machine-readable format and joined to outcome-labeled forward-return data.</td>
+          <td>
+            
+            <span class="pm-status-display">DISPLAY</span>
+            
+          </td>
+          <td class="pm-meta">structural</td>
+          <td class="pm-meta">pit_pure</td>
+          <td class="pm-meta">2026-10-06</td>
+        </tr>
+        
+        <tr>
+          <td class="pm-truth-id">cycle_truth_ft1_breadth_hazard_null_v1</td>
+          <td class="pm-stmt">The FT-1 family-breadth block (fam_pct_above_200d, fam_pct_above_50d, breadth_div_own, breadth_thrust_3m) does not add out-of-sample turn-hazard skill beyond the shipped W2.5-bound feature set under the W4.2 harness (0/6 cells pass; the block significantly DEGRADES down/1m, dBrier -0.0056 CI90 [-0.0099,-0.0016]). Up-direction point estimates lean positive but are unearned.</td>
+          <td>
+            
+            <span class="pm-status-null">NULL</span>
+            
+          </td>
+          <td class="pm-meta">null</td>
+          <td class="pm-meta">pit_pure</td>
+          <td class="pm-meta">2027-01-06</td>
+        </tr>
+        
+        <tr>
+          <td class="pm-truth-id">cycle_truth_ft4_structure_hazard_null_v1</td>
+          <td class="pm-stmt">The FT-4 cross-entity structure block (sync_family, phase_breadth_late, phase_breadth_early, pos_dispersion) as features on MEMBER-level turn hazard adds no out-of-sample skill beyond the shipped feature set (0/6 cells pass). Does NOT cover the index-level target: IX-1 (index turn hazard from constituent structure) remains an open, separately-gated question.</td>
+          <td>
+            
+            <span class="pm-status-null">NULL</span>
+            
+          </td>
+          <td class="pm-meta">null</td>
+          <td class="pm-meta">pit_pure</td>
+          <td class="pm-meta">2027-01-06</td>
+        </tr>
+        
+      </tbody>
+    </table>
+    </div>
+
+    
+  </section>
+
+  
+  
+  <section class="mh-section" id="nl-section">
+    <div class="mh-sh">
+      <h2><span class="l-en">Null Library — Ruled Out</span><span class="l-zh">零效应库 — 已排除</span></h2>
+      <span class="mh-sh-sub"><span class="l-en">Do not rebuild these — each carries evidence that the approach carries no edge</span><span class="l-zh">请勿重建以下条目 — 均有证据表明该路径无优势</span></span>
+    </div>
+    <p style="font-size:.82rem;color:var(--muted,#8899aa);max-width:700px;margin:0 0 16px;line-height:1.6">
+      <span class="l-en">These findings reached <code>promoted_null</code> status because the evidence — at the sample sizes and horizons listed — ruled out an edge.
+      The evidence file paths below are citations, not promises. A null holds until the falsifier conditions in the truth record are met.</span>
+      <span class="l-zh">以下发现已达到 <code>promoted_null</code> 状态，因为在所列样本量与时间窗口下，证据排除了优势的存在。
+      下方文件路径为引用，非承诺。零效应结论在其真值记录中的证伪条件成立前持续有效。</span>
+    </p>
+    <div class="nl-wrap">
+      
+      <div class="nl-card">
+        <div class="nl-card-hd">
+          <span class="nl-card-id">CPI-001</span>
+          <span class="nl-ruled-badge"><span class="l-en">RULED OUT</span><span class="l-zh">已排除</span></span>
+        </div>
+        <div class="nl-stmt">Cycle position deciles carry no forward drawdown-adjusted return signal at 21-, 63-, or 126-day horizons on the membership-free US-sector and country-ETF universe (8,344 PIT stamps, 2005–2026): every decile return-gap CI straddles zero.</div>
+        
+        <div class="nl-ci">All 10 position-decile return-gap CIs straddle zero at every horizon; dd-adj ordering not claimable (no CI excludes 0). KG-1.</div>
+        
+        <div class="nl-refs-label"><span class="l-en">Evidence</span><span class="l-zh">证据</span></div>
+        <ul class="nl-refs-list">
+          
+          <li>research/cycle_masterplan/W04_KEYSTONE_VERDICT.md</li>
+          
+          <li>data/research/keystone_tr0/study_tables.json</li>
+          
+          <li>data/research/keystone_tr0/manifest.json</li>
+          
+        </ul>
+        
+        <div class="nl-due">
+          <span class="l-en">Review due:</span><span class="l-zh">复查日期：</span> 2026-10-06
+        </div>
+        
+      </div>
+      
+      <div class="nl-card">
+        <div class="nl-card-hd">
+          <span class="nl-card-id">CPI-003</span>
+          <span class="nl-ruled-badge"><span class="l-en">RULED OUT</span><span class="l-zh">已排除</span></span>
+        </div>
+        <div class="nl-stmt">The ladder inversion hypothesis — that low-position/DECLINE states outperform high-position/FRESH-BUY states on the drawdown-adjusted lens — is not confirmed on PIT data: all 9 era × horizon cells are INCONCLUSIVE and the full-sample point estimate leans the opposite direction.</div>
+        
+        <div class="nl-ci">Every dd-adj gap CI straddles zero. Point estimate runs opposite to the inversion hypothesis in the full sample (high-pos states score higher). KG-3.</div>
+        
+        <div class="nl-refs-label"><span class="l-en">Evidence</span><span class="l-zh">证据</span></div>
+        <ul class="nl-refs-list">
+          
+          <li>research/cycle_masterplan/W04_KEYSTONE_VERDICT.md</li>
+          
+          <li>data/research/keystone_tr0/study_tables.json</li>
+          
+          <li>data/regime/ladder_calibration.json</li>
+          
+        </ul>
+        
+        <div class="nl-due">
+          <span class="l-en">Review due:</span><span class="l-zh">复查日期：</span> 2026-10-06
+        </div>
+        
+      </div>
+      
+      <div class="nl-card">
+        <div class="nl-card-hd">
+          <span class="nl-card-id">CPI-006</span>
+          <span class="nl-ruled-badge"><span class="l-en">RULED OUT</span><span class="l-zh">已排除</span></span>
+        </div>
+        <div class="nl-stmt">Up-leg hazard at 3-month and 6-month horizons shows no skill beyond the family-stratified KM prior: up/3m CI [−0.000, +0.014] touches zero (p=0.061); up/6m gap ≈ 0 (p=0.52). Both ship PRIOR.</div>
+        
+        <div class="nl-ci">up/3m 90% CI [−0.000, +0.014]; up/6m 90% CI [−0.006, +0.006]. up/6m essentially zero skill (p=0.52).</div>
+        
+        <div class="nl-refs-label"><span class="l-en">Evidence</span><span class="l-zh">证据</span></div>
+        <ul class="nl-refs-list">
+          
+          <li>research/cycle_masterplan/W42_HAZARD_VERDICT.md</li>
+          
+          <li>data/hazard/model_price_c4414dcb.json</li>
+          
+        </ul>
+        
+        <div class="nl-due">
+          <span class="l-en">Review due:</span><span class="l-zh">复查日期：</span> 2026-10-06
+        </div>
+        
+      </div>
+      
+      <div class="nl-card">
+        <div class="nl-card-hd">
+          <span class="nl-card-id">CPI-007</span>
+          <span class="nl-ruled-badge"><span class="l-en">RULED OUT</span><span class="l-zh">已排除</span></span>
+        </div>
+        <div class="nl-stmt">After vol-residualizing forward max-drawdowns, no ladder state × family × horizon cell survives BH-FDR (q=0.10): 2 nominal hits of 48 cells are consistent with chance; every state ships risk_size_mult=1.0.</div>
+        
+        <div class="nl-ci">0 of 48 cells survive BH-FDR. The BC-1 return ranking inverts out of sample. Risk channel: null. Return channel: null.</div>
+        
+        <div class="nl-refs-label"><span class="l-en">Evidence</span><span class="l-zh">证据</span></div>
+        <ul class="nl-refs-list">
+          
+          <li>research/cycle_masterplan/W46_BINDING_CALIBRATION_VERDICT.md</li>
+          
+          <li>data/regime/ladder_risk_calibration.json</li>
+          
+        </ul>
+        
+        <div class="nl-due">
+          <span class="l-en">Review due:</span><span class="l-zh">复查日期：</span> 2026-10-06
+        </div>
+        
+      </div>
+      
+      <div class="nl-card">
+        <div class="nl-card-hd">
+          <span class="nl-card-id">CPI-008</span>
+          <span class="nl-ruled-badge"><span class="l-en">RULED OUT</span><span class="l-zh">已排除</span></span>
+        </div>
+        <div class="nl-stmt">136 in-sample FDR-surviving cross-lagged pair correlations yield zero out-of-sample Brier improvement (rel improvement 0.029%, 90% CI spanning zero, 3/9 year-blocks positive): the lead-lag interaction layer is a NO-GO and must not be built on this evidence.</div>
+        
+        <div class="nl-ci">Pooled rel improvement 0.029% (bar ≥ 2.0%); 90% CI [−0.261%, +0.288%]; 3/9 year-blocks positive (bar ≥ 6/9). All three LL-B sub-criteria FAIL.</div>
+        
+        <div class="nl-refs-label"><span class="l-en">Evidence</span><span class="l-zh">证据</span></div>
+        <ul class="nl-refs-list">
+          
+          <li>research/cycle_masterplan/W51_LEADLAG_VERDICT.md</li>
+          
+          <li>data/cycle_hazard/leadlag_phase0.json</li>
+          
+          <li>data/leadlag/frozen_pairs.json</li>
+          
+          <li>data/leadlag/sync_gauge.json</li>
+          
+        </ul>
+        
+        <div class="nl-due">
+          <span class="l-en">Review due:</span><span class="l-zh">复查日期：</span> 2026-10-06
+        </div>
+        
+      </div>
+      
+      <div class="nl-card">
+        <div class="nl-card-hd">
+          <span class="nl-card-id">CPI-010</span>
+          <span class="nl-ruled-badge"><span class="l-en">RULED OUT</span><span class="l-zh">已排除</span></span>
+        </div>
+        <div class="nl-stmt">Turn-projection precision is falsified against the pre-registered 0.5 bar: sector_cycles 0.075 [0.05, 0.10], country_cycles 0.109 [0.09, 0.13], china_sector_cycles 0.230 [0.20, 0.26] — all Wilson lower bounds far below 0.5.</div>
+        
+        <div class="nl-ci">sector: prec Wilson CI [0.05, 0.10]; country [0.09, 0.13]; china [0.20, 0.26]. All upper bounds below 0.5 bar. Dominant cause: chronically overdue projections (large overdue_fraction — re-anchoring / find_troughs repaint).</div>
+        
+        <div class="nl-refs-label"><span class="l-en">Evidence</span><span class="l-zh">证据</span></div>
+        <ul class="nl-refs-list">
+          
+          <li>research/cycle_masterplan/W24_FIRST_SCORECARDS.md</li>
+          
+          <li>data/sector_cycles/scorecards/promises_price_v1_zz14_v0.json</li>
+          
+          <li>data/country_cycles/scorecards/promises_price_v1_zz14_v0.json</li>
+          
+          <li>data/china_sector_cycles/scorecards/promises_price_v1_zz14_v0.json</li>
+          
+        </ul>
+        
+        <div class="nl-due">
+          <span class="l-en">Review due:</span><span class="l-zh">复查日期：</span> 2026-10-06
+        </div>
+        
+      </div>
+      
+      <div class="nl-card">
+        <div class="nl-card-hd">
+          <span class="nl-card-id">CPI-012</span>
+          <span class="nl-ruled-badge"><span class="l-en">RULED OUT</span><span class="l-zh">已排除</span></span>
+        </div>
+        <div class="nl-stmt">Directional signal and stance labels carry negative Brier skill vs the instrument base rate over 63 days: sector −1.538 / −1.309, country −1.198 / −1.191, china −1.159 — the labels do not beat an always-predict-majority-direction coin on the backfill cohort.</div>
+        
+        <div class="nl-ci">All three engines: CC-2 FAIL. Signal/stance labels are below the majority-class coin flip on this backfill cohort.</div>
+        
+        <div class="nl-refs-label"><span class="l-en">Evidence</span><span class="l-zh">证据</span></div>
+        <ul class="nl-refs-list">
+          
+          <li>research/cycle_masterplan/W24_FIRST_SCORECARDS.md</li>
+          
+          <li>data/sector_cycles/scorecards/promises_price_v1_zz14_v0.json</li>
+          
+          <li>data/country_cycles/scorecards/promises_price_v1_zz14_v0.json</li>
+          
+          <li>data/china_sector_cycles/scorecards/promises_price_v1_zz14_v0.json</li>
+          
+        </ul>
+        
+        <div class="nl-due">
+          <span class="l-en">Review due:</span><span class="l-zh">复查日期：</span> 2026-10-06
+        </div>
+        
+      </div>
+      
+      <div class="nl-card">
+        <div class="nl-card-hd">
+          <span class="nl-card-id">cycle_truth_ft1_breadth_hazard_null_v1</span>
+          <span class="nl-ruled-badge"><span class="l-en">RULED OUT</span><span class="l-zh">已排除</span></span>
+        </div>
+        <div class="nl-stmt">The FT-1 family-breadth block (fam_pct_above_200d, fam_pct_above_50d, breadth_div_own, breadth_thrust_3m) does not add out-of-sample turn-hazard skill beyond the shipped W2.5-bound feature set under the W4.2 harness (0/6 cells pass; the block significantly DEGRADES down/1m, dBrier -0.0056 CI90 [-0.0099,-0.0016]). Up-direction point estimates lean positive but are unearned.</div>
+        
+        <div class="nl-ci">all 6 cells fail BH q=0.10; dn/1m CI90 excludes 0 on the harmful side</div>
+        
+        <div class="nl-refs-label"><span class="l-en">Evidence</span><span class="l-zh">证据</span></div>
+        <ul class="nl-refs-list">
+          
+          <li>research/cycle_masterplan/CPI_FT1_FT4_VERDICT.md</li>
+          
+          <li>data/cycle_pattern/ft_trials/ft1_breadth.json</li>
+          
+          <li>research/cycle_masterplan/PREREGISTRATION.md</li>
+          
+        </ul>
+        
+        <div class="nl-due">
+          <span class="l-en">Review due:</span><span class="l-zh">复查日期：</span> 2027-01-06
+        </div>
+        
+      </div>
+      
+      <div class="nl-card">
+        <div class="nl-card-hd">
+          <span class="nl-card-id">cycle_truth_ft4_structure_hazard_null_v1</span>
+          <span class="nl-ruled-badge"><span class="l-en">RULED OUT</span><span class="l-zh">已排除</span></span>
+        </div>
+        <div class="nl-stmt">The FT-4 cross-entity structure block (sync_family, phase_breadth_late, phase_breadth_early, pos_dispersion) as features on MEMBER-level turn hazard adds no out-of-sample skill beyond the shipped feature set (0/6 cells pass). Does NOT cover the index-level target: IX-1 (index turn hazard from constituent structure) remains an open, separately-gated question.</div>
+        
+        <div class="nl-ci">all 6 cells fail BH q=0.10; every CI90 straddles 0</div>
+        
+        <div class="nl-refs-label"><span class="l-en">Evidence</span><span class="l-zh">证据</span></div>
+        <ul class="nl-refs-list">
+          
+          <li>research/cycle_masterplan/CPI_FT1_FT4_VERDICT.md</li>
+          
+          <li>data/cycle_pattern/ft_trials/ft4_structure.json</li>
+          
+          <li>research/cycle_masterplan/PREREGISTRATION.md</li>
+          
+        </ul>
+        
+        <div class="nl-due">
+          <span class="l-en">Review due:</span><span class="l-zh">复查日期：</span> 2027-01-06
+        </div>
+        
+      </div>
+      
+    </div>
+  </section>
+  
+
+  
+  
+  <section class="mh-section" id="ac-section">
+    <div class="mh-sh">
+      <h2><span class="l-en">Live Maturity &amp; Accrual Clocks</span><span class="l-zh">实盘成熟度与积累时钟</span></h2>
+      <span class="mh-sh-sub"><span class="l-en">When will each ledger reach 40 unique stamp dates?</span><span class="l-zh">各台账何时达到40个唯一时间戳？</span></span>
+    </div>
+    <p class="ac-note">
+      <span class="l-en">These are accrual clocks, not promises. The projected date to 40 unique stamps is a mechanical extrapolation
+      of the observed cadence — it assumes the ledger continues filling at the same pace, which may not hold.
+      40 unique stamp dates is the minimum for the live cohort maturity gate (n_eff threshold for meaningful
+      turn P/R). No edge is implied by reaching this milestone; it only means the gate can be re-evaluated.</span>
+      <span class="l-zh">这些是积累时钟，非承诺。达到40个唯一时间戳的预测日期，是对观测节奏的机械外推——假设台账以相同速度持续填充，
+      实际情况可能并非如此。40个唯一时间戳是实盘队列成熟度门槛的最低要求（拐点精准率/召回率的有效n阈值）。
+      达到此里程碑并不意味着存在优势；仅意味着该门槛可以重新评估。</span>
+    </p>
+    <div class="ac-table-wrap">
+    <table class="ac-table">
+      <thead>
+        <tr>
+          <th><span class="l-en">Ledger</span><span class="l-zh">台账</span></th>
+          <th><span class="l-en">Rows</span><span class="l-zh">行数</span></th>
+          <th><span class="l-en">IDs</span><span class="l-zh">标的数</span></th>
+          <th><span class="l-en">Stamp dates</span><span class="l-zh">时间戳数</span></th>
+          <th><span class="l-en">First / Last</span><span class="l-zh">首/末日期</span></th>
+          <th><span class="l-en">Cadence</span><span class="l-zh">节奏</span></th>
+          <th><span class="l-en">→ 40 stamps</span><span class="l-zh">→ 40时间戳</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        
+        <tr>
+          <td>
+            <div class="ac-ledger-name">
+              <span class="l-en">US Sector Cycles — forward log</span><span class="l-zh">美国板块周期 · 前向日志</span>
+            </div>
+          </td>
+          
+          <td class="ac-num">114</td>
+          <td class="ac-num">57</td>
+          <td class="ac-num">2</td>
+          <td style="font-family:monospace;font-size:.78rem;color:var(--muted,#8899aa)">
+            2026-07-02<br>2026-07-05
+          </td>
+          <td class="ac-num">
+            
+            3.0d
+            
+          </td>
+          <td>
+            
+            <span class="ac-proj ac-proj-future">2026-10-27</span>
+            
+          </td>
+          
+        </tr>
+        
+        <tr>
+          <td>
+            <div class="ac-ledger-name">
+              <span class="l-en">Country Cycles — forward log</span><span class="l-zh">国家周期 · 前向日志</span>
+            </div>
+          </td>
+          
+          <td class="ac-num">62</td>
+          <td class="ac-num">31</td>
+          <td class="ac-num">2</td>
+          <td style="font-family:monospace;font-size:.78rem;color:var(--muted,#8899aa)">
+            2026-07-02<br>2026-07-05
+          </td>
+          <td class="ac-num">
+            
+            3.0d
+            
+          </td>
+          <td>
+            
+            <span class="ac-proj ac-proj-future">2026-10-27</span>
+            
+          </td>
+          
+        </tr>
+        
+        <tr>
+          <td>
+            <div class="ac-ledger-name">
+              <span class="l-en">China Sector Cycles — forward log</span><span class="l-zh">中国板块周期 · 前向日志</span>
+            </div>
+          </td>
+          
+          <td class="ac-num">265</td>
+          <td class="ac-num">53</td>
+          <td class="ac-num">5</td>
+          <td style="font-family:monospace;font-size:.78rem;color:var(--muted,#8899aa)">
+            2026-06-26<br>2026-07-03
+          </td>
+          <td class="ac-num">
+            
+            1.8d
+            
+          </td>
+          <td>
+            
+            <span class="ac-proj ac-proj-future">2026-09-04</span>
+            
+          </td>
+          
+        </tr>
+        
+        <tr>
+          <td>
+            <div class="ac-ledger-name">
+              <span class="l-en">US Sector Central — calls</span><span class="l-zh">美国板块中枢 · 研判记录</span>
+            </div>
+          </td>
+          
+          <td class="ac-num">282</td>
+          <td class="ac-num">57</td>
+          <td class="ac-num">5</td>
+          <td style="font-family:monospace;font-size:.78rem;color:var(--muted,#8899aa)">
+            2026-06-28<br>2026-07-05
+          </td>
+          <td class="ac-num">
+            
+            1.8d
+            
+          </td>
+          <td>
+            
+            <span class="ac-proj ac-proj-future">2026-09-06</span>
+            
+          </td>
+          
+        </tr>
+        
+        <tr>
+          <td>
+            <div class="ac-ledger-name">
+              <span class="l-en">China Sector Central — calls</span><span class="l-zh">中国板块中枢 · 研判记录</span>
+            </div>
+          </td>
+          
+          <td class="ac-num">265</td>
+          <td class="ac-num">53</td>
+          <td class="ac-num">5</td>
+          <td style="font-family:monospace;font-size:.78rem;color:var(--muted,#8899aa)">
+            2026-06-26<br>2026-07-03
+          </td>
+          <td class="ac-num">
+            
+            1.8d
+            
+          </td>
+          <td>
+            
+            <span class="ac-proj ac-proj-future">2026-09-04</span>
+            
+          </td>
+          
+        </tr>
+        
+      </tbody>
+    </table>
+    </div>
+  </section>
+  
+
+  
+  <section class="mh-section" id="pl-section">
+    <div class="mh-sh">
+      <h2><span class="l-en">Prediction Layer — Hazard Model</span><span class="l-zh">预测层 — 风险模型</span></h2>
+      <span class="mh-sh-sub"><span class="l-en">6-cell turn hazard ledger (W4.2) · model freshness · adoption gaps</span><span class="l-zh">6格拐点风险台账（W4.2）· 模型新鲜度 · 采用差距</span></span>
+    </div>
+    <p style="font-size:.82rem;color:var(--muted,#8899aa);max-width:700px;margin:0 0 16px;line-height:1.6">
+      <span class="l-en">The hazard model scores each cycle entity's probability of a turn within 1/3/6 months.
+      Per-cell criterion: OOS Brier(model) &lt; Brier(KM baseline), 90% CI excludes zero, BH-FDR q=0.10.
+      Failing cells ship the KM prior — no model output, no invented confidence.
+      Quad-conditioned cells are revision-optimistic (macro vintage fix pending, P-D5-1).</span>
+      <span class="l-zh">风险模型评估每个周期实体在1/3/6个月内发生拐点的概率。
+      单格标准：OOS Brier（模型）&lt; Brier（KM基准），90% CI不含零，BH-FDR q=0.10。
+      未通过的格子使用KM先验——无模型输出，无捏造的置信度。
+      四象限条件格子处于修正乐观状态（宏观数据时间点修复待处理，P-D5-1）。</span>
+    </p>
+
+    
+
+    
+    <div class="pl-meta-row">
+      <div class="pl-meta-chip">
+        <span class="l-en"><strong>Fit date:</strong> 2026-07-03</span>
+        <span class="l-zh"><strong>拟合日期：</strong>2026-07-03</span>
+      </div>
+      <div class="pl-meta-chip">
+        <span class="l-en"><strong>Days since fit:</strong> 3</span>
+        <span class="l-zh"><strong>距拟合天数：</strong>3</span>
+      </div>
+      <div class="pl-meta-chip">
+        <span class="l-en"><strong>Refit cadence:</strong> quarterly (per D5)</span>
+        <span class="l-zh"><strong>重拟节奏：</strong>quarterly (per D5)</span>
+      </div>
+      <div class="pl-meta-chip">
+        <span class="l-en"><strong>Cells PASS / total:</strong> 4 / 6</span>
+        <span class="l-zh"><strong>通过格 / 总格：</strong>4 / 6</span>
+      </div>
+      
+      <span class="pl-revopt-warn">
+        <span class="l-en">⚠ Quad cells revision-optimistic — macro vintage wiring pending (P-D5-1)</span>
+        <span class="l-zh">⚠ 四象限格子修正乐观 — 宏观数据时间点接入待处理（P-D5-1）</span>
+      </span>
+      
+    </div>
+
+    
+    <div class="pl-grid">
+      
+      <div class="pl-cell pl-cell-pass">
+        <div class="pl-cell-dir">
+          <span class="l-en">Peak / Up turn</span><span class="l-zh">顶部 / 向上拐</span>
+          
+        </div>
+        <div class="pl-cell-horizon">1m</div>
+        <div>
+          <span class="pl-badge pl-badge-pass">
+            PASS
+          </span>
+        </div>
+        <div class="pl-cell-stat">
+          <span class="l-en">
+            <strong>ΔBrier:</strong> +0.0140<br>
+            <strong>CI 90%:</strong> [+0.0068, +0.0209]<br>
+            <strong>n OOS:</strong> 9246<br>
+          </span>
+          <span class="l-zh">
+            <strong>ΔBrier：</strong>+0.0140<br>
+            <strong>CI 90%：</strong>[+0.0068, +0.0209]<br>
+            <strong>OOS样本：</strong>9246<br>
+          </span>
+        </div>
+      </div>
+      
+      <div class="pl-cell pl-cell-prior">
+        <div class="pl-cell-dir">
+          <span class="l-en">Peak / Up turn</span><span class="l-zh">顶部 / 向上拐</span>
+          
+        </div>
+        <div class="pl-cell-horizon">3m</div>
+        <div>
+          <span class="pl-badge pl-badge-prior">
+            PRIOR
+          </span>
+        </div>
+        <div class="pl-cell-stat">
+          <span class="l-en">
+            <strong>ΔBrier:</strong> +0.0071<br>
+            <strong>CI 90%:</strong> [-0.0003, +0.0143]<br>
+            <strong>n OOS:</strong> 9246<br>
+          </span>
+          <span class="l-zh">
+            <strong>ΔBrier：</strong>+0.0071<br>
+            <strong>CI 90%：</strong>[-0.0003, +0.0143]<br>
+            <strong>OOS样本：</strong>9246<br>
+          </span>
+        </div>
+      </div>
+      
+      <div class="pl-cell pl-cell-prior">
+        <div class="pl-cell-dir">
+          <span class="l-en">Peak / Up turn</span><span class="l-zh">顶部 / 向上拐</span>
+          
+        </div>
+        <div class="pl-cell-horizon">6m</div>
+        <div>
+          <span class="pl-badge pl-badge-prior">
+            PRIOR
+          </span>
+        </div>
+        <div class="pl-cell-stat">
+          <span class="l-en">
+            <strong>ΔBrier:</strong> +0.0002<br>
+            <strong>CI 90%:</strong> [-0.0057, +0.0062]<br>
+            <strong>n OOS:</strong> 9246<br>
+          </span>
+          <span class="l-zh">
+            <strong>ΔBrier：</strong>+0.0002<br>
+            <strong>CI 90%：</strong>[-0.0057, +0.0062]<br>
+            <strong>OOS样本：</strong>9246<br>
+          </span>
+        </div>
+      </div>
+      
+      <div class="pl-cell pl-cell-pass">
+        <div class="pl-cell-dir">
+          <span class="l-en">Trough / Down turn</span><span class="l-zh">底部 / 向下拐</span>
+        </div>
+        <div class="pl-cell-horizon">1m</div>
+        <div>
+          <span class="pl-badge pl-badge-pass">
+            PASS
+          </span>
+        </div>
+        <div class="pl-cell-stat">
+          <span class="l-en">
+            <strong>ΔBrier:</strong> +0.0141<br>
+            <strong>CI 90%:</strong> [+0.0034, +0.0247]<br>
+            <strong>n OOS:</strong> 3744<br>
+          </span>
+          <span class="l-zh">
+            <strong>ΔBrier：</strong>+0.0141<br>
+            <strong>CI 90%：</strong>[+0.0034, +0.0247]<br>
+            <strong>OOS样本：</strong>3744<br>
+          </span>
+        </div>
+      </div>
+      
+      <div class="pl-cell pl-cell-pass">
+        <div class="pl-cell-dir">
+          <span class="l-en">Trough / Down turn</span><span class="l-zh">底部 / 向下拐</span>
+        </div>
+        <div class="pl-cell-horizon">3m</div>
+        <div>
+          <span class="pl-badge pl-badge-pass">
+            PASS
+          </span>
+        </div>
+        <div class="pl-cell-stat">
+          <span class="l-en">
+            <strong>ΔBrier:</strong> +0.0078<br>
+            <strong>CI 90%:</strong> [+0.0005, +0.0155]<br>
+            <strong>n OOS:</strong> 3744<br>
+          </span>
+          <span class="l-zh">
+            <strong>ΔBrier：</strong>+0.0078<br>
+            <strong>CI 90%：</strong>[+0.0005, +0.0155]<br>
+            <strong>OOS样本：</strong>3744<br>
+          </span>
+        </div>
+      </div>
+      
+      <div class="pl-cell pl-cell-pass">
+        <div class="pl-cell-dir">
+          <span class="l-en">Trough / Down turn</span><span class="l-zh">底部 / 向下拐</span>
+        </div>
+        <div class="pl-cell-horizon">6m</div>
+        <div>
+          <span class="pl-badge pl-badge-pass">
+            PASS
+          </span>
+        </div>
+        <div class="pl-cell-stat">
+          <span class="l-en">
+            <strong>ΔBrier:</strong> +0.0042<br>
+            <strong>CI 90%:</strong> [+0.0005, +0.0079]<br>
+            <strong>n OOS:</strong> 3744<br>
+          </span>
+          <span class="l-zh">
+            <strong>ΔBrier：</strong>+0.0042<br>
+            <strong>CI 90%：</strong>[+0.0005, +0.0079]<br>
+            <strong>OOS样本：</strong>3744<br>
+          </span>
+        </div>
+      </div>
+      
+    </div>
+
+    
+    <div class="pl-gaps-section">
+      <div class="pl-gaps-title">
+        <span class="l-en">Adoption Gaps</span><span class="l-zh">采用差距</span>
+      </div>
+      <p style="font-size:.8rem;color:var(--muted,#8899aa);margin:0 0 12px;line-height:1.5">
+        <span class="l-en">Where each artifact is produced vs consumed. Machine-detectable gaps are derived from parquet non-null counts.
+        Gaps marked "curated check" were verified by manual inspection and are not machine-detectable.</span>
+        <span class="l-zh">每个文物的生产地与消费地。机器可检测的差距源自 parquet 非空计数。
+        标注"人工核查"的差距经人工审核，无法由机器自动检测。</span>
+      </p>
+
+      
+      <ul class="pl-gap-list">
+        
+        <li class="pl-gap-item ">
+          <div class="pl-gap-hd">
+            <span class="l-en">US Sector Cycles</span><span class="l-zh">美国板块周期</span>
+            <span class="pl-gap-tag">machine</span>
+          </div>
+          <div class="pl-gap-note">
+            <span class="l-en">hazard_1m_p non-null in 50.9% of rows — pre-W4.3 rows are null</span><span class="l-zh">hazard_1m_p 在 50.9% 行中非空 — W4.3 前的行为空值</span>
+          </div>
+          <div class="pl-gap-meta">
+            <span class="l-en">Produced: engine/cycle_hazard/ stamp loop (W4.3)<br>Consumed: forward_log.parquet column (hazard_1m_p/3m/6m) — not yet rendered in any page template</span>
+            <span class="l-zh">生产：engine/cycle_hazard/ stamp loop (W4.3)<br>消费：forward_log.parquet column (hazard_1m_p/3m/6m) — not yet rendered in any page template</span>
+          </div>
+        </li>
+        
+        <li class="pl-gap-item ">
+          <div class="pl-gap-hd">
+            <span class="l-en">Country Cycles</span><span class="l-zh">国家周期</span>
+            <span class="pl-gap-tag">machine</span>
+          </div>
+          <div class="pl-gap-note">
+            <span class="l-en">hazard_1m_p non-null in 50.0% of rows — pre-W4.3 rows are null</span><span class="l-zh">hazard_1m_p 在 50.0% 行中非空 — W4.3 前的行为空值</span>
+          </div>
+          <div class="pl-gap-meta">
+            <span class="l-en">Produced: engine/cycle_hazard/ stamp loop (W4.3)<br>Consumed: forward_log.parquet column (hazard_1m_p/3m/6m) — not yet rendered in any page template</span>
+            <span class="l-zh">生产：engine/cycle_hazard/ stamp loop (W4.3)<br>消费：forward_log.parquet column (hazard_1m_p/3m/6m) — not yet rendered in any page template</span>
+          </div>
+        </li>
+        
+        <li class="pl-gap-item pl-gap-allnull">
+          <div class="pl-gap-hd">
+            <span class="l-en">China Sector Cycles</span><span class="l-zh">中国板块周期</span>
+            <span class="pl-gap-tag">machine</span>
+          </div>
+          <div class="pl-gap-note">
+            <span class="l-en">hazard_1m_p is 100% null — all historical rows pre-date W4.3 stamp fix</span><span class="l-zh">hazard_1m_p 全为空值 — 所有历史行早于 W4.3 修复时间点</span>
+          </div>
+          <div class="pl-gap-meta">
+            <span class="l-en">Produced: engine/cycle_hazard/ stamp loop (W4.3)<br>Consumed: forward_log.parquet column (hazard_1m_p/3m/6m) — not yet rendered in any page template</span>
+            <span class="l-zh">生产：engine/cycle_hazard/ stamp loop (W4.3)<br>消费：forward_log.parquet column (hazard_1m_p/3m/6m) — not yet rendered in any page template</span>
+          </div>
+        </li>
+        
+
+        
+        
+        <li class="pl-gap-item">
+          <div class="pl-gap-hd">
+            <span class="l-en">UI-HZ-1 — UI Adoption</span><span class="l-zh">UI-HZ-1 — 界面采用</span>
+            <span class="pl-gap-tag">curated check</span>
+          </div>
+          <div class="pl-gap-note">
+            <span class="l-en">Hazard probabilities (hazard_1m_p, hazard_3m_p, hazard_6m_p) are present in forward_log.parquet for sector and country engines, but are rendered on zero user-facing pages today. No template consumes now.hazard or any hazard_*_p column. The 4/6 PASS cells exist only in data/hazard/model_price_c4414dcb.json.</span>
+            <span class="l-zh">风险概率（hazard_1m_p、hazard_3m_p、hazard_6m_p）已存在于板块与国家引擎的 forward_log.parquet 中，但当前未被任何用户可见页面渲染。没有任何模板读取 now.hazard 或任何 hazard_*_p 字段。4/6 通过的单元格仅存在于 data/hazard/model_price_c4414dcb.json 中。</span>
+          </div>
+          <div class="pl-gap-meta">
+            <span class="l-en">Produced: engine/cycle_hazard/stamp loop → forward_log.parquet; data/hazard/model_price_c4414dcb.json<br>Consumed: nowhere — zero page templates<br>Planned: P6</span>
+            <span class="l-zh">生产：engine/cycle_hazard/stamp loop → forward_log.parquet; data/hazard/model_price_c4414dcb.json<br>消费：nowhere — zero page templates<br>计划阶段：P6</span>
+          </div>
+        </li>
+        
+      </ul>
+    </div>
+
+    
+  </section>
+
+  
+  
+  <section class="mh-section" id="cm-section">
+    <div class="mh-sh">
+      <h2><span class="l-en">Coverage Matrix</span><span class="l-zh">覆盖矩阵</span></h2>
+      <span class="mh-sh-sub"><span class="l-en">7 scope pages × 6 capability columns — curated, audited 2026-07-06</span><span class="l-zh">7个范围页面 × 6个能力列 — curated, audited 2026-07-06</span></span>
+    </div>
+    <p class="cm-note">
+      <span class="l-en">Each cell shows whether the page currently uses this capability: <strong class="cm-yes">yes</strong> / <strong class="cm-partial">partial</strong> / <span class="cm-no">no</span>.
+      Values are sourced from a committed Python dict in <code>scripts/build_measurement.py</code> with a comment per cell citing the evidence file.
+      This matrix is hand-maintained until machine detection exists — it is honest about what exists today, not a roadmap.</span>
+      <span class="l-zh">每格显示该页面是否当前使用此能力：<strong class="cm-yes">是</strong> / <strong class="cm-partial">部分</strong> / <span class="cm-no">否</span>。
+      值来源于 <code>scripts/build_measurement.py</code> 中已提交的 Python 字典，每格附有引用证据文件的注释。
+      该矩阵为人工维护，直至机器检测可用——仅反映当前实际情况，非路线图。</span>
+    </p>
+    <div class="cm-wrap">
+    <table class="cm-table">
+      <thead>
+        <tr>
+          <th><span class="l-en">Page</span><span class="l-zh">页面</span></th>
+          
+          <th>
+            <span class="l-en">State export</span><span class="l-zh">状态导出</span>
+          </th>
+          
+          <th>
+            <span class="l-en">Outcome join</span><span class="l-zh">结果关联</span>
+          </th>
+          
+          <th>
+            <span class="l-en">Hazard adoption</span><span class="l-zh">风险采纳</span>
+          </th>
+          
+          <th>
+            <span class="l-en">Truth badge</span><span class="l-zh">真值徽章</span>
+          </th>
+          
+          <th>
+            <span class="l-en">NW export</span><span class="l-zh">神经网络导出</span>
+          </th>
+          
+          <th>
+            <span class="l-en">Live grader</span><span class="l-zh">实盘评分器</span>
+          </th>
+          
+        </tr>
+      </thead>
+      <tbody>
+        
+        <tr>
+          <td><span class="cm-page">cycle.html</span></td>
+          
+          
+          
+          
+          <td>
+            
+            <span class="cm-no">no</span>
+            
+            
+          </td>
+          
+          
+          
+          
+          <td>
+            
+            <span class="cm-no">no</span>
+            
+            
+          </td>
+          
+          
+          
+          
+          <td>
+            
+            <span class="cm-no">no</span>
+            
+            
+          </td>
+          
+          
+          
+          
+          <td>
+            
+            <span class="cm-no">no</span>
+            
+            
+          </td>
+          
+          
+          
+          
+          <td>
+            
+            <span class="cm-no">no</span>
+            
+            
+          </td>
+          
+          
+          
+          
+          <td>
+            
+            <span class="cm-no">no</span>
+            
+            
+          </td>
+          
+        </tr>
+        
+        <tr>
+          <td><span class="cm-page">sector_cycles.html</span></td>
+          
+          
+          
+          
+          <td>
+            
+            <span class="cm-partial">partial</span>
+            
+            
+            <span class="cm-hint">forward_log</span>
+            
+          </td>
+          
+          
+          
+          
+          <td>
+            
+            <span class="cm-no">no</span>
+            
+            
+          </td>
+          
+          
+          
+          
+          <td>
+            
+            <span class="cm-no">no</span>
+            
+            
+            <span class="cm-hint">col-not-rendered</span>
+            
+          </td>
+          
+          
+          
+          
+          <td>
+            
+            <span class="cm-no">no</span>
+            
+            
+          </td>
+          
+          
+          
+          
+          <td>
+            
+            <span class="cm-no">no</span>
+            
+            
+          </td>
+          
+          
+          
+          
+          <td>
+            
+            <span class="cm-no">no</span>
+            
+            
+          </td>
+          
+        </tr>
+        
+        <tr>
+          <td><span class="cm-page">country_cycles.html</span></td>
+          
+          
+          
+          
+          <td>
+            
+            <span class="cm-partial">partial</span>
+            
+            
+            <span class="cm-hint">forward_log</span>
+            
+          </td>
+          
+          
+          
+          
+          <td>
+            
+            <span class="cm-no">no</span>
+            
+            
+          </td>
+          
+          
+          
+          
+          <td>
+            
+            <span class="cm-no">no</span>
+            
+            
+            <span class="cm-hint">col-not-rendered</span>
+            
+          </td>
+          
+          
+          
+          
+          <td>
+            
+            <span class="cm-no">no</span>
+            
+            
+          </td>
+          
+          
+          
+          
+          <td>
+            
+            <span class="cm-no">no</span>
+            
+            
+          </td>
+          
+          
+          
+          
+          <td>
+            
+            <span class="cm-no">no</span>
+            
+            
+          </td>
+          
+        </tr>
+        
+        <tr>
+          <td><span class="cm-page">markets.html</span></td>
+          
+          
+          
+          
+          <td>
+            
+            <span class="cm-no">no</span>
+            
+            
+          </td>
+          
+          
+          
+          
+          <td>
+            
+            <span class="cm-no">no</span>
+            
+            
+          </td>
+          
+          
+          
+          
+          <td>
+            
+            <span class="cm-no">no</span>
+            
+            
+          </td>
+          
+          
+          
+          
+          <td>
+            
+            <span class="cm-no">no</span>
+            
+            
+          </td>
+          
+          
+          
+          
+          <td>
+            
+            <span class="cm-no">no</span>
+            
+            
+          </td>
+          
+          
+          
+          
+          <td>
+            
+            <span class="cm-no">no</span>
+            
+            
+          </td>
+          
+        </tr>
+        
+        <tr>
+          <td><span class="cm-page">sector_central.html</span></td>
+          
+          
+          
+          
+          <td>
+            
+            <span class="cm-no">no</span>
+            
+            
+          </td>
+          
+          
+          
+          
+          <td>
+            
+            <span class="cm-no">no</span>
+            
+            
+          </td>
+          
+          
+          
+          
+          <td>
+            
+            <span class="cm-no">no</span>
+            
+            
+          </td>
+          
+          
+          
+          
+          <td>
+            
+            <span class="cm-no">no</span>
+            
+            
+          </td>
+          
+          
+          
+          
+          <td>
+            
+            <span class="cm-no">no</span>
+            
+            
+          </td>
+          
+          
+          
+          
+          <td>
+            
+            <span class="cm-no">no</span>
+            
+            
+          </td>
+          
+        </tr>
+        
+        <tr>
+          <td><span class="cm-page">sector_central_china.html</span></td>
+          
+          
+          
+          
+          <td>
+            
+            <span class="cm-no">no</span>
+            
+            
+          </td>
+          
+          
+          
+          
+          <td>
+            
+            <span class="cm-no">no</span>
+            
+            
+          </td>
+          
+          
+          
+          
+          <td>
+            
+            <span class="cm-no">no</span>
+            
+            
+          </td>
+          
+          
+          
+          
+          <td>
+            
+            <span class="cm-no">no</span>
+            
+            
+          </td>
+          
+          
+          
+          
+          <td>
+            
+            <span class="cm-no">no</span>
+            
+            
+          </td>
+          
+          
+          
+          
+          <td>
+            
+            <span class="cm-no">no</span>
+            
+            
+          </td>
+          
+        </tr>
+        
+        <tr>
+          <td><span class="cm-page">measurement.html</span></td>
+          
+          
+          
+          
+          <td>
+            
+            <span class="cm-partial">partial</span>
+            
+            
+            <span class="cm-hint">accrual-clocks</span>
+            
+          </td>
+          
+          
+          
+          
+          <td>
+            
+            <span class="cm-no">no</span>
+            
+            
+          </td>
+          
+          
+          
+          
+          <td>
+            
+            <span class="cm-partial">partial</span>
+            
+            
+            <span class="cm-hint">model-json</span>
+            
+          </td>
+          
+          
+          
+          
+          <td>
+            
+            <span class="cm-yes">yes</span>
+            
+            
+            <span class="cm-hint">truth-ledger</span>
+            
+          </td>
+          
+          
+          
+          
+          <td>
+            
+            <span class="cm-no">no</span>
+            
+            
+          </td>
+          
+          
+          
+          
+          <td>
+            
+            <span class="cm-no">no</span>
+            
+            
+          </td>
+          
+        </tr>
+        
+      </tbody>
+    </table>
+    </div>
+    <div class="cm-audit">
+      <span class="l-en">Source: <code>COVERAGE_MATRIX</code> dict in <code>scripts/build_measurement.py</code> — curated, audited 2026-07-06. Each cell cites the evidence file in a Python comment.</span>
+      <span class="l-zh">来源：<code>scripts/build_measurement.py</code> 中的 <code>COVERAGE_MATRIX</code> 字典 — curated, audited 2026-07-06。每格在 Python 注释中引用了证据文件。</span>
+    </div>
+  </section>
+  
+
+  
   <div class="mh-provenance">
     <div class="mh-prov-title"><span class="l-en">Provenance</span><span class="l-zh">来源溯源</span></div>
     <div class="mh-prov-grid">
       <dl class="mh-prov-cell">
         <dt><span class="l-en">Build date</span><span class="l-zh">构建日期</span></dt>
-        <dd>2026-07-03</dd>
+        <dd>2026-07-06</dd>
       </dl>
       <dl class="mh-prov-cell">
         <dt><span class="l-en">Generated at (UTC)</span><span class="l-zh">生成时间（UTC）</span></dt>
-        <dd>2026-07-03T17:23:12.639773Z</dd>
+        <dd>2026-07-06T12:15:03.744529Z</dd>
       </dl>
       
       <dl class="mh-prov-cell">
@@ -2403,10 +4064,6 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
   })();
 })();
 </script>
-<script defer data-whb data-root="" src="wh_banner.js"></script>
-<footer class="site-footer">
-  <span class="made">© 2026 MastermindX Inc</span>
-</footer>
 <script src="theme.js"></script>
 </body>
 </html>

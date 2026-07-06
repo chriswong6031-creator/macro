@@ -41,6 +41,7 @@ from engine.capital_allocation import (  # noqa: E402
     _compute_repurch_ttm,
     _get_annual_repurchases,
     _get_sbc_ttm,
+    _fy_overlaps_ttm_window,
     _ACCRETIVE_SHARES_CHANGE_PCT,
     _DILUTIVE_SHARES_CHANGE_PCT,
     _HORIZON_ROLE,
@@ -561,9 +562,12 @@ class TestComputeCapitalAllocation:
         assert result["buyback_yield"] is None
 
     def test_debt_funded_buyback_flag_fires_when_debt_rose(self) -> None:
+        # period_end="2025-09-30" ensures the FY overlaps the TTM window by >= 6 months
+        # (ttm_start=2024-12-31; 2025-09-30 >= 2024-12-31+6m=2025-06-30 → aligned)
         q_df = self._base_quarterly()
         fp_df = _make_fundamentals_panel([
-            {"fy": 2024, "shares": 985_000.0, "debt_lt": 600e6, "asof_date": "2025-04-30"},  # debt rose
+            {"fy": 2024, "shares": 985_000.0, "debt_lt": 600e6, "asof_date": "2025-04-30",
+             "period_end": "2025-09-30"},  # debt rose; FY period aligned to TTM window
             {"fy": 2023, "shares": 1_000_000.0, "debt_lt": 500e6, "asof_date": "2024-04-30"},
         ])
         result = compute_capital_allocation(
@@ -572,9 +576,11 @@ class TestComputeCapitalAllocation:
         assert result["debt_funded_buyback_flag"] is True
 
     def test_debt_funded_buyback_flag_false_when_debt_fell(self) -> None:
+        # period_end="2025-09-30" ensures the FY overlaps the TTM window by >= 6 months
         q_df = self._base_quarterly()
         fp_df = _make_fundamentals_panel([
-            {"fy": 2024, "shares": 985_000.0, "debt_lt": 400e6, "asof_date": "2025-04-30"},  # debt fell
+            {"fy": 2024, "shares": 985_000.0, "debt_lt": 400e6, "asof_date": "2025-04-30",
+             "period_end": "2025-09-30"},  # debt fell; FY period aligned to TTM window
             {"fy": 2023, "shares": 1_000_000.0, "debt_lt": 500e6, "asof_date": "2024-04-30"},
         ])
         result = compute_capital_allocation(
@@ -642,6 +648,113 @@ class TestComputeCapitalAllocation:
             json.dumps(result, default=str)
         except TypeError as exc:
             pytest.fail(f"json.dumps failed on result: {exc}")
+
+
+# ── Group D2: debt_funded_buyback_flag period-alignment guard ─────────────────
+
+class TestDebtFlagPeriodAlignment:
+    """debt_funded_buyback_flag is None when FY and TTM windows are misaligned,
+    and computes correctly when aligned.  Three required cases per task brief:
+      1. Aligned case — flag computes (True or False)
+      2. Misaligned FY — flag is None
+      3. Missing repurchases — flag is None
+    """
+
+    # as_of="2026-06-01" → ttm_start="2025-06-01"
+    # min_fy_end = ttm_start + 6m = "2025-12-01"
+    _AS_OF = "2026-06-01"
+    _TTM_START = pd.Timestamp("2025-06-01")
+
+    def _base_quarterly(self):
+        """4 filed quarterly rows, all within TTM window for as_of=2026-06-01."""
+        return _make_quarterly([
+            {"fiscal_quarter": 1, "period_end": "2026-03-31", "filed": "2026-05-01", "repurchases": 100e6},
+            {"fiscal_quarter": 2, "period_end": "2025-12-31", "filed": "2026-02-01", "repurchases": 100e6},
+            {"fiscal_quarter": 3, "period_end": "2025-09-30", "filed": "2025-11-01", "repurchases": 100e6},
+            {"fiscal_quarter": 4, "period_end": "2025-06-30", "filed": "2025-08-01", "repurchases": 100e6},
+        ])
+
+    def test_aligned_fy_flag_computes(self) -> None:
+        """When FY period_end >= ttm_start + 6 months, flag computes normally."""
+        # fy_period_end="2025-12-31" >= "2025-06-01" + 6m = "2025-12-01" → aligned
+        q_df = self._base_quarterly()
+        fp_df = _make_fundamentals_panel([
+            {"fy": 2025, "shares": 985_000.0, "debt_lt": 700e6, "asof_date": "2026-04-30",
+             "period_end": "2025-12-31"},   # debt rose; FY aligned
+            {"fy": 2024, "shares": 1_000_000.0, "debt_lt": 500e6, "asof_date": "2025-04-30",
+             "period_end": "2024-12-31"},
+        ])
+        result = compute_capital_allocation(
+            "TEST", q_df, fp_df, as_of_date=self._AS_OF,
+        )
+        # Alignment passes; debt rose → True
+        assert result["debt_funded_buyback_flag"] is True
+
+    def test_aligned_fy_flag_false_when_debt_fell(self) -> None:
+        """Aligned FY + debt fell → False (not None)."""
+        q_df = self._base_quarterly()
+        fp_df = _make_fundamentals_panel([
+            {"fy": 2025, "shares": 985_000.0, "debt_lt": 300e6, "asof_date": "2026-04-30",
+             "period_end": "2025-12-31"},   # debt fell; FY aligned
+            {"fy": 2024, "shares": 1_000_000.0, "debt_lt": 500e6, "asof_date": "2025-04-30",
+             "period_end": "2024-12-31"},
+        ])
+        result = compute_capital_allocation(
+            "TEST", q_df, fp_df, as_of_date=self._AS_OF,
+        )
+        assert result["debt_funded_buyback_flag"] is False
+
+    def test_misaligned_fy_flag_is_none(self) -> None:
+        """When FY period_end < ttm_start + 6 months, flag is None even with buybacks and debt data."""
+        # as_of="2026-06-01" → ttm_start="2025-06-01" → min_fy_end="2025-12-01"
+        # fy_period_end="2025-03-31" < "2025-12-01" → misaligned → flag None
+        q_df = self._base_quarterly()
+        fp_df = _make_fundamentals_panel([
+            {"fy": 2025, "shares": 985_000.0, "debt_lt": 700e6, "asof_date": "2025-05-30",
+             "period_end": "2025-03-31"},   # stale FY end — only 1 quarter overlaps TTM
+            {"fy": 2024, "shares": 1_000_000.0, "debt_lt": 500e6, "asof_date": "2024-04-30",
+             "period_end": "2024-12-31"},
+        ])
+        result = compute_capital_allocation(
+            "TEST", q_df, fp_df, as_of_date=self._AS_OF,
+        )
+        # FY overlaps by < 2 quarters → flag must be None
+        assert result["debt_funded_buyback_flag"] is None
+
+    def test_missing_repurchases_flag_is_none(self) -> None:
+        """When repurch_coverage='missing', flag is None regardless of debt data."""
+        # No quarterly rows → coverage="missing"
+        q_df = pd.DataFrame(columns=["ticker", "period_end", "filed", "repurchases",
+                                      "fiscal_year", "fiscal_quarter"])
+        fp_df = _make_fundamentals_panel([
+            {"fy": 2025, "shares": 985_000.0, "debt_lt": 700e6, "asof_date": "2026-04-30",
+             "period_end": "2025-12-31"},
+            {"fy": 2024, "shares": 1_000_000.0, "debt_lt": 500e6, "asof_date": "2025-04-30",
+             "period_end": "2024-12-31"},
+        ])
+        result = compute_capital_allocation(
+            "TEST", q_df, fp_df, as_of_date=self._AS_OF,
+        )
+        assert result["repurch_coverage"] == "missing"
+        # Condition (a) fails: coverage is missing → flag None
+        assert result["debt_funded_buyback_flag"] is None
+
+    def test_fy_overlaps_ttm_window_helper_boundary(self) -> None:
+        """_fy_overlaps_ttm_window: exactly at boundary (= min_fy_end) is True."""
+        ttm_start = pd.Timestamp("2025-06-01")
+        # Exactly at ttm_start + 6m → boundary case → True
+        assert _fy_overlaps_ttm_window(pd.Timestamp("2025-12-01"), ttm_start) is True
+
+    def test_fy_overlaps_ttm_window_helper_one_day_before_boundary(self) -> None:
+        """_fy_overlaps_ttm_window: one day before boundary is False."""
+        ttm_start = pd.Timestamp("2025-06-01")
+        # One day before min_fy_end → False
+        assert _fy_overlaps_ttm_window(pd.Timestamp("2025-11-30"), ttm_start) is False
+
+    def test_fy_overlaps_ttm_window_helper_none_period_end(self) -> None:
+        """_fy_overlaps_ttm_window: None fy_period_end → False."""
+        ttm_start = pd.Timestamp("2025-06-01")
+        assert _fy_overlaps_ttm_window(None, ttm_start) is False
 
 
 # ── Group E: Firewall — synapse.yml registration ──────────────────────────────

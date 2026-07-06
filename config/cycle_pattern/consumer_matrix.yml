@@ -1,0 +1,194 @@
+# CPI Consumer Matrix
+# ======================================================
+# Defines which pipeline surfaces are ALLOWED or FORBIDDEN to consume each
+# class of cycle-pattern artifact.  Enforced by
+# scripts/check_cycle_pattern_authority.py (hard CI gate).
+#
+# Artifact classes mirror the truth status enum in the truth registry
+# (engine/cycle_pattern/truths.py) plus two structural classes for lake
+# and candidate artifacts.
+#
+# Surface names are consistent with the seed truths in
+# data/cycle_pattern/truths.jsonl and the forbidden_consumers list in
+# config/cycle_pattern/truth_schema.md.
+#
+# Design principles:
+#   - Allowed/forbidden lists are DISJOINT (a surface cannot appear in both).
+#   - A surface not listed in either list is an IMPLICIT WARN (not a hard fail)
+#     for non-scored artifact classes; it IS a hard fail for scored artifacts.
+#   - The "scored" class has the most restricted allowed list: only surfaces
+#     that have passed the explicit authority-grant check may consume it.
+#   - Lake artifacts (parquet data files) have a wide allowlist; only the
+#     money-path surfaces are explicitly forbidden.
+#
+# Schema version: v0  (2026-07-06)
+# Owner: cycle-intelligence
+
+schema_version: "v0"
+owner_program: "cycle-intelligence"
+created: "2026-07-06"
+
+# ── Surface name registry ─────────────────────────────────────────────────────
+# Canonical names used throughout this file.  Adding a surface here does NOT
+# grant access — surfaces must appear in the allowed_consumers list of the
+# relevant artifact class.
+surfaces:
+  # Money-path surfaces (scored authority; any read of a restricted artifact
+  # by these surfaces is a HARD CI failure regardless of allowlist).
+  money_path:
+    - board_rank
+    - oracle_escalation
+    - sector_central_direction_score
+    - position_sizing
+
+  # Display and measurement surfaces (allowed to cite display/confirmer truths)
+  display:
+    - measurement_page
+    - cycle_docs
+    - neuralweb_context
+
+  # Research / factory surfaces
+  research:
+    - research_factory
+
+
+# ── Artifact classes ──────────────────────────────────────────────────────────
+
+artifact_classes:
+
+  # ── promoted_null ─────────────────────────────────────────────────────────
+  # An adjudicated null truth: actively displayed as an honest null.
+  # The null actively guards against re-belief; money-path surfaces must never
+  # cite it as a positive signal.
+  - class: promoted_null
+    description: >
+      Adjudicated null truth (status=promoted_null in truths.jsonl).
+      Displayed as honest null on measurement and documentation surfaces.
+      Must NEVER reach board_rank, oracle_escalation,
+      sector_central_direction_score, or position_sizing — those surfaces
+      cannot use a null as a positive gate input.
+    allowed_consumers:
+      - measurement_page      # measurement.html Null Library section
+      - cycle_docs            # cycle documentation surfaces (honest display)
+      - research_factory      # factory lifecycle / candidate dedup context
+    forbidden_consumers:
+      - board_rank
+      - oracle_escalation
+      - sector_central_direction_score
+      - position_sizing
+      - neuralweb_context     # NW lobe may not cite nulls as positive context
+
+  # ── display ───────────────────────────────────────────────────────────────
+  # Approved for measurement and documentation surfaces; not yet a confirmed
+  # gate input.  Risk-only truths (CPI-002, CPI-004, CPI-005) are display class.
+  - class: display
+    description: >
+      Truth approved for measurement surfaces and honest risk-context display
+      (status=display in truths.jsonl).  May appear in NW cycle-pattern lobe
+      as a context signal (never as a score).  Must not feed board_rank,
+      oracle_escalation, sector_central_direction_score, or position_sizing
+      without passing an explicit DL-1/DL-2 gate.
+    allowed_consumers:
+      - measurement_page
+      - cycle_docs
+      - research_factory
+      - neuralweb_context     # cycle-pattern lobe (context only, not scored)
+    forbidden_consumers:
+      - board_rank
+      - oracle_escalation
+      - sector_central_direction_score
+      - position_sizing
+
+  # ── confirmer ─────────────────────────────────────────────────────────────
+  # Used as a confirming gate in a pipeline; still not a direct score input.
+  - class: confirmer
+    description: >
+      Truth used as a confirming gate (status=confirmer in truths.jsonl).
+      May feed confirmer-gated pipeline steps but not direct rank/sizing.
+    allowed_consumers:
+      - measurement_page
+      - cycle_docs
+      - research_factory
+      - neuralweb_context
+    forbidden_consumers:
+      - board_rank
+      - oracle_escalation
+      - sector_central_direction_score
+      - position_sizing
+
+  # ── scored ────────────────────────────────────────────────────────────────
+  # Passed a pre-registered gate with a machine-readable gate artifact.
+  # Most restricted class: only explicitly authorized surfaces.
+  # Note: no current CPI truth has reached scored status (2026-07-06).
+  # This class entry is forward-declared so the harness can enforce it
+  # before any truth reaches scored status.
+  - class: scored
+    description: >
+      Truth that passed a pre-registered gate (status=scored; gate artifact
+      required in evidence_refs).  May reach constrained pipeline consumers
+      only after an explicit DL-1/DL-2 authority grant is recorded in the
+      truth registry.  Any surface not in allowed_consumers is a HARD fail.
+    allowed_consumers:
+      - measurement_page
+      - cycle_docs
+      - research_factory
+      - neuralweb_context     # context-only even for scored truths
+    forbidden_consumers:
+      - board_rank            # requires DL-1 explicit gate — not yet granted
+      - oracle_escalation     # requires explicit grant
+      - sector_central_direction_score  # requires explicit grant
+      - position_sizing       # requires DL-1 + DL-2 gates — not yet granted
+    notes: >
+      When a truth passes DL-1, its entry in truths.jsonl must be updated to
+      add the relevant money-path surface to allowed_consumers (via
+      transition_truth); the authority check re-reads truths.jsonl at scan
+      time.  No surface may self-add itself — only human_review transitions
+      may expand the allowed list for scored truths.
+
+  # ── candidates ────────────────────────────────────────────────────────────
+  # Proposed / registered / screened candidates in the Research Factory;
+  # not yet adjudicated truths.  Wide allowlist; money-path surfaces forbidden.
+  - class: candidates
+    description: >
+      Research Factory candidate artifacts (data/cycle_pattern/ files read
+      during the candidate lifecycle: lake, trial outputs, screened parquets).
+      Engine and builder scripts may read freely; money-path surfaces are
+      forbidden because candidates have not passed the frozen gates.
+    allowed_consumers:
+      - measurement_page      # candidate counts / trial status display
+      - cycle_docs
+      - research_factory
+    forbidden_consumers:
+      - board_rank
+      - oracle_escalation
+      - sector_central_direction_score
+      - position_sizing
+      - neuralweb_context     # NW lobe must not consume unvetted candidates
+
+  # ── lake_artifacts ────────────────────────────────────────────────────────
+  # Infrastructure parquet / JSON files in data/cycle_pattern/ that feed the
+  # feature lake, state panel, outcomes spine, and entity map.  These are
+  # read by builder scripts, engine modules, and tests — not by money-path
+  # surfaces.
+  - class: lake_artifacts
+    description: >
+      Core infrastructure artifacts: entities.parquet, state_monthly.parquet,
+      state_monthly_meta.json, outcomes.parquet, state_daily_live.parquet.
+      Wide read access for builders and engine; forbidden from direct
+      consumption by money-path surfaces (they must go through scored truths
+      or an explicitly gated adapter).
+    allowed_consumers:
+      - measurement_page
+      - cycle_docs
+      - research_factory
+      - neuralweb_context     # cycle-pattern lobe adapter reads state summary
+    forbidden_consumers:
+      - board_rank
+      - oracle_escalation
+      - sector_central_direction_score
+      - position_sizing
+    notes: >
+      The NW lobe reads a COMPACT SUMMARY (cycle_pattern_state.json), not
+      the raw lake files.  Direct reads of data/cycle_pattern/*.parquet by
+      NW cortex modules are a WARN-level finding (not HARD) unless the module
+      is also in the money-path set.

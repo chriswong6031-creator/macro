@@ -110,4 +110,26 @@ Per Signal Commons R3, no fused "positioning/macro permission" score, leg, or ti
 
 **Coordination:** in-flight ESX W1 (#1408 chain, S-EV/S-TS) untouched — harness edits queue behind it; lane B0 owns the envelope build; #1302 owns RS-repair fields (`rs_repair_state` stays `unavailable`); Oracle artifacts consumed read-only (B2); provenance sidecar needs a new `_row` builder + qual_ladder SHADOW entries before any new display field ⟦RV⟧. **Compute:** all phase0 studies, PIT panels, and fire-joins are off-path `scripts/research/`; heavy per-ticker panels go to R2 (r2-data-plane law); the only on-path artifact is the envelope bind (≤+30s, benchmarked, RUL-15); new stores git-added + sentinel staging list in the same PR. **Non-goals:** no master score; no fused positioning/permission leg; no new oscillators; no HK/CA (every US bottom mechanism tested there has failed or inverted); no options lane; no LLM-originated signals (extract/classify/cite/de-escalate only, quote-span-verified); no news-tone collector under this amendment (separate memo if wanted); no Committee View surface before the QA surface accrues.
 
+## F. Addendum 1 — T1 verdicts + T2/T3 re-adjudication (Fable, 2026-07-06; RUL-27..29)
+
+**T1 executed and verdicted in full** (#1454 harness, #1478 insider panels v1.2, #1496 macro/positioning panel v1.1, #1566 esx_insider_sponsor, #1599 esx_macro_release + esx_pos_reset): the paper's entry-time thesis is **3-for-3 refuted or null at 21d** — insider sponsorship (adversity attributed to the washout state by the I1w reserve contrast; cluster marginal = tight null), macro stress release (NULL 8/8 incl. the within-elevated contrast), positioning reset (P1 null; P2 COT-reset mildly ADVERSE, +3.2pp stop5, q=0.096, 4/4 baskets eras). Surviving entry-time value: S-EV event hygiene (ESX lane, +8.7pp confirmed). `esx_support_dose` stays LOCKED (zero qualifying legs). Long-hold's F4 (`long_hold.insider_sponsor_lh`) Ruler-P adds: insider NULL at 252d display-ruler as well.
+
+### RUL-27 — T2 ceded/deferred
+
+The hold-side buyback substance is **owned by the Long-Hold program's LT-3a** (`engine/capital_allocation.py`: buyback_yield, net_buyback_after_sbc, share_count_reduction_confirmed, debt_funded_buyback_flag; PIT filed-date gates; display-only, horizon_role=hold_thesis) — this amendment BINDS it read-only and builds no parallel artifact. The entry-anchored buyback study and `buyback_authorization_after_washout` are **DEFERRED indefinitely**: they instantiate the same sponsor-at-entry mechanism class the T1 studies just refuted three ways; re-open conditions = a favorable long-hold Ruler-H insider/buyback verdict (~2027-H2) OR live-accrual kernel evidence. Two recommendations FORWARDED to long-hold (theirs to build, not ours): (a) complete the balance-sheet veto beyond the debt-trend flag (leverage/cash/maturity inputs exist in the same store); (b) wire the `backfill_edgar_quarterly.py` refresh into the nightly collect (their reader consumes the parquet nightly but nothing refreshes it).
+
+### RUL-28 — T3 shrunk; evidence-hostile display barred
+
+No washout-conditional join engine is built (Tier-C come-backs stand unchanged). The RUL-19 envelope display fields (`sponsor_present`, `repair_present`, `event_clear`, `macro_relief`, `support_legs`) are **NOT added this wave**: `macro_relief` and any positive positioning field are not built this wave — a supportive-framed descriptor is disallowed until evidence supports it (a relief chip would contradict this program's own filed reports); the remaining fields require a written display-value case citing A2_INSIDER_REPORT.md / A2_MACRO_POS_REPORT.md before any build. Display-first never meant display-despite-evidence.
+
+### RUL-29 — Insider horizon partition (coordination)
+
+Entry ruler (21d) = this program, DONE (null, #1566). 252d hold ruler = `long_hold.insider_sponsor_lh` (F4; their prereg cites RUL-26 and forbids double-counting; Ruler-P null, Ruler-H ~2027-H2). The intermediate 63/126d insider-holdability hypothesis is **not elevated into any ESX budget** — it was adjudication-note language, never an itemized trial; if it earns a future life it enters via a new RUL-7-compliant budget amendment citing long-hold's Ruler-H outcome. No ESX trial slot exists or is reserved for it.
+
+**Program state after Addendum 1:** build phase CLOSED; the program moves to **accrual/consumption mode**. Standing items: consume the W1-SEV wiring when the ESX lane ships it (W1.5); come-backs — activist 13D at _MIN_EVENTS=40 (~late-2026), F8 stores at ≥2y depth, short interest at ≥24 vintages, revision_turn per the vintage law, kernel lanes at the 2026-10 FDR batch, long-hold Ruler-H ~2027-H2. Reserves held: esx_insider_sponsor 2, esx_pos_reset 4, esx_fund_repair 12 (untouched — SUE forms remain runnable if ever re-prioritized), esx_support_dose 2 (locked), esx_sponsorship 8 (B2 lane, Amendment 1's), esx_macro_release 0 (consumed 8/8, exhausted).
+
+*Addendum filed by Fable, 2026-07-06, after the long-hold collision census (Explore agent, same session). One opus review pass before merge.*
+
+---
+
 *Filed by Fable, 2026-07-05. Census: workflow wf_ec6648eb (12 lanes, sonnet). Red-team: 3 opus lenses; blockers/majors integrated ⟦RV⟧. Companion: Codex paper (same-PR rescue), W0_INVENTORY.md.*

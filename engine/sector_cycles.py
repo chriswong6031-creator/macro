@@ -917,10 +917,11 @@ def _stamp_hazard(rec: dict, family: str = "sector") -> None:
 
         # Age since last confirmed turn in bars (using x = float years from series start)
         # Now is the last bar in rec; the projection's age is implicit.
-        # Use proj.period_yrs.median for median_half_yrs.
+        # proj.period_yrs.median is the FULL cycle (med*2 per project_next); divide by 2
+        # to recover the half-cycle that _hazard_features stores as median_half_yrs.
         proj = rec.get("proj") or {}
         period_yrs = proj.get("period_yrs") or {}
-        median_half_yrs = float(period_yrs.get("median") or 0.0)
+        median_half_yrs = float(period_yrs.get("median") or 0.0) / 2.0
 
         now_x_approx: float = 0.0
         # Compute now_x from the oscillator's last point x-value (years-from-series-start).
