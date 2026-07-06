@@ -126,16 +126,50 @@ def _tail_jsonl(p: Path, n: int = 20) -> list[dict]:
 
 # ---- Section A: Engine-Health Board -----------------------------------------
 
+_NW_HEALTH_JSON = _DATA_NW / "health.json"
+
+
 def _section_engine_health() -> dict:
-    """SLA compliance across all synapse-registered artifacts + spine/kernel freshness."""
-    out: dict = {
-        "spine": None,
-        "kernel": None,
-        "sla": None,
-        "kernel_families": None,
-        "lagging": None,
-        "read_gate": None,
-    }
+    """SLA compliance across all synapse-registered artifacts + spine/kernel freshness.
+
+    Prefers data/neuralweb/health.json (PR-C artifact) when present — renders its
+    lobes/status/overall directly and falls back to the legacy in-memory computation
+    when the artifact is absent (older clones or first nightly before PR-C runs).
+    """
+    # --- PR-C fast-path: consume pre-built health artifact ---
+    nw_health = _read_json(_NW_HEALTH_JSON)
+    if nw_health and nw_health.get("schema") == "neuralweb.health.v1":
+        out: dict = {
+            "spine": None,
+            "kernel": None,
+            "sla": None,
+            "kernel_families": None,
+            "lagging": None,
+            "read_gate": None,
+            # PR-C enrichment keys
+            "nw_health": {
+                "overall_status": nw_health.get("overall_status"),
+                "produced_at": nw_health.get("produced_at"),
+                "as_of": nw_health.get("as_of"),
+                "cortex_source": (nw_health.get("cortex") or {}).get("cortex_source"),
+                "summary_counts": nw_health.get("summary_counts"),
+                "lobes": nw_health.get("lobes", []),
+                "cortex": nw_health.get("cortex"),
+                "workflow_conformance_misses": nw_health.get("workflow_conformance_misses", []),
+            },
+        }
+        # Still populate spine/kernel/lagging/read_gate from live artifacts for
+        # the existing admin display panels — they remain useful for detailed ops view.
+    else:
+        out = {
+            "spine": None,
+            "kernel": None,
+            "sla": None,
+            "kernel_families": None,
+            "lagging": None,
+            "read_gate": None,
+            "nw_health": {"missing": True, "note": "data/neuralweb/health.json not yet written (pre-PR-C clone or first nightly)"},
+        }
 
     # Spine Index freshness
     env = _read_json(_SPINE_ENVELOPE)

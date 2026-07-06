@@ -20,7 +20,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | institutional-sector-intelligence | 2 |
 | intl-fix | 1 |
 | long-hold | 16 |
-| neural-web | 28 |
+| neural-web | 30 |
 | nw-mastermind-bridge | 2 |
 | nw-rails | 3 |
 | options-alpha | 7 |
@@ -38,7 +38,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | tier | count |
 |---|---|
 | display | 89 |
-| infrastructure | 40 |
+| infrastructure | 42 |
 | scored | 4 |
 | shadow | 38 |
 
@@ -46,7 +46,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 165 |
+| git | 167 |
 | gitignored-local | 4 |
 | r2 | 2 |
 
@@ -184,6 +184,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | cortex-attention-grades | `data/reflexes/cortex_attention/grades.jsonl` | jsonl | nightly-cortex | shadow | 1 | 0 |
 | governance-ledger | `data/neuralweb/governance.jsonl` | jsonl | daily-engine | infrastructure | 1 | 0 |
 | kernel-estimates | `data/neuralweb/kernel_estimates.parquet` | parquet | daily-engine | infrastructure | 1 | 0 |
+| neuralweb-health | `data/neuralweb/health.json` | json | daily-engine | infrastructure | 1 | 0 |
 | ops-push-basket-freeze | `data/alert_triage/push_sent_basket_freeze.jsonl` | jsonl | on-demand | infrastructure | 1 | 0 |
 | ops-push-healthcheck | `data/alert_triage/push_sent_healthcheck.jsonl` | jsonl | on-demand | infrastructure | 1 | 0 |
 | ops-push-signal-sanity | `data/alert_triage/push_sent_signal_sanity.jsonl` | jsonl | on-demand | infrastructure | 1 | 0 |
@@ -195,6 +196,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | research-queue | `data/neuralweb/research_queue.json` | json | on-demand | infrastructure | 0 | 0 |
 | risk-radar-review-log | `data/risk_radar/review_log.jsonl` | jsonl | weekly | display | 0 | 0 |
 | rule-experiment-summaries | `data/rule_experiments/results/<EXP_ID>_summary.json` | json | on-demand | display | 0 | 0 |
+| site-neuralweb-health | `site/neuralwebdata/health.json` | json | daily-engine | infrastructure | 0 | 0 |
 
 ### nw-mastermind-bridge
 

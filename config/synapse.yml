@@ -4985,3 +4985,53 @@ artifacts:
       keyed (date, ticker). Severity hardcoded to 'note' until H2 GATE-PASSED.
       display_only=true unconditionally. Single-writer: engine/neuralweb/factor_contradictions.py.
       0-20 rows/day; dormant until panel has >= 60 distinct dates.
+
+  # --- PR-C: NW lobe-status health surface ---
+  neuralweb-health:
+    path: data/neuralweb/health.json
+    format: json
+    producer: scripts/build_neuralweb_health.py
+    known_extra_writers: []
+    owner_program: neural-web
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: neuralweb.health.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - admin/neural_web.py
+    external_consumers: []
+    notes: >
+      PR-C canonical NW lobe-status surface. Machine-readable operating-truth
+      file for all Neural Web lobes. Built in two phases: engine job writes
+      cortex_source='previous_run' (last committed cortex memo status); cortex job
+      runs --refresh-cortex to rewrite cortex section with cortex_source='current_run'.
+      Display/ops only — no authority, no behavioral conditioning. Never 'missing'
+      for r2-storage lobes (status='not_locally_verifiable'). Schema enforced at
+      write time via neuralweb.health.v1.
+
+  site-neuralweb-health:
+    path: site/neuralwebdata/health.json
+    format: json
+    producer: scripts/build_neuralweb_health.py
+    known_extra_writers: []
+    owner_program: neural-web
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: neuralweb.health.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      PR-C site copy of data/neuralweb/health.json for frontend/admin consumption.
+      Exact mirror written atomically alongside the data copy by
+      scripts/build_neuralweb_health.py. Display/ops only — no authority.
