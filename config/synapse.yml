@@ -3999,6 +3999,63 @@ artifacts:
       Accrual instrument for the registered §5 promotion rule (15-window re-evaluation gate).
       No peeking logic — desk only displays counts.
 
+  # --- NW Rails R1 (PR-1) ---
+  rule-experiment-registry:
+    path: data/rule_experiments/registry.jsonl
+    format: jsonl
+    producer: scripts/register_rule_experiment.py
+    known_extra_writers: []
+    owner_program: neural-web
+    cadence: on-demand
+    storage: git
+    asof_field: registered_at
+    freshness_sla_hours: 8760
+    schema: rule_experiment_registry.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/register_rule_experiment.py
+    external_consumers: []
+    notes: >
+      NW Rails R1 anti-fishing governor registry. Append-only JSONL; single writer is
+      scripts/register_rule_experiment.py. Every entry records exp_id, registered_at,
+      question, spec_hashes (full enumerated grid), n_floor, declared_budget,
+      verdict_criteria, derived_from_surface (RUL-P3 forking-paths stamp), and status
+      (registered→executed→reported). Runner hard-fails on any unregistered or
+      hash-mismatched spec. FDR pooling: all registrations call
+      TrialLedger.log_declared_budget(grid_size, family='replay') — flat pooled family,
+      never sub-scoped. Program §3.3 of NW_RAILS_AND_TIER1_LOBES_PROGRAM_BY_FABLE.md.
+      PR-2 will add scripts/run_rule_replay.py as a consumer once that wave ships.
+
+  rule-experiment-summaries:
+    path: data/rule_experiments/results/<EXP_ID>_summary.json
+    format: json
+    producer: scripts/register_rule_experiment.py
+    known_extra_writers: []
+    owner_program: neural-web
+    cadence: on-demand
+    storage: git
+    asof_field: null
+    freshness_sla_hours: 8760
+    schema: rule_experiment_summary.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      NW Rails R1 per-experiment results summaries. Small JSON files (per-cell WR,
+      mean/median exit metrics, regret metrics, era-law splits, episode-cluster counts,
+      censoring rates, cumulative pooled replay trial count). Git-committed; written by
+      scripts/run_rule_replay.py (PR-2). The companion *_perfire.parquet files are
+      Mac-local only (gitignored per RUL-P10). All results are display-only; promoting
+      any rule to live behavior requires the standard PREREG gauntlet (§3.3).
+      Producer listed as scripts/register_rule_experiment.py in PR-1 (the runner ships
+      in PR-2); update to scripts/run_rule_replay.py when that wave merges.
+
   # --- NW Rails W2 PR-4: L3 dispersion regime lens ---
   dispersion-regime:
     path: data/dispersion/regime.json
