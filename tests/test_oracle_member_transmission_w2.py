@@ -27,12 +27,17 @@ from scripts.oracle_member_transmission_w2 import (
     assign_arm,
     is_pit_member,
     cluster_bootstrap_ci,
+    cluster_bootstrap_delta_ci,
     build_vix_regime_lookup,
     compute_metrics,
     bh_correct,
     mde_at_power,
     stop5_rate,
+    _placebo_draw_both_metrics,
     SEED,
+    SEED_REGISTERED,
+    R3_SPLIT_DATE,
+    MDE_ALPHA_REGISTERED,
     VIX_HIGH_THRESHOLD,
     K_PRIMARY,
 )
@@ -554,3 +559,284 @@ class TestWindowRoundTrip:
         arm, wid = assign_arm(pd.Timestamp(fire_date), "XLK", wins_by_node)
         assert arm == "IN"
         assert wid is not None
+
+
+# ---------------------------------------------------------------------------
+# Registered-run specific tests (prereg §6 law)
+# ---------------------------------------------------------------------------
+
+class TestSymmetricPlacebo:
+    """Prereg §2 correction (a): placebo OUT-arm must exclude real IN-arm fires.
+
+    A real armed-window fire (inside a real window) must NOT appear in placebo-OUT
+    when real_in_mask_ns is supplied (registered-run mode).
+    """
+
+    def _make_placebo_fixture(self):
+        """Synthetic: 1 node, 1 armed window, some fires inside + some outside."""
+        td = _make_trading_days("2022-01-03", 300)
+        td_arr_ns = td.to_numpy().astype("datetime64[ns]").astype("int64")
+
+        # Armed window covers first 10 trading days
+        win_start = td[0]
+        win_end = td[10]
+        node_windows = pd.DataFrame([{
+            "node": "XLK",
+            "window_id": 0,
+            "window_start": win_start,
+            "window_end": win_end,
+        }])
+
+        # Fire dates: 5 inside the window, 15 outside
+        inside_dates = td[:5]
+        outside_dates = td[15:30]
+        all_dates = inside_dates.append(outside_dates)
+        fire_dates_ns = all_dates.to_numpy().astype("datetime64[ns]").astype("int64")
+        ret21_vals = np.ones(len(fire_dates_ns)) * 0.03
+
+        # Real armed-window intervals (int64 ns)
+        real_ivs = [(
+            np.datetime64(win_start, "ns").astype("int64"),
+            np.datetime64(win_end, "ns").astype("int64"),
+        )]
+
+        # Real IN-arm mask: marks fires inside the real window
+        real_in_mask = np.zeros(len(fire_dates_ns), dtype=bool)
+        ws_ns, we_ns = real_ivs[0]
+        real_in_mask |= (fire_dates_ns >= ws_ns) & (fire_dates_ns <= we_ns)
+
+        is_high_vix = np.zeros(len(td_arr_ns), dtype=bool)  # all low-VIX
+
+        return node_windows, fire_dates_ns, ret21_vals, td_arr_ns, is_high_vix, real_ivs, real_in_mask
+
+    def test_real_in_fire_not_in_placebo_out_when_symmetric(self):
+        """With real_in_mask_ns, real IN fires must NOT appear in placebo OUT pool.
+
+        We verify: under the symmetric placebo (real_in_mask_ns supplied), the
+        placebo OUT mask never has True at positions where real_in_mask_ns is True.
+        Since placebo windows are placed outside real intervals (real_ivs are forbidden),
+        the placebo itself already excludes those positions from IN; but without
+        real_in_mask_ns, real IN fires landing in placebo-OUT is possible when the
+        random placement covers a different region.
+
+        The test: run 50 draws with real_in_mask_ns; assert no real-IN position ends
+        up in placebo-OUT (i.e., ~in_mask & real_in_mask is always empty).
+        """
+        node_windows, fire_dates_ns, ret21_vals, td_arr_ns, is_high_vix, real_ivs, real_in_mask = (
+            self._make_placebo_fixture()
+        )
+        rng = np.random.default_rng(42)
+        for _ in range(50):
+            result = _placebo_draw_both_metrics(
+                node_windows, fire_dates_ns, ret21_vals,
+                td_arr_ns, is_high_vix, rng,
+                real_intervals_ns=real_ivs,
+                real_in_mask_ns=real_in_mask,
+            )
+            if result is None:
+                continue
+            in_mask, _ = result
+            # Real IN fires must not appear in the placebo OUT pool
+            real_in_in_placebo_out = (~in_mask) & real_in_mask
+            assert not real_in_in_placebo_out.any(), (
+                "Real IN-arm fire leaked into placebo OUT arm — symmetric placebo broken"
+            )
+
+    def test_without_real_in_mask_real_fires_can_land_in_out(self):
+        """Without real_in_mask_ns, real IN fires CAN appear in placebo OUT (old behavior).
+
+        This documents the pre-registration asymmetry and verifies the correction works.
+        We use a deterministic fixture where real IN fires will land in placebo-OUT
+        if the placebo window is placed far away.
+        """
+        node_windows, fire_dates_ns, ret21_vals, td_arr_ns, is_high_vix, real_ivs, real_in_mask = (
+            self._make_placebo_fixture()
+        )
+        # Without real_in_mask_ns: real IN fires can land in placebo-OUT
+        # (depends on where the random window is placed)
+        found_leak = False
+        rng = np.random.default_rng(12345)
+        for _ in range(200):
+            result = _placebo_draw_both_metrics(
+                node_windows, fire_dates_ns, ret21_vals,
+                td_arr_ns, is_high_vix, rng,
+                real_intervals_ns=real_ivs,
+                real_in_mask_ns=None,  # no symmetric exclusion
+            )
+            if result is None:
+                continue
+            in_mask, _ = result
+            if ((~in_mask) & real_in_mask).any():
+                found_leak = True
+                break
+        # The leak should occur at least once in 200 draws
+        assert found_leak, (
+            "Expected at least one draw to show real IN fires in placebo-OUT (old behavior)"
+        )
+
+
+class TestR3TemporalSplit:
+    """Prereg §3 R3: armed windows split at 2024-06-30.
+
+    Dev = window_start <= 2024-06-30; holdout = window_start > 2024-06-30.
+    """
+
+    def test_split_boundary_date(self):
+        """Window on exactly 2024-06-30 is dev; window on 2024-07-01 is holdout."""
+        split_ts = pd.Timestamp(R3_SPLIT_DATE)
+        boundary_start = pd.Timestamp("2024-06-30")
+        post_boundary_start = pd.Timestamp("2024-07-01")
+
+        # Simulate the split logic used in run_main
+        assert boundary_start <= split_ts, "2024-06-30 should be dev (≤ split date)"
+        assert not (post_boundary_start <= split_ts), "2024-07-01 should be holdout (> split date)"
+
+    def test_split_assigns_windows_correctly(self):
+        """Synthetic window set: check dev vs holdout assignment is consistent with prereg §3."""
+        split_ts = pd.Timestamp(R3_SPLIT_DATE)
+
+        # Build a minimal window map
+        win_start_map = {
+            0: pd.Timestamp("2023-01-10"),  # dev
+            1: pd.Timestamp("2024-06-30"),  # dev (boundary, inclusive)
+            2: pd.Timestamp("2024-07-01"),  # holdout
+            3: pd.Timestamp("2025-03-15"),  # holdout
+        }
+
+        dev_ids = [wid for wid, ws in win_start_map.items() if ws <= split_ts]
+        holdout_ids = [wid for wid, ws in win_start_map.items() if ws > split_ts]
+
+        assert set(dev_ids) == {0, 1}, f"Expected dev={{0,1}}, got {set(dev_ids)}"
+        assert set(holdout_ids) == {2, 3}, f"Expected holdout={{2,3}}, got {set(holdout_ids)}"
+
+    def test_r3_split_date_constant(self):
+        """R3_SPLIT_DATE constant must be '2024-06-30' per prereg §3."""
+        assert R3_SPLIT_DATE == "2024-06-30"
+
+
+class TestDeltaCI:
+    """Prereg §2 correction (b): cluster-bootstrap CI on the IN−OUT delta.
+
+    Tests on a crafted two-window fixture.
+    """
+
+    def _make_two_window_fixture(self):
+        """Two windows with distinct returns; OUT arm has different distribution."""
+        in_rows = []
+        for wid, retval in [(0, 0.05), (1, 0.08)]:
+            for _ in range(8):
+                in_rows.append({"window_id": wid, "fwd_ret_21": retval})
+        in_df = pd.DataFrame(in_rows)
+
+        out_rows = []
+        for _ in range(20):
+            out_rows.append({"window_id": None, "fwd_ret_21": 0.01})
+        out_df = pd.DataFrame(out_rows)
+
+        return in_df, out_df
+
+    def _wr21(self, df: pd.DataFrame) -> float:
+        r = df["fwd_ret_21"].dropna()
+        return float((r > 0).mean()) if len(r) > 0 else float("nan")
+
+    def test_delta_ci_returns_expected_keys(self):
+        in_df, out_df = self._make_two_window_fixture()
+        result = cluster_bootstrap_delta_ci(
+            in_df, out_df, self._wr21,
+            n_draws=100, rng=np.random.default_rng(SEED_REGISTERED),
+        )
+        for key in ["delta_point", "ci_lo", "ci_hi", "n_windows_in", "n_rows_in", "n_rows_out"]:
+            assert key in result, f"Missing key: {key}"
+
+    def test_delta_ci_point_is_in_minus_out(self):
+        """delta_point = metric(IN) - metric(OUT)."""
+        in_df, out_df = self._make_two_window_fixture()
+        result = cluster_bootstrap_delta_ci(
+            in_df, out_df, self._wr21,
+            n_draws=100, rng=np.random.default_rng(SEED_REGISTERED),
+        )
+        expected_delta = self._wr21(in_df) - self._wr21(out_df)
+        assert abs(result["delta_point"] - expected_delta) < 1e-10
+
+    def test_delta_ci_positive_for_strong_in_advantage(self):
+        """Strong IN advantage (all wins) → CI lower bound should be positive."""
+        in_rows = [{"window_id": wid, "fwd_ret_21": 0.10} for wid in range(5) for _ in range(6)]
+        out_rows = [{"window_id": None, "fwd_ret_21": -0.02} for _ in range(30)]
+        in_df = pd.DataFrame(in_rows)
+        out_df = pd.DataFrame(out_rows)
+        result = cluster_bootstrap_delta_ci(
+            in_df, out_df, self._wr21,
+            n_draws=500, rng=np.random.default_rng(SEED_REGISTERED),
+        )
+        assert result["delta_point"] > 0
+        assert result["ci_lo"] >= 0, (
+            f"Expected CI LB >= 0 for strong IN advantage, got {result['ci_lo']}"
+        )
+
+    def test_delta_ci_out_arm_is_fixed(self):
+        """OUT arm metric is the same across all bootstrap draws (OUT is fixed)."""
+        in_df, out_df = self._make_two_window_fixture()
+        # The delta_point minus ci_lo and ci_hi reflect IN-arm variance, not OUT
+        result1 = cluster_bootstrap_delta_ci(
+            in_df, out_df, self._wr21,
+            n_draws=200, rng=np.random.default_rng(SEED_REGISTERED),
+        )
+        # Modify OUT arm to have different return; OUT metric changes → delta changes
+        out_df2 = out_df.copy()
+        out_df2["fwd_ret_21"] = -0.05  # all loses
+        result2 = cluster_bootstrap_delta_ci(
+            in_df, out_df2, self._wr21,
+            n_draws=200, rng=np.random.default_rng(SEED_REGISTERED),
+        )
+        # delta_point must differ (OUT metric changed)
+        assert abs(result1["delta_point"] - result2["delta_point"]) > 0.1
+
+    def test_delta_ci_n_windows_in_is_correct(self):
+        in_df, out_df = self._make_two_window_fixture()
+        result = cluster_bootstrap_delta_ci(
+            in_df, out_df, self._wr21,
+            n_draws=50, rng=np.random.default_rng(42),
+        )
+        assert result["n_windows_in"] == 2  # fixture has window_id ∈ {0, 1}
+        assert result["n_rows_in"] == len(in_df)
+        assert result["n_rows_out"] == len(out_df)
+
+
+class TestDefaultModeRegression:
+    """Regression guard: default mode (no --registered-run) must be byte-identical.
+
+    We verify that the key constants and function signatures that default mode relies
+    on are unchanged, and that the registered-run constants are distinct from the
+    default ones.
+    """
+
+    def test_default_seed_unchanged(self):
+        """Default SEED must still be 20260705 (W2 spec §5)."""
+        assert SEED == 20260705
+
+    def test_registered_seed_distinct(self):
+        """SEED_REGISTERED must be 20260706 (prereg §2 correction e)."""
+        assert SEED_REGISTERED == 20260706
+        assert SEED_REGISTERED != SEED
+
+    def test_mde_alpha_registered_is_005(self):
+        """MDE_ALPHA_REGISTERED must be 0.05 (prereg §2 correction c)."""
+        assert MDE_ALPHA_REGISTERED == 0.05
+
+    def test_mde_default_uses_bh_q(self):
+        """Default mde_at_power (no alpha arg) uses BH_Q = 0.10 as alpha."""
+        from scripts.oracle_member_transmission_w2 import BH_Q
+        assert BH_Q == 0.10
+        # mde with alpha=0.10 > mde with alpha=0.05 (larger alpha = smaller z_alpha = smaller MDE)
+        mde_bh = mde_at_power(30, alpha=BH_Q)
+        mde_reg = mde_at_power(30, alpha=MDE_ALPHA_REGISTERED)
+        assert mde_reg > mde_bh, "MDE at alpha=0.05 must be larger than at alpha=0.10"
+
+    def test_cluster_bootstrap_delta_ci_empty_in_returns_nan(self):
+        """Empty IN arm → NaN delta CI."""
+        in_df = pd.DataFrame(columns=["window_id", "fwd_ret_21"])
+        out_df = pd.DataFrame({"window_id": [None] * 5, "fwd_ret_21": [0.01] * 5})
+        def _wr21(d): return float((d["fwd_ret_21"] > 0).mean()) if len(d) > 0 else float("nan")
+        result = cluster_bootstrap_delta_ci(in_df, out_df, _wr21, n_draws=10)
+        assert not np.isfinite(result["delta_point"])
+        assert result["n_windows_in"] == 0

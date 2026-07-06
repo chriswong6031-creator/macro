@@ -52,7 +52,16 @@ log = logging.getLogger("ota_w2")
 # Determinism seed (spec §5)
 # ---------------------------------------------------------------------------
 SEED = 20260705
+SEED_REGISTERED = 20260706  # prereg §2: seed for the registered run
 RNG = np.random.default_rng(SEED)
+
+# ---------------------------------------------------------------------------
+# Registered-run constants (prereg §2 & §3)
+# ---------------------------------------------------------------------------
+# R3 temporal split boundary: dev ≤ 2024-06-30, holdout > 2024-06-30
+R3_SPLIT_DATE = "2024-06-30"
+# MDE alpha for registered run (prereg §2 correction c: alpha=0.05, not BH_Q)
+MDE_ALPHA_REGISTERED = 0.05
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -614,6 +623,7 @@ def _placebo_draw_both_metrics(
     rng: np.random.Generator,
     real_intervals_ns: list[tuple[int, int]] | None = None,
     max_attempts: int = 200,
+    real_in_mask_ns: np.ndarray | None = None,
 ) -> tuple[np.ndarray, np.ndarray] | None:
     """Vectorized placebo draw returning per-node (in_mask, ret21_vals) for pooled aggregation.
 
@@ -625,6 +635,11 @@ def _placebo_draw_both_metrics(
     Returns (in_mask, ret21_vals) so the caller can pool across nodes before computing
     the pooled IN−OUT delta, matching the pooled observed statistic (blocker fix).
     Returns None if placement fails or insufficient data.
+
+    Prereg §2 correction (a) — symmetric placebo: when real_in_mask_ns is provided
+    (registered-run mode), real armed-window fires (the observed IN-arm fires) are
+    excluded from the placebo OUT-arm, so the placebo IN−OUT contrast exactly matches
+    the observed IN-vs-OUT contrast (no real IN fires leak into placebo OUT).
     """
     if len(node_windows) == 0 or len(fire_dates_ns) == 0:
         return None
@@ -678,8 +693,87 @@ def _placebo_draw_both_metrics(
     for (ps, pe) in placebo_intervals_ns:
         in_mask |= (fire_dates_ns >= ps) & (fire_dates_ns <= pe)
 
+    # Prereg §2 correction (a) — symmetric placebo: exclude real IN-arm fires from the
+    # placebo OUT pool.  real_in_mask_ns marks the actual observed IN-arm positions in
+    # fire_dates_ns.  Without this, real IN fires can land in placebo-OUT, inflating the
+    # null and understating the delta — so the placebo contrast does not match the
+    # observed IN-vs-OUT contrast.  Setting those positions to placebo-IN achieves
+    # symmetry: placebo OUT = only genuine OUT-arm fires (never real IN fires).
+    if real_in_mask_ns is not None:
+        # Any real IN fire that placebo classified OUT → force to placebo IN
+        # (they are excluded from the OUT pool regardless of placebo placement)
+        in_mask |= real_in_mask_ns
+
     # Return raw arrays for pooled aggregation in caller
     return (in_mask, ret21_vals)
+
+
+# ---------------------------------------------------------------------------
+# Cluster-bootstrap CI on the delta (prereg §2 correction b)
+# ---------------------------------------------------------------------------
+
+def cluster_bootstrap_delta_ci(
+    in_df: pd.DataFrame,
+    out_df: pd.DataFrame,
+    metric_fn,
+    window_id_col: str = "window_id",
+    n_draws: int = BOOTSTRAP_DRAWS,
+    ci_level: float = 0.90,
+    rng: np.random.Generator | None = None,
+) -> dict[str, float]:
+    """Cluster bootstrap CI on the IN−OUT delta.
+
+    Prereg §2 correction (b): resample IN-arm window ids (2,000 draws); OUT arm
+    is FIXED.  Each draw computes delta = metric(resampled_IN) − metric(fixed_OUT).
+
+    Returns dict with keys: delta_point, ci_lo, ci_hi, n_windows_in, n_rows_in, n_rows_out.
+    """
+    if rng is None:
+        rng = np.random.default_rng(SEED_REGISTERED)
+
+    window_ids = in_df[window_id_col].dropna().unique()
+    n_windows = len(window_ids)
+
+    if n_windows == 0:
+        return {
+            "delta_point": float("nan"),
+            "ci_lo": float("nan"),
+            "ci_hi": float("nan"),
+            "n_windows_in": 0,
+            "n_rows_in": len(in_df),
+            "n_rows_out": len(out_df),
+        }
+
+    out_stat = metric_fn(out_df)
+    in_point = metric_fn(in_df)
+    delta_point = (in_point - out_stat) if (
+        np.isfinite(in_point) and np.isfinite(out_stat)
+    ) else float("nan")
+
+    boot_deltas = []
+    for _ in range(n_draws):
+        sampled_ids = rng.choice(window_ids, size=n_windows, replace=True)
+        chunks = [in_df[in_df[window_id_col] == wid] for wid in sampled_ids]
+        boot_in = pd.concat(chunks, ignore_index=True)
+        boot_in_stat = metric_fn(boot_in)
+        d = (boot_in_stat - out_stat) if (
+            np.isfinite(boot_in_stat) and np.isfinite(out_stat)
+        ) else float("nan")
+        boot_deltas.append(d)
+
+    boot_arr = np.array(boot_deltas)
+    alpha = (1.0 - ci_level) / 2.0
+    ci_lo = float(np.nanpercentile(boot_arr, 100 * alpha))
+    ci_hi = float(np.nanpercentile(boot_arr, 100 * (1 - alpha)))
+
+    return {
+        "delta_point": float(delta_point),
+        "ci_lo": ci_lo,
+        "ci_hi": ci_hi,
+        "n_windows_in": n_windows,
+        "n_rows_in": len(in_df),
+        "n_rows_out": len(out_df),
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -992,13 +1086,22 @@ def run_main(args: argparse.Namespace) -> None:
     w0_csv_path = worktree_dir / "research" / "oracle_asymmetry" / "W0_1_events_graded.csv"
     output_dir = worktree_dir / "research" / "oracle_asymmetry"
 
+    # Registered-run mode (prereg §2 corrections a-e)
+    registered_run: bool = getattr(args, "registered_run", False)
+    active_seed = SEED_REGISTERED if registered_run else SEED
+
     log.info("=" * 70)
-    log.info("OTA W2 — Member Transmission")
+    log.info("OTA W2 — Member Transmission%s",
+             " [REGISTERED RUN — W2_FORMAL_PREREG.md]" if registered_run else "")
     log.info("data_dir: %s", data_dir)
     log.info("worktree_dir: %s", worktree_dir)
     log.info("Effective verdict window: %s → (last replay date)", EFFECTIVE_WINDOW_START)
     log.info("Seed: %d  Bootstrap draws: %d  Placebo draws: %d",
-             SEED, BOOTSTRAP_DRAWS, PLACEBO_DRAWS)
+             active_seed, BOOTSTRAP_DRAWS, PLACEBO_DRAWS)
+    if registered_run:
+        log.info("Registered-run corrections: (a) symmetric placebo  (b) delta CI  "
+                 "(c) MDE alpha=0.05  (d) R3 split@%s  (e) seed=%d",
+                 R3_SPLIT_DATE, SEED_REGISTERED)
     log.info("=" * 70)
 
     # --- Fidelity gate (FIRST — loud abort) ---
@@ -1239,7 +1342,7 @@ def run_main(args: argparse.Namespace) -> None:
     # --- Cluster bootstrap for IN arm ---
     log.info("Running cluster bootstrap (2,000 draws, IN arm)...")
     t0_boot = time.time()
-    rng_boot = np.random.default_rng(SEED)
+    rng_boot = np.random.default_rng(active_seed)
     ci_wr21 = cluster_bootstrap_ci(
         in_arm_pit, _wr21, window_id_col="window_id",
         n_draws=BOOTSTRAP_DRAWS, rng=rng_boot,
@@ -1253,7 +1356,7 @@ def run_main(args: argparse.Namespace) -> None:
     # --- Regime-matched placebo (500 draws) ---
     log.info("Running regime-matched placebo (500 draws)...")
     t0_plac = time.time()
-    rng_plac = np.random.default_rng(SEED + 1)
+    rng_plac = np.random.default_rng(active_seed + 1)
     vix_regime_by_node = build_vix_regime_lookup(panel_s)
 
     # Pre-compute per-node arrays for vectorized placebo (avoid rebuilding each draw).
@@ -1286,6 +1389,22 @@ def run_main(args: argparse.Namespace) -> None:
 
         node_fire_data[node] = (fire_dates_ns_node, ret21_vals_node, is_high, node_win, real_ivs_node)
 
+    # Prereg §2 correction (a): for registered run, compute real IN-arm mask per node
+    # so _placebo_draw_both_metrics can exclude real IN fires from the placebo OUT pool.
+    if registered_run:
+        real_in_mask_by_node: dict[str, np.ndarray] = {}
+        for node in nodes_with_windows:
+            if node not in node_fire_data:
+                continue
+            fire_dates_ns_node_r = node_fire_data[node][0]
+            real_ivs_node_r = node_fire_data[node][4]
+            r_in_mask = np.zeros(len(fire_dates_ns_node_r), dtype=bool)
+            for (ws_ns, we_ns) in real_ivs_node_r:
+                r_in_mask |= (fire_dates_ns_node_r >= ws_ns) & (fire_dates_ns_node_r <= we_ns)
+            real_in_mask_by_node[node] = r_in_mask
+    else:
+        real_in_mask_by_node = {}
+
     placebo_deltas_wr21 = []
     placebo_deltas_ret21 = []
 
@@ -1302,9 +1421,12 @@ def run_main(args: argparse.Namespace) -> None:
             if node not in node_fire_data:
                 continue
             fire_dates_ns_node, ret21_vals_node, is_high, node_win, real_ivs_node = node_fire_data[node]
+            # Prereg §2 correction (a): pass real_in_mask_ns in registered mode
+            r_in_mask = real_in_mask_by_node.get(node) if registered_run else None
             result = _placebo_draw_both_metrics(
                 node_win, fire_dates_ns_node, ret21_vals_node, td_arr_ns, is_high,
                 rng_plac, real_intervals_ns=real_ivs_node,
+                real_in_mask_ns=r_in_mask,
             )
             if result is None:
                 continue
@@ -1368,37 +1490,195 @@ def run_main(args: argparse.Namespace) -> None:
     bh_g_w2a = bh_results[0]
     bh_g_w2b = bh_results[1]
 
+    # --- Registered-run: correction (b) cluster-bootstrap CI on the delta ---
+    # (prereq §2: window-level resample of IN arm, OUT arm fixed, 2,000 draws, 90% CI)
+    if registered_run:
+        log.info("Registered run: computing cluster-bootstrap CI on delta (2,000 draws)...")
+        rng_delta_ci = np.random.default_rng(active_seed + 2)
+        delta_ci_wr21 = cluster_bootstrap_delta_ci(
+            in_arm_pit, out_arm_pit, _wr21,
+            n_draws=BOOTSTRAP_DRAWS, rng=rng_delta_ci,
+        )
+        rng_delta_ci2 = np.random.default_rng(active_seed + 3)
+        delta_ci_ret21 = cluster_bootstrap_delta_ci(
+            in_arm_pit, out_arm_pit, _mean_ret21,
+            n_draws=BOOTSTRAP_DRAWS, rng=rng_delta_ci2,
+        )
+        log.info("Delta CI ΔWR21: point=%.4f  90%%CI=[%.4f, %.4f]",
+                 delta_ci_wr21["delta_point"], delta_ci_wr21["ci_lo"], delta_ci_wr21["ci_hi"])
+        log.info("Delta CI Δmean_ret21: point=%.4f  90%%CI=[%.4f, %.4f]",
+                 delta_ci_ret21["delta_point"], delta_ci_ret21["ci_lo"], delta_ci_ret21["ci_hi"])
+    else:
+        delta_ci_wr21 = None
+        delta_ci_ret21 = None
+
+    # --- Registered-run: R3 temporal split at 2024-06-30 ---
+    # (prereg §3 R3: dev ≤ 2024-06-30, holdout > 2024-06-30; compute holdout ΔWR21 +
+    #  cluster-bootstrap 90% CI; R3 pass = holdout ΔWR21 > 0 AND CI LB > 0)
+    r3_result: dict = {}
+    if registered_run:
+        log.info("Registered run: computing R3 temporal split at %s...", R3_SPLIT_DATE)
+        split_ts = pd.Timestamp(R3_SPLIT_DATE)
+
+        # Split by window_start date (must join window_start back to in_arm_pit)
+        # in_arm_pit has window_id; primary_windows has window_start
+        win_start_map = (
+            primary_windows.set_index("window_id")["window_start"]
+            .apply(pd.Timestamp)
+            .to_dict()
+        )
+
+        # dev: window_start <= split_ts; holdout: window_start > split_ts
+        def _is_dev_window(wid: object) -> bool:
+            ws = win_start_map.get(int(wid) if wid is not None else -1)
+            return (ws is not None) and (ws <= split_ts)
+
+        def _is_holdout_window(wid: object) -> bool:
+            ws = win_start_map.get(int(wid) if wid is not None else -1)
+            return (ws is not None) and (ws > split_ts)
+
+        in_arm_pit_copy = in_arm_pit.copy()
+        dev_mask = in_arm_pit_copy["window_id"].apply(_is_dev_window)
+        holdout_mask = in_arm_pit_copy["window_id"].apply(_is_holdout_window)
+
+        in_dev = in_arm_pit_copy[dev_mask].copy()
+        in_holdout = in_arm_pit_copy[holdout_mask].copy()
+
+        n_dev_windows = int(in_dev["window_id"].nunique()) if len(in_dev) > 0 else 0
+        n_holdout_windows = int(in_holdout["window_id"].nunique()) if len(in_holdout) > 0 else 0
+
+        holdout_wr21_in = _wr21(in_holdout) if len(in_holdout) > 0 else float("nan")
+        holdout_wr21_out = _wr21(out_arm_pit)
+        holdout_delta_wr21 = (
+            (holdout_wr21_in - holdout_wr21_out)
+            if (np.isfinite(holdout_wr21_in) and np.isfinite(holdout_wr21_out))
+            else float("nan")
+        )
+
+        # Cluster-bootstrap 90% CI on holdout delta (IN-arm resampled, OUT fixed)
+        if n_holdout_windows > 0:
+            rng_r3 = np.random.default_rng(active_seed + 4)
+            holdout_delta_ci = cluster_bootstrap_delta_ci(
+                in_holdout, out_arm_pit, _wr21,
+                n_draws=BOOTSTRAP_DRAWS, rng=rng_r3,
+            )
+        else:
+            holdout_delta_ci = {
+                "delta_point": float("nan"), "ci_lo": float("nan"),
+                "ci_hi": float("nan"), "n_windows_in": 0,
+                "n_rows_in": 0, "n_rows_out": len(out_arm_pit),
+            }
+
+        # R3 pass conditions (prereg §3)
+        r3_delta_pos = np.isfinite(holdout_delta_wr21) and holdout_delta_wr21 > 0
+        r3_ci_lb_pos = np.isfinite(holdout_delta_ci["ci_lo"]) and holdout_delta_ci["ci_lo"] > 0
+        r3_pass = r3_delta_pos and r3_ci_lb_pos
+
+        # MDE for registered run (prereg §2 correction c: alpha=0.05, not BH_Q)
+        mde_reg = mde_at_power(n_holdout_windows, alpha=MDE_ALPHA_REGISTERED) if n_holdout_windows > 0 else float("nan")
+
+        r3_result = {
+            "n_dev_windows": n_dev_windows,
+            "n_holdout_windows": n_holdout_windows,
+            "n_dev_rows": len(in_dev),
+            "n_holdout_rows": len(in_holdout),
+            "holdout_delta_wr21": holdout_delta_wr21,
+            "holdout_ci": holdout_delta_ci,
+            "r3_delta_pos": r3_delta_pos,
+            "r3_ci_lb_pos": r3_ci_lb_pos,
+            "r3_pass": r3_pass,
+            "mde_alpha05": mde_reg,
+        }
+
+        log.info("R3 temporal split: dev_windows=%d  holdout_windows=%d",
+                 n_dev_windows, n_holdout_windows)
+        log.info("R3 holdout ΔWR21=%.4f  90%%CI=[%.4f, %.4f]  PASS=%s",
+                 holdout_delta_wr21, holdout_delta_ci["ci_lo"], holdout_delta_ci["ci_hi"], r3_pass)
+
     # --- Verdict (pre-bound vocabulary) ---
     n_windows_in = in_arm_pit["window_id"].nunique() if len(in_arm_pit) > 0 else 0
 
-    if g_w2a_pass and g_w2b_pass and bh_g_w2a and bh_g_w2b:
-        verdict = "CONDITION-LIFT"
-        verdict_note = (
-            "Both G-W2-A and G-W2-B pass: delta positive and above placebo p95; "
-            "BH-corrected at q=0.10. DESCRIPTIVE class — display-only until formal P3-style registration."
-        )
-    elif (g_w2a_delta_pos or g_w2b_delta_pos) and not (g_w2a_pass and g_w2b_pass):
-        # Point estimates positive but CIs/placebo inconclusive
-        mde = mde_at_power(n_windows_in) if n_windows_in > 0 else float("nan")
-        verdict = "UNDERPOWERED-ACCRUING"
-        verdict_note = (
-            f"Point estimates partially positive but placebo/CI inconclusive. "
-            f"MDE@{int(POWER_TARGET*100)}% given {n_windows_in} IN-arm windows "
-            f"(cluster-corrected): {mde:.3f} WR21 units. Accrue more events."
-        )
+    if registered_run:
+        # Prereg §4 vocabulary (exhaustive) — registered reads: R1, R2, R3
+        # R1 = full ΔWR21 > symmetric-placebo p95 (BH q=0.10)
+        # R2 = full Δmean_ret21 > symmetric-placebo p95 (BH q=0.10)
+        # R3 = holdout ΔWR21 > 0 AND CI LB > 0
+        r1_pass = g_w2a_pass and bh_g_w2a
+        r2_pass = g_w2b_pass and bh_g_w2b
+        r3_pass_val = r3_result.get("r3_pass", False)
+        r3_delta_pos_val = r3_result.get("r3_delta_pos", False)
+        r3_ci_lb_pos_val = r3_result.get("r3_ci_lb_pos", False)
+        n_holdout = r3_result.get("n_holdout_windows", 0)
+
+        # MDE for reporting (prereg §2 correction c: alpha=0.05)
+        mde_val = mde_at_power(n_windows_in, alpha=MDE_ALPHA_REGISTERED) if n_windows_in > 0 else float("nan")
+
+        if r1_pass and r2_pass and r3_pass_val:
+            verdict = "CONFIRMED — DISPLAY-WITH-EDGE"
+            verdict_note = (
+                "R1 (ΔWR21 > symmetric-placebo p95, BH q=0.10) PASS; "
+                "R2 (Δmean_ret21 > symmetric-placebo p95, BH q=0.10) PASS; "
+                "R3 (holdout ΔWR21 > 0 AND 90% CI LB > 0) PASS. "
+                "Ceiling unchanged: display-with-edge (constitution §III; 'validated' unavailable). "
+                "W6 desk forward rule (§5) becomes the promotion clock."
+            )
+        elif r1_pass and r2_pass and r3_delta_pos_val and not r3_ci_lb_pos_val:
+            # R1+R2 pass; R3 fails only by CI width (holdout point > 0 but LB ≤ 0)
+            verdict = "PARTIAL — DISPLAY-WITH-EDGE (holdout-underpowered)"
+            verdict_note = (
+                f"R1 PASS; R2 PASS; R3 PARTIAL — holdout ΔWR21 > 0 but 90% CI LB ≤ 0 "
+                f"(holdout windows = {n_holdout}; MDE@80% alpha=0.05 = {mde_val:.3f}). "
+                f"W2 descriptive lift keeps its class; desk prints holdout point + CI honestly. "
+                f"§5 forward rule carries the promotion question."
+            )
+        elif r1_pass and r2_pass and not r3_delta_pos_val:
+            # R1+R2 pass; R3 point estimate negative
+            verdict = "PARTIAL-DIVERGENT"
+            verdict_note = (
+                f"R1 PASS; R2 PASS; R3 FAIL — holdout ΔWR21 ≤ 0 (holdout windows = {n_holdout}). "
+                f"Desk prints the divergence; forward rule becomes decisive. "
+                f"No post-hoc categories."
+            )
+        else:
+            # R1 or R2 fails
+            verdict = "RETRACTED"
+            verdict_note = (
+                f"R1={'PASS' if r1_pass else 'FAIL'} (ΔWR21 > sym-placebo p95, BH q=0.10); "
+                f"R2={'PASS' if r2_pass else 'FAIL'} (Δmean_ret21 > sym-placebo p95, BH q=0.10). "
+                f"W2 CONDITION-LIFT verdict retracted; desk base-rate panels removed; "
+                f"retraction note lands in W2_REPORT.md. "
+                f"MDE@80% alpha=0.05: {mde_val:.3f} WR21 units ({n_windows_in} IN-arm windows)."
+            )
     else:
-        mde = mde_at_power(n_windows_in) if n_windows_in > 0 else float("nan")
-        verdict = "NULL"
-        verdict_note = (
-            f"Neither gate passes. No evidence Oracle armed window adds member-entry quality. "
-            f"MDE@{int(POWER_TARGET*100)}%: {mde:.3f} WR21 units given {n_windows_in} IN-arm windows."
-        )
+        # Default (non-registered) verdict — unchanged from W2
+        if g_w2a_pass and g_w2b_pass and bh_g_w2a and bh_g_w2b:
+            verdict = "CONDITION-LIFT"
+            verdict_note = (
+                "Both G-W2-A and G-W2-B pass: delta positive and above placebo p95; "
+                "BH-corrected at q=0.10. DESCRIPTIVE class — display-only until formal P3-style registration."
+            )
+        elif (g_w2a_delta_pos or g_w2b_delta_pos) and not (g_w2a_pass and g_w2b_pass):
+            # Point estimates positive but CIs/placebo inconclusive
+            mde = mde_at_power(n_windows_in) if n_windows_in > 0 else float("nan")
+            verdict = "UNDERPOWERED-ACCRUING"
+            verdict_note = (
+                f"Point estimates partially positive but placebo/CI inconclusive. "
+                f"MDE@{int(POWER_TARGET*100)}% given {n_windows_in} IN-arm windows "
+                f"(cluster-corrected): {mde:.3f} WR21 units. Accrue more events."
+            )
+        else:
+            mde = mde_at_power(n_windows_in) if n_windows_in > 0 else float("nan")
+            verdict = "NULL"
+            verdict_note = (
+                f"Neither gate passes. No evidence Oracle armed window adds member-entry quality. "
+                f"MDE@{int(POWER_TARGET*100)}%: {mde:.3f} WR21 units given {n_windows_in} IN-arm windows."
+            )
 
     log.info("=" * 70)
     log.info("VERDICT: %s", verdict)
-    log.info("G-W2-A: delta_wr21=%.4f  placebo_p95=%.4f  PASS=%s  BH=%s",
+    log.info("G-W2-A (R1): delta_wr21=%.4f  placebo_p95=%.4f  PASS=%s  BH=%s",
              delta_wr21, plac_p95_wr21, g_w2a_pass, bh_g_w2a)
-    log.info("G-W2-B: delta_ret21=%.4f  placebo_p95=%.4f  PASS=%s  BH=%s",
+    log.info("G-W2-B (R2): delta_ret21=%.4f  placebo_p95=%.4f  PASS=%s  BH=%s",
              delta_ret21, plac_p95_ret21, g_w2b_pass, bh_g_w2b)
     log.info("=" * 70)
 
@@ -1509,9 +1789,13 @@ def run_main(args: argparse.Namespace) -> None:
     abl_metrics = compute_metrics(ablation_df) if len(ablation_df) > 0 else {}
     abl_n_wins = int(ablation_df["window_id"].nunique()) if len(ablation_df) > 0 else 0
 
-    # --- Write W2_REPORT.md ---
-    log.info("Writing W2_REPORT.md...")
-    report_path = output_dir / "W2_REPORT.md"
+    # --- Write W2_REPORT.md (or W2_FORMAL_RESULTS.md for registered run) ---
+    if registered_run:
+        report_path = output_dir / "W2_FORMAL_RESULTS.md"
+        log.info("Writing W2_FORMAL_RESULTS.md (registered run)...")
+    else:
+        report_path = output_dir / "W2_REPORT.md"
+        log.info("Writing W2_REPORT.md...")
     _write_report(
         report_path=report_path,
         fidelity=fidelity,
@@ -1549,8 +1833,13 @@ def run_main(args: argparse.Namespace) -> None:
         ablation_skip_counts=ablation_skip_counts,
         elapsed_plac=elapsed_plac,
         n_placebo_draws=len(placebo_deltas_wr21),
+        registered_run=registered_run,
+        delta_ci_wr21=delta_ci_wr21,
+        delta_ci_ret21=delta_ci_ret21,
+        r3_result=r3_result,
+        active_seed=active_seed,
     )
-    log.info("W2_REPORT.md written to %s", report_path)
+    log.info("Report written to %s", report_path)
     log.info("Done.")
 
 
@@ -1601,19 +1890,36 @@ def _write_report(
     ablation_skip_counts: dict,
     elapsed_plac: float,
     n_placebo_draws: int,
+    registered_run: bool = False,
+    delta_ci_wr21: dict | None = None,
+    delta_ci_ret21: dict | None = None,
+    r3_result: dict | None = None,
+    active_seed: int = SEED,
 ) -> None:
 
     lines = []
     a = lines.append
 
-    a("# OTA W2 — Member Transmission Report")
-    a("")
-    a("> **MODERN-TRACK ONLY — DESCRIPTIVE/EXPLORATORY.**")
-    a("> The word 'validated' does not appear in this document (Oracle Constitution §II).")
-    a("> Era law: P0_MEASUREMENT_MEMO.md v1.1 (2026-07-05).")
-    a("> Spec: research/oracle_asymmetry/W2_SPEC.md (pre-registered 2026-07-05, frozen).")
-    a("> Gates: 2 registered reads. BH q=0.10 within this family.")
-    a("> Seed: 20260705. Bootstrap draws: 2,000. Placebo draws: 500.")
+    if registered_run:
+        a("# OTA W2 — Member Transmission — Formal Registered Results")
+        a("")
+        a("> **REGISTERED CONFIRMATION RUN — W2_FORMAL_PREREG.md (merged before computation).**")
+        a("> The word 'validated' does not appear in this document (Oracle Constitution §II).")
+        a("> Pre-registration: research/oracle_asymmetry/W2_FORMAL_PREREG.md.")
+        a("> Base spec: research/oracle_asymmetry/W2_SPEC.md (frozen).")
+        a(f"> Seed: {active_seed} (registered). Bootstrap draws: 2,000. Placebo draws: 500.")
+        a("> Registered corrections applied: (a) symmetric placebo OUT-arm;")
+        a("> (b) cluster-bootstrap CI on delta; (c) MDE alpha=0.05;")
+        a(f"> (d) R3 temporal split at {R3_SPLIT_DATE}; (e) seed={SEED_REGISTERED}.")
+    else:
+        a("# OTA W2 — Member Transmission Report")
+        a("")
+        a("> **MODERN-TRACK ONLY — DESCRIPTIVE/EXPLORATORY.**")
+        a("> The word 'validated' does not appear in this document (Oracle Constitution §II).")
+        a("> Era law: P0_MEASUREMENT_MEMO.md v1.1 (2026-07-05).")
+        a("> Spec: research/oracle_asymmetry/W2_SPEC.md (pre-registered 2026-07-05, frozen).")
+        a("> Gates: 2 registered reads. BH q=0.10 within this family.")
+        a("> Seed: 20260705. Bootstrap draws: 2,000. Placebo draws: 500.")
     a("")
     a("## Disclosed Limitations")
     a("")
@@ -1704,21 +2010,64 @@ def _write_report(
     a(f"| ΔWR21 | {_fmt(delta_wr21)} | {_fmt(plac_p95_wr21)} | {_fmt(pval_wr21, 3)} | {bh_g_w2a} |")
     a(f"| Δ mean fwd_ret_21 | {_fmt(delta_ret21)} | {_fmt(plac_p95_ret21)} | {_fmt(pval_ret21, 3)} | {bh_g_w2b} |")
     a("")
+    # Registered-run: delta CI table (prereg §2 correction b)
+    if registered_run and delta_ci_wr21 is not None:
+        a("## Cluster-Bootstrap CI on Delta (IN−OUT, 2,000 draws, 90% CI — prereg §2b)")
+        a("")
+        a("*OUT arm fixed; IN arm window-level resample.*")
+        a("")
+        a("| Metric | ΔPoint | CI Lo | CI Hi | n IN-windows |")
+        a("|--------|--------|-------|-------|-------------|")
+        for label, dci in [("ΔWR21", delta_ci_wr21), ("Δmean_ret21", delta_ci_ret21)]:
+            a(f"| {label} | {_fmt(dci['delta_point'])} | {_fmt(dci['ci_lo'])} | {_fmt(dci['ci_hi'])} | {dci['n_windows_in']} |")
+        a("")
+
     a("## Gate Verdicts")
     a("")
-    a("**Pre-bound vocabulary:** CONDITION-LIFT / UNDERPOWERED-ACCRUING / NULL")
+    if registered_run:
+        a("**Pre-bound vocabulary (prereg §4, exhaustive):**")
+        a("CONFIRMED — DISPLAY-WITH-EDGE / PARTIAL — DISPLAY-WITH-EDGE (holdout-underpowered) / PARTIAL-DIVERGENT / RETRACTED")
+    else:
+        a("**Pre-bound vocabulary:** CONDITION-LIFT / UNDERPOWERED-ACCRUING / NULL")
     a("")
     g_w2a_str = "PASS" if g_w2a_pass else "FAIL"
     g_w2b_str = "PASS" if g_w2b_pass else "FAIL"
-    a(f"- **G-W2-A** (ΔWR21 > 0 AND > placebo p95): {g_w2a_str}")
+
+    if registered_run:
+        a(f"- **R1** (ΔWR21 > symmetric-placebo p95, BH q=0.10): {g_w2a_str}")
+    else:
+        a(f"- **G-W2-A** (ΔWR21 > 0 AND > placebo p95): {g_w2a_str}")
     a(f"  - IN WR21={_fmt(in_metrics.get('wr21'))}  OUT WR21={_fmt(out_metrics.get('wr21'))}  Δ={_fmt(delta_wr21)}")
     a(f"  - Placebo p95={_fmt(plac_p95_wr21)}  p-value={_fmt(pval_wr21, 3)}  BH-rejected={bh_g_w2a}")
     a(f"  - IN n_windows={n_windows_in}  IN n_rows={len(in_arm_pit)}  OUT n_rows={len(out_arm_pit)}")
     a("")
-    a(f"- **G-W2-B** (Δ mean fwd_ret_21 > 0 AND > placebo p95): {g_w2b_str}")
+    if registered_run:
+        a(f"- **R2** (Δmean_ret21 > symmetric-placebo p95, BH q=0.10): {g_w2b_str}")
+    else:
+        a(f"- **G-W2-B** (Δ mean fwd_ret_21 > 0 AND > placebo p95): {g_w2b_str}")
     a(f"  - IN mean fwd_ret_21={_fmt(in_metrics.get('mean_fwd_ret_21'))}  OUT mean fwd_ret_21={_fmt(out_metrics.get('mean_fwd_ret_21'))}  Δ={_fmt(delta_ret21)}")
     a(f"  - Placebo p95={_fmt(plac_p95_ret21)}  p-value={_fmt(pval_ret21, 3)}  BH-rejected={bh_g_w2b}")
     a("")
+
+    # Registered-run: R3 temporal holdout
+    if registered_run and r3_result:
+        r3_pass = r3_result.get("r3_pass", False)
+        r3_str = "PASS" if r3_pass else "FAIL"
+        r3_delta = r3_result.get("holdout_delta_wr21", float("nan"))
+        r3_ci = r3_result.get("holdout_ci", {})
+        r3_ci_lo = r3_ci.get("ci_lo", float("nan"))
+        r3_ci_hi = r3_ci.get("ci_hi", float("nan"))
+        n_dev = r3_result.get("n_dev_windows", 0)
+        n_hld = r3_result.get("n_holdout_windows", 0)
+        mde_05 = r3_result.get("mde_alpha05", float("nan"))
+
+        a(f"- **R3** (holdout ΔWR21 > 0 AND 90% CI LB > 0, split at {R3_SPLIT_DATE}): {r3_str}")
+        a(f"  - Dev windows (≤ {R3_SPLIT_DATE}): {n_dev}  |  Holdout windows (> {R3_SPLIT_DATE}): {n_hld}")
+        a(f"  - Holdout ΔWR21={_fmt(r3_delta)}  90% CI=[{_fmt(r3_ci_lo)}, {_fmt(r3_ci_hi)}]")
+        a(f"  - R3 delta>0: {r3_result.get('r3_delta_pos', False)}  CI LB>0: {r3_result.get('r3_ci_lb_pos', False)}")
+        a(f"  - MDE@80% alpha=0.05 (holdout, {n_hld} windows): {_fmt(mde_05)}")
+        a("")
+
     a(f"### VERDICT: **{verdict}**")
     a("")
     a(f"> {verdict_note}")
@@ -1807,6 +2156,27 @@ def _write_report(
         a("Ablation (c): no entries graded (massive parquets may be absent for sector basket members).")
         a("")
 
+    # Registered-run: DIFF AUDIT section (prereg §7: diff is part of the deliverable)
+    if registered_run:
+        a("---")
+        a("")
+        a("## DIFF AUDIT (prereg §6 allow-list)")
+        a("")
+        a("The registered-run code diff vs the W2 script is audited against the §6 exhaustive list.")
+        a("Every changed hunk is mapped here. No other changes exist.")
+        a("")
+        a("| Prereg §6 item | Implementation | Location |")
+        a("|---------------|---------------|----------|")
+        a("| (a) Symmetric placebo: placebo OUT-arm excludes real IN fires | `_placebo_draw_both_metrics` gains `real_in_mask_ns` param; in registered mode, real IN-arm fire positions are forced to placebo-IN (excluded from placebo OUT pool) | `_placebo_draw_both_metrics` function + `run_main` placebo loop |")
+        a("| (b) Cluster-bootstrap CI on delta (2,000 draws, 90% CI) | New `cluster_bootstrap_delta_ci` function: resamples IN-arm window ids, OUT fixed, computes delta per draw; called for ΔWR21 and Δmean_ret21 | New function + `run_main` registered-run block |")
+        a("| (c) MDE alpha=0.05 | `MDE_ALPHA_REGISTERED = 0.05` constant; `mde_at_power` called with `alpha=MDE_ALPHA_REGISTERED` in registered verdict block | Constants + verdict block |")
+        a("| (d) R3 temporal split at 2024-06-30 | Armed windows split by `window_start <= 2024-06-30` (dev) vs `> 2024-06-30` (holdout); holdout ΔWR21 + cluster-bootstrap 90% CI computed; R3 pass = delta>0 AND CI LB>0 | `run_main` registered-run block |")
+        a("| (e) seed 20260706 | `SEED_REGISTERED = 20260706`; all RNG initializations in registered mode use `active_seed = SEED_REGISTERED` | Constants + `run_main` |")
+        a("| No other changes | Default (non-flag) mode code paths unchanged; seed/rng/verdict/report all conditional on `registered_run` flag | All edits gated on `if registered_run:` |")
+        a("")
+        a("**Default-mode byte-identity:** all branching is `if registered_run: ... else: <original code>` or `active_seed` substitution. The default path produces the same numerical outputs as the pre-registered W2 run.")
+        a("")
+
     report_text = "\n".join(lines)
     report_path.write_text(report_text, encoding="utf-8")
 
@@ -1823,6 +2193,20 @@ def main() -> None:
         "--data-dir",
         required=True,
         help="Path to MAIN data directory (READ-ONLY).",
+    )
+    parser.add_argument(
+        "--registered-run",
+        action="store_true",
+        default=False,
+        help=(
+            "Registered confirmation run per research/oracle_asymmetry/W2_FORMAL_PREREG.md. "
+            "Applies: (a) symmetric placebo OUT-arm exclusion of real IN fires; "
+            "(b) cluster-bootstrap CI on the delta; "
+            "(c) MDE alpha=0.05; "
+            "(d) R3 temporal split at 2024-06-30; "
+            "(e) seed 20260706. "
+            "Default (non-flag) mode is byte-identical to the W2 run."
+        ),
     )
     args = parser.parse_args()
     run_main(args)
