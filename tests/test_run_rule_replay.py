@@ -573,3 +573,93 @@ def test_no_adhoc_flag_exists() -> None:
         "run_rule_replay.py registers '--adhoc' as an argparse argument, "
         "which is a house-law violation (RUL-P3). No adhoc/interactive mode may exist."
     )
+
+
+# ---------------------------------------------------------------------------
+# 13. B1 — wide trailing stop that never triggers is held_to_reference,
+#     included in cell mean at the reference-horizon return (not dropped)
+# ---------------------------------------------------------------------------
+def test_trail_stop_held_to_reference_included_in_mean(tmp_path: Path) -> None:
+    """B1 fix: when a trail_stop runs over a FULL max_H window without triggering,
+    the fire is marked held_to_reference=True (not censored) and its exit_ret
+    equals the reference-horizon return.  _cell_stats must include it in the mean.
+
+    Setup: monotonically rising price path over 200 bars; a 20% trailing stop
+    will never trigger on a path that never pulls back 20% from its HWM.
+    The fire is placed with >= 126 bars (max_H) remaining, so the full window
+    is available.
+    """
+    from engine.rule_replay import _compute_per_fire, ExitPolicy, ExitKind
+
+    # Build a strictly monotone rising series: +0.1% every bar for 250 bars
+    n = 250
+    idx = pd.bdate_range("2022-01-03", periods=n)
+    prices = 100.0 * np.cumprod(np.ones(n) * 1.001)
+    close = pd.Series(prices, index=idx)
+
+    # Fire at bar 10; 240 bars remain (well above max_H=126)
+    fill_idx = 10
+    policy = ExitPolicy.trail_stop(20)  # 20% trailing stop — wide, never triggers on monotone rise
+    result = _compute_per_fire(close, fill_idx, policy, horizons_ref=(126,))
+
+    # On a monotone-rising path the stop never fires → held_to_reference
+    assert result["held_to_reference"] is True, (
+        "Expected held_to_reference=True on a monotone-rising path with 20% trail stop; "
+        f"got held_to_reference={result['held_to_reference']}, censored={result['censored']}"
+    )
+    assert result["censored"] is False, (
+        f"censored must be False for held_to_reference rows; got {result['censored']}"
+    )
+    assert result["short_path"] is False, (
+        f"short_path must be False when full window is available; got {result['short_path']}"
+    )
+    # exit_ret should be non-None (the reference-horizon return at max_H-1)
+    assert result["exit_ret"] is not None, (
+        "exit_ret must be set for held_to_reference rows (it is the reference-horizon return)"
+    )
+    # The return should be positive (monotone rising path)
+    assert result["exit_ret"] > 0, (
+        f"exit_ret should be positive on a rising path; got {result['exit_ret']}"
+    )
+
+
+def test_trail_stop_held_to_reference_included_in_cell_stats() -> None:
+    """B1 fix (cell-level): _cell_stats includes held_to_reference rows in WR/mean.
+
+    Two synthetic fires on the same monotone-rising series:
+      Fire A: trail_stop triggers at bar 30 (negative return path, then recovers)
+      Fire B: trail_stop never triggers (held_to_reference, positive return)
+
+    With the B1 fix, both rows are included in the mean — WR and mean_exit_ret
+    should reflect the average of the two exit returns.
+    Without the fix (old code excluded all censored rows, which incorrectly grouped
+    held_to_reference with genuine censors), only fire A would be included.
+    """
+    from scripts.run_rule_replay import _cell_stats
+
+    # Simulate two perfire rows: one triggered, one held_to_reference
+    perfire = pd.DataFrame({
+        "exit_ret": [0.10, 0.15],       # fire A: +10%; fire B: +15% (held_to_reference)
+        "censored": [False, False],
+        "short_path": [False, False],
+        "held_to_reference": [False, True],
+        "ticker": ["A", "B"],
+        "fire_date": pd.to_datetime(["2022-06-01", "2022-06-02"]),
+    })
+    # No fires DataFrame needed for the cluster count path (we rely on ticker+fire_date)
+    stats = _cell_stats(perfire, pd.DataFrame())
+
+    # Both rows should be included: WR = 2/2 = 1.0, mean = (0.10+0.15)/2 = 0.125
+    assert stats["wr"] == pytest.approx(1.0), (
+        f"Expected WR=1.0 (both positive), got {stats['wr']}. "
+        "held_to_reference rows must be included in WR computation."
+    )
+    assert stats["mean_exit_ret"] == pytest.approx(0.125, abs=0.001), (
+        f"Expected mean=(0.10+0.15)/2=0.125, got {stats['mean_exit_ret']}. "
+        "held_to_reference rows must be included in mean_exit_ret."
+    )
+    # Both short_path_pct and held_to_reference_pct should be reported
+    assert "short_path_pct" in stats
+    assert "held_to_reference_pct" in stats
+    assert stats["held_to_reference_pct"] == pytest.approx(0.5, abs=0.01)  # 1/2 = 0.5
+    assert stats["short_path_pct"] == pytest.approx(0.0)
