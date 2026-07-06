@@ -5,7 +5,7 @@ The contrarian read IS live, display-only: `engine/dannytrades_chip.py` →
 `dt_contra` on US stock pages (basket-level fields via `engine/basket_tape.py`;
 the Canada builder degrades gracefully on its close-only universe). See
 `research/DANNYTRADES_NW_ADJUDICATION_AND_MASTERPLAN_BY_FABLE.md` (2026-07-06,
-rulings DT-R1..R12) for the standing adjudication. Engine `engine/dannytrades.py`; harness
+rulings DT-R1..R12; §7 Amendment DT-W1a 2026-07-06: all four contrarian reads FAILED time-controlled replication on the 2021+ survivorship-honest PIT panel — whale line dropped from the chip, extension band downgraded to weak tilt) for the standing adjudication. Engine `engine/dannytrades.py`; harness
 `scripts/dannytrades_phase0.py`; robustness `scripts/dannytrades_sweep.py`;
 tests `tests/test_dannytrades.py`. Backtest on a local yfinance OHLCV cache
 (`/tmp/dtcache`, 114 large-cap US names, 1962–2026 — real historical volume; the

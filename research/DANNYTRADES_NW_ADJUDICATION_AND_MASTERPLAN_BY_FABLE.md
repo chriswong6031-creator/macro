@@ -268,3 +268,76 @@ per-ticker `dt_contra` state to the NW as a governed artifact.
 - His churn-avoidance *behavior*: already institutionalized as slower exit
   horizons (TRIM/EXIT grids), the reduce-gate, and the long-hold firewall — we
   keep the idea, we just don't need a new ledger for it.
+
+---
+
+## 7. Amendment DT-W1a — verdicts of record (2026-07-06, same day)
+
+DT-W1 ran same-day (PR #1736). The first pass REPLICATED H1/H2/H4 on the raw
+basis, but the mandatory adversarial review **bounced** it: the ticker-cluster
+bootstrap had no power against the calendar-time confound (panel monthly base
+return −9.9%..+9.6%; effective independent N ≈ 60 months, not 591 tickers), and
+the within-ticker permutation negative control was structurally powerless for
+LEVEL tests (it preserves each ticker's whale-value multiset, so "whale>75"
+keeps selecting winner tickers under the null — the builder's first-pass excuse
+for the control anomaly had the sign backwards). The repair (time-controlled
+primary basis: within-month demeaning + month-block bootstrap; level tests get
+a within-month cross-ticker permutation control; real one-sided bootstrap
+p-values; H4 verdict on the per-month cross-sectional Spearman per the frozen
+rule, the builder-invented −0.3 threshold removed) left all four controls
+clean and produced the verdicts of record:
+
+| Test | Raw (superseded) | Time-controlled (primary) | Verdict |
+|---|---|---|---|
+| H1 entering→fade | −0.0333 [−0.0453,−0.0219] | −0.0062 [−0.0293,+0.0186] | **FAILED** |
+| H2 leaving→bounce | +0.0445 [+0.0329,+0.0552] | +0.0119 [−0.0146,+0.0380] | **FAILED** |
+| H3 hot>75→fade | −0.0092 [−0.0411,+0.0200] | +0.0262 [−0.0215,+0.0713] | **FAILED** |
+| H4 level-decile monotone | pooled Spearman −0.8424 | per-month +0.0548 [−0.1059,+0.2035] | **FAILED** |
+
+Reading: the raw contrarian lifts were ~85–90% calendar-month base rate — the
+whale reads fire in months whose whole tape moved, and the pooled −0.84
+monotonicity was cross-month base-rate variation, not within-month
+differentiation. Scope note (binding, from the results doc): 2021-07+ is a
+single bull regime with ~60 effective months — FAILED here means "does not
+replicate time-controlled in this window"; it does not by itself overturn the
+64-year evidence, which carries the survivorship caveat *and* (now flagged) the
+same absent-time-control weakness.
+
+**Consequences applied (frozen rules, §4.1):**
+
+- H1∧H2∧H3 FAILED → the whale line is DROPPED from the chip: whale motion no
+  longer resolves fade/bounce states and carries no directional label;
+  accumulation values remain as descriptive data only (`whale`, `whale_chg`
+  fields kept for schema stability of `dt_contra_state.json`).
+- H4 FAILED → the extension band remains the sole state driver, downgraded to
+  a weak-tilt display; the caveat (single source `_CAVEAT`, propagates to the
+  DT-NW-1 synapse artifact automatically) now prints the two-panel status:
+  64y survivor-panel Spearman −0.88 (no time control) / 2021+ time-controlled
+  null. The word "Validated" was removed from the caveat.
+- The committed `dt_contra_state.json` seed refreshes with the new states and
+  caveat on the next nightly render (aggregator reads chip output).
+
+**New rulings:**
+
+- **DT-R13 (restoration path).** Whale-based directional claims may return
+  only via a new prereg in which the 64-year panel survives month-block time
+  control. Until then, any citation of the t≈−3.9 whale-change result must
+  carry "computed without time control" alongside the survivorship caveat.
+- **DT-R14 (time-control law).** Every future DannyTrades-family study — and
+  any monthly/level-threshold event study on a regime-limited panel — must
+  include a calendar-time control in its PRIMARY inference (within-month
+  demeaning or month-block resampling) and a control design matched to the
+  test type (time-permutation for change tests, cross-sectional permutation
+  for level tests). Prereg lesson recorded: §4.1 lacked an insufficient-power
+  outcome; future preregs must pre-declare a DEFERRED/UNDERPOWERED verdict
+  path so a low-power null is distinguishable from a refutation.
+
+**Follow-ups registered:**
+
+- `engine/basket_tape.py` emits basket-level Danny-direction fields
+  (`danny.buy/sell`, whale tier labels at his 35/50/75 thresholds) — a
+  pre-existing display surface now inconsistent with DT-W1a. Review at next
+  basket-tape touch: either relabel descriptive or attach the DT-W1a caveat.
+- Optional (cheap, settles DT-R13): month-block re-run of the original
+  64-year harness (`scripts/dannytrades_whale.py` + `/tmp/dtcache`-style
+  panel). Un-clocked; runs only if someone wants the whale line back.

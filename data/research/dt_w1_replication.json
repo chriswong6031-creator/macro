@@ -1,0 +1,289 @@
+{
+  "amendment": "DT-W1a \u2014 2026-07-06: time-control repair after Opus adversarial bounce",
+  "coverage": {
+    "n_tickers_in_scope": 607,
+    "n_tickers_with_data": 591,
+    "coverage_pct": 97.4,
+    "n_exited_delisted_included": 105,
+    "n_missing_store": 2,
+    "missing_store_tickers": [
+      "BF-B",
+      "BRK-B"
+    ],
+    "total_gap_excluded_months": 0,
+    "pool_ticker_months_total": 30009,
+    "pool_rows_with_whale_and_fwd": 26396,
+    "n_calendar_months": 60,
+    "panel_fwd_1m_range_pct": [
+      -9.984,
+      9.576
+    ],
+    "store_latest_date": "2026-07-02",
+    "effective_window_start": "2021-07-06 + warmup (6mo whale win + 3mo diff = ~9 months warm-up)",
+    "effective_event_start_approx": "2022-04-30",
+    "study_run_date": "2026-07-06T23:35:47.331143+00:00",
+    "era_law": "data/massive_stock_day/ 2021-07-06+ (DT-R12); no pre-2021 volume claims",
+    "amendment": "DT-W1a: time-control repair (cross-sectional demeaning + month-block bootstrap)"
+  },
+  "h1": {
+    "n": 5596,
+    "n_months": 60,
+    "lift": -0.0062,
+    "ci95": [
+      -0.0293,
+      0.0186
+    ],
+    "mean_fwd_dm": 0.035,
+    "base_fwd_dm": 0.0,
+    "mask": "whale_chg > +10",
+    "expected_sign": "negative",
+    "basis": "time-controlled (primary)",
+    "p_exact": 0.318,
+    "bh_survived": false,
+    "ci_excludes_zero_at_sign": false,
+    "verdict": "FAILED"
+  },
+  "h2": {
+    "n": 5279,
+    "n_months": 60,
+    "lift": 0.0119,
+    "ci95": [
+      -0.0146,
+      0.038
+    ],
+    "mean_fwd_dm": 0.11,
+    "base_fwd_dm": 0.0,
+    "mask": "whale_chg < -10",
+    "expected_sign": "positive",
+    "basis": "time-controlled (primary)",
+    "p_exact": 0.181,
+    "bh_survived": false,
+    "ci_excludes_zero_at_sign": false,
+    "verdict": "FAILED"
+  },
+  "h3": {
+    "n": 1102,
+    "n_months": 60,
+    "lift": 0.0262,
+    "ci95": [
+      -0.0215,
+      0.0713
+    ],
+    "mean_fwd_dm": 0.296,
+    "base_fwd_dm": 0.0,
+    "mask": "whale > 75",
+    "expected_sign": "negative",
+    "basis": "time-controlled (primary)",
+    "p_exact": 0.848,
+    "bh_survived": false,
+    "ci_excludes_zero_at_sign": false,
+    "verdict": "FAILED"
+  },
+  "h4": {
+    "n": 27947,
+    "n_months": 56,
+    "spearman_per_month_mean": 0.0548,
+    "ci95": [
+      -0.1059,
+      0.2035
+    ],
+    "spearman_pooled_equal_count": -0.8424,
+    "spearman_pooled_equal_width": -0.1152,
+    "by_decile_mean_pooled_eq": [
+      1.8242,
+      1.3356,
+      0.8221,
+      0.462,
+      0.3007,
+      0.3851,
+      0.3587,
+      0.2956,
+      0.4058,
+      -0.023
+    ],
+    "decile_sizes_pooled_eq": [
+      2795,
+      2795,
+      2794,
+      2795,
+      2795,
+      2794,
+      2795,
+      2794,
+      2795,
+      2795
+    ],
+    "expected_sign": "spearman < 0",
+    "basis": "per-month cross-sectional decile Spearman (primary)",
+    "p_exact": 0.75,
+    "bh_survived": false,
+    "ci_excludes_zero_at_sign": false,
+    "verdict": "FAILED"
+  },
+  "h1_raw": {
+    "n": 5596,
+    "p_up": 0.4886,
+    "base_p_up": 0.5219,
+    "lift": -0.0333,
+    "ci95": [
+      -0.0453,
+      -0.0219
+    ],
+    "mean_fwd": 0.033,
+    "base_fwd": 0.598,
+    "mean_ret_diff": -0.565,
+    "basis": "raw ticker-cluster only (superseded)",
+    "note": "superseded by time-controlled; calendar confound not removed"
+  },
+  "h2_raw": {
+    "n": 5279,
+    "p_up": 0.5664,
+    "base_p_up": 0.5219,
+    "lift": 0.0445,
+    "ci95": [
+      0.0329,
+      0.0552
+    ],
+    "mean_fwd": 1.484,
+    "base_fwd": 0.598,
+    "mean_ret_diff": 0.886,
+    "basis": "raw ticker-cluster only (superseded)",
+    "note": "superseded by time-controlled; calendar confound not removed"
+  },
+  "h3_raw": {
+    "n": 1102,
+    "p_up": 0.5127,
+    "base_p_up": 0.5219,
+    "lift": -0.0092,
+    "ci95": [
+      -0.0411,
+      0.02
+    ],
+    "mean_fwd": 0.188,
+    "base_fwd": 0.598,
+    "mean_ret_diff": -0.409,
+    "basis": "raw ticker-cluster only (superseded)",
+    "note": "superseded by time-controlled; calendar confound not removed"
+  },
+  "controls": {
+    "c1_within_ticker_time_permutation": {
+      "label": "within-ticker time permutation (for change tests H1/H2)",
+      "h1_neg_ctrl": {
+        "n": 6517,
+        "p_up": 0.5177,
+        "base_p_up": 0.5219,
+        "lift": -0.0042,
+        "ci95": [
+          -0.0147,
+          0.0062
+        ],
+        "mean_fwd": 0.533,
+        "base_fwd": 0.598,
+        "mean_ret_diff": -0.065
+      },
+      "h2_neg_ctrl": {
+        "n": 6450,
+        "p_up": 0.5169,
+        "base_p_up": 0.5219,
+        "lift": -0.005,
+        "ci95": [
+          -0.0161,
+          0.0051
+        ],
+        "mean_fwd": 0.408,
+        "base_fwd": 0.598,
+        "mean_ret_diff": -0.189
+      }
+    },
+    "c2_within_month_cross_ticker_permutation": {
+      "label": "within-month cross-ticker whale permutation (for level tests H3/H4)",
+      "mechanism": "shuffles which ticker holds which whale value each month; breaks selection channel",
+      "h3_neg_ctrl_level": {
+        "n": 1102,
+        "p_up": 0.5027,
+        "base_p_up": 0.5219,
+        "lift": -0.0192,
+        "ci95": [
+          -0.0472,
+          0.0102
+        ],
+        "mean_fwd": -0.045,
+        "base_fwd": 0.598,
+        "mean_ret_diff": -0.643
+      }
+    },
+    "c3_within_ticker_time_permutation_demeaned": {
+      "label": "within-ticker time permutation on time-controlled (demeaned) series",
+      "h1_neg_ctrl_tc": {
+        "n": 6509,
+        "n_months": 60,
+        "lift": 0.0099,
+        "ci95": [
+          -0.0032,
+          0.024
+        ],
+        "mean_fwd_dm": 0.079,
+        "base_fwd_dm": 0.0
+      },
+      "h2_neg_ctrl_tc": {
+        "n": 6471,
+        "n_months": 60,
+        "lift": -0.0035,
+        "ci95": [
+          -0.0154,
+          0.0084
+        ],
+        "mean_fwd_dm": -0.046,
+        "base_fwd_dm": 0.0
+      }
+    },
+    "c4_positive_injection": {
+      "label": "inject +2pp into fwd_1m on H2-mask rows (for change test H2)",
+      "h2_pos_ctrl": {
+        "n": 5279,
+        "n_months": 60,
+        "lift": 0.105,
+        "ci95": [
+          0.0776,
+          0.1339
+        ],
+        "mean_fwd_dm": 1.557,
+        "base_fwd_dm": 0.0
+      }
+    }
+  },
+  "descriptive_63d_deciles": {
+    "label": "DESCRIPTIVE-ONLY: composite-score deciles at 63d (overlapping, PIT-filtered, not in FDR family)",
+    "n": 573861,
+    "spearman": -0.9758,
+    "by_decile_mean_63d": [
+      3.3335,
+      2.6641,
+      2.2404,
+      1.6973,
+      1.279,
+      0.8613,
+      0.9427,
+      0.3782,
+      0.6481,
+      0.2905
+    ]
+  },
+  "bh_correction": {
+    "q": 0.1,
+    "m": 4,
+    "p_values_exact": [
+      0.318,
+      0.181,
+      0.848,
+      0.75
+    ],
+    "survived": [
+      false,
+      false,
+      false,
+      false
+    ],
+    "method": "exact one-sided bootstrap tail fractions"
+  }
+}
