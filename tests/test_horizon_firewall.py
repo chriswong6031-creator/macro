@@ -395,22 +395,47 @@ class TestRealRegistryFirewallClean:
                 + "\n".join(msgs)
             )
 
-    def test_real_registry_has_no_hold_thesis_artifacts_yet(self) -> None:
+    def test_real_registry_hold_thesis_artifacts_are_only_long_hold(self) -> None:
         """
-        No hold_thesis artifacts should exist yet (W0 milestone).
-        The first hold_thesis artifacts arrive in W1 after the missed-hold study.
-        This test acts as a reminder to re-evaluate the firewall once hold artifacts
-        are registered — it should be REMOVED or updated when W1 lands hold_thesis stamps.
+        W1 PR-E: the ONLY hold_thesis artifacts are the long-hold labels and manifest.
+        Any additional hold_thesis artifact must be explicitly added to this allowlist.
+        All hold_thesis artifacts must have no scored_path_surfaces (LH-R1 / LH-R7).
+
+        This test replaced the W0 assertion 'no hold_thesis artifacts exist yet'.
+        When W3 PR-L adds long_thesis_registry.jsonl, update the allowlist below.
         """
+        _EXPECTED_HOLD_THESIS_ARTIFACTS = {
+            "long-hold-labels",
+            "long-hold-labels-manifest",
+        }
         reg = load_registry(REPO_ROOT)
-        hold_arts = [
+        hold_arts = {
             art_id
             for art_id, v in (reg.get("artifacts") or {}).items()
             if isinstance(v, dict) and v.get("horizon_role") == "hold_thesis"
+        }
+        unexpected = hold_arts - _EXPECTED_HOLD_THESIS_ARTIFACTS
+        assert not unexpected, (
+            f"Unexpected hold_thesis artifacts found: {unexpected}. "
+            "If W3+ has landed new hold_thesis artifacts, add them to "
+            "_EXPECTED_HOLD_THESIS_ARTIFACTS in this test."
+        )
+        missing = _EXPECTED_HOLD_THESIS_ARTIFACTS - hold_arts
+        assert not missing, (
+            f"Expected hold_thesis artifacts are missing from registry: {missing}. "
+            "Ensure long-hold-labels and long-hold-labels-manifest are registered "
+            "in config/synapse.yml with horizon_role: hold_thesis."
+        )
+        # All hold_thesis artifacts must have no scored_path_surfaces (LH-R1 / LH-R7)
+        artifacts = reg.get("artifacts") or {}
+        with_surfaces = [
+            art_id
+            for art_id in hold_arts
+            if list(artifacts.get(art_id, {}).get("scored_path_surfaces") or [])
         ]
-        assert hold_arts == [], (
-            f"Unexpected hold_thesis artifacts in W0 registry: {hold_arts}. "
-            "If W1 has landed, remove this assertion and verify firewall config."
+        assert not with_surfaces, (
+            f"hold_thesis artifact(s) have scored_path_surfaces (LH-R1 violation): "
+            f"{with_surfaces}. hold_thesis artifacts must NEVER route to entry surfaces."
         )
 
     def test_real_registry_tactical_entry_artifacts_present(self) -> None:

@@ -1,0 +1,241 @@
+{
+  "artifact": "long_hold_labels",
+  "version": "W1-PR-E-r1",
+  "generated_at": "2026-07-06T02:24:49.560441+00:00",
+  "runtime_seconds": 63.3,
+  "population": {
+    "source": "data/research/gate_fires_baskets.parquet",
+    "n_fires_total": 113542,
+    "n_tickers": 2495,
+    "date_range": [
+      "2014-08-11",
+      "2026-07-02"
+    ]
+  },
+  "price_coverage": {
+    "massive_store_available": true,
+    "n_resolvable": 113361,
+    "n_no_price": 181,
+    "price_source_counts": {
+      "massive": 92849,
+      "yahoo": 20454,
+      "none": 181,
+      "stocks": 58
+    }
+  },
+  "label_distribution": {
+    "cheap_trap": 4414,
+    "compounder": 196,
+    "multiple_expansion_only": 800,
+    "sector_laggard_winner": 3409,
+    "tactical_only": 4410,
+    "tactical_only_fail": 34604,
+    "unlabeled": 65709
+  },
+  "tactical_summary": {
+    "n_tactical_win": 15106,
+    "n_tactical_only_fail": 34604,
+    "n_unlabeled": 65709,
+    "n_gap_period": 34734
+  },
+  "cohort_label_counts": {
+    "2014": {
+      "cheap_trap": 29,
+      "multiple_expansion_only": 21,
+      "sector_laggard_winner": 7,
+      "tactical_only": 28,
+      "tactical_only_fail": 159,
+      "unlabeled": 3182
+    },
+    "2015": {
+      "cheap_trap": 37,
+      "compounder": 4,
+      "multiple_expansion_only": 16,
+      "sector_laggard_winner": 17,
+      "tactical_only": 37,
+      "tactical_only_fail": 476,
+      "unlabeled": 6867
+    },
+    "2016": {
+      "cheap_trap": 84,
+      "compounder": 4,
+      "multiple_expansion_only": 38,
+      "sector_laggard_winner": 41,
+      "tactical_only": 84,
+      "tactical_only_fail": 280,
+      "unlabeled": 6966
+    },
+    "2017": {
+      "cheap_trap": 91,
+      "compounder": 3,
+      "multiple_expansion_only": 44,
+      "sector_laggard_winner": 44,
+      "tactical_only": 91,
+      "tactical_only_fail": 281,
+      "unlabeled": 7259
+    },
+    "2018": {
+      "cheap_trap": 53,
+      "compounder": 2,
+      "multiple_expansion_only": 24,
+      "sector_laggard_winner": 26,
+      "tactical_only": 53,
+      "tactical_only_fail": 510,
+      "unlabeled": 7614
+    },
+    "2019": {
+      "cheap_trap": 97,
+      "compounder": 13,
+      "multiple_expansion_only": 41,
+      "sector_laggard_winner": 42,
+      "tactical_only": 97,
+      "tactical_only_fail": 413,
+      "unlabeled": 8896
+    },
+    "2020": {
+      "cheap_trap": 95,
+      "compounder": 5,
+      "multiple_expansion_only": 27,
+      "sector_laggard_winner": 62,
+      "tactical_only": 94,
+      "tactical_only_fail": 394,
+      "unlabeled": 8238
+    },
+    "2021": {
+      "cheap_trap": 390,
+      "compounder": 11,
+      "multiple_expansion_only": 88,
+      "sector_laggard_winner": 290,
+      "tactical_only": 389,
+      "tactical_only_fail": 3460,
+      "unlabeled": 5053
+    },
+    "2022": {
+      "cheap_trap": 772,
+      "compounder": 31,
+      "multiple_expansion_only": 82,
+      "sector_laggard_winner": 659,
+      "tactical_only": 772,
+      "tactical_only_fail": 7110,
+      "unlabeled": 1772
+    },
+    "2023": {
+      "cheap_trap": 1085,
+      "compounder": 52,
+      "multiple_expansion_only": 162,
+      "sector_laggard_winner": 870,
+      "tactical_only": 1085,
+      "tactical_only_fail": 6097,
+      "unlabeled": 1028
+    },
+    "2024": {
+      "cheap_trap": 1101,
+      "compounder": 49,
+      "multiple_expansion_only": 182,
+      "sector_laggard_winner": 869,
+      "tactical_only": 1101,
+      "tactical_only_fail": 7549,
+      "unlabeled": 376
+    },
+    "2025": {
+      "cheap_trap": 580,
+      "compounder": 22,
+      "multiple_expansion_only": 75,
+      "sector_laggard_winner": 482,
+      "tactical_only": 579,
+      "tactical_only_fail": 7875,
+      "unlabeled": 2111
+    },
+    "2026": {
+      "unlabeled": 6347
+    }
+  },
+  "coverage_frac_by_cohort": {
+    "2014": 0.998,
+    "2015": 0.9977,
+    "2016": 0.998,
+    "2017": 0.9982,
+    "2018": 0.9981,
+    "2019": 0.9982,
+    "2020": 0.9983,
+    "2021": 0.9986,
+    "2022": 0.9989,
+    "2023": 0.9986,
+    "2024": 0.9988,
+    "2025": 0.9984,
+    "2026": 0.9991
+  },
+  "survivorship_biased_by_cohort": {
+    "2014": true,
+    "2015": true,
+    "2016": true,
+    "2017": true,
+    "2018": true,
+    "2019": true,
+    "2020": true,
+    "2021": true,
+    "2022": true,
+    "2023": true,
+    "2024": true,
+    "2025": true,
+    "2026": true
+  },
+  "fundamentals_coverage_by_cohort": {
+    "2014": 0.6118,
+    "2015": 0.5495,
+    "2016": 0.4741,
+    "2017": 0.5971,
+    "2018": 0.5253,
+    "2019": 0.6069,
+    "2020": 0.5654,
+    "2021": 0.4238,
+    "2022": 0.4011,
+    "2023": 0.4103,
+    "2024": 0.4161,
+    "2025": 0.4143,
+    "2026": 0.0
+  },
+  "fundamentals_coverage_waiver_status": {
+    "waiver_threshold": 0.3,
+    "waiver_fired_for_any_cohort": false,
+    "n_fund_unchecked_compounders": 0,
+    "note": "The \u00a72.4 coverage waiver (coverage_waived = True when <30% of cohort tactical-win+252d-matured fires have non-null piotroski_f) NEVER FIRED for any cohort with matured fires. All cohort-year coverage fractions are >= 0.40 (range 0.40-0.61 for 2014-2025). Cohort 2026 has zero matured tactical wins with 252d bars and is excluded from the denominator. All 196 compounders have piotroski_f >= 6 from available panel data (or are in a coverage-waived cohort \u2014 but no cohort was coverage-waived). fund_unchecked=True fires = 0. The sensitivity run pre-registered in \u00a72.4 (excluding fund_unchecked=True fires) is a null operation on this dataset."
+  },
+  "episode_cluster_counts": {
+    "honest_cohort_252d_n_fires": 2454,
+    "honest_cohort_252d_episode_clusters": 2414,
+    "honest_cohort_126d_n_fires": 11954,
+    "honest_cohort_126d_episode_clusters": 11456,
+    "n25_floor_met_252d": true,
+    "n25_floor_met_126d": true
+  },
+  "oos_honest_cohort_252d": {
+    "fire_date_range": "2021-07-06 to 2021-10-25 (within the OOS 2020-2023 split)",
+    "n_fires": 722,
+    "n_episode_clusters": 702,
+    "n25_floor_met": true,
+    "note": "The G1 kill criterion (\u00a78) requires running on the OOS split (2020-2023) within honest cohorts (massive-only, non-gap, 252d matured). The practical honest-OOS window is only 2021-07-06 \u2192 2021-10-25 (~3.5 months), because the massive store gap (2021-10-25 \u2192 2025-01-02) swallows all subsequent OOS fires. The full-tape honest-252d count (episode_cluster_counts) includes non-OOS and 2025+ fires; the OOS-honest number above (702 clusters) is the correct decision denominator for G1 runnability."
+  },
+  "label_g_coverage_warning": {
+    "n_sector_laggard_winner_total": 3409,
+    "n_sector_laggard_winner_no_benchmark": 3391,
+    "pct_no_benchmark": 99.5,
+    "WARNING": "THREAT TO G1 POWER: Label G (sector_laggard_winner) is 99.5% a missing-benchmark bucket, not an economically-lagging bucket. Only 503 of 2,495 fire-tape tickers map to the 11 EW sector baskets (76% of matured fires have no sector benchmark). Per \u00a72.3, G fires are excluded from the W1 missed_hold-vs-tactical_only contrast, so the majority of top-tercile fires that could be compounders are silently dropped from the kill-test on data-coverage grounds rather than economics. This is a documented conservative choice (\u00a72.4) and not a code bug, but it substantially reduces G1 power. The G1 null may reflect sector-benchmark coverage, not absence of alpha. Pre-registered in \u00a72.4; must be examined before ratifying a G1 null."
+  },
+  "survivorship_fields": {
+    "survivorship_biased": "bool per fire \u2014 True for all yahoo/stocks-sourced fires (survivor-only stores; delisted names absent) and for massive-store fires in the gap period (2021-10-25 \u2192 2025-01-02). False ONLY for massive-store fires post-2021-07-06 outside the gap period.",
+    "coverage_frac": "resolvable fires / total fires in cohort-year",
+    "cohort_description": "post-2021-07 massive (honest) | survivor-only (UPPER BOUND) | no_price",
+    "horizon_status": "primary_126d | primary_252d | caveat_504d | refused_756d"
+  },
+  "lh_r3_stamp": "UPPER BOUND \u2014 survivor-only cohort applies to all yahoo/stocks-sourced fires and pre-2021-07 massive fires. Post-2021-07 massive-store fires (outside the gap 2021-10-25 \u2192 2025-01-02) are survivorship-correct per day. 756d results are REFUSED until dead_name_prices.parquet achieves >=50% coverage.",
+  "conservative_choices": [
+    "tercile_rank: computed as fraction of cohort-year tactical-win+252d-matured fires strictly below current fire; ties get same rank (no interpolation).",
+    "sector_rel_252d=None treated as sector_laggard_winner (top tercile) rather than compounder/multiple_expansion_only \u2014 cannot confirm beats sector without benchmark.",
+    "coverage_waived denominator includes only fires with tactical_win=True AND total_return_252d not None (as per locked \u00a72.4 formula).",
+    "Gap-period fires (2021-10-25 to 2025-01-02) labeled but flagged gap_period=True; included in output for coverage accounting but excluded from honest-cohort counts.",
+    "Regime data unavailable from regime/latest.json (current-only snapshot); episode-cluster de-dup uses name-only blocks (conservative \u2014 more de-duplication).",
+    "Piotroski F computed from fundamentals_panel.parquet via simplified 8-test variant (panel lacks cur_assets/cur_liab) as in run_w2_sql.py."
+  ],
+  "firewall": "This artifact has horizon_role=hold_thesis. It must NEVER feed entry-stack z-scores, board ordering, top-setups gates, alert triage, or push floor. Enforced by check_synapse_reads.py (CI)."
+}
