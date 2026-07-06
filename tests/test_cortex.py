@@ -1166,6 +1166,48 @@ class TestProviderFailover:
         assert rs.get("status") == "degraded"
         assert rs.get("degraded") is True
 
+    def test_single_call_fallback_with_live_provider_still_degraded(self, repo):
+        """_single_call_fallback must report degraded=True even when a live provider exists.
+
+        The fallback path is inherently degraded (tool loop unavailable); a provider
+        being alive does not change that classification.
+        """
+        from engine.neuralweb.cortex import _single_call_fallback
+        from engine.llm_auth import clear_dead
+
+        clear_dead()
+
+        # Provider whose fallback LLM call returns text — the tool loop still never ran.
+        text_block = MagicMock()
+        text_block.type = "text"
+        text_block.text = '{"summary": "fallback memo", "what_fired": [], "contradictions_review": "", "decaying_families": [], "deserves_operator": []}'
+        resp = MagicMock()
+        resp.content = [text_block]
+
+        def _side(**kwargs):
+            return resp
+
+        provider = _make_mock_provider("anthropic", env_var="ANT_KEY", side_effect=_side)
+        providers = [provider]
+
+        result = _single_call_fallback(repo, {}, providers, _NOW_STR, dict(_PROBATION), "loop_error:test")
+
+        memo_path = repo / "data" / "neuralweb" / "cortex" / "memo.json"
+        memo = json.loads(memo_path.read_text())
+        rs = memo.get("run_status", {})
+        assert rs.get("status") == "degraded", (
+            f"single-call fallback must report status=degraded; got {rs.get('status')!r}"
+        )
+        assert rs.get("degraded") is True, (
+            "single-call fallback must report degraded=True even when a live provider exists"
+        )
+        assert rs.get("degradation_reason") == "loop_error:test"
+        attempts = rs.get("provider_attempts", [])
+        assert len(attempts) == 1
+        assert attempts[0]["ok"] is False, (
+            "provider_attempts[0].ok must be False — the tool loop never ran on this provider"
+        )
+
     def test_provider_attempts_recorded_with_error_type(self, repo):
         """provider_attempts list must contain error_type on failure."""
         from engine.neuralweb.cortex import _run_tool_loop

@@ -1313,7 +1313,9 @@ def _single_call_fallback(
 
     result = _tool_write_memo(root, memo_params, now_str, probation_status)
 
-    # Stamp run_status for the single-call fallback path
+    # Stamp run_status for the single-call fallback path.
+    # This path is ALWAYS degraded: the tool loop was unavailable regardless of
+    # whether a fallback LLM call succeeded.  degraded=True unconditionally.
     from engine import llm_auth as _llm_auth  # noqa: PLC0415
     context_stale, context_as_of = _detect_context_stale(root, now_str)
     fallback_attempts: list[dict] = []
@@ -1326,15 +1328,18 @@ def _single_call_fallback(
                 "provider": name,
                 "model": p.get("model", ""),
                 "attempted": True,
-                "ok": not is_d,
-                "error_type": "auth" if is_d else None,
-                "error_message": f"provider dead ({degraded_reason})" if is_d else None,
+                "ok": False,
+                "error_type": "auth" if is_d else "loop_unavailable",
+                "error_message": (
+                    f"provider dead ({degraded_reason})" if is_d
+                    else f"tool loop unavailable — single-call fallback only ({degraded_reason})"
+                ),
             })
 
     run_status = {
-        "status": "warn" if fallback_attempts else "degraded",
-        "degraded": not bool(fallback_attempts),
-        "degradation_reason": degraded_reason if not fallback_attempts else None,
+        "status": "degraded",
+        "degraded": True,
+        "degradation_reason": degraded_reason,
         "provider_attempts": fallback_attempts,
         "tool_call_batches": 0,
         "individual_tool_calls": 0,
@@ -1490,6 +1495,8 @@ def _run_tool_loop(
                     {"role": "user", "content": "Begin deliberation. Read the world state first, then explore the spine and contradictions, then flag attention items and write your memo."},
                 ]
                 tool_call_count = 0
+                n_tool_calls_total = 0
+                tool_call_census.clear()
                 continue
             log.warning("cortex: all providers exhausted or already restarted; breaking loop (%s)", exc)
             break
@@ -1565,14 +1572,10 @@ def _run_tool_loop(
         run_status_value = "degraded"
         degraded = True
         degradation_reason = "zero_tool_calls"
-    elif not has_model_response:
+    else:
         run_status_value = "degraded"
         degraded = True
         degradation_reason = "model_unavailable"
-    else:
-        run_status_value = "warn"
-        degraded = False
-        degradation_reason = None
 
     if context_stale and not degraded:
         run_status_value = "warn"
