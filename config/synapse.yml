@@ -3864,6 +3864,50 @@ artifacts:
       FDR family: long_hold (isolated per LH-R5). No scored_path_surfaces.
       G1 ratification: PENDING FABLE RULING (see research/long_hold/W1_KILLTEST_RESULTS.md).
 
+  # --- Long-Hold W2 PR-I: compounder feature panel (embedded in per-stock panels) ---
+  # NOTE: compounder features are NOT a standalone parquet — they are a sub-key
+  # ("compounder") inside the existing financials.multiyear block that _multiyear()
+  # already produces and build_stock_library.py already bakes into
+  # site/stockdata/<TICKER>.json.  A dedicated top-level parquet would duplicate
+  # data already in the per-stock JSON pipeline; the registration here is
+  # documentary so the firewall CI can verify the horizon_role stamp.
+  long-hold-compounder-features:
+    path: "embedded: financials.multiyear.compounder inside site/stockdata/<TICKER>.json"
+    format: json
+    producer: engine/stock_fundamentals.py
+    known_extra_writers: []
+    owner_program: long-hold
+    cadence: daily-engine
+    storage: git
+    asof_field: null
+    freshness_sla_hours: 30
+    schema: compounder_features.v1
+    tier: display
+    horizon_role: hold_thesis
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - site/stockdata/<TICKER>.json
+    external_consumers: []
+    notes: >
+      W2 PR-I (Long-Hold Thesis Layer). Compounder feature columns added
+      ADDITIVELY to engine/stock_fundamentals._multiyear() as a sub-dict
+      under key "compounder".  All fields are DISPLAY-ONLY annotation
+      (LH-R1 firewall; G1-DEFERRED ruling 2026-07-06).
+      Features: roic_series, roic_5y_median, roic_5y_stability,
+      gross_margin_5y_stability, fcf_conversion, reinvestment_rate,
+      incremental_rev_per_reinvestment, asset_light_scaling.
+      Tax assumption: 21% US statutory (TCJA 2018), applied uniformly.
+      Per-feature _cov coverage stamps (0–1) ship alongside each value.
+      Depreciation-dependent features blocked with depreciation_gated_blocked=True
+      until PR-H (edgar_facts.py FLOW additions) backfills the D&A series.
+      Firewall annotations embedded in every output dict:
+        _horizon_role = "hold_thesis"
+        _display_only = True
+      FIREWALL: horizon_role=hold_thesis. These fields MUST NOT feed
+      entry-stack z-scores, board ordering, top-setups gates, alert triage,
+      or push floor.  LH-R2 (no fused admission) respected by construction.
+
   # --- Long-Hold W2 PR-J: two display clocks (entry_clock + thesis_clock) ---
   # Both clocks are embedded fields in per-stock panel JSON
   # (site/stockdata/<TICKER>.json) — no standalone parquet.
@@ -3918,6 +3962,74 @@ artifacts:
       FIREWALL: horizon_role=hold_thesis. These fields MUST NOT feed
       entry-stack z-scores, board ordering, top-setups gates, alert triage,
       or push floor.
+
+  # --- Long-Hold W2 PR-K: Moat Falsifier Sensors ---
+  moat-falsifier-sensors:
+    path: "embedded: per-ticker moat sensor fields inside site/stockdata/<TICKER>.json"
+    format: json
+    producer: engine/moat_falsifiers.py
+    known_extra_writers:
+      - "engine/stock_fundamentals.py — _compute_moat_block() calls compute_moat_falsifiers() inside panels()"
+    owner_program: long-hold
+    cadence: daily-engine
+    storage: git
+    asof_field: null
+    freshness_sla_hours: 30
+    schema: moat_falsifiers.v1
+    tier: display
+    horizon_role: hold_thesis
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - site/stockdata/<TICKER>.json
+    external_consumers: []
+    notes: >
+      W2 PR-K (Long-Hold Thesis Layer). Four moat falsifier sensors computed from
+      data/edgar/statements.parquet: margin_compression_despite_revenue_growth,
+      receivables_stretch, inventory_build, capital_intensity_rising.
+      Each sensor carries a universe-level base rate (live-recomputed per build;
+      NOT a locked control — display context only) so the display layer can show
+      how frequently a sensor fires across the covered universe in that fiscal year.
+      Thresholds pre-registered in research/long_hold/OBJECTIVE.md Amendment A3 §W2-PR-K.
+      DISPLAY-ONLY — G1-DEFERRED ruling 2026-07-06. Per LH-R2: no composite
+      "moat score" is produced. Per LH-R6: no LLM transition logic.
+      FIREWALL: horizon_role=hold_thesis. MUST NOT feed board ordering, alert
+      triage, top-setups gates, or push floor (LH-R1). fdr_family=long_hold (LH-R5).
+      Coverage stamps: sensor_coverage (full|partial|missing), coverage_n_years,
+      base_rate_annual_fy per sensor, _horizon_role, _display_only, _version.
+
+  great-company-trap:
+    path: "embedded: great_company_trap fields inside site/stockdata/<TICKER>.json"
+    format: json
+    producer: engine/moat_falsifiers.py
+    known_extra_writers:
+      - "engine/stock_fundamentals.py — _compute_trap_block() calls great_company_trap() inside panels()"
+    owner_program: long-hold
+    cadence: daily-engine
+    storage: git
+    asof_field: null
+    freshness_sla_hours: 30
+    schema: great_company_trap.v1
+    tier: display
+    horizon_role: hold_thesis
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - site/stockdata/<TICKER>.json
+    external_consumers: []
+    notes: >
+      W2 PR-K (Long-Hold Thesis Layer). Great-company-trap de-escalation overlay
+      per LH-R10. Assembled ONLY from existing signals: crowding_z (engine/theme_crowding,
+      basket-level — passed as None in per-ticker panels context; available when
+      caller supplies it), insider_net_usd (engine/equity_factors / sec_insider panel),
+      revision_direction (engine/analyst_revisions). Plain deterministic function; no LLM.
+      MAY ONLY LOWER conviction display context, never raise/rank (LH-R10).
+      Inputs printed verbatim in every output for transparency (Article-1/A3 shape).
+      DISPLAY-ONLY — G1-DEFERRED ruling 2026-07-06.
+      FIREWALL: horizon_role=hold_thesis. MUST NOT feed board ordering, alert
+      triage, top-setups gates, or push floor (LH-R1). fdr_family=long_hold (LH-R5).
+      Fields: trap_signals_present, de_escalation_reason, legs, inputs_used,
+      _horizon_role, _display_only, _version.
 
   # --- NW quant-synthesis B: research-queue EV-ranker ---
   research-queue:
@@ -3998,6 +4110,32 @@ artifacts:
       h=21 maturity grading from massive_stock_day closes (absolute return).
       Accrual instrument for the registered §5 promotion rule (15-window re-evaluation gate).
       No peeking logic — desk only displays counts.
+
+  # --- NW Rails PR-6 governance artifact ---
+  grading-closure:
+    path: data/governance/grading_closure.json
+    format: json
+    producer: scripts/audit_grading_closure.py
+    known_extra_writers: []
+    owner_program: nw-rails
+    cadence: collect
+    storage: git
+    asof_field: generated_at
+    freshness_sla_hours: 30
+    schema: grading_closure.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - docs/GRADING_CLOSURE.md
+    external_consumers: []
+    notes: >
+      NW Rails PR-6 (RUL-P10 path b) — standing grading-closure audit.
+      Walks 26 declared forward ledgers and classifies each CLOSED / GRADER-STARVED
+      / LOG-ONLY. Single writer: scripts/audit_grading_closure.py run_as_collect_step
+      (end-of-collect, after all graders). Companion markdown table at docs/GRADING_CLOSURE.md.
+      Fixes are per-program follow-ups; this rail makes standing status visible.
 
   # --- NW Rails R1 (PR-1) ---
   rule-experiment-registry:
