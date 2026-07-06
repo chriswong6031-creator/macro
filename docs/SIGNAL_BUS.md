@@ -20,7 +20,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | hk-canada | 2 |
 | institutional-sector-intelligence | 2 |
 | intl-fix | 1 |
-| long-hold | 21 |
+| long-hold | 22 |
 | neural-web | 34 |
 | nw-mastermind-bridge | 2 |
 | nw-rails | 4 |
@@ -39,7 +39,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 100 |
+| display | 101 |
 | infrastructure | 51 |
 | scored | 4 |
 | shadow | 37 |
@@ -48,7 +48,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 186 |
+| git | 187 |
 | gitignored-local | 4 |
 | r2 | 2 |
 
@@ -180,6 +180,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | long-hold-thesis-funnel-states | `data/research/thesis_funnel_states.parquet` | parquet | on-demand | display | 1 | 0 |
 | long-hold-thesis-funnel-states-manifest | `data/research/thesis_funnel_states_manifest.json` | json | on-demand | display | 1 | 0 |
 | moat-falsifier-sensors | `embedded: per-ticker moat sensor fields inside site/stockdata/<TICKER>.json` | json | daily-engine | display | 1 | 0 |
+| per-fire-sector-benchmark | `data/research/per_fire_sector_benchmark.parquet` | parquet | on-demand | display | 1 | 0 |
 | ticker-sectors | `data/breadth/ticker_sectors.parquet` | parquet | on-demand | display | 1 | 0 |
 
 ### neural-web
