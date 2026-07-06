@@ -55,6 +55,7 @@ const NAV_ICO = (inner) => `<svg class="nav-ico" viewBox="0 0 24 24" fill="none"
 const ICONS = {
   overview:    NAV_ICO('<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>'),
   neural_web:  NAV_ICO('<circle cx="12" cy="12" r="2.4"/><circle cx="5" cy="6" r="1.7"/><circle cx="19" cy="6" r="1.7"/><circle cx="5" cy="18" r="1.7"/><circle cx="19" cy="18" r="1.7"/><path d="M10 11 6.4 7.2M14 11l3.6-3.8M10 13l-3.6 3.8M14 13l3.6 3.8"/>'),
+  alerts:      NAV_ICO('<path d="M12 3a6 6 0 0 0-6 6c0 4-1.5 5.5-2 6.5h16c-.5-1-2-2.5-2-6.5a6 6 0 0 0-6-6Z"/><path d="M10 19a2 2 0 0 0 4 0"/>'),
   analytics:   NAV_ICO('<path d="M4 20V11M9.5 20V5M15 20v-8M20.5 20V8"/><path d="M2.5 20h19"/>'),
   users:       NAV_ICO('<circle cx="9" cy="8" r="3"/><path d="M3.5 20a5.5 5.5 0 0 1 11 0"/><path d="M16 5.3a3 3 0 0 1 0 5.4M21 20a5.5 5.5 0 0 0-4-5.3"/>'),
   experiments: NAV_ICO('<path d="M9 3h6M10 3v5.5L5.4 17.6A2 2 0 0 0 7.2 20.5h9.6a2 2 0 0 0 1.8-2.9L14 8.5V3"/><path d="M8 14h8"/>'),
@@ -69,7 +70,7 @@ const ICONS = {
 };
 const NAV_GROUPS = [
   { label: "", items: [["overview", "Overview"]] },
-  { label: "Neural Web", items: [["neural_web", "Observatory"]] },
+  { label: "Neural Web", items: [["neural_web", "Observatory"], ["alerts", "Alerts"]] },
   { label: "Growth", items: [["analytics", "Analytics"], ["users", "Users"], ["experiments", "Experiments"]] },
   { label: "System", items: [["system", "System"], ["health", "Health"], ["deploy", "Build & Deploy"], ["cost", "AI Cost"], ["content", "Content"]] },
   { label: "Config", items: [["features", "Features"], ["brief", "AI Brief"], ["vector", "BTC Override"]] },
@@ -261,6 +262,7 @@ RENDER.experiments = async () => {
         <button class="btn exp-act-btn" data-exp-id="${esc(e.id || "")}" data-action="acted">Acted</button>
         <button class="btn exp-act-btn" data-exp-id="${esc(e.id || "")}" data-action="dismissed">Dismiss</button>
         <button class="btn exp-act-btn" data-exp-id="${esc(e.id || "")}" data-action="snoozed">Snooze</button>
+        <button class="btn exp-act-btn" data-exp-id="${esc(e.id || "")}" data-action="overrode">Override</button>
       </td></tr>`).join("")}
     </tbody></table>
     ${d.note ? `<div class="sub" style="margin-top:10px">${esc(d.note)}</div>` : ""}`;
@@ -1187,6 +1189,57 @@ async function renderLobeDetail(id) {
     ${timeline}`;
   wireBack();
 }
+
+/* ---- ALERTS (operator capture) ------------------------------------------ */
+const SEV_CLS = { critical: "s-bad", major: "s-warn", minor: "" };
+RENDER.alerts = async () => {
+  const v = $("#view");
+  v.innerHTML = `<div class="sub" style="margin-bottom:12px">Recent alerts from the live site feed. Log your action against any alert — Acted, Dismissed, Overrode, or Snoozed — to build the operator capture ledger (L4 instrumentation). All writes go through /api/actions behind auth.</div>
+    <div class="sub muted" style="margin-bottom:8px">Loading…</div>`;
+  const d = await api("/api/alerts");
+  if (!d.ok) {
+    v.innerHTML = card("Alerts", `<div class="sub" style="color:var(--bad)">${esc(d.note || d.error || "error")}</div>`);
+    return;
+  }
+  const alerts = d.alerts || [];
+  const genLine = d.generated_utc ? `<div class="sub muted" style="margin-bottom:8px">Feed generated: ${esc(d.generated_utc)} UTC${d.note ? " — " + esc(d.note) : ""}</div>` : (d.note ? `<div class="sub muted" style="margin-bottom:8px">${esc(d.note)}</div>` : "");
+  if (!alerts.length) {
+    v.innerHTML = `${genLine}<div class="section">Alerts <span class="cnt">0</span></div><div class="sub muted">No alerts in the feed.</div>`;
+    return;
+  }
+  v.innerHTML = `${genLine}<div class="section">Alerts <span class="cnt">${alerts.length}</span></div>
+    <table><thead><tr><th>Alert</th><th>Severity</th><th>Priority</th><th>Emitted</th><th>Your action</th></tr></thead><tbody>
+    ${alerts.map(a => `<tr>
+      <td><b>${esc(a.title || a.surface || a.alert_id)}</b><div class="note mono muted">${esc(a.surface || "")}</div></td>
+      <td><span class="statpill ${SEV_CLS[a.severity] || ""}">${esc(a.severity || "—")}</span></td>
+      <td class="r mono">${a.priority != null ? a.priority : "—"}</td>
+      <td class="sub mono">${esc((a.emit_ts || "").slice(0, 10))}</td>
+      <td style="white-space:nowrap">
+        <button class="btn alert-act-btn" data-alert-id="${esc(a.alert_id || "")}" data-emit-ts="${esc(a.emit_ts || "")}" data-action="acted">Acted</button>
+        <button class="btn alert-act-btn" data-alert-id="${esc(a.alert_id || "")}" data-emit-ts="${esc(a.emit_ts || "")}" data-action="dismissed">Dismiss</button>
+        <button class="btn alert-act-btn" data-alert-id="${esc(a.alert_id || "")}" data-emit-ts="${esc(a.emit_ts || "")}" data-action="overrode">Override</button>
+        <button class="btn alert-act-btn" data-alert-id="${esc(a.alert_id || "")}" data-emit-ts="${esc(a.emit_ts || "")}" data-action="snoozed">Snooze</button>
+      </td></tr>`).join("")}
+    </tbody></table>`;
+  // Wire action buttons — POST {surface: alert_id, action, direction_note, alert_emit_ts}
+  v.querySelectorAll(".alert-act-btn").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      const alertId = btn.dataset.alertId;
+      const emitTs = btn.dataset.emitTs;
+      const action = btn.dataset.action;
+      const note = window.prompt(`Direction note (optional, ≤280 chars) for "${action}" on ${alertId}:`);
+      if (note === null) return; // user cancelled
+      const r = await post("/api/actions", {
+        surface: alertId,
+        action,
+        direction_note: note,
+        alert_emit_ts: emitTs || undefined,
+      });
+      if (r.ok) toast(`Logged: ${action} — ${alertId}`);
+      else toast(r.error || "action log failed", true);
+    });
+  });
+};
 
 /* ---- boot --------------------------------------------------------------- */
 async function boot() {

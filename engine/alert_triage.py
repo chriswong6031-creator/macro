@@ -34,6 +34,7 @@ empty section, never a failed build.
 """
 from __future__ import annotations
 
+import hashlib
 import json
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
@@ -553,8 +554,14 @@ def build_triage(days: int = 30, today: date | None = None,
         score, comp = priority(tier, band, age, ca_tag)
         act_en, act_zh = action_for(tier, band, ca_tag)
         smeta = SOURCES.get(a["source"], {})
+        # Stable content-hash ID: (source, type, asset, date-part).
+        # Truncated to 12 hex chars — collision-probability negligible for
+        # the ~60-alert board.  Used by the admin Alerts capture tab.
+        _id_key = f"{a['source']}|{a['type']}|{a.get('asset', '')}|{a['ts'][:10]}"
+        alert_id = hashlib.sha256(_id_key.encode()).hexdigest()[:12]
         enriched.append({
             **a,
+            "alert_id": alert_id,
             "severity": band, "age_days": int(age),
             "priority": score, "priority_components": comp,
             "cross_asset_tag": ca_tag,
