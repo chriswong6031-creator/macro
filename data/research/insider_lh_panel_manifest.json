@@ -1,0 +1,34 @@
+{
+  "schema": "insider_lh_panel.v1",
+  "definition_version": "v1.0",
+  "family": "long_hold.insider_sponsor_lh",
+  "fdr_family": "long_hold",
+  "horizon_role": "hold_thesis",
+  "_display_only": true,
+  "benchmark": "sector_neutral",
+  "smoke_mode": false,
+  "n_fires": 113542,
+  "feature_coverage": {
+    "IS-1_insider_net_usd_mcap_6m_pct": {
+      "n_non_null": 39929,
+      "coverage_frac": 0.35166722446319426
+    },
+    "IS-2_cluster_buy_pre_fire": {
+      "n_non_null": 113542,
+      "n_true": 4105,
+      "coverage_frac": 1.0
+    },
+    "IS-3_officer_buy_flag": {
+      "n_non_null": 113542,
+      "n_true": 6186,
+      "coverage_frac": 1.0
+    }
+  },
+  "fire_date_range": {
+    "min": "2014-08-11",
+    "max": "2026-07-02"
+  },
+  "unique_tickers": 2495,
+  "scored_path_surfaces": [],
+  "generated_at": "2026-07-06T08:41:19.912130+00:00"
+}

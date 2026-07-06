@@ -419,6 +419,10 @@ class TestRealRegistryFirewallClean:
             # LT-2a expect_drift feature panel — hold_thesis by design; display-only
             "long-hold-expect-drift-manifest",
             "long-hold-expect-drift-panel",
+            # LT-3b insider_sponsor_lh family F4 artifacts — display/research tier only
+            "insider-lh-panel",
+            "insider-lh-panel-manifest",
+            "insider-lh-ruler-p-results",
         }
         reg = load_registry(REPO_ROOT)
         hold_arts = {

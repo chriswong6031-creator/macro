@@ -4121,6 +4121,104 @@ artifacts:
       Fields: trap_signals_present, de_escalation_reason, legs, inputs_used,
       _horizon_role, _display_only, _version.
 
+  # ---------------------------------------------------------------------------
+  # LONG-HOLD LT-3b: insider_sponsor_lh family artifacts (horizon_role: hold_thesis)
+  # F4 prereg: research/long_hold/INSIDER_SPONSOR_LH_FAMILY_PREREG.md
+  # All artifacts are display/research tier, scored_path_surfaces: [].
+  # ---------------------------------------------------------------------------
+
+  # --- LT-3b: Insider LH feature panel ---
+  insider-lh-panel:
+    path: data/research/insider_lh_panel.parquet
+    format: parquet
+    producer: scripts/research/build_insider_lh_panel.py
+    known_extra_writers: []
+    owner_program: long-hold
+    cadence: on-demand
+    storage: git
+    asof_field: fire_date
+    freshness_sla_hours: 8760
+    schema: insider_lh_panel.v1
+    tier: display
+    horizon_role: hold_thesis
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/research/insider_lh_ruler_p_study.py
+    external_consumers: []
+    notes: >
+      LT-3b (Long-Hold Thesis Layer, LT External Foundation). Per-fire insider
+      sponsorship feature panel keyed (ticker, fire_date) over all fires in
+      long_hold_labels.parquet. PIT by filing_date <= fire_date.
+      Features: IS-1 insider_net_usd_mcap_6m_pct (trailing 126-session net
+      open-market USD/mcap, sector-neutral cross-sectional percentile),
+      IS-2 cluster_buy_pre_fire (>=2 distinct CIKs each >=25k P in 63-session
+      window), IS-3 officer_buy_flag (>=1 is_officer P buy >=25k in same window).
+      Mcap: close(fire_date) x shares from fundamentals_panel asof_date<=fire_date.
+      Missing mcap -> IS-1 NaN (prereg law, no fallback).
+      Sector map: entry_strata_phase0 (503 tickers); fallback market-wide
+      benchmark='market' stamp. 113,542 fires, 2,495 tickers.
+      IS-1 coverage 35.2%; IS-2/IS-3 100% computable.
+      FIREWALL: horizon_role=hold_thesis. MUST NOT feed entry-stack z-scores,
+      board ordering, top-setups gates, alert triage, or push floor (LH-R1).
+      fdr_family=long_hold.insider_sponsor_lh (F4, m=3).
+
+  # --- LT-3b: Insider LH panel manifest ---
+  insider-lh-panel-manifest:
+    path: data/research/insider_lh_panel_manifest.json
+    format: json
+    producer: scripts/research/build_insider_lh_panel.py
+    known_extra_writers: []
+    owner_program: long-hold
+    cadence: on-demand
+    storage: git
+    asof_field: generated_at
+    freshness_sla_hours: 8760
+    schema: insider_lh_panel_manifest.v1
+    tier: display
+    horizon_role: hold_thesis
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/research/build_insider_lh_panel.py
+    external_consumers: []
+    notes: >
+      Companion manifest for insider_lh_panel.parquet. Feature coverage fractions,
+      benchmark stamp, fire-date range, schema version.
+      FIREWALL: hold_thesis — no entry-stack consumers permitted.
+
+  # --- LT-3b: Ruler-P study results ---
+  insider-lh-ruler-p-results:
+    path: data/research/insider_lh_ruler_p_results.parquet
+    format: parquet
+    producer: scripts/research/insider_lh_ruler_p_study.py
+    known_extra_writers: []
+    owner_program: long-hold
+    cadence: on-demand
+    storage: git
+    asof_field: null
+    freshness_sla_hours: 8760
+    schema: insider_lh_ruler_p_results.v1
+    tier: display
+    horizon_role: hold_thesis
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/research/insider_lh_ruler_p_study.py
+    external_consumers: []
+    notes: >
+      LT-3b Ruler-P study: cheap_trap vs tactical_only at 252d, fires <=2023-12-31.
+      TrialLedger.log_declared_budget(3, family='long_hold.insider_sponsor_lh') called
+      before p-values. Episode-clustered (±14 calendar days), BH q=0.10, reshuffle
+      null 1000/seed42, era breakout (2014-2019 / 2020-2021 / 2022-2023).
+      RESULTS: IS-1 RBC=-0.032 p=0.212 (NULL); IS-2 RBC=0.011 p=0.060 (NULL);
+      IS-3 RBC=0.002 p=0.828 (NULL). All three features NULL at Ruler-P.
+      UPPER BOUND stamp (survivorship-biased). Authority ceiling: display block
+      ships regardless of result; no SURVIVE/KILL vocabulary.
+      Ruler-H: accruing on OOS-2; G1-Retest ~2027-H2.
+      FIREWALL: horizon_role=hold_thesis. MUST NOT feed board ordering, alert
+      triage, top-setups gates, or push floor (LH-R1). fdr_family=long_hold (LH-R5).
+
   # --- NW quant-synthesis B: research-queue EV-ranker ---
   research-queue:
     path: data/neuralweb/research_queue.json
