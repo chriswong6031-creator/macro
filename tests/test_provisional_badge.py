@@ -58,10 +58,15 @@ def test_provisional_iff_tier_is_t3():
 
 
 def test_t3_fire_is_provisional_end_to_end():
-    """A real T3 fire (pinned fixture: seed=50 truncated at 2023-11-17 grades T3) carries the
-    flag through the cascade, the gate verdict, and BOTH display subsets."""
+    """A real T3 fire (pinned fixture: seed=50 truncated at 2023-11-20 grades T3) carries the
+    flag through the cascade, the gate verdict, and BOTH display subsets.
+
+    Date updated from 2023-11-17 to 2023-11-20: the T3 persistence hardening (default N=2,
+    CONFLUENCE_T3_PERSIST) requires 2 consecutive completed 2D-bucket T3 conditions. On
+    2023-11-17 only ONE bucket had imm2=True; 2023-11-20 is the first day where both the
+    2023-11-17 and 2023-11-20 2D buckets are imm2=True, so T3 fires under the new default."""
     c = _synthetic_close(seed=50)
-    trunc = c[c.index <= pd.Timestamp("2023-11-17")]
+    trunc = c[c.index <= pd.Timestamp("2023-11-20")]
     casc = confluence_tiers.cascade(trunc)
     assert casc["tier"] == "T3", "fixture drifted — expected a T3 fire on this truncation"
     assert casc["provisional"] is True
@@ -142,3 +147,76 @@ def test_hysteresis_wiring_matches_library(monkeypatch):
         got = confluence_tiers.cascade(trunc)["not_topped"]
         monkeypatch.delenv("VETO_HYSTERESIS_CONFIRM", raising=False)
         assert got == expect, f"seed={seed} cut={cut}: wiring diverges from the library"
+
+
+# ------------------------------------------ 3. T3 persistence (CONFLUENCE_T3_PERSIST) --
+
+def test_t3_persist_env_parsing(monkeypatch):
+    """_t3_persist() must parse the env knob exactly like _veto_confirm(): floor at 1,
+    garbage -> default (2), unset -> default (2)."""
+    monkeypatch.delenv("CONFLUENCE_T3_PERSIST", raising=False)
+    assert confluence_tiers._t3_persist() == 2      # default
+    monkeypatch.setenv("CONFLUENCE_T3_PERSIST", "1")
+    assert confluence_tiers._t3_persist() == 1      # legacy
+    monkeypatch.setenv("CONFLUENCE_T3_PERSIST", "3")
+    assert confluence_tiers._t3_persist() == 3      # custom window
+    monkeypatch.setenv("CONFLUENCE_T3_PERSIST", "0")
+    assert confluence_tiers._t3_persist() == 1      # floor at 1
+    monkeypatch.setenv("CONFLUENCE_T3_PERSIST", "junk")
+    assert confluence_tiers._t3_persist() == 2      # garbage -> default
+
+
+def test_t3_single_session_does_not_fire_under_default(monkeypatch):
+    """At the default N=2, a T3 condition that holds on only ONE 2D bucket must NOT fire.
+
+    Fixture: seed=50 truncated at 2023-11-17. Under N=1 (legacy) this graded T3; under N=2
+    only ONE 2D bucket (2023-11-17) has imm2=True, so T3 is suppressed."""
+    monkeypatch.delenv("CONFLUENCE_T3_PERSIST", raising=False)    # default N=2
+    c = _synthetic_close(seed=50)
+    trunc = c[c.index <= pd.Timestamp("2023-11-17")]
+    casc = confluence_tiers.cascade(trunc)
+    assert casc["tier"] != "T3", (
+        f"single-session T3 must not fire under N=2 default; got tier={casc['tier']}")
+
+
+def test_t3_two_consecutive_sessions_fire(monkeypatch):
+    """Two consecutive 2D buckets both imm2=True must fire T3 at N=2 default.
+
+    Fixture: seed=50 truncated at 2023-11-20. Both 2023-11-17 and 2023-11-20 buckets
+    have imm2=True — this is the first date where 2 consecutive completed buckets qualify."""
+    monkeypatch.delenv("CONFLUENCE_T3_PERSIST", raising=False)    # default N=2
+    c = _synthetic_close(seed=50)
+    trunc = c[c.index <= pd.Timestamp("2023-11-20")]
+    casc = confluence_tiers.cascade(trunc)
+    assert casc["tier"] == "T3", (
+        f"two-consecutive-bucket T3 must fire under N=2; got tier={casc['tier']}")
+    assert casc["provisional"] is True
+
+
+def test_t3_persist_1_restores_legacy(monkeypatch):
+    """N=1 must restore the legacy single-session behaviour (byte-identical to the pre-change
+    outcome for the seed=50 / 2023-11-17 fixture that originally pinned T3)."""
+    monkeypatch.setenv("CONFLUENCE_T3_PERSIST", "1")
+    c = _synthetic_close(seed=50)
+    trunc = c[c.index <= pd.Timestamp("2023-11-17")]
+    casc = confluence_tiers.cascade(trunc)
+    assert casc["tier"] == "T3", (
+        f"N=1 must restore legacy T3 firing at 2023-11-17; got tier={casc['tier']}")
+    assert casc["provisional"] is True
+
+
+def test_t3_persist_de_escalation(monkeypatch):
+    """T3 fire count under N=2 is strictly <= fire count under N=1 (DE-ESCALATION invariant)."""
+    c = _synthetic_close(seed=50)
+    fires_n1, fires_n2 = 0, 0
+    for d in c.index:
+        trunc = c[c.index <= d]
+        monkeypatch.setenv("CONFLUENCE_T3_PERSIST", "1")
+        if confluence_tiers.cascade(trunc)["tier"] == "T3":
+            fires_n1 += 1
+        monkeypatch.setenv("CONFLUENCE_T3_PERSIST", "2")
+        if confluence_tiers.cascade(trunc)["tier"] == "T3":
+            fires_n2 += 1
+    assert fires_n2 <= fires_n1, (
+        f"N=2 must fire T3 no more than N=1; got n1={fires_n1} n2={fires_n2}")
+    assert fires_n1 > 0, "fixture must produce at least one T3 fire at N=1 (fixture sanity)"

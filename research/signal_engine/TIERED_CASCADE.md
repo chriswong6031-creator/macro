@@ -270,3 +270,45 @@ T1 fires, the entry window may have passed. T2 is now the board's primary “act
 - `engine/confluence_tiers.py` — WEIGHTS dict (T1 1.00→0.90, T2 0.80→1.00)
 - `engine/signal_gate.py` — _CASCADE_RANK (T2=0, T1=1) + tier_rank docstring/T1-pending=2
 - `templates/basket_detail.html.j2` — client-side TIER_W dict synced
+
+---
+
+## Amendment 2026-07-06 — T3 2-session persistence hardening (CONFLUENCE_T3_PERSIST)
+
+**Date:** 2026-07-06  **PR:** feat/t3-persistence-hardening  **Status:** shipped
+
+### Change
+
+T3 now requires the `imm2` (2D MACD imminence) condition to hold for **N=2 consecutive
+completed 2D-bucket evaluations** before the tier fires. N is controlled by the env var
+`CONFLUENCE_T3_PERSIST` (default 2). N=1 restores the legacy single-session behavior.
+
+The implementation checks `imm2.rolling(N).min()` at the 2D-TF level before mapping to the
+daily grid — applied in both `cascade()` (stateless live path) and `tier_stream()`
+(vectorized completed-bucket path). The stable legs (`recent3`, `confirm3`, `rsi_ok`) are
+checked at the current daily bar only (they do not contribute to the repaint problem).
+
+### Measured trade-off (backtest /tmp/tier_deepdive/v3/, 2026-07-06)
+
+| Metric | T3 (N=1, legacy) | T3p (N=2, new default) |
+|---|---|---|
+| US repaint rate | 15.5% | 9.4% |
+| CN repaint rate | 16.0% | 0.0% |
+| US 21d excess mean | +0.16% | +0.41% |
+| US median lead vs T1 | 11.0 sessions | 10.5 sessions |
+| US event count | 3,208 | 2,041 (~36% fewer) |
+| CN event count | 750 | 485 (~35% fewer) |
+
+### What this is NOT
+
+**De-escalation only.** T4 is untouched. The priority cascade order is unchanged (T3 still
+ranks above T4). BUYABLE_TIERS unchanged. T3 still carries `provisional=True` (it remains
+projection-based).
+
+### Stale documentation (recalibration clock, separate task)
+
+The following numbers predate this change and need re-measurement before being updated:
+- `calibration/provisional_replay.json` repaint figures: 23.8% US / 15.1% CN (T3 section)
+- The T3 tooltip repaint copy rendered on display boards
+
+These are LEFT UNCHANGED here — recalibration is a separate clock.
