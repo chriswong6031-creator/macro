@@ -54,7 +54,7 @@ BUYZONE_MIN = 0.3   # a buy-zone pick must still be a genuine top pick (top_scor
 # just-crossed buy; T3 is the "about to cross" anticipation. Keyed by the cascade tier.
 SIGNAL_LABELS = {
     "T1": ("Buy zone", "买入区", "sg-confirmed"),     # validated 3D master take, just-crossed
-    "T2": ("Buy zone", "买入区", "sg-confirmed"),     # 2D MACD x 3D StochRSI just crossed
+    "T2": ("early✓", "提前✓", "sg-early-confirmed"),  # 2D MACD x 3D StochRSI confirmed cross
     "T3": ("About to cross", "即将交叉", "sg-imminent"),  # 3D StochRSI crossed, 2D MACD imminent
 }
 
