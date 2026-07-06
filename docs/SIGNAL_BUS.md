@@ -22,7 +22,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | intl-fix | 1 |
 | long-hold | 22 |
 | neural-web | 34 |
-| next3 | 1 |
+| next3 | 3 |
 | nw-mastermind-bridge | 2 |
 | nw-rails | 4 |
 | options-alpha | 7 |
@@ -41,7 +41,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | tier | count |
 |---|---|
 | display | 102 |
-| infrastructure | 53 |
+| infrastructure | 55 |
 | scored | 4 |
 | shadow | 37 |
 
@@ -49,8 +49,8 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 190 |
-| gitignored-local | 4 |
+| git | 191 |
+| gitignored-local | 5 |
 | r2 | 2 |
 
 ## Artifacts by owner_program
@@ -227,6 +227,8 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
+| operator-exposure-log | `data/operator/exposure_log.jsonl` | jsonl | daily | infrastructure | 1 | 0 |
+| operator-exposure-summary | `data/governance/operator_exposure_summary.json` | json | daily | infrastructure | 0 | 0 |
 | options-entry-coverage | `data/options_entry/coverage.json` | json | collect | infrastructure | 0 | 0 |
 
 ### nw-mastermind-bridge

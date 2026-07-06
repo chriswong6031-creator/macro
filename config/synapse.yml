@@ -5016,6 +5016,61 @@ artifacts:
       Wilson/bootstrap; qledger claims as counterfactual source). Ledger accrues only in
       calendar time; n>=25 graded actions is the cortex A2 Wilson floor.
 
+  # --- NEXT3 W-EX: operator exposure log (denominator substrate) ---
+  operator-exposure-log:
+    path: data/operator/exposure_log.jsonl
+    format: jsonl
+    producer: scripts/build_operator_exposure_log.py
+    known_extra_writers: []
+    owner_program: next3
+    cadence: daily
+    storage: gitignored-local
+    asof_field: as_of
+    freshness_sla_hours: 36
+    schema: operator_exposure.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - data/governance/operator_exposure_summary.json
+    external_consumers: []
+    notes: >
+      NEXT3 W-EX (§5.2 / RUL-U6) — denominator substrate for operator decision-quality.
+      Gitignored host-local; append-only with dedup on (surface, surface_id, as_of).
+      Records what the operator was shown from committed site artifacts: experiments.json
+      (experiment surface), us_standouts.json (board_buy/board_watch), wh_banner.json
+      (alert_wh), rr_banner.json (alert_rr when alert != null). Exposure date = artifact
+      as_of field, NEVER run date. No statistics, no contrasts, no trial registrations
+      (RUL-U6 fence). Action rows (operator-action-ledger) join on surface conventions;
+      unmatched actions are counted, never dropped (mirrors engine/operator_grading.py).
+      Single writer: scripts/build_operator_exposure_log.py run_as_collect_step, wired
+      end-of-collect next to audit_grading_closure. Come-back for exposure-conditioned
+      contrasts: 2026-09-15.
+
+  operator-exposure-summary:
+    path: data/governance/operator_exposure_summary.json
+    format: json
+    producer: scripts/build_operator_exposure_log.py
+    known_extra_writers: []
+    owner_program: next3
+    cadence: daily
+    storage: git
+    asof_field: generated_at
+    freshness_sla_hours: 36
+    schema: operator_exposure_summary.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      NEXT3 W-EX (§5.2 / RUL-U6) — committed governance artifact. Counts-by-surface×day
+      bounded to 90 days; vintage-stamped (generated_at ISO). Single writer:
+      scripts/build_operator_exposure_log.py. Companion to gitignored operator-exposure-log.
+      No statistics; display-only until gauntleted (come-back 2026-09-15).
+
   # ============================================================
   # NW → MASTERMIND BRIDGE (W1)
   # ============================================================
