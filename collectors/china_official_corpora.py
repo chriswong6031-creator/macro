@@ -453,10 +453,18 @@ class ChinaOfficialCorporaAdapter(Adapter):
         log.info("china_official: %d docs across %d organs (%s) → %d qbus",
                  len(all_rows), len(organs), per_organ, n_bus)
 
-        # Summary frame for the runner (one row per organ). This is what the
-        # Adapter contract returns; the real payload landed in the parquet store.
+        # Summary frame for the runner. The Adapter contract requires a
+        # DatetimeIndex so that validate() / store.upsert() can call
+        # pd.to_datetime(df.index) without raising a DateParseError.
+        # Previous code did .set_index("organ") which left string labels
+        # ("state_council", "pboc", …) as the index — causing:
+        #   DateParseError: Unknown datetime string format, unable to parse: state_council
+        # Fix: pivot so the crawl timestamp is the index and each organ
+        # becomes its own numeric column (n_docs_<organ>).
+        idx = pd.Timestamp(crawled_at)
         summary = pd.DataFrame(
-            [{"organ": k, "n_docs": v, "crawled_at": crawled_at}
-             for k, v in per_organ.items()]
-        ).set_index("organ")
+            {f"n_docs_{k}": [float(v)] for k, v in per_organ.items()},
+            index=[idx],
+        )
+        summary.index.name = "crawled_at"
         return {"china_official_summary": summary}
