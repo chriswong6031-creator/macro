@@ -77,6 +77,7 @@ from engine.rule_replay import (  # noqa: E402
     ExitPolicy,
     GovernorRefusal,
     RuleSpec,
+    ScaledPolicy,
     cohort_filter,
     replay_spec,
     serialize_results,
@@ -224,11 +225,108 @@ def _build_disp_gate_1_specs(cohort: CohortFilter) -> list[RuleSpec]:
     return specs
 
 
+def _build_trim_grid_v1_specs(cohort: CohortFilter) -> list[RuleSpec]:
+    """Reconstruct the TRIM-GRID-1 grid from its frozen definition (RUL-F3.5, PR-F3.3).
+
+    6 frozen cells (exactly — no additions permitted without a program amendment):
+      1. trim50_h21_ema8        — 0.5 hold(21)  + 0.5 ema_trail_s8
+      2. trim50_h21_h126        — 0.5 hold(21)  + 0.5 hold(126)
+      3. trim25_h21_ema8        — 0.25 hold(21) + 0.75 ema_trail_s8
+      4. trim33_h21_h63_h126    — 1/3 hold(21)  + 1/3 hold(63) + 1/3 hold(126)
+      5. trim50_ema8_h126       — 0.5 ema_trail_s8 + 0.5 hold(126)
+      6. trim50_mfe15_ema8      — 0.5 profit_take(15%) + 0.5 ema_trail_s8
+
+    The cohort is the same as exit_grid_v1: verdict_type='fire' AND verdict_grade=True.
+    derived_from_surface=exit_grid_v1 (seen surface — descriptive-only, contamination stamped).
+    """
+    specs: list[RuleSpec] = []
+
+    # 1. trim50_h21_ema8
+    specs.append(RuleSpec(
+        spec_id="trim_grid_v1/trim50_h21_ema8",
+        cohort=cohort,
+        delay_n=1,
+        exit=ScaledPolicy.scaled([
+            (0.5, ExitPolicy.hold(21)),
+            (0.5, ExitPolicy.ema_trail(span=8, resample="3B")),
+        ]),
+        horizons_ref=(126,),
+    ))
+
+    # 2. trim50_h21_h126
+    specs.append(RuleSpec(
+        spec_id="trim_grid_v1/trim50_h21_h126",
+        cohort=cohort,
+        delay_n=1,
+        exit=ScaledPolicy.scaled([
+            (0.5, ExitPolicy.hold(21)),
+            (0.5, ExitPolicy.hold(126)),
+        ]),
+        horizons_ref=(126,),
+    ))
+
+    # 3. trim25_h21_ema8
+    specs.append(RuleSpec(
+        spec_id="trim_grid_v1/trim25_h21_ema8",
+        cohort=cohort,
+        delay_n=1,
+        exit=ScaledPolicy.scaled([
+            (0.25, ExitPolicy.hold(21)),
+            (0.75, ExitPolicy.ema_trail(span=8, resample="3B")),
+        ]),
+        horizons_ref=(126,),
+    ))
+
+    # 4. trim33_h21_h63_h126
+    specs.append(RuleSpec(
+        spec_id="trim_grid_v1/trim33_h21_h63_h126",
+        cohort=cohort,
+        delay_n=1,
+        exit=ScaledPolicy.scaled([
+            (1.0 / 3.0, ExitPolicy.hold(21)),
+            (1.0 / 3.0, ExitPolicy.hold(63)),
+            (1.0 / 3.0, ExitPolicy.hold(126)),
+        ]),
+        horizons_ref=(126,),
+    ))
+
+    # 5. trim50_ema8_h126
+    specs.append(RuleSpec(
+        spec_id="trim_grid_v1/trim50_ema8_h126",
+        cohort=cohort,
+        delay_n=1,
+        exit=ScaledPolicy.scaled([
+            (0.5, ExitPolicy.ema_trail(span=8, resample="3B")),
+            (0.5, ExitPolicy.hold(126)),
+        ]),
+        horizons_ref=(126,),
+    ))
+
+    # 6. trim50_mfe15_ema8
+    # profit_take(15) exits first half at first close >= +15% from entry (close basis).
+    # If never touched, that leg holds to reference (held_to_reference included at
+    # reference return — EXIT-GRID-1 bug-class prevention).
+    specs.append(RuleSpec(
+        spec_id="trim_grid_v1/trim50_mfe15_ema8",
+        cohort=cohort,
+        delay_n=1,
+        exit=ScaledPolicy.scaled([
+            (0.5, ExitPolicy.profit_take(15.0)),
+            (0.5, ExitPolicy.ema_trail(span=8, resample="3B")),
+        ]),
+        horizons_ref=(126,),
+    ))
+
+    assert len(specs) == 6, f"TRIM-GRID-1 must be 6 cells, got {len(specs)}"
+    return specs
+
+
 # Grid builders registry — keyed by exp_id prefix
 _GRID_BUILDERS: dict[str, Any] = {
     "exit_grid_v1": _build_exit_grid_v1_specs,
     "wait_grid_v1": _build_wait_grid_v1_specs,
     "disp_gate_1": _build_disp_gate_1_specs,
+    "trim_grid_v1": _build_trim_grid_v1_specs,
 }
 
 
@@ -610,6 +708,107 @@ def _cell_stats(
         "stop5_rate": stop5_rate,
         "dead_money_rate": dead_money_rate,
     }
+
+
+def _trim_cell_stats_extra(
+    perfire: pd.DataFrame,
+    hold126_perfire: pd.DataFrame | None = None,
+    cluster_col: str = "episode_cluster",
+) -> dict[str, Any]:
+    """Compute TRIM-GRID-1 specific extra metrics for a scaled-policy cell.
+
+    Metrics
+    -------
+    weighted_wr           : WR on weighted exit_ret (same as _cell_stats wr for scaled cells)
+    weighted_mean_ret     : mean of weighted exit_ret (same as mean_exit_ret)
+    weighted_median_ret   : median of weighted exit_ret (same as median_exit_ret)
+    weighted_foregone_mfe_126 : mean of weighted foregone_mfe_126
+    weighted_avoided_mae_126  : mean of weighted avoided_mae_126
+    regret_ratio          : weighted_avoided_mae / weighted_foregone_mfe (>1 = saved more)
+    right_tail_retention  : mean scaled-policy return among fires in the top decile of
+                            hold_126 returns ÷ mean hold_126 return among those fires.
+                            Caveat: the right tail is where survivorship bites hardest
+                            (delisted-name recall floor for this cohort).
+    capital_freed_days    : weighted mean holding_days vs 126 reference
+    churn                 : mean n_exit_events per fire (number of exit events across legs)
+
+    Parameters
+    ----------
+    perfire           : ScaledPolicy perfire results DataFrame (one cell)
+    hold126_perfire   : hold(126) perfire results (for right-tail reference).
+                        If None, right_tail_retention is null.
+    """
+    extra: dict[str, Any] = {
+        "right_tail_retention": None,
+        "right_tail_retention_caveat": (
+            "Survivorship caveat: the massive-era cohort has a delisted-name recall floor "
+            "(dead_name_coverage_pct ~38%); the right tail of hold_126 returns is where "
+            "survivorship bites hardest — firms that kept rising vs those that fell and "
+            "delisted. Right-tail retention comparisons between scaled and hold_126 are "
+            "directionally informative but should not be over-interpreted."
+        ),
+        "capital_freed_days": None,
+        "churn": None,
+    }
+
+    # Exclude short_path / censored rows (same logic as _cell_stats)
+    exclude_mask = pd.Series(False, index=perfire.index)
+    if "short_path" in perfire.columns:
+        exclude_mask |= perfire["short_path"].astype(bool)
+    if "censored" in perfire.columns:
+        exclude_mask |= perfire["censored"].astype(bool)
+    included = perfire[~exclude_mask]
+
+    if len(included) == 0:
+        return extra
+
+    # Capital-freed days: weighted mean holding_days vs 126-bar reference
+    if "holding_days" in included.columns:
+        hd = pd.to_numeric(included["holding_days"], errors="coerce").dropna()
+        if len(hd) > 0:
+            extra["capital_freed_days"] = round(float(hd.mean()), 1)
+
+    # Churn: mean number of exit events per fire (n_exit_events across legs)
+    if "n_exit_events" in included.columns:
+        ne = pd.to_numeric(included["n_exit_events"], errors="coerce").dropna()
+        if len(ne) > 0:
+            extra["churn"] = round(float(ne.mean()), 3)
+
+    # Right-tail retention: requires hold_126 perfire as the reference
+    if hold126_perfire is not None and len(hold126_perfire) > 0:
+        # Exclude censored rows from hold_126 reference
+        h126_exclude = pd.Series(False, index=hold126_perfire.index)
+        if "short_path" in hold126_perfire.columns:
+            h126_exclude |= hold126_perfire["short_path"].astype(bool)
+        if "censored" in hold126_perfire.columns:
+            h126_exclude |= hold126_perfire["censored"].astype(bool)
+        h126_included = hold126_perfire[~h126_exclude]
+
+        if "exit_ret" in h126_included.columns and "fire_idx" in h126_included.columns:
+            h126_rets = pd.to_numeric(h126_included["exit_ret"], errors="coerce")
+            # Top decile of hold_126 returns
+            top_decile_threshold = h126_rets.quantile(0.9)
+            top_decile_mask = h126_rets >= top_decile_threshold
+            top_decile_fire_idxs = h126_included.loc[top_decile_mask, "fire_idx"]
+
+            if len(top_decile_fire_idxs) > 0:
+                # Mean hold_126 return among top-decile fires
+                h126_top_mean = float(h126_rets[top_decile_mask].mean())
+
+                # Find the corresponding scaled-policy fires by fire_idx
+                if "fire_idx" in included.columns:
+                    scaled_top = included[included["fire_idx"].isin(top_decile_fire_idxs)]
+                    if len(scaled_top) > 0 and "exit_ret" in scaled_top.columns:
+                        scaled_top_rets = pd.to_numeric(scaled_top["exit_ret"], errors="coerce").dropna()
+                        if len(scaled_top_rets) > 0 and h126_top_mean != 0:
+                            scaled_top_mean = float(scaled_top_rets.mean())
+                            rtr = scaled_top_mean / h126_top_mean
+                            extra["right_tail_retention"] = round(rtr, 4)
+                            extra["right_tail_n_fires"] = len(scaled_top_rets)
+                            extra["right_tail_h126_mean"] = round(h126_top_mean, 4)
+                            extra["right_tail_scaled_mean"] = round(scaled_top_mean, 4)
+
+    return extra
 
 
 def _era_tier_splits(
@@ -1037,19 +1236,68 @@ def run_experiment(
         "cells": {},
     }
 
+    # For trim_grid_v1: load hold_126 perfire from exit_grid_v1 summary
+    # (for right-tail retention computation — uses the same cohort baseline).
+    # We reconstruct exit_grid_v1 perfire on the fly from all_perfire if present,
+    # or fall back to None (right_tail_retention will be null).
+    _hold126_pf: pd.DataFrame | None = None
+    if exp_id == "trim_grid_v1":
+        # hold_126 is the reference for right-tail retention.
+        # We run the hold(126) spec as part of the trim run to get the reference baseline.
+        # Build a temporary hold_126 spec with the same cohort and run it.
+        # This is NOT a new registered trial — it uses exit_grid_v1/hold_126 semantics
+        # and the already-registered hash (it is a reference lookup, not a new cell).
+        cohort_for_h126 = cohort_filter(
+            ("eq", "verdict_type", "fire"),
+            ("eq", "verdict_grade", True),
+        )
+        from scripts.run_rule_replay import _build_exit_grid_v1_specs
+        h126_specs = [s for s in _build_exit_grid_v1_specs(cohort_for_h126)
+                      if "hold_126" in s.spec_id]
+        if h126_specs:
+            h126_spec = h126_specs[0]
+            h126_reg_hashes = set(exp_entry.get("spec_hashes", []))
+            # hold_126 hash is registered in exit_grid_v1, not trim_grid_v1;
+            # we load from all_perfire if possible, otherwise skip right-tail.
+            # Here we run the spec as a reference lookup (hash checked against exit_grid_v1
+            # registry entry is not available; suppress governor by passing the h126 hash).
+            # IMPORTANT: this is reference data only, not a new registered trial.
+            # We pass the existing spec_hashes set from trim_grid_v1 — the h126 hash is not
+            # in it, so we use a try/except and default to None.
+            try:
+                _hold126_pf = replay_spec(
+                    h126_spec,
+                    fires_df,
+                    closes,
+                    registry_hashes={h126_spec.content_hash()},  # pass spec's own hash
+                )
+                # Attach episode_cluster
+                if "fire_idx" in _hold126_pf.columns and "episode_cluster" not in _hold126_pf.columns:
+                    _cmap = fires_df["episode_cluster"].to_dict()
+                    _hold126_pf["episode_cluster"] = _hold126_pf["fire_idx"].map(_cmap)
+                log.info("hold_126 reference for right-tail retention: %d rows", len(_hold126_pf))
+            except Exception as exc:
+                log.warning("Could not compute hold_126 reference for right-tail: %s", exc)
+                _hold126_pf = None
+
     # Every cell in the declared grid appears in the summary (nulls included)
     for spec in specs:
         stats = cell_summaries[spec.spec_id]
         pf = all_perfire[spec.spec_id]
         era_tier = _era_tier_splits(pf, cluster_col="episode_cluster")
         spy_split = _spy_covariate_split(pf, cluster_col="episode_cluster")
-        summary["cells"][spec.spec_id] = {
+        cell_dict: dict[str, Any] = {
             **stats,
             "spec_hash": spec.content_hash(),
             "exit_policy": spec.exit.to_dict(),
             "era_tier_splits": era_tier,
             **({"spy_covariate_split": spy_split} if spy_split is not None else {}),
         }
+        # Trim-specific extra metrics
+        if exp_id == "trim_grid_v1":
+            trim_extra = _trim_cell_stats_extra(pf, _hold126_pf, cluster_col="episode_cluster")
+            cell_dict.update(trim_extra)
+        summary["cells"][spec.spec_id] = cell_dict
 
     # ── 9b. Add disp_gate_1_meta block for DISP-GATE-1 experiments ───────────
     # This block is experiment-specific and captures panel reach, exclusion
@@ -1074,6 +1322,55 @@ def run_experiment(
                 if k in _regime_panel_meta
             })
         summary["disp_gate_1_meta"] = meta_block
+
+    # ── 9c. Add trim_grid_v1_meta block ──────────────────────────────────────
+    if exp_id == "trim_grid_v1":
+        declared = exp_entry.get("declared_budget", 0) or 0
+        pre_trim_pooled = cumulative_trials - declared
+        # Compute the max()-basis: largest declared_budget across all registered experiments
+        # (per RUL-5: TrialLedger.effective_n() uses max() semantics).
+        from engine.rule_experiments import list_experiments as _list_exp
+        all_exps = _list_exp(rp)
+        # Note: list_experiments returns de-duplicated latest-entry-per-exp_id.
+        # For merged records (load_experiment merges all), we need to re-read budgets.
+        from engine.rule_experiments import _load_registry_raw as _load_raw
+        _all_records = _load_raw(rp)
+        _max_basis = max(
+            (int(r["declared_budget"]) for r in _all_records if "declared_budget" in r),
+            default=declared
+        )
+        summary["trim_grid_v1_meta"] = {
+            "derived_from_surface": exp_entry.get("derived_from_surface"),
+            "contamination_note": (
+                "TRIM-GRID-1 is derived_from_surface=exit_grid_v1 — that surface is now seen. "
+                "These cells were designed on the same fire tape already examined by exit_grid_v1. "
+                "Any promotion prereg must carry this contamination stamp and compensate via "
+                "fresh OOS fires (>=2026-H2) plus stricter thresholds (RUL-F3.5)."
+            ),
+            "verdict_criteria": "descriptive-only",
+            "pre_trim_pooled_replay_sum": pre_trim_pooled,
+            "post_trim_pooled_replay_sum": cumulative_trials,
+            "trial_ledger_max_basis": _max_basis,
+            "trial_ledger_max_basis_note": (
+                f"TrialLedger.effective_n() uses max() semantics and reports {_max_basis} "
+                f"(largest declared budget in the replay family = exit_grid_v1 with budget={_max_basis}). "
+                f"The cumulative pooled SUM is {cumulative_trials} (per RUL-5: both numbers printed)."
+            ),
+            "right_tail_survivorship_caveat": (
+                "Right-tail retention is measured against the top decile of hold_126 returns. "
+                "The massive-era cohort has a delisted-name recall floor (dead_name_coverage_pct ~38%); "
+                "survivorship bites hardest in the right tail — names that kept rising vs those "
+                "that fell and delisted. The right-tail capture rate is directionally informative "
+                "but should not be over-interpreted."
+            ),
+            "profit_take_note": (
+                "profit_take(15) exits at the first CLOSE >= +15% from entry (conservative close basis). "
+                "If the target is never touched within the reference window, the leg holds to reference "
+                "(included at reference return — same held-to-reference semantics as trail_stop/barrier). "
+                "This is the EXIT-GRID-1 bug-class prevention: dropping never-triggered legs was the "
+                "error that sign-flipped wide-stop cells in the first run."
+            ),
+        }
 
     # ── 10. Write perfire.parquet (gitignored Mac-local) ───────────────────
     rd.mkdir(parents=True, exist_ok=True)

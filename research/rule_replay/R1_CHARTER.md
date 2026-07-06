@@ -30,6 +30,8 @@ Enforcement: `scripts/run_rule_replay.py` enforces this on every call. There is 
 | `ema_trail(span=8, resample='3B')` | span=8, resample='3B' | EMA8 tail-flag. MUST import `engine.signal_quality` — never re-implement. |
 | `trail_stop(pct)` | pct ∈ {8, 12, 15, 20} | High-watermark trailing stop. |
 | `barrier(stop_pct, target_pct)` | stop<0, target>0 | Close-only bracket; first-touch on close (conservative). |
+| `scaled(legs=[(fraction, leg_policy), ...])` | fractions > 0, sum to 1.0; each leg from v1 vocabulary or `profit_take(pct)` | **Amendment: RUL-F3.5** (Final-3 masterplan, 2026-07-06) + **PR-F3.3**. Composite policy: each leg exits its fraction per its own policy; fire return = Σ fraction × leg_return. Never-triggered legs included at reference return (EXIT-GRID-1 aggregation-bug-class prevention). |
+| `profit_take(pct)` | pct = 15 (frozen) | **Amendment: RUL-F3.5 + PR-F3.3**. Exit at first CLOSE >= +pct% from entry (close basis, conservative). ONLY valid as a leg inside `scaled()`; rejected as a standalone policy. If never touched, holds to reference (included at reference return). |
 
 Extending the enum requires a program amendment logged in the program doc.
 
