@@ -11,7 +11,9 @@ Design contracts:
                     today) >= 21.  Unmatured rows are untouched.
 - IDEMPOTENT      : skips rows that already have a non-null fwd_dd value.
 - SINGLE-WRITER   : called only from scripts/collect.py end-of-collect
-                    block; never raises into the caller.
+                    block, nightly lane only (COLLECT_LANE=nightly gate).
+                    asia-close / weekly / intl_etf lanes are no-ops; only
+                    the nightly daily.yml collect step advances this ledger.
 - NEVER RAISES    : entire body wrapped; non-fatal on any error.
 
 Levels are built from the deep OHLCV store (data/baskets/ohlcv/<ticker>.parquet)
@@ -91,7 +93,16 @@ def _build_level(basket_id: str, members: list[dict], ohlcv_dir: Path) -> pd.Ser
 
 
 def _load_levels(basket_ids: list[str], root: Path) -> dict[str, pd.Series]:
-    """Load EW-level histories for the requested basket_ids."""
+    """Load EW-level histories for the requested basket_ids.
+
+    NOTE — coverage is US baskets only: data/baskets/membership.json holds the
+    ~46 US baskets (GICS + theme).  China / HK / intl / Canada basket_ids (e.g.
+    cn_pharma_cxo) that appear in forward_log.parquet will silently return no
+    level and their rows will remain ungraded indefinitely.  This is honest
+    degradation for a display-only accrual grader — those rows never mature-grade
+    but never block the parquet write; the closure audit will flag them as
+    GRADER-STARVED.  A per-region OHLCV source would be needed for full coverage.
+    """
     try:
         import json
         mem_path = root / "data" / "baskets" / "membership.json"
@@ -179,15 +190,19 @@ def grade_matured_rows(root: Path | None = None) -> int:
     if not graded_rows:
         return 0
 
-    # Merge fwd_dd back into df by (date, basket_id, region)
+    # Merge fwd_dd back into df by (date, basket_id, region).
+    # region is included in the key to guard against future basket_id reuse across
+    # regions (e.g. a CN basket sharing an id with a US basket), which would cause
+    # a silent wrong-grade with a (date, basket_id)-only key.
     graded_map = {
-        (r["date"], r["basket_id"]): r["fwd_dd"]
+        (r["date"], r["basket_id"], r.get("region", "")): r["fwd_dd"]
         for r in graded_rows
     }
 
     n_new = 0
     for idx in df.index:
-        key = (str(df.at[idx, "date"]), str(df.at[idx, "basket_id"]))
+        key = (str(df.at[idx, "date"]), str(df.at[idx, "basket_id"]),
+               str(df.at[idx, "region"]) if "region" in df.columns else "")
         if key in graded_map and pd.isna(df.at[idx, "fwd_dd"]):
             df.at[idx, "fwd_dd"] = graded_map[key]
             n_new += 1

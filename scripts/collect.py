@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import argparse
 import logging
+import os
 import sys
 import time
 from concurrent.futures import ThreadPoolExecutor
@@ -751,20 +752,34 @@ def main() -> int:
     # Grades matured rows (stamp_date + 21 business days <= today) of
     # data/breadth_divergence/forward_log.parquet in-place; idempotent re-runs.
     # Runs BEFORE the closure audit so the audit sees freshly graded state.
-    try:
-        from scripts.grade_breadth_divergence import run_as_collect_step as _bd_grader
-        _bd_grader()
-    except Exception as e:  # noqa: BLE001 — a grader crash must not abort the run
-        log.error("[grade_breadth_divergence] step crashed (non-fatal): %s", e)
+    # NIGHTLY-ONLY gate: forward ledgers must only be advanced in the nightly lane
+    # (house law: "nightly is the sole advancer of forward ledgers; intraday lanes
+    # discard data/ writes"). The daily.yml collect step sets COLLECT_LANE=nightly;
+    # asia-close.yml, weekly.yml, and intl_etf.yml leave it unset so this block is
+    # a no-op in those lanes.
+    if os.environ.get("COLLECT_LANE") == "nightly":
+        try:
+            from scripts.grade_breadth_divergence import run_as_collect_step as _bd_grader
+            _bd_grader()
+        except Exception as e:  # noqa: BLE001 — a grader crash must not abort the run
+            log.error("[grade_breadth_divergence] step crashed (non-fatal): %s", e)
+    else:
+        log.debug("[grade_breadth_divergence] skipped — not the nightly lane (COLLECT_LANE=%r)",
+                  os.environ.get("COLLECT_LANE"))
 
     # PR-A2 — foresight policy-calendar date-accuracy grader (end-of-collect, seconds-scale).
     # After next_comment_close_date passes, checks the federal_register store to confirm
     # whether the predicted comment-close event occurred.  Idempotent re-runs.
-    try:
-        from scripts.grade_policy_calendar import run_as_collect_step as _pol_grader
-        _pol_grader()
-    except Exception as e:  # noqa: BLE001 — a grader crash must not abort the run
-        log.error("[grade_policy_calendar] step crashed (non-fatal): %s", e)
+    # NIGHTLY-ONLY gate: same rationale as grade_breadth_divergence above.
+    if os.environ.get("COLLECT_LANE") == "nightly":
+        try:
+            from scripts.grade_policy_calendar import run_as_collect_step as _pol_grader
+            _pol_grader()
+        except Exception as e:  # noqa: BLE001 — a grader crash must not abort the run
+            log.error("[grade_policy_calendar] step crashed (non-fatal): %s", e)
+    else:
+        log.debug("[grade_policy_calendar] skipped — not the nightly lane (COLLECT_LANE=%r)",
+                  os.environ.get("COLLECT_LANE"))
 
     # NW Rails PR-6 — grading-closure standing audit (RUL-P10 path b).
     # Walks all declared forward ledgers, classifies each as CLOSED / GRADER-STARVED

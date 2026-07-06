@@ -14,7 +14,9 @@ Grade definition (date-accuracy check):
 
 Writes graded_date (ISO date string) and accurate (bool | null) back into each
 row of the JSONL file.  IDEMPOTENT: skips rows that already have graded_date.
-SINGLE-WRITER: called only from scripts/collect.py end-of-collect block.
+SINGLE-WRITER: called only from scripts/collect.py end-of-collect block,
+  nightly lane only (COLLECT_LANE=nightly gate).  asia-close / weekly /
+  intl_etf lanes are no-ops so the ledger is never advanced intraday.
 NEVER RAISES: wrapped entirely; non-fatal.
 """
 from __future__ import annotations
