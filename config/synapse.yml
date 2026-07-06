@@ -5467,7 +5467,7 @@ artifacts:
     producer: scripts/research/bd_avoid1_stamper.py
     known_extra_writers: []
     owner_program: short-side
-    cadence: ops-lane
+    cadence: on-demand
     storage: git
     asof_field: event_date
     freshness_sla_hours: 48

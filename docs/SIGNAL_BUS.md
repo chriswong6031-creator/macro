@@ -342,7 +342,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
-| bd-avoid1-ledger | `data/research/bd_avoid1_ledger.parquet` | parquet | ops-lane | infrastructure | 1 | 0 |
+| bd-avoid1-ledger | `data/research/bd_avoid1_ledger.parquet` | parquet | on-demand | infrastructure | 1 | 0 |
 
 ### signal-commons
 
