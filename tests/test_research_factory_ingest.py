@@ -1499,3 +1499,331 @@ def test_advisory_reject_not_rejected_is_divergence():
         f"ADVISORY_REJECT → paper must count as divergence; "
         f"got divergence_rate={chd['divergence_rate']}"
     )
+
+
+# ===========================================================================
+# W7 / A2 amendment tests — domain_registry adoption (RF-2, A2)
+# ===========================================================================
+
+from scripts.research_factory_ingest import (
+    adopt_oracle_compounds,
+    _load_existing_adopted_spec_refs,
+    _build_adoption_candidate,
+    _oracle_track_for_registry_row,
+    _trial_accounting_for_oracle_adoption,
+    _load_oracle_registry_indexed,
+    _load_promotion_queue_json,
+)
+
+
+def _make_oracle_registry_row(
+    compound_id: str = "TEST_COMPOUND_01",
+    name: str = "Test Compound",
+    status: str = "screened",
+    with_reversion_pass: bool = True,
+    mechanism_en: str = "test mechanism",
+) -> dict:
+    """Build a minimal oracle registry row for test fixtures."""
+    row: dict = {
+        "id": compound_id,
+        "family": "TEST",
+        "name": name,
+        "mechanism_en": mechanism_en,
+        "mechanism_zh": "",
+        "entry_rule": {"col": "washout_w", "op": "gt", "value": 0},
+        "condition_rule": None,
+        "universe": {"tier": "s"},
+        "horizons": [21, 63],
+        "status": status,
+        "created": "2026-07-06",
+        "lineage": "test",
+        "live_n": 0,
+        "live_effect": None,
+    }
+    if with_reversion_pass:
+        row["reversion"] = {
+            "gauntlet": "PASS",
+            "n": 500,
+            "wr": 0.65,
+            "asym": 1.8,
+            "ret_exit": 0.025,
+            "asof": "2026-07-06",
+        }
+    return row
+
+
+def _make_oracle_registry_jsonl(path: Path, rows: list[dict]) -> None:
+    """Write a list of registry rows to a JSONL file."""
+    path.write_text("\n".join(json.dumps(r) for r in rows) + "\n", encoding="utf-8")
+
+
+def _make_promotion_queue_json(path: Path, candidates: list[dict],
+                               search_width: int = 110) -> None:
+    """Write a promotion_queue.json file."""
+    data = {
+        "schema": "oracle.promotion_queue.v1",
+        "generated_at": "2026-07-06T00:00:00Z",
+        "search_width": search_width,
+        "n_candidates": len(candidates),
+        "candidates": candidates,
+        "note": "test fixture",
+    }
+    path.write_text(json.dumps(data), encoding="utf-8")
+
+
+# ---------------------------------------------------------------------------
+# 30. Adoption round-trip: domain_registry source, correct fields
+# ---------------------------------------------------------------------------
+
+
+def test_adoption_round_trip(tmp_path):
+    """Adopting a known compound_id produces a registered candidate with
+    source='domain_registry', candidate_type='oracle_compound', spec_ref set."""
+    oracle_reg = tmp_path / "registry.jsonl"
+    registry_row = _make_oracle_registry_row("A15_WASHOUT_OPP_OUT_2NODE")
+    _make_oracle_registry_jsonl(oracle_reg, [registry_row])
+
+    pq_path = tmp_path / "promotion_queue.json"
+    pq_candidate = {
+        "compound_id": "A15_WASHOUT_OPP_OUT_2NODE",
+        "compound_name": "Washout two-node",
+        "n": 2357,
+        "effect_63d": 0.013,
+        "hit_63d": 0.571,
+        "era_consistent_63d": 4,
+        "search_width_at_scan": 110,
+        "floor_passed": {"n_ge_100": True, "abs_effect63_ge_1pct": True,
+                         "hit63_ge_55pct": True, "era_consistent_ge_3": True},
+        "current_status": "screened",
+    }
+    _make_promotion_queue_json(pq_path, [pq_candidate])
+
+    rf_dir = tmp_path / "rf"
+    result = adopt_oracle_compounds(
+        ["A15_WASHOUT_OPP_OUT_2NODE"],
+        oracle_registry_path=oracle_reg,
+        promotion_queue_path=pq_path,
+        rf_dir=rf_dir,
+        dry_run=True,
+    )
+
+    assert len(result.registered) == 1, f"expected 1 registered, got {len(result.registered)}"
+    assert len(result.dropped) == 0
+    cand_out, trans_out = result.registered[0]
+
+    assert cand_out["source"] == "domain_registry"
+    assert cand_out["candidate_type"] == "oracle_compound"
+    assert cand_out["spec_ref"] == "A15_WASHOUT_OPP_OUT_2NODE"
+    assert cand_out["domain"] == "oracle"
+    assert cand_out["status"] == "registered"
+    assert cand_out["authority"] == "display_only"
+    assert trans_out["to"] == "registered"
+    assert trans_out["from"] == "proposed"
+    assert trans_out["actor"] == "script"
+    # trial_accounting: reversion track → read_only
+    ta = cand_out["trial_accounting"]
+    assert ta["mode"] == "read_only", f"expected read_only for reversion track, got {ta['mode']}"
+
+
+# ---------------------------------------------------------------------------
+# 31. Unknown compound_id fails loudly
+# ---------------------------------------------------------------------------
+
+
+def test_adoption_unknown_compound_id_fails(tmp_path):
+    """Adopting a compound_id that does not exist in the oracle registry must fail
+    loudly: dropped with reason_code='adopt_unknown_compound_id'."""
+    oracle_reg = tmp_path / "registry.jsonl"
+    _make_oracle_registry_jsonl(oracle_reg, [_make_oracle_registry_row("KNOWN_001")])
+
+    rf_dir = tmp_path / "rf"
+    result = adopt_oracle_compounds(
+        ["UNKNOWN_XYZ_NOT_IN_REGISTRY"],
+        oracle_registry_path=oracle_reg,
+        promotion_queue_path=tmp_path / "no_pq.json",
+        rf_dir=rf_dir,
+        dry_run=True,
+    )
+
+    assert len(result.registered) == 0
+    assert len(result.dropped) == 1
+    _, rc, rt = result.dropped[0]
+    assert rc == "adopt_unknown_compound_id", f"expected adopt_unknown_compound_id, got {rc!r}"
+    assert "UNKNOWN_XYZ_NOT_IN_REGISTRY" in rt
+
+
+# ---------------------------------------------------------------------------
+# 32. Idempotent re-adoption: same spec_ref skipped on second call
+# ---------------------------------------------------------------------------
+
+
+def test_adoption_idempotent_readoption(tmp_path):
+    """Re-adopting an already-adopted spec_ref must be silently skipped (keep-first).
+    The factory ledger must not accumulate a second row."""
+    oracle_reg = tmp_path / "registry.jsonl"
+    registry_row = _make_oracle_registry_row("IDEM_TEST_01")
+    _make_oracle_registry_jsonl(oracle_reg, [registry_row])
+
+    rf_dir = tmp_path / "rf"
+    common_kwargs = dict(
+        oracle_registry_path=oracle_reg,
+        promotion_queue_path=tmp_path / "no_pq.json",
+        rf_dir=rf_dir,
+    )
+
+    # First adoption: should register
+    result1 = adopt_oracle_compounds(["IDEM_TEST_01"], dry_run=False, **common_kwargs)
+    assert len(result1.registered) == 1
+
+    # Second adoption of same spec_ref: must be skipped (idempotent)
+    result2 = adopt_oracle_compounds(["IDEM_TEST_01"], dry_run=False, **common_kwargs)
+    assert len(result2.registered) == 0, "re-adoption must not add a second row"
+
+    # Factory ledger must still have exactly one candidate
+    from engine.research_factory.ledger import load_jsonl
+    cands_on_disk = [c for c in load_jsonl(rf_dir / "candidates.jsonl")
+                     if c.get("status") == "registered"]
+    assert len(cands_on_disk) == 1, (
+        f"idempotent re-adoption must leave exactly 1 registered row; "
+        f"got {len(cands_on_disk)}"
+    )
+
+
+# ---------------------------------------------------------------------------
+# 33. Dedup waiver scoped to the declared spec_ref only
+# ---------------------------------------------------------------------------
+
+
+def test_adoption_dedup_waiver_scoped_to_declared_spec_ref(tmp_path):
+    """The dedup rule-1 waiver applies ONLY to the explicitly declared spec_ref.
+    A different candidate whose entry_rule collides with the oracle registry
+    (but is not a declared adoption target) must still be deduped normally."""
+    entry_rule = {"col": "washout_w", "op": "gt", "value": 0}
+
+    oracle_reg = tmp_path / "registry.jsonl"
+    # ADOPT_TARGET: the compound being adopted
+    adopt_target = _make_oracle_registry_row("ADOPT_TARGET_01", mechanism_en="washout mechanism")
+    adopt_target["entry_rule"] = entry_rule
+    # COLLIDER: NOT an adoption target, but has the same entry_rule
+    collider = _make_oracle_registry_row("COLLIDER_001", mechanism_en="collider mechanism")
+    collider["entry_rule"] = entry_rule
+    _make_oracle_registry_jsonl(oracle_reg, [adopt_target, collider])
+
+    rf_dir = tmp_path / "rf"
+    # Adopt only ADOPT_TARGET_01 — waiver scoped to it
+    result = adopt_oracle_compounds(
+        ["ADOPT_TARGET_01"],
+        oracle_registry_path=oracle_reg,
+        promotion_queue_path=tmp_path / "no_pq.json",
+        rf_dir=rf_dir,
+        dry_run=True,
+    )
+    assert len(result.registered) == 1
+    assert result.registered[0][0]["spec_ref"] == "ADOPT_TARGET_01"
+
+    # Now try to ingest COLLIDER_001 via normal run_ingest (NOT adoption mode)
+    # It should be deduped by oracle_compounds_registry canonical hash
+    cand_collider = _build_candidate(
+        source="oracle_brainstorm",
+        candidate_type="oracle_compound",
+        domain="oracle",
+        hypothesis="collider hypothesis washout",
+        mechanism="collider washout mechanism",
+        spec_ref="COLLIDER_001",
+        entry_rule=entry_rule,
+    )
+    cand_collider["artifacts"]["entry_rule"] = entry_rule
+
+    dedup_result = run_ingest(
+        [cand_collider],
+        oracle_registry_path=oracle_reg,  # oracle registry has COLLIDER_001 entry_rule
+        species_registry_path=tmp_path / "no_species.json",
+        machine_registry_path=tmp_path / "no_machine.jsonl",
+        trial_ledger_path=tmp_path / "no_ledger.jsonl",
+        rf_dir=rf_dir,
+        dry_run=True,
+    )
+    # Must be deduped (rule 1 not waived for COLLIDER_001)
+    assert len(dedup_result.registered) == 0, (
+        "COLLIDER_001 must be deduped via normal rule-1 (oracle canonical hash); "
+        "the waiver only applies to the declared adoption target ADOPT_TARGET_01"
+    )
+    assert len(dedup_result.dropped) == 1
+    _, rc, _ = dedup_result.dropped[0]
+    assert rc == "deduped"
+
+
+# ---------------------------------------------------------------------------
+# 34. Reversion vs 63d trial_accounting modes
+# ---------------------------------------------------------------------------
+
+
+def test_adoption_trial_accounting_reversion_track(tmp_path):
+    """A compound with reversion.gauntlet='PASS' gets mode='read_only'."""
+    reversion_row = _make_oracle_registry_row("REV_COMPOUND", with_reversion_pass=True)
+    assert _oracle_track_for_registry_row(reversion_row) == "reversion"
+    ta = _trial_accounting_for_oracle_adoption("reversion")
+    assert ta["mode"] == "read_only"
+    assert ta["family"] is None
+
+
+def test_adoption_trial_accounting_63d_track(tmp_path):
+    """A compound WITHOUT reversion.gauntlet='PASS' gets mode='oracle_screen'."""
+    non_rev_row = _make_oracle_registry_row("SIXTYTHREE_COMPOUND", with_reversion_pass=False)
+    assert _oracle_track_for_registry_row(non_rev_row) == "63d"
+    ta = _trial_accounting_for_oracle_adoption("63d")
+    assert ta["mode"] == "oracle_screen"
+    assert ta["family"] is None
+
+
+def test_adoption_reversion_track_compound_end_to_end(tmp_path):
+    """Full adoption of a reversion-track compound: trial_accounting.mode='read_only'."""
+    oracle_reg = tmp_path / "registry.jsonl"
+    reversion_row = _make_oracle_registry_row("REV_E2E", with_reversion_pass=True)
+    _make_oracle_registry_jsonl(oracle_reg, [reversion_row])
+
+    rf_dir = tmp_path / "rf"
+    result = adopt_oracle_compounds(
+        ["REV_E2E"],
+        oracle_registry_path=oracle_reg,
+        promotion_queue_path=tmp_path / "no_pq.json",
+        rf_dir=rf_dir,
+        dry_run=True,
+    )
+    assert len(result.registered) == 1
+    cand_out, _ = result.registered[0]
+    assert cand_out["trial_accounting"]["mode"] == "read_only"
+    assert cand_out["artifacts"]["oracle_track"] == "reversion"
+
+
+def test_adoption_63d_track_compound_end_to_end(tmp_path):
+    """Full adoption of a 63d-track compound: trial_accounting.mode='oracle_screen'."""
+    oracle_reg = tmp_path / "registry.jsonl"
+    sixty3_row = _make_oracle_registry_row("SIXTYTHREE_E2E", with_reversion_pass=False)
+    _make_oracle_registry_jsonl(oracle_reg, [sixty3_row])
+
+    rf_dir = tmp_path / "rf"
+    result = adopt_oracle_compounds(
+        ["SIXTYTHREE_E2E"],
+        oracle_registry_path=oracle_reg,
+        promotion_queue_path=tmp_path / "no_pq.json",
+        rf_dir=rf_dir,
+        dry_run=True,
+    )
+    assert len(result.registered) == 1
+    cand_out, _ = result.registered[0]
+    assert cand_out["trial_accounting"]["mode"] == "oracle_screen"
+    assert cand_out["artifacts"]["oracle_track"] == "63d"
+
+
+# ---------------------------------------------------------------------------
+# 35. domain_registry source is valid in schema
+# ---------------------------------------------------------------------------
+
+
+def test_domain_registry_source_is_valid_in_schema():
+    """schema.SOURCES must include 'domain_registry' after the A2 amendment."""
+    from engine.research_factory.schema import SOURCES
+    assert "domain_registry" in SOURCES, (
+        "'domain_registry' must be in SOURCES after A2 amendment"
+    )

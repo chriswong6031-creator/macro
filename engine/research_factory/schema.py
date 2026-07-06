@@ -59,6 +59,7 @@ SOURCES = frozenset({
     "human",
     "external_report",
     "research_queue",
+    "domain_registry",   # A2 amendment (W7): RF-2 pointer adoption of existing domain-homed compounds
 })
 
 # §5.1: claim_shape — RESERVED for metabolism enum (RF-3).
