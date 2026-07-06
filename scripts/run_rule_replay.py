@@ -305,6 +305,7 @@ def _cell_stats(
             "n_censored": 0,
             "n_short_path": 0,
             "n_held_to_reference": 0,
+            "n_null_regret_126": 0,
             "short_path_pct": None,
             "held_to_reference_pct": None,
             "censoring_rate": None,
@@ -353,9 +354,18 @@ def _cell_stats(
 
     # Regret metrics computed over all fires (not just included — regret vs reference is
     # meaningful for all fires with a valid forward path, including held_to_reference).
+    # Track fires where the 126-bar reference horizon is unavailable (null regret shortfall).
+    # This happens when delay_n shifts the fill bar close enough to the data end that
+    # fill_idx + 1 + 126 exceeds the available price series length — those fires have
+    # fwd_mfe_126=None in engine/rule_replay.py, which propagates to foregone_mfe_126=None.
+    # The .dropna() below is correct for computing the mean, but the dropped count must be
+    # disclosed so cross-delay regret comparisons are not made on a silently shrinking denominator.
+    n_null_regret_126 = 0
     mean_foregone = None
     if "foregone_mfe_126" in perfire.columns:
-        fm = pd.to_numeric(perfire["foregone_mfe_126"], errors="coerce").dropna()
+        fm_raw = pd.to_numeric(perfire["foregone_mfe_126"], errors="coerce")
+        n_null_regret_126 = int(fm_raw.isna().sum())
+        fm = fm_raw.dropna()
         mean_foregone = float(fm.mean()) if len(fm) > 0 else None
 
     mean_avoided = None
@@ -375,6 +385,12 @@ def _cell_stats(
         "n_censored": n_censored,
         "n_short_path": n_short_path,
         "n_held_to_reference": n_held_to_reference,
+        # n_null_regret_126: fires where the 126-bar reference horizon is unavailable
+        # (fill bar too close to end of data after delay_n shift). These fires are
+        # excluded from mean_foregone_mfe_126 / mean_avoided_mae_126 / regret_ratio
+        # via .dropna(). The count grows with delay_n for boundary fires — so
+        # cross-delay regret comparisons use a denominator that shrinks with delay_n.
+        "n_null_regret_126": n_null_regret_126,
         "short_path_pct": round(n_short_path / n_total, 4) if n_total > 0 else None,
         "held_to_reference_pct": round(n_held_to_reference / n_total, 4) if n_total > 0 else None,
         "censoring_rate": round(n_censored / n_total, 4) if n_total > 0 else None,

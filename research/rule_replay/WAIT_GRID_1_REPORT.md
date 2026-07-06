@@ -115,16 +115,36 @@ hold(63) cells (positional anchor):
 | delay5_hold63 | 49,939 | 22,295 | 0.588 | +4.41% | +3.18% | 0.0785 | 0.0367 | 0.47 | 0.0% |
 | delay10_hold63 | 49,939 | 22,295 | 0.583 | +4.21% | +3.03% | 0.0778 | 0.0384 | 0.49 | 0.0% |
 
-**Censoring:** zero censored fires across all 10 cells. Every fire in this cohort
-has a full 126-bar forward price path; no fires sit near the end of the data.
+**Censoring (HOLD-policy):** zero censored fires (censored=True) across all 10
+cells. The `censored` flag tracks fires where the HOLD policy exit bar or the
+fill bar itself exceeds the available price series — that count is genuinely 0.
 
-**Per-cell censoring rate note (required per §6.1):** censoring rises with
-`delay_n` in theory — a fire with only N bars remaining before end of data would
-become censored at delay_n > N-hold_bars. In this cohort, every fire has a full
-path, so the censoring rate is 0.0% at all delay levels. The structure of the
-censoring check is present in the data but has no fires to censor here. Any future
-backfill of the fire tape with recent fires will show censoring rising with delay_n
-for the most recent entries.
+**Reference-horizon shortfall (distinct from censoring):** the 126-bar reference
+horizon used to compute `foregone_mfe_126` / `avoided_mae_126` / `regret_ratio`
+requires `fill_idx + 1 + 126` bars to exist in the price series. At `delay_n=1`
+(base fill), `verdict_grade=True` guarantees the 126-bar window is available
+(the grading gate in `scripts/replay_standout_pipeline.py` checks for a full
+126-bar path at the base fill). At `delay_n>1`, the actual fill is
+`base_fill + delay_n - 1` (`engine/rule_replay.py:642`), pushing the anchor
+forward by `delay_n - 1` bars. Boundary fires — those within `delay_n - 1` bars
+of the grading gate's 126-bar limit — lose the 126-bar reference window at
+higher delay levels. Their `fwd_mfe_126` is set to None in the engine, which
+propagates to `foregone_mfe_126 = None` and `avoided_mae_126 = None`.
+
+The `_cell_stats` function uses `.dropna()` to compute regret means, silently
+excluding these boundary fires without counting them or flagging them as
+censored. In this particular run the `n_null_regret_126` count was not emitted
+per cell (the harness has been corrected to emit it going forward); the observed
+n_fires=49,939 at all delay levels is the HOLD-exit denominator (WR/mean_ret),
+which is unaffected — but the regret mean denominator may be smaller at higher
+delay levels for boundary fires.
+
+**Implication for cross-delay regret comparisons:** the observed trend in
+regret_ratio (0.52 → 0.54 at hold21; 0.45 → 0.49 at hold63) is computed on a
+denominator that may shrink with `delay_n` for boundary fires. See the
+"Censoring and short-path structure note" below for full discussion. Any
+inferential use of the cross-delay regret pattern must first quantify the
+boundary-fire shortfall per cell.
 
 ---
 
@@ -141,7 +161,10 @@ for the most recent entries.
 - The regret ratio rises slightly with delay: 0.52 at delay_n=1 to 0.54 at delay_n=10.
   A rising regret ratio means each bar of delay saves a slightly larger fraction of
   avoided MAE relative to foregone MFE — but both numerator and denominator are nearly
-  constant until delay_n=10.
+  constant until delay_n=10. **Confound flag:** this cross-delay regret comparison is
+  computed on a denominator that may shrink with delay_n (boundary fires losing the
+  126-bar reference window). The trend should not be read as a clean causal delay
+  effect until per-cell `n_null_regret_126` counts are obtained.
 
 **hold(63) — delay ladder:**
 - WR is non-monotone: rises slightly delay_n=1 to delay_n=3 (0.585 → 0.589), then
@@ -149,7 +172,10 @@ for the most recent entries.
 - Mean return follows a similar arc (+4.26% → +4.41% → +4.21%), with the +4.41%
   plateau at delay_n=3 and delay_n=5.
 - The regret ratio rises from 0.45 at delay_n=1 to 0.49 at delay_n=10, driven by
-  avoided MAE growing more than foregone MFE shrinks.
+  avoided MAE growing more than foregone MFE shrinks. **Confound flag:** same as
+  hold(21) — the cross-delay regret comparison may be on a shrinking denominator
+  of reference-horizon-eligible fires; treat as confounded until rerun with
+  per-cell `n_null_regret_126` counts.
 
 **Cross-hold comparison:**
 - hold(63) dominates hold(21) on WR and mean return at every delay level, as
@@ -164,13 +190,34 @@ for the most recent entries.
 
 ## Censoring and short-path structure note
 
-Zero short-path fires and zero censored fires across all cells. This is the same
-cohort as EXIT-GRID-1 (verdict_grade=True fires with full 126-bar forward paths).
-Delay_n shifts the fill bar forward, but because the forward path is measured
-from the delayed fill bar, this does not change the total available window — it
-changes where in the price history the window is anchored. The censoring structure
-would only differ from EXIT-GRID-1 if delay_n pushed the fill bar past the end
-of the available price series. No such fires exist in this cohort.
+Zero short-path fires and zero censored fires (HOLD-policy censor) across all
+cells. The `verdict_grade=True` grading gate guarantees a full 126-bar path at
+the **base fill** (delay_n=1). HOLD-policy exit windows (21 or 63 bars) are
+well within that limit, so no HOLD-exit is truncated.
+
+However, the **126-bar reference horizon** used for regret metrics is a separate
+requirement from HOLD-policy censoring. At delay_n>1, the actual fill bar is
+`base_fill + delay_n - 1`. For a fire graded with exactly 126 bars remaining at
+the base fill, shifting forward by `delay_n - 1` bars leaves fewer than 126 bars
+for the reference-horizon window. These fires have `fwd_mfe_126 = None` and are
+excluded from regret means via `.dropna()` — but they are **not** flagged as
+censored (that flag tracks only HOLD-policy and fill-past-end cases), and
+`n_fires` remains 49,939.
+
+The number of such "reference-horizon-shortfall" fires grows with `delay_n`:
+roughly the most recent `delay_n - 1` trading days of boundary fires lose the
+reference window at each delay level. The harness now emits `n_null_regret_126`
+per cell to track this. For this run the per-cell counts were not recorded (the
+fix was applied after the run); future reruns will surface them.
+
+**Impact on reported results:** WR, mean_ret, and median_ret are computed on the
+HOLD-policy exit (21 or 63 bars) and are unaffected. The **cross-delay regret-
+ratio trend** (0.52 → 0.54 at hold21; 0.45 → 0.49 at hold63) is computed on a
+denominator that may shrink with `delay_n`. The direction and approximate
+magnitude of the trend are unlikely to be fully explained by boundary-fire
+dropout (the dropout is expected to be small relative to 49,939 fires), but the
+trend should be interpreted as **potentially confounded** until per-cell
+`n_null_regret_126` counts are obtained from a rerun.
 
 ---
 
