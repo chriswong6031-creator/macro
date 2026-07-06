@@ -502,19 +502,39 @@ class TestDryRunWritesNothing:
         # Import and run with the dangerous combination: dry_run=True, count=True
         # This must NOT write trial_ledger.jsonl or transitions.jsonl
         from scripts.research_factory_run import run
-        # Patch screen_compound to a sentinel that would write if called without dry_run
+        # Patch screen_compound with a side_effect that ACTUALLY writes trial_ledger.jsonl.
+        # This makes the file-mutation invariants below non-vacuous: if the code path
+        # ever reaches screen_compound, the trial_ledger assertion fires.  The primary
+        # real guard is assert_not_called(), which catches code-path suppression failures
+        # even if a future refactor keeps effective_count correct but threads raw count
+        # downstream.
         from unittest.mock import patch, MagicMock
-        mock_screen = MagicMock(return_value={"dry_run_safe": True})
+        import json as _json
+
+        def _writing_screen_compound(compound, data_dir, **kwargs):
+            """Side-effect: write a sentinel row so file-invariant assertions are live."""
+            ledger = trial_ledger_path
+            with open(ledger, "a") as _f:
+                _f.write(_json.dumps({"id": compound.get("id"), "_sentinel": True}) + "\n")
+            return {"dry_run_safe": True}
+
+        mock_screen = MagicMock(side_effect=_writing_screen_compound)
         with patch("scripts.oracle_screen.screen_compound", mock_screen, create=True):
             summary = run(
                 rf_dir=rf_dir, data_dir=tmp_path, dry_run=True, count=True
             )
 
+        # PRIMARY guard: screen_compound must never be called when dry_run=True.
+        # This is the real code-path invariant; if effective_count suppression ever
+        # regresses, this assertion catches it regardless of how the summary is computed.
+        mock_screen.assert_not_called()
+
         # Invariant: no transition ledger
         assert not (rf_dir / "transitions.jsonl").exists(), (
             "transitions.jsonl must not exist after dry_run=True run"
         )
-        # Invariant: no trial_ledger written (compound status unchanged)
+        # Invariant: no trial_ledger written — non-vacuous because the mock's
+        # side_effect would have created this file if screen_compound were called.
         assert not trial_ledger_path.exists(), (
             "trial_ledger.jsonl must not be created by dry_run=True, count=True run"
         )
@@ -522,7 +542,7 @@ class TestDryRunWritesNothing:
         assert registry_path.read_text() == registry_before, (
             "oracle registry must not be mutated by dry_run=True, count=True run"
         )
-        # Summary correctly reflects dry_run=True
+        # Secondary: summary fields reflect dry_run=True suppression
         assert summary["dry_run"] is True
         assert summary["effective_count"] is False
 
