@@ -2,39 +2,37 @@ name: factor-ops
 # Factor Intelligence Program P2 — operational dispatch workflow.
 #
 # Actions:
-#   backfill      — deep panel backfill (2020-01-01 forward, ~25 min, runner-local)
-#   register_h123 — register H1/H2/H3 in metabolism (W27 budget batch)
-#   register_h45  — register H4/H5 in metabolism (W28+ budget batch)
+#   backfill — deep panel backfill (2020-01-01 forward, ~25 min, runner-local)
+#
+# REGISTER ACTIONS REMOVED (2026-07-06 persistence fix):
+#   register_h123 / register_h45 wrote machine_registry.jsonl to THIS workflow's
+#   checkout and relied on the next nightly's git add to commit it.  That relay
+#   NEVER WORKED: every job starts from a fresh actions/checkout (git clean
+#   -ffdx), so the rows were wiped before any commit step could see them — the
+#   same cross-job visibility hole as the factor_attention firings bug (PR
+#   #1583).  The W27 register_h123 and W28 register_h45 dispatch registrations
+#   were both lost this way (verified 2026-07-06: machine_registry.jsonl has no
+#   git history).  H1–H5 registration now runs as an idempotent, budget-deferred
+#   step INSIDE the nightly cortex job (daily.yml), whose commit lane stages
+#   machine_registry.jsonl + governance.jsonl + trial_ledger.jsonl.  See
+#   research/factor_intelligence/NW_INTEGRATION_ADJUDICATION_BY_FABLE.md §E.
 #
 # OPERATIONAL FACTS (per masterplan §7-P2 context brief):
 #   - Self-hosted runner FS is virtualized/isolated.  Panel data
-#     (data/factordata/panel/) and metabolism registry
-#     (data/neuralweb/machine_registry.jsonl) live on the RUNNER workspace.
+#     (data/factordata/panel/) lives on the RUNNER workspace.
 #   - Panel is not committed (R2-rule; first build measures partitions to decide).
-#   - machine_registry.jsonl and governance.jsonl are NOT yet tracked on the
-#     runner workspace at dispatch time; they BECOME tracked when first written
-#     and swept by daily.yml:1278's explicit git add on the next nightly ENGINE
-#     job.  Do NOT add .gitignore for machine_registry.jsonl.
 #
 # NIGHTLY-SOLE-ADVANCER LAW (FIX-1):
-#   A dispatchable workflow MUST NOT push to main.  Registrations written by
-#   this workflow ride the next ENGINE job's explicit git add (daily.yml:1278):
-#     git add data/neuralweb/machine_registry.jsonl
-#     git add data/neuralweb/governance.jsonl
-#   The broad "git add data/ site/ reports/" at line 920 also sweeps
-#   data/neuralweb/ on the ENGINE job.  Both files are tracked by design;
-#   git history is the tamper-detection substrate (metabolism.py line 20-24).
-#   Factor Intelligence registrations committed via the nightly ENGINE job
-#   preserve the governance audit trail without violating the sole-advancer law.
+#   A dispatchable workflow MUST NOT push to main.  This workflow keeps
+#   permissions: contents: read.  Anything that must persist to main belongs in
+#   a nightly job whose commit lane stages it (see the register-actions note
+#   above for what happens otherwise).
 #
 # REPLAY ACTION REMOVED (FIX-2):
 #   The yahoo-sourced preliminary replay was removed because writing to the
 #   canonical data/replay/ path with a non-massive (non-ERA-LAW-compliant)
 #   source could be mistaken for the study substrate.  P3 owns replay
 #   generation using the massive store on a runner with the full price history.
-#
-# BUDGET_PER_WEEK=3: register_h123 and register_h45 must run in separate
-#   ISO weeks.
 
 on:
   workflow_dispatch:
@@ -45,8 +43,6 @@ on:
         type: choice
         options:
           - backfill
-          - register_h123
-          - register_h45
 
 permissions:
   contents: read
@@ -96,49 +92,3 @@ jobs:
             echo "::warning::factor panel backfill exited $rc — check /tmp/factor_panel_backfill.log"
           fi
           exit 0  # fail-soft per masterplan §7-P2 (data lives on runner; no commit gate needed)
-
-      # ── ACTION: register_h123 ─────────────────────────────────────────────
-      - name: register H1/H2/H3 — dry run first
-        if: github.event.inputs.action == 'register_h123'
-        run: |
-          echo "=== H1/H2/H3 Registration — DRY RUN ===" >&2
-          python -m scripts.register_factor_hypotheses --only h1,h2,h3 --dry-run
-
-      - name: register H1/H2/H3 — real run
-        if: github.event.inputs.action == 'register_h123'
-        run: |
-          echo "=== H1/H2/H3 Registration — REAL RUN ===" >&2
-          python -m scripts.register_factor_hypotheses --only h1,h2,h3
-          echo "--- Registry state after registration ---" >&2
-          python -c "
-          from engine.neuralweb.metabolism import _load_registry
-          import json
-          rows = _load_registry(None)
-          factor_rows = [r for r in rows if 'factor_intelligence' in r.get('notes','') or 'H1:' in r.get('hypothesis','') or 'H2:' in r.get('hypothesis','') or 'H3:' in r.get('hypothesis','')]
-          for r in factor_rows:
-              print(json.dumps({'id': r.get('id'), 'status': r.get('status'), 'claim_shape': r.get('claim_shape'), 'hypothesis': r.get('hypothesis','')[:80]}, indent=2))
-          " 2>&1 || echo "Could not print registry state" >&2
-          echo "=== Registrations are runner-local; nightly ENGINE job (daily.yml:1278) will git-add and commit them. ===" >&2
-
-      # ── ACTION: register_h45 ──────────────────────────────────────────────
-      - name: register H4/H5 — dry run first
-        if: github.event.inputs.action == 'register_h45'
-        run: |
-          echo "=== H4/H5 Registration — DRY RUN ===" >&2
-          python -m scripts.register_factor_hypotheses --only h4,h5 --dry-run
-
-      - name: register H4/H5 — real run
-        if: github.event.inputs.action == 'register_h45'
-        run: |
-          echo "=== H4/H5 Registration — REAL RUN ===" >&2
-          python -m scripts.register_factor_hypotheses --only h4,h5
-          echo "--- Registry state after registration ---" >&2
-          python -c "
-          from engine.neuralweb.metabolism import _load_registry
-          import json
-          rows = _load_registry(None)
-          factor_rows = [r for r in rows if 'H4:' in r.get('hypothesis','') or 'H5:' in r.get('hypothesis','')]
-          for r in factor_rows:
-              print(json.dumps({'id': r.get('id'), 'status': r.get('status'), 'claim_shape': r.get('claim_shape'), 'hypothesis': r.get('hypothesis','')[:80]}, indent=2))
-          " 2>&1 || echo "Could not print registry state" >&2
-          echo "=== Registrations are runner-local; nightly ENGINE job (daily.yml:1278) will git-add and commit them. ===" >&2

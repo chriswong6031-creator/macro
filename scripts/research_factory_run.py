@@ -158,7 +158,11 @@ def _route_candidate(
                 f"— awaiting data"
             )
         elif projected == "screened":
-            if re_refused:
+            if re_refused and source != "domain_registry":
+                # 63d re-screen refused for normal (non-adoption) candidates.
+                # Adoption mode (source='domain_registry') uses promotion-queue
+                # evidence as the screen artifact and always advances to screened
+                # (RF-2 projection law: domain screened → factory screened).
                 result["action"] = "no_action"
                 result["reason"] = (
                     f"oracle 63d re-screen refused (compound already screened per RF-13); "
@@ -166,9 +170,12 @@ def _route_candidate(
                 )
             else:
                 result["action"] = "transition_screened"
+                reason_extra = ""
+                if re_refused and source == "domain_registry":
+                    reason_extra = " [adoption mode: promotion-queue evidence used as screen artifact; no new screen invoked]"
                 result["reason"] = (
                     f"oracle compound {spec_ref!r} projected as screened "
-                    f"(domain_status={adapter_result.get('domain_status')!r})"
+                    f"(domain_status={adapter_result.get('domain_status')!r}){reason_extra}"
                 )
         elif projected == "paper":
             result["action"] = "no_action"

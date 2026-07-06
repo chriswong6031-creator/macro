@@ -1577,6 +1577,43 @@ artifacts:
       (Spearman + Newey-West HAC t). 'proven' requires matured n AND significant HAC-t.
       Distinct from site-marketdata-subsector-rotation (the display output artifact).
 
+  # --- SRSS Phase 2: subsector sponsorship spine adapter (shadow, display-only) ---
+  subsector-sponsorship-spine:
+    path: data/spine/subsector_sponsorship.parquet
+    format: parquet
+    producer: engine/spine.py
+    known_extra_writers:
+      - "scripts/build_subsector_sponsorship.py — CLI runner; calls write_subsector_sponsorship()"
+    owner_program: entry-stack-expansion
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: spine.predictions.v1
+    tier: shadow
+    horizon_role: tactical_entry
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/neuralweb/confluence.py
+      - scripts/build_stock_library.py
+    external_consumers: []
+    notes: >
+      SRSS Phase 2 production wiring (research/entry_stack/sponsorship_phase0.py was the
+      research-only Phase 0 harness; classification/join logic now shared via
+      engine/subsector_sponsorship.py). adapt_subsector_sponsorship() joins today's live
+      per-stock gate fires (data/us_board_ledger/snapshots.jsonl, the same forward ledger
+      grade_us_board.py --nightly accrues) to the latest subsector-rotation-snapshots row
+      via the SAME nearest-prior-date leak-safe join Phase 0 validated. Deliberately kept
+      OUT of data/spine/predictions.parquet (spine-predictions above) — rows here are
+      NEVER graded (outcome_graded always False, score always 0.0, size_binding always
+      False) so they can never enter graded_rows()/measured_ic() or move any pooled
+      score. direction is inherited from the source fire only, never invented.
+      meta.display_only=True on every row (same convention confluence.py's edges use).
+      Coverage will accrue slowly: subsector-rotation-snapshots has ~1wk of history as of
+      this build (2026-06-28 start) so most fires still find no match — expected, not a
+      bug (see research/entry_stack/sponsorship_phase0.py's coverage report).
+
   # --- W2 sweep 19: Index Leadership Track Record ---
   index-leadership-snapshots:
     path: data/index_leadership/snapshots.jsonl
@@ -3948,6 +3985,45 @@ artifacts:
       Companion manifest for expect_drift_panel.parquet. Per-feature coverage %,
       event/SUE coverage, population hash, pre-registration reference, survivorship stamp.
       FIREWALL: hold_thesis — no entry-stack consumers permitted.
+
+  # --- Long-Hold LT-2b: expect_drift Ruler-P study results ---
+  expect-drift-ruler-p-results:
+    path: data/research/expect_drift_ruler_p_results.parquet
+    format: parquet
+    producer: scripts/research/expect_drift_ruler_p_study.py
+    known_extra_writers: []
+    owner_program: long-hold
+    cadence: on-demand
+    storage: git
+    asof_field: null
+    freshness_sla_hours: 8760
+    schema: expect_drift_ruler_p_results.v1
+    tier: display
+    horizon_role: hold_thesis
+    weights: none
+    scored_path_surfaces: []
+    fdr_family: long_hold
+    consumers:
+      - scripts/research/expect_drift_ruler_p_study.py
+    external_consumers: []
+    notes: >
+      LT-2b Ruler-P study: cheap_trap vs tactical_only at 252d, fires <=2023-12-31.
+      Outcome coded cheap_trap=1 (bad outcome); expected RBC is NEGATIVE (higher feature
+      values predict avoiding cheap_trap). TrialLedger.log_declared_budget(7,
+      family='long_hold.expect_drift') called before p-values. Episode-clustered
+      (±14 calendar days), BH q=0.10 descriptive, reshuffle null 1000/seed42 (one-sided
+      p10 tail for sign=-), era breakout (2014-2019 / 2020-2021 / 2022-2023).
+      MWU/RBC for continuous (ED-1/2/3/6); Fisher exact for binary (ED-4/5/7).
+      RESULTS (full cell 2014-2023, n=5325 dedup): ED-1 sue_latest RBC=-0.051
+      p=0.032 q=0.075 DESCRIPTIVE_PASS. ED-2 sue_streak RBC=-0.061 p=0.010
+      q=0.034 DESCRIPTIVE_PASS. ED-7 confirmed_absorption RBC=+0.041 p=0.008
+      NULL (wrong sign — more common among cheap_traps, opposite of mechanism).
+      ED-3/4/5/6 all NULL. 2 of 7 features DESCRIPTIVE_PASS.
+      UPPER BOUND stamp (survivorship-biased). Authority ceiling: display block
+      ships regardless of result; no SURVIVE/KILL vocabulary.
+      Ruler-H: accruing on OOS-2; G1-Retest ~2027-H2.
+      FIREWALL: horizon_role=hold_thesis. MUST NOT feed board ordering, alert
+      triage, top-setups gates, or push floor (LH-R1). fdr_family=long_hold (LH-R5).
 
   # --- Long-Hold W2 PR-I: compounder feature panel (embedded in per-stock panels) ---
   # NOTE: compounder features are NOT a standalone parquet — they are a sub-key

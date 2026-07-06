@@ -1056,3 +1056,106 @@ class TestFactorTools:
         # The artifact is small — must return full structure, not a 'too large' error
         assert "error" not in result
         assert "schema" in result
+
+
+# ---------------------------------------------------------------------------
+# 13. Subsector sponsorship evidence lane (SRSS Phase 3 — display/shadow only)
+# ---------------------------------------------------------------------------
+
+class TestSponsorshipEvidenceLane:
+    """Sponsorship evidence must reach cortex generically via read_graph, and
+    the evidence must remain descriptive-only — never a fabricated
+    buy/sell/recommendation field, and the prompt text must frame it as
+    de-escalate/explain-only (Article 1 — never originate)."""
+
+    def test_read_graph_surfaces_sponsorship_edges_generically(self, repo):
+        """read_graph needs zero sponsorship-specific code — it returns whatever
+        confluence_graph.json contains, including sponsorship_* edge types."""
+        from engine.neuralweb.cortex import dispatch_tool
+
+        graph = json.loads(
+            (repo / "data" / "neuralweb" / "confluence_graph.json").read_text(encoding="utf-8")
+        )
+        graph["edges"].append({
+            "src": "entity:REZI",
+            "dst": "subsector:smarthomesecurity",
+            "edge_type": "sponsorship_support",
+            "display_only": True,
+            "sponsorship_score": 0.872,
+            "confidence_tier": "medium",
+            "direction": 1,
+            "note": "sponsorship_state=CONFIRMED_LEADERSHIP confidence_tier=medium "
+                    "direction=1 (display-only; sponsorship_score not aggregated)",
+        })
+        (repo / "data" / "neuralweb" / "confluence_graph.json").write_text(
+            json.dumps(graph), encoding="utf-8"
+        )
+
+        census: dict = {}
+        result = dispatch_tool("read_graph", {}, repo, _NOW_STR, _PROBATION, census)
+        sponsorship_edges = [
+            e for e in result.get("edges", [])
+            if str(e.get("edge_type", "")).startswith("sponsorship")
+        ]
+        assert len(sponsorship_edges) == 1
+        assert sponsorship_edges[0]["display_only"] is True
+
+        # Same generic path filters by edge_type too — no special-cased tool needed.
+        census2: dict = {}
+        filtered = dispatch_tool(
+            "read_graph", {"edge_type": "sponsorship_support"}, repo, _NOW_STR, _PROBATION, census2
+        )
+        assert len(filtered.get("edges", [])) == 1
+
+    def test_sponsorship_edge_has_no_action_or_recommendation_keys(self, repo):
+        """Evidence surface must be descriptive fields only — no 'action',
+        'recommendation', 'buy', or 'sell' keys anywhere on a sponsorship edge."""
+        from engine.neuralweb.confluence import _build_sponsorship_edges
+
+        class _FakeRow(dict):
+            def get(self, k, default=None):
+                return dict.get(self, k, default)
+
+        import pandas as pd
+
+        df = pd.DataFrame([{
+            "symbol": "REZI",
+            "direction": 1,
+            "meta": json.dumps({
+                "sponsorship_state": "CONFIRMED_LEADERSHIP",
+                "confidence_tier": "medium",
+                "sponsorship_score": 0.872,
+                "rotation_key": "smarthomesecurity",
+            }),
+        }])
+        gaps: list[str] = []
+        edges = _build_sponsorship_edges(df, gaps)
+        assert len(edges) == 1
+        forbidden_keys = {"action", "recommendation", "buy", "sell", "trade", "escalation"}
+        for edge in edges:
+            assert not (set(edge.keys()) & forbidden_keys), (
+                f"sponsorship edge carries a forbidden key: {edge.keys()}"
+            )
+            assert edge.get("display_only") is True
+
+    def test_system_prompt_frames_sponsorship_as_de_escalate_only(self):
+        """The cortex system prompt text that mentions 'sponsorship' must carry
+        the de-escalate/explain-only framing — never-originate, near the mention."""
+        from engine.neuralweb.cortex import _SYSTEM_PROMPT
+
+        assert "sponsorship" in _SYSTEM_PROMPT.lower()
+        # Find the sponsorship passage and confirm the never-originate framing
+        # sits in the same neighbourhood (not scattered/unrelated elsewhere).
+        idx = _SYSTEM_PROMPT.lower().index("subsector sponsorship")
+        window = _SYSTEM_PROMPT[idx: idx + 700]
+        assert "never originate a buy" in window
+        assert "de-escalate" in window.lower() or "explain" in window.lower()
+        # Article-1 word must never appear as "validated" for this feature.
+        assert "validated" not in window.lower()
+
+    def test_no_validated_word_near_sponsorship_anywhere_in_prompt(self):
+        """House law: 'validated' is CI-gated; the sponsorship guidance text
+        must never use it."""
+        from engine.neuralweb.cortex import _SYSTEM_PROMPT
+
+        assert "validated" not in _SYSTEM_PROMPT.lower()

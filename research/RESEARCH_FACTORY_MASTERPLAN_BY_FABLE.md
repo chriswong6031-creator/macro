@@ -12,6 +12,7 @@
 
 - 2026-07-06 — W0 charter ratified (this doc). Census verified the study's inventory; four blocker-class corrections adjudicated into rulings RF-1..RF-16 below. Wave plan W1–W7 approved for build.
 - 2026-07-06 — A1 amendment (W1 review): RF-5 re-arm gate scoped to respin registration; clock resurfacing ruled mechanical. Helper-invariant sentence in §4 aligned with the ledger.py split.
+- 2026-07-06 — A2 amendment (W7): `domain_registry` source + `--adopt-oracle` ingest mode for RF-2 pointer adoption of existing domain-homed compounds (adoption ≠ duplication; dedup rule 1 waived only for the explicitly declared spec_ref).
 
 ---
 
@@ -100,7 +101,7 @@ The transition helper (`engine/research_factory/state.py`) enforces: allowed-pai
   "authority": "display_only",
   "candidate_id": "rf-20260706-oracle-washout_flow-001",
   "created_at": "2026-07-06T00:00:00Z",
-  "source": "oracle_brainstorm|cortex|alpha_grammar|human|external_report|research_queue",
+  "source": "oracle_brainstorm|cortex|alpha_grammar|human|external_report|research_queue|domain_registry",
   "candidate_type": "oracle_compound|cortex_hypothesis|alpha_family|species|external_idea",
   "domain": "oracle|neuralweb|entry|factor|macro|options|china|us_stocks",
   "status": "proposed",

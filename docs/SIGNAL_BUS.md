@@ -14,12 +14,12 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | china-alpha | 7 |
 | cycle-intelligence | 4 |
 | engine-fix | 16 |
-| entry-stack-expansion | 2 |
+| entry-stack-expansion | 3 |
 | factor-intelligence | 5 |
 | hk-canada | 2 |
 | institutional-sector-intelligence | 2 |
 | intl-fix | 1 |
-| long-hold | 15 |
+| long-hold | 16 |
 | neural-web | 28 |
 | nw-mastermind-bridge | 2 |
 | nw-rails | 3 |
@@ -37,16 +37,16 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 88 |
+| display | 89 |
 | infrastructure | 40 |
 | scored | 4 |
-| shadow | 37 |
+| shadow | 38 |
 
 ### Artifacts by storage
 
 | storage | count |
 |---|---|
-| git | 163 |
+| git | 165 |
 | gitignored-local | 4 |
 | r2 | 2 |
 
@@ -109,6 +109,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
 | bottom-sensors-json | `site/neuralwebdata/bottom_sensors.json` | json | daily-engine | display | 1 | 1 |
+| subsector-sponsorship-spine | `data/spine/subsector_sponsorship.parquet` | parquet | daily-engine | shadow | 2 | 0 |
 | bottom-sensors-parquet | `data/neuralweb/bottom_sensors.parquet` | parquet | daily-engine | display | 1 | 0 |
 
 ### factor-intelligence
@@ -146,6 +147,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
 | capital-allocation-delta | `embedded: capital_allocation block inside site/stockdata/<TICKER>.json` | json | daily-engine | display | 1 | 0 |
+| expect-drift-ruler-p-results | `data/research/expect_drift_ruler_p_results.parquet` | parquet | on-demand | display | 1 | 0 |
 | great-company-trap | `embedded: great_company_trap fields inside site/stockdata/<TICKER>.json` | json | daily-engine | display | 1 | 0 |
 | insider-lh-panel | `data/research/insider_lh_panel.parquet` | parquet | on-demand | display | 1 | 0 |
 | insider-lh-panel-manifest | `data/research/insider_lh_panel_manifest.json` | json | on-demand | display | 1 | 0 |
@@ -817,6 +819,13 @@ Artifacts below have `known_extra_writers` — additional code paths that write 
 - **declared producer:** `engine/subsector_track_record.py`
 - **extra writers:**
   - scripts/build_subsector_rotation.py — CLI runner; calls compute() then appends snapshot
+
+### subsector-sponsorship-spine
+
+- **path:** `data/spine/subsector_sponsorship.parquet`
+- **declared producer:** `engine/spine.py`
+- **extra writers:**
+  - scripts/build_subsector_sponsorship.py — CLI runner; calls write_subsector_sponsorship()
 
 ### trial-ledger
 

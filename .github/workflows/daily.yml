@@ -963,6 +963,20 @@ jobs:
         # Resilient: fail-open; kept last committed context on error; never blocks the commit.
         # Both outputs covered by 'git add data/ site/' in 'commit engine outputs' below.
         run: python -m scripts.build_nw_mastermind_context || echo "::warning::build_nw_mastermind_context failed (non-fatal) — keeping last committed mastermind_context"
+      - name: research_factory_monitor (W6 — paper monitor + nightly ledger)
+        if: always()
+        # Research Factory W6 (RF-8/RF-9/RF-10): paper monitor over all 'paper',
+        # 'awaiting_data', and 'deferred' candidates.  Appends to
+        # data/research_factory/paper_monitor.jsonl (keep-first per candidate_id+as_of),
+        # refreshes data/research_factory/track/<id>.json for the experiments-registry
+        # overlay, and appends a health.v1 row to data/research_factory/health.jsonl.
+        # Emits mechanical paper→human_review and deferred→human_review transitions
+        # (RF-5 A2 attention-routing) to data/research_factory/transitions.jsonl.
+        # Forward-ledger law (RF-8): --write is nightly-only; intraday invocations
+        # must use --dry-run.  All data/research_factory/ writes are covered by
+        # 'git add data/' in 'commit engine outputs' below.
+        # Non-fatal: a failed monitor never kills the nightly build.
+        run: python -m scripts.research_factory_monitor --write || echo "::warning::research_factory_monitor failed (non-fatal)"
       - name: options_flow_attention reflex trigger (W-D — nightly EOD fold)
         if: always()
         # Neural Web W-D (RO-8): direction-free reflex that fires when an on-board
@@ -1333,6 +1347,27 @@ jobs:
           echo "$VENV/bin" >> "$GITHUB_PATH"
           "$VENV/bin/python" -m pip install --quiet --upgrade pip
       - run: pip install -r requirements.txt
+      # Factor Intelligence P2 — registration persistence fix. Operator hypothesis
+      # registrations MUST be written in the tree that commits machine_registry.jsonl
+      # (this job): the factor_ops.yml dispatch actions wrote to a different
+      # workflow's checkout and were wiped by the next fresh checkout (git clean)
+      # before any commit step could see them — same cross-job visibility class as
+      # the factor_attention firings hole (PR #1583). The W27 h1-h3 and W28 h4-h5
+      # dispatch registrations were both lost this way. Idempotent (skips
+      # already-registered hypothesis text); --defer-on-budget exits 0 when the
+      # metabolism weekly budget (3/ISO-week) can't absorb a batch, so the step
+      # retries nightly until a week with budget. Runs BEFORE cortex deliberation
+      # so operator batches claim budget ahead of cortex-proposed hypotheses.
+      - name: register factor hypotheses (P2 — idempotent, budget-deferred)
+        run: |
+          set +e
+          python -m scripts.register_factor_hypotheses --only h1,h2,h3 --defer-on-budget > /tmp/factor_hyp_reg.log 2>&1; rc1=$?
+          python -m scripts.register_factor_hypotheses --only h4,h5 --defer-on-budget >> /tmp/factor_hyp_reg.log 2>&1; rc2=$?
+          cat /tmp/factor_hyp_reg.log
+          if [ "$rc1" -ne 0 ] || [ "$rc2" -ne 0 ]; then
+            echo "::warning title=register_factor_hypotheses::rc=($rc1,$rc2) (non-fatal)"
+          fi
+          exit 0
       - name: cortex deliberation (Opus-class tool loop — attention queue, memo, hypothesis metabolism)
         run: |
           set +e
@@ -1374,6 +1409,10 @@ jobs:
           git add data/neuralweb/cortex/ 2>/dev/null || true
           git add data/neuralweb/machine_registry.jsonl 2>/dev/null || true
           git add data/neuralweb/governance.jsonl 2>/dev/null || true
+          # trial_ledger: metabolism declares 1 budget row per accepted registration
+          # (log_declared_budget family='cortex'); unstaged it dies with this checkout
+          # and the DSR haircut undercounts.
+          git add data/trial_ledger.jsonl 2>/dev/null || true
           git add site/neuralweb/ 2>/dev/null || true
           if git diff --cached --quiet; then echo "no cortex output changes"; exit 0; fi
           git commit -m "cortex: attention grades + A2 earn-in + hypothesis metabolism $(date -u +%F)"

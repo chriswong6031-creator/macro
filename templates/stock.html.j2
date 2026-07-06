@@ -241,6 +241,13 @@
   .gchip .gk { color:var(--muted); display:block; font-size:10px; text-transform:uppercase; letter-spacing:.05em; }
   .gchip .gv { font-weight:700; font-size:14px; }
   .gchip.dashed { border-style:dashed; opacity:.7; }
+  /* ---- Neural Web sponsorship chip (SRSS Phase 4, shadow tier) ---- */
+  .spo-chip { display:inline-flex; align-items:center; gap:5px; padding:5px 11px; border-radius:9px;
+              background:var(--panel2); border:1px dashed var(--line); font-size:12px; line-height:1.35;
+              max-width:100%; cursor:help; }
+  .spo-chip.spo-tailwind, .spo-chip.spo-early_repair { border-color:color-mix(in srgb,var(--up) 40%,var(--line)); }
+  .spo-chip.spo-headwind, .spo-chip.spo-rollover { border-color:color-mix(in srgb,var(--down) 40%,var(--line)); }
+  .spo-chip.spo-confirmed_leadership { border-color:color-mix(in srgb,var(--link) 40%,var(--line)); }
   /* ---- unified Conviction Profile hero ---- */
   .conv { margin:8px 0 4px; padding:11px 13px; border-radius:11px; background:var(--panel2);
           border:1px solid var(--line); }
@@ -625,6 +632,12 @@
       <p id="r_profile_desc" style="margin:0 0 8px"></p>
       <div id="r_profile_chips" class="chips"></div>
       <p id="r_profile_src" class="srcline"></p>
+      <!-- Neural Web sponsorship chip (SRSS Phase 4, shadow tier) — subsector rotation
+           context for THIS name, only shown when today's ledger has a live match.
+           Display-only, never scored; see subsector_rotation.html for the full desk. -->
+      <div id="r_sponsorship_wrap" style="display:none;margin-top:8px">
+        <div id="r_sponsorship" class="chips"></div>
+      </div>
     </div>
 
     <div class="panel" id="panel_demand" style="display:none">
@@ -1184,6 +1197,39 @@
     return '<div class="fc-grid">' + revBox + epsBox + '</div>';
   }
 
+  // Neural Web sponsorship chip (SRSS Phase 4, shadow tier) — cross-references THIS
+  // ticker against today's subsector-rotation state. d.sponsorship is absent/null
+  // whenever the ticker has no live match (no chip shown; never a fabricated read).
+  // Display-only, never scored: see engine.subsector_sponsorship / engine.spine
+  // (adapt_subsector_sponsorship) for the join this reads from.
+  var SPO_STATE_WORD = {
+    TAILWIND:            ['Group tailwind', '板块顺风'],
+    EARLY_REPAIR:        ['Group repair', '板块修复'],
+    CONFIRMED_LEADERSHIP:['Confirmed group leadership', '确认板块领先'],
+    HEADWIND:            ['Group headwind', '板块逆风'],
+    ROLLOVER:            ['Group rolling over', '板块转向下行'],
+    NEUTRAL:             ['Group neutral', '板块中性']
+  };
+  function fmtSigned(n, nd) {
+    return n == null ? '—' : (n > 0 ? '+' : '') + n.toFixed(nd == null ? 2 : nd);
+  }
+  function renderSponsorship(sp) {
+    var wrap = el('r_sponsorship_wrap'), box = el('r_sponsorship');
+    if (!wrap || !box) return;
+    if (!sp || !sp.sponsorship_state) { wrap.style.display = 'none'; box.innerHTML = ''; return; }
+    var plainText = lz(sp.plain_en, sp.plain_zh) || lz.apply(null, SPO_STATE_WORD[sp.sponsorship_state] || SPO_STATE_WORD.NEUTRAL);
+    var tipEn = (sp.plain_en || '') + ' · rs mom ' + fmtSigned(sp.rs_mom) + ' · accel ' + fmtSigned(sp.accel) +
+      ' · score ' + fmtSigned(sp.sponsorship_score) + ' · ' + (sp.n_members != null ? sp.n_members : '—') +
+      ' members · as of ' + (sp.rotation_asof || '—') + ' · supporting evidence only, not validated';
+    var tipZh = (sp.plain_zh || '') + ' · 相对强度动量 ' + fmtSigned(sp.rs_mom) + ' · 加速度 ' + fmtSigned(sp.accel) +
+      ' · 评分 ' + fmtSigned(sp.sponsorship_score) + ' · 成分股 ' + (sp.n_members != null ? sp.n_members : '—') +
+      ' · 截至 ' + (sp.rotation_asof || '—') + ' · 仅作辅助参考，尚未验证';
+    var cls = 'spo-' + String(sp.sponsorship_state).toLowerCase();
+    box.innerHTML = '<span class="spo-chip ' + cls + '" data-tip-en="' + esc(tipEn) + '" data-tip-zh="' + esc(tipZh) + '">' +
+      '🕸️ ' + esc(plainText) + '</span>';
+    wrap.style.display = '';
+  }
+
   function renderFundamentals(d) {
     var prof = d.profile, val = d.valuation, fin = d.financials, fac = d.factors, pos = d.positioning, an = d.analyst;
     var isEquity = !!(prof || val || fin || fac);
@@ -1230,8 +1276,12 @@
       if (prof.sic_description) pc.push('<span class="chip">' + esc(prof.sic_description) + '</span>');
       if (prof.exchange) pc.push('<span class="chip">' + esc(prof.exchange) + '</span>');
       el('r_profile_chips').innerHTML = pc.join('');
-      show('panel_profile', true);
-    } else show('panel_profile', false);
+    } else {
+      el('r_profile_desc').textContent = '';
+      el('r_profile_chips').innerHTML = '';
+    }
+    renderSponsorship(d.sponsorship);
+    show('panel_profile', !!(prof || d.sponsorship));
 
     if (val) {
       el('r_valbars').innerHTML = VROWS.map(function (r) { return valbar(lz(r.en, r.zh), val[r.k], r.kind); }).join('');

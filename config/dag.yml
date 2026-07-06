@@ -233,6 +233,9 @@ lanes:
       - id: build_nw_mastermind_context
         module: scripts.build_nw_mastermind_context
         note: non-fatal; NW→Mastermind context bridge (macro #1567) — declares the live daily.yml engine step that was added without a dag.yml entry (merge-race drift)
+      - id: research_factory_monitor
+        module: scripts.research_factory_monitor
+        note: non-fatal; Research Factory W6 — paper monitor, regime-aware decay, nightly forward-ledger wiring (RF-8/RF-9/RF-10); data/research_factory/ writes covered by 'git add data/' in commit step
       - id: build_options_flow_attention
         module: scripts.build_options_flow_attention
         note: non-fatal reflex; neural-web W-D — direction-free options-flow attention trigger (nightly EOD fold)
@@ -310,6 +313,23 @@ lanes:
   - workflow: .github/workflows/daily.yml
     job: cortex
     steps:
+      - id: register_factor_hypotheses
+        module: scripts.register_factor_hypotheses
+        note: >
+          Factor Intelligence P2 — registers operator hypotheses H1-H5 in the
+          machine registry IN THE CORTEX JOB's tree (persistence fix: the
+          factor_ops.yml dispatch actions wrote to another workflow's checkout
+          and were wiped by the next fresh checkout before any commit step
+          could see them; the W27 h1-h3 and W28 h4-h5 dispatch registrations
+          were both lost this way). Idempotent by hypothesis text; batch-atomic
+          weekly-budget pre-flight (3/ISO-week shared with cortex) with
+          --defer-on-budget nightly retry. Runs BEFORE cortex_deliberation so
+          operator batches claim budget ahead of cortex-proposed hypotheses.
+          Non-fatal (always exits 0 in the workflow step).
+          inputs: [data/neuralweb/machine_registry.jsonl]
+          outputs: [data/neuralweb/machine_registry.jsonl,
+                    data/neuralweb/governance.jsonl,
+                    data/trial_ledger.jsonl]
       - id: cortex_deliberation
         module: engine.neuralweb.cortex
         note: >
