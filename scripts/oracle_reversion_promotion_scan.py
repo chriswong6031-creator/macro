@@ -230,18 +230,24 @@ def _load_sidecar_base_rate(site_dir: Path, compound_id: str) -> float | None:
 # Lapse detection helpers
 # ---------------------------------------------------------------------------
 
-def _sessions_since_last_fire(last_fire_date_str: str | None) -> int | None:
+def _sessions_since_last_fire(
+    last_fire_date_str: str | None,
+    now: datetime | None = None,
+) -> int | None:
     """Return approximate trading-session count since last_fire_date.
 
     Uses calendar days × 5/7 as a session approximation (no panel needed).
     Returns None if last_fire_date is unavailable.
+
+    ``now`` is accepted so selftest fixtures with synthetic dates work correctly
+    (without it the real clock would always dominate and override fixture dates).
     """
     if not last_fire_date_str:
         return None
     try:
         last_fire = datetime.fromisoformat(last_fire_date_str[:10])
-        now = datetime.now(timezone.utc).replace(tzinfo=None)
-        calendar_days = (now - last_fire).days
+        ref = (now or datetime.now(timezone.utc)).replace(tzinfo=None)
+        calendar_days = (ref - last_fire).days
         # Conservative: 5/7 * calendar_days ≈ trading sessions
         sessions = int(calendar_days * 5 / 7)
         return max(0, sessions)
@@ -354,6 +360,18 @@ def _scan_compound(
     reversion = compound.get("reversion", {})
     operating_regime = reversion.get("operating_regime", "dual")
 
+    # Guard: single-regime path requires an explicit operating_regime stamp.
+    # A compound whose path indicates single-regime (Amendment 1) but lacks
+    # operating_regime would silently default to 'dual' and accrue/grade across
+    # both regimes, breaking the regime-gated clock (PREREG §n/single-regime).
+    path = reversion.get("path", "")
+    if "single-regime" in path.lower() and operating_regime not in ("risk_off", "risk_on"):
+        raise ValueError(
+            f"[{cid}] single-regime path requires operating_regime='risk_off'|'risk_on' "
+            f"in the reversion block, got {operating_regime!r}. "
+            f"Fix the registry entry or remove the single-regime path label."
+        )
+
     rows = _load_ledger(data_dir, cid)
     matured = _matured_rows(rows, operating_regime)
     stats = _compute_live_stats(matured)
@@ -403,7 +421,7 @@ def _scan_compound(
     current_level = current_auth.get("authority_level")
     if current_level in ("confirmer", "scored"):
         # Check silence: no fire in 90 sessions
-        sessions_silent = _sessions_since_last_fire(last_fire_date)
+        sessions_silent = _sessions_since_last_fire(last_fire_date, now=now)
         if sessions_silent is not None and sessions_silent >= _LAPSE_NO_FIRE_SESSIONS:
             lapse_reason = (
                 f"silence: {sessions_silent} sessions without a fire "
@@ -541,6 +559,18 @@ def run_promotion_scan(
     existing_authorities = _load_authority(data_dir)
     kill_requeue = _load_kill_requeue(data_dir)
 
+    # Load the PRIOR queue to dedup governance events — emit only on NEW proposals
+    # (a candidate awaiting human adjudication may sit for weeks; without dedup
+    # the ledger accrues one duplicate proposed-transition event per night).
+    prior_queue = _load_queue(data_dir)
+    _prior_candidate_ids: set[str] = {
+        r.get("compound_id") for r in prior_queue.get("candidates", [])
+        if r.get("ratified_by") is None  # unratified pending rows only
+    }
+    _prior_lapse_ids: set[str] = {
+        r.get("compound_id") for r in prior_queue.get("lapses", [])
+    }
+
     candidates: list[dict] = []
     lapses: list[dict] = []
     accruing: list[dict] = []
@@ -583,8 +613,9 @@ def run_promotion_scan(
             lapses.append(lapse_row)
             log.info("  [%s] LAPSE PROPOSED — %s", cid, lapse_reason)
 
-            # Emit governance event for the lapse proposal
-            if not dry_run:
+            # Emit governance event ONLY for NEW lapse proposals (dedup: skip if
+            # this compound already has a pending lapse row in the prior queue).
+            if not dry_run and cid not in _prior_lapse_ids:
                 append_event(
                     "authority_lapse",
                     target=f"oracle_reversion:{cid}",
@@ -639,8 +670,10 @@ def run_promotion_scan(
                 cid, gate.lift_lb or 0, live_stats["n"], target_level,
             )
 
-            # Emit governance event for the proposed promotion
-            if not dry_run:
+            # Emit governance event ONLY for NEW promotion proposals (dedup: skip
+            # if this compound already has an unratified candidate row in the prior
+            # queue — it is still awaiting adjudication, not a new state change).
+            if not dry_run and cid not in _prior_candidate_ids:
                 append_event(
                     "tier_promotion",
                     target=f"oracle_reversion:{cid}",
@@ -680,6 +713,8 @@ def run_promotion_scan(
     newly_ratified: list[dict] = []
     updated_authorities = dict(existing_authorities)
 
+    registry_by_id = {c.get("id"): c for c in compounds}
+
     for queued in existing_queue.get("candidates", []):
         ratified_by = queued.get("ratified_by")
         if not ratified_by:
@@ -691,14 +726,61 @@ def run_promotion_scan(
 
         proposed = queued.get("proposed_authority", "confirmer")
         # Only apply if this compound is still valid in the registry
-        registry_ids = {c.get("id") for c in compounds}
-        if qcid not in registry_ids:
+        if qcid not in registry_by_id:
             log.warning("ratified queue row for %s: not in registry, skipping", qcid)
             continue
 
         current_in_auth = updated_authorities.get(qcid, {}).get("authority_level")
         if current_in_auth == proposed:
             continue  # already applied
+
+        # --- LIVE RE-VALIDATION (Fix: never trust stale/forged gate_result) ---
+        # Re-run grant_authority on CURRENT live evidence before applying any
+        # ratification.  A stale/decayed/mistaken queue row must not push a signal
+        # that no longer clears the floor onto the money path (constitution §3).
+        from engine.neuralweb.constitution import grant_authority as _grant
+        _comp = registry_by_id[qcid]
+        _rev = _comp.get("reversion", {})
+        _op_regime = _rev.get("operating_regime", "dual")
+        _rows = _load_ledger(data_dir, qcid)
+        _matured = _matured_rows(_rows, _op_regime)
+        _live_stats = _compute_live_stats(_matured)
+        _base = _load_sidecar_base_rate(site_dir, qcid) or 0.0
+        _live_evidence = {
+            "hits": _live_stats["hits"],
+            "n": _live_stats["n"],
+            "base_rate": float(_base),
+            "evidence_asof": _live_stats["last_fire_date"],
+        }
+        _live_gate = _grant(
+            _live_evidence,
+            floors={"min_n": _L3_MIN_N, "min_events": _L3_MIN_HITS},
+            now=now,
+            max_staleness_days=_MAX_STALENESS_DAYS,
+        )
+        if not _live_gate.granted:
+            log.warning(
+                "RATIFICATION SKIPPED: %s → %s — live gate REFUSES at apply time "
+                "(live n=%d hits=%d lift_lb=%s reason=%s). "
+                "Stale/decayed ratification; human must re-queue after evidence matures.",
+                qcid, proposed, _live_stats["n"], _live_stats["hits"],
+                _live_gate.lift_lb, _live_gate.reason,
+            )
+            continue
+
+        # If the ratified row proposes 'scored' but live gate does not yet support
+        # the L4 thresholds, cap at 'confirmer' (never exceed what the live gate allows).
+        _live_asym = _live_stats.get("asym") or 0.0
+        _live_n = _live_stats["n"]
+        if proposed == "scored" and not (
+            _live_n >= _L4_MIN_N and (_live_asym is not None and _live_asym >= _L4_MIN_ASYM)
+        ):
+            log.warning(
+                "RATIFICATION CAPPED: %s scored→confirmer — live L4 thresholds not met "
+                "(live n=%d asym=%s, need n>=%d asym>=%s). Applying confirmer.",
+                qcid, _live_n, _live_asym, _L4_MIN_N, _L4_MIN_ASYM,
+            )
+            proposed = "confirmer"
 
         log.info(
             "RATIFICATION APPLIED: %s → %s (ratified_by=%s)",
@@ -709,21 +791,35 @@ def run_promotion_scan(
             "ratified_by": ratified_by,
             "ratified_at": queued.get("proposed_at"),
             "applied_at": now.isoformat(timespec="seconds"),
-            "evidence": queued.get("gate_result"),
+            "live_gate_at_apply": {
+                "granted": _live_gate.granted,
+                "lift_lb": _live_gate.lift_lb,
+                "wilson_lb": _live_gate.wilson_lb,
+                "n": _live_stats["n"],
+                "hits": _live_stats["hits"],
+                "base_rate": float(_base),
+            },
         }
         newly_ratified.append({"compound_id": qcid, "authority_level": proposed})
 
-        # Emit a governance event for the applied ratification
+        # Emit a governance event for the applied ratification (use live gate
+        # evidence, not the stale queue row's gate_result blob)
         if not dry_run:
             append_event(
                 "tier_promotion",
                 target=f"oracle_reversion:{qcid}",
                 article=3,
                 authored_by="oracle_reversion_promotion_scan",
-                evidence=queued.get("gate_result"),
+                evidence={
+                    "n": _live_stats["n"],
+                    "hits": _live_stats["hits"],
+                    "lift_lb": _live_gate.lift_lb,
+                    "wilson_lb": _live_gate.wilson_lb,
+                    "base_rate": float(_base),
+                },
                 before={"authority_level": current_in_auth or "display"},
                 after={"authority_level": proposed},
-                note=f"ratification applied: ratified_by={ratified_by}",
+                note=f"ratification applied: ratified_by={ratified_by} (live-gate re-validated at apply)",
                 root=governance_root,
             )
 
@@ -1011,22 +1107,11 @@ def _run_selftest() -> int:
         print(f"    PASS — refused: {result_refuse.reason}")
 
     # ------------------------------------------------------------------
-    # LAPSE PATH: n=30, lift_lb <= 1.25, current_authority=confirmer
+    # LAPSE PATH (A): SILENCE branch — no fire in >=90 sessions
+    # fire_date='2024-06-01', now='2025-07-01' → ~284 cal days → ~203 sessions
     # ------------------------------------------------------------------
     print()
-    print("  [3] LAPSE PATH (lift_lb<=1.25 with existing confirmer authority):")
-    n_lapse, hits_lapse, base_lapse = 30, 18, 0.75  # low hit rate → lift_lb<=1.25
-    wl_lapse = wilson_lower(hits_lapse, n_lapse, z=_L3_Z)
-    lift_lapse = wl_lapse / base_lapse
-    print(f"       lift_lb={lift_lapse:.4f} (should be <= {_LAPSE_LIFT_LB_FLOOR})")
-
-    if lift_lapse > _LAPSE_LIFT_LB_FLOOR:
-        # Adjust to ensure lapse
-        hits_lapse = 15
-        wl_lapse = wilson_lower(hits_lapse, n_lapse, z=_L3_Z)
-        lift_lapse = wl_lapse / base_lapse
-        print(f"       adjusted: lift_lb={lift_lapse:.4f}")
-
+    print("  [3a] LAPSE PATH — SILENCE branch (fire_date 2024-06-01, now 2025-07-01):")
     with tempfile.TemporaryDirectory() as tmpdir:
         td = Path(tmpdir)
         reg_dir = td / "data" / "oracle" / "compounds"
@@ -1034,11 +1119,13 @@ def _run_selftest() -> int:
         fwd_dir = td / "data" / "oracle" / "reversion_forward"
         fwd_dir.mkdir(parents=True)
 
-        compound_id = "SYNTH_LAPSE"
+        compound_id = "SYNTH_LAPSE_SILENCE"
         reg_dir.joinpath("registry.jsonl").write_text(
             json.dumps(_make_synthetic_registry(compound_id)[0]) + "\n"
         )
-        rows = _make_matured_rows(compound_id, n=30, hits=hits_lapse)
+        # Use hits=25, base=0.55 → lift_lb > 1.25 so the ci-decay branch does NOT
+        # fire; only silence triggers the lapse proposal.
+        rows = _make_matured_rows(compound_id, n=30, hits=25, first_fire="2024-06-01")
         fwd_dir.joinpath(f"{compound_id}.jsonl").write_text(
             "\n".join(json.dumps(r) for r in rows) + "\n"
         )
@@ -1060,23 +1147,111 @@ def _run_selftest() -> int:
             json.dumps(auth_payload)
         )
 
-        site_dir = td / "site"
-        sidecar_dir = site_dir / "basketdata"
+        site_dir_lapse = td / "site"
+        sidecar_dir = site_dir_lapse / "basketdata"
         sidecar_dir.mkdir(parents=True)
         sidecar_dir.joinpath("oracle_reversion_state.json").write_text(
-            json.dumps({"signals": [{"id": compound_id, "live": {"base_rate": 0.75}}]})
+            json.dumps({"signals": [{"id": compound_id, "live": {"base_rate": 0.55}}]})
         )
 
-        result = run_promotion_scan(
-            td / "data", site_dir, dry_run=True,
+        result_silence = run_promotion_scan(
+            td / "data", site_dir_lapse, dry_run=True,
             now=datetime(2025, 7, 1, tzinfo=timezone.utc),
             governance_root=td,
         )
-        if result["n_lapses"] != 1:
-            failures.append(f"LAPSE PATH: expected 1 lapse, got {result['n_lapses']}")
-            print(f"    FAIL — expected 1 lapse, got {result['n_lapses']}")
+        if result_silence["n_lapses"] != 1:
+            failures.append(
+                f"LAPSE PATH (silence): expected 1 lapse, got {result_silence['n_lapses']}"
+            )
+            print(f"    FAIL — expected 1 lapse (silence), got {result_silence['n_lapses']}")
         else:
-            print(f"    PASS — 1 lapse proposed (n_lapses={result['n_lapses']})")
+            print(
+                f"    PASS — 1 lapse proposed via SILENCE "
+                f"(n_lapses={result_silence['n_lapses']})"
+            )
+
+    # ------------------------------------------------------------------
+    # LAPSE PATH (B): CI-DECAY branch — fire_date recent, lift_lb <= 1.25
+    # fire_date='2025-06-15', now='2025-07-01' → ~11 days → ~8 sessions (silence
+    # does NOT fire at <90); low hit rate → lift_lb<=1.25 triggers ci-decay lapse.
+    # ------------------------------------------------------------------
+    print()
+    print("  [3b] LAPSE PATH — CI-DECAY branch (recent fires, lift_lb<=1.25):")
+    n_cidecay, base_cidecay = 30, 0.75
+    # Choose hits to guarantee lift_lb <= 1.25
+    hits_cidecay = 16  # wilson_lower(16,30,z=1.645)/0.75 ≈ 0.81 → lift_lb ≈ 0.81/0.75=1.08
+    wl_cidecay = wilson_lower(hits_cidecay, n_cidecay, z=_L3_Z)
+    lift_cidecay = wl_cidecay / base_cidecay
+    print(f"       lift_lb={lift_cidecay:.4f} (should be <= {_LAPSE_LIFT_LB_FLOOR})")
+    if lift_cidecay > _LAPSE_LIFT_LB_FLOOR:
+        failures.append(
+            f"CI-DECAY LAPSE setup: computed lift_lb={lift_cidecay:.4f} is NOT <= "
+            f"{_LAPSE_LIFT_LB_FLOOR}; fixture needs adjustment"
+        )
+        print(f"    SETUP FAIL — lift_lb={lift_cidecay:.4f} > threshold")
+    else:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            td = Path(tmpdir)
+            reg_dir = td / "data" / "oracle" / "compounds"
+            reg_dir.mkdir(parents=True)
+            fwd_dir = td / "data" / "oracle" / "reversion_forward"
+            fwd_dir.mkdir(parents=True)
+
+            compound_id = "SYNTH_LAPSE_CIDECAY"
+            reg_dir.joinpath("registry.jsonl").write_text(
+                json.dumps(_make_synthetic_registry(compound_id)[0]) + "\n"
+            )
+            # Recent fire_date → silence does NOT trigger (< 90 sessions)
+            rows = _make_matured_rows(
+                compound_id, n=n_cidecay, hits=hits_cidecay, first_fire="2025-06-15"
+            )
+            fwd_dir.joinpath(f"{compound_id}.jsonl").write_text(
+                "\n".join(json.dumps(r) for r in rows) + "\n"
+            )
+
+            # Pre-seed authority file with confirmer tier
+            auth_dir = td / "data" / "oracle"
+            auth_payload = {
+                "schema": "reversion_authority.v1",
+                "updated_at": "2025-01-01T00:00:00",
+                "authorities": {
+                    compound_id: {
+                        "authority_level": "confirmer",
+                        "ratified_by": "test_human",
+                        "ratified_at": "2025-01-01T00:00:00",
+                    }
+                },
+            }
+            auth_dir.joinpath("reversion_authority.json").write_text(
+                json.dumps(auth_payload)
+            )
+
+            site_dir_cd = td / "site"
+            sidecar_dir = site_dir_cd / "basketdata"
+            sidecar_dir.mkdir(parents=True)
+            sidecar_dir.joinpath("oracle_reversion_state.json").write_text(
+                json.dumps(
+                    {"signals": [{"id": compound_id, "live": {"base_rate": base_cidecay}}]}
+                )
+            )
+
+            result_cidecay = run_promotion_scan(
+                td / "data", site_dir_cd, dry_run=True,
+                now=datetime(2025, 7, 1, tzinfo=timezone.utc),
+                governance_root=td,
+            )
+            if result_cidecay["n_lapses"] != 1:
+                failures.append(
+                    f"LAPSE PATH (ci-decay): expected 1 lapse, got {result_cidecay['n_lapses']}"
+                )
+                print(
+                    f"    FAIL — expected 1 lapse (ci-decay), got {result_cidecay['n_lapses']}"
+                )
+            else:
+                print(
+                    f"    PASS — 1 lapse proposed via CI-DECAY "
+                    f"(n_lapses={result_cidecay['n_lapses']})"
+                )
 
     # ------------------------------------------------------------------
     # NEVER-AUTO-PROMOTE: grant path + no ratified_by → authority unchanged

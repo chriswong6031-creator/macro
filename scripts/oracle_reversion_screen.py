@@ -529,10 +529,18 @@ def _is_underpowered_accruing(
     if n <= 0:
         return False
 
-    # All point estimates must be in the passing direction
-    wr_passing = (wr is not None and not np.isnan(wr) and wr > 0)
-    ret_passing = (mean_ret is not None and not np.isnan(mean_ret) and mean_ret > 0)
-    asym_passing = (asym_v is None or np.isnan(asym_v) or asym_v > 0)
+    # All point estimates must be in the passing direction (trending toward the
+    # FROZEN gate thresholds — consistent with eventually clearing the gate, not
+    # merely non-negative).  PREREG gate bars: WR>=0.62, asym>=1.5, ret>=+1.0%.
+    # Comparing against gate thresholds prevents genuinely-mediocre signals
+    # (sub-threshold WR/asym) from being mislabelled UNDERPOWERED-ACCRUING.
+    _GATE_WR: float = 0.62    # FROZEN: ORACLE_REVERSION_GATE_PREREG.md Leg 2
+    _GATE_ASYM: float = 1.5   # FROZEN: ORACLE_REVERSION_GATE_PREREG.md Leg 3
+    _GATE_RET: float = 0.01   # FROZEN: ORACLE_REVERSION_GATE_PREREG.md Leg 4 (+1.0%)
+
+    wr_passing = (wr is not None and not np.isnan(wr) and wr >= _GATE_WR)
+    ret_passing = (mean_ret is not None and not np.isnan(mean_ret) and mean_ret >= _GATE_RET)
+    asym_passing = (asym_v is None or np.isnan(asym_v) or asym_v >= _GATE_ASYM)
 
     if not (wr_passing and ret_passing and asym_passing):
         return False
