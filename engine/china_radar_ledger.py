@@ -18,8 +18,8 @@ log = logging.getLogger(__name__)
 
 SCHEMA = "china_radar_ledger.v1"
 HORIZON_DAYS = 90
-_COLUMNS = ("event_id", "fired_date", "pair", "signal_key", "sector_etf", "sector_en",
-            "sector_zh", "sign", "rs_at_fire", "signal_value")
+_COLUMNS = ("event_id", "fired_date", "pair", "signal_key", "family",
+            "sector_etf", "sector_en", "sector_zh", "sign", "rs_at_fire", "signal_value")
 
 
 def _path() -> Path:
@@ -41,7 +41,10 @@ def accrue(scan: dict | None, asof: date | str | None = None) -> dict | None:
             recs.append({
                 "event_id": f"{d['pair']}|{month}", "fired_date": asof,
                 "pair": d["pair"], "signal_key": d["signal_key"],
-                "sector_etf": d["sector_etf"], "sector_en": d["sector_en"],
+                # family tag: "venue" for cross-venue pairs, None for legacy sector pairs
+                # (existing rows on disk carry None and are unaffected)
+                "family": d.get("family"),
+                "sector_etf": d.get("sector_etf"), "sector_en": d["sector_en"],
                 "sector_zh": d.get("sector_zh", d["sector_en"]),
                 "sign": d["sign"], "rs_at_fire": d.get("price_rs"),
                 "signal_value": d.get("signal_value"),
@@ -62,8 +65,14 @@ def accrue(scan: dict | None, asof: date | str | None = None) -> dict | None:
         return None
 
 
-def _fwd_rel(etf: str, fired: str, horizon: int = HORIZON_DAYS):
-    """Realized sector-vs-CSI300 relative return from `fired` to fired+horizon. None if young."""
+def _fwd_rel(etf: str | None, fired: str, horizon: int = HORIZON_DAYS):
+    """Realized sector-vs-CSI300 relative return from `fired` to fired+horizon. None if young.
+
+    Returns None for venue pairs (etf is None) — venue grading is a future extension
+    (each venue pair has a different outcome metric; deferred until n_resolved >= 3).
+    """
+    if not etf:
+        return None   # venue pairs: no ETF-vs-benchmark grading path yet
     try:
         from engine.china_radar import BENCH
         a = store.read("china", etf)
@@ -108,7 +117,9 @@ def track_record() -> dict | None:
                 hits += 1 if hit else 0
                 status = "hit" if hit else "miss"
             rows.append({"fired_date": r.fired_date, "pair": r.pair,
-                         "signal_key": r.signal_key, "sector_en": r.sector_en,
+                         "signal_key": r.signal_key,
+                         "family": getattr(r, "family", None),
+                         "sector_en": r.sector_en,
                          "sector_zh": (getattr(r, "sector_zh", None) or r.sector_en),
                          "sign": r.sign, "rs_at_fire": r.rs_at_fire,
                          "fwd_rel": fwd, "status": status})
