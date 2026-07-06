@@ -9,7 +9,11 @@ Covers:
   4. BD-3 event detection on hand-built series (mocked ETF data)
   5. Episode collapse
   6. Paired-grading plumbing
-  7. Control sampling determinism
+  7. Control sampling determinism + year-stratification (B3)
+  8. Module-level smoke test
+  9. Paired within-event contrast correctness (B1)
+  10. Clustered bootstrap CI plumbing determinism (B2)
+  11. fresh_breach_mask canonical helper (N1)
 """
 from __future__ import annotations
 
@@ -629,15 +633,21 @@ class TestPairedGrading:
 # ---------------------------------------------------------------------------
 
 class TestControlSampling:
+    """Tests for year-stratified control sampling (B3)."""
+
+    def _make_event_timestamps(self, close: pd.Series, indices: list[int]) -> list[pd.Timestamp]:
+        """Build event timestamp list from close series indices."""
+        return [close.index[i] for i in indices]
 
     def test_controls_are_deterministic_with_same_seed(self):
         """Sampling with the same RNG seed produces the same controls."""
         from scripts.research.dump_breakdown_events import _sample_controls, CONTROL_RNG_SEED
         close = _long_series(n=400, start_price=100.0)
+        ev_ts = self._make_event_timestamps(close, [260, 270, 280, 290, 300])
         rng1 = np.random.default_rng(CONTROL_RNG_SEED)
         rng2 = np.random.default_rng(CONTROL_RNG_SEED)
-        c1 = _sample_controls("TEST", close, None, 5, rng1)
-        c2 = _sample_controls("TEST", close, None, 5, rng2)
+        c1 = _sample_controls("TEST", close, None, ev_ts, rng1)
+        c2 = _sample_controls("TEST", close, None, ev_ts, rng2)
         dates1 = [r.get("event_date") for r in c1]
         dates2 = [r.get("event_date") for r in c2]
         assert dates1 == dates2
@@ -646,29 +656,32 @@ class TestControlSampling:
         """Different seeds produce different samples (with high probability)."""
         from scripts.research.dump_breakdown_events import _sample_controls, CONTROL_RNG_SEED
         close = _long_series(n=500, start_price=100.0)
+        ev_ts = self._make_event_timestamps(close, list(range(260, 270)))
         rng1 = np.random.default_rng(CONTROL_RNG_SEED)
         rng2 = np.random.default_rng(CONTROL_RNG_SEED + 1)
-        c1 = _sample_controls("TEST", close, None, 10, rng1)
-        c2 = _sample_controls("TEST", close, None, 10, rng2)
+        c1 = _sample_controls("TEST", close, None, ev_ts, rng1)
+        c2 = _sample_controls("TEST", close, None, ev_ts, rng2)
         dates1 = sorted([r.get("event_date") for r in c1])
         dates2 = sorted([r.get("event_date") for r in c2])
         assert dates1 != dates2  # different seeds → different samples
 
     def test_control_ratio_matches_spec(self):
-        """Controls are sampled at CONTROL_RATIO : 1 vs events."""
+        """Controls are sampled at CONTROL_RATIO : 1 vs events (when pool is large enough)."""
         from scripts.research.dump_breakdown_events import _sample_controls, CONTROL_RATIO
         close = _long_series(n=500, start_price=100.0)
         n_events = 4
+        ev_ts = self._make_event_timestamps(close, [260, 270, 280, 290])
         rng = np.random.default_rng(42)
-        controls = _sample_controls("TEST", close, None, n_events, rng)
+        controls = _sample_controls("TEST", close, None, ev_ts, rng)
         assert len(controls) == n_events * CONTROL_RATIO
 
     def test_controls_are_marked_as_control(self):
         """Control rows have is_control=True."""
         from scripts.research.dump_breakdown_events import _sample_controls
         close = _long_series(n=400, start_price=100.0)
+        ev_ts = self._make_event_timestamps(close, [260, 270, 280])
         rng = np.random.default_rng(0)
-        controls = _sample_controls("TEST", close, None, 3, rng)
+        controls = _sample_controls("TEST", close, None, ev_ts, rng)
         for r in controls:
             assert r.get("is_control") is True
 
@@ -676,8 +689,9 @@ class TestControlSampling:
         """All control bar dates are within the ERA window."""
         from scripts.research.dump_breakdown_events import _sample_controls, ERA_START
         close = _long_series(n=400, start_price=100.0)
+        ev_ts = self._make_event_timestamps(close, [260, 270, 280, 290, 300])
         rng = np.random.default_rng(7)
-        controls = _sample_controls("TEST", close, None, 5, rng)
+        controls = _sample_controls("TEST", close, None, ev_ts, rng)
         for r in controls:
             ev_date = pd.Timestamp(r.get("event_date", "2099-01-01"))
             assert ev_date >= ERA_START, f"Control date {ev_date} < ERA_START {ERA_START}"
@@ -690,9 +704,47 @@ class TestControlSampling:
             np.full(50, 100.0),
             index=pd.bdate_range("2021-01-04", periods=50)
         )
+        ev_ts = [close.index[10]]  # dummy event timestamp
         rng = np.random.default_rng(0)
-        controls = _sample_controls("TEST", close, None, 5, rng)
+        controls = _sample_controls("TEST", close, None, ev_ts, rng)
         assert controls == []
+
+    def test_controls_empty_when_no_event_timestamps(self):
+        """No controls when event_timestamps list is empty."""
+        from scripts.research.dump_breakdown_events import _sample_controls
+        close = _long_series(n=400, start_price=100.0)
+        rng = np.random.default_rng(0)
+        controls = _sample_controls("TEST", close, None, [], rng)
+        assert controls == []
+
+    def test_year_stratification_controls_within_same_year(self):
+        """Year-stratified: each event's controls come from the same calendar year."""
+        from scripts.research.dump_breakdown_events import _sample_controls, CONTROL_RATIO
+        # Build a 2-year series (2021 + 2022) with enough bars
+        close_2021 = _long_series(n=300, start_price=100.0, start="2021-07-06")
+        close_2022 = _long_series(n=260, start_price=100.0, start="2022-01-03")
+        close = pd.concat([close_2021, close_2022]).sort_index()
+        close = close[~close.index.duplicated()]
+
+        # Place one event clearly in 2022
+        ev_2022_idx = close.index.searchsorted(pd.Timestamp("2022-06-01"))
+        if ev_2022_idx >= len(close):
+            ev_2022_idx = len(close) - 50
+        ev_ts = [close.index[ev_2022_idx]]
+
+        rng = np.random.default_rng(99)
+        controls = _sample_controls("TESTYR", close, None, ev_ts, rng)
+
+        # Controls for a 2022 event must come from 2022 (or ±1 fallback)
+        for r in controls:
+            ctrl_year = pd.Timestamp(r.get("event_date", "2099-01-01")).year
+            assert ctrl_year in (2021, 2022, 2023), (
+                f"Control year {ctrl_year} not in expected range for 2022 event"
+            )
+            # Tighter: should ideally be 2022 when 2022 pool is non-empty
+            assert ctrl_year == 2022, (
+                f"Expected year-matched control in 2022, got {ctrl_year}"
+            )
 
 
 # ---------------------------------------------------------------------------
@@ -725,3 +777,304 @@ class TestModuleImports:
         assert hasattr(m, "detect_bd3")
         assert hasattr(m, "_collapse_episodes")
         assert hasattr(m, "_grade_event")
+
+    def test_new_summary_functions_present(self):
+        """B1/B2 helper functions exist in the module."""
+        import scripts.research.dump_breakdown_events as m
+        assert hasattr(m, "_paired_within_event_stats")
+        assert hasattr(m, "_vs_control_stats")
+        assert hasattr(m, "_clustered_bootstrap_ci95")
+
+    def test_fresh_breach_mask_importable_from_signal_quality(self):
+        """N1: fresh_breach_mask is importable from engine.signal_quality."""
+        from engine.signal_quality import fresh_breach_mask
+        assert callable(fresh_breach_mask)
+
+
+# ---------------------------------------------------------------------------
+# 9. Paired within-event contrast correctness (B1)
+# ---------------------------------------------------------------------------
+
+class TestPairedWithinEventContrast:
+
+    def _make_events_df(
+        self,
+        n_events: int = 20,
+        long_stopped_rate: float = 0.8,
+        short_favorable_rate: float = 0.6,
+        seed: int = 7,
+    ) -> pd.DataFrame:
+        """Build a synthetic events DataFrame with controlled terminal state rates.
+
+        long_stopped_rate: fraction of events where long_state_clean8_21 == STOPPED
+        short_favorable_rate: fraction of events where short_state_short21 == FAVORABLE_TRIGGERED
+        """
+        rng = np.random.default_rng(seed)
+        rows = []
+        tickers = ["AAA", "BBB", "CCC", "DDD"]
+        years = [2022, 2023, 2024]
+        for i in range(n_events):
+            ticker = tickers[i % len(tickers)]
+            year = years[i % len(years)]
+            event_date = f"{year}-06-{(i % 28) + 1:02d}"
+            try:
+                pd.Timestamp(event_date)
+            except Exception:
+                event_date = f"{year}-06-15"
+            long_stop = rng.random() < long_stopped_rate
+            short_fav  = rng.random() < short_favorable_rate
+            rows.append({
+                "ticker": ticker,
+                "definition": "BD-1",
+                "event_date": event_date,
+                "is_control": False,
+                "censored": False,
+                "long_state_clean8_21": (
+                    TerminalState.STOPPED if long_stop else TerminalState.CLEAN_LIFTOFF
+                ),
+                "long_state_clean15_126": (
+                    TerminalState.STOPPED if long_stop else TerminalState.CLEAN_LIFTOFF
+                ),
+                "short_state_short21": (
+                    TerminalStateShort.FAVORABLE_TRIGGERED if short_fav
+                    else TerminalStateShort.ADVERSE_TRIGGERED
+                ),
+                "short_state_short126": (
+                    TerminalStateShort.FAVORABLE_TRIGGERED if short_fav
+                    else TerminalStateShort.ADVERSE_TRIGGERED
+                ),
+            })
+        return pd.DataFrame(rows)
+
+    def test_paired_diff_sign_matches_rates(self):
+        """mean_paired_diff_pp is positive when short_favorable > long_stopped."""
+        from scripts.research.dump_breakdown_events import _paired_within_event_stats
+        ev = self._make_events_df(
+            n_events=100, long_stopped_rate=0.3, short_favorable_rate=0.7, seed=42
+        )
+        boot_rng = np.random.default_rng(0)
+        result = _paired_within_event_stats(ev, "clean8_21", "short21", boot_rng)
+        assert result is not None
+        # short_favorable 70% > long_stopped 30% → mean_paired_diff_pp > 0
+        assert result["mean_paired_diff_pp"] > 0, (
+            f"Expected positive diff (short fav dominates) but got {result['mean_paired_diff_pp']}"
+        )
+
+    def test_paired_diff_negative_when_long_stop_dominates(self):
+        """mean_paired_diff_pp is negative when long_stopped > short_favorable."""
+        from scripts.research.dump_breakdown_events import _paired_within_event_stats
+        ev = self._make_events_df(
+            n_events=100, long_stopped_rate=0.8, short_favorable_rate=0.2, seed=42
+        )
+        boot_rng = np.random.default_rng(0)
+        result = _paired_within_event_stats(ev, "clean8_21", "short21", boot_rng)
+        assert result is not None
+        # long_stopped 80% > short_favorable 20% → mean_paired_diff_pp < 0
+        assert result["mean_paired_diff_pp"] < 0, (
+            f"Expected negative diff (long stop dominates) but got {result['mean_paired_diff_pp']}"
+        )
+
+    def test_paired_diff_returns_correct_keys(self):
+        """Returned dict has all required keys from §6 deliverable."""
+        from scripts.research.dump_breakdown_events import _paired_within_event_stats
+        ev = self._make_events_df(n_events=50)
+        boot_rng = np.random.default_rng(0)
+        result = _paired_within_event_stats(ev, "clean8_21", "short21", boot_rng)
+        assert result is not None
+        required_keys = {
+            "mean_paired_diff_pp", "n_matured_both_sides",
+            "long_stopped_rate_pct", "short_favorable_rate_pct",
+            "ci95", "cluster_var", "boot_n_iter",
+        }
+        assert required_keys.issubset(set(result.keys())), (
+            f"Missing keys: {required_keys - set(result.keys())}"
+        )
+
+    def test_paired_diff_none_when_missing_columns(self):
+        """Returns None when required columns are absent."""
+        from scripts.research.dump_breakdown_events import _paired_within_event_stats
+        ev = pd.DataFrame({"ticker": ["A"], "definition": ["BD-1"], "event_date": ["2022-01-01"]})
+        boot_rng = np.random.default_rng(0)
+        result = _paired_within_event_stats(ev, "clean8_21", "short21", boot_rng)
+        assert result is None
+
+    def test_paired_diff_cluster_var_is_ticker_x_year(self):
+        """cluster_var field reports 'ticker_x_year'."""
+        from scripts.research.dump_breakdown_events import _paired_within_event_stats
+        ev = self._make_events_df(n_events=40)
+        boot_rng = np.random.default_rng(0)
+        result = _paired_within_event_stats(ev, "clean8_21", "short21", boot_rng)
+        assert result is not None
+        assert result["cluster_var"] == "ticker_x_year"
+
+    def test_vs_control_block_has_correct_keys(self):
+        """_vs_control_stats returns dict with long_stop_vs_control_pp key."""
+        from scripts.research.dump_breakdown_events import _vs_control_stats
+        ev = self._make_events_df(n_events=50)
+        # Build minimal control df
+        ctrl_rows = []
+        for i in range(150):
+            ctrl_rows.append({
+                "ticker": "AAA",
+                "definition": "CONTROL",
+                "event_date": f"2022-0{(i%9)+1}-15",
+                "is_control": True,
+                "censored": False,
+                "long_state_clean8_21": TerminalState.STOPPED if i % 2 == 0 else TerminalState.CLEAN_LIFTOFF,
+                "long_state_clean15_126": TerminalState.STOPPED if i % 3 == 0 else TerminalState.CLEAN_LIFTOFF,
+            })
+        ctrl = pd.DataFrame(ctrl_rows)
+        boot_rng = np.random.default_rng(0)
+        result = _vs_control_stats(ev, ctrl, "clean8_21", boot_rng)
+        assert result is not None
+        assert "long_stop_vs_control_pp" in result
+        assert "event_stop_rate_pct" in result
+        assert "control_stop_rate_pct" in result
+
+    def test_build_summary_has_paired_within_and_vs_control(self):
+        """build_summary output has paired_within_event and vs_control blocks."""
+        from scripts.research.dump_breakdown_events import build_summary
+        ev = self._make_events_df(n_events=50)
+        ctrl_rows = [
+            {
+                "ticker": "AAA", "definition": "CONTROL", "event_date": f"2022-{(i%12)+1:02d}-15",
+                "is_control": True, "censored": False,
+                "long_state_clean8_21": TerminalState.STOPPED if i % 2 == 0 else TerminalState.CLEAN_LIFTOFF,
+                "long_state_clean15_126": TerminalState.STOPPED if i % 3 == 0 else TerminalState.CLEAN_LIFTOFF,
+                "short_state_short21": TerminalStateShort.FAVORABLE_TRIGGERED,
+                "short_state_short126": TerminalStateShort.ADVERSE_TRIGGERED,
+            }
+            for i in range(150)
+        ]
+        events_df = pd.concat([ev, pd.DataFrame(ctrl_rows)], ignore_index=True)
+        stamp = {"generated_utc": "2026-07-06T00:00:00", "price_plane_id": "test"}
+        summary = build_summary(events_df, stamp)
+
+        bd1 = summary["per_definition"]["BD-1"]
+        assert "paired_within_event" in bd1, "B1: paired_within_event block missing"
+        assert "vs_control" in bd1, "B1: vs_control block missing"
+        assert "paired_asymmetry_delta" not in bd1, "Old key should be gone"
+
+        # Check no 'Phase-1 work' punt note remains
+        import json
+        summary_str = json.dumps(summary)
+        assert "Phase-1 work" not in summary_str, "B2: Phase-1 punt note should be removed"
+
+
+# ---------------------------------------------------------------------------
+# 10. Clustered bootstrap CI plumbing determinism (B2)
+# ---------------------------------------------------------------------------
+
+class TestClusteredBootstrapCI:
+
+    def test_same_seed_deterministic(self):
+        """Seeded bootstrap produces identical CI on repeated calls."""
+        from scripts.research.dump_breakdown_events import _clustered_bootstrap_ci95
+        values   = np.array([1.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 0.0])
+        clusters = np.array(["A_2022", "A_2022", "B_2022", "B_2022",
+                              "C_2023", "C_2023", "D_2023", "D_2023"])
+        rng1 = np.random.default_rng(999)
+        rng2 = np.random.default_rng(999)
+        ci1 = _clustered_bootstrap_ci95(values, clusters, rng1, n_iter=200)
+        ci2 = _clustered_bootstrap_ci95(values, clusters, rng2, n_iter=200)
+        assert ci1 == ci2, f"Same seed should give same CI: {ci1} vs {ci2}"
+
+    def test_ci_bounds_are_ordered(self):
+        """ci95[0] <= ci95[1] always."""
+        from scripts.research.dump_breakdown_events import _clustered_bootstrap_ci95
+        values   = np.random.default_rng(0).random(30)
+        clusters = np.array([f"T{i % 6}_2022" for i in range(30)])
+        rng = np.random.default_rng(1)
+        ci = _clustered_bootstrap_ci95(values, clusters, rng, n_iter=200)
+        assert ci is not None
+        assert ci[0] <= ci[1], f"CI lower > upper: {ci}"
+
+    def test_ci_none_when_single_cluster(self):
+        """Returns None when all observations are in one cluster (< 2 clusters)."""
+        from scripts.research.dump_breakdown_events import _clustered_bootstrap_ci95
+        values   = np.array([1.0, 0.0, 1.0])
+        clusters = np.array(["only_2022", "only_2022", "only_2022"])
+        rng = np.random.default_rng(0)
+        ci = _clustered_bootstrap_ci95(values, clusters, rng, n_iter=100)
+        assert ci is None
+
+    def test_ci_mean_is_within_bounds(self):
+        """The point estimate falls within the CI (not guaranteed but holds for stable data)."""
+        from scripts.research.dump_breakdown_events import _clustered_bootstrap_ci95
+        # Stable data: all 1s in different clusters → mean=1.0, CI should bracket 1.0
+        values   = np.ones(10)
+        clusters = np.array([f"T{i}_2022" for i in range(10)])
+        rng = np.random.default_rng(5)
+        ci = _clustered_bootstrap_ci95(values, clusters, rng, n_iter=500)
+        assert ci is not None
+        assert ci[0] <= 1.0 <= ci[1], f"Mean=1.0 not within CI {ci}"
+
+    def test_ci_excludes_zero_for_strong_signal(self):
+        """CI excludes 0 when all values are 1 (trivially strong signal)."""
+        from scripts.research.dump_breakdown_events import _clustered_bootstrap_ci95
+        values   = np.ones(20)
+        clusters = np.array([f"T{i % 5}_202{2 + i % 3}" for i in range(20)])
+        rng = np.random.default_rng(3)
+        ci = _clustered_bootstrap_ci95(values, clusters, rng, n_iter=500)
+        assert ci is not None
+        assert ci[0] > 0.0, f"CI should exclude 0 for all-ones: {ci}"
+
+
+# ---------------------------------------------------------------------------
+# 11. fresh_breach_mask canonical helper (N1)
+# ---------------------------------------------------------------------------
+
+class TestFreshBreachMask:
+
+    def test_returns_bool_series_on_sufficient_data(self):
+        """fresh_breach_mask returns a boolean Series on a 200+ bar series."""
+        from engine.signal_quality import fresh_breach_mask
+        close = _long_series(n=300, start_price=100.0)
+        mask = fresh_breach_mask(close)
+        assert isinstance(mask, pd.Series)
+        assert mask.dtype == bool or mask.dtype == np.dtype("bool")
+
+    def test_returns_empty_on_short_series(self):
+        """Returns empty Series when input is < 90 bars (signal_frame returns empty)."""
+        from engine.signal_quality import fresh_breach_mask
+        close = _long_series(n=50, start_price=100.0)
+        mask = fresh_breach_mask(close)
+        assert len(mask) == 0
+
+    def test_flat_series_has_no_breaches(self):
+        """A perfectly flat close never breaches its own EMA-trail."""
+        from engine.signal_quality import fresh_breach_mask
+        close = _long_series(n=300, start_price=100.0)
+        mask = fresh_breach_mask(close)
+        # Flat series: EMA-trail equals close; close < trail never fires
+        assert not mask.any(), "Flat series should have no fresh breaches"
+
+    def test_consistent_with_analyze_risk_flags(self):
+        """analyze() risk_flags are a subset of fresh_breach_mask dates.
+
+        analyze() additionally dropna's on macd/sig/k/d/rsi14 columns before
+        scanning for breaches, so it may emit fewer dates than the raw mask.
+        The key invariant: every risk_flag date appears in the fresh_breach_mask.
+        """
+        from engine.signal_quality import fresh_breach_mask, analyze
+        # Use a series with variation to get some breaches
+        rng = np.random.default_rng(42)
+        n = 300
+        walk = np.cumsum(rng.normal(0, 1, n)) + 100
+        close = pd.Series(walk, index=pd.bdate_range("2020-01-02", periods=n))
+        close = pd.Series(np.abs(close), index=close.index)
+
+        mask = fresh_breach_mask(close)
+        breach_dates_mask = {str(d.date()) for d in mask.index[mask]}
+
+        result = analyze("TEST", close)
+        if result is None:
+            return  # not enough data; skip
+        risk_flag_dates = set(result.get("risk_flags", []))
+
+        # Every flag emitted by analyze must be in our canonical mask
+        missing = risk_flag_dates - breach_dates_mask
+        assert not missing, (
+            f"analyze() risk_flags {missing} not present in fresh_breach_mask — "
+            "fresh_breach_mask and analyze use different constructions"
+        )

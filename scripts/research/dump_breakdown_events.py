@@ -51,7 +51,7 @@ from engine.grading import (  # noqa: E402
     LIFTOFF_HORIZON_21,
 )
 from engine.trial_ledger import TrialLedger  # noqa: E402
-from engine.signal_quality import signal_frame  # noqa: E402
+from engine.signal_quality import fresh_breach_mask  # noqa: E402
 
 # split_adjust from scripts.replay_standout_pipeline (the canonical import per §3.2)
 try:
@@ -218,23 +218,9 @@ def _read_massive_ohlcv(ticker: str) -> pd.DataFrame | None:
         return None
 
 
-def _liquidity_ok(close: pd.Series, raw_df: pd.DataFrame | None, event_idx: int) -> bool:
-    """Check liquidity floor at event bar: 21d median dollar volume >= $5M, price >= $3."""
-    price = float(close.iloc[event_idx])
-    if price < LIQ_MIN_PRICE:
-        return False
-    if raw_df is None or "close" not in raw_df.columns or "volume" not in raw_df.columns:
-        return True  # degrade gracefully; price floor already checked
-    # 21d median dollar volume up to and including event bar
-    start = max(0, event_idx - 20)
-    sub_raw = raw_df.iloc[start: event_idx + 1]
-    dv = sub_raw["close"] * sub_raw["volume"]
-    return float(dv.median()) >= LIQ_MIN_DOLLAR_APPROX or float(dv.median()) >= LIQ_MIN_ADV_DOLLAR
-
-
-# Use the simpler raw volume * raw close for dollar-volume; approximate since we use
-# split-adjusted close but raw volume — ratio is directionally consistent for the floor.
-LIQ_MIN_DOLLAR_APPROX = LIQ_MIN_ADV_DOLLAR
+# ADV note: dollar-volume uses raw_df["close"] * raw_df["volume"] (split-adjusted close ×
+# raw volume — approximate since volume is not split-adjusted, but the ratio is
+# directionally consistent for the $5M floor check).
 
 
 # ===========================================================================
@@ -437,9 +423,7 @@ def detect_bd2(ticker: str, close: pd.Series, raw_df: pd.DataFrame | None) -> li
             continue
 
         stop_ts = close.index[stop_idx]
-        fire_close = float(close.iloc[fill_idx - 1]) if fill_idx > 0 else float(entry_price)
-        # fire_close = close at the signal bar (the "fire-day close")
-        # Use the signal bar close as the reference level
+        # fire_day_close = close at the signal bar (the reference level for failed-reclaim)
         fire_day_close = float(close.iloc[sig_loc])
 
         # Within BD2_RALLY_WINDOW bars after stop bar, find highest close
@@ -526,13 +510,12 @@ def _defensive_bid_on(date: pd.Timestamp) -> bool | None:
     for etf in def_etfs:
         c = _load_etf_close(etf)
         if c is None:
-            continue
+            return None  # require all 3 ETFs present; partial defensive-bid is undefined
         r = _21d_return(c, date)
-        if r is not None:
-            def_rets.append(r)
-    if len(def_rets) < 2:  # need at least 2 of 3
-        return None
-
+        if r is None:
+            return None  # require all 3 ETF returns computable
+        def_rets.append(r)
+    # All 3 required; if any were missing we already returned None above
     return (np.mean(def_rets) - spy_ret) > 0.0
 
 
@@ -554,28 +537,18 @@ def detect_bd3(ticker: str, close: pd.Series, raw_df: pd.DataFrame | None) -> li
     if era_mask.sum() == 0:
         return events
 
-    # Compute ema8 fresh_breach via signal_quality.signal_frame (3B resample; span=8)
-    # signal_frame returns a 3B-resampled DataFrame; we reindex back to daily index
+    # Compute ema8 fresh_breach via the canonical fresh_breach_mask() helper in
+    # engine.signal_quality (single source of truth: 3B resample, span=8, fresh_breach mask).
     try:
-        sf = signal_frame(close)
+        fresh_breach_3b = fresh_breach_mask(close)
     except Exception as e:
-        log.debug("BD-3 signal_frame failed for %s: %s", ticker, e)
+        log.debug("BD-3 fresh_breach_mask failed for %s: %s", ticker, e)
         return events
-    if sf.empty:
+    if fresh_breach_3b.empty:
         return events
 
-    # fresh_breach in the 3B frame; we need to propagate to daily for event-bar lookup
-    # The 3B index is the LAST day of each 3-business-day bucket
-    trail_3b = sf["ema_trail"]
-    close_3b  = sf["close"]
-    below_3b  = close_3b < trail_3b
-    prev_below = below_3b.shift(1, fill_value=False)
-    rising_into = (trail_3b.shift(1) > trail_3b.shift(3))
-    fresh_breach_3b = (below_3b & ~prev_below & rising_into).fillna(False)
-
-    # Map breach 3B bars back to daily close dates by reindexing
-    # (the 3B bar's date is the LAST trading day in its bucket)
-    # We mark the daily bar that IS the 3B-bar-end date as a breach date
+    # Map 3B breach dates back to daily close dates: the 3B bar date is the LAST
+    # trading day of that bucket, so we collect those dates directly as a set.
     breach_dates: set[pd.Timestamp] = set(fresh_breach_3b.index[fresh_breach_3b])
 
     # Extended: close >= 1.15 * rolling 126-bar min
@@ -704,39 +677,56 @@ def _sample_controls(
     ticker: str,
     close: pd.Series,
     raw_df: pd.DataFrame | None,
-    n_events: int,
+    event_timestamps: list[pd.Timestamp],
     rng: np.random.Generator,
 ) -> list[dict[str, Any]]:
-    """Sample n_events * CONTROL_RATIO random bars passing liquidity floor from the ERA window."""
+    """Sample CONTROL_RATIO random non-event bars per event, stratified by calendar year.
+
+    Each event draws its 3 controls from the same calendar year, same ticker, non-event bars
+    passing the same liquidity floor and ERA/prior-bar gates.  This implements the prereg §4
+    'uniformly sampled non-event bars' WITHIN the year stratum (year-stratified matching).
+
+    Control block note in summary: year-stratification is the implementation of 'matched'.
+    """
+    if not event_timestamps:
+        return []
+
     era_close = close[close.index >= ERA_START]
     if len(era_close) < ERA_PRIOR_BARS_REQUIRED:
         return []
 
-    # Eligible bars: within ERA window, enough prior history, pass liquidity
-    eligible_idx = []
+    # Build lookup: year -> list of eligible bar indices (non-event, passes gates)
+    event_date_set: set[pd.Timestamp] = set(event_timestamps)
+    year_eligible: dict[int, list[int]] = {}
     for i, ts in enumerate(close.index):
         if ts < ERA_START:
             continue
         if i < ERA_PRIOR_BARS_REQUIRED:
             continue
+        if ts in event_date_set:
+            continue  # non-event bars only
         if raw_df is not None and not _liq_ok_at(close, raw_df, i):
             continue
-        eligible_idx.append(i)
+        yr = ts.year
+        year_eligible.setdefault(yr, []).append(i)
 
-    if not eligible_idx:
-        return []
+    rows: list[dict[str, Any]] = []
+    for ev_ts in event_timestamps:
+        yr = ev_ts.year
+        pool = year_eligible.get(yr, [])
+        if not pool:
+            # Fall back to adjacent years (±1) when pool is empty
+            pool = year_eligible.get(yr - 1, []) + year_eligible.get(yr + 1, [])
+        if not pool:
+            continue
+        n_draw = min(CONTROL_RATIO, len(pool))
+        chosen = rng.choice(pool, size=n_draw, replace=False)
+        for i in chosen:
+            ts = close.index[i]
+            r = _grade_event(ticker, ts, close, definition="CONTROL")
+            r["is_control"] = True
+            rows.append(r)
 
-    n_needed = n_events * CONTROL_RATIO
-    chosen = rng.choice(eligible_idx,
-                        size=min(n_needed, len(eligible_idx)),
-                        replace=False)
-
-    rows = []
-    for i in chosen:
-        ts = close.index[i]
-        r = _grade_event(ticker, ts, close, definition="CONTROL")
-        r["is_control"] = True
-        rows.append(r)
     return rows
 
 
@@ -794,8 +784,14 @@ def process_ticker(
     if total_events == 0:
         return rows  # no events, no controls needed
 
-    # Matched controls: 3:1 vs total events across all definitions
-    ctrl_rows = _sample_controls(ticker, close, raw_df, total_events, rng)
+    # Collect all event timestamps across all definitions for year-stratified control draw
+    all_event_timestamps: list[pd.Timestamp] = []
+    for event_list in all_events_by_def.values():
+        all_event_timestamps.extend(event_list)
+
+    # Matched controls: 3:1 per event, year-stratified (same calendar year, same ticker,
+    # non-event bars passing same liquidity floor — prereg §4, year-stratified implementation)
+    ctrl_rows = _sample_controls(ticker, close, raw_df, all_event_timestamps, rng)
     rows.extend(ctrl_rows)
 
     return rows
@@ -872,10 +868,168 @@ def _base_rates(sub: pd.DataFrame, col: str, target_val: str) -> float | None:
     return round(float((sub.loc[valid, col] == target_val).mean() * 100), 2)
 
 
+# ---------------------------------------------------------------------------
+# Bootstrap CI95 (episode-clustered, ticker×year clusters — B2)
+# ---------------------------------------------------------------------------
+
+_BOOT_N_ITER = 5000
+_BOOT_RNG_SEED = 12345  # separate seed from control sampling to avoid entanglement
+
+
+def _clustered_bootstrap_ci95(
+    values: np.ndarray,
+    clusters: np.ndarray,
+    rng: np.random.Generator,
+    n_iter: int = _BOOT_N_ITER,
+) -> tuple[float, float] | None:
+    """Episode-clustered bootstrap CI95 on mean(values).
+
+    Resample unit = cluster (ticker×year).  Each iteration: draw len(unique_clusters)
+    clusters with replacement, concatenate their member values, compute the mean.
+
+    Returns (ci_lo, ci_hi) at the 2.5/97.5 percentiles, or None if < 2 clusters.
+    Cluster variable: ticker×year.
+    """
+    unique_clusters = np.unique(clusters)
+    if len(unique_clusters) < 2:
+        return None
+    cluster_values: dict[Any, list[float]] = {}
+    for c, v in zip(clusters, values):
+        cluster_values.setdefault(c, []).append(v)
+
+    boot_means = np.empty(n_iter)
+    n_clusters = len(unique_clusters)
+    for b in range(n_iter):
+        drawn = rng.choice(unique_clusters, size=n_clusters, replace=True)
+        sample = []
+        for c in drawn:
+            sample.extend(cluster_values[c])
+        boot_means[b] = np.mean(sample)
+
+    return (
+        round(float(np.percentile(boot_means, 2.5)), 4),
+        round(float(np.percentile(boot_means, 97.5)), 4),
+    )
+
+
+def _paired_within_event_stats(
+    ev_d: pd.DataFrame,
+    long_param: str,
+    short_label: str,
+    boot_rng: np.random.Generator,
+) -> dict[str, Any] | None:
+    """Compute per-event within-pair diff (short_favorable - long_stopped), mean, and CI95.
+
+    Both sides must be matured (non-None state).  Cluster = ticker×year.
+    Positive mean = short favorable dominates; negative = long stop dominates.
+
+    Horizon mapping (prereg §4 paired contrast):
+      short21 ↔ clean8_21   (21-bar grade)
+      short126 ↔ clean15_126 (126-bar grade)
+    """
+    long_col  = f"long_state_{long_param}"
+    short_col = f"short_state_{short_label}"
+
+    if long_col not in ev_d.columns or short_col not in ev_d.columns:
+        return None
+
+    # Rows where BOTH sides matured
+    matured_mask = ev_d[long_col].notna() & ev_d[short_col].notna()
+    sub = ev_d[matured_mask].copy()
+    if len(sub) == 0:
+        return None
+
+    long_stopped   = (sub[long_col]  == TerminalState.STOPPED).astype(int)
+    short_favorable = (sub[short_col] == TerminalStateShort.FAVORABLE_TRIGGERED).astype(int)
+    paired_diff = (short_favorable - long_stopped).to_numpy(dtype=float)
+
+    # Cluster label = ticker×year
+    tickers = sub["ticker"].astype(str)
+    years   = pd.to_datetime(sub["event_date"]).dt.year.astype(str)
+    clusters = (tickers + "_" + years).to_numpy()
+
+    mean_diff = round(float(np.mean(paired_diff)), 4)
+    ci = _clustered_bootstrap_ci95(paired_diff, clusters, boot_rng)
+
+    return {
+        "mean_paired_diff_pp": round(mean_diff * 100, 2),
+        "n_matured_both_sides": int(len(sub)),
+        "long_stopped_rate_pct": round(float(long_stopped.mean() * 100), 2),
+        "short_favorable_rate_pct": round(float(short_favorable.mean() * 100), 2),
+        "ci95": (
+            [round(ci[0] * 100, 2), round(ci[1] * 100, 2)]
+            if ci is not None else None
+        ),
+        "cluster_var": "ticker_x_year",
+        "boot_n_iter": _BOOT_N_ITER,
+        "interpretation": (
+            "positive = short-favorable dominates long-stopped at this horizon; "
+            "negative = long-stopped dominates"
+        ),
+    }
+
+
+def _vs_control_stats(
+    ev_d: pd.DataFrame,
+    ctrl_d: pd.DataFrame,
+    long_param: str,
+    boot_rng: np.random.Generator,
+) -> dict[str, Any] | None:
+    """Event stop rate minus control stop rate (between-group quantity) with clustered CI95.
+
+    Events clustered by ticker×year; controls clustered by ticker×year of their control date.
+    """
+    long_col = f"long_state_{long_param}"
+    if long_col not in ev_d.columns:
+        return None
+
+    ev_valid   = ev_d[ev_d[long_col].notna()]
+    ctrl_valid = ctrl_d[ctrl_d[long_col].notna()] if long_col in ctrl_d.columns else ctrl_d.iloc[0:0]
+
+    ev_stop_rate   = _base_rates(ev_d,   long_col, TerminalState.STOPPED)
+    ctrl_stop_rate = _base_rates(ctrl_d, long_col, TerminalState.STOPPED)
+    if ev_stop_rate is None or ctrl_stop_rate is None:
+        return None
+
+    delta_pp = round(ev_stop_rate - ctrl_stop_rate, 2)
+
+    # Bootstrap on event side (cluster = ticker×year); control is a large uniform pool
+    ev_stopped_arr = (ev_valid[long_col] == TerminalState.STOPPED).astype(float).to_numpy()
+    ev_tickers     = ev_valid["ticker"].astype(str)
+    ev_years       = pd.to_datetime(ev_valid["event_date"]).dt.year.astype(str)
+    ev_clusters    = (ev_tickers + "_" + ev_years).to_numpy()
+    ci_ev = _clustered_bootstrap_ci95(ev_stopped_arr, ev_clusters, boot_rng)
+
+    ctrl_stopped_arr = (ctrl_valid[long_col] == TerminalState.STOPPED).astype(float).to_numpy() if len(ctrl_valid) > 0 else np.array([])
+    # For controls, cluster by ticker×year of the control bar date
+    if len(ctrl_valid) > 0 and "event_date" in ctrl_valid.columns:
+        ctrl_tickers  = ctrl_valid["ticker"].astype(str)
+        ctrl_years    = pd.to_datetime(ctrl_valid["event_date"]).dt.year.astype(str)
+        ctrl_clusters = (ctrl_tickers + "_" + ctrl_years).to_numpy()
+        ci_ctrl = _clustered_bootstrap_ci95(ctrl_stopped_arr, ctrl_clusters, boot_rng)
+    else:
+        ci_ctrl = None
+
+    return {
+        "event_stop_rate_pct":   ev_stop_rate,
+        "control_stop_rate_pct": ctrl_stop_rate,
+        "long_stop_vs_control_pp": delta_pp,
+        "n_events_matured": int(len(ev_valid)),
+        "n_controls_matured": int(len(ctrl_valid)),
+        "ci95_event_stop_pct": (
+            [round(ci_ev[0] * 100, 2), round(ci_ev[1] * 100, 2)]
+            if ci_ev is not None else None
+        ),
+        "cluster_var": "ticker_x_year",
+    }
+
+
 def build_summary(events_df: pd.DataFrame, stamp: dict) -> dict[str, Any]:
     """Build the §6 table and return as a dict for JSON output."""
     ev   = events_df[~events_df.get("is_control", pd.Series(False, index=events_df.index))]
     ctrl = events_df[events_df.get("is_control", pd.Series(False, index=events_df.index))]
+
+    boot_rng = np.random.default_rng(_BOOT_RNG_SEED)
 
     per_def: dict[str, Any] = {}
     for defn in ["BD-1", "BD-2", "BD-3"]:
@@ -928,20 +1082,22 @@ def build_summary(events_df: pd.DataFrame, stamp: dict) -> dict[str, Any]:
                     "n":                int(ctrl_d[col].notna().sum()),
                 }
 
-        # Paired asymmetry: simple delta (events - control) on stop rate
-        # Full bootstrap CI is Phase-1 work; Phase-0 prints point estimates only.
-        asym: dict[str, Any] = {}
+        # B1: within-event paired contrast (prereg §4 and §6 deliverable)
+        # Paired diff per matured event: short_favorable(0/1) - long_stopped(0/1).
+        # Horizon mapping: short21 ↔ clean8_21; short126 ↔ clean15_126.
+        paired_within: dict[str, Any] = {}
+        for long_param, short_label in (("clean8_21", "short21"), ("clean15_126", "short126")):
+            stat = _paired_within_event_stats(ev_d, long_param, short_label, boot_rng)
+            if stat is not None:
+                paired_within[f"{long_param}_x_{short_label}"] = stat
+
+        # B1: vs-control block (renamed from paired_asymmetry_delta) — between-group quantity
+        # with clustered CI95
+        vs_control: dict[str, Any] = {}
         for pname in ("clean15_126", "clean8_21"):
-            ev_stop  = long_states.get(pname, {}).get("stop_rate_pct")
-            ctrl_stop = ctrl_long_states.get(pname, {}).get("stop_rate_pct")
-            if ev_stop is not None and ctrl_stop is not None:
-                asym[pname] = {
-                    "stop_rate_delta_pp": round(ev_stop - ctrl_stop, 2),
-                    "note": (
-                        "point estimate only (Phase-0); "
-                        "episode-clustered bootstrap CI is Phase-1 work"
-                    ),
-                }
+            stat = _vs_control_stats(ev_d, ctrl_d, pname, boot_rng)
+            if stat is not None:
+                vs_control[pname] = stat
 
         per_def[defn] = {
             "n_episodes":    n_episodes,
@@ -949,7 +1105,12 @@ def build_summary(events_df: pd.DataFrame, stamp: dict) -> dict[str, Any]:
             "long_states":   long_states,
             "short_states":  short_states,
             "control_baseline_long": ctrl_long_states,
-            "paired_asymmetry_delta": asym,
+            "paired_within_event":   paired_within,
+            "vs_control":            vs_control,
+            "control_sampling_note": (
+                "year-stratified: each event's controls drawn from same calendar year, "
+                "same ticker, non-event bars passing same liquidity floor (prereg §4 matched)"
+            ),
             "powering_note": (
                 "< 100 episodes: parked as underpowered per prereg §6"
                 if n_episodes < 100 else ""
@@ -964,7 +1125,7 @@ def build_summary(events_df: pd.DataFrame, stamp: dict) -> dict[str, Any]:
     total_controls = int(ctrl["definition"].notna().sum()) if len(ctrl) > 0 else 0
 
     return {
-        "schema":          "breakdown_events_summary.v1",
+        "schema":          "breakdown_events_summary.v2",
         "vintage":         stamp,
         "trial_family":    "short_side",
         "declared_budget": 3,
@@ -1099,8 +1260,12 @@ def main(args=None):
                 print(f"  short[{sh_label}]: adverse={ss.get('adverse_rate_pct')}% "
                       f"favorable={ss.get('favorable_rate_pct')}% "
                       f"n_matured={ss.get('n_matured')}")
-            for pname, asym in d.get("paired_asymmetry_delta", {}).items():
-                print(f"  asym_delta[{pname}]: stop_delta={asym.get('stop_rate_delta_pp')}pp")
+            for key, pw in d.get("paired_within_event", {}).items():
+                ci = pw.get("ci95")
+                print(f"  paired_within[{key}]: diff={pw.get('mean_paired_diff_pp')}pp "
+                      f"ci95={ci} n={pw.get('n_matured_both_sides')}")
+            for pname, vc in d.get("vs_control", {}).items():
+                print(f"  vs_control[{pname}]: delta={vc.get('long_stop_vs_control_pp')}pp")
             if d.get("powering_note"):
                 print(f"  NOTE: {d['powering_note']}")
         print(f"\nOverlap matrix: {summary['overlap_matrix']}")
