@@ -1,0 +1,8 @@
+{
+  "schema": "research_factory.review_queue.v1",
+  "authority": "display_only",
+  "generated_at": "2026-07-06T09:51:50.729798+00:00",
+  "n_candidates": 0,
+  "candidates": [],
+  "note": "Cross-domain review queue. Ordered by candidate_type bin then created_at. RF-16: crowds_with is context only — no composite ranking. All metrics are display-only."
+}

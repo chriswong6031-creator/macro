@@ -1,0 +1,38 @@
+{
+  "schema": "research_factory.track.v1",
+  "authority": "display_only",
+  "candidate_id": "rf-20260706-adopt-a15_washout_opp_out_2node",
+  "decision": "paper",
+  "expected_half_life_d": 250,
+  "regime_at_entry": {
+    "regime": "Q1",
+    "quad": "Q1",
+    "asof": "2026-07-02",
+    "source": "data/regime/latest.json"
+  },
+  "verdict": "accruing",
+  "horizons": {
+    "21": {
+      "n_matured": 0,
+      "metric_value": null,
+      "gate_threshold": null,
+      "gate_pass": null,
+      "note": "accruing \u2014 no matured observations yet"
+    }
+  },
+  "created_at": "2026-07-06T09:50:46.358653+00:00",
+  "note": "display-only accrual skeleton; updated by the paper monitor (W6)",
+  "decision_note": "Fable Batch-A ruling 2026-07-06: adopted at paper on the current aggregate PASS. The honest headline is the +1.14% washout increment vs a size-matched null (ORACLE_CONSTITUTION), NOT the absolute WR=0.737 (beta-inflated by construction; prereg concedes Legs 4+6 are the sole beta guards).",
+  "paper_tripwires": [
+    {
+      "id": "beta_attribution",
+      "source": "challenger major (regime lens)",
+      "spec": "surface the washout-increment-vs-size-matched-null on live fires; if the live increment is indistinguishable from 0 while absolute WR stays high, the edge is beta \u2014 route to human review"
+    },
+    {
+      "id": "cluster_adjusted_se",
+      "source": "challenger major (overfit lens)",
+      "spec": "fires cluster across nodes in the same washout windows; effective n << raw n. Before any promote_eligible proposal, a cluster-adjusted SE (cluster = washout window) must accompany the WR \u2014 raw-n SEs are inadmissible"
+    }
+  ]
+}

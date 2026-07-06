@@ -1,0 +1,69 @@
+{
+  "schema": "research_factory.challenge.v1",
+  "authority": "display_only",
+  "candidate_id": "rf-20260706-adopt-a9_washout_same_outflow_dense",
+  "challenged_at": "2026-07-06T09:49:39+00:00",
+  "mechanical_probes": {
+    "input_insensitive": "not_applicable",
+    "permutation_probe": {
+      "input_insensitive": "not_applicable",
+      "note": "no per-fire outcome arrays present in artifacts"
+    },
+    "near_dup": {
+      "score": null,
+      "nearest": null,
+      "flagged": false
+    },
+    "mechanism_spec_mismatch": false,
+    "recent_only_columns": false,
+    "scale_flagged": false,
+    "raw_flags": [],
+    "gauntlet_legs": []
+  },
+  "reviewer": {
+    "agent_type": "reviewer",
+    "recommendation": "ADVISORY_REJECT",
+    "blockers": [
+      {
+        "severity": "blocker",
+        "category": "duplicate",
+        "finding": "A9 is a structural sibling in the already-adjudicated washout x flow-stress compound basin and is dominated by its own family's validated representative. The R1 compound gauntlet (research/ORACLE_COMPOUND_GAUNTLET_R1.md, results table lines 39-41 and 'Next step' line 116) subjected A9 alongside A15/A17 and concluded 'A9 remains a secondary, weaker candidate'; A15_WASHOUT_OPP_OUT_2NODE was taken forward and now sits in the validated set (research/ORACLE_REVERSION_VALIDATED.md lines 11/31/51), while A9 appears nowhere in ORACLE_REVERSION_VALIDATED.md or ORACLE_REVERSION_HANDOFF.md. Re-adopting A9 re-litigates a candidate already ranked below a validated sibling within the same mechanism family.",
+        "evidence_ref": "research/ORACLE_COMPOUND_GAUNTLET_R1.md lines 39-41,59-62,116; research/ORACLE_REVERSION_VALIDATED.md lines 11,31,51 (A9 absent)"
+      },
+      {
+        "severity": "blocker",
+        "category": "overfit",
+        "finding": "A9's entire edge is recent-loaded and time-unstable, and the floor's era_consistent=3 masks a negative earliest era. Packet evaluation_plan.era_consistent=3 with era_dominant_direction 'pos', but the trial ledger era_direction_63d records 1999-2014='neg'. R1 gauntlet decomposition: 1999-2014 = -1.35%, dev-period (<=2019) = +0.13% (flat), holdout (>2019) = +2.27% -> verdict 'PASS (lumpy)' / 'recent-loaded' (R1 lines 40,59-61). The +1.06% pooled effect_63d is therefore a post-2019 artifact riding a flat/negative pre-2019 base, not a stable edge. The default 63d era-consistency gate (era-1 = 1999-2014) is exactly the gate the program itself flagged as structurally penalizing modern-regime edges (R1 lines 106-110); A9 sneaks a 3/4 pass with a negative era-1 but has NOT been run through the labeled modern-regime track that such a claim requires.",
+        "evidence_ref": "packet trial_ledger era_direction_63d 1999-2014='neg'; research/ORACLE_COMPOUND_GAUNTLET_R1.md lines 40,59-61,106-110"
+      },
+      {
+        "severity": "major",
+        "category": "mechanism",
+        "finding": "The stated mechanism lacks a rotation source and inverts the program's only validated flow-routing mechanism without a distinct falsifiable rationale. A9 buys a washout DURING a same-complex multi-node outflow cascade \u2014 i.e., the sink node and its complex-siblings are ALL bleeding, so no counter-flow is identified to fund the reversion. The validated/standout channel in the program is the OPPOSITE-complex case: P8 cond_b (washout x opposite-complex rollover) delivered the +1.14% increment 'in exactly the direction the operator predicted (money must have somewhere to come FROM)' (research/ORACLE_GAUNTLET_P8_RESULTS.md line 122), and A15 (opposite-complex) is described as 'capitulation with cross-complex displacement' (ORACLE_REVERSION_VALIDATED.md line 51). A9's same-complex framing has no analogous displacement mechanism; the empty decay_conditions/expected_failure_modes/falsifiers arrays in the packet mean no specific condition-of-death was pre-registered.",
+        "evidence_ref": "packet mechanism + empty decay_conditions/falsifiers; research/ORACLE_GAUNTLET_P8_RESULTS.md line 122; research/ORACLE_REVERSION_VALIDATED.md line 51"
+      },
+      {
+        "severity": "major",
+        "category": "overfit",
+        "finding": "Both floor metrics clear their gates by knife-edge margins that are fragile at this n. observed_hit_63d = 0.55023 vs gate 0.55 (margin 0.0002, ~one fire from failing at n=438) and observed_effect_63d = 0.01065 vs gate_effect_abs 0.01 (6.5% over the floor). With n=438 (smallest of the pos-direction A-family queue members vs A15 n=2357), a hit-rate one fire above threshold on a metric known to be lumpy is not a robust floor pass.",
+        "evidence_ref": "packet evaluation_plan observed_hit_63d 0.5502283 vs gate_hit_63d 0.55; observed_n 438"
+      },
+      {
+        "severity": "major",
+        "category": "data",
+        "finding": "The gauntlet-legs evidence needed to distinguish edge from artifact is absent from this packet, and the ruler is defaulted. mechanical_probes.gauntlet_legs = [] and mechanical_probes.input_insensitive = 'not_applicable' with note 'no per-fire outcome arrays present in artifacts' \u2014 the permutation probe, OOS leg, and timing-placebo leg (all of which R1 previously computed for A9 at placebo p=0.000) are not carried in this packet. evaluation_plan.defaulted=true and expected_half_life_d=null: no decay horizon was declared. The candidate is presented purely as a floor-crossing screen row with no leg verdicts to support 'adopt'.",
+        "evidence_ref": "packet mechanical_probes.gauntlet_legs=[], permutation_probe.note; evaluation_plan.defaulted=true, expected_half_life_d=null"
+      }
+    ],
+    "non_blocking_concerns": [
+      "trial_accounting.family=null and A9 is not a distinct row in dedup_context.trial_ledger_families \u2014 the washout-compound screen is counted via the oracle_screen mode with search_width_at_scan=110 (the Harvey-Liu-Zhu denominator), so trial counting is not sidestepped, but the family field being null should be confirmed as intentional rather than an omission.",
+      "Cost: net edge is ~+1.06% 63d excess at ~55% hit on liquid sector ETFs; R1's own guardrail (line 74-77) calls the sibling A15's larger +1.3%/57% 'a tilt, not a fortune, net of costs' \u2014 A9's thinner edge is even more exposed to slippage/financing haircut and should be cost-netted before any display claim.",
+      "Per-ETF heterogeneity is large in this program (P8: XLE +1.79% vs +0.45% pooled) \u2014 a pooled A9 pass could be a small number of sectors carrying the aggregate; any per-sector reading would require its own registration (ORACLE_GAUNTLET_P8_RESULTS.md line 127).",
+      "authority=display_only is consistent with the packet; no scored-path or LLM-originated-signal violation observed in the design."
+    ],
+    "best_counterargument": "A9 did clear a real, pre-registered timing placebo at p=0.000 in the R1 gauntlet and passed G1 on the letter (holdout positive at +2.27%/65.4%, hit>52%, n=191>100). If the post-2020 structural break is treated as the governing regime (the same reasoning that rehabilitated A17 from a full-history FAIL to a modern-regime PASS, R1 Correction lines 79-110), then A9's negative 1999-2014 era is not disqualifying \u2014 it is expected for a modern-microstructure edge \u2014 and its recent loading is a feature, not a bug. Under a properly built modern-regime track, A9 could be a live higher-n complement to A15 (same-complex capitulation may capture whole-complex overshoot that opposite-complex rotation misses).",
+    "minimum_fix_to_reconsider": "Route A9 through the labeled modern-regime track (within-modern OOS split + modern sub-period consistency + a pre-committed ex-ante mechanism rationale for why same-complex outflow \u2014 with no counter-flow source \u2014 should mean-revert), exactly as R1 prescribed for modern-regime candidates (lines 106-110). Then re-file with populated decay_conditions/expected_failure_modes/falsifiers, a declared half-life, and a redundancy/overlap audit against the already-validated A15 (containment %) demonstrating A9 is additive rather than a subset of A15's opposite-complex fires.",
+    "falsifier_spec": "If, on a within-modern OOS holdout (fit through 2020, test 2021+), A9's same-complex-outflow washout fires do NOT beat (a) a size-matched random-timing placebo AND (b) the standalone-washout NULL baseline (P-W1: +0.45%/50.7% at 63d, ORACLE_GAUNTLET_P8_RESULTS.md line 17) AND the validated sector_signals BUY state (+1.1%/56%), the mechanism is dead \u2014 the pooled +1.06% was pre-2019-negative recency, not a same-complex capitulation edge.",
+    "human_review_question": "Should A9 be REJECTED for adoption now and instead re-routed exclusively through the labeled modern-regime track (given its earliest era is negative, its edge is recent-loaded/lumpy, and its opposite-complex sibling A15 is already validated), rather than adopted from this defaulted floor-crossing screen row?"
+  }
+}

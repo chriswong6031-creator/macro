@@ -1,0 +1,63 @@
+{
+  "schema": "research_factory.challenge.v1",
+  "authority": "display_only",
+  "candidate_id": "rf-20260706-adopt-a15_washout_opp_out_2node",
+  "challenged_at": "2026-07-06T09:49:39+00:00",
+  "mechanical_probes": {
+    "input_insensitive": "not_applicable",
+    "permutation_probe": {
+      "input_insensitive": "not_applicable",
+      "note": "no per-fire outcome arrays present in artifacts"
+    },
+    "near_dup": {
+      "score": null,
+      "nearest": null,
+      "flagged": false
+    },
+    "mechanism_spec_mismatch": false,
+    "recent_only_columns": false,
+    "scale_flagged": false,
+    "raw_flags": [],
+    "gauntlet_legs": []
+  },
+  "reviewer": {
+    "agent_type": "reviewer",
+    "recommendation": "ADVISORY_REVIEW",
+    "blockers": [
+      {
+        "severity": "major",
+        "category": "regime",
+        "finding": "The primary metric WR=0.737 (and ret_exit=+3.05%, asym=1.835) is computed on ABSOLUTE 21d returns with no SPY-excess control in Legs 1-5. scripts/oracle_reversion_screen.py line 16 states ret_exit is the 'absolute time-exit return', and ORACLE_REVERSION_GATE_PREREG.md lines 70-72 concede 'ABSOLUTE returns include market beta by design ... Regime robustness (leg 4) + the placebo (leg 6) are the guards against \"it's only beta.\"' A 0.737 absolute-return WR at 21d is inflated by market drift over the sampled windows. The ORACLE_CONSTITUTION line 25 records this exact mechanism's honest edge as only +1.14% increment vs a size-matched null (P8 cond_b, 'unvalidated, accruing'), and standalone washout is NULL pooled. The headline WR/ret/asym gates therefore overstate the washout-specific edge; the true edge rides on Legs 4+6 being clean, which the packet does not surface.",
+        "evidence_ref": "evaluation_plan.observed_wr=0.737 / .observed_ret_exit=0.0305; scripts/oracle_reversion_screen.py:16; research/ORACLE_REVERSION_GATE_PREREG.md L17-19,L70-72; research/ORACLE_CONSTITUTION.md:25"
+      },
+      {
+        "severity": "major",
+        "category": "overfit",
+        "finding": "The Leg-6 timing placebo (_gauntlet_placebo, lines 747-848) samples count-matched draws WITH REPLACEMENT independently per node from that node's realizable-outcome pool. It tests whether entry TIMING beats random timing within a node, but treats each of the 2357 fires as an independent draw and does NOT cluster-adjust. With min_count>=2 opposite-complex nodes required within 20 sessions, fires by construction cluster in the same washout/displacement windows across nodes; the effective independent-draw count is well below 2357, so the placebo p95 is understated and the WR standard error is understated. The placebo is defeatable by regime clustering (broad-bottom weeks firing many nodes at once). No cluster-adjusted SE is applied anywhere in the gauntlet.",
+        "evidence_ref": "scripts/oracle_reversion_screen.py:747-848 (_gauntlet_placebo rng.choice replace=True, per-node count-matched); entry_rule episode_event min_count=2 within_sessions=20 (packet mechanism + _INLINE_COMPOUNDS A15 L118-127); observed_n=2357"
+      },
+      {
+        "severity": "minor",
+        "category": "data",
+        "finding": "search_width_at_scan=110 is carried in aggregate_metrics, but the reversion gauntlet is a FIXED-threshold pass (WR>=0.62, asym>=1.5, ret>=1%, n>=100) with NO Harvey-Liu-Zhu / FDR / multiplicity discount anywhere in scripts/oracle_reversion_screen.py (grep for search_width/Harvey/FDR/multiplic returns nothing). trial_accounting.mode='read_only' with family=null means no new trial family is registered by this screen; this is appropriate for a re-verification of the already-registered A15 (the reversion-track flagship), but the PASS as presented does not visibly discount the 110-wide reversion search. The multiplicity of the search that produced this survivor is not reflected in the gate.",
+        "evidence_ref": "aggregate_metrics.search_width_at_scan=110; trial_accounting.mode='read_only', family=null; scripts/oracle_reversion_screen.py:1235-1256 (_FROZEN_GATES, no FDR term)"
+      },
+      {
+        "severity": "minor",
+        "category": "mechanism",
+        "finding": "decay_conditions, expected_failure_modes, and falsifiers are all EMPTY arrays in the packet. Lens 3 requires pre-registered, specific decay conditions; none are declared. For a signal being re-verified for adoption at display tier this is a documentation gap, not a construction defect, but it means there is no ex-ante tripwire recorded for when the washout x opposite-complex-outflow mechanism should be considered dead.",
+        "evidence_ref": "packet decay_conditions=[], expected_failure_modes=[], falsifiers=[]"
+      }
+    ],
+    "non_blocking_concerns": [
+      "gauntlet_legs=[] and mechanical_probes.gauntlet_legs=[]: the per-leg Leg-5 (OOS holdout) and Leg-6 (timing placebo) verdicts and margins are NOT in the packet. Per RF prompt guidance this is a GAP to note, not evidence of a leg pass/fail \u2014 I do not assert an individual leg verdict. The aggregate is PASS; the Leg-6 margin (how far real mean beats p95) is the single most load-bearing number and is unavailable here.",
+      "mechanical_probes.input_insensitive='not_applicable' and permutation_probe note 'no per-fire outcome arrays present in artifacts' \u2014 the n-aware permutation probe could NOT run. There is no independent check that WR=0.737 is distinguishable from a sign-permuted null; the only timing control is the in-screen Leg-6 placebo, whose margin is not surfaced.",
+      "near_dup.flagged=false but this candidate IS the already-registered A15 (spec_ref A15_WASHOUT_OPP_OUT_2NODE, published reversion base per registry). The near-dup checker compares against OTHER candidates, not the registry self, so a self-duplicate of an existing screened signal reads as 'no dup'. This is expected for a read-only re-verification but the human should confirm this is a re-adopt, not a re-count of a fresh family.",
+      "Cost/capacity not addressed in packet: tier-S node entries (episode-qualified washout) incur slippage + financing per fire; at 2357 fires the net-of-cost edge over the +1.14% size-matched increment is thin and untested. A transaction-cost haircut is warranted before any live claim (consistent with the reversion reframe caveat)."
+    ],
+    "best_counterargument": "A15 is the single most-vetted survivor of the reversion program and the one honest cell of an effort that explicitly NULLed both standalone washout and 63d rotation. Its mechanism is not a bare oscillator: it pairs local capitulation (washout_w>0) with an INDEPENDENT confirmation \u2014 >=2 opposite-complex nodes in confirmed onset-outflow within 20 sessions \u2014 so it is displacement-confirmed capitulation, not lone washout (which the constitution correctly nulls). It cleared a PRE-REGISTERED frozen gate (ORACLE_REVERSION_GATE_PREREG.md, thresholds frozen before result), an OOS holdout at the tier-S 2019-12-31 split, and a timing placebo, at n=2357 (very large). The 21d absolute time-exit is the OPERATOR-RATIFIED primary ruler (not a flatterer), and authority is display_only with grant_authority never called \u2014 so even a residual-beta component cannot leak into a scored/board-rank path. No PIT or authority violation exists; the open questions are about how much of a large, well-vetted absolute-WR is washout-specific vs beta, not whether the construction is sound.",
+    "minimum_fix_to_reconsider": null,
+    "falsifier_spec": "In live forward accrual (oracle_reversion_forward ledger), if the risk-OFF-conditioned mean ret_exit converges to the mean of size-matched random risk-off-timed entries (regime-matched placebo delta -> 0) over the next >=100 matured fires, OR if the WASHOUT-INCREMENT over a size-matched non-washout null in the same opposite-complex-outflow windows falls below ~+1% (the P8 cond_b baseline), the mechanism is confirmed to be beta/timing rather than washout-specific and is dead.",
+    "human_review_question": "Given that A15 is a display-only re-verification (trial_accounting.mode=read_only, family=null) of the already-registered reversion flagship, and that its absolute-return WR/ret/asym gates are conceded by prereg to include market beta with Legs 4+6 as the sole beta guards \u2014 do you adopt it at display tier on the current aggregate PASS, or do you HOLD adoption pending (a) the Leg-6 placebo margin surfaced and (b) a cluster-adjusted SE / washout-increment-vs-size-matched-null number that isolates the +1.14% edge from beta?"
+  }
+}

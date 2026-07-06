@@ -1,0 +1,70 @@
+{
+  "schema": "research_factory.challenge.v1",
+  "authority": "display_only",
+  "candidate_id": "rf-20260706-adopt-a16_washout_any_out_3node_10d",
+  "challenged_at": "2026-07-06T09:49:39+00:00",
+  "mechanical_probes": {
+    "input_insensitive": "not_applicable",
+    "permutation_probe": {
+      "input_insensitive": "not_applicable",
+      "note": "no per-fire outcome arrays present in artifacts"
+    },
+    "near_dup": {
+      "score": null,
+      "nearest": null,
+      "flagged": false
+    },
+    "mechanism_spec_mismatch": false,
+    "recent_only_columns": false,
+    "scale_flagged": false,
+    "raw_flags": [],
+    "gauntlet_legs": []
+  },
+  "reviewer": {
+    "agent_type": "reviewer",
+    "recommendation": "ADVISORY_REJECT",
+    "blockers": [
+      {
+        "severity": "blocker",
+        "category": "overfit",
+        "finding": "The candidate does not meet its own declared promotion floor: floor_passed.hit63_ge_55pct=false (observed_hit_63d=0.5355 < gate 0.55). The only floor leg it clears is abs_effect63_ge_1pct at 0.010075 \u2014 0.75 basis points above the 0.01 cutoff, a hairline pass. A 53.55% hit / +1.0% 63d-excess cell that sits below its own hit gate is exactly the marginal profile expected from a false-discovery pulled off a 110-wide search. No OOS holdout, timing placebo, or block-bootstrap CI is attached to demonstrate the effect is not a screen artifact.",
+        "evidence_ref": "evaluation_plan.floor_passed.hit63_ge_55pct=false, observed_hit_63d=0.5355029, observed_effect_63d=0.010075, gate_hit_63d=0.55, gate_effect_abs=0.01"
+      },
+      {
+        "severity": "blocker",
+        "category": "mechanism",
+        "finding": "The mechanism strips out the exact ingredient that the sibling OOS gauntlet identified as the source of edge. A16 uses complex_scope='any' (engine/oracle/compounds.py L398: scope=='any' returns all candidate episodes with no complex filter) \u2014 i.e. '>=3 nodes ANYWHERE have onset outflow.' The validated sibling A15 uses scope='opposite'; the R1 gauntlet (ORACLE_COMPOUND_GAUNTLET_R1.md 'Read' section) named A15's mechanism as 'rotation-driven mean reversion (local capitulation coincident with active displacement from the OPPOSITE risk pole).' A16 discards the directional rotation signal and reduces to 'buy a washout during broad market-wide de-risking' \u2014 a generic panic/beta proxy, not a rotation edge. The stated mechanism ('active cross-map liquidation pressure') describes market-wide risk-off, which is a plausible tautology: broad onset-outflow clustering is itself a proxy for a market drawdown, and buying any oversold ETF during a drawdown is mean-reversion-to-beta, not sector alpha vs SPY.",
+        "evidence_ref": "registry entry_rule complex_scope='any', engine/oracle/compounds.py:398, ORACLE_COMPOUND_GAUNTLET_R1.md Read paragraph; contrast A15 spec (scope='opposite')"
+      },
+      {
+        "severity": "major",
+        "category": "duplicate",
+        "finding": "A16 is a near-sibling of an already-adjudicated family. It sits in the same washout x outflow basin as A15 (validated, reversion gauntlet PASS), A9, A13 (screened n=0), A17 \u2014 all family 'A' from the same 2026-07-04 external-brainstorm batch. R1 explicitly states five compounds cleared the mechanical floor (A9, A15, A16, A17, C6) and then deliberately carried only 'the two headline candidates plus A9' into the OOS+placebo gauntlet, i.e. A16 was screened and set aside, NOT independently validated. Adopting A16 as its own registry candidate re-surfaces a member of an already-triaged cluster whose directional variant (A15) already covers the mechanism-quality case, while A16 is the weaker undifferentiated variant. Not a hard identity-duplicate of A15 (any!=opposite, 3-in-10 vs 2-in-20), so classified major not blocker.",
+        "evidence_ref": "ORACLE_COMPOUND_GAUNTLET_R1.md Context + reproduce block (A15/A9/A17 selected, A16/C6 dropped); dedup_context family 'A'; registry.jsonl A13/A15/A16"
+      },
+      {
+        "severity": "major",
+        "category": "data",
+        "finding": "Trial-family accounting is unregistered and the FDR denominator is likely understated. trial_accounting.family=null and declared_at=null. search_width_at_scan=110 is present, but A16 is 1 of 8 candidates adopted from oracle_promotion_queue.json in a single 2026-07-06 batch (candidates.jsonl: a9/a15/a16/a17/a24/a46/c6/term_premium_02). If the 8 adopted candidates are jointly evaluated as promotion candidates, the effective family is this batch drawn from the 110-wide screen, and no BH-FDR family has been registered for it before p-values (Lens 2 / Constitution II grammar-hash + trial-counting law). The candidate rides on the screen's search-width but has no dedicated registered gauntlet-family count.",
+        "evidence_ref": "trial_accounting.family=null, aggregate_metrics.search_width_at_scan=110, data/research_factory/candidates.jsonl 8 rf-20260706 adoptions, data/oracle/promotion_queue.json n_candidates=8"
+      },
+      {
+        "severity": "minor",
+        "category": "regime",
+        "finding": "Era consistency is 3/4 with the 2015-2019 era marked 'mixed' (not positive). The floor's era-consistency gate structurally counts era-1 (1999-2014) and can mask modern-regime instability; R1's A17 correction already documented that the era gate 'structurally penalizes modern-regime edges.' A16 clears era_consistent_ge_3 but with a soft (mixed) middle era, so era-stability is weaker than the 4/4 achieved by the validated A15.",
+        "evidence_ref": "evaluation_plan.era_consistent=3, trial_ledger era_direction_63d 2015-2019='mixed'; ORACLE_COMPOUND_GAUNTLET_R1.md Correction 'Structural flaw surfaced'"
+      }
+    ],
+    "non_blocking_concerns": [
+      "PIT construction is clean: engine/oracle/compounds.py:362-426 filters episodes onset_date<=date over a session-counted lookback and counts distinct nodes (nunique) \u2014 no forward information, no survivorship in the 11-ETF survivorship-clean universe. Lookahead is not the objection here.",
+      "mechanical_probes are uninformative for this candidate: input_insensitive='not_applicable' (no per-fire outcome arrays), gauntlet_legs=[] empty, near_dup.flagged=false. The absence of a permutation-probe and per-leg verdicts is a gap, not a pass \u2014 do not read the empty probes as evidence of soundness.",
+      "decay_conditions, expected_failure_modes, and falsifiers are all empty arrays \u2014 the candidate carries no pre-registered kill conditions.",
+      "Cost/capacity: liquid sector-ETF entries, but R1 already flagged the A-family effect as '~+1.3% 63d excess ... a tilt, not a fortune, net of costs'; A16's +1.0% is below that and may not survive slippage+financing on a 63d hold.",
+      "authority: authority='display_only' and the rule outputs no score/board-rank/escalation; no LLM-originated value in the mechanism \u2014 no Article-1/Article-2 (RF-16) violation observed."
+    ],
+    "best_counterargument": "A16 is PIT-clean, computes over a survivorship-clean 27-year 11-ETF universe, and clears the effect-size and n floors on 1,352 fires with 3/4 eras positive and the recent (2023-2026) era positive. It lives in the one basin the program has repeatedly found live (washout x active-flow-stress), and its directional sibling A15 passed a full reversion gauntlet at WR .737 with an OOS holdout \u2014 so the family mechanism is real, not imagined. 'Any-scope, 3-in-10-sessions' is a defensibly distinct, broader-net variant that could capture capitulation episodes A15's opposite-only filter misses, and it is being adopted as display-only, which is exactly the pre-registration-before-gauntlet stage where a wider net is cheap to carry.",
+    "minimum_fix_to_reconsider": "Register a dedicated BH-FDR family for this adoption batch (declare the count before p-values), then subject A16 to the same R1/P3-style gauntlet A15 received: OOS holdout (report holdout effect sign, hit>=0.52, n>=100), timing/count-matched placebo (real 63d mean > 95th pctile of random-timing draws), and block-bootstrap CI. Additionally, demonstrate A16's edge is not fully contained by A15 (an entry-set containment / marginal-fire test like the W3 22.6% containment analysis) \u2014 i.e. that 'any'-scope adds real capitulation entries beyond the opposite-scope rotation signal rather than diluting it with broad-de-risking beta. Absent a positive OOS holdout AND a placebo pass AND non-containment, the sub-55% hit rate should keep this NULL.",
+    "falsifier_spec": "In a pre-registered OOS holdout (split at 2019-12-31, matching the R1 protocol), A16 has holdout hit_63d < 0.52 OR a holdout 63d-excess mean that flips sign vs the dev period; OR, in a count-matched random-timing placebo, the real 63d mean fails to exceed the 95th percentile of the placebo distribution. Either outcome confirms the 'any-scope broad-outflow' entry is capturing market-wide beta/panic timing rather than a durable sector-reversion edge.",
+    "human_review_question": "Should A16 (the undifferentiated 'any-complex, 3-nodes-in-10-sessions' washout variant, hit_63d=0.5355 below the 0.55 floor and never carried into the R1 OOS/placebo gauntlet) be defer-killed as a weaker duplicate of the already-validated directional sibling A15 \u2014 YES to defer/kill until it passes its own registered OOS+placebo gauntlet, NO to advance it to paper alongside A15?"
+  }
+}

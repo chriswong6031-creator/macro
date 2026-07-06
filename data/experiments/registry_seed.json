@@ -2273,6 +2273,36 @@
       "state": "Accruing OOS-2 honest compounder fires. G1-Retest not triggered yet.",
       "next_step": "Check 2027-07-01: if >= 25 honest compounder clusters, run Ruler-H study.",
       "phase_hint": "G1-Retest"
+    },
+    {
+      "id": "rf-rf-20260706-adopt-a15_washout_opp_out_2node",
+      "name": "Research Factory: oracle_compound/oracle — Washout during two-node opposite-complex outflow",
+      "kind": "track_record",
+      "priority": "medium",
+      "cadence": "nightly",
+      "what": "[Research Factory paper accrual] Washout during two-node opposite-complex outflow. Mechanism: washout_w>0 while >=2 opposite-complex nodes have recent onset outflow, pairing local capitulation with broader displacement away from another complex.. expected_half_life_d=250 (operator-declared). regime_at_entry={\"regime\": \"Q1\", \"quad\": \"Q1\", \"asof\": \"2026-07-02\", \"source\": \"data/regime/latest.json\"}.",
+      "source": "research_factory/oracle_compound/oracle",
+      "storage": "data/research_factory/candidates.jsonl",
+      "track_json": "data/research_factory/track/rf-20260706-adopt-a15_washout_opp_out_2node.json",
+      "hook": "track_record",
+      "started": "2026-07-06",
+      "come_back_on": "2027-03-13",
+      "come_back_note": "RF-9 paper accrual clock; expected_half_life_d=250; regime_at_entry=Q1",
+      "maturation": "n>=100 matured obs at 21d horizon; primary_metric=WR; expected_half_life_d=250 (operator-set)",
+      "status": "accruing",
+      "state": "paper accrual started; regime_at_entry=Q1",
+      "next_step": "Monitor WR against domain gate; regime_at_entry=Q1; return at come_back_on for decay review.",
+      "phase_hint": "research-factory · oracle · oracle_compound",
+      "rf_candidate_id": "rf-20260706-adopt-a15_washout_opp_out_2node",
+      "rf_decision": "paper",
+      "rf_expected_half_life_d": 250,
+      "rf_defaulted_half_life": false,
+      "rf_regime_at_entry": {
+        "regime": "Q1",
+        "quad": "Q1",
+        "asof": "2026-07-02",
+        "source": "data/regime/latest.json"
+      }
     }
   ]
 }
