@@ -4,6 +4,22 @@ Signals that PASS all 6 legs of the frozen reversion gauntlet (`research/ORACLE_
 
 **PUBLISHED:** all rows below are landed in the durable compound registry (`data/oracle/compounds/registry.jsonl`) with a `reversion` validation block (gauntlet=PASS + per-regime + OOS + placebo, re-verified on a fresh panel rebuild 2026-07-05). Status stays `screened` — the durable registry is the publish target; promotion to any live/escalating surface still requires Fable adjudication (and the existing 63d promotion_scan is the *wrong* ruler for these, so a reversion promotion track is a separate build).
 
+**Transaction-cost haircut — PASSED (2026-07-05, the prereg's required pre-live gate).** All 9 signals survive realistic round-trip costs robustly, because the per-trade edge (+2–12% over ~21 sessions) dwarfs spread+slippage. Net mean / net WR (cost subtracted once per entry):
+
+| signal | gross | @10bps | @25bps | @50bps |
+|---|---|---|---|---|
+| A15 | +3.05% / .737 | +2.95% / .733 | +2.80% / .726 | +2.55% / .713 |
+| B4_WASHOUT_DOLLAR_RELIEF | +2.07% / .683 | +1.97% / .682 | +1.82% / .676 | +1.57% / .657 |
+| E_DOLLAR_EASE_TLT_POS_K25 | +2.31% / .692 | +2.21% / .692 | +2.06% / .680 | +1.81% / .654 |
+| B4_EP_SAME_OUT_CREDIT_EASE | +2.12% / .724 | +2.02% / .722 | +1.87% / .719 | +1.62% / .707 |
+| R16 | +2.70% / .683 | +2.60% / .681 | +2.45% / .672 | +2.20% / .661 |
+| R3_B2 | +2.79% / .710 | +2.69% / .706 | +2.54% / .699 | +2.29% / .687 |
+| R4_E10 | +2.70% / .685 | +2.60% / .681 | +2.45% / .668 | +2.20% / .652 |
+| M1_OIL_DOWN_K30_RS_NEG *(tier-M)* | +12.24% / .690 | — | +11.99% / .682 | +11.74% / .678 |
+| SRM_BEARTAPE_ACCEL_K20 *(tier-M)* | +5.57% / .679 | — | +5.32% / .671 | +5.07% / .664 |
+
+Even at 50bps (illiquid-name proxy) every signal stays positive with WR ≥ 0.65; the WR barely moves because few winners sit in the razor-thin 0–50bps band (these are not cost-fragile scalps). **Caveats:** models spread+slippage as a fixed per-trade cost — NOT market impact or capacity; the tier-M magnitudes are era-inflated (2021-2026), so the cost-*robustness* holds but the absolute levels are optimistic; ~21-session holds ⇒ ~12 turns/yr ≈ ~3%/yr drag at 25bps if a book is fully cycled (opportunity-set dependent). Upgrades the base from "un-haircut" to **cost-robust** — still display-only until live-tracked.
+
 | id | entry_rule | asym | WR | ret_exit | n | OOS holdout | date | batch |
 |---|---|---|---|---|---|---|---|---|
 | A15_WASHOUT_OPP_OUT_2NODE | washout_w>0 ∧ ep(out/onset/opposite/w20/min2) | 1.83 | 0.74 | +3.05% | 2357 | +4.60% / WR .78 | 2026-07-05 | (screen leads) |
