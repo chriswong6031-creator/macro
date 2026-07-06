@@ -171,7 +171,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
-| dispersion-regime | `data/dispersion/regime.json` | json | daily-engine | display | 1 | 0 |
+| dispersion-regime | `data/dispersion/regime.json` | json | daily-engine | display | 2 | 0 |
 
 ### options-alpha
 
@@ -255,7 +255,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
-| us-board-ledger-retro-grades | `data/us_board_ledger/retro_grades.parquet` | parquet | daily-engine | infrastructure | 8 | 0 |
+| us-board-ledger-retro-grades | `data/us_board_ledger/retro_grades.parquet` | parquet | daily-engine | infrastructure | 9 | 0 |
 | signal-archive-mtf | `data/signal_archive/mtf_signals_latest.json` | json | daily-engine | display | 6 | 0 |
 | site-signals-per-ticker | `site/signals/<SYM>.json` | json | daily-engine | display | 3 | 2 |
 | signal-archive-track-record | `data/signal_archive/track_record.parquet` | parquet | daily-engine | shadow | 4 | 0 |
@@ -352,6 +352,12 @@ flowchart LR
     C_engine_oracle_panel_py["engine/oracle/panel.py"]
     C_engine_oracle_timemachine_py["engine/oracle/timemachine.py"]
     OVF_site_baskets_json["...+6 more"]
+    P_scripts_grade_us_board_py(("scripts/grade_us_board.py"))
+    A_us_board_ledger_retro_grades["us-board-ledger-retro-grades"]
+    C_engine_china_standout_track_py["engine/china_standout_track.py"]
+    C_engine_spine_py["engine/spine.py"]
+    C_engine_track_record_py["engine/track_record.py"]
+    OVF_us_board_ledger_retro_grades["...+5 more"]
     P_engine_radar_py(("engine/radar.py"))
     A_radar_theses["radar-theses"]
     C_engine_ai_desk_scorer_py["engine/ai_desk_scorer.py"]
@@ -367,12 +373,6 @@ flowchart LR
     P_engine_altdata_emit_py(("engine/altdata_emit.py"))
     A_site_altdata_mastermind["site-altdata-mastermind"]
     OVF_site_altdata_mastermind["...+4 more"]
-    P_scripts_grade_us_board_py(("scripts/grade_us_board.py"))
-    A_us_board_ledger_retro_grades["us-board-ledger-retro-grades"]
-    C_engine_china_standout_track_py["engine/china_standout_track.py"]
-    C_engine_spine_py["engine/spine.py"]
-    C_engine_track_record_py["engine/track_record.py"]
-    OVF_us_board_ledger_retro_grades["...+4 more"]
     P_engine_neuralweb_world_state_py(("engine/neuralweb/world_state.py"))
     A_world_state["world-state"]
     C_scripts_build_feeds_py["scripts/build_feeds.py"]
@@ -440,6 +440,12 @@ flowchart LR
     A_site_baskets_json --> C_engine_oracle_panel_py
     A_site_baskets_json --> C_engine_oracle_timemachine_py
     A_site_baskets_json --> OVF_site_baskets_json
+    P_scripts_grade_us_board_py --> A_us_board_ledger_retro_grades
+    A_us_board_ledger_retro_grades --> C_engine_board_ledger_py
+    A_us_board_ledger_retro_grades --> C_engine_china_standout_track_py
+    A_us_board_ledger_retro_grades --> C_engine_spine_py
+    A_us_board_ledger_retro_grades --> C_engine_track_record_py
+    A_us_board_ledger_retro_grades --> OVF_us_board_ledger_retro_grades
     P_engine_radar_py --> A_radar_theses
     A_radar_theses --> C_engine_ai_desk_scorer_py
     A_radar_theses --> C_engine_hub_track_record_py
@@ -458,12 +464,6 @@ flowchart LR
     A_site_altdata_mastermind --> C_engine_radar_ticker_py
     A_site_altdata_mastermind --> C_engine_china_intel_analysis_py
     A_site_altdata_mastermind --> OVF_site_altdata_mastermind
-    P_scripts_grade_us_board_py --> A_us_board_ledger_retro_grades
-    A_us_board_ledger_retro_grades --> C_engine_board_ledger_py
-    A_us_board_ledger_retro_grades --> C_engine_china_standout_track_py
-    A_us_board_ledger_retro_grades --> C_engine_spine_py
-    A_us_board_ledger_retro_grades --> C_engine_track_record_py
-    A_us_board_ledger_retro_grades --> OVF_us_board_ledger_retro_grades
     P_engine_neuralweb_world_state_py --> A_world_state
     A_world_state --> C_scripts_build_feeds_py
     A_world_state --> C_scripts_notify_py
