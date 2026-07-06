@@ -671,9 +671,11 @@ def main(alpha: dict | None = None) -> dict | None:
                       ("collectors.china_pledge", {}),        # 股权质押 forced-sell tail risk
                       ("collectors.china_unlocks", {}),       # 限售股 restricted-share unlock queue
                       ("collectors.china_preannounce", {}),   # 业绩预告 earnings pre-announcements
-                      # china_inquiry DEPRECATED (W4): inquiry letters now from china_filings.
-                      # Kept here for legacy data/china_inquiry/ backfill runs only.
-                      ("collectors.china_inquiry", {}),       # 问询函 exchange inquiry letters (DEPRECATED → china_filings)
+                      # china_inquiry has been FULLY RETIRED (W4 review fix): inquiry letters are
+                      # now sourced exclusively from collectors/china_filings.py →
+                      # data/china_filings/filings.parquet (category=='inquiry_letter').
+                      # The engine's read-fallback to the frozen data/china_inquiry/inquiry.parquet
+                      # stays in place to surface honest asof staleness if filings degrades.
                       ("collectors.china_st", {}),            # ST board snapshot + history + goodwill
                       # PREMIUM Tushare feeds — GATED on TUSHARE_TOKEN (each refresh() self-no-ops
                       # without the token, so CI / keyless builds are unaffected). See

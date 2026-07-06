@@ -17,6 +17,14 @@ Rules:
 
 Unlock ratio note: 占解禁前流通市值比例 is a FRACTION (1.0 = 100%). Engine stores
 float_pct = ratio * 100 so that float_pct=5.0 means 5% of pre-unlock float.
+
+Data freshness / ordering dependency:
+    data/china_filings/filings.parquet is written by the asia-lane collect step
+    (collectors/china_filings.py) that runs BEFORE this engine is invoked by
+    build_china_special_situations.py. There is NO in-build refresh of china_filings
+    — the collector is network-bound and belongs in the collect phase only.
+    Running this engine standalone reads whatever filings.parquet was last committed
+    by the collector; the asof/status chip surfaces staleness honestly.
 """
 from __future__ import annotations
 
@@ -758,6 +766,46 @@ def scan() -> dict:
     }
 
 
+def _cst_claim_keys(sec_code: str, date_str: str) -> tuple[str, str, str]:
+    """Return (canonical_key, utc_variant_key, cst_plus1_key) for an inquiry claim.
+
+    Canonical key: the claim key derived from date_str as given (for the filings plane
+    this is already the CST date; for a legacy-path snap the stored date is a UTC date).
+
+    utc_variant_key: canonical_key with date − 1 day.
+        Rationale: the filings plane stores publish_ts in Asia/Shanghai; publish_ts[:10]
+        is the CST date (D). The legacy collector stored UTC-basis dates; for events at
+        00:00–08:00 CST (prior UTC day), the legacy date was D−1. Checking utc_variant_key
+        ensures that a claim registered from the filings path (canonical=D) blocks
+        re-registration from the legacy path (which arrives with date D−1 → its
+        canonical_key would be inq_{code}_{D-1}).
+
+    cst_plus1_key: canonical_key with date + 1 day.
+        Rationale (reverse direction): when the legacy source arrives first with date=D−1
+        (UTC date), and the filings source has already written canonical=D to the sidecar,
+        the legacy processing sees date=D−1 → canonical=D−1, utc_variant=D−2.  Neither
+        matches D in the sidecar. The fix: also check D−1+1 = D (the CST "next day"
+        candidate for a UTC-dated row). Legacy UTC date can lag CST by one day, never
+        lead; so checking date+1 as an additional sidecar lookup covers that direction.
+        Document: "legacy UTC date can lag CST by one day, never lead."
+
+    Dedup contract: register_claims checks ALL THREE keys. Registration always writes
+    the canonical key (the date_str as provided by the snap — already CST for filings).
+    """
+    from datetime import date as _date, timedelta as _td
+    canonical_key = f"inq_{sec_code}_{date_str}"
+    try:
+        d = _date.fromisoformat(date_str)
+        utc_date = (d - _td(days=1)).isoformat()
+        cst_plus1_date = (d + _td(days=1)).isoformat()
+    except Exception:  # noqa: BLE001 — malformed date_str; fall back to same key
+        utc_date = date_str
+        cst_plus1_date = date_str
+    utc_variant_key = f"inq_{sec_code}_{utc_date}"
+    cst_plus1_key = f"inq_{sec_code}_{cst_plus1_date}"
+    return canonical_key, utc_variant_key, cst_plus1_key
+
+
 def register_claims(snap: dict, root: Any = None) -> int:
     """Register salience-only qledger claims for inquiry-letter and large-unlock events.
 
@@ -771,6 +819,15 @@ def register_claims(snap: dict, root: Any = None) -> int:
     sidecar data/china_special_sits/claims_registered.parquet
     (columns: event_key, first_registered).
     event_key: unlock → unlock_{ticker}_{unlock_date}; inquiry → inq_{secCode}_{announce_date}
+
+    Claim-key timezone canonicalization (CST skew fix):
+        The canonical claim key uses the Asia/Shanghai (CST) calendar date of the event.
+        The legacy collector (collectors/china_inquiry.py) stored UTC-basis dates; for
+        events published 00:00–08:00 CST, the legacy UTC date is one day behind the CST
+        date. To prevent double-registration across the source switch, when checking the
+        sidecar this function tests BOTH the canonical CST-basis key AND the legacy
+        UTC-basis key (CST date − 1 day). Registration always writes the canonical key.
+        See _cst_claim_keys() for the derivation.
 
     Entity scope: scope_type='entity', scope_key=<normalized ticker> (mirrors communique_diff.py
     lines ~431-444). Falls back to macro/510300.SS only when ticker normalization fails.
@@ -842,9 +899,13 @@ def register_claims(snap: dict, root: Any = None) -> int:
         if not sec_code:
             continue
         announce_date = str(ltr.get("date") or today)[:10]
-        event_key = f"inq_{sec_code}_{announce_date}"
-        if event_key in registered_keys:
-            continue  # already registered on a previous run
+        # Canonical key is the date as given; also check date−1 (utc_variant, for
+        # filings-first blocking legacy re-registration) and date+1 (cst_plus1, for
+        # legacy-first blocking filings re-registration). Legacy UTC date can lag
+        # CST by one day, never lead. See _cst_claim_keys() for full derivation.
+        event_key, utc_variant_key, cst_plus1_key = _cst_claim_keys(sec_code, announce_date)
+        if event_key in registered_keys or utc_variant_key in registered_keys or cst_plus1_key in registered_keys:
+            continue  # already registered on a previous run (either source)
         scope_type, scope_key = _entity_claim("", sec_code)
         try:
             claim_asof = announce_date  # stamp from the event's own date

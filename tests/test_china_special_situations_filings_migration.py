@@ -596,3 +596,252 @@ def test_inquiry_block_excludes_non_inquiry_categories(tmp_path, monkeypatch):
     inq = snap.get("inquiry") or {}
     assert inq.get("n_letters") == 1
     assert inq["letters"][0]["secCode"] == "000001"
+
+
+# ── 8. 复函 reply classification — both code paths agree ──────────────────────
+
+def test_fuhan_kind_reply_filings_path(tmp_path, monkeypatch):
+    """复函 title from filings.parquet → kind='reply' → parent letter has_reply=True,
+    复函 row excluded from letters display list.
+
+    This tests the FILINGS code path: filings.parquet with a 'letter' row for stock
+    000001 and a 'reply' row whose kind was derived from a 复函 title.
+    Both must agree: the letter's has_reply=True, and the reply is NOT in the letters list.
+    """
+    import lib.config as cfg
+    monkeypatch.setattr(cfg, "data_dir", lambda: tmp_path / "data")
+    monkeypatch.setattr(cfg, "load", lambda: {"storage": {"site_dir": str(tmp_path / "site")}})
+    monkeypatch.setattr(cfg, "ROOT", tmp_path)
+
+    from engine import china_special_situations as css
+    import collectors.china_filings as cf
+    css._REGIME_HISTORY_CACHE.clear()
+
+    today = pd.Timestamp.today().strftime("%Y-%m-%d")
+
+    # The classify_kind function must map 复函 → 'reply'
+    assert cf.classify_kind("股票交易异常波动问询函的复函-郁敏珺") == "reply", \
+        "classify_kind must return 'reply' for 复函 title"
+
+    rows = [
+        # The exchange-issued letter
+        _filings_row("000001", "平安银行", "关于股票交易异常波动的问询函",
+                     f"{today}T09:00:00+08:00", kind="letter", announcement_id="LTR-001"),
+        # The company's 复函 reply (kind should be 'reply' from classify_kind)
+        _filings_row("000001", "平安银行", "股票交易异常波动问询函的复函-郁敏珺",
+                     f"{today}T15:00:00+08:00", kind="reply", announcement_id="REP-001"),
+    ]
+    _make_parquet(tmp_path / "data" / "china_filings" / "filings.parquet", rows)
+
+    snap = css.scan()
+    inq = snap.get("inquiry") or {}
+
+    # Only the letter appears in the display list; the reply does NOT
+    assert inq.get("n_letters") == 1, f"Expected 1 letter, got {inq.get('n_letters')}"
+    assert inq.get("n_replies") == 1, f"Expected 1 reply count, got {inq.get('n_replies')}"
+
+    letter = inq["letters"][0]
+    assert letter["secCode"] == "000001"
+    assert letter["has_reply"] is True, "Letter must show has_reply=True when a 复函 reply exists"
+    # The reply row must NOT appear in the letters list
+    for ltr in inq["letters"]:
+        assert "复函" not in ltr.get("title", ""), \
+            "复函 reply title must NOT appear in the letters display list"
+
+
+def test_fuhan_kind_reply_legacy_path(tmp_path, monkeypatch):
+    """复函 reply via the legacy inquiry.parquet path → has_reply=True, reply excluded.
+
+    Tests the LEGACY code path: legacy inquiry.parquet with kind='reply' for the 复函 row.
+    Both code paths (legacy + filings) must agree on the reply classification.
+    """
+    import lib.config as cfg
+    monkeypatch.setattr(cfg, "data_dir", lambda: tmp_path / "data")
+    monkeypatch.setattr(cfg, "load", lambda: {"storage": {"site_dir": str(tmp_path / "site")}})
+    monkeypatch.setattr(cfg, "ROOT", tmp_path)
+
+    from engine import china_special_situations as css
+    css._REGIME_HISTORY_CACHE.clear()
+
+    today = pd.Timestamp.today().strftime("%Y-%m-%d")
+
+    # No filings.parquet → legacy path is used
+    _make_parquet(tmp_path / "data" / "china_inquiry" / "inquiry.parquet", [
+        {"secCode": "000555", "secName": "老格式银行", "announcementTitle": "关于问询函的说明",
+         "announcementTime": today, "adjunctUrl": "/x/letter.pdf",
+         "announcementTypeName": "问询函", "kind": "letter", "asof": today},
+        {"secCode": "000555", "secName": "老格式银行",
+         "announcementTitle": "股票交易异常波动问询函的复函-张三",
+         "announcementTime": today, "adjunctUrl": "/x/fuhan.pdf",
+         "announcementTypeName": "问询函回函", "kind": "reply", "asof": today},
+    ])
+
+    snap = css.scan()
+    inq = snap.get("inquiry") or {}
+
+    assert inq.get("n_letters") == 1, f"Legacy path: expected 1 letter, got {inq.get('n_letters')}"
+    letter = inq["letters"][0]
+    assert letter["secCode"] == "000555"
+    assert letter["has_reply"] is True, "Legacy path: has_reply must be True for 复函 reply row"
+
+
+# ── 9. CST skew fixture — claim not double-registered across source switch ─────
+
+def test_cst_skew_legacy_first_filings_no_reregister(tmp_path, monkeypatch):
+    """Skew fixture (forward direction): letter timestamped 07:30 CST.
+
+    Legacy path stored UTC date (D-1 = previous calendar day).
+    Filings path stores CST date (D).
+
+    Step 1: Legacy registers claim with key inq_{code}_{D-1}.
+    Step 2: Filings path MUST NOT re-register (canonical key inq_{code}_{D},
+            but utc_variant_key inq_{code}_{D-1} is already in sidecar → skipped).
+
+    Implements the reviewer's skew fixture.
+    """
+    monkeypatch.setenv("CN_LANE", "asia")
+    import lib.config as cfg
+    monkeypatch.setattr(cfg, "data_dir", lambda: tmp_path / "data")
+    monkeypatch.setattr(cfg, "load", lambda: {"storage": {"site_dir": str(tmp_path / "site")}})
+    monkeypatch.setattr(cfg, "ROOT", tmp_path)
+
+    import engine.china_special_situations as css
+    import engine.qledger as ql_mod
+    css._REGIME_HISTORY_CACHE.clear()
+
+    registered_calls: list[list] = []
+
+    def fake_make(**kw):
+        return {"_claim": True, **kw}
+
+    def fake_batch(claims, **kw):
+        registered_calls.append(list(claims))
+        return [{"status": "new"} for _ in claims]
+
+    monkeypatch.setattr(ql_mod, "make_claim", fake_make)
+    monkeypatch.setattr(ql_mod, "register_batch", fake_batch)
+
+    import datetime
+    # Letter at 07:30 CST = 23:30 UTC on D-1.
+    # CST date = D, UTC date = D-1.
+    today = pd.Timestamp.today()
+    cst_date = today.strftime("%Y-%m-%d")          # D (canonical CST date)
+    utc_date = (today - pd.Timedelta(days=1)).strftime("%Y-%m-%d")  # D-1 (legacy UTC date)
+
+    sec_code = "000333"
+
+    # Step 1: Pre-populate sidecar as if LEGACY registered with the UTC date (D-1).
+    sidecar_path = tmp_path / "data" / "china_special_sits" / "claims_registered.parquet"
+    sidecar_path.parent.mkdir(parents=True, exist_ok=True)
+    pd.DataFrame([
+        {"event_key": f"inq_{sec_code}_{utc_date}", "first_registered": utc_date}
+    ]).to_parquet(sidecar_path, index=False)
+
+    # Step 2: Filings.parquet stores CST date (D) for the same event.
+    rows = [
+        _filings_row(sec_code, "跨时区测试", "关注函说明",
+                     f"{cst_date}T07:30:00+08:00",   # 07:30 CST = previous UTC day
+                     kind="letter", announcement_id="SKEW-001"),
+    ]
+    _make_parquet(tmp_path / "data" / "china_filings" / "filings.parquet", rows)
+
+    snap = css.scan()
+    n = css.register_claims(snap)
+
+    assert n == 0, (
+        f"CST-skew fixture (legacy-first): filings path must NOT re-register a claim "
+        f"already registered by legacy (utc_date={utc_date}, cst_date={cst_date}). "
+        f"Got n={n}, registered_calls={registered_calls}"
+    )
+
+
+def test_cst_skew_filings_first_legacy_no_reregister(tmp_path, monkeypatch):
+    """Skew fixture (reverse direction): letter timestamped 07:30 CST.
+
+    Filings path registers claim first with canonical key inq_{code}_{D} (CST date).
+    Legacy path then arrives with date D-1 (UTC date).
+    The canonical for legacy (D-1+1 = D) is already registered → must be skipped.
+
+    We simulate this by: (1) registering via filings (canonical key D written to sidecar),
+    (2) then building a snap whose inquiry date is D-1 (as legacy would report) and
+    calling register_claims again — must return 0.
+    """
+    monkeypatch.setenv("CN_LANE", "asia")
+    import lib.config as cfg
+    monkeypatch.setattr(cfg, "data_dir", lambda: tmp_path / "data")
+    monkeypatch.setattr(cfg, "load", lambda: {"storage": {"site_dir": str(tmp_path / "site")}})
+    monkeypatch.setattr(cfg, "ROOT", tmp_path)
+
+    import engine.china_special_situations as css
+    import engine.qledger as ql_mod
+    css._REGIME_HISTORY_CACHE.clear()
+
+    all_registered: list = []
+
+    def fake_make(**kw):
+        return {"_claim": True, **kw}
+
+    def fake_batch(claims, **kw):
+        all_registered.extend(claims)
+        return [{"status": "new"} for _ in claims]
+
+    monkeypatch.setattr(ql_mod, "make_claim", fake_make)
+    monkeypatch.setattr(ql_mod, "register_batch", fake_batch)
+
+    today = pd.Timestamp.today()
+    cst_date = today.strftime("%Y-%m-%d")          # D
+    utc_date = (today - pd.Timedelta(days=1)).strftime("%Y-%m-%d")  # D-1
+
+    sec_code = "000444"
+
+    # Step 1: Pre-populate sidecar as if FILINGS already registered with canonical key (D).
+    sidecar_path = tmp_path / "data" / "china_special_sits" / "claims_registered.parquet"
+    sidecar_path.parent.mkdir(parents=True, exist_ok=True)
+    pd.DataFrame([
+        {"event_key": f"inq_{sec_code}_{cst_date}", "first_registered": cst_date}
+    ]).to_parquet(sidecar_path, index=False)
+
+    # Step 2: Build a snap that looks like the LEGACY source — date = D-1 (UTC date).
+    # The utc_variant_key for D-1 is (D-1)-1 = D-2 (NOT in sidecar).
+    # BUT: the canonical key for D-1 would be inq_{code}_{D-1}, which is NOT in sidecar.
+    # The real dedup path: canonical=D-1, utc_variant=D-2 → neither matches → would register.
+    #
+    # The correct dedup for reverse-order requires that when the legacy date is D-1,
+    # we also check if D-1+1 = D is in the sidecar. This is the "check both date and
+    # date+1day variants for legacy-dated rows" ruling.
+    # Implementation: _cst_claim_keys(sec_code, D-1) returns:
+    #   canonical_key = inq_{code}_{D-1}
+    #   utc_variant_key = inq_{code}_{D-2}
+    # Neither is in sidecar (sidecar has D). So we need a separate "forward check"
+    # for legacy: also check date+1 as the canonical variant.
+    #
+    # Per the ruling: "check both `date` and `date+1day` variants for legacy-dated rows".
+    # The snap letter has date=D-1; we also check inq_{code}_{D} (date+1).
+    # That key IS in sidecar → skip.
+    #
+    # We simulate legacy snap by injecting a letter with date=D-1 directly.
+    snap_legacy = {
+        "inquiry": {
+            "letters": [
+                {
+                    "secCode": sec_code,
+                    "secName": "逆序测试",
+                    "title": "关注函说明",
+                    "date": utc_date,   # legacy UTC date = D-1
+                    "pdf_url": "/x.pdf",
+                    "has_reply": False,
+                    "type_name": "问询函",
+                }
+            ],
+            "n_letters": 1,
+            "n_replies": 0,
+        },
+        "unlocks": None,
+    }
+
+    n = css.register_claims(snap_legacy)
+    assert n == 0, (
+        f"CST-skew fixture (filings-first): legacy path (date=D-1={utc_date}) must NOT "
+        f"re-register when filings already registered canonical key (D={cst_date}). "
+        f"Got n={n}. Check that register_claims tests date+1 variant for legacy rows."
+    )

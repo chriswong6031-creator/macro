@@ -153,6 +153,27 @@ class TestClassifyKind:
         # reply keyword beats plain letter match (no attachment keyword)
         assert cf.classify_kind("问询函答复") == "reply"
 
+    # --- 复函 fixture (review finding: formal reply letter missing from _KIND_REPLY_KW) ---
+
+    def test_reply_fuhan(self):
+        """复函 (formal reply letter) must classify as 'reply'.
+
+        Live data example: "股票交易异常波动问询函的复函-郁敏珺" (4 rows in inquiry.parquet).
+        """
+        assert cf.classify_kind("股票交易异常波动问询函的复函-郁敏珺") == "reply"
+
+    def test_reply_fuhan_standalone(self):
+        """复函 alone → 'reply' (not 'letter' default)."""
+        assert cf.classify_kind("复函") == "reply"
+
+    def test_reply_fuhan_precedence_over_letter(self):
+        """复函 beats the plain 'letter' default when no attachment keyword present."""
+        assert cf.classify_kind("关于问询函的复函") == "reply"
+
+    def test_precedence_attachment_over_fuhan(self):
+        """附件 keyword still wins over 复函 (attachment > reply precedence unchanged)."""
+        assert cf.classify_kind("关注函复函的专项说明") == "attachment"
+
 
 # --------------------------------------------------------------------------- #
 # _unix_ms_to_iso
