@@ -9,10 +9,17 @@ Computes, for the LIVE universe at build time (PIT-as-of-today), per ticker:
   last_event_date   : most recent EDGAR 8-K 2.02 filing_date visible today
   sue_latest        : PIT SUE at today (engine/sue.py construction)
   sue_streak        : consecutive quarters with d_q > 0 (cap 8), at today
-  pead_drift_20d    : cumulative stock-minus-benchmark return from last event
+  pead_drift_20d    : cumulative stock-minus-market return from last event
                       +1 session up to min(event+20 sessions, today)
-  bad_news_absorption : binary, ED-4 definition from EXPECT_DRIFT_FAMILY_PREREG.md §2
+                      [DISCLOSED DIVERGENCE from prereg ED-3: benchmark is SPY
+                      not the EW sector basket; sector basket deferred (heavy).
+                      Display labels say 'vs market'/'stock-minus-market'.
+                      _benchmark='SPY' carried in each chip dict.]
+  bad_news_absorption : binary, market-relative variant of ED-4 definition
+                      from EXPECT_DRIFT_FAMILY_PREREG.md §2 — same logic but
+                      momentum condition (cond-3) uses SPY not sector basket
   good_news_hold    : binary, ED-5 definition from EXPECT_DRIFT_FAMILY_PREREG.md §2
+                      (no benchmark dependency; unaffected by SPY divergence)
 
 References:
   Pre-registration: research/long_hold/EXPECT_DRIFT_FAMILY_PREREG.md §2
@@ -358,13 +365,15 @@ def _good_news_hold(
 
 def _dq_at_event(
     ticker_eps: pd.DataFrame,
-    event_date: pd.Timestamp,
+    asof_date: pd.Timestamp,
 ) -> float | None:
     """Get the d_q (seasonal surprise) from the most recent visible EPS quarter
-    at event_date.  Mirrors the build_expect_drift_panel._dq_at_event logic.
+    as of asof_date (today).  Matches build_expect_drift_panel._dq_at_event:
+    visibility gate uses fire_date (today), not event_date; threshold is
+    _SUE_MIN_DIFFS + 1 (>=5 visible rows required).
     """
-    visible = ticker_eps[ticker_eps["asof_date"] <= event_date].sort_values("period_end")
-    if len(visible) < _SUE_MIN_DIFFS + 2:
+    visible = ticker_eps[ticker_eps["asof_date"] <= asof_date].sort_values("period_end")
+    if len(visible) < _SUE_MIN_DIFFS + 1:
         return None
     diffs = _seasonal_diffs(
         visible["period_end"].values,
@@ -401,12 +410,13 @@ def expectation_states(
         last_event_date        str | None    ISO "YYYY-MM-DD"
         sue_latest             float | None
         sue_streak             int | None
-        pead_drift_20d         float | None
-        bad_news_absorption    bool | None
+        pead_drift_20d         float | None  (market-relative: benchmark=SPY)
+        bad_news_absorption    bool | None   (momentum cond uses SPY, not sector)
         good_news_hold         bool | None
         _horizon_role          "hold_thesis"
         _display_only          True
         _version               "v1"
+        _benchmark             "SPY"         (disclosed: prereg ED-3/ED-4 define sector-relative)
 
     Firewall: the returned dicts MUST NOT be consumed by any entry-stack
     scored surface (LH-R1).
@@ -502,8 +512,9 @@ def expectation_states(
                 # when sector basket is unavailable — benchmark='market' stamp)
                 benchmark = spy_close
 
-                # d_q at E(f) for bad_news_absorption / good_news_hold
-                dq = _dq_at_event(ticker_eps, event_date)
+                # d_q as of today (ref_ts) — PIT visibility is fire_date not event_date
+                # per prereg §2 and build_expect_drift_panel._dq_at_event(fire_date)
+                dq = _dq_at_event(ticker_eps, ref_ts)
 
                 pead_drift = _pead_drift(close, benchmark, event_date, ref_ts)
                 bna = _bad_news_absorption(close, benchmark, event_date, dq)
@@ -528,6 +539,12 @@ def expectation_states(
             "_horizon_role": "hold_thesis",
             "_display_only": True,
             "_version": "v1",
+            # Disclosed divergence from prereg ED-3/ED-4: benchmark is SPY (market)
+            # not the EW sector basket.  Prereg §1 defines sector-relative; sector basket
+            # build is deferred (heavy membership.json dependency).  pead_drift_20d and
+            # bad_news_absorption momentum condition are market-relative variants for all
+            # sector-covered names.  Display labels already say 'vs market'/'stock-minus-market'.
+            "_benchmark": "SPY",
         }
         # Cast numpy scalars to native Python (json.dumps safety)
         for k, v in chip.items():

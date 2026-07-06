@@ -349,6 +349,80 @@ class TestGoodNewsHold:
 
 
 # ===========================================================================
+# E-pre. _dq_at_event — threshold and visibility tests (Fix 1 + Fix 2)
+# ===========================================================================
+
+class TestDqAtEvent:
+    """Unit tests for _dq_at_event — guards the two study-alignment fixes.
+
+    Fix 1: threshold is _SUE_MIN_DIFFS + 1 (=5), not + 2 (=6) — exactly 5
+    visible rows must return a value, not None.
+
+    Fix 2: asof_date parameter controls visibility; caller must pass ref_ts
+    (today), not event_date, so a later-filed quarter visible today but not at
+    event_date is included — matching build_expect_drift_panel._dq_at_event.
+    """
+
+    def _make_eps(self, n_rows: int, asof_today: bool = True) -> pd.DataFrame:
+        """Build n_rows of eps_quarterly with asof_date all visible at TODAY_TS."""
+        records = []
+        for i in range(n_rows):
+            pe = pd.Timestamp("2022-03-31") + pd.DateOffset(months=3 * i)
+            eps_val = 1.0 + i * 0.1
+            asof = (pe + pd.DateOffset(days=60)) if asof_today else pd.Timestamp("2030-01-01")
+            records.append((str(pe.date()), eps_val, str(asof.date())))
+        return _make_eps_df("TDQ", records)
+
+    def test_exactly_5_visible_rows_returns_value(self):
+        """Fix 1: with exactly 5 visible rows (_SUE_MIN_DIFFS+1=5), must return float."""
+        eps = self._make_eps(5)
+        result = _dq_at_event(eps, TODAY_TS)
+        assert result is not None, (
+            "With 5 visible rows (_SUE_MIN_DIFFS+1) _dq_at_event must return a value; "
+            "got None — threshold divergence not fixed"
+        )
+        assert isinstance(result, float)
+
+    def test_4_visible_rows_returns_none(self):
+        """With 4 visible rows (below _SUE_MIN_DIFFS+1=5), must return None."""
+        eps = self._make_eps(4)
+        result = _dq_at_event(eps, TODAY_TS)
+        assert result is None, "4 visible rows must return None (not enough for a seasonal diff)"
+
+    def test_visibility_gated_by_asof_date(self):
+        """Fix 2: rows with asof_date > passed timestamp are invisible.
+
+        Pass a timestamp that only sees 4 rows; should return None.
+        Pass TODAY_TS which sees all 6 rows; should return float.
+        """
+        # Build 6 rows, the last 2 filed after 2025-01-01
+        records = [
+            ("2022-03-31", 1.0, "2022-06-01"),
+            ("2022-06-30", 1.1, "2022-09-01"),
+            ("2022-09-30", 1.2, "2022-12-01"),
+            ("2022-12-31", 1.3, "2023-03-01"),
+            ("2023-03-31", 1.4, "2025-06-01"),  # filed 2025
+            ("2023-06-30", 1.5, "2025-09-01"),  # filed 2025
+        ]
+        eps = _make_eps_df("TDQ2", records)
+        # As-of 2024-01-01: only 4 rows visible → None
+        asof_early = pd.Timestamp("2024-01-01")
+        assert _dq_at_event(eps, asof_early) is None
+        # As-of TODAY_TS: all 6 visible → float
+        result_today = _dq_at_event(eps, TODAY_TS)
+        assert result_today is not None
+        assert isinstance(result_today, float)
+
+    def test_returns_float_not_numpy(self):
+        """Return value must be a native Python float (json.dumps safe)."""
+        eps = self._make_eps(6)
+        result = _dq_at_event(eps, TODAY_TS)
+        if result is not None:
+            assert isinstance(result, float), f"Expected float, got {type(result)}"
+            assert not isinstance(result, np.floating), "Must not return np.floating"
+
+
+# ===========================================================================
 # E. expectation_states() — integration with synthetic parquets
 # ===========================================================================
 
@@ -431,8 +505,9 @@ class TestExpectationStatesIntegration:
         chip = result.get("TSYN", {})
         for key in ("last_event_date", "sue_latest", "sue_streak",
                     "pead_drift_20d", "bad_news_absorption", "good_news_hold",
-                    "_horizon_role", "_display_only", "_version"):
+                    "_horizon_role", "_display_only", "_version", "_benchmark"):
             assert key in chip, f"Missing key: {key}"
+        assert chip["_benchmark"] == "SPY", "benchmark must be 'SPY'"
 
     def test_returns_empty_on_missing_parquets(self, tmp_path):
         """When parquets are absent, returns empty dict (no crash)."""
