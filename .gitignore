@@ -256,3 +256,8 @@ data/live_flow_out/
 # W0.2 OHLC store (reproducible from collector + manifest; not committed)
 data/yahoo_ohlc/
 research/oracle_asymmetry/W2_member_trades.csv
+
+# NW Rails PR-8 / RUL-P10 (path a): operator action ledger.
+# Admin server is the single intraday writer; MUST NOT be staged by the nightly
+# blanket `git add data/` sweep. Off-band backup rides the admin host's path.
+data/operator/
