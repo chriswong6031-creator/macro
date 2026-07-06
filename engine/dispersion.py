@@ -100,25 +100,44 @@ def _compute_eigen_block(full_returns: pd.DataFrame) -> dict | None:
             if sum_lambda_sq > 0 else None
         )
 
-        # idio_dispersion_share: reconstruct top-3 PCs, compute residual
-        # share of recent (last-21d) cross-sectional dispersion
+        # idio_dispersion_share: variance-share of residuals on demeaned (NOT
+        # standardised) returns so that common-factor variance actually enters
+        # the cross-sectional total.  Using X_std would standardise every name
+        # to unit variance *before* cross-sectional scatter is computed, making
+        # the per-day scatter trivially dominated by idiosyncratic components
+        # regardless of the true factor structure (near-constant ~0.92-0.97 as
+        # dominant_equity_pc_share sweeps 0 → 1 — no discrimination power).
+        #
+        # Method: top-k PCs are extracted from the demeaned matrix X_dm; the
+        # residual variance share = mean(per-name resid_var) / mean(per-name
+        # total_var) on the recent 21-day window.
         k = min(_EIGEN_TOP_PCS, len(s))
-        # Reconstruct top-k component: U[:, :k] * diag(s[:k]) * Vt[:k, :]
-        X_top_k = _U[:, :k] * s[:k] @ _Vt[:k, :]  # (T, N)
-        X_resid = X_std - X_top_k                   # (T, N)
 
-        recent_rows = min(21, X_std.shape[0])
-        total_csd = np.std(X_std[-recent_rows:], axis=1)        # (recent,)
-        resid_csd = np.std(X_resid[-recent_rows:], axis=1)      # (recent,)
+        # Demeaned raw returns (same column filter as X_std but no /std)
+        X_dm = (win - means).fillna(0.0).to_numpy(dtype=float)  # (T, N)
 
-        mean_total = float(np.mean(total_csd))
-        mean_resid = float(np.mean(resid_csd))
+        # Re-run SVD on demeaned matrix for idio computation
+        try:
+            _U_dm, s_dm, Vt_dm = np.linalg.svd(X_dm, full_matrices=False)
+            k_dm = min(k, len(s_dm))
+            X_top_k_dm = _U_dm[:, :k_dm] * s_dm[:k_dm] @ Vt_dm[:k_dm, :]
+            X_resid_dm = X_dm - X_top_k_dm
 
-        if mean_total > 0:
-            idio_dispersion_share = round(
-                float(np.clip(mean_resid / mean_total, 0.0, 1.0)), 4
-            )
-        else:
+            recent_rows = min(21, X_dm.shape[0])
+            # Per-name variances over the recent window (axis=0 = time axis)
+            total_var_by_name = np.var(X_dm[-recent_rows:], axis=0)    # (N,)
+            resid_var_by_name = np.var(X_resid_dm[-recent_rows:], axis=0)
+
+            mean_total_var = float(np.mean(total_var_by_name))
+            mean_resid_var = float(np.mean(resid_var_by_name))
+
+            if mean_total_var > 0:
+                idio_dispersion_share = round(
+                    float(np.clip(mean_resid_var / mean_total_var, 0.0, 1.0)), 4
+                )
+            else:
+                idio_dispersion_share = None
+        except Exception:  # noqa: BLE001
             idio_dispersion_share = None
 
         return {

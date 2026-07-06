@@ -365,3 +365,56 @@ def test_eigen_block_shape():
     assert eigen["basis"] == "trailing_252d_fixed"
     assert eigen["display_only"] is True
     assert eigen["sector_pc_loadings"] is None
+
+
+def test_compute_eigen_block_direct_15_name_guard():
+    """_compute_eigen_block directly with a 15-name panel exercises its own <20 guard.
+
+    test_eigen_none_on_tiny_panel is partly vacuous: assess() early-returns None at
+    r.shape[1] < 20, so _compute_eigen_block never sees the panel.  This test calls
+    _compute_eigen_block directly to cover its own minimum-names path.
+    """
+    returns = _make_returns(300, 15)
+    result = dispersion._compute_eigen_block(returns)
+    assert result is None, (
+        f"_compute_eigen_block should return None for 15-name panel, got {result}"
+    )
+
+
+def test_idio_dispersion_share_discriminates_factor_structure():
+    """idio_dispersion_share must be lower for a one-factor panel than for iid.
+
+    This guards against the near-degeneracy bug (whitened returns making the ratio
+    near-constant ~0.92-0.97 regardless of factor structure).  After the fix
+    (variance-share on demeaned returns), a strongly factor-driven panel has much
+    lower idio_dispersion_share than iid noise.
+    """
+    iid_returns = _make_returns(300, 30, seed=42, factor_loading=None)
+    one_factor_returns = _make_returns(300, 30, seed=42, factor_loading=1.0)
+
+    iid_result = dispersion.assess(iid_returns)
+    one_factor_result = dispersion.assess(one_factor_returns)
+
+    assert iid_result is not None
+    assert one_factor_result is not None
+
+    iid_eigen = iid_result.get("eigen")
+    one_factor_eigen = one_factor_result.get("eigen")
+
+    assert iid_eigen is not None, "eigen block should not be None for 300d x 30n iid panel"
+    assert one_factor_eigen is not None, "eigen block should not be None for 300d x 30n one-factor panel"
+
+    iid_idio = iid_eigen["idio_dispersion_share"]
+    one_factor_idio = one_factor_eigen["idio_dispersion_share"]
+
+    assert iid_idio is not None, "idio_dispersion_share should not be None for valid iid panel"
+    assert one_factor_idio is not None, "idio_dispersion_share should not be None for valid one-factor panel"
+
+    # One-factor panel should have substantially lower idio share than iid panel.
+    # With the corrected variance-share definition: one-factor concentrates variance
+    # in the common component, leaving little residual variance → low idio share.
+    # iid panel: no common factor → all variance is residual → high idio share.
+    assert one_factor_idio < iid_idio, (
+        f"idio_dispersion_share should be lower for one-factor panel ({one_factor_idio}) "
+        f"than for iid panel ({iid_idio}); near-equal values indicate near-degeneracy bug"
+    )

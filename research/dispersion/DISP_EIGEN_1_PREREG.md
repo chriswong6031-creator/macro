@@ -35,7 +35,7 @@ for any new field).
 |---|---|---|
 | `dominant_equity_pc_share` | Share of total variance explained by PC1 (shares[0] = λ₁/Σλ) | 4dp |
 | `effective_universe_bets_pr` | Participation ratio = (Σλ)² / Σλ² — effective number of independent bets | 2dp |
-| `idio_dispersion_share` | Share of recent (21d) cross-sectional dispersion that is idiosyncratic (residual after top-3 PCs), clipped [0,1] | 4dp |
+| `idio_dispersion_share` | Mean per-name residual variance (after top-3 PCs removed) divided by mean per-name total variance, on demeaned returns over the recent 21d window, clipped [0,1]. Computed on demeaned (not whitened) returns so that common-factor variance enters the denominator and the ratio carries genuine discrimination power. | 4dp |
 
 `sector_pc_loadings` is deferred: emitted as `null` with note `"sector map not wired
 (deferred)"`. A sector mapping requires a sector registry integration that is out of
@@ -75,11 +75,17 @@ These tests are frozen PRE-OBSERVATION. Running them before DISP-GATE-1 resolves
 is NOT permitted.
 
 **Test (a) — idio_dispersion_share predicts wider forward residual return spread**
-- Metric: rank IC of idio_dispersion_share at date t vs cross-sectional std of
-  forward 21d residual returns (residual = each name's return minus EW market).
+- Metric: rank IC of idio_dispersion_share (mean per-name residual variance /
+  mean per-name total variance on demeaned returns, top-3 PCs removed, 21d window)
+  at date t vs cross-sectional std of forward 21d residual returns (residual =
+  each name's return minus EW market).
 - Minimum n: 60 non-overlapping 21d windows.
 - Pass criterion: IC positive, 90% bootstrap CI (block-bootstrap, 21d blocks)
   excludes 0 (one-sided).
+- Note: field was corrected from a cross-sectional-std ratio on whitened returns
+  (near-constant ~0.92–0.97, no discrimination power) to the variance-share on
+  demeaned returns (2026-07-06 review finding). Gate test re-registered against
+  the corrected definition.
 
 **Test (b) — effective_universe_bets_pr predicts better realized selection payoff**
 - Metric: within existing board/Oracle fires, sort dates by effective_universe_bets_pr
