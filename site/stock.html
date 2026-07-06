@@ -1146,6 +1146,8 @@
       <div id="r_earn"></div>
       <!-- LT-2c expectation state (display-only, hold_thesis) rendered when present -->
       <div id="r_expect_state" style="display:none"></div>
+      <!-- LT-4 thesis funnel shadow (display-only, hold_thesis) rendered when present -->
+      <div id="r_thesis_funnel" style="display:none"></div>
     </div>
 
     <div class="panel" id="panel_fac" style="display:none">
@@ -1884,6 +1886,10 @@
     // Renders last earnings date, SUE beat streak, post-event drift, and absorption flags
     // in plain language.  No 'validated' language.  Tooltips via data-tip-en/zh only.
     renderExpectationState(d.expectation_state);
+
+    // LT-4: thesis funnel shadow — AND-gate survival + candidate chip (display-only, hold_thesis).
+    // Neutral process labels only.  No predictive claims.  Tooltips list gate inputs + values.
+    renderThesisFunnel(d.thesis_funnel);
   }
 
   function renderExpectationState(es) {
@@ -1957,6 +1963,121 @@
     box.innerHTML = '<div class="es-block">' +
       '<div class="es-block-h">' + lz('Earnings momentum context (display only)', '盈利动量背景（仅供展示）') + '</div>' +
       '<div class="es-chips">' + chips.join('') + '</div></div>';
+    box.style.display = '';
+  }
+
+  // LT-4: thesis funnel shadow chip (display-only, hold_thesis, LH-R2).
+  // Neutral process labels only — no predictive claims, no 'validated' language.
+  // Tooltip lists each AND-gate input and its value for full transparency.
+  function renderThesisFunnel(tf) {
+    var box = el('r_thesis_funnel');
+    if (!box) return;
+    if (!tf || !tf.state || tf.state === 'unavailable') { box.style.display = 'none'; return; }
+
+    var state = tf.state;
+    var flags = tf.flags || {};
+    var gate = tf.gate_inputs || {};
+    var ctx = tf.context || {};
+
+    // ---- State chip ----
+    var stateLabel, stateLabelZh, stateCls;
+    if (state === 'thesis_candidate_shadow') {
+      stateLabel = 'Survival gate: passed — watching';
+      stateLabelZh = '存活门筛：通过—观察中';
+      stateCls = 'es-pos';
+    } else if (state === 'watch_for_thesis') {
+      stateLabel = 'Survival gate: passed — not yet candidate';
+      stateLabelZh = '存活门筛：通过—尚未满足候选条件';
+      stateCls = 'es-neu';
+    } else {
+      // not_eligible — determine the primary reason
+      var reason = tf.state_reason || '';
+      if (reason.indexOf('s1_dilution') >= 0) {
+        stateLabel = 'Not eligible: dilution flag';
+        stateLabelZh = '不符合资格：稀释标志';
+      } else if (reason.indexOf('s2_moat') >= 0) {
+        stateLabel = 'Not eligible: moat falsifier';
+        stateLabelZh = '不符合资格：护城河假证信号';
+      } else if (reason.indexOf('s3_solvency') >= 0) {
+        stateLabel = 'Not eligible: solvency concern';
+        stateLabelZh = '不符合资格：偿债能力问题';
+      } else {
+        stateLabel = 'Not eligible: insufficient data';
+        stateLabelZh = '不符合资格：数据不足';
+      }
+      stateCls = 'es-neg';
+    }
+
+    // ---- Build tooltip listing all gate inputs ----
+    var tipParts = [], tipPartsZh = [];
+
+    // s1 dilution
+    var s1 = flags.s1_dilution || {};
+    if (s1.computable) {
+      var s1v = s1.value != null ? s1.value.toFixed(1) + '%' : '?';
+      tipParts.push('Dilution: shares YoY ' + s1v + ' (threshold ≥+3%)' + (s1.fired ? ' ✔ FIRED' : ' ✘ pass'));
+      tipPartsZh.push('稀释：股本同比 ' + s1v + '（閘值≥+3%）' + (s1.fired ? ' ✔触发' : ' ✘通过'));
+    } else {
+      tipParts.push('Dilution: data unavailable');
+      tipPartsZh.push('稀释：数据不可用');
+    }
+
+    // s2 moat falsifiers
+    var s2 = flags.s2_moat_falsifier || {};
+    if (s2.computable) {
+      var s2fired = (s2.sensors_fired || []).join(', ') || 'none';
+      tipParts.push('Moat falsifiers: ' + (s2.fired ? 'FIRED (' + s2fired + ')' : 'pass (none fired)'));
+      tipPartsZh.push('护城河假证：' + (s2.fired ? '触发(' + s2fired + ')' : '通过（无触发）'));
+    } else {
+      tipParts.push('Moat falsifiers: data unavailable');
+      tipPartsZh.push('护城河假证：数据不可用');
+    }
+
+    // s3 solvency (Altman Z)
+    var s3 = flags.s3_solvency || {};
+    if (s3.computable) {
+      var s3v = s3.value != null ? s3.value.toFixed(2) : '?';
+      var s3app = s3.approx ? ' (approx)' : '';
+      tipParts.push('Solvency: Altman Z=' + s3v + s3app + ' (threshold <1.81)' + (s3.fired ? ' ✔ FIRED' : ' ✘ pass'));
+      tipPartsZh.push('偿债能力：Altman Z=' + s3v + s3app + '（阈值<1.81）' + (s3.fired ? ' ✔触发' : ' ✘通过'));
+    } else {
+      tipParts.push('Solvency: data unavailable');
+      tipPartsZh.push('偿债能力：数据不可用');
+    }
+
+    // Coverage
+    var s4 = flags.s4_coverage || {};
+    tipParts.push('Coverage: ' + (s4.n_computable != null ? s4.n_computable : '?') + '/3 inputs computable (floor: 2)');
+    tipPartsZh.push('覆盖率：' + (s4.n_computable != null ? s4.n_computable : '?') + '/3可计算（门限：2）');
+
+    // Piotroski (for candidate gate)
+    var pio = gate.piotroski || {};
+    if (pio.score != null && pio.of != null) {
+      tipParts.push('Piotroski F: ' + pio.score + '/' + pio.of + ' (candidate floor: ≥6)');
+      tipPartsZh.push('Piotroski F: ' + pio.score + '/' + pio.of + '（候选需≥ 6）');
+    }
+
+    // Capital allocation (for candidate gate)
+    var capDelta = ctx.capital_allocation_delta;
+    if (capDelta) {
+      tipParts.push('Capital allocation: ' + capDelta + ' (dilutive disqualifies from shadow)');
+      tipPartsZh.push('资本分配：' + capDelta + '（dilutive取消候选资格）');
+    }
+
+    tipParts.push('Display only — no behavioral authority');
+    tipPartsZh.push('仅供展示—无行为权限');
+
+    var tipEn = tipParts.join(' | ');
+    var tipZh = tipPartsZh.join(' | ');
+
+    var chip = '<span class="es-chip ' + stateCls + '"' +
+      ' data-tip-en="' + tipEn.replace(/"/g, '&quot;') + '"' +
+      ' data-tip-zh="' + tipZh.replace(/"/g, '&quot;') + '">' +
+      lz(stateLabel, stateLabelZh) + '</span>';
+
+    box.innerHTML = '<div class="es-block">' +
+      '<div class="es-block-h">' + lz('Long-hold admission gate (display only)', '长期持有入门门筛（仅供展示）') + '</div>' +
+      '<div class="es-chips">' + chip + '</div></div>';
     box.style.display = '';
   }
   // internal state -> friendly "LABEL · ACTION" (mirrors engine/cycles.STATE_DISPLAY)
@@ -2668,7 +2789,7 @@
   window.addEventListener('hashchange',load); load();
 })();
 </script>
-<p class="muted" style="font-size:12px">Generated 2026-07-06 10:58 UTC · charts rendered in-house with
+<p class="muted" style="font-size:12px">Generated 2026-07-06 11:35 UTC · charts rendered in-house with
 Lightweight Charts™ on our own price data · methodology &amp; caveats: see any sector page footer.</p>
 <footer class="site-footer">
   <span class="made">© 2026 MastermindX Inc</span>
