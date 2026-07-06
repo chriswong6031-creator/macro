@@ -56,6 +56,7 @@ _BUDGET_WHY_FIRED = 6
 _BUDGET_CONTRADICTS = 5
 _BUDGET_REGIME = 3
 _BUDGET_FACTOR = 6
+_BUDGET_OPTIONS = 6
 _BUDGET_GENERAL = 8
 _BUDGET_MAX_HARD_CAP = 8
 
@@ -88,6 +89,19 @@ _FACTOR_TRIGGER_TERMS = re.compile(
     re.I,
 )
 
+# Options-question trigger terms (RO-7) — checked after factor, before generic branches.
+# Bare "delta" and bare "vol" excluded: collide with News Delta Desk / generic usage.
+# Known over-match: bare "options"/"iv"/"skew"/"gamma" also catch non-options usage
+# (English "options", statistical skew, …) — acceptable, seeds are hints only.
+_OPTIONS_TRIGGER_TERMS = re.compile(
+    r"(?i)"
+    r"\b(iv|implied\s+vol(?:atility)?|skew|gamma|gex|gamma\s+exposure|opex|"
+    r"pin\s+risk|pinning|options?\s+flow|options|call\s+wall|put\s+wall|"
+    r"dealer\s+positioning|open\s+interest|put[/-]call|vanna|charm|straddle|"
+    r"iv\s+rank|iv\s+percentile|term\s+structure)\b"
+    r"|\b\d{1,2}dte\b|\bodte\b",
+)
+
 # Prompt-injection reject patterns
 _INJECTION_PATTERNS = [
     # Canonical phrase variants: "ignore [all] [the/your/previous/prior] instructions",
@@ -112,6 +126,11 @@ _ASK_READ_TOOLS = frozenset({
     "read_contradictions",
     "read_governance",
     "read_artifact",
+    # Options→NW W-B (RO-7): options read tools
+    "read_options_entry_state",
+    "explain_options_context",
+    "query_options_confluence",
+    "list_options_contradictions",
     # Factor Intelligence × Neural Web W2 (RUL-NW4): factor read tools
     "read_factor_state",
     "list_factor_contradictions",
@@ -225,6 +244,36 @@ def _post_filter_advice(answer: str, citations: list[str]) -> tuple[str, bool]:
 
 
 # ---------------------------------------------------------------------------
+# Ticker detector — all-caps jargon stopwords
+# ---------------------------------------------------------------------------
+
+# Jargon tokens the caps-regex would otherwise flag as tickers.
+# Real tickers (SPY, QQQ, IWM, TLT, GLD, VIX, NVDA, SPX …) intentionally absent.
+_TICKER_STOPWORDS: frozenset[str] = frozenset({
+    "DNA", "IC", "FDR", "GEX", "GEXR", "CWIV", "DOI", "IV", "ETF", "ETFS",
+    "OPEX", "OTM", "ITM", "ATM",
+    "DTE", "ODTE", "VALUE", "GDP", "CPI", "PMI", "FOMC", "USD", "EPS", "NBBO",
+    "RSI", "MACD", "API", "FAQ", "AI", "OK", "THE", "AND", "FOR", "NOT",
+    "LLM", "NW", "PIT", "WR", "MFE", "MAE",
+})
+
+
+def _detect_ticker(question: str) -> str | None:
+    """Return the first all-caps word (2–5 chars) in *question* that is not a
+    known jargon stopword, or None if no candidate is found.
+
+    Used by the factor and options classifier branches so that questions like
+    "What is the DNA class of AAPL?" correctly detect AAPL while "What is the
+    DNA class?" returns None (DNA is a stopword).
+    """
+    for m in re.finditer(r"\b([A-Z]{2,5})\b", question):
+        candidate = m.group(1)
+        if candidate not in _TICKER_STOPWORDS:
+            return candidate
+    return None
+
+
+# ---------------------------------------------------------------------------
 # Question classifier → tool budget
 # ---------------------------------------------------------------------------
 
@@ -243,13 +292,26 @@ def _classify_question(question: str, context_ticker: str | None) -> tuple[int, 
     if _FACTOR_TRIGGER_TERMS.search(q):
         seeds = ["read_factor_state"]
         # Detect a ticker in the question — add explain_factor_context
-        ticker_match = re.search(r"\b([A-Z]{2,5})\b", question)
-        if ticker_match:
+        if _detect_ticker(question):
             seeds.append("explain_factor_context")
         # Contradiction phrasing also seeds the contradiction ledger
         if re.search(r"\b(contradict\w*|conflict\w*|tension\w*|borrowed\s+strength)\b", q):
             seeds.append("list_factor_contradictions")
         return _BUDGET_FACTOR, seeds
+    # Options path (RO-7) — checked after factor, before generic contradictions/regime
+    # so "options contradictions" and "skew" questions don't bleed into generic branches
+    if _OPTIONS_TRIGGER_TERMS.search(question):
+        seeds = ["read_options_entry_state"]
+        # Detect a ticker in the question — add explain_options_context
+        if _detect_ticker(question):
+            seeds.append("explain_options_context")
+        # Contradiction phrasing also seeds the options contradiction ledger
+        if re.search(r"\b(contradict\w*|conflict\w*|tension\w*|borrowed\s+strength)\b", q):
+            seeds.append("list_options_contradictions")
+        # Confluence phrasing seeds the options confluence graph
+        if re.search(r"\b(confluence|confirm\w*|align\w*|agree\w*)\b", q):
+            seeds.append("query_options_confluence")
+        return _BUDGET_OPTIONS, seeds
     # "what contradicts / contradictions / disagreement" — generic graph contradictions
     if re.search(r"\b(contradict\w*|disagree\w*|conflict\w*|tension\w*|opposing\w*)\b", q):
         return _BUDGET_CONTRADICTS, ["read_contradictions", "read_graph"]
@@ -267,7 +329,9 @@ def _classify_question(question: str, context_ticker: str | None) -> tuple[int, 
 def _read_tool_schemas() -> list[dict]:
     """Return read-tool schemas (write tools excluded structurally).
 
-    Returns the 10 read tools: the 7 original cortex read tools + 3 factor
+    Returns the 14 read tools: the 7 original cortex read tools + 4 options
+    tools (RO-7: read_options_entry_state, explain_options_context,
+    query_options_confluence, list_options_contradictions) + 3 factor
     intelligence tools (RUL-NW4: read_factor_state, list_factor_contradictions,
     explain_factor_context).  All write tools are excluded.
     """
@@ -448,6 +512,10 @@ def _dispatch_read_tool(tool_name: str, tool_params: dict, root: Path) -> dict:
         _tool_read_contradictions,
         _tool_read_governance,
         _tool_read_artifact,
+        _tool_read_options_entry_state,
+        _tool_explain_options_context,
+        _tool_query_options_confluence,
+        _tool_list_options_contradictions,
         _tool_read_factor_state,
         _tool_list_factor_contradictions,
         _tool_explain_factor_context,
@@ -467,6 +535,14 @@ def _dispatch_read_tool(tool_name: str, tool_params: dict, root: Path) -> dict:
         return _tool_read_governance(root, tool_params)
     elif tool_name == "read_artifact":
         return _tool_read_artifact(root, tool_params)
+    elif tool_name == "read_options_entry_state":
+        return _tool_read_options_entry_state(root, tool_params)
+    elif tool_name == "explain_options_context":
+        return _tool_explain_options_context(root, tool_params)
+    elif tool_name == "query_options_confluence":
+        return _tool_query_options_confluence(root, tool_params)
+    elif tool_name == "list_options_contradictions":
+        return _tool_list_options_contradictions(root, tool_params)
     elif tool_name == "read_factor_state":
         return _tool_read_factor_state(root, tool_params)
     elif tool_name == "list_factor_contradictions":
