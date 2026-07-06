@@ -18,7 +18,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | hk-canada | 2 |
 | institutional-sector-intelligence | 2 |
 | intl-fix | 1 |
-| long-hold | 2 |
+| long-hold | 3 |
 | neural-web | 25 |
 | options-alpha | 7 |
 | options-nw-entry-intelligence | 3 |
@@ -34,7 +34,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | tier | count |
 |---|---|
 | display | 62 |
-| infrastructure | 31 |
+| infrastructure | 32 |
 | scored | 4 |
 | shadow | 35 |
 
@@ -42,7 +42,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 127 |
+| git | 128 |
 | gitignored-local | 3 |
 | r2 | 2 |
 
@@ -131,6 +131,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
+| long-hold-dead-name-prices | `data/edgar/dead_name_prices.parquet` | parquet | on-demand | infrastructure | 1 | 0 |
 | long-hold-labels | `data/research/long_hold_labels.parquet` | parquet | on-demand | display | 1 | 0 |
 | long-hold-labels-manifest | `data/research/long_hold_labels_manifest.json` | json | on-demand | display | 1 | 0 |
 
@@ -579,6 +580,13 @@ Artifacts below have `known_extra_writers` — additional code paths that write 
 - **declared producer:** `engine/neuralweb/lagging.py`
 - **extra writers:**
   - scripts/build_kernel_diagnostics.py — thin CLI wrapper; calls write_lagging() defined in the producer; no independent write logic
+
+### long-hold-dead-name-prices
+
+- **path:** `data/edgar/dead_name_prices.parquet`
+- **declared producer:** `scripts/research/fetch_dead_name_prices_polygon.py`
+- **extra writers:**
+  - collectors/edgar_deadname_prices.py — legacy collector (Stooq→Polygon→yfinance); may append rows from CI runs
 
 ### market-state-latest
 
