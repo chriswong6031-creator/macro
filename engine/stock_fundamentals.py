@@ -1352,9 +1352,15 @@ def _analyst(t, deep, rev=None) -> dict | None:
 
 
 def panels() -> dict[str, dict]:
-    """{ticker: {profile, valuation, financials, factors, positioning, analyst}}
+    """{ticker: {profile, valuation, financials, factors, positioning, analyst,
+    thesis_clock}}
     for every name we have fundamentals on. Empty dict if the EDGAR cache is
-    missing (caller logs and ships the page without fundamental panels)."""
+    missing (caller logs and ships the page without fundamental panels).
+
+    W2 PR-J: thesis_clock is a DISPLAY-ONLY Long-Hold Thesis Layer annotation.
+    It carries _horizon_role="hold_thesis" and must not feed any entry-stack
+    scored surface (LH-R1 firewall, G1-DEFERRED ruling 2026-07-06).
+    """
     fund = _load_fundamentals()
     if fund is None:
         log.warning("stock_fundamentals: no edgar fundamentals — panels skipped")
@@ -1371,6 +1377,14 @@ def panels() -> dict[str, dict]:
     earnings = _load_earnings()
     aq_cfg = config.load().get("accounting_quality") or {}
     betas_map = _load_betas()   # v2: per-name rates/oil betas for archetype v2
+
+    # W2 PR-J: thesis_clock map (display-only; no entry-stack consumers)
+    from engine.long_hold_clocks import thesis_clocks_from_parquet  # noqa: PLC0415
+    _thesis_clocks: dict[str, dict] = {}
+    try:
+        _thesis_clocks = thesis_clocks_from_parquet()
+    except Exception as _tc_exc:  # noqa: BLE001
+        log.warning("stock_fundamentals: thesis_clocks skipped (%s)", _tc_exc)
 
     M = _context_frame(fund, table)
     nm_top_thr = _num(M["net_margin"].quantile(2 / 3)) if "net_margin" in M else None
@@ -1414,6 +1428,10 @@ def panels() -> dict[str, dict]:
             # bottom-survival-quality leverage ratios (display-only; partial coverage
             # until the weekly D&A drip accrues; Financial-sector names mostly absent).
             "leverage_ratios": lev if lev else None,
+            # W2 PR-J — Long-Hold Thesis Layer: thesis_clock annotation.
+            # Days since latest EDGAR period_end with positive fundamental delta (v1).
+            # DISPLAY-ONLY; horizon_role=hold_thesis; must NOT feed entry-stack surfaces.
+            "thesis_clock": _thesis_clocks.get(str(t)) or None,
         }
         out[str(t)] = _clean({k: v for k, v in blocks.items() if v})
     log.info("stock_fundamentals: %d names with panels (factors %d, deep %d, short %s)",

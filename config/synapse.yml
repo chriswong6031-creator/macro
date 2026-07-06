@@ -3785,6 +3785,61 @@ artifacts:
       FDR family: long_hold (isolated per LH-R5). No scored_path_surfaces.
       G1 ratification: PENDING FABLE RULING (see research/long_hold/W1_KILLTEST_RESULTS.md).
 
+  # --- Long-Hold W2 PR-J: two display clocks (entry_clock + thesis_clock) ---
+  # Both clocks are embedded fields in per-stock panel JSON
+  # (site/stockdata/<TICKER>.json) — no standalone parquet.
+  # entry_clock is at top-level rec["entry_clock"] (build_stock_library.py).
+  # thesis_clock is in the per-ticker panel dict from stock_fundamentals.panels()
+  # baked into stockdata JSON at build time.
+  long-hold-clocks:
+    path: "embedded: entry_clock + thesis_clock inside site/stockdata/<TICKER>.json"
+    format: json
+    producer: engine/long_hold_clocks.py
+    known_extra_writers:
+      - "scripts/build_stock_library.py — calls entry_clock() per name after sig_verdict build"
+      - "engine/stock_fundamentals.py — calls thesis_clocks_from_parquet() inside panels()"
+    owner_program: long-hold
+    cadence: daily-engine
+    storage: git
+    asof_field: null
+    freshness_sla_hours: 30
+    schema: long_hold_clocks.v1
+    tier: display
+    horizon_role: hold_thesis
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - site/stockdata/<TICKER>.json
+    external_consumers: []
+    notes: >
+      W2 PR-J (Long-Hold Thesis Layer). Two display-tier clock annotations added
+      ADDITIVELY to per-stock panel JSON. Both are DISPLAY-ONLY (LH-R1 firewall;
+      G1-DEFERRED ruling 2026-07-06). Neither field feeds board ordering, alert
+      triage, top-setups gates, or push floor.
+
+      entry_clock: days since last tactical buy/rebuy marker fire. Source:
+      signal_gate.gate()["last"]["date"] (existing entry-stack state, no new
+      computation). Half-life reference: FRESH_TICKS window from confluence_tiers
+      (~1-6 ticks, ~3-18 days). Clock is calendar days from last fire to today.
+      Fields: date_last_fire (YYYY-MM-DD|null), days_since (int|null),
+      _horizon_role, _display_only, _version.
+
+      thesis_clock (v1): days since latest EDGAR period_end with positive
+      fundamental delta. V1 criterion: ROA improving OR CFO>0 OR revenue growing
+      vs prior year. Source: data/edgar/fundamentals_panel.parquet
+      (period_end + 120d PIT lag from collectors/edgar.py as_of_cross_section).
+      Clock anchored to period_end (fiscal year end), not asof_date (filing date).
+      Fields: date_last_confirmation (YYYY-MM-DD|null), days_since (int|null),
+      definition_version ("v1"), definition_note (str), _horizon_role,
+      _display_only, _version.
+
+      Firewall annotation embedded in every output dict:
+        _horizon_role = "hold_thesis"
+        _display_only = True
+      FIREWALL: horizon_role=hold_thesis. These fields MUST NOT feed
+      entry-stack z-scores, board ordering, top-setups gates, alert triage,
+      or push floor.
+
   # --- NW quant-synthesis B: research-queue EV-ranker ---
   research-queue:
     path: data/neuralweb/research_queue.json
