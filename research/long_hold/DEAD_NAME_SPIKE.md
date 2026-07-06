@@ -11,9 +11,9 @@
 
 ## Context
 
-`grading.py` already implements the full dead-name architecture (`resolve_series`, `terminal_state`, `load_dead_prices`). The file `data/edgar/dead_name_prices.parquet` is absent; current coverage is 15/1,083 names (1.39%). The OBJECTIVE.md §8 pre-registration notes that the honest OOS window for 252d labels collapses to ~3.5 months of 2021 fires; this memo investigates whether ThetaData v3 or Polygon can fill the price gap.
+`grading.py` already implements the full dead-name architecture (`resolve_series`, `terminal_state`, `load_dead_prices`). The file `data/edgar/dead_name_prices.parquet` is absent; current **price** coverage is ~0/1,083 names (the live close cache serves only currently-listed names). Note: `data/edgar/_dead_name_coverage.json` records 15/1,083 CIK+fundamentals resolved — that is fundamentals resolution, not price coverage. The OBJECTIVE.md §8 pre-registration notes that the honest OOS window for 252d labels collapses to ~3.5 months of 2021 fires; this memo investigates whether ThetaData v3 or Polygon can fill the price gap.
 
-**Dead universe:** 1,083 names. Source: `data/edgar/_dead_name_coverage.json`. Era breakdown from `data/breadth/sp1500_pit_membership.parquet`:
+**Dead universe:** 1,083 names. Defined by `dead_universe()` in `collectors/edgar_deadnames` — a filtered subset of the 1,496 names with recorded exit dates in `data/breadth/sp1500_pit_membership.parquet` (the 1,083 set applies additional filtering for CIK resolution and fundamental availability that is not fully documented here; the split below is consistent with that filtering but cannot be independently re-derived from the parquet alone). Era boundary based on the Polygon rolling anchor (2021-07-06):
 
 | Era | Count | Notes |
 |---|---|---|
@@ -45,9 +45,9 @@ subscription. Please consider upgrading!"
 | Does ThetaData serve delisted-name EOD? | Yes — if a stock subscription is held |
 | Does our current account have a stock subscription? | No — FREE tier only |
 | Can we use ThetaData for dead-name price recovery now? | **No** |
-| Upgrade cost estimate | ~$60/mo (Standard) to $240+/mo (Professional + historical); separate from options subscription |
+| Upgrade cost estimate | Approximate/not price-checked; likely in the $60–240+/mo range (Standard to Professional + historical); separate from options subscription |
 
-ThetaData is a future option if the stock subscription is purchased. The terminal already knows all the dead tickers. **Not usable under current budget.**
+ThetaData is a future option if the stock subscription is purchased. The terminal already knows all the dead tickers. **Not usable under current budget.** (Cost figure approximate — not verified against pricing page; treat as re-buy trigger requiring a current price check.)
 
 ---
 
@@ -180,7 +180,7 @@ The honest OOS window for 252d labels is 2021-07-06 → 2021-10-25 (~3.5 months)
 - **235 fires from dead names** (140 unique dead tickers)
 - All 140 dead tickers fired AFTER the Polygon anchor → Polygon REST serves their full 252d price window (252d after 2021-10-25 = ~2022-10-25, well within Polygon coverage)
 
-The episode-cluster n-floor (§6.3): n ≥ 25 independent clusters. With 1,957 unique tickers in the window, even at a 10% extraction rate through tactical-win + 252d-maturity + dedup, the estimated cluster count is ~330. **The n=25 floor clears easily from the live-name cohort alone, independent of dead names.**
+The episode-cluster n-floor (§6.3): n ≥ 25 independent clusters. OBJECTIVE.md §8 pre-registered an explicit warning that this ~3.5-month OOS window 'may produce fewer than 25 honest-OOS episode-clusters at 252d' and routes a shortfall to the survivorship-deferral path. The correct denominator for the floor estimate is the deduplicated (name × macro_regime) episode-cluster count, not the raw fire count. Working conservatively from the 1,957 unique tickers collapsed into regime blocks, the episode-cluster base is materially below the raw fire count. A floor of n ≥ 25 likely clears from the live-name cohort alone, but the achieved cluster count must be printed by the harness before any OOS statistic is computed (§8 requirement) — treat the floor as 'likely met, pending harness confirmation' rather than 'clears easily'.
 
 Dead names are not the determinant of whether the floor clears. Their contribution is qualitative: they populate the `cheap_trap` and `tactical_only_fail` cells that pure survivor data systematically underpopulates.
 
@@ -209,9 +209,9 @@ With Polygon REST covering the post-anchor dead names (418 names, ~140 in the ho
 | 126d | **Viable** — even without dead names, 126d maturity after 2021-07-06 fires is fully within any price source's range |
 | 252d | **Viable for OOS** — Polygon covers 252d windows for all post-anchor dead name fires |
 | 504d | **Caveat-stamped** — post-anchor only; 504d after 2021-07-06 = 2023-07 onwards; Polygon serves this but survivorship bias caveat required |
-| 756d | **REFUSED** (per OBJECTIVE.md §3) — 756d gate requires ≥50% dead-name coverage of the full 1,083-name universe. With Polygon-only coverage at 37%, this gate CANNOT be met. With Stooq addition reaching ~60-70%, the gate CANNOT be met either (short of 50%). The 756d horizon remains refused. |
+| 756d | **REFUSED** (per OBJECTIVE.md §3) — 756d gate requires ≥50% dead-name coverage of the full 1,083-name universe. Polygon-only coverage is ~37% (400/1,083), which cannot meet the gate. Polygon + Stooq is estimated at ~58–70% (632–763/1,083), which COULD meet the gate at the point estimate, but Stooq CI accessibility is unconfirmed. The 756d horizon remains refused until a live CI coverage measurement is taken. |
 
-**756d gate calculation:** OBJECTIVE.md requires ≥50% dead-name coverage (≥542/1,083 names) before 756d results may be published. Polygon REST provides ~400/1,083 (37%); Polygon + Stooq provides ~632–763/1,083 (58–70%). The 756d gate is technically meetable IF Stooq from CI delivers the upper end of estimates. However, this is not confirmed without a live CI probe. Do not treat 756d as unblocked until coverage is measured on actual data.
+**756d gate calculation:** OBJECTIVE.md requires ≥50% dead-name coverage (≥542/1,083 names) before 756d results may be published. Polygon REST provides ~400/1,083 (37%) — cannot meet the gate alone. Polygon + Stooq provides an estimated ~632–763/1,083 (58–70%) — this range includes values above the 50% threshold but Stooq CI accessibility has not been confirmed in this probe session. The 756d horizon is refused until coverage is empirically measured on actual CI data. Do not treat 756d as unblocked until coverage is measured.
 
 ### G1 kill test can proceed now (with one caveat)
 
@@ -243,7 +243,7 @@ The G1 kill test on the honest OOS cohort (252d horizon, 2021-07-06 → 2021-10-
 
 | Source | Era coverage | Status |
 |---|---|---|
-| ThetaData v3 | All eras (2012+) if subscribed | NOT USABLE — FREE stock subscription only; requires ~$60–240/mo upgrade |
+| ThetaData v3 | All eras (2012+) if subscribed | NOT USABLE — FREE stock subscription only; requires upgrade (cost approximate/not price-checked) |
 | Polygon REST (`MASSIVE_API_KEY`) | post-2021-07-06 only | **PRIMARY SOURCE** — ~418 names (~95%); 140/140 needed for OOS window; 1–3 days build |
 | Polygon flat files S3 | post-2021-07-06 (same window) | Redundant with REST; unadjusted; not recommended |
 | Stooq (from CI) | pre-2021 (partial) | **SECONDARY SOURCE** — unverified from CI, ~50–70% if accessible; no new code needed |

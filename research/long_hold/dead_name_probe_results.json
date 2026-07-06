@@ -1,6 +1,7 @@
 {
   "schema": "dead_name_spike_probe.v1",
   "generated_utc": "2026-07-06T00:00:00Z",
+  "probe_methodology_note": "PARTIALLY ESTIMATED — no raw probe script or sampled price bars were retained. Bar counts and date ranges for ATVI/TWTR/CERN/Y are consistent with REST endpoint responses but the raw HTTP responses were not committed. XLNX was confirmed via flat-file cross-check, not the REST adjusted endpoint directly. ThetaData subscription tier finding and Polygon rolling boundary are stated as observed probe results but cannot be verified from committed artifacts. The '~95% post-anchor' coverage figure is an estimate, not a measured sample. Treat all findings as 'estimated/unverified' pending a committed probe script with sampled bars.",
   "probe_tickers": ["ATVI", "TWTR", "CERN", "XLNX", "Y"],
   "sources": {
     "thetadata_v3": {
@@ -11,7 +12,7 @@
       "finding": "ThetaData stock symbol list includes dead names (ATVI, TWTR, CERN, XLNX confirmed enumerable via /v3/stock/list/symbols). Historical EOD data is behind a paid stock subscription; the current account has FREE stock access. STANDARD subscription required for recent data; PROFESSIONAL required for history back to 2012-06. The options PROFESSIONAL subscription does NOT grant stock history.",
       "dead_name_symbol_enumerable": true,
       "dead_name_history_accessible": false,
-      "verdict": "NOT USABLE — requires separate stock subscription upgrade (~$120+/mo for Standard, more for Professional)"
+      "verdict": "NOT USABLE — requires separate stock subscription upgrade (cost approximate/not price-checked; memo body cites ~$60/mo Standard, pricing page not confirmed; treat as 'upgrade required, cost TBD')"
     },
     "polygon_rest": {
       "base_url": "https://api.polygon.io",
@@ -46,7 +47,7 @@
           "reference_found": true,
           "agg_range": "2021-07-05 to 2022-02-11",
           "count": 155,
-          "status": "OK (via flat-file cross-check: last trading day 2022-02-11)"
+          "status": "OK (ESTIMATED — bar count/range derived from flat-file cross-check: last trading day 2022-02-11; REST adjusted endpoint not directly confirmed for XLNX in this probe session)"
         },
         "Y": {
           "delist_date": "2022-10-18",
