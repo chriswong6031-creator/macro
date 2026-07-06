@@ -3847,7 +3847,7 @@ artifacts:
     format: json
     producer: engine/moat_falsifiers.py
     known_extra_writers:
-      - "engine/stock_fundamentals.py — calls compute_moat_falsifiers() inside panels()"
+      - "engine/stock_fundamentals.py — _compute_moat_block() calls compute_moat_falsifiers() inside panels()"
     owner_program: long-hold
     cadence: daily-engine
     storage: git
@@ -3865,9 +3865,10 @@ artifacts:
       W2 PR-K (Long-Hold Thesis Layer). Four moat falsifier sensors computed from
       data/edgar/statements.parquet: margin_compression_despite_revenue_growth,
       receivables_stretch, inventory_build, capital_intensity_rising.
-      Each sensor carries a matched-control base rate (universe fire frequency per FY)
-      so the display layer can show context: a sensor firing at 25% base rate
-      fires 1-in-4 names and is less informative than one at 5%.
+      Each sensor carries a universe-level base rate (live-recomputed per build;
+      NOT a locked control — display context only) so the display layer can show
+      how frequently a sensor fires across the covered universe in that fiscal year.
+      Thresholds pre-registered in research/long_hold/OBJECTIVE.md Amendment A2 §W2-PR-K.
       DISPLAY-ONLY — G1-DEFERRED ruling 2026-07-06. Per LH-R2: no composite
       "moat score" is produced. Per LH-R6: no LLM transition logic.
       FIREWALL: horizon_role=hold_thesis. MUST NOT feed board ordering, alert
@@ -3880,7 +3881,7 @@ artifacts:
     format: json
     producer: engine/moat_falsifiers.py
     known_extra_writers:
-      - "engine/stock_fundamentals.py — calls great_company_trap() inside panels()"
+      - "engine/stock_fundamentals.py — _compute_trap_block() calls great_company_trap() inside panels()"
     owner_program: long-hold
     cadence: daily-engine
     storage: git
@@ -3896,9 +3897,10 @@ artifacts:
     external_consumers: []
     notes: >
       W2 PR-K (Long-Hold Thesis Layer). Great-company-trap de-escalation overlay
-      per LH-R10. Assembled ONLY from existing signals: crowding_z (engine/theme_crowding),
-      insider_net_usd (engine/equity_factors / altdata), revision_direction
-      (engine/analyst_revisions). Plain deterministic function; no LLM.
+      per LH-R10. Assembled ONLY from existing signals: crowding_z (engine/theme_crowding,
+      basket-level — passed as None in per-ticker panels context; available when
+      caller supplies it), insider_net_usd (engine/equity_factors / sec_insider panel),
+      revision_direction (engine/analyst_revisions). Plain deterministic function; no LLM.
       MAY ONLY LOWER conviction display context, never raise/rank (LH-R10).
       Inputs printed verbatim in every output for transparency (Article-1/A3 shape).
       DISPLAY-ONLY — G1-DEFERRED ruling 2026-07-06.

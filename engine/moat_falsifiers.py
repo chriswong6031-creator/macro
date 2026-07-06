@@ -6,6 +6,12 @@ or push floor.  No composite "moat score" is produced (LH-R2, Signal Commons R3)
 
 Design contract (masterplan §4-W2 / rulings LH-R6, LH-R10)
 -----------------------------------------------------------
+This is a standalone fundamental-sensor module with its own dataclass design.
+It is NOT structurally derived from ``engine/falsifier_tripwires.py`` (that module
+handles event-schedule tripwires; this handles per-ticker financial-statement
+sensors — different scope, no shared base class, no TripwireResult reuse).
+The falsifier-sensor *concept* is consistent with masterplan §4-W2 wording.
+
 Four falsifier sensors, each computed from ``data/edgar/statements.parquet``:
 
   1. margin_compression_despite_revenue_growth
@@ -34,12 +40,18 @@ Four falsifier sensors, each computed from ``data/edgar/statements.parquet``:
      capex_growth > op_income_growth + 10pp.  Op_income sign-flip edge case
      handled: if op_income <= 0 the capex growth condition alone must hold.
 
-For EACH sensor a matched-control base rate is computed:
+For EACH sensor a universe-level base rate is computed:
   base_rate_annual — fraction of (ticker, fy) observations in the covered
   universe that satisfy the sensor condition in that fiscal year.
   This is the universe-level fire frequency; a sensor firing only when base_rate
   is near 1.0 is uninformative.  The base rate is printed in every result dict
   so callers can display it next to the firing flag.
+
+  NOTE: the base rate is recomputed live over all tickers in statements.parquet
+  on each build run — it is NOT a locked control value.  It shifts as the
+  universe composition changes.  The pre-registered thresholds (research/long_hold/
+  OBJECTIVE.md Amendment A2 §W2-PR-K) are the locked definition; the base rate
+  is a live display-context annotation, not an inferential anchor.
 
 Coverage stamps
 ---------------
@@ -223,6 +235,15 @@ def compute_base_rates(statements_df: pd.DataFrame) -> dict[str, dict[int, float
         for i in range(1, len(grp)):
             row_cur = grp.iloc[i]
             row_prior = grp.iloc[i - 1]
+            # Guard: only compare adjacent fiscal years (gap == 1).
+            # Rows spanning >1 FY (e.g. 2021→2023) would mislabel a 2-year
+            # change as a YoY move, inflating magnitudes and polluting the base rate.
+            try:
+                fy_gap = int(row_cur["fy"]) - int(row_prior["fy"])
+            except (TypeError, ValueError):
+                fy_gap = 0
+            if fy_gap != 1:
+                continue
             fy = int(row_cur["fy"])
             for name, fn in _SENSOR_FNS.items():
                 result = fn(row_cur, row_prior)
@@ -324,8 +345,17 @@ def compute_moat_falsifiers(
         for i in range(len(grp_all) - 1, 0, -1):
             row_cur = grp_all.iloc[i]
             row_prior = grp_all.iloc[i - 1]
-            res = fn(row_cur, row_prior)
             fy_val = int(row_cur["fy"])
+            # Guard: only evaluate adjacent fiscal years (gap == 1).
+            # Multi-year gaps inflate magnitudes and mislabel fy_evaluated.
+            try:
+                fy_gap = fy_val - int(row_prior["fy"])
+            except (TypeError, ValueError):
+                fy_gap = 0
+            if fy_gap != 1:
+                detail_rows.append({"fy": fy_val, "result": None, "fy_gap": fy_gap})
+                continue
+            res = fn(row_cur, row_prior)
             detail_rows.append({
                 "fy": fy_val,
                 "result": res,
@@ -350,17 +380,26 @@ def compute_moat_falsifiers(
         else:
             br_median = None
 
+        # Per-sensor coverage: aligned with _assess_coverage vocabulary.
+        # "full"    — 2+ consecutive-FY rows with all required columns non-null
+        #             AND the sensor evaluated successfully (fy_fired_on is not None).
+        # "partial" — ticker has rows but the sensor couldn't evaluate (e.g. sparse
+        #             columns, or only non-adjacent year pairs available).
+        # "missing" — no rows for this ticker at all.
+        if fy_fired_on is not None and _assess_coverage(grp_all, _sensor_cols()[sensor_name]) == "full":
+            sensor_cov = "full"
+        elif n_years >= 1:
+            sensor_cov = "partial"
+        else:
+            sensor_cov = "missing"
+
         sensors[sensor_name] = {
             "fired": fired,                # True = sensor fires; False = does not; None = no data
             "fy_evaluated": fy_fired_on,   # FY year of evaluation
             "base_rate_annual_fy": br_for_fy,     # universe base rate for that FY
             "base_rate_median_all_years": br_median,  # median across all FY years
             "detail": detail_rows[:3],     # last 3 year-pairs for display
-            "coverage": (
-                "full" if (fy_fired_on is not None) else
-                "partial" if (n_years >= 1) else
-                "missing"
-            ),
+            "coverage": sensor_cov,
         }
 
     return {
@@ -399,7 +438,7 @@ def great_company_trap(
     crowding_z: float | None = None,
     insider_net_usd: float | None = None,
     revision_direction: str | None = None,
-    crowding_z_threshold: float = 1.5,
+    crowding_z_threshold: float = 1.0,
     insider_net_sell_threshold_usd: float = -500_000.0,
 ) -> dict[str, Any]:
     """Great-company-trap de-escalation overlay (LH-R10).
@@ -428,7 +467,8 @@ def great_company_trap(
         Pass None if unavailable.
     crowding_z_threshold:
         Z-score at or above which crowding is considered elevated.
-        Default: 1.5 (basket_crowding.CROWDED_Z convention).
+        Default: 1.0 — matches ``engine.theme_crowding.CROWDED_Z = 1.0``,
+        the repo's crowding convention.
     insider_net_sell_threshold_usd:
         USD threshold below which insider net is considered meaningful selling.
         Default: -500,000.

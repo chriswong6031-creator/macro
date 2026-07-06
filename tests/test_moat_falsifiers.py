@@ -464,13 +464,13 @@ class TestGreatCompanyTrap:
         assert result["legs"]["revision_direction"]["fired"] is False
 
     def test_threshold_boundary_crowding_exact(self) -> None:
-        """Crowding_z exactly at threshold → fires (>=)."""
-        result = great_company_trap(crowding_z=1.5)
+        """Crowding_z exactly at threshold (1.0 = engine.theme_crowding.CROWDED_Z) → fires."""
+        result = great_company_trap(crowding_z=1.0)
         assert result["legs"]["crowding"]["fired"] is True
 
     def test_threshold_boundary_crowding_below(self) -> None:
         """Crowding_z just below threshold → does not fire."""
-        result = great_company_trap(crowding_z=1.499)
+        result = great_company_trap(crowding_z=0.999)
         assert result["legs"]["crowding"]["fired"] is False
 
 

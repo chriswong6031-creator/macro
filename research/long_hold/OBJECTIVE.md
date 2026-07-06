@@ -674,3 +674,82 @@ W1 study. W3/W4 remain suspended during this remediation path.
 Amendment A1 is **additive only**. The primary analysis and all locked definitions in
 §§2–9 are unchanged. The primary analysis runs first and its outputs are reported
 unconditionally. A1 is an additional mandatory sensitivity run, not a replacement.
+
+---
+
+## Amendment A2 — W2 PR-K Pre-Registration: Moat Falsifier Sensors
+
+**Registered:** 2026-07-06  
+**Wave:** W2 PR-K  
+**Module:** `engine/moat_falsifiers.py`  
+**Status:** DISPLAY-ONLY — G1-DEFERRED ruling applies; no selection, ranking, or alert logic.
+
+### §W2-PR-K.1 Sensor definitions (locked)
+
+Four falsifier sensors, each a single measurable series derived from
+`data/edgar/statements.parquet`. All are display-only annotations; no composite
+"moat score" is produced (LH-R2, Signal Commons R3).
+
+| Sensor | Condition | Rationale |
+|---|---|---|
+| `margin_compression_despite_revenue_growth` | `revenue_growth >= +3pp YoY AND gross_margin_pct latest < gross_margin_pct prior` | Top-line intact, pricing power / cost structure weakening |
+| `receivables_stretch` | `receivables_growth > revenue_growth + 10pp AND revenue > 0` | AR outpacing revenue → channel-stuffing / collection risk |
+| `inventory_build` | `inventory_growth > revenue_growth + 15pp AND revenue > 0` | Inventory accumulation vs demand signals over-production |
+| `capital_intensity_rising` | `capex_growth > revenue_growth + 10pp AND (capex_growth > op_income_growth + 10pp OR op_income <= 0)` | Escalating capital requirement for same-or-less unit output |
+
+### §W2-PR-K.2 Thresholds (locked)
+
+| Constant | Value | Rationale |
+|---|---|---|
+| `_MARGIN_MIN_REVENUE_GROWTH_PP` | 3.0 pp | Minimum revenue growth to qualify as "revenue-intact"; below this, margin compression may be revenue-driven, not moat-erosion |
+| `_RECV_STRETCH_PP` | 10.0 pp | Materiality buffer: AR growing 10pp faster than revenue is operationally significant |
+| `_INV_BUILD_PP` | 15.0 pp | Higher bar than receivables: inventory build is more supply-chain-driven and requires a larger departure to be informative |
+| `_CAPEX_INTENSITY_PP` | 10.0 pp | Consistent with receivables threshold; applied to both revenue and op_income legs |
+
+These thresholds are locked as of Amendment A2.  They may not be tuned to improve
+sensor fire rates or base rates.  Any threshold change requires a new amendment.
+
+### §W2-PR-K.3 Base rate definition (display context, NOT a locked control)
+
+The universe-level base rate is the fraction of `(ticker, fy)` pairs in
+`statements.parquet` that satisfy the sensor condition in a given fiscal year.
+It is **recomputed live on each build run** as the universe composition changes —
+it is NOT a pre-registered locked control value.  It is printed as display context
+alongside the per-ticker firing flag so the reader can assess how selective a
+sensor is (base_rate ≈ 0.05 = 1-in-20 names fire; base_rate ≈ 0.50 = half fire,
+which is uninformative).  The base rate is not an inferential anchor.
+
+### §W2-PR-K.4 FY gap rule (locked)
+
+Only adjacent fiscal year pairs (gap == 1 FY) are evaluated.  Rows spanning
+> 1 FY (e.g. 2021→2023) are skipped to prevent inflating growth magnitudes.
+This applies to both per-ticker evaluation and base-rate computation.
+
+### §W2-PR-K.5 Great-company-trap overlay (LH-R10)
+
+A deterministic de-escalation overlay assembled from existing signals only:
+
+| Input | Source | Fire condition |
+|---|---|---|
+| `crowding_z` | `engine.theme_crowding.CROWDED_Z` | `crowding_z >= 1.0` (matches repo convention) |
+| `insider_net_usd` | `sec_insider` panel / `engine.equity_factors` | `insider_net_usd <= -500,000` USD |
+| `revision_direction` | `engine.analyst_revisions` | `direction == "downgrading"` |
+
+May ONLY lower conviction display context, never raise it (LH-R10).  No LLM.
+Inputs printed verbatim for Article-1/A3 transparency.  Returns `None` when both
+insider and revision inputs are unavailable (panel omitted from JSON).
+
+### §W2-PR-K.6 Coverage vocabulary (locked)
+
+Sensor-level `coverage` field uses the same vocabulary as `sensor_coverage` (top-level):
+
+- `"full"` — 2+ consecutive-FY rows with all required columns non-null **AND** the sensor evaluated successfully (`fy_fired_on` is not None)  
+- `"partial"` — ticker has rows but sensor could not evaluate (sparse columns, or only non-adjacent FY pairs)  
+- `"missing"` — no rows for this ticker in `statements.parquet`
+
+### §W2-PR-K.7 Firewall (binding)
+
+All outputs carry `_horizon_role="hold_thesis"`, `_display_only=True`.
+These fields MUST NOT feed: board ordering, alert triage, top-setups gates,
+push floor, or any entry-stack z-scored surface (LH-R1).
+FDR family: `long_hold` (LH-R5).
