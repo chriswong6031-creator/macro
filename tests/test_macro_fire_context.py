@@ -336,6 +336,112 @@ class TestWeeklyForwardFill:
 
 
 # ---------------------------------------------------------------------------
+# Group (e): Truncation prefix test (union→ffill→expanding-pctile composition)
+# ---------------------------------------------------------------------------
+class TestBuilderTruncationPrefix:
+    """Build the panel on full fixture data and on a truncated fixture; assert that
+    values at pre-truncation dates are identical (prefix property of the composition).
+
+    This exercises the real builder path:
+        union → ffill → expanding-pctile
+    which is the composition used by _expanding_pctile + reindex-ffill in the builder.
+    The test uses the private _expanding_pctile + the ffill/reindex pattern directly
+    to avoid needing real parquet data (pure unit test).
+    """
+
+    def _make_weekly_series(self, n_weeks: int, start: str = "2010-01-04",
+                            seed: int = 42) -> pd.Series:
+        """Weekly series starting on Monday, n_weeks entries."""
+        rng = np.random.default_rng(seed)
+        idx = pd.date_range(start, periods=n_weeks, freq="W-MON")
+        return pd.Series(rng.standard_normal(n_weeks), index=idx)
+
+    def _union_ffill_pctile(self, weekly: pd.Series, bdays: pd.DatetimeIndex) -> pd.Series:
+        """Replicate the builder's union→ffill→expanding-pctile composition."""
+        # Step 1: union→ffill to get a full-history series (matches builder pattern)
+        full_union = weekly.reindex(bdays.union(weekly.index)).ffill()
+        # Step 2: expanding pctile on full_union
+        pctile = mfc._expanding_pctile(full_union)
+        return pctile.reindex(bdays)
+
+    def test_truncation_prefix_weekly_to_daily(self):
+        """Values at pre-truncation dates must be identical when future rows are absent.
+
+        Simulates: run on full 4-year fixture vs run on first 2 years only.
+        Dates in the 2-year window must produce identical pctile values.
+        """
+        n_full = 208   # 4 years of weekly obs
+        n_trunc = 104  # 2 years (truncation point)
+        weekly_full = self._make_weekly_series(n_weeks=n_full, start="2010-01-04", seed=7)
+        weekly_trunc = weekly_full.iloc[:n_trunc]
+
+        bdays_full = pd.bdate_range("2010-01-04", periods=1040)  # ~4 years
+        bdays_trunc = bdays_full[:520]  # ~2 years
+
+        pctile_full = self._union_ffill_pctile(weekly_full, bdays_full)
+        pctile_trunc = self._union_ffill_pctile(weekly_trunc, bdays_trunc)
+
+        # Values at pre-truncation bdays must be identical
+        common_bdays = bdays_trunc
+        diff = (pctile_full.reindex(common_bdays) - pctile_trunc.reindex(common_bdays)).abs()
+        max_diff = diff.max()
+        assert max_diff < 1e-10, (
+            f"Truncation prefix violated: max abs diff at pre-truncation dates = {max_diff:.2e}. "
+            f"The builder's union→ffill→expanding-pctile composition has look-ahead."
+        )
+
+    def test_truncation_prefix_cot_publish_shift(self):
+        """COT-specific: Tuesday-indexed weekly → +3cd → Friday-indexed → union/ffill/pctile.
+        Truncation prefix must hold through the +3cd shift too."""
+        rng = np.random.default_rng(13)
+        n_full = 200  # weeks
+        # Tuesday-indexed (COT as-of date)
+        tuesdays = pd.date_range("2010-01-05", periods=n_full, freq="W-TUE")
+        vals = pd.Series(rng.standard_normal(n_full), index=tuesdays)
+
+        # Apply +3cd shift (Tue → Fri)
+        fridays_full = pd.Series(vals.values, index=vals.index + pd.Timedelta(days=3))
+        fridays_trunc = fridays_full.iloc[:100]
+
+        bdays_full = pd.bdate_range("2010-01-04", periods=1000)
+        bdays_trunc = bdays_full[:500]
+
+        pctile_full = self._union_ffill_pctile(fridays_full, bdays_full)
+        pctile_trunc = self._union_ffill_pctile(fridays_trunc, bdays_trunc)
+
+        common = bdays_trunc
+        diff = (pctile_full.reindex(common) - pctile_trunc.reindex(common)).abs()
+        max_diff = diff.dropna().max()
+        assert max_diff < 1e-10, (
+            f"COT publish-shift truncation prefix violated: max diff = {max_diff:.2e}"
+        )
+
+    def test_truncation_prefix_naaim_lag(self):
+        """NAAIM-specific: Wednesday-indexed weekly + 7cd lag → union/ffill/pctile.
+        Truncation prefix must hold through the +7cd lag."""
+        rng = np.random.default_rng(17)
+        n_full = 200
+        wednesdays = pd.date_range("2010-01-06", periods=n_full, freq="W-WED")
+        vals = pd.Series(rng.standard_normal(n_full), index=wednesdays)
+
+        lagged_full = pd.Series(vals.values, index=vals.index + pd.Timedelta(days=7))
+        lagged_trunc = lagged_full.iloc[:100]
+
+        bdays_full = pd.bdate_range("2010-01-04", periods=1000)
+        bdays_trunc = bdays_full[:500]
+
+        pctile_full = self._union_ffill_pctile(lagged_full, bdays_full)
+        pctile_trunc = self._union_ffill_pctile(lagged_trunc, bdays_trunc)
+
+        common = bdays_trunc
+        diff = (pctile_full.reindex(common) - pctile_trunc.reindex(common)).abs()
+        max_diff = diff.dropna().max()
+        assert max_diff < 1e-10, (
+            f"NAAIM lag truncation prefix violated: max diff = {max_diff:.2e}"
+        )
+
+
+# ---------------------------------------------------------------------------
 # Integration smoke: actual parquet (if present)
 # ---------------------------------------------------------------------------
 class TestParquetSmoke:

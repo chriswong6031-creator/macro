@@ -1,6 +1,17 @@
 {
-  "definition_version": "v1",
-  "generated_at": "2026-07-05T16:58:56",
+  "definition_version": "v1.1",
+  "changelog": {
+    "v1.1": [
+      "B1: COT store index is Tuesday as-of (not Friday); shift +3cd to Friday publish before pctile/rising-flag/ffill",
+      "B2: NAAIM store index is Wednesday survey-close (not Thursday publish); fixed labels \u2014 source_event_date=Wednesday survey close, known_date=survey_close+7cd (conservative, >=1 day past Thursday publish)",
+      "M1: replace raw ES+NDX net_spec contract sum (ES-dominated; ES OI ~7x NDX) with simple average of ES and NDX net_spec_pct_oi; frozen combination per RUL-26 P2 spec registration",
+      "m2: stlfsi4_vintage coverage note now states PANEL's actual first non-null date (2022-11-17) not raw vintage store start"
+    ],
+    "v1": [
+      "initial release"
+    ]
+  },
+  "generated_at": "2026-07-05T17:11:02",
   "date_span": {
     "start": "2002-01-02",
     "end": "2026-07-03",
@@ -60,7 +71,8 @@
       "known_date": "realtime_start (ALFRED initial-release date)",
       "pit_basis": "alfred_vintage_as_of_join",
       "coverage_note": "partial_vintage_available_2022-11-17_to_2026-06-10",
-      "note": "STLFSI4 ALFRED-vintaged; local store partial (2022-11-11 onward, 187 rows). Dates before 2022-11-11 are NaN. Full history requires FRED API key + collectors/fred.py fetch_vintages(). NFCI excluded per RUL-23 (re-revises all history, no vintage)."
+      "panel_first_non_null": "2022-11-17 (PANEL's actual first non-null date after join to bday grid)",
+      "note": "STLFSI4 ALFRED-vintaged; panel first non-null date = 2022-11-17 (raw vintage store start 2022-11-11 lands on 2022-11-17 after bday join). Dates before 2022-11-17 in the panel are NaN. Full history requires FRED API key + collectors/fred.py fetch_vintages(). NFCI excluded per RUL-23 (re-revises all history, no vintage)."
     },
     "macro_m1_fsi_turn": {
       "source_event_date": "derived from ofr_fsi",
@@ -75,18 +87,18 @@
       "definition": "hy_oas_pctile_exp >= 0.80 AND hy_oas_roc21 < 0"
     },
     "pos_p1_naaim_reset": {
-      "source_event_date": "NAAIM Wednesday survey close",
-      "known_date": "publish_date + 7 calendar days (Thursday publish + 7d)",
-      "pit_basis": "+7_calendar_days",
-      "note": "NAAIM publishes Thursday; 7-day forward lag matches naaim_overlay_phase0.py convention. Forward-filled. Trailing 3y (156 weekly obs) rolling percentile <= 0.20 AND latest > 2-weeks-prior publish. Value NOT visible before publish+7d.",
+      "source_event_date": "Wednesday survey close (store index = Wednesday; 1032/1043 rows are Wednesdays)",
+      "known_date": "survey_close + 7 calendar days (conservative: >=1 day past Thursday publish)",
+      "pit_basis": "+7_calendar_days_from_wednesday_survey_close",
+      "note": "NAAIM survey closes Wednesday; published Thursday. Store index = Wednesday survey-close date. 7-day forward lag (known_date = survey_close + 7cd) is conservative (lands >=1 day past Thursday publish); matches naaim_overlay_phase0.py lag_days=7 convention. Forward-filled. Trailing 3y (156 weekly obs) rolling percentile <= 0.20 AND latest > 2-weeks-prior publish. Value NOT visible before survey_close + 7cd.",
       "definition": "trailing_156wk_pctile(naaim_exposure) <= 0.20 AND naaim_exposure > naaim_exposure.shift(2)"
     },
     "pos_p2_cot_reset": {
-      "source_event_date": "COT Tuesday as-of",
-      "known_date": "Friday publish date (embedded in store index \u2014 store is Friday-indexed)",
-      "pit_basis": "friday_publish_date",
-      "note": "COT net spec = ES+NDX combined. Forward-filled from Friday publish. No additional lag: Friday publish IS the known_date per RUL-23. 3-day lag to Tuesday as-of already embedded in the published date.",
-      "definition": "trailing_156wk_pctile(cot_es+ndx_net_spec) <= 0.20 AND cot_combined > cot_combined.shift(2)"
+      "source_event_date": "COT Tuesday as-of (report_date_as_yyyy_mm_dd \u2014 store index is Tuesday)",
+      "known_date": "Friday publish (+3 calendar days from Tuesday as-of; CFTC publishes Friday ~15:30 ET)",
+      "pit_basis": "friday_publish_date (+3cd from Tuesday as-of)",
+      "note": "COT store index = Tuesday as-of date (see collectors/cot.py:3-4). Builder shifts +3 calendar days (Tue->Fri) to obtain Friday publish date before pctile / rising-flag / daily forward-fill. Frozen combination (RUL-26 P2 spec registration): simple average of ES and NDX net_spec_pct_oi (normalized by OI; ES OI ~7x NDX so raw contract sum is effectively ES-only). Precedent: capitulation_overlay_phase0.py:93.",
+      "definition": "trailing_156wk_pctile(avg(es_net_spec_pct_oi, ndx_net_spec_pct_oi)) <= 0.20 AND cot_combined > cot_combined.shift(2)"
     }
   },
   "market_state_label": {
@@ -209,6 +221,6 @@
     "macro_m1_fsi_turn": 0.0488,
     "macro_m2_oas_turn": 0.0432,
     "pos_p1_naaim_reset": 0.04,
-    "pos_p2_cot_reset": 0.0984
+    "pos_p2_cot_reset": 0.0707
   }
 }
