@@ -57,6 +57,7 @@
     sunEl.style.top = p.y.toFixed(2) + '%';
   }
   function placeMoon() {
+    if (!moonEl) return;                             // page may opt out of the moon
     var nf = (((hourNow() - 19) + 24) % 24) / 12;   // night window 19:00→07:00 (12h)
     var p = arcPos(nf < 0 ? 0 : (nf > 1 ? 1 : nf));
     moonEl.style.left = p.x.toFixed(2) + '%';
