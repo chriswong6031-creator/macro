@@ -35,8 +35,10 @@ if ! cmp -s "$APP_DIR/app/deploy/Caddyfile" /etc/caddy/Caddyfile; then
 fi
 
 # macro-api: restart ONLY when its own code changed (avoid blipping /api on every
-# site/ render commit).
-if echo "$CHANGED" | grep -qE '^app/(main\.py|requirements\.txt|__init__\.py)$'; then
+# site/ render commit). "Its own code" includes the engine modules /api/ask imports
+# (ask_brain → cortex + llm_auth, cached in the running uvicorn after first call —
+# without a restart an engine-side fix never goes live).
+if echo "$CHANGED" | grep -qE '^(app/(main\.py|requirements\.txt|__init__\.py)|engine/neuralweb/(ask_brain|cortex)\.py|engine/llm_auth\.py)$'; then
 	systemctl is-enabled macro-api >/dev/null 2>&1 && systemctl restart macro-api || true
 fi
 
