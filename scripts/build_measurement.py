@@ -23,13 +23,15 @@ import json
 import logging
 import sys
 import time
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
+import pyarrow.parquet as pq
 from jinja2 import Environment, FileSystemLoader
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from engine.cycle_pattern.truths import active_truths  # noqa: E402
 from lib.pages import write_page  # noqa: E402
 
 log = logging.getLogger("build_measurement")
@@ -191,6 +193,207 @@ GATE_LEDGER_FALLBACK: list[dict] = [
 # ── sync gauge paths ───────────────────────────────────────────────────────────
 SYNC_GAUGE_PATH = DATA / "leadlag" / "sync_gauge.json"
 LEADLAG_PHASE0_PATH = DATA / "cycle_hazard" / "leadlag_phase0.json"
+
+# ── Pattern Memory v0 paths ────────────────────────────────────────────────────
+TRUTHS_JSONL_PATH = DATA / "cycle_pattern" / "truths.jsonl"
+
+# ── Accrual clock ledger paths (five live ledgers) ─────────────────────────────
+ACCRUAL_LEDGERS: list[dict[str, Any]] = [
+    {
+        "key": "sector_cycles",
+        "label_en": "US Sector Cycles — forward log",
+        "label_zh": "美国板块周期 · 前向日志",
+        "path": DATA / "sector_cycles" / "forward_log.parquet",
+        "id_col": "id",
+        "date_col": "date",
+    },
+    {
+        "key": "country_cycles",
+        "label_en": "Country Cycles — forward log",
+        "label_zh": "国家周期 · 前向日志",
+        "path": DATA / "country_cycles" / "forward_log.parquet",
+        "id_col": "id",
+        "date_col": "date",
+    },
+    {
+        "key": "china_sector_cycles",
+        "label_en": "China Sector Cycles — forward log",
+        "label_zh": "中国板块周期 · 前向日志",
+        "path": DATA / "china_sector_cycles" / "forward_log.parquet",
+        "id_col": "id",
+        "date_col": "date",
+    },
+    {
+        "key": "sector_central",
+        "label_en": "US Sector Central — calls",
+        "label_zh": "美国板块中枢 · 研判记录",
+        "path": DATA / "sector_central" / "calls.parquet",
+        "id_col": "id",
+        "date_col": "date",
+    },
+    {
+        "key": "china_sector_central",
+        "label_en": "China Sector Central — calls",
+        "label_zh": "中国板块中枢 · 研判记录",
+        "path": DATA / "china_sector_central" / "calls.parquet",
+        "id_col": "id",
+        "date_col": "date",
+    },
+]
+
+
+def build_truth_ledger() -> dict:
+    """Pattern Memory v0 — read truths.jsonl via active_truths() and return a
+    summary dict for embedding in window.MEASUREMENT.
+
+    Absent-safe: if the file is missing, returns {available: False}.
+    BC-2: no use of 'validated'/'已验证' in rendered text here — this is data,
+    not UI copy.
+    """
+    if not TRUTHS_JSONL_PATH.exists():
+        log.warning("truths.jsonl not found at %s — truth ledger unavailable", TRUTHS_JSONL_PATH)
+        return {"available": False}
+
+    try:
+        truths = active_truths(TRUTHS_JSONL_PATH)
+    except Exception as exc:
+        log.warning("active_truths() failed: %s — truth ledger unavailable", exc)
+        return {"available": False}
+
+    from collections import Counter
+    status_counts = dict(Counter(t.get("status", "") for t in truths))
+
+    # Promoted nulls: the subset that is the null library
+    promoted_nulls = [t for t in truths if t.get("status") == "promoted_null"]
+
+    # Truth table rows (display order: truth_id sorted, which active_truths() guarantees)
+    rows = []
+    for t in truths:
+        rows.append({
+            "truth_id": t.get("truth_id", ""),
+            "statement": t.get("statement", ""),
+            "status": t.get("status", ""),
+            "effect_class": t.get("effect_class", ""),
+            "pit_class": t.get("pit_class", ""),
+            "next_review_due": t.get("next_review_due", ""),
+        })
+
+    # Null library: promoted_null rows with their evidence_refs
+    null_library = []
+    for t in promoted_nulls:
+        null_library.append({
+            "truth_id": t.get("truth_id", ""),
+            "statement": t.get("statement", ""),
+            "evidence_refs": t.get("evidence_refs", []),
+            "ci_summary": t.get("ci_summary", ""),
+            "notes": t.get("notes", ""),
+            "next_review_due": t.get("next_review_due", ""),
+        })
+
+    return {
+        "available": True,
+        "total": len(truths),
+        "status_counts": status_counts,
+        "rows": rows,
+        "null_library": null_library,
+    }
+
+
+def _parse_date(s: str) -> date | None:
+    """Parse YYYY-MM-DD string to date; return None on failure."""
+    try:
+        return datetime.strptime(s, "%Y-%m-%d").date()
+    except Exception:
+        return None
+
+
+def build_accrual_clocks() -> list[dict]:
+    """Live maturity & accrual clock for the five forward ledgers.
+
+    For each ledger:
+      rows            — total row count
+      unique_ids      — number of unique id values
+      unique_dates    — number of unique stamp dates
+      first_date      — earliest date (YYYY-MM-DD)
+      last_date       — latest date (YYYY-MM-DD)
+      cadence_days    — (last-first)/(n_dates-1) in fractional days; None if n_dates<2
+      target_40_date  — projected calendar date to reach 40 unique stamp dates;
+                        None if cadence unmeasurable or already at ≥40
+
+    Absent-safe: if the file does not exist, returns a stub with available=False.
+    Pure numpy/pandas/pyarrow — no sklearn/scipy.
+    """
+    results = []
+    for spec in ACCRUAL_LEDGERS:
+        path: Path = spec["path"]
+        key: str = spec["key"]
+        id_col: str = spec["id_col"]
+        date_col: str = spec["date_col"]
+
+        if not path.exists():
+            log.warning("Accrual ledger not found: %s", path)
+            results.append({
+                "key": key,
+                "label_en": spec["label_en"],
+                "label_zh": spec["label_zh"],
+                "available": False,
+            })
+            continue
+
+        try:
+            table = pq.read_table(path, columns=[id_col, date_col])
+            import pandas as pd
+            df = table.to_pandas()
+
+            n_rows = len(df)
+            unique_ids = int(df[id_col].nunique())
+
+            # Unique stamp dates (as sorted list of YYYY-MM-DD strings)
+            date_strs = sorted(df[date_col].dropna().unique().tolist())
+            n_dates = len(date_strs)
+            first_date = date_strs[0] if date_strs else None
+            last_date = date_strs[-1] if date_strs else None
+
+            cadence_days: float | None = None
+            target_40_date: str | None = None
+
+            if n_dates >= 2 and first_date and last_date:
+                d_first = _parse_date(first_date)
+                d_last = _parse_date(last_date)
+                if d_first and d_last:
+                    span_days = (d_last - d_first).days
+                    cadence_days = round(span_days / (n_dates - 1), 1)
+                    if n_dates < 40 and cadence_days and cadence_days > 0:
+                        stamps_needed = 40 - n_dates
+                        days_needed = stamps_needed * cadence_days
+                        projected = d_last + timedelta(days=days_needed)
+                        target_40_date = projected.isoformat()
+                    # else already at 40+ or cadence is 0 (shouldn't happen)
+
+            results.append({
+                "key": key,
+                "label_en": spec["label_en"],
+                "label_zh": spec["label_zh"],
+                "available": True,
+                "n_rows": n_rows,
+                "unique_ids": unique_ids,
+                "unique_dates": n_dates,
+                "first_date": first_date,
+                "last_date": last_date,
+                "cadence_days": cadence_days,
+                "target_40_date": target_40_date,
+            })
+        except Exception as exc:
+            log.warning("Accrual clock failed for %s: %s", key, exc)
+            results.append({
+                "key": key,
+                "label_en": spec["label_en"],
+                "label_zh": spec["label_zh"],
+                "available": False,
+                "error": str(exc),
+            })
+
+    return results
 
 
 def load_json(path: Path) -> dict | list:
@@ -602,12 +805,27 @@ def run() -> None:
     else:
         log.warning("Sync gauge not available — check data/leadlag/sync_gauge.json")
 
+    # 6c. Pattern Memory v0 — truth ledger + null library (Hub v2)
+    truth_ledger = build_truth_ledger()
+    if truth_ledger.get("available"):
+        log.info(
+            "Truth ledger: %d active truths, status counts: %s",
+            truth_ledger.get("total", 0),
+            truth_ledger.get("status_counts", {}),
+        )
+    else:
+        log.warning("Truth ledger unavailable — truths.jsonl missing or parse error")
+
+    # 6d. Accrual clocks (Hub v2)
+    accrual_clocks = build_accrual_clocks()
+    log.info("Accrual clocks: %d ledgers loaded", len(accrual_clocks))
+
     # 7. Provenance
     provenance = build_provenance(engines)
 
     # 8. Assemble payload
     payload = {
-        "schema": "measurement.v1",
+        "schema": "measurement.v2",
         "generated_at": datetime.utcnow().isoformat() + "Z",
         "engines": engines,
         "gate_ledger": gates,
@@ -617,6 +835,9 @@ def run() -> None:
         "provenance": provenance,
         # Headline consolidated verdict (§6.6)
         "sync_gauge": sync_gauge,
+        # Hub v2 additions
+        "truth_ledger": truth_ledger,
+        "accrual_clocks": accrual_clocks,
         "consolidated_verdict": {
             "en": (
                 "Descriptive structure (confirmed turns, phase wheel, risk/vol clustering) has measurable substance. "
@@ -659,6 +880,9 @@ def run() -> None:
         provenance=provenance,
         build_date=date.today().isoformat(),
         generated_at=payload["generated_at"],
+        # Hub v2 additions
+        truth_ledger=truth_ledger,
+        accrual_clocks=accrual_clocks,
     )
     write_page(OUT_HTML, html, encoding="utf-8")
     log.info("Wrote %s (%d bytes)", OUT_HTML.relative_to(ROOT), len(html))
