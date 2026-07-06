@@ -413,6 +413,9 @@ class TestRealRegistryFirewallClean:
             "long-hold-compounder-features",
             # W2 PR-J two display clocks — hold_thesis by design; display-only
             "long-hold-clocks",
+            # W2 PR-K moat falsifier sensors and great-company-trap overlay
+            "moat-falsifier-sensors",
+            "great-company-trap",
         }
         reg = load_registry(REPO_ROOT)
         hold_arts = {
