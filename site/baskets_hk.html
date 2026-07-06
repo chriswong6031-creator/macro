@@ -399,6 +399,12 @@
   .tpill b { color:var(--text); font-variant-numeric:tabular-nums; }
   .tcard details > summary { font-size:11.5px; margin:6px 0 0; }
   .tcard .why { font-size:11.5px; color:var(--muted); margin:5px 0 0; max-width:none; }
+  .tmore > summary { font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted);
+    cursor:pointer; list-style:none; user-select:none; margin:6px 0 0; display:flex; align-items:center; gap:4px; }
+  .tmore > summary::-webkit-details-marker { display:none; }
+  .tmore > summary::before { content:'▾'; display:inline-block; transition:transform .18s; }
+  .tmore[open] > summary::before { transform:rotate(-180deg); }
+  .tglyph { margin:3px 0 0; }
 
   /* ---- mobile: 2-up compact desk cards ----
      On phones the desk would otherwise stack one big card per row and scroll on and on.
@@ -533,12 +539,6 @@
   .anrow .rn { font-weight:650; white-space:nowrap; min-width:0; overflow:hidden; text-overflow:ellipsis; }
   .anwhy { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .ansc { font-variant-numeric:tabular-nums; font-weight:700; }
-  /* vol-regime sizing transparency chip (honest drawdown-control read; hidden when calm) */
-  .rs-chip { background:var(--panel2); border:1px solid var(--line); border-radius:9px; padding:9px 12px; margin:4px 0 10px; }
-  .rs-head { display:flex; align-items:baseline; gap:8px; }
-  .rs-ic { font-size:14px; } .rs-main { font-size:13px; } .rs-main b { font-variant-numeric:tabular-nums; }
-  .rs-decomp { margin-top:3px; font-variant-numeric:tabular-nums; }
-  .rs-note { margin-top:4px; font-style:italic; line-height:1.45; }
   /* ---- W4 Velocity / Heat pills (DESCRIPTIVE — rank/score trajectory, not a forecast) ---- */
   /* heat-pill: inline chip next to the label on each theme card */
   .heat-pill { font-size:9.5px; font-weight:700; letter-spacing:.04em; padding:1px 5px; border-radius:5px;
@@ -554,13 +554,16 @@
   .rot-sub { font-size:11.5px; color:var(--muted); margin:4px 0 8px; font-style:italic; }
   /* 20d rank trajectory context appended in rk span */
   .rk20 { font-size:9.5px; opacity:.72; font-variant-numeric:tabular-nums; }
-  /* act-now pulse bar */
-  .pulse-bar { font-size:12px; background:var(--panel2); border:1px solid var(--line); border-radius:8px;
-    padding:7px 12px; margin-bottom:10px; display:flex; flex-wrap:wrap; gap:4px 12px; align-items:center; }
-  .pulse-bar a { color:var(--link); text-decoration:none; }
-  .pulse-bar a:hover { text-decoration:underline; }
-  .pulse-tag { font-size:10px; color:var(--muted); border:1px solid var(--line); border-radius:5px;
-    padding:0 5px; margin-left:auto; white-space:nowrap; }
+  /* act-now merged pulse strip */
+  .pulse-bar { display:flex; flex-wrap:wrap; align-items:center; gap:6px 12px; font-size:12px;
+    padding:7px 10px; border:1px solid var(--line); border-radius:9px;
+    background:var(--panel2); margin:0 0 10px; }
+  .pulse-grp { white-space:normal; }
+  .pulse-grp a { color:var(--link); text-decoration:none; }
+  .pulse-grp a:hover { text-decoration:underline; }
+  .pulse-size { border:1px solid color-mix(in srgb, var(--warn) 45%, var(--line));
+    border-left:3px solid var(--warn); border-radius:7px; padding:2px 8px;
+    background:color-mix(in srgb, var(--warn) 8%, transparent); cursor:default; }
 
   /* ---- Leadership Health (display-only shape/fragility reads) ---- */
   .tflag.mut { color:var(--muted); border-color:var(--line); font-weight:600; }
@@ -689,7 +692,6 @@
     <h2><span class="idx">★</span>✅ <span class="l-en">What to act on now</span><span class="l-zh">现在该做什么</span>
       <span class="sect-tag"><span class="l-en">buy now · wait for a pullback · reduce / avoid</span><span class="l-zh">立即买入 · 等待回调 · 减仓回避</span></span></h2>
     <p class="sub"><span class="l-en">Shortlist by action: buyable now, wait for a better entry, or reduce / avoid. Click a theme for its stocks.</span><span class="l-zh">按操作分组：当前可买、等待更好入场点、或减仓/回避。点击主题查看个股。</span></p>
-    <div id="regime-sizing-chip"></div>
     <div id="actnow"></div>
   </section>
 
@@ -760,7 +762,7 @@
 
   <footer>
     <span class="l-en">Informational only, not investment advice. Baskets are equal-weighted and benchmarked to the Hang Seng Index. Membership is curated, so results are descriptive, not an out-of-sample backtest or buy list. See LIMITATIONS.md.</span><span class="l-zh">仅供参考，非投资建议。篮子等权重，并以恒生指数为基准。成分为人工整理，因此结果是描述性信息，不是样本外回测或买入清单。参见 LIMITATIONS.md。</span>
-    <span class="l-en">Generated</span><span class="l-zh">生成于</span> <span id="gen">2026-07-06 08:28 UTC</span>.
+    <span class="l-en">Generated</span><span class="l-zh">生成于</span> <span id="gen">2026-07-06 09:57 UTC</span>.
   </footer>
 
 <script src="lightweight-charts.js"></script>
@@ -906,7 +908,7 @@ function renderCards(){
   const el=document.getElementById('cards');
   el.innerHTML=(BASKETS.categories||[]).map(cat=>{
     const since = LANG()==='zh'?'自':'since';
-    const memberW = LANG()==='zh'?'只 · 等权 · ':' members · equal-weighted · ';
+    const memberW = LANG()==='zh'?'只 · ':' members · ';
     const cards=(BASKETS.baskets||[]).filter(b=>b.category===cat)
       .sort((a,c)=>((c.perf?.[bhz]?.rel)??-9)-((a.perf?.[bhz]?.rel)??-9))
       .map(b=>{ const spk=sparkTail(ratio(CHART.baskets[b.id]));
@@ -984,6 +986,5 @@ if(document.readyState!=='loading') boot(); else document.addEventListener('DOMC
 </script>
 <script src="allocation_scorecard.js"></script>
 <script src="theme.js"></script>
-<script defer data-whb data-root="" src="wh_banner.js"></script>
 </body>
 </html>

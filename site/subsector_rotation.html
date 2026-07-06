@@ -524,6 +524,10 @@
     font-size:11.5px; color:var(--muted); line-height:1.6; }
   .td-caveats strong { color:var(--text); }
   .td-promotion-clock { margin-top:10px; font-size:11px; color:var(--muted); }
+  .td-qual-filters { margin-top:8px; font-size:10.5px; color:var(--muted); border-top:1px solid var(--line); padding-top:6px; }
+  .td-qual-filter-tag { display:inline-block; margin:1px 3px 1px 0; padding:1px 5px; border-radius:4px;
+    background:color-mix(in srgb,var(--link) 12%,transparent); color:var(--link); font-size:9.5px; font-weight:700; }
+  .td-qual-accrual-note { margin-top:6px; font-size:10px; color:var(--muted); font-style:italic; }
 </style>
 
     <h2>🎯 <span class="l-en">Rotation Turn Desk</span><span class="l-zh">轮动入场台</span></h2>
@@ -550,6 +554,7 @@
       var armed = d.armed || [];
       var br    = d.base_rates || {};
       var pc    = d.promotion_clock || {};
+      var qualNote = d.qual_accrual_note || '';
 
       // Staleness note when asof differs
       var staleHtml = '';
@@ -568,7 +573,7 @@
           + t('No sectors currently armed — A15 has not fired in the last 10 sessions. Quiet state is a valid state.',
               '当前无板块处于入场窗口——A15在过去10个交易日内未触发。安静状态是有效状态。')
           + '</p>'
-          + _caveatsHtml(br, pc);
+          + _caveatsHtml(br, pc, qualNote);
         return;
       }
 
@@ -598,6 +603,25 @@
             + t('No cascade fires in this sector today','此板块今日暂无级联信号')
             + '</p>';
         }
+        var qualFilters = sec.qual_filters_true || [];
+        var qualHtml = '';
+        if(qualFilters.length){
+          qualHtml = '<div class="td-qual-filters">'
+            + '<span style="margin-right:4px">'
+            + t('Context filters active:', '上下文过滤器激活：')
+            + '</span>';
+          qualFilters.forEach(function(fid){
+            var tipEn = '', tipZh = '';
+            if(fid==='F-Q2-RISKOFF'){ tipEn='Market state is NOT risk-off'; tipZh='市场状态非避险'; }
+            else if(fid==='F-Q2-HIGHVIX'){ tipEn='VIX percentile ≥0.6'; tipZh='VIX百分位≥0.6'; }
+            else if(fid==='F-Q3-TAPE'){ tipEn='Operator tape touch'; tipZh='运营商标注匹配'; }
+            var tipAttrs = (tipEn ? ' data-tip-en="'+esc(tipEn)+'" data-tip-zh="'+esc(tipZh)+'"' : '');
+            qualHtml += '<span class="td-qual-filter-tag"'
+              + tipAttrs
+              + '>'+esc(fid)+'</span>';
+          });
+          qualHtml += '</div>';
+        }
         cardsHtml += '<div class="td-sector-card">'
           + '<div class="td-card-hd">'
           + '<span class="td-sector-name">'+esc(name)+'</span>'
@@ -610,14 +634,15 @@
           + '</span>'
           + '</div>'
           + firesHtml
+          + qualHtml
           + '</div>';
       });
       cardsHtml += '</div>';
 
-      el.innerHTML = staleHtml + cardsHtml + _caveatsHtml(br, pc);
+      el.innerHTML = staleHtml + cardsHtml + _caveatsHtml(br, pc, qualNote);
     }
 
-    function _caveatsHtml(br, pc){
+    function _caveatsHtml(br, pc, qualNote){
       var wrIn  = br.in_window_wr21  != null ? (br.in_window_wr21*100).toFixed(1)+'%' : '65.2%';
       var wrOut = br.outside_window_wr21 != null ? (br.outside_window_wr21*100).toFixed(1)+'%' : '53.6%';
       var delta = br.holdout_delta_pp != null ? '+'+br.holdout_delta_pp.toFixed(1)+'pp' : '+10.7pp';
@@ -649,6 +674,7 @@
         + accrued + ' / ' + required
         + t(' windows accrued (re-evaluation gate at 15).', ' 个窗口已累积（15个触发复评）。')
         + '</span>'
+        + (qualNote ? '<div class="td-qual-accrual-note" data-tip-en="Qualitative filters log context at window open; accrual is descriptive-only — no ranking or gating." data-tip-zh="定性过滤器在窗口开启时记录上下文；积累数据为描述性——不排名不设门控。">'+esc(qualNote)+'</div>' : '')
         + '</div>';
     }
 
@@ -1459,6 +1485,5 @@ _themeObs.observe(document.documentElement, {attributes:true, attributeFilter:['
 
 })();
 </script>
-<script defer data-whb data-root="" src="wh_banner.js"></script>
 </body>
 </html>

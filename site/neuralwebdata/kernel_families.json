@@ -23,7 +23,7 @@
       },
       "staleness": {
         "date_last": "2026-06-24",
-        "days_since_last_fire": 11
+        "days_since_last_fire": 12
       },
       "armed": false
     },
@@ -50,7 +50,7 @@
       },
       "staleness": {
         "date_last": "2026-06-29",
-        "days_since_last_fire": 6
+        "days_since_last_fire": 7
       },
       "armed": false
     },
@@ -77,7 +77,7 @@
       },
       "staleness": {
         "date_last": "2026-06-25",
-        "days_since_last_fire": 10
+        "days_since_last_fire": 11
       },
       "armed": false
     },
@@ -104,7 +104,7 @@
       },
       "staleness": {
         "date_last": "2026-06-26",
-        "days_since_last_fire": 9
+        "days_since_last_fire": 10
       },
       "armed": false
     },
@@ -135,7 +135,7 @@
       },
       "staleness": {
         "date_last": "2026-06-24",
-        "days_since_last_fire": 11
+        "days_since_last_fire": 12
       },
       "armed": true
     },
@@ -163,7 +163,7 @@
       },
       "staleness": {
         "date_last": "2026-06-24",
-        "days_since_last_fire": 11
+        "days_since_last_fire": 12
       },
       "armed": true
     }
@@ -171,7 +171,7 @@
   "generated_from": "sha256:2cace08c37a5551ca752e65ab9533d2b78d2948392c53b1ecade99d0cbe9f23b",
   "schema_version": 1,
   "produced_by": "engine/neuralweb/decay.py",
-  "produced_at": "2026-07-05T08:12:43Z",
-  "inputs_hash": "sha256:8a3c7a52aaa8c4b9f41c224a3570ebfb96ef2b2d5dba759493843861e145552e",
+  "produced_at": "2026-07-06T08:37:06Z",
+  "inputs_hash": "sha256:cf87d56170b9deecda7f56177512fff0806e2a188914472eee6aff2c633f4536",
   "tier": "infrastructure"
 }

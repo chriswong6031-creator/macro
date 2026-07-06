@@ -465,6 +465,15 @@ html[data-theme="light"] .sc-openpage { color: #fff; }
   border: 1px solid color-mix(in srgb, var(--link) 20%, var(--line)); border-radius: 9px; }
 .sc-dna-ana-k { font-weight: 700; color: var(--link); margin-right: 4px; }
 @media (max-width: 620px) { .sc-dna-sig { grid-template-columns: 1fr; } }
+.sc-dna-body { max-height: 9.5em; overflow: hidden; position: relative; }
+.sc-dna-body::after { content: ""; position: absolute; bottom: 0; left: 0; right: 0; height: 2.5em;
+  background: linear-gradient(to bottom, transparent, var(--panel)); pointer-events: none; }
+.sc-dna-body.open { max-height: none; }
+.sc-dna-body.open::after { display: none; }
+.sc-dna-more { display: block; font-size: 10.5px; font-weight: 700; color: var(--muted); background: none; border: none;
+  cursor: pointer; padding: 3px 0 0; letter-spacing: .02em; text-align: left; }
+.sc-dna-more:hover { color: var(--link); }
+.sc-dna-more[hidden] { display: none; }
 
 /* visible focus ring for keyboard users across both page chromes */
 .sc-page :focus-visible, .scc-page :focus-visible { outline: 2px solid var(--link); outline-offset: 2px; border-radius: 7px; }

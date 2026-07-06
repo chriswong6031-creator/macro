@@ -52,12 +52,6 @@
   /* board universe toggle: redundant with the page-level one on a phone → desktop only.
      (.scc-tabs.scc-tabs-board to outrank the later .scc-tabs{display:flex} base rule.) */
   @media (max-width: 880px) { .scc-tabs.scc-tabs-board { display: none; } }
-  /* collapsible reasoning trace on conviction cards */
-  .trace-d > summary { font-size: 11px; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; color: var(--muted);
-    cursor: pointer; list-style: none; padding: 4px 0; display: inline-flex; align-items: center; gap: 6px; }
-  .trace-d > summary::-webkit-details-marker { display: none; }
-  .trace-d > summary::after { content: "▾"; font-size: 10px; transition: transform .2s; }
-  .trace-d[open] > summary::after { transform: rotate(180deg); }
   /* sub-dashboard rail */
   .scc-rail { display: flex; gap: 9px; flex-wrap: wrap; margin: 6px 0 16px; position: sticky; top: 0; z-index: 30;
     background: color-mix(in srgb, var(--bg) 92%, transparent); backdrop-filter: blur(8px); padding: 7px 0; }
@@ -87,14 +81,14 @@
   .chip2 b { color: var(--text); font-variant-numeric: tabular-nums; }
   .chip2.early { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 40%, var(--line)); }
   .chip2.up { color: var(--up); } .chip2.down { color: var(--down); }
-  .fwd { font-size: 12px; margin: 8px 0; padding: 8px 10px; border-radius: 9px;
-    background: color-mix(in srgb, var(--link) 6%, var(--panel2, var(--panel))); border: 1px solid color-mix(in srgb, var(--link) 22%, var(--line)); }
-  .fwd b { font-variant-numeric: tabular-nums; } .fwd.shut { background: color-mix(in srgb, var(--down) 6%, var(--panel2, var(--panel))); border-color: color-mix(in srgb, var(--down) 24%, var(--line)); }
-  .trace { margin: 8px 0 0; display: flex; flex-direction: column; gap: 5px; }
-  .tr-row { display: flex; gap: 8px; align-items: baseline; font-size: 12px; }
-  .tr-dot { flex: 0 0 auto; width: 8px; height: 8px; border-radius: 50%; margin-top: 4px; }
-  .tr-validated { background: var(--link); } .tr-confirmer { background: var(--warn); } .tr-display { background: var(--muted); }
-  .tr-layer { font-weight: 650; flex: 0 0 88px; } .tr-txt { color: var(--muted); }
+  .tr-txt { color: var(--muted); }
+  .mini-cyc { margin: 7px 0 5px; position: relative; }
+  .mini-cyc-cap { font-size: 10px; color: var(--muted); margin-bottom: 2px; letter-spacing: .02em; }
+  .mini-cyc svg { display: block; width: 100%; height: 52px; }
+  .mc-dot { position: absolute; width: 6px; height: 6px; border-radius: 50%; transform: translate(-50%, -50%); pointer-events: none; }
+  .mc-read { position: absolute; font-size: 8px; font-variant-numeric: tabular-nums; pointer-events: none; transform: translateY(-50%); white-space: nowrap; }
+  .mc-x { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--muted); opacity: 0.5; pointer-events: none; display: none; }
+  .mc-hov { position: absolute; width: 7px; height: 7px; border-radius: 50%; transform: translate(-50%, -50%); pointer-events: none; display: none; }
   .conflu { font-size: 10.5px; color: var(--muted); margin-top: 8px; }
   .conflu b.high { color: var(--up); } .conflu b.moderate { color: var(--warn); }
   /* grader */
@@ -578,6 +572,18 @@
 (function(){
   "use strict";
   var D = window.SECTOR_CENTRAL; if (!D) return;
+  /* FIX 1a — strip "(Equal-Weight)" / "（等权）" suffixes from all string values at boot */
+  var _ewRe = /\s*[（(]\s*(?:equal[-\s]?weight(?:ed)?|等权(?:重)?)\s*[）)]/gi;
+  function deepStrip(obj) {
+    if (obj === null || typeof obj !== 'object') return;
+    var keys = Object.keys(obj);
+    for (var _k = 0; _k < keys.length; _k++) {
+      var _key = keys[_k], _val = obj[_key];
+      if (typeof _val === 'string') { obj[_key] = _val.replace(_ewRe, ''); }
+      else if (_val && typeof _val === 'object') { deepStrip(_val); }
+    }
+  }
+  deepStrip(D);
   var M = D.market || {}, GR = D.grader || {};
   function lang(){ return document.documentElement.getAttribute("data-lang") === "zh" ? "zh" : "en"; }
   function L(en, zh){ return '<span class="l-en">'+en+'</span><span class="l-zh">'+(zh==null?en:zh)+'</span>'; }
@@ -623,6 +629,132 @@
     document.getElementById('regime').innerHTML=head+cells.join('');
   }
 
+  /* ---- mini cycle chart ---- */
+  var _cycSeriesCache = {};
+  function _cycSeries(id) {
+    if (_cycSeriesCache[id]) return _cycSeriesCache[id];
+    var cyc = window.SECTOR_CYCLES; if (!cyc) return null;
+    var today = (cyc.meta && cyc.meta.today) || null;
+    var lists = [cyc.sectors||[], cyc.baskets||[]];
+    for (var li=0; li<lists.length; li++) {
+      var list = lists[li];
+      for (var i=0; i<list.length; i++) {
+        var s = list[i];
+        if (s.id !== id) continue;
+        var raw = s.osc || []; if (!raw.length) return null;
+        var cutoff = (today || raw[raw.length-1].x) - 5;
+        var pts = raw.filter(function(p){ return p.x >= cutoff; });
+        if (!pts.length) pts = raw.slice(-2);
+        var result = { pts: pts, accent: s.accent || null };
+        _cycSeriesCache[id] = result;
+        return result;
+      }
+    }
+    return null;
+  }
+  function miniCycChart(s) {
+    var id = s.id;
+    var ser = _cycSeries(id); if (!ser || !ser.pts.length) return '';
+    var pts = ser.pts;
+    var accent = ser.accent || 'var(--link)';
+    var last = pts[pts.length-1];
+    var oscNow = Math.round(last.v);
+    var W=320, H=52;
+    var xMin = pts[0].x, xMax = last.x, xRng = xMax-xMin || 1;
+    function px(p) { return ((p.x-xMin)/xRng*W).toFixed(2); }
+    function py(p) { return (H - p.v/100*H).toFixed(2); }
+    var pathD = pts.map(function(p,i){ return (i===0?'M':'L')+px(p)+','+py(p); }).join(' ');
+    var ex = parseFloat(px(last)), ey = parseFloat(py(last));
+    /* FIX 3 — bilingual aria-label */
+    var ariaLabel = lang()==='zh'
+      ? ('近5年周期位置，当前'+oscNow+'/100')
+      : ('cycle position over 5 years, now '+oscNow+' of 100');
+    /* FIX 2 — end dot, readout, crosshair/hover dot moved OUT of SVG into HTML spans */
+    var dotLeftPct = (ex/W*100).toFixed(3)+'%';
+    var dotTopPct  = (ey/H*100).toFixed(3)+'%';
+    var readTransform = ex > W-28 ? 'translate(-100%,-50%)' : 'translate(4px,-50%)';
+    return '<div class="mini-cyc" data-id="'+id+'">'+
+      '<div class="mini-cyc-cap">'+L('cycle position','周期位置')+'</div>'+
+      '<svg viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" role="img" aria-label="'+ariaLabel+'">'+
+        '<rect x="0" y="'+((1-0.25)*H).toFixed(2)+'" width="'+W+'" height="'+(0.25*H).toFixed(2)+'" fill="color-mix(in srgb, var(--up) 10%, transparent)"/>'+
+        '<rect x="0" y="0" width="'+W+'" height="'+(0.25*H).toFixed(2)+'" fill="color-mix(in srgb, var(--warn) 12%, transparent)"/>'+
+        '<path d="'+pathD+'" stroke="'+accent+'" stroke-width="1.6" fill="none" vector-effect="non-scaling-stroke"/>'+
+      '</svg>'+
+      '<span class="mc-dot" style="background:'+accent+';left:'+dotLeftPct+';top:'+dotTopPct+'"></span>'+
+      '<span class="mc-read" data-now="'+oscNow+'" data-left="'+dotLeftPct+'" data-top="'+dotTopPct+'" data-tfm="'+readTransform+'" style="color:'+accent+';left:'+dotLeftPct+';top:'+dotTopPct+';transform:'+readTransform+'">'+oscNow+'</span>'+
+      '<span class="mc-x"></span>'+
+      '<span class="mc-hov" style="background:'+accent+'"></span>'+
+    '</div>';
+  }
+  function _decYearToYM(x) {
+    var yr = Math.floor(x);
+    var mo = Math.floor((x - yr) * 12);
+    return yr+'-'+(mo+1<10?'0':'')+(mo+1);
+  }
+  function _initMiniCycHover(board) {
+    if (!board || board._mcInit) return;
+    board._mcInit = true;
+    board.addEventListener('pointermove', function(e) {
+      /* FIX 2 — hover handler now moves HTML elements, not SVG crosshair nodes */
+      var wrap = e.target.closest('.mini-cyc'); if (!wrap) return;
+      var id = wrap.getAttribute('data-id'); if (!id) return;
+      var ser = _cycSeries(id); if (!ser) return;
+      var pts = ser.pts; if (!pts.length) return;
+      var svg = wrap.querySelector('svg'); if (!svg) return;
+      var rect = svg.getBoundingClientRect();
+      var frac = (e.clientX - rect.left) / (rect.width || 1);
+      var xMin = pts[0].x, xMax = pts[pts.length-1].x, xRng = xMax-xMin||1;
+      var xAt = xMin + frac * xRng;
+      var lo=0, hi=pts.length-1;
+      while (lo < hi) { var mid=(lo+hi)>>1; if (pts[mid].x < xAt) lo=mid+1; else hi=mid; }
+      if (lo>0 && Math.abs(pts[lo-1].x-xAt)<Math.abs(pts[lo].x-xAt)) lo--;
+      var pt = pts[lo];
+      var W=320, H=52;
+      var ex = ((pt.x-xMin)/xRng*W);
+      var ey = H - pt.v/100*H;
+      var xEl = wrap.querySelector('.mc-x');
+      var hovEl = wrap.querySelector('.mc-hov');
+      var readEl = wrap.querySelector('.mc-read');
+      var dotEl = wrap.querySelector('.mc-dot');
+      if(xEl){ xEl.style.display='block'; xEl.style.left=(ex/W*100).toFixed(3)+'%'; }
+      if(hovEl){ hovEl.style.display='block'; hovEl.style.left=(ex/W*100).toFixed(3)+'%'; hovEl.style.top=(ey/H*100).toFixed(3)+'%'; }
+      var ym = _decYearToYM(pt.x);
+      var readout = Math.round(pt.v)+' · '+ym;
+      if(readEl){
+        readEl.textContent=readout;
+        var lPct = ex/W*100;
+        readEl.style.left = lPct+'%';
+        readEl.style.top = (ey/H*100).toFixed(3)+'%';
+        readEl.style.transform = lPct > 75 ? 'translate(-100%,-50%)' : 'translate(4px,-50%)';
+        readEl.style.display='block';
+      }
+      if(dotEl) dotEl.style.display='none';
+    });
+    board.addEventListener('pointerleave', function(e) {
+      var wrap = e.target.closest && e.target.closest('.mini-cyc');
+      if (!wrap) { board.querySelectorAll('.mini-cyc').forEach(function(w){ _restoreMiniCyc(w); }); return; }
+      _restoreMiniCyc(wrap);
+    }, true);
+    board.addEventListener('pointerout', function(e) {
+      var wrap = e.target.closest && e.target.closest('.mini-cyc'); if (!wrap) return;
+      if (wrap.contains(e.relatedTarget)) return;
+      _restoreMiniCyc(wrap);
+    });
+  }
+  function _restoreMiniCyc(wrap) {
+    var xEl = wrap && wrap.querySelector('.mc-x'); if(xEl) xEl.style.display='none';
+    var hovEl = wrap && wrap.querySelector('.mc-hov'); if(hovEl) hovEl.style.display='none';
+    var readEl = wrap && wrap.querySelector('.mc-read');
+    if(readEl){
+      var orig = readEl.getAttribute('data-now'); if(orig) readEl.textContent=orig;
+      readEl.style.left=readEl.getAttribute('data-left')||readEl.style.left;
+      readEl.style.top=readEl.getAttribute('data-top')||readEl.style.top;
+      readEl.style.transform=readEl.getAttribute('data-tfm')||'translateY(-50%)';
+      readEl.style.display='';
+    }
+    var dotEl = wrap && wrap.querySelector('.mc-dot'); if(dotEl) dotEl.style.display='';
+  }
+
   /* ---- conviction card ---- */
   function card(s){
     var c=s.conviction||{}, cy=s.cycle||{}, dir=c.dir||'flat';
@@ -630,26 +762,11 @@
     var sub = (s.kind==='basket' ? (s.etf_proxy?esc(s.etf_proxy)+' · ':'') : (esc(s.ticker||'')+' · ')) + esc(lang()==='zh'?(s.group_zh||s.group):s.group);
     var chips=[];
     if(cy.phaseLabel||cy.phase) chips.push('<span class="chip2">'+esc(cy.phaseLabel||cy.phase)+'</span>');
-    if(cy.pos!=null) chips.push('<span class="chip2">'+L('pos','位置')+' <b>'+Math.round(cy.pos)+'</b></span>');
     if(cy.rs_rank) chips.push('<span class="chip2">RS <b>#'+cy.rs_rank+'</b></span>');
     if(c.confluence) chips.push('<span class="chip2">'+L('confluence','共振')+' <b>'+c.confluence.agree+'/'+c.confluence.of+'</b></span>');
     if(c.early) chips.push('<span class="chip2 early">'+L('early','偏早')+'</span>');
     var h=s.heat;
     if(h && h.heat_1M!=null) chips.push('<span class="chip2 '+(h.heat_1M>0?'up':'down')+'">'+L('heat','热度')+' <b>'+pc(h.heat_1M)+'</b></span>');
-    // forward panel — the VALIDATED absolute-trend drawdown gate + cycle rhythm (NOT an odds forecast)
-    var f=s.forward||{}, fwdHtml='';
-    if(f.trend_pass!=null){
-      var open=f.trend_pass===true;
-      var r12=(f.ret_12m!=null)?(' · '+pc(f.ret_12m*100)+' 12m'):'';
-      fwdHtml='<div class="fwd'+(open?'':' shut')+'">'+L('Trend gate','趋势门控')+': <b>'+(open?L('OPEN','开启'):L('SHUT — longs de-rated','关闭 — 多头降级'))+'</b>'+
-        '<span class="muted">'+(open?L(' above own 200-day trend',' 位于自身200日趋势之上'):L(' below own 200-day trend',' 跌破自身200日趋势'))+r12+'</span></div>';
-    }
-    // reasoning trace
-    var trace=(s.reasoning||[]).map(function(r){
-      return '<div class="tr-row"><span class="tr-dot tr-'+esc(r.tier)+'"></span>'+
-        '<span class="tr-layer">'+esc(r.layer)+'</span>'+
-        '<span class="tr-txt">'+L(esc(r.en),esc(r.zh||r.en))+'</span></div>';
-    }).join('');
     // name → its own page: baskets open the dedicated theme page; sectors focus the embedded cycle map.
     var cycHref = 'sector_cycles.html#'+esc(s.id);
     var nameHtml = s.kind==='basket'
@@ -659,8 +776,8 @@
       '<div class="card-top"><div><div class="card-nm">'+nameHtml+'</div><div class="card-sub">'+sub+'</div></div>'+
         '<div class="conv"><span class="conv-badge tier-'+dir+'">'+L(esc(c.label_en),esc(c.label_zh||c.label_en))+'</span>'+
         '<div class="conv-score">'+c.score+'</div><div class="conv-sub">'+L('conviction','信念')+'</div></div></div>'+
-      '<div class="chips">'+chips.join('')+'</div>'+ fwdHtml +
-      '<details class="trace-d"><summary>'+L('Why — the full reasoning','为何 — 完整推理')+'</summary><div class="trace">'+trace+'</div></details>'+
+      '<div class="chips">'+chips.join('')+'</div>'+
+      miniCycChart(s)+
       '<div class="conflu">'+L('confluence','共振度')+': <b class="'+esc((c.confluence||{}).label||'')+'">'+esc((c.confluence||{}).label||'—')+'</b> · '+
         '<a href="'+cycHref+'" data-focus="'+esc(s.id)+'" style="color:var(--link)">'+L('open cycle →','打开周期 →')+'</a></div>'+
     '</article>';
@@ -717,8 +834,8 @@
   }
   function boot(){
     regimeBanner(); renderBoard(); renderGrader(); linkTabs();
-    var board=document.getElementById('board'); if(board) board.addEventListener('click', focusDelegate);
-    document.addEventListener('langchange', function(){ regimeBanner(); renderBoard(); renderGrader(); });
+    var board=document.getElementById('board'); if(board){ board.addEventListener('click', focusDelegate); _initMiniCycHover(board); }
+    document.addEventListener('langchange', function(){ regimeBanner(); renderBoard(); renderGrader(); if(board) _initMiniCycHover(board); });
   }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', boot); else boot();
 })();
@@ -819,6 +936,5 @@
     .then(leadershipStrip);
 })();
 </script>
-<script defer data-whb data-root="" src="wh_banner.js"></script>
 </body>
 </html>
