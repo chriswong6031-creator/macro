@@ -673,8 +673,9 @@ def label_coiled_context(
         # vectorized approach returns the LAST COMPLETED FRIDAY D value (up to 4
         # trading days stale vs the live engine). This is a DOCUMENTED STALENESS,
         # not a fix: adding a per-event synthetic bar would negate the speedup.
-        # The bias is conservative (fewer cohort-washout detections = smaller
-        # TRUE COILED subset = if anything underestimates the COILED form's n).
+        # The direction of the staleness bias is INDETERMINATE: a stale last-Friday
+        # D value can be higher or lower than the live partial-week D, so cohort_frac
+        # (and TRUE-COILED membership via >=0.40 threshold) can move either way.
         # Path taken: document and keep the vectorized approach. The equivalence
         # claim (that this matches weekly_d_last exactly) is DROPPED.
         #
@@ -1211,6 +1212,8 @@ def check_species_bar_per_form(
     co_fire_share: float,
     coiled_fire_recall: float | None,
     ur_recall: float,
+    is_gatefire_form: bool = False,
+    nc2_marginality: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Evaluate species bar clauses for a SINGLE form independently.
 
@@ -1291,7 +1294,36 @@ def check_species_bar_per_form(
 
     # Clause 6: independence clause (co-fire at +/-3 true trading bars <= 60%)
     verdicts["co_fire_share"] = co_fire_share
-    verdicts["independence_clause_met"] = co_fire_share <= MAX_COFIRE_SHARE
+    if is_gatefire_form:
+        # The gatefire form selects events BY DEFINITION near gate fires (±5 bars).
+        # It is structurally gate-dependent: independence is not a meaningful clause.
+        # The ±3-bar co-fire check uses a tighter radius than the form radius (±5 bars),
+        # so events in the (3-bar, 5-bar] band escape the co-fire check and produce an
+        # artificially low share (36.4%). This exactly matches the failure mode the
+        # test_cofire_per_form_not_shared_constant test flags.
+        # Verdict: N/A — structurally gate-dependent (not PASS or FAIL).
+        verdicts["independence_clause_met"] = None
+        verdicts["independence_structural_na"] = True
+    else:
+        verdicts["independence_clause_met"] = co_fire_share <= MAX_COFIRE_SHARE
+        verdicts["independence_structural_na"] = False
+
+    # Clause 6b (gatefire only): NC-2 superiority nullification.
+    # If NC-2 band FE shows CI includes 0 after proximity de-confounding, the
+    # superiority_met verdict is nullified — superiority does not survive confound test.
+    if is_gatefire_form and nc2_marginality is not None and nc2_marginality.get("band_computed"):
+        nc2_excl_zero = nc2_marginality.get("ci_excl_zero", False)
+        verdicts["nc2_superiority_survives"] = bool(nc2_excl_zero)
+        if not nc2_excl_zero:
+            # NC-2 kills superiority: CI includes 0 after proximity band FE.
+            verdicts["superiority_met_nc2_nullified"] = True
+            verdicts["superiority_met"] = False
+            verdicts["stop5_superiority_met"] = False
+        else:
+            verdicts["superiority_met_nc2_nullified"] = False
+    else:
+        verdicts["nc2_superiority_survives"] = None
+        verdicts["superiority_met_nc2_nullified"] = False
 
     # zone_held_21 (ADDITION C — adjudication context, feeds no clause)
     zone_effects = [e for e in results.get("effects", []) if e.get("outcome") == "zone_held_21"]
@@ -1413,8 +1445,16 @@ def write_report(
         coef = _fmt_f(sb.get("stop5_coef"), 4)
         ci_hi = sb.get("stop5_ci_hi")
         ni = "NO" if sb.get("stop5_noninferiority_met") is False else ("YES" if sb.get("stop5_noninferiority_met") else "N/A")
-        sup = "NO" if sb.get("stop5_superiority_met") is False else ("YES" if sb.get("stop5_superiority_met") else "N/A")
-        indep = "FAIL" if sb.get("independence_clause_met") is False else ("PASS" if sb.get("independence_clause_met") else "N/A")
+        # Superiority: annotate NC-2 nullification for gatefire form
+        if sb.get("superiority_met_nc2_nullified"):
+            sup = "NO (NC-2 nullified)"
+        else:
+            sup = "NO" if sb.get("stop5_superiority_met") is False else ("YES" if sb.get("stop5_superiority_met") else "N/A")
+        # Independence: structural N/A for gatefire form
+        if sb.get("independence_structural_na"):
+            indep = "N/A-STRUCTURAL"
+        else:
+            indep = "FAIL" if sb.get("independence_clause_met") is False else ("PASS" if sb.get("independence_clause_met") else "N/A")
         cofshare = f"{sb.get('co_fire_share', 0.0):.1%}"
         z_coef = _fmt_f(sb.get("zone_held_21_coef"), 4)
         lines.append(f"| {form_key} | {coef} | {_fmt_f(ci_hi,4)} | {ni} | {sup} | {indep} ({cofshare}) | {z_coef} |")
@@ -1423,11 +1463,12 @@ def write_report(
     lines.append("- The standalone and COILED-intersection forms show stop5 SIGNIFICANTLY WORSE")
     lines.append("  than the incumbent gate baseline (positive coef, CI entirely above 0).")
     lines.append("  Both FAIL non-inferiority and FAIL superiority.")
-    lines.append(f"- The gatefire-proximity form PASSES the ±3-bar independence clause ({primary_gf_cofire_share:.1%} <= 60%).")
-    lines.append("  However it is NOT an independent trigger species: the form requires a gate fire as a prerequisite.")
-    lines.append("  Evaluated as confirmer-context only (structural dependency, not co-fire threshold).")
-    lines.append("- The gatefire NC-2 marginality coefficient (band FE result) is printed as-is")
-    lines.append("  in the NC-2 Marginality section — whatever the actual number is, sourced from this run.")
+    lines.append(f"- The gatefire-proximity form: independence clause is N/A-STRUCTURAL (form defined by gate-fire proximity).")
+    lines.append("  The ±3-bar co-fire check uses a tighter radius than the form definition (±5 bars); events")
+    lines.append("  in the (3-bar, 5-bar] band escape the co-fire count, producing a spuriously low 36.4% share")
+    lines.append("  that would incorrectly 'pass' the ≤60% threshold. The form is NOT an independent trigger species.")
+    lines.append("- The gatefire NC-2 marginality result (band FE): if CI includes 0 after proximity de-confounding,")
+    lines.append("  the superiority clause is nullified — marked 'NO (NC-2 nullified)' in the table above.")
     lines.append("- Nulls and kills printed with equal care as wins.")
     lines.append("**Adjudication belongs to the orchestrator, not this study.**")
     lines.append("")
@@ -1483,21 +1524,22 @@ def write_report(
         f"| COILED-intersection | {primary_coiled_cofire_share:.1%} | — "
         f"| {'PASS' if primary_coiled_cofire_share <= MAX_COFIRE_SHARE else 'FAIL'} |"
     )
-    gf_indep_pass = primary_gf_cofire_share <= MAX_COFIRE_SHARE
-    gf_clause_str = f"{'PASS' if gf_indep_pass else 'FAIL'}"
     lines.append(
         f"| gatefire-proximity | {primary_gf_cofire_share:.1%} | {primary_gf_cofire_n} "
-        f"| {gf_clause_str} |"
+        f"| N/A-STRUCTURAL |"
     )
     lines.append("")
     lines.append(
-        "**DESIGN NOTE — GATEFIRE FORM AND INDEPENDENCE:** "
-        "The gatefire form selects U&R events within ±5 bars of gate fires (form definition, F2). "
-        "The independence clause checks ±3 TRUE TRADING BARS. Events between 3 and 5 bars "
-        "from a gate fire are NOT co-fired at the ±3-bar check. "
-        f"Measured co-fire share: {primary_gf_cofire_share:.1%} "
-        f"({'below' if gf_indep_pass else 'above'} the {MAX_COFIRE_SHARE:.0%} threshold). "
-        f"Independence clause: {'PASSES at ±3 bars, BUT the form remains a confirmer-context species only — it requires a gate fire as a prerequisite.' if gf_indep_pass else 'FAILS at ±3 bars — this form is NOT an independent trigger.'}"
+        "**DESIGN NOTE — GATEFIRE FORM INDEPENDENCE IS N/A-STRUCTURAL:** "
+        "The gatefire form selects U&R events WITHIN ±5 BARS of gate fires (form definition, F2). "
+        "It is structurally gate-dependent: independence is not a meaningful clause for this form. "
+        "The ±3-bar co-fire check uses a TIGHTER radius than the form radius (±5 bars). "
+        "Events in the (3-bar, 5-bar] band are included in the form but NOT counted as co-fires "
+        f"at ±3 bars, producing a measured share of {primary_gf_cofire_share:.1%} that "
+        f"falls below the {MAX_COFIRE_SHARE:.0%} threshold — but this is an artifact of the "
+        "radius mismatch, not evidence of independence. "
+        "The form requires a gate fire as a prerequisite by construction. "
+        "Verdict: N/A-STRUCTURAL (independence clause does not apply)."
     )
     lines.append("")
     lines.append(f"Aggregate co-fire share (standalone forms, all cells): {aggregate_cofire_share:.1%}")
@@ -1543,9 +1585,16 @@ def write_report(
         ci_hi_str = f"{sb.get('stop5_ci_hi'):.4f}" if sb.get("stop5_ci_hi") is not None else "—"
         coef_str  = f"{sb.get('stop5_coef'):.4f}" if sb.get("stop5_coef") is not None else "—"
         lines.append(f"| Stop5 non-inferiority (CI_hi < +0.01) | coef={coef_str} CI_hi={ci_hi_str} | {_yn(sb.get('stop5_noninferiority_met'))} |")
-        lines.append(f"| Stop5 superiority (CI_hi < 0) | CI_hi={ci_hi_str} | {_yn(sb.get('stop5_superiority_met'))} |")
+        # Stop5 superiority: for gatefire form, annotate NC-2 nullification if applicable
+        sup5_verdict = _yn(sb.get("stop5_superiority_met"))
+        if sb.get("superiority_met_nc2_nullified"):
+            sup5_verdict = "NO (NC-2 nullified: CI includes 0 after proximity band FE)"
+        lines.append(f"| Stop5 superiority (CI_hi < 0) | CI_hi={ci_hi_str} | {sup5_verdict} |")
         sup_axes = sb.get("superiority_axes", [])
-        lines.append(f"| Superiority CI-excl-0 on >=1 constitution axis | {sup_axes if sup_axes else 'none'} | {_yn(sb.get('superiority_met'))} |")
+        sup_overall_verdict = _yn(sb.get("superiority_met"))
+        if sb.get("superiority_met_nc2_nullified"):
+            sup_overall_verdict = "NO (NC-2 nullified: gatefire stop5 CI includes 0 after proximity de-confounding)"
+        lines.append(f"| Superiority CI-excl-0 on >=1 constitution axis | {sup_axes if sup_axes else 'none'} | {sup_overall_verdict} |")
         era_stable = sb.get("era_sign_stable")
         era_str = "YES (>=3/4 eras)" if era_stable is True else ("NO (<3/4 eras)" if era_stable is False else "INSUFFICIENT DATA")
         lines.append(f"| Era sign-stability (>=3/4 eras) | {era_str} | {_yn(sb.get('era_sign_stable_met'))} |")
@@ -1554,7 +1603,11 @@ def write_report(
         recall_thresh_str = f"{recall_thresh:.1%}" if recall_thresh is not None else "DEFERRED"
         lines.append(f"| Recall clause (>= half COILED-FIRE recall) | S-UR={ur_recall_str} threshold={recall_thresh_str} | {_yn(sb.get('recall_clause_met'))} |")
         cofire_str = f"{sb.get('co_fire_share', 1.0):.1%}"
-        lines.append(f"| Independence clause (co-fire <= 60% at ±3 bars) | {cofire_str} | {_yn(sb.get('independence_clause_met'))} |")
+        if sb.get("independence_structural_na"):
+            indep_verdict = "N/A (structurally gate-dependent: form defined by gate-fire proximity; independence clause does not apply)"
+        else:
+            indep_verdict = _yn(sb.get("independence_clause_met"))
+        lines.append(f"| Independence clause (co-fire <= 60% at ±3 bars) | {cofire_str} | {indep_verdict} |")
 
         # zone_held_21 adjudication context (ADDITION C)
         z_coef = sb.get("zone_held_21_coef")
@@ -1577,6 +1630,15 @@ def write_report(
     for panel_label, panel_data in panel_results.items():
         lines.append(f"## Panel: {panel_label}")
         lines.append("")
+        # FINDING 4 NOTE: baskets panel is run WHOLE (no dev/holdout split).
+        # There is no dev/holdout half-splitting logic in this study.
+        if panel_label == "baskets":
+            lines.append(
+                "> **NOTE (FINDING 4):** The baskets panel is run as a WHOLE — "
+                "there is no dev/holdout half-split in this study. "
+                "Any claim that baskets results span dev/holdout halves is incorrect."
+            )
+            lines.append("")
         survivor_msg = panel_data.get("survivor_stamp", "")
         if survivor_msg:
             lines.append(f"**SURVIVOR BIAS STAMP:** {survivor_msg}")
@@ -1709,8 +1771,10 @@ def write_report(
     lines.append("engine/coiled.weekly_d_last() (live engine) includes the partial current week's bar.")
     lines.append("On non-Friday fire dates, the vectorized D value is up to 4 trading days stale.")
     lines.append("The equivalence claim between the vectorized path and weekly_d_last is DROPPED.")
-    lines.append("The staleness is conservative: it slightly underestimates cohort washout detections,")
-    lines.append("making the COILED form's n slightly smaller (conservative).")
+    lines.append("The direction of the staleness bias is INDETERMINATE: a stale last-Friday D value")
+    lines.append("can be higher or lower than the live partial-week D, so cohort_frac (and hence")
+    lines.append("TRUE-COILED membership via the >=0.40 threshold) can move either way.")
+    lines.append("The net effect on the COILED form's n is not guaranteed to be conservative.")
     lines.append("")
     lines.append("**NC-2 band FE fix (FINDING 1):** Prior implementation assigned proximity bands")
     lines.append("to treatment rows only; control rows got band='unknown', causing perfect FE")
@@ -2131,17 +2195,23 @@ def run_study(
 
     # Per-form species bar (primary cell, deep panel).
     # BLOCKER FIX: each form gets its OWN per-form co-fire share.
-    # The gatefire form passes the +-3-bar co-fire threshold (36.4% <= 60%) but is still
-    # a confirmer-context-only species due to structural dependency on gate fires as prerequisite.
-    # Data-driven verdict printed in report; evaluated as confirmer-context only.
+    # FINDING 1 FIX: the gatefire form's independence clause is N/A (structurally
+    # gate-dependent). The ±3-bar co-fire check uses a tighter radius than the form
+    # definition (±5 bars), so events in the (3-bar, 5-bar] band are excluded from the
+    # co-fire count but included in the form — producing a spuriously low 36.4% share
+    # that incorrectly "passes" the ≤60% threshold. The form is defined by gate-fire
+    # proximity; independence cannot be claimed. Verdict: N/A — structural.
+    # FINDING 2 FIX: if NC-2 band FE shows CI includes 0 after proximity de-confounding,
+    # the gatefire superiority clause is nullified (not merely noted separately).
+    primary_gf_nc2 = primary_gatefire_results.get("nc2_marginality")
     per_form_species_bars: dict[str, dict[str, Any]] = {}
-    for form_key, results, n_deduped, form_cofire_share in [
+    for form_key, results, n_deduped, form_cofire_share, is_gf, nc2_marg in [
         ("standalone (n21/k3/deep)", primary_standalone_results, primary_standalone_n_deduped,
-         primary_sa_cofire_share),
+         primary_sa_cofire_share, False, None),
         ("COILED-intersection (n21/k3/deep)", primary_coiled_results, primary_coiled_n_deduped,
-         primary_coiled_cofire_share),
+         primary_coiled_cofire_share, False, None),
         ("gatefire-proximity (n21/k3/deep)", primary_gatefire_results, primary_gatefire_n_deduped,
-         primary_gf_cofire_share),
+         primary_gf_cofire_share, True, primary_gf_nc2),
     ]:
         per_form_species_bars[form_key] = check_species_bar_per_form(
             form_label=form_key,
@@ -2150,6 +2220,8 @@ def run_study(
             co_fire_share=form_cofire_share,
             coiled_fire_recall=None,  # DEFERRED
             ur_recall=primary_ur_recall,
+            is_gatefire_form=is_gf,
+            nc2_marginality=nc2_marg,
         )
     log.info(
         "Per-form primary-cell co-fire shares: standalone=%.1f%% coiled=%.1f%% gatefire=%.1f%%",

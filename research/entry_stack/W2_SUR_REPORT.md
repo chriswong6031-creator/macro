@@ -18,17 +18,19 @@ Superiority on stop5 = CI upper bound < 0.0 (significantly fewer stops).
 |---|---|---|---|---|---|---|
 | standalone (n21/k3/deep) | 0.0244 | 0.0376 | NO | NO | PASS (4.5%) | -0.0076 |
 | COILED-intersection (n21/k3/deep) | 0.0460 | 0.0625 | NO | NO | PASS (7.5%) | -0.0113 |
-| gatefire-proximity (n21/k3/deep) | -0.0266 | -0.0096 | YES | YES | PASS (36.4%) | 0.0422 |
+| gatefire-proximity (n21/k3/deep) | -0.0266 | -0.0096 | YES | NO (NC-2 nullified) | N/A-STRUCTURAL (36.4%) | 0.0422 |
 
 **HONEST FINDING (AS MEASURED IN THIS RUN):**
 - The standalone and COILED-intersection forms show stop5 SIGNIFICANTLY WORSE
   than the incumbent gate baseline (positive coef, CI entirely above 0).
   Both FAIL non-inferiority and FAIL superiority.
-- The gatefire-proximity form PASSES the ±3-bar independence clause (36.4% <= 60%).
-  However it is NOT an independent trigger species: the form requires a gate fire as a prerequisite.
-  Evaluated as confirmer-context only (structural dependency, not co-fire threshold).
-- The gatefire NC-2 marginality coefficient (band FE result) is printed as-is
-  in the NC-2 Marginality section — whatever the actual number is, sourced from this run.
+- The gatefire-proximity form: independence clause is N/A-STRUCTURAL (form defined by gate-fire proximity).
+  The ±3-bar co-fire check uses a tighter radius than the form definition (±5 bars); events
+  in the (3-bar, 5-bar] band escape the co-fire count, producing a spuriously low 36.4% share
+  that would incorrectly 'pass' the ≤60% threshold. The form is NOT an independent trigger species.
+- The gatefire NC-2 marginality result (band FE): CI=[-0.0251, 0.0045] includes 0 after proximity
+  de-confounding — the stop5 improvement does NOT survive the confound test. Superiority clause
+  is nullified — marked 'NO (NC-2 nullified)' in the table above.
 - Nulls and kills printed with equal care as wins.
 **Adjudication belongs to the orchestrator, not this study.**
 
@@ -65,9 +67,9 @@ Co-fire computed on each form's OWN event subset, not on the shared event set.
 |---|---|---|---|
 | standalone | 4.5% | 805 | PASS |
 | COILED-intersection | 7.5% | — | PASS |
-| gatefire-proximity | 36.4% | 805 | PASS |
+| gatefire-proximity | 36.4% | 805 | N/A-STRUCTURAL |
 
-**DESIGN NOTE — GATEFIRE FORM AND INDEPENDENCE:** The gatefire form selects U&R events within ±5 bars of gate fires (form definition, F2). The independence clause checks ±3 TRUE TRADING BARS. Events between 3 and 5 bars from a gate fire are NOT co-fired at the ±3-bar check. Measured co-fire share: 36.4% (below the 60% threshold). Independence clause: PASSES at ±3 bars, BUT the form remains a confirmer-context species only — it requires a gate fire as a prerequisite.
+**DESIGN NOTE — GATEFIRE FORM INDEPENDENCE IS N/A-STRUCTURAL:** The gatefire form selects U&R events WITHIN ±5 BARS of gate fires (form definition, F2). It is structurally gate-dependent: independence is not a meaningful clause for this form. The ±3-bar co-fire check uses a TIGHTER radius than the form radius (±5 bars). Events in the (3-bar, 5-bar] band are included in the form but NOT counted as co-fires at ±3 bars, producing a measured share of 36.4% that falls below the 60% threshold — but this is an artifact of the radius mismatch, not evidence of independence. The form requires a gate fire as a prerequisite by construction. Verdict: N/A-STRUCTURAL (independence clause does not apply).
 
 Aggregate co-fire share (standalone forms, all cells): 4.4%
 Independence clause threshold: <= 60%
@@ -129,12 +131,14 @@ NO promotion decision made in this report (RUL-3).
 |---|---|---|
 | n_events >= 150 | 2212 | YES |
 | Stop5 non-inferiority (CI_hi < +0.01) | coef=-0.0266 CI_hi=-0.0096 | YES |
-| Stop5 superiority (CI_hi < 0) | CI_hi=-0.0096 | YES |
-| Superiority CI-excl-0 on >=1 constitution axis | ['stop5', 'dead_money', 'cushion_rot'] | YES |
+| Stop5 superiority (CI_hi < 0) | CI_hi=-0.0096 | NO (NC-2 nullified: CI includes 0 after proximity band FE) |
+| Superiority CI-excl-0 on >=1 constitution axis | ['stop5', 'dead_money', 'cushion_rot'] | NO (NC-2 nullified: gatefire stop5 CI includes 0 after proximity de-confounding) |
 | Era sign-stability (>=3/4 eras) | YES (>=3/4 eras) | YES |
 | Recall clause (>= half COILED-FIRE recall) | S-UR=5.8% threshold=DEFERRED | DEFERRED |
-| Independence clause (co-fire <= 60% at ±3 bars) | 36.4% | YES |
+| Independence clause (co-fire <= 60% at ±3 bars) | 36.4% | N/A (structurally gate-dependent: form defined by gate-fire proximity; independence clause does not apply) |
 | zone_held_21 (ADJUDICATION CONTEXT, no clause) | coef=0.0422 CI=[0.0230,0.0556] | — |
+
+> **NC-2 NULLIFICATION NOTE (FINDING 2 FIX):** The NC-2 marginality test (line 391 below, band FE result) shows stop5 coef=-0.0173 CI=[-0.0251, +0.0045] — CI INCLUDES ZERO after proximity de-confounding. The stop5 improvement does not survive the confound test. Superiority clauses above are marked NULLIFIED accordingly. Under CLAUDE.md 'display-only until gauntleted', presenting superiority as YES when the study's own NC-2 result nullifies it would be an unearned escalation.
 
 > **RECALL CLAUSE NOTE:** DEFERRED: COILED-FIRE recall requires full cycles.py pipeline per-fire. Cannot evaluate recall clause from this study alone. See W0_BASELINES.md DEFERRALS §COILED/COILED-FIRE Recall Recompute.
 
@@ -873,6 +877,8 @@ Era sign-stability clause: **YES (>=3/4 eras sign-stable)**
 | 2023-2026 | 1 | 139 | 5.0% | 40.3% |
 
 ## Panel: baskets
+
+> **NOTE (FINDING 4):** The baskets panel is run as a WHOLE — there is no dev/holdout half-split in this study. Any claim that baskets results span dev/holdout halves is incorrect.
 
 **SURVIVOR BIAS STAMP:** SURVIVOR BIAS STAMP: absolute rates on surviving basket names only. Comparisons within-era are directionally valid.
 
@@ -1900,8 +1906,10 @@ uses the last completed W-FRI StochRSI D bar at or before each fire date.
 engine/coiled.weekly_d_last() (live engine) includes the partial current week's bar.
 On non-Friday fire dates, the vectorized D value is up to 4 trading days stale.
 The equivalence claim between the vectorized path and weekly_d_last is DROPPED.
-The staleness is conservative: it slightly underestimates cohort washout detections,
-making the COILED form's n slightly smaller (conservative).
+The direction of the staleness bias is INDETERMINATE: a stale last-Friday D value
+can be higher or lower than the live partial-week D, so cohort_frac (and hence
+TRUE-COILED membership via the >=0.40 threshold) can move either way.
+The net effect on the COILED form's n is not guaranteed to be conservative.
 
 **NC-2 band FE fix (FINDING 1):** Prior implementation assigned proximity bands
 to treatment rows only; control rows got band='unknown', causing perfect FE

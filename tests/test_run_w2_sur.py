@@ -1055,6 +1055,98 @@ class TestVerdictLogic:
             "co_fire_share=0.10 <= 0.60 must PASS independence clause."
         )
 
+    def test_gatefire_independence_is_structural_na(self):
+        """is_gatefire_form=True must set independence_clause_met=None and independence_structural_na=True.
+
+        FINDING 1 FIX: the gatefire form is defined by gate-fire proximity; independence
+        is not a meaningful clause regardless of the measured co-fire share.
+        Even a 'passing' 36.4% co-fire share at ±3 bars is an artifact of the radius
+        mismatch (form: ±5 bars, check: ±3 bars) and must NOT be reported as PASS.
+        """
+        results = _make_synthetic_results(stop5_coef=-0.02, stop5_ci_lo=-0.03, stop5_ci_hi=-0.01)
+        sb = check_species_bar_per_form(
+            form_label="gatefire-proximity (n21/k3/deep)",
+            results=results,
+            n_events=200,
+            co_fire_share=0.364,  # the production 36.4% — would wrongly PASS if not overridden
+            coiled_fire_recall=None,
+            ur_recall=0.20,
+            is_gatefire_form=True,
+        )
+        assert sb["independence_clause_met"] is None, (
+            f"Gatefire form independence_clause_met must be None (N/A-structural), not "
+            f"{sb['independence_clause_met']!r}. The ±3-bar co-fire check is not meaningful "
+            "for a form defined by gate-fire proximity."
+        )
+        assert sb.get("independence_structural_na") is True, (
+            "Gatefire form must have independence_structural_na=True."
+        )
+
+    def test_gatefire_superiority_nullified_by_nc2(self):
+        """NC-2 band FE with CI including 0 must nullify superiority_met for gatefire form.
+
+        FINDING 2 FIX: if the NC-2 marginality test shows CI includes 0 after proximity
+        de-confounding, the superiority clause does not survive the confound test.
+        The species bar must show superiority_met=False (nullified), not YES.
+        """
+        results = _make_synthetic_results(stop5_coef=-0.02, stop5_ci_lo=-0.03, stop5_ci_hi=-0.01)
+        # NC-2 result where CI includes 0 (attenuated, not significant after band FE)
+        nc2_includes_zero = {
+            "band_computed": True,
+            "coef": -0.0173,
+            "ci_lo": -0.0251,
+            "ci_hi": 0.0045,  # CI includes 0 — edge does not survive confound test
+            "ci_excl_zero": False,
+            "note": "CI includes 0 after proximity band FE — proximity confounding not ruled out",
+        }
+        sb = check_species_bar_per_form(
+            form_label="gatefire-proximity (n21/k3/deep)",
+            results=results,
+            n_events=200,
+            co_fire_share=0.364,
+            coiled_fire_recall=None,
+            ur_recall=0.20,
+            is_gatefire_form=True,
+            nc2_marginality=nc2_includes_zero,
+        )
+        assert sb.get("superiority_met_nc2_nullified") is True, (
+            "NC-2 CI-includes-0 result must set superiority_met_nc2_nullified=True."
+        )
+        assert sb.get("superiority_met") is False, (
+            f"superiority_met must be False (nullified by NC-2), got {sb.get('superiority_met')!r}."
+        )
+        assert sb.get("stop5_superiority_met") is False, (
+            f"stop5_superiority_met must be False (nullified by NC-2), got {sb.get('stop5_superiority_met')!r}."
+        )
+
+    def test_gatefire_superiority_survives_nc2_when_excl_zero(self):
+        """NC-2 band FE with CI excluding 0 must NOT nullify superiority_met."""
+        results = _make_synthetic_results(stop5_coef=-0.02, stop5_ci_lo=-0.03, stop5_ci_hi=-0.01)
+        nc2_excl_zero = {
+            "band_computed": True,
+            "coef": -0.0200,
+            "ci_lo": -0.0300,
+            "ci_hi": -0.0050,  # CI excludes 0 — survives confound test
+            "ci_excl_zero": True,
+            "note": "CI excludes 0 — edge survives proximity de-confounding",
+        }
+        sb = check_species_bar_per_form(
+            form_label="gatefire-proximity (n21/k3/deep)",
+            results=results,
+            n_events=200,
+            co_fire_share=0.364,
+            coiled_fire_recall=None,
+            ur_recall=0.20,
+            is_gatefire_form=True,
+            nc2_marginality=nc2_excl_zero,
+        )
+        assert sb.get("superiority_met_nc2_nullified") is False, (
+            "NC-2 CI-excl-0 result must NOT nullify superiority."
+        )
+        assert sb.get("nc2_superiority_survives") is True, (
+            "nc2_superiority_survives must be True when CI excludes 0."
+        )
+
     # --- zone_held_21 presence (ADDITION C) ---
 
     def test_zone_held_21_in_results(self):
