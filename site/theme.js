@@ -148,6 +148,19 @@
     location.href = terminalUrl(t);
   }, true);
 
+  /* ---- nb-spot data-href handler -------------------------------------------
+     The .nb-spot[data-href] spotlight chip carries a basket URL in data-href.
+     Post div-restructure the outer anchor no longer wraps the chip, so we need
+     an explicit delegated handler. stopPropagation prevents the card-body handler
+     (dashboard.html.j2) from double-navigating. Mirrors the nb-cau pattern. */
+  document.addEventListener('click', function (e) {
+    var chip = e.target && e.target.closest ? e.target.closest('.nb-spot[data-href]') : null;
+    if (!chip) return;
+    e.preventDefault(); e.stopPropagation();
+    var href = chip.getAttribute('data-href');
+    if (href) { location.href = href; }
+  }, true);
+
   /* ---- account / profile panel loader -------------------------------------
      Load the shared account component (account.js) on EVERY page and point it at
      the app API. It self-mounts a HIDDEN management panel (no avatar) and exposes
