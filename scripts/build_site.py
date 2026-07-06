@@ -28,7 +28,7 @@ from collectors.sponsors import flows_table  # noqa: E402
 from engine.i18n import t as T  # noqa: E402
 from engine.inputs import build_features  # noqa: E402
 from engine.market_gamma import view as market_gamma_view  # noqa: E402 — SHARED deriver: FE banner + contract (engine/run.py) call the SAME function so they can't drift
-from lib import config, store  # noqa: E402
+from lib import config, site_assets, store  # noqa: E402
 from lib.pages import write_page  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
@@ -2786,21 +2786,13 @@ def main() -> int:
                                                confirming, contradicting)
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("advanced page failed: %s", e)
-    # Supabase account config (public URL + publishable anon key) — BAKED into
-    # theme.js so the account system (sign-in modal + cookie session) works on
-    # EVERY page, not just watchlist.html. Same value the watchlist injects inline;
-    # a page-level window.SUPABASE_CFG still wins. The publishable key is PUBLIC by
-    # design — per-user isolation is enforced by RLS (templates/watchlist_supabase.sql).
-    _auth_wl = config.load().get("watchlist", {})
-    _auth_sup = (_auth_wl.get("supabase") or {})
-    _auth_cfg = ({"url": _auth_sup["url"], "anonKey": _auth_sup["anon_key"]}
-                 if _auth_sup.get("url") and _auth_sup.get("anon_key") else None)
-    _AUTH_TOKEN = "/*__SUPABASE_CFG__*/null"
-    # NB: use the module-level `json` here, NOT `_json` — `_json` is imported
-    # further down in main() (in the stock_search block), which makes the name
-    # function-local for the WHOLE of main(); referencing it before that import
-    # raises UnboundLocalError and aborts the build. `json` is module-global.
-    _auth_repl = json.dumps(_auth_cfg)
+    # Supabase account config (public URL + publishable anon key) is BAKED into
+    # theme.js at copy time so the account system (sign-in modal + cookie session)
+    # is live on EVERY page — see lib/site_assets.copy_asset(), used in the loop
+    # below and by every other page builder (so a builder that runs after this one
+    # can no longer clobber the bake with a raw copy). The publishable key is
+    # PUBLIC by design; per-user isolation is enforced by RLS
+    # (templates/watchlist_supabase.sql).
     # NOTE: site/CNAME is deliberately NOT written. Pages has no custom domain
     # (repo pages cname=null) and all Pages deploys are workflow-type
     # (actions/deploy-pages), where a CNAME file in the artifact is inert.
@@ -2829,10 +2821,7 @@ def main() -> int:
                   "favicon.svg"):
         src = config.ROOT / "templates" / asset
         if src.exists():
-            text = src.read_text()
-            if asset == "theme.js":
-                text = text.replace(_AUTH_TOKEN, _auth_repl)
-            (site / asset).write_text(text)
+            site_assets.copy_asset(asset, src, site)
     # self-hosted webfonts (binary WOFF2) — copied as a tree so the @font-face in
     # theme.css resolves same-origin (Google Fonts is blocked in mainland China).
     import shutil
@@ -3477,13 +3466,10 @@ def main() -> int:
         # each load). Optional Supabase cloud sync is config-gated; blank => local-only.
         wl = config.load().get("watchlist", {})
         if wl.get("enabled", True):
-            sup = wl.get("supabase") or {}
-            sup_cfg = ({"url": sup["url"], "anonKey": sup["anon_key"]}
-                       if sup.get("url") and sup.get("anon_key") else None)
             write_page(site / "watchlist.html",
                 env.get_template("watchlist.html.j2").render(
                     generated_utc=generated, state_display_json=sd_json,
-                    supabase_cfg_json=_json.dumps(sup_cfg),
+                    supabase_cfg_json=site_assets.supabase_cfg_json(),
                     starters_json=_json.dumps(wl.get("suggested", []))))
             log.info("wrote %s", site / "watchlist.html")
 
@@ -3512,7 +3498,6 @@ def main() -> int:
     # Copies data/neuralweb/confluence_graph.json + kernel_families.json to
     # site/neuralwebdata/ for client-side consumption, then renders committee.html.
     try:
-        import json as _nw_json
         nwd = site / "neuralwebdata"
         nwd.mkdir(parents=True, exist_ok=True)
         # Copy confluence graph (nodes / edges / contradiction_summary)
@@ -3532,13 +3517,9 @@ def main() -> int:
             (nwd / "half_life.json").write_bytes(_hl_src.read_bytes())
             log.info("neuralwebdata: copied half_life.json")
         # Supabase config (same as watchlist / theme.js)
-        _nw_wl = config.load().get("watchlist", {})
-        _nw_sup = (_nw_wl.get("supabase") or {})
-        _nw_auth_cfg = ({"url": _nw_sup["url"], "anonKey": _nw_sup["anon_key"]}
-                        if _nw_sup.get("url") and _nw_sup.get("anon_key") else None)
         committee_html = env.get_template("committee.html.j2").render(
             generated_utc=generated,
-            supabase_cfg_json=_nw_json.dumps(_nw_auth_cfg),
+            supabase_cfg_json=site_assets.supabase_cfg_json(),
         )
         write_page(site / "committee.html", committee_html)
         log.info("wrote %s", site / "committee.html")

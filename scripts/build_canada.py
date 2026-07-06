@@ -24,7 +24,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import plotly.graph_objects as go  # noqa: E402
 
-from lib import config, store  # noqa: E402
+from lib import config, site_assets, store  # noqa: E402
 from lib.pages import write_page  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
@@ -708,7 +708,7 @@ def main() -> int:
         for a in ASSETS:
             src = Path(config.ROOT) / "templates" / a
             if src.exists():
-                (site / a).write_text(src.read_text())
+                site_assets.copy_asset(a, src, site)
         log.info("wrote %s/canada.html (%d KB, %d sectors)", site, len(html) // 1024, len(vm["sectors"]))
 
         # TSX Stock Dashboard — same VM, the standout-names half (show-more card strip).

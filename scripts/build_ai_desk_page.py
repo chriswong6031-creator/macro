@@ -20,7 +20,7 @@ from jinja2 import Environment, FileSystemLoader
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from lib import config  # noqa: E402
+from lib import config, site_assets  # noqa: E402
 from lib.pages import write_page  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
@@ -48,7 +48,7 @@ def main() -> int:
         for a in ASSETS:
             srcf = Path(config.ROOT) / "templates" / a
             if srcf.exists():
-                (site / a).write_text(srcf.read_text())
+                site_assets.copy_asset(a, srcf, site)
         log.info("wrote %s/ai_desk.html (%d KB)", site, len(html) // 1024)
     except Exception as e:  # noqa: BLE001 — additive, must never break the site build
         log.error("AI desk page build failed (%s); skipping", e)
