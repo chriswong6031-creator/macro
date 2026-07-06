@@ -407,6 +407,8 @@ class TestRealRegistryFirewallClean:
         _EXPECTED_HOLD_THESIS_ARTIFACTS = {
             "long-hold-labels",
             "long-hold-labels-manifest",
+            # W1 kill-test (dead-name spike study): hold_thesis, scored_path_surfaces=[]
+            "long-hold-killtest-results",
         }
         reg = load_registry(REPO_ROOT)
         hold_arts = {
