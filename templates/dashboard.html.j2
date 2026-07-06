@@ -2886,21 +2886,37 @@
          Order is set by the JSON producer (build_stock_library.py rank_by="bottoming-alignment"
          + entry_open_first); the template renders as-is — no re-sort here. #}
       {% set _board = _su.buy %}
-      {# lane sub-heading state — reset before loop; injected when lane changes #}
-      {% set _prev_lane = namespace(val=none) %}
-      {% for n in _board %}
+      {# --- TRUE STABLE LANE PARTITION (additive to lane_counts pill row above; P2.4 §4.2).
+           Canonical group order: bottoming, continuation, trend, recovery, watch (skip empty).
+           Cards with lane missing/None render FIRST, ungrouped, with NO heading (honest
+           degradation — dev VM with lane=None exercises this path).
+           Within each lane group, producer order is preserved (stable selectattr filter).
+           Sub-heading shows label · count (l-en/l-zh); per-card left-border accents kept. --- #}
+      {%- set _lane_order = ['bottoming','continuation','trend','recovery','watch'] -%}
+      {%- set _lane_labels_en = {'bottoming':'Bottoming','continuation':'Continuation','trend':'Trend','recovery':'Recovery','watch':'Watch'} -%}
+      {%- set _lane_labels_zh = {'bottoming':'筑底','continuation':'延续','trend':'趋势','recovery':'复苏','watch':'观察'} -%}
+      {%- set _render_list = namespace(items=[]) -%}
+      {# 1. ungrouped cards first (lane absent or None) — no heading #}
+      {%- for _n in _board -%}
+        {%- if not _n.get('lane') -%}{%- set _render_list.items = _render_list.items + [_n] -%}{%- endif -%}
+      {%- endfor -%}
+      {# 2. canonical lane groups — heading sentinel then group cards #}
+      {%- for _lk in _lane_order -%}
+        {%- set _grp = _board | selectattr('lane', 'equalto', _lk) | list -%}
+        {%- if _grp -%}
+          {%- set _render_list.items = _render_list.items + [{'_heading': true, 'lane': _lk, 'count': _grp|length}] + _grp -%}
+        {%- endif -%}
+      {%- endfor -%}
+      {% for n in _render_list.items %}
+        {# heading sentinel: emit featherweight lane sub-heading and skip card rendering #}
+        {% if n.get('_heading') %}
+        <div class="nb-lane-hd">
+          <span class="l-en">{{ _lane_labels_en.get(n.lane, n.lane) }} · {{ n.count }}</span>
+          <span class="l-zh">{{ _lane_labels_zh.get(n.lane, n.lane) }} · {{ n.count }}</span>
+        </div>
+        {% else %}
         {% set c = n.conviction %}
         {% set es = n.entry_signal %}
-        {# --- lane sub-heading (additive to lane_counts pill row above; P2.4 §4.2 L230-235).
-             Renders a featherweight separator whenever the lane changes, as a stable partition
-             of producer order. Within-lane order unchanged (guarded by test_us_board_lanes.py). --- #}
-        {% if n.get('lane') and n.lane != _prev_lane.val %}
-        {% set _prev_lane.val = n.lane %}
-        <div class="nb-lane-hd">
-          <span class="l-en">{{ {'bottoming':'Bottoming','continuation':'Continuation','watch':'Watch','recovery':'Recovery','trend':'Trend'}.get(n.lane, n.lane.capitalize()) }}</span>
-          <span class="l-zh">{{ {'bottoming':'筑底','continuation':'延续','watch':'观察','recovery':'复苏','trend':'趋势'}.get(n.lane, n.lane) }}</span>
-        </div>
-        {% endif %}
         {# triage ring: subtle accent on cards with strong edge (≥80%ile) AND entry open now #}
         {% set _is_triage = (c and c.get('score_edge') is not none and c.score_edge >= 80) and (es and es.get('status') in ['buy_now','partial']) %}
         <div class="nbcard nb-{{ n.dir or 'caution' }}{% if _is_triage %} nb-triage{% endif %}" data-ticker="{{ n.ticker|e }}">
@@ -2961,16 +2977,16 @@
                   data-tip-en="Extension z={{ '%.1f'|format(n.ext_z) }} — extended (F3 anti-chase context: ext_z&gt;2 gate reduces stop-outs and dead-money, P1.3 validated; display context only — gate not wired in P2.4). Display-only per R10."
                   data-tip-zh="延伸z={{ '%.1f'|format(n.ext_z) }} — 过度延伸（F3反追涨背景：ext_z>2门槛减少止损和死钱，P1.3验证；仅为展示背景）。仅供参考。">ext {{ '%.1f'|format(n.ext_z) }}</span>
             {% endif %}
-            {# P2.1a Anti-Chase Watch chip — stays at rest (validated safety warning) #}
+            {# P2.1a Anti-Chase Watch chip — stays at rest (scored safety warning; P1.3-backed) #}
             {% if n.get('antichase_shadow_blocked') %}
             <span class="nb-antichase"
                   data-tip-en="Anti-Chase Watch (shadow) — ext_z&gt;2.0: this name is in the parabolic tail (&gt;2 own-history σ above its 200-day average). P1.3: blocking this cohort reduced stop-outs −0.43pp/21d, −5.0pp/63d and dead-money −3.6pp/21d (BH q≤0.01, sign-stable). Shadow gate only — name stays on board; the shadow ledger accrues forward outcomes for the flip decision (C1≥100 clusters + 2 quarters + C2 Wilson LB&gt;0). No rank change, no removal. R7 additive-lanes law."
                   data-tip-zh="反追涨观察（影子期）——ext_z&gt;2.0：该标的位于抛物线尾部（高于200日均线超2个自身历史标准差）。P1.3验证：屏蔽该组减少止损−0.43pp/21日、−5.0pp/63日及死钱−3.6pp/21日（BH q≤0.01，各拆分稳定）。当前为影子门槛，标的保留在看板；影子账本累积前瞻结果以供翻转决策（C1≥100集群+2个季度+C2 Wilson下界&gt;0）。不影响排名，不做移除。R7叠加通道法则。"><span class="l-en">Anti-Chase Watch</span><span class="l-zh">反追涨观察</span></span>
             {% endif %}
-            {# W8-B Shaken-recovery — stays at rest (validated safety chip, minority frequency) #}
+            {# W8-B Shaken-recovery — stays at rest (W8-B OOS-confirmed safety chip, minority frequency) #}
             {% set _pc = n.get('postcross') %}
             {% if _pc and _pc.get('shaken') %}<span class="nb-postcross pc-shaken" data-tip-en="Post-cross shake-out then recovery: new low after the 3D cross, recovered above the base midpoint, weekly histogram net-rising. Validated on two panels: stop-out −4.6pp vs fresh crosses, upside odds unchanged. Display only — no ranking power." data-tip-zh="交叉后震仓再复苏：3日交叉后创新低，已收复底部中点以上，周线柱状图净上升。两个面板验证：止损率较新鲜交叉低4.6pp，上涨胜率不变。仅供参考——无排名权重。"><span class="l-en">↗ Shaken-recovery</span><span class="l-zh">↗ 震仓复苏</span></span>{% endif %}
-            {# W9-A sector-capitulating safety chip — stays at rest (validated safety, minority) #}
+            {# W9-A sector-capitulating safety chip — stays at rest (OOS-confirmed safety, minority) #}
             {% if n.get('sector_capitulating') %}<span class="nb-sector-cap" data-tip-en="Sector capitulating — {{ '%.0f'|format((n.sector_capitulating.cohort_frac or 0)*100) }}% of {{ n.sector or 'sector' }} peers in weekly washout at build time. Safety context: stop-out −2.7pp (deep panel) / −3.5pp (OOS), sign-stable all splits — safety context, not a ranking signal." data-tip-zh="板块集体回调——{{ '%.0f'|format((n.sector_capitulating.cohort_frac or 0)*100) }}%的{{ n.sector or '板块' }}同类股处于周线深度超卖。安全背景：止损率−2.7pp（深度面板）/−3.5pp（样本外），各拆分均稳定——仅为安全背景参考，不影响排名。"><span class="l-en">Sector capitulating</span><span class="l-zh">板块集体回调</span></span>{% endif %}
             {# 💥 Moving — don't chase (adjudicated UX finding #2 + risk finding #2):
                renders when vol-squeeze already fired (FIRED_UP/EXPANSION) or alpha_entry=momentum
@@ -3132,7 +3148,8 @@
           </div>{# end .nb-more #}
           {% endif %}{# end if c #}
         </div>{# end .nbcard div #}
-      {% endfor %}
+        {% endif %}{# end if not heading #}
+      {% endfor %}{# end for n in _render_list.items #}
       {% else %}
       {% for n in action_board.notable %}
         {% set _d = n.dir or 'caution' %}
