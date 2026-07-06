@@ -955,6 +955,17 @@ jobs:
         # engine-render.yml (express lane) also runs this step — its regime/market_state
         # recompute would otherwise drift ahead of the committed world_state copies.
         run: python -m scripts.build_world_state || echo "::warning::build_world_state failed (non-fatal) — keeping last committed world_state"
+      - name: build bottom-sensor envelope (NW Rails B0)
+        if: always()
+        # Display-only (no ranking/gating/money-path) — assembles the bottom-sensor
+        # envelope for the US board (labels_v1 decision table, Amendment 1 Lane B0).
+        # Reads site/factordata/signal_gate.json + us_standouts.json (written by
+        # build_site above) and optional price/earnings/oracle stores.
+        # Writes data/neuralweb/bottom_sensors.parquet + site/neuralwebdata/bottom_sensors.json.
+        # Both outputs are covered by 'git add data/ site/' in 'commit engine outputs' below.
+        # Benchmark: 2.29s on the full US universe (~1722 names, 2026-07-06).
+        # Fail-soft: missing optional inputs degrade gracefully; never blocks the commit.
+        run: python -m scripts.build_bottom_sensors || echo "::warning::build_bottom_sensors failed (non-fatal - keeping last committed bottom sensors)"
       - name: build mastermind context (NW bridge)
         if: always()
         # NW → Mastermind bridge W1: compile data/neuralweb/mastermind_context.json and

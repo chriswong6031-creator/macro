@@ -230,6 +230,9 @@ lanes:
         module: scripts.oracle_nightly
       - id: build_world_state
         module: scripts.build_world_state
+      - id: build_bottom_sensors
+        module: scripts.build_bottom_sensors
+        note: non-fatal; display-only bottom-sensor envelope (Amendment 1 Lane B0) — wired 2026-07-06 after build_world_state; benchmark 2.29s
       - id: build_nw_mastermind_context
         module: scripts.build_nw_mastermind_context
         note: non-fatal; NW→Mastermind context bridge (macro #1567) — declares the live daily.yml engine step that was added without a dag.yml entry (merge-race drift)
