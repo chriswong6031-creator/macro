@@ -10,7 +10,9 @@ Design rules (binding):
             which enforces --dry-run default / --write-only nightly.
   RF-9   — regime-aware: launched_hot flag on decay suppresses retire_recommended;
             emits 'launched_hot_context' companion flag instead.
-  RF-10  — decay flag signals; requeue pointer written by the CLI layer.
+  RF-10  — decay flag signals only.  Requeue pointers are written by the
+            human-decision path (scripts/research_factory_decide.py) on kill
+            transitions; the monitor never kills and owns no requeue write.
 
 Absent-file-safety: every file access is guarded; absent oracle ledger / track
 file / challenge file all produce valid rows with sentinel values
@@ -87,6 +89,18 @@ def _load_jsonl_file(path: Path) -> list[dict]:
 
 def _today_iso() -> str:
     return date.today().isoformat()
+
+
+def _as_of_date(as_of: str) -> date:
+    """Resolve the run's as_of stamp to a date for due-checks.
+
+    Falls back to the wall clock only when as_of is unparsable, so replay /
+    --as-of backfill runs stay internally consistent (due-checks compare
+    against the same date the rows are stamped with)."""
+    try:
+        return date.fromisoformat(str(as_of)[:10])
+    except (ValueError, TypeError):
+        return date.today()
 
 
 def _now_iso() -> str:
@@ -192,7 +206,13 @@ def _extract_expected_metric(candidate: dict) -> dict:
     metric_name = ep.get("primary_metric") or "primary_metric"
     # The expected value may be stored as 'expected_metric_value' or within
     # the evaluation_plan; if absent, leave as None (display-only — not an error).
-    expected_value = ep.get("expected_metric_value") or ep.get("gate_threshold")
+    # Explicit None checks — 0.0 is a legitimate frozen-gate value (e.g. an
+    # absolute-excess floor of 'excess > 0'); `or` would silently discard it.
+    expected_value = (
+        ep["expected_metric_value"]
+        if ep.get("expected_metric_value") is not None
+        else ep.get("gate_threshold")
+    )
     return {
         "name": metric_name,
         "value": expected_value,
@@ -560,7 +580,7 @@ def _build_monitor_row(
     if come_back_on:
         try:
             cb_date = date.fromisoformat(str(come_back_on)[:10])
-            is_come_back_due = cb_date <= date.today()
+            is_come_back_due = cb_date <= _as_of_date(as_of)
         except (ValueError, TypeError):
             pass
 
@@ -638,7 +658,7 @@ def _build_clock_row(
     except (ValueError, TypeError):
         return None
 
-    if cb_date > date.today():
+    if cb_date > _as_of_date(as_of):
         return None  # not yet due
 
     # Due — emit a review row

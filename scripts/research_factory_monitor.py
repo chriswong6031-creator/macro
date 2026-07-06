@@ -184,6 +184,21 @@ def _write_transition(
         log.error("Transition schema violations for %s: %s", cid, errs)
         return False
 
+    # Defense-in-depth (RF-5): route through the state-machine allowlist so a
+    # future edit constructing a non-allowlisted (from, to, actor) raises here
+    # instead of slipping past schema-only validation.
+    from engine.research_factory.state import IllegalTransition, transition as rf_transition
+    try:
+        rf_transition(
+            from_state=t_row.get("from"),
+            to_state=t_row.get("to"),
+            actor=t_row.get("actor", "script"),
+            transition_row=t_row,
+        )
+    except IllegalTransition as exc:
+        log.error("Actor-law violation for %s: %s", cid, exc)
+        return False
+
     if dry_run:
         log.info(
             "[DRY-RUN] Would write transition %s→%s for %s",
