@@ -21,7 +21,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | neural-web | 25 |
 | options-alpha | 7 |
 | options-nw-entry-intelligence | 3 |
-| oracle | 13 |
+| oracle | 15 |
 | qualitative-intelligence | 23 |
 | sector-pulse | 3 |
 | setup-species | 6 |
@@ -32,16 +32,16 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 59 |
+| display | 60 |
 | infrastructure | 31 |
 | scored | 4 |
-| shadow | 34 |
+| shadow | 35 |
 
 ### Artifacts by storage
 
 | storage | count |
 |---|---|
-| git | 123 |
+| git | 125 |
 | gitignored-local | 3 |
 | r2 | 2 |
 
@@ -187,9 +187,11 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | site-radar-ticker | `site/basketdata/radar_ticker.json` | json | daily-engine | display | 4 | 0 |
 | site-basket-flow | `site/basketdata/flow.json` | json | daily-engine | display | 2 | 1 |
 | index-leadership-snapshots | `data/index_leadership/snapshots.jsonl` | jsonl | daily-engine | shadow | 2 | 0 |
+| oracle-reversion-forward-ledger | `data/oracle/reversion_forward/<compound_id>.jsonl` | jsonl | daily-engine | shadow | 2 | 0 |
 | radar-track-record | `data/radar/track_record.json` | json | daily-engine | display | 2 | 0 |
 | site-marketdata-subsector-rotation | `site/marketdata/subsector_rotation.json` | json | daily-engine | display | 2 | 0 |
 | subsector-rotation-snapshots | `data/subsector_rotation/snapshots.jsonl` | jsonl | daily-engine | shadow | 2 | 0 |
+| oracle-reversion-state | `site/basketdata/oracle_reversion_state.json` | json | daily-engine | display | 1 | 0 |
 | site-basketdata-radar-news | `site/basketdata/radar_news.json` | json | daily-engine | display | 1 | 0 |
 | site-member-context | `site/basketdata/member_context.json` | json | daily-engine | display | 1 | 0 |
 | site-narrative-brain | `site/basketdata/narrative_brain.json` | json | daily-engine | display | 1 | 0 |

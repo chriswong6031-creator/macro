@@ -2128,6 +2128,59 @@ artifacts:
     external_consumers: []
     notes: "Producer: engine/oracle/live.py:395 write_text. schema=oracle_state.v1 inline constant at live.py:78."
 
+  # --- oracle reversion promotion track (P0+P1) ---
+  # P0: per-compound forward ledger (shadow tier, nightly single-writer)
+  oracle-reversion-forward-ledger:
+    path: data/oracle/reversion_forward/<compound_id>.jsonl
+    format: jsonl
+    producer: scripts/oracle_reversion_forward_ledger.py
+    known_extra_writers: []
+    owner_program: oracle
+    cadence: daily-engine
+    storage: git
+    asof_field: fire_date
+    freshness_sla_hours: 30
+    schema: oracle_reversion_state.v1
+    tier: shadow
+    horizon_role: tactical_entry
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/oracle_reversion_state.py
+      - scripts/oracle_nightly.py
+    external_consumers: []
+    notes: >
+      Nightly single-writer; PIT-graded reversion forward ledger per compound.
+      Grading uses _per_entry_rows from scripts/oracle_reversion_screen.py VERBATIM
+      (live == backtest grading). See research/ORACLE_REVERSION_PROMOTION_PREREG.md
+      for the frozen schema + live promotion floor. Path contains <compound_id>
+      placeholder — one file per compound under data/oracle/reversion_forward/.
+
+  # P1: display-tier sidecar (oracle_reversion_state.v1)
+  oracle-reversion-state:
+    path: site/basketdata/oracle_reversion_state.json
+    format: json
+    producer: scripts/oracle_reversion_state.py
+    known_extra_writers: []
+    owner_program: oracle
+    cadence: daily-engine
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 30
+    schema: oracle_reversion_state.v1
+    tier: display
+    horizon_role: tactical_entry
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/oracle_nightly.py
+    external_consumers: []
+    notes: >
+      Sidecar alongside oracle_state.json — does NOT modify the oracle_state.v1
+      episode contract. authority_level is ALWAYS 'display'; no ranking surface
+      is touched (Article 2). Live block is honest at n=0 (nulls, never fabricated).
+      See research/ORACLE_REVERSION_PROMOTION_TRACK_DESIGN.md §2 (sidecar rationale).
+
   # --- 3 consumers ---
   site-basket-flow:
     path: site/basketdata/flow.json
