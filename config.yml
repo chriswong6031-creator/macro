@@ -411,9 +411,15 @@ polygon:
                                  # cut a ~16-min serial run to ~3-4 min). 1 => serial.
   gex:
     # ANCHORS — the index-ETF gamma backbone + mega-caps that must always be snapshot
-    # (mirror collectors/cboe.DEFAULT_GEX_SYMBOLS so the two sources stay comparable).
-    # SPX excluded: index spot (I:SPX) is not entitled.
-    symbols: [SPY, QQQ, IWM, DIA, NVDA, AAPL, TSLA, AMD, META, MSFT]
+    # (first 10 mirror collectors/cboe.DEFAULT_GEX_SYMBOLS so the two sources stay
+    # comparable), plus the 15 sector/industry ETFs the Neural Web options_weather lobe
+    # aggregates (OPTIONS_NW masterplan RO-1/W-B; also the W-E1 gauntlet universe).
+    # Cost: ~15 roots × ~3 REST calls/day on the measured ~993/day vs ~14K ceiling
+    # (options-alpha W1.4 probe) — trivial headroom. SPX excluded: index spot (I:SPX)
+    # is not entitled.
+    symbols: [SPY, QQQ, IWM, DIA, NVDA, AAPL, TSLA, AMD, META, MSFT,
+              XLB, XLC, XLE, XLF, XLI, XLK, XLP, XLRE, XLU, XLV, XLY,
+              SMH, SOXX, XBI, KRE]
     # ALSO snapshot every ACTIVE single name in the thematic baskets we trade
     # (data/baskets/membership.json) so the per-name flow / positioning / GEX reads cover
     # the whole optionable set, not just the 10 anchors. Resolved by engine.options_universe.
@@ -421,7 +427,7 @@ polygon:
     # daily raw-chain parquet (committed by build_polygon_gex) grows ~linearly with the
     # universe, so max_underlyings bounds storage/runtime. Set include_baskets:false to revert.
     include_baskets: true
-    max_underlyings: 360         # safety cap on total underlyings per build (anchors kept first)
+    max_underlyings: 375         # safety cap (anchors kept first; +15 with the sector-ETF anchors so no basket name is evicted)
     strike_window_pct: 0.30      # keep contracts within +/-30% of spot (gamma lives here)
     max_expiry_days: 400         # ~13 months; covers the engine's 365d window + buffer
     contract_multiplier: 100
