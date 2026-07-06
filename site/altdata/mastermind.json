@@ -1,7 +1,7 @@
 {
   "schema": "altdata.mastermind.v1",
   "as_of": "2026-07-06",
-  "generated_utc": "2026-07-06T14:57:25.191551+00:00",
+  "generated_utc": "2026-07-06T15:53:48.613097+00:00",
   "contract": "Actionable alt-data axis for the Mastermind bot. Each signal: signal_score 0-100 (composite of weighted convergence + brain conviction + price confirm \u2212 extension), action \u2208 {ACCUMULATE,WATCH,AVOID}, direction \u2208 {long,short,neutral}, source \u2208 {brain,deterministic}. The bot sizes through its OWN risk framework; this is an input, not an order. Brain calls are graded vs SPY (see calibration). An extended name is never ACCUMULATE. trump_linked / affiliations flag actor ties. rolling_over names (off_high\u2264\u221215% AND 20d<0 AND below 50dma) appear in broken_signals only \u2014 crowd attention, NOT entries. entry_tier (T1/T2/T3) = validated confluence buy gate signal.",
   "regime_read": null,
   "brain_present": false,
@@ -1527,7 +1527,7 @@
       "off_high_252": -37.6,
       "ret_20d": -9.1,
       "above_50dma": false,
-      "entry_tier": "T3",
+      "entry_tier": "T1",
       "affiliations": [
         {
           "actor": "Marjorie Taylor Greene",
@@ -1782,7 +1782,7 @@
       "off_high_252": -58.3,
       "ret_20d": -5.3,
       "above_50dma": false,
-      "entry_tier": "T3",
+      "entry_tier": "T1",
       "affiliations": [],
       "n_affiliated_actors": 0,
       "thesis": null,
