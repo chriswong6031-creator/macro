@@ -313,8 +313,12 @@ class ChinaFilingsAdapter(Adapter):
                 rows.append(_parse_announcement(ann, exchange, collected_at))
 
             total_pages = int(payload.get("totalpages") or 1)
-            has_more = bool(payload.get("hasMore", False))
-            if page_num >= total_pages or not has_more:
+            # Terminate only when we have consumed all pages per totalpages.
+            # hasMore is NOT used as a termination guard: CNInfo's hisAnnouncement
+            # endpoint returns hasMore=false inconsistently mid-pagination (known
+            # CNInfo quirk), so `or not has_more` would silently truncate a
+            # multi-page day to only the first 30 rows.
+            if page_num >= total_pages:
                 break
             page_num += 1
             _pace()
@@ -371,8 +375,11 @@ class ChinaFilingsAdapter(Adapter):
         )
 
         # Summary frame — DatetimeIndex is required by base.validate() /
-        # store.upsert(). See china_official_corpora fix for the exact pattern.
-        idx = pd.Timestamp(collected_at)
+        # store.upsert(). Follow china_official_corpora precedent (line 468):
+        # strip tz-awareness so the index is tz-naive.  Mixing tz-aware with
+        # any tz-naive parquet already on disk causes combine_first to raise
+        # "Cannot join tz-naive with tz-aware DatetimeIndex".
+        idx = pd.Timestamp(collected_at).tz_convert(None)
         summary = pd.DataFrame(
             {f"n_rows_{ex}": [float(per_exchange.get(ex, 0))]
              for ex in _EXCHANGES},

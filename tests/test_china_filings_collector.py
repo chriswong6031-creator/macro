@@ -302,6 +302,136 @@ class TestResponseParsing:
 
 
 # --------------------------------------------------------------------------- #
+# Pagination: _fetch_exchange multi-page termination
+# --------------------------------------------------------------------------- #
+
+class TestFetchExchangePagination:
+    """Verify that _fetch_exchange terminates on totalpages, NOT on hasMore.
+
+    Finding [major]: the old `or not has_more` guard truncated multi-page days
+    when CNInfo returned hasMore=False mid-pagination (known endpoint quirk).
+    The fix: terminate only when `page_num >= total_pages`.
+    """
+
+    def _make_page(
+        self,
+        page_num: int,
+        total_pages: int,
+        has_more: bool,
+        ann_ids: list[str],
+    ) -> dict:
+        return {
+            "totalAnnouncement": total_pages * len(ann_ids),
+            "totalpages": total_pages,
+            "hasMore": has_more,
+            "announcements": [
+                {
+                    "announcementId": aid,
+                    "secCode": "000001",
+                    "secName": "平安银行",
+                    "orgId": "ORG1",
+                    "announcementTitle": "测试公告",
+                    "announcementTime": 1705276800000,
+                    "adjunctUrl": "",
+                    "adjunctType": "PDF",
+                    "announcementType": "",
+                }
+                for aid in ann_ids
+            ],
+        }
+
+    def test_multipage_hasMore_false_early_still_collects_all(self, monkeypatch):
+        """hasMore=False on page 1 of 3 must NOT truncate — all 3 pages collected."""
+        # CNInfo quirk: page 1 says hasMore=False even though totalpages=3.
+        pages = [
+            self._make_page(1, 3, has_more=False, ann_ids=["P001", "P002"]),
+            self._make_page(2, 3, has_more=False, ann_ids=["P003", "P004"]),
+            self._make_page(3, 3, has_more=False, ann_ids=["P005", "P006"]),
+        ]
+        page_iter = iter(pages)
+
+        # Monkeypatch _fetch_page so no real HTTP happens; also suppress _pace.
+        monkeypatch.setattr(cf, "_fetch_page", lambda *args, **kw: next(page_iter))
+        monkeypatch.setattr(cf, "_pace", lambda: None)
+
+        adapter = cf.ChinaFilingsAdapter()
+        # Pass a dummy session — _fetch_page is patched so it's never called.
+        rows = adapter._fetch_exchange("sse", "2024-01-15~2024-01-15", None, "t0")
+
+        assert len(rows) == 6
+        ids = [r["announcementId"] for r in rows]
+        assert ids == ["P001", "P002", "P003", "P004", "P005", "P006"]
+
+    def test_singlepage_hasMore_false_terminates_normally(self, monkeypatch):
+        """Single-page day: totalpages=1, hasMore=False — terminates after page 1."""
+        pages = [
+            self._make_page(1, 1, has_more=False, ann_ids=["Q001", "Q002"]),
+        ]
+        page_iter = iter(pages)
+
+        monkeypatch.setattr(cf, "_fetch_page", lambda *args, **kw: next(page_iter))
+        monkeypatch.setattr(cf, "_pace", lambda: None)
+
+        adapter = cf.ChinaFilingsAdapter()
+        rows = adapter._fetch_exchange("szse", "2024-01-15~2024-01-15", None, "t0")
+
+        assert len(rows) == 2
+
+    def test_multipage_hasMore_true_collects_all(self, monkeypatch):
+        """Normal multi-page case: hasMore=True, verifies all pages still consumed."""
+        pages = [
+            self._make_page(1, 2, has_more=True, ann_ids=["R001"]),
+            self._make_page(2, 2, has_more=False, ann_ids=["R002"]),
+        ]
+        page_iter = iter(pages)
+
+        monkeypatch.setattr(cf, "_fetch_page", lambda *args, **kw: next(page_iter))
+        monkeypatch.setattr(cf, "_pace", lambda: None)
+
+        adapter = cf.ChinaFilingsAdapter()
+        rows = adapter._fetch_exchange("sse", "2024-01-15~2024-01-15", None, "t0")
+
+        assert len(rows) == 2
+        assert [r["announcementId"] for r in rows] == ["R001", "R002"]
+
+
+# --------------------------------------------------------------------------- #
+# Summary frame tz-naive index (review finding — latent break guard)
+# --------------------------------------------------------------------------- #
+
+class TestSummaryFrameTzNaive:
+    """The summary frame index must be tz-NAIVE.
+
+    Precedent: collectors/china_official_corpora.py:468 uses .tz_convert(None)
+    because mixing tz-aware with any tz-naive parquet on disk causes
+    store.upsert -> combine_first to raise
+    "Cannot join tz-naive with tz-aware DatetimeIndex".
+    """
+
+    def test_summary_index_is_tz_naive(self, tmp_path, monkeypatch):
+        from unittest.mock import MagicMock, patch
+
+        monkeypatch.setattr(cf, "_store_path", lambda: tmp_path / "filings.parquet")
+        adapter = cf.ChinaFilingsAdapter()
+
+        def fake_fetch_exchange(exchange, date_range, session, collected_at):
+            return [_make_row("TZ001", exchange=exchange)]
+
+        import requests as _requests
+        with patch.object(adapter, "_fetch_exchange", side_effect=fake_fetch_exchange):
+            with patch.object(_requests, "Session", return_value=MagicMock()):
+                result = adapter.fetch()
+
+        summary = result["china_filings_summary"]
+        # Index must be tz-naive (tzinfo is None on each Timestamp)
+        for ts in summary.index:
+            assert ts.tzinfo is None, (
+                f"Summary index must be tz-naive; got tzinfo={ts.tzinfo!r}. "
+                "Fix: add .tz_convert(None) to pd.Timestamp(collected_at)."
+            )
+
+
+# --------------------------------------------------------------------------- #
 # Storage: keep-FIRST dedup + empty-day handling
 # --------------------------------------------------------------------------- #
 
