@@ -520,6 +520,53 @@ class TestOiConfirmed:
         for field in ("root", "right", "exp", "strike", "prev_premium", "delta_oi"):
             assert field in row, f"Missing field '{field}' in confirmed row"
 
+    @pytest.mark.parametrize("feed_right,mover_right", [
+        # same-convention baselines
+        ("C",    "C"),
+        ("P",    "P"),
+        # full-word feed → single-char mover
+        ("call", "C"),
+        ("put",  "P"),
+        # single-char feed → full-word mover
+        ("C",    "call"),
+        ("P",    "put"),
+        # full-word both sides
+        ("call", "call"),
+        ("put",  "put"),
+        # mixed-case variants
+        ("Call", "c"),
+        ("PUT",  "p"),
+    ])
+    def test_right_field_convention_mismatch_still_matches(
+        self, tmp_path, feed_right, mover_right
+    ):
+        """Mixed right-field conventions ('call'/'put' vs 'C'/'P') must NOT prevent match.
+
+        This guards against the join being permanently empty when the live-flow
+        poller writes full-word rights while oi_movers uses single-char rights (or
+        vice versa).
+        """
+        self._write_feed(tmp_path, {
+            "SPY": [
+                {"right": feed_right, "expiration": "2026-09-19", "strike": 560.0,
+                 "premium": 9000.0},
+            ],
+        })
+        movers = self._movers([
+            {"root": "SPY", "right": mover_right, "exp": "2026-09-19",
+             "strike": 560.0, "d_oi": 4000, "mid": 6.0},
+        ])
+        result = build_oi_confirmed("2026-07-04", tmp_path, oi_movers_today=movers)
+        assert len(result) == 1, (
+            f"Expected 1 match for feed_right={feed_right!r} / mover_right={mover_right!r}, "
+            f"got {result}"
+        )
+        # right in output is always normalised to single-char upper
+        expected_norm = feed_right.upper()[:1]
+        assert result[0]["right"] == expected_norm, (
+            f"right in output should be normalised to {expected_norm!r}, got {result[0]['right']!r}"
+        )
+
 
 # --------------------------------------------------------------------------- #
 # 19. Nightly smoke: graceful degradation on ALL missing inputs
