@@ -41,13 +41,32 @@ FLOW = {
     "cfo": ["NetCashProvidedByUsedInOperatingActivities",
             "NetCashProvidedByUsedInOperatingActivitiesContinuingOperations"],
     "capex": ["PaymentsToAcquirePropertyPlantAndEquipment", "PaymentsToAcquireProductiveAssets"],
+    # Coverage note: large-cap filers (AAPL, MSFT) stopped tagging standalone InterestExpense
+    # in recent filings; InterestAndDebtExpense fallback is also empty for them. This means
+    # interest_exp is NaN on the LATEST fiscal-year row for ~73% of tickers in the universe
+    # (statements.parquet latest-FY coverage ≈27%). The PANEL path (collectors/edgar.py,
+    # PIT-lagged fundamentals_panel.parquet) has broader multi-year coverage; interest_coverage
+    # via the statements consumer (_leverage latest-FY path) stays None for most large caps.
     "interest_exp": ["InterestExpense", "InterestAndDebtExpense"],
+    # Primary two are cash-flow-statement D&A add-backs (depletion + amortization included).
+    # Third fallback "Depreciation" is P&L depreciation only (no amortization, no depletion);
+    # a filer that tags DD&A in some years and only "Depreciation" in others will have a
+    # mixed D&A basis year-to-year (EBITDA denominator understated in fallback years).
+    # Coverage note: AAPL/MSFT/NVDA all use DepreciationDepletionAndAmortization; the third
+    # fallback is exercised only by non-standard filers and carries a basis caveat.
     "depreciation": ["DepreciationDepletionAndAmortization", "DepreciationAndAmortization",
                      "Depreciation"],
     # --- W2 PR-H additions (Long-Hold Thesis Layer, 2026-07-06) ---
-    # SBC: share-based compensation (non-cash; needed for EBITDA proxy and FCF conversion)
-    "sbc": ["ShareBasedCompensation", "AllocatedShareBasedCompensationExpense",
-            "ShareBasedCompensationArrangementByShareBasedPaymentAwardEquityInstrumentsOtherThanOptionsVestedInPeriodTotalFairValue"],
+    # SBC: share-based compensation (non-cash; needed for EBITDA proxy and FCF conversion).
+    # Only two fallbacks: ShareBasedCompensation (IS/CF SBC expense) and
+    # AllocatedShareBasedCompensationExpense (alternative label for the same P&L line).
+    # NOTE: ShareBasedCompensationArrangementByShareBasedPaymentAwardEquityInstruments
+    # OtherThanOptionsVestedInPeriodTotalFairValue was intentionally excluded — that
+    # concept reports total fair-value-of-awards-VESTED (a footnote disclosure quantity),
+    # NOT the SBC expense charged to the income statement; merging them would silently
+    # corrupt the EBITDA proxy and FCF add-back for any filer that tags it without the
+    # primary concepts.
+    "sbc": ["ShareBasedCompensation", "AllocatedShareBasedCompensationExpense"],
     # R&D: research and development expense (capital-allocation and moat-falsifier work)
     "research_dev": ["ResearchAndDevelopmentExpense",
                      "ResearchAndDevelopmentExpenseExcludingAcquiredInProcessCost"],
