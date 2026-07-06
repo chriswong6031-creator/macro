@@ -108,11 +108,15 @@ class TestFamilyBudgetsA2:
         "esx_support_dose":    2,
     }
 
-    def test_total_budget_is_165(self):
-        """Sum of all FAMILY_BUDGETS values must equal 165 (A2 RUL-26 ceiling)."""
+    def test_total_budget_is_201(self):
+        """Sum of all FAMILY_BUDGETS values must equal 201 (A3 RUL-32 ceiling).
+
+        Ceiling history (each change logged in its amendment, RUL-7 law):
+        masterplan 115 → A2 RUL-26 165 → A3 RUL-32 201.
+        """
         total = sum(info["budget"] for info in ph.FAMILY_BUDGETS.values())
-        assert total == 165, (
-            f"FAMILY_BUDGETS total is {total}, expected 165 (A2 RUL-26: 115→165). "
+        assert total == 201, (
+            f"FAMILY_BUDGETS total is {total}, expected 201 (A3 RUL-32: 165→201). "
             f"Individual budgets: { {k: v['budget'] for k, v in ph.FAMILY_BUDGETS.items()} }"
         )
 

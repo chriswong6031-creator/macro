@@ -183,6 +183,61 @@ FAMILY_BUDGETS: dict[str, dict[str, Any]] = {
             "unlocked after ≥2 leg verdicts"
         ),
     },
+    # --- Amendment 3 RUL-32 additions: program ceiling 165 → 201 ---
+    "esx_htf_turn": {
+        "budget": 12,
+        "reason": (
+            "A3 RUL-32: 3 rungs (A1 weekly RSI-MACD hist-rising; A2 2W stoch turn "
+            "K>D & K-rising; A3m monthly stoch turn) x 2 panels x 2 reads "
+            "(pooled-FE, not-wbull subset per RUL-29)"
+        ),
+    },
+    "esx_htf_turn_dose": {
+        "budget": 2,
+        "reason": (
+            "A3 RUL-32: ordinal n_turn_legs {0..3} x 2 panels; verdict LOCKED until "
+            ">=1 esx_htf_turn rung shows CI-excluding-0 in its operative read; "
+            "legs pre-declared collinear (weekly-dominant expectation)"
+        ),
+    },
+    "esx_washout_x_turn": {
+        "budget": 8,
+        "reason": (
+            "A3 RUL-32: 2 interaction forms (H1-frozen 2W-D-min<25 x {A1, A2}) "
+            "x 2 panels x 2 contrasts (deep&turn vs deep&not-turn; deep&turn vs rest); "
+            "no age/calm ingredient (H2 firewall)"
+        ),
+    },
+    "esx_sub_x_turn": {
+        "budget": 2,
+        "reason": (
+            "A3 RUL-32: tape sub x A1 weekly-turn interaction coefficient x 2 panels; "
+            "LOCKED behind esx_htf_turn; expect-null"
+        ),
+    },
+    "esx_decline_geometry": {
+        "budget": 4,
+        "reason": (
+            "A3 RUL-32: Herfindahl of |neg daily log-returns| trailing 63 bars "
+            "(min 8 down-days), fixed trailing cross-sectional terciles x 2 panels "
+            "x 2 contrasts (flush-vs-grind; flush-vs-rest); two-sided"
+        ),
+    },
+    "esx_underwater": {
+        "budget": 4,
+        "reason": (
+            "A3 RUL-32: time_underwater_series(close,252) terciles x 2 panels "
+            "x 2 contrasts; window=126 named kill-only diagnostic; two-sided"
+        ),
+    },
+    "esx_vol_transition": {
+        "budget": 4,
+        "reason": (
+            "A3 RUL-32: vol_ts=rv(5)/rv(63), vol_falling=(vol_ts<1)&(vol_ts<vol_ts[-5]) "
+            "x 2 panels x 2 contrasts (falling-vs-rest; falling-vs-elevated); "
+            "pre-registered EXPECT-NULL; realized-vol-LEVEL FE control binding (RUL-30)"
+        ),
+    },
 }
 
 # ---------------------------------------------------------------------------
@@ -451,6 +506,106 @@ def grade_fires(
             out[col] = series.reindex(out.index).values
 
     return out
+
+
+# ---------------------------------------------------------------------------
+# NC-2 proximity proxy (shared helper — A3 RUL-32.b)
+#
+# Extracted verbatim from run_w1_nc.py at Amendment-3 registration so every
+# runner calls ONE audited implementation (the arm that nullified S-UR's only
+# positive form). run_w1_nc.py re-exports these names for back-compat
+# (run_w2_sur.py imports them from there).
+#
+# PROXY-INPUT LIMITATION stands: the engine (engine/cycles.py:1705-1706) uses
+# cand_price/dcl_price as the proximity pivot; this uses a naive 63-bar
+# close-minimum. NC-2 remains descriptive-only / kill-arm-only — it must NOT
+# be used as a promotion bar (A3 RUL-28: CHIP promotion is BLOCKED until the
+# true eq_band lands).
+# ---------------------------------------------------------------------------
+
+def _eq_proximity_long(pct: float) -> float:
+    """Entry-quality PROXIMITY component (long/buy-setup), from cycles.py:1625.
+    Exact copy of _eq_proximity(pct, up=True) — frozen, no discretion.
+    Uses fractional distance above (positive) or below (negative) the rolling low.
+    """
+    p = pct
+    if p < -0.06:
+        return 0.15
+    if p < -0.03:
+        return 0.15 + (0.5 - 0.15) * (p - (-0.06)) / (-0.03 - (-0.06))
+    if p < 0.0:
+        return 0.5 + (0.9 - 0.5) * (p - (-0.03)) / (0.0 - (-0.03))
+    if p < 0.03:
+        return 0.9 + (1.0 - 0.9) * (p - 0.0) / (0.03 - 0.0)
+    if p < 0.06:
+        return 1.0 + (0.85 - 1.0) * (p - 0.03) / (0.06 - 0.03)
+    t = min(1.0, (p - 0.06) / (0.18 - 0.06))
+    return 0.85 + (0.2 - 0.85) * t
+
+
+def compute_nc2_proximity_proxy(
+    fires: pd.DataFrame,
+    closes: dict[str, pd.Series],
+    *,
+    rolling_window: int = 63,
+) -> pd.Series:
+    """Proximity component of entry_quality for each fire row.
+
+    NC-2 PARTIAL IMPLEMENTATION — proximity component only (EQ_W_PROX=0.52).
+    See module comment above: proxy-INPUT, descriptive/kill-arm only.
+
+    Proxy: pct_from_low = close_at_fire / rolling_63d_close_min - 1 (strictly
+    prior bars, no lookahead), fed through _eq_proximity_long().
+    Returns pd.Series of float in [0, 1], NaN where not computable.
+    """
+    prox_scores: list[float | None] = []
+    for _, row in fires.iterrows():
+        ticker = str(row["ticker"])
+        sig_date = pd.Timestamp(row["date"])
+        close = closes.get(ticker)
+        if close is None or close.empty:
+            prox_scores.append(None)
+            continue
+        c = close.dropna().sort_index()
+        locs = c.index.searchsorted(sig_date)
+        # Reject loc==len(c): fire date after last bar would silently pair the
+        # final bar's close with a prior-window low (undisclosed approximation).
+        if locs <= 0 or locs >= len(c):
+            prox_scores.append(None)
+            continue
+        loc = locs  # first bar on/after sig_date
+        if loc < rolling_window:
+            prox_scores.append(None)
+            continue
+        prior_window = c.iloc[loc - rolling_window:loc]
+        if len(prior_window) == 0:
+            prox_scores.append(None)
+            continue
+        rolling_low = float(prior_window.min())
+        price = float(c.iloc[loc])
+        if rolling_low <= 0:
+            prox_scores.append(None)
+            continue
+        pct_from_low = price / rolling_low - 1.0
+        prox_scores.append(_eq_proximity_long(pct_from_low))
+    return pd.Series(prox_scores, index=fires.index, name="nc2_prox")
+
+
+def assign_nc2_bands(prox: pd.Series) -> pd.Series:
+    """Cross-sectional proximity bands by tercile.
+    Bands 0/1/2 = bottom/mid/top tercile (fixed, not fitted).
+    """
+    valid = prox.dropna()
+    if len(valid) < 30:
+        return pd.Series(np.nan, index=prox.index, name="nc2_band")
+    q33 = float(valid.quantile(1 / 3))
+    q67 = float(valid.quantile(2 / 3))
+    bands = np.where(
+        prox.isna(), np.nan,
+        np.where(prox <= q33, 0.0,
+                 np.where(prox <= q67, 1.0, 2.0))
+    )
+    return pd.Series(bands, index=prox.index, name="nc2_band")
 
 
 # ---------------------------------------------------------------------------
