@@ -347,7 +347,12 @@ fred:
     ipo: [IPO, FPX]               # Renaissance IPO ETF + First Trust IPOX — aftermarket new-issue basket reality-check (IPO Radar; the "buy IPOs in the secondary market" trade)
     credit: [HYG, LQD]
     bond_etfs: [TLT, IEF, TIP, EMB]   # Bonds dashboard price/flow proxies: long UST, 7-10y UST, TIPS, EM USD sov
-    intl_etfs: [FXI]                  # China large-cap (US-hours) — factor-exposure China proxy + holding
+    intl_etfs: [FXI,                   # China large-cap (US-hours) — factor-exposure China proxy + holding
+                KWEB,                  # KraneShares CSI China Internet (2013->) — offshore internet cohort; onshore/offshore divergence axis
+                MCHI,                  # iShares MSCI China (2011->) — broad China offshore benchmark
+                ASHR,                  # Xtrackers CSI 300 China A-Shares (2013->) — onshore A-share price discovery; divergence axis anchor
+                CQQQ,                  # Invesco China Technology (2009->) — tech-heavy offshore; pre-KWEB era coverage
+                GXC]                   # SPDR S&P China (2007->) — longest-history offshore; broadest sector coverage
     country_etfs: [EWG, EWU, EWQ, EWL, EWP, EWI, EWN, EWD,   # World Market Cycles (intl_cycles.html) — USD single-country iShares MSCI ETFs, most back to 1996
                    EWJ, EWA, EWH, EWS, EWC,
                    INDA, EWT, EWY, EIDO, EWZ, EWW, ECH, EZA, TUR, EPOL,
@@ -5404,7 +5409,12 @@ yahoo:
     ipo: [IPO, FPX]               # Renaissance IPO ETF + First Trust IPOX — aftermarket new-issue basket reality-check (IPO Radar; the "buy IPOs in the secondary market" trade)
     credit: [HYG, LQD]
     bond_etfs: [TLT, IEF, TIP, EMB]   # Bonds dashboard price/flow proxies: long UST, 7-10y UST, TIPS, EM USD sov
-    intl_etfs: [FXI]                  # China large-cap (US-hours) — factor-exposure China proxy + holding
+    intl_etfs: [FXI,                   # China large-cap (US-hours) — factor-exposure China proxy + holding
+                KWEB,                  # KraneShares CSI China Internet (2013->) — offshore internet cohort; onshore/offshore divergence axis
+                MCHI,                  # iShares MSCI China (2011->) — broad China offshore benchmark
+                ASHR,                  # Xtrackers CSI 300 China A-Shares (2013->) — onshore A-share price discovery; divergence axis anchor
+                CQQQ,                  # Invesco China Technology (2009->) — tech-heavy offshore; pre-KWEB era coverage
+                GXC]                   # SPDR S&P China (2007->) — longest-history offshore; broadest sector coverage
     country_etfs: [EWG, EWU, EWQ, EWL, EWP, EWI, EWN, EWD,   # World Market Cycles (intl_cycles.html) — USD single-country iShares MSCI ETFs, most back to 1996
                    EWJ, EWA, EWH, EWS, EWC,
                    INDA, EWT, EWY, EIDO, EWZ, EWW, ECH, EZA, TUR, EPOL,
