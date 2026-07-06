@@ -1082,6 +1082,10 @@ modules:
       - site/factordata/signal_gate.json
       - data/oracle/turn_desk_ledger.jsonl
       - data/massive_stock_day/*.parquet
+      - data/oracle/qual_filters/registry.jsonl
+      - data/market_state/latest.json
+      - data/oracle/qual_filter_stamps.jsonl
+      - data/oracle/qual_filter_accrual.json
     writes:
       - site/basketdata/oracle_state.json
       - data/oracle/oracle_alerts.jsonl
@@ -1094,6 +1098,8 @@ modules:
       - site/basketdata/oracle_reversion_state.json
       - site/basketdata/oracle_turn_desk.json
       - data/oracle/turn_desk_ledger.jsonl
+      - data/oracle/qual_filter_stamps.jsonl
+      - data/oracle/qual_filter_accrual.json
     impure: false
     needs_secrets: false
     event_driven: true
@@ -1103,6 +1109,7 @@ modules:
       P1 (Step 11c): oracle_reversion_state.json sidecar (display tier, reads P2 authority
       additively). W6 (Step 15): Rotation Turn Desk — armed A15 windows + member fires
       + display artifact + forward ledger (DISPLAY-ONLY under hard law).
+      W7 (Step 17): Qualitative filter PIT stamps + accrual report.
 
   - module: scripts.oracle_reversion_promotion_scan
     reads:
