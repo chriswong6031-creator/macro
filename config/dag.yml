@@ -94,6 +94,9 @@ lanes:
         module: scripts.build_congress
       - id: build_foresight
         module: scripts.build_foresight
+      - id: backfill_regime_stamps
+        module: scripts.backfill_regime_stamps
+        note: "nw-macro-rail R5 PR-C — regime stamp backfill on qledger rows (non-fatal); near-term yield ≈ 2 rows from regime_vector.parquet coverage"
       # parallel band
       - id: band
         cluster:
@@ -172,6 +175,9 @@ lanes:
         note: "Options Alpha W1.3 — pre-registered options entry-quality gate"
       - id: build_calibration
         module: scripts.build_calibration
+      - id: build_macro_snapshot
+        module: scripts.build_macro_snapshot
+        note: "nw-macro-rail R5 PR-C — macro context snapshot registry (latest.json + ledger.parquet + transitions.jsonl); fail-open, runs before build_spine_index"
       - id: build_spine_index
         module: scripts.build_spine_index
         note: "neural-web W2 — spine query index (read-side union over all graded ledgers)"

@@ -370,6 +370,116 @@ def _summarize_cortex(repo: Path) -> tuple[dict, str | None]:
     return lobe, None
 
 
+def _summarize_macro_weather(repo: Path) -> tuple[dict, str | None]:
+    """Distill macro climate from world_state.json + data/macro_snapshots/latest.json.
+
+    Returns a gap when data/macro_snapshots/latest.json is absent — the snapshot
+    file is created by PR-C; absence means PR-C has not yet landed, so
+    ``has_rich_summary`` must NOT be patched onto the manifest row (red-team §5.4).
+
+    Serialised lobe budget: ≤ 12 KB (RUL-M8).
+    Macro ETF/futures tickers are admissible as macro-level records per RUL-M8;
+    they are NOT candidate names.  The no-new-names invariant is tested by
+    tests/test_macro_context_authority.py.
+    """
+    snapshot_path = repo / "data" / "macro_snapshots" / "latest.json"
+    if not snapshot_path.exists():
+        return {}, "data/macro_snapshots/latest.json absent (PR-C not landed)"
+
+    try:
+        snapshot = _read_json(snapshot_path)
+        if not isinstance(snapshot, dict):
+            return {}, "data/macro_snapshots/latest.json unreadable or not a dict"
+
+        ws = _read_json(repo / "data" / "neuralweb" / "world_state.json")
+        if not isinstance(ws, dict):
+            return {}, "world_state.json absent — cannot build macro_weather"
+
+        # ── Core identity ─────────────────────────────────────────────────────
+        asof = snapshot.get("asof")
+        macro_context_id = snapshot.get("macro_context_id")
+        labels = snapshot.get("labels") or {}
+
+        # ── Quads per market (snapshot v1 domain keys: us/china/hk/canada) ────
+        us_labels = labels.get("us") or {}
+        china_labels = labels.get("china") or {}
+        hk_labels = labels.get("hk") or {}
+        canada_labels = labels.get("canada") or {}
+
+        # ── FX block from world_state fx_dollar lobe ──────────────────────────
+        fx_ws = ws.get("fx_dollar") or {}
+        tx_ws = fx_ws.get("transmission") or {}
+        fx_block = {
+            "regime": fx_ws.get("regime"),
+            "usd_trend": (fx_ws.get("dollar_desk") or {}).get("trend"),
+            "headwind_for": (tx_ws.get("headwind_for") or [])[:5],
+            "tailwind_for": (tx_ws.get("tailwind_for") or [])[:5],
+        }
+
+        # ── Rates block from world_state rates_transmission + rates_credit ────
+        rt_ws = ws.get("rates_transmission") or {}
+        rc_ws = ws.get("rates_credit") or {}
+        yc = rt_ws.get("yield_curve") or {}
+        yc_regime = yc.get("regime") or {}
+        yc_recession = yc.get("recession") or {}
+
+        # Transmission headwinds/tailwinds: compact list of asset names
+        hw_assets = [h.get("asset") for h in (rt_ws.get("headwinds") or []) if isinstance(h, dict) and h.get("asset")]
+        tw_assets = [t.get("asset") for t in (rt_ws.get("tailwinds") or []) if isinstance(t, dict) and t.get("asset")]
+
+        rates_block = {
+            "yield_curve_regime": yc_regime.get("key"),
+            "recession_risk": yc_recession.get("risk"),
+            "transmission_headwinds": hw_assets[:5],
+            "transmission_tailwinds": tw_assets[:3],
+        }
+
+        # ── Credit block from rates_credit ────────────────────────────────────
+        credit_block = {
+            "health_label": rc_ws.get("health_label"),
+            "cycle_phase": rc_ws.get("cycle_phase"),
+        }
+
+        # ── Commodity block from commodity_context ────────────────────────────
+        cc_ws = ws.get("commodity_context") or {}
+        commodity_block = {
+            "regime": cc_ws.get("regime"),
+            "favored": cc_ws.get("favored"),
+        }
+
+        # ── Label deltas from macro_deltas ────────────────────────────────────
+        md_ws = ws.get("macro_deltas") or {}
+        deltas_raw = md_ws.get("transitions") or []
+        deltas_14d = deltas_raw[:10]
+
+        # ── Contradiction note from world_state contradictions ────────────────
+        contra_ws = ws.get("contradictions") or {}
+        n_contra = contra_ws.get("n") or 0
+        contradiction_note = f"{n_contra} contradiction pairs active" if n_contra else "no contradictions"
+
+        lobe: dict = {
+            "asof": asof,
+            "macro_context_id": macro_context_id,
+            "us_quad": us_labels.get("us_quad"),
+            "china_quad": china_labels.get("china_quad"),
+            "hk_quad": hk_labels.get("hk_quad"),
+            "canada_quad": canada_labels.get("canada_quad"),
+            "fx": fx_block,
+            "rates": rates_block,
+            "credit": credit_block,
+            "commodity": commodity_block,
+            "deltas_14d": deltas_14d,
+            "contradiction_note": contradiction_note,
+            "display_only": True,
+        }
+
+        return lobe, None
+
+    except Exception as exc:  # noqa: BLE001
+        log.warning("mastermind_context: macro_weather summarizer failed — %s", exc)
+        return {}, f"macro_weather: {exc}"
+
+
 # Registry: ordered list of (lobe_name, summarizer_fn)
 # Each fn signature: (repo: Path) -> (lobe_dict, gap_note | None)
 LOBE_SUMMARIZERS: dict[str, Any] = {
@@ -379,6 +489,7 @@ LOBE_SUMMARIZERS: dict[str, Any] = {
     "bottom_sensors": _summarize_bottom_sensors,
     "options_entry": _summarize_options_entry,
     "cortex": _summarize_cortex,
+    "macro_weather": _summarize_macro_weather,
 }
 
 # Map summarizer lobe names to their primary artifact IDs for manifest patching
@@ -389,6 +500,7 @@ _LOBE_TO_ARTIFACT_IDS: dict[str, list[str]] = {
     "bottom_sensors": ["bottom-sensors-json"],
     "options_entry": ["options-entry-gate"],
     "cortex": ["cortex-memo"],
+    "macro_weather": ["macro-snapshots-latest"],
 }
 
 
@@ -659,6 +771,10 @@ def _build_freshness(lobes: dict, lobe_manifest: list[dict]) -> dict:
         ),
         "cortex": (
             _asof_of(lobes.get("cortex", {}).get("memo")),
+            False,
+        ),
+        "macro_weather": (
+            lobes.get("macro_weather", {}).get("asof"),
             False,
         ),
     }

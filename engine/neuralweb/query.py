@@ -174,6 +174,12 @@ COLUMNS: list[str] = [
     "is_context",   # Catch-all default; True for non-sizing/non-veto/non-alpha rows
     "falsifier",    # Human-facing falsifier text (nullable str); spine-ledger rows only
     "half_life",    # Decay half-life in trading days (nullable float); filled by W2
+    # R5 PR-C — macro context + market routing + own-market quad (additive; None defaults)
+    "macro_context_id",       # sha256[:16] of the day's macro label composite; None pre-ledger
+    "macro_context_asof",     # asof of the macro snapshot that stamped this row; None pre-ledger
+    "market",                 # US | CN | HK | CA | None (derived from ledger+symbol routing)
+    "own_market_quad",        # national market quad for CN/HK/CA rows; None for US / macro
+    "regime_stamp_basis",     # pit_live | recomputed_history | None
 ]
 
 # Conservative defaults for role flag columns in _ensure_columns / load_index.
@@ -185,6 +191,16 @@ _FLAG_DEFAULTS: dict[str, object] = {
     "is_timing":  False,
     "is_context": True,
 }
+
+# R5 PR-C new columns — None defaults (read-time compatibility with existing parquets).
+# These are NOT in _FLAG_DEFAULTS because they are nullable str/None, not bool flags.
+_R5_NEW_COLS: tuple[str, ...] = (
+    "macro_context_id",
+    "macro_context_asof",
+    "market",
+    "own_market_quad",
+    "regime_stamp_basis",
+)
 
 # Valid ledger values — used to name-space signal_id prefixes
 LEDGER_ENUM: tuple[str, ...] = (
@@ -200,6 +216,7 @@ LEDGER_ENUM: tuple[str, ...] = (
     "reflexes",             # Neural Web W6a: per-reflex firings ledgers
     "cortex_attention",     # Neural Web W7b PR2: graded cortex attention claims
     "options_entry",        # Options→NW W-B (RO-5): ungraded-honest options state context
+    "macro_context",        # R5 PR-C: macro snapshot context rows (scope_type='macro')
 )
 
 # ---------------------------------------------------------------------------
@@ -265,12 +282,17 @@ def _ensure_columns(df: pd.DataFrame) -> pd.DataFrame:
     W1: role flag columns default to conservative values (is_context=True, others=False)
     rather than NaN so old rows honour R8's 'is_context=true for pre-W1 rows' requirement.
     falsifier defaults None, half_life defaults NaN.
+    R5: macro_context_id, macro_context_asof, market, own_market_quad, regime_stamp_basis
+    default to None for read-time compatibility with existing parquets.
     """
     for c in COLUMNS:
         if c not in df.columns:
-            # Use conservative default for flag cols; NaN for everything else
-            default = _FLAG_DEFAULTS.get(c, np.nan)
-            df[c] = default
+            if c in _R5_NEW_COLS:
+                df[c] = None
+            else:
+                # Use conservative default for flag cols; NaN for everything else
+                default = _FLAG_DEFAULTS.get(c, np.nan)
+                df[c] = default
     df = df[COLUMNS].copy()
     # Backfill any NaN in flag columns with conservative defaults (handles mixed old/new rows)
     for flag, default_val in _FLAG_DEFAULTS.items():
@@ -1008,6 +1030,7 @@ def build_index(
         ("reflexes",       lambda: adapt_reflexes(root)),            # W6a — reflex firings ledgers
         ("cortex_attention", lambda: adapt_cortex_attention(root)),  # W7b PR2 — graded cortex attention
         ("options_entry",  lambda: adapt_options_entry(root)),       # Options→NW W-B — ungraded-honest context
+        ("macro_context",  lambda: adapt_macro_context(root)),        # R5 PR-C — macro snapshot context rows
     ]
 
     for name, fn in adapters:
@@ -1038,6 +1061,37 @@ def build_index(
         ["ledger", "as_of", "symbol", "horizon"],
         na_position="last",
     ).reset_index(drop=True)
+
+    # R5 PR-C — market routing: derive market for every row from (ledger, symbol).
+    # Vectorised by applying _market_for_row row-wise.  None for non-market ledgers.
+    if "market" in combined.columns:
+        combined["market"] = [
+            _market_for_row(str(r["ledger"]) if r["ledger"] is not None else None,
+                            str(r["symbol"]) if r["symbol"] is not None else None)
+            for _, r in combined[["ledger", "symbol"]].iterrows()
+        ]
+
+    # R5 PR-C — adapter-carried regime stamps are live-registration stamps (qledger
+    # claims stamped at registration via regime_vector; board/track_record rows stamped
+    # during live nightly builds).  Label them pit_live BEFORE the historical helper
+    # runs, so the stamp_basis='pit_live' default filter keeps the genuinely-live
+    # population.  Rows with no stamps keep basis None (nothing to label).
+    if "regime_stamp_basis" in combined.columns:
+        _stamp_cols = [
+            "rate_pressure", "quad_hard_label", "fused_risk_label",
+            "vol_regime", "risk_radar_state",
+        ]
+        _has_stamp = combined[_stamp_cols].notna().any(axis=1)
+        _no_basis = combined["regime_stamp_basis"].isna()
+        combined.loc[_has_stamp & _no_basis, "regime_stamp_basis"] = "pit_live"
+
+    # R5 PR-C — macro context stamp-join: backward merge_asof from macro snapshot ledger.
+    # Stamps macro_context_id + macro_context_asof onto all rows (PIT-correct, fail-open).
+    combined = _stamp_macro_context(combined, root)
+
+    # R5 PR-C — historical quad stamps: fill quad_hard_label + own_market_quad from
+    # per-market regime_history parquets (recomputed_history basis).
+    combined = _stamp_historical_quads(combined, root)
 
     # W2 — stamp family_half_life from half_life.json (family-level constant broadcast).
     # This is a cheap map-merge: reads the artifact once and joins on engine.
@@ -1105,6 +1159,99 @@ def _stamp_family_half_life(df: pd.DataFrame, root: Path | str | None) -> pd.Dat
         log.warning("_stamp_family_half_life: failed (half_life stays NaN): %s", e)
 
     return df
+
+
+def _stamp_macro_context(combined: pd.DataFrame, root: Path | str | None = None) -> pd.DataFrame:
+    """Stamp macro_context_id and macro_context_asof onto all rows from the macro snapshot ledger.
+
+    Backward merge_asof: each spine row gets the macro snapshot from the MOST RECENT
+    snapshot day whose asof <= row's as_of (PIT-correct, no forward-look).
+
+    DTYPE LAW (§0.5 item 9):
+      1. pd.to_datetime both keys
+      2. sort left table by datetime key
+      3. merge_asof(direction='backward')
+      4. restore string as_of
+
+    Source: data/macro_snapshots/latest.json — provides the active snapshot with
+    macro_context_id.  If latest.json absent → gap note, no-op.
+
+    Only stamps rows where macro_context_id is currently None (non-destructive).
+    Sets regime_stamp_basis='pit_live' for rows that receive a stamp.
+    """
+    if combined.empty:
+        return combined
+
+    snap_path = _data_dir(root) / "macro_snapshots" / "ledger.parquet"
+    if not snap_path.exists():
+        log.debug("_stamp_macro_context: ledger.parquet absent — macro_context_id stays None")
+        return combined
+
+    try:
+        snap = pd.read_parquet(snap_path)
+    except Exception as e:  # noqa: BLE001
+        log.warning("_stamp_macro_context: ledger.parquet unreadable (%s) — no-op", e)
+        return combined
+
+    if snap.empty or "asof" not in snap.columns or "macro_context_id" not in snap.columns:
+        log.debug("_stamp_macro_context: ledger.parquet empty or missing columns — no-op")
+        return combined
+
+    # Build per-asof snapshot index: one row per unique asof, most-recent macro_context_id
+    snap_asofs = (
+        snap[["asof", "macro_context_id"]]
+        .dropna(subset=["asof", "macro_context_id"])
+        .drop_duplicates(subset=["asof"], keep="last")
+        .copy()
+    )
+    if snap_asofs.empty:
+        return combined
+
+    # DTYPE LAW
+    snap_asofs["_snap_dt"] = pd.to_datetime(snap_asofs["asof"], errors="coerce")
+    snap_asofs = snap_asofs.dropna(subset=["_snap_dt"]).sort_values("_snap_dt")
+    snap_asofs = snap_asofs.rename(columns={"asof": "_snap_asof"})
+
+    # Only stamp rows where macro_context_id is currently None
+    needs_stamp = combined["macro_context_id"].isna()
+    if not needs_stamp.any():
+        return combined
+
+    work = combined.loc[needs_stamp, ["as_of"]].copy()
+    work["_as_of_dt"] = pd.to_datetime(work["as_of"], errors="coerce")
+    work = work.dropna(subset=["_as_of_dt"]).sort_values("_as_of_dt")
+
+    if work.empty:
+        return combined
+
+    try:
+        merged = pd.merge_asof(
+            work,
+            snap_asofs[["_snap_dt", "_snap_asof", "macro_context_id"]],
+            left_on="_as_of_dt",
+            right_on="_snap_dt",
+            direction="backward",
+        )
+        merged.index = work.index
+
+        # Apply non-null results back
+        stamp_mask = needs_stamp & combined.index.isin(merged.index)
+        ctx_id_vals = merged["macro_context_id"].reindex(combined.index)
+        ctx_asof_vals = merged["_snap_asof"].reindex(combined.index)
+
+        notnull_ctx = ctx_id_vals.notna()
+        combined.loc[stamp_mask & notnull_ctx, "macro_context_id"] = ctx_id_vals[stamp_mask & notnull_ctx]
+        combined.loc[stamp_mask & notnull_ctx, "macro_context_asof"] = ctx_asof_vals[stamp_mask & notnull_ctx]
+        # Set pit_live basis for rows that just received a stamp and don't have a basis yet
+        no_basis = combined["regime_stamp_basis"].isna() | (
+            combined["regime_stamp_basis"].astype(str).isin({"None", "nan", ""})
+        )
+        combined.loc[stamp_mask & notnull_ctx & no_basis, "regime_stamp_basis"] = "pit_live"
+
+    except Exception as e:  # noqa: BLE001
+        log.warning("_stamp_macro_context: merge_asof failed (%s) — no-op", e)
+
+    return combined
 
 
 # ---------------------------------------------------------------------------
@@ -1193,6 +1340,8 @@ def query(
     as_of_before: str | None = None,
     graded_before: str | None = None,
     graded_only: bool = False,
+    macro_context_id: str | None = None,
+    stamp_basis: str | None = None,
     root: Path | str | None = None,
 ) -> pd.DataFrame:
     """Filter the spine index by the given criteria.
@@ -1210,13 +1359,21 @@ def query(
     regime:
         Filter by regime label.  Matches against quad_hard_label OR
         fused_risk_label OR vol_regime OR risk_radar_state (any match
-        qualifies the row).
+        qualifies the row).  Default (None) returns all rows (no filter).
+        Pass ``regime='pit_live'`` to restrict to rows stamped from the
+        current-day macro snapshot (regime_stamp_basis='pit_live').
     horizon:
         Filter by horizon (int, exact).
     symbol:
         Filter by symbol (exact).
     scope_type:
         Filter by scope_type (entity | sector | basket | macro).
+    macro_context_id:
+        R5 — filter by macro_context_id (sha256[:16] of macro label composite).
+        Returns only rows stamped with this specific snapshot id.
+    stamp_basis:
+        R5 — filter by regime_stamp_basis ('pit_live' | 'recomputed_history').
+        Default None returns all rows regardless of basis.
     as_of_before:
         PIT guard — retain rows where as_of < cutoff (ISO date str).
         These rows EXISTED before the cutoff; their outcomes were graded AFTER.
@@ -1306,6 +1463,17 @@ def query(
         except (TypeError, ValueError):
             graded_col = graded_col.map(lambda x: bool(x) if x is not None else False)
         mask &= graded_col
+    if macro_context_id is not None:
+        if "macro_context_id" in df.columns:
+            mask &= df["macro_context_id"].astype(str) == macro_context_id
+        else:
+            # Column absent (pre-R5 index) — filter returns zero rows for safety
+            mask &= pd.Series([False] * len(df), index=df.index)
+    if stamp_basis is not None:
+        if "regime_stamp_basis" in df.columns:
+            mask &= df["regime_stamp_basis"].astype(str) == stamp_basis
+        else:
+            mask &= pd.Series([False] * len(df), index=df.index)
 
     return df[mask].copy().reset_index(drop=True)
 
@@ -1503,6 +1671,315 @@ def adapt_options_entry(
 
     if not rows:
         return _empty_df(), gaps
+    return _ensure_columns(pd.DataFrame(rows)), gaps
+
+
+# ---------------------------------------------------------------------------
+# R5 PR-C helpers: market routing, historical quad stamps, macro adapter
+# ---------------------------------------------------------------------------
+
+def _market_for_row(ledger: str | None, symbol: str | None) -> str | None:
+    """Derive market routing from (ledger, symbol).
+
+    Routing rules (§6.3):
+      board_hk                    → HK
+      board_ca                    → CA
+      board_cn                    → CN
+      track_record, spine,
+        options_entry              → US  (track_record verified all-US by census)
+      qledger                     → by symbol suffix:
+                                     .SS / .SZ → CN; .HK → HK; else → US
+      macro_context               → None  (not market-specific)
+      reflexes, cortex_attention,
+        cycles_*                  → None  (no market-specific routing)
+      None / other                → None
+    """
+    ledger = _safe_str(ledger) or ""
+    symbol = _safe_str(symbol) or ""
+
+    if ledger in ("board_hk",):
+        return "HK"
+    if ledger in ("board_ca",):
+        return "CA"
+    if ledger in ("board_cn",):
+        return "CN"
+    if ledger in ("track_record", "spine", "options_entry"):
+        return "US"
+    if ledger == "qledger":
+        sym_upper = symbol.upper()
+        if sym_upper.endswith(".SS") or sym_upper.endswith(".SZ"):
+            return "CN"
+        if sym_upper.endswith(".HK"):
+            return "HK"
+        return "US"
+    # macro_context, reflexes, cortex_attention, cycles_*, etc. → None
+    return None
+
+
+def _stamp_historical_quads(df: pd.DataFrame, root: Path | None = None) -> pd.DataFrame:
+    """Fill quad_hard_label and own_market_quad from per-market regime_history parquets.
+
+    Deterministic, build-time, inside build_index. §6.3.3.
+
+    quad_hard_label: US quads only — fills where null from data/regime/regime_history.parquet
+    (US history, 1971→). US quads stay US-primary EVERYWHERE (query.py:159 invariant).
+    regime_stamp_basis set to 'recomputed_history' for these rows.
+
+    own_market_quad: fills for market ∈ {CN, HK, CA} from matching history parquet:
+      CN → data/china_regime/regime_history.parquet
+      HK → data/hk_regime/regime_history.parquet
+      CA → data/canada_regime/regime_history.parquet
+
+    DTYPE LAW (§0.5 item 9): reset_index() on DatetimeIndex parquets, convert both keys
+    with pd.to_datetime, sort, merge_asof(direction='backward'), restore string as_of.
+
+    Rows outside a parquet's range stay null (no imputation).
+    """
+    if df.empty:
+        return df
+
+    data = _data_dir(root)
+
+    def _merge_history(
+        target_df: pd.DataFrame,
+        history_path: Path,
+        quad_col: str,
+        dest_col: str,
+    ) -> pd.DataFrame:
+        """Merge regime_history onto target_df by backward merge_asof on as_of."""
+        if not history_path.exists():
+            return target_df
+        try:
+            hist = pd.read_parquet(history_path)
+        except Exception as e:  # noqa: BLE001
+            log.warning("_stamp_historical_quads: cannot read %s (%s)", history_path, e)
+            return target_df
+
+        if hist.empty:
+            return target_df
+
+        # Reset DatetimeIndex → plain column. An unnamed DatetimeIndex resets to a
+        # column literally called "index" — name it first so the date-column
+        # resolution below finds it (all four regime_history parquets are unnamed).
+        if isinstance(hist.index, pd.DatetimeIndex):
+            if hist.index.name is None:
+                hist.index.name = "date"
+            hist = hist.reset_index()
+
+        # Resolve the date column name
+        date_col = None
+        for cand in ("date", "as_of", "asof"):
+            if cand in hist.columns:
+                date_col = cand
+                break
+        if date_col is None:
+            log.warning("_stamp_historical_quads: no date column in %s", history_path)
+            return target_df
+
+        if quad_col not in hist.columns:
+            # Try common alternatives
+            for alt in ("quad", "hard_label", "quad_hard_label"):
+                if alt in hist.columns:
+                    quad_col = alt
+                    break
+            else:
+                log.warning(
+                    "_stamp_historical_quads: column %r absent in %s", quad_col, history_path
+                )
+                return target_df
+
+        # DTYPE LAW: convert both keys to datetime, sort, merge_asof, restore string
+        try:
+            hist_sorted = hist[[date_col, quad_col]].copy()
+            hist_sorted[date_col] = pd.to_datetime(hist_sorted[date_col], errors="coerce")
+            hist_sorted = hist_sorted.dropna(subset=[date_col]).sort_values(date_col)
+            hist_sorted = hist_sorted.rename(columns={date_col: "_hist_dt", quad_col: "_hist_quad"})
+
+            # Need a mask of rows to update
+            needs_update = target_df[dest_col].isna()
+            if not needs_update.any():
+                return target_df
+
+            work = target_df.loc[needs_update, ["as_of"]].copy()
+            work["_as_of_dt"] = pd.to_datetime(work["as_of"], errors="coerce")
+            work = work.dropna(subset=["_as_of_dt"]).sort_values("_as_of_dt")
+
+            if work.empty:
+                return target_df
+
+            merged = pd.merge_asof(
+                work,
+                hist_sorted,
+                left_on="_as_of_dt",
+                right_on="_hist_dt",
+                direction="backward",
+            )
+
+            # Restore original index
+            merged.index = work.index
+            # Apply to target_df
+            update_mask = needs_update & target_df.index.isin(merged.index)
+            quad_values = merged["_hist_quad"].reindex(target_df.index)
+            target_df.loc[update_mask, dest_col] = quad_values[update_mask]
+
+            # Set basis for rows that got filled
+            filled_mask = update_mask & target_df[dest_col].notna()
+            target_df.loc[filled_mask, "regime_stamp_basis"] = "recomputed_history"
+
+        except Exception as e:  # noqa: BLE001
+            log.warning("_stamp_historical_quads: merge failed for %s (%s)", history_path, e)
+
+        return target_df
+
+    # 1. Fill quad_hard_label for ALL rows with null quad_hard_label
+    #    from US history parquet (US quads are US-primary on every lane)
+    us_hist_path = data / "regime" / "regime_history.parquet"
+    df = _merge_history(df, us_hist_path, "quad", "quad_hard_label")
+
+    def _apply_subset(
+        target_df: pd.DataFrame,
+        market_val: str,
+        hist_path: Path,
+        quad_col: str,
+        dest_col: str,
+    ) -> pd.DataFrame:
+        """Apply _merge_history on the subset matching market_val, write results back."""
+        market_mask = target_df["market"] == market_val
+        if not market_mask.any():
+            return target_df
+        subset = target_df[market_mask].copy()
+        subset = _merge_history(subset, hist_path, quad_col, dest_col)
+        # Write own_market_quad back using reindex to keep index alignment
+        target_df.loc[market_mask, dest_col] = subset[dest_col].reindex(
+            target_df.loc[market_mask].index
+        )
+        # Write regime_stamp_basis back for rows that got filled
+        basis_vals = subset["regime_stamp_basis"].reindex(target_df.loc[market_mask].index)
+        filled = basis_vals.notna()
+        target_df.loc[target_df.index[market_mask][filled], "regime_stamp_basis"] = (
+            basis_vals[filled].values
+        )
+        return target_df
+
+    # 2. Fill own_market_quad for CN rows
+    cn_hist_path = data / "china_regime" / "regime_history.parquet"
+    df = _apply_subset(df, "CN", cn_hist_path, "quad", "own_market_quad")
+
+    # 3. Fill own_market_quad for HK rows
+    hk_hist_path = data / "hk_regime" / "regime_history.parquet"
+    df = _apply_subset(df, "HK", hk_hist_path, "quad", "own_market_quad")
+
+    # 4. Fill own_market_quad for CA rows
+    ca_hist_path = data / "canada_regime" / "regime_history.parquet"
+    df = _apply_subset(df, "CA", ca_hist_path, "quad", "own_market_quad")
+
+    return df
+
+
+def adapt_macro_context(
+    root: Path | None = None,
+) -> tuple[pd.DataFrame, list[str]]:
+    """Adapt data/macro_snapshots/ledger.parquet → ledger='macro_context'.
+
+    ADAPTER PATTERN: follows adapt_options_entry (ungraded-honest context rows).
+    One row per (asof, domain) from ledger.parquet.
+
+    signal_id: 'macro_context:{asof}:{domain}'
+    ledger: 'macro_context'
+    engine: 'macro_context'
+    scope_type: 'macro'  (pre-declared vocabulary at query.py COLUMNS, first population)
+    direction: 0  (context rows)
+    is_context: True
+    horizon: 0  (context, no trading-day horizon)
+    regime_stamp_basis: 'pit_live'
+    market: None  (not market-specific)
+
+    us_* regime stamps are injected from the day's labels where present.
+
+    Fail-open: absent/unreadable ledger.parquet → gap note + zero rows.
+    """
+    gaps: list[str] = []
+
+    ledger_path = _data_dir(root) / "macro_snapshots" / "ledger.parquet"
+    if not ledger_path.exists():
+        gaps.append("macro_context: data/macro_snapshots/ledger.parquet absent — zero rows")
+        return _empty_df(), gaps
+
+    try:
+        ledger_df = pd.read_parquet(ledger_path)
+    except Exception as e:  # noqa: BLE001
+        gaps.append(f"macro_context: ledger.parquet unreadable ({e}) — zero rows")
+        return _empty_df(), gaps
+
+    if ledger_df.empty:
+        gaps.append("macro_context: ledger.parquet empty — zero rows")
+        return _empty_df(), gaps
+
+    # Group by (asof, domain) — emit one row per group
+    # Pivot field→value within each (asof, domain) pair to build a mini dict
+    # Then extract us_* stamps from the 'us' domain for regime stamp injection.
+
+    # First build a lookup: asof → {domain → {field: value}}
+    asof_domain_map: dict[str, dict[str, dict[str, Any]]] = {}
+    for _, r in ledger_df.iterrows():
+        asof = _str_date(r.get("asof")) or ""
+        domain = _safe_str(r.get("domain")) or ""
+        field = _safe_str(r.get("field")) or ""
+        value = _safe_str(r.get("value"))
+        macro_context_id = _safe_str(r.get("macro_context_id"))
+        if not asof or not domain:
+            continue
+        asof_domain_map.setdefault(asof, {}).setdefault(domain, {})[field] = value
+        # Attach macro_context_id to the asof level
+        if "macro_context_id" not in asof_domain_map[asof]:
+            asof_domain_map[asof]["macro_context_id"] = macro_context_id
+
+    rows: list[dict] = []
+    for asof, domain_map in asof_domain_map.items():
+        ctx_id = domain_map.pop("macro_context_id", None)
+        # us stamps for regime injection
+        us_fields = domain_map.get("us") or {}
+
+        for domain, field_vals in domain_map.items():
+            sig = f"macro_context:{asof}:{domain}"
+            row: dict[str, Any] = {c: None for c in COLUMNS}
+            row["signal_id"]         = sig
+            row["engine"]            = "macro_context"
+            row["family"]            = domain
+            row["ledger"]            = "macro_context"
+            row["as_of"]             = asof
+            row["symbol"]            = domain
+            row["scope_type"]        = "macro"
+            row["universe"]          = "macro_context"
+            row["horizon"]           = 0
+            row["direction"]         = 0
+            row["size_binding"]      = False
+            row["fill_basis"]        = "macro_snapshot"
+            row["score"]             = None
+            row["outcome_excess"]    = None
+            row["outcome_graded"]    = False
+            row["graded_at"]         = None
+            row["is_context"]        = True
+            row["macro_context_id"]  = ctx_id
+            row["macro_context_asof"] = asof
+            row["market"]            = None
+            row["own_market_quad"]   = None
+            row["regime_stamp_basis"] = "pit_live"
+
+            # Inject us_* regime stamps from the day's 'us' domain labels
+            row["quad_hard_label"]  = us_fields.get("us_quad")
+            row["fused_risk_label"] = us_fields.get("us_fused_risk")
+            row["vol_regime"]       = us_fields.get("us_vol_regime")
+            row["risk_radar_state"] = us_fields.get("us_risk_radar")
+            row["rate_pressure"]    = us_fields.get("us_rate_pressure")
+
+            rows.append(row)
+
+    if not rows:
+        gaps.append("macro_context: no (asof, domain) pairs found — zero rows")
+        return _empty_df(), gaps
+
+    gaps.append(f"macro_context: {len(rows)} context rows emitted (ungraded-honest)")
     return _ensure_columns(pd.DataFrame(rows)), gaps
 
 

@@ -32,6 +32,16 @@ DESIGN (adjudicated W1 PR1)
 * factor_weather — factor panel lobe (§5.4 + RULING-B); data loaded inside
                    _compose_factor_weather, wired as one line in build_world_state.
 
+R5 macro lobes (PR-B — display_only=True; all fail-open):
+* rates_transmission — data/transmission/latest.json
+* fx_dollar          — data/forex/latest.json
+* rates_credit       — data/bonds/bond_health.json
+* global_regimes     — data/{china,hk,canada}_regime/latest.json + regime block
+* commodity_context  — data/commodity/latest.json
+* intelligence       — site/intelligence/briefing.json
+* macro_deltas       — data/macro_snapshots/transitions.jsonl (may be absent; gap OK)
+factor_weather is enriched in place with rotation block from factor_series.json.
+
 BORDER LAW (§9)
 ---------------
 Neural Web owns rails, memory, governance, and synthesis; domain programs own
@@ -56,6 +66,9 @@ import math
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+
+from engine.neuralweb._law import display_only as _display_only
+from engine.neuralweb._dates import to_iso as _to_iso
 
 log = logging.getLogger(__name__)
 
@@ -771,6 +784,482 @@ def _compose_factor_weather(
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# R5 macro-context lobes (PR-B, §5.3)
+# All composers follow the _compose_factor_weather discipline:
+#   • all data loading is internal
+#   • _clean() on every value
+#   • display_only=True always (via _display_only)
+#   • try/except at the wiring site returns a null-shaped fallback + gap
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _compose_rates_transmission(root: "Path | str | None" = None) -> dict:
+    """Compose rates_transmission lobe from data/transmission/latest.json.
+
+    Field list per §5.3 lobe 1 (census-verified).
+    """
+    repo = _repo_root(root)
+    path = repo / "data" / "transmission" / "latest.json"
+
+    null_out: dict = {
+        "asof": None,
+        "scored_status": None,
+        "calibrated": None,
+        "state": None,
+        "headwinds": None,
+        "tailwinds": None,
+        "yield_curve": None,
+        "yield_curve_source": "transmission",
+        "display_only": True,
+    }
+
+    raw = _read_json(path)
+    if raw is None:
+        return null_out
+
+    try:
+        # Headwinds / tailwinds: compact [{asset, verdict, net}]
+        def _hw_tw(lst: list) -> list:
+            out = []
+            for item in (lst or []):
+                if not isinstance(item, dict):
+                    continue
+                out.append({
+                    "asset": _clean(item.get("asset")),
+                    "verdict": _clean(item.get("verdict")),
+                    "net": _clean(item.get("net")),
+                })
+            return out
+
+        # yield_curve subset
+        yc_raw = raw.get("yield_curve") or {}
+        regime_raw = yc_raw.get("regime") or {}
+        recession_raw = yc_raw.get("recession") or {}
+        shape_raw = yc_raw.get("shape") or {}
+
+        yc = {
+            "regime": {
+                "key": _clean(regime_raw.get("key")),
+                "label": _clean(regime_raw.get("label")),
+            },
+            "recession": {
+                "risk": _clean(recession_raw.get("risk")),
+                "ntfs": _clean(recession_raw.get("ntfs")),
+            },
+            "shape": {
+                "slope_2s10s": _clean(shape_raw.get("slope_2s10s")),
+            },
+        }
+
+        return _display_only({
+            "asof": _clean(raw.get("asof")),
+            "scored_status": _clean(raw.get("scored_status")),
+            "calibrated": _clean(raw.get("calibrated")),
+            "state": raw.get("state"),
+            "headwinds": _hw_tw(raw.get("headwinds") or []),
+            "tailwinds": _hw_tw(raw.get("tailwinds") or []),
+            "yield_curve": yc,
+            "yield_curve_source": "transmission",
+        })
+    except Exception as exc:  # noqa: BLE001
+        log.warning("rates_transmission: compose failed — %s", exc)
+        return null_out
+
+
+def _compose_fx_dollar(root: "Path | str | None" = None) -> dict:
+    """Compose fx_dollar lobe from data/forex/latest.json.
+
+    Field list per §5.3 lobe 2 (census-verified).
+    Uses _to_iso() to normalise the "Jul 02, 2026" display-string date.
+    """
+    repo = _repo_root(root)
+    path = repo / "data" / "forex" / "latest.json"
+
+    null_out: dict = {
+        "asof": None,
+        "regime": None,
+        "risk": None,
+        "favored": None,
+        "dollar_desk": None,
+        "transmission": None,
+        "regime_radar": None,
+        "display_only": True,
+    }
+
+    raw = _read_json(path)
+    if raw is None:
+        return null_out
+
+    try:
+        dd_raw = raw.get("dollar_desk") or {}
+        tx_raw = raw.get("transmission") or {}
+        rr_raw = raw.get("regime_radar") or {}
+
+        dollar_desk = {
+            "lean": _clean(dd_raw.get("lean")),
+            "real_rate_regime": _clean(dd_raw.get("real_rate_regime")),
+            "usd_valuation": _clean(dd_raw.get("usd_valuation")),
+            "trend": _clean(dd_raw.get("trend")),
+            "fed_path_lean": _clean(dd_raw.get("fed_path_lean")),
+            "liquidity_dir": _clean(dd_raw.get("liquidity_dir")),
+        }
+
+        transmission = {
+            "usd_dir": _clean(tx_raw.get("usd_dir")),
+            "headwind_for": tx_raw.get("headwind_for"),
+            "tailwind_for": tx_raw.get("tailwind_for"),
+            "unstable": _clean(tx_raw.get("unstable")),
+        }
+
+        regime_radar = {
+            "dominant": _clean(rr_raw.get("dominant")),
+            "active": rr_raw.get("active"),
+        }
+
+        # Prefer ISO asof; fall back to display-string date normalisation
+        asof = _to_iso(raw.get("asof") or raw.get("date"))
+
+        return _display_only({
+            "asof": asof,
+            "regime": _clean(raw.get("regime")),
+            "risk": _clean(raw.get("risk")),
+            "favored": raw.get("favored"),
+            "dollar_desk": dollar_desk,
+            "transmission": transmission,
+            "regime_radar": regime_radar,
+        })
+    except Exception as exc:  # noqa: BLE001
+        log.warning("fx_dollar: compose failed — %s", exc)
+        return null_out
+
+
+def _compose_rates_credit(root: "Path | str | None" = None) -> dict:
+    """Compose rates_credit lobe from data/bonds/bond_health.json.
+
+    Field list per §5.3 lobe 3 (census-verified).
+    """
+    repo = _repo_root(root)
+    path = repo / "data" / "bonds" / "bond_health.json"
+
+    null_out: dict = {
+        "as_of": None,
+        "health_score": None,
+        "health_label": None,
+        "cycle_phase": None,
+        "recession_risk": None,
+        "drawdown_risk": None,
+        "alarms": None,
+        "verdict_en": None,
+        "fed_path": None,
+        "bond_compass": None,
+        "bond_cross_asset": None,
+        "drivers_for": None,
+        "display_only": True,
+    }
+
+    raw = _read_json(path)
+    if raw is None:
+        return null_out
+
+    try:
+        fp_raw = raw.get("fed_path") or {}
+        bc_raw = raw.get("bond_compass") or {}
+        bca_raw = raw.get("bond_cross_asset") or {}
+
+        fed_path = {
+            "policy_rate": _clean(fp_raw.get("policy_rate")),
+            "implied_bp_12m": _clean(fp_raw.get("implied_bp_12m")),
+            "implied_cuts_12m": _clean(fp_raw.get("implied_cuts_12m")),
+        }
+
+        bond_compass = {
+            "duration": _clean(bc_raw.get("duration")),
+            "curve_trade": _clean(bc_raw.get("curve_trade")),
+        }
+
+        bond_cross_asset = {
+            "verdict_en": _clean(bca_raw.get("verdict_en")),
+        }
+
+        return _display_only({
+            "as_of": _clean(raw.get("as_of")),
+            "health_score": _clean(raw.get("health_score")),
+            "health_label": _clean(raw.get("health_label")),
+            "cycle_phase": _clean(raw.get("cycle_phase")),
+            "recession_risk": _clean(raw.get("recession_risk")),
+            "drawdown_risk": _clean(raw.get("drawdown_risk")),
+            "alarms": raw.get("alarms"),
+            "verdict_en": _clean(raw.get("verdict_en")),
+            "fed_path": fed_path,
+            "bond_compass": bond_compass,
+            "bond_cross_asset": bond_cross_asset,
+            "drivers_for": raw.get("drivers_for"),
+        })
+    except Exception as exc:  # noqa: BLE001
+        log.warning("rates_credit: compose failed — %s", exc)
+        return null_out
+
+
+def _compose_global_regimes(
+    root: "Path | str | None" = None,
+    regime_block: "dict | None" = None,
+) -> dict:
+    """Compose global_regimes lobe from three regional latest.json files + US regime.
+
+    Field list per §5.3 lobe 4 (census-verified).
+    regime_block is the already-composed US regime dict passed from build_world_state
+    to avoid re-reading the same file.
+    """
+    repo = _repo_root(root)
+
+    null_out: dict = {
+        "us": None,
+        "china": None,
+        "hk": None,
+        "canada": None,
+        "dispersion_note": None,
+        "display_only": True,
+    }
+
+    try:
+        def _read_regional(p: Path, market: str) -> dict | None:
+            raw = _read_json(p)
+            if raw is None:
+                return None
+            row: dict = {
+                "market": market,
+                "date": _to_iso(raw.get("date") or raw.get("asof")),
+                "quad": _clean(raw.get("quad")),
+                "quad_name": _clean(raw.get("quad_name")),
+                "cycle_tag": _clean(raw.get("cycle_tag")),
+                "liquidity_overlay": _clean(raw.get("liquidity_overlay")),
+                "pending_quad": _clean(raw.get("pending_quad")),
+                "confidence": _clean(raw.get("confidence")),
+                "stale": False,
+            }
+            if market == "hk":
+                row["risk_state"] = _clean(raw.get("risk_state"))
+                row["peg_state"] = _clean(raw.get("peg_state"))
+            return row
+
+        china = _read_regional(repo / "data" / "china_regime" / "latest.json", "china")
+        hk = _read_regional(repo / "data" / "hk_regime" / "latest.json", "hk")
+        canada = _read_regional(repo / "data" / "canada_regime" / "latest.json", "canada")
+
+        # US quad from already-composed regime_block (avoid double read)
+        us: dict | None = None
+        if isinstance(regime_block, dict):
+            us = {
+                "market": "us",
+                "date": _to_iso(regime_block.get("asof")),
+                "quad": _clean(regime_block.get("quad")),
+                "quad_name": _clean(regime_block.get("quad_name")),
+                "cycle_tag": _clean(regime_block.get("cycle_tag")),
+                "liquidity_overlay": _clean(regime_block.get("liquidity_overlay")),
+                "confidence": _clean(regime_block.get("confidence")),
+                "pending_quad": None,
+                "stale": False,
+            }
+
+        # Dispersion: count of distinct non-None quads
+        quads = [
+            (us or {}).get("quad"),
+            (china or {}).get("quad"),
+            (hk or {}).get("quad"),
+            (canada or {}).get("quad"),
+        ]
+        distinct_quads = len({q for q in quads if q is not None})
+        dispersion_note = (
+            f"{distinct_quads} distinct quads across US/China/HK/Canada"
+        )
+
+        return _display_only({
+            "us": us,
+            "china": china,
+            "hk": hk,
+            "canada": canada,
+            "dispersion_note": dispersion_note,
+        })
+    except Exception as exc:  # noqa: BLE001
+        log.warning("global_regimes: compose failed — %s", exc)
+        return null_out
+
+
+def _compose_commodity_context(root: "Path | str | None" = None) -> dict:
+    """Compose commodity_context lobe from data/commodity/latest.json.
+
+    Field list per §5.3 lobe 5 (census-verified).
+    """
+    repo = _repo_root(root)
+    path = repo / "data" / "commodity" / "latest.json"
+
+    null_out: dict = {
+        "asof": None,
+        "regime": None,
+        "favored": None,
+        "assets": None,
+        "display_only": True,
+    }
+
+    raw = _read_json(path)
+    if raw is None:
+        return null_out
+
+    try:
+        # assets: dict or list — normalise to list[{label, trend, action, conviction}]
+        assets_raw = raw.get("assets")
+        assets_out: list = []
+        if isinstance(assets_raw, dict):
+            for name, val in assets_raw.items():
+                if not isinstance(val, dict):
+                    continue
+                assets_out.append({
+                    "label": _clean(val.get("label") or name),
+                    "trend": _clean(val.get("trend")),
+                    "action": _clean(val.get("action")),
+                    "conviction": _clean(val.get("conviction")),
+                })
+        elif isinstance(assets_raw, list):
+            for item in assets_raw:
+                if not isinstance(item, dict):
+                    continue
+                assets_out.append({
+                    "label": _clean(item.get("label")),
+                    "trend": _clean(item.get("trend")),
+                    "action": _clean(item.get("action")),
+                    "conviction": _clean(item.get("conviction")),
+                })
+
+        asof = _to_iso(raw.get("asof") or raw.get("date"))
+
+        return _display_only({
+            "asof": asof,
+            "regime": _clean(raw.get("regime")),
+            "favored": raw.get("favored"),
+            "assets": assets_out if assets_out else None,
+        })
+    except Exception as exc:  # noqa: BLE001
+        log.warning("commodity_context: compose failed — %s", exc)
+        return null_out
+
+
+def _compose_intelligence(root: "Path | str | None" = None) -> dict:
+    """Compose intelligence lobe from site/intelligence/briefing.json.
+
+    Field list per §5.3 lobe 6 (census-verified).
+    """
+    repo = _repo_root(root)
+    path = repo / "site" / "intelligence" / "briefing.json"
+
+    null_out: dict = {
+        "as_of": None,
+        "n_universe": None,
+        "n_priority": None,
+        "n_actionable": None,
+        "n_divergences": None,
+        "macro_context": None,
+        "top_actionable": None,
+        "display_only": True,
+    }
+
+    raw = _read_json(path)
+    if raw is None:
+        return null_out
+
+    try:
+        mc_raw = raw.get("macro_context") or {}
+        macro_ctx = {
+            "regime": _clean(mc_raw.get("regime")),
+            "posture": _clean(mc_raw.get("posture")),
+            "fed_stance": _clean(mc_raw.get("fed_stance")),
+        }
+
+        pq = raw.get("priority_queue") or []
+        top_actionable = []
+        for item in pq[:5]:
+            if not isinstance(item, dict):
+                continue
+            top_actionable.append({
+                "ticker": _clean(item.get("ticker")),
+                "priority": _clean(item.get("priority")),
+                "lean": _clean(item.get("lean")),
+                "read": _clean(item.get("read")),
+            })
+
+        return _display_only({
+            "as_of": _clean(raw.get("as_of")),
+            "n_universe": _clean(raw.get("n_universe")),
+            "n_priority": _clean(raw.get("n_priority")),
+            "n_actionable": _clean(raw.get("n_actionable")),
+            "n_divergences": _clean(raw.get("n_divergences")),
+            "macro_context": macro_ctx,
+            "top_actionable": top_actionable,
+        })
+    except Exception as exc:  # noqa: BLE001
+        log.warning("intelligence: compose failed — %s", exc)
+        return null_out
+
+
+def _compose_macro_deltas(root: "Path | str | None" = None) -> dict:
+    """Compose macro_deltas lobe from data/macro_snapshots/transitions.jsonl.
+
+    Returns a gap when the file is absent (build-order independence — the file
+    is created by PR-C's build_macro_snapshot; during W1/PR-B it will not exist).
+
+    Field list per §5.3 lobe 7 (census-verified).
+    """
+    repo = _repo_root(root)
+    path = repo / "data" / "macro_snapshots" / "transitions.jsonl"
+
+    null_out: dict = {
+        "transitions": None,
+        "n_transitions_14d": None,
+        "display_only": True,
+    }
+
+    if not path.exists():
+        # Deliberate gap — file created by PR-C; absence is expected
+        return null_out
+
+    try:
+        from datetime import timedelta  # noqa: PLC0415
+
+        cutoff = (datetime.now(timezone.utc) - timedelta(days=14)).strftime("%Y-%m-%d")
+
+        transitions: list[dict] = []
+        with path.open(encoding="utf-8") as fh:
+            for line in fh:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    rec = json.loads(line)
+                except Exception:  # noqa: BLE001
+                    continue
+                if not isinstance(rec, dict):
+                    continue
+                asof = rec.get("asof") or rec.get("date") or ""
+                if asof >= cutoff:
+                    transitions.append({
+                        "asof": _clean(asof),
+                        "domain": _clean(rec.get("domain")),
+                        "field": _clean(rec.get("field")),
+                        "from": _clean(rec.get("from")),
+                        "to": _clean(rec.get("to")),
+                    })
+
+        # Cap at 20 most-recent entries (already ordered by file append order)
+        transitions = transitions[-20:]
+
+        return _display_only({
+            "transitions": transitions,
+            "n_transitions_14d": len(transitions),
+        })
+    except Exception as exc:  # noqa: BLE001
+        log.warning("macro_deltas: compose failed — %s", exc)
+        return null_out
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Public API
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -913,6 +1402,127 @@ def build_world_state(
             "note": "lobe failed — null fallback", "display_only": True,
         }
 
+    # ── 6c. R5 macro-context lobes (PR-B §5.3) ───────────────────────────────
+    # Each lobe is try/except-wrapped at the wiring site; failures produce a
+    # null-shaped fallback + gap entry per the _compose_factor_weather pattern.
+
+    # rates_transmission
+    _tx_path = data_dir / "transmission" / "latest.json"
+    try:
+        rates_transmission_block: dict = _compose_rates_transmission(root=repo)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("world_state: rates_transmission lobe failed — %s", exc)
+        gaps.append(f"rates_transmission: {exc}")
+        rates_transmission_block = {"asof": None, "scored_status": None, "calibrated": None,
+                                    "state": None, "headwinds": None, "tailwinds": None,
+                                    "yield_curve": None, "yield_curve_source": "transmission",
+                                    "display_only": True}
+    sources[str(_tx_path.relative_to(repo))] = (rates_transmission_block or {}).get("asof")
+    if rates_transmission_block.get("asof") is None and _tx_path.exists():
+        pass  # file present but asof absent — not a gap at the lobe level
+    elif not _tx_path.exists():
+        gaps.append("data/transmission/latest.json: missing or unreadable")
+
+    # fx_dollar
+    _fx_path = data_dir / "forex" / "latest.json"
+    try:
+        fx_dollar_block: dict = _compose_fx_dollar(root=repo)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("world_state: fx_dollar lobe failed — %s", exc)
+        gaps.append(f"fx_dollar: {exc}")
+        fx_dollar_block = {"asof": None, "regime": None, "risk": None, "favored": None,
+                           "dollar_desk": None, "transmission": None, "regime_radar": None,
+                           "display_only": True}
+    sources[str(_fx_path.relative_to(repo))] = (fx_dollar_block or {}).get("asof")
+    if not _fx_path.exists():
+        gaps.append("data/forex/latest.json: missing or unreadable")
+
+    # rates_credit
+    _bonds_path = data_dir / "bonds" / "bond_health.json"
+    try:
+        rates_credit_block: dict = _compose_rates_credit(root=repo)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("world_state: rates_credit lobe failed — %s", exc)
+        gaps.append(f"rates_credit: {exc}")
+        rates_credit_block = {"as_of": None, "health_score": None, "health_label": None,
+                              "cycle_phase": None, "recession_risk": None, "drawdown_risk": None,
+                              "alarms": None, "verdict_en": None, "fed_path": None,
+                              "bond_compass": None, "bond_cross_asset": None, "drivers_for": None,
+                              "display_only": True}
+    sources[str(_bonds_path.relative_to(repo))] = (rates_credit_block or {}).get("as_of")
+    if not _bonds_path.exists():
+        gaps.append("data/bonds/bond_health.json: missing or unreadable")
+
+    # global_regimes — pass already-composed regime_block to avoid double read
+    _china_path = data_dir / "china_regime" / "latest.json"
+    _hk_path = data_dir / "hk_regime" / "latest.json"
+    _canada_path = data_dir / "canada_regime" / "latest.json"
+    try:
+        global_regimes_block: dict = _compose_global_regimes(
+            root=repo, regime_block=regime_block
+        )
+    except Exception as exc:  # noqa: BLE001
+        log.warning("world_state: global_regimes lobe failed — %s", exc)
+        gaps.append(f"global_regimes: {exc}")
+        global_regimes_block = {"us": None, "china": None, "hk": None, "canada": None,
+                                "dispersion_note": None, "display_only": True}
+    gr = global_regimes_block or {}
+    sources[str(_china_path.relative_to(repo))] = (
+        (gr.get("china") or {}).get("date") if isinstance(gr.get("china"), dict) else None
+    )
+    sources[str(_hk_path.relative_to(repo))] = (
+        (gr.get("hk") or {}).get("date") if isinstance(gr.get("hk"), dict) else None
+    )
+    sources[str(_canada_path.relative_to(repo))] = (
+        (gr.get("canada") or {}).get("date") if isinstance(gr.get("canada"), dict) else None
+    )
+    for _rp, _label in [
+        (_china_path, "data/china_regime/latest.json"),
+        (_hk_path, "data/hk_regime/latest.json"),
+        (_canada_path, "data/canada_regime/latest.json"),
+    ]:
+        if not _rp.exists():
+            gaps.append(f"{_label}: missing or unreadable")
+
+    # commodity_context
+    _commodity_path = data_dir / "commodity" / "latest.json"
+    try:
+        commodity_context_block: dict = _compose_commodity_context(root=repo)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("world_state: commodity_context lobe failed — %s", exc)
+        gaps.append(f"commodity_context: {exc}")
+        commodity_context_block = {"asof": None, "regime": None, "favored": None,
+                                   "assets": None, "display_only": True}
+    sources[str(_commodity_path.relative_to(repo))] = (commodity_context_block or {}).get("asof")
+    if not _commodity_path.exists():
+        gaps.append("data/commodity/latest.json: missing or unreadable")
+
+    # intelligence
+    _briefing_path = site_dir / "intelligence" / "briefing.json"
+    try:
+        intelligence_block: dict = _compose_intelligence(root=repo)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("world_state: intelligence lobe failed — %s", exc)
+        gaps.append(f"intelligence: {exc}")
+        intelligence_block = {"as_of": None, "n_universe": None, "n_priority": None,
+                              "n_actionable": None, "n_divergences": None,
+                              "macro_context": None, "top_actionable": None, "display_only": True}
+    sources[str(_briefing_path.relative_to(repo))] = (intelligence_block or {}).get("as_of")
+    if not _briefing_path.exists():
+        gaps.append("site/intelligence/briefing.json: missing or unreadable")
+
+    # macro_deltas
+    _transitions_path = data_dir / "macro_snapshots" / "transitions.jsonl"
+    try:
+        macro_deltas_block: dict = _compose_macro_deltas(root=repo)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("world_state: macro_deltas lobe failed — %s", exc)
+        gaps.append(f"macro_deltas: {exc}")
+        macro_deltas_block = {"transitions": None, "n_transitions_14d": None, "display_only": True}
+    # transitions.jsonl absence is an expected gap (PR-C creates this file)
+    if not _transitions_path.exists():
+        gaps.append("data/macro_snapshots/transitions.jsonl: absent (PR-C)")
+
     # ── 7. Contradictions summary (W4) ───────────────────────────────────────
     contradictions_block: dict | None = None
     try:
@@ -957,6 +1567,14 @@ def build_world_state(
         "alerts": alerts_block,
         "factor_weather": factor_weather_block,  # §5.4 wiring line (RULING-B)
         "options_weather": options_weather_block,  # Options→NW W-B wiring line (RO-1)
+        # R5 macro-context lobes (PR-B §5.3) — display_only=True on each
+        "rates_transmission": rates_transmission_block,
+        "fx_dollar": fx_dollar_block,
+        "rates_credit": rates_credit_block,
+        "global_regimes": global_regimes_block,
+        "commodity_context": commodity_context_block,
+        "intelligence": intelligence_block,
+        "macro_deltas": macro_deltas_block,
         "qi": None,
         "qi_note": (
             "pending joint QI border ruling (masterplan W1) — "

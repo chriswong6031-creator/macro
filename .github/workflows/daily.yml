@@ -400,6 +400,18 @@ jobs:
           # Reads only committed data; returns 0 on error.
           run_py "thematic foresight desk (build_foresight)" scripts.build_foresight
           exit 0
+      - name: backfill regime stamps (nw-macro-rail R5)
+        # Calls engine.qledger.backfill_regime_stamps() — stamps regime columns onto qledger
+        # rows that have as_of within regime_vector.parquet coverage.  Near-term yield ≈ 2 rows
+        # (coverage starts 2026-07-01).  Non-fatal: if the function does not yet exist in
+        # engine.qledger the step exits 0 with a warning.  Runs AFTER engine.run (regime
+        # artifacts are fresh) and BEFORE build_spine_index (index reads the stamped rows).
+        run: |
+          set +e
+          python -m scripts.backfill_regime_stamps > /tmp/backfill_regime_stamps.log 2>&1; rc=$?
+          cat /tmp/backfill_regime_stamps.log
+          [ "$rc" -ne 0 ] && echo "::warning title=backfill_regime_stamps::rc=$rc (non-fatal)"
+          exit 0
       - name: regional + desk builders (parallelised — independent clusters, barrier before the hub)
         # The ~22 builders between build_site and the landing hub split into mutually
         # INDEPENDENT clusters (each internally ordered by its own data deps). They used
@@ -694,6 +706,18 @@ jobs:
         # surface (data/calibration/summary.json + site/calibration.html). Runs after the
         # deterministic scorers so it reads fresh track records; never feeds a score.
         run: python -m scripts.build_calibration || true
+      - name: build macro snapshot (nw-macro-rail R5)
+        # Writes data/macro_snapshots/latest.json + ledger.parquet + transitions.jsonl from
+        # the day's regime, transmission, forex, bonds, commodity, china, hk, canada, and
+        # dispersion sources.  Fail-open per source; missing sources produce gap notes rather
+        # than failures.  Must run BEFORE build_spine_index so the stamp-join picks up today's
+        # macro_context_id.  Same-asof replace semantics — safe to re-run.
+        run: |
+          set +e
+          python -m scripts.build_macro_snapshot > /tmp/macro_snapshot.log 2>&1; rc=$?
+          cat /tmp/macro_snapshot.log
+          [ "$rc" -ne 0 ] && echo "::warning title=build_macro_snapshot::rc=$rc (non-fatal)"
+          exit 0
       - name: build spine index (neural-web W2)
         # Read-side union index over all graded ledgers: spine + track_record + HK/CA/CN
         # boards + qledger claims⋈grades (read-only) + graded cycle rows. Writes

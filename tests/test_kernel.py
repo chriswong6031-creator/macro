@@ -48,6 +48,9 @@ _SPINE_COLS = [
     # W1 Spine v2 role flags + metadata
     "is_sizing", "is_veto", "is_alpha", "is_timing", "is_context",
     "falsifier", "half_life",
+    # R5 macro context rail: snapshot stamp + market routing + stamp basis
+    "macro_context_id", "macro_context_asof", "market", "own_market_quad",
+    "regime_stamp_basis",
 ]
 
 

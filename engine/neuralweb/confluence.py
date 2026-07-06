@@ -102,6 +102,20 @@ _REGIME_QUADS = ["Q1", "Q2", "Q3", "Q4"]
 
 _MIN_N_COFIRING = 10  # minimum n for co-firing lift edge
 
+# Macro node subtypes (id pattern: macro:<subtype>)
+_MACRO_SUBTYPES = [
+    "fx_dollar",
+    "rates_transmission",
+    "rates_credit",
+    "commodity",
+    "dispersion",
+    "global_regime:us",
+    "global_regime:china",
+    "global_regime:hk",
+    "global_regime:canada",
+]
+
+
 
 # ---------------------------------------------------------------------------
 # Internal helpers
@@ -318,6 +332,266 @@ def _build_episode_nodes(
             f"most recent (omitted {len(episodes)-cap})"
         )
     return nodes
+
+
+# ---------------------------------------------------------------------------
+# Macro node + edge builders (PR-D: confluence macro nodes/edges)
+# ---------------------------------------------------------------------------
+
+def _build_macro_nodes(world_state: dict | None, gaps: list[str]) -> list[dict]:
+    """Macro nodes from world_state macro lobes (PR-B adds these lobes).
+
+    Node id pattern: macro:<subtype>.  Defensive — returns zero nodes when any
+    macro lobe is absent (PR-B may not have landed yet at runtime).  A gap note
+    is recorded when the lobes block is absent so the caller knows why nodes are
+    empty.
+    """
+    nodes: list[dict] = []
+    if world_state is None:
+        gaps.append(
+            "macro nodes: world_state.json absent — macro nodes empty"
+        )
+        return nodes
+
+    # The macro lobes are added by PR-B.  They may not be present yet.
+    has_any = False
+    try:
+        # fx_dollar lobe
+        fx = world_state.get("fx_dollar")
+        if fx is not None:
+            has_any = True
+            nodes.append(_node(
+                nid="macro:fx_dollar",
+                ntype="macro",
+                label="FX / Dollar",
+                meta={
+                    "subtype": "fx_dollar",
+                    "regime": fx.get("regime"),
+                    "risk": fx.get("risk"),
+                    "usd_trend": (fx.get("dollar_desk") or {}).get("trend"),
+                    "asof": fx.get("asof"),
+                    "display_only": True,
+                    "source_lobe": "fx_dollar",
+                },
+            ))
+
+        # rates_transmission lobe
+        rt = world_state.get("rates_transmission")
+        if rt is not None:
+            has_any = True
+            nodes.append(_node(
+                nid="macro:rates_transmission",
+                ntype="macro",
+                label="Rates Transmission",
+                meta={
+                    "subtype": "rates_transmission",
+                    "state": rt.get("state"),
+                    "scored_status": rt.get("scored_status"),
+                    "yield_curve_regime": (rt.get("yield_curve") or {}).get("regime", {}).get("key"),
+                    "asof": rt.get("asof"),
+                    "display_only": True,
+                    "source_lobe": "rates_transmission",
+                },
+            ))
+
+        # rates_credit lobe
+        rc = world_state.get("rates_credit")
+        if rc is not None:
+            has_any = True
+            nodes.append(_node(
+                nid="macro:rates_credit",
+                ntype="macro",
+                label="Rates / Credit",
+                meta={
+                    "subtype": "rates_credit",
+                    "health_label": rc.get("health_label"),
+                    "cycle_phase": rc.get("cycle_phase"),
+                    "recession_risk": rc.get("recession_risk"),
+                    "asof": rc.get("as_of"),
+                    "display_only": True,
+                    "source_lobe": "rates_credit",
+                },
+            ))
+
+        # commodity_context lobe
+        cc = world_state.get("commodity_context")
+        if cc is not None:
+            has_any = True
+            nodes.append(_node(
+                nid="macro:commodity",
+                ntype="macro",
+                label="Commodity",
+                meta={
+                    "subtype": "commodity",
+                    "regime": cc.get("regime"),
+                    "favored": cc.get("favored"),
+                    "asof": cc.get("asof"),
+                    "display_only": True,
+                    "source_lobe": "commodity_context",
+                },
+            ))
+
+        # global_regimes lobe — one node per market
+        gr = world_state.get("global_regimes")
+        if gr is not None:
+            has_any = True
+            for market_key in ("us", "china", "hk", "canada"):
+                mdata = gr.get(market_key)
+                if mdata is None:
+                    continue
+                nodes.append(_node(
+                    nid=f"macro:global_regime:{market_key}",
+                    ntype="macro",
+                    label=f"Global Regime: {market_key.upper()}",
+                    meta={
+                        "subtype": f"global_regime:{market_key}",
+                        "quad": mdata.get("quad"),
+                        "quad_name": mdata.get("quad_name"),
+                        "cycle_tag": mdata.get("cycle_tag"),
+                        "stale": mdata.get("stale"),
+                        "asof": mdata.get("date"),
+                        "display_only": True,
+                        "source_lobe": "global_regimes",
+                    },
+                ))
+            dispersion_note = gr.get("dispersion_note")
+            if dispersion_note is not None:
+                nodes.append(_node(
+                    nid="macro:dispersion",
+                    ntype="macro",
+                    label="Global Dispersion",
+                    meta={
+                        "subtype": "dispersion",
+                        "dispersion_note": str(dispersion_note),
+                        "display_only": True,
+                        "source_lobe": "global_regimes",
+                    },
+                ))
+
+    except Exception as exc:  # noqa: BLE001
+        log.warning("confluence: macro nodes build failed — %s", exc)
+        gaps.append(f"macro nodes: build error ({exc})")
+
+    if not has_any:
+        gaps.append(
+            "macro nodes: world_state macro lobes absent "
+            "(rates_transmission, fx_dollar, rates_credit, commodity_context, "
+            "global_regimes) — PR-B not yet landed or lobes not populated; "
+            "macro nodes empty"
+        )
+
+    return nodes
+
+
+def _build_macro_edges(
+    world_state: dict | None,
+    node_ids: frozenset[str],
+    gaps: list[str],
+) -> list[dict]:
+    """Headwind/tailwind edges from rates_transmission → sector nodes;
+    contradicts edges from fx_dollar/rates_credit → current regime node.
+
+    All edges are display_only=True (structural).  Only creates edges whose
+    both endpoints exist in node_ids.  Returns zero edges when lobes are absent.
+    """
+    edges: list[dict] = []
+    if world_state is None:
+        return edges
+
+    try:
+        asof_note = ""
+        regime_lobe = world_state.get("regime")
+        current_quad = None
+        if isinstance(regime_lobe, dict):
+            current_quad = regime_lobe.get("quad")
+        asof = (regime_lobe or {}).get("asof", "") if isinstance(regime_lobe, dict) else ""
+        if asof:
+            asof_note = f" asof={asof}"
+
+        # ── headwind/tailwind edges from rates_transmission → sector nodes ──
+        rt = world_state.get("rates_transmission")
+        if rt is not None and "macro:rates_transmission" in node_ids:
+            rt_asof = rt.get("asof", "")
+            rt_note = f"source_lobe=rates_transmission asof={rt_asof}"
+
+            for item in (rt.get("headwinds") or []):
+                asset = (item.get("asset") or "").strip()
+                sector_id = f"sector:{asset.lower()}"
+                if asset and sector_id in node_ids:
+                    edges.append(_edge(
+                        src="macro:rates_transmission",
+                        dst=sector_id,
+                        edge_type="headwind",
+                        note=(
+                            f"rates headwind: asset={asset} "
+                            f"net={item.get('net')} "
+                            f"verdict={item.get('verdict')} "
+                            f"{rt_note}"
+                        ),
+                    ))
+
+            for item in (rt.get("tailwinds") or []):
+                asset = (item.get("asset") or "").strip()
+                sector_id = f"sector:{asset.lower()}"
+                if asset and sector_id in node_ids:
+                    edges.append(_edge(
+                        src="macro:rates_transmission",
+                        dst=sector_id,
+                        edge_type="tailwind",
+                        note=(
+                            f"rates tailwind: asset={asset} "
+                            f"net={item.get('net')} "
+                            f"verdict={item.get('verdict')} "
+                            f"{rt_note}"
+                        ),
+                    ))
+
+        # ── contradicts edges: fx_dollar/rates_credit → regime:<quad> ──
+        # Only when cross_asset confirm verdict == 'diverge' AND both endpoints exist.
+        # The diverge verdict is carried in world_state's cross_asset lobe or
+        # in the regime lobe's cross_asset_confirm block (whichever is available).
+        ca_verdict = None
+        # Try world_state.cross_asset_confirm first (if PR-B populates it)
+        ca_block = world_state.get("cross_asset_confirm")
+        if isinstance(ca_block, dict):
+            ca_verdict = ca_block.get("verdict")
+        # Fallback: regime lobe's cross_asset_confirm
+        if ca_verdict is None and isinstance(regime_lobe, dict):
+            ca_sub = regime_lobe.get("cross_asset_confirm")
+            if isinstance(ca_sub, dict):
+                ca_verdict = ca_sub.get("verdict")
+        # Fallback: contradictions block's to_brain (from the cross_asset_confirm pair)
+        if ca_verdict is None:
+            contra_block = world_state.get("contradictions")
+            if isinstance(contra_block, dict):
+                top_pairs = contra_block.get("top_pair_ids") or []
+                if "cross_asset_confirm-diverge" in top_pairs:
+                    ca_verdict = "diverge"
+
+        if ca_verdict == "diverge" and current_quad is not None:
+            regime_nid = f"regime:{current_quad}"
+            if regime_nid in node_ids:
+                for macro_src, label in [
+                    ("macro:fx_dollar", "fx_dollar"),
+                    ("macro:rates_credit", "rates_credit"),
+                ]:
+                    if macro_src in node_ids:
+                        edges.append(_edge(
+                            src=macro_src,
+                            dst=regime_nid,
+                            edge_type="contradicts",
+                            note=(
+                                f"cross_asset diverge: {label} contradicts "
+                                f"regime:{current_quad}{asof_note} "
+                                f"source_lobe=contradictions/cross_asset_confirm"
+                            ),
+                        ))
+
+    except Exception as exc:  # noqa: BLE001
+        log.warning("confluence: macro edges build failed — %s", exc)
+        gaps.append(f"macro edges: build error ({exc})")
+
+    return edges
 
 
 # ---------------------------------------------------------------------------
@@ -848,6 +1122,14 @@ def build_graph(
             "oracle complex + episode nodes omitted; gitignored/Mac-local"
         )
 
+    # ── Load world_state for macro nodes/edges ────────────────────────────────
+    world_state: dict | None = None
+    ws_path = data_dir / "neuralweb" / "world_state.json"
+    if ws_path.exists():
+        ws_raw = _read_json(ws_path)
+        if isinstance(ws_raw, dict):
+            world_state = ws_raw
+
     # ── Load oracle graph files (READ-ONLY) ──────────────────────────────────
     graph_s: dict | None = None
     gs_path = data_dir / "oracle" / "graph_s.json"
@@ -894,12 +1176,15 @@ def build_graph(
     nodes.extend(_build_thesis_nodes(data_dir / "radar" / "theses.jsonl", gaps))
     nodes.extend(_build_episode_nodes(oracle_state, gaps))
     nodes.extend(_build_sponsorship_nodes(sponsorship_df, gaps))
+    nodes.extend(_build_macro_nodes(world_state, gaps))
 
     # ── Detect contradictions ─────────────────────────────────────────────────
     contra_records, contra_gaps = detect_contradictions(root=repo)
     gaps.extend(contra_gaps)
 
     # ── Build edges ───────────────────────────────────────────────────────────
+    # Build a frozenset of node ids for endpoint-existence checks in macro edges
+    _node_ids = frozenset(n["id"] for n in nodes)
     edges: list[dict] = []
     edges.extend(_build_feeds_edges(registry, gaps))
     edges.extend(_build_stable_edges(graph_s, graph_m, gaps))
@@ -908,6 +1193,7 @@ def build_graph(
     edges.extend(_build_confirms_edges(spine_df, gaps))
     edges.extend(_build_options_edges(repo, gaps))   # Options→NW W-B (RO-6)
     edges.extend(_build_sponsorship_edges(sponsorship_df, gaps))
+    edges.extend(_build_macro_edges(world_state, _node_ids, gaps))  # PR-D macro edges
 
     # ── Contradiction summary ─────────────────────────────────────────────────
     by_severity: dict[str, int] = {}

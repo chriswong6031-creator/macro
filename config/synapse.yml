@@ -5203,3 +5203,74 @@ artifacts:
     notes: >
       R5 macro context rail — alerts triage summary artifact.
       Producer: scripts/build_site.py:2186 (fdir/"alerts_triage.json").write_text(...).
+
+  macro-snapshots-latest:
+    path: data/macro_snapshots/latest.json
+    format: json
+    producer: scripts/build_macro_snapshot.py
+    known_extra_writers: []
+    owner_program: nw-macro-context-rail
+    cadence: daily-engine
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/neuralweb/query.py
+    external_consumers: []
+    notes: >
+      R5 PR-C — macro context snapshot registry. Latest snapshot: macro_context_id,
+      labels dict, asof. Written daily by scripts/build_macro_snapshot.py:main()
+      before build_spine_index. Fail-open: if absent, spine query returns None for
+      macro_context_id (display/context tier only).
+
+  macro-snapshots-ledger:
+    path: data/macro_snapshots/ledger.parquet
+    format: parquet
+    producer: scripts/build_macro_snapshot.py
+    known_extra_writers: []
+    owner_program: nw-macro-context-rail
+    cadence: daily-engine
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/neuralweb/query.py
+    external_consumers: []
+    notes: >
+      R5 PR-C — macro context ledger parquet. One row per (asof, domain, field).
+      Same-asof replace semantics on re-run (idempotent). Backward merge_asof source
+      for spine stamp-join in _stamp_macro_context(). Display/context tier only.
+
+  macro-transitions:
+    path: data/macro_snapshots/transitions.jsonl
+    format: jsonl
+    producer: scripts/build_macro_snapshot.py
+    known_extra_writers: []
+    owner_program: nw-macro-context-rail
+    cadence: daily-engine
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/neuralweb/world_state.py
+    external_consumers: []
+    notes: >
+      R5 PR-C — macro regime transition log (JSONL). One line per (asof, domain,
+      field) where prev != current value. Same-asof replace: drops today's rows
+      before re-deriving. Growing append-only ledger across days. Display/context
+      tier only.

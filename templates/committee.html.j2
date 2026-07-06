@@ -224,8 +224,11 @@ body { padding-bottom:56px; }
     <div class="graph-legend">
       <span class="gl-dot" style="background:var(--link)"></span> {{ t('Engine / Sector node', '引擎/板块节点') }} &nbsp;
       <span class="gl-dot" style="background:color-mix(in srgb,var(--link) 60%,transparent);border:1px solid var(--link)"></span> {{ t('Regime / Thesis', '周期/论点') }} &nbsp;
+      <span class="gl-dot" style="background:rgba(167,139,250,0.65);border:1px solid #a78bfa"></span> {{ t('Macro node', '宏观节点') }} &nbsp;
       <span style="width:28px;height:3px;background:color-mix(in srgb,var(--up) 80%,transparent);display:inline-block;vertical-align:middle"></span> {{ t('Confirms edge', '确认边') }} &nbsp;
-      <span style="width:28px;height:3px;background:color-mix(in srgb,var(--down) 80%,transparent);display:inline-block;vertical-align:middle"></span> {{ t('Contradicts edge', '矛盾边') }}
+      <span style="width:28px;height:3px;background:color-mix(in srgb,var(--down) 80%,transparent);display:inline-block;vertical-align:middle"></span> {{ t('Contradicts edge', '矛盾边') }} &nbsp;
+      <span style="width:28px;height:2px;background:#d97706;display:inline-block;vertical-align:middle;border-top:2px dashed #d97706;height:0"></span> {{ t('Headwind', '逆风') }} &nbsp;
+      <span style="width:28px;height:0;border-top:2px dashed #0d9488;display:inline-block;vertical-align:middle"></span> {{ t('Tailwind', '顺风') }}
     </div>
   </div>
 
@@ -636,12 +639,13 @@ body { padding-bottom:56px; }
 
     // Filter to meaningful nodes (engines, sectors, regimes; skip most thesis/episode)
     var TYPE_PRIORITY = { engine: 0, regime: 1, sector: 2, thesis: 3, episode: 4 };
-    var SHOW_TYPES = { engine: true, regime: true, sector: true };
+    var SHOW_TYPES = { engine: true, regime: true, sector: true, macro: true };
     var displayNodes = nodes.filter(function (n) { return SHOW_TYPES[n.type]; });
-    // Also include thesis/episode nodes that appear in confirms/contradicts edges
+    // Also include thesis/episode nodes that appear in confirms/contradicts/headwind/tailwind edges
     var edgeNodes = new Set();
     edges.forEach(function (e) {
-      if (e.edge_type === 'confirms' || e.edge_type === 'contradicts') {
+      if (e.edge_type === 'confirms' || e.edge_type === 'contradicts' ||
+          e.edge_type === 'headwind' || e.edge_type === 'tailwind') {
         edgeNodes.add(e.src); edgeNodes.add(e.dst);
       }
     });
@@ -659,17 +663,17 @@ body { padding-bottom:56px; }
       seen.add(n.id); return true;
     });
 
-    // Subset note: N displayed of M total (engines, sectors, regimes, and theses/episodes
-    // participating in confirms/contradicts edges; structural feeds edges hidden)
+    // Subset note: N displayed of M total (engines, sectors, regimes, macro, and theses/episodes
+    // participating in confirms/contradicts/headwind/tailwind edges; structural feeds edges hidden)
     var subsetEl = document.getElementById('graph_subset_note');
     if (subsetEl) {
       var N_shown = displayNodes.length;
       var M_total = nodes.length;
       var isZh = document.documentElement.lang === 'zh' || (navigator.language || '').startsWith('zh');
       if (isZh) {
-        subsetEl.textContent = '显示 ' + N_shown + '（共 ' + M_total + ' 个）节点（引擎、板块、周期，以及参与确认/矛盾边的论点/事件）；结构性馈入边已隐藏。';
+        subsetEl.textContent = '显示 ' + N_shown + '（共 ' + M_total + ' 个）节点（引擎、板块、周期、宏观，以及参与确认/矛盾/顺风/逆风边的论点/事件）；结构性馈入边已隐藏。';
       } else {
-        subsetEl.textContent = 'Showing ' + N_shown + ' of ' + M_total + ' nodes (engines, sectors, regimes, and the theses/episodes participating in confirms/contradicts edges); structural feeds edges hidden.';
+        subsetEl.textContent = 'Showing ' + N_shown + ' of ' + M_total + ' nodes (engines, sectors, regimes, macro, and the theses/episodes participating in confirms/contradicts/headwind/tailwind edges); structural feeds edges hidden.';
       }
     }
 
@@ -753,20 +757,25 @@ body { padding-bottom:56px; }
         var isCon = e.edge_type === 'confirms';
         var isContra = e.edge_type === 'contradicts';
         var isFeeds = e.edge_type === 'feeds';
+        var isHeadwind = e.edge_type === 'headwind';
+        var isTailwind = e.edge_type === 'tailwind';
         if (isFeeds) return; // skip feeds edges to reduce clutter
 
-        var baseAlpha = isCon ? 0.7 : isContra ? 0.8 : 0.25;
-        var col = isCon ? COL_UP : isContra ? COL_DOWN : COL_MUTED;
+        // headwind: muted amber/orange dashed; tailwind: muted teal dashed
+        var COL_HEADWIND = '#d97706'; // amber-600, muted
+        var COL_TAILWIND = '#0d9488'; // teal-600, muted
+        var baseAlpha = isCon ? 0.7 : isContra ? 0.8 : isHeadwind ? 0.55 : isTailwind ? 0.55 : 0.25;
+        var col = isCon ? COL_UP : isContra ? COL_DOWN : isHeadwind ? COL_HEADWIND : isTailwind ? COL_TAILWIND : COL_MUTED;
         if (isPulse && (isCon || isContra)) {
           var pulse = 0.5 + 0.5 * Math.sin(phase + (isCon ? 0 : Math.PI));
           ctx.globalAlpha = baseAlpha * (0.6 + 0.4 * pulse);
           ctx.lineWidth = isCon ? 2.5 : 2;
         } else {
-          ctx.globalAlpha = isContra ? 0.5 : 0.4;
-          ctx.lineWidth = 1.5;
+          ctx.globalAlpha = isContra ? 0.5 : (isHeadwind || isTailwind) ? 0.5 : 0.4;
+          ctx.lineWidth = (isHeadwind || isTailwind) ? 1.5 : 1.5;
         }
         ctx.strokeStyle = col;
-        ctx.setLineDash(isContra ? [5, 4] : []);
+        ctx.setLineDash(isContra ? [5, 4] : (isHeadwind ? [3, 4] : (isTailwind ? [6, 3] : [])));
         ctx.beginPath();
         ctx.moveTo(pa.x, pa.y);
         ctx.lineTo(pb.x, pb.y);
@@ -780,8 +789,9 @@ body { padding-bottom:56px; }
       nodeIds.forEach(function (id) {
         var p = positions[id];
         var n = p.node;
-        var r = n.type === 'engine' ? 12 : n.type === 'regime' ? 9 : 7;
-        var fillCol = n.type === 'engine' ? COL_LINK : n.type === 'regime' ? alphaColor(COL_LINK, 0.55) : alphaColor(COL_MUTED, 0.45);
+        var r = n.type === 'engine' ? 12 : n.type === 'regime' ? 9 : n.type === 'macro' ? 8 : 7;
+        var COL_MACRO = '#a78bfa'; // violet-400, muted
+        var fillCol = n.type === 'engine' ? COL_LINK : n.type === 'regime' ? alphaColor(COL_LINK, 0.55) : n.type === 'macro' ? alphaColor(COL_MACRO, 0.65) : alphaColor(COL_MUTED, 0.45);
         ctx.beginPath();
         ctx.arc(p.x, p.y, r, 0, 2 * Math.PI);
         ctx.fillStyle = fillCol;
