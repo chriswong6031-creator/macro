@@ -11,10 +11,15 @@ BUDGET BATCHING (PREREGISTRATION.md §1 + masterplan §4.2):
 BUDGET PRE-FLIGHT (FIX-7):
   Before any writes, register_batch reads the remaining weekly budget via
   _count_week_registrations() from metabolism.  If the remaining budget
-  (BUDGET_PER_WEEK − already_filed_this_week) < len(keys), the entire batch
-  is aborted with a clear message.  Partial filing (e.g. H1+H2 filed, H3
+  (BUDGET_PER_WEEK − already_filed_this_week) < len(pending keys), the entire
+  batch is aborted with a clear message.  Partial filing (e.g. H1+H2 filed, H3
   silently dropped by metabolism's own budget enforcement) is worse than a
   delayed batch because a silently-dropped H3 looks registered to the operator.
+  The pre-flight counts only PENDING keys (not already registered) so a batch
+  that is already fully filed never falsely aborts on an exhausted week.
+  --defer-on-budget turns the pre-flight abort into a clean exit 0 ("deferred")
+  for the nightly cortex-job step, which simply retries the batch every night
+  until an ISO week with enough budget.
 
 METRIC ENUM FINDING (P2 audit, 2026-07-05):
   The evaluator (scripts/evaluate_cortex_hypotheses.py) accepts ONLY:
@@ -66,12 +71,19 @@ METRIC ENUM FINDING (P2 audit, 2026-07-05):
   reflect the metabolism floor only; the locked prereg thresholds (−5pp, +5pp, etc.)
   do NOT move regardless of what the evaluator's metric enum accepts.
 
-REGISTRY TRACKING (FIX-8):
-  machine_registry.jsonl is NOT yet tracked anywhere when this workflow dispatches.
-  It BECOMES tracked when first written on the runner and committed via the nightly
-  ENGINE job's explicit git add (daily.yml:1278).  Do NOT add .gitignore for
-  machine_registry.jsonl — git history is the tamper-detection substrate per
-  metabolism.py lines 20-24.
+REGISTRY TRACKING (FIX-8, amended 2026-07-06):
+  The original persistence path (dispatch via factor_ops.yml; rows "ride the next
+  nightly's git add") NEVER WORKED: each workflow job starts from a fresh
+  actions/checkout (git clean -ffdx), so registry rows written in the factor_ops
+  runner workspace were wiped before any commit step could see them — the same
+  cross-job visibility hole as the factor_attention firings bug (PR #1583).  The
+  W27 register_h123 and W28 register_h45 dispatch registrations were both lost
+  this way (verified 2026-07-06: machine_registry.jsonl has no git history).
+  THE PERSISTENCE PATH IS NOW: this script runs as a step INSIDE the nightly
+  cortex job (daily.yml), whose commit lane explicitly stages
+  data/neuralweb/machine_registry.jsonl + governance.jsonl + trial_ledger.jsonl.
+  Do NOT add .gitignore for machine_registry.jsonl — git history is the
+  tamper-detection substrate per metabolism.py lines 20-24.
 
 IDEMPOTENCE:
   metabolism.register_hypothesis deduplicates by ID (content hash of date+hypothesis
@@ -85,15 +97,14 @@ IDEMPOTENCE:
 
 Usage
 -----
+    # Canonical path: the nightly cortex job runs both batches with
+    # --defer-on-budget (idempotent; a budget-blocked batch retries nightly).
+    python -m scripts.register_factor_hypotheses --only h1,h2,h3 --defer-on-budget
+    python -m scripts.register_factor_hypotheses --only h4,h5 --defer-on-budget
+
     # Dry-run: print payloads, no writes
     python -m scripts.register_factor_hypotheses --only h1,h2,h3 --dry-run
     python -m scripts.register_factor_hypotheses --only h4,h5 --dry-run
-
-    # Real run (W27 batch)
-    python -m scripts.register_factor_hypotheses --only h1,h2,h3
-
-    # Real run (W28+ batch)
-    python -m scripts.register_factor_hypotheses --only h4,h5
 """
 from __future__ import annotations
 
@@ -500,14 +511,21 @@ def register_batch(
     BUDGET_PER_WEEK = 3  # mirrors metabolism.py line 83
 
     # Budget pre-flight (FIX-7): abort the entire batch rather than silently dropping
-    # hypotheses.  Skip in dry-run (no writes happen).
+    # hypotheses.  Skip in dry-run (no writes happen).  Only PENDING keys (not yet
+    # registered) count against the batch size — a fully-registered batch re-run on
+    # an exhausted week is a no-op, not an abort (the nightly step re-runs every
+    # night; without this filter the log would claim "deferred" for finished work).
     if not dry_run:
+        pending = [
+            k for k in keys
+            if not _already_registered(_ALL_PAYLOADS[k]["hypothesis"], root=root)
+        ]
         already_filed = _count_week_registrations(root=root, now=now)
         remaining = BUDGET_PER_WEEK - already_filed
-        if remaining < len(keys):
+        if remaining < len(pending):
             msg = (
                 f"BUDGET PRE-FLIGHT ABORT: {already_filed} hypothesis(es) already registered "
-                f"this ISO week; remaining budget={remaining} < batch_size={len(keys)}. "
+                f"this ISO week; remaining budget={remaining} < pending batch_size={len(pending)}. "
                 f"Run in a later ISO week or split the batch. "
                 f"No hypotheses were written (partial filing is worse than delayed batch)."
             )
@@ -609,6 +627,16 @@ def main(argv: list[str] | None = None) -> int:
         default=None,
         help="Repo root override",
     )
+    parser.add_argument(
+        "--defer-on-budget",
+        action="store_true",
+        help=(
+            "Exit 0 with a 'deferred' notice (instead of crashing) when the "
+            "weekly budget pre-flight aborts the batch. For the nightly "
+            "cortex-job step, which retries every night until an ISO week "
+            "with enough budget."
+        ),
+    )
     args = parser.parse_args(argv)
 
     try:
@@ -618,7 +646,13 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     root = Path(args.root) if args.root else None
-    results = register_batch(keys, dry_run=args.dry_run, root=root)
+    try:
+        results = register_batch(keys, dry_run=args.dry_run, root=root)
+    except RuntimeError as exc:
+        if args.defer_on_budget and "BUDGET PRE-FLIGHT ABORT" in str(exc):
+            print(f"[deferred] {exc}")
+            return 0
+        raise
 
     if not args.dry_run:
         print(json.dumps(results, indent=2, default=str))

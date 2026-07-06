@@ -586,3 +586,89 @@ class TestBudgetPreflight:
             "FIX-7: both h4 and h5 must be registered when budget is sufficient"
         )
         assert len(results) == 2
+
+    def test_preflight_ignores_already_registered_keys(self, empty_registry):
+        """Pre-flight counts only PENDING keys: a fully-registered batch re-run
+        on an exhausted week is a no-op (already-registered results), NOT an
+        abort.  Without this, the nightly step would log 'deferred' forever
+        for work that already finished.
+        """
+        from datetime import datetime, timezone
+        fixed_now = datetime(2026, 7, 8, 12, 0, 0, tzinfo=timezone.utc)
+
+        with mock.patch("scripts.register_factor_hypotheses._already_registered",
+                        return_value=True):
+            with mock.patch(
+                "scripts.register_factor_hypotheses._count_week_registrations",
+                return_value=3,  # week exhausted — but nothing is pending
+            ):
+                results = register_batch(
+                    ["h1", "h2", "h3"],
+                    dry_run=False,
+                    root=empty_registry,
+                    now=fixed_now,
+                )
+
+        assert len(results) == 3
+        assert all(r["status"] == "already-registered" for r in results), (
+            "A fully-registered batch must return already-registered results "
+            "even when the weekly budget is exhausted (pending=0 ≤ remaining=0)"
+        )
+
+
+# ---------------------------------------------------------------------------
+# 7. --defer-on-budget (nightly cortex-job step behavior)
+# ---------------------------------------------------------------------------
+
+class TestDeferOnBudget:
+    """The nightly cortex-job step runs both batches every night with
+    --defer-on-budget: a budget-blocked batch exits 0 ('deferred') and is
+    retried the next night, instead of crashing the step with a traceback.
+    """
+
+    def test_defer_flag_exits_zero_on_budget_abort(self, empty_registry):
+        """main() with --defer-on-budget returns 0 when the pre-flight aborts."""
+        from scripts.register_factor_hypotheses import main
+
+        with mock.patch("scripts.register_factor_hypotheses._already_registered",
+                        return_value=False):
+            with mock.patch(
+                "scripts.register_factor_hypotheses._count_week_registrations",
+                return_value=3,  # budget exhausted, 2 pending → abort
+            ):
+                rc = main([
+                    "--only", "h4,h5",
+                    "--root", str(empty_registry),
+                    "--defer-on-budget",
+                ])
+        assert rc == 0, "--defer-on-budget must exit 0 on budget pre-flight abort"
+
+    def test_without_flag_budget_abort_still_raises(self, empty_registry):
+        """Default behavior unchanged: no flag → the RuntimeError propagates."""
+        from scripts.register_factor_hypotheses import main
+
+        with mock.patch("scripts.register_factor_hypotheses._already_registered",
+                        return_value=False):
+            with mock.patch(
+                "scripts.register_factor_hypotheses._count_week_registrations",
+                return_value=3,
+            ):
+                with pytest.raises(RuntimeError, match="BUDGET PRE-FLIGHT ABORT"):
+                    main(["--only", "h4,h5", "--root", str(empty_registry)])
+
+    def test_defer_flag_does_not_mask_other_errors(self, empty_registry):
+        """--defer-on-budget only absorbs the budget pre-flight abort, not
+        arbitrary RuntimeErrors from the registration path.
+        """
+        from scripts.register_factor_hypotheses import main
+
+        with mock.patch(
+            "scripts.register_factor_hypotheses.register_batch",
+            side_effect=RuntimeError("registry disk on fire"),
+        ):
+            with pytest.raises(RuntimeError, match="disk on fire"):
+                main([
+                    "--only", "h4,h5",
+                    "--root", str(empty_registry),
+                    "--defer-on-budget",
+                ])
