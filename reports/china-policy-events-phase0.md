@@ -245,3 +245,124 @@ No-go families (T1 F-A SHCOMP, T3 F-A real estate, T4 F-B SHCOMP) are not regist
 - No wiring: nothing here feeds any engine, board, or score.
 - No post-outcome threshold edits. The prereg is law.
 - No p-hacking: 6 gated trials were declared, all 6 are reported including nulls.
+
+
+---
+
+## F-C MPC Communiqué Phrase-Diff Leg
+
+**Status:** EXPLORATORY / UNSIGNED — no verdict, no FDR membership, no wiring.
+This leg was BLOCKED-DATA in the original run. Data became available after
+`scripts/backfill_china_communiques.py` ran (PR #1724).
+
+**What this section contains:** Descriptive forward CAR tables for SHCOMP
+following MPC readouts that contained ≥1 formula change vs the prior readout.
+Phrase polarity is unsigned — no directional claim is made or permitted.
+HAC t-statistics are shown but **labeled EXPLORATORY** — they are not gates,
+they carry no verdict weight, and they do not enter any FDR family.
+
+### Events
+
+| Metric | Value |
+|---|---|
+| MPC readouts loaded | 68 |
+| Diffable pairs | 67 |
+| Events (≥1 formula change) | 25 |
+| After same-date merge | 25 |
+| Anchor fallback (meeting_date) | 0 |
+
+Anchor note: publish_date available for all events; no fallback used.
+
+> **In plain English:** Each PBoC Monetary Policy Committee quarterly readout is
+> compared against the preceding one. If any phrase from the canonical phrase book
+> appears for the first time (APPEARED) or disappears (DROPPED), the meeting is
+> an "event". We then ask: how did the Shanghai Composite perform over the following
+> 5 / 10 / 20 / 40 / 60 trading sessions? Because the phrase book's polarity is
+> provisional and unsigned, we make no claim about *direction* — we simply measure
+> what happened. This is a fact-finding exercise, not a signal.
+
+### Main Table — All-Change Events → SHCOMP Absolute Log CAR
+
+| Horizon | K usable | Mean CAR | Median CAR | HAC-t [exploratory] |
+|---|---|---|---|---|
+| H=5 | 25 | +0.14% | +0.24% | 0.2 [exp.] |
+| H=10 | 25 | +0.34% | +0.13% | 0.421 [exp.] |
+| **H=20** | **25** | **-0.70%** | **-1.89%** | **-0.882 [exp.]** |
+| H=40 | 25 | +1.23% | +0.10% | 1.012 [exp.] |
+| H=60 | 25 | +0.52% | -0.94% | 0.306 [exp.] |
+
+*HAC NW t (lags=4) labeled EXPLORATORY — shown for reference, not a gate, no verdict.*
+
+### Slice Tables (H=20 only — n/mean/median, no t-stats)
+
+| Slice | n | Mean CAR@H20 | Median CAR@H20 |
+|---|---|---|---|
+| APPEARED-only events | 11 | +0.32% | -1.89% |
+| DROPPED-only events | 5 | -1.00% | -1.24% |
+| Both (appeared AND dropped) | 9 | -1.79% | -2.17% |
+
+*Cells n<5 show n only.*
+
+### Top Appeared / Dropped Formulas (frequency across all events)
+
+**Appeared (new formula in readout vs prior):**
+
+| Formula | Times appeared |
+|---|---|
+| 稳增长 | 4 |
+| 降准降息 | 3 |
+| 积极的财政政策 | 2 |
+| 专项债 | 2 |
+| 逆周期调节 | 2 |
+
+**Dropped (formula present in prior, absent in this readout):**
+
+| Formula | Times dropped |
+|---|---|
+| 稳增长 | 4 |
+| 降准降息 | 3 |
+| 积极的财政政策 | 2 |
+| 专项债 | 2 |
+| 适度宽松 | 1 |
+
+
+### Conditioning Tables (Descriptive — No t-stats, No Verdict Language)
+
+Regime at anchor date (last known as-of). Cells n<5 print n only.
+
+| Quad | n | Mean CAR@H20 | Median CAR@H20 |
+|---|---|---|---|
+| Q1 | 10 | +1.27% | +0.09% |
+| Q2 | 8 | -2.23% | -1.69% |
+| Q3 | 4 | n<5 | n<5 |
+| Q4 | 3 | n<5 | n<5 |
+
+
+| Liquidity | n | Mean CAR@H20 | Median CAR@H20 |
+|---|---|---|---|
+| contracting | 12 | -0.11% | -1.57% |
+| expanding | 9 | -0.95% | -3.51% |
+| neutral | 4 | n<5 | n<5 |
+
+
+| Cycle | n | Mean CAR@H20 | Median CAR@H20 |
+|---|---|---|---|
+| late | 5 | -2.11% | -2.74% |
+| mid | 20 | -0.35% | -1.33% |
+
+
+
+> **In plain English:** We are looking at whether the market regime at the time of
+> a phrase-change event seems to moderate the forward drift. These are counts and
+> averages only — no claim about edge, no verdict. Any pattern here would need its
+> own pre-registered test before it could be acted on.
+
+### What This Leg Cannot Tell You
+
+Because phrase polarity is UNSIGNED and this leg is EXPLORATORY:
+- No claim is made about *which direction* a formula change predicts.
+- No claim survives to FDR gating.
+- Nothing here wires into any engine, board, or score.
+- "APPEARED" does not mean bullish; "DROPPED" does not mean bearish.
+- Any numeric observation is descriptive only — it requires a new pre-registered
+  test (with its own budget) before it can be used as an investment input.

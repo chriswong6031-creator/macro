@@ -5,7 +5,7 @@
     "FA_rrr_ease": 26,
     "FB_lpr_cut": 15,
     "FX_rrr_hike_exploratory": 27,
-    "FC_mpc_communiques": "BLOCKED-DATA"
+    "FC_mpc_communiques": 25
   },
   "primary_horizon": 20,
   "gated_trials": {
@@ -2028,8 +2028,200 @@
       "verdict": "DESCRIPTIVE"
     },
     "FC_communiques": {
-      "verdict": "BLOCKED-DATA",
-      "reason": "data/china_official/communiques.parquet not present on main at study start"
+      "label": "FC->SHCOMP_exploratory",
+      "family": "F-C",
+      "exploratory": true,
+      "unsigned": true,
+      "verdict": "EXPLORATORY",
+      "no_verdict_note": "F-C is EXPLORATORY/UNSIGNED per prereg RUL-5 \u2014 phrase polarity stays unsigned; no directional claim is made or permitted. No FDR membership. No wiring.",
+      "n_mpc_readouts": 68,
+      "n_diffable_pairs": 67,
+      "n_events_with_change": 25,
+      "n_same_date_merges": 0,
+      "n_events_after_dedup": 25,
+      "anchor_source": "publish_date primary; meeting_date fallback",
+      "n_fallback_anchor": 0,
+      "fallback_bias_note": "No fallback anchors used.",
+      "top_appeared_formulas": [
+        {
+          "phrase": "\u7a33\u589e\u957f",
+          "count": 4
+        },
+        {
+          "phrase": "\u964d\u51c6\u964d\u606f",
+          "count": 3
+        },
+        {
+          "phrase": "\u79ef\u6781\u7684\u8d22\u653f\u653f\u7b56",
+          "count": 2
+        },
+        {
+          "phrase": "\u4e13\u9879\u503a",
+          "count": 2
+        },
+        {
+          "phrase": "\u9006\u5468\u671f\u8c03\u8282",
+          "count": 2
+        }
+      ],
+      "top_dropped_formulas": [
+        {
+          "phrase": "\u7a33\u589e\u957f",
+          "count": 4
+        },
+        {
+          "phrase": "\u964d\u51c6\u964d\u606f",
+          "count": 3
+        },
+        {
+          "phrase": "\u79ef\u6781\u7684\u8d22\u653f\u653f\u7b56",
+          "count": 2
+        },
+        {
+          "phrase": "\u4e13\u9879\u503a",
+          "count": 2
+        },
+        {
+          "phrase": "\u9002\u5ea6\u5bbd\u677e",
+          "count": 1
+        }
+      ],
+      "horizons": {
+        "h5": {
+          "h": 5,
+          "n_events_total": 25,
+          "n_usable": 25,
+          "n_dropped": 0,
+          "n": 25,
+          "mean_car": 0.001443,
+          "median_car": 0.002421,
+          "hac_t_exploratory": 0.2,
+          "hac_p_exploratory": 0.8411,
+          "hac_note": "LABELED EXPLORATORY \u2014 not a gate, no verdict"
+        },
+        "h10": {
+          "h": 10,
+          "n_events_total": 25,
+          "n_usable": 25,
+          "n_dropped": 0,
+          "n": 25,
+          "mean_car": 0.003398,
+          "median_car": 0.001311,
+          "hac_t_exploratory": 0.421,
+          "hac_p_exploratory": 0.6739,
+          "hac_note": "LABELED EXPLORATORY \u2014 not a gate, no verdict"
+        },
+        "h20": {
+          "h": 20,
+          "n_events_total": 25,
+          "n_usable": 25,
+          "n_dropped": 0,
+          "n": 25,
+          "mean_car": -0.007024,
+          "median_car": -0.018899,
+          "hac_t_exploratory": -0.882,
+          "hac_p_exploratory": 0.3777,
+          "hac_note": "LABELED EXPLORATORY \u2014 not a gate, no verdict"
+        },
+        "h40": {
+          "h": 40,
+          "n_events_total": 25,
+          "n_usable": 25,
+          "n_dropped": 0,
+          "n": 25,
+          "mean_car": 0.012296,
+          "median_car": 0.000965,
+          "hac_t_exploratory": 1.012,
+          "hac_p_exploratory": 0.3113,
+          "hac_note": "LABELED EXPLORATORY \u2014 not a gate, no verdict"
+        },
+        "h60": {
+          "h": 60,
+          "n_events_total": 25,
+          "n_usable": 25,
+          "n_dropped": 0,
+          "n": 25,
+          "mean_car": 0.005166,
+          "median_car": -0.00938,
+          "hac_t_exploratory": 0.306,
+          "hac_p_exploratory": 0.7598,
+          "hac_note": "LABELED EXPLORATORY \u2014 not a gate, no verdict"
+        }
+      },
+      "primary_h": 20,
+      "primary_stats": {
+        "label": "FC->SHCOMP_h20_ALL",
+        "n": 25,
+        "mean_car": -0.007024,
+        "median_car": -0.018899,
+        "hac_t_exploratory": -0.882,
+        "hac_p_exploratory": 0.3777,
+        "hac_note": "LABELED EXPLORATORY \u2014 not a gate, no verdict"
+      },
+      "slice_tables": {
+        "appeared_only": {
+          "n": 11,
+          "mean_car_h20": 0.003237,
+          "median_car_h20": -0.018899
+        },
+        "dropped_only": {
+          "n": 5,
+          "mean_car_h20": -0.010031,
+          "median_car_h20": -0.01245
+        },
+        "both": {
+          "n": 9,
+          "mean_car_h20": -0.017896,
+          "median_car_h20": -0.021704
+        }
+      },
+      "conditioning_tables": {
+        "quad": {
+          "Q2": {
+            "n": 8,
+            "mean_car_h20": -0.022333,
+            "median_car_h20": -0.016923
+          },
+          "Q1": {
+            "n": 10,
+            "mean_car_h20": 0.012699,
+            "median_car_h20": 0.000908
+          },
+          "Q4": {
+            "n": 3
+          },
+          "Q3": {
+            "n": 4
+          }
+        },
+        "liquidity": {
+          "expanding": {
+            "n": 9,
+            "mean_car_h20": -0.009503,
+            "median_car_h20": -0.03511
+          },
+          "contracting": {
+            "n": 12,
+            "mean_car_h20": -0.001113,
+            "median_car_h20": -0.015706
+          },
+          "neutral": {
+            "n": 4
+          }
+        },
+        "cycle": {
+          "mid": {
+            "n": 20,
+            "mean_car_h20": -0.003494,
+            "median_car_h20": -0.013263
+          },
+          "late": {
+            "n": 5,
+            "mean_car_h20": -0.021148,
+            "median_car_h20": -0.027422
+          }
+        }
+      }
     }
   },
   "bh_fdr": {
@@ -2434,5 +2626,5 @@
     "T5_FB_banks_rel": "ACCRUE",
     "T6_FB_restate_rel": "ACCRUE"
   },
-  "fc_status": "BLOCKED-DATA: communiques.parquet absent on main at study start"
+  "fc_status": "COMPLETED: 25 events from 68 MPC readouts; EXPLORATORY/UNSIGNED"
 }
