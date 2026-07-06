@@ -3755,6 +3755,36 @@ artifacts:
       gap_period flags, runtime stats. Produced by the same script as long-hold-labels.
       FIREWALL: hold_thesis — no entry-stack consumers permitted.
 
+  # --- Long-Hold W1 kill-test study results (W1 PR-F) ---
+  long-hold-killtest-results:
+    path: data/research/missed_hold_study_results.parquet
+    format: parquet
+    producer: scripts/research/missed_hold_study.py
+    known_extra_writers: []
+    owner_program: long-hold
+    cadence: on-demand
+    storage: git
+    asof_field: null
+    freshness_sla_hours: 8760
+    schema: missed_hold_study_results.v1
+    tier: display
+    horizon_role: hold_thesis
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/research/missed_hold_study.py
+    external_consumers: []
+    notes: >
+      W1 PR-F: missed-hold kill-test study results. Per-feature Mann-Whitney RBC,
+      BH-FDR q-values, reshuffle-null percentiles, episode-cluster n per split,
+      and G1-condition evaluation across primary (OOS honest), fund_unchecked sensitivity,
+      and Amendment A1 (market-benchmark) sensitivity. Combined routing: DEFERRED
+      (OOS honest n-floor not met: 4 compounder clusters vs required ≥25). Pre-registration
+      locked in research/long_hold/OBJECTIVE.md including Amendment A1.
+      FIREWALL: horizon_role=hold_thesis. This artifact MUST NOT feed entry-stack surfaces.
+      FDR family: long_hold (isolated per LH-R5). No scored_path_surfaces.
+      G1 ratification: PENDING FABLE RULING (see research/long_hold/W1_KILLTEST_RESULTS.md).
+
   # --- NW quant-synthesis B: research-queue EV-ranker ---
   research-queue:
     path: data/neuralweb/research_queue.json
