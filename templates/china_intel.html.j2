@@ -40,7 +40,7 @@
     border:1px solid color-mix(in srgb,var(--line) 80%,transparent); }
   .desk:hover { transform:translateY(-3px); border-color:color-mix(in srgb,var(--link) 45%,var(--line)); }
   .desk .dh { display:flex; align-items:center; gap:7px; font-size:13px; font-weight:700; color:var(--text); }
-  .desk .dh .dot { width:7px; height:7px; border-radius:50%; margin-left:auto; background:var(--down); }
+  .desk .dh .dot { width:7px; height:7px; border-radius:50%; margin-left:auto; background:var(--muted); }
   .desk .dh .dot.on { background:var(--ok); box-shadow:0 0 8px color-mix(in srgb,var(--ok) 70%,transparent); }
   .desk small { display:block; margin-top:4px; color:var(--muted); font-size:11px; }
   .desk .desk-asof { font-size:10px; color:var(--muted); margin-top:3px; }
@@ -68,14 +68,15 @@
   .pp-event-list li { display:flex; align-items:flex-start; gap:9px; padding:8px 0; border-bottom:1px solid var(--line); font-size:12.5px; }
   .pp-event-list li:last-child { border-bottom:none; }
   .pp-kind { font-size:9px; font-weight:800; letter-spacing:.04em; text-transform:uppercase; padding:2px 7px; border-radius:6px; white-space:nowrap; }
-  .pp-kind.APPEARED { background:color-mix(in srgb,var(--up) 18%,transparent); color:var(--up); }
-  .pp-kind.DROPPED { background:color-mix(in srgb,var(--down) 16%,transparent); color:var(--down); }
+  .pp-kind.APPEARED { background:color-mix(in srgb,#1f9a55 18%,transparent); color:#1f9a55; }
+  .pp-kind.DROPPED { background:color-mix(in srgb,#888 16%,transparent); color:#888; }
   .pp-kind.LEAD_SHIFT { background:color-mix(in srgb,#8b5cf6 18%,transparent); color:#a78bfa; }
   .pp-phrase { font-weight:700; font-size:13px; }
   .pp-gloss { font-size:11px; color:var(--muted); margin-top:2px; }
   .pp-meta { font-size:10px; color:var(--muted); margin-left:auto; white-space:nowrap; }
   .pp-cold { font-size:11px; color:var(--muted); padding:6px 0; font-style:italic; }
-  .pp-expander { font-size:11px; color:var(--link); cursor:pointer; margin-top:6px; display:inline-block; }
+  .pp-more > summary { cursor:pointer; font-size:11px; color:var(--link); margin-top:6px; list-style:none; }
+  .pp-more > summary::-webkit-details-marker { display:none; }
   /* ── narrative divergence chip ── */
   .nd-chip { display:flex; align-items:center; gap:10px; background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:11px 14px; margin:12px 0; font-size:13px; flex-wrap:wrap; }
   .nd-z { font-size:20px; font-weight:800; font-variant-numeric:tabular-nums; }
@@ -186,7 +187,7 @@
     {%- if b.max_staleness_days is not none and b.max_staleness_days > 2 %}
       <span class="mc warn"><span>{{ t('Freshest data','最新数据') }}</span> <b>{{ b.max_staleness_days }}{{ t('d old','天') }}</b></span>
     {%- endif %}
-    <span class="mode-badge">{{ t('Context only / 仅供参考','仅供参考') }}</span>
+    <span class="mode-badge">{{ t('Context only','仅供参考') }}</span>
   </div>
 
   {# ── B. DESK STATUS BOARD ── #}
@@ -206,7 +207,7 @@
       {%- set _live = _surf_key and b.surfaces_present is defined and _surf_key in b.surfaces_present %}
       {%- set _asof = (b.surface_asof or {}).get(_surf_key) if _surf_key else none %}
       <a class="desk" href="{{ href }}">
-        <div class="dh">{{ icon }} {{ label }}<span class="dot {{ 'on' if _live else '' }}"></span></div>
+        <div class="dh">{{ icon }} {{ label }}{% if _surf_key %}<span class="dot {{ 'on' if _live else '' }}"></span>{% endif %}</div>
         <small>{{ desc }}{% if not _live and _surf_key %} · {{ t('offline','离线') }}{% endif %}</small>
         {%- if _asof %}<div class="desk-asof">{{ _asof }}</div>{%- endif %}
         {%- if key == 'policy' and b.policy_phrase %}
@@ -246,8 +247,9 @@
     <p class="pp-cold">{{ t('Cold-start organs (no prior window yet — cannot detect APPEARED/DROPPED):','冷启动器官（尚无先验窗口——无法检测新增/消失）：') }} {{ _pp.cold_start_organs | join(', ') }}</p>
     {%- endif %}
     {%- if _pp.recent_events %}
+    {%- set _pp_all = _pp.recent_events[:24] %}
     <ul class="pp-event-list">
-      {%- for ev in _pp.recent_events[:8] %}
+      {%- for ev in _pp_all[:8] %}
       <li>
         <span class="pp-kind {{ ev.get('kind','') }}">{{ ev.get('kind','') }}</span>
         <div style="flex:1">
@@ -264,6 +266,29 @@
       </li>
       {%- endfor %}
     </ul>
+    {%- if _pp_all|length > 8 %}
+    <details class="pp-more">
+      <summary>{{ t('Show ' ~ (_pp_all|length - 8) ~ ' more', '显示更多 ' ~ (_pp_all|length - 8) ~ ' 条') }}</summary>
+      <ul class="pp-event-list">
+        {%- for ev in _pp_all[8:] %}
+        <li>
+          <span class="pp-kind {{ ev.get('kind','') }}">{{ ev.get('kind','') }}</span>
+          <div style="flex:1">
+            {%- if ev.get('kind') == 'LEAD_SHIFT' %}
+              <div class="pp-phrase">{{ t('Front-page lead domain','头版领衔议题') }}: {{ ev.get('from_domain','?') }} → {{ ev.get('to_domain','?') }}</div>
+              <div class="pp-gloss">{{ ev.get('organ','') }}</div>
+            {%- else %}
+              <div class="pp-phrase">{{ ev.get('phrase','') }}</div>
+              {%- if ev.get('gloss') %}<div class="pp-gloss">{{ ev.get('gloss','') }}</div>{%- endif %}
+              <div class="pp-gloss">{{ ev.get('organ','') }}</div>
+            {%- endif %}
+          </div>
+          <div class="pp-meta">{{ ev.get('asof','') }}</div>
+        </li>
+        {%- endfor %}
+      </ul>
+    </details>
+    {%- endif %}
     {%- else %}
     <p class="pp-cold">{{ t('No recent phrase-shift events in the last 14 days.','最近 14 天内无政策表述变化事件。') }}</p>
     {%- endif %}
@@ -282,7 +307,7 @@
       {%- if _nd.trend_5d %}<div style="font-size:10px;color:var(--muted)">{{ t('5d trend','5日趋势') }}: {{ _nd.trend_5d }}</div>{%- endif %}
     </div>
     <div class="nd-label">
-      {%- if _nd.risk_flag %}
+      {%- if _nd.risk_flag and _nd.divergence_z > 0 %}
         {{ t('Domestic tape appears quieter than offshore coverage — potential suppression signal. Risk flag only.', '境内报道较境外覆盖更平静——潜在信息抑制信号。仅风险标志。') }}
       {%- else %}
         {{ t('Onshore and offshore tone divergence within normal range.', '境内外报道语调差异在正常范围内。') }}

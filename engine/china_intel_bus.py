@@ -1,11 +1,13 @@
-"""China Intelligence transmission bus — the connector to the (future) China Mastermind.
+"""China Intelligence transmission bus — hub-display surfaces; digest summary travels to Mastermind.
 
 LEAF · CONTEXT-ONLY · NEVER A SCORE/SIZE. The China sibling of the macro master_brain brief:
 it fans the FIVE China intelligence surfaces — News, Central-Bank/Policy, Alternative Data,
 Divergence Radar, and the central-intelligence Analysis — into ONE schema-versioned,
-machine-readable rollup (`china_intel.briefing.v4`) that the China Mastermind reads as
-CONTEXT. It DECOUPLES by reading each surface's already-emitted JSON off disk (build-order is
-the only dependency); every reader degrades to None and NOTHING here raises into a build.
+machine-readable rollup (`china_intel.briefing.v4`) for hub display. The blocks assembled here
+are hub-display surfaces only; they reach the China Mastermind only via the digest summary
+line (see `_digest_text`). It DECOUPLES by reading each surface's already-emitted JSON off disk
+(build-order is the only dependency); every reader degrades to None and NOTHING here raises
+into a build.
 
 v2 carries the upgrade: importance-ranked + ticker-flagged news, conviction-scored cross-
 surface reads, flagged tickers, "what changed", staleness per surface, and a synthesis-led
@@ -216,9 +218,10 @@ def _policy_phrase_block() -> dict | None:
             return None
         asof = raw.get("asof") or ""
         events = raw.get("events") or []
-        counts = raw.get("counts") or {}
         cold_start_organs = raw.get("cold_start_organs") or []
-        # filter to last 14d
+        # Defensive 14d recency filter — communique_diff stamps all events with the run asof,
+        # so in practice all events already share the top-level asof and this filter is a no-op.
+        # Kept as a defensive guard in case a future producer emits per-event asof values.
         cutoff = ""
         try:
             cutoff = (date.fromisoformat(str(asof)[:10]) - timedelta(days=14)).isoformat()
@@ -237,7 +240,7 @@ def _policy_phrase_block() -> dict | None:
             if org:
                 organs_seen.add(org)
         return {
-            "asof": asof,
+            "asof": asof,  # "last diff run" — communique_diff stamps run day, not corpus freshness
             "n_events_recent": len(recent),
             "n_appeared": type_counts.get("APPEARED", 0),
             "n_dropped": type_counts.get("DROPPED", 0),
@@ -290,7 +293,7 @@ def _narrative_divergence_block() -> dict | None:
             "asof": latest_date,
             "divergence_z": round(z_val, 3),
             "trend_5d": trend_dir,
-            "risk_flag": abs(z_val) > 1.5,
+            "risk_flag": z_val > 1.5,  # one-sided: high z = suppression-suspect; negative z is not a flag
             "is_context_only": True,
             "direction_proven": False,
             "note_en": "Risk flag only — direction unproven (direction=0). High z suggests domestic tape quieter than offshore coverage.",

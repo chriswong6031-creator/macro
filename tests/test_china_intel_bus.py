@@ -120,7 +120,13 @@ def test_policy_phrase_block_happy_path(monkeypatch):
 
 
 def test_policy_phrase_old_events_excluded(monkeypatch):
-    """Events older than 14d are excluded from recent_events count."""
+    """Events older than 14d are excluded from recent_events count.
+
+    NOTE: this exercises the defensive 14d filter path. In production,
+    communique_diff stamps all events with the run asof (same as the top-level asof),
+    so the filter is a no-op — this payload fabricates a per-event asof older than
+    the top-level asof, which the producer cannot currently emit.
+    """
     payload = {
         "schema": "communique_diff.v1",
         "asof": "2026-07-02",
@@ -138,7 +144,7 @@ def test_policy_phrase_old_events_excluded(monkeypatch):
     monkeypatch.setattr(bus, "_read_json", lambda rel: payload if "communique_diff" in rel else None)
     result = bus._policy_phrase_block()
     assert result is not None
-    assert result["n_events_recent"] == 0  # old event filtered out
+    assert result["n_events_recent"] == 0  # old event filtered out (defensive path)
 
 
 # ── v4: narrative_divergence block ───────────────────────────────────────────
@@ -182,6 +188,32 @@ def test_narrative_divergence_block_happy_path(monkeypatch, tmp_path):
     assert result["risk_flag"] is True  # z > 1.5
     assert result["direction_proven"] is False
     assert result["asof"] == "2026-07-06"
+
+
+def test_narrative_divergence_block_negative_z_no_flag(monkeypatch, tmp_path):
+    """Negative z (e.g. -2.0) must NOT set risk_flag — semantics are one-sided (high = suspect)."""
+    import pandas as pd
+    parquet_dir = tmp_path / "data" / "missing_tape"
+    parquet_dir.mkdir(parents=True)
+    df = pd.DataFrame({
+        "date": ["2026-07-01", "2026-07-02", "2026-07-03",
+                 "2026-07-04", "2026-07-05", "2026-07-06"],
+        "zh_tone": [-1.0, -1.2, -1.5, -1.8, -2.0, -2.5],
+        "en_tone": [0.2, 0.3, 0.5, 0.4, 0.6, 0.8],
+        "spread": [-1.2, -1.5, -2.0, -2.2, -2.6, -3.3],
+        "spread_expanding_z": [float("nan"), float("nan"), float("nan"),
+                               float("nan"), float("nan"), -2.0],
+        "fetch_status": ["ok"] * 6,
+    })
+    df.to_parquet(parquet_dir / "tone_divergence.parquet", index=False)
+
+    import types
+    fake_config = types.SimpleNamespace(ROOT=tmp_path)
+    monkeypatch.setattr(bus, "config", fake_config)
+    result = bus._narrative_divergence_block()
+    assert result is not None
+    assert result["divergence_z"] == pytest.approx(-2.0, abs=0.01)
+    assert result["risk_flag"] is False  # negative z = offshore quieter, not domestic suppression
 
 
 def test_narrative_divergence_block_all_nan_z(monkeypatch, tmp_path):
