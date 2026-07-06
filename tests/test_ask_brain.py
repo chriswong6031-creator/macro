@@ -1316,6 +1316,33 @@ def test_factor_branch_checked_before_options_branch():
     assert "read_factor_state" in seeds
 
 
+# --- 15h. Advice filter on options path ---
+
+def test_advice_filter_covers_options_path():
+    """Advice-pattern filter is applied to options-path answers too (RO-7).
+
+    Mirrors test_advice_filter_covers_factor_path: the filter is path-agnostic,
+    so options-shaped answers with directional advice must be replaced by the
+    refusal text, including Chinese directional verbs (kill-list #6 / RUL-NW4).
+    """
+    # English directional verb
+    answer_en = "Given the dealer positioning into opex, you should buy the straddle."
+    filtered, was_filtered = ab._post_filter_advice(answer_en, [])
+    assert was_filtered, "English buy-advice must be filtered on options path"
+    assert "cannot provide investment advice" in filtered
+
+    # Chinese directional verbs
+    answer_zh = "根据期权流数据，建议买入跨式组合。"
+    filtered_zh, was_filtered_zh = ab._post_filter_advice(answer_zh, [])
+    assert was_filtered_zh, "Chinese 买入 must be filtered (kill-list #6)"
+    assert "cannot provide investment advice" in filtered_zh
+
+    answer_zh2 = "GEX 显示挤压风险，应平仓。"
+    filtered_zh2, was_filtered_zh2 = ab._post_filter_advice(answer_zh2, [])
+    assert was_filtered_zh2, "Chinese 平仓 must be filtered (kill-list #6)"
+    assert "cannot provide investment advice" in filtered_zh2
+
+
 if __name__ == "__main__":
     import pytest
     pytest.main([__file__, "-v"])
