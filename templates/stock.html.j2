@@ -1570,7 +1570,7 @@
       var s3v = s3.value != null ? s3.value.toFixed(2) : '?';
       var s3app = s3.approx ? ' (approx)' : '';
       tipParts.push('Solvency: Altman Z=' + s3v + s3app + ' (threshold <1.81)' + (s3.fired ? ' ✔ FIRED' : ' ✘ pass'));
-      tipPartsZh.push('偿债能力：Altman Z=' + s3v + s3app + '（閘值<1.81）' + (s3.fired ? ' ✔触发' : ' ✘通过'));
+      tipPartsZh.push('偿债能力：Altman Z=' + s3v + s3app + '（阈值<1.81）' + (s3.fired ? ' ✔触发' : ' ✘通过'));
     } else {
       tipParts.push('Solvency: data unavailable');
       tipPartsZh.push('偿债能力：数据不可用');
