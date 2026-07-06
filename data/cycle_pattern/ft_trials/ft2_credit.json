@@ -1,0 +1,263 @@
+{
+  "schema": "cycle_pattern_ft_trial.v1",
+  "registered_ref": "PREREGISTRATION.md \u00a713",
+  "run_at": "2026-07-06T22:04:16.924369+00:00",
+  "embargo": "date<2024-01-01",
+  "panel_epoch": "price_c4414dcb",
+  "n_rows": 16429,
+  "n_test_years": 14,
+  "candidate_count_printed": 6,
+  "trial_family": "rf.cycle_pattern.ft_v1",
+  "config": {
+    "first_test_year": 2010,
+    "embargo_m": 6,
+    "boot_draws": 800,
+    "boot_seed": 7,
+    "fdr_q": 0.1,
+    "sign_stability_min": 9,
+    "n_cells_family": 6,
+    "base_design": [
+      "age_b1",
+      "age_b2",
+      "age_b3",
+      "age_b4",
+      "age_b5",
+      "log_age_ratio",
+      "amp_proxy",
+      "pos_osc_s",
+      "osc_slope_s",
+      "trend_pass",
+      "mom_score",
+      "rs_63d",
+      "vol_pctile",
+      "quad_Q2",
+      "quad_Q3",
+      "quad_Q4",
+      "liq_expanding",
+      "fam_country",
+      "fam_cn"
+    ]
+  },
+  "feature_block": {
+    "features": [
+      "hy_oas_pctile",
+      "hy_oas_d63",
+      "curve_10y3m"
+    ],
+    "hy_oas_pctile": "expanding percentile of BofA HY OAS level at t (data/fred/BAMLH0A0HYM2.parquet 'hy_oas', obs<=t only; PIT)",
+    "hy_oas_d63": "63-trading-day change in HY OAS level at t (last obs<=t minus obs 63 daily positions prior)",
+    "curve_10y3m": "10y-3m Treasury spread level at t (data/fred/T10Y3M.parquet 'spread_10y3m', last obs<=t; PIT)"
+  },
+  "per_fold": {
+    "up": {
+      "n_folds": 14,
+      "test_years": [
+        2010,
+        2011,
+        2012,
+        2013,
+        2014,
+        2015,
+        2016,
+        2017,
+        2018,
+        2019,
+        2020,
+        2021,
+        2022,
+        2023
+      ],
+      "n_train_per_fold": [
+        3674,
+        4151,
+        4669,
+        5032,
+        5532,
+        6091,
+        6611,
+        7047,
+        7775,
+        8375,
+        8804,
+        9405,
+        10115,
+        10594
+      ],
+      "n_test_per_fold": [
+        446,
+        384,
+        446,
+        576,
+        547,
+        446,
+        601,
+        708,
+        374,
+        590,
+        696,
+        630,
+        410,
+        625
+      ]
+    },
+    "down": {
+      "n_folds": 14,
+      "test_years": [
+        2010,
+        2011,
+        2012,
+        2013,
+        2014,
+        2015,
+        2016,
+        2017,
+        2018,
+        2019,
+        2020,
+        2021,
+        2022,
+        2023
+      ],
+      "n_train_per_fold": [
+        1643,
+        1790,
+        1914,
+        2210,
+        2382,
+        2495,
+        2678,
+        3058,
+        3154,
+        3382,
+        3787,
+        4026,
+        4156,
+        4521
+      ],
+      "n_test_per_fold": [
+        184,
+        269,
+        220,
+        96,
+        135,
+        319,
+        217,
+        120,
+        454,
+        250,
+        144,
+        210,
+        452,
+        251
+      ]
+    }
+  },
+  "ledger": {
+    "up": {
+      "1m": {
+        "delta_brier": -0.011775,
+        "ci90": [
+          -0.017943,
+          -0.006436
+        ],
+        "boot_p": 1.0,
+        "years_positive": 4,
+        "n_years": 14,
+        "bh_pass": false,
+        "verdict": "FAIL",
+        "brier_base": 0.233536,
+        "brier_block": 0.245311,
+        "ci_excludes_zero": false,
+        "sign_stable": false,
+        "n_oos": 7479
+      },
+      "3m": {
+        "delta_brier": -0.011331,
+        "ci90": [
+          -0.017931,
+          -0.005599
+        ],
+        "boot_p": 1.0,
+        "years_positive": 4,
+        "n_years": 14,
+        "bh_pass": false,
+        "verdict": "FAIL",
+        "brier_base": 0.253071,
+        "brier_block": 0.264401,
+        "ci_excludes_zero": false,
+        "sign_stable": false,
+        "n_oos": 7479
+      },
+      "6m": {
+        "delta_brier": -0.009823,
+        "ci90": [
+          -0.014909,
+          -0.004958
+        ],
+        "boot_p": 1.0,
+        "years_positive": 4,
+        "n_years": 14,
+        "bh_pass": false,
+        "verdict": "FAIL",
+        "brier_base": 0.24026,
+        "brier_block": 0.250084,
+        "ci_excludes_zero": false,
+        "sign_stable": false,
+        "n_oos": 7479
+      }
+    },
+    "down": {
+      "1m": {
+        "delta_brier": -0.004329,
+        "ci90": [
+          -0.007383,
+          -0.001272
+        ],
+        "boot_p": 0.9938,
+        "years_positive": 4,
+        "n_years": 14,
+        "bh_pass": false,
+        "verdict": "FAIL",
+        "brier_base": 0.229743,
+        "brier_block": 0.234072,
+        "ci_excludes_zero": false,
+        "sign_stable": false,
+        "n_oos": 3321
+      },
+      "3m": {
+        "delta_brier": -0.001996,
+        "ci90": [
+          -0.004132,
+          0.000121
+        ],
+        "boot_p": 0.9401,
+        "years_positive": 5,
+        "n_years": 14,
+        "bh_pass": false,
+        "verdict": "FAIL",
+        "brier_base": 0.17712,
+        "brier_block": 0.179116,
+        "ci_excludes_zero": false,
+        "sign_stable": false,
+        "n_oos": 3321
+      },
+      "6m": {
+        "delta_brier": -0.000265,
+        "ci90": [
+          -0.001099,
+          0.000647
+        ],
+        "boot_p": 0.6704,
+        "years_positive": 7,
+        "n_years": 14,
+        "bh_pass": false,
+        "verdict": "FAIL",
+        "brier_base": 0.100733,
+        "brier_block": 0.100998,
+        "ci_excludes_zero": false,
+        "sign_stable": false,
+        "n_oos": 3321
+      }
+    }
+  }
+}
