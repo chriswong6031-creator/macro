@@ -32,7 +32,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | sector-pulse | 3 |
 | setup-species | 6 |
 | short-side | 1 |
-| signal-commons | 7 |
+| signal-commons | 8 |
 | us-stocks-prebreakout | 2 |
 
 ### Artifacts by tier
@@ -40,7 +40,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | tier | count |
 |---|---|
 | display | 99 |
-| infrastructure | 50 |
+| infrastructure | 51 |
 | scored | 4 |
 | shadow | 37 |
 
@@ -48,7 +48,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 184 |
+| git | 185 |
 | gitignored-local | 4 |
 | r2 | 2 |
 
@@ -356,6 +356,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | event-priors-sp-index-changes | `data/special_situations/event_priors/sp_index_changes.json` | json | weekly | display | 2 | 0 |
 | kernel-half-lives | `data/neuralweb/half_life.json` | json | daily-engine | infrastructure | 1 | 0 |
 | event-priors-gov-contract | `data/special_situations/event_priors/gov_contract.json` | json | weekly | display | 0 | 0 |
+| reflexivity-n-eff-history | `data/reflexivity/n_eff_history.json` | json | daily-engine | infrastructure | 0 | 0 |
 
 ### us-stocks-prebreakout
 
