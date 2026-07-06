@@ -5780,3 +5780,37 @@ artifacts:
       n_eff_by_lane, same_thesis_group_count}. Accrual substrate for Codex BOOK-1
       "N_eff by regime" study — verdict window ~2027. Display/context only;
       no behavioral consumer (R-F / Signal Commons R7).
+
+  # --- DT-NW-1: register live dt_contra chip state as NW display artifact ---
+  dt-contra-state:
+    path: data/neuralweb/dt_contra_state.json
+    format: json
+    producer: scripts/build_dt_contra_state.py
+    known_extra_writers: []
+    owner_program: dannytrades
+    cadence: daily-engine
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 30
+    schema: dt_contra_state.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - cortex-read
+    external_consumers: []
+    notes: >
+      DT-NW-1 (adjudication §4.2). Promotion, not invention (RUL-P5): exposes the
+      already-computed per-ticker dt_contra field (state ∈ {fade,bounce,neutral},
+      band, score_pct, whale, whale_chg) aggregated from site/stockdata/*.json into
+      a governed NW artifact. Schema: {asof, universe_n, n_with_chip,
+      counts_by_state, counts_by_band, states:[{ticker, state, band, score_pct,
+      whale, whale_chg}], caveat}. Caveat string is sourced verbatim from
+      engine/dannytrades_chip.py (_CAVEAT) — single source of truth (DT-R11a).
+      DISPLAY-ONLY ceiling (DT-R11a): cortex may cite to de-escalate a calibrated
+      key; may never originate, score, or escalate. Momentum-dilution law (DT-R11b):
+      must never be blended into any momentum ranker. Degrades gracefully (empty
+      states list + note) when site/stockdata dir is absent (CI runners). Deterministic
+      ordering (sort by ticker) for stable diffs. DT-W1 replication verdict will
+      rewrite the chip caveat string (single source) if warranted.
