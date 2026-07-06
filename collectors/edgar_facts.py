@@ -42,7 +42,15 @@ FLOW = {
             "NetCashProvidedByUsedInOperatingActivitiesContinuingOperations"],
     "capex": ["PaymentsToAcquirePropertyPlantAndEquipment", "PaymentsToAcquireProductiveAssets"],
     "interest_exp": ["InterestExpense", "InterestAndDebtExpense"],
-    "depreciation": ["DepreciationDepletionAndAmortization", "DepreciationAndAmortization"],
+    "depreciation": ["DepreciationDepletionAndAmortization", "DepreciationAndAmortization",
+                     "Depreciation"],
+    # --- W2 PR-H additions (Long-Hold Thesis Layer, 2026-07-06) ---
+    # SBC: share-based compensation (non-cash; needed for EBITDA proxy and FCF conversion)
+    "sbc": ["ShareBasedCompensation", "AllocatedShareBasedCompensationExpense",
+            "ShareBasedCompensationArrangementByShareBasedPaymentAwardEquityInstrumentsOtherThanOptionsVestedInPeriodTotalFairValue"],
+    # R&D: research and development expense (capital-allocation and moat-falsifier work)
+    "research_dev": ["ResearchAndDevelopmentExpense",
+                     "ResearchAndDevelopmentExpenseExcludingAcquiredInProcessCost"],
 }
 BALANCE = {
     "assets": ["Assets"],
@@ -239,6 +247,7 @@ if __name__ == "__main__":
         sub = df[df["ticker"] == t].sort_values("fy") if "ticker" in df else df
         print(f"\n=== {t} ===")
         cols = [c for c in ("fy", "revenue", "gross_profit", "op_income", "ni",
-                            "eps_diluted", "cfo", "capex", "assets", "equity",
+                            "eps_diluted", "cfo", "capex", "interest_exp", "depreciation",
+                            "sbc", "research_dev", "assets", "equity",
                             "cur_assets", "cur_liab", "debt_lt", "cash") if c in sub.columns]
         print(sub[cols].to_string(index=False))
