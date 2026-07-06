@@ -429,6 +429,8 @@ def run(root: Path | None = None, dry_run: bool = False) -> dict:
 
     # ── determine as_of_today from artifacts ──────────────────────────────
     # Use the most recent as_of seen across loaded artifacts.
+    # wh_banner has no top-level as_of; harvest from per-alert rows so that a
+    # run with ONLY wh_banner present does not fall back to date.today().
     candidate_dates = []
     if exp_data:
         d = exp_data.get("as_of")
@@ -442,6 +444,12 @@ def run(root: Path | None = None, dry_run: bool = False) -> dict:
         d = rr_data.get("asof")  # note: no underscore
         if d:
             candidate_dates.append(d)
+    # wh_banner: collect published_at-derived dates already resolved into row as_of
+    for r in new_rows:
+        if r.get("surface") == "alert_wh":
+            d = r.get("as_of")
+            if d:
+                candidate_dates.append(d)
     as_of_today = max(candidate_dates) if candidate_dates else date.today().isoformat()
 
     # ── build summary over all rows (existing + appended) ─────────────────
