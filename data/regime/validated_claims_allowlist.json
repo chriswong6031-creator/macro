@@ -852,6 +852,41 @@
       "match": "validated on two panels: stop-out",
       "backing": "W8-B-OOS SHAKEN confirmatory PASS, research/signal_engine/DURABLE_BOTTOM_FRAMEWORK.md decisions ledger (2026-07-03): n=8009 stop5 42.5 vs FRESH 47.1 (−4.59pp), clean15 +1.59pp NI, sign-stable all four splits (tickerA/tickerB/pre/post); confirmed on the deep panel (35.8 vs 40.3). The Wave-8 ship decision in the same ledger explicitly licenses the SHAKEN chip's validated copy (display-only, no rank power).",
       "surfaces": ["us_stocks"]
+    },
+    {
+      "match": "validated confluence buy",
+      "backing": "the T1-T4 confluence buy-GATE (signal_gate; research/SECTOR_CONFLUENCE.md) — same gate as the existing 'validated-confluence buy-gate' sig_badge entry. Badge/tooltip renders ONLY on an engine-emitted gate verdict: engine/altdata_emit.py _entry_badge stamps entry_tier from signal_gate verdicts ('entry_tier (T1/T2/T3) = validated confluence buy gate signal'); intel-hub entrybadge renders only when entry_gate.buyable (engine/intel_hub.py payload). Covers the ⚡ prime-entry tooltip EN+zh (已验证共振买入 / 已验证汇流买入信号).",
+      "surfaces": ["intelligence_hub", "alt_data"]
+    },
+    {
+      "match": "validated t1-t4 confluence",
+      "backing": "code/CSS comments naming the same T1-T4 confluence buy gate (signal_gate; research/SECTOR_CONFLUENCE.md) — the prime-entry badge plumbing in intelligence_hub (jinja macro comment + .egate style-block comment), not free prose; the displayed badge itself is gated by the entry above.",
+      "surfaces": ["intelligence_hub"]
+    },
+    {
+      "match": "validated 2d-macd",
+      "backing": "research/SECTOR_CONFLUENCE.md — the MACD-2D × StochRSI-3D confluence turn (same signal as the 'validated MACD-2D' entry); engine/china_sector_turn reuses it as the leg-A turn marker for the CN sector washout→turn boost. Display re-rank only, never a filter (the legend copy states this). Covers the JS comment + legend line EN+zh (已验证的 2D-MACD × 3D-StochRSI).",
+      "surfaces": ["china"]
+    },
+    {
+      "match": "'VALIDATED EDGE','已验证优势'",
+      "backing": "Reversal Sleeve strategy-card tag (template t() form) — the validated A-share within-sector 3M reversal edge: +0.56%/mo, Sharpe 0.58, 388 rebalances (research/CHINA_HK_STOCK_SIGNALS.md; ENGINE_FIX_MASTERPLAN.md §Selection); productized per W5-A/W5-B CONFIRM-ON-AVAILABLE-PLANE verdict, both time-halves positive (research/china_alpha/w5/W5B_INTEGRATION.md, 2026-07-03). No-gate invariant enforced (#823); card copy itself carries the high-variance/small-size caveat.",
+      "surfaces": ["baskets_china", "cn_reversal_sleeve"]
+    },
+    {
+      "match": "validated edge</span><span class=\"l-zh\">已验证优势",
+      "backing": "same Reversal Sleeve tag, rendered dual-span form (research/CHINA_HK_STOCK_SIGNALS.md within-sector 3M reversal + research/china_alpha/w5/W5B_INTEGRATION.md CONFIRM verdict).",
+      "surfaces": ["baskets_china", "cn_reversal_sleeve"]
+    },
+    {
+      "match": "已验证\"门槛",
+      "backing": "desk-grader fine-print zh span — quotes the grader's own 'proven' (zh 已验证) tier THRESHOLD: engine/desk_grader.py _proven_status needs n>=40 matured obs + significant Newey-West HAC t of the right sign, and the daily HAC IC needs MIN_DATES_IC=6 grading dates. A statement of the gate's mechanics (doctrine-quote, like the measurement.html entries); the EN twin span on the adjacent line says 'the \"proven\" gate'.",
+      "surfaces": ["desk_grader", "intelligence_hub"]
+    },
+    {
+      "match": "p1.3 validated",
+      "backing": "EI P1.3 trio ablation, round 2 CONFORMANT (valid permutation null + positive/negative statistic-calibration controls): F3 anti-chase ext_z>2 verdict SHIPS-AS-HARD-GATE — stop −0.43pp@21d/−5.00pp@63d at 4.6% fire cost, BH q≤0.01, sign-stable (research/ENTRY_INTELLIGENCE_MASTERPLAN_BY_FABLE.md decisions ledger 2026-07-05; P1_3_TRIO_ABLATION_PREREG.md). F3_ANTICHASE registry entry merged #1472; ships shadow-first per Article 2 — the tooltip itself discloses 'display context only — gate not wired in P2.4'.",
+      "surfaces": ["dashboard"]
     }
   ]
 }
