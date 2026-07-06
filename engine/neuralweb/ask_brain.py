@@ -55,6 +55,7 @@ _DISCLAIMER = (
 _BUDGET_WHY_FIRED = 6
 _BUDGET_CONTRADICTS = 5
 _BUDGET_REGIME = 3
+_BUDGET_FACTOR = 6
 _BUDGET_GENERAL = 8
 _BUDGET_MAX_HARD_CAP = 8
 
@@ -66,6 +67,7 @@ _DAILY_GLOBAL_QUOTA = int(os.environ.get("ASK_BRAIN_DAILY_QUOTA", "200"))
 _STATE_DIR = Path(os.environ.get("MACRO_API_STATE_DIR", "/var/lib/macro-api"))
 
 # Advice-pattern post-filter — any answer hitting these triggers a refusal
+# kill-list #6: directional verbs banned in customer-facing text (applies to factor path too)
 _ADVICE_PATTERNS = [
     # buy/sell/short/cover + position context
     re.compile(r"\b(you\s+should\s+(buy|sell|short|cover|exit|enter|hold))\b", re.I),
@@ -73,7 +75,18 @@ _ADVICE_PATTERNS = [
     re.compile(r"\b(i\s+recommend|my\s+recommendation\s+is|you\s+ought\s+to)\b", re.I),
     re.compile(r"\bprice\s+target\b", re.I),
     re.compile(r"\bshould\s+(exit|enter|add|trim|reduce)\s+(your|the)?\s*position\b", re.I),
+    # Chinese directional verbs — kill-list #6 / RUL-NW4
+    re.compile(r"(加仓|卖出|买入|减仓|建仓|平仓)", re.I),
 ]
+
+# Factor-question trigger terms (RUL-NW4)
+_FACTOR_TRIGGER_TERMS = re.compile(
+    r"\b(factor|style\s+regime|factor\s+weather|alibi|borrowed\s+strength|"
+    r"dna|twin|payout|low.?vol|profitability|quality|value\s+leadership|"
+    r"factor\s+contradiction|factor\s+leader|factor\s+model|"
+    r"ic\s+score|scorecard|factor\s+percentile|block[.-]a|block[.-]b)\b",
+    re.I,
+)
 
 # Prompt-injection reject patterns
 _INJECTION_PATTERNS = [
@@ -99,6 +112,10 @@ _ASK_READ_TOOLS = frozenset({
     "read_contradictions",
     "read_governance",
     "read_artifact",
+    # Factor Intelligence × Neural Web W2 (RUL-NW4): factor read tools
+    "read_factor_state",
+    "list_factor_contradictions",
+    "explain_factor_context",
 })
 
 # Customer-facing system prompt
@@ -218,13 +235,25 @@ def _classify_question(question: str, context_ticker: str | None) -> tuple[int, 
     the actual tool sequence.
     """
     q = question.lower()
-    # "why did X fire / what signals fired for X"
+    # "why did X fire / what signals fired for X" — highest specificity, checked first
     if context_ticker or re.search(r"\b(why\s+did|what\s+fired|signals?\s+for|setup\s+for)\b", q):
         return _BUDGET_WHY_FIRED, ["query_spine", "read_world_state", "read_kernel"]
-    # "what contradicts / contradictions / disagreement"
+    # Factor Intelligence path (RUL-NW4) — checked before generic contradictions/regime
+    # so "factor contradictions" and "style regime" questions don't bleed into other branches
+    if _FACTOR_TRIGGER_TERMS.search(q):
+        seeds = ["read_factor_state"]
+        # Detect a ticker in the question — add explain_factor_context
+        ticker_match = re.search(r"\b([A-Z]{2,5})\b", question)
+        if ticker_match:
+            seeds.append("explain_factor_context")
+        # Contradiction phrasing also seeds the contradiction ledger
+        if re.search(r"\b(contradict\w*|conflict\w*|tension\w*|borrowed\s+strength)\b", q):
+            seeds.append("list_factor_contradictions")
+        return _BUDGET_FACTOR, seeds
+    # "what contradicts / contradictions / disagreement" — generic graph contradictions
     if re.search(r"\b(contradict\w*|disagree\w*|conflict\w*|tension\w*|opposing\w*)\b", q):
         return _BUDGET_CONTRADICTS, ["read_contradictions", "read_graph"]
-    # "macro regime / market state / risk / outlook"
+    # "macro regime / market state / risk / outlook" — generic macro state
     if re.search(r"\b(regime|macro|risk[.\s-]off|risk[.\s-]on|market\s+state|outlook|quad)\b", q):
         return _BUDGET_REGIME, ["read_world_state"]
     # default
@@ -236,7 +265,12 @@ def _classify_question(question: str, context_ticker: str | None) -> tuple[int, 
 # ---------------------------------------------------------------------------
 
 def _read_tool_schemas() -> list[dict]:
-    """Return only the 7 read-tool schemas.  Write tools not included."""
+    """Return read-tool schemas (write tools excluded structurally).
+
+    Returns the 10 read tools: the 7 original cortex read tools + 3 factor
+    intelligence tools (RUL-NW4: read_factor_state, list_factor_contradictions,
+    explain_factor_context).  All write tools are excluded.
+    """
     # Import the full schema list from cortex and filter to read-only
     from engine.neuralweb.cortex import _tool_schemas as _all_schemas  # noqa: PLC0415
     all_schemas = _all_schemas()
@@ -414,6 +448,9 @@ def _dispatch_read_tool(tool_name: str, tool_params: dict, root: Path) -> dict:
         _tool_read_contradictions,
         _tool_read_governance,
         _tool_read_artifact,
+        _tool_read_factor_state,
+        _tool_list_factor_contradictions,
+        _tool_explain_factor_context,
     )
 
     if tool_name == "read_world_state":
@@ -430,6 +467,12 @@ def _dispatch_read_tool(tool_name: str, tool_params: dict, root: Path) -> dict:
         return _tool_read_governance(root, tool_params)
     elif tool_name == "read_artifact":
         return _tool_read_artifact(root, tool_params)
+    elif tool_name == "read_factor_state":
+        return _tool_read_factor_state(root, tool_params)
+    elif tool_name == "list_factor_contradictions":
+        return _tool_list_factor_contradictions(root, tool_params)
+    elif tool_name == "explain_factor_context":
+        return _tool_explain_factor_context(root, tool_params)
     # Unreachable given the whitelist guard above
     return {"error": f"dispatcher: unhandled tool {tool_name!r}"}
 

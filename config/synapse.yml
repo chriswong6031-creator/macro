@@ -4607,6 +4607,8 @@ artifacts:
     scored_path_surfaces: []
     consumers:
       - engine/neuralweb/world_state.py
+      - engine/neuralweb/cortex.py
+      - engine/neuralweb/ask_brain.py
     notes: >
       RUL-NW1 — factor_panel job is sole advancer. Context-only committed
       digest of factor intelligence state (panel health, factor weather,
@@ -4677,7 +4679,9 @@ artifacts:
     horizon_role: context
     weights: none
     scored_path_surfaces: []
-    consumers: []
+    consumers:
+      - engine/neuralweb/cortex.py
+      - engine/neuralweb/ask_brain.py
     notes: >
       RUL-NW10 — append-only per-fire panel coordinates, keyed (as_of, ticker).
       PIT by construction: panel row at exactly the standouts as_of date. Fields:
@@ -4701,7 +4705,9 @@ artifacts:
     horizon_role: context
     weights: none
     scored_path_surfaces: []
-    consumers: []
+    consumers:
+      - engine/neuralweb/cortex.py
+      - engine/neuralweb/ask_brain.py
     notes: >
       RUL-NW1 — un-gitignored by this ruling; committed via the factor_panel job's
       narrow commit step. Pair G borrowed_strength contradiction ledger: append-only,

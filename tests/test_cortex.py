@@ -837,3 +837,222 @@ class TestMemoCensusConsistency:
         assert data_memo == site_memo, (
             "Budget-exhausted memo: data and site copies diverged."
         )
+
+
+# ---------------------------------------------------------------------------
+# 12. Factor Intelligence × Neural Web tools (RUL-NW3)
+# ---------------------------------------------------------------------------
+
+def _make_repo_with_factor_state(tmp: Path) -> Path:
+    """Extend _make_repo with factor intelligence artifacts."""
+    _make_repo(tmp)
+
+    # factor_intelligence_state.json
+    (tmp / "data" / "neuralweb").mkdir(parents=True, exist_ok=True)
+    state = {
+        "schema": "neuralweb.factor_intelligence_state.v1",
+        "as_of": "2026-07-05",
+        "is_context_only": True,
+        "display_only": True,
+        "factor_weather": {
+            "style_regime": "VALUE",
+            "factor_leader": "Value",
+            "factor_leader_ic": 0.12,
+            "display_only": True,
+        },
+        "scorecard": {
+            "payout_fdr_survivor": True,
+            "composite_untradeable": True,
+        },
+        "attention": {
+            "track_record": {"n": 0, "hits": 0},
+        },
+        "latest_board_coordinates": {
+            "AAPL": {
+                "ticker": "AAPL",
+                "dna_class": "A1",
+                "alibi_share_20d": 0.65,
+                "twin_bleed_flag": False,
+            },
+        },
+        "gaps": [],
+    }
+    (tmp / "data" / "neuralweb" / "factor_intelligence_state.json").write_text(
+        json.dumps(state), encoding="utf-8"
+    )
+
+    # factor_contradictions.jsonl
+    rows = [
+        {"date": "2026-07-04", "ticker": "NVDA", "severity": "note",
+         "display_only": True, "reason": "borrowed_strength from Value factor"},
+        {"date": "2026-07-05", "ticker": "AAPL", "severity": "note",
+         "display_only": True, "reason": "twin_bleed detected"},
+    ]
+    (tmp / "data" / "neuralweb" / "factor_contradictions.jsonl").write_text(
+        "\n".join(json.dumps(r) for r in rows) + "\n", encoding="utf-8"
+    )
+
+    # fire_coordinates.jsonl
+    (tmp / "data" / "factordata").mkdir(parents=True, exist_ok=True)
+    fires = [
+        {"as_of": "2026-07-04", "ticker": "AAPL", "tier": "buy",
+         "dna_class": "A1", "style_regime": "VALUE",
+         "alibi_share_20d": 0.65, "twin_bleed_flag": False,
+         "twin_rel_20d": 0.02, "alpha_z_house": 1.1,
+         "top_contrib_streams": ["momentum_20d", "value_rank", "breadth_z"],
+         "factor_model": "v1"},
+        {"as_of": "2026-07-03", "ticker": "AAPL", "tier": "buy",
+         "dna_class": "A1", "style_regime": "VALUE",
+         "alibi_share_20d": 0.60, "twin_bleed_flag": False,
+         "twin_rel_20d": 0.01, "alpha_z_house": 0.9,
+         "top_contrib_streams": ["momentum_20d", "value_rank", "breadth_z"],
+         "factor_model": "v1"},
+    ]
+    (tmp / "data" / "factordata" / "fire_coordinates.jsonl").write_text(
+        "\n".join(json.dumps(f) for f in fires) + "\n", encoding="utf-8"
+    )
+
+    return tmp
+
+
+@pytest.fixture
+def factor_repo(tmp_path: Path) -> Path:
+    return _make_repo_with_factor_state(tmp_path)
+
+
+class TestFactorTools:
+    """Factor Intelligence × Neural Web tools (RUL-NW3)."""
+
+    def test_read_factor_state_returns_artifact(self, factor_repo):
+        from engine.neuralweb.cortex import dispatch_tool
+        census: dict = {}
+        result = dispatch_tool("read_factor_state", {}, factor_repo, _NOW_STR, _PROBATION, census)
+        assert "error" not in result
+        assert result.get("is_context_only") is True
+        assert result.get("display_only") is True
+        assert result.get("as_of") == "2026-07-05"
+        assert "factor_weather" in result
+        assert census["read_factor_state"] == 1
+
+    def test_read_factor_state_absent_returns_structured_gap(self, repo):
+        """When factor_intelligence_state.json is absent, return structured gap not exception."""
+        from engine.neuralweb.cortex import dispatch_tool
+        census: dict = {}
+        result = dispatch_tool("read_factor_state", {}, repo, _NOW_STR, _PROBATION, census)
+        # File is absent in base repo fixture — must return structured gap
+        assert "gaps" in result
+        assert result.get("is_context_only") is True
+        assert len(result["gaps"]) > 0
+
+    def test_list_factor_contradictions_returns_records(self, factor_repo):
+        from engine.neuralweb.cortex import dispatch_tool
+        census: dict = {}
+        result = dispatch_tool("list_factor_contradictions", {}, factor_repo, _NOW_STR, _PROBATION, census)
+        assert "error" not in result
+        assert result.get("is_context_only") is True
+        assert result.get("display_only") is True
+        assert "records" in result
+        assert result["total_available"] == 2
+        assert result["returned"] <= 2
+
+    def test_list_factor_contradictions_ticker_filter(self, factor_repo):
+        from engine.neuralweb.cortex import dispatch_tool
+        census: dict = {}
+        result = dispatch_tool("list_factor_contradictions", {"ticker": "NVDA"},
+                               factor_repo, _NOW_STR, _PROBATION, census)
+        assert result.get("total_available") == 1
+        for rec in result["records"]:
+            assert rec["ticker"] == "NVDA"
+
+    def test_list_factor_contradictions_limit_enforced(self, factor_repo):
+        from engine.neuralweb.cortex import dispatch_tool
+        census: dict = {}
+        result = dispatch_tool("list_factor_contradictions", {"limit": 1},
+                               factor_repo, _NOW_STR, _PROBATION, census)
+        assert result["returned"] <= 1
+
+    def test_list_factor_contradictions_absent_returns_empty(self, repo):
+        """Absent file returns empty list with note, not an exception."""
+        from engine.neuralweb.cortex import dispatch_tool
+        census: dict = {}
+        result = dispatch_tool("list_factor_contradictions", {}, repo, _NOW_STR, _PROBATION, census)
+        assert result["records"] == []
+        assert result.get("is_context_only") is True
+        assert "note" in result
+
+    def test_explain_factor_context_returns_structured_context(self, factor_repo):
+        from engine.neuralweb.cortex import dispatch_tool
+        census: dict = {}
+        result = dispatch_tool("explain_factor_context", {"ticker": "AAPL"},
+                               factor_repo, _NOW_STR, _PROBATION, census)
+        assert "error" not in result
+        assert result.get("ticker") == "AAPL"
+        assert result.get("is_context_only") is True
+        assert result.get("display_only") is True
+        assert "board_coordinates" in result
+        assert result["board_coordinates"] is not None
+        assert "fire_history" in result
+        assert len(result["fire_history"]) == 2
+        assert "mandate" in result
+        # Mandate must not contain directional verbs
+        mandate = result["mandate"].lower()
+        for verb in ("buy", "sell", "recommend", "should"):
+            assert verb not in mandate, f"Mandate contains forbidden verb: {verb!r}"
+
+    def test_explain_factor_context_absent_data_returns_gaps(self, repo):
+        """When no factor data exists, return structured gap dict not prose apology."""
+        from engine.neuralweb.cortex import dispatch_tool
+        census: dict = {}
+        result = dispatch_tool("explain_factor_context", {"ticker": "NVDA"},
+                               repo, _NOW_STR, _PROBATION, census)
+        assert "error" not in result
+        assert result.get("ticker") == "NVDA"
+        assert result.get("is_context_only") is True
+        # Must have explicit gaps list (not a prose apology string)
+        assert "gaps" in result
+        assert isinstance(result["gaps"], list)
+        assert len(result["gaps"]) > 0
+
+    def test_explain_factor_context_ticker_not_in_board(self, factor_repo):
+        """Ticker absent from board coordinates returns None coord + gap entry."""
+        from engine.neuralweb.cortex import dispatch_tool
+        census: dict = {}
+        result = dispatch_tool("explain_factor_context", {"ticker": "MSFT"},
+                               factor_repo, _NOW_STR, _PROBATION, census)
+        assert result.get("ticker") == "MSFT"
+        assert result.get("board_coordinates") is None
+        # Must have a gap noting the absence
+        assert any("MSFT" in g or "not present" in g.lower() for g in result.get("gaps", []))
+
+    def test_explain_factor_context_requires_ticker(self, factor_repo):
+        """Missing ticker returns error, not exception."""
+        from engine.neuralweb.cortex import dispatch_tool
+        census: dict = {}
+        result = dispatch_tool("explain_factor_context", {},
+                               factor_repo, _NOW_STR, _PROBATION, census)
+        assert "error" in result
+
+    def test_unknown_factor_write_tool_refused(self, factor_repo):
+        """A hypothetical write tool named with 'factor' is refused by A7 guard."""
+        from engine.neuralweb.cortex import dispatch_tool
+        census: dict = {}
+        result = dispatch_tool("write_factor_signal", {"ticker": "AAPL"},
+                               factor_repo, _NOW_STR, _PROBATION, census)
+        assert "error" in result
+        assert "not allowed" in result["error"].lower() or "whitelist" in result["error"].lower()
+        assert "write_factor_signal" not in census
+
+    def test_factor_tools_in_allowed_tools(self):
+        """All three factor tools must be in _ALLOWED_TOOLS (A7 guard whitelist)."""
+        from engine.neuralweb.cortex import _ALLOWED_TOOLS
+        for tool_name in ("read_factor_state", "list_factor_contradictions", "explain_factor_context"):
+            assert tool_name in _ALLOWED_TOOLS, f"{tool_name} missing from _ALLOWED_TOOLS"
+
+    def test_factor_tools_cap_output(self, factor_repo):
+        """read_factor_state returns the small artifact directly (not truncated)."""
+        from engine.neuralweb.cortex import dispatch_tool
+        census: dict = {}
+        result = dispatch_tool("read_factor_state", {}, factor_repo, _NOW_STR, _PROBATION, census)
+        # The artifact is small — must return full structure, not a 'too large' error
+        assert "error" not in result
+        assert "schema" in result
