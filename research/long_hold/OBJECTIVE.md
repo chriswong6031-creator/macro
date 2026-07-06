@@ -677,7 +677,7 @@ unconditionally. A1 is an additional mandatory sensitivity run, not a replacemen
 
 ---
 
-## Amendment A2 — W2 PR-K Pre-Registration: Moat Falsifier Sensors
+## Amendment A3 — W2 PR-K Pre-Registration: Moat Falsifier Sensors
 
 **Registered:** 2026-07-06  
 **Wave:** W2 PR-K  
@@ -706,7 +706,7 @@ Four falsifier sensors, each a single measurable series derived from
 | `_INV_BUILD_PP` | 15.0 pp | Higher bar than receivables: inventory build is more supply-chain-driven and requires a larger departure to be informative |
 | `_CAPEX_INTENSITY_PP` | 10.0 pp | Consistent with receivables threshold; applied to both revenue and op_income legs |
 
-These thresholds are locked as of Amendment A2.  They may not be tuned to improve
+These thresholds are locked as of Amendment A3.  They may not be tuned to improve
 sensor fire rates or base rates.  Any threshold change requires a new amendment.
 
 ### §W2-PR-K.3 Base rate definition (display context, NOT a locked control)

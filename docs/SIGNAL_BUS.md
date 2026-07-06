@@ -18,12 +18,12 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | hk-canada | 2 |
 | institutional-sector-intelligence | 2 |
 | intl-fix | 1 |
-| long-hold | 5 |
-| neural-web | 25 |
-| nw-rails | 1 |
+| long-hold | 8 |
+| neural-web | 27 |
+| nw-rails | 2 |
 | options-alpha | 7 |
 | options-nw-entry-intelligence | 3 |
-| oracle | 17 |
+| oracle | 20 |
 | qualitative-intelligence | 23 |
 | sector-pulse | 3 |
 | setup-species | 6 |
@@ -34,8 +34,8 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 66 |
-| infrastructure | 32 |
+| display | 70 |
+| infrastructure | 37 |
 | scored | 4 |
 | shadow | 36 |
 
@@ -43,7 +43,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 133 |
+| git | 142 |
 | gitignored-local | 3 |
 | r2 | 2 |
 
@@ -132,11 +132,14 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
+| great-company-trap | `embedded: great_company_trap fields inside site/stockdata/<TICKER>.json` | json | daily-engine | display | 1 | 0 |
 | long-hold-clocks | `embedded: entry_clock + thesis_clock inside site/stockdata/<TICKER>.json` | json | daily-engine | display | 1 | 0 |
+| long-hold-compounder-features | `embedded: financials.multiyear.compounder inside site/stockdata/<TICKER>.json` | json | daily-engine | display | 1 | 0 |
 | long-hold-dead-name-prices | `data/edgar/dead_name_prices.parquet` | parquet | on-demand | infrastructure | 1 | 0 |
 | long-hold-killtest-results | `data/research/missed_hold_study_results.parquet` | parquet | on-demand | display | 1 | 0 |
 | long-hold-labels | `data/research/long_hold_labels.parquet` | parquet | on-demand | display | 1 | 0 |
 | long-hold-labels-manifest | `data/research/long_hold_labels_manifest.json` | json | on-demand | display | 1 | 0 |
+| moat-falsifier-sensors | `embedded: per-ticker moat sensor fields inside site/stockdata/<TICKER>.json` | json | daily-engine | display | 1 | 0 |
 
 ### neural-web
 
@@ -162,17 +165,20 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | reflex-firings-commodity-shock | `data/reflexes/commodity_shock/firings.jsonl` | jsonl | on-demand | shadow | 1 | 0 |
 | reflex-firings-regime-selfheal | `data/reflexes/regime_stale_selfheal/firings.jsonl` | jsonl | on-demand | infrastructure | 1 | 0 |
 | reflex-push-dedup-store | `data/alert_triage/push_sent.jsonl` | jsonl | on-demand | infrastructure | 1 | 0 |
+| rule-experiment-registry | `data/rule_experiments/registry.jsonl` | jsonl | on-demand | infrastructure | 1 | 0 |
 | cortex-memo | `data/neuralweb/cortex/memo.json` | json | nightly-cortex | shadow | 0 | 0 |
 | hypothesis-inbox | `data/neuralweb/cortex/hypothesis_inbox.jsonl` | jsonl | nightly-cortex | infrastructure | 0 | 0 |
 | lagging-signals | `data/neuralweb/lagging_signals.json` | json | daily-engine | infrastructure | 0 | 0 |
 | research-queue | `data/neuralweb/research_queue.json` | json | on-demand | infrastructure | 0 | 0 |
 | risk-radar-review-log | `data/risk_radar/review_log.jsonl` | jsonl | weekly | display | 0 | 0 |
+| rule-experiment-summaries | `data/rule_experiments/results/<EXP_ID>_summary.json` | json | on-demand | display | 0 | 0 |
 
 ### nw-rails
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
 | dispersion-regime | `data/dispersion/regime.json` | json | daily-engine | display | 2 | 0 |
+| grading-closure | `data/governance/grading_closure.json` | json | collect | infrastructure | 1 | 0 |
 
 ### options-alpha
 
@@ -209,6 +215,9 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | radar-track-record | `data/radar/track_record.json` | json | daily-engine | display | 2 | 0 |
 | site-marketdata-subsector-rotation | `site/marketdata/subsector_rotation.json` | json | daily-engine | display | 2 | 0 |
 | subsector-rotation-snapshots | `data/subsector_rotation/snapshots.jsonl` | jsonl | daily-engine | shadow | 2 | 0 |
+| oracle-reversion-authority | `data/oracle/reversion_authority.json` | json | daily-engine | infrastructure | 1 | 0 |
+| oracle-reversion-kill-requeue | `data/oracle/reversion_kill_requeue.jsonl` | jsonl | on-demand | infrastructure | 1 | 0 |
+| oracle-reversion-promotion-queue | `data/oracle/reversion_promotion_queue.json` | json | daily-engine | infrastructure | 1 | 0 |
 | oracle-reversion-state | `site/basketdata/oracle_reversion_state.json` | json | daily-engine | display | 1 | 0 |
 | oracle-turn-desk | `site/basketdata/oracle_turn_desk.json` | json | daily-engine | display | 1 | 0 |
 | oracle-turn-desk-ledger | `data/oracle/turn_desk_ledger.jsonl` | jsonl | daily-engine | shadow | 1 | 0 |
@@ -550,6 +559,13 @@ Artifacts below have `known_extra_writers` — additional code paths that write 
   - engine/market_state_tune.py — a6_auto_apply lane-i events on every tune() call
   - engine/risk_radar_intl_tune.py — a6_auto_apply lane-i events on every tune() call
 
+### great-company-trap
+
+- **path:** `embedded: great_company_trap fields inside site/stockdata/<TICKER>.json`
+- **declared producer:** `engine/moat_falsifiers.py`
+- **extra writers:**
+  - engine/stock_fundamentals.py — _compute_trap_block() calls great_company_trap() inside panels()
+
 ### hub-signal-snapshots
 
 - **path:** `data/hub/signal_snapshots.jsonl`
@@ -613,6 +629,13 @@ Artifacts below have `known_extra_writers` — additional code paths that write 
 - **declared producer:** `engine/market_state.py`
 - **extra writers:**
   - scripts/build_site.py — calls market_state.persist() at line 1700; build_site is the runner, market_state.py is the author
+
+### moat-falsifier-sensors
+
+- **path:** `embedded: per-ticker moat sensor fields inside site/stockdata/<TICKER>.json`
+- **declared producer:** `engine/moat_falsifiers.py`
+- **extra writers:**
+  - engine/stock_fundamentals.py — _compute_moat_block() calls compute_moat_falsifiers() inside panels()
 
 ### name-score-calls
 

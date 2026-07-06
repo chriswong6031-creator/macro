@@ -50,7 +50,7 @@ For EACH sensor a universe-level base rate is computed:
   NOTE: the base rate is recomputed live over all tickers in statements.parquet
   on each build run — it is NOT a locked control value.  It shifts as the
   universe composition changes.  The pre-registered thresholds (research/long_hold/
-  OBJECTIVE.md Amendment A2 §W2-PR-K) are the locked definition; the base rate
+  OBJECTIVE.md Amendment A3 §W2-PR-K) are the locked definition; the base rate
   is a live display-context annotation, not an inferential anchor.
 
 Coverage stamps

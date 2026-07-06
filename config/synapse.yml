@@ -2178,9 +2178,87 @@ artifacts:
     external_consumers: []
     notes: >
       Sidecar alongside oracle_state.json — does NOT modify the oracle_state.v1
-      episode contract. authority_level is ALWAYS 'display'; no ranking surface
-      is touched (Article 2). Live block is honest at n=0 (nulls, never fabricated).
+      episode contract. authority_level surfaces ratified P2 tiers when present;
+      defaults to 'display' when authority file absent (additive, fail-open wiring).
+      Live block is honest at n=0 (nulls, never fabricated).
       See research/ORACLE_REVERSION_PROMOTION_TRACK_DESIGN.md §2 (sidecar rationale).
+
+  # P2: reversion promotion queue (infrastructure tier, Fable adjudication)
+  oracle-reversion-promotion-queue:
+    path: data/oracle/reversion_promotion_queue.json
+    format: json
+    producer: scripts/oracle_reversion_promotion_scan.py
+    known_extra_writers: []
+    owner_program: oracle
+    cadence: daily-engine
+    storage: git
+    asof_field: generated_at
+    freshness_sla_hours: 30
+    schema: reversion_promotion_queue.v1
+    tier: infrastructure
+    horizon_role: tactical_entry
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/oracle_reversion_promotion_scan.py
+    external_consumers: []
+    notes: >
+      P2 promotion scan output. NEVER auto-promotes. Candidates require
+      Fable/operator adjudication (ratified_by must be set by a human-committed
+      edit). Lapse proposals also land here.
+      ORACLE_REVERSION_PROMOTION_PREREG.md gates are FROZEN.
+      Source: W4_SPEC.md §W4.a.
+
+  # P2: reversion authority (infrastructure tier, written only by promotion scan)
+  oracle-reversion-authority:
+    path: data/oracle/reversion_authority.json
+    format: json
+    producer: scripts/oracle_reversion_promotion_scan.py
+    known_extra_writers: []
+    owner_program: oracle
+    cadence: daily-engine
+    storage: git
+    asof_field: updated_at
+    freshness_sla_hours: 30
+    schema: reversion_authority.v1
+    tier: infrastructure
+    horizon_role: tactical_entry
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/oracle_reversion_state.py
+    external_consumers: []
+    notes: >
+      Written ONLY by oracle_reversion_promotion_scan.py. Authority entries
+      exist ONLY for compounds with human-ratified queue rows (ratified_by set
+      by human-committed edit). P1 sidecar reads this additively (fail-open).
+      Source: W4_SPEC.md §W4.a.
+
+  # W4.b: reversion kill-requeue registry
+  oracle-reversion-kill-requeue:
+    path: data/oracle/reversion_kill_requeue.jsonl
+    format: jsonl
+    producer: scripts/oracle_reversion_screen.py
+    known_extra_writers: []
+    owner_program: oracle
+    cadence: on-demand
+    storage: git
+    asof_field: killed_at_asof
+    freshness_sla_hours: 9999
+    schema: none
+    tier: infrastructure
+    horizon_role: tactical_entry
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/oracle_reversion_promotion_scan.py
+    external_consumers: []
+    notes: >
+      Append-only kill-requeue registry. Written when oracle_reversion_screen.py
+      detects UNDERPOWERED-ACCRUING (all point estimates positive, power<50%).
+      Keep-first by compound_id. Promotion scan checks for requeue_at_n=2×n_at_kill
+      and prints a REMINDER (never auto-rescreens — counted-trials law).
+      Source: W4_SPEC.md §W4.b.
 
   # --- 3 consumers ---
   site-basket-flow:
@@ -3786,6 +3864,50 @@ artifacts:
       FDR family: long_hold (isolated per LH-R5). No scored_path_surfaces.
       G1 ratification: PENDING FABLE RULING (see research/long_hold/W1_KILLTEST_RESULTS.md).
 
+  # --- Long-Hold W2 PR-I: compounder feature panel (embedded in per-stock panels) ---
+  # NOTE: compounder features are NOT a standalone parquet — they are a sub-key
+  # ("compounder") inside the existing financials.multiyear block that _multiyear()
+  # already produces and build_stock_library.py already bakes into
+  # site/stockdata/<TICKER>.json.  A dedicated top-level parquet would duplicate
+  # data already in the per-stock JSON pipeline; the registration here is
+  # documentary so the firewall CI can verify the horizon_role stamp.
+  long-hold-compounder-features:
+    path: "embedded: financials.multiyear.compounder inside site/stockdata/<TICKER>.json"
+    format: json
+    producer: engine/stock_fundamentals.py
+    known_extra_writers: []
+    owner_program: long-hold
+    cadence: daily-engine
+    storage: git
+    asof_field: null
+    freshness_sla_hours: 30
+    schema: compounder_features.v1
+    tier: display
+    horizon_role: hold_thesis
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - site/stockdata/<TICKER>.json
+    external_consumers: []
+    notes: >
+      W2 PR-I (Long-Hold Thesis Layer). Compounder feature columns added
+      ADDITIVELY to engine/stock_fundamentals._multiyear() as a sub-dict
+      under key "compounder".  All fields are DISPLAY-ONLY annotation
+      (LH-R1 firewall; G1-DEFERRED ruling 2026-07-06).
+      Features: roic_series, roic_5y_median, roic_5y_stability,
+      gross_margin_5y_stability, fcf_conversion, reinvestment_rate,
+      incremental_rev_per_reinvestment, asset_light_scaling.
+      Tax assumption: 21% US statutory (TCJA 2018), applied uniformly.
+      Per-feature _cov coverage stamps (0–1) ship alongside each value.
+      Depreciation-dependent features blocked with depreciation_gated_blocked=True
+      until PR-H (edgar_facts.py FLOW additions) backfills the D&A series.
+      Firewall annotations embedded in every output dict:
+        _horizon_role = "hold_thesis"
+        _display_only = True
+      FIREWALL: horizon_role=hold_thesis. These fields MUST NOT feed
+      entry-stack z-scores, board ordering, top-setups gates, alert triage,
+      or push floor.  LH-R2 (no fused admission) respected by construction.
+
   # --- Long-Hold W2 PR-J: two display clocks (entry_clock + thesis_clock) ---
   # Both clocks are embedded fields in per-stock panel JSON
   # (site/stockdata/<TICKER>.json) — no standalone parquet.
@@ -3868,7 +3990,7 @@ artifacts:
       Each sensor carries a universe-level base rate (live-recomputed per build;
       NOT a locked control — display context only) so the display layer can show
       how frequently a sensor fires across the covered universe in that fiscal year.
-      Thresholds pre-registered in research/long_hold/OBJECTIVE.md Amendment A2 §W2-PR-K.
+      Thresholds pre-registered in research/long_hold/OBJECTIVE.md Amendment A3 §W2-PR-K.
       DISPLAY-ONLY — G1-DEFERRED ruling 2026-07-06. Per LH-R2: no composite
       "moat score" is produced. Per LH-R6: no LLM transition logic.
       FIREWALL: horizon_role=hold_thesis. MUST NOT feed board ordering, alert
@@ -3988,6 +4110,89 @@ artifacts:
       h=21 maturity grading from massive_stock_day closes (absolute return).
       Accrual instrument for the registered §5 promotion rule (15-window re-evaluation gate).
       No peeking logic — desk only displays counts.
+
+  # --- NW Rails PR-6 governance artifact ---
+  grading-closure:
+    path: data/governance/grading_closure.json
+    format: json
+    producer: scripts/audit_grading_closure.py
+    known_extra_writers: []
+    owner_program: nw-rails
+    cadence: collect
+    storage: git
+    asof_field: generated_at
+    freshness_sla_hours: 30
+    schema: grading_closure.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - docs/GRADING_CLOSURE.md
+    external_consumers: []
+    notes: >
+      NW Rails PR-6 (RUL-P10 path b) — standing grading-closure audit.
+      Walks 26 declared forward ledgers and classifies each CLOSED / GRADER-STARVED
+      / LOG-ONLY. Single writer: scripts/audit_grading_closure.py run_as_collect_step
+      (end-of-collect, after all graders). Companion markdown table at docs/GRADING_CLOSURE.md.
+      Fixes are per-program follow-ups; this rail makes standing status visible.
+
+  # --- NW Rails R1 (PR-1) ---
+  rule-experiment-registry:
+    path: data/rule_experiments/registry.jsonl
+    format: jsonl
+    producer: scripts/register_rule_experiment.py
+    known_extra_writers: []
+    owner_program: neural-web
+    cadence: on-demand
+    storage: git
+    asof_field: registered_at
+    freshness_sla_hours: 8760
+    schema: rule_experiment_registry.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/register_rule_experiment.py
+    external_consumers: []
+    notes: >
+      NW Rails R1 anti-fishing governor registry. Append-only JSONL; single writer is
+      scripts/register_rule_experiment.py. Every entry records exp_id, registered_at,
+      question, spec_hashes (full enumerated grid), n_floor, declared_budget,
+      verdict_criteria, derived_from_surface (RUL-P3 forking-paths stamp), and status
+      (registered→executed→reported). Runner hard-fails on any unregistered or
+      hash-mismatched spec. FDR pooling: all registrations call
+      TrialLedger.log_declared_budget(grid_size, family='replay') — flat pooled family,
+      never sub-scoped. Program §3.3 of NW_RAILS_AND_TIER1_LOBES_PROGRAM_BY_FABLE.md.
+      PR-2 will add scripts/run_rule_replay.py as a consumer once that wave ships.
+
+  rule-experiment-summaries:
+    path: data/rule_experiments/results/<EXP_ID>_summary.json
+    format: json
+    producer: scripts/register_rule_experiment.py
+    known_extra_writers: []
+    owner_program: neural-web
+    cadence: on-demand
+    storage: git
+    asof_field: null
+    freshness_sla_hours: 8760
+    schema: rule_experiment_summary.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      NW Rails R1 per-experiment results summaries. Small JSON files (per-cell WR,
+      mean/median exit metrics, regret metrics, era-law splits, episode-cluster counts,
+      censoring rates, cumulative pooled replay trial count). Git-committed; written by
+      scripts/run_rule_replay.py (PR-2). The companion *_perfire.parquet files are
+      Mac-local only (gitignored per RUL-P10). All results are display-only; promoting
+      any rule to live behavior requires the standard PREREG gauntlet (§3.3).
+      Producer listed as scripts/register_rule_experiment.py in PR-1 (the runner ships
+      in PR-2); update to scripts/run_rule_replay.py when that wave merges.
 
   # --- NW Rails W2 PR-4: L3 dispersion regime lens ---
   dispersion-regime:

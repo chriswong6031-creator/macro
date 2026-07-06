@@ -409,6 +409,8 @@ class TestRealRegistryFirewallClean:
             "long-hold-labels-manifest",
             # W1 PR-F kill-test results (#1544, G1-DEFERRED ruling) — hold_thesis by design
             "long-hold-killtest-results",
+            # W2 PR-I compounder annotation columns — hold_thesis by design; display-only
+            "long-hold-compounder-features",
             # W2 PR-J two display clocks — hold_thesis by design; display-only
             "long-hold-clocks",
             # W2 PR-K moat falsifier sensors and great-company-trap overlay
