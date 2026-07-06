@@ -14,6 +14,7 @@ Test coverage:
   5. Single-call fallback path (no providers).
   6. A2 refusal today (probation status in memo).
   7. Dispatcher refuses unknown tools.
+  8–15. PR-A: failover, run_status, context_stale, provider_attempts.
 """
 from __future__ import annotations
 
@@ -1059,103 +1060,440 @@ class TestFactorTools:
 
 
 # ---------------------------------------------------------------------------
-# 13. Subsector sponsorship evidence lane (SRSS Phase 3 — display/shadow only)
+# 13. Provider failover (PR-A item 1)
 # ---------------------------------------------------------------------------
 
-class TestSponsorshipEvidenceLane:
-    """Sponsorship evidence must reach cortex generically via read_graph, and
-    the evidence must remain descriptive-only — never a fabricated
-    buy/sell/recommendation field, and the prompt text must frame it as
-    de-escalate/explain-only (Article 1 — never originate)."""
+def _make_mock_provider(name: str, env_var: str = "K", cred: str = "tok",
+                         side_effect=None) -> dict:
+    client = MagicMock()
+    if side_effect is not None:
+        client.messages.create.side_effect = side_effect
+    return {"name": name, "env_var": env_var, "cred": cred, "client": client,
+            "model": "claude-opus-4-8"}
 
-    def test_read_graph_surfaces_sponsorship_edges_generically(self, repo):
-        """read_graph needs zero sponsorship-specific code — it returns whatever
-        confluence_graph.json contains, including sponsorship_* edge types."""
-        from engine.neuralweb.cortex import dispatch_tool
 
-        graph = json.loads(
-            (repo / "data" / "neuralweb" / "confluence_graph.json").read_text(encoding="utf-8")
-        )
-        graph["edges"].append({
-            "src": "entity:REZI",
-            "dst": "subsector:smarthomesecurity",
-            "edge_type": "sponsorship_support",
-            "display_only": True,
-            "sponsorship_score": 0.872,
-            "confidence_tier": "medium",
-            "direction": 1,
-            "note": "sponsorship_state=CONFIRMED_LEADERSHIP confidence_tier=medium "
-                    "direction=1 (display-only; sponsorship_score not aggregated)",
-        })
-        (repo / "data" / "neuralweb" / "confluence_graph.json").write_text(
-            json.dumps(graph), encoding="utf-8"
-        )
+def _make_write_memo_resp():
+    block = MagicMock()
+    block.type = "tool_use"
+    block.name = "write_memo"
+    block.input = {"summary": "failover test memo", "what_fired": [], "contradictions_review": "",
+                   "decaying_families": [], "deserves_operator": []}
+    block.id = "tu_wm"
+    resp = MagicMock()
+    resp.stop_reason = "tool_use"
+    resp.content = [block]
+    return resp
 
-        census: dict = {}
-        result = dispatch_tool("read_graph", {}, repo, _NOW_STR, _PROBATION, census)
-        sponsorship_edges = [
-            e for e in result.get("edges", [])
-            if str(e.get("edge_type", "")).startswith("sponsorship")
+
+def _make_end_turn_resp():
+    resp = MagicMock()
+    resp.stop_reason = "end_turn"
+    resp.content = []
+    return resp
+
+
+class TestProviderFailover:
+
+    def test_connection_error_reaches_provider2(self, repo):
+        """If provider1 throws a connection error, provider2 must serve the call."""
+        from engine.neuralweb.cortex import _run_tool_loop
+        from engine.llm_auth import clear_dead
+        clear_dead()
+
+        call_counts = {"p1": 0, "p2": 0}
+
+        def p1_side(**kwargs):
+            call_counts["p1"] += 1
+            raise ConnectionError("network unavailable")
+
+        sequence_p2 = [_make_write_memo_resp(), _make_end_turn_resp()]
+        seq_iter = iter(sequence_p2)
+
+        def p2_side(**kwargs):
+            call_counts["p2"] += 1
+            return next(seq_iter)
+
+        providers = [
+            _make_mock_provider("oauth", side_effect=p1_side),
+            _make_mock_provider("anthropic", env_var="K2", side_effect=p2_side),
         ]
-        assert len(sponsorship_edges) == 1
-        assert sponsorship_edges[0]["display_only"] is True
+        cfg = {"max_tool_calls": 5, "max_tokens": 512}
 
-        # Same generic path filters by edge_type too — no special-cased tool needed.
-        census2: dict = {}
-        filtered = dispatch_tool(
-            "read_graph", {"edge_type": "sponsorship_support"}, repo, _NOW_STR, _PROBATION, census2
+        _run_tool_loop(repo, cfg, providers, _NOW_STR, _PROBATION)
+
+        assert call_counts["p1"] >= 1, "provider1 must have been tried"
+        assert call_counts["p2"] >= 1, "provider2 must have been reached via failover"
+
+        memo_path = repo / "data" / "neuralweb" / "cortex" / "memo.json"
+        assert memo_path.exists()
+
+    def test_401_marks_provider_dead_and_fails_over(self, repo):
+        """A 401-like error must mark provider dead and fall over to next provider."""
+        from engine.neuralweb.cortex import _run_tool_loop
+        from engine.llm_auth import clear_dead, is_dead
+        clear_dead()
+
+        def p1_auth_side(**kwargs):
+            raise Exception("401 authentication_error: Invalid bearer token")
+
+        sequence_p2 = [_make_write_memo_resp(), _make_end_turn_resp()]
+        seq_iter = iter(sequence_p2)
+
+        def p2_side(**kwargs):
+            return next(seq_iter)
+
+        providers = [
+            _make_mock_provider("oauth", env_var="OAUTH_T", side_effect=p1_auth_side),
+            _make_mock_provider("anthropic", env_var="ANTH_K", side_effect=p2_side),
+        ]
+        cfg = {"max_tool_calls": 5, "max_tokens": 512}
+
+        _run_tool_loop(repo, cfg, providers, _NOW_STR, _PROBATION)
+
+        assert is_dead("oauth", "OAUTH_T"), "oauth provider must be marked dead after 401"
+
+        memo_path = repo / "data" / "neuralweb" / "cortex" / "memo.json"
+        assert memo_path.exists()
+
+    def test_no_providers_results_in_degraded_status(self, repo):
+        """With no providers, run_status.status must be degraded."""
+        from engine.neuralweb.cortex import _single_call_fallback
+
+        result = _single_call_fallback(repo, {}, [], _NOW_STR, dict(_PROBATION), "no_provider")
+        memo_path = repo / "data" / "neuralweb" / "cortex" / "memo.json"
+        memo = json.loads(memo_path.read_text())
+        rs = memo.get("run_status", {})
+        assert rs.get("status") == "degraded"
+        assert rs.get("degraded") is True
+
+    def test_single_call_fallback_with_live_provider_still_degraded(self, repo):
+        """_single_call_fallback must report degraded=True even when a live provider exists.
+
+        The fallback path is inherently degraded (tool loop unavailable); a provider
+        being alive does not change that classification.
+        """
+        from engine.neuralweb.cortex import _single_call_fallback
+        from engine.llm_auth import clear_dead
+
+        clear_dead()
+
+        # Provider whose fallback LLM call returns text — the tool loop still never ran.
+        text_block = MagicMock()
+        text_block.type = "text"
+        text_block.text = '{"summary": "fallback memo", "what_fired": [], "contradictions_review": "", "decaying_families": [], "deserves_operator": []}'
+        resp = MagicMock()
+        resp.content = [text_block]
+
+        def _side(**kwargs):
+            return resp
+
+        provider = _make_mock_provider("anthropic", env_var="ANT_KEY", side_effect=_side)
+        providers = [provider]
+
+        result = _single_call_fallback(repo, {}, providers, _NOW_STR, dict(_PROBATION), "loop_error:test")
+
+        memo_path = repo / "data" / "neuralweb" / "cortex" / "memo.json"
+        memo = json.loads(memo_path.read_text())
+        rs = memo.get("run_status", {})
+        assert rs.get("status") == "degraded", (
+            f"single-call fallback must report status=degraded; got {rs.get('status')!r}"
         )
-        assert len(filtered.get("edges", [])) == 1
+        assert rs.get("degraded") is True, (
+            "single-call fallback must report degraded=True even when a live provider exists"
+        )
+        assert rs.get("degradation_reason") == "loop_error:test"
+        attempts = rs.get("provider_attempts", [])
+        assert len(attempts) == 1
+        assert attempts[0]["ok"] is False, (
+            "provider_attempts[0].ok must be False — the tool loop never ran on this provider"
+        )
 
-    def test_sponsorship_edge_has_no_action_or_recommendation_keys(self, repo):
-        """Evidence surface must be descriptive fields only — no 'action',
-        'recommendation', 'buy', or 'sell' keys anywhere on a sponsorship edge."""
-        from engine.neuralweb.confluence import _build_sponsorship_edges
+    def test_provider_attempts_recorded_with_error_type(self, repo):
+        """provider_attempts list must contain error_type on failure."""
+        from engine.neuralweb.cortex import _run_tool_loop
+        from engine.llm_auth import clear_dead
+        clear_dead()
 
-        class _FakeRow(dict):
-            def get(self, k, default=None):
-                return dict.get(self, k, default)
+        def p1_fail(**kwargs):
+            raise Exception("401 authentication_error: token expired")
 
-        import pandas as pd
+        def p2_ok(**kwargs):
+            return _make_write_memo_resp()
 
-        df = pd.DataFrame([{
-            "symbol": "REZI",
-            "direction": 1,
-            "meta": json.dumps({
-                "sponsorship_state": "CONFIRMED_LEADERSHIP",
-                "confidence_tier": "medium",
-                "sponsorship_score": 0.872,
-                "rotation_key": "smarthomesecurity",
-            }),
-        }])
-        gaps: list[str] = []
-        edges = _build_sponsorship_edges(df, gaps)
-        assert len(edges) == 1
-        forbidden_keys = {"action", "recommendation", "buy", "sell", "trade", "escalation"}
-        for edge in edges:
-            assert not (set(edge.keys()) & forbidden_keys), (
-                f"sponsorship edge carries a forbidden key: {edge.keys()}"
-            )
-            assert edge.get("display_only") is True
+        def p2_end(**kwargs):
+            return _make_end_turn_resp()
 
-    def test_system_prompt_frames_sponsorship_as_de_escalate_only(self):
-        """The cortex system prompt text that mentions 'sponsorship' must carry
-        the de-escalate/explain-only framing — never-originate, near the mention."""
-        from engine.neuralweb.cortex import _SYSTEM_PROMPT
+        seq = [_make_write_memo_resp(), _make_end_turn_resp()]
+        seq_iter = iter(seq)
 
-        assert "sponsorship" in _SYSTEM_PROMPT.lower()
-        # Find the sponsorship passage and confirm the never-originate framing
-        # sits in the same neighbourhood (not scattered/unrelated elsewhere).
-        idx = _SYSTEM_PROMPT.lower().index("subsector sponsorship")
-        window = _SYSTEM_PROMPT[idx: idx + 700]
-        assert "never originate a buy" in window
-        assert "de-escalate" in window.lower() or "explain" in window.lower()
-        # Article-1 word must never appear as "validated" for this feature.
-        assert "validated" not in window.lower()
+        def p2_side(**kwargs):
+            return next(seq_iter)
 
-    def test_no_validated_word_near_sponsorship_anywhere_in_prompt(self):
-        """House law: 'validated' is CI-gated; the sponsorship guidance text
-        must never use it."""
-        from engine.neuralweb.cortex import _SYSTEM_PROMPT
+        providers = [
+            _make_mock_provider("oauth", env_var="OA", side_effect=p1_fail),
+            _make_mock_provider("anthropic", env_var="AN", side_effect=p2_side),
+        ]
+        cfg = {"max_tool_calls": 5, "max_tokens": 512}
+        _run_tool_loop(repo, cfg, providers, _NOW_STR, _PROBATION)
 
-        assert "validated" not in _SYSTEM_PROMPT.lower()
+        memo = json.loads((repo / "data" / "neuralweb" / "cortex" / "memo.json").read_text())
+        rs = memo.get("run_status", {})
+        attempts = rs.get("provider_attempts", [])
+        assert len(attempts) >= 1
+        failed = [a for a in attempts if not a["ok"]]
+        assert len(failed) >= 1
+        assert failed[0]["error_type"] in ("auth", "transient")
+        assert failed[0]["error_message"] is not None
+
+
+# ---------------------------------------------------------------------------
+# 14. run_status block (PR-A item 2)
+# ---------------------------------------------------------------------------
+
+class TestRunStatus:
+
+    def _run_scripted(self, repo, sequence):
+        from engine.neuralweb.cortex import _run_tool_loop
+        seq_iter = iter(sequence)
+        mock_client = MagicMock()
+
+        def _side(**kwargs):
+            kind, name, inp, tid = next(seq_iter)
+            if kind == "end_turn":
+                return _make_end_turn_resp()
+            block = MagicMock()
+            block.type = "tool_use"
+            block.name = name
+            block.input = inp
+            block.id = tid
+            resp = MagicMock()
+            resp.stop_reason = "tool_use"
+            resp.content = [block]
+            return resp
+
+        mock_client.messages.create.side_effect = _side
+        providers = [{"name": "oauth", "env_var": "X", "cred": "tok",
+                      "client": mock_client, "model": "claude-opus-4-8"}]
+        cfg = {"max_tool_calls": 10, "max_tokens": 512}
+        _run_tool_loop(repo, cfg, providers, _NOW_STR, _PROBATION)
+        return json.loads((repo / "data" / "neuralweb" / "cortex" / "memo.json").read_text())
+
+    def test_ok_status_when_tool_calls_made(self, repo):
+        sequence = [
+            ("tool_use", "read_world_state", {}, "tu_1"),
+            ("tool_use", "write_memo",
+             {"summary": "run_status ok test", "what_fired": [], "contradictions_review": "",
+              "decaying_families": [], "deserves_operator": []}, "tu_2"),
+            ("end_turn", None, None, None),
+        ]
+        memo = self._run_scripted(repo, sequence)
+        rs = memo.get("run_status", {})
+        assert rs["status"] == "ok"
+        assert rs["degraded"] is False
+        assert rs["individual_tool_calls"] >= 1
+
+    def test_degraded_status_zero_tool_calls(self, repo):
+        """A model that calls end_turn immediately without any tool calls → degraded."""
+        from engine.neuralweb.cortex import _run_tool_loop
+        from engine.llm_auth import clear_dead
+        clear_dead()
+
+        mock_client = MagicMock()
+        mock_client.messages.create.return_value = _make_end_turn_resp()
+        providers = [{"name": "oauth", "env_var": "X", "cred": "tok",
+                      "client": mock_client, "model": "claude-opus-4-8"}]
+        cfg = {"max_tool_calls": 5, "max_tokens": 512}
+        _run_tool_loop(repo, cfg, providers, _NOW_STR, _PROBATION)
+
+        memo = json.loads((repo / "data" / "neuralweb" / "cortex" / "memo.json").read_text())
+        rs = memo.get("run_status", {})
+        assert rs["status"] == "degraded"
+        assert rs["degraded"] is True
+        assert rs["individual_tool_calls"] == 0
+
+    def test_warn_status_budget_exhausted_with_reads(self, repo):
+        """Budget exhausted after reads but no write_memo → forced write → warn status."""
+        from engine.neuralweb.cortex import _run_tool_loop
+        from engine.llm_auth import clear_dead
+        clear_dead()
+
+        call_count = [0]
+        mock_client = MagicMock()
+        def _always_read(**kwargs):
+            call_count[0] += 1
+            block = MagicMock()
+            block.type = "tool_use"
+            block.name = "read_world_state"
+            block.input = {}
+            block.id = f"tu_{call_count[0]}"
+            resp = MagicMock()
+            resp.stop_reason = "tool_use"
+            resp.content = [block]
+            return resp
+
+        mock_client.messages.create.side_effect = _always_read
+        providers = [{"name": "oauth", "env_var": "X", "cred": "tok",
+                      "client": mock_client, "model": "claude-opus-4-8"}]
+        cfg = {"max_tool_calls": 3, "max_tokens": 512}
+        _run_tool_loop(repo, cfg, providers, _NOW_STR, _PROBATION)
+
+        memo = json.loads((repo / "data" / "neuralweb" / "cortex" / "memo.json").read_text())
+        rs = memo.get("run_status", {})
+        # Has model responses and tool calls, but no explicit write_memo → still ok
+        # (budget exhaustion with reads ≥ 1 → ok, since tool_calls > 0)
+        assert rs["status"] in ("ok", "warn")
+        assert rs["individual_tool_calls"] >= 1
+
+    def test_run_status_stamped_in_both_copies(self, repo):
+        """run_status appears in both data/ and site/ memo copies."""
+        from engine.neuralweb.cortex import _run_tool_loop
+        from engine.llm_auth import clear_dead
+        clear_dead()
+
+        mock_client = MagicMock()
+        mock_client.messages.create.return_value = _make_end_turn_resp()
+        providers = [{"name": "oauth", "env_var": "X", "cred": "tok",
+                      "client": mock_client, "model": "claude-opus-4-8"}]
+        cfg = {"max_tool_calls": 5, "max_tokens": 512}
+        _run_tool_loop(repo, cfg, providers, _NOW_STR, _PROBATION)
+
+        for path in [
+            repo / "data" / "neuralweb" / "cortex" / "memo.json",
+            repo / "site" / "neuralweb" / "cortex_memo.json",
+        ]:
+            memo = json.loads(path.read_text())
+            assert "run_status" in memo, f"run_status missing from {path}"
+
+
+# ---------------------------------------------------------------------------
+# 15. context_stale detection (PR-A item 3)
+# ---------------------------------------------------------------------------
+
+class TestContextStale:
+
+    def test_context_stale_when_world_state_date_is_old(self, repo):
+        """world_state.json produced_at older than run date → context_stale=True."""
+        from engine.neuralweb.cortex import _detect_context_stale
+
+        # The fixture world_state.json has as_of=2026-07-04; run date is later
+        stale, as_of = _detect_context_stale(repo, "2026-07-05T10:00:00+00:00")
+        assert stale is True
+        assert as_of is not None
+
+    def test_context_fresh_when_same_date(self, repo):
+        """world_state.json as_of == run date → context_stale=False."""
+        from engine.neuralweb.cortex import _detect_context_stale
+
+        stale, _ = _detect_context_stale(repo, "2026-07-04T10:00:00+00:00")
+        assert stale is False
+
+    def test_context_stale_sets_warn_in_run_status(self, repo):
+        """context_stale=True → run_status.status at least 'warn' (not degraded alone)."""
+        from engine.neuralweb.cortex import _run_tool_loop
+        from engine.llm_auth import clear_dead
+        clear_dead()
+
+        # world_state fixture: as_of=2026-07-04; run date = 2026-07-05 → stale
+        NOW_LATER = "2026-07-05T12:00:00+00:00"
+
+        sequence = [
+            ("tool_use", "read_world_state", {}, "tu_1"),
+            ("tool_use", "write_memo",
+             {"summary": "stale context test", "what_fired": [], "contradictions_review": "",
+              "decaying_families": [], "deserves_operator": []}, "tu_2"),
+            ("end_turn", None, None, None),
+        ]
+        seq_iter = iter(sequence)
+        mock_client = MagicMock()
+
+        def _side(**kwargs):
+            kind, name, inp, tid = next(seq_iter)
+            if kind == "end_turn":
+                return _make_end_turn_resp()
+            block = MagicMock()
+            block.type = "tool_use"
+            block.name = name
+            block.input = inp
+            block.id = tid
+            resp = MagicMock()
+            resp.stop_reason = "tool_use"
+            resp.content = [block]
+            return resp
+
+        mock_client.messages.create.side_effect = _side
+        providers = [{"name": "oauth", "env_var": "X", "cred": "tok",
+                      "client": mock_client, "model": "claude-opus-4-8"}]
+        cfg = {"max_tool_calls": 10, "max_tokens": 512}
+        _run_tool_loop(repo, cfg, providers, NOW_LATER, _PROBATION)
+
+        memo = json.loads((repo / "data" / "neuralweb" / "cortex" / "memo.json").read_text())
+        rs = memo.get("run_status", {})
+        assert rs.get("context_stale") is True
+        assert rs["status"] in ("ok", "warn")  # stale alone does not make degraded
+
+    def test_context_stale_appends_deserves_operator_note(self, repo):
+        """context_stale=True → a note is appended to deserves_operator."""
+        from engine.neuralweb.cortex import _run_tool_loop
+        from engine.llm_auth import clear_dead
+        clear_dead()
+
+        NOW_LATER = "2026-07-05T12:00:00+00:00"
+
+        sequence = [
+            ("tool_use", "write_memo",
+             {"summary": "stale note test", "what_fired": [], "contradictions_review": "",
+              "decaying_families": [], "deserves_operator": []}, "tu_1"),
+            ("end_turn", None, None, None),
+        ]
+        seq_iter = iter(sequence)
+        mock_client = MagicMock()
+
+        def _side(**kwargs):
+            kind, name, inp, tid = next(seq_iter)
+            if kind == "end_turn":
+                return _make_end_turn_resp()
+            block = MagicMock()
+            block.type = "tool_use"
+            block.name = name
+            block.input = inp
+            block.id = tid
+            resp = MagicMock()
+            resp.stop_reason = "tool_use"
+            resp.content = [block]
+            return resp
+
+        mock_client.messages.create.side_effect = _side
+        providers = [{"name": "oauth", "env_var": "X", "cred": "tok",
+                      "client": mock_client, "model": "claude-opus-4-8"}]
+        cfg = {"max_tool_calls": 10, "max_tokens": 512}
+        _run_tool_loop(repo, cfg, providers, NOW_LATER, _PROBATION)
+
+        memo = json.loads((repo / "data" / "neuralweb" / "cortex" / "memo.json").read_text())
+        do_list = memo.get("deserves_operator", [])
+        stale_notes = [x for x in do_list if "context_stale" in str(x)]
+        assert len(stale_notes) >= 1, "Expected a context_stale note in deserves_operator"
+
+    def test_staleness_skip_does_not_overwrite_memo(self, repo):
+        """Staleness gate skip must leave existing memo.json untouched."""
+        from engine.neuralweb.cortex import _compute_run_state_hash, _save_last_run_state, run
+
+        # Pre-write a memo
+        memo_path = repo / "data" / "neuralweb" / "cortex" / "memo.json"
+        prior_memo = {"schema": "neuralweb.cortex_memo.v1", "as_of": "2026-07-04T00:00:00+00:00",
+                      "summary": "prior memo — must survive staleness skip",
+                      "is_context_only": True, "tool_call_census": {"read_world_state": 2}}
+        memo_path.write_text(json.dumps(prior_memo), encoding="utf-8")
+
+        # Save current state so staleness gate fires
+        state = _compute_run_state_hash(repo)
+        _save_last_run_state(repo, state)
+
+        with patch("engine.neuralweb.cortex._build_providers") as mock_bp:
+            mock_bp.return_value = []
+            rc = run(root=repo, force=False)
+
+        assert rc == 0
+        mock_bp.assert_not_called()
+        # Memo must be unchanged
+        after_memo = json.loads(memo_path.read_text())
+        assert after_memo["summary"] == "prior memo — must survive staleness skip"

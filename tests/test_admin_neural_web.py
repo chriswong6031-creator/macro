@@ -799,6 +799,103 @@ def test_no_engine_imports_still_passes():
         assert pattern not in code, f"Forbidden {label!r} found in non-comment lines"
 
 
+# ---------------------------------------------------------------------------
+# PR-A: run_status in cortex_memo + legacy memo fallback
+# ---------------------------------------------------------------------------
+
+def test_cortex_memo_run_status_present(tmp_repo):
+    """A modern memo WITH run_status → cortex_memo.run_status must be returned as-is."""
+    modern_memo = {
+        "schema": "neuralweb.cortex_memo.v1",
+        "as_of": "2026-07-06T12:00:00+00:00",
+        "summary": "modern memo",
+        "what_fired": [],
+        "contradictions_review": "",
+        "deserves_operator": [],
+        "probation": {"tier": "A0/A1 shadow", "granted": False, "reason": "insufficient-n",
+                      "attention_track_record": {"n": 0, "hits": 0}, "lapses_at": None},
+        "tool_call_census": {"read_world_state": 2, "write_memo": 1},
+        "is_context_only": True,
+        "run_status": {
+            "status": "ok",
+            "degraded": False,
+            "degradation_reason": None,
+            "provider_attempts": [{"provider": "oauth", "model": "claude-opus-4-8",
+                                    "attempted": True, "ok": True, "error_type": None,
+                                    "error_message": None}],
+            "tool_call_batches": 3,
+            "individual_tool_calls": 3,
+            "expected_min_tool_calls": 1,
+            "context_stale": False,
+            "context_as_of": None,
+        },
+    }
+    (tmp_repo / "data" / "neuralweb" / "cortex" / "memo.json").write_text(
+        json.dumps(modern_memo), encoding="utf-8"
+    )
+    d = _make_panel_with_root(tmp_repo)
+    cm = d["governance"]["cortex_memo"]
+    rs = cm.get("run_status", {})
+    assert rs.get("status") == "ok"
+    assert rs.get("degraded") is False
+    assert rs.get("_legacy_memo") is None  # not a legacy memo
+
+
+def test_cortex_memo_legacy_fallback_no_run_status(tmp_repo):
+    """An old memo WITHOUT run_status → admin derives run_status from tool_call_census."""
+    legacy_memo = {
+        "schema": "neuralweb.cortex_memo.v1",
+        "as_of": "2026-07-04T12:00:00+00:00",
+        "summary": "legacy memo — no run_status field",
+        "what_fired": ["signal_x"],
+        "contradictions_review": "none",
+        "deserves_operator": [],
+        "probation": {"tier": "A0/A1 shadow", "granted": False,
+                      "reason": "insufficient-n: n=0 < min_n=30",
+                      "attention_track_record": {"n": 0, "hits": 0}, "lapses_at": None},
+        "tool_call_census": {"read_world_state": 1},
+        "is_context_only": True,
+        # No run_status key at all
+    }
+    (tmp_repo / "data" / "neuralweb" / "cortex" / "memo.json").write_text(
+        json.dumps(legacy_memo), encoding="utf-8"
+    )
+    d = _make_panel_with_root(tmp_repo)
+    cm = d["governance"]["cortex_memo"]
+    rs = cm.get("run_status", {})
+    # Admin must derive a sensible status from tool_call_census
+    assert "status" in rs
+    assert rs.get("_legacy_memo") is True
+    # census has read_world_state → has_tools=True → status should be warn (not degraded)
+    assert rs["status"] in ("warn", "ok")
+
+
+def test_cortex_memo_legacy_empty_census_degraded(tmp_repo):
+    """Old memo with empty tool_call_census → admin derives degraded run_status."""
+    legacy_memo = {
+        "schema": "neuralweb.cortex_memo.v1",
+        "as_of": "2026-07-04T12:00:00+00:00",
+        "summary": "Budget exhausted after 0 tool-call batches",
+        "what_fired": [],
+        "contradictions_review": "",
+        "deserves_operator": [],
+        "probation": {"tier": "A0/A1 shadow", "granted": False,
+                      "reason": "insufficient-n: n=0 < min_n=30",
+                      "attention_track_record": {"n": 0, "hits": 0}, "lapses_at": None},
+        "tool_call_census": {},
+        "is_context_only": True,
+    }
+    (tmp_repo / "data" / "neuralweb" / "cortex" / "memo.json").write_text(
+        json.dumps(legacy_memo), encoding="utf-8"
+    )
+    d = _make_panel_with_root(tmp_repo)
+    cm = d["governance"]["cortex_memo"]
+    rs = cm.get("run_status", {})
+    assert rs.get("_legacy_memo") is True
+    assert rs.get("status") == "degraded"
+    assert rs.get("degraded") is True
+
+
 if __name__ == "__main__":
     import pytest as _pytest
     _pytest.main([__file__, "-v"])

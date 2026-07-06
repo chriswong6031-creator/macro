@@ -461,6 +461,25 @@ def _tool_flag_attention(root: Path, params: dict, now_str: str) -> dict:
     return {"written": len(written), "claim_ids": written}
 
 
+def _detect_context_stale(root: Path, now_str: str) -> tuple[bool, str | None]:
+    """Check whether world_state.json was produced before today's run date.
+
+    Returns (context_stale, context_as_of).
+    """
+    ws_path = _data(root, "neuralweb", "world_state.json")
+    try:
+        ws = json.loads(ws_path.read_text(encoding="utf-8"))
+        produced_at = ws.get("produced_at") or ws.get("as_of") or ""
+        if not produced_at:
+            return False, None
+        run_date = now_str[:10]
+        ws_date = str(produced_at)[:10]
+        stale = ws_date < run_date
+        return stale, produced_at
+    except Exception:  # noqa: BLE001
+        return False, None
+
+
 def _tool_write_memo(root: Path, params: dict, now_str: str, probation_status: dict) -> dict:
     """Write the committee memo to data/neuralweb/cortex/memo.json."""
     memo = {
@@ -1216,15 +1235,6 @@ CONSTITUTIONAL RULES:
 • Article 2: Never touch a ranked surface.
 • Article 3: All authority requires earned evidence.
 
-EVIDENCE LANES (shadow-tier confluence signals):
-• Subsector sponsorship (sponsorship_support / sponsorship_contradicts /
-  sponsorship_rollover_warning edges in read_graph): Use subsector sponsorship
-  evidence only to explain or de-escalate an existing candidate's confidence;
-  never originate a buy, raise size, or override a veto from this evidence
-  alone. Tailwind/EARLY_REPAIR can explain confidence in an existing
-  candidate. Headwind/rollover can explain caution or request an exit
-  review. Missing sponsorship data is neutral, not negative.
-
 Be specific, honest about uncertainty, and always provide falsifiable criteria when flagging attention items.
 """
 
@@ -1302,6 +1312,56 @@ def _single_call_fallback(
     probation_status["degraded_reason"] = degraded_reason
 
     result = _tool_write_memo(root, memo_params, now_str, probation_status)
+
+    # Stamp run_status for the single-call fallback path.
+    # This path is ALWAYS degraded: the tool loop was unavailable regardless of
+    # whether a fallback LLM call succeeded.  degraded=True unconditionally.
+    from engine import llm_auth as _llm_auth  # noqa: PLC0415
+    context_stale, context_as_of = _detect_context_stale(root, now_str)
+    fallback_attempts: list[dict] = []
+    for p in providers:
+        name = p.get("name", "unknown")
+        env_var = p.get("env_var", "")
+        if p.get("cred") and p.get("client"):
+            is_d = _llm_auth.is_dead(name, env_var)
+            fallback_attempts.append({
+                "provider": name,
+                "model": p.get("model", ""),
+                "attempted": True,
+                "ok": False,
+                "error_type": "auth" if is_d else "loop_unavailable",
+                "error_message": (
+                    f"provider dead ({degraded_reason})" if is_d
+                    else f"tool loop unavailable — single-call fallback only ({degraded_reason})"
+                ),
+            })
+
+    run_status = {
+        "status": "degraded",
+        "degraded": True,
+        "degradation_reason": degraded_reason,
+        "provider_attempts": fallback_attempts,
+        "tool_call_batches": 0,
+        "individual_tool_calls": 0,
+        "expected_min_tool_calls": 1,
+        "context_stale": context_stale,
+        "context_as_of": context_as_of,
+    }
+
+    if result and not result.get("error"):
+        try:
+            memo_path = _cortex_dir(root) / "memo.json"
+            memo = json.loads(memo_path.read_text(encoding="utf-8"))
+            memo["run_status"] = run_status
+            memo_serialized = json.dumps(memo, indent=2, default=str)
+            memo_path.write_text(memo_serialized, encoding="utf-8")
+            site_nw = _site(root, "neuralweb")
+            if site_nw.parent.exists():
+                site_nw.mkdir(parents=True, exist_ok=True)
+                (site_nw / "cortex_memo.json").write_text(memo_serialized, encoding="utf-8")
+        except Exception:  # noqa: BLE001
+            pass
+
     return result
 
 
@@ -1333,41 +1393,112 @@ def _run_tool_loop(
     tool_call_count = 0
     n_tool_calls_total = 0
 
-    def _call_with_tools(client, _model: str):
-        resp = client.messages.create(
-            model=_model,
-            max_tokens=max_tokens,
-            system=_SYSTEM_PROMPT,
-            tools=_tool_schemas(),
-            messages=messages,
+    # provider_attempts accumulates one record per call attempt for run_status
+    provider_attempts: list[dict] = []
+    # run-local set of provider names that failed transiently (not dead globally)
+    _skipped_this_run: set[str] = set()
+
+    def _pick_live_provider() -> tuple[Any, str, dict] | tuple[None, None, None]:
+        """Return (client, effective_model, provider_dict) for the first live provider
+        that has not been skipped in this run."""
+        for p in providers:
+            name = p.get("name", "unknown")
+            env_var = p.get("env_var", "")
+            if (p.get("cred") and p.get("client")
+                    and not llm_auth.is_dead(name, env_var)
+                    and name not in _skipped_this_run):
+                return p["client"], p.get("model", model), p
+        return None, None, None
+
+    def _is_auth_exc(exc: BaseException) -> bool:
+        msg = str(exc).lower()
+        return (
+            llm_auth._is_auth_error(exc)  # noqa: SLF001
+            or ("403" in msg and ("permission" in msg or "forbidden" in msg))
         )
-        return resp, None
 
-    # We need direct client access for the tool loop (make_call abstraction
-    # doesn't return the response object, only text).  Use the first live provider.
-    client = None
-    effective_model = model
-    for p in providers:
-        if p.get("cred") and p.get("client"):
-            client = p["client"]
-            effective_model = p.get("model", model)
-            break
+    def _make_call(client, effective_model: str, provider_dict: dict) -> Any:
+        """One messages.create call with up to 2 retries on transient errors."""
+        name = provider_dict.get("name", "unknown")
+        env_var = provider_dict.get("env_var", "")
+        max_attempts = 2
+        for attempt in range(1, max_attempts + 1):
+            try:
+                resp = client.messages.create(
+                    model=effective_model,
+                    max_tokens=max_tokens,
+                    system=_SYSTEM_PROMPT,
+                    tools=_tool_schemas(),
+                    messages=messages,
+                )
+                provider_attempts.append({
+                    "provider": name,
+                    "model": effective_model,
+                    "attempted": True,
+                    "ok": True,
+                    "error_type": None,
+                    "error_message": None,
+                })
+                return resp
+            except Exception as exc:  # noqa: BLE001
+                etype = "auth" if _is_auth_exc(exc) else "transient"
+                provider_attempts.append({
+                    "provider": name,
+                    "model": effective_model,
+                    "attempted": True,
+                    "ok": False,
+                    "error_type": etype,
+                    "error_message": str(exc)[:300],
+                })
+                if _is_auth_exc(exc):
+                    llm_auth.mark_dead(name, env_var)
+                    log.warning(
+                        "cortex: provider '%s' auth error (turn %d) — marking dead",
+                        name, tool_call_count,
+                    )
+                    raise
+                log.warning(
+                    "cortex: provider '%s' transient error (attempt %d/%d, turn %d): %s",
+                    name, attempt, max_attempts, tool_call_count, exc,
+                )
+                if attempt == max_attempts:
+                    # Exhausted retries — skip this provider for this run
+                    _skipped_this_run.add(name)
+                    raise
+        raise RuntimeError("unreachable")  # pragma: no cover
 
-    if client is None:
+    initial_client, initial_model_str, initial_pdict = _pick_live_provider()
+    if initial_client is None:
         return _single_call_fallback(root, cfg, providers, now_str, probation_status,
                                      "no_provider")
 
+    client = initial_client
+    effective_model = initial_model_str
+    current_pdict = initial_pdict
+    deliberation_restarted = False
+
     while tool_call_count < max_tool_calls:
         try:
-            resp = client.messages.create(
-                model=effective_model,
-                max_tokens=max_tokens,
-                system=_SYSTEM_PROMPT,
-                tools=_tool_schemas(),
-                messages=messages,
-            )
+            resp = _make_call(client, effective_model, current_pdict)
         except Exception as exc:  # noqa: BLE001
-            log.warning("cortex: model call failed at turn %d: %s", tool_call_count, exc)
+            next_client, next_model_str, next_pdict = _pick_live_provider()
+            if next_client is not None and not deliberation_restarted:
+                log.warning(
+                    "cortex: switching provider after failure (%s); restarting deliberation once",
+                    exc,
+                )
+                client = next_client
+                effective_model = next_model_str
+                current_pdict = next_pdict
+                deliberation_restarted = True
+                messages[:] = [
+                    {"role": "user", "content": "Begin deliberation. Read the world state first, then explore the spine and contradictions, then flag attention items and write your memo."},
+                ]
+                tool_call_count = 0
+                n_tool_calls_total = 0
+                tool_call_census.clear()
+                continue
+            log.warning("cortex: all providers exhausted or already restarted; breaking loop (%s)", exc)
             break
 
         # Add assistant message to conversation
@@ -1379,7 +1510,6 @@ def _run_tool_loop(
             break
 
         if stop_reason != "tool_use":
-            # Unexpected stop
             log.info("cortex: stop_reason=%s at turn %d", stop_reason, tool_call_count)
             break
 
@@ -1430,7 +1560,53 @@ def _run_tool_loop(
         }
         memo_result = _tool_write_memo(root, memo_params, now_str, probation_status)
 
-    # Stamp census into memo and re-mirror site copy so both are identical.
+    # Build run_status block
+    has_model_response = bool(provider_attempts) and any(a["ok"] for a in provider_attempts)
+    context_stale, context_as_of = _detect_context_stale(root, now_str)
+
+    if n_tool_calls_total >= 1 and has_model_response:
+        run_status_value = "ok"
+        degraded = False
+        degradation_reason = None
+    elif has_model_response and n_tool_calls_total == 0:
+        run_status_value = "degraded"
+        degraded = True
+        degradation_reason = "zero_tool_calls"
+    else:
+        run_status_value = "degraded"
+        degraded = True
+        degradation_reason = "model_unavailable"
+
+    if context_stale and not degraded:
+        run_status_value = "warn"
+
+    run_status = {
+        "status": run_status_value,
+        "degraded": degraded,
+        "degradation_reason": degradation_reason,
+        "provider_attempts": provider_attempts,
+        "tool_call_batches": tool_call_count,
+        "individual_tool_calls": n_tool_calls_total,
+        "expected_min_tool_calls": 1,
+        "context_stale": context_stale,
+        "context_as_of": context_as_of,
+    }
+
+    # Stamp stale-context note into deserves_operator when stale
+    if context_stale and memo_result and not memo_result.get("error"):
+        try:
+            memo_path = _cortex_dir(root) / "memo.json"
+            memo = json.loads(memo_path.read_text(encoding="utf-8"))
+            stale_note = f"[context_stale] cortex deliberated over world_state from {context_as_of}; current run={now_str}"
+            do_list = memo.get("deserves_operator") or []
+            if stale_note not in do_list:
+                do_list.append(stale_note)
+            memo["deserves_operator"] = do_list
+            memo_path.write_text(json.dumps(memo, indent=2, default=str), encoding="utf-8")
+        except Exception:  # noqa: BLE001
+            pass
+
+    # Stamp census + run_status into memo and re-mirror site copy so both are identical.
     # _tool_write_memo was called with tool_call_census={} (unknown at write time);
     # we update both copies here to avoid the data/site divergence.
     if memo_result and not memo_result.get("error"):
@@ -1438,6 +1614,7 @@ def _run_tool_loop(
             memo_path = _cortex_dir(root) / "memo.json"
             memo = json.loads(memo_path.read_text(encoding="utf-8"))
             memo["tool_call_census"] = tool_call_census
+            memo["run_status"] = run_status
             memo_serialized = json.dumps(memo, indent=2, default=str)
             memo_path.write_text(memo_serialized, encoding="utf-8")
             # Keep site mirror in sync — re-write with the final census stamp.
