@@ -113,11 +113,67 @@ def _load_challenges(challenges_dir: Path) -> dict[str, dict]:
 # ---------------------------------------------------------------------------
 
 
+def _adapter_candidate_counts(data_dir: Path) -> dict[str, int]:
+    """Call each domain adapter's route_all() absent-safely and return per-source counts.
+
+    Returns a dict mapping adapter source name → candidate count (0 when absent).
+    All four adapters are always included, even when their data files are absent.
+    Errors per adapter are caught and logged; that adapter reports 0.
+    """
+    import logging
+    log = logging.getLogger(__name__)
+
+    counts: dict[str, int] = {
+        "oracle": 0,
+        "alpha_grammar": 0,
+        "cortex": 0,
+        "cycle_pattern": 0,
+    }
+
+    # Oracle
+    try:
+        from engine.research_factory.adapter_oracle import load_oracle_registry
+        oracle_rows = load_oracle_registry(data_dir)
+        counts["oracle"] = len(oracle_rows)
+    except Exception as exc:  # noqa: BLE001
+        log.debug("adapter_candidate_counts: oracle error: %s", exc)
+
+    # Alpha grammar
+    try:
+        from engine.research_factory.adapter_alpha_grammar import route_all as _ag_route_all
+        ag_results = _ag_route_all(data_dir)
+        # Each result represents a family; sum n_survivors for individual candidate count
+        counts["alpha_grammar"] = sum(
+            r.get("n_survivors", 0) for r in ag_results
+        )
+    except Exception as exc:  # noqa: BLE001
+        log.debug("adapter_candidate_counts: alpha_grammar error: %s", exc)
+
+    # Cortex
+    try:
+        from engine.research_factory.adapter_cortex import route_all as _cx_route_all
+        cx_results = _cx_route_all(data_dir)
+        counts["cortex"] = len(cx_results)
+    except Exception as exc:  # noqa: BLE001
+        log.debug("adapter_candidate_counts: cortex error: %s", exc)
+
+    # Cycle pattern
+    try:
+        from engine.research_factory.adapter_cycle_pattern import route_all as _cp_route_all
+        cp_results = _cp_route_all(data_dir)
+        counts["cycle_pattern"] = len(cp_results)
+    except Exception as exc:  # noqa: BLE001
+        log.debug("adapter_candidate_counts: cycle_pattern error: %s", exc)
+
+    return counts
+
+
 def compute_health(
     candidates: list[dict],
     transitions: list[dict],
     challenges: dict[str, dict] | None = None,
     as_of: str | None = None,
+    data_dir: Path | None = None,
 ) -> dict:
     """Compute a research_factory.health.v1 dict from candidates + transitions.
 
@@ -296,6 +352,26 @@ def compute_health(
         }
 
     # ----------------------------------------------------------------
+    # 7. Adapter fan-out candidate counts (per-source, including zeros)
+    # ----------------------------------------------------------------
+    # Call each domain adapter's route_all() to report how many candidates
+    # exist at the source (absent-safe; zeros reported when data files absent).
+    # Display-only; does not affect any lifecycle state.
+    adapter_candidate_counts: dict[str, int] = {}
+    if data_dir is not None:
+        try:
+            adapter_candidate_counts = _adapter_candidate_counts(data_dir)
+        except Exception:  # noqa: BLE001
+            adapter_candidate_counts = {
+                "oracle": 0, "alpha_grammar": 0, "cortex": 0, "cycle_pattern": 0,
+            }
+    else:
+        # data_dir not supplied (e.g. unit tests); report zeros for all adapters
+        adapter_candidate_counts = {
+            "oracle": 0, "alpha_grammar": 0, "cortex": 0, "cycle_pattern": 0,
+        }
+
+    # ----------------------------------------------------------------
     # Build health row
     # ----------------------------------------------------------------
     health_row: dict = {
@@ -323,6 +399,14 @@ def compute_health(
         },
         "respin_generation_histogram": dict(gen_hist),
         "source_acceptance_rates": source_acceptance_rates,
+        "adapter_candidate_counts": {
+            **adapter_candidate_counts,
+            "_note": (
+                "Per-adapter candidate count from route_all() fan-out. "
+                "Display-only; zeros reported when source data files are absent. "
+                "Does not affect lifecycle state."
+            ),
+        },
     }
 
     return health_row
@@ -340,6 +424,8 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     ap.add_argument("--rf-dir", type=Path, default=None,
                     help="Override data/research_factory/ dir")
+    ap.add_argument("--data-dir", type=Path, default=None,
+                    help="Root data dir for adapter fan-out (default: parent of rf-dir or data/)")
     ap.add_argument("--as-of", default=None,
                     help="ISO timestamp override for this health row")
     # Forward-ledger law: default is --dry-run; --write appends
@@ -356,6 +442,13 @@ def main() -> int:
     dry_run = not args.write
 
     rf_dir = args.rf_dir or DEFAULT_RF_DIR
+    # data_dir for adapter fan-out: explicit flag, or rf_dir's parent, or repo data/
+    if args.data_dir:
+        data_dir: Path | None = args.data_dir
+    else:
+        # rf_dir is typically data/research_factory/ — parent is data/
+        candidate_data_dir = rf_dir.parent
+        data_dir = candidate_data_dir if candidate_data_dir.exists() else None
 
     candidates_path = rf_dir / "candidates.jsonl"
     transitions_path = rf_dir / "transitions.jsonl"
@@ -376,6 +469,7 @@ def main() -> int:
         transitions=transitions,
         challenges=challenges,
         as_of=as_of,
+        data_dir=data_dir,
     )
 
     # Validate
@@ -395,6 +489,10 @@ def main() -> int:
           f"rate={chd['divergence_rate']}")
     print(f"  respin_generation_histogram: {json.dumps(health_row['respin_generation_histogram'])}")
     print(f"  source_acceptance_rates: {json.dumps(health_row['source_acceptance_rates'])}")
+    # Print per-adapter counts (fan-out; includes zeros for absent sources)
+    acc = health_row.get("adapter_candidate_counts", {})
+    acc_display = {k: v for k, v in acc.items() if k != "_note"}
+    print(f"  adapter_candidate_counts: {json.dumps(acc_display, sort_keys=True)}")
 
     if dry_run:
         print("\n[DRY-RUN] Not writing to disk. Use --write to append.")

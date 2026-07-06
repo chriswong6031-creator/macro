@@ -2,6 +2,8 @@
 
 Builds the human-review packet list from candidates in `human_review` status
 (plus paper candidates flagged for decay review by monitor rows when present,
+plus candidates in `awaiting_data` status — blocked on data/label/grader
+availability — surfaced as a separate Blocked section,
 absent-safe).
 
 Each packet:
@@ -53,6 +55,11 @@ ALLOWED_DECISIONS = ["paper", "deferred", "rejected", "scoped_build"]
 # candidates in human_review).  Mark them clearly so operators don't run a command
 # that will always return rc=1.
 _PAPER_DECAY_ALLOWED_DECISIONS: list[str] = []  # empty — no runnable decide path yet
+
+# awaiting_data (blocked) candidates surface for operator awareness only.
+# No auto-transition is possible until the blocking condition resolves.
+# Empty allowed_decisions mirrors paper-decay shape — no runnable decide path.
+_AWAITING_DATA_ALLOWED_DECISIONS: list[str] = []  # empty — blocked, no decide action
 
 # Terminal states — excluded from crowds_with candidates pool
 _TERMINAL_STATES = frozenset({
@@ -441,6 +448,27 @@ def _is_flagged_for_decay_review(pm_row: dict | None) -> bool:
 
 
 # ---------------------------------------------------------------------------
+# come_back_on extractor for awaiting_data transitions
+# ---------------------------------------------------------------------------
+
+
+def _extract_come_back_on(transitions_jsonl: list[dict], candidate_id: str) -> str | None:
+    """Return the come_back_on date from the most-recent awaiting_data transition.
+
+    Absent-safe: returns None if no awaiting_data transition found.
+    """
+    matched = [
+        t for t in transitions_jsonl
+        if t.get("candidate_id") == candidate_id and t.get("to") == "awaiting_data"
+    ]
+    if not matched:
+        return None
+    # Most recent = last in the append-only log
+    last = matched[-1]
+    return last.get("come_back_on")
+
+
+# ---------------------------------------------------------------------------
 # Core queue builder
 # ---------------------------------------------------------------------------
 
@@ -478,19 +506,25 @@ def build_queue(
     #   1. status == 'human_review'  → full decide.py path
     #   2. status == 'paper' AND monitor flags decay review
     #      → visibility-only; decide.py cannot act until W6 re-transitions to human_review
-    queue_ids: list[tuple[str, bool]] = []  # (candidate_id, is_paper_decay)
+    #   3. status == 'awaiting_data'
+    #      → blocked bucket; surfaced for operator awareness with come_back_on clock;
+    #        no decide path until the blocking condition resolves
+    # Tuple: (candidate_id, is_paper_decay, is_awaiting_data)
+    queue_ids: list[tuple[str, bool, bool]] = []
     for cid, cand in all_candidates.items():
         status = cand.get("status")
         if status == "human_review":
-            queue_ids.append((cid, False))
+            queue_ids.append((cid, False, False))
         elif status == "paper":
             pm_row = _load_paper_monitor(pm_path, cid)
             if _is_flagged_for_decay_review(pm_row):
-                queue_ids.append((cid, True))
+                queue_ids.append((cid, True, False))
+        elif status == "awaiting_data":
+            queue_ids.append((cid, False, True))
 
     # Build packets
     packets: list[dict] = []
-    for cid, is_paper_decay in queue_ids:
+    for cid, is_paper_decay, is_awaiting_data in queue_ids:
         cand = all_candidates[cid]
         challenge = _load_challenge(challenges_dir, cid)
 
@@ -514,6 +548,19 @@ def build_queue(
                 "No runnable decide command exists yet. "
                 "RF-16 forbids any composite/fused ranking — crowds_with is context only."
             )
+        elif is_awaiting_data:
+            # awaiting_data candidates are blocked on data/label/grader availability.
+            # No decide command is runnable until the blocking condition resolves and
+            # the candidate re-enters a decidable state.
+            packet_allowed_decisions = _AWAITING_DATA_ALLOWED_DECISIONS
+            # Extract come_back_on from the most recent awaiting_data transition
+            come_back_on = _extract_come_back_on(transitions_jsonl, cid)
+            packet_note = (
+                f"awaiting_data — blocked on data/label/grader availability; "
+                f"come_back_on={come_back_on or 'not set'}. "
+                "No decide command is runnable until the blocking condition resolves. "
+                "RF-16 forbids any composite/fused ranking — crowds_with is context only."
+            )
         else:
             packet_allowed_decisions = ALLOWED_DECISIONS
             packet_note = (
@@ -527,6 +574,9 @@ def build_queue(
             "candidate_id": cid,
             "created_at": cand.get("created_at"),
             "current_status": cand.get("status"),
+            "is_awaiting_data": is_awaiting_data,
+            "come_back_on": (_extract_come_back_on(transitions_jsonl, cid)
+                             if is_awaiting_data else None),
             "candidate_type": cand.get("candidate_type"),
             "domain": cand.get("domain"),
             "track": (cand.get("artifacts") or {}).get("track"),

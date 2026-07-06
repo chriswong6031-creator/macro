@@ -253,6 +253,38 @@ def _route_candidate(
         )
         return result
 
+    # --- Cycle-pattern domain ---
+    if source == "cycle_pattern_scan" or domain == "cycle_pattern" or ctype == "cycle_pattern_rule":
+        from engine.research_factory.adapter_cycle_pattern import route_candidate as _cp_route
+        adapter_result = _cp_route(candidate, data_dir=data_dir)
+        result["adapter_result"] = adapter_result
+        projected = adapter_result.get("projected_state", "registered")
+
+        if projected == "numeric_rejected":
+            result["action"] = "transition_numeric_rejected"
+            result["reason"] = (
+                f"cycle_pattern candidate projected as numeric_rejected "
+                f"(domain_status={adapter_result.get('domain_status')!r})"
+            )
+        elif projected == "screened":
+            result["action"] = "transition_screened"
+            result["reason"] = (
+                f"cycle_pattern candidate projected as screened "
+                f"(domain_status={adapter_result.get('domain_status')!r})"
+            )
+        elif projected in ("paper", "promote_eligible"):
+            result["action"] = "no_action"
+            result["reason"] = (
+                f"cycle_pattern candidate projected as {projected!r} "
+                f"— requires human gate decision (RF-5)"
+            )
+        else:
+            result["action"] = "no_action"
+            result["reason"] = (
+                f"cycle_pattern candidate projected as {projected!r}; no auto-action"
+            )
+        return result
+
     # Unrecognised domain/source
     result["action"] = "no_action"
     result["reason"] = (
