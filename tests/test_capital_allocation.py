@@ -39,6 +39,7 @@ from engine.capital_allocation import (  # noqa: E402
     compute_capital_allocation,
     _classify_delta,
     _compute_repurch_ttm,
+    _get_annual_repurchases,
     _get_sbc_ttm,
     _ACCRETIVE_SHARES_CHANGE_PCT,
     _DILUTIVE_SHARES_CHANGE_PCT,
@@ -266,6 +267,116 @@ class TestRepurchTTM:
         ttm, cov = _compute_repurch_ttm("TEST", df, as_of_date=None)
         # Result depends on today's date; just ensure no crash
         assert isinstance(cov, str)
+
+    def test_dedup_keeps_latest_filed_for_restated_quarter(self) -> None:
+        """A quarter re-filed after restatement should not be double-counted."""
+        df = _make_quarterly([
+            # Q1 filed originally, then restated and re-filed with corrected amount
+            {"fiscal_quarter": 1, "period_end": "2025-09-30", "filed": "2025-11-01", "repurchases": 100e6},
+            {"fiscal_quarter": 1, "period_end": "2025-09-30", "filed": "2025-12-15", "repurchases": 90e6},  # restatement
+        ])
+        ttm, cov = _compute_repurch_ttm("TEST", df, as_of_date=pd.Timestamp("2026-01-01"))
+        # Only the latest-filed row (90e6) should be counted, not both
+        assert ttm == pytest.approx(90e6)
+        assert cov == "partial"  # only 1 unique quarter
+
+
+# ── Group B2: Annual fallback ─────────────────────────────────────────────────
+
+class TestAnnualFallback:
+    """compute_capital_allocation falls back to annual repurchases when quarterly is partial."""
+
+    def test_partial_quarterly_triggers_annual_fallback(self) -> None:
+        """When only 1 quarterly row exists, repurch_ttm should use annual figure."""
+        # Only 1 quarterly row → partial coverage
+        q_df = _make_quarterly([
+            {"fiscal_quarter": 1, "period_end": "2025-09-30", "filed": "2025-11-01", "repurchases": 25e9},
+        ])
+        # Annual figure is the correct full-year amount
+        fp_df = _make_fundamentals_panel([
+            {"fy": 2025, "shares": 985_000.0, "repurchases": 90e9, "asof_date": "2025-10-30"},
+            {"fy": 2024, "shares": 1_000_000.0, "asof_date": "2025-04-30"},
+        ])
+        result = compute_capital_allocation(
+            "TEST", q_df, fp_df, mcap=3_000_000_000_000.0,
+            as_of_date="2026-01-01",
+        )
+        # Annual fallback should be used
+        assert result["repurch_coverage"] == "annual_fallback"
+        assert result["repurch_ttm"] == pytest.approx(90e9)
+        # buyback_yield uses annual figure
+        assert result["buyback_yield"] == pytest.approx(90e9 / 3_000_000_000_000.0)
+
+    def test_partial_with_no_annual_stays_partial(self) -> None:
+        """When quarterly is partial AND annual is unavailable, keep partial."""
+        q_df = _make_quarterly([
+            {"fiscal_quarter": 1, "period_end": "2025-09-30", "filed": "2025-11-01", "repurchases": 25e9},
+        ])
+        # fundamentals_panel has no repurchases column
+        fp_df = _make_fundamentals_panel([
+            {"fy": 2024, "shares": 1_000_000.0, "asof_date": "2025-04-30"},
+        ])
+        # Remove repurchases column to simulate absence
+        fp_df = fp_df.drop(columns=["dividends"], errors="ignore")
+        # The repurchases column is built into _make_fundamentals_panel defaults as not present
+        # Create panel without repurchases
+        fp_df_no_rep = fp_df.drop(columns=["dividends"], errors="ignore")
+        # Build a fundamentals panel that has no repurchases column
+        fp_noq = pd.DataFrame([{
+            "ticker": "TEST", "fy": 2024, "shares": 1_000_000.0,
+            "debt_lt": 500_000_000.0, "asof_date": "2025-04-30", "period_end": "2024-12-31",
+        }])
+        result = compute_capital_allocation(
+            "TEST", q_df, fp_noq, mcap=1_000_000_000.0,
+            as_of_date="2026-01-01",
+        )
+        # Without annual, stays partial
+        assert result["repurch_coverage"] == "partial"
+        assert result["repurch_ttm"] == pytest.approx(25e9)
+
+    def test_net_buyback_after_sbc_none_for_partial_coverage(self) -> None:
+        """With partial quarterly coverage and no annual fallback, net_buyback must be None."""
+        q_df = _make_quarterly([
+            {"fiscal_quarter": 1, "period_end": "2025-09-30", "filed": "2025-11-01", "repurchases": 25e9},
+        ])
+        fp_noq = pd.DataFrame([{
+            "ticker": "TEST", "fy": 2024, "shares": 1_000_000.0,
+            "debt_lt": 500_000_000.0, "asof_date": "2025-04-30", "period_end": "2024-12-31",
+        }])
+        st_df = _make_statements([
+            {"fy": 2024, "sbc": 12e9, "period_end": "2024-12-31"},
+        ])
+        result = compute_capital_allocation(
+            "TEST", q_df, fp_noq, statements_df=st_df,
+            mcap=3_000_000_000_000.0,
+            as_of_date="2026-01-01",
+        )
+        assert result["repurch_coverage"] == "partial"
+        assert result["net_buyback_after_sbc"] is None
+        assert result["sbc_note"] is not None
+        assert "period mismatch" in result["sbc_note"]
+
+    def test_net_buyback_after_sbc_computed_for_annual_fallback(self) -> None:
+        """With annual_fallback coverage AND available SBC, net_buyback_after_sbc is computed."""
+        q_df = _make_quarterly([
+            {"fiscal_quarter": 1, "period_end": "2025-09-30", "filed": "2025-11-01", "repurchases": 25e9},
+        ])
+        fp_df = _make_fundamentals_panel([
+            {"fy": 2025, "shares": 985_000.0, "repurchases": 90e9, "asof_date": "2025-10-30"},
+            {"fy": 2024, "shares": 1_000_000.0, "asof_date": "2025-04-30"},
+        ])
+        st_df = _make_statements([
+            {"fy": 2024, "sbc": 12e9, "period_end": "2024-12-31"},
+        ])
+        mcap = 3_000_000_000_000.0
+        result = compute_capital_allocation(
+            "TEST", q_df, fp_df, statements_df=st_df,
+            mcap=mcap,
+            as_of_date="2026-01-01",
+        )
+        assert result["repurch_coverage"] == "annual_fallback"
+        # net_buyback_after_sbc = (90B - 12B) / 3T
+        assert result["net_buyback_after_sbc"] == pytest.approx((90e9 - 12e9) / mcap)
 
 
 # ── Group C: SBC path ─────────────────────────────────────────────────────────

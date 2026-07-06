@@ -16,7 +16,9 @@ capital_allocation_delta:
   'accretive'   — shares_yoy_change <= -0.5% AND repurch_ttm > 0
                   (company is shrinking its share count and actively buying back)
   'dilutive'    — shares_yoy_change >= +3.0%
-                  (matches the dilution_flag threshold in engine/stock_fundamentals.py)
+                  (matches the dilution_flag threshold in
+                  scripts/research/missed_hold_study.py; note: stock_fundamentals.py
+                  uses a separate multi-year dilution_pct=5.0 threshold)
   'neutral'     — all other cases where data is present
   'unavailable' — shares data missing
 
@@ -25,7 +27,8 @@ buyback_yield:
 
 net_buyback_after_sbc:
   (repurch_ttm - sbc_ttm) / mcap  (None if sbc unavailable — handles the LT-1 backfill
-  landing or not landing gracefully)
+  landing or not landing gracefully; also None if repurch_coverage='partial' to avoid
+  period mismatch between a partial quarterly sum and a full-year SBC figure)
 
 share_count_reduction_confirmed:
   bool — shares_yoy_change <= -0.5%
@@ -38,9 +41,23 @@ Point-in-time gating (quarterly data)
 --------------------------------------
 Quarterly rows in statements_quarterly.parquet carry both period_end AND filed date.
 Only rows where filed IS NOT NULL are used (PIT gate: a row is only visible once filed).
+A defensive dedup on (ticker, fiscal_year, fiscal_quarter) retains the latest-filed row
+so that restated quarters cannot be double-counted.
 TTM = trailing 4 quarters with period_end in the last 12 months, counting only filed rows.
 The PIT gate is strict: any quarter without a filed date is excluded — this matches the
 task brief ("only rows with filed date present").
+
+Annual fallback for partial quarterly coverage
+-----------------------------------------------
+As of 2026-07-06 the statements_quarterly.parquet 'repurchases' column is populated for
+only 1 quarter in the trailing 12 months for 852 of 881 covered tickers (quarterly XBRL
+tagging is sparse — additional filings will not reliably fill the gap). When the quarterly
+TTM sum is partial (repurch_coverage='partial'), repurch_ttm falls back to
+fundamentals_panel.repurchases (the latest PIT-safe annual figure).  The fallback is
+reflected in repurch_coverage='annual_fallback'.  All metrics computed from repurch_ttm
+(buyback_yield, net_buyback_after_sbc, capital_allocation_delta) then use the annual
+figure, which also matches the period of sbc_ttm (annual), preventing the period-mismatch
+that would otherwise make net_buyback_after_sbc structurally unreliable.
 
 SBC handling
 ------------
@@ -56,10 +73,13 @@ Every result dict carries:
   _horizon_role   : "hold_thesis"
   _display_only   : True
   _version        : "v1"
-  repurch_coverage: "full" | "partial" | "missing"
-    full    : >= 4 PIT-filed quarterly rows in trailing 12 months
-    partial : 1-3 filed rows (TTM is partial sum)
-    missing : no filed quarterly rows with repurchases column
+  repurch_coverage: "full" | "partial" | "annual_fallback" | "missing"
+    full             : >= 4 PIT-filed quarterly rows in trailing 12 months
+    partial          : 1-3 filed rows (TTM is partial quarterly sum — only used
+                       when annual fallback is also unavailable)
+    annual_fallback  : quarterly coverage was partial, fell back to
+                       fundamentals_panel.repurchases (annual)
+    missing          : no data available from either source
 
 Usage
 -----
@@ -96,7 +116,9 @@ _VERSION = "v1"
 # ── threshold constants (frozen v1 display semantics) ─────────────────────────
 # capital_allocation_delta thresholds
 _ACCRETIVE_SHARES_CHANGE_PCT = -0.5   # shares_yoy_change <= this AND repurch > 0
-_DILUTIVE_SHARES_CHANGE_PCT = 3.0     # shares_yoy_change >= this (matches dilution_flag in stock_fundamentals)
+# +3% threshold from scripts/research/missed_hold_study.py:220 (long-hold family);
+# note: engine/stock_fundamentals.py uses a separate multi-year dilution_pct=5.0 threshold.
+_DILUTIVE_SHARES_CHANGE_PCT = 3.0     # shares_yoy_change >= this
 
 # ── TTM window ────────────────────────────────────────────────────────────────
 _TTM_QUARTERS = 4
@@ -171,6 +193,14 @@ def _compute_repurch_ttm(
     if sub.empty:
         return None, "missing"
 
+    # Dedup: if a quarter was restated and re-filed, keep only the latest-filed row
+    # per (ticker, fiscal_year, fiscal_quarter) so restated rows are not double-counted.
+    if "fiscal_year" in sub.columns and "fiscal_quarter" in sub.columns:
+        sub = (
+            sub.sort_values("_filed_ts", ascending=True)
+            .drop_duplicates(subset=["ticker", "fiscal_year", "fiscal_quarter"], keep="last")
+        )
+
     # TTM window: period_end within the last 12 months from as_of
     ttm_start = asof - pd.DateOffset(months=_TTM_MONTHS)
     sub_ttm = sub[sub["_period_end_ts"] >= ttm_start]
@@ -232,6 +262,47 @@ def _get_latest_two_annual(
     latest = sub.iloc[-1].to_dict()
     prior = sub.iloc[-2].to_dict()
     return latest, prior
+
+
+# ── Annual repurchases fallback from fundamentals_panel ──────────────────────
+
+def _get_annual_repurchases(
+    ticker: str,
+    fundamentals_panel_df: pd.DataFrame,
+    as_of_date: pd.Timestamp | None = None,
+) -> float | None:
+    """Get the latest PIT-safe annual repurchases from fundamentals_panel.
+
+    Returns None if unavailable.  Used as fallback when quarterly TTM coverage
+    is partial — the annual figure is on the same period footing as sbc_ttm.
+    """
+    if fundamentals_panel_df is None or fundamentals_panel_df.empty:
+        return None
+    if "repurchases" not in fundamentals_panel_df.columns:
+        return None
+    if "ticker" not in fundamentals_panel_df.columns or "fy" not in fundamentals_panel_df.columns:
+        return None
+
+    asof = as_of_date if as_of_date is not None else pd.Timestamp.now().normalize()
+
+    sub = fundamentals_panel_df[fundamentals_panel_df["ticker"].str.upper() == ticker.upper()].copy()
+    if sub.empty:
+        return None
+
+    # PIT gate via asof_date column
+    if "asof_date" in sub.columns:
+        sub["_asof_ts"] = pd.to_datetime(sub["asof_date"], errors="coerce")
+        sub = sub[sub["_asof_ts"].notna() & (sub["_asof_ts"] <= asof)]
+
+    if sub.empty:
+        return None
+
+    # Take latest row with non-null repurchases
+    sub_rep = sub[sub["repurchases"].notna()].sort_values("fy", ascending=False)
+    if sub_rep.empty:
+        return None
+
+    return _num(sub_rep.iloc[0]["repurchases"])
 
 
 # ── SBC from statements.parquet ───────────────────────────────────────────────
@@ -334,6 +405,18 @@ def compute_capital_allocation(
     # ── 1. TTM repurchases from quarterly data ────────────────────────────────
     repurch_ttm, repurch_coverage = _compute_repurch_ttm(ticker, quarterly_df, asof_ts)
 
+    # Annual fallback: quarterly 'repurchases' column is sparsely populated (~1 quarter
+    # per ticker in the TTM window for 97% of names).  A partial quarterly sum is NOT a
+    # reliable TTM figure and cannot be cleanly subtracted from a full-year SBC.
+    # When coverage is partial, fall back to fundamentals_panel.repurchases (annual,
+    # PIT-safe, well-covered) so that repurch_ttm and sbc_ttm are on the same footing.
+    if repurch_coverage == "partial":
+        annual_rep = _get_annual_repurchases(ticker, fundamentals_panel_df, asof_ts)
+        if annual_rep is not None:
+            repurch_ttm = annual_rep
+            repurch_coverage = "annual_fallback"
+        # else: keep partial sum and partial coverage label
+
     # ── 2. Annual data: shares, debt_lt from fundamentals_panel ──────────────
     latest_annual, prior_annual = _get_latest_two_annual(ticker, fundamentals_panel_df, asof_ts)
 
@@ -377,11 +460,17 @@ def compute_capital_allocation(
         buyback_yield = float(repurch_ttm / mcap)
 
     # net_buyback_after_sbc = (repurch_ttm - sbc_ttm) / mcap
-    # None when sbc unavailable — must not treat missing as zero
+    # None when sbc unavailable — must not treat missing as zero.
+    # Also None when repurch_coverage='partial': subtracting a full-year SBC from
+    # a partial quarterly sum produces a structurally unreliable result.  The annual
+    # fallback ('annual_fallback') and 'full' quarterly coverage are both acceptable
+    # because they use the same period as sbc_ttm (annual).
     net_buyback_after_sbc: float | None = None
     net_buyback_after_sbc_note: str | None = None
     if not sbc_available:
         net_buyback_after_sbc_note = "unavailable — SBC not in data"
+    elif repurch_coverage == "partial":
+        net_buyback_after_sbc_note = "unavailable — repurch_ttm is partial quarterly sum; period mismatch with annual SBC"
     elif repurch_ttm is not None and mcap and mcap > 0:
         net_buyback_after_sbc = float((repurch_ttm - sbc_ttm) / mcap)
 
