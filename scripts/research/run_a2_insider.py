@@ -7,8 +7,8 @@ Masterplan refs:
 
 Family: esx_insider_sponsor
 Budget declared: 12 (A2 RUL-26, program ceiling 115→165)
-Consumed: 8 trials = {I1, I1-sens, I2, I3} × 2 panels (deep, baskets)
-Reserve: 4
+Consumed: 10 trials = {I1, I1-sens, I2, I3, I1w-reserve} × 2 panels (deep, baskets)
+Reserve: 2
 
 Pre-registered trial definitions (frozen at registration, A2 RUL-26):
   I1 (ins_cluster_washout):
@@ -32,7 +32,7 @@ Estimator: module-level r1_estimate (entry_strata_phase0) with computable_mask.
 Grading: grade ONCE per panel (full fire set + all insider extra_columns),
   then run r1_estimate per stratum on the same graded frame. T+1 fill.
   Era tables: {2012-2015, 2016-2019, 2020-2022, 2023-2026}.
-  BH q≤0.10 within-family across the 8 trials (primary = stop5 + mae21).
+  BH q≤0.10 within-family across all 10 consumed trials (primary = stop5 + mae21).
   Block bootstrap CIs.
   Recall (stratum coverage: % of computable fires in-stratum) beside every effect.
   Survivor-bias stamp on all absolute rates.
@@ -358,7 +358,7 @@ def _run_one_stratum(
         p_values.append(res.get("p_value"))
         labels.append(label)
 
-    # BH within-trial (per-trial p-values; family BH runs later across all 8 trials)
+    # BH within-trial (per-trial p-values; family BH runs later across all 10 consumed trials)
     bh_within = bh_correction(p_values, labels)
 
     # Era table on the computable subset
@@ -398,14 +398,14 @@ def _run_one_stratum(
 
 
 # ---------------------------------------------------------------------------
-# Family-wide BH correction (across all 8 trials, primary outcomes)
+# Family-wide BH correction (across all 10 consumed trials, primary outcomes)
 # ---------------------------------------------------------------------------
 
 def _family_bh(
     trial_results: list[dict[str, Any]],
     primary_outcome: str = "stop5",
 ) -> list[dict[str, Any]]:
-    """BH FDR across all 8 trials on the primary outcome p-values."""
+    """BH FDR across all consumed trials (10 = 8 initial + 2 reserve) on the primary outcome p-values."""
     p_values: list[float | None] = []
     labels: list[str] = []
     for res in trial_results:
@@ -431,7 +431,7 @@ def run_insider_study(
     Structure:
       1. Register all families and this study's trials.
       2. For each panel: load fires + insider context, grade ONCE, run 4 strata.
-      3. Family-wide BH on stop5 p-values (8 trials).
+      3. Family-wide BH on stop5 p-values (all 10 consumed trials).
       4. Return all results.
     """
     _register_all_families(ledger_path)
@@ -473,10 +473,14 @@ def run_insider_study(
 
         fires_merged = fires.merge(ctx_subset, on=["ticker", "date"], how="left")
         # Derived mask for the I1w reserve trials: computable AND washed-out.
-        fires_merged["ins_computable_washout"] = (
-            fires_merged["ins_computable"].fillna(False).astype(bool)
-            & fires_merged["washout_flag"].fillna(False).astype(bool)
-        )
+        if "washout_flag" in fires_merged.columns:
+            fires_merged["ins_computable_washout"] = (
+                fires_merged["ins_computable"].fillna(False).astype(bool)
+                & fires_merged["washout_flag"].fillna(False).astype(bool)
+            )
+        else:
+            log.warning("washout_flag missing from context parquet; I1w mask empty")
+            fires_merged["ins_computable_washout"] = False
         insider_cols = insider_cols + ["ins_computable_washout"]
         n_matched = fires_merged[insider_cols[0]].notna().sum() if insider_cols[0] in fires_merged.columns else 0
         log.info("Panel %s: %d/%d fires matched insider context", panel_name, n_matched, len(fires_merged))
@@ -529,7 +533,7 @@ def run_insider_study(
             "n_gradable":      n_gradable,
         }
 
-    # Family-wide BH on stop5 across all 8 trials
+    # Family-wide BH on stop5 across all 10 consumed trials
     all_trial_results: list[dict[str, Any]] = []
     for panel_name in panels_to_run:
         pr = all_panel_results.get(panel_name, {})
@@ -665,12 +669,12 @@ def write_report(study_results: dict[str, Any], out_path: Path) -> None:
     a("")
     a("**Era tables:** 2012-2015, 2016-2019, 2020-2022, 2023-2026.")
     a("")
-    a("**BH correction:** q≤0.10 within-family across 8 trials (stop5 primary).")
+    a("**BH correction:** q≤0.10 within-family across all 10 consumed trials — 8 initial + 2 reserve (stop5 primary).")
     a("")
     a("**Trial registration:**")
     a(f"- Budget declared: {BUDGET_DECLARED} | Consumed: {BUDGET_CONSUMED} "
       f"| Reserve: {BUDGET_RESERVE}")
-    a("- 8 trials = {I1, I1-sens, I2, I3} × 2 panels (deep, baskets)")
+    a("- 10 trials = {I1, I1-sens, I2, I3} × 2 panels (initial 8) + I1w reserve × 2 panels")
     a("")
     a("| Trial | Stratum col | Computable mask | Definition |")
     a("|---|---|---|---|")
@@ -754,7 +758,10 @@ def write_report(study_results: dict[str, Any], out_path: Path) -> None:
             a(f"N total (post-mask): {n_treat + n_ctrl:,} | "
               f"N estimation sample: shown in n_treatment + n_control | "
               f"N blocks: {n_blocks:,}")
-            a(f"FE: `date` | Sector fallback: depends on panel coverage")
+            _sf = next((e.get("sector_fallback") for e in effects
+                        if e.get("sector_fallback") is not None), None)
+            a(f"FE: `date` | Sector fallback to date-only blocks: "
+              f"{'YES' if _sf else ('no' if _sf is not None else 'unknown')}")
             a("")
 
             # Primary + co-primary highlighted
@@ -830,10 +837,10 @@ def write_report(study_results: dict[str, Any], out_path: Path) -> None:
         a("")
 
     # Family-wide BH summary
-    a("## Family-Wide BH Summary (8 trials, q≤0.10)")
+    a("## Family-Wide BH Summary (10 consumed trials, q≤0.10)")
     a("")
     a("BH correction runs independently on stop5 (primary) and mae21 (co-primary)")
-    a("across all 8 pre-registered trials.")
+    a("across all 10 consumed trials (8 initial + 2 stamped reserve).")
     a("")
     a("**stop5 family BH:**")
     a("")
@@ -900,6 +907,26 @@ def write_report(study_results: dict[str, Any], out_path: Path) -> None:
 
     out_path.write_text("\n".join(lines), encoding="utf-8")
     log.info("Wrote %s", out_path)
+    try:
+        import json as _json
+
+        def _np_safe(o):
+            import numpy as _np
+            if isinstance(o, (_np.integer,)):
+                return int(o)
+            if isinstance(o, (_np.floating,)):
+                return float(o)
+            if isinstance(o, (_np.bool_,)):
+                return bool(o)
+            if isinstance(o, _np.ndarray):
+                return o.tolist()
+            return str(o)
+
+        _json_path = out_path.with_suffix(".results.json")
+        _json_path.write_text(_json.dumps(study_results, default=_np_safe, indent=1))
+        log.info("Wrote %s", _json_path)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("results JSON dump failed (report unaffected): %s", exc)
 
 
 # ---------------------------------------------------------------------------

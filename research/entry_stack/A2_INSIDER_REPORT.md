@@ -105,11 +105,11 @@ all insider extra_columns attached. All strata run on the same graded frame.
 
 **Era tables:** 2012-2015, 2016-2019, 2020-2022, 2023-2026.
 
-**BH correction:** q≤0.10 within-family across 8 trials (stop5 primary).
+**BH correction:** q≤0.10 within-family across all 10 consumed trials — 8 initial + 2 reserve (stop5 primary).
 
 **Trial registration:**
 - Budget declared: 12 | Consumed: 10 | Reserve: 2
-- 8 trials = {I1, I1-sens, I2, I3} × 2 panels (deep, baskets)
+- 10 trials = {I1, I1-sens, I2, I3} × 2 panels (initial 8) + I1w reserve × 2 panels
 
 | Trial | Stratum col | Computable mask | Definition |
 |---|---|---|---|
@@ -142,7 +142,7 @@ Within-arm comparisons are directionally valid.
 #### Effect Table (R1 date-FE, block bootstrap, computable_mask applied)
 
 N total (post-mask): 17,195 | N estimation sample: shown in n_treatment + n_control | N blocks: 3,456
-FE: `date` | Sector fallback: depends on panel coverage
+FE: `date` | Sector fallback to date-only blocks: no
 
 | Outcome | Coef | 95% CI (boot) | Naive diff | p | Within-trial BH q | Family BH q (stop5) | Family BH q (mae21) | BH rej? |
 |---|---|---|---|---|---|---|---|---|
@@ -183,7 +183,7 @@ FE: `date` | Sector fallback: depends on panel coverage
 #### Effect Table (R1 date-FE, block bootstrap, computable_mask applied)
 
 N total (post-mask): 17,195 | N estimation sample: shown in n_treatment + n_control | N blocks: 3,456
-FE: `date` | Sector fallback: depends on panel coverage
+FE: `date` | Sector fallback to date-only blocks: no
 
 | Outcome | Coef | 95% CI (boot) | Naive diff | p | Within-trial BH q | Family BH q (stop5) | Family BH q (mae21) | BH rej? |
 |---|---|---|---|---|---|---|---|---|
@@ -224,7 +224,7 @@ FE: `date` | Sector fallback: depends on panel coverage
 #### Effect Table (R1 date-FE, block bootstrap, computable_mask applied)
 
 N total (post-mask): 17,195 | N estimation sample: shown in n_treatment + n_control | N blocks: 3,456
-FE: `date` | Sector fallback: depends on panel coverage
+FE: `date` | Sector fallback to date-only blocks: no
 
 | Outcome | Coef | 95% CI (boot) | Naive diff | p | Within-trial BH q | Family BH q (stop5) | Family BH q (mae21) | BH rej? |
 |---|---|---|---|---|---|---|---|---|
@@ -265,7 +265,7 @@ FE: `date` | Sector fallback: depends on panel coverage
 #### Effect Table (R1 date-FE, block bootstrap, computable_mask applied)
 
 N total (post-mask): 17,197 | N estimation sample: shown in n_treatment + n_control | N blocks: 3,457
-FE: `date` | Sector fallback: depends on panel coverage
+FE: `date` | Sector fallback to date-only blocks: no
 
 | Outcome | Coef | 95% CI (boot) | Naive diff | p | Within-trial BH q | Family BH q (stop5) | Family BH q (mae21) | BH rej? |
 |---|---|---|---|---|---|---|---|---|
@@ -306,7 +306,7 @@ FE: `date` | Sector fallback: depends on panel coverage
 #### Effect Table (R1 date-FE, block bootstrap, computable_mask applied)
 
 N total (post-mask): 5,021 | N estimation sample: shown in n_treatment + n_control | N blocks: 1,310
-FE: `date` | Sector fallback: depends on panel coverage
+FE: `date` | Sector fallback to date-only blocks: no
 
 | Outcome | Coef | 95% CI (boot) | Naive diff | p | Within-trial BH q | Family BH q (stop5) | Family BH q (mae21) | BH rej? |
 |---|---|---|---|---|---|---|---|---|
@@ -357,7 +357,7 @@ Within-arm comparisons are directionally valid.
 #### Effect Table (R1 date-FE, block bootstrap, computable_mask applied)
 
 N total (post-mask): 91,755 | N estimation sample: shown in n_treatment + n_control | N blocks: 263
-FE: `date` | Sector fallback: depends on panel coverage
+FE: `date` | Sector fallback to date-only blocks: YES
 
 | Outcome | Coef | 95% CI (boot) | Naive diff | p | Within-trial BH q | Family BH q (stop5) | Family BH q (mae21) | BH rej? |
 |---|---|---|---|---|---|---|---|---|
@@ -398,7 +398,7 @@ FE: `date` | Sector fallback: depends on panel coverage
 #### Effect Table (R1 date-FE, block bootstrap, computable_mask applied)
 
 N total (post-mask): 91,755 | N estimation sample: shown in n_treatment + n_control | N blocks: 263
-FE: `date` | Sector fallback: depends on panel coverage
+FE: `date` | Sector fallback to date-only blocks: YES
 
 | Outcome | Coef | 95% CI (boot) | Naive diff | p | Within-trial BH q | Family BH q (stop5) | Family BH q (mae21) | BH rej? |
 |---|---|---|---|---|---|---|---|---|
@@ -439,7 +439,7 @@ FE: `date` | Sector fallback: depends on panel coverage
 #### Effect Table (R1 date-FE, block bootstrap, computable_mask applied)
 
 N total (post-mask): 91,755 | N estimation sample: shown in n_treatment + n_control | N blocks: 263
-FE: `date` | Sector fallback: depends on panel coverage
+FE: `date` | Sector fallback to date-only blocks: YES
 
 | Outcome | Coef | 95% CI (boot) | Naive diff | p | Within-trial BH q | Family BH q (stop5) | Family BH q (mae21) | BH rej? |
 |---|---|---|---|---|---|---|---|---|
@@ -480,7 +480,7 @@ FE: `date` | Sector fallback: depends on panel coverage
 #### Effect Table (R1 date-FE, block bootstrap, computable_mask applied)
 
 N total (post-mask): 91,793 | N estimation sample: shown in n_treatment + n_control | N blocks: 263
-FE: `date` | Sector fallback: depends on panel coverage
+FE: `date` | Sector fallback to date-only blocks: YES
 
 | Outcome | Coef | 95% CI (boot) | Naive diff | p | Within-trial BH q | Family BH q (stop5) | Family BH q (mae21) | BH rej? |
 |---|---|---|---|---|---|---|---|---|
@@ -521,7 +521,7 @@ FE: `date` | Sector fallback: depends on panel coverage
 #### Effect Table (R1 date-FE, block bootstrap, computable_mask applied)
 
 N total (post-mask): 47,442 | N estimation sample: shown in n_treatment + n_control | N blocks: 261
-FE: `date` | Sector fallback: depends on panel coverage
+FE: `date` | Sector fallback to date-only blocks: YES
 
 | Outcome | Coef | 95% CI (boot) | Naive diff | p | Within-trial BH q | Family BH q (stop5) | Family BH q (mae21) | BH rej? |
 |---|---|---|---|---|---|---|---|---|
@@ -551,10 +551,10 @@ FE: `date` | Sector fallback: depends on panel coverage
 
 ---
 
-## Family-Wide BH Summary (8 trials, q≤0.10)
+## Family-Wide BH Summary (10 consumed trials, q≤0.10)
 
 BH correction runs independently on stop5 (primary) and mae21 (co-primary)
-across all 8 pre-registered trials.
+across all 10 consumed trials (8 initial + 2 stamped reserve).
 
 **stop5 family BH:**
 
@@ -622,14 +622,14 @@ come-back scheduling and the esx_support_dose dose-response study (RUL-25).
 *CHIP promotion impossible this wave: NC-2 eq_band DEFERRED (A2 §C3).*
 ---
 
-## Adjudication (Fable, 2026-07-05)
+## Adjudication (Fable, 2026-07-05; revised post-review 2026-07-06)
 
 Family reading across all 10 trials, no promotion implied:
 
 1. **Unconditional insider strata are adverse at 21d** (I1/I1-sens/I2/I3: stop5 +2.5 to +7.8pp, mae21 deeper, vol-zones break more; CI-excl-0, BH-passing on both panels). Taken alone this would read "insider presence marks worse entries."
-2. **The I1w reserve contrast attributes that adversity to the WASHOUT STATE, not the cluster.** Within washed-out computable fires, the cluster's marginal effect on stop5 is a tight null (baskets +0.5pp, CI [−0.8, +1.8], n_treat=3,815; deep +0.15pp, CI [−4.2, +4.5]). The paper's F1 entry-confirmer conjecture does not survive at the swing horizon.
-3. **The one BH-surviving positive points at the holdability lane:** deep I1w mfe63 +4.1pp (CI-excl-0) — higher 63d favorable excursion for cluster fires with null mae63 — consistent with the grandfathered priors (insider IC lives at 63d+, long-only, monthly cadence; `research/INSIDER_FACTOR.md` §6).
-4. **Disposition:** no entry chip, no re-run of these contrasts (family reserve now 2). Insider sponsorship remains eligible ONLY as (a) a holdability-lane hypothesis coordinated with the esx_ql_overlay/S-QL lane at 63/126d, per RUL-20; (b) a display-only `sponsor_present` envelope field (RUL-19), which these results neither earn nor forbid — display carries no ranking authority. The esx_support_dose leg-count study should NOT count insider presence as an entry-quality leg on this evidence.
-5. Era note: I1w deep era signs flip (2016-19 and 2023-26 favorable, 2012-15 and 2020-22 adverse) — consistent with a null, not a hidden regime edge.
+2. **The I1w reserve contrast attributes that adversity to the WASHOUT STATE, not the cluster.** Within washed-out computable fires, the cluster's marginal effect on stop5 is a tight null on the well-powered panel (baskets +0.5pp, CI [−0.8, +1.8], n_treat=3,815 — excludes ±2pp in both directions vs the RUL-21 floor) and a wide null on deep (+0.15pp, CI [−4.2, +4.5], underpowered). The paper's F1 entry-confirmer conjecture does not survive at the swing horizon.
+3. **The holdability-lane hint is deep-only and weak.** Deep I1w mfe63 is +4.1pp (CI-excl-0, BH-YES), directionally consistent with the grandfathered 63d+ insider priors (`research/INSIDER_FACTOR.md` §6) — but the well-powered baskets panel CONTRADICTS it (mfe63 −0.5pp, CI [−1.5, +0.4], null). Read as a hypothesis for the esx_ql_overlay/S-QL lane at most, not evidence.
+4. **Disposition:** no entry chip; no re-run of these contrasts (family reserve now 2). Insider sponsorship remains eligible ONLY as (a) a holdability-lane hypothesis coordinated with the esx_ql_overlay/S-QL lane at 63/126d per RUL-20; (b) a display-only `sponsor_present` envelope field (RUL-19), which these results neither earn nor forbid — display carries no ranking authority. The esx_support_dose leg-count study must NOT count insider presence as an entry-quality leg on this evidence.
+5. Era note: I1w deep era signs flip across the four program eras — consistent with a null, not a hidden regime edge.
 
 *This section is an adjudication note on a phase-0 report; it moves no registry state and ships no product change.*
