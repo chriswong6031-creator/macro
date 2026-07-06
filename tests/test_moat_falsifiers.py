@@ -564,3 +564,83 @@ class TestFirewall:
             "tests/test_horizon_firewall.py _EXPECTED_HOLD_THESIS_ARTIFACTS does not "
             "include 'great-company-trap'. Update it."
         )
+
+
+# ===========================================================================
+# Group F — Point-in-time gate (W2 PR-K PIT fix)
+# ===========================================================================
+
+
+class TestPointInTimeGate:
+    """A fiscal row whose availability date (period_end + 120d) is AFTER the as-of
+    date was not yet filed, and must be dropped before any sensor evaluates."""
+
+    def _prior_plus_future(self, future_period_end: str, future_fy: int = 2026) -> pd.DataFrame:
+        """Filed prior FY + a margin-compressing future FY (revenue +10%, gross
+        margin halved → margin_compression WOULD fire if the future row were used)."""
+        return _make_statements([
+            {"ticker": "PIT", "fy": future_fy - 1, "revenue": 100.0, "gross_profit": 50.0,
+             "op_income": 20.0, "receivables": 10.0, "inventory": 5.0, "capex": 8.0,
+             "period_end": f"{future_fy - 1}-12-31"},
+            {"ticker": "PIT", "fy": future_fy, "revenue": 110.0, "gross_profit": 27.5,
+             "op_income": 20.0, "receivables": 10.0, "inventory": 5.0, "capex": 8.0,
+             "period_end": future_period_end},
+        ])
+
+    def test_not_yet_filed_row_does_not_fire(self) -> None:
+        # period_end 2026-12-31 → available 2027-04-30, AFTER as-of 2026-07-05.
+        df = self._prior_plus_future("2026-12-31")
+        res = compute_moat_falsifiers("PIT", df, asof_date="2026-07-05")
+        mc = res["sensors"]["margin_compression_despite_revenue_growth"]
+        assert mc["fired"] in (None, False), f"not-yet-filed FY2026 fired: {mc}"
+        assert mc["fy_evaluated"] != 2026
+
+    def test_filed_row_still_fires_after_availability(self) -> None:
+        # Same shape, but as-of 2027-06-01 is AFTER availability (2027-04-30).
+        df = self._prior_plus_future("2026-12-31")
+        res = compute_moat_falsifiers("PIT", df, asof_date="2027-06-01")
+        mc = res["sensors"]["margin_compression_despite_revenue_growth"]
+        assert mc["fired"] is True
+        assert mc["fy_evaluated"] == 2026
+
+    def test_none_asof_gates_against_today(self) -> None:
+        # A fiscal year that files far in the future must not fire on the live path
+        # (asof_date=None → today).  period_end year+1 guarantees availability > now.
+        future_fy = pd.Timestamp.now().year + 2
+        df = self._prior_plus_future(f"{future_fy}-12-31", future_fy=future_fy)
+        res = compute_moat_falsifiers("PIT", df, asof_date=None)
+        mc = res["sensors"]["margin_compression_despite_revenue_growth"]
+        assert mc["fired"] in (None, False), f"future FY fired on live path: {mc}"
+        assert mc["fy_evaluated"] != future_fy
+
+    def test_missing_period_end_is_kept(self) -> None:
+        # Legacy rows without a period_end column cannot be gated → kept & evaluated.
+        df = _make_statements([
+            {"ticker": "LEG", "fy": 2023, "revenue": 100.0, "gross_profit": 50.0,
+             "op_income": 20.0, "receivables": 10.0, "inventory": 5.0, "capex": 8.0},
+            {"ticker": "LEG", "fy": 2024, "revenue": 110.0, "gross_profit": 27.5,
+             "op_income": 20.0, "receivables": 10.0, "inventory": 5.0, "capex": 8.0},
+        ])
+        assert "period_end" not in df.columns
+        res = compute_moat_falsifiers("LEG", df, asof_date="2026-07-05")
+        mc = res["sensors"]["margin_compression_despite_revenue_growth"]
+        assert mc["fired"] is True
+
+    def test_base_rates_exclude_not_yet_filed_fy(self) -> None:
+        # 6 names each with a not-yet-filed compressing FY2026 → FY2026 must be
+        # absent from the base rate as of 2026-07-05 (rows dropped before pairing).
+        rows: list[dict] = []
+        for i in range(6):
+            tk = f"BR{i}"
+            rows += [
+                {"ticker": tk, "fy": 2025, "revenue": 100.0, "gross_profit": 50.0,
+                 "op_income": 20.0, "receivables": 10.0, "inventory": 5.0, "capex": 8.0,
+                 "period_end": "2025-12-31"},
+                {"ticker": tk, "fy": 2026, "revenue": 110.0, "gross_profit": 27.5,
+                 "op_income": 20.0, "receivables": 10.0, "inventory": 5.0, "capex": 8.0,
+                 "period_end": "2026-12-31"},
+            ]
+        df = _make_statements(rows)
+        rates = compute_base_rates(df, asof_date="2026-07-05")
+        mc = rates["margin_compression_despite_revenue_growth"]
+        assert 2026 not in mc, f"not-yet-filed FY2026 leaked into base rate: {mc}"
