@@ -116,6 +116,9 @@ lanes:
       - id: build_dispersion_regime
         module: scripts.build_dispersion_regime
         note: NW Rails W2 PR-4 — L3 dispersion regime lens (display-only, seconds)
+      - id: build_dt_contra_state
+        module: scripts.build_dt_contra_state
+        note: DT-NW-1 — aggregate per-ticker dt_contra chip state into NW display artifact (display-only, seconds)
       - id: build_congress
         module: scripts.build_congress
       - id: build_foresight

@@ -438,6 +438,10 @@ jobs:
           # from the breadth close caches (same panel as build_stock_library). Display-only;
           # gross_mult_live clamped 1.0. Seconds; never fatal.
           run_py "L3 dispersion regime lens (build_dispersion_regime)" scripts.build_dispersion_regime
+          # DT-NW-1: aggregate per-ticker dt_contra chip state into data/neuralweb/dt_contra_state.json.
+          # AFTER build_site (which calls build_stock_library to write site/stockdata/*.json).
+          # Display-only NW artifact; degrades gracefully if stockdata absent. Seconds; never fatal.
+          run_py "DT-NW-1 dt_contra state aggregator (build_dt_contra_state)" scripts.build_dt_contra_state
           # Congressional / politician disclosed-trades desk — AFTER build_alt_data (refreshes
           # data/quiver/congress.parquet) + build_site (refreshes per-name stockdata + regime +
           # allocation that the watchlist scores against). Reads only committed data; returns 0 on error.

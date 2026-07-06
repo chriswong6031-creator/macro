@@ -14,6 +14,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | china-alpha | 7 |
 | china-intel-hub | 2 |
 | cycle-intelligence | 10 |
+| dannytrades | 1 |
 | engine-fix | 16 |
 | entry-stack-expansion | 2 |
 | factor-intelligence | 5 |
@@ -40,7 +41,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 102 |
+| display | 103 |
 | infrastructure | 55 |
 | scored | 4 |
 | shadow | 37 |
@@ -49,7 +50,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 191 |
+| git | 192 |
 | gitignored-local | 5 |
 | r2 | 2 |
 
@@ -98,6 +99,12 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | cycle-pattern-state-daily-live | `data/cycle_pattern/state_daily_live.parquet` | parquet | daily-engine | infrastructure | 0 | 0 |
 | cycle-pattern-state-monthly | `data/cycle_pattern/state_monthly.parquet` | parquet | on-demand | infrastructure | 0 | 0 |
 | signal-archive-context-daily | `data/signal_archive/context_daily.parquet` | parquet | daily-engine | infrastructure | 0 | 0 |
+
+### dannytrades
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| dt-contra-state | `data/neuralweb/dt_contra_state.json` | json | daily-engine | display | 1 | 0 |
 
 ### engine-fix
 
