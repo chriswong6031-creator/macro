@@ -1,0 +1,1217 @@
+{
+  "exp_id": "exit_grid_v1",
+  "run_at": "2026-07-06T05:45:21.890890+00:00",
+  "runtime_s": 808.53,
+  "vintage_stamp": {
+    "price_plane_id": "massive_stock_day_v1",
+    "adjustment_mode": "split_adjusted_raw",
+    "universe_as_of": "2026-07-05",
+    "frame": "pit_massive_era_law",
+    "survivorship_biased": false,
+    "coverage_frac": 1.0,
+    "dead_name_coverage_pct": null,
+    "era_law_cohort": "verdict_grade_2021plus",
+    "stamp_degraded": true
+  },
+  "cumulative_pooled_replay_trial_count": 15,
+  "episode_cluster_definition": "episode_id column from replay_boarded",
+  "cohort_n": 49939,
+  "cohort_tickers": 992,
+  "cohort_closes_loaded": 992,
+  "coverage_frac": 1.0,
+  "declared_budget": 15,
+  "verdict_criteria": "descriptive-only",
+  "derived_from_surface": null,
+  "cells": {
+    "exit_grid_v1/hold_5": {
+      "n_fires": 49939,
+      "n_censored": 0,
+      "censoring_rate": 0.0,
+      "episode_clusters": 22295,
+      "wr": 0.528,
+      "mean_exit_ret": 0.0028,
+      "median_exit_ret": 0.0027,
+      "mean_foregone_mfe_126": 0.1976,
+      "mean_avoided_mae_126": 0.1065,
+      "regret_ratio": 0.5389,
+      "spec_hash": "5d02fe17b521c2f20bb35e424580bce1ed0b7139f2c94125b19a75f1ed382d82",
+      "exit_policy": {
+        "kind": "hold",
+        "H": 5
+      },
+      "era_tier_splits": {
+        "era_verdict_grade_2021plus": {
+          "n_fires": 49939,
+          "n_censored": 0,
+          "censoring_rate": 0.0,
+          "episode_clusters": 22295,
+          "wr": 0.528,
+          "mean_exit_ret": 0.0028,
+          "median_exit_ret": 0.0027,
+          "mean_foregone_mfe_126": 0.1976,
+          "mean_avoided_mae_126": 0.1065,
+          "regret_ratio": 0.5389
+        },
+        "era_survivor_biased": {
+          "n_fires": 0,
+          "n_censored": 0,
+          "censoring_rate": null,
+          "episode_clusters": 0,
+          "wr": null,
+          "mean_exit_ret": null,
+          "median_exit_ret": null,
+          "mean_foregone_mfe_126": null,
+          "mean_avoided_mae_126": null,
+          "regret_ratio": null
+        },
+        "tier_T1": {
+          "n_fires": 23016,
+          "n_censored": 0,
+          "censoring_rate": 0.0,
+          "episode_clusters": 11429,
+          "wr": 0.5293,
+          "mean_exit_ret": 0.0031,
+          "median_exit_ret": 0.003,
+          "mean_foregone_mfe_126": 0.1979,
+          "mean_avoided_mae_126": 0.1069,
+          "regret_ratio": 0.5402
+        },
+        "tier_T2": {
+          "n_fires": 24225,
+          "n_censored": 0,
+          "censoring_rate": 0.0,
+          "episode_clusters": 12793,
+          "wr": 0.5314,
+          "mean_exit_ret": 0.0031,
+          "median_exit_ret": 0.0029,
+          "mean_foregone_mfe_126": 0.1988,
+          "mean_avoided_mae_126": 0.106,
+          "regret_ratio": 0.5331
+        },
+        "tier_T3": {
+          "n_fires": 2698,
+          "n_censored": 0,
+          "censoring_rate": 0.0,
+          "episode_clusters": 2085,
+          "wr": 0.487,
+          "mean_exit_ret": -0.0025,
+          "median_exit_ret": -0.0011,
+          "mean_foregone_mfe_126": 0.184,
+          "mean_avoided_mae_126": 0.1073,
+          "regret_ratio": 0.5833
+        }
+      }
+    },
+    "exit_grid_v1/hold_10": {
+      "n_fires": 49939,
+      "n_censored": 0,
+      "censoring_rate": 0.0,
+      "episode_clusters": 22295,
+      "wr": 0.5553,
+      "mean_exit_ret": 0.0088,
+      "median_exit_ret": 0.0079,
+      "mean_foregone_mfe_126": 0.1788,
+      "mean_avoided_mae_126": 0.0938,
+      "regret_ratio": 0.5245,
+      "spec_hash": "2446e6282ca37263e9c35386651329540e1648a565b251e32117dc25e1f47bfa",
+      "exit_policy": {
+        "kind": "hold",
+        "H": 10
+      },
+      "era_tier_splits": {
+        "era_verdict_grade_2021plus": {
+          "n_fires": 49939,
+          "n_censored": 0,
+          "censoring_rate": 0.0,
+          "episode_clusters": 22295,
+          "wr": 0.5553,
+          "mean_exit_ret": 0.0088,
+          "median_exit_ret": 0.0079,
+          "mean_foregone_mfe_126": 0.1788,
+          "mean_avoided_mae_126": 0.0938,
+          "regret_ratio": 0.5245
+        },
+        "era_survivor_biased": {
+          "n_fires": 0,
+          "n_censored": 0,
+          "censoring_rate": null,
+          "episode_clusters": 0,
+          "wr": null,
+          "mean_exit_ret": null,
+          "median_exit_ret": null,
+          "mean_foregone_mfe_126": null,
+          "mean_avoided_mae_126": null,
+          "regret_ratio": null
+        },
+        "tier_T1": {
+          "n_fires": 23016,
+          "n_censored": 0,
+          "censoring_rate": 0.0,
+          "episode_clusters": 11429,
+          "wr": 0.5554,
+          "mean_exit_ret": 0.0093,
+          "median_exit_ret": 0.008,
+          "mean_foregone_mfe_126": 0.1792,
+          "mean_avoided_mae_126": 0.0941,
+          "regret_ratio": 0.5254
+        },
+        "tier_T2": {
+          "n_fires": 24225,
+          "n_censored": 0,
+          "censoring_rate": 0.0,
+          "episode_clusters": 12793,
+          "wr": 0.5628,
+          "mean_exit_ret": 0.0096,
+          "median_exit_ret": 0.009,
+          "mean_foregone_mfe_126": 0.1794,
+          "mean_avoided_mae_126": 0.0935,
+          "regret_ratio": 0.5212
+        },
+        "tier_T3": {
+          "n_fires": 2698,
+          "n_censored": 0,
+          "censoring_rate": 0.0,
+          "episode_clusters": 2085,
+          "wr": 0.4863,
+          "mean_exit_ret": -0.0028,
+          "median_exit_ret": -0.0012,
+          "mean_foregone_mfe_126": 0.1699,
+          "mean_avoided_mae_126": 0.0931,
+          "regret_ratio": 0.5477
+        }
+      }
+    },
+    "exit_grid_v1/hold_21": {
+      "n_fires": 49939,
+      "n_censored": 0,
+      "censoring_rate": 0.0,
+      "episode_clusters": 22295,
+      "wr": 0.5767,
+      "mean_exit_ret": 0.0193,
+      "median_exit_ret": 0.0163,
+      "mean_foregone_mfe_126": 0.1492,
+      "mean_avoided_mae_126": 0.0773,
+      "regret_ratio": 0.5182,
+      "spec_hash": "6f4b79f5927553c5fd91cd1f32e374e4baf7e2e1eb90b28d3b03a58d50b93466",
+      "exit_policy": {
+        "kind": "hold",
+        "H": 21
+      },
+      "era_tier_splits": {
+        "era_verdict_grade_2021plus": {
+          "n_fires": 49939,
+          "n_censored": 0,
+          "censoring_rate": 0.0,
+          "episode_clusters": 22295,
+          "wr": 0.5767,
+          "mean_exit_ret": 0.0193,
+          "median_exit_ret": 0.0163,
+          "mean_foregone_mfe_126": 0.1492,
+          "mean_avoided_mae_126": 0.0773,
+          "regret_ratio": 0.5182
+        },
+        "era_survivor_biased": {
+          "n_fires": 0,
+          "n_censored": 0,
+          "censoring_rate": null,
+          "episode_clusters": 0,
+          "wr": null,
+          "mean_exit_ret": null,
+          "median_exit_ret": null,
+          "mean_foregone_mfe_126": null,
+          "mean_avoided_mae_126": null,
+          "regret_ratio": null
+        },
+        "tier_T1": {
+          "n_fires": 23016,
+          "n_censored": 0,
+          "censoring_rate": 0.0,
+          "episode_clusters": 11429,
+          "wr": 0.5761,
+          "mean_exit_ret": 0.02,
+          "median_exit_ret": 0.0167,
+          "mean_foregone_mfe_126": 0.1495,
+          "mean_avoided_mae_126": 0.0776,
+          "regret_ratio": 0.5192
+        },
+        "tier_T2": {
+          "n_fires": 24225,
+          "n_censored": 0,
+          "censoring_rate": 0.0,
+          "episode_clusters": 12793,
+          "wr": 0.5849,
+          "mean_exit_ret": 0.0205,
+          "median_exit_ret": 0.0175,
+          "mean_foregone_mfe_126": 0.1493,
+          "mean_avoided_mae_126": 0.0774,
+          "regret_ratio": 0.5183
+        },
+        "tier_T3": {
+          "n_fires": 2698,
+          "n_censored": 0,
+          "censoring_rate": 0.0,
+          "episode_clusters": 2085,
+          "wr": 0.5093,
+          "mean_exit_ret": 0.0023,
+          "median_exit_ret": 0.0017,
+          "mean_foregone_mfe_126": 0.1458,
+          "mean_avoided_mae_126": 0.0742,
+          "regret_ratio": 0.5086
+        }
+      }
+    },
+    "exit_grid_v1/hold_42": {
+      "n_fires": 49939,
+      "n_censored": 0,
+      "censoring_rate": 0.0,
+      "episode_clusters": 22295,
+      "wr": 0.5642,
+      "mean_exit_ret": 0.026,
+      "median_exit_ret": 0.0194,
+      "mean_foregone_mfe_126": 0.1124,
+      "mean_avoided_mae_126": 0.053,
+      "regret_ratio": 0.4717,
+      "spec_hash": "3783446df401a1d4b5d2a129c0910e3f126fd810e8c559ad35ca516f51f3073b",
+      "exit_policy": {
+        "kind": "hold",
+        "H": 42
+      },
+      "era_tier_splits": {
+        "era_verdict_grade_2021plus": {
+          "n_fires": 49939,
+          "n_censored": 0,
+          "censoring_rate": 0.0,
+          "episode_clusters": 22295,
+          "wr": 0.5642,
+          "mean_exit_ret": 0.026,
+          "median_exit_ret": 0.0194,
+          "mean_foregone_mfe_126": 0.1124,
+          "mean_avoided_mae_126": 0.053,
+          "regret_ratio": 0.4717
+        },
+        "era_survivor_biased": {
+          "n_fires": 0,
+          "n_censored": 0,
+          "censoring_rate": null,
+          "episode_clusters": 0,
+          "wr": null,
+          "mean_exit_ret": null,
+          "median_exit_ret": null,
+          "mean_foregone_mfe_126": null,
+          "mean_avoided_mae_126": null,
+          "regret_ratio": null
+        },
+        "tier_T1": {
+          "n_fires": 23016,
+          "n_censored": 0,
+          "censoring_rate": 0.0,
+          "episode_clusters": 11429,
+          "wr": 0.5724,
+          "mean_exit_ret": 0.0277,
+          "median_exit_ret": 0.0214,
+          "mean_foregone_mfe_126": 0.1123,
+          "mean_avoided_mae_126": 0.0528,
+          "regret_ratio": 0.4702
+        },
+        "tier_T2": {
+          "n_fires": 24225,
+          "n_censored": 0,
+          "censoring_rate": 0.0,
+          "episode_clusters": 12793,
+          "wr": 0.5611,
+          "mean_exit_ret": 0.0256,
+          "median_exit_ret": 0.0188,
+          "mean_foregone_mfe_126": 0.1128,
+          "mean_avoided_mae_126": 0.0534,
+          "regret_ratio": 0.4733
+        },
+        "tier_T3": {
+          "n_fires": 2698,
+          "n_censored": 0,
+          "censoring_rate": 0.0,
+          "episode_clusters": 2085,
+          "wr": 0.5215,
+          "mean_exit_ret": 0.0145,
+          "median_exit_ret": 0.0067,
+          "mean_foregone_mfe_126": 0.1097,
+          "mean_avoided_mae_126": 0.0516,
+          "regret_ratio": 0.4702
+        }
+      }
+    },
+    "exit_grid_v1/hold_63": {
+      "n_fires": 49939,
+      "n_censored": 0,
+      "censoring_rate": 0.0,
+      "episode_clusters": 22295,
+      "wr": 0.5849,
+      "mean_exit_ret": 0.0426,
+      "median_exit_ret": 0.031,
+      "mean_foregone_mfe_126": 0.0785,
+      "mean_avoided_mae_126": 0.0357,
+      "regret_ratio": 0.4543,
+      "spec_hash": "0404eeb6b3177136591ed1256988d15cd3bcaf294c3b1bbfb0aae3e8d0496e4a",
+      "exit_policy": {
+        "kind": "hold",
+        "H": 63
+      },
+      "era_tier_splits": {
+        "era_verdict_grade_2021plus": {
+          "n_fires": 49939,
+          "n_censored": 0,
+          "censoring_rate": 0.0,
+          "episode_clusters": 22295,
+          "wr": 0.5849,
+          "mean_exit_ret": 0.0426,
+          "median_exit_ret": 0.031,
+          "mean_foregone_mfe_126": 0.0785,
+          "mean_avoided_mae_126": 0.0357,
+          "regret_ratio": 0.4543
+        },
+        "era_survivor_biased": {
+          "n_fires": 0,
+          "n_censored": 0,
+          "censoring_rate": null,
+          "episode_clusters": 0,
+          "wr": null,
+          "mean_exit_ret": null,
+          "median_exit_ret": null,
+          "mean_foregone_mfe_126": null,
+          "mean_avoided_mae_126": null,
+          "regret_ratio": null
+        },
+        "tier_T1": {
+          "n_fires": 23016,
+          "n_censored": 0,
+          "censoring_rate": 0.0,
+          "episode_clusters": 11429,
+          "wr": 0.5932,
+          "mean_exit_ret": 0.0452,
+          "median_exit_ret": 0.0348,
+          "mean_foregone_mfe_126": 0.0781,
+          "mean_avoided_mae_126": 0.0352,
+          "regret_ratio": 0.4504
+        },
+        "tier_T2": {
+          "n_fires": 24225,
+          "n_censored": 0,
+          "censoring_rate": 0.0,
+          "episode_clusters": 12793,
+          "wr": 0.5825,
+          "mean_exit_ret": 0.0419,
+          "median_exit_ret": 0.0299,
+          "mean_foregone_mfe_126": 0.079,
+          "mean_avoided_mae_126": 0.0361,
+          "regret_ratio": 0.4573
+        },
+        "tier_T3": {
+          "n_fires": 2698,
+          "n_censored": 0,
+          "censoring_rate": 0.0,
+          "episode_clusters": 2085,
+          "wr": 0.5367,
+          "mean_exit_ret": 0.0273,
+          "median_exit_ret": 0.012,
+          "mean_foregone_mfe_126": 0.0775,
+          "mean_avoided_mae_126": 0.0356,
+          "regret_ratio": 0.4592
+        }
+      }
+    },
+    "exit_grid_v1/hold_126": {
+      "n_fires": 49939,
+      "n_censored": 0,
+      "censoring_rate": 0.0,
+      "episode_clusters": 22295,
+      "wr": 0.5899,
+      "mean_exit_ret": 0.0732,
+      "median_exit_ret": 0.043,
+      "mean_foregone_mfe_126": 0.0,
+      "mean_avoided_mae_126": 0.0,
+      "regret_ratio": null,
+      "spec_hash": "7eb2b068324cf9f9bb319224ce227a97ba88266d1d7a8df38beac9bddd85746b",
+      "exit_policy": {
+        "kind": "hold",
+        "H": 126
+      },
+      "era_tier_splits": {
+        "era_verdict_grade_2021plus": {
+          "n_fires": 49939,
+          "n_censored": 0,
+          "censoring_rate": 0.0,
+          "episode_clusters": 22295,
+          "wr": 0.5899,
+          "mean_exit_ret": 0.0732,
+          "median_exit_ret": 0.043,
+          "mean_foregone_mfe_126": 0.0,
+          "mean_avoided_mae_126": 0.0,
+          "regret_ratio": null
+        },
+        "era_survivor_biased": {
+          "n_fires": 0,
+          "n_censored": 0,
+          "censoring_rate": null,
+          "episode_clusters": 0,
+          "wr": null,
+          "mean_exit_ret": null,
+          "median_exit_ret": null,
+          "mean_foregone_mfe_126": null,
+          "mean_avoided_mae_126": null,
+          "regret_ratio": null
+        },
+        "tier_T1": {
+          "n_fires": 23016,
+          "n_censored": 0,
+          "censoring_rate": 0.0,
+          "episode_clusters": 11429,
+          "wr": 0.5862,
+          "mean_exit_ret": 0.0725,
+          "median_exit_ret": 0.0414,
+          "mean_foregone_mfe_126": 0.0,
+          "mean_avoided_mae_126": 0.0,
+          "regret_ratio": null
+        },
+        "tier_T2": {
+          "n_fires": 24225,
+          "n_censored": 0,
+          "censoring_rate": 0.0,
+          "episode_clusters": 12793,
+          "wr": 0.5961,
+          "mean_exit_ret": 0.0753,
+          "median_exit_ret": 0.0457,
+          "mean_foregone_mfe_126": 0.0,
+          "mean_avoided_mae_126": 0.0,
+          "regret_ratio": null
+        },
+        "tier_T3": {
+          "n_fires": 2698,
+          "n_censored": 0,
+          "censoring_rate": 0.0,
+          "episode_clusters": 2085,
+          "wr": 0.5671,
+          "mean_exit_ret": 0.0595,
+          "median_exit_ret": 0.0301,
+          "mean_foregone_mfe_126": 0.0,
+          "mean_avoided_mae_126": 0.0,
+          "regret_ratio": null
+        }
+      }
+    },
+    "exit_grid_v1/ema_trail_s8": {
+      "n_fires": 49939,
+      "n_censored": 61,
+      "censoring_rate": 0.0012,
+      "episode_clusters": 22295,
+      "wr": 0.6228,
+      "mean_exit_ret": 0.0439,
+      "median_exit_ret": 0.0147,
+      "mean_foregone_mfe_126": 0.1338,
+      "mean_avoided_mae_126": 0.0999,
+      "regret_ratio": 0.7469,
+      "spec_hash": "a34922359a53802016d3427a653ca7f022ad5ade27b38665f621c5dfae21954c",
+      "exit_policy": {
+        "kind": "ema_trail",
+        "span": 8,
+        "resample": "3B"
+      },
+      "era_tier_splits": {
+        "era_verdict_grade_2021plus": {
+          "n_fires": 49939,
+          "n_censored": 61,
+          "censoring_rate": 0.0012,
+          "episode_clusters": 22295,
+          "wr": 0.6228,
+          "mean_exit_ret": 0.0439,
+          "median_exit_ret": 0.0147,
+          "mean_foregone_mfe_126": 0.1338,
+          "mean_avoided_mae_126": 0.0999,
+          "regret_ratio": 0.7469
+        },
+        "era_survivor_biased": {
+          "n_fires": 0,
+          "n_censored": 0,
+          "censoring_rate": null,
+          "episode_clusters": 0,
+          "wr": null,
+          "mean_exit_ret": null,
+          "median_exit_ret": null,
+          "mean_foregone_mfe_126": null,
+          "mean_avoided_mae_126": null,
+          "regret_ratio": null
+        },
+        "tier_T1": {
+          "n_fires": 23016,
+          "n_censored": 25,
+          "censoring_rate": 0.0011,
+          "episode_clusters": 11429,
+          "wr": 0.6291,
+          "mean_exit_ret": 0.0456,
+          "median_exit_ret": 0.0159,
+          "mean_foregone_mfe_126": 0.1318,
+          "mean_avoided_mae_126": 0.099,
+          "regret_ratio": 0.7511
+        },
+        "tier_T2": {
+          "n_fires": 24225,
+          "n_censored": 34,
+          "censoring_rate": 0.0014,
+          "episode_clusters": 12793,
+          "wr": 0.6226,
+          "mean_exit_ret": 0.0438,
+          "median_exit_ret": 0.0147,
+          "mean_foregone_mfe_126": 0.1356,
+          "mean_avoided_mae_126": 0.1005,
+          "regret_ratio": 0.7412
+        },
+        "tier_T3": {
+          "n_fires": 2698,
+          "n_censored": 2,
+          "censoring_rate": 0.0007,
+          "episode_clusters": 2085,
+          "wr": 0.5712,
+          "mean_exit_ret": 0.0309,
+          "median_exit_ret": 0.0065,
+          "mean_foregone_mfe_126": 0.134,
+          "mean_avoided_mae_126": 0.1023,
+          "regret_ratio": 0.7634
+        }
+      }
+    },
+    "exit_grid_v1/trail_stop_8pct": {
+      "n_fires": 49939,
+      "n_censored": 2729,
+      "censoring_rate": 0.0546,
+      "episode_clusters": 22295,
+      "wr": 0.3864,
+      "mean_exit_ret": 0.0048,
+      "median_exit_ret": -0.0297,
+      "mean_foregone_mfe_126": 0.1016,
+      "mean_avoided_mae_126": 0.0833,
+      "regret_ratio": 0.8201,
+      "spec_hash": "07ab9e4111067dc6b3f26f9745e69f4582afe831b140fc5a0cbe9749b4a6faea",
+      "exit_policy": {
+        "kind": "trail_stop",
+        "pct": 8.0
+      },
+      "era_tier_splits": {
+        "era_verdict_grade_2021plus": {
+          "n_fires": 49939,
+          "n_censored": 2729,
+          "censoring_rate": 0.0546,
+          "episode_clusters": 22295,
+          "wr": 0.3864,
+          "mean_exit_ret": 0.0048,
+          "median_exit_ret": -0.0297,
+          "mean_foregone_mfe_126": 0.1016,
+          "mean_avoided_mae_126": 0.0833,
+          "regret_ratio": 0.8201
+        },
+        "era_survivor_biased": {
+          "n_fires": 0,
+          "n_censored": 0,
+          "censoring_rate": null,
+          "episode_clusters": 0,
+          "wr": null,
+          "mean_exit_ret": null,
+          "median_exit_ret": null,
+          "mean_foregone_mfe_126": null,
+          "mean_avoided_mae_126": null,
+          "regret_ratio": null
+        },
+        "tier_T1": {
+          "n_fires": 23016,
+          "n_censored": 1188,
+          "censoring_rate": 0.0516,
+          "episode_clusters": 11429,
+          "wr": 0.3896,
+          "mean_exit_ret": 0.0058,
+          "median_exit_ret": -0.0303,
+          "mean_foregone_mfe_126": 0.102,
+          "mean_avoided_mae_126": 0.0837,
+          "regret_ratio": 0.8213
+        },
+        "tier_T2": {
+          "n_fires": 24225,
+          "n_censored": 1401,
+          "censoring_rate": 0.0578,
+          "episode_clusters": 12793,
+          "wr": 0.3899,
+          "mean_exit_ret": 0.0058,
+          "median_exit_ret": -0.0278,
+          "mean_foregone_mfe_126": 0.1009,
+          "mean_avoided_mae_126": 0.0832,
+          "regret_ratio": 0.8243
+        },
+        "tier_T3": {
+          "n_fires": 2698,
+          "n_censored": 140,
+          "censoring_rate": 0.0519,
+          "episode_clusters": 2085,
+          "wr": 0.3284,
+          "mean_exit_ret": -0.0119,
+          "median_exit_ret": -0.0427,
+          "mean_foregone_mfe_126": 0.1044,
+          "mean_avoided_mae_126": 0.0807,
+          "regret_ratio": 0.7728
+        }
+      }
+    },
+    "exit_grid_v1/trail_stop_12pct": {
+      "n_fires": 49939,
+      "n_censored": 10414,
+      "censoring_rate": 0.2085,
+      "episode_clusters": 22295,
+      "wr": 0.3137,
+      "mean_exit_ret": -0.0204,
+      "median_exit_ret": -0.0575,
+      "mean_foregone_mfe_126": 0.0614,
+      "mean_avoided_mae_126": 0.0654,
+      "regret_ratio": 1.0662,
+      "spec_hash": "57e690a0e068f4ef54b6aa2095fbcc21b731c00cc56a7ccbc3df66ea0499bae2",
+      "exit_policy": {
+        "kind": "trail_stop",
+        "pct": 12.0
+      },
+      "era_tier_splits": {
+        "era_verdict_grade_2021plus": {
+          "n_fires": 49939,
+          "n_censored": 10414,
+          "censoring_rate": 0.2085,
+          "episode_clusters": 22295,
+          "wr": 0.3137,
+          "mean_exit_ret": -0.0204,
+          "median_exit_ret": -0.0575,
+          "mean_foregone_mfe_126": 0.0614,
+          "mean_avoided_mae_126": 0.0654,
+          "regret_ratio": 1.0662
+        },
+        "era_survivor_biased": {
+          "n_fires": 0,
+          "n_censored": 0,
+          "censoring_rate": null,
+          "episode_clusters": 0,
+          "wr": null,
+          "mean_exit_ret": null,
+          "median_exit_ret": null,
+          "mean_foregone_mfe_126": null,
+          "mean_avoided_mae_126": null,
+          "regret_ratio": null
+        },
+        "tier_T1": {
+          "n_fires": 23016,
+          "n_censored": 4591,
+          "censoring_rate": 0.1995,
+          "episode_clusters": 11429,
+          "wr": 0.3112,
+          "mean_exit_ret": -0.0217,
+          "median_exit_ret": -0.0589,
+          "mean_foregone_mfe_126": 0.0631,
+          "mean_avoided_mae_126": 0.0655,
+          "regret_ratio": 1.0377
+        },
+        "tier_T2": {
+          "n_fires": 24225,
+          "n_censored": 5196,
+          "censoring_rate": 0.2145,
+          "episode_clusters": 12793,
+          "wr": 0.3196,
+          "mean_exit_ret": -0.018,
+          "median_exit_ret": -0.0552,
+          "mean_foregone_mfe_126": 0.0598,
+          "mean_avoided_mae_126": 0.0656,
+          "regret_ratio": 1.0963
+        },
+        "tier_T3": {
+          "n_fires": 2698,
+          "n_censored": 627,
+          "censoring_rate": 0.2324,
+          "episode_clusters": 2085,
+          "wr": 0.2815,
+          "mean_exit_ret": -0.0313,
+          "median_exit_ret": -0.0645,
+          "mean_foregone_mfe_126": 0.0597,
+          "mean_avoided_mae_126": 0.0628,
+          "regret_ratio": 1.0519
+        }
+      }
+    },
+    "exit_grid_v1/trail_stop_15pct": {
+      "n_fires": 49939,
+      "n_censored": 17502,
+      "censoring_rate": 0.3505,
+      "episode_clusters": 22295,
+      "wr": 0.2413,
+      "mean_exit_ret": -0.0485,
+      "median_exit_ret": -0.0878,
+      "mean_foregone_mfe_126": 0.0406,
+      "mean_avoided_mae_126": 0.0531,
+      "regret_ratio": 1.306,
+      "spec_hash": "66441ccfa37b02361f19e47d75db6ed801da550fc4c68aa956166024fc8a4caa",
+      "exit_policy": {
+        "kind": "trail_stop",
+        "pct": 15.0
+      },
+      "era_tier_splits": {
+        "era_verdict_grade_2021plus": {
+          "n_fires": 49939,
+          "n_censored": 17502,
+          "censoring_rate": 0.3505,
+          "episode_clusters": 22295,
+          "wr": 0.2413,
+          "mean_exit_ret": -0.0485,
+          "median_exit_ret": -0.0878,
+          "mean_foregone_mfe_126": 0.0406,
+          "mean_avoided_mae_126": 0.0531,
+          "regret_ratio": 1.306
+        },
+        "era_survivor_biased": {
+          "n_fires": 0,
+          "n_censored": 0,
+          "censoring_rate": null,
+          "episode_clusters": 0,
+          "wr": null,
+          "mean_exit_ret": null,
+          "median_exit_ret": null,
+          "mean_foregone_mfe_126": null,
+          "mean_avoided_mae_126": null,
+          "regret_ratio": null
+        },
+        "tier_T1": {
+          "n_fires": 23016,
+          "n_censored": 7847,
+          "censoring_rate": 0.3409,
+          "episode_clusters": 11429,
+          "wr": 0.2386,
+          "mean_exit_ret": -0.0501,
+          "median_exit_ret": -0.0889,
+          "mean_foregone_mfe_126": 0.0423,
+          "mean_avoided_mae_126": 0.0529,
+          "regret_ratio": 1.2493
+        },
+        "tier_T2": {
+          "n_fires": 24225,
+          "n_censored": 8652,
+          "censoring_rate": 0.3572,
+          "episode_clusters": 12793,
+          "wr": 0.2468,
+          "mean_exit_ret": -0.0459,
+          "median_exit_ret": -0.0861,
+          "mean_foregone_mfe_126": 0.0392,
+          "mean_avoided_mae_126": 0.0535,
+          "regret_ratio": 1.3647
+        },
+        "tier_T3": {
+          "n_fires": 2698,
+          "n_censored": 1003,
+          "censoring_rate": 0.3718,
+          "episode_clusters": 2085,
+          "wr": 0.2147,
+          "mean_exit_ret": -0.0584,
+          "median_exit_ret": -0.0962,
+          "mean_foregone_mfe_126": 0.0389,
+          "mean_avoided_mae_126": 0.0506,
+          "regret_ratio": 1.3018
+        }
+      }
+    },
+    "exit_grid_v1/trail_stop_20pct": {
+      "n_fires": 49939,
+      "n_censored": 28392,
+      "censoring_rate": 0.5685,
+      "episode_clusters": 22295,
+      "wr": 0.1556,
+      "mean_exit_ret": -0.1022,
+      "median_exit_ret": -0.144,
+      "mean_foregone_mfe_126": 0.0216,
+      "mean_avoided_mae_126": 0.0351,
+      "regret_ratio": 1.6282,
+      "spec_hash": "d29bcfddfa3bca7fe70bad7bbd9f7e7ea013a82ff58cf1ff81c067acc640da29",
+      "exit_policy": {
+        "kind": "trail_stop",
+        "pct": 20.0
+      },
+      "era_tier_splits": {
+        "era_verdict_grade_2021plus": {
+          "n_fires": 49939,
+          "n_censored": 28392,
+          "censoring_rate": 0.5685,
+          "episode_clusters": 22295,
+          "wr": 0.1556,
+          "mean_exit_ret": -0.1022,
+          "median_exit_ret": -0.144,
+          "mean_foregone_mfe_126": 0.0216,
+          "mean_avoided_mae_126": 0.0351,
+          "regret_ratio": 1.6282
+        },
+        "era_survivor_biased": {
+          "n_fires": 0,
+          "n_censored": 0,
+          "censoring_rate": null,
+          "episode_clusters": 0,
+          "wr": null,
+          "mean_exit_ret": null,
+          "median_exit_ret": null,
+          "mean_foregone_mfe_126": null,
+          "mean_avoided_mae_126": null,
+          "regret_ratio": null
+        },
+        "tier_T1": {
+          "n_fires": 23016,
+          "n_censored": 13029,
+          "censoring_rate": 0.5661,
+          "episode_clusters": 11429,
+          "wr": 0.1542,
+          "mean_exit_ret": -0.1043,
+          "median_exit_ret": -0.1459,
+          "mean_foregone_mfe_126": 0.0223,
+          "mean_avoided_mae_126": 0.0347,
+          "regret_ratio": 1.5565
+        },
+        "tier_T2": {
+          "n_fires": 24225,
+          "n_censored": 13795,
+          "censoring_rate": 0.5695,
+          "episode_clusters": 12793,
+          "wr": 0.1596,
+          "mean_exit_ret": -0.0992,
+          "median_exit_ret": -0.142,
+          "mean_foregone_mfe_126": 0.021,
+          "mean_avoided_mae_126": 0.0358,
+          "regret_ratio": 1.7075
+        },
+        "tier_T3": {
+          "n_fires": 2698,
+          "n_censored": 1568,
+          "censoring_rate": 0.5812,
+          "episode_clusters": 2085,
+          "wr": 0.1301,
+          "mean_exit_ret": -0.1116,
+          "median_exit_ret": -0.1533,
+          "mean_foregone_mfe_126": 0.0206,
+          "mean_avoided_mae_126": 0.0322,
+          "regret_ratio": 1.566
+        }
+      }
+    },
+    "exit_grid_v1/barrier_s5_t8": {
+      "n_fires": 49939,
+      "n_censored": 218,
+      "censoring_rate": 0.0044,
+      "episode_clusters": 22295,
+      "wr": 0.4715,
+      "mean_exit_ret": 0.011,
+      "median_exit_ret": -0.0507,
+      "mean_foregone_mfe_126": 0.1664,
+      "mean_avoided_mae_126": 0.0882,
+      "regret_ratio": 0.5302,
+      "spec_hash": "7fd98374b42ee7a418d1a2b854ee74592d69016021e75bddda208810c49041e4",
+      "exit_policy": {
+        "kind": "barrier",
+        "stop_pct": -5.0,
+        "target_pct": 8.0
+      },
+      "era_tier_splits": {
+        "era_verdict_grade_2021plus": {
+          "n_fires": 49939,
+          "n_censored": 218,
+          "censoring_rate": 0.0044,
+          "episode_clusters": 22295,
+          "wr": 0.4715,
+          "mean_exit_ret": 0.011,
+          "median_exit_ret": -0.0507,
+          "mean_foregone_mfe_126": 0.1664,
+          "mean_avoided_mae_126": 0.0882,
+          "regret_ratio": 0.5302
+        },
+        "era_survivor_biased": {
+          "n_fires": 0,
+          "n_censored": 0,
+          "censoring_rate": null,
+          "episode_clusters": 0,
+          "wr": null,
+          "mean_exit_ret": null,
+          "median_exit_ret": null,
+          "mean_foregone_mfe_126": null,
+          "mean_avoided_mae_126": null,
+          "regret_ratio": null
+        },
+        "tier_T1": {
+          "n_fires": 23016,
+          "n_censored": 93,
+          "censoring_rate": 0.004,
+          "episode_clusters": 11429,
+          "wr": 0.4707,
+          "mean_exit_ret": 0.0108,
+          "median_exit_ret": -0.0507,
+          "mean_foregone_mfe_126": 0.1677,
+          "mean_avoided_mae_126": 0.089,
+          "regret_ratio": 0.5304
+        },
+        "tier_T2": {
+          "n_fires": 24225,
+          "n_censored": 115,
+          "censoring_rate": 0.0047,
+          "episode_clusters": 12793,
+          "wr": 0.4784,
+          "mean_exit_ret": 0.0124,
+          "median_exit_ret": -0.0505,
+          "mean_foregone_mfe_126": 0.1664,
+          "mean_avoided_mae_126": 0.0876,
+          "regret_ratio": 0.5266
+        },
+        "tier_T3": {
+          "n_fires": 2698,
+          "n_censored": 10,
+          "censoring_rate": 0.0037,
+          "episode_clusters": 2085,
+          "wr": 0.417,
+          "mean_exit_ret": 0.001,
+          "median_exit_ret": -0.0521,
+          "mean_foregone_mfe_126": 0.155,
+          "mean_avoided_mae_126": 0.0872,
+          "regret_ratio": 0.5624
+        }
+      }
+    },
+    "exit_grid_v1/barrier_s5_t15": {
+      "n_fires": 49939,
+      "n_censored": 2018,
+      "censoring_rate": 0.0404,
+      "episode_clusters": 22295,
+      "wr": 0.3453,
+      "mean_exit_ret": 0.0146,
+      "median_exit_ret": -0.0536,
+      "mean_foregone_mfe_126": 0.1407,
+      "mean_avoided_mae_126": 0.082,
+      "regret_ratio": 0.5829,
+      "spec_hash": "df502d80493627be99415a6e11022ee559e43c7e0e0217a8145c68eadf0c9eea",
+      "exit_policy": {
+        "kind": "barrier",
+        "stop_pct": -5.0,
+        "target_pct": 15.0
+      },
+      "era_tier_splits": {
+        "era_verdict_grade_2021plus": {
+          "n_fires": 49939,
+          "n_censored": 2018,
+          "censoring_rate": 0.0404,
+          "episode_clusters": 22295,
+          "wr": 0.3453,
+          "mean_exit_ret": 0.0146,
+          "median_exit_ret": -0.0536,
+          "mean_foregone_mfe_126": 0.1407,
+          "mean_avoided_mae_126": 0.082,
+          "regret_ratio": 0.5829
+        },
+        "era_survivor_biased": {
+          "n_fires": 0,
+          "n_censored": 0,
+          "censoring_rate": null,
+          "episode_clusters": 0,
+          "wr": null,
+          "mean_exit_ret": null,
+          "median_exit_ret": null,
+          "mean_foregone_mfe_126": null,
+          "mean_avoided_mae_126": null,
+          "regret_ratio": null
+        },
+        "tier_T1": {
+          "n_fires": 23016,
+          "n_censored": 911,
+          "censoring_rate": 0.0396,
+          "episode_clusters": 11429,
+          "wr": 0.3446,
+          "mean_exit_ret": 0.0141,
+          "median_exit_ret": -0.0536,
+          "mean_foregone_mfe_126": 0.1423,
+          "mean_avoided_mae_126": 0.0828,
+          "regret_ratio": 0.582
+        },
+        "tier_T2": {
+          "n_fires": 24225,
+          "n_censored": 1001,
+          "censoring_rate": 0.0413,
+          "episode_clusters": 12793,
+          "wr": 0.3517,
+          "mean_exit_ret": 0.0164,
+          "median_exit_ret": -0.0534,
+          "mean_foregone_mfe_126": 0.1401,
+          "mean_avoided_mae_126": 0.0813,
+          "regret_ratio": 0.5804
+        },
+        "tier_T3": {
+          "n_fires": 2698,
+          "n_censored": 106,
+          "censoring_rate": 0.0393,
+          "episode_clusters": 2085,
+          "wr": 0.2944,
+          "mean_exit_ret": 0.0023,
+          "median_exit_ret": -0.0548,
+          "mean_foregone_mfe_126": 0.1324,
+          "mean_avoided_mae_126": 0.0814,
+          "regret_ratio": 0.6148
+        }
+      }
+    },
+    "exit_grid_v1/barrier_s8_t15": {
+      "n_fires": 49939,
+      "n_censored": 4268,
+      "censoring_rate": 0.0855,
+      "episode_clusters": 22295,
+      "wr": 0.4427,
+      "mean_exit_ret": 0.0204,
+      "median_exit_ret": -0.0815,
+      "mean_foregone_mfe_126": 0.1249,
+      "mean_avoided_mae_126": 0.0665,
+      "regret_ratio": 0.5325,
+      "spec_hash": "1dc883717a3a61c3c328bb99891d288c684986b5cc94dad180d477fc8f796052",
+      "exit_policy": {
+        "kind": "barrier",
+        "stop_pct": -8.0,
+        "target_pct": 15.0
+      },
+      "era_tier_splits": {
+        "era_verdict_grade_2021plus": {
+          "n_fires": 49939,
+          "n_censored": 4268,
+          "censoring_rate": 0.0855,
+          "episode_clusters": 22295,
+          "wr": 0.4427,
+          "mean_exit_ret": 0.0204,
+          "median_exit_ret": -0.0815,
+          "mean_foregone_mfe_126": 0.1249,
+          "mean_avoided_mae_126": 0.0665,
+          "regret_ratio": 0.5325
+        },
+        "era_survivor_biased": {
+          "n_fires": 0,
+          "n_censored": 0,
+          "censoring_rate": null,
+          "episode_clusters": 0,
+          "wr": null,
+          "mean_exit_ret": null,
+          "median_exit_ret": null,
+          "mean_foregone_mfe_126": null,
+          "mean_avoided_mae_126": null,
+          "regret_ratio": null
+        },
+        "tier_T1": {
+          "n_fires": 23016,
+          "n_censored": 1901,
+          "censoring_rate": 0.0826,
+          "episode_clusters": 11429,
+          "wr": 0.4379,
+          "mean_exit_ret": 0.0185,
+          "median_exit_ret": -0.0816,
+          "mean_foregone_mfe_126": 0.1274,
+          "mean_avoided_mae_126": 0.067,
+          "regret_ratio": 0.5261
+        },
+        "tier_T2": {
+          "n_fires": 24225,
+          "n_censored": 2094,
+          "censoring_rate": 0.0864,
+          "episode_clusters": 12793,
+          "wr": 0.4526,
+          "mean_exit_ret": 0.0236,
+          "median_exit_ret": -0.0812,
+          "mean_foregone_mfe_126": 0.1238,
+          "mean_avoided_mae_126": 0.0662,
+          "regret_ratio": 0.5352
+        },
+        "tier_T3": {
+          "n_fires": 2698,
+          "n_censored": 273,
+          "censoring_rate": 0.1012,
+          "episode_clusters": 2085,
+          "wr": 0.3942,
+          "mean_exit_ret": 0.0078,
+          "median_exit_ret": -0.0823,
+          "mean_foregone_mfe_126": 0.1149,
+          "mean_avoided_mae_126": 0.0651,
+          "regret_ratio": 0.5661
+        }
+      }
+    },
+    "exit_grid_v1/barrier_s8_t25": {
+      "n_fires": 49939,
+      "n_censored": 10356,
+      "censoring_rate": 0.2074,
+      "episode_clusters": 22295,
+      "wr": 0.2976,
+      "mean_exit_ret": 0.012,
+      "median_exit_ret": -0.0847,
+      "mean_foregone_mfe_126": 0.096,
+      "mean_avoided_mae_126": 0.0619,
+      "regret_ratio": 0.6452,
+      "spec_hash": "ea2a5d08f1f8d3035d2658f76c91673f8738cfe120e64156fd546264b70893e6",
+      "exit_policy": {
+        "kind": "barrier",
+        "stop_pct": -8.0,
+        "target_pct": 25.0
+      },
+      "era_tier_splits": {
+        "era_verdict_grade_2021plus": {
+          "n_fires": 49939,
+          "n_censored": 10356,
+          "censoring_rate": 0.2074,
+          "episode_clusters": 22295,
+          "wr": 0.2976,
+          "mean_exit_ret": 0.012,
+          "median_exit_ret": -0.0847,
+          "mean_foregone_mfe_126": 0.096,
+          "mean_avoided_mae_126": 0.0619,
+          "regret_ratio": 0.6452
+        },
+        "era_survivor_biased": {
+          "n_fires": 0,
+          "n_censored": 0,
+          "censoring_rate": null,
+          "episode_clusters": 0,
+          "wr": null,
+          "mean_exit_ret": null,
+          "median_exit_ret": null,
+          "mean_foregone_mfe_126": null,
+          "mean_avoided_mae_126": null,
+          "regret_ratio": null
+        },
+        "tier_T1": {
+          "n_fires": 23016,
+          "n_censored": 4611,
+          "censoring_rate": 0.2003,
+          "episode_clusters": 11429,
+          "wr": 0.2963,
+          "mean_exit_ret": 0.011,
+          "median_exit_ret": -0.0848,
+          "mean_foregone_mfe_126": 0.0982,
+          "mean_avoided_mae_126": 0.0623,
+          "regret_ratio": 0.634
+        },
+        "tier_T2": {
+          "n_fires": 24225,
+          "n_censored": 5158,
+          "censoring_rate": 0.2129,
+          "episode_clusters": 12793,
+          "wr": 0.3043,
+          "mean_exit_ret": 0.015,
+          "median_exit_ret": -0.0846,
+          "mean_foregone_mfe_126": 0.0943,
+          "mean_avoided_mae_126": 0.0617,
+          "regret_ratio": 0.6538
+        },
+        "tier_T3": {
+          "n_fires": 2698,
+          "n_censored": 587,
+          "censoring_rate": 0.2176,
+          "episode_clusters": 2085,
+          "wr": 0.2482,
+          "mean_exit_ret": -0.007,
+          "median_exit_ret": -0.085,
+          "mean_foregone_mfe_126": 0.0912,
+          "mean_avoided_mae_126": 0.0609,
+          "regret_ratio": 0.6682
+        }
+      }
+    }
+  }
+}
