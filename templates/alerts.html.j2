@@ -209,7 +209,7 @@
 {% for a in alerts %}
   {% set sevcls = 'crit' if a.severity=='critical' else ('major' if a.severity=='major' else 'minor') %}
   {% set v = a.validation %}
-  <div class="ac {{ sevcls }}" data-sev="{{ a.severity }}" data-tier="{{ a.tier }}" data-src="{{ a.source }}">
+  <div class="ac {{ sevcls }}" data-sev="{{ a.severity }}" data-tier="{{ a.tier }}" data-src="{{ a.source }}" data-id="{{ a.alert_id }}" data-emit-ts="{{ a.ts }}">
     <div class="rail">
       <div class="pr">{{ a.priority }}</div>
       <div class="prl">{{ t('priority','优先级') }}{{ help(

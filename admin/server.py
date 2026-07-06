@@ -25,7 +25,8 @@ from http.cookies import SimpleCookie
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
-from . import (actions, ai_cost, auth, brief, config_store, content, experiments,
+from . import (actions, ai_cost, alerts as _alerts_mod, auth, brief, config_store,
+               content, experiments,
                flags, ga4, github_api, github_config, gitops, health, neural_web,
                services, settings, system, umami, uptime_board, users, vector_override)
 from .paths import STATIC
@@ -305,6 +306,10 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json(system.snapshot())
             if path == "/api/services":
                 return self._json(services.status())
+            if path == "/api/alerts":
+                # Operator capture feed (RUL-8: authed only, no public write endpoint).
+                limit = int((q.get("limit") or ["60"])[0])
+                return self._json(_alerts_mod.panel(limit=limit))
 
             return self._json({"error": f"unknown route {path}"}, 404)
         except Exception as e:  # noqa: BLE001

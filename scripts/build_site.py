@@ -2211,9 +2211,30 @@ def build_alerts_page(env: Environment, site: Path, generated: str) -> None:
     fdir.mkdir(parents=True, exist_ok=True)
     (fdir / "alerts_triage.json").write_text(
         json.dumps(payload, separators=(",", ":"), default=str))
+    # Machine-readable feed for the admin Alerts capture tab (RUL-8: auth-only
+    # consumption; no public write endpoint).  One record per deduplicated alert
+    # with stable content-hash IDs and just the fields the capture tab needs.
+    adir = site / "alertsdata"
+    adir.mkdir(parents=True, exist_ok=True)
+    feed_records = [
+        {
+            "alert_id": a["alert_id"],
+            "emit_ts": a["ts"],
+            "title": a.get("headline", ""),
+            "surface": f"{a['source']}:{a['type']}",
+            "severity": a["severity"],
+            "tier": a["tier"],
+            "priority": a["priority"],
+            "source": a["source"],
+        }
+        for a in payload.get("alerts", [])
+    ]
+    (adir / "feed.json").write_text(
+        json.dumps({"generated_utc": generated, "alerts": feed_records},
+                   separators=(",", ":"), default=str))
     s = payload["summary"]
     log.info("wrote alerts.html (%d alerts: %d critical / %d major / %d actionable, "
-             "%d validated)", s["total"], s["critical"], s["major"],
+             "%d with measured edge)", s["total"], s["critical"], s["major"],
              s["actionable"], s["backtested"])
 
 
