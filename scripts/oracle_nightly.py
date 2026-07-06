@@ -976,14 +976,19 @@ _MATURITY_H = 21
 _BANNED_KEY_SUBS = ("forecast", "predicted", "target", "expected_return")
 
 
-def _step_turn_desk(data_dir: Path, site_dir: Path, dry_run: bool) -> bool:
+def _step_turn_desk(
+    data_dir: Path, site_dir: Path, dry_run: bool
+) -> tuple[bool, list[dict], str, list[str]]:
     """W6 Step 15: Rotation Turn Desk — armed windows + member fires + display artifact.
 
     DISPLAY-ONLY under hard law: this artifact feeds no score, gate, or ordering.
     Forward ledger (data/oracle/turn_desk_ledger.jsonl) is the accrual instrument
     for the registered §5 promotion rule — no peeking logic.
 
-    Loud-error pattern: ::error:: + returns False; pipeline continues.
+    Returns (ok, armed, panel_asof, all_dates_list) so Step 17 (W7) can stamp
+    the same window set without re-running the A15 rule.
+
+    Loud-error pattern: ::error:: + returns (False, [], "", []) ; pipeline continues.
     """
     log.info("=== Step 15: Rotation Turn Desk (W6) ===")
     try:
@@ -1179,6 +1184,51 @@ def _step_turn_desk(data_dir: Path, site_dir: Path, dry_run: bool) -> bool:
             "windows_required": 15,
         }
 
+        # ── 7b. Load existing qual_filter stamps for display (W7 additive) ──
+        # Read stamps written by previous runs (tonight's stamps are written in
+        # Step 17, AFTER this step; this block is display-only and degrades
+        # gracefully if the file is absent on first run).
+        _stamps_path = data_dir / "oracle" / "qual_filter_stamps.jsonl"
+        _stamps_by_window: dict[str, list[str]] = {}  # window_key → [filter_id, ...]
+        if _stamps_path.exists():
+            for _sl in _stamps_path.read_text().splitlines():
+                _sl = _sl.strip()
+                if not _sl:
+                    continue
+                try:
+                    _sr = _json.loads(_sl)
+                    if _sr.get("value") is True:
+                        _wk = _sr.get("window_key", "")
+                        _fid = _sr.get("filter_id", "")
+                        if _wk and _fid:
+                            _stamps_by_window.setdefault(_wk, []).append(_fid)
+                except Exception:  # noqa: BLE001
+                    pass
+        # Annotate each armed entry with its true-stamped filter ids (display only).
+        for _ae in armed:
+            _node = _ae["node"]
+            _ae_qual_true: list[str] = []
+            for _fd in _ae.get("fire_dates", []):
+                _wk = f"{_node}::a15::{_fd}"
+                _ae_qual_true.extend(_stamps_by_window.get(_wk, []))
+            _ae["qual_filters_true"] = sorted(set(_ae_qual_true))
+
+        # Compute qual_accrual_note for the payload caveats section.
+        _accrual_path = data_dir / "oracle" / "qual_filter_accrual.json"
+        _qual_accrual_note = ""
+        if _accrual_path.exists():
+            try:
+                _ac = _json.loads(_accrual_path.read_text())
+                _per = _ac.get("per_filter") or {}
+                _parts = [
+                    f"{fid} n={v.get('filter_true', {}).get('n', 0)}"
+                    for fid, v in _per.items()
+                ]
+                if _parts:
+                    _qual_accrual_note = "Qualitative filters accruing: " + "; ".join(_parts)
+            except Exception:  # noqa: BLE001
+                pass
+
         # ── 8. Build payload ──
         # n_windows=31 is the full-sample count; holdout arm has n=15.
         # Disclaimer makes both counts explicit to avoid overstating holdout evidence.
@@ -1196,6 +1246,7 @@ def _step_turn_desk(data_dir: Path, site_dir: Path, dry_run: bool) -> bool:
             "armed": armed,
             "base_rates": base_rates,
             "promotion_clock": promotion_clock,
+            "qual_accrual_note": _qual_accrual_note,
             "disclaimers": disclaimers,
         }
 
@@ -1243,10 +1294,55 @@ def _step_turn_desk(data_dir: Path, site_dir: Path, dry_run: bool) -> bool:
                 armed, panel_asof, data_dir, all_dates_list, date_to_pos
             )
 
-        return True
+        return True, armed, panel_asof, all_dates_list
 
     except Exception as e:  # noqa: BLE001
         _annotation(f"oracle_nightly: turn_desk FAILED: {e}")
+        return False, [], "", []
+
+
+def _step_qual_filter_stamps(
+    armed: list[dict],
+    panel_asof: str,
+    data_dir: Path,
+    all_dates_list: list[str],
+    dry_run: bool,
+) -> bool:
+    """W7 Step 17: Qualitative filter PIT stamping + accrual report.
+
+    Writes:
+      data/oracle/qual_filter_stamps.jsonl  (keep-first, PIT stamps)
+      data/oracle/qual_filter_accrual.json  (conditional WR21 on matured windows)
+
+    Loud-error pattern: ::error:: annotation + returns False; does not block
+    earlier steps.  Runs AFTER the turn desk (Step 15) so window_open keys exist.
+
+    Law: no retro-stamping of pre-existing windows — this step stamps only the
+    windows passed in `armed` (current night's armed set), which is always a
+    subset of the window_open rows just written to turn_desk_ledger.jsonl.
+    """
+    log.info("=== Step 17: Qualitative filter stamps + accrual (W7) ===")
+    try:
+        from engine.oracle.qual_filters import (
+            stamp_window_open, build_accrual_report, write_accrual_report
+        )
+
+        n_new = stamp_window_open(
+            armed, panel_asof, data_dir, all_dates_list, dry_run=dry_run
+        )
+        log.info("qual_filter_stamps: %d new stamp rows", n_new)
+
+        # Accrual report — runs even when no new stamps (updates as windows mature)
+        accrual = build_accrual_report(data_dir)
+        write_accrual_report(accrual, data_dir, dry_run=dry_run)
+        log.info(
+            "qual_filter_accrual: n_graded_windows=%d n_filters=%d",
+            accrual.get("n_graded_windows", 0),
+            len(accrual.get("per_filter") or {}),
+        )
+        return True
+    except Exception as e:  # noqa: BLE001
+        _annotation(f"oracle_nightly: qual_filter_stamps FAILED: {e}")
         return False
 
 
@@ -1574,7 +1670,10 @@ def main() -> int:
         failures.append("hypothesis_inbox")
 
     # --- Step 15: Rotation Turn Desk (W6) — DISPLAY-ONLY, additive at END ---
-    if not _step_turn_desk(data_dir, site_dir, args.dry_run):
+    td_ok, td_armed, td_panel_asof, td_all_dates = _step_turn_desk(
+        data_dir, site_dir, args.dry_run
+    )
+    if not td_ok:
         failures.append("turn_desk")
 
     # --- Step 16: Reversion promotion scan (W4.a P2) — additive at END ---
@@ -1583,6 +1682,14 @@ def main() -> int:
     # sidecar (11c) so it has the freshest base_rate and matured rows.
     if not _step_reversion_promotion_scan(data_dir, site_dir, args.dry_run):
         failures.append("reversion_promotion_scan")
+
+    # --- Step 17: Qualitative filter stamps + accrual (W7) — additive at END ---
+    # Runs AFTER turn_desk (Step 15) so the window_open keys exist in the ledger.
+    # Seam: Step 15 returns armed + all_dates_list for PIT reuse without re-running A15.
+    if not _step_qual_filter_stamps(
+        td_armed, td_panel_asof, data_dir, td_all_dates, args.dry_run
+    ):
+        failures.append("qual_filter_stamps")
 
     elapsed = time.time() - t_total
     log.info(
