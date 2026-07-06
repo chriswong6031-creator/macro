@@ -15,7 +15,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | china-intel-hub | 1 |
 | cycle-intelligence | 4 |
 | engine-fix | 16 |
-| entry-stack-expansion | 3 |
+| entry-stack-expansion | 2 |
 | factor-intelligence | 5 |
 | hk-canada | 2 |
 | institutional-sector-intelligence | 2 |
@@ -41,13 +41,13 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | display | 90 |
 | infrastructure | 42 |
 | scored | 4 |
-| shadow | 38 |
+| shadow | 37 |
 
 ### Artifacts by storage
 
 | storage | count |
 |---|---|
-| git | 168 |
+| git | 167 |
 | gitignored-local | 4 |
 | r2 | 2 |
 
@@ -116,7 +116,6 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
 | bottom-sensors-json | `site/neuralwebdata/bottom_sensors.json` | json | daily-engine | display | 1 | 1 |
-| subsector-sponsorship-spine | `data/spine/subsector_sponsorship.parquet` | parquet | daily-engine | shadow | 2 | 0 |
 | bottom-sensors-parquet | `data/neuralweb/bottom_sensors.parquet` | parquet | daily-engine | display | 1 | 0 |
 
 ### factor-intelligence
@@ -828,13 +827,6 @@ Artifacts below have `known_extra_writers` — additional code paths that write 
 - **declared producer:** `engine/subsector_track_record.py`
 - **extra writers:**
   - scripts/build_subsector_rotation.py — CLI runner; calls compute() then appends snapshot
-
-### subsector-sponsorship-spine
-
-- **path:** `data/spine/subsector_sponsorship.parquet`
-- **declared producer:** `engine/spine.py`
-- **extra writers:**
-  - scripts/build_subsector_sponsorship.py — CLI runner; calls write_subsector_sponsorship()
 
 ### trial-ledger
 
