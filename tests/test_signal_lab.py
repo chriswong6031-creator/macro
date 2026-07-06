@@ -261,14 +261,18 @@ def test_fable_verdicts_covers_23_original_advance_ids():
     assert len(kills) == 11, f"expected 11 kills, got {len(kills)}: {kills}"
     routes = [k for k, v in FABLE_VERDICTS.items() if v["verdict"] == "ROUTED"]
     assert len(routes) == 1
+    # 2026-07-06: W1 BUILD entries have been promoted to TESTED-* after phase-0 runs.
+    # BUILD count is now 0; tested count is 7 (SLF-001/006/048/051/053/055/056).
     builds = [k for k, v in FABLE_VERDICTS.items() if v["verdict"] == "BUILD"]
-    assert len(builds) == 7
+    assert len(builds) == 0, f"expected 0 pure BUILD (all promoted to TESTED-*), got {builds}"
+    tested = [k for k, v in FABLE_VERDICTS.items() if v["verdict"].startswith("TESTED-")]
+    assert len(tested) == 7, f"expected 7 TESTED-* entries, got {tested}"
     probes = [k for k, v in FABLE_VERDICTS.items() if v["verdict"] == "PROBE"]
-    assert len(probes) == 1
+    assert len(probes) == 0, "PROBE promoted to ACCRUE-CONFIRMED after zt_pool history check"
     pilots = [k for k, v in FABLE_VERDICTS.items() if v["verdict"] == "PILOT"]
     assert len(pilots) == 1
-    accrue = [k for k, v in FABLE_VERDICTS.items() if v["verdict"] == "ACCRUE"]
-    assert len(accrue) == 1
+    accrue = [k for k, v in FABLE_VERDICTS.items() if v["verdict"] in {"ACCRUE", "ACCRUE-CONFIRMED"}]
+    assert len(accrue) == 2, f"expected 2 accrue entries (ACCRUE + ACCRUE-CONFIRMED), got {accrue}"
     queued = [k for k, v in FABLE_VERDICTS.items() if v["verdict"] == "QUEUED"]
     assert len(queued) == 1
 
@@ -351,3 +355,88 @@ def test_frontier_page_renders_with_fable_chip():
         "frontier panel should render with fable-chip elements"
     assert "研究前沿" in html, "ZH label for Research frontier not found"
     assert "已否决" in html, "KILLED 已否决 chip text not found"
+
+
+# --------------------------------------------------------------------------
+# SLF consolidation tests (Task 6 — 2026-07-06 frontier build wave)
+# --------------------------------------------------------------------------
+
+def test_slf056_funding_tail_registry_row_present():
+    """SLF-056 confirmer-tier row for Repo/SOFR tail stress must be in the registry."""
+    p = _payload()
+    confirmer = next((t for t in p["tiers"] if t["key"] == "confirmer"), None)
+    assert confirmer, "confirmer tier not found"
+    names = [r["name"] for r in confirmer["rows"]]
+    assert any("Repo/SOFR" in n or "tail stress" in n.lower() for n in names), \
+        f"SLF-056 funding tail row not found in confirmer tier; names={names}"
+
+
+def test_slf056_confirmer_tier_and_no_score_leakage():
+    """SLF-056 must be tier='confirmer', must have no ic/t_hac, and must not affect score."""
+    from engine.signal_lab import REGISTRY
+    matches = [r for r in REGISTRY if "Repo/SOFR" in r.get("name", "") or
+               ("tail stress" in r.get("name", "").lower() and r.get("dsr_family") == "slf056_funding_tail")]
+    assert matches, "SLF-056 registry row not found"
+    row = matches[0]
+    assert row["tier"] == "confirmer", f"tier must be 'confirmer', got {row['tier']}"
+    assert row["ic"] is None, f"ic should be None (no cross-sectional test), got {row['ic']}"
+    assert row["t_hac"] is None, f"t_hac should be None, got {row['t_hac']}"
+    # wired field must indicate no score impact
+    wired = row.get("wired", "")
+    assert "none" in wired.lower() or "pending" in wired.lower(), \
+        f"wired should indicate no score hookup, got {wired!r}"
+    # dsr_family is set (for ledger resolution)
+    assert row["dsr_family"] == "slf056_funding_tail", \
+        f"dsr_family should be 'slf056_funding_tail', got {row['dsr_family']}"
+
+
+def test_waves_adjudication_block_present_in_scorecard():
+    """build_scorecard() must include waves_adjudication with 3 waves."""
+    p = _payload()
+    wa = p.get("waves_adjudication")
+    assert wa is not None, "waves_adjudication key missing from scorecard payload"
+    assert len(wa["waves"]) == 3, f"expected 3 waves, got {len(wa['waves'])}"
+    wave_numbers = [w["wave"] for w in wa["waves"]]
+    assert wave_numbers == [2, 3, 4], f"expected waves [2,3,4], got {wave_numbers}"
+    assert wa["moratorium"] is True, "moratorium flag must be True"
+
+
+def test_waves_block_renders_in_html():
+    """Waves 2-4 adjudication block must appear in the rendered signal_lab.html."""
+    env = Environment(loader=FileSystemLoader(config.ROOT / "templates"))
+    env.filters["min"] = lambda seq: min(seq)
+    env.globals.update(t=i18n.t, td=i18n.td, tr=i18n.tr, zip=zip)
+    payload = signal_lab.build_scorecard()
+    html = env.get_template("signal_lab.html.j2").render(**payload)
+    assert "moratorium" in html.lower() or "暂停" in html, \
+        "moratorium text not found in rendered signal_lab.html"
+    # Wave 2 link to adjudication doc must be present
+    assert "WAVE2_FABLE_ADJUDICATION" in html or "wave2" in html.lower() or "W2" in html, \
+        "Wave 2 adjudication reference not found in rendered HTML"
+
+
+def test_tested_chips_present_in_html():
+    """TESTED-* chip classes must appear for SLF-001, SLF-006, SLF-048, SLF-051, SLF-055, SLF-056."""
+    env = Environment(loader=FileSystemLoader(config.ROOT / "templates"))
+    env.filters["min"] = lambda seq: min(seq)
+    env.globals.update(t=i18n.t, td=i18n.td, tr=i18n.tr, zip=zip)
+    payload = signal_lab.build_scorecard()
+    html = env.get_template("signal_lab.html.j2").render(**payload)
+    # At least one TESTED-* class must appear in the rendered HTML
+    assert "tested-null" in html or "tested-pass" in html or "tested-partial" in html or \
+           "tested-accrue" in html, \
+        "No tested-* chip classes found in rendered HTML — tested rulings not rendering"
+
+
+def test_w1_tested_verdicts_in_frontier_docket():
+    """W1 phase-0 results must update FABLE_VERDICTS; BUILD entries must be replaced by TESTED-* or ACCRUE-CONFIRMED."""
+    from engine.signal_frontier_docket import FABLE_VERDICTS
+    tested_ids = ["SLF-001", "SLF-006", "SLF-048", "SLF-051", "SLF-053", "SLF-055", "SLF-056"]
+    for sid in tested_ids:
+        assert sid in FABLE_VERDICTS, f"{sid} missing from FABLE_VERDICTS"
+        verdict = FABLE_VERDICTS[sid]["verdict"]
+        assert verdict.startswith("TESTED-") or verdict == "ACCRUE-CONFIRMED", \
+            f"{sid}: expected TESTED-* or ACCRUE-CONFIRMED verdict, got {verdict!r}"
+    # SLF-052 must be ACCRUE-CONFIRMED (probe result: unmanufacturable)
+    assert FABLE_VERDICTS.get("SLF-052", {}).get("verdict") == "ACCRUE-CONFIRMED", \
+        "SLF-052 should be ACCRUE-CONFIRMED (history unmanufacturable)"

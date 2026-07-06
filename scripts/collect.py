@@ -758,6 +758,31 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — a governance audit must not abort the run
         log.error("[grading_closure] audit step crashed (non-fatal): %s", e)
 
+    # SEC Fails-to-Deliver (SLF-001) — incremental daily append.
+    # Fetches semi-monthly FTD files whose availability_date has passed since the
+    # last panel date (uniform 30-day PIT lag enforced in the collector).
+    # Store: data/sec_ftd/panel.parquet. Additive, never fatal.
+    try:
+        from collectors.sec_ftd import incremental as _sec_ftd_incremental
+        _ftd_result = _sec_ftd_incremental()
+        log.info("sec_ftd incremental: fetched=%d skipped=%d errors=%d",
+                 _ftd_result.get("fetched", 0), _ftd_result.get("skipped", 0),
+                 _ftd_result.get("errors", 0))
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("sec_ftd incremental step failed: %s", e)
+
+    # NY Fed Primary Dealer Statistics (SLF-055) — Thursday weekly refresh.
+    # Published Thursdays ~16:15 ET for prior Wednesday; gated to Thursdays to
+    # avoid redundant fetches on other days. Store: data/nyfed_pd/pd_weekly.parquet.
+    # Additive, never fatal.
+    if datetime.now(timezone.utc).isoweekday() == 4:  # Thursday
+        try:
+            from collectors.nyfed_primary_dealer import run as _run_pd
+            _run_pd(config.data_dir() / "nyfed_pd")
+            log.info("nyfed_pd: Thursday refresh complete")
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.warning("nyfed_pd step failed: %s", e)
+
     return 0 if ok > 0 else 1
 
 
