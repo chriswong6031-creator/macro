@@ -1,0 +1,110 @@
+{
+  "schema": "dead_name_spike_probe.v1",
+  "generated_utc": "2026-07-06T00:00:00Z",
+  "probe_tickers": ["ATVI", "TWTR", "CERN", "XLNX", "Y"],
+  "sources": {
+    "thetadata_v3": {
+      "terminal_url": "http://127.0.0.1:25503",
+      "subscription": "FREE (stock tier only)",
+      "stock_entitlement": false,
+      "options_entitlement": "PROFESSIONAL",
+      "finding": "ThetaData stock symbol list includes dead names (ATVI, TWTR, CERN, XLNX confirmed enumerable via /v3/stock/list/symbols). Historical EOD data is behind a paid stock subscription; the current account has FREE stock access. STANDARD subscription required for recent data; PROFESSIONAL required for history back to 2012-06. The options PROFESSIONAL subscription does NOT grant stock history.",
+      "dead_name_symbol_enumerable": true,
+      "dead_name_history_accessible": false,
+      "verdict": "NOT USABLE — requires separate stock subscription upgrade (~$120+/mo for Standard, more for Professional)"
+    },
+    "polygon_rest": {
+      "base_url": "https://api.polygon.io",
+      "key_env": "MASSIVE_API_KEY",
+      "subscription": "massive.com paid (US stocks entitled)",
+      "rolling_window_start": "2021-07-06",
+      "rolling_window_note": "REST API enforces rolling 5-year entitlement; data before 2021-07-06 returns NOT_AUTHORIZED regardless of ticker",
+      "probe_results": {
+        "ATVI": {
+          "delist_date": "2023-10-16",
+          "reference_found": true,
+          "agg_range": "2021-07-05 to 2023-10-11",
+          "count": 573,
+          "status": "OK"
+        },
+        "TWTR": {
+          "delist_date": "2022-10-27",
+          "reference_found": true,
+          "agg_range": "2021-07-05 to 2022-10-26",
+          "count": 333,
+          "status": "OK"
+        },
+        "CERN": {
+          "delist_date": "2022-06-07",
+          "reference_found": true,
+          "agg_range": "2021-07-05 to 2022-06-06",
+          "count": 234,
+          "status": "OK"
+        },
+        "XLNX": {
+          "delist_date": "2022-02-14",
+          "reference_found": true,
+          "agg_range": "2021-07-05 to 2022-02-11",
+          "count": 155,
+          "status": "OK (via flat-file cross-check: last trading day 2022-02-11)"
+        },
+        "Y": {
+          "delist_date": "2022-10-18",
+          "reference_found": true,
+          "agg_range": "2021-07-05 to 2022-10-17",
+          "count": 326,
+          "status": "OK"
+        },
+        "WFM_2017_control": {
+          "note": "Whole Foods Market — delisted 2017-08-29 (pre-anchor)",
+          "reference_found": true,
+          "agg_range": null,
+          "status": "NOT_AUTHORIZED — pre-anchor delist, no REST history"
+        }
+      },
+      "flat_files_s3": {
+        "endpoint": "https://files.massive.com",
+        "bucket": "flatfiles",
+        "prefix": "us_stocks_sip/day_aggs_v1/",
+        "years_listed": "2003-2026",
+        "years_accessible": "2021-07-06 onward (same rolling entitlement as REST)",
+        "format": "CSV.gz per trading day, ~200KB each",
+        "columns": ["ticker", "volume", "open", "close", "high", "low", "window_start", "transactions"],
+        "dead_names_present": true,
+        "note_no_adjusted": "Flat files are UNADJUSTED. REST adjusted=true endpoint is preferred for dead-name price recovery (accounts for splits/dividends before delisting).",
+        "boundary_confirmed": "2021-07-06 accessible, 2021-07-02 and earlier = 403 Forbidden"
+      },
+      "verdict": "PRIMARY SOURCE for post-2021-07-06 dead names. 418 names covered. REST adjusted aggregates preferred over S3 flat files (flat files unadjusted; REST handles split/div adjustment)."
+    },
+    "stooq": {
+      "url_pattern": "https://stooq.com/q/d/l/?s={ticker}.us&i=d",
+      "from_mac_ip": "BLOCKED — all .us symbol queries return 'page does not exist' (HTML 404 wrapper). This is the IP-level block documented in collectors/edgar_deadname_prices.py.",
+      "from_ci_ip": "UNCERTAIN — edgar_deadname_prices.py comment says 'HTML-blocks some IPs, reachable from CI'. Not verified in this probe session.",
+      "coverage_if_accessible": "Deep history for acquisitions; shallow for bankruptcies. Free, no key required. Quality: unadjusted close prices.",
+      "note_adjusted": "Stooq provides unadjusted prices. For names with splits before delisting (less common for delisters), this creates a bias. Acceptable for sector-relative return computation at scale.",
+      "verdict": "CANDIDATE for pre-2021 era if CI IP is unblocked. Not confirmable from this probe. The existing edgar_deadname_prices.py collector already implements Stooq as primary source; it just needs to run from CI."
+    },
+    "yfinance": {
+      "verdict": "NOT USABLE — documented ~0% coverage for delisted names. edgar_deadname_prices.py uses as last-resort fallback only."
+    }
+  },
+  "dead_universe_stats": {
+    "total": 1083,
+    "post_anchor_polygon_coverable": 418,
+    "pre_anchor_polygon_blocked": 665,
+    "era_breakdown": {
+      "pre_2012": 333,
+      "2012_to_2021_07_05": 332,
+      "post_2021_07_06": 418
+    }
+  },
+  "honest_oos_window_stats": {
+    "window": "2021-07-06 to 2021-10-25",
+    "total_fires": 3331,
+    "unique_tickers": 1957,
+    "dead_name_fires": 235,
+    "unique_dead_tickers": 140,
+    "dead_fires_with_252d_label_possible": 189,
+    "note": "All 140 dead tickers fired post-anchor; Polygon REST covers their full 252d windows (252d after 2021-10-25 = ~2022-10-25, within Polygon coverage)"
+  }
+}
