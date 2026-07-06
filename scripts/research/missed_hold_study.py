@@ -82,12 +82,21 @@ _OUT_MD = _REPO_ROOT / "research" / "long_hold" / "W1_KILLTEST_RESULTS.md"
 # Constants (OBJECTIVE.md §6-§7)
 # ---------------------------------------------------------------------------
 BH_Q_THRESHOLD = 0.10          # §6.1
-RESHUFFLE_SEED = 42             # §6.4
+RESHUFFLE_SEED = 42             # §6.4 — LOCKED in pre-registration; do not change
+BOOTSTRAP_SEED_BLOCK = 43       # §6.2 block-bootstrap CI — distinct from RESHUFFLE_SEED
+                                # (should-fix: shared seeds cause correlated draws across
+                                #  independent inference gates §6.2 and §6.4)
+BOOTSTRAP_SEED_CLUSTER = 44     # §6.2 cluster-bootstrap CI — distinct from RESHUFFLE_SEED
 N_RESHUFFLE = 1000              # §6.4
 N_BOOTSTRAP = 1000              # §6.2
-BLOCK_RADIUS_DAYS = 14          # ≈±10 trading bars per §6.3
+BLOCK_RADIUS_DAYS = 14          # §6.3: spec says ±10 TRADING days; 14 CALENDAR days is an
+                                # approximation (undercounts across holidays; ~10 trading days
+                                # in most weeks). See deviation note in deduplicate_episode_clusters.
 EPISODE_FLOOR = 25              # §6.3 minimum episode-cluster count
 BLOCK_WIDTH = 63                # trading days for block-bootstrap fallback (§6.2)
+                                # Note: BLOCK_WIDTH is labeled in trading days but the block
+                                # assignment arithmetic in _block_bootstrap_rbc uses calendar-day
+                                # arithmetic (dt.days // (BLOCK_WIDTH * 1.4)). Deviation documented.
 
 FIT_START = "2014-01-01"        # §7
 FIT_END   = "2019-12-31"        # §7
@@ -332,6 +341,15 @@ def deduplicate_episode_clusters(
 
     For each (ticker × macro_regime) group, retain only the earliest fire_date
     in any ±window_days window. Returns deduplicated DataFrame.
+
+    DEVIATION FROM OBJECTIVE.md §6.3 (documented per should-fix):
+    §6.3 specifies "±10 TRADING days (measured on fire_date)."
+    This implementation uses BLOCK_RADIUS_DAYS=14 CALENDAR days, which is an
+    approximation of 10 trading days (typical ~2-week span). Calendar-day measurement
+    undercounts across holiday-heavy weeks and may retain ~1-2% extra clusters at
+    holiday boundaries. Impact on the DEFERRED verdict is nil (4 compounders regardless
+    of dedup window), but the fit and OOS-all cluster counts quoted as inferential n are
+    computed on a calendar-day proxy for a trading-day spec.
     """
     df = df.copy()
     df[date_col] = pd.to_datetime(df[date_col])
@@ -484,7 +502,7 @@ def _block_bootstrap_rbc(
     date_col: str = "fire_date",
     block_width: int = BLOCK_WIDTH,
     n_bootstrap: int = N_BOOTSTRAP,
-    seed: int = RESHUFFLE_SEED,
+    seed: int = BOOTSTRAP_SEED_BLOCK,
 ) -> dict[str, Any]:
     """Block-bootstrap 95% CI for the RBC of feature vs missed_hold.
 
@@ -504,7 +522,7 @@ def _block_bootstrap_rbc(
     block_ids = df["_block_id"].unique()
     n_blocks = len(block_ids)
 
-    rng = np.random.default_rng(seed)
+    rng = np.random.default_rng(BOOTSTRAP_SEED_BLOCK)
     boot_rbcs = []
     for _ in range(n_bootstrap):
         chosen_blocks = rng.choice(block_ids, size=n_blocks, replace=True)
@@ -539,7 +557,18 @@ def _cluster_robust_ci(
 ) -> dict[str, Any]:
     """CI via sector×macro_regime clustering.
 
-    Computes the RBC cluster-by-cluster and bootstrap the cluster-level RBCs.
+    DEVIATION FROM OBJECTIVE.md §6.2 (documented per should-fix):
+    §6.2 specifies clustering by (ticker_SECTOR × macro_regime).
+    The labels parquet has no sector-category column (only sector_rel_252d as a
+    continuous return); the ticker→sector mapping covers only the 503/2,495 tickers
+    that map to the 11 EW basket names. This function therefore clusters by
+    (ticker × macro_regime) as a finer-grained proxy. Ticker-level clustering is
+    finer than sector-level and may understate within-sector error correlation,
+    biasing CIs slightly narrow. The §6.2 "wider CI governs" rule (block-bootstrap
+    fallback) partially mitigates this. Results tables in the markdown carry a
+    "(ticker × macro_regime)" note in the inference design section.
+
+    Computes the RBC cluster-by-cluster and bootstraps the cluster-level RBCs.
     Where regime is unavailable, falls back to block-bootstrap.
     Returns dict with ci_lo, ci_hi, method.
     """
@@ -549,8 +578,7 @@ def _cluster_robust_ci(
     if len(sub) < 10:
         return {"ci_lo": np.nan, "ci_hi": np.nan, "method": "insufficient_data"}
 
-    # cluster column = sector × regime
-    # We don't have a sector column directly; use (ticker × macro_regime) as cluster
+    # cluster column = ticker × regime (deviation from §6.2 sector×regime: see docstring)
     sub["_cluster"] = (
         sub[sector_col].astype(str) + "|" + sub[regime_col].astype(str).fillna("none")
     )
@@ -571,8 +599,8 @@ def _cluster_robust_ci(
         return bb
 
     arr = np.array(cluster_rbcs)
-    # Bootstrap over cluster-level RBCs
-    rng = np.random.default_rng(RESHUFFLE_SEED)
+    # Bootstrap over cluster-level RBCs (distinct seed from reshuffle null per should-fix)
+    rng = np.random.default_rng(BOOTSTRAP_SEED_CLUSTER)
     boot = rng.choice(arr, size=(N_BOOTSTRAP, len(arr)), replace=True).mean(axis=1)
 
     bb = _block_bootstrap_rbc(df, feature, outcome_col)
@@ -880,20 +908,47 @@ def apply_amendment_a1(
       sector_rel_252d with market_rel_252d = name's 252d return minus equal-weight
       average 252d return across all resolvable tickers for that fire.
     - Reapply label assignment logic to affected fires.
-    - Market benchmark S(f): all tickers with a resolvable 252d return at fire_date.
 
-    The per-fire market benchmark is expensive to compute exactly.
-    Approximation: use the mean of total_return_252d across all labeled fires
-    with the same cohort_year as the global market proxy.
-    This is an approximation of the full S(f) per-fire computation, documented
-    as a conservative shortcut. The exact S(f) requires the full price store;
-    we use the cohort-year mean of total_return_252d as the market proxy since
-    those fires are already materialized from the label harness (which uses
-    the same fill-anchor convention).
+    SPEC-INFEASIBILITY NOTE (must-fix, LH-W1-2):
+    ---
+    OBJECTIVE.md Amendment A1 defines the benchmark constituent set S(f) as:
+      "every ticker in the fire tape whose 252-trading-day fill-anchored forward
+       price path is FULLY RESOLVABLE (no NaN, length == 252) as of that fire's
+       own fire_date."
 
-    NOTE: This approximation produces a cohort-year-level market benchmark
-    rather than a per-fire S(f) benchmark. It is directionally correct but
-    less precise than the full specification. This is documented in A1 outputs.
+    This per-fire S(f) is NOT computable from long_hold_labels.parquet alone because:
+    - The labels parquet only records rows that achieved ≥252 matured bars AND were
+      tactical wins. Specifically:
+        - 34,604 tactical_only_fail fires have total_return_252d=null (never lifted off;
+          their 252d paths may be resolvable but were never computed by the label harness).
+        - 65,723 unlabeled fires have total_return_252d=null (unmatured, no_price, or
+          unmatured_126).
+    - The filter `full[full['total_return_252d'].notna()]` therefore covers ONLY the
+      ~13,215 rows with non-null total_return_252d — all of which are tactical wins
+      with usable 252d legs: cheap_trap (4,409), tactical_only (4,406),
+      sector_laggard_winner (3,404), multiple_expansion_only (801), compounder (195).
+    - tactical_only_fail fires (which form the bulk of dead-name candidates) are
+      entirely EXCLUDED from the benchmark pool.
+
+    Consequence: the cohort-year mean used here is a WINNER-SELECTED, UPWARD-BIASED
+    benchmark — it excludes all fires that never achieved tactical liftoff, which
+    are disproportionately the worst-performing names. This depresses (makes less
+    negative) market_rel_252d for surviving names, shifting Label G (sector_laggard_winner)
+    back toward compounder — exactly the direction that inflated the A1 SURVIVE result.
+
+    The 2021 benchmark of 0.0178 computed below is drawn entirely from this winner-
+    selected pool. The 128 no-benchmark SLW fires in the honest OOS window with
+    total_return_252d ranging 0.116–2.548 (all positive, all strong performers) flip
+    to compounder when compared against a ~1.78% winner-pool mean. That flip produces
+    the A1 honest compounder count of 132 and drives the A1 SURVIVE result.
+
+    Per must-fix ruling: A1 results are reported with this spec-infeasibility flag.
+    The A1 SURVIVE verdict is NOT presented as evidence on the pre-registered S(f)
+    specification — it is an approximate sensitivity only. See §7 of the results doc.
+    ---
+
+    The exact S(f) requires iterating the full price tape per fire_date — a computation
+    that requires access to the raw price store, not the labels parquet.
     """
     df_a1 = df_all.copy()
 
@@ -903,13 +958,29 @@ def apply_amendment_a1(
     full["cohort_year"] = full["fire_date"].dt.year
 
     # Compute cohort-year market benchmark: mean of total_return_252d for
-    # all fires with a resolvable 252d return (unlabeled with reason != no_price)
+    # all fires with a non-null 252d return.
+    #
+    # WINNER-SELECTION NOTE: only tactical-win rows have non-null total_return_252d
+    # in the labels parquet. tactical_only_fail (34,604) and unlabeled (65,723) rows
+    # are excluded. This benchmark is upward-biased relative to the spec's S(f).
+    # See SPEC-INFEASIBILITY NOTE in this docstring for full consequences.
     ew_benchmark = (
         full[full["total_return_252d"].notna()]
         .groupby("cohort_year")["total_return_252d"]
         .mean()
     )
-    log.info("A1 market benchmark (cohort-year EW mean): %s", ew_benchmark.to_dict())
+    log.info(
+        "A1 market benchmark (cohort-year EW mean, WINNER-SELECTED pool only): %s",
+        ew_benchmark.to_dict(),
+    )
+    log.warning(
+        "A1 SPEC-INFEASIBILITY: benchmark computed from winner-selected tactical-win pool "
+        "only (excludes %d tactical_only_fail + %d unlabeled rows with null 252d returns). "
+        "A1 results are approximate sensitivity only — NOT the pre-registered S(f). "
+        "See apply_amendment_a1 docstring and §7 of W1_KILLTEST_RESULTS.md.",
+        int((labels_full["label"] == "tactical_only_fail").sum()),
+        int((labels_full["label"] == "unlabeled").sum()),
+    )
 
     # For fires where sector_rel_252d is null AND label == sector_laggard_winner:
     # recompute label using market_rel_252d
@@ -1113,8 +1184,11 @@ def main(dry_run: bool = False, fit_only: bool = False) -> None:
     kt_fit = kt[fit_mask].copy()
     kt_oos = kt[oos_mask].copy()
 
-    # Honest OOS = survivorship_biased=False only
-    kt_oos_honest = kt_oos[~kt_oos["survivorship_biased"].astype(bool)].copy()
+    # Honest OOS = survivorship_biased=False only.
+    # NOTE: explicit == False comparison (not ~astype(bool)) to avoid coercing None → False.
+    # astype(bool) maps None→False (treats unknown-survivorship fires as honest), which is
+    # a latent correctness trap if the label harness ever emits null survivorship in-window.
+    kt_oos_honest = kt_oos[kt_oos["survivorship_biased"] == False].copy()  # noqa: E712
 
     log.info("Fit period fires (kill-test): %d", len(kt_fit))
     log.info("OOS period fires (kill-test, all): %d", len(kt_oos))
@@ -1175,7 +1249,11 @@ def main(dry_run: bool = False, fit_only: bool = False) -> None:
         survivorship_note=(
             "OOS honest cohort: survivorship_biased=False only. "
             "These fires have resolvable price paths from the Massive whole-market store "
-            "or Yahoo, with dead-name coverage from Polygon REST (post-anchor era). "
+            "or Yahoo, with dead-name coverage from Polygon REST (post-anchor era; "
+            "ESTIMATED/UNVERIFIED — dead_name_probe_results.json self-describes as "
+            "'PARTIALLY ESTIMATED — no raw probe script or sampled price bars were retained; "
+            "~95% post-anchor coverage figure is an estimate, not a measured sample; "
+            "treat as estimated/unverified pending a committed probe script with sampled bars'). "
             "This is the pre-registered G1 decision cell."
         ),
     )
@@ -1264,7 +1342,8 @@ def main(dry_run: bool = False, fit_only: bool = False) -> None:
                 kt_a1_oos_idx[col] = kt_features[col].reindex(kt_a1_oos_idx.index)
         kt_a1_oos = kt_a1_oos_idx.reset_index()
 
-        kt_a1_oos_honest = kt_a1_oos[~kt_a1_oos["survivorship_biased"].astype(bool)].copy()
+        # Explicit == False (not ~astype(bool)) to avoid None→False coercion (should-fix)
+        kt_a1_oos_honest = kt_a1_oos[kt_a1_oos["survivorship_biased"] == False].copy()  # noqa: E712
 
         result_a1_honest = run_analysis(
             kt_a1_oos_honest, retained_features,
@@ -1292,6 +1371,19 @@ def main(dry_run: bool = False, fit_only: bool = False) -> None:
             "a1_survivorship_caveat": (
                 "Pre-2021 cohorts: S(f) is survivor-upward-biased → market benchmark "
                 "depressed → excess Label G assignment direction documented per A1 spec."
+            ),
+            "spec_infeasibility": (
+                "SPEC-INFEASIBLE FROM LABELS PARQUET: the pre-registered S(f) constituent set "
+                "(OBJECTIVE.md Amendment A1) requires every fire-tape ticker with a fully "
+                "resolvable 252d forward path at the fire's own fire_date. The labels parquet "
+                "has total_return_252d=null for all 34,604 tactical_only_fail fires and 65,723 "
+                "unlabeled fires. The benchmark used here is computed ONLY from the ~13,215 "
+                "tactical-win rows with non-null 252d returns — a winner-selected, upward-biased "
+                "pool. The A1 SURVIVE verdict arises because the 128 no-benchmark SLW fires in "
+                "the OOS honest window (all strong performers, total_return_252d 0.116-2.548) "
+                "flip to compounder against this ~1.78% winner-pool mean (2021 cohort). "
+                "A1 results are reported as APPROXIMATE SENSITIVITY ONLY — not as evidence on "
+                "the pre-registered S(f). See apply_amendment_a1 docstring and §7 of results doc."
             ),
         }
     else:
@@ -1575,8 +1667,11 @@ def _build_markdown(
     lines.append("- **Test statistic:** Mann-Whitney rank-biserial correlation (RBC)")
     lines.append("- **BH-FDR:** q ≤ 0.10 across all retained features simultaneously (§6.1)")
     lines.append("- **CIs:** cluster-robust (ticker × macro_regime) + block-bootstrap; wider CI governs (§6.2)")
+    lines.append("  - _Deviation from §6.2_: spec requires (ticker_SECTOR × macro_regime); implemented as (ticker × macro_regime) because the labels parquet has no sector-category column (only sector_rel_252d as a float). Ticker-level clustering is finer than sector-level and may produce slightly narrow CIs. The block-bootstrap fallback (which governs when wider) partially mitigates this.")
     lines.append("- **Episode-cluster floor:** n ≥ 25 independent (ticker × macro_regime) clusters per group (§6.3)")
-    lines.append("- **Reshuffle null:** 1,000 within-(cohort_year × macro_regime) permutations; 90th percentile threshold (§6.4)")
+    lines.append("  - _Deviation from §6.3_: spec says ±10 TRADING days; implemented as ±14 CALENDAR days (≈10 trading days). Impact on the DEFERRED verdict is nil (4 compounders regardless of dedup window).")
+    lines.append("- **Reshuffle null:** 1,000 within-(cohort_year × macro_regime) permutations; 90th percentile threshold (§6.4); seed=42 (LOCKED in pre-registration)")
+    lines.append("- **Bootstrap seeds:** block-bootstrap uses seed=43; cluster-bootstrap uses seed=44 (distinct from reshuffle seed=42 to avoid correlated draws across independent inference gates)")
     lines.append("- **G1 criterion:** a feature must clear ALL THREE gates (BH-FDR + reshuffle + n-floor) on the OOS honest cohort")
     lines.append("")
 
@@ -1627,6 +1722,27 @@ def _build_markdown(
 
     lines.append("## 7. Amendment A1: Market-Benchmark Reassignment")
     lines.append("")
+    lines.append(
+        "> **SPEC-INFEASIBILITY — A1 results are APPROXIMATE SENSITIVITY ONLY.**"
+    )
+    lines.append("> The pre-registered S(f) constituent set (OBJECTIVE.md Amendment A1) requires")
+    lines.append("> \"every ticker in the fire tape whose 252d fill-anchored forward price path")
+    lines.append("> is fully resolvable at that fire's own fire_date.\" This is NOT computable")
+    lines.append("> from long_hold_labels.parquet alone: the parquet has total_return_252d=null")
+    lines.append("> for all 34,604 tactical_only_fail fires and 65,723 unlabeled fires.")
+    lines.append("> The benchmark below uses ONLY the ~13,215 tactical-win rows with non-null")
+    lines.append("> 252d returns — a WINNER-SELECTED, UPWARD-BIASED pool that excludes all")
+    lines.append("> fires that never achieved tactical liftoff.")
+    lines.append(">")
+    lines.append("> Consequence: the 2021 cohort-year benchmark is 0.0178 (1.78%), computed from")
+    lines.append("> the winner pool. The 128 no-benchmark SLW fires in the OOS honest window")
+    lines.append("> (all strong performers, total_return_252d ranging 0.116–2.548) flip to")
+    lines.append("> compounder against this low bar, inflating the A1-honest compounder count")
+    lines.append("> from 4 to 132 and producing the A1 SURVIVE result. The A1 SURVIVE verdict")
+    lines.append("> **is NOT reported as evidence on the pre-registered S(f) specification.**")
+    lines.append("> It is an approximate sensitivity result and is labelled as such.")
+    lines.append("> The combined routing (§9) correctly gates on the primary DEFERRED verdict.")
+    lines.append("")
     a1_meta = all_results.get("a1_metadata", {})
     lines.append(
         f"N fires reassigned from no-sector-benchmark: **{a1_meta.get('n_fires_reassigned', '—')}**  "
@@ -1636,7 +1752,7 @@ def _build_markdown(
     lines.append("")
     bm_approx = a1_meta.get("benchmark_approximation", "")
     if bm_approx:
-        lines.append(f"> **Benchmark approximation:** {bm_approx}")
+        lines.append(f"> **Benchmark approximation (winner-selected pool):** {bm_approx}")
         lines.append("")
     surv_a1 = a1_meta.get("a1_survivorship_caveat", "")
     if surv_a1:
@@ -1679,6 +1795,14 @@ def _build_markdown(
         "DISAGREE_REMEDIATION if one KILL and one SURVIVE (no deferral)."
     )
     lines.append("")
+    lines.append(
+        "> **Note on A1 SURVIVE:** the A1 SURVIVE result is computed on a non-spec benchmark "
+        "(winner-selected cohort-year mean, not the pre-registered per-fire S(f)). "
+        "Per §7 above, it is not reportable as evidence on the pre-registered specification. "
+        "The combined routing is correctly DEFERRED (driven by the primary leg's DEFERRED_N_FLOOR). "
+        "The A1 SURVIVE cell does not alter this routing and is not presented as a reprieve."
+    )
+    lines.append("")
 
     # -------------------------------------------------------------------
     # In-plain-English box
@@ -1693,28 +1817,41 @@ def _build_markdown(
     lines.append("> The contrast is: compounders (multi-year winners from entry) vs tactical-only")
     lines.append("> fires (bounced and faded within a year).")
     lines.append(">")
-    lines.append("> **What the data constraint means:**")
-    lines.append("> The honest test requires price data from a survivorship-correct source —")
-    lines.append("> meaning we need prices for companies that eventually went bankrupt or were")
-    lines.append("> delisted, not just survivors. Our Massive whole-market store provides this")
-    lines.append("> from July 2021 forward. But that gap in our price store means the honest")
-    lines.append("> test window (July 2021 to October 2021, ~3.5 months) produces very few")
-    lines.append("> episode-clusters — specifically, only 4 compounder clusters vs the required")
-    lines.append(f"> minimum of {EPISODE_FLOOR}. You cannot run a reliable statistical test with 4 examples.")
+    lines.append("> **What the data constraint means (LH-W1-3 verified forward-leg source):**")
+    lines.append("> The honest test requires a survivorship-correct price source so that companies")
+    lines.append("> that eventually failed or were delisted are represented. Dead-name forward legs")
+    lines.append("> ARE present in the honest cell: data/edgar/dead_name_prices.parquet was built")
+    lines.append("> from Polygon REST (415 tickers, continuous coverage 2021-07-06→2026-06-02,")
+    lines.append("> source='polygon'). This covers the entire honest OOS window")
+    lines.append("> (2021-07-06→2021-10-22); all 271 honest fires have gap_leg_crossed=False")
+    lines.append("> and full 252d returns, confirming the Polygon dead-name build fills the gap.")
+    lines.append("> COVERAGE CAVEAT: the ~95% post-anchor coverage figure from")
+    lines.append("> dead_name_probe_results.json is ESTIMATED — no committed probe script with")
+    lines.append("> sampled price bars was retained; treat coverage as estimated/unverified.")
+    lines.append(">")
+    lines.append("> **Why the test is deferred — window length, not missing dead names:**")
+    lines.append("> The honest OOS window is approximately 3.5 months (2021-07-06→2021-10-22)")
+    lines.append("> because the 1,165-day Massive store gap begins 2021-10-25. In that window,")
+    lines.append("> only 4 compounder episode-clusters fired vs the required minimum of")
+    lines.append(f"> {EPISODE_FLOOR}. The DEFERRED verdict is driven SOLELY by this window-length")
+    lines.append("> constraint (too few compounders in 3.5 months), NOT by absent or")
+    lines.append("> survivorship-biased forward legs. You cannot run a reliable statistical test")
+    lines.append("> on 4 examples, regardless of how complete the price data is.")
     lines.append(">")
     lines.append("> **What this means for the program:**")
-    lines.append("> We cannot answer the core question from honest data yet. The test can")
-    lines.append("> technically be run on survivorship-biased data (where we only have prices for")
-    lines.append("> surviving companies), but that biases the result toward finding a false signal")
-    lines.append("> (because companies acquired at a premium look like 'compounders' when they")
-    lines.append("> really just got bought out). The null or positive result from biased data")
-    lines.append("> does not resolve the question.")
+    lines.append("> We cannot answer the core question from honest data yet — the honest cohort")
+    lines.append("> is too small because the fire window is only 3.5 months. The test can be")
+    lines.append("> run on survivorship-biased data (the full OOS 2020-2023 set), but that")
+    lines.append("> biases the result toward finding a false signal (companies acquired at a")
+    lines.append("> premium look like 'compounders' when they just got bought out). The null")
+    lines.append("> or positive result from biased data does not resolve the question.")
     lines.append(">")
     lines.append("> **What needs to happen next:**")
-    lines.append("> The dead-name spike (PR-G) provides a path: building the dead-name price")
-    lines.append("> store from Polygon REST would correct survivorship bias in the OOS window.")
-    lines.append("> Only after that can the honest test fire cleanly. This is the pre-registered")
-    lines.append("> deferral path in OBJECTIVE.md §8.")
+    lines.append("> The dead-name spike (PR-G) expands the dead-name price store to cover the")
+    lines.append("> full 1,165-day gap period (2021-10-25→2025-01-02). Once that gap is filled,")
+    lines.append("> post-gap fires (2025+) will mature to full 252d, creating a larger honest")
+    lines.append("> cohort. The pre-registered deferral path in OBJECTIVE.md §8 is activated")
+    lines.append("> because the n-floor was not met — not because dead-name prices are absent.")
     lines.append("")
 
     # -------------------------------------------------------------------
