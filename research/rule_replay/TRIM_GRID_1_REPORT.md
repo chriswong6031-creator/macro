@@ -4,7 +4,7 @@
 **Run date:** 2026-07-06
 **Runtime:** 2756 seconds (~46 min)
 **Verdict criteria:** descriptive-only
-**Cumulative pooled replay trial count:** 37 (SUM); TrialLedger max()-basis: 15
+**Cumulative pooled replay trial count:** 37 (SUM); registry max-declared-budget: 15
 **Status:** reported
 
 ---
@@ -146,7 +146,7 @@ n_fires = 49,939 for all cells; clusters = 22,295 for all cells.
 
 **Cumulative pooled replay SUM: 37**
 
-**TrialLedger max()-basis: 15** (largest single declared budget = exit_grid_v1). Per RUL-5, both numbers are stated here: SUM=37, max()-basis=15.
+**Registry max-declared-budget: 15** (largest single declared budget = exit_grid_v1, sourced from registry.jsonl records — NOTE: exit_grid_v1 never wrote a TrialLedger declared_budget row, so TrialLedger.effective_n('replay') currently returns 10 (wait_grid_v1); a ledger backfill is queued as separate hygiene work. Per RUL-5, both numbers are stated here: SUM=37, registry-max=15.)
 
 Any future promotion prereg on this tape must account for N=37 cumulative trials at minimum.
 
@@ -185,6 +185,6 @@ These are descriptive comparisons only. No promotion is warranted without fresh 
 
 ## Appendix: cumulative pooled trial count
 
-**37 cells declared** to date in the replay family. Both numbers per RUL-5: pooled SUM=37, TrialLedger max()-basis=15.
+**37 cells declared** to date in the replay family. Both numbers per RUL-5: pooled SUM=37, registry max-declared-budget=15 (see budget-accounting note above for the TrialLedger gap).
 
 *All numbers are close-to-close, split-adjusted (massive_stock_day_v1), next-bar fill (delay_n=1), conservative (exits fill on close of triggering bar). CIs require episode-clustered bootstrap not computed in this descriptive batch. See `data/rule_experiments/results/trim_grid_v1_summary.json` and `trim_grid_v1_perfire.parquet` (Mac-local) for the full record.*
