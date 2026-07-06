@@ -803,6 +803,27 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — a governance audit must not abort the run
         log.error("[claim_accountability] audit step crashed (non-fatal): %s", e)
 
+    # NEXT3 W-OC — options accrual freshness tripwire (previously unwired).
+    # Checks polygon_gex/chains/ freshness + Massive S3 creds + flow summary accrual.
+    # Writes data/quality/options_accrual_audit.json.  Runs BEFORE the coverage audit
+    # so coverage.json can surface the accrual audit's last-run status.  Non-fatal.
+    try:
+        from scripts.audit_options_accrual import run_as_collect_step as _opts_accrual_audit
+        _opts_accrual_audit()
+    except Exception as e:  # noqa: BLE001 — an accrual audit must not abort the run
+        log.error("[audit_options_accrual] step crashed (non-fatal): %s", e)
+
+    # NEXT3 W-OC (PR-β) — options entry feature coverage audit.
+    # Reads state.parquet + gate.json + board ledger; emits
+    # data/options_entry/coverage.json (feature non-null coverage, family stamp
+    # coverage, readiness forecast, structural-null ledger, consistency rows).
+    # RUL-U5: read-only over all inputs; single-writer on coverage.json.  Non-fatal.
+    try:
+        from scripts.audit_options_entry_coverage import run_as_collect_step as _opts_coverage_audit
+        _opts_coverage_audit()
+    except Exception as e:  # noqa: BLE001 — a coverage audit must not abort the run
+        log.error("[options_entry_coverage] step crashed (non-fatal): %s", e)
+
     # SEC Fails-to-Deliver (SLF-001) — incremental daily append.
     # Fetches semi-monthly FTD files whose availability_date has passed since the
     # last panel date (uniform 30-day PIT lag enforced in the collector).

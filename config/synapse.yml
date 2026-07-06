@@ -4843,6 +4843,35 @@ artifacts:
       (end-of-collect, immediately after grading-closure audit).
       Companion markdown at docs/CLAIM_ACCOUNTABILITY.md.
 
+  # --- NEXT3 W-OC: options entry coverage audit (PR-β) ---
+  options-entry-coverage:
+    path: data/options_entry/coverage.json
+    format: json
+    producer: scripts/audit_options_entry_coverage.py
+    known_extra_writers: []
+    owner_program: next3
+    cadence: collect
+    storage: git
+    asof_field: generated_at
+    freshness_sla_hours: 30
+    schema: options_entry_coverage.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      NEXT3 W-OC (PR-β) — options entry feature coverage audit (RUL-U5).
+      Read-only over state.parquet, gate.json, board ledger, and registry constants.
+      Emits per-feature non-null counts + shares, per-family stamp coverage (n_cond/n_base
+      from gate.json tests), weekly new-stamped-fire counts (derived from ledger as_of),
+      readiness forecast per family (projected date n_cond>=30; "unknown" until >=14 days
+      of post-W-C history exist), structural-null ledger (iv_rank_* ruling A9, pin_risk
+      by-design opex_days<=5 gate, gamma_regime constancy caveat), consistency rows
+      (BH test-count drift 28 vs 22 — print only, fix owned by W-OVC; stale as_of ages;
+      audit_options_accrual last-run status). Single writer.
+
   # --- NW Rails post-Fable PR-1: DQ-2 operator-action grading harness ---
   operator-grading:
     path: data/governance/operator_grading.json

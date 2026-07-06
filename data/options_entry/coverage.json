@@ -1,0 +1,406 @@
+{
+  "schema": "options_entry_coverage.v1",
+  "generated_at": "2026-07-06T14:24:53.612564+00:00",
+  "as_of": "2026-07-06",
+  "absent_stores": [],
+  "feature_coverage": {
+    "n_rows": 403,
+    "n_features": 26,
+    "features": [
+      {
+        "feature": "iv30",
+        "n_nonnull": 388,
+        "n_total": 403,
+        "share_nonnull": 0.9628
+      },
+      {
+        "feature": "iv_rank_252",
+        "n_nonnull": 0,
+        "n_total": 403,
+        "share_nonnull": 0.0
+      },
+      {
+        "feature": "iv_rank_5d_chg",
+        "n_nonnull": 0,
+        "n_total": 403,
+        "share_nonnull": 0.0
+      },
+      {
+        "feature": "ivspread_rel",
+        "n_nonnull": 355,
+        "n_total": 403,
+        "share_nonnull": 0.8809
+      },
+      {
+        "feature": "ivspread_5d_chg",
+        "n_nonnull": 307,
+        "n_total": 403,
+        "share_nonnull": 0.7618
+      },
+      {
+        "feature": "skew",
+        "n_nonnull": 386,
+        "n_total": 403,
+        "share_nonnull": 0.9578
+      },
+      {
+        "feature": "skew_5d_chg",
+        "n_nonnull": 356,
+        "n_total": 403,
+        "share_nonnull": 0.8834
+      },
+      {
+        "feature": "net_doi",
+        "n_nonnull": 348,
+        "n_total": 403,
+        "share_nonnull": 0.8635
+      },
+      {
+        "feature": "doi_pc",
+        "n_nonnull": 315,
+        "n_total": 403,
+        "share_nonnull": 0.7816
+      },
+      {
+        "feature": "fresh_contracts",
+        "n_nonnull": 348,
+        "n_total": 403,
+        "share_nonnull": 0.8635
+      },
+      {
+        "feature": "fresh_premium_mn",
+        "n_nonnull": 310,
+        "n_total": 403,
+        "share_nonnull": 0.7692
+      },
+      {
+        "feature": "zerodte_share",
+        "n_nonnull": 368,
+        "n_total": 403,
+        "share_nonnull": 0.9132
+      },
+      {
+        "feature": "gamma_regime",
+        "n_nonnull": 385,
+        "n_total": 403,
+        "share_nonnull": 0.9553
+      },
+      {
+        "feature": "gamma_regime_structurally_constant",
+        "n_nonnull": 403,
+        "n_total": 403,
+        "share_nonnull": 1.0
+      },
+      {
+        "feature": "dist_to_flip_pct",
+        "n_nonnull": 264,
+        "n_total": 403,
+        "share_nonnull": 0.6551
+      },
+      {
+        "feature": "wall_up_dist_pct",
+        "n_nonnull": 388,
+        "n_total": 403,
+        "share_nonnull": 0.9628
+      },
+      {
+        "feature": "wall_down_dist_pct",
+        "n_nonnull": 388,
+        "n_total": 403,
+        "share_nonnull": 0.9628
+      },
+      {
+        "feature": "max_pain_dist_pct",
+        "n_nonnull": 388,
+        "n_total": 403,
+        "share_nonnull": 0.9628
+      },
+      {
+        "feature": "opex_days",
+        "n_nonnull": 403,
+        "n_total": 403,
+        "share_nonnull": 1.0
+      },
+      {
+        "feature": "pin_risk",
+        "n_nonnull": 0,
+        "n_total": 403,
+        "share_nonnull": 0.0
+      },
+      {
+        "feature": "gex_confirm_verdict",
+        "n_nonnull": 388,
+        "n_total": 403,
+        "share_nonnull": 0.9628
+      },
+      {
+        "feature": "evidence_quality",
+        "n_nonnull": 403,
+        "n_total": 403,
+        "share_nonnull": 1.0
+      },
+      {
+        "feature": "src_gex_asof",
+        "n_nonnull": 388,
+        "n_total": 403,
+        "share_nonnull": 0.9628
+      },
+      {
+        "feature": "src_skew_asof",
+        "n_nonnull": 386,
+        "n_total": 403,
+        "share_nonnull": 0.9578
+      },
+      {
+        "feature": "src_ivspread_asof",
+        "n_nonnull": 355,
+        "n_total": 403,
+        "share_nonnull": 0.8809
+      },
+      {
+        "feature": "src_flow_asof",
+        "n_nonnull": 368,
+        "n_total": 403,
+        "share_nonnull": 0.9132
+      }
+    ],
+    "ticker_coverage": {
+      "n_tickers": 403,
+      "n_rows": 403,
+      "n_tickers_ge75pct_features": 346,
+      "n_tickers_50to74pct_features": 29,
+      "n_tickers_lt50pct_features": 28
+    }
+  },
+  "family_stamp_coverage": [
+    {
+      "family": "S-IVR",
+      "status": "building_history",
+      "n_cond": 0,
+      "n_base": 0,
+      "target_n_cond": 30,
+      "weekly_fires": {
+        "2026-W25": 6,
+        "2026-W26": 41
+      },
+      "n_stamped_cond": 0,
+      "cond_hit_share": 0.0,
+      "readiness_forecast": {
+        "forecast": "unknown",
+        "reason": "post-W-C history 1d < 14d minimum; n_post_wc_fires=0",
+        "post_wc_fires": 0,
+        "post_wc_span_days": 1
+      }
+    },
+    {
+      "family": "S-DOI",
+      "status": "building_history",
+      "n_cond": 0,
+      "n_base": 0,
+      "target_n_cond": 30,
+      "weekly_fires": {
+        "2026-W25": 6,
+        "2026-W26": 41
+      },
+      "n_stamped_cond": 0,
+      "cond_hit_share": 0.0,
+      "readiness_forecast": {
+        "forecast": "unknown",
+        "reason": "post-W-C history 1d < 14d minimum; n_post_wc_fires=0",
+        "post_wc_fires": 0,
+        "post_wc_span_days": 1
+      }
+    },
+    {
+      "family": "S-VOI",
+      "status": "building_history",
+      "n_cond": 42,
+      "n_base": 4,
+      "target_n_cond": 30,
+      "weekly_fires": {
+        "2026-W25": 6,
+        "2026-W26": 41
+      },
+      "n_stamped_cond": 46,
+      "cond_hit_share": 0.9787,
+      "readiness_forecast": {
+        "forecast": "already_ready",
+        "n_cond": 42
+      }
+    },
+    {
+      "family": "S-IVSPREAD-F",
+      "status": "building_history",
+      "n_cond": 0,
+      "n_base": 0,
+      "target_n_cond": 30,
+      "weekly_fires": {
+        "2026-W25": 6,
+        "2026-W26": 41
+      },
+      "n_stamped_cond": 0,
+      "cond_hit_share": 0.0,
+      "readiness_forecast": {
+        "forecast": "unknown",
+        "reason": "post-W-C history 1d < 14d minimum; n_post_wc_fires=0",
+        "post_wc_fires": 0,
+        "post_wc_span_days": 1
+      }
+    },
+    {
+      "family": "S-SKEW_DECEL",
+      "status": "building_history",
+      "n_cond": 0,
+      "n_base": 0,
+      "target_n_cond": 30,
+      "weekly_fires": {
+        "2026-W25": 6,
+        "2026-W26": 41
+      },
+      "n_stamped_cond": 0,
+      "cond_hit_share": 0.0,
+      "readiness_forecast": {
+        "forecast": "unknown",
+        "reason": "post-W-C history 1d < 14d minimum; n_post_wc_fires=0",
+        "post_wc_fires": 0,
+        "post_wc_span_days": 1
+      }
+    },
+    {
+      "family": "S-TOP_RISK",
+      "status": "building_history",
+      "n_cond": 0,
+      "n_base": 0,
+      "target_n_cond": 30,
+      "weekly_fires": {
+        "2026-W25": 6,
+        "2026-W26": 41
+      },
+      "n_stamped_cond": 0,
+      "cond_hit_share": 0.0,
+      "readiness_forecast": {
+        "forecast": "unknown",
+        "reason": "post-W-C history 1d < 14d minimum; n_post_wc_fires=0",
+        "post_wc_fires": 0,
+        "post_wc_span_days": 1
+      }
+    },
+    {
+      "family": "S-PIN_RISK",
+      "status": "building_history",
+      "n_cond": 0,
+      "n_base": 0,
+      "target_n_cond": 30,
+      "weekly_fires": {
+        "2026-W25": 6,
+        "2026-W26": 41
+      },
+      "n_stamped_cond": 0,
+      "cond_hit_share": 0.0,
+      "readiness_forecast": {
+        "forecast": "unknown",
+        "reason": "post-W-C history 1d < 14d minimum; n_post_wc_fires=0",
+        "post_wc_fires": 0,
+        "post_wc_span_days": 1
+      }
+    },
+    {
+      "family": "S-VOI2",
+      "status": "building_history",
+      "n_cond": 0,
+      "n_base": 0,
+      "target_n_cond": 30,
+      "weekly_fires": {
+        "2026-W25": 6,
+        "2026-W26": 41
+      },
+      "n_stamped_cond": 46,
+      "cond_hit_share": 0.9787,
+      "readiness_forecast": {
+        "forecast": "unknown",
+        "reason": "post-W-C history 1d < 14d minimum; n_post_wc_fires=0",
+        "post_wc_fires": 0,
+        "post_wc_span_days": 1
+      }
+    }
+  ],
+  "structural_nulls": {
+    "iv_rank_252": {
+      "columns": [
+        "opt_iv_rank_252",
+        "iv_rank_252"
+      ],
+      "null_share": 1.0,
+      "root_cause": "ruling A9 \u2014 IV-backfill PR (W-E0) not yet merged; column created always-null in options_stamp.py by design. Will become non-null when W-E0 lands.",
+      "resolution": "W-E0 (87/88 roots at 15y as of 2026-07-06); accrual ongoing"
+    },
+    "pin_risk": {
+      "columns": [
+        "opt_pin_risk",
+        "pin_risk"
+      ],
+      "null_share": 1.0,
+      "root_cause": "by-design opex_days<=5 gate \u2014 opt_pin_risk requires opex_days<=5 AND gamma='long' AND min_wall_dist<=2%. Gate only fires in the final week before monthly OPEX.",
+      "pin_risk_gate_condition": "opex_days<=5 AND gamma_regime='long' AND min(|wall_dist_up_pct|, |wall_dist_down_pct|)<=2.0",
+      "current_opex_days": 9,
+      "next_opex_date": "2026-07-17",
+      "note": "pin_risk will be non-null only in the 5 trading days before each monthly OPEX. Current build date has opex_days>5 \u2014 no fires expected."
+    },
+    "gamma_regime_constancy": {
+      "columns": [
+        "gamma_regime",
+        "gamma_regime_structurally_constant",
+        "opt_gamma_regime"
+      ],
+      "caveat": "gamma_regime_structurally_constant=True for all rows where GEX data is present (audit #29 \u2014 single-name GEX snapshots represent a single point-in-time, not intraday dynamics). The column is not a defect but a documented interpretation caveat. Per-name gamma_regime should be read as 'dominant regime on fire date', not 'intraday regime'.",
+      "state_pct_structurally_constant": "see feature_coverage gamma_regime_structurally_constant"
+    }
+  },
+  "consistency": [
+    {
+      "check": "bh_test_count_drift",
+      "registry_registered": 28,
+      "gate_json_family_size": 22,
+      "validate_docstring_count": 22,
+      "note": "BH test-count drift: registry after #1674 = 28 tests; gate.json fdr_family.family_size = 22; validate_options_entry.py FDR docstring = 22. These are TEST counts (the BH family size), not bucket counts. Discrepancy is printed only \u2014 fix owned by W-OVC as first obligation (RUL-U5)."
+    },
+    {
+      "check": "stale_asof_ages",
+      "sources": [
+        {
+          "source": "options_entry/state.parquet",
+          "latest_as_of": "2026-07-05",
+          "age_days_from_today": 1,
+          "status": "FRESH"
+        },
+        {
+          "source": "options_entry/gate.json",
+          "latest_as_of": "2026-07-06 08:36 UTC",
+          "age_days_from_today": 0,
+          "status": "FRESH"
+        },
+        {
+          "source": "us_board_ledger/retro_grades.parquet",
+          "latest_as_of": "2026-06-24",
+          "age_days_from_today": 12,
+          "status": "STALE"
+        }
+      ]
+    },
+    {
+      "check": "audit_options_accrual_last_run",
+      "generated_at": "2026-07-03T22:39:08.513826+00:00",
+      "ok": true,
+      "fail_reasons": [],
+      "warnings": [
+        "CHAINS AT LIMIT: latest chain file is 2026-07-02 (exactly 1 trading day(s) behind last_td=2026-07-03) \u2014 OK today but will trip if tomorrow's accrual is missed"
+      ]
+    }
+  ],
+  "_stamp": {
+    "audit": "options_entry_coverage.v1",
+    "generated_at_utc": "2026-07-06T14:24:53.612556+00:00",
+    "as_of": "2026-07-06",
+    "absent_stores": []
+  }
+}
