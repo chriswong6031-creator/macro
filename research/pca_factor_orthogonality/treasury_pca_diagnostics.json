@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-06T23:24:10.225483+00:00",
+  "generated_at": "2026-07-06T23:28:39.318266+00:00",
   "data_source": "Local FRED Treasury constant-maturity parquet files under data/fred",
   "source_files": [
     "DGS3MO.parquet",
@@ -22,7 +22,7 @@
     "notes": "OOS health is max absolute off-diagonal correlation of next-21d projected first-three PC returns.",
     "sample_truncation": "Joint sample starts at DGS3MO inception (~1981-09-01) due to inner-join dropna; earlier DGS10/DGS30 history is discarded.",
     "latest_2y_note": "latest_2y covers the current rolling window; no separate snapshot is created for today.",
-    "null_calibration": "oos_null_median/p90 are computed from contiguous 21-row slices inside each training window (stride=5, cap=100, deterministic enumeration). oos_pctile_vs_null is the fraction of null draws <= the observed value. Per RUL-ORTH-8, raw OOS thresholds are illegal; metrics must be read against these null columns."
+    "null_calibration": "oos_null_median/p90 are computed from contiguous 21-row slices inside each training window (stride=2, cap=200, deterministic enumeration, \u2265200 draws per window per RUL-ORTH-8). oos_pctile_vs_null is the fraction of null draws <= the observed value. Per RUL-ORTH-8, raw OOS thresholds are illegal; metrics must be read against these null columns."
   },
   "sample": {
     "yield_start": "1981-09-01",
@@ -259,22 +259,22 @@
       "latest": 0.4859
     },
     "oos_null_median": {
-      "min": 0.3282,
-      "median": 0.4715,
-      "max": 0.8153,
-      "latest": 0.4889
+      "min": 0.321,
+      "median": 0.47065,
+      "max": 0.80795,
+      "latest": 0.4933
     },
     "oos_null_p90": {
-      "min": 0.49836,
-      "median": 0.67462,
-      "max": 0.96164,
-      "latest": 0.66418
+      "min": 0.50726,
+      "median": 0.67797,
+      "max": 0.95911,
+      "latest": 0.66056
     },
     "oos_pctile_vs_null": {
       "min": 0.0,
-      "median": 0.659794,
+      "median": 0.655,
       "max": 1.0,
-      "latest": 0.494845
+      "latest": 0.485
     }
   },
   "snapshots_2y": {

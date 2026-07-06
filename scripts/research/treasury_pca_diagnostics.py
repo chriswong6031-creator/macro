@@ -157,7 +157,7 @@ def _latest_window(changes: pd.DataFrame, window: int) -> dict[str, Any]:
     return _pca(changes.iloc[-window:])
 
 
-def _within_window_null(window: pd.DataFrame, vectors: np.ndarray, stride: int = 5, cap: int = 100) -> list[float]:
+def _within_window_null(window: pd.DataFrame, vectors: np.ndarray, stride: int = 2, cap: int = 200) -> list[float]:
     """Compute the OOS statistic on contiguous 21-row slices INSIDE the training window.
 
     Slices are deterministically enumerated at the given stride (no randomness).
@@ -316,7 +316,7 @@ def main() -> None:
             "latest_2y_note": "latest_2y covers the current rolling window; no separate snapshot is created for today.",
             "null_calibration": (
                 "oos_null_median/p90 are computed from contiguous 21-row slices inside each training window "
-                "(stride=5, cap=100, deterministic enumeration). "
+                "(stride=2, cap=200, deterministic enumeration, ≥200 draws per window per RUL-ORTH-8). "
                 "oos_pctile_vs_null is the fraction of null draws <= the observed value. "
                 "Per RUL-ORTH-8, raw OOS thresholds are illegal; metrics must be read against these null columns."
             ),
