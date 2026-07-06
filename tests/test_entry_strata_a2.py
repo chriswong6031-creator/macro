@@ -593,3 +593,41 @@ class TestR1mEstimator:
         assert result["ci_lo"] is not None and result["ci_hi"] is not None
         assert np.isfinite(result["ci_lo"]) and np.isfinite(result["ci_hi"])
         assert result["ci_lo"] <= result["ci_hi"]
+
+
+class TestVectorizedDemeaningEquivalence:
+    """Pin the vectorized within-FE demeaning (factorize + np.add.at) to the
+    per-cell loop it replaced in the r1_estimate bootstrap. The harness edit
+    touches every future study; this test is the permanent known-answer."""
+
+    def test_matches_per_cell_loop_on_random_fixtures(self):
+        rng = np.random.default_rng(7)
+        for _ in range(50):
+            n = int(rng.integers(5, 400))
+            n_cells = int(rng.integers(1, max(2, n // 2)))
+            fe = rng.integers(0, n_cells, size=n).astype(object)
+            y = rng.normal(size=n)
+            x = rng.integers(0, 2, size=n).astype(float)
+
+            # old per-cell loop
+            y_old = np.empty_like(y)
+            x_old = np.empty_like(x)
+            for cell in np.unique(fe):
+                m = fe == cell
+                y_old[m] = y[m] - y[m].mean()
+                x_old[m] = x[m] - x[m].mean()
+
+            # new vectorized path (mirror of entry_strata_phase0 bootstrap block)
+            codes, _ = pd.factorize(fe)
+            k = codes.max() + 1
+            counts = np.zeros(k)
+            ysum = np.zeros(k)
+            xsum = np.zeros(k)
+            np.add.at(counts, codes, 1.0)
+            np.add.at(ysum, codes, y)
+            np.add.at(xsum, codes, x)
+            y_new = y - (ysum / np.maximum(counts, 1))[codes]
+            x_new = x - (xsum / np.maximum(counts, 1))[codes]
+
+            np.testing.assert_allclose(y_new, y_old, atol=1e-12)
+            np.testing.assert_allclose(x_new, x_old, atol=1e-12)
