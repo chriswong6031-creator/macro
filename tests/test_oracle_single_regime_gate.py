@@ -10,6 +10,10 @@ Test inventory:
     in the operating regime only (no cross-regime contamination).
 (C) is_risk_off_date_logic — _is_risk_off_date mirrors _regime_at exactly for
     spy_above_200d and vix_pctile boundary conditions.
+(D) regime_classifier_placebo_lock — DIFFERENTIAL grid binding the ENTRY
+    classifier (_regime_at) to the placebo-pool rule (_is_risk_off_date): for
+    every (spy_above_200d, vix_pctile) cell they must agree on risk_off, so a
+    future edit desyncing one from the other fails CI.
 
 All fixtures are SYNTHETIC — no real data files, no network.
 """
@@ -25,6 +29,7 @@ import pytest
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from scripts.oracle_reversion_screen import (
+    _regime_at,
     _is_risk_off_date,
     _gauntlet_placebo_regime_matched,
     run_gauntlet,
@@ -298,3 +303,73 @@ class TestIsRiskOffDate:
     def test_missing_columns_defaults_to_risk_on(self):
         row = pd.Series({"other_col": 1.0})
         assert _is_risk_off_date(row) is False
+
+
+# ---------------------------------------------------------------------------
+# (D) Differential lock — ENTRY classifier == placebo-pool rule
+# ---------------------------------------------------------------------------
+
+class _Absent:
+    """Grid sentinel: this column is absent from the row (readable in reprs)."""
+
+    def __repr__(self) -> str:  # shows in the failure message
+        return "<absent>"
+
+
+_MISSING = _Absent()
+
+
+class TestRegimeClassifierPlaceboLock:
+    """_regime_at (ENTRY regime) and _is_risk_off_date (placebo-pool rule) must
+    encode the byte-for-byte IDENTICAL risk-off rule.
+
+    Amendment 1's regime-matched placebo (Leg 6') is statistically valid ONLY
+    if the dates labeled risk_off at ENTRY are exactly the dates the placebo
+    pool treats as risk_off.  The two functions live ~350 lines apart and each
+    hand-duplicates the rule (spy_above_200d == 0 OR vix_pctile >= 0.70) — with
+    _is_risk_off_date additionally float()-wrapping before np.isnan.  Asserting
+    agreement on EVERY input cell locks them together, so a future edit that
+    desyncs one from the other (e.g. moving the VIX threshold in only one) fails
+    CI instead of silently invalidating the single-regime gate.
+    """
+
+    # spy_above_200d axis: risk-off (0), risk-on (1), NaN, column absent.
+    _SPY_AXIS = [0.0, 1.0, float("nan"), _MISSING]
+    # vix_pctile axis: below, just-below, EXACT 0.70 boundary, just-above,
+    # deep risk-off, NaN, column absent.
+    _VIX_AXIS = [0.30, 0.69, 0.70, 0.71, 0.80, float("nan"), _MISSING]
+
+    @staticmethod
+    def _row(spy, vix) -> pd.Series:
+        """Synthetic panel row; a _MISSING axis value omits that column so the
+        .get(col, np.nan) default path is exercised."""
+        data = {}
+        if spy is not _MISSING:
+            data["spy_above_200d"] = spy
+        if vix is not _MISSING:
+            data["vix_pctile"] = vix
+        if not data:
+            # both columns absent — keep the Series non-empty
+            data["other_col"] = 1.0
+        return pd.Series(data)
+
+    def test_regime_at_matches_is_risk_off_date_over_grid(self):
+        mismatches = []
+        for spy in self._SPY_AXIS:
+            for vix in self._VIX_AXIS:
+                row = self._row(spy, vix)
+                entry_risk_off = _regime_at(row) == "risk_off"
+                pool_risk_off = _is_risk_off_date(row)
+                if entry_risk_off != pool_risk_off:
+                    mismatches.append(
+                        f"spy_above_200d={spy!r}, vix_pctile={vix!r}: "
+                        f"_regime_at -> "
+                        f"{'risk_off' if entry_risk_off else 'risk_on'}, "
+                        f"_is_risk_off_date -> {pool_risk_off}"
+                    )
+        assert not mismatches, (
+            "ENTRY regime classifier (_regime_at) has desynced from the "
+            "placebo-pool rule (_is_risk_off_date). Amendment 1's regime-matched "
+            "placebo requires an IDENTICAL risk-off rule in both functions. "
+            f"Diverging cells ({len(mismatches)}):\n  " + "\n  ".join(mismatches)
+        )
