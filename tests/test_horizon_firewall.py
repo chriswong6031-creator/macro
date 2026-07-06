@@ -427,6 +427,8 @@ class TestRealRegistryFirewallClean:
             "capital-allocation-delta",
             # LT-2b expect_drift Ruler-P study results — hold_thesis by design; research-only
             "expect-drift-ruler-p-results",
+            # LT-2c per-stock expectation-state display block — hold_thesis by design; display-only
+            "long-hold-expectation-state",
         }
         reg = load_registry(REPO_ROOT)
         hold_arts = {

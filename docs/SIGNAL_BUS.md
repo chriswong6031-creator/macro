@@ -19,7 +19,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | hk-canada | 2 |
 | institutional-sector-intelligence | 2 |
 | intl-fix | 1 |
-| long-hold | 15 |
+| long-hold | 16 |
 | neural-web | 28 |
 | nw-mastermind-bridge | 2 |
 | nw-rails | 3 |
@@ -37,7 +37,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 88 |
+| display | 89 |
 | infrastructure | 40 |
 | scored | 4 |
 | shadow | 38 |
@@ -46,7 +46,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 164 |
+| git | 165 |
 | gitignored-local | 4 |
 | r2 | 2 |
 
@@ -157,6 +157,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | long-hold-dead-name-prices | `data/edgar/dead_name_prices.parquet` | parquet | on-demand | infrastructure | 1 | 0 |
 | long-hold-expect-drift-manifest | `data/research/expect_drift_panel_manifest.json` | json | on-demand | display | 1 | 0 |
 | long-hold-expect-drift-panel | `data/research/expect_drift_panel.parquet` | parquet | on-demand | display | 1 | 0 |
+| long-hold-expectation-state | `embedded: expectation_state inside site/stockdata/<TICKER>.json` | json | daily-engine | display | 1 | 0 |
 | long-hold-killtest-results | `data/research/missed_hold_study_results.parquet` | parquet | on-demand | display | 1 | 0 |
 | long-hold-labels | `data/research/long_hold_labels.parquet` | parquet | on-demand | display | 1 | 0 |
 | long-hold-labels-manifest | `data/research/long_hold_labels_manifest.json` | json | on-demand | display | 1 | 0 |
@@ -670,6 +671,13 @@ Artifacts below have `known_extra_writers` — additional code paths that write 
 - **declared producer:** `scripts/research/fetch_dead_name_prices_polygon.py`
 - **extra writers:**
   - collectors/edgar_deadname_prices.py — legacy collector (Stooq→Polygon→yfinance); may append rows from CI runs
+
+### long-hold-expectation-state
+
+- **path:** `embedded: expectation_state inside site/stockdata/<TICKER>.json`
+- **declared producer:** `engine/expectation_state.py`
+- **extra writers:**
+  - engine/stock_fundamentals.py — expectation_states() called inside panels(); result keyed as 'expectation_state'
 
 ### market-state-latest
 

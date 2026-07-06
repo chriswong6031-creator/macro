@@ -1862,6 +1862,17 @@ def panels() -> dict[str, dict]:
     except Exception as _tc_exc:  # noqa: BLE001
         log.warning("stock_fundamentals: thesis_clocks skipped (%s)", _tc_exc)
 
+    # LT-2c: expectation_state display block (display-only; horizon_role=hold_thesis;
+    # LH-R1 firewall; MUST NOT feed entry-stack scored surfaces).
+    # Computes: last_event_date, sue_latest, sue_streak, pead_drift_20d,
+    # bad_news_absorption, good_news_hold per EXPECT_DRIFT_FAMILY_PREREG.md §2.
+    from engine.expectation_state import expectation_states  # noqa: PLC0415
+    _expect_states: dict[str, dict] = {}
+    try:
+        _expect_states = expectation_states()
+    except Exception as _es_exc:  # noqa: BLE001
+        log.warning("stock_fundamentals: expectation_states skipped (%s)", _es_exc)
+
     # W2 PR-K: moat falsifier sensors + great-company-trap overlay (display-only;
     # horizon_role=hold_thesis; MUST NOT feed entry-stack scored surfaces — LH-R1).
     from engine.moat_falsifiers import (  # noqa: PLC0415
@@ -1966,6 +1977,11 @@ def panels() -> dict[str, dict]:
             "capital_allocation": _compute_capital_allocation_block(
                 str(t), _quarterly_df, _fundamentals_panel_df, _statements_df, mcap,
             ),
+            # LT-2c — expectation_state display block (DISPLAY-ONLY; horizon_role=hold_thesis).
+            # Fields: last_event_date, sue_latest, sue_streak, pead_drift_20d,
+            # bad_news_absorption, good_news_hold.  Per EXPECT_DRIFT_FAMILY_PREREG.md §2.
+            # MUST NOT feed board ordering, alert triage, top-setups gates, or push floor.
+            "expectation_state": _expect_states.get(str(t)) or None,
         }
         out[str(t)] = _clean({k: v for k, v in blocks.items() if v})
     log.info("stock_fundamentals: %d names with panels (factors %d, deep %d, short %s)",

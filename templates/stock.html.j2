@@ -507,6 +507,18 @@
   #panel_earn .earn-fwd-h { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; margin-bottom:6px; }
   #panel_earn .earn-fwd-row { display:flex; flex-wrap:wrap; gap:8px; font-size:13px; align-items:center; }
   #panel_earn .earn-fwd-row .dot { color:var(--muted); }
+  /* LT-2c: expectation state block (display-only, hold_thesis) */
+  .es-block { margin-top:10px; background:var(--panel2); border-radius:11px; padding:10px 13px; }
+  .es-block-h { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; margin-bottom:7px; }
+  .es-chips { display:flex; flex-wrap:wrap; gap:6px; }
+  .es-chip { display:inline-flex; align-items:center; gap:5px; padding:3px 9px;
+             border-radius:9px; font-size:12px; font-weight:600; border:1px solid var(--line);
+             background:var(--panel); cursor:help; }
+  .es-chip.es-pos { color:var(--up); border-color:color-mix(in srgb,var(--up) 35%,transparent);
+                    background:color-mix(in srgb,var(--up) 9%,transparent); }
+  .es-chip.es-neg { color:var(--down); border-color:color-mix(in srgb,var(--down) 35%,transparent);
+                    background:color-mix(in srgb,var(--down) 9%,transparent); }
+  .es-chip.es-neu { color:var(--muted); }
   /* GEX — vol "hole" strip */
   #panel_gex .gex-hole { margin:8px 0 2px; font-size:12.5px; color:var(--text);
     background:var(--panel2); border-radius:10px; padding:8px 12px; }
@@ -666,6 +678,8 @@
         {{ help('Next reported earnings date and the recent beat/miss history (SEC + Nasdaq, keyless), plus the SUE earnings-momentum z. SUE (standardized unexpected earnings) measures how far the latest quarter beat its year-ago seasonal expectation, standardized by the company\'s own history — the post-earnings-announcement-drift (PEAD) effect. It was the strongest factor and lone false-discovery-rate survivor on the shallow 2023-2025 window, but a deep 2011-2026 re-test (survivorship-biased, an optimistic bound) collapses its CROSS-SECTIONAL edge to ~zero (see the factors page) — so it is shown as earnings-momentum / PEAD context, not a validated standalone alpha; the z is RELATIVE to the S&P 1500 (0 = average, +2 = top of the pack). Context, not a standalone buy signal.',
           '下次财报日与近期超预期/不及预期历史（SEC＋纳斯达克，免密钥），以及SUE盈利动量z值。SUE（标准化超预期盈利）衡量最新季度相对去年同期季节性预期超出多少，并以公司自身历史标准化——即盈利公布后漂移（PEAD）效应。它在浅窗口（2023-2025）曾是最强正向因子且唯一通过无泄漏错误发现率检验，但 2011-2026 深度复检（含幸存者偏差，乐观上界）使其横截面优势崩塌至约零（见因子页）——故仅作盈利动量／PEAD 背景展示，并非已验证的独立超额收益；该z为相对标普1500的排名（0＝平均，+2＝领先）。仅供参考，并非独立买入信号。') }}</h2>
       <div id="r_earn"></div>
+      <!-- LT-2c expectation state (display-only, hold_thesis) rendered when present -->
+      <div id="r_expect_state" style="display:none"></div>
     </div>
 
     <div class="panel" id="panel_fac" style="display:none">
@@ -1446,6 +1460,85 @@
       if (ar.length) { el('r_analyst').innerHTML = '<div class="posbox">' + ar.join('') + '</div>'; show('panel_analyst', true); }
       else show('panel_analyst', false);
     } else show('panel_analyst', false);
+
+    // LT-2c: expectation state — earnings-momentum context block (display-only, hold_thesis).
+    // Renders last earnings date, SUE beat streak, post-event drift, and absorption flags
+    // in plain language.  No 'validated' language.  Tooltips via data-tip-en/zh only.
+    renderExpectationState(d.expectation_state);
+  }
+
+  function renderExpectationState(es) {
+    var box = el('r_expect_state');
+    if (!box) return;
+    if (!es || (es.sue_latest == null && es.sue_streak == null && !es.last_event_date)) {
+      box.style.display = 'none'; return;
+    }
+    var chips = [];
+
+    // Last event date chip
+    if (es.last_event_date) {
+      var daysSince = Math.round((new Date() - new Date(es.last_event_date + 'T00:00:00')) / 86400000);
+      var dsStr = daysSince <= 1 ? lz('today', '今天') : daysSince + lz('d ago', '天前');
+      chips.push('<span class="es-chip es-neu"' +
+        ' data-tip-en="Most recent earnings filing date (8-K item 2.02, SEC EDGAR)"' +
+        ' data-tip-zh="最近一次财报披露日（8-K 第2.02项，SEC EDGAR）">' +
+        lz('Last earnings: ', '最近财报：') + es.last_event_date + ' · ' + dsStr + '</span>');
+    }
+
+    // SUE latest chip
+    if (es.sue_latest != null) {
+      var suVal = es.sue_latest, suCls = suVal >= 0.5 ? 'es-pos' : suVal <= -0.5 ? 'es-neg' : 'es-neu';
+      var suLabel = suVal >= 0.5 ? lz('beat trend', '超预期趋势') : suVal <= -0.5 ? lz('miss trend', '不及预期趋势') : lz('flat trend', '趋势持平');
+      chips.push('<span class="es-chip ' + suCls + '"' +
+        ' data-tip-en="SUE (standardized unexpected earnings): how far the latest quarter beat its year-ago seasonal expectation, standardized by the company\'s own history. Research context — cross-sectional edge does not persist on deep history."' +
+        ' data-tip-zh="SUE（标准化超预期盈利）：最新季度相对去年同期超出多少，以公司历史标准化。研究背景——横截面优势在深度历史中不持续。">' +
+        lz('SUE ', 'SUE ') + (suVal > 0 ? '+' : '') + suVal.toFixed(2) + ' · ' + suLabel + '</span>');
+    }
+
+    // Streak chip
+    if (es.sue_streak != null && es.sue_streak > 0) {
+      var strk = es.sue_streak, strkCls = strk >= 3 ? 'es-pos' : 'es-neu';
+      chips.push('<span class="es-chip ' + strkCls + '"' +
+        ' data-tip-en="Consecutive quarters where the earnings beat matched the year-ago quarter (d_q > 0), capped at 8."' +
+        ' data-tip-zh="连续季度中，盈利超过去年同期的季数（d_q>0），最多计8季。">' +
+        strk + lz('-qtr beat streak', '季连续超预期') + '</span>');
+    } else if (es.sue_streak === 0) {
+      chips.push('<span class="es-chip es-neg"' +
+        ' data-tip-en="No consecutive beat streak — the most recent quarter did not beat its year-ago seasonal level."' +
+        ' data-tip-zh="无连续超预期——最近一季未超去年同期水平。">' +
+        lz('No beat streak', '无连续超预期') + '</span>');
+    }
+
+    // PEAD drift chip
+    if (es.pead_drift_20d != null) {
+      var pd = es.pead_drift_20d, pdPct = Math.round(pd * 1000) / 10;
+      var pdCls = pd > 0.01 ? 'es-pos' : pd < -0.01 ? 'es-neg' : 'es-neu';
+      var pdLabel = pd > 0.01 ? lz('held gains', '守住涨幅') : pd < -0.01 ? lz('faded', '回吐') : lz('flat', '走平');
+      chips.push('<span class="es-chip ' + pdCls + '"' +
+        ' data-tip-en="Post-event drift: cumulative stock-minus-market return since last earnings (up to 20 sessions). Positive = held its gains vs the market after reporting. Research context only."' +
+        ' data-tip-zh="事件后漂移：最近财报后（最多20个交易日）相对市场的累计超额收益。正数=公告后相对市场守住涨幅。仅作研究背景。">' +
+        lz('Post-earnings drift: ', '财报后漂移：') + (pdPct > 0 ? '+' : '') + pdPct + '% · ' + pdLabel + '</span>');
+    }
+
+    // Absorption / hold flags
+    if (es.bad_news_absorption === true) {
+      chips.push('<span class="es-chip es-pos"' +
+        ' data-tip-en="Bad-news absorption: the stock reported a miss (d_q < 0) but did not break below its pre-event lows in the next 10 sessions, and held its ground vs the market over the following 5 sessions."' +
+        ' data-tip-zh="坏消息吸收：股票公告不及预期（d_q<0），但在后续10个交易日内未跌破事件前低点，且5日内相对市场守住。">' +
+        lz('Absorbed bad news', '消化坏消息') + '</span>');
+    }
+    if (es.good_news_hold === true) {
+      chips.push('<span class="es-chip es-pos"' +
+        ' data-tip-en="Good-news hold: the stock reported a beat (d_q > 0), gapped up ≥ 2% the next session, and the close 10 sessions later was at least as high as the post-earnings open."' +
+        ' data-tip-zh="好消息守住：股票超预期（d_q>0），次日跳空上涨≥2%，且10日后收盘仍不低于财报后首日开盘。">' +
+        lz('Beat, held its gains', '超预期并守住涨幅') + '</span>');
+    }
+
+    if (!chips.length) { box.style.display = 'none'; return; }
+    box.innerHTML = '<div class="es-block">' +
+      '<div class="es-block-h">' + lz('Earnings momentum context (display only)', '盈利动量背景（仅供展示）') + '</div>' +
+      '<div class="es-chips">' + chips.join('') + '</div></div>';
+    box.style.display = '';
   }
   // internal state -> friendly "LABEL · ACTION" (mirrors engine/cycles.STATE_DISPLAY)
   var DISP = {{ state_display_json | safe }};
