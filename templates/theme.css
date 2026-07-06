@@ -181,9 +181,9 @@ html body :is(.tabbtn, .segbtn, .brief-tab-btn):hover {
 /* clickable card / tile containers — the landing's hover light-up, shared: a
    gentle lift, an accent border and a soft accent glow. Additive (hover only),
    so each card keeps its own base layout. */
-html body :is(a.actitem, a.idx-alloc, a.nbcard, a.scard) {
+html body :is(a.actitem, a.idx-alloc, .nbcard, a.scard) {
   transition: transform .2s cubic-bezier(.2,.7,.3,1), border-color .2s ease, box-shadow .2s ease; }
-html body :is(a.actitem, a.idx-alloc, a.nbcard, a.scard):hover {
+html body :is(a.actitem, a.idx-alloc, .nbcard, a.scard):hover {
   transform: translateY(-2px);
   border-color: color-mix(in srgb, var(--link) 45%, var(--line));
   box-shadow: 0 14px 30px -16px color-mix(in srgb, var(--link) 40%, transparent); }
@@ -192,7 +192,7 @@ html body :is(a.actitem, a.idx-alloc, a.nbcard, a.scard):hover {
    (:where) so it never fights component styles; only shows for keyboard nav. */
 :where(.navbtn, .theme-btn, .tm-btn, .vtm-btn, .lang-btn, .wl-btn, .fbtn, .tabbtn,
   .segbtn, .brief-tab-btn, .aff, .af-toggle, .sm-btn, .theme-switch, .lang-toggle,
-  .ai-brief-link, .nav-link, .nav-dd-menu a, a.actitem, a.idx-alloc, a.nbcard,
+  .ai-brief-link, .nav-link, .nav-dd-menu a, a.actitem, a.idx-alloc, .nbcard,
   a.scard):focus-visible {
   outline: 2px solid color-mix(in srgb, var(--link) 70%, transparent); outline-offset: 2px; }
 
@@ -676,7 +676,7 @@ html[data-lang="zh"] .lang-toggle .zh-opt { color: #fff; }
   .nav-search input { animation: none; }
   /* hover lifts collapse to a static accent (keep colour/shadow, drop the move) */
   .navbtn:hover, .theme-btn:hover, .af-toggle:hover, .nav-ctrls .ai-brief-link:hover,
-  html body :is(a.actitem, a.idx-alloc, a.nbcard, a.scard):hover { transform: none; }
+  html body :is(a.actitem, a.idx-alloc, .nbcard, a.scard):hover { transform: none; }
 }
 
 /* pinned standing read — the ladder's current call, top of the feed */

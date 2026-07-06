@@ -387,6 +387,10 @@ jobs:
           # (engine.run, above). Reactive early-ignition momentum screen; display/context only.
           # Reads only committed/cached data; returns 0 on error so it can never break the site.
           run_py "impulse tracker (build_impulse)" scripts.build_impulse
+          # L3 dispersion regime lens — NW Rails W2 PR-4 (§5). Emits data/dispersion/regime.json
+          # from the breadth close caches (same panel as build_stock_library). Display-only;
+          # gross_mult_live clamped 1.0. Seconds; never fatal.
+          run_py "L3 dispersion regime lens (build_dispersion_regime)" scripts.build_dispersion_regime
           # Congressional / politician disclosed-trades desk — AFTER build_alt_data (refreshes
           # data/quiver/congress.parquet) + build_site (refreshes per-name stockdata + regime +
           # allocation that the watchlist scores against). Reads only committed data; returns 0 on error.

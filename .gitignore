@@ -256,3 +256,15 @@ data/live_flow_out/
 # W0.2 OHLC store (reproducible from collector + manifest; not committed)
 data/yahoo_ohlc/
 research/oracle_asymmetry/W2_member_trades.csv
+
+# NW Rails R1 (PR-1, RUL-P10) — Mac-local per-fire parquet files.
+# The small summary JSONs at data/rule_experiments/results/*_summary.json ARE committed
+# (git-committed, single-writer: scripts/run_rule_replay.py).
+# The large per-fire parquet files are Mac-local only (never staged by nightly blanket
+# git add data/).
+data/rule_experiments/results/*_perfire.parquet
+
+# NW Rails R1 (PR-1, RUL-P10 retroactive) — replay parquet files are Mac-local/server-local
+# only (not gitignored previously; made explicit per RUL-P10 to prevent accidental staging
+# by the nightly blanket git add data/).
+data/replay/*.parquet

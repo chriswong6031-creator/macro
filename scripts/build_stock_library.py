@@ -1664,6 +1664,16 @@ def main() -> int:
         # W6-C HOLD: attach per-name basing state to the stockdata JSON (BLOCKED names get it too)
         if _hold_state.get(ticker):
             rec["hold"] = _hold_state[ticker]
+        # W2 PR-J — Long-Hold Thesis Layer: entry_clock annotation (display-only).
+        # Days since the most recent tactical buy/rebuy marker fire (signal_gate).
+        # horizon_role=hold_thesis; must NOT feed entry-stack scored surfaces (LH-R1).
+        try:
+            from engine.long_hold_clocks import entry_clock as _ec  # noqa: PLC0415
+            _eck = _ec(sig_verdict.get(ticker))
+            if _eck is not None:
+                rec["entry_clock"] = _eck
+        except Exception:  # noqa: BLE001 — additive display chip; never fatal
+            pass
         # Sector Pulse — top-level block in each stockdata JSON (DISPLAY-ONLY, never scored).
         # Null/absent when the ticker maps to no live theme. Never fatal.
         try:
