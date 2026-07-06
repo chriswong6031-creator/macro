@@ -161,6 +161,12 @@ calibration/ab_risk_gate_divergence.jsonl
 # Committed files in the same dir (_universe.json, _checkpoint.json) are NOT ignored.
 data/hk_stocks_ext/*.parquet
 
+# SLF-048 Wikipedia attention pageview store (R2-only since 2026-07-06).
+# Deep history 2015-07→ (~30 MB, rewrites whole per-ticker parquets daily — repo
+# bloat if tracked). Nightly loop: fetch_r2 restore -> wiki_pageviews upsert ->
+# publish_r2 --dirs attention. Recover locally: python -m scripts.fetch_r2 --dirs attention
+data/attention/*.parquet
+
 # Massive.com whole-market daily OHLCV derived store (R2-only; Setup-Species §7 W0.6a).
 # Per-ticker parquets published via scripts/publish_r2 --dirs massive_stock_day.
 # Committed: data/massive_stock_day/_manifest.json (freshness anchor for audit_r2)

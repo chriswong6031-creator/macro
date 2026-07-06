@@ -99,6 +99,23 @@ jobs:
           path: data/quality/baselines
           key: quality-baselines-${{ github.run_id }}
           restore-keys: quality-baselines-
+      - name: restore attention store from R2 (deep history is git-ignored)
+        # data/attention/*.parquet (SLF-048 Wikipedia pageviews, 2015-07→) moved to the
+        # R2 data plane 2026-07-06 — a fresh checkout holds NONE of them. Restore FIRST
+        # so the wiki_pageviews collector's ~120d fetch upserts ON TOP of deep history
+        # (lib.store.upsert keeps disk-only rows) instead of rebuilding a shallow window.
+        # continue-on-error: on restore failure the collector still produces a usable
+        # ~120d store (the display chip needs ~95d) — but the publish-back step after
+        # "commit data" is GATED on this step's outcome, so a shallow rebuild can never
+        # clobber the deep store on R2 (publish_r2's bytes floor is the second fence).
+        id: attention_restore
+        continue-on-error: true
+        env:
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: python -m scripts.fetch_r2 --dirs attention
       - name: run collectors (graceful degradation — never fails the build on one source)
         env:
           FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
@@ -186,6 +203,22 @@ jobs:
             echo "data push attempt $i lost a race; re-syncing"; sleep $((i * 7))
           done
           echo "::warning::could not push collected data after 5 attempts (non-fatal)"
+      - name: publish attention store back to R2 (gated on the restore)
+        # The day's upserted increments ride back to R2 so tomorrow's restore (and the
+        # engine job's render-side restore) reads a CURRENT deep store — a frozen R2
+        # copy would slowly starve the chip's trailing-5d window. Gated on the restore
+        # step's outcome: if the restore failed, the local tree is a shallow ~120d
+        # rebuild whose file count matches the deep store, and publishing it would
+        # clobber 11y of history. Gaps self-heal: the collector's ~120d fetch window
+        # re-covers any missed days on the next successful cycle. Runs AFTER "commit
+        # data" so the commit is never delayed by the upload. Non-fatal.
+        if: steps.attention_restore.outcome == 'success'
+        env:
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: python -m scripts.publish_r2 --dirs attention || echo "::warning::attention R2 publish failed (non-fatal — R2 store goes stale, chip self-heals within the 120d fetch window)"
 
   engine:
     needs: collect
@@ -204,6 +237,17 @@ jobs:
           echo "$VENV/bin" >> "$GITHUB_PATH"
           "$VENV/bin/python" -m pip install --quiet --upgrade pip
       - run: pip install -r requirements.txt
+      - name: restore attention store from R2 (wiki chip reads it at render)
+        # build_site.build_attention_data reads data/attention/*.parquet — git-ignored
+        # since 2026-07-06, R2-hosted, kept current by the collect job's publish-back.
+        # Non-fatal: an absent store means the attention chip is silently absent for
+        # one render (build_attention_data degrades to None); nothing else reads it.
+        env:
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: python -m scripts.fetch_r2 --dirs attention || echo "::warning::attention restore failed (non-fatal — attention chip absent/stale this render)"
       - name: restore breadth close cache (stock search library needs constituent closes)
         uses: actions/cache@v4
         with:
