@@ -1,0 +1,648 @@
+"""China Special Situations desk engine.
+
+Fuses six data planes into a schema-versioned, context-only JSON:
+  NEW  : unlocks, preannouncements, inquiry letters, ST board + history, goodwill
+  EXISTING: buybacks, pledge stress, block-trade anomalies, earnings calendar
+
+Output: site/chinaspecialdata/special.json  (schema: china_special_sits.v1)
+
+Rules:
+- Every input degrades independently (try/except → None, log warning)
+- Per-input asof + status chips surface staleness
+- NO composite scores, NO buy/sell language
+- Counts, ranks by DISCLOSED magnitudes, dates, links only
+- Direction labels = exchange-reported 预告类型 verbatim
+- Inquiry letters = metadata + link only (no body text)
+- ST watch labeled "history accrues from 2026-07 forward" until ≥2 dates present
+"""
+from __future__ import annotations
+
+import json
+import logging
+from datetime import date, timedelta
+from pathlib import Path
+from typing import Any
+
+import pandas as pd
+
+from lib import config
+
+log = logging.getLogger(__name__)
+
+SCHEMA = "china_special_sits.v1"
+_MAX_ROWS = 8  # capped row count per category
+
+
+# --------------------------------------------------------------------------- #
+# helpers
+# --------------------------------------------------------------------------- #
+def _data_dir() -> Path:
+    return config.data_dir()
+
+
+def _site_dir() -> Path:
+    sd = Path(config.load()["storage"]["site_dir"])
+    return sd if sd.is_absolute() else (config.ROOT / sd)
+
+
+def _col(cols: list[str], *needles: str) -> str | None:
+    """First column containing ALL needle substrings."""
+    for c in cols:
+        s = str(c)
+        if all(n in s for n in needles):
+            return c
+    return None
+
+
+def _safe_float(v: Any) -> float | None:
+    try:
+        f = float(v)
+        return None if pd.isna(f) else f
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def _today() -> str:
+    return date.today().isoformat()
+
+
+def _asof_status(parquet: Path) -> tuple[str | None, str]:
+    """Return (asof_str, 'ok'|'missing'|'stale') for a parquet artifact."""
+    if not parquet.exists():
+        return None, "missing"
+    try:
+        df = pd.read_parquet(parquet, columns=["asof"])
+        asof = str(df["asof"].max())
+        today = _today()
+        age = (date.fromisoformat(today) - date.fromisoformat(asof[:10])).days
+        return asof[:10], ("ok" if age <= 2 else "stale")
+    except Exception:  # noqa: BLE001
+        return None, "missing"
+
+
+# --------------------------------------------------------------------------- #
+# per-plane readers (each returns None on failure)
+# --------------------------------------------------------------------------- #
+
+def _unlock_block() -> dict | None:
+    """Next-30d unlock events ranked by float impact; weekly aggregate strip."""
+    det_path = _data_dir() / "china_unlocks" / "detail.parquet"
+    sum_path  = _data_dir() / "china_unlocks" / "summary.parquet"
+    asof, status = _asof_status(det_path)
+    try:
+        if not det_path.exists():
+            return {"asof": None, "status": "missing", "events": [], "weekly_strip": [],
+                    "n_events_30d": 0, "n_large": 0}
+        df = pd.read_parquet(det_path)
+        if df.empty:
+            return {"asof": asof, "status": status, "events": [], "weekly_strip": [],
+                    "n_events_30d": 0, "n_large": 0}
+
+        cols = list(df.columns)
+        date_col   = _col(cols, "解禁时间") or _col(cols, "时间")
+        ratio_col  = _col(cols, "比例") or _col(cols, "流通市值比例")
+        qty_col    = _col(cols, "解禁数量")
+        mktcap_col = _col(cols, "实际解禁市值")
+        type_col   = _col(cols, "限售股类型") or _col(cols, "类型")
+        code_col   = _col(cols, "代码") or _col(cols, "股票代码")
+        name_col   = _col(cols, "简称") or _col(cols, "名称")
+
+        # Normalise date column (may be datetime.date objects)
+        if date_col and date_col in df.columns:
+            df[date_col] = pd.to_datetime(df[date_col], errors="coerce")
+        else:
+            return {"asof": asof, "status": "no_date_col", "events": [], "weekly_strip": [],
+                    "n_events_30d": 0, "n_large": 0}
+
+        today_ts = pd.Timestamp.today().normalize()
+        cutoff   = today_ts + pd.Timedelta(days=30)
+        fwd = df[(df[date_col] >= today_ts) & (df[date_col] <= cutoff)].copy()
+        if fwd.empty:
+            return {"asof": asof, "status": status, "events": [], "weekly_strip": [],
+                    "n_events_30d": 0, "n_large": 0}
+
+        # Sort by float-impact ratio desc
+        if ratio_col and ratio_col in fwd.columns:
+            fwd["_ratio"] = fwd[ratio_col].apply(_safe_float)
+        else:
+            fwd["_ratio"] = None
+        fwd = fwd.sort_values("_ratio", ascending=False, na_position="last")
+
+        events = []
+        for _, row in fwd.head(_MAX_ROWS).iterrows():
+            ratio = _safe_float(row.get("_ratio")) if "_ratio" in row.index else None
+            events.append({
+                "ticker":      str(row.get("ticker") or row.get(code_col) or ""),
+                "name":        str(row.get(name_col) or ""),
+                "unlock_date": row[date_col].strftime("%Y-%m-%d") if pd.notna(row[date_col]) else None,
+                "lock_type":   str(row.get(type_col) or "") if type_col else "",
+                "float_ratio": ratio,
+                "large_flag":  ratio is not None and ratio >= 5.0,
+                "mktcap_yi":   _safe_float(row.get(mktcap_col)) if mktcap_col else None,
+            })
+
+        n_large = sum(1 for e in events if e["large_flag"])
+
+        # Weekly aggregate strip from summary
+        weekly_strip: list[dict] = []
+        try:
+            if sum_path.exists():
+                df_sum = pd.read_parquet(sum_path)
+                scols = list(df_sum.columns)
+                sdate_col = _col(scols, "日期") or _col(scols, "解禁日期")
+                smktcap_col = _col(scols, "实际解禁市值") or _col(scols, "市值")
+                if sdate_col and smktcap_col:
+                    df_sum[sdate_col] = pd.to_datetime(df_sum[sdate_col], errors="coerce")
+                    df_sum["_week"] = df_sum[sdate_col].dt.to_period("W")
+                    df_sum["_mktcap"] = df_sum[smktcap_col].apply(_safe_float)
+                    by_week = df_sum.groupby("_week")["_mktcap"].sum().reset_index()
+                    for _, wr in by_week.head(6).iterrows():
+                        weekly_strip.append({
+                            "week": str(wr["_week"]),
+                            "total_mktcap": _safe_float(wr["_mktcap"]),
+                        })
+        except Exception as e:  # noqa: BLE001
+            log.debug("china_special_sits: weekly strip failed (%s)", e)
+
+        return {
+            "asof": asof, "status": status,
+            "events": events,
+            "weekly_strip": weekly_strip,
+            "n_events_30d": len(fwd),
+            "n_large": n_large,
+        }
+    except Exception as e:  # noqa: BLE001
+        log.warning("china_special_sits: unlock block failed (%s)", e)
+        return None
+
+
+def _inquiry_block() -> dict | None:
+    """Last-14d exchange-issued letters (kind=letter), newest first + reply status."""
+    path = _data_dir() / "china_inquiry" / "inquiry.parquet"
+    asof, status = _asof_status(path)
+    try:
+        if not path.exists():
+            return {"asof": None, "status": "missing", "letters": [], "n_letters": 0, "n_replies": 0}
+        df = pd.read_parquet(path)
+        if df.empty:
+            return {"asof": asof, "status": status, "letters": [], "n_letters": 0, "n_replies": 0}
+
+        # Filter to last 14 days
+        cutoff = (date.today() - timedelta(days=14)).isoformat()
+        if "announcementTime" in df.columns:
+            df_filt = df[df["announcementTime"].fillna("") >= cutoff].copy()
+        else:
+            df_filt = df.copy()
+
+        # Build reply lookup: secCode → True if there's a reply in the window
+        replies = set(df_filt[df_filt["kind"] == "reply"]["secCode"].dropna().tolist())
+
+        letters = df_filt[df_filt["kind"] == "letter"].sort_values(
+            "announcementTime", ascending=False, na_position="last"
+        )
+
+        rows = []
+        for _, r in letters.head(_MAX_ROWS).iterrows():
+            rows.append({
+                "secCode":    str(r.get("secCode") or ""),
+                "secName":    str(r.get("secName") or ""),
+                "title":      str(r.get("announcementTitle") or ""),
+                "date":       str(r.get("announcementTime") or ""),
+                "pdf_url":    str(r.get("adjunctUrl") or ""),
+                "has_reply":  str(r.get("secCode") or "") in replies,
+                "type_name":  str(r.get("announcementTypeName") or ""),
+            })
+
+        return {
+            "asof": asof, "status": status,
+            "letters": rows,
+            "n_letters": len(letters),
+            "n_replies": len(df_filt[df_filt["kind"] == "reply"]),
+        }
+    except Exception as e:  # noqa: BLE001
+        log.warning("china_special_sits: inquiry block failed (%s)", e)
+        return None
+
+
+def _preannounce_block() -> dict | None:
+    """Earnings preannouncement counts by type + biggest movers."""
+    path = _data_dir() / "china_preannounce" / "forecast.parquet"
+    asof, status = _asof_status(path)
+    try:
+        if not path.exists():
+            return {"asof": None, "status": "missing", "by_type": {}, "top_movers": [], "n_total": 0}
+        df = pd.read_parquet(path)
+        if df.empty:
+            return {"asof": asof, "status": status, "by_type": {}, "top_movers": [], "n_total": 0}
+
+        cols = list(df.columns)
+        type_col   = _col(cols, "预告类型") or _col(cols, "类型")
+        change_col = _col(cols, "业绩变动幅度") or _col(cols, "变动幅度") or _col(cols, "变化幅度")
+        name_col   = _col(cols, "简称") or _col(cols, "名称")
+        code_col   = _col(cols, "代码") or _col(cols, "股票代码")
+
+        # Counts by type (exchange-reported labels verbatim)
+        by_type: dict[str, int] = {}
+        if type_col and type_col in df.columns:
+            by_type = df[type_col].value_counts().to_dict()
+            by_type = {str(k): int(v) for k, v in by_type.items()}
+
+        # Top movers by magnitude (abs)
+        top_movers: list[dict] = []
+        if change_col and change_col in df.columns:
+            df["_change"] = df[change_col].apply(_safe_float)
+            df_sorted = df.dropna(subset=["_change"]).sort_values(
+                "_change", key=lambda x: x.abs(), ascending=False
+            )
+            for _, row in df_sorted.head(_MAX_ROWS).iterrows():
+                top_movers.append({
+                    "ticker":     str(row.get("ticker") or row.get(code_col) or ""),
+                    "name":       str(row.get(name_col) or ""),
+                    "type":       str(row.get(type_col) or "") if type_col else "",
+                    "pct_change": _safe_float(row.get("_change")),
+                    "quarter":    str(row.get("quarter") or ""),
+                })
+
+        return {
+            "asof": asof, "status": status,
+            "by_type": by_type,
+            "top_movers": top_movers,
+            "n_total": len(df),
+        }
+    except Exception as e:  # noqa: BLE001
+        log.warning("china_special_sits: preannounce block failed (%s)", e)
+        return None
+
+
+def _buyback_block() -> dict | None:
+    """Largest active buyback programs by plan_amt_yi + progress."""
+    path = _data_dir() / "china_buyback" / "buyback.parquet"
+    asof, status = _asof_status(path)
+    try:
+        if not path.exists():
+            return {"asof": None, "status": "missing", "top": [], "n_active": 0}
+        df = pd.read_parquet(path)
+        if df.empty:
+            return {"asof": asof, "status": status, "top": [], "n_active": 0}
+
+        # Active programs
+        if "progress" in df.columns:
+            active = df[df["progress"].str.contains("实施中", na=False)].copy()
+        else:
+            active = df.copy()
+
+        active = active.sort_values("plan_amt_yi", ascending=False, na_position="last")
+        top = []
+        for _, r in active.head(_MAX_ROWS).iterrows():
+            top.append({
+                "ticker":       str(r.get("ticker") or ""),
+                "name":         str(r.get("name") or ""),
+                "plan_amt_yi":  _safe_float(r.get("plan_amt_yi")),
+                "done_amt_yi":  _safe_float(r.get("done_amt_yi")),
+                "progress":     str(r.get("progress") or ""),
+            })
+        return {"asof": asof, "status": status, "top": top, "n_active": len(active)}
+    except Exception as e:  # noqa: BLE001
+        log.warning("china_special_sits: buyback block failed (%s)", e)
+        return None
+
+
+def _pledge_block() -> dict | None:
+    """Highest pledge_ratio names (latest quarter)."""
+    path = _data_dir() / "china_pledge" / "pledge.parquet"
+    asof, status = _asof_status(path)
+    try:
+        if not path.exists():
+            return {"asof": None, "status": "missing", "top": [], "n_high": 0}
+        df = pd.read_parquet(path)
+        if df.empty:
+            return {"asof": asof, "status": status, "top": [], "n_high": 0}
+
+        # Latest quarter only
+        if "quarter" in df.columns:
+            latest_q = df["quarter"].max()
+            df = df[df["quarter"] == latest_q].copy()
+
+        df = df.sort_values("pledge_ratio", ascending=False, na_position="last")
+        n_high = int((df["pledge_ratio"] >= 50).sum()) if "pledge_ratio" in df.columns else 0
+        top = []
+        for _, r in df.head(_MAX_ROWS).iterrows():
+            top.append({
+                "ticker":          str(r.get("ticker") or ""),
+                "name":            str(r.get("name") or ""),
+                "pledge_ratio":    _safe_float(r.get("pledge_ratio")),
+                "pledge_mktcap_yi": _safe_float(r.get("pledge_mktcap_yi")),
+                "quarter":         str(r.get("quarter") or ""),
+            })
+        return {"asof": asof, "status": status, "top": top, "n_high": n_high,
+                "quarter": str(df["quarter"].max()) if "quarter" in df.columns else None}
+    except Exception as e:  # noqa: BLE001
+        log.warning("china_special_sits: pledge block failed (%s)", e)
+        return None
+
+
+def _st_block() -> dict | None:
+    """Current ST count + newest additions (once history accrues)."""
+    snap_path = _data_dir() / "china_st" / "st_snapshot.parquet"
+    hist_path = _data_dir() / "china_st" / "st_history.parquet"
+    asof, status = _asof_status(snap_path)
+    try:
+        if not snap_path.exists():
+            return {"asof": None, "status": "missing", "count": 0, "additions": [],
+                    "removals": [], "history_note": "history accrues from 2026-07 forward"}
+        df = pd.read_parquet(snap_path)
+        count = len(df)
+
+        additions: list[dict] = []
+        removals:  list[dict] = []
+        history_note = "history accrues from 2026-07 forward"
+
+        if hist_path.exists():
+            try:
+                hist = pd.read_parquet(hist_path)
+                dates = sorted(hist["date"].unique())
+                if len(dates) >= 2:
+                    history_note = None
+                    prev_date = dates[-2]
+                    curr_date = dates[-1]
+                    prev_set = set(hist[hist["date"] == prev_date]["ticker"].dropna())
+                    curr_set = set(hist[hist["date"] == curr_date]["ticker"].dropna())
+
+                    added   = curr_set - prev_set
+                    removed = prev_set - curr_set
+
+                    # Get names for additions
+                    name_map = {}
+                    if "name" in df.columns:
+                        name_map = dict(zip(df.get("ticker", []), df.get("name", [])))
+                    for tk in list(added)[:_MAX_ROWS]:
+                        additions.append({"ticker": tk, "name": name_map.get(tk, "")})
+                    for tk in list(removed)[:_MAX_ROWS]:
+                        removals.append({"ticker": tk, "name": ""})
+            except Exception as e:  # noqa: BLE001
+                log.debug("china_special_sits: ST history diff failed (%s)", e)
+
+        top_current = []
+        if not df.empty:
+            for _, r in df.head(_MAX_ROWS).iterrows():
+                top_current.append({
+                    "ticker": str(r.get("ticker") or ""),
+                    "name":   str(r.get("name") or ""),
+                    "pct_chg": _safe_float(r.get("pct_chg")),
+                })
+
+        return {
+            "asof": asof, "status": status,
+            "count": count,
+            "top_current": top_current,
+            "additions": additions,
+            "removals": removals,
+            "history_note": history_note,
+        }
+    except Exception as e:  # noqa: BLE001
+        log.warning("china_special_sits: ST block failed (%s)", e)
+        return None
+
+
+def _block_trade_block() -> dict | None:
+    """Largest premium/discount block-trade anomalies."""
+    path = _data_dir() / "china_block_trades" / "detail.parquet"
+    asof, status = _asof_status(path)
+    try:
+        if not path.exists():
+            return {"asof": None, "status": "missing", "top_premium": [], "top_discount": []}
+        df = pd.read_parquet(path)
+        if df.empty:
+            return {"asof": asof, "status": status, "top_premium": [], "top_discount": []}
+
+        df = df.copy()
+        if "avg_premium_pct" in df.columns:
+            df["_abs_prem"] = df["avg_premium_pct"].apply(lambda x: abs(_safe_float(x) or 0))
+            df_prem = df[df["avg_premium_pct"].apply(lambda x: (_safe_float(x) or 0) > 0)].sort_values(
+                "avg_premium_pct", ascending=False)
+            df_disc = df[df["avg_premium_pct"].apply(lambda x: (_safe_float(x) or 0) < 0)].sort_values(
+                "avg_premium_pct", ascending=True)
+        else:
+            df_prem = df_disc = pd.DataFrame()
+
+        def _row(r):
+            return {
+                "ticker":         str(r.get("ticker") or ""),
+                "avg_premium_pct": _safe_float(r.get("avg_premium_pct")),
+                "block_amt_yi":   _safe_float(r.get("block_amt_yi")),
+                "n_blocks":       int(r.get("n_blocks") or 0),
+                "last_date":      str(r.get("last_date") or ""),
+            }
+
+        top_premium  = [_row(r) for _, r in df_prem.head(_MAX_ROWS).iterrows()]
+        top_discount = [_row(r) for _, r in df_disc.head(_MAX_ROWS).iterrows()]
+
+        return {"asof": asof, "status": status,
+                "top_premium": top_premium, "top_discount": top_discount,
+                "n_names": len(df)}
+    except Exception as e:  # noqa: BLE001
+        log.warning("china_special_sits: block trade block failed (%s)", e)
+        return None
+
+
+def _goodwill_block() -> dict | None:
+    """Whole-market annual goodwill aggregate context chip."""
+    path = _data_dir() / "china_st" / "goodwill.parquet"
+    asof, status = _asof_status(path)
+    try:
+        if not path.exists():
+            return None
+        df = pd.read_parquet(path)
+        if df.empty:
+            return None
+        # Return last 5 years as context rows
+        rows = df.tail(5).to_dict("records")
+        return {"asof": asof, "status": status, "annual_rows": rows[:5]}
+    except Exception as e:  # noqa: BLE001
+        log.warning("china_special_sits: goodwill block failed (%s)", e)
+        return None
+
+
+def _by_ticker_rollup(blocks: dict) -> dict:
+    """Build per-ticker flags dict for W4's command apparatus."""
+    by_ticker: dict[str, dict] = {}
+
+    def _flag(tk: str, category: str) -> None:
+        if not tk:
+            return
+        if tk not in by_ticker:
+            by_ticker[tk] = {}
+        by_ticker[tk][category] = True
+
+    unlocks = blocks.get("unlocks") or {}
+    for ev in (unlocks.get("events") or []):
+        if ev.get("large_flag"):
+            _flag(ev.get("ticker"), "unlock_large")
+        else:
+            _flag(ev.get("ticker"), "unlock")
+
+    inquiry = blocks.get("inquiry") or {}
+    for ltr in (inquiry.get("letters") or []):
+        _flag(ltr.get("secCode"), "inquiry_letter")
+
+    pledge = blocks.get("pledge") or {}
+    for r in (pledge.get("top") or []):
+        _flag(r.get("ticker"), "high_pledge")
+
+    buyback = blocks.get("buyback") or {}
+    for r in (buyback.get("top") or []):
+        _flag(r.get("ticker"), "buyback_active")
+
+    st = blocks.get("st") or {}
+    for r in (st.get("additions") or []):
+        _flag(r.get("ticker"), "st_new")
+    for r in (st.get("top_current") or []):
+        _flag(r.get("ticker"), "st")
+
+    return by_ticker
+
+
+# --------------------------------------------------------------------------- #
+# public: fuse + emit
+# --------------------------------------------------------------------------- #
+
+def scan() -> dict:
+    """Assemble the special-situations context snapshot. Never raises."""
+    blocks: dict[str, Any] = {}
+    for key, fn in (
+        ("unlocks",      _unlock_block),
+        ("inquiry",      _inquiry_block),
+        ("preannounce",  _preannounce_block),
+        ("buyback",      _buyback_block),
+        ("pledge",       _pledge_block),
+        ("st",           _st_block),
+        ("block_trades", _block_trade_block),
+        ("goodwill",     _goodwill_block),
+    ):
+        try:
+            blocks[key] = fn()
+        except Exception as e:  # noqa: BLE001
+            log.warning("china_special_sits: %s block raised (%s)", key, e)
+            blocks[key] = None
+
+    by_ticker = _by_ticker_rollup(blocks)
+
+    return {
+        "schema": SCHEMA,
+        "is_context_only": True,
+        "generated_utc": pd.Timestamp.utcnow().isoformat(),
+        "asof": _today(),
+        **blocks,
+        "by_ticker": by_ticker,
+        "disclaimer": (
+            "Context only — not a signal, score or trade. "
+            "Rankings by disclosed magnitudes and exchange-reported labels; "
+            "no directional scoring originates here."
+        ),
+    }
+
+
+def register_claims(snap: dict, root: Any = None) -> int:
+    """Register salience-only qledger claims for inquiry-letter and large-unlock events.
+
+    Called from the SCHEDULED CI LANE (build_china_special_situations, inside build_china.py
+    which runs in asia-close). Gated on CN_LANE=asia to prevent intraday / render-lane
+    ledger writes (mirrors the china_standout_track lane guard pattern).
+
+    direction=0 for all claims (salience-only); claim_family=cn_special_sits.
+    Returns count registered; 0 on any failure.
+    """
+    import os
+    if os.environ.get("CN_LANE", "") != "asia":
+        log.debug("china_special_sits.register_claims: not in asia lane, skipping ledger write")
+        return 0
+    try:
+        from engine import qledger
+    except Exception as e:  # noqa: BLE001
+        log.warning("china_special_sits: qledger import failed (%s)", e)
+        return 0
+
+    DESK = "china_special_sits"
+    CLAIM_FAMILY = "cn_special_sits"
+    HORIZON_D = 21
+    asof = snap.get("asof") or _today()
+    pending: list[dict] = []
+
+    # inquiry letters (per-company salience claims)
+    inquiry = snap.get("inquiry") or {}
+    for ltr in (inquiry.get("letters") or []):
+        if ltr.get("kind") != "letter":
+            continue
+        sec_code = str(ltr.get("secCode") or "")
+        if not sec_code:
+            continue
+        try:
+            pending.append(qledger.make_claim(
+                desk=DESK, asof=asof, scope_type="macro",
+                scope_key="510300.SS", direction=0, horizon_d=HORIZON_D,
+                timestamp_quality="CRAWL_BOUNDED", bench="510300.SS",
+                claim_family=CLAIM_FAMILY,
+                extra={
+                    "event_kind": "inquiry_letter",
+                    "sec_code": sec_code,
+                    "sec_name": ltr.get("secName"),
+                    "salt": f"inq_{sec_code}_{asof}",
+                },
+            ))
+        except Exception as ex:  # noqa: BLE001
+            log.debug("china_special_sits: claim build failed for %s (%s)", sec_code, ex)
+
+    # large-unlock events (≥5% float)
+    unlocks = snap.get("unlocks") or {}
+    for ev in (unlocks.get("events") or []):
+        if not ev.get("large_flag"):
+            continue
+        ticker = str(ev.get("ticker") or "")
+        if not ticker:
+            continue
+        try:
+            pending.append(qledger.make_claim(
+                desk=DESK, asof=asof, scope_type="macro",
+                scope_key="510300.SS", direction=0, horizon_d=HORIZON_D,
+                timestamp_quality="CRAWL_BOUNDED", bench="510300.SS",
+                claim_family=CLAIM_FAMILY,
+                extra={
+                    "event_kind": "large_unlock",
+                    "ticker": ticker,
+                    "unlock_date": ev.get("unlock_date"),
+                    "float_ratio": ev.get("float_ratio"),
+                    "salt": f"unlock_{ticker}_{ev.get('unlock_date')}",
+                },
+            ))
+        except Exception as ex:  # noqa: BLE001
+            log.debug("china_special_sits: claim build failed for unlock %s (%s)", ticker, ex)
+
+    if not pending:
+        return 0
+    try:
+        results = qledger.register_batch(pending, root=root)
+        n = sum(1 for r in results if r.get("status") != "error")
+        log.info("china_special_sits: registered %d/%d qledger claims (asof=%s)",
+                 n, len(pending), asof)
+        return n
+    except Exception as e:  # noqa: BLE001
+        log.warning("china_special_sits: register_batch failed (%s)", e)
+        return 0
+
+
+def build() -> dict | None:
+    """Run scan(), write site/chinaspecialdata/special.json, register claims. Returns snapshot or None."""
+    try:
+        snap = scan()
+        out_dir = _site_dir() / "chinaspecialdata"
+        out_dir.mkdir(parents=True, exist_ok=True)
+        (out_dir / "special.json").write_text(
+            json.dumps(snap, ensure_ascii=False, separators=(",", ":"), default=str)
+        )
+        log.info("china_special_sits: wrote special.json (schema=%s)", SCHEMA)
+        # register qledger claims (gated on CN_LANE=asia — nightly lane only)
+        register_claims(snap)
+        return snap
+    except Exception as e:  # noqa: BLE001
+        log.error("china_special_sits build failed (%s)", e)
+        return None

@@ -46,7 +46,7 @@ _FIXTURES = {
 def test_briefing_v2_fans_in_all_five_surfaces(monkeypatch):
     monkeypatch.setattr(bus, "_read_json", lambda rel: _FIXTURES.get(rel))
     b = bus.briefing(asof="2026-06-20")
-    assert b["schema"] == "china_intel.briefing.v4"
+    assert b["schema"] == "china_intel.briefing.v5"
     assert set(b["surfaces_present"]) == {"news", "policy", "altdata", "radar", "analysis"}
     # enriched blocks
     assert b["news"]["band_label_en"] == "Supportive"               # zh-leak fix carried
@@ -84,4 +84,5 @@ def test_master_brain_china_lens_includes_synthesis():
         assert set(ci).issubset({"news", "policy", "altdata", "radar", "analysis",
                                  "conviction", "cross_surface", "flagged_tickers",
                                  "what_changed", "salience", "digest", "regime", "discovery",
+                                 "policy_phrase", "narrative_divergence", "special_situations",
                                  "is_context_only", "disclaimer", "disclaimer_zh"})

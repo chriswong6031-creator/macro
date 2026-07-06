@@ -192,14 +192,15 @@
 
   {# ── B. DESK STATUS BOARD ── #}
   {%- set _DESKS = [
-    ('news',    '📰', t('News','新闻'),        'china_news.html',         t('China news tape','中国财经新闻')),
-    ('policy',  '🏛️', t('Policy','政策'),      'china_policy_watch.html', t('PBoC & policy watch','央行与政策观察')),
-    ('altdata', '🛰️', t('Alt-Data','另类数据'), 'china_altdata.html',      t('Smart-money convergence','聪明钱共振')),
-    ('radar',   '📡', t('Radar','雷达'),        'china_radar.html',        t('Divergence signals','背离信号')),
-    ('stocks',  '📊', t('Stocks Board','个股板'), 'china_stocks.html',      t('China stocks board','中国个股板')),
-    ('sector',  '🗂️', t('Sector Desk','板块台'), 'china_sector_desk.html', t('Sector momentum desk','板块动能台'))
+    ('news',              '📰', t('News','新闻'),             'china_news.html',                 t('China news tape','中国财经新闻')),
+    ('policy',            '🏛️', t('Policy','政策'),           'china_policy_watch.html',         t('PBoC & policy watch','央行与政策观察')),
+    ('altdata',           '🛰️', t('Alt-Data','另类数据'),      'china_altdata.html',              t('Smart-money convergence','聪明钱共振')),
+    ('radar',             '📡', t('Radar','雷达'),             'china_radar.html',                t('Divergence signals','背离信号')),
+    ('special_situations','⚠️', t('Special Sits','特殊情景'),  'china_special_situations.html',   t('Unlocks · inquiry · ST watch','解禁·问询·ST观察')),
+    ('stocks',            '📊', t('Stocks Board','个股板'),    'china_stocks.html',               t('China stocks board','中国个股板')),
+    ('sector',            '🗂️', t('Sector Desk','板块台'),     'china_sector_desk.html',          t('Sector momentum desk','板块动能台'))
   ] %}
-  {%- set _DESK_SURF_KEY = {'news':'news','policy':'policy','altdata':'altdata','radar':'radar'} %}
+  {%- set _DESK_SURF_KEY = {'news':'news','policy':'policy','altdata':'altdata','radar':'radar','special_situations':'special_situations'} %}
   <h2 class="sec">🖥️ {{ t('Desk Status Board', '面板状态') }}</h2>
   <div class="desks">
     {%- for key, icon, label, href, desc in _DESKS %}
@@ -440,6 +441,22 @@
       <div class="age">{{ b.surface_asof.radar }}</div>{% else %}<div class="v">—</div>{% endif %}
       <div class="go">{{ t('Open radar →','打开雷达 →') }}</div>
     </a>
+    <a class="scard" href="china_special_situations.html">
+      <div class="ic">⚠️</div><div class="nm">{{ t('Special Situations','特殊情景') }}</div>
+      {% if b.special_situations %}
+        {%- set _ss = b.special_situations %}
+        <div class="v">{{ _ss.n_unlocks or 0 }}</div>
+        <div class="s">{{ t('forward unlocks','待解禁') }}
+          {%- if _ss.n_inquiry %} · {{ _ss.n_inquiry }} {{ t('letters','问询函') }}{%- endif %}
+          {%- if _ss.n_st %} · {{ _ss.n_st }} {{ t('ST names','ST名称') }}{%- endif %}
+        </div>
+        <div class="age">{{ _ss.asof }}</div>
+        {%- if _ss.top_unlock and _ss.top_unlock.large_flag %}
+          <div style="font-size:10px;color:#e0973a;margin-top:3px">⚠ {{ t('large unlock flagged','大宗解禁预警') }}</div>
+        {%- endif %}
+      {% else %}<div class="v">—</div>{% endif %}
+      <div class="go">{{ t('Open special sits →','打开特殊情景 →') }}</div>
+    </a>
   </div>
 
   {# ── J. NEXT CATALYSTS + STANDING CALLS ── #}
@@ -470,6 +487,7 @@
         <a class="slink" href="china_policy_watch.html"><div><div class="sl-name">🏛️ {{ t('Policy Watch','政策观察') }}</div><div class="sl-desc">{{ t('PBoC rate corridor · phrase shifts · predictions','央行利率走廊 · 表述变化 · 政策预测') }}</div></div></a>
         <a class="slink" href="china_altdata.html"><div><div class="sl-name">🛰️ {{ t('Alternative Data','另类数据') }}</div><div class="sl-desc">{{ t('Smart-money convergence · margin velocity · positioning','聪明钱共振 · 融资速度 · 资金定位') }}</div></div></a>
         <a class="slink" href="china_radar.html"><div><div class="sl-name">📡 {{ t('Divergence Radar','背离雷达') }}</div><div class="sl-desc">{{ t('Cross-signal divergence tracking · dated ledger','跨信号背离追踪 · 台账记录') }}</div></div></a>
+        <a class="slink" href="china_special_situations.html"><div><div class="sl-name">⚠️ {{ t('Special Situations','特殊情景') }}</div><div class="sl-desc">{{ t('Unlocks · inquiry letters · pre-announcements · ST watch · pledge · buybacks','解禁 · 问询函 · 业绩预告 · ST观察 · 质押 · 回购') }}</div></div></a>
       </div>
     </div>
 
