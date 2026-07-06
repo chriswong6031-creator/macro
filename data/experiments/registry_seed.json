@@ -2570,6 +2570,26 @@
       "state": "Phase-0 2026-07-06: K=15, mean_car=+0.08%, HAC_t=0.145, BH-q=0.78, DSR=0.06, split-half inconsistent. Verdict=ACCRUE.",
       "next_step": "Wait. Very weak signal. Come back 2029-01-01.",
       "phase_hint": "Phase-0 complete"
+    },
+    {
+      "id": "rf-batch-b-cortex-watch",
+      "name": "RF Batch B: cortex registration watch",
+      "kind": "data_collection",
+      "priority": "high",
+      "cadence": "on-trigger",
+      "what": "Watch for first cortex hypothesis registrations in data/neuralweb/machine_registry.jsonl. The cortex LLM deliberation loop is wired and hardened (token-sanitization + staleness-gate fix shipped 2026-07-06) but has been blocked by a corrupted CLAUDE_CODE_OAUTH_TOKEN secret. Once ops re-sets the secret cleanly, registrations should begin within the next weekly 3/week budget cycle. Come-back triggers the Batch B procedure in research/RF_CORTEX_BATCH_FOR_FABLE.md §3.",
+      "source": "research/RF_CORTEX_BATCH_FOR_FABLE.md",
+      "storage": "data/neuralweb/machine_registry.jsonl",
+      "track_json": "",
+      "hook": "static",
+      "started": "2026-07-06",
+      "come_back_on": "2026-08-03",
+      "come_back_note": "If machine_registry.jsonl is still absent by 2026-08-03, cortex pipeline is still broken — escalate ops action (re-set CLAUDE_CODE_OAUTH_TOKEN cleanly + consider setting ANTHROPIC_API_KEY failover). If rows exist: proceed with RF_CORTEX_BATCH_FOR_FABLE.md §3.",
+      "maturation": "Trigger: machine_registry.jsonl exists with >=1 row having an evaluator verdict. No numeric maturation gate — this is a pipeline-health watch, not a forward-return accrual.",
+      "status": "accruing",
+      "state": "machine_registry.jsonl absent (2026-07-06); cortex loop failing at turn 0 (Connection error — corrupted token); ops action outstanding.",
+      "next_step": "Ops: re-set CLAUDE_CODE_OAUTH_TOKEN as a clean single-line secret (gh secret set). Check cortex CI run after next nightly. Once registrations appear, open research/RF_CORTEX_BATCH_FOR_FABLE.md and execute §3.",
+      "phase_hint": "Research Factory · Batch B · cortex"
     }
   ]
 }

@@ -1076,14 +1076,89 @@ def _load_research_queue(queue_path: Path, nominate_ids: list[str]) -> list[dict
     return selected
 
 
+def _is_cortex_sourced_row(row: dict) -> bool:
+    """Return True when a research_queue row originated from the cortex metabolism pipeline.
+
+    Detection criteria (any one is sufficient):
+      - row["source"] == "cortex"        — explicitly labelled by upstream
+      - row["domain"] == "neuralweb"     — domain marker
+      - row["kind"] == "cortex_hypothesis" — metabolism schema field
+      - row["id"] starts with "cortex-"  — metabolism id prefix convention
+
+    Intentionally broad (ruling R4, RF_CORTEX_BATCH_FOR_FABLE.md §6): a cortex
+    row that slips through as 'external_idea' takes the rf_family accounting
+    path and double-counts the shared 'cortex' trial family (the RF-6 trap) —
+    worse than the converse, where a non-cortex neuralweb-domain row is held
+    to the stricter spec_ref requirement and refused with a warning.
+    """
+    if row.get("source") == "cortex":
+        return True
+    if row.get("domain") == "neuralweb":
+        return True
+    if row.get("kind") == "cortex_hypothesis":
+        return True
+    row_id = str(row.get("id") or "")
+    if row_id.startswith("cortex-"):
+        return True
+    return False
+
+
 def _ingest_research_queue_row(row: dict) -> dict:
-    """Convert a research_queue row to a candidate dict."""
+    """Convert a research_queue row to a candidate dict.
+
+    RF-3/RF-6 — cortex auto-typing:
+      When the row is cortex-sourced (metabolism pipeline), this function:
+        - Forces candidate_type='cortex_hypothesis' (never 'external_idea') to
+          avoid double-counting the shared 'cortex' trial family (RF-6).
+        - Overrides trial_accounting to mode='cortex_shared', family=None.
+        - Carries the metabolism-issued id as spec_ref (RF-13).
+        - Copies claim_shape VERBATIM from the row when present (RF-3).
+        - REFUSES ingest (returns None) if no metabolism id is present — the row
+          has not passed the metabolism chokepoint and must not create an
+          unregistered cortex candidate.  Callers must handle None.
+
+    For non-cortex rows the original behaviour is unchanged (default
+    candidate_type='external_idea').
+    """
     hypothesis = row.get("hypothesis") or row.get("name") or row.get("id", "")
     mechanism = row.get("mechanism") or hypothesis
     domain = row.get("domain", "oracle")
-    ctype = row.get("candidate_type", "external_idea")
     spec_ref = row.get("id") or row.get("spec_ref")
 
+    if _is_cortex_sourced_row(row):
+        # RF-6 / RF-13: cortex-sourced rows must carry a metabolism id.
+        if not spec_ref:
+            import sys as _sys  # noqa: PLC0415
+            print(
+                "[WARN] _ingest_research_queue_row: cortex-sourced row has no metabolism id "
+                f"(row keys: {list(row.keys())}); refusing ingest — "
+                "row has not passed the metabolism chokepoint.",
+                file=_sys.stderr,
+            )
+            return None  # type: ignore[return-value]  # caller must guard
+
+        # Use explicit candidate_type if provided, else force 'cortex_hypothesis'.
+        ctype = row.get("candidate_type") or "cortex_hypothesis"
+
+        cand = _build_candidate(
+            source="research_queue",
+            candidate_type=ctype,
+            domain=domain,
+            hypothesis=hypothesis,
+            mechanism=mechanism,
+            spec_ref=spec_ref,
+            entry_rule=row.get("entry_rule"),
+            evaluation_plan=row.get("evaluation_plan") or _default_evaluation_plan(),
+        )
+        # RF-6: override trial_accounting to cortex_shared (no new family created).
+        cand["trial_accounting"] = {"mode": "cortex_shared", "family": None, "declared_at": None}
+        # RF-3: copy claim_shape verbatim from the row — never synthesise it.
+        if row.get("claim_shape") is not None:
+            cand["claim_shape"] = row["claim_shape"]
+        return cand
+
+    # Non-cortex path: original behaviour unchanged.
+    ctype = row.get("candidate_type", "external_idea")
     return _build_candidate(
         source="research_queue",
         candidate_type=ctype,
@@ -1879,7 +1954,9 @@ def main() -> int:
         rq_rows = _load_research_queue(rq_path, args.nominate or [])
         print(f"Research-queue: loaded {len(rq_rows)} rows from {rq_path}")
         for row in rq_rows:
-            proposals.append(_ingest_research_queue_row(row))
+            _rq_cand = _ingest_research_queue_row(row)
+            if _rq_cand is not None:
+                proposals.append(_rq_cand)
 
     if not proposals:
         print("[INFO] No proposals to ingest.", file=sys.stderr)
