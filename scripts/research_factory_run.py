@@ -256,6 +256,35 @@ def _route_candidate(
 
 
 # ---------------------------------------------------------------------------
+# Legal-path finder
+# ---------------------------------------------------------------------------
+
+def _find_legal_path(from_state: str, to_state: str) -> list[str] | None:
+    """Return the shortest sequence of intermediate states from from_state to to_state.
+
+    Returns a list of states to traverse (not including from_state, including to_state).
+    Returns None if no legal path exists.
+
+    Only searches one level of intermediate states (the §4 matrix is shallow enough
+    that no path requires more than one intermediate hop for the known transitions).
+
+    Example: registered → numeric_rejected needs [screened, numeric_rejected].
+    """
+    from engine.research_factory.state import ALLOWED_TRANSITIONS
+
+    # Direct path
+    if to_state in ALLOWED_TRANSITIONS.get(from_state, frozenset()):
+        return [to_state]
+
+    # One intermediate hop
+    for intermediate in ALLOWED_TRANSITIONS.get(from_state, frozenset()):
+        if to_state in ALLOWED_TRANSITIONS.get(intermediate, frozenset()):
+            return [intermediate, to_state]
+
+    return None  # no legal path found
+
+
+# ---------------------------------------------------------------------------
 # Transition performer
 # ---------------------------------------------------------------------------
 
@@ -265,10 +294,21 @@ def _build_transition_row(
     routing: dict,
     *,
     as_of: str,
+    from_state_override: str | None = None,
 ) -> dict:
-    """Build a transition.v1 row for ledger.append_row."""
+    """Build a transition.v1 row for ledger.append_row.
+
+    Parameters
+    ----------
+    from_state_override : When provided, use this as the 'from' state instead of
+                          candidate.status.  Used for intermediate-hop rows where the
+                          candidate's recorded status has not been updated on disk yet
+                          (e.g. the second hop in a two-hop kill path needs
+                          from_state='screened' even though the candidate.jsonl still
+                          records 'registered').
+    """
     cid = candidate.get("candidate_id", "?")
-    from_state = candidate.get("status", "registered")
+    from_state = from_state_override if from_state_override is not None else candidate.get("status", "registered")
     adapter_result = routing.get("adapter_result") or {}
 
     row: dict[str, Any] = {
@@ -287,7 +327,7 @@ def _build_transition_row(
         "come_back_on": None,
     }
 
-    # Attach artifact_refs from adapter
+    # Attach artifact_refs from adapter (required for 'screened' per §4 table)
     art = adapter_result.get("artifact")
     if art:
         row["artifact_refs"] = [art]
@@ -326,18 +366,28 @@ def _perform_transition(
     rf_dir: Path,
     as_of: str,
     dry_run: bool,
+    from_state_override: str | None = None,
 ) -> bool:
     """Validate and optionally write a transition row.
 
     Returns True on success (or dry-run), False on validation error.
+
+    Parameters
+    ----------
+    from_state_override : When provided, use this as the 'from' state for validation
+                          and for the transition row.  Used for multi-hop paths where
+                          the candidate's on-disk status has not been updated between
+                          hops (it is the caller's responsibility to supply the correct
+                          intermediate from_state for the second and later hops).
     """
     from engine.research_factory.state import transition, IllegalTransition
     from engine.research_factory.ledger import append_row
     from engine.research_factory.schema import validate_transition
 
-    from_state = candidate.get("status", "registered")
+    from_state = from_state_override if from_state_override is not None else candidate.get("status", "registered")
     transition_row = _build_transition_row(
-        candidate, to_state, routing, as_of=as_of
+        candidate, to_state, routing, as_of=as_of,
+        from_state_override=from_state_override,
     )
 
     # Validate state machine
@@ -399,6 +449,8 @@ def run(
     count is silently suppressed when dry_run=True so the public API call
     run(dry_run=True, count=True) is safe (blocker fix).
     """
+    from engine.research_factory.state import _HUMAN_GATE_TARGETS  # noqa: PLC0415
+
     as_of = datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds")
     # Enforce: counted writes require both count=True AND dry_run=False
     effective_count = count and not dry_run
@@ -470,6 +522,34 @@ def run(
         }
         to_state = to_state_map.get(action)
 
+        # Human-gate check: 'paper' projection from a registered candidate.
+        # The runner must never auto-transition to human-gate states (paper, deferred,
+        # rejected, retired, scoped_build — RF-5 _HUMAN_GATE_TARGETS).
+        # When the domain projection is a human-gate state, we advance the candidate
+        # to the last mechanical step (screened) and record human_gate_required.
+        from_state_now = candidate.get("status", "registered")
+        projected_state = (adapter_result.get("projected_state") if adapter_result else None)
+
+        # Identify projected human-gate states that the runner cannot auto-perform
+        # and where the candidate is still in a pre-screened state that needs advancing.
+        _human_gate_advance = False
+        if (
+            projected_state in _HUMAN_GATE_TARGETS
+            and from_state_now == "registered"
+            and action == "no_action"
+        ):
+            # The domain has evaluated this compound (it has a real status beyond
+            # 'exploratory') but the final transition requires a human actor.
+            # Advance mechanically to 'screened' so evidence is recorded.
+            to_state = "screened"
+            _human_gate_advance = True
+            route_entry["human_gate_required"] = True
+            log.info(
+                "  [%s] human_gate_required for projected=%r — will advance to 'screened', "
+                "then stop (human actor required for %r transition, RF-5)",
+                cid, projected_state, projected_state,
+            )
+
         if dry_run:
             # Just describe what would happen
             print(
@@ -482,16 +562,55 @@ def run(
             print(f"    reason: {reason}")
         else:
             if to_state:
-                summary["transitions_attempted"] += 1
-                ok = _perform_transition(
-                    candidate, to_state, routing,
-                    rf_dir=rf_dir,
-                    as_of=as_of,
-                    dry_run=False,
-                )
-                route_entry["transition_ok"] = ok
-                if ok:
-                    summary["transitions_ok"] += 1
+                from_state_cursor = from_state_now  # track current state across hops
+
+                # Check whether the target is directly reachable from current state.
+                # If not, find the legal multi-hop path and execute each hop.
+                path = _find_legal_path(from_state_cursor, to_state)
+                if path is None:
+                    log.error(
+                        "  [%s] no_legal_path: %s → %s — recording outcome, "
+                        "no transition attempted",
+                        cid, from_state_cursor, to_state,
+                    )
+                    route_entry["transition_ok"] = False
+                    route_entry["no_legal_path"] = True
+                    summary["routes"].append(route_entry)
+                    continue
+
+                # Execute each hop in sequence
+                all_ok = True
+                for hop_to_state in path:
+                    # Human-gate stop: never auto-transition to human-gate states
+                    if hop_to_state in _HUMAN_GATE_TARGETS:
+                        log.info(
+                            "  [%s] halting before human-gate state %r "
+                            "(human actor required, RF-5)",
+                            cid, hop_to_state,
+                        )
+                        route_entry["human_gate_required"] = True
+                        break
+
+                    summary["transitions_attempted"] += 1
+                    ok = _perform_transition(
+                        candidate, hop_to_state, routing,
+                        rf_dir=rf_dir,
+                        as_of=as_of,
+                        dry_run=False,
+                        from_state_override=from_state_cursor,
+                    )
+                    if ok:
+                        summary["transitions_ok"] += 1
+                        from_state_cursor = hop_to_state
+                    else:
+                        all_ok = False
+                        log.error(
+                            "  [%s] hop %s→%s failed — aborting path",
+                            cid, from_state_cursor, hop_to_state,
+                        )
+                        break
+
+                route_entry["transition_ok"] = all_ok
             else:
                 log.info("  [%s] no-action: %s", cid, reason)
 

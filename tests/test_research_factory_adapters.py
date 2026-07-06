@@ -881,3 +881,243 @@ class TestUnderpoweredAccruingKillClassFidelity:
         assert ke is not None
         # Fallback: no verdict_class/verdict → gauntlet=='PASS' → synthesised None → 'falsified'
         assert ke["kill_class"] == "falsified"
+
+
+# ===========================================================================
+# 14. Execute-mode: two-hop kill path (registered → screened → numeric_rejected)
+#
+# [blocker — ADJUDICATED] A candidate whose domain projection is 'numeric_rejected'
+# while the factory row is 'registered' must take TWO sequential legal transitions:
+#   hop 1: registered → screened  (artifact_refs = domain screen/projection artifact)
+#   hop 2: screened   → numeric_rejected  (with mandatory RF-10 kill_evidence block)
+#
+# This class writes tests FIRST (fail against current code) then the implementation
+# makes them green.  Both failing output and final green output are reported.
+# ===========================================================================
+
+class TestExecuteModeKillPath:
+    """Execute-mode (dry_run=False) tests for the two-hop kill path."""
+
+    def _write_candidates_registered(self, rf_dir: Path, spec_ref: str) -> None:
+        """Seed a candidate in 'registered' state with trial_accounting=read_only."""
+        rf_dir.mkdir(parents=True, exist_ok=True)
+        candidate = {
+            "schema": "research_factory.candidate.v1",
+            "authority": "display_only",
+            "candidate_id": "rf-kill-hop-001",
+            "created_at": "2026-07-06T00:00:00Z",
+            "source": "oracle_brainstorm",
+            "candidate_type": "oracle_compound",
+            "domain": "oracle",
+            "status": "registered",
+            "hypothesis": "two-hop kill path test",
+            "mechanism": "test mechanism",
+            "spec_ref": spec_ref,
+            "trial_accounting": {"mode": "read_only", "family": None},
+        }
+        (rf_dir / "candidates.jsonl").write_text(json.dumps(candidate) + "\n")
+
+    def _write_refuted_63d_registry(self, tmp_path: Path, compound_id: str) -> None:
+        """Write a 63d-track compound (no reversion block) in status 'refuted'."""
+        oracle_dir = tmp_path / "oracle" / "compounds"
+        oracle_dir.mkdir(parents=True, exist_ok=True)
+        compound = {
+            "id": compound_id,
+            "status": "refuted",
+            "family": "X",
+            "entry_rule": {"col": "washout_w", "op": "gt", "value": 0},
+            "universe": {"tier": "s"},
+            # No 'reversion' block → 63d track
+        }
+        (oracle_dir / "registry.jsonl").write_text(json.dumps(compound) + "\n")
+
+    def _read_transitions(self, rf_dir: Path) -> list[dict]:
+        """Read transitions.jsonl and return list of rows."""
+        path = rf_dir / "transitions.jsonl"
+        if not path.exists():
+            return []
+        rows = []
+        for line in path.read_text().splitlines():
+            line = line.strip()
+            if line:
+                rows.append(json.loads(line))
+        return rows
+
+    def test_execute_two_hops_present_in_transitions_jsonl(self, tmp_path):
+        """Execute mode: transitions.jsonl must contain BOTH hops.
+
+        hop 1: registered → screened  (with artifact_refs)
+        hop 2: screened   → numeric_rejected  (with kill_evidence)
+        """
+        rf_dir = tmp_path / "research_factory"
+        compound_id = "KILL_HOP_63D"
+        self._write_candidates_registered(rf_dir, compound_id)
+        self._write_refuted_63d_registry(tmp_path, compound_id)
+
+        from scripts.research_factory_run import run
+        summary = run(rf_dir=rf_dir, data_dir=tmp_path, dry_run=False, count=False)
+
+        transitions = self._read_transitions(rf_dir)
+        froms = [t["from"] for t in transitions]
+        tos = [t["to"] for t in transitions]
+
+        assert "registered" in froms, (
+            f"Expected a 'registered' hop in transitions; got froms={froms}"
+        )
+        assert "screened" in tos, (
+            f"Expected a 'screened' hop in transitions; got tos={tos}"
+        )
+        assert "screened" in froms, (
+            f"Expected a 'screened' → 'numeric_rejected' hop; got froms={froms}"
+        )
+        assert "numeric_rejected" in tos, (
+            f"Expected 'numeric_rejected' in transitions; got tos={tos}"
+        )
+
+        # Both hops must be for the same candidate
+        cids = {t["candidate_id"] for t in transitions}
+        assert "rf-kill-hop-001" in cids
+
+    def test_execute_kill_row_has_kill_evidence(self, tmp_path):
+        """The numeric_rejected transition row must carry populated kill_evidence (RF-10)."""
+        rf_dir = tmp_path / "research_factory"
+        compound_id = "KILL_HOP_63D_KE"
+        self._write_candidates_registered(rf_dir, compound_id)
+        self._write_refuted_63d_registry(tmp_path, compound_id)
+
+        from scripts.research_factory_run import run
+        run(rf_dir=rf_dir, data_dir=tmp_path, dry_run=False, count=False)
+
+        transitions = self._read_transitions(rf_dir)
+        kill_row = next(
+            (t for t in transitions if t.get("to") == "numeric_rejected"), None
+        )
+        assert kill_row is not None, "No numeric_rejected transition row found"
+        ke = kill_row.get("kill_evidence")
+        assert ke is not None, "kill_evidence must be set on numeric_rejected row (RF-10)"
+        assert "n_at_kill" in ke, f"kill_evidence missing n_at_kill; got: {ke}"
+        assert "kill_class" in ke, f"kill_evidence missing kill_class; got: {ke}"
+
+    def test_execute_summary_counts_transitions_ok_correctly(self, tmp_path):
+        """summary['transitions_ok'] must reflect the two successful hops (count=2)."""
+        rf_dir = tmp_path / "research_factory"
+        compound_id = "KILL_HOP_COUNT"
+        self._write_candidates_registered(rf_dir, compound_id)
+        self._write_refuted_63d_registry(tmp_path, compound_id)
+
+        from scripts.research_factory_run import run
+        summary = run(rf_dir=rf_dir, data_dir=tmp_path, dry_run=False, count=False)
+
+        assert summary["transitions_ok"] == 2, (
+            f"Expected transitions_ok=2 for two-hop kill; got {summary['transitions_ok']}. "
+            f"transitions_attempted={summary['transitions_attempted']}"
+        )
+        assert summary["transitions_attempted"] >= 2
+
+
+# ===========================================================================
+# 15. Execute-mode: human-gate non-regression (accruing → paper)
+#
+# The runner must NEVER auto-transition a candidate to a human-gate state
+# (paper, deferred, rejected, retired, scoped_build — per RF-5 _HUMAN_GATE_TARGETS).
+# When a registered candidate's domain projection is 'paper' (accruing),
+# the runner must:
+#   (a) transition registered → screened  (the intermediate legal step)
+#   (b) NOT perform screened → paper  (paper is human-gated, RF-5)
+#   (c) record a 'human_gate_required' note in the run summary for that candidate
+# ===========================================================================
+
+class TestExecuteHumanGateNonRegression:
+    """Runner must never auto-transition to human-gate states."""
+
+    def _write_candidates_registered(self, rf_dir: Path, spec_ref: str) -> None:
+        rf_dir.mkdir(parents=True, exist_ok=True)
+        candidate = {
+            "schema": "research_factory.candidate.v1",
+            "authority": "display_only",
+            "candidate_id": "rf-gate-001",
+            "created_at": "2026-07-06T00:00:00Z",
+            "source": "oracle_brainstorm",
+            "candidate_type": "oracle_compound",
+            "domain": "oracle",
+            "status": "registered",
+            "hypothesis": "human gate non-regression test",
+            "mechanism": "test mechanism",
+            "spec_ref": spec_ref,
+            "trial_accounting": {"mode": "read_only", "family": None},
+        }
+        (rf_dir / "candidates.jsonl").write_text(json.dumps(candidate) + "\n")
+
+    def _write_accruing_63d_registry(self, tmp_path: Path, compound_id: str) -> None:
+        """Write a 63d compound with status 'accruing' → projects to 'paper'."""
+        oracle_dir = tmp_path / "oracle" / "compounds"
+        oracle_dir.mkdir(parents=True, exist_ok=True)
+        compound = {
+            "id": compound_id,
+            "status": "accruing",
+            "family": "Y",
+            "entry_rule": {"col": "washout_w", "op": "gt", "value": 0},
+            "universe": {"tier": "s"},
+            # No reversion block → 63d track
+        }
+        (oracle_dir / "registry.jsonl").write_text(json.dumps(compound) + "\n")
+
+    def _read_transitions(self, rf_dir: Path) -> list[dict]:
+        path = rf_dir / "transitions.jsonl"
+        if not path.exists():
+            return []
+        rows = []
+        for line in path.read_text().splitlines():
+            line = line.strip()
+            if line:
+                rows.append(json.loads(line))
+        return rows
+
+    def test_accruing_compound_runner_does_not_auto_transition_to_paper(self, tmp_path):
+        """Runner must not perform the human-gate screened→paper transition.
+
+        For a registered candidate with domain projection 'paper' (accruing):
+        - The runner may transition registered→screened (mechanical intermediate hop)
+        - The runner must NOT transition screened→paper (human-gated, RF-5)
+        - No 'paper' row must appear in transitions.jsonl
+        """
+        rf_dir = tmp_path / "research_factory"
+        compound_id = "ACCRUING_63D"
+        self._write_candidates_registered(rf_dir, compound_id)
+        self._write_accruing_63d_registry(tmp_path, compound_id)
+
+        from scripts.research_factory_run import run
+        summary = run(rf_dir=rf_dir, data_dir=tmp_path, dry_run=False, count=False)
+
+        transitions = self._read_transitions(rf_dir)
+        tos = [t.get("to") for t in transitions]
+
+        assert "paper" not in tos, (
+            f"Runner must NEVER auto-transition to 'paper' (human-gated RF-5); "
+            f"got tos={tos}"
+        )
+
+    def test_accruing_compound_summary_has_human_gate_required_note(self, tmp_path):
+        """Summary must record a human_gate_required outcome for the candidate."""
+        rf_dir = tmp_path / "research_factory"
+        compound_id = "ACCRUING_GATE"
+        self._write_candidates_registered(rf_dir, compound_id)
+        self._write_accruing_63d_registry(tmp_path, compound_id)
+
+        from scripts.research_factory_run import run
+        summary = run(rf_dir=rf_dir, data_dir=tmp_path, dry_run=False, count=False)
+
+        routes = summary.get("routes", [])
+        assert routes, "Summary must contain route entries"
+        route = routes[0]
+
+        # The route must carry a human_gate_required marker
+        has_gate_note = (
+            route.get("human_gate_required") is True
+            or "human_gate" in str(route.get("reason", "")).lower()
+            or "human_gate" in str(route.get("action", "")).lower()
+        )
+        assert has_gate_note, (
+            f"Route must indicate human_gate_required for accruing projection; "
+            f"got route={route}"
+        )
