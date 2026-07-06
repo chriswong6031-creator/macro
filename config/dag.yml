@@ -1028,6 +1028,8 @@ modules:
       - data/oracle/panel*.parquet
       - data/oracle/graph_s.json
       - data/oracle/episodes.json
+      - data/oracle/episodes_s.parquet
+      - data/oracle/rotation_groups.json
       - site/basketdata/oracle_state.json
       - data/breadth/breadth.parquet
       - data/oracle/compounds/registry.jsonl

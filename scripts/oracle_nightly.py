@@ -951,20 +951,22 @@ _A15_COMPOUND: dict = {
     "condition_rule": None,
 }
 
-# GICS sector name -> ETF node (for mapping us_standouts sector field)
-_SECTOR_TO_ETF: dict[str, str] = {
-    "Information Technology": "XLK",
-    "Health Care": "XLV",
-    "Financials": "XLF",
-    "Consumer Discretionary": "XLY",
-    "Communication Services": "XLC",
-    "Industrials": "XLI",
-    "Consumer Staples": "XLP",
-    "Energy": "XLE",
-    "Utilities": "XLU",
-    "Real Estate": "XLRE",
-    "Materials": "XLB",
-}
+# GICS sector name -> ETF node (for mapping us_standouts sector field).
+# Derived from engine/oracle/panel.py::ETF_TO_SECTOR (canonical inverse) plus
+# non-canonical aliases emitted by the buy-lane builder (e.g. 'Technology',
+# 'Communications').  Aliases added here must NOT appear in ETF_TO_SECTOR so the
+# two-way round-trip is preserved; the canonical map is source-of-truth.
+def _build_sector_to_etf() -> dict[str, str]:
+    from engine.oracle.panel import ETF_TO_SECTOR as _ETS
+    _map = {sector: etf for etf, sector in _ETS.items()}
+    # Non-canonical aliases emitted by the buy-lane standouts builder.
+    # These are intentional additions, not duplicates of canonical names.
+    _map.setdefault("Technology", "XLK")          # buy lane alias for XLK
+    _map.setdefault("Communications", "XLC")       # buy lane alias for XLC
+    return _map
+
+
+_SECTOR_TO_ETF: dict[str, str] = _build_sector_to_etf()
 
 # Window length in sessions
 _A15_WINDOW_SESSIONS = 10
@@ -1089,7 +1091,8 @@ def _step_turn_desk(data_dir: Path, site_dir: Path, dry_run: bool) -> bool:
 
         # ── 5. Load member fires from us_standouts.json ──
         standouts_path = site_dir / "factordata" / "us_standouts.json"
-        signal_gate_path = site_dir / "factordata" / "signal_gate.json"
+        # signal_gate.json is declared in dag.yml reads but not consumed yet;
+        # variable removed to avoid dead-code confusion (spec §2.2 finding).
 
         member_fires_asof = ""
         if standouts_path.exists():
@@ -1098,6 +1101,12 @@ def _step_turn_desk(data_dir: Path, site_dir: Path, dry_run: bool) -> bool:
             buy_rows = standouts.get("buy", [])
             watch_rows = standouts.get("watch", [])
             all_standout_rows = buy_rows + watch_rows
+
+            # Propagate member_fires_asof to each armed entry so the ledger
+            # writer can key member_fire rows on the standouts artifact date
+            # (stable for the same event) rather than panel_asof.
+            for _ae in armed:
+                _ae["_member_fires_asof"] = member_fires_asof
 
             # Build a quick set of armed nodes
             armed_nodes = {a["node"] for a in armed}
@@ -1110,7 +1119,16 @@ def _step_turn_desk(data_dir: Path, site_dir: Path, dry_run: bool) -> bool:
                 # Map sector field to ETF node
                 sector_str = row.get("sector", "")
                 etf_node = _SECTOR_TO_ETF.get(sector_str)
-                if etf_node is None or etf_node not in armed_nodes:
+                if etf_node is None:
+                    # Loud annotation so future label drift trips CI rather than
+                    # silently dropping T1-T3 fires (spec §2.1 blocker fix).
+                    _annotation(
+                        f"oracle_nightly: turn_desk — T1-T3 fire sector "
+                        f"'{sector_str}' (ticker={row.get('ticker','?')}) "
+                        f"not in _SECTOR_TO_ETF — fire dropped; add alias if intentional"
+                    )
+                    continue
+                if etf_node not in armed_nodes:
                     continue
                 # Append to armed entry
                 for armed_entry in armed:
@@ -1143,15 +1161,6 @@ def _step_turn_desk(data_dir: Path, site_dir: Path, dry_run: bool) -> bool:
             ),
         }
 
-        # Validate no banned keys
-        for key in base_rates:
-            for banned in _BANNED_KEY_SUBS:
-                if banned in key:
-                    _annotation(
-                        f"oracle_nightly: turn_desk — BANNED key '{key}' in base_rates"
-                    )
-                    return False
-
         # ── 7. Promotion clock ──
         turn_desk_ledger_path = data_dir / "oracle" / "turn_desk_ledger.jsonl"
         windows_accrued = 0
@@ -1171,9 +1180,11 @@ def _step_turn_desk(data_dir: Path, site_dir: Path, dry_run: bool) -> bool:
         }
 
         # ── 8. Build payload ──
+        # n_windows=31 is the full-sample count; holdout arm has n=15.
+        # Disclaimer makes both counts explicit to avoid overstating holdout evidence.
         disclaimers = [
             "DISPLAY-WITH-EDGE — desk feeds no score, gate, or ordering surface.",
-            "WR21 65.2% vs 53.6% (holdout Δ+10.7pp CI [+3.8, +17.9]) — 31 windows, ≥2022-06-30.",
+            "WR21 65.2% vs 53.6% (holdout Δ+10.7pp CI [+3.8, +17.9]) — 31 modern-track windows (holdout n=15), ≥2022-06-30.",
             "Growth/cyclical tilt; defensive sectors (XLV, XLP, XLU) were negative in-window.",
             "T3 fires carry ~23.8% repaint risk — badge shown on each fire.",
             "Not a forecast.",
@@ -1188,14 +1199,27 @@ def _step_turn_desk(data_dir: Path, site_dir: Path, dry_run: bool) -> bool:
             "disclaimers": disclaimers,
         }
 
-        # Final banned-key sweep on entire payload (shallow keys only)
-        for key in payload:
-            for banned in _BANNED_KEY_SUBS:
-                if banned in key:
-                    _annotation(
-                        f"oracle_nightly: turn_desk — BANNED top-level key '{key}'"
-                    )
-                    return False
+        # Final banned-key sweep — recursive over entire payload tree (dict keys + list items).
+        # Enforces Constitution III: no field name containing forecast/predicted/target/expected_return.
+        def _check_banned_keys_recursive(obj: object, path: str) -> bool:
+            if isinstance(obj, dict):
+                for k, v in obj.items():
+                    for banned in _BANNED_KEY_SUBS:
+                        if banned in k:
+                            _annotation(
+                                f"oracle_nightly: turn_desk — BANNED key '{k}' at {path}"
+                            )
+                            return False
+                    if not _check_banned_keys_recursive(v, f"{path}.{k}"):
+                        return False
+            elif isinstance(obj, list):
+                for i, item in enumerate(obj):
+                    if not _check_banned_keys_recursive(item, f"{path}[{i}]"):
+                        return False
+            return True
+
+        if not _check_banned_keys_recursive(payload, "payload"):
+            return False
 
         # ── 9. Stamp + write artifact ──
         artifact_path = site_dir / "basketdata" / "oracle_turn_desk.json"
@@ -1280,11 +1304,18 @@ def _write_turn_desk_ledger(
                 })
                 existing_keys.add(wkey)
 
-        # member fires inside this window
+        # member fires inside this window.
+        # Key on the member's OWN first cascade fire_date (member_fires_asof
+        # from the standouts artifact, falling back to panel_asof) rather than
+        # panel_asof, so cross-night re-observations of the same economic event
+        # are deduped and don't inflate the grading population (spec §4 fix).
+        member_fires_asof_for_key = armed_entry.get("_member_fires_asof", panel_asof)
         for mf in armed_entry.get("member_fires", []):
             ticker = mf.get("ticker", "")
             wkey = f"{node}::a15::{armed_entry.get('fire_dates', [''])[0] if armed_entry.get('fire_dates') else ''}"
-            mkey = f"{wkey}::{ticker}::{panel_asof}"
+            # Key on the asof of the standouts artifact (stable for the same
+            # cascade event across re-runs on the same night), not panel_asof.
+            mkey = f"{wkey}::{ticker}::{member_fires_asof_for_key}"
             if mkey not in existing_keys:
                 new_rows.append({
                     "kind": "member_fire",
@@ -1293,7 +1324,7 @@ def _write_turn_desk_ledger(
                     "ticker": ticker,
                     "tier": mf.get("tier"),
                     "provisional": mf.get("provisional"),
-                    "fire_date": panel_asof,
+                    "fire_date": member_fires_asof_for_key,
                     "pit_stamp": panel_asof,
                     "registered_at": now_utc,
                     "fwd_ret_21": None,
