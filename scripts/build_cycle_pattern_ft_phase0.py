@@ -520,8 +520,8 @@ def declare_trial_budget(ledger_path: Path, *, run_at: str) -> None:
     )
 
 
-def run(panel_path: Path, out_dir: Path, *, smoke: bool = False,
-        ledger_path: Path | None = None, write: bool = True) -> dict:
+def _run_batch1(panel_path: Path, out_dir: Path, *, smoke: bool = False,
+                ledger_path: Path | None = None, write: bool = True) -> dict:
     panel, epoch = _load_panel(panel_path)
     panel = truncate_embargo(panel)
     n_rows = len(panel)
@@ -602,14 +602,297 @@ def run(panel_path: Path, out_dir: Path, *, smoke: bool = False,
     return {"ft1_breadth": art_ft1, "ft4_structure": art_ft4}
 
 
+# ═══════════════════════════════════════════════════════════════════════════════
+# Batch 2 — FT-2 credit/curve block (PREREGISTRATION.md §13; registered 2026-07-06)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# FROZEN constants (§13; not tuned).  These lists are the guarded spec — tests
+# parse them via AST and assert against §13.
+FT2_CREDIT_BLOCK = [
+    "hy_oas_pctile",
+    "hy_oas_d63",
+    "curve_10y3m",
+]
+
+FAMILY_V1 = "rf.cycle_pattern.ft_v1"   # batch-2 trial-budget family (§13)
+N_TRIALS_V1 = 6                         # 2 directions × 3 horizons
+
+_FRED_DIR = _REPO / "data" / "fred"
+_HY_OAS_PARQUET = _FRED_DIR / "BAMLH0A0HYM2.parquet"   # col: hy_oas
+_CURVE_PARQUET = _FRED_DIR / "T10Y3M.parquet"           # col: spread_10y3m
+
+
+def _load_fred_series(path: Path, col: str) -> pd.Series:
+    """Load a FRED parquet and return the named column as a date-indexed Series (sorted).
+    Rows with NaN in the column are dropped (FRED publishes NaN for non-trading days
+    on some series; we want the last non-NaN obs <= t)."""
+    df = pd.read_parquet(path)
+    df.index = pd.to_datetime(df.index)
+    s = df[col].dropna().sort_index()
+    return s
+
+
+def _fred_pit(series: pd.Series, t: pd.Timestamp) -> float | None:
+    """Point-in-time sampler: return the LAST observation of *series* with index <= *t*.
+    Returns None when no such observation exists.  No lookahead by construction."""
+    pos = series.index.searchsorted(t, side="right")   # number of entries with index <= t
+    if pos == 0:
+        return None
+    return float(series.iloc[pos - 1])
+
+
+def _expanding_percentile(series: pd.Series, t: pd.Timestamp) -> float | None:
+    """Expanding-window percentile of *series*: fraction of observations (index <= t)
+    that are STRICTLY less than the value at t (a.k.a. the empirical CDF at t, using
+    observations up to and including t).  Returns None when no obs exist at/before t."""
+    pos = series.index.searchsorted(t, side="right")   # entries with index <= t
+    if pos == 0:
+        return None
+    window = series.iloc[:pos].to_numpy(float)
+    val = window[-1]   # last obs at or before t
+    return float(np.mean(window < val))   # fraction strictly less than val at t
+
+
+def attach_ft2_credit(panel: pd.DataFrame) -> pd.DataFrame:
+    """Add the FT-2 credit/curve block to the panel (§13).
+
+    All three features are TIME-ONLY covariates: they are computed from FRED series
+    at each UNIQUE month-end date in the panel, then broadcast to all panel rows for
+    that date (direction-invariant). Sampling is PIT-pure: each feature uses
+    ``_fred_pit`` to take the last available observation <= t, with no lookahead.
+
+    Features:
+      hy_oas_pctile  expanding percentile of BofA HY OAS level at t.
+      hy_oas_d63     63-trading-day change in HY OAS level at t.
+      curve_10y3m    10y−3m Treasury spread level at t.
+    """
+    d = panel.copy()
+    d["date"] = pd.to_datetime(d["date"])
+    for c in FT2_CREDIT_BLOCK:
+        d[c] = np.nan
+
+    # Load FRED series once — missing files → all NaN (median-imputed downstream).
+    hy_oas: pd.Series | None = None
+    curve: pd.Series | None = None
+    if _HY_OAS_PARQUET.exists():
+        try:
+            hy_oas = _load_fred_series(_HY_OAS_PARQUET, "hy_oas")
+        except Exception:
+            pass
+    if _CURVE_PARQUET.exists():
+        try:
+            curve = _load_fred_series(_CURVE_PARQUET, "spread_10y3m")
+        except Exception:
+            pass
+
+    # Build a lookup from date -> feature values, sampling once per unique month-end.
+    unique_dates = sorted(d["date"].unique())
+
+    # Pre-sort hy_oas index once; searchsorted handles the rest.
+    feat_rows: dict[pd.Timestamp, dict] = {}
+    for t in unique_dates:
+        row: dict[str, float | None] = {}
+
+        # hy_oas_pctile — expanding percentile
+        row["hy_oas_pctile"] = _expanding_percentile(hy_oas, t) if hy_oas is not None else None
+
+        # hy_oas_d63 — 63-trading-day change
+        if hy_oas is not None:
+            val_t = _fred_pit(hy_oas, t)
+            # 63-trading-day lag: walk backward through the hy_oas index by 63 positions.
+            pos = hy_oas.index.searchsorted(t, side="right")   # entries <= t
+            if pos >= 64 and val_t is not None:
+                val_lag = float(hy_oas.iloc[pos - 64])
+                row["hy_oas_d63"] = val_t - val_lag
+            else:
+                row["hy_oas_d63"] = None
+        else:
+            row["hy_oas_d63"] = None
+
+        # curve_10y3m — PIT level
+        row["curve_10y3m"] = _fred_pit(curve, t) if curve is not None else None
+
+        feat_rows[t] = row
+
+    # Broadcast to panel rows.
+    for c in FT2_CREDIT_BLOCK:
+        d[c] = d["date"].map(lambda t, _c=c: feat_rows.get(t, {}).get(_c))
+    return d
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Batch-2 artifact builder and orchestration
+# ─────────────────────────────────────────────────────────────────────────────
+
+FEATURE_BLOCK_DEFS_V1 = {
+    "ft2_credit": {
+        "features": FT2_CREDIT_BLOCK,
+        "hy_oas_pctile": (
+            "expanding percentile of BofA HY OAS level at t "
+            "(data/fred/BAMLH0A0HYM2.parquet 'hy_oas', obs<=t only; PIT)"
+        ),
+        "hy_oas_d63": (
+            "63-trading-day change in HY OAS level at t "
+            "(last obs<=t minus obs 63 daily positions prior)"
+        ),
+        "curve_10y3m": (
+            "10y-3m Treasury spread level at t "
+            "(data/fred/T10Y3M.parquet 'spread_10y3m', last obs<=t; PIT)"
+        ),
+    },
+}
+
+
+def build_artifact_v1(block_key: str, block_result: dict, *, panel_epoch: str,
+                      n_rows: int, n_test_years: int) -> dict:
+    """Assemble the §13 JSON artifact for one FT-2 block."""
+    return {
+        "schema": "cycle_pattern_ft_trial.v1",
+        "registered_ref": "PREREGISTRATION.md §13",
+        "run_at": datetime.now(timezone.utc).isoformat(),
+        "embargo": "date<2024-01-01",
+        "panel_epoch": panel_epoch,
+        "n_rows": int(n_rows),
+        "n_test_years": int(n_test_years),
+        "candidate_count_printed": N_TRIALS_V1,
+        "trial_family": FAMILY_V1,
+        "config": {
+            "first_test_year": FIRST_TEST_YEAR, "embargo_m": EMBARGO_M,
+            "boot_draws": BOOT_DRAWS, "boot_seed": BOOT_SEED, "fdr_q": FDR_Q,
+            "sign_stability_min": SIGN_STABILITY_MIN, "n_cells_family": N_TRIALS_V1,
+            "base_design": list(DESIGN),
+        },
+        "feature_block": FEATURE_BLOCK_DEFS_V1[block_key],
+        "per_fold": block_result["per_fold"],
+        "ledger": _restructure_ledger(block_result),
+    }
+
+
+def declare_trial_budget_v1(ledger_path: Path, *, run_at: str) -> None:
+    """Register the §13 multiple-testing budget before any p-value (same idiom as batch 1)."""
+    from engine.trial_ledger import TrialLedger
+    led = TrialLedger(path=ledger_path, family=FAMILY_V1)
+    led.log_declared_budget(
+        N_TRIALS_V1, family=FAMILY_V1,
+        reason=(f"PREREGISTRATION.md §13 cycle_pattern_ft batch 2: 1 block × 2 directions × "
+                f"3 horizons = 6 pre-registered cells; run_at={run_at}"),
+    )
+
+
+def run_batch2(panel_path: Path, out_dir: Path, *, smoke: bool = False,
+               ledger_path: Path | None = None, write: bool = True) -> dict:
+    """Batch-2 runner for FT-2 credit/curve block (§13).  Evaluates 6 cells (2 directions ×
+    3 horizons) against the SAME refit baseline under identical folds.  BH-FDR q=0.10
+    applied across the 6 cells of THIS batch only.  Does NOT run the real study — call only
+    after the pre-registered criteria are committed."""
+    panel, epoch = _load_panel(panel_path)
+    panel = truncate_embargo(panel)
+    n_rows = len(panel)
+    run_at = datetime.now(timezone.utc).isoformat()
+
+    if smoke:
+        directions: tuple[str, ...] = ("up",)
+        panel = panel[panel["date"] < pd.Timestamp("2013-01-01")].reset_index(drop=True)
+        print(f"[SMOKE batch2] one direction (up), first 3 test years, {len(panel)} truncated rows")
+    else:
+        directions = ("up", "down")
+
+    # ANTI-MINING LAW (§13): print candidate count BEFORE any evaluation.
+    print(f"CANDIDATE COUNT (pre-registered, evaluated BEFORE any p-value): {N_TRIALS_V1} "
+          f"cells = 1 block × 2 directions × 3 horizons  [family={FAMILY_V1}]")
+
+    # Trial-budget declaration.
+    if ledger_path is None:
+        if smoke:
+            ledger_path = Path(tempfile.gettempdir()) / "cpi_ft_smoke_trial_ledger_v1.jsonl"
+        else:
+            ledger_path = _REPO / "data" / "trial_ledger.jsonl"
+    declare_trial_budget_v1(ledger_path, run_at=run_at)
+    print(f"Declared trial budget: family={FAMILY_V1} n={N_TRIALS_V1} → {ledger_path}")
+
+    # Attach FT-2 credit/curve features (PIT, time-only covariates).
+    panel = attach_ft2_credit(panel)
+    panel_d = build_design(panel)
+    panel_d["date"] = pd.to_datetime(panel_d["date"])
+
+    # Median-impute FT-2 NaNs on the same convention as batch 1.
+    for c in FT2_CREDIT_BLOCK:
+        panel_d[c] = pd.to_numeric(panel_d[c], errors="coerce")
+        med = panel_d[c].median()
+        panel_d[c] = panel_d[c].fillna(med if pd.notna(med) else 0.0)
+
+    if smoke:
+        # Validates plumbing only — no real artifacts.
+        ft2 = run_block(panel_d, FT2_CREDIT_BLOCK, directions=directions, horizons=HORIZONS)
+        pvals = [p for (_, _, p) in ft2["cell_pvals"]]
+        rej = bh_fdr(pvals, q=FDR_Q)
+        for (direction, h, _), r in zip(ft2["cell_pvals"], rej):
+            c = ft2["ledger"][direction][f"{h}m"]
+            c["bh_pass"] = bool(r)
+            c["verdict"] = "PASS" if (c.get("ci_excludes_zero") and c.get("sign_stable") and r) else "FAIL"
+        print("[SMOKE batch2] FT2 up ledger:")
+        for h in HORIZONS:
+            c = ft2["ledger"]["up"][f"{h}m"]
+            print(f"  up/{h}m: verdict={c.get('verdict')} dBrier={c.get('delta_brier')} "
+                  f"ci90={c.get('ci90')} years+={c.get('years_positive')}/{c.get('n_years')}")
+        return {"smoke": True, "ft2_up": ft2["ledger"]["up"]}
+
+    # Full run — BH-FDR across the 6 cells of this batch only (§13).
+    ft2 = run_block(panel_d, FT2_CREDIT_BLOCK, directions=directions, horizons=HORIZONS)
+    pvals = [p for (_, _, p) in ft2["cell_pvals"]]
+    rejects = bh_fdr(pvals, q=FDR_Q)
+    for (direction, h, _), rej in zip(ft2["cell_pvals"], rejects):
+        cell = ft2["ledger"][direction][f"{h}m"]
+        cell["bh_pass"] = bool(rej)
+        cell["verdict"] = "PASS" if (
+            cell.get("ci_excludes_zero", False)
+            and cell.get("sign_stable", False)
+            and rej
+        ) else "FAIL"
+
+    n_test_years = ft2["per_fold"].get("up", {}).get("n_folds", 0)
+    art_ft2 = build_artifact_v1("ft2_credit", ft2, panel_epoch=epoch,
+                                n_rows=n_rows, n_test_years=n_test_years)
+
+    if write:
+        out_dir.mkdir(parents=True, exist_ok=True)
+        (out_dir / "ft2_credit.json").write_text(json.dumps(art_ft2, indent=2, default=str))
+        print(f"Wrote {out_dir / 'ft2_credit.json'}")
+
+    print(f"\nRESULT (panel_epoch={epoch}, n_rows={n_rows}, test_years={n_test_years}):")
+    for direction in ("up", "down"):
+        for h in HORIZONS:
+            c = art_ft2["ledger"][direction][f"{h}m"]
+            print(f"  FT2 {direction}/{h}m: {c['verdict']:4s}  "
+                  f"dBrier={c['delta_brier']}  ci90={c['ci90']}  "
+                  f"years+={c['years_positive']}/{c['n_years']}  bh={c['bh_pass']}")
+    return {"ft2_credit": art_ft2}
+
+
+def run(panel_path: Path, out_dir: Path, *, smoke: bool = False,
+        ledger_path: Path | None = None, write: bool = True,
+        batch: int = 1) -> dict:
+    """Top-level run dispatcher.  batch=1 → exact batch-1 behaviour (default, unchanged).
+    batch=2 → FT-2 credit/curve block only (§13)."""
+    if batch == 2:
+        return run_batch2(panel_path, out_dir, smoke=smoke,
+                          ledger_path=ledger_path, write=write)
+    # batch == 1: delegate to the original run logic (unchanged below).
+    return _run_batch1(panel_path, out_dir, smoke=smoke,
+                       ledger_path=ledger_path, write=write)
+
+
 def main(argv=None):
-    ap = argparse.ArgumentParser(description="CPI feature-trial runner (PREREG §12)")
+    ap = argparse.ArgumentParser(description="CPI feature-trial runner (PREREG §12/§13)")
     ap.add_argument("--panel", default=str(_REPO / "data/hazard/panel_price_c4414dcb.parquet"))
     ap.add_argument("--out-dir", default=str(_REPO / "data/cycle_pattern/ft_trials"))
     ap.add_argument("--smoke", action="store_true",
                     help="tiny slice (up direction, first 3 test years); writes NO real artifacts")
+    ap.add_argument("--batch", type=int, choices=[1, 2], default=1,
+                    help="1=batch-1 FT-1/FT-4 (§12, default); 2=batch-2 FT-2 credit/curve (§13)")
     args = ap.parse_args(argv)
-    run(Path(args.panel), Path(args.out_dir), smoke=args.smoke, write=not args.smoke)
+    run(Path(args.panel), Path(args.out_dir), smoke=args.smoke, write=not args.smoke,
+        batch=args.batch)
     return 0
 
 

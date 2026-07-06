@@ -364,3 +364,36 @@ adjudication: `research/cycle_masterplan/CPI_FT1_FT4_VERDICT.md`. Reopening eith
 NEW preregistered trial naming the null it challenges (dead-stays-dead). Artifacts:
 `data/cycle_pattern/ft_trials/ft{1,4}_*.json`; budget line `rf.cycle_pattern.ft_v0` n=12 in
 `data/trial_ledger.jsonl`.
+
+---
+
+## 13 · CPI feature-trial batch 2 — FT-2 credit/curve (registered 2026-07-06, PRE-RUN)
+
+Same harness and discipline as §12, unchanged: W4.2 harness verbatim; **baseline = the shipped
+W2.5-bound feature set refit under identical folds inside the runner**; embargo (rows ≥ 2024-01-01
+excluded from fit AND gate); 14 test years 2010–2023; paired ΔBrier month-block bootstrap (800, seed
+7); sign-stability ≥ 9/14. **Batch-1 lessons applied:** one block, three features, and
+direction-scoped adjudication — the block may be adopted for at most the direction(s) whose cells pass.
+
+**FT-3 (net liquidity) is NOT registered this batch** — the numeric components on disk are
+insufficient (WALCL 2002→, RRPONTSYD 2003→, TGA absent). Registering a weak proxy would repeat the
+FT-1 kitchen-sink mistake. Docket: build the TGA/netliq collector (P4), then register FT-3 properly.
+
+**Frozen FT-2 block (3 features; market-priced; PIT-pure; time-only covariates — precedent: the
+quad/liquidity dummies already in the base model):**
+- `hy_oas_pctile` — expanding percentile of the BofA HY OAS level at t
+  (`data/fred/BAMLH0A0HYM2.parquet`, 1996-12→; the 4-month NaN head at panel start follows the §12
+  median-impute convention).
+- `hy_oas_d63` — 63-trading-day change in the HY OAS level at t.
+- `curve_10y3m` — the 10y−3m Treasury spread level at t (`data/fred/T10Y3M.parquet`, 1982→).
+
+All series sampled at the last available observation ≤ t (weekly/daily publication; no lookahead).
+
+| id | claim | success criterion | judged by | E[pass\|null] | FDR family |
+|---|---|---|---|---|---|
+| **FT2-{up,dn}-{1m,3m,6m}** | the credit/curve block adds OOS turn-hazard skill beyond the shipped feature set | identical to §12: paired ΔBrier CI₉₀ excludes 0 on the positive side AND survives BH-FDR q=0.10 within `cycle_pattern_ft_v1` AND sign-stability ≥ 9/14 years | `data/cycle_pattern/ft_trials/ft2_credit.json` → `ledger.<dir>.<h>` | 0.05/cell | `cycle_pattern_ft_v1` (q=0.10) |
+
+**Trial budget:** 6 cells, declared as family `rf.cycle_pattern.ft_v1` in `data/trial_ledger.jsonl`
+pre-p-value. No other features, transformations, lags, or horizons may be evaluated under this
+registration. Outcome handling as §12: fail → `promoted_null` scoped to this block; pass → adoption
+is a separate follow-on wave; no page/UI change this wave regardless.

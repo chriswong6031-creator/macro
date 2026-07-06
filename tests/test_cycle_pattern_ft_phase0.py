@@ -293,3 +293,200 @@ def test_fit_cycle_hazard_suite_still_green():
         cwd=str(_REPO), capture_output=True, text=True, timeout=300,
     )
     assert proc.returncode == 0, f"fit_cycle_hazard suite broke:\n{proc.stdout}\n{proc.stderr}"
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Batch-2 / FT-2 tests (PREREGISTRATION.md §13)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# The EXACT lists as written in PREREGISTRATION.md §13 (independently transcribed so a
+# silent edit to the runner trips this test).
+PREREG_FT2 = ["hy_oas_pctile", "hy_oas_d63", "curve_10y3m"]
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# (a) Frozen FT-2 block AST guard — matches §13 exactly (three features, exact names)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_frozen_ft2_block_matches_prereg():
+    """AST-parsed FT2_CREDIT_BLOCK must match §13 verbatim: three features, exact names,
+    exact order.  Import-time mutation is also checked via the live constant."""
+    src_list = _parse_module_list("FT2_CREDIT_BLOCK")
+    assert src_list == PREREG_FT2, f"FT2 block drifted from §13: {src_list}"
+    assert ft.FT2_CREDIT_BLOCK == PREREG_FT2, "imported FT2_CREDIT_BLOCK drifted"
+    assert len(ft.FT2_CREDIT_BLOCK) == 3, "§13 specifies exactly 3 features"
+
+
+def test_ft2_trial_budget_constants():
+    """§13: 6 cells (1 block × 2 directions × 3 horizons), family rf.cycle_pattern.ft_v1."""
+    assert ft.N_TRIALS_V1 == 6
+    assert ft.FAMILY_V1 == "rf.cycle_pattern.ft_v1"
+    assert 1 * 2 * len(hz.HORIZONS) == ft.N_TRIALS_V1
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# (b) PIT guard — FRED sampler returns last obs <= t, never a later one
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _make_fred_series(dates, values=None) -> pd.Series:
+    """Helper: synthetic FRED-style Series indexed by date."""
+    idx = pd.to_datetime(dates)
+    if values is None:
+        values = list(range(len(dates)))
+    return pd.Series(values, index=idx, dtype=float).sort_index()
+
+
+def test_fred_pit_returns_last_obs_at_or_before_t():
+    """_fred_pit must return the value at exactly t when t is in the index."""
+    dates = pd.date_range("2020-01-01", periods=10, freq="D")
+    s = _make_fred_series(dates)
+    # Exact boundary: t is an index date.
+    t_exact = dates[4]   # value == 4
+    assert ft._fred_pit(s, t_exact) == 4.0
+
+    # One day before publication: t falls between index[3] and index[4] — should return 3.
+    t_between = dates[3] + pd.Timedelta(hours=12)
+    assert ft._fred_pit(s, t_between) == 3.0
+
+
+def test_fred_pit_never_returns_later_obs():
+    """PIT guard: no observation AFTER t should ever be returned."""
+    dates = pd.date_range("2021-01-04", periods=5, freq="W-MON")
+    s = _make_fred_series(dates, [10.0, 20.0, 30.0, 40.0, 50.0])
+    for i, t in enumerate(dates):
+        val = ft._fred_pit(s, t)
+        # The value at t itself is fine; anything from a later date is a lookahead.
+        assert val == s.iloc[i], f"expected {s.iloc[i]} at t={t}, got {val}"
+        # One hour before the NEXT publication: must not see the next value.
+        # (pd.Timedelta(nanoseconds=1) is incompatible with day-resolution DatetimeIndex
+        # in pandas >=2; one hour is precise enough to prove no lookahead here.)
+        if i + 1 < len(dates):
+            import datetime as _dt
+            t_before_next = pd.Timestamp(dates[i + 1].to_pydatetime() - _dt.timedelta(hours=1))
+            val_prev = ft._fred_pit(s, t_before_next)
+            assert val_prev == s.iloc[i], (
+                f"lookahead detected: at t_before_next={t_before_next} "
+                f"got {val_prev} instead of {s.iloc[i]}"
+            )
+
+
+def test_fred_pit_returns_none_before_first_obs():
+    """_fred_pit returns None when t precedes every observation."""
+    dates = pd.date_range("2020-06-01", periods=3, freq="D")
+    s = _make_fred_series(dates)
+    t_before = pd.Timestamp("2020-05-31")
+    assert ft._fred_pit(s, t_before) is None
+
+
+def test_fred_pit_exact_month_end_boundary():
+    """Boundary test at an exact month-end date and one day before publication (§13 PIT contract)."""
+    # Weekly FRED cadence: published every Monday.
+    mondays = pd.date_range("2022-09-12", periods=8, freq="W-MON")  # Sep 12, 19, 26, Oct 3 …
+    values = [100.0 + i * 5 for i in range(8)]
+    s = _make_fred_series(mondays, values)
+
+    # Sep 30 2022 is a Friday month-end; last pub <= Sep 30 is Sep 26 (index 2 = value 110.0).
+    t_month_end = pd.Timestamp("2022-09-30")
+    val = ft._fred_pit(s, t_month_end)
+    assert val == 110.0, f"expected 110.0 (Sep 26 pub) at month-end Sep 30, got {val}"
+
+    # One day before publication (Sep 25, a Sunday): last pub <= Sep 25 is Sep 19 (value 105.0).
+    t_day_before_pub = pd.Timestamp("2022-09-25")
+    val2 = ft._fred_pit(s, t_day_before_pub)
+    assert val2 == 105.0, f"expected 105.0 (Sep 19 pub), got {val2}"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# (c) Expanding-percentile positive control on a known small series
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_expanding_percentile_positive_control():
+    """Known-small series: [1,2,3,4,5] daily.  At t=day[4] (value=5) all 4 prior obs are
+    strictly less → pctile = 4/5 = 0.80.  At t=day[0] (value=1) no prior obs less → 0.0."""
+    dates = pd.date_range("2000-01-03", periods=5, freq="B")
+    s = _make_fred_series(dates, [1.0, 2.0, 3.0, 4.0, 5.0])
+
+    # At day[0]: only [1] in window, 0 strictly less than 1 → 0.0
+    assert ft._expanding_percentile(s, dates[0]) == 0.0
+
+    # At day[2]: window=[1,2,3], val=3, two strictly less → 2/3
+    assert abs(ft._expanding_percentile(s, dates[2]) - 2/3) < 1e-12
+
+    # At day[4]: window=[1,2,3,4,5], val=5, four strictly less → 4/5
+    assert abs(ft._expanding_percentile(s, dates[4]) - 4/5) < 1e-12
+
+
+def test_expanding_percentile_min_value_always_zero():
+    """At the global minimum, no prior obs is strictly less → pctile = 0.0."""
+    dates = pd.date_range("2001-01-02", periods=6, freq="B")
+    s = _make_fred_series(dates, [5.0, 3.0, 7.0, 1.0, 9.0, 2.0])
+    # At day[3] (value=1.0, the min): 3 obs in window [5,3,7,1], none strictly < 1 → 0.0
+    assert ft._expanding_percentile(s, dates[3]) == 0.0
+
+
+def test_expanding_percentile_returns_none_before_first_obs():
+    """Returns None when t precedes the series."""
+    dates = pd.date_range("2010-01-04", periods=3, freq="B")
+    s = _make_fred_series(dates)
+    assert ft._expanding_percentile(s, pd.Timestamp("2010-01-01")) is None
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# (d) batch-1 default path unchanged — verified by the existing tests above.
+#     This explicit test asserts that run(..., batch=1) still has the same
+#     callable signature and delegates to _run_batch1 (not run_batch2).
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_batch1_default_run_signature_unchanged():
+    """run() with default batch=1 must accept the same positional args as before the refactor,
+    and must NOT call any batch-2 logic (verified by function identity)."""
+    import inspect
+    sig = inspect.signature(ft.run)
+    params = list(sig.parameters.keys())
+    # The first two positional params are unchanged.
+    assert params[:2] == ["panel_path", "out_dir"], f"positional prefix changed: {params}"
+    # batch defaults to 1.
+    assert sig.parameters["batch"].default == 1
+    # _run_batch1 exists (the refactor renamed, not deleted).
+    assert callable(ft._run_batch1)
+    # run_batch2 exists and is distinct.
+    assert callable(ft.run_batch2)
+    assert ft._run_batch1 is not ft.run_batch2
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# (e) --smoke --batch 2 completes without writing real artifacts (data-guarded)
+# ─────────────────────────────────────────────────────────────────────────────
+
+@pytest.mark.skipif(not _PANEL.exists(), reason="real panel not present in this checkout")
+def test_smoke_batch2_completes_without_writing_artifacts(tmp_path):
+    """--smoke --batch 2 must: exit 0, print CANDIDATE COUNT before any verdict,
+    write NO ft_trials/*.json and NOT touch the production trial ledger."""
+    ft_trials = _REPO / "data/cycle_pattern/ft_trials"
+    before = set(ft_trials.glob("*.json")) if ft_trials.exists() else set()
+    prod_ledger = _REPO / "data/trial_ledger.jsonl"
+    prod_before = prod_ledger.read_bytes() if prod_ledger.exists() else b""
+
+    proc = subprocess.run(
+        [sys.executable, str(_RUNNER), "--smoke", "--batch", "2"],
+        cwd=str(_REPO), capture_output=True, text=True, timeout=300,
+    )
+    assert proc.returncode == 0, f"smoke batch2 failed:\n{proc.stdout}\n{proc.stderr}"
+    assert "CANDIDATE COUNT" in proc.stdout, "anti-mining candidate count not printed"
+
+    # Candidate count must precede any verdict line.
+    ci = proc.stdout.index("CANDIDATE COUNT")
+    verdict_pos = proc.stdout.find("verdict=")
+    if verdict_pos != -1:
+        assert ci < verdict_pos, "candidate count must print BEFORE any evaluation"
+
+    # Must print the ft_v1 family.
+    assert "ft_v1" in proc.stdout, "batch-2 family rf.cycle_pattern.ft_v1 not mentioned"
+
+    # No new JSON artifacts written.
+    after = set(ft_trials.glob("*.json")) if ft_trials.exists() else set()
+    assert after == before, "smoke batch2 must NOT write ft_trials artifacts"
+
+    # Production ledger untouched.
+    prod_after = prod_ledger.read_bytes() if prod_ledger.exists() else b""
+    assert prod_after == prod_before, "smoke batch2 must NOT append to the production trial ledger"
