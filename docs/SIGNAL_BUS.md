@@ -227,8 +227,8 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
-| operator-exposure-log | `data/operator/exposure_log.jsonl` | jsonl | daily | infrastructure | 1 | 0 |
-| operator-exposure-summary | `data/governance/operator_exposure_summary.json` | json | daily | infrastructure | 0 | 0 |
+| operator-exposure-log | `data/operator/exposure_log.jsonl` | jsonl | collect | infrastructure | 1 | 0 |
+| operator-exposure-summary | `data/governance/operator_exposure_summary.json` | json | collect | infrastructure | 0 | 0 |
 | options-entry-coverage | `data/options_entry/coverage.json` | json | collect | infrastructure | 0 | 0 |
 
 ### nw-mastermind-bridge
