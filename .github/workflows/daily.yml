@@ -981,6 +981,13 @@ jobs:
         # Fail-open: per-lobe exceptions produce status='unknown'; missing synapse.yml exits 0.
         # Both outputs covered by 'git add data/ site/' in 'commit engine outputs' below.
         run: python -m scripts.build_neuralweb_health || echo "::warning::build_neuralweb_health failed (non-fatal) — keeping last committed health.json"
+      - name: build neuralweb daily brief (PR-D — NW daily brief surface, engine phase)
+        if: always()
+        # PR-D two-phase brief: engine job writes phase='engine' after health.json is ready.
+        # Cortex job runs --finalize after --refresh-cortex to write phase='final' + history row.
+        # Fail-open: any missing input → brief with explicit gap notes, exit 0.
+        # Both outputs covered by 'git add data/ site/' in 'commit engine outputs' below.
+        run: python -m scripts.build_neuralweb_brief || echo "::warning::build_neuralweb_brief failed (non-fatal) — keeping last committed daily_brief.json"
       - name: research_factory_monitor (W6 — paper monitor + nightly ledger)
         if: always()
         # Research Factory W6 (RF-8/RF-9/RF-10): paper monitor over all 'paper',
@@ -1424,6 +1431,17 @@ jobs:
           cat /tmp/nw_health_refresh.log
           [ "$rc" -ne 0 ] && echo "::warning title=nw_health_refresh::rc=$rc (non-fatal — keeping previous health.json)"
           exit 0
+      - name: build neuralweb daily brief — finalize (PR-D, cortex phase)
+        if: always()
+        # PR-D cortex phase: rebuild brief with phase='final' using post-refresh-cortex
+        # health.json, rewrite both copies, and upsert compact history row keyed by as_of.
+        # Fail-open: any missing input → brief with explicit gap notes, exit 0.
+        run: |
+          set +e
+          python -m scripts.build_neuralweb_brief --finalize > /tmp/nw_brief_finalize.log 2>&1; rc=$?
+          cat /tmp/nw_brief_finalize.log
+          [ "$rc" -ne 0 ] && echo "::warning title=nw_brief_finalize::rc=$rc (non-fatal — keeping previous daily_brief.json)"
+          exit 0
       - name: commit cortex outputs
         run: |
           git config user.name "dashboard-bot"
@@ -1443,6 +1461,10 @@ jobs:
           # PR-C: NW health refresh (cortex_source=current_run) — two-phase health surface
           git add data/neuralweb/health.json 2>/dev/null || true
           git add site/neuralwebdata/health.json 2>/dev/null || true
+          # PR-D: NW daily brief finalize (phase=final + history row) — two-phase brief surface
+          git add data/neuralweb/daily_brief.json 2>/dev/null || true
+          git add site/neuralwebdata/daily_brief.json 2>/dev/null || true
+          git add data/neuralweb/daily_brief_history.jsonl 2>/dev/null || true
           if git diff --cached --quiet; then echo "no cortex output changes"; exit 0; fi
           git commit -m "cortex: attention grades + A2 earn-in + hypothesis metabolism $(date -u +%F)"
           # Retry-rebase push loop (stock_briefs pattern)

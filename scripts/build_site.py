@@ -3700,6 +3700,11 @@ def main() -> int:
         if _hl_src.exists():
             (nwd / "half_life.json").write_bytes(_hl_src.read_bytes())
             log.info("neuralwebdata: copied half_life.json")
+        # PR-D: copy NW daily brief for committee.html client-side fetch
+        _db_src = config.data_dir() / "neuralweb" / "daily_brief.json"
+        if _db_src.exists():
+            (nwd / "daily_brief.json").write_bytes(_db_src.read_bytes())
+            log.info("neuralwebdata: copied daily_brief.json")
         # Supabase config (same as watchlist / theme.js)
         committee_html = env.get_template("committee.html.j2").render(
             generated_utc=generated,

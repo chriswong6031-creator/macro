@@ -188,6 +188,29 @@ body { padding-bottom:56px; }
 <!-- Main content (hidden until auth) -->
 <div id="cm_content">
 
+  <!-- 0. DAILY BRIEF: deterministic NW daily brief (PR-D) -->
+  <div class="panel" id="cm_brief_section">
+    <div class="panel-head">
+      <h1>{{ t('Neural Web Daily Brief', '神经网络每日简报') }}</h1>
+      <span class="is-context-badge">{{ t('CONTEXT ONLY', '仅供参考') }}</span>
+    </div>
+    <div class="cm-loading" id="brief_loading">{{ t('Loading brief…', '加载简报中…') }}</div>
+    <div id="cm_brief_content" style="display:none">
+      <div id="brief_status_row" style="margin-bottom:8px"></div>
+      <div id="brief_brain_row" style="margin-bottom:8px;font-size:13px;color:var(--muted)"></div>
+      <div id="brief_changed_list"></div>
+      <div id="brief_stale_list"></div>
+      <div id="brief_attn_list"></div>
+      <details id="brief_expander" style="margin-top:8px">
+        <summary style="cursor:pointer;font-size:12px;color:var(--muted)">{{ t('Show all items…', '显示全部…') }}</summary>
+        <div id="brief_expander_content" style="margin-top:6px"></div>
+      </details>
+    </div>
+    <div id="brief_error" style="display:none;color:var(--muted);font-size:13px">
+      {{ t('Daily brief not yet available.', '每日简报暂不可用。') }}
+    </div>
+  </div>
+
   <!-- 1. COMMITTEE VIEW: per-ticker provenance panel -->
   <div class="panel section-lazy" id="cm_ticker_section">
     <div class="panel-head">
@@ -375,6 +398,7 @@ body { padding-bottom:56px; }
   function initPage() {
     setupSearch();
     setupLazyReveal();
+    loadDailyBrief();
     loadGraph();
     loadMemo();
     loadKernelFamilies();
@@ -608,6 +632,92 @@ body { padding-bottom:56px; }
       + '<td><span class="source-expand">▼ source</span>'
         + '<div class="source-detail">' + detailHtml + '</div></td>'
       + '</tr>';
+  }
+
+  // ── PR-D: Neural Web Daily Brief ──────────────────────────────────────────
+  function loadDailyBrief() {
+    var loadEl = document.getElementById('brief_loading');
+    var contentEl = document.getElementById('cm_brief_content');
+    var errEl = document.getElementById('brief_error');
+    fetch('neuralwebdata/daily_brief.json')
+      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(function (d) {
+        if (loadEl) loadEl.style.display = 'none';
+        if (!contentEl) return;
+        contentEl.style.display = '';
+        var esc = function (s) {
+          return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        };
+        var statusColor = {'ok':'var(--up)','warn':'var(--warn,#e6a817)','degraded':'var(--down)'};
+        var st = d.status || 'unknown';
+        var stColor = statusColor[st] || 'var(--muted)';
+        // Status row
+        var statusEl = document.getElementById('brief_status_row');
+        if (statusEl) {
+          statusEl.innerHTML = '<span style="font-weight:600;color:' + stColor + '">' + esc(st.toUpperCase()) + '</span>'
+            + ' <span style="font-size:11px;color:var(--muted)">' + esc(d.phase || '') + ' &bull; ' + esc((d.as_of || '').slice(0, 16).replace('T',' ')) + ' UTC</span>';
+        }
+        // Brain-run row
+        var brainEl = document.getElementById('brief_brain_row');
+        if (brainEl) {
+          var br = d.did_the_brain_run || {};
+          brainEl.innerHTML = '<span class="l-en">Brain: </span><span class="l-zh">大脑：</span>' + esc(br.summary || 'unknown');
+        }
+        // Helper: render up to N items from a list, return {shown, rest}
+        function renderItems(list, n, renderFn) {
+          var shown = (list || []).slice(0, n);
+          var rest = (list || []).slice(n);
+          return { html: shown.map(renderFn).join(''), rest: rest, restFn: renderFn };
+        }
+        // what_changed
+        var changedEl = document.getElementById('brief_changed_list');
+        if (changedEl && (d.what_changed || []).length) {
+          var r1 = renderItems(d.what_changed, 3, function (c) {
+            return '<div style="font-size:13px;margin-bottom:3px">'
+              + '<span style="color:var(--muted);margin-right:4px">[' + esc(c.kind || '') + ']</span>'
+              + esc(c.summary || '') + '</div>';
+          });
+          changedEl.innerHTML = '<div style="font-size:11px;color:var(--muted);text-transform:uppercase;margin-bottom:3px"><span class="l-en">Changes</span><span class="l-zh">变化</span></div>' + r1.html;
+        }
+        // what_is_stale
+        var staleEl = document.getElementById('brief_stale_list');
+        if (staleEl && (d.what_is_stale || []).length) {
+          var r2 = renderItems(d.what_is_stale, 3, function (s) {
+            return '<div style="font-size:13px;margin-bottom:3px;color:var(--down)">'
+              + esc(s.id || '') + ': ' + esc(s.age_hours != null ? s.age_hours + 'h old' : 'age unknown') + '</div>';
+          });
+          staleEl.innerHTML = '<div style="font-size:11px;color:var(--muted);text-transform:uppercase;margin-bottom:3px"><span class="l-en">Stale</span><span class="l-zh">过期</span></div>' + r2.html;
+        }
+        // operator_attention (top 3)
+        var attnEl = document.getElementById('brief_attn_list');
+        var r3 = null;
+        if (attnEl && (d.operator_attention || []).length) {
+          r3 = renderItems(d.operator_attention, 3, function (a) {
+            var pColor = a.priority === 1 ? 'var(--down)' : a.priority === 2 ? 'var(--warn,#e6a817)' : 'var(--muted)';
+            return '<div style="font-size:13px;margin-bottom:3px">'
+              + '<span style="color:' + pColor + ';font-weight:600;margin-right:4px">P' + (a.priority || '?') + '</span>'
+              + esc(a.summary || '') + '</div>';
+          });
+          attnEl.innerHTML = '<div style="font-size:11px;color:var(--muted);text-transform:uppercase;margin-bottom:3px"><span class="l-en">Operator Attention</span><span class="l-zh">操作人员注意</span></div>' + r3.html;
+        }
+        // Expander: collect overflow items from all three lists regardless of which overflowed
+        var allExtra = [];
+        if (r1 && r1.rest.length) allExtra = allExtra.concat(r1.rest.map(r1.restFn));
+        if (r2 && r2.rest.length) allExtra = allExtra.concat(r2.rest.map(r2.restFn));
+        if (r3 && r3.rest.length) allExtra = allExtra.concat(r3.rest.map(r3.restFn));
+        var exContent = document.getElementById('brief_expander_content');
+        var exEl = document.getElementById('brief_expander');
+        if (allExtra.length && exContent && exEl) {
+          exContent.innerHTML = allExtra.join('');
+          exEl.style.display = '';
+        } else if (exEl) {
+          exEl.style.display = 'none';
+        }
+      })
+      .catch(function () {
+        if (loadEl) loadEl.style.display = 'none';
+        if (errEl) errEl.style.display = '';
+      });
   }
 
   // ── Living confluence graph ────────────────────────────────────────────────

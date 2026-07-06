@@ -3126,6 +3126,7 @@ artifacts:
     scored_path_surfaces: []
     consumers:
       - engine/neuralweb/mastermind_context.py
+      - engine/neuralweb/daily_brief.py
     external_consumers:
       - mastermind:context
     notes: >
@@ -4988,6 +4989,7 @@ artifacts:
     scored_path_surfaces: []
     consumers:
       - admin/neural_web.py
+      - engine/neuralweb/daily_brief.py
     external_consumers: []
     notes: >
       PR-C canonical NW lobe-status surface. Machine-readable operating-truth
@@ -5019,3 +5021,74 @@ artifacts:
       PR-C site copy of data/neuralweb/health.json for frontend/admin consumption.
       Exact mirror written atomically alongside the data copy by
       scripts/build_neuralweb_health.py. Display/ops only — no authority.
+
+  # --- PR-D: NW daily brief surface ---
+  neuralweb-daily-brief:
+    path: data/neuralweb/daily_brief.json
+    format: json
+    producer: scripts/build_neuralweb_brief.py
+    known_extra_writers: []
+    owner_program: neural-web
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: neuralweb.daily_brief.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - admin/neural_web.py
+    external_consumers: []
+    notes: >
+      PR-D canonical NW daily brief surface — deterministic "what did Neural Web do today?"
+      Built in two phases: engine job writes phase='engine'; cortex job --finalize
+      rewrites with phase='final' and upserts compact history row. Display/ops only —
+      no authority, no trading language. Schema: neuralweb.daily_brief.v1.
+
+  site-neuralweb-daily-brief:
+    path: site/neuralwebdata/daily_brief.json
+    format: json
+    producer: scripts/build_neuralweb_brief.py
+    known_extra_writers: []
+    owner_program: neural-web
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: neuralweb.daily_brief.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - templates/committee.html.j2
+    external_consumers: []
+    notes: >
+      PR-D site copy of data/neuralweb/daily_brief.json for client-side consumption
+      in committee.html. Exact mirror written atomically alongside the data copy by
+      scripts/build_neuralweb_brief.py. Display/ops only — no authority.
+
+  neuralweb-daily-brief-history:
+    path: data/neuralweb/daily_brief_history.jsonl
+    format: jsonl
+    producer: scripts/build_neuralweb_brief.py
+    known_extra_writers: []
+    owner_program: neural-web
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: neuralweb.daily_brief.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/neuralweb/daily_brief.py
+    external_consumers: []
+    notes: >
+      PR-D compact history of daily brief snapshots. One row per as_of date;
+      upserted (same as_of → replace row) by scripts/build_neuralweb_brief --finalize.
+      Chronologically sorted. Used for delta detection in next run. Display/ops only.

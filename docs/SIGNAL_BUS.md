@@ -21,7 +21,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | institutional-sector-intelligence | 2 |
 | intl-fix | 1 |
 | long-hold | 16 |
-| neural-web | 30 |
+| neural-web | 33 |
 | nw-mastermind-bridge | 2 |
 | nw-rails | 3 |
 | options-alpha | 7 |
@@ -38,7 +38,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 90 |
+| display | 93 |
 | infrastructure | 42 |
 | scored | 4 |
 | shadow | 37 |
@@ -47,7 +47,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 167 |
+| git | 170 |
 | gitignored-local | 4 |
 | r2 | 2 |
 
@@ -175,28 +175,31 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 |---|---|---|---|---|---|---|
 | world-state | `data/neuralweb/world_state.json` | json | daily-engine | infrastructure | 9 | 1 |
 | confluence-graph | `data/neuralweb/confluence_graph.json` | json | daily-engine | display | 2 | 1 |
+| cortex-memo | `data/neuralweb/cortex/memo.json` | json | nightly-cortex | shadow | 2 | 1 |
 | cortex-probation | `data/neuralweb/cortex/probation.json` | json | nightly-cortex | infrastructure | 2 | 1 |
 | feeds-plane | `site/feeds/` | json | daily-engine | infrastructure | 1 | 2 |
 | kernel-families | `data/neuralweb/kernel_families.json` | json | daily-engine | infrastructure | 2 | 1 |
 | site-artifact-manifest | `site/factordata/contracts/artifact_manifest.json` | json | daily-engine | infrastructure | 1 | 2 |
 | site-golden-signals | `site/factordata/contracts/golden_signals.json` | json | daily-engine | infrastructure | 1 | 2 |
 | spine-index | `data/neuralweb/spine_index.parquet` | parquet | daily-engine | infrastructure | 3 | 0 |
-| cortex-memo | `data/neuralweb/cortex/memo.json` | json | nightly-cortex | shadow | 1 | 1 |
 | kernel-decisions | `data/neuralweb/kernel_decisions.json` | json | on-demand | infrastructure | 1 | 1 |
 | machine-registry | `data/neuralweb/machine_registry.jsonl` | jsonl | nightly-cortex | infrastructure | 2 | 0 |
+| neuralweb-health | `data/neuralweb/health.json` | json | daily-engine | infrastructure | 2 | 0 |
 | reflex-firings-pattern | `data/reflexes/<NAME>/firings.jsonl` | jsonl | on-demand | shadow | 2 | 0 |
 | rule-experiment-registry | `data/rule_experiments/registry.jsonl` | jsonl | on-demand | infrastructure | 2 | 0 |
 | cortex-attention-firings | `data/reflexes/cortex_attention/firings.jsonl` | jsonl | nightly-cortex | shadow | 1 | 0 |
 | cortex-attention-grades | `data/reflexes/cortex_attention/grades.jsonl` | jsonl | nightly-cortex | shadow | 1 | 0 |
 | governance-ledger | `data/neuralweb/governance.jsonl` | jsonl | daily-engine | infrastructure | 1 | 0 |
 | kernel-estimates | `data/neuralweb/kernel_estimates.parquet` | parquet | daily-engine | infrastructure | 1 | 0 |
-| neuralweb-health | `data/neuralweb/health.json` | json | daily-engine | infrastructure | 1 | 0 |
+| neuralweb-daily-brief | `data/neuralweb/daily_brief.json` | json | daily-engine | display | 1 | 0 |
+| neuralweb-daily-brief-history | `data/neuralweb/daily_brief_history.jsonl` | jsonl | daily-engine | display | 1 | 0 |
 | ops-push-basket-freeze | `data/alert_triage/push_sent_basket_freeze.jsonl` | jsonl | on-demand | infrastructure | 1 | 0 |
 | ops-push-healthcheck | `data/alert_triage/push_sent_healthcheck.jsonl` | jsonl | on-demand | infrastructure | 1 | 0 |
 | ops-push-signal-sanity | `data/alert_triage/push_sent_signal_sanity.jsonl` | jsonl | on-demand | infrastructure | 1 | 0 |
 | reflex-firings-commodity-shock | `data/reflexes/commodity_shock/firings.jsonl` | jsonl | on-demand | shadow | 1 | 0 |
 | reflex-firings-regime-selfheal | `data/reflexes/regime_stale_selfheal/firings.jsonl` | jsonl | on-demand | infrastructure | 1 | 0 |
 | reflex-push-dedup-store | `data/alert_triage/push_sent.jsonl` | jsonl | on-demand | infrastructure | 1 | 0 |
+| site-neuralweb-daily-brief | `site/neuralwebdata/daily_brief.json` | json | daily-engine | display | 1 | 0 |
 | hypothesis-inbox | `data/neuralweb/cortex/hypothesis_inbox.jsonl` | jsonl | nightly-cortex | infrastructure | 0 | 0 |
 | lagging-signals | `data/neuralweb/lagging_signals.json` | json | daily-engine | infrastructure | 0 | 0 |
 | research-queue | `data/neuralweb/research_queue.json` | json | on-demand | infrastructure | 0 | 0 |
