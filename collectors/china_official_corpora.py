@@ -461,7 +461,11 @@ class ChinaOfficialCorporaAdapter(Adapter):
         #   DateParseError: Unknown datetime string format, unable to parse: state_council
         # Fix: pivot so the crawl timestamp is the index and each organ
         # becomes its own numeric column (n_docs_<organ>).
-        idx = pd.Timestamp(crawled_at)
+        # tz_convert(None) strips UTC timezone to produce a tz-naive Timestamp.
+        # Every other collector uses tz-naive DatetimeIndex; mixing tz-aware
+        # here causes store.upsert → combine_first to raise
+        # "Cannot join tz-naive with tz-aware DatetimeIndex".
+        idx = pd.Timestamp(crawled_at).tz_convert(None)
         summary = pd.DataFrame(
             {f"n_docs_{k}": [float(v)] for k, v in per_organ.items()},
             index=[idx],
