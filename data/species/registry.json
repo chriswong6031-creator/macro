@@ -1,7 +1,7 @@
 {
   "schema": "species_registry.v1",
   "authored": "2026-07-03",
-  "note": "Setup-Species Registry — §3.1 of research/SETUP_SPECIES_MASTERPLAN_BY_FABLE.md. One entry per species-version. Lifecycle transitions via engine/species_registry.transition_validation_status() only; falsified/retired are terminal. horizon_class changes require bump_version().",
+  "note": "Setup-Species Registry \u2014 \u00a73.1 of research/SETUP_SPECIES_MASTERPLAN_BY_FABLE.md. One entry per species-version. Lifecycle transitions via engine/species_registry.transition_validation_status() only; falsified/retired are terminal. horizon_class changes require bump_version().",
   "species": [
     {
       "species_id": "S1",
@@ -9,11 +9,11 @@
       "name": "Cohort Capitulation Reversal (COILED / STAR / C2)",
       "validation_status": "validated",
       "deployment_status": "graded_bonus",
-      "mechanism": "Sustained sector-cohort liquidation exhausts the marginal seller. When ≥40% of a sector's constituents are in multi-timeframe washout, the remaining sellers are structural longs rather than momentum players — the cohort's next buyer is rotation capital entering a sector that has already priced the damage. STAR (multi-TF bullish divergence) provides stop relief only WITH cohort context; C2 (union trigger) widens recall from 12.4 to 14.2 and shortens lead from 6d to 3d.",
+      "mechanism": "Sustained sector-cohort liquidation exhausts the marginal seller. When \u226540% of a sector's constituents are in multi-timeframe washout, the remaining sellers are structural longs rather than momentum players \u2014 the cohort's next buyer is rotation capital entering a sector that has already priced the damage. STAR (multi-TF bullish divergence) provides stop relief only WITH cohort context; C2 (union trigger) widens recall from 12.4 to 14.2 and shortens lead from 6d to 3d.",
       "horizon_class": "positional",
       "evidence_stack": [
         {
-          "condition": "cohort_fraction >= 0.40 (monotone — edge increases with cohort depth)",
+          "condition": "cohort_fraction >= 0.40 (monotone \u2014 edge increases with cohort depth)",
           "tag": "arming"
         },
         {
@@ -29,7 +29,7 @@
           "tag": "trigger"
         },
         {
-          "condition": "sector cohort coverage >= 70% (§3.3 coverage law)",
+          "condition": "sector cohort coverage >= 70% (\u00a73.3 coverage law)",
           "tag": "context"
         }
       ],
@@ -43,7 +43,7 @@
           "prevents": "chasing a stale signal"
         },
         {
-          "rule": "hygiene_screen: ST/ADV/staleness screens — hygiene, not a forecast",
+          "rule": "hygiene_screen: ST/ADV/staleness screens \u2014 hygiene, not a forecast",
           "prevents": "untradeable names"
         },
         {
@@ -70,7 +70,7 @@
           "vol-regime-compressed-or-recovering"
         ],
         "hypothesized_hostile": [
-          "low-vol-bull-leg — edge measured to sleep here"
+          "low-vol-bull-leg \u2014 edge measured to sleep here"
         ],
         "learnable_projection": {
           "axes": [
@@ -82,7 +82,7 @@
             "high-vol-bear",
             "recovery"
           ],
-          "note": "≤2 axes, ≤6 cells per §5.4; stamped from W0.5 onward; learnable only under ≥20 episodes AND ≥5 each half"
+          "note": "\u22642 axes, \u22646 cells per \u00a75.4; stamped from W0.5 onward; learnable only under \u226520 episodes AND \u22655 each half"
         }
       },
       "market_scope": [
@@ -92,22 +92,22 @@
       "adjacent_falsified": [
         {
           "idea": "Pre-cross aged quiet base / calm-VCP arming (H2)",
-          "source": "§1.6 WAVE1 §2",
+          "source": "\u00a71.6 WAVE1 \u00a72",
           "mechanical_difference": "S1 requires ACTIVE multi-TF washout + cohort context, not a calm pre-cross base; H2's calm-base criterion had wrong sign and worst stop-outs in the program"
         },
         {
           "idea": "Raw washout depth as boost (H1)",
-          "source": "§1.6 WAVE1 §2 / BOTTOM_CONFIDENCE P2",
+          "source": "\u00a71.6 WAVE1 \u00a72 / BOTTOM_CONFIDENCE P2",
           "mechanical_difference": "S1 uses COHORT fraction, not individual drawdown depth; depth works only through the cohort lens"
         },
         {
           "idea": "Volume dry-up / OBV-div as positive filter (H4)",
-          "source": "§1.6 WAVE1 §2",
+          "source": "\u00a71.6 WAVE1 \u00a72",
           "mechanical_difference": "S1 has no volume filter in its gate battery"
         },
         {
           "idea": "BASED chip as operationalized",
-          "source": "§1.6 WAVE5",
+          "source": "\u00a71.6 WAVE5",
           "mechanical_difference": "BASED state is byte-identical to survival-to-day-j; zero selection content; C2 uses an active trigger event, not a passive survival predicate"
         }
       ],
@@ -115,23 +115,23 @@
         {
           "ticker": "JNJ",
           "expected": "excluded by extension_demote",
-          "note": "chase-exclusion regression fixture — must stay excluded"
+          "note": "chase-exclusion regression fixture \u2014 must stay excluded"
         },
         {
           "ticker": "AMAT",
           "expected": "excluded by extension_demote",
-          "note": "chase-exclusion regression fixture — must stay excluded"
+          "note": "chase-exclusion regression fixture \u2014 must stay excluded"
         }
       ],
       "ledger_binding": {
         "ledger": "us_board_ledger + china_standout_track",
         "since": "2026-06-01",
-        "flip_criteria": "§1.3 template: challenger matches-or-beats incumbent on stop-out AND dead-money AND cushion incidence (Wilson lower bound, episode-clustered n floor) at positional horizons (clean15_126 primary). Returns printed as context, not verdict. Board-level forward ledger must reproduce claimed entry-quality spread (§1.3 gate-weight rung)."
+        "flip_criteria": "\u00a71.3 template: challenger matches-or-beats incumbent on stop-out AND dead-money AND cushion incidence (Wilson lower bound, episode-clustered n floor) at positional horizons (clean15_126 primary). Returns printed as context, not verdict. Board-level forward ledger must reproduce claimed entry-quality spread (\u00a71.3 gate-weight rung)."
       },
       "gating": {
         "come_back_on": null,
         "cadence": "monthly",
-        "maturation": "Forward ledger matures at clean15_126 horizon (126 trading days). Promotion to gate_weight requires board-level ledger confirmation per §1.3. CN channel re-grades when second macro regime accrues."
+        "maturation": "Forward ledger matures at clean15_126 horizon (126 trading days). Promotion to gate_weight requires board-level ledger confirmation per \u00a71.3. CN channel re-grades when second macro regime accrues."
       },
       "trial_count": 0
     },
@@ -141,7 +141,7 @@
       "name": "Donor-Funded Bottom (G6a leader-cracking / donor-unwind)",
       "validation_status": "validated",
       "deployment_status": "chip",
-      "mechanism": "Rotations are funded — capital leaving a cracking leader cohort (G6a: 6+ consecutive weeks of leadership, now breaking down) is the marginal buyer of washed-out laggards. The donor's exhaustion is the entry timing signal, not the laggard's own chart. US-only: explicitly NOT ported to HK (G6a inverts there).",
+      "mechanism": "Rotations are funded \u2014 capital leaving a cracking leader cohort (G6a: 6+ consecutive weeks of leadership, now breaking down) is the marginal buyer of washed-out laggards. The donor's exhaustion is the entry timing signal, not the laggard's own chart. US-only: explicitly NOT ported to HK (G6a inverts there).",
       "horizon_class": "rotational",
       "evidence_stack": [
         {
@@ -153,7 +153,7 @@
           "tag": "arming"
         },
         {
-          "condition": "Cracking-donor × cohort-washout cell: S2 × S1 joint fires",
+          "condition": "Cracking-donor \u00d7 cohort-washout cell: S2 \u00d7 S1 joint fires",
           "tag": "trigger"
         },
         {
@@ -163,15 +163,15 @@
       ],
       "rejection_rules": [
         {
-          "rule": "HK market excluded — G6a inverts in HK",
+          "rule": "HK market excluded \u2014 G6a inverts in HK",
           "prevents": "porting a falsified HK mechanism"
         },
         {
-          "rule": "extension_demote on target name — no chase entries",
+          "rule": "extension_demote on target name \u2014 no chase entries",
           "prevents": "buying the laggard after it has already moved"
         },
         {
-          "rule": "No cross-sector donor inference — donor must be in the subsector rotation stack",
+          "rule": "No cross-sector donor inference \u2014 donor must be in the subsector rotation stack",
           "prevents": "spurious rotation claims"
         }
       ],
@@ -203,7 +203,7 @@
             "rotation-quiet",
             "risk-off"
           ],
-          "note": "≤2 axes, ≤6 cells per §5.4"
+          "note": "\u22642 axes, \u22646 cells per \u00a75.4"
         }
       },
       "market_scope": [
@@ -211,13 +211,13 @@
       ],
       "adjacent_falsified": [
         {
-          "idea": "HK: residual momentum, southbound-Δ, COILED, G6a",
-          "source": "§1.6 WAVE3/6 HK_CANADA masterplan",
+          "idea": "HK: residual momentum, southbound-\u0394, COILED, G6a",
+          "source": "\u00a71.6 WAVE3/6 HK_CANADA masterplan",
           "mechanical_difference": "S2 is US-only by design; the G6a mechanism inverts in HK and is listed in the graveyard for that market"
         },
         {
           "idea": "Net-liquidity expand/contract gate on the long book",
-          "source": "§1.6 NOVEL_IDEAS §3",
+          "source": "\u00a71.6 NOVEL_IDEAS \u00a73",
           "mechanical_difference": "S2 uses donor-sector rotation, not an aggregate liquidity gate"
         }
       ],
@@ -236,26 +236,26 @@
       "ledger_binding": {
         "ledger": "us_board_ledger",
         "since": "2026-06-01",
-        "flip_criteria": "§1.3 template at rotational horizons (clean8_21 primary): challenger matches-or-beats on stop-out AND dead-money AND cushion incidence. Returns context only."
+        "flip_criteria": "\u00a71.3 template at rotational horizons (clean8_21 primary): challenger matches-or-beats on stop-out AND dead-money AND cushion incidence. Returns context only."
       },
       "gating": {
         "come_back_on": null,
         "cadence": "monthly",
-        "maturation": "Ledger matures at clean8_21 (21 trading days). Promote from chip to graded context as ledger accrues. Join cell S1×S2 (cracking-donor × cohort-washout) as combined context."
+        "maturation": "Ledger matures at clean8_21 (21 trading days). Promote from chip to graded context as ledger accrues. Join cell S1\u00d7S2 (cracking-donor \u00d7 cohort-washout) as combined context."
       },
       "trial_count": 1
     },
     {
       "species_id": "T1-T4",
       "version": "1.0",
-      "name": "Confluence Cascade (T1–T4 incumbent gate)",
+      "name": "Confluence Cascade (T1\u2013T4 incumbent gate)",
       "validation_status": "validated",
       "deployment_status": "gate_weight",
       "mechanism": "Multi-timeframe MACD+StochRSI confluence cascade: T1=daily cross, T2=2D cross, T3=3D cross, T4=weekly cross. Each tier is a sequentially stronger confirmation of trend initiation. The cascade is the incumbent buy gate; per-name majorities and held-out stop-out rates are validated. Tier-specific stop-out rates are held-out and used as rejection calibration reference.",
       "horizon_class": "positional",
       "evidence_stack": [
         {
-          "condition": "T1: daily MACD × StochRSI cross",
+          "condition": "T1: daily MACD \u00d7 StochRSI cross",
           "tag": "trigger"
         },
         {
@@ -289,22 +289,22 @@
           "prevents": "weak-confluence entries"
         },
         {
-          "rule": "C-LOCKOUT serial gate is CLOSED (§1.6): stops not gates cap knife damage",
+          "rule": "C-LOCKOUT serial gate is CLOSED (\u00a71.6): stops not gates cap knife damage",
           "prevents": "re-deriving a falsified gating idea"
         }
       ],
       "archetype_scope": {
         "applies": [
-          "all — the cascade is market-wide"
+          "all \u2014 the cascade is market-wide"
         ],
         "hostile": [
-          "distressed — hygiene screens handle these before cascade"
+          "distressed \u2014 hygiene screens handle these before cascade"
         ],
         "note": "Tier-A cascade: no archetype restriction; archetype enters as S1/S2 context"
       },
       "regime_scope": {
         "hypothesized_supportive": [
-          "all regimes — incumbent gate"
+          "all regimes \u2014 incumbent gate"
         ],
         "hypothesized_hostile": [],
         "learnable_projection": {
@@ -325,36 +325,36 @@
       "adjacent_falsified": [
         {
           "idea": "Single-leg MACD or StochRSI alone",
-          "source": "§1.6 macd_stochrsi_mtf_backtest",
+          "source": "\u00a71.6 macd_stochrsi_mtf_backtest",
           "mechanical_difference": "T1-T4 requires BOTH MACD AND StochRSI cross on each timeframe; single legs are 'worthless' per the validated finding"
         },
         {
           "idea": "Trend/location guards per-event (ATR-contraction, higher-low, rising-50MA)",
-          "source": "§1.6 CONFLUENCE_TUNING §5b",
+          "source": "\u00a71.6 CONFLUENCE_TUNING \u00a75b",
           "mechanical_difference": "These were exposure artifacts; the cascade does not add them"
         },
         {
           "idea": "Exit/cut rules",
-          "source": "§1.6 CONFLUENCE_TUNING §8",
+          "source": "\u00a71.6 CONFLUENCE_TUNING \u00a78",
           "mechanical_difference": "S1 carries only entry rules; EMA8 = tail-flag only, not an exit gate"
         }
       ],
       "fixtures": [
         {
           "ticker": "MCD",
-          "expected": "excluded — based-late: passed T4 but extension too high",
+          "expected": "excluded \u2014 based-late: passed T4 but extension too high",
           "note": "based-late exclusion fixture"
         },
         {
           "ticker": "KO",
-          "expected": "excluded — based-late: passed T4 but extension too high",
+          "expected": "excluded \u2014 based-late: passed T4 but extension too high",
           "note": "based-late exclusion fixture"
         }
       ],
       "ledger_binding": {
         "ledger": "us_board_ledger + china_standout_track",
         "since": "2026-01-01",
-        "flip_criteria": "Incumbent: no flip criteria — this IS the gate. Successor must beat on §1.1 safety-net axes."
+        "flip_criteria": "Incumbent: no flip criteria \u2014 this IS the gate. Successor must beat on \u00a71.1 safety-net axes."
       },
       "gating": {
         "come_back_on": null,
@@ -369,7 +369,7 @@
       "name": "CN Washout / EXT_PENALTY (China entry gate)",
       "validation_status": "validated",
       "deployment_status": "gate_weight",
-      "mechanism": "China A-share and HK constituent entry gate: washout state (multi-TF) is the arming condition; EXT_PENALTY (extension-since-cross) demotes names that have already moved. Gate parity with US board: alignment→+entry_ok→T1-T4 confluence cascade with CN-specific 2W-StochRSI-washout rank boost and blend-order. CN reversal mechanics diverge from US on purpose: A-share momentum is dead; China edge is WHEN (washout timing), not WHICH-name.",
+      "mechanism": "China A-share and HK constituent entry gate: washout state (multi-TF) is the arming condition; EXT_PENALTY (extension-since-cross) demotes names that have already moved. Gate parity with US board: alignment\u2192+entry_ok\u2192T1-T4 confluence cascade with CN-specific 2W-StochRSI-washout rank boost and blend-order. CN reversal mechanics diverge from US on purpose: A-share momentum is dead; China edge is WHEN (washout timing), not WHICH-name.",
       "horizon_class": "positional",
       "evidence_stack": [
         {
@@ -411,8 +411,8 @@
           "prevents": "stale-data entries"
         },
         {
-          "rule": "CN subsector-state gating is CLOSED (§1.6 #754)",
-          "prevents": "gating A-share reversal by subsector state — it HURT vs flat"
+          "rule": "CN subsector-state gating is CLOSED (\u00a71.6 #754)",
+          "prevents": "gating A-share reversal by subsector state \u2014 it HURT vs flat"
         }
       ],
       "archetype_scope": {
@@ -427,7 +427,7 @@
       },
       "regime_scope": {
         "hypothesized_supportive": [
-          "CN macro single-regime — re-grades when second regime accrues"
+          "CN macro single-regime \u2014 re-grades when second regime accrues"
         ],
         "hypothesized_hostile": [],
         "learnable_projection": {
@@ -437,7 +437,7 @@
           "cells": [
             "single-regime-default"
           ],
-          "note": "CN COILED re-grades when a second regime accrues (§1.5)"
+          "note": "CN COILED re-grades when a second regime accrues (\u00a71.5)"
         }
       },
       "market_scope": [
@@ -446,22 +446,22 @@
       "adjacent_falsified": [
         {
           "idea": "A-share momentum",
-          "source": "§1.6 CHINA_HK_STOCK_SIGNALS et al.",
+          "source": "\u00a71.6 CHINA_HK_STOCK_SIGNALS et al.",
           "mechanical_difference": "CN-WASHOUT is a reversal/mean-reversion gate, not a momentum overlay"
         },
         {
           "idea": "CN quality floors on reversal (they HURT)",
-          "source": "§1.6 CHINA_HK_STOCK_SIGNALS",
-          "mechanical_difference": "No quality floor — hygiene only"
+          "source": "\u00a71.6 CHINA_HK_STOCK_SIGNALS",
+          "mechanical_difference": "No quality floor \u2014 hygiene only"
         },
         {
           "idea": "CN subsector-state gating (#754)",
-          "source": "§1.6",
-          "mechanical_difference": "Gating A-share reversal by subsector state HURTS vs flat — explicitly closed"
+          "source": "\u00a71.6",
+          "mechanical_difference": "Gating A-share reversal by subsector state HURTS vs flat \u2014 explicitly closed"
         },
         {
           "idea": "HK: COILED and every US bottom mechanism",
-          "source": "§1.6 WAVE3/6 HK_CANADA masterplan",
+          "source": "\u00a71.6 WAVE3/6 HK_CANADA masterplan",
           "mechanical_difference": "HK is excluded from this species; HK needs its own battery"
         }
       ],
@@ -469,7 +469,7 @@
       "ledger_binding": {
         "ledger": "china_standout_track",
         "since": "2026-01-01",
-        "flip_criteria": "§1.3 template at positional horizons. CN channel re-grades on second regime."
+        "flip_criteria": "\u00a71.3 template at positional horizons. CN channel re-grades on second regime."
       },
       "gating": {
         "come_back_on": null,
@@ -484,7 +484,7 @@
       "name": "CN Within-Sector Reversal Sleeve",
       "validation_status": "validated",
       "deployment_status": "graded_bonus",
-      "mechanism": "Monthly, deepest-quintile within-sector reversal on A-shares: buy the most-punished names in each CN Shenwan sector, equal-weight, hygiene-only screens, no timing or confirmation gate. The CN reversal edge (+0.56%/mo validated) is invariant to gating — every timing or confirmation gate flipped it negative (cn_reversal_sleeve.assert_no_gate() enforces this). The mechanism is overreaction recovery within peer cohorts; the edge dies when you gate it.",
+      "mechanism": "Monthly, deepest-quintile within-sector reversal on A-shares: buy the most-punished names in each CN Shenwan sector, equal-weight, hygiene-only screens, no timing or confirmation gate. The CN reversal edge (+0.56%/mo validated) is invariant to gating \u2014 every timing or confirmation gate flipped it negative (cn_reversal_sleeve.assert_no_gate() enforces this). The mechanism is overreaction recovery within peer cohorts; the edge dies when you gate it.",
       "horizon_class": "rotational",
       "evidence_stack": [
         {
@@ -506,7 +506,7 @@
           "prevents": "untradeable names"
         },
         {
-          "rule": "No quality floor — CN quality floors on reversal HURT",
+          "rule": "No quality floor \u2014 CN quality floors on reversal HURT",
           "prevents": "deriving a falsified quality gate"
         }
       ],
@@ -515,13 +515,13 @@
           "all CN Shenwan sectors"
         ],
         "hostile": [
-          "none — the monthly-quintile is market-wide"
+          "none \u2014 the monthly-quintile is market-wide"
         ],
         "note": "CN sleeve is a product-unit species; no per-archetype restriction"
       },
       "regime_scope": {
         "hypothesized_supportive": [
-          "all — edge is regime-agnostic in available history"
+          "all \u2014 edge is regime-agnostic in available history"
         ],
         "hypothesized_hostile": [],
         "learnable_projection": {
@@ -540,17 +540,17 @@
       "adjacent_falsified": [
         {
           "idea": "Timing as return-alpha",
-          "source": "§1.6 ENGINE_FIX status",
+          "source": "\u00a71.6 ENGINE_FIX status",
           "mechanical_difference": "CN sleeve is a product-unit portfolio, not a per-name act-now overlay"
         },
         {
           "idea": "CN subsector-state gating (#754)",
-          "source": "§1.6",
+          "source": "\u00a71.6",
           "mechanical_difference": "assert_no_gate() prohibits all timing gates; subsector state gating killed the edge"
         },
         {
           "idea": "A-share momentum",
-          "source": "§1.6 CHINA_HK_STOCK_SIGNALS",
+          "source": "\u00a71.6 CHINA_HK_STOCK_SIGNALS",
           "mechanical_difference": "Within-sector reversal is the opposite of momentum"
         }
       ],
@@ -558,7 +558,7 @@
       "ledger_binding": {
         "ledger": "china_standout_track",
         "since": "2026-01-01",
-        "flip_criteria": "Graded on safety-net axes PLUS sleeve-level excess-vs-CSI300 (CN-2 pattern). assert_no_gate() must remain enforced — any gate-addition triggers review."
+        "flip_criteria": "Graded on safety-net axes PLUS sleeve-level excess-vs-CSI300 (CN-2 pattern). assert_no_gate() must remain enforced \u2014 any gate-addition triggers review."
       },
       "gating": {
         "come_back_on": null,
@@ -573,7 +573,7 @@
       "name": "Dislocation Fed-Put Switch",
       "validation_status": "validated",
       "deployment_status": "chip",
-      "mechanism": "Dislocation episodes (elevated credit spread + equity vol + policy-backstop signal present) improve the forward stop-out rate of entry signals. The ONLY robust clause is median-drawdown improvement in put-present episodes. Hit-rate claims (70.3% put-present vs 40.0% put-absent) rest on n=37 vs n=10 episodes — too thin for a promotion gate. Functions as a conditioner on S1 and S5 fires; not a standalone entry signal. Display context.",
+      "mechanism": "Dislocation episodes (elevated credit spread + equity vol + policy-backstop signal present) improve the forward stop-out rate of entry signals. The ONLY robust clause is median-drawdown improvement in put-present episodes. Hit-rate claims (70.3% put-present vs 40.0% put-absent) rest on n=37 vs n=10 episodes \u2014 too thin for a promotion gate. Functions as a conditioner on S1 and S5 fires; not a standalone entry signal. Display context.",
       "horizon_class": "positional",
       "evidence_stack": [
         {
@@ -589,13 +589,13 @@
           "tag": "trigger"
         },
         {
-          "condition": "Hit-rate arms (70.3% vs 40.0%): CONTEXT only — n=37 vs n=10 episodes is too thin",
+          "condition": "Hit-rate arms (70.3% vs 40.0%): CONTEXT only \u2014 n=37 vs n=10 episodes is too thin",
           "tag": "context"
         }
       ],
       "rejection_rules": [
         {
-          "rule": "Standalone use as an entry signal is prohibited — conditioner only",
+          "rule": "Standalone use as an entry signal is prohibited \u2014 conditioner only",
           "prevents": "over-trading thin episode counts"
         },
         {
@@ -605,7 +605,7 @@
       ],
       "archetype_scope": {
         "applies": [
-          "all — conditioner context, not a filter"
+          "all \u2014 conditioner context, not a filter"
         ],
         "hostile": [],
         "note": "Conditioner on S1/S5 fires; archetype scope inherited from the parent species"
@@ -635,12 +635,12 @@
       "adjacent_falsified": [
         {
           "idea": "Anticipation/bottom-radar as SIZING",
-          "source": "§1.6 ANTICIPATION_ENGINE_DESIGN",
+          "source": "\u00a71.6 ANTICIPATION_ENGINE_DESIGN",
           "mechanical_difference": "DISLOC is display context only; never sizes"
         },
         {
           "idea": "Defensive-rotation vol-shock lead (all 7 variants)",
-          "source": "§1.6 DEFENSIVE_ROTATION",
+          "source": "\u00a71.6 DEFENSIVE_ROTATION",
           "mechanical_difference": "DISLOC detects the BACK of the episode, not vol-prediction"
         }
       ],
@@ -648,12 +648,12 @@
       "ledger_binding": {
         "ledger": "us_board_ledger",
         "since": "2026-06-01",
-        "flip_criteria": "Display context chip only. Promotion to graded_bonus requires episode n ≥ 20 AND both halves sign-stable on the median-drawdown clause. Returns are context."
+        "flip_criteria": "Display context chip only. Promotion to graded_bonus requires episode n \u2265 20 AND both halves sign-stable on the median-drawdown clause. Returns are context."
       },
       "gating": {
         "come_back_on": null,
         "cadence": "quarterly",
-        "maturation": "Episode n=37 vs n=10 is the binding constraint. Promotion gate: ≥20 episodes per arm with ≥5 in each time-half. Data-scarce: real episodes accrue slowly."
+        "maturation": "Episode n=37 vs n=10 is the binding constraint. Promotion gate: \u226520 episodes per arm with \u22655 in each time-half. Data-scarce: real episodes accrue slowly."
       },
       "trial_count": 2
     },
@@ -663,7 +663,7 @@
       "name": "De-escalation Window",
       "validation_status": "phase0",
       "deployment_status": "unshipped",
-      "mechanism": "The highest-asymmetry entries cluster where a risk-off episode is ENDING — sellers exhausted at the index level with the policy backstop intact. This does not predict the shock; it detects the exhaustion of the reaction to it. The measurable form of front-running the recovery leg. Evidence stack: radar deescalation.eligible + trajectory receding + dislocation Fed-put switch as conditioner on S1/S5 fires. Validated pieces: put-present dislocations 63d hit 70.3% (n=37 episodes) vs 40.0% (n=10) put-absent — CONTEXT; the median-drawdown improvement is the only robust clause and is S3's load-bearing prior.",
+      "mechanism": "The highest-asymmetry entries cluster where a risk-off episode is ENDING \u2014 sellers exhausted at the index level with the policy backstop intact. This does not predict the shock; it detects the exhaustion of the reaction to it. The measurable form of front-running the recovery leg. Evidence stack: radar deescalation.eligible + trajectory receding + dislocation Fed-put switch as conditioner on S1/S5 fires. Validated pieces: put-present dislocations 63d hit 70.3% (n=37 episodes) vs 40.0% (n=10) put-absent \u2014 CONTEXT; the median-drawdown improvement is the only robust clause and is S3's load-bearing prior.",
       "horizon_class": "rotational",
       "evidence_stack": [
         {
@@ -679,11 +679,11 @@
           "tag": "context"
         },
         {
-          "condition": "VIX-percentile-stratified within-bucket spread (co-primary gate per §4)",
+          "condition": "VIX-percentile-stratified within-bucket spread (co-primary gate per \u00a74)",
           "tag": "context"
         },
         {
-          "condition": "ATR-scaled barriers co-primary with fixed −5/+15 (elevated-vol correction)",
+          "condition": "ATR-scaled barriers co-primary with fixed \u22125/+15 (elevated-vol correction)",
           "tag": "context"
         }
       ],
@@ -697,13 +697,13 @@
           "prevents": "reading spurious retro spreads"
         },
         {
-          "rule": "VIX-percentile stratification required — pooled spread is unreadable across elevated-vol cells (W6 F8 lesson)",
+          "rule": "VIX-percentile stratification required \u2014 pooled spread is unreadable across elevated-vol cells (W6 F8 lesson)",
           "prevents": "uncontrolled vol confounder"
         }
       ],
       "archetype_scope": {
         "applies": [
-          "all — conditioner shifts timing across all archetypes"
+          "all \u2014 conditioner shifts timing across all archetypes"
         ],
         "hostile": [],
         "note": "Conditioner on S1/S5; not standalone"
@@ -735,12 +735,12 @@
       "adjacent_falsified": [
         {
           "idea": "Defensive-rotation vol-shock lead (all 7 variants)",
-          "source": "§1.6 DEFENSIVE_ROTATION",
+          "source": "\u00a71.6 DEFENSIVE_ROTATION",
           "mechanical_difference": "S3 conditions entries on the BACK of the episode; makes no vol-prediction claim; vol-matching in gate (a) is exactly what the graveyard entry proved load-bearing"
         },
         {
           "idea": "EPU/GPR scored leg; cycle turn-timing as shipped",
-          "source": "§1.6 NEWS_FEED audit",
+          "source": "\u00a71.6 NEWS_FEED audit",
           "mechanical_difference": "S3 uses index-level exhaustion signals, not keyword-based uncertainty scores"
         }
       ],
@@ -748,12 +748,12 @@
       "ledger_binding": {
         "ledger": "us_board_ledger",
         "since": "2026-07-03",
-        "flip_criteria": "§1.3 template at rotational horizons (clean8_21). VIX-percentile-stratified within-bucket spreads are the primary verdict table. Spread must survive stratification AND agree in sign across ATR-scaled vs fixed barrier schemes. Adjacent: entry premium above episode trough and days-from-radar-peak-severity printed (statistics, not gates)."
+        "flip_criteria": "\u00a71.3 template at rotational horizons (clean8_21). VIX-percentile-stratified within-bucket spreads are the primary verdict table. Spread must survive stratification AND agree in sign across ATR-scaled vs fixed barrier schemes. Adjacent: entry premium above episode trough and days-from-radar-peak-severity printed (statistics, not gates)."
       },
       "gating": {
         "come_back_on": "2026-10-01",
         "cadence": "quarterly",
-        "maturation": "W1 RULING 2026-07-04: moved to W3+ per the pre-registered fallback — the reconstruction check's overlap window DOES NOT EXIST (forward_log: 7 days of states, ZERO logged de-escalation verdicts). Retro-deriving without a verification window is the exact un-checked reconstruction the gate prohibits. ENABLING FIX SHIPPED: deescalation_eligible/reason + dislocation_active now logged in every forward_log row, so the overlap window accrues from 2026-07-04; the W3 retro-derivation runs when ~60+ overlap days exist (≈2026-10-01, unchanged come-back) and the Opus reconstruction check becomes decidable."
+        "maturation": "W1 RULING 2026-07-04: moved to W3+ per the pre-registered fallback \u2014 the reconstruction check's overlap window DOES NOT EXIST (forward_log: 7 days of states, ZERO logged de-escalation verdicts). Retro-deriving without a verification window is the exact un-checked reconstruction the gate prohibits. ENABLING FIX SHIPPED: deescalation_eligible/reason + dislocation_active now logged in every forward_log row, so the overlap window accrues from 2026-07-04; the W3 retro-derivation runs when ~60+ overlap days exist (\u22482026-10-01, unchanged come-back) and the Opus reconstruction check becomes decidable."
       },
       "trial_count": 3
     },
@@ -763,7 +763,7 @@
       "name": "Two-Clock Re-Arm (FRONTRUN Cluster D / BASING successor)",
       "validation_status": "phase0",
       "deployment_status": "unshipped",
-      "mechanism": "Sector confirmation arrives on a slow clock AFTER constituent entry freshness expired. The sector-confirmation event is the SOLE hypothesized new information — an external fact the aged name's own chart cannot supply. Design honesty (the WAVE5 collision, addressed head-on): 'low-extension-since-cross ∧ not-broken' is the falsified BASED predicate (co-extensive with survival-to-j; zero selection content). It is retained ONLY as a launch-hygiene exclusion (keep JNJ/AMAT out), NOT as selection content. S4 lives or dies on the event's marginal value over survival-selection + self-healing.",
+      "mechanism": "Sector confirmation arrives on a slow clock AFTER constituent entry freshness expired. The sector-confirmation event is the SOLE hypothesized new information \u2014 an external fact the aged name's own chart cannot supply. Design honesty (the WAVE5 collision, addressed head-on): 'low-extension-since-cross \u2227 not-broken' is the falsified BASED predicate (co-extensive with survival-to-j; zero selection content). It is retained ONLY as a launch-hygiene exclusion (keep JNJ/AMAT out), NOT as selection content. S4 lives or dies on the event's marginal value over survival-selection + self-healing.",
       "horizon_class": "rotational",
       "evidence_stack": [
         {
@@ -771,21 +771,21 @@
           "tag": "trigger"
         },
         {
-          "condition": "Name survived ¬launched∧¬broken to the event bar (hygiene exclusion only, not selection content)",
+          "condition": "Name survived \u00aclaunched\u2227\u00acbroken to the event bar (hygiene exclusion only, not selection content)",
           "tag": "arming"
         },
         {
-          "condition": "P2-style survival-matched control: all names surviving ¬launched∧¬broken at that bar, regardless of sector event — mandatory comparator",
+          "condition": "P2-style survival-matched control: all names surviving \u00aclaunched\u2227\u00acbroken at that bar, regardless of sector event \u2014 mandatory comparator",
           "tag": "context"
         },
         {
-          "condition": "Self-healing measure: 77.6% of basing windows self-heal via fresh re-fire — S4 scores only on non-self-healing remainder",
+          "condition": "Self-healing measure: 77.6% of basing windows self-heal via fresh re-fire \u2014 S4 scores only on non-self-healing remainder",
           "tag": "context"
         }
       ],
       "rejection_rules": [
         {
-          "rule": "BASED predicate as selection content is CLOSED (§1.6 WAVE5)",
+          "rule": "BASED predicate as selection content is CLOSED (\u00a71.6 WAVE5)",
           "prevents": "re-deriving a zero-content predicate as a gate"
         },
         {
@@ -802,7 +802,7 @@
           "sector-mapped names with subsector_confluence coverage"
         ],
         "hostile": [
-          "unmapped names — no sector confirmation available"
+          "unmapped names \u2014 no sector confirmation available"
         ],
         "note": "Coverage constraint: only ~500 sector-mapped priced names have subsector_confluence state"
       },
@@ -833,12 +833,12 @@
       "adjacent_falsified": [
         {
           "idea": "BASED chip as operationalized",
-          "source": "§1.6 WAVE5",
+          "source": "\u00a71.6 WAVE5",
           "mechanical_difference": "BASED state is byte-identical to survival-to-j; S4 retains this as hygiene only, not selection content"
         },
         {
-          "idea": "RETEST marker as parameterized in WAVE5 §3",
-          "source": "§1.6 WAVE5 §3 (missed by 0.19/0.60pp)",
+          "idea": "RETEST marker as parameterized in WAVE5 \u00a73",
+          "source": "\u00a71.6 WAVE5 \u00a73 (missed by 0.19/0.60pp)",
           "mechanical_difference": "S4 uses sector-confirmation event, not a name-level retest marker; differently-parameterized retest remains OPEN, not falsified"
         }
       ],
@@ -857,7 +857,7 @@
       "ledger_binding": {
         "ledger": "us_board_ledger",
         "since": "2026-07-03",
-        "flip_criteria": "Promotion requires beating BOTH the survival-matched control AND the self-healing-adjusted fire set at the §1.2 bootstrap standard (episode-clustered p-value, BH-FDR across wave family, q≤0.10). Wait-cost (entry premium vs raw-bar baseline) printed per §1.2."
+        "flip_criteria": "Promotion requires beating BOTH the survival-matched control AND the self-healing-adjusted fire set at the \u00a71.2 bootstrap standard (episode-clustered p-value, BH-FDR across wave family, q\u22640.10). Wait-cost (entry premium vs raw-bar baseline) printed per \u00a71.2."
       },
       "gating": {
         "come_back_on": "2026-10-01",
@@ -872,7 +872,7 @@
       "name": "Coiled-Cohort Thrust Frontrun",
       "validation_status": "phase0",
       "deployment_status": "unshipped",
-      "mechanism": "Breadth thrusts are preceded by member-level turn evidence spreading through a washed-out cohort. The 'forming' state (peer_washout_pct high + peer_reclaim_pct rising) leads the confirmed subsector_confluence flip. Three arming legs, each with its own ablation against the validated COILED baseline (in_washout_ctx ∧ sector cohort ≥ 0.40): (1) peer_washout_pct high — H6-validated safe leg; (2) peer_reclaim_pct rising — the second-derivative leg (must be a turn event, not time-passing); (3) cohort vol-compression — NEAREST FALSIFIED NEIGHBOR IS H2 ITSELF (calm base, wrong sign); enters only if ablation shows clean-liftoff spread without stop-out tax. Pre-registered frontrun falsifiability: forming must lead confirmed by ≥3 trading days median.",
+      "mechanism": "Breadth thrusts are preceded by member-level turn evidence spreading through a washed-out cohort. The 'forming' state (peer_washout_pct high + peer_reclaim_pct rising) leads the confirmed subsector_confluence flip. Three arming legs, each with its own ablation against the validated COILED baseline (in_washout_ctx \u2227 sector cohort \u2265 0.40): (1) peer_washout_pct high \u2014 H6-validated safe leg; (2) peer_reclaim_pct rising \u2014 the second-derivative leg (must be a turn event, not time-passing); (3) cohort vol-compression \u2014 NEAREST FALSIFIED NEIGHBOR IS H2 ITSELF (calm base, wrong sign); enters only if ablation shows clean-liftoff spread without stop-out tax. Pre-registered frontrun falsifiability: forming must lead confirmed by \u22653 trading days median.",
       "horizon_class": "rotational",
       "evidence_stack": [
         {
@@ -888,7 +888,7 @@
           "tag": "trigger"
         },
         {
-          "condition": "coverage_pct >= 70% (§3.3 coverage law)",
+          "condition": "coverage_pct >= 70% (\u00a73.3 coverage law)",
           "tag": "context"
         },
         {
@@ -898,7 +898,7 @@
       ],
       "rejection_rules": [
         {
-          "rule": "cohort vol-compression leg is DROPPED if ablation shows stop-out tax — H2 closest neighbor",
+          "rule": "cohort vol-compression leg is DROPPED if ablation shows stop-out tax \u2014 H2 closest neighbor",
           "prevents": "re-deriving the falsified calm-base idea at cohort level"
         },
         {
@@ -912,7 +912,7 @@
       ],
       "archetype_scope": {
         "applies": [
-          "sector-mapped names with ≥70% coverage"
+          "sector-mapped names with \u226570% coverage"
         ],
         "hostile": [],
         "note": "Coverage depends on W0.4 peer metrics landing"
@@ -935,7 +935,7 @@
             "thrust-confirmed",
             "no-thrust"
           ],
-          "note": "Frontrun falsifiability pre-registered: forming leads confirmed by ≥3d median. Phase-0 W2."
+          "note": "Frontrun falsifiability pre-registered: forming leads confirmed by \u22653d median. Phase-0 W2."
         }
       },
       "market_scope": [
@@ -944,12 +944,12 @@
       "adjacent_falsified": [
         {
           "idea": "Pre-cross aged quiet base / calm-VCP arming (H2)",
-          "source": "§1.6 WAVE1 §2",
+          "source": "\u00a71.6 WAVE1 \u00a72",
           "mechanical_difference": "S5's vol-compression leg enters ONLY if ablation passes; H2 had wrong sign and worst stop-outs; this is the NEAREST falsified neighbor for that leg"
         },
         {
           "idea": "Volume dry-up / OBV-div / up-down ratio (H4)",
-          "source": "§1.6 WAVE1 §2",
+          "source": "\u00a71.6 WAVE1 \u00a72",
           "mechanical_difference": "S5 uses cohort-level turn metrics, not volume-based filters"
         }
       ],
@@ -957,7 +957,7 @@
       "ledger_binding": {
         "ledger": "us_board_ledger",
         "since": "2026-07-03",
-        "flip_criteria": "§1.3 template at rotational horizons (clean8_21). Forming and confirmed are graded as SEPARATE fire cohorts. Frontrun gate: forming leads confirmed by ≥3d median (episode-clustered, full distribution). Promotion requires forming to lead confirmed by ≥3d median."
+        "flip_criteria": "\u00a71.3 template at rotational horizons (clean8_21). Forming and confirmed are graded as SEPARATE fire cohorts. Frontrun gate: forming leads confirmed by \u22653d median (episode-clustered, full distribution). Promotion requires forming to lead confirmed by \u22653d median."
       },
       "gating": {
         "come_back_on": "2026-10-01",
@@ -972,19 +972,19 @@
       "name": "Failed-Fire Fuel (honest restatement)",
       "validation_status": "phase0",
       "deployment_status": "unshipped",
-      "mechanism": "A name whose own trigger stopped out 2+ times in 180d may be late-stage washout — serial failure as seller-persistence marker. Evidence status, stated EXACTLY: the failed2 inversion is sign-stable but IN-SAMPLE ONLY — wave-1 stocks panel +1.8pp (base3d) / +3.2pp (m2d_s3d), below the +5pp bar; the wave-2 'replication' recomputed the identical 12,797-fire stocks panel and never touched the OOS basket panel; within STAR the increment is a wash (40.66 vs 41.58). Nobody has built OR validated the species. Phase-0 therefore: run on the OOS basket panel (wave-2 machinery already produces its fire parquets). The pre-registered PRIMARY claim is the INTERACTION MARGINAL — (failed2 × COILED) vs COILED alone — since the nearest measured cell is adverse. The standalone inversion is a secondary sanity read. Expectations set low; a clean kill is a fine outcome.",
+      "mechanism": "A name whose own trigger stopped out 2+ times in 180d may be late-stage washout \u2014 serial failure as seller-persistence marker. Evidence status, stated EXACTLY: the failed2 inversion is sign-stable but IN-SAMPLE ONLY \u2014 wave-1 stocks panel +1.8pp (base3d) / +3.2pp (m2d_s3d), below the +5pp bar; the wave-2 'replication' recomputed the identical 12,797-fire stocks panel and never touched the OOS basket panel; within STAR the increment is a wash (40.66 vs 41.58). Nobody has built OR validated the species. Phase-0 therefore: run on the OOS basket panel (wave-2 machinery already produces its fire parquets). The pre-registered PRIMARY claim is the INTERACTION MARGINAL \u2014 (failed2 \u00d7 COILED) vs COILED alone \u2014 since the nearest measured cell is adverse. The standalone inversion is a secondary sanity read. Expectations set low; a clean kill is a fine outcome.",
       "horizon_class": "rotational",
       "evidence_stack": [
         {
-          "condition": "failed2: ≥2 trigger stop-outs in the prior 180d on the same name",
+          "condition": "failed2: \u22652 trigger stop-outs in the prior 180d on the same name",
           "tag": "arming"
         },
         {
-          "condition": "COILED arming (S1) — the interaction marginal is the primary claim",
+          "condition": "COILED arming (S1) \u2014 the interaction marginal is the primary claim",
           "tag": "arming"
         },
         {
-          "condition": "Primary claim: (failed2 × COILED) vs COILED alone",
+          "condition": "Primary claim: (failed2 \u00d7 COILED) vs COILED alone",
           "tag": "trigger"
         },
         {
@@ -994,11 +994,11 @@
       ],
       "rejection_rules": [
         {
-          "rule": "OOS basket panel required — in-sample stocks panel is not the validation surface",
+          "rule": "OOS basket panel required \u2014 in-sample stocks panel is not the validation surface",
           "prevents": "claiming validation on the panel where the sign appeared"
         },
         {
-          "rule": "interaction-marginal is primary; standalone is secondary sanity — cannot flip the verdict order",
+          "rule": "interaction-marginal is primary; standalone is secondary sanity \u2014 cannot flip the verdict order",
           "prevents": "endpoint shopping after seeing results"
         }
       ],
@@ -1011,7 +1011,7 @@
       },
       "regime_scope": {
         "hypothesized_supportive": [
-          "washout regime — same as S1"
+          "washout regime \u2014 same as S1"
         ],
         "hypothesized_hostile": [],
         "learnable_projection": {
@@ -1032,8 +1032,8 @@
       ],
       "adjacent_falsified": [
         {
-          "idea": "Trap-context vetoes; failed-fire veto — inverted in-sample: serial failure looked like MR fuel",
-          "source": "§1.6 WAVE1/2",
+          "idea": "Trap-context vetoes; failed-fire veto \u2014 inverted in-sample: serial failure looked like MR fuel",
+          "source": "\u00a71.6 WAVE1/2",
           "mechanical_difference": "S6 treats the failed-fire inversion as an honest IN-SAMPLE-ONLY finding and tests it OOS; graveyard entry names the veto direction (correct: vetoing does not help), S6 tests whether the INVERTED direction has OOS merit"
         }
       ],
@@ -1041,12 +1041,12 @@
       "ledger_binding": {
         "ledger": "us_board_ledger",
         "since": "2026-07-03",
-        "flip_criteria": "Primary: (failed2 × COILED) vs COILED alone on OOS basket panel, episode-clustered p-value, BH-FDR q≤0.10, n≥300 per side, both halves sign-stable. Secondary: standalone inversion. Clean kill is acceptable and closes the graveyard row properly."
+        "flip_criteria": "Primary: (failed2 \u00d7 COILED) vs COILED alone on OOS basket panel, episode-clustered p-value, BH-FDR q\u22640.10, n\u2265300 per side, both halves sign-stable. Secondary: standalone inversion. Clean kill is acceptable and closes the graveyard row properly."
       },
       "gating": {
         "come_back_on": "2026-08-01",
         "cadence": "monthly",
-        "maturation": "W1 phase-0 COMPLETE 2026-07-04 (research/species/W1_S6_REPORT.md): PASSED both variants — failed2×COILED clean8_21 spread +4.29pp (m2d_s3d, q=0.032) / +3.79pp (base3d, q=0.080), n floors met, both halves positive, per-name majority 52-53%; failed2 side ALSO stops out less within COILED (−4.9pp m2d_s3d). Standalone form buys liftoff with WORSE stop-outs — interaction only, as registered. OOS came in stronger than in-sample. CONSTRAINT: spreads below the ≥5pp §1.2 promotion floor → DISPLAY-CHIP CANDIDACY ONLY; monthly review decides chip wiring; near-miss ledger accrues the forward read."
+        "maturation": "W1 phase-0 COMPLETE 2026-07-04 (research/species/W1_S6_REPORT.md): PASSED both variants \u2014 failed2\u00d7COILED clean8_21 spread +4.29pp (m2d_s3d, q=0.032) / +3.79pp (base3d, q=0.080), n floors met, both halves positive, per-name majority 52-53%; failed2 side ALSO stops out less within COILED (\u22124.9pp m2d_s3d). Standalone form buys liftoff with WORSE stop-outs \u2014 interaction only, as registered. OOS came in stronger than in-sample. CONSTRAINT: spreads below the \u22655pp \u00a71.2 promotion floor \u2192 DISPLAY-CHIP CANDIDACY ONLY; monthly review decides chip wiring; near-miss ledger accrues the forward read."
       },
       "trial_count": 2
     },
@@ -1056,7 +1056,7 @@
       "name": "Relative-Strength-Before-Price",
       "validation_status": "phase0",
       "deployment_status": "unshipped",
-      "mechanism": "Institutions accumulate before price confirms; RS slope vs cohort turns up while price still bases. Mechanism: systematic buyer accumulation creates a relative-strength divergence observable in sector-relative momentum before the price chart shows a bottom. Adjacent evidence, honestly (three entries): (a) WAVE1's rs_low — RS-vs-SPY at fresh 126d lows was mildly positive but ticker-unstable, and H6∧rs_low was DILUTIVE (36.8 vs 39.3 H6-only) — weak evidence IN THE OPPOSITE DIRECTION; (b) residual momentum — US mom_res fails modern-era DSR; (c) BOTTOM_CONFIDENCE R4 restated honestly as semi-supportive. Registration is TWO-SIDED: the in-house prior weakly favors LOW/deteriorating RS within washout — both signs are admissible outcomes.",
+      "mechanism": "Institutions accumulate before price confirms; RS slope vs cohort turns up while price still bases. Mechanism: systematic buyer accumulation creates a relative-strength divergence observable in sector-relative momentum before the price chart shows a bottom. Adjacent evidence, honestly (three entries): (a) WAVE1's rs_low \u2014 RS-vs-SPY at fresh 126d lows was mildly positive but ticker-unstable, and H6\u2227rs_low was DILUTIVE (36.8 vs 39.3 H6-only) \u2014 weak evidence IN THE OPPOSITE DIRECTION; (b) residual momentum \u2014 US mom_res fails modern-era DSR; (c) BOTTOM_CONFIDENCE R4 restated honestly as semi-supportive. Registration is TWO-SIDED: the in-house prior weakly favors LOW/deteriorating RS within washout \u2014 both signs are admissible outcomes.",
       "horizon_class": "positional",
       "evidence_stack": [
         {
@@ -1068,13 +1068,13 @@
           "tag": "arming"
         },
         {
-          "condition": "Requires W0.4 within-cohort RS-rank SERIES (not snapshot) — gated",
+          "condition": "Requires W0.4 within-cohort RS-rank SERIES (not snapshot) \u2014 gated",
           "tag": "context"
         }
       ],
       "rejection_rules": [
         {
-          "rule": "rs_low (RS level vs market) is NOT the same as RS slope vs cohort — different in sign from the graveyard",
+          "rule": "rs_low (RS level vs market) is NOT the same as RS slope vs cohort \u2014 different in sign from the graveyard",
           "prevents": "confusing level with slope, or market-relative with cohort-relative"
         },
         {
@@ -1084,14 +1084,14 @@
       ],
       "archetype_scope": {
         "applies": [
-          "all — two-sided registration"
+          "all \u2014 two-sided registration"
         ],
         "hostile": [],
         "note": "In-house prior weakly favors LOW RS within washout; both signs admissible"
       },
       "regime_scope": {
         "hypothesized_supportive": [
-          "unknown — two-sided registration"
+          "unknown \u2014 two-sided registration"
         ],
         "hypothesized_hostile": [],
         "learnable_projection": {
@@ -1112,36 +1112,36 @@
       ],
       "adjacent_falsified": [
         {
-          "idea": "rs_low: RS-vs-SPY at 126d low — H6∧rs_low was dilutive (36.8 vs 39.3 H6-only)",
-          "source": "§4 S7 adjacent evidence (a)",
+          "idea": "rs_low: RS-vs-SPY at 126d low \u2014 H6\u2227rs_low was dilutive (36.8 vs 39.3 H6-only)",
+          "source": "\u00a74 S7 adjacent evidence (a)",
           "mechanical_difference": "S7 is RS SLOPE vs cohort, not RS LEVEL vs market; different sign direction from the graveyard entry"
         },
         {
-          "idea": "US residual momentum as modern-era alpha (DSR≈0.001, Sharpe −0.29 modern era)",
-          "source": "§1.6 reports/residual-alpha-phase0",
+          "idea": "US residual momentum as modern-era alpha (DSR\u22480.001, Sharpe \u22120.29 modern era)",
+          "source": "\u00a71.6 reports/residual-alpha-phase0",
           "mechanical_difference": "S7 is a washout-fire stratifier, not a cross-sectional ranking signal"
         },
         {
           "idea": "RS-vs-SPY 20d slope repair on bottom fires (external Codex backtest's headline RS leg)",
-          "source": "research/species/s7_rs_repair_phase0/REPORT.md §7 P-B",
-          "mechanical_difference": "market-relative slope, not within-cohort rank slope. Phase-0: dev null/pointwise-worse; 2025-26 holdout SIGNIFICANTLY worse (stop-out Δ +7.4pp, 90% CI [+2.0,+13.2] excludes 0). The cohort-rank form kept the repair sign; the market-relative form is anti-signal."
+          "source": "research/species/s7_rs_repair_phase0/REPORT.md \u00a77 P-B",
+          "mechanical_difference": "market-relative slope, not within-cohort rank slope. Phase-0: dev null/pointwise-worse; 2025-26 holdout SIGNIFICANTLY worse (stop-out \u0394 +7.4pp, 90% CI [+2.0,+13.2] excludes 0). The cohort-rank form kept the repair sign; the market-relative form is anti-signal."
         },
         {
           "idea": "Triple-lock conjunction tier (cohort_frac>=40 AND rs_spy-repair AND within-15%-of-60d-low) as a required entry gate",
-          "source": "research/species/s7_rs_repair_phase0/REPORT.md §4 H-B / §7 P-C",
-          "mechanical_difference": "S7 is a stratifier on COILED arming, not a conjunction gate. Failed pre-registered dev bars (5.1pp < 8pp vs subset baseline; 0.7pp < 3pp vs best pair); holdout significantly WORSE than cohort-alone (+11.7pp, CI excludes 0) — the anti-signal rs_spy leg poisons the conjunction."
+          "source": "research/species/s7_rs_repair_phase0/REPORT.md \u00a74 H-B / \u00a77 P-C",
+          "mechanical_difference": "S7 is a stratifier on COILED arming, not a conjunction gate. Failed pre-registered dev bars (5.1pp < 8pp vs subset baseline; 0.7pp < 3pp vs best pair); holdout significantly WORSE than cohort-alone (+11.7pp, CI excludes 0) \u2014 the anti-signal rs_spy leg poisons the conjunction."
         }
       ],
       "fixtures": [],
       "ledger_binding": {
         "ledger": "us_board_ledger",
         "since": "2026-07-03",
-        "flip_criteria": "Two-sided registration: promotion bar is BEATING the rs_low stratum baseline on the same panels, not beating zero. Episode-clustered p-value, BH-FDR q≤0.10."
+        "flip_criteria": "Two-sided registration: promotion bar is BEATING the rs_low stratum baseline on the same panels, not beating zero. Episode-clustered p-value, BH-FDR q\u22640.10."
       },
       "gating": {
         "come_back_on": "2026-10-01",
         "cadence": "quarterly",
-        "maturation": "W3 phase-0. Gated on W0.4 within-cohort RS-rank series persistence. Both signs admissible. || 2026-07-04 phase-0 EXECUTED (research/species/s7_rs_repair_phase0, brought forward from W3 on external-evidence grounds): REPAIR sign supported on dev 2022-24 F1/P1 (stop-out Δ −5.7pp, 90% CI [−8.7,−1.9]; clean8_21 Δ +8.8pp CI [+4.6,+11.8]; rs_low promotion bar MET; within-month permutation placebo p≈0.000) but MIXED on 2025-26 holdout (Δ −2.7pp spans 0 at n=725; signs held on both primaries; rs_low bar flipped) → stays phase0 per frozen rule. Re-read on W0.4 series + come_back_on; in-harness rank approximation used, production series may differ."
+        "maturation": "W3 phase-0. Gated on W0.4 within-cohort RS-rank series persistence. Both signs admissible. || 2026-07-04 phase-0 EXECUTED (research/species/s7_rs_repair_phase0, brought forward from W3 on external-evidence grounds): REPAIR sign supported on dev 2022-24 F1/P1 (stop-out \u0394 \u22125.7pp, 90% CI [\u22128.7,\u22121.9]; clean8_21 \u0394 +8.8pp CI [+4.6,+11.8]; rs_low promotion bar MET; within-month permutation placebo p\u22480.000) but MIXED on 2025-26 holdout (\u0394 \u22122.7pp spans 0 at n=725; signs held on both primaries; rs_low bar flipped) \u2192 stays phase0 per frozen rule. Re-read on W0.4 series + come_back_on; in-harness rank approximation used, production series may differ."
       },
       "trial_count": 3
     },
@@ -1151,7 +1151,7 @@
       "name": "Revision-Deceleration Bottom",
       "validation_status": "phase0",
       "deployment_status": "unshipped",
-      "mechanism": "When analyst EPS revision momentum decelerates (second derivative turns) while the name is in washout and prices start recovering, the revision exhaustion signals that the institutional downgrade cycle is ending. Per-name revision-impulse second derivative × washout state × post-cut price reaction as fire stratifier. Gated on revisions PIT archive depth: revisions archive starts 2026-06-16; a proper backtest needs accrual (~2 quarters) or a reconstructed vintage proxy. W0.6 adds estimate dispersion + revenue revisions so the archive fattens.",
+      "mechanism": "When analyst EPS revision momentum decelerates (second derivative turns) while the name is in washout and prices start recovering, the revision exhaustion signals that the institutional downgrade cycle is ending. Per-name revision-impulse second derivative \u00d7 washout state \u00d7 post-cut price reaction as fire stratifier. Gated on revisions PIT archive depth: revisions archive starts 2026-06-16; a proper backtest needs accrual (~2 quarters) or a reconstructed vintage proxy. W0.6 adds estimate dispersion + revenue revisions so the archive fattens.",
       "horizon_class": "positional",
       "evidence_stack": [
         {
@@ -1167,13 +1167,13 @@
           "tag": "trigger"
         },
         {
-          "condition": "Revisions PIT archive depth ≥2 quarters (data gate)",
+          "condition": "Revisions PIT archive depth \u22652 quarters (data gate)",
           "tag": "context"
         }
       ],
       "rejection_rules": [
         {
-          "rule": "Archive depth gate: do not run before ≥2 quarters of PIT archive (or reconstructed vintage proxy)",
+          "rule": "Archive depth gate: do not run before \u22652 quarters of PIT archive (or reconstructed vintage proxy)",
           "prevents": "look-ahead bias in revision timing"
         },
         {
@@ -1189,9 +1189,9 @@
           "healthcare"
         ],
         "hostile": [
-          "financials — EDGAR ratio unreliability"
+          "financials \u2014 EDGAR ratio unreliability"
         ],
-        "note": "Financials excluded per §4 S10 analogue"
+        "note": "Financials excluded per \u00a74 S10 analogue"
       },
       "regime_scope": {
         "hypothesized_supportive": [
@@ -1220,20 +1220,20 @@
       "adjacent_falsified": [
         {
           "idea": "pead_sue_pit: drift mildly positive-in-SUE, FDR-fail",
-          "source": "§4 S9 adjacent evidence",
-          "mechanical_difference": "S8 uses revision DECELERATION second-derivative, not the level of surprise; confined to washout × deceleration cell, not unconditional positive-SUE"
+          "source": "\u00a74 S9 adjacent evidence",
+          "mechanical_difference": "S8 uses revision DECELERATION second-derivative, not the level of surprise; confined to washout \u00d7 deceleration cell, not unconditional positive-SUE"
         }
       ],
       "fixtures": [],
       "ledger_binding": {
         "ledger": "us_board_ledger",
         "since": "2026-07-03",
-        "flip_criteria": "§1.3 template at positional horizons. Gated on archive depth — do not run before come_back_on."
+        "flip_criteria": "\u00a71.3 template at positional horizons. Gated on archive depth \u2014 do not run before come_back_on."
       },
       "gating": {
         "come_back_on": "2026-10-01",
         "cadence": "quarterly",
-        "maturation": "W5+ phase-0. Gated on revisions PIT archive ≥2 quarters (2026-10-01 estimated). W0.6 adds estimate dispersion + revenue revisions to fatten the archive."
+        "maturation": "W5+ phase-0. Gated on revisions PIT archive \u22652 quarters (2026-10-01 estimated). W0.6 adds estimate dispersion + revenue revisions to fatten the archive."
       },
       "trial_count": 2
     },
@@ -1243,7 +1243,7 @@
       "name": "Bad-News Immunity",
       "validation_status": "phase0",
       "deployment_status": "unshipped",
-      "mechanism": "When expectations are washed out, bad news stops making new sellers — the REACTION, not the news, is the signal. Narrowed to earnings events first (cleanest timestamps; surprise history exists): negative-surprise × non-negative 2-day reaction × washout state → forward constitution axes. Adjacent evidence: pead_sue_pit — the repo's only measured earnings-event object — found drift mildly positive-in-SUE (weak, FDR-fail); S9's claim is confined to the washout × muted-reaction cell and must beat the unconditional negative-SUE baseline. Wider news-tone version gated on W0.6 coverage widening + the tone feed's own validation.",
+      "mechanism": "When expectations are washed out, bad news stops making new sellers \u2014 the REACTION, not the news, is the signal. Narrowed to earnings events first (cleanest timestamps; surprise history exists): negative-surprise \u00d7 non-negative 2-day reaction \u00d7 washout state \u2192 forward constitution axes. Adjacent evidence: pead_sue_pit \u2014 the repo's only measured earnings-event object \u2014 found drift mildly positive-in-SUE (weak, FDR-fail); S9's claim is confined to the washout \u00d7 muted-reaction cell and must beat the unconditional negative-SUE baseline. Wider news-tone version gated on W0.6 coverage widening + the tone feed's own validation.",
       "horizon_class": "rotational",
       "evidence_stack": [
         {
@@ -1269,7 +1269,7 @@
           "prevents": "premature extension to unstamped news sources"
         },
         {
-          "rule": "S9 claim confined to washout × muted-reaction cell — cannot claim broader bad-news immunity",
+          "rule": "S9 claim confined to washout \u00d7 muted-reaction cell \u2014 cannot claim broader bad-news immunity",
           "prevents": "over-generalizing from a narrow cell"
         }
       ],
@@ -1309,20 +1309,20 @@
       "adjacent_falsified": [
         {
           "idea": "EPU keyword uncertainty (dead)",
-          "source": "§1.6 NEWS_FEED audit",
+          "source": "\u00a71.6 NEWS_FEED audit",
           "mechanical_difference": "S9 uses per-name event REACTION, not macro keyword counts; reaction date is precise, EPU is aggregate"
         },
         {
           "idea": "pead_sue_pit (positive-in-SUE, FDR-fail)",
-          "source": "§4 S9 adjacent evidence",
-          "mechanical_difference": "S9 targets NEGATIVE surprise × muted reaction — the opposite SUE direction, confined to washout cell"
+          "source": "\u00a74 S9 adjacent evidence",
+          "mechanical_difference": "S9 targets NEGATIVE surprise \u00d7 muted reaction \u2014 the opposite SUE direction, confined to washout cell"
         }
       ],
       "fixtures": [],
       "ledger_binding": {
         "ledger": "us_board_ledger",
         "since": "2026-07-03",
-        "flip_criteria": "§1.3 template at rotational horizons (clean8_21). Must beat unconditional negative-SUE baseline on stop-out AND cushion incidence. BH-FDR q≤0.10."
+        "flip_criteria": "\u00a71.3 template at rotational horizons (clean8_21). Must beat unconditional negative-SUE baseline on stop-out AND cushion incidence. BH-FDR q\u22640.10."
       },
       "gating": {
         "come_back_on": "2026-10-01",
@@ -1337,11 +1337,11 @@
       "name": "Margin-Inflection Reclaim",
       "validation_status": "phase0",
       "deployment_status": "unshipped",
-      "mechanism": "When gross/operating margin DIRECTION changes (first improvement after multiple quarters of deterioration) while the name is in washout and price begins to reclaim key levels, the margin turn signals fundamental mean-reversion. Archetype-scoped: consumer/industrial/retail first; financials excluded — EDGAR ratio unreliability. Keys on margin DIRECTION change, not level. Gated on quarterly EDGAR extraction (one-time paced re-crawl, ~1,334 names).",
+      "mechanism": "When gross/operating margin DIRECTION changes (first improvement after multiple quarters of deterioration) while the name is in washout and price begins to reclaim key levels, the margin turn signals fundamental mean-reversion. Archetype-scoped: consumer/industrial/retail first; financials excluded \u2014 EDGAR ratio unreliability. Keys on margin DIRECTION change, not level. Gated on quarterly EDGAR extraction (one-time paced re-crawl, ~1,334 names).",
       "horizon_class": "positional",
       "evidence_stack": [
         {
-          "condition": "Margin-direction-change: first quarterly improvement after ≥2 quarters of deterioration",
+          "condition": "Margin-direction-change: first quarterly improvement after \u22652 quarters of deterioration",
           "tag": "trigger"
         },
         {
@@ -1359,11 +1359,11 @@
       ],
       "rejection_rules": [
         {
-          "rule": "Financials excluded — EDGAR ratio unreliability for banks/insurers",
+          "rule": "Financials excluded \u2014 EDGAR ratio unreliability for banks/insurers",
           "prevents": "spurious signals in financial archetypes"
         },
         {
-          "rule": "Margin LEVEL is not the signal — only DIRECTION change (first improvement)",
+          "rule": "Margin LEVEL is not the signal \u2014 only DIRECTION change (first improvement)",
           "prevents": "buying cheap-but-declining margins"
         },
         {
@@ -1378,8 +1378,8 @@
           "retail"
         ],
         "hostile": [
-          "financials — EDGAR ratio unreliability",
-          "distressed — margin may not recover"
+          "financials \u2014 EDGAR ratio unreliability",
+          "distressed \u2014 margin may not recover"
         ],
         "note": "Phase-0 W5+ after EDGAR re-crawl completes"
       },
@@ -1410,12 +1410,12 @@
       "adjacent_falsified": [
         {
           "idea": "timing as return-alpha",
-          "source": "§1.6 ENGINE_FIX status",
+          "source": "\u00a71.6 ENGINE_FIX status",
           "mechanical_difference": "S10 is a fundamental margin-turn stratifier, not a return-alpha timing overlay"
         },
         {
           "idea": "Shallow-dip preference (0/8 promote; shallow side LOSES)",
-          "source": "§1.6 WAVE6 §3",
+          "source": "\u00a71.6 WAVE6 \u00a73",
           "mechanical_difference": "S10 keys on margin turn, not dip depth"
         }
       ],
@@ -1423,12 +1423,12 @@
       "ledger_binding": {
         "ledger": "us_board_ledger",
         "since": "2026-07-03",
-        "flip_criteria": "§1.3 template at positional horizons. Financials excluded throughout. Gated on EDGAR re-crawl completion."
+        "flip_criteria": "\u00a71.3 template at positional horizons. Financials excluded throughout. Gated on EDGAR re-crawl completion."
       },
       "gating": {
         "come_back_on": "2026-07-03",
         "cadence": "quarterly",
-        "maturation": "W5+ phase-0. Gated on quarterly EDGAR extraction (one-time paced re-crawl, ~1,334 names). Completion date populates come_back_on definitively. GATE CLEARED: backfill completed 2026-07-03 — 54,853 ticker-quarters, 1,331 tickers, FY2009-2027, 0 failures (data/edgar/statements_quarterly.parquet)."
+        "maturation": "W5+ phase-0. Gated on quarterly EDGAR extraction (one-time paced re-crawl, ~1,334 names). Completion date populates come_back_on definitively. GATE CLEARED: backfill completed 2026-07-03 \u2014 54,853 ticker-quarters, 1,331 tickers, FY2009-2027, 0 failures (data/edgar/statements_quarterly.parquet)."
       },
       "trial_count": 2
     },
@@ -1438,7 +1438,7 @@
       "name": "Buyback-Floor Washout",
       "validation_status": "phase0",
       "deployment_status": "unshipped",
-      "mechanism": "Companies that are actually shrinking their share count during a washout provide a buyback floor — realized buyback activity (not announcements) signals management confidence at a price they consider cheap. Keys on realized share-count DECLINE (from EDGAR quarterly); never on buyback announcements. CN precedent: buybacks kept a capped confirmer role. Debt-funded buybacks are the named failure mode. Gated on same EDGAR extraction as S10.",
+      "mechanism": "Companies that are actually shrinking their share count during a washout provide a buyback floor \u2014 realized buyback activity (not announcements) signals management confidence at a price they consider cheap. Keys on realized share-count DECLINE (from EDGAR quarterly); never on buyback announcements. CN precedent: buybacks kept a capped confirmer role. Debt-funded buybacks are the named failure mode. Gated on same EDGAR extraction as S10.",
       "horizon_class": "positional",
       "evidence_stack": [
         {
@@ -1456,11 +1456,11 @@
       ],
       "rejection_rules": [
         {
-          "rule": "Announcements are NOT the signal — only realized share-count decline",
+          "rule": "Announcements are NOT the signal \u2014 only realized share-count decline",
           "prevents": "counting buyback promises as buyback evidence"
         },
         {
-          "rule": "Debt-funded buyback: net-debt rising concurrent with buyback → demote to context",
+          "rule": "Debt-funded buyback: net-debt rising concurrent with buyback \u2192 demote to context",
           "prevents": "the named failure mode: leveraging up to buy back shares in distress"
         },
         {
@@ -1472,11 +1472,11 @@
         "applies": [
           "consumer",
           "industrial",
-          "technology — names with buyback history"
+          "technology \u2014 names with buyback history"
         ],
         "hostile": [
-          "distressed — buyback in distress is the debt-funded failure mode",
-          "financials — EDGAR ratio unreliability"
+          "distressed \u2014 buyback in distress is the debt-funded failure mode",
+          "financials \u2014 EDGAR ratio unreliability"
         ],
         "note": "Same EDGAR gate as S10"
       },
@@ -1506,13 +1506,13 @@
       ],
       "adjacent_falsified": [
         {
-          "idea": "52w-high×volume breakout alpha",
-          "source": "§1.6 NOVEL_IDEAS §3",
+          "idea": "52w-high\u00d7volume breakout alpha",
+          "source": "\u00a71.6 NOVEL_IDEAS \u00a73",
           "mechanical_difference": "S11 is a washout bottom species, not a breakout/momentum species"
         },
         {
           "idea": "timing as return-alpha",
-          "source": "§1.6 ENGINE_FIX status",
+          "source": "\u00a71.6 ENGINE_FIX status",
           "mechanical_difference": "S11 is a fundamental buyback-floor stratifier"
         }
       ],
@@ -1520,12 +1520,12 @@
       "ledger_binding": {
         "ledger": "us_board_ledger",
         "since": "2026-07-03",
-        "flip_criteria": "§1.3 template at positional horizons. Debt-funded buyback detection required. Gated on EDGAR re-crawl."
+        "flip_criteria": "\u00a71.3 template at positional horizons. Debt-funded buyback detection required. Gated on EDGAR re-crawl."
       },
       "gating": {
         "come_back_on": "2026-07-03",
         "cadence": "quarterly",
-        "maturation": "W5+ phase-0. Same EDGAR re-crawl gate as S10. Completion date populates come_back_on. GATE CLEARED: backfill completed 2026-07-03 — same store as S10 (data/edgar/statements_quarterly.parquet)."
+        "maturation": "W5+ phase-0. Same EDGAR re-crawl gate as S10. Completion date populates come_back_on. GATE CLEARED: backfill completed 2026-07-03 \u2014 same store as S10 (data/edgar/statements_quarterly.parquet)."
       },
       "trial_count": 2
     },
@@ -1535,11 +1535,11 @@
       "name": "Rate-Relief Duration Rebound",
       "validation_status": "phase0",
       "deployment_status": "unshipped",
-      "mechanism": "Rate-sensitive-archetype names (high duration, rate-beta positive) in washout stratified by the §3.4 rate_pressure state = 'relief'. When real rates stop rising and begin declining, duration-sensitive names that have been washed out benefit from PE re-expansion. Adjacent-falsified now includes the net-liquidity gate (episode-scale effective n — inherited here). Hard phase-0 clause: ≥8 distinct rate-relief episodes with ≥1 outside 2020-21, or the wave does not run. The 'rates falling because growth is dying' confound is separated via the growth axis (the species claims rate relief, not rate panic).",
+      "mechanism": "Rate-sensitive-archetype names (high duration, rate-beta positive) in washout stratified by the \u00a73.4 rate_pressure state = 'relief'. When real rates stop rising and begin declining, duration-sensitive names that have been washed out benefit from PE re-expansion. Adjacent-falsified now includes the net-liquidity gate (episode-scale effective n \u2014 inherited here). Hard phase-0 clause: \u22658 distinct rate-relief episodes with \u22651 outside 2020-21, or the wave does not run. The 'rates falling because growth is dying' confound is separated via the growth axis (the species claims rate relief, not rate panic).",
       "horizon_class": "positional",
       "evidence_stack": [
         {
-          "condition": "rate_pressure = 'relief' (§3.4 definition: DFII10 63d change ≤ −25bp, 2-day hysteresis)",
+          "condition": "rate_pressure = 'relief' (\u00a73.4 definition: DFII10 63d change \u2264 \u221225bp, 2-day hysteresis)",
           "tag": "arming"
         },
         {
@@ -1555,13 +1555,13 @@
           "tag": "context"
         },
         {
-          "condition": "Hard clause: ≥8 distinct rate-relief episodes with ≥1 outside 2020-21",
+          "condition": "Hard clause: \u22658 distinct rate-relief episodes with \u22651 outside 2020-21",
           "tag": "context"
         }
       ],
       "rejection_rules": [
         {
-          "rule": "Episode floor: ≥8 distinct rate-relief episodes required with ≥1 outside 2020-21; if not met, wave does not run",
+          "rule": "Episode floor: \u22658 distinct rate-relief episodes required with \u22651 outside 2020-21; if not met, wave does not run",
           "prevents": "reading an ZIRP-era artifact as a general mechanism"
         },
         {
@@ -1569,7 +1569,7 @@
           "prevents": "2020-COVID confound"
         },
         {
-          "rule": "Net-liquidity gate is CLOSED (§1.6 NOVEL_IDEAS §3) — episode-scale n is the hard constraint here too",
+          "rule": "Net-liquidity gate is CLOSED (\u00a71.6 NOVEL_IDEAS \u00a73) \u2014 episode-scale n is the hard constraint here too",
           "prevents": "re-deriving a graveyard gate at episode scale"
         }
       ],
@@ -1604,7 +1604,7 @@
             "pressure",
             "panic"
           ],
-          "note": "Phase-0 W5+. Hard episode floor: ≥8 episodes with ≥1 outside 2020-21."
+          "note": "Phase-0 W5+. Hard episode floor: \u22658 episodes with \u22651 outside 2020-21."
         }
       },
       "market_scope": [
@@ -1613,12 +1613,12 @@
       "adjacent_falsified": [
         {
           "idea": "Net-liquidity expand/contract gate on the long book",
-          "source": "§1.6 NOVEL_IDEAS §3",
+          "source": "\u00a71.6 NOVEL_IDEAS \u00a73",
           "mechanical_difference": "S12 uses rate_pressure state (a rate-regime categorical), not a net-liquidity gate; the episode-scale effective n problem is inherited as the hard floor clause"
         },
         {
           "idea": "Defensive-rotation vol-shock lead",
-          "source": "§1.6 DEFENSIVE_ROTATION",
+          "source": "\u00a71.6 DEFENSIVE_ROTATION",
           "mechanical_difference": "S12 is a duration-rebound species, not a vol-shock prediction"
         }
       ],
@@ -1626,12 +1626,12 @@
       "ledger_binding": {
         "ledger": "us_board_ledger",
         "since": "2026-07-03",
-        "flip_criteria": "§1.3 template at positional horizons. Episode floor is a hard promotion gate (≥8 with ≥1 outside 2020-21). Growth-axis separation required."
+        "flip_criteria": "\u00a71.3 template at positional horizons. Episode floor is a hard promotion gate (\u22658 with \u22651 outside 2020-21). Growth-axis separation required."
       },
       "gating": {
         "come_back_on": "2026-10-01",
         "cadence": "quarterly",
-        "maturation": "W5+ phase-0. Hard clause: ≥8 distinct rate-relief episodes with ≥1 outside 2020-21. Gated on W0.5 regime_vector (rate_pressure) stamping and W0.7 archetype v2."
+        "maturation": "W5+ phase-0. Hard clause: \u22658 distinct rate-relief episodes with \u22651 outside 2020-21. Gated on W0.5 regime_vector (rate_pressure) stamping and W0.7 archetype v2."
       },
       "trial_count": 3
     },
@@ -1641,7 +1641,7 @@
       "name": "US Within-Sector Reversal Sleeve",
       "validation_status": "phase0",
       "deployment_status": "unshipped",
-      "mechanism": "Within-sector overreaction — the CN sleeve's construction ported honestly: monthly, deepest-quintile within-sector reversal fuel (test both 3M per CN and 1M per the US evidence), equal-weight, hygiene-only screens, assert_no_gate-style invariant (the §1.5 law: gates killed the CN edge; the phase-0 tests whether that holds for US too rather than assuming it either way). In-repo seed: sector-neutral 1M reversal IC −0.046 (t −9.5) full-history on the deep panel — with pre-registered kill criteria: modern-era decay (2002–26 IC −0.011, t −2.4) and the 2024–26 mega-cap sign flip. Runs NOW on the existing deep panel with PIT restriction + recovered delisted names. Do NOT wait for W0.6 — the flat files serve the forward ledger, not this backtest. As a product-unit species graded on safety-net axes PLUS sleeve-level excess-vs-SPY.",
+      "mechanism": "Within-sector overreaction \u2014 the CN sleeve's construction ported honestly: monthly, deepest-quintile within-sector reversal fuel (test both 3M per CN and 1M per the US evidence), equal-weight, hygiene-only screens, assert_no_gate-style invariant (the \u00a71.5 law: gates killed the CN edge; the phase-0 tests whether that holds for US too rather than assuming it either way). In-repo seed: sector-neutral 1M reversal IC \u22120.046 (t \u22129.5) full-history on the deep panel \u2014 with pre-registered kill criteria: modern-era decay (2002\u201326 IC \u22120.011, t \u22122.4) and the 2024\u201326 mega-cap sign flip. Runs NOW on the existing deep panel with PIT restriction + recovered delisted names. Do NOT wait for W0.6 \u2014 the flat files serve the forward ledger, not this backtest. As a product-unit species graded on safety-net axes PLUS sleeve-level excess-vs-SPY.",
       "horizon_class": "rotational",
       "evidence_stack": [
         {
@@ -1649,11 +1649,11 @@
           "tag": "trigger"
         },
         {
-          "condition": "Hygiene-only screens: ST, ADV, staleness — NO timing or confirmation gate",
+          "condition": "Hygiene-only screens: ST, ADV, staleness \u2014 NO timing or confirmation gate",
           "tag": "context"
         },
         {
-          "condition": "assert_no_gate invariant: any timing gate is prohibited (§1.5 law)",
+          "condition": "assert_no_gate invariant: any timing gate is prohibited (\u00a71.5 law)",
           "tag": "context"
         },
         {
@@ -1667,17 +1667,17 @@
           "prevents": "killing the edge the way the CN sleeve proved"
         },
         {
-          "rule": "Pre-registered kill criteria: modern-era decay (IC −0.011) and 2024–26 mega-cap sign flip",
+          "rule": "Pre-registered kill criteria: modern-era decay (IC \u22120.011) and 2024\u201326 mega-cap sign flip",
           "prevents": "ignoring the decay signal"
         },
         {
-          "rule": "Do NOT wait for W0.6 massive flat files — this backtest uses the existing deep panel",
+          "rule": "Do NOT wait for W0.6 massive flat files \u2014 this backtest uses the existing deep panel",
           "prevents": "unnecessary delay"
         }
       ],
       "archetype_scope": {
         "applies": [
-          "all US sectors — monthly EW quintile portfolio"
+          "all US sectors \u2014 monthly EW quintile portfolio"
         ],
         "hostile": [],
         "note": "Product-unit species; no per-archetype restriction in phase-0; archetype-conditional cells in W3+"
@@ -1688,7 +1688,7 @@
           "breadth improving"
         ],
         "hypothesized_hostile": [
-          "mega-cap-dominance — MEASURED W1 phase-0: 2024-01→2026-06 sleeve excess −11.8%/yr (t −2.42) vs pre-flip +5.7%/yr DSR 0.981; hostile cell LIVE at phase-0 date"
+          "mega-cap-dominance \u2014 MEASURED W1 phase-0: 2024-01\u21922026-06 sleeve excess \u221211.8%/yr (t \u22122.42) vs pre-flip +5.7%/yr DSR 0.981; hostile cell LIVE at phase-0 date"
         ],
         "learnable_projection": {
           "axes": [
@@ -1709,17 +1709,17 @@
       "adjacent_falsified": [
         {
           "idea": "Timing as return-alpha",
-          "source": "§1.6 ENGINE_FIX status",
+          "source": "\u00a71.6 ENGINE_FIX status",
           "mechanical_difference": "S13 is a monthly portfolio unit (same carve-out the CN sleeve enjoys), not a per-name act-now overlay"
         },
         {
           "idea": "H1 depth-as-boost (raw washout depth as a boost)",
-          "source": "§1.6 WAVE1 §2",
+          "source": "\u00a71.6 WAVE1 \u00a72",
           "mechanical_difference": "S13 is a cross-sectional quintile portfolio, not a board bonus for deep drawdowns"
         },
         {
           "idea": "US residual momentum as modern-era alpha",
-          "source": "§1.6 reports/residual-alpha-phase0",
+          "source": "\u00a71.6 reports/residual-alpha-phase0",
           "mechanical_difference": "S13 is within-sector reversal (opposite direction from momentum)"
         }
       ],
@@ -1732,7 +1732,7 @@
       "gating": {
         "come_back_on": "2026-08-01",
         "cadence": "monthly",
-        "maturation": "W1 phase-0 COMPLETE 2026-07-04 (research/species/W1_S13_REPORT.md): PASSED as the 3M-formation construction (PIT-era +0.49%/mo excess, DSR 0.991 SURVIVES; modern era +0.34%/mo DSR 0.908 marginal); 1M variant CLOSED (modern DSR 0.760 fails). K2 TRIGGERED: mega-cap flip measured (2024–26 −11.8%/yr) → REGIME-SCOPED, hostile cell live — no surface may imply current tradability. K3 clean (top name 3.1%), K4 sign sanity passed (IC −0.011). Survivorship bound: 69.4% member-price coverage — positives are optimistic; re-confirm on the massive-store panel before promotion past display. Monthly review re-reads the regime cell."
+        "maturation": "W1 phase-0 COMPLETE 2026-07-04 (research/species/W1_S13_REPORT.md): PASSED as the 3M-formation construction (PIT-era +0.49%/mo excess, DSR 0.991 SURVIVES; modern era +0.34%/mo DSR 0.908 marginal); 1M variant CLOSED (modern DSR 0.760 fails). K2 TRIGGERED: mega-cap flip measured (2024\u201326 \u221211.8%/yr) \u2192 REGIME-SCOPED, hostile cell live \u2014 no surface may imply current tradability. K3 clean (top name 3.1%), K4 sign sanity passed (IC \u22120.011). Survivorship bound: 69.4% member-price coverage \u2014 positives are optimistic; re-confirm on the massive-store panel before promotion past display. Monthly review re-reads the regime cell."
       },
       "trial_count": 3
     },
@@ -1743,7 +1743,7 @@
       "validation_status": "phase0",
       "deployment_status": "unshipped",
       "trial_count": 0,
-      "mechanism": "A new-high breakout that closes back below the breakout level traps late buyers who chased the print; their supply overhang suppresses subsequent rally attempts. The failed-breakout pattern identifies names whose breakout has reversed intrabar or within 1-3 sessions, leaving the majority of late entrants underwater. This is a top/entry-veto-shaped context for de-escalation or new-position avoidance — NOT a short-selling signal. The supply overhang typically resolves as: (a) time washout (late buyers capitulate) or (b) re-test of the breakout level on improved breadth. Mechanism link: the Wave-5 retest_hold study confirmed that a retest of the prior high WITHOUT breakout failure predicts continuation; the complement (WITH failure) predicts elevated drawdown risk.",
+      "mechanism": "A new-high breakout that closes back below the breakout level traps late buyers who chased the print; their supply overhang suppresses subsequent rally attempts. The failed-breakout pattern identifies names whose breakout has reversed intrabar or within 1-3 sessions, leaving the majority of late entrants underwater. This is a top/entry-veto-shaped context for de-escalation or new-position avoidance \u2014 NOT a short-selling signal. The supply overhang typically resolves as: (a) time washout (late buyers capitulate) or (b) re-test of the breakout level on improved breadth. Mechanism link: the Wave-5 retest_hold study confirmed that a retest of the prior high WITHOUT breakout failure predicts continuation; the complement (WITH failure) predicts elevated drawdown risk.",
       "horizon_class": "rotational",
       "evidence_stack": [
         {
@@ -1765,7 +1765,7 @@
           "prevents": "misuse as a direction signal"
         },
         {
-          "rule": "Index-breakout context: broad-market new highs suppress the per-name failed-breakout mechanism — do not fire in strong bull-tape regimes without regime gating",
+          "rule": "Index-breakout context: broad-market new highs suppress the per-name failed-breakout mechanism \u2014 do not fire in strong bull-tape regimes without regime gating",
           "prevents": "false veto in strong uptrend"
         },
         {
@@ -1784,11 +1784,11 @@
       },
       "regime_scope": {
         "hypothesized_supportive": [
-          "rotation-active — trapped-buyer supply resolves faster in rotation regimes",
-          "risk-off — failed breakouts in risk-off regimes carry elevated drawdown risk"
+          "rotation-active \u2014 trapped-buyer supply resolves faster in rotation regimes",
+          "risk-off \u2014 failed breakouts in risk-off regimes carry elevated drawdown risk"
         ],
         "hypothesized_hostile": [
-          "strong bull tape (broad market making sustained new highs) — mechanism attenuated"
+          "strong bull tape (broad market making sustained new highs) \u2014 mechanism attenuated"
         ],
         "learnable_projection": {
           "axes": [
@@ -1800,7 +1800,7 @@
             "rotation-active",
             "strong-bull-tape"
           ],
-          "note": "Phase-0 W1. Axis: market_trend (risk-off / neutral / bull) × breadth (improving / deteriorating). ≤2 axes, ≤6 cells constraint satisfied."
+          "note": "Phase-0 W1. Axis: market_trend (risk-off / neutral / bull) \u00d7 breadth (improving / deteriorating). \u22642 axes, \u22646 cells constraint satisfied."
         }
       },
       "market_scope": [
@@ -1817,13 +1817,114 @@
       "ledger_binding": {
         "ledger": "us_board_ledger",
         "since": "2026-07-05",
-        "flip_criteria": "Phase-0 gate: (1) ≥25 failed-breakout events logged with measurable forward returns; (2) median 21d forward return in failed-breakout cohort is statistically below the non-failed-breakout control (one-sided t-test, p<0.10); (3) drawdown incidence (max drawdown >15% within 21d) elevated vs control; (4) regime stability: mechanism holds across both risk-off and rotation-active cells. Kill criteria: median forward return NOT below control OR effect driven by single regime."
+        "flip_criteria": "Phase-0 gate: (1) \u226525 failed-breakout events logged with measurable forward returns; (2) median 21d forward return in failed-breakout cohort is statistically below the non-failed-breakout control (one-sided t-test, p<0.10); (3) drawdown incidence (max drawdown >15% within 21d) elevated vs control; (4) regime stability: mechanism holds across both risk-off and rotation-active cells. Kill criteria: median forward return NOT below control OR effect driven by single regime."
       },
       "gating": {
         "come_back_on": "2026-10-05",
         "cadence": "quarterly",
-        "maturation": "Phase-0 W1. Requires ≥25 logged failed-breakout fire events for statistical feasibility (MIN_N=25 server clamp). Come-back 2026-10-05 allows one full quarter of accrual. The research queue ranker (nw-quant-synthesis B) lists S14 as its first ranked customer."
+        "maturation": "Phase-0 W1. Requires \u226525 logged failed-breakout fire events for statistical feasibility (MIN_N=25 server clamp). Come-back 2026-10-05 allows one full quarter of accrual. The research queue ranker (nw-quant-synthesis B) lists S14 as its first ranked customer."
       }
+    },
+    {
+      "species_id": "S15",
+      "version": "1.0",
+      "name": "Spring Reclaim (U&R \u2014 Undercut-and-Rally)",
+      "validation_status": "phase0",
+      "deployment_status": "unshipped",
+      "mechanism": "A support level is undercut (close below the N-bar rolling low) and then reclaimed within K bars. The mechanical event is a failed breakdown: the market rejected the lower level, forcing trapped short-sellers and fearful longs to reverse. Adjacent-falsified now includes the trap-context veto inverse (sign-stable but IN-SAMPLE-ONLY per S6 card, cited exactly) and the shallow-dip preference (0/8 promote; shallow side LOSES per \u00a71.6 WAVE6 \u00a73). Depth arm is panel-determined (ATR mult frozen at 1.0). Three forms: standalone / TRUE COILED intersection (washout AND cohort_frac>=0.40 per assess()) / gate-fire proximity. Phase-0 headline: standalone (+2.44pp stop5) and COILED-intersection (+4.67pp) forms are SIGNIFICANTLY WORSE than the incumbent gate baseline (CI entirely above 0); only the gatefire-proximity form shows stop5 improvement (\u22122.3pp), but proximity confounding is the primary alternative explanation.",
+      "horizon_class": "rotational",
+      "evidence_stack": [
+        {
+          "condition": "Close undercuts the N-bar rolling low (N in {21, 63})",
+          "tag": "arming"
+        },
+        {
+          "condition": "Price reclaims the broken level within K bars (K in {2, 3, 5})",
+          "tag": "trigger"
+        },
+        {
+          "condition": "Depth of undercut >= 2% of rolling low (ATR-mult frozen 1.0)",
+          "tag": "arming"
+        },
+        {
+          "condition": "COILED intersection form: TRUE COILED at fire = washout_ctx AND cohort_frac >= 0.40",
+          "tag": "context"
+        },
+        {
+          "condition": "Gate-fire proximity form: U&R event within +/-5 bars of gate_fires_{panel}",
+          "tag": "context"
+        }
+      ],
+      "rejection_rules": [
+        {
+          "rule": "Trap-context veto inverse: sign-stable IN-SAMPLE ONLY (per S6 card) \u2014 cannot claim OOS merit without phase-0 pass",
+          "prevents": "overstating evidence from in-sample sign"
+        },
+        {
+          "rule": "Shallow-dip preference (0/8 promote; shallow side LOSES) is CLOSED",
+          "prevents": "gating on dip depth"
+        },
+        {
+          "rule": "Same-bar fill banned (T+1 fill required)",
+          "prevents": "look-ahead bias"
+        }
+      ],
+      "archetype_scope": {
+        "applies": [
+          "all \u2014 U&R is market-wide; forms narrow the scope"
+        ],
+        "hostile": [
+          "extended names \u2014 a reclaim after extension is momentum continuation, not spring"
+        ],
+        "note": "Depth arm is panel-determined; ATR mult frozen at 1.0"
+      },
+      "regime_scope": {
+        "hypothesized_supportive": [
+          "washout regime \u2014 reclaim has a natural seller-exhaustion mechanism"
+        ],
+        "hypothesized_hostile": [
+          "low-vol bull leg \u2014 fewer forced sellers"
+        ],
+        "learnable_projection": {
+          "axes": [
+            "vol_regime",
+            "sector_washout"
+          ],
+          "cells": [
+            "washout-high-vol",
+            "washout-low-vol",
+            "trending"
+          ],
+          "note": "Phase-0 W2. Regime cells are context; no conditional gate yet."
+        }
+      },
+      "market_scope": [
+        "US"
+      ],
+      "adjacent_falsified": [
+        {
+          "idea": "Trap-context veto inverse as IN-SAMPLE evidence",
+          "source": "S6 card / \u00a71.6",
+          "mechanical_difference": "S15 tests the U&R event directly; the veto-inverse in S6 was in-sample only and cites that honestly"
+        },
+        {
+          "idea": "Shallow-dip preference (0/8 promote; shallow side LOSES)",
+          "source": "\u00a71.6 WAVE6 \u00a73",
+          "mechanical_difference": "S15 uses depth >= 2% floor only; shallow preference closed"
+        }
+      ],
+      "fixtures": [],
+      "ledger_binding": {
+        "ledger": "us_board_ledger",
+        "since": "2026-07-05",
+        "flip_criteria": "\u00a71.3 template at rotational horizons (clean8_21 primary). Non-inferiority = CI_hi < +0.01 on stop5. Superiority = CI_hi < 0 on stop5 (or CI_lo > 0 on cushion_rot / CI_hi < 0 on dead_money). BH-FDR q<=0.10 family-wide (esx_ur_phase0 budget=36)."
+      },
+      "gating": {
+        "come_back_on": "2026-10-01",
+        "cadence": "quarterly",
+        "maturation": "W2 phase-0 COMPLETE 2026-07-05: standalone (+2.44pp stop5) and COILED-intersection (+4.67pp) forms FAIL non-inferiority (CI entirely above 0 \u2014 SIGNIFICANTLY WORSE than incumbent baseline). Gatefire-proximity form shows stop5 improvement (-2.3pp, CI excludes 0) but proximity confounding (NC-2 marginality) is the primary alternative explanation. Adjudication belongs to the orchestrator. Come-back: orchestrator adjudication + NC-2 deferred test result."
+      },
+      "trial_count": 3
     },
     {
       "species_id": "F3_ANTICHASE",
@@ -1831,7 +1932,7 @@
       "name": "Anti-Chase Hard Gate (F3 ext_z)",
       "validation_status": "phase0_passed",
       "deployment_status": "chip",
-      "mechanism": "Names with ext_z > 2.0 are in the PARABOLIC tail: priced more than 2 own-history σ above their 200-day average. P1.3 established this cohort has higher stop-out (+0.43pp at 21d, +5.0pp at 63d) and dead-money (+3.6pp at 21d) incidence vs the unblocked population on production-trigger fires. The mechanism is forced-buyer exhaustion: a parabolic extension means every short-term buyer has already bought; when momentum stalls, there is no marginal buyer to absorb the first seller. The gate does not predict when the reversal happens — only that it stops the board from confirming a chase entry.",
+      "mechanism": "Names with ext_z > 2.0 are in the PARABOLIC tail: priced more than 2 own-history \u03c3 above their 200-day average. P1.3 established this cohort has higher stop-out (+0.43pp at 21d, +5.0pp at 63d) and dead-money (+3.6pp at 21d) incidence vs the unblocked population on production-trigger fires. The mechanism is forced-buyer exhaustion: a parabolic extension means every short-term buyer has already bought; when momentum stalls, there is no marginal buyer to absorb the first seller. The gate does not predict when the reversal happens \u2014 only that it stops the board from confirming a chase entry.",
       "horizon_class": "positional",
       "trial_count": 3,
       "p1_3_trials": [
@@ -1867,7 +1968,7 @@
         }
       ],
       "archetype_scope": {
-        "applies": "all archetypes — the parabolic tail is archetype-agnostic (extension is own-history relative, not absolute)",
+        "applies": "all archetypes \u2014 the parabolic tail is archetype-agnostic (extension is own-history relative, not absolute)",
         "hostile": "none identified; the 4.6% impact means virtually no archetype is disproportionately affected"
       },
       "regime_scope": {
@@ -1881,8 +1982,8 @@
       "adjacent_falsified": [
         {
           "id": "extension_as_return_alpha",
-          "source": "SETUP_SPECIES_MASTERPLAN §1.6",
-          "mechanical_difference": "This gate acts on the safety-net axes (stop-out / dead-money), not return-alpha. The graveyard entry falsified extension as a return predictor; P1.3 tests it as a stop-out reducer — a different claim on a different axis."
+          "source": "SETUP_SPECIES_MASTERPLAN \u00a71.6",
+          "mechanical_difference": "This gate acts on the safety-net axes (stop-out / dead-money), not return-alpha. The graveyard entry falsified extension as a return predictor; P1.3 tests it as a stop-out reducer \u2014 a different claim on a different axis."
         },
         {
           "id": "cn_reversal_gate",
@@ -1898,7 +1999,7 @@
         {
           "name": "NVDA_persistent_leader",
           "expectation": "NVDA in normal strong-trend periods reads ext_z < 2 (own-history z-scoring is the key distinction)",
-          "status": "UNVERIFIED — convert to a computable assertion before PR merge"
+          "status": "UNVERIFIED \u2014 convert to a computable assertion before PR merge"
         }
       ],
       "ledger_binding": {
@@ -1912,7 +2013,7 @@
         "rollback_triggers": {
           "RB1_wilson_reversal": "Wilson 95% upper bound on D < 0 after >= 200 post-flip episode clusters at 21d OR 63d",
           "RB2_fire_rate_breach": "gate blocking > 15% of weekly fires over any consecutive 4-week window",
-          "RB3_recall_failure": "PENDING P1.4 column confirmation — not yet operational"
+          "RB3_recall_failure": "PENDING P1.4 column confirmation \u2014 not yet operational"
         },
         "flip_floor_clusters": 100,
         "flip_floor_quarters": 2
