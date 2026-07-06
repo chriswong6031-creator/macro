@@ -4357,3 +4357,79 @@ artifacts:
       macro_refresh.refresh() sparse checkout of site/ materializes this file at
       vendor/macro_src/site/neuralwebdata/mastermind_context.json with zero new sync
       plumbing (site/ is in the sparse set). See NW_MASTERMIND_BRIDGE_PROGRAM.md §3.2.
+
+  # --- Research Factory W1 (RF-11) ---
+  # Three durable orchestration ledgers at display tier, horizon-agnostic context.
+  # Authority ceiling: A0-A2 display-only (no scored-path authority).
+  # scored_path_surfaces: [] — factory outputs must never reach money-path surfaces.
+
+  research-factory-candidates:
+    path: data/research_factory/candidates.jsonl
+    format: jsonl
+    producer: scripts/check_research_factory_authority.py
+    known_extra_writers:
+      - "scripts/research_factory_ingest.py — W2 ingest writer (planned)"
+    owner_program: research-factory
+    cadence: on-demand
+    storage: git
+    asof_field: created_at
+    freshness_sla_hours: 8760
+    schema: research_factory.candidate.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    notes: >
+      Research Factory W1 (RF-11). Candidate identity ledger — append-only JSONL.
+      Authority ceiling A0-A2 display-only; every row carries authority='display_only'.
+      Producer at W1 is the authority-guard script (creates the file path on first
+      ingest in W2); the ingest writer (W2) is listed as a known_extra_writer.
+      See research/RESEARCH_FACTORY_MASTERPLAN_BY_FABLE.md §5.1.
+
+  research-factory-transitions:
+    path: data/research_factory/transitions.jsonl
+    format: jsonl
+    producer: scripts/check_research_factory_authority.py
+    known_extra_writers:
+      - "scripts/research_factory_ingest.py — W2 transition writer (planned)"
+      - "scripts/research_factory_decide.py — W5 decision recorder (planned)"
+    owner_program: research-factory
+    cadence: on-demand
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 8760
+    schema: research_factory.transition.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    notes: >
+      Research Factory W1 (RF-11). State-transition audit log — append-only JSONL.
+      Authority ceiling A0-A2 display-only; every row carries authority='display_only'.
+      This is the sole audit history; rows are never deleted.
+      See research/RESEARCH_FACTORY_MASTERPLAN_BY_FABLE.md §5.2.
+
+  research-factory-paper-monitor:
+    path: data/research_factory/paper_monitor.jsonl
+    format: jsonl
+    producer: scripts/check_research_factory_authority.py
+    known_extra_writers:
+      - "scripts/research_factory_monitor.py — W6 nightly monitor writer (planned)"
+    owner_program: research-factory
+    cadence: on-demand
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 8760
+    schema: research_factory.paper_monitor.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    notes: >
+      Research Factory W1 (RF-11). Paper-phase monitor forward ledger — keep-first
+      per (candidate_id, as_of); advanced only by the nightly engine job (W6+).
+      Authority ceiling A0-A2 display-only; cadence flips to daily-engine at W6.
+      See research/RESEARCH_FACTORY_MASTERPLAN_BY_FABLE.md §5.4.
