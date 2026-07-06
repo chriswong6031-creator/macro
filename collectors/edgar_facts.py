@@ -19,12 +19,27 @@ so consumers can gate not-yet-filed fiscal rows point-in-time (availability ≈
 period_end + reporting-lag). Rows written before this column existed have
 period_end=NaN until their next drip re-fetch re-stamps it (consumers keep
 un-stamped rows ungated — display-only, self-heals within the ~monthly refresh).
+
+BUG FIX NOTES (LT-1a, 2026-07-06):
+  shares: us-gaap:CommonStockSharesOutstanding lives in the "shares" XBRL unit, NOT
+    "USD". The BALANCE loop previously called _concept() with the default unit="USD",
+    returning an empty dict → all shares values were None. Fixed by extracting shares
+    separately with unit="shares", instant=True.  dei:EntityCommonStockSharesOutstanding
+    was considered as fallback but is only in the dei namespace (not us-gaap) and
+    contains cover-page counts (post-period-end), so it was NOT added.
+    WeightedAverageNumberOfDilutedSharesOutstanding is a FLOW concept (per-period
+    average) and should not mix with the point-in-time balance sheet count.
+  future-FY guard: rows whose period_end is in the future relative to run date are
+    dropped at the end of _statements_for(). This is the canonical PIT gate — the fy
+    XBRL field alone is unreliable (e.g. STX encodes their fiscal year count as fy=2027
+    when the actual period ends in June 2025). period_end (the 'end' date from the
+    winning filing entry) is the correct signal.
 """
 from __future__ import annotations
 
 import logging
 import time
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 
 import pandas as pd
 
@@ -91,6 +106,16 @@ BALANCE = {
     "debt_lt": ["LongTermDebtNoncurrent", "LongTermDebt"],
     "debt_cur": ["LongTermDebtCurrent", "DebtCurrent"],
     "retained_earnings": ["RetainedEarningsAccumulatedDeficit"],
+    # NOTE: 'shares' is intentionally absent — shares live in the "shares" XBRL unit,
+    # not "USD". They are extracted separately in _statements_for() via BALANCE_SHARES.
+}
+# Concepts reported in the "shares" XBRL unit (not USD). Extracted with unit="shares".
+# Primary: us-gaap:CommonStockSharesOutstanding — the fiscal-year-end balance-sheet
+# share count, reported as an instant (point-in-time) concept.
+# dei:EntityCommonStockSharesOutstanding is NOT used: it is cover-page count (slightly
+# post-period-end), lives in the dei namespace (not us-gaap), and would require a
+# separate namespace lookup path.
+BALANCE_SHARES = {
     "shares": ["CommonStockSharesOutstanding"],
 }
 EPS = ["EarningsPerShareDiluted", "EarningsPerShareBasicAndDiluted"]
@@ -203,10 +228,18 @@ def _statements_for(cik: int) -> list[dict]:
     for key, names in BALANCE.items():
         series[key], _ends = _concept(usgaap, names, instant=True)
         _absorb(_ends)
+    # Shares are in the "shares" XBRL unit (not USD) — must be extracted separately.
+    # us-gaap:CommonStockSharesOutstanding is the fiscal-year-end balance-sheet share
+    # count (instant concept). The BALANCE loop above uses unit="USD" (default) so
+    # it returns an empty dict for shares → was always None before this fix.
+    for key, names in BALANCE_SHARES.items():
+        series[key], _ends = _concept(usgaap, names, unit="shares", instant=True)
+        _absorb(_ends)
     series["eps_diluted"], _ends = _concept(usgaap, EPS, unit="USD/shares", instant=False)
     _absorb(_ends)
 
     years = sorted({fy for s in series.values() for fy in s}, reverse=True)[:KEEP_YEARS]
+    today_iso = date.today().isoformat()
     rows = []
     for fy in sorted(years):
         rec = {"fy": fy}
@@ -215,6 +248,15 @@ def _statements_for(cik: int) -> list[dict]:
         # PIT: fiscal period-end of this FY (the winning filing's `end`), so consumers
         # can drop rows whose 10-K was not yet filed at a given as-of date.
         rec["period_end"] = period_ends.get(fy)
+        # Future-FY guard: drop rows whose fiscal period has not yet closed.
+        # The XBRL fy field is unreliable (e.g. STX tags their FY ending June 2025 as
+        # fy=2027). period_end (the winning entry's 'end' date) is the canonical signal.
+        # A row is only dropped when period_end IS set and is strictly in the future;
+        # rows with period_end=None are kept (display-only — they self-heal on next drip).
+        pe = rec.get("period_end")
+        if pe and pe > today_iso:
+            log.debug("edgar_facts: dropping future-period row fy=%s period_end=%s", fy, pe)
+            continue
         # derive revenue from gross profit + COGS when the revenue tag is absent
         # for that year (common when a filer only tags GrossProfit + COGS)
         if rec.get("revenue") is None and rec.get("gross_profit") is not None and rec.get("cogs") is not None:
@@ -290,13 +332,22 @@ def fetch_statements(force: bool = False, max_new: int = 200,
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
     import sys
-    ts = sys.argv[1:] or ["AAPL"]
-    df = fetch_statements(force=True, max_new=len(ts), tickers=ts)
+    # Usage: python -m collectors.edgar_facts [TICKER ...] [--limit N]
+    # --limit N: cap max_new to N (smoke-test path; default = len(tickers))
+    args = sys.argv[1:]
+    limit: int | None = None
+    if "--limit" in args:
+        idx = args.index("--limit")
+        limit = int(args[idx + 1])
+        args = args[:idx] + args[idx + 2:]
+    ts = args or ["AAPL"]
+    max_new = limit if limit is not None else len(ts)
+    df = fetch_statements(force=True, max_new=max_new, tickers=ts)
     for t in ts:
         sub = df[df["ticker"] == t].sort_values("fy") if "ticker" in df else df
         print(f"\n=== {t} ===")
-        cols = [c for c in ("fy", "revenue", "gross_profit", "op_income", "ni",
+        cols = [c for c in ("fy", "period_end", "revenue", "gross_profit", "op_income", "ni",
                             "eps_diluted", "cfo", "capex", "interest_exp", "depreciation",
-                            "sbc", "research_dev", "assets", "equity",
+                            "sbc", "research_dev", "assets", "equity", "shares",
                             "cur_assets", "cur_liab", "debt_lt", "cash") if c in sub.columns]
         print(sub[cols].to_string(index=False))
