@@ -32,6 +32,10 @@ EVENT-TYPE VOCABULARY
     config_disarm        — engine flips enabled:False
     operator_override    — human overrides an engine decision with evidence
     article3_review      — Article-3 review of a grandfathered authority grant
+    research_factory_gate      — Research Factory human-gate decision
+                                 (paper/deferred/rejected/scoped_build), article:null
+    research_factory_challenge — Research Factory challenge packet written
+                                 (advisory-only, RF-7), article:null
 
 SCHEMA (neuralweb.governance.v1)
 ---------------------------------
@@ -77,6 +81,8 @@ _VALID_EVENT_TYPES = frozenset({
     "article3_review",
     # W5 (RF-12): human-gate decisions recorded by research_factory_decide.py
     "research_factory_gate",
+    # W4 (RF-12): challenge packets written by research_factory_challenge_pack.py
+    "research_factory_challenge",
 })
 
 

@@ -116,7 +116,7 @@ def _load_dedup_context(root: Path | None = None) -> dict[str, Any]:
     species_names: list[str] = []
     try:
         import engine.species_registry as sr
-        reg = sr.load()
+        reg = sr.load(_root / "data" / "species" / "registry.json")
         for s in reg.get("species", []):
             sid = s.get("species_id", "")
             name = s.get("name", "")
