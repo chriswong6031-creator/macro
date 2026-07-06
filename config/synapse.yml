@@ -3841,6 +3841,72 @@ artifacts:
       entry-stack z-scores, board ordering, top-setups gates, alert triage,
       or push floor.
 
+  # --- Long-Hold W2 PR-K: Moat Falsifier Sensors ---
+  moat-falsifier-sensors:
+    path: "embedded: per-ticker moat sensor fields inside site/stockdata/<TICKER>.json"
+    format: json
+    producer: engine/moat_falsifiers.py
+    known_extra_writers:
+      - "engine/stock_fundamentals.py — calls compute_moat_falsifiers() inside panels()"
+    owner_program: long-hold
+    cadence: daily-engine
+    storage: git
+    asof_field: null
+    freshness_sla_hours: 30
+    schema: moat_falsifiers.v1
+    tier: display
+    horizon_role: hold_thesis
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - site/stockdata/<TICKER>.json
+    external_consumers: []
+    notes: >
+      W2 PR-K (Long-Hold Thesis Layer). Four moat falsifier sensors computed from
+      data/edgar/statements.parquet: margin_compression_despite_revenue_growth,
+      receivables_stretch, inventory_build, capital_intensity_rising.
+      Each sensor carries a matched-control base rate (universe fire frequency per FY)
+      so the display layer can show context: a sensor firing at 25% base rate
+      fires 1-in-4 names and is less informative than one at 5%.
+      DISPLAY-ONLY — G1-DEFERRED ruling 2026-07-06. Per LH-R2: no composite
+      "moat score" is produced. Per LH-R6: no LLM transition logic.
+      FIREWALL: horizon_role=hold_thesis. MUST NOT feed board ordering, alert
+      triage, top-setups gates, or push floor (LH-R1). fdr_family=long_hold (LH-R5).
+      Coverage stamps: sensor_coverage (full|partial|missing), coverage_n_years,
+      base_rate_annual_fy per sensor, _horizon_role, _display_only, _version.
+
+  great-company-trap:
+    path: "embedded: great_company_trap fields inside site/stockdata/<TICKER>.json"
+    format: json
+    producer: engine/moat_falsifiers.py
+    known_extra_writers:
+      - "engine/stock_fundamentals.py — calls great_company_trap() inside panels()"
+    owner_program: long-hold
+    cadence: daily-engine
+    storage: git
+    asof_field: null
+    freshness_sla_hours: 30
+    schema: great_company_trap.v1
+    tier: display
+    horizon_role: hold_thesis
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - site/stockdata/<TICKER>.json
+    external_consumers: []
+    notes: >
+      W2 PR-K (Long-Hold Thesis Layer). Great-company-trap de-escalation overlay
+      per LH-R10. Assembled ONLY from existing signals: crowding_z (engine/theme_crowding),
+      insider_net_usd (engine/equity_factors / altdata), revision_direction
+      (engine/analyst_revisions). Plain deterministic function; no LLM.
+      MAY ONLY LOWER conviction display context, never raise/rank (LH-R10).
+      Inputs printed verbatim in every output for transparency (Article-1/A3 shape).
+      DISPLAY-ONLY — G1-DEFERRED ruling 2026-07-06.
+      FIREWALL: horizon_role=hold_thesis. MUST NOT feed board ordering, alert
+      triage, top-setups gates, or push floor (LH-R1). fdr_family=long_hold (LH-R5).
+      Fields: trap_signals_present, de_escalation_reason, legs, inputs_used,
+      _horizon_role, _display_only, _version.
+
   # --- NW quant-synthesis B: research-queue EV-ranker ---
   research-queue:
     path: data/neuralweb/research_queue.json
