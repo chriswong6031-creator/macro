@@ -445,8 +445,37 @@ def _compose_options_weather(
 
 def _compose_factor_weather(
     root: "Path | str | None" = None,
+    prefer_artifact: bool = True,
 ) -> dict:
     """Compose the factor_weather sub-block for world_state (§5.4).
+
+    Parameters
+    ----------
+    root:
+        Repo root override (defaults to _repo_root()).
+    prefer_artifact:
+        When True (default, world_state lobe path): attempt to read
+        data/neuralweb/factor_intelligence_state.json as canonical
+        (RUL-NW2).  If the artifact is present, parseable, and contains a
+        ``factor_weather`` block, that block is returned AUGMENTED with a
+        ``factor_state_as_of`` key carrying the artifact's top-level
+        ``as_of`` value (staleness visibility, RUL-NW2).
+
+        When False (builder path): the artifact read is skipped entirely
+        and the function goes directly to the legacy direct-panel-read
+        branch.  Pass ``prefer_artifact=False`` from
+        ``build_factor_intelligence_state._build_factor_weather_block``
+        to guarantee a fresh recompute every night — preventing the
+        circular-freeze where the builder reads last night's committed
+        artifact and re-emits it verbatim without touching the panel
+        (regression: RUL-NW10 history tape would freeze at day-1 values).
+
+    Fallback / legacy path (artifact absent/corrupt/missing factor_weather,
+    OR prefer_artifact=False):
+        the legacy direct-panel-read logic (below) runs unchanged.  The
+        returned dict carries ``factor_state_as_of: null``.  Staleness is
+        signalled solely by this null value — no additional gap-note entry
+        is appended.
 
     RULING-B fold (FIX-1): all data loading is done inside this function.
     The wiring line in build_world_state is:
@@ -454,6 +483,7 @@ def _compose_factor_weather(
     No panel_latest or factor_series arguments are passed from build_world_state.
 
     Data sources read internally (all fail-open):
+    - data/neuralweb/factor_intelligence_state.json  (canonical — RUL-NW2)
     - data/factordata/panel/ — latest-date row, via max-date selection (FIX-9)
     - site/factordata/factor_series.json — rotation leader
     - data/edgar/ic_scorecard.json — leader IC (FIX-2)
@@ -469,10 +499,63 @@ def _compose_factor_weather(
     -------
     dict
         Keys: style_regime, style_regime_pending, style_regime_hold_days,
-        factor_leader, factor_leader_ic, etf_pulse_summary, display_only.
+        factor_leader, factor_leader_ic, etf_pulse_summary, display_only,
+        factor_state_as_of (11th key, RUL-NW2 staleness stamp).
         display_only is ALWAYS True — §5.4 mandates it.
     """
     repo = _repo_root(root)
+
+    # ── RUL-NW2: try canonical committed state artifact first ─────────────────
+    # Skipped when prefer_artifact=False (builder fresh-compute path — see docstring).
+    _state_artifact_path = repo / "data" / "neuralweb" / "factor_intelligence_state.json"
+    if prefer_artifact:
+        try:
+            if _state_artifact_path.exists():
+                _state = json.loads(_state_artifact_path.read_text(encoding="utf-8"))
+                if isinstance(_state, dict):
+                    _fw_block = _state.get("factor_weather")
+                    if isinstance(_fw_block, dict) and _fw_block:
+                        # Canonical path: augment with staleness stamp and return.
+                        _artifact_as_of = _state.get("as_of")
+                        out = dict(_fw_block)
+                        out["factor_state_as_of"] = _artifact_as_of
+                        # Ensure display_only is always True regardless of artifact content.
+                        out["display_only"] = True
+                        log.info(
+                            "factor_weather: canonical artifact path (RUL-NW2) — as_of=%s",
+                            _artifact_as_of,
+                        )
+                        return out
+                    else:
+                        log.info(
+                            "factor_weather: artifact present but factor_weather block "
+                            "missing or empty — falling back to direct panel read"
+                        )
+                else:
+                    log.warning(
+                        "factor_weather: artifact at %s is not a dict — falling back",
+                        _state_artifact_path,
+                    )
+            else:
+                log.info(
+                    "factor_weather: state artifact absent (%s) — falling back to "
+                    "direct panel read",
+                    _state_artifact_path,
+                )
+        except Exception as exc:  # noqa: BLE001
+            log.warning(
+                "factor_weather: artifact read/parse failed (%s) — falling back: %s",
+                _state_artifact_path,
+                exc,
+            )
+    else:
+        log.info(
+            "factor_weather: prefer_artifact=False — skipping artifact, fresh recompute from panel"
+        )
+
+    # ── Legacy fallback: direct panel / ETF / scorecard read ─────────────────
+    # (unchanged from the pre-RUL-NW2 implementation; runs only when the
+    # committed artifact is absent, corrupt, or missing the factor_weather block)
     data_dir = repo / "data"
     site_dir = repo / "site"
 
@@ -668,6 +751,10 @@ def _compose_factor_weather(
     if gaps:
         log.info("factor_weather gaps: %s", gaps)
 
+    # RUL-NW2 fallback path: factor_state_as_of is null (artifact was absent/
+    # corrupt/missing factor_weather block, or prefer_artifact=False was passed).
+    # Staleness is signalled solely by the factor_state_as_of: null value —
+    # no additional gap-note entry is emitted here.
     return {
         "style_regime": _clean(style_regime),
         "style_regime_pending": _clean(style_regime_pending),
@@ -679,6 +766,7 @@ def _compose_factor_weather(
         "ratio_qqq_spy_20d": _clean(ratio_qqq_spy),
         "ratio_iwm_spy_20d": _clean(ratio_iwm_spy),
         "display_only": True,
+        "factor_state_as_of": None,  # null on legacy fallback path (RUL-NW2)
     }
 
 
@@ -810,6 +898,7 @@ def build_world_state(
             "ratio_qqq_spy_20d": None,
             "ratio_iwm_spy_20d": None,
             "display_only": True,
+            "factor_state_as_of": None,  # null on lobe failure (RUL-NW2)
         }
     try:
         options_weather_block: dict = _compose_options_weather(root=repo)

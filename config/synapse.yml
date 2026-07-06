@@ -4542,7 +4542,8 @@ artifacts:
     horizon_role: context
     weights: none
     scored_path_surfaces: []
-    consumers: []
+    consumers:
+      - engine/neuralweb/world_state.py
     notes: >
       RUL-NW1 — factor_panel job is sole advancer. Context-only committed
       digest of factor intelligence state (panel health, factor weather,
