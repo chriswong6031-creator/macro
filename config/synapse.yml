@@ -4541,6 +4541,55 @@ artifacts:
       FIREWALL: horizon_role=hold_thesis. MUST NOT feed board ordering, alert
       triage, top-setups gates, or push floor (LH-R1). fdr_family=long_hold.
 
+  # --- Long-Hold LT-4: thesis funnel longitudinal history (PR-A2) ---
+  long-hold-thesis-funnel-history:
+    path: data/research/thesis_funnel_history.parquet
+    format: parquet
+    producer: scripts/research/build_thesis_funnel_snapshot.py
+    known_extra_writers:
+      - "scripts/research/build_thesis_funnel_history.py — append_history() called by snapshot main() under --write-history"
+    owner_program: long-hold
+    cadence: daily-engine
+    storage: git
+    asof_field: snapshot_date
+    freshness_sla_hours: 30
+    schema: thesis_funnel_history.v1
+    tier: display
+    horizon_role: hold_thesis
+    weights: none
+    scored_path_surfaces: []
+    fdr_family: long_hold
+    consumers:
+      - research/long_hold/LT4_FUNNEL_SHADOW_REPORT.md
+    external_consumers: []
+    notes: >
+      LT-4 (Long-Hold External Foundation) longitudinal history store (PR-A2).
+      Append-only per (ticker, snapshot_date): keep-FIRST semantics — same-date
+      re-runs are no-ops; no prior-date row is ever mutated. Gated on --write-history
+      flag; sole-advancer law: only the daily.yml engine job passes this flag.
+
+      Schema (thesis_funnel_history.v1):
+        ticker, snapshot_date (YYYY-MM-DD str), state, state_reason,
+        s1_dilution_fired, s2_moat_falsifier_fired, s3_solvency_fired, s3_altman_z,
+        s4_coverage_fired, s4_n_computable, piotroski_score, piotroski_of,
+        capital_allocation_delta, _display_only, _horizon_role, _version,
+        _survivorship_caveat.
+
+      Survivorship caveat: delisted names exit fundamentals_panel silently. Their
+      terminal state is not recorded; population is a varying survivor cohort.
+      Terminal transitions are invisible. Longitudinal consumers MUST treat this
+      as a survivor-biased panel, not a closed panel.
+
+      Drift alerting: when any state's share shifts >5pp vs the prior snapshot,
+      the script prints a drift block and logs a WARNING. Coverage-artifact
+      confounders (LT-1 period_end coverage, fundamentals_panel expansion) are
+      printed alongside to contextualize apparent drift.
+
+      FIREWALL (LH-R1 — STANDING): MUST NOT feed entry-stack z-scores, board
+      ordering, top-setups gates, alert triage, or push floor.
+      DISPLAY-ONLY — G1-DEFERRED ruling 2026-07-06.
+      fdr_family=long_hold (LH-R5). No scored_path_surfaces.
+
   # --- NW quant-synthesis B: research-queue EV-ranker ---
   research-queue:
     path: data/neuralweb/research_queue.json

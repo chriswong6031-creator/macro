@@ -20,7 +20,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | hk-canada | 2 |
 | institutional-sector-intelligence | 2 |
 | intl-fix | 1 |
-| long-hold | 20 |
+| long-hold | 21 |
 | neural-web | 34 |
 | nw-mastermind-bridge | 2 |
 | nw-rails | 4 |
@@ -39,7 +39,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 99 |
+| display | 100 |
 | infrastructure | 51 |
 | scored | 4 |
 | shadow | 37 |
@@ -48,7 +48,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 185 |
+| git | 186 |
 | gitignored-local | 4 |
 | r2 | 2 |
 
@@ -175,6 +175,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | long-hold-killtest-results | `data/research/missed_hold_study_results.parquet` | parquet | on-demand | display | 1 | 0 |
 | long-hold-labels | `data/research/long_hold_labels.parquet` | parquet | on-demand | display | 1 | 0 |
 | long-hold-labels-manifest | `data/research/long_hold_labels_manifest.json` | json | on-demand | display | 1 | 0 |
+| long-hold-thesis-funnel-history | `data/research/thesis_funnel_history.parquet` | parquet | daily-engine | display | 1 | 0 |
 | long-hold-thesis-funnel-panel | `embedded: thesis_funnel inside site/stockdata/<TICKER>.json` | json | daily-engine | display | 1 | 0 |
 | long-hold-thesis-funnel-states | `data/research/thesis_funnel_states.parquet` | parquet | on-demand | display | 1 | 0 |
 | long-hold-thesis-funnel-states-manifest | `data/research/thesis_funnel_states_manifest.json` | json | on-demand | display | 1 | 0 |
@@ -710,6 +711,13 @@ Artifacts below have `known_extra_writers` — additional code paths that write 
 - **declared producer:** `engine/expectation_state.py`
 - **extra writers:**
   - engine/stock_fundamentals.py — expectation_states() called inside panels(); result keyed as 'expectation_state'
+
+### long-hold-thesis-funnel-history
+
+- **path:** `data/research/thesis_funnel_history.parquet`
+- **declared producer:** `scripts/research/build_thesis_funnel_snapshot.py`
+- **extra writers:**
+  - scripts/research/build_thesis_funnel_history.py — append_history() called by snapshot main() under --write-history
 
 ### long-hold-thesis-funnel-panel
 
