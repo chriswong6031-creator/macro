@@ -408,8 +408,8 @@ def assign_lq_bands(
     fires["date"] = pd.to_datetime(fires["date"])
 
     # Batch by unique fire date to reduce redundant computations.
-    # For each unique fire date, compute proxy cross-section for all tickers
-    # with sufficient history.
+    # For each unique fire date, compute proxy cross-section for the cohort of
+    # fires on that date (tickers present in the fires DataFrame at that date).
     unique_dates = sorted(fires["date"].unique())
     log.info("assign_lq_bands: proxy=%s, %d unique fire dates", proxy, len(unique_dates))
 
@@ -490,8 +490,9 @@ def assign_lq_bands(
     # Tercile thresholds are based ONLY on the cross-section at each fire date —
     # never on all-time data (which would leak future information).
     # Approach: for each unique fire date, compute cross-sectional thresholds
-    # from the proxy values of ALL tickers at that date (trailing-year lookback).
-    # This mirrors what an investor would see: all tickers' liquidity at today.
+    # from the proxy values of the COHORT OF FIRES on that date (not the full
+    # market universe). Each name is ranked against other names that also fired
+    # on that date — fully point-in-time causal.
     fires["lq_band"] = np.nan
 
     for fire_date in unique_dates:
@@ -949,6 +950,20 @@ def _write_report(
                 lines.append(f"| {b} | {BAND_LABELS[b]} | {n_b} | {pct:.1f}% |")
             lines.append("")
 
+            # Deterioration sign distribution — emitted ONCE at proxy level (band 0 fires).
+            # det_sign_dist is computed for band 0 only; showing it inside every band
+            # section would repeat band-0 numbers under band-1 / band-2 headings.
+            det_dist = proxy_data.get("det_sign_dist", {})
+            if det_dist:
+                lines.append("**Deterioration sign distribution (band 0 — worst-liquidity fires):**")
+                lines.append("")
+                lines.append("| Deterioration sign | N fires |")
+                lines.append("|---|---|")
+                for sign, n_s in det_dist.items():
+                    label = {1: "+1 (deteriorating)", -1: "-1 (improving)", 0: "0 (flat)"}.get(sign, str(sign))
+                    lines.append(f"| {label} | {n_s} |")
+                lines.append("")
+
             # Per-band effect tables
             for b in range(N_BANDS):
                 br = band_results.get(b, {})
@@ -991,18 +1006,6 @@ def _write_report(
                             f"| {outcome} | {coef_s} | {ci_s} | {p_s} | {bh_q_s} | {bh_rej_s} |"
                         )
                     lines.append("")
-
-                    # Deterioration sign breakdown
-                    det_dist = proxy_data.get("det_sign_dist", {})
-                    if det_dist:
-                        lines.append("**Deterioration sign distribution (band 0 fires):**")
-                        lines.append("")
-                        lines.append("| Deterioration sign | N fires |")
-                        lines.append("|---|---|")
-                        for sign, n_s in det_dist.items():
-                            label = {1: "+1 (deteriorating)", -1: "-1 (improving)", 0: "0 (flat)"}.get(sign, str(sign))
-                            lines.append(f"| {label} | {n_s} |")
-                        lines.append("")
                 else:
                     lines.append("*No effects computed.*")
                     lines.append("")
@@ -1137,6 +1140,20 @@ def _write_report(
         lines.append("")
         lines.append("> **SMOKE RUN STAMP**: Bootstrap n=200, first 50 unique fire dates only. "
                      "Numbers are NOT production quality.")
+        lines.append("")
+    else:
+        # Production run stamp: self-certify scale so the artifact is auditable
+        # without re-running. n_bootstrap default = 1000 (meeting >=1000 floor).
+        total_gradable_fires = sum(
+            pd.get("n_gradable", 0) for pd in panel_results.values()
+        )
+        panels_run = list(panel_results.keys())
+        lines.append("")
+        lines.append(
+            f"> **PRODUCTION RUN STAMP**: n_bootstrap={n_bootstrap}, "
+            f"panels={panels_run}, "
+            f"total gradable fires={total_gradable_fires:,}."
+        )
         lines.append("")
 
 
@@ -1346,8 +1363,11 @@ def main(args: argparse.Namespace) -> None:
     lines.append("- Amihud ILLIQ: |ret| / (close × volume), smoothed 20d rolling mean (all panels).")
     lines.append("- Corwin-Schultz HL-spread: two-day HL estimator (panels with H/L).")
     lines.append("")
-    lines.append("**Band rule (FIXED, NEVER FITTED):** Cross-sectional terciles on trailing "
-                 "252-bar (1-year) proxy values at each fire date.")
+    lines.append("**Band rule (FIXED, NEVER FITTED):** Cross-sectional terciles computed over "
+                 "the cohort of fires on each date (not the full market universe). "
+                 "Trailing 252-bar (1-year) proxy value at each fire date determines the band. "
+                 "This is fully point-in-time causal: each name is ranked against "
+                 "other names that also fired on that date.")
     lines.append("- Band 0 = top third of proxy values = worst liquidity (least liquid / widest spread).")
     lines.append("- Band 1 = middle third.")
     lines.append("- Band 2 = bottom third of proxy values = best liquidity.")
@@ -1362,6 +1382,16 @@ def main(args: argparse.Namespace) -> None:
     lines.append("- Clause A: CI-excluding-0 degradation on stop5 (CI_lo > 0) OR fwd_mdd_21 "
                  "(CI_hi < 0) for the worst band (band 0).")
     lines.append("- Clause B: Affected volume of worst band <= 10% of fires.")
+    lines.append("")
+    lines.append("**Clause A co-primary note (RUL-13 / Amendment 1):** "
+                 "fwd_mdd_21 is used as the 21d drawdown co-primary in lieu of mae63 "
+                 "(RUL-13 horizon doctrine: 63d+ horizons never decide entry verdicts). "
+                 "fwd_mdd_21 is the surfaced proxy for the not-yet-wired mae21; "
+                 "Amendment 2 notes mae21 is still missing from EFFECT_OUTCOMES but "
+                 "fwd_mdd_21 serves the same 21d window. "
+                 "This substitution is immaterial to the verdict: Clause B (volume>10%) "
+                 "fails for all four proxy×panel combos, so no drawdown-metric choice "
+                 "can change SHIP NOTHING.")
     lines.append("")
     lines.append("**Sign convention:**")
     lines.append("- stop5 is ADVERSE. CI_lo > 0 means significantly MORE stops (degradation).")

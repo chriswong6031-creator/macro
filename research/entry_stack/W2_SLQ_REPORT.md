@@ -13,7 +13,7 @@
 - Amihud ILLIQ: |ret| / (close × volume), smoothed 20d rolling mean (all panels).
 - Corwin-Schultz HL-spread: two-day HL estimator (panels with H/L).
 
-**Band rule (FIXED, NEVER FITTED):** Cross-sectional terciles on trailing 252-bar (1-year) proxy values at each fire date.
+**Band rule (FIXED, NEVER FITTED):** Cross-sectional terciles computed over the cohort of fires on each date (not the full market universe). Trailing 252-bar (1-year) proxy value at each fire date determines the band. This is fully point-in-time causal: each name is ranked against other names that also fired on that date.
 - Band 0 = top third of proxy values = worst liquidity (least liquid / widest spread).
 - Band 1 = middle third.
 - Band 2 = bottom third of proxy values = best liquidity.
@@ -25,6 +25,8 @@
 **Hygiene bar (§5 pre-registered):**
 - Clause A: CI-excluding-0 degradation on stop5 (CI_lo > 0) OR fwd_mdd_21 (CI_hi < 0) for the worst band (band 0).
 - Clause B: Affected volume of worst band <= 10% of fires.
+
+**Clause A co-primary note (RUL-13 / Amendment 1):** fwd_mdd_21 is used as the 21d drawdown co-primary in lieu of mae63 (RUL-13 horizon doctrine: 63d+ horizons never decide entry verdicts). fwd_mdd_21 is the surfaced proxy for the not-yet-wired mae21; Amendment 2 notes mae21 is still missing from EFFECT_OUTCOMES but fwd_mdd_21 serves the same 21d window. This substitution is immaterial to the verdict: Clause B (volume>10%) fails for all four proxy×panel combos, so no drawdown-metric choice can change SHIP NOTHING.
 
 **Sign convention:**
 - stop5 is ADVERSE. CI_lo > 0 means significantly MORE stops (degradation).
@@ -67,6 +69,14 @@ Direction note: stop5 is ADVERSE — a BETTER signal has a MORE NEGATIVE coeffic
 | 1 | mid_tercile | 10172 | 27.0% |
 | 2 | top_tercile (best) | 9709 | 25.7% |
 
+**Deterioration sign distribution (band 0 — worst-liquidity fires):**
+
+| Deterioration sign | N fires |
+|---|---|
+| +1 (deteriorating) | 5785 |
+| -1 (improving) | 3952 |
+| None | 1 |
+
 #### Band 0 — bottom_tercile (worst)
 
 N treatment: 9738 | N control: 19881 | Affected volume: 25.8% of fires
@@ -81,14 +91,6 @@ N treatment: 9738 | N control: 19881 | Affected volume: 25.8% of fires
 | zone_held_21 | 0.0087 | [-0.0009, 0.0158] | 0.0660 | 0.1828 | no |
 | stop_vol_21 | -0.0087 | [-0.0158, 0.0009] | 0.0660 | excl | excl |
 | days_to_10 | -2.9908 | [-3.8629, -0.9907] * | 0.0000 | excl | excl |
-
-**Deterioration sign distribution (band 0 fires):**
-
-| Deterioration sign | N fires |
-|---|---|
-| +1 (deteriorating) | 5785 |
-| -1 (improving) | 3952 |
-| None | 1 |
 
 **Era table (band 0 vs rest):**
 
@@ -122,14 +124,6 @@ N treatment: 10172 | N control: 19447 | Affected volume: 27.0% of fires
 | stop_vol_21 | 0.0063 | [-0.0012, 0.0140] | 0.0880 | excl | excl |
 | days_to_10 | 1.5368 | [0.1429, 2.4085] * | 0.0240 | excl | excl |
 
-**Deterioration sign distribution (band 0 fires):**
-
-| Deterioration sign | N fires |
-|---|---|
-| +1 (deteriorating) | 5785 |
-| -1 (improving) | 3952 |
-| None | 1 |
-
 **Era table (band 1 vs rest):**
 
 | era | stratum | n_fires | stop5_rate | mae63_mean (63d context, NOT a verdict metric) |
@@ -162,14 +156,6 @@ N treatment: 9709 | N control: 19910 | Affected volume: 25.7% of fires
 | stop_vol_21 | 0.0024 | [-0.0076, 0.0111] | 0.7400 | excl | excl |
 | days_to_10 | 1.5269 | [-0.7223, 2.9969] | 0.2560 | excl | excl |
 
-**Deterioration sign distribution (band 0 fires):**
-
-| Deterioration sign | N fires |
-|---|---|
-| +1 (deteriorating) | 5785 |
-| -1 (improving) | 3952 |
-| None | 1 |
-
 **Era table (band 2 vs rest):**
 
 | era | stratum | n_fires | stop5_rate | mae63_mean (63d context, NOT a verdict metric) |
@@ -199,6 +185,14 @@ N treatment: 9709 | N control: 19910 | Affected volume: 25.7% of fires
 | 1 | mid_tercile | 12481 | 33.1% |
 | 2 | top_tercile (best) | 3557 | 9.4% |
 
+**Deterioration sign distribution (band 0 — worst-liquidity fires):**
+
+| Deterioration sign | N fires |
+|---|---|
+| +1 (deteriorating) | 6010 |
+| -1 (improving) | 1738 |
+| 0 (flat) | 5 |
+
 #### Band 0 — bottom_tercile (worst)
 
 N treatment: 7753 | N control: 16038 | Affected volume: 20.6% of fires
@@ -213,14 +207,6 @@ N treatment: 7753 | N control: 16038 | Affected volume: 20.6% of fires
 | zone_held_21 | -0.0105 | [-0.0167, -0.0023] * | 0.0160 | 0.0576 | YES |
 | stop_vol_21 | 0.0105 | [0.0023, 0.0167] * | 0.0160 | excl | excl |
 | days_to_10 | -1.9279 | [-2.9997, -1.1017] * | 0.0000 | excl | excl |
-
-**Deterioration sign distribution (band 0 fires):**
-
-| Deterioration sign | N fires |
-|---|---|
-| +1 (deteriorating) | 6010 |
-| -1 (improving) | 1738 |
-| 0 (flat) | 5 |
 
 **Era table (band 0 vs rest):**
 
@@ -253,14 +239,6 @@ N treatment: 12481 | N control: 11310 | Affected volume: 33.1% of fires
 | zone_held_21 | 0.0071 | [-0.0022, 0.0113] | 0.1860 | 0.3720 | no |
 | stop_vol_21 | -0.0071 | [-0.0113, 0.0022] | 0.1860 | excl | excl |
 | days_to_10 | 1.7695 | [1.0948, 2.8170] * | 0.0000 | excl | excl |
-
-**Deterioration sign distribution (band 0 fires):**
-
-| Deterioration sign | N fires |
-|---|---|
-| +1 (deteriorating) | 6010 |
-| -1 (improving) | 1738 |
-| 0 (flat) | 5 |
 
 **Era table (band 1 vs rest):**
 
@@ -298,14 +276,6 @@ N treatment: 3557 | N control: 20234 | Affected volume: 9.4% of fires
 | zone_held_21 | 0.0076 | [0.0007, 0.0214] * | 0.0320 | 0.0960 | YES |
 | stop_vol_21 | -0.0076 | [-0.0214, -0.0007] * | 0.0320 | excl | excl |
 | days_to_10 | 0.4167 | [-0.6542, 1.4978] | 0.4620 | excl | excl |
-
-**Deterioration sign distribution (band 0 fires):**
-
-| Deterioration sign | N fires |
-|---|---|
-| +1 (deteriorating) | 6010 |
-| -1 (improving) | 1738 |
-| 0 (flat) | 5 |
 
 **Era table (band 2 vs rest):**
 
@@ -347,6 +317,14 @@ Note: NC-2 band FE: proximity proxy = 63-bar close-min pivot (PROXY, not true ca
 | 1 | mid_tercile | 32958 | 30.8% |
 | 2 | top_tercile (best) | 32985 | 30.8% |
 
+**Deterioration sign distribution (band 0 — worst-liquidity fires):**
+
+| Deterioration sign | N fires |
+|---|---|
+| +1 (deteriorating) | 19555 |
+| -1 (improving) | 13406 |
+| None | 24 |
+
 #### Band 0 — bottom_tercile (worst)
 
 N treatment: 32985 | N control: 65943 | Affected volume: 30.8% of fires
@@ -361,14 +339,6 @@ N treatment: 32985 | N control: 65943 | Affected volume: 30.8% of fires
 | zone_held_21 | -0.0100 | [-0.2071, 0.0370] | 0.2440 | 0.4285 | no |
 | stop_vol_21 | 0.0100 | [-0.0370, 0.2071] | 0.2440 | excl | excl |
 | days_to_10 | -6.3315 | [-13.4301, -1.3672] * | 0.0220 | excl | excl |
-
-**Deterioration sign distribution (band 0 fires):**
-
-| Deterioration sign | N fires |
-|---|---|
-| +1 (deteriorating) | 19555 |
-| -1 (improving) | 13406 |
-| None | 24 |
 
 **Era table (band 0 vs rest):**
 
@@ -400,14 +370,6 @@ N treatment: 32958 | N control: 65970 | Affected volume: 30.8% of fires
 | stop_vol_21 | 0.0137 | [-0.0074, 0.0185] | 0.2160 | excl | excl |
 | days_to_10 | -1.1057 | [-6.6539, 1.0848] | 0.4480 | excl | excl |
 
-**Deterioration sign distribution (band 0 fires):**
-
-| Deterioration sign | N fires |
-|---|---|
-| +1 (deteriorating) | 19555 |
-| -1 (improving) | 13406 |
-| None | 24 |
-
 **Era table (band 1 vs rest):**
 
 | era | stratum | n_fires | stop5_rate | mae63_mean (63d context, NOT a verdict metric) |
@@ -437,14 +399,6 @@ N treatment: 32985 | N control: 65943 | Affected volume: 30.8% of fires
 | zone_held_21 | 0.0237 | [-0.0071, 0.0275] | 0.1860 | 0.3720 | no |
 | stop_vol_21 | -0.0237 | [-0.0275, 0.0071] | 0.1860 | excl | excl |
 | days_to_10 | 7.7221 | [3.6698, 8.8227] * | 0.0000 | excl | excl |
-
-**Deterioration sign distribution (band 0 fires):**
-
-| Deterioration sign | N fires |
-|---|---|
-| +1 (deteriorating) | 19555 |
-| -1 (improving) | 13406 |
-| None | 24 |
 
 **Era table (band 2 vs rest):**
 
@@ -478,6 +432,14 @@ Note: NC-2 band FE: proximity proxy = 63-bar close-min pivot (PROXY, not true ca
 | 1 | mid_tercile | 52007 | 48.5% |
 | 2 | top_tercile (best) | 6517 | 6.1% |
 
+**Deterioration sign distribution (band 0 — worst-liquidity fires):**
+
+| Deterioration sign | N fires |
+|---|---|
+| +1 (deteriorating) | 23125 |
+| -1 (improving) | 6114 |
+| 0 (flat) | 2 |
+
 #### Band 0 — bottom_tercile (worst)
 
 N treatment: 29241 | N control: 58524 | Affected volume: 27.3% of fires
@@ -492,14 +454,6 @@ N treatment: 29241 | N control: 58524 | Affected volume: 27.3% of fires
 | zone_held_21 | -0.0218 | [-0.0229, 0.0028] | 0.1480 | 0.3229 | no |
 | stop_vol_21 | 0.0218 | [-0.0028, 0.0229] | 0.1480 | excl | excl |
 | days_to_10 | -4.1469 | [-4.3983, -2.5887] * | 0.0000 | excl | excl |
-
-**Deterioration sign distribution (band 0 fires):**
-
-| Deterioration sign | N fires |
-|---|---|
-| +1 (deteriorating) | 23125 |
-| -1 (improving) | 6114 |
-| 0 (flat) | 2 |
 
 **Era table (band 0 vs rest):**
 
@@ -530,14 +484,6 @@ N treatment: 52007 | N control: 35758 | Affected volume: 48.5% of fires
 | zone_held_21 | 0.0208 | [0.0022, 0.0227] * | 0.0240 | 0.0751 | YES |
 | stop_vol_21 | -0.0208 | [-0.0227, -0.0022] * | 0.0240 | excl | excl |
 | days_to_10 | 4.4185 | [2.3104, 4.6860] * | 0.0000 | excl | excl |
-
-**Deterioration sign distribution (band 0 fires):**
-
-| Deterioration sign | N fires |
-|---|---|
-| +1 (deteriorating) | 23125 |
-| -1 (improving) | 6114 |
-| 0 (flat) | 2 |
 
 **Era table (band 1 vs rest):**
 
@@ -573,14 +519,6 @@ N treatment: 6517 | N control: 81248 | Affected volume: 6.1% of fires
 | zone_held_21 | 0.0048 | [-0.0467, 0.0114] | 0.7840 | 0.8553 | no |
 | stop_vol_21 | -0.0048 | [-0.0114, 0.0467] | 0.7840 | excl | excl |
 | days_to_10 | -1.0173 | [-1.4660, 1.7735] | 0.4760 | excl | excl |
-
-**Deterioration sign distribution (band 0 fires):**
-
-| Deterioration sign | N fires |
-|---|---|
-| +1 (deteriorating) | 23125 |
-| -1 (improving) | 6114 |
-| 0 (flat) | 2 |
 
 **Era table (band 2 vs rest):**
 
@@ -636,3 +574,5 @@ Pool size: 72 cells. BH-rejected: 24.
 *Grader: engine/grading.py (program barriers, RUL-9).*
 *'validated' word deliberately absent (CI-enforced).*
 *No promotion language. Hygiene study only.*
+
+> **PRODUCTION RUN STAMP**: n_bootstrap=1000, panels=['deep', 'baskets'], total gradable fires=144,849.
