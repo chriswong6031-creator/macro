@@ -1,0 +1,8 @@
+{
+  "allow": [
+    {"module": "engine/research_factory/__init__.py", "reason": "factory package itself — internal self-reference in imports and docstrings"},
+    {"module": "engine/research_factory/schema.py", "reason": "factory schema module — path literals appear in docstrings and comments describing the schemas it validates"},
+    {"module": "engine/research_factory/state.py", "reason": "factory state module — internal module"},
+    {"module": "engine/research_factory/ledger.py", "reason": "factory ledger module — writes to data/research_factory/ by design"}
+  ]
+}

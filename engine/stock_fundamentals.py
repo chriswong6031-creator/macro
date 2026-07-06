@@ -378,7 +378,19 @@ def _load_profiles() -> dict[str, dict]:
 
 def _load_statements() -> dict[str, list[dict]]:
     """ticker -> list of per-fiscal-year statement dicts (ascending) from the
-    Phase-2 companyfacts collector (collectors/edgar_facts.py). Empty until run."""
+    Phase-2 companyfacts collector (collectors/edgar_facts.py). Empty until run.
+
+    Point-in-time: fiscal rows not yet filed as of today — availability date
+    ``period_end + 120d`` in the future — are dropped before grouping, reusing the
+    same gate as ``engine.moat_falsifiers`` (``_pit_filter``/``_resolve_asof``, #1572).
+    The companyfacts store can carry not-yet-filed future fiscal years (its ``fy``
+    range runs past the current year — e.g. an FY2027 STX row); without this gate
+    they leak into every latest-row consumer — ``_multiyear`` / ``_leverage_ratios`` /
+    ``_piotroski`` / ``_accounting_quality`` all read ``rows[-1]`` as "latest filed
+    FY". Rows lacking ``period_end`` (legacy rows fetched before the column existed)
+    cannot be gated and are KEPT (fail-open): these are display-only panels, so the
+    gate self-activates as the weekly companyfacts re-fetch re-stamps ``period_end``
+    rather than blanking the panel meanwhile."""
     p = config.data_dir() / "edgar" / "statements.parquet"
     if not p.exists():
         return {}
@@ -387,6 +399,12 @@ def _load_statements() -> dict[str, list[dict]]:
     except Exception:  # noqa: BLE001
         return {}
     if df.empty or "ticker" not in df.columns:
+        return {}
+    # PIT gate: drop fiscal rows whose 10-K is not yet filed as of today
+    # (period_end + 120d in the future). Fail-open on rows lacking period_end.
+    from engine.moat_falsifiers import _pit_filter, _resolve_asof  # noqa: PLC0415
+    df = _pit_filter(df, _resolve_asof(None))
+    if df.empty:
         return {}
     out: dict[str, list[dict]] = {}
     for t, sub in df.sort_values("fy").groupby("ticker"):
@@ -510,15 +528,22 @@ def _net_debt(stmt: dict) -> float | None:
     return dl + dc - ca
 
 
-def _leverage_ratios(rows: list[dict]) -> dict:
+def _leverage_ratios(rows: list[dict], sector: str | None = None) -> dict:
     """Bottom-survival-quality leverage ratios from statement rows.
 
-    Follows the _altman()/_piotroski() pattern: takes the full list of per-fiscal-year
-    statement rows (unfiltered, consistent with sibling helpers) and uses rows[-1]
-    (latest filed FY), which is PIT-safe for a current-snapshot builder.
-    Returns a dict with up to four keys; any ratio that cannot be computed (missing or
+    Follows the _altman()/_piotroski() pattern: takes the per-fiscal-year statement
+    rows and uses rows[-1] as the latest filed FY. This is PIT-safe because the rows
+    are availability-gated upstream by _load_statements() (period_end + 120d, #1572),
+    which drops the not-yet-filed future fiscal years the companyfacts store can carry
+    — so rows[-1] is the latest *available* filing, never a not-yet-filed one. (The
+    helper itself is pure and does no gating; a caller that passes ungated rows would
+    reintroduce the leak.)
+    Returns a dict with up to six keys; any ratio that cannot be computed (missing or
     zero denominator, all-None inputs) is absent from the dict (not set to 0/None) so
     the caller can detect unavailability via .get() returning None.
+
+    ``sector``: when provided, current_ratio and quick_ratio are suppressed for
+    Financials-sector names (bank balance sheets make these ratios misleading).
 
     None-safety law: never use `x or default` on values that can be 0 — use explicit
     `is None` checks throughout (repo footgun; 0 is a valid financial value).
@@ -533,6 +558,12 @@ def _leverage_ratios(rows: list[dict]) -> dict:
       net_debt_to_ebitda     = net_debt / (op_income + depreciation)
                                None unless depreciation is present AND denominator > 0.
                                Will be None for nearly everything until the drip accrues D&A.
+      current_ratio          = cur_assets / cur_liab
+                               Financials-suppressed. None if either input is missing or
+                               cur_liab <= 0.
+      quick_ratio            = (cur_assets − inventory) / cur_liab
+                               Financials-suppressed. inventory treated as 0 only when
+                               cur_assets is present; None otherwise (explicit, not or-0).
     """
     if not rows:
         return {}
@@ -546,6 +577,9 @@ def _leverage_ratios(rows: list[dict]) -> dict:
     op_income = _g("op_income")
     interest_exp = _g("interest_exp")
     depreciation = _g("depreciation")
+    cur_assets = _g("cur_assets")
+    cur_liab = _g("cur_liab")
+    inventory = _g("inventory")
 
     out: dict = {}
 
@@ -572,6 +606,17 @@ def _leverage_ratios(rows: list[dict]) -> dict:
         ebitda = op_income + depreciation
         if ebitda > 0:
             out["net_debt_to_ebitda"] = round(net_debt / ebitda, 2)
+
+    # ── current_ratio / quick_ratio (Financials-suppressed) ──────────────────
+    # None-safety: 0 is a valid value for cur_liab (very unusual but possible).
+    # Inventory: treat as 0 ONLY when cur_assets is present (can't subtract unknown
+    # from known); otherwise leave quick_ratio null.
+    is_fin = sector in _FINANCIAL_SECTORS if sector is not None else False
+    if not is_fin and cur_assets is not None and cur_liab is not None and cur_liab > 0:
+        out["current_ratio"] = round(cur_assets / cur_liab, 2)
+        # inventory missing → treat as 0 (cur_assets is present so subtraction is safe)
+        inv_val = inventory if inventory is not None else 0.0
+        out["quick_ratio"] = round((cur_assets - inv_val) / cur_liab, 2)
 
     return out
 
@@ -1205,11 +1250,15 @@ def _context_frame(fund: pd.DataFrame, table: dict,
     sector medians + a universe-wide composite percentile. 'cheapness' is oriented
     so HIGHER = cheaper/better for every metric (the bar fills green to the right).
 
-    EV / enterprise multiples (ev_sales / ev_ebit / p_fcf) additionally need the
-    companyfacts statement layer (op_income / capex / current-debt / cash), passed in
-    via ``statements``. They are US-only, Financial-sector-suppressed (bank balance
-    sheets make enterprise ratios meaningless), and carry partial coverage until the
-    weekly drip accrues — np.nan wherever an input is missing (never fabricated)."""
+    EV / enterprise multiples (ev_sales / ev_ebit / ev_ebitda / p_fcf) additionally
+    need the companyfacts statement layer (op_income / capex / depreciation /
+    current-debt / cash), passed in via ``statements``. They are US-only,
+    Financial-sector-suppressed (bank balance sheets make enterprise ratios
+    meaningless), and carry partial coverage until the weekly drip accrues —
+    np.nan wherever an input is missing (never fabricated).
+
+    fcf_yield_true = (cfo − capex) / mktcap × 100 (true post-capex; higher-is-better,
+    like fcfy). Also computed from the statement layer — available once capex is present."""
     stmts = statements or {}
     rows = []
     for t, f in fund.iterrows():
@@ -1228,10 +1277,14 @@ def _context_frame(fund: pd.DataFrame, table: dict,
         capex = _num(stmt.get("capex"))
         cfo_s = _num(stmt.get("cfo"))
         rev_s = _num(stmt.get("revenue"))
+        depreciation = _num(stmt.get("depreciation"))
         nd = _net_debt(stmt) if stmt else None
         ev = (mcap + nd) if (mcap is not None and nd is not None) else None
         rev_ev = rev_s if rev_s is not None else rev   # prefer statement rev; fall back to cross-section
         fcf = (cfo_s - capex) if (cfo_s is not None and capex is not None) else None
+        # ev_ebitda = EV / (op_income + depreciation); Financials-suppressed; needs D&A
+        ebitda = (op_income + depreciation) if (op_income is not None and depreciation is not None) else None
+        # fcf_yield_true = (cfo − capex) / mktcap × 100; true post-capex FCF yield
         rows.append({
             "ticker": t, "sector": sector, "mktcap": mcap,
             "pe": mcap / ni if (mcap and ni and ni > 0) else np.nan,
@@ -1245,6 +1298,8 @@ def _context_frame(fund: pd.DataFrame, table: dict,
             "ev_sales": (ev / rev_ev) if (ev is not None and rev_ev and rev_ev > 0 and not is_fin) else np.nan,
             "ev_ebit": (ev / op_income) if (ev is not None and op_income and op_income > 0 and not is_fin) else np.nan,
             "p_fcf": (mcap / fcf) if (mcap and fcf is not None and fcf > 0 and not is_fin) else np.nan,
+            "ev_ebitda": (ev / ebitda) if (ev is not None and ebitda is not None and ebitda > 0 and not is_fin) else np.nan,
+            "fcf_yield_true": (fcf / mcap * 100) if (mcap and fcf is not None and not is_fin) else np.nan,
             "composite": _num(fac.get("composite")),
         })
     M = pd.DataFrame(rows).set_index("ticker")
@@ -1253,7 +1308,8 @@ def _context_frame(fund: pd.DataFrame, table: dict,
     # lower-is-cheaper metrics vs higher-is-cheaper (yield) metrics
     for col, lower_cheap in (("pe", True), ("pb", True), ("ps", True),
                              ("ey", False), ("fcfy", False), ("shy", False),
-                             ("ev_sales", True), ("ev_ebit", True), ("p_fcf", True)):
+                             ("ev_sales", True), ("ev_ebit", True), ("p_fcf", True),
+                             ("ev_ebitda", True), ("fcf_yield_true", False)):
         g = M.groupby("sector")[col]
         M[f"{col}_med"] = g.transform("median")
         rank = g.rank(pct=True)                       # 0..1 within sector
@@ -1489,8 +1545,11 @@ def _valuation(t, f, fac, M, deep) -> dict | None:
     return {
         "trailing_pe": cell("pe"), "price_to_book": cell("pb"),
         "price_to_sales": cell("ps"), "earnings_yield": cell("ey"),
-        "fcf_proxy_yield": cell("fcfy"), "shareholder_yield": cell("shy"),
+        "fcf_proxy_yield": cell("fcfy"),
+        "fcf_yield_true": cell("fcf_yield_true"),
+        "shareholder_yield": cell("shy"),
         "ev_to_sales": cell("ev_sales"), "ev_to_ebit": cell("ev_ebit"),
+        "ev_to_ebitda": cell("ev_ebitda"),
         "price_to_fcf": cell("p_fcf"),
         "value_z": _r(fac.get("value"), 2) if fac else None,
         "forward_pe": _r(fwd, 1) if fwd else None,
@@ -1498,7 +1557,21 @@ def _valuation(t, f, fac, M, deep) -> dict | None:
     }
 
 
-def _financials(t, f, deep, multiyear=None) -> dict | None:
+def _financials(t, f, deep, multiyear=None, stmt: dict | None = None,
+                sector: str | None = None) -> dict | None:
+    """Assemble the financials panel.
+
+    ``stmt`` is the latest companyfacts statement row (rows[-1] from statements dict),
+    used for the four statement-layer metrics that require op_income / assets /
+    cur_liab / research_dev. When absent (no statement coverage), those four keys
+    are simply absent from the output — same honest-null pattern as the EV multiples.
+
+    ``sector``: when provided, gp_assets and roce are suppressed for Financials-sector
+    names (bank assets ≠ operating assets, making these ratios misleading).
+
+    None-safety law: never use `x or default` on values that can legitimately be 0 —
+    use explicit `is None` checks throughout.
+    """
     rev, ni, ni_p = _num(f.get("revenue")), _num(f.get("ni")), _num(f.get("ni_prior"))
     eq, cfo, gp = _num(f.get("equity")), _num(f.get("cfo")), _num(f.get("gross_profit"))
     assets, assets_p = _num(f.get("assets")), _num(f.get("assets_prior"))
@@ -1515,6 +1588,39 @@ def _financials(t, f, deep, multiyear=None) -> dict | None:
 
     avg_assets = (assets + assets_p) / 2 if (assets is not None and assets_p is not None) else None
     rev_growth_deep = (deep or {}).get("rev_growth")
+
+    # ── statement-layer metrics (Tier-1) ──────────────────────────────────────
+    # Computed from the latest statement row when available.  All four respect the
+    # None-safety law: explicit `is None` guards, never `x or default`.
+    s = stmt or {}
+    s_op_income = _num(s.get("op_income"))
+    s_rev = _num(s.get("revenue"))
+    s_assets = _num(s.get("assets"))
+    s_cur_liab = _num(s.get("cur_liab"))
+    s_rd = _num(s.get("research_dev"))
+    s_gp = _num(s.get("gross_profit"))
+    is_fin = sector in _FINANCIAL_SECTORS if sector is not None else False
+
+    # op_margin = op_income / revenue × 100 (not Financials-suppressed)
+    op_margin = pct(s_op_income, s_rev) if (s_op_income is not None and s_rev is not None) else None
+
+    # gp_assets = gross_profit / assets (Novy-Marx gross profitability; ~0-1 ratio)
+    # Financials-suppressed: bank assets ≠ operating assets
+    gp_assets = _r(s_gp / s_assets, 3) if (
+        s_gp is not None and s_assets is not None and s_assets > 0 and not is_fin
+    ) else None
+
+    # roce = op_income / (assets − cur_liab) × 100; Financials-suppressed
+    roce: float | None = None
+    if not is_fin and s_op_income is not None and s_assets is not None and s_cur_liab is not None:
+        cap_employed = s_assets - s_cur_liab
+        if cap_employed > 0:
+            roce = _r(s_op_income / cap_employed * 100, 1)
+
+    # rd_sales = research_dev / revenue × 100
+    # Absent (not 0) when research_dev missing — only tech/pharma have it.
+    rd_sales = pct(s_rd, s_rev) if (s_rd is not None and s_rev is not None) else None
+
     return {
         "raw": {"revenue": _num(rev), "ni": _num(ni), "gross_profit": _num(gp),
                 "cfo": _num(cfo), "equity": _num(eq), "debt_lt": _num(debt),
@@ -1522,10 +1628,14 @@ def _financials(t, f, deep, multiyear=None) -> dict | None:
                 "dividends": _num(div), "repurchases": _num(rep)},
         "gross_margin": pct(gp, rev), "net_margin": pct(ni, rev),
         "fcf_margin": pct(cfo, rev),
+        "op_margin": op_margin,
         "ni_growth": growth(ni, ni_p),
         "rev_growth": _r(rev_growth_deep * 100, 1) if rev_growth_deep is not None else None,
         "asset_growth": growth(assets, assets_p),
         "roe": pct(ni, eq), "roa": pct(ni, assets),
+        "gp_assets": gp_assets,
+        "roce": roce,
+        "rd_sales": rd_sales,
         "debt_to_assets": pct(debt, assets),
         "accruals": _r((ni - cfo) / avg_assets, 3) if (ni is not None and cfo is not None and avg_assets) else None,
         # tiny 2-point sparkline series (prior, latest) — honest until companyfacts (Phase 2)
@@ -1755,12 +1865,17 @@ def panels() -> dict[str, dict]:
             my=my,
             betas=betas_map.get(str(t)),
         )
-        fin = _financials(t, f, deep.get(t), my)
-        # Leverage ratios: computed from the PIT-filtered statement rows (same rows
-        # already used for _multiyear).  None-safe throughout; Financial-sector names
-        # and names without statements will produce an empty dict which is excluded by
-        # the `if v` filter below (display-only, partial coverage expected).
-        lev = _leverage_ratios(rows or [])
+        # Latest statement row (availability-gated by _load_statements — period_end
+        # + 120d, #1572; drops not-yet-filed future fiscal years), used for the Tier-1
+        # financials metrics (op_margin, gp_assets, roce, rd_sales) and the leverage
+        # panel current/quick ratios.
+        latest_stmt = rows[-1] if rows else None
+        fin = _financials(t, f, deep.get(t), my, stmt=latest_stmt,
+                         sector=(fac or {}).get("sector"))
+        # Leverage ratios: computed from the same availability-gated statement rows
+        # already used for _multiyear.  None-safe throughout; Financials-sector names
+        # have current/quick suppressed; empty dict excluded by `if v` filter below.
+        lev = _leverage_ratios(rows or [], sector=(fac or {}).get("sector"))
         blocks = {
             "profile": _profile(t, f, fac, M, arche, profiles.get(str(t))),
             "valuation": _valuation(t, f, fac, M, deep.get(t)),
@@ -1845,7 +1960,9 @@ def archetypes_history(out_path=None) -> pd.DataFrame:
 
     Inputs consumed (all optional — rows that lack them get None for those fields):
       - data/edgar/fundamentals_panel.parquet   (PIT financials — Altman inputs)
-      - data/edgar/statements.parquet           (rev/EPS multi-year for CAGR — PIT-filtered)
+      - data/edgar/statements.parquet           (rev/EPS multi-year for CAGR — PIT-filtered:
+                                                 fy <= panel fy per row (below), and not-yet-filed
+                                                 future rows dropped upstream by _load_statements)
       - site/factor_betas.json                  (rate/oil betas — CURRENT-SNAPSHOT, non-PIT)
       - site/factordata/factors.json            (sector + factor z-scores — CURRENT-SNAPSHOT, non-PIT)
 

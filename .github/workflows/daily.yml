@@ -1189,6 +1189,38 @@ jobs:
           cat /tmp/factor_contradictions.log
           [ "$rc" -ne 0 ] && echo "::warning title=factor_contradictions::rc=$rc (non-fatal — dormant behavior expected until panel backfill)"
           exit 0
+      # RUL-NW1: factor_panel job is the sole advancer of factor-namespace artifacts.
+      # Builds factor_intelligence_state.json + site mirror + history digest +
+      # fire_coordinates. Fail-open: always exits 0.
+      - name: build factor intelligence state
+        run: |
+          python -m scripts.build_factor_intelligence_state || echo "::warning::build_factor_intelligence_state failed (non-fatal — fail-open)"
+      # RUL-NW1: narrow allowlisted commit — stages ONLY these six paths.
+      # Never adds anything else (no git add data/).
+      # Firings staged here (not in cortex job) to fix the cross-job hole where
+      # factor_attention firings are written in THIS job's tree but the cortex
+      # job's commit step runs in a different tree where they never exist.
+      - name: commit factor intelligence outputs
+        run: |
+          git config user.name "dashboard-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/neuralweb/factor_intelligence_state.json
+          git add site/neuralwebdata/factor_intelligence_state.json
+          git add data/factordata/factor_state_history.jsonl
+          git add data/factordata/fire_coordinates.jsonl
+          git add data/neuralweb/factor_contradictions.jsonl
+          git add data/reflexes/factor_attention/firings.jsonl
+          if git diff --cached --quiet; then echo "no factor intelligence changes"; exit 0; fi
+          git commit -m "factor-intelligence: nightly state artifact + pool $(date -u +%F)"
+          # best-effort push (own files -> rebases clean against engine/factor_series)
+          for i in 1 2 3 4 5; do
+            if git pull --rebase -X theirs origin main && git push; then
+              echo "pushed factor intelligence outputs on attempt $i"; exit 0
+            fi
+            git rebase --abort 2>/dev/null || true
+            echo "factor-intelligence push attempt $i lost a race; re-syncing"; sleep $((i * 7))
+          done
+          echo "::warning::could not push factor intelligence after 5 attempts (non-fatal)"
 
   # AI stock-research briefs = ~30 DeepSeek calls (~20 min) — the heaviest single
   # step in the build, and what pushed the engine job past its timeout. build_site
@@ -1337,7 +1369,8 @@ jobs:
           git config user.email "actions@users.noreply.github.com"
           # Own commit lane (W7b PR2 + P1-D): all cortex + factor_attention subtrees — STAGING LAW
           git add data/reflexes/cortex_attention/ 2>/dev/null || true
-          git add data/reflexes/factor_attention/ 2>/dev/null || true
+          git add data/reflexes/factor_attention/grades.jsonl 2>/dev/null || true
+          git add data/reflexes/factor_attention/probation.json 2>/dev/null || true
           git add data/neuralweb/cortex/ 2>/dev/null || true
           git add data/neuralweb/machine_registry.jsonl 2>/dev/null || true
           git add data/neuralweb/governance.jsonl 2>/dev/null || true

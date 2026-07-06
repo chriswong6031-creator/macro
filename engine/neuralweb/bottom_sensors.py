@@ -832,10 +832,10 @@ def assemble(
             )
             # ── Bottom-survival-quality leverage ratios (FR-9/FR-10) ──────────
             # Additive per-ticker columns: None when statements absent or ratio
-            # uncomputable (Financial-sector names, sparse filers).  Use the full
-            # statement history — no additional PIT truncation needed here because
-            # the rows are already ordered ascending-fy by _load_statements() and
-            # _leverage_ratios() uses only the latest row.
+            # uncomputable (Financial-sector names, sparse filers).  No additional PIT
+            # truncation needed here: _load_statements() availability-gates the rows
+            # (period_end + 120d, #1572) so rows[-1] is the latest *filed* FY — never a
+            # not-yet-filed future row — and _leverage_ratios() uses only that row.
             stmt_rows = statements_by_ticker.get(ticker) or []
             lev = _leverage_ratios(stmt_rows)
             row["interest_coverage"] = lev.get("interest_coverage")

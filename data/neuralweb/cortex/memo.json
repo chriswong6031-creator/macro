@@ -1,6 +1,6 @@
 {
   "schema": "neuralweb.cortex_memo.v1",
-  "as_of": "2026-07-05T08:21:12+00:00",
+  "as_of": "2026-07-06T08:48:01+00:00",
   "summary": "Budget exhausted after 0 tool-call batches (0 individual calls). Partial deliberation only.",
   "what_fired": [],
   "contradictions_review": "Incomplete \u2014 budget exhausted before contradictions review.",
@@ -8,17 +8,19 @@
   "deserves_operator": [],
   "probation": {
     "schema": "neuralweb.cortex_probation.v1",
-    "tier": "A0/A1 shadow",
+    "as_of": "2026-07-05",
     "granted": false,
+    "tier": "A0/A1 shadow",
     "reason": "insufficient-n: n=0 < min_n=25",
     "lift_lb": null,
     "wilson_lb": null,
+    "lapses_at": null,
+    "evidence_asof": null,
     "attention_track_record": {
       "n": 0,
       "hits": 0,
       "base_rate": 0.5
     },
-    "lapses_at": null,
     "is_context_only": true
   },
   "tool_call_census": {},

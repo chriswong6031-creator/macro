@@ -48,10 +48,6 @@ data/canada_breadth/_closes_cache.parquet
 # R5: factor panel monthly partitions (off-render-path nightly artifact; R2-only by design,
 # regenerated every daily run; consumers join via (ticker,date) against the replay parquet).
 data/factordata/panel/
-# P1-D Pair G contradiction ledger: R2-candidate; explicitly gitignored (R2-candidate;
-# single-copy runner-local pending R2 sync).  Explicit entry prevents any broad
-# `git add data/` sweep from staging this onto main.
-data/neuralweb/factor_contradictions.jsonl
 # hk_shorts: positions.parquet + turnover.parquet + coverage.json are GIT-tracked
 # (NOT R2) because they are not regenerable without re-scraping and are critical
 # evidence for the H2a phase-0 test.  Only the _closes_cache-equivalent rebuild
@@ -251,6 +247,17 @@ data/oracle/memory_active_analogues.json
 # hypothesis_state.json is also governance data (tracks graded ids + sentinel line count).
 !data/oracle/hypothesis_inbox.jsonl
 !data/oracle/hypothesis_state.json
+
+# Research Factory W1 (RF-8): broad exclude for bulk/replay artifacts; explicit
+# negations for the six durable git-tracked ledgers and the allowlist.
+data/research_factory/*
+!data/research_factory/candidates.jsonl
+!data/research_factory/transitions.jsonl
+!data/research_factory/challenges/
+!data/research_factory/review/
+!data/research_factory/health.jsonl
+!data/research_factory/paper_monitor.jsonl
+!data/research_factory/authority_allowlist.json
 
 # Live options-flow poller runtime artifacts (regenerated each session)
 # live_flow_baselines/baselines.json is git-TRACKED (small, ~50 roots × 4 fields)

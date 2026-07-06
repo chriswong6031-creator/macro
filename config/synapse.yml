@@ -4138,6 +4138,82 @@ artifacts:
       Accrual instrument for the registered §5 promotion rule (15-window re-evaluation gate).
       No peeking logic — desk only displays counts.
 
+  # --- OTA W7: Qualitative Filter Registry ---
+  oracle-qual-filter-registry:
+    path: data/oracle/qual_filters/registry.jsonl
+    format: jsonl
+    producer: engine/oracle/qual_filters.py
+    known_extra_writers: []
+    owner_program: oracle
+    cadence: on-demand
+    storage: git
+    asof_field: registered_at
+    freshness_sla_hours: null
+    schema: oracle_qual_filter_registry.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/oracle/qual_filters.py
+    external_consumers: []
+    notes: >
+      OTA W7 Qualitative Filter Registry — governance artifact.
+      One row per filter: id, lane (Q1/Q2/Q3), predicate, source_artifact,
+      registered_at, status (accruing|retired). Append-only; retire-to-add
+      law; max 5 active per quarter. No LLM in any stamp path.
+
+  oracle-qual-filter-stamps:
+    path: data/oracle/qual_filter_stamps.jsonl
+    format: jsonl
+    producer: scripts/oracle_nightly.py
+    known_extra_writers: []
+    owner_program: oracle
+    cadence: daily-engine
+    storage: git
+    asof_field: stamped_asof
+    freshness_sla_hours: 30
+    schema: oracle_qual_filter_stamps.v1
+    tier: shadow
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/oracle_nightly.py
+      - engine/oracle/qual_filters.py
+    external_consumers: []
+    notes: >
+      OTA W7 PIT stamp ledger — keep-first, nightly sole advancer (Step 17).
+      Key: window_key::filter_id. value: true|false|null (null-honest law).
+      Null when source_artifact missing at stamp time. No retro-stamping:
+      only windows in the current night's armed set are stamped.
+      Infrastructure tier: feeds accrual report, never rendered directly.
+
+  oracle-qual-filter-accrual:
+    path: data/oracle/qual_filter_accrual.json
+    format: json
+    producer: scripts/oracle_nightly.py
+    known_extra_writers: []
+    owner_program: oracle
+    cadence: daily-engine
+    storage: git
+    asof_field: produced_at
+    freshness_sla_hours: 30
+    schema: oracle_qual_filter_accrual.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/oracle_nightly.py
+      - templates/subsector_rotation.html.j2
+    external_consumers: []
+    notes: >
+      OTA W7 accrual report — per-filter conditional WR21 true vs false on matured
+      windows. Wilson LBs. DESCRIPTIVE only — "validated" banned. Re-evaluation
+      eligible line printed when n_true >= 15 (operator event, never automatic).
+      Display tier; embedded in oracle_turn_desk.json as qual_accrual_note string.
+
   # --- NW Rails PR-6 governance artifact ---
   grading-closure:
     path: data/governance/grading_closure.json
@@ -4361,3 +4437,210 @@ artifacts:
       macro_refresh.refresh() sparse checkout of site/ materializes this file at
       vendor/macro_src/site/neuralwebdata/mastermind_context.json with zero new sync
       plumbing (site/ is in the sparse set). See NW_MASTERMIND_BRIDGE_PROGRAM.md §3.2.
+
+  # --- Research Factory W1 (RF-11) ---
+  # Three durable orchestration ledgers at display tier, horizon-agnostic context.
+  # Authority ceiling: A0-A2 display-only (no scored-path authority).
+  # scored_path_surfaces: [] — factory outputs must never reach money-path surfaces.
+
+  research-factory-candidates:
+    path: data/research_factory/candidates.jsonl
+    format: jsonl
+    producer: <RESEARCH_FACTORY_INGEST>
+    known_extra_writers:
+      - "scripts/research_factory_ingest.py — W2 ingest writer (planned)"
+    owner_program: research-factory
+    cadence: on-demand
+    storage: git
+    asof_field: created_at
+    freshness_sla_hours: 8760
+    schema: research_factory.candidate.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    notes: >
+      Research Factory W1 (RF-11). Candidate identity ledger — append-only JSONL.
+      Authority ceiling A0-A2 display-only; every row carries authority='display_only'.
+      Producer is the W2 ingest writer (planned: scripts/research_factory_ingest.py);
+      W1 ships the path registration and schemas only — the file is first written at W2.
+      scripts/check_research_factory_authority.py is the read-only authority guard
+      and must NOT be listed as a ledger writer.
+      See research/RESEARCH_FACTORY_MASTERPLAN_BY_FABLE.md §5.1.
+
+  research-factory-transitions:
+    path: data/research_factory/transitions.jsonl
+    format: jsonl
+    producer: <RESEARCH_FACTORY_INGEST>
+    known_extra_writers:
+      - "scripts/research_factory_ingest.py — W2 transition writer (planned)"
+      - "scripts/research_factory_decide.py — W5 decision recorder (planned)"
+    owner_program: research-factory
+    cadence: on-demand
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 8760
+    schema: research_factory.transition.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    notes: >
+      Research Factory W1 (RF-11). State-transition audit log — append-only JSONL.
+      Authority ceiling A0-A2 display-only; every row carries authority='display_only'.
+      This is the sole audit history; rows are never deleted.
+      Producer is the W2 ingest writer (planned: scripts/research_factory_ingest.py).
+      scripts/check_research_factory_authority.py is the read-only authority guard
+      and must NOT be listed as a ledger writer.
+      See research/RESEARCH_FACTORY_MASTERPLAN_BY_FABLE.md §5.2.
+
+  research-factory-paper-monitor:
+    path: data/research_factory/paper_monitor.jsonl
+    format: jsonl
+    producer: <RESEARCH_FACTORY_MONITOR>
+    known_extra_writers:
+      - "scripts/research_factory_monitor.py — W6 nightly monitor writer (planned)"
+    owner_program: research-factory
+    cadence: on-demand
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 8760
+    schema: research_factory.paper_monitor.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    notes: >
+      Research Factory W1 (RF-11). Paper-phase monitor forward ledger — keep-first
+      per (candidate_id, as_of); advanced only by the nightly engine job (W6+).
+      Authority ceiling A0-A2 display-only; cadence flips to daily-engine at W6.
+      Producer is the W6 monitor writer (planned: scripts/research_factory_monitor.py).
+      scripts/check_research_factory_authority.py is the read-only authority guard
+      and must NOT be listed as a ledger writer.
+      See research/RESEARCH_FACTORY_MASTERPLAN_BY_FABLE.md §5.4.
+
+  # ============================================================
+  # FACTOR INTELLIGENCE × NEURAL WEB INTEGRATION (RUL-NW1/NW10/NW11)
+  # §D PR-1: state artifact + long-term factor pool + narrow advancer
+  # ============================================================
+
+  factor-intelligence-state:
+    path: data/neuralweb/factor_intelligence_state.json
+    format: json
+    producer: scripts/build_factor_intelligence_state.py
+    known_extra_writers: []
+    owner_program: factor-intelligence
+    cadence: nightly-factor-panel
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: neuralweb.factor_intelligence_state.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    notes: >
+      RUL-NW1 — factor_panel job is sole advancer. Context-only committed
+      digest of factor intelligence state (panel health, factor weather,
+      Pair G, hypotheses h1..h5, scorecard). is_context_only=true,
+      display_only=true. allowed_actions block is a mirror, never a switch
+      (RUL-NW9). No scored-path surfaces — display and admin rendering only.
+      Written by scripts/build_factor_intelligence_state.py after the
+      factor_contradictions step in the factor_panel job.
+
+  site-factor-intelligence-state:
+    path: site/neuralwebdata/factor_intelligence_state.json
+    format: json
+    producer: scripts/build_factor_intelligence_state.py
+    known_extra_writers: []
+    owner_program: factor-intelligence
+    cadence: nightly-factor-panel
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: neuralweb.factor_intelligence_state.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    notes: >
+      Byte-identical site mirror of data/neuralweb/factor_intelligence_state.json.
+      Written atomically with the data copy by scripts/build_factor_intelligence_state.py
+      in the factor_panel job (RUL-NW1).
+
+  factor-state-history:
+    path: data/factordata/factor_state_history.jsonl
+    format: jsonl
+    producer: scripts/build_factor_intelligence_state.py
+    known_extra_writers: []
+    owner_program: factor-intelligence
+    cadence: nightly-factor-panel
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: neuralweb.factor_state_history.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    notes: >
+      RUL-NW10 — append-only daily digest (one row per trading day, keyed as_of).
+      Idempotent: same-day reruns skip if as_of already present. Fields: as_of,
+      style_regime (+pending/hold_days), factor_leader (+IC), ETF ratios, panel
+      health (n_dates, n_tickers, latest_date), pair_g_n_today, cross-sectional
+      alibi stats (median, Q80), dna_distribution dict, gaps_count. Display/analysis
+      only until kernel-FDR 2026-10 sweep. No behavioral conditioning on pooled
+      history before that verdict.
+
+  fire-coordinates:
+    path: data/factordata/fire_coordinates.jsonl
+    format: jsonl
+    producer: scripts/build_factor_intelligence_state.py
+    known_extra_writers: []
+    owner_program: factor-intelligence
+    cadence: nightly-factor-panel
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: neuralweb.fire_coordinates.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    notes: >
+      RUL-NW10 — append-only per-fire panel coordinates, keyed (as_of, ticker).
+      PIT by construction: panel row at exactly the standouts as_of date. Fields:
+      as_of, ticker, tier, dna_class, style_regime, alibi_share_20d, twin_bleed_flag,
+      twin_rel_20d, alpha_z_house, top_contrib_streams (top-3 Block-A |contrib_20d|
+      stream names), factor_model=v1. Standalone artifact — JOINs to replay/board-ledger
+      outcomes at study time. Display/analysis only (no rank/score surfaces).
+
+  factor-contradictions-ledger:
+    path: data/neuralweb/factor_contradictions.jsonl
+    format: jsonl
+    producer: engine/neuralweb/factor_contradictions.py
+    known_extra_writers: []
+    owner_program: factor-intelligence
+    cadence: nightly-factor-panel
+    storage: git
+    asof_field: date
+    freshness_sla_hours: 30
+    schema: neuralweb.factor_contradictions.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    notes: >
+      RUL-NW1 — un-gitignored by this ruling; committed via the factor_panel job's
+      narrow commit step. Pair G borrowed_strength contradiction ledger: append-only,
+      keyed (date, ticker). Severity hardcoded to 'note' until H2 GATE-PASSED.
+      display_only=true unconditionally. Single-writer: engine/neuralweb/factor_contradictions.py.
+      0-20 rows/day; dormant until panel has >= 60 distinct dates.
