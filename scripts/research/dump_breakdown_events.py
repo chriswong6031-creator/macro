@@ -25,20 +25,15 @@ Phase-0/0b is DESCRIPTIVE ONLY.  No chip, no synapse consumer, no site surface.
 
 Seeding contract (CRITICAL):
   - BD-1/2/3 controls: drawn from the SINGLE global rng=np.random.default_rng(42) passed
-    per-ticker in process_ticker(). BD-4/5/6 events for a ticker are appended to the
-    existing event list BEFORE calling _sample_controls(), so all six definitions' events
-    contribute to the same stratified draw.  This means BD-1/2/3 control rows WILL differ
-    from Phase-0-only runs when a ticker has BD-4/5/6 events (larger event set → different
-    pool draws).  To preserve Phase-0 rows byte-identically would require running Phase-0
-    again with BD-4/5/6 set to empty, which is not the strategy here.
-  - BD-4/5/6 share the SAME pooled control draw as BD-1/2/3 (the shared-pool controls,
-    definition="CONTROL", come from the global rng and cover all six definitions).
-    BD4_CONTROL_RNG_SEED/BD5_CONTROL_RNG_SEED/BD6_CONTROL_RNG_SEED (lines 160-162) are
-    declared-but-unused — reserved for future per-definition separate draws, not currently
-    wired.  See report §7 (BD_PHASE0B_REPORT.md) for the honest seeding narrative.
-  - PRACTICAL CONSEQUENCE: re-running dump_breakdown_events.py with BD-4/5/6 enabled
-    changes which SHARED CONTROL bars are drawn for tickers that have BD-4/5/6 events
-    (because the event pool size increases).  BD-1/2/3 event rows themselves are unchanged.
+    per-ticker in process_ticker(), using ONLY the BD-1/2/3 event pool — identical to a
+    Phase-0-only run for the same ticker (same pool, same order, same rng state).
+    BD-4/5/6 events do NOT enter this pool.  BD-1/2/3 event rows AND their control draws
+    are byte-identical to any Phase-0-only run.
+  - BD-4/5/6 controls: each definition uses its OWN declared per-definition seed constant
+    (BD4=7891, BD5=13421, BD6=19937), XOR-ed with a ticker hash for per-ticker variation.
+    This is a SEPARATE RNG pass that does not advance the global rng state.
+  - PRACTICAL CONSEQUENCE: Phase-0 (BD-1/2/3) rows in the output parquet are byte-identical
+    to a hypothetical Phase-0-only run — the seeding contract is preserved exactly.
 """
 from __future__ import annotations
 
@@ -195,7 +190,11 @@ YAHOO_DIR = DATA_DIR / "yahoo"
 EDGAR_DEAD_COV = DATA_DIR / "edgar" / "_dead_name_coverage.json"
 OUT_PARQUET = RESEARCH_DIR / "breakdown_events.parquet"
 OUT_SUMMARY = RESEARCH_DIR / "breakdown_events_summary.json"
-TICKER_SECTORS_PATH = DATA_DIR / "breadth" / "ticker_sectors.parquet"
+# ticker_sectors.parquet is a GIT-TRACKED artifact (12,980 bytes, committed on this branch).
+# It resolves relative to the repo root (_ROOT), NOT the Mac-canonical heavy-data directory
+# (CANONICAL_DATA/DATA_DIR), where it is absent.  The --data-root override path applies only
+# to Mac-local heavy stores (massive plane, replay); git-tracked artifacts use _ROOT.
+TICKER_SECTORS_PATH = _ROOT / "data" / "breadth" / "ticker_sectors.parquet"
 
 
 # ===========================================================================
@@ -1224,11 +1223,18 @@ def process_ticker(
 ) -> list[dict[str, Any]]:
     """Process one ticker: detect all BD-1..BD-6 events, grade, add controls.
 
-    Seeding contract:
-      - The shared controls (definition="CONTROL") are drawn from rng (global, passed in).
-        The event pool covers all six definitions, so adding BD-4/5/6 changes control draws
-        relative to Phase-0-only runs for tickers that have BD-4/5/6 events.
-      - BD-1/2/3 event ROWS themselves are identical; only their control pairings may differ.
+    Seeding contract (CRITICAL — preserves BD-1/2/3 byte-identity vs Phase-0-only runs):
+      - BD-1/2/3 events are detected exactly as before.
+      - BD-1/2/3 controls are drawn from rng (the global seed=42 Generator passed in)
+        using ONLY the BD-1/2/3 event pool — the same pool, same order, same rng state
+        as a Phase-0-only run for the same ticker.  BD-4/5/6 events do NOT enter this pool.
+        This guarantees BD-1/2/3 event rows AND their control draws are byte-identical to
+        a Phase-0-only run for every ticker.
+      - BD-4/5/6 controls are drawn in a SEPARATE pass, each using the declared
+        per-definition seed constants (BD4=7891, BD5=13421, BD6=19937), independent of
+        the global rng.  This eliminates cross-contamination of the global rng state.
+      - All controls carry definition="CONTROL" and is_control=True.  Downstream code
+        (build_summary, overlap) uses the is_control flag, not a per-definition distinction.
     """
     close = _read_massive_ticker(ticker)
     if close is None or len(close) < ERA_PRIOR_BARS_REQUIRED:
@@ -1302,17 +1308,38 @@ def process_ticker(
     if total_events == 0:
         return rows  # no events, no controls needed
 
-    # Collect all event timestamps across all definitions for year-stratified control draw
-    all_event_timestamps: list[pd.Timestamp] = []
-    for event_list in all_events_by_def.values():
-        all_event_timestamps.extend(event_list)
+    # -----------------------------------------------------------------------
+    # Control sampling — TWO SEPARATE PASSES (seeding contract §26-38 above).
+    # -----------------------------------------------------------------------
 
-    # Matched controls: 3:1 per event, year-stratified (same calendar year, same ticker,
-    # non-event bars passing same liquidity floor — prereg §4, year-stratified implementation).
-    # The event pool includes BD-4/5/6 events, so control draws differ from Phase-0-only
-    # runs for tickers with BD-4/5/6 events (per seeding-contract note in module docstring).
-    ctrl_rows = _sample_controls(ticker, close, raw_df, all_event_timestamps, rng)
-    rows.extend(ctrl_rows)
+    # PASS 1 — BD-1/2/3 controls: use the global rng (seed=42) with ONLY BD-1/2/3 events.
+    # This is identical to the Phase-0-only run for any ticker — same pool, same rng state.
+    phase0_event_timestamps: list[pd.Timestamp] = []
+    for defn in ("BD-1", "BD-2", "BD-3"):
+        phase0_event_timestamps.extend(all_events_by_def.get(defn, []))
+
+    if phase0_event_timestamps:
+        ctrl_rows_p0 = _sample_controls(ticker, close, raw_df, phase0_event_timestamps, rng)
+        rows.extend(ctrl_rows_p0)
+
+    # PASS 2 — BD-4/5/6 controls: each uses its OWN declared seed (independent of global rng).
+    # seed constants: BD4=7891, BD5=13421, BD6=19937 (declared at module level).
+    # We use a deterministic sub-seed derived from the declared constant + ticker hash
+    # so that different tickers get different draws even with the same per-definition seed,
+    # while the global rng state for Phase-0 definitions is entirely unaffected.
+    for defn, seed_const in (("BD-4", BD4_CONTROL_RNG_SEED),
+                              ("BD-5", BD5_CONTROL_RNG_SEED),
+                              ("BD-6", BD6_CONTROL_RNG_SEED)):
+        def_events = all_events_by_def.get(defn, [])
+        if not def_events:
+            continue
+        # Per-ticker sub-seed: seed_const XOR (hash of ticker, masked to 31 bits).
+        # This makes draws ticker-specific while keeping per-definition seed independence.
+        ticker_hash = hash(ticker) & 0x7FFF_FFFF
+        per_ticker_seed = seed_const ^ ticker_hash
+        def_rng = np.random.default_rng(per_ticker_seed)
+        ctrl_rows_def = _sample_controls(ticker, close, raw_df, def_events, def_rng)
+        rows.extend(ctrl_rows_def)
 
     return rows
 

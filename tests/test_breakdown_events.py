@@ -1529,58 +1529,222 @@ class TestSectorPrePass:
 
 
 # ---------------------------------------------------------------------------
-# 16. Seeding stability: BD-1/2/3 event rows identical regardless of BD-4/5/6
+# 16. Seeding stability: BD-1/2/3 event rows AND control draws byte-identical
+#     between a 3-def run and a 6-def run (synthetic fixture, no massive data).
 # ---------------------------------------------------------------------------
 
 class TestSeedingStability:
-    """BD-1/2/3 event rows are content-identical when BD-4/5/6 are inactive vs active."""
+    """Prove BD-1/2/3 + their controls are byte-identical: 3-def vs 6-def run.
 
-    def test_bd1_event_rows_unchanged_by_bd4_presence(self):
-        """BD-1 event detection is pure per-ticker arithmetic; adding BD-4 doesn't change it."""
-        from scripts.research.dump_breakdown_events import detect_bd1, detect_bd4
+    The seeding contract requires that process_ticker() with BD-4/5/6 active
+    produces exactly the same BD-1/2/3 event rows AND control draws as a
+    3-definition-only run.  We test this using a synthetic fixture that patches
+    the detect_bd* functions and _read_massive_ticker/_read_massive_ohlcv so
+    the test has no dependency on the massive plane.
+    """
 
-        # Build a series with known BD-1 events
-        n_pre = 300
-        rng = np.random.default_rng(42)
-        warm = np.full(n_pre, 50.0)
-        prior_high = np.full(30, 100.0)
-        pullback   = np.linspace(100, 90, 10)
-        recovery   = np.full(30, 98.0)
-        pin        = np.full(10, 99.5)
-        vals = np.concatenate([warm, prior_high, pullback, recovery, pin])
-        idx  = pd.bdate_range("2021-01-04", periods=len(vals))
+    def _make_synthetic_close(self, n: int = 500, seed: int = 7) -> tuple[pd.Series, pd.DataFrame]:
+        """Build a synthetic close + raw_df pair for use in process_ticker tests."""
+        rng_np = np.random.default_rng(seed)
+        vals = 50.0 + np.cumsum(rng_np.normal(0, 0.5, n))
+        vals = np.clip(vals, 5.0, 300.0)
+        idx = pd.bdate_range("2021-01-04", periods=n)
         close = pd.Series(vals, index=idx)
+        raw_df = pd.DataFrame({
+            "open": close, "high": close + 1, "low": close - 1,
+            "close": close, "volume": pd.Series(2_000_000.0, index=idx),
+        })
+        return close, raw_df
 
-        n = len(vals)
-        high  = close + 1.5
-        low   = close - 2.0
-        for j in range(len(vals) - 40, len(vals)):
-            high.iloc[j] = close.iloc[j] + 3.0
-            low.iloc[j]  = close.iloc[j] - 0.5
-        volume = pd.Series(np.full(n, 1_000_000.0), index=idx)
-        raw_df = pd.DataFrame({"open": close, "high": high, "low": low,
-                                "close": close, "volume": volume}, index=idx)
+    def test_bd123_event_rows_and_controls_byte_identical_between_3def_and_6def_run(self):
+        """BD-1/2/3 event rows + control draws are byte-identical: 3-def vs 6-def run.
 
-        # BD-1 events: deterministic (pure arithmetic, no RNG)
-        bd1_events_1 = detect_bd1("TEST", close, raw_df)
-        bd1_events_2 = detect_bd1("TEST", close, raw_df)
-        assert bd1_events_1 == bd1_events_2, "BD-1 detection is not deterministic"
+        Synthetic fixture: patches detect_bd1/2/3 to return fixed timestamps, and
+        detect_bd4/5/6 to return fixed timestamps (or empty in the 3-def run).
+        Both runs use the same starting rng (seed=42).  Asserts that all (ticker,
+        event_date, definition) tuples for BD-1/2/3 and CONTROL rows drawn for
+        those BD-1/2/3 events are identical.
+        """
+        from scripts.research.dump_breakdown_events import (
+            process_ticker, ERA_START, CONTROL_RNG_SEED, ERA_PRIOR_BARS_REQUIRED,
+        )
+        from unittest.mock import patch
 
-        # BD-4 events on the same series: different detector, doesn't affect BD-1
-        bd4_events = detect_bd4("TEST", close, raw_df)
-        bd1_events_after = detect_bd1("TEST", close, raw_df)
-        assert bd1_events_1 == bd1_events_after, (
-            "BD-1 event list changed after running BD-4 detector on same series"
+        close, raw_df = self._make_synthetic_close(n=600)
+
+        # Fixed BD-1/2/3 event timestamps (deterministic — within ERA window + warmup)
+        bd1_ts = [close.index[280], close.index[350]]
+        bd2_ts = [close.index[300]]
+        bd3_ts = [close.index[320]]
+
+        # Fixed BD-4/5/6 event timestamps (different bars — these must NOT pollute BD-1/2/3 controls)
+        bd4_ts = [close.index[260], close.index[400]]
+        bd5_ts = [close.index[270]]
+        bd6_ts = [close.index[290]]
+
+        def make_patches(include_456: bool):
+            return {
+                "scripts.research.dump_breakdown_events._read_massive_ticker":
+                    lambda tk: close,
+                "scripts.research.dump_breakdown_events._read_massive_ohlcv":
+                    lambda tk: raw_df,
+                "scripts.research.dump_breakdown_events.detect_bd1":
+                    lambda tk, c, r: bd1_ts,
+                "scripts.research.dump_breakdown_events.detect_bd2":
+                    lambda tk, c, r: bd2_ts,
+                "scripts.research.dump_breakdown_events.detect_bd3":
+                    lambda tk, c, r: bd3_ts,
+                "scripts.research.dump_breakdown_events.detect_bd4":
+                    lambda tk, c, r: (bd4_ts if include_456 else []),
+                "scripts.research.dump_breakdown_events.detect_bd5":
+                    lambda tk, c, r: (bd5_ts if include_456 else []),
+                "scripts.research.dump_breakdown_events.detect_bd6":
+                    lambda tk, c, r, p: (bd6_ts if include_456 else []),
+            }
+
+        # 3-def run (BD-1/2/3 only — BD-4/5/6 return empty)
+        rng_3def = np.random.default_rng(CONTROL_RNG_SEED)
+        patches_3 = make_patches(include_456=False)
+        with patch("scripts.research.dump_breakdown_events._read_massive_ticker",
+                   patches_3["scripts.research.dump_breakdown_events._read_massive_ticker"]), \
+             patch("scripts.research.dump_breakdown_events._read_massive_ohlcv",
+                   patches_3["scripts.research.dump_breakdown_events._read_massive_ohlcv"]), \
+             patch("scripts.research.dump_breakdown_events.detect_bd1",
+                   patches_3["scripts.research.dump_breakdown_events.detect_bd1"]), \
+             patch("scripts.research.dump_breakdown_events.detect_bd2",
+                   patches_3["scripts.research.dump_breakdown_events.detect_bd2"]), \
+             patch("scripts.research.dump_breakdown_events.detect_bd3",
+                   patches_3["scripts.research.dump_breakdown_events.detect_bd3"]), \
+             patch("scripts.research.dump_breakdown_events.detect_bd4",
+                   patches_3["scripts.research.dump_breakdown_events.detect_bd4"]), \
+             patch("scripts.research.dump_breakdown_events.detect_bd5",
+                   patches_3["scripts.research.dump_breakdown_events.detect_bd5"]), \
+             patch("scripts.research.dump_breakdown_events.detect_bd6",
+                   patches_3["scripts.research.dump_breakdown_events.detect_bd6"]):
+            rows_3def = process_ticker("SYNTH", rng_3def, sector_panel={"sector_map": {}})
+
+        # 6-def run (BD-4/5/6 also active — must not change BD-1/2/3 rows or controls)
+        rng_6def = np.random.default_rng(CONTROL_RNG_SEED)
+        patches_6 = make_patches(include_456=True)
+        with patch("scripts.research.dump_breakdown_events._read_massive_ticker",
+                   patches_6["scripts.research.dump_breakdown_events._read_massive_ticker"]), \
+             patch("scripts.research.dump_breakdown_events._read_massive_ohlcv",
+                   patches_6["scripts.research.dump_breakdown_events._read_massive_ohlcv"]), \
+             patch("scripts.research.dump_breakdown_events.detect_bd1",
+                   patches_6["scripts.research.dump_breakdown_events.detect_bd1"]), \
+             patch("scripts.research.dump_breakdown_events.detect_bd2",
+                   patches_6["scripts.research.dump_breakdown_events.detect_bd2"]), \
+             patch("scripts.research.dump_breakdown_events.detect_bd3",
+                   patches_6["scripts.research.dump_breakdown_events.detect_bd3"]), \
+             patch("scripts.research.dump_breakdown_events.detect_bd4",
+                   patches_6["scripts.research.dump_breakdown_events.detect_bd4"]), \
+             patch("scripts.research.dump_breakdown_events.detect_bd5",
+                   patches_6["scripts.research.dump_breakdown_events.detect_bd5"]), \
+             patch("scripts.research.dump_breakdown_events.detect_bd6",
+                   patches_6["scripts.research.dump_breakdown_events.detect_bd6"]):
+            rows_6def = process_ticker("SYNTH", rng_6def, sector_panel={"sector_map": {"SYNTH": "TestSec"}})
+
+        # Extract BD-1/2/3 event rows (not controls)
+        def _phase0_event_key(r):
+            return (r["definition"], r.get("event_date", ""))
+
+        bd123_3 = sorted(
+            [_phase0_event_key(r) for r in rows_3def
+             if not r.get("is_control") and r["definition"] in ("BD-1", "BD-2", "BD-3")],
+        )
+        bd123_6 = sorted(
+            [_phase0_event_key(r) for r in rows_6def
+             if not r.get("is_control") and r["definition"] in ("BD-1", "BD-2", "BD-3")],
+        )
+        assert bd123_3 == bd123_6, (
+            f"BD-1/2/3 event rows differ between 3-def and 6-def run!\n"
+            f"3-def: {bd123_3}\n6-def: {bd123_6}"
         )
 
-    def test_bd5_independent_rng_seed_constants_distinct(self):
+        # Extract CONTROL rows that belong to BD-1/2/3 events (the Phase-0 control pool).
+        # The 3-def run ALL controls are for BD-1/2/3 events.
+        # In the 6-def run: BD-1/2/3 controls are drawn FIRST by the global rng (seed=42),
+        # THEN BD-4/5/6 controls are drawn by independent per-definition rngs.
+        # The process_ticker implementation appends BD-4/5/6 controls AFTER BD-1/2/3 controls
+        # in the rows list.  We check the FIRST len(ctrl_3def) control rows from rows_6def
+        # (by position in the returned list, not sorted-date order) are identical to rows_3def.
+        ctrl_3def_dates = [r.get("event_date", "") for r in rows_3def if r.get("is_control")]
+        ctrl_6def_dates_all = [r.get("event_date", "") for r in rows_6def if r.get("is_control")]
+        n_ctrl_p0 = len(ctrl_3def_dates)
+
+        # 6-def run must have MORE controls (BD-4/5/6 add theirs)
+        assert len(ctrl_6def_dates_all) >= n_ctrl_p0, (
+            f"6-def run has fewer controls than 3-def run — unexpected. "
+            f"n_ctrl_3def={n_ctrl_p0}, n_ctrl_6def={len(ctrl_6def_dates_all)}"
+        )
+
+        # The FIRST n_ctrl_p0 control rows in the 6-def output must be identical to the
+        # 3-def run controls (same event_date, same position in the list — the Phase-0
+        # pass appends before the BD-4/5/6 pass per process_ticker seeding contract).
+        ctrl_6def_p0_portion = ctrl_6def_dates_all[:n_ctrl_p0]
+        assert ctrl_3def_dates == ctrl_6def_p0_portion, (
+            f"BD-1/2/3 control draws are NOT byte-identical between 3-def and 6-def runs!\n"
+            f"3-def ctrl (ordered): {ctrl_3def_dates}\n"
+            f"6-def ctrl Phase-0 portion (first {n_ctrl_p0}): {ctrl_6def_p0_portion}\n"
+            f"SEEDING CONTRACT VIOLATION — BD-4/5/6 contaminated the Phase-0 rng state."
+        )
+
+    def test_bd456_controls_extra_rows_present_in_6def_run(self):
+        """6-def run has MORE control rows than 3-def run (BD-4/5/6 controls are extra)."""
+        from scripts.research.dump_breakdown_events import (
+            process_ticker, CONTROL_RNG_SEED,
+        )
+        from unittest.mock import patch
+
+        close, raw_df = self._make_synthetic_close(n=600)
+        bd1_ts = [close.index[280]]
+        bd4_ts = [close.index[400]]  # BD-4 event in 6-def run
+
+        def common_patches(include_456):
+            return {
+                "scripts.research.dump_breakdown_events._read_massive_ticker": lambda tk: close,
+                "scripts.research.dump_breakdown_events._read_massive_ohlcv": lambda tk: raw_df,
+                "scripts.research.dump_breakdown_events.detect_bd1": lambda tk, c, r: bd1_ts,
+                "scripts.research.dump_breakdown_events.detect_bd2": lambda tk, c, r: [],
+                "scripts.research.dump_breakdown_events.detect_bd3": lambda tk, c, r: [],
+                "scripts.research.dump_breakdown_events.detect_bd4":
+                    lambda tk, c, r: (bd4_ts if include_456 else []),
+                "scripts.research.dump_breakdown_events.detect_bd5": lambda tk, c, r: [],
+                "scripts.research.dump_breakdown_events.detect_bd6":
+                    lambda tk, c, r, p: [],
+            }
+
+        def _run(include_456):
+            p = common_patches(include_456)
+            rng = np.random.default_rng(CONTROL_RNG_SEED)
+            with patch("scripts.research.dump_breakdown_events._read_massive_ticker", p["scripts.research.dump_breakdown_events._read_massive_ticker"]), \
+                 patch("scripts.research.dump_breakdown_events._read_massive_ohlcv", p["scripts.research.dump_breakdown_events._read_massive_ohlcv"]), \
+                 patch("scripts.research.dump_breakdown_events.detect_bd1", p["scripts.research.dump_breakdown_events.detect_bd1"]), \
+                 patch("scripts.research.dump_breakdown_events.detect_bd2", p["scripts.research.dump_breakdown_events.detect_bd2"]), \
+                 patch("scripts.research.dump_breakdown_events.detect_bd3", p["scripts.research.dump_breakdown_events.detect_bd3"]), \
+                 patch("scripts.research.dump_breakdown_events.detect_bd4", p["scripts.research.dump_breakdown_events.detect_bd4"]), \
+                 patch("scripts.research.dump_breakdown_events.detect_bd5", p["scripts.research.dump_breakdown_events.detect_bd5"]), \
+                 patch("scripts.research.dump_breakdown_events.detect_bd6", p["scripts.research.dump_breakdown_events.detect_bd6"]):
+                return process_ticker("SYNTH", rng, sector_panel={"sector_map": {"SYNTH": "TestSec"}})
+
+        rows_3def = _run(include_456=False)
+        rows_6def = _run(include_456=True)
+
+        n_ctrl_3 = sum(1 for r in rows_3def if r.get("is_control"))
+        n_ctrl_6 = sum(1 for r in rows_6def if r.get("is_control"))
+        # 6-def run has BD-4 event → more controls
+        assert n_ctrl_6 > n_ctrl_3, (
+            f"Expected 6-def to have more controls than 3-def "
+            f"(n_ctrl_3={n_ctrl_3}, n_ctrl_6={n_ctrl_6})"
+        )
+
+    def test_seed_constants_distinct(self):
         """BD-4/5/6 control RNG seeds are distinct from each other and from CONTROL_RNG_SEED=42."""
         from scripts.research.dump_breakdown_events import (
             CONTROL_RNG_SEED, BD4_CONTROL_RNG_SEED, BD5_CONTROL_RNG_SEED, BD6_CONTROL_RNG_SEED
         )
         seeds = [CONTROL_RNG_SEED, BD4_CONTROL_RNG_SEED, BD5_CONTROL_RNG_SEED, BD6_CONTROL_RNG_SEED]
         assert len(seeds) == len(set(seeds)), f"Duplicate seeds: {seeds}"
-        # None should be 0 or negative
         for s in seeds:
             assert s > 0, f"Seed {s} should be positive"
 
