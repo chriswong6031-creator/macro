@@ -1,6 +1,6 @@
-# Long-Hold Masterplan — PROPOSED AMENDMENT LH-R11: multiple at-entry families vs `missed_hold`
+# Long-Hold Masterplan — AMENDMENT LH-R11: multiple at-entry families vs `missed_hold`
 
-**Status:** PROPOSED — for operator/Fable ratification. Rev 2 (Opus red-team applied). Not in force until merged into `LONG_HOLD_THESIS_MASTERPLAN_BY_FABLE.md §3`.
+**Status:** RATIFIED 2026-07-06 (operator + Fable; LT-0 adjudication) — merged into `LONG_HOLD_THESIS_MASTERPLAN_BY_FABLE.md §3` as LH-R11. Rev 2 (Opus red-team applied). R11.1 + R11.2 adopted as drafted; R11.3 adopted in the per-feature form (washout-timeframe family admitted to the roster as family #2, with stamps).
 **Trigger:** the washout-timeframe proposal + its red-team exposed a governance gap (how many feature families may probe one label + program-wide FDR + restriction-of-range).
 **Author:** orchestrator. **Ratifier:** operator / Fable.
 **Rev-2 corrections (Opus red-team, evidence-grounded):** (i) W1's fundamental family has ALREADY run OOS and G1 was ruled **DEFERRED** (`W1_KILLTEST_RESULTS.md` §12, 2026-07-06) — the roster-freeze logic must reckon with that; (ii) the entry selector is `engine/coiled.py:116` `washout_ctx` = a **daily ≥15%-from-126d-high** condition + **3D** StochRSI (`confluence.py:218`) — it does NOT condition on monthly/weekly StochRSI, and `entry_intel/P2_5_INTERACTION_PREREG.md` proves depth varies richly within entry fires. So blanket inadmissibility was wrong; R11.3 is now per-feature.
