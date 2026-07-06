@@ -20,6 +20,12 @@ Signals that PASS all 6 legs of the frozen reversion gauntlet (`research/ORACLE_
 
 Even at 50bps (illiquid-name proxy) every signal stays positive with WR ≥ 0.65; the WR barely moves because few winners sit in the razor-thin 0–50bps band (these are not cost-fragile scalps). **Caveats:** models spread+slippage as a fixed per-trade cost — NOT market impact or capacity; the tier-M magnitudes are era-inflated (2021-2026), so the cost-*robustness* holds but the absolute levels are optimistic; ~21-session holds ⇒ ~12 turns/yr ≈ ~3%/yr drag at 25bps if a book is fully cycled (opportunity-set dependent). Upgrades the base from "un-haircut" to **cost-robust** — still display-only until live-tracked.
 
+**Independence map (2026-07-05) — the 10 rows are ≈ 7 independent bets; SIZE BY CLUSTER, not by signal.** Pairwise co-firing (Jaccard) is LOW throughout (max **0.40**) — the base is genuinely diversified; no two signals co-fire on >40% of their combined entries. Clustering at Jaccard ≥ 0.30:
+- **tier-S (7 → 5 clusters):** {A15} · {B4_WASHOUT_DOLLAR_RELIEF, E_DOLLAR_EASE_TLT_POS_K25} (0.36) · {B4_EP_SAME_OUT_CREDIT_EASE} · {R16, R3_B2} (0.31) · {R4_E10}
+- **tier-M (3 → 2 clusters):** {M1_OIL_DOWN_K30_RS_NEG, RSLAG_OVERSOLD_K20} (0.40) · {SRM_BEARTAPE_ACCEL_K20}
+
+Across tiers the distinct MECHANISMS number ~6 (episode-routing · dollar-relief · credit-relief · V-bottom [incl. the bear-tape single-regime variant] · oil-relief · rs-laggard). The paired clusters are ~1.3–1.5 bets each, not 2; and the tier-S/tier-M versions of a shared mechanism (oil; V-bottom) are the same bet at different node resolution. Deploy accordingly.
+
 | id | entry_rule | asym | WR | ret_exit | n | OOS holdout | date | batch |
 |---|---|---|---|---|---|---|---|---|
 | A15_WASHOUT_OPP_OUT_2NODE | washout_w>0 ∧ ep(out/onset/opposite/w20/min2) | 1.83 | 0.74 | +3.05% | 2357 | +4.60% / WR .78 | 2026-07-05 | (screen leads) |
