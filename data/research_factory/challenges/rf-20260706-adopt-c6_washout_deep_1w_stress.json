@@ -1,0 +1,63 @@
+{
+  "schema": "research_factory.challenge.v1",
+  "authority": "display_only",
+  "candidate_id": "rf-20260706-adopt-c6_washout_deep_1w_stress",
+  "challenged_at": "2026-07-06T09:49:39+00:00",
+  "mechanical_probes": {
+    "input_insensitive": "not_applicable",
+    "permutation_probe": {
+      "input_insensitive": "not_applicable",
+      "note": "no per-fire outcome arrays present in artifacts"
+    },
+    "near_dup": {
+      "score": null,
+      "nearest": null,
+      "flagged": false
+    },
+    "mechanism_spec_mismatch": false,
+    "recent_only_columns": false,
+    "scale_flagged": false,
+    "raw_flags": [],
+    "gauntlet_legs": []
+  },
+  "reviewer": {
+    "agent_type": "reviewer",
+    "recommendation": "ADVISORY_REJECT",
+    "blockers": [
+      {
+        "severity": "blocker",
+        "category": "duplicate",
+        "finding": "C6's entry_rule is `washout_w>0 AND vel_1w<-0.03` (registry.jsonl). This is a strict sub-rule of the already-gauntleted A17_WASHOUT_SAME_OUT_NEG_VEL (`washout_w>0 AND vel_1w<0 AND same-complex outflow onset >=2 nodes`) with the flow-displacement episode_event clause REMOVED. C6 also re-runs the P8 P-W1 standalone-washout endpoint (washout_w>0) with only an added price-velocity screen. Both A17 (ORACLE_COMPOUND_GAUNTLET_R1.md) and P-W1 (ORACLE_GAUNTLET_P8_RESULTS.md) already exist in the trial ledger. This is a re-proposal of already-counted structure, not a new family.",
+        "evidence_ref": "data/oracle/compounds/registry.jsonl C6/A17 entry_rule; research/ORACLE_COMPOUND_GAUNTLET_R1.md line 41; research/ORACLE_GAUNTLET_P8_RESULTS.md P-W1"
+      },
+      {
+        "severity": "blocker",
+        "category": "mechanism",
+        "finding": "The Oracle Constitution IV records: 'Standalone 2W washout-turn on sector ETFs: NULL pooled (P8; loses to the validated sector_signals BUY state).' The program's twice-verified anchor is that the washout edge lives in FLOW DISPLACEMENT (A15 = opposite-complex outflow, the durable +1.3% winner), NOT price velocity. C6 deletes the flow clause and substitutes a deep-negative `vel_1w` price-speed threshold. P8 P-W2 cond_a (washout x RS-acceleration, a price-velocity conditioner) produced a NEGATIVE increment (-0.31%), adjudicated 'entry after acceleration is LATE.' C6 is therefore the registered-NULL standalone washout plus a conditioner in the family shown to add nothing or subtract. 'washout' and 'deep-negative weekly velocity' are near-tautological (both encode recent sharp price decline), so the secondary conditioner is not mechanistically independent of the trigger.",
+        "evidence_ref": "research/ORACLE_CONSTITUTION.md IV; research/ORACLE_COMPOUND_LIBRARY.md line 10; research/ORACLE_GAUNTLET_P8_RESULTS.md P-W2 cond_a adjudication"
+      },
+      {
+        "severity": "major",
+        "category": "overfit",
+        "finding": "Primary hit_63d gate FAILS: observed_hit_63d=0.5374 < gate_hit_63d=0.55 (floor_passed.hit63_ge_55pct=false). The candidate cleared the mechanical floor ONLY on |effect63|>=1% at 1.03% \u2014 barely above the 1.0% floor and squarely inside the noise band P8 established for pooled washout (P-W1 63d ranged +0.45% pooled to +1.29% by era; era_consistent=3/4 exactly mirrors P-W1). The promotion_queue.json note states 'QUEUE ONLY \u2014 not promoted.' A 1.03% effect with a failed hit gate at search_width_at_scan=110 (batch FDR scope) is consistent with a multiple-testing artifact, not a discovery.",
+        "evidence_ref": "evaluation_plan.floor_passed, observed_hit_63d=0.5374, observed_effect_63d=0.0103, aggregate_metrics.search_width_at_scan=110; data/oracle/promotion_queue.json"
+      },
+      {
+        "severity": "major",
+        "category": "data",
+        "finding": "The `-0.03` threshold in `vel_1w<-0.03` is an un-registered, un-derived magic scalar. It appears nowhere in the P8 prereg or R1 gauntlet docs; A17 used the sign-only cut `vel_1w<0`. Choosing a specific magnitude cut (-0.03) is a free tuning knob that adds untracked trials on top of the already-counted washout family. Constitution II: a fixed scalar proxy must be labeled by what it IS and grammar/threshold choices are reviewed, not conveniences. trial_accounting.family=null in the packet \u2014 this compound family was not pre-registered as a distinct trial-ledger family, so the threshold search is not counted.",
+        "evidence_ref": "registry.jsonl C6 entry_rule value=-0.03; trial_accounting.family=null; research/ORACLE_CONSTITUTION.md II; absence in ORACLE_GAUNTLET_P8_WASHOUT_PREREG.md"
+      }
+    ],
+    "non_blocking_concerns": [
+      "gauntlet_legs is empty and mechanical_probes.input_insensitive='not_applicable' (no per-fire outcome arrays) \u2014 the permutation and per-leg (OOS Leg5 / timing-placebo Leg6) evidence is unavailable; treat as a gap, not a pass. Any promotion must run the full P3/R1-style OOS + count-matched timing placebo before adjudication.",
+      "near_dup.flagged=false is a false negative here: the structural relationship to A17 and P-W1 is explicit in the registry but the probe's similarity metric did not surface it. Do not rely on that flag for this candidate.",
+      "Cost realism: this is a liquid sector-ETF (tier s) entry; even the durable A15 winner is called 'a tilt, not a fortune, net of costs' at ~+1.3%. A 1.03% pooled effect with a failed hit gate is unlikely to survive slippage + financing net-of-cost.",
+      "Per-ETF heterogeneity is large (XLE +1.79% vs +0.45% pooled) \u2014 pooled numbers here may be carried by a few sectors; naming which post-hoc would itself be trial-mining (constitution ruling)."
+    ],
+    "best_counterargument": "Deepening the velocity screen (vel_1w<-0.03 vs A17's <0) could in principle isolate genuine capitulation from mild drift, and the pooled +1.03% 63d effect with 3/4 positive eras is directionally consistent with the operator's 'buy weekly capitulation' thesis and with A17's mechanism minus the flow requirement \u2014 arguably a cheaper, more universally-firable version (n=1667 vs A17's n=262) that trades A17's flow-displacement precision for breadth. If the program's true edge is capitulation-mean-reversion and flow-displacement is only one route to identifying it, a price-velocity route could recover a diluted but still-real slice of the same effect. That is why it is worth a human glance rather than a silent kill.",
+    "minimum_fix_to_reconsider": "Re-cast as a distinct, pre-registered trial family with the -0.03 threshold justified ex-ante (not fit), then run the full R1/P3-style gauntlet (OOS split + count-matched per-node timing placebo + block-bootstrap CI + BH-FDR over the real trial count including the velocity-threshold search). It must clear the hit_63d>=0.55 gate AND demonstrate a positive INCREMENT over the standalone P-W1 washout base rate (not merely over zero) \u2014 i.e., prove the velocity clause adds edge beyond the registered-NULL standalone washout. Absent that increment, it is P-W1 re-labeled.",
+    "falsifier_spec": "In a pre-registered forward window, C6's mean 63d excess-vs-SPY does NOT exceed the P8 P-W1 standalone-washout base rate (+0.45%/50.7% pooled) by a positive, bootstrap-CI-clearing increment, AND its 63d hit rate stays below the sector_signals BUY base rate (56%). If the conditioned entry cannot beat the unconditioned washout it is built on, the 'deep weekly velocity stress' conditioner is confirmed to add nothing and the mechanism is dead.",
+    "human_review_question": "Should C6 be rejected as a duplicate re-run of the already-adjudicated-NULL standalone washout (P-W1) and a flow-clause-stripped subset of the gauntleted A17 \u2014 YES to kill/defer, or NO to spend one registered gauntlet shot testing whether the deep-velocity screen produces a positive increment over the standalone-washout base rate?"
+  }
+}

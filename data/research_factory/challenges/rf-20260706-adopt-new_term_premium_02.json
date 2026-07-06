@@ -1,0 +1,75 @@
+{
+  "schema": "research_factory.challenge.v1",
+  "authority": "display_only",
+  "candidate_id": "rf-20260706-adopt-new_term_premium_02",
+  "challenged_at": "2026-07-06T09:49:39+00:00",
+  "mechanical_probes": {
+    "input_insensitive": "not_applicable",
+    "permutation_probe": {
+      "input_insensitive": "not_applicable",
+      "note": "no per-fire outcome arrays present in artifacts"
+    },
+    "near_dup": {
+      "score": null,
+      "nearest": null,
+      "flagged": false
+    },
+    "mechanism_spec_mismatch": false,
+    "recent_only_columns": false,
+    "scale_flagged": false,
+    "raw_flags": [],
+    "gauntlet_legs": []
+  },
+  "reviewer": {
+    "agent_type": "reviewer",
+    "recommendation": "ADVISORY_REJECT",
+    "blockers": [
+      {
+        "severity": "blocker",
+        "category": "duplicate",
+        "finding": "The candidate is a near-verbatim member of the saturated 'same-complex outflow survivor with positive RS' family already in data/oracle/compounds/registry.jsonl. Its entry_rule is [tlt_ret_10d<0, episode_event(out,onset,same,within15,min1), rs>0]. This is A4_SAME_OUT_SURVIVOR / A26_SAME_OUT_SURVIVOR_STOCH ('Executes when peers in the same complex are seeing outflow but the candidate keeps positive RS, buying the node resisting local selling') plus a single tlt_ret_10d<0 gate. It is also structurally identical to sibling D10_RATE_STRESS_OPP_OUT_DEST (same three legs; only complex_scope flips same->opposite) and to its own family-mate NEW:TERM_PREMIUM_01. The registry contains 12 SAME_OUT signals (A4, A9, A12, A13, A17, A26, A37, A39, A47, A58, etc.) and a dedicated D-family rate-stress/relief cluster (D3/D4/D5/D10). The one novel element is the tlt_ret_10d<0 leg, which merely intersects an existing survivor rule with a bond-return sign filter.",
+        "evidence_ref": "registry.jsonl lines 6 (A4_SAME_OUT_SURVIVOR), 53 (A26_SAME_OUT_SURVIVOR_STOCH), 89 (D10_RATE_STRESS_OPP_OUT_DEST), 106-107 (NEW:TERM_PREMIUM_01/02); candidate entry_rule in packet mechanism + registry line 107"
+      },
+      {
+        "severity": "blocker",
+        "category": "data",
+        "finding": "Primary economic floor is NOT met. evaluation_plan.gate_hit_63d=0.55 but observed_hit_63d=0.5341880 and floor_passed.hit63_ge_55pct=false. The candidate reaches the promotion queue on abs-effect (0.0122) and era_consistent alone while failing the hit-rate floor; it is 'QUEUE ONLY \u2014 not promoted' per promotion_queue.json. A screened candidate that fails its own pre-registered primary gate should not be adopted.",
+        "evidence_ref": "evaluation_plan.observed_hit_63d, evaluation_plan.floor_passed.hit63_ge_55pct=false; data/oracle/promotion_queue.json NEW:TERM_PREMIUM_02 note='QUEUE ONLY'"
+      },
+      {
+        "severity": "major",
+        "category": "data",
+        "finding": "Trial-family accounting was sidestepped. trial_accounting.family=null and declared_at=null; the candidate's family 'NEW:term-premium-routing' does NOT appear in dedup_context.trial_ledger_families. A new family entered the screen without prior registration, so the search_width_at_scan=110 FDR denominator does not reflect the term-premium-routing arm that produced both TERM_PREMIUM_01 and _02. Multiple-testing correction is understated.",
+        "evidence_ref": "trial_accounting.family=null, trial_accounting.declared_at=null; dedup_context.trial_ledger_families (no 'term-premium-routing' entry); aggregate_metrics.search_width_at_scan=110"
+      },
+      {
+        "severity": "major",
+        "category": "regime",
+        "finding": "The mechanism inverts in the live-relevant era. The tier1 trial_ledger row for NEW:TERM_PREMIUM_02 records era_direction_63d {'1999-2014':'pos','2015-2019':'pos','2020-2022':'pos','2023-2026':'neg'} and era_direction_21d {...,'2023-2026':'neg'}. era_consistent_63d=3 counts only the older positive eras; the most recent (2023-2026) era is negative-signed at BOTH horizons. The floor's era_consistent_ge_3 credit masks a sign flip in the era that matters for going live.",
+        "evidence_ref": "data/oracle/compounds/trial_ledger.jsonl line 108 (NEW:TERM_PREMIUM_02 era_direction_21d/63d); evaluation_plan.era_consistent=3"
+      },
+      {
+        "severity": "major",
+        "category": "implementation",
+        "finding": "Spec-name vs mechanism drift. hypothesis 'Rate stress...', name 'Rate stress same outflow survivor', and spec_ref NEW:TERM_PREMIUM_02 all invoke 'term premium', but the entry_rule uses tlt_ret_10d<0 (a 10-day TLT total-return-price momentum proxy), not any term-premium series. grep of engine/oracle/ finds no term_premium column; tlt_ret_10d is bond-price momentum, which conflates duration return, term premium, and real-rate/inflation-expectation moves. The mechanistic claim ('resist rate pressure') is not what the rule measures, and mechanism_spec_mismatch=false only checks that the text references the rule's columns, not that the economic label is accurate.",
+        "evidence_ref": "candidate name/hypothesis/spec_ref vs entry_rule col=tlt_ret_10d; absence of term_premium column in engine/oracle/ (grep); mechanical_probes.mechanism_spec_mismatch=false"
+      },
+      {
+        "severity": "minor",
+        "category": "duplicate",
+        "finding": "The packet's dedup context is blind to the closest matches. dedup_context.machine_registry_hypotheses is empty [], and species_names / nw_quant_synthesis_s3_text do not enumerate oracle compound ids. The A4/A26/D10 duplicates live in registry.jsonl, which is not one of the four dedup blocks fed to the reviewer, and near_dup.flagged=false despite the exact-family match. The automated near-dup probe therefore under-reports; the duplicate finding above rests on direct registry inspection.",
+        "evidence_ref": "dedup_context.machine_registry_hypotheses=[]; mechanical_probes.near_dup.flagged=false; registry.jsonl (not embedded in packet dedup blocks)"
+      }
+    ],
+    "non_blocking_concerns": [
+      "mechanical_probes.input_insensitive and permutation_probe are 'not_applicable' (no per-fire outcome arrays), so the sign-permutation insensitivity check could not run \u2014 the WR-vs-null discriminability is unverified.",
+      "gauntlet_legs=[] : no OOS-holdout (Leg 5) or timing-placebo (Leg 6) verdicts are present; unlike the family passer SEQ_TLT_RELIEF_WASHOUT (which cleared a 6-leg gauntlet with asym 1.75), this candidate has no asymmetry/placebo evidence at all \u2014 it is only a tier-1 floor screen.",
+      "observed_effect_63d=0.0122 barely clears the abs>=0.01 floor; with within_sessions=15 and min_count=1 (a loose episode gate) fires likely cluster in time, so cluster-adjusted SEs would widen the interval and could push effect below the floor.",
+      "n=1195 with min_count=1 loose gate suggests this is a broad, low-selectivity rule; contrast with A17_WASHOUT_SAME_OUT_NEG_VEL (n=262, hit 0.576) which clears the hit floor at much higher selectivity \u2014 the loose gate is buying n at the cost of edge."
+    ],
+    "best_counterargument": "Steelman: the same-complex-outflow-survivor idea is a genuine, economically motivated pattern (isolating the node absorbing capital inside a stressed complex), and the tlt_ret_10d<0 leg is a real conditioning axis the existing A4/A26 survivors do not carry \u2014 it selects survivors specifically during rate-pressure episodes rather than in aggregate, which is a distinct sub-population (the mirror-image of the family passer SEQ_TLT_RELIEF_WASHOUT, where the relief leg leads). If a full entry-set redundancy audit against A4/A26/D10 showed <85% containment (as SEQ_TLT_RELIEF_WASHOUT did at 22.6% vs A15), the rate-stress conditioning could be additive rather than a duplicate, and the sub-population might carry asymmetry the tier-1 hit-rate screen does not measure.",
+    "minimum_fix_to_reconsider": "Provide (1) an entry-set redundancy audit computing containment% of NEW:TERM_PREMIUM_02 fires against every same-out survivor and rate-stress registry sibling (A4, A26, A39, A47, D10 at minimum) demonstrating <85% overlap with each; (2) registration of the 'term-premium-routing' family in the trial ledger BEFORE the screen so the FDR denominator is honest; (3) a re-screen that clears the pre-registered hit_63d>=0.55 floor, or a re-declared ruler if 63d hit-rate is the wrong metric; and (4) an era-split showing the 2023-2026 sign is not negative, or an explicit ruling that the recent-era inversion is tolerated. Rename to reflect the actual tlt_ret_10d proxy rather than 'term premium'.",
+    "falsifier_spec": "In a forward or held-out window, condition on tlt_ret_10d<0 same-complex-outflow survivor fires and measure 63d absolute hit-rate on distinct-date clusters: if hit_63d stays below 0.55 (as in the 2023-2026 negative-era split) across >=20 distinct fire dates, OR if >=85% of its fires are contained in the union of A4/A26/D10 entry sets, the candidate is confirmed dead as an independent signal.",
+    "human_review_question": "Should NEW:TERM_PREMIUM_02 be REJECTED as (a) a duplicate of the existing A4/A26/D10 same-out-survivor + rate-stress family AND (b) a candidate that fails its own pre-registered hit_63d>=0.55 floor with a negative 2023-2026 era sign \u2014 YES to reject, or NO to defer pending a full entry-set redundancy audit and trial-family registration?"
+  }
+}
