@@ -18,6 +18,7 @@ Lifecycle: registered → executed → reported
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 import re
@@ -166,6 +167,40 @@ def verify_spec_hashes(
 # ---------------------------------------------------------------------------
 # Registration
 # ---------------------------------------------------------------------------
+# Fields that define WHAT was registered (the semantic content). Timestamps,
+# lifecycle status and the stored hash itself are excluded so that a re-run of
+# the same registration command hashes identically.
+_CONTENT_HASH_FIELDS = (
+    "exp_id",
+    "question",
+    "spec_hashes",
+    "n_floor",
+    "declared_budget",
+    "verdict_criteria",
+    "derived_from_surface",
+    "needed_merge_columns",
+    "base_cohort_predicates",
+)
+
+
+def registration_content_hash(entry: dict) -> str:
+    """sha256 over the semantic registration fields (order-stable).
+
+    Absent fields hash the same as their registration defaults so entries
+    written before a field existed compare equal to a re-registration that
+    passes the default.
+    """
+    defaults: dict[str, Any] = {"needed_merge_columns": [], "base_cohort_predicates": []}
+    payload = {}
+    for k in _CONTENT_HASH_FIELDS:
+        v = entry.get(k, defaults.get(k))
+        if k == "spec_hashes" and v is not None:
+            v = sorted(v)
+        payload[k] = v
+    canon = json.dumps(payload, sort_keys=True, separators=(",", ":"), default=str)
+    return hashlib.sha256(canon.encode("utf-8")).hexdigest()
+
+
 def register_experiment(
     exp_id: str,
     question: str,
@@ -232,26 +267,8 @@ def register_experiment(
     rp = registry_path or _default_registry_path()
     lp = ledger_path or _default_ledger_path()
 
-    # Check for duplicate exp_id (re-registration is allowed; just appends)
-    existing = [r for r in _load_registry_raw(rp) if r.get("exp_id") == exp_id]
-    if existing:
-        log.warning(
-            "Experiment %r already exists in registry (%d prior entries). "
-            "Appending new registration (lifecycle update).",
-            exp_id, len(existing)
-        )
-
-    # --- FDR accounting: log declared budget to the flat pooled family ---
-    # This MUST happen before the run (§3.3).
-    rp.parent.mkdir(parents=True, exist_ok=True)
-    led = TrialLedger(lp, family=REGISTRY_FAMILY)
-    led.log_declared_budget(
-        declared_budget,
-        family=REGISTRY_FAMILY,
-        reason=f"exp_id={exp_id}; question={question[:80]!r}",
-    )
-
-    # --- Build registry entry ---
+    # --- Build registry entry (before the ledger write so the dedup guard can
+    # hash it and bail out without spending a ledger row) ---
     entry: dict[str, Any] = {
         "exp_id": exp_id,
         "registered_at": datetime.now(timezone.utc).isoformat(),
@@ -265,6 +282,42 @@ def register_experiment(
         "base_cohort_predicates": base_cohort_predicates or [],
         "status": "registered",
     }
+    entry["registration_content_hash"] = registration_content_hash(entry)
+
+    # Dedup guard: a re-registration with IDENTICAL semantic content is a
+    # no-op — it appends nothing and burns no ledger row (run churn across
+    # worktrees was double-writing 'registered' rows; see
+    # data/rule_experiments/RECONCILIATION_2026-07-06.md). A re-registration
+    # whose content DIFFERS is a legitimate amendment and still appends
+    # (load_experiment merges field-union, later-wins).
+    existing = [r for r in _load_registry_raw(rp) if r.get("exp_id") == exp_id]
+    for prior in existing:
+        if "declared_budget" not in prior:
+            continue  # status-update rows carry no registration content
+        if registration_content_hash(prior) == entry["registration_content_hash"]:
+            log.warning(
+                "Experiment %r already registered with identical content "
+                "(registered_at=%s). Skipping duplicate registration — no "
+                "registry append, no ledger row.",
+                exp_id, prior.get("registered_at"),
+            )
+            return load_experiment(exp_id, rp)
+    if existing:
+        log.warning(
+            "Experiment %r already exists in registry (%d prior entries). "
+            "Appending amended registration (content differs).",
+            exp_id, len(existing)
+        )
+
+    # --- FDR accounting: log declared budget to the flat pooled family ---
+    # This MUST happen before the run (§3.3).
+    rp.parent.mkdir(parents=True, exist_ok=True)
+    led = TrialLedger(lp, family=REGISTRY_FAMILY)
+    led.log_declared_budget(
+        declared_budget,
+        family=REGISTRY_FAMILY,
+        reason=f"exp_id={exp_id}; question={question[:80]!r}",
+    )
 
     with rp.open("a", encoding="utf-8") as fh:
         fh.write(json.dumps(entry) + "\n")
@@ -344,6 +397,90 @@ def pooled_replay_trial_count(registry_path: Path | None = None) -> int:
         if eid not in latest or ts >= latest[eid][0]:
             latest[eid] = (ts, int(budget))
     return sum(v[1] for v in latest.values())
+
+
+def replay_ledger_budgets(
+    ledger_path: Path | None = None,
+) -> tuple[dict[str, int], list[str]]:
+    """Derive per-experiment declared budgets from the trial ledger's 'replay' rows.
+
+    Every ``register_experiment`` ledger write stamps ``exp_id=<id>;`` at the
+    head of the row's ``reason``. Duplicate rows for the same exp_id (run churn
+    re-registering with reworded question text) collapse via max() — for a
+    fixed grid the declared budget is identical across duplicates, so max() is
+    exact, and if budgets ever differ the larger (conservative) one wins.
+
+    Returns (budgets, unattributed): ``budgets`` maps exp_id -> declared budget;
+    ``unattributed`` lists the reasons of any replay rows that do not carry the
+    ``exp_id=`` stamp (should be empty — a non-empty list is accounting drift).
+    """
+    lp = ledger_path or _default_ledger_path()
+    budgets: dict[str, int] = {}
+    unattributed: list[str] = []
+    if not lp.exists():
+        return budgets, unattributed
+    pat = re.compile(r"^exp_id=([a-z0-9][a-z0-9_\-/]*);")
+    with lp.open(encoding="utf-8") as fh:
+        for line in fh:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                row = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if row.get("family") != REGISTRY_FAMILY or row.get("kind") != "declared_budget":
+                continue
+            m = pat.match(row.get("reason") or "")
+            n = row.get("n")
+            if not m or not isinstance(n, int):
+                unattributed.append(str(row.get("reason")))
+                continue
+            eid = m.group(1)
+            budgets[eid] = max(budgets.get(eid, 0), n)
+    return budgets, unattributed
+
+
+def reconcile_replay_accounting(
+    registry_path: Path | None = None,
+    ledger_path: Path | None = None,
+) -> dict:
+    """Cross-check the two replay-budget books: registry (SUM basis) vs ledger.
+
+    The registry is the source of truth for the pooled SUM (see
+    ``pooled_replay_trial_count``); the ledger's per-family max() is the DSR
+    floor. Both numbers must be disclosed in any promotion prereg, so this
+    returns both plus the per-exp_id mismatches that would make the SUM
+    ambiguous. ``consistent`` is True iff every registered experiment has a
+    matching ledger row with the same budget and no unattributed replay rows.
+    """
+    rp = registry_path or _default_registry_path()
+    registry_budgets: dict[str, int] = {}
+    latest_ts: dict[str, str] = {}
+    for r in _load_registry_raw(rp):
+        eid, budget = r.get("exp_id", ""), r.get("declared_budget")
+        if not eid or budget is None:
+            continue
+        ts = r.get("registered_at", "")
+        if eid not in registry_budgets or ts >= latest_ts[eid]:
+            registry_budgets[eid] = int(budget)
+            latest_ts[eid] = ts
+    ledger_budgets, unattributed = replay_ledger_budgets(ledger_path)
+    mismatches = {
+        eid: {"registry": registry_budgets.get(eid), "ledger": ledger_budgets.get(eid)}
+        for eid in set(registry_budgets) | set(ledger_budgets)
+        if registry_budgets.get(eid) != ledger_budgets.get(eid)
+    }
+    return {
+        "registry_sum": sum(registry_budgets.values()),
+        "ledger_sum": sum(ledger_budgets.values()),
+        "ledger_max_floor": max(ledger_budgets.values(), default=0),
+        "registry_budgets": registry_budgets,
+        "ledger_budgets": ledger_budgets,
+        "mismatches": mismatches,
+        "unattributed_ledger_rows": unattributed,
+        "consistent": not mismatches and not unattributed,
+    }
 
 
 def results_summary_header(registry_path: Path | None = None) -> str:
