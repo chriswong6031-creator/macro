@@ -618,6 +618,45 @@ def _section_factor_intelligence() -> dict:
     }
 
 
+# ---- Section F: Daily Brief (PR-D) ------------------------------------------
+
+_NW_DAILY_BRIEF_JSON = _DATA_NW / "daily_brief.json"
+
+
+def _section_daily_brief() -> dict:
+    """PR-D NW daily brief — status, brain-run line, operator_attention.
+
+    Reads data/neuralweb/daily_brief.json (committed artifact only).
+    Fail-open: missing or malformed artifact → honest placeholder.
+    No engine imports, no subprocess.
+    """
+    brief = _read_json(_NW_DAILY_BRIEF_JSON)
+    if brief is None or brief.get("schema") != "neuralweb.daily_brief.v1":
+        return {
+            "missing": True,
+            "note": "data/neuralweb/daily_brief.json not yet written (pre-PR-D clone or first nightly)",
+        }
+
+    brain_run = brief.get("did_the_brain_run") or {}
+    attn = brief.get("operator_attention") or []
+    p1 = [a for a in attn if a.get("priority") == 1]
+    p2 = [a for a in attn if a.get("priority") == 2]
+
+    return {
+        "schema": brief.get("schema"),
+        "produced_at": brief.get("produced_at"),
+        "as_of": brief.get("as_of"),
+        "status": brief.get("status"),
+        "phase": brief.get("phase"),
+        "brain_run_summary": brain_run.get("summary"),
+        "cortex_status": brain_run.get("cortex_status"),
+        "operator_attention_p1": p1,
+        "operator_attention_p2": p2[:5],  # top 5 only for admin display
+        "operator_attention_count": len(attn),
+        "gaps": brief.get("_gaps") or [],
+    }
+
+
 # ---- Top-level panel entry point -------------------------------------------
 
 def panel() -> dict:
@@ -629,6 +668,7 @@ def panel() -> dict:
         bus_graph          — Section C
         governance         — Section D
         factor_intelligence — Section E (§D PR-4, RUL-NW7/NW8)
+        daily_brief        — Section F (PR-D)
     """
     return {
         "ok": True,
@@ -637,4 +677,5 @@ def panel() -> dict:
         "bus_graph": _section_bus_graph(),
         "governance": _section_governance(),
         "factor_intelligence": _section_factor_intelligence(),
+        "daily_brief": _section_daily_brief(),
     }
