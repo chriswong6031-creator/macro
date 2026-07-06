@@ -3864,3 +3864,31 @@ artifacts:
       h=21 maturity grading from massive_stock_day closes (absolute return).
       Accrual instrument for the registered §5 promotion rule (15-window re-evaluation gate).
       No peeking logic — desk only displays counts.
+
+  # --- NW Rails W2 PR-4: L3 dispersion regime lens ---
+  dispersion-regime:
+    path: data/dispersion/regime.json
+    format: json
+    producer: scripts/build_dispersion_regime.py
+    known_extra_writers: []
+    owner_program: nw-rails
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: dispersion_regime.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - templates/dashboard.html.j2
+    external_consumers: []
+    notes: >
+      L3 chartered lobe (NW Rails program §5). Promotes engine/dispersion.py output
+      (lean_in/neutral/lean_out + pctile + avg_corr) to a registered nightly artifact.
+      DISPLAY-ONLY hard law: gross_mult_live is permanently 1.0 (clamped per
+      US_BOARD_MEASUREMENT §Study 3 — no measured selection-IR edge). shadow_gross_mult
+      logged as a prior for a future measured promotion. DISP-GATE-1 shadow-ladder
+      question registered in research/dispersion/L3_PREREG.md; verdict gates frozen for
+      a later batch run via R1 governor. No scoring surface, no gate, no rank power.

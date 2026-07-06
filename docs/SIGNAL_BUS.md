@@ -18,8 +18,9 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | hk-canada | 2 |
 | institutional-sector-intelligence | 2 |
 | intl-fix | 1 |
-| long-hold | 3 |
+| long-hold | 4 |
 | neural-web | 25 |
+| nw-rails | 1 |
 | options-alpha | 7 |
 | options-nw-entry-intelligence | 3 |
 | oracle | 17 |
@@ -33,7 +34,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 63 |
+| display | 65 |
 | infrastructure | 32 |
 | scored | 4 |
 | shadow | 36 |
@@ -42,7 +43,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 130 |
+| git | 132 |
 | gitignored-local | 3 |
 | r2 | 2 |
 
@@ -132,6 +133,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
 | long-hold-dead-name-prices | `data/edgar/dead_name_prices.parquet` | parquet | on-demand | infrastructure | 1 | 0 |
+| long-hold-killtest-results | `data/research/missed_hold_study_results.parquet` | parquet | on-demand | display | 1 | 0 |
 | long-hold-labels | `data/research/long_hold_labels.parquet` | parquet | on-demand | display | 1 | 0 |
 | long-hold-labels-manifest | `data/research/long_hold_labels_manifest.json` | json | on-demand | display | 1 | 0 |
 
@@ -164,6 +166,12 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | lagging-signals | `data/neuralweb/lagging_signals.json` | json | daily-engine | infrastructure | 0 | 0 |
 | research-queue | `data/neuralweb/research_queue.json` | json | on-demand | infrastructure | 0 | 0 |
 | risk-radar-review-log | `data/risk_radar/review_log.jsonl` | jsonl | weekly | display | 0 | 0 |
+
+### nw-rails
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| dispersion-regime | `data/dispersion/regime.json` | json | daily-engine | display | 1 | 0 |
 
 ### options-alpha
 
