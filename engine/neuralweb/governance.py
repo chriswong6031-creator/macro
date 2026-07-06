@@ -75,6 +75,8 @@ _VALID_EVENT_TYPES = frozenset({
     "config_disarm",
     "operator_override",
     "article3_review",
+    # W5 (RF-12): human-gate decisions recorded by research_factory_decide.py
+    "research_factory_gate",
 })
 
 
