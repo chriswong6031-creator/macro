@@ -144,6 +144,7 @@ def _sector_cards(latest: dict) -> list[dict]:
             "pctile": rs.get("pctile_252d"),
             "state": lad.get("state"), "label": lad.get("label"),
             "action": lad.get("action"), "dir": lad.get("dir"),
+            "entry": lad.get("entry"),     # cycle-entry call -> action board buckets
             "age_short": lad.get("age_short"), "age_short_zh": lad.get("age_short_zh"),
             "why": lad.get("why"), "regime_label": lad.get("regime_label"),
             "dc_day": cyc.get("dc_day"), "dc_band": cyc.get("dc_band"),
@@ -152,6 +153,48 @@ def _sector_cards(latest: dict) -> list[dict]:
         })
     cards.sort(key=lambda c: (c["rank"] is None, c["rank"] or 999))
     return cards
+
+
+def _action_board(sectors: list[dict]) -> dict:
+    """Bucket the sector cards' cycle-entry calls into a 'what to act on' board —
+    the HK analog of build_site.action_board / build_china._china_action_board.
+
+    Urgency routing (the #1513 lane split, ported):
+      now → buy_now; imminent/soon → buy_soon; hold → hold; exit → take_profits;
+      caution splits by entry tag:
+        "DON'T CHASE"             → on_the_run  (uptrend intact, extended — do not chase)
+        "UNCONFIRMED — HIGH RISK" → avoid       (bear-trend countertrend bounce)
+        anything else (incl. "TAKE PROFITS") → take_profits
+      all other urgency values → avoid.
+    Tag literals must match engine/cycles.py entry_timing byte-for-byte
+    (em dash in UNCONFIRMED, ASCII apostrophe in DON'T)."""
+    buy_now, buy_soon, on_the_run, take_profits, hold, avoid = [], [], [], [], [], []
+    for s in sectors:
+        e = s.get("entry") or {}
+        tag = e.get("tag", "")
+        item = {"ticker": s["ticker"], "name": s["name"], "label": s.get("label") or s.get("state"),
+                "tag": tag, "days": e.get("days_hi"), "dir": s.get("dir")}
+        u = e.get("urgency")
+        if u == "now":
+            buy_now.append(item)
+        elif u in ("imminent", "soon"):
+            buy_soon.append(item)
+        elif u == "caution":
+            if tag == "DON'T CHASE":
+                on_the_run.append(item)
+            elif tag == "UNCONFIRMED — HIGH RISK":
+                avoid.append(item)
+            else:
+                take_profits.append(item)
+        elif u == "exit":
+            take_profits.append(item)
+        elif u == "hold":
+            hold.append(item)
+        else:
+            avoid.append(item)
+    buy_soon.sort(key=lambda x: (x["days"] if x["days"] is not None else 99))
+    return {"buy_now": buy_now, "buy_soon": buy_soon, "on_the_run": on_the_run,
+            "take_profits": take_profits, "hold": hold, "avoid": avoid}
 
 
 def _benchmark_card() -> dict | None:
@@ -650,6 +693,7 @@ def main() -> int:
             "latest": latest,
             "built": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
             "sectors": sectors,
+            "actions": _action_board(sectors),   # "what to act on now" sector board (stocks page)
             "breadth": _breadth(),
             "full_breadth": _full_breadth(),     # full main-board adv/dec (fragile; None when blocked)
             "benchmark": _benchmark_card(),
