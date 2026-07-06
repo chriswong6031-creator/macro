@@ -288,6 +288,49 @@ def build_cross_root(
 
 
 # --------------------------------------------------------------------------- #
+# Completeness guard helper (pure — testable without main())
+# --------------------------------------------------------------------------- #
+
+def _gex_publish_decision(
+    gex_payload: dict,
+    root: str,
+    asof: str,
+    theta_store,
+) -> tuple[bool, dict, bool]:
+    """Decide whether to publish gex_payload to R2.
+
+    Returns (gex_publish, gex_payload, is_guarded):
+      - gex_publish:  True  → upload to R2; False → skip upload (preserve last-good)
+      - gex_payload:  possibly mutated (no_data_reason added for genuine empty store)
+      - is_guarded:   True when upload was suppressed by the mid-backfill guard
+    """
+    if gex_payload.get("by_strike"):
+        return True, gex_payload, False
+
+    oi_check = _load_oi_for_date(root, asof, theta_store)
+    if not oi_check.empty:
+        # Store has contracts but compute produced empty by_strike —
+        # suppressing R2 upload to keep last-good object.
+        log.warning(
+            "options_hub_builder: GEX GUARD triggered for %s on %s — "
+            "by_strike is empty but theta store has %d OI rows; "
+            "skipping R2 upload to preserve last-good object",
+            root, asof, len(oi_check),
+        )
+        return False, gex_payload, True
+    else:
+        # Store genuinely has no data — mark the payload explicitly.
+        gex_payload = dict(gex_payload)
+        gex_payload["no_data_reason"] = f"no_oi_in_store:{asof}"
+        log.info(
+            "options_hub_builder: %s has no OI in store for %s — "
+            "publishing with no_data_reason",
+            root, asof,
+        )
+        return True, gex_payload, False
+
+
+# --------------------------------------------------------------------------- #
 # CLI entry point
 # --------------------------------------------------------------------------- #
 
@@ -387,13 +430,21 @@ def main() -> None:
     # ── per-root loop ─────────────────────────────────────────────────────────
     roots_ok: list[str] = []
     roots_skipped: list[str] = []
+    roots_gex_skipped: list[str] = []  # roots where GEX R2 upload was suppressed (guard)
 
     for root in roots:
         log.info("options_hub_builder: processing %s …", root)
         try:
             vol_payload, gex_payload = build_root(root, asof, theta_store)
 
-            # write locally
+            # ── COMPLETENESS GUARD (CONTRACT) ────────────────────────────────────
+            gex_publish, gex_payload, is_guarded = _gex_publish_decision(
+                gex_payload, root, asof, theta_store
+            )
+            if is_guarded:
+                roots_gex_skipped.append(root)
+
+            # write locally (always — local file reflects what was computed)
             vol_path = out_dir / "vol" / f"{root}.json"
             gex_path = out_dir / "gex" / f"{root}.json"
             _write_json(vol_path, vol_payload)
@@ -402,7 +453,8 @@ def main() -> None:
             # publish
             if s3 and bucket:
                 _upload_r2(s3, bucket, vol_path, f"{R2_PREFIX}vol/{root}.json")
-                _upload_r2(s3, bucket, gex_path, f"{R2_PREFIX}gex/{root}.json")
+                if gex_publish:
+                    _upload_r2(s3, bucket, gex_path, f"{R2_PREFIX}gex/{root}.json")
 
             roots_ok.append(root)
             log.info("options_hub_builder: %s done", root)
@@ -430,11 +482,17 @@ def main() -> None:
 
     # ── summary ──────────────────────────────────────────────────────────────
     log.info(
-        "options_hub_builder: complete. asof=%s roots_ok=%d roots_skipped=%d",
-        asof, len(roots_ok), len(roots_skipped),
+        "options_hub_builder: complete. asof=%s roots_ok=%d roots_skipped=%d "
+        "roots_gex_guarded=%d",
+        asof, len(roots_ok), len(roots_skipped), len(roots_gex_skipped),
     )
     if roots_skipped:
         log.warning("options_hub_builder: skipped roots: %s", roots_skipped)
+    if roots_gex_skipped:
+        log.warning(
+            "options_hub_builder: GEX R2 upload suppressed (guard) for %d roots: %s",
+            len(roots_gex_skipped), roots_gex_skipped,
+        )
 
     # Item 6 — register options_hub_nightly in the run_status/circuit-breaker pattern.
     # Mirrors the established pattern in scripts/collect.py + lib/store.write_status.
@@ -447,11 +505,13 @@ def main() -> None:
         from datetime import datetime as _dt, timezone as _tz  # noqa: PLC0415
         _rs = _store.read_status()
         _rs.setdefault("sources", {})["options_hub_nightly"] = {
-            "status":        "ok" if not roots_skipped else "partial",
-            "roots_ok":      len(roots_ok),
-            "roots_skipped": len(roots_skipped),
-            "asof":          asof,
-            "checked_at":    _dt.now(_tz.utc).isoformat(),
+            "status":            "ok" if not roots_skipped else "partial",
+            "roots_ok":          len(roots_ok),
+            "roots_skipped":     len(roots_skipped),
+            "roots_gex_guarded": len(roots_gex_skipped),
+            "roots_gex_guarded_list": roots_gex_skipped,
+            "asof":              asof,
+            "checked_at":        _dt.now(_tz.utc).isoformat(),
         }
         _store.write_status(_rs)
         log.info("options_hub_builder: run_status updated")
