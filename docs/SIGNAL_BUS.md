@@ -22,6 +22,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | intl-fix | 1 |
 | long-hold | 22 |
 | neural-web | 34 |
+| next3 | 1 |
 | nw-mastermind-bridge | 2 |
 | nw-rails | 4 |
 | options-alpha | 7 |
@@ -40,7 +41,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | tier | count |
 |---|---|
 | display | 102 |
-| infrastructure | 52 |
+| infrastructure | 53 |
 | scored | 4 |
 | shadow | 37 |
 
@@ -48,7 +49,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 189 |
+| git | 190 |
 | gitignored-local | 4 |
 | r2 | 2 |
 
@@ -221,6 +222,12 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | risk-radar-review-log | `data/risk_radar/review_log.jsonl` | jsonl | weekly | display | 0 | 0 |
 | rule-experiment-summaries | `data/rule_experiments/results/<EXP_ID>_summary.json` | json | on-demand | display | 0 | 0 |
 | site-neuralweb-health | `site/neuralwebdata/health.json` | json | daily-engine | infrastructure | 0 | 0 |
+
+### next3
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| options-entry-coverage | `data/options_entry/coverage.json` | json | collect | infrastructure | 0 | 0 |
 
 ### nw-mastermind-bridge
 

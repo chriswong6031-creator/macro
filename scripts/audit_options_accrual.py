@@ -163,5 +163,43 @@ def main() -> int:
     return 0
 
 
+# ---------------------------------------------------------------------------
+# Collect step hook (W-OC wiring — NEXT3 PR-β)
+# ---------------------------------------------------------------------------
+
+def run_as_collect_step() -> None:
+    """End-of-collect hook — wraps audit() + write; must never raise.
+
+    Called from scripts/collect.py after the options accrual steps so the
+    options entry coverage audit (audit_options_entry_coverage.py) can read the
+    freshly updated options_accrual_audit.json for its consistency section.
+    Idempotent; non-fatal.
+    """
+    import logging as _logging
+    _log = _logging.getLogger("audit_options_accrual")
+    try:
+        report = audit()
+        # Write observability artifact
+        try:
+            from datetime import datetime as _dt, timezone as _tz
+            import json as _json
+            from lib import config as _config
+            out_dir = _config.data_dir() / "quality"
+            out_dir.mkdir(parents=True, exist_ok=True)
+            doc = {"generated_at": _dt.now(_tz.utc).isoformat(), **report}
+            (out_dir / "options_accrual_audit.json").write_text(
+                _json.dumps(doc, indent=2) + "\n"
+            )
+            _log.info("audit_options_accrual: wrote options_accrual_audit.json")
+        except Exception as write_exc:  # noqa: BLE001
+            _log.warning("audit_options_accrual: write failed (non-fatal): %s", write_exc)
+        for w in report.get("warnings", []):
+            _log.warning("audit_options_accrual: %s", w)
+        for f in report.get("fail_reasons", []):
+            _log.error("audit_options_accrual: %s", f)
+    except Exception as exc:  # noqa: BLE001
+        _log.error("[audit_options_accrual] collect step crashed (non-fatal): %s", exc)
+
+
 if __name__ == "__main__":
     sys.exit(main())
