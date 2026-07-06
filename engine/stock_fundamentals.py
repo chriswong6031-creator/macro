@@ -1795,6 +1795,38 @@ def _compute_trap_block(
         return None
 
 
+def _compute_capital_allocation_block(
+    ticker: str,
+    quarterly_df: "pd.DataFrame | None",
+    fundamentals_panel_df: "pd.DataFrame | None",
+    statements_df: "pd.DataFrame | None",
+    mcap: "float | None",
+) -> "dict | None":
+    """Call compute_capital_allocation for one ticker; non-fatal.
+
+    Returns None when required inputs are absent (panel omitted from JSON).
+    DISPLAY-ONLY; horizon_role=hold_thesis; MUST NOT feed entry-stack surfaces (LH-R1).
+    """
+    if quarterly_df is None or quarterly_df.empty:
+        return None
+    if fundamentals_panel_df is None or fundamentals_panel_df.empty:
+        return None
+    try:
+        from engine.capital_allocation import compute_capital_allocation  # noqa: PLC0415
+        result = compute_capital_allocation(
+            ticker, quarterly_df, fundamentals_panel_df,
+            statements_df=statements_df,
+            mcap=mcap,
+        )
+        # Suppress unavailable-delta results with no repurchase data to keep JSON lean
+        if result.get("capital_allocation_delta") == "unavailable" and result.get("repurch_ttm") is None:
+            return None
+        return result
+    except Exception as exc:  # noqa: BLE001
+        log.debug("stock_fundamentals: capital_allocation skipped for %s (%s)", ticker, exc)
+        return None
+
+
 def panels() -> dict[str, dict]:
     """{ticker: {profile, valuation, financials, factors, positioning, analyst,
     thesis_clock}}
@@ -1846,6 +1878,21 @@ def panels() -> dict[str, dict]:
             _moat_base_rates = compute_base_rates(_statements_df)
     except Exception as _mf_exc:  # noqa: BLE001
         log.warning("stock_fundamentals: moat_falsifiers base rates skipped (%s)", _mf_exc)
+
+    # LT-3a: capital allocation delta block (display-only; horizon_role=hold_thesis;
+    # MUST NOT feed entry-stack scored surfaces — LH-R1).
+    from engine.capital_allocation import compute_capital_allocation  # noqa: PLC0415
+    _quarterly_df: pd.DataFrame | None = None
+    _fundamentals_panel_df: pd.DataFrame | None = None
+    try:
+        _qp = config.data_dir() / "edgar" / "statements_quarterly.parquet"
+        _fp = config.data_dir() / "edgar" / "fundamentals_panel.parquet"
+        if _qp.exists():
+            _quarterly_df = pd.read_parquet(_qp)
+        if _fp.exists():
+            _fundamentals_panel_df = pd.read_parquet(_fp)
+    except Exception as _ca_exc:  # noqa: BLE001
+        log.warning("stock_fundamentals: capital_allocation inputs skipped (%s)", _ca_exc)
 
     M = _context_frame(fund, table, statements)
     nm_top_thr = _num(M["net_margin"].quantile(2 / 3)) if "net_margin" in M else None
@@ -1910,6 +1957,14 @@ def panels() -> dict[str, dict]:
             # Assembled ONLY from existing signals; may ONLY lower conviction context.
             "great_company_trap": _compute_trap_block(
                 str(t), analyst_rev, insider,
+            ),
+            # LT-3a — capital allocation delta block (DISPLAY-ONLY; horizon_role=hold_thesis).
+            # Buyback execution (TTM repurchases from statements_quarterly.parquet),
+            # share-count trend (fundamentals_panel.parquet), SBC (statements.parquet,
+            # sparse until LT-1 backfill lands).
+            # MUST NOT feed board ordering, alert triage, top-setups gates, or push floor.
+            "capital_allocation": _compute_capital_allocation_block(
+                str(t), _quarterly_df, _fundamentals_panel_df, _statements_df, mcap,
             ),
         }
         out[str(t)] = _clean({k: v for k, v in blocks.items() if v})
