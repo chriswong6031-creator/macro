@@ -225,6 +225,82 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
   .mh-gate-table,.mh-exp-table{font-size:.73rem}
   .mh-gate-table td,.mh-exp-table td{padding:7px 8px}
 }
+
+/* ── Hub v2: Pattern Memory / Truth Ledger ──────────────────────────────── */
+.pm-unavail{padding:14px;border-radius:8px;
+  background:color-mix(in srgb,var(--muted) 10%,transparent);
+  border:1px solid var(--border,rgba(255,255,255,.06));
+  font-size:.85rem;color:var(--muted,#8899aa)}
+.pm-status-row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px}
+.pm-status-chip{padding:5px 12px;border-radius:6px;font-size:.78rem;font-weight:700;
+  border:1px solid var(--border,rgba(255,255,255,.1))}
+.pm-chip-promoted_null{background:color-mix(in srgb,var(--muted,#8899aa) 12%,transparent);
+  color:var(--muted,#8899aa);border-color:color-mix(in srgb,var(--muted) 30%,transparent)}
+.pm-chip-display{background:color-mix(in srgb,var(--blue,#3b82f6) 12%,transparent);
+  color:var(--blue,#3b82f6);border-color:color-mix(in srgb,var(--blue) 30%,transparent)}
+.pm-chip-candidate{background:color-mix(in srgb,var(--warn,#f59e0b) 12%,transparent);
+  color:var(--warn,#f59e0b);border-color:color-mix(in srgb,var(--warn) 30%,transparent)}
+.pm-chip-structural{background:color-mix(in srgb,var(--text,#e2e8f0) 8%,transparent);
+  color:var(--text,#e2e8f0);border-color:color-mix(in srgb,var(--text) 20%,transparent)}
+.pm-truth-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%}
+.pm-truth-table{width:100%;min-width:600px;border-collapse:collapse;font-size:.8rem}
+.pm-truth-table th{text-align:left;padding:8px 12px;font-size:.72rem;font-weight:700;
+  color:var(--muted,#8899aa);border-bottom:1px solid var(--border,rgba(255,255,255,.08));
+  text-transform:uppercase;letter-spacing:.08em}
+.pm-truth-table td{padding:8px 12px;border-bottom:1px solid var(--border,rgba(255,255,255,.04));
+  vertical-align:top;line-height:1.4}
+.pm-truth-table tr:last-child td{border-bottom:none}
+.pm-truth-id{font-family:monospace;font-size:.75rem;font-weight:700;white-space:nowrap;
+  color:var(--text,#e2e8f0)}
+.pm-stmt{font-size:.78rem;color:var(--text,#e2e8f0);line-height:1.4;max-width:400px}
+.pm-status-null{color:var(--muted,#8899aa);font-size:.72rem;font-weight:700}
+.pm-status-display{color:var(--blue,#3b82f6);font-size:.72rem;font-weight:700}
+.pm-status-candidate{color:var(--warn,#f59e0b);font-size:.72rem;font-weight:700}
+.pm-status-other{color:var(--text,#e2e8f0);font-size:.72rem;font-weight:700}
+.pm-meta{font-size:.7rem;color:var(--muted,#8899aa)}
+
+/* ── Hub v2: Null Library ───────────────────────────────────────────────── */
+.nl-wrap{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:16px;margin-top:8px}
+.nl-card{border:1px solid color-mix(in srgb,var(--muted,#8899aa) 20%,transparent);
+  border-radius:10px;padding:16px;
+  background:color-mix(in srgb,var(--muted,#8899aa) 5%,transparent)}
+.nl-card-hd{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.nl-card-id{font-family:monospace;font-size:.75rem;font-weight:700;color:var(--muted,#8899aa)}
+.nl-ruled-badge{font-size:.68rem;font-weight:700;letter-spacing:.05em;padding:2px 7px;
+  border-radius:4px;
+  background:color-mix(in srgb,var(--muted,#8899aa) 12%,transparent);
+  color:var(--muted,#8899aa);
+  border:1px solid color-mix(in srgb,var(--muted) 25%,transparent)}
+.nl-stmt{font-size:.8rem;color:var(--text,#e2e8f0);line-height:1.5;margin-bottom:10px}
+.nl-ci{font-size:.75rem;color:var(--muted,#8899aa);margin-bottom:10px;line-height:1.4}
+.nl-refs-label{font-size:.68rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--muted,#8899aa);margin-bottom:4px}
+.nl-refs-list{list-style:none;padding:0;margin:0}
+.nl-refs-list li{font-family:monospace;font-size:.7rem;color:var(--muted,#8899aa);
+  padding:2px 0;word-break:break-all;line-height:1.4}
+.nl-due{font-size:.68rem;color:var(--muted,#8899aa);margin-top:8px}
+@media(max-width:600px){
+  .nl-wrap{grid-template-columns:1fr}
+}
+
+/* ── Hub v2: Accrual Clocks ─────────────────────────────────────────────── */
+.ac-note{font-size:.82rem;color:var(--muted,#8899aa);max-width:720px;margin:0 0 16px;line-height:1.6}
+.ac-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%}
+.ac-table{width:100%;min-width:640px;border-collapse:collapse;font-size:.8rem}
+.ac-table th{text-align:left;padding:8px 12px;font-size:.72rem;font-weight:700;
+  color:var(--muted,#8899aa);border-bottom:1px solid var(--border,rgba(255,255,255,.08));
+  text-transform:uppercase;letter-spacing:.08em}
+.ac-table td{padding:9px 12px;border-bottom:1px solid var(--border,rgba(255,255,255,.04));
+  color:var(--text,#e2e8f0);vertical-align:top;line-height:1.4}
+.ac-table tr:last-child td{border-bottom:none}
+.ac-ledger-name{font-size:.82rem;font-weight:600;color:var(--text,#e2e8f0)}
+.ac-ledger-sub{font-size:.7rem;color:var(--muted,#8899aa);margin-top:2px}
+.ac-num{font-family:monospace;font-size:.82rem;font-weight:700;color:var(--text,#e2e8f0)}
+.ac-na{color:var(--muted,#8899aa);font-size:.82rem}
+.ac-proj{font-family:monospace;font-size:.82rem;font-weight:700}
+.ac-proj-future{color:var(--blue,#3b82f6)}
+.ac-proj-done{color:var(--up,#22c55e)}
+.ac-proj-none{color:var(--muted,#8899aa)}
 </style>
 </head>
 <body>
@@ -757,6 +833,197 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
       {% endif %}
     </div>
     {% endif %}
+  </section>
+  {% endif %}
+
+  {# ── PATTERN MEMORY v0 — TRUTH LEDGER (Hub v2) ───────────────────────── #}
+  <section class="mh-section" id="pm-section">
+    <div class="mh-sh">
+      <h2><span class="l-en">Pattern Memory v0 — What Cycle Has Learned</span><span class="l-zh">模式记忆 v0 — 周期已发现的规律</span></h2>
+      <span class="mh-sh-sub"><span class="l-en">Adjudicated findings — append-only registry, PIT-pure</span><span class="l-zh">已裁定发现 — 追加式注册表，时点纯净</span></span>
+    </div>
+    <p style="font-size:.82rem;color:var(--muted,#8899aa);max-width:700px;margin:0 0 16px;line-height:1.6">
+      <span class="l-en">Each row is an adjudicated finding stored in <code>data/cycle_pattern/truths.jsonl</code>.
+      <strong>Null findings are guardrails</strong>: they rule out approaches that have been tried and found to carry no edge,
+      so they should not be rebuilt. Displaying them prominently is the honesty contract.</span>
+      <span class="l-zh">每一行均为存储于 <code>data/cycle_pattern/truths.jsonl</code> 的已裁定发现。
+      <strong>零效应发现是护栏</strong>：它们排除了已尝试且无优势的路径，不应被重建。
+      将其显著呈现正是诚实契约的体现。</span>
+    </p>
+
+    {% if truth_ledger and truth_ledger.get('available') %}
+
+    {# Status summary chips #}
+    <div class="pm-status-row">
+      {% for status, count in (truth_ledger.get('status_counts', {})|dictsort) %}
+      <div class="pm-status-chip pm-chip-{{ status }}">
+        {{ status }}: {{ count }}
+      </div>
+      {% endfor %}
+      <div class="pm-status-chip pm-chip-structural" style="font-weight:400;background:none;border:none;padding-left:0">
+        <span class="l-en">{{ truth_ledger.get('total', 0) }} active total</span><span class="l-zh">共 {{ truth_ledger.get('total', 0) }} 条有效</span>
+      </div>
+    </div>
+
+    {# Truth table #}
+    <div class="pm-truth-wrap">
+    <table class="pm-truth-table">
+      <thead>
+        <tr>
+          <th><span class="l-en">ID</span><span class="l-zh">编号</span></th>
+          <th><span class="l-en">Statement</span><span class="l-zh">陈述</span></th>
+          <th><span class="l-en">Status</span><span class="l-zh">状态</span></th>
+          <th><span class="l-en">Effect class</span><span class="l-zh">效应类别</span></th>
+          <th><span class="l-en">PIT class</span><span class="l-zh">PIT类别</span></th>
+          <th><span class="l-en">Next review</span><span class="l-zh">下次复查</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in truth_ledger.get('rows', []) %}
+        <tr>
+          <td class="pm-truth-id">{{ row.truth_id }}</td>
+          <td class="pm-stmt">{{ row.statement }}</td>
+          <td>
+            {% if row.status == 'promoted_null' %}
+            <span class="pm-status-null">NULL</span>
+            {% elif row.status == 'display' %}
+            <span class="pm-status-display">DISPLAY</span>
+            {% elif row.status == 'candidate' %}
+            <span class="pm-status-candidate">CANDIDATE</span>
+            {% else %}
+            <span class="pm-status-other">{{ row.status | upper }}</span>
+            {% endif %}
+          </td>
+          <td class="pm-meta">{{ row.effect_class }}</td>
+          <td class="pm-meta">{{ row.pit_class }}</td>
+          <td class="pm-meta">{{ row.next_review_due or '—' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    </div>{# end .pm-truth-wrap #}
+
+    {% else %}
+    <div class="pm-unavail">
+      <span class="l-en">Pattern Memory not yet built — <code>data/cycle_pattern/truths.jsonl</code> is absent.</span>
+      <span class="l-zh">模式记忆尚未构建 — <code>data/cycle_pattern/truths.jsonl</code> 文件不存在。</span>
+    </div>
+    {% endif %}
+  </section>
+
+  {# ── NULL LIBRARY (Hub v2) ────────────────────────────────────────────── #}
+  {% if truth_ledger and truth_ledger.get('available') and truth_ledger.get('null_library') %}
+  <section class="mh-section" id="nl-section">
+    <div class="mh-sh">
+      <h2><span class="l-en">Null Library — Ruled Out</span><span class="l-zh">零效应库 — 已排除</span></h2>
+      <span class="mh-sh-sub"><span class="l-en">Do not rebuild these — each carries evidence that the approach carries no edge</span><span class="l-zh">请勿重建以下条目 — 均有证据表明该路径无优势</span></span>
+    </div>
+    <p style="font-size:.82rem;color:var(--muted,#8899aa);max-width:700px;margin:0 0 16px;line-height:1.6">
+      <span class="l-en">These findings reached <code>promoted_null</code> status because the evidence — at the sample sizes and horizons listed — ruled out an edge.
+      The evidence file paths below are citations, not promises. A null holds until the falsifier conditions in the truth record are met.</span>
+      <span class="l-zh">以下发现已达到 <code>promoted_null</code> 状态，因为在所列样本量与时间窗口下，证据排除了优势的存在。
+      下方文件路径为引用，非承诺。零效应结论在其真值记录中的证伪条件成立前持续有效。</span>
+    </p>
+    <div class="nl-wrap">
+      {% for entry in truth_ledger.get('null_library', []) %}
+      <div class="nl-card">
+        <div class="nl-card-hd">
+          <span class="nl-card-id">{{ entry.truth_id }}</span>
+          <span class="nl-ruled-badge"><span class="l-en">RULED OUT</span><span class="l-zh">已排除</span></span>
+        </div>
+        <div class="nl-stmt">{{ entry.statement }}</div>
+        {% if entry.ci_summary %}
+        <div class="nl-ci">{{ entry.ci_summary }}</div>
+        {% endif %}
+        <div class="nl-refs-label"><span class="l-en">Evidence</span><span class="l-zh">证据</span></div>
+        <ul class="nl-refs-list">
+          {% for ref in entry.evidence_refs %}
+          <li>{{ ref }}</li>
+          {% endfor %}
+        </ul>
+        {% if entry.next_review_due %}
+        <div class="nl-due">
+          <span class="l-en">Review due:</span><span class="l-zh">复查日期：</span> {{ entry.next_review_due }}
+        </div>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  {# ── LIVE MATURITY & ACCRUAL CLOCKS (Hub v2) ─────────────────────────── #}
+  {% if accrual_clocks %}
+  <section class="mh-section" id="ac-section">
+    <div class="mh-sh">
+      <h2><span class="l-en">Live Maturity &amp; Accrual Clocks</span><span class="l-zh">实盘成熟度与积累时钟</span></h2>
+      <span class="mh-sh-sub"><span class="l-en">When will each ledger reach 40 unique stamp dates?</span><span class="l-zh">各台账何时达到40个唯一时间戳？</span></span>
+    </div>
+    <p class="ac-note">
+      <span class="l-en">These are accrual clocks, not promises. The projected date to 40 unique stamps is a mechanical extrapolation
+      of the observed cadence — it assumes the ledger continues filling at the same pace, which may not hold.
+      40 unique stamp dates is the minimum for the live cohort maturity gate (n_eff threshold for meaningful
+      turn P/R). No edge is implied by reaching this milestone; it only means the gate can be re-evaluated.</span>
+      <span class="l-zh">这些是积累时钟，非承诺。达到40个唯一时间戳的预测日期，是对观测节奏的机械外推——假设台账以相同速度持续填充，
+      实际情况可能并非如此。40个唯一时间戳是实盘队列成熟度门槛的最低要求（拐点精准率/召回率的有效n阈值）。
+      达到此里程碑并不意味着存在优势；仅意味着该门槛可以重新评估。</span>
+    </p>
+    <div class="ac-table-wrap">
+    <table class="ac-table">
+      <thead>
+        <tr>
+          <th><span class="l-en">Ledger</span><span class="l-zh">台账</span></th>
+          <th><span class="l-en">Rows</span><span class="l-zh">行数</span></th>
+          <th><span class="l-en">IDs</span><span class="l-zh">标的数</span></th>
+          <th><span class="l-en">Stamp dates</span><span class="l-zh">时间戳数</span></th>
+          <th><span class="l-en">First / Last</span><span class="l-zh">首/末日期</span></th>
+          <th><span class="l-en">Cadence</span><span class="l-zh">节奏</span></th>
+          <th><span class="l-en">→ 40 stamps</span><span class="l-zh">→ 40时间戳</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for cl in accrual_clocks %}
+        <tr>
+          <td>
+            <div class="ac-ledger-name">
+              <span class="l-en">{{ cl.label_en }}</span><span class="l-zh">{{ cl.label_zh }}</span>
+            </div>
+          </td>
+          {% if cl.get('available') %}
+          <td class="ac-num">{{ cl.n_rows }}</td>
+          <td class="ac-num">{{ cl.unique_ids }}</td>
+          <td class="ac-num">{{ cl.unique_dates }}</td>
+          <td style="font-family:monospace;font-size:.78rem;color:var(--muted,#8899aa)">
+            {{ cl.first_date or '—' }}<br>{{ cl.last_date or '—' }}
+          </td>
+          <td class="ac-num">
+            {% if cl.cadence_days is not none %}
+            {{ cl.cadence_days }}d
+            {% else %}
+            <span class="ac-na">—</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if cl.unique_dates >= 40 %}
+            <span class="ac-proj ac-proj-done">
+              <span class="l-en">Reached ({{ cl.unique_dates }})</span><span class="l-zh">已达到（{{ cl.unique_dates }}）</span>
+            </span>
+            {% elif cl.target_40_date %}
+            <span class="ac-proj ac-proj-future">{{ cl.target_40_date }}</span>
+            {% else %}
+            <span class="ac-proj ac-proj-none">—</span>
+            {% endif %}
+          </td>
+          {% else %}
+          <td colspan="6" class="ac-na">
+            <span class="l-en">Ledger not found</span><span class="l-zh">台账未找到</span>
+          </td>
+          {% endif %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    </div>{# end .ac-table-wrap #}
   </section>
   {% endif %}
 
