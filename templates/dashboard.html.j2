@@ -2185,8 +2185,11 @@
   {# ===================== SELECTION REGIME CHIP — L3 dispersion lens (macro mode only, NW Rails W2 PR-4) =====================
      Display-only, display-only, display-only: gross_mult_live is permanently 1.0 per §5 hard constraint.
      Reads from the standalone data/dispersion/regime.json artifact (build_dispersion_regime).
-     EN/ZH bilingual; no translated text in title= attributes (CI law). #}
-  {% if mode != 'stocks' and dispersion_regime and dispersion_regime.state %}
+     EN/ZH bilingual; no translated text in title= attributes (CI law).
+     HIDDEN 2026-07-06 (UI feedback): in its slot the chip wraps into a tall,
+     skinny column and reads as orphaned between Sector Heat and Sentiment regime.
+     Data artifact (regime.json) still builds; drop the `false and` below to restore. #}
+  {% if false and mode != 'stocks' and dispersion_regime and dispersion_regime.state %}
   {% set _dr_mac = dispersion_regime %}
   <div class="nb-disp disp-{{ _dr_mac.state }}" id="selection-regime-chip"
        data-tip-en="Selection regime — cross-sectional dispersion lens (L3, NW Rails). When names fan out (high dispersion / low pairwise correlation) stock-selection historically earns more; a macro-driven tape (low dispersion / high correlation) mutes it. DISPLAY-ONLY: gross_mult_live=1.0 — this chip does NOT move any score, gate, or sizing. Shadow tilt ×{{ _dr_mac.shadow_gross_mult }} is a hand-picked prior with no measured edge (US_BOARD_MEASUREMENT §Study 3). Dispersion pctile {{ _dr_mac.dispersion_pctile }} · avg pairwise corr {{ _dr_mac.avg_corr }}. DISP-GATE-1 shadow study pre-registered in research/dispersion/L3_PREREG.md."
