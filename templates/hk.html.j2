@@ -679,6 +679,47 @@
         <a href="hk.html" style="color:var(--link);font-weight:600;margin-left:6px">← {{ t('HK macro dashboard', '香港宏观看板') }}</a></div>
     </div>
   </div>
+
+  <!-- ===================== WHAT TO ACT ON NOW (sector entry-timing board) ===================== -->
+  {% if actions and (actions.buy_now or actions.buy_soon or actions.get('on_the_run') or actions.take_profits or actions.hold or actions.avoid) %}
+  <style>
+  .act-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+  .act-col { background: var(--panel2); border: 1px solid var(--line); border-radius: 9px; padding: 9px 11px; }
+  .act-col h3 { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; margin: 0 0 6px; }
+  .act-item { font-size: 12.5px; padding: 3px 0; border-bottom: 1px solid var(--line); }
+  .act-item:last-child { border-bottom: none; }
+  .act-item .an { font-weight: 600; color: var(--text); }
+  .act-item .at { font-size: 10.5px; color: var(--muted); }
+  .act-now h3 { color: var(--up); } .act-soon h3 { color: var(--info); }
+  .act-run h3 { color: #8b5cf6; }   /* neutral violet — NOT green/buy */
+  .act-tp h3 { color: var(--warn); } .act-avoid h3 { color: var(--down); } .act-hold h3 { color: var(--muted); }
+  </style>
+  <div class="panel span12" id="act-now">
+    <h2>⚡ {{ t('What to act on now — sectors', '当前可操作 — 板块') }}
+      {{ help("The HK sector groups bucketed by the cycle ladder’s entry-timing call — the same engine as the US action board. A structure / risk map, not an allocation rule: ON THE RUN = in favour but extended (do not chase; add on a pullback); the reduce side (take profits / avoid) is the risk read. HK has no validated single-stock edge — this is sector positioning.", "香港板块按周期阶梯的入场时机分桶 — 与美国操作板同一引擎。这是结构／风险图，而非配置规则：顺势运行 = 看好但已延伸（勿追高；回调加仓）；减仓侧（止盈／回避）是风险判读。香港无经验证的个股优势 — 这是板块定位。") }}
+    </h2>
+    <div class="act-grid">
+      {% macro sactcol(cls, title_en, title_zh, items) %}
+      {% if items %}
+      <div class="act-col {{ cls }}">
+        <h3>{{ t(title_en, title_zh) }} · {{ items|length }}</h3>
+        {% for it in items %}
+        <div class="act-item"><a class="an" href="sectors/{{ it.ticker }}.html">{{ td(it.name) }}</a>
+          <div class="at">{{ td(it.label) }}{% if it.days is not none %} · ~{{ it.days }}{{ t('d', '天') }}{% endif %}</div>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+      {% endmacro %}
+      {{ sactcol('act-now', 'Buy zone', '买入区', actions.buy_now) }}
+      {{ sactcol('act-soon', 'Setting up', '即将到位', actions.buy_soon) }}
+      {{ sactcol('act-run', "ON THE RUN — don't chase", '顺势运行 — 勿追高', actions.get('on_the_run', [])) }}
+      {{ sactcol('act-tp', 'Take profits', '止盈', actions.take_profits) }}
+      {{ sactcol('act-hold', 'Hold', '持有', actions.hold) }}
+      {{ sactcol('act-avoid', 'Avoid', '回避', actions.avoid) }}
+    </div>
+  </div>
+  {% endif %}
   {% endif %}
 
   <!-- ===================== STANDOUT STOCKS (relative-strength cards) ===================== -->

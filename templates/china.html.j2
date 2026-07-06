@@ -523,6 +523,35 @@
     <p class="note" style="margin:8px 0 0;text-transform:none">{{ t('A-share entry watchlist: washed-out names with a fresh 3D/2D turn. Rank means buy-readiness, not advice.', 'A股入场观察表：洗盘后出现3日/2日新转向的个股。排序表示买入就绪度，非建议。') }}
       <a href="china.html" style="color:var(--link);font-weight:600">← {{ t('China macro dashboard', '中国宏观看板') }}</a></p>
   </div>
+
+  <!-- ===================== WHAT TO ACT ON NOW (sector entry-timing board) ===================== -->
+  {% if actions and (actions.buy_now or actions.buy_soon or actions.get('on_the_run') or actions.take_profits or actions.hold or actions.avoid) %}
+  <div class="panel span12" id="act-now">
+    <h2>⚡ {{ t('What to act on now — sectors', '当前可操作 — 板块') }}
+      {{ help("The A-share sector ETFs bucketed by the cycle ladder’s entry-timing call — the same engine as the US action board. A structure / risk map, not an allocation rule: ON THE RUN = in favour but extended (do not chase; add on a pullback); the reduce side (take profits / avoid) is the risk read. Click any sector for its full breakdown.", "A股板块 ETF 按周期阶梯的入场时机分桶 — 与美国操作板同一引擎。这是结构／风险图，而非配置规则：顺势运行 = 看好但已延伸（勿追高；回调加仓）；减仓侧（止盈／回避）是风险判读。点击任意板块查看完整拆解。") }}
+    </h2>
+    <div class="act-grid">
+      {% macro sactcol(cls, title_en, title_zh, items) %}
+      {% if items %}
+      <div class="act-col {{ cls }}">
+        <h3>{{ t(title_en, title_zh) }} · {{ items|length }}</h3>
+        {% for it in items %}
+        <div class="act-item"><a class="an" href="sectors/{{ it.ticker }}.html">{{ td(it.name) }}</a>
+          <div class="at">{{ td(it.label) }}{% if it.days is not none %} · ~{{ it.days }}{{ t('d', '天') }}{% endif %}</div>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+      {% endmacro %}
+      {{ sactcol('act-now', 'Buy zone', '买入区', actions.buy_now) }}
+      {{ sactcol('act-soon', 'Setting up', '即将到位', actions.buy_soon) }}
+      {{ sactcol('act-run', "ON THE RUN — don't chase", '顺势运行 — 勿追高', actions.get('on_the_run', [])) }}
+      {{ sactcol('act-tp', 'Take profits', '止盈', actions.take_profits) }}
+      {{ sactcol('act-hold', 'Hold', '持有', actions.hold) }}
+      {{ sactcol('act-avoid', 'Avoid', '回避', actions.avoid) }}
+    </div>
+  </div>
+  {% endif %}
   {% endif %}
 
   {% if mode != 'stocks' %}

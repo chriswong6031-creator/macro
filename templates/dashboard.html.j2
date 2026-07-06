@@ -305,7 +305,8 @@
   .ew-chip.ew-gate { border-color: var(--up); color: var(--up); font-weight: 700; }
   .acth { font-size: 11.5px; font-weight: 700; letter-spacing: .03em; margin-bottom: 7px; }
   .actitem { display: flex; align-items: center; gap: 6px; padding: 5px 0;
-             border-bottom: 1px solid var(--line); font-size: 13px; min-width: 0; }
+             border-bottom: 1px solid var(--line); font-size: 13px; min-width: 0;
+             flex-wrap: wrap; row-gap: 3px; }
   .actitem:last-child { border-bottom: none; }
   .actitem b { color: var(--text); }
   .acttag { margin-left: auto; font-size: 10.5px; color: var(--muted); }
@@ -317,7 +318,9 @@
             background: color-mix(in srgb, var(--g-cold) 16%, transparent);
             padding: 1px 7px; border-radius: 9px; }
   /* unified board: narrative-basket vs GICS-sector items + honesty markers */
-  .actitem b { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* name keeps a readable floor; metadata chips wrap to a second line rather than
+     squeezing the name to "Fi…" in the crowded run/take-profit lanes (5-col grid) */
+  .actitem b { min-width: 6em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .ai-bdg { font-size: 11px; flex: none; opacity: .9; cursor: help; }
   .actitem.ai-theme b { font-weight: 800; flex: 1 1 auto; }   /* name fills; markers pushed right */
   .ai-book { flex: none; margin-left: 6px; font-size: 9.5px; font-weight: 800; cursor: help;
