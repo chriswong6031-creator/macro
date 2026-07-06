@@ -144,7 +144,9 @@ _OTHER = "other"
 #   attachment (专项说明/核查意见) > reply (回函/回复/答复) > letter (exchange-issued, default)
 # kind is None for all non-inquiry_letter categories.
 _KIND_ATTACHMENT_KW = ("专项说明", "核查意见", "专项核查意见")
-_KIND_REPLY_KW = ("回函", "回复", "答复")
+# 复函 (formal reply letter) added: confirmed in 4 live inquiry.parquet rows
+# e.g. "股票交易异常波动问询函的复函-郁敏珺". 答复 kept (deliberate superset ruling).
+_KIND_REPLY_KW = ("回函", "回复", "答复", "复函")
 
 
 def classify_kind(title: str) -> str | None:

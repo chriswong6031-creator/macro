@@ -17,6 +17,14 @@ Rules:
 
 Unlock ratio note: 占解禁前流通市值比例 is a FRACTION (1.0 = 100%). Engine stores
 float_pct = ratio * 100 so that float_pct=5.0 means 5% of pre-unlock float.
+
+Data freshness / ordering dependency:
+    data/china_filings/filings.parquet is written by the asia-lane collect step
+    (collectors/china_filings.py) that runs BEFORE this engine is invoked by
+    build_china_special_situations.py. There is NO in-build refresh of china_filings
+    — the collector is network-bound and belongs in the collect phase only.
+    Running this engine standalone reads whatever filings.parquet was last committed
+    by the collector; the asof/status chip surfaces staleness honestly.
 """
 from __future__ import annotations
 
@@ -265,62 +273,153 @@ def _unlock_block() -> dict | None:
 def _inquiry_block() -> dict | None:
     """Last-14d exchange-issued letters (kind=letter), newest first + reply status.
 
+    Source: data/china_filings/filings.parquet (category=='inquiry_letter').
+    The `kind` column distinguishes letter/reply/attachment within this family
+    (same semantics as the legacy china_inquiry collector).
+
     Returns a list of letter dicts WITHOUT a 'kind' key — the list is
     already letters-only by construction (kind='letter' filtered here).
+
+    Claim-key contract (register_claims): event_key = f"inq_{secCode}_{date[:10]}".
+    The output dict exposes `secCode` and `date` (YYYY-MM-DD) so that contract
+    is preserved identically across the source switch.
+
+    Fallback: when filings.parquet is absent but the legacy china_inquiry/inquiry.parquet
+    still exists, reads from the legacy store. Logs a debug note.
     """
-    path = _data_dir() / "china_inquiry" / "inquiry.parquet"
-    asof, status = _asof_status(path)
+    filings_path = _data_dir() / "china_filings" / "filings.parquet"
+    legacy_path  = _data_dir() / "china_inquiry"  / "inquiry.parquet"
+
+    # Prefer filings.parquet; fall back to legacy on missing filings
+    if filings_path.exists():
+        path = filings_path
+        source = "filings"
+    else:
+        path = legacy_path
+        source = "legacy"
+        log.debug("china_special_sits: filings.parquet absent; falling back to legacy inquiry.parquet")
+
+    # --- asof derivation ---
+    # filings.parquet has no 'asof' column; derive from publish_ts or _collected_at.
+    # legacy inquiry.parquet has an 'asof' column — _asof_status() handles it directly.
+    if not path.exists():
+        return {"asof": None, "status": "missing", "letters": [], "n_letters": 0, "n_replies": 0}
+
+    if source == "filings":
+        try:
+            _peek = pd.read_parquet(path, columns=["_collected_at"])
+            _asof_raw = str(_peek["_collected_at"].max())[:10]
+            today = date.today().isoformat()
+            _age = (date.fromisoformat(today) - date.fromisoformat(_asof_raw)).days
+            asof = _asof_raw
+            status = "ok" if _age <= 2 else "stale"
+        except Exception:  # noqa: BLE001
+            asof, status = None, "missing"
+    else:
+        asof, status = _asof_status(path)
+
     try:
-        if not path.exists():
-            return {"asof": None, "status": "missing", "letters": [], "n_letters": 0, "n_replies": 0}
-        df = pd.read_parquet(path)
-        if df.empty:
-            return {"asof": asof, "status": status, "letters": [], "n_letters": 0, "n_replies": 0}
+        if source == "filings":
+            df_raw = pd.read_parquet(path)
+            # Narrow to inquiry_letter family only
+            if "category" in df_raw.columns:
+                df_raw = df_raw[df_raw["category"] == "inquiry_letter"].copy()
+            else:
+                df_raw = df_raw.copy()
 
-        # Filter to last 14 days
-        cutoff = (date.today() - timedelta(days=14)).isoformat()
-        if "announcementTime" in df.columns:
-            df_filt = df[df["announcementTime"].fillna("") >= cutoff].copy()
-        else:
-            df_filt = df.copy()
+            if df_raw.empty:
+                return {"asof": asof, "status": status, "letters": [], "n_letters": 0, "n_replies": 0}
 
-        # Build reply lookup: secCode → True if there's a reply in the window
-        replies = set(df_filt[df_filt["kind"] == "reply"]["secCode"].dropna().tolist())
+            # Normalise: translate filings column names → legacy field names
+            # publish_ts (ISO8601 string with tz) → date string YYYY-MM-DD
+            df_raw["_date_str"] = df_raw["publish_ts"].fillna("").apply(
+                lambda v: str(v)[:10] if v else ""
+            )
+            # cutoff: last 14 days
+            cutoff = (date.today() - timedelta(days=14)).isoformat()
+            df_filt = df_raw[df_raw["_date_str"].fillna("") >= cutoff].copy()
 
-        # Exclude attachments (kind='attachment') and replies — letters only
-        letters = df_filt[df_filt["kind"] == "letter"].sort_values(
-            "announcementTime", ascending=False, na_position="last"
-        )
+            # Build reply lookup: sec_code → True if there's a reply in the window
+            replies = set(df_filt[df_filt["kind"] == "reply"]["sec_code"].dropna().tolist())
 
-        rows = []
-        for _, r in letters.head(_MAX_ROWS).iterrows():
-            letter_date = str(r.get("announcementTime") or "")
-            letter: dict = {
-                "secCode":    str(r.get("secCode") or ""),
-                "secName":    str(r.get("secName") or ""),
-                "title":      str(r.get("announcementTitle") or ""),
-                "date":       letter_date,
-                "pdf_url":    str(r.get("adjunctUrl") or ""),
-                "has_reply":  str(r.get("secCode") or "") in replies,
-                "type_name":  str(r.get("announcementTypeName") or ""),
-                # Note: no 'kind' key — list is letters-only; register_claims must not filter on kind
+            # Letters only
+            letters = df_filt[df_filt["kind"] == "letter"].sort_values(
+                "_date_str", ascending=False, na_position="last"
+            )
+
+            rows = []
+            for _, r in letters.head(_MAX_ROWS).iterrows():
+                letter_date = str(r.get("_date_str") or "")
+                # secCode for claim-key: filings uses sec_code
+                sec_code_val = str(r.get("sec_code") or "")
+                letter: dict = {
+                    "secCode":   sec_code_val,
+                    "secName":   str(r.get("sec_name") or ""),
+                    "title":     str(r.get("title") or ""),
+                    "date":      letter_date,
+                    "pdf_url":   str(r.get("adjunct_url") or ""),
+                    "has_reply": sec_code_val in replies,
+                    "type_name": str(r.get("announcement_type_raw") or ""),
+                    # Note: no 'kind' key — list is letters-only; register_claims must not filter on kind
+                }
+                if letter_date:
+                    chip = _regime_chip_for_date(letter_date[:10])
+                    if chip:
+                        letter["regime_chip"] = chip
+                rows.append(letter)
+
+            n_replies = int(len(df_filt[df_filt["kind"] == "reply"]))
+            return {
+                "asof": asof, "status": status,
+                "letters": rows,
+                "n_letters": int(len(letters)),
+                "n_replies": n_replies,
             }
-            # Cycle-context chip (W5): stamp regime quad/liquidity/cycle at letter date.
-            # Muted/descriptive only — no directional language.
-            if letter_date:
-                chip = _regime_chip_for_date(letter_date[:10])
-                if chip:
-                    letter["regime_chip"] = chip
-            rows.append(letter)
 
-        return {
-            "asof": asof, "status": status,
-            "letters": rows,
-            "n_letters": len(letters),
-            "n_replies": len(df_filt[df_filt["kind"] == "reply"]),
-        }
+        else:
+            # Legacy path (inquiry.parquet)
+            df = pd.read_parquet(path)
+            if df.empty:
+                return {"asof": asof, "status": status, "letters": [], "n_letters": 0, "n_replies": 0}
+
+            cutoff = (date.today() - timedelta(days=14)).isoformat()
+            if "announcementTime" in df.columns:
+                df_filt = df[df["announcementTime"].fillna("") >= cutoff].copy()
+            else:
+                df_filt = df.copy()
+
+            replies = set(df_filt[df_filt["kind"] == "reply"]["secCode"].dropna().tolist())
+            letters = df_filt[df_filt["kind"] == "letter"].sort_values(
+                "announcementTime", ascending=False, na_position="last"
+            )
+
+            rows = []
+            for _, r in letters.head(_MAX_ROWS).iterrows():
+                letter_date = str(r.get("announcementTime") or "")
+                letter: dict = {
+                    "secCode":   str(r.get("secCode") or ""),
+                    "secName":   str(r.get("secName") or ""),
+                    "title":     str(r.get("announcementTitle") or ""),
+                    "date":      letter_date,
+                    "pdf_url":   str(r.get("adjunctUrl") or ""),
+                    "has_reply": str(r.get("secCode") or "") in replies,
+                    "type_name": str(r.get("announcementTypeName") or ""),
+                    # Note: no 'kind' key — list is letters-only
+                }
+                if letter_date:
+                    chip = _regime_chip_for_date(letter_date[:10])
+                    if chip:
+                        letter["regime_chip"] = chip
+                rows.append(letter)
+
+            return {
+                "asof": asof, "status": status,
+                "letters": rows,
+                "n_letters": len(letters),
+                "n_replies": len(df_filt[df_filt["kind"] == "reply"]),
+            }
     except Exception as e:  # noqa: BLE001
-        log.warning("china_special_sits: inquiry block failed (%s)", e)
+        log.warning("china_special_sits: inquiry block failed (source=%s, %s)", source, e)
         return None
 
 
@@ -667,6 +766,60 @@ def scan() -> dict:
     }
 
 
+# Cutoff for legacy UTC-basis sidecar keys.
+# The legacy collector (collectors/china_inquiry.py) was retired in this PR; its nightly
+# dispatch is removed. Sidecar keys written on or before this date may carry UTC-basis
+# dates that lag CST by one day. After this date, only canonical CST keys are written.
+# The ±1 day variant checks in register_claims are scoped to rows whose canonical event
+# date is <= this cutoff (transition-era rows only) — applying them to post-cutoff dates
+# would cause over-suppression for genuinely distinct letters from the same company on
+# consecutive days (e.g., letter A on date D already registered; distinct letter B with
+# canonical date D+1 would check {D+1, D, D+2}, hit A's key D, and be wrongly suppressed).
+_LEGACY_UTC_KEY_CUTOFF = "2026-07-06"
+
+
+def _cst_claim_keys(sec_code: str, date_str: str) -> tuple[str, str, str]:
+    """Return (canonical_key, utc_variant_key, cst_plus1_key) for an inquiry claim.
+
+    Canonical key: the claim key derived from date_str as given (for the filings plane
+    this is already the CST date; for a legacy-path snap the stored date is a UTC date).
+
+    utc_variant_key: canonical_key with date − 1 day.
+        Rationale: the filings plane stores publish_ts in Asia/Shanghai; publish_ts[:10]
+        is the CST date (D). The legacy collector stored UTC-basis dates; for events at
+        00:00–08:00 CST (prior UTC day), the legacy date was D−1. Checking utc_variant_key
+        ensures that a claim registered from the filings path (canonical=D) blocks
+        re-registration from the legacy path (which arrives with date D−1 → its
+        canonical_key would be inq_{code}_{D-1}).
+
+    cst_plus1_key: canonical_key with date + 1 day.
+        Rationale (reverse direction): when the legacy source arrives first with date=D−1
+        (UTC date), and the filings source has already written canonical=D to the sidecar,
+        the legacy processing sees date=D−1 → canonical=D−1, utc_variant=D−2.  Neither
+        matches D in the sidecar. The fix: also check D−1+1 = D (the CST "next day"
+        candidate for a UTC-dated row). Legacy UTC date can lag CST by one day, never
+        lead; so checking date+1 as an additional sidecar lookup covers that direction.
+        Document: "legacy UTC date can lag CST by one day, never lead."
+
+    Dedup contract: register_claims checks ALL THREE keys only for transition-era rows
+    (canonical date <= _LEGACY_UTC_KEY_CUTOFF). Post-cutoff rows use canonical key only.
+    Registration always writes the canonical key (the date_str as provided by the snap —
+    already CST for filings).
+    """
+    from datetime import date as _date, timedelta as _td
+    canonical_key = f"inq_{sec_code}_{date_str}"
+    try:
+        d = _date.fromisoformat(date_str)
+        utc_date = (d - _td(days=1)).isoformat()
+        cst_plus1_date = (d + _td(days=1)).isoformat()
+    except Exception:  # noqa: BLE001 — malformed date_str; fall back to same key
+        utc_date = date_str
+        cst_plus1_date = date_str
+    utc_variant_key = f"inq_{sec_code}_{utc_date}"
+    cst_plus1_key = f"inq_{sec_code}_{cst_plus1_date}"
+    return canonical_key, utc_variant_key, cst_plus1_key
+
+
 def register_claims(snap: dict, root: Any = None) -> int:
     """Register salience-only qledger claims for inquiry-letter and large-unlock events.
 
@@ -680,6 +833,15 @@ def register_claims(snap: dict, root: Any = None) -> int:
     sidecar data/china_special_sits/claims_registered.parquet
     (columns: event_key, first_registered).
     event_key: unlock → unlock_{ticker}_{unlock_date}; inquiry → inq_{secCode}_{announce_date}
+
+    Claim-key timezone canonicalization (CST skew fix):
+        The canonical claim key uses the Asia/Shanghai (CST) calendar date of the event.
+        The legacy collector (collectors/china_inquiry.py) stored UTC-basis dates; for
+        events published 00:00–08:00 CST, the legacy UTC date is one day behind the CST
+        date. To prevent double-registration across the source switch, when checking the
+        sidecar this function tests BOTH the canonical CST-basis key AND the legacy
+        UTC-basis key (CST date − 1 day). Registration always writes the canonical key.
+        See _cst_claim_keys() for the derivation.
 
     Entity scope: scope_type='entity', scope_key=<normalized ticker> (mirrors communique_diff.py
     lines ~431-444). Falls back to macro/510300.SS only when ticker normalization fails.
@@ -751,9 +913,23 @@ def register_claims(snap: dict, root: Any = None) -> int:
         if not sec_code:
             continue
         announce_date = str(ltr.get("date") or today)[:10]
-        event_key = f"inq_{sec_code}_{announce_date}"
+        # Canonical key is the date as given; also check date−1 (utc_variant, for
+        # filings-first blocking legacy re-registration) and date+1 (cst_plus1, for
+        # legacy-first blocking filings re-registration). Legacy UTC date can lag
+        # CST by one day, never lead. See _cst_claim_keys() for full derivation.
+        event_key, utc_variant_key, cst_plus1_key = _cst_claim_keys(sec_code, announce_date)
+        # Scope ±1 variant checks to transition-era rows only.
+        # Legacy UTC-basis sidecar keys can only reference event dates <= _LEGACY_UTC_KEY_CUTOFF
+        # (the legacy collector was retired in the PR that introduced that cutoff). Applying
+        # the variant checks beyond the cutoff date would cause over-suppression: a distinct
+        # letter B with canonical date D+1 would check {D+1, D, D+2} and wrongly hit letter
+        # A's key D, silently under-counting the cn_special_sits qledger family.
         if event_key in registered_keys:
-            continue  # already registered on a previous run
+            continue  # already registered (canonical key match)
+        if announce_date <= _LEGACY_UTC_KEY_CUTOFF:
+            # Transition-era row: check ±1 day variants to catch UTC/CST skew
+            if utc_variant_key in registered_keys or cst_plus1_key in registered_keys:
+                continue  # already registered via the other-source date variant
         scope_type, scope_key = _entity_claim("", sec_code)
         try:
             claim_asof = announce_date  # stamp from the event's own date
