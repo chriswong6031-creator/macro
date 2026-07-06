@@ -963,6 +963,20 @@ jobs:
         # Resilient: fail-open; kept last committed context on error; never blocks the commit.
         # Both outputs covered by 'git add data/ site/' in 'commit engine outputs' below.
         run: python -m scripts.build_nw_mastermind_context || echo "::warning::build_nw_mastermind_context failed (non-fatal) — keeping last committed mastermind_context"
+      - name: research_factory_monitor (W6 — paper monitor + nightly ledger)
+        if: always()
+        # Research Factory W6 (RF-8/RF-9/RF-10): paper monitor over all 'paper',
+        # 'awaiting_data', and 'deferred' candidates.  Appends to
+        # data/research_factory/paper_monitor.jsonl (keep-first per candidate_id+as_of),
+        # refreshes data/research_factory/track/<id>.json for the experiments-registry
+        # overlay, and appends a health.v1 row to data/research_factory/health.jsonl.
+        # Emits mechanical paper→human_review and deferred→human_review transitions
+        # (RF-5 A2 attention-routing) to data/research_factory/transitions.jsonl.
+        # Forward-ledger law (RF-8): --write is nightly-only; intraday invocations
+        # must use --dry-run.  All data/research_factory/ writes are covered by
+        # 'git add data/' in 'commit engine outputs' below.
+        # Non-fatal: a failed monitor never kills the nightly build.
+        run: python -m scripts.research_factory_monitor --write || echo "::warning::research_factory_monitor failed (non-fatal)"
       - name: options_flow_attention reflex trigger (W-D — nightly EOD fold)
         if: always()
         # Neural Web W-D (RO-8): direction-free reflex that fires when an on-board

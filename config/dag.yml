@@ -233,6 +233,9 @@ lanes:
       - id: build_nw_mastermind_context
         module: scripts.build_nw_mastermind_context
         note: non-fatal; NW→Mastermind context bridge (macro #1567) — declares the live daily.yml engine step that was added without a dag.yml entry (merge-race drift)
+      - id: research_factory_monitor
+        module: scripts.research_factory_monitor
+        note: non-fatal; Research Factory W6 — paper monitor, regime-aware decay, nightly forward-ledger wiring (RF-8/RF-9/RF-10); data/research_factory/ writes covered by 'git add data/' in commit step
       - id: build_options_flow_attention
         module: scripts.build_options_flow_attention
         note: non-fatal reflex; neural-web W-D — direction-free options-flow attention trigger (nightly EOD fold)
