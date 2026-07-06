@@ -925,6 +925,290 @@ def test_valuation_ev_cells_json_safe():
     assert "NaN" not in s and "Infinity" not in s
 
 
+# ---------------------------------------------------------------------------
+# Tier-1 metrics tests (Panel A: ev_ebitda, fcf_yield_true; Panel B: op_margin,
+# gp_assets, roce, rd_sales; Panel C: current_ratio, quick_ratio)
+# ---------------------------------------------------------------------------
+
+def _tier1_ev_frame():
+    """Extend the _ev_frame() fixture to cover ev_ebitda and fcf_yield_true.
+
+    GOOD: has op_income + depreciation → ebitda computable; FCF = cfo − capex.
+    BANK: Financials sector → ev_ebitda and fcf_yield_true suppressed.
+    NODEP: missing depreciation → ev_ebitda NaN, fcf_yield_true still works.
+    """
+    import pandas as pd
+    base_row = {"ni": 5e9, "equity": 5e10, "revenue": 2e10, "cfo": 8e9,
+                "dividends": 0.0, "repurchases": 1e9}
+    fund = pd.DataFrame.from_dict(
+        {"GOOD": dict(base_row), "BANK": dict(base_row), "NODEP": dict(base_row)},
+        orient="index",
+    )
+    table = {
+        "GOOD": {"mktcap_bn": 100.0, "sector": "Information Technology", "composite": 0.5},
+        "BANK": {"mktcap_bn": 100.0, "sector": "Financials", "composite": 0.4},
+        "NODEP": {"mktcap_bn": 100.0, "sector": "Health Care", "composite": 0.3},
+    }
+    good_stmt = {
+        "op_income": 6e9, "capex": 2e9, "cfo": 8e9, "revenue": 2e10,
+        "debt_lt": 1e10, "debt_cur": 2e9, "cash": 5e9,
+        "depreciation": 1e9,   # ebitda = 6e9 + 1e9 = 7e9; ev_ebitda = 1.07e11 / 7e9
+    }
+    nodep_stmt = {
+        "op_income": 6e9, "capex": 2e9, "cfo": 8e9, "revenue": 2e10,
+        "debt_lt": 1e10, "debt_cur": 2e9, "cash": 5e9,
+        "depreciation": None,   # no D&A → ev_ebitda NaN
+    }
+    statements = {
+        "GOOD":  [dict(good_stmt)],
+        "BANK":  [dict(good_stmt)],
+        "NODEP": [dict(nodep_stmt)],
+    }
+    return fund, table, statements
+
+
+def test_context_frame_ev_ebitda_correct():
+    """ev_ebitda = EV / (op_income + depreciation); numerically correct."""
+    fund, table, statements = _tier1_ev_frame()
+    M = SF._context_frame(fund, table, statements)
+    g = M.loc["GOOD"]
+    # net_debt = 1e10 + 2e9 − 5e9 = 7e9; ev = 1e11 + 7e9 = 1.07e11
+    # ebitda = 6e9 + 1e9 = 7e9; ev_ebitda = 1.07e11 / 7e9 ≈ 15.286
+    expected = 1.07e11 / 7e9
+    assert abs(g["ev_ebitda"] - expected) < 1e-6, g["ev_ebitda"]
+
+
+def test_context_frame_ev_ebitda_no_depreciation():
+    """Missing depreciation → ev_ebitda NaN; ev_ebit still computes."""
+    fund, table, statements = _tier1_ev_frame()
+    M = SF._context_frame(fund, table, statements)
+    nd = M.loc["NODEP"]
+    assert math.isnan(nd["ev_ebitda"]), nd["ev_ebitda"]
+    assert not math.isnan(nd["ev_ebit"]), nd["ev_ebit"]
+
+
+def test_context_frame_ev_ebitda_financial_suppressed():
+    """Financials sector → ev_ebitda NaN (bank balance sheets make it noise)."""
+    fund, table, statements = _tier1_ev_frame()
+    M = SF._context_frame(fund, table, statements)
+    b = M.loc["BANK"]
+    assert math.isnan(b["ev_ebitda"]), b["ev_ebitda"]
+
+
+def test_context_frame_fcf_yield_true_correct():
+    """fcf_yield_true = (cfo − capex) / mktcap × 100; higher-is-better."""
+    fund, table, statements = _tier1_ev_frame()
+    M = SF._context_frame(fund, table, statements)
+    g = M.loc["GOOD"]
+    # fcf = 8e9 − 2e9 = 6e9; mktcap = 1e11; yield = 6e9/1e11 * 100 = 6.0
+    assert abs(g["fcf_yield_true"] - 6.0) < 1e-6, g["fcf_yield_true"]
+
+
+def test_context_frame_fcf_yield_true_financial_suppressed():
+    """Financials sector → fcf_yield_true NaN."""
+    fund, table, statements = _tier1_ev_frame()
+    M = SF._context_frame(fund, table, statements)
+    b = M.loc["BANK"]
+    assert math.isnan(b["fcf_yield_true"]), b["fcf_yield_true"]
+
+
+def test_valuation_ev_ebitda_and_fcf_yield_true_cells():
+    """_valuation() exposes ev_to_ebitda and fcf_yield_true cells; Financials → None."""
+    fund, table, statements = _tier1_ev_frame()
+    M = SF._context_frame(fund, table, statements)
+    good = SF._valuation("GOOD", fund.loc["GOOD"], table["GOOD"], M, None)
+    assert good["ev_to_ebitda"] is not None, "ev_to_ebitda missing for GOOD"
+    assert good["fcf_yield_true"] is not None, "fcf_yield_true missing for GOOD"
+    bank = SF._valuation("BANK", fund.loc["BANK"], table["BANK"], M, None)
+    assert bank["ev_to_ebitda"] is None, "ev_to_ebitda must be None for Financials"
+    assert bank["fcf_yield_true"] is None, "fcf_yield_true must be None for Financials"
+    s = json.dumps(SF._clean({"good": good, "bank": bank}))
+    assert "NaN" not in s and "Infinity" not in s
+
+
+def _mk_fin_row():
+    """Synthetic cross-section fund row for _financials() tests."""
+    import pandas as pd
+    return pd.Series({
+        "revenue": 2e10, "ni": 2e9, "ni_prior": 1.8e9,
+        "equity": 1e10, "cfo": 3e9, "gross_profit": 8e9,
+        "assets": 5e10, "assets_prior": 4.5e10,
+        "debt_lt": 1e10, "shares": 1e9,
+        "dividends": 5e8, "repurchases": 2e8,
+    })
+
+
+def _mk_stmt(**kw):
+    """Synthetic latest statement row for the financials stmt param."""
+    base = {
+        "op_income": 2.5e9, "revenue": 2e10, "assets": 5e10,
+        "cur_liab": 5e9, "gross_profit": 8e9, "research_dev": 1e9,
+    }
+    base.update(kw)
+    return base
+
+
+def test_financials_op_margin_correct():
+    """op_margin = op_income / revenue × 100, rounded to 1 d.p."""
+    f = _mk_fin_row()
+    s = _mk_stmt(op_income=2.5e9, revenue=2e10)
+    fin = SF._financials("TEST", f, None, stmt=s)
+    # 2.5e9 / 2e10 * 100 = 12.5
+    assert fin["op_margin"] == 12.5, fin["op_margin"]
+
+
+def test_financials_op_margin_missing_stmt():
+    """No stmt → op_margin is None (not 0, not crash)."""
+    f = _mk_fin_row()
+    fin = SF._financials("TEST", f, None, stmt=None)
+    assert fin.get("op_margin") is None
+
+
+def test_financials_op_margin_zero_revenue():
+    """Zero revenue denominator → op_margin is None (not divide-by-zero)."""
+    f = _mk_fin_row()
+    s = _mk_stmt(op_income=1e9, revenue=0.0)
+    fin = SF._financials("TEST", f, None, stmt=s)
+    assert fin.get("op_margin") is None
+
+
+def test_financials_gp_assets_correct():
+    """gp_assets = gross_profit / assets; non-Financials."""
+    f = _mk_fin_row()
+    s = _mk_stmt(gross_profit=8e9, assets=5e10)
+    fin = SF._financials("TEST", f, None, stmt=s, sector="Information Technology")
+    # 8e9 / 5e10 = 0.16
+    assert fin["gp_assets"] == round(8e9 / 5e10, 3), fin["gp_assets"]
+
+
+def test_financials_gp_assets_financial_suppressed():
+    """gp_assets is None for Financials sector (bank assets misleading)."""
+    f = _mk_fin_row()
+    s = _mk_stmt(gross_profit=8e9, assets=5e10)
+    fin = SF._financials("TEST", f, None, stmt=s, sector="Financials")
+    assert fin.get("gp_assets") is None
+
+
+def test_financials_gp_assets_missing_assets():
+    """Missing assets → gp_assets is None."""
+    f = _mk_fin_row()
+    s = _mk_stmt(gross_profit=8e9, assets=None)
+    fin = SF._financials("TEST", f, None, stmt=s)
+    assert fin.get("gp_assets") is None
+
+
+def test_financials_roce_correct():
+    """roce = op_income / (assets − cur_liab) × 100; capital employed > 0."""
+    f = _mk_fin_row()
+    s = _mk_stmt(op_income=2.5e9, assets=5e10, cur_liab=5e9)
+    fin = SF._financials("TEST", f, None, stmt=s, sector="Information Technology")
+    # cap_employed = 5e10 − 5e9 = 4.5e10; roce = 2.5e9/4.5e10 * 100 ≈ 5.556
+    expected = round(2.5e9 / (5e10 - 5e9) * 100, 1)
+    assert fin["roce"] == expected, fin["roce"]
+
+
+def test_financials_roce_financial_suppressed():
+    """roce is None for Financials sector."""
+    f = _mk_fin_row()
+    s = _mk_stmt(op_income=2.5e9, assets=5e10, cur_liab=5e9)
+    fin = SF._financials("TEST", f, None, stmt=s, sector="Financials")
+    assert fin.get("roce") is None
+
+
+def test_financials_roce_negative_capital_employed():
+    """cur_liab > assets → cap_employed ≤ 0 → roce is None."""
+    f = _mk_fin_row()
+    s = _mk_stmt(op_income=2.5e9, assets=5e9, cur_liab=1e10)  # assets < cur_liab
+    fin = SF._financials("TEST", f, None, stmt=s)
+    assert fin.get("roce") is None
+
+
+def test_financials_rd_sales_present():
+    """rd_sales = research_dev / revenue × 100 when both present."""
+    f = _mk_fin_row()
+    s = _mk_stmt(research_dev=1e9, revenue=2e10)
+    fin = SF._financials("TEST", f, None, stmt=s)
+    # 1e9 / 2e10 * 100 = 5.0
+    assert fin["rd_sales"] == 5.0, fin["rd_sales"]
+
+
+def test_financials_rd_sales_absent_when_no_rd():
+    """rd_sales is None (not 0) when research_dev is absent."""
+    f = _mk_fin_row()
+    s = _mk_stmt(research_dev=None, revenue=2e10)
+    fin = SF._financials("TEST", f, None, stmt=s)
+    assert fin.get("rd_sales") is None
+
+
+def test_financials_tier1_json_safe():
+    """The four new financials keys must serialize without NaN/Infinity tokens."""
+    f = _mk_fin_row()
+    s = _mk_stmt()
+    fin = SF._financials("TEST", f, None, stmt=s, sector="Information Technology")
+    cleaned = SF._clean(fin)
+    text = json.dumps(cleaned)
+    assert "NaN" not in text and "Infinity" not in text
+
+
+def test_leverage_current_and_quick_correct():
+    """current_ratio = cur_assets / cur_liab; quick_ratio = (cur_assets − inv) / cur_liab."""
+    rows = [{
+        "op_income": 100.0, "interest_exp": 10.0,
+        "cur_assets": 300.0, "cur_liab": 150.0, "inventory": 60.0,
+    }]
+    lev = SF._leverage_ratios(rows)
+    assert lev["current_ratio"] == round(300.0 / 150.0, 2)          # 2.0
+    assert lev["quick_ratio"]   == round((300.0 - 60.0) / 150.0, 2) # 1.6
+
+
+def test_leverage_current_ratio_no_inventory():
+    """inventory absent → treat as 0 for quick_ratio (cur_assets is present)."""
+    rows = [{"cur_assets": 200.0, "cur_liab": 100.0, "inventory": None}]
+    lev = SF._leverage_ratios(rows)
+    assert lev["current_ratio"] == 2.0
+    assert lev["quick_ratio"]   == 2.0   # inventory treated as 0
+
+
+def test_leverage_current_quick_financial_suppressed():
+    """current_ratio and quick_ratio absent for Financials sector."""
+    rows = [{
+        "cur_assets": 300.0, "cur_liab": 150.0, "inventory": 60.0,
+    }]
+    lev = SF._leverage_ratios(rows, sector="Financials")
+    assert "current_ratio" not in lev, lev
+    assert "quick_ratio" not in lev, lev
+
+
+def test_leverage_current_ratio_zero_denominator():
+    """cur_liab == 0 → neither ratio computed (division by zero guard)."""
+    rows = [{"cur_assets": 300.0, "cur_liab": 0.0, "inventory": 50.0}]
+    lev = SF._leverage_ratios(rows)
+    assert "current_ratio" not in lev, lev
+    assert "quick_ratio" not in lev, lev
+
+
+def test_leverage_current_ratio_missing_inputs():
+    """cur_assets or cur_liab None → neither ratio computed."""
+    lev_no_ca = SF._leverage_ratios([{"cur_assets": None, "cur_liab": 100.0}])
+    assert "current_ratio" not in lev_no_ca
+
+    lev_no_cl = SF._leverage_ratios([{"cur_assets": 200.0, "cur_liab": None}])
+    assert "current_ratio" not in lev_no_cl
+
+
+def test_leverage_tier1_json_safe():
+    """current_ratio and quick_ratio must serialize without NaN/Infinity tokens."""
+    rows = [{
+        "op_income": 100.0, "interest_exp": 10.0,
+        "debt_lt": 200.0, "debt_cur": 50.0, "cash": 80.0,
+        "cur_assets": 300.0, "cur_liab": 150.0, "inventory": 60.0,
+        "depreciation": 20.0,
+    }]
+    lev = SF._leverage_ratios(rows, sector="Information Technology")
+    s = json.dumps(lev)
+    assert "NaN" not in s and "Infinity" not in s
+
+
 def _run():
     fns = [v for k, v in sorted(globals().items()) if k.startswith("test_") and callable(v)]
     passed = 0
