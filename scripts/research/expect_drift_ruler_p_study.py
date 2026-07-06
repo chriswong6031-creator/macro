@@ -8,13 +8,19 @@ Hard assertion in code: 2024+ fires MUST NEVER enter any feature-outcome join
 (AMENDMENT_A2_G1_RETEST.md §4).
 
 Features from data/research/expect_drift_panel.parquet (7 hypotheses ED-1..ED-7):
-  ED-1  sue_latest          cont  +  MWU/RBC
-  ED-2  sue_streak          int   +  MWU/RBC
-  ED-3  pead_drift          cont  +  MWU/RBC
-  ED-4  bad_news_absorption bin   +  Fisher
-  ED-5  good_news_hold      bin   +  Fisher
-  ED-6  sue_accel           cont  +  MWU/RBC
-  ED-7  confirmed_absorption bin  +  Fisher
+  Outcome coding: ruler_p_positive=1 means cheap_trap (bad outcome), 0 means tactical_only.
+  Mechanism: higher feature → likelier to *avoid* cheap_trap → feature is LOWER in cheap_trap
+  arm → expected RBC is NEGATIVE (sign '-').  Prereg §2 specifies '+' relative to the
+  compounder-favorable outcome; because this ruler codes the opposite (cheap_trap=1), the
+  sign flips to '-' here.
+
+  ED-1  sue_latest          cont  -  MWU/RBC
+  ED-2  sue_streak          int   -  MWU/RBC
+  ED-3  pead_drift          cont  -  MWU/RBC
+  ED-4  bad_news_absorption bin   -  Fisher
+  ED-5  good_news_hold      bin   -  Fisher
+  ED-6  sue_accel           cont  -  MWU/RBC
+  ED-7  confirmed_absorption bin  -  Fisher
 
 Methodology (reuses machinery from scripts/research/missed_hold_study.py):
   - episode-clustering: name × macro_regime ±14 calendar-day dedup
@@ -126,13 +132,18 @@ FEATURE_TYPES = {
     "confirmed_absorption": "bin",
 }
 EXPECTED_SIGNS = {
-    "sue_latest":           "+",
-    "sue_streak":           "+",
-    "pead_drift":           "+",
-    "bad_news_absorption":  "+",
-    "good_news_hold":       "+",
-    "sue_accel":            "+",
-    "confirmed_absorption": "+",
+    # NB: outcome is coded cheap_trap=1, tactical_only=0 (see RULER_P_OUTCOME_COL below).
+    # The mechanism predicts higher feature values AVOID cheap_trap, so mechanism-consistent
+    # features are LOWER in the cheap_trap arm → expected RBC is NEGATIVE.
+    # A '+' sign here would require the feature to be *higher* among cheap_traps, which is
+    # the wrong direction.  All seven are '-'.
+    "sue_latest":           "-",
+    "sue_streak":           "-",
+    "pead_drift":           "-",
+    "bad_news_absorption":  "-",
+    "good_news_hold":       "-",
+    "sue_accel":            "-",
+    "confirmed_absorption": "-",
 }
 
 # Ruler-P outcome label: cheap_trap = positive group, tactical_only = baseline
@@ -447,14 +458,22 @@ def reshuffle_null(
     outcome_col: str,
     n_shuffle: int = N_RESHUFFLE,
     seed: int = RESHUFFLE_SEED,
+    expected_sign: str = "+",
 ) -> dict[str, Any]:
-    """Within-(cohort_year × macro_regime) reshuffle null per §6.4 of OBJECTIVE.md."""
+    """Within-(cohort_year × macro_regime) reshuffle null per §6.4 of OBJECTIVE.md.
+
+    expected_sign controls the tail used for the one-sided pass gate:
+      '+' → obs_rbc must exceed null p90 (feature higher in group-1)
+      '-' → obs_rbc must be below null p10 (feature lower in group-1)
+    When outcome is coded cheap_trap=1 and mechanism predicts avoidance, all
+    features use '-'.
+    """
     sub = df[[feature, outcome_col, "cohort_year", "macro_regime"]].dropna(
         subset=[feature, outcome_col]
     ).copy()
     if len(sub) < 10:
         return {
-            "null_p90": np.nan, "observed_rbc": np.nan,
+            "null_p90": np.nan, "null_p10": np.nan, "observed_rbc": np.nan,
             "passes_reshuffle": None, "n_shuffle": n_shuffle,
             "note": "insufficient data",
         }
@@ -484,15 +503,20 @@ def reshuffle_null(
 
     if len(null_rbcs) < 10:
         return {
-            "null_p90": np.nan, "observed_rbc": float(obs_rbc),
+            "null_p90": np.nan, "null_p10": np.nan, "observed_rbc": float(obs_rbc),
             "passes_reshuffle": None, "n_shuffle": n_shuffle,
             "note": "null distribution degenerate",
         }
     null_arr = np.array(null_rbcs)
     p90 = float(np.percentile(null_arr, 90))
-    passes = bool(not np.isnan(obs_rbc) and obs_rbc > p90)
+    p10 = float(np.percentile(null_arr, 10))
+    if expected_sign == "-":
+        passes = bool(not np.isnan(obs_rbc) and obs_rbc < p10)
+    else:
+        passes = bool(not np.isnan(obs_rbc) and obs_rbc > p90)
     return {
         "null_p90": round(p90, 4),
+        "null_p10": round(p10, 4),
         "observed_rbc": round(float(obs_rbc), 4),
         "passes_reshuffle": passes,
         "n_shuffle": int(n_shuffle),
@@ -621,7 +645,10 @@ def _analyze_cell(
         ci_result = _cluster_robust_ci(df_tmp, feat, RULER_P_OUTCOME_COL)
 
         # Reshuffle null (within cohort_year × macro_regime, seed=42 LOCKED)
-        reshuffle_result = reshuffle_null(df_tmp, feat, RULER_P_OUTCOME_COL)
+        # Pass expected_sign so the one-sided tail matches the mechanism direction.
+        reshuffle_result = reshuffle_null(
+            df_tmp, feat, RULER_P_OUTCOME_COL, expected_sign=expected_sign
+        )
 
         rec: dict[str, Any] = {
             "feature": feat,
@@ -644,6 +671,7 @@ def _analyze_cell(
             "ci_hi": ci_result.get("ci_hi"),
             "ci_method": ci_result.get("method"),
             "reshuffle_null_p90": reshuffle_result.get("null_p90"),
+            "reshuffle_null_p10": reshuffle_result.get("null_p10"),
             "reshuffle_observed_rbc": reshuffle_result.get("observed_rbc"),
             "passes_reshuffle": reshuffle_result.get("passes_reshuffle"),
             "display_claim": None,  # filled after BH
@@ -672,7 +700,9 @@ def _analyze_cell(
         passes_r = rec.get("passes_reshuffle") is True
         n_ok = rec.get("n_floor_ok", False)
         rbc_val = rec.get("rbc")
-        right_sign = (rbc_val is not None and rbc_val > 0) if rec["expected_sign"] == "+" else True
+        right_sign = (rbc_val is not None and rbc_val < 0) if rec["expected_sign"] == "-" else (
+            rbc_val is not None and rbc_val > 0
+        ) if rec["expected_sign"] == "+" else True
         if passes_bh and passes_r and n_ok and right_sign:
             rec["display_claim"] = "DESCRIPTIVE_PASS"
         else:
@@ -767,6 +797,10 @@ def run_study() -> tuple[pd.DataFrame, dict[str, Any]]:
     labeled = labels[labels["label"].isin(["cheap_trap", "tactical_only"])].copy()
     ruler_p = labeled[labeled["fire_date"] <= pd.Timestamp(RULER_P_CUTOFF)].copy()
 
+    # NOTE: this assertion checks the output of the filter one line above, so it cannot fail
+    # on its own.  The actual OOS-2 leak-prevention comes from the left-join key at the
+    # feature merge step below (ruler_p already filtered; panel rows for 2024+ are never
+    # selected).  The assertion is retained as a belt-and-suspenders documentation aid.
     assert (ruler_p["fire_date"] <= pd.Timestamp(RULER_P_CUTOFF)).all(), (
         f"OOS-2 CONTAMINATION: fires after {RULER_P_CUTOFF} detected — "
         "AMENDMENT_A2_G1_RETEST.md §4 violation"
@@ -830,8 +864,12 @@ def run_study() -> tuple[pd.DataFrame, dict[str, Any]]:
         all_rows.append(rec)
 
     # STEP 7: Temporal cells (pre-registered split: fit 2014-2019 / OOS-biased 2020-2023)
+    # NB: cell labels here are distinct from ERA_LABELS (STEP 8) to avoid duplicate rows in
+    # the output parquet.  The pre-registered era breakout (STEP 8) also covers 2014-2019
+    # as "fit_2014-2019"; the temporal-split cell is labelled "temporal_fit_2014-2019" to
+    # prevent the two from colliding.
     for cell_label, cell_start, cell_end in [
-        ("fit_2014-2019",       RULER_P_FIT_START, RULER_P_FIT_END),
+        ("temporal_fit_2014-2019",       RULER_P_FIT_START, RULER_P_FIT_END),
         ("oos_biased_2020-2023", RULER_P_OOS_START, RULER_P_OOS_END),
     ]:
         mask = (
