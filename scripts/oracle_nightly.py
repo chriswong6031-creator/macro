@@ -1591,6 +1591,20 @@ def main() -> int:
     if not args.skip_panel:
         if not _step_panel(data_dir, args.dry_run):
             failures.append("panel")
+        else:
+            # --- Step 1b: Publish oracle panels to R2 (PR-C1 RUL-7) ---
+            # Named single-writer: only the Mac-side oracle ops lane runs this.
+            # No-op when R2 creds absent; never blocks subsequent steps on failure.
+            log.info("=== Step 1b: Publish oracle panels to R2 (PR-C1) ===")
+            try:
+                from scripts.publish_oracle_panels import publish as _publish_panels
+                rc = _publish_panels(data_dir=data_dir, dry_run=args.dry_run)
+                if rc != 0:
+                    _annotation("oracle_nightly: publish_oracle_panels returned non-zero (non-fatal)")
+                else:
+                    log.info("publish_oracle_panels: done")
+            except Exception as _e:  # noqa: BLE001
+                _annotation(f"oracle_nightly: publish_oracle_panels FAILED: {_e} (non-fatal)")
     else:
         log.info("=== Step 1: Panel SKIPPED (--skip-panel) ===")
 

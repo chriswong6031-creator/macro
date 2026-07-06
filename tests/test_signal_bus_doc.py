@@ -126,7 +126,7 @@ def test_all_artifact_ids_present():
         " cycle-pattern-outcomes, cycle-pattern-truths, signal-archive-context-daily = 180->185;"
         " CPI P2 state_daily_live adapter added cycle-pattern-state-daily-live = 185->186;"
         " china-intel W4 added site-china-intel-command = 186->187;"
-        " short-side BD-AVOID-1 Phase-1 added bd-avoid1-ledger = 187->188)"
+        " NW next-lobes DQ-2 operator-action grading harness added operator-grading = 187->188)"
     )
     content = generate(_SYNAPSE_YML)
     missing = [aid for aid in artifact_ids if aid not in content]

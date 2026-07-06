@@ -136,9 +136,21 @@ def build(root: Path | None = None) -> Path:
     if star_cnt and "STAR" not in overlay_counts:
         overlay_counts["STAR"] = star_cnt
 
+    # ── Sponsorship coverage counts (PR-C1) ──
+    sponsorship_populated = sum(
+        1 for r in rows
+        if r.get("sponsorship_state") and r.get("sponsorship_state") != "unavailable"
+    )
+    sponsorship_unavailable = sum(
+        1 for r in rows
+        if not r.get("sponsorship_state") or r.get("sponsorship_state") == "unavailable"
+    )
+
     log.info(
-        "bottom_sensors: n_rows=%d state_counts=%s overlay_counts=%s",
+        "bottom_sensors: n_rows=%d state_counts=%s overlay_counts=%s "
+        "sponsorship_populated=%d sponsorship_unavailable=%d",
         n_rows, state_counts, overlay_counts,
+        sponsorship_populated, sponsorship_unavailable,
     )
 
     # ── Jinja render ──
@@ -160,6 +172,8 @@ def build(root: Path | None = None) -> Path:
         computed_at=computed_at,
         state_counts=state_counts,
         overlay_counts=overlay_counts,
+        sponsorship_populated=sponsorship_populated,
+        sponsorship_unavailable=sponsorship_unavailable,
     )
 
     site = _site_dir()
