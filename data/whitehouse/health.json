@@ -1,10 +1,17 @@
 {
   "schema": "wh_health.v1",
-  "as_of": "2026-07-06T16:29:55.763619+00:00",
-  "posts_seen": 5,
-  "seen_total": 11,
-  "evaluated": 0,
+  "as_of": "2026-07-06T19:04:38.606237+00:00",
+  "posts_seen": 6,
+  "seen_total": 12,
+  "evaluated": 1,
   "activated": 0,
   "provider": "Claude claude-opus-4-8 (subscription)",
-  "gate_scores": []
+  "gate_scores": [
+    {
+      "id": "wh-2026-07-06-president-trump-rings-in-trump-accounts-with-historic-opening-bell-ceremony-from",
+      "importance": null,
+      "activated": false,
+      "degraded_reason": "llm_error"
+    }
+  ]
 }
