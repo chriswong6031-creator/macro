@@ -22,19 +22,32 @@
   </div>
 
   <div id="app" style="display:none">
-    <header>
-      <div class="hrow">
-        <div class="brand"><span class="dot">●</span> Mastermind Admin</div>
-        <div class="hmeta" id="hmeta"><span class="muted">loading…</span></div>
+    <div class="app-shell">
+      <!-- Sidebar -->
+      <aside class="sidebar" id="sidebar">
+        <div class="sidebar-brand">
+          <div class="dot"></div>
+          Mastermind
+        </div>
+        <nav id="sidenav"></nav>
+      </aside>
+
+      <!-- Right column -->
+      <div class="shell-right">
+        <!-- Topbar -->
+        <div class="topbar" id="topbar">
+          <span class="topbar-title" id="topbar-title">Overview</span>
+          <span class="spacer"></span>
+          <div id="hmeta" class="hmeta" style="margin-left:0"><span class="muted">loading…</span></div>
+        </div>
+
+        <!-- Content -->
+        <main>
+          <div class="banner" id="banner"></div>
+          <div class="content" id="view"><div class="spin">Loading…</div></div>
+        </main>
       </div>
-    </header>
-
-    <nav class="tabs" id="tabs"></nav>
-
-    <main>
-      <div class="banner" id="banner"></div>
-      <div id="view"><div class="spin">Loading…</div></div>
-    </main>
+    </div>
   </div>
 
   <div class="toast" id="toast"></div>

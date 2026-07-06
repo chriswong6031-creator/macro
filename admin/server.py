@@ -258,6 +258,10 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json(vector_override.panel())
             if path == "/api/neural_web":
                 return self._json(neural_web.panel())
+            if path == "/api/neural_web/lobes":
+                return self._json(neural_web.lobes_panel())
+            if path == "/api/neural_web/lobe":
+                return self._json(neural_web.lobe_detail((q.get("id") or [""])[0]))
             if path == "/api/health":
                 return self._json(health.summary())
             if path == "/api/cost":
