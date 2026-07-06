@@ -46,6 +46,14 @@ DEFAULT_RF_DIR = Path("data") / "research_factory"
 # Allowed human decisions from human_review (§4 state machine)
 ALLOWED_DECISIONS = ["paper", "deferred", "rejected", "scoped_build"]
 
+# Paper-decay candidates surface for visibility but cannot be decided by decide.py
+# until the W6 paper-to-human_review monitor re-transitions them.
+# The legal exits from 'paper' per §4 matrix are: promote_eligible, human_review, retired.
+# None of those are human decisions accepted by decide.py today (which only accepts
+# candidates in human_review).  Mark them clearly so operators don't run a command
+# that will always return rc=1.
+_PAPER_DECAY_ALLOWED_DECISIONS: list[str] = []  # empty — no runnable decide path yet
+
 # Terminal states — excluded from crowds_with candidates pool
 _TERMINAL_STATES = frozenset({
     "schema_rejected", "deduped", "numeric_rejected",
@@ -467,21 +475,22 @@ def build_queue(
     all_candidates = _resolve_candidates(candidates_jsonl, transitions_jsonl)
 
     # Collect candidates eligible for the queue:
-    #   1. status == 'human_review'
-    #   2. status == 'paper' AND monitor flags decay review (paper→human_review path)
-    queue_ids: list[str] = []
+    #   1. status == 'human_review'  → full decide.py path
+    #   2. status == 'paper' AND monitor flags decay review
+    #      → visibility-only; decide.py cannot act until W6 re-transitions to human_review
+    queue_ids: list[tuple[str, bool]] = []  # (candidate_id, is_paper_decay)
     for cid, cand in all_candidates.items():
         status = cand.get("status")
         if status == "human_review":
-            queue_ids.append(cid)
+            queue_ids.append((cid, False))
         elif status == "paper":
             pm_row = _load_paper_monitor(pm_path, cid)
             if _is_flagged_for_decay_review(pm_row):
-                queue_ids.append(cid)
+                queue_ids.append((cid, True))
 
     # Build packets
     packets: list[dict] = []
-    for cid in queue_ids:
+    for cid, is_paper_decay in queue_ids:
         cand = all_candidates[cid]
         challenge = _load_challenge(challenges_dir, cid)
 
@@ -491,6 +500,26 @@ def build_queue(
         search_width = _extract_search_width(cand)
         crowds_with = _compute_crowds_with(cid, cand, all_candidates)
         decision_question = _build_decision_question(cand, challenge)
+
+        if is_paper_decay:
+            # Paper-decay candidates surface for operator awareness only.
+            # decide.py refuses any candidate not in human_review, so emitting
+            # the standard allowed_decisions list would produce a command that always
+            # exits rc=1.  The W6 paper-monitor step (not yet built) will re-transition
+            # these to human_review when decay is confirmed.
+            packet_allowed_decisions = _PAPER_DECAY_ALLOWED_DECISIONS
+            packet_note = (
+                "decay_review_pending — current_status is 'paper'; decide.py cannot act "
+                "until W6 paper-monitor re-transitions this candidate to human_review. "
+                "No runnable decide command exists yet. "
+                "RF-16 forbids any composite/fused ranking — crowds_with is context only."
+            )
+        else:
+            packet_allowed_decisions = ALLOWED_DECISIONS
+            packet_note = (
+                "display-only review context; RF-16 forbids any composite/fused "
+                "ranking — crowds_with is context only, not a score"
+            )
 
         packet: dict = {
             "authority": "display_only",
@@ -511,12 +540,9 @@ def build_queue(
             "human_review_question": reviewer_fields["human_review_question"],
             "search_width_at_scan": search_width,
             "crowds_with": crowds_with,
-            "allowed_decisions": ALLOWED_DECISIONS,
+            "allowed_decisions": packet_allowed_decisions,
             "decision_question": decision_question,
-            "note": (
-                "display-only review context; RF-16 forbids any composite/fused "
-                "ranking — crowds_with is context only, not a score"
-            ),
+            "note": packet_note,
         }
         packets.append(packet)
 

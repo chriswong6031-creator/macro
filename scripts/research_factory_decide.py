@@ -222,22 +222,32 @@ def _build_regime_at_entry(candidate: dict, regime_path: Path) -> dict:
 
 
 def _load_seed(seed_path: Path) -> dict:
-    """Load registry_seed.json absent-safely."""
+    """Load registry_seed.json absent-safely.
+
+    If the file does NOT exist, return an empty seed structure.
+    If the file EXISTS but fails to parse, raise — never silently return empty
+    and clobber an existing 112-entry file with a single new entry (data loss).
+    """
     if not seed_path.exists():
         return {"schema": "experiments_registry_seed.v1", "experiments": []}
-    try:
-        return json.loads(seed_path.read_text(encoding="utf-8"))
-    except Exception:
-        return {"schema": "experiments_registry_seed.v1", "experiments": []}
+    raw = seed_path.read_text(encoding="utf-8")
+    # Let json.loads propagate: caller must not proceed on a corrupt file.
+    return json.loads(raw)
 
 
 def _write_seed(seed_path: Path, seed: dict) -> None:
-    """Write registry_seed.json atomically-ish."""
+    """Write registry_seed.json atomically via a .tmp sibling then os.replace.
+
+    A crash or concurrent read mid-write never leaves the shared file truncated.
+    """
+    import os
     seed_path.parent.mkdir(parents=True, exist_ok=True)
-    seed_path.write_text(
+    tmp_path = seed_path.with_suffix(".tmp")
+    tmp_path.write_text(
         json.dumps(seed, indent=2, ensure_ascii=False, default=str),
         encoding="utf-8",
     )
+    os.replace(tmp_path, seed_path)
 
 
 def _make_seed_entry(
@@ -490,7 +500,12 @@ def _append_governance_event(
     root: Path | None,
     dry_run: bool = False,
 ) -> None:
-    """Append governance event with event_type=research_factory_gate, article=null (RF-12)."""
+    """Append governance event with event_type=research_factory_gate, article=null (RF-12).
+
+    This is a HARD requirement (RF-12): a human-gate decision with no governance
+    record is an audit gap.  The function raises RuntimeError if the event cannot
+    be written so the caller can abort before committing the transition.
+    """
     if dry_run:
         print(f"  [DRY-RUN] Would append governance event research_factory_gate "
               f"for {candidate_id} decision={decision}")
@@ -515,9 +530,17 @@ def _append_governance_event(
         if ok:
             print(f"  Appended governance event research_factory_gate for {candidate_id}")
         else:
-            print(f"  [WARN] governance.append_event returned False for {candidate_id}")
+            raise RuntimeError(
+                f"governance.append_event returned False for {candidate_id} — "
+                f"reconcile data/neuralweb/governance.jsonl manually before retrying"
+            )
+    except RuntimeError:
+        raise
     except Exception as exc:
-        print(f"  [WARN] governance event failed (non-fatal): {exc}")
+        raise RuntimeError(
+            f"governance event write failed for {candidate_id}: {exc} — "
+            f"reconcile data/neuralweb/governance.jsonl manually before retrying"
+        ) from exc
 
 
 # ---------------------------------------------------------------------------
@@ -631,19 +654,20 @@ def _build_parser() -> argparse.ArgumentParser:
         help="For deferred: YYYY-MM-DD come-back date (required for deferred)",
     )
 
-    # rejected/retired-specific
+    # rejected-specific (retirement from human_review is not a reachable path per §4 matrix;
+    # retirement is a W6 monitor step — not wired yet)
     ap.add_argument(
         "--kill-class", default=None,
         choices=sorted(VALID_KILL_CLASSES),
-        help="For rejected/retired: kill class (RF-10)",
+        help="For rejected: kill class (RF-10)",
     )
     ap.add_argument(
         "--n-at-kill", type=int, default=0,
-        help="For rejected/retired: n observations at kill (RF-10)",
+        help="For rejected: n observations at kill (RF-10)",
     )
     ap.add_argument(
         "--mde-at-n", type=float, default=None,
-        help="For rejected/retired: minimum detectable effect at n (RF-10, optional)",
+        help="For rejected: minimum detectable effect at n (RF-10, optional)",
     )
 
     # scoped_build-specific
@@ -759,6 +783,11 @@ def main() -> int:  # noqa: C901 — complexity is inherent in a multi-path deci
     # --- Per-decision required args validation ---
     extra_fields: dict = {}
 
+    # ---------------------------------------------------------------------------
+    # Phase 1: build all in-memory structures (zero disk writes here).
+    # Only after ALL structures are ready do we validate then commit.
+    # ---------------------------------------------------------------------------
+
     if decision == "paper":
         # expected_half_life_d: use domain prior if not provided
         domain = candidate.get("domain") or "?"
@@ -778,7 +807,6 @@ def main() -> int:  # noqa: C901 — complexity is inherent in a multi-path deci
         print(f"  regime_at_entry: {regime_at_entry}")
 
         # come_back_on: derive from half-life (RF-9 clock)
-        # Use come_back_on if provided, else compute from today + half_life
         if args.come_back_on:
             come_back_on = args.come_back_on
         else:
@@ -789,13 +817,10 @@ def main() -> int:  # noqa: C901 — complexity is inherent in a multi-path deci
                 f"{come_back_on}"
             )
 
-        # Build track skeleton
+        # Build structures (no disk writes yet)
         track_skeleton = _make_track_skeleton(
             candidate, decision, expected_half_life_d, regime_at_entry
         )
-        track_rel_path = _write_track_file(rf_dir, candidate_id, track_skeleton, dry_run=dry_run)
-
-        # Build seed entry (RF-9)
         seed_entry = _make_seed_entry(
             candidate=candidate,
             decision=decision,
@@ -828,13 +853,10 @@ def main() -> int:  # noqa: C901 — complexity is inherent in a multi-path deci
 
         regime_at_entry = _build_regime_at_entry(candidate, regime_path)
 
-        # Build track skeleton (for deferred accrual tracking)
+        # Build structures (no disk writes yet)
         track_skeleton = _make_track_skeleton(
             candidate, decision, expected_half_life_d, regime_at_entry
         )
-        track_rel_path = _write_track_file(rf_dir, candidate_id, track_skeleton, dry_run=dry_run)
-
-        # Build seed entry (RF-9)
         seed_entry = _make_seed_entry(
             candidate=candidate,
             decision=decision,
@@ -849,7 +871,7 @@ def main() -> int:  # noqa: C901 — complexity is inherent in a multi-path deci
             "seed_entry_ref": seed_entry.get("id"),
         }
 
-    elif decision in ("rejected", "retired"):
+    elif decision == "rejected":
         if not args.kill_class:
             print(
                 f"[ERROR] --kill-class is required for {decision} decision (RF-10)",
@@ -870,8 +892,6 @@ def main() -> int:  # noqa: C901 — complexity is inherent in a multi-path deci
         extra_fields = {
             "kill_evidence": kill_evidence,
         }
-
-        # RF-10: requeue pointer for underpowered_accruing / regime_change_suspect
         seed_entry = None
         track_skeleton = None
 
@@ -897,16 +917,41 @@ def main() -> int:  # noqa: C901 — complexity is inherent in a multi-path deci
         seed_entry = None
         track_skeleton = None
 
-    # --- Write transition (state.py enforces actor law) ---
-    try:
-        # Map decision to target state
-        to_state = {
-            "paper": "paper",
-            "deferred": "deferred",
-            "rejected": "rejected",
-            "scoped_build": "scoped_build",
-        }[decision]
+    # ---------------------------------------------------------------------------
+    # Phase 1b: pre-flight seed integrity check (paper/deferred only).
+    # If registry_seed.json exists but is unparseable (e.g. partial concurrent
+    # write), abort NOW — before any governance write or transition commit —
+    # so we never clobber the shared file with a single-entry overwrite.
+    # ---------------------------------------------------------------------------
 
+    if decision in ("paper", "deferred"):
+        try:
+            _load_seed(seed_path)
+        except Exception as exc:
+            print(
+                f"[ERROR] registry_seed.json at {seed_path} exists but failed to parse: {exc}\n"
+                f"  Aborting — the shared seed file must be repaired before recording "
+                f"a paper/deferred decision. No transition, governance event, or seed "
+                f"entry has been written.",
+                file=sys.stderr,
+            )
+            return 1
+
+    # ---------------------------------------------------------------------------
+    # Phase 2: validate the transition (no disk writes — raises on violation).
+    # This must happen BEFORE any side-effect file is written so that a failed
+    # transition (e.g. non-monotonic as_of raising IllegalTransition) leaves no
+    # orphan track file or seed entry on disk.
+    # ---------------------------------------------------------------------------
+
+    to_state = {
+        "paper": "paper",
+        "deferred": "deferred",
+        "rejected": "rejected",
+        "scoped_build": "scoped_build",
+    }[decision]
+
+    try:
         transition_row = _write_transition(
             rf_dir=rf_dir,
             candidate_id=candidate_id,
@@ -917,7 +962,7 @@ def main() -> int:  # noqa: C901 — complexity is inherent in a multi-path deci
             decision=decision,
             extra_fields=extra_fields,
             candidate=candidate,
-            dry_run=dry_run,
+            dry_run=True,   # validate-only pass — no disk write yet
         )
     except IllegalTransition as exc:
         print(f"[ERROR] Illegal transition: {exc}", file=sys.stderr)
@@ -926,22 +971,64 @@ def main() -> int:  # noqa: C901 — complexity is inherent in a multi-path deci
         print(f"[ERROR] Transition validation failed: {exc}", file=sys.stderr)
         return 1
 
-    # --- Governance event (RF-12) ---
-    _append_governance_event(
-        candidate_id=candidate_id,
-        decision=decision,
-        actor=actor,
-        actor_ref=actor_ref,
-        root=ROOT,
-        dry_run=dry_run,
-    )
+    # ---------------------------------------------------------------------------
+    # Phase 3: governance event (RF-12) — written BEFORE committing the
+    # transition.  A governance failure is a hard error: no committed transition
+    # may exist without a corresponding audit record.
+    # ---------------------------------------------------------------------------
 
-    # --- Seed entry + track file (RF-9) for paper/deferred ---
+    try:
+        _append_governance_event(
+            candidate_id=candidate_id,
+            decision=decision,
+            actor=actor,
+            actor_ref=actor_ref,
+            root=ROOT,
+            dry_run=dry_run,
+        )
+    except RuntimeError as exc:
+        print(f"[ERROR] Governance event write failed: {exc}", file=sys.stderr)
+        return 1
+
+    # ---------------------------------------------------------------------------
+    # Phase 4: commit the transition (real disk write).
+    # All validation and governance have passed; this is the point of no return.
+    # ---------------------------------------------------------------------------
+
+    if not dry_run:
+        try:
+            transition_row = _write_transition(
+                rf_dir=rf_dir,
+                candidate_id=candidate_id,
+                from_state=current_status,
+                to_state=to_state,
+                actor=actor,
+                actor_ref=actor_ref,
+                decision=decision,
+                extra_fields=extra_fields,
+                candidate=candidate,
+                dry_run=False,
+            )
+        except (IllegalTransition, ValueError) as exc:
+            # Should not happen after the validate-only pass, but guard anyway.
+            print(f"[ERROR] Transition commit failed: {exc}", file=sys.stderr)
+            return 1
+
+    # ---------------------------------------------------------------------------
+    # Phase 5: write side-effect files (track skeleton, seed entry) — only after
+    # the transition is committed.  An orphan track file from a failed transition
+    # would be read by the paper-monitor as a live paper accrual for a candidate
+    # that never entered paper.
+    # ---------------------------------------------------------------------------
+
     if decision in ("paper", "deferred") and seed_entry is not None:
+        track_rel_path = _write_track_file(  # noqa: F841
+            rf_dir, candidate_id, track_skeleton, dry_run=dry_run
+        )
         _append_seed_entry(seed_path, seed_entry, dry_run=dry_run)
 
     # --- Requeue pointer for kill classes that warrant it (RF-10) ---
-    if decision in ("rejected", "retired") and args.kill_class in (
+    if decision == "rejected" and args.kill_class in (
         "underpowered_accruing", "regime_change_suspect"
     ):
         _write_requeue_pointer(

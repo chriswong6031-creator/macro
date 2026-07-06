@@ -1092,3 +1092,240 @@ def test_queue_md_renders(tmp_path):
     assert "deferred" in md
     assert "rejected" in md
     assert "scoped_build" in md
+
+
+# ---------------------------------------------------------------------------
+# Finding 1: corrupt seed aborts decision, file untouched
+# ---------------------------------------------------------------------------
+
+
+def test_corrupt_seed_aborts_decision(tmp_path):
+    """A corrupt registry_seed.json must abort the decision (return rc=1) and
+    leave the file byte-for-byte unchanged. No transition, no track file.
+    """
+    cand = _make_candidate(
+        candidate_id="rf-corrupt-seed",
+        status="human_review",
+    )
+    rf_dir, seed_path, regime_path, requeue_path, root = _setup_decide_env(
+        tmp_path, candidate=cand
+    )
+
+    # Corrupt the seed file (truncated JSON — simulates partial concurrent write)
+    corrupt_bytes = b'{"schema": "experiments_registry_seed.v1", "experiments": [{'
+    seed_path.write_bytes(corrupt_bytes)
+    seed_before = seed_path.read_bytes()
+
+    rc = _run_decide(
+        tmp_path, rf_dir, seed_path, regime_path, requeue_path,
+        candidate_id="rf-corrupt-seed",
+        decision="paper",
+        args_extra=["--expected-half-life-d", "250"],
+    )
+
+    assert rc != 0, "Corrupt seed should cause rc != 0"
+
+    # File must be untouched
+    assert seed_path.read_bytes() == seed_before, (
+        "Corrupt seed file must not be overwritten by a failed decision"
+    )
+
+    # No transition written
+    transitions = rf_ledger.load_jsonl(rf_dir / "transitions.jsonl")
+    assert not any(t.get("candidate_id") == "rf-corrupt-seed" for t in transitions), (
+        "No transition should be written when seed is corrupt"
+    )
+
+    # No track file written
+    track_path = rf_dir / "track" / "rf-corrupt-seed.json"
+    assert not track_path.exists(), "No track file should exist when seed is corrupt"
+
+
+# ---------------------------------------------------------------------------
+# Finding 2: paper-decay queue packet has no runnable decide command
+# ---------------------------------------------------------------------------
+
+
+def test_paper_decay_packet_no_allowed_decisions(tmp_path):
+    """A paper-decay packet must not emit allowed_decisions that decide.py would
+    refuse (rc=1).  The packet must reflect that no decide command is runnable
+    until W6 re-transitions the candidate to human_review.
+    """
+    cand = _make_candidate(
+        candidate_id="rf-paper-decay-2",
+        status="paper",
+    )
+    pm_row = {
+        "schema": "research_factory.paper_monitor.v1",
+        "authority": "display_only",
+        "candidate_id": "rf-paper-decay-2",
+        "as_of": "2026-07-06",
+        "paper_status": "review",
+        "action": "review",
+    }
+    rf_dir = _setup_rf_dir(
+        tmp_path,
+        candidates=[cand],
+        paper_monitor=[pm_row],
+    )
+    packets = build_queue(rf_dir=rf_dir)
+    assert len(packets) == 1
+    pkt = packets[0]
+
+    # current_status must be 'paper', not 'human_review'
+    assert pkt["current_status"] == "paper"
+
+    # allowed_decisions must be empty — no runnable decide path until W6
+    assert pkt["allowed_decisions"] == [], (
+        "Paper-decay packet must not list any allowed_decisions that decide.py "
+        "would reject (current_status='paper' is refused by decide.py)"
+    )
+
+    # The note must explain that decay_review_pending / no runnable command
+    assert "decay_review_pending" in pkt["note"], (
+        "Paper-decay packet note must explain that no decide command is runnable yet"
+    )
+
+
+# ---------------------------------------------------------------------------
+# Finding 3: failed transition leaves no track file and no seed entry
+# ---------------------------------------------------------------------------
+
+
+def test_failed_transition_leaves_no_orphan_files(tmp_path):
+    """If the state.py transition raises IllegalTransition, no track file and
+    no seed entry must be left on disk (rc=1).
+    """
+    import scripts.research_factory_decide as decide_mod
+
+    cand = _make_candidate(
+        candidate_id="rf-bad-transition",
+        status="human_review",
+    )
+    rf_dir, seed_path, regime_path, requeue_path, root = _setup_decide_env(
+        tmp_path, candidate=cand
+    )
+    seed_before = seed_path.read_text()
+
+    # Patch state_transition to always raise IllegalTransition
+    from engine.research_factory.state import IllegalTransition as IT
+
+    def _always_illegal(*a, **kw):
+        raise IT("test-forced illegal transition")
+
+    from unittest.mock import patch
+    import sys
+
+    argv = [
+        "research_factory_decide.py",
+        "--candidate", "rf-bad-transition",
+        "--decision", "paper",
+        "--actor", "fable",
+        "--actor-ref", "session-test",
+        "--rf-dir", str(rf_dir),
+        "--experiments-seed", str(seed_path),
+        "--regime-path", str(regime_path),
+        "--requeue-path", str(requeue_path),
+        "--expected-half-life-d", "250",
+    ]
+    with patch.object(sys, "argv", argv):
+        with patch.object(decide_mod, "_write_transition", side_effect=IT("forced")):
+            rc = decide_mod.main()
+
+    assert rc != 0, "Decision with failed transition must return non-zero"
+
+    # No track file
+    track_path = rf_dir / "track" / "rf-bad-transition.json"
+    assert not track_path.exists(), (
+        "No track file must exist when transition is rejected"
+    )
+
+    # Seed unchanged
+    assert seed_path.read_text() == seed_before, (
+        "Seed file must not be modified when transition is rejected"
+    )
+
+
+# ---------------------------------------------------------------------------
+# Finding 4: governance-write failure does not return success
+# ---------------------------------------------------------------------------
+
+
+def test_governance_failure_returns_nonzero(tmp_path):
+    """A governance event write failure must cause rc != 0 and must not commit
+    the transition (the transition ledger must remain unchanged).
+    """
+    import scripts.research_factory_decide as decide_mod
+    from unittest.mock import patch
+    import sys
+
+    cand = _make_candidate(
+        candidate_id="rf-gov-fail",
+        status="human_review",
+    )
+    rf_dir, seed_path, regime_path, requeue_path, root = _setup_decide_env(
+        tmp_path, candidate=cand
+    )
+
+    argv = [
+        "research_factory_decide.py",
+        "--candidate", "rf-gov-fail",
+        "--decision", "paper",
+        "--actor", "fable",
+        "--actor-ref", "session-test",
+        "--rf-dir", str(rf_dir),
+        "--experiments-seed", str(seed_path),
+        "--regime-path", str(regime_path),
+        "--requeue-path", str(requeue_path),
+        "--expected-half-life-d", "250",
+    ]
+
+    def _raise_governance(**kw):
+        raise RuntimeError("simulated governance write failure")
+
+    with patch.object(sys, "argv", argv):
+        with patch.object(decide_mod, "_append_governance_event",
+                          side_effect=_raise_governance):
+            rc = decide_mod.main()
+
+    assert rc != 0, "Governance failure must return non-zero"
+
+    # No transition committed
+    transitions = rf_ledger.load_jsonl(rf_dir / "transitions.jsonl")
+    assert not any(t.get("candidate_id") == "rf-gov-fail" for t in transitions), (
+        "No transition must be committed when governance write fails"
+    )
+
+
+# ---------------------------------------------------------------------------
+# Finding 5: real _append_governance_event with tmp root writes correct row
+# ---------------------------------------------------------------------------
+
+
+def test_real_governance_event_article_null(tmp_path):
+    """Call the real _append_governance_event (no patch) with a tmp root and
+    assert the written row has article=None and event_type=research_factory_gate.
+    This guards RF-12 article-null against regression without patching.
+    """
+    import scripts.research_factory_decide as decide_mod
+
+    decide_mod._append_governance_event(
+        candidate_id="rf-gov-test",
+        decision="paper",
+        actor="fable",
+        actor_ref="session-gov-test",
+        root=tmp_path,
+        dry_run=False,
+    )
+
+    gov_path = tmp_path / "data" / "neuralweb" / "governance.jsonl"
+    assert gov_path.exists(), "Governance file must be written"
+    rows = rf_ledger.load_jsonl(gov_path)
+    assert len(rows) >= 1
+    row = rows[-1]
+    assert row.get("event_type") == "research_factory_gate", (
+        f"event_type must be research_factory_gate, got {row.get('event_type')!r}"
+    )
+    assert row.get("article") is None, (
+        f"article must be None (RF-12), got {row.get('article')!r}"
+    )
