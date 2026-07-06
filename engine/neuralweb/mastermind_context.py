@@ -95,7 +95,9 @@ _CLAIM_RELIABILITY_STANDING_LAW = (
     "No family is promotion-ready. "
     "Per-source reliability does not exist yet (source_tier/channel ontology fill is near-zero). "
     "Nothing here may rank, gate, or condition any signal or allocation (display context only). "
-    "Horizon 5d is the sole graded horizon; 21d/63d grades have not yet matured."
+    "Horizon 5d is the sole graded horizon; 21d/63d grades have not yet matured. "
+    "Desks without a hit_rate are salience-only (direction=0 claims, not hit-gradeable — "
+    "graded on excess only)."
 )
 
 # Top-N families per desk to include in claim_reliability lobe (keep payload small)
@@ -390,7 +392,8 @@ def _summarize_claim_reliability(repo: Path) -> tuple[dict, str | None]:
     if not tr:
         return {}, "site/qledger/track_record.json absent or unreadable"
 
-    by_desk_raw = tr.get("by_desk") or {}
+    by_desk_raw = tr.get("by_desk")
+    by_desk_raw = by_desk_raw if isinstance(by_desk_raw, dict) else {}
 
     # Build per-desk summary — horizon_d=5 only (all graded claims are 5d)
     desks_out: dict = {}
@@ -414,7 +417,8 @@ def _summarize_claim_reliability(repo: Path) -> tuple[dict, str | None]:
         desks_out[desk] = entry
 
     # Top-N families by n_obs (bounded payload)
-    by_family_raw = tr.get("by_family") or {}
+    by_family_raw = tr.get("by_family")
+    by_family_raw = by_family_raw if isinstance(by_family_raw, dict) else {}
     families_with_n: list[tuple[str, int, dict]] = []
     for fam, horizon_map in by_family_raw.items():
         h5 = horizon_map.get("5") if isinstance(horizon_map, dict) else None
