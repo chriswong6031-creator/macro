@@ -265,8 +265,8 @@ def test_smoke_completes_without_writing_artifacts(tmp_path):
     # Production ledger untouched (smoke routes the declaration to a scratch temp path)
     prod_after = prod_ledger.read_bytes() if prod_ledger.exists() else b""
     assert prod_after == prod_before, "smoke must NOT append to the production trial ledger"
-    assert "rf.cycle_pattern.ft_v0" not in prod_after.decode(errors="ignore"), \
-        "smoke leaked the trial family into the production ledger"
+    # (byte-equality above is the leak check; the family MAY legitimately exist in the
+    # ledger once the real run has declared it — do not assert absence)
 
 
 # ─────────────────────────────────────────────────────────────────────────────

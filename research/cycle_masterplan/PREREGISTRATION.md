@@ -347,3 +347,20 @@ truth artifact scoped to the block is appended to `data/cycle_pattern/truths.jso
 eligibility for a shipped-model refit is a SEPARATE follow-on wave (promotion still requires the truth
 layer + Signal Bus notes); no page/UI change this wave regardless of outcome. The stated bounty is the
 up-3m/up-6m PRIOR cells: any block that unlocks multi-month peak hazard matters more than any lattice cell.
+
+### FT results (2026-07-06 — criteria above UNCHANGED; two-commit discipline observed)
+
+| id | result | date |
+|---|---|---|
+| **FT1-up-{1m,3m,6m}** | **FAIL** — ΔBrier +0.0026 / +0.0028 / +0.0021, all CI₉₀ straddle 0 (lower bounds −0.0005/−0.0004/−0.0003); years+ 10/7/8 of 14; none survive BH. Directionally positive but not claimable. | 2026-07-06 |
+| **FT1-dn-1m** | **FAIL (harmful)** — ΔBrier **−0.0056**, CI₉₀ [−0.0099, −0.0016] excludes 0 on the NEGATIVE side: the breadth block actively degrades the strongest shipped cell. | 2026-07-06 |
+| **FT1-dn-{3m,6m}** | **FAIL** — ΔBrier −0.0018 / −0.0006, CIs straddle 0. | 2026-07-06 |
+| **FT4-{up,dn}-{1m,3m,6m}** | **FAIL** — all six cells: ΔBrier −0.0036 … +0.0010, every CI₉₀ straddles 0 (up/6m lower −0.0077), no BH survivor. | 2026-07-06 |
+
+**Verdict: 0 of 12 cells pass.** Per frozen outcome handling: neither block enters the shipped model;
+null truth artifacts CPI-016 (breadth block) and CPI-017 (structure block) appended to
+`data/cycle_pattern/truths.jsonl`, scoped to these exact block definitions and this harness. Full
+adjudication: `research/cycle_masterplan/CPI_FT1_FT4_VERDICT.md`. Reopening either block requires a
+NEW preregistered trial naming the null it challenges (dead-stays-dead). Artifacts:
+`data/cycle_pattern/ft_trials/ft{1,4}_*.json`; budget line `rf.cycle_pattern.ft_v0` n=12 in
+`data/trial_ledger.jsonl`.

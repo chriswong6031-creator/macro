@@ -2471,11 +2471,11 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
       </div>
       
       <div class="pm-status-chip pm-chip-promoted_null">
-        promoted_null: 7
+        promoted_null: 9
       </div>
       
       <div class="pm-status-chip pm-chip-structural" style="font-weight:400;background:none;border:none;padding-left:0">
-        <span class="l-en">15 active total</span><span class="l-zh">共 15 条有效</span>
+        <span class="l-en">17 active total</span><span class="l-zh">共 17 条有效</span>
       </div>
     </div>
 
@@ -2689,6 +2689,32 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
           <td class="pm-meta">2026-10-06</td>
         </tr>
         
+        <tr>
+          <td class="pm-truth-id">cycle_truth_ft1_breadth_hazard_null_v1</td>
+          <td class="pm-stmt">The FT-1 family-breadth block (fam_pct_above_200d, fam_pct_above_50d, breadth_div_own, breadth_thrust_3m) does not add out-of-sample turn-hazard skill beyond the shipped W2.5-bound feature set under the W4.2 harness (0/6 cells pass; the block significantly DEGRADES down/1m, dBrier -0.0056 CI90 [-0.0099,-0.0016]). Up-direction point estimates lean positive but are unearned.</td>
+          <td>
+            
+            <span class="pm-status-null">NULL</span>
+            
+          </td>
+          <td class="pm-meta">null</td>
+          <td class="pm-meta">pit_pure</td>
+          <td class="pm-meta">2027-01-06</td>
+        </tr>
+        
+        <tr>
+          <td class="pm-truth-id">cycle_truth_ft4_structure_hazard_null_v1</td>
+          <td class="pm-stmt">The FT-4 cross-entity structure block (sync_family, phase_breadth_late, phase_breadth_early, pos_dispersion) as features on MEMBER-level turn hazard adds no out-of-sample skill beyond the shipped feature set (0/6 cells pass). Does NOT cover the index-level target: IX-1 (index turn hazard from constituent structure) remains an open, separately-gated question.</td>
+          <td>
+            
+            <span class="pm-status-null">NULL</span>
+            
+          </td>
+          <td class="pm-meta">null</td>
+          <td class="pm-meta">pit_pure</td>
+          <td class="pm-meta">2027-01-06</td>
+        </tr>
+        
       </tbody>
     </table>
     </div>
@@ -2891,6 +2917,58 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
         
         <div class="nl-due">
           <span class="l-en">Review due:</span><span class="l-zh">复查日期：</span> 2026-10-06
+        </div>
+        
+      </div>
+      
+      <div class="nl-card">
+        <div class="nl-card-hd">
+          <span class="nl-card-id">cycle_truth_ft1_breadth_hazard_null_v1</span>
+          <span class="nl-ruled-badge"><span class="l-en">RULED OUT</span><span class="l-zh">已排除</span></span>
+        </div>
+        <div class="nl-stmt">The FT-1 family-breadth block (fam_pct_above_200d, fam_pct_above_50d, breadth_div_own, breadth_thrust_3m) does not add out-of-sample turn-hazard skill beyond the shipped W2.5-bound feature set under the W4.2 harness (0/6 cells pass; the block significantly DEGRADES down/1m, dBrier -0.0056 CI90 [-0.0099,-0.0016]). Up-direction point estimates lean positive but are unearned.</div>
+        
+        <div class="nl-ci">all 6 cells fail BH q=0.10; dn/1m CI90 excludes 0 on the harmful side</div>
+        
+        <div class="nl-refs-label"><span class="l-en">Evidence</span><span class="l-zh">证据</span></div>
+        <ul class="nl-refs-list">
+          
+          <li>research/cycle_masterplan/CPI_FT1_FT4_VERDICT.md</li>
+          
+          <li>data/cycle_pattern/ft_trials/ft1_breadth.json</li>
+          
+          <li>research/cycle_masterplan/PREREGISTRATION.md</li>
+          
+        </ul>
+        
+        <div class="nl-due">
+          <span class="l-en">Review due:</span><span class="l-zh">复查日期：</span> 2027-01-06
+        </div>
+        
+      </div>
+      
+      <div class="nl-card">
+        <div class="nl-card-hd">
+          <span class="nl-card-id">cycle_truth_ft4_structure_hazard_null_v1</span>
+          <span class="nl-ruled-badge"><span class="l-en">RULED OUT</span><span class="l-zh">已排除</span></span>
+        </div>
+        <div class="nl-stmt">The FT-4 cross-entity structure block (sync_family, phase_breadth_late, phase_breadth_early, pos_dispersion) as features on MEMBER-level turn hazard adds no out-of-sample skill beyond the shipped feature set (0/6 cells pass). Does NOT cover the index-level target: IX-1 (index turn hazard from constituent structure) remains an open, separately-gated question.</div>
+        
+        <div class="nl-ci">all 6 cells fail BH q=0.10; every CI90 straddles 0</div>
+        
+        <div class="nl-refs-label"><span class="l-en">Evidence</span><span class="l-zh">证据</span></div>
+        <ul class="nl-refs-list">
+          
+          <li>research/cycle_masterplan/CPI_FT1_FT4_VERDICT.md</li>
+          
+          <li>data/cycle_pattern/ft_trials/ft4_structure.json</li>
+          
+          <li>research/cycle_masterplan/PREREGISTRATION.md</li>
+          
+        </ul>
+        
+        <div class="nl-due">
+          <span class="l-en">Review due:</span><span class="l-zh">复查日期：</span> 2027-01-06
         </div>
         
       </div>
@@ -3882,7 +3960,7 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
       </dl>
       <dl class="mh-prov-cell">
         <dt><span class="l-en">Generated at (UTC)</span><span class="l-zh">生成时间（UTC）</span></dt>
-        <dd>2026-07-06T11:49:58.959292Z</dd>
+        <dd>2026-07-06T12:15:03.744529Z</dd>
       </dl>
       
       <dl class="mh-prov-cell">
