@@ -4177,6 +4177,7 @@ artifacts:
     scored_path_surfaces: []
     consumers:
       - scripts/register_rule_experiment.py
+      - scripts/run_rule_replay.py
     external_consumers: []
     notes: >
       NW Rails R1 anti-fishing governor registry. Append-only JSONL; single writer is
@@ -4187,12 +4188,12 @@ artifacts:
       hash-mismatched spec. FDR pooling: all registrations call
       TrialLedger.log_declared_budget(grid_size, family='replay') — flat pooled family,
       never sub-scoped. Program §3.3 of NW_RAILS_AND_TIER1_LOBES_PROGRAM_BY_FABLE.md.
-      PR-2 will add scripts/run_rule_replay.py as a consumer once that wave ships.
+      scripts/run_rule_replay.py added as a consumer (PR-2).
 
   rule-experiment-summaries:
     path: data/rule_experiments/results/<EXP_ID>_summary.json
     format: json
-    producer: scripts/register_rule_experiment.py
+    producer: scripts/run_rule_replay.py
     known_extra_writers: []
     owner_program: neural-web
     cadence: on-demand
@@ -4213,8 +4214,6 @@ artifacts:
       scripts/run_rule_replay.py (PR-2). The companion *_perfire.parquet files are
       Mac-local only (gitignored per RUL-P10). All results are display-only; promoting
       any rule to live behavior requires the standard PREREG gauntlet (§3.3).
-      Producer listed as scripts/register_rule_experiment.py in PR-1 (the runner ships
-      in PR-2); update to scripts/run_rule_replay.py when that wave merges.
 
   # --- NW Rails W2 PR-4: L3 dispersion regime lens ---
   dispersion-regime:

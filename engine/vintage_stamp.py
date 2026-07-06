@@ -60,13 +60,23 @@ def _default_dead_name_path() -> Path:
 def _load_dead_name_coverage(path: Path | None = None) -> tuple[float | None, bool]:
     """Return (coverage_pct, degraded).
 
-    coverage_pct: float from the JSON file's ``coverage_pct`` key, or None.
+    coverage_pct: float (percentage, 0–100) from the JSON file, or None.
     degraded:     True when the file is absent or unreadable.
+
+    Key lookup order (to handle schema evolution):
+      1. ``price_coverage_frac`` — v2 schema (fraction, multiply by 100)
+      2. ``coverage_frac``       — generic fraction key (multiply by 100)
+      3. ``coverage_pct``        — legacy percentage key (use as-is)
     """
     p = path or _default_dead_name_path()
     try:
         with open(p, encoding="utf-8") as fh:
             data = json.load(fh)
+        # Try fractional keys first (value in [0, 1] → convert to pct)
+        for frac_key in ("price_coverage_frac", "coverage_frac"):
+            if frac_key in data and data[frac_key] is not None:
+                return float(data[frac_key]) * 100.0, False
+        # Fallback: legacy percentage key (value already in pct)
         val = data.get("coverage_pct")
         if val is None:
             return None, True

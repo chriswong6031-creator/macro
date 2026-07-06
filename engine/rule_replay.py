@@ -333,6 +333,13 @@ def _compute_per_fire(
         "mfe_to_exit": None,
         "holding_days": None,
         "censored": False,
+        # short_path: True when the forward window is genuinely shorter than max_H
+        #   (fire near end of data — true censor, excluded from aggregates).
+        # held_to_reference: True when a trail_stop/barrier policy ran over a FULL
+        #   max_H window without ever triggering — this IS the policy outcome; the
+        #   row is included in aggregates at the reference-horizon return.
+        "short_path": False,
+        "held_to_reference": False,
     }
 
     # Compute reference horizon metrics for regret calculation
@@ -395,13 +402,21 @@ def _compute_per_fire(
             if len(idxs) > 0:
                 exit_offset = int(idxs[0])
             else:
-                # Breach is beyond fwd_slice window — censor
+                # Breach is beyond fwd_slice window.
                 exit_offset = len(fwd_slice) - 1
-                result["censored"] = True
+                if len(fwd_slice) < max_H:
+                    result["censored"] = True
+                    result["short_path"] = True
+                else:
+                    result["held_to_reference"] = True
         else:
-            # No breach found in the forward path — censor at max_H
+            # No breach found in the forward path.
             exit_offset = len(fwd_slice) - 1
-            result["censored"] = True
+            if len(fwd_slice) < max_H:
+                result["censored"] = True
+                result["short_path"] = True
+            else:
+                result["held_to_reference"] = True
 
     elif exit_policy.kind == ExitKind.TRAIL_STOP:
         pct = exit_policy.trail_pct or 0.0
@@ -417,7 +432,16 @@ def _compute_per_fire(
                 break
         if exit_offset is None:
             exit_offset = len(fwd_slice) - 1
-            result["censored"] = True
+            if len(fwd_slice) < max_H:
+                # Genuine short path: forward window is truncated (fire near end of data).
+                # True censor — exclude from aggregates.
+                result["censored"] = True
+                result["short_path"] = True
+            else:
+                # Policy ran over a FULL max_H window and never triggered.
+                # This IS the policy outcome: held to reference horizon.
+                # Include in aggregates at the reference-horizon return.
+                result["held_to_reference"] = True
 
     elif exit_policy.kind == ExitKind.BARRIER:
         stop_mult = 1.0 + (exit_policy.stop_pct or 0.0) / 100.0
@@ -430,7 +454,16 @@ def _compute_per_fire(
                 break
         if exit_offset is None:
             exit_offset = len(fwd_slice) - 1
-            result["censored"] = True
+            if len(fwd_slice) < max_H:
+                # Genuine short path: forward window is truncated (fire near end of data).
+                # True censor — exclude from aggregates.
+                result["censored"] = True
+                result["short_path"] = True
+            else:
+                # Policy ran over a FULL max_H window and never triggered.
+                # This IS the policy outcome: held to reference horizon.
+                # Include in aggregates at the reference-horizon return.
+                result["held_to_reference"] = True
 
     else:
         raise ValueError(f"Unknown ExitKind: {exit_policy.kind}")  # pragma: no cover
