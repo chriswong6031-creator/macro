@@ -1,6 +1,6 @@
 # China Intelligence Hub — Masterplan (Fable program, 2026-07-06)
 
-Status: ACTIVE — orchestrated build.
+Status: COMPLETE (W1-W5 shipped 2026-07-06, PRs #1609 #1627 #1640 #1655 + W5 PR).
 Source paper: `/Users/chriswong/.codex/worktrees/5173/Macro Dashboard/research/CHINA_INTELLIGENCE_HUB_FREE_DATA_RESEARCH.md` (Codex, 2026-07-06)
 Prior art: `research/CHINA_INTEL_POWERHOUSE.md`, `research/INTELLIGENCE_HUB_V2_RESEARCH.md`, `research/CHINA_ENGINE_REASSESSMENT.md`
 Model: `china_intel.html` becomes the China analog of `intelligence_hub.html` — a hub-and-spoke command page consolidating existing + new China subpage boards.
@@ -65,3 +65,32 @@ Deferred (post-program docket): PDF text extraction for filings; phrase-polarity
 ## 5. Verification per wave
 
 Local render of touched pages (MACRO_DUMP_VM pattern where applicable) + pytest for new engines (fixtures: missing surface, stale surface, empty events) + `python scripts/check_validated_claims.py` + `python scripts/check_title_i18n.py`. Each PR same-day squash-merged; asia-close nightly is the sole forward-ledger advancer.
+
+Note on registry-race resolutions (W5 observation): count tests (e.g. 171→174→181→187) reflect expected behavior on busy build days — other concurrent program PRs merge and advance the registry count while this program accrues. Not a program defect.
+
+## 6. Division of labor (2026-07-06, cross-session)
+
+This program (China Intel Hub, W1-W5) owns:
+- `china_intel.html` + its bus (`engine/china_intel_bus.py`) + briefing schema v1→v6
+- `china_special_situations.html` + `engine/china_special_situations.py`
+- `china_radar.html` (venue-divergence extension, W3)
+- `china_intel_hub.py` command apparatus (W4)
+- China subpage UX conventions (nav integration, i18n, cycle-context chips)
+
+The **CHINA_INTEL_CYCLES program** owns:
+- History backfills (`communiques.parquet`, CCTV) — deep communique corpus enabling APPEARED/DROPPED event history
+- Pre-registered event studies (`china_policy_events`) — the causal inference layer above salience-only context
+- The filings collector spine (`collectors/china_filings.py`) — CNInfo structured filing ingestion
+- The regime analog finder (`site/china_intel/analogs.json`) — our bus block + hub card ship **dark** until this lands
+- The China Lens card in the global `intelligence_hub.html` — a routing card to this hub, not a duplicate build
+
+## 7. Post-program docket
+
+These items were assessed but deferred to explicit come-back dates or external program dependencies:
+
+- **(a) Filings migration:** once `data/china_filings/filings.parquet` lands (from CHINA_INTEL_CYCLES), migrate `engine/china_special_situations.py` inquiry input to that source. Contract: keep-FIRST `announcementId`; `publish_ts`; `exchange`; `category` enum; `kind` mirrors letter/reply/attachment. Then retire `collectors/china_inquiry.py`.
+- **(b) Policy phrase history:** deepen `policy_phrase` block to read-only from `data/china_official/communiques.parquet` when CHINA_INTEL_CYCLES lands it; preserve existing `site/communique_diff/latest.json` path as fallback.
+- **(c) Venue-divergence grading maturation:** registry come-back 2026-10-06, n_resolved≥3 threshold for the radar ledger to graduate from "unproven".
+- **(d) cn_special_sits qledger gate:** family needs n_dates≥25 before any directional claim can graduate. Current accrual start: 2026-07-06.
+- **(e) china-intel-hub-command track-record:** come-back 2026-08-15; evaluate rank-IC over `signal_core>0` rows only (lower-confidence rows dilute the metric).
+- **(f) LHB first-seat lane verification:** confirm candidates appear once a fresh LHB collect lands. Lane was empty on 2026-07-06 data — this is expected (LHB collector not yet live in asia-close.yml); not a bug.
