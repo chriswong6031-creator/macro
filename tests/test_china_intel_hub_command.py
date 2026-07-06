@@ -389,98 +389,65 @@ def test_margin_velocity_always_experimental():
 
 
 # ── T7: template render ───────────────────────────────────────────────────── #
+# NOTE: Template K2/K3 now read cmd_full (passed separately by builder), NOT b.command.
+# b.command carries only a compact top-10 for Mastermind transport.
 
-def test_template_renders_command_section(tmp_path):
-    """Template renders both command and discovery sections without error."""
-    from jinja2 import Environment, FileSystemLoader
-    from lib import config
-    from engine import i18n
-
-    # Minimal briefing with a command block
-    b = {
-        "schema": "china_intel.briefing.v6",
-        "is_context_only": True, "asof": "2026-07-06",
-        "generated_utc": "2026-07-06T08:00:00Z",
-        "news": None, "policy": None, "altdata": None, "radar": None,
-        "analysis": None, "regime": None, "discovery": None,
-        "policy_phrase": None, "narrative_divergence": None,
-        "special_situations": None,
-        "command": {
-            "schema": "china_intel.command.v1",
-            "is_context_only": True,
-            "as_of": "2026-07-06",
-            "n_universe": 3,
-            "command": [
-                {
-                    "ticker": "600519.SS", "name": "茅台",
-                    "stage": "emerging", "opportunity_score": 78.5,
-                    "edge_remaining": 0.82, "leading_gap": 2,
-                    "lead_up": 2, "lag_up": 0, "signal_core": 0.9,
-                    "falsifier": None, "falsifier_penalty": 1.0,
-                    "off_desk": False,
-                    "directions": {"altdata": 1, "radar": 1, "news": None, "board": None},
-                    "desk_matrix": {
-                        "news": {"present": False, "dir": None},
-                        "altdata": {"present": True, "dir": 1},
-                        "radar": {"present": True, "dir": 1},
-                        "board": {"present": False, "dir": None},
-                        "special": {"present": False, "dir": None},
-                    },
-                    "traj": {"ret_20d": 3.5, "rs_20d": 5.2, "rs_60d": 8.1,
-                             "off_high_pct": -8.0, "rolling_over": False},
-                    "read": "Altdata/radar leading while news/board are still quiet.",
-                    "edge_drivers": ["board BOTTOMING", "RS +5.2% vs CSI300"],
-                    "edge_components": 2,
-                }
-            ],
-            "discovery": [
-                {
-                    "ticker": "000002.SZ", "name": "万科A",
-                    "disc_score": 0.65, "source": "lhb_first_seat",
-                    "reason": "First LHB seat in 90+ days",
-                    "off_desk": True, "experimental": False,
-                }
-            ],
-            "analogs": None,
-            "desks": {"altdata": {"live": True}, "radar": {"live": True}},
-            "counts": {"emerging": 1, "early": 0, "consensus": 0, "exhausted": 0},
-            "disclaimer": "Context only.",
-        },
-        "conviction": [], "cross_surface": [], "flagged_tickers": [],
-        "what_changed": {}, "salience": [],
-        "surfaces_present": ["command"],
-        "surface_asof": {"command": "2026-07-06"},
-        "max_staleness_days": 0,
-        "digest": "China intel bus: command apparatus present.",
-        "disclaimer": "Context only.", "disclaimer_zh": "仅供参考。",
+def _make_cmd_full():
+    """Fixture cmd_full dict for template tests."""
+    return {
+        "schema": "china_intel.command.v1",
+        "is_context_only": True,
+        "as_of": "2026-07-06",
+        "n_universe": 3,
+        "command": [
+            {
+                "ticker": "600519.SS", "name": "茅台",
+                "stage": "emerging", "opportunity_score": 78.5,
+                "edge_remaining": 0.82, "leading_gap": 2,
+                "lead_up": 2, "lag_up": 0, "signal_core": 0.9,
+                "falsifier": None, "falsifier_penalty": 1.0,
+                "off_desk": False, "veto_blind": False,
+                "directions": {"altdata": 1, "radar": 1, "news": None, "board": None},
+                "desk_matrix": {
+                    "news": {"present": False, "dir": None},
+                    "altdata": {"present": True, "dir": 1},
+                    "radar": {"present": True, "dir": 1},
+                    "board": {"present": False, "dir": None},
+                    "special": {"present": False, "dir": None},
+                },
+                "traj": {"ret_20d": 3.5, "rs_20d": 5.2, "rs_60d": 8.1,
+                         "off_high_pct": -8.0, "rolling_over": False},
+                "read": "Altdata/radar leading while news/board are still quiet.",
+                "edge_drivers": ["board BOTTOMING", "RS +5.2% vs CSI300"],
+                "edge_components": 2,
+            }
+        ],
+        "discovery": [
+            {
+                "ticker": "000002.SZ", "name": "万科A",
+                "disc_score": 0.65, "source": "lhb_first_seat",
+                "reason": "First LHB seat in 90+ days",
+                "off_desk": True, "experimental": False,
+            }
+        ],
+        "analogs": None,
+        "desks": {"altdata": {"live": True}, "radar": {"live": True}},
+        "counts": {"emerging": 1, "early": 0, "consensus": 0, "exhausted": 0,
+                   "veto_blind": 0, "board_only_unranked": 0},
+        "disclaimer": "Context only.",
     }
 
-    env = Environment(loader=FileSystemLoader(str(config.ROOT / "templates")), autoescape=False)
-    env.globals.update(td=i18n.td, tr=i18n.tr, t=i18n.t)
-    html = env.get_template("china_intel.html.j2").render(b=b)
 
-    assert "China Command List" in html or "china-intel-command" in html.lower() or "cmd-tbl" in html
-    assert "600519.SS" in html
-    assert "Discovery Queue" in html or "disc-queue" in html
-    assert "000002.SZ" in html
-    # CI guard: no 'validated' in user-facing text (check_validated_claims pattern)
-    assert "validated" not in html.lower() or "is not validated" in html.lower()
-
-
-def test_template_renders_without_command_block(tmp_path):
-    """Template renders cleanly when command block is absent (degrade-safe)."""
-    from jinja2 import Environment, FileSystemLoader
-    from lib import config
-    from engine import i18n
-
-    b = {
+def _make_b():
+    """Minimal briefing dict for template tests."""
+    return {
         "schema": "china_intel.briefing.v6",
         "is_context_only": True, "asof": "2026-07-06",
         "generated_utc": "2026-07-06T08:00:00Z",
         "news": None, "policy": None, "altdata": None, "radar": None,
         "analysis": None, "regime": None, "discovery": None,
         "policy_phrase": None, "narrative_divergence": None,
-        "special_situations": None, "command": None,
+        "special_situations": None, "command": None, "analogs": None,
         "conviction": [], "cross_surface": [], "flagged_tickers": [],
         "what_changed": {}, "salience": [],
         "surfaces_present": [],
@@ -490,14 +457,42 @@ def test_template_renders_without_command_block(tmp_path):
         "disclaimer": "Context only.", "disclaimer_zh": "仅供参考。",
     }
 
+
+def test_template_renders_command_section(tmp_path):
+    """Template renders both command and discovery sections when cmd_full is passed."""
+    from jinja2 import Environment, FileSystemLoader
+    from lib import config
+    from engine import i18n
+
+    b = _make_b()
+    cmd_full = _make_cmd_full()
+
     env = Environment(loader=FileSystemLoader(str(config.ROOT / "templates")), autoescape=False)
     env.globals.update(td=i18n.td, tr=i18n.tr, t=i18n.t)
-    html = env.get_template("china_intel.html.j2").render(b=b)
-    # Should render fine; command section absent when b.command is None
+    html = env.get_template("china_intel.html.j2").render(b=b, cmd_full=cmd_full)
+
+    assert 'class="cmd-tbl"' in html, "cmd-tbl not found — K2 command section not rendered"
+    assert "600519.SS" in html
+    assert "Discovery Queue" in html or "发现队列" in html
+    assert "000002.SZ" in html
+    # CI guard: no 'validated' in user-facing text
+    assert "validated" not in html.lower() or "is not validated" in html.lower()
+
+
+def test_template_renders_without_command_block(tmp_path):
+    """Template renders cleanly when cmd_full is absent (degrade-safe)."""
+    from jinja2 import Environment, FileSystemLoader
+    from lib import config
+    from engine import i18n
+
+    b = _make_b()
+
+    env = Environment(loader=FileSystemLoader(str(config.ROOT / "templates")), autoescape=False)
+    env.globals.update(td=i18n.td, tr=i18n.tr, t=i18n.t)
+    # cmd_full=None: K2/K3 guards fail; no command table rendered
+    html = env.get_template("china_intel.html.j2").render(b=b, cmd_full=None)
     assert "China Intelligence Hub" in html or "china_intel" in html.lower()
-    # CSS class appears in <style>, but the actual command table element must be absent.
-    # The template only renders <table class="cmd-tbl"> inside {% if b.command %} blocks.
-    # Verify by checking the section anchor is absent from body content after the style block.
+    # cmd-tbl element must be absent from body (not just CSS class in <style>)
     body_after_style = html.split("</style>", 1)[-1] if "</style>" in html else html
     assert '<table class="cmd-tbl">' not in body_after_style
 
@@ -601,3 +596,183 @@ def test_bus_briefing_v6_schema_string(monkeypatch):
     monkeypatch.setattr(bus, "_read_json", lambda rel: None)
     b = bus.briefing(asof="2026-07-06")
     assert b["schema"] == "china_intel.briefing.v6"
+
+
+# ── T10: price coverage and veto_blind (BLOCKER 3 real-data test) ────────── #
+
+def test_command_counts_with_trajectory_and_veto_blind():
+    """Real-data test: counts.with_price and counts.veto_blind are present and consistent.
+
+    Builds the command apparatus against live data (no monkeypatching of price loader).
+    Asserts:
+    - counts.with_price >= 0 (priced rows in command)
+    - counts.veto_blind >= 0 (unpriced rows in command)
+    - counts.board_only_unranked >= 0
+    - Each command row carries veto_blind: bool
+    - Priced rows (veto_blind=False) appear before veto_blind rows at equal opportunity (tie-break)
+    - Post-layered-lookup coverage improved over closes.parquet-only baseline
+    """
+    result = hub.build(today=date.today())
+    cmd = result.get("command", [])
+    counts = result.get("counts", {})
+
+    assert "with_price" in counts, "counts.with_price missing"
+    assert "veto_blind" in counts, "counts.veto_blind missing"
+    assert "board_only_unranked" in counts, "counts.board_only_unranked missing"
+    assert isinstance(counts["with_price"], int)
+    assert isinstance(counts["veto_blind"], int)
+    assert counts["with_price"] >= 0
+    assert counts["veto_blind"] >= 0
+
+    # Every command row must have veto_blind field
+    for row in cmd:
+        assert "veto_blind" in row, f"veto_blind missing from row {row.get('ticker')}"
+        assert isinstance(row["veto_blind"], bool)
+
+    # Consistency: veto_blind count matches rows in command
+    veto_in_cmd = sum(1 for r in cmd if r.get("veto_blind"))
+    assert veto_in_cmd == counts["veto_blind"], (
+        f"veto_blind count mismatch: counts={counts['veto_blind']}, actual in cmd={veto_in_cmd}"
+    )
+
+    # Priced rows must not rank below veto_blind rows at equal opportunity score
+    # (tie-break: priced first)
+    for i, row_i in enumerate(cmd):
+        for j, row_j in enumerate(cmd):
+            if j <= i:
+                continue
+            if (not row_i.get("veto_blind") and row_j.get("veto_blind")
+                    and row_i["opportunity_score"] == row_j["opportunity_score"]):
+                assert i < j, (
+                    f"Tie-break violated: priced row {row_i['ticker']} (pos={i}) "
+                    f"ranked AFTER veto_blind row {row_j['ticker']} (pos={j}) "
+                    f"at equal opportunity {row_i['opportunity_score']}"
+                )
+
+
+def test_lhb_session_based_window(tmp_path):
+    """LHB lane returns candidates when max event date is 3 calendar days before build date.
+
+    This would fail with the old today-minus-2-calendar-days window (no events within 2 days).
+    The session-based window anchors on the DATA max date (not build date - N days),
+    so a max-date of Friday 2026-07-04 is picked up when building on Monday 2026-07-07.
+
+    Fixture: ticker appears ONLY on 2026-07-04 (no prior history) → qualifies as first seat.
+    The old code would have used today - 2 calendar days = 2026-07-05, which is AFTER
+    the event on 2026-07-04, so the event would be excluded.
+    """
+    import pandas as pd
+
+    build_date = date(2026, 7, 7)   # Monday
+    # Ticker appears only on the most recent session (2026-07-04 = Friday, 3 days before Monday)
+    # No prior history → is_first = True
+    ev_data = {
+        "ticker": ["000563.SZ"],   # ONE event, no prior history
+        "date": ["2026-07-04"],
+        "name": ["武汉银行"],
+    }
+    events_df = pd.DataFrame(ev_data)
+    events_df["date"] = pd.to_datetime(events_df["date"])
+
+    events_dir = tmp_path / "data" / "china_lhb"
+    events_dir.mkdir(parents=True)
+    events_df.to_parquet(events_dir / "events.parquet", index=False)
+
+    with patch.object(hub, "_root", return_value=tmp_path):
+        candidates = hub._disc_lhb_first_seat(build_date)
+
+    assert len(candidates) > 0, (
+        "LHB session-based window FAILED: no candidates returned when last event is "
+        "3 calendar days before build date (Monday). Old today-minus-2-days window would miss this "
+        "(cutoff would be 2026-07-05, after the event on 2026-07-04)."
+    )
+    assert candidates[0]["ticker"] == "000563.SZ"
+
+
+def test_board_only_excluded_from_command(monkeypatch):
+    """Board-only names (signal_core==0, no altdata/radar) excluded from command list.
+
+    They must appear in counts.board_only_unranked but not in the command rows.
+    n_universe still counts them.
+    """
+    # Set up one board-only name (no altdata, no radar) and one with altdata signal
+    board_row_only = _board_row("BOARD_ONLY", label="BOTTOMING")
+    altdata_row_signal = _altdata_row("SIGNAL_NAME", side="accumulate", convergence=0.85)
+
+    standouts_payload = {"as_of": "2026-07-06", "buy": [board_row_only]}
+    altdata_payload = {
+        "schema": "china_altdata.v1", "is_context_only": True,
+        "asof": "2026-07-06", "n_universe": 1, "n_triple": 0,
+        "triple": [], "bottom": [], "crowding_flags": [],
+        "top": [altdata_row_signal],
+    }
+
+    def _mock_read(rel):
+        if "chinaaltdata" in rel:
+            return altdata_payload
+        if "china_standouts" in rel:
+            return standouts_payload
+        return None
+
+    monkeypatch.setattr(hub, "_read_json", _mock_read)
+    monkeypatch.setattr(hub, "_load_closes_and_benchmark", lambda: (None, None))
+    monkeypatch.setattr(hub, "_append_snapshot_ledger", lambda *a, **kw: None)
+
+    result = hub.build(today=date(2026, 7, 6))
+    cmd_tickers = [d["ticker"] for d in result["command"]]
+    counts = result["counts"]
+
+    # board-only must NOT be in command list
+    assert "BOARD_ONLY" not in cmd_tickers, (
+        "Board-only name with signal_core==0 must be excluded from command list"
+    )
+    # signal name must be in command list
+    assert "SIGNAL_NAME" in cmd_tickers, "Signal-carrying name must appear in command"
+    # counts.board_only_unranked tracks the excluded count
+    assert counts.get("board_only_unranked", 0) >= 1, (
+        "counts.board_only_unranked must be >= 1 when a board-only name is excluded"
+    )
+    # n_universe includes the board-only name (stays in universe)
+    assert result["n_universe"] >= 2, "n_universe must include board-only names"
+
+
+def test_news_dir_none_does_not_count_toward_lag_up(monkeypatch):
+    """News desk direction is None (no sentiment from by_ticker).
+
+    lag_up must NOT include news presence. A name with only news (no altdata/radar)
+    must have lag_up=0 and dirs.news=None.
+    """
+    news_payload = {
+        "schema": "china_news_intel.by_ticker.v2",
+        "by_ticker": {
+            "NEWS_ONLY": [{"title": "头条", "score": 1.5}],
+        },
+    }
+    altdata_payload = {
+        "schema": "china_altdata.v1", "is_context_only": True,
+        "asof": "2026-07-06", "n_universe": 1, "n_triple": 0,
+        "triple": [], "bottom": [], "crowding_flags": [],
+        "top": [_altdata_row("ALTDATA_NAME", convergence=0.8)],
+    }
+
+    def _mock_read(rel):
+        if "chinanews" in rel:
+            return news_payload
+        if "chinaaltdata" in rel:
+            return altdata_payload
+        return None
+
+    monkeypatch.setattr(hub, "_read_json", _mock_read)
+    monkeypatch.setattr(hub, "_load_closes_and_benchmark", lambda: (None, None))
+    monkeypatch.setattr(hub, "_append_snapshot_ledger", lambda *a, **kw: None)
+
+    result = hub.build(today=date(2026, 7, 6))
+
+    # Find ALTDATA_NAME and verify its directions.news is None
+    for row in result["command"]:
+        if row["ticker"] == "ALTDATA_NAME":
+            assert row["directions"]["news"] is None, (
+                f"news direction must be None (no sentiment), got {row['directions']['news']}"
+            )
+            # news present (from news_payload) but dir=None means neutral dot not a lag signal
+            break

@@ -131,7 +131,7 @@
   .band.steady,.band.building,.band.neutral,.band.unknown { color:var(--muted); background:var(--panel2); }
   .disc { font-size:11.5px; color:var(--muted); margin-top:14px; line-height:1.55; }
   /* ── command list ── */
-  .cmd-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; margin:12px 0; }
+  /* uses .tbl-scroll from theme.js (avoids double-wrap) */
   table.cmd-tbl { border-collapse:collapse; width:100%; min-width:680px; font-size:12.5px; }
   table.cmd-tbl th { text-align:left; padding:6px 9px; background:var(--panel2); color:var(--muted); font-weight:600; border-bottom:2px solid var(--line); white-space:nowrap; }
   table.cmd-tbl td { padding:7px 9px; border-bottom:1px solid var(--line); vertical-align:middle; }
@@ -532,8 +532,9 @@
   {% if b.digest %}<details><summary style="cursor:pointer;font-size:12px;color:var(--muted);margin:8px 0">{{ t('Machine digest (what the Mastermind reads)','机器摘要（Mastermind 读取的内容）') }}</summary><div class="digest">{{ b.digest }}</div></details>{% endif %}
 
   {# ── K2. COMMAND LIST ── #}
-  {%- if b.command and b.command.command %}
-  {%- set _cmd = b.command %}
+  {# cmd_full is the full command.json artifact loaded separately by the builder #}
+  {%- if cmd_full and cmd_full.command %}
+  {%- set _cmd = cmd_full %}
   <h2 class="sec">⚡ {{ t('China Command List','中国指挥清单') }}</h2>
   <p style="font-size:12px;color:var(--muted);margin:0 0 10px">
     {{ t('Ranked by opportunity = signal × edge-remaining × leading-gap — NOT by desk agreement. Emerging = altdata/radar leading while news/board are still quiet.','按机会评分排序 = 信号 × 剩余边际 × 领先差值 — 非按共识排序。萌芽 = 另类数据/雷达领先，新闻/买入板尚静。') }}
@@ -541,10 +542,11 @@
     &nbsp;{{ t('Universe','覆盖') }}: {{ _cmd.n_universe or '—' }} &nbsp;·&nbsp;
     {{ t('Emerging','萌芽') }}: {{ (_cmd.counts or {}).get('emerging',0) }} &nbsp;·&nbsp;
     {{ t('Early','早期') }}: {{ (_cmd.counts or {}).get('early',0) }}
+    {%- if (_cmd.counts or {}).get('veto_blind') %} &nbsp;·&nbsp; <span style="color:#e0973a">{{ t('No-price','无价格') }}: {{ (_cmd.counts or {}).get('veto_blind',0) }}</span>{%- endif %}
   </p>
   {%- set _rows = _cmd.command %}
   {%- set _show_n = [15, _rows|length]|min %}
-  <div class="cmd-wrap">
+  <div class="tbl-scroll">
     <table class="cmd-tbl">
       <thead>
         <tr>
@@ -588,13 +590,17 @@
           </td>
           <td><span class="opp-score">{{ "%.0f"|format(d.opportunity_score or 0) }}</span></td>
           <td>
-            {%- if _traj.rs_20d is not none %}
-              <span class="rs-chip {{ 'rs-pos' if _traj.rs_20d > 3 else ('rs-neg' if _traj.rs_20d < -3 else 'rs-neu') }}">
-                RS {{ "%+.0f"|format(_traj.rs_20d) }}%
-              </span>
-            {%- endif %}
-            {%- if _traj.off_high_pct is not none %}
-              &nbsp;<span class="rs-chip rs-neu">{{ "%+.0f"|format(_traj.off_high_pct) }}%H</span>
+            {%- if d.veto_blind %}
+              <span class="rs-chip rs-neg" data-tip-en="no price plane / veto blind" data-tip-zh="无价格数据">no price plane / 无价格数据</span>
+            {%- else %}
+              {%- if _traj.rs_20d is not none %}
+                <span class="rs-chip {{ 'rs-pos' if _traj.rs_20d > 3 else ('rs-neg' if _traj.rs_20d < -3 else 'rs-neu') }}">
+                  RS {{ "%+.0f"|format(_traj.rs_20d) }}%
+                </span>
+              {%- endif %}
+              {%- if _traj.off_high_pct is not none %}
+                &nbsp;<span class="rs-chip rs-neu">{{ "%+.0f"|format(_traj.off_high_pct) }}%H</span>
+              {%- endif %}
             {%- endif %}
           </td>
           <td>
@@ -658,13 +664,13 @@
   {%- endif %}
 
   {# ── K3. DISCOVERY QUEUE ── #}
-  {%- if b.command and b.command.discovery %}
+  {%- if cmd_full and cmd_full.discovery %}
   <h2 class="sec">🔭 {{ t('Discovery Queue','发现队列') }}</h2>
   <p style="font-size:12px;color:var(--muted);margin:0 0 10px">
     {{ t('Off-desk leading signals — names not yet on any desk. Margin Velocity lane is experimental (Phase-0 accruing, contributes zero to ranking).','离板块领先信号——尚未出现在任何台的个股。融资速度栏为实验性（阶段0积累，不计入排名）。') }}
   </p>
   <div class="disc-queue">
-    {%- for c in b.command.discovery %}
+    {%- for c in cmd_full.discovery %}
     <div class="disc-card {{ 'off-desk' if c.off_desk }}">
       <div class="disc-ticker">{{ c.ticker }}</div>
       <div class="disc-name">{{ c.name[:22] }}</div>
@@ -685,8 +691,8 @@
   {%- endif %}
 
   {# ── K4. ANALOGS CARD (degrade-safe; hidden when artifact absent) ── #}
-  {%- if b.command and b.command.analogs %}
-  {%- set _an = b.command.analogs %}
+  {%- if b.analogs %}
+  {%- set _an = b.analogs %}
   <h2 class="sec">🕰️ {{ t('Cycle Context & Historical Analogs','周期背景与历史类比') }}</h2>
   <div class="analogs-card">
     <div style="font-size:11px;color:var(--muted);margin-bottom:8px">

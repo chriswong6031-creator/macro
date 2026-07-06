@@ -409,6 +409,19 @@ def _digest_text(b: dict) -> str:
         risk = " [RISK FLAG]" if nd.get("risk_flag") else ""
         trend = f" trend: {nd.get('trend_5d')}" if nd.get("trend_5d") else ""
         parts.append(f"Onshore/offshore tone divergence z={z:+.2f}{trend}{risk} (direction=0, accruing)")
+    # command line: top-2 ranked names for Mastermind transport
+    cmd = b.get("command")
+    if cmd and cmd.get("top10"):
+        top2 = cmd["top10"][:2]
+        cmd_line_parts = []
+        for row in top2:
+            ticker = row.get("ticker") or "?"
+            stage = row.get("stage") or "?"
+            edge = row.get("edge_remaining")
+            edge_str = f" edge={edge:.0%}" if isinstance(edge, float) else ""
+            cmd_line_parts.append(f"{ticker} ({stage}{edge_str})")
+        parts.append("COMMAND TOP-2: " + " · ".join(cmd_line_parts)
+                     + f" (universe={cmd.get('n_universe','?')}, context-only)")
     if not parts:
         return "China intelligence bus: no surfaces built yet."
     return "\n".join(parts)
@@ -478,6 +491,9 @@ def _command_block() -> dict | None:
 
     Reads the already-built artifact (build order: build_china_intel_hub runs first).
     Returns None when artifact absent — degrade-safe.  Additive over v5 (prefix-match safe).
+
+    Contract: returns {asof, n_universe, counts, top10, discovery_n, is_context_only}.
+    Analogs are handled separately via _analogs_block_from_command().
     """
     try:
         data = _read_json("china_intel/command.json")
@@ -508,6 +524,41 @@ def _command_block() -> dict | None:
 
 
 # --------------------------------------------------------------------------- #
+# v6: analogs block — reads site/china_intel/analogs.json (separate from command)
+# --------------------------------------------------------------------------- #
+def _analogs_block() -> dict | None:
+    """Read site/china_intel/analogs.json (schema china_intel.analogs.v1).
+
+    Separate from the command block so the template K4 can read b.analogs independently.
+    Returns None when artifact absent — NOT added to surfaces_present until non-None
+    (the artifact does not exist today; auto-lights when a parallel program ships it).
+    """
+    try:
+        d = _read_json("china_intel/analogs.json")
+        if not isinstance(d, dict):
+            return None
+        if d.get("schema") != "china_intel.analogs.v1":
+            log.debug("china_intel_bus: analogs schema mismatch: %s", d.get("schema"))
+            return None
+        if not d.get("fan") or not d.get("query"):
+            return None
+        return {
+            "as_of": d.get("as_of"),
+            "coverage": d.get("coverage"),
+            "query": d.get("query"),
+            "analogs": (d.get("analogs") or [])[:12],
+            "fan": d.get("fan"),
+            "method_note": d.get("method_note"),
+            "disclaimer_en": d.get("disclaimer_en"),
+            "disclaimer_zh": d.get("disclaimer_zh"),
+            "n_analogs": len(d.get("analogs") or []),
+        }
+    except Exception as e:  # noqa: BLE001
+        log.debug("china_intel_bus: analogs block failed (%s)", e)
+        return None
+
+
+# --------------------------------------------------------------------------- #
 # public
 # --------------------------------------------------------------------------- #
 def _staleness(b: dict) -> tuple[dict, int]:
@@ -526,7 +577,7 @@ def _staleness(b: dict) -> tuple[dict, int]:
 
 
 def briefing(asof: date | str | None = None) -> dict:
-    """Assemble the context-only `china_intel.briefing.v5`. Always valid; never raises."""
+    """Assemble the context-only `china_intel.briefing.v6`. Always valid; never raises."""
     b = {
         "schema": SCHEMA, "is_context_only": True,
         "generated_utc": datetime.now(timezone.utc).isoformat(),
@@ -535,6 +586,7 @@ def briefing(asof: date | str | None = None) -> dict:
         "regime": None, "discovery": None,
         "policy_phrase": None, "narrative_divergence": None,
         "special_situations": None, "command": None,
+        "analogs": None,   # v6: separate from command; NOT in surfaces_present until non-None
         "disclaimer": DISCLAIMER, "disclaimer_zh": DISCLAIMER_ZH,
     }
     for key, fn in (("news", _news_block), ("policy", _policy_block),
@@ -544,7 +596,8 @@ def briefing(asof: date | str | None = None) -> dict:
                     ("policy_phrase", _policy_phrase_block),
                     ("narrative_divergence", _narrative_divergence_block),
                     ("special_situations", _special_situations_block),
-                    ("command", _command_block)):
+                    ("command", _command_block),
+                    ("analogs", _analogs_block)):
         try:
             b[key] = fn()
         except Exception as e:  # noqa: BLE001
@@ -557,6 +610,7 @@ def briefing(asof: date | str | None = None) -> dict:
     b["flagged_tickers"] = a.get("flagged_tickers") or []
     b["what_changed"] = a.get("what_changed") or {}
     b["salience"] = a.get("what_matters") or []
+    # analogs NOT in surfaces_present until the artifact ships (degrade-safe)
     b["surfaces_present"] = [k for k in ("news", "policy", "altdata", "radar", "analysis",
                                         "policy_phrase", "narrative_divergence",
                                         "special_situations", "command") if b.get(k)]

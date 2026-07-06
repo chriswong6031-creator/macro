@@ -2374,7 +2374,7 @@
       "storage": "data/china_hub/signal_snapshots.jsonl",
       "started": "2026-07-06",
       "come_back_on": "2026-08-15",
-      "come_back_note": "Check n_dates>=25 and compute rank IC across opportunity_score vs forward 20d return vs CSI300.",
+      "come_back_note": "Check n_dates>=25 and compute rank IC across opportunity_score vs forward 20d return vs CSI300. IC is computed over rows with signal_core>0 only (board_only_unranked excluded from ranking). Priced rows only (veto_blind=False) form the cleaner IC sample.",
       "maturation": "n_dates>=25 then FDR gate",
       "status": "accruing",
       "state": "active",

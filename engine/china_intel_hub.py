@@ -229,46 +229,90 @@ def _load_closes_and_benchmark() -> tuple:
         return None, None
 
 
+def _load_per_stock_close(ticker: str) -> "pd.Series | None":
+    """Fallback price loader from data/china_stocks/<ticker>.parquet.
+
+    Used when the ticker is absent from closes.parquet.  Only the 'close' column
+    is read.  Returns a Series indexed by date or None on failure.
+    """
+    try:
+        import pandas as pd
+        p = _root() / "data" / "china_stocks" / f"{ticker}.parquet"
+        if not p.exists():
+            return None
+        df = pd.read_parquet(p, columns=["close"])
+        s = df["close"].dropna()
+        # ensure datetime index
+        if not isinstance(s.index, pd.DatetimeIndex):
+            s.index = pd.to_datetime(s.index, errors="coerce")
+            s = s[s.index.notna()].sort_index()
+        return s if len(s) >= 21 else None
+    except Exception as e:  # noqa: BLE001
+        log.debug("china_intel_hub: per-stock close load for %s failed (%s)", ticker, e)
+        return None
+
+
 def _price_trajectory(ticker: str, closes, bench) -> dict | None:
     """Compute per-name trajectory fields: rs_20d, rs_60d, off_high_pct, ret_20d, rolling_over.
 
-    rs_Xd = cumulative return of ticker minus CSI300 over X days (pct).
-    off_high_pct = (price / 252d-high − 1) * 100 — negative = below high.
+    LAYERED LOOKUP: first tries closes.parquet; falls back to
+    data/china_stocks/<ticker>.parquet for names missing from closes.
+
+    rs_Xd = cumulative return of ticker minus CSI300 over X sessions (pct),
+    computed on the dropna-aligned joined index (same trailing sessions for both legs).
+    off_high_pct = (price / 120-session-high − 1) * 100 — requires len >= 120.
     rolling_over = ret_20d < VETO_RETURN_THRESH AND rs_20d < rs_60d (momentum fading).
-    Returns None if fewer than 21 rows.
+    Returns None if fewer than 21 rows after lookup.
     """
-    if closes is None:
-        return None
-    try:
-        if ticker not in closes.columns:
-            return None
+    import pandas as pd
+
+    s: pd.Series | None = None
+
+    # Primary: closes.parquet
+    if closes is not None and ticker in closes.columns:
         s = closes[ticker].dropna()
         if len(s) < 21:
-            return None
+            s = None
+
+    # Fallback: per-stock parquet
+    if s is None:
+        s = _load_per_stock_close(ticker)
+
+    if s is None:
+        return None
+
+    try:
         ret_20 = float(s.iloc[-1] / s.iloc[-21] - 1.0) if len(s) >= 21 else None
         ret_60 = float(s.iloc[-1] / s.iloc[-61] - 1.0) if len(s) >= 61 else None
 
         rs_20: float | None = None
         rs_60: float | None = None
         if bench is not None:
-            # align
-            aligned_20 = s.iloc[-21:].align(bench.iloc[-21:], join="inner")[0] if len(s) >= 21 else None
-            if aligned_20 is not None and len(aligned_20) >= 2:
-                b20 = bench.reindex(aligned_20.index).dropna()
-                a20 = aligned_20.reindex(b20.index).dropna()
-                if len(a20) >= 2:
-                    rs_20 = float(a20.iloc[-1] / a20.iloc[0] - 1.0) - float(b20.iloc[-1] / b20.iloc[0] - 1.0)
-                    rs_20 *= 100.0
+            # rs_20: align both legs over last 21 rows on the shared index
+            if len(s) >= 21:
+                s20 = s.iloc[-21:]
+                b20_raw = bench.reindex(s20.index)
+                joined20 = pd.concat([s20, b20_raw], axis=1, join="inner").dropna()
+                joined20.columns = ["stk", "bnch"]
+                if len(joined20) >= 2:
+                    rs_20 = (float(joined20["stk"].iloc[-1] / joined20["stk"].iloc[0] - 1.0)
+                             - float(joined20["bnch"].iloc[-1] / joined20["bnch"].iloc[0] - 1.0)) * 100.0
+            # rs_60: same aligned approach over last 61 rows
             if len(s) >= 61:
-                aligned_60 = s.iloc[-61:].align(bench.iloc[-61:], join="inner")[0]
-                b60 = bench.reindex(aligned_60.index).dropna()
-                a60 = aligned_60.reindex(b60.index).dropna()
-                if len(a60) >= 2:
-                    rs_60 = float(a60.iloc[-1] / a60.iloc[0] - 1.0) - float(b60.iloc[-1] / b60.iloc[0] - 1.0)
-                    rs_60 *= 100.0
+                s60 = s.iloc[-61:]
+                b60_raw = bench.reindex(s60.index)
+                joined60 = pd.concat([s60, b60_raw], axis=1, join="inner").dropna()
+                joined60.columns = ["stk", "bnch"]
+                if len(joined60) >= 2:
+                    rs_60 = (float(joined60["stk"].iloc[-1] / joined60["stk"].iloc[0] - 1.0)
+                             - float(joined60["bnch"].iloc[-1] / joined60["bnch"].iloc[0] - 1.0)) * 100.0
 
-        high_252 = float(s.tail(252).max()) if len(s) >= 5 else None
-        off_high = float(s.iloc[-1] / high_252 - 1.0) * 100.0 if high_252 and high_252 > 0 else None
+        # off_high: require at least 120 sessions — avoid labelling a short-window high
+        off_high: float | None = None
+        if len(s) >= 120:
+            high_252 = float(s.tail(252).max())
+            if high_252 > 0:
+                off_high = float(s.iloc[-1] / high_252 - 1.0) * 100.0
 
         # rolling_over: 20d return below veto threshold AND RS falling (rs_20d < rs_60d)
         rolling_over = False
@@ -310,11 +354,12 @@ def _dirs(altdata_row: dict | None, radar_row: dict | None,
         sign = radar_row.get("sign")
         rd = 1 if sign == "positive" else -1 if sign == "negative" else 0
 
-    # news: net presence (>0 headlines = bullish lean for news desk; no sentiment in by_ticker)
+    # news: presence indicator — no sentiment is computed from by_ticker, so direction is None
+    # for gap purposes (news dir must NOT count toward lag_up, only toward desk_matrix presence).
+    # The dot in the desk matrix shows neutral presence; a data-tip notes sentiment-less.
     nd: int | None = None
-    if news_items is not None:
-        # use headline count as a proxy presence signal; 0 headlines = data absent for desk
-        nd = 1 if news_items else None   # news list present but empty = desk absent
+    # news_items present (even empty list) = desk present, but dir stays None (no sentiment).
+    # Desk absent (news_items is None) = nd stays None.
 
     # board: membership on buy board = bullish
     bd: int | None = None
@@ -609,12 +654,14 @@ def _disc_lhb_first_seat(today: date | None = None) -> list:
 
     Source: data/china_lhb/events.parquet + detail.parquet.
     Returns list of {ticker, name, disc_score, source, reason, off_desk, experimental}.
+
+    Recent window is SESSION-BASED: events with date >= (max date in events parquet minus
+    1 session).  This avoids the calendar-days window failing on Mondays/holidays.
     """
     try:
         import pandas as pd
         td = today or date.today()
         cutoff_90 = pd.Timestamp(td) - pd.Timedelta(days=90)
-        cutoff_ref = pd.Timestamp(td) - pd.Timedelta(days=2)   # recent window
 
         events_p = _root() / "data" / "china_lhb" / "events.parquet"
         detail_p = _root() / "data" / "china_lhb" / "detail.parquet"
@@ -625,7 +672,18 @@ def _disc_lhb_first_seat(today: date | None = None) -> list:
         ev["date"] = pd.to_datetime(ev["date"], errors="coerce")
         ev = ev.dropna(subset=["date", "ticker"])
 
-        # tickers appearing recently
+        if ev.empty:
+            return []
+
+        # SESSION-BASED recent window: anchor on the DATA max date.
+        # "Recent" = events with date == max_date in the parquet (the most-recent session).
+        # This fixes the Monday/holiday gap: even if the last session was 3 calendar days
+        # ago, any event on that session date is picked up.
+        all_dates = ev["date"].sort_values().unique()
+        max_date = all_dates[-1]
+        cutoff_ref = max_date  # include only the most-recent session
+
+        # tickers appearing in the most-recent session
         recent = ev[ev["date"] >= cutoff_ref]
         if recent.empty:
             return []
@@ -879,17 +937,24 @@ def _append_snapshot_ledger(command: list, today: date, guard_env: bool = True) 
         snap_path = out_dir / "signal_snapshots.jsonl"
         today_str = today.isoformat()
 
-        # idempotency: check if today's rows already written
+        # idempotency: check the LAST WRITTEN date by reading the final non-empty line
         if snap_path.exists():
-            tail = snap_path.read_text(encoding="utf-8").splitlines()[-5:]
-            for line in tail:
+            content = snap_path.read_text(encoding="utf-8")
+            # find last non-empty line (not a fixed 5-line tail)
+            last_date = None
+            for line in reversed(content.splitlines()):
+                line = line.strip()
+                if not line:
+                    continue
                 try:
                     row = json.loads(line)
-                    if row.get("date") == today_str:
-                        log.debug("china_intel_hub: snapshot already written for %s", today_str)
-                        return
+                    last_date = row.get("date")
                 except Exception:  # noqa: BLE001
                     pass
+                break  # stop after first non-empty line from end
+            if last_date == today_str:
+                log.debug("china_intel_hub: snapshot already written for %s", today_str)
+                return
 
         rows = []
         for d in command:
@@ -1031,15 +1096,37 @@ def _build_inner(today: date, top: int) -> dict:
         traj = _price_trajectory(ticker, closes, bench)
         d = _dossier(ticker, altdata_row, radar_row, news_items, board_row,
                      special_flags, traj, board_member)
+
+        # ── BLOCKER 3b: price-plane missing → veto_blind, honest opportunity ── #
+        veto_blind = traj is None  # No price data from either source
+        d["veto_blind"] = veto_blind
+        if veto_blind:
+            # opportunity computed WITHOUT the edge multiplier (the 0.75 board-absent constant
+            # must NOT be awarded as sole edge component when price is absent)
+            edge_rec_score = d["edge_remaining"]
+            if d.get("edge_components", 0) == 1 and not d.get("traj"):
+                # sole component is board-absent bonus — that's the flat 0.75 constant
+                # Do NOT count it when price plane is absent: opportunity = 0
+                d["opportunity_score"] = 0.0
+            # else: keep opportunity as computed (there's a board_row or other component)
+
         dossiers.append(d)
 
-    # ── 5. Anti-echo-chamber ranking (the law) ──────────────────────────── #
-    # opportunity = signal_core × falsifier_penalty × edge_remaining × gap_mult
-    # Sort key: (opportunity_score DESC, edge_remaining DESC) — NEVER (agreement, conviction)
-    dossiers.sort(key=lambda d: (d["opportunity_score"], d["edge_remaining"]), reverse=True)
+    # ── 5. MAJOR 5: exclude signal_core==0 board-only names from command ── #
+    # They stay in n_universe and counts.board_only_unranked.
+    # No leading signal ⇒ no opportunity claim in the ranked list.
+    board_only_unranked = [d for d in dossiers if d.get("signal_core", 0) == 0]
+    ranked_dossiers = [d for d in dossiers if d.get("signal_core", 0) > 0]
+
+    # ── 5a. Anti-echo-chamber ranking (the law) ─────────────────────────── #
+    # Sort key: (veto_blind ASC so priced rows rank above veto-blind at equal signal,
+    #            opportunity_score DESC, edge_remaining DESC)
+    ranked_dossiers.sort(
+        key=lambda d: (d.get("veto_blind", False), -d["opportunity_score"], -d["edge_remaining"])
+    )
 
     # ── 6. Command list (compact, strip _* fields) ──────────────────────── #
-    command = [_compact(d) for d in dossiers[:top]]
+    command = [_compact(d) for d in ranked_dossiers[:top]]
 
     # ── 7. Discovery lanes ──────────────────────────────────────────────── #
     lhb = _disc_lhb_first_seat(today)
@@ -1070,20 +1157,24 @@ def _build_inner(today: date, top: int) -> dict:
     # ── 8. Analogs block ────────────────────────────────────────────────── #
     analogs = _analogs_block()
 
-    # ── 9. Snapshot ledger ──────────────────────────────────────────────── #
-    _append_snapshot_ledger(dossiers, today)
+    # ── 9. Snapshot ledger (ranked rows only — already top-top cap) ─────── #
+    _append_snapshot_ledger(ranked_dossiers, today)
 
     # ── 10. Counts ──────────────────────────────────────────────────────── #
+    # Stage counts over ALL dossiers (universe = ranked + board_only_unranked)
+    all_dossiers = ranked_dossiers + board_only_unranked
     counts = {
-        "emerging": sum(1 for d in dossiers if d["stage"] == "emerging"),
-        "early": sum(1 for d in dossiers if d["stage"] == "early"),
-        "consensus": sum(1 for d in dossiers if d["stage"] == "consensus"),
-        "exhausted": sum(1 for d in dossiers if d["stage"] == "exhausted"),
-        "faltering": sum(1 for d in dossiers if d["stage"] == "faltering"),
-        "distribution": sum(1 for d in dossiers if d["stage"] == "distribution"),
-        "quiet": sum(1 for d in dossiers if d["stage"] == "quiet"),
+        "emerging": sum(1 for d in ranked_dossiers if d["stage"] == "emerging"),
+        "early": sum(1 for d in ranked_dossiers if d["stage"] == "early"),
+        "consensus": sum(1 for d in ranked_dossiers if d["stage"] == "consensus"),
+        "exhausted": sum(1 for d in ranked_dossiers if d["stage"] == "exhausted"),
+        "faltering": sum(1 for d in ranked_dossiers if d["stage"] == "faltering"),
+        "distribution": sum(1 for d in ranked_dossiers if d["stage"] == "distribution"),
+        "quiet": sum(1 for d in ranked_dossiers if d["stage"] == "quiet"),
         "board_members": len(board_members),
-        "with_price": sum(1 for d in dossiers if d.get("traj") is not None),
+        "with_price": sum(1 for d in ranked_dossiers if d.get("traj") is not None),
+        "veto_blind": sum(1 for d in command if d.get("veto_blind")),
+        "board_only_unranked": len(board_only_unranked),
     }
 
     return {
@@ -1091,7 +1182,7 @@ def _build_inner(today: date, top: int) -> dict:
         "is_context_only": True,
         "as_of": today.isoformat(),
         "generated_utc": datetime.now(timezone.utc).isoformat(),
-        "n_universe": len(dossiers),
+        "n_universe": len(all_dossiers),
         "command": command,
         "discovery": discovery_queue,
         "analogs": analogs,
@@ -1101,7 +1192,8 @@ def _build_inner(today: date, top: int) -> dict:
             "Ranked by OPPORTUNITY = signal_core × edge_remaining × leading_gap_multiplier. "
             "'emerging' = altdata/radar lead while board/news are still quiet (pre-consensus). "
             "'exhausted' = priced-in across all desks. Discovery lanes surface off-desk names. "
-            "Margin velocity lane is EXPERIMENTAL (Phase-0 accruing, contributes zero to ranking)."
+            "Margin velocity lane is EXPERIMENTAL (Phase-0 accruing, contributes zero to ranking). "
+            "board_only_unranked = names with signal_core==0 excluded from ranking (no leading signal)."
         ),
         "disclaimer": DISCLAIMER,
     }

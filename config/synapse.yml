@@ -2396,7 +2396,7 @@ artifacts:
     consumers:
       - engine/china_intel_bus.py
     external_consumers: []
-    notes: "Producer: engine/china_intel_hub.py build(). Per-ticker fusion of 5 China desks ranked by edge-remaining × opportunity (anti-echo-chamber, INTELLIGENCE_HUB_V2 rulings). Discovery lanes: LHB first-seat, margin velocity (EXPERIMENTAL), southbound delta, THS concepts. Snapshot ledger data/china_hub/signal_snapshots.jsonl appends daily under CN_LANE=asia. china-intel W4 added site-china-intel-command = 177->178"
+    notes: "Producer: engine/china_intel_hub.py build(). Per-ticker fusion of 5 China desks ranked by edge-remaining × opportunity (anti-echo-chamber, INTELLIGENCE_HUB_V2 rulings). Discovery lanes: LHB first-seat, margin velocity (EXPERIMENTAL), southbound delta, THS concepts. Snapshot ledger data/china_hub/signal_snapshots.jsonl appends daily under CN_LANE=asia. china-intel W4 added site-china-intel-command = 180->181"
     qual_ladder_ref: china_intel.news_dir
 
   # --- 3 consumers ---
