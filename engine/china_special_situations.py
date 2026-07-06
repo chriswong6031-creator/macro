@@ -14,6 +14,9 @@ Rules:
 - Direction labels = exchange-reported 预告类型 verbatim
 - Inquiry letters = metadata + link only (no body text)
 - ST watch labeled "history accrues from 2026-07 forward" until ≥2 dates present
+
+Unlock ratio note: 占解禁前流通市值比例 is a FRACTION (1.0 = 100%). Engine stores
+float_pct = ratio * 100 so that float_pct=5.0 means 5% of pre-unlock float.
 """
 from __future__ import annotations
 
@@ -62,6 +65,20 @@ def _safe_float(v: Any) -> float | None:
         return None
 
 
+def _safe_str(v: Any) -> str:
+    """Coerce to str; never emits raw numpy/int64 types."""
+    if v is None:
+        return ""
+    try:
+        f = float(v)
+        if pd.isna(f):
+            return ""
+        # int-like float → no decimal
+        return str(int(f)) if f == int(f) else str(f)
+    except (TypeError, ValueError):
+        return str(v)
+
+
 def _today() -> str:
     return date.today().isoformat()
 
@@ -85,7 +102,12 @@ def _asof_status(parquet: Path) -> tuple[str | None, str]:
 # --------------------------------------------------------------------------- #
 
 def _unlock_block() -> dict | None:
-    """Next-30d unlock events ranked by float impact; weekly aggregate strip."""
+    """Next-30d unlock events ranked by float impact; weekly aggregate strip.
+
+    占解禁前流通市值比例 is a FRACTION: 1.0 = 100% of pre-unlock float.
+    Engine converts to float_pct (percent, 0-100 scale) on read.
+    large_flag fires when float_pct >= 5.0 (≥5% of pre-unlock float).
+    """
     det_path = _data_dir() / "china_unlocks" / "detail.parquet"
     sum_path  = _data_dir() / "china_unlocks" / "summary.parquet"
     asof, status = _asof_status(det_path)
@@ -121,35 +143,48 @@ def _unlock_block() -> dict | None:
             return {"asof": asof, "status": status, "events": [], "weekly_strip": [],
                     "n_events_30d": 0, "n_large": 0}
 
-        # Sort by float-impact ratio desc
+        # Build float_pct (percent, 0-100 scale) from ratio column (fraction 0-1 scale)
+        # Then sort by float_pct desc
         if ratio_col and ratio_col in fwd.columns:
-            fwd["_ratio"] = fwd[ratio_col].apply(_safe_float)
+            fwd["_ratio_raw"] = fwd[ratio_col].apply(_safe_float)
+            # ratio is a fraction: multiply by 100 to get percent
+            fwd["_float_pct"] = fwd["_ratio_raw"].apply(
+                lambda x: x * 100.0 if x is not None else None
+            )
         else:
-            fwd["_ratio"] = None
-        fwd = fwd.sort_values("_ratio", ascending=False, na_position="last")
+            fwd["_ratio_raw"] = None
+            fwd["_float_pct"] = None
+        fwd = fwd.sort_values("_float_pct", ascending=False, na_position="last")
 
         events = []
         for _, row in fwd.head(_MAX_ROWS).iterrows():
-            ratio = _safe_float(row.get("_ratio")) if "_ratio" in row.index else None
+            float_pct = _safe_float(row.get("_float_pct")) if "_float_pct" in row.index else None
             events.append({
                 "ticker":      str(row.get("ticker") or row.get(code_col) or ""),
                 "name":        str(row.get(name_col) or ""),
                 "unlock_date": row[date_col].strftime("%Y-%m-%d") if pd.notna(row[date_col]) else None,
                 "lock_type":   str(row.get(type_col) or "") if type_col else "",
-                "float_ratio": ratio,
-                "large_flag":  ratio is not None and ratio >= 5.0,
+                # float_pct: percent (0-100 scale); 5.0 = 5% of pre-unlock float
+                "float_pct":   float_pct,
+                # kept for backward-compat consumers; same value, same name
+                "float_ratio": float_pct,
+                "large_flag":  float_pct is not None and float_pct >= 5.0,
                 "mktcap_yi":   _safe_float(row.get(mktcap_col)) if mktcap_col else None,
             })
 
         n_large = sum(1 for e in events if e["large_flag"])
 
         # Weekly aggregate strip from summary
+        # Summary date column is 解禁时间; fall back to 时间, then 日期
         weekly_strip: list[dict] = []
         try:
             if sum_path.exists():
                 df_sum = pd.read_parquet(sum_path)
                 scols = list(df_sum.columns)
-                sdate_col = _col(scols, "日期") or _col(scols, "解禁日期")
+                sdate_col = (
+                    _col(scols, "解禁时间") or _col(scols, "时间") or
+                    _col(scols, "日期") or _col(scols, "解禁日期")
+                )
                 smktcap_col = _col(scols, "实际解禁市值") or _col(scols, "市值")
                 if sdate_col and smktcap_col:
                     df_sum[sdate_col] = pd.to_datetime(df_sum[sdate_col], errors="coerce")
@@ -177,7 +212,11 @@ def _unlock_block() -> dict | None:
 
 
 def _inquiry_block() -> dict | None:
-    """Last-14d exchange-issued letters (kind=letter), newest first + reply status."""
+    """Last-14d exchange-issued letters (kind=letter), newest first + reply status.
+
+    Returns a list of letter dicts WITHOUT a 'kind' key — the list is
+    already letters-only by construction (kind='letter' filtered here).
+    """
     path = _data_dir() / "china_inquiry" / "inquiry.parquet"
     asof, status = _asof_status(path)
     try:
@@ -197,6 +236,7 @@ def _inquiry_block() -> dict | None:
         # Build reply lookup: secCode → True if there's a reply in the window
         replies = set(df_filt[df_filt["kind"] == "reply"]["secCode"].dropna().tolist())
 
+        # Exclude attachments (kind='attachment') and replies — letters only
         letters = df_filt[df_filt["kind"] == "letter"].sort_values(
             "announcementTime", ascending=False, na_position="last"
         )
@@ -211,6 +251,7 @@ def _inquiry_block() -> dict | None:
                 "pdf_url":    str(r.get("adjunctUrl") or ""),
                 "has_reply":  str(r.get("secCode") or "") in replies,
                 "type_name":  str(r.get("announcementTypeName") or ""),
+                # Note: no 'kind' key — list is letters-only; register_claims must not filter on kind
             })
 
         return {
@@ -455,9 +496,19 @@ def _goodwill_block() -> dict | None:
         df = pd.read_parquet(path)
         if df.empty:
             return None
-        # Return last 5 years as context rows
-        rows = df.tail(5).to_dict("records")
-        return {"asof": asof, "status": status, "annual_rows": rows[:5]}
+        # Coerce all values to safe Python scalars (guard against numpy int64 → json.dumps TypeError)
+        raw_rows = df.tail(5).to_dict("records")
+        coerced_rows = []
+        for row in raw_rows:
+            coerced = {}
+            for k, v in row.items():
+                f = _safe_float(v)
+                if f is not None:
+                    coerced[k] = f
+                else:
+                    coerced[k] = _safe_str(v) if v is not None else None
+            coerced_rows.append(coerced)
+        return {"asof": asof, "status": status, "annual_rows": coerced_rows[:5]}
     except Exception as e:  # noqa: BLE001
         log.warning("china_special_sits: goodwill block failed (%s)", e)
         return None
@@ -509,6 +560,8 @@ def _by_ticker_rollup(blocks: dict) -> dict:
 def scan() -> dict:
     """Assemble the special-situations context snapshot. Never raises."""
     blocks: dict[str, Any] = {}
+    block_asofs: list[str] = []
+
     for key, fn in (
         ("unlocks",      _unlock_block),
         ("inquiry",      _inquiry_block),
@@ -525,6 +578,14 @@ def scan() -> dict:
             log.warning("china_special_sits: %s block raised (%s)", key, e)
             blocks[key] = None
 
+        # collect per-block asof for data_asof staleness indicator
+        blk = blocks.get(key)
+        if isinstance(blk, dict) and blk.get("asof"):
+            block_asofs.append(str(blk["asof"]))
+
+    # data_asof = worst (oldest) per-input asof; falls back to today
+    data_asof = min(block_asofs) if block_asofs else _today()
+
     by_ticker = _by_ticker_rollup(blocks)
 
     return {
@@ -532,12 +593,17 @@ def scan() -> dict:
         "is_context_only": True,
         "generated_utc": pd.Timestamp.utcnow().isoformat(),
         "asof": _today(),
+        "data_asof": data_asof,
         **blocks,
         "by_ticker": by_ticker,
         "disclaimer": (
             "Context only — not a signal, score or trade. "
             "Rankings by disclosed magnitudes and exchange-reported labels; "
             "no directional scoring originates here."
+        ),
+        "disclaimer_zh": (
+            "仅作背景，非信号、评分或交易。按披露规模和交易所公布类型排序；"
+            "此处不产生任何方向性评分。"
         ),
     }
 
@@ -550,6 +616,15 @@ def register_claims(snap: dict, root: Any = None) -> int:
     ledger writes (mirrors the china_standout_track lane guard pattern).
 
     direction=0 for all claims (salience-only); claim_family=cn_special_sits.
+
+    Deduplication: each event registers exactly ONCE per event identity via an append-only
+    sidecar data/china_special_sits/claims_registered.parquet
+    (columns: event_key, first_registered).
+    event_key: unlock → unlock_{ticker}_{unlock_date}; inquiry → inq_{secCode}_{announce_date}
+
+    Entity scope: scope_type='entity', scope_key=<normalized ticker> (mirrors communique_diff.py
+    lines ~431-444). Falls back to macro/510300.SS only when ticker normalization fails.
+
     Returns count registered; 0 on any failure.
     """
     import os
@@ -565,30 +640,77 @@ def register_claims(snap: dict, root: Any = None) -> int:
     DESK = "china_special_sits"
     CLAIM_FAMILY = "cn_special_sits"
     HORIZON_D = 21
-    asof = snap.get("asof") or _today()
+
+    # ---------------------------------------------------------------------- #
+    # load (or create) the claims-registered sidecar
+    # ---------------------------------------------------------------------- #
+    sidecar_path = _data_dir() / "china_special_sits" / "claims_registered.parquet"
+    try:
+        if sidecar_path.exists():
+            df_sidecar = pd.read_parquet(sidecar_path)
+            registered_keys: set[str] = set(df_sidecar["event_key"].dropna().tolist())
+        else:
+            df_sidecar = pd.DataFrame(columns=["event_key", "first_registered"])
+            registered_keys = set()
+    except Exception as e:  # noqa: BLE001
+        log.warning("china_special_sits: sidecar read failed (%s), starting fresh", e)
+        df_sidecar = pd.DataFrame(columns=["event_key", "first_registered"])
+        registered_keys = set()
+
+    today = _today()
     pending: list[dict] = []
+    new_sidecar_rows: list[dict] = []
+
+    # try to import to_ticker for entity normalization
+    try:
+        from collectors.china_analyst import to_ticker as _to_ticker
+    except Exception:  # noqa: BLE001
+        _to_ticker = None
+
+    def _entity_claim(ticker: str, sec_code: str = "") -> tuple[str, str]:
+        """Return (scope_type, scope_key) for a claim. Entity path preferred."""
+        normalized = None
+        # try ticker first (already normalized in unlock events)
+        if ticker and "." in ticker:
+            normalized = ticker
+        # try sec_code via to_ticker
+        if normalized is None and sec_code and _to_ticker:
+            try:
+                normalized = _to_ticker(sec_code)
+            except Exception:  # noqa: BLE001
+                pass
+        if normalized:
+            return "entity", normalized
+        return "macro", "510300.SS"
 
     # inquiry letters (per-company salience claims)
     inquiry = snap.get("inquiry") or {}
     for ltr in (inquiry.get("letters") or []):
-        if ltr.get("kind") != "letter":
-            continue
+        # letters list has NO 'kind' key by construction (already filtered to letters-only)
+        # do NOT filter on ltr.get('kind') — the list is letters-only
         sec_code = str(ltr.get("secCode") or "")
         if not sec_code:
             continue
+        announce_date = str(ltr.get("date") or today)[:10]
+        event_key = f"inq_{sec_code}_{announce_date}"
+        if event_key in registered_keys:
+            continue  # already registered on a previous run
+        scope_type, scope_key = _entity_claim("", sec_code)
         try:
+            claim_asof = announce_date  # stamp from the event's own date
             pending.append(qledger.make_claim(
-                desk=DESK, asof=asof, scope_type="macro",
-                scope_key="510300.SS", direction=0, horizon_d=HORIZON_D,
+                desk=DESK, asof=claim_asof, scope_type=scope_type,
+                scope_key=scope_key, direction=0, horizon_d=HORIZON_D,
                 timestamp_quality="CRAWL_BOUNDED", bench="510300.SS",
                 claim_family=CLAIM_FAMILY,
                 extra={
                     "event_kind": "inquiry_letter",
                     "sec_code": sec_code,
                     "sec_name": ltr.get("secName"),
-                    "salt": f"inq_{sec_code}_{asof}",
+                    "salt": event_key,
                 },
             ))
+            new_sidecar_rows.append({"event_key": event_key, "first_registered": today})
         except Exception as ex:  # noqa: BLE001
             log.debug("china_special_sits: claim build failed for %s (%s)", sec_code, ex)
 
@@ -600,34 +722,55 @@ def register_claims(snap: dict, root: Any = None) -> int:
         ticker = str(ev.get("ticker") or "")
         if not ticker:
             continue
+        unlock_date = str(ev.get("unlock_date") or today)[:10]
+        event_key = f"unlock_{ticker}_{unlock_date}"
+        if event_key in registered_keys:
+            continue  # already registered on a previous run
+        scope_type, scope_key = _entity_claim(ticker, "")
         try:
+            # stamp from first-seen (today, sidecar guarantees uniqueness)
+            claim_asof = today
             pending.append(qledger.make_claim(
-                desk=DESK, asof=asof, scope_type="macro",
-                scope_key="510300.SS", direction=0, horizon_d=HORIZON_D,
+                desk=DESK, asof=claim_asof, scope_type=scope_type,
+                scope_key=scope_key, direction=0, horizon_d=HORIZON_D,
                 timestamp_quality="CRAWL_BOUNDED", bench="510300.SS",
                 claim_family=CLAIM_FAMILY,
                 extra={
                     "event_kind": "large_unlock",
                     "ticker": ticker,
-                    "unlock_date": ev.get("unlock_date"),
-                    "float_ratio": ev.get("float_ratio"),
-                    "salt": f"unlock_{ticker}_{ev.get('unlock_date')}",
+                    "unlock_date": unlock_date,
+                    "float_pct": ev.get("float_pct"),
+                    "salt": event_key,
                 },
             ))
+            new_sidecar_rows.append({"event_key": event_key, "first_registered": today})
         except Exception as ex:  # noqa: BLE001
             log.debug("china_special_sits: claim build failed for unlock %s (%s)", ticker, ex)
 
     if not pending:
         return 0
+
     try:
         results = qledger.register_batch(pending, root=root)
         n = sum(1 for r in results if r.get("status") != "error")
         log.info("china_special_sits: registered %d/%d qledger claims (asof=%s)",
-                 n, len(pending), asof)
-        return n
+                 n, len(pending), today)
     except Exception as e:  # noqa: BLE001
         log.warning("china_special_sits: register_batch failed (%s)", e)
         return 0
+
+    # persist sidecar only after successful registration
+    if new_sidecar_rows and n > 0:
+        try:
+            df_new = pd.DataFrame(new_sidecar_rows)
+            df_merged = pd.concat([df_sidecar, df_new], ignore_index=True)
+            sidecar_path.parent.mkdir(parents=True, exist_ok=True)
+            df_merged.to_parquet(sidecar_path, index=False)
+            log.debug("china_special_sits: sidecar updated (%d total keys)", len(df_merged))
+        except Exception as e:  # noqa: BLE001
+            log.warning("china_special_sits: sidecar write failed (%s)", e)
+
+    return n
 
 
 def build() -> dict | None:

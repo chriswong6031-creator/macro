@@ -26,7 +26,24 @@ def _site_dir() -> Path:
 
 
 def build() -> dict | None:
+    import importlib
+    import os
     from engine import china_special_situations as css
+
+    # Best-effort collector refresh when running in the asia-close lane.
+    # Idempotency gates inside each collector make repeat calls cheap no-ops.
+    if os.environ.get("CN_LANE", "") == "asia":
+        for mod_name, fn_name in (
+            ("collectors.china_unlocks",     "refresh"),
+            ("collectors.china_inquiry",     "refresh"),
+            ("collectors.china_preannounce", "refresh"),
+            ("collectors.china_st",          "refresh"),
+        ):
+            try:
+                mod = importlib.import_module(mod_name)
+                getattr(mod, fn_name)()
+            except Exception as e:  # noqa: BLE001
+                log.warning("build_china_special_situations: %s.%s failed (%s)", mod_name, fn_name, e)
 
     snap = css.build()   # writes site/chinaspecialdata/special.json
 

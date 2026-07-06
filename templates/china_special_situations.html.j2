@@ -2,9 +2,6 @@
 {% macro t(en, zh='') -%}
 <span class="l-en">{{ en|safe }}</span><span class="l-zh">{{ (zh if zh else en)|safe }}</span>
 {%- endmacro %}
-{% macro bl(en, zh='') -%}
-<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
-{%- endmacro %}
 
 {% block title %}{{ t('China Special Situations', '中国特殊情景') }} — {{ t('Macro Dashboard', '宏观仪表盘') }}{% endblock %}
 
@@ -111,7 +108,7 @@
         <th>{{ t('Name', '名称') }}</th>
         <th>{{ t('Unlock Date', '解禁日期') }}</th>
         <th>{{ t('Type', '类型') }}</th>
-        <th>{{ t('Float %', '流通占比') }}</th>
+        <th>{{ t('Float % of Pre-Unlock', '占解禁前流通%') }}</th>
       </tr></thead>
       <tbody>
       {%- for ev in u.events %}
@@ -121,8 +118,8 @@
         <td>{{ ev.unlock_date or '—' }}</td>
         <td style="font-size:11.5px;color:var(--muted)">{{ ev.lock_type or '—' }}</td>
         <td>
-          {%- if ev.float_ratio is not none %}
-            {{ '%.1f'|format(ev.float_ratio) }}%
+          {%- if ev.float_pct is not none %}
+            {{ '%.1f'|format(ev.float_pct) }}%
             {%- if ev.large_flag %} <span class="large-flag" data-tip-en="≥5% of pre-unlock float" data-tip-zh="占解禁前流通市值≥5%">!</span>{%- endif %}
           {%- else %}—{%- endif %}
         </td>
@@ -136,7 +133,7 @@
       {%- for w in u.weekly_strip %}
         <span style="background:var(--panel2);padding:3px 9px;border-radius:8px;border:1px solid var(--line)">
           <b>{{ w.week }}</b>
-          {%- if w.total_mktcap is not none %} · {{ w.total_mktcap|round(0)|int }} {{ t('万元', '万元') }}{%- endif %}
+          {%- if w.total_mktcap is not none %} · {{ w.total_mktcap|round(0)|int }} {{ t('(¥10k)', '万元') }}{%- endif %}
         </span>
       {%- endfor %}
       </div>
@@ -156,7 +153,7 @@
   {%- if not inq or inq.status == 'missing' %}
   <p class="empty-state">{{ t('No inquiry data — populates after first collect.', '无问询数据——将在首次采集后填充。') }}</p>
   {%- elif not inq.letters %}
-  <p class="empty-state">{{ t('No exchange-issued letters in past 14 days / 窗口内无问询函', '过去14天内无交易所问询函 / 窗口内无问询函') }}</p>
+  <p class="empty-state">{{ t('No exchange-issued letters in past 14 days.', '过去14天内无交易所问询函。') }}</p>
   {%- else %}
   <div class="ss-card">
     <div class="sc-hd">
@@ -170,7 +167,13 @@
         <b>{{ ltr.secCode }}</b> {{ ltr.secName }}
         {%- if ltr.has_reply %} <span class="reply-tag">{{ t('replied', '已回复') }}</span>{%- endif %}
         <div style="font-size:11.5px;color:var(--muted);margin-top:3px">{{ ltr.title }}</div>
-        {%- if ltr.pdf_url %}<a href="http://www.cninfo.com.cn{{ ltr.pdf_url }}" target="_blank" rel="noopener noreferrer" style="font-size:10.5px;color:var(--link)">{{ t('PDF ↗', 'PDF ↗') }}</a>{%- endif %}
+        {%- if ltr.pdf_url %}
+          {%- if ltr.pdf_url.startswith('/') %}
+            <a href="https://static.cninfo.com.cn{{ ltr.pdf_url }}" target="_blank" rel="noopener noreferrer" style="font-size:10.5px;color:var(--link)">{{ t('PDF ↗', 'PDF ↗') }}</a>
+          {%- else %}
+            <a href="https://static.cninfo.com.cn/{{ ltr.pdf_url }}" target="_blank" rel="noopener noreferrer" style="font-size:10.5px;color:var(--link)">{{ t('PDF ↗', 'PDF ↗') }}</a>
+          {%- endif %}
+        {%- endif %}
       </div>
       <div class="inq-meta">{{ ltr.date }}</div>
     </div>
@@ -251,8 +254,8 @@
     <table class="ss">
       <thead><tr>
         <th>{{ t('Ticker', '代码') }}</th><th>{{ t('Name', '名称') }}</th>
-        <th>{{ t('Plan 亿', '计划规模（亿）') }}</th>
-        <th>{{ t('Done 亿', '已完成（亿）') }}</th>
+        <th>{{ t('Plan (¥100M)', '计划规模（亿）') }}</th>
+        <th>{{ t('Done (¥100M)', '已完成（亿）') }}</th>
         <th>{{ t('Status', '状态') }}</th>
       </tr></thead>
       <tbody>
@@ -293,7 +296,7 @@
       <thead><tr>
         <th>{{ t('Ticker', '代码') }}</th><th>{{ t('Name', '名称') }}</th>
         <th>{{ t('Pledge %', '质押比例') }}</th>
-        <th>{{ t('Mktcap 亿', '质押市值（亿）') }}</th>
+        <th>{{ t('Mktcap (¥100M)', '质押市值（亿）') }}</th>
       </tr></thead>
       <tbody>
       {%- for r in pl.top %}
@@ -378,7 +381,7 @@
     <table class="ss">
       <thead><tr>
         <th>{{ t('Ticker', '代码') }}</th><th>{{ t('Avg Prem%', '平均溢价') }}</th>
-        <th>{{ t('Amount 亿', '金额（亿）') }}</th><th>{{ t('Count', '笔数') }}</th>
+        <th>{{ t('Amount (¥100M)', '金额（亿）') }}</th><th>{{ t('Count', '笔数') }}</th>
         <th>{{ t('Last', '最近日期') }}</th>
       </tr></thead>
       <tbody>
@@ -399,7 +402,7 @@
     <table class="ss">
       <thead><tr>
         <th>{{ t('Ticker', '代码') }}</th><th>{{ t('Avg Disc%', '平均折价') }}</th>
-        <th>{{ t('Amount 亿', '金额（亿）') }}</th><th>{{ t('Count', '笔数') }}</th>
+        <th>{{ t('Amount (¥100M)', '金额（亿）') }}</th><th>{{ t('Count', '笔数') }}</th>
         <th>{{ t('Last', '最近日期') }}</th>
       </tr></thead>
       <tbody>
@@ -428,10 +431,23 @@
   <div class="ss-card">
     <p style="font-size:12px;color:var(--muted);margin-bottom:8px">{{ t('Whole-market annual goodwill aggregates — macro context for impairment risk across A-share universe.', '全市场年度商誉汇总——A股商誉减值风险的宏观背景。') }}</p>
     <details class="ss-more"><summary>{{ t('Show annual rows ▸', '显示年度数据 ▸') }}</summary>
+      {%- set _key_labels = {
+        '报告期': t('Period', '报告期'),
+        '商誉': t('Goodwill (¥100M)', '商誉（亿）'),
+        '商誉减值': t('Impairment (¥100M)', '商誉减值（亿）'),
+        '净资产': t('Net assets (¥100M)', '净资产（亿）'),
+      } %}
       <div class="gw-strip" style="margin-top:8px">
         {%- for r in gw.annual_rows %}
         {%- for k, v in r.items() if k != 'asof' %}
-        <span><span class="gw-yr">{{ k }}</span>: <span class="gw-val">{{ v }}</span></span>
+        <span>
+          <span class="gw-yr">{{ _key_labels.get(k, k) }}</span>:
+          <span class="gw-val">
+            {%- if v is number and v > 1000 %}{{ '%.0f'|format(v / 1e8) }}{{ t(' (¥100M)', '（亿）') }}
+            {%- elif v is number %}{{ '%.2f'|format(v) }}%
+            {%- else %}{{ v }}{%- endif %}
+          </span>
+        </span>
         {%- endfor %}
         {%- endfor %}
       </div>
@@ -439,7 +455,10 @@
   </div>
   {%- endif %}
 
-  <p class="disc">{{ ss.disclaimer }}</p>
+  <div class="disc">
+    <span class="l-en">{{ ss.disclaimer }}</span>
+    <span class="l-zh">{{ ss.disclaimer_zh if ss.disclaimer_zh else ss.disclaimer }}</span>
+  </div>
   {%- endif %}
 </div>
 {% endblock %}

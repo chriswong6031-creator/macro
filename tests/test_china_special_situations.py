@@ -4,8 +4,11 @@ Tests:
   - all inputs missing → every block None / degraded, scan() still returns valid dict
   - empty categories → graceful (no crash, empty lists)
   - happy path from small fixture parquets
+  - unlock float_pct scale: ratio column is a fraction (1.0=100%), engine stores percent
   - register_claims lane guard (only fires with CN_LANE=asia)
-  - build() skips ledger write outside asia lane
+  - register_claims fires when CN_LANE=asia with correct dict shape (no 'kind' key)
+  - sidecar dedup: second run same day and next day for same event does NOT re-register
+  - data_asof present in scan() output
 """
 from __future__ import annotations
 
@@ -37,6 +40,7 @@ def test_scan_all_missing_still_returns_valid_dict(tmp_path, monkeypatch):
     assert snap["schema"] == "china_special_sits.v1"
     assert snap["is_context_only"] is True
     assert "asof" in snap
+    assert "data_asof" in snap
     assert "by_ticker" in snap
     assert isinstance(snap["by_ticker"], dict)
     # blocks may be None or empty-state dicts — none should be missing entirely
@@ -137,6 +141,8 @@ def test_scan_happy_path_inquiry(tmp_path, monkeypatch):
     assert inq.get("n_replies") == 1
     # letter should have has_reply=True because the same secCode has a reply
     assert inq["letters"][0]["has_reply"] is True
+    # letter dict must NOT have a 'kind' key (register_claims must not filter on it)
+    assert "kind" not in inq["letters"][0]
 
 
 def test_scan_st_history_note_when_one_date(tmp_path, monkeypatch):
@@ -181,6 +187,64 @@ def test_scan_by_ticker_rollup(tmp_path, monkeypatch):
     assert bt["600519.SS"].get("buyback_active") is True
 
 
+def test_scan_data_asof_present(tmp_path, monkeypatch):
+    """scan() emits data_asof = worst per-input asof across present blocks."""
+    data_dir = tmp_path / "data"
+    monkeypatch.setattr("lib.config.data_dir", lambda: data_dir)
+    monkeypatch.setattr("lib.config.load", lambda: {"storage": {"site_dir": str(tmp_path / "site")}})
+
+    today = pd.Timestamp.today().strftime("%Y-%m-%d")
+    stale = "2026-01-01"
+    # Two parquets: one fresh, one stale
+    p1 = data_dir / "china_buyback" / "buyback.parquet"
+    _make_parquet(p1, [{"ticker": "600519.SS", "name": "X", "plan_amt_yi": 1.0,
+                        "progress": "实施中", "asof": today}])
+    p2 = data_dir / "china_pledge" / "pledge.parquet"
+    _make_parquet(p2, [{"ticker": "600000.SS", "pledge_ratio": 60.0, "asof": stale}])
+
+    from engine import china_special_situations as css
+    snap = css.scan()
+    # data_asof = min across present blocks → stale wins
+    assert snap["data_asof"] == stale
+
+
+# ── unlock float_pct scale ────────────────────────────────────────────────────
+
+def test_unlock_ratio_is_fraction_converted_to_pct(tmp_path, monkeypatch):
+    """占解禁前流通市值比例 is a FRACTION (1.0=100%). Engine stores float_pct=ratio*100."""
+    data_dir = tmp_path / "data"
+    monkeypatch.setattr("lib.config.data_dir", lambda: data_dir)
+    monkeypatch.setattr("lib.config.load", lambda: {"storage": {"site_dir": str(tmp_path / "site")}})
+
+    tomorrow = (pd.Timestamp.today() + pd.Timedelta(days=1)).strftime("%Y-%m-%d")
+    today = pd.Timestamp.today().strftime("%Y-%m-%d")
+
+    p = data_dir / "china_unlocks" / "detail.parquet"
+    _make_parquet(p, [
+        # ratio=0.08 → float_pct=8.0 → large_flag=True
+        {"ticker": "300001.SZ", "简称": "TestA", "解禁时间": tomorrow,
+         "限售股类型": "首发原股东限售股", "占解禁前流通市值比例": 0.08,
+         "实际解禁市值": 5e8, "asof": today},
+        # ratio=0.02 → float_pct=2.0 → large_flag=False
+        {"ticker": "300002.SZ", "简称": "TestB", "解禁时间": tomorrow,
+         "限售股类型": "首发原股东限售股", "占解禁前流通市值比例": 0.02,
+         "实际解禁市值": 1e8, "asof": today},
+    ])
+
+    from engine import china_special_situations as css
+    snap = css.scan()
+    u = snap.get("unlocks") or {}
+    events = u.get("events") or []
+    assert len(events) == 2
+    # sorted by float_pct desc → TestA first
+    assert events[0]["ticker"] == "300001.SZ"
+    assert abs(events[0]["float_pct"] - 8.0) < 0.01
+    assert events[0]["large_flag"] is True
+    assert abs(events[1]["float_pct"] - 2.0) < 0.01
+    assert events[1]["large_flag"] is False
+    assert u["n_large"] == 1
+
+
 def test_build_writes_json(tmp_path, monkeypatch):
     """build() writes special.json to the site dir."""
     data_dir = tmp_path / "data"
@@ -198,6 +262,7 @@ def test_build_writes_json(tmp_path, monkeypatch):
     loaded = json.loads(out.read_text())
     assert loaded["schema"] == "china_special_sits.v1"
     assert loaded["is_context_only"] is True
+    assert "data_asof" in loaded
 
 
 def test_register_claims_blocked_outside_asia_lane(tmp_path, monkeypatch):
@@ -213,39 +278,30 @@ def test_register_claims_blocked_outside_asia_lane(tmp_path, monkeypatch):
     monkeypatch.setattr("engine.qledger.register_batch", _fake_register_batch, raising=False)
 
     snap = {"asof": "2026-07-06",
-            "inquiry": {"letters": [{"secCode": "000001", "kind": "letter"}]},
+            "inquiry": {"letters": [{"secCode": "000001", "secName": "测试", "date": "2026-07-05"}]},
             "unlocks": {"events": [{"ticker": "600000.SS", "large_flag": True,
-                                    "unlock_date": "2026-07-15", "float_ratio": 6.0}]}}
+                                    "unlock_date": "2026-07-15", "float_pct": 6.0}]}}
     n = css.register_claims(snap)
     assert n == 0
     assert not called  # qledger should not have been touched
 
 
 def test_register_claims_fires_in_asia_lane(tmp_path, monkeypatch):
-    """register_claims() calls register_batch when CN_LANE=asia."""
+    """register_claims() calls register_batch when CN_LANE=asia.
+
+    Uses the EXACT dict shape _inquiry_block emits: no 'kind' key on letter dicts.
+    Asserts a POSITIVE claim count (both inquiry letter + large unlock should register).
+    """
     monkeypatch.setenv("CN_LANE", "asia")
-    registered: list = []
+    monkeypatch.setattr("lib.config.data_dir", lambda: tmp_path / "data")
+    monkeypatch.setattr("lib.config.load", lambda: {"storage": {"site_dir": str(tmp_path / "site")}})
 
-    class _FakeQledger:
-        @staticmethod
-        def make_claim(**kw):
-            return {"_claim": True, **kw}
-        @staticmethod
-        def register_batch(claims, **kw):
-            registered.extend(claims)
-            return [{"status": "new"} for _ in claims]
-
-    import engine.china_special_situations as css
-    monkeypatch.setattr(css, "_import_qledger",
-                        lambda: _FakeQledger(), raising=False)
-
-    # Use a simple mock — patch at module level
     import engine.qledger as ql_mod
-    original_make = ql_mod.make_claim
-    original_batch = ql_mod.register_batch
+    registered: list = []
 
     def fake_make(**kw):
         return {"_claim": True, **kw}
+
     def fake_batch(claims, **kw):
         registered.extend(claims)
         return [{"status": "new"} for _ in claims]
@@ -253,9 +309,122 @@ def test_register_claims_fires_in_asia_lane(tmp_path, monkeypatch):
     monkeypatch.setattr(ql_mod, "make_claim", fake_make)
     monkeypatch.setattr(ql_mod, "register_batch", fake_batch)
 
-    snap = {"asof": "2026-07-06",
-            "inquiry": {"letters": [{"secCode": "000001", "kind": "letter", "secName": "测试银行"}]},
-            "unlocks": {"events": [{"ticker": "600000.SS", "large_flag": True,
-                                    "unlock_date": "2026-07-15", "float_ratio": 6.0}]}}
+    # Exact shape that _inquiry_block emits: no 'kind' key
+    snap = {
+        "asof": "2026-07-06",
+        "inquiry": {
+            "letters": [
+                {
+                    "secCode": "000001",
+                    "secName": "测试银行",
+                    "title": "关注函",
+                    "date": "2026-07-05",  # announce_date → event_key
+                    "pdf_url": "/x/PDF.pdf",
+                    "has_reply": False,
+                    "type_name": "问询函",
+                    # deliberately NO 'kind' key — matches _inquiry_block output
+                }
+            ]
+        },
+        "unlocks": {
+            "events": [
+                {
+                    "ticker": "600000.SS",
+                    "name": "浦发银行",
+                    "unlock_date": "2026-07-15",
+                    "float_pct": 8.0,
+                    "float_ratio": 8.0,
+                    "large_flag": True,
+                }
+            ]
+        },
+    }
     n = css.register_claims(snap)
-    assert n >= 0  # may be 0 if qledger import catches, but should not raise
+    # Both the inquiry letter AND the large unlock should have been registered
+    assert n == 2, f"Expected 2 claims registered, got {n}"
+
+
+def test_register_claims_sidecar_dedup_same_day(tmp_path, monkeypatch):
+    """Second call on the same day with the same events must NOT re-register (sidecar dedup)."""
+    monkeypatch.setenv("CN_LANE", "asia")
+    monkeypatch.setattr("lib.config.data_dir", lambda: tmp_path / "data")
+    monkeypatch.setattr("lib.config.load", lambda: {"storage": {"site_dir": str(tmp_path / "site")}})
+
+    import engine.china_special_situations as css
+    import engine.qledger as ql_mod
+    registered_calls: list[int] = []
+
+    def fake_make(**kw):
+        return {"_claim": True, **kw}
+
+    def fake_batch(claims, **kw):
+        registered_calls.append(len(claims))
+        return [{"status": "new"} for _ in claims]
+
+    monkeypatch.setattr(ql_mod, "make_claim", fake_make)
+    monkeypatch.setattr(ql_mod, "register_batch", fake_batch)
+
+    snap = {
+        "asof": "2026-07-06",
+        "inquiry": {
+            "letters": [
+                {"secCode": "000001", "secName": "X", "title": "T",
+                 "date": "2026-07-05", "pdf_url": "", "has_reply": False, "type_name": ""}
+            ]
+        },
+        "unlocks": {"events": []},
+    }
+
+    # First run: should register 1 claim
+    n1 = css.register_claims(snap)
+    assert n1 == 1
+
+    # Second run same day, same snap: sidecar exists → 0 new claims
+    n2 = css.register_claims(snap)
+    assert n2 == 0, f"Second run should be 0 (sidecar dedup), got {n2}"
+
+
+def test_register_claims_sidecar_dedup_next_day(tmp_path, monkeypatch):
+    """Next-day re-run with same event identity must NOT re-register (sidecar dedup)."""
+    monkeypatch.setenv("CN_LANE", "asia")
+    monkeypatch.setattr("lib.config.data_dir", lambda: tmp_path / "data")
+    monkeypatch.setattr("lib.config.load", lambda: {"storage": {"site_dir": str(tmp_path / "site")}})
+
+    import engine.china_special_situations as css
+    import engine.qledger as ql_mod
+    registered_calls: list[int] = []
+
+    def fake_make(**kw):
+        return {"_claim": True, **kw}
+
+    def fake_batch(claims, **kw):
+        registered_calls.append(len(claims))
+        return [{"status": "new"} for _ in claims]
+
+    monkeypatch.setattr(ql_mod, "make_claim", fake_make)
+    monkeypatch.setattr(ql_mod, "register_batch", fake_batch)
+
+    # Simulate a pre-existing sidecar entry from "yesterday"
+    sidecar_path = tmp_path / "data" / "china_special_sits" / "claims_registered.parquet"
+    sidecar_path.parent.mkdir(parents=True, exist_ok=True)
+    pd.DataFrame([
+        {"event_key": "inq_000001_2026-07-05", "first_registered": "2026-07-05"}
+    ]).to_parquet(sidecar_path, index=False)
+
+    snap = {
+        "asof": "2026-07-06",
+        "inquiry": {
+            "letters": [
+                {"secCode": "000001", "secName": "X", "title": "T",
+                 "date": "2026-07-05", "pdf_url": "", "has_reply": False, "type_name": ""}
+            ]
+        },
+        "unlocks": {"events": []},
+    }
+
+    # Run on "today" (day after sidecar entry) — same event_key → must not re-register
+    n = css.register_claims(snap)
+    assert n == 0, f"Next-day re-run should be 0 (sidecar dedup), got {n}"
+
+
+import engine.china_special_situations as css

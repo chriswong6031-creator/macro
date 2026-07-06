@@ -423,7 +423,8 @@ def _special_situations_block() -> dict | None:
     if not data or not isinstance(data, dict):
         return None
     out: dict = {
-        "asof": data.get("asof"),
+        # data_asof = worst (oldest) per-input asof from the engine scan; falls back to asof
+        "asof": data.get("data_asof") or data.get("asof"),
         "is_context_only": True,
     }
     # counts per category

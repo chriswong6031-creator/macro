@@ -2242,7 +2242,7 @@
       "kind": "qledger_promotion",
       "priority": "medium",
       "cadence": "daily",
-      "what": "Salience-only qledger claims for two cn_special_sits families: (1) inquiry-letter events (exchange-issued 问询函 from CNInfo, per-company, macro bench=510300.SS); (2) large-unlock events (≥50% of pre-unlock float, direction=0). Gate: n_dates>=25. No direction until mechanism independently validated.",
+      "what": "Salience-only qledger claims for two cn_special_sits families: (1) inquiry-letter events (exchange-issued 问询函 from CNInfo, per-company, macro bench=510300.SS); (2) large-unlock events (≥5% of pre-unlock float, direction=0). Gate: n_dates>=25. No direction until mechanism independently validated.",
       "source": "engine/china_special_situations.py register_claims (called from scripts/build_china_special_situations.py, asia-close lane only)",
       "storage": "site/qledger/track_record.json",
       "track_json": "site/qledger/track_record.json",

@@ -91,8 +91,11 @@ def refresh() -> int:
 
     if df_sum is not None and not df_sum.empty:
         cols = list(df_sum.columns)
-        # normalise date column (can be datetime.date objects)
-        date_col = _col(cols, "日期") or _col(cols, "解禁日期")
+        # normalise date column (summary uses 解禁时间; fall back to 时间, 日期, 解禁日期)
+        date_col = (
+            _col(cols, "解禁时间") or _col(cols, "时间") or
+            _col(cols, "日期") or _col(cols, "解禁日期")
+        )
         if date_col:
             df_sum[date_col] = pd.to_datetime(df_sum[date_col]).dt.date
         df_sum["asof"] = today

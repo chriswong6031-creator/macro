@@ -5,6 +5,8 @@ companies to explain material disclosures, unusual financial moves, or news-pric
 divergences. Both the original letters and company replies are significant events:
   - Original letters (kind='letter')  flag a regulator concern before any resolution.
   - Company replies  (kind='reply')   indicate the company has acknowledged the enquiry.
+  - Third-party attachments (kind='attachment') — 专项说明/专项核查意见/核查意见 — are
+    classified separately and excluded from the letters list and claims.
 
 akshare's inquiry wrapper has a persistent KeyError bug so we go direct to the CNInfo
 public announcements API (the same endpoint the scout verified works without auth):
@@ -12,9 +14,13 @@ public announcements API (the same endpoint the scout verified works without aut
   form fields mirror the akshare source minimally.
 
 Rolling 30-day window, cap 10 pages × 30 results = 300 rows per run.
+Effective bound = min(30 days, 300 announcements); a warning is logged when the last
+page arrives full (cap likely reached before the 30-day window is exhausted).
 
 Stored under data/china_inquiry/inquiry.parquet
 ({secCode, secName, announcementTitle, announcementTime (date), adjunctUrl, kind, asof}).
+
+kind values: 'letter' | 'reply' | 'attachment'
 
 METADATA ONLY — PDFs are not downloaded; the page links to the CNInfo PDF adjunctUrl.
 CONTEXT-ONLY. No body text extracted; no sentiment scored.
@@ -56,11 +62,21 @@ def _col(cols: list[str], *needles: str) -> str | None:
 
 
 def _classify_kind(title: str) -> str:
-    """Classify announcement as original letter or company reply."""
+    """Classify announcement as original letter, company reply, or third-party attachment.
+
+    kind='letter'     — original inquiry from the exchange (default)
+    kind='reply'      — company reply / response announcement
+    kind='attachment' — third-party verification report (专项说明/专项核查意见/核查意见);
+                        excluded from the letters list and claims.
+    """
     if not title:
         return "letter"
     t = str(title)
-    if any(k in t for k in ("回复", "回复的公告", "关于回复", "复函")):
+    # Third-party attachments take priority (checked before reply tokens)
+    if any(k in t for k in ("专项说明", "专项核查意见", "核查意见")):
+        return "attachment"
+    # Reply tokens: 回复/回复的公告/关于回复/复函/回函
+    if any(k in t for k in ("回复", "回复的公告", "关于回复", "复函", "回函")):
         return "reply"
     return "letter"
 
@@ -117,6 +133,7 @@ def refresh() -> int:
     se_date = f"{start_date}~{today_str}"
 
     rows: list[dict] = []
+    cap_reached = False
     for page in range(1, _MAX_PAGES + 1):
         page_rows = _fetch_page(se_date, page)
         if not page_rows:
@@ -124,8 +141,19 @@ def refresh() -> int:
         rows.extend(page_rows)
         time.sleep(1.2)
         if len(page_rows) < _PAGE_SIZE:
-            # last page
+            # last page — window exhausted before cap
             break
+        if page == _MAX_PAGES:
+            # last page arrived full → cap likely hit before 30-day window exhausted
+            cap_reached = True
+            break
+
+    if cap_reached:
+        log.warning(
+            "china inquiry: page cap reached (%d pages × %d = %d rows); "
+            "30-day window may be truncated. Effective bound = min(30 days, %d announcements).",
+            _MAX_PAGES, _PAGE_SIZE, len(rows), _MAX_PAGES * _PAGE_SIZE,
+        )
 
     if not rows:
         log.info("china inquiry: no results for window %s", se_date)
