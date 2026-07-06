@@ -415,3 +415,39 @@ on the pooled hazard until a structurally different result motivates one; the do
 lattice (no model fitting), TR-1 (new target), IX-1 (new unit of analysis), and the regime-v2 PIT
 spine. Artifacts: `data/cycle_pattern/ft_trials/ft2_credit.json`; budget `rf.cycle_pattern.ft_v1`
 n=6 declared pre-p-value. Full adjudication: `research/cycle_masterplan/CPI_FT2_VERDICT.md`.
+
+---
+
+## 14 · CPI lattice batch 1 — family `cycle_pattern_lattice_v0` (registered 2026-07-06, PRE-RUN)
+
+**Mode shift after the FT synthesis (§13 results):** no model fitting. Shrunken conditional-cell
+estimates over PIT-pure, price-derived dimensions only — the W4.4 machinery
+(`scripts/build_conditional_cells.py`: `james_stein_shrink`, month-block `cell_boot_ci`,
+vol-residualized DD) reused verbatim, with **no quad conditioning** → survivors carry NO
+revision-optimistic caveat (the novelty vs W4.4).
+
+**Frozen lattices** (substrate: hazard panel `price_c4414dcb` + its W4.4-convention forward joins;
+embargo: rows ≥ 2024-01-01 excluded from estimates AND gate):
+- **L-A:** `phase_v2`(5, derived from pos_osc+direction per W4.4) × `family`(3) = 15 cells.
+- **L-B:** `phase_v2`(5) × `trend_pass`(2) × `family`(3) = 30 cells.
+
+**Frozen targets (3):** `rdd_63d` (vol-residualized forward max-DD, 63 trading days — the W4.6
+binding metric; raw-DD ordering is ambient-vol clustering and is NOT a target), `turn_event_3m`
+(panel y3), `phase_persist_3m` (phase_v2 unchanged across the next 3 month-ends).
+
+**Estimates:** (15 + 30) × 3 = **135 shrunken cell estimates** — this whole count is the declared
+search space. Exploration output = shrunk mean + 95% month-block bootstrap CI on the gap vs the
+phase-pooled mean (800 draws, seed 7), n_months per cell, collapse below 12 months (report pooled
+only), per D2/A2 rules.
+
+| id | claim | success (PROMOTION) criterion | judged by | E[pass\|null] | FDR family |
+|---|---|---|---|---|---|
+| **LT1-cell** (any of the 135) | the cell's outcome differs from its phase-pooled baseline | gap CI₉₅ excludes 0 AND n_months ≥ 40 AND era-split sign agreement (pre-2018 AND post-2018 sub-panel gaps share the full-sample sign) AND survives BH-FDR q=0.10 across ALL 135 gap tests | `data/cycle_pattern/lattice/batch1.json` → `promotions[]` | ~0.05/cell pre-FDR | `cycle_pattern_lattice_v0` (q=0.10) |
+
+**Budget:** 135, declared as `rf.cycle_pattern.lattice_v0` pre-p-value. **Pipeline sanity gate
+(printed, not a claim):** the raw-DD phase×family point estimates must reproduce the KG-2 direction
+(Trough → deeper, Peak → shallower forward DD) on the full sample, else the run aborts as a
+pipeline error. **Outcome handling:** promoted cells → factory candidates (status `screened`, with
+this artifact as evidence) + display-class truth candidacy; zero promotions → a scoped null truth
+for the two lattices; exploration tables ship to the measurement research surface either way. No
+page-authority change this wave.
