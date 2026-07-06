@@ -440,6 +440,54 @@ def test_no_trading_verbs(tmp_path):
 
 
 # ---------------------------------------------------------------------------
+# 9b. Trading verb in upstream contradiction description → scrubbed, not emitted
+# ---------------------------------------------------------------------------
+
+def test_trading_verb_in_contradiction_description_is_scrubbed(tmp_path):
+    """If an upstream contradiction record carries a trading verb in its description,
+    _contradiction_delta must redact it before it enters the artifact.
+    The verb must be absent from the produced summary; the record must still appear."""
+    _make_minimal_root(tmp_path)
+    _make_health(tmp_path)
+    _make_world_state(tmp_path)
+    _make_cortex_memo(tmp_path)
+    # Contradiction record whose description contains a trading verb verbatim
+    records = [
+        {
+            "id": "C99",
+            "description": "model wants to BUY semis aggressively",
+            "severity": "tension",
+        }
+    ]
+    _make_graph(tmp_path, contradiction_records=records)
+    _make_mastermind_context(tmp_path)
+
+    brief = build(root=tmp_path)
+
+    # The record must appear in what_contradicted
+    ids = [c["id"] for c in brief["what_contradicted"]]
+    assert "C99" in ids, f"C99 not found in what_contradicted: {ids}"
+
+    # No trading verb may appear in any produced string
+    all_strings = _collect_all_strings(brief)
+    for s in all_strings:
+        tokens = s.lower().split()
+        for verb in TRADING_VERBS:
+            assert verb not in tokens, (
+                f"Trading verb '{verb}' leaked into output string: {s!r}"
+            )
+
+    # Specifically confirm the C99 summary was scrubbed
+    c99 = next(c for c in brief["what_contradicted"] if c["id"] == "C99")
+    assert "buy" not in c99["summary"].lower(), (
+        f"Trading verb 'buy' not scrubbed from contradiction summary: {c99['summary']!r}"
+    )
+    assert "[redacted]" in c99["summary"], (
+        f"Expected '[redacted]' marker in scrubbed summary: {c99['summary']!r}"
+    )
+
+
+# ---------------------------------------------------------------------------
 # 10. Site copy written alongside data copy
 # ---------------------------------------------------------------------------
 

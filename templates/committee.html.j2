@@ -690,27 +690,28 @@ body { padding-bottom:56px; }
         }
         // operator_attention (top 3)
         var attnEl = document.getElementById('brief_attn_list');
+        var r3 = null;
         if (attnEl && (d.operator_attention || []).length) {
-          var r3 = renderItems(d.operator_attention, 3, function (a) {
+          r3 = renderItems(d.operator_attention, 3, function (a) {
             var pColor = a.priority === 1 ? 'var(--down)' : a.priority === 2 ? 'var(--warn,#e6a817)' : 'var(--muted)';
             return '<div style="font-size:13px;margin-bottom:3px">'
               + '<span style="color:' + pColor + ';font-weight:600;margin-right:4px">P' + (a.priority || '?') + '</span>'
               + esc(a.summary || '') + '</div>';
           });
           attnEl.innerHTML = '<div style="font-size:11px;color:var(--muted);text-transform:uppercase;margin-bottom:3px"><span class="l-en">Operator Attention</span><span class="l-zh">操作人员注意</span></div>' + r3.html;
-          // Expander for rest
-          var allExtra = [];
-          if (r1 && r1.rest.length) allExtra = allExtra.concat(r1.rest.map(r1.restFn));
-          if (r2 && r2.rest.length) allExtra = allExtra.concat(r2.rest.map(r2.restFn));
-          if (r3 && r3.rest.length) allExtra = allExtra.concat(r3.rest.map(r3.restFn));
-          var exContent = document.getElementById('brief_expander_content');
-          var exEl = document.getElementById('brief_expander');
-          if (allExtra.length && exContent && exEl) {
-            exContent.innerHTML = allExtra.join('');
-            exEl.style.display = '';
-          } else if (exEl) {
-            exEl.style.display = 'none';
-          }
+        }
+        // Expander: collect overflow items from all three lists regardless of which overflowed
+        var allExtra = [];
+        if (r1 && r1.rest.length) allExtra = allExtra.concat(r1.rest.map(r1.restFn));
+        if (r2 && r2.rest.length) allExtra = allExtra.concat(r2.rest.map(r2.restFn));
+        if (r3 && r3.rest.length) allExtra = allExtra.concat(r3.rest.map(r3.restFn));
+        var exContent = document.getElementById('brief_expander_content');
+        var exEl = document.getElementById('brief_expander');
+        if (allExtra.length && exContent && exEl) {
+          exContent.innerHTML = allExtra.join('');
+          exEl.style.display = '';
+        } else if (exEl) {
+          exEl.style.display = 'none';
         }
       })
       .catch(function () {

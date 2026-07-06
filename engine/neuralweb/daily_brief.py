@@ -86,13 +86,22 @@ def _safe_str(x: Any) -> str:
 
 
 def _scrub_trading_verbs(text: str) -> str:
-    """Assert no trading verbs — returns text unchanged; raises if found.
-    Used in tests only via the TRADING_VERBS set; this function is a guard."""
-    lower = text.lower()
+    """Redact trading verbs from dynamically-sourced text.
+
+    Replaces each word-boundary match of a TRADING_VERBS token with '[redacted]'
+    and logs a warning.  Never raises so the brief always ships.
+    Called on every externally-sourced produced string before it enters the
+    artifact (contradiction summaries, P3 lobe-gap labels).
+    """
+    import re
+    result = text
     for verb in TRADING_VERBS:
-        if verb in lower.split():
-            raise ValueError(f"Trading verb '{verb}' found in output: {text[:120]}")
-    return text
+        pattern = re.compile(r'(?<!\w)' + re.escape(verb) + r'(?!\w)', re.IGNORECASE)
+        if pattern.search(result):
+            log.warning("daily_brief: scrubbed trading verb '%s' from upstream string: %s",
+                        verb, text[:120])
+            result = pattern.sub("[redacted]", result)
+    return result
 
 
 # ---- input readers -----------------------------------------------------------
@@ -357,9 +366,10 @@ def _contradiction_delta(current_records: list[dict], prior_snap: dict | None) -
         delta_vs_prior = "new" if rid not in prior_ids else "persisting"
         sev = r.get("severity", "note")
         ui_sev = "watch" if sev == "tension" else "info"
+        raw_summary = r.get("description") or r.get("summary") or f"contradiction {rid}"
         items.append({
             "id": rid,
-            "summary": r.get("description") or r.get("summary") or f"contradiction {rid}",
+            "summary": _scrub_trading_verbs(raw_summary),
             "severity": ui_sev,
             "delta_vs_prior": delta_vs_prior,
             "evidence_path": "site/neuralwebdata/confluence_graph.json",
@@ -467,7 +477,7 @@ def _build_operator_attention(
             items.append({
                 "priority": 2,
                 "area": s.get("id", "unknown"),
-                "summary": f"lobe {s.get('id')} is {s.get('id', 'stale')} — age {s.get('age_hours')}h vs SLA {s.get('freshness_sla_hours')}h",
+                "summary": f"lobe {s.get('id')} is {s.get('severity', 'stale')} — age {s.get('age_hours')}h vs SLA {s.get('freshness_sla_hours')}h",
                 "action_type": "inspect",
             })
 
@@ -497,10 +507,11 @@ def _build_operator_attention(
     if health:
         for lobe in health.get("lobes", []):
             if lobe.get("status") == "fresh_partial" and lobe.get("gaps"):
+                raw_gap_summary = f"lobe {lobe.get('id')} has gaps: {', '.join(str(g) for g in (lobe.get('gaps') or [])[:3])}"
                 items.append({
                     "priority": 3,
                     "area": lobe.get("id", "unknown"),
-                    "summary": f"lobe {lobe.get('id')} has gaps: {', '.join(str(g) for g in (lobe.get('gaps') or [])[:3])}",
+                    "summary": _scrub_trading_verbs(raw_gap_summary),
                     "action_type": "follow_up",
                 })
 
