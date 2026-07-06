@@ -85,6 +85,9 @@ _OUT_MANIFEST = _DATA / "research" / "long_hold_labels_manifest.json"
 _MASSIVE_DIR_LOCAL = _DATA / "massive_stock_day"
 _MASSIVE_DIR_MAC = Path("/Users/chriswong/Documents/Cluade/Macro Dashboard/data/massive_stock_day")
 
+# Dead-name price store (W1 Phase-1 build; post-anchor dead names via Polygon REST)
+_DEAD_NAME_PRICES_PATH = _DATA / "edgar" / "dead_name_prices.parquet"
+
 # ---------------------------------------------------------------------------
 # Constants (OBJECTIVE.md §3)
 # ---------------------------------------------------------------------------
@@ -195,16 +198,45 @@ def _load_massive_closes(massive_dir: Path) -> dict[str, pd.Series]:
     return closes
 
 
+def _load_dead_name_closes() -> dict[str, pd.Series]:
+    """Load dead-name price store (data/edgar/dead_name_prices.parquet).
+
+    Returns {ticker -> close Series}. This store covers post-2021-07-06 dead names
+    via Polygon REST (adjusted closes). Source: W1 Phase-1 build.
+    """
+    closes: dict[str, pd.Series] = {}
+    if not _DEAD_NAME_PRICES_PATH.exists():
+        log.info("Dead-name price store not found: %s", _DEAD_NAME_PRICES_PATH)
+        return closes
+    try:
+        df = pd.read_parquet(_DEAD_NAME_PRICES_PATH)
+        if df.empty or "ticker" not in df.columns or "close" not in df.columns:
+            return closes
+        # Normalize dates to midnight to match massive_stock_day convention
+        df["date"] = pd.to_datetime(df["date"]).dt.normalize()
+        for ticker, grp in df.groupby("ticker"):
+            s = grp.set_index("date")["close"].sort_index()
+            s = s[~s.index.duplicated(keep="last")]
+            if len(s) >= 2:
+                closes[str(ticker)] = s
+    except Exception as exc:  # noqa: BLE001
+        log.warning("Dead-name price store load fail: %s", exc)
+    log.info("Loaded %d dead-name closes from %s", len(closes), _DEAD_NAME_PRICES_PATH)
+    return closes
+
+
 def resolve_price(
     ticker: str,
     yahoo_closes: dict[str, pd.Series],
     stocks_closes: dict[str, pd.Series],
     massive_closes: dict[str, pd.Series],
+    dead_name_closes: dict[str, pd.Series] | None = None,
 ) -> tuple[pd.Series | None, str]:
     """Resolve close series for ticker. Returns (series, source_label).
 
-    Priority: yahoo (adjusted TR) > massive (raw; post-2021) > stocks (survivor-only).
-    source_label: 'yahoo' | 'massive' | 'stocks' | 'none'
+    Priority: yahoo (adjusted TR) > massive (raw; post-2021) > dead_name (Polygon
+    adjusted; post-anchor dead names) > stocks (survivor-only).
+    source_label: 'yahoo' | 'massive' | 'dead_name' | 'stocks' | 'none'
     """
     s = yahoo_closes.get(ticker)
     if s is not None and not s.empty:
@@ -212,6 +244,10 @@ def resolve_price(
     s = massive_closes.get(ticker)
     if s is not None and not s.empty:
         return s, "massive"
+    if dead_name_closes is not None:
+        s = dead_name_closes.get(ticker)
+        if s is not None and not s.empty:
+            return s, "dead_name"
     s = stocks_closes.get(ticker)
     if s is not None and not s.empty:
         return s, "stocks"
@@ -498,8 +534,23 @@ def _total_return(
     close: pd.Series,
     fire_date: pd.Timestamp,
     horizon: int,
+    max_intra_window_gap_days: int = 10,
 ) -> float | None:
-    """Total return from fill bar to fill+horizon bar."""
+    """Total return from fill bar to fill+horizon bar.
+
+    Returns None if the forward window is shorter than `horizon` bars OR if any
+    consecutive date pair inside the window is separated by more than
+    `max_intra_window_gap_days` calendar days.  The latter guard catches
+    per-ticker data gaps (e.g., a ticker missing 2021-10-25 → 2025-01-02 data):
+    without it, `fwd.iloc[horizon-1]` resolves to a bar that is nominally bar N
+    but is separated from bar N-1 by years, corrupting the 'N-bar return' label.
+
+    Per ruling LH-W1-3: callers must verify that the forward leg is calendar-
+    contiguous.  A gap > 10 calendar days between any two consecutive bars in
+    the horizon window is treated as a disqualifying discontinuity; the return
+    is returned as None and the fire is stamped `gap_leg_crossed=True` by the
+    caller.
+    """
     from engine.grading import fill_index  # noqa: PLC0415
     fi = fill_index(close, fire_date)
     if fi is None:
@@ -510,12 +561,51 @@ def _total_return(
     fwd = close.iloc[fi + 1:]
     if len(fwd) < horizon:
         return None
-    return float(fwd.iloc[horizon - 1]) / entry - 1.0
+    window = fwd.iloc[:horizon]
+    # Calendar-continuity guard: reject if any intra-window gap exceeds threshold.
+    # Use pd.Series.diff() which handles DatetimeIndex correctly.
+    window_dates = pd.Series(window.index)
+    day_diffs = window_dates.diff().dt.days.dropna()
+    if len(day_diffs) > 0 and day_diffs.max() > max_intra_window_gap_days:
+        return None
+    return float(window.iloc[horizon - 1]) / entry - 1.0
 
 
 # ---------------------------------------------------------------------------
 # Sector-relative return
 # ---------------------------------------------------------------------------
+
+def _forward_leg_has_gap(
+    close: pd.Series,
+    fire_date: pd.Timestamp,
+    horizon: int,
+    max_intra_window_gap_days: int = 10,
+) -> bool:
+    """Return True if the horizon-bar forward window from fill_index contains any
+    intra-bar gap exceeding max_intra_window_gap_days calendar days.
+
+    This is the forward-leg integrity check required by ruling LH-W1-3.  It is
+    distinct from `gap_period` (which gates only the fire_date itself) and from
+    `survivorship_biased` (which tracks dead-name presence).  A fire can be
+    survivorship-clean yet have a gap-corrupted forward leg.
+
+    Returns False if the window is too short to evaluate (caller should treat as
+    insufficient bars, not as a gap crossing).
+    """
+    from engine.grading import fill_index  # noqa: PLC0415
+    fi = fill_index(close, fire_date)
+    if fi is None:
+        return False
+    fwd = close.iloc[fi + 1:]
+    if len(fwd) < horizon:
+        return False  # too short — not a gap crossing, just not matured
+    window = fwd.iloc[:horizon]
+    window_dates = pd.Series(window.index)
+    day_diffs = window_dates.diff().dt.days.dropna()
+    if len(day_diffs) == 0:
+        return False
+    return bool(day_diffs.max() > max_intra_window_gap_days)
+
 
 def _sector_return(
     sector_close: pd.Series | None,
@@ -564,10 +654,19 @@ def _is_survivorship_biased(fire_date: pd.Timestamp, price_source: str) -> bool:
     resolved from those stores is stamped survivorship_biased=True regardless
     of fire date.  Gap-period massive fires (2021-10-25 → 2025-01-02) are also
     biased because the store has an entitlement gap across that window.
+
+    dead_name (Polygon REST, post-anchor): covers post-2021-07-06 dead tickers;
+    these fires ARE survivorship-correct by construction for post-anchor dates
+    (dead names are explicitly present). The bias caveat (acquisition skew) is
+    documented but does not affect the survivorship_biased flag.
     """
     if price_source in ("yahoo", "stocks"):
         return True  # survivor-only stores — biased at any date
     if price_source == "massive":
+        return _is_gap_period(fire_date)
+    if price_source == "dead_name":
+        # Post-anchor Polygon-sourced dead-name prices: survivorship-correct at fire date
+        # (the dead name is explicitly present). Gap period fires still flagged.
         return _is_gap_period(fire_date)
     return True
 
@@ -655,6 +754,7 @@ def compute_labels(
     ticker_sector_map: dict[str, str],
     qp_by_ticker: dict[str, list[dict]],
     *,
+    dead_name_closes: dict[str, pd.Series] | None = None,
     limit: int | None = None,
     verbose: bool = True,
 ) -> pd.DataFrame:
@@ -714,6 +814,13 @@ def compute_labels(
             "coverage_frac": None,
             "cohort_fundamentals_coverage_frac": None,
             "gap_period": _is_gap_period(fire_date),
+            # Forward-leg integrity stamp (per ruling LH-W1-3):
+            # True when any consecutive bar pair in the 252d forward window is
+            # separated by > 10 calendar days (a data gap inside the horizon window).
+            # Distinct from gap_period (which marks fire_date only) and from
+            # survivorship_biased.  A gap_leg_crossed=True fire has total_return_252d=None
+            # because _total_return returns None for such windows.
+            "gap_leg_crossed": False,
             # Horizon status stamps
             "horizon_status_126": "primary_126d",
             "horizon_status_252": "primary_252d",
@@ -725,7 +832,8 @@ def compute_labels(
 
         # --- Step 1: resolve price path ---
         close, price_source = resolve_price(
-            ticker, yahoo_closes, stocks_closes, massive_closes)
+            ticker, yahoo_closes, stocks_closes, massive_closes,
+            dead_name_closes=dead_name_closes)
         rec["price_source"] = price_source
         rec["resolvable"] = close is not None
 
@@ -740,6 +848,8 @@ def compute_labels(
         rec["survivorship_biased"] = _is_survivorship_biased(fire_date, price_source)
         if price_source == "massive" and not _is_gap_period(fire_date) and fire_date >= HONEST_COHORT_START:
             rec["cohort_description"] = "post-2021-07 massive (honest)"
+        elif price_source == "dead_name" and not _is_gap_period(fire_date) and fire_date >= HONEST_COHORT_START:
+            rec["cohort_description"] = "post-2021-07 dead_name Polygon (honest)"
         else:
             rec["cohort_description"] = "survivor-only (UPPER BOUND)"
 
@@ -770,6 +880,15 @@ def compute_labels(
         if fwd_bars_252 < HORIZON_252:
             rec["label"] = "unlabeled"
             rec["label_reason"] = "unmatured_252"
+            rows_out.append(rec)
+            continue
+
+        # Check forward-leg integrity (ruling LH-W1-3): stamp gap_leg_crossed before
+        # calling _total_return so the reason for None is recorded in the output.
+        if _forward_leg_has_gap(close, fire_date, HORIZON_252):
+            rec["gap_leg_crossed"] = True
+            rec["label"] = "unlabeled"
+            rec["label_reason"] = "gap_leg_crossed_252"
             rows_out.append(rec)
             continue
 
@@ -950,7 +1069,7 @@ def compute_episode_cluster_counts(
     honest_252 = labeled[
         (labeled["fire_date"] >= HONEST_COHORT_START) &
         (~labeled["gap_period"].fillna(False)) &
-        (labeled["price_source"] == "massive") &
+        (labeled["price_source"].isin(["massive", "dead_name"])) &
         (labeled["total_return_252d"].notna())
     ].copy()
 
@@ -964,13 +1083,12 @@ def compute_episode_cluster_counts(
     honest_252_all = pd.concat([honest_252, yahoo_2025_plus]).drop_duplicates(
         subset=["ticker", "fire_date"])
 
-    # 126d honest cohort: same massive-only filter as 252d for consistency
-    # (§4.1 designates only the Massive whole-market store as survivorship-correct;
-    # yahoo/stocks are survivor-only regardless of date — must not inflate honest n)
+    # 126d honest cohort: post-2021-07 massive + dead_name (survivorship-correct sources)
+    # dead_name fires are post-anchor Polygon-sourced; valid for 126d forward labels
     honest_126 = labeled[
         (labeled["fire_date"] >= HONEST_COHORT_START) &
         (~labeled["gap_period"].fillna(False)) &
-        (labeled["price_source"] == "massive") &
+        (labeled["price_source"].isin(["massive", "dead_name"])) &
         (labeled["total_return_126d"].notna())
     ].copy()
 
@@ -1066,14 +1184,16 @@ def build_manifest(
     unlabeled_n = int((labeled["label"] == "unlabeled").sum())
 
     # -----------------------------------------------------------------------
-    # OOS honest-cohort subset (§8: 2020-2023, massive-only, non-gap, 252d)
+    # OOS honest-cohort subset (§8: 2020-2023, massive+dead_name, non-gap, 252d)
     # This is the number that governs G1 runnability — surfaced here per reviewer.
+    # dead_name (Polygon-sourced) fires are included as a survivorship-correct source
+    # for post-anchor dead tickers (LH-W1-3: auditor must verify forward path source).
     # -----------------------------------------------------------------------
     oos_honest_252 = labeled[
         (labeled["fire_date"] >= pd.Timestamp("2020-01-01")) &
         (labeled["fire_date"] <= pd.Timestamp("2023-12-31")) &
         (~labeled["gap_period"].fillna(False)) &
-        (labeled["price_source"] == "massive") &
+        (labeled["price_source"].isin(["massive", "dead_name"])) &
         (labeled["total_return_252d"].notna())
     ].copy()
     n_oos_honest_252_fires = len(oos_honest_252)
@@ -1126,9 +1246,14 @@ def build_manifest(
     n_g_no_sector = int(g_df["sector_rel_252d"].isna().sum()) if not g_df.empty else 0
     g_no_sector_pct = round(100.0 * n_g_no_sector / n_g_total, 1) if n_g_total > 0 else 0.0
 
+    # -----------------------------------------------------------------------
+    # gap_leg_crossed counts (ruling LH-W1-3 mandatory stamp)
+    # -----------------------------------------------------------------------
+    n_gap_leg_crossed = int(labeled["gap_leg_crossed"].fillna(False).sum())
+
     manifest = {
         "artifact": "long_hold_labels",
-        "version": "W1-PR-E-r1",  # r1 = post-reviewer fixes
+        "version": "W1-PR-E-r3",  # r3 = gap-leg-crossed guard + gap_leg_crossed stamp
         "generated_at": pd.Timestamp.now(tz="UTC").isoformat(),
         "runtime_seconds": round(runtime_seconds, 1),
         "population": {
@@ -1152,6 +1277,7 @@ def build_manifest(
             "n_tactical_only_fail": tactical_fail_n,
             "n_unlabeled": unlabeled_n,
             "n_gap_period": gap_period_n,
+            "n_gap_leg_crossed": n_gap_leg_crossed,
         },
         "cohort_label_counts": cohort_label_counts,
         "coverage_frac_by_cohort": coverage_by_cohort,
@@ -1185,10 +1311,14 @@ def build_manifest(
                 "The G1 kill criterion (§8) requires running on the OOS split (2020-2023) "
                 "within honest cohorts (massive-only, non-gap, 252d matured). The practical "
                 "honest-OOS window is only 2021-07-06 → 2021-10-25 (~3.5 months), because "
-                "the massive store gap (2021-10-25 → 2025-01-02) swallows all subsequent "
-                "OOS fires. The full-tape honest-252d count (episode_cluster_counts) "
-                "includes non-OOS and 2025+ fires; the OOS-honest number above (702 clusters) "
-                "is the correct decision denominator for G1 runnability."
+                "the massive store gap (2021-10-25 → 2025-01-02) means many tickers have "
+                "per-ticker internal gaps in their forward paths; fires where the 252-bar "
+                "forward window crosses such a gap are stamped gap_leg_crossed=True and "
+                "excluded from the honest-OOS count (total_return_252d=None). The full-tape "
+                "honest-252d count (episode_cluster_counts) includes non-OOS and 2025+ fires; "
+                "the OOS-honest number above is the correct decision denominator for G1 "
+                "runnability. Forward-leg continuity is verified by the calendar-gap guard "
+                "in _total_return (max_intra_window_gap_days=10) per ruling LH-W1-3."
             ),
         },
         "label_g_coverage_warning": {
@@ -1215,15 +1345,32 @@ def build_manifest(
                 "(2021-10-25 → 2025-01-02). False ONLY for massive-store fires post-2021-07-06 "
                 "outside the gap period."
             ),
+            "gap_leg_crossed": (
+                "bool per fire — True when the 252-bar forward window starting at fill_index "
+                "contains any consecutive bar pair separated by > 10 calendar days. Distinct "
+                "from gap_period (which gates fire_date only) and survivorship_biased (dead-name "
+                "presence). A fire can be survivorship-clean yet have gap_leg_crossed=True. "
+                "gap_leg_crossed=True fires have total_return_252d=None and label_reason="
+                "'gap_leg_crossed_252'. They are excluded from all honest-cohort inference. "
+                "This field satisfies ruling LH-W1-3: 'a separate forward-leg-integrity field "
+                "that the study must carry'."
+            ),
             "coverage_frac": "resolvable fires / total fires in cohort-year",
-            "cohort_description": "post-2021-07 massive (honest) | survivor-only (UPPER BOUND) | no_price",
+            "cohort_description": "post-2021-07 massive (honest) | post-2021-07 dead_name Polygon (honest) | survivor-only (UPPER BOUND) | no_price",
             "horizon_status": "primary_126d | primary_252d | caveat_504d | refused_756d",
         },
         "lh_r3_stamp": (
             "UPPER BOUND — survivor-only cohort applies to all yahoo/stocks-sourced fires and "
             "pre-2021-07 massive fires. Post-2021-07 massive-store fires (outside the gap "
             "2021-10-25 → 2025-01-02) are survivorship-correct per day. "
-            "756d results are REFUSED until dead_name_prices.parquet achieves >=50% coverage."
+            "Per-ticker parquets in the massive store may have internal gaps within the "
+            f"gap window; {n_gap_leg_crossed} fires have gap_leg_crossed=True (forward window "
+            "contains a >10 calendar-day bar gap) and are excluded from honest-cohort labels. "
+            "Post-2021-07 dead_name (Polygon-sourced) fires are also honest for dead names "
+            "explicitly present in the data (acquisition skew residual exists; see "
+            "DEAD_NAME_SPIKE.md §Deviations). "
+            "756d results are REFUSED until dead_name_prices.parquet achieves >=50% coverage "
+            "(current 38.3%, gate requires 50.0%)."
         ),
         "conservative_choices": conservative_choices,
         "firewall": (
@@ -1298,6 +1445,24 @@ def run(
 
     stocks_closes = _load_stocks_closes()
 
+    # --- Load dead-name price store (W1 Phase-1 Polygon build) ---
+    log.info("Loading dead-name price store (data/edgar/dead_name_prices.parquet)...")
+    dead_name_closes_map = _load_dead_name_closes()
+    if dead_name_closes_map:
+        log.info(
+            "Dead-name price store loaded: %d tickers (Polygon REST, post-2021-07-06)",
+            len(dead_name_closes_map),
+        )
+        conservative_choices.append(
+            f"Dead-name price store loaded: {len(dead_name_closes_map)} tickers "
+            "(W1 Phase-1 Polygon build). These are post-2021-07-06 dead names "
+            "resolved via REST adjusted aggregates. Acquisition skew residual exists "
+            "(see DEAD_NAME_SPIKE.md). Fires resolved via dead_name source stamped "
+            "survivorship_biased=True if gap_period, otherwise False (honest)."
+        )
+    else:
+        log.info("Dead-name price store unavailable — dead-name fires will be no_price")
+
     # --- Load sector baskets ---
     log.info("Building sector EW benchmark series from member closes...")
     sector_closes = _build_sector_closes()
@@ -1334,6 +1499,7 @@ def run(
         sector_closes=sector_closes,
         ticker_sector_map=ticker_sector_map,
         qp_by_ticker=qp_by_ticker,
+        dead_name_closes=dead_name_closes_map,
         limit=limit,
         verbose=verbose,
     )

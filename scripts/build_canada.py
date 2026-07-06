@@ -222,26 +222,44 @@ def _health_rows() -> list[dict]:
 
 
 def _action_board(sectors: list[dict]) -> dict:
-    """Bucket the sector cards' cycle-entry calls into a 'what to act on' board."""
-    buy_now, buy_soon, take_profits, hold, avoid = [], [], [], [], []
+    """Bucket the sector cards' cycle-entry calls into a 'what to act on' board.
+
+    Urgency routing (the #1513 lane split, ported):
+      now → buy_now; imminent/soon → buy_soon; hold → hold; exit → take_profits;
+      caution splits by entry tag:
+        "DON'T CHASE"             → on_the_run  (uptrend intact, extended — do not chase)
+        "UNCONFIRMED — HIGH RISK" → avoid       (bear-trend countertrend bounce)
+        anything else (incl. "TAKE PROFITS") → take_profits
+      all other urgency values → avoid.
+    Tag literals must match engine/cycles.py entry_timing byte-for-byte
+    (em dash in UNCONFIRMED, ASCII apostrophe in DON'T)."""
+    buy_now, buy_soon, on_the_run, take_profits, hold, avoid = [], [], [], [], [], []
     for s in sectors:
         e = s.get("entry") or {}
+        tag = e.get("tag", "")
         item = {"ticker": s["ticker"], "name": s["name"], "label": s.get("label") or s.get("state"),
-                "tag": e.get("tag", ""), "days": e.get("days_hi"), "dir": s.get("dir")}
+                "tag": tag, "days": e.get("days_hi"), "dir": s.get("dir")}
         u = e.get("urgency")
         if u == "now":
             buy_now.append(item)
         elif u in ("imminent", "soon"):
             buy_soon.append(item)
-        elif u in ("caution", "exit"):
+        elif u == "caution":
+            if tag == "DON'T CHASE":
+                on_the_run.append(item)
+            elif tag == "UNCONFIRMED — HIGH RISK":
+                avoid.append(item)
+            else:
+                take_profits.append(item)
+        elif u == "exit":
             take_profits.append(item)
         elif u == "hold":
             hold.append(item)
         else:
             avoid.append(item)
     buy_soon.sort(key=lambda x: (x["days"] if x["days"] is not None else 99))
-    return {"buy_now": buy_now, "buy_soon": buy_soon, "take_profits": take_profits,
-            "hold": hold, "avoid": avoid}
+    return {"buy_now": buy_now, "buy_soon": buy_soon, "on_the_run": on_the_run,
+            "take_profits": take_profits, "hold": hold, "avoid": avoid}
 
 
 def _sector_cards(latest: dict) -> list[dict]:

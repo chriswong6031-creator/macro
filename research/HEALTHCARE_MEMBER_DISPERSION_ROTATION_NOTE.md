@@ -220,3 +220,62 @@ Pre-registration draft (to be red-teamed by Opus BEFORE any harness run; spec lo
 **Dormant:** R-2b (member-level leader exhaustion) until the W0b holdings archive matures (~2027-07).
 
 **Routing:** Fable (main loop) adjudicates specs and verdicts; Opus red-teams registrations and reviews results; Sonnet builds harnesses and collectors; nothing spawns at frontier tier.
+
+---
+
+# §12. R-1 registration — red-team record + LOCKED spec (2026-07-06)
+
+**Red-team verdict on the §11-W1 draft (Opus, 2026-07-06): DO-NOT-LOCK.** Three blockers and four majors, all folded below. The draft is superseded by this section; it stays above as the audit trail.
+
+- **BLOCKER-1 (domain transfer):** the incumbent validated reduce gate is NOT a price gate — it is `engine.theme_scoring._label ∈ {fading, deteriorating}` computed on a *relative-strength* series (`lvl/SPY`) plus panel breadth, via `run_proxy` in `scripts/calibrate_baskets.py` (`universe: proxy_spdr_sectors`, `car_metric: fwd_dd_21d`). "Recompute on cap series as-is" was undefined. Fixed by pinning events to the exact implementation at a frozen SHA.
+- **BLOCKER-2 (no EW PIT data):** the Invesco EW family was absent from `data/yahoo/` at review time (W0b #1529 landed the collectors the same day; first parquets arrive with the next nightly collect). The hindsight-curated `us_sector_*` GICS baskets (`MEMBER_ADDED 2023-05-09`) are **BANNED** as the EW condition source.
+- **BLOCKER-3 (power):** ~390 de-overlapped onsets 2006→, with a badly imbalanced divergent/confirmed split (RSP-proxy estimate ~87/13). Power floor added; no verdict on <40-event cohorts.
+- **MAJOR-1 (direction):** the operator's own mechanism (leaders break first) means cap-onset-while-EW-fine is the *validated early exit* — the de-escalation candidate carries an explicit null prior; the reverse leg (EW cracks first under a still-firm cap) is escalation-shaped and stays descriptive (house law: context layers cannot originate escalations).
+- **MAJOR-2 (laundered stay-long):** mean-DD-shallower is not a legal de-escalation gate; tail-safety conditions added (p10/p25 DD + P(DD<−8%) no-worse), since a missed exit costs more than a tolerated whipsaw.
+- **MAJOR-3 (whipsaw magic numbers):** −5%/15-session whipsaw had no validated source and contradicted the gate's own `DD_RISK = −8%`; demoted to descriptive-only.
+- **MAJOR-4 (systemic confound):** "confirmed" events concentrate in market-wide stress (divergent-rate ~96% calm vs ~77% stressed, RSP proxy) — naive contrasts would measure systemic-vs-idiosyncratic selloff type. Calendar-block bootstrap + SPY-stress stratification added; the key cannot ship on the pooled contrast alone.
+- MINORs: condition timing pinned to close `t` modulating `t+1+` only; BH family = DD verdict tests only; dividend-adjusted `close` on both legs; per-pair inception truncation.
+
+## LOCKED registration (status: DESCRIPTIVE/ACCRUAL — not verdict-eligible)
+
+**Trial family:** `construction_divergence`.
+
+**H-R1 (dual-direction, verdict potential on one leg only).** On the SPDR-vs-SPY relative-strength reduce gate (`engine.theme_scoring._label ∈ {fading, deteriorating}` recomputed via `run_proxy`'s PIT path; benchmark SPY; implementation frozen at commit `9a31b78ad0` of `scripts/calibrate_baskets.py` + `engine/theme_scoring.py`; no re-tuning), classify each de-overlapped onset by the paired Invesco EW ETF's own recomputed gate state (rs = EW/SPY, breadth = EW-ETF panel) at the same close `t`:
+- **cap-leads-EW ("divergent"):** cap onset, EW not reducing. *Prior: the validated early exit — expect NO de-escalation.* Sole de-escalation candidate.
+- **cap-lags-EW:** EW reduce-onset, cap not reducing. Descriptive escalation context only; never a key.
+- **confirmed:** both reducing.
+
+**Universe (verified tickers + inceptions, #1529):** XLK/RSPT, XLE/RSPG, XLF/RSPF, XLV/RSPH, XLY/RSPD, XLP/RSPS, XLU/RSPU, XLB/RSPM (all EW 2006-11-07→); XLI/RGI (2009-01-02→; RSPI not served by Yahoo); XLC/RSPC (2018-11-07→); XLRE/RSPR (2015-08-14→). Per-pair window = `max(cap_inception, EW_inception)`; XLC/XLRE pairs excluded from pre-2018 decade cells. Both legs dividend-adjusted `close`.
+
+**Data precondition:** runs only once the EW parquets exist in `data/yahoo/` with genuine (non-backfilled) history. `us_sector_*` baskets banned as condition source.
+
+**Events:** first `_label ∈ {fading, deteriorating}` after ≥15 trading days out of state. Condition evaluated at close `t`; de-escalation modulates `t+1+` actions only; audit prints max feature index ≤ `t`.
+
+**Covariate (mandatory):** SPY-stress flag = SPY below its own 200d MA. Secondary (descriptive): EW/cap 20d ratio slope sign.
+
+**Outcomes:** forward max absolute DD at 21/63d (the only verdict-bearing outcome). Whipsaw (leg = `DD_RISK` −8%, reversal grid {10,15,21} sessions) and fwd return: descriptive, excluded from BH.
+
+**Stats:** divergent-vs-confirmed DD contrast; calendar-time block bootstrap (onsets co-firing within 7 trading days collapse to one block; print `bootstrap_effective_t`, raw n, and the divergent/confirmed × stress/calm 2×2 counts); BH family = {DD × 2 horizons}; decade splits + post-2018 decay check.
+
+**Power floor:** smaller cohort ≥40 de-overlapped onsets across ≥2 decades on genuine EW history, else `INSUFFICIENT_POWER → descriptive` prints and no verdict exists.
+
+**Ablations:** condition-label shuffle within sector; placebo = a different sector's EW state; sector-decade-matched random event dates.
+
+**Verdict gates (all required for CONFIRMED):** (i) BH-pass on DD; (ii) sign-stable across decade splits AND within the SPY-stress stratum, not only pooled; (iii) tail-safety — divergent p10 AND p25 fwd max-DD no worse than confirmed (one-sided block-bootstrap CI) and `P(fwd_DD21<−8%)` no higher; (iv) power floor met. Failure modes print as `TAIL_UNSAFE` / `SYSTEMIC_CONFOUND` / `INSUFFICIENT_POWER`. On CONFIRMED: `construction_divergence` ships as a de-escalation-only context key (🧩 chip severity downgrade + NW context key; zero rank path, zero hold/buy path; never suppresses the gate firing).
+
+## Program status ledger
+
+- W0a doc+tape row: #1527 MERGED. W0b infra (EW collectors + PIT holdings archiver): #1529 MERGED; first EW parquets + first `history.parquet` rows arrive with the next nightly collect.
+- R-1: LOCKED as descriptive/accrual (this section). Descriptive harness authorized; verdict deferred to data + power preconditions.
+- R-2a: design inherits R-1 event tooling; pre-register only after R-1 descriptive tables exist.
+- R-3: upgraded home — oracle W2 member-transmission lane was formally registered and CONFIRMED (display-with-edge, temporal holdout) in #1533 the same day; washout strata graft onto `scripts/oracle_member_transmission_w2.py`.
+- R-4: judge-first Opus power memo before any build. R-2b: dormant until the #1529 holdings archive matures (~2027-07).
+
+---
+
+# §13. Same-day execution record (2026-07-06)
+
+- **R-1 descriptive run COMPLETE (#1538).** Adjudication caught a spec-conformance bug in the first run: the de-overlap gated on days-since-last-event instead of ≥15 consecutive days out of state, inflating the event set to 1,684; corrected to 800 (315 divergent / 485 confirmed / 319 cap-lags-EW, 2007-11→2026-07, power floor PASS). Corrected tables: DD21 contrast null (div median −2.32% vs con −2.56%, t-raw 0.947, 72.7th pctile of 999-draw shuffle); DD21 tails NOT safer for divergent (P(DD<−8%) 10.5% vs 11.2% — near-tie); DD63 leans divergent-shallower (median −3.48% vs −4.19%, p10 −12.35% vs −15.12%, 89.8th pctile) but clears no gate. **The registered prior held: no de-escalation key ships.** Family stays descriptive/accrual; EW parquets become canonical with the next nightly collect; record: `research/CONSTRUCTION_DIVERGENCE_R1_DESCRIPTIVE.md`, `data/strategies/construction_divergence.json`.
+- **R-4 RULED DON'T-TEST** (Opus judge memo, adjudicated same day). Three converging blockers: (i) the survivorship-clean Tier-S episode catalog contains **zero** donor→recipient paired objects (all cross-complex pairs live in hindsight-flagged Tier-M, 2021→); (ii) effective-n after calendar-block collapse ≈ 20–30 regime-events, at/below the rotation-cycle kill line and the R-1 ≥40 floor; (iii) fatal tautology — `rs = ret − cross-node-median` is zero-sum, so donor rs-repair and recipient rs-fade are the same accounting identity, and the only de-coupling (absolute-return legs) exits the sanctioned risk-side framework into the dead buy-side family. Salvage noted, not scheduled: Tier-M forward accrual could revisit ONLY if the complementarity confound is first resolved conceptually — accrual alone cannot fix an identity.
+- **R-2a** is the next actionable thread; its spec inherits the corrected R-1 event tooling (out-of-state de-overlap) and pre-registers after EW data matures on the canonical path.
+- **R-3** grafts `washout_active` strata onto the W2 member-transmission harness that was formally registered and CONFIRMED in #1533 (`scripts/oracle_member_transmission_w2.py`); strata are descriptive until effective-n grows (~Q4-2026).
