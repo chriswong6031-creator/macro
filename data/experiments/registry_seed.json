@@ -2344,6 +2344,24 @@
       "state": "ledger seeded 2026-07-06; 0 venue rows accrued (lane guard requires CN_LANE=asia); first fire expected nightly asia-close run.",
       "next_step": "After n_resolved>=3 per pair: evaluate convergence metrics for statistical significance. If hit_rate>=0.6 at n>=10: graduate to Phase-1 (weekly inclusion in conviction). Composition bias (tech tilt in offshore basket vs financials tilt in CSI 300) must be documented before promoting offshore_gap.",
       "phase_hint": "Phase 0 (accumulation)"
+    },
+    {
+      "id": "thesis-funnel-shadow",
+      "name": "Long-Hold Thesis Funnel — population stability track record",
+      "kind": "track_record",
+      "priority": "medium",
+      "cadence": "quarterly",
+      "what": "Tracks population stability of the LT-4 thesis funnel states across nightly builds. States: not_eligible / watch_for_thesis / thesis_candidate_shadow. Gate = transparent AND-conjunction of s1_dilution + s2_moat_falsifier + s3_solvency + s4_coverage + piotroski_f + capital_allocation_delta. Display-only; no behavioral authority (LH-R1/LH-R2). Come-back: review funnel population stability after one quarter of nightly builds.",
+      "source": "engine/thesis_funnel.py",
+      "storage": "data/research/thesis_funnel_states.parquet",
+      "started": "2026-07-06",
+      "come_back_on": "2026-10-01",
+      "come_back_note": "Review funnel population stability after one quarter of nightly builds. Check: state counts stable (watch_for_thesis / thesis_candidate_shadow proportions not drifting >±5pp week-over-week). If unstable, audit data coverage changes (LT-1 backfill, period_end PIT gate).",
+      "maturation": "Population stability check: n_builds >= 60 (one quarter of nightly runs). Primary metric: coefficient of variation of watch_for_thesis count < 10%. No predictive authority until W3 unlock and G1-Retest (forecasted ~2027-H2).",
+      "status": "accruing",
+      "state": "LT-4 shipped; snapshot built; population accruing",
+      "next_step": "Per-stock funnel state computed daily via panels(). Standalone snapshot (scripts/research/build_thesis_funnel_snapshot.py) overwrites thesis_funnel_states.parquet on-demand; wire to nightly if longitudinal population tracking is needed before 2026-10-01 review. Return 2026-10-01 to review population stability. Do NOT wire to board ordering or entry gates (W3-locked).",
+      "phase_hint": "LT-4 (long-hold external foundation)"
     }
   ]
 }

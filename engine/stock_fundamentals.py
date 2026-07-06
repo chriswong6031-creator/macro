@@ -1827,6 +1827,56 @@ def _compute_capital_allocation_block(
         return None
 
 
+def _compute_thesis_funnel_block(
+    ticker: str,
+    my: "dict | None",
+    moat_falsifiers_result: "dict | None",
+    capital_allocation_block: "dict | None",
+    expectation_state: "dict | None",
+    insider_context: "dict | None",
+) -> "dict | None":
+    """Call compute_thesis_funnel for one ticker; non-fatal.
+
+    Extracts the required inputs from pre-computed blocks (no re-loading of
+    parquets) and delegates to engine.thesis_funnel.compute_thesis_funnel_safe.
+    Returns None on any exception (fail-open: panels() must never crash on this
+    block; display-only per LH-R1/LH-R2).
+
+    DISPLAY-ONLY; horizon_role=hold_thesis; MUST NOT feed entry-stack surfaces.
+    """
+    try:
+        from engine.thesis_funnel import compute_thesis_funnel_safe  # noqa: PLC0415
+
+        altman_block = (my or {}).get("altman") or {}
+        altman_z = _num(altman_block.get("z"))
+        altman_approx = bool(altman_block.get("approx", False))
+
+        pio_block = (my or {}).get("piotroski") or {}
+        piotroski_score = pio_block.get("score")
+        piotroski_of = pio_block.get("of")
+
+        ca = capital_allocation_block or {}
+        shares_yoy = _num(ca.get("shares_yoy_change_pct"))
+        cap_delta = ca.get("capital_allocation_delta")  # str | None
+
+        result = compute_thesis_funnel_safe(
+            ticker,
+            altman_z=altman_z,
+            altman_approx=altman_approx,
+            moat_falsifiers_result=moat_falsifiers_result,
+            shares_yoy_change_pct=shares_yoy,
+            capital_allocation_delta=cap_delta,
+            piotroski_score=piotroski_score,
+            piotroski_of=piotroski_of,
+            expectation_state=expectation_state,
+            insider_context=insider_context,
+        )
+        return result
+    except Exception as exc:  # noqa: BLE001
+        log.debug("stock_fundamentals: thesis_funnel skipped for %s (%s)", ticker, exc)
+        return None
+
+
 def panels() -> dict[str, dict]:
     """{ticker: {profile, valuation, financials, factors, positioning, analyst,
     thesis_clock}}
@@ -1934,6 +1984,12 @@ def panels() -> dict[str, dict]:
         # already used for _multiyear.  None-safe throughout; Financials-sector names
         # have current/quick suppressed; empty dict excluded by `if v` filter below.
         lev = _leverage_ratios(rows or [], sector=(fac or {}).get("sector"))
+        # LT-4: pre-compute moat_falsifiers and capital_allocation blocks so
+        # thesis_funnel can reuse them without a second parquet read.
+        _t_moat = _compute_moat_block(str(t), _statements_df, _moat_base_rates)
+        _t_ca = _compute_capital_allocation_block(
+            str(t), _quarterly_df, _fundamentals_panel_df, _statements_df, mcap,
+        )
         blocks = {
             "profile": _profile(t, f, fac, M, arche, profiles.get(str(t))),
             "valuation": _valuation(t, f, fac, M, deep.get(t)),
@@ -1961,9 +2017,7 @@ def panels() -> dict[str, dict]:
             # stretch, inventory build, capital intensity rising.  Each sensor carries
             # a matched-control universe base rate so display layer can show context.
             # MUST NOT feed board ordering, alert triage, top-setups gates, or push floor.
-            "moat_falsifiers": _compute_moat_block(
-                str(t), _statements_df, _moat_base_rates,
-            ),
+            "moat_falsifiers": _t_moat,
             # W2 PR-K — great-company-trap de-escalation overlay (LH-R10).
             # Assembled ONLY from existing signals; may ONLY lower conviction context.
             "great_company_trap": _compute_trap_block(
@@ -1974,14 +2028,29 @@ def panels() -> dict[str, dict]:
             # share-count trend (fundamentals_panel.parquet), SBC (statements.parquet,
             # sparse until LT-1 backfill lands).
             # MUST NOT feed board ordering, alert triage, top-setups gates, or push floor.
-            "capital_allocation": _compute_capital_allocation_block(
-                str(t), _quarterly_df, _fundamentals_panel_df, _statements_df, mcap,
-            ),
+            "capital_allocation": _t_ca,
             # LT-2c — expectation_state display block (DISPLAY-ONLY; horizon_role=hold_thesis).
             # Fields: last_event_date, sue_latest, sue_streak, pead_drift_20d,
             # bad_news_absorption, good_news_hold.  Per EXPECT_DRIFT_FAMILY_PREREG.md §2.
             # MUST NOT feed board ordering, alert triage, top-setups gates, or push floor.
             "expectation_state": _expect_states.get(str(t)) or None,
+            # LT-4 — thesis funnel shadow (DISPLAY-ONLY; horizon_role=hold_thesis).
+            # Transparent AND-gate of independently registered flags per LH-R2.
+            # States: not_eligible | watch_for_thesis | thesis_candidate_shadow.
+            # Ceiling is thesis_candidate_shadow — no 'active_thesis' (W3-locked).
+            # Inputs: s1_dilution, s2_moat_falsifier, s3_solvency, s4_coverage,
+            #   plus piotroski_f and capital_allocation_delta for candidate upgrade.
+            # Context (not gate inputs): expectation_state, capital_allocation_delta, insider.
+            # Reuses _t_moat and _t_ca pre-computed above — no second parquet read.
+            # MUST NOT feed board ordering, alert triage, top-setups gates, or push floor.
+            "thesis_funnel": _compute_thesis_funnel_block(
+                str(t),
+                my=my,
+                moat_falsifiers_result=_t_moat,
+                capital_allocation_block=_t_ca,
+                expectation_state=_expect_states.get(str(t)) or None,
+                insider_context=(insider.get(t) or None),
+            ),
         }
         out[str(t)] = _clean({k: v for k, v in blocks.items() if v})
     log.info("stock_fundamentals: %d names with panels (factors %d, deep %d, short %s)",

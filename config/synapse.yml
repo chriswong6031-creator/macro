@@ -4401,6 +4401,123 @@ artifacts:
       MUST NOT feed board ordering, alert triage, top-setups gates, or push floor (LH-R1).
       fdr_family=long_hold (LH-R5).
 
+  # --- Long-Hold LT-4: thesis funnel shadow ---
+  long-hold-thesis-funnel-states:
+    path: data/research/thesis_funnel_states.parquet
+    format: parquet
+    producer: scripts/research/build_thesis_funnel_snapshot.py
+    known_extra_writers: []
+    owner_program: long-hold
+    cadence: on-demand
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 168
+    schema: thesis_funnel_states.v1
+    tier: display
+    horizon_role: hold_thesis
+    weights: none
+    scored_path_surfaces: []
+    fdr_family: long_hold
+    consumers:
+      - research/long_hold/LT4_FUNNEL_SHADOW_REPORT.md
+    external_consumers: []
+    notes: >
+      LT-4 (Long-Hold External Foundation). Per-ticker thesis funnel state snapshot.
+      Transparent AND-gate of independently registered flags (LH-R2: no composite,
+      no weights, no behavioral surface).
+
+      State enum (frozen v1, exactly 3 values):
+        not_eligible: s4_coverage fires OR any of s1/s2/s3 fires.
+        watch_for_thesis: survival gates all pass but not yet candidate-eligible.
+        thesis_candidate_shadow: survival pass + piotroski_f >= 6 + not dilutive.
+
+      Survival flags:
+        s1_dilution: shares_yoy_change >= +3% (threshold from capital_allocation.py
+          _DILUTIVE_SHARES_CHANGE_PCT, matched to missed_hold_study.py).
+        s2_moat_falsifier: any of the 4 moat sensors firing (engine/moat_falsifiers.py).
+        s3_solvency: Altman Z < 1.81 (distress floor; engine/stock_fundamentals._altman).
+        s4_coverage: fewer than 2 of {shares_yoy, moat sensors, altman_z} computable.
+
+      Candidate upgrade gate (in addition to survival pass):
+        piotroski_f >= 6 (engine/stock_fundamentals._piotroski, existing computation).
+        capital_allocation_delta != 'dilutive' ('unavailable' does NOT disqualify).
+
+      Ceiling = thesis_candidate_shadow. No 'active_thesis' state anywhere (W3-locked;
+      G1-DEFERRED ruling 2026-07-06).
+
+      Context (NOT gate inputs, printed for transparency):
+        expectation_state (engine/expectation_state — ED-7 descriptive pass RBC=0.041
+          is TINY; SUE wrong-sign at the trap ruler per EXPECT_DRIFT_RULER_P_RESULTS.md
+          — explicitly NOT a gate input).
+        capital_allocation_delta (engine/capital_allocation.py, LT-3a).
+        insider (positioning.insider, context only).
+
+      Columns: ticker, as_of, state, state_reason, s1_dilution_fired, s1_dilution_value,
+        s2_moat_falsifier_fired, s2_sensors_fired, s3_solvency_fired, s3_altman_z,
+        s3_altman_approx, s4_coverage_fired, s4_n_computable, piotroski_score,
+        piotroski_of, capital_allocation_delta, _display_only, _horizon_role, _version.
+
+      FIREWALL: horizon_role=hold_thesis. MUST NOT feed board ordering, alert triage,
+      top-setups gates, or push floor (LH-R1). fdr_family=long_hold (LH-R5).
+      No scored_path_surfaces. Display/research tier only.
+
+  long-hold-thesis-funnel-states-manifest:
+    path: data/research/thesis_funnel_states_manifest.json
+    format: json
+    producer: scripts/research/build_thesis_funnel_snapshot.py
+    known_extra_writers: []
+    owner_program: long-hold
+    cadence: on-demand
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 168
+    schema: thesis_funnel_states.v1
+    tier: display
+    horizon_role: hold_thesis
+    weights: none
+    scored_path_surfaces: []
+    fdr_family: long_hold
+    consumers:
+      - research/long_hold/LT4_FUNNEL_SHADOW_REPORT.md
+    external_consumers: []
+    notes: >
+      Companion manifest for thesis_funnel_states.parquet. Fields: schema,
+      as_of, n_tickers, state_counts (per-state population), elapsed_seconds.
+      FIREWALL: hold_thesis — no entry-stack consumers permitted.
+
+  long-hold-thesis-funnel-panel:
+    path: "embedded: thesis_funnel inside site/stockdata/<TICKER>.json"
+    format: json
+    producer: engine/thesis_funnel.py
+    known_extra_writers:
+      - "engine/stock_fundamentals.py — _compute_thesis_funnel_block() called inside panels(); result keyed as 'thesis_funnel'"
+    owner_program: long-hold
+    cadence: daily-engine
+    storage: git
+    asof_field: null
+    freshness_sla_hours: 30
+    schema: thesis_funnel.v1
+    tier: display
+    horizon_role: hold_thesis
+    weights: none
+    scored_path_surfaces: []
+    fdr_family: long_hold
+    consumers:
+      - site/stockdata/<TICKER>.json
+    external_consumers: []
+    notes: >
+      LT-4 (Long-Hold External Foundation). Per-stock thesis funnel state block
+      computed at build time. Transparent AND-gate per LH-R2; no composite,
+      no weights. State enum: not_eligible | watch_for_thesis |
+      thesis_candidate_shadow (ceiling). Survival flags: s1_dilution,
+      s2_moat_falsifier, s3_solvency, s4_coverage. Candidate gate: piotroski_f
+      >= 6 AND capital_allocation_delta != 'dilutive'. Context (non-gate):
+      expectation_state, capital_allocation_delta, insider.
+      Firewall annotations: _horizon_role='hold_thesis', _display_only=True,
+      _version='v1'. DISPLAY-ONLY — G1-DEFERRED ruling 2026-07-06.
+      FIREWALL: horizon_role=hold_thesis. MUST NOT feed board ordering, alert
+      triage, top-setups gates, or push floor (LH-R1). fdr_family=long_hold.
+
   # --- NW quant-synthesis B: research-queue EV-ranker ---
   research-queue:
     path: data/neuralweb/research_queue.json
