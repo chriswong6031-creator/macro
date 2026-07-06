@@ -268,3 +268,7 @@ data/rule_experiments/results/*_perfire.parquet
 # only (not gitignored previously; made explicit per RUL-P10 to prevent accidental staging
 # by the nightly blanket git add data/).
 data/replay/*.parquet
+# NW Rails PR-8 / RUL-P10 (path a): operator action ledger.
+# Admin server is the single intraday writer; MUST NOT be staged by the nightly
+# blanket `git add data/` sweep. Off-band backup rides the admin host's path.
+data/operator/

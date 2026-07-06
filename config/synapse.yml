@@ -4222,3 +4222,32 @@ artifacts:
       logged as a prior for a future measured promotion. DISP-GATE-1 shadow-ladder
       question registered in research/dispersion/L3_PREREG.md; verdict gates frozen for
       a later batch run via R1 governor. No scoring surface, no gate, no rank power.
+
+  # --- NW Rails PR-8: L4 operator action ledger ---
+  operator-action-ledger:
+    path: data/operator/action_ledger.jsonl
+    format: jsonl
+    producer: admin/server.py
+    known_extra_writers: []
+    owner_program: nw-rails
+    cadence: on-demand
+    storage: gitignored-local
+    asof_field: ts
+    freshness_sla_hours: 8760
+    schema: operator_action_ledger.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      NW Rails PR-8 (L4 instrumentation, RUL-P7 + RUL-P10 path a).
+      Gitignored server-local accrual ledger of operator decisions on alerts, experiments,
+      and boards. Schema: ts (server-stamped ISO-8601 UTC), actor="operator", surface
+      (alert id / experiment id / board name), action in {acted, dismissed, overrode,
+      snoozed}, direction_note (free text, capped at 280 chars), latency_s (server-computed
+      from alert_emit_ts when caller supplies it). Single writer: admin/server.py POST
+      /api/actions. Grading harness is a post-Fable wave (template: btc_override_ledger.py
+      Wilson/bootstrap; qledger claims as counterfactual source). Ledger accrues only in
+      calendar time; n>=25 graded actions is the cortex A2 Wilson floor.
