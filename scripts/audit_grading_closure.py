@@ -347,6 +347,23 @@ INVENTORY: list[dict[str, Any]] = [
         "tune_step": False,
         "storage_note": "absent-by-design: seeded when EI-F1D-RW species accrues its first ledger row",
     },
+    # ── BD-AVOID-1 Phase-1 forward ledger (L1 Short-Side Lobe) ──────────────
+    # Mac-side ops lane; pre-registered 2026-07-06.
+    # Verdict floor: n>=300 events/side; come-back BD-2>=2026-10-01, BD-3>=2027-01-01.
+    # Long-side (clean8_21) feeds verdict; short-side grades are quarantined (RUL-3).
+    {
+        "key": "bd_avoid1_ledger",
+        "path": "data/research/bd_avoid1_ledger.parquet",
+        "format": "parquet",
+        "grader": "scripts/research/bd_avoid1_stamper.py",
+        "grade_field": "long_state_clean8_21",  # non-null = graded at 21d horizon
+        "grade_ts_field": "stamped_at",
+        "tune_step": False,
+        "storage_note": (
+            "absent-by-design until first ops-lane stamp run; "
+            "Mac-local only (requires massive_stock_day + replay_boarded)"
+        ),
+    },
 ]
 
 

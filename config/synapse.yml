@@ -5456,3 +5456,39 @@ artifacts:
       unmapped_id. Unmapped ids kept (entity_id=None, unmapped_id=True)
       with WARNING; never silently dropped. Built after all three cycle
       builders so today's stamps are present before the view rebuilds.
+
+  # ============================================================
+  # BD-AVOID-1 Phase-1 Forward Ledger (L1 Short-Side Lobe)
+  # ============================================================
+
+  bd-avoid1-ledger:
+    path: data/research/bd_avoid1_ledger.parquet
+    format: parquet
+    producer: scripts/research/bd_avoid1_stamper.py
+    known_extra_writers: []
+    owner_program: short-side
+    cadence: ops-lane
+    storage: git
+    asof_field: event_date
+    freshness_sla_hours: 48
+    schema: bd_avoid1_ledger.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/audit_grading_closure.py
+    external_consumers: []
+    notes: >
+      BD-AVOID-1 Phase-1 forward ledger for the L1 Short-Side lobe.
+      Pre-registered 2026-07-06 (research/short_side/BD_AVOID1_PHASE1_PREREG.md).
+      Contains BD-2 and BD-3 forward OOS events (derived_from_surface=bd_phase0;
+      compensating gate >=8pp; fdr_family='short_side'; n>=300/side floor before
+      verdict). Mac-side single-writer ops lane only — never on CI runners
+      (requires massive_stock_day + replay_boarded, both Mac-local/R2).
+      Append-only; event rows + 3 seeded PIT random-bar controls per event
+      (is_control=True). Long-side grades (clean8_21) feed the future verdict;
+      short-side grades (short21) are quarantined descriptive (RUL-3).
+      No board chips, no site surface until verdict floor is reached.
+      Come-back dates: BD-2 >= 2026-10-01, BD-3 >= 2027-01-01.
+      Invoked by ops/launchd/com.macro.bd_avoid1_stamper.plist (weekday 17:00 ET).

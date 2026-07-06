@@ -31,6 +31,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | research-factory | 3 |
 | sector-pulse | 3 |
 | setup-species | 6 |
+| short-side | 1 |
 | signal-commons | 7 |
 | us-stocks-prebreakout | 2 |
 
@@ -39,7 +40,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | tier | count |
 |---|---|
 | display | 99 |
-| infrastructure | 48 |
+| infrastructure | 49 |
 | scored | 4 |
 | shadow | 37 |
 
@@ -47,7 +48,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 182 |
+| git | 183 |
 | gitignored-local | 4 |
 | r2 | 2 |
 
@@ -336,6 +337,12 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | signal-archive-track-record | `data/signal_archive/track_record.parquet` | parquet | daily-engine | shadow | 4 | 0 |
 | species-registry | `data/species/registry.json` | json | on-demand | infrastructure | 4 | 0 |
 | experiments-registry-seed | `data/experiments/registry_seed.json` | json | daily-engine | infrastructure | 3 | 0 |
+
+### short-side
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| bd-avoid1-ledger | `data/research/bd_avoid1_ledger.parquet` | parquet | ops-lane | infrastructure | 1 | 0 |
 
 ### signal-commons
 
