@@ -704,6 +704,9 @@ def run_event_study(
         "mean_par": round(float(cal.mean()) * 100, 4) if len(cal) > 0 else None,
         "nw": nw,
         "by_ticker": by_ticker,
+        # Per-avail_date collapsed calendar series (pd.Series, date index).
+        # Required by G2 split-half gate in apply_gates; stored in-memory only.
+        "cal_series": cal,
     }
 
 
@@ -711,12 +714,71 @@ def run_event_study(
 # GATES
 # ---------------------------------------------------------------------------
 
+def _g2_split_half(cal_series: "pd.Series | None") -> dict:
+    """G2: split-half same-sign check on a calendar-time PAR series.
+
+    Splits the date-indexed series at the median date into first and second
+    halves; checks that the mean of each half is negative (matching the
+    pre-registered direction). Both halves must have at least 3 observations.
+
+    Returns a dict with keys: pass (bool), first_half_mean, second_half_mean,
+    n_first, n_second, note (str).
+    """
+    if cal_series is None or not hasattr(cal_series, "__len__") or len(cal_series) < 6:
+        n = len(cal_series) if cal_series is not None and hasattr(cal_series, "__len__") else 0
+        return {
+            "pass": False,
+            "first_half_mean": None,
+            "second_half_mean": None,
+            "n_first": 0,
+            "n_second": 0,
+            "note": f"insufficient dates for split-half (n={n}, need >=6)",
+        }
+
+    sorted_series = cal_series.sort_index()
+    dates = sorted_series.index
+    median_date = dates[len(dates) // 2]  # lower-median split point
+
+    first_half = sorted_series[dates < median_date]
+    second_half = sorted_series[dates >= median_date]
+
+    n_first = len(first_half)
+    n_second = len(second_half)
+
+    if n_first < 3 or n_second < 3:
+        return {
+            "pass": False,
+            "first_half_mean": float(first_half.mean()) if n_first > 0 else None,
+            "second_half_mean": float(second_half.mean()) if n_second > 0 else None,
+            "n_first": n_first,
+            "n_second": n_second,
+            "note": f"half too small (n_first={n_first}, n_second={n_second}, need >=3 each)",
+        }
+
+    fh_mean = float(first_half.mean())
+    sh_mean = float(second_half.mean())
+    # Pre-registered direction: negative; same-sign = both halves negative
+    same_sign_negative = (fh_mean < 0) and (sh_mean < 0)
+
+    return {
+        "pass": same_sign_negative,
+        "first_half_mean": round(fh_mean * 100, 4),
+        "second_half_mean": round(sh_mean * 100, 4),
+        "n_first": n_first,
+        "n_second": n_second,
+        "note": (
+            "PASS: both halves negative" if same_sign_negative
+            else f"FAIL: first={round(fh_mean*100,4)}% second={round(sh_mean*100,4)}% (need both <0)"
+        ),
+    }
+
+
 def apply_gates(results: dict) -> dict:
     """Apply pre-registered gates G1, G2, G3 across 6 cells.
 
     G1: >=1 cell shows negative direction with |t|>=2 AND survives BH-FDR q<=0.10
-    G2: split-half same-sign for any G1-passing cell (approximate: first/second half by date)
-    G3: TSLA-exclusion robustness for any G1-passing cell
+    G2: split-half same-sign (both halves negative) for any G1-passing cell
+    G3: TSLA-exclusion robustness for any G1+G2-passing cell
     """
     # Collect p-values for the 6 gated cells (not robustness checks)
     gated_keys = [k for k in results if not k.endswith("_notsla")]
@@ -743,14 +805,23 @@ def apply_gates(results: dict) -> dict:
         if negative_dir and abs_t_ge2 and bh_pass:
             g1_passing.append(k)
 
-    # G2: split-half (approximate via even/odd indices — we don't have the raw series here;
-    # flag as "REQUIRES_FULL_DATA" since the split must be done on the calendar series)
-    # We store a note; full split-half requires access to the EP series per cell.
-    g2_note = "split-half requires per-date series (not stored in summary dict)"
-
-    # G3: TSLA-exclusion
-    g3_results = {}
+    # G2: split-half same-sign for each G1-passing cell.
+    # cal_series is stored inside the results dict by run_event_study.
+    # G1 currently fails on this run so g1_passing is empty — but the gate
+    # is evaluated unconditionally so future re-runs where G1 passes extend
+    # correctly without any code change.
+    g2_results: dict[str, dict] = {}
+    g2_passing: list[str] = []
     for k in g1_passing:
+        cal = results[k].get("cal_series")
+        g2_r = _g2_split_half(cal)
+        g2_results[k] = g2_r
+        if g2_r["pass"]:
+            g2_passing.append(k)
+
+    # G3: TSLA-exclusion robustness (only for cells that passed both G1 and G2)
+    g3_results = {}
+    for k in g2_passing:
         notsla_key = f"{k}_notsla"
         if notsla_key in results:
             r_notsla = results[notsla_key]
@@ -765,17 +836,22 @@ def apply_gates(results: dict) -> dict:
 
     verdict = "NULL"
     if g1_passing:
-        g3_any_pass = any(v.get("passes") for v in g3_results.values())
-        if g3_any_pass:
-            verdict = "CONFIRMER_CANDIDATE"
+        if not g2_passing:
+            verdict = "G1_PASS_G2_FAIL"
         else:
-            verdict = "G1_PASS_G3_FAIL"
+            g3_any_pass = any(v.get("passes") for v in g3_results.values())
+            if g3_any_pass:
+                verdict = "CONFIRMER_CANDIDATE"
+            else:
+                verdict = "G1_G2_PASS_G3_FAIL"
 
     return {
         "G1_passing": g1_passing,
         "G1_pass": len(g1_passing) > 0,
         "bh_results": bh,
-        "G2_note": g2_note,
+        "G2_results": g2_results,
+        "G2_passing": g2_passing,
+        "G2_pass": len(g2_passing) > 0,
         "G3": g3_results,
         "G3_pass": any(v.get("passes") for v in g3_results.values()) if g3_results else False,
         "verdict": verdict,
@@ -804,8 +880,9 @@ def write_report(results: dict, gates: dict, ev_counts: dict,
     verdict = gates["verdict"]
     verdict_label = {
         "NULL": "NULL — no pre-registered gate passed",
-        "CONFIRMER_CANDIDATE": "CONFIRMER CANDIDATE — G1+G3 passed",
-        "G1_PASS_G3_FAIL": "PARTIAL — G1 passed but G3 (TSLA-excl) failed",
+        "CONFIRMER_CANDIDATE": "CONFIRMER CANDIDATE — G1+G2+G3 passed",
+        "G1_PASS_G2_FAIL": "PARTIAL — G1 passed but G2 (split-half) failed",
+        "G1_G2_PASS_G3_FAIL": "PARTIAL — G1+G2 passed but G3 (TSLA-excl) failed",
     }.get(verdict, verdict)
 
     def fmt_nw(nw: dict) -> str:
@@ -978,14 +1055,39 @@ def write_report(results: dict, gates: dict, ev_counts: dict,
                      f"{'YES' if v.get('reject') else 'NO'} |")
 
     g1_pass = gates.get("G1_pass", False)
+    g2_pass = gates.get("G2_pass", False)
     g3_pass = gates.get("G3_pass", False)
     lines += [
         "",
         f"**G1 (≥1 cell negative, |t|≥2, BH q≤0.10):** {'PASS' if g1_pass else 'FAIL'}",
         f"  - Passing cells: {gates.get('G1_passing', [])}",
-        f"**G2 (split-half same-sign):** {gates.get('G2_note', 'n/a')}",
-        f"**G3 (TSLA-exclusion robustness):** {'PASS' if g3_pass else ('FAIL' if g1_pass else 'NOT REACHED')}",
     ]
+
+    # G2: report per-cell results (or NOT REACHED if G1 failed)
+    if not g1_pass:
+        lines.append("**G2 (split-half same-sign):** NOT REACHED (G1 failed)")
+    else:
+        g2_results = gates.get("G2_results", {})
+        if not g2_results:
+            lines.append("**G2 (split-half same-sign):** no G1-passing cells to check")
+        else:
+            g2_label = "PASS" if g2_pass else "FAIL"
+            lines.append(f"**G2 (split-half same-sign):** {g2_label}")
+            for k, gr in g2_results.items():
+                lines.append(
+                    f"  - {k}: first_half={gr.get('first_half_mean', 'n/a')}% "
+                    f"(n={gr.get('n_first', 0)}), "
+                    f"second_half={gr.get('second_half_mean', 'n/a')}% "
+                    f"(n={gr.get('n_second', 0)}), "
+                    f"pass={gr.get('pass', False)} — {gr.get('note', '')}"
+                )
+
+    g3_label = (
+        "PASS" if g3_pass else
+        ("FAIL" if g2_pass else
+         ("NOT REACHED (G2 failed)" if g1_pass else "NOT REACHED (G1 failed)"))
+    )
+    lines.append(f"**G3 (TSLA-exclusion robustness):** {g3_label}")
     for k, v in gates.get("G3", {}).items():
         lines.append(f"  - {k}: notsla_mean_par={v.get('notsla_mean_par', 'n/a')}%, "
                      f"passes={v.get('passes', 'n/a')}")
@@ -1038,19 +1140,29 @@ def write_report(results: dict, gates: dict, ev_counts: dict,
         ]
     elif verdict == "CONFIRMER_CANDIDATE":
         lines += [
-            "G1 and G3 gates passed. The flagged cells show negative peer-adjusted",
-            "returns with |t| ≥ 2 (NW HAC) and survive BH-FDR q ≤ 0.10 and TSLA",
-            "exclusion. This qualifies for confirmer candidacy.",
+            "G1, G2, and G3 gates passed. The flagged cells show negative peer-adjusted",
+            "returns with |t| ≥ 2 (NW HAC), survive BH-FDR q ≤ 0.10, replicate in",
+            "both calendar halves, and persist after TSLA exclusion.",
+            "This qualifies for confirmer candidacy.",
             "",
-            "**Required before promotion:** G2 split-half must be verified on the full",
-            "per-date return series; propose collector phase to extend the panel.",
+            "**Next step:** propose a collector phase to extend the panel beyond 2021.",
+        ]
+    elif verdict == "G1_PASS_G2_FAIL":
+        lines += [
+            "G1 passed but G2 (split-half same-sign) failed. The negative signal does",
+            "not consistently replicate across both halves of the calendar-time series,",
+            "suggesting it may be period-specific rather than structural.",
+        ]
+    elif verdict == "G1_G2_PASS_G3_FAIL":
+        lines += [
+            "G1 and G2 passed but G3 (TSLA-exclusion) failed. The negative signal",
+            "disappears or weakens materially when TSLA events are excluded, suggesting",
+            "TSLA-specific dynamics (regulatory spotlight, media amplification) drive",
+            "the effect rather than a general OEM defect signal.",
         ]
     else:
         lines += [
-            "G1 passed but G3 (TSLA-exclusion) failed. The negative signal disappears",
-            "or weakens materially when TSLA events are excluded, suggesting TSLA-specific",
-            "dynamics (regulatory spotlight, media amplification) drive the effect rather",
-            "than a general OEM defect signal.",
+            "No pre-registered gate passed.",
         ]
 
     lines += ["", "---", "",
@@ -1161,6 +1273,11 @@ def main() -> None:
     print("\n[8] Applying pre-registered gates...")
     gates = apply_gates(results)
     print(f"  G1 pass: {gates['G1_pass']}, passing cells: {gates['G1_passing']}")
+    print(f"  G2 pass: {gates['G2_pass']}, passing cells: {gates['G2_passing']}")
+    if gates.get("G2_results"):
+        for k, gr in gates["G2_results"].items():
+            print(f"    G2 {k}: first={gr.get('first_half_mean')}% "
+                  f"second={gr.get('second_half_mean')}% pass={gr.get('pass')} — {gr.get('note')}")
     print(f"  G3 pass: {gates['G3_pass']}")
     print(f"  VERDICT: {gates['verdict']}")
 

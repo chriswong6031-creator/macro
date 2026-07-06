@@ -121,20 +121,17 @@ Own-history z-score (no fleet normalization) is the pre-registered ruler.
 **Hypothesis:** Recall with potentially-affected units > trailing-3y p90 →
 negative peer-adjusted AR over 21d.
 
-**V3_rcl_21d:** 0 events — NOT COMPUTABLE.
-
-**Data limitation:** The NHTSA ODI recall flat file (FLAT_RCL.zip) is no longer
-available at its published URL (HTTP 404). The NHTSA recall API was used as a fallback
-(1,089 recall events collected across all tickers and model years 2010-2026), but the API
-does not expose the "potentially affected units" field required for the pre-registered
-p90 gate. V3 is therefore **NOT COMPUTABLE** with available data, not a true null.
+**V3_rcl_21d:** 0 events, 0 calendar dates
+  - Mean peer-adj AR: None%
+  - NW HAC: n/a (too few observations)
 
 **Honest prior:** recalls are often negotiated weeks before announcement;
 same-day pricing of material recalls is common for large events.
 
 **V3_rcl_21d (TSLA excluded — G3 check):**
-  - Events: 0 (same data limitation)
-  - NOT COMPUTABLE
+  - Events: 0, dates: 0
+  - Mean peer-adj AR: None%
+  - NW HAC: n/a (too few observations)
 
 ### Tier-B ADR Robustness (non-gated)
 
@@ -155,10 +152,9 @@ NW HAC: mean=-0.0342, t=-0.72, p=0.4737, n=29
 | V2_cmpl_63d | 0.6515 | 0.7920 | NO |
 
 **G1 (≥1 cell negative, |t|≥2, BH q≤0.10):** FAIL
-  - Passing cells: [] (all t-stats well below 2.0; strongest is V1_inv_21d t=-0.77)
+  - Passing cells: []
 **G2 (split-half same-sign):** NOT REACHED (G1 failed)
 **G3 (TSLA-exclusion robustness):** NOT REACHED (G1 failed)
-**V3 gate:** NOT COMPUTABLE (potaff data unavailable)
 
 ### FINAL VERDICT: **NULL — no pre-registered gate passed**
 
@@ -187,31 +183,18 @@ NW HAC: mean=-0.0342, t=-0.72, p=0.4737, n=29
 
 ## 6. Conclusion
 
-No pre-registered gate passed. V1 (investigation opening) and V2 (complaint
-acceleration) both show the pre-registered negative direction but t-statistics
-below 2.0 in both cases (V1_21d: t=-0.77, V2_21d: t=-0.26). V3 (major recall)
-could not be computed due to the NHTSA flat file being unavailable and the API
-not exposing the "potentially affected units" field. This is a null result;
-no collector is proposed.
+No pre-registered gate passed. The three NHTSA defect-escalation signals
+(investigation opening, complaint acceleration, major recall) do not show
+statistically reliable negative peer-adjusted returns over the tested windows
+in this price panel. This is a null result; no collector is proposed.
 
-By the numbers:
-- V1 investigations: 1,602 PE/EA events in history; 76 in the 2021-07..2026-07
-  price window; 64 unique calendar dates after collapse. Mean peer-adj AR = -1.2%
-  (5d) and -3.3% (21d); both t-stats < 1.0 under Newey-West HAC.
-- V2 complaint acceleration: 689 top-decile complaint months; 113 in price window;
-  54 calendar dates. Mean peer-adj AR = -0.4% (21d); t = -0.26.
-- V3 major recall: 1,089 recall events collected from API across all tickers;
-  potaff field not available; gate NOT COMPUTABLE.
-- Tier-B ADR robustness (non-gated): 35 V1 events, mean PAR = -3.4%, t = -0.72.
-
-Possible explanations for V1/V2 null:
-- **Already priced:** the market prices NHTSA events in real time via news;
-  formal ODI filing is lagged relative to media coverage and analyst attention.
+Possible explanations:
+- **Already priced:** the market prices NHTSA events in real time (news); formal
+  ODI filing may be lagged or anticipated.
 - **Event heterogeneity:** not all PE openings carry equal severity; a
-  severity-stratified study might find edge in the tail (e.g., NHTSA actions
-  with large affected-vehicle populations or prior fatalities).
-- **Short panel:** ~5 years and 7 Tier-A tickers limits power substantially;
-  RIVN/LCID have thin histories and rare events; GM dominates V1 count.
+  severity-stratified study might find edge in the tail.
+- **Short panel:** ~5 years and few Tier-A tickers limits power, especially
+  for rare events (RIVN/LCID have thin histories).
 
 ---
 

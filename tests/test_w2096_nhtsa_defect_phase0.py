@@ -29,6 +29,7 @@ from scripts.w2096_nhtsa_defect_phase0 import (  # noqa: E402
     map_make_to_ticker,
     abnormal_return,
     apply_gates,
+    _g2_split_half,
     TIER_A,
     TIER_B,
     FWD_5,
@@ -160,23 +161,97 @@ class TestAbnormalReturn:
 
 
 # ===========================================================================
-# Section 3 — gate logic
+# Section 3 — G2 split-half gate
+# ===========================================================================
+
+class TestG2SplitHalf:
+    """_g2_split_half checks that both halves of the calendar series are negative."""
+
+    def _make_cal(self, values: list[float], start: str = "2022-01-03") -> pd.Series:
+        """Build a business-date indexed Series with given values."""
+        idx = pd.bdate_range(start, periods=len(values))
+        return pd.Series(values, index=idx)
+
+    def test_both_halves_negative_passes(self):
+        """When both halves have negative means, G2 should pass."""
+        vals = [-0.01] * 12  # all negative
+        cal = self._make_cal(vals)
+        r = _g2_split_half(cal)
+        assert r["pass"] is True
+        assert r["first_half_mean"] < 0
+        assert r["second_half_mean"] < 0
+
+    def test_first_half_positive_fails(self):
+        """Positive first-half mean must fail even if second half is negative."""
+        vals = [0.02] * 6 + [-0.01] * 6
+        cal = self._make_cal(vals)
+        r = _g2_split_half(cal)
+        assert r["pass"] is False
+
+    def test_second_half_positive_fails(self):
+        """Positive second-half mean fails."""
+        vals = [-0.01] * 6 + [0.02] * 6
+        cal = self._make_cal(vals)
+        r = _g2_split_half(cal)
+        assert r["pass"] is False
+
+    def test_insufficient_dates_returns_false(self):
+        """Fewer than 6 dates — cannot split into two halves of >=3; must not error."""
+        cal = self._make_cal([-0.01] * 4)
+        r = _g2_split_half(cal)
+        assert r["pass"] is False
+        assert "insufficient" in r["note"]
+
+    def test_none_input_returns_false(self):
+        """None cal_series must return pass=False without raising."""
+        r = _g2_split_half(None)
+        assert r["pass"] is False
+
+    def test_half_sizes_approximately_equal(self):
+        """12-item series: each half should have ~6 observations."""
+        cal = self._make_cal([-0.01] * 12)
+        r = _g2_split_half(cal)
+        assert r["n_first"] >= 3
+        assert r["n_second"] >= 3
+        assert r["n_first"] + r["n_second"] == 12
+
+    def test_mixed_sign_same_half_checks_mean(self):
+        """A half with mixed signs but net-negative mean should pass."""
+        # first 6: net -0.005 per bar; second 6: net -0.005 per bar
+        vals = [-0.02, 0.01, -0.02, 0.01, -0.02, 0.01] * 2
+        cal = self._make_cal(vals)
+        r = _g2_split_half(cal)
+        # net mean is -0.005 per bar for each half -> pass
+        assert r["pass"] is True
+
+
+# ===========================================================================
+# Section 4 — gate logic
 # ===========================================================================
 
 class TestApplyGates:
     """apply_gates takes a results dict and returns gate verdicts."""
 
-    def _make_results(self, t_vals: dict[str, float]) -> dict:
-        """Build synthetic results dict from a t-value map."""
+    def _make_results(self, t_vals: dict[str, float],
+                      cal_all_negative: bool = True) -> dict:
+        """Build synthetic results dict from a t-value map.
+
+        cal_series is included so apply_gates can run G2 on G1-passing cells.
+        """
         out = {}
         for k, t in t_vals.items():
             p = 2.0 * (1.0 - _norm_cdf(abs(t)))
+            # Build a synthetic cal_series with 20 dates, sign matching t
+            idx = pd.bdate_range("2022-01-03", periods=20)
+            val = -0.01 if (t < 0 and cal_all_negative) else 0.01
+            cal = pd.Series([val] * 20, index=idx)
             out[k] = {
                 "n_events": 50,
                 "n_dates": 40,
                 "mean_par": -0.5 if t < 0 else 0.5,  # sign follows t
                 "nw": {"mean": -0.005 if t < 0 else 0.005, "t": t, "p": p, "n": 40},
                 "by_ticker": {},
+                "cal_series": cal,
             }
         return out
 
@@ -243,6 +318,55 @@ class TestApplyGates:
         for k in gated:
             if results[k]["nw"]["p"] is not None:
                 assert k in bh, f"{k} missing from BH results"
+
+    def test_g2_not_evaluated_when_g1_fails(self):
+        """When G1 fails, G2_results must be empty (not reached)."""
+        results = self._make_results({
+            "V1_inv_5d": -0.3, "V1_inv_21d": -0.5,
+            "V2_cmpl_21d": -0.2, "V2_cmpl_63d": -0.4,
+            "V3_rcl_21d": -0.6, "V3_rcl_21d_notsla": -0.5,
+        })
+        gates = apply_gates(results)
+        assert gates["G1_pass"] is False
+        assert gates["G2_results"] == {}
+        assert gates["G2_pass"] is False
+
+    def test_g2_fail_gives_g1_pass_g2_fail_verdict(self):
+        """Synthetic: G1-passing cell with a cal_series that fails G2 (positive first half)."""
+        import math
+
+        # Build all cells: most are weak; V1_inv_21d will have t=-5.0 to pass G1
+        results = self._make_results({
+            "V1_inv_5d": -0.5, "V1_inv_21d": -5.0,
+            "V2_cmpl_21d": -0.8, "V2_cmpl_63d": -0.5,
+            "V3_rcl_21d": -0.6, "V3_rcl_21d_notsla": -0.4,
+        })
+        # Override V1_inv_21d's cal_series so first half is positive (G2 fail)
+        idx = pd.bdate_range("2022-01-03", periods=20)
+        # first 10 bars positive, last 10 bars negative -> mixed halves
+        vals = [0.02] * 10 + [-0.01] * 10
+        results["V1_inv_21d"]["cal_series"] = pd.Series(vals, index=idx)
+
+        gates = apply_gates(results)
+        # G1 may or may not pass with BH correction at p~0 for t=-5; check G2 logic
+        if gates["G1_pass"] and "V1_inv_21d" in gates["G1_passing"]:
+            g2r = gates["G2_results"].get("V1_inv_21d", {})
+            assert g2r.get("pass") is False, "G2 should fail with positive first half"
+            # Verdict should not be CONFIRMER_CANDIDATE
+            assert gates["verdict"] != "CONFIRMER_CANDIDATE"
+
+    def test_gates_output_has_required_keys(self):
+        """apply_gates must always return G1, G2, G3 keys regardless of outcome."""
+        results = self._make_results({
+            "V1_inv_5d": -0.3, "V1_inv_21d": -0.5,
+            "V2_cmpl_21d": -0.2, "V2_cmpl_63d": -0.4,
+            "V3_rcl_21d": -0.6, "V3_rcl_21d_notsla": -0.5,
+        })
+        gates = apply_gates(results)
+        for key in ("G1_pass", "G1_passing", "bh_results",
+                    "G2_pass", "G2_passing", "G2_results",
+                    "G3_pass", "G3", "verdict"):
+            assert key in gates, f"missing key: {key}"
 
 
 # ---------------------------------------------------------------------------
