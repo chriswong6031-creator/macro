@@ -669,9 +669,15 @@
   }
   function _isAuthReturn() {
     var h = location.hash || '', q = location.search || '';
-    // PKCE returns ?code=...; keep the legacy hash checks for robustness.
-    return /[?&]code=/.test(q) || /[?&]error=/.test(q) ||
-           h.indexOf('access_token=') >= 0 || /[#&]error=/.test(h);
+    // PKCE returns the auth code in the query (?code=), never in the hash. Errors
+    // can arrive in either the query (?error=) or the fragment (#error=), e.g. a
+    // provider-side denial. We deliberately do NOT treat a bare #access_token=
+    // hash as an auth return: under flowType:'pkce' (getSupabaseClient) the
+    // vendored gotrue-js _getSessionFromURL throws "Not a valid PKCE flow url."
+    // on any non-?code= URL, so hash tokens are never consumed and a pasted
+    // #access_token= link cannot seed/fixate a session. (Verified against the
+    // gotrue-js in supabase.js.) The old access_token= clause was dead legacy.
+    return /[?&]code=/.test(q) || /[?&]error=/.test(q) || /[#&]error=/.test(h);
   }
   function _emitAuth(detail) {
     try { window.dispatchEvent(new CustomEvent('mdx-auth', { detail: detail })); }
