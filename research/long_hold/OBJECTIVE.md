@@ -579,3 +579,98 @@ short-horizon features is a form of lookahead contamination. The wall is absolut
 ---
 
 *Document locked on merge. Any change requires a new pre-registration file.*
+
+---
+
+## Amendments
+
+Amendments are additive pre-registrations appended after the base document is locked.
+They must be registered before any feature-vs-outcome statistics are computed.
+Each amendment carries its discovery PR, registration date, and the mandate scope.
+
+---
+
+### Amendment A1 — Sector-benchmark coverage sensitivity (mandatory)
+
+**Registered:** 2026-07-05  
+**Registered before any feature-vs-outcome statistics computed:** YES  
+**Discovering PR:** #1517 (W1 label harness + outputs)  
+**Ruling:** LH-W1-2
+
+#### Background
+
+§2.1 assumed pre-built sector basket candles (`data/baskets/ohlcv/*.parquet`, 11 EW GICS
+sector baskets) would be available for all fire-tape tickers. The W1 label harness (#1517)
+found that only 503 of 2,495 fire-tape tickers map to the 11 EW baskets. As a result,
+3,391 of the 3,409 `sector_laggard_winner` (Label G) fires have no sector benchmark and
+received Label G solely because `sector_rel_252d` was undefined (treated as < 0 under the
+primary algorithm). This is a coverage collapse in the benchmark source, not a signal.
+
+#### Sensitivity run A1 (mandatory, runs in the same wave as the primary W1 kill-test)
+
+Reassign every no-benchmark Label G fire using an **equal-weight all-resolvable-tickers
+market benchmark** in place of the missing sector benchmark:
+
+- Replace `sector_rel_252d` with `market_rel_252d` for every fire where `sector_rel_252d`
+  is null at labeling time.
+- `market_rel_252d` = name's 252-trading-day total return **minus** the equal-weight
+  average 252-trading-day total return across the benchmark constituent set S(f) for fire
+  f, defined as follows:
+  - **Fill anchor (identical to primary):** both the name leg and every constituent leg
+    use the next-bar-after-fire_date anchor (`fill_index` = `searchsorted(fire_date,
+    side='right')`, i.e. `fi + 1`). The forward window is `close.iloc[fi+1 : fi+1+252]`,
+    exactly matching `_total_return` in the primary label harness. Reading "from fire date"
+    means "fill-anchored at the next bar strictly after fire_date" — the same convention
+    used by the primary code to eliminate the 1-bar look-ahead.
+  - **Benchmark constituent set S(f):** for fire f, S(f) is the set of every ticker in
+    the fire tape whose 252-trading-day fill-anchored forward price path
+    (`close.iloc[fi+1 : fi+1+252]`) is **fully resolvable** (no NaN, length == 252) as of
+    that fire's own fire_date. Membership is evaluated per-fire using that fire's fi+1
+    anchor — it is not a pooled or shared set. Each constituent's 252d return is computed
+    on its own fire_date-specific fi+1..fi+252 window.
+  - **Survivorship caveat (inherited from §4.3):** in pre-2021 cohorts where dead names
+    are absent from the price tape, S(f) is survivor-upward-biased. This mechanically
+    depresses `market_rel_252d` for surviving names and can re-inflate Label G assignment.
+    All A1 results from pre-2021 cohorts carry the `survivorship_biased` stamp from §4.3
+    and the direction of induced bias (upward benchmark → downward `market_rel_252d` →
+    excess Label G) must be noted in every table that reports A1 outcomes.
+- The `>= 0` threshold is unchanged: `market_rel_252d >= 0` assigns Label A or B
+  (depending on fundamentals); `market_rel_252d < 0` assigns Label G.
+- All other label logic, tercile cutoffs, fundamentals gates, cohort-year groupings,
+  n-floor rules, and inference gates are **identical** to the primary analysis.
+
+Repeat the **entire primary W1 analysis** (all §6 inference gates, BH-FDR, reshuffle null,
+episode-cluster n-floor) on the A1-reassigned label set. Report results alongside the
+primary results in every table.
+
+#### Interpretation rule (pre-registered, binding)
+
+Each of primary and A1 produces one of three outcomes: **KILL**, **SURVIVE**, or
+**DEFERRED** (survivorship-deferral: honest-OOS n-floor not met, verdict deferred to the
+dead-name-spike wave per §8). The routing table is:
+
+| Primary outcome | A1 outcome | Combined routing |
+|---|---|---|
+| KILL | KILL | Agreed KILL — ratifiable |
+| SURVIVE | SURVIVE | Agreed SURVIVE — ratifiable |
+| KILL | SURVIVE | Disagree — benchmark-coverage remediation (see below) |
+| SURVIVE | KILL | Disagree — benchmark-coverage remediation (see below) |
+| DEFERRED | any | DEFERRED — routes to dead-name-spike wave; A1 is reported but does not override deferral |
+| any | DEFERRED | DEFERRED — routes to dead-name-spike wave; primary result is reported but does not override deferral |
+
+The pre-registered expectation (§8 OOS n-floor warning) is that the honest-OOS 252d
+cohort will very likely NOT meet the n-floor, routing primary to DEFERRED. Any pairing
+that includes a DEFERRED outcome from either leg routes to DEFERRED (not remediation).
+Remediation fires only on a clean KILL-vs-SURVIVE split with no deferral on either leg.
+
+**Benchmark-coverage remediation path:** build a fuller sector-to-ticker mapping covering
+at minimum >= 80% of episode-cluster-weighted fires (measured as the fraction of
+episode-cluster-weighted `sector_laggard_winner` fires that receive a non-null
+`sector_rel_252d`); re-run the label harness with the improved mapping; and re-open the
+W1 study. W3/W4 remain suspended during this remediation path.
+
+#### Scope
+
+Amendment A1 is **additive only**. The primary analysis and all locked definitions in
+§§2–9 are unchanged. The primary analysis runs first and its outputs are reported
+unconditionally. A1 is an additional mandatory sensitivity run, not a replacement.
