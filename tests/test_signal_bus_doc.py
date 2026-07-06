@@ -73,13 +73,8 @@ def test_all_artifact_ids_present():
     with _SYNAPSE_YML.open(encoding="utf-8") as fh:
         registry = yaml.safe_load(fh)
     artifact_ids = list(registry.get("artifacts", {}).keys())
-<<<<<<< HEAD
-    assert len(artifact_ids) == 137, (
-        f"Expected 137 artifacts in synapse.yml, found {len(artifact_ids)}. "
-=======
-    assert len(artifact_ids) == 144, (
+    assert len(artifact_ids) == 145, (
         f"Expected 138 artifacts in synapse.yml, found {len(artifact_ids)}. "
->>>>>>> origin/main
         "Update the test if the registry count changed intentionally."
         " (W7b added machine-registry, cortex-attention-grades, cortex-probation = 104->107;"
         " W6b added ops-push-basket-freeze, ops-push-signal-sanity, ops-push-healthcheck = 107->110;"
@@ -94,17 +89,13 @@ def test_all_artifact_ids_present():
         " oracle reversion promo P0+P1 added oracle-reversion-forward-ledger, oracle-reversion-state = 128->130;"
         " long-hold W1 PR-E added long-hold-labels, long-hold-labels-manifest = 130->132;"
         " long-hold W1 dead-name build added long-hold-dead-name-prices = 132->133;"
-<<<<<<< HEAD
-        " OTA W6 oracle-turn-desk + oracle-turn-desk-ledger + long-hold-killtest-results = 133->136;"
-        " nw-rails PR-8 operator-action-ledger = 136->137)"
-=======
         " OTA W6 turn desk added oracle-turn-desk, oracle-turn-desk-ledger = 133->135;"
         " long-hold W1 PR-F killtest added long-hold-killtest-results = 135->136;"
         " NW-rails PR-4 added dispersion-regime = 136->137;"
         " long-hold W2 PR-J two clocks added long-hold-clocks = 137->138;"
         " NW-rails PR-1 added rule-experiment-registry, rule-experiment-summaries = 141->143;"
-        " NW-rails PR-6 added grading-closure = 143->144)"
->>>>>>> origin/main
+        " NW-rails PR-6 added grading-closure = 143->144;"
+        " NW-rails PR-8 added operator-action-ledger = 144->145)"
     )
     content = generate(_SYNAPSE_YML)
     missing = [aid for aid in artifact_ids if aid not in content]
