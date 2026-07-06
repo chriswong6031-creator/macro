@@ -1,5 +1,5 @@
 {
-  "schema": "neuralweb.cortex_probation.v1",
+  "schema": "reflex.factor_attention_probation.v1",
   "as_of": "2026-07-06",
   "granted": false,
   "tier": "A0/A1 shadow",
