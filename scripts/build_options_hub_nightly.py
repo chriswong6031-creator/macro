@@ -37,12 +37,27 @@ if str(_REPO) not in sys.path:
     sys.path.insert(0, str(_REPO))
 
 from engine.thetadata_store import _load_parquets, _normalise_date, store_root
-from engine.options_hub import compute_vol, compute_gex, compute_oi_movers, compute_hot_contracts
+from engine.options_hub import (
+    compute_vol,
+    compute_gex,
+    compute_oi_movers,
+    compute_hot_contracts,
+    load_gex_history_v2,
+    build_context_payload,
+    build_tickers_ctx,
+    build_oi_confirmed,
+)
 
 log = logging.getLogger(__name__)
 
 # ── R2 publish prefix ─────────────────────────────────────────────────────────
 R2_PREFIX = "options_hub/"
+
+# ── standard data paths (relative to data_root) ───────────────────────────────
+_POLYGON_GEX_SUBDIR = "polygon_gex"
+_GEX_LATEST_REL     = "gex/latest.json"
+_FEAR_GREED_REL     = "basketdata/fear_greed.json"   # relative to site/
+_TAPE_FLOW_SUBDIR   = "tape_flow/daily"
 
 # ── default roots (ETF anchors) ────────────────────────────────────────────────
 DEFAULT_ROOTS = [
@@ -190,6 +205,7 @@ def build_root(
     root: str,
     asof: str,
     theta_store: str | Path | None,
+    polygon_gex_dir: Path | None = None,
 ) -> tuple[dict, dict]:
     """Build vol + gex payloads for one root.
 
@@ -198,6 +214,10 @@ def build_root(
 
     OI TIMING LAW: we load OI for asof (= OPRA report representing EOD(asof-1)
     positions) as OI[t-1]. The previous session's OI is used for ΔOI comparisons.
+
+    CONTRACT v2: gex_payload.history is attached when polygon_gex_dir is provided
+    and the summary_{ROOT}.parquet exists.  When absent, the 'history' key is
+    omitted entirely (not set to null) — frontend checks key presence.
     """
     greeks = _load_greeks(root, theta_store)
 
@@ -221,6 +241,16 @@ def build_root(
     oi_t1 = _load_oi_for_date(root, asof, theta_store)
 
     gex_payload = compute_gex(greeks_asof, oi_t1, asof, root)
+
+    # ── CONTRACT v2: attach gex history from polygon_gex summary parquet ──────
+    if polygon_gex_dir is not None:
+        try:
+            hist = load_gex_history_v2(root, polygon_gex_dir)
+            if hist is not None:
+                gex_payload = dict(gex_payload)
+                gex_payload["history"] = hist
+        except Exception as _he:  # noqa: BLE001
+            log.warning("build_root: gex_history attach failed for %s — %s", root, _he)
 
     return vol_payload, gex_payload
 
@@ -361,6 +391,15 @@ def main() -> None:
     out_dir = Path(args.out) if args.out else (data_root / "live_flow_out" / "options_hub")
     out_dir.mkdir(parents=True, exist_ok=True)
 
+    # CONTRACT v2 data paths (resolved once; graceful-absent throughout)
+    polygon_gex_dir = data_root / _POLYGON_GEX_SUBDIR
+    gex_latest_path = data_root / _GEX_LATEST_REL
+    # fear_greed.json lives under site/ (git-tracked, not data/)
+    _repo_root = Path(__file__).resolve().parent.parent
+    fear_greed_path = _repo_root / "site" / _FEAR_GREED_REL
+    tape_flow_dir = data_root / _TAPE_FLOW_SUBDIR
+    live_flow_out_dir = data_root / "live_flow_out"  # poller archive root
+
     # Item 5 — THETADATA_STORE env: explicit override wins over all auto-detect paths.
     # Priority: --theta-store CLI > THETADATA_STORE env > data/thetadata_eod default.
     _theta_store_env = os.environ.get("THETADATA_STORE")
@@ -435,7 +474,7 @@ def main() -> None:
     for root in roots:
         log.info("options_hub_builder: processing %s …", root)
         try:
-            vol_payload, gex_payload = build_root(root, asof, theta_store)
+            vol_payload, gex_payload = build_root(root, asof, theta_store, polygon_gex_dir)
 
             # ── COMPLETENESS GUARD (CONTRACT) ────────────────────────────────────
             gex_publish, gex_payload, is_guarded = _gex_publish_decision(
@@ -450,7 +489,18 @@ def main() -> None:
             _write_json(vol_path, vol_payload)
             _write_json(gex_path, gex_payload)
 
-            # publish
+            # CONTRACT v2 — per-root tickers_ctx
+            try:
+                tctx = build_tickers_ctx(root, asof, tape_flow_dir)
+                tctx_path = out_dir / "tickers_ctx" / f"{root}.json"
+                _write_json(tctx_path, tctx)
+                if s3 and bucket:
+                    _upload_r2(s3, bucket, tctx_path,
+                               f"{R2_PREFIX}tickers_ctx/{root}.json")
+            except Exception as _te:  # noqa: BLE001
+                log.warning("options_hub_builder: tickers_ctx failed for %s — %s", root, _te)
+
+            # publish vol + gex
             if s3 and bucket:
                 _upload_r2(s3, bucket, vol_path, f"{R2_PREFIX}vol/{root}.json")
                 if gex_publish:
@@ -465,8 +515,10 @@ def main() -> None:
 
     # ── cross-root payloads ───────────────────────────────────────────────────
     log.info("options_hub_builder: building cross-root payloads …")
+    oi_movers_payload: dict | None = None
     try:
         oi_movers, hot_contracts = build_cross_root(roots_ok, asof, theta_store)
+        oi_movers_payload = oi_movers
 
         oi_path  = out_dir / "oi_movers.json"
         hot_path = out_dir / "hot_contracts.json"
@@ -479,6 +531,46 @@ def main() -> None:
 
     except Exception as e:  # noqa: BLE001
         log.warning("options_hub_builder: cross-root build FAILED — %s", e)
+
+    # ── CONTRACT v2: context.json ─────────────────────────────────────────────
+    log.info("options_hub_builder: building context.json …")
+    try:
+        ctx_payload = build_context_payload(
+            asof=asof,
+            gex_latest_path=gex_latest_path,
+            fear_greed_path=fear_greed_path,
+        )
+        ctx_path = out_dir / "context.json"
+        _write_json(ctx_path, ctx_payload)
+        if s3 and bucket:
+            _upload_r2(s3, bucket, ctx_path, f"{R2_PREFIX}context.json")
+        log.info("options_hub_builder: context.json done")
+    except Exception as e:  # noqa: BLE001
+        log.warning("options_hub_builder: context.json build FAILED — %s", e)
+
+    # ── CONTRACT v2: oi_confirmed.json ────────────────────────────────────────
+    log.info("options_hub_builder: building oi_confirmed.json …")
+    try:
+        oi_confirmed_list = build_oi_confirmed(
+            asof=asof,
+            live_flow_out_dir=live_flow_out_dir,
+            oi_movers_today=oi_movers_payload,
+        )
+        oi_conf_payload = {
+            "schema": "options_hub.oi_confirmed/v1",
+            "asof": asof,
+            "confirmed": oi_confirmed_list,
+        }
+        oi_conf_path = out_dir / "oi_confirmed.json"
+        _write_json(oi_conf_path, oi_conf_payload)
+        if s3 and bucket:
+            _upload_r2(s3, bucket, oi_conf_path, f"{R2_PREFIX}oi_confirmed.json")
+        log.info(
+            "options_hub_builder: oi_confirmed.json done (%d confirmed)",
+            len(oi_confirmed_list),
+        )
+    except Exception as e:  # noqa: BLE001
+        log.warning("options_hub_builder: oi_confirmed.json build FAILED — %s", e)
 
     # ── summary ──────────────────────────────────────────────────────────────
     log.info(
@@ -505,13 +597,16 @@ def main() -> None:
         from datetime import datetime as _dt, timezone as _tz  # noqa: PLC0415
         _rs = _store.read_status()
         _rs.setdefault("sources", {})["options_hub_nightly"] = {
-            "status":            "ok" if not roots_skipped else "partial",
-            "roots_ok":          len(roots_ok),
-            "roots_skipped":     len(roots_skipped),
-            "roots_gex_guarded": len(roots_gex_skipped),
+            "status":                "ok" if not roots_skipped else "partial",
+            "roots_ok":              len(roots_ok),
+            "roots_skipped":         len(roots_skipped),
+            "roots_gex_guarded":     len(roots_gex_skipped),
             "roots_gex_guarded_list": roots_gex_skipped,
-            "asof":              asof,
-            "checked_at":        _dt.now(_tz.utc).isoformat(),
+            # CONTRACT v2 object counts (None when build failed / skipped)
+            "context_json":          "ok" if (out_dir / "context.json").exists() else "missing",
+            "oi_confirmed_n":        len(oi_confirmed_list) if "oi_confirmed_list" in dir() else None,
+            "asof":                  asof,
+            "checked_at":            _dt.now(_tz.utc).isoformat(),
         }
         _store.write_status(_rs)
         log.info("options_hub_builder: run_status updated")

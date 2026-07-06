@@ -18,6 +18,18 @@ OI TIMING LAW (engine/thetadata_store.py docstring):
   use OI[t-1] (shift(1)). Same-day OI is a lookahead bug. This module ONLY
   consumes pre-shifted OI frames (the caller is responsible for the shift).
 
+CONTRACT UPGRADE OBJECTS (PAYLOAD CONTRACT v2):
+  * VolPayload: iv_rank_all + coverage_days_all + since_all — full-history
+    ATM-IV percentile using the complete greeks date range (not just 252 days).
+    Null when < 60 observed sessions.
+  * GexPayload.history: last 30 rows from data/polygon_gex/summary_{ROOT}.parquet,
+    mapping magnet_up → call_wall, magnet_down → put_wall.  Omitted when absent.
+  * options_hub/context.json: cross-root index GEX + fear/greed + sector ETF flows.
+  * options_hub/tickers_ctx/{ROOT}.json: tape-flow z-scores from
+    data/tape_flow/daily/{ROOT}.parquet; null unless history_n >= 20.
+  * options_hub/oi_confirmed.json: previous session's notable contracts ∩ today's
+    top ΔOI movers.
+
 DISPLAY-TIER ONLY: nothing here ranks, gates, or advises trades.
 Words 'signal' and 'validated' are banned in user-facing strings.
 """
@@ -167,8 +179,10 @@ def compute_vol(
     # ── ATM IV (30d interpolated) ─────────────────────────────────────────────
     atm_iv_30 = _iv30_from_term(term_rows)
 
-    # ── IV rank 252 ───────────────────────────────────────────────────────────
-    history_rows, iv_rank_252 = _compute_iv_history(df, root, asof, spot)
+    # ── IV rank 252 + full-history iv_rank_all ────────────────────────────────
+    history_rows, iv_rank_252, iv_rank_all, coverage_days_all, since_all = (
+        _compute_iv_history(df, root, asof, spot)
+    )
 
     # ── realized vol (yahoo log-returns, 20-day) ──────────────────────────────
     rv20 = _rv20(yahoo_closes, asof)
@@ -193,6 +207,10 @@ def compute_vol(
         "asof": asof,
         "root": root,
         "iv_rank_252": iv_rank_252,
+        # CONTRACT v2: full-history IV rank (null when < 60 observed sessions)
+        "iv_rank_all": iv_rank_all,
+        "coverage_days_all": coverage_days_all,
+        "since_all": since_all,
         "atm_iv": _f(atm_iv_30, 4),
         "iv_52w_hi": _f(max((r["atm_iv"] for r in history_rows), default=None), 4) if history_rows else None,
         "iv_52w_lo": _f(min((r["atm_iv"] for r in history_rows), default=None), 4) if history_rows else None,
@@ -211,6 +229,9 @@ def _empty_vol(root: str, asof: str) -> dict:
         "asof": asof,
         "root": root,
         "iv_rank_252": None,
+        "iv_rank_all": None,
+        "coverage_days_all": 0,
+        "since_all": None,
         "atm_iv": None,
         "iv_52w_hi": None,
         "iv_52w_lo": None,
@@ -239,22 +260,32 @@ def _rv20(closes: pd.Series, asof: str) -> float | None:
     return round(rv, 4) if np.isfinite(rv) else None
 
 
-def _compute_iv_history(df: pd.DataFrame, root: str, asof: str, spot_today: float) -> tuple[list[dict], float | None]:
-    """Build the last-90-sessions IV history and compute iv_rank_252.
+def _compute_iv_history(
+    df: pd.DataFrame,
+    root: str,
+    asof: str,
+    spot_today: float,
+) -> tuple[list[dict], float | None, float | None, int, str | None]:
+    """Build the last-90-sessions IV history, iv_rank_252, and full-history iv_rank_all.
 
-    Returns (history_rows, iv_rank_252).
-    iv_rank_252 = percentile of today's 30d-interpolated ATM IV in trailing 252 sessions.
-    Null if <60 observed sessions (per spec).
+    Returns:
+        (history_rows, iv_rank_252, iv_rank_all, coverage_days_all, since_all)
+
+    iv_rank_252: percentile of today's 30d ATM IV in trailing 252 sessions.
+    iv_rank_all: percentile of today's 30d ATM IV in FULL available history.
+    Both are null when < 60 observed sessions (per spec).
+    coverage_days_all: count of all available IV-data dates.
+    since_all: earliest available date with IV data.
     """
     # All dates with greeks available
     valid = df[df["implied_vol"].notna() & (df["implied_vol"] > 0)].copy()
     if valid.empty:
-        return [], None
+        return [], None, None, 0, None
 
     all_dates = sorted(valid["date"].unique())
     all_dates_before_asof = [d for d in all_dates if d <= asof]
     if not all_dates_before_asof:
-        return [], None
+        return [], None, None, 0, None
 
     # ── per-date ATM IV (30d interp) ─────────────────────────────────────────
     per_date_iv: dict[str, float] = {}
@@ -287,13 +318,14 @@ def _compute_iv_history(df: pd.DataFrame, root: str, asof: str, spot_today: floa
         per_date_iv[d] = round(iv30 * 100, 4)
 
     if not per_date_iv:
-        return [], None
+        return [], None, None, 0, None
 
     sorted_dates = sorted(per_date_iv)
+    all_before_asof = [d for d in sorted_dates if d <= asof]
 
     # ── iv_rank_252 ────────────────────────────────────────────────────────────
     # Last 252 sessions ending at asof
-    trailing_252 = [d for d in sorted_dates if d <= asof][-252:]
+    trailing_252 = all_before_asof[-252:]
     iv_rank_252: float | None = None
     if len(trailing_252) >= 60 and asof in per_date_iv:
         today_iv = per_date_iv[asof]
@@ -301,8 +333,18 @@ def _compute_iv_history(df: pd.DataFrame, root: str, asof: str, spot_today: floa
         rank = sum(1 for v in window_ivs if v < today_iv) / len(window_ivs)
         iv_rank_252 = round(rank * 100, 1)
 
+    # ── iv_rank_all — full history ─────────────────────────────────────────────
+    iv_rank_all: float | None = None
+    coverage_days_all: int = len(all_before_asof)
+    since_all: str | None = all_before_asof[0] if all_before_asof else None
+    if len(all_before_asof) >= 60 and asof in per_date_iv:
+        today_iv = per_date_iv[asof]
+        all_ivs = [per_date_iv[d] for d in all_before_asof]
+        rank_all = sum(1 for v in all_ivs if v < today_iv) / len(all_ivs)
+        iv_rank_all = round(rank_all * 100, 1)
+
     # ── history: last 90 sessions ─────────────────────────────────────────────
-    last_90 = [d for d in sorted_dates if d <= asof][-90:]
+    last_90 = all_before_asof[-90:]
     history_rows: list[dict] = []
     for d in last_90:
         history_rows.append({
@@ -312,7 +354,7 @@ def _compute_iv_history(df: pd.DataFrame, root: str, asof: str, spot_today: floa
             "close": None,  # caller can enrich; omitting avoids a yahoo join here
         })
 
-    return history_rows, iv_rank_252
+    return history_rows, iv_rank_252, iv_rank_all, coverage_days_all, since_all
 
 
 def _compute_smile(asof_df: pd.DataFrame, spot: float, asof: str) -> list[dict]:
@@ -579,6 +621,8 @@ def compute_gex(
         "by_expiry": by_expiry_rows,
         "convention": "dealer-sign per engine/gex_model (long-call/short-put)",
         "coverage": coverage,
+        # NOTE: history field is injected by build_options_hub_nightly.py
+        # via _attach_gex_history() — it is absent when polygon_gex parquet is missing.
     }
 
 
@@ -809,3 +853,396 @@ def compute_hot_contracts(
         "by_premium": by_prem,
         "by_volume":  by_vol,
     }
+
+
+# --------------------------------------------------------------------------- #
+# CONTRACT v2 — GexPayload.history
+# --------------------------------------------------------------------------- #
+
+_GEX_HISTORY_ROWS = 30  # CONTRACT: last N rows from polygon_gex summary parquet
+
+
+def _row_val(row, col: str):
+    """Safe column access on a pandas Series row."""
+    try:
+        v = row[col]
+        return None if pd.isna(v) else v
+    except (KeyError, TypeError):
+        return None
+
+
+def load_gex_history_v2(root: str, polygon_gex_dir) -> list[dict] | None:
+    """Load last 30 rows from data/polygon_gex/summary_{ROOT}.parquet.
+
+    Maps polygon_gex columns:
+      magnet_up   -> call_wall   (CONTRACT field name)
+      magnet_down -> put_wall    (CONTRACT field name)
+      gamma_regime -> regime
+
+    Returns a list of dicts or None when the parquet is absent.
+    Each row: {date, net_gex_bn, gamma_flip, call_wall, put_wall, regime}.
+
+    CONTRACT: field is OMITTED from the gex_payload (not set to null) when
+    parquet is absent — callers check ``"history" in gex_payload`` before use.
+    """
+    from pathlib import Path as _Path
+
+    p = _Path(polygon_gex_dir) / f"summary_{root}.parquet"
+    if not p.exists():
+        log.debug("load_gex_history: %s absent — skipping history", p)
+        return None
+
+    try:
+        df = pd.read_parquet(p)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("load_gex_history: failed reading %s — %s", p, exc)
+        return None
+
+    if df.empty:
+        return []
+
+    tail = df.tail(_GEX_HISTORY_ROWS)
+    rows: list[dict] = []
+    for idx, row in tail.iterrows():
+        date_str = str(idx.date()) if hasattr(idx, "date") else str(idx)[:10]
+        rows.append({
+            "date": date_str,
+            "net_gex_bn": _f(_row_val(row, "net_gex_bn"), 4),
+            "gamma_flip": _f(_row_val(row, "gamma_flip")),
+            "call_wall": _f(_row_val(row, "magnet_up")),    # magnet_up → call_wall
+            "put_wall": _f(_row_val(row, "magnet_down")),   # magnet_down → put_wall
+            "regime": str(row["gamma_regime"]) if "gamma_regime" in df.columns and pd.notna(_row_val(row, "gamma_regime")) else None,
+        })
+    return rows
+
+
+# --------------------------------------------------------------------------- #
+# CONTRACT v2 — context.json (cross-root index GEX + fear/greed + ETF flows)
+# --------------------------------------------------------------------------- #
+
+_CONTEXT_INDEX_ROOTS = ("SPX", "NDX", "RUT", "SPY")
+
+
+def build_context_payload(
+    asof: str,
+    gex_latest_path,
+    fear_greed_path,
+    flows_wide_fn=None,
+) -> dict:
+    """Build options_hub/context.json per CONTRACT v2.
+
+    Args:
+        asof:              'YYYY-MM-DD' reference date.
+        gex_latest_path:   Path to data/gex/latest.json.
+        fear_greed_path:   Path to site/basketdata/fear_greed.json.
+        flows_wide_fn:     Optional callable returning a pd.DataFrame (wide flows frame).
+                           If None, engine.etf_flows.flows_wide is used.
+
+    Returns dict with schema 'options_hub.context/v1'.  Every section degrades
+    to absent/null on missing input — the function never raises.
+    """
+    from pathlib import Path as _Path
+
+    out: dict = {
+        "schema": "options_hub.context/v1",
+        "asof": asof,
+    }
+
+    # ── index_gex from data/gex/latest.json ──────────────────────────────────
+    try:
+        import json as _json
+        p = _Path(gex_latest_path)
+        if p.exists():
+            raw = _json.loads(p.read_text(encoding="utf-8"))
+            indices_raw = raw.get("indices", {})
+            index_gex: dict = {}
+            for sym in _CONTEXT_INDEX_ROOTS:
+                entry = indices_raw.get(sym)
+                if entry:
+                    index_gex[sym] = {
+                        "regime": entry.get("regime"),
+                        "net_gex_bn": _f(entry.get("net_gex_bn"), 4),
+                        "gamma_flip": _f(entry.get("gamma_flip")),
+                        "dist_to_flip_pct": _f(entry.get("dist_to_flip_pct"), 4),
+                    }
+            out["index_gex"] = index_gex
+        else:
+            log.debug("build_context_payload: gex/latest.json absent at %s", p)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("build_context_payload: index_gex load failed — %s", exc)
+
+    # ── fear_greed from site/basketdata/fear_greed.json ─────────────────────
+    try:
+        import json as _json
+        p = _Path(fear_greed_path)
+        if p.exists():
+            raw = _json.loads(p.read_text(encoding="utf-8"))
+            out["fear_greed"] = {
+                "dial": raw.get("dial"),
+                "label_en": raw.get("label_en"),
+                "label_zh": raw.get("label_zh"),
+            }
+        else:
+            log.debug("build_context_payload: fear_greed.json absent at %s", p)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("build_context_payload: fear_greed load failed — %s", exc)
+
+    # ── sector_etf_flows (d1 + w1 windows, creation/redemption proxy) ───────
+    try:
+        if flows_wide_fn is not None:
+            wide = flows_wide_fn()
+        else:
+            from engine.etf_flows import flows_wide as _fw, SECTOR_TICKERS
+            wide = _fw(SECTOR_TICKERS)
+
+        if wide is not None and not wide.empty:
+            wide = wide.sort_index()
+            # Ensure datetime index
+            if not isinstance(wide.index, pd.DatetimeIndex):
+                wide.index = pd.to_datetime(wide.index)
+            # Filter to dates up to asof
+            asof_ts = pd.Timestamp(asof)
+            wide = wide[wide.index <= asof_ts]
+
+            sector_etf_flows: dict = {}
+            for col in wide.columns:
+                ticker = col.replace("_flow_mn", "")
+                series = wide[col].dropna()
+                if series.empty:
+                    continue
+                # d1: most recent flow
+                d1 = _f(float(series.iloc[-1]), 2) if len(series) >= 1 else None
+                # w1: sum of last 5 trading days (proxy for 1-week window)
+                w1_n = min(5, len(series))
+                w1 = _f(float(series.iloc[-w1_n:].sum()), 2) if w1_n >= 1 else None
+                sector_etf_flows[ticker] = {"d1": d1, "w1": w1, "label": "proxy"}
+            if sector_etf_flows:
+                out["sector_etf_flows"] = sector_etf_flows
+        else:
+            log.debug("build_context_payload: flows_wide returned no data")
+    except Exception as exc:  # noqa: BLE001
+        log.warning("build_context_payload: sector_etf_flows load failed — %s", exc)
+
+    return out
+
+
+# --------------------------------------------------------------------------- #
+# CONTRACT v2 — tickers_ctx/{ROOT}.json
+# --------------------------------------------------------------------------- #
+
+_TICKERS_CTX_MIN_HISTORY = 20  # CONTRACT: z null when history_n < this
+
+
+def build_tickers_ctx(
+    root: str,
+    asof: str,
+    tape_flow_dir,
+) -> dict:
+    """Build options_hub/tickers_ctx/{ROOT}.json from data/tape_flow/daily/{ROOT}.parquet.
+
+    Returns dict with schema 'options_hub.tickers_ctx/v1'.
+    z-scores are null when history_n < 20 (no fake z).
+    The function never raises; degrades to absent z-fields on missing input.
+    """
+    from pathlib import Path as _Path
+
+    base: dict = {
+        "schema": "options_hub.tickers_ctx/v1",
+        "asof": asof,
+        "root": root,
+        "history_n": 0,
+        "z": {
+            "net_signed_premium_z252": None,
+            "zerodte_share_z252": None,
+            "short_dated_otm_call_share_z252": None,
+            "vol_gt_oi_share_z252": None,
+            "block_share_z252": None,
+        },
+    }
+
+    p = _Path(tape_flow_dir) / f"{root}.parquet"
+    if not p.exists():
+        log.debug("build_tickers_ctx: %s absent", p)
+        return base
+
+    try:
+        df = pd.read_parquet(p)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("build_tickers_ctx: read failed for %s — %s", p, exc)
+        return base
+
+    if df.empty:
+        return base
+
+    # normalise index to date strings
+    if not isinstance(df.index, pd.DatetimeIndex):
+        df.index = pd.to_datetime(df.index)
+    df = df[df.index <= pd.Timestamp(asof)].sort_index()
+
+    history_n = len(df)
+    base["history_n"] = history_n
+
+    if history_n < _TICKERS_CTX_MIN_HISTORY:
+        # Per CONTRACT: z null (not fake) when not enough history
+        return base
+
+    # Z-score helper: percentile of today's value in full available history.
+    # We output a 252-day rolling z for each series (z = (x - mean) / std,
+    # but CONTRACT names the fields *_z252 — use 252-day trailing window).
+    _Z_WINDOW = 252
+    z_fields = {
+        "net_signed_premium_z252": "net_signed_premium",
+        "zerodte_share_z252": "zerodte_share",
+        "short_dated_otm_call_share_z252": "short_dated_otm_call_share",
+        "vol_gt_oi_share_z252": "vol_gt_oi_share",
+        "block_share_z252": "block_share",
+    }
+    z_out: dict = {}
+    for z_key, col in z_fields.items():
+        if col not in df.columns:
+            z_out[z_key] = None
+            continue
+        series = df[col].dropna()
+        if len(series) < _TICKERS_CTX_MIN_HISTORY:
+            z_out[z_key] = None
+            continue
+        # Use a trailing 252-day window for mean/std; fall back to full history
+        window = series.iloc[-_Z_WINDOW:] if len(series) >= _Z_WINDOW else series
+        mu = float(window.mean())
+        sigma = float(window.std(ddof=1)) if len(window) > 1 else 0.0
+        today_val = float(series.iloc[-1])
+        if sigma == 0.0 or not np.isfinite(sigma):
+            z_out[z_key] = None
+        else:
+            z_out[z_key] = _f((today_val - mu) / sigma, 2)
+
+    base["z"] = z_out
+    return base
+
+
+# --------------------------------------------------------------------------- #
+# CONTRACT v2 — oi_confirmed.json
+# --------------------------------------------------------------------------- #
+
+def build_oi_confirmed(
+    asof: str,
+    live_flow_out_dir,
+    oi_movers_today: dict | None = None,
+    top_n: int = 50,
+) -> list[dict]:
+    """Build options_hub/oi_confirmed.json.
+
+    Contracts that were notable in the PREVIOUS session's poller feed payload
+    AND appear in today's top ΔOI movers.
+
+    Strategy:
+      1. Load the most recent archived feed payload from data/live_flow_out/
+         (either feed_current.json or the most recent archive_YYYYMMDDTHH.json
+         whose date-prefix is < asof).
+      2. Extract all contracts from root_top_contracts in that feed.
+      3. Intersect with today's oi_movers (passed in as oi_movers_today or
+         loaded from data/live_flow_out/options_hub/oi_movers.json).
+      4. Return [{root, right, exp, strike, prev_premium, delta_oi}].
+
+    Degrades to [] on missing inputs — never raises.
+    """
+    import json as _json
+    from pathlib import Path as _Path
+
+    live_dir = _Path(live_flow_out_dir)
+
+    # ── load previous session's notable contracts ────────────────────────────
+    prev_contracts: list[dict] = []
+    try:
+        # Prefer feed_current.json (written by poller at end of each session)
+        feed_path = live_dir / "feed_current.json"
+        archive_path: _Path | None = None
+
+        if not feed_path.exists():
+            # Fall back to most recent archive_YYYYMMDDTHH.json strictly before asof
+            archives = sorted(live_dir.glob("archive_*.json"))
+            # key format: archive_YYYYMMDDTHH.json — date prefix is first 8 chars after _
+            for a in reversed(archives):
+                stem = a.stem  # e.g. "archive_20260704T10"
+                parts = stem.split("_", 1)
+                if len(parts) < 2:
+                    continue
+                date_part = parts[1][:8]  # YYYYMMDD
+                try:
+                    arc_date = str(pd.Timestamp(date_part).date())
+                except Exception:  # noqa: BLE001
+                    continue
+                if arc_date < asof:
+                    archive_path = a
+                    break
+
+        chosen = feed_path if feed_path.exists() else archive_path
+        if chosen is not None and chosen.exists():
+            raw = _json.loads(chosen.read_text(encoding="utf-8"))
+            rtc = raw.get("root_top_contracts", {})
+            for root_sym, contracts in rtc.items():
+                for c in (contracts or []):
+                    if isinstance(c, dict):
+                        prev_contracts.append({
+                            "root": root_sym,
+                            "right": c.get("right", ""),
+                            "exp": str(c.get("expiration", c.get("exp", ""))),
+                            "strike": c.get("strike"),
+                            "prev_premium": c.get("premium", c.get("gross_premium")),
+                        })
+        else:
+            log.debug("build_oi_confirmed: no feed/archive found in %s", live_dir)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("build_oi_confirmed: prev-session load failed — %s", exc)
+        return []
+
+    if not prev_contracts:
+        return []
+
+    # ── load or use today's oi_movers ────────────────────────────────────────
+    movers_list: list[dict] = []
+    try:
+        if oi_movers_today is not None:
+            movers_list = oi_movers_today.get("movers", [])
+        else:
+            oi_path = live_dir / "options_hub" / "oi_movers.json"
+            if oi_path.exists():
+                movers_list = _json.loads(oi_path.read_text(encoding="utf-8")).get("movers", [])
+    except Exception as exc:  # noqa: BLE001
+        log.warning("build_oi_confirmed: oi_movers load failed — %s", exc)
+        return []
+
+    if not movers_list:
+        return []
+
+    # ── intersect on (root, right, exp, strike) key ──────────────────────────
+    # Build a lookup from today's oi_movers
+    mover_idx: dict[tuple, int] = {}  # key -> d_oi
+    for m in movers_list[:top_n]:
+        key = (
+            str(m.get("root", "")),
+            str(m.get("right", "")),
+            str(m.get("exp", "")),
+            _f(float(m["strike"]), 2) if m.get("strike") is not None else None,
+        )
+        mover_idx[key] = int(m.get("d_oi", 0))
+
+    confirmed: list[dict] = []
+    for c in prev_contracts:
+        key = (
+            str(c.get("root", "")),
+            str(c.get("right", "")),
+            str(c.get("exp", "")),
+            _f(float(c["strike"]), 2) if c.get("strike") is not None else None,
+        )
+        if key in mover_idx:
+            confirmed.append({
+                "root": c["root"],
+                "right": c["right"],
+                "exp": c["exp"],
+                "strike": _f(float(c["strike"]), 2) if c.get("strike") is not None else None,
+                "prev_premium": _f(c.get("prev_premium"), 2),
+                "delta_oi": mover_idx[key],
+            })
+
+    return confirmed
