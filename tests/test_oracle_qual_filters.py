@@ -3,20 +3,24 @@
 All fixtures are SYNTHETIC — no real data files, no network.
 
 Test inventory:
-(A) registry_valid_load     — three seed filters load cleanly, all fields present
-(B) registry_lane_law       — unknown lane annotates + excludes from load result
-(C) registry_budget_cap     — 6 active filters triggers loud annotation
-(D) stamp_idempotency       — rerun same night produces no dup rows (keep-first)
-(E) stamp_null_honest       — missing source artifact → value=null, loud WARNING, never false
-(F) q3_tape_touch           — tape-touch predicate: ±3 sessions, node match, direction, schema_note skip
-(G) q3_tape_no_match        — tape row outside ±3 session window → false
-(H) q2_riskoff_true         — market_state verdict != RISK_OFF → filter true
-(I) q2_riskoff_false        — market_state verdict == RISK_OFF → filter false
-(J) q2_highvix_true         — vix_pctile >= 0.6 → filter true
-(K) q2_highvix_false        — vix_pctile < 0.6 → filter false
-(L) accrual_math            — synthetic ledger+stamps fixture; Wilson LB computed; n>=15 triggers re-eval line
-(M) accrual_no_validated    — "validated" word absent from accrual output (hard ban)
-(N) template_smoke          — oracle_turn_desk.json with qual_filters_true + qual_accrual_note fields round-trips JSON
+(A) registry_valid_load              — three seed filters load cleanly, all fields present
+(B) registry_lane_law                — unknown lane annotates + excludes from load result
+(C) registry_budget_cap              — 6 active filters triggers annotation; active_filters returns ≤5
+(D) stamp_idempotency                — rerun same night produces no dup rows (keep-first)
+(E) stamp_null_honest                — missing source artifact → value=null, loud WARNING, never false
+(F) q3_tape_touch                    — tape-touch predicate: ±3 sessions, node match, direction, schema_note skip
+(G) q3_tape_no_match                 — tape row outside ±3 session window → false
+(H) q2_riskoff_true                  — market_state verdict != RISK_OFF → filter true
+(I) q2_riskoff_false                 — market_state verdict == RISK_OFF → filter false
+(J) q2_highvix_true                  — vix_pctile >= 0.6 → filter true
+(K) q2_highvix_false                 — vix_pctile < 0.6 → filter false
+(L) accrual_math                     — synthetic member_fire ledger+stamps fixture; Wilson LB computed; n>=15 re-eval
+(M) accrual_no_validated             — "validated" word absent from accrual output (hard ban)
+(N) template_smoke                   — oracle_turn_desk.json with qual_filters_true + qual_accrual_note round-trips JSON
+(O) q2_highvix_nan_is_null           — NaN vix_pctile (numpy.float64) stamps null, not false (null-honest law)
+(P) registry_q1_requires_pit_law     — Q1 filter without PIT-law citation in notes is rejected
+(Q) retire_to_add                    — retiring a filter and adding a replacement stays within budget
+(R) stamp_only_latest_fire           — only the latest fire date per armed entry is stamped (no retro-stamp)
 """
 from __future__ import annotations
 
@@ -188,12 +192,16 @@ def test_registry_budget_cap(tmp_path, caplog):
             "status": "accruing",
         })
     data_dir = _write_registry(tmp_path, [*_SEED_REGISTRY, *extra_rows])
-    from engine.oracle.qual_filters import load_registry
+    from engine.oracle.qual_filters import load_registry, active_filters
     with caplog.at_level(logging.ERROR):
         rows = load_registry(data_dir)
-    # All rows loaded but error logged
-    assert len(rows) == 6  # 3 seed + 3 extra
+    # All rows are returned by load_registry (retired filters must keep their history),
+    # but active_filters() must reject the over-budget 6th filter.
+    assert len(rows) == 6  # 3 seed + 3 extra (all parsed)
     assert any("budget cap" in m for m in caplog.messages)
+    # Budget enforcement: only MAX_ACTIVE (5) filters are returned as active
+    active = active_filters(rows)
+    assert len(active) == 5, f"Expected 5 active filters after cap; got {len(active)}"
 
 
 # ---------------------------------------------------------------------------
@@ -363,16 +371,15 @@ def test_accrual_math(tmp_path):
     # Write registry
     data_dir = _write_registry(tmp_path, [_SEED_REGISTRY[0]])  # F-Q2-RISKOFF only
 
-    # Build 20 matured window_open rows in turn_desk_ledger.jsonl
-    # 16 with filter=True (12 wins, 4 losses) → WR21 = 12/16 = 0.75
-    # 4 with filter=False (2 wins, 2 losses) → WR21 = 0.5
+    # Build 20 windows.  Each window has ONE member_fire row (kind=member_fire)
+    # with fwd_ret_21 populated — this is what _grade_turn_desk_ledger produces.
+    # window_open rows never carry fwd_ret_21 (grading skips them).
+    #   16 windows with filter=True (12 wins, 4 losses) → WR21 = 12/16 = 0.75
+    #   4 windows with filter=False (2 wins, 2 losses)  → WR21 = 0.5
     oracle_dir = data_dir / "oracle"
     oracle_dir.mkdir(parents=True, exist_ok=True)
     ledger_path = oracle_dir / "turn_desk_ledger.jsonl"
     stamps_path = oracle_dir / "qual_filter_stamps.jsonl"
-
-    import random
-    random.seed(42)
 
     ledger_rows = []
     stamp_rows = []
@@ -382,9 +389,22 @@ def test_accrual_math(tmp_path):
         is_filter_true = (i < 16)
         win = (i < 12) if is_filter_true else (i % 2 == 0)
 
+        # window_open row — no fwd_ret_21 (mirrors real pipeline)
         ledger_rows.append({
             "kind": "window_open",
             "key": window_key,
+            "node": "XLK",
+            "fire_date": fire_date,
+            "pit_stamp": fire_date,
+            "outcome_mature": False,
+            "fwd_ret_21": None,
+        })
+        # member_fire row — graded with fwd_ret_21 (mirrors real pipeline)
+        ledger_rows.append({
+            "kind": "member_fire",
+            "key": f"{window_key}::AAPL",
+            "window_key": window_key,
+            "ticker": "AAPL",
             "node": "XLK",
             "fire_date": fire_date,
             "pit_stamp": fire_date,
@@ -462,3 +482,154 @@ def test_template_smoke():
     recovered = json.loads(serialized)
     assert recovered["armed"][0]["qual_filters_true"] == ["F-Q2-HIGHVIX"]
     assert recovered["qual_accrual_note"].startswith("Qualitative filters")
+
+
+# ---------------------------------------------------------------------------
+# (O) NaN vix_pctile must produce null stamp, not false
+# ---------------------------------------------------------------------------
+
+def test_q2_highvix_nan_is_null(tmp_path, caplog):
+    """F-Q2-HIGHVIX with NaN vix_pctile must stamp null (null-honest law).
+
+    Reproduces the numpy.float64 type-name bug: the old guard checked
+    type(val).__name__ == 'float' but numpy gives 'float64', so NaN
+    fell through to float(nan) >= 0.6 which evaluates to False.
+    """
+    import numpy as np
+    data_dir = _data_dir(tmp_path)
+    dates = _DATES[:10]
+
+    # Build panel with NaN vix_pctile
+    oracle_dir = tmp_path / "data" / "oracle"
+    oracle_dir.mkdir(parents=True, exist_ok=True)
+    rows = []
+    for i, d in enumerate(dates):
+        rows.append({
+            "node": "XLV",
+            "date": pd.Timestamp(d),
+            # Use numpy NaN (the real parquet path produces numpy.float64)
+            "vix_pctile": np.nan,
+        })
+    df = pd.DataFrame(rows).set_index(["node", "date"])
+    df.to_parquet(oracle_dir / "panel_s.parquet")
+
+    from engine.oracle.qual_filters import _eval_q2_highvix
+    filt = _SEED_REGISTRY[1]
+    with caplog.at_level(logging.WARNING):
+        result = _eval_q2_highvix(filt, "XLV", dates[5], data_dir)
+
+    assert result is None, (
+        f"NaN vix_pctile must stamp null (got {result!r}); "
+        f"type-name bug: numpy.float64.__name__=='float64', not 'float'"
+    )
+    assert any("NaN" in m or "stamp=null" in m for m in caplog.messages)
+
+
+# ---------------------------------------------------------------------------
+# (P) Q1 lane law — registration without PIT-law citation is rejected
+# ---------------------------------------------------------------------------
+
+def test_registry_q1_requires_pit_law_citation(tmp_path, caplog):
+    """A Q1 filter without 'pit_law' in notes must be rejected at load time."""
+    q1_row_bad = {
+        **_SEED_REGISTRY[0],
+        "id": "F-Q1-NOCITATATION",
+        "lane": "Q1",
+        "notes": "archival text feature, no citation here",
+    }
+    q1_row_good = {
+        **_SEED_REGISTRY[0],
+        "id": "F-Q1-WITHCITATION",
+        "lane": "Q1",
+        "notes": "pit_law: data/archive/sentiment_snapshot.parquet (as-of-t computed nightly)",
+    }
+    data_dir = _write_registry(tmp_path, [*_SEED_REGISTRY, q1_row_bad, q1_row_good])
+    from engine.oracle.qual_filters import load_registry
+    with caplog.at_level(logging.ERROR):
+        rows = load_registry(data_dir)
+
+    ids = {r["id"] for r in rows}
+    assert "F-Q1-NOCITATATION" not in ids, "Q1 without PIT-law citation must be excluded"
+    assert "F-Q1-WITHCITATION" in ids, "Q1 with PIT-law citation must be accepted"
+    assert any("pit" in m.lower() or "Q1" in m for m in caplog.messages)
+
+
+# ---------------------------------------------------------------------------
+# (Q) Retire-to-add — retiring a filter then adding a replacement works
+# ---------------------------------------------------------------------------
+
+def test_retire_to_add(tmp_path, caplog):
+    """Retiring a filter (status=retired) and adding a replacement stays within budget."""
+    # Start with all 5 budget slots filled + one retired
+    retired_row = {
+        **_SEED_REGISTRY[0],
+        "id": "F-Q2-RETIRED",
+        "status": "retired",
+    }
+    extra_rows = []
+    for i in range(2):  # 3 seed + 2 extra = 5 active (budget full)
+        extra_rows.append({
+            **_SEED_REGISTRY[0],
+            "id": f"F-Q2-ACTIVE{i}",
+            "status": "accruing",
+        })
+    new_row = {
+        **_SEED_REGISTRY[0],
+        "id": "F-Q2-NEW",
+        "status": "accruing",
+    }
+    # 3 seed + 2 extra = 5 active + 1 retired + 1 new = budget stays at 5+1 but
+    # retired doesn't count → only 6 accruing → over budget.
+    # Correct retire-to-add: retire one of the extras, add new one.
+    extra_rows[1]["status"] = "retired"  # retire slot to make room
+    data_dir = _write_registry(tmp_path, [*_SEED_REGISTRY, *extra_rows, retired_row, new_row])
+    from engine.oracle.qual_filters import load_registry, active_filters
+    with caplog.at_level(logging.ERROR):
+        rows = load_registry(data_dir)
+    active = active_filters(rows)
+    # retired rows (2) don't count; 3 seed + 1 extra (accruing) + 1 new = 5 active
+    assert len(active) == 5, f"Retire-to-add should keep budget at 5; got {len(active)}"
+    retired_ids = {r["id"] for r in rows if r.get("status") == "retired"}
+    assert "F-Q2-RETIRED" in retired_ids
+    assert "F-Q2-ACTIVE1" in retired_ids
+
+
+# ---------------------------------------------------------------------------
+# (R) Retro-stamp prevention — only latest fire per window gets stamped
+# ---------------------------------------------------------------------------
+
+def test_stamp_only_latest_fire(tmp_path):
+    """stamp_window_open must stamp ONLY the latest fire date per armed entry.
+
+    Stamping all historical fire_dates would retro-stamp pre-existing windows
+    from before go-live (spec §5 prohibition).
+    """
+    data_dir = _write_registry(tmp_path, [_SEED_REGISTRY[0]])  # F-Q2-RISKOFF
+    _make_market_state(tmp_path, "NEUTRAL")
+
+    from engine.oracle.qual_filters import stamp_window_open
+
+    # Armed entry with 3 historical fire dates — only the latest must be stamped
+    all_fires = [_DATES[2], _DATES[5], _DATES[10]]
+    latest = _DATES[10]
+    armed = [{"node": "XLK", "fire_dates": all_fires}]
+    all_dates = _DATES[:20]
+
+    n = stamp_window_open(armed, _DATES[15], data_dir, all_dates)
+    assert n == 1, f"Expected 1 stamp (latest fire only); got {n}"
+
+    stamps_path = data_dir / "oracle" / "qual_filter_stamps.jsonl"
+    stamped_windows = []
+    for line in stamps_path.read_text().splitlines():
+        if line.strip():
+            row = json.loads(line)
+            stamped_windows.append(row.get("window_key", ""))
+
+    assert all(latest in wk for wk in stamped_windows), (
+        f"Only the latest fire {latest!r} should be stamped; got {stamped_windows}"
+    )
+    # Confirm old fire dates are not stamped
+    old_fires = [_DATES[2], _DATES[5]]
+    for wk in stamped_windows:
+        for old in old_fires:
+            assert old not in wk, f"Old fire date {old!r} was retro-stamped: {wk}"

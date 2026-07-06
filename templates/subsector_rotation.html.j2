@@ -362,12 +362,13 @@
             + t('Context filters active:', '上下文过滤器激活：')
             + '</span>';
           qualFilters.forEach(function(fid){
-            var tip = '';
-            if(fid==='F-Q2-RISKOFF') tip = t('Market state is NOT risk-off','市场状态非避险');
-            else if(fid==='F-Q2-HIGHVIX') tip = t('VIX percentile ≥0.6','VIX百分位≥0.6');
-            else if(fid==='F-Q3-TAPE') tip = t('Operator tape touch','运营商标注匹配');
+            var tipEn = '', tipZh = '';
+            if(fid==='F-Q2-RISKOFF'){ tipEn='Market state is NOT risk-off'; tipZh='市场状态非避险'; }
+            else if(fid==='F-Q2-HIGHVIX'){ tipEn='VIX percentile ≥0.6'; tipZh='VIX百分位≥0.6'; }
+            else if(fid==='F-Q3-TAPE'){ tipEn='Operator tape touch'; tipZh='运营商标注匹配'; }
+            var tipAttrs = (tipEn ? ' data-tip-en="'+esc(tipEn)+'" data-tip-zh="'+esc(tipZh)+'"' : '');
             qualHtml += '<span class="td-qual-filter-tag"'
-              + (tip ? ' title="'+esc(tip)+'"' : '')
+              + tipAttrs
               + '>'+esc(fid)+'</span>';
           });
           qualHtml += '</div>';

@@ -76,6 +76,19 @@ def load_registry(data_dir: Path) -> list[dict]:
             )
             continue
 
+        # Q1 additional law: registration must name the artifact's PIT law
+        # (spec §1: "a current-model recompute over old text is Q2, not Q1").
+        # The PIT-law citation must appear in the 'notes' field.
+        if lane == "Q1":
+            notes = row.get("notes", "") or ""
+            if "pit_law" not in notes.lower() and "pit law" not in notes.lower():
+                _annotate(
+                    f"qual_filters: registry row {i} id={row.get('id')!r} "
+                    f"is lane Q1 but notes field does not cite a PIT law "
+                    f"(add 'pit_law: <artifact-path>' to notes — spec §1)"
+                )
+                continue
+
         rows.append(row)
 
     # Budget check (active only)
@@ -83,17 +96,30 @@ def load_registry(data_dir: Path) -> list[dict]:
     if len(active) > MAX_ACTIVE:
         _annotate(
             f"qual_filters: {len(active)} active filters exceed budget cap "
-            f"of {MAX_ACTIVE}; retire one before adding another"
+            f"of {MAX_ACTIVE} — retire one before adding another. "
+            f"Over-budget filters beyond position {MAX_ACTIVE} are REJECTED from stamping "
+            f"(registration order determines which {MAX_ACTIVE} are kept)."
         )
-        # Still return all rows — the nightly should not silently drop them;
-        # operator action is required.
+        # Enforce the cap: mark rows beyond MAX_ACTIVE as budget-rejected so
+        # active_filters() excludes them.  Retired rows are unaffected.
+        count = 0
+        for r in rows:
+            if r.get("status") == "accruing":
+                count += 1
+                if count > MAX_ACTIVE:
+                    r["_budget_rejected"] = True
 
     return rows
 
 
 def active_filters(registry: list[dict]) -> list[dict]:
-    """Return only accruing rows."""
-    return [r for r in registry if r.get("status") == "accruing"]
+    """Return only accruing rows that are within the budget cap.
+
+    Rows marked _budget_rejected=True by load_registry (over-budget) are
+    excluded — the spec requires retiring one before adding a 6th.
+    """
+    return [r for r in registry
+            if r.get("status") == "accruing" and not r.get("_budget_rejected")]
 
 
 # ─── Stamp evaluators ────────────────────────────────────────────────────────
@@ -117,6 +143,17 @@ def _eval_q2_riskoff(
         if verdict is None:
             log.warning("qual_filters: F-Q2-RISKOFF: verdict field absent — stamp=null")
             return None
+        # PIT check: warn if market_state artifact is stale relative to fire_date.
+        # (The source is a mutable-latest snapshot; it is PIT only when fire_date ==
+        # today's run date, which is guaranteed by the retro-stamp fix that restricts
+        # stamping to the latest fire = tonight's window_open.)
+        ms_asof = ms.get("asof", "")
+        if ms_asof and fire_date and ms_asof < fire_date:
+            log.warning(
+                "qual_filters: F-Q2-RISKOFF market_state asof=%s < fire_date=%s "
+                "— source may be stale (stamp proceeds; verify pipeline timing)",
+                ms_asof, fire_date,
+            )
         pred = filt["predicate"]
         # op="ne" value="RISK_OFF"
         if pred.get("op") == "ne":
@@ -170,8 +207,9 @@ def _eval_q2_highvix(
             return None
 
         val = available[col].iloc[-1]
-        if val is None or (hasattr(val, "__class__") and str(type(val).__name__) == "float"
-                           and str(val) == "nan"):
+        # Use pd.isna() to catch numpy.float64 NaN (type(val).__name__ == 'float64',
+        # not 'float', so the old type-name check silently failed — null-honest law).
+        if val is None or _pd.isna(val):
             log.warning(
                 "qual_filters: F-Q2-HIGHVIX vix_pctile is NaN for node=%s fire_date=%s — stamp=null",
                 node, fire_date,
@@ -340,7 +378,16 @@ def stamp_window_open(
 
     for armed_entry in armed:
         node = armed_entry["node"]
-        for fire_date in armed_entry.get("fire_dates", []):
+        # Stamp ONLY the latest fire (the current night's window_open key).
+        # Stamping all historical fire_dates would retro-stamp pre-existing windows
+        # from before go-live — prohibited by spec §5 and the null-honesty law.
+        all_fire_dates = armed_entry.get("fire_dates", [])
+        if not all_fire_dates:
+            continue
+        latest_fire = max(all_fire_dates)  # most recent = tonight's window_open
+        stamp_dates = [latest_fire]
+
+        for fire_date in stamp_dates:
             window_key = f"{node}::a15::{fire_date}"
             for filt in filters:
                 fid   = filt["id"]
@@ -391,8 +438,14 @@ def build_accrual_report(data_dir: Path) -> dict:
     stamps_path  = data_dir / STAMPS_PATH
     ledger_path  = data_dir / "oracle" / "turn_desk_ledger.jsonl"
 
-    # ── Load graded window_open rows from turn_desk_ledger ──────────────────
-    graded_windows: dict[str, dict] = {}  # window_key -> ledger row
+    # ── Load graded member_fire rows from turn_desk_ledger ──────────────────
+    # Accrual computes member-fire WR21 (spec §2): for each stamp (window_key,
+    # filter_id, value) we look up all matured member_fire rows that share the
+    # same window_key and average their fwd_ret_21 outcomes.  window_open rows
+    # never receive fwd_ret_21 from _grade_turn_desk_ledger (that pass skips
+    # rows without a ticker field, which window_open rows lack), so joining on
+    # window_open would permanently yield n=0.
+    graded_windows: dict[str, list[dict]] = {}  # window_key -> list of member_fire rows
     if ledger_path.exists():
         for line in ledger_path.read_text().splitlines():
             line = line.strip()
@@ -402,10 +455,19 @@ def build_accrual_report(data_dir: Path) -> dict:
                 row = json.loads(line)
             except json.JSONDecodeError:
                 continue
-            if row.get("kind") == "window_open" and row.get("outcome_mature") is True:
-                wkey = row.get("key")
+            if (row.get("kind") == "member_fire"
+                    and row.get("outcome_mature") is True
+                    and row.get("fwd_ret_21") is not None):
+                # window_key = first 3 segments of key: node::a15::fire_date
+                # key format: {node}::a15::{first_fire_date}::{ticker}::{asof}
+                wkey = row.get("window_key")
+                if not wkey:
+                    parts = row.get("key", "").split("::")
+                    # node::a15::fire_date is 3 parts
+                    if len(parts) >= 3:
+                        wkey = "::".join(parts[:3])
                 if wkey:
-                    graded_windows[wkey] = row
+                    graded_windows.setdefault(wkey, []).append(row)
 
     # ── Load stamps ──────────────────────────────────────────────────────────
     stamps_by_filter: dict[str, list[dict]] = {}
@@ -429,7 +491,10 @@ def build_accrual_report(data_dir: Path) -> dict:
         fid = filt["id"]
         stamps = stamps_by_filter.get(fid, [])
 
-        # Join stamps to graded windows
+        # Join stamps to graded member_fire rows (spec §2: member-fire WR21).
+        # graded_windows maps window_key -> list[member_fire rows with fwd_ret_21].
+        # Each stamp represents one window; all member_fire rows in that window
+        # contribute wins — their average determines the window-level WR21 outcome.
         true_wins: list[float]  = []
         false_wins: list[float] = []
 
@@ -438,15 +503,16 @@ def build_accrual_report(data_dir: Path) -> dict:
             value = stamp.get("value")
             if value is None:
                 continue  # null-honest: skip nulls in conditional stats
-            gw = graded_windows.get(wkey)
-            if gw is None:
-                continue  # not yet matured
+            mf_rows = graded_windows.get(wkey)
+            if not mf_rows:
+                continue  # no matured member_fire rows for this window yet
 
-            fwd = gw.get("fwd_ret_21")
-            if fwd is None:
-                continue  # graded but no return (e.g. member fire vs window_open)
-
-            win = 1 if float(fwd) > 0 else 0
+            # Average fwd_ret_21 across all member fires in the window
+            rets = [float(r["fwd_ret_21"]) for r in mf_rows if r.get("fwd_ret_21") is not None]
+            if not rets:
+                continue
+            avg_ret = sum(rets) / len(rets)
+            win = 1 if avg_ret > 0 else 0
             if value is True:
                 true_wins.append(win)
             elif value is False:
@@ -457,8 +523,8 @@ def build_accrual_report(data_dir: Path) -> dict:
             if n == 0:
                 return {"n": 0, "wr21": None, "wilson_lb": None, "wilson_ub": None}
             p = sum(wins) / n
-            # Wilson score interval (95%)
-            z = 1.96
+            # Wilson lower bound — z=1.645 (90% one-sided), pre-registered in spec §2
+            z = 1.645
             denom = 1 + z * z / n
             center = (p + z * z / (2 * n)) / denom
             margin = z * (p * (1 - p) / n + z * z / (4 * n * n)) ** 0.5 / denom
