@@ -1531,7 +1531,7 @@
         stateLabelZh = '不符合资格：护城河假证信号';
       } else if (reason.indexOf('s3_solvency') >= 0) {
         stateLabel = 'Not eligible: solvency concern';
-        stateLabelZh = '不符合资格：偿偿能力问题';
+        stateLabelZh = '不符合资格：偿债能力问题';
       } else {
         stateLabel = 'Not eligible: insufficient data';
         stateLabelZh = '不符合资格：数据不足';
@@ -1570,10 +1570,10 @@
       var s3v = s3.value != null ? s3.value.toFixed(2) : '?';
       var s3app = s3.approx ? ' (approx)' : '';
       tipParts.push('Solvency: Altman Z=' + s3v + s3app + ' (threshold <1.81)' + (s3.fired ? ' ✔ FIRED' : ' ✘ pass'));
-      tipPartsZh.push('偿偿能力：Altman Z=' + s3v + s3app + '（閘值<1.81）' + (s3.fired ? ' ✔触发' : ' ✘通过'));
+      tipPartsZh.push('偿债能力：Altman Z=' + s3v + s3app + '（閘值<1.81）' + (s3.fired ? ' ✔触发' : ' ✘通过'));
     } else {
       tipParts.push('Solvency: data unavailable');
-      tipPartsZh.push('偿偿能力：数据不可用');
+      tipPartsZh.push('偿债能力：数据不可用');
     }
 
     // Coverage

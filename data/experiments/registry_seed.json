@@ -2360,7 +2360,7 @@
       "maturation": "Population stability check: n_builds >= 60 (one quarter of nightly runs). Primary metric: coefficient of variation of watch_for_thesis count < 10%. No predictive authority until W3 unlock and G1-Retest (forecasted ~2027-H2).",
       "status": "accruing",
       "state": "LT-4 shipped; snapshot built; population accruing",
-      "next_step": "Nightly builds append to thesis_funnel_states.parquet. Return 2026-10-01 to review population stability. Do NOT wire to board ordering or entry gates (W3-locked).",
+      "next_step": "Per-stock funnel state computed daily via panels(). Standalone snapshot (scripts/research/build_thesis_funnel_snapshot.py) overwrites thesis_funnel_states.parquet on-demand; wire to nightly if longitudinal population tracking is needed before 2026-10-01 review. Return 2026-10-01 to review population stability. Do NOT wire to board ordering or entry gates (W3-locked).",
       "phase_hint": "LT-4 (long-hold external foundation)"
     }
   ]

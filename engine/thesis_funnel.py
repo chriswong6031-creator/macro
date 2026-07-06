@@ -31,8 +31,8 @@ Survival flags (each independently computed):
     receivables_stretch, inventory_build, capital_intensity_rising.
 
   s3_solvency:
-    Altman Z < 1.8 where computable (< 1.81 is the classic distress floor;
-    we use 1.8 to match engine/stock_fundamentals.py _ALTMAN_DISTRESS_MAX).
+    Altman Z < 1.81 where computable (1.81 is the classic distress floor;
+    matches engine/stock_fundamentals.py _ALTMAN_DISTRESS_MAX = 1.81).
     Source: altman sub-dict from engine/stock_fundamentals.py _multiyear output
     (already computed in panels() — passed in here; NOT re-loaded).
 
