@@ -416,6 +416,9 @@ class TestRealRegistryFirewallClean:
             # W2 PR-K moat falsifier sensors and great-company-trap overlay
             "moat-falsifier-sensors",
             "great-company-trap",
+            # LT-2a expect_drift feature panel — hold_thesis by design; display-only
+            "long-hold-expect-drift-manifest",
+            "long-hold-expect-drift-panel",
         }
         reg = load_registry(REPO_ROOT)
         hold_arts = {

@@ -3886,6 +3886,69 @@ artifacts:
       FDR family: long_hold (isolated per LH-R5). No scored_path_surfaces.
       G1 ratification: PENDING FABLE RULING (see research/long_hold/W1_KILLTEST_RESULTS.md).
 
+  # --- Long-Hold LT-2a: expect_drift feature panel ---
+  long-hold-expect-drift-panel:
+    path: data/research/expect_drift_panel.parquet
+    format: parquet
+    producer: scripts/research/build_expect_drift_panel.py
+    known_extra_writers: []
+    owner_program: long-hold
+    cadence: on-demand
+    storage: git
+    asof_field: fire_date
+    freshness_sla_hours: 8760
+    schema: expect_drift_panel.v1
+    tier: display
+    horizon_role: hold_thesis
+    weights: none
+    scored_path_surfaces: []
+    fdr_family: long_hold
+    consumers:
+      - scripts/research/build_expect_drift_panel.py
+    external_consumers: []
+    notes: >
+      LT-2a (Long-Hold External Foundation). 7 at-entry expect-drift features (ED-1..ED-7)
+      per EXPECT_DRIFT_FAMILY_PREREG.md (registered 2026-07-06). Population: all 113,542
+      fires from long_hold_labels.parquet. OUTCOME-BLIND: no label, return, or outcome
+      column is present. Per AMENDMENT_A2_G1_RETEST.md §4 the join to 2024+ outcomes
+      is forbidden until the A2 freeze; feature computation for all dates is permitted.
+      Features: sue_latest, sue_streak, pead_drift, bad_news_absorption, good_news_hold,
+      sue_accel, confirmed_absorption. Per-feature coverage: sue_latest=44.0%,
+      sue_streak=44.0%, pead_drift=19.1%, bad_news_absorption=34.7%,
+      good_news_hold=31.0%, sue_accel=44.0%, confirmed_absorption=18.8%.
+      Event coverage (E(f) present): 45.3% of fires.
+      Reference event E(f): latest 8-K item 2.02 with filing_date <= fire_date - 1 BDay
+      and within 120 calendar days. Source stores: data/edgar/earnings_8k_dates.parquet,
+      data/edgar/eps_quarterly.parquet. Price resolution identical to long_hold_label_panel.py.
+      survivorship_biased inherited per-fire from long_hold_labels.parquet.
+      FIREWALL: horizon_role=hold_thesis. MUST NOT feed board ordering, alert triage,
+      top-setups gates, or push floor. fdr_family=long_hold (LH-R5).
+
+  # --- Long-Hold LT-2a: expect_drift panel manifest ---
+  long-hold-expect-drift-manifest:
+    path: data/research/expect_drift_panel_manifest.json
+    format: json
+    producer: scripts/research/build_expect_drift_panel.py
+    known_extra_writers: []
+    owner_program: long-hold
+    cadence: on-demand
+    storage: git
+    asof_field: generated_at
+    freshness_sla_hours: 8760
+    schema: expect_drift_panel_manifest.v1
+    tier: display
+    horizon_role: hold_thesis
+    weights: none
+    scored_path_surfaces: []
+    fdr_family: long_hold
+    consumers:
+      - scripts/research/build_expect_drift_panel.py
+    external_consumers: []
+    notes: >
+      Companion manifest for expect_drift_panel.parquet. Per-feature coverage %,
+      event/SUE coverage, population hash, pre-registration reference, survivorship stamp.
+      FIREWALL: hold_thesis — no entry-stack consumers permitted.
+
   # --- Long-Hold W2 PR-I: compounder feature panel (embedded in per-stock panels) ---
   # NOTE: compounder features are NOT a standalone parquet — they are a sub-key
   # ("compounder") inside the existing financials.multiyear block that _multiyear()

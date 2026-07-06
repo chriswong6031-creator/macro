@@ -1,0 +1,44 @@
+{
+  "artifact": "expect_drift_panel",
+  "version": "LT-2a-v1",
+  "generated_at": "2026-07-06T08:46:00.947146+00:00",
+  "runtime_seconds": 396.5,
+  "prereg_reference": "research/long_hold/EXPECT_DRIFT_FAMILY_PREREG.md",
+  "population": {
+    "source": "data/research/long_hold_labels.parquet",
+    "n_fires": 113542,
+    "n_tickers": 2495,
+    "date_range": [
+      "2014-08-11",
+      "2026-07-02"
+    ],
+    "population_hash": "91f50b19c43a11f6",
+    "limit_applied": null
+  },
+  "survivorship_biased": false,
+  "survivorship_note": "survivorship_biased per fire is inherited from long_hold_labels.parquet. Features are at-entry and outcome-blind; the biased flag applies to the outcome labels (not feature computation), but is carried here to support study-level filtering.",
+  "event_coverage": {
+    "n_fires_with_event": 51391,
+    "pct_fires_with_event": 45.26,
+    "note": "E(f) = latest 8-K item 2.02 with filing_date <= fire_date - 1 BDay and within 120 calendar days. Fires without qualifying event have pead_drift, bad_news_absorption, good_news_hold, confirmed_absorption = NaN."
+  },
+  "sue_coverage": {
+    "n_fires_with_sue": 49926,
+    "pct_fires_with_sue": 43.97
+  },
+  "per_feature_coverage_pct": {
+    "sue_latest": 43.97,
+    "sue_streak": 43.97,
+    "pead_drift": 19.07,
+    "bad_news_absorption": 34.7,
+    "good_news_hold": 30.96,
+    "sue_accel": 43.97,
+    "confirmed_absorption": 18.81
+  },
+  "fdr_family": "long_hold",
+  "horizon_role": "hold_thesis",
+  "tier": "display",
+  "_display_only": true,
+  "outcome_firewall": "This panel carries ONLY at-entry features (ED-1..ED-7). No outcome column (label, total_return_*, sector_rel_*, missed_hold) is present. Per AMENDMENT_A2_G1_RETEST.md \u00a74, the join of these features to 2024+ outcomes is FORBIDDEN until the A2 analysis script commits.",
+  "firewall": "horizon_role=hold_thesis. MUST NOT feed board ordering / alert triage / top-setups gates / push floor. Enforced by check_synapse_reads.py."
+}
