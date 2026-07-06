@@ -138,10 +138,15 @@ empirically by the event studies in W2.
   2010→), CEWC (annual). ~450 dated documents → `data/china_official/communiques.parquet`
   (doc_id, family, meeting_date, publish_date, title, body, body_sha256, url,
   source). Paced (≥1s + jitter), browser UA, per-source isolation, resumable.
-- **W1.2 CCTV daily backfill** — resumable runner for `news_cctv(date)` 2016→
-  (~3,800 days × ~45s serial; run as background lane over several nights, store
-  full text locally/R2 — gitignored). Output feeds phrase echo + tone depth.
-  Explicitly NOT on the render path.
+- **W1.2 CCTV daily backfill** — **AMENDED 2026-07-06**: the repo already had
+  `scripts/backfill_cctv_archive.py` (PR #923, Qualitative-Intelligence W4
+  prereq) implementing exactly this spec (resumable newest-first 2016-02-03→,
+  stub detection, `--repair`, `--gap-audit`), with `data/china_news/cctv_archive/`
+  already holding 2021-05→2026-07. A duplicate lane (PR #1630) was built and
+  CLOSED unmerged; instead the existing script was relaunched on the Mac to fill
+  the 2016→2021 gap (~1,900 days, ~30h). Store stays gitignored Mac-local.
+  Lesson recorded: check `data/china_news/` sublanes before commissioning
+  CCTV-adjacent collectors.
 - **W1.3 Rate-action event table** — derived in-runner from on-disk parquets (no
   new nightly artifact until a study says ACCRUE): RRR change dates + magnitudes
   2007→ (n=55), LPR cut/hold dates 2017→, plus MPC meeting dates once W1.1 lands.
@@ -189,6 +194,32 @@ empirically by the event studies in W2.
 - **W3.4 Forward registration** — filing-category event families (inquiry
   letters, preannouncement direction) registered as accruing experiments with
   come-back dates; studied through the W2 harness once n matures.
+
+### Amendment 1 (2026-07-06) — cross-session division of labor
+
+A concurrent session ("China Intelligence Hub redesign", masterplan
+`research/CHINA_INTEL_HUB_MASTERPLAN.md`) built from the same Codex paper the
+same day: #1609 (hub v2, briefing v4), #1627 (special-situations desk +
+`collectors/china_inquiry.py`, briefing v5), #1663 (W5 polish incl.
+cycle-context chips — the chips contract from this program, already wired).
+Agreed division, both sides confirmed:
+
+- **They owned** `templates/china_intel.html.j2`, `engine/china_intel_bus.py`,
+  the briefing schema (additive-only guarantee, their R-4), all China subpage
+  UX, and the `cn_special_sits` qledger salience family.
+- **This program owns** history backfills (W1), pre-registered event studies
+  (W2), the filings **spine** (W3 — their narrow `china_inquiry.py` migrates to
+  it; contract: `kind` ∈ letter/reply/attachment on the inquiry family;
+  reply/attachment take precedence over letter keyword match), the analog-finder
+  JSON, and the global-hub China lens (#1616; their thin routing card dropped).
+- Contracts delivered to them: `analogs.json` schema + card spec,
+  `filings.parquet` schema, cycle-chips regime_history join, `communiques.parquet`
+  schema (read-only deepening of their policy_phrase card history).
+- That session is now COMPLETE. Consequences inherited here: the
+  `china_inquiry.py` → `china_filings` migration of
+  `engine/china_special_situations.py` and the analogs/filings card wiring on
+  `china_intel.html` fall to this program's W4 (additive edits on their v5
+  template, respecting the schema additive-only rule).
 
 ### W4 — Surfaces + validation wiring
 
