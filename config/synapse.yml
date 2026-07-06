@@ -1591,10 +1591,12 @@ artifacts:
     freshness_sla_hours: 30
     schema: spine.predictions.v1
     tier: shadow
+    horizon_role: tactical_entry
     weights: none
     scored_path_surfaces: []
     consumers:
       - engine/neuralweb/confluence.py
+      - scripts/build_stock_library.py
     external_consumers: []
     notes: >
       SRSS Phase 2 production wiring (research/entry_stack/sponsorship_phase0.py was the
