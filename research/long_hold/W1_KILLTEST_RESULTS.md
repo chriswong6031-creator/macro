@@ -273,6 +273,16 @@ Registered in `config/synapse.yml` with:
 
 ---
 
-**G1 ratification: PENDING FABLE RULING**
+**G1 ratification: RULED 2026-07-06 — DEFERRED (Fable)**
 
-_This document prints the analysis results. It does not declare the program alive or dead. The G1 kill criterion requires Fable adjudication of the combined routing outcome above, including the survivorship-deferral path interpretation per OBJECTIVE.md §8._
+## 12. G1 Ruling (Fable, 2026-07-06)
+
+**Ruling: DEFERRED, per the locked §8 / Amendment A1 routing table (any DEFERRED leg forces DEFERRED).** This is neither a kill nor a survive:
+
+1. **The deferral is window-driven, not evidence-driven.** The honest OOS cell holds 4 compounder episode-clusters against the ≥25 floor because the survivorship-correct OOS window is ~3.5 months of 2021 fires. The dead-name build (#1528) confirmed no data purchase fixes this — the compounder cell grows only with calendar time.
+2. **What the evidence supports (and no more):** piotroski_f separates missed-holds from faders in every floor-met split (fit RBC 0.814, OOS-biased 0.748, A1-honest 0.810; q≈0 throughout; direction never flips), with quality/profitability/SUE surviving FDR in the survivor-caveated splits. This is *promising, survivorship-caveated, non-validated* evidence. It licenses nothing behavioral and no selection machinery.
+3. **W3/W4 remain LOCKED.** No thesis ledger, no species registration, no committee surface.
+4. **W2 authorized** (display-only, per masterplan): PR-H EDGAR FLOW additions are now ALSO retest-critical (op_income to un-alias quality_z≡profitability_z; interest_exp to restore interest_coverage; depreciation/SBC/R&D), plus the two clocks and moat-falsifier sensors.
+5. **G1-RETEST ordered (pre-register as Amendment A2 before any further feature-outcome contact):** OOS-2 = the 2025+ honest cohort (Massive live accrual, survivorship-correct per day), same frozen feature family with coverage-restored features documented, evaluated when the honest compounder cell reaches ≥25 episode-clusters — projected ~2027-H2 at the observed ~14 clusters/year accrual rate. Register through the metabolism harness, fdr_family='long_hold'. Retest prep list: A1-to-spec per-fire S(f) benchmark (requires price-store iteration), fuller sector→ticker mapping (503/2,495 today), committed probe script replacing the estimated dead-name coverage figure.
+
+_In plain English: the referee didn't call the game — the honest part of the field was too small to score on. The early signals (fundamental quality at entry predicting which winners kept compounding) point the right way in every view we have, but every view big enough to read is survivor-tinted. The clean test arrives as the post-2025 data matures; the machinery to run it is now built, locked, and waiting._

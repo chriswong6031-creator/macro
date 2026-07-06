@@ -143,3 +143,4 @@ The discipline tier. Immediate relief for the entry/hold confusion.
 ## 7. Status log
 
 - 2026-07-05 — Program chartered. Source study committed as-received. W0 build authorized (PR-B/C/D). W1 authorized to begin after W0 merges; G1 kill criterion locked in OBJECTIVE.md before any label computation.
+- 2026-07-06 — W0 SHIPPED (#1508 prereg, #1510 horizon_role stamps, #1514 firewall gate). W1 SHIPPED (#1517 label panel, #1519 dead-name spike, #1520 Amendment A1, #1528 dead-name Phase-1 build + gap-crossing fix, #1540 kill-test). **G1 RULED: DEFERRED** (window-driven n-floor failure: 4 honest compounder clusters vs ≥25; piotroski_f separation consistent but survivorship-caveated in every floor-met split). W3/W4 LOCKED. W2 authorized display-only; PR-H EDGAR FLOW additions now retest-critical. G1-RETEST (Amendment A2, 2025+ honest cohort) projected evaluable ~2027-H2. Full ruling: research/long_hold/W1_KILLTEST_RESULTS.md §12.
