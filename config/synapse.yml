@@ -1730,9 +1730,11 @@ artifacts:
       - scripts/build_theme_detail.py
       - scripts/grade_us_board.py
       - scripts/snapshot_shadow_book.py
+      - engine/neuralweb/mastermind_context.py
     external_consumers:
       - mastermind:anchor
       - mastermind:vendored
+      - mastermind:context
       - terminal:screener
     notes: "Producer: scripts/build_stock_library.py:2412 write_text. Mastermind anchor_1 contract; Terminal screener contract per export_signal_contracts.py:171."
 
@@ -1795,8 +1797,10 @@ artifacts:
       - engine/china_intel_bus.py
       - engine/signal_sanity.py
       - scripts/build_intelligence.py
+      - engine/neuralweb/mastermind_context.py
     external_consumers:
       - mastermind:vendored
+      - mastermind:context
     qual_ladder_ref: altdata.signal_score
     notes: "Producer: engine/altdata_emit.py:259 write_text. schema=altdata.mastermind.v1 inline constant at altdata_emit.py:65."
 
@@ -2053,7 +2057,9 @@ artifacts:
       - engine/intel_discovery.py
       - engine/radar_ic.py
       - engine/signal_sanity.py
-    external_consumers: []
+      - engine/neuralweb/mastermind_context.py
+    external_consumers:
+      - mastermind:context
     notes: "Producer: scripts/build_radar_plus.py:3 via engine/radar_ticker.py:14."
 
   # --- 4 consumers ---
@@ -2660,7 +2666,9 @@ artifacts:
     scored_path_surfaces: []
     consumers:
       - scripts/build_site.py  # copies kernel_families.json to site/neuralwebdata/ for committee pages (display-only)
-    external_consumers: []
+      - engine/neuralweb/mastermind_context.py
+    external_consumers:
+      - mastermind:context
     notes: >
       DISPLAY-FIRST LAW: zero behavior-changing consumers. Per-engine-family decay
       diagnostics: horizon_curve (shrunken_ic per horizon from __all__ marginal cells in
@@ -2766,7 +2774,9 @@ artifacts:
       - engine/briefing.py
       - engine/neuralweb/read.py
       - engine/neuralweb/cortex.py
-    external_consumers: []
+      - engine/neuralweb/mastermind_context.py
+    external_consumers:
+      - mastermind:context
     notes: >
       Composed one-page truth (Neural Web N1 masterplan). Reads data/market_state/latest.json
       (post-radar resolved verdict), data/regime/latest.json (regime quad, vol_regime,
@@ -2799,7 +2809,9 @@ artifacts:
     scored_path_surfaces: []
     consumers:
       - scripts/build_site.py  # copies graph JSON to site/neuralwebdata/ for committee/graph pages (display-only)
-    external_consumers: []
+      - engine/neuralweb/mastermind_context.py
+    external_consumers:
+      - mastermind:context
     notes: >
       DISPLAY-ONLY HARD LAW: confluence never gates, never ranks, never raises a priority.
       All edges carry display_only=True. Cross-engine hard gates require their own
@@ -3091,8 +3103,10 @@ artifacts:
     horizon_role: context
     weights: none
     scored_path_surfaces: []
-    consumers: []
-    external_consumers: []
+    consumers:
+      - engine/neuralweb/mastermind_context.py
+    external_consumers:
+      - mastermind:context
     notes: >
       W7b: Nightly committee memo produced by the cortex deliberation loop.
       Schema neuralweb.cortex_memo.v1: {as_of, summary, what_fired,
@@ -3236,7 +3250,9 @@ artifacts:
     scored_path_surfaces: []
     consumers:
       - engine/neuralweb/cortex.py
-    external_consumers: []
+      - engine/neuralweb/mastermind_context.py
+    external_consumers:
+      - mastermind:context
     notes: >
       W7b PR2: Single source of truth for A2 earn-in state (replaces the PR1
       inline evaluation in cortex.py).  Written nightly by grade_cortex_attention.py
@@ -3419,7 +3435,9 @@ artifacts:
     scored_path_surfaces: []
     consumers:
       - engine/neuralweb/world_state.py
-    external_consumers: []
+      - engine/neuralweb/mastermind_context.py
+    external_consumers:
+      - mastermind:context
     notes: >
       Display-only raw-fields fusion table per RO-1 (masterplan W-A).
       Mandate: display-only raw-fields fusion; composites forbidden per RO-2 /
@@ -3447,8 +3465,10 @@ artifacts:
     horizon_role: tactical_entry
     weights: none
     scored_path_surfaces: []
-    consumers: []
-    external_consumers: []
+    consumers:
+      - engine/neuralweb/mastermind_context.py
+    external_consumers:
+      - mastermind:context
     notes: >
       Pre-registered options-entry quality gate (W1.3 machinery). Currently:
       scored=false, status=building_history (n << 30 per bucket; all gates building).
@@ -3736,8 +3756,10 @@ artifacts:
     horizon_role: tactical_entry
     weights: none
     scored_path_surfaces: []
-    consumers: []
-    external_consumers: []
+    consumers:
+      - engine/neuralweb/mastermind_context.py
+    external_consumers:
+      - mastermind:context
     notes: >
       QA/debug JSON companion to bottom-sensors-parquet.
       is_display_only=true — display and debug surface only.
@@ -4251,3 +4273,87 @@ artifacts:
       /api/actions. Grading harness is a post-Fable wave (template: btc_override_ledger.py
       Wilson/bootstrap; qledger claims as counterfactual source). Ledger accrues only in
       calendar time; n>=25 graded actions is the cortex A2 Wilson floor.
+
+  # ============================================================
+  # NW → MASTERMIND BRIDGE (W1)
+  # ============================================================
+
+  kernel-decisions:
+    path: data/neuralweb/kernel_decisions.json
+    format: json
+    producer: scripts/run_kernel_decisions.py
+    known_extra_writers: []
+    owner_program: neural-web
+    cadence: on-demand
+    storage: git
+    asof_field: run_at
+    freshness_sla_hours: 9999
+    schema: implicit
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/neuralweb/mastermind_context.py
+    external_consumers:
+      - mastermind:context
+    notes: >
+      FDR batch-decision record for kernel families (run_kernel_decisions.py).
+      survivors[] is empty until the 2026-10-01 FDR batch. STANDING LAW: kernel
+      'armed' means display-ready, NOT FDR-cleared. Only survivors[] cells may
+      be promoted to behavior-facing use. This artifact is read by the bridge
+      compiler to emit fdr_cleared flags; it is never used for gating or sizing.
+
+  neuralweb-mastermind-context:
+    path: data/neuralweb/mastermind_context.json
+    format: json
+    producer: scripts/build_nw_mastermind_context.py
+    known_extra_writers:
+      - "engine/neuralweb/mastermind_context.py — build_and_write() writes both canonical and site copy"
+    owner_program: nw-mastermind-bridge
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: neural_web_mastermind_context.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers:
+      - mastermind:anchor
+    notes: >
+      NW → Mastermind bridge compiler artifact (canonical copy). Schema
+      neural_web_mastermind_context.v1. Authority: all five booleans false
+      (context-only). Two-tier lobe model: auto-manifest (synapse scan for
+      mastermind:context tags) + registered summarizers (market/reliability/
+      contradictions/bottom_sensors/options_entry/cortex). Candidate universe:
+      us_standouts ∪ altdata/mastermind ∪ radar_ticker (filtered to actionable).
+      Hard cap 250 rows. Envelope sibling-stamped. See NW_MASTERMIND_BRIDGE_PROGRAM.md.
+
+  site-neuralweb-mastermind-context:
+    path: site/neuralwebdata/mastermind_context.json
+    format: json
+    producer: scripts/build_nw_mastermind_context.py
+    known_extra_writers:
+      - "engine/neuralweb/mastermind_context.py — build_and_write() writes both canonical and site copy"
+    owner_program: nw-mastermind-bridge
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: neural_web_mastermind_context.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers:
+      - mastermind:anchor
+    notes: >
+      NW → Mastermind bridge compiler artifact (public site copy, byte-identical to
+      neuralweb-mastermind-context canonical). Transport: Mastermind bot's existing
+      macro_refresh.refresh() sparse checkout of site/ materializes this file at
+      vendor/macro_src/site/neuralwebdata/mastermind_context.json with zero new sync
+      plumbing (site/ is in the sparse set). See NW_MASTERMIND_BRIDGE_PROGRAM.md §3.2.
