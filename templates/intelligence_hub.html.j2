@@ -257,6 +257,34 @@
   .ql-chip-graded-neg { background:color-mix(in srgb,var(--down) 14%,transparent);
     color:var(--down); border-color:color-mix(in srgb,var(--down) 35%,transparent); }
   .desk-chips { display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-top:5px; }
+  /* China Lens module (W0.2) */
+  .cl-badge{ font-size:9px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;
+    padding:2px 7px;border-radius:5px;
+    background:color-mix(in srgb,#f59e0b 18%,transparent);color:#f59e0b;margin-left:7px; }
+  .cl-wrap{ margin-top:0; }
+  .cl-headline{ font-size:13.5px;font-weight:600;color:var(--text);margin-bottom:10px;line-height:1.4; }
+  .cl-chips{ display:flex;flex-wrap:wrap;gap:7px;margin-bottom:12px; }
+  .cl-chip{ font-size:11.5px;font-weight:600;padding:5px 11px;border-radius:9px;cursor:default;
+    background:color-mix(in srgb,var(--panel) 78%,transparent);
+    border:1px solid color-mix(in srgb,var(--line) 75%,transparent); }
+  .cl-chip-stale{ border-color:color-mix(in srgb,var(--warn) 45%,var(--line));
+    color:var(--warn); }
+  .cl-rows{ display:flex;flex-direction:column;gap:9px;margin-bottom:12px; }
+  .cl-row{ display:flex;align-items:center;gap:10px;padding:9px 0;
+    border-top:1px solid color-mix(in srgb,var(--line) 50%,transparent); }
+  .cl-row:first-child{ border-top:0; }
+  .cl-sector{ font-size:13px;font-weight:700;min-width:120px; }
+  @media(max-width:560px){ .cl-sector{ min-width:80px;font-size:12px; } }
+  .cl-fresh{ display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:10px;margin-bottom:10px; }
+  .cl-fresh-label{ font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em; }
+  .cl-dot{ font-size:9.5px;font-weight:700;padding:2px 7px;border-radius:5px;cursor:default;
+    text-transform:uppercase;letter-spacing:.03em; }
+  .cl-dot-ok{ background:color-mix(in srgb,var(--ok) 16%,transparent);color:var(--ok); }
+  .cl-dot-stale{ background:color-mix(in srgb,var(--down) 16%,transparent);color:var(--down); }
+  .cl-footer{ margin-top:10px;padding-top:8px;
+    border-top:1px solid color-mix(in srgb,var(--line) 50%,transparent); }
+  .cl-link{ font-size:12px;font-weight:600;color:var(--info);text-decoration:none; }
+  .cl-link:hover{ text-decoration:underline; }
 </style>
 </head>
 <body class="page-hub">
@@ -313,6 +341,103 @@
       <div class="desk-chips">{{ ql_chip(_ql.get(key)) }}</div>
     </a>{% endfor %}
   </div>
+
+  {# ── CHINA LENS (W0.2) — context-only, reads china_intel/briefing.json packet ── #}
+  {# Module is omitted entirely if china packet is None (briefing absent/stale). #}
+  {% if china %}
+  {# Freshness: briefing.json is built at 08:30 UTC (asia lane) while the hub builds at 02:00 UTC.
+     The briefing is typically ~18h old at hub build time — surface age honestly. #}
+  <div id="china-lens" class="band"><h2 style="--accent:#f59e0b">{{ ic('sector') }}
+    {{ t('China Lens', '中国观察') }}
+    <span class="cl-badge">{{ t('Context only', '上下文') }}</span></h2>
+    <span class="ln"></span>
+    {% if china.asof_age_days is not none %}
+    <span class="cnt" data-tip-en="briefing.json is built in the asia lane (~08:30 UTC); hub builds at 02:00 UTC — typical lag ~18h" data-tip-zh="简报在亚洲收盘后生成（约北京时间16:30），与情报中枢更新时差约18小时">
+      {{ t('as of', '截至') }} {{ china.as_of }}
+      {% if china.asof_age_days == 0 %}{{ t('(today)', '（今日）') }}
+      {% elif china.asof_age_days == 1 %}{{ t('(1d ago)', '（1天前）') }}
+      {% else %}{{ t('(' ~ china.asof_age_days ~ 'd ago)', '（' ~ china.asof_age_days ~ '天前）') }}{% endif %}
+    </span>
+    {% endif %}
+  </div>
+  <div class="glass acc cl-wrap" style="--accent:#f59e0b;padding:14px 16px">
+    {# Headline row — derived mechanically from what_changed / top conviction #}
+    <div class="cl-headline">{{ china.headline }}</div>
+
+    {# Chips row: RORO band, PBoC stance, news band #}
+    <div class="cl-chips">
+      {% set rg = china.regime or {} %}
+      {% set po = china.policy or {} %}
+      {% set nw = china.news or {} %}
+      {% if rg.band_en %}
+      <span class="cl-chip"
+        data-tip-en="RORO state: {{ rg.roro_state or '—' }}"
+        data-tip-zh="风险偏好状态：{{ rg.roro_state or '—' }}">
+        <span class="l-en">CN Sentiment: {{ rg.band_en }}</span>
+        <span class="l-zh">CN情绪：{{ rg.band_zh or rg.band_en }}</span>
+      </span>
+      {% endif %}
+      {% if po.stance_label_en %}
+      <span class="cl-chip {{ 'cl-chip-stale' if po.stale else '' }}"
+        data-tip-en="PBoC stance{{ ' (data may be stale)' if po.stale else '' }}"
+        data-tip-zh="央行立场{{ '（数据可能较旧）' if po.stale else '' }}">
+        <span class="l-en">PBoC: {{ po.stance_label_en }}</span>
+        <span class="l-zh">央行：{{ po.stance_label_zh or po.stance_label_en }}</span>
+      </span>
+      {% endif %}
+      {% if nw.band_label_en %}
+      <span class="cl-chip"
+        data-tip-en="China news sentiment band"
+        data-tip-zh="中国新闻情绪区间">
+        <span class="l-en">News: {{ nw.band_label_en }}</span>
+        <span class="l-zh">新闻：{{ nw.band_label_zh or nw.band_label_en }}</span>
+      </span>
+      {% endif %}
+      {% if china.flagged_ticker_count %}
+      <span class="cl-chip"
+        data-tip-en="{{ china.flagged_ticker_count }} flagged tickers — see china_intel.html for detail"
+        data-tip-zh="{{ china.flagged_ticker_count }} 只关注标的 — 详情见中国情报页">
+        {{ china.flagged_ticker_count }} <span class="l-en">flagged tickers</span><span class="l-zh">关注标的</span>
+      </span>
+      {% endif %}
+    </div>
+
+    {# Top-2 conviction rows — reuse existing stage() / edgebar() macros #}
+    {% if china.conviction %}
+    <div class="cl-rows">
+      {% for row in china.conviction %}
+      <div class="cl-row">
+        <div class="cl-sector">
+          <span class="l-en">{{ row.sector_en }}</span><span class="l-zh">{{ row.sector_zh or row.sector_en }}</span>
+        </div>
+        {{ stage(row.stage) }}
+        {% if row.edge_remaining is not none %}{{ edgebar(row.edge_remaining) }}{% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {# Surface freshness dots — one dot per surface, stale = red #}
+    {% if china.surfaces %}
+    <div class="cl-fresh">
+      <span class="cl-fresh-label">{{ t('surfaces:', '数据面：') }}</span>
+      {% for sname, sinfo in china.surfaces.items() %}
+      <span class="cl-dot {{ 'cl-dot-stale' if sinfo.stale else 'cl-dot-ok' }}"
+        data-tip-en="{{ sname }}: {{ sinfo.asof }}{{ ' (stale >5d)' if sinfo.stale else '' }}"
+        data-tip-zh="{{ sname }}：{{ sinfo.asof }}{{ '（数据偏旧，超5天）' if sinfo.stale else '' }}">{{ sname }}</span>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {# Footer link to china_intel.html #}
+    <div class="cl-footer">
+      <a href="{{ china.links.detail }}" class="cl-link">
+        {{ t('Full China report →', '查看中国完整报告 →') }}
+      </a>
+    </div>
+  </div>
+  {# END CHINA LENS #}
+  {% endif %}
 
   {# ── EMERGING EDGE — the pre-consensus hero (highest value) ── #}
   {% set EM = hub.emerging or [] %}{% set EX = hub.exhausted or [] %}{% set CA = hub.catalysts or [] %}
