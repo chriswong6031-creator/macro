@@ -1250,6 +1250,43 @@ def _step_turn_desk(data_dir: Path, site_dir: Path, dry_run: bool) -> bool:
         return False
 
 
+def _step_reversion_promotion_scan(
+    data_dir: Path,
+    site_dir: Path,
+    dry_run: bool,
+) -> bool:
+    """W4.a Step 16: Reversion promotion scan (P2, armed-not-fired).
+
+    Reads registry reversion-block compounds + P0 forward ledger (matured rows
+    only); calls grant_authority VERBATIM; writes
+    data/oracle/reversion_promotion_queue.json + data/oracle/reversion_authority.json
+    (only for human-ratified rows) + data/neuralweb/governance.jsonl events.
+
+    NEVER auto-promotes: all promotions require human ratified_by in queue row.
+
+    Additive nightly step placed at END per W4_SPEC.md §W4.a:
+    'Nightly step appended at END (after the current last step)'.
+
+    Loud-error pattern: ::error:: annotation + returns False; does not block
+    earlier steps.
+    """
+    log.info("=== Step 16: Reversion promotion scan (W4.a P2) ===")
+    try:
+        from scripts.oracle_reversion_promotion_scan import run_promotion_scan
+        summary = run_promotion_scan(data_dir, site_dir, dry_run=dry_run)
+        log.info(
+            "reversion_promotion_scan: n_compounds=%d candidates=%d lapses=%d accruing=%d",
+            summary.get("n_compounds", 0),
+            summary.get("n_candidates", 0),
+            summary.get("n_lapses", 0),
+            summary.get("n_accruing", 0),
+        )
+        return True
+    except Exception as e:  # noqa: BLE001
+        _annotation(f"oracle_nightly: reversion_promotion_scan FAILED: {e}")
+        return False
+
+
 def _write_turn_desk_ledger(
     armed: list[dict],
     panel_asof: str,
@@ -1539,6 +1576,13 @@ def main() -> int:
     # --- Step 15: Rotation Turn Desk (W6) — DISPLAY-ONLY, additive at END ---
     if not _step_turn_desk(data_dir, site_dir, args.dry_run):
         failures.append("turn_desk")
+
+    # --- Step 16: Reversion promotion scan (W4.a P2) — additive at END ---
+    # W4_SPEC.md: 'Nightly step appended at END (after the current last step)'
+    # NEVER auto-promotes; loud-error pattern; runs AFTER P0 ledger (11b) + P1
+    # sidecar (11c) so it has the freshest base_rate and matured rows.
+    if not _step_reversion_promotion_scan(data_dir, site_dir, args.dry_run):
+        failures.append("reversion_promotion_scan")
 
     elapsed = time.time() - t_total
     log.info(

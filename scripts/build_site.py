@@ -1546,6 +1546,23 @@ def _froth_fragility_view(latest: dict) -> dict | None:
         return None
 
 
+def _dispersion_regime_view() -> dict | None:
+    """Load the L3 dispersion regime artifact (data/dispersion/regime.json) for the
+    macro page selection-regime chip.  DISPLAY-ONLY; gross_mult_live is always 1.0 per
+    NW Rails W2 PR-4 §5 hard constraint.  Never raises."""
+    try:
+        p = config.data_dir() / "dispersion" / "regime.json"
+        if not p.exists():
+            return None
+        d = json.loads(p.read_text())
+        if d.get("state") is None:
+            return None  # degraded artifact — don't show the chip
+        return d
+    except Exception as e:  # noqa: BLE001 — additive / display-only, never fatal
+        log.warning("dispersion_regime_view failed (%s)", e)
+        return None
+
+
 def _sector_heat_view() -> dict | None:
     """Compact sector-heat strip for the macro.html dashboard: up to 4 heating themes
     and up to 4 cooling/broken themes, each with a link to baskets.html#theme-<id>.
@@ -3241,6 +3258,7 @@ def main() -> int:
         froth_fragility=_froth_fragility_view(latest),  # euphoria + hidden-distribution top-risk gauge (display-only)
         fear_greed=_fear_greed_view(),    # Fear/Greed composite dial (display-only, P1.2)
         sector_heat=_sector_heat_view(),  # compact sector-heat strip for macro.html (display-only)
+        dispersion_regime=_dispersion_regime_view(),  # L3 selection-regime chip (NW Rails W2 PR-4, display-only)
     )
     # DEV-ONLY fast-render cache: when MACRO_DUMP_VM is set, pickle the assembled
     # view-model so scripts/render_macro_fast.py can re-render macro.html /

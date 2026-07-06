@@ -159,36 +159,153 @@ def build_golden_signals() -> dict:
 # expected_max_age is in TRADING-CALENDAR days: an artifact older than this (excluding
 # weekends/holidays) is genuinely stale and the consumer must abstain. A weekend-only
 # lag is NOT stale (the cadence is trading-day-aware on the consumer side).
+#
+# R4 contract governance (NW Rails PR-7):
+#   schema_version  — semver string; bump minor when fields are added (backwards-compatible),
+#                     bump major when fields are removed or renamed (breaking change).
+#   schema_fields   — sorted list of ACTUAL top-level JSON keys in the artifact.
+#                     For list-valued artifacts where kind implies items (e.g. board),
+#                     schema_item_fields lists the item-level keys (buy[] / reduce[] items).
+#                     scripts/check_contract_drift.py compares these against the live artifact
+#                     and exits nonzero on divergence — use --warn-only during the ratchet
+#                     period, then flip to hard-fail after one clean week (see that script).
+#   Per-wildcard artifacts (per_stock_intel, per_stock_signal): schema is derived from a
+#   representative sample; all files in the same kind share the schema.
+#
+# Consumer-registry vocabulary:
+#   bot:*       — the autonomous trading bot (bot.mastermind-x.com :8001, Brain BOT VPS
+#                 mirror). Reads artifacts at intraday cadence. A stale or schema-drifted
+#                 artifact causes the bot to abstain (fail-closed per audit #9). Known
+#                 consumers: bot:conviction, bot:lenses, bot:strategist, bot:macro_risk,
+#                 bot:china_book, bot:canada_book, bot:hk_book.
+#   terminal:*  — the Mastermind Terminal (app.mastermind-x.com, Next.js SaaS). Reads
+#                 artifacts for display and chart markers. Known consumers:
+#                 terminal:pull_macro_intel (stock intel bridge), terminal:chart_markers
+#                 (BUY/SELL/tier markers overlay), terminal:screener (US board candidates),
+#                 terminal:regime_banner (macro regime display strip).
 ARTIFACT_MANIFEST = [
-    {"artifact": "site/stockdata/<SYM>.json", "kind": "per_stock_intel",
-     "expected_max_age_td": 2, "as_of_field": "asof",
+    {"artifact": "site/stockdata/<SYM>.json",
+     "kind": "per_stock_intel",
+     "schema_version": "1.0.0",
+     "schema_fields": [
+         "accounting_quality", "alerts", "alpha", "altdata", "analyst", "anticipation",
+         "asof", "basket_alloc", "baskets_membership", "composite", "conviction", "cycle",
+         "dt_contra", "early", "earnings", "entry_signal", "factors", "financials",
+         "fund_flows", "gex", "gex_confirm", "has_intraday", "history_days", "iv_spread",
+         "iv_spread_confirm", "ladder", "macro_sensitivity", "mtf", "name", "positioning",
+         "profile", "revisions", "risk_sizing", "season_next", "season_next_zh",
+         "season_this", "season_this_zh", "sector", "smart_money", "tech", "ticker",
+         "valuation", "view", "vol_squeeze",
+     ],
+     "expected_max_age_td": 2,
+     "as_of_field": "asof",
      "consumers": ["terminal:pull_macro_intel", "bot:conviction"],
      "note": "per-stock decision/conviction/gex intel; the Terminal intel bridge reads this"},
-    {"artifact": "site/signals/<SYM>.json", "kind": "per_stock_signal",
-     "expected_max_age_td": 2, "as_of_field": "asof",
+    {"artifact": "site/signals/<SYM>.json",
+     "kind": "per_stock_signal",
+     "schema_version": "1.0.0",
+     "schema_fields": [
+         "above200", "asof", "early_markers", "early_now", "markers", "risk_flags",
+         "state", "tf", "ticker", "trail_breach", "trail_stop", "weekly_bull",
+     ],
+     "expected_max_age_td": 2,
+     "as_of_field": "asof",
      "consumers": ["terminal:chart_markers"],
      "note": "confluence signal state + markers (BUY/SELL/cut) per stock"},
-    {"artifact": "site/factordata/us_standouts.json", "kind": "board",
-     "expected_max_age_td": 2, "as_of_field": "as_of",
+    {"artifact": "site/factordata/us_standouts.json",
+     "kind": "board",
+     "schema_version": "1.0.0",
+     "schema_fields": [
+         "as_of", "buy", "concentration", "dispersion_regime", "donor",
+         "earnings_blackout_note", "eligible", "gate_go", "laggards", "lane_counts",
+         "rank_by", "universe", "watch",
+     ],
+     "schema_item_fields": [
+         "above_trend", "adv_dollar_20d_median", "adv_dollar_21d", "align_tier", "alpha",
+         "alpha_entry", "antichase_shadow_blocked", "composite", "conviction",
+         "days_to_build_100k", "days_to_build_1m", "days_to_exit_at_10pct_adv", "dd_pct",
+         "dir", "entry_signal", "eq_dir", "f1d_shadow_bonus", "f1d_shadow_c6",
+         "f1d_shadow_rank", "factor_z", "hold", "label", "label_zh", "lane",
+         "liquidity_tier", "name", "off_high", "price", "risk_sizing", "sector",
+         "sector_n", "sector_pulse", "sector_rank", "setup", "signal", "spark_svg",
+         "state", "stop_guidance", "sue_fresh_days", "ticker", "urgency",
+         "washout_active", "weekly_phase",
+     ],
+     "expected_max_age_td": 2,
+     "as_of_field": "as_of",
      "consumers": ["bot:lenses", "bot:strategist", "terminal:screener"],
      "note": "US Buy Board — sizes the autonomous book's US candidate universe"},
-    {"artifact": "site/factordata/china_standouts.json", "kind": "board",
-     "expected_max_age_td": 3, "as_of_field": "as_of",
+    {"artifact": "site/factordata/china_standouts.json",
+     "kind": "board",
+     "schema_version": "1.0.0",
+     "schema_fields": [
+         "as_of", "board_track", "buy", "coverage", "dispersion_regime", "eligible",
+         "laggards", "quality_screen", "qvix_regime", "ran", "rank_by", "ripening",
+         "sleeve_chip", "universe",
+     ],
+     "schema_item_fields": [
+         "ab_tier", "align_tier", "alpha", "alpha_entry", "coiled", "conviction",
+         "data_through", "dir", "entry_signal", "eq_dir", "extension", "hold", "label",
+         "label_zh", "name", "narrative", "off_high", "price", "risk_sizing", "sector",
+         "sector_n", "sector_rank", "sector_turn", "setup", "signal", "spark_svg",
+         "stage", "stage_detail", "stage_sublabel", "stage_sublabel_zh", "state",
+         "ticker", "urgency", "washout_2w", "why_ranked",
+     ],
+     "expected_max_age_td": 3,
+     "as_of_field": "as_of",
      "consumers": ["bot:china_book"],
      "note": "China Standout board; CN calendar has more holidays → wider cadence"},
-    {"artifact": "site/factordata/canada_standouts.json", "kind": "board",
-     "expected_max_age_td": 2, "as_of_field": "as_of",
-     "consumers": ["bot:canada_book"], "note": "Canada Standout board"},
-    {"artifact": "site/regime_timeline.json", "kind": "regime",
-     "expected_max_age_td": 2, "as_of_field": None,
+    {"artifact": "site/factordata/canada_standouts.json",
+     "kind": "board",
+     "schema_version": "1.0.0",
+     "schema_fields": [
+         "as_of", "branch", "buy", "confluence", "dispersion_regime", "eligible",
+         "laggards", "rank_basis", "universe",
+     ],
+     "schema_item_fields": [
+         "align_tier", "alpha", "alpha_entry", "board_pos", "conviction", "dir",
+         "earnings", "entry_signal", "eq_dir", "factor_beta", "group", "hold",
+         "insider", "label", "label_zh", "lead_en", "lead_zh", "name", "off_high",
+         "oil_tailwind", "price", "risk_sizing", "sector", "sector_n", "sector_rank",
+         "setup", "signal", "spark_svg", "state", "ticker", "urgency",
+     ],
+     "expected_max_age_td": 2,
+     "as_of_field": "as_of",
+     "consumers": ["bot:canada_book"],
+     "note": "Canada Standout board"},
+    {"artifact": "site/regime_timeline.json",
+     "kind": "regime",
+     "schema_version": "1.0.0",
+     "schema_fields": [
+         "conf", "cyc", "dates", "flag_order", "flags", "g", "i", "liq", "quad",
+         "rec", "shock", "trans",
+     ],
+     "expected_max_age_td": 2,
+     "as_of_field": None,
      "consumers": ["bot:macro_risk", "terminal:regime_banner"],
      "note": "US regime/quad timeline; as_of = last entry of the `dates` array"},
-    {"artifact": "site/china_regime_timeline.json", "kind": "regime",
-     "expected_max_age_td": 3, "as_of_field": None,
-     "consumers": ["bot:china_book"], "note": "China regime timeline"},
-    {"artifact": "site/hk_regime_timeline.json", "kind": "regime",
-     "expected_max_age_td": 3, "as_of_field": None,
-     "consumers": ["bot:hk_book"], "note": "HK regime timeline"},
+    {"artifact": "site/china_regime_timeline.json",
+     "kind": "regime",
+     "schema_version": "1.0.0",
+     "schema_fields": [
+         "conf", "cyc", "dates", "flag_order", "flags", "g", "i", "liq", "quad",
+         "rec", "shock", "trans",
+     ],
+     "expected_max_age_td": 3,
+     "as_of_field": None,
+     "consumers": ["bot:china_book"],
+     "note": "China regime timeline"},
+    {"artifact": "site/hk_regime_timeline.json",
+     "kind": "regime",
+     "schema_version": "1.0.0",
+     "schema_fields": [
+         "conf", "cyc", "dates", "flag_order", "flags", "g", "i", "liq", "quad",
+         "rec", "shock", "trans",
+     ],
+     "expected_max_age_td": 3,
+     "as_of_field": None,
+     "consumers": ["bot:hk_book"],
+     "note": "HK regime timeline"},
 ]
 
 
