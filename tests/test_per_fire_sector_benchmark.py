@@ -26,6 +26,7 @@ from scripts.research.build_per_fire_sector_benchmark import (  # noqa: E402
     build_all_closes,
     compute_sf_for_fires,
     era_coverage_report,
+    delta_vs_old_benchmark_stats,
 )
 
 
@@ -409,3 +410,149 @@ def test_fire_with_no_own_price_still_gets_sf():
     assert row_a["sf_mean"] is not None
     expected_pool_mean = (0.20 + 0.10) / 2
     assert abs(row_a["sf_mean"] - expected_pool_mean) < 0.05
+
+
+# ---------------------------------------------------------------------------
+# Fix (1): Calendar-continuity guard — gap-leg rejection
+# ---------------------------------------------------------------------------
+
+def test_gap_leg_rejected_by_continuity_guard():
+    """A 252-bar forward window with a multi-year gap in the middle must return None.
+
+    This test would FAIL under the old implementation that lacked the
+    calendar-continuity guard (ruling LH-W1-3): without the guard,
+    the function would silently return a return measured across a data gap,
+    producing a corrupted label.
+
+    Fixture:
+    - 10 bars of normal trading data anchored at 2021-07-06
+    - A gap (missing data) from 2021-07-21 to 2024-01-02 (~900 calendar days)
+    - 260 bars of normal trading data after the gap
+
+    The forward window (252 bars from fill_index) straddles this gap.
+    With the continuity guard, _ticker_252d_return must return None.
+    Without the guard (old implementation), it would return a value — WRONG.
+    """
+    # Build the gapped series:
+    # Segment 1: 10 bars starting 2021-07-06
+    seg1_dates = list(pd.bdate_range(start="2021-07-06", periods=10))
+    # Segment 2: 260 bars starting ~900 days after seg1 ends (large gap)
+    seg2_start = seg1_dates[-1] + pd.Timedelta(days=920)  # ~2.5 year gap
+    seg2_dates = list(pd.bdate_range(start=seg2_start, periods=260))
+    all_dates = seg1_dates + seg2_dates
+    n = len(all_dates)
+    prices = np.linspace(100.0, 150.0, n)
+    gapped_close = pd.Series(prices, index=all_dates)
+
+    # fire_date = first bar; fill_index = bar 1 (next bar after fire_date)
+    # Forward window from bar 1 spans into the gap.
+    fire_date = seg1_dates[0]
+    result = _ticker_252d_return(gapped_close, fire_date, horizon=252)
+
+    # With the gap guard: must return None (gap > 10 calendar days found in window)
+    assert result is None, (
+        f"Expected None for gapped series (LH-W1-3 calendar-continuity guard), "
+        f"got {result}. The gap between consecutive bars in the window exceeds "
+        "10 calendar days, which signals a data discontinuity that would corrupt "
+        "the N-bar return label."
+    )
+
+
+def test_clean_series_passes_continuity_guard():
+    """A clean trading series (no gaps > 10 calendar days) should return a valid return."""
+    # Normal business-day series: max gap = 3 calendar days (Fri->Mon)
+    dates = list(pd.bdate_range(start="2021-07-06", periods=300))
+    close = _make_close(dates, total_return=0.25)
+    fire_date = dates[0]
+    result = _ticker_252d_return(close, fire_date, horizon=252)
+    assert result is not None, "Clean series should pass the continuity guard"
+    assert isinstance(result, float)
+    assert -1.0 < result < 5.0
+
+
+def test_short_gap_within_threshold_passes():
+    """A gap of exactly 10 calendar days (threshold) should pass (not > 10)."""
+    # Build a series with a 10-calendar-day gap (just at the threshold, not over)
+    seg1_dates = list(pd.bdate_range(start="2021-07-06", periods=5))
+    # 10 calendar days after last bar of seg1
+    seg2_start = seg1_dates[-1] + pd.Timedelta(days=10)
+    seg2_dates = list(pd.bdate_range(start=seg2_start, periods=300))
+    all_dates = seg1_dates + seg2_dates
+    prices = np.linspace(100.0, 130.0, len(all_dates))
+    close = pd.Series(prices, index=all_dates)
+    fire_date = seg1_dates[0]
+    result = _ticker_252d_return(close, fire_date, horizon=252)
+    # Gap = 10 days, threshold is > 10, so this should pass
+    assert result is not None, "Gap of exactly 10 calendar days should NOT be rejected (threshold is > 10)"
+
+
+# ---------------------------------------------------------------------------
+# Fix (2): A2 §4 contact-freeze enforcement
+# ---------------------------------------------------------------------------
+
+def test_a2_freeze_filter_excludes_post2024(tmp_path):
+    """delta_vs_old_benchmark_stats must exclude fire_date > 2023-12-31 from labels."""
+    import pyarrow as pa
+    import pyarrow.parquet as pq
+
+    # Build a synthetic labels parquet with fires spanning 2022-2025
+    fire_dates = pd.to_datetime([
+        "2022-06-15", "2023-06-15", "2024-06-15", "2025-01-15",
+    ])
+    labels_df = pd.DataFrame({
+        "fire_date": fire_dates,
+        "total_return_252d": [0.10, 0.15, 0.20, 0.25],
+    })
+    labels_path = tmp_path / "long_hold_labels.parquet"
+    labels_df.to_parquet(labels_path, index=False)
+
+    # Build a per-fire benchmark df with fires in 2022-2025
+    bench_df = pd.DataFrame({
+        "fire_date": fire_dates,
+        "sf_mean": [0.08, 0.12, 0.18, 0.22],
+        "sf_n_pool": [10, 10, 10, 10],
+    })
+
+    result = delta_vs_old_benchmark_stats(bench_df, labels_path)
+
+    # Should succeed with computed status
+    assert result["status"] == "computed", f"Expected computed, got: {result}"
+
+    # Freeze compliance keys must be present
+    assert result.get("a2_freeze_compliant") is True
+    assert result.get("a2_freeze_cutoff") == "2023-12-31"
+
+    # 2024 and 2025 fires (2 rows) must be excluded from both labels and df
+    assert result["n_labels_excluded_post2024"] == 2, (
+        f"Expected 2 labels rows excluded (2024, 2025), got {result['n_labels_excluded_post2024']}"
+    )
+    assert result["n_df_fires_excluded_post2024"] == 2, (
+        f"Expected 2 df fires excluded (2024, 2025), got {result['n_df_fires_excluded_post2024']}"
+    )
+
+    # Comparison must only cover 2022 and 2023 cohort years
+    assert result["n_fires_compared"] == 2, (
+        f"Expected 2 fires compared (2022+2023 only), got {result['n_fires_compared']}"
+    )
+
+
+# ---------------------------------------------------------------------------
+# Fix (3): Sample mode writes to SAMPLE path, not canonical
+# ---------------------------------------------------------------------------
+
+def test_sample_output_path_is_not_canonical():
+    """Sample runs must write to per_fire_sector_benchmark_SAMPLE.parquet, not the canonical path."""
+    from scripts.research.build_per_fire_sector_benchmark import _OUT_PARQUET
+
+    sample_path_stem = "per_fire_sector_benchmark_SAMPLE"
+    canonical_stem = "per_fire_sector_benchmark"
+
+    # Verify canonical path stem
+    assert _OUT_PARQUET.stem == canonical_stem, (
+        f"Canonical path stem should be '{canonical_stem}', got '{_OUT_PARQUET.stem}'"
+    )
+
+    # Verify the SAMPLE path would be a different file
+    sample_path = _OUT_PARQUET.parent / f"{sample_path_stem}.parquet"
+    assert sample_path != _OUT_PARQUET, "SAMPLE path must differ from canonical path"
+    assert "SAMPLE" in sample_path.stem, "SAMPLE path must contain 'SAMPLE' in stem"

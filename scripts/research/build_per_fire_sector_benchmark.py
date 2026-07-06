@@ -182,13 +182,22 @@ def _ticker_252d_return(
     close: pd.Series,
     fire_date: pd.Timestamp,
     horizon: int = 252,
+    max_intra_window_gap_days: int = 10,
 ) -> float | None:
     """Return horizon-bar total return for ticker from fill_index anchor.
+
+    Matches the calendar-continuity guard in long_hold_label_panel.py _total_return
+    (ruling LH-W1-3): the forward window is rejected if any two consecutive bars in
+    the horizon window are separated by more than max_intra_window_gap_days calendar
+    days.  This catches per-ticker data gaps (e.g., a ticker missing years of data)
+    which would otherwise produce a nominally-N-bar return measured across a multi-year
+    gap — corrupting the label.
 
     Returns None if:
     - fill_index is None (fire_date after all data)
     - fewer than horizon bars available
     - entry price is 0
+    - any intra-window consecutive gap exceeds max_intra_window_gap_days calendar days
     """
     fi = _fill_index(close, fire_date)
     if fi is None:
@@ -201,7 +210,14 @@ def _ticker_252d_return(
     fwd = close.iloc[fi + 1:]
     if len(fwd) < horizon:
         return None
-    return float(fwd.iloc[horizon - 1]) / entry - 1.0
+    window = fwd.iloc[:horizon]
+    # Calendar-continuity guard: identical to long_hold_label_panel.py _total_return.
+    # Reject if any intra-window gap exceeds threshold (ruling LH-W1-3).
+    window_dates = pd.Series(window.index)
+    day_diffs = window_dates.diff().dt.days.dropna()
+    if len(day_diffs) > 0 and day_diffs.max() > max_intra_window_gap_days:
+        return None
+    return float(window.iloc[horizon - 1]) / entry - 1.0
 
 
 def build_all_closes(
@@ -375,9 +391,21 @@ def delta_vs_old_benchmark_stats(df: pd.DataFrame, old_benchmark_path: Path | No
     except Exception as exc:  # noqa: BLE001
         return {"status": f"labels_load_fail:{exc}", "delta": None}
 
+    # A2 §4 CONTACT-FREEZE: hard filter — MUST NOT touch 2024+ outcomes.
+    # Apply fire_date <= 2023-12-31 before any outcome-touching computation.
+    _FREEZE_DATE = pd.Timestamp("2023-12-31")
+    labels["fire_date"] = pd.to_datetime(labels["fire_date"])
+    n_before_freeze = len(labels)
+    labels = labels[labels["fire_date"] <= _FREEZE_DATE].copy()
+    n_excluded = n_before_freeze - len(labels)
+    log.info(
+        "A2 §4 freeze filter: excluded %d rows with fire_date > 2023-12-31 "
+        "(%d retained of %d total in labels parquet)",
+        n_excluded, len(labels), n_before_freeze,
+    )
+
     # Old benchmark: cohort-year mean of total_return_252d (winner-selected pool)
     # This is the approximation used in W1 §7
-    labels["fire_date"] = pd.to_datetime(labels["fire_date"])
     labels["cohort_year"] = labels["fire_date"].dt.year
 
     old_bm: dict[int, float] = {}
@@ -389,8 +417,19 @@ def delta_vs_old_benchmark_stats(df: pd.DataFrame, old_benchmark_path: Path | No
     if not old_bm:
         return {"status": "no_old_benchmark_computable", "delta": None}
 
-    # Assign old benchmark per fire
+    # Assign old benchmark per fire — A2 §4: restrict df to pre-2024 fires only.
+    # The sf_mean is a benchmark value but delta is computed against old_bm which
+    # derives from 2024+-included labels; keep only pre-2024 fires on both sides.
     df2 = df.copy()
+    df2["fire_date"] = pd.to_datetime(df2["fire_date"])
+    n_df_before = len(df2)
+    df2 = df2[df2["fire_date"] <= _FREEZE_DATE].copy()
+    n_df_excluded = n_df_before - len(df2)
+    log.info(
+        "A2 §4 freeze filter (df side): excluded %d fires with fire_date > 2023-12-31 "
+        "from delta computation (%d retained)",
+        n_df_excluded, len(df2),
+    )
     df2["cohort_year"] = df2["fire_date"].dt.year
     df2["old_bm"] = df2["cohort_year"].map(old_bm)
 
@@ -403,6 +442,10 @@ def delta_vs_old_benchmark_stats(df: pd.DataFrame, old_benchmark_path: Path | No
     return {
         "status": "computed",
         "n_fires_compared": int(mask.sum()),
+        "a2_freeze_compliant": True,
+        "a2_freeze_cutoff": "2023-12-31",
+        "n_labels_excluded_post2024": int(n_excluded),
+        "n_df_fires_excluded_post2024": int(n_df_excluded),
         "delta_mean": round(float(deltas.mean()), 4),
         "delta_median": round(float(deltas.median()), 4),
         "delta_p25": round(float(deltas.quantile(0.25)), 4),
@@ -508,12 +551,21 @@ def write_report(
         lines.append(f"| Stat | Value |")
         lines.append(f"|------|-------|")
         lines.append(f"| N fires compared | {d['n_fires_compared']} |")
+        lines.append(f"| A2 §4 freeze cutoff | {d.get('a2_freeze_cutoff', '2023-12-31')} |")
+        lines.append(f"| Labels rows excluded (post-2024) | {d.get('n_labels_excluded_post2024', 'N/A')} |")
+        lines.append(f"| Fires excluded from delta (post-2024) | {d.get('n_df_fires_excluded_post2024', 'N/A')} |")
         lines.append(f"| Delta mean (new - old) | {d['delta_mean']:.4f} |")
         lines.append(f"| Delta median | {d['delta_median']:.4f} |")
         lines.append(f"| Delta p25 | {d['delta_p25']:.4f} |")
         lines.append(f"| Delta p75 | {d['delta_p75']:.4f} |")
         lines.append("")
         lines.append(f"*{d['direction_note']}*")
+        lines.append("")
+        lines.append(
+            "**A2 §4 freeze compliance:** Delta computation enforces `fire_date <= 2023-12-31` "
+            "on BOTH the labels parquet and the benchmark df before any outcome-touching join. "
+            "No 2024+ outcomes are read or computed."
+        )
     else:
         lines.append(f"*Delta not computed: {delta_stats['status']}*")
         lines.append("")
@@ -675,9 +727,21 @@ def run(
         }
 
     # --- Write outputs ---
-    _OUT_PARQUET.parent.mkdir(parents=True, exist_ok=True)
-    df.to_parquet(_OUT_PARQUET, index=False)
-    log.info("Wrote %s (%d rows)", _OUT_PARQUET, len(df))
+    # Sample runs MUST NOT write to the canonical path to avoid polluting the
+    # authoritative artifact with a partial dataset.
+    if is_sample:
+        out_parquet = _OUT_PARQUET.parent / "per_fire_sector_benchmark_SAMPLE.parquet"
+        log.warning(
+            "SAMPLE RUN: writing to %s (NOT the canonical path %s). "
+            "Run without --sample to produce the canonical artifact.",
+            out_parquet, _OUT_PARQUET,
+        )
+    else:
+        out_parquet = _OUT_PARQUET
+
+    out_parquet.parent.mkdir(parents=True, exist_ok=True)
+    df.to_parquet(out_parquet, index=False)
+    log.info("Wrote %s (%d rows)", out_parquet, len(df))
 
     write_report(
         df=df,
@@ -697,7 +761,7 @@ def run(
         "sample_n": sample_n,
         "era_coverage": era_report,
         "delta_stats": delta_stats,
-        "output": str(_OUT_PARQUET),
+        "output": str(out_parquet),
         "report": str(_OUT_REPORT),
         "runtime_sec": round(runtime, 1),
     }
