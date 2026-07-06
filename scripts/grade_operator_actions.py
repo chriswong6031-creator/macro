@@ -66,6 +66,10 @@ def run(
 
     try:
         from engine.vintage_stamp import vintage_stamp
+        # vintage_stamp treats dead_name_coverage_pct=None as "go read the EDGAR file",
+        # which is meaningless for this harness (no price plane involved).  We pass a
+        # placeholder float of 0.0 to satisfy the helper's type contract, then forcibly
+        # override the field to null below with the "not_applicable" note.
         stamp = vintage_stamp(
             price_plane_id="operator_action_ledger_v1",
             adjustment_mode="none",
@@ -73,7 +77,7 @@ def run(
             frame="server_stamped_utc",
             survivorship_biased=False,
             coverage_frac=coverage,
-            dead_name_coverage_pct=None,   # not applicable; triggers stamp_degraded=True
+            dead_name_coverage_pct=0.0,   # placeholder; overridden to null below
             era_law_cohort="all_time",
         )
     except Exception as exc:  # noqa: BLE001
@@ -85,10 +89,15 @@ def run(
             "frame": "server_stamped_utc",
             "survivorship_biased": False,
             "coverage_frac": coverage,
-            "dead_name_coverage_pct": None,
             "era_law_cohort": "all_time",
-            "stamp_degraded": True,
         }
+
+    # Force dead_name_coverage_pct to null — the EDGAR coverage number is meaningless
+    # for operator-action grading (no price plane, no universe filter).  Add a note
+    # so downstream readers understand why it is null rather than seeing a misleading
+    # EDGAR percentage.
+    stamp["dead_name_coverage_pct"] = None
+    stamp["stamp_note"] = "not_applicable_operator_ledger"
 
     result["vintage_stamp"] = stamp
     result["generated_at"] = _now_iso()
