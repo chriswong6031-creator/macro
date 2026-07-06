@@ -73,8 +73,8 @@ def test_all_artifact_ids_present():
     with _SYNAPSE_YML.open(encoding="utf-8") as fh:
         registry = yaml.safe_load(fh)
     artifact_ids = list(registry.get("artifacts", {}).keys())
-    assert len(artifact_ids) == 144, (
-        f"Expected 138 artifacts in synapse.yml, found {len(artifact_ids)}. "
+    assert len(artifact_ids) == 145, (
+        f"Expected 145 artifacts in synapse.yml, found {len(artifact_ids)}. "
         "Update the test if the registry count changed intentionally."
         " (W7b added machine-registry, cortex-attention-grades, cortex-probation = 104->107;"
         " W6b added ops-push-basket-freeze, ops-push-signal-sanity, ops-push-healthcheck = 107->110;"
@@ -94,7 +94,8 @@ def test_all_artifact_ids_present():
         " NW-rails PR-4 added dispersion-regime = 136->137;"
         " long-hold W2 PR-J two clocks added long-hold-clocks = 137->138;"
         " NW-rails PR-1 added rule-experiment-registry, rule-experiment-summaries = 141->143;"
-        " NW-rails PR-6 added grading-closure = 143->144)"
+        " NW-rails PR-6 added grading-closure = 143->144;"
+        " long-hold W2 PR-I added long-hold-compounder-features = 144->145)"
     )
     content = generate(_SYNAPSE_YML)
     missing = [aid for aid in artifact_ids if aid not in content]

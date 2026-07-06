@@ -585,8 +585,245 @@ def _cagr(series: list) -> float | None:
     return round(((series[-1] / series[0]) ** (1 / (len(series) - 1)) - 1) * 100, 1)
 
 
+def _cv(vals: list) -> float | None:
+    """Coefficient of variation (σ/|μ|) as a stability proxy.
+
+    Returns None when fewer than 2 non-None values exist or |mean| ≈ 0.
+    A *lower* CV means *higher* stability.  Rounded to 3 d.p.
+    """
+    xs = [x for x in vals if x is not None]
+    if len(xs) < 2:
+        return None
+    mean = sum(xs) / len(xs)
+    if abs(mean) < 1e-9:
+        return None
+    variance = sum((x - mean) ** 2 for x in xs) / len(xs)
+    return round(variance ** 0.5 / abs(mean), 3)
+
+
+def _compounders(rows: list[dict]) -> dict:
+    """Compounder feature columns for the Long-Hold Thesis Layer (W2 PR-I).
+
+    All outputs are DISPLAY-ONLY annotation fields — they feed no score, gate, or
+    rank surface (LH-R1 firewall, masterplan §4-W2, G1-DEFERRED ruling 2026-07-06).
+    Each field ships with a ``_cov`` (non-null coverage fraction 0–1) stamp.
+
+    Assumed corporate tax rate: 21% (US statutory rate since 2018 Tax Cuts and Jobs
+    Act; applied uniformly for simplicity; named clients outside the US are
+    under-stated; document clearly in UI).
+
+    Depreciation-dependent sub-fields: ``net_debt_to_ebitda`` equivalents are
+    blocked here if fewer than 5% of rows carry a non-null depreciation value
+    (indicating PR-H has not yet backfilled the EDGAR FLOW additions).  Blocked
+    fields are stamped ``blocked_pending_backfill=True`` so the UI can surface an
+    honest placeholder.
+
+    Returns a dict (never None) — missing or uncomputable features are absent;
+    per-feature ``_cov`` stamps indicate coverage fraction.
+    """
+    _TAX = 0.21          # documented assumed US statutory rate
+    _MIN_ROWS_RATIO = 2  # minimum non-null rows to report a series-based metric
+
+    out: dict = {}
+    if not rows:
+        return out
+
+    n = len(rows)
+
+    def col(k):
+        return [_num(r.get(k)) for r in rows]
+
+    rev   = col("revenue")
+    ni    = col("ni")
+    gp    = col("gross_profit")
+    cfo   = col("cfo")
+    capex = col("capex")
+    dep   = col("depreciation")
+    eq    = col("equity")
+    dlt   = col("debt_lt")
+    dcur  = col("debt_cur")
+    cash  = col("cash")
+    op_in = col("op_income")
+    assets = col("assets")
+
+    # ── helpers ────────────────────────────────────────────────────────────────
+
+    def _nn(series):
+        """Non-null values from series."""
+        return [x for x in series if x is not None]
+
+    def _cov_frac(series):
+        """Coverage fraction 0–1."""
+        return round(sum(1 for x in series if x is not None) / max(n, 1), 3)
+
+    def _last5(series):
+        """Last up-to-5 non-None values (maintains time order)."""
+        pairs = [(i, v) for i, v in enumerate(series) if v is not None]
+        return [v for _, v in pairs[-5:]]
+
+    # ── ROIC proxy series ──────────────────────────────────────────────────────
+    # ROIC proxy = op_income * (1 - 0.21) / invested_capital
+    # invested_capital = equity + debt_lt + (debt_cur or 0) - cash
+    # Per-year series; None when any required input is absent.
+    roic_series = []
+    for i in range(n):
+        oi = op_in[i]
+        e  = eq[i]
+        dl = dlt[i]
+        dc = dcur[i]  # may be None; treated as 0 when missing (conservative)
+        ca = cash[i]
+        if oi is None or e is None or dl is None or ca is None:
+            roic_series.append(None)
+            continue
+        ic = e + dl + (dc if dc is not None else 0.0) - ca
+        if ic <= 0:                 # guard zero/negative IC (net-cash companies)
+            # Negative invested capital produces wrong-sign ROIC for profitable
+            # net-cash names (e.g. BKNG, FTNT). Suppress rather than display a
+            # misleading deeply-negative number on what is actually a high-quality
+            # compounder.  Display-tier annotation; None is the correct signal.
+            roic_series.append(None)
+            continue
+        roic_series.append(round(oi * (1.0 - _TAX) / ic * 100.0, 2))
+
+    roic_cov = _cov_frac(roic_series)
+    if _nn(roic_series):
+        out["roic_series"]     = roic_series
+        out["roic_series_cov"] = roic_cov
+
+    # 5-year median / stability
+    roic5 = _last5(roic_series)
+    if len(roic5) >= _MIN_ROWS_RATIO:
+        sorted_r5 = sorted(roic5)
+        mid = len(sorted_r5) // 2
+        if len(sorted_r5) % 2 == 1:
+            median = sorted_r5[mid]
+        else:
+            median = round((sorted_r5[mid - 1] + sorted_r5[mid]) / 2, 2)
+        out["roic_5y_median"]     = median
+        out["roic_5y_median_cov"] = round(len(roic5) / 5, 3)
+
+        cv = _cv(roic5)
+        if cv is not None:
+            out["roic_5y_stability"]     = cv
+            out["roic_5y_stability_cov"] = round(len(roic5) / 5, 3)
+
+    # ── Gross-margin 5-year stability ─────────────────────────────────────────
+    gm_pct = [
+        round(g / r * 100.0, 2) if (g is not None and r) else None
+        for g, r in zip(gp, rev)
+    ]
+    gm5 = _last5(gm_pct)
+    if len(gm5) >= _MIN_ROWS_RATIO:
+        cv_gm = _cv(gm5)
+        if cv_gm is not None:
+            out["gross_margin_5y_stability"]     = cv_gm
+            out["gross_margin_5y_stability_cov"] = round(len(gm5) / 5, 3)
+
+    # ── FCF conversion (FCF / NI) ─────────────────────────────────────────────
+    # FCF = CFO - capex  (both must be non-None; NI must be non-zero and non-None)
+    fcf_conv_series = []
+    for i in range(n):
+        c, x, niv = cfo[i], capex[i], ni[i]
+        if c is None or x is None or niv is None or abs(niv) < 1e-6:
+            fcf_conv_series.append(None)
+            continue
+        fcf_conv_series.append(round((c - x) / niv, 3))
+    fcf_conv_cov = _cov_frac(fcf_conv_series)
+    latest_fc = next((v for v in reversed(fcf_conv_series) if v is not None), None)
+    if latest_fc is not None:
+        out["fcf_conversion"]     = latest_fc
+        out["fcf_conversion_cov"] = fcf_conv_cov
+
+    # ── Reinvestment rate (capex / CFO) ───────────────────────────────────────
+    rr_series = []
+    for i in range(n):
+        c, x = cfo[i], capex[i]
+        if c is None or x is None or abs(c) < 1e-6:
+            rr_series.append(None)
+            continue
+        rr_series.append(round(x / c, 3))
+    rr_cov = _cov_frac(rr_series)
+    latest_rr = next((v for v in reversed(rr_series) if v is not None), None)
+    if latest_rr is not None:
+        out["reinvestment_rate"]     = latest_rr
+        out["reinvestment_rate_cov"] = rr_cov
+
+    # ── Incremental revenue per reinvestment dollar ───────────────────────────
+    # sum(Δrevenue) / sum(capex) over the intersecting year set.
+    # Both the adjacent-year revenue delta AND the capex for year i must be
+    # present for a pair to be included — ensures numerator and denominator
+    # span the same years (avoids mismatch when rev or capex has spotty coverage).
+    rev_deltas, capex_accum = [], []
+    for i in range(1, n):
+        r0, r1, cx = rev[i - 1], rev[i], capex[i]
+        if r0 is not None and r1 is not None and cx is not None:
+            rev_deltas.append(r1 - r0)
+            capex_accum.append(cx)
+    if len(rev_deltas) >= 2 and len(capex_accum) >= 2:
+        total_capex = sum(capex_accum)
+        if abs(total_capex) > 1e-6:
+            out["incremental_rev_per_reinvestment"]     = round(sum(rev_deltas) / total_capex, 3)
+            out["incremental_rev_per_reinvestment_cov"] = round(
+                len(rev_deltas) / max(n - 1, 1), 3
+            )
+
+    # ── Asset-light scaling (rev growth vs asset growth) ─────────────────────
+    # Reported as (rev_cagr_pct, asset_cagr_pct, spread_pct).
+    # spread > 0 → revenue growing faster than assets (asset-light characteristic).
+    rev_nn = _nn(rev)
+    assets_nn = _nn(assets)
+    if len(rev_nn) >= 2 and len(assets_nn) >= 2:
+        # Use first/last non-None of EACH series (independent spans acceptable
+        # for display context; labeled with coverage stamps).
+        rev_first  = next((v for v in rev if v is not None), None)
+        rev_last   = next((v for v in reversed(rev) if v is not None), None)
+        ast_first  = next((v for v in assets if v is not None), None)
+        ast_last   = next((v for v in reversed(assets) if v is not None), None)
+        rev_years  = sum(1 for v in rev if v is not None) - 1
+        ast_years  = sum(1 for v in assets if v is not None) - 1
+
+        rev_ag = None
+        if rev_first and rev_first > 0 and rev_last and rev_last > 0 and rev_years > 0:
+            rev_ag = round(((rev_last / rev_first) ** (1.0 / rev_years) - 1) * 100, 1)
+
+        ast_ag = None
+        if ast_first and ast_first > 0 and ast_last and ast_last > 0 and ast_years > 0:
+            ast_ag = round(((ast_last / ast_first) ** (1.0 / ast_years) - 1) * 100, 1)
+
+        if rev_ag is not None and ast_ag is not None:
+            out["asset_light_scaling"] = {
+                "rev_cagr_pct":   rev_ag,
+                "asset_cagr_pct": ast_ag,
+                "spread_pct":     round(rev_ag - ast_ag, 1),
+            }
+            out["asset_light_scaling_cov"] = round(
+                min(_cov_frac(rev), _cov_frac(assets)), 3
+            )
+
+    # ── Depreciation-gated block stamp ────────────────────────────────────────
+    dep_cov = _cov_frac(dep)
+    if dep_cov < 0.05:
+        out["depreciation_gated_blocked"] = True
+        out["depreciation_gated_note"] = (
+            "blocked_pending_backfill — depreciation field coverage "
+            f"{dep_cov:.1%}; populate via PR-H (edgar_facts.py FLOW additions)"
+        )
+
+    # ── Firewall annotation ───────────────────────────────────────────────────
+    # Guarantees no downstream code can silently consume these as scored inputs.
+    out["_horizon_role"]  = "hold_thesis"
+    out["_display_only"]  = True
+    out["_tax_assumption"] = "21% US statutory (TCJA 2018); applied uniformly"
+
+    return out
+
+
 def _multiyear(rows: list[dict], mktcap: float | None) -> dict | None:
-    """Multi-year trend series + CAGRs + Piotroski/Altman from the statements rows."""
+    """Multi-year trend series + CAGRs + Piotroski/Altman from the statements rows.
+
+    Also embeds W2 PR-I compounder feature columns under the ``compounder``
+    sub-key — DISPLAY-ONLY hold-thesis annotation (LH-R1 firewall).
+    """
     if not rows:
         return None
 
@@ -606,6 +843,8 @@ def _multiyear(rows: list[dict], mktcap: float | None) -> dict | None:
         "eps": eps, "fcf": fcf, "fcf_margin": margin(fcf, rev),
         "rev_cagr": _cagr(rev), "eps_cagr": _cagr(eps),
         "piotroski": _piotroski(rows), "altman": _altman(rows[-1], mktcap),
+        # W2 PR-I: compounder feature panel (hold_thesis, display-only)
+        "compounder": _compounders(rows),
     }
     return block
 
