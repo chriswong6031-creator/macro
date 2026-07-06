@@ -469,6 +469,8 @@ lanes:
         module: engine.run
       - id: build_world_state
         module: scripts.build_world_state
+      - id: build_nw_mastermind_context
+        module: scripts.build_nw_mastermind_context
       # spine (serial)
       - id: build_spvector
         module: scripts.build_spvector

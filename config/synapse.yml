@@ -4852,8 +4852,7 @@ artifacts:
       and must NOT be listed as a ledger writer.
       See research/RESEARCH_FACTORY_MASTERPLAN_BY_FABLE.md §5.4.
 
-  # ============================================================
-  # FACTOR INTELLIGENCE × NEURAL WEB INTEGRATION (RUL-NW1/NW10/NW11)
+  # =====================================================  # FACTOR INTELLIGENCE × NEURAL WEB INTEGRATION (RUL-NW1/NW10/NW11)
   # §D PR-1: state artifact + long-term factor pool + narrow advancer
   # ============================================================
 
@@ -4868,6 +4867,25 @@ artifacts:
     asof_field: as_of
     freshness_sla_hours: 30
     schema: neuralweb.factor_intelligence_state.v1
+  # --- NW Macro Context Rail R5 (PR-A) — 10 existing-producer registrations ---
+  # All entries: owner_program=macro-context-rail, tier=display, horizon_role=context,
+  # storage=git, schema=implicit, weights=none, scored_path_surfaces=[],
+  # consumers=[engine/neuralweb/world_state.py], external_consumers=[].
+  # asof_field verified against live artifact keys on 2026-07-06 (origin/main e0e9f71cc6).
+  # NOTE: consumers list will be extended to include scripts/build_macro_snapshot.py
+  # once PR-C lands (producer-existence law prevents registering it here).
+
+  forex-latest:
+    path: data/forex/latest.json
+    format: json
+    producer: scripts/build_forex.py
+    known_extra_writers: []
+    owner_program: macro-context-rail
+    cadence: daily-engine
+    storage: git
+    asof_field: date
+    freshness_sla_hours: 30
+    schema: implicit
     tier: display
     horizon_role: context
     weights: none
@@ -4946,6 +4964,24 @@ artifacts:
     asof_field: as_of
     freshness_sla_hours: 30
     schema: neuralweb.fire_coordinates.v1
+    external_consumers: []
+    notes: >
+      R5 macro context rail — FX / dollar regime snapshot.
+      Producer: scripts/build_forex.py:635 (outdir/"latest.json").write_text(...).
+      asof_field=date (display string); flips to asof (ISO) in PR-E of this program
+      once build_forex.py adds the ISO field — note anticipates that change.
+
+  transmission-latest:
+    path: data/transmission/latest.json
+    format: json
+    producer: scripts/build_transmission.py
+    known_extra_writers: []
+    owner_program: macro-context-rail
+    cadence: daily-engine
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 30
+    schema: implicit
     tier: display
     horizon_role: context
     weights: none
@@ -4972,6 +5008,45 @@ artifacts:
     asof_field: date
     freshness_sla_hours: 30
     schema: neuralweb.factor_contradictions.v1
+      - engine/neuralweb/world_state.py
+    external_consumers: []
+    notes: >
+      R5 macro context rail — rates/inflation transmission contract.
+      Producer: scripts/build_transmission.py:84 (outdir/"latest.json").write_text(...).
+
+  bond-health:
+    path: data/bonds/bond_health.json
+    format: json
+    producer: scripts/build_bonds.py
+    known_extra_writers: []
+    owner_program: macro-context-rail
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/neuralweb/world_state.py
+    external_consumers: []
+    notes: >
+      R5 macro context rail — bond health dashboard snapshot.
+      Producer: scripts/build_bonds.py:671 (outdir/"bond_health.json").write_text(...).
+
+  commodity-latest:
+    path: data/commodity/latest.json
+    format: json
+    producer: scripts/build_commodities.py
+    known_extra_writers: []
+    owner_program: macro-context-rail
+    cadence: daily-engine
+    storage: git
+    asof_field: date
+    freshness_sla_hours: 30
+    schema: implicit
     tier: display
     horizon_role: context
     weights: none
@@ -4985,3 +5060,146 @@ artifacts:
       keyed (date, ticker). Severity hardcoded to 'note' until H2 GATE-PASSED.
       display_only=true unconditionally. Single-writer: engine/neuralweb/factor_contradictions.py.
       0-20 rows/day; dormant until panel has >= 60 distinct dates.
+      - engine/neuralweb/world_state.py
+    external_consumers: []
+    notes: >
+      R5 macro context rail — commodity regime snapshot.
+      Producer: scripts/build_commodities.py:615 (outdir/"latest.json").write_text(...).
+      asof_field=date (display string); flips to asof (ISO) in PR-E of this program
+      once build_commodities.py adds the ISO field — note anticipates that change.
+
+  china-regime-latest:
+    path: data/china_regime/latest.json
+    format: json
+    producer: engine/china_run.py
+    known_extra_writers: []
+    owner_program: macro-context-rail
+    cadence: asia-close
+    storage: git
+    asof_field: date
+    freshness_sla_hours: 40
+    schema: implicit
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/neuralweb/world_state.py
+    external_consumers: []
+    notes: >
+      R5 macro context rail — China quad/regime snapshot.
+      Producer: engine/china_run.py:104 open(p/"latest.json","w") json.dump.
+
+  hk-regime-latest:
+    path: data/hk_regime/latest.json
+    format: json
+    producer: engine/hk_run.py
+    known_extra_writers: []
+    owner_program: macro-context-rail
+    cadence: asia-close
+    storage: git
+    asof_field: date
+    freshness_sla_hours: 40
+    schema: implicit
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/neuralweb/world_state.py
+    external_consumers: []
+    notes: >
+      R5 macro context rail — Hong Kong quad/regime snapshot.
+      Producer: engine/hk_run.py:113 open(p/"latest.json","w") json.dump.
+
+  canada-regime-latest:
+    path: data/canada_regime/latest.json
+    format: json
+    producer: engine/canada_run.py
+    known_extra_writers:
+      - "scripts/build_vector.py — invokes build_canada.main() as a side-effect hook (build_canada is called from build_vector; see scripts/build_vector.py:3116-3117)"
+    owner_program: macro-context-rail
+    cadence: daily-engine
+    storage: git
+    asof_field: date
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/neuralweb/world_state.py
+    external_consumers: []
+    notes: >
+      R5 macro context rail — Canada quad/regime snapshot.
+      Producer: engine/canada_run.py:73 open(p/"latest.json","w") json.dump.
+      known_extra_writers: build_vector.py invokes build_canada as a side-effect
+      (scripts/build_vector.py:3116-3117 — TODO comment marks this as a planned
+      migration to a proper daily.yml step).
+
+  site-intelligence-briefing:
+    path: site/intelligence/briefing.json
+    format: json
+    producer: scripts/build_briefing.py
+    known_extra_writers: []
+    owner_program: macro-context-rail
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/neuralweb/world_state.py
+    external_consumers: []
+    notes: >
+      R5 macro context rail — daily intelligence briefing snapshot.
+      Producer: scripts/build_briefing.py:33 (outdir/"briefing.json").write_text(...).
+
+  site-factor-series:
+    path: site/factordata/factor_series.json
+    format: json
+    producer: scripts/build_factor_series.py
+    known_extra_writers: []
+    owner_program: macro-context-rail
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/neuralweb/world_state.py
+    external_consumers: []
+    notes: >
+      R5 macro context rail — factor return series and rotation data.
+      Producer: scripts/build_factor_series.py:50 (fdir/"factor_series.json").write_text(...).
+
+  site-alerts-triage:
+    path: site/factordata/alerts_triage.json
+    format: json
+    producer: scripts/build_site.py
+    known_extra_writers: []
+    owner_program: macro-context-rail
+    cadence: daily-engine
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/neuralweb/world_state.py
+    external_consumers: []
+    notes: >
+      R5 macro context rail — alerts triage summary artifact.
+      Producer: scripts/build_site.py:2186 (fdir/"alerts_triage.json").write_text(...).

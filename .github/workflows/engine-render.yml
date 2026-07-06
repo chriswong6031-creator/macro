@@ -144,6 +144,13 @@ jobs:
         # that reads it during the render (the builders run after this step and
         # read data/neuralweb/world_state.json from the working tree).
         run: python -m scripts.build_world_state || echo "::warning::build_world_state failed (non-fatal) — keeping last committed world_state"
+      - name: build mastermind context (NW bridge)
+        if: always()
+        # NW → Mastermind bridge W1: compile data/neuralweb/mastermind_context.json and
+        # site/neuralwebdata/mastermind_context.json from committed NW outputs.
+        # Must run AFTER build world state so world_state.json is fresh.
+        # Resilient: fail-open; kept last committed context on error; never blocks the render.
+        run: python -m scripts.build_nw_mastermind_context || echo "::warning::build_nw_mastermind_context failed (non-fatal) — keeping last committed mastermind_context"
       - name: re-render pages from the freshly recomputed engine output (resilient)
         # IDENTICAL to render.yml's render step — reads the engine output just recomputed above
         # (regime/latest.json + the MTF leaf, now in the working tree) and re-renders every page.

@@ -17,8 +17,11 @@ Individual circuit-broken sources are reported as warnings but don't fail the ch
 """
 from __future__ import annotations
 
+import argparse
 import json
 import sys
+import urllib.error
+import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -90,6 +93,39 @@ def check_r2_freshness(now: datetime) -> dict:
         return {"ok": True, "fail_reasons": [], "warnings": [f"r2 freshness check skipped: {e!r}"]}
 
 
+_LIVE_ROUTE_BASE = "https://mastermind-x.com/neuralwebdata"
+_LIVE_ROUTE_FILES = [
+    "mastermind_context.json",
+    "bottom_sensors.json",
+    "confluence_graph.json",
+    "kernel_families.json",
+]
+
+
+def check_live_routes(timeout: float = 8.0) -> dict:
+    """Probe the four public neuralwebdata JSON routes via HEAD requests.
+
+    Fail-open: any network-level error (no connectivity, timeout, DNS) degrades to a
+    warning, never a hard failure — so CI without outbound network access is unaffected.
+    A definitive HTTP non-200 from a reachable host is reported as a warning line.
+    Returns the same {ok, fail_reasons, warnings} shape as the other probes.
+    """
+    warnings: list[str] = []
+    for fname in _LIVE_ROUTE_FILES:
+        url = f"{_LIVE_ROUTE_BASE}/{fname}"
+        try:
+            req = urllib.request.Request(url, method="HEAD")
+            with urllib.request.urlopen(req, timeout=timeout) as resp:
+                status = resp.status
+            if status != 200:
+                warnings.append(f"live-route {fname}: HTTP {status} (expected 200)")
+        except urllib.error.HTTPError as exc:
+            warnings.append(f"live-route {fname}: HTTP {exc.code} {exc.reason}")
+        except Exception as exc:  # noqa: BLE001 — network absent / timeout / DNS — degrade
+            warnings.append(f"live-route {fname}: network error (non-fatal) — {type(exc).__name__}: {exc}")
+    return {"ok": True, "fail_reasons": [], "warnings": warnings}
+
+
 def _notify(report: dict) -> None:
     """Best-effort outbound alert via the W6b push spine.
     The non-zero exit is the primary signal; push_ops_alert() dispatches raw
@@ -109,7 +145,25 @@ def _notify(report: dict) -> None:
         pass
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description="Macro Dashboard heartbeat check")
+    parser.add_argument(
+        "--live-routes", action="store_true",
+        help="Probe the four public mastermind-x.com/neuralwebdata routes (HEAD). "
+             "Fail-open: network errors degrade to warnings only.",
+    )
+    args = parser.parse_args(argv)
+
+    # --live-routes standalone: run only the live-route probe and exit.
+    if args.live_routes:
+        now = datetime.now(timezone.utc)
+        lr = check_live_routes()
+        for w in lr["warnings"]:
+            print(f"::warning::{w}")
+        if not lr["warnings"]:
+            print("live-routes OK — all 4 neuralwebdata routes responded 200")
+        return 0  # always exit 0 — live-route probe is advisory / W3 PR-F only
+
     cfg = (config.load().get("healthcheck", {}) or {})
     now = datetime.now(timezone.utc)
     p = config.data_dir() / "run_status.json"

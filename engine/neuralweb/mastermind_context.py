@@ -189,14 +189,21 @@ def _build_lobe_manifest(registry: dict, repo: Path, now: datetime) -> list[dict
         path_str = entry.get("path", "")
         artifact_path = repo / path_str if path_str else None
         asof = None
-        stale = True
+        stale = None  # unknown until we read the file
         if artifact_path and artifact_path.exists():
-            try:
-                obj = json.loads(artifact_path.read_text(encoding="utf-8"))
-                asof = _asof_of(obj)
-                stale = _is_stale(asof)
-            except Exception:  # noqa: BLE001
-                stale = True
+            if path_str.endswith(".parquet"):
+                # Parquet artifacts cannot be read via json.loads.
+                # Leave asof=None and stale=None (unknown) rather than
+                # reporting stale=True, which would produce a spurious
+                # perma-stale flag (e.g. options-entry-state).
+                pass
+            else:
+                try:
+                    obj = json.loads(artifact_path.read_text(encoding="utf-8"))
+                    asof = _asof_of(obj)
+                    stale = _is_stale(asof)
+                except Exception:  # noqa: BLE001
+                    stale = None
         rows.append({
             "artifact_id": artifact_id,
             "path": path_str,
