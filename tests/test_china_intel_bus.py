@@ -401,6 +401,26 @@ def test_template_renders_command_section(tmp_path, monkeypatch):
                          "off_high_pct": -8.5, "rolling_over": False},
                 "read": "A leading desk is ahead of the crowd — early, ~93% edge remaining.",
             },
+            {
+                # veto-blind row: traj is None and MUST NOT crash the render
+                # (missing traj keys pass `is not none` as Undefined then crash on compare)
+                "ticker": "832000.BJ", "name": "无价名", "stage": "early",
+                "opportunity_score": 61.0, "edge_remaining": None,
+                "edge_drivers": [], "edge_components": 0,
+                "leading_gap": 1, "lead_up": 1, "lag_up": 0, "signal_core": 0.61,
+                "falsifier": None, "falsifier_penalty": 1.0,
+                "directions": {"altdata": 1, "radar": None, "news": None, "board": None},
+                "desk_matrix": {
+                    "news": {"present": False, "dir": None},
+                    "altdata": {"present": True, "dir": 1},
+                    "radar": {"present": False, "dir": None},
+                    "board": {"present": False, "dir": None},
+                    "special": {"present": False, "dir": None},
+                },
+                "off_desk": True, "veto_blind": True,
+                "traj": None,
+                "read": "Leading signal, no price plane — veto blind.",
+            },
         ],
         "discovery": [
             {

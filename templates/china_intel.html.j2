@@ -593,13 +593,14 @@
             {%- if d.veto_blind %}
               <span class="rs-chip rs-neg" data-tip-en="no price plane / veto blind" data-tip-zh="无价格数据">no price plane / 无价格数据</span>
             {%- else %}
-              {%- if _traj.rs_20d is not none %}
-                <span class="rs-chip {{ 'rs-pos' if _traj.rs_20d > 3 else ('rs-neg' if _traj.rs_20d < -3 else 'rs-neu') }}">
-                  RS {{ "%+.0f"|format(_traj.rs_20d) }}%
+              {#- .get() access: missing traj keys pass `is not none` as Undefined then crash on compare (house gotcha) #}
+              {%- if _traj.get('rs_20d') is not none %}
+                <span class="rs-chip {{ 'rs-pos' if _traj.get('rs_20d') > 3 else ('rs-neg' if _traj.get('rs_20d') < -3 else 'rs-neu') }}">
+                  RS {{ "%+.0f"|format(_traj.get('rs_20d')) }}%
                 </span>
               {%- endif %}
-              {%- if _traj.off_high_pct is not none %}
-                &nbsp;<span class="rs-chip rs-neu">{{ "%+.0f"|format(_traj.off_high_pct) }}%H</span>
+              {%- if _traj.get('off_high_pct') is not none %}
+                &nbsp;<span class="rs-chip rs-neu">{{ "%+.0f"|format(_traj.get('off_high_pct')) }}%H</span>
               {%- endif %}
             {%- endif %}
           </td>
@@ -650,8 +651,11 @@
             <td><span class="edge-bar"><i style="width:{{ (d.edge_remaining or 0)*100 }}%"></i></span> {{ "%.0f"|format((d.edge_remaining or 0)*100) }}%</td>
             <td><span class="opp-score">{{ "%.0f"|format(d.opportunity_score or 0) }}</span></td>
             <td>
-              {%- if _traj2.rs_20d is not none %}<span class="rs-chip {{ 'rs-pos' if _traj2.rs_20d > 3 else ('rs-neg' if _traj2.rs_20d < -3 else 'rs-neu') }}">RS {{ "%+.0f"|format(_traj2.rs_20d) }}%</span>{%- endif %}
-              {%- if _traj2.off_high_pct is not none %}&nbsp;<span class="rs-chip rs-neu">{{ "%+.0f"|format(_traj2.off_high_pct) }}%H</span>{%- endif %}
+              {%- if d.veto_blind %}<span class="rs-chip rs-neg" data-tip-en="no price plane / veto blind" data-tip-zh="无价格数据">no price plane / 无价格数据</span>
+              {%- else %}
+              {%- if _traj2.get('rs_20d') is not none %}<span class="rs-chip {{ 'rs-pos' if _traj2.get('rs_20d') > 3 else ('rs-neg' if _traj2.get('rs_20d') < -3 else 'rs-neu') }}">RS {{ "%+.0f"|format(_traj2.get('rs_20d')) }}%</span>{%- endif %}
+              {%- if _traj2.get('off_high_pct') is not none %}&nbsp;<span class="rs-chip rs-neu">{{ "%+.0f"|format(_traj2.get('off_high_pct')) }}%H</span>{%- endif %}
+              {%- endif %}
             </td>
             <td><div class="cmd-read">{{ d.read }}</div></td>
           </tr>
