@@ -418,6 +418,15 @@ def _write_report(status: str = "DATA-BLOCKED") -> None:
 
 
 def main() -> None:
+    # LEDGER-ADVANCE POLICY: main() writes 4 rows to the forward trial ledger
+    # (engine/trial_ledger.py, default path data/trial_ledger.jsonl).
+    # This is intentional pre-registration logging (grid before results, house rule).
+    # CONSTRAINT: this function MUST be invoked only by the nightly CI job that owns
+    # forward-ledger advancement.  Do NOT call main() in intraday/worktree lanes,
+    # and do NOT commit data/trial_ledger.jsonl changes — the ledger file is tracked
+    # but only the nightly job is entitled to advance it.  The harness was correctly
+    # NOT run at commit time; data/trial_ledger.jsonl contains no w2044 rows in HEAD.
+    # In tests, monkeypatch engine.trial_ledger.DEFAULT_PATH to a tmp_path ledger.
     print("=" * 70)
     print("W2-044 WARN Intensity Phase-0")
     print("=" * 70)

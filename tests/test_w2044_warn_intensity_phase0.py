@@ -254,20 +254,17 @@ class TestMainRun:
     """main() must run to completion and produce the report with DATA-BLOCKED verdict."""
 
     def test_main_runs_without_error(self, tmp_path, monkeypatch, capsys):
-        monkeypatch.setattr(w2044, "REPORT_PATH", tmp_path / "test_report.md")
-        # Redirect trial ledger to tmp dir to avoid touching the real ledger
         import engine.trial_ledger as tl
-        real_path = tl.TrialLedger.__init__
-        orig_path_attr = getattr(tl.TrialLedger, 'path', None)
-
-        # Run main — it may write to the real ledger (that's fine; it's idempotent)
-        # but redirect the report path
+        monkeypatch.setattr(tl, "DEFAULT_PATH", tmp_path / "ledger.jsonl")
+        monkeypatch.setattr(w2044, "REPORT_PATH", tmp_path / "test_report.md")
         w2044.main()
         captured = capsys.readouterr()
         assert "DATA-BLOCKED" in captured.out
         assert "PARK" in captured.out
 
     def test_main_produces_report_file(self, tmp_path, monkeypatch):
+        import engine.trial_ledger as tl
+        monkeypatch.setattr(tl, "DEFAULT_PATH", tmp_path / "ledger.jsonl")
         monkeypatch.setattr(w2044, "REPORT_PATH", tmp_path / "test_report.md")
         w2044.main()
         assert (tmp_path / "test_report.md").exists()
@@ -276,6 +273,8 @@ class TestMainRun:
 
     def test_main_zero_adequate_sources(self, capsys, tmp_path, monkeypatch):
         """main() must conclude with 0 adequate sources and trigger DATA-BLOCKED path."""
+        import engine.trial_ledger as tl
+        monkeypatch.setattr(tl, "DEFAULT_PATH", tmp_path / "ledger.jsonl")
         monkeypatch.setattr(w2044, "REPORT_PATH", tmp_path / "test_report.md")
         w2044.main()
         out = capsys.readouterr().out
