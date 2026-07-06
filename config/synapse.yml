@@ -4722,6 +4722,38 @@ artifacts:
       (end-of-collect, after all graders). Companion markdown table at docs/GRADING_CLOSURE.md.
       Fixes are per-program follow-ups; this rail makes standing status visible.
 
+  # --- NW Codex Three Lobes W-A (PR-B) governance artifact ---
+  claim-accountability:
+    path: data/governance/claim_accountability.json
+    format: json
+    producer: scripts/audit_claim_accountability.py
+    known_extra_writers: []
+    owner_program: neural-web
+    cadence: collect
+    storage: git
+    asof_field: generated_at
+    freshness_sla_hours: 30
+    schema: claim_accountability.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - docs/CLAIM_ACCOUNTABILITY.md
+    external_consumers: []
+    notes: >
+      NW Codex Three Lobes W-A (PR-B) — standing claim-accountability audit (RUL-C9).
+      Read-only over data/qledger/ (QI-owned, RUL-C3). Per desk and claim_family emits:
+      n_claims, falsifier_coverage, hit_gradeable_share (direction=0 claims are not
+      hit-gradeable — graded on excess only; does not contradict R2 audit CLOSED verdict),
+      maturity_mix (5d graded share; 21d/63d matured counts — 0 today, calendar-gated),
+      fill_convention_split (asof_legacy vs next_bar, #1180 discontinuity),
+      source_ontology_fill (source_tier/channels/source_id fill rates — near-zero;
+      per-source reliability unbuildable until >=500 graded labels).
+      Single writer: scripts/audit_claim_accountability.py run_as_collect_step
+      (end-of-collect, immediately after grading-closure audit).
+      Companion markdown at docs/CLAIM_ACCOUNTABILITY.md.
+
   # --- NW Rails post-Fable PR-1: DQ-2 operator-action grading harness ---
   operator-grading:
     path: data/governance/operator_grading.json

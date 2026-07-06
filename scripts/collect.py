@@ -792,6 +792,17 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — a governance audit must not abort the run
         log.error("[grading_closure] audit step crashed (non-fatal): %s", e)
 
+    # NW Codex Three Lobes W-A (PR-B) — claim-accountability standing audit (RUL-C9).
+    # Reads claims.jsonl + grades.jsonl + track_record.json; writes
+    # data/governance/claim_accountability.json + docs/CLAIM_ACCOUNTABILITY.md.
+    # Read-only over qledger (RUL-C3). Runs after grading-closure so both
+    # governance artifacts are updated together. Seconds only; never fatal.
+    try:
+        from scripts.audit_claim_accountability import run_as_collect_step as _claim_accountability_audit
+        _claim_accountability_audit()
+    except Exception as e:  # noqa: BLE001 — a governance audit must not abort the run
+        log.error("[claim_accountability] audit step crashed (non-fatal): %s", e)
+
     # SEC Fails-to-Deliver (SLF-001) — incremental daily append.
     # Fetches semi-monthly FTD files whose availability_date has passed since the
     # last panel date (uniform 30-day PIT lag enforced in the collector).
