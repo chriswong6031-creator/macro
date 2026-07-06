@@ -3,7 +3,7 @@
 LEAF · CONTEXT-ONLY · NEVER A SCORE/SIZE. The China sibling of the macro master_brain brief:
 it fans the FIVE China intelligence surfaces — News, Central-Bank/Policy, Alternative Data,
 Divergence Radar, and the central-intelligence Analysis — into ONE schema-versioned,
-machine-readable rollup (`china_intel.briefing.v5`) for hub display. The blocks assembled here
+machine-readable rollup (`china_intel.briefing.v6`) for hub display. The blocks assembled here
 are hub-display surfaces only; they reach the China Mastermind only via the digest summary
 line (see `_digest_text`). It DECOUPLES by reading each surface's already-emitted JSON off disk
 (build-order is the only dependency); every reader degrades to None and NOTHING here raises
@@ -21,6 +21,10 @@ degrade cleanly to None when their artifacts are absent. Schema bumped to v4.
 v5 (additive over v4): special_situations block reading site/chinaspecialdata/special.json
 (unlock overhang, inquiry letters, preannouncements, buybacks, pledge stress, ST watch,
 block-trade anomalies). Degrades cleanly when artifact absent. Schema bumped to v5.
+
+v6 (additive over v5): command block reading site/china_intel/command.json (W4 command
+apparatus — per-ticker fusion, edge-remaining ranking, discovery lanes). Compact top-10
+rows + counts + asof. Degrades cleanly when artifact absent. Schema bumped to v6.
 """
 from __future__ import annotations
 
@@ -33,7 +37,7 @@ from lib import config
 
 log = logging.getLogger(__name__)
 
-SCHEMA = "china_intel.briefing.v5"
+SCHEMA = "china_intel.briefing.v6"
 MAX_STALE_OK = 35
 
 DISCLAIMER = (
@@ -467,12 +471,49 @@ def _special_situations_block() -> dict | None:
 
 
 # --------------------------------------------------------------------------- #
+# v6: command block — compact top-10 from the W4 command apparatus
+# --------------------------------------------------------------------------- #
+def _command_block() -> dict | None:
+    """Compact command summary from site/china_intel/command.json (W4 apparatus).
+
+    Reads the already-built artifact (build order: build_china_intel_hub runs first).
+    Returns None when artifact absent — degrade-safe.  Additive over v5 (prefix-match safe).
+    """
+    try:
+        data = _read_json("china_intel/command.json")
+        if not isinstance(data, dict):
+            return None
+        command = data.get("command") or []
+        return {
+            "asof": data.get("as_of"),
+            "n_universe": data.get("n_universe"),
+            "counts": data.get("counts"),
+            "top10": [
+                {
+                    "ticker": d.get("ticker"),
+                    "name": d.get("name"),
+                    "stage": d.get("stage"),
+                    "opportunity_score": d.get("opportunity_score"),
+                    "edge_remaining": d.get("edge_remaining"),
+                    "leading_gap": d.get("leading_gap"),
+                }
+                for d in command[:10]
+            ],
+            "discovery_n": len(data.get("discovery") or []),
+            "is_context_only": True,
+        }
+    except Exception as e:  # noqa: BLE001
+        log.debug("china_intel_bus: command block failed (%s)", e)
+        return None
+
+
+# --------------------------------------------------------------------------- #
 # public
 # --------------------------------------------------------------------------- #
 def _staleness(b: dict) -> tuple[dict, int]:
     sa, worst = {}, 0
     for k in ("news", "policy", "altdata", "radar", "analysis",
-              "policy_phrase", "narrative_divergence", "special_situations"):
+              "policy_phrase", "narrative_divergence", "special_situations", "command"):
         d = (b.get(k) or {}).get("asof") if isinstance(b.get(k), dict) else None
         sa[k] = d
         if d:
@@ -493,7 +534,7 @@ def briefing(asof: date | str | None = None) -> dict:
         "news": None, "policy": None, "altdata": None, "radar": None, "analysis": None,
         "regime": None, "discovery": None,
         "policy_phrase": None, "narrative_divergence": None,
-        "special_situations": None,
+        "special_situations": None, "command": None,
         "disclaimer": DISCLAIMER, "disclaimer_zh": DISCLAIMER_ZH,
     }
     for key, fn in (("news", _news_block), ("policy", _policy_block),
@@ -502,7 +543,8 @@ def briefing(asof: date | str | None = None) -> dict:
                     ("discovery", _discovery_block),
                     ("policy_phrase", _policy_phrase_block),
                     ("narrative_divergence", _narrative_divergence_block),
-                    ("special_situations", _special_situations_block)):
+                    ("special_situations", _special_situations_block),
+                    ("command", _command_block)):
         try:
             b[key] = fn()
         except Exception as e:  # noqa: BLE001
@@ -517,7 +559,7 @@ def briefing(asof: date | str | None = None) -> dict:
     b["salience"] = a.get("what_matters") or []
     b["surfaces_present"] = [k for k in ("news", "policy", "altdata", "radar", "analysis",
                                         "policy_phrase", "narrative_divergence",
-                                        "special_situations") if b.get(k)]
+                                        "special_situations", "command") if b.get(k)]
     b["surface_asof"], b["max_staleness_days"] = _staleness(b)
     b["digest"] = _digest_text(b)
     return b

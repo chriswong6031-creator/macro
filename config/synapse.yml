@@ -2353,7 +2353,7 @@ artifacts:
       - engine/master_brain.py
     external_consumers:
       - mastermind:vendored
-    notes: "Producer: engine/china_intel_bus.py write_text. schema=china_intel.briefing.v5 constant at china_intel_bus.py. v5 adds special_situations block (additive over v4 policy_phrase + narrative_divergence)."
+    notes: "Producer: engine/china_intel_bus.py write_text. schema=china_intel.briefing.v6 constant at china_intel_bus.py. v6 adds command block (additive over v5 special_situations + v4 policy_phrase + narrative_divergence). Command block reads site/china_intel/command.json (W4 apparatus)."
     qual_ladder_ref: china_intel.news_dir
 
   site-china-special-sits:
@@ -2373,8 +2373,30 @@ artifacts:
     scored_path_surfaces: []
     consumers:
       - engine/china_intel_bus.py
+      - engine/china_intel_hub.py
     external_consumers: []
     notes: "Producer: engine/china_special_situations.py build(). Fuses unlocks/inquiry/preannounce/ST/buyback/pledge/block-trades into context-only JSON for the Special Situations desk page and hub card. schema=china_special_sits.v1."
+    qual_ladder_ref: china_intel.news_dir
+
+  site-china-intel-command:
+    path: site/china_intel/command.json
+    format: json
+    producer: engine/china_intel_hub.py
+    known_extra_writers: []
+    owner_program: china-intel-hub
+    cadence: asia-close
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: china_intel.command.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/china_intel_bus.py
+    external_consumers: []
+    notes: "Producer: engine/china_intel_hub.py build(). Per-ticker fusion of 5 China desks ranked by edge-remaining × opportunity (anti-echo-chamber, INTELLIGENCE_HUB_V2 rulings). Discovery lanes: LHB first-seat, margin velocity (EXPERIMENTAL), southbound delta, THS concepts. Snapshot ledger data/china_hub/signal_snapshots.jsonl appends daily under CN_LANE=asia. china-intel W4 added site-china-intel-command = 177->178"
     qual_ladder_ref: china_intel.news_dir
 
   # --- 3 consumers ---

@@ -12,7 +12,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 |---|---|
 | btc-vector | 5 |
 | china-alpha | 7 |
-| china-intel-hub | 1 |
+| china-intel-hub | 2 |
 | cycle-intelligence | 10 |
 | engine-fix | 16 |
 | entry-stack-expansion | 2 |
@@ -38,7 +38,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 98 |
+| display | 99 |
 | infrastructure | 47 |
 | scored | 4 |
 | shadow | 37 |
@@ -47,7 +47,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 180 |
+| git | 181 |
 | gitignored-local | 4 |
 | r2 | 2 |
 
@@ -79,7 +79,8 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
-| site-china-special-sits | `site/chinaspecialdata/special.json` | json | asia-close | display | 1 | 0 |
+| site-china-special-sits | `site/chinaspecialdata/special.json` | json | asia-close | display | 2 | 0 |
+| site-china-intel-command | `site/china_intel/command.json` | json | asia-close | display | 1 | 0 |
 
 ### cycle-intelligence
 

@@ -936,6 +936,11 @@ def main() -> int:
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.error("china special situations build failed (%s); skipping", e)
         try:
+            from scripts.build_china_intel_hub import build as _build_china_intel_hub
+            _build_china_intel_hub()  # command apparatus → site/china_intel/command.json
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.error("china intel hub command apparatus build failed (%s); skipping", e)
+        try:
             from scripts.build_china_intel import build as _build_china_intel
             _build_china_intel()      # fan-in 5 surfaces + analysis + hub for the China Mastermind (v5 schema)
         except Exception as e:  # noqa: BLE001 — additive, never fatal
