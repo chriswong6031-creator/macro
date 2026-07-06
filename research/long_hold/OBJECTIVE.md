@@ -613,9 +613,27 @@ market benchmark** in place of the missing sector benchmark:
 
 - Replace `sector_rel_252d` with `market_rel_252d` for every fire where `sector_rel_252d`
   is null at labeling time.
-- `market_rel_252d` = name's total return over 252 trading days from fire date minus the
-  equal-weight average 252d total return across **all tickers in the fire tape** that have
-  a resolvable price path for that 252d window.
+- `market_rel_252d` = name's 252-trading-day total return **minus** the equal-weight
+  average 252-trading-day total return across the benchmark constituent set S(f) for fire
+  f, defined as follows:
+  - **Fill anchor (identical to primary):** both the name leg and every constituent leg
+    use the next-bar-after-fire_date anchor (`fill_index` = `searchsorted(fire_date,
+    side='right')`, i.e. `fi + 1`). The forward window is `close.iloc[fi+1 : fi+1+252]`,
+    exactly matching `_total_return` in the primary label harness. Reading "from fire date"
+    means "fill-anchored at the next bar strictly after fire_date" — the same convention
+    used by the primary code to eliminate the 1-bar look-ahead.
+  - **Benchmark constituent set S(f):** for fire f, S(f) is the set of every ticker in
+    the fire tape whose 252-trading-day fill-anchored forward price path
+    (`close.iloc[fi+1 : fi+1+252]`) is **fully resolvable** (no NaN, length == 252) as of
+    that fire's own fire_date. Membership is evaluated per-fire using that fire's fi+1
+    anchor — it is not a pooled or shared set. Each constituent's 252d return is computed
+    on its own fire_date-specific fi+1..fi+252 window.
+  - **Survivorship caveat (inherited from §4.3):** in pre-2021 cohorts where dead names
+    are absent from the price tape, S(f) is survivor-upward-biased. This mechanically
+    depresses `market_rel_252d` for surviving names and can re-inflate Label G assignment.
+    All A1 results from pre-2021 cohorts carry the `survivorship_biased` stamp from §4.3
+    and the direction of induced bias (upward benchmark → downward `market_rel_252d` →
+    excess Label G) must be noted in every table that reports A1 outcomes.
 - The `>= 0` threshold is unchanged: `market_rel_252d >= 0` assigns Label A or B
   (depending on fundamentals); `market_rel_252d < 0` assigns Label G.
 - All other label logic, tercile cutoffs, fundamentals gates, cohort-year groupings,
@@ -627,13 +645,29 @@ primary results in every table.
 
 #### Interpretation rule (pre-registered, binding)
 
-- If primary and A1 agree on the kill verdict (both kill OR both survive): the agreed
-  verdict stands and is ratifiable.
-- If primary and A1 **disagree** on the kill verdict: neither a kill nor a pass may be
-  ratified. The program routes to **"benchmark-coverage remediation"**: build a fuller
-  sector-to-ticker mapping (covering at minimum the top-fired tickers), re-run label
-  harness with the improved mapping, and re-open the W1 study. W3/W4 remain suspended
-  during this remediation path.
+Each of primary and A1 produces one of three outcomes: **KILL**, **SURVIVE**, or
+**DEFERRED** (survivorship-deferral: honest-OOS n-floor not met, verdict deferred to the
+dead-name-spike wave per §8). The routing table is:
+
+| Primary outcome | A1 outcome | Combined routing |
+|---|---|---|
+| KILL | KILL | Agreed KILL — ratifiable |
+| SURVIVE | SURVIVE | Agreed SURVIVE — ratifiable |
+| KILL | SURVIVE | Disagree — benchmark-coverage remediation (see below) |
+| SURVIVE | KILL | Disagree — benchmark-coverage remediation (see below) |
+| DEFERRED | any | DEFERRED — routes to dead-name-spike wave; A1 is reported but does not override deferral |
+| any | DEFERRED | DEFERRED — routes to dead-name-spike wave; primary result is reported but does not override deferral |
+
+The pre-registered expectation (§8 OOS n-floor warning) is that the honest-OOS 252d
+cohort will very likely NOT meet the n-floor, routing primary to DEFERRED. Any pairing
+that includes a DEFERRED outcome from either leg routes to DEFERRED (not remediation).
+Remediation fires only on a clean KILL-vs-SURVIVE split with no deferral on either leg.
+
+**Benchmark-coverage remediation path:** build a fuller sector-to-ticker mapping covering
+at minimum >= 80% of episode-cluster-weighted fires (measured as the fraction of
+episode-cluster-weighted `sector_laggard_winner` fires that receive a non-null
+`sector_rel_252d`); re-run the label harness with the improved mapping; and re-open the
+W1 study. W3/W4 remain suspended during this remediation path.
 
 #### Scope
 
