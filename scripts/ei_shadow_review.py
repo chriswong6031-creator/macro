@@ -854,7 +854,7 @@ def evaluate_f1d_shadow(df: pd.DataFrame) -> "dict[str, Any]":
                     _nq_labels = notqual_mat63["stopped_63d"].astype(float).to_numpy()
                     _nq_clusters = notqual_mat63["cluster"].to_numpy()
                     # A1b fix: the registered flip criterion (registry EI-F1D-RW
-                    # flip_criterion + P2_5_INTERACTION_PREREG.md §6.3) specifies
+                    # flip_criterion + P2_5_INTERACTION_PREREG.md §8) specifies
                     # one-sided 95% (z=1.645). _wilson_cluster_bootstrap uses
                     # two-sided idiom (alpha/2, 1-alpha/2 quantiles), so the
                     # one-sided 95th percentile requires alpha=0.10 here, which
@@ -865,7 +865,7 @@ def evaluate_f1d_shadow(df: pd.DataFrame) -> "dict[str, Any]":
                     _w = _wilson_cluster_bootstrap(
                         _q_labels, _q_clusters,
                         _nq_labels, _nq_clusters,
-                        alpha=0.10,  # one-sided 95th percentile (z=1.645) per §6.3
+                        alpha=0.10,  # one-sided 95th percentile (z=1.645) per §8
                         n_bootstrap=N_BOOTSTRAP,
                     )
                     wilson_upper_63 = _w.get("D_upper")
