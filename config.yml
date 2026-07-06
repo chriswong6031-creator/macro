@@ -5430,6 +5430,11 @@ yahoo:
                   VALE,    # Vale — iron ore / EM growth proxy
                   HSBC,    # HSBC Holdings — HK/global banking stress sensor
                   SONY]    # Sony Group — Japan consumer/tech / Asia-semi adjacent
+    # Invesco S&P 500 Equal Weight Sector ETFs (post-2023 rename; history served under new symbol back to 2006-11).
+    # W0b collect-only; not wired into any engine computation. RSPI (Industrials) fails Yahoo — use legacy RGI instead.
+    # Verified 2026-07-05: RSPH/RSPT/RSPD/RSPS/RSPG/RSPF/RSPU/RSPM 2006-11-07->; RSPC 2018-11-07->; RSPR 2015-08-14->.
+    # RGI (legacy Industrials, pre-rename of RSPI) 2009-01-02->; RSPI not served by Yahoo.
+    ew_sectors: [RSPH, RSPT, RSPD, RSPS, RSPG, RSPF, RSPU, RGI, RSPM, RSPC, RSPR]
 
 
 # --------------------------------------------------------------------------- #
