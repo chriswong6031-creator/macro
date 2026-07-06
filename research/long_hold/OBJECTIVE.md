@@ -59,7 +59,7 @@ usable price path are recorded as `unlabeled` with `label_reason='no_price'`.
 | Source | Path | Notes |
 |---|---|---|
 | Price paths | `data/yahoo/*.parquet` (primary); Massive whole-market store (survivorship-correct post-2021-07) | `close` is dividend-adjusted total return |
-| Fire tape | `data/research/gate_fires_baskets.parquet` | 113,542 fires, 2014-08-11 to present |
+| Fire tape | `data/research/gate_fires_baskets.parquet` | 113,542 fires, 2014-08-11 to 2026-07-02 (frozen snapshot at registration; the population is reproducible from this snapshot date) |
 | PIT fundamentals | `data/edgar/fundamentals_panel.parquet` | Accessed via `period_end + 120d` lag |
 | Sector benchmarks | `data/baskets/ohlcv/*.parquet` (11 GICS EW sector baskets) | Sector-relative returns computed vs sector basket |
 
@@ -71,12 +71,24 @@ is a **tactical win** if it achieves `TerminalState.CLEAN_LIFTOFF` under the
 entry_price × 0.95, within 126 trading days of fire date (the `clean15_126`
 convention). This is the existing production grader; it is not redefined here.
 
-A fire that is a tactical win is always assigned exactly one long-hold label based
-on its subsequent 252d total return from fire date (not from tactical exit).
+**Maturity handling:** `grading.terminal_state(clean15_126)` returns `state=None`
+(not a boolean) for fires with fewer than 126 matured forward bars. A `None` return
+is NOT treated as "not a tactical win"; it is treated as `unlabeled` with
+`label_reason='unmatured_126'`. Separately, computing `total_return_252d` requires
+252 matured forward bars. A fire with ≥ 126 bars but < 252 bars is a potential
+tactical win but cannot receive a 252d-horizon label; such fires are assigned
+`label_reason='unmatured_252'` and are excluded from all label-comparison analyses.
+Both unmatured categories are retained in output for coverage accounting. They do
+NOT fall into `tactical_only_fail` or any tercile bucket.
 
-A fire that is **not** a tactical win is assigned `tactical_only = False` and
-receives label `tactical_only` (meaning: the entry never lifted off; the hold-thesis
-question is moot for this fire).
+A fire that is a tactical win AND has ≥ 252 matured bars is always assigned exactly
+one long-hold label based on its subsequent 252d total return from fire date (not
+from tactical exit).
+
+A fire where `terminal_state` returns a non-None, non-CLEAN_LIFTOFF state (i.e.,
+STOPPED, DEAD_MONEY, or CUSHIONED) with ≥ 126 matured bars is assigned label
+`tactical_only_fail` (meaning: the entry never lifted off; the hold-thesis question
+is moot for this fire).
 
 ### 2.3 Label definitions
 
@@ -150,6 +162,32 @@ Conditions (all must hold):
 2. Total return from fire date to 252d: middle tercile within cohort-year
    (33rd ≤ rank < 67th percentile of all tactical-win fires in that cohort-year).
 
+Note: Label D is **strictly** the middle tercile. It does NOT absorb top-tercile
+fires that merely lagged their sector — those are Label G (see below).
+
+---
+
+**Label G — `sector_laggard_winner`**
+
+> The fire produced a strong absolute return (top tercile) but lagged its own
+> sector benchmark. The name was carried by its sector rather than compounding on
+> its own merits.
+
+Conditions (all must hold):
+1. Tactical win = True.
+2. Total return from fire date to 252d: top tercile within cohort-year
+   (rank ≥ 67th percentile of all tactical-win fires in that cohort-year).
+3. Sector-relative 252d return < 0 (lagged own sector).
+
+This label closes the mutual-exclusivity gap: a top-tercile fire with
+`sector_rel_252d < 0` is neither `compounder` nor `multiple_expansion_only`
+(both require `sector_rel_252d ≥ 0`) nor `tactical_only` (middle tercile only).
+Without this label that cell would be an unregistered residual in the algorithm.
+`sector_laggard_winner` fires are excluded from the W1 kill-test contrast
+(`missed_hold` vs `tactical_only`) because their path into the top tercile was
+sector-driven, not quality-driven; they are retained in output for coverage
+accounting.
+
 ---
 
 **Label E — `missed_hold`**
@@ -171,41 +209,101 @@ cohort)?"
 
 **Label F — fires that never achieved tactical win**
 
-These rows receive `label='tactical_only_fail'` (the fire did not lift off) and are
-excluded from all label-comparison analyses. They are retained in output for
-coverage accounting.
+These rows receive `label='tactical_only_fail'` (the fire reached a non-None
+non-CLEAN_LIFTOFF terminal state within the 126d window, e.g. STOPPED, DEAD_MONEY,
+or CUSHIONED) and are excluded from all label-comparison analyses. They are retained
+in output for coverage accounting. Fires where `terminal_state` returns `None` due
+to insufficient maturity are `unlabeled` with `label_reason='unmatured_126'` and are
+distinct from `tactical_only_fail`.
 
 ### 2.4 Label assignment algorithm (computable, unambiguous)
 
+**`coverage_waived` definition (locked, not tunable):**
+`coverage_waived` for cohort-year Y = True when the fraction of fires in cohort-year
+Y that have a non-null `piotroski_f` value in `fundamentals_panel.parquet` (accessed
+at `period_end + 120d` PIT) is < 0.30.
+Formally:
 ```
+fundamentals_coverage(Y) = count(fires in Y with non-null piotroski_f) /
+                            count(fires in Y with tactical_win == True AND
+                                  total_return_252d is not None)
+coverage_waived(Y) = fundamentals_coverage(Y) < 0.30
+```
+This is computed once per cohort-year before any label assignment; the per-cohort-year
+value is frozen and stored in the output parquet as `cohort_fundamentals_coverage_frac`.
+Fires in a coverage-waived year that land in the top-tercile + sector-positive cell
+receive `label='compounder'` and `fund_unchecked=True`.
+
+**Implication for `missed_hold` (the kill-test outcome variable):** `fund_unchecked`
+fires DO count as `missed_hold=True` (i.e. label == 'compounder') in the W1 contrast.
+A sensitivity run EXCLUDING `fund_unchecked=True` fires from the missed_hold contrast
+is pre-registered as a mandatory secondary analysis. If the primary result and the
+fund_unchecked-excluded result disagree in direction, the primary result is marked
+"coverage-sensitive" and not treated as evidence. This sensitivity run is reported
+unconditionally alongside the primary result.
+
+```
+# PRE-PASS: compute cohort_fundamentals_coverage_frac per cohort-year
+for each cohort_year Y:
+    cohort_fundamentals_coverage_frac[Y] = (
+        count fires in Y where tactical_win=True AND 252d bars matured AND piotroski_f is not null
+    ) / (
+        count fires in Y where tactical_win=True AND 252d bars matured
+    )
+    coverage_waived[Y] = cohort_fundamentals_coverage_frac[Y] < 0.30
+
+# MAIN PASS: label each fire
 for each fire row (ticker, fire_date):
+    # Step 1: resolve price path
     resolve price path (yahoo then Massive; mark no_price if absent)
-    compute tactical_win via grading.terminal_state(clean15_126)
-    if not tactical_win:
-        label = 'tactical_only_fail'
-        continue
+    if no_price:
+        label = 'unlabeled'; label_reason = 'no_price'; continue
+
+    # Step 2: tactical win check
+    result_126 = grading.terminal_state(clean15_126)
+    if result_126['state'] is None:
+        label = 'unlabeled'; label_reason = 'unmatured_126'; continue
+    if result_126['state'] != TerminalState.CLEAN_LIFTOFF:
+        label = 'tactical_only_fail'; continue
+
+    # Step 3: 252d return check
+    if fewer than 252 matured forward bars available:
+        label = 'unlabeled'; label_reason = 'unmatured_252'; continue
 
     compute total_return_252d = close[fire_date + 252d] / close[fire_date] - 1
     compute sector_rel_252d = total_return_252d - sector_basket_252d_return
     compute cohort_year = fire_date.year
     compute tercile_rank = rank(total_return_252d) within cohort_year fires
-    (tercile cutoffs computed on tactical-win fires only, within cohort_year)
+    (tercile cutoffs computed on tactical-win, 252d-matured fires only, within cohort_year)
 
+    # Step 4: label assignment — all cells are explicit; no residual
     if tercile_rank >= 0.67 and sector_rel_252d >= 0:
-        if piotroski_f >= 6 OR coverage_waived:
+        # Top absolute AND beats sector
+        if piotroski_f >= 6 OR coverage_waived[cohort_year]:
             label = 'compounder'
+            fund_unchecked = coverage_waived[cohort_year] AND piotroski_f is null
         else:
             label = 'multiple_expansion_only'
+            fund_unchecked = False
+    elif tercile_rank >= 0.67 and sector_rel_252d < 0:
+        # Top absolute BUT lagged sector — Label G
+        label = 'sector_laggard_winner'
     elif tercile_rank < 0.33:
         label = 'cheap_trap'
     else:
+        # 33rd <= rank < 67th — middle tercile
         label = 'tactical_only'
 ```
+
+Every branch above maps to exactly one named label. The label set
+{compounder, multiple_expansion_only, sector_laggard_winner, cheap_trap,
+tactical_only, tactical_only_fail, unlabeled} is exhaustive and mutually exclusive
+over all fires with a resolvable price path.
 
 Label output is written to `data/research/long_hold_labels.parquet` with fields:
 `ticker, fire_date, label, total_return_252d, sector_rel_252d, tercile_rank,
 cohort_year, tactical_win, piotroski_f, fund_unchecked, survivorship_biased,
-coverage_frac, label_reason`.
+coverage_frac, cohort_fundamentals_coverage_frac, label_reason`.
 
 ---
 
@@ -277,7 +375,8 @@ in the W1 verdict; it does not constitute post-hoc modification of this list.
 | Archetype class | `data/edgar/fundamentals_panel.parquet` | `archetype` | Existing classification field |
 
 All features are read at fire date using the PIT cross-section
-(`as_of_cross_section(fire_date)`) so that no future-fundamental data leaks in.
+(`as_of_cross_section(fire_date, panel=fundamentals_panel)`) so that no
+future-fundamental data leaks in.
 
 **No post-registration additions are permitted.** If a desired feature is absent from
 this list, it requires a new pre-registration.
@@ -307,13 +406,37 @@ Where a named-cluster solution is unavailable (e.g., regime label missing),
 block-bootstrap CIs with block width 63 trading days are used instead.
 Both methods must be tried; the wider CI governs.
 
+**Note on clustering granularity across inference gates (intentional design):**
+Three distinct block definitions are used across the three inference gates — this is
+intentional and each is chosen for its purpose:
+- §6.2 (CI clustering): `(ticker_sector × macro_regime)` — sector-level, because
+  sector-correlated errors are the dominant source of within-cluster dependence in
+  cross-sectional feature tests.
+- §6.3 (episode-cluster n-floor): `(name × macro_regime)` — name-level, because the
+  n-floor protects against pseudo-replication from the same stock firing repeatedly.
+- §6.4 (reshuffle null): `(cohort_year × macro_regime)` — year-level, because the
+  permutation must preserve annual cross-sectional structure to avoid destroying the
+  seasonal dependence in the feature distribution.
+**Effective-n for reporting** (the headline sample size quoted in any results table)
+is the §6.3 episode-cluster count — i.e., the count of retained fires after the
+(name × macro_regime) ±10d de-duplication. This is the most conservative of the
+three granularities and is the correct denominator for the n ≥ 25 floor.
+
 ### 6.3 Minimum episode-cluster floor
 
 **n ≥ 25 independent episode-clusters per horizon** is required before any
 statistic is reported as inferential. "Independent episode-cluster" means a
-(name × macro-regime) block that does not overlap within ±10 trading days of
-another block for the same name. Raw fire counts are banned as inferential n and
+(name × macro-regime) block whose `fire_date` does not fall within ±10 trading days
+(measured on `fire_date`, not on episode-block span) of another fire for the same
+(name × macro-regime) combination. Raw fire counts are banned as inferential n and
 may not appear in any results table as if they were the sample size for a test.
+
+**Tie-break rule for de-duplication within ±10d:** when multiple fires for the same
+(name × macro-regime) fall within a ±10 trading-day window, retain the
+**earliest** fire_date in the window. Remove the later fires. Apply greedily
+left-to-right: after removing a later fire, do not re-evaluate earlier retained
+fires. This rule is deterministic and produces a unique de-duplicated set for any
+input ordering.
 
 If a horizon does not meet the n ≥ 25 floor, results for that horizon are refused
 (not reported, not stamped as "directional", not shown with a larger caveat — simply
@@ -324,10 +447,20 @@ refused and absent from output).
 Any classifier or feature separation result must beat the within-regime
 label-reshuffle null. The null is constructed by randomly permuting the
 `missed_hold` label within each `(cohort_year × macro_regime)` cell 1,000 times
-and computing the feature test statistic distribution. The claim is that the
-observed statistic exceeds the 90th percentile of the null distribution
-(one-sided; consistent with q=0.10). A result that passes BH-FDR but fails the
-reshuffle null is marked as "reshuffle-null-fail" and does not count as evidence.
+and computing the feature test statistic distribution.
+
+**Per-feature application (9 separate nulls, not one aggregate):** The reshuffle
+null is run independently for each of the 9 features in the frozen W1 family (§5).
+For each feature, the test statistic is the Mann-Whitney U (rank-biserial correlation)
+between feature values for `missed_hold=True` fires vs `label='tactical_only'` fires.
+The claim is that the observed per-feature statistic exceeds the 90th percentile of
+that feature's null distribution (one-sided; consistent with q=0.10). The 90th-pctile
+threshold is applied independently per feature — there is no additional BH correction
+on top of the reshuffle gate (BH-FDR §6.1 and the reshuffle gate are independent
+hurdles, both of which must be cleared). A feature that passes BH-FDR but fails its
+own reshuffle null is marked "reshuffle-null-fail" and does not count as evidence.
+
+The reshuffle seed is fixed at 42 for reproducibility.
 
 ---
 
@@ -337,14 +470,15 @@ reshuffle null is marked as "reshuffle-null-fail" and does not count as evidence
 |---|---|---|
 | Fit / exploration | 2014-01-01 – 2019-12-31 | Feature selection, direction-finding, hyperparameter tuning |
 | OOS | 2020-01-01 – 2023-12-31 | Held-out evaluation; touched ONCE after design is locked |
-| Recent (do not use in W1) | 2024-01-01 – present | Reserved for post-publication monitoring; not used in W1 |
+| Recent (do not use in W1) | 2024-01-01 – 2026-07-02 (snapshot) | Reserved for post-publication monitoring; not used in W1 |
 
 The OOS split is opened once, after the fit-period analysis is complete and the W1
 study script is committed. Any analysis run on the OOS split counts as the single
 OOS test; no iterative refinement is permitted.
 
-The fire tape (`gate_fires_baskets.parquet`) spans 2014-08-11 to present; the fit
-period therefore starts at the first available fire.
+The fire tape (`gate_fires_baskets.parquet`) spans 2014-08-11 to 2026-07-02 (frozen
+snapshot at registration — see §2.1); the fit period therefore starts at the first
+available fire.
 
 ---
 
@@ -365,6 +499,20 @@ than true absence of signal, the finding is printed as: "selection-alpha may exi
 but cannot be measured honestly without dead-name prices; verdict deferred to PR-G
 dead-name spike." This deferral is not a reprieve — W3/W4 remain suspended until
 PR-G resolves the price gap.
+
+**OOS honest-cohort n-floor warning (pre-registered):** The G1 criterion requires
+the kill-test to run on the OOS split (2020-2023) within honest cohorts (§4.1). The
+only honest cohort for 252d labels is post-2021-07 Massive, which is gutted by the
+1,165-day gap (2021-10-25 → 2025-01-02, all fires flagged `gap_period=True`). The
+practical honest-OOS window for 252d resolution is approximately 2021-07-06 →
+2021-10-25 (~3.5 months of fires, then nothing until post-gap fires reach 252d
+maturity). This may produce fewer than 25 honest-OOS episode-clusters at 252d. If
+the OOS honest-cohort n-floor is not met, the G1 criterion cannot fire from honest
+data alone; per §8 the finding is automatically routed to the survivorship-deferral
+path: "verdict deferred to PR-G dead-name spike." This routing is pre-registered and
+not a post-hoc rescue — the program was designed knowing this gap exists. The PR-W1
+analysis script must report the achieved honest-OOS episode-cluster count before
+running any OOS statistic.
 
 A null is not a failure of the program. It is a valid and publishable finding.
 It is printed loudly in the verdict document, not hidden.
@@ -419,7 +567,7 @@ short-horizon features is a form of lookahead contamination. The wall is absolut
 | Masterplan | `research/LONG_HOLD_THESIS_MASTERPLAN_BY_FABLE.md` |
 | Entry grader (reused as-is for tactical win) | `engine/grading.py`, `TerminalState.CLEAN_LIFTOFF`, `clean15_126` |
 | Entry harness template | `scripts/research/entry_strata_phase0.py` |
-| PIT fundamentals accessor | `collectors/edgar.py as_of_cross_section()` |
+| PIT fundamentals accessor | `collectors/edgar.py as_of_cross_section(asof, panel=None)` — pass `panel=fundamentals_panel` explicitly to avoid default-load-path dependency; positional `asof` = fire_date |
 | FDR machinery | `engine/neuralweb/metabolism.py` (extend to `fdr_family='long_hold'`) |
 | Survivorship field precedent | `ic_scorecard.json` (`survivorship_biased`, `coverage_frac`) |
 | IC scorecard (context) | `data/ic_scorecard.json` — quality mean_ic = 0.0042; composite anti-predictive (-0.0072); context only |
