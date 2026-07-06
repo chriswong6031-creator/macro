@@ -55,9 +55,10 @@ _BUY_TYPES = ("buy", "rebuy")
 # tier sort order: take above every anticipation; within anticipation, a fired-but-pending
 # buy ranks above the pre-cross early warning (it is "more formed"). 0 = best.
 _TIER_ORDER = {(TAKE, None): 0, (ANTICIPATION, "pending"): 1, (ANTICIPATION, "early"): 2}
-# owner's weighted cascade rank (held-out justified, TIERED_CASCADE.md): T1 master .. T4 earliest.
-# pending (3D master forming) sits at 1, between the held take (T1=0) and the 2D-early tiers.
-_CASCADE_RANK = {"T1": 0, "T2": 2, "T3": 3, "T4": 4}
+# operator-ratified 2026-07-06: T2 now scores above T1 for entry quality (fills closer to
+# trough, confirmed-bar with low repaint). T2=0 (best), T1-held=1, T1-pending=2, T3=3, T4=4.
+# pending (3D master forming) sits at 2, just below the held T1 and the T2 cross.
+_CASCADE_RANK = {"T1": 1, "T2": 0, "T3": 3, "T4": 4}
 # board ranking = convex blend of cascade tier (TIER_FRAC) + conviction percentile (1-TIER_FRAC).
 # Conviction-led (<0.5) so strong EARLIER tiers surface on a take-heavy board; tier is a real
 # boost (a master beats an equal-conviction earlier tier). See signal_gate.blend_sorted.
@@ -224,13 +225,13 @@ def gate(ticker: str, daily_close) -> dict:
 
 
 def tier_rank(v: dict | None) -> int:
-    """Ascending sort rank (0 = best). Owner's cascade orders the board: held take (T1)=0,
-    forming master (pending)=1, then T2=2 / T3=3 / T4=4. Non-eligible sinks to the bottom."""
+    """Ascending sort rank (0 = best). Operator-ratified 2026-07-06 order: T2 confirmed
+    cross=0, T1 held take=1, T1 forming master (pending)=2, T3=3, T4=4. Non-eligible sinks."""
     if not v or not v.get("eligible"):
         return 9
     tc = v.get("tier_cascade")
     if tc == "T1" and v.get("sub") == "pending":
-        return 1                              # forming master ranks just below a held take
+        return 2                              # forming master ranks just below T1 held and T2
     if tc:
         return _CASCADE_RANK.get(tc, 8)
     return _TIER_ORDER.get((v.get("tier"), v.get("sub")), 8)

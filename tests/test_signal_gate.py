@@ -8,7 +8,11 @@ NOT buyable.
 """
 import json
 
+import pytest
+
 from engine.signal_gate import BUYABLE_TIERS, buy_signal, is_buyable
+from engine.signal_gate import blend_sorted, tier_rank, TIER_FRAC
+from engine import confluence_tiers
 
 
 def test_buyable_tiers_are_t1_t2_t3_only():
@@ -115,3 +119,82 @@ class TestNearMissAnnotation:
         v = sg.gate("TEST", self._series())
         assert v["eligible"] is True
         assert v.get("near_miss_reason") is None
+
+
+# ---------------------------------------------------------------------------
+# Operator re-weight 2026-07-06: T2 > T1 > T3 > T4 invariant
+# ---------------------------------------------------------------------------
+class TestT2AboveT1OperatorReweight:
+    """Pin the operator-ratified 2026-07-06 re-weight: T2 scores above T1 in WEIGHTS,
+    _CASCADE_RANK, tier_rank, and blend_sorted. Eligibility / BUYABLE_TIERS unchanged."""
+
+    def test_weights_ordering_t2_above_t1(self):
+        """WEIGHTS["T2"] > WEIGHTS["T1"] > WEIGHTS["T3"] > WEIGHTS["T4"]."""
+        w = confluence_tiers.WEIGHTS
+        assert w["T2"] > w["T1"], f"T2 weight {w['T2']} must exceed T1 {w['T1']}"
+        assert w["T1"] > w["T3"], f"T1 weight {w['T1']} must exceed T3 {w['T3']}"
+        assert w["T3"] > w["T4"], f"T3 weight {w['T3']} must exceed T4 {w['T4']}"
+
+    def test_weights_exact_values(self):
+        """Pin the exact re-weight values."""
+        w = confluence_tiers.WEIGHTS
+        assert w["T2"] == pytest.approx(1.00)
+        assert w["T1"] == pytest.approx(0.90)
+        assert w["T3"] == pytest.approx(0.60)
+        assert w["T4"] == pytest.approx(0.40)
+
+    def test_tier_rank_t2_best_among_eligible_cascade(self):
+        """tier_rank(T2 eligible) < tier_rank(T1 held) < tier_rank(T3) < tier_rank(T4)."""
+        v_t2 = {"eligible": True, "tier_cascade": "T2", "sub": None}
+        v_t1 = {"eligible": True, "tier_cascade": "T1", "sub": None}
+        v_t3 = {"eligible": True, "tier_cascade": "T3", "sub": None}
+        v_t4 = {"eligible": True, "tier_cascade": "T4", "sub": None}
+        assert tier_rank(v_t2) < tier_rank(v_t1)
+        assert tier_rank(v_t1) < tier_rank(v_t3)
+        assert tier_rank(v_t3) < tier_rank(v_t4)
+        assert tier_rank({"eligible": False, "tier_cascade": "T2"}) == 9   # ineligible sinks
+
+    def test_tier_rank_t1_pending_below_t1_held(self):
+        """T1 forming master (pending) ranks below both T2 and held T1."""
+        v_t2 = {"eligible": True, "tier_cascade": "T2", "sub": None}
+        v_t1_held = {"eligible": True, "tier_cascade": "T1", "sub": None}
+        v_t1_pend = {"eligible": True, "tier_cascade": "T1", "sub": "pending"}
+        assert tier_rank(v_t2) < tier_rank(v_t1_pend)
+        assert tier_rank(v_t1_held) < tier_rank(v_t1_pend)
+
+    def test_blend_sorted_orders_t2_above_t1_equal_conviction(self):
+        """With identical conviction scores, blend_sorted must place T2 before T1.
+        Before the re-weight T1 would have ranked first; confirm the ordering inverted."""
+        items = ["T1_item", "T2_item", "T3_item", "T4_item"]
+        base_scores = {"T1_item": 50.0, "T2_item": 50.0, "T3_item": 50.0, "T4_item": 50.0}
+        verdicts = {
+            "T1_item": {"weight": confluence_tiers.WEIGHTS["T1"], "eligible": True},
+            "T2_item": {"weight": confluence_tiers.WEIGHTS["T2"], "eligible": True},
+            "T3_item": {"weight": confluence_tiers.WEIGHTS["T3"], "eligible": True},
+            "T4_item": {"weight": confluence_tiers.WEIGHTS["T4"], "eligible": True},
+        }
+        ordered = blend_sorted(items,
+                               base_of=lambda x: base_scores[x],
+                               verdict_of=lambda x: verdicts[x],
+                               reverse=True)
+        assert ordered[0] == "T2_item", f"Expected T2 first, got {ordered}"
+        assert ordered[1] == "T1_item", f"Expected T1 second, got {ordered}"
+        assert ordered[2] == "T3_item", f"Expected T3 third, got {ordered}"
+        assert ordered[3] == "T4_item", f"Expected T4 fourth, got {ordered}"
+
+    def test_blend_sorted_t1_still_beats_t3_t4(self):
+        """T1 must still rank above T3 and T4 with equal conviction."""
+        items = ["T1_item", "T3_item", "T4_item"]
+        base_scores = {x: 50.0 for x in items}
+        verdicts = {
+            "T1_item": {"weight": confluence_tiers.WEIGHTS["T1"], "eligible": True},
+            "T3_item": {"weight": confluence_tiers.WEIGHTS["T3"], "eligible": True},
+            "T4_item": {"weight": confluence_tiers.WEIGHTS["T4"], "eligible": True},
+        }
+        ordered = blend_sorted(items,
+                               base_of=lambda x: base_scores[x],
+                               verdict_of=lambda x: verdicts[x],
+                               reverse=True)
+        assert ordered[0] == "T1_item"
+        assert ordered[1] == "T3_item"
+        assert ordered[2] == "T4_item"

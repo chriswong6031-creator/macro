@@ -221,3 +221,52 @@ formalizes alongside T2 (`m2d_s3d`) and T4, each carrying the graded weight from
 current flat "display-only context" treatment. **Net: same contract, finer resolution** — the
 cascade turns a binary early-flag into a weighted earliness ladder, all of it still display-only /
 brain-input, none of it auto-traded (charter §6–§7).
+
+
+---
+
+## 8. 2026-07-06 operator re-weight — T2 1.00 / T1 0.90
+
+**Previous weights:** T1 1.00 · T2 0.80 · T3 0.60 · T4 0.40
+
+**New weights:** T2 1.00 · T1 0.90 · T3 0.60 · T4 0.40
+
+### Rationale
+
+A 2026-07-05/06 entry-quality deep-dive (Opus red-teamed) produced three findings that collectively
+justify ranking T2 above T1 for entry-quality purposes on display boards:
+
+1. **Monotone fill-premium ladder.** Production-true dating of entry fills showed a strict
+   T1 > T2 > T3 > T4 gradient in how far above the 20-day trough a confirmed entry fills:
+   T1 ~10.9% median above trough vs T2 ~7.5%. T2 consistently fills closer to the structural low.
+
+2. **Confirmed-bar, low repaint.** T2 fires on a completed 2D bar (the cross is on a closed
+   candle), measured repaint rate ~9% — below the ~15% flip criterion. T1 confirmation by design
+   waits for the reclaim-and-hold forward period, meaning T1 fires structurally later and
+   adversely selects on price when the operator acts on the signal.
+
+3. **Delayed-user context.** The human operator typically enters on the session after the signal
+   appears. For T1 this means the entry is even more extended; T2's confirmed-bar nature makes
+   it actionable at open the next session with less gap risk.
+
+### What this is and is not
+
+This is an **operator-ratified entry-quality ranking decision, not a gauntleted excess-return
+promotion.** No tier showed robust standalone 21-day benchmark-excess returns with confidence
+intervals clearly above zero — all 21d excess CIs straddle zero. The re-weight applies only to
+board display ordering (the `blend_sorted` cascade and the `basket_detail` recommend sort). It
+does not change:
+
+- which tiers are BUYABLE (`BUYABLE_TIERS = ("T1", "T2", "T3")` — unchanged)
+- eligibility criteria or gate semantics
+- provisional flags (T3 only)
+- TIER_FRAC, CN_TIER_FRAC, CN_WN_FLOOR
+
+T1 remains the highest-precision confirmed state; the re-weight acknowledges that by the time
+T1 fires, the entry window may have passed. T2 is now the board's primary “actionable now” tier.
+
+### Files changed
+
+- `engine/confluence_tiers.py` — WEIGHTS dict (T1 1.00→0.90, T2 0.80→1.00)
+- `engine/signal_gate.py` — _CASCADE_RANK (T2=0, T1=1) + tier_rank docstring/T1-pending=2
+- `templates/basket_detail.html.j2` — client-side TIER_W dict synced
