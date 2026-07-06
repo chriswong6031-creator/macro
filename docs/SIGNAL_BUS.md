@@ -293,7 +293,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | qbus-items | `data/qbus/items.parquet` | parquet | daily-engine | infrastructure | 10 | 0 |
 | site-altdata-mastermind | `site/altdata/mastermind.json` | json | daily-engine | display | 8 | 2 |
 | site-altdata-by-ticker | `site/altdata/by_ticker.json` | json | daily-engine | display | 8 | 0 |
-| site-qledger-track-record | `site/qledger/track_record.json` | json | daily-engine | display | 5 | 1 |
+| site-qledger-track-record | `site/qledger/track_record.json` | json | daily-engine | display | 5 | 2 |
 | spine-predictions | `data/spine/predictions.parquet` | parquet | daily-engine | shadow | 6 | 0 |
 | ai-desk-theses | `data/ai_desk/theses.jsonl` | jsonl | daily-engine | shadow | 5 | 0 |
 | altdata-theses | `data/altdata/theses.jsonl` | jsonl | daily-engine | shadow | 4 | 0 |

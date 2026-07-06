@@ -1959,6 +1959,7 @@ artifacts:
       - scripts/build_alt_data.py
     external_consumers:
       - admin:console
+      - mastermind:context
     notes: "Two writers: engine/qledger.py:979 (emit_track_record) and scripts/grade_qledger.py:576 (merges ladder_states). Both are additive/in-place-update, not clobber."
 
   # --- 5 consumers ---
