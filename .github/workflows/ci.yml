@@ -123,6 +123,11 @@ on:
       - "tests/test_signal_bus_doc.py"
       - "tests/test_synapse_registry.py"
       - "tests/test_neuralweb_envelope.py"
+      # NW Rails PR-7 R4 contract governance: schema drift check + test suite.
+      - "scripts/check_contract_drift.py"
+      - "scripts/export_signal_contracts.py"
+      - "site/factordata/contracts/artifact_manifest.json"
+      - "tests/test_contract_drift.py"
   workflow_dispatch:
 
 permissions:
@@ -488,3 +493,29 @@ jobs:
         run: python scripts/check_dag_conformance.py --verbose
       - name: DAG conformance selftest + live conformance tests
         run: python -m pytest tests/test_dag_conformance.py -q
+
+  contract-drift:
+    # NW Rails PR-7 (R4 contract governance): checks that each artifact in
+    # site/factordata/contracts/artifact_manifest.json has not drifted from the
+    # live artifact's actual top-level JSON fields.  A bot consuming china_standouts
+    # with a stale schema contract has no handshake — this makes drift visible at PR
+    # merge time rather than at trade time.
+    #
+    # Warn-first ratchet: exits 0 even on drift during the initial accrual week so
+    # this never blocks a deploy on its first day.  Flip --warn-only to hard-fail
+    # after one clean week: 2026-07-13.
+    #
+    # Wildcard artifacts (per_stock_intel, per_stock_signal) are skipped when no
+    # live sample is present (normal on CI runners without the full stockdata store).
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml
+      - name: contract drift check (warn-only ratchet — flip to hard-fail 2026-07-13)
+        run: python scripts/check_contract_drift.py --warn-only
+      - name: contract drift unit tests
+        run: python -m pytest tests/test_contract_drift.py -q

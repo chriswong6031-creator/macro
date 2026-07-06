@@ -128,7 +128,7 @@ def test_panels_smoke():
     # blocks present are from the known set; archetype key is valid when present
     assert set(sample).issubset({"profile", "valuation", "financials",
                                  "factors", "positioning", "analyst", "earnings",
-                                 "accounting_quality", "leverage_ratios"})
+                                 "accounting_quality", "leverage_ratios", "thesis_clock"})
     for rec in list(p.values())[:200]:
         arch = (rec.get("profile") or {}).get("archetype")
         if arch:
@@ -607,6 +607,116 @@ def test_leverage_ratios_output_is_json_safe():
     ]
     lev = SF._leverage_ratios(rows)
     s = json.dumps(lev)
+    assert "NaN" not in s and "Infinity" not in s
+
+
+def test_net_debt_helper():
+    """Shared _net_debt: total debt − cash&equiv, computed only when at least one
+    component is present (0 is a valid value; all-missing → None, never zero)."""
+    assert SF._net_debt({"debt_lt": 200.0, "debt_cur": 50.0, "cash": 80.0}) == 170.0
+    # zero cash is a valid value, not "missing": 100 + 0 - 0 = 100
+    assert SF._net_debt({"debt_lt": 100.0, "debt_cur": 0.0, "cash": 0.0}) == 100.0
+    # partial (only cash present) → net cash −40
+    assert SF._net_debt({"cash": 40.0}) == -40.0
+    # all three missing → None (never fabricate a zero net-debt)
+    assert SF._net_debt({}) is None
+    assert SF._net_debt({"debt_lt": None, "debt_cur": None, "cash": None}) is None
+
+
+def test_net_debt_parity_with_leverage_panel():
+    """The whole point of the shared helper: EV multiples and the leverage panel must
+    report the SAME net_debt (they cannot be allowed to diverge)."""
+    stmt = {"op_income": 100.0, "interest_exp": 10.0, "debt_lt": 400.0,
+            "debt_cur": 50.0, "cash": 100.0, "depreciation": 20.0}
+    lev = SF._leverage_ratios([stmt])
+    assert lev["net_debt"] == round(SF._net_debt(stmt), 0) == 350.0
+
+
+def _mk_fund(rows: dict):
+    import pandas as pd
+    return pd.DataFrame.from_dict(rows, orient="index")
+
+
+def _ev_frame():
+    """Tiny synthetic universe exercising every EV-multiple branch."""
+    base_row = {"ni": 5e9, "equity": 5e10, "revenue": 2e10, "cfo": 8e9,
+                "dividends": 0.0, "repurchases": 1e9}
+    fund = _mk_fund({"GOOD": dict(base_row), "BANK": dict(base_row),
+                     "NOSTMT": dict(base_row),
+                     "LOSS": {"ni": -1e9, "equity": 5e10, "revenue": 2e10,
+                              "cfo": -3e9, "dividends": 0.0, "repurchases": 0.0}})
+    table = {
+        "GOOD":   {"mktcap_bn": 100.0, "sector": "Information Technology", "composite": 0.5},
+        "BANK":   {"mktcap_bn": 100.0, "sector": "Financials", "composite": 0.4},
+        "NOSTMT": {"mktcap_bn": 100.0, "sector": "Health Care", "composite": 0.3},
+        "LOSS":   {"mktcap_bn": 50.0,  "sector": "Industrials", "composite": 0.2},
+    }
+    good_stmt = {"op_income": 6e9, "capex": 2e9, "cfo": 8e9, "revenue": 2e10,
+                 "debt_lt": 1e10, "debt_cur": 2e9, "cash": 5e9}
+    statements = {
+        "GOOD": [dict(good_stmt)],
+        "BANK": [dict(good_stmt)],
+        # NOSTMT intentionally has no statement row
+        "LOSS": [{"op_income": -2e9, "capex": 1e9, "cfo": -3e9, "revenue": 2e10,
+                  "debt_lt": 1e10, "debt_cur": 0.0, "cash": 1e9}],
+    }
+    return fund, table, statements
+
+
+def test_context_frame_ev_multiples():
+    """EV = mktcap + net_debt; ev_sales/ev_ebit off the statement layer; P/FCF is TRUE
+    post-capex FCF (cfo − capex), not the pre-capex proxy."""
+    fund, table, statements = _ev_frame()
+    M = SF._context_frame(fund, table, statements)
+    g = M.loc["GOOD"]
+    # net_debt = 1e10 + 2e9 − 5e9 = 7e9 ; ev = 1e11 + 7e9 = 1.07e11
+    assert abs(g["ev_sales"] - (1.07e11 / 2e10)) < 1e-6, g["ev_sales"]   # 5.35
+    assert abs(g["ev_ebit"] - (1.07e11 / 6e9)) < 1e-6, g["ev_ebit"]      # 17.83
+    assert abs(g["p_fcf"] - (1e11 / (8e9 - 2e9))) < 1e-6, g["p_fcf"]     # 16.67
+
+
+def test_context_frame_ev_financial_suppressed():
+    """Financials: enterprise ratios are meaningless (bank balance sheets) → all NaN,
+    but the equity-based P/B is still computed."""
+    fund, table, statements = _ev_frame()
+    M = SF._context_frame(fund, table, statements)
+    b = M.loc["BANK"]
+    assert math.isnan(b["ev_sales"]) and math.isnan(b["ev_ebit"]) and math.isnan(b["p_fcf"])
+    assert not math.isnan(b["pb"])
+
+
+def test_context_frame_ev_missing_statement():
+    """No statement row → no net_debt → no EV → all three NaN; cross-section P/S intact."""
+    fund, table, statements = _ev_frame()
+    M = SF._context_frame(fund, table, statements)
+    n = M.loc["NOSTMT"]
+    assert math.isnan(n["ev_sales"]) and math.isnan(n["ev_ebit"]) and math.isnan(n["p_fcf"])
+    assert not math.isnan(n["ps"])
+
+
+def test_context_frame_ev_negative_denominators():
+    """Negative EBIT → ev_ebit NaN; negative FCF → p_fcf NaN; ev_sales still valid
+    (revenue > 0), following the same explicit >0 guard the other multiples use."""
+    fund, table, statements = _ev_frame()
+    M = SF._context_frame(fund, table, statements)
+    lo = M.loc["LOSS"]
+    assert math.isnan(lo["ev_ebit"]), lo["ev_ebit"]
+    assert math.isnan(lo["p_fcf"]), lo["p_fcf"]
+    assert not math.isnan(lo["ev_sales"]), lo["ev_sales"]
+
+
+def test_valuation_ev_cells_json_safe():
+    """_valuation exposes the three EV cells; suppressed/missing names get a clean None
+    (not a NaN token), and the block serializes JSON-safe."""
+    fund, table, statements = _ev_frame()
+    M = SF._context_frame(fund, table, statements)
+    good = SF._valuation("GOOD", fund.loc["GOOD"], table["GOOD"], M, None)
+    assert good["ev_to_sales"]["v"] is not None
+    assert good["ev_to_ebit"]["v"] is not None
+    assert good["price_to_fcf"]["v"] is not None
+    bank = SF._valuation("BANK", fund.loc["BANK"], table["BANK"], M, None)
+    assert bank["ev_to_sales"] is None and bank["ev_to_ebit"] is None and bank["price_to_fcf"] is None
+    s = json.dumps(SF._clean({"good": good, "bank": bank}))
     assert "NaN" not in s and "Infinity" not in s
 
 

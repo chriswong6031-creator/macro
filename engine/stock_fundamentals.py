@@ -489,6 +489,27 @@ def _altman(latest: dict, mktcap: float | None) -> dict | None:
     return {"z": round(z, 2), "zone": zone, "approx": approx}
 
 
+def _net_debt(stmt: dict) -> float | None:
+    """net_debt = (debt_lt or 0) + (debt_cur or 0) − (cash or 0), computed only when
+    at least one component is present (else None — never fabricate zero net debt from
+    fully-missing data). Shared by _leverage_ratios and _context_frame so the EV
+    multiples and the leverage panel agree to the dollar.
+
+    None-safety law: 0 is a valid financial value — explicit `is None` checks, never
+    `x or default`. `cash` here is CashAndCashEquivalents only (excludes marketable
+    securities), so net_debt is mildly overstated for securities-rich balance sheets;
+    this matches the definition the shipped leverage panel already uses."""
+    debt_lt = _num(stmt.get("debt_lt"))
+    debt_cur = _num(stmt.get("debt_cur"))
+    cash = _num(stmt.get("cash"))
+    if debt_lt is None and debt_cur is None and cash is None:
+        return None
+    dl = debt_lt if debt_lt is not None else 0.0
+    dc = debt_cur if debt_cur is not None else 0.0
+    ca = cash if cash is not None else 0.0
+    return dl + dc - ca
+
+
 def _leverage_ratios(rows: list[dict]) -> dict:
     """Bottom-survival-quality leverage ratios from statement rows.
 
@@ -524,9 +545,6 @@ def _leverage_ratios(rows: list[dict]) -> dict:
 
     op_income = _g("op_income")
     interest_exp = _g("interest_exp")
-    debt_lt = _g("debt_lt")
-    debt_cur = _g("debt_cur")
-    cash = _g("cash")
     depreciation = _g("depreciation")
 
     out: dict = {}
@@ -535,18 +553,9 @@ def _leverage_ratios(rows: list[dict]) -> dict:
     if op_income is not None and interest_exp is not None and interest_exp > 0:
         out["interest_coverage"] = round(op_income / interest_exp, 2)
 
-    # ── net_debt ─────────────────────────────────────────────────────────────
-    # Treat individual missing debt fields as 0 only when at least one debt field
-    # is present — avoids fabricating zero net_debt from fully-missing data.
-    if debt_lt is None and debt_cur is None and cash is None:
-        net_debt = None          # all three missing: no basis to compute
-    else:
-        # Use 0 for individually missing components when peer fields are present.
-        debt_lt_v = debt_lt if debt_lt is not None else 0.0
-        debt_cur_v = debt_cur if debt_cur is not None else 0.0
-        cash_v = cash if cash is not None else 0.0
-        net_debt = debt_lt_v + debt_cur_v - cash_v
-
+    # ── net_debt (shared _net_debt helper — single definition so the EV multiples
+    #    in _context_frame and this leverage panel agree to the dollar) ─────────
+    net_debt = _net_debt(latest)
     if net_debt is not None:
         out["net_debt"] = round(net_debt, 0)
 
@@ -951,10 +960,18 @@ def _load_deep() -> dict[str, dict]:
 
 
 # ---- cross-sectional valuation context -------------------------------------
-def _context_frame(fund: pd.DataFrame, table: dict) -> pd.DataFrame:
+def _context_frame(fund: pd.DataFrame, table: dict,
+                   statements: dict[str, list[dict]] | None = None) -> pd.DataFrame:
     """Per-ticker trailing multiples + within-sector cheapness percentile +
     sector medians + a universe-wide composite percentile. 'cheapness' is oriented
-    so HIGHER = cheaper/better for every metric (the bar fills green to the right)."""
+    so HIGHER = cheaper/better for every metric (the bar fills green to the right).
+
+    EV / enterprise multiples (ev_sales / ev_ebit / p_fcf) additionally need the
+    companyfacts statement layer (op_income / capex / current-debt / cash), passed in
+    via ``statements``. They are US-only, Financial-sector-suppressed (bank balance
+    sheets make enterprise ratios meaningless), and carry partial coverage until the
+    weekly drip accrues — np.nan wherever an input is missing (never fabricated)."""
+    stmts = statements or {}
     rows = []
     for t, f in fund.iterrows():
         fac = table.get(t, {})
@@ -962,8 +979,22 @@ def _context_frame(fund: pd.DataFrame, table: dict) -> pd.DataFrame:
         mcap = mcap_bn * 1e9 if mcap_bn else None
         ni, eq, rev = _num(f.get("ni")), _num(f.get("equity")), _num(f.get("revenue"))
         cfo, div, rep = _num(f.get("cfo")), _num(f.get("dividends")), _num(f.get("repurchases"))
+        sector = fac.get("sector") or "—"
+        # EV multiples — from the latest companyfacts statement row.
+        # EV = mktcap + net_debt; P/FCF uses true post-capex FCF (cfo − capex).
+        srows = stmts.get(str(t))
+        stmt = srows[-1] if srows else {}
+        is_fin = sector in _FINANCIAL_SECTORS
+        op_income = _num(stmt.get("op_income"))
+        capex = _num(stmt.get("capex"))
+        cfo_s = _num(stmt.get("cfo"))
+        rev_s = _num(stmt.get("revenue"))
+        nd = _net_debt(stmt) if stmt else None
+        ev = (mcap + nd) if (mcap is not None and nd is not None) else None
+        rev_ev = rev_s if rev_s is not None else rev   # prefer statement rev; fall back to cross-section
+        fcf = (cfo_s - capex) if (cfo_s is not None and capex is not None) else None
         rows.append({
-            "ticker": t, "sector": fac.get("sector") or "—", "mktcap": mcap,
+            "ticker": t, "sector": sector, "mktcap": mcap,
             "pe": mcap / ni if (mcap and ni and ni > 0) else np.nan,
             "pb": mcap / eq if (mcap and eq and eq > 0) else np.nan,
             "ps": mcap / rev if (mcap and rev and rev > 0) else np.nan,
@@ -972,6 +1003,9 @@ def _context_frame(fund: pd.DataFrame, table: dict) -> pd.DataFrame:
             "shy": (((div or 0) + (rep or 0)) / mcap * 100)
                    if (mcap and (div is not None or rep is not None)) else np.nan,
             "net_margin": (ni / rev * 100) if (rev and rev > 0 and ni is not None) else np.nan,
+            "ev_sales": (ev / rev_ev) if (ev is not None and rev_ev and rev_ev > 0 and not is_fin) else np.nan,
+            "ev_ebit": (ev / op_income) if (ev is not None and op_income and op_income > 0 and not is_fin) else np.nan,
+            "p_fcf": (mcap / fcf) if (mcap and fcf is not None and fcf > 0 and not is_fin) else np.nan,
             "composite": _num(fac.get("composite")),
         })
     M = pd.DataFrame(rows).set_index("ticker")
@@ -979,7 +1013,8 @@ def _context_frame(fund: pd.DataFrame, table: dict) -> pd.DataFrame:
         return M
     # lower-is-cheaper metrics vs higher-is-cheaper (yield) metrics
     for col, lower_cheap in (("pe", True), ("pb", True), ("ps", True),
-                             ("ey", False), ("fcfy", False), ("shy", False)):
+                             ("ey", False), ("fcfy", False), ("shy", False),
+                             ("ev_sales", True), ("ev_ebit", True), ("p_fcf", True)):
         g = M.groupby("sector")[col]
         M[f"{col}_med"] = g.transform("median")
         rank = g.rank(pct=True)                       # 0..1 within sector
@@ -1216,6 +1251,8 @@ def _valuation(t, f, fac, M, deep) -> dict | None:
         "trailing_pe": cell("pe"), "price_to_book": cell("pb"),
         "price_to_sales": cell("ps"), "earnings_yield": cell("ey"),
         "fcf_proxy_yield": cell("fcfy"), "shareholder_yield": cell("shy"),
+        "ev_to_sales": cell("ev_sales"), "ev_to_ebit": cell("ev_ebit"),
+        "price_to_fcf": cell("p_fcf"),
         "value_z": _r(fac.get("value"), 2) if fac else None,
         "forward_pe": _r(fwd, 1) if fwd else None,
         "forward_tier": "deep" if fwd else "lite",
@@ -1352,9 +1389,15 @@ def _analyst(t, deep, rev=None) -> dict | None:
 
 
 def panels() -> dict[str, dict]:
-    """{ticker: {profile, valuation, financials, factors, positioning, analyst}}
+    """{ticker: {profile, valuation, financials, factors, positioning, analyst,
+    thesis_clock}}
     for every name we have fundamentals on. Empty dict if the EDGAR cache is
-    missing (caller logs and ships the page without fundamental panels)."""
+    missing (caller logs and ships the page without fundamental panels).
+
+    W2 PR-J: thesis_clock is a DISPLAY-ONLY Long-Hold Thesis Layer annotation.
+    It carries _horizon_role="hold_thesis" and must not feed any entry-stack
+    scored surface (LH-R1 firewall, G1-DEFERRED ruling 2026-07-06).
+    """
     fund = _load_fundamentals()
     if fund is None:
         log.warning("stock_fundamentals: no edgar fundamentals — panels skipped")
@@ -1372,7 +1415,15 @@ def panels() -> dict[str, dict]:
     aq_cfg = config.load().get("accounting_quality") or {}
     betas_map = _load_betas()   # v2: per-name rates/oil betas for archetype v2
 
-    M = _context_frame(fund, table)
+    # W2 PR-J: thesis_clock map (display-only; no entry-stack consumers)
+    from engine.long_hold_clocks import thesis_clocks_from_parquet  # noqa: PLC0415
+    _thesis_clocks: dict[str, dict] = {}
+    try:
+        _thesis_clocks = thesis_clocks_from_parquet()
+    except Exception as _tc_exc:  # noqa: BLE001
+        log.warning("stock_fundamentals: thesis_clocks skipped (%s)", _tc_exc)
+
+    M = _context_frame(fund, table, statements)
     nm_top_thr = _num(M["net_margin"].quantile(2 / 3)) if "net_margin" in M else None
 
     out: dict[str, dict] = {}
@@ -1414,6 +1465,10 @@ def panels() -> dict[str, dict]:
             # bottom-survival-quality leverage ratios (display-only; partial coverage
             # until the weekly D&A drip accrues; Financial-sector names mostly absent).
             "leverage_ratios": lev if lev else None,
+            # W2 PR-J — Long-Hold Thesis Layer: thesis_clock annotation.
+            # Days since latest EDGAR period_end with positive fundamental delta (v1).
+            # DISPLAY-ONLY; horizon_role=hold_thesis; must NOT feed entry-stack surfaces.
+            "thesis_clock": _thesis_clocks.get(str(t)) or None,
         }
         out[str(t)] = _clean({k: v for k, v in blocks.items() if v})
     log.info("stock_fundamentals: %d names with panels (factors %d, deep %d, short %s)",

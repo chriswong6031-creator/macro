@@ -747,6 +747,17 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — a watcher crash must not abort the run
         log.error("[cctv_watcher] step crashed (non-fatal): %s", e)
 
+    # NW Rails PR-6 — grading-closure standing audit (RUL-P10 path b).
+    # Walks all declared forward ledgers, classifies each as CLOSED / GRADER-STARVED
+    # / LOG-ONLY, and writes data/governance/grading_closure.json + docs/GRADING_CLOSURE.md.
+    # Runs LAST (after graders) so it audits the state graders just updated. Seconds
+    # only; never fatal.
+    try:
+        from scripts.audit_grading_closure import run_as_collect_step as _grading_closure_audit
+        _grading_closure_audit()
+    except Exception as e:  # noqa: BLE001 — a governance audit must not abort the run
+        log.error("[grading_closure] audit step crashed (non-fatal): %s", e)
+
     return 0 if ok > 0 else 1
 
 
