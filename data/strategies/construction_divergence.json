@@ -1,0 +1,367 @@
+{
+  "schema": "construction_divergence_r1.v1",
+  "generated_at": "2026-07-06T03:57:58.568480+00:00",
+  "git_sha": "e729361002c136630c1d0f87d27b0d173f57cf89",
+  "as_of_date": "2026-07-06",
+  "frozen_impl_sha": "9a31b78ad0",
+  "trial_family": "construction_divergence",
+  "status": "DESCRIPTIVE/ACCRUAL \u2014 not verdict-eligible",
+  "registration": "research/HEALTHCARE_MEMBER_DISPERSION_ROTATION_NOTE.md \u00a712 (LOCKED)",
+  "prior": "divergent = validated early exit; expect NO de-escalation",
+  "dd_risk_threshold": -0.08,
+  "deoverlap_min_days": 15,
+  "block_collapse_days": 7,
+  "power_floor": {
+    "smaller_cohort_n": 315,
+    "power_floor_threshold": 40,
+    "decades_with_data": 3,
+    "decades_required": 2,
+    "power_floor": "PASS",
+    "note": "Per \u00a712: FAIL \u2192 descriptive only, no verdict exists"
+  },
+  "cohort_counts": {
+    "total": 800,
+    "divergent": 315,
+    "confirmed": 485,
+    "cap_lags_ew_descriptive": 319
+  },
+  "block_counts": {
+    "all_blocks": 235,
+    "div_blocks": 189,
+    "con_blocks": 232
+  },
+  "two_by_two_divergent_confirmed_x_stress_calm": {
+    "divergent_stress": 42,
+    "divergent_calm": 273,
+    "confirmed_stress": 74,
+    "confirmed_calm": 411,
+    "divergent_total": 315,
+    "confirmed_total": 485,
+    "pct_divergent_in_stress": 36.2,
+    "pct_divergent_in_calm": 39.9
+  },
+  "cohort_stats": {
+    "21": {
+      "divergent": {
+        "n": 314,
+        "mean": -3.1,
+        "median": -2.32,
+        "p10": -8.23,
+        "p25": -4.25,
+        "p_lt_risk": 0.105,
+        "ret_mean": 0.73,
+        "ret_median": 1.55
+      },
+      "confirmed": {
+        "n": 483,
+        "mean": -3.37,
+        "median": -2.56,
+        "p10": -8.16,
+        "p25": -4.92,
+        "p_lt_risk": 0.112,
+        "ret_mean": 0.67,
+        "ret_median": 0.91
+      }
+    },
+    "63": {
+      "divergent": {
+        "n": 312,
+        "mean": -5.31,
+        "median": -3.48,
+        "p10": -12.35,
+        "p25": -6.9,
+        "p_lt_risk": 0.224,
+        "ret_mean": 3.42,
+        "ret_median": 3.42
+      },
+      "confirmed": {
+        "n": 480,
+        "mean": -6.17,
+        "median": -4.19,
+        "p10": -15.12,
+        "p25": -8.51,
+        "p_lt_risk": 0.265,
+        "ret_mean": 2.37,
+        "ret_median": 2.43
+      }
+    }
+  },
+  "stress_stratified": {
+    "21": {
+      "divergent_stress": {
+        "n": 42,
+        "mean": -4.76,
+        "median": -2.82,
+        "p10": -12.31,
+        "p25": -8.12,
+        "p_lt_risk": 0.262
+      },
+      "divergent_calm": {
+        "n": 272,
+        "mean": -2.84,
+        "median": -2.24,
+        "p10": -6.7,
+        "p25": -3.87,
+        "p_lt_risk": 0.081
+      },
+      "confirmed_stress": {
+        "n": 74,
+        "mean": -5.54,
+        "median": -3.78,
+        "p10": -11.15,
+        "p25": -9.39,
+        "p_lt_risk": 0.324
+      },
+      "confirmed_calm": {
+        "n": 409,
+        "mean": -2.97,
+        "median": -2.45,
+        "p10": -7.01,
+        "p25": -4.52,
+        "p_lt_risk": 0.073
+      }
+    },
+    "63": {
+      "divergent_stress": {
+        "n": 42,
+        "mean": -8.37,
+        "median": -6.47,
+        "p10": -20.36,
+        "p25": -12.21,
+        "p_lt_risk": 0.405
+      },
+      "divergent_calm": {
+        "n": 270,
+        "mean": -4.84,
+        "median": -3.36,
+        "p10": -11.04,
+        "p25": -6.4,
+        "p_lt_risk": 0.196
+      },
+      "confirmed_stress": {
+        "n": 74,
+        "mean": -8.82,
+        "median": -7.13,
+        "p10": -17.25,
+        "p25": -13.0,
+        "p_lt_risk": 0.459
+      },
+      "confirmed_calm": {
+        "n": 406,
+        "mean": -5.68,
+        "median": -3.82,
+        "p10": -14.27,
+        "p25": -7.55,
+        "p_lt_risk": 0.229
+      }
+    }
+  },
+  "bootstrap_effective_t_dd21_contrast": {
+    "raw_contrast_pct": 0.27,
+    "t_raw": 0.947,
+    "n_div": 314,
+    "n_con": 483,
+    "eff_t_div": {
+      "t_eff": 287,
+      "t_raw": 314,
+      "ratio": 0.914,
+      "block": 7,
+      "B": 2000
+    },
+    "eff_t_con": {
+      "t_eff": 402,
+      "t_raw": 483,
+      "ratio": 0.832,
+      "block": 7,
+      "B": 2000
+    },
+    "note": "descriptive contrast only; no verdict-bearing BH test on this stat per \u00a712"
+  },
+  "decade_cells": {
+    "2000s": {
+      "divergent": {
+        "n": 31,
+        "dd21": {
+          "n": 31,
+          "mean": -5.56,
+          "median": -3.16,
+          "p10": -12.37,
+          "p25": -9.83,
+          "p_lt_risk": 0.323
+        },
+        "dd63": {
+          "n": 31,
+          "mean": -11.24,
+          "median": -8.25,
+          "p10": -23.53,
+          "p25": -16.65,
+          "p_lt_risk": 0.516
+        }
+      },
+      "confirmed": {
+        "n": 42,
+        "dd21": {
+          "n": 42,
+          "mean": -4.78,
+          "median": -2.92,
+          "p10": -10.17,
+          "p25": -6.94,
+          "p_lt_risk": 0.19
+        },
+        "dd63": {
+          "n": 42,
+          "mean": -9.58,
+          "median": -7.21,
+          "p10": -16.34,
+          "p25": -13.88,
+          "p_lt_risk": 0.429
+        }
+      }
+    },
+    "2010s": {
+      "divergent": {
+        "n": 171,
+        "dd21": {
+          "n": 171,
+          "mean": -2.35,
+          "median": -1.38,
+          "p10": -6.21,
+          "p25": -3.32,
+          "p_lt_risk": 0.058
+        },
+        "dd63": {
+          "n": 171,
+          "mean": -4.06,
+          "median": -2.62,
+          "p10": -10.29,
+          "p25": -5.46,
+          "p_lt_risk": 0.181
+        }
+      },
+      "confirmed": {
+        "n": 238,
+        "dd21": {
+          "n": 238,
+          "mean": -2.9,
+          "median": -2.14,
+          "p10": -8.08,
+          "p25": -4.11,
+          "p_lt_risk": 0.105
+        },
+        "dd63": {
+          "n": 238,
+          "mean": -4.98,
+          "median": -3.33,
+          "p10": -12.47,
+          "p25": -7.0,
+          "p_lt_risk": 0.218
+        }
+      }
+    },
+    "2020s": {
+      "divergent": {
+        "n": 111,
+        "dd21": {
+          "n": 110,
+          "mean": -3.61,
+          "median": -2.83,
+          "p10": -8.32,
+          "p25": -4.65,
+          "p_lt_risk": 0.118
+        },
+        "dd63": {
+          "n": 108,
+          "mean": -5.6,
+          "median": -3.84,
+          "p10": -12.43,
+          "p25": -6.86,
+          "p_lt_risk": 0.204
+        }
+      },
+      "confirmed": {
+        "n": 201,
+        "dd21": {
+          "n": 199,
+          "mean": -3.67,
+          "median": -3.01,
+          "p10": -8.13,
+          "p25": -5.12,
+          "p_lt_risk": 0.106
+        },
+        "dd63": {
+          "n": 196,
+          "mean": -6.96,
+          "median": -4.67,
+          "p10": -16.61,
+          "p25": -9.28,
+          "p_lt_risk": 0.291
+        }
+      }
+    }
+  },
+  "ablations": {
+    "shuffle_dd21": {
+      "real_contrast_pct": 0.27,
+      "shuffle_mean_pct": 0.06,
+      "shuffle_std_pct": 0.34,
+      "percentile_of_real": 72.7,
+      "n_draws": 999,
+      "note": "negative contrast = divergent has deeper DD (opposite of early-exit hypothesis)"
+    },
+    "shuffle_dd63": {
+      "real_contrast_pct": 0.85,
+      "shuffle_mean_pct": 0.1,
+      "shuffle_std_pct": 0.6,
+      "percentile_of_real": 89.8,
+      "n_draws": 999,
+      "note": "negative contrast = divergent has deeper DD (opposite of early-exit hypothesis)"
+    },
+    "placebo_sector_rotation_dd21": {
+      "note": "placebo: each sector uses a different sector's EW label (rotation pairing)",
+      "placebo_div_dd_mean_pct": -3.33,
+      "placebo_con_dd_mean_pct": -2.92,
+      "placebo_contrast_pct": -0.41,
+      "placebo_div_n": 666,
+      "placebo_con_n": 131
+    },
+    "placebo_sector_rotation_dd63": {
+      "note": "placebo: each sector uses a different sector's EW label (rotation pairing)",
+      "placebo_div_dd_mean_pct": -6.01,
+      "placebo_con_dd_mean_pct": -4.94,
+      "placebo_contrast_pct": -1.07,
+      "placebo_div_n": 661,
+      "placebo_con_n": 131
+    },
+    "random_date_dd21": {
+      "real_contrast_pct": 0.27,
+      "placebo_mean_pct": 0.0,
+      "placebo_std_pct": 0.27,
+      "percentile_of_real": 81.4,
+      "n_draws": 999
+    },
+    "random_date_dd63": {
+      "real_contrast_pct": 0.85,
+      "placebo_mean_pct": 0.05,
+      "placebo_std_pct": 0.47,
+      "percentile_of_real": 95.2,
+      "n_draws": 999
+    }
+  },
+  "lookahead_audit_summary": {
+    "n_events_audited": 800,
+    "n_violations": 0,
+    "result": "PASS"
+  },
+  "operationalization_notes": [
+    "Panel breadth for cap ETFs: all 11 SPDR sector ETFs (same panel used in run_proxy).",
+    "Panel breadth for EW ETFs: all 11 Invesco EW ETFs (RSPT/RSPG/RSPF/RSPH/RSPD/RSPS/RSPU/RSPM/RGI/RSPC/RSPR).",
+    "Window start per pair: max(cap_first_valid_label, ew_first_valid_label, inception_override).",
+    "EW labels evaluated at same bar i as cap onset (close t, per \u00a712).",
+    "Block bootstrap: circular block bootstrap via engine.validation.bootstrap_effective_t, block=7 trading days.",
+    "Shuffle ablation: EW label array shuffled in place (non-None values only) within each sector; 999 draws.",
+    "Placebo: each sector's cap events reclassified using the next sector's EW labels (rotation pairing).",
+    "Random-date placebo: DD values shuffled within sector while keeping classification; 999 draws.",
+    "cap_lags_ew events are descriptive escalation context only; never a key per \u00a712.",
+    "SPY stress: SPY close < 200d MA (min_periods=100) evaluated at onset bar i."
+  ]
+}
