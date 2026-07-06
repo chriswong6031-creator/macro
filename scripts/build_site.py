@@ -1104,10 +1104,27 @@ def basket_action_items(site) -> dict:
 
     HONEST framing carried per item: the BUY side (enter/accumulate) is the descriptive
     leadership LENS (cross-sectional rank-IC ~0 on the clean sector backtest); the REDUCE
-    side (trim/avoid) rides the VALIDATED absolute-trend / fading-deteriorating drawdown gate
-    (the one multi-decade-backtested edge). `validated` flags which is which. Each item is
-    badged kind='theme'. Graceful: empty buckets if the artifacts are absent."""
-    buckets = {"buy_now": [], "buy_soon": [], "take_profits": [], "hold": [], "avoid": []}
+    side (trim/avoid) rides the backtested absolute-trend / fading-deteriorating drawdown gate
+    (the one multi-decade-measured edge). `validated` flags which is which. Each item is
+    badged kind='theme'. Graceful: empty buckets if the artifacts are absent.
+
+    NEW — us_sector_* themes are separated out: they are returned in `sector_overlay` keyed
+    by SPDR ticker (reverse-mapped from US_SECTOR_PAGE), not placed in narrative bucket rows.
+    This prevents the board from double-listing each GICS sector (once as 🏛 cap-weighted
+    cycle timing and once as 🧩 equal-weight basket).
+
+    NEW — enter/accumulate routing now honours clean_entry from textures (or falls back to
+    act_now membership). clean_entry.flag=True → buy_now (accumulate) / buy_soon (enter);
+    flag absent/False → on_the_run bucket (in favour but no clean setup, don't chase)."""
+    # Build reverse map: us_sector_<slug> → SPDR ticker from US_SECTOR_PAGE
+    _slug_to_spdr: dict[str, str] = {}
+    for _spdr, _href in US_SECTOR_PAGE.items():
+        _slug = _href.replace("basket/", "").replace(".html", "")
+        _slug_to_spdr[_slug] = _spdr
+
+    buckets: dict = {"buy_now": [], "buy_soon": [], "on_the_run": [],
+                     "take_profits": [], "hold": [], "avoid": [],
+                     "sector_overlay": {}}
     try:
         ti = (json.loads((site / "basketdata" / "baskets.json").read_text())
               .get("theme_intel") or {})
@@ -1117,6 +1134,12 @@ def basket_action_items(site) -> dict:
     themes = ti.get("themes") or []
     if not themes:
         return buckets
+
+    # act_now lists provide a fallback when textures.clean_entry is absent
+    act_now = ti.get("act_now") or {}
+    act_now_buy_ids = {x["id"] for x in (act_now.get("buy") or [])}
+    act_now_pullback_ids = {x["id"] for x in (act_now.get("add_on_pullback") or [])}
+
     alloc, book_wt = {}, {}
     try:
         aj = json.loads((site / "allocationdata" / "allocation.json").read_text())
@@ -1125,20 +1148,30 @@ def basket_action_items(site) -> dict:
                    for w in ((aj.get("allocation") or {}).get("weights") or [])}
     except Exception as e:  # noqa: BLE001 — enrichment only
         log.warning("basket action: allocation.json unreadable (%s)", e)
-    # 'enter' (emerging, fresh) → SETTING UP; 'accumulate' (confirmed leader) → BUY ZONE.
-    reco_bucket = {"enter": "buy_soon", "accumulate": "buy_now",
-                   "hold": "hold", "trim": "take_profits", "avoid": "avoid"}
+
+    # Lane mapping for non-buy recos — same as before
+    reduce_bucket = {"hold": "hold", "trim": "take_profits", "avoid": "avoid"}
+
     for th in themes:
+        tid = th.get("id") or ""
         reco = (th.get("reco") or "").lower()
-        bkt = reco_bucket.get(reco)
-        if not bkt:
-            continue
-        a = alloc.get(th.get("id")) or {}
+        a = alloc.get(tid) or {}
         gate = a.get("gate") or {}
-        buckets[bkt].append({
+        tex = th.get("textures") or {}
+        ce = tex.get("clean_entry") or {}
+        # clean_entry: prefer textures.clean_entry.flag; fallback to act_now membership
+        if ce:
+            ce_flag = bool(ce.get("flag"))
+            ce_quality = ce.get("quality")
+        else:
+            ce_flag = tid in act_now_buy_ids
+            ce_quality = None
+
+        base_item = {
             "kind": "theme",
-            "ticker": th.get("id"), "slug": th.get("id"),
-            "href": "basket/" + str(th.get("id")) + ".html",
+            "reco": reco,                            # raw reco; needed by action_board() reduce-side override
+            "ticker": tid, "slug": tid,
+            "href": "basket/" + tid + ".html",
             "name": th.get("name"), "name_zh": th.get("name_zh"),
             "label": th.get("reco_en") or reco.upper(),
             "label_zh": th.get("reco_zh") or reco,
@@ -1147,15 +1180,61 @@ def basket_action_items(site) -> dict:
             "above_trend": bool(gate.get("above_200dma")) if gate else None,
             "eligible": a.get("eligible"),
             "durability": (a.get("durability") or {}).get("bar"),
-            "book_wt": book_wt.get(th.get("id")),
+            "book_wt": book_wt.get(tid),
             "validated": reco in ("trim", "avoid"),   # the trend-gate / drawdown risk side
             "signal_grade": (th.get("signal_strength") or {}).get("grade"),
-        })
+            "clean_entry": ce_flag,
+            "clean_quality": ce_quality,
+        }
+
+        # --- us_sector_* go to sector_overlay, NOT into narrative rows ---
+        if tid.startswith("us_sector_"):
+            spdr = _slug_to_spdr.get(tid)
+            if not spdr:
+                continue   # unknown slug — skip gracefully
+            # Determine which lane this reco WOULD have mapped to (used for ew_lane)
+            if reco in ("accumulate", "enter"):
+                ew_lane = "buy_now" if (reco == "accumulate" and ce_flag) else (
+                          "buy_soon" if (reco == "enter" and ce_flag) else "on_the_run")
+            else:
+                ew_lane = reduce_bucket.get(reco, "avoid")
+            buckets["sector_overlay"][spdr] = dict(base_item, ew_lane=ew_lane)
+            continue
+
+        # --- Narrative (non-us_sector_*) themes: route by reco + clean_entry ---
+        if reco in ("accumulate", "enter"):
+            if reco == "accumulate" and ce_flag:
+                bkt = "buy_now"
+            elif reco == "enter" and ce_flag:
+                bkt = "buy_soon"
+            else:
+                # In favour but no clean-entry setup — don't chase, add on pullback
+                bkt = "on_the_run"
+                quality_pct = (
+                    round(ce_quality * 100) if ce_quality is not None else None
+                )
+                # Carry a short reason for the template to surface
+                base_item["run_reason_en"] = (
+                    "In favour but no clean-entry setup — add on pullback"
+                    + (f"; entry quality {quality_pct}%" if quality_pct is not None else "")
+                )
+                base_item["run_reason_zh"] = (
+                    "顺势但无干净入场机会 — 等回调加仓"
+                    + (f"；入场质量 {quality_pct}%" if quality_pct is not None else "")
+                )
+        else:
+            bkt = reduce_bucket.get(reco)
+            if not bkt:
+                continue
+
+        buckets[bkt].append(base_item)
+
     buckets["buy_now"].sort(key=lambda x: -(x.get("score") or 0))   # leaders first
     buckets["buy_soon"].sort(key=lambda x: -(x.get("score") or 0))
+    buckets["on_the_run"].sort(key=lambda x: -(x.get("score") or 0))
     buckets["take_profits"].sort(key=lambda x: (x.get("score") or 0))  # weakest first
     buckets["avoid"].sort(key=lambda x: (x.get("score") or 0))
-    for k in buckets:                                # cap so baskets don't crowd the board
+    for k in ("buy_now", "buy_soon", "on_the_run", "take_profits", "hold", "avoid"):
         buckets[k] = buckets[k][:8]
     return buckets
 
@@ -1183,29 +1262,89 @@ def action_board(sector_timing: dict, notable: list[dict],
     """Bucket sector + narrative-basket + standout-stock cycle signals into an at-a-glance
     'what to act on now' board. Sectors and baskets are UNIFIED (each item carries
     kind='sector'|'theme' + an href) so the board acts on narrative resolution, not just the
-    11 GICS sectors."""
+    11 GICS sectors.
+
+    Urgency routing (ratified):
+      now → buy_now; imminent/soon → buy_soon; hold → hold; exit → take_profits;
+      caution splits by entry tag:
+        "DON'T CHASE"            → on_the_run   (uptrend intact, extended)
+        "UNCONFIRMED — HIGH RISK" → avoid        (bear-trend bounce)
+        anything else (incl. "TAKE PROFITS") → take_profits
+      all other urgency values → avoid.
+
+    EW overlay attach: if sector_overlay carries the SPDR ticker, attach item["ew"] + ew_lane.
+    Reduce-side override (the one backtested drawdown-control edge): if overlay reco is
+    trim/avoid and the cycle lane is buy_now/buy_soon/on_the_run/hold, the row is MOVED to
+    take_profits or avoid respectively (gate_override=True so the template can badge ✓)."""
     from engine.playbook import SECTOR_NAMES
-    buy_now, buy_soon, take_profits, hold, avoid = [], [], [], [], []
+    buy_now, buy_soon, on_the_run, take_profits, hold, avoid = [], [], [], [], [], []
+
+    # sector_overlay comes from basket_action_items(); keyed by SPDR ticker
+    sector_overlay = (basket_items or {}).get("sector_overlay") or {}
+
+    _BUY_LANES = {"buy_now", "buy_soon", "on_the_run", "hold"}
+
     for fund, tm in sector_timing.items():
         e = tm.get("entry") or {}
+        tag = e.get("tag", "")
         item = {"ticker": fund, "name": SECTOR_NAMES.get(fund, fund),
                 "kind": "sector", "href": US_SECTOR_PAGE.get(fund, "sectors/" + fund + ".html"),
-                "label": tm["label"], "tag": e.get("tag", ""),
+                "label": tm["label"], "tag": tag,
                 "text": e.get("text", ""), "days": e.get("days_hi"),
                 "age_short": tm.get("age_short"), "age_short_zh": tm.get("age_short_zh"),
                 "eq_badge": tm.get("eq_badge"), "eq_dir": tm.get("eq_dir"),
-                "eq_tip": tm.get("eq_tip"), "style": tm.get("state_style")}
+                "eq_tip": tm.get("eq_tip"), "eq_tip_zh": tm.get("eq_tip_zh"), "style": tm.get("state_style")}
         u = e.get("urgency")
+        # Determine the cycle-timing lane
         if u == "now":
-            buy_now.append(item)
+            cycle_lane = "buy_now"
         elif u in ("imminent", "soon"):
-            buy_soon.append(item)
-        elif u in ("caution", "exit"):
-            take_profits.append(item)
+            cycle_lane = "buy_soon"
         elif u == "hold":
+            cycle_lane = "hold"
+        elif u == "exit":
+            cycle_lane = "take_profits"
+        elif u == "caution":
+            if tag == "DON'T CHASE":
+                cycle_lane = "on_the_run"
+            elif tag == "UNCONFIRMED — HIGH RISK":
+                cycle_lane = "avoid"
+            else:
+                cycle_lane = "take_profits"
+        else:
+            cycle_lane = "avoid"
+
+        # Attach EW overlay when available
+        ov = sector_overlay.get(fund)
+        if ov:
+            item["ew"] = ov
+            item["ew_lane"] = ov.get("ew_lane")
+
+        # Reduce-side override: the backtested drawdown-control edge may not be hidden
+        # behind a constructive cycle read.
+        final_lane = cycle_lane
+        if ov:
+            ov_reco = (ov.get("reco") or "").lower()
+            if ov_reco == "trim" and cycle_lane in _BUY_LANES:
+                final_lane = "take_profits"
+                item["gate_override"] = True
+            elif ov_reco == "avoid" and cycle_lane in _BUY_LANES:
+                final_lane = "avoid"
+                item["gate_override"] = True
+
+        if final_lane == "buy_now":
+            buy_now.append(item)
+        elif final_lane == "buy_soon":
+            buy_soon.append(item)
+        elif final_lane == "on_the_run":
+            on_the_run.append(item)
+        elif final_lane == "take_profits":
+            take_profits.append(item)
+        elif final_lane == "hold":
             hold.append(item)
         else:
             avoid.append(item)
+
     buy_soon.sort(key=lambda x: (x["days"] if x["days"] is not None else 99))
     # ----- standout-stock ranking ------------------------------------------------
     # Within each urgency tier, rank by the alpha-aware SETUP score (selection =
@@ -1271,10 +1410,11 @@ def action_board(sector_timing: dict, notable: list[dict],
             overflow.append(n)
     notable_clean = (picked + overflow)[:CAP]
     # UNIFY: narrative baskets lead each lane (the resolution the user acts on), GICS
-    # sectors follow. 'hold' carries themes then both sector hold + avoid lists.
+    # sectors follow. on_the_run: basket rows first (same 🧩-then-🏛 pattern), then sectors.
     bi = basket_items or {}
     return {"buy_now": (bi.get("buy_now") or []) + buy_now,
             "buy_soon": (bi.get("buy_soon") or []) + buy_soon,
+            "on_the_run": (bi.get("on_the_run") or []) + on_the_run,
             "take_profits": (bi.get("take_profits") or []) + take_profits,
             "hold": (bi.get("hold") or []) + hold,
             "avoid": (bi.get("avoid") or []) + avoid,
