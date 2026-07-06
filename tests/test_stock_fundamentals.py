@@ -613,6 +613,78 @@ def test_leverage_ratios_output_is_json_safe():
 
 
 # ---------------------------------------------------------------------------
+# _load_statements() point-in-time gate (period_end + 120d; parity with #1572)
+# ---------------------------------------------------------------------------
+
+def _pit_stmt_frame(*, include_period_end=True, future_period_end="2099-06-30"):
+    """3-row TST frame: two filed FYs (past period_end) + one not-yet-filed future
+    FY. ``include_period_end=False`` drops the column entirely (legacy schema);
+    ``future_period_end=None`` leaves the future row's period_end NaN (un-restamped
+    legacy row)."""
+    import pandas as pd
+    rows = [
+        {"ticker": "TST", "fy": 2023, "op_income": 20.0, "interest_exp": 2.0,
+         "debt_lt": 40.0, "debt_cur": 10.0, "cash": 5.0, "period_end": "2023-06-30"},
+        {"ticker": "TST", "fy": 2024, "op_income": 22.0, "interest_exp": 2.0,
+         "debt_lt": 42.0, "debt_cur": 11.0, "cash": 6.0, "period_end": "2024-06-30"},
+        {"ticker": "TST", "fy": 2099, "op_income": 500.0, "interest_exp": 2.0,
+         "debt_lt": 99.0, "debt_cur": 9.0, "cash": 1.0, "period_end": future_period_end},
+    ]
+    df = pd.DataFrame(rows)
+    if not include_period_end:
+        df = df.drop(columns=["period_end"])
+    return df
+
+
+def _load_statements_with(df):
+    """Run SF._load_statements() against a temp statements.parquet built from df,
+    with SF.config.data_dir patched to the temp dir (restored afterwards)."""
+    import shutil
+    import tempfile
+    tmp = Path(tempfile.mkdtemp())
+    try:
+        (tmp / "edgar").mkdir(parents=True, exist_ok=True)
+        df.to_parquet(tmp / "edgar" / "statements.parquet")
+        orig = SF.config.data_dir
+        SF.config.data_dir = lambda: tmp
+        try:
+            return SF._load_statements()
+        finally:
+            SF.config.data_dir = orig
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
+def test_load_statements_drops_not_yet_filed_fy():
+    """A future fiscal row whose availability date (period_end + 120d) is after today
+    is dropped, so latest-row consumers never see a not-yet-filed FY (the #1572 leak
+    for statements.parquet — e.g. the FY2027 STX row)."""
+    out = _load_statements_with(_pit_stmt_frame())
+    yrs = [r["fy"] for r in out["TST"]]
+    assert yrs == [2023, 2024], yrs
+    # end-to-end: _leverage_ratios now reads fy2024 (net_debt 42+11-6=47),
+    # NOT the gated fy2099 row (99+9-1=107).
+    lev = SF._leverage_ratios(out["TST"])
+    assert lev["net_debt"] == 47.0, lev
+
+
+def test_load_statements_failopen_when_no_period_end_column():
+    """Legacy schema without a period_end column cannot be gated — every row is KEPT
+    (fail-open) so the panel is not blanked before the re-fetch re-stamps period_end."""
+    out = _load_statements_with(_pit_stmt_frame(include_period_end=False))
+    yrs = [r["fy"] for r in out["TST"]]
+    assert yrs == [2023, 2024, 2099], yrs
+
+
+def test_load_statements_failopen_on_nan_period_end():
+    """A row with period_end NaN (legacy row not yet re-fetched) cannot be gated and
+    is KEPT — the gate self-activates only once period_end is stamped."""
+    out = _load_statements_with(_pit_stmt_frame(future_period_end=None))
+    yrs = [r["fy"] for r in out["TST"]]
+    assert yrs == [2023, 2024, 2099], yrs
+
+
+# ---------------------------------------------------------------------------
 # W2 PR-I — _compounders() tests
 # ---------------------------------------------------------------------------
 

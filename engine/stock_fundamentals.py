@@ -378,7 +378,19 @@ def _load_profiles() -> dict[str, dict]:
 
 def _load_statements() -> dict[str, list[dict]]:
     """ticker -> list of per-fiscal-year statement dicts (ascending) from the
-    Phase-2 companyfacts collector (collectors/edgar_facts.py). Empty until run."""
+    Phase-2 companyfacts collector (collectors/edgar_facts.py). Empty until run.
+
+    Point-in-time: fiscal rows not yet filed as of today — availability date
+    ``period_end + 120d`` in the future — are dropped before grouping, reusing the
+    same gate as ``engine.moat_falsifiers`` (``_pit_filter``/``_resolve_asof``, #1572).
+    The companyfacts store can carry not-yet-filed future fiscal years (its ``fy``
+    range runs past the current year — e.g. an FY2027 STX row); without this gate
+    they leak into every latest-row consumer — ``_multiyear`` / ``_leverage_ratios`` /
+    ``_piotroski`` / ``_accounting_quality`` all read ``rows[-1]`` as "latest filed
+    FY". Rows lacking ``period_end`` (legacy rows fetched before the column existed)
+    cannot be gated and are KEPT (fail-open): these are display-only panels, so the
+    gate self-activates as the weekly companyfacts re-fetch re-stamps ``period_end``
+    rather than blanking the panel meanwhile."""
     p = config.data_dir() / "edgar" / "statements.parquet"
     if not p.exists():
         return {}
@@ -387,6 +399,12 @@ def _load_statements() -> dict[str, list[dict]]:
     except Exception:  # noqa: BLE001
         return {}
     if df.empty or "ticker" not in df.columns:
+        return {}
+    # PIT gate: drop fiscal rows whose 10-K is not yet filed as of today
+    # (period_end + 120d in the future). Fail-open on rows lacking period_end.
+    from engine.moat_falsifiers import _pit_filter, _resolve_asof  # noqa: PLC0415
+    df = _pit_filter(df, _resolve_asof(None))
+    if df.empty:
         return {}
     out: dict[str, list[dict]] = {}
     for t, sub in df.sort_values("fy").groupby("ticker"):
@@ -513,9 +531,13 @@ def _net_debt(stmt: dict) -> float | None:
 def _leverage_ratios(rows: list[dict], sector: str | None = None) -> dict:
     """Bottom-survival-quality leverage ratios from statement rows.
 
-    Follows the _altman()/_piotroski() pattern: takes the full list of per-fiscal-year
-    statement rows (unfiltered, consistent with sibling helpers) and uses rows[-1]
-    (latest filed FY), which is PIT-safe for a current-snapshot builder.
+    Follows the _altman()/_piotroski() pattern: takes the per-fiscal-year statement
+    rows and uses rows[-1] as the latest filed FY. This is PIT-safe because the rows
+    are availability-gated upstream by _load_statements() (period_end + 120d, #1572),
+    which drops the not-yet-filed future fiscal years the companyfacts store can carry
+    — so rows[-1] is the latest *available* filing, never a not-yet-filed one. (The
+    helper itself is pure and does no gating; a caller that passes ungated rows would
+    reintroduce the leak.)
     Returns a dict with up to six keys; any ratio that cannot be computed (missing or
     zero denominator, all-None inputs) is absent from the dict (not set to 0/None) so
     the caller can detect unavailability via .get() returning None.
@@ -1843,13 +1865,15 @@ def panels() -> dict[str, dict]:
             my=my,
             betas=betas_map.get(str(t)),
         )
-        # Latest statement row, used for the Tier-1 financials metrics (op_margin,
-        # gp_assets, roce, rd_sales) and the leverage panel current/quick ratios.
+        # Latest statement row (availability-gated by _load_statements — period_end
+        # + 120d, #1572; drops not-yet-filed future fiscal years), used for the Tier-1
+        # financials metrics (op_margin, gp_assets, roce, rd_sales) and the leverage
+        # panel current/quick ratios.
         latest_stmt = rows[-1] if rows else None
         fin = _financials(t, f, deep.get(t), my, stmt=latest_stmt,
                          sector=(fac or {}).get("sector"))
-        # Leverage ratios: computed from the PIT-filtered statement rows (same rows
-        # already used for _multiyear).  None-safe throughout; Financials-sector names
+        # Leverage ratios: computed from the same availability-gated statement rows
+        # already used for _multiyear.  None-safe throughout; Financials-sector names
         # have current/quick suppressed; empty dict excluded by `if v` filter below.
         lev = _leverage_ratios(rows or [], sector=(fac or {}).get("sector"))
         blocks = {
@@ -1936,7 +1960,9 @@ def archetypes_history(out_path=None) -> pd.DataFrame:
 
     Inputs consumed (all optional — rows that lack them get None for those fields):
       - data/edgar/fundamentals_panel.parquet   (PIT financials — Altman inputs)
-      - data/edgar/statements.parquet           (rev/EPS multi-year for CAGR — PIT-filtered)
+      - data/edgar/statements.parquet           (rev/EPS multi-year for CAGR — PIT-filtered:
+                                                 fy <= panel fy per row (below), and not-yet-filed
+                                                 future rows dropped upstream by _load_statements)
       - site/factor_betas.json                  (rate/oil betas — CURRENT-SNAPSHOT, non-PIT)
       - site/factordata/factors.json            (sector + factor z-scores — CURRENT-SNAPSHOT, non-PIT)
 
