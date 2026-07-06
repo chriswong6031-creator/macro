@@ -196,14 +196,20 @@ def _sample_control_dates(
     event_ts: pd.Timestamp,
     existing_event_dates: set[pd.Timestamp],
     seed: int,
+    used_control_dates: set[pd.Timestamp] | None = None,
 ) -> list[pd.Timestamp]:
     """Sample CONTROL_RATIO random non-event bars for one event (year-stratified).
 
     Matching: same ticker, same calendar year as the event, non-event bars,
     passing the same liquidity + ERA gates.  Seed is derived from event_id.
+
+    ``used_control_dates`` excludes dates already chosen as controls in this
+    run, preventing two events from independently sampling the same bar and
+    producing a duplicate control event_id.
     """
     rng = np.random.default_rng(seed)
     yr = event_ts.year
+    excluded = existing_event_dates | (used_control_dates or set())
 
     eligible: list[int] = []
     for i, ts in enumerate(close.index):
@@ -213,7 +219,7 @@ def _sample_control_dates(
             continue
         if ts.year != yr:
             continue
-        if ts in existing_event_dates:
+        if ts in excluded:
             continue
         if raw_df is not None and not _liq_ok_at(close, raw_df, i):
             continue
@@ -226,7 +232,7 @@ def _sample_control_dates(
                 continue
             if abs(ts.year - yr) > 1:
                 continue
-            if ts in existing_event_dates:
+            if ts in excluded:
                 continue
             if raw_df is not None and not _liq_ok_at(close, raw_df, i):
                 continue
@@ -642,6 +648,13 @@ def run(
         new_rows: list[dict[str, Any]] = []
         n_new_events = 0
         n_new_controls = 0
+        # Tracks control bar dates chosen within this run (across all tickers /
+        # definitions) so that _sample_control_dates can exclude them, preventing
+        # two events from independently sampling the same date and producing a
+        # duplicate control event_id.  Per-ticker exclusion (not globally keyed by
+        # ticker) is intentionally conservative: it avoids same-date controls even
+        # across different tickers, which is acceptable given the large bar pool.
+        used_ctrl_dates: set[pd.Timestamp] = set()
 
         tickers = sorted(universe)
         log.info("Processing %d tickers for new events since %s...", len(tickers), last_stamp.date())
@@ -686,9 +699,13 @@ def run(
                         ticker, close, raw_df, event_ts,
                         existing_event_dates=all_event_ts,
                         seed=ctrl_seed,
+                        used_control_dates=used_ctrl_dates,
                     )
-                    for ctrl_ts in ctrl_dates:
-                        ctrl_eid = _make_event_id(ticker, f"CONTROL_FOR_{defn}", ctrl_ts)
+                    for k, ctrl_ts in enumerate(ctrl_dates):
+                        # Globally-unique control id: parent_event_id|ctrl_{k}
+                        # Ties the control to exactly one parent event, preventing
+                        # collisions when two events sample the same calendar date.
+                        ctrl_eid = f"{event_id}|ctrl_{k}"
                         ctrl_row = _grade_row(
                             ticker=ticker,
                             event_ts=ctrl_ts,
@@ -701,6 +718,8 @@ def run(
                         )
                         ctrl_row["event_id"] = ctrl_eid
                         new_rows.append(ctrl_row)
+                        existing_ids.add(ctrl_eid)
+                        used_ctrl_dates.add(ctrl_ts)
                         n_new_controls += 1
 
         log.info(
@@ -730,6 +749,17 @@ def run(
                 combined = existing_df
 
             if len(combined) > 0 or not ledger_path.exists():
+                # Safety dedup: should be a no-op when the controls are generated
+                # correctly, but guards against any residual collision path.
+                before_dedup = len(combined)
+                combined = combined.drop_duplicates(subset="event_id", keep="first")
+                n_dropped = before_dedup - len(combined)
+                if n_dropped:
+                    log.warning(
+                        "drop_duplicates removed %d duplicate event_id rows — "
+                        "investigate upstream collision",
+                        n_dropped,
+                    )
                 combined.to_parquet(ledger_path, index=False)
                 log.info(
                     "Wrote %s (%d total rows = %d existing + %d new)",

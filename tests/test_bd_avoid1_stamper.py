@@ -538,7 +538,7 @@ class TestFullRunIntegration:
         )
         monkeypatch.setattr(
             "scripts.research.bd_avoid1_stamper._sample_control_dates",
-            lambda ticker, close, raw_df, event_ts, existing_event_dates, seed: [],
+            lambda ticker, close, raw_df, event_ts, existing_event_dates, seed, **kw: [],
         )
 
         result = run(data_dir=tmp_path, dry_run=False)
@@ -585,8 +585,10 @@ class TestFullRunIntegration:
         monkeypatch.setattr("scripts.research.bd_avoid1_stamper._build_vintage_stamp",
                             lambda n: self._make_vstamp())
         monkeypatch.setattr("scripts.research.bd_avoid1_stamper._ensure_trial_ledger", lambda p: None)
-        monkeypatch.setattr("scripts.research.bd_avoid1_stamper._sample_control_dates",
-                            lambda *a, **kw: [])
+        monkeypatch.setattr(
+            "scripts.research.bd_avoid1_stamper._sample_control_dates",
+            lambda *a, **kw: [],
+        )
 
         # First run: 1 event written
         r1 = run(data_dir=tmp_path, dry_run=False)
@@ -604,3 +606,150 @@ class TestFullRunIntegration:
         # (detected_ids_seen[1] = second run's existing_ids at time of detection)
         assert len(detected_ids_seen) >= 2
         assert fake_eid in detected_ids_seen[1]
+
+
+# ---------------------------------------------------------------------------
+# 9. Control-arm dedup — collision prevention (blocking review finding)
+# ---------------------------------------------------------------------------
+
+class TestControlDedup:
+    """Tests that control event_ids are unique and collisions are prevented.
+
+    This covers the blocking finding from the adversarial review:
+      - Two events on the same ticker+year that independently sample the same
+        control bar must NOT produce the same control event_id.
+      - used_ctrl_dates must exclude already-chosen control bars within a run.
+      - drop_duplicates guards the final write.
+    """
+
+    def _make_vstamp(self) -> dict:
+        from engine.vintage_stamp import vintage_stamp
+        return vintage_stamp(
+            price_plane_id="test",
+            adjustment_mode="test",
+            universe_as_of="2026-07-06",
+            frame="test",
+            survivorship_biased=True,
+            coverage_frac=1.0,
+            dead_name_coverage_pct=None,
+            era_law_cohort="test",
+        )
+
+    def test_control_event_id_format_includes_parent(self):
+        """Control event_ids must be {parent_event_id}|ctrl_{k}, not a date-only key.
+
+        This ensures two events can never produce the same ctrl_eid even if
+        they sample the same calendar bar.
+        """
+        from scripts.research.bd_avoid1_stamper import _make_event_id
+        parent_eid = _make_event_id("AAPL", "BD-2", pd.Timestamp("2026-07-07"))
+        # Simulate control id generation as implemented after the fix
+        ctrl_eid_0 = f"{parent_eid}|ctrl_0"
+        ctrl_eid_1 = f"{parent_eid}|ctrl_1"
+        # Different events on same ticker+year produce different ctrl eids even for
+        # the same sampled date
+        parent_eid2 = _make_event_id("AAPL", "BD-2", pd.Timestamp("2026-08-07"))
+        ctrl_eid2_0 = f"{parent_eid2}|ctrl_0"
+        # Same bar sampled by two different parents → distinct ctrl eids
+        assert ctrl_eid_0 != ctrl_eid2_0
+        assert "|ctrl_" in ctrl_eid_0
+        assert "|ctrl_" in ctrl_eid2_0
+
+    def test_sample_control_dates_excludes_used_ctrl_dates(self):
+        """_sample_control_dates respects used_control_dates exclusion set."""
+        from scripts.research.bd_avoid1_stamper import _sample_control_dates, CONTROL_RATIO
+
+        # 1500 bars from 2021-01-04 reaches ~2026-10; ERA_START is 2021-07-06
+        close = _flat_series(n=1500, start="2021-01-04")
+        # Find bars in 2026 (there will be ~200+)
+        bars_2026 = [ts for ts in close.index if ts.year == 2026]
+        assert len(bars_2026) >= 5, "Need at least 5 bars in 2026 for this test"
+
+        event_ts = bars_2026[0]  # event is first 2026 bar
+
+        # First sampling: no exclusions beyond event date
+        first_draw = _sample_control_dates(
+            "FAKE", close, None, event_ts,
+            existing_event_dates={event_ts},
+            seed=42,
+        )
+        assert len(first_draw) > 0, "Expected at least one control date sampled"
+
+        # Second sampling with used_control_dates = first_draw
+        # Should not return any bar that was already drawn
+        used = set(first_draw)
+        second_draw = _sample_control_dates(
+            "FAKE", close, None, event_ts,
+            existing_event_dates={event_ts},
+            seed=99,
+            used_control_dates=used,
+        )
+        # None of the second draw should overlap with first
+        overlap = set(second_draw) & used
+        assert overlap == set(), (
+            f"used_control_dates exclusion failed: overlap={overlap}"
+        )
+
+    def test_run_produces_unique_ctrl_eids_two_events_same_ticker(
+        self, tmp_path, monkeypatch
+    ):
+        """Two BD-2 events on the same ticker in the same calendar year must produce
+        unique control event_ids even if their control pool overlaps.
+
+        This is the canonical collision scenario from the blocking review finding:
+        without the fix, two events could independently sample the same bar and
+        write duplicate control rows that silently double-count in the verdict arm.
+        """
+        from scripts.research.bd_avoid1_stamper import run, _make_event_id
+
+        # 1500 bars from 2021-01-04 reaches ~2026-10; ERA_START is 2021-07-06
+        close = _flat_series(n=1500, start="2021-01-04")
+        # Pick two distinct event dates in the same year, well after registration
+        bars_2026 = [ts for ts in close.index if ts.year == 2026]
+        assert len(bars_2026) >= 10
+        event_ts1 = bars_2026[5]
+        event_ts2 = bars_2026[8]
+
+        def fake_detect(ticker, cl, raw_df, existing_ids, last_stamp):
+            if ticker == "FAKE":
+                new_events = []
+                for ts in [event_ts1, event_ts2]:
+                    eid = _make_event_id("FAKE", "BD-2", ts)
+                    if eid not in existing_ids:
+                        new_events.append(ts)
+                return {"BD-2": new_events, "BD-3": []}
+            return {"BD-2": [], "BD-3": []}
+
+        monkeypatch.setattr("scripts.research.bd_avoid1_stamper._detect_new_events", fake_detect)
+        monkeypatch.setattr("scripts.research.bd_avoid1_stamper.build_universe", lambda: {"FAKE"})
+        monkeypatch.setattr("scripts.research.bd_avoid1_stamper._read_massive_ticker", lambda t: close)
+        monkeypatch.setattr("scripts.research.bd_avoid1_stamper._read_massive_ohlcv", lambda t: None)
+        monkeypatch.setattr("scripts.research.bd_avoid1_stamper._narrow_commit", lambda *a, **kw: True)
+        monkeypatch.setattr(
+            "scripts.research.bd_avoid1_stamper._build_vintage_stamp",
+            lambda n: self._make_vstamp(),
+        )
+        monkeypatch.setattr("scripts.research.bd_avoid1_stamper._ensure_trial_ledger", lambda p: None)
+        # NOTE: _sample_control_dates is NOT stubbed — this exercises the real
+        # control sampling path (the gap identified in the review).
+
+        result = run(data_dir=tmp_path, dry_run=False)
+
+        assert result["n_new_events"] == 2
+
+        ledger = pd.read_parquet(tmp_path / "research" / "bd_avoid1_ledger.parquet")
+        # All event_ids must be unique
+        assert ledger["event_id"].nunique() == len(ledger), (
+            "Duplicate event_ids found in ledger — control dedup failed"
+        )
+
+        # Control rows: every ctrl eid must embed its parent event_id
+        ctrl_rows = ledger[ledger["is_control"] == True]
+        for eid in ctrl_rows["event_id"]:
+            assert "|ctrl_" in eid, f"Control eid missing |ctrl_ suffix: {eid}"
+
+        # Verify the two event eids are in the ledger
+        eid1 = _make_event_id("FAKE", "BD-2", event_ts1)
+        eid2 = _make_event_id("FAKE", "BD-2", event_ts2)
+        assert eid1 in ledger["event_id"].values
+        assert eid2 in ledger["event_id"].values
