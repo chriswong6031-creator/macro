@@ -515,6 +515,290 @@ def test_fixture_lagging_flags(tmp_repo):
     assert "family_a" in lg["flagged_names"]
 
 
+# ---------------------------------------------------------------------------
+# Section E: Factor Intelligence — fixture helper
+# ---------------------------------------------------------------------------
+
+def _patch_factor_paths(neural_web, root: Path) -> dict:
+    """Set the factor intelligence path constants to point at tmp root.
+    Returns a dict of (attr_name → old_value) for restoration."""
+    nw = root / "data" / "neuralweb"
+    reflexes = root / "data" / "reflexes"
+    saved = {}
+    patches = {
+        "_FACTOR_STATE": nw / "factor_intelligence_state.json",
+        "_FACTOR_FIRINGS": reflexes / "factor_attention" / "firings.jsonl",
+        "_FACTOR_GRADES": reflexes / "factor_attention" / "grades.jsonl",
+        "_FACTOR_PROBATION": reflexes / "factor_attention" / "probation.json",
+        "_FACTOR_CONTRADICTIONS": nw / "factor_contradictions.jsonl",
+    }
+    for attr, val in patches.items():
+        saved[attr] = getattr(neural_web, attr)
+        setattr(neural_web, attr, val)
+    return saved
+
+
+def _restore_factor_paths(neural_web, saved: dict) -> None:
+    for attr, val in saved.items():
+        setattr(neural_web, attr, val)
+
+
+def _make_panel_with_root_fi(root: Path):
+    """Like _make_panel_with_root but also patches Section E factor paths."""
+    from admin import neural_web
+
+    old_root = neural_web._ROOT
+    neural_web._ROOT = root
+    neural_web._DATA_NW = root / "data" / "neuralweb"
+    neural_web._CONFIG = root / "config"
+    neural_web._DATA_REFLEXES = root / "data" / "reflexes"
+    neural_web._SPINE_ENVELOPE = neural_web._DATA_NW / "spine_index.parquet.envelope.json"
+    neural_web._SPINE_PARQUET = neural_web._DATA_NW / "spine_index.parquet"
+    neural_web._KERNEL_ENVELOPE = neural_web._DATA_NW / "kernel_estimates.parquet.envelope.json"
+    neural_web._KERNEL_FAMILIES = neural_web._DATA_NW / "kernel_families.json"
+    neural_web._KERNEL_DECISIONS = neural_web._DATA_NW / "kernel_decisions.json"
+    neural_web._LAGGING_SIGNALS = neural_web._DATA_NW / "lagging_signals.json"
+    neural_web._READ_GATE = neural_web._DATA_NW / "read_gate_baseline.json"
+    neural_web._CONFLUENCE_GRAPH = neural_web._DATA_NW / "confluence_graph.json"
+    neural_web._GOVERNANCE_JSONL = neural_web._DATA_NW / "governance.jsonl"
+    neural_web._CORTEX_MEMO = neural_web._DATA_NW / "cortex" / "memo.json"
+    neural_web._SYNAPSE_YML = neural_web._CONFIG / "synapse.yml"
+    neural_web._REFLEXES_YML = neural_web._CONFIG / "reflexes.yml"
+    saved_factor = _patch_factor_paths(neural_web, root)
+    try:
+        return neural_web.panel()
+    finally:
+        neural_web._ROOT = old_root
+        neural_web._DATA_NW = old_root / "data" / "neuralweb"
+        neural_web._CONFIG = old_root / "config"
+        neural_web._DATA_REFLEXES = old_root / "data" / "reflexes"
+        neural_web._SPINE_ENVELOPE = neural_web._DATA_NW / "spine_index.parquet.envelope.json"
+        neural_web._SPINE_PARQUET = neural_web._DATA_NW / "spine_index.parquet"
+        neural_web._KERNEL_ENVELOPE = neural_web._DATA_NW / "kernel_estimates.parquet.envelope.json"
+        neural_web._KERNEL_FAMILIES = neural_web._DATA_NW / "kernel_families.json"
+        neural_web._KERNEL_DECISIONS = neural_web._DATA_NW / "kernel_decisions.json"
+        neural_web._LAGGING_SIGNALS = neural_web._DATA_NW / "lagging_signals.json"
+        neural_web._READ_GATE = neural_web._DATA_NW / "read_gate_baseline.json"
+        neural_web._CONFLUENCE_GRAPH = neural_web._DATA_NW / "confluence_graph.json"
+        neural_web._GOVERNANCE_JSONL = neural_web._DATA_NW / "governance.jsonl"
+        neural_web._CORTEX_MEMO = neural_web._DATA_NW / "cortex" / "memo.json"
+        neural_web._SYNAPSE_YML = neural_web._CONFIG / "synapse.yml"
+        neural_web._REFLEXES_YML = neural_web._CONFIG / "reflexes.yml"
+        _restore_factor_paths(neural_web, saved_factor)
+
+
+def _write_factor_state(root: Path, n_dates: int = 80, granted: bool = False,
+                        pair_g_dormant: bool = True, n_today: int = 0) -> None:
+    """Write a synthetic factor_intelligence_state.json to the fixture root."""
+    nw = root / "data" / "neuralweb"
+    nw.mkdir(parents=True, exist_ok=True)
+    state = {
+        "schema": "neuralweb.factor_intelligence_state.v1",
+        "as_of": "2026-07-06",
+        "produced_at": "2026-07-06T08:00:00+00:00",
+        "is_context_only": True,
+        "display_only": True,
+        "panel": {
+            "available": True,
+            "n_dates": n_dates,
+            "latest_date": "2026-07-06",
+            "history_floor_met": n_dates >= 60,
+            "n_tickers_latest": 500,
+        },
+        "factor_weather": {
+            "style_regime": "growth",
+            "factor_leader": "profitability",
+            "factor_leader_ic": 0.045,
+            "display_only": True,
+        },
+        "contradictions": {
+            "pair_g": {
+                "dormant": pair_g_dormant,
+                "n_today": n_today,
+                "latest": [],
+            }
+        },
+        "attention": {
+            "factor_attention": {
+                "n_firings": 12,
+                "n_graded": 3,
+                "granted": granted,
+                "tier": "A0/A1 shadow",
+                "reason": "insufficient-n: n=3 < min_n=25",
+                "latest_firings": [],
+            }
+        },
+        "hypotheses": {
+            f"h{i}": {"status": "accruing", "authority": "display"}
+            for i in range(1, 6)
+        },
+        "allowed_actions": {
+            "may_explain": True,
+            "may_flag_attention": True,
+            "may_deescalate": False,
+            "may_rank": False,
+            "may_originate": False,
+            "authority_source": "constitution.grant_authority + prereg gates; this block is a mirror, never a switch",
+        },
+        "gaps": [],
+    }
+    (nw / "factor_intelligence_state.json").write_text(json.dumps(state))
+
+
+# ---------------------------------------------------------------------------
+# Section E — smoke test (real repo artifacts)
+# ---------------------------------------------------------------------------
+
+def test_panel_has_factor_intelligence_section():
+    """panel() includes factor_intelligence section (Section E)."""
+    from admin import neural_web
+    d = neural_web.panel()
+    assert "factor_intelligence" in d, "Missing factor_intelligence section in panel()"
+    fi = d["factor_intelligence"]
+    assert "state_missing" in fi
+    assert "panel_health" in fi
+    assert "pair_g" in fi
+    assert "factor_attention" in fi
+    assert "hypotheses" in fi
+    assert "alerts" in fi
+    assert isinstance(fi["alerts"], list)
+
+
+# ---------------------------------------------------------------------------
+# Section E — fixture tests
+# ---------------------------------------------------------------------------
+
+def test_fi_absent_artifact(tmp_repo):
+    """When state artifact is absent, state_missing=True and section fails-open."""
+    # Do NOT write a factor state — absence is the default
+    d = _make_panel_with_root_fi(tmp_repo)
+    assert d["ok"] is True
+    fi = d["factor_intelligence"]
+    assert fi["state_missing"] is True
+    assert isinstance(fi["alerts"], list)
+
+
+def test_fi_present_artifact_floor_met(tmp_repo):
+    """With n_dates=80 (>=60), floor_met=True and section not missing."""
+    _write_factor_state(tmp_repo, n_dates=80)
+    d = _make_panel_with_root_fi(tmp_repo)
+    fi = d["factor_intelligence"]
+    assert fi["state_missing"] is False
+    assert fi["panel_health"]["floor_met"] is True
+    assert fi["panel_health"]["n_dates"] == 80
+
+
+def test_fi_present_artifact_floor_pending(tmp_repo):
+    """With n_dates=30 (<60), floor_met=False and dormancy alert fires."""
+    _write_factor_state(tmp_repo, n_dates=30)
+    d = _make_panel_with_root_fi(tmp_repo)
+    fi = d["factor_intelligence"]
+    assert fi["state_missing"] is False
+    assert fi["panel_health"]["floor_met"] is False
+    # Dormancy alert must be present
+    dormancy_alerts = [a for a in fi["alerts"] if "n_dates" in a and "dormant" in a.lower()]
+    assert dormancy_alerts, f"Expected dormancy alert with n_dates=30, got alerts: {fi['alerts']}"
+
+
+def test_fi_attention_not_granted(tmp_repo):
+    """Attention not granted by default → granted=False in section."""
+    _write_factor_state(tmp_repo, granted=False)
+    d = _make_panel_with_root_fi(tmp_repo)
+    fi = d["factor_intelligence"]
+    assert fi["factor_attention"]["granted"] is False
+
+
+def test_fi_attention_granted_triggers_alert(tmp_repo):
+    """attention.granted=True → §9.2 alert fires about A3 wiring."""
+    _write_factor_state(tmp_repo, granted=True)
+    d = _make_panel_with_root_fi(tmp_repo)
+    fi = d["factor_intelligence"]
+    assert fi["factor_attention"]["granted"] is True
+    wiring_alerts = [a for a in fi["alerts"] if "A3" in a or "granted" in a.lower()]
+    assert wiring_alerts, f"Expected A3 wiring alert when granted=True, got: {fi['alerts']}"
+
+
+def test_fi_hypotheses_all_present(tmp_repo):
+    """hypotheses block contains h1..h5 entries."""
+    _write_factor_state(tmp_repo)
+    d = _make_panel_with_root_fi(tmp_repo)
+    fi = d["factor_intelligence"]
+    hyp = fi["hypotheses"]
+    for hi in ("h1", "h2", "h3", "h4", "h5"):
+        assert hi in hyp, f"Missing hypothesis {hi} in section E"
+        assert "status" in hyp[hi]
+
+
+def test_fi_no_rank_score_alert_when_clean(tmp_repo):
+    """Clean state (may_rank=False, may_originate=False) → no rank/score alert."""
+    _write_factor_state(tmp_repo)
+    d = _make_panel_with_root_fi(tmp_repo)
+    fi = d["factor_intelligence"]
+    rank_alerts = [a for a in fi["alerts"] if "may_rank" in a or "may_originate" in a]
+    assert not rank_alerts, f"Unexpected rank/score alert on clean state: {rank_alerts}"
+
+
+def test_fi_bad_allowed_actions_triggers_alert(tmp_repo):
+    """may_rank=True in state artifact → alert fires (RUL-NW9)."""
+    nw = tmp_repo / "data" / "neuralweb"
+    nw.mkdir(parents=True, exist_ok=True)
+    bad_state = {
+        "schema": "neuralweb.factor_intelligence_state.v1",
+        "as_of": "2026-07-06",
+        "produced_at": "2026-07-06T08:00:00+00:00",
+        "is_context_only": True,
+        "display_only": True,
+        "panel": {"available": False, "n_dates": None, "history_floor_met": False},
+        "factor_weather": {},
+        "contradictions": {"pair_g": {"dormant": True, "n_today": 0, "latest": []}},
+        "attention": {"factor_attention": {
+            "n_firings": 0, "n_graded": 0, "granted": False,
+            "tier": "A0/A1 shadow", "reason": "insufficient-n",
+        }},
+        "hypotheses": {f"h{i}": {"status": "not-visible-in-tree"} for i in range(1, 6)},
+        "allowed_actions": {
+            "may_explain": True, "may_flag_attention": True,
+            "may_deescalate": False, "may_rank": True,  # <-- BAD
+            "may_originate": False,
+        },
+        "gaps": [],
+    }
+    (nw / "factor_intelligence_state.json").write_text(json.dumps(bad_state))
+    d = _make_panel_with_root_fi(tmp_repo)
+    fi = d["factor_intelligence"]
+    rank_alerts = [a for a in fi["alerts"] if "may_rank" in a]
+    assert rank_alerts, f"Expected may_rank=True alert, got: {fi['alerts']}"
+
+
+def test_fi_display_only_and_is_context_only(tmp_repo):
+    """Section E always carries display_only=True and is_context_only=True."""
+    _write_factor_state(tmp_repo)
+    d = _make_panel_with_root_fi(tmp_repo)
+    fi = d["factor_intelligence"]
+    assert fi.get("display_only") is True
+    assert fi.get("is_context_only") is True
+
+
+def test_no_engine_imports_still_passes():
+    """Re-verify engine import check still passes after Section E addition."""
+    src = (Path(__file__).resolve().parent.parent / "admin" / "neural_web.py").read_text()
+    import_lines = [
+        line for line in src.splitlines()
+        if line.strip() and not line.strip().startswith("#") and not line.strip().startswith('"""') and not line.strip().startswith("'")
+    ]
+    code = "\n".join(import_lines)
+    for pattern, label in [
+        ("from engine", "engine module import"),
+        ("import engine", "engine module import"),
+        ("from scripts", "scripts module import"),
+        ("import scripts", "scripts module import"),
+        ("subprocess.run", "subprocess.run call"),
+        ("subprocess.Popen", "subprocess.Popen call"),
+        ("import subprocess", "subprocess import"),
+    ]:
+        assert pattern not in code, f"Forbidden {label!r} found in non-comment lines"
+
+
 if __name__ == "__main__":
     import pytest as _pytest
     _pytest.main([__file__, "-v"])

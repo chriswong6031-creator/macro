@@ -107,7 +107,7 @@ def test_all_artifact_ids_present():
         " factor-intel NW W1 added factor-intelligence-state, site-factor-intelligence-state,"
         " factor-state-history, fire-coordinates, factor-contradictions-ledger = 157->162;"
         " long-hold LT-2a added long-hold-expect-drift-manifest, long-hold-expect-drift-panel = 162->164;"
-        " long-hold LT-3b added insider-lh-panel, insider-lh-panel-manifest,"
+        " insider-LH panel build added insider-lh-panel, insider-lh-panel-manifest,"
         " insider-lh-ruler-p-results = 164->167;"
         " long-hold LT-3a added capital-allocation-delta = 167->168)"
     )
