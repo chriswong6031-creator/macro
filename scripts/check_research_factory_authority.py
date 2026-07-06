@@ -83,9 +83,6 @@ _PATTERNS = [
     "engine.research_factory",
 ]
 
-# Allowlist path
-_ALLOWLIST_PATH = ROOT / "data" / "research_factory" / "authority_allowlist.json"
-
 # ---------------------------------------------------------------------------
 # Scan directories (same scope as check_synapse_reads.py)
 # ---------------------------------------------------------------------------

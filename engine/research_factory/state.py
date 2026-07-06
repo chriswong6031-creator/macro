@@ -140,13 +140,16 @@ def _check_screened_gate(candidate: dict | None,
                 "the 'screened' transition is refused: trial_accounting.mode='rf_family' "
                 "requires a non-empty family name (RF-6)"
             )
-        # Check the family has been declared in the trial ledger.
+        # Check the family is KNOWN to the trial ledger.
         # RF-6 permits two declaration paths:
         #   (a) log_declared_budget() — writes a row with kind=='declared_budget'
         #   (b) log_grid()/log_trial() — writes rows with a config_hash and family
-        #       (no 'kind' field); the presence of at least one such row means the
-        #       grid was pre-logged before the screening run.
-        # Either path satisfies the declaration requirement.
+        #       (no 'kind' field); log_grid() rows and per-trial rows are
+        #       structurally identical, so this gate proves the family exists in
+        #       the ledger but CANNOT enforce the before-screening temporal order.
+        #       That ordering guarantee is a caller/ingest responsibility enforced
+        #       at W2, not by this gate.
+        # Either path satisfies the ledger-known requirement.
         path = Path(ledger_path) if ledger_path else Path("data") / "trial_ledger.jsonl"
         declared_families: set[str] = set()
         if path.exists():
@@ -166,8 +169,9 @@ def _check_screened_gate(candidate: dict | None,
                         # Path (a): explicit declared_budget row
                         if row.get("kind") == "declared_budget":
                             declared_families.add(fam)
-                        # Path (b): grid/trial row — presence of config_hash is
-                        # sufficient evidence the grid was logged before screening
+                        # Path (b): grid/trial row — presence of config_hash proves
+                        # the family is known to the ledger (temporal ordering is a
+                        # W2 ingest responsibility, not enforced here)
                         elif row.get("config_hash"):
                             declared_families.add(fam)
             except OSError:

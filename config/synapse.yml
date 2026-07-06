@@ -4366,7 +4366,7 @@ artifacts:
   research-factory-candidates:
     path: data/research_factory/candidates.jsonl
     format: jsonl
-    producer: scripts/research_factory_ingest.py
+    producer: <RESEARCH_FACTORY_INGEST>
     known_extra_writers:
       - "scripts/research_factory_ingest.py — W2 ingest writer (planned)"
     owner_program: research-factory
@@ -4392,7 +4392,7 @@ artifacts:
   research-factory-transitions:
     path: data/research_factory/transitions.jsonl
     format: jsonl
-    producer: scripts/research_factory_ingest.py
+    producer: <RESEARCH_FACTORY_INGEST>
     known_extra_writers:
       - "scripts/research_factory_ingest.py — W2 transition writer (planned)"
       - "scripts/research_factory_decide.py — W5 decision recorder (planned)"
@@ -4419,7 +4419,7 @@ artifacts:
   research-factory-paper-monitor:
     path: data/research_factory/paper_monitor.jsonl
     format: jsonl
-    producer: scripts/research_factory_monitor.py
+    producer: <RESEARCH_FACTORY_MONITOR>
     known_extra_writers:
       - "scripts/research_factory_monitor.py — W6 nightly monitor writer (planned)"
     owner_program: research-factory
