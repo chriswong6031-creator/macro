@@ -579,3 +579,24 @@ class TestNightlySmoke:
         # With only 1 day, everything is null/0 — but the fields exist
         assert result["iv_rank_all"] is None
         assert result["coverage_days_all"] >= 0
+
+    def test_compute_vol_all_nan_implied_vol_does_not_raise(self):
+        """Regression: greeks frame with asof rows but all implied_vol NaN must not raise
+        ValueError (5-tuple unpack). _compute_iv_history valid.empty branch must return
+        5-tuple, not 2-tuple. Reproduces the stale `return [], None` early-exit bug."""
+        import numpy as np
+        asof = "2025-01-10"
+        rows = [
+            _make_greeks_row(date=asof, expiration="2025-06-20", implied_vol=float("nan")),
+            _make_greeks_row(date=asof, expiration="2025-09-19", implied_vol=float("nan")),
+        ]
+        greeks = pd.DataFrame(rows)
+        closes = pd.Series({"2025-01-09": 500.0, "2025-01-10": 500.0})
+        # Must not raise ValueError: not enough values to unpack
+        result = compute_vol(greeks, closes, asof, "SPY")
+        assert isinstance(result, dict), "compute_vol must return a dict"
+        for field in ("iv_rank_all", "coverage_days_all", "since_all"):
+            assert field in result, f"Missing v2 field: {field}"
+        assert result["iv_rank_all"] is None
+        assert result["coverage_days_all"] == 0
+        assert result["since_all"] is None

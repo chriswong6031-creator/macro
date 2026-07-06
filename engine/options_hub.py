@@ -280,12 +280,12 @@ def _compute_iv_history(
     # All dates with greeks available
     valid = df[df["implied_vol"].notna() & (df["implied_vol"] > 0)].copy()
     if valid.empty:
-        return [], None
+        return [], None, None, 0, None
 
     all_dates = sorted(valid["date"].unique())
     all_dates_before_asof = [d for d in all_dates if d <= asof]
     if not all_dates_before_asof:
-        return [], None
+        return [], None, None, 0, None
 
     # ── per-date ATM IV (30d interp) ─────────────────────────────────────────
     per_date_iv: dict[str, float] = {}
