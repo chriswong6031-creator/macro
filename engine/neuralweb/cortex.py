@@ -1727,7 +1727,12 @@ def run(root: Path | None = None, force: bool = False) -> int:
     if not providers:
         log.warning("cortex: no Anthropic providers configured — single-call fallback")
         _single_call_fallback(root, cfg, [], now_str, probation_status, "no_provider")
-        _save_last_run_state(root, current_state)
+        # no-provider fallback always produces status='degraded'; skip the gate save
+        # so the next nightly sees changed-or-missing state and retries the LLM.
+        log.info(
+            "cortex: skipping last_run_state save (no-provider fallback = degraded by "
+            "construction) — gate stays open so next nightly retries"
+        )
         return 0
 
     # 4. Run tool loop (with single-call fallback on any error)
@@ -1738,8 +1743,25 @@ def run(root: Path | None = None, force: bool = False) -> int:
         log.warning("cortex: tool loop raised (%s) — falling back to single-call", exc)
         _single_call_fallback(root, cfg, providers, now_str, probation_status, f"loop_error:{exc}")
 
-    # 5. Save run state (so next run staleness gate works)
-    _save_last_run_state(root, current_state)
+    # 5. Save run state only when memo is healthy (ok or warn).
+    # If run_status.status=='degraded', skip the save so the gate stays open and the
+    # next nightly sees unchanged inputs as still-stale, retrying the LLM call.
+    # On any read/parse failure, save conservatively — never crash.
+    _memo_run_status = "ok"  # conservative default
+    try:
+        _memo_path = _cortex_dir(root) / "memo.json"
+        _memo_doc = json.loads(_memo_path.read_text(encoding="utf-8"))
+        _memo_run_status = _memo_doc.get("run_status", {}).get("status", "ok")
+    except Exception:  # noqa: BLE001
+        pass  # read/parse failure → keep conservative default, save below
+
+    if _memo_run_status == "degraded":
+        log.info(
+            "cortex: skipping last_run_state save (memo run_status=degraded) — "
+            "gate stays open so next nightly retries"
+        )
+    else:
+        _save_last_run_state(root, current_state)
 
     elapsed = time.monotonic() - t0
     log.info("cortex: run complete in %.1fs", elapsed)
