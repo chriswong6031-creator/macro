@@ -171,7 +171,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
-| dispersion-regime | `data/dispersion/regime.json` | json | daily-engine | display | 1 | 0 |
+| dispersion-regime | `data/dispersion/regime.json` | json | daily-engine | display | 2 | 0 |
 
 ### options-alpha
 

@@ -3883,6 +3883,7 @@ artifacts:
     weights: none
     scored_path_surfaces: []
     consumers:
+      - scripts/build_site.py
       - templates/dashboard.html.j2
     external_consumers: []
     notes: >
