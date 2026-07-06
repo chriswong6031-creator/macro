@@ -267,6 +267,77 @@ def test_off_history_null_no_price_series():
     assert _fwd_log_return(None, anchor, 20) is None
 
 
+def test_pre_listing_pit_guard_returns_null():
+    """Anchor date before series start must return None (pre-listing PIT guard).
+
+    This covers the CSI300 bug: 510300.SS starts 2012-05-04.  Anchors from 2008,
+    2010, 2011 must yield null — NOT a return anchored to the 2012-05-04 listing
+    close that fabricates lookahead forward returns.
+    """
+    # Simulate CSI300: first date is 2012-05-04
+    price = _make_price(
+        ["2012-05-04", "2012-05-07", "2012-05-08",
+         "2012-05-09", "2012-05-10", "2012-05-11"],
+        [1000.0, 1010.0, 1020.0, 1030.0, 1040.0, 1050.0],
+    )
+    # Anchors that predate the series start
+    for anchor_str in ("2008-06-01", "2010-03-15", "2011-11-01"):
+        anchor = pd.Timestamp(anchor_str)
+        assert _fwd_log_return(price, anchor, 1) is None, (
+            f"Expected None for pre-listing anchor {anchor_str} but got a value — "
+            "this is a PIT/lookahead bug"
+        )
+    # Verify a valid anchor AFTER series start still works (positive control)
+    anchor_valid = pd.Timestamp("2012-05-04")
+    result = _fwd_log_return(price, anchor_valid, 1)
+    assert result is not None, "Valid post-listing anchor should return a float"
+    expected = round(math.log(1020.0 / 1010.0), 6)
+    assert result == pytest.approx(expected, rel=1e-5)
+
+
+def test_pre_listing_csi300_yields_null_in_find_analogs():
+    """_find_analogs must emit fwd_csi300=null for analogs that predate CSI300 listing.
+
+    Verifies the _fwd_paths fix: analog dates before 2012-05-04 must not produce
+    non-null fwd_csi300 dicts anchored to the listing close.
+    """
+    # Build regime history going back to 2006 (pre-CSI300)
+    dates = pd.date_range("2006-01-01", "2026-01-01", freq="ME")
+    n = len(dates)
+    dates_str = [d.strftime("%Y-%m-%d") for d in dates]
+    quads = ["Q3"] * n
+    growths = [-0.2] * n
+    inflations = [0.3] * n
+    regime = _make_regime(dates_str, quads, growths, inflations)
+
+    # SHCOMP: full history from 2006
+    shcomp_dates = pd.date_range("2006-01-01", "2027-01-01", freq="B")
+    shcomp = pd.Series(
+        [1000.0 + i * 0.5 for i in range(len(shcomp_dates))],
+        index=shcomp_dates,
+        name="close",
+    )
+
+    # CSI300: starts 2012-05-04
+    csi300_dates = pd.date_range("2012-05-04", "2027-01-01", freq="B")
+    csi300 = pd.Series(
+        [2000.0 + i * 0.3 for i in range(len(csi300_dates))],
+        index=csi300_dates,
+        name="close",
+    )
+
+    result = _find_analogs(regime, shcomp, csi300)
+    csi300_start = pd.Timestamp("2012-05-04")
+
+    for analog in result["analogs"]:
+        analog_date = pd.Timestamp(analog["date"])
+        if analog_date < csi300_start:
+            assert analog["fwd_csi300"] is None, (
+                f"Analog {analog['date']} predates CSI300 listing (2012-05-04) "
+                f"but fwd_csi300={analog['fwd_csi300']} is not null — PIT bug"
+            )
+
+
 # ---------------------------------------------------------------------------
 # Schema keys: all required keys present in output
 # ---------------------------------------------------------------------------

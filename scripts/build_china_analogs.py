@@ -173,9 +173,17 @@ def _fwd_log_return(
     """
     Log return from the first close strictly after anchor_date to the close
     sessions trading days later.  Returns None if price series is missing,
-    anchor falls before the series, or the forward window extends past history.
+    anchor predates the series start (pre-listing PIT guard), anchor falls at or
+    past the series end, or the forward window extends past history.
+
+    Pre-listing PIT guard: if anchor_date < price.index.min(), the series has
+    not started yet — returning a forward return would silently anchor to the
+    listing date, fabricating lookahead returns.  Return None instead.
     """
     if price is None:
+        return None
+    # PIT guard: anchor predates the price series start
+    if anchor_date < price.index.min():
         return None
     after = price.loc[price.index > anchor_date]
     if len(after) == 0:
@@ -200,16 +208,23 @@ def _fwd_paths(
     h120 = _fwd_log_return(shcomp, anchor_date, 120)
     fwd_sh = {"h20": h20, "h60": h60, "h120": h120}
 
-    # CSI300 only if any window is available (i.e. price series covers the date)
+    # CSI300 only if any window is available (i.e. price series covers the date).
+    # PIT guard: anchor must be >= series start AND have subsequent closes.
+    # Without the pre-listing guard, an analog predating 2012-05-04 (510300.SS
+    # inception) would silently anchor to the listing-day close — fabricating
+    # forward returns from a date 185-1433 days after the analog.
     if csi300 is not None:
-        after = csi300.loc[csi300.index > anchor_date]
-        if len(after) == 0:
-            fwd_csi = None   # analog predates CSI300 listing entirely
+        if anchor_date < csi300.index.min():
+            fwd_csi = None   # analog predates CSI300 listing (PIT violation)
         else:
-            c20 = _fwd_log_return(csi300, anchor_date, 20)
-            c60 = _fwd_log_return(csi300, anchor_date, 60)
-            c120 = _fwd_log_return(csi300, anchor_date, 120)
-            fwd_csi: dict | None = {"h20": c20, "h60": c60, "h120": c120}
+            after = csi300.loc[csi300.index > anchor_date]
+            if len(after) == 0:
+                fwd_csi = None   # anchor at/past end of CSI300 price history
+            else:
+                c20 = _fwd_log_return(csi300, anchor_date, 20)
+                c60 = _fwd_log_return(csi300, anchor_date, 60)
+                c120 = _fwd_log_return(csi300, anchor_date, 120)
+                fwd_csi: dict | None = {"h20": c20, "h60": c60, "h120": c120}
     else:
         fwd_csi = None
 
