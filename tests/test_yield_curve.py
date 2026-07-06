@@ -178,3 +178,169 @@ def test_graceful_degradation_missing_nodes():
     # missing the whole curve front/back anchor → None, never an exception
     g = f.drop(columns=["us10y"])
     assert yc.snapshot(g) is None
+
+
+# --------------------------------------------------------------------------- #
+# pca_health tests (R-ORTH PR-2)
+# --------------------------------------------------------------------------- #
+
+def _rich_curve_frame(n: int = 700, seed: int = 42) -> pd.DataFrame:
+    """Curve fixture with genuine cross-sectional factor structure (level + slope +
+    curvature factors each have independent noise), so PC2/PC3 carry measurable variance
+    and pca_health sub-fields are non-degenerate. Used exclusively by pca_health tests."""
+    idx = pd.bdate_range("2018-01-01", periods=n)
+    rng = np.random.default_rng(seed)
+    # three orthogonal factors driving yield changes
+    level_shocks = rng.normal(0, 0.012, n)       # parallel shift
+    slope_shocks = rng.normal(0, 0.005, n)       # short minus long
+    curv_shocks = rng.normal(0, 0.002, n)        # belly vs wings
+    maturities = np.array([0.25, 0.5, 1.0, 2.0, 3.0, 5.0, 7.0, 10.0, 30.0])
+    # loadings: level=1, slope~linear in mat, curvature~butterfly
+    slope_loads = (maturities - maturities.mean()) / maturities.std()
+    curv_loads = -(abs(slope_loads) - abs(slope_loads).mean())
+    # build yield changes per tenor
+    dy_matrix = (
+        level_shocks[:, None] * np.ones(9)
+        + slope_shocks[:, None] * slope_loads
+        + curv_shocks[:, None] * curv_loads
+    )
+    # integrate to levels (start at upward-sloping curve)
+    base = np.array([4.2, 4.25, 4.30, 4.35, 4.42, 4.50, 4.60, 4.75, 5.00])
+    yields = base + np.cumsum(dy_matrix, axis=0)
+    cols = ["us3m", "us6m", "us1y", "us2y", "us3y", "us5y", "us7y", "us10y", "us30y"]
+    f = pd.DataFrame(yields, index=idx, columns=cols)
+    f["spread_2s10s"] = f["us10y"] - f["us2y"]
+    f["spread_10y3m"] = f["us10y"] - f["us3m"]
+    f["us10y_real"] = f["us10y"] - 2.3
+    f["us5y_real"] = f["us5y"] - 2.3
+    f["breakeven_10y"] = f["us10y"] - f["us10y_real"]
+    f["breakeven_5y"] = pd.Series(2.3 + np.cumsum(rng.normal(0, 0.005, n)), index=idx)
+    f["term_premium_10y"] = pd.Series(0.2 + np.cumsum(rng.normal(0, 0.006, n)), index=idx)
+    f["curve_tp_adj"] = f["spread_2s10s"] + f["term_premium_10y"]
+    return f
+
+_PCA_HEALTH_KEYS = {
+    "eigenvalue_gaps", "effective_dimension_pr", "pc1_loading_turnover_vs_2y",
+    "oos_null", "vol_match_multipliers", "curvature_stability_tag", "window_set",
+}
+_OOS_NULL_KEYS = {"observed", "null_median", "null_p90", "pctile_vs_null", "n_null_draws"}
+
+
+def test_pca_health_present_and_key_set():
+    """pca_health is present on a rich (multi-factor) 700-row fixture and passes structural checks."""
+    f = _rich_curve_frame(n=700)
+    pca = yc.pca_decomposition(f)
+    assert pca is not None, "pca_decomposition returned None"
+    assert "pca_health" in pca, "pca_health key missing"
+    h = pca["pca_health"]
+    assert h is not None, "pca_health is None on 700-row frame"
+    assert set(h.keys()) == _PCA_HEALTH_KEYS, f"unexpected keys: {set(h.keys()) ^ _PCA_HEALTH_KEYS}"
+
+    # eigenvalue_gaps: present keys, gaps > 0 where not None
+    gaps = h["eigenvalue_gaps"]
+    for gk in ("pc1_to_pc2", "pc2_to_pc3", "pc3_to_pc4"):
+        assert gk in gaps
+    for gk, gv in gaps.items():
+        if gv is not None:
+            assert gv > 0, f"gap {gk} should be > 0, got {gv}"
+
+    # effective_dimension_pr in [1, n_tenors]
+    n_tenors = len(pca["tenors"])
+    efd = h["effective_dimension_pr"]
+    assert efd is not None
+    assert 1.0 <= efd <= n_tenors, f"effective_dimension_pr={efd} outside [1, {n_tenors}]"
+
+    # oos_null present and pctile_vs_null in [0, 1]
+    oos = h["oos_null"]
+    assert oos is not None, "oos_null should be populated on 700-row frame"
+    assert set(oos.keys()) == _OOS_NULL_KEYS
+    assert 0.0 <= oos["pctile_vs_null"] <= 1.0
+    assert oos["n_null_draws"] >= 200  # RUL-ORTH-8: >=200-draw within-window null
+
+    # curvature_stability_tag
+    tag = h["curvature_stability_tag"]
+    assert tag in {"stable", "caution", "unstable", None}
+
+    # vol_match_multipliers >= 1 where not None
+    mults = h["vol_match_multipliers"]
+    for mk in ("pc2", "pc3"):
+        assert mk in mults
+        if mults[mk] is not None:
+            assert mults[mk] >= 1.0, f"vol_match_multiplier {mk}={mults[mk]} < 1"
+
+    # window_set
+    ws = h["window_set"]
+    assert ws["compare_window_d"] == 504
+    assert ws["oos_horizon_d"] == 21
+    assert ws["full_window_d"] > 0
+
+
+def test_pca_health_backward_compat():
+    """The existing keys factors/first3_var/window_d/tenors are untouched by pca_health."""
+    f = _rich_curve_frame(n=700)
+    pca = yc.pca_decomposition(f)
+    assert pca is not None
+    # all original keys still present
+    for k in ("factors", "first3_var", "window_d", "tenors"):
+        assert k in pca, f"original key {k!r} missing after pca_health addition"
+    # check the variance-and-orientation invariants from the original test
+    keys = [fct["key"] for fct in pca["factors"]]
+    assert keys == ["level", "slope", "curvature"]
+    vars_ = [fct["var_explained"] for fct in pca["factors"]]
+    assert all(0.0 <= v <= 1.0 for v in vars_)
+    assert vars_ == sorted(vars_, reverse=True)
+    assert 0.5 < pca["first3_var"] <= 1.0
+    lev = pca["factors"][0]["loadings"]
+    signs = {np.sign(v) for v in lev.values() if v != 0}
+    assert len(signs) == 1
+
+
+def test_pca_health_degradation_300_rows():
+    """300-row frame: main PCA passes; pca_health present; oos_null and turnover may be
+    None (insufficient history) but the call must never raise."""
+    f = _curve_frame(n=300)
+    pca = yc.pca_decomposition(f)
+    assert pca is not None, "pca_decomposition should succeed on 300-row frame"
+    h = pca["pca_health"]
+    assert h is not None, "pca_health should not be None on 300-row frame"
+    # turnover needs >= 525 rows; must be None here
+    assert h["pc1_loading_turnover_vs_2y"] is None
+    # oos_null is None here twice over: train=278 rows yields <200 strided null draws
+    # (RUL-ORTH-8 floor), and _curve_frame's tenors are near-perfectly correlated so
+    # the degenerate-std guard trips (projected PC2/PC3 variance ~ 0)
+    assert h["oos_null"] is None
+
+    # a frame too small for the main PCA returns None overall (not an exception)
+    g = _curve_frame(n=100)
+    result = yc.pca_decomposition(g)
+    assert result is None
+
+
+def test_pca_health_degenerate_frame_oos_null_none():
+    """A rank-deficient curve (all tenors driven by one factor — the original _curve_frame)
+    must yield oos_null=None via the degenerate-std guard even with ample history, and the
+    pc3_to_pc4 gap must be None (denominator floor), never a spuriously huge 'stable' read."""
+    f = _curve_frame(n=700)
+    pca = yc.pca_decomposition(f)
+    assert pca is not None
+    h = pca["pca_health"]
+    assert h is not None
+    assert h["oos_null"] is None
+    gap34 = h["eigenvalue_gaps"]["pc3_to_pc4"]
+    assert gap34 is None or gap34 < 1e6, f"degenerate PC4 produced runaway gap {gap34}"
+    if gap34 is None:
+        assert h["curvature_stability_tag"] is None
+
+
+def test_pca_health_json_serializable():
+    """No numpy scalar leaks from pca_health; json.dumps must round-trip."""
+    f = _rich_curve_frame(n=700)
+    pca = yc.pca_decomposition(f)
+    assert pca is not None
+    # snapshot round-trip (pca_health is nested inside shape.pca)
+    s = yc.snapshot(f)
+    assert s is not None
+    dumped = json.dumps(s)  # raises TypeError on numpy types
+    reloaded = json.loads(dumped)
+    # pca_health preserved through round-trip
+    assert "pca_health" in reloaded["shape"]["pca"]
