@@ -32,6 +32,7 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 
+from engine.signal_frontier_docket import page_frontier_rows, phase0_summary
 from lib import config
 
 # Tier metadata: order on the page + bilingual labels + a one-line honest blurb.
@@ -1124,6 +1125,174 @@ _FACTOR_LABEL = {
 }
 
 
+def _frontier_row(name, name_zh, market, readiness, readiness_zh, thesis, thesis_zh,
+                  build, build_zh, gate, gate_zh, source, priority="P1",
+                  fable_verdict="PENDING") -> dict:
+    return {
+        "name": name, "name_zh": name_zh, "market": market,
+        "readiness": readiness, "readiness_zh": readiness_zh,
+        "thesis": thesis, "thesis_zh": thesis_zh,
+        "build": build, "build_zh": build_zh,
+        "gate": gate, "gate_zh": gate_zh,
+        "source": source, "priority": priority,
+        "fable_verdict": fable_verdict,
+    }
+
+
+# Research backlog surfaced on the page. These are NOT validation verdicts and
+# never influence a score until a pre-registered Phase-0 report earns a registry row.
+FRONTIER: list[dict] = [
+    _frontier_row(
+        "SEC fails-to-deliver pressure",
+        "SEC 交割失败压力",
+        "US equities", "free data / new collector", "免费数据 / 新采集",
+        "FTD balances are a short-sale constraint/informed-short proxy; literature finds "
+        "higher FTD stocks later earn negative abnormal returns.",
+        "交割失败余额可作为卖空约束/知情做空代理；文献显示高 FTD 股票随后异常收益偏负。",
+        "Build SEC semi-monthly FTD panel, map CUSIP->ticker, normalize by float and dollar "
+        "volume, then test high-FTD and rising-FTD buckets.",
+        "建立 SEC 半月 FTD 面板，CUSIP 映射到 ticker，按流通股与成交额标准化，再测高 FTD 与上升 FTD 分组。",
+        "21/63d rank-IC, FDR across FTD variants, incremental IC vs size, momentum, short volume.",
+        "21/63日 rank-IC，FTD 变体间 FDR，相对规模、动量、短量的增量 IC。",
+        "SEC FTD data + Stratmann/Welborn 2016",
+        priority="P0", fable_verdict="BUILD",
+    ),
+    _frontier_row(
+        "Borrow-fee / loan-fee anomaly",
+        "借券费 / 融券费异常",
+        "US equities", "paid data", "付费数据",
+        "Loan fees are one of the strongest documented short-side predictors; free short "
+        "interest is a weak substitute.",
+        "借券费是文献中最强的做空侧预测变量之一；免费做空余额只是弱替代。",
+        "If a borrow-fee vendor is approved, archive daily fee/utilization PIT and test high-fee "
+        "underperformance plus long-only exclusion value.",
+        "若接入借券费供应商，按日归档费用/利用率时点数据，测试高费股票跑输及多头排除价值。",
+        "Must beat FINRA short volume, FTD, size, low-price and microcap controls after costs.",
+        "必须在成本后优于 FINRA 短量、FTD、规模、低价股和微盘控制项。",
+        "Engelberg et al. Management Science 2024",
+        priority="P0-data",
+    ),
+    _frontier_row(
+        "Option informed-flow lens",
+        "期权知情流镜头",
+        "US options", "partial plumbing", "部分管线已在",
+        "Buyer-to-open option put/call flow and IV spreads have evidence of informed trading; "
+        "public EOD put/call is much weaker.",
+        "买方开仓期权看跌/看涨流与隐波价差有知情交易证据；公开 EOD put/call 弱很多。",
+        "Extend options_flow / ivspread history: separate stock-vs-index hedging, buyer-open "
+        "proxies, scheduled-news windows, and O/S volume.",
+        "扩展 options_flow / ivspread 历史：区分股票与指数对冲、买方开仓代理、预定新闻窗口与期权/股票量。",
+        "Event-window and 1/5/21d forward tests; require improvement over GEX/200dma baselines.",
+        "事件窗口及1/5/21日前瞻测试；必须优于 GEX/200日均线基线。",
+        "Pan/Poteshman 2006; CBOE/POLYGON options feeds",
+        priority="P1",
+    ),
+    _frontier_row(
+        "EDGAR attention shock",
+        "EDGAR 关注度冲击",
+        "US filings", "free but heavy", "免费但重型",
+        "SEC log files expose filing-demand attention; spikes around stale vs fresh filings may "
+        "separate retail attention from informed acquisition.",
+        "SEC 日志显示投资者对公告的阅读需求；围绕新旧文件的流量冲击可区分散户关注与信息获取。",
+        "Prototype on 2020-2025 logs only: de-robot, aggregate human views by filing/ticker, "
+        "join to 8-K/10-Q/10-K events.",
+        "先用2020-2025日志试做：去机器人，按公告/ticker 聚合人类阅读量，并接入8-K/10-Q/10-K事件。",
+        "Filing-day and post-filing drift; Brier calibration if used as event probability.",
+        "公告日与公告后漂移；若作为事件概率则做 Brier 校准。",
+        "SEC EDGAR log files; Drake/Roulstone/Thornock literature",
+        priority="P1",
+    ),
+    _frontier_row(
+        "Overnight/intraday tug-of-war",
+        "隔夜/日内拉锯",
+        "US equities", "OHLC on disk", "OHLC 已在盘",
+        "Some anomalies accrue overnight while intraday returns mean-revert; this may improve "
+        "entry timing without creating a new signal.",
+        "部分异常收益在隔夜兑现而日内均值回归；它可能改善入场时点，而不是创造新信号。",
+        "Decompose existing momentum/reversal/insider/payout candidates into close-open and "
+        "open-close legs using adjusted OHLC.",
+        "用调整后 OHLC 将现有动量/反转/内部人/payout 候选拆成 close-open 与 open-close 两腿。",
+        "Net-of-open-spread viability, split-half, and no alpha claim unless tradable at open.",
+        "扣除开盘价差后验证、两半稳定；除非开盘可交易，否则不声称 alpha。",
+        "Lou/Polk/Skouras 2019",
+        priority="P1", fable_verdict="KILLED",
+    ),
+    _frontier_row(
+        "Treasury auction absorption",
+        "美债拍卖吸收力",
+        "US rates", "collector exists", "采集器已在",
+        "Auction demand metrics can identify weak/strong duration absorption, but the data are "
+        "mostly ex-post and must be framed as event context.",
+        "拍卖需求指标可识别久期吸收强弱，但数据多为事后，需作为事件背景处理。",
+        "Use treasury_auctions.parquet: bid-to-cover, indirect share, dealer takedown, issue size.",
+        "使用 treasury_auctions.parquet：bid-to-cover、间接投标、一级交易商承接、发行量。",
+        "Event study on TLT/IEF/curve moves; forbid scoring unless pre-auction predictors beat term premium.",
+        "对 TLT/IEF/曲线做事件研究；除非拍卖前预测项优于期限溢价，否则禁止计分。",
+        "TreasuryDirect auction query + 2025 auction-demand research",
+        priority="P1", fable_verdict="BUILD",
+    ),
+    _frontier_row(
+        "COT exhaustion matrix",
+        "COT 仓位耗尽矩阵",
+        "Cross-asset futures", "collector exists", "采集器已在",
+        "COT already helps capitulation context; a broader matrix may detect crowded futures "
+        "positions across rates, FX and commodities.",
+        "COT 已用于投降背景；更广的矩阵可能识别利率、外汇与商品期货拥挤仓位。",
+        "Compute 3y rolling spec-position percentiles, first differences, and cross-asset crowding "
+        "clusters from existing COT store.",
+        "从现有 COT 库计算3年滚动投机仓位分位、变化量与跨资产拥挤簇。",
+        "Must beat dumb price trend / VIX gates; likely confirmer or graveyard, not scored.",
+        "必须优于朴素价格趋势 / VIX 门；大概率是确认项或墓地，而非计分。",
+        "CFTC COT public reporting environment",
+        priority="P2", fable_verdict="KILLED",
+    ),
+    _frontier_row(
+        "Crypto funding + on-chain stress",
+        "加密资金费率 + 链上压力",
+        "Crypto", "partial plumbing", "部分管线已在",
+        "Funding, MVRV, realized cap and holder-profit metrics may add cycle/tail context to the "
+        "BTC Vector, but single-asset crypto samples are tiny.",
+        "资金费率、MVRV、实现市值与持有人盈利指标或可补充 BTC 向量的周期/尾部背景，但单资产样本极小。",
+        "Separate raw engine from human gates; test funding-rate extremes and Coin Metrics "
+        "valuation deltas as drawdown/entry confirmers.",
+        "分离纯引擎与人工门；把资金费率极值和 Coin Metrics 估值变化作为回撤/入场确认项测试。",
+        "Leave-one-cycle-out, brake-matched 200dma baseline, DSR with explicit trial ledger.",
+        "逐周期剔除、匹配200日均线刹车基线、带明确试验账本的 DSR。",
+        "Coin Metrics Community API; crypto funding literature",
+        priority="P2",
+    ),
+    _frontier_row(
+        "Supply-chain pressure impulse",
+        "供应链压力脉冲",
+        "Macro / sectors", "free data", "免费数据",
+        "GSCPI-style shocks may matter more for inflation-sensitive sectors than for broad SPY timing.",
+        "GSCPI 类冲击对通胀敏感行业可能比对广义 SPY 择时更有用。",
+        "Collect FRBNY GSCPI; test level/change/surprise vs breakevens, CPI/PPI revisions, "
+        "transports, semis, retailers and commodity sectors.",
+        "采集纽约联储 GSCPI；测试水平/变化/意外值相对盈亏平衡通胀、CPI/PPI修正、运输、半导体、零售与商品板块。",
+        "Sector-relative IC with macro controls; no broad-risk claim unless it beats NFCI/OFR.",
+        "行业相对 IC 加宏观控制；除非优于 NFCI/OFR，否则不声明广义风险信号。",
+        "NY Fed GSCPI",
+        priority="P2",
+    ),
+    _frontier_row(
+        "Lottery/MAX anti-chase flag",
+        "彩票/MAX 反追高标记",
+        "US equities", "price-only", "仅价格",
+        "Extreme one-day winners often underperform later, but replication literature warns the "
+        "edge can vanish outside microcaps.",
+        "极端单日赢家随后常跑输，但复验文献警告该边际在排除微盘后可能消失。",
+        "Compute prior-month MAX and idio-skew, then test as a subtract-only extension/fragility "
+        "overlay inside liquid universes.",
+        "计算上月 MAX 与特质偏度，在高流动性股票内作为减分式拉伸/脆弱叠加层测试。",
+        "NYSE breakpoints, value weights, cost and liquidity gates; expect graveyard unless incremental.",
+        "NYSE 断点、市值加权、成本与流动性门；除非有增量，否则预期进墓地。",
+        "Bali/Cakici/Whitelaw 2011; Hou/Xue/Zhang replication",
+        priority="P2", fable_verdict="KILLED",
+    ),
+]
+
+
 def _resolve_dsr_provenance(registry: list[dict]) -> None:
     """Stamp each row's DSR n_trials with a live-ledger or frozen-quote passport (W1d).
 
@@ -1231,4 +1400,6 @@ def build_scorecard() -> dict:
         "factor_rows": factor_rows,
         "factor_survivors": survivors,
         "factor_meta": factor_meta,
+        "frontier_rows": FRONTIER + page_frontier_rows(),
+        "frontier_phase0_summary": phase0_summary(),
     }

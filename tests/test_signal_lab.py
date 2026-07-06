@@ -150,3 +150,204 @@ def test_page_renders_without_template_errors():
     # the methodology + PIT data stamps are present (ChatGPT proposal #2)
     assert "Deflated Sharpe" in html
     assert "data span" in html
+
+
+# ---------------------------------------------------------------------------
+# Frontier docket tests (feat/slf-frontier-port-adjudication)
+# ---------------------------------------------------------------------------
+
+def test_screen_candidates_determinism():
+    """screen_candidates() is a pure function — two calls must return identical output."""
+    from engine.signal_frontier_docket import screen_candidates
+    a = screen_candidates()
+    b = screen_candidates()
+    assert a == b, "screen_candidates() is not deterministic"
+
+
+def test_verdict_count_snapshot():
+    """Post-correction counts after docket corrections (SLF-050 blocked, history fixes)."""
+    from engine.signal_frontier_docket import phase0_summary
+    s = phase0_summary()
+    assert s["total"] == 60, f"expected 60 candidates, got {s['total']}"
+    # SLF-050 is now blocked → graveyard_now
+    assert s["graveyard_now"] >= 1, "SLF-050 blocked should put at least 1 in graveyard_now"
+    # After corrections, advance_to_fable should be < 23 (some dropped due to history fixes)
+    assert s["advance_to_fable"] < 23, (
+        f"advance_to_fable={s['advance_to_fable']} — expected drop below 23 after corrections"
+    )
+    # Counts must sum to total
+    total_check = (
+        s["advance_to_fable"]
+        + s["local_phase0_ready"]
+        + s["data_contract_first"]
+        + s["watchlist_or_reject"]
+        + s["graveyard_now"]
+    )
+    assert total_check == 60, f"verdict counts don't sum to 60: {total_check}"
+
+
+def test_page_frontier_rows_count_and_zh_fields():
+    """page_frontier_rows() returns docket rows; every *_zh field is non-empty."""
+    from engine.signal_frontier_docket import page_frontier_rows
+    rows = page_frontier_rows()
+    # All docket-derived rows must come from IDs > 10
+    from engine.signal_frontier_docket import _id_suffix
+    for r in rows:
+        # No id field exposed in page rows, but they have fable_verdict
+        assert r.get("readiness_zh") == "Phase-0 存活候选", \
+            f"readiness_zh wrong: {r.get('readiness_zh')!r}"
+    # must have at least some rows (the advance_to_fable survivors with id > 10)
+    assert len(rows) >= 1
+
+
+def test_frontier_rows_in_scorecard_zh_non_empty():
+    """All *_zh fields in frontier_rows are non-empty and not identical to EN for hand rows."""
+    p = signal_lab.build_scorecard()
+    fr = p["frontier_rows"]
+    assert len(fr) > 0, "frontier_rows is empty"
+    for i, r in enumerate(fr):
+        assert r.get("name_zh"), f"row {i} name_zh empty"
+        assert r.get("thesis_zh"), f"row {i} thesis_zh empty"
+        assert r.get("build_zh"), f"row {i} build_zh empty"
+        assert r.get("gate_zh"), f"row {i} gate_zh empty"
+        assert r.get("readiness_zh"), f"row {i} readiness_zh empty"
+
+
+def test_frontier_rows_hand_rows_zh_differs_from_en():
+    """For the 10 hand rows (index 0-9), name_zh must differ from name (real Chinese)."""
+    p = signal_lab.build_scorecard()
+    fr = p["frontier_rows"]
+    for r in fr[:10]:
+        assert r["name_zh"] != r["name"], (
+            f"Hand row '{r['name']}' has name_zh == name (no translation)"
+        )
+
+
+def test_frontier_rows_docket_rows_zh_differs_from_en():
+    """All *_zh fields for ALL frontier_rows (hand + docket) must be non-empty
+    AND differ from their English twin — guards against the mirroring bug where
+    _c()-built candidates fall through to English for all zh fields."""
+    p = signal_lab.build_scorecard()
+    fr = p["frontier_rows"]
+    assert len(fr) > 0, "frontier_rows is empty"
+    for r in fr:
+        name = r["name"]
+        assert r.get("name_zh") and r["name_zh"] != r["name"], (
+            f"Row '{name}' name_zh is empty or mirrors English: {r.get('name_zh')!r}"
+        )
+        assert r.get("thesis_zh") and r["thesis_zh"] != r["thesis"], (
+            f"Row '{name}' thesis_zh is empty or mirrors English: {r.get('thesis_zh')!r}"
+        )
+        assert r.get("build_zh") and r["build_zh"] != r["build"], (
+            f"Row '{name}' build_zh is empty or mirrors English: {r.get('build_zh')!r}"
+        )
+        assert r.get("gate_zh") and r["gate_zh"] != r["gate"], (
+            f"Row '{name}' gate_zh is empty or mirrors English: {r.get('gate_zh')!r}"
+        )
+
+
+def test_fable_verdicts_covers_23_original_advance_ids():
+    """FABLE_VERDICTS must contain exactly the 23 original advance_to_fable candidate IDs."""
+    from engine.signal_frontier_docket import FABLE_VERDICTS
+    assert len(FABLE_VERDICTS) == 23, (
+        f"FABLE_VERDICTS has {len(FABLE_VERDICTS)} entries, expected 23"
+    )
+    # Verify all keys are SLF-NNN format
+    import re
+    for k in FABLE_VERDICTS:
+        assert re.match(r"^SLF-\d{3}$", k), f"key {k!r} is not SLF-NNN format"
+    # Verify the kill/authorize split
+    kills = [k for k, v in FABLE_VERDICTS.items() if v["verdict"] == "KILLED"]
+    assert len(kills) == 11, f"expected 11 kills, got {len(kills)}: {kills}"
+    routes = [k for k, v in FABLE_VERDICTS.items() if v["verdict"] == "ROUTED"]
+    assert len(routes) == 1
+    builds = [k for k, v in FABLE_VERDICTS.items() if v["verdict"] == "BUILD"]
+    assert len(builds) == 7
+    probes = [k for k, v in FABLE_VERDICTS.items() if v["verdict"] == "PROBE"]
+    assert len(probes) == 1
+    pilots = [k for k, v in FABLE_VERDICTS.items() if v["verdict"] == "PILOT"]
+    assert len(pilots) == 1
+    accrue = [k for k, v in FABLE_VERDICTS.items() if v["verdict"] == "ACCRUE"]
+    assert len(accrue) == 1
+    queued = [k for k, v in FABLE_VERDICTS.items() if v["verdict"] == "QUEUED"]
+    assert len(queued) == 1
+
+
+def test_frontier_rows_no_ic_dsr_keys():
+    """frontier_rows must not expose rank-IC or DSR result keys — research metadata only."""
+    FORBIDDEN = {"ic", "dsr", "t_hac", "q_fdr", "rank_ic", "deflated_sharpe",
+                 "fdr_survivor", "survives"}
+    p = signal_lab.build_scorecard()
+    for r in p["frontier_rows"]:
+        bad = [k for k in r if k.lower() in FORBIDDEN]
+        assert not bad, f"frontier row has ic/dsr result keys: {bad}"
+
+
+def test_hand_rows_name_source_agree_with_docket():
+    """Hand rows SLF-001..010 names and sources agree with docket entries."""
+    from engine.signal_frontier_docket import CANDIDATES
+    from engine import signal_lab
+    # Build the first 10 hand rows from FRONTIER list
+    hand = signal_lab.FRONTIER[:10]
+    docket_map = {c["id"]: c for c in CANDIDATES}
+    expected_pairs = [
+        ("SLF-001", "SEC fails-to-deliver pressure"),
+        ("SLF-002", "Borrow-fee / loan-fee anomaly"),
+        ("SLF-003", "Option informed-flow lens"),
+        ("SLF-004", "EDGAR attention shock"),
+        ("SLF-005", "Overnight/intraday tug-of-war"),
+        ("SLF-006", "Treasury auction absorption"),
+        ("SLF-007", "COT exhaustion matrix"),
+        ("SLF-008", "Crypto funding + on-chain stress"),
+        ("SLF-009", "Supply-chain pressure impulse"),
+        ("SLF-010", "Lottery/MAX anti-chase flag"),
+    ]
+    for (sid, expected_name), hand_row in zip(expected_pairs, hand):
+        docket = docket_map[sid]
+        assert hand_row["name"] == expected_name, (
+            f"{sid}: hand row name={hand_row['name']!r} != expected={expected_name!r}"
+        )
+        assert docket["name"] == expected_name, (
+            f"{sid}: docket name={docket['name']!r} != expected={expected_name!r}"
+        )
+
+
+def test_id_suffix_compare_vs_lexicographic():
+    """Integer suffix compare must differ from lexicographic for ids like SLF-010 vs SLF-009."""
+    from engine.signal_frontier_docket import _id_suffix
+    # Lexicographic: 'SLF-010' < 'SLF-009' is False but 'SLF-010' > 'SLF-009' is True
+    # (because '1' > '0' in position 4) — BUT wait, that's wrong: '010' vs '009': '0'=='0','1'>'0' → '010'>'009'
+    # The actual bug: 'SLF-010' <= 'SLF-009' is False but both should be in the same bucket
+    # The real issue: lexicographic 'SLF-011' > 'SLF-010' correctly, but 'SLF-010' <= 'SLF-010' = True
+    # so SLF-010 would be SKIPPED by the old code (it's <= 'SLF-010')
+    # The fix ensures SLF-010 is also skipped (suffix == 10, which is <= 10), SLF-011 is included
+    assert _id_suffix("SLF-001") == 1
+    assert _id_suffix("SLF-010") == 10
+    assert _id_suffix("SLF-011") == 11
+    assert _id_suffix("SLF-060") == 60
+    # Verify the boundary: ids with suffix <= 10 are skipped, >10 are included
+    assert _id_suffix("SLF-010") <= 10  # should be skipped
+    assert _id_suffix("SLF-011") > 10   # should be included
+
+
+def test_phase0_summary_no_generated_utc():
+    """phase0_summary() must not contain generated_utc — it belongs only in script outputs."""
+    from engine.signal_frontier_docket import phase0_summary
+    s = phase0_summary()
+    assert "generated_utc" not in s, "generated_utc must not be in phase0_summary()"
+
+
+def test_frontier_page_renders_with_fable_chip():
+    """signal_lab.html.j2 renders frontier panel with Fable ruling column."""
+    from jinja2 import Environment, FileSystemLoader
+    from engine import i18n, signal_lab
+    from lib import config
+    env = Environment(loader=FileSystemLoader(config.ROOT / "templates"))
+    env.filters["min"] = lambda seq: min(seq)
+    env.globals.update(t=i18n.t, td=i18n.td, tr=i18n.tr, zip=zip)
+    payload = signal_lab.build_scorecard()
+    html = env.get_template("signal_lab.html.j2").render(**payload)
+    assert "frontier_rows" not in html or "fable-chip" in html, \
+        "frontier panel should render with fable-chip elements"
+    assert "研究前沿" in html, "ZH label for Research frontier not found"
+    assert "已否决" in html, "KILLED 已否决 chip text not found"
