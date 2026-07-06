@@ -23,6 +23,14 @@ Tests
 14. determinism               — two calls with same now give same inputs_hash
 15. qi_block_null             — qi is always null with qi_note present
 16. all_missing               — total failure -> partial payload with all gaps, no raise
+17. liquidity_overlay         — regime block carries liquidity_overlay and sector_rs
+18. test_rulnw2_artifact_present_lobe_from_artifact   — RUL-NW2a canonical path
+19. test_rulnw2_artifact_absent_fallback_path         — RUL-NW2b fallback path
+20. test_rulnw2_artifact_corrupt_json_fallback        — RUL-NW2c corrupt artifact
+21. test_rulnw2_artifact_missing_factor_weather_block — RUL-NW2d missing fw block
+22. test_rulnw2_prefer_artifact_false_skips_artifact  — freeze-regression: prefer_artifact=False
+23. test_rulnw2_builder_calls_prefer_artifact_false   — builder integration regression
+24. test_rulnw2_artifact_display_only_false_is_coerced — display_only:False coerced True
 """
 from __future__ import annotations
 
@@ -776,3 +784,135 @@ def test_rulnw2_artifact_missing_factor_weather_block_fallback(tmp_path):
     )
     assert result.get("display_only") is True
     assert isinstance(result, dict)
+
+
+# ---------------------------------------------------------------------------
+# Tests 22-24: Regression tests for Opus PR-2 review findings
+# ---------------------------------------------------------------------------
+
+def test_rulnw2_prefer_artifact_false_skips_artifact(tmp_path):
+    """Test 22 (RUL-NW2 freeze-regression): prefer_artifact=False bypasses the committed
+    artifact and forces a fresh panel-based recompute.
+
+    Regression for the circular-staleness freeze: _build_factor_weather_block in the
+    state builder must pass prefer_artifact=False so that it never reads and re-emits
+    the prior night's artifact verbatim.  This test seeds an artifact whose style_regime
+    is a sentinel value ('STALE_FROZEN_VALUE'), then calls _compose_factor_weather with
+    prefer_artifact=False and asserts the sentinel does NOT appear in the result — the
+    function recomputed from scratch (no panel in tmp_path, so all fields are null).
+    """
+    from engine.neuralweb.world_state import _compose_factor_weather
+
+    # Seed a prior-night artifact with a distinguishable sentinel value.
+    stale_fw = {
+        "style_regime": "STALE_FROZEN_VALUE",
+        "style_regime_pending": None,
+        "style_regime_hold_days": 999,
+        "factor_leader": "STALE_LEADER",
+        "factor_leader_ic": 0.999,
+        "etf_pulse_summary": "STALE",
+        "ratio_iwf_iwd_20d": 9.99,
+        "ratio_qqq_spy_20d": 9.99,
+        "ratio_iwm_spy_20d": 9.99,
+        "display_only": True,
+    }
+    _make_state_artifact(tmp_path, factor_weather=stale_fw, as_of="2026-07-05")
+
+    # With default (prefer_artifact=True) the sentinel WOULD be returned —
+    # confirm that first so we know the artifact is readable.
+    result_canonical = _compose_factor_weather(root=tmp_path, prefer_artifact=True)
+    assert result_canonical.get("style_regime") == "STALE_FROZEN_VALUE", (
+        "Positive-control failed: artifact is present but canonical path did not read it — "
+        "the freeze-regression test would be vacuous.  Check _make_state_artifact."
+    )
+
+    # With prefer_artifact=False the builder path must NOT return the stale sentinel.
+    result_fresh = _compose_factor_weather(root=tmp_path, prefer_artifact=False)
+    assert result_fresh.get("style_regime") != "STALE_FROZEN_VALUE", (
+        "FREEZE REGRESSION: prefer_artifact=False still returned the stale artifact value "
+        f"(style_regime={result_fresh.get('style_regime')!r}).  The builder will freeze "
+        "factor_weather at day-1 values forever."
+    )
+    # No panel in tmp_path → all panel-derived fields are null (fresh compute).
+    assert result_fresh.get("style_regime") is None, (
+        f"expected style_regime=None (no panel in tmp_path), got {result_fresh.get('style_regime')!r}"
+    )
+    # factor_state_as_of must be null on the fresh-compute path.
+    assert result_fresh.get("factor_state_as_of") is None
+    assert result_fresh.get("display_only") is True
+
+
+def test_rulnw2_builder_calls_prefer_artifact_false(tmp_path):
+    """Test 23 (builder integration): _build_factor_weather_block passes prefer_artifact=False.
+
+    Verifies the builder-side fix end-to-end: even with a stale artifact on disk,
+    calling _build_factor_weather_block returns a fresh (null-filled) result rather
+    than the artifact's sentinel values.
+    """
+    import sys
+    import importlib
+
+    # Seed the stale artifact in tmp_path.
+    stale_fw = {
+        "style_regime": "BUILDER_STALE_SENTINEL",
+        "style_regime_pending": None,
+        "style_regime_hold_days": 42,
+        "factor_leader": "BUILDER_STALE_LEADER",
+        "factor_leader_ic": 0.777,
+        "etf_pulse_summary": "STALE_ETF",
+        "ratio_iwf_iwd_20d": 7.77,
+        "ratio_qqq_spy_20d": 7.77,
+        "ratio_iwm_spy_20d": 7.77,
+        "display_only": True,
+    }
+    _make_state_artifact(tmp_path, factor_weather=stale_fw, as_of="2026-07-05")
+
+    # Import the builder's private function and call it directly.
+    import scripts.build_factor_intelligence_state as bfis
+    gaps: list[str] = []
+    result = bfis._build_factor_weather_block(tmp_path, gaps)
+
+    assert result.get("style_regime") != "BUILDER_STALE_SENTINEL", (
+        "BUILDER FREEZE REGRESSION: _build_factor_weather_block returned stale artifact "
+        f"value (style_regime={result.get('style_regime')!r}).  It must pass "
+        "prefer_artifact=False to _compose_factor_weather."
+    )
+    # No panel in tmp_path → style_regime must be null.
+    assert result.get("style_regime") is None, (
+        f"expected style_regime=None (no panel), got {result.get('style_regime')!r}"
+    )
+
+
+def test_rulnw2_artifact_display_only_false_is_coerced(tmp_path):
+    """Test 24 (display_only coercion): artifact carrying display_only:False is overridden.
+
+    world_state.py:504 forces display_only=True regardless of what the artifact carries.
+    This test verifies the override is applied — an artifact with display_only:False must
+    still produce display_only:True in the returned dict.
+    """
+    from engine.neuralweb.world_state import _compose_factor_weather
+
+    # Seed an artifact whose factor_weather block carries display_only: False.
+    fw_with_false = {
+        "style_regime": "growth",
+        "style_regime_pending": None,
+        "style_regime_hold_days": 5,
+        "factor_leader": "value",
+        "factor_leader_ic": 0.031,
+        "etf_pulse_summary": "IWF/IWD_20d=+0.005",
+        "ratio_iwf_iwd_20d": 0.005,
+        "ratio_qqq_spy_20d": 0.002,
+        "ratio_iwm_spy_20d": -0.001,
+        "display_only": False,  # deliberately set to False — should be coerced
+    }
+    _make_state_artifact(tmp_path, factor_weather=fw_with_false, as_of="2026-07-06")
+
+    result = _compose_factor_weather(root=tmp_path, prefer_artifact=True)
+
+    assert result.get("display_only") is True, (
+        f"display_only override failed: artifact carried display_only=False but result has "
+        f"display_only={result.get('display_only')!r}.  §5.4 mandates display_only always True."
+    )
+    # Confirm we did take the canonical path (not fallback).
+    assert result.get("factor_state_as_of") == "2026-07-06"
+    assert result.get("style_regime") == "growth"
