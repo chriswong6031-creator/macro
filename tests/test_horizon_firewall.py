@@ -429,6 +429,10 @@ class TestRealRegistryFirewallClean:
             "expect-drift-ruler-p-results",
             # LT-2c per-stock expectation-state display block — hold_thesis by design; display-only
             "long-hold-expectation-state",
+            # LT-4 thesis funnel shadow — hold_thesis by design; display/research tier only
+            "long-hold-thesis-funnel-states",
+            "long-hold-thesis-funnel-states-manifest",
+            "long-hold-thesis-funnel-panel",
         }
         reg = load_registry(REPO_ROOT)
         hold_arts = {

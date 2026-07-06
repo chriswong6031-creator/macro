@@ -130,6 +130,59 @@
   .band.cautious,.band.tightening { color:#d23f3f; background:color-mix(in srgb,#d23f3f 13%,transparent); }
   .band.steady,.band.building,.band.neutral,.band.unknown { color:var(--muted); background:var(--panel2); }
   .disc { font-size:11.5px; color:var(--muted); margin-top:14px; line-height:1.55; }
+  /* ── command list ── */
+  /* uses .tbl-scroll from theme.js (avoids double-wrap) */
+  table.cmd-tbl { border-collapse:collapse; width:100%; min-width:680px; font-size:12.5px; }
+  table.cmd-tbl th { text-align:left; padding:6px 9px; background:var(--panel2); color:var(--muted); font-weight:600; border-bottom:2px solid var(--line); white-space:nowrap; }
+  table.cmd-tbl td { padding:7px 9px; border-bottom:1px solid var(--line); vertical-align:middle; }
+  table.cmd-tbl tr:last-child td { border-bottom:none; }
+  .cmd-ticker { font-family:ui-monospace,Menlo,monospace; font-size:11px; color:var(--link); font-weight:700; white-space:nowrap; }
+  .cmd-name { font-size:12px; font-weight:600; max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .cmd-desk-dots { display:flex; gap:3px; align-items:center; }
+  .cmd-dot { width:9px; height:9px; border-radius:50%; flex-shrink:0; }
+  .cmd-dot.up { background:var(--up); }
+  .cmd-dot.down { background:var(--down); }
+  .cmd-dot.neutral { background:var(--muted); opacity:.35; }
+  .cmd-dot.absent { background:transparent; border:1px solid var(--line); }
+  .stage-chip { font-size:9.5px; font-weight:700; padding:2px 7px; border-radius:6px; text-transform:uppercase; letter-spacing:.04em; white-space:nowrap; }
+  .stage-emerging { color:#1f9a55; background:color-mix(in srgb,#1f9a55 14%,transparent); border:1px solid #1f9a5540; }
+  .stage-early { color:#5b8def; background:color-mix(in srgb,#5b8def 14%,transparent); border:1px solid #5b8def40; }
+  .stage-consensus { color:var(--muted); background:var(--panel2); border:1px solid var(--line); }
+  .stage-exhausted { color:#d23f3f; background:color-mix(in srgb,#d23f3f 12%,transparent); border:1px solid #d23f3f40; }
+  .stage-faltering { color:#e0973a; background:color-mix(in srgb,#e0973a 12%,transparent); border:1px solid #e0973a40; }
+  .stage-distribution { color:#e0973a; background:color-mix(in srgb,#e0973a 12%,transparent); border:1px solid #e0973a40; }
+  .stage-quiet { color:var(--muted); background:var(--panel2); border:1px solid var(--line); opacity:.6; }
+  .stage-discovery { color:#8b5cf6; background:color-mix(in srgb,#8b5cf6 13%,transparent); border:1px solid #8b5cf640; }
+  .edge-bar { display:inline-block; width:48px; height:5px; background:var(--panel2); border-radius:3px; overflow:hidden; vertical-align:middle; margin-right:4px; }
+  .edge-bar > i { display:block; height:100%; background:var(--link); border-radius:3px; }
+  .opp-score { font-weight:800; font-variant-numeric:tabular-nums; font-size:13px; }
+  .rs-chip { font-size:10px; font-weight:700; padding:1px 6px; border-radius:5px; white-space:nowrap; }
+  .rs-pos { color:var(--up); background:color-mix(in srgb,var(--up) 12%,transparent); }
+  .rs-neg { color:var(--down); background:color-mix(in srgb,var(--down) 12%,transparent); }
+  .rs-neu { color:var(--muted); background:var(--panel2); }
+  .cmd-read { font-size:11px; color:var(--muted); max-width:240px; line-height:1.4; }
+  .cmd-fals { font-size:10px; color:#e0973a; margin-top:2px; }
+  .cmd-expander { font-size:11.5px; color:var(--link); cursor:pointer; margin-top:8px; display:inline-block; }
+  /* ── discovery queue ── */
+  .disc-queue { display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:10px; margin:12px 0; }
+  .disc-card { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:12px 14px; }
+  .disc-card.off-desk { border-left:3px solid #8b5cf6; }
+  .disc-card .disc-ticker { font-family:ui-monospace,Menlo,monospace; font-size:11px; color:var(--link); font-weight:700; }
+  .disc-card .disc-name { font-size:12.5px; font-weight:700; margin:3px 0; }
+  .disc-card .disc-reason { font-size:11px; color:var(--muted); margin-top:3px; line-height:1.4; }
+  .disc-card .disc-meta { display:flex; gap:5px; flex-wrap:wrap; margin-top:6px; align-items:center; }
+  .lane-chip { font-size:9px; font-weight:700; padding:1px 6px; border-radius:5px; text-transform:uppercase; letter-spacing:.04em; background:var(--panel2); color:var(--muted); border:1px solid var(--line); }
+  .exp-chip { font-size:9px; font-weight:700; padding:1px 6px; border-radius:5px; color:#e0973a; background:color-mix(in srgb,#e0973a 13%,transparent); border:1px solid #e0973a44; }
+  .offdesk-chip { font-size:9px; font-weight:700; padding:1px 6px; border-radius:5px; color:#8b5cf6; background:color-mix(in srgb,#8b5cf6 13%,transparent); border:1px solid #8b5cf640; }
+  .disc-score-bar { height:3px; border-radius:2px; background:var(--link); margin-top:5px; }
+  /* ── analogs card ── */
+  .analogs-card { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:15px 17px; margin:14px 0; }
+  .analogs-query { display:flex; flex-wrap:wrap; gap:7px; margin:8px 0 12px; }
+  .aq-chip { font-size:11px; padding:3px 9px; border-radius:999px; background:var(--panel2); border:1px solid var(--line); color:var(--text); }
+  .fan-table { border-collapse:collapse; font-size:12px; margin:8px 0; }
+  .fan-table th { padding:4px 8px; color:var(--muted); font-weight:600; border-bottom:1px solid var(--line); }
+  .fan-table td { padding:5px 8px; border-bottom:1px solid var(--line); font-variant-numeric:tabular-nums; }
+  .fan-table tr:last-child td { border-bottom:none; }
   /* ── surface cards (spoke links) ── */
   .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(232px,1fr)); gap:14px; margin:14px 0; }
   a.scard { display:block; background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:15px 17px; color:var(--text); transition:border-color .15s, transform .15s; text-decoration:none; }
@@ -155,7 +208,9 @@
 {% set KIND_ZH = {'chain':'链条','news':'新闻','radar':'雷达','scheduled':'日程','policy':'政策','altdata':'另类数据'} %}
 {% set STANCE_ZH = {'easing':'宽松','neutral':'中性','tightening':'收紧'} %}
 {% set BAND_ZH = {'supportive':'偏积极','cautious':'偏谨慎','steady':'平稳','building':'积累中','unknown':'未知'} %}
-{% set _STG = {'emerging':['Emerging','萌芽'],'early':['Early','早期'],'consensus':['Consensus','共识'],'exhausted':['Exhausted','见顶'],'distribution':['Distribution','派发'],'building':['Building','酝酿']} %}
+{% set _STG = {'emerging':['Emerging','萌芽'],'early':['Early','早期'],'consensus':['Consensus','共识'],'exhausted':['Exhausted','见顶'],'distribution':['Distribution','派发'],'building':['Building','酝酿'],'faltering':['Faltering','走弱'],'quiet':['Quiet','平静'],'discovery':['Discovery','发现']} %}
+{% set _LANE_EN = {'lhb_first_seat':'LHB First Seat','margin_velocity':'Margin Velocity','southbound_delta':'Southbound Delta','ths_emerging_concepts':'THS Concepts'} %}
+{% set _LANE_ZH = {'lhb_first_seat':'龙虎榜首现','margin_velocity':'融资速度','southbound_delta':'南向持仓变化','ths_emerging_concepts':'同花顺概念'} %}
 
 <section class="ci-hero">
   <p class="eyebrow">🧠 {{ t('China Intelligence', '中国情报中心') }}</p>
@@ -475,6 +530,221 @@
 
   {# ── K. DIGEST ── #}
   {% if b.digest %}<details><summary style="cursor:pointer;font-size:12px;color:var(--muted);margin:8px 0">{{ t('Machine digest (what the Mastermind reads)','机器摘要（Mastermind 读取的内容）') }}</summary><div class="digest">{{ b.digest }}</div></details>{% endif %}
+
+  {# ── K2. COMMAND LIST ── #}
+  {# cmd_full is the full command.json artifact loaded separately by the builder #}
+  {%- if cmd_full and cmd_full.command %}
+  {%- set _cmd = cmd_full %}
+  <h2 class="sec">⚡ {{ t('China Command List','中国指挥清单') }}</h2>
+  <p style="font-size:12px;color:var(--muted);margin:0 0 10px">
+    {{ t('Ranked by opportunity = signal × edge-remaining × leading-gap — NOT by desk agreement. Emerging = altdata/radar leading while news/board are still quiet.','按机会评分排序 = 信号 × 剩余边际 × 领先差值 — 非按共识排序。萌芽 = 另类数据/雷达领先，新闻/买入板尚静。') }}
+    <span class="mode-badge">{{ t('context only','仅供参考') }}</span>
+    &nbsp;{{ t('Universe','覆盖') }}: {{ _cmd.n_universe or '—' }} &nbsp;·&nbsp;
+    {{ t('Emerging','萌芽') }}: {{ (_cmd.counts or {}).get('emerging',0) }} &nbsp;·&nbsp;
+    {{ t('Early','早期') }}: {{ (_cmd.counts or {}).get('early',0) }}
+    {%- if (_cmd.counts or {}).get('veto_blind') %} &nbsp;·&nbsp; <span style="color:#e0973a">{{ t('No-price','无价格') }}: {{ (_cmd.counts or {}).get('veto_blind',0) }}</span>{%- endif %}
+  </p>
+  {%- set _rows = _cmd.command %}
+  {%- set _show_n = [15, _rows|length]|min %}
+  <div class="tbl-scroll">
+    <table class="cmd-tbl">
+      <thead>
+        <tr>
+          <th>{{ t('Ticker','代码') }}</th>
+          <th>{{ t('Name','名称') }}</th>
+          <th data-tip-en="news · altdata · radar · board · special" data-tip-zh="新闻 · 另类数据 · 雷达 · 买入板 · 特殊情景">{{ t('Desks','台') }}</th>
+          <th>{{ t('Stage','阶段') }}</th>
+          <th>{{ t('Edge','剩余边际') }}</th>
+          <th>{{ t('Opp','机会') }}</th>
+          <th>{{ t('RS/Off-High','RS/偏离高点') }}</th>
+          <th>{{ t('Read · Falsifier','读数 · 证伪') }}</th>
+        </tr>
+      </thead>
+      <tbody>
+      {%- for d in _rows[:_show_n] %}
+        {%- set _dm = d.desk_matrix or {} %}
+        {%- set _traj = d.traj or {} %}
+        {%- set _stage_cls = 'stage-' ~ (d.stage or 'quiet') %}
+        {%- set _stage_lbl = _STG.get(d.stage, [d.stage|capitalize, d.stage|capitalize]) %}
+        <tr>
+          <td><span class="cmd-ticker">{{ d.ticker }}</span></td>
+          <td><span class="cmd-name" data-tip-en="{{ d.name }}" data-tip-zh="{{ d.name }}">{{ d.name[:18] }}</span></td>
+          <td>
+            <div class="cmd-desk-dots">
+              {%- for dk, dl in [('news','N'),('altdata','A'),('radar','R'),('board','B'),('special','S')] %}
+              {%- set _di = (_dm.get(dk) or {}) %}
+              {%- set _dp = _di.get('present', false) %}
+              {%- set _dd = _di.get('dir') %}
+              {%- if _dp and _dd == 1 %}<span class="cmd-dot up" data-tip-en="{{ dl }}:bullish" data-tip-zh="{{ dl }}:看涨"></span>
+              {%- elif _dp and _dd == -1 %}<span class="cmd-dot down" data-tip-en="{{ dl }}:bearish" data-tip-zh="{{ dl }}:看跌"></span>
+              {%- elif _dp %}<span class="cmd-dot neutral" data-tip-en="{{ dl }}:neutral" data-tip-zh="{{ dl }}:中性"></span>
+              {%- else %}<span class="cmd-dot absent" data-tip-en="{{ dl }}:absent" data-tip-zh="{{ dl }}:缺失"></span>
+              {%- endif %}
+              {%- endfor %}
+            </div>
+          </td>
+          <td><span class="{{ _stage_cls }} stage-chip">{{ t(_stage_lbl[0], _stage_lbl[1]) }}</span></td>
+          <td>
+            <span class="edge-bar"><i style="width:{{ (d.edge_remaining or 0)*100 }}%"></i></span>
+            <span style="font-size:11px;font-variant-numeric:tabular-nums">{{ "%.0f"|format((d.edge_remaining or 0)*100) }}%</span>
+          </td>
+          <td><span class="opp-score">{{ "%.0f"|format(d.opportunity_score or 0) }}</span></td>
+          <td>
+            {%- if d.veto_blind %}
+              <span class="rs-chip rs-neg" data-tip-en="no price plane / veto blind" data-tip-zh="无价格数据">no price plane / 无价格数据</span>
+            {%- else %}
+              {#- .get() access: missing traj keys pass `is not none` as Undefined then crash on compare (house gotcha) #}
+              {%- if _traj.get('rs_20d') is not none %}
+                <span class="rs-chip {{ 'rs-pos' if _traj.get('rs_20d') > 3 else ('rs-neg' if _traj.get('rs_20d') < -3 else 'rs-neu') }}">
+                  RS {{ "%+.0f"|format(_traj.get('rs_20d')) }}%
+                </span>
+              {%- endif %}
+              {%- if _traj.get('off_high_pct') is not none %}
+                &nbsp;<span class="rs-chip rs-neu">{{ "%+.0f"|format(_traj.get('off_high_pct')) }}%H</span>
+              {%- endif %}
+            {%- endif %}
+          </td>
+          <td>
+            <div class="cmd-read">{{ d.read }}</div>
+            {%- if d.falsifier %}<div class="cmd-fals">⚠ {{ d.falsifier[:80] }}</div>{%- endif %}
+          </td>
+        </tr>
+      {%- endfor %}
+      </tbody>
+    </table>
+  </div>
+  {%- if _rows|length > _show_n %}
+  <details>
+    <summary class="cmd-expander">{{ t('Show all','展开全部') }} {{ _rows|length }} {{ t('names','只') }} ▸</summary>
+    <div class="cmd-wrap" style="margin-top:8px">
+      <table class="cmd-tbl">
+        <thead>
+          <tr>
+            <th>{{ t('Ticker','代码') }}</th><th>{{ t('Name','名称') }}</th>
+            <th>{{ t('Desks','台') }}</th><th>{{ t('Stage','阶段') }}</th>
+            <th>{{ t('Edge','剩余边际') }}</th><th>{{ t('Opp','机会') }}</th>
+            <th>{{ t('RS/Off-High','RS/偏离高点') }}</th><th>{{ t('Read','读数') }}</th>
+          </tr>
+        </thead>
+        <tbody>
+        {%- for d in _rows[_show_n:] %}
+          {%- set _dm2 = d.desk_matrix or {} %}
+          {%- set _traj2 = d.traj or {} %}
+          {%- set _stage_cls2 = 'stage-' ~ (d.stage or 'quiet') %}
+          {%- set _stage_lbl2 = _STG.get(d.stage, [d.stage|capitalize, d.stage|capitalize]) %}
+          <tr>
+            <td><span class="cmd-ticker">{{ d.ticker }}</span></td>
+            <td><span class="cmd-name">{{ d.name[:18] }}</span></td>
+            <td>
+              <div class="cmd-desk-dots">
+                {%- for dk, dl in [('news','N'),('altdata','A'),('radar','R'),('board','B'),('special','S')] %}
+                {%- set _di2 = (_dm2.get(dk) or {}) %}
+                {%- if _di2.get('present') and _di2.get('dir') == 1 %}<span class="cmd-dot up"></span>
+                {%- elif _di2.get('present') and _di2.get('dir') == -1 %}<span class="cmd-dot down"></span>
+                {%- elif _di2.get('present') %}<span class="cmd-dot neutral"></span>
+                {%- else %}<span class="cmd-dot absent"></span>
+                {%- endif %}
+                {%- endfor %}
+              </div>
+            </td>
+            <td><span class="{{ _stage_cls2 }} stage-chip">{{ t(_stage_lbl2[0], _stage_lbl2[1]) }}</span></td>
+            <td><span class="edge-bar"><i style="width:{{ (d.edge_remaining or 0)*100 }}%"></i></span> {{ "%.0f"|format((d.edge_remaining or 0)*100) }}%</td>
+            <td><span class="opp-score">{{ "%.0f"|format(d.opportunity_score or 0) }}</span></td>
+            <td>
+              {%- if d.veto_blind %}<span class="rs-chip rs-neg" data-tip-en="no price plane / veto blind" data-tip-zh="无价格数据">no price plane / 无价格数据</span>
+              {%- else %}
+              {%- if _traj2.get('rs_20d') is not none %}<span class="rs-chip {{ 'rs-pos' if _traj2.get('rs_20d') > 3 else ('rs-neg' if _traj2.get('rs_20d') < -3 else 'rs-neu') }}">RS {{ "%+.0f"|format(_traj2.get('rs_20d')) }}%</span>{%- endif %}
+              {%- if _traj2.get('off_high_pct') is not none %}&nbsp;<span class="rs-chip rs-neu">{{ "%+.0f"|format(_traj2.get('off_high_pct')) }}%H</span>{%- endif %}
+              {%- endif %}
+            </td>
+            <td><div class="cmd-read">{{ d.read }}</div></td>
+          </tr>
+        {%- endfor %}
+        </tbody>
+      </table>
+    </div>
+  </details>
+  {%- endif %}
+  {%- endif %}
+
+  {# ── K3. DISCOVERY QUEUE ── #}
+  {%- if cmd_full and cmd_full.discovery %}
+  <h2 class="sec">🔭 {{ t('Discovery Queue','发现队列') }}</h2>
+  <p style="font-size:12px;color:var(--muted);margin:0 0 10px">
+    {{ t('Off-desk leading signals — names not yet on any desk. Margin Velocity lane is experimental (Phase-0 accruing, contributes zero to ranking).','离板块领先信号——尚未出现在任何台的个股。融资速度栏为实验性（阶段0积累，不计入排名）。') }}
+  </p>
+  <div class="disc-queue">
+    {%- for c in cmd_full.discovery %}
+    <div class="disc-card {{ 'off-desk' if c.off_desk }}">
+      <div class="disc-ticker">{{ c.ticker }}</div>
+      <div class="disc-name">{{ c.name[:22] }}</div>
+      <div class="disc-reason">{{ (c.reason or '')[:80] }}</div>
+      <div class="disc-meta">
+        <span class="lane-chip">{{ t((_LANE_EN.get(c.source) or c.source), (_LANE_ZH.get(c.source) or c.source)) }}</span>
+        {%- if c.experimental %}<span class="exp-chip">{{ t('Experimental','实验性') }}</span>{%- endif %}
+        {%- if c.off_desk %}<span class="offdesk-chip">{{ t('Off-desk','离板块') }}</span>{%- endif %}
+        {%- if c.venue %}<span class="lane-chip" style="color:var(--link)">{{ c.venue }}</span>{%- endif %}
+      </div>
+      <div class="disc-score-bar" style="width:{{ (c.disc_score or 0)*100 }}%"></div>
+      {%- if c.experimental %}
+      <div style="font-size:10px;color:#e0973a;margin-top:4px">{{ t('⚠ Phase-0 accruing — not yet in ranking','⚠ 阶段0积累中——暂不计入排名') }}</div>
+      {%- endif %}
+    </div>
+    {%- endfor %}
+  </div>
+  {%- endif %}
+
+  {# ── K4. ANALOGS CARD (degrade-safe; hidden when artifact absent) ── #}
+  {%- if b.analogs %}
+  {%- set _an = b.analogs %}
+  <h2 class="sec">🕰️ {{ t('Cycle Context & Historical Analogs','周期背景与历史类比') }}</h2>
+  <div class="analogs-card">
+    <div style="font-size:11px;color:var(--muted);margin-bottom:8px">
+      {{ t('Historical analog periods sharing the current macro fingerprint. Descriptive fan only — not a forecast.','与当前宏观指纹相近的历史类比区间。仅为描述性分布——非预测。') }}
+    </div>
+    {%- if _an.query %}
+    <div class="analogs-query">
+      {%- set _aq = _an.query %}
+      {%- if _aq.quad %}<span class="aq-chip">{{ t('Quad','象限') }}: {{ _aq.quad_name or _aq.quad }}</span>{%- endif %}
+      {%- if _aq.liquidity %}<span class="aq-chip">{{ t('Liquidity','流动性') }}: {{ _aq.liquidity }}</span>{%- endif %}
+      {%- if _aq.cycle %}<span class="aq-chip">{{ t('Cycle','周期') }}: {{ _aq.cycle }}</span>{%- endif %}
+    </div>
+    {%- endif %}
+    {%- if _an.fan %}
+    <table class="fan-table">
+      <thead><tr><th>{{ t('Horizon','期限') }}</th><th>P25</th><th>{{ t('Median','中位') }}</th><th>P75</th><th>N</th></tr></thead>
+      <tbody>
+      {%- for hz in ['h20','h60','h120'] %}
+      {%- set _frow = (_an.fan or {}).get(hz, {}) %}
+      <tr>
+        <td>{{ {'h20':'20d','h60':'60d','h120':'120d'}[hz] }}</td>
+        <td>{{ "%+.1f%%"|format(_frow.p25*100) if _frow.p25 is defined else '—' }}</td>
+        <td><b>{{ "%+.1f%%"|format(_frow.median*100) if _frow.median is defined else '—' }}</b></td>
+        <td>{{ "%+.1f%%"|format(_frow.p75*100) if _frow.p75 is defined else '—' }}</td>
+        <td>{{ _frow.n or '—' }}</td>
+      </tr>
+      {%- endfor %}
+      </tbody>
+    </table>
+    {%- endif %}
+    {%- if _an.analogs %}
+    <details style="margin-top:8px">
+      <summary style="cursor:pointer;font-size:11.5px;color:var(--link)">{{ t('Analog periods','类比区间') }} ({{ _an.n_analogs or 0 }}) ▸</summary>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:7px">
+      {%- for a in _an.analogs[:12] %}
+        <span style="font-size:11px;padding:2px 8px;border-radius:7px;background:var(--panel2);border:1px solid var(--line)">
+          {{ a.date }} · {{ a.quad or '' }}
+          {%- if a.fwd_shcomp %} · {{ "%+.1f%%"|format(a.fwd_shcomp.h20*100) if a.fwd_shcomp.h20 is defined else '' }}{%- endif %}
+        </span>
+      {%- endfor %}
+      </div>
+    </details>
+    {%- endif %}
+    {%- if _an.disclaimer_en %}
+    <p style="font-size:10.5px;color:var(--muted);margin-top:10px;line-height:1.5">{{ t(_an.disclaimer_en, _an.disclaimer_zh or _an.disclaimer_en) }}</p>
+    {%- endif %}
+  </div>
+  {%- endif %}
 
   {# ── L. CHINA SUITE DIRECTORY ── #}
   <h2 class="sec">🗺️ {{ t('China Suite Directory','中国页面目录') }}</h2>

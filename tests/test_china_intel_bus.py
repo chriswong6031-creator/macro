@@ -14,7 +14,7 @@ from engine import china_intel_bus as bus
 def test_briefing_shape(monkeypatch):
     monkeypatch.setattr(bus, "_read_json", lambda rel: None)   # no surfaces built
     b = bus.briefing(asof="2026-06-20")
-    assert b["schema"] == "china_intel.briefing.v5"
+    assert b["schema"] == "china_intel.briefing.v6"
     assert b["is_context_only"] is True
     assert b["asof"] == "2026-06-20"
     for k in ("news", "policy", "altdata", "radar", "analysis"):
@@ -23,6 +23,8 @@ def test_briefing_shape(monkeypatch):
     for k in ("conviction", "cross_surface", "flagged_tickers", "what_changed", "salience",
               "surface_asof", "max_staleness_days"):
         assert k in b
+    # v6: analogs key always present (may be None)
+    assert "analogs" in b
     assert isinstance(b["digest"], str) and b["digest"]
     assert b["disclaimer"] and b["disclaimer_zh"]
 
@@ -343,8 +345,189 @@ def test_briefing_includes_v5_blocks(monkeypatch):
     assert b["special_situations"] is None  # None when artifact absent
 
 
-def test_briefing_schema_is_v5(monkeypatch):
-    """Schema string must be v5."""
+def test_briefing_schema_is_v6(monkeypatch):
+    """Schema string must be v6."""
     monkeypatch.setattr(bus, "_read_json", lambda rel: None)
     b = bus.briefing(asof="2026-07-06")
-    assert b["schema"] == "china_intel.briefing.v5"
+    assert b["schema"] == "china_intel.briefing.v6"
+
+
+# ── v6 integration: bus↔template contract integration test (BLOCKER 2) ────────
+
+def test_template_renders_command_section(tmp_path, monkeypatch):
+    """Integration test: fixture command.json + builder + template → cmd-tbl appears.
+
+    This test was designed to FAIL against the pre-fix code (bus block carried top10
+    but template guarded on b.command.command which didn't exist in the bus payload).
+    Post-fix: builder loads cmd_full separately and passes it to the template.
+
+    Steps:
+    1. Write a fixture command.json to tmp_path/china_intel/command.json
+    2. Run china_intel_bus.briefing() with _read_json monkeypatched to serve the fixture
+    3. Load cmd_full exactly as build_china_intel._load_cmd_full() does
+    4. Render the actual template with (b=b, cmd_full=cmd_full)
+    5. Assert <table class="cmd-tbl">, Discovery Queue header, and (with analogs) analogs card
+    """
+    import json as _json
+    from jinja2 import Environment, FileSystemLoader
+    from lib import config
+    from scripts.build_china_intel import _load_cmd_full
+
+    # ── 1. Write fixture command.json ──────────────────────────────────────
+    cmd_dir = tmp_path / "china_intel"
+    cmd_dir.mkdir(parents=True)
+    fixture_command = {
+        "schema": "china_intel.command.v1",
+        "is_context_only": True,
+        "as_of": "2026-07-06",
+        "n_universe": 5,
+        "command": [
+            {
+                "ticker": "000563.SZ", "name": "武汉银行", "stage": "early",
+                "opportunity_score": 82.2, "edge_remaining": 0.93,
+                "edge_drivers": ["not on buy-board"], "edge_components": 2,
+                "leading_gap": 1, "lead_up": 1, "lag_up": 0, "signal_core": 0.768,
+                "falsifier": None, "falsifier_penalty": 1.0,
+                "directions": {"altdata": 1, "radar": None, "news": None, "board": None},
+                "desk_matrix": {
+                    "news": {"present": False, "dir": None},
+                    "altdata": {"present": True, "dir": 1},
+                    "radar": {"present": False, "dir": None},
+                    "board": {"present": False, "dir": None},
+                    "special": {"present": False, "dir": None},
+                },
+                "off_desk": True, "veto_blind": False,
+                "traj": {"ret_20d": 5.2, "rs_20d": 3.1, "rs_60d": 1.2,
+                         "off_high_pct": -8.5, "rolling_over": False},
+                "read": "A leading desk is ahead of the crowd — early, ~93% edge remaining.",
+            },
+            {
+                # veto-blind row: traj is None and MUST NOT crash the render
+                # (missing traj keys pass `is not none` as Undefined then crash on compare)
+                "ticker": "832000.BJ", "name": "无价名", "stage": "early",
+                "opportunity_score": 61.0, "edge_remaining": None,
+                "edge_drivers": [], "edge_components": 0,
+                "leading_gap": 1, "lead_up": 1, "lag_up": 0, "signal_core": 0.61,
+                "falsifier": None, "falsifier_penalty": 1.0,
+                "directions": {"altdata": 1, "radar": None, "news": None, "board": None},
+                "desk_matrix": {
+                    "news": {"present": False, "dir": None},
+                    "altdata": {"present": True, "dir": 1},
+                    "radar": {"present": False, "dir": None},
+                    "board": {"present": False, "dir": None},
+                    "special": {"present": False, "dir": None},
+                },
+                "off_desk": True, "veto_blind": True,
+                "traj": None,
+                "read": "Leading signal, no price plane — veto blind.",
+            },
+        ],
+        "discovery": [
+            {
+                "ticker": "000001.SZ", "name": "平安银行", "disc_score": 0.65,
+                "source": "lhb_first_seat", "reason": "First LHB seat in 90+ days",
+                "off_desk": True, "experimental": False, "lhb_date": "2026-07-06",
+            },
+        ],
+        "analogs": None,
+        "desks": {"news": {"live": False}, "altdata": {"live": True},
+                  "radar": {"live": False}, "board": {"live": False}, "special": {"live": False}},
+        "counts": {"emerging": 0, "early": 1, "consensus": 0, "exhausted": 0,
+                   "faltering": 0, "distribution": 0, "quiet": 0, "board_members": 0,
+                   "with_price": 1, "veto_blind": 0, "board_only_unranked": 0},
+    }
+    (cmd_dir / "command.json").write_text(_json.dumps(fixture_command, ensure_ascii=False))
+
+    # Also write a fixture analogs.json to test analogs card
+    fixture_analogs = {
+        "schema": "china_intel.analogs.v1",
+        "as_of": "2026-07-06",
+        "coverage": "CSI300 2010-2026",
+        "query": {"quad": "Q2", "quad_name": "Bull", "liquidity": "easing", "cycle": "mid"},
+        "fan": {"h20": {"p25": 0.01, "median": 0.03, "p75": 0.06, "n": 12}},
+        "analogs": [{"date": "2015-06-01", "quad": "Q2", "fwd_shcomp": {"h20": 0.04}}],
+        "method_note": "Cosine similarity on macro fingerprint.",
+        "disclaimer_en": "Descriptive fan only.",
+        "disclaimer_zh": "仅描述性分布。",
+    }
+    (cmd_dir / "analogs.json").write_text(_json.dumps(fixture_analogs, ensure_ascii=False))
+
+    # ── 2. Run briefing() with _read_json reading from tmp_path ───────────
+    def _mock_read_json(rel: str):
+        p = tmp_path / rel
+        if p.exists():
+            return _json.loads(p.read_text())
+        return None
+
+    monkeypatch.setattr(bus, "_read_json", _mock_read_json)
+    b = bus.briefing(asof="2026-07-06")
+
+    # ── 3. Load cmd_full exactly as the builder does ───────────────────────
+    cmd_full = _json.loads((cmd_dir / "command.json").read_text())
+
+    # ── 4. Render the actual template ─────────────────────────────────────
+    env = Environment(
+        loader=FileSystemLoader(str(config.ROOT / "templates")), autoescape=False)
+    try:
+        from engine import i18n
+        env.globals.update(td=i18n.td, tr=i18n.tr, t=i18n.t)
+    except Exception:
+        # i18n may fail without full data; provide stub
+        env.globals.update(td=lambda k, zh="": k, tr=lambda k, zh="": k,
+                           t=lambda k, zh="": k)
+    html = env.get_template("china_intel.html.j2").render(b=b, cmd_full=cmd_full)
+
+    # ── 5. Assertions ──────────────────────────────────────────────────────
+    # K2: command table rendered
+    assert 'class="cmd-tbl"' in html, "cmd-tbl table not found — K2 command section not rendered"
+    # K2: ticker in table
+    assert "000563.SZ" in html, "fixture ticker not found in rendered HTML"
+    # K3: Discovery Queue header present
+    assert "Discovery Queue" in html or "发现队列" in html, \
+        "Discovery Queue header not found — K3 not rendered"
+    # K3: discovery ticker present
+    assert "000001.SZ" in html, "discovery ticker not found in rendered HTML"
+
+    # Analogs card: b.analogs is set (from fixture analogs.json via _mock_read_json)
+    assert b.get("analogs") is not None, "b.analogs should be non-None with fixture analogs.json"
+    assert "Cycle Context" in html or "周期背景" in html, \
+        "Analogs card not rendered — K4 not present even with b.analogs set"
+
+
+def test_template_command_pre_fix_would_fail(tmp_path, monkeypatch):
+    """Demonstrate that WITHOUT cmd_full the old template guard fails silently.
+
+    This test proves the pre-fix behavior: b.command is a compact dict with top10/discovery_n
+    but no .command/.discovery keys, so K2/K3 render nothing.
+    """
+    import json as _json
+    from jinja2 import Environment, FileSystemLoader
+    from lib import config
+
+    # monkeypatch: no artifacts on disk → bus command block returns compact form
+    monkeypatch.setattr(bus, "_read_json", lambda rel: None)
+    b = bus.briefing(asof="2026-07-06")
+
+    # Inject a fake bus-style command block (as the OLD code would have returned)
+    b["command"] = {
+        "asof": "2026-07-06", "n_universe": 5, "counts": {},
+        "top10": [{"ticker": "000563.SZ", "stage": "early"}],
+        "discovery_n": 1, "is_context_only": True,
+        # note: NO .command key, NO .discovery key
+    }
+
+    env = Environment(
+        loader=FileSystemLoader(str(config.ROOT / "templates")), autoescape=False)
+    try:
+        from engine import i18n
+        env.globals.update(td=i18n.td, tr=i18n.tr, t=i18n.t)
+    except Exception:
+        env.globals.update(td=lambda k, zh="": k, tr=lambda k, zh="": k,
+                           t=lambda k, zh="": k)
+
+    # Render WITHOUT cmd_full (cmd_full=None simulates the old template behavior)
+    html = env.get_template("china_intel.html.j2").render(b=b, cmd_full=None)
+
+    # K2 must NOT render — cmd_full is None so the guard `{%- if cmd_full and cmd_full.command %}` fails
+    assert 'class="cmd-tbl"' not in html, \
+        "cmd-tbl should NOT be present when cmd_full=None (pre-fix behavior)"

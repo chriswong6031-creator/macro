@@ -131,9 +131,12 @@ lanes:
             - scripts.build_cycle
             - scripts.build_sector_cycles
             - scripts.build_country_cycles
+            - scripts.build_measurement
+            - scripts.append_sync_gauge
             - engine.policy_intent_desk
             - scripts.build_policy_watch
             - scripts.build_index_changes
+            - scripts.build_cycle_pattern_live
       # serial post-band
       - id: build_sector_central
         module: scripts.build_sector_central
@@ -217,6 +220,15 @@ lanes:
         # W6a: config-gated OFF (alert_push.enabled=false); pure no-op until operator enables
       - id: archive_signals
         module: scripts.archive_signals
+      - id: archive_context_snapshots
+        module: scripts.archive_context_snapshots
+        note: >
+          non-fatal; append-only context PIT history (keep-FIRST per date) into
+          data/signal_archive/context_daily.parquet — fixes P-D5-3 class of
+          'no PIT context history' problems going forward.
+          inputs: [data/regime/latest.json, data/market_state/latest.json,
+                   data/sentiment_crypto/fear_greed.parquet]
+          outputs: [data/signal_archive/context_daily.parquet]
       - id: signal_sanity
         module: scripts.signal_sanity
       - id: build_whitehouse_page_only
@@ -644,6 +656,7 @@ lanes:
             - scripts.build_sector_cycles
             - scripts.build_country_cycles
             - scripts.build_cycle
+            - scripts.build_measurement
             - scripts.build_markets
             - engine.policy_intent_desk
             - scripts.build_policy_watch
