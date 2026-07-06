@@ -1328,3 +1328,7 @@
 {"date": "2026-07-02", "ticker": "VRRM", "score": 10.0, "percentile": 10.0, "regime": "mixed", "horizons": [21, 63, 126]}
 {"date": "2026-07-02", "ticker": "LEN", "score": 32.0, "percentile": 32.0, "regime": "mixed", "horizons": [21, 63, 126]}
 {"date": "2026-07-02", "ticker": "CG", "score": 12.0, "percentile": 12.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-07-02", "ticker": "NWSA", "score": 46.0, "percentile": 46.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-07-02", "ticker": "UBER", "score": 70.0, "percentile": 70.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-07-02", "ticker": "VRSN", "score": 9.0, "percentile": 9.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-07-02", "ticker": "RCUS", "score": 28.0, "percentile": 28.0, "regime": "mixed", "horizons": [21, 63, 126]}
