@@ -25,7 +25,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | neural-web | 34 |
 | next3 | 3 |
 | nw-mastermind-bridge | 2 |
-| nw-rails | 4 |
+| nw-rails | 7 |
 | options-alpha | 7 |
 | options-nw-entry-intelligence | 3 |
 | oracle | 25 |
@@ -42,7 +42,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | tier | count |
 |---|---|
 | display | 103 |
-| infrastructure | 55 |
+| infrastructure | 58 |
 | scored | 4 |
 | shadow | 37 |
 
@@ -50,7 +50,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 192 |
+| git | 195 |
 | gitignored-local | 5 |
 | r2 | 2 |
 
@@ -251,8 +251,11 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 |---|---|---|---|---|---|---|
 | dispersion-regime | `data/dispersion/regime.json` | json | daily-engine | display | 2 | 0 |
 | grading-closure | `data/governance/grading_closure.json` | json | collect | infrastructure | 1 | 0 |
+| covariance-spine | `data/neuralweb/covariance_spine.json` | json | daily-engine | infrastructure | 0 | 0 |
+| covariance-spine-history | `data/neuralweb/covariance_spine_history.parquet` | parquet | daily-engine | infrastructure | 0 | 0 |
 | operator-action-ledger | `data/operator/action_ledger.jsonl` | jsonl | on-demand | infrastructure | 0 | 0 |
 | operator-grading | `data/governance/operator_grading.json` | json | on-demand | infrastructure | 0 | 0 |
+| site-covariance-spine | `site/neuralwebdata/covariance_spine.json` | json | daily-engine | infrastructure | 0 | 0 |
 
 ### options-alpha
 
@@ -635,6 +638,13 @@ Artifacts below have `known_extra_writers` — additional code paths that write 
 - **declared producer:** `engine/neuralweb/confluence.py`
 - **extra writers:**
   - scripts/build_confluence_graph.py — thin CLI wrapper; calls build_and_write() defined in the producer; no independent write logic
+
+### covariance-spine
+
+- **path:** `data/neuralweb/covariance_spine.json`
+- **declared producer:** `scripts/build_covariance_spine.py`
+- **extra writers:**
+  - site/neuralwebdata/covariance_spine.json
 
 ### experiments-registry-seed
 

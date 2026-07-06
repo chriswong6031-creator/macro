@@ -5814,3 +5814,82 @@ artifacts:
       states list + note) when site/stockdata dir is absent (CI runners). Deterministic
       ordering (sort by ticker) for stable diffs. DT-W1 replication verdict will
       rewrite the chip caveat string (single source) if warranted.
+
+  # --- R-ORTH PR-3: covariance spine (RUL-ORTH-1..11) ---
+  covariance-spine:
+    path: data/neuralweb/covariance_spine.json
+    format: json
+    producer: scripts/build_covariance_spine.py
+    known_extra_writers:
+      - site/neuralwebdata/covariance_spine.json  # site mirror written atomically by same producer
+    owner_program: nw-rails
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 48
+    schema: neuralweb.covariance_spine.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      R-ORTH PR-3 (RUL-ORTH-1..11) — covariance spine rail (not a lobe).
+      Measures structural concentration and independence across four blocks:
+      rates PCA (yield_curve shape), factor-return correlation PCA, dispersion
+      regime pass-through, and NW engine firing independence (lobes block).
+      Display-only hard law: authority="context"; never scores, sizes, gates,
+      ranks, or originates a trade. Fail-open: each block guarded independently;
+      missing inputs noted, builder always exits 0. Lobes block: effective_independent_lobes
+      via participation-ratio of measurable-engine correlation matrix (>=30 active
+      weeks floor; RUL-ORTH-8 null via 200 deterministic circular-shift draws).
+      same_bet_warning fires when largest cluster has >=3 engines with mean
+      intra-cluster |corr|>0.60. Site mirror site/neuralwebdata/covariance_spine.json
+      is a known secondary write path by the same producer (atomic temp+rename).
+
+  site-covariance-spine:
+    path: site/neuralwebdata/covariance_spine.json
+    format: json
+    producer: scripts/build_covariance_spine.py
+    known_extra_writers: []
+    owner_program: nw-rails
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 48
+    schema: neuralweb.covariance_spine.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      R-ORTH PR-3 site copy of data/neuralweb/covariance_spine.json for frontend
+      consumption. Exact mirror written atomically alongside the data copy by
+      scripts/build_covariance_spine.py. Display-only; no authority.
+
+  covariance-spine-history:
+    path: data/neuralweb/covariance_spine_history.parquet
+    format: parquet
+    producer: scripts/build_covariance_spine.py
+    known_extra_writers: []
+    owner_program: nw-rails
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 48
+    schema: neuralweb.covariance_spine_history.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      R-ORTH PR-3 history ledger — one row per as_of with headline scalars:
+      effective_independent_lobes, n_lobes_measurable, rates_dominant_pc_share,
+      factors_effective_bets, dispersion_state, same_bet_warning (bool).
+      Idempotent: existing row with same as_of is replaced. Written atomically
+      by scripts/build_covariance_spine.py alongside the main artifact.

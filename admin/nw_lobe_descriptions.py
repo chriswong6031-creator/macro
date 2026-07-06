@@ -57,6 +57,21 @@ LOBE_DESCRIPTIONS = {
         "full": "This file is the single source of truth for whether the AI reviewer has earned expanded authority. It is rewritten nightly by the grading process after evaluating the reviewer's accumulated performance record. Currently the reviewer is on probation with zero graded entries — it has not yet met the threshold. The governance log is updated only when the status actually changes, keeping that log sparse and meaningful.",
         "src_fp": "2cef2470e3afe15e",
     },
+    "covariance-spine": {
+        "short": "",
+        "full": "",
+        "src_fp": "12ea04f0aca72f8f",
+    },
+    "covariance-spine-history": {
+        "short": "",
+        "full": "",
+        "src_fp": "cde97c269bfed318",
+    },
+    "dt-contra-state": {
+        "short": "",
+        "full": "",
+        "src_fp": "eef3af10ebddce16",
+    },
     "factor-contradictions-ledger": {
         "short": "Append-only log of days when the factor pair signals borrowed strength from each other — display only.",
         "full": "When the factor analysis detects a contradiction between the factor pair's signals — where one factor's apparent strength may be borrowed from the other — a record is appended here keyed by date and stock. All entries are display-only and all are currently marked as informational notes rather than warnings. The ledger remains dormant until the factor panel has at least 60 distinct dates of history.",
@@ -206,6 +221,11 @@ LOBE_DESCRIPTIONS = {
         "short": "Daily registry of all published signal artifacts, used to verify the pipeline produced complete outputs.",
         "full": "Each day the signal-export process writes a manifest listing every artifact it produced. Three downstream consumers read this manifest to confirm the pipeline ran completely. It serves as a conformance checkpoint — if an artifact is missing, the manifest exposes the gap.",
         "src_fp": "07a8b02b06bde190",
+    },
+    "site-covariance-spine": {
+        "short": "",
+        "full": "",
+        "src_fp": "28e5ef449ec6b76b",
     },
     "site-factor-intelligence-state": {
         "short": "The public-site copy of the factor intelligence state, byte-identical to the canonical version.",

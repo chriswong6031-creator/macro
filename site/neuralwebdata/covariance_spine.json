@@ -1,0 +1,123 @@
+{
+  "schema": "neuralweb.covariance_spine.v1",
+  "as_of": "2026-07-06",
+  "display_only": true,
+  "authority": "context",
+  "descriptive_not_gauntleted": true,
+  "blocks": {
+    "rates": {
+      "dominant_pc_share": 0.8244,
+      "first3_var": 0.9632,
+      "effective_dimension_pr": null,
+      "pc3_to_pc4_gap": null,
+      "oos_pctile_vs_null": null,
+      "curvature_stability_tag": null,
+      "vol_match_multipliers": null,
+      "source": "data/regime/latest.json#yield_curve",
+      "pca_health_note": "pca_health pending next nightly render"
+    },
+    "factors": {
+      "dominant_factor_pc_share": 0.5001,
+      "effective_factor_bets_pr": 3.2337,
+      "n_factors_used": 7,
+      "n_obs_used": 252,
+      "caveat": "~3y history, annual fundamentals; descriptive only",
+      "composite_note": "'composite' excluded from correlation PCA — it is a linear blend of the other factors; including it would double-count shared variance."
+    },
+    "dispersion": {
+      "state": "lean_in",
+      "dispersion_pctile": 0.8,
+      "avg_corr": 0.07,
+      "dominant_equity_pc_share": null,
+      "effective_universe_bets_pr": null,
+      "idio_dispersion_share": null,
+      "eigen_note": "eigen block absent — lands via sibling PR"
+    },
+    "lobes": {
+      "effective_independent_lobes": 1.0,
+      "n_lobes_measurable": 1,
+      "n_lobes_total": 17,
+      "null_reference": {
+        "null_median": 1.0,
+        "null_p90": 1.0,
+        "pctile_vs_null": 1.0,
+        "n_null_draws": 200
+      },
+      "same_bet_warning": {
+        "active": false
+      },
+      "highest_overlap_pairs": [],
+      "clusters": [],
+      "coverage": {
+        "measurable": [
+          "track_record"
+        ],
+        "unmeasurable": {
+          "altdata": 3,
+          "altdata_conv": 2,
+          "ca_board": 1,
+          "china_news": 3,
+          "cn_board": 1,
+          "cn_importance_v0": 3,
+          "cn_importance_v0_pit": 3,
+          "desk:ai_desk": 2,
+          "hk_board": 1,
+          "options_entry": 2,
+          "policy": 3,
+          "radar": 3,
+          "reflex.cortex_attention": 1,
+          "us_board": 2,
+          "us_importance_v0": 2,
+          "us_importance_v0_pit": 2
+        },
+        "pairs_below_floor": 0,
+        "placebo_excluded": "'placebo' engine excluded — control lane, not a signal source"
+      }
+    }
+  },
+  "coverage": {
+    "measurable": [
+      "track_record"
+    ],
+    "unmeasurable": {
+      "altdata": 3,
+      "altdata_conv": 2,
+      "ca_board": 1,
+      "china_news": 3,
+      "cn_board": 1,
+      "cn_importance_v0": 3,
+      "cn_importance_v0_pit": 3,
+      "desk:ai_desk": 2,
+      "hk_board": 1,
+      "options_entry": 2,
+      "policy": 3,
+      "radar": 3,
+      "reflex.cortex_attention": 1,
+      "us_board": 2,
+      "us_importance_v0": 2,
+      "us_importance_v0_pit": 2
+    },
+    "pairs_below_floor": 0,
+    "placebo_excluded": "'placebo' engine excluded — control lane, not a signal source"
+  },
+  "missing_inputs": [],
+  "committee_annotations": [
+    "Rail (not a lobe): provides concentration accounting context only.",
+    "Display-only ceiling: no block may score, size, gate, rank, or originate a trade.",
+    "Lobes block: effective_independent_lobes derived from participation-ratio of measurable-engine correlation matrix.",
+    "Factors block: composite factor excluded — linear blend would double-count shared variance.",
+    "Null reference: 200 deterministic circular-shift draws; pctile_vs_null in [0,1]."
+  ],
+  "allowed_actions": [
+    "display",
+    "explain",
+    "de_escalation_research_only"
+  ],
+  "forbidden_actions": [
+    "score",
+    "size",
+    "originate_trade",
+    "gate",
+    "rank"
+  ]
+}

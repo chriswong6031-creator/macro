@@ -778,6 +778,18 @@ jobs:
           cat /tmp/kernel_estimates.log
           [ "$rc" -ne 0 ] && echo "::warning title=build_kernel_estimates::rc=$rc (non-fatal)"
           exit 0
+      - name: build covariance spine (R-ORTH PR-3)
+        # R-ORTH PR-3: covariance spine MVP (RUL-ORTH-1..11). Measures structural
+        # concentration across rates PCA, factor correlations, dispersion regime,
+        # and NW engine firing independence. Display-only; four independently-guarded
+        # blocks; always exits 0. Writes data/neuralweb/covariance_spine.json +
+        # site/neuralwebdata/covariance_spine.json + history parquet.
+        run: |
+          set +e
+          python -m scripts.build_covariance_spine > /tmp/covariance_spine.log 2>&1; rc=$?
+          cat /tmp/covariance_spine.log
+          [ "$rc" -ne 0 ] && echo "::warning title=build_covariance_spine::rc=$rc (non-fatal)"
+          exit 0
       - name: build kernel diagnostics (neural-web W3)
         # W3 PR3: decay curves (kernel_families.json) + lagging-signal detector
         # (lagging_signals.json). Both are display-only diagnostics; zero behavior-changing
