@@ -4543,6 +4543,7 @@ artifacts:
     weights: none
     scored_path_surfaces: []
     consumers:
+      - engine/neuralweb/world_state.py
       - engine/neuralweb/cortex.py
       - engine/neuralweb/ask_brain.py
     notes: >

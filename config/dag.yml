@@ -1143,6 +1143,7 @@ modules:
       - site/basketdata/oracle_state.json
       - data/run_status.json
       - site/factordata/alerts_triage.json
+      - data/neuralweb/factor_intelligence_state.json
     writes:
       - data/neuralweb/world_state.json
     impure: false
@@ -1323,6 +1324,7 @@ modules:
       - site/basketdata/oracle_state.json
       - data/run_status.json
       - site/factordata/alerts_triage.json
+      - data/neuralweb/factor_intelligence_state.json
     writes:
       - data/neuralweb/world_state.json
     impure: false

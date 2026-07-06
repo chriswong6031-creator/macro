@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-07-06T06:48:41.835413+00:00",
+  "generated_utc": "2026-07-06T08:37:13.200955+00:00",
   "as_of": "2026-07-06",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
@@ -22507,6 +22507,14 @@
         "detail": "Acquisitions"
       },
       {
+        "ticker": "BHRB",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
         "ticker": "CMC",
         "category": "Acquisitions",
         "confidence": "high",
@@ -26755,14 +26763,6 @@
         "detail": "M&A / Divestitures"
       },
       {
-        "ticker": "CNVS",
-        "category": "M&A / Divestitures",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "M&A / Divestitures"
-      },
-      {
         "ticker": "0489",
         "category": "M&A / Divestitures",
         "confidence": "high",
@@ -27188,11 +27188,11 @@
       },
       {
         "ticker": "AMKR",
-        "category": "Other Situations",
-        "confidence": "high",
+        "category": "Capital Returns",
+        "confidence": "medium",
         "activist": false,
         "filer": null,
-        "detail": "Other Situations"
+        "detail": "Capital Returns"
       },
       {
         "ticker": "ALAUD",
@@ -34723,14 +34723,6 @@
         "detail": "Other"
       },
       {
-        "ticker": "IQV",
-        "category": "Capital Returns",
-        "confidence": "medium",
-        "activist": false,
-        "filer": null,
-        "detail": "Capital Returns"
-      },
-      {
         "ticker": "MH",
         "category": "Capital Returns",
         "confidence": "high",
@@ -34859,12 +34851,28 @@
         "detail": "Capital Returns"
       },
       {
+        "ticker": "CARE",
+        "category": "Divestitures",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Divestitures"
+      },
+      {
         "ticker": "FRMEP",
         "category": "Capital Returns",
         "confidence": "high",
         "activist": false,
         "filer": null,
         "detail": "Capital Returns"
+      },
+      {
+        "ticker": "LAZ",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
       },
       {
         "ticker": "MIDDV",
@@ -35201,6 +35209,14 @@
         "activist": false,
         "filer": null,
         "detail": "Other"
+      },
+      {
+        "ticker": "FBLG",
+        "category": "Delistings",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Delistings"
       },
       {
         "ticker": "GIPRW",
@@ -36603,6 +36619,14 @@
         "detail": "Delistings"
       },
       {
+        "ticker": "GLED-RI",
+        "category": "SPACs",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "SPACs"
+      },
+      {
         "ticker": "PAYC",
         "category": "Capital Returns",
         "confidence": "high",
@@ -36825,6 +36849,14 @@
         "activist": false,
         "filer": null,
         "detail": "Delistings"
+      },
+      {
+        "ticker": "MZTI",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
       },
       {
         "ticker": "FTW-WT",
@@ -37787,6 +37819,14 @@
         "detail": "Capital Returns"
       },
       {
+        "ticker": "MKC-V",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
         "ticker": "TNMWF",
         "category": "Delistings",
         "confidence": "high",
@@ -38387,6 +38427,14 @@
         "detail": "Acquisitions"
       },
       {
+        "ticker": "JYNT",
+        "category": "Divestitures",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Divestitures"
+      },
+      {
         "ticker": "MTEX",
         "category": "Delistings",
         "confidence": "high",
@@ -38529,6 +38577,22 @@
         "activist": false,
         "filer": null,
         "detail": "Capital Returns"
+      },
+      {
+        "ticker": "GRO",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
+        "ticker": "AEHL",
+        "category": "Other",
+        "confidence": "medium",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
       },
       {
         "ticker": "COOTW",
@@ -38715,6 +38779,70 @@
         "detail": "Restructuring"
       },
       {
+        "ticker": "ADVB",
+        "category": "Divestitures",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Divestitures"
+      },
+      {
+        "ticker": "AUB-PA",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
+        "ticker": "BTCY",
+        "category": "Restructuring",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Restructuring"
+      },
+      {
+        "ticker": "COSO",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
+        "ticker": "FGBIP",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
+        "ticker": "GHC",
+        "category": "Divestitures",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Divestitures"
+      },
+      {
+        "ticker": "INDB",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
+        "ticker": "NKSH",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
         "ticker": "ONFOP",
         "category": "Delistings",
         "confidence": "high",
@@ -38723,12 +38851,44 @@
         "detail": "Delistings"
       },
       {
+        "ticker": "OC",
+        "category": "Divestitures",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Divestitures"
+      },
+      {
+        "ticker": "RZC",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
+        "ticker": "RREVW",
+        "category": "SPACs",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "SPACs"
+      },
+      {
         "ticker": "REKR",
         "category": "Delistings",
         "confidence": "high",
         "activist": false,
         "filer": null,
         "detail": "Delistings"
+      },
+      {
+        "ticker": "USCB",
+        "category": "Other",
+        "confidence": "medium",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
       },
       {
         "ticker": "WT",
@@ -38985,14 +39145,6 @@
         "activist": false,
         "filer": null,
         "detail": "SPACs"
-      },
-      {
-        "ticker": "AUB-PA",
-        "category": "Capital Returns",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Capital Returns"
       },
       {
         "ticker": "BHVN",
@@ -39964,14 +40116,6 @@
       },
       {
         "ticker": "LEAT",
-        "category": "Capital Returns",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Capital Returns"
-      },
-      {
-        "ticker": "NKSH",
         "category": "Capital Returns",
         "confidence": "high",
         "activist": false,
@@ -42785,14 +42929,6 @@
         "activist": false,
         "filer": null,
         "detail": "Capital Returns"
-      },
-      {
-        "ticker": "ADVB",
-        "category": "Divestitures",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Divestitures"
       },
       {
         "ticker": "ANGX",

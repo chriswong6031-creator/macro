@@ -22,6 +22,7 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
+from engine.confluence_tiers import _rsi_macd, _stoch_rsi_kd
 from engine.indicators import pct_rank_window, rolling_slope
 from engine.stock_technicals import (
     atr,
@@ -706,3 +707,300 @@ def gap_hold_events(
             event.iloc[i + hold_bars] = True
 
     return pd.DataFrame({"event": event.astype(bool)}, index=close.index)
+
+
+# ---------------------------------------------------------------------------
+# Amendment 3 — HTF Oscillator Motion + Non-Momentum Technicals
+# Entry-Stack Expansion Amendment 3 (RUL-27..34), ratified 2026-07-06.
+# These primitives feed families A–G (esx_htf_turn, esx_decline_geometry,
+# esx_vol_transition). Leak law: every output at t depends only on data ≤ t.
+# RUL-31 PIT: HTF bar labeled L is available on the first daily bar with
+# date >= L (last trading day of the period). In-progress bars are excluded
+# by construction — the resample known-date equals the last COMPLETED bar's
+# last trading day, so the mapping never makes a forming bar available.
+# ---------------------------------------------------------------------------
+
+
+
+def _completed_resample(daily: pd.Series, rule: str):
+    """Resample daily close to HTF, returning only COMPLETED bars.
+
+    A bar is completed iff its period-end label (the resample index) <=
+    the last observed daily date.  The in-progress bar — whose period-end
+    is in the future — is dropped.  This is the RUL-31 PIT gate.
+
+    Returns
+    -------
+    tf_close : pd.Series indexed by known-dates (last trading day of each bar)
+    known_dt : pd.Series of Timestamps, same index, for _completed_htf_to_daily
+    """
+    last_obs = daily.index.max()
+    raw = daily.resample(rule).last().dropna()
+    # Drop bars whose period-end label is strictly after the last observed date.
+    # Conservatism note: when the calendar period-end label falls after the last
+    # observed trading day (e.g. ME label 2024-03-31 Sunday > last_obs 2024-03-29
+    # Friday), the fully-completed trailing bar is also dropped.  This affects
+    # only the single trailing bar at the very end of the series; interior bars
+    # are PIT-correct via the known-date ffill in _completed_htf_to_daily.
+    # The bias is a conservatism, not a leak.
+    raw = raw[raw.index <= last_obs]
+    known = (
+        daily.resample(rule)
+        .apply(lambda x: x.dropna().index.max())
+        .reindex(raw.index)
+        .dropna()
+    )
+    raw = raw.reindex(known.index)
+    known_dt = pd.Series(pd.to_datetime(known.values), index=known.index)
+    return raw, known_dt
+
+
+def _completed_htf_to_daily(
+    htf: pd.Series,
+    daily_index: pd.DatetimeIndex,
+) -> pd.Series:
+    """Map a completed-HTF-bar series to daily by the RUL-31 known-date law.
+
+    The HTF series must be ALREADY labeled at the last trading day of each bar
+    (the known-date, not the period-end label from resample).  The value labeled
+    L becomes available on the first daily bar with date >= L, then forward-fills.
+    In-progress bars are excluded by construction: their known-date is in the
+    future relative to every daily observation inside the forming bar.
+
+    Parameters
+    ----------
+    htf:
+        Series indexed by known-dates (last trading day of each completed bar).
+        Duplicate known-dates are resolved by keeping the last.
+    daily_index:
+        The target daily DatetimeIndex (business-day grid).
+
+    Returns
+    -------
+    pd.Series with ``daily_index``, values forward-filled from the completed
+    HTF bars.  NaN before the first completed bar.
+    """
+    s = htf[~htf.index.duplicated(keep="last")].sort_index()
+    return s.reindex(daily_index, method="ffill")
+
+
+def htf_turn_flags(close: pd.Series) -> pd.DataFrame:
+    """HTF oscillator-motion flags — daily-indexed, float 0/1/NaN columns.
+
+    Computes weekly, 2-week, and monthly oscillator-motion features and maps
+    each to daily via the RUL-31 completed-bar law.  NaN propagates wherever
+    any input to a flag is NaN (burn-in periods produce NaN, never 0).
+
+    2W convention replicates wave1.py lines 338-349 verbatim:
+        s2w = daily.resample("2W-FRI").last().dropna()
+        known_2w = daily.resample("2W-FRI").apply(
+            lambda x: x.dropna().index.max()
+        ).reindex(s2w.index).dropna()
+        s2w = s2w.reindex(known_2w.index)
+    The period label is "2W-FRI"; the known-date is the last trading day in
+    the two-week window (not necessarily a Friday if the preceding Friday is
+    a holiday).
+
+    Math pinned per RUL-31.2:
+        RSI-MACD = confluence_tiers._rsi_macd  (EMA(RSI14,14)−EMA(RSI14,60), sig EMA5)
+        StochRSI  = confluence_tiers._stoch_rsi_kd  (14/3/3 K&D, 0-100)
+    Never engine.cycles.stoch_rsi (K-only) or price macd_parts.
+
+    Parameters
+    ----------
+    close:
+        Daily close price series (DatetimeIndex, business-day grid).
+
+    Returns
+    -------
+    pd.DataFrame with the same DatetimeIndex as ``close`` and float columns:
+        w_hist_rising  — weekly RSI-MACD histogram slope (hist > hist.shift(1)); 0/1/NaN
+        wbull          — weekly RSI-MACD line above signal (m >= s); 0/1/NaN
+        w2_stoch_turn  — 2W StochRSI K>D and K rising; 0/1/NaN
+        w2_d_min6      — rolling(6).min() of 2W StochRSI D, float/NaN
+        m_stoch_turn   — monthly StochRSI K>D and K rising; 0/1/NaN
+        m_hist_rising  — monthly RSI-MACD histogram slope; 0/1/NaN (deep-panel diagnostic)
+    """
+    if not isinstance(close.index, pd.DatetimeIndex):
+        close = close.copy()
+        close.index = pd.to_datetime(close.index)
+
+    daily_index = close.index
+
+    # ── Weekly ───────────────────────────────────────────────────────────────
+    wk, known_w_dt = _completed_resample(close, "W-FRI")
+
+    wm, ws = _rsi_macd(wk)
+    hist = wm - ws
+
+    _notna_hist = hist.notna() & hist.shift(1).notna()
+    w_hist_rising_tf = pd.Series(
+        np.where(_notna_hist, (hist > hist.shift(1)).astype(float), np.nan),
+        index=hist.index,
+    )
+    _notna_bull = wm.notna() & ws.notna()
+    wbull_tf = pd.Series(
+        np.where(_notna_bull, (wm >= ws).astype(float), np.nan),
+        index=wm.index,
+    )
+
+    w_hist_rising = _completed_htf_to_daily(
+        pd.Series(w_hist_rising_tf.values, index=known_w_dt.values),
+        daily_index,
+    )
+    wbull = _completed_htf_to_daily(
+        pd.Series(wbull_tf.values, index=known_w_dt.values),
+        daily_index,
+    )
+
+    # ── 2-Week (2W-FRI) — replicates wave1.py lines 338-349 verbatim ────────
+    # Period label = "2W-FRI"; known-date = last trading day in the two-week
+    # window (wave1.py:338-349).  In-progress bar filtered by _completed_resample.
+    s2w, known_2w_dt = _completed_resample(close, "2W-FRI")
+
+    k2, d2 = _stoch_rsi_kd(s2w)
+
+    _notna_2w = k2.notna() & d2.notna() & k2.shift(1).notna()
+    w2_stoch_turn_tf = pd.Series(
+        np.where(_notna_2w, ((k2 > d2) & (k2 > k2.shift(1))).astype(float), np.nan),
+        index=k2.index,
+    )
+    # rolling(6).min() on TF-native series before to_daily — wave1.py:348-349
+    w2_d_min6_tf = d2.rolling(6, min_periods=1).min()
+
+    w2_stoch_turn = _completed_htf_to_daily(
+        pd.Series(w2_stoch_turn_tf.values, index=known_2w_dt.values),
+        daily_index,
+    )
+    w2_d_min6 = _completed_htf_to_daily(
+        pd.Series(w2_d_min6_tf.values, index=known_2w_dt.values),
+        daily_index,
+    )
+
+    # ── Monthly ──────────────────────────────────────────────────────────────
+    mo, known_m_dt = _completed_resample(close, "ME")
+
+    km, dm = _stoch_rsi_kd(mo)
+
+    _notna_m = km.notna() & dm.notna() & km.shift(1).notna()
+    m_stoch_turn_tf = pd.Series(
+        np.where(_notna_m, ((km > dm) & (km > km.shift(1))).astype(float), np.nan),
+        index=km.index,
+    )
+
+    mm, ms = _rsi_macd(mo)
+    hist_m = mm - ms
+    _notna_mh = hist_m.notna() & hist_m.shift(1).notna()
+    m_hist_rising_tf = pd.Series(
+        np.where(_notna_mh, (hist_m > hist_m.shift(1)).astype(float), np.nan),
+        index=hist_m.index,
+    )
+
+    m_stoch_turn = _completed_htf_to_daily(
+        pd.Series(m_stoch_turn_tf.values, index=known_m_dt.values),
+        daily_index,
+    )
+    m_hist_rising = _completed_htf_to_daily(
+        pd.Series(m_hist_rising_tf.values, index=known_m_dt.values),
+        daily_index,
+    )
+
+    return pd.DataFrame(
+        {
+            "w_hist_rising": w_hist_rising,
+            "wbull": wbull,
+            "w2_stoch_turn": w2_stoch_turn,
+            "w2_d_min6": w2_d_min6,
+            "m_stoch_turn": m_stoch_turn,
+            "m_hist_rising": m_hist_rising,
+        },
+        index=daily_index,
+    )
+
+
+def decline_concentration_series(
+    close: pd.Series,
+    window: int = 63,
+    min_down_days: int = 8,
+) -> pd.Series:
+    """Herfindahl concentration of negative log-returns over trailing window.
+
+    Measures whether the decline is FLUSH (few large down-days dominate) vs
+    GRIND (loss spread evenly).  Scale-free: a Herfindahl of the absolute
+    loss-shares within the trailing ``window`` bars.
+
+    At each date d: compute log-returns over the trailing ``window`` bars ending
+    at d.  Take the subset of negative returns; compute each |neg| / sum(|neg|)
+    and return the sum of squared shares (the Herfindahl).
+
+    NaN if fewer than ``min_down_days`` negative returns in the window OR fewer
+    than int(window * 2 / 3) non-NaN returns in the window.
+
+    Parameters
+    ----------
+    close:
+        Daily close price series.
+    window:
+        Trailing look-back in bars (default 63).
+    min_down_days:
+        Minimum number of strictly-negative log-returns required (default 8).
+
+    Returns
+    -------
+    pd.Series in [1/n_neg, 1.0]; NaN during burn-in and wherever the
+    conditions above are not met.  Rolling-apply (offline lane).
+    """
+    min_obs = int(window * 2 / 3)
+    lr = np.log(close / close.shift(1))
+
+    def _herf(arr: np.ndarray) -> float:
+        valid = arr[~np.isnan(arr)]
+        if len(valid) < min_obs:
+            return np.nan
+        neg = valid[valid < 0]
+        if len(neg) < min_down_days:
+            return np.nan
+        abs_neg = np.abs(neg)
+        total = abs_neg.sum()
+        if total == 0.0:
+            return np.nan
+        shares = abs_neg / total
+        return float((shares ** 2).sum())
+
+    return lr.rolling(window, min_periods=min_obs).apply(_herf, raw=True)
+
+
+def vol_ts_series(close: pd.Series) -> pd.DataFrame:
+    """Vol term-structure ratio and falling flag — daily-indexed.
+
+    vol_ts     = realized_vol(close, 5) / realized_vol(close, 63).
+    Annualization cancels (both use the same sqrt(252)*100 factor in
+    ``engine.stock_technicals.realized_vol``), so vol_ts is a pure ratio of
+    short-window to long-window volatility.
+
+    vol_falling = (vol_ts < 1.0) AND (vol_ts < vol_ts.shift(5)), NaN-propagating
+    float (0.0, 1.0, or NaN).
+
+    Parameters
+    ----------
+    close:
+        Daily close price series.
+
+    Returns
+    -------
+    pd.DataFrame with the same DatetimeIndex as ``close`` and columns:
+        vol_ts      — float ratio; NaN during burn-in
+        vol_falling — float 0/1/NaN; NaN wherever vol_ts or vol_ts.shift(5) is NaN
+    """
+    rv5 = realized_vol(close, 5)
+    rv63 = realized_vol(close, 63)
+
+    vt = rv5 / rv63.replace(0.0, np.nan)
+
+    _notna_vf = vt.notna() & vt.shift(5).notna()
+    vf = pd.Series(
+        np.where(_notna_vf, ((vt < 1.0) & (vt < vt.shift(5))).astype(float), np.nan),
+        index=close.index,
+    )
+
+    return pd.DataFrame({"vol_ts": vt, "vol_falling": vf}, index=close.index)
