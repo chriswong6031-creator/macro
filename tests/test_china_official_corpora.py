@@ -191,12 +191,20 @@ def test_summary_frame_has_datetime_index(tmp_path, monkeypatch):
         )
 
     # ---- verify the FIXED frame shape passes validate() cleanly --------------
-    idx = pd.Timestamp(crawled_at)
+    # Use tz_convert(None) to strip UTC tz, matching every other collector
+    # (tz-naive); mixing tz-aware here causes store.upsert → combine_first to
+    # raise "Cannot join tz-naive with tz-aware DatetimeIndex".
+    idx = pd.Timestamp(crawled_at).tz_convert(None)
     fixed_summary = pd.DataFrame(
         {f"n_docs_{k}": [float(v)] for k, v in per_organ.items()},
         index=[idx],
     )
     fixed_summary.index.name = "crawled_at"
+
+    # Index must be tz-NAIVE (no tzinfo) so it can join with other collectors.
+    assert fixed_summary.index.tz is None, (
+        f"Expected tz-naive DatetimeIndex, got tz={fixed_summary.index.tz!r}"
+    )
 
     # This is the exact call that validate() makes (base.py line 63):
     #   df.index = pd.to_datetime(df.index).normalize()
