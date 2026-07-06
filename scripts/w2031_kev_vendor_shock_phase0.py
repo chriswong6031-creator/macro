@@ -27,7 +27,7 @@ HONEST PRIOR (printed at runtime):
 
 GATES (all must pass for confirmer candidacy):
   G1: V1 21d mean abnormal return is NEGATIVE with |t_HAC| >= 2.0 AND BH-FDR q <= 0.10
-      across the 4×2 (variant × horizon) family of 8 p-values.
+      across the 7-cell family (V1×2 + V2×2 + V3×2 + V4×1 — V4 is 21d-only).
   G2: Split-half same-sign — 2021-11..2024-02 vs 2024-03..2026-07 — for V1 21d mean.
   G3: Survives excluding Microsoft entries (largest vendor concentration).
 
@@ -67,7 +67,11 @@ KEV_URL = "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulner
 KEV_CACHE = ROOT / "data" / "cisa_kev" / "kev.json"
 VENDOR_MAP_PATH = ROOT / "scripts" / "w2031_kev_vendor_map.csv"
 BENCHMARK_TICKER = "IGV"  # iShares Expanded Tech-Software ETF
-MASSIVE_DIR = ROOT / "data" / "massive_stock_day"
+# The worktree's data/massive_stock_day/ top level contains only
+# _manifest.json/_backfill_state.json plus a nested symlink named
+# 'massive_stock_day' that points to the real parquet store.
+# Resolve one level deeper so _load_prices() finds TICKER.parquet files.
+MASSIVE_DIR = ROOT / "data" / "massive_stock_day" / "massive_stock_day"
 YAHOO_DIR = ROOT / "data" / "yahoo"
 BETA_WINDOW = 252
 BETA_MIN = 120
@@ -339,6 +343,9 @@ def _add_due_pressure(events: pd.DataFrame, cal: pd.DatetimeIndex) -> pd.DataFra
     if press_df.empty or press_df["count"].max() == 0:
         return events
 
+    # NOTE: quantile computed over FULL 2021-2026 sample — this is NOT point-in-time.
+    # A top-decile week label uses full-sample knowledge. V4 is flagged as NOT deployable
+    # as-is; an expanding-window or trailing quantile would be the PIT form.
     threshold = press_df["count"].quantile(0.90)
     top_weeks = set(press_df.loc[press_df["count"] >= threshold, "week_start"].tolist())
 
@@ -399,18 +406,46 @@ def _run_event_study(events: pd.DataFrame, bench_prices: pd.Series,
 # ---------------------------------------------------------------------------
 
 def _summarize_variant(ars: pd.Series, label: str) -> dict[str, Any]:
-    """Compute mean, t_HAC, n for a set of abnormal returns."""
+    """Compute mean, t_HAC, n for a set of abnormal returns.
+
+    STATS NOTE — calendar-time collapse:
+    Naive NW on the event-indexed array treats it as a time series and
+    Bartlett-weights over event-index lags, but many events share the same
+    calendar entry_date (especially Microsoft CVEs) and 21d forward windows
+    overlap pervasively — so cross-event correlation is NOT corrected by
+    event-index lags. We collapse to one observation per calendar entry_date
+    (mean AR across all events on that date), then run NW on the resulting
+    date-indexed series. This is the calendar-time portfolio method and
+    correctly treats each trading day as one observation regardless of how
+    many events share it. n_events = raw count; n_dates = dates used in NW.
+    """
     clean = ars.dropna()
-    n = len(clean)
-    if n < 8:
-        return {"label": label, "mean": None, "t_hac": None, "p_hac": None, "n": n}
-    nw = newey_west_tstat(clean.values, lags=4)
+    n_events = len(clean)
+    if n_events < 8:
+        return {"label": label, "mean": None, "t_hac": None, "p_hac": None,
+                "n": n_events, "n_events": n_events, "n_dates": 0}
+    # Collapse to one observation per calendar date (simple mean across events on same date)
+    if isinstance(clean.index, pd.DatetimeIndex):
+        daily = clean.groupby(clean.index.date).mean()
+    else:
+        # ars was passed without a date index — fall back to raw (shouldn't happen)
+        daily = clean
+    n_dates = len(daily)
+    if n_dates < 8:
+        return {"label": label, "mean": None, "t_hac": None, "p_hac": None,
+                "n": n_events, "n_events": n_events, "n_dates": n_dates}
+    # NW lags = min(4, n_dates-1); for 21d windows ~sqrt(n_dates) would be
+    # the Newey-West (1994) plug-in, but 4 is conservative and matches family
+    nw_lags = min(4, n_dates - 1)
+    nw = newey_west_tstat(daily.values, lags=nw_lags)
     return {
         "label": label,
         "mean": round(nw["mean"] * 100, 4) if nw["mean"] is not None else None,  # as %
         "t_hac": nw["t"],
         "p_hac": nw["p"],
-        "n": n,
+        "n": n_events,
+        "n_events": n_events,
+        "n_dates": n_dates,
     }
 
 
@@ -532,7 +567,12 @@ def main() -> None:
     print()
 
     def get_ars(mask: pd.Series, horizon_col: str) -> pd.Series:
-        return events.loc[mask, horizon_col].dropna()
+        """Return AR series indexed by entry_date for calendar-time NW collapse."""
+        sub = events.loc[mask, ["entry_date", horizon_col]].dropna(subset=[horizon_col])
+        s = pd.Series(sub[horizon_col].values,
+                      index=pd.DatetimeIndex(sub["entry_date"].values),
+                      name=horizon_col)
+        return s
 
     mask_all = pd.Series([True] * len(events), index=events.index)
     mask_ransomware = events["is_ransomware"]
@@ -564,10 +604,10 @@ def main() -> None:
     # Gate G1: BH-FDR across 4x2 family
     # -----------------------------------------------------------------------
     print("=" * 70)
-    print("GATE G1: V1 21d negative + |t_HAC| >= 2 + BH-FDR q <= 0.10 over 4x2 family")
+    print("GATE G1: V1 21d negative + |t_HAC| >= 2 + BH-FDR q <= 0.10 over 7-cell family")
     print("=" * 70)
 
-    # Collect p-values for the 8 cells (4 variants × 2 horizons)
+    # Collect p-values for the 7 cells (V1×2 + V2×2 + V3×2 + V4×1; V4 is 21d-only)
     pvals_for_bh = {k: v["p_hac"] for k, v in summaries.items() if v.get("p_hac") is not None}
     bh_results = benjamini_hochberg(pvals_for_bh, alpha=0.10)
 
@@ -579,7 +619,7 @@ def main() -> None:
 
     print(f"  V1 21d mean AR: {v1_21.get('mean', 'n/a')}")
     print(f"  V1 21d t_HAC:   {v1_21.get('t_hac', 'n/a')}")
-    print(f"  BH results (4x2 family):")
+    print(f"  BH results (7-cell family):")
     for k, bh in sorted(bh_results.items()):
         rej_str = "REJECT" if bh.get("reject") else "retain"
         print(f"    {k:12s}  p={bh['p']:.4f}  q={bh['q']:.4f}  [{rej_str}]")
@@ -760,7 +800,7 @@ Prior probability of clearing all three gates: LOW.
 ### Gates (all must pass for confirmer candidacy)
 
 - **G1:** V1 21d mean abnormal return NEGATIVE with |t_HAC| >= 2.0 AND BH-FDR q <= 0.10
-  across the 4×2 (variant × horizon) family of 8 p-values.
+  across the 7-cell family (V1×2 + V2×2 + V3×2 + V4×1 — V4 is 21d-only).
 - **G2:** Split-half same-sign: 2021-11..2024-02 vs 2024-03..2026-07 for V1 21d mean.
 - **G3:** Survives excluding Microsoft entries (largest vendor concentration).
 
@@ -829,7 +869,7 @@ All means expressed as percentage abnormal return (vendor cumulative − beta ×
 
 V1 21d: mean = {fmt_mean(summaries['V1_21d'])}, t_HAC = {fmt_t(summaries['V1_21d'])}
 
-BH-FDR across 4×2 family (α = 0.10):
+BH-FDR across 7-cell family (α = 0.10):
 
 | Cell | p | q (BH) | Decision |
 |------|---|--------|----------|
@@ -879,7 +919,15 @@ Ex-MSFT: n = {no_msft_sum['n']}, mean = {fmt_mean(no_msft_sum)}, t_HAC = {fmt_t(
 - **No intraday resolution:** Entry at next-day close may miss same-day price moves if
   KEV additions become known before market close.
 - **Price availability:** Vendors without price data in massive_stock_day or yahoo are
-  excluded (small-cap or delisted entries).
+  excluded. All public vendors in the map (Cisco/SAP/Juniper/F5/NETGEAR/Ubiquiti/SolarWinds/
+  Progress) are present in the massive store; small-cap or truly delisted tickers account for
+  the beta-coverage drop (722/931 = 78% beta coverage).
+- **Calendar-time NW:** t-stats are computed on date-collapsed means (calendar-time portfolio
+  method) to handle overlapping 21d windows and same-date events. n_events counts raw events;
+  the NW degrees of freedom are the number of distinct entry_dates.
+- **V4 not point-in-time:** The top-decile threshold for V4 (due-pressure weeks) uses the
+  full-sample quantile over 2021-2026. A live version would require an expanding-window or
+  trailing quantile. V4 results are descriptive only.
 - **Ransomware sub-sample is small:** V2 events ({n_ransomware}) may have insufficient
   power for reliable inference.
 - **Cluster definition is heuristic:** The 5-trading-day cluster window is pre-registered

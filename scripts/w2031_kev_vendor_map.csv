@@ -13,7 +13,7 @@ Fortinet,FTNT,public,2021-11-03,,NASDAQ-listed throughout KEV history
 VMware,VMW,public,2021-11-03,2023-10-30,Broadcom acquired Oct 2023; use VMW before 2023-10-30
 Citrix,,delisted,2021-11-03,2022-09-08,Taken private Sep 2022; exclude
 Synacor,SYNC,public,2021-11-03,,NASDAQ small-cap throughout KEV history
-Android,,private,2021-11-03,,Google product; map via Google row
+Android,,private,2021-11-03,,Google product; 'Android' is a separate KEV vendorProject string — excluded as private (remap not implemented; conservative)
 Palo Alto Networks,PANW,public,2021-11-03,,NASDAQ-listed throughout KEV history
 Samsung,,private,2021-11-03,,Korea-listed only; not US common equity; exclude
 SonicWall,,private,2021-11-03,,Francisco Partners private; exclude

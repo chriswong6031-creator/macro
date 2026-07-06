@@ -3,7 +3,7 @@
 **Family:** `w2031_kev_vendor_shock`
 **Date:** 2026-07-06
 **Status:** Wave-2 spike S1 — off-render, no collector, no wiring
-**Verdict:** NULL — gate(s) failed: G1, G2, G3 — no confirmer proposed; display only
+**Verdict:** NULL — gate(s) failed: G1, G3 — no confirmer proposed; display only
 
 ---
 
@@ -44,7 +44,7 @@ Prior probability of clearing all three gates: LOW.
 ### Gates (all must pass for confirmer candidacy)
 
 - **G1:** V1 21d mean abnormal return NEGATIVE with |t_HAC| >= 2.0 AND BH-FDR q <= 0.10
-  across the 4×2 (variant × horizon) family of 8 p-values.
+  across the 7-cell family (V1×2 + V2×2 + V3×2 + V4×1 — V4 is 21d-only).
 - **G2:** Split-half same-sign: 2021-11..2024-02 vs 2024-03..2026-07 for V1 21d mean.
 - **G3:** Survives excluding Microsoft entries (largest vendor concentration).
 
@@ -69,10 +69,10 @@ Prior probability of clearing all three gates: LOW.
 | KEV catalog total entries | 1631 |
 | Events for mapped public vendors (post corporate-action filter) | 931 |
 | Mapping coverage | 57.1% of total entries |
-| Events with valid beta (≥120d history) | 246 |
-| Events with valid 5d abnormal return | 245 |
-| Events with valid 21d abnormal return | 243 |
-| Benchmark | IGV (yahoo), 2001-07-17 to 2026-07-02 |
+| Events with valid beta (≥120d history) | 722 |
+| Events with valid 5d abnormal return | 719 |
+| Events with valid 21d abnormal return | 712 |
+| Benchmark | IGV (yahoo), 2021-07-06 to 2026-07-02 |
 
 **Variant event counts:**
 
@@ -111,13 +111,13 @@ All means expressed as percentage abnormal return (vendor cumulative − beta ×
 
 | Variant | N | Mean AR | t_HAC | p_HAC |
 |---------|---|---------|-------|-------|
-| V1  5d  all | 245 | +0.763% | +2.63 | 0.0084 |
-| V1 21d  all | 243 | +0.190% | +0.30 | 0.7607 |
-| V2  5d  ransomware | 48 | +0.784% | +1.87 | 0.0616 |
-| V2 21d  ransomware | 47 | -0.128% | -0.10 | 0.9197 |
-| V3  5d  cluster | 41 | +0.080% | +0.15 | 0.8804 |
-| V3 21d  cluster | 41 | -1.015% | -0.74 | 0.4605 |
-| V4 21d  due pressure | 27 | +3.518% | +1.54 | 0.1223 |
+| V1  5d  all | 719 | +0.905% | +1.74 | 0.0818 |
+| V1 21d  all | 712 | +1.737% | +1.34 | 0.1793 |
+| V2  5d  ransomware | 132 | +1.149% | +1.19 | 0.2354 |
+| V2 21d  ransomware | 131 | +3.361% | +1.28 | 0.1996 |
+| V3  5d  cluster | 188 | +1.139% | +1.21 | 0.2266 |
+| V3 21d  cluster | 187 | -0.098% | -0.04 | 0.9701 |
+| V4 21d  due pressure | 179 | +1.791% | +1.85 | 0.0639 |
 
 ---
 
@@ -125,19 +125,19 @@ All means expressed as percentage abnormal return (vendor cumulative − beta ×
 
 ### G1 — Direction + significance + FDR
 
-V1 21d: mean = +0.190%, t_HAC = +0.30
+V1 21d: mean = +1.737%, t_HAC = +1.34
 
-BH-FDR across 4×2 family (α = 0.10):
+BH-FDR across 7-cell family (α = 0.10):
 
 | Cell | p | q (BH) | Decision |
 |------|---|--------|----------|
-| V1_21d       | 0.7607 | 0.9197 | retain |
-| V1_5d        | 0.0084 | 0.0588 | REJECT |
-| V2_21d       | 0.9197 | 0.9197 | retain |
-| V2_5d        | 0.0616 | 0.2156 | retain |
-| V3_21d       | 0.4605 | 0.8059 | retain |
-| V3_5d        | 0.8804 | 0.9197 | retain |
-| V4_21d       | 0.1223 | 0.2854 | retain |
+| V1_21d       | 0.1793 | 0.2746 | retain |
+| V1_5d        | 0.0818 | 0.2746 | retain |
+| V2_21d       | 0.1996 | 0.2746 | retain |
+| V2_5d        | 0.2354 | 0.2746 | retain |
+| V3_21d       | 0.9701 | 0.9701 | retain |
+| V3_5d        | 0.2266 | 0.2746 | retain |
+| V4_21d       | 0.0639 | 0.2746 | retain |
 
 **G1: FAIL**
 
@@ -145,16 +145,16 @@ BH-FDR across 4×2 family (α = 0.10):
 
 | Period | N | Mean AR | t_HAC |
 |--------|---|---------|-------|
-| Early 2021-11..2024-02 | 47 | +1.521% | +0.80 |
-| Late  2024-03..2026-07 | 196 | -0.129% | -0.21 |
+| Early 2021-11..2024-02 | 485 | +1.880% | +0.96 |
+| Late  2024-03..2026-07 | 227 | +1.615% | +1.25 |
 
-**G2: FAIL**
+**G2: PASS**
 
 ### G3 — Survives ex-Microsoft
 
-Microsoft contributes 378 events in catalog (102 with valid 21d AR = 42.0% of 21d observations).
+Microsoft contributes 378 events in catalog (294 with valid 21d AR = 41.3% of 21d observations).
 
-Ex-MSFT: n = 141, mean = +1.137%, t_HAC = +1.19
+Ex-MSFT: n = 418, mean = +1.291%, t_HAC = +1.09
 
 **G3: FAIL**
 
@@ -162,12 +162,12 @@ Ex-MSFT: n = 141, mean = +1.137%, t_HAC = +1.19
 
 ## 5. Verdict
 
-**NULL — gate(s) failed: G1, G2, G3 — no confirmer proposed; display only**
+**NULL — gate(s) failed: G1, G3 — no confirmer proposed; display only**
 
 | Gate | Result |
 |------|--------|
 | G1 direction + |t_HAC|>=2 + BH-FDR q<=0.10 | FAIL |
-| G2 split-half same-sign | FAIL |
+| G2 split-half same-sign | PASS |
 | G3 survives ex-MSFT | FAIL |
 
 One or more gates failed. NULL printed. No collector build proposed. The signal may be deployed as event-context DISPLAY (informational flagging) for the special-situations desk without allocation or ranking influence. The null is consistent with the pre-registered honest prior.
@@ -183,7 +183,15 @@ One or more gates failed. NULL printed. No collector build proposed. The signal 
 - **No intraday resolution:** Entry at next-day close may miss same-day price moves if
   KEV additions become known before market close.
 - **Price availability:** Vendors without price data in massive_stock_day or yahoo are
-  excluded (small-cap or delisted entries).
+  excluded. All public vendors in the map (Cisco/SAP/Juniper/F5/NETGEAR/Ubiquiti/SolarWinds/
+  Progress) are present in the massive store; small-cap or truly delisted tickers account for
+  the beta-coverage drop (722/931 = 78% beta coverage).
+- **Calendar-time NW:** t-stats are computed on date-collapsed means (calendar-time portfolio
+  method) to handle overlapping 21d windows and same-date events. n_events counts raw events;
+  the NW degrees of freedom are the number of distinct entry_dates.
+- **V4 not point-in-time:** The top-decile threshold for V4 (due-pressure weeks) uses the
+  full-sample quantile over 2021-2026. A live version would require an expanding-window or
+  trailing quantile. V4 results are descriptive only.
 - **Ransomware sub-sample is small:** V2 events (185) may have insufficient
   power for reliable inference.
 - **Cluster definition is heuristic:** The 5-trading-day cluster window is pre-registered
