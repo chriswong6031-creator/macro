@@ -1032,6 +1032,10 @@ modules:
       - data/breadth/breadth.parquet
       - data/oracle/compounds/registry.jsonl
       - data/oracle/reversion_forward/*.jsonl
+      - site/factordata/us_standouts.json
+      - site/factordata/signal_gate.json
+      - data/oracle/turn_desk_ledger.jsonl
+      - data/massive_stock_day/*.parquet
     writes:
       - site/basketdata/oracle_state.json
       - data/oracle/oracle_alerts.jsonl
@@ -1042,6 +1046,8 @@ modules:
       - site/wh_banner.json
       - data/oracle/reversion_forward/*.jsonl
       - site/basketdata/oracle_reversion_state.json
+      - site/basketdata/oracle_turn_desk.json
+      - data/oracle/turn_desk_ledger.jsonl
     impure: false
     needs_secrets: false
     event_driven: true
@@ -1049,6 +1055,8 @@ modules:
       Event-driven — detects new rotation complexes vs prior state by diffing oracle_state.
       P0 (Step 11b): reversion forward ledger nightly accrual + grading.
       P1 (Step 11c): oracle_reversion_state.json sidecar (display tier, no authority granted).
+      W6 (Step 15): Rotation Turn Desk — armed A15 windows + member fires + display artifact
+      + forward ledger (DISPLAY-ONLY under hard law).
 
   - module: scripts.build_world_state
     reads:

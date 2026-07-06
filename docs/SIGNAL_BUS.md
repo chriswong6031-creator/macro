@@ -18,10 +18,11 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | hk-canada | 2 |
 | institutional-sector-intelligence | 2 |
 | intl-fix | 1 |
+| long-hold | 2 |
 | neural-web | 25 |
 | options-alpha | 7 |
 | options-nw-entry-intelligence | 3 |
-| oracle | 15 |
+| oracle | 17 |
 | qualitative-intelligence | 23 |
 | sector-pulse | 3 |
 | setup-species | 6 |
@@ -32,16 +33,16 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 60 |
+| display | 63 |
 | infrastructure | 31 |
 | scored | 4 |
-| shadow | 35 |
+| shadow | 36 |
 
 ### Artifacts by storage
 
 | storage | count |
 |---|---|
-| git | 125 |
+| git | 129 |
 | gitignored-local | 3 |
 | r2 | 2 |
 
@@ -126,6 +127,13 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 |---|---|---|---|---|---|---|
 | intl-bridge-ledger | `data/intl_bridge/ledger.json` | json | on-demand | shadow | 6 | 0 |
 
+### long-hold
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| long-hold-labels | `data/research/long_hold_labels.parquet` | parquet | on-demand | display | 1 | 0 |
+| long-hold-labels-manifest | `data/research/long_hold_labels_manifest.json` | json | on-demand | display | 1 | 0 |
+
 ### neural-web
 
 | id | path | format | cadence | tier | consumers | external consumers |
@@ -192,6 +200,8 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | site-marketdata-subsector-rotation | `site/marketdata/subsector_rotation.json` | json | daily-engine | display | 2 | 0 |
 | subsector-rotation-snapshots | `data/subsector_rotation/snapshots.jsonl` | jsonl | daily-engine | shadow | 2 | 0 |
 | oracle-reversion-state | `site/basketdata/oracle_reversion_state.json` | json | daily-engine | display | 1 | 0 |
+| oracle-turn-desk | `site/basketdata/oracle_turn_desk.json` | json | daily-engine | display | 1 | 0 |
+| oracle-turn-desk-ledger | `data/oracle/turn_desk_ledger.jsonl` | jsonl | daily-engine | shadow | 1 | 0 |
 | site-basketdata-radar-news | `site/basketdata/radar_news.json` | json | daily-engine | display | 1 | 0 |
 | site-member-context | `site/basketdata/member_context.json` | json | daily-engine | display | 1 | 0 |
 | site-narrative-brain | `site/basketdata/narrative_brain.json` | json | daily-engine | display | 1 | 0 |

@@ -3752,3 +3752,54 @@ artifacts:
       budget chokepoint; the ranker has zero write or gating authority over the cortex.
       NOT on the render path; run manually or via future nightly opt-in.
       is_display_only=true — no board rank, no alerts, no sizing.
+
+  # --- OTA W6: Rotation Turn Desk ---
+  oracle-turn-desk:
+    path: site/basketdata/oracle_turn_desk.json
+    format: json
+    producer: scripts/oracle_nightly.py
+    known_extra_writers: []
+    owner_program: oracle
+    cadence: daily-engine
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 30
+    schema: oracle_turn_desk.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - templates/subsector_rotation.html.j2
+    external_consumers: []
+    notes: >
+      OTA W6 Rotation Turn Desk — DISPLAY-ONLY under hard law (desk feeds no score,
+      gate, or ordering surface). Armed A15 windows (washout + ≥2 opposite-complex
+      outflow-onset nodes), member T1-T3 cascade fires, and base rates stamped with
+      display_with_edge + lineage #1533. Envelope via stamp_if_changed.
+      Banned-implication keys enforced at write time.
+
+  oracle-turn-desk-ledger:
+    path: data/oracle/turn_desk_ledger.jsonl
+    format: jsonl
+    producer: scripts/oracle_nightly.py
+    known_extra_writers: []
+    owner_program: oracle
+    cadence: daily-engine
+    storage: git
+    asof_field: pit_stamp
+    freshness_sla_hours: 30
+    schema: oracle_turn_desk_ledger.v1
+    tier: shadow
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/oracle_nightly.py
+    external_consumers: []
+    notes: >
+      OTA W6 forward ledger — nightly sole advancer, keep-first.
+      Kinds: window_open (key node::a15::fire_date), member_fire (key window_key::ticker::fire_date).
+      h=21 maturity grading from massive_stock_day closes (absolute return).
+      Accrual instrument for the registered §5 promotion rule (15-window re-evaluation gate).
+      No peeking logic — desk only displays counts.
