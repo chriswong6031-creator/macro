@@ -240,6 +240,198 @@
   </section>
 </div>
 
+<!-- ── Rotation Turn Desk (W6) ─────────────────────────────────────────────── -->
+<div class="wrap">
+  <section class="td-section" id="td-section" aria-label="Rotation Turn Desk">
+<style>
+  .td-section { margin:44px 2px 0; }
+  .td-section h2 { font-size:19px; font-weight:800; letter-spacing:-.015em; margin:0 0 5px; }
+  .td-sub { color:var(--muted); font-size:12.5px; margin-bottom:14px; max-width:82ch; line-height:1.55; }
+  .td-quiet { color:var(--muted); font-size:13px; padding:18px 0; }
+  .td-armed-grid { display:flex; flex-wrap:wrap; gap:12px; margin-bottom:18px; }
+  .td-sector-card { flex:1 1 280px; min-width:240px; border-radius:13px; border:1px solid var(--line);
+    background:var(--panel); padding:14px 16px; }
+  .td-card-hd { display:flex; align-items:baseline; gap:8px; margin-bottom:8px; }
+  .td-sector-name { font-weight:800; font-size:14px; }
+  .td-window-badge { font-size:10px; font-weight:700; text-transform:uppercase; padding:2px 7px;
+    border-radius:6px; background:color-mix(in srgb,var(--link) 16%,transparent); color:var(--link); }
+  .td-sessions-left { font-size:11px; color:var(--muted); margin-left:auto; }
+  .td-member-list { list-style:none; margin:0; padding:0; }
+  .td-member-item { display:flex; align-items:baseline; gap:6px; font-size:12px; padding:4px 0;
+    border-bottom:1px solid var(--line); }
+  .td-member-item:last-child { border-bottom:none; }
+  .td-member-ticker { font-weight:700; min-width:52px; }
+  .td-tier-tag { font-size:9.5px; font-weight:700; text-transform:uppercase; padding:1px 6px;
+    border-radius:5px; background:color-mix(in srgb,var(--up) 14%,transparent); color:var(--up); }
+  .td-tier-tag.t3 { background:color-mix(in srgb,var(--warn) 16%,transparent); color:var(--warn); }
+  .td-provisional-note { font-size:9.5px; color:var(--warn); margin-left:2px; }
+  .td-no-fires { color:var(--muted); font-size:11.5px; font-style:italic; }
+  .td-staleness-note { font-size:11px; color:var(--warn); margin-bottom:8px; }
+  .td-caveats { margin-top:18px; padding:12px 15px; border-radius:11px;
+    background:color-mix(in srgb,var(--muted) 6%,transparent); border:1px solid var(--line);
+    font-size:11.5px; color:var(--muted); line-height:1.6; }
+  .td-caveats strong { color:var(--text); }
+  .td-promotion-clock { margin-top:10px; font-size:11px; color:var(--muted); }
+</style>
+
+    <h2>🎯 {{ t('Rotation Turn Desk', '轮动入场台') }}</h2>
+    <p class="td-sub">{{ t(
+      'When A15 fires (washout + ≥2 opposite-complex sectors rotating out), the armed window opens for up to 10 sessions. This desk shows today\'s armed sectors and which member stocks from those sectors currently have a T1–T3 cascade signal. DISPLAY-ONLY — feeds no score, gate, or ordering surface.',
+      '当A15触发（洗盘 + ≥2个对立复合板块轮出），入场窗口开启，持续最多10个交易日。此台显示当前处于入场窗口的板块，以及这些板块中当前有T1–T3级联信号的成员股票。仅供展示——不驱动任何评分、门控或排序。'
+    ) }}</p>
+
+    <div id="td-content">
+      <p class="td-quiet">
+        <span class="l-en">Loading…</span><span class="l-zh">加载中…</span>
+      </p>
+    </div>
+
+    <script>
+    (function(){
+    'use strict';
+    function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+    function isZh(){return document.documentElement.getAttribute('data-lang')==='zh';}
+    function t(en,zh){return isZh()&&zh?zh:en;}
+
+    var ARTIFACT = 'basketdata/oracle_turn_desk.json';
+
+    function render(d){
+      var el = document.getElementById('td-content');
+      if(!el) return;
+      var armed = d.armed || [];
+      var br    = d.base_rates || {};
+      var pc    = d.promotion_clock || {};
+
+      // Staleness note when asof differs
+      var staleHtml = '';
+      if(d.asof && d.member_fires_asof && d.asof !== d.member_fires_asof){
+        staleHtml = '<p class="td-staleness-note">'
+          + t('Note: panel asof ','注意：面板日期')
+          + esc(d.asof)
+          + t(' / member signals asof ','，成员信号日期')
+          + esc(d.member_fires_asof)
+          + '</p>';
+      }
+
+      if(!armed.length){
+        el.innerHTML = staleHtml
+          + '<p class="td-quiet">'
+          + t('No sectors currently armed — A15 has not fired in the last 10 sessions. Quiet state is a valid state.',
+              '当前无板块处于入场窗口——A15在过去10个交易日内未触发。安静状态是有效状态。')
+          + '</p>'
+          + _caveatsHtml(br, pc);
+        return;
+      }
+
+      var cardsHtml = '<div class="td-armed-grid">';
+      armed.forEach(function(sec){
+        var name = isZh() ? (sec.name_zh||sec.node) : (sec.name_en||sec.node);
+        var mfires = sec.member_fires || [];
+        var firesHtml = '';
+        if(mfires.length){
+          firesHtml = '<ul class="td-member-list">';
+          mfires.forEach(function(m){
+            var tierCls = m.tier==='T3' ? ' t3' : '';
+            var provNote = m.provisional
+              ? '<span class="td-provisional-note">'
+                + t('(repaint ~23.8%)', '（约23.8%重绘）')
+                + '</span>'
+              : '';
+            firesHtml += '<li class="td-member-item">'
+              + '<span class="td-member-ticker">'+esc(m.ticker)+'</span>'
+              + '<span class="td-tier-tag'+tierCls+'">'+esc(m.tier)+'</span>'
+              + provNote
+              + '</li>';
+          });
+          firesHtml += '</ul>';
+        } else {
+          firesHtml = '<p class="td-no-fires">'
+            + t('No cascade fires in this sector today','此板块今日暂无级联信号')
+            + '</p>';
+        }
+        cardsHtml += '<div class="td-sector-card">'
+          + '<div class="td-card-hd">'
+          + '<span class="td-sector-name">'+esc(name)+'</span>'
+          + '<span class="td-window-badge">'
+          + t('ARMED', '已激活')
+          + '</span>'
+          + '<span class="td-sessions-left">'
+          + esc(sec.sessions_remaining)
+          + t(' sessions left', ' 日剩余')
+          + '</span>'
+          + '</div>'
+          + firesHtml
+          + '</div>';
+      });
+      cardsHtml += '</div>';
+
+      el.innerHTML = staleHtml + cardsHtml + _caveatsHtml(br, pc);
+    }
+
+    function _caveatsHtml(br, pc){
+      var wrIn  = br.in_window_wr21  != null ? (br.in_window_wr21*100).toFixed(1)+'%' : '65.2%';
+      var wrOut = br.outside_window_wr21 != null ? (br.outside_window_wr21*100).toFixed(1)+'%' : '53.6%';
+      var delta = br.holdout_delta_pp != null ? '+'+br.holdout_delta_pp.toFixed(1)+'pp' : '+10.7pp';
+      var ciLo  = br.holdout_ci_lo_pp != null ? br.holdout_ci_lo_pp.toFixed(1) : '3.8';
+      var ciHi  = br.holdout_ci_hi_pp != null ? br.holdout_ci_hi_pp.toFixed(1) : '17.9';
+      var nw    = br.n_windows || 31;
+      var from  = br.modern_track_from || '2022-06-30';
+      var accrued  = pc.windows_accrued || 0;
+      var required = pc.windows_required || 15;
+
+      return '<div class="td-caveats">'
+        + '<strong>'
+        + t('Base rates (display-with-edge, lineage: #1533):', '基础胜率（展示边缘级，来源：#1533）：')
+        + '</strong> '
+        + t('IN-window member fires WR21 ', '窗口内成员触发WR21 ')
+        + wrIn
+        + t(' vs ', ' vs ')
+        + wrOut
+        + t(' outside; holdout Δ', '（窗口外）；持出集Δ')
+        + delta
+        + ' CI [+'+ciLo+', +'+ciHi+'pp]. '
+        + nw + t(' modern-track windows (holdout n=15)', '个现代追踪窗口（持出集n=15）') + ', ≥' + from + '. '
+        + t('Growth/cyclical tilt; defensive sectors negative.', '成长/周期偏向；防御性板块为负。')
+        + ' <em>'
+        + t('Not a forecast.', '非预测。')
+        + '</em><br>'
+        + '<span class="td-promotion-clock">'
+        + t('Promotion clock: ', '晋升计数：')
+        + accrued + ' / ' + required
+        + t(' windows accrued (re-evaluation gate at 15).', ' 个窗口已累积（15个触发复评）。')
+        + '</span>'
+        + '</div>';
+    }
+
+    fetch(ARTIFACT, {cache:'no-cache'})
+      .then(function(r){ return r.ok ? r.json() : null; })
+      .then(function(d){
+        if(!d){ throw new Error('no data'); }
+        render(d);
+      })
+      .catch(function(){
+        var el = document.getElementById('td-content');
+        if(el) el.innerHTML = '<p class="td-quiet">'
+          + '<span class="l-en">Turn Desk data unavailable.</span>'
+          + '<span class="l-zh">入场台数据暂不可用。</span>'
+          + '</p>';
+      });
+
+    // Re-render on lang/theme change
+    var _obs = new MutationObserver(function(){
+      fetch(ARTIFACT, {cache:'no-cache'})
+        .then(function(r){ return r.ok ? r.json() : null; })
+        .then(function(d){ if(d) render(d); })
+        .catch(function(){});
+    });
+    _obs.observe(document.documentElement, {attributes:true, attributeFilter:['data-lang','data-theme']});
+
+    })();
+    </script>
+
+  </section>
+</div>
+
 <footer class="site-footer">
   <span class="made">© 2026 MastermindX Inc</span>
 </footer>
