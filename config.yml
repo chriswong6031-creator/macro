@@ -5498,3 +5498,16 @@ oracle:
   # survival is registered in the forward ledger.  Two-sided regression test in
   # tests/test_oracle_tilt.py verifies the gate is effective (not dead code).
   tilt_enabled: false
+
+# --------------------------------------------------------------------------- #
+# Cycle Pattern Intelligence — CPI substrate (engine/cycle_pattern/, W0).
+# Entity registry + unified monthly PIT state lake. Paths are repo-relative.
+# --------------------------------------------------------------------------- #
+cycle_pattern_intelligence:
+  version: "v0"
+  entities_path: "data/cycle_pattern/entities.parquet"
+  state_monthly_path: "data/cycle_pattern/state_monthly.parquet"
+  state_monthly_meta_path: "data/cycle_pattern/state_monthly_meta.json"
+  outcomes_path: "data/cycle_pattern/outcomes.parquet"  # label-side outcome spine (engine/cycle_pattern/outcomes.py)
+  hazard_epoch: "price_c4414dcb"                 # feature source epoch joined into state
+  embargo_holdout_start: "2024-01-01"            # rows dated after this are permanently embargoed (holdout)
