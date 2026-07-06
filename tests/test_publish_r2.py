@@ -130,3 +130,40 @@ def test_thetadata_eod_full_tree_syncable():
     """A materialised thetadata_eod store (many parquets) must be accepted."""
     from scripts.publish_r2 import _DATA_DIR_MIN_FILES
     assert _data_dir_syncable("thetadata_eod", _DATA_DIR_MIN_FILES + 1)[0]
+
+
+# ── attention append-only registration (SLF-048 deep-history backfill) ────────
+
+def test_attention_in_data_dirs_not_default():
+    """attention is a data-dir store published on demand from the host (R2 holds
+    2015-07→ deep history; git tracks a short rolling window) — never a nightly
+    default: a runner checkout would only trip the append-only guard."""
+    from scripts.publish_r2 import DEFAULT_DIRS, _DATA_DIRS
+    assert "attention" in _DATA_DIRS
+    assert "attention" not in DEFAULT_DIRS
+
+
+def test_attention_git_window_passes_min_files():
+    # data/attention/*.parquet are TRACKED (~966 short files), so the min-files
+    # partial-checkout guard can NOT protect this dir — that's the append-only
+    # guard's job.
+    assert _data_dir_syncable("attention", 966)[0]
+
+
+def test_append_only_guard_blocks_shorter_local():
+    # runner checkout: ~126d tracked window (≈5 KB) vs R2 deep-history object (≈50 KB)
+    from scripts.publish_r2 import _append_only_guarded
+    assert _append_only_guarded("attention", 5_000, 50_000)
+
+
+def test_append_only_guard_allows_growth_equal_and_new():
+    from scripts.publish_r2 import _append_only_guarded
+    assert not _append_only_guarded("attention", 50_100, 50_000)  # host append: bigger
+    assert not _append_only_guarded("attention", 50_000, 50_000)  # byte-equal rewrite
+    assert not _append_only_guarded("attention", 5_000, None)     # no remote object yet
+
+
+def test_append_only_guard_scoped_to_registered_dirs():
+    # ohlc JSON legitimately shrinks between renders — must never be guarded
+    from scripts.publish_r2 import _append_only_guarded
+    assert not _append_only_guarded("ohlc", 5_000, 50_000)

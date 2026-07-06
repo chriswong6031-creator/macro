@@ -18,6 +18,11 @@ store is R2-only) would replace the full ~5000-name manifest with a 2-name one �
 and bulk consumers prune against it. A guard blocks any manifest that shrinks the
 remote list by more than half (--force-manifest overrides for intentional culls).
 
+Append-only stores (_APPEND_ONLY_DIRS, e.g. attention/) additionally refuse per-file
+uploads SMALLER than the R2 object: git tracks a short rolling window of the same
+filenames, so a runner checkout passes the min-files guard yet must never clobber
+the deep-history objects backfilled from the host.
+
 Usage: python -m scripts.publish_r2 [--dirs ohlc,stockdata,...] [--dry-run]
                                     [--no-manifest] [--force-manifest]
 """
@@ -65,13 +70,22 @@ DEFAULT_DIRS = [
 
 # Dirs whose source lives under data/ rather than site/ (per-ticker parquet stores
 # that are never rendered into site/ — published straight from the data plane).
-_DATA_DIRS = {"hk_stocks_ext", "massive_stock_day", "thetadata_eod"}
+_DATA_DIRS = {"hk_stocks_ext", "massive_stock_day", "thetadata_eod", "attention"}
 # A data-dir tree with fewer files than this is a PARTIAL CHECKOUT (the parquets are
 # gitignored — a CI runner checkout holds just the committed _manifest.json +
 # _backfill_state.json), not the store. Syncing it would overwrite R2's full-history
 # objects with 2-file stubs; refuse instead. Only the store host (the Mac main
 # checkout, where the backfill materialises the parquets) may publish these dirs.
 _DATA_DIR_MIN_FILES = 100
+# History-append stores whose R2 objects hold DEEP history while git tracks a short
+# rolling window of the SAME filenames (data/attention/*.parquet: ~126d tracked and
+# advanced by the nightly collection commit; R2 backfilled 2015-07→ from the host,
+# SLF-048 2026-07-06). A CI checkout therefore materialises 900+ real-but-SHORT files
+# and sails past _DATA_DIR_MIN_FILES — so for these dirs a changed file uploads only
+# when the local object is at least as large as the remote one. Deliberately NOT in
+# DEFAULT_DIRS: publish on demand from the host store (ATTENTION_STORE env or the Mac
+# main checkout), never from a runner checkout.
+_APPEND_ONLY_DIRS = {"attention"}
 _CT = {".json": "application/json", ".js": "application/javascript",
        ".html": "text/html; charset=utf-8", ".csv": "text/csv"}
 
@@ -105,7 +119,8 @@ def _md5(p: Path) -> str:
 
 
 def _remote_etags(s3, bucket: str, prefix: str) -> dict:
-    """key -> ETag (== md5 for our small single-part objects) already under prefix."""
+    """key -> (ETag, Size) already under prefix (ETag == md5 for our small
+    single-part objects; Size feeds the append-only guard)."""
     out, tok = {}, None
     while True:
         kw = {"Bucket": bucket, "Prefix": prefix}
@@ -113,7 +128,7 @@ def _remote_etags(s3, bucket: str, prefix: str) -> dict:
             kw["ContinuationToken"] = tok
         r = s3.list_objects_v2(**kw)
         for o in r.get("Contents", []):
-            out[o["Key"]] = o["ETag"].strip('"')
+            out[o["Key"]] = (o["ETag"].strip('"'), o["Size"])
         if not r.get("IsTruncated"):
             return out
         tok = r.get("NextContinuationToken")
@@ -138,6 +153,14 @@ def _data_dir_syncable(d: str, n_files: int) -> tuple[bool, str]:
         return False, (f"only {n_files} file(s) locally (< {_DATA_DIR_MIN_FILES}) — "
                        "partial checkout, the parquet store is not materialised here")
     return True, ""
+
+
+def _append_only_guarded(d: str, local_size: int, remote_size: int | None) -> bool:
+    """True when `d` is an append-only history store and the local file is SMALLER
+    than the R2 object — a short-window checkout, not a legitimate rewrite; uploading
+    would clobber the deep-history object. An intentional shrinking re-export needs
+    the R2 objects deleted first."""
+    return d in _APPEND_ONLY_DIRS and remote_size is not None and local_size < remote_size
 
 
 def _manifest_doc(d: str, base: Path, names: list[str]) -> dict:
@@ -186,6 +209,8 @@ def publish(dirs, dry_run: bool = False, workers: int = 32,
     _store_overrides: dict[str, Path] = {}
     if ts := os.environ.get("THETADATA_STORE"):
         _store_overrides["thetadata_eod"] = Path(ts)
+    if ts := os.environ.get("ATTENTION_STORE"):
+        _store_overrides["attention"] = Path(ts)
     for d in dirs:
         # Per-ticker parquet stores live under data/<dir>, not site/<dir>.
         if d in _DATA_DIRS:
@@ -204,14 +229,24 @@ def publish(dirs, dry_run: bool = False, workers: int = 32,
                   "skipped", flush=True)
             continue
         remote = _remote_etags(s3, bucket, d + "/")
-        todo = []
+        todo, guarded = [], 0
         for p in files:
             key = f"{d}/{p.relative_to(base).as_posix()}"
-            if remote.get(key) == _md5(p):
+            etag, rsize = remote.get(key, (None, None))
+            if etag == _md5(p):
                 skip += 1
+            elif _append_only_guarded(d, p.stat().st_size, rsize):
+                guarded += 1
             else:
                 todo.append((p, key))
-        log.info("%s: %d files — %d changed, %d unchanged", d, len(files), len(todo), len(files) - len(todo))
+        log.info("%s: %d files — %d changed, %d unchanged, %d guarded", d, len(files),
+                 len(todo), len(files) - len(todo) - guarded, guarded)
+        if guarded:
+            log.warning("%s: %d local file(s) SMALLER than their R2 object — append-only "
+                        "store, short-window checkout? NOT uploaded; publish from the "
+                        "deep-history host store instead.", d, guarded)
+            print(f"::warning title=publish_r2 append-only guard::{d}: {guarded} "
+                  "shorter-than-remote local file(s) skipped", flush=True)
         if dry_run:
             up += len(todo)
             continue
@@ -232,6 +267,10 @@ def publish(dirs, dry_run: bool = False, workers: int = 32,
         # the put is fine); the shrink guard catches partial lanes that forget the flag.
         if not manifest:
             log.info("%s: manifest untouched (--no-manifest)", d)
+            continue
+        if guarded:
+            log.info("%s: manifest untouched (append-only guard tripped — this local "
+                     "tree is not authoritative for the store)", d)
             continue
         names = sorted(p.relative_to(base).as_posix() for p in files)
         ok, why = (True, "forced") if force_manifest else \
