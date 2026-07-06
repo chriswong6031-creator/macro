@@ -27,6 +27,8 @@ import tempfile
 import types
 from unittest.mock import MagicMock, patch
 
+import pytest
+
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 
 from engine.neuralweb import ask_brain as ab  # noqa: E402
@@ -196,8 +198,13 @@ def test_read_tool_schemas_no_write_tools():
     assert "read_factor_state" in names
     assert "list_factor_contradictions" in names
     assert "explain_factor_context" in names
-    # 7 original + 3 factor = 10 total read tools
-    assert len(names) == 10
+    # Options tools (RO-7) must also be present
+    assert "read_options_entry_state" in names
+    assert "explain_options_context" in names
+    assert "query_options_confluence" in names
+    assert "list_options_contradictions" in names
+    # 7 original + 4 options + 3 factor = 14 total read tools
+    assert len(names) == 14
 
 
 def test_dispatch_refuses_write_tools():
@@ -1066,6 +1073,247 @@ def test_explain_factor_context_absent_data_returns_structured_gap(tmp_path):
         # Should have a gaps list
         assert "gaps" in result
         assert isinstance(result["gaps"], list)
+
+
+# ---------------------------------------------------------------------------
+# 15. Options path (RO-7) — classifier, tools, ticker detector, schema, dispatch
+# ---------------------------------------------------------------------------
+
+def _make_options_root() -> pathlib.Path:
+    """Create a minimal options-state root for ask_brain options tests.
+
+    Mirrors _make_factor_root style.  Files read by the options tools:
+      - data/options_entry/state.parquet  (read_options_entry_state, explain_options_context,
+                                           list_options_contradictions)
+      - data/neuralweb/confluence_graph.json  (query_options_confluence)
+      - data/us_board_ledger/retro_grades.parquet  (list_options_contradictions)
+    """
+    import pandas as pd
+
+    d = pathlib.Path(tempfile.mkdtemp())
+
+    # data/neuralweb/world_state.json — needed by dispatcher world_state calls
+    nw = d / "data" / "neuralweb"
+    nw.mkdir(parents=True, exist_ok=True)
+    (nw / "world_state.json").write_text(json.dumps({
+        "verdict": "CAUTION",
+        "regime": "Q2",
+        "inputs_hash": "opt123",
+    }))
+
+    # data/neuralweb/confluence_graph.json — query_options_confluence
+    (nw / "confluence_graph.json").write_text(json.dumps({
+        "edges": [
+            {"src": "options.NVDA", "dst": "board.NVDA", "weight": 0.6, "note": "NVDA"},
+        ],
+    }))
+
+    # data/options_entry/state.parquet — read_options_entry_state / explain_options_context
+    oe = d / "data" / "options_entry"
+    oe.mkdir(parents=True, exist_ok=True)
+    state_df = pd.DataFrame([
+        {
+            "ticker": "NVDA",
+            "skew": -0.05,
+            "skew_5d_chg": 0.01,
+            "gex_confirm_verdict": "CONFIRM",
+            "gamma_regime": "long",
+            "ivspread_rel": 0.02,
+            "pin_risk": False,
+            "opex_days": 12,
+            "evidence_quality": "medium",
+        }
+    ])
+    state_df.to_parquet(oe / "state.parquet", index=False)
+
+    # data/us_board_ledger/retro_grades.parquet — list_options_contradictions
+    bl = d / "data" / "us_board_ledger"
+    bl.mkdir(parents=True, exist_ok=True)
+    board_df = pd.DataFrame([
+        {"as_of": "2026-07-05", "ticker": "NVDA", "lane": "buy"},
+        {"as_of": "2026-07-05", "ticker": "AAPL", "lane": "buy"},
+    ])
+    board_df.to_parquet(bl / "retro_grades.parquet", index=False)
+
+    return d
+
+
+# --- 15a. Options classifier routing ---
+
+@pytest.mark.parametrize("question", [
+    "What's the IV/skew context for NVDA?",
+    "Where is the gamma wall / GEX on SPX?",
+    "Any pin risk into opex?",
+    "What does the options flow say?",
+    "Is 0dte activity elevated?",
+    "What is the implied volatility regime?",
+    "Tell me about skew dynamics.",
+    "What's the dealer positioning on QQQ?",
+])
+def test_options_classifier_routes_options_questions(question):
+    """Options trigger terms route to options budget and seed read_options_entry_state."""
+    budget, seeds = ab._classify_question(question, None)
+    assert budget == ab._BUDGET_OPTIONS, (
+        f"Expected options budget for: {question!r}, got {budget}"
+    )
+    assert "read_options_entry_state" in seeds, (
+        f"Expected read_options_entry_state in seeds for: {question!r}, got {seeds}"
+    )
+
+
+def test_options_classifier_adds_explain_context_when_ticker_present():
+    """A ticker in an options question seeds explain_options_context."""
+    budget, seeds = ab._classify_question("What's the IV/skew context for NVDA?", None)
+    assert budget == ab._BUDGET_OPTIONS
+    assert "explain_options_context" in seeds
+
+
+def test_options_classifier_adds_contradiction_tool_for_contradiction_phrasing():
+    """Contradiction phrasing in an options question seeds list_options_contradictions."""
+    budget, seeds = ab._classify_question(
+        "Do the options contradict the equity signal on NVDA?", None
+    )
+    assert budget == ab._BUDGET_OPTIONS
+    assert "list_options_contradictions" in seeds
+
+
+def test_options_classifier_adds_confluence_tool_for_confluence_phrasing():
+    """Confluence phrasing in an options question seeds query_options_confluence."""
+    budget, seeds = ab._classify_question(
+        "Does the skew confirm the board signal?", None
+    )
+    assert budget == ab._BUDGET_OPTIONS
+    assert "query_options_confluence" in seeds
+
+
+# --- 15b. Ticker detector ---
+
+def test_detect_ticker_finds_ticker_past_jargon():
+    """_detect_ticker returns AAPL and skips DNA (stopword)."""
+    assert ab._detect_ticker("What is the DNA class of AAPL?") == "AAPL"
+
+
+def test_detect_ticker_returns_none_for_jargon_only():
+    """_detect_ticker returns None when only jargon tokens are present."""
+    assert ab._detect_ticker("What is the DNA class?") is None
+
+
+def test_detect_ticker_real_etf_not_stopworded():
+    """QQQ must not be in stopwords — it is a real ticker."""
+    assert ab._detect_ticker("What's the skew on QQQ?") == "QQQ"
+
+
+def test_detect_ticker_spx_not_stopworded():
+    """SPX (3 caps, common index symbol) is not a stopword."""
+    result = ab._detect_ticker("Where is the gamma wall on SPX?")
+    assert result == "SPX"
+
+
+# --- 15c. Classifier-level ticker integration ---
+
+def test_classify_question_factor_with_real_ticker_seeds_explain_factor_context():
+    """When a real ticker appears in a factor question, explain_factor_context is seeded."""
+    budget, seeds = ab._classify_question("What is the DNA class of AAPL?", None)
+    assert budget == ab._BUDGET_FACTOR
+    assert "explain_factor_context" in seeds
+
+
+def test_classify_question_factor_jargon_only_does_not_seed_explain_factor_context():
+    """Pure jargon in a factor question does NOT seed explain_factor_context."""
+    budget, seeds = ab._classify_question("What is the DNA class for this name?", None)
+    assert budget == ab._BUDGET_FACTOR
+    assert "explain_factor_context" not in seeds
+
+
+# --- 15d. Schema count ---
+
+def test_read_tool_schemas_count_and_options_tools_present():
+    """_read_tool_schemas() returns exactly 14 tools (7 core + 4 options + 3 factor)."""
+    schemas = ab._read_tool_schemas()
+    names = {s["name"] for s in schemas}
+    # All four options tools present
+    for tool in (
+        "read_options_entry_state",
+        "explain_options_context",
+        "query_options_confluence",
+        "list_options_contradictions",
+    ):
+        assert tool in names, f"{tool} missing from _read_tool_schemas()"
+    # Total count
+    assert len(schemas) == 14, (
+        f"Expected 14 read tools, got {len(schemas)}: {sorted(names)}"
+    )
+    # Write tools absent
+    for write_tool in ("flag_attention", "write_memo", "stake_hypothesis"):
+        assert write_tool not in names
+
+
+# --- 15e. Dispatch tests ---
+
+def test_dispatch_options_entry_state_absent_returns_error_not_refused(tmp_path):
+    """read_options_entry_state with absent state.parquet returns data error, not whitelist refusal."""
+    result = ab._dispatch_read_tool("read_options_entry_state", {}, tmp_path)
+    # Must not be a whitelist refusal
+    assert "not allowed" not in str(result.get("error", ""))
+    # Absent parquet → structured error from the tool
+    assert "error" in result or "rows" in result
+
+
+def test_dispatch_options_entry_state_with_fixture():
+    """read_options_entry_state returns the fixture row — data flows, not just shape."""
+    root = _make_options_root()
+    result = ab._dispatch_read_tool("read_options_entry_state", {}, root)
+    assert "error" not in result, f"Unexpected error: {result.get('error')}"
+    rows = result["rows"]
+    assert len(rows) >= 1, f"Expected fixture row to flow through, got {result}"
+    assert any(r.get("ticker") == "NVDA" for r in rows)
+
+
+def test_dispatch_list_options_contradictions_with_fixture():
+    """list_options_contradictions surfaces the fixture contradiction — data flows."""
+    root = _make_options_root()
+    result = ab._dispatch_read_tool("list_options_contradictions", {}, root)
+    assert "error" not in result, f"Unexpected error: {result.get('error')}"
+    contradictions = result["contradictions"]
+    assert len(contradictions) >= 1, f"Expected fixture contradiction, got {result}"
+    assert any(c.get("ticker") == "NVDA" for c in contradictions)
+
+
+def test_dispatch_options_tool_refused_for_write_tool():
+    """A write-shaped options tool name is refused by the whitelist guard."""
+    import pathlib as _pl
+    result = ab._dispatch_read_tool("write_options_state", {}, _pl.Path("/tmp"))
+    assert "error" in result
+    assert "not allowed" in result["error"]
+
+
+# --- 15f. Options tools in _ASK_READ_TOOLS ---
+
+def test_options_tools_in_ask_read_tools():
+    """All four options tools are present in _ASK_READ_TOOLS."""
+    for tool in (
+        "read_options_entry_state",
+        "explain_options_context",
+        "query_options_confluence",
+        "list_options_contradictions",
+    ):
+        assert tool in ab._ASK_READ_TOOLS, f"{tool} missing from _ASK_READ_TOOLS"
+
+
+# --- 15g. Branch-order pin test ---
+
+def test_factor_branch_checked_before_options_branch():
+    """A question with both factor and options terms routes to the FACTOR branch.
+
+    The factor branch is checked first (RUL-NW4 ordering).  This pin test
+    prevents future reordering from silently changing routing semantics.
+    """
+    q = "Does the gamma skew contradict the value factor leadership?"
+    budget, seeds = ab._classify_question(q, None)
+    assert budget == ab._BUDGET_FACTOR, (
+        f"Expected factor branch to win for mixed question, got budget={budget}, seeds={seeds}"
+    )
+    assert "read_factor_state" in seeds
 
 
 if __name__ == "__main__":
