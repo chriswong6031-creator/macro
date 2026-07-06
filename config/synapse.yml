@@ -3986,6 +3986,45 @@ artifacts:
       event/SUE coverage, population hash, pre-registration reference, survivorship stamp.
       FIREWALL: hold_thesis — no entry-stack consumers permitted.
 
+  # --- Long-Hold LT-2b: expect_drift Ruler-P study results ---
+  expect-drift-ruler-p-results:
+    path: data/research/expect_drift_ruler_p_results.parquet
+    format: parquet
+    producer: scripts/research/expect_drift_ruler_p_study.py
+    known_extra_writers: []
+    owner_program: long-hold
+    cadence: on-demand
+    storage: git
+    asof_field: null
+    freshness_sla_hours: 8760
+    schema: expect_drift_ruler_p_results.v1
+    tier: display
+    horizon_role: hold_thesis
+    weights: none
+    scored_path_surfaces: []
+    fdr_family: long_hold
+    consumers:
+      - scripts/research/expect_drift_ruler_p_study.py
+    external_consumers: []
+    notes: >
+      LT-2b Ruler-P study: cheap_trap vs tactical_only at 252d, fires <=2023-12-31.
+      Outcome coded cheap_trap=1 (bad outcome); expected RBC is NEGATIVE (higher feature
+      values predict avoiding cheap_trap). TrialLedger.log_declared_budget(7,
+      family='long_hold.expect_drift') called before p-values. Episode-clustered
+      (±14 calendar days), BH q=0.10 descriptive, reshuffle null 1000/seed42 (one-sided
+      p10 tail for sign=-), era breakout (2014-2019 / 2020-2021 / 2022-2023).
+      MWU/RBC for continuous (ED-1/2/3/6); Fisher exact for binary (ED-4/5/7).
+      RESULTS (full cell 2014-2023, n=5325 dedup): ED-1 sue_latest RBC=-0.051
+      p=0.032 q=0.075 DESCRIPTIVE_PASS. ED-2 sue_streak RBC=-0.061 p=0.010
+      q=0.034 DESCRIPTIVE_PASS. ED-7 confirmed_absorption RBC=+0.041 p=0.008
+      NULL (wrong sign — more common among cheap_traps, opposite of mechanism).
+      ED-3/4/5/6 all NULL. 2 of 7 features DESCRIPTIVE_PASS.
+      UPPER BOUND stamp (survivorship-biased). Authority ceiling: display block
+      ships regardless of result; no SURVIVE/KILL vocabulary.
+      Ruler-H: accruing on OOS-2; G1-Retest ~2027-H2.
+      FIREWALL: horizon_role=hold_thesis. MUST NOT feed board ordering, alert
+      triage, top-setups gates, or push floor (LH-R1). fdr_family=long_hold (LH-R5).
+
   # --- Long-Hold W2 PR-I: compounder feature panel (embedded in per-stock panels) ---
   # NOTE: compounder features are NOT a standalone parquet — they are a sub-key
   # ("compounder") inside the existing financials.multiyear block that _multiyear()

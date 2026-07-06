@@ -425,6 +425,8 @@ class TestRealRegistryFirewallClean:
             "insider-lh-ruler-p-results",
             # LT-3a capital allocation display block — hold_thesis by design; display-only
             "capital-allocation-delta",
+            # LT-2b expect_drift Ruler-P study results — hold_thesis by design; research-only
+            "expect-drift-ruler-p-results",
         }
         reg = load_registry(REPO_ROOT)
         hold_arts = {

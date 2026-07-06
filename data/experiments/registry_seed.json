@@ -2235,6 +2235,44 @@
       "state": "Accruing OOS-2 fires. G1-Retest not triggered yet.",
       "next_step": "Check 2027-07-01: if >=25 missed_hold clusters, run Ruler-H study.",
       "phase_hint": "G1-Retest"
+    },
+    {
+      "id": "expect-drift-ruler-p",
+      "name": "Expect-Drift LH — Ruler-P study (cheap_trap vs tactical_only, 252d)",
+      "kind": "offline_study",
+      "priority": "medium",
+      "cadence": "on-demand",
+      "what": "Ruler-P study for F3 expect_drift family: ED-1..ED-7 features, cheap_trap vs tactical_only contrast at 252d, fires <= 2023-12-31, episode-clustered (name × macro_regime ±14 calendar days), MWU/RBC for cont (ED-1/2/3/6), Fisher exact for bin (ED-4/5/7), BH q=0.10 descriptive, reshuffle null 1000/seed=42. UPPER BOUND (survivorship-biased). Display-ceiling authority.",
+      "source": "scripts/research/expect_drift_ruler_p_study.py",
+      "storage": "data/research/expect_drift_ruler_p_results.parquet",
+      "hook": "offline_study",
+      "started": "2026-07-06",
+      "come_back_on": "2026-07-06",
+      "come_back_note": "Study complete on run; Ruler-H at G1-Retest ~2027-H2",
+      "maturation": "Ruler-H on OOS-2 at G1-Retest trigger (~2027-H2); program-wide BH q=0.10",
+      "status": "complete",
+      "state": "Ruler-P complete; 1/7 features pass both BH-FDR and reshuffle-null descriptive gates in full cell. Ruler-H accruing.",
+      "next_step": "Review Ruler-H at G1-Retest (~2027-H2).",
+      "phase_hint": "Ruler-H"
+    },
+    {
+      "id": "expect-drift-ruler-h-accrual",
+      "name": "Expect-Drift LH — Ruler-H accrual (OOS-2 honest compounder contrast)",
+      "kind": "track_record",
+      "priority": "low",
+      "cadence": "none",
+      "what": "Ruler-H for F3 expect_drift family: missed_hold vs tactical_only on OOS-2 (2025+) at G1-Retest. Program-wide HLZ q=0.10. Evaluated at >= 25 honest compounder episode-cluster trigger (~2027-H2).",
+      "source": "scripts/research/expect_drift_ruler_p_study.py",
+      "storage": "data/research/expect_drift_panel.parquet",
+      "hook": "offline_study",
+      "started": "2026-07-06",
+      "come_back_on": "2027-07-01",
+      "come_back_note": "G1-Retest A2 trigger: >= 25 honest compounder clusters (Amendment A2 §4, AMENDMENT_A2_G1_RETEST.md)",
+      "maturation": ">= 25 episode-cluster honest compounder fires in OOS-2 AND program-wide BH q=0.10",
+      "status": "accruing",
+      "state": "Accruing OOS-2 honest compounder fires. G1-Retest not triggered yet.",
+      "next_step": "Check 2027-07-01: if >= 25 honest compounder clusters, run Ruler-H study.",
+      "phase_hint": "G1-Retest"
     }
   ]
 }
