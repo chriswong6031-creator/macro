@@ -175,6 +175,8 @@ def register_experiment(
     *,
     n_floor: int = DEFAULT_N_FLOOR,
     derived_from_surface: str | None = None,
+    needed_merge_columns: list[str] | None = None,
+    base_cohort_predicates: list[list] | None = None,
     registry_path: Path | None = None,
     ledger_path: Path | None = None,
 ) -> dict:
@@ -190,6 +192,16 @@ def register_experiment(
     n_floor           : minimum verdict-grade fires per cell (default 300)
     derived_from_surface : null or the exp_id of a previously seen descriptive
                         surface (RUL-P3 mandatory honesty stamp)
+    needed_merge_columns : list of column names the runner must merge into fires_df
+                        before CohortFilter applies (e.g. PIT regime columns for
+                        DISP-GATE-1).  Empty list means no merge needed (default).
+                        Other experiments are untouched when this is empty.
+    base_cohort_predicates : list of (op, col, val) triples for the common
+                        pre-filter applied to fires_full before per-spec cohort
+                        filtering.  When set, the runner uses this instead of
+                        specs[0].cohort for the initial fires_df subset.  Needed
+                        for experiments where each spec has a different per-cell
+                        predicate (e.g. regime state filter in DISP-GATE-1).
     registry_path     : override registry file path (default: data/rule_experiments/registry.jsonl)
     ledger_path       : override trial ledger path
 
@@ -249,6 +261,8 @@ def register_experiment(
         "declared_budget": declared_budget,
         "verdict_criteria": verdict_criteria,
         "derived_from_surface": derived_from_surface,
+        "needed_merge_columns": needed_merge_columns or [],
+        "base_cohort_predicates": base_cohort_predicates or [],
         "status": "registered",
     }
 

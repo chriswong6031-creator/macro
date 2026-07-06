@@ -91,6 +91,17 @@ from engine.rule_experiments import (  # noqa: E402
 )
 from engine.vintage_stamp import vintage_stamp  # noqa: E402
 
+# Regime merge columns that DISP-GATE-1 requires.
+# These are appended to fires_df before CohortFilter applies, only when the
+# experiment registry entry declares them in "needed_merge_columns".
+_DISP_MERGE_COLS = [
+    "disp_state_expanding",
+    "disp_state_trailing252",
+    "disp_pctile_expanding",
+    "disp_pctile_trailing252",
+    "n_bars_before",
+    "disp_excluded",  # renamed from 'excluded' to avoid shadowing
+]
 
 # ---------------------------------------------------------------------------
 # Grid reconstruction from experiment definition
@@ -176,10 +187,48 @@ def _build_exit_grid_v1_specs(cohort: CohortFilter) -> list[RuleSpec]:
     return specs
 
 
+def _build_disp_gate_1_specs(cohort: CohortFilter) -> list[RuleSpec]:
+    """Reconstruct the DISP-GATE-1 grid from its frozen definition (§6.2).
+
+    6 primary cells:
+      regime arm {lean_in, neutral, lean_out}  ×  basis {expanding, trailing252}
+
+    The cohort must already have regime columns merged (see _merge_regime_columns).
+    Each cell filters on disp_state_expanding or disp_state_trailing252.
+    Exit: hold(21) — the ratified anchor per L3_PREREG.
+
+    Note: the DISP-GATE-1 cohort is an extension of the production fire cohort
+    (verdict_type='fire' AND verdict_grade=True) INTERSECTED with the non-excluded
+    regime-assigned fires.  The regime-column merge and exclusion of fires with
+    < 252 prior bars happen in the load path (run_experiment), not here.
+    """
+    specs: list[RuleSpec] = []
+    for regime_state in ["lean_in", "neutral", "lean_out"]:
+        for basis in ["expanding", "trailing252"]:
+            col = f"disp_state_{basis}"
+            spec_id = f"disp_gate_1/{basis}/{regime_state}"
+            regime_cohort = cohort_filter(
+                *cohort.predicates,
+                ("eq", col, regime_state),
+                ("eq", "disp_excluded", False),
+            )
+            specs.append(RuleSpec(
+                spec_id=spec_id,
+                cohort=regime_cohort,
+                delay_n=1,
+                exit=ExitPolicy.hold(21),
+                horizons_ref=(126,),
+            ))
+
+    assert len(specs) == 6, f"DISP-GATE-1 must be 6 cells, got {len(specs)}"
+    return specs
+
+
 # Grid builders registry — keyed by exp_id prefix
 _GRID_BUILDERS: dict[str, Any] = {
     "exit_grid_v1": _build_exit_grid_v1_specs,
     "wait_grid_v1": _build_wait_grid_v1_specs,
+    "disp_gate_1": _build_disp_gate_1_specs,
 }
 
 
@@ -210,6 +259,111 @@ def _build_grid(exp_id: str, exp_entry: dict) -> list[RuleSpec]:
         ("eq", "verdict_grade", True),
     )
     return builder(cohort)
+
+
+# ---------------------------------------------------------------------------
+# Regime merge — experiment-scoped (only for experiments that declare it)
+# ---------------------------------------------------------------------------
+
+def _merge_regime_columns(
+    fires_df: pd.DataFrame,
+    needed_merge_columns: list[str],
+    *,
+    massive_dir: Path,
+) -> pd.DataFrame:
+    """Merge PIT dispersion regime columns into fires_df.
+
+    Called BEFORE CohortFilter applies so that regime-column predicates
+    in the cohort filter resolve correctly.
+
+    Only called for experiments that declare needed_merge_columns in their
+    registry entry, so other experiments are untouched.
+
+    Parameters
+    ----------
+    fires_df             : fires DataFrame (pre-filter)
+    needed_merge_columns : list of column names from _DISP_MERGE_COLS
+    massive_dir          : path to massive_stock_day for panel reconstruction
+
+    Returns
+    -------
+    fires_df with regime columns appended (keyed on signal_date).
+    """
+    from scripts.compute_disp_pit_state import compute_pit_states, compute_spy_21d_returns, assign_spy_tercile
+
+    # Check if any needed columns are already present (idempotent)
+    missing = [c for c in needed_merge_columns if c not in fires_df.columns]
+    if not missing:
+        log.info("All needed merge columns already present — skipping regime merge.")
+        return fires_df
+
+    # Resolve the fire dates
+    date_col = "signal_date" if "signal_date" in fires_df.columns else "fire_date"
+    fire_dates = pd.to_datetime(fires_df[date_col]).unique()
+    log.info(
+        "Merging PIT dispersion regime for %d unique fire dates "
+        "(%s → %s)...",
+        len(fire_dates), fire_dates.min().date(), fire_dates.max().date(),
+    )
+
+    # Compute PIT states (prints DATA-REACH GATE exclusion counts)
+    states = compute_pit_states(fire_dates, massive_dir=massive_dir, verbose=True)
+    states = states.reset_index()  # fire_date column
+
+    # Rename 'excluded' → 'disp_excluded' to avoid column collision
+    if "excluded" in states.columns:
+        states = states.rename(columns={"excluded": "disp_excluded"})
+
+    # Compute SPY 21d contemporaneous covariate (L3_PREREG obligation 2)
+    spy_rets = compute_spy_21d_returns(fire_dates, massive_dir=massive_dir)
+    spy_tercile = assign_spy_tercile(spy_rets)
+
+    spy_df = pd.DataFrame({
+        "fire_date": spy_rets.index,
+        "spy_ret_21d": spy_rets.values,
+        "spy_tercile": spy_tercile.values,
+    })
+
+    # Merge states on date
+    fires_out = fires_df.copy()
+    fires_out["_fire_date_ts"] = pd.to_datetime(fires_out[date_col])
+
+    states["fire_date"] = pd.to_datetime(states["fire_date"])
+    spy_df["fire_date"] = pd.to_datetime(spy_df["fire_date"])
+
+    fires_out = fires_out.merge(
+        states,
+        left_on="_fire_date_ts",
+        right_on="fire_date",
+        how="left",
+        suffixes=("", "_disp"),
+    )
+    if "fire_date" in fires_out.columns and "fire_date" != date_col:
+        fires_out = fires_out.drop(columns=["fire_date"])
+
+    fires_out = fires_out.merge(
+        spy_df,
+        left_on="_fire_date_ts",
+        right_on="fire_date",
+        how="left",
+        suffixes=("", "_spy"),
+    )
+    if "fire_date" in fires_out.columns and "fire_date" != date_col:
+        fires_out = fires_out.drop(columns=["fire_date"])
+
+    fires_out = fires_out.drop(columns=["_fire_date_ts"], errors="ignore")
+
+    # Fill disp_excluded NaN → True (no state available = exclude)
+    if "disp_excluded" in fires_out.columns:
+        fires_out["disp_excluded"] = fires_out["disp_excluded"].fillna(True)
+
+    n_merged = fires_out["disp_state_expanding"].notna().sum() if "disp_state_expanding" in fires_out.columns else 0
+    n_excl = fires_out["disp_excluded"].sum() if "disp_excluded" in fires_out.columns else 0
+    log.info(
+        "Regime merge complete: %d fires with state, %d excluded",
+        int(n_merged), int(n_excl),
+    )
+    return fires_out
 
 
 # ---------------------------------------------------------------------------
@@ -502,10 +656,43 @@ def run_experiment(
     fires_full = pd.read_parquet(bp)
     log.info("Loaded %d rows from replay_boarded", len(fires_full))
 
-    # Apply experiment's cohort filter (built from the first spec's cohort —
-    # all specs share the same cohort for EXIT-GRID-1)
-    primary_cohort = specs[0].cohort
-    cohort_mask = primary_cohort.apply(fires_full)
+    # ── 4a. Regime merge (experiment-scoped) ──────────────────────────────
+    # Merge per-date PIT dispersion regime columns BEFORE CohortFilter so
+    # that regime-column predicates in the cohort filter resolve correctly.
+    # Only runs for experiments that declare needed_merge_columns.
+    needed_merge_columns: list[str] = exp_entry.get("needed_merge_columns", [])
+    if needed_merge_columns:
+        log.info(
+            "Experiment %r declares needed_merge_columns=%r — merging regime data",
+            exp_id, needed_merge_columns,
+        )
+        fires_full = _merge_regime_columns(
+            fires_full,
+            needed_merge_columns,
+            massive_dir=md,
+        )
+
+    # Apply experiment's cohort filter.
+    # For experiments where all specs share the same cohort (EXIT-GRID-1,
+    # WAIT-GRID-1), using specs[0].cohort is correct.
+    # For experiments where each spec has a per-cell regime predicate
+    # (DISP-GATE-1), the registry stores a base_cohort_predicates key with
+    # the common predicates to pre-filter on; per-spec predicates are applied
+    # by replay_spec itself.
+    base_cohort_predicates = exp_entry.get("base_cohort_predicates")
+    if base_cohort_predicates:
+        # Reconstruct a CohortFilter from the stored predicate list
+        base_cohort = cohort_filter(
+            *[tuple(p) for p in base_cohort_predicates]
+        )
+        log.info(
+            "Using base_cohort_predicates for fires_df pre-filter: %s",
+            base_cohort_predicates,
+        )
+    else:
+        base_cohort = specs[0].cohort
+
+    cohort_mask = base_cohort.apply(fires_full)
     fires_df = fires_full[cohort_mask].reset_index(drop=True)
     log.info(
         "Cohort filter: %d/%d rows match (%.1f%%)",
@@ -571,7 +758,7 @@ def run_experiment(
             pf["episode_cluster"] = pf["fire_idx"].map(cluster_map)
 
         # Also carry tier_cascade for era/tier splits
-        if "tier_cascade" not in pf.columns and "tier_cascade" in fires_df.columns:
+        if "tier_cascade" not in pf.columns and "tier_cascade" in fires_df.columns and "fire_idx" in pf.columns:
             tier_map = fires_df["tier_cascade"].to_dict()
             pf["tier_cascade"] = pf["fire_idx"].map(tier_map)
 
