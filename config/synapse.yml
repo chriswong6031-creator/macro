@@ -4138,6 +4138,82 @@ artifacts:
       Accrual instrument for the registered §5 promotion rule (15-window re-evaluation gate).
       No peeking logic — desk only displays counts.
 
+  # --- OTA W7: Qualitative Filter Registry ---
+  oracle-qual-filter-registry:
+    path: data/oracle/qual_filters/registry.jsonl
+    format: jsonl
+    producer: engine/oracle/qual_filters.py
+    known_extra_writers: []
+    owner_program: oracle
+    cadence: on-demand
+    storage: git
+    asof_field: registered_at
+    freshness_sla_hours: null
+    schema: oracle_qual_filter_registry.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/oracle/qual_filters.py
+    external_consumers: []
+    notes: >
+      OTA W7 Qualitative Filter Registry — governance artifact.
+      One row per filter: id, lane (Q1/Q2/Q3), predicate, source_artifact,
+      registered_at, status (accruing|retired). Append-only; retire-to-add
+      law; max 5 active per quarter. No LLM in any stamp path.
+
+  oracle-qual-filter-stamps:
+    path: data/oracle/qual_filter_stamps.jsonl
+    format: jsonl
+    producer: scripts/oracle_nightly.py
+    known_extra_writers: []
+    owner_program: oracle
+    cadence: daily-engine
+    storage: git
+    asof_field: stamped_asof
+    freshness_sla_hours: 30
+    schema: oracle_qual_filter_stamps.v1
+    tier: shadow
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/oracle_nightly.py
+      - engine/oracle/qual_filters.py
+    external_consumers: []
+    notes: >
+      OTA W7 PIT stamp ledger — keep-first, nightly sole advancer (Step 17).
+      Key: window_key::filter_id. value: true|false|null (null-honest law).
+      Null when source_artifact missing at stamp time. No retro-stamping:
+      only windows in the current night's armed set are stamped.
+      Infrastructure tier: feeds accrual report, never rendered directly.
+
+  oracle-qual-filter-accrual:
+    path: data/oracle/qual_filter_accrual.json
+    format: json
+    producer: scripts/oracle_nightly.py
+    known_extra_writers: []
+    owner_program: oracle
+    cadence: daily-engine
+    storage: git
+    asof_field: produced_at
+    freshness_sla_hours: 30
+    schema: oracle_qual_filter_accrual.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/oracle_nightly.py
+      - templates/subsector_rotation.html.j2
+    external_consumers: []
+    notes: >
+      OTA W7 accrual report — per-filter conditional WR21 true vs false on matured
+      windows. Wilson LBs. DESCRIPTIVE only — "validated" banned. Re-evaluation
+      eligible line printed when n_true >= 15 (operator event, never automatic).
+      Display tier; embedded in oracle_turn_desk.json as qual_accrual_note string.
+
   # --- NW Rails PR-6 governance artifact ---
   grading-closure:
     path: data/governance/grading_closure.json
