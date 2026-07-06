@@ -73,8 +73,8 @@ def test_all_artifact_ids_present():
     with _SYNAPSE_YML.open(encoding="utf-8") as fh:
         registry = yaml.safe_load(fh)
     artifact_ids = list(registry.get("artifacts", {}).keys())
-    assert len(artifact_ids) == 196, (
-        f"Expected 196 artifacts in synapse.yml, found {len(artifact_ids)}. "
+    assert len(artifact_ids) == 198, (
+        f"Expected 191 artifacts in synapse.yml, found {len(artifact_ids)}. "
         "Update the test if the registry count changed intentionally."
         " (W7b added machine-registry, cortex-attention-grades, cortex-probation = 104->107;"
         " W6b added ops-push-basket-freeze, ops-push-signal-sanity, ops-push-healthcheck = 107->110;"
@@ -128,11 +128,7 @@ def test_all_artifact_ids_present():
         " china-intel W4 added site-china-intel-command = 186->187;"
         " NW next-lobes DQ-2 operator-action grading harness added operator-grading = 187->188;"
         " short-side BD-AVOID-1 Phase-1 added bd-avoid1-ledger = 188->189;"
-        " W-C L6-P0 + races = ->191; PR-A2 long-hold-thesis-funnel-history added = 191->192;"
-        " PR-B1 per-fire-sector-benchmark added = 192->193;"
-        " PR-A3 oracle-operator-tape-outcomes, oracle-operator-scorecard added = 193->195;"
-        " NW Codex Three Lobes W-A claim-accountability added = 195->195 (already in origin/main);"
-        " NEXT3 W-OC options entry coverage audit added options-entry-coverage = 195->196)"
+        " NEXT3 W-EX added operator-exposure-log, operator-exposure-summary = 189->191)"
     )
     content = generate(_SYNAPSE_YML)
     missing = [aid for aid in artifact_ids if aid not in content]

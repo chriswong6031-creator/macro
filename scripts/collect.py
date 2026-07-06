@@ -824,6 +824,18 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — a coverage audit must not abort the run
         log.error("[options_entry_coverage] step crashed (non-fatal): %s", e)
 
+    # NEXT3 W-EX — operator exposure log (RUL-U6; measurement-substrate-only).
+    # Reads previously committed site artifacts (experiments.json, us_standouts.json,
+    # wh_banner.json, rr_banner.json); writes data/operator/exposure_log.jsonl
+    # (gitignored host-local, append+dedup) and data/governance/operator_exposure_summary.json
+    # (committed, 90-day bounded). No statistics, no contrasts, no trials. Seconds only;
+    # never fatal.
+    try:
+        from scripts.build_operator_exposure_log import run_as_collect_step as _op_exposure
+        _op_exposure()
+    except Exception as e:  # noqa: BLE001 — a governance audit must not abort the run
+        log.error("[operator_exposure] build step crashed (non-fatal): %s", e)
+
     # SEC Fails-to-Deliver (SLF-001) — incremental daily append.
     # Fetches semi-monthly FTD files whose availability_date has passed since the
     # last panel date (uniform 30-day PIT lag enforced in the collector).
