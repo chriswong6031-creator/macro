@@ -82,6 +82,8 @@ def test_ppi_artifact_guard(monkeypatch):
 def test_ledger_accrue_keep_first(tmp_path, monkeypatch):
     # redirect the ledger parquet to a temp file
     monkeypatch.setattr(rl, "_path", lambda: tmp_path / "ledger.parquet")
+    # Lane guard: accrue() requires CN_LANE=asia (PR #1640 FIX 2)
+    monkeypatch.setenv("CN_LANE", "asia")
     scan = {"asof": "2026-06-20", "divergences": [
         {"pair": "ppi->512400.SS", "signal_key": "ppi", "sector_etf": "512400.SS",
          "sector_en": "Nonferrous", "sign": "positive", "price_rs": -8.6, "signal_value": 3.9}]}
