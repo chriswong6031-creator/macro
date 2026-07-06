@@ -2953,11 +2953,15 @@
           {% set _ivshow = _iv_scored and _iv.verdict in ['confirm','caution'] %}
           {% set _gc_unval_caution = _gc and not _gc_scored and _gc.verdict == 'caution' %}
           {% set _iv_unval_caution = _iv and not _iv_scored and _iv.verdict == 'caution' %}
-          {# 💥 don't-chase chip: vol-squeeze FIRED_UP/EXPANSION or alpha=momentum, and entry not
-             already blocked/extended — spec §4 UX adjudication (risk.md finding #2, ux.md finding #2) #}
+          {# 💥 don't-chase chip: vol-squeeze FIRED_UP/EXPANSION or alpha_entry=extended (leader
+             that just spiked — reversal risk), and entry not already blocked/extended.
+             Spec §4 UX adjudication (risk.md finding #2, ux.md finding #2).
+             NOTE: spec originally said alpha_entry=='momentum' but that value is never emitted by
+             engine/residual_alpha.py; the correct enum is 'extended' (leader that spiked, short-term
+             reversal risk = "already moving"). Round-2 review finding #1. #}
           {% set _vs_fired = _vs and _vs.state in ['FIRED_UP','EXPANSION'] %}
           {% set _entry_ok = not (es and es.get('status') in ['extended','topping','exit','avoid','blocked']) %}
-          {% set _show_moving = (_vs_fired or n.get('alpha_entry') == 'momentum') and _entry_ok %}
+          {% set _show_moving = (_vs_fired or n.get('alpha_entry') == 'extended') and _entry_ok %}
           <div class="nb-chiprow">
             {% with sig = n.signal %}{% include "_sig_badge.html.j2" %}{% endwith %}
             {% if n.get('coiled') and n.get('coiled').get('coiled') %}{% set _cf = n.get('coiled').get('fire') %}<span class="nb-coiled{% if _cf %} fire{% elif n.get('coiled').get('star') %} star{% endif %}"><span class="l-en">{% if _cf %}⚡ Coiled·FIRE{% else %}⚡ Coiled{% endif %}{% if n.get('coiled').get('star') %} ★{% endif %}</span><span class="l-zh">{% if _cf %}⚡ 蓄势·触发{% else %}⚡ 蓄势{% endif %}{% if n.get('coiled').get('star') %} ★{% endif %}</span></span>{% endif %}
@@ -2989,13 +2993,14 @@
             {# W9-A sector-capitulating safety chip — stays at rest (OOS-confirmed safety, minority) #}
             {% if n.get('sector_capitulating') %}<span class="nb-sector-cap" data-tip-en="Sector capitulating — {{ '%.0f'|format((n.sector_capitulating.cohort_frac or 0)*100) }}% of {{ n.sector or 'sector' }} peers in weekly washout at build time. Safety context: stop-out −2.7pp (deep panel) / −3.5pp (OOS), sign-stable all splits — safety context, not a ranking signal." data-tip-zh="板块集体回调——{{ '%.0f'|format((n.sector_capitulating.cohort_frac or 0)*100) }}%的{{ n.sector or '板块' }}同类股处于周线深度超卖。安全背景：止损率−2.7pp（深度面板）/−3.5pp（样本外），各拆分均稳定——仅为安全背景参考，不影响排名。"><span class="l-en">Sector capitulating</span><span class="l-zh">板块集体回调</span></span>{% endif %}
             {# 💥 Moving — don't chase (adjudicated UX finding #2 + risk finding #2):
-               renders when vol-squeeze already fired (FIRED_UP/EXPANSION) or alpha_entry=momentum
-               AND entry gauge is NOT already extended/topping/exit/avoid/blocked.
+               renders when vol-squeeze already fired (FIRED_UP/EXPANSION) or alpha_entry=extended
+               (leader that spiked, reversal risk) AND entry gauge is NOT already
+               extended/topping/exit/avoid/blocked.
                Template-level conjunction of existing fields; no builder change. #}
             {% if _show_moving %}
             <span class="nb-vchip vf-exp"
-                  data-tip-en="Already moving — vol-squeeze {{ _vs.state if _vs else '' }}{% if n.get('alpha_entry') == 'momentum' %} / momentum leader{% endif %}. The entry window may have already fired; don't chase this entry above the buy zone. Context only — the setup is still valid if it consolidates."
-                  data-tip-zh="已在异动——波动{{ _vs.state if _vs else '' }}{% if n.get('alpha_entry') == 'momentum' %} / 动量领先{% endif %}。入场窗口可能已触发，不要在买入区上方追高。仅为背景——若标的整固，形态仍有效。">💥 <span class="l-en">Moving — don't chase</span><span class="l-zh">已异动，勿追</span></span>
+                  data-tip-en="Already moving — vol-squeeze {{ _vs.state if _vs else '' }}{% if n.get('alpha_entry') == 'extended' %} / extended leader (just spiked){% endif %}. The entry window may have already fired; don't chase this entry above the buy zone. Context only — the setup is still valid if it consolidates."
+                  data-tip-zh="已在异动——波动{{ _vs.state if _vs else '' }}{% if n.get('alpha_entry') == 'extended' %} / 领涨股过热（刚刚拉升）{% endif %}。入场窗口可能已触发，不要在买入区上方追高。仅为背景——若标的整固，形态仍有效。">💥 <span class="l-en">Moving — don't chase</span><span class="l-zh">已异动，勿追</span></span>
             {% endif %}
           </div>
           {# Sub-line: the company NAME (demoted here so row 1 stays ticker · full sector · price,
