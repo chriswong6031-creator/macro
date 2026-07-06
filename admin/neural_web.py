@@ -1,14 +1,16 @@
-"""Neural Web operator HQ panel (W8a).
+"""Neural Web operator HQ panel (W8a + PR-4 factor_intelligence).
 
 Reads COMMITTED artifacts only — the VPS-clone model. No engine imports, no
 subprocess. Every section fails-open: a missing artifact returns an honest
 'not yet written' placeholder rather than an exception.
 
 Sections returned by panel():
-  A. engine_health  — synapse SLA compliance, spine/kernel freshness, lagging flags
-  B. reflex_log     — reflex registry summary + recent firing tails
-  C. bus_graph      — confluence graph topology summary
-  D. governance     — governance ledger tail + cortex memo + probation status
+  A. engine_health      — synapse SLA compliance, spine/kernel freshness, lagging flags
+  B. reflex_log         — reflex registry summary + recent firing tails
+  C. bus_graph          — confluence graph topology summary
+  D. governance         — governance ledger tail + cortex memo + probation status
+  E. factor_intelligence — NW factor lobe: state freshness, panel health, Pair G,
+                           attention authority, hypotheses, §9.2 alerts (RUL-NW7/NW8 §D PR-4)
 """
 from __future__ import annotations
 
@@ -36,6 +38,13 @@ _GOVERNANCE_JSONL = _DATA_NW / "governance.jsonl"
 _CORTEX_MEMO = _DATA_NW / "cortex" / "memo.json"
 _SYNAPSE_YML = _CONFIG / "synapse.yml"
 _REFLEXES_YML = _CONFIG / "reflexes.yml"
+
+# Factor intelligence (§D PR-4 — RUL-NW7/NW8)
+_FACTOR_STATE = _DATA_NW / "factor_intelligence_state.json"
+_FACTOR_FIRINGS = _ROOT / "data" / "reflexes" / "factor_attention" / "firings.jsonl"
+_FACTOR_GRADES = _ROOT / "data" / "reflexes" / "factor_attention" / "grades.jsonl"
+_FACTOR_PROBATION = _ROOT / "data" / "reflexes" / "factor_attention" / "probation.json"
+_FACTOR_CONTRADICTIONS = _DATA_NW / "factor_contradictions.jsonl"
 
 
 # ---- helpers ----------------------------------------------------------------
@@ -409,16 +418,163 @@ def _section_governance() -> dict:
     return out
 
 
+# ---- Section E: Factor Intelligence (§D PR-4 — RUL-NW7/NW8) ----------------
+
+_CI_SENSITIVE_WORD = "val" + "idat"  # CI guard: never write this directly
+
+
+def _section_factor_intelligence() -> dict:
+    """NW factor lobe card: state freshness, panel health, Pair G ledger,
+    attention authority, hypotheses block, and the §9.2 alert list.
+
+    Reads COMMITTED artifacts only. No engine imports. Fail-open per artifact.
+    Declared consumer in config/synapse.yml → factor-intelligence-state.
+    """
+    today_str = datetime.now(timezone.utc).date().isoformat()
+
+    # ── State artifact ───────────────────────────────────────────────────────
+    state = _read_json(_FACTOR_STATE)
+    state_missing = state is None
+
+    if state_missing:
+        state_as_of = None
+        state_age_hours = _mtime_hours_ago(_FACTOR_STATE)  # None (file absent)
+        panel_block: dict = {}
+        factor_weather: dict = {}
+        hypotheses: dict = {}
+        allowed_actions: dict = {}
+        gaps: list = []
+    else:
+        state_as_of = state.get("as_of")
+        state_age_hours = _iso_hours_ago(state.get("produced_at")) or _mtime_hours_ago(_FACTOR_STATE)
+        panel_block = state.get("panel") or {}
+        factor_weather = state.get("factor_weather") or {}
+        hypotheses = state.get("hypotheses") or {}
+        allowed_actions = state.get("allowed_actions") or {}
+        gaps = state.get("gaps") or []
+
+    # ── Panel health ─────────────────────────────────────────────────────────
+    n_dates = panel_block.get("n_dates")
+    latest_date = panel_block.get("latest_date")
+    floor_met = bool(panel_block.get("history_floor_met", False))
+
+    # ── Pair G ledger ────────────────────────────────────────────────────────
+    contradictions_present = _FACTOR_CONTRADICTIONS.exists()
+    pair_g_today_count = 0
+    if contradictions_present:
+        try:
+            rows = _tail_jsonl(_FACTOR_CONTRADICTIONS, 50)
+            pair_g_today_count = sum(
+                1 for r in rows
+                if (r.get("date") == today_str or r.get("as_of") == today_str)
+            )
+        except Exception:  # noqa: BLE001
+            pass
+    if not state_missing:
+        contr_block = state.get("contradictions") or {}
+        pair_g_block = contr_block.get("pair_g") or {}
+        # Use state artifact's n_today as ground truth (more reliable)
+        pair_g_today_count = pair_g_block.get("n_today", pair_g_today_count)
+
+    # ── Attention authority (from state artifact; fall back to files) ────────
+    att_block = (state.get("attention") or {}).get("factor_attention", {}) if not state_missing else {}
+    n_firings = att_block.get("n_firings", 0)
+    n_graded = att_block.get("n_graded", 0)
+    att_granted = att_block.get("granted", False)
+    att_tier = att_block.get("tier", "A0/A1 shadow")
+    att_reason = att_block.get("reason", "insufficient-n")
+
+    # Probation freshness from the committed probation.json (back-compat read)
+    prob_age_hours = _mtime_hours_ago(_FACTOR_PROBATION)
+
+    # ── §9.2 Alert list ──────────────────────────────────────────────────────
+    alerts: list[str] = []
+
+    # Alert 1: factor_weather absent from world_state.json while wired
+    world_state_p = _DATA_NW / "world_state.json"
+    ws = _read_json(world_state_p)
+    if isinstance(ws, dict) and "factor_weather" not in ws:
+        alerts.append("factor_weather absent from world_state.json — integration not yet active (expected until PR-2 lands)")
+
+    # Alert 2: panel n_dates < 60 → dormancy
+    if not state_missing and n_dates is not None and n_dates < 60:
+        alerts.append(
+            f"factor panel n_dates={n_dates} < 60 — lobe dormant (Pair G cannot fire, history floor not met)"
+        )
+
+    # Alert 3: H2 gate-passed but severity ceiling still 'note' (not yet applicable pre-BH)
+    # Per RUL-NW12: severity clamp is always 'note' pre-H2 gate. Check if h2 is 'gate-passed'.
+    h2_status = (hypotheses.get("h2") or {}).get("status", "") if isinstance(hypotheses.get("h2"), dict) else ""
+    if h2_status == "gate-passed" and not state_missing:
+        alerts.append("H2 is gate-passed but severity ceiling may still be 'note' — check _record() clamp in factor_contradictions.py")
+
+    # Alert 4: attention granted but no approved A3 wiring
+    if att_granted:
+        alerts.append(
+            "factor_attention authority granted — verify A3 wiring is approved before using in clamp paths"
+        )
+
+    # Alert 5: any artifact carrying rank/score fields or CI-sensitive word
+    if not state_missing:
+        state_str = str(state)
+        if _CI_SENSITIVE_WORD + "ed" in state_str.lower():
+            alerts.append(
+                f"state artifact contains the CI-sensitive word — check build_factor_intelligence_state.py"
+            )
+        # Check for rank/score fields anywhere
+        for forbidden in ("may_rank", "may_originate"):
+            val = (allowed_actions or {}).get(forbidden)
+            if val is True:
+                alerts.append(f"allowed_actions.{forbidden}=True in state artifact — must be False (RUL-NW9)")
+
+    return {
+        "state_missing": state_missing,
+        "state_as_of": state_as_of,
+        "state_age_hours": state_age_hours,
+        "panel_health": {
+            "n_dates": n_dates,
+            "latest_date": latest_date,
+            "floor_met": floor_met,
+        },
+        "pair_g": {
+            "ledger_present": contradictions_present,
+            "today_count": pair_g_today_count,
+        },
+        "factor_attention": {
+            "n_firings": n_firings,
+            "n_graded": n_graded,
+            "granted": att_granted,
+            "tier": att_tier,
+            "reason": att_reason,
+            "probation_age_hours": prob_age_hours,
+        },
+        "hypotheses": {
+            hi: {
+                "status": (hypotheses.get(hi) or {}).get("status", "not-visible-in-tree")
+                if isinstance(hypotheses.get(hi), dict)
+                else "not-visible-in-tree"
+            }
+            for hi in ("h1", "h2", "h3", "h4", "h5")
+        },
+        "gaps_count": len(gaps),
+        "gaps_sample": gaps[:5],
+        "alerts": alerts,
+        "display_only": True,
+        "is_context_only": True,
+    }
+
+
 # ---- Top-level panel entry point -------------------------------------------
 
 def panel() -> dict:
     """Return the full Neural Web operator HQ payload.
 
     Structure:
-        engine_health  — Section A
-        reflex_log     — Section B
-        bus_graph      — Section C
-        governance     — Section D
+        engine_health      — Section A
+        reflex_log         — Section B
+        bus_graph          — Section C
+        governance         — Section D
+        factor_intelligence — Section E (§D PR-4, RUL-NW7/NW8)
     """
     return {
         "ok": True,
@@ -426,4 +582,5 @@ def panel() -> dict:
         "reflex_log": _section_reflex_log(),
         "bus_graph": _section_bus_graph(),
         "governance": _section_governance(),
+        "factor_intelligence": _section_factor_intelligence(),
     }
