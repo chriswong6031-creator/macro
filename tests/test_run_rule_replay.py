@@ -830,3 +830,164 @@ def test_trail_stop_held_to_reference_included_in_cell_stats() -> None:
     assert "held_to_reference_pct" in stats
     assert stats["held_to_reference_pct"] == pytest.approx(0.5, abs=0.01)  # 1/2 = 0.5
     assert stats["short_path_pct"] == pytest.approx(0.0)
+
+
+# ---------------------------------------------------------------------------
+# stop5_rate / dead_money_rate (BLOCKING fix: reviewer finding 1)
+# ---------------------------------------------------------------------------
+
+def test_cell_stats_stop5_and_dead_money() -> None:
+    """_cell_stats must return stop5_rate and dead_money_rate using L3_PREREG definitions.
+
+    Per L3_PREREG.md:
+      stop5_rate    : fraction of included fires where mae_to_exit <= -5%
+                      (intra-window drawdown reached ≥5% from entry at any point)
+      dead_money_rate: fraction where |exit_ret| < 2%
+                      (fire went nowhere — tape parked the name)
+
+    Synthetic fixture with 4 fires:
+      mae_to_exit = -0.10 → stop5 (drew down 10%)
+      mae_to_exit = -0.04 → NOT stop5 (peak drawdown only 4%)
+      mae_to_exit = -0.06 → stop5
+      mae_to_exit = 0.00  → NOT stop5
+
+      exit_ret = -0.09 → NOT dead_money (|ret|=9% >= 2%)
+      exit_ret =  0.01 → dead_money (|ret|=1% < 2%)
+      exit_ret = -0.01 → dead_money (|ret|=1% < 2%)
+      exit_ret =  0.05 → NOT dead_money (|ret|=5% >= 2%)
+
+    Expected:
+      stop5_rate    = 2/4 = 0.50  (fires 0 and 2 have mae <= -0.05)
+      dead_money_rate = 2/4 = 0.50  (fires 1 and 2 have |exit_ret| < 0.02)
+    """
+    from scripts.run_rule_replay import _cell_stats
+
+    perfire = pd.DataFrame({
+        "exit_ret":    [-0.09,  0.01, -0.01,  0.05],
+        "mae_to_exit": [-0.10, -0.04, -0.06,  0.00],
+        "censored":    [False, False, False, False],
+        "short_path":  [False, False, False, False],
+        "held_to_reference": [False, False, False, False],
+        "ticker":      ["A", "B", "C", "D"],
+        "fire_date":   pd.to_datetime(["2022-06-01", "2022-06-02", "2022-06-03", "2022-06-04"]),
+    })
+
+    stats = _cell_stats(perfire, pd.DataFrame())
+
+    assert "stop5_rate" in stats, "stop5_rate key must be present in _cell_stats output"
+    assert "dead_money_rate" in stats, "dead_money_rate key must be present in _cell_stats output"
+    assert stats["stop5_rate"] == pytest.approx(0.50, abs=0.001), (
+        f"stop5_rate: expected 0.50 (2 of 4 fires with mae_to_exit <= -5%), got {stats['stop5_rate']}. "
+        "stop5 is defined as mae_to_exit <= -0.05 per L3_PREREG."
+    )
+    assert stats["dead_money_rate"] == pytest.approx(0.50, abs=0.001), (
+        f"dead_money_rate: expected 0.50 (2 of 4 fires with |exit_ret| < 2%), got {stats['dead_money_rate']}. "
+        "dead_money is defined as abs(exit_ret) < 0.02 per L3_PREREG."
+    )
+
+
+def test_cell_stats_stop5_dead_money_zero_case() -> None:
+    """_cell_stats returns stop5_rate=0.0, dead_money_rate=0.0 when all returns are clear wins."""
+    from scripts.run_rule_replay import _cell_stats
+
+    perfire = pd.DataFrame({
+        "exit_ret":    [0.05, 0.10, 0.15],
+        "mae_to_exit": [-0.01, -0.02, -0.03],   # peak drawdown < 5%
+        "censored":    [False, False, False],
+        "short_path":  [False, False, False],
+        "held_to_reference": [False, False, False],
+        "ticker":      ["A", "B", "C"],
+        "fire_date":   pd.to_datetime(["2022-06-01", "2022-06-02", "2022-06-03"]),
+    })
+    stats = _cell_stats(perfire, pd.DataFrame())
+    assert stats["stop5_rate"] == pytest.approx(0.0, abs=0.001), (
+        "No fires drew down >= 5% — stop5_rate must be 0.0"
+    )
+    assert stats["dead_money_rate"] == pytest.approx(0.0, abs=0.001), (
+        "All exit_ret >= 5% — dead_money_rate must be 0.0"
+    )
+
+
+def test_cell_stats_empty_returns_none_for_stop5() -> None:
+    """_cell_stats returns None for stop5_rate and dead_money_rate on empty input."""
+    from scripts.run_rule_replay import _cell_stats
+
+    stats = _cell_stats(pd.DataFrame(), pd.DataFrame())
+    assert stats["stop5_rate"] is None
+    assert stats["dead_money_rate"] is None
+
+
+# ---------------------------------------------------------------------------
+# _spy_covariate_split (BLOCKING fix: reviewer finding 2)
+# ---------------------------------------------------------------------------
+
+def test_spy_covariate_split_produces_tercile_split() -> None:
+    """_spy_covariate_split returns per-tercile stop5/dead_money/wr when spy_tercile present.
+
+    Uses the L3_PREREG definitions:
+      stop5     : mae_to_exit <= -0.05
+      dead_money: |exit_ret| < 0.02
+
+    down-tercile fires: mae_to_exit = -0.10 (both stop5), exit_ret = -0.10 (both losers)
+    up-tercile fires:   mae_to_exit = -0.01 (neither stop5), exit_ret = +0.12 (both winners)
+    flat-tercile fires: one stop5 (mae=-0.07) / dead_money (exit=-0.01), one win (exit=+0.05)
+    """
+    from scripts.run_rule_replay import _spy_covariate_split
+
+    perfire = pd.DataFrame({
+        "exit_ret":    [-0.10, -0.10,  0.12,  0.12, -0.01,  0.05],
+        "mae_to_exit": [-0.10, -0.10, -0.01, -0.01, -0.07, -0.03],
+        "censored":    [False] * 6,
+        "short_path":  [False] * 6,
+        "held_to_reference": [False] * 6,
+        "spy_tercile": ["down", "down", "up", "up", "flat", "flat"],
+        "ticker":      ["A", "B", "C", "D", "E", "F"],
+        "fire_date":   pd.to_datetime([
+            "2022-06-01", "2022-06-02", "2022-06-03",
+            "2022-06-04", "2022-06-05", "2022-06-06",
+        ]),
+    })
+
+    result = _spy_covariate_split(perfire)
+
+    assert result is not None, "_spy_covariate_split must return a dict when spy_tercile present"
+    assert set(result.keys()) == {"down", "flat", "up"}, "Must produce exactly 3 tercile keys"
+
+    # down: both fires stop5 (mae_to_exit = -10% <= -5%)
+    assert result["down"]["n"] == 2
+    assert result["down"]["stop5"] == pytest.approx(1.0, abs=0.001), (
+        "All down-tercile fires have mae_to_exit=-10% — stop5 rate must be 1.0"
+    )
+    assert result["down"]["wr"] == pytest.approx(0.0, abs=0.001), (
+        "All down-tercile fires have negative exit_ret — wr must be 0.0"
+    )
+
+    # up: neither fire hits stop5 (mae_to_exit = -1% > -5%)
+    assert result["up"]["n"] == 2
+    assert result["up"]["stop5"] == pytest.approx(0.0, abs=0.001), (
+        "Up-tercile fires have mae_to_exit=-1% — no stop5"
+    )
+    assert result["up"]["wr"] == pytest.approx(1.0, abs=0.001)
+
+    # flat: fire E has mae=-7% (stop5) and exit=-1% (dead_money); fire F has mae=-3% (no stop5), exit=5% (win)
+    assert result["flat"]["n"] == 2
+    assert result["flat"]["stop5"] == pytest.approx(0.5, abs=0.001), (
+        "flat-tercile: 1 of 2 fires hit mae <= -5% — stop5 rate must be 0.5"
+    )
+    assert result["flat"]["dead_money"] == pytest.approx(0.5, abs=0.001), (
+        "flat-tercile: fire E has |exit_ret|=1% < 2% (dead_money); fire F has 5% (not dead_money)"
+    )
+    assert result["flat"]["wr"] == pytest.approx(0.5, abs=0.001)
+
+
+def test_spy_covariate_split_returns_none_when_column_absent() -> None:
+    """_spy_covariate_split returns None when spy_tercile not in perfire."""
+    from scripts.run_rule_replay import _spy_covariate_split
+
+    perfire = pd.DataFrame({
+        "exit_ret": [0.05, -0.05],
+        "censored": [False, False],
+        "short_path": [False, False],
+        "held_to_reference": [False, False],
+    })
+    assert _spy_covariate_split(perfire) is None
