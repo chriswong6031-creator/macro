@@ -145,7 +145,6 @@ from scripts.research.run_w1_nc import (  # noqa: E402
 # NC-2 band FE and family-wide BH from S-UR — REUSE (L1)
 from scripts.research.run_w2_sur import (  # noqa: E402
     _run_nc2_band_fe,
-    apply_family_wide_bh,
     _parse_nc_yardstick_from_report,
     ADVERSE_METRICS,
     BENEFICIAL_METRICS,
@@ -514,6 +513,19 @@ def assign_lq_bands(
         p33 = float(np.nanpercentile(valid_vals, 33.33))
         p67 = float(np.nanpercentile(valid_vals, 66.67))
 
+        # Guard degenerate cross-section: if all values are identical (p33 == p67),
+        # tercile thresholds collapse and every name would land in band 0 (worst).
+        # In this case leave bands NaN for the date — cannot form 3 distinct terciles.
+        if p33 >= p67:
+            log.warning(
+                "assign_lq_bands: proxy=%s date=%s has degenerate cross-section "
+                "(p33=%.6g >= p67=%.6g, n=%d) — bands left NaN for this date.",
+                proxy, date, p33, p67, len(valid_vals),
+            )
+            continue
+
+        n_in_band_counts: dict[float, int] = {}
+
         def _assign_band(v: float | None) -> float:
             if v is None or np.isnan(v):
                 return np.nan
@@ -526,7 +538,18 @@ def assign_lq_bands(
             else:
                 return 2.0   # bottom third = lowest proxy = best liquidity = band 2
 
-        fires.loc[date_mask, "lq_band"] = date_rows["lq_proxy_val"].apply(_assign_band)
+        assigned = date_rows["lq_proxy_val"].apply(_assign_band)
+        fires.loc[date_mask, "lq_band"] = assigned
+
+        # Warn if a single band captures >50% of fires (e.g. near-degenerate cross-section)
+        for band_val in [0.0, 1.0, 2.0]:
+            n_band = int((assigned == band_val).sum())
+            if n_band > 0.5 * len(valid_vals):
+                log.warning(
+                    "assign_lq_bands: proxy=%s date=%s band=%.0f captures %d/%d fires "
+                    "(>50%%) — near-degenerate cross-section.",
+                    proxy, date, band_val, n_band, len(valid_vals),
+                )
 
     n_assigned = int(fires["lq_band"].notna().sum())
     n_total = len(fires)
@@ -570,6 +593,10 @@ def run_band_analysis(
     has_band = graded_with_bands["lq_band"].notna() & graded_with_bands["gradable"].fillna(False)
     df_valid = graded_with_bands[has_band].copy()
 
+    # Single gradable-fire denominator for affected_volume_pct — used in both branches
+    # to ensure consistency regardless of how many rows have a valid band.
+    n_gradable_total = int(graded_with_bands["gradable"].fillna(False).sum())
+
     if df_valid.empty:
         log.warning("run_band_analysis: no gradable fires with valid band for proxy=%s", proxy)
         return results_by_band
@@ -598,7 +625,7 @@ def run_band_analysis(
                 "era_table": None,
                 "era_sign_stable": None,
                 "nc2_marginality": None,
-                "affected_volume_pct": n_treatment / max(len(graded_with_bands), 1),
+                "affected_volume_pct": n_treatment / max(n_gradable_total, 1),
                 "skipped": True,
             }
             continue
@@ -663,8 +690,9 @@ def run_band_analysis(
                     n_bootstrap, rng_seed, panel, sector_col_eff,
                 )
 
-        # Affected volume percentage: fraction of all fires in this band
-        affected_volume_pct = n_treatment / max(len(graded_with_bands[graded_with_bands["gradable"].fillna(False)]), 1)
+        # Affected volume percentage: fraction of all gradable fires in this band
+        # Uses n_gradable_total (computed once above) for consistency across both branches.
+        affected_volume_pct = n_treatment / max(n_gradable_total, 1)
 
         results_by_band[band] = {
             "n_treatment": n_treatment,
@@ -986,17 +1014,19 @@ def _write_report(
                     lines.append("")
                     stratum_col = f"band_{b}"
                     # Summarize era table: stop5 rate per era × stratum
-                    lines.append("| era | stratum | n_fires | stop5_rate | fwd_mdd_21_mean |")
+                    # mae63_mean = 63d MAE context (per RUL-13, NOT a verdict metric —
+                    # 63d+ NEVER decides an entry verdict; shown here for holdability context only).
+                    lines.append("| era | stratum | n_fires | stop5_rate | mae63_mean (63d context, NOT a verdict metric) |")
                     lines.append("|---|---|---|---|---|")
                     for _, erow in era_tbl.iterrows():
                         strat = int(erow.get(stratum_col, -1)) if stratum_col in erow else "all"
                         era_label = erow.get("era", "?")
                         n_fires = int(erow.get("n_fires", 0))
                         s5 = erow.get("stop5_rate")
-                        m21 = erow.get("mae63_mean")  # fast_era_table uses mae63 name
+                        m63 = erow.get("mae63_mean")  # fast_era_table emits mae63_mean only (63d MAE)
                         lines.append(
                             f"| {era_label} | {strat} | {n_fires} | "
-                            f"{_fmt_pct(s5)} | {_fmt_f(m21, 4)} |"
+                            f"{_fmt_pct(s5)} | {_fmt_f(m63, 4)} |"
                         )
                     lines.append("")
                     era_stable = br.get("era_sign_stable")
@@ -1105,7 +1135,7 @@ def _write_report(
 
     if smoke:
         lines.append("")
-        lines.append("> **SMOKE RUN STAMP**: Bootstrap n=200, first 1000 fires only. "
+        lines.append("> **SMOKE RUN STAMP**: Bootstrap n=200, first 50 unique fire dates only. "
                      "Numbers are NOT production quality.")
         lines.append("")
 
@@ -1419,7 +1449,7 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     p.add_argument(
         "--smoke", action="store_true",
-        help="Run a fast smoke test: first 1000 fires, n_bootstrap=200.",
+        help="Run a fast smoke test: first 50 unique fire dates, n_bootstrap=200.",
     )
     p.add_argument(
         "--n-bootstrap", type=int, default=N_BOOTSTRAP,
