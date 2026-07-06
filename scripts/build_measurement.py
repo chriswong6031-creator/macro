@@ -197,6 +197,161 @@ LEADLAG_PHASE0_PATH = DATA / "cycle_hazard" / "leadlag_phase0.json"
 # ── Pattern Memory v0 paths ────────────────────────────────────────────────────
 TRUTHS_JSONL_PATH = DATA / "cycle_pattern" / "truths.jsonl"
 
+# ── Prediction Layer — hazard model path ──────────────────────────────────────
+HAZARD_MODEL_PATH = DATA / "hazard" / "model_price_c4414dcb.json"
+
+# ── Prediction Layer — forward log paths (for hazard adoption non-null checks) ─
+FORWARD_LOG_PATHS: dict[str, Path] = {
+    "sector_cycles": DATA / "sector_cycles" / "forward_log.parquet",
+    "country_cycles": DATA / "country_cycles" / "forward_log.parquet",
+    "china_sector_cycles": DATA / "china_sector_cycles" / "forward_log.parquet",
+}
+
+# ── Coverage Matrix — sourced from committed dict (curated, audited 2026-07-06) ─
+# Columns: state_export / outcome_join / hazard_adoption / truth_badge / nw_export / live_grader
+# Values: yes / partial / no
+# Evidence comment cites the file path that was checked.
+# "curated check" = not machine-detectable; verified by manual inspection.
+COVERAGE_MATRIX: list[dict] = [
+    {
+        # cycle.html — built by scripts/build_cycle.py; reads forward_log + backfill;
+        # no engine.cycle_pattern imports found; no truth badge; no hazard columns shown;
+        # no NW lobe; no live grader.
+        "page": "cycle",
+        "label_en": "cycle.html",
+        "label_zh": "cycle.html",
+        "state_export": "no",          # evidence: templates/cycle.html.j2 — no state_monthly read
+        "state_export_hint": "none",
+        "outcome_join": "no",          # evidence: templates/cycle.html.j2 — no outcomes.parquet read
+        "outcome_join_hint": "none",
+        "hazard_adoption": "no",       # evidence: templates/cycle.html.j2 grep hazard_1m_p → 0 hits
+        "hazard_adoption_hint": "none",
+        "truth_badge": "no",           # curated check: no truth_badge token in template
+        "truth_badge_hint": "none",
+        "nw_export": "no",             # evidence: data/neuralweb/cycle_pattern_state.json not built (P6)
+        "nw_export_hint": "none",
+        "live_grader": "no",           # evidence: no grader wired in dag.yml for cycle page
+        "live_grader_hint": "none",
+    },
+    {
+        # sector_cycles.html — built by scripts/build_sector_cycles.py;
+        # reads forward_log.parquet (has hazard cols at 50.9% non-null);
+        # no state_monthly join; no truth badge; no hazard rendered in template;
+        # no NW export; no live grader.
+        "page": "sector_cycles",
+        "label_en": "sector_cycles.html",
+        "label_zh": "sector_cycles.html",
+        "state_export": "partial",     # evidence: data/sector_cycles/forward_log.parquet has hazard cols
+        "state_export_hint": "forward_log",
+        "outcome_join": "no",          # evidence: templates/sector_cycles.html.j2 — no outcomes read
+        "outcome_join_hint": "none",
+        "hazard_adoption": "no",       # curated check: templates/sector_cycles.html.j2 grep hazard_1m_p → 0 hits; field present in data but not rendered
+        "hazard_adoption_hint": "col-not-rendered",
+        "truth_badge": "no",           # curated check: no truth_badge in sector_cycles template
+        "truth_badge_hint": "none",
+        "nw_export": "no",             # evidence: cycle_pattern_state.json not built (P6)
+        "nw_export_hint": "none",
+        "live_grader": "no",           # evidence: no live grader in dag.yml for sector_cycles
+        "live_grader_hint": "none",
+    },
+    {
+        # country_cycles.html — analogous to sector_cycles; forward_log has hazard at 50% non-null;
+        # hazard cols present but not rendered in template.
+        "page": "country_cycles",
+        "label_en": "country_cycles.html",
+        "label_zh": "country_cycles.html",
+        "state_export": "partial",     # evidence: data/country_cycles/forward_log.parquet has hazard cols
+        "state_export_hint": "forward_log",
+        "outcome_join": "no",          # evidence: templates/country_cycles.html.j2 — no outcomes read
+        "outcome_join_hint": "none",
+        "hazard_adoption": "no",       # curated check: templates/country_cycles.html.j2 grep hazard_1m_p → 0 hits
+        "hazard_adoption_hint": "col-not-rendered",
+        "truth_badge": "no",           # curated check: no truth_badge in country_cycles template
+        "truth_badge_hint": "none",
+        "nw_export": "no",             # evidence: cycle_pattern_state.json not built (P6)
+        "nw_export_hint": "none",
+        "live_grader": "no",           # evidence: no live grader in dag.yml for country_cycles
+        "live_grader_hint": "none",
+    },
+    {
+        # markets.html — curated opinion page; no engine-backed hazard; no cycle_pattern reads;
+        # no state_monthly, no outcomes, no truth badge, no NW export, no grader.
+        "page": "markets",
+        "label_en": "markets.html",
+        "label_zh": "markets.html",
+        "state_export": "no",          # evidence: templates/markets.html.j2 — no state_monthly or forward_log import
+        "state_export_hint": "none",
+        "outcome_join": "no",          # evidence: templates/markets.html.j2 — no outcomes.parquet
+        "outcome_join_hint": "none",
+        "hazard_adoption": "no",       # evidence: templates/markets.html.j2 grep hazard → 0 cycle-hazard hits
+        "hazard_adoption_hint": "none",
+        "truth_badge": "no",           # curated check: no truth_badge in markets template
+        "truth_badge_hint": "none",
+        "nw_export": "no",             # evidence: cycle_pattern_state.json not built (P6)
+        "nw_export_hint": "none",
+        "live_grader": "no",           # evidence: no live grader wired for markets
+        "live_grader_hint": "none",
+    },
+    {
+        # sector_central.html — reads data/sector_central/calls.parquet; no cycle_pattern artifacts;
+        # no truth badge; no hazard; no NW export; no live grader.
+        "page": "sector_central",
+        "label_en": "sector_central.html",
+        "label_zh": "sector_central.html",
+        "state_export": "no",          # evidence: templates/sector_central.html.j2 — no state_monthly import
+        "state_export_hint": "none",
+        "outcome_join": "no",          # evidence: templates/sector_central.html.j2 — no outcomes read
+        "outcome_join_hint": "none",
+        "hazard_adoption": "no",       # curated check: templates/sector_central.html.j2 grep hazard_1m_p → 0 hits
+        "hazard_adoption_hint": "none",
+        "truth_badge": "no",           # curated check: no truth_badge in sector_central template
+        "truth_badge_hint": "none",
+        "nw_export": "no",             # evidence: cycle_pattern_state.json not built (P6)
+        "nw_export_hint": "none",
+        "live_grader": "no",           # evidence: no live grader wired for sector_central
+        "live_grader_hint": "none",
+    },
+    {
+        # sector_central_china.html — reads china central calls; no cycle_pattern artifacts;
+        # no truth badge; no hazard; no NW export; no live grader.
+        "page": "sector_central_china",
+        "label_en": "sector_central_china.html",
+        "label_zh": "sector_central_china.html",
+        "state_export": "no",          # evidence: templates/sector_central_china.html.j2 — no state_monthly import
+        "state_export_hint": "none",
+        "outcome_join": "no",          # evidence: templates/sector_central_china.html.j2 — no outcomes read
+        "outcome_join_hint": "none",
+        "hazard_adoption": "no",       # curated check: templates/sector_central_china.html.j2 grep hazard_1m_p → 0 hits
+        "hazard_adoption_hint": "none",
+        "truth_badge": "no",           # curated check: no truth_badge in sector_central_china template
+        "truth_badge_hint": "none",
+        "nw_export": "no",             # evidence: cycle_pattern_state.json not built (P6)
+        "nw_export_hint": "none",
+        "live_grader": "no",           # evidence: no live grader wired for china central
+        "live_grader_hint": "none",
+    },
+    {
+        # measurement.html — this page; reads truth_ledger (truths.jsonl), accrual_clocks,
+        # hazard model JSON (prediction layer); no state_monthly join; no outcome join;
+        # no NW export; no live grader slot.
+        "page": "measurement",
+        "label_en": "measurement.html",
+        "label_zh": "measurement.html",
+        "state_export": "partial",     # evidence: scripts/build_measurement.py reads forward_log.parquet for accrual clocks; no state_monthly join
+        "state_export_hint": "accrual-clocks",
+        "outcome_join": "no",          # evidence: scripts/build_measurement.py — outcomes.parquet not read
+        "outcome_join_hint": "none",
+        "hazard_adoption": "partial",  # evidence: scripts/build_measurement.py build_prediction_layer() reads hazard model JSON; rendered in prediction layer section
+        "hazard_adoption_hint": "model-json",
+        "truth_badge": "yes",          # evidence: templates/measurement.html.j2 — Pattern Memory section renders truth_ledger rows
+        "truth_badge_hint": "truth-ledger",
+        "nw_export": "no",             # evidence: cycle_pattern_state.json not built (P6)
+        "nw_export_hint": "none",
+        "live_grader": "no",           # evidence: no live grader wired; page is static build
+        "live_grader_hint": "none",
+    },
+]
+
 # ── Accrual clock ledger paths (five live ledgers) ─────────────────────────────
 ACCRUAL_LEDGERS: list[dict[str, Any]] = [
     {
@@ -394,6 +549,223 @@ def build_accrual_clocks() -> list[dict]:
             })
 
     return results
+
+
+def _hazard_non_null_rates() -> dict[str, float | None]:
+    """Return per-engine non-null fraction for hazard_1m_p in each forward log.
+
+    Used in build_prediction_layer() adoption gaps section.
+    Pure pyarrow; absent-safe (None if file missing or col absent).
+    """
+    rates: dict[str, float | None] = {}
+    for engine_key, path in FORWARD_LOG_PATHS.items():
+        if not path.exists():
+            rates[engine_key] = None
+            continue
+        try:
+            table = pq.read_table(path, columns=["hazard_1m_p"])
+            col = table.column("hazard_1m_p").to_pylist()
+            total = len(col)
+            if total == 0:
+                rates[engine_key] = None
+            else:
+                non_null = sum(1 for v in col if v is not None)
+                rates[engine_key] = round(non_null / total, 4)
+        except Exception as exc:
+            log.warning("hazard non-null check failed for %s: %s", engine_key, exc)
+            rates[engine_key] = None
+    return rates
+
+
+def build_prediction_layer() -> dict:
+    """Prediction Layer — hazard model ledger, freshness, and adoption gaps.
+
+    Returns a dict for embedding in window.MEASUREMENT.prediction_layer.
+    Absent-safe: if the model artifact is missing, returns {available: False}.
+    BC-2: no affirmative 'validated'/'已验证' in rendered copy.
+    """
+    if not HAZARD_MODEL_PATH.exists():
+        log.warning("Hazard model not found at %s — prediction layer unavailable", HAZARD_MODEL_PATH)
+        return {"available": False}
+
+    try:
+        raw = load_json(HAZARD_MODEL_PATH)
+    except Exception as exc:
+        log.warning("Failed to load hazard model: %s", exc)
+        return {"available": False}
+
+    # ── 6-cell ledger ─────────────────────────────────────────────────────────
+    ledger_raw = raw.get("ledger", {})
+    cells = []
+    for direction in ("up", "down"):
+        for horizon in ("1m", "3m", "6m"):
+            cell = ledger_raw.get(direction, {}).get(horizon, {})
+            skill = cell.get("skill_vs_km")
+            ci90 = cell.get("ci90", [])
+            delta_brier_str = f"{skill:+.4f}" if skill is not None else "—"
+            ci_str = (
+                f"[{ci90[0]:+.4f}, {ci90[1]:+.4f}]"
+                if len(ci90) == 2
+                else "—"
+            )
+            verdict = cell.get("verdict", "PRIOR")
+            cells.append({
+                "direction": direction,
+                "horizon": horizon,
+                "verdict": verdict,         # "PASS" or "PRIOR"
+                "delta_brier": skill,
+                "delta_brier_str": delta_brier_str,
+                "ci90": ci90,
+                "ci90_str": ci_str,
+                "ci_excludes_zero": cell.get("ci_excludes_zero", False),
+                "survives_bh_fdr": cell.get("survives_bh_fdr", False),
+                "n_oos": cell.get("n_oos"),
+                "n_months": cell.get("n_months"),
+            })
+
+    # ── Model freshness ────────────────────────────────────────────────────────
+    built_at = raw.get("built_at", "")
+    fit_date_str = built_at[:10] if built_at else "unknown"  # YYYY-MM-DD
+    revision_optimistic = bool(raw.get("revision_optimistic", False))
+
+    # Days since fit (vs today)
+    days_stale: int | None = None
+    try:
+        fit_date = date.fromisoformat(fit_date_str)
+        days_stale = (date.today() - fit_date).days
+    except Exception:
+        pass
+
+    # ── Adoption gaps ─────────────────────────────────────────────────────────
+    # Machine-detectable: hazard non-null rate per engine in forward logs
+    non_null_rates = _hazard_non_null_rates()
+
+    # Build per-engine adoption gap records
+    engine_adoption_gaps = []
+    ENGINE_LABELS_LOCAL = {
+        "sector_cycles": {"en": "US Sector Cycles", "zh": "美国板块周期"},
+        "country_cycles": {"en": "Country Cycles", "zh": "国家周期"},
+        "china_sector_cycles": {"en": "China Sector Cycles", "zh": "中国板块周期"},
+    }
+    for engine_key, rate in non_null_rates.items():
+        labels = ENGINE_LABELS_LOCAL.get(engine_key, {"en": engine_key, "zh": engine_key})
+        if rate is None:
+            note_en = "forward log absent or hazard column missing"
+            note_zh = "前向日志缺失或无风险列"
+            gap_type = "missing"
+        elif rate == 0.0:
+            note_en = "hazard_1m_p is 100% null — all historical rows pre-date W4.3 stamp fix"
+            note_zh = "hazard_1m_p 全为空值 — 所有历史行早于 W4.3 修复时间点"
+            gap_type = "all_null"
+        elif rate < 1.0:
+            pct = round(rate * 100, 1)
+            note_en = f"hazard_1m_p non-null in {pct}% of rows — pre-W4.3 rows are null"
+            note_zh = f"hazard_1m_p 在 {pct}% 行中非空 — W4.3 前的行为空值"
+            gap_type = "partial_null"
+        else:
+            note_en = "hazard_1m_p fully populated"
+            note_zh = "hazard_1m_p 全量填充"
+            gap_type = "none"
+
+        engine_adoption_gaps.append({
+            "engine": engine_key,
+            "label_en": labels["en"],
+            "label_zh": labels["zh"],
+            "produced_by": "engine/cycle_hazard/ stamp loop (W4.3)",
+            "consumed_by": "forward_log.parquet column (hazard_1m_p/3m/6m) — not yet rendered in any page template",
+            "non_null_rate": rate,
+            "gap_type": gap_type,
+            "note_en": note_en,
+            "note_zh": note_zh,
+            "detection": "machine",   # derived from parquet non-null count
+        })
+
+    # Curated (not machine-detectable) adoption gaps
+    # Evidence: grep for hazard_1m_p/hazard_3m_p across all templates returns 0 hits.
+    # The cycle hazard probabilities exist in forward_log.parquet columns and in the
+    # model artifact, but no template (cycle.html.j2, sector_cycles.html.j2, etc.)
+    # renders them to the user. This is the primary UI adoption gap.
+    curated_gaps = [
+        {
+            "gap_id": "UI-HZ-1",
+            "description_en": (
+                "Hazard probabilities (hazard_1m_p, hazard_3m_p, hazard_6m_p) are present in "
+                "forward_log.parquet for sector and country engines, but are rendered on zero "
+                "user-facing pages today. No template consumes now.hazard or any hazard_*_p column. "
+                "The 4/6 PASS cells exist only in data/hazard/model_price_c4414dcb.json."
+            ),
+            "description_zh": (
+                "风险概率（hazard_1m_p、hazard_3m_p、hazard_6m_p）已存在于板块与国家引擎的 "
+                "forward_log.parquet 中，但当前未被任何用户可见页面渲染。"
+                "没有任何模板读取 now.hazard 或任何 hazard_*_p 字段。"
+                "4/6 通过的单元格仅存在于 data/hazard/model_price_c4414dcb.json 中。"
+            ),
+            "produced_by": "engine/cycle_hazard/stamp loop → forward_log.parquet; data/hazard/model_price_c4414dcb.json",
+            "consumed_by": "nowhere — zero page templates",
+            "detection": "curated check",  # grep templates/ for hazard_1m_p → 0 hits (verified 2026-07-06)
+            "planned_phase": "P6",
+        },
+    ]
+
+    return {
+        "available": True,
+        "model_artifact": str(HAZARD_MODEL_PATH.relative_to(ROOT)),
+        "built_at": built_at,
+        "fit_date": fit_date_str,
+        "days_stale": days_stale,
+        "refit_cadence": "quarterly (per D5)",
+        "revision_optimistic": revision_optimistic,
+        "n_cells_pass": raw.get("n_cells_pass", 0),
+        "n_cells_total": 6,
+        "cells": cells,
+        "adoption_gaps": {
+            "by_engine": engine_adoption_gaps,
+            "curated": curated_gaps,
+        },
+    }
+
+
+def build_coverage_matrix() -> dict:
+    """Coverage Matrix — 7 scope pages × 6 capability columns.
+
+    Values are sourced from COVERAGE_MATRIX (a committed Python dict with a
+    comment per cell citing the evidence file path).  This is intentionally
+    hand-maintained until machine detection exists — marked 'curated, audited
+    2026-07-06'.
+
+    Returns a dict for embedding in window.MEASUREMENT.coverage_matrix.
+    """
+    columns = [
+        {"key": "state_export",    "label_en": "State export",    "label_zh": "状态导出"},
+        {"key": "outcome_join",    "label_en": "Outcome join",    "label_zh": "结果关联"},
+        {"key": "hazard_adoption", "label_en": "Hazard adoption", "label_zh": "风险采纳"},
+        {"key": "truth_badge",     "label_en": "Truth badge",     "label_zh": "真值徽章"},
+        {"key": "nw_export",       "label_en": "NW export",       "label_zh": "神经网络导出"},
+        {"key": "live_grader",     "label_en": "Live grader",     "label_zh": "实盘评分器"},
+    ]
+
+    rows = []
+    for spec in COVERAGE_MATRIX:
+        row = {
+            "page": spec["page"],
+            "label_en": spec["label_en"],
+            "label_zh": spec["label_zh"],
+            "cells": {},
+        }
+        for col in columns:
+            key = col["key"]
+            row["cells"][key] = {
+                "value": spec.get(key, "no"),
+                "hint": spec.get(f"{key}_hint", ""),
+            }
+        rows.append(row)
+
+    return {
+        "available": True,
+        "audit_note": "curated, audited 2026-07-06",
+        "columns": columns,
+        "rows": rows,
+    }
 
 
 def load_json(path: Path) -> dict | list:
@@ -820,6 +1192,23 @@ def run() -> None:
     accrual_clocks = build_accrual_clocks()
     log.info("Accrual clocks: %d ledgers loaded", len(accrual_clocks))
 
+    # 6e. Prediction Layer (Hub v2 completion)
+    prediction_layer = build_prediction_layer()
+    if prediction_layer.get("available"):
+        log.info(
+            "Prediction layer: %d cells, %d PASS, fit=%s, %s days stale",
+            prediction_layer.get("n_cells_total", 0),
+            prediction_layer.get("n_cells_pass", 0),
+            prediction_layer.get("fit_date", "?"),
+            prediction_layer.get("days_stale", "?"),
+        )
+    else:
+        log.warning("Prediction layer unavailable — hazard model artifact missing")
+
+    # 6f. Coverage Matrix (Hub v2 completion)
+    coverage_matrix = build_coverage_matrix()
+    log.info("Coverage matrix: %d page rows", len(coverage_matrix.get("rows", [])))
+
     # 7. Provenance
     provenance = build_provenance(engines)
 
@@ -838,6 +1227,9 @@ def run() -> None:
         # Hub v2 additions
         "truth_ledger": truth_ledger,
         "accrual_clocks": accrual_clocks,
+        # Hub v2 completion (P2)
+        "prediction_layer": prediction_layer,
+        "coverage_matrix": coverage_matrix,
         "consolidated_verdict": {
             "en": (
                 "Descriptive structure (confirmed turns, phase wheel, risk/vol clustering) has measurable substance. "
@@ -883,6 +1275,9 @@ def run() -> None:
         # Hub v2 additions
         truth_ledger=truth_ledger,
         accrual_clocks=accrual_clocks,
+        # Hub v2 completion (P2)
+        prediction_layer=prediction_layer,
+        coverage_matrix=coverage_matrix,
     )
     write_page(OUT_HTML, html, encoding="utf-8")
     log.info("Wrote %s (%d bytes)", OUT_HTML.relative_to(ROOT), len(html))

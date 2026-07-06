@@ -34,9 +34,13 @@ sys.path.insert(0, str(REPO))
 from engine.cycle_pattern.truths import active_truths, load_truths  # noqa: E402
 from scripts.build_measurement import (  # noqa: E402
     ACCRUAL_LEDGERS,
+    COVERAGE_MATRIX,
+    HAZARD_MODEL_PATH,
     TRUTHS_JSONL_PATH,
     _parse_date,
     build_accrual_clocks,
+    build_coverage_matrix,
+    build_prediction_layer,
     build_truth_ledger,
 )
 
@@ -377,3 +381,209 @@ def test_existing_js_payload_has_engines():
     assert "engines" in payload
     assert "gate_ledger" in payload
     assert isinstance(payload["engines"], list)
+
+
+# ---------------------------------------------------------------------------
+# 8. Prediction Layer — 6 hazard cells with verdicts matching model artifact
+# ---------------------------------------------------------------------------
+
+def test_prediction_layer_cells_match_model_artifact():
+    """JS payload prediction_layer has 6 cells with verdicts matching data/hazard/model_price_c4414dcb.json."""
+    if not HAZARD_MODEL_PATH.exists():
+        pytest.skip("Hazard model artifact not present — skipping prediction layer cell check")
+
+    import json as _json
+    with open(HAZARD_MODEL_PATH) as f:
+        model = _json.load(f)
+    ledger = model.get("ledger", {})
+
+    js = (REPO / "site" / "measurementdata" / "measurement_data.js").read_text(encoding="utf-8")
+    payload = _extract_payload(js)
+
+    assert "prediction_layer" in payload, "prediction_layer key missing from payload"
+    pl = payload["prediction_layer"]
+    assert pl.get("available") is True, "prediction_layer.available should be True"
+
+    cells = pl.get("cells", [])
+    assert len(cells) == 6, f"Expected 6 hazard cells, got {len(cells)}"
+
+    # Verify each cell's verdict matches the model artifact exactly
+    for direction in ("up", "down"):
+        for horizon in ("1m", "3m", "6m"):
+            model_verdict = ledger.get(direction, {}).get(horizon, {}).get("verdict")
+            js_cell = next(
+                (c for c in cells if c["direction"] == direction and c["horizon"] == horizon),
+                None,
+            )
+            assert js_cell is not None, f"Cell {direction}/{horizon} missing from payload"
+            assert js_cell["verdict"] == model_verdict, (
+                f"Cell {direction}/{horizon}: JS verdict={js_cell['verdict']} "
+                f"but model says {model_verdict}"
+            )
+
+
+def test_prediction_layer_absent_safe():
+    """build_prediction_layer() returns available=False when model artifact is missing."""
+    from scripts import build_measurement as bm
+    original_path = bm.HAZARD_MODEL_PATH
+    bm.HAZARD_MODEL_PATH = Path("/tmp/__nonexistent_hazard_model_abc123.json")
+    try:
+        result = bm.build_prediction_layer()
+    finally:
+        bm.HAZARD_MODEL_PATH = original_path
+
+    assert result["available"] is False, (
+        f"Expected available=False when model artifact missing, got: {result}"
+    )
+
+
+def test_prediction_layer_adoption_gaps_non_empty():
+    """Adoption gaps list is non-empty (at minimum the curated UI gap exists)."""
+    if not HAZARD_MODEL_PATH.exists():
+        pytest.skip("Hazard model artifact not present — skipping adoption gaps check")
+
+    result = build_prediction_layer()
+    assert result.get("available") is True
+
+    gaps = result.get("adoption_gaps", {})
+    by_engine = gaps.get("by_engine", [])
+    curated = gaps.get("curated", [])
+
+    assert len(by_engine) > 0, "by_engine adoption gaps must be non-empty"
+    assert len(curated) > 0, "curated adoption gaps must be non-empty"
+
+    # The canonical gap: China log is all-NaN
+    china_gap = next((g for g in by_engine if g["engine"] == "china_sector_cycles"), None)
+    assert china_gap is not None, "china_sector_cycles must have an adoption gap entry"
+    assert china_gap["gap_type"] == "all_null", (
+        f"China sector cycles hazard should be all_null, got {china_gap['gap_type']}"
+    )
+
+    # The curated UI gap must state 'zero' or 'nowhere' (no page renders hazard)
+    curated_text = curated[0].get("description_en", "").lower()
+    assert "zero" in curated_text or "nowhere" in curated_text, (
+        f"Curated UI gap description should mention zero/nowhere pages, got: {curated_text[:120]}"
+    )
+
+
+def test_prediction_layer_html_renders_sections():
+    """Rendered measurement.html contains prediction_layer and adoption gap markers."""
+    html = (REPO / "site" / "measurement.html").read_text(encoding="utf-8")
+    assert "pl-section" in html, "Prediction Layer section (id=pl-section) missing from HTML"
+    assert "Adoption Gaps" in html, "Adoption Gaps heading missing from HTML"
+    assert "curated check" in html, "'curated check' tag missing from prediction layer HTML"
+    assert "UI-HZ-1" in html, "UI-HZ-1 curated gap id missing from HTML"
+
+
+# ---------------------------------------------------------------------------
+# 9. Coverage Matrix — 7 rows, correct columns
+# ---------------------------------------------------------------------------
+
+def test_coverage_matrix_has_7_rows():
+    """Coverage matrix has exactly 7 page rows (the 7 scope pages)."""
+    result = build_coverage_matrix()
+    assert result.get("available") is True
+    rows = result.get("rows", [])
+    assert len(rows) == 7, f"Expected 7 coverage matrix rows, got {len(rows)}"
+
+    expected_pages = {
+        "cycle", "sector_cycles", "country_cycles", "markets",
+        "sector_central", "sector_central_china", "measurement",
+    }
+    actual_pages = {r["page"] for r in rows}
+    assert actual_pages == expected_pages, (
+        f"Coverage matrix pages mismatch. Expected {expected_pages}, got {actual_pages}"
+    )
+
+
+def test_coverage_matrix_columns():
+    """Coverage matrix has exactly the 6 required columns."""
+    result = build_coverage_matrix()
+    columns = [c["key"] for c in result.get("columns", [])]
+    expected = [
+        "state_export", "outcome_join", "hazard_adoption",
+        "truth_badge", "nw_export", "live_grader",
+    ]
+    assert columns == expected, f"Coverage matrix columns mismatch: {columns}"
+
+
+def test_coverage_matrix_cell_values_valid():
+    """All coverage matrix cell values are 'yes', 'partial', or 'no'."""
+    result = build_coverage_matrix()
+    valid = {"yes", "partial", "no"}
+    for row in result.get("rows", []):
+        for col_key, cell in row.get("cells", {}).items():
+            val = cell.get("value", "")
+            assert val in valid, (
+                f"Coverage matrix cell {row['page']}/{col_key} has invalid value: {val!r}"
+            )
+
+
+def test_coverage_matrix_measurement_has_truth_badge():
+    """measurement.html row has truth_badge=yes (the Pattern Memory section is there)."""
+    result = build_coverage_matrix()
+    meas_row = next((r for r in result.get("rows", []) if r["page"] == "measurement"), None)
+    assert meas_row is not None, "measurement row missing from coverage matrix"
+    assert meas_row["cells"]["truth_badge"]["value"] == "yes", (
+        "measurement.html should have truth_badge=yes (Pattern Memory section)"
+    )
+
+
+def test_coverage_matrix_in_js_payload():
+    """JS payload contains coverage_matrix with 7 rows."""
+    js = (REPO / "site" / "measurementdata" / "measurement_data.js").read_text(encoding="utf-8")
+    payload = _extract_payload(js)
+    assert "coverage_matrix" in payload, "coverage_matrix key missing from JS payload"
+    cm = payload["coverage_matrix"]
+    assert cm.get("available") is True
+    assert len(cm.get("rows", [])) == 7, (
+        f"Expected 7 coverage matrix rows in JS, got {len(cm.get('rows', []))}"
+    )
+
+
+def test_coverage_matrix_html_renders():
+    """Rendered measurement.html contains the Coverage Matrix section."""
+    html = (REPO / "site" / "measurement.html").read_text(encoding="utf-8")
+    assert "cm-section" in html, "Coverage Matrix section (id=cm-section) missing from HTML"
+    assert "Coverage Matrix" in html, "Coverage Matrix heading missing from HTML"
+    assert "curated, audited" in html, "Audit note missing from Coverage Matrix"
+
+
+# ---------------------------------------------------------------------------
+# 10. Absent-safe template render (both new sections)
+# ---------------------------------------------------------------------------
+
+def test_template_renders_absent_prediction_layer():
+    """Template renders absent-safe message when prediction_layer.available=False."""
+    from jinja2 import Environment, FileSystemLoader
+    templates_dir = REPO / "templates"
+    env = Environment(loader=FileSystemLoader(str(templates_dir)), autoescape=False)
+    try:
+        from engine import i18n
+        env.globals.update(td=i18n.td, tr=i18n.tr, t=i18n.t)
+    except Exception:
+        env.globals.update(td=lambda en: en, tr=lambda en: en, t=lambda en, zh="": en)
+
+    template = env.get_template("measurement.html.j2")
+    html = template.render(
+        page_title="Test",
+        engines=[],
+        gate_ledger=[],
+        accruing_experiments=[],
+        cone_recalibration={},
+        collinearity={},
+        sync_gauge={"available": False},
+        provenance={"epochs": {}, "fingerprint_consistent": True},
+        build_date=date.today().isoformat(),
+        generated_at="2026-07-06T00:00:00Z",
+        truth_ledger={"available": False},
+        accrual_clocks=[],
+        prediction_layer={"available": False},
+        coverage_matrix={"available": False, "rows": []},
+    )
+    assert "model_price_c4414dcb.json" in html, (
+        "Prediction Layer absent-safe message should mention the model artifact filename"
+    )
+    assert "not yet built" in html.lower() or "尚未构建" in html, (
+        "Absent-safe message missing for prediction_layer"
+    )

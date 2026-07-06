@@ -301,6 +301,66 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
 .ac-proj-future{color:var(--blue,#3b82f6)}
 .ac-proj-done{color:var(--up,#22c55e)}
 .ac-proj-none{color:var(--muted,#8899aa)}
+
+/* ── Hub v2: Prediction Layer ───────────────────────────────────────────── */
+.pl-unavail{padding:14px;border-radius:8px;
+  background:color-mix(in srgb,var(--muted) 10%,transparent);
+  border:1px solid var(--border,rgba(255,255,255,.06));
+  font-size:.85rem;color:var(--muted,#8899aa)}
+.pl-meta-row{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:20px;align-items:center}
+.pl-meta-chip{font-size:.75rem;padding:4px 10px;border-radius:5px;
+  border:1px solid var(--border,rgba(255,255,255,.1));color:var(--muted,#8899aa)}
+.pl-meta-chip strong{color:var(--text,#e2e8f0)}
+.pl-stale-note{font-size:.78rem;color:var(--muted,#8899aa);font-style:italic}
+.pl-revopt-warn{font-size:.78rem;color:var(--warn,#f59e0b);margin-left:4px}
+.pl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:28px}
+.pl-cell{border-radius:8px;padding:14px;border:1px solid var(--border,rgba(255,255,255,.08));
+  background:color-mix(in srgb,var(--surface,#0f1629) 60%,transparent)}
+.pl-cell-pass{border-color:color-mix(in srgb,var(--up,#22c55e) 30%,transparent);
+  background:color-mix(in srgb,var(--up,#22c55e) 5%,transparent)}
+.pl-cell-prior{border-color:color-mix(in srgb,var(--muted,#8899aa) 20%,transparent)}
+.pl-cell-dir{font-size:.68rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--muted,#8899aa);margin-bottom:4px}
+.pl-cell-horizon{font-size:.95rem;font-weight:800;color:var(--text,#e2e8f0);margin-bottom:8px}
+.pl-badge{display:inline-block;font-size:.72rem;font-weight:700;padding:3px 8px;
+  border-radius:4px;margin-bottom:8px}
+.pl-badge-pass{background:color-mix(in srgb,var(--up,#22c55e) 18%,transparent);
+  color:var(--up,#22c55e);border:1px solid color-mix(in srgb,var(--up) 30%,transparent)}
+.pl-badge-prior{background:color-mix(in srgb,var(--muted,#8899aa) 12%,transparent);
+  color:var(--muted,#8899aa);border:1px solid color-mix(in srgb,var(--muted) 25%,transparent)}
+.pl-cell-stat{font-size:.72rem;color:var(--muted,#8899aa);line-height:1.5}
+.pl-cell-stat strong{color:var(--text,#e2e8f0)}
+/* Adoption gaps */
+.pl-gaps-section{margin-top:8px}
+.pl-gaps-title{font-size:.75rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--muted,#8899aa);margin-bottom:12px}
+.pl-gap-list{list-style:none;padding:0;margin:0 0 20px;display:flex;flex-direction:column;gap:10px}
+.pl-gap-item{padding:12px 16px;border-radius:8px;border:1px solid var(--border,rgba(255,255,255,.07));
+  background:color-mix(in srgb,var(--warn,#f59e0b) 4%,transparent);font-size:.8rem}
+.pl-gap-item.pl-gap-allnull{background:color-mix(in srgb,var(--fail,#ef4444) 5%,transparent);
+  border-color:color-mix(in srgb,var(--fail,#ef4444) 20%,transparent)}
+.pl-gap-hd{font-weight:700;color:var(--text,#e2e8f0);margin-bottom:5px}
+.pl-gap-note{color:var(--muted,#8899aa);line-height:1.5}
+.pl-gap-meta{font-size:.7rem;color:var(--muted,#8899aa);margin-top:5px;font-family:monospace}
+.pl-gap-tag{display:inline-block;font-size:.65rem;padding:1px 6px;border-radius:3px;margin-left:6px;
+  background:color-mix(in srgb,var(--muted) 12%,transparent);color:var(--muted,#8899aa)}
+
+/* ── Hub v2: Coverage Matrix ────────────────────────────────────────────── */
+.cm-note{font-size:.82rem;color:var(--muted,#8899aa);max-width:720px;margin:0 0 16px;line-height:1.6}
+.cm-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%}
+.cm-table{width:100%;min-width:700px;border-collapse:collapse;font-size:.8rem}
+.cm-table th{text-align:left;padding:8px 12px;font-size:.7rem;font-weight:700;
+  color:var(--muted,#8899aa);border-bottom:1px solid var(--border,rgba(255,255,255,.08));
+  text-transform:uppercase;letter-spacing:.06em}
+.cm-table td{padding:9px 12px;border-bottom:1px solid var(--border,rgba(255,255,255,.04));
+  color:var(--text,#e2e8f0);vertical-align:middle;line-height:1.4}
+.cm-table tr:last-child td{border-bottom:none}
+.cm-page{font-size:.8rem;font-weight:600;color:var(--text,#e2e8f0);font-family:monospace}
+.cm-yes{font-weight:700;color:var(--up,#22c55e)}
+.cm-partial{font-weight:700;color:var(--warn,#f59e0b)}
+.cm-no{color:var(--muted,#8899aa);font-size:.75rem}
+.cm-hint{font-size:.65rem;color:var(--muted,#8899aa);display:block;margin-top:2px;font-family:monospace}
+.cm-audit{font-size:.72rem;color:var(--muted,#8899aa);font-style:italic;margin-top:8px}
 </style>
 </head>
 <body>
@@ -1024,6 +1084,199 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
       </tbody>
     </table>
     </div>{# end .ac-table-wrap #}
+  </section>
+  {% endif %}
+
+  {# ── PREDICTION LAYER (Hub v2 completion) ───────────────────────────── #}
+  <section class="mh-section" id="pl-section">
+    <div class="mh-sh">
+      <h2><span class="l-en">Prediction Layer — Hazard Model</span><span class="l-zh">预测层 — 风险模型</span></h2>
+      <span class="mh-sh-sub"><span class="l-en">6-cell turn hazard ledger (W4.2) · model freshness · adoption gaps</span><span class="l-zh">6格拐点风险台账（W4.2）· 模型新鲜度 · 采用差距</span></span>
+    </div>
+    <p style="font-size:.82rem;color:var(--muted,#8899aa);max-width:700px;margin:0 0 16px;line-height:1.6">
+      <span class="l-en">The hazard model scores each cycle entity's probability of a turn within 1/3/6 months.
+      Per-cell criterion: OOS Brier(model) &lt; Brier(KM baseline), 90% CI excludes zero, BH-FDR q=0.10.
+      Failing cells ship the KM prior — no model output, no invented confidence.
+      Quad-conditioned cells are revision-optimistic (macro vintage fix pending, P-D5-1).</span>
+      <span class="l-zh">风险模型评估每个周期实体在1/3/6个月内发生拐点的概率。
+      单格标准：OOS Brier（模型）&lt; Brier（KM基准），90% CI不含零，BH-FDR q=0.10。
+      未通过的格子使用KM先验——无模型输出，无捏造的置信度。
+      四象限条件格子处于修正乐观状态（宏观数据时间点修复待处理，P-D5-1）。</span>
+    </p>
+
+    {% if prediction_layer and prediction_layer.get('available') %}
+
+    {# Freshness bar #}
+    <div class="pl-meta-row">
+      <div class="pl-meta-chip">
+        <span class="l-en"><strong>Fit date:</strong> {{ prediction_layer.fit_date }}</span>
+        <span class="l-zh"><strong>拟合日期：</strong>{{ prediction_layer.fit_date }}</span>
+      </div>
+      <div class="pl-meta-chip">
+        <span class="l-en"><strong>Days since fit:</strong> {{ prediction_layer.days_stale if prediction_layer.days_stale is not none else '—' }}</span>
+        <span class="l-zh"><strong>距拟合天数：</strong>{{ prediction_layer.days_stale if prediction_layer.days_stale is not none else '—' }}</span>
+      </div>
+      <div class="pl-meta-chip">
+        <span class="l-en"><strong>Refit cadence:</strong> {{ prediction_layer.refit_cadence }}</span>
+        <span class="l-zh"><strong>重拟节奏：</strong>{{ prediction_layer.refit_cadence }}</span>
+      </div>
+      <div class="pl-meta-chip">
+        <span class="l-en"><strong>Cells PASS / total:</strong> {{ prediction_layer.n_cells_pass }} / {{ prediction_layer.n_cells_total }}</span>
+        <span class="l-zh"><strong>通过格 / 总格：</strong>{{ prediction_layer.n_cells_pass }} / {{ prediction_layer.n_cells_total }}</span>
+      </div>
+      {% if prediction_layer.revision_optimistic %}
+      <span class="pl-revopt-warn">
+        <span class="l-en">⚠ Quad cells revision-optimistic — macro vintage wiring pending (P-D5-1)</span>
+        <span class="l-zh">⚠ 四象限格子修正乐观 — 宏观数据时间点接入待处理（P-D5-1）</span>
+      </span>
+      {% endif %}
+    </div>
+
+    {# 6-cell ledger grid #}
+    <div class="pl-grid">
+      {% for cell in prediction_layer.get('cells', []) %}
+      <div class="pl-cell {% if cell.verdict == 'PASS' %}pl-cell-pass{% else %}pl-cell-prior{% endif %}">
+        <div class="pl-cell-dir">
+          {% if cell.direction == 'up' %}<span class="l-en">Peak / Up turn</span><span class="l-zh">顶部 / 向上拐</span>
+          {% else %}<span class="l-en">Trough / Down turn</span><span class="l-zh">底部 / 向下拐</span>{% endif %}
+        </div>
+        <div class="pl-cell-horizon">{{ cell.horizon }}</div>
+        <div>
+          <span class="pl-badge {% if cell.verdict == 'PASS' %}pl-badge-pass{% else %}pl-badge-prior{% endif %}">
+            {{ cell.verdict }}
+          </span>
+        </div>
+        <div class="pl-cell-stat">
+          <span class="l-en">
+            <strong>ΔBrier:</strong> {{ cell.delta_brier_str }}<br>
+            <strong>CI 90%:</strong> {{ cell.ci90_str }}<br>
+            {% if cell.n_oos %}<strong>n OOS:</strong> {{ cell.n_oos }}<br>{% endif %}
+          </span>
+          <span class="l-zh">
+            <strong>ΔBrier：</strong>{{ cell.delta_brier_str }}<br>
+            <strong>CI 90%：</strong>{{ cell.ci90_str }}<br>
+            {% if cell.n_oos %}<strong>OOS样本：</strong>{{ cell.n_oos }}<br>{% endif %}
+          </span>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    {# Adoption Gaps #}
+    <div class="pl-gaps-section">
+      <div class="pl-gaps-title">
+        <span class="l-en">Adoption Gaps</span><span class="l-zh">采用差距</span>
+      </div>
+      <p style="font-size:.8rem;color:var(--muted,#8899aa);margin:0 0 12px;line-height:1.5">
+        <span class="l-en">Where each artifact is produced vs consumed. Machine-detectable gaps are derived from parquet non-null counts.
+        Gaps marked "curated check" were verified by manual inspection and are not machine-detectable.</span>
+        <span class="l-zh">每个文物的生产地与消费地。机器可检测的差距源自 parquet 非空计数。
+        标注"人工核查"的差距经人工审核，无法由机器自动检测。</span>
+      </p>
+
+      {# Per-engine machine-detectable gaps #}
+      <ul class="pl-gap-list">
+        {% for gap in prediction_layer.adoption_gaps.get('by_engine', []) %}
+        <li class="pl-gap-item {% if gap.gap_type == 'all_null' %}pl-gap-allnull{% endif %}">
+          <div class="pl-gap-hd">
+            <span class="l-en">{{ gap.label_en }}</span><span class="l-zh">{{ gap.label_zh }}</span>
+            <span class="pl-gap-tag">machine</span>
+          </div>
+          <div class="pl-gap-note">
+            <span class="l-en">{{ gap.note_en }}</span><span class="l-zh">{{ gap.note_zh }}</span>
+          </div>
+          <div class="pl-gap-meta">
+            <span class="l-en">Produced: {{ gap.produced_by }}<br>Consumed: {{ gap.consumed_by }}</span>
+            <span class="l-zh">生产：{{ gap.produced_by }}<br>消费：{{ gap.consumed_by }}</span>
+          </div>
+        </li>
+        {% endfor %}
+
+        {# Curated gaps #}
+        {% for gap in prediction_layer.adoption_gaps.get('curated', []) %}
+        <li class="pl-gap-item">
+          <div class="pl-gap-hd">
+            <span class="l-en">{{ gap.gap_id }} — UI Adoption</span><span class="l-zh">{{ gap.gap_id }} — 界面采用</span>
+            <span class="pl-gap-tag">curated check</span>
+          </div>
+          <div class="pl-gap-note">
+            <span class="l-en">{{ gap.description_en }}</span>
+            <span class="l-zh">{{ gap.description_zh }}</span>
+          </div>
+          <div class="pl-gap-meta">
+            <span class="l-en">Produced: {{ gap.produced_by }}<br>Consumed: {{ gap.consumed_by }}<br>Planned: {{ gap.planned_phase }}</span>
+            <span class="l-zh">生产：{{ gap.produced_by }}<br>消费：{{ gap.consumed_by }}<br>计划阶段：{{ gap.planned_phase }}</span>
+          </div>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    {% else %}
+    <div class="pl-unavail">
+      <span class="l-en">Prediction Layer not yet built — <code>data/hazard/model_price_c4414dcb.json</code> is absent.</span>
+      <span class="l-zh">预测层尚未构建 — <code>data/hazard/model_price_c4414dcb.json</code> 文件不存在。</span>
+    </div>
+    {% endif %}
+  </section>
+
+  {# ── COVERAGE MATRIX (Hub v2 completion) ────────────────────────────── #}
+  {% if coverage_matrix and coverage_matrix.get('available') %}
+  <section class="mh-section" id="cm-section">
+    <div class="mh-sh">
+      <h2><span class="l-en">Coverage Matrix</span><span class="l-zh">覆盖矩阵</span></h2>
+      <span class="mh-sh-sub"><span class="l-en">7 scope pages × 6 capability columns — {{ coverage_matrix.audit_note }}</span><span class="l-zh">7个范围页面 × 6个能力列 — {{ coverage_matrix.audit_note }}</span></span>
+    </div>
+    <p class="cm-note">
+      <span class="l-en">Each cell shows whether the page currently uses this capability: <strong class="cm-yes">yes</strong> / <strong class="cm-partial">partial</strong> / <span class="cm-no">no</span>.
+      Values are sourced from a committed Python dict in <code>scripts/build_measurement.py</code> with a comment per cell citing the evidence file.
+      This matrix is hand-maintained until machine detection exists — it is honest about what exists today, not a roadmap.</span>
+      <span class="l-zh">每格显示该页面是否当前使用此能力：<strong class="cm-yes">是</strong> / <strong class="cm-partial">部分</strong> / <span class="cm-no">否</span>。
+      值来源于 <code>scripts/build_measurement.py</code> 中已提交的 Python 字典，每格附有引用证据文件的注释。
+      该矩阵为人工维护，直至机器检测可用——仅反映当前实际情况，非路线图。</span>
+    </p>
+    <div class="cm-wrap">
+    <table class="cm-table">
+      <thead>
+        <tr>
+          <th><span class="l-en">Page</span><span class="l-zh">页面</span></th>
+          {% for col in coverage_matrix.get('columns', []) %}
+          <th>
+            <span class="l-en">{{ col.label_en }}</span><span class="l-zh">{{ col.label_zh }}</span>
+          </th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in coverage_matrix.get('rows', []) %}
+        <tr>
+          <td><span class="cm-page">{{ row.label_en }}</span></td>
+          {% for col in coverage_matrix.get('columns', []) %}
+          {% set cell = row.cells.get(col.key, {}) %}
+          {% set val = cell.get('value', 'no') %}
+          {% set hint = cell.get('hint', '') %}
+          <td>
+            {% if val == 'yes' %}
+            <span class="cm-yes">yes</span>
+            {% elif val == 'partial' %}
+            <span class="cm-partial">partial</span>
+            {% else %}
+            <span class="cm-no">no</span>
+            {% endif %}
+            {% if hint and hint != 'none' %}
+            <span class="cm-hint">{{ hint }}</span>
+            {% endif %}
+          </td>
+          {% endfor %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    </div>{# end .cm-wrap #}
+    <div class="cm-audit">
+      <span class="l-en">Source: <code>COVERAGE_MATRIX</code> dict in <code>scripts/build_measurement.py</code> — {{ coverage_matrix.audit_note }}. Each cell cites the evidence file in a Python comment.</span>
+      <span class="l-zh">来源：<code>scripts/build_measurement.py</code> 中的 <code>COVERAGE_MATRIX</code> 字典 — {{ coverage_matrix.audit_note }}。每格在 Python 注释中引用了证据文件。</span>
+    </div>
   </section>
   {% endif %}
 

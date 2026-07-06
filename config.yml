@@ -5509,5 +5509,6 @@ cycle_pattern_intelligence:
   state_monthly_path: "data/cycle_pattern/state_monthly.parquet"
   state_monthly_meta_path: "data/cycle_pattern/state_monthly_meta.json"
   outcomes_path: "data/cycle_pattern/outcomes.parquet"  # label-side outcome spine (engine/cycle_pattern/outcomes.py)
+  state_daily_live_path: "data/cycle_pattern/state_daily_live.parquet"  # nightly union of forward logs (scripts/build_cycle_pattern_live.py)
   hazard_epoch: "price_c4414dcb"                 # feature source epoch joined into state
   embargo_holdout_start: "2024-01-01"            # rows dated after this are permanently embargoed (holdout)

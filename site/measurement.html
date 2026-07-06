@@ -296,6 +296,66 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
 .ac-proj-future{color:var(--blue,#3b82f6)}
 .ac-proj-done{color:var(--up,#22c55e)}
 .ac-proj-none{color:var(--muted,#8899aa)}
+
+/* ── Hub v2: Prediction Layer ───────────────────────────────────────────── */
+.pl-unavail{padding:14px;border-radius:8px;
+  background:color-mix(in srgb,var(--muted) 10%,transparent);
+  border:1px solid var(--border,rgba(255,255,255,.06));
+  font-size:.85rem;color:var(--muted,#8899aa)}
+.pl-meta-row{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:20px;align-items:center}
+.pl-meta-chip{font-size:.75rem;padding:4px 10px;border-radius:5px;
+  border:1px solid var(--border,rgba(255,255,255,.1));color:var(--muted,#8899aa)}
+.pl-meta-chip strong{color:var(--text,#e2e8f0)}
+.pl-stale-note{font-size:.78rem;color:var(--muted,#8899aa);font-style:italic}
+.pl-revopt-warn{font-size:.78rem;color:var(--warn,#f59e0b);margin-left:4px}
+.pl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:28px}
+.pl-cell{border-radius:8px;padding:14px;border:1px solid var(--border,rgba(255,255,255,.08));
+  background:color-mix(in srgb,var(--surface,#0f1629) 60%,transparent)}
+.pl-cell-pass{border-color:color-mix(in srgb,var(--up,#22c55e) 30%,transparent);
+  background:color-mix(in srgb,var(--up,#22c55e) 5%,transparent)}
+.pl-cell-prior{border-color:color-mix(in srgb,var(--muted,#8899aa) 20%,transparent)}
+.pl-cell-dir{font-size:.68rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--muted,#8899aa);margin-bottom:4px}
+.pl-cell-horizon{font-size:.95rem;font-weight:800;color:var(--text,#e2e8f0);margin-bottom:8px}
+.pl-badge{display:inline-block;font-size:.72rem;font-weight:700;padding:3px 8px;
+  border-radius:4px;margin-bottom:8px}
+.pl-badge-pass{background:color-mix(in srgb,var(--up,#22c55e) 18%,transparent);
+  color:var(--up,#22c55e);border:1px solid color-mix(in srgb,var(--up) 30%,transparent)}
+.pl-badge-prior{background:color-mix(in srgb,var(--muted,#8899aa) 12%,transparent);
+  color:var(--muted,#8899aa);border:1px solid color-mix(in srgb,var(--muted) 25%,transparent)}
+.pl-cell-stat{font-size:.72rem;color:var(--muted,#8899aa);line-height:1.5}
+.pl-cell-stat strong{color:var(--text,#e2e8f0)}
+/* Adoption gaps */
+.pl-gaps-section{margin-top:8px}
+.pl-gaps-title{font-size:.75rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--muted,#8899aa);margin-bottom:12px}
+.pl-gap-list{list-style:none;padding:0;margin:0 0 20px;display:flex;flex-direction:column;gap:10px}
+.pl-gap-item{padding:12px 16px;border-radius:8px;border:1px solid var(--border,rgba(255,255,255,.07));
+  background:color-mix(in srgb,var(--warn,#f59e0b) 4%,transparent);font-size:.8rem}
+.pl-gap-item.pl-gap-allnull{background:color-mix(in srgb,var(--fail,#ef4444) 5%,transparent);
+  border-color:color-mix(in srgb,var(--fail,#ef4444) 20%,transparent)}
+.pl-gap-hd{font-weight:700;color:var(--text,#e2e8f0);margin-bottom:5px}
+.pl-gap-note{color:var(--muted,#8899aa);line-height:1.5}
+.pl-gap-meta{font-size:.7rem;color:var(--muted,#8899aa);margin-top:5px;font-family:monospace}
+.pl-gap-tag{display:inline-block;font-size:.65rem;padding:1px 6px;border-radius:3px;margin-left:6px;
+  background:color-mix(in srgb,var(--muted) 12%,transparent);color:var(--muted,#8899aa)}
+
+/* ── Hub v2: Coverage Matrix ────────────────────────────────────────────── */
+.cm-note{font-size:.82rem;color:var(--muted,#8899aa);max-width:720px;margin:0 0 16px;line-height:1.6}
+.cm-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%}
+.cm-table{width:100%;min-width:700px;border-collapse:collapse;font-size:.8rem}
+.cm-table th{text-align:left;padding:8px 12px;font-size:.7rem;font-weight:700;
+  color:var(--muted,#8899aa);border-bottom:1px solid var(--border,rgba(255,255,255,.08));
+  text-transform:uppercase;letter-spacing:.06em}
+.cm-table td{padding:9px 12px;border-bottom:1px solid var(--border,rgba(255,255,255,.04));
+  color:var(--text,#e2e8f0);vertical-align:middle;line-height:1.4}
+.cm-table tr:last-child td{border-bottom:none}
+.cm-page{font-size:.8rem;font-weight:600;color:var(--text,#e2e8f0);font-family:monospace}
+.cm-yes{font-weight:700;color:var(--up,#22c55e)}
+.cm-partial{font-weight:700;color:var(--warn,#f59e0b)}
+.cm-no{color:var(--muted,#8899aa);font-size:.75rem}
+.cm-hint{font-size:.65rem;color:var(--muted,#8899aa);display:block;margin-top:2px;font-family:monospace}
+.cm-audit{font-size:.72rem;color:var(--muted,#8899aa);font-style:italic;margin-top:8px}
 </style>
 </head>
 <body>
@@ -3007,6 +3067,812 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
   
 
   
+  <section class="mh-section" id="pl-section">
+    <div class="mh-sh">
+      <h2><span class="l-en">Prediction Layer — Hazard Model</span><span class="l-zh">预测层 — 风险模型</span></h2>
+      <span class="mh-sh-sub"><span class="l-en">6-cell turn hazard ledger (W4.2) · model freshness · adoption gaps</span><span class="l-zh">6格拐点风险台账（W4.2）· 模型新鲜度 · 采用差距</span></span>
+    </div>
+    <p style="font-size:.82rem;color:var(--muted,#8899aa);max-width:700px;margin:0 0 16px;line-height:1.6">
+      <span class="l-en">The hazard model scores each cycle entity's probability of a turn within 1/3/6 months.
+      Per-cell criterion: OOS Brier(model) &lt; Brier(KM baseline), 90% CI excludes zero, BH-FDR q=0.10.
+      Failing cells ship the KM prior — no model output, no invented confidence.
+      Quad-conditioned cells are revision-optimistic (macro vintage fix pending, P-D5-1).</span>
+      <span class="l-zh">风险模型评估每个周期实体在1/3/6个月内发生拐点的概率。
+      单格标准：OOS Brier（模型）&lt; Brier（KM基准），90% CI不含零，BH-FDR q=0.10。
+      未通过的格子使用KM先验——无模型输出，无捏造的置信度。
+      四象限条件格子处于修正乐观状态（宏观数据时间点修复待处理，P-D5-1）。</span>
+    </p>
+
+    
+
+    
+    <div class="pl-meta-row">
+      <div class="pl-meta-chip">
+        <span class="l-en"><strong>Fit date:</strong> 2026-07-03</span>
+        <span class="l-zh"><strong>拟合日期：</strong>2026-07-03</span>
+      </div>
+      <div class="pl-meta-chip">
+        <span class="l-en"><strong>Days since fit:</strong> 3</span>
+        <span class="l-zh"><strong>距拟合天数：</strong>3</span>
+      </div>
+      <div class="pl-meta-chip">
+        <span class="l-en"><strong>Refit cadence:</strong> quarterly (per D5)</span>
+        <span class="l-zh"><strong>重拟节奏：</strong>quarterly (per D5)</span>
+      </div>
+      <div class="pl-meta-chip">
+        <span class="l-en"><strong>Cells PASS / total:</strong> 4 / 6</span>
+        <span class="l-zh"><strong>通过格 / 总格：</strong>4 / 6</span>
+      </div>
+      
+      <span class="pl-revopt-warn">
+        <span class="l-en">⚠ Quad cells revision-optimistic — macro vintage wiring pending (P-D5-1)</span>
+        <span class="l-zh">⚠ 四象限格子修正乐观 — 宏观数据时间点接入待处理（P-D5-1）</span>
+      </span>
+      
+    </div>
+
+    
+    <div class="pl-grid">
+      
+      <div class="pl-cell pl-cell-pass">
+        <div class="pl-cell-dir">
+          <span class="l-en">Peak / Up turn</span><span class="l-zh">顶部 / 向上拐</span>
+          
+        </div>
+        <div class="pl-cell-horizon">1m</div>
+        <div>
+          <span class="pl-badge pl-badge-pass">
+            PASS
+          </span>
+        </div>
+        <div class="pl-cell-stat">
+          <span class="l-en">
+            <strong>ΔBrier:</strong> +0.0140<br>
+            <strong>CI 90%:</strong> [+0.0068, +0.0209]<br>
+            <strong>n OOS:</strong> 9246<br>
+          </span>
+          <span class="l-zh">
+            <strong>ΔBrier：</strong>+0.0140<br>
+            <strong>CI 90%：</strong>[+0.0068, +0.0209]<br>
+            <strong>OOS样本：</strong>9246<br>
+          </span>
+        </div>
+      </div>
+      
+      <div class="pl-cell pl-cell-prior">
+        <div class="pl-cell-dir">
+          <span class="l-en">Peak / Up turn</span><span class="l-zh">顶部 / 向上拐</span>
+          
+        </div>
+        <div class="pl-cell-horizon">3m</div>
+        <div>
+          <span class="pl-badge pl-badge-prior">
+            PRIOR
+          </span>
+        </div>
+        <div class="pl-cell-stat">
+          <span class="l-en">
+            <strong>ΔBrier:</strong> +0.0071<br>
+            <strong>CI 90%:</strong> [-0.0003, +0.0143]<br>
+            <strong>n OOS:</strong> 9246<br>
+          </span>
+          <span class="l-zh">
+            <strong>ΔBrier：</strong>+0.0071<br>
+            <strong>CI 90%：</strong>[-0.0003, +0.0143]<br>
+            <strong>OOS样本：</strong>9246<br>
+          </span>
+        </div>
+      </div>
+      
+      <div class="pl-cell pl-cell-prior">
+        <div class="pl-cell-dir">
+          <span class="l-en">Peak / Up turn</span><span class="l-zh">顶部 / 向上拐</span>
+          
+        </div>
+        <div class="pl-cell-horizon">6m</div>
+        <div>
+          <span class="pl-badge pl-badge-prior">
+            PRIOR
+          </span>
+        </div>
+        <div class="pl-cell-stat">
+          <span class="l-en">
+            <strong>ΔBrier:</strong> +0.0002<br>
+            <strong>CI 90%:</strong> [-0.0057, +0.0062]<br>
+            <strong>n OOS:</strong> 9246<br>
+          </span>
+          <span class="l-zh">
+            <strong>ΔBrier：</strong>+0.0002<br>
+            <strong>CI 90%：</strong>[-0.0057, +0.0062]<br>
+            <strong>OOS样本：</strong>9246<br>
+          </span>
+        </div>
+      </div>
+      
+      <div class="pl-cell pl-cell-pass">
+        <div class="pl-cell-dir">
+          <span class="l-en">Trough / Down turn</span><span class="l-zh">底部 / 向下拐</span>
+        </div>
+        <div class="pl-cell-horizon">1m</div>
+        <div>
+          <span class="pl-badge pl-badge-pass">
+            PASS
+          </span>
+        </div>
+        <div class="pl-cell-stat">
+          <span class="l-en">
+            <strong>ΔBrier:</strong> +0.0141<br>
+            <strong>CI 90%:</strong> [+0.0034, +0.0247]<br>
+            <strong>n OOS:</strong> 3744<br>
+          </span>
+          <span class="l-zh">
+            <strong>ΔBrier：</strong>+0.0141<br>
+            <strong>CI 90%：</strong>[+0.0034, +0.0247]<br>
+            <strong>OOS样本：</strong>3744<br>
+          </span>
+        </div>
+      </div>
+      
+      <div class="pl-cell pl-cell-pass">
+        <div class="pl-cell-dir">
+          <span class="l-en">Trough / Down turn</span><span class="l-zh">底部 / 向下拐</span>
+        </div>
+        <div class="pl-cell-horizon">3m</div>
+        <div>
+          <span class="pl-badge pl-badge-pass">
+            PASS
+          </span>
+        </div>
+        <div class="pl-cell-stat">
+          <span class="l-en">
+            <strong>ΔBrier:</strong> +0.0078<br>
+            <strong>CI 90%:</strong> [+0.0005, +0.0155]<br>
+            <strong>n OOS:</strong> 3744<br>
+          </span>
+          <span class="l-zh">
+            <strong>ΔBrier：</strong>+0.0078<br>
+            <strong>CI 90%：</strong>[+0.0005, +0.0155]<br>
+            <strong>OOS样本：</strong>3744<br>
+          </span>
+        </div>
+      </div>
+      
+      <div class="pl-cell pl-cell-pass">
+        <div class="pl-cell-dir">
+          <span class="l-en">Trough / Down turn</span><span class="l-zh">底部 / 向下拐</span>
+        </div>
+        <div class="pl-cell-horizon">6m</div>
+        <div>
+          <span class="pl-badge pl-badge-pass">
+            PASS
+          </span>
+        </div>
+        <div class="pl-cell-stat">
+          <span class="l-en">
+            <strong>ΔBrier:</strong> +0.0042<br>
+            <strong>CI 90%:</strong> [+0.0005, +0.0079]<br>
+            <strong>n OOS:</strong> 3744<br>
+          </span>
+          <span class="l-zh">
+            <strong>ΔBrier：</strong>+0.0042<br>
+            <strong>CI 90%：</strong>[+0.0005, +0.0079]<br>
+            <strong>OOS样本：</strong>3744<br>
+          </span>
+        </div>
+      </div>
+      
+    </div>
+
+    
+    <div class="pl-gaps-section">
+      <div class="pl-gaps-title">
+        <span class="l-en">Adoption Gaps</span><span class="l-zh">采用差距</span>
+      </div>
+      <p style="font-size:.8rem;color:var(--muted,#8899aa);margin:0 0 12px;line-height:1.5">
+        <span class="l-en">Where each artifact is produced vs consumed. Machine-detectable gaps are derived from parquet non-null counts.
+        Gaps marked "curated check" were verified by manual inspection and are not machine-detectable.</span>
+        <span class="l-zh">每个文物的生产地与消费地。机器可检测的差距源自 parquet 非空计数。
+        标注"人工核查"的差距经人工审核，无法由机器自动检测。</span>
+      </p>
+
+      
+      <ul class="pl-gap-list">
+        
+        <li class="pl-gap-item ">
+          <div class="pl-gap-hd">
+            <span class="l-en">US Sector Cycles</span><span class="l-zh">美国板块周期</span>
+            <span class="pl-gap-tag">machine</span>
+          </div>
+          <div class="pl-gap-note">
+            <span class="l-en">hazard_1m_p non-null in 50.9% of rows — pre-W4.3 rows are null</span><span class="l-zh">hazard_1m_p 在 50.9% 行中非空 — W4.3 前的行为空值</span>
+          </div>
+          <div class="pl-gap-meta">
+            <span class="l-en">Produced: engine/cycle_hazard/ stamp loop (W4.3)<br>Consumed: forward_log.parquet column (hazard_1m_p/3m/6m) — not yet rendered in any page template</span>
+            <span class="l-zh">生产：engine/cycle_hazard/ stamp loop (W4.3)<br>消费：forward_log.parquet column (hazard_1m_p/3m/6m) — not yet rendered in any page template</span>
+          </div>
+        </li>
+        
+        <li class="pl-gap-item ">
+          <div class="pl-gap-hd">
+            <span class="l-en">Country Cycles</span><span class="l-zh">国家周期</span>
+            <span class="pl-gap-tag">machine</span>
+          </div>
+          <div class="pl-gap-note">
+            <span class="l-en">hazard_1m_p non-null in 50.0% of rows — pre-W4.3 rows are null</span><span class="l-zh">hazard_1m_p 在 50.0% 行中非空 — W4.3 前的行为空值</span>
+          </div>
+          <div class="pl-gap-meta">
+            <span class="l-en">Produced: engine/cycle_hazard/ stamp loop (W4.3)<br>Consumed: forward_log.parquet column (hazard_1m_p/3m/6m) — not yet rendered in any page template</span>
+            <span class="l-zh">生产：engine/cycle_hazard/ stamp loop (W4.3)<br>消费：forward_log.parquet column (hazard_1m_p/3m/6m) — not yet rendered in any page template</span>
+          </div>
+        </li>
+        
+        <li class="pl-gap-item pl-gap-allnull">
+          <div class="pl-gap-hd">
+            <span class="l-en">China Sector Cycles</span><span class="l-zh">中国板块周期</span>
+            <span class="pl-gap-tag">machine</span>
+          </div>
+          <div class="pl-gap-note">
+            <span class="l-en">hazard_1m_p is 100% null — all historical rows pre-date W4.3 stamp fix</span><span class="l-zh">hazard_1m_p 全为空值 — 所有历史行早于 W4.3 修复时间点</span>
+          </div>
+          <div class="pl-gap-meta">
+            <span class="l-en">Produced: engine/cycle_hazard/ stamp loop (W4.3)<br>Consumed: forward_log.parquet column (hazard_1m_p/3m/6m) — not yet rendered in any page template</span>
+            <span class="l-zh">生产：engine/cycle_hazard/ stamp loop (W4.3)<br>消费：forward_log.parquet column (hazard_1m_p/3m/6m) — not yet rendered in any page template</span>
+          </div>
+        </li>
+        
+
+        
+        
+        <li class="pl-gap-item">
+          <div class="pl-gap-hd">
+            <span class="l-en">UI-HZ-1 — UI Adoption</span><span class="l-zh">UI-HZ-1 — 界面采用</span>
+            <span class="pl-gap-tag">curated check</span>
+          </div>
+          <div class="pl-gap-note">
+            <span class="l-en">Hazard probabilities (hazard_1m_p, hazard_3m_p, hazard_6m_p) are present in forward_log.parquet for sector and country engines, but are rendered on zero user-facing pages today. No template consumes now.hazard or any hazard_*_p column. The 4/6 PASS cells exist only in data/hazard/model_price_c4414dcb.json.</span>
+            <span class="l-zh">风险概率（hazard_1m_p、hazard_3m_p、hazard_6m_p）已存在于板块与国家引擎的 forward_log.parquet 中，但当前未被任何用户可见页面渲染。没有任何模板读取 now.hazard 或任何 hazard_*_p 字段。4/6 通过的单元格仅存在于 data/hazard/model_price_c4414dcb.json 中。</span>
+          </div>
+          <div class="pl-gap-meta">
+            <span class="l-en">Produced: engine/cycle_hazard/stamp loop → forward_log.parquet; data/hazard/model_price_c4414dcb.json<br>Consumed: nowhere — zero page templates<br>Planned: P6</span>
+            <span class="l-zh">生产：engine/cycle_hazard/stamp loop → forward_log.parquet; data/hazard/model_price_c4414dcb.json<br>消费：nowhere — zero page templates<br>计划阶段：P6</span>
+          </div>
+        </li>
+        
+      </ul>
+    </div>
+
+    
+  </section>
+
+  
+  
+  <section class="mh-section" id="cm-section">
+    <div class="mh-sh">
+      <h2><span class="l-en">Coverage Matrix</span><span class="l-zh">覆盖矩阵</span></h2>
+      <span class="mh-sh-sub"><span class="l-en">7 scope pages × 6 capability columns — curated, audited 2026-07-06</span><span class="l-zh">7个范围页面 × 6个能力列 — curated, audited 2026-07-06</span></span>
+    </div>
+    <p class="cm-note">
+      <span class="l-en">Each cell shows whether the page currently uses this capability: <strong class="cm-yes">yes</strong> / <strong class="cm-partial">partial</strong> / <span class="cm-no">no</span>.
+      Values are sourced from a committed Python dict in <code>scripts/build_measurement.py</code> with a comment per cell citing the evidence file.
+      This matrix is hand-maintained until machine detection exists — it is honest about what exists today, not a roadmap.</span>
+      <span class="l-zh">每格显示该页面是否当前使用此能力：<strong class="cm-yes">是</strong> / <strong class="cm-partial">部分</strong> / <span class="cm-no">否</span>。
+      值来源于 <code>scripts/build_measurement.py</code> 中已提交的 Python 字典，每格附有引用证据文件的注释。
+      该矩阵为人工维护，直至机器检测可用——仅反映当前实际情况，非路线图。</span>
+    </p>
+    <div class="cm-wrap">
+    <table class="cm-table">
+      <thead>
+        <tr>
+          <th><span class="l-en">Page</span><span class="l-zh">页面</span></th>
+          
+          <th>
+            <span class="l-en">State export</span><span class="l-zh">状态导出</span>
+          </th>
+          
+          <th>
+            <span class="l-en">Outcome join</span><span class="l-zh">结果关联</span>
+          </th>
+          
+          <th>
+            <span class="l-en">Hazard adoption</span><span class="l-zh">风险采纳</span>
+          </th>
+          
+          <th>
+            <span class="l-en">Truth badge</span><span class="l-zh">真值徽章</span>
+          </th>
+          
+          <th>
+            <span class="l-en">NW export</span><span class="l-zh">神经网络导出</span>
+          </th>
+          
+          <th>
+            <span class="l-en">Live grader</span><span class="l-zh">实盘评分器</span>
+          </th>
+          
+        </tr>
+      </thead>
+      <tbody>
+        
+        <tr>
+          <td><span class="cm-page">cycle.html</span></td>
+          
+          
+          
+          
+          <td>
+            
+            <span class="cm-no">no</span>
+            
+            
+          </td>
+          
+          
+          
+          
+          <td>
+            
+            <span class="cm-no">no</span>
+            
+            
+          </td>
+          
+          
+          
+          
+          <td>
+            
+            <span class="cm-no">no</span>
+            
+            
+          </td>
+          
+          
+          
+          
+          <td>
+            
+            <span class="cm-no">no</span>
+            
+            
+          </td>
+          
+          
+          
+          
+          <td>
+            
+            <span class="cm-no">no</span>
+            
+            
+          </td>
+          
+          
+          
+          
+          <td>
+            
+            <span class="cm-no">no</span>
+            
+            
+          </td>
+          
+        </tr>
+        
+        <tr>
+          <td><span class="cm-page">sector_cycles.html</span></td>
+          
+          
+          
+          
+          <td>
+            
+            <span class="cm-partial">partial</span>
+            
+            
+            <span class="cm-hint">forward_log</span>
+            
+          </td>
+          
+          
+          
+          
+          <td>
+            
+            <span class="cm-no">no</span>
+            
+            
+          </td>
+          
+          
+          
+          
+          <td>
+            
+            <span class="cm-no">no</span>
+            
+            
+            <span class="cm-hint">col-not-rendered</span>
+            
+          </td>
+          
+          
+          
+          
+          <td>
+            
+            <span class="cm-no">no</span>
+            
+            
+          </td>
+          
+          
+          
+          
+          <td>
+            
+            <span class="cm-no">no</span>
+            
+            
+          </td>
+          
+          
+          
+          
+          <td>
+            
+            <span class="cm-no">no</span>
+            
+            
+          </td>
+          
+        </tr>
+        
+        <tr>
+          <td><span class="cm-page">country_cycles.html</span></td>
+          
+          
+          
+          
+          <td>
+            
+            <span class="cm-partial">partial</span>
+            
+            
+            <span class="cm-hint">forward_log</span>
+            
+          </td>
+          
+          
+          
+          
+          <td>
+            
+            <span class="cm-no">no</span>
+            
+            
+          </td>
+          
+          
+          
+          
+          <td>
+            
+            <span class="cm-no">no</span>
+            
+            
+            <span class="cm-hint">col-not-rendered</span>
+            
+          </td>
+          
+          
+          
+          
+          <td>
+            
+            <span class="cm-no">no</span>
+            
+            
+          </td>
+          
+          
+          
+          
+          <td>
+            
+            <span class="cm-no">no</span>
+            
+            
+          </td>
+          
+          
+          
+          
+          <td>
+            
+            <span class="cm-no">no</span>
+            
+            
+          </td>
+          
+        </tr>
+        
+        <tr>
+          <td><span class="cm-page">markets.html</span></td>
+          
+          
+          
+          
+          <td>
+            
+            <span class="cm-no">no</span>
+            
+            
+          </td>
+          
+          
+          
+          
+          <td>
+            
+            <span class="cm-no">no</span>
+            
+            
+          </td>
+          
+          
+          
+          
+          <td>
+            
+            <span class="cm-no">no</span>
+            
+            
+          </td>
+          
+          
+          
+          
+          <td>
+            
+            <span class="cm-no">no</span>
+            
+            
+          </td>
+          
+          
+          
+          
+          <td>
+            
+            <span class="cm-no">no</span>
+            
+            
+          </td>
+          
+          
+          
+          
+          <td>
+            
+            <span class="cm-no">no</span>
+            
+            
+          </td>
+          
+        </tr>
+        
+        <tr>
+          <td><span class="cm-page">sector_central.html</span></td>
+          
+          
+          
+          
+          <td>
+            
+            <span class="cm-no">no</span>
+            
+            
+          </td>
+          
+          
+          
+          
+          <td>
+            
+            <span class="cm-no">no</span>
+            
+            
+          </td>
+          
+          
+          
+          
+          <td>
+            
+            <span class="cm-no">no</span>
+            
+            
+          </td>
+          
+          
+          
+          
+          <td>
+            
+            <span class="cm-no">no</span>
+            
+            
+          </td>
+          
+          
+          
+          
+          <td>
+            
+            <span class="cm-no">no</span>
+            
+            
+          </td>
+          
+          
+          
+          
+          <td>
+            
+            <span class="cm-no">no</span>
+            
+            
+          </td>
+          
+        </tr>
+        
+        <tr>
+          <td><span class="cm-page">sector_central_china.html</span></td>
+          
+          
+          
+          
+          <td>
+            
+            <span class="cm-no">no</span>
+            
+            
+          </td>
+          
+          
+          
+          
+          <td>
+            
+            <span class="cm-no">no</span>
+            
+            
+          </td>
+          
+          
+          
+          
+          <td>
+            
+            <span class="cm-no">no</span>
+            
+            
+          </td>
+          
+          
+          
+          
+          <td>
+            
+            <span class="cm-no">no</span>
+            
+            
+          </td>
+          
+          
+          
+          
+          <td>
+            
+            <span class="cm-no">no</span>
+            
+            
+          </td>
+          
+          
+          
+          
+          <td>
+            
+            <span class="cm-no">no</span>
+            
+            
+          </td>
+          
+        </tr>
+        
+        <tr>
+          <td><span class="cm-page">measurement.html</span></td>
+          
+          
+          
+          
+          <td>
+            
+            <span class="cm-partial">partial</span>
+            
+            
+            <span class="cm-hint">accrual-clocks</span>
+            
+          </td>
+          
+          
+          
+          
+          <td>
+            
+            <span class="cm-no">no</span>
+            
+            
+          </td>
+          
+          
+          
+          
+          <td>
+            
+            <span class="cm-partial">partial</span>
+            
+            
+            <span class="cm-hint">model-json</span>
+            
+          </td>
+          
+          
+          
+          
+          <td>
+            
+            <span class="cm-yes">yes</span>
+            
+            
+            <span class="cm-hint">truth-ledger</span>
+            
+          </td>
+          
+          
+          
+          
+          <td>
+            
+            <span class="cm-no">no</span>
+            
+            
+          </td>
+          
+          
+          
+          
+          <td>
+            
+            <span class="cm-no">no</span>
+            
+            
+          </td>
+          
+        </tr>
+        
+      </tbody>
+    </table>
+    </div>
+    <div class="cm-audit">
+      <span class="l-en">Source: <code>COVERAGE_MATRIX</code> dict in <code>scripts/build_measurement.py</code> — curated, audited 2026-07-06. Each cell cites the evidence file in a Python comment.</span>
+      <span class="l-zh">来源：<code>scripts/build_measurement.py</code> 中的 <code>COVERAGE_MATRIX</code> 字典 — curated, audited 2026-07-06。每格在 Python 注释中引用了证据文件。</span>
+    </div>
+  </section>
+  
+
+  
   <div class="mh-provenance">
     <div class="mh-prov-title"><span class="l-en">Provenance</span><span class="l-zh">来源溯源</span></div>
     <div class="mh-prov-grid">
@@ -3016,7 +3882,7 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
       </dl>
       <dl class="mh-prov-cell">
         <dt><span class="l-en">Generated at (UTC)</span><span class="l-zh">生成时间（UTC）</span></dt>
-        <dd>2026-07-06T11:08:17.102365Z</dd>
+        <dd>2026-07-06T11:49:58.959292Z</dd>
       </dl>
       
       <dl class="mh-prov-cell">

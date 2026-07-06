@@ -5374,3 +5374,33 @@ artifacts:
       state at each calendar date. Sources: data/regime/latest.json,
       data/market_state/latest.json, fear-greed parquet. Feeds CPI calibration
       context alignment; all sources absent-safe.
+
+  cycle-pattern-state-daily-live:
+    path: data/cycle_pattern/state_daily_live.parquet
+    format: parquet
+    producer: scripts/build_cycle_pattern_live.py
+    known_extra_writers: []
+    owner_program: cycle-intelligence
+    cadence: daily-engine
+    storage: git
+    asof_field: date
+    freshness_sla_hours: 30
+    schema: cycle_pattern.state_daily_live.v0
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      CPI live adapter — nightly union of the three forward logs
+      (sector_cycles, country_cycles, china_sector_cycles) mapped to the
+      entity registry (entity_id, family added). Full deterministic rebuild
+      each run; forward logs are the append-only source of truth.
+      Columns: entity_id, native_id, family, date, kind, name, engine,
+      source_artifact, phase, pos, osc_slope, signal, timing_state,
+      above200d, rs_63d, proj_next/central/lo/hi, pos_v2, phase_v2,
+      stance, divergence, overdue, basis, hazard_1m/3m/6m_p+src,
+      unmapped_id. Unmapped ids kept (entity_id=None, unmapped_id=True)
+      with WARNING; never silently dropped. Built after all three cycle
+      builders so today's stamps are present before the view rebuilds.
