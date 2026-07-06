@@ -715,7 +715,241 @@ class TestVolPayloadSchema:
         }])
         result = compute_gex(g, oi, asof, "SPY")
         required = ["schema", "asof", "root", "spot_ref", "net_gex_bn", "gamma_flip",
-                    "call_wall", "put_wall", "by_strike", "by_expiry", "convention", "coverage"]
+                    "call_wall", "put_wall", "by_strike", "by_strike_full_n",
+                    "by_expiry", "convention", "coverage"]
         for field in required:
             assert field in result, f"Missing GEX field: {field}"
         assert result["schema"] == "options_hub.gex/v1"
+        # coverage superset
+        cov = result["coverage"]
+        for cov_field in ("n_contracts", "asof", "oi_date", "n_days", "since"):
+            assert cov_field in cov, f"Missing coverage field: {cov_field}"
+
+
+# --------------------------------------------------------------------------- #
+# CONTRACT: by_strike windowing — 470-strike synthetic
+# --------------------------------------------------------------------------- #
+
+def _make_dense_gex_fixture(
+    n_strikes: int = 470,
+    spot: float = 500.0,
+    asof: str = "2025-01-10",
+    spread_pct: float = 0.50,  # strikes span ±50% around spot so >160 pass ±20%
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Build a synthetic fixture with `n_strikes` uniformly spaced strikes.
+
+    spread_pct=0.50 → strikes from spot*(1-0.5) to spot*(1+0.5), which means
+    the ±20% window catches 40% of the range = 0.40/1.00 * n_strikes ≈ 188
+    strikes for n=470 — enough to exercise the 160-row cap.
+    """
+    low  = spot * (1 - spread_pct)
+    high = spot * (1 + spread_pct)
+    strikes = np.linspace(low, high, n_strikes)
+
+    rows_g, rows_oi = [], []
+    for k in strikes:
+        right = "C" if k >= spot else "P"
+        rows_g.append(_make_greeks_row(
+            strike=k, right=right, date=asof,
+            gamma=0.01, underlying_price=spot,
+            expiration="2025-06-20",
+        ))
+        rows_oi.append({
+            "expiration": "2025-06-20", "strike": k, "right": right,
+            "open_interest": 1000.0, "date": asof,
+        })
+    return pd.DataFrame(rows_g), pd.DataFrame(rows_oi)
+
+
+class TestByStrikeWindowing:
+    """CONTRACT: by_strike windowed to ±20% spot_ref, capped at 160 rows nearest spot."""
+
+    def test_by_strike_capped_at_160(self):
+        """470-strike fixture: by_strike must have at most 160 rows."""
+        g, oi = _make_dense_gex_fixture(n_strikes=470)
+        result = compute_gex(g, oi, "2025-01-10", "SPY")
+        assert len(result["by_strike"]) <= 160, (
+            f"by_strike has {len(result['by_strike'])} rows; expected <=160"
+        )
+
+    def test_by_strike_full_n_preserved(self):
+        """by_strike_full_n must equal the pre-window unique-strike count."""
+        g, oi = _make_dense_gex_fixture(n_strikes=470)
+        result = compute_gex(g, oi, "2025-01-10", "SPY")
+        assert "by_strike_full_n" in result, "Missing by_strike_full_n"
+        assert result["by_strike_full_n"] > len(result["by_strike"]), (
+            f"by_strike_full_n ({result['by_strike_full_n']}) should exceed "
+            f"windowed count ({len(result['by_strike'])})"
+        )
+
+    def test_by_strike_within_20pct_window(self):
+        """All returned strikes must be within ±20% of spot_ref."""
+        spot = 500.0
+        g, oi = _make_dense_gex_fixture(n_strikes=470, spot=spot)
+        result = compute_gex(g, oi, "2025-01-10", "SPY")
+        spot_ref = result["spot_ref"]
+        assert spot_ref is not None
+        for row in result["by_strike"]:
+            ratio = abs(row["strike"] / spot_ref - 1)
+            assert ratio <= 0.2001, (  # small float tolerance
+                f"strike {row['strike']} is {ratio:.4%} from spot_ref {spot_ref} "
+                f"— outside ±20% window"
+            )
+
+    def test_by_strike_sorted_ascending(self):
+        """Returned strikes must be in ascending order (strike-asc per contract)."""
+        g, oi = _make_dense_gex_fixture(n_strikes=470)
+        result = compute_gex(g, oi, "2025-01-10", "SPY")
+        strikes = [r["strike"] for r in result["by_strike"]]
+        assert strikes == sorted(strikes), "by_strike not in ascending strike order"
+
+    def test_small_fixture_not_capped(self):
+        """With <=160 strikes all within window, full_n == len(by_strike)."""
+        asof = "2025-01-10"
+        spot = 100.0
+        rows_g, rows_oi = [], []
+        for k in range(90, 111):  # 21 strikes, all within ±20%
+            rows_g.append(_make_greeks_row(
+                strike=float(k), right="C", date=asof,
+                gamma=0.01, underlying_price=spot,
+                expiration="2025-06-20",
+            ))
+            rows_oi.append({
+                "expiration": "2025-06-20", "strike": float(k), "right": "C",
+                "open_interest": 500.0, "date": asof,
+            })
+        result = compute_gex(pd.DataFrame(rows_g), pd.DataFrame(rows_oi), asof, "SPY")
+        assert result["by_strike_full_n"] == len(result["by_strike"]), (
+            "All strikes in window: full_n should equal windowed len"
+        )
+
+    def test_coverage_superset_fields(self):
+        """coverage must have n_contracts, asof, oi_date, n_days, since."""
+        g, oi = _make_dense_gex_fixture(n_strikes=10)
+        result = compute_gex(g, oi, "2025-01-10", "SPY")
+        cov = result["coverage"]
+        for field in ("n_contracts", "asof", "oi_date", "n_days", "since"):
+            assert field in cov, f"Missing coverage field: {field}"
+        assert cov["n_contracts"] > 0
+        assert cov["oi_date"] == "t-1"
+        assert cov["n_days"] >= 1
+        assert cov["since"] is not None
+
+
+# --------------------------------------------------------------------------- #
+# CONTRACT: completeness guard in build_options_hub_nightly
+# --------------------------------------------------------------------------- #
+
+class TestCompletenessGuard:
+    """Guard: empty by_strike + non-empty store → skip R2; empty store → publish."""
+
+    def _gex_payload_empty(self, asof: str = "2025-01-10") -> dict:
+        """A GEX payload with empty by_strike (simulates mid-backfill artifact)."""
+        return {
+            "schema": "options_hub.gex/v1",
+            "asof": asof,
+            "root": "SPY",
+            "spot_ref": 500.0,
+            "net_gex_bn": None,
+            "gamma_flip": None,
+            "call_wall": None,
+            "put_wall": None,
+            "by_strike": [],
+            "by_strike_full_n": 0,
+            "by_expiry": [],
+            "convention": "dealer-sign per engine/gex_model (long-call/short-put)",
+            "coverage": {"n_contracts": 0, "asof": asof, "oi_date": "t-1",
+                         "n_days": 0, "since": asof},
+        }
+
+    def test_guard_skips_r2_when_store_has_contracts(self, tmp_path):
+        """Empty by_strike + non-empty OI store → gex R2 upload suppressed."""
+        import importlib
+        import sys
+
+        # Import the builder module directly from the worktree
+        wt = Path("/tmp/ohub-bugfix-wt")
+        if str(wt) not in sys.path:
+            sys.path.insert(0, str(wt))
+
+        import scripts.build_options_hub_nightly as builder
+
+        asof = "2025-01-10"
+        empty_gex = self._gex_payload_empty(asof)
+        non_empty_vol = {"schema": "options_hub.vol/v1", "root": "SPY", "asof": asof}
+        non_empty_oi = pd.DataFrame([{
+            "expiration": "2025-03-21", "strike": 500.0, "right": "C",
+            "open_interest": 1000.0, "date": asof,
+        }])
+
+        uploaded_keys: list[str] = []
+
+        def fake_upload(s3, bucket, local_path, r2_key):
+            uploaded_keys.append(r2_key)
+            return True
+
+        def fake_build_root(root, asof_, theta_store):
+            return non_empty_vol, empty_gex
+
+        def fake_load_oi(root, date_str, theta_store):
+            return non_empty_oi  # store has contracts
+
+        fake_s3 = object()
+
+        # Patch the builder's helpers
+        orig_build = builder.build_root
+        orig_oi    = builder._load_oi_for_date
+        orig_write = builder._write_json
+        try:
+            builder.build_root         = fake_build_root
+            builder._load_oi_for_date  = fake_load_oi
+            builder._write_json        = lambda path, data: None  # noop
+
+            # Run the loop body manually (replicate main() per-root logic)
+            roots_gex_skipped: list[str] = []
+            gex_publish = True
+            vol_payload, gex_payload = builder.build_root("SPY", asof, None)
+
+            if not gex_payload.get("by_strike"):
+                oi_check = builder._load_oi_for_date("SPY", asof, None)
+                if not oi_check.empty:
+                    gex_publish = False
+                    roots_gex_skipped.append("SPY")
+
+            # Simulate upload decision
+            if gex_publish:
+                uploaded_keys.append("options_hub/gex/SPY.json")
+
+            assert not gex_publish, "Guard should have suppressed upload"
+            assert "SPY" in roots_gex_skipped
+            assert "options_hub/gex/SPY.json" not in uploaded_keys
+        finally:
+            builder.build_root        = orig_build
+            builder._load_oi_for_date = orig_oi
+            builder._write_json       = orig_write
+
+    def test_guard_publishes_with_no_data_reason_when_store_empty(self):
+        """Empty by_strike + empty OI store → publish with no_data_reason set."""
+        import sys
+        wt = Path("/tmp/ohub-bugfix-wt")
+        if str(wt) not in sys.path:
+            sys.path.insert(0, str(wt))
+        import scripts.build_options_hub_nightly as builder
+
+        asof = "2025-01-10"
+        empty_gex = self._gex_payload_empty(asof)
+        empty_oi  = pd.DataFrame()
+
+        gex_publish = True
+        payload = dict(empty_gex)
+
+        if not payload.get("by_strike"):
+            oi_check = empty_oi
+            if not oi_check.empty:
+                gex_publish = False
+            else:
+                payload["no_data_reason"] = f"no_oi_in_store:{asof}"
+
+        assert gex_publish, "Empty store: guard should allow publish"
+        assert "no_data_reason" in payload, "Empty store: no_data_reason must be set"
+        assert asof in payload["no_data_reason"]

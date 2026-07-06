@@ -509,6 +509,22 @@ def compute_gex(
     call_wall: float | None = float(above.loc[above["gamma_net"].idxmax(), "K"]) if not above.empty else None
     put_wall: float | None  = float(below.loc[below["gamma_net"].idxmin(), "K"]) if not below.empty else None
 
+    # ── by_strike windowing (CONTRACT: ±20% of spot_ref, cap 160 nearest spot) ──
+    by_strike_full_n = int(len(by_k))  # pre-window row count preserved in payload
+
+    # Window: keep only strikes within ±20% of spot
+    by_k_win = by_k[((by_k["K"] / spot - 1).abs() <= 0.20)].copy()
+
+    # Cap at 160 rows nearest to spot (sort by distance, take 160, restore strike-asc)
+    if len(by_k_win) > 160:
+        by_k_win = (
+            by_k_win
+            .assign(_dist=(by_k_win["K"] - spot).abs())
+            .nsmallest(160, "_dist")
+            .drop(columns=["_dist"])
+            .sort_values("K")
+        )
+
     by_strike_rows = [
         {
             "strike": _f(row.K),
@@ -519,7 +535,7 @@ def compute_gex(
             "vanna_net": _f(row.vanna_net / 1e6, 4),
             "charm_net": _f(row.charm_net / 1e6, 4),
         }
-        for row in by_k.itertuples()
+        for row in by_k_win.itertuples()
     ]
 
     # ── by expiry ─────────────────────────────────────────────────────────────
@@ -538,10 +554,15 @@ def compute_gex(
     ]
     by_expiry_rows.sort(key=lambda r: r["exp"])
 
+    # ── coverage superset (CONTRACT: {n_contracts, asof, oi_date, n_days, since}) ─
+    # n_days / since derived from the greeks dates represented in this compute call.
+    greeks_dates = sorted(g["date"].unique()) if "date" in g.columns else []
     coverage = {
         "n_contracts": int(len(g)),
         "asof": asof,
         "oi_date": "t-1",  # OI is always t-1 per OI timing law
+        "n_days": len(greeks_dates),
+        "since": greeks_dates[0] if greeks_dates else asof,
     }
 
     return {
@@ -554,6 +575,7 @@ def compute_gex(
         "call_wall": _f(call_wall),
         "put_wall": _f(put_wall),
         "by_strike": by_strike_rows,
+        "by_strike_full_n": by_strike_full_n,
         "by_expiry": by_expiry_rows,
         "convention": "dealer-sign per engine/gex_model (long-call/short-put)",
         "coverage": coverage,
