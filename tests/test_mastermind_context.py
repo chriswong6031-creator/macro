@@ -793,3 +793,140 @@ class TestHelpers:
         assert payload["generated_utc"] == "2026-07-05T12:00:00Z", (
             "generated_utc must remain the build time stamp"
         )
+
+
+# ---------------------------------------------------------------------------
+# 11. claim_reliability lobe (W-B bridge key, RUL-C2/C3/C10)
+# ---------------------------------------------------------------------------
+
+def _minimal_track_record(tmp_path: Path) -> Path:
+    """Write a minimal site/qledger/track_record.json fixture."""
+    (tmp_path / "site" / "qledger").mkdir(parents=True, exist_ok=True)
+    obj = {
+        "generated_at": "2026-07-05",
+        "grade_horizons": [5],
+        "by_desk": {
+            "altdata": {
+                "5": {
+                    "n_obs": 94,
+                    "hit_rate": 0.56383,
+                    "wilson_ci_low": 0.463027,
+                    "state": "ACCRUING",
+                }
+            },
+            "radar": {
+                "5": {
+                    "n_obs": 1014,
+                    "hit_rate": 0.540434,
+                    "wilson_ci_low": 0.509664,
+                    "state": "ACCRUING",
+                }
+            },
+        },
+        "by_family": {
+            "altdata": {
+                "5": {
+                    "n_obs": 94,
+                    "hit_rate": 0.56383,
+                    "wilson_ci_low": 0.463027,
+                    "state": "ACCRUING",
+                }
+            },
+        },
+    }
+    p = tmp_path / "site" / "qledger" / "track_record.json"
+    p.write_text(json.dumps(obj))
+    return p
+
+
+class TestClaimReliabilityLobe:
+    """Tests for the claim_reliability bridge lobe key (W-B, RUL-C2/C3/C10)."""
+
+    def test_claim_reliability_standing_law_present(self, tmp_path):
+        """claim_reliability lobe must carry standing_law string (mirrors reliability test)."""
+        _build_minimal_tree(tmp_path)
+        _minimal_track_record(tmp_path)
+        payload = build_context(root=tmp_path, now=_NOW)
+        cr = payload["lobes"].get("claim_reliability", {})
+        assert "standing_law" in cr, "claim_reliability lobe missing standing_law"
+        assert len(cr["standing_law"]) > 20, "standing_law string too short"
+        # Must mention 5d-only and ACCRUING (key spec requirements)
+        law = cr["standing_law"]
+        assert "5d" in law or "5-day" in law or "5d-only" in law, (
+            "standing_law must reference 5d horizon"
+        )
+        assert "ACCRUING" in law or "accruing" in law.lower(), (
+            "standing_law must reference ACCRUING state"
+        )
+
+    def test_claim_reliability_expected_subfields(self, tmp_path):
+        """claim_reliability lobe must have desks, top_families, standing_law, as_of."""
+        _build_minimal_tree(tmp_path)
+        _minimal_track_record(tmp_path)
+        payload = build_context(root=tmp_path, now=_NOW)
+        cr = payload["lobes"].get("claim_reliability")
+        assert cr is not None, "claim_reliability lobe missing from payload"
+        assert "desks" in cr, "claim_reliability missing 'desks'"
+        assert "top_families" in cr, "claim_reliability missing 'top_families'"
+        assert "standing_law" in cr, "claim_reliability missing 'standing_law'"
+        assert "as_of" in cr, "claim_reliability missing 'as_of'"
+        # Each desk entry must have horizon_d=5
+        for desk_name, desk_entry in cr["desks"].items():
+            assert desk_entry.get("horizon_d") == 5, (
+                f"desk {desk_name!r} missing horizon_d=5"
+            )
+        # Spot-check altdata desk values from fixture
+        altdata = cr["desks"].get("altdata", {})
+        assert altdata.get("hit_rate") == pytest.approx(0.56383, rel=1e-4), (
+            "altdata hit_rate mismatch"
+        )
+        assert altdata.get("n") == 94, "altdata n mismatch"
+        assert altdata.get("state") == "ACCRUING", "altdata state mismatch"
+
+    def test_claim_reliability_track_record_absent_fail_open(self, tmp_path):
+        """When track_record.json is absent, lobe should produce a gap_note, not raise."""
+        _build_minimal_tree(tmp_path)
+        # Deliberately do NOT write track_record.json
+        payload = build_context(root=tmp_path, now=_NOW)
+        gap_str = " ".join(payload["gap_notes"])
+        assert "claim_reliability" in gap_str or "track_record" in gap_str, (
+            f"Expected claim_reliability/track_record gap note; got: {payload['gap_notes']}"
+        )
+        # Lobe key must still be present (even if empty)
+        assert "claim_reliability" in payload["lobes"], (
+            "claim_reliability key must be present even when track_record absent"
+        )
+
+    def test_claim_reliability_claim_accountability_absent_is_gap_note_not_failure(
+        self, tmp_path
+    ):
+        """When claim_accountability.json is absent (sibling PR-B not yet merged),
+        lobe succeeds with a gap note on the lobe but does not fail."""
+        _build_minimal_tree(tmp_path)
+        _minimal_track_record(tmp_path)
+        # Do NOT write data/governance/claim_accountability.json
+        payload = build_context(root=tmp_path, now=_NOW)
+        cr = payload["lobes"].get("claim_reliability", {})
+        # Lobe must still have its core fields
+        assert "desks" in cr, "desks missing when accountability absent"
+        assert "standing_law" in cr, "standing_law missing when accountability absent"
+        # accountability_gap note must appear on the lobe
+        assert "accountability_gap" in cr, (
+            "claim_reliability lobe must carry accountability_gap key when "
+            "claim_accountability.json is absent"
+        )
+
+    def test_claim_reliability_key_does_not_clobber_reliability(self, tmp_path):
+        """RUL-C2: claim_reliability must be separate from reliability lobe."""
+        _build_minimal_tree(tmp_path)
+        _minimal_track_record(tmp_path)
+        payload = build_context(root=tmp_path, now=_NOW)
+        lobes = payload["lobes"]
+        # Both must be present and distinct
+        assert "reliability" in lobes, "reliability lobe must still be present"
+        assert "claim_reliability" in lobes, "claim_reliability lobe must be present"
+        # reliability lobe must still carry kernel_decisions (its own structure)
+        rel = lobes["reliability"]
+        assert "kernel_decisions" in rel, (
+            "reliability lobe clobbered — kernel_decisions missing"
+        )
