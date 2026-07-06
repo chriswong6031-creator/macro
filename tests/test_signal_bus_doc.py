@@ -89,7 +89,8 @@ def test_all_artifact_ids_present():
         " oracle reversion promo P0+P1 added oracle-reversion-forward-ledger, oracle-reversion-state = 128->130;"
         " long-hold W1 PR-E added long-hold-labels, long-hold-labels-manifest = 130->132;"
         " long-hold W1 dead-name build added long-hold-dead-name-prices = 132->133;"
-        " options-hub PR-1543 absorbed 3 pre-existing entries (#1543) = 133->136;"
+        " OTA W6 turn desk added oracle-turn-desk, oracle-turn-desk-ledger = 133->135;"
+        " long-hold W1 PR-F killtest added long-hold-killtest-results = 135->136;"
         " NW Rails R1 PR-1 added rule-experiment-registry, rule-experiment-summaries = 136->138)"
     )
     content = generate(_SYNAPSE_YML)
