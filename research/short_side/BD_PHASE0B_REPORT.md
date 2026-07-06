@@ -183,7 +183,7 @@ No cross-definition selection statistic is computed. No promotion. No site surfa
 - **BD-4/5/6 controls:** each definition uses its OWN declared per-definition seed constant (BD4=7891, BD5=13421, BD6=19937), XOR-ed with a ticker hash for per-ticker variation. This is a SEPARATE RNG pass that does not advance the global rng state.
 - **Preservation verified:** BD-1/2/3 event rows in the new tape are exactly identical (NaN-safe comparison, 0 diffs across all key columns) to the Phase-0-only tape backup.
 
-Note: control row differences between this tape and the old Phase-0 tape are expected (the old tape used a prior seeding path; the invariant is Phase-0b == hypothetical Phase-0-only run using the *current* code and same data — proved by the TestSeedingStability test suite, 89 tests passing).
+Note: control row differences between this tape and the old Phase-0 tape are expected (the old tape used a prior seeding path; the invariant is Phase-0b == hypothetical Phase-0-only run using the *current* code and same data — proved by the TestSeedingStability test suite, 89 tests passing). Quantified drift vs the published Phase-0 summary (event rows byte-identical, only control draws re-sampled): pooled control stop rate 21d 41.80% → 41.66% (−0.14pp), 126d 65.38% → 66.01% (+0.63pp) — an order of magnitude below the +9.66pp/+16.81pp gaps that selected BD-2/BD-3, so no Phase-0 reading changes.
 
 ---
 
