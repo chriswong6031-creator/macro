@@ -1826,6 +1826,107 @@
       }
     },
     {
+      "species_id": "S15",
+      "version": "1.0",
+      "name": "Spring Reclaim (U&R — Undercut-and-Rally)",
+      "validation_status": "phase0",
+      "deployment_status": "unshipped",
+      "mechanism": "A support level is undercut (close below the N-bar rolling low) and then reclaimed within K bars. The mechanical event is a failed breakdown: the market rejected the lower level, forcing trapped short-sellers and fearful longs to reverse. Adjacent-falsified now includes the trap-context veto inverse (sign-stable but IN-SAMPLE-ONLY per S6 card, cited exactly) and the shallow-dip preference (0/8 promote; shallow side LOSES per §1.6 WAVE6 §3). Depth arm is panel-determined (ATR mult frozen at 1.0). Three forms: standalone / TRUE COILED intersection (washout AND cohort_frac>=0.40 per assess()) / gate-fire proximity. Phase-0 headline: standalone (+2.44pp stop5) and COILED-intersection (+4.67pp) forms are SIGNIFICANTLY WORSE than the incumbent gate baseline (CI entirely above 0); only the gatefire-proximity form shows stop5 improvement (−2.3pp), but proximity confounding is the primary alternative explanation.",
+      "horizon_class": "rotational",
+      "evidence_stack": [
+        {
+          "condition": "Close undercuts the N-bar rolling low (N in {21, 63})",
+          "tag": "arming"
+        },
+        {
+          "condition": "Price reclaims the broken level within K bars (K in {2, 3, 5})",
+          "tag": "trigger"
+        },
+        {
+          "condition": "Depth of undercut >= 2% of rolling low (ATR-mult frozen 1.0)",
+          "tag": "arming"
+        },
+        {
+          "condition": "COILED intersection form: TRUE COILED at fire = washout_ctx AND cohort_frac >= 0.40",
+          "tag": "context"
+        },
+        {
+          "condition": "Gate-fire proximity form: U&R event within +/-5 bars of gate_fires_{panel}",
+          "tag": "context"
+        }
+      ],
+      "rejection_rules": [
+        {
+          "rule": "Trap-context veto inverse: sign-stable IN-SAMPLE ONLY (per S6 card) — cannot claim OOS merit without phase-0 pass",
+          "prevents": "overstating evidence from in-sample sign"
+        },
+        {
+          "rule": "Shallow-dip preference (0/8 promote; shallow side LOSES) is CLOSED",
+          "prevents": "gating on dip depth"
+        },
+        {
+          "rule": "Same-bar fill banned (T+1 fill required)",
+          "prevents": "look-ahead bias"
+        }
+      ],
+      "archetype_scope": {
+        "applies": [
+          "all — U&R is market-wide; forms narrow the scope"
+        ],
+        "hostile": [
+          "extended names — a reclaim after extension is momentum continuation, not spring"
+        ],
+        "note": "Depth arm is panel-determined; ATR mult frozen at 1.0"
+      },
+      "regime_scope": {
+        "hypothesized_supportive": [
+          "washout regime — reclaim has a natural seller-exhaustion mechanism"
+        ],
+        "hypothesized_hostile": [
+          "low-vol bull leg — fewer forced sellers"
+        ],
+        "learnable_projection": {
+          "axes": [
+            "vol_regime",
+            "sector_washout"
+          ],
+          "cells": [
+            "washout-high-vol",
+            "washout-low-vol",
+            "trending"
+          ],
+          "note": "Phase-0 W2. Regime cells are context; no conditional gate yet."
+        }
+      },
+      "market_scope": [
+        "US"
+      ],
+      "adjacent_falsified": [
+        {
+          "idea": "Trap-context veto inverse as IN-SAMPLE evidence",
+          "source": "S6 card / §1.6",
+          "mechanical_difference": "S15 tests the U&R event directly; the veto-inverse in S6 was in-sample only and cites that honestly"
+        },
+        {
+          "idea": "Shallow-dip preference (0/8 promote; shallow side LOSES)",
+          "source": "§1.6 WAVE6 §3",
+          "mechanical_difference": "S15 uses depth >= 2% floor only; shallow preference closed"
+        }
+      ],
+      "fixtures": [],
+      "ledger_binding": {
+        "ledger": "us_board_ledger",
+        "since": "2026-07-05",
+        "flip_criteria": "§1.3 template at rotational horizons (clean8_21 primary). Non-inferiority = CI_hi < +0.01 on stop5. Superiority = CI_hi < 0 on stop5 (or CI_lo > 0 on cushion_rot / CI_hi < 0 on dead_money). BH-FDR q<=0.10 family-wide (esx_ur_phase0 budget=36)."
+      },
+      "gating": {
+        "come_back_on": "2026-10-01",
+        "cadence": "quarterly",
+        "maturation": "W2 phase-0 COMPLETE 2026-07-05: standalone (+2.44pp stop5) and COILED-intersection (+4.67pp) forms FAIL non-inferiority (CI entirely above 0 — SIGNIFICANTLY WORSE than incumbent baseline). Gatefire-proximity form shows stop5 improvement (-2.3pp, CI excludes 0) but proximity confounding (NC-2 marginality) is the primary alternative explanation. Adjudication belongs to the orchestrator. Come-back: orchestrator adjudication + NC-2 deferred test result."
+      },
+      "trial_count": 3
+    },
+    {
       "species_id": "F3_ANTICHASE",
       "version": "1.0",
       "name": "Anti-Chase Hard Gate (F3 ext_z)",
