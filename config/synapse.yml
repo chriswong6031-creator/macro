@@ -4883,7 +4883,7 @@ artifacts:
     owner_program: macro-context-rail
     cadence: daily-engine
     storage: git
-    asof_field: date
+    asof_field: asof
     freshness_sla_hours: 30
     schema: implicit
     tier: display
@@ -4967,9 +4967,8 @@ artifacts:
     external_consumers: []
     notes: >
       R5 macro context rail — FX / dollar regime snapshot.
-      Producer: scripts/build_forex.py:635 (outdir/"latest.json").write_text(...).
-      asof_field=date (display string); flips to asof (ISO) in PR-E of this program
-      once build_forex.py adds the ISO field — note anticipates that change.
+      Producer: scripts/build_forex.py (outdir/"latest.json").write_text(...).
+      PR-E: ISO asof field added alongside display date; asof_field flipped from date to asof.
 
   transmission-latest:
     path: data/transmission/latest.json
@@ -5044,7 +5043,7 @@ artifacts:
     owner_program: macro-context-rail
     cadence: daily-engine
     storage: git
-    asof_field: date
+    asof_field: asof
     freshness_sla_hours: 30
     schema: implicit
     tier: display
@@ -5064,9 +5063,8 @@ artifacts:
     external_consumers: []
     notes: >
       R5 macro context rail — commodity regime snapshot.
-      Producer: scripts/build_commodities.py:615 (outdir/"latest.json").write_text(...).
-      asof_field=date (display string); flips to asof (ISO) in PR-E of this program
-      once build_commodities.py adds the ISO field — note anticipates that change.
+      Producer: scripts/build_commodities.py (outdir/"latest.json").write_text(...).
+      PR-E: ISO asof field added alongside display date; asof_field flipped from date to asof.
 
   china-regime-latest:
     path: data/china_regime/latest.json
@@ -5274,3 +5272,26 @@ artifacts:
       field) where prev != current value. Same-asof replace: drops today's rows
       before re-deriving. Growing append-only ledger across days. Display/context
       tier only.
+
+  macro-context-latest:
+    path: data/macro_context/latest.json
+    format: json
+    producer: scripts/build_macro_context.py
+    known_extra_writers: []
+    owner_program: macro-context-rail
+    cadence: daily-engine
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      R5 PR-E — Macro Weather Station hub contract. Fields: asof, macro_context_id,
+      n_transitions_14d, headline_en, headline_zh. Written by scripts/build_macro_context.py
+      after rendering site/macro_context.html. Display/context tier; display-only disclaimer
+      on page. No scored surfaces.

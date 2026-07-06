@@ -1,0 +1,315 @@
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
+{%- endmacro %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<title>Macro Weather — {{ vm.asof }}</title>
+{% set seo_title = 'Macro Weather Station — Regime Labels & Context | Mastermind' %}{% set seo_desc = 'Live macro label board: US cycle quadrant, FX/dollar regime, rates transmission, bond health, commodity, China, HK and Canada reads — display-only context.' %}{% set seo_path = 'macro_context.html' %}
+{% include "_seo_head.html.j2" %}
+<style>
+:root{
+  --blue:{{C.blue}}; --indigo:{{C.indigo}}; --ink:{{C.ink}}; --text:{{C.text}}; --muted:{{C.muted}};
+  --faint:{{C.faint}}; --red:{{C.red}}; --amber:{{C.amber}}; --green:{{C.green}}; --teal:{{C.teal}};
+  --grid:{{C.grid}}; --card:{{C.card}}; --bg:{{C.bg}};
+}
+*{box-sizing:border-box}
+html:not([data-lang="zh"]) .l-zh{display:none}
+html[data-lang="zh"] .l-en{display:none}
+html[data-lang="zh"] body{font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",Inter,sans-serif}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,sans-serif;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+a{color:var(--blue);text-decoration:none}
+.wrap{max-width:1180px;margin:0 auto;padding:0 20px 60px}
+html[data-theme="dark"]{--bg:#0f1115;--card:#181b21;--grid:#2a2f3a;--ink:#e8edf4;--text:#d7dce3;--muted:#8b93a1;--faint:#6b7280}
+.grid{display:grid;gap:18px}
+.cols-2{grid-template-columns:1fr 1fr}
+.cols-3{grid-template-columns:repeat(3,1fr)}
+@media(max-width:900px){.cols-2,.cols-3{grid-template-columns:1fr}}
+.sec-head{font-size:12px;font-weight:700;color:var(--ink);text-transform:uppercase;letter-spacing:.05em;margin:26px 0 12px;padding-bottom:6px;border-bottom:1px solid var(--grid)}
+.card{background:var(--card);border:1px solid var(--grid);border-radius:16px;padding:22px;min-width:0;overflow-wrap:break-word}
+.card h2{margin:0 0 4px;font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.brand{font-weight:800;font-size:21px;color:var(--ink);letter-spacing:-.02em;margin:6px 0 2px}
+.brand .gn{color:var(--blue)}
+.lead{color:var(--muted);font-size:14px;margin:0 0 20px}
+.sub{font-size:13px;color:var(--muted);min-width:0}.faint{color:var(--faint)}
+.site-footer{max-width:1180px;margin:30px auto 0;padding:18px 20px;border-top:1px solid var(--grid);display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;color:var(--muted);font-size:12.5px}
+.meta-foot{font-size:12px;color:var(--faint);margin-top:8px}
+/* jump nav */
+.jump-nav{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 20px}
+.jump-nav a{font-size:12px;font-weight:600;color:var(--muted);background:var(--card);border:1px solid var(--grid);border-radius:999px;padding:5px 12px;white-space:nowrap;transition:color .15s,border-color .15s}
+.jump-nav a:hover{color:var(--ink);border-color:var(--blue)}
+/* weather board */
+.domain-block{margin-bottom:18px}
+.domain-head{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.domain-label{font-size:13px;font-weight:700;color:var(--ink)}
+.domain-asof{font-size:11px;color:var(--muted);margin-left:auto}
+.stale-ok{color:var(--green)}.stale-warn{color:var(--amber)}.stale-old{color:var(--red)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{display:inline-flex;flex-direction:column;padding:6px 12px;border-radius:10px;border:1px solid var(--grid);background:var(--card);min-width:0;max-width:200px}
+.chip-field{font-size:10.5px;color:var(--muted);font-weight:600;white-space:nowrap}
+.chip-val{font-size:13px;font-weight:700;margin-top:2px;overflow-wrap:anywhere}
+.chip-null .chip-val{color:var(--faint)}
+html[data-theme="dark"] .chip{background:#1e2230;border-color:#2a2f3a}
+/* headwind/tailwind matrix */
+.hw-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media(max-width:700px){.hw-grid{grid-template-columns:1fr}}
+.hw-section h3{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:0 0 10px}
+.hw-rows{display:flex;flex-direction:column;gap:7px}
+.hw-row{display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:10px;background:var(--card);border:1px solid var(--grid);font-size:13px}
+html[data-theme="dark"] .hw-row{background:#1e2230}
+.hw-asset{font-weight:700;color:var(--ink);flex:1;min-width:0}
+.hw-chip{padding:3px 9px;border-radius:999px;font-size:11.5px;font-weight:700;color:#fff;white-space:nowrap}
+.hw-head{background:var(--red)}.hw-tail{background:var(--green)}.hw-neut{background:var(--muted)}
+.hw-net{font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums;flex:none;min-width:42px;text-align:right}
+/* transition timeline */
+.tl-wrap{overflow-x:auto}
+.tl-tbl{width:100%;border-collapse:collapse;font-size:13px;min-width:520px}
+.tl-tbl th{text-align:left;padding:6px 8px;border-bottom:1px solid var(--grid);color:var(--muted);font-size:10.5px;text-transform:uppercase;letter-spacing:.03em;font-weight:700;white-space:nowrap}
+.tl-tbl td{padding:7px 8px;border-bottom:1px solid var(--grid);vertical-align:top}
+.tl-tbl tr:hover td{background:rgba(40,95,255,.04)}
+html[data-theme="dark"] .tl-tbl tr:hover td{background:rgba(40,95,255,.10)}
+.tl-asof{color:var(--muted);font-size:12px;white-space:nowrap}
+.tl-domain{font-weight:700;color:var(--ink)}
+.tl-field{color:var(--text)}
+.tl-from{color:var(--red)}.tl-to{color:var(--green)}.tl-arrow{color:var(--faint);padding:0 4px}
+/* contradiction census strip */
+.census-strip{display:flex;flex-wrap:wrap;gap:14px;align-items:center;padding:14px 18px;background:var(--card);border:1px solid var(--grid);border-radius:14px;font-size:14px}
+html[data-theme="dark"] .census-strip{background:#1e2230}
+.census-kv{display:flex;flex-direction:column}
+.census-k{font-size:10.5px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.census-v{font-size:18px;font-weight:800;color:var(--ink);line-height:1}
+/* disclaimer */
+.disclaimer{font-size:12.5px;color:var(--muted);line-height:1.6;padding:14px 18px;border-left:3px solid var(--amber);background:rgba(245,173,66,.07);border-radius:0 10px 10px 0;margin-top:10px}
+.disclaimer b{color:var(--ink)}
+html[data-theme="dark"] .disclaimer{background:rgba(245,173,66,.10)}
+/* footnote */
+.footnote{font-size:12px;color:var(--faint);margin-top:16px;line-height:1.7}
+.footnote a{color:var(--muted)}
+/* empty state */
+.empty-state{padding:24px;text-align:center;color:var(--muted);font-size:14px;border:1px dashed var(--grid);border-radius:14px}
+@media(max-width:560px){
+  .wrap{padding:0 12px 48px}
+  .card{padding:16px}
+  .site-footer{padding:16px 12px}
+}
+</style>
+{% include "_vector_polish.html.j2" %}
+</head>
+<body>
+<nav class="site-nav" style="max-width:1180px;margin:18px auto 16px;padding:0 20px">
+  {% include "_navlinks.html.j2" %}
+  <div class="nav-ctrls">
+    <a class="ai-brief-link" href="mastermind.html">🤖 {{ t('Mastermind', '操盘大脑') }}</a>
+    <a class="ai-brief-link terminal-link" href="https://app.mastermind-x.com" target="_blank" rel="noopener">🖥️ {{ t('Terminal', '终端') }}</a>
+    <button class="theme-switch" aria-label="Toggle dark / light mode"><span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span></button>
+    <div class="lang-toggle" role="group" aria-label="Language">
+      <span class="pill"></span>
+      <span class="opt en-opt" data-l="en">EN</span>
+      <span class="opt zh-opt" data-l="zh">中文</span>
+    </div>
+  </div>
+</nav>
+
+<div class="wrap">
+  <div class="brand">🌦️ {{ t('Macro Weather', '') }}<span class="gn"> {{ t('Station', '宏观气象台') }}</span></div>
+  <p class="lead">{{ t('Live macro label board — quadrant, FX, rates, bond health, commodity, China, HK, Canada. Display-only context; not signals.', '宏观标签全景展示 — 象限、外汇、利率、债券健康、大宗、中港加。仅作背景参考，非信号。') }}
+  <span class="faint">· {{ t('As of', '截至') }} {{ vm.asof }}</span></p>
+
+  <!-- display-only disclaimer -->
+  <div class="disclaimer">
+    <b>{{ t('Display-only context.', '仅供展示参考。') }}</b>
+    {{ t('Labels describe current regime reads — they are not trade signals and carry no forward-return claim. For committee-graded signals see', '标签描述当前周期读数，不构成交易信号，不含任何前瞻收益声明。如需委员会评级信号，请参阅') }}
+    <a href="committee.html">{{ t('Committee View', '委员会视图') }}</a>.
+  </div>
+
+  <!-- section jump nav -->
+  <div class="jump-nav" style="margin-top:16px">
+    <a href="#board">🌡️ {{ t('Weather Board', '气象板') }}</a>
+    <a href="#matrix">⚖️ {{ t('Head/Tailwind Matrix', '顺逆风矩阵') }}</a>
+    <a href="#timeline">🕑 {{ t('Transitions', '转换记录') }}</a>
+    <a href="#census">🔍 {{ t('Contradictions', '矛盾统计') }}</a>
+    <a href="#footnote">📌 {{ t('Footnote', '注脚') }}</a>
+  </div>
+
+  <!-- ==================== MACRO WEATHER BOARD ==================== -->
+  <div id="board">
+    <div class="sec-head">🌡️ {{ t('Macro Weather Board', '宏观气象板') }}</div>
+    {% if vm.weather_board %}
+      {% for domain_row in vm.weather_board %}
+      <div class="domain-block">
+        <div class="domain-head">
+          <span class="domain-label">{{ t(domain_row.domain_en, domain_row.domain_zh) }}</span>
+          {% if domain_row.asof %}
+          <span class="domain-asof {{ domain_row.stale_cls }}" data-tip-en="Source as-of {{ domain_row.asof }}" data-tip-zh="数据截至 {{ domain_row.asof }}">{{ domain_row.asof }}</span>
+          {% endif %}
+        </div>
+        <div class="chips">
+          {% for chip in domain_row.chips %}
+          <div class="chip{% if chip.null %} chip-null{% endif %}">
+            <span class="chip-field">{{ t(chip.field_en, chip.field_zh) }}</span>
+            <span class="chip-val" style="color:{{ chip.color }}">{{ chip.val }}</span>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+    <div class="empty-state">{{ t('Macro snapshot not yet available — run build_macro_snapshot to populate.', '宏观快照尚未生成，请先运行 build_macro_snapshot。') }}</div>
+    {% endif %}
+  </div>
+
+  <!-- ==================== HEADWIND / TAILWIND MATRIX ==================== -->
+  <div id="matrix">
+    <div class="sec-head">⚖️ {{ t('Headwind / Tailwind Matrix', '顺逆风矩阵') }}</div>
+    <div class="hw-grid">
+      <!-- Rates Transmission -->
+      <div class="card hw-section">
+        <h2>{{ t('Rates Transmission', '利率传导') }}</h2>
+        {% set rt = vm.headwind_tailwind.rates %}
+        {% if rt.headwinds or rt.tailwinds %}
+        <div class="hw-rows">
+          {% for hw in rt.headwinds %}
+          <div class="hw-row">
+            <span class="hw-asset">{{ hw.asset }}</span>
+            <span class="hw-chip hw-head">{{ t('headwind', '逆风') }}</span>
+            <span class="hw-net">{{ '%+.2f'|format(hw.net) if hw.net is not none else '' }}</span>
+          </div>
+          {% endfor %}
+          {% for tw in rt.tailwinds %}
+          <div class="hw-row">
+            <span class="hw-asset">{{ tw.asset }}</span>
+            <span class="hw-chip hw-tail">{{ t('tailwind', '顺风') }}</span>
+            <span class="hw-net">{{ '%+.2f'|format(tw.net) if tw.net is not none else '' }}</span>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state" style="padding:16px;font-size:13px">{{ t('No rates transmission data.', '暂无利率传导数据。') }}</div>
+        {% endif %}
+        {% if rt.asof %}<div class="meta-foot">{{ t('As of', '截至') }} {{ rt.asof }}</div>{% endif %}
+      </div>
+
+      <!-- FX / Dollar -->
+      <div class="card hw-section">
+        <h2>{{ t('FX / Dollar', '外汇 / 美元') }}</h2>
+        {% set fx = vm.headwind_tailwind.fx %}
+        {% if fx.headwind_for or fx.tailwind_for %}
+        <div class="hw-rows">
+          {% for asset in fx.headwind_for %}
+          <div class="hw-row">
+            <span class="hw-asset">{{ td(asset) }}</span>
+            <span class="hw-chip hw-head">{{ t('headwind', '逆风') }}</span>
+          </div>
+          {% endfor %}
+          {% for asset in fx.tailwind_for %}
+          <div class="hw-row">
+            <span class="hw-asset">{{ td(asset) }}</span>
+            <span class="hw-chip hw-tail">{{ t('tailwind', '顺风') }}</span>
+          </div>
+          {% endfor %}
+        </div>
+        {% if fx.trend %}<div class="sub" style="margin-top:8px">{{ t('USD trend', '美元趋势') }}: <b>{{ td(fx.trend) }}</b></div>{% endif %}
+        {% else %}
+        <div class="empty-state" style="padding:16px;font-size:13px">{{ t('No FX transmission data.', '暂无外汇传导数据。') }}</div>
+        {% endif %}
+        {% if fx.asof %}<div class="meta-foot">{{ t('As of', '截至') }} {{ fx.asof }}</div>{% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== TRANSITION TIMELINE ==================== -->
+  <div id="timeline">
+    <div class="sec-head">🕑 {{ t('Transition Timeline', '周期转换记录') }}</div>
+    {% if vm.transitions %}
+    <div class="tl-wrap">
+      <table class="tl-tbl">
+        <thead>
+          <tr>
+            <th>{{ t('Date', '日期') }}</th>
+            <th>{{ t('Domain', '领域') }}</th>
+            <th>{{ t('Field', '字段') }}</th>
+            <th>{{ t('Change', '变化') }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for tr_row in vm.transitions %}
+          <tr>
+            <td class="tl-asof">{{ tr_row.asof }}</td>
+            <td class="tl-domain">{{ t(tr_row.domain, tr_row.domain) }}</td>
+            <td class="tl-field">{{ tr_row.field }}</td>
+            <td>
+              <span class="tl-from">{{ tr_row.get('from', tr_row.get('prev', '—')) }}</span>
+              <span class="tl-arrow">→</span>
+              <span class="tl-to">{{ tr_row.get('to', tr_row.get('curr', '—')) }}</span>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty-state">{{ t('No transitions recorded yet — ledger builds from the first nightly run.', '暂无转换记录，将从首次每日运行后开始积累。') }}</div>
+    {% endif %}
+  </div>
+
+  <!-- ==================== CONTRADICTION CENSUS STRIP ==================== -->
+  <div id="census">
+    <div class="sec-head">🔍 {{ t('Contradiction Census', '矛盾统计') }}</div>
+    <div class="census-strip">
+      <div class="census-kv">
+        <span class="census-k">{{ t('Contradictions', '矛盾对数') }}</span>
+        <span class="census-v">{{ vm.contradiction_census.n_contradictions }}</span>
+      </div>
+      {% if vm.contradiction_census.cross_asset_verdict %}
+      <div class="census-kv">
+        <span class="census-k">{{ t('Cross-Asset', '跨资产') }}</span>
+        <span class="census-v">{{ td(vm.contradiction_census.cross_asset_verdict) }}</span>
+      </div>
+      {% endif %}
+      {% if vm.contradiction_census.n_divergences is not none %}
+      <div class="census-kv">
+        <span class="census-k">{{ t('Intelligence Divergences', '情报分歧数') }}</span>
+        <span class="census-v">{{ vm.contradiction_census.n_divergences }}</span>
+      </div>
+      {% endif %}
+      {% if vm.contradiction_census.top_pairs %}
+      <div class="census-kv" style="max-width:420px">
+        <span class="census-k">{{ t('Active Pairs', '活跃矛盾对') }}</span>
+        <span style="font-size:12px;color:var(--muted);margin-top:4px">{{ vm.contradiction_census.top_pairs | join(' · ') }}</span>
+      </div>
+      {% endif %}
+    </div>
+    <div class="sub" style="margin-top:8px">{{ t('Contradiction pairs are display-only — no gate, no rank raise. See committee.html for graded signal authority.', '矛盾对仅供展示，不触发任何门槛或排名变化。如需评级信号权威，请参阅委员会视图。') }}</div>
+  </div>
+
+  <!-- ==================== NEURAL WEB FOOTNOTE ==================== -->
+  <div id="footnote">
+    <div class="sec-head">📌 {{ t('Neural Web Footnote', '神经网络注脚') }}</div>
+    <div class="footnote">
+      <b>{{ t('Context ID', '背景ID') }}:</b> <code>{{ vm.macro_context_id or '—' }}</code>
+      &nbsp;·&nbsp;
+      <b>{{ t('As of', '截至') }}:</b> {{ vm.asof }}
+      &nbsp;·&nbsp;
+      <b>{{ t('14-day transitions', '14天转换数') }}:</b> {{ vm.n_transitions_14d }}
+      &nbsp;·&nbsp;
+      <a href="committee.html">{{ t('Committee View', '委员会视图') }}</a>
+    </div>
+    <div class="disclaimer" style="margin-top:12px">
+      <b>{{ t('Display-only — labels, not signals.', '仅展示标签，非信号。') }}</b>
+      {{ t('This page presents macro regime labels distilled from committed data sources. No label on this page has been calibrated for forward return, has passed a pre-registration gate, or carries authority to modify any position or scoring surface. These are context descriptors only.', '本页展示从已提交数据源中提炼的宏观周期标签。页面上任何标签均未经前瞻收益校准、未通过预注册门槛，亦不具备修改任何持仓或评分界面的权限。仅作背景描述使用。') }}
+    </div>
+    <div class="meta-foot" style="margin-top:8px">{{ t('Built', '构建于') }} {{ built }}</div>
+  </div>
+
+</div><!-- /wrap -->
+
+<footer class="site-footer">
+  <span>© Mastermind-X</span>
+  <span class="faint">{{ t('Macro Weather Station · display-only context · labels, not signals', '宏观气象台 · 仅供展示 · 标签，非信号') }}</span>
+</footer>
+
+</body>
+</html>

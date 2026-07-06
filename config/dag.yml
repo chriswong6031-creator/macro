@@ -178,6 +178,9 @@ lanes:
       - id: build_macro_snapshot
         module: scripts.build_macro_snapshot
         note: "nw-macro-rail R5 PR-C — macro context snapshot registry (latest.json + ledger.parquet + transitions.jsonl); fail-open, runs before build_spine_index"
+      - id: build_macro_context
+        module: scripts.build_macro_context
+        note: "nw-macro-rail R5 PR-E — Macro Weather Station page (site/macro_context.html) + hub contract (data/macro_context/latest.json); fail-open, runs after build_macro_snapshot"
       - id: build_spine_index
         module: scripts.build_spine_index
         note: "neural-web W2 — spine query index (read-side union over all graded ledgers)"
@@ -592,6 +595,7 @@ lanes:
             - scripts.build_crossasset
             - scripts.build_transmission
             - scripts.build_discovery
+            - scripts.build_macro_context
           cl_china:
             - scripts.build_china
           cl_hk:

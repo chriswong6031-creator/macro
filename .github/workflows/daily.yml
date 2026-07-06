@@ -718,6 +718,17 @@ jobs:
           cat /tmp/macro_snapshot.log
           [ "$rc" -ne 0 ] && echo "::warning title=build_macro_snapshot::rc=$rc (non-fatal)"
           exit 0
+      - name: build macro context page (nw-macro-rail R5)
+        # Renders site/macro_context.html (Macro Weather Station) from world_state +
+        # macro_snapshots/latest.json + transitions.jsonl.  Fail-open: all three sources
+        # are read gracefully; missing files produce empty-state sections.  Also writes
+        # hub contract data/macro_context/latest.json.  Non-fatal.
+        run: |
+          set +e
+          python -m scripts.build_macro_context > /tmp/macro_context.log 2>&1; rc=$?
+          cat /tmp/macro_context.log
+          [ "$rc" -ne 0 ] && echo "::warning title=build_macro_context::rc=$rc (non-fatal)"
+          exit 0
       - name: build spine index (neural-web W2)
         # Read-side union index over all graded ledgers: spine + track_record + HK/CA/CN
         # boards + qledger claims⋈grades (read-only) + graded cycle rows. Writes
