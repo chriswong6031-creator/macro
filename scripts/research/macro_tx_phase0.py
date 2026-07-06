@@ -55,7 +55,8 @@ REPORT_PATH = RESEARCH_DIR / "L6_PHASE0_REPORT.md"
 SUMMARY_PATH = RESEARCH_DIR / "l6_phase0_summary.json"
 SPINE_PATH = DATA / "neuralweb" / "spine_index.parquet"
 FRED = DATA / "fred"
-SPY_PATH = DATA / "yahoo" / "SPY.parquet"
+GSPC_PATH = DATA / "yahoo" / "_GSPC.parquet"   # S&P 500 index 1927→2026 — primary strata source
+SPY_PATH = DATA / "yahoo" / "SPY.parquet"       # fallback if GSPC absent (1993+)
 REPLAY_PATH = DATA / "replay" / "replay_boarded.parquet"
 BASKETS_PATH = DATA / "baskets" / "membership.json"
 
@@ -180,11 +181,11 @@ def _build_sector_map() -> dict[str, str]:
     return sector_map
 
 
-def _load_spy_close() -> pd.Series | None:
-    """Load SPY close for drawdown stratification."""
-    if not SPY_PATH.exists():
+def _load_index_close(path: Path) -> pd.Series | None:
+    """Load a price parquet (GSPC or SPY) and return the close series."""
+    if not path.exists():
         return None
-    df = pd.read_parquet(SPY_PATH)
+    df = pd.read_parquet(path)
     if "close" in df.columns:
         s = df["close"].copy()
     elif "close_price" in df.columns:
@@ -194,6 +195,27 @@ def _load_spy_close() -> pd.Series | None:
     if not isinstance(s.index, pd.DatetimeIndex):
         s.index = pd.to_datetime(s.index)
     return s.sort_index().dropna()
+
+
+def _load_market_close() -> tuple[pd.Series | None, str]:
+    """Load S&P 500 close for drawdown stratification.
+
+    Preference order:
+      1. data/yahoo/_GSPC.parquet (1927→2026 — covers full fire tape)
+      2. data/yahoo/SPY.parquet (1993+ — last-resort fallback; pre-1993 fires default
+         to dd_0_5 stratum; count printed at runtime)
+
+    Returns (series, source_label).
+    """
+    s = _load_index_close(GSPC_PATH)
+    if s is not None:
+        label = f"data/yahoo/_GSPC.parquet (S&P 500, range {s.index.min().date()} to {s.index.max().date()})"
+        return s, label
+    s = _load_index_close(SPY_PATH)
+    if s is not None:
+        label = f"data/yahoo/SPY.parquet (SPY fallback, range {s.index.min().date()} to {s.index.max().date()})"
+        return s, label
+    return None, "ABSENT — drawdown stratification uses single stratum (P0-DEFER quality)"
 
 
 # ---------------------------------------------------------------------------
@@ -390,21 +412,30 @@ def _compute_spy_drawdown(spy_close: pd.Series) -> pd.Series:
     return (spy_close / roll_high) - 1.0
 
 
-def assign_drawdown_stratum(fire_dt: pd.Series, spy_dd: pd.Series) -> pd.Series:
+def assign_drawdown_stratum(fire_dt: pd.Series, spy_dd: pd.Series) -> tuple[pd.Series, int]:
     """Assign each fire date to a drawdown stratum.
 
     Strata: [0,-5%), [-5%,-10%), [-10%,-20%), <=-20%
+
+    Returns (strata_series, n_defaulted) where n_defaulted is the count of fire
+    dates that fell before the index series start and were assigned dd_0_5 by
+    default (should be ~0 when using GSPC 1927→2026).
     """
-    fire_ts = pd.to_datetime(fire_dt).drop_duplicates()
-    combined_idx = spy_dd.index.union(fire_ts).drop_duplicates().sort_values()
-    spy_dd_reindexed = spy_dd.reindex(combined_idx).ffill().reindex(pd.to_datetime(fire_dt))
+    fire_ts = pd.to_datetime(fire_dt)
+    index_start = spy_dd.index.min()
+    combined_idx = spy_dd.index.union(fire_ts.drop_duplicates()).drop_duplicates().sort_values()
+    spy_dd_reindexed = spy_dd.reindex(combined_idx).ffill().reindex(fire_ts)
     strata = pd.Series("dd_0_5", index=fire_dt.index)
     dd = spy_dd_reindexed.values
-    strata[dd <= -0.20] = "dd_20plus"
-    strata[(dd > -0.20) & (dd <= -0.10)] = "dd_10_20"
-    strata[(dd > -0.10) & (dd <= -0.05)] = "dd_5_10"
-    # default [0,-5%) = dd_0_5: dd > -0.05
-    return strata
+    # NaN means no prior index data (fire predates series start) — count as defaulted
+    n_defaulted = int(pd.isna(dd).sum())
+    # Assign non-NaN values
+    valid = ~pd.isna(dd)
+    strata[valid & (dd <= -0.20)] = "dd_20plus"
+    strata[valid & (dd > -0.20) & (dd <= -0.10)] = "dd_10_20"
+    strata[valid & (dd > -0.10) & (dd <= -0.05)] = "dd_5_10"
+    # default [0,-5%) = dd_0_5: dd > -0.05 or NaN
+    return strata, n_defaulted
 
 
 STRATA_LABELS = ["dd_0_5", "dd_5_10", "dd_10_20", "dd_20plus"]
@@ -486,9 +517,12 @@ def circular_block_bootstrap(
 ) -> tuple[float, float]:
     """95% CI on the stratified delta via circular block bootstrap on calendar time.
 
-    Vectorized implementation: represents each row by (arm, stratum, hit, date_idx),
-    then for each bootstrap draw selects date_idx blocks and recomputes the stratified
-    delta using numpy operations (no per-row Python loop).
+    True multiplicity-preserving resample: for each draw, we sample n_blocks block-start
+    positions WITH REPLACEMENT, build the array of selected date-indices (with repeats
+    when a start is drawn twice), and for each row in df we replicate the row by the
+    number of times its date-index appears in the selected set.  This preserves the
+    total effective sample size ~= N (n_blocks * block_len) rather than sub-sampling
+    the ~64% unique-date subset that np.unique() would produce.
 
     Returns (ci_lo, ci_hi).
     """
@@ -509,48 +543,53 @@ def circular_block_bootstrap(
     n_strata = len(STRATA_LABELS)
 
     n_blocks = max(1, int(np.ceil(n_dates / block_len)))
-
-    # Build circular block index lookup: for each start s, block = [(s+j) % n_dates for j in range(block_len)]
-    # Pre-build a (n_dates, block_len) table of date indices for all possible starts
-    starts_all = np.arange(n_dates)
     offsets = np.arange(block_len)
-    # Shape (n_dates, block_len): block_starts[s, j] = (s + j) % n_dates
-    block_date_matrix = (starts_all[:, None] + offsets[None, :]) % n_dates  # (n_dates, block_len)
-    # Flatten to set per row
-    # Instead, use a boolean mask approach: precompute per-date membership for any combination
+
+    # Pre-build (n_dates, block_len) circular date-index table: block_table[s, j] = (s+j)%n_dates
+    starts_all = np.arange(n_dates)
+    block_table = (starts_all[:, None] + offsets[None, :]) % n_dates  # (n_dates, block_len)
+
+    # For each date index d, build a reverse lookup: row_positions[d] = array of row indices
+    # This allows fast per-date row accumulation.
+    row_positions: list[np.ndarray] = [np.where(date_idx == d)[0].astype(np.int32) for d in range(n_dates)]
 
     deltas = []
     for _ in range(n_draws):
-        # Pick n_blocks random starts
+        # Sample n_blocks block starts WITH REPLACEMENT
         starts = rng.integers(0, n_dates, size=n_blocks)
-        # Build selected date set
-        selected_dates = np.unique((starts[:, None] + offsets[None, :]) % n_dates)
-        # Boolean mask over rows
-        row_mask = np.isin(date_idx, selected_dates)
-        if row_mask.sum() < 20:
+        # Build date multiplicity vector: how many times each date index is selected
+        selected_date_idxs = block_table[starts].ravel()   # length = n_blocks * block_len
+        # Count occurrences of each date index (may be > 1 if drawn multiple times)
+        date_counts = np.bincount(selected_date_idxs, minlength=n_dates)
+
+        # Expand rows: each row is replicated by date_counts[date_idx[row]]
+        row_weights = date_counts[date_idx]   # per-row replication count
+
+        if row_weights.sum() < 20:
             continue
 
-        # Compute stratified delta for this bootstrap sample
-        h_hit = hit[row_mask & (is_hostile == 1)]
-        b_hit = hit[row_mask & (is_hostile == 0)]
-        h_stratum = stratum_idx[row_mask & (is_hostile == 1)]
-        b_stratum = stratum_idx[row_mask & (is_hostile == 0)]
-
-        weighted_deltas = 0.0
+        # Compute stratified delta with row weights
+        weighted_deltas_val = 0.0
         total_w = 0.0
         for s in range(n_strata):
-            h_s = h_hit[h_stratum == s]
-            b_s = b_hit[b_stratum == s]
-            n_h, n_b = len(h_s), len(b_s)
-            if n_h < 1 or n_b < 1:
+            mask_h = (is_hostile == 1) & (stratum_idx == s)
+            mask_b = (is_hostile == 0) & (stratum_idx == s)
+            w_h = row_weights[mask_h]
+            w_b = row_weights[mask_b]
+            h_hit_s = hit[mask_h]
+            b_hit_s = hit[mask_b]
+            n_h_eff = w_h.sum()
+            n_b_eff = w_b.sum()
+            if n_h_eff < 1 or n_b_eff < 1:
                 continue
-            hm = 2.0 * n_h * n_b / (n_h + n_b)
-            delta_s = h_s.mean() - b_s.mean()
-            weighted_deltas += hm * delta_s
+            mean_h = np.dot(w_h, h_hit_s) / n_h_eff
+            mean_b = np.dot(w_b, b_hit_s) / n_b_eff
+            hm = 2.0 * n_h_eff * n_b_eff / (n_h_eff + n_b_eff)
+            weighted_deltas_val += hm * (mean_h - mean_b)
             total_w += hm
 
         if total_w > 0:
-            deltas.append(weighted_deltas / total_w)
+            deltas.append(weighted_deltas_val / total_w)
 
     if len(deltas) < 100:
         return (np.nan, np.nan)
@@ -661,7 +700,11 @@ def analyze_axis(
 
         # Assign drawdown stratum
         if spy_dd is not None:
-            fires_h["stratum"] = assign_drawdown_stratum(fires_h["as_of_dt"], spy_dd)
+            strata, n_defaulted = assign_drawdown_stratum(fires_h["as_of_dt"], spy_dd)
+            fires_h["stratum"] = strata
+            if n_defaulted > 0:
+                print(f"    WARNING: {n_defaulted} fire dates predated the index series start "
+                      f"and were assigned dd_0_5 stratum by default")
         else:
             fires_h["stratum"] = "dd_0_5"   # fallback: single stratum
 
@@ -754,6 +797,34 @@ def analyze_axis(
             cell_result["modern_cohort_delta"] = None
             cell_result["modern_cohort_n"] = len(fires_modern)
 
+        # Family composition (spine `family` column: buy/sell/cut/rebuy)
+        # Descriptive only — the pooled delta may reflect composition mix, not pure transmission.
+        if "family" in fires_h.columns:
+            fam_comp: dict[str, Any] = {}
+            families = sorted(fires_h["family"].dropna().unique().tolist())
+            for fam in families:
+                fam_df = fires_h[fires_h["family"] == fam]
+                n_h_fam = int((fam_df["arm"] == "hostile").sum())
+                n_b_fam = int((fam_df["arm"] == "benign").sum())
+                n_hostile_arm_total = int((fires_h["arm"] == "hostile").sum())
+                n_benign_arm_total = int((fires_h["arm"] == "benign").sum())
+                hostile_share = round(n_h_fam / max(1, n_hostile_arm_total), 4)
+                benign_share = round(n_b_fam / max(1, n_benign_arm_total), 4)
+                # Within-family delta (unstratified — for descriptive family decomposition)
+                h_hits = fam_df[fam_df["arm"] == "hostile"]["hit"]
+                b_hits = fam_df[fam_df["arm"] == "benign"]["hit"]
+                within_delta = None
+                if len(h_hits) > 0 and len(b_hits) > 0:
+                    within_delta = round(float(h_hits.mean() - b_hits.mean()), 4)
+                fam_comp[fam] = {
+                    "n_hostile": n_h_fam,
+                    "n_benign": n_b_fam,
+                    "hostile_share": hostile_share,
+                    "benign_share": benign_share,
+                    "within_delta": within_delta,
+                }
+            cell_result["family_composition"] = fam_comp
+
         result["horizons"][str(h)] = cell_result
 
     return result
@@ -796,16 +867,23 @@ def assign_verdicts(axis_results: dict[str, dict]) -> dict[str, dict]:
                 "ci_lo_h2": ci_lo2, "ci_hi_h2": ci_hi2,
             }))
 
-    # Build p-values for BH
+    # Build p-values for BH using FULL-sample CI paired with full-sample delta.
+    # (Fix: previously paired full delta with half-sample CI, understating SE.)
     p_values = []
-    for _, cell in h21_cells:
+    for axis_name_i, cell in h21_cells:
         if cell is None:
             p_values.append(None)
         else:
             d = cell["delta"]
-            ci_lo = cell.get("ci_lo_h1") or cell.get("ci_lo_h2")
-            ci_hi = cell.get("ci_hi_h1") or cell.get("ci_hi_h2")
-            p = _delta_to_pvalue(d, ci_lo or np.nan, ci_hi or np.nan)
+            # Use the full-sample bootstrap CI (ci_lo / ci_hi stored directly on h21 cell)
+            h21_full = axis_results[axis_name_i].get("horizons", {}).get("21", {})
+            ci_lo_full = h21_full.get("ci_lo")
+            ci_hi_full = h21_full.get("ci_hi")
+            p = _delta_to_pvalue(
+                d,
+                ci_lo_full if ci_lo_full is not None else np.nan,
+                ci_hi_full if ci_hi_full is not None else np.nan,
+            )
             p_values.append(p)
 
     bh_rejected = bh_correct(p_values)
@@ -870,7 +948,7 @@ def generate_report(
     lines.append(f"**Fire tape:** spine_index.parquet track_record, outcome_graded=True, horizons 5/21/63  ")
     lines.append(f"**Verdict horizon:** h21  ")
     lines.append(f"**Cumulative macro_tx trial count:** {cumulative_macro_tx_count}  ")
-    lines.append(f"**SPY/S&P 500 drawdown source:** {spy_source}  ")
+    lines.append(f"**S&P 500 drawdown source:** {spy_source}  ")
     lines.append(f"**USD series source:** {usd_source}  ")
     lines.append("")
 
@@ -879,15 +957,35 @@ def generate_report(
     lines.append("")
     lines.append("## In plain English")
     lines.append("")
-    lines.append("> This study asks: when a macro condition is hostile at the time a signal fires — "
-                 "when rates are rising fast, the dollar is surging, credit spreads are blowing out, "
-                 "or financial conditions are tight — does the signal perform differently versus "
-                 "normal times? Each macro axis is tested separately (never combined). The verdict "
-                 "requires the hostile-vs-normal hit-rate gap to be stable across two time periods "
-                 "AND the statistical confidence interval to exclude zero in both periods. Any axis "
-                 "that passes this gate re-opens the question of whether macro conditioning should "
-                 "be wired into the signal engine (subject to further approval). A fail means the "
-                 "gap is not reliably there. Either outcome is informative and is printed honestly.")
+    lines.append("> **What is being measured:** The outcome metric `hit` equals 1 when the signal "
+                 "achieved *any* positive favorable excursion versus the benchmark within 21 sessions "
+                 "of firing (i.e., `outcome_excess > 0`). The metric is floored at zero — it is an "
+                 "achieved-favorable-excursion indicator, not a signed return or a 'beat the market' "
+                 "measure. The base rate across all fires is approximately 88% (roughly 12% of fires "
+                 "never achieved any favorable excursion). The delta reported here measures how much "
+                 "MORE OFTEN hostile-window fires FAIL to achieve any favorable excursion compared "
+                 "to benign-window fires. A negative delta means hostile fires reach favorable "
+                 "excursion less often than benign fires.  "
+                 "\n>\n> "
+                 "**What is being asked:** When a macro condition is hostile at the time a signal "
+                 "fires — when rates are rising fast, the dollar is surging, credit spreads are "
+                 "blowing out, or financial conditions are tight — does the signal's favorable "
+                 "excursion rate change versus normal times? Each macro axis is tested separately "
+                 "(never combined). The verdict requires the hostile-vs-benign gap to be stable "
+                 "across two time periods AND the bootstrap confidence interval to exclude zero in "
+                 "both periods.  "
+                 "\n>\n> "
+                 "**Family composition caveat:** The spine fires are drawn from four signal families "
+                 "(sell, buy, cut, rebuy) in unequal proportions. The hostile arm may have a "
+                 "different mix of these families than the benign arm. The pooled stratified delta "
+                 "is NOT decomposed for family mix — part of the observed delta may reflect "
+                 "composition differences rather than macro transmission. Per-family within-deltas "
+                 "are reported descriptively; treat them as hypothesis-generating, not as verdicts.  "
+                 "\n>\n> "
+                 "Any axis that passes this gate re-opens the question of whether macro conditioning "
+                 "should be wired into the signal engine (subject to further approval and a separate "
+                 "masterplan). A fail means the gap is not reliably there. Either outcome is "
+                 "informative and is printed honestly.")
     lines.append("")
     lines.append("---")
     lines.append("")
@@ -986,6 +1084,30 @@ def generate_report(
             mod_n_b = h21_res.get("modern_cohort_n_benign", "—")
             lines.append(f"Modern delta: {mod_delta} (hostile n={mod_n_h}, benign n={mod_n_b})")
 
+        # Family composition table (h21)
+        h21_res = res.get("horizons", {}).get("21", {})
+        fam_comp = h21_res.get("family_composition") if h21_res else None
+        if fam_comp:
+            lines.append("")
+            lines.append("#### Family composition and within-family deltas (h21, descriptive)")
+            lines.append("")
+            lines.append("| Family | N hostile | N benign | Hostile share | Benign share | Within-family delta |")
+            lines.append("|---|---|---|---|---|---|")
+            for fam, fdata in sorted(fam_comp.items()):
+                lines.append(
+                    f"| {fam} | {fdata.get('n_hostile','—')} | {fdata.get('n_benign','—')} | "
+                    f"{_fmt(fdata.get('hostile_share'))} | {_fmt(fdata.get('benign_share'))} | "
+                    f"{_fmt(fdata.get('within_delta'))} |"
+                )
+            lines.append("")
+            lines.append(
+                "> **Composition caveat:** The hostile and benign arms may have different mixes of "
+                "signal families (sell/buy/cut/rebuy). The pooled stratified delta above is not "
+                "decomposed for this composition effect — part of the observed delta may reflect "
+                "which families fire more often during hostile windows, not pure macro transmission. "
+                "Within-family deltas are descriptive only and do not carry verdict status."
+            )
+
         lines.append("")
 
     # Summary table
@@ -1069,15 +1191,13 @@ def main() -> None:
     else:
         fires["sector"] = "unknown"
 
-    # STEP 4: SPY/S&P 500 for drawdown stratification
-    print("\nLoading SPY close for drawdown stratification...")
-    spy_close = _load_spy_close()
+    # STEP 4: S&P 500 close for drawdown stratification (prefer GSPC 1927→2026 over SPY 1993+)
+    print("\nLoading S&P 500 close for drawdown stratification...")
+    spy_close, spy_source = _load_market_close()
     if spy_close is not None:
-        spy_source = f"data/yahoo/SPY.parquet (close, range {spy_close.index.min().date()} to {spy_close.index.max().date()})"
         spy_dd = _compute_spy_drawdown(spy_close)
-        print(f"  SPY source: {spy_source}")
+        print(f"  Source: {spy_source}")
     else:
-        spy_source = "ABSENT — drawdown stratification uses single stratum (P0-DEFER quality)"
         spy_dd = None
         print(f"  WARNING: {spy_source}")
 
@@ -1170,7 +1290,7 @@ def main() -> None:
         universe_as_of=run_date,
         frame="track_record_historical",
         survivorship_biased=True,   # prereg §1: old eras survivorship-exposed
-        coverage_frac=fires_total / max(1, fires_total),  # graded subset only
+        coverage_frac=1.0,          # all loaded fires are graded (pre-filtered); no separate coverage fraction meaningful here
         dead_name_coverage_pct=None,
         era_law_cohort="track_record_all_eras",
     )

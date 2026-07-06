@@ -6,7 +6,7 @@
   "declared_budget": 12,
   "cumulative_macro_tx_trial_count": 12,
   "fires_total": 165710,
-  "spy_source": "data/yahoo/SPY.parquet (close, range 1993-01-29 to 2026-07-02)",
+  "spy_source": "data/yahoo/_GSPC.parquet (S&P 500, range 1927-12-30 to 2026-06-12)",
   "usd_source": "data/fred/DTWEXBGS.parquet (broad_dollar, FRED)",
   "derived_from_surface": null,
   "contamination_surface": "macro_tx_phase0_v1",
@@ -17,9 +17,9 @@
       "verdict_h21": "P0-PASS",
       "coverage_note": "1962-01-02 to 2026-07-01",
       "episode_count_total": 128,
-      "h21_stratified_delta": -0.0349,
-      "h21_ci_lo": -0.0484,
-      "h21_ci_hi": -0.0218
+      "h21_stratified_delta": -0.034,
+      "h21_ci_lo": -0.0514,
+      "h21_ci_hi": -0.0171
     },
     "A2_usd_shock": {
       "deferred": false,
@@ -27,9 +27,9 @@
       "verdict_h21": "P0-FAIL (BH_fail, sign_unstable, CI_includes_0_in_a_half)",
       "coverage_note": "2006-01-02 to 2026-06-26",
       "episode_count_total": 44,
-      "h21_stratified_delta": -0.0032,
-      "h21_ci_lo": -0.021,
-      "h21_ci_hi": 0.017
+      "h21_stratified_delta": -0.004,
+      "h21_ci_lo": -0.0284,
+      "h21_ci_hi": 0.0197
     },
     "A3_credit_shock": {
       "deferred": false,
@@ -37,9 +37,9 @@
       "verdict_h21": "P0-FAIL (BH_fail, CI_includes_0_in_a_half)",
       "coverage_note": "1996-12-31 to 2026-07-02",
       "episode_count_total": 35,
-      "h21_stratified_delta": 0.0018,
-      "h21_ci_lo": -0.0174,
-      "h21_ci_hi": 0.0225
+      "h21_stratified_delta": 0.002,
+      "h21_ci_lo": -0.024,
+      "h21_ci_hi": 0.0281
     },
     "A4_fin_conditions": {
       "deferred": false,
@@ -47,9 +47,9 @@
       "verdict_h21": "P0-FAIL (BH_fail, sign_unstable, CI_includes_0_in_a_half)",
       "coverage_note": "1971-01-08 to 2026-06-26 (weekly, ffill to BD)",
       "episode_count_total": 28,
-      "h21_stratified_delta": -0.0068,
-      "h21_ci_lo": -0.019,
-      "h21_ci_hi": 0.006
+      "h21_stratified_delta": -0.0063,
+      "h21_ci_lo": -0.0223,
+      "h21_ci_hi": 0.0093
     }
   },
   "vintage_stamp": {
