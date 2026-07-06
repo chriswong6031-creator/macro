@@ -73,15 +73,12 @@
   #sky{position:fixed;inset:0;z-index:-1;pointer-events:none;overflow:hidden;--cs:clamp(120px,13vw,214px)}
   @media(max-width:560px){ #sky{--cs:clamp(92px,26vw,124px)} }
   #sky-stars{position:absolute;inset:0;width:100%;height:100%;display:block}
-  #sky-sun,#sky-moon{position:absolute;width:var(--cs);height:var(--cs);border-radius:50%;
+  #sky-sun{position:absolute;width:var(--cs);height:var(--cs);border-radius:50%;
     transform:translate(-50%,calc(-50% + 80vh));opacity:0;
     transition:transform 1.7s cubic-bezier(.16,.78,.29,1),opacity 1.25s ease}
   #sky[data-sky="day"] #sky-sun{transform:translate(-50%,-50%);opacity:1}
-  #sky[data-sky="night"] #sky-moon{transform:translate(-50%,-50%);opacity:1}
   #sky-sun{background:radial-gradient(circle at 50% 50%,#fffdf7 0%,#fff2cc 20%,#ffd87f 40%,#ffb84d 58%,rgba(255,156,54,.34) 76%,transparent 84%);
     box-shadow:0 0 46px 6px rgba(255,226,150,.6),0 0 110px 28px rgba(255,192,92,.38),0 0 220px 86px rgba(255,170,68,.18)}
-  #sky-moon{background:radial-gradient(circle at 34% 28%,#ffffff 0%,#eef2fb 26%,#cdd8ee 58%,#9fafcf 100%);
-    box-shadow:inset -24px -20px 50px rgba(16,26,54,.58),inset 12px 9px 24px rgba(255,255,255,.42),0 0 56px 10px rgba(150,182,242,.3)}
   .hub-wrap{ max-width:1240px; margin:0 auto; padding:10px 18px 72px; position:relative; z-index:1; }
   body.page-hub > .site-nav{ max-width:1240px; margin:14px auto 8px; padding:0 18px; }
   .ic-svg{ width:15px;height:15px;flex:none;vertical-align:middle; }
@@ -263,7 +260,7 @@
 </style>
 </head>
 <body class="page-hub">
-<div id="sky" aria-hidden="true"><canvas id="sky-stars"></canvas><div id="sky-sun"></div><div id="sky-moon"></div></div>
+<div id="sky" aria-hidden="true"><canvas id="sky-stars"></canvas><div id="sky-sun"></div></div>
 <nav class="site-nav">
   {% include "_navlinks.html.j2" %}
   <div class="nav-search"><span class="mag">🔎</span>
