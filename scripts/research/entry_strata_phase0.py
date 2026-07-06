@@ -911,13 +911,24 @@ def r1_estimate(
         boot_x = x_arr[boot_idx]
         boot_fe = fe_vals[boot_idx]
 
-        # fast demeaning in bootstrap
-        boot_y_dm = np.empty_like(boot_y)
-        boot_x_dm = np.empty_like(boot_x)
-        for cell in np.unique(boot_fe):
-            m = boot_fe == cell
-            boot_y_dm[m] = boot_y[m] - boot_y[m].mean()
-            boot_x_dm[m] = boot_x[m] - boot_x[m].mean()
+        # Vectorised within-FE demeaning — avoids a Python loop over all unique
+        # FE cells (O(n_cells) Python overhead → O(1) via factorize + np.add.at).
+        # Mathematically identical to the per-cell for-loop above.
+        codes, _ = pd.factorize(boot_fe)
+        _n_cells = codes.max() + 1 if len(codes) else 0
+        if _n_cells == 0:
+            boot_coefs.append(0.0)
+            continue
+        _counts = np.zeros(_n_cells)
+        _ysum   = np.zeros(_n_cells)
+        _xsum   = np.zeros(_n_cells)
+        np.add.at(_counts, codes, 1.0)
+        np.add.at(_ysum,   codes, boot_y)
+        np.add.at(_xsum,   codes, boot_x)
+        _ymean = _ysum / np.maximum(_counts, 1)
+        _xmean = _xsum / np.maximum(_counts, 1)
+        boot_y_dm = boot_y - _ymean[codes]
+        boot_x_dm = boot_x - _xmean[codes]
 
         boot_coefs.append(_ols_coef(boot_y_dm, boot_x_dm))
 
