@@ -3610,6 +3610,67 @@ artifacts:
       QA/debug JSON companion to bottom-sensors-parquet.
       is_display_only=true — display and debug surface only.
 
+  # ===========================================================================
+  # LONG-HOLD THESIS LAYER — W1 artifacts (horizon_role: hold_thesis)
+  # Firewall enforced: no scored_path_surfaces; no entry-stack consumers.
+  # LH-R1, LH-R3, LH-R7: research/LONG_HOLD_THESIS_MASTERPLAN_BY_FABLE.md
+  # ===========================================================================
+
+  # --- Long-Hold label panel (W1 PR-E) ---
+  long-hold-labels:
+    path: data/research/long_hold_labels.parquet
+    format: parquet
+    producer: scripts/research/long_hold_label_panel.py
+    known_extra_writers: []
+    owner_program: long-hold
+    cadence: on-demand
+    storage: git
+    asof_field: fire_date
+    freshness_sla_hours: 8760
+    schema: long_hold_labels.v1
+    tier: display
+    horizon_role: hold_thesis
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/research/long_hold_label_panel.py
+    external_consumers: []
+    notes: >
+      W1 PR-E: per-fire outcome labels over gate_fires_baskets.parquet (113,542 fires,
+      2014-2026). Labels: compounder / multiple_expansion_only / cheap_trap / tactical_only
+      / sector_laggard_winner / tactical_only_fail / unlabeled. Pre-registration locked in
+      research/long_hold/OBJECTIVE.md. survivorship_biased field stamps pre-2021-07
+      cohorts as UPPER BOUND per LH-R3. Episode-cluster n: 2,414 at 252d (honest cohort),
+      13,586 at 126d — both exceed the n>=25 floor (LH-R4).
+      FIREWALL: horizon_role=hold_thesis. This artifact MUST NOT feed entry-stack
+      z-scores, board ordering, top-setups gates, alert triage, or push floor.
+      LH-R7 (ledger law): nightly is sole advancer of this forward ledger.
+
+  # --- Long-Hold labels manifest (W1 PR-E) ---
+  long-hold-labels-manifest:
+    path: data/research/long_hold_labels_manifest.json
+    format: json
+    producer: scripts/research/long_hold_label_panel.py
+    known_extra_writers: []
+    owner_program: long-hold
+    cadence: on-demand
+    storage: git
+    asof_field: generated_at
+    freshness_sla_hours: 8760
+    schema: long_hold_labels_manifest.v1
+    tier: display
+    horizon_role: hold_thesis
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/research/long_hold_label_panel.py
+    external_consumers: []
+    notes: >
+      Companion manifest for long_hold_labels.parquet. Per-label per-cohort-year
+      counts, coverage fractions, survivorship stamps, episode-cluster counts,
+      gap_period flags, runtime stats. Produced by the same script as long-hold-labels.
+      FIREWALL: hold_thesis — no entry-stack consumers permitted.
+
   # --- NW quant-synthesis B: research-queue EV-ranker ---
   research-queue:
     path: data/neuralweb/research_queue.json
