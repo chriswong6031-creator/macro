@@ -98,6 +98,10 @@ on:
       # test pins producer (AST) + template consumer, so the builder must trigger CI.
       - "scripts/build_stock_library.py"
       - "tests/test_sector_pulse_wiring.py"
+      # China Lens / Intel Hub W0.2: builder + test must re-run together so a
+      # headline crash or schema drift fails RED before merging.
+      - "scripts/build_intel_hub.py"
+      - "tests/test_china_lens_hub.py"
       # W5a DAG conformance: any change to a workflow, the dag.yml, the checker, or
       # the test file must re-prove the conformance check still holds.
       - ".github/workflows/**"
@@ -380,7 +384,7 @@ jobs:
           tests/test_canon.py tests/test_whitehouse_w5.py
           tests/test_board_ledger.py tests/test_grade_us_board.py
           tests/test_options_stamp.py tests/test_sector_pulse_wiring.py
-          tests/test_news_page_render.py -q
+          tests/test_news_page_render.py tests/test_china_lens_hub.py -q
 
   collector-registry:
     # 2026-07-03 (#1052 post-mortem): PR #1052's squash-merge shipped scripts/collect.py as

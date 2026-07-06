@@ -202,6 +202,34 @@
   .ql-chip-graded-neg { background:color-mix(in srgb,var(--down) 14%,transparent);
     color:var(--down); border-color:color-mix(in srgb,var(--down) 35%,transparent); }
   .desk-chips { display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-top:5px; }
+  /* China Lens module (W0.2) */
+  .cl-badge{ font-size:9px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;
+    padding:2px 7px;border-radius:5px;
+    background:color-mix(in srgb,#f59e0b 18%,transparent);color:#f59e0b;margin-left:7px; }
+  .cl-wrap{ margin-top:0; }
+  .cl-headline{ font-size:13.5px;font-weight:600;color:var(--text);margin-bottom:10px;line-height:1.4; }
+  .cl-chips{ display:flex;flex-wrap:wrap;gap:7px;margin-bottom:12px; }
+  .cl-chip{ font-size:11.5px;font-weight:600;padding:5px 11px;border-radius:9px;cursor:default;
+    background:color-mix(in srgb,var(--panel) 78%,transparent);
+    border:1px solid color-mix(in srgb,var(--line) 75%,transparent); }
+  .cl-chip-stale{ border-color:color-mix(in srgb,var(--warn) 45%,var(--line));
+    color:var(--warn); }
+  .cl-rows{ display:flex;flex-direction:column;gap:9px;margin-bottom:12px; }
+  .cl-row{ display:flex;align-items:center;gap:10px;padding:9px 0;
+    border-top:1px solid color-mix(in srgb,var(--line) 50%,transparent); }
+  .cl-row:first-child{ border-top:0; }
+  .cl-sector{ font-size:13px;font-weight:700;min-width:120px; }
+  @media(max-width:560px){ .cl-sector{ min-width:80px;font-size:12px; } }
+  .cl-fresh{ display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:10px;margin-bottom:10px; }
+  .cl-fresh-label{ font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em; }
+  .cl-dot{ font-size:9.5px;font-weight:700;padding:2px 7px;border-radius:5px;cursor:default;
+    text-transform:uppercase;letter-spacing:.03em; }
+  .cl-dot-ok{ background:color-mix(in srgb,var(--ok) 16%,transparent);color:var(--ok); }
+  .cl-dot-stale{ background:color-mix(in srgb,var(--down) 16%,transparent);color:var(--down); }
+  .cl-footer{ margin-top:10px;padding-top:8px;
+    border-top:1px solid color-mix(in srgb,var(--line) 50%,transparent); }
+  .cl-link{ font-size:12px;font-weight:600;color:var(--info);text-decoration:none; }
+  .cl-link:hover{ text-decoration:underline; }
 </style>
 </head>
 <body class="page-hub">
@@ -452,7 +480,7 @@
           
           <div class="nav-mega-col">
             <div class="nav-mega-h"><span class="l-en">Policy & Quant Lab</span><span class="l-zh">政策与量化</span></div>
-            <a class="nav-mega-item" href="committee.html"><span class="nm-ic">🧬</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Committee View</span><span class="l-zh">委员会视图</span></span><span class="d"><span class="l-en">Every signal traced to its graded source · kernel · ladder · staleness</span><span class="l-zh">每条信号溯源 · 核心估计 · 阶梯状态 · 时效性</span></span></span></a>
+            <a class="nav-mega-item" href="committee.html"><span class="nm-ic">🧠</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Neural Web</span><span class="l-zh">神经网</span></span><span class="d"><span class="l-en">The living brain — synapse map, signal committee, cortex memo</span><span class="l-zh">活体大脑 — 突触地图 · 信号委员会 · 皮层备忘录</span></span></span></a>
             <a class="nav-mega-item" href="policy_watch.html"><span class="nm-ic">🏦</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Fed & Policy Watch</span><span class="l-zh">美联储与政策观察</span></span><span class="d"><span class="l-en">Fed + Administration intent & capital rotation</span><span class="l-zh">美联储+政府意图与资本轮动</span></span></span></a>
             <a class="nav-mega-item" href="whitehouse.html"><span class="nm-ic">🏛️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">White House Watch</span><span class="l-zh">白宫快讯</span></span><span class="d"><span class="l-en">Policy alerts · sector head/tailwinds · exposed names</span><span class="l-zh">政策快讯 · 行业顺逆风 · 受影响标的</span></span></span></a>
             <a class="nav-mega-item" href="signal_lab.html"><span class="nm-ic">🔬</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Signal Lab</span><span class="l-zh">信号实验室</span></span><span class="d"><span class="l-en">Consolidated validation scorecard</span><span class="l-zh">验证记分卡汇总</span></span></span></a>
@@ -479,7 +507,7 @@
 
 <div class="hub-wrap">
   <header class="hh">
-    <span class="eyebrow"><span class="live"></span><span class="l-en">Central command · five desks fused</span><span class="l-zh">中枢指挥 · 五台融合</span> · <time datetime="2026-07-06T19:24:07.106458+00:00">2026-07-06</time></span>
+    <span class="eyebrow"><span class="live"></span><span class="l-en">Central command · five desks fused</span><span class="l-zh">中枢指挥 · 五台融合</span> · <time datetime="2026-07-06T22:30:31.013694+00:00">2026-07-06</time></span>
     <h1><span class="l-en">Intelligence Hub</span><span class="l-zh">情报中心</span></h1>
     <p><span class="l-en">Ranked by EDGE REMAINING — genuine signal × how much of the move is still ahead × a leading desk firing before the crowd — not by how many desks agree (agreement is a lagging, consensus condition). The hero is what is EMERGING: a leading desk positioning into a quiet tape with room to run. The crowd-favourite that has already run is demoted on purpose. Context only, never a trade trigger.</span><span class="l-zh">按「剩余空间」排序 —— 真实信号 × 行情尚未走完的幅度 × 领先信号台抢在人群之前发动 —— 而非看多少台一致（一致性是滞后的共识状态）。主推「萌芽」机会：领先信号台在安静的盘面中悄悄建仓、仍有上行空间。已经跑完的人群宠儿被刻意下调。仅供参考，绝非交易触发。</span></p>
   </header>
@@ -548,6 +576,147 @@
       <div class="desk-chips"><span class="ql-chip ql-chip-ungraded"><span class="l-en">UNGRADED · n=0</span><span class="l-zh">未评级 · n=0</span></span></div>
     </a>
   </div>
+
+  
+  
+  
+  
+  <div id="china-lens" class="band"><h2 style="--accent:#f59e0b">
+<svg class="ic-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2.1 5L8.5 15.5l2.1-5z"/></svg>
+    <span class="l-en">China Lens</span><span class="l-zh">中国观察</span>
+    <span class="cl-badge"><span class="l-en">Context only</span><span class="l-zh">上下文</span></span></h2>
+    <span class="ln"></span>
+    
+    <span class="cnt" data-tip-en="briefing.json is built in the asia lane (~08:30 UTC); hub builds at 02:00 UTC — typical lag ~18h" data-tip-zh="简报在亚洲收盘后生成（约北京时间16:30），与情报中枢更新时差约18小时">
+      <span class="l-en">as of</span><span class="l-zh">截至</span> 2026-07-06
+      <span class="l-en">(today)</span><span class="l-zh">（今日）</span>
+      
+    </span>
+    
+  </div>
+  <div class="glass acc cl-wrap" style="--accent:#f59e0b;padding:14px 16px">
+    
+    <div class="cl-headline">+1 accumulation · Upcoming: Customs trade (exports/imports), CPI (consumer prices)</div>
+
+    
+    <div class="cl-chips">
+      
+      
+      
+      
+      <span class="cl-chip"
+        data-tip-en="RORO state: neutral"
+        data-tip-zh="风险偏好状态：neutral">
+        <span class="l-en">CN Sentiment: Greed</span>
+        <span class="l-zh">CN情绪：贪婪</span>
+      </span>
+      
+      
+      <span class="cl-chip "
+        data-tip-en="PBoC stance"
+        data-tip-zh="央行立场">
+        <span class="l-en">PBoC: On hold / neutral</span>
+        <span class="l-zh">央行：按兵不动 / 中性</span>
+      </span>
+      
+      
+      <span class="cl-chip"
+        data-tip-en="China news sentiment band"
+        data-tip-zh="中国新闻情绪区间">
+        <span class="l-en">News: cautious / risk-tilted lean</span>
+        <span class="l-zh">新闻：偏谨慎 / 防风险</span>
+      </span>
+      
+      
+      <span class="cl-chip"
+        data-tip-en="11 flagged tickers — see china_intel.html for detail"
+        data-tip-zh="11 只关注标的 — 详情见中国情报页">
+        11 <span class="l-en">flagged tickers</span><span class="l-zh">关注标的</span>
+      </span>
+      
+    </div>
+
+    
+    
+    <div class="cl-rows">
+      
+      <div class="cl-row">
+        <div class="cl-sector">
+          <span class="l-en">Defense</span><span class="l-zh">国防军工</span>
+        </div>
+        <span class="stage emerging"><span class="l-en">emerging</span><span class="l-zh">萌芽</span></span>
+        <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
+<span class="ebar"><i style="width:74%"></i></span>
+<span class="ev">74%</span></div>
+      </div>
+      
+      <div class="cl-row">
+        <div class="cl-sector">
+          <span class="l-en">Semiconductors</span><span class="l-zh">半导体</span>
+        </div>
+        <span class="stage consensus"><span class="l-en">consensus</span><span class="l-zh">共识</span></span>
+        <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
+<span class="ebar"><i style="width:36%"></i></span>
+<span class="ev">36%</span></div>
+      </div>
+      
+    </div>
+    
+
+    
+    
+    <div class="cl-fresh">
+      <span class="cl-fresh-label"><span class="l-en">surfaces:</span><span class="l-zh">数据面：</span></span>
+      
+      <span class="cl-dot cl-dot-ok"
+        data-tip-en="news: 2026-07-06"
+        data-tip-zh="news：2026-07-06">news</span>
+      
+      <span class="cl-dot cl-dot-ok"
+        data-tip-en="policy: 2026-07-03"
+        data-tip-zh="policy：2026-07-03">policy</span>
+      
+      <span class="cl-dot cl-dot-ok"
+        data-tip-en="altdata: 2026-07-06"
+        data-tip-zh="altdata：2026-07-06">altdata</span>
+      
+      <span class="cl-dot cl-dot-ok"
+        data-tip-en="radar: 2026-07-06"
+        data-tip-zh="radar：2026-07-06">radar</span>
+      
+      <span class="cl-dot cl-dot-ok"
+        data-tip-en="analysis: 2026-07-06"
+        data-tip-zh="analysis：2026-07-06">analysis</span>
+      
+      <span class="cl-dot cl-dot-stale"
+        data-tip-en="policy_phrase: 2026-07-02 (stale >3d)"
+        data-tip-zh="policy_phrase：2026-07-02（数据偏旧，超过3天）">policy_phrase</span>
+      
+      <span class="cl-dot cl-dot-ok"
+        data-tip-en="narrative_divergence: None"
+        data-tip-zh="narrative_divergence：None">narrative_divergence</span>
+      
+      <span class="cl-dot cl-dot-ok"
+        data-tip-en="special_situations: 2026-07-06"
+        data-tip-zh="special_situations：2026-07-06">special_situations</span>
+      
+      <span class="cl-dot cl-dot-ok"
+        data-tip-en="command: 2026-07-06"
+        data-tip-zh="command：2026-07-06">command</span>
+      
+    </div>
+    
+
+    
+    <div class="cl-footer">
+      <a href="china_intel.html" class="cl-link">
+        <span class="l-en">Full China report →</span><span class="l-zh">查看中国完整报告 →</span>
+      </a>
+    </div>
+  </div>
+  
+  
 
   
   
@@ -1867,7 +2036,7 @@
 
 
   <footer class="hf">
-    <span class="l-en">Built</span><span class="l-zh">生成于</span> <time datetime="2026-07-06T19:24:07.106458+00:00">2026-07-06 19:24</time> UTC ·
+    <span class="l-en">Built</span><span class="l-zh">生成于</span> <time datetime="2026-07-06T22:30:31.013694+00:00">2026-07-06 22:30</time> UTC ·
     Context only. A central command that fuses five independent desks — news flow, alt-data smart-money, the divergence radar, the factor buy-board, and policy intent — into one reasoned read per name. Composite conviction rewards INDEPENDENT agreement across desks and is docked by an unanswered falsifier; the second/third-order flags name the setup. The bot sizes through its own risk framework; nothing here sizes alone.
   </footer>
 </div>
