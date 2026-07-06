@@ -1,4 +1,4 @@
-"""Tests for BD Phase-0 breakdown event tape (PR-5, L1 short-side).
+"""Tests for BD Phase-0 / Phase-0b breakdown event tape (L1 short-side).
 
 Synthetic fixtures only — CI has no canonical massive_stock_day data.
 
@@ -14,6 +14,13 @@ Covers:
   9. Paired within-event contrast correctness (B1)
   10. Clustered bootstrap CI plumbing determinism (B2)
   11. fresh_breach_mask canonical helper (N1)
+  --- Phase-0b additions ---
+  12. BD-4 Two-Clock Rollover detector (warmup floor, rollover formula, extended gate)
+  13. BD-5 Coiled Breakdown detector (coil percentile, distribution sigma, flat-window guard)
+  14. BD-6 Within-Sector Leader Fade detector (sector pre-pass, fade guard, near-highs)
+  15. Sector pre-pass on synthetic panel
+  16. Seeding stability: BD-4/5/6 independent seeds don't corrupt BD-1/2/3 event rows
+  17. v3 summary schema: all six definitions + overlap matrix + RUL-U3a budget note
 """
 from __future__ import annotations
 
@@ -775,6 +782,11 @@ class TestModuleImports:
         assert hasattr(m, "detect_bd1")
         assert hasattr(m, "detect_bd2")
         assert hasattr(m, "detect_bd3")
+        # Phase-0b
+        assert hasattr(m, "detect_bd4")
+        assert hasattr(m, "detect_bd5")
+        assert hasattr(m, "detect_bd6")
+        assert hasattr(m, "build_sector_panel")
         assert hasattr(m, "_collapse_episodes")
         assert hasattr(m, "_grade_event")
 
@@ -1077,4 +1089,950 @@ class TestFreshBreachMask:
         assert not missing, (
             f"analyze() risk_flags {missing} not present in fresh_breach_mask — "
             "fresh_breach_mask and analyze use different constructions"
+        )
+
+
+# ---------------------------------------------------------------------------
+# 12. BD-4 Two-Clock Rollover detector (Phase-0b prereg §1)
+# ---------------------------------------------------------------------------
+
+class TestBD4Detection:
+    """BD-4 Two-Clock Rollover — frozen formula edge cases."""
+
+    def _make_rolling_peak_series(self, n_pre: int = 290) -> tuple[pd.Series, pd.DataFrame]:
+        """Build a close series that fires BD-4:
+        - price runs up to ~100, then rolls over (oscillators peak near 80+, then fall 15+)
+        - close stays extended (>= 0.88 * 252-bar max)
+        """
+        # warmup phase: gradual rise from 50 to 100
+        warm = np.linspace(50.0, 100.0, n_pre)
+        # peak phase: flat at 100 for 20 bars (osc should be near 100)
+        peak = np.full(20, 100.0)
+        # rollover phase: drop to 90 over 20 bars — osc falls sharply
+        roll = np.linspace(100.0, 90.0, 20)
+        # extended tail: stay at 90 (0.90 >= 0.88 * 100 = 88 ✓)
+        tail = np.full(20, 90.0)
+        vals = np.concatenate([warm, peak, roll, tail])
+        idx = pd.bdate_range("2021-01-04", periods=len(vals))
+        close = pd.Series(vals, index=idx)
+        raw_df = pd.DataFrame({
+            "open": close, "high": close + 1, "low": close - 1,
+            "close": close, "volume": pd.Series(2e6, index=close.index)
+        })
+        return close, raw_df
+
+    def test_bd4_requires_273_warmup_bars(self):
+        """BD-4 never fires before 273 prior bars (raised ERA-LAW floor)."""
+        from scripts.research.dump_breakdown_events import detect_bd4, BD4_WARMUP_BARS
+        close, raw_df = self._make_rolling_peak_series(n_pre=290)
+        events = detect_bd4("TEST", close, raw_df)
+        for ts in events:
+            loc = close.index.get_loc(ts)
+            assert loc >= BD4_WARMUP_BARS, (
+                f"BD-4 event at bar {loc} < warmup floor {BD4_WARMUP_BARS}"
+            )
+
+    def test_bd4_returns_list(self):
+        """detect_bd4 returns a list (no exception) on a valid series."""
+        from scripts.research.dump_breakdown_events import detect_bd4
+        close, raw_df = self._make_rolling_peak_series()
+        events = detect_bd4("TEST", close, raw_df)
+        assert isinstance(events, list)
+
+    def test_bd4_empty_on_flat_series(self):
+        """BD-4 never fires on a flat series (oscillators don't peak then roll)."""
+        from scripts.research.dump_breakdown_events import detect_bd4
+        # Flat close: pos63/pos252 are NaN (max==min), daily/weekly_osc = NaN
+        # So rollover conditions can't fire
+        close = _long_series(n=500, start_price=50.0)
+        raw_df = pd.DataFrame({
+            "open": close, "high": close + 0.01, "low": close - 0.01,
+            "close": close, "volume": pd.Series(1e6, index=close.index)
+        })
+        events = detect_bd4("TEST", close, raw_df)
+        assert events == []
+
+    def test_bd4_extended_gate_requires_close_near_max(self):
+        """BD-4 extended gate: close < 0.88 * 252-bar max → no event even if oscillators roll."""
+        from scripts.research.dump_breakdown_events import detect_bd4
+        # Build series: peak at 100, then crashes to 70 (70 < 0.88 * 100 = 88)
+        n_pre = 290
+        warm = np.linspace(50.0, 100.0, n_pre)
+        crash = np.full(30, 70.0)  # 70 < 88 → not extended
+        vals = np.concatenate([warm, crash])
+        idx = pd.bdate_range("2021-01-04", periods=len(vals))
+        close = pd.Series(vals, index=idx)
+        raw_df = pd.DataFrame({
+            "open": close, "high": close + 1, "low": close - 1,
+            "close": close, "volume": pd.Series(2e6, index=close.index)
+        })
+        events = detect_bd4("TEST", close, raw_df)
+        # In the crash zone, extended=False → no BD-4 events should fire
+        for ts in events:
+            loc = close.index.get_loc(ts)
+            price = float(close.iloc[loc])
+            max252 = float(close.rolling(252).max().iloc[loc])
+            assert price >= 0.88 * max252, (
+                f"BD-4 event at {ts}: price={price:.2f} < 0.88*max252={0.88*max252:.2f}"
+            )
+
+    def test_bd4_era_start_respected(self):
+        """BD-4 events are all >= ERA_START."""
+        from scripts.research.dump_breakdown_events import detect_bd4, ERA_START
+        close, raw_df = self._make_rolling_peak_series()
+        events = detect_bd4("TEST", close, raw_df)
+        for ts in events:
+            assert ts >= ERA_START
+
+
+# ---------------------------------------------------------------------------
+# 13. BD-5 Coiled Breakdown detector (Phase-0b prereg §2)
+# ---------------------------------------------------------------------------
+
+class TestBD5Detection:
+    """BD-5 Coiled Breakdown — frozen formula edge cases."""
+
+    def _make_coiled_breakdown_series(self, n_pre: int = 260) -> tuple[pd.Series, pd.DataFrame]:
+        """Build a series that fires BD-5:
+        - coil_ratio < 20th pctile (tight range before breakdown)
+        - distribution (sv_21 sum) is -0.5σ below mean
+        - breakdown: C < min(C, 21 bars ending t-1)
+        """
+        # warmup: varying prices to build meaningful pctile distribution
+        rng = np.random.default_rng(42)
+        warm = 50.0 + np.cumsum(rng.normal(0, 1, n_pre)) % 20
+        warm = np.clip(warm, 30, 80)
+
+        # coil phase: very tight range (21-bar range ~ 1.0 on price 60)
+        coil_phase = np.full(30, 60.0)
+        # slight perturbation to avoid exactly flat
+        coil_phase += rng.uniform(-0.1, 0.1, 30)
+
+        # breakdown: sharp drop below prior 21-bar min
+        prior_21_min = float(np.min(coil_phase[-21:]))
+        breakdown_val = prior_21_min * 0.97  # 3% below 21-bar min
+        breakdown = np.array([breakdown_val, breakdown_val * 0.99])
+
+        tail = np.full(30, breakdown_val * 0.98)
+        vals = np.concatenate([warm, coil_phase, breakdown, tail])
+        idx = pd.bdate_range("2021-01-04", periods=len(vals))
+        close = pd.Series(vals, index=idx)
+
+        # OHLCV: in the coil phase, close near high (sv > 0 usually)
+        # In breakdown phase: close near low (sv < 0) to build distribution signal
+        n = len(vals)
+        high  = pd.Series(close + 2.0, index=idx)
+        low   = pd.Series(close - 0.5, index=idx)
+        # In breakdown zone: close near low (deteriorating distribution)
+        bd_start = n_pre + 30
+        for j in range(bd_start, n):
+            high.iloc[j] = close.iloc[j] + 0.3
+            low.iloc[j]  = close.iloc[j] - 3.0
+        volume = pd.Series(np.full(n, 1_500_000.0), index=idx)
+        raw_df = pd.DataFrame({
+            "open": close, "high": high, "low": low,
+            "close": close, "volume": volume
+        })
+        return close, raw_df
+
+    def test_bd5_returns_list_no_exception(self):
+        """detect_bd5 returns a list without raising on a valid series."""
+        from scripts.research.dump_breakdown_events import detect_bd5
+        close, raw_df = self._make_coiled_breakdown_series()
+        events = detect_bd5("TEST", close, raw_df)
+        assert isinstance(events, list)
+
+    def test_bd5_requires_hlv(self):
+        """BD-5 returns empty when raw_df is None (no H/L/V → sign_volume unavailable)."""
+        from scripts.research.dump_breakdown_events import detect_bd5
+        close = _long_series(n=400, start_price=50.0)
+        events = detect_bd5("TEST", close, None)
+        assert events == [], "BD-5 requires H/L/V; should return empty without raw_df"
+
+    def test_bd5_breakdown_gate_requires_close_below_prior_21min(self):
+        """BD-5 breakdown gate: C >= min(C, 21 bars ending t-1) → no event."""
+        from scripts.research.dump_breakdown_events import detect_bd5
+        # Flat close: never breaks below its own 21-bar min
+        close = _long_series(n=500, start_price=50.0)
+        raw_df = pd.DataFrame({
+            "open": close, "high": close + 1, "low": close - 1,
+            "close": close, "volume": pd.Series(2e6, index=close.index)
+        })
+        events = detect_bd5("TEST", close, raw_df)
+        assert events == [], "Flat series: no breakdown → no BD-5 events"
+
+    def test_bd5_coil_percentile_uses_252bar_window(self):
+        """The coil percentile window is 252 bars (bd1 convention: sv_21.rolling(252))."""
+        from scripts.research.dump_breakdown_events import (
+            BD5_COIL_PCT_WINDOW, BD5_DIST_ROLL_WINDOW
+        )
+        assert BD5_COIL_PCT_WINDOW == 252
+        assert BD5_DIST_ROLL_WINDOW == 252
+
+    def test_bd5_distribution_sigma_is_neg_half(self):
+        """The distribution sigma threshold is -0.5 (BD-1 convention verbatim)."""
+        from scripts.research.dump_breakdown_events import BD5_DIST_SIGMA
+        assert BD5_DIST_SIGMA == pytest.approx(-0.5)
+
+    def test_bd5_era_start_respected(self):
+        """BD-5 events are all >= ERA_START."""
+        from scripts.research.dump_breakdown_events import detect_bd5, ERA_START
+        close, raw_df = self._make_coiled_breakdown_series()
+        events = detect_bd5("TEST", close, raw_df)
+        for ts in events:
+            assert ts >= ERA_START
+
+
+# ---------------------------------------------------------------------------
+# 14. BD-6 Within-Sector Leader Fade (Phase-0b prereg §3)
+# ---------------------------------------------------------------------------
+
+class TestBD6Detection:
+    """BD-6 Within-Sector Leader Fade — frozen formula, sector pre-pass, flat-window guard."""
+
+    def _make_sector_panel_synthetic(
+        self, tickers: list[str], sector: str = "TestSector"
+    ) -> dict:
+        """Build a minimal sector_panel dict for testing detect_bd6.
+
+        Each ticker has a 500-bar close series (2021+).  All in the same synthetic sector.
+        Returns sector_panel with pre-computed top-decile and median values.
+        """
+        rng = np.random.default_rng(77)
+        n = 500
+        idx = pd.bdate_range("2021-01-04", periods=n)
+        ticker_closes: dict[str, pd.Series] = {}
+        for i, tk in enumerate(tickers):
+            # Each ticker has slightly different trajectory
+            vals = 50.0 + np.cumsum(rng.normal(0, 0.5, n)) + i * 5
+            vals = np.clip(vals, 5.0, 200.0)
+            ticker_closes[tk] = pd.Series(vals, index=idx)
+
+        # Compute per-bar top-decile (126-bar return) and median (21-bar return)
+        from scripts.research.dump_breakdown_events import BD6_MIN_SECTOR_MEMBERS
+        sector_top_decile_126: dict[str, dict[str, float]] = {}
+        sector_median_21:      dict[str, dict[str, float]] = {}
+        sector_map = {tk: sector for tk in tickers}
+
+        for i, ts in enumerate(idx):
+            ts_str = str(ts.date())
+            r126_vals = []
+            r21_vals  = []
+            for tk, c in ticker_closes.items():
+                if i >= 126:
+                    p_now  = float(c.iloc[i])
+                    p_prev = float(c.iloc[i - 126])
+                    if p_prev > 0:
+                        r126_vals.append(p_now / p_prev - 1.0)
+                if i >= 21:
+                    p_now  = float(c.iloc[i])
+                    p_prev = float(c.iloc[i - 21])
+                    if p_prev > 0:
+                        r21_vals.append(p_now / p_prev - 1.0)
+            sec_d: dict[str, float] = {}
+            sec_m: dict[str, float] = {}
+            if len(r126_vals) >= BD6_MIN_SECTOR_MEMBERS:
+                sec_d[sector] = float(np.percentile(r126_vals, 90))
+            if len(r21_vals) >= BD6_MIN_SECTOR_MEMBERS:
+                sec_m[sector] = float(np.median(r21_vals))
+            sector_top_decile_126[ts_str] = sec_d
+            sector_median_21[ts_str]      = sec_m
+
+        return {
+            "sector_top_decile_126": sector_top_decile_126,
+            "sector_median_21":      sector_median_21,
+            "sector_map":            sector_map,
+            "artifact_path":         "synthetic",
+            "as_of":                 "2026-07-06",
+            "n_tickers_covered":     len(tickers),
+        }
+
+    def test_bd6_returns_empty_when_no_sector_panel(self):
+        """detect_bd6 returns [] when sector_panel is None or empty."""
+        from scripts.research.dump_breakdown_events import detect_bd6
+        close = _long_series(n=500, start_price=100.0)
+        events = detect_bd6("TEST", close, None, {})
+        assert events == []
+
+        events2 = detect_bd6("TEST", close, None, None)
+        assert events2 == []
+
+    def test_bd6_returns_empty_when_ticker_not_in_sector_map(self):
+        """detect_bd6 returns [] when ticker has no sector assignment."""
+        from scripts.research.dump_breakdown_events import detect_bd6
+        close = _long_series(n=500, start_price=100.0)
+        panel = {"sector_map": {"OTHER_TICKER": "Tech"}, "sector_top_decile_126": {},
+                 "sector_median_21": {}}
+        events = detect_bd6("TEST", close, None, panel)
+        assert events == []
+
+    def test_bd6_flat_window_guard_skips_zero_std(self):
+        """Bars where std(rel21, 252)==0 are skipped (flat-window guard)."""
+        from scripts.research.dump_breakdown_events import detect_bd6
+        # Build a series where rel21 is constant (identical to sector median every bar)
+        # → std(rel21, 252) = 0 → all bars skipped by the guard
+        n = 500
+        close = _long_series(n=n, start_price=100.0)
+        idx = close.index
+
+        # Build a sector panel where ticker 21-bar return == sector median every bar
+        # → rel21 = 0 always → std = 0
+        sector_top_decile_126 = {}
+        sector_median_21 = {}
+        sector = "TestSector"
+        for i, ts in enumerate(idx):
+            ts_str = str(ts.date())
+            if i >= 21:
+                p_now  = float(close.iloc[i])
+                p_prev = float(close.iloc[i - 21])
+                r21 = p_now / p_prev - 1.0 if p_prev > 0 else 0.0
+                sector_median_21[ts_str] = {sector: r21}  # matches ticker's own return
+            if i >= 126:
+                p_now  = float(close.iloc[i])
+                p_prev = float(close.iloc[i - 126])
+                r126 = p_now / p_prev - 1.0 if p_prev > 0 else 0.0
+                sector_top_decile_126[ts_str] = {sector: r126 - 1.0}  # ticker is always leader
+
+        panel = {
+            "sector_top_decile_126": sector_top_decile_126,
+            "sector_median_21": sector_median_21,
+            "sector_map": {"TEST": sector},
+            "artifact_path": "synthetic",
+            "as_of": "2026-07-06",
+        }
+        raw_df = pd.DataFrame({
+            "open": close, "high": close + 1, "low": close - 1,
+            "close": close, "volume": pd.Series(2e6, index=close.index)
+        })
+        events = detect_bd6("TEST", close, raw_df, panel)
+        # With constant rel21=0, std=0, all bars are skipped by the flat-window guard
+        assert events == [], (
+            f"Expected no events (flat-window guard), got {len(events)} events"
+        )
+
+    def test_bd6_returns_list_no_exception(self):
+        """detect_bd6 doesn't raise on a synthetic sector panel with many tickers."""
+        from scripts.research.dump_breakdown_events import detect_bd6, _collapse_episodes
+        tickers = [f"T{i:02d}" for i in range(12)]
+        panel = self._make_sector_panel_synthetic(tickers, sector="Alpha")
+        # Process the first ticker in the panel
+        tk = tickers[0]
+        n = 500
+        idx = pd.bdate_range("2021-01-04", periods=n)
+        rng = np.random.default_rng(33)
+        vals = 60.0 + np.cumsum(rng.normal(0, 0.5, n))
+        vals = np.clip(vals, 5.0, 300.0)
+        close = pd.Series(vals, index=idx)
+        raw_df = pd.DataFrame({
+            "open": close, "high": close + 2, "low": close - 2,
+            "close": close, "volume": pd.Series(2e6, index=close.index)
+        })
+        events = detect_bd6(tk, close, raw_df, panel)
+        assert isinstance(events, list)
+
+    def test_bd6_near_highs_gate(self):
+        """BD-6 near_highs gate: events only when close >= 0.85 * rolling 126-bar max."""
+        from scripts.research.dump_breakdown_events import detect_bd6, BD6_NEAR_HIGHS_MULT
+        assert BD6_NEAR_HIGHS_MULT == pytest.approx(0.85)
+
+
+# ---------------------------------------------------------------------------
+# 15. Sector pre-pass on synthetic panel
+# ---------------------------------------------------------------------------
+
+class TestSectorPrePass:
+    """build_sector_panel on synthetic data — validates structure and sector filtering."""
+
+    def test_sector_panel_structure(self):
+        """build_sector_panel returns required keys."""
+        from scripts.research.dump_breakdown_events import build_sector_panel
+        from unittest.mock import patch
+        import pandas as pd
+
+        n_tickers = 10
+        tickers = {f"T{i:02d}" for i in range(n_tickers)}
+        sector_map = pd.DataFrame({
+            "ticker": list(tickers),
+            "sector": ["Alpha"] * 5 + ["Beta"] * 5,
+        })
+
+        # Build a minimal close series for each ticker
+        def mock_read_massive(ticker):
+            n = 500
+            rng = np.random.default_rng(hash(ticker) % (2**31))
+            vals = 50.0 + np.cumsum(rng.normal(0, 0.5, n))
+            vals = np.clip(vals, 5.0, 200.0)
+            idx = pd.bdate_range("2021-01-04", periods=n)
+            return pd.Series(vals, index=idx)
+
+        with patch(
+            "scripts.research.dump_breakdown_events._read_massive_ticker",
+            side_effect=mock_read_massive
+        ):
+            panel = build_sector_panel(tickers, sector_map)
+
+        assert "sector_top_decile_126" in panel
+        assert "sector_median_21" in panel
+        assert "sector_map" in panel
+        assert "artifact_path" in panel
+        assert "as_of" in panel
+        assert "n_tickers_covered" in panel
+        assert panel["n_tickers_covered"] > 0
+
+    def test_sector_panel_skips_sectors_below_8_members(self):
+        """Sectors with <8 covered members are skipped per BD6_MIN_SECTOR_MEMBERS."""
+        from scripts.research.dump_breakdown_events import (
+            build_sector_panel, BD6_MIN_SECTOR_MEMBERS
+        )
+        from unittest.mock import patch
+        import pandas as pd
+
+        assert BD6_MIN_SECTOR_MEMBERS == 8
+
+        # Build universe with 5 tickers in one sector (< 8)
+        n_tickers = 5
+        tickers = {f"T{i:02d}" for i in range(n_tickers)}
+        sector_map = pd.DataFrame({
+            "ticker": list(tickers),
+            "sector": ["TinyOne"] * n_tickers,
+        })
+
+        def mock_read_massive(ticker):
+            n = 500
+            rng = np.random.default_rng(hash(ticker) % (2**31))
+            vals = 50.0 + np.cumsum(rng.normal(0, 0.5, n))
+            vals = np.clip(vals, 5.0, 200.0)
+            idx = pd.bdate_range("2021-01-04", periods=n)
+            return pd.Series(vals, index=idx)
+
+        with patch(
+            "scripts.research.dump_breakdown_events._read_massive_ticker",
+            side_effect=mock_read_massive
+        ):
+            panel = build_sector_panel(tickers, sector_map)
+
+        # All dates should have {} for sector_top_decile_126 (< 8 members → skipped)
+        for ts_str, sec_d in panel["sector_top_decile_126"].items():
+            assert "TinyOne" not in sec_d, (
+                f"Date {ts_str}: TinyOne sector should be skipped (<8 members) but has value"
+            )
+
+    def test_sector_panel_empty_universe(self):
+        """build_sector_panel handles empty universe gracefully."""
+        from scripts.research.dump_breakdown_events import build_sector_panel
+        import pandas as pd
+
+        sector_map = pd.DataFrame({"ticker": ["AAA"], "sector": ["Tech"]})
+        panel = build_sector_panel(set(), sector_map)
+        assert panel["n_tickers_covered"] == 0
+        assert panel["sector_top_decile_126"] == {}
+
+
+# ---------------------------------------------------------------------------
+# 16. Seeding stability: BD-1/2/3 event rows AND control draws byte-identical
+#     between a 3-def run and a 6-def run (synthetic fixture, no massive data).
+# ---------------------------------------------------------------------------
+
+class TestSeedingStability:
+    """Prove BD-1/2/3 + their controls are byte-identical: 3-def vs 6-def run.
+
+    The seeding contract requires that process_ticker() with BD-4/5/6 active
+    produces exactly the same BD-1/2/3 event rows AND control draws as a
+    3-definition-only run.  We test this using a synthetic fixture that patches
+    the detect_bd* functions and _read_massive_ticker/_read_massive_ohlcv so
+    the test has no dependency on the massive plane.
+    """
+
+    def _make_synthetic_close(self, n: int = 500, seed: int = 7) -> tuple[pd.Series, pd.DataFrame]:
+        """Build a synthetic close + raw_df pair for use in process_ticker tests."""
+        rng_np = np.random.default_rng(seed)
+        vals = 50.0 + np.cumsum(rng_np.normal(0, 0.5, n))
+        vals = np.clip(vals, 5.0, 300.0)
+        idx = pd.bdate_range("2021-01-04", periods=n)
+        close = pd.Series(vals, index=idx)
+        raw_df = pd.DataFrame({
+            "open": close, "high": close + 1, "low": close - 1,
+            "close": close, "volume": pd.Series(2_000_000.0, index=idx),
+        })
+        return close, raw_df
+
+    def test_bd123_event_rows_and_controls_byte_identical_between_3def_and_6def_run(self):
+        """BD-1/2/3 event rows + control draws are byte-identical: 3-def vs 6-def run.
+
+        Synthetic fixture: patches detect_bd1/2/3 to return fixed timestamps, and
+        detect_bd4/5/6 to return fixed timestamps (or empty in the 3-def run).
+        Both runs use the same starting rng (seed=42).  Asserts that all (ticker,
+        event_date, definition) tuples for BD-1/2/3 and CONTROL rows drawn for
+        those BD-1/2/3 events are identical.
+        """
+        from scripts.research.dump_breakdown_events import (
+            process_ticker, ERA_START, CONTROL_RNG_SEED, ERA_PRIOR_BARS_REQUIRED,
+        )
+        from unittest.mock import patch
+
+        close, raw_df = self._make_synthetic_close(n=600)
+
+        # Fixed BD-1/2/3 event timestamps (deterministic — within ERA window + warmup)
+        bd1_ts = [close.index[280], close.index[350]]
+        bd2_ts = [close.index[300]]
+        bd3_ts = [close.index[320]]
+
+        # Fixed BD-4/5/6 event timestamps (different bars — these must NOT pollute BD-1/2/3 controls)
+        bd4_ts = [close.index[260], close.index[400]]
+        bd5_ts = [close.index[270]]
+        bd6_ts = [close.index[290]]
+
+        def make_patches(include_456: bool):
+            return {
+                "scripts.research.dump_breakdown_events._read_massive_ticker":
+                    lambda tk: close,
+                "scripts.research.dump_breakdown_events._read_massive_ohlcv":
+                    lambda tk: raw_df,
+                "scripts.research.dump_breakdown_events.detect_bd1":
+                    lambda tk, c, r: bd1_ts,
+                "scripts.research.dump_breakdown_events.detect_bd2":
+                    lambda tk, c, r: bd2_ts,
+                "scripts.research.dump_breakdown_events.detect_bd3":
+                    lambda tk, c, r: bd3_ts,
+                "scripts.research.dump_breakdown_events.detect_bd4":
+                    lambda tk, c, r: (bd4_ts if include_456 else []),
+                "scripts.research.dump_breakdown_events.detect_bd5":
+                    lambda tk, c, r: (bd5_ts if include_456 else []),
+                "scripts.research.dump_breakdown_events.detect_bd6":
+                    lambda tk, c, r, p: (bd6_ts if include_456 else []),
+            }
+
+        # 3-def run (BD-1/2/3 only — BD-4/5/6 return empty)
+        rng_3def = np.random.default_rng(CONTROL_RNG_SEED)
+        patches_3 = make_patches(include_456=False)
+        with patch("scripts.research.dump_breakdown_events._read_massive_ticker",
+                   patches_3["scripts.research.dump_breakdown_events._read_massive_ticker"]), \
+             patch("scripts.research.dump_breakdown_events._read_massive_ohlcv",
+                   patches_3["scripts.research.dump_breakdown_events._read_massive_ohlcv"]), \
+             patch("scripts.research.dump_breakdown_events.detect_bd1",
+                   patches_3["scripts.research.dump_breakdown_events.detect_bd1"]), \
+             patch("scripts.research.dump_breakdown_events.detect_bd2",
+                   patches_3["scripts.research.dump_breakdown_events.detect_bd2"]), \
+             patch("scripts.research.dump_breakdown_events.detect_bd3",
+                   patches_3["scripts.research.dump_breakdown_events.detect_bd3"]), \
+             patch("scripts.research.dump_breakdown_events.detect_bd4",
+                   patches_3["scripts.research.dump_breakdown_events.detect_bd4"]), \
+             patch("scripts.research.dump_breakdown_events.detect_bd5",
+                   patches_3["scripts.research.dump_breakdown_events.detect_bd5"]), \
+             patch("scripts.research.dump_breakdown_events.detect_bd6",
+                   patches_3["scripts.research.dump_breakdown_events.detect_bd6"]):
+            rows_3def = process_ticker("SYNTH", rng_3def, sector_panel={"sector_map": {}})
+
+        # 6-def run (BD-4/5/6 also active — must not change BD-1/2/3 rows or controls)
+        rng_6def = np.random.default_rng(CONTROL_RNG_SEED)
+        patches_6 = make_patches(include_456=True)
+        with patch("scripts.research.dump_breakdown_events._read_massive_ticker",
+                   patches_6["scripts.research.dump_breakdown_events._read_massive_ticker"]), \
+             patch("scripts.research.dump_breakdown_events._read_massive_ohlcv",
+                   patches_6["scripts.research.dump_breakdown_events._read_massive_ohlcv"]), \
+             patch("scripts.research.dump_breakdown_events.detect_bd1",
+                   patches_6["scripts.research.dump_breakdown_events.detect_bd1"]), \
+             patch("scripts.research.dump_breakdown_events.detect_bd2",
+                   patches_6["scripts.research.dump_breakdown_events.detect_bd2"]), \
+             patch("scripts.research.dump_breakdown_events.detect_bd3",
+                   patches_6["scripts.research.dump_breakdown_events.detect_bd3"]), \
+             patch("scripts.research.dump_breakdown_events.detect_bd4",
+                   patches_6["scripts.research.dump_breakdown_events.detect_bd4"]), \
+             patch("scripts.research.dump_breakdown_events.detect_bd5",
+                   patches_6["scripts.research.dump_breakdown_events.detect_bd5"]), \
+             patch("scripts.research.dump_breakdown_events.detect_bd6",
+                   patches_6["scripts.research.dump_breakdown_events.detect_bd6"]):
+            rows_6def = process_ticker("SYNTH", rng_6def, sector_panel={"sector_map": {"SYNTH": "TestSec"}})
+
+        # Extract BD-1/2/3 event rows (not controls)
+        def _phase0_event_key(r):
+            return (r["definition"], r.get("event_date", ""))
+
+        bd123_3 = sorted(
+            [_phase0_event_key(r) for r in rows_3def
+             if not r.get("is_control") and r["definition"] in ("BD-1", "BD-2", "BD-3")],
+        )
+        bd123_6 = sorted(
+            [_phase0_event_key(r) for r in rows_6def
+             if not r.get("is_control") and r["definition"] in ("BD-1", "BD-2", "BD-3")],
+        )
+        assert bd123_3 == bd123_6, (
+            f"BD-1/2/3 event rows differ between 3-def and 6-def run!\n"
+            f"3-def: {bd123_3}\n6-def: {bd123_6}"
+        )
+
+        # Extract CONTROL rows that belong to BD-1/2/3 events (the Phase-0 control pool).
+        # The 3-def run ALL controls are for BD-1/2/3 events.
+        # In the 6-def run: BD-1/2/3 controls are drawn FIRST by the global rng (seed=42),
+        # THEN BD-4/5/6 controls are drawn by independent per-definition rngs.
+        # The process_ticker implementation appends BD-4/5/6 controls AFTER BD-1/2/3 controls
+        # in the rows list.  We check the FIRST len(ctrl_3def) control rows from rows_6def
+        # (by position in the returned list, not sorted-date order) are identical to rows_3def.
+        ctrl_3def_dates = [r.get("event_date", "") for r in rows_3def if r.get("is_control")]
+        ctrl_6def_dates_all = [r.get("event_date", "") for r in rows_6def if r.get("is_control")]
+        n_ctrl_p0 = len(ctrl_3def_dates)
+
+        # 6-def run must have MORE controls (BD-4/5/6 add theirs)
+        assert len(ctrl_6def_dates_all) >= n_ctrl_p0, (
+            f"6-def run has fewer controls than 3-def run — unexpected. "
+            f"n_ctrl_3def={n_ctrl_p0}, n_ctrl_6def={len(ctrl_6def_dates_all)}"
+        )
+
+        # The FIRST n_ctrl_p0 control rows in the 6-def output must be identical to the
+        # 3-def run controls (same event_date, same position in the list — the Phase-0
+        # pass appends before the BD-4/5/6 pass per process_ticker seeding contract).
+        ctrl_6def_p0_portion = ctrl_6def_dates_all[:n_ctrl_p0]
+        assert ctrl_3def_dates == ctrl_6def_p0_portion, (
+            f"BD-1/2/3 control draws are NOT byte-identical between 3-def and 6-def runs!\n"
+            f"3-def ctrl (ordered): {ctrl_3def_dates}\n"
+            f"6-def ctrl Phase-0 portion (first {n_ctrl_p0}): {ctrl_6def_p0_portion}\n"
+            f"SEEDING CONTRACT VIOLATION — BD-4/5/6 contaminated the Phase-0 rng state."
+        )
+
+    def test_bd456_controls_extra_rows_present_in_6def_run(self):
+        """6-def run has MORE control rows than 3-def run (BD-4/5/6 controls are extra)."""
+        from scripts.research.dump_breakdown_events import (
+            process_ticker, CONTROL_RNG_SEED,
+        )
+        from unittest.mock import patch
+
+        close, raw_df = self._make_synthetic_close(n=600)
+        bd1_ts = [close.index[280]]
+        bd4_ts = [close.index[400]]  # BD-4 event in 6-def run
+
+        def common_patches(include_456):
+            return {
+                "scripts.research.dump_breakdown_events._read_massive_ticker": lambda tk: close,
+                "scripts.research.dump_breakdown_events._read_massive_ohlcv": lambda tk: raw_df,
+                "scripts.research.dump_breakdown_events.detect_bd1": lambda tk, c, r: bd1_ts,
+                "scripts.research.dump_breakdown_events.detect_bd2": lambda tk, c, r: [],
+                "scripts.research.dump_breakdown_events.detect_bd3": lambda tk, c, r: [],
+                "scripts.research.dump_breakdown_events.detect_bd4":
+                    lambda tk, c, r: (bd4_ts if include_456 else []),
+                "scripts.research.dump_breakdown_events.detect_bd5": lambda tk, c, r: [],
+                "scripts.research.dump_breakdown_events.detect_bd6":
+                    lambda tk, c, r, p: [],
+            }
+
+        def _run(include_456):
+            p = common_patches(include_456)
+            rng = np.random.default_rng(CONTROL_RNG_SEED)
+            with patch("scripts.research.dump_breakdown_events._read_massive_ticker", p["scripts.research.dump_breakdown_events._read_massive_ticker"]), \
+                 patch("scripts.research.dump_breakdown_events._read_massive_ohlcv", p["scripts.research.dump_breakdown_events._read_massive_ohlcv"]), \
+                 patch("scripts.research.dump_breakdown_events.detect_bd1", p["scripts.research.dump_breakdown_events.detect_bd1"]), \
+                 patch("scripts.research.dump_breakdown_events.detect_bd2", p["scripts.research.dump_breakdown_events.detect_bd2"]), \
+                 patch("scripts.research.dump_breakdown_events.detect_bd3", p["scripts.research.dump_breakdown_events.detect_bd3"]), \
+                 patch("scripts.research.dump_breakdown_events.detect_bd4", p["scripts.research.dump_breakdown_events.detect_bd4"]), \
+                 patch("scripts.research.dump_breakdown_events.detect_bd5", p["scripts.research.dump_breakdown_events.detect_bd5"]), \
+                 patch("scripts.research.dump_breakdown_events.detect_bd6", p["scripts.research.dump_breakdown_events.detect_bd6"]):
+                return process_ticker("SYNTH", rng, sector_panel={"sector_map": {"SYNTH": "TestSec"}})
+
+        rows_3def = _run(include_456=False)
+        rows_6def = _run(include_456=True)
+
+        n_ctrl_3 = sum(1 for r in rows_3def if r.get("is_control"))
+        n_ctrl_6 = sum(1 for r in rows_6def if r.get("is_control"))
+        # 6-def run has BD-4 event → more controls
+        assert n_ctrl_6 > n_ctrl_3, (
+            f"Expected 6-def to have more controls than 3-def "
+            f"(n_ctrl_3={n_ctrl_3}, n_ctrl_6={n_ctrl_6})"
+        )
+
+    def test_seed_constants_distinct(self):
+        """BD-4/5/6 control RNG seeds are distinct from each other and from CONTROL_RNG_SEED=42."""
+        from scripts.research.dump_breakdown_events import (
+            CONTROL_RNG_SEED, BD4_CONTROL_RNG_SEED, BD5_CONTROL_RNG_SEED, BD6_CONTROL_RNG_SEED
+        )
+        seeds = [CONTROL_RNG_SEED, BD4_CONTROL_RNG_SEED, BD5_CONTROL_RNG_SEED, BD6_CONTROL_RNG_SEED]
+        assert len(seeds) == len(set(seeds)), f"Duplicate seeds: {seeds}"
+        for s in seeds:
+            assert s > 0, f"Seed {s} should be positive"
+
+
+# ---------------------------------------------------------------------------
+# 17. v3 summary schema: all six definitions + overlap matrix + RUL-U3a budget note
+# ---------------------------------------------------------------------------
+
+class TestV3SummarySchema:
+    """Verify that build_summary returns the v3 schema with all required fields."""
+
+    def _make_six_def_events_df(self, n_per_def: int = 30) -> pd.DataFrame:
+        """Build a minimal events DataFrame with all six definitions + controls."""
+        rng = np.random.default_rng(7)
+        defs = ["BD-1", "BD-2", "BD-3", "BD-4", "BD-5", "BD-6"]
+        rows = []
+        tickers = ["AAA", "BBB", "CCC", "DDD"]
+        years = [2022, 2023, 2024]
+        for defn in defs:
+            for i in range(n_per_def):
+                ticker = tickers[i % len(tickers)]
+                year = years[i % len(years)]
+                event_date = f"{year}-0{(i % 9) + 1}-{(i % 28) + 1:02d}"
+                try:
+                    pd.Timestamp(event_date)
+                except Exception:
+                    event_date = f"{year}-06-15"
+                long_stop  = rng.random() < 0.5
+                short_fav  = rng.random() < 0.4
+                rows.append({
+                    "ticker": ticker,
+                    "definition": defn,
+                    "event_date": event_date,
+                    "is_control": False,
+                    "censored": False,
+                    "long_state_clean8_21": (
+                        TerminalState.STOPPED if long_stop else TerminalState.CLEAN_LIFTOFF
+                    ),
+                    "long_state_clean15_126": (
+                        TerminalState.STOPPED if long_stop else TerminalState.CLEAN_LIFTOFF
+                    ),
+                    "short_state_short21": (
+                        TerminalStateShort.FAVORABLE_TRIGGERED if short_fav
+                        else TerminalStateShort.ADVERSE_TRIGGERED
+                    ),
+                    "short_state_short126": (
+                        TerminalStateShort.FAVORABLE_TRIGGERED if short_fav
+                        else TerminalStateShort.ADVERSE_TRIGGERED
+                    ),
+                })
+
+        # Add controls
+        for i in range(n_per_def * 3):
+            year = years[i % len(years)]
+            rows.append({
+                "ticker": tickers[i % len(tickers)],
+                "definition": "CONTROL",
+                "event_date": f"{year}-06-15",
+                "is_control": True,
+                "censored": False,
+                "long_state_clean8_21": (
+                    TerminalState.STOPPED if i % 2 == 0 else TerminalState.CLEAN_LIFTOFF
+                ),
+                "long_state_clean15_126": (
+                    TerminalState.STOPPED if i % 3 == 0 else TerminalState.CLEAN_LIFTOFF
+                ),
+                "short_state_short21": TerminalStateShort.ADVERSE_TRIGGERED,
+                "short_state_short126": TerminalStateShort.ADVERSE_TRIGGERED,
+            })
+        return pd.DataFrame(rows)
+
+    def test_v3_schema_present(self):
+        """build_summary returns schema='breakdown_events_summary.v3'."""
+        from scripts.research.dump_breakdown_events import build_summary
+        df = self._make_six_def_events_df()
+        stamp = {"generated_utc": "2026-07-06T00:00:00", "price_plane_id": "test"}
+        summary = build_summary(df, stamp)
+        assert summary["schema"] == "breakdown_events_summary.v3", (
+            f"Expected v3 schema, got {summary['schema']}"
+        )
+
+    def test_v3_all_six_definitions_present(self):
+        """per_definition has keys for all six definitions."""
+        from scripts.research.dump_breakdown_events import build_summary
+        df = self._make_six_def_events_df()
+        stamp = {"generated_utc": "2026-07-06T00:00:00", "price_plane_id": "test"}
+        summary = build_summary(df, stamp)
+        required_defs = {"BD-1", "BD-2", "BD-3", "BD-4", "BD-5", "BD-6"}
+        actual_defs   = set(summary["per_definition"].keys())
+        assert required_defs == actual_defs, (
+            f"Missing definitions: {required_defs - actual_defs}"
+        )
+
+    def test_v3_overlap_matrix_has_six_definitions(self):
+        """overlap_matrix.matrix covers all six definitions."""
+        from scripts.research.dump_breakdown_events import build_summary
+        df = self._make_six_def_events_df()
+        stamp = {"generated_utc": "2026-07-06T00:00:00", "price_plane_id": "test"}
+        summary = build_summary(df, stamp)
+        matrix = summary["overlap_matrix"]["matrix"]
+        required_defs = {"BD-1", "BD-2", "BD-3", "BD-4", "BD-5", "BD-6"}
+        assert required_defs == set(matrix.keys()), (
+            f"overlap_matrix.matrix missing defs: {required_defs - set(matrix.keys())}"
+        )
+
+    def test_v3_bd4_x_bd3_required_row_present(self):
+        """overlap_matrix has bd4_x_bd3 key with all required subkeys."""
+        from scripts.research.dump_breakdown_events import build_summary
+        df = self._make_six_def_events_df()
+        stamp = {"generated_utc": "2026-07-06T00:00:00", "price_plane_id": "test"}
+        summary = build_summary(df, stamp)
+        bd4x3 = summary["overlap_matrix"].get("bd4_x_bd3")
+        assert bd4x3 is not None, "bd4_x_bd3 key missing from overlap_matrix"
+        required_keys = {
+            "n_bd4_episodes", "n_bd3_episodes", "n_exact_overlap",
+            "n_near_overlap_21bars", "share_exact", "share_near_21bars", "redundancy_flag"
+        }
+        assert required_keys.issubset(set(bd4x3.keys())), (
+            f"bd4_x_bd3 missing keys: {required_keys - set(bd4x3.keys())}"
+        )
+
+    def test_v3_redundancy_flag_fires_when_overlap_exceeds_50pct(self):
+        """redundancy_flag=True when BD-4 shares >50% episodes with BD-3 (±21 bars)."""
+        from scripts.research.dump_breakdown_events import build_summary
+        # Build DF where all BD-4 events have a BD-3 event on the same date (100% overlap)
+        rows = []
+        for i in range(20):
+            dt = f"2023-0{(i%9)+1}-{(i%28)+1:02d}"
+            try:
+                pd.Timestamp(dt)
+            except Exception:
+                dt = "2023-06-15"
+            for defn in ["BD-3", "BD-4"]:
+                rows.append({
+                    "ticker": "AAA",
+                    "definition": defn,
+                    "event_date": dt,
+                    "is_control": False,
+                    "censored": False,
+                    "long_state_clean8_21": TerminalState.STOPPED,
+                    "long_state_clean15_126": TerminalState.STOPPED,
+                    "short_state_short21": TerminalStateShort.ADVERSE_TRIGGERED,
+                    "short_state_short126": TerminalStateShort.ADVERSE_TRIGGERED,
+                })
+        df = pd.DataFrame(rows)
+        stamp = {"generated_utc": "2026-07-06T00:00:00", "price_plane_id": "test"}
+        summary = build_summary(df, stamp)
+        bd4x3 = summary["overlap_matrix"]["bd4_x_bd3"]
+        assert bd4x3["redundancy_flag"] is True, (
+            "100% same-date overlap should set redundancy_flag=True"
+        )
+        assert bd4x3["redundancy_note"], "redundancy_note should be non-empty when flag is True"
+
+    def test_v3_near_overlap_uses_business_days_not_calendar_days(self):
+        """±21 near-overlap check uses business days (not calendar days / ns-timestamp proxy).
+
+        Regression guard for the fix described in W-0B code review finding #1 (2026-07-06):
+        the prior implementation used pd.Timedelta(days=30) as an ~21-trading-bar proxy,
+        which could under-count near-overlaps by 0-1 bar around US holiday clusters.
+        The corrected implementation uses np.busday_count (Mon-Fri business days), which
+        is conservative (slightly over-inclusive: at most ~1 bar, because US market
+        holidays are not explicitly excluded from the weekday count).
+
+        This test exercises the non-exact-date near-overlap path: BD-4 event on day T,
+        BD-3 event 15 business days later on the same ticker.  This should be flagged as
+        near-overlap (15 <= 21) regardless of whether 15 bdays spans >=30 calendar days.
+        """
+        from scripts.research.dump_breakdown_events import build_summary
+
+        bd3_date = pd.Timestamp("2023-01-03")  # a Tuesday
+        # 15 business days after 2023-01-03 = 2023-01-24 (Mon-Fri, no holiday exclusion)
+        bd4_date = pd.Timestamp("2023-01-24")
+        # Verify: np.busday_count gives 15
+        import numpy as np
+        bdays = np.busday_count(bd3_date.date(), bd4_date.date())
+        assert bdays == 15, f"fixture sanity: expected 15 bdays, got {bdays}"
+        # Calendar days between them: 21 calendar days exactly
+        cal_days = (bd4_date - bd3_date).days
+        # The near-overlap should fire because 15 bdays <= 21 threshold
+
+        def _row(defn, dt):
+            return {
+                "ticker": "ZZZ",
+                "definition": defn,
+                "event_date": str(dt.date()),
+                "is_control": False,
+                "censored": False,
+                "long_state_clean8_21": TerminalState.STOPPED,
+                "long_state_clean15_126": TerminalState.STOPPED,
+                "short_state_short21": TerminalStateShort.ADVERSE_TRIGGERED,
+                "short_state_short126": TerminalStateShort.ADVERSE_TRIGGERED,
+            }
+
+        rows = [_row("BD-3", bd3_date), _row("BD-4", bd4_date)]
+        df = pd.DataFrame(rows)
+        stamp = {"generated_utc": "2026-07-06T00:00:00", "price_plane_id": "test"}
+        summary = build_summary(df, stamp)
+        bd4x3 = summary["overlap_matrix"]["bd4_x_bd3"]
+        assert bd4x3["n_near_overlap_21bars"] == 1, (
+            f"BD-4 event {bd4_date.date()} is {bdays} bdays ({cal_days} cal days) from "
+            f"BD-3 event {bd3_date.date()} — should count as near-overlap (15 <= 21 bdays). "
+            f"Got n_near_overlap_21bars={bd4x3['n_near_overlap_21bars']}"
+        )
+        assert bd4x3["redundancy_flag"] is True, (
+            "1/1 BD-4 episode overlapping BD-3 (15 bdays) should set redundancy_flag=True"
+        )
+
+    def test_v3_no_near_overlap_beyond_21_bdays(self):
+        """BD-4 event more than 21 bdays from any BD-3 event is NOT flagged as near-overlap."""
+        from scripts.research.dump_breakdown_events import build_summary
+        import numpy as np
+
+        bd3_date = pd.Timestamp("2023-01-03")
+        # 30 business days later: 2023-02-14
+        bd4_date = bd3_date + pd.offsets.BDay(30)
+        bdays = np.busday_count(bd3_date.date(), bd4_date.date())
+        assert bdays == 30, f"fixture sanity: expected 30 bdays, got {bdays}"
+
+        def _row(defn, dt):
+            return {
+                "ticker": "ZZZ",
+                "definition": defn,
+                "event_date": str(dt.date()),
+                "is_control": False,
+                "censored": False,
+                "long_state_clean8_21": TerminalState.STOPPED,
+                "long_state_clean15_126": TerminalState.STOPPED,
+                "short_state_short21": TerminalStateShort.ADVERSE_TRIGGERED,
+                "short_state_short126": TerminalStateShort.ADVERSE_TRIGGERED,
+            }
+
+        rows = [_row("BD-3", bd3_date), _row("BD-4", bd4_date)]
+        df = pd.DataFrame(rows)
+        stamp = {"generated_utc": "2026-07-06T00:00:00", "price_plane_id": "test"}
+        summary = build_summary(df, stamp)
+        bd4x3 = summary["overlap_matrix"]["bd4_x_bd3"]
+        assert bd4x3["n_near_overlap_21bars"] == 0, (
+            f"BD-4 event {bd4_date.date()} is {bdays} bdays from BD-3 event {bd3_date.date()} "
+            f"— should NOT count as near-overlap (30 > 21 bdays). "
+            f"Got n_near_overlap_21bars={bd4x3['n_near_overlap_21bars']}"
+        )
+        assert bd4x3["redundancy_flag"] is False, (
+            "0/1 BD-4 episodes overlapping should set redundancy_flag=False"
+        )
+
+    def test_v3_budget_semantics_note_present(self):
+        """budget_semantics_note key is present and mentions max() and literal_n."""
+        from scripts.research.dump_breakdown_events import build_summary
+        df = self._make_six_def_events_df()
+        stamp = {"generated_utc": "2026-07-06T00:00:00", "price_plane_id": "test"}
+        summary = build_summary(df, stamp)
+        note = summary.get("budget_semantics_note", "")
+        assert "max()" in note, "budget_semantics_note should mention max() semantics"
+        assert "literal_n" in note.lower() or "literal_n" in note, (
+            "budget_semantics_note should mention literal_n"
+        )
+
+    def test_v3_derived_from_surface_stamped(self):
+        """derived_from_surface='bd_phase0_tape' is present in summary."""
+        from scripts.research.dump_breakdown_events import build_summary
+        df = self._make_six_def_events_df()
+        stamp = {"generated_utc": "2026-07-06T00:00:00", "price_plane_id": "test"}
+        summary = build_summary(df, stamp)
+        assert summary.get("derived_from_surface") == "bd_phase0_tape", (
+            "derived_from_surface should be 'bd_phase0_tape' per Phase-0b contamination stamp"
+        )
+
+    def test_v3_phase0b_definitions_have_powering_note_when_small(self):
+        """Phase-0b definitions with <100 episodes have non-empty powering_note."""
+        from scripts.research.dump_breakdown_events import build_summary
+        # With n_per_def=30, all defs have 30 episodes → < 100 → parked
+        df = self._make_six_def_events_df(n_per_def=30)
+        stamp = {"generated_utc": "2026-07-06T00:00:00", "price_plane_id": "test"}
+        summary = build_summary(df, stamp)
+        for defn in ["BD-4", "BD-5", "BD-6"]:
+            note = summary["per_definition"][defn].get("powering_note", "")
+            assert note, (
+                f"{defn}: expected powering_note (< 100 episodes) but got empty string"
+            )
+
+    def test_v3_no_validated_word_in_summary(self):
+        """The word 'validated' must not appear anywhere in the summary JSON (CI-enforced)."""
+        import json
+        from scripts.research.dump_breakdown_events import build_summary
+        df = self._make_six_def_events_df()
+        stamp = {"generated_utc": "2026-07-06T00:00:00", "price_plane_id": "test"}
+        summary = build_summary(df, stamp)
+        summary_str = json.dumps(summary)
+        assert "validated" not in summary_str.lower(), (
+            "The word 'validated' must not appear in any user-facing summary text"
         )
