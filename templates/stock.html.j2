@@ -913,8 +913,11 @@
     { k:'trailing_pe', en:'P/E (trailing)', zh:'市盈率（历史）', kind:'x' },
     { k:'price_to_book', en:'Price / book', zh:'市净率', kind:'x' },
     { k:'price_to_sales', en:'Price / sales', zh:'市销率', kind:'x' },
+    { k:'ev_to_sales', en:'EV / sales', zh:'企业价值/销售额', kind:'x' },
+    { k:'ev_to_ebit', en:'EV / EBIT', zh:'企业价值/息税前利润', kind:'x' },
     { k:'earnings_yield', en:'Earnings yield', zh:'盈利收益率', kind:'pct' },
     { k:'fcf_proxy_yield', en:'FCF yield (pre-capex)', zh:'自由现金流收益率', kind:'pct' },
+    { k:'price_to_fcf', en:'Price / FCF', zh:'价格/自由现金流', kind:'x' },
     { k:'shareholder_yield', en:'Shareholder yield', zh:'股东回报率', kind:'pct' } ];
   var FROWS = [
     { en:'Revenue', zh:'营收', get:function(f){return f.raw && f.raw.revenue;}, fmt:'num', chg:function(f){return f.rev_growth;} },
