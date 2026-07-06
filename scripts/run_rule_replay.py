@@ -91,6 +91,17 @@ from engine.rule_experiments import (  # noqa: E402
 )
 from engine.vintage_stamp import vintage_stamp  # noqa: E402
 
+# Regime merge columns that DISP-GATE-1 requires.
+# These are appended to fires_df before CohortFilter applies, only when the
+# experiment registry entry declares them in "needed_merge_columns".
+_DISP_MERGE_COLS = [
+    "disp_state_expanding",
+    "disp_state_trailing252",
+    "disp_pctile_expanding",
+    "disp_pctile_trailing252",
+    "n_bars_before",
+    "disp_excluded",  # renamed from 'excluded' to avoid shadowing
+]
 
 # ---------------------------------------------------------------------------
 # Grid reconstruction from experiment definition
@@ -176,10 +187,48 @@ def _build_exit_grid_v1_specs(cohort: CohortFilter) -> list[RuleSpec]:
     return specs
 
 
+def _build_disp_gate_1_specs(cohort: CohortFilter) -> list[RuleSpec]:
+    """Reconstruct the DISP-GATE-1 grid from its frozen definition (§6.2).
+
+    6 primary cells:
+      regime arm {lean_in, neutral, lean_out}  ×  basis {expanding, trailing252}
+
+    The cohort must already have regime columns merged (see _merge_regime_columns).
+    Each cell filters on disp_state_expanding or disp_state_trailing252.
+    Exit: hold(21) — the ratified anchor per L3_PREREG.
+
+    Note: the DISP-GATE-1 cohort is an extension of the production fire cohort
+    (verdict_type='fire' AND verdict_grade=True) INTERSECTED with the non-excluded
+    regime-assigned fires.  The regime-column merge and exclusion of fires with
+    < 252 prior bars happen in the load path (run_experiment), not here.
+    """
+    specs: list[RuleSpec] = []
+    for regime_state in ["lean_in", "neutral", "lean_out"]:
+        for basis in ["expanding", "trailing252"]:
+            col = f"disp_state_{basis}"
+            spec_id = f"disp_gate_1/{basis}/{regime_state}"
+            regime_cohort = cohort_filter(
+                *cohort.predicates,
+                ("eq", col, regime_state),
+                ("eq", "disp_excluded", False),
+            )
+            specs.append(RuleSpec(
+                spec_id=spec_id,
+                cohort=regime_cohort,
+                delay_n=1,
+                exit=ExitPolicy.hold(21),
+                horizons_ref=(126,),
+            ))
+
+    assert len(specs) == 6, f"DISP-GATE-1 must be 6 cells, got {len(specs)}"
+    return specs
+
+
 # Grid builders registry — keyed by exp_id prefix
 _GRID_BUILDERS: dict[str, Any] = {
     "exit_grid_v1": _build_exit_grid_v1_specs,
     "wait_grid_v1": _build_wait_grid_v1_specs,
+    "disp_gate_1": _build_disp_gate_1_specs,
 }
 
 
@@ -210,6 +259,140 @@ def _build_grid(exp_id: str, exp_entry: dict) -> list[RuleSpec]:
         ("eq", "verdict_grade", True),
     )
     return builder(cohort)
+
+
+# ---------------------------------------------------------------------------
+# Regime merge — experiment-scoped (only for experiments that declare it)
+# ---------------------------------------------------------------------------
+
+def _merge_regime_columns(
+    fires_df: pd.DataFrame,
+    needed_merge_columns: list[str],
+    *,
+    massive_dir: Path,
+    return_panel_meta: bool = False,
+) -> "pd.DataFrame | tuple[pd.DataFrame, dict]":
+    """Merge PIT dispersion regime columns into fires_df.
+
+    Called BEFORE CohortFilter applies so that regime-column predicates
+    in the cohort filter resolve correctly.
+
+    Only called for experiments that declare needed_merge_columns in their
+    registry entry, so other experiments are untouched.
+
+    Parameters
+    ----------
+    fires_df             : fires DataFrame (pre-filter)
+    needed_merge_columns : list of column names from _DISP_MERGE_COLS
+    massive_dir          : path to massive_stock_day for panel reconstruction
+    return_panel_meta    : if True, return (fires_out, panel_meta_dict) instead
+                           of just fires_out.  panel_meta_dict contains:
+                           panel_data_reach, panel_n_bars, panel_n_tickers.
+
+    Returns
+    -------
+    fires_df with regime columns appended (keyed on signal_date).
+    If return_panel_meta=True, returns (fires_out, panel_meta) tuple.
+    """
+    from scripts.compute_disp_pit_state import (  # noqa: PLC0415
+        compute_pit_states, compute_spy_21d_returns, assign_spy_tercile,
+        _load_panel_from_massive,
+    )
+
+    # Check if any needed columns are already present (idempotent)
+    missing = [c for c in needed_merge_columns if c not in fires_df.columns]
+    if not missing:
+        log.info("All needed merge columns already present — skipping regime merge.")
+        if return_panel_meta:
+            return fires_df, {}
+        return fires_df
+
+    # Resolve the fire dates
+    date_col = "signal_date" if "signal_date" in fires_df.columns else "fire_date"
+    fire_dates = pd.to_datetime(fires_df[date_col]).unique()
+    log.info(
+        "Merging PIT dispersion regime for %d unique fire dates "
+        "(%s → %s)...",
+        len(fire_dates), fire_dates.min().date(), fire_dates.max().date(),
+    )
+
+    # Load panel once so we can extract metadata for the summary block.
+    # compute_pit_states also loads the panel internally, but exposing it here
+    # avoids a second I/O pass when return_panel_meta=True.
+    panel_meta: dict[str, Any] = {}
+    try:
+        _panel = _load_panel_from_massive(massive_dir)
+        if not _panel.empty:
+            panel_meta = {
+                "panel_data_reach": (
+                    f"{_panel.index[0].date()} to {_panel.index[-1].date()}"
+                ),
+                "panel_n_bars": len(_panel),
+                "panel_n_tickers": int(_panel.shape[1]),
+            }
+    except Exception as exc:
+        log.warning("Could not read panel metadata: %s", exc)
+
+    # Compute PIT states (prints DATA-REACH GATE exclusion counts)
+    states = compute_pit_states(fire_dates, massive_dir=massive_dir, verbose=True)
+    states = states.reset_index()  # fire_date column
+
+    # Rename 'excluded' → 'disp_excluded' to avoid column collision
+    if "excluded" in states.columns:
+        states = states.rename(columns={"excluded": "disp_excluded"})
+
+    # Compute SPY 21d contemporaneous covariate (L3_PREREG obligation 2)
+    spy_rets = compute_spy_21d_returns(fire_dates, massive_dir=massive_dir)
+    spy_tercile = assign_spy_tercile(spy_rets)
+
+    spy_df = pd.DataFrame({
+        "fire_date": spy_rets.index,
+        "spy_ret_21d": spy_rets.values,
+        "spy_tercile": spy_tercile.values,
+    })
+
+    # Merge states on date
+    fires_out = fires_df.copy()
+    fires_out["_fire_date_ts"] = pd.to_datetime(fires_out[date_col])
+
+    states["fire_date"] = pd.to_datetime(states["fire_date"])
+    spy_df["fire_date"] = pd.to_datetime(spy_df["fire_date"])
+
+    fires_out = fires_out.merge(
+        states,
+        left_on="_fire_date_ts",
+        right_on="fire_date",
+        how="left",
+        suffixes=("", "_disp"),
+    )
+    if "fire_date" in fires_out.columns and "fire_date" != date_col:
+        fires_out = fires_out.drop(columns=["fire_date"])
+
+    fires_out = fires_out.merge(
+        spy_df,
+        left_on="_fire_date_ts",
+        right_on="fire_date",
+        how="left",
+        suffixes=("", "_spy"),
+    )
+    if "fire_date" in fires_out.columns and "fire_date" != date_col:
+        fires_out = fires_out.drop(columns=["fire_date"])
+
+    fires_out = fires_out.drop(columns=["_fire_date_ts"], errors="ignore")
+
+    # Fill disp_excluded NaN → True (no state available = exclude)
+    if "disp_excluded" in fires_out.columns:
+        fires_out["disp_excluded"] = fires_out["disp_excluded"].fillna(True)
+
+    n_merged = fires_out["disp_state_expanding"].notna().sum() if "disp_state_expanding" in fires_out.columns else 0
+    n_excl = fires_out["disp_excluded"].sum() if "disp_excluded" in fires_out.columns else 0
+    log.info(
+        "Regime merge complete: %d fires with state, %d excluded",
+        int(n_merged), int(n_excl),
+    )
+    if return_panel_meta:
+        return fires_out, panel_meta
+    return fires_out
 
 
 # ---------------------------------------------------------------------------
@@ -316,6 +499,8 @@ def _cell_stats(
             "mean_foregone_mfe_126": None,
             "mean_avoided_mae_126": None,
             "regret_ratio": None,
+            "stop5_rate": None,
+            "dead_money_rate": None,
         }
 
     # short_path: genuine truncated window (fire near end of data) — exclude from aggregates.
@@ -380,6 +565,27 @@ def _cell_stats(
     elif mean_foregone is not None and mean_foregone == 0 and mean_avoided is not None:
         regret_ratio = None  # degenerate: foregone_mfe=0 means nothing was given up
 
+    # stop5: fraction of fires where the intra-window drawdown reaches ≥5% from entry.
+    # Per L3_PREREG design: mae_to_exit <= -0.05 (MAE at any point in the 21d window).
+    # For a HOLD-21 policy, mae_to_exit is the minimum return over the holding period,
+    # so it captures the running maximum adverse excursion up to the time-exit.
+    #
+    # dead_money: |exit_ret| < 2% — fire went nowhere (neither gain nor meaningful loss).
+    # Per L3_PREREG: abs(ret_21d) < 0.02 — tape parked the name.
+    #
+    # Both are computed over included fires only (same denominator as WR).
+    stop5_rate = None
+    dead_money_rate = None
+    if len(included) > 0:
+        if "mae_to_exit" in included.columns:
+            mae_num = pd.to_numeric(included["mae_to_exit"], errors="coerce").dropna()
+            if len(mae_num) > 0:
+                stop5_rate = round(float((mae_num <= -0.05).mean()), 4)
+        if "exit_ret" in included.columns:
+            rets_num = pd.to_numeric(included["exit_ret"], errors="coerce").dropna()
+            if len(rets_num) > 0:
+                dead_money_rate = round(float((rets_num.abs() < 0.02).mean()), 4)
+
     return {
         "n_fires": n_total,
         "n_censored": n_censored,
@@ -401,6 +607,8 @@ def _cell_stats(
         "mean_foregone_mfe_126": round(mean_foregone, 4) if mean_foregone is not None else None,
         "mean_avoided_mae_126": round(mean_avoided, 4) if mean_avoided is not None else None,
         "regret_ratio": regret_ratio,
+        "stop5_rate": stop5_rate,
+        "dead_money_rate": dead_money_rate,
     }
 
 
@@ -424,6 +632,158 @@ def _era_tier_splits(
             result[f"tier_{tier}"] = _cell_stats(sub, sub, cluster_col)
 
     return result
+
+
+def _spy_covariate_split(
+    perfire: pd.DataFrame,
+    cluster_col: str = "episode_cluster",
+) -> dict[str, Any] | None:
+    """Compute SPY-21d tercile split within a perfire cell.
+
+    L3_PREREG design obligation 2: the contemporaneous SPY-21d drawdown
+    covariate must be applied WITHIN cells as a tercile split so that the
+    confound can be evaluated by a stats reviewer.
+
+    Terciles (fixed thresholds per assign_spy_tercile in compute_disp_pit_state):
+        down : SPY 21d return < -5%
+        flat : -5% <= SPY 21d return <= +5%
+        up   : SPY 21d return > +5%
+
+    Returns None if spy_tercile column is absent from perfire.
+    Returns dict keyed by tercile label with per-tercile n/stop5/dead_money/wr.
+    """
+    if "spy_tercile" not in perfire.columns:
+        return None
+
+    result: dict[str, Any] = {}
+    for label in ["down", "flat", "up"]:
+        sub = perfire[perfire["spy_tercile"] == label]
+        if len(sub) == 0:
+            result[label] = {"n": 0, "stop5": None, "dead_money": None, "wr": None}
+            continue
+        # Use _cell_stats to compute stop5/dead_money/wr in a consistent way
+        sub_stats = _cell_stats(sub, sub, cluster_col=cluster_col)
+        result[label] = {
+            "n": sub_stats["n_fires"],
+            "stop5": sub_stats["stop5_rate"],
+            "dead_money": sub_stats["dead_money_rate"],
+            "wr": sub_stats["wr"],
+        }
+    return result
+
+
+def _compute_disp_meta(
+    fires_df: pd.DataFrame,
+    pre_b2_pooled_sum: int,
+    post_b2_pooled_sum: int,
+) -> dict[str, Any]:
+    """Build the disp_gate_1_meta block for the summary JSON.
+
+    Requires that fires_df has already had PIT regime columns merged
+    (i.e., _merge_regime_columns was called) and that disp_excluded,
+    disp_state_expanding, and disp_state_trailing252 columns are present.
+
+    Parameters
+    ----------
+    fires_df            : fires DataFrame post regime-merge and cohort-filter,
+                          INCLUDING excluded fires (so total exclusion count is accurate).
+    pre_b2_pooled_sum   : pooled trial count BEFORE this experiment.
+    post_b2_pooled_sum  : pooled trial count INCLUDING this experiment.
+
+    Returns a dict with all meta fields committed in disp_gate_1_summary.json.
+    """
+    meta: dict[str, Any] = {}
+
+    # Panel data reach, bars, tickers — read from the merged columns
+    # n_bars_before is per-fire; take the max to get the full panel reach.
+    if "n_bars_before" in fires_df.columns:
+        meta["panel_n_bars"] = int(fires_df["n_bars_before"].max()) if len(fires_df) > 0 else None
+    else:
+        meta["panel_n_bars"] = None
+
+    # Exclusion counts
+    if "disp_excluded" in fires_df.columns:
+        n_excl_fires = int(fires_df["disp_excluded"].sum())
+        n_total_fires = len(fires_df)
+        excl_pct = round(100.0 * n_excl_fires / n_total_fires, 1) if n_total_fires > 0 else None
+
+        # Dates excluded (unique fire dates that were excluded)
+        date_col = "signal_date" if "signal_date" in fires_df.columns else "fire_date"
+        if date_col in fires_df.columns:
+            excl_mask = fires_df["disp_excluded"].astype(bool)
+            n_dates_excl = int(pd.to_datetime(fires_df.loc[excl_mask, date_col]).nunique())
+        else:
+            n_dates_excl = None
+
+        meta["fires_excluded_data_reach_gate"] = n_excl_fires
+        meta["fires_excluded_pct"] = excl_pct
+        meta["n_dates_excluded"] = n_dates_excl
+    else:
+        meta["fires_excluded_data_reach_gate"] = None
+        meta["fires_excluded_pct"] = None
+        meta["n_dates_excluded"] = None
+
+    # Basis flip rate between expanding and trailing-252d (non-stationarity check)
+    if "disp_state_expanding" in fires_df.columns and "disp_state_trailing252" in fires_df.columns:
+        included_mask = ~fires_df.get("disp_excluded", pd.Series(False, index=fires_df.index)).astype(bool)
+        included_fires = fires_df[included_mask]
+        both_valid = included_fires.dropna(
+            subset=["disp_state_expanding", "disp_state_trailing252"]
+        )
+        if len(both_valid) > 0:
+            # Compute flip rate across UNIQUE fire dates (not per-fire rows)
+            date_col = "signal_date" if "signal_date" in both_valid.columns else "fire_date"
+            if date_col in both_valid.columns:
+                date_states = both_valid.drop_duplicates(subset=[date_col])[[
+                    date_col, "disp_state_expanding", "disp_state_trailing252"
+                ]]
+                n_flip_dates = int(
+                    (date_states["disp_state_expanding"] != date_states["disp_state_trailing252"]).sum()
+                )
+                n_total_dates = len(date_states)
+            else:
+                n_flip_dates = int(
+                    (both_valid["disp_state_expanding"] != both_valid["disp_state_trailing252"]).sum()
+                )
+                n_total_dates = len(both_valid)
+
+            flip_pct = round(100.0 * n_flip_dates / n_total_dates, 1) if n_total_dates > 0 else 0.0
+        else:
+            flip_pct = 0.0
+    else:
+        flip_pct = None
+
+    _FLIP_THRESHOLD = 15.0
+    meta["basis_flip_rate_pct"] = flip_pct
+    meta["nonstationarity_flag"] = (flip_pct is not None and flip_pct > _FLIP_THRESHOLD)
+    if meta["nonstationarity_flag"]:
+        meta["nonstationarity_note"] = (
+            f"{flip_pct}% of fire dates flip regime state between expanding and trailing-252d bases "
+            f"(>{_FLIP_THRESHOLD:.0f}% threshold). Study proceeds descriptively on primary "
+            "(expanding) basis only."
+        )
+    else:
+        meta["nonstationarity_note"] = (
+            "Bases agree on >85% of fire dates — stationarity assumption holds."
+        )
+
+    # SPY covariate tercile boundaries (fixed by assign_spy_tercile)
+    meta["spy_covariate_tercile_boundaries"] = {
+        "down": "< -5%",
+        "flat": "-5% to +5%",
+        "up": "> +5%",
+    }
+
+    # FDR accounting
+    meta["pre_b2_pooled_sum"] = pre_b2_pooled_sum
+    meta["post_b2_pooled_sum"] = post_b2_pooled_sum
+    meta["trial_ledger_max_basis_note"] = (
+        "TrialLedger.effective_n() uses max() semantics and reports 15 "
+        "(largest declared budget in replay family), not the sum "
+        f"{post_b2_pooled_sum}. Both numbers are printed per §0.5.6."
+    )
+
+    return meta
 
 
 # ---------------------------------------------------------------------------
@@ -502,10 +862,45 @@ def run_experiment(
     fires_full = pd.read_parquet(bp)
     log.info("Loaded %d rows from replay_boarded", len(fires_full))
 
-    # Apply experiment's cohort filter (built from the first spec's cohort —
-    # all specs share the same cohort for EXIT-GRID-1)
-    primary_cohort = specs[0].cohort
-    cohort_mask = primary_cohort.apply(fires_full)
+    # ── 4a. Regime merge (experiment-scoped) ──────────────────────────────
+    # Merge per-date PIT dispersion regime columns BEFORE CohortFilter so
+    # that regime-column predicates in the cohort filter resolve correctly.
+    # Only runs for experiments that declare needed_merge_columns.
+    needed_merge_columns: list[str] = exp_entry.get("needed_merge_columns", [])
+    _regime_panel_meta: dict[str, Any] = {}
+    if needed_merge_columns:
+        log.info(
+            "Experiment %r declares needed_merge_columns=%r — merging regime data",
+            exp_id, needed_merge_columns,
+        )
+        fires_full, _regime_panel_meta = _merge_regime_columns(
+            fires_full,
+            needed_merge_columns,
+            massive_dir=md,
+            return_panel_meta=True,
+        )
+
+    # Apply experiment's cohort filter.
+    # For experiments where all specs share the same cohort (EXIT-GRID-1,
+    # WAIT-GRID-1), using specs[0].cohort is correct.
+    # For experiments where each spec has a per-cell regime predicate
+    # (DISP-GATE-1), the registry stores a base_cohort_predicates key with
+    # the common predicates to pre-filter on; per-spec predicates are applied
+    # by replay_spec itself.
+    base_cohort_predicates = exp_entry.get("base_cohort_predicates")
+    if base_cohort_predicates:
+        # Reconstruct a CohortFilter from the stored predicate list
+        base_cohort = cohort_filter(
+            *[tuple(p) for p in base_cohort_predicates]
+        )
+        log.info(
+            "Using base_cohort_predicates for fires_df pre-filter: %s",
+            base_cohort_predicates,
+        )
+    else:
+        base_cohort = specs[0].cohort
+
+    cohort_mask = base_cohort.apply(fires_full)
     fires_df = fires_full[cohort_mask].reset_index(drop=True)
     log.info(
         "Cohort filter: %d/%d rows match (%.1f%%)",
@@ -571,9 +966,16 @@ def run_experiment(
             pf["episode_cluster"] = pf["fire_idx"].map(cluster_map)
 
         # Also carry tier_cascade for era/tier splits
-        if "tier_cascade" not in pf.columns and "tier_cascade" in fires_df.columns:
+        if "tier_cascade" not in pf.columns and "tier_cascade" in fires_df.columns and "fire_idx" in pf.columns:
             tier_map = fires_df["tier_cascade"].to_dict()
             pf["tier_cascade"] = pf["fire_idx"].map(tier_map)
+
+        # Carry spy_tercile for SPY-covariate splits (L3_PREREG design obligation 2).
+        # spy_tercile is merged into fires_df by _merge_regime_columns when the
+        # experiment declares needed_merge_columns (as DISP-GATE-1 does).
+        if "spy_tercile" not in pf.columns and "spy_tercile" in fires_df.columns and "fire_idx" in pf.columns:
+            spy_tercile_map = fires_df["spy_tercile"].to_dict()
+            pf["spy_tercile"] = pf["fire_idx"].map(spy_tercile_map)
 
         all_perfire[spec.spec_id] = pf
 
@@ -640,12 +1042,38 @@ def run_experiment(
         stats = cell_summaries[spec.spec_id]
         pf = all_perfire[spec.spec_id]
         era_tier = _era_tier_splits(pf, cluster_col="episode_cluster")
+        spy_split = _spy_covariate_split(pf, cluster_col="episode_cluster")
         summary["cells"][spec.spec_id] = {
             **stats,
             "spec_hash": spec.content_hash(),
             "exit_policy": spec.exit.to_dict(),
             "era_tier_splits": era_tier,
+            **({"spy_covariate_split": spy_split} if spy_split is not None else {}),
         }
+
+    # ── 9b. Add disp_gate_1_meta block for DISP-GATE-1 experiments ───────────
+    # This block is experiment-specific and captures panel reach, exclusion
+    # counts, basis flip rate, and FDR accounting required by L3_PREREG §6.
+    # fires_full (pre-cohort-filter) is used so total exclusion count is accurate
+    # (the cohort filter removes excluded fires from fires_df).
+    if exp_id == "disp_gate_1":
+        # Compute pre-B2 pooled sum: cumulative_trials is the POST-B2 value;
+        # pre-B2 = cumulative_trials - declared_budget
+        declared = exp_entry.get("declared_budget", 0) or 0
+        pre_b2 = cumulative_trials - declared
+        meta_block = _compute_disp_meta(
+            fires_full,
+            pre_b2_pooled_sum=pre_b2,
+            post_b2_pooled_sum=cumulative_trials,
+        )
+        # Add panel_data_reach and panel_n_tickers from the merge step if available
+        if _regime_panel_meta:
+            meta_block.update({
+                k: _regime_panel_meta[k]
+                for k in ("panel_data_reach", "panel_n_bars", "panel_n_tickers")
+                if k in _regime_panel_meta
+            })
+        summary["disp_gate_1_meta"] = meta_block
 
     # ── 10. Write perfire.parquet (gitignored Mac-local) ───────────────────
     rd.mkdir(parents=True, exist_ok=True)
