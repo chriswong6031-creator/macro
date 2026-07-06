@@ -293,7 +293,14 @@ class TestSchemaAndAuthority:
         for key in ENVELOPE_KEYS:
             assert key in payload, f"envelope key {key!r} missing after stamp"
 
-    def test_as_of_matches_now(self, tmp_path):
+    def test_as_of_reflects_lobe_data_date(self, tmp_path):
+        """as_of must match lobe data timestamps (not build time).
+
+        When all fixture lobes carry as_of='2026-07-05' and build time is also
+        2026-07-05, the top-level as_of is '2026-07-05' (the data timestamp).
+        See also test_as_of_reflects_data_timestamp_not_build_time in TestHelpers
+        which covers the case where build time differs from data timestamps.
+        """
         _build_minimal_tree(tmp_path)
         payload = build_context(root=tmp_path, now=_NOW)
         assert payload["as_of"] == "2026-07-05"
@@ -668,3 +675,121 @@ class TestHelpers:
         rel = payload["lobes"]["reliability"]
         assert "standing_law" in rel
         assert len(rel["standing_law"]) > 20, "standing_law string too short"
+
+    def test_graph_conflicts_no_substring_false_positives(self, tmp_path):
+        """graph_conflicts must use word-boundary matching, not substring matching.
+
+        Tickers like 'F', 'ON', 'ST', 'BA', 'NI', 'MAR' are all substrings of
+        words appearing in macro contradiction records (growth, transition, state,
+        etc.). None should receive graph_conflicts from macro-only records unless
+        the ticker symbol appears as a standalone word.
+        """
+        _build_minimal_tree(tmp_path)
+        # Patch the confluence_graph to include macro-level records that contain
+        # common ticker substrings (regime/market_state records, no ticker fields).
+        cg_path = tmp_path / "data" / "neuralweb" / "confluence_graph.json"
+        cg = json.loads(cg_path.read_text())
+        cg["contradiction_records"] = [
+            {
+                "pair_id": "regime_vector-vs-risk_radar",
+                "a": "regime_vector",
+                "b": "risk_radar",
+                "kind": "flip_margin",
+                "note": "growth vs contraction transition_state mismatch",
+                "severity": "warn",
+                "as_of": "2026-07-05",
+                "display_only": True,
+            },
+            {
+                "pair_id": "regime-vs-market_state",
+                "a": "regime",
+                "b": "market_state",
+                "kind": "stage",
+                "note": "on the transition boundary, stale",
+                "severity": "note",
+                "as_of": "2026-07-05",
+                "display_only": True,
+            },
+        ]
+        cg_path.write_text(json.dumps(cg))
+
+        # Add tickers that are substrings of words in those records to standouts
+        ss_path = tmp_path / "site" / "factordata" / "us_standouts.json"
+        ss = json.loads(ss_path.read_text())
+        # 'F' is in 'growth'/'flip_margin', 'ON' is in 'transition', 'ST' is in 'state'/'stale'
+        ss["buy"] = [
+            {"ticker": "F", "score": 80},
+            {"ticker": "ON", "score": 78},
+            {"ticker": "ST", "score": 76},
+        ]
+        ss_path.write_text(json.dumps(ss))
+
+        # Add these tickers to bottom_sensors so they're not filtered
+        bs_path = tmp_path / "site" / "neuralwebdata" / "bottom_sensors.json"
+        bs = json.loads(bs_path.read_text())
+        for t in ["F", "ON", "ST"]:
+            bs["rows"].append({
+                "symbol": t,
+                "as_of": "2026-07-05",
+                "bottom_state": "COILED",
+                "trigger_tier": "T1",
+                "coiled": True,
+                "star": False,
+                "coiled_fire": False,
+            })
+        bs_path.write_text(json.dumps(bs))
+
+        payload = build_context(root=tmp_path, now=_NOW)
+        cc = payload["candidate_context"]
+        for ticker in ("F", "ON", "ST"):
+            row = cc.get(ticker, {})
+            assert "graph_conflicts" not in row, (
+                f"Ticker {ticker!r} received false-positive graph_conflicts from "
+                f"macro-level records (substring match bug): {row.get('graph_conflicts')}"
+            )
+
+    def test_as_of_reflects_data_timestamp_not_build_time(self, tmp_path):
+        """Top-level as_of must reflect the oldest lobe data timestamp, not build time.
+
+        PERCEPTION_CONTRACTS law: 'asof = TRUE data timestamp per artifact, never
+        build time'. The W2 reader gates whole-artifact staleness on this field.
+        If all lobe data is from 2026-07-01 but the build runs on 2026-07-05,
+        as_of must be 2026-07-01 (the oldest lobe date), not 2026-07-05.
+        """
+        _build_minimal_tree(tmp_path)
+
+        # Overwrite fixture lobes to have older data timestamps
+        stale_date = "2026-07-01"
+
+        ws_path = tmp_path / "data" / "neuralweb" / "world_state.json"
+        ws = json.loads(ws_path.read_text())
+        ws["as_of"] = stale_date
+        ws["regime"]["asof"] = stale_date
+        ws_path.write_text(json.dumps(ws))
+
+        kd_path = tmp_path / "data" / "neuralweb" / "kernel_decisions.json"
+        kd = json.loads(kd_path.read_text())
+        kd["run_at"] = f"{stale_date}T12:00:00Z"
+        kd_path.write_text(json.dumps(kd))
+
+        memo_path = tmp_path / "data" / "neuralweb" / "cortex" / "memo.json"
+        memo = json.loads(memo_path.read_text())
+        memo["as_of"] = stale_date
+        memo_path.write_text(json.dumps(memo))
+
+        bs_path = tmp_path / "site" / "neuralwebdata" / "bottom_sensors.json"
+        bs = json.loads(bs_path.read_text())
+        bs["as_of"] = stale_date
+        bs_path.write_text(json.dumps(bs))
+
+        # Build with now=2026-07-05 (4 days after stale data)
+        payload = build_context(root=tmp_path, now=_NOW)
+
+        assert payload["as_of"] == stale_date, (
+            f"as_of should reflect oldest lobe data timestamp {stale_date!r}, "
+            f"not build time; got {payload['as_of']!r}"
+        )
+        # generated_utc must still be the build timestamp
+        assert payload["generated_utc"] == "2026-07-05T12:00:00Z", (
+            "generated_utc must remain the build time stamp"
+        )

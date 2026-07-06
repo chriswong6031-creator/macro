@@ -58,6 +58,7 @@ from __future__ import annotations
 import json
 import logging
 import math
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -531,12 +532,15 @@ def _build_candidate_context(repo: Path, gap_notes: list[str]) -> dict:
             or_.pop("ticker", None)
             row["options"] = _sparse(_coerce_numpy(or_))
 
-        # Graph conflicts mentioning this ticker or its sector
+        # Graph conflicts mentioning this ticker (word-boundary match on original case
+        # to avoid substring false-positives: 'F'⊂'growth', 'ON'⊂'transition' etc.)
         conflicts = []
-        ticker_lower = ticker.lower()
+        _ticker_pat = re.compile(
+            r"(?<![A-Za-z])" + re.escape(ticker) + r"(?![A-Za-z])"
+        )
         for rec in contradiction_records:
-            rec_str = json.dumps(rec, default=str).lower()
-            if ticker_lower in rec_str:
+            rec_str = json.dumps(rec, default=str)
+            if _ticker_pat.search(rec_str):
                 conflicts.append(rec)
         if conflicts:
             row["graph_conflicts"] = conflicts
@@ -750,10 +754,25 @@ def build_context(
     # ── Book context ──────────────────────────────────────────────────────────
     book_context = _build_book_context(lobes, candidate_context, gap_notes)
 
+    # ── True data timestamp for top-level as_of ───────────────────────────────
+    # Must be the oldest lobe data timestamp, NOT build time (ruling §3.3 /
+    # PERCEPTION_CONTRACTS: 'asof = TRUE data timestamp per artifact').
+    # W2 reader gates whole-artifact staleness on this field (age > 4 days →
+    # absent-stale). Using build time would make the gate permanently green even
+    # when all lobes carry stale data. We take min() over non-None freshness
+    # asof values so the field is conservative: if any lobe is stale, as_of
+    # reflects the oldest data date. generated_utc remains the build stamp.
+    _lobe_asofs = [
+        v["as_of"]
+        for v in freshness.values()
+        if isinstance(v, dict) and isinstance(v.get("as_of"), str) and v["as_of"]
+    ]
+    _data_asof: str = min(_lobe_asofs) if _lobe_asofs else now.strftime("%Y-%m-%d")
+
     # ── Assemble payload ──────────────────────────────────────────────────────
     payload: dict = {
         "schema": SCHEMA,
-        "as_of": now.strftime("%Y-%m-%d"),
+        "as_of": _data_asof,
         "generated_utc": now.strftime("%Y-%m-%dT%H:%M:%SZ"),
         "is_context_only": True,
         "authority": {
