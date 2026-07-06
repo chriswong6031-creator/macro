@@ -5525,3 +5525,32 @@ artifacts:
       No board chips, no site surface until verdict floor is reached.
       Come-back dates: BD-2 >= 2026-10-01, BD-3 >= 2027-01-01.
       Invoked by ops/launchd/com.macro.bd_avoid1_stamper.plist (weekday 17:00 ET).
+
+
+  # --- W-D reflexivity wave: N_eff rolling history ---
+  reflexivity-n-eff-history:
+    path: data/reflexivity/n_eff_history.json
+    format: json
+    producer: scripts/build_reflexivity_overlay.py
+    known_extra_writers: []
+    owner_program: signal-commons
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: reflexivity_n_eff_history.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      Rolling N_eff history for the reflexivity overlay (W-D wave, Signal Commons
+      program). Single-writer: scripts/build_reflexivity_overlay.py (RUL-P10 path b).
+      Follows dispersion/regime.json pattern verbatim: bounded history array
+      (_HISTORY_LEN=252), dedup-by-as_of, tail-trim. A degraded/empty overlay run
+      preserves prior history (explicit guard in builder). Entries: {as_of,
+      n_eff_by_lane, same_thesis_group_count}. Accrual substrate for Codex BOOK-1
+      "N_eff by regime" study — verdict window ~2027. Display/context only;
+      no behavioral consumer (R-F / Signal Commons R7).

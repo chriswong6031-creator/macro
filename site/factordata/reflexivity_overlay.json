@@ -2,7 +2,7 @@
   "schema": "reflexivity_overlay.v1",
   "is_context_only": true,
   "as_of": "2026-07-02",
-  "generated_utc": "2026-07-06T12:54:10Z",
+  "generated_utc": "2026-07-06T13:34:23Z",
   "note": "Risk-clustering read: 'is this the same hidden trade?'. NOT an alpha claim. Board-level, held-agnostic (US only, v1). Display-only per R-F / Signal Commons R7.",
   "factor_caveat": "Per-name secondary betas (oil/usd/btc/gold/china) are OOS-unstable and excluded. Similarity uses high-tier factors only (mkt/growth/size/rates, scope=single). Trust the MEMBERSHIP leg more than the factor leg for individual names.",
   "board_concentration": {
@@ -11,6 +11,19 @@
     "basis": "membership-jaccard+high-tier-factor-cosine",
     "note": "Supersedes sector-only HHI effective_bets in build_stock_board_v2 per R-B. N_eff = participation-ratio of similarity-matrix eigenvalues. 13 candidates \u2248 8.38 independent bets."
   },
+  "same_thesis_groups": [
+    {
+      "members": [
+        "CVSA",
+        "MATW",
+        "PJT"
+      ],
+      "size": 3,
+      "basis": "membership-jaccard",
+      "label": "Consumer Discretionary"
+    }
+  ],
+  "earnings_coverage_frac": 1.0,
   "by_ticker": {
     "HE": {
       "verdict": "partial",
@@ -26,7 +39,7 @@
           "shared_groups": [
             "sector:Utilities"
           ],
-          "same_earnings_week": null
+          "same_earnings_week": true
         },
         {
           "ticker": "NEE",
@@ -37,7 +50,7 @@
           "shared_groups": [
             "sector:Utilities"
           ],
-          "same_earnings_week": null
+          "same_earnings_week": false
         },
         {
           "ticker": "PJT",
@@ -46,11 +59,25 @@
           "factor_cosine": null,
           "factor_basis": "beta-read-thin:r2=0.18<0.2",
           "shared_groups": [],
-          "same_earnings_week": null
+          "same_earnings_week": true
         }
       ],
-      "earnings_leg": null,
-      "earnings_leg_note": "earnings-cluster not wired in v1",
+      "earnings_leg": {
+        "next_date": "2026-08-06",
+        "same_week_peers": [
+          "BIO",
+          "BMY",
+          "CVSA",
+          "DBX",
+          "MATW",
+          "NI",
+          "NWSA",
+          "OMCL",
+          "PJT"
+        ],
+        "has_data": true
+      },
+      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
       "why_en": "Partial overlap with NI \u2014 Utilities (similarity 50%).",
       "why_zh": "\u4e0e NI \u90e8\u5206\u91cd\u53e0 \u2014 Utilities\uff08\u76f8\u4f3c\u5ea6 50%\uff09\u3002"
     },
@@ -69,7 +96,7 @@
             "basket:us_sector_utilities",
             "sector:Utilities"
           ],
-          "same_earnings_week": null
+          "same_earnings_week": false
         },
         {
           "ticker": "HE",
@@ -80,7 +107,7 @@
           "shared_groups": [
             "sector:Utilities"
           ],
-          "same_earnings_week": null
+          "same_earnings_week": true
         },
         {
           "ticker": "PJT",
@@ -89,11 +116,25 @@
           "factor_cosine": null,
           "factor_basis": "beta-read-thin:r2=0.15<0.2",
           "shared_groups": [],
-          "same_earnings_week": null
+          "same_earnings_week": true
         }
       ],
-      "earnings_leg": null,
-      "earnings_leg_note": "earnings-cluster not wired in v1",
+      "earnings_leg": {
+        "next_date": "2026-08-05",
+        "same_week_peers": [
+          "BIO",
+          "BMY",
+          "CVSA",
+          "DBX",
+          "HE",
+          "MATW",
+          "NWSA",
+          "OMCL",
+          "PJT"
+        ],
+        "has_data": true
+      },
+      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
       "why_en": "Same bet as NEE \u2014 us_sector_utilities, Utilities (similarity 67%).",
       "why_zh": "\u4e0e NEE \u62bc\u6ce8\u76f8\u540c \u2014 us_sector_utilities\u3001Utilities\uff08\u76f8\u4f3c\u5ea6 67%\uff09\u3002"
     },
@@ -112,7 +153,7 @@
             "basket:us_sector_utilities",
             "sector:Utilities"
           ],
-          "same_earnings_week": null
+          "same_earnings_week": false
         },
         {
           "ticker": "HE",
@@ -123,7 +164,7 @@
           "shared_groups": [
             "sector:Utilities"
           ],
-          "same_earnings_week": null
+          "same_earnings_week": false
         },
         {
           "ticker": "GEV",
@@ -134,11 +175,18 @@
           "shared_groups": [
             "basket:power_grid"
           ],
-          "same_earnings_week": null
+          "same_earnings_week": true
         }
       ],
-      "earnings_leg": null,
-      "earnings_leg_note": "earnings-cluster not wired in v1",
+      "earnings_leg": {
+        "next_date": "2026-07-22",
+        "same_week_peers": [
+          "GEV",
+          "TR"
+        ],
+        "has_data": true
+      },
+      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
       "why_en": "Same bet as NI \u2014 us_sector_utilities, Utilities (similarity 67%).",
       "why_zh": "\u4e0e NI \u62bc\u6ce8\u76f8\u540c \u2014 us_sector_utilities\u3001Utilities\uff08\u76f8\u4f3c\u5ea6 67%\uff09\u3002"
     },
@@ -154,7 +202,7 @@
           "factor_cosine": 0.9734,
           "factor_basis": "high-tier-factors:4of4",
           "shared_groups": [],
-          "same_earnings_week": null
+          "same_earnings_week": true
         },
         {
           "ticker": "GEV",
@@ -163,7 +211,7 @@
           "factor_cosine": 0.4319,
           "factor_basis": "high-tier-factors:4of4",
           "shared_groups": [],
-          "same_earnings_week": null
+          "same_earnings_week": false
         },
         {
           "ticker": "HE",
@@ -172,11 +220,25 @@
           "factor_cosine": null,
           "factor_basis": "beta-read-thin:r2=0.18<0.2",
           "shared_groups": [],
-          "same_earnings_week": null
+          "same_earnings_week": true
         }
       ],
-      "earnings_leg": null,
-      "earnings_leg_note": "earnings-cluster not wired in v1",
+      "earnings_leg": {
+        "next_date": "2026-08-04",
+        "same_week_peers": [
+          "BIO",
+          "BMY",
+          "CVSA",
+          "DBX",
+          "HE",
+          "MATW",
+          "NI",
+          "NWSA",
+          "OMCL"
+        ],
+        "has_data": true
+      },
+      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
       "why_en": "Same bet as MATW \u2014 shared factor profile (similarity 97%).",
       "why_zh": "\u4e0e MATW \u62bc\u6ce8\u76f8\u540c \u2014 \u5171\u540c\u56e0\u5b50\u655e\u53e3\uff08\u76f8\u4f3c\u5ea6 97%\uff09\u3002"
     },
@@ -194,7 +256,7 @@
           "shared_groups": [
             "sector:Health Care"
           ],
-          "same_earnings_week": null
+          "same_earnings_week": true
         },
         {
           "ticker": "OMCL",
@@ -205,7 +267,7 @@
           "shared_groups": [
             "sector:Health Care"
           ],
-          "same_earnings_week": null
+          "same_earnings_week": true
         },
         {
           "ticker": "HE",
@@ -214,11 +276,26 @@
           "factor_cosine": null,
           "factor_basis": "beta-read-thin:r2=0.18<0.2",
           "shared_groups": [],
-          "same_earnings_week": null
+          "same_earnings_week": true
         }
       ],
-      "earnings_leg": null,
-      "earnings_leg_note": "earnings-cluster not wired in v1",
+      "earnings_leg": {
+        "next_date": "2026-07-30",
+        "same_week_peers": [
+          "BIO",
+          "CVSA",
+          "DBX",
+          "HE",
+          "MATW",
+          "NI",
+          "NWSA",
+          "OMCL",
+          "PJT",
+          "TR"
+        ],
+        "has_data": true
+      },
+      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
       "why_en": "Distinct bet \u2014 nearest peer BIO at 33% similarity.",
       "why_zh": "\u72ec\u7acb\u62bc\u6ce8 \u2014 \u6700\u8fd1\u7684\u5019\u9009\u540d\u79f0 BIO\uff0c\u76f8\u4f3c\u5ea6 33%\u3002"
     },
@@ -236,7 +313,7 @@
           "shared_groups": [
             "sector:Consumer Discretionary"
           ],
-          "same_earnings_week": null
+          "same_earnings_week": true
         },
         {
           "ticker": "HE",
@@ -245,7 +322,7 @@
           "factor_cosine": null,
           "factor_basis": "beta-read-thin:r2=0.18<0.2",
           "shared_groups": [],
-          "same_earnings_week": null
+          "same_earnings_week": true
         },
         {
           "ticker": "NI",
@@ -254,11 +331,25 @@
           "factor_cosine": null,
           "factor_basis": "beta-read-thin:r2=0.15<0.2",
           "shared_groups": [],
-          "same_earnings_week": null
+          "same_earnings_week": true
         }
       ],
-      "earnings_leg": null,
-      "earnings_leg_note": "earnings-cluster not wired in v1",
+      "earnings_leg": {
+        "next_date": "2026-08-06",
+        "same_week_peers": [
+          "BIO",
+          "BMY",
+          "DBX",
+          "HE",
+          "MATW",
+          "NI",
+          "NWSA",
+          "OMCL",
+          "PJT"
+        ],
+        "has_data": true
+      },
+      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
       "why_en": "Same bet as MATW \u2014 Consumer Discretionary (similarity 100%).",
       "why_zh": "\u4e0e MATW \u62bc\u6ce8\u76f8\u540c \u2014 Consumer Discretionary\uff08\u76f8\u4f3c\u5ea6 100%\uff09\u3002"
     },
@@ -276,7 +367,7 @@
           "shared_groups": [
             "sector:Health Care"
           ],
-          "same_earnings_week": null
+          "same_earnings_week": true
         },
         {
           "ticker": "BMY",
@@ -287,7 +378,7 @@
           "shared_groups": [
             "sector:Health Care"
           ],
-          "same_earnings_week": null
+          "same_earnings_week": true
         },
         {
           "ticker": "HE",
@@ -296,11 +387,26 @@
           "factor_cosine": null,
           "factor_basis": "beta-read-thin:r2=0.18<0.2",
           "shared_groups": [],
-          "same_earnings_week": null
+          "same_earnings_week": true
         }
       ],
-      "earnings_leg": null,
-      "earnings_leg_note": "earnings-cluster not wired in v1",
+      "earnings_leg": {
+        "next_date": "2026-07-30",
+        "same_week_peers": [
+          "BMY",
+          "CVSA",
+          "DBX",
+          "HE",
+          "MATW",
+          "NI",
+          "NWSA",
+          "OMCL",
+          "PJT",
+          "TR"
+        ],
+        "has_data": true
+      },
+      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
       "why_en": "Same bet as OMCL \u2014 Health Care (similarity 100%).",
       "why_zh": "\u4e0e OMCL \u62bc\u6ce8\u76f8\u540c \u2014 Health Care\uff08\u76f8\u4f3c\u5ea6 100%\uff09\u3002"
     },
@@ -318,7 +424,7 @@
           "shared_groups": [
             "sector:Health Care"
           ],
-          "same_earnings_week": null
+          "same_earnings_week": true
         },
         {
           "ticker": "BMY",
@@ -329,7 +435,7 @@
           "shared_groups": [
             "sector:Health Care"
           ],
-          "same_earnings_week": null
+          "same_earnings_week": true
         },
         {
           "ticker": "HE",
@@ -338,11 +444,26 @@
           "factor_cosine": null,
           "factor_basis": "beta-read-thin:r2=0.18<0.2",
           "shared_groups": [],
-          "same_earnings_week": null
+          "same_earnings_week": true
         }
       ],
-      "earnings_leg": null,
-      "earnings_leg_note": "earnings-cluster not wired in v1",
+      "earnings_leg": {
+        "next_date": "2026-07-30",
+        "same_week_peers": [
+          "BIO",
+          "BMY",
+          "CVSA",
+          "DBX",
+          "HE",
+          "MATW",
+          "NI",
+          "NWSA",
+          "PJT",
+          "TR"
+        ],
+        "has_data": true
+      },
+      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
       "why_en": "Same bet as BIO \u2014 Health Care (similarity 100%).",
       "why_zh": "\u4e0e BIO \u62bc\u6ce8\u76f8\u540c \u2014 Health Care\uff08\u76f8\u4f3c\u5ea6 100%\uff09\u3002"
     },
@@ -360,7 +481,7 @@
           "shared_groups": [
             "sector:Consumer Discretionary"
           ],
-          "same_earnings_week": null
+          "same_earnings_week": true
         },
         {
           "ticker": "PJT",
@@ -369,7 +490,7 @@
           "factor_cosine": 0.9734,
           "factor_basis": "high-tier-factors:4of4",
           "shared_groups": [],
-          "same_earnings_week": null
+          "same_earnings_week": true
         },
         {
           "ticker": "GEV",
@@ -378,11 +499,25 @@
           "factor_cosine": 0.3126,
           "factor_basis": "high-tier-factors:4of4",
           "shared_groups": [],
-          "same_earnings_week": null
+          "same_earnings_week": false
         }
       ],
-      "earnings_leg": null,
-      "earnings_leg_note": "earnings-cluster not wired in v1",
+      "earnings_leg": {
+        "next_date": "2026-08-04",
+        "same_week_peers": [
+          "BIO",
+          "BMY",
+          "CVSA",
+          "DBX",
+          "HE",
+          "NI",
+          "NWSA",
+          "OMCL",
+          "PJT"
+        ],
+        "has_data": true
+      },
+      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
       "why_en": "Same bet as CVSA \u2014 Consumer Discretionary (similarity 100%).",
       "why_zh": "\u4e0e CVSA \u62bc\u6ce8\u76f8\u540c \u2014 Consumer Discretionary\uff08\u76f8\u4f3c\u5ea6 100%\uff09\u3002"
     },
@@ -398,7 +533,7 @@
           "factor_cosine": 0.4319,
           "factor_basis": "high-tier-factors:4of4",
           "shared_groups": [],
-          "same_earnings_week": null
+          "same_earnings_week": false
         },
         {
           "ticker": "MATW",
@@ -407,7 +542,7 @@
           "factor_cosine": 0.3126,
           "factor_basis": "high-tier-factors:4of4",
           "shared_groups": [],
-          "same_earnings_week": null
+          "same_earnings_week": false
         },
         {
           "ticker": "NEE",
@@ -418,11 +553,18 @@
           "shared_groups": [
             "basket:power_grid"
           ],
-          "same_earnings_week": null
+          "same_earnings_week": true
         }
       ],
-      "earnings_leg": null,
-      "earnings_leg_note": "earnings-cluster not wired in v1",
+      "earnings_leg": {
+        "next_date": "2026-07-22",
+        "same_week_peers": [
+          "NEE",
+          "TR"
+        ],
+        "has_data": true
+      },
+      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
       "why_en": "Partial overlap with PJT \u2014 partially overlapping exposure (similarity 43%).",
       "why_zh": "\u4e0e PJT \u90e8\u5206\u91cd\u53e0 \u2014 \u90e8\u5206\u91cd\u53e0\u655e\u53e3\uff08\u76f8\u4f3c\u5ea6 43%\uff09\u3002"
     },
@@ -438,7 +580,7 @@
           "factor_cosine": null,
           "factor_basis": "beta-read-thin:r2=0.18<0.2",
           "shared_groups": [],
-          "same_earnings_week": null
+          "same_earnings_week": false
         },
         {
           "ticker": "NI",
@@ -447,7 +589,7 @@
           "factor_cosine": null,
           "factor_basis": "beta-read-thin:r2=0.15<0.2",
           "shared_groups": [],
-          "same_earnings_week": null
+          "same_earnings_week": false
         },
         {
           "ticker": "NEE",
@@ -456,11 +598,21 @@
           "factor_cosine": null,
           "factor_basis": "beta-read-thin:r2=0.11<0.2",
           "shared_groups": [],
-          "same_earnings_week": null
+          "same_earnings_week": true
         }
       ],
-      "earnings_leg": null,
-      "earnings_leg_note": "earnings-cluster not wired in v1",
+      "earnings_leg": {
+        "next_date": "2026-07-23",
+        "same_week_peers": [
+          "BIO",
+          "BMY",
+          "GEV",
+          "NEE",
+          "OMCL"
+        ],
+        "has_data": true
+      },
+      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
       "why_en": "Distinct bet \u2014 nearest peer HE at 0% similarity.",
       "why_zh": "\u72ec\u7acb\u62bc\u6ce8 \u2014 \u6700\u8fd1\u7684\u5019\u9009\u540d\u79f0 HE\uff0c\u76f8\u4f3c\u5ea6 0%\u3002"
     },
@@ -476,7 +628,7 @@
           "factor_cosine": null,
           "factor_basis": "beta-read-thin:r2=0.18<0.2",
           "shared_groups": [],
-          "same_earnings_week": null
+          "same_earnings_week": true
         },
         {
           "ticker": "NI",
@@ -485,7 +637,7 @@
           "factor_cosine": null,
           "factor_basis": "beta-read-thin:r2=0.15<0.2",
           "shared_groups": [],
-          "same_earnings_week": null
+          "same_earnings_week": true
         },
         {
           "ticker": "NEE",
@@ -494,11 +646,25 @@
           "factor_cosine": null,
           "factor_basis": "beta-read-thin:r2=0.11<0.2",
           "shared_groups": [],
-          "same_earnings_week": null
+          "same_earnings_week": false
         }
       ],
-      "earnings_leg": null,
-      "earnings_leg_note": "earnings-cluster not wired in v1",
+      "earnings_leg": {
+        "next_date": "2026-08-06",
+        "same_week_peers": [
+          "BIO",
+          "BMY",
+          "CVSA",
+          "HE",
+          "MATW",
+          "NI",
+          "NWSA",
+          "OMCL",
+          "PJT"
+        ],
+        "has_data": true
+      },
+      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
       "why_en": "Distinct bet \u2014 nearest peer HE at 0% similarity.",
       "why_zh": "\u72ec\u7acb\u62bc\u6ce8 \u2014 \u6700\u8fd1\u7684\u5019\u9009\u540d\u79f0 HE\uff0c\u76f8\u4f3c\u5ea6 0%\u3002"
     },
@@ -514,7 +680,7 @@
           "factor_cosine": null,
           "factor_basis": "beta-read-thin:r2=0.18<0.2",
           "shared_groups": [],
-          "same_earnings_week": null
+          "same_earnings_week": true
         },
         {
           "ticker": "NI",
@@ -523,7 +689,7 @@
           "factor_cosine": null,
           "factor_basis": "beta-read-thin:r2=0.15<0.2",
           "shared_groups": [],
-          "same_earnings_week": null
+          "same_earnings_week": true
         },
         {
           "ticker": "NEE",
@@ -532,11 +698,25 @@
           "factor_cosine": null,
           "factor_basis": "beta-read-thin:r2=0.11<0.2",
           "shared_groups": [],
-          "same_earnings_week": null
+          "same_earnings_week": false
         }
       ],
-      "earnings_leg": null,
-      "earnings_leg_note": "earnings-cluster not wired in v1",
+      "earnings_leg": {
+        "next_date": "2026-08-04",
+        "same_week_peers": [
+          "BIO",
+          "BMY",
+          "CVSA",
+          "DBX",
+          "HE",
+          "MATW",
+          "NI",
+          "OMCL",
+          "PJT"
+        ],
+        "has_data": true
+      },
+      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
       "why_en": "Distinct bet \u2014 nearest peer HE at 0% similarity.",
       "why_zh": "\u72ec\u7acb\u62bc\u6ce8 \u2014 \u6700\u8fd1\u7684\u5019\u9009\u540d\u79f0 HE\uff0c\u76f8\u4f3c\u5ea6 0%\u3002"
     }

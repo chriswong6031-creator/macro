@@ -70,12 +70,19 @@
 </div>
 {%- endmacro %}
 {# W4 reflexivity board-level banner — only rendered when overlay is present #}
+{# W-D addition: same_thesis_groups banner fires when any group size >= 5       #}
+{# No title= translation (CI law). EN/ZH via l-en/l-zh spans.                  #}
 {% macro rx_board_banner() -%}
 {%- if rx -%}
 {%- set bc = rx.get('board_concentration') or {} -%}
 {%- set n = bc.get('n', 0) -%}
 {%- set neff = bc.get('n_eff', 0) -%}
 {%- set caveat = rx.get('factor_caveat', '') -%}
+{%- set thesis_groups = rx.get('same_thesis_groups') or [] -%}
+{%- set large_groups = [] -%}
+{%- for g in thesis_groups if g.size >= 5 -%}
+  {%- set _ = large_groups.append(g) -%}
+{%- endfor -%}
 <div class="rx-banner">
   <span class="l-en">W4 Reflexivity — {{ n }} candidates ≈ <b>{{ neff }}</b> independent bets
     (union board; per-lane in concentration banners above)</span>
@@ -83,6 +90,14 @@
     （合并口径；各分栏浓度栏可见分栏口径）</span>
   {% if caveat %}<span class="rx-caveat" data-tip-en="{{ caveat }}" data-tip-zh="{{ caveat }}">?</span>{% endif %}
 </div>
+{%- for g in large_groups %}
+<div class="rx-banner rx-thesis-banner">
+  <span class="l-en"><b>{{ g.size }} candidates, one thesis: {{ g.label }}</b>
+    — {{ g.members | join(', ') }} ({{ g.basis }})</span>
+  <span class="l-zh"><b>{{ g.size }} 候选，同一主题：{{ g.label }}</b>
+    — {{ g.members | join('、') }}（{{ g.basis }}）</span>
+</div>
+{%- endfor -%}
 {%- endif -%}
 {%- endmacro %}
 <!DOCTYPE html>
@@ -160,6 +175,8 @@
     padding:5px 12px; border:1px solid color-mix(in srgb,var(--muted) 30%,var(--line));
     border-radius:9px; display:inline-block; }
   .rx-banner b { color:var(--text); font-variant-numeric:tabular-nums; }
+  .rx-thesis-banner { border-color:color-mix(in srgb,var(--warn) 50%,var(--line));
+    color:var(--warn); display:block; margin-top:4px; }
   .rx-caveat { display:inline-block; font-size:10px; cursor:help; margin-left:6px;
     color:var(--muted); border:1px solid var(--line); border-radius:50%;
     width:15px; height:15px; text-align:center; line-height:13px; vertical-align:middle; }

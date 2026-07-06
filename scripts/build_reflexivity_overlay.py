@@ -3,7 +3,9 @@
 Runs AFTER build_site.py has written site/factor_betas.json and AFTER
 build_stock_board_v2.py has written site/factordata/us_standouts_v2.json.
 
-Writes: site/factordata/reflexivity_overlay.json  (display-only, is_context_only=true)
+Writes:
+  site/factordata/reflexivity_overlay.json  (display-only, is_context_only=true)
+  data/reflexivity/n_eff_history.json       (git-committed, single-writer, RUL-P10)
 
 After writing the overlay, re-renders site/us_stocks_v2.html so the card chips
 and board banner that consume the overlay fields are present in the preview page
@@ -12,7 +14,11 @@ and board banner that consume the overlay fields are present in the preview page
 PLACEMENT (R-A ruling): BOARD-level, held-agnostic overlay only.
 The candidate-vs-HELD read is chartered to the Mastermind repo.
 CN/HK names are out of scope in v1 (R-E ruling).
-Nothing here writes to data/ (ledger law: nightly is the sole advancer).
+
+N_EFF HISTORY (W-D wave): data/reflexivity/n_eff_history.json is git-committed
+and single-writer (this script). Follows the dispersion/regime.json pattern
+(bounded history array, _HISTORY_LEN=252, dedup-by-as_of, tail-trim).
+A degraded/empty overlay run PRESERVES existing history — explicit guard.
 
 PER-LANE N_EFF (invariant-e fix): the overlay emits board_concentration for the
 union AND n_eff_by_lane keyed by lane name (entry_open / setting_up), matching
@@ -32,10 +38,15 @@ from pathlib import Path
 log = logging.getLogger("build_reflexivity_overlay")
 
 ROOT = Path(__file__).resolve().parents[1]
-_FACTOR_BETAS = ROOT / "site" / "factor_betas.json"
-_STANDOUTS_V2 = ROOT / "site" / "factordata" / "us_standouts_v2.json"
-_MEMBERSHIP   = ROOT / "data" / "baskets" / "membership.json"
-_OUT          = ROOT / "site" / "factordata" / "reflexivity_overlay.json"
+_FACTOR_BETAS   = ROOT / "site" / "factor_betas.json"
+_STANDOUTS_V2   = ROOT / "site" / "factordata" / "us_standouts_v2.json"
+_MEMBERSHIP     = ROOT / "data" / "baskets" / "membership.json"
+_OUT            = ROOT / "site" / "factordata" / "reflexivity_overlay.json"
+_EARNINGS       = ROOT / "data" / "earnings" / "earnings.parquet"
+_HISTORY_OUT    = ROOT / "data" / "reflexivity" / "n_eff_history.json"
+
+# Rolling history length — mirrors build_dispersion_regime._HISTORY_LEN.
+_HISTORY_LEN = 252
 
 
 def _load_json(path: Path) -> dict | None:
@@ -94,6 +105,96 @@ def _as_of(standouts: dict, factor_betas: dict) -> str:
     return s or f or datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
 
+# ── N_eff history helpers (W-D wave) ─────────────────────────────────────────
+# Mirrors the dispersion/regime.json pattern verbatim:
+# bounded array, dedup-by-as_of, tail-trim, read-prior-then-append.
+# SINGLE WRITER: this script only (RUL-P10).
+
+def _load_history(out_path: Path) -> list[dict]:
+    """Load the existing history list from n_eff_history.json (if it exists)."""
+    if not out_path.exists():
+        return []
+    try:
+        existing = json.loads(out_path.read_text())
+        return existing.get("history", [])
+    except Exception:  # noqa: BLE001
+        return []
+
+
+def _update_history(history: list[dict], today_entry: dict) -> list[dict]:
+    """Append today's entry and keep the last _HISTORY_LEN days.
+
+    Deduplicates by as_of — if today's as_of already exists, the new entry
+    replaces it (last-write-wins; handles re-runs within the same day).
+    """
+    as_of = today_entry.get("as_of")
+    pruned = [h for h in history if h.get("as_of") != as_of]
+    pruned.append(today_entry)
+    return pruned[-_HISTORY_LEN:]
+
+
+def _write_n_eff_history(artifact: dict, history_path: Path) -> None:
+    """Append the current n_eff snapshot to the rolling history file.
+
+    Guard: if artifact is an empty overlay (n=0 and no by_ticker) we still
+    PRESERVE prior history — we just skip appending a new entry. This prevents
+    degraded runs from silently resetting the accrual store.
+    """
+    n = (artifact.get("board_concentration") or {}).get("n", 0)
+    by_ticker = artifact.get("by_ticker") or {}
+    if n == 0 and not by_ticker:
+        # Degraded/empty run — preserve history, do not append a null entry.
+        log.debug("n_eff_history: empty overlay, preserving prior history")
+        return
+
+    as_of = artifact.get("as_of") or datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    n_eff_by_lane = artifact.get("n_eff_by_lane") or {}
+    same_thesis_groups = artifact.get("same_thesis_groups") or []
+
+    today_entry: dict = {
+        "as_of": as_of,
+        "n_eff_by_lane": n_eff_by_lane,
+        "same_thesis_group_count": len(same_thesis_groups),
+    }
+
+    history_path.parent.mkdir(parents=True, exist_ok=True)
+    history = _load_history(history_path)
+    history = _update_history(history, today_entry)
+
+    out = {
+        "schema": "reflexivity_n_eff_history.v1",
+        "as_of": as_of,
+        "generated_utc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "note": (
+            "Rolling N_eff history for the reflexivity overlay. "
+            "Single-writer: scripts/build_reflexivity_overlay.py (RUL-P10). "
+            "Accrual substrate for Codex BOOK-1 'N_eff by regime' (~2027 verdict)."
+        ),
+        "history": history,
+    }
+    try:
+        history_path.write_text(json.dumps(out, indent=2))
+        log.info("n_eff_history written: %d entries → %s", len(history), history_path)
+    except Exception as e:  # noqa: BLE001
+        log.warning("n_eff_history write failed (non-fatal): %s", e)
+
+
+def _load_earnings() -> "pd.DataFrame | None":
+    """Load data/earnings/earnings.parquet — fail-open on any error."""
+    if not _EARNINGS.exists():
+        log.debug("reflexivity: earnings.parquet not found — earnings leg skipped")
+        return None
+    try:
+        import pandas as pd  # noqa: PLC0415
+        df = pd.read_parquet(_EARNINGS)
+        # Normalise index to upper-case for robust lookup
+        df.index = df.index.str.upper()
+        return df
+    except Exception as e:  # noqa: BLE001
+        log.warning("reflexivity: earnings.parquet unreadable (%s) — earnings leg skipped", e)
+        return None
+
+
 def compute(site: Path | None = None) -> dict:
     """Build the reflexivity overlay artifact. Degrades gracefully on missing inputs.
 
@@ -133,12 +234,14 @@ def compute(site: Path | None = None) -> dict:
         compute as _compute,
     )
     as_of = _as_of(standouts, factor_betas or {})
+    earnings = _load_earnings()
     artifact = _compute(
         tickers=tickers,
         sector_by_ticker=sector_by_ticker,
         betas_index=betas_index,
         membership_data=membership,
         as_of=as_of,
+        earnings_store=earnings,
     )
 
     # ── per-lane n_eff (invariant-e population fix) ────────────────────────────
@@ -223,8 +326,17 @@ def main() -> int:
 
         n = artifact.get("board_concentration", {}).get("n", 0)
         neff = artifact.get("board_concentration", {}).get("n_eff", 0.0)
-        log.info("reflexivity overlay written: %d candidates ≈ %.1f independent bets → %s",
-                 n, neff, out_path)
+        thesis_groups = artifact.get("same_thesis_groups", [])
+        earnings_cov = artifact.get("earnings_coverage_frac", 0.0)
+        log.info(
+            "reflexivity overlay written: %d candidates ≈ %.1f independent bets, "
+            "%d thesis groups, earnings coverage %.0f%% → %s",
+            n, neff, len(thesis_groups), earnings_cov * 100, out_path,
+        )
+
+        # W-D: write N_eff history (git-committed, single-writer, RUL-P10).
+        # Guard inside _write_n_eff_history: degraded/empty run preserves prior history.
+        _write_n_eff_history(artifact, _HISTORY_OUT)
 
         # Re-render the v2 preview page so the reflexivity chips and board banner
         # (which consume the overlay) are present in the deployed preview.
