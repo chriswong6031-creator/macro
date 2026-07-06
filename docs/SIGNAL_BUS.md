@@ -19,7 +19,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | hk-canada | 2 |
 | institutional-sector-intelligence | 2 |
 | intl-fix | 1 |
-| long-hold | 13 |
+| long-hold | 14 |
 | neural-web | 28 |
 | nw-mastermind-bridge | 2 |
 | nw-rails | 3 |
@@ -37,7 +37,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 86 |
+| display | 87 |
 | infrastructure | 40 |
 | scored | 4 |
 | shadow | 37 |
@@ -46,7 +46,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 161 |
+| git | 162 |
 | gitignored-local | 4 |
 | r2 | 2 |
 
@@ -145,6 +145,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
+| capital-allocation-delta | `embedded: capital_allocation block inside site/stockdata/<TICKER>.json` | json | daily-engine | display | 1 | 0 |
 | great-company-trap | `embedded: great_company_trap fields inside site/stockdata/<TICKER>.json` | json | daily-engine | display | 1 | 0 |
 | insider-lh-panel | `data/research/insider_lh_panel.parquet` | parquet | on-demand | display | 1 | 0 |
 | insider-lh-panel-manifest | `data/research/insider_lh_panel_manifest.json` | json | on-demand | display | 1 | 0 |
@@ -551,6 +552,13 @@ Artifacts below have `known_extra_writers` — additional code paths that write 
 - **declared producer:** `engine/board_ledger.py`
 - **extra writers:**
   - engine/hk_run.py — calls board_ledger via lane='HK'; store_df.to_parquet L44
+
+### capital-allocation-delta
+
+- **path:** `embedded: capital_allocation block inside site/stockdata/<TICKER>.json`
+- **declared producer:** `engine/capital_allocation.py`
+- **extra writers:**
+  - engine/stock_fundamentals.py — _compute_capital_allocation_block() calls compute_capital_allocation() inside panels()
 
 ### china-sector-central-calls
 

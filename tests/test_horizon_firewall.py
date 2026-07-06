@@ -423,6 +423,8 @@ class TestRealRegistryFirewallClean:
             "insider-lh-panel",
             "insider-lh-panel-manifest",
             "insider-lh-ruler-p-results",
+            # LT-3a capital allocation display block — hold_thesis by design; display-only
+            "capital-allocation-delta",
         }
         reg = load_registry(REPO_ROOT)
         hold_arts = {

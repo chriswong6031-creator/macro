@@ -1128,6 +1128,12 @@
       <div id="r_aq"></div>
     </div>
 
+    <div class="panel" id="panel_capalloc" style="display:none">
+      <h2>💸 <span class="l-en">Capital allocation</span><span class="l-zh">资本配置</span>
+        <span class="help">?<span class="tip"><span class="l-en">How management is deploying cash relative to shares outstanding. Buyback yield = trailing-12-month repurchases ÷ market cap (SEC EDGAR quarterly filings, point-in-time: only rows with a filed date are counted). Net buyback after SBC = (buybacks − stock-based compensation) ÷ market cap — only shown when annual SBC data is available. Debt-funded flag fires when long-term debt rose while the company was buying back stock. Share count trend is year-over-year from annual EDGAR data. DISPLAY-ONLY research context — these are accounting observations, not a buy/sell signal and not part of any score or ranking.</span><span class="l-zh">管理层相对流通股的现金部署情况。回购收益率＝过去12个月回购额÷市值（来自SEC EDGAR季度申报，仅计入有申报日期的记录，点位时间口径）。扣除股权激励后净回购＝（回购－股权激励）÷市值，仅在年度SBC数据可用时显示。当公司在回购股票的同时长期债务上升时，债务融资标志触发。股份数量趋势为年度EDGAR数据的同比变化。仅作背景展示——这些为会计层面观测，并非买卖信号，也不计入任何评分或排名。</span></span></span></h2>
+      <div id="r_capalloc"></div>
+    </div>
+
     <div class="panel" id="panel_earn" style="display:none">
       <h2>📅 <span class="l-en">Earnings</span><span class="l-zh">财报</span>
         <span class="help">?<span class="tip"><span class="l-en">Next reported earnings date and the recent beat/miss history (SEC + Nasdaq, keyless), plus the SUE earnings-momentum z. SUE (standardized unexpected earnings) measures how far the latest quarter beat its year-ago seasonal expectation, standardized by the company's own history — the post-earnings-announcement-drift (PEAD) effect. It was the strongest factor and lone false-discovery-rate survivor on the shallow 2023-2025 window, but a deep 2011-2026 re-test (survivorship-biased, an optimistic bound) collapses its CROSS-SECTIONAL edge to ~zero (see the factors page) — so it is shown as earnings-momentum / PEAD context, not a validated standalone alpha; the z is RELATIVE to the S&P 1500 (0 = average, +2 = top of the pack). Context, not a standalone buy signal.</span><span class="l-zh">下次财报日与近期超预期/不及预期历史（SEC＋纳斯达克，免密钥），以及SUE盈利动量z值。SUE（标准化超预期盈利）衡量最新季度相对去年同期季节性预期超出多少，并以公司自身历史标准化——即盈利公布后漂移（PEAD）效应。它在浅窗口（2023-2025）曾是最强正向因子且唯一通过无泄漏错误发现率检验，但 2011-2026 深度复检（含幸存者偏差，乐观上界）使其横截面优势崩塌至约零（见因子页）——故仅作盈利动量／PEAD 背景展示，并非已验证的独立超额收益；该z为相对标普1500的排名（0＝平均，+2＝领先）。仅供参考，并非独立买入信号。</span></span></span></h2>
@@ -1749,6 +1755,56 @@
         '<p class="aq-foot">' + esc(lz(aq.caveat, aq.caveat_zh)) + '</p>';
       show('panel_aq', true);
     } else show('panel_aq', false);
+
+    // Capital allocation chip (LT-3a; display-only; hold_thesis)
+    if (d.capital_allocation) {
+      var ca = d.capital_allocation;
+      var caHtml = '';
+      // Delta chip: accretive / dilutive / neutral / unavailable
+      var delta = ca.capital_allocation_delta;
+      if (delta && delta !== 'unavailable') {
+        var dCol = delta === 'accretive' ? 'var(--up)' : delta === 'dilutive' ? 'var(--down)' : 'var(--muted)';
+        var dEn = delta === 'accretive' ? 'Share count shrinking' : delta === 'dilutive' ? 'Share count diluting' : 'Neutral';
+        var dZh = delta === 'accretive' ? '股本缩减中' : delta === 'dilutive' ? '股本稀释中' : '中性';
+        var dTipEn = delta === 'accretive' ? 'Shares outstanding down ≥0.5% YoY with active buybacks — company returning cash to holders by reducing the share count' : delta === 'dilutive' ? 'Shares outstanding up ≥3% YoY — equity issuance or heavy SBC is outpacing any buybacks' : 'Share count change between -0.5% and +3% YoY — neither clearly shrinking nor expanding';
+        var dTipZh = delta === 'accretive' ? '股本同比减少≥0.5%且有回购——公司通过减少股数向股东回报现金' : delta === 'dilutive' ? '股本同比增加≥3%——股权发行或大量股权激励超过回购规模' : '股本同比变化介于-0.5%至+3%之间——既未明显缩减也未明显扩张';
+        caHtml += '<span class="hchip" style="color:' + dCol + ';background:color-mix(in srgb,' + dCol + ' 14%,transparent)" data-tip-en="' + esc(dTipEn) + '" data-tip-zh="' + esc(dTipZh) + '">' + lz(dEn, dZh) + '</span> ';
+      }
+      // Buyback yield chip
+      if (ca.buyback_yield != null) {
+        var byPct = (ca.buyback_yield * 100).toFixed(2) + '%';
+        caHtml += '<span class="hchip" data-tip-en="Buyback yield: trailing-12-month repurchases ÷ market cap (SEC EDGAR quarterly filings)" data-tip-zh="回购收益率：过去12个月回购额÷市值（SEC EDGAR季度申报）">' + lz('Buyback yld','回购率') + ' ' + byPct + '</span> ';
+      }
+      // Net buyback after SBC chip (only when available)
+      if (ca.net_buyback_after_sbc != null) {
+        var nbPct = (ca.net_buyback_after_sbc * 100).toFixed(2) + '%';
+        var nbCol = ca.net_buyback_after_sbc >= 0 ? 'var(--up)' : 'var(--down)';
+        caHtml += '<span class="hchip" style="color:' + nbCol + ';background:color-mix(in srgb,' + nbCol + ' 14%,transparent)" data-tip-en="Net buyback after stock-based compensation ÷ market cap — negative means SBC exceeds buybacks (dilutive net)" data-tip-zh="扣除股权激励后净回购÷市值——负值表示SBC超过回购（净稀释）">' + lz('Net buyback','净回购') + ' ' + nbPct + '</span> ';
+      }
+      // Debt-funded flag
+      if (ca.debt_funded_buyback_flag === true) {
+        caHtml += '<span class="hchip" style="color:var(--down);background:color-mix(in srgb,var(--down) 14%,transparent)" data-tip-en="Long-term debt rose while the company was buying back stock — buybacks may be debt-funded" data-tip-zh="公司回购股票的同时长期债务上升——回购可能由债务融资">' + lz('Debt-funded buyback','债务融资回购') + '</span> ';
+      }
+      // Share count info line
+      var caLines = [];
+      if (ca.shares_yoy_change_pct != null) {
+        var scSign = ca.shares_yoy_change_pct > 0 ? '+' : '';
+        caLines.push(lz('Shares YoY','股本同比') + ' ' + scSign + ca.shares_yoy_change_pct.toFixed(2) + '%');
+      }
+      if (ca.repurch_ttm != null) {
+        var rttmStr = ca.repurch_ttm >= 1e9 ? '$' + (ca.repurch_ttm / 1e9).toFixed(1) + 'B' :
+                      ca.repurch_ttm >= 1e6 ? '$' + (ca.repurch_ttm / 1e6).toFixed(0) + 'M' : '$' + ca.repurch_ttm.toFixed(0);
+        caLines.push(lz('Repurch TTM','TTM回购') + ' ' + rttmStr + (ca.repurch_coverage === 'partial' ? ' (' + lz('partial','部分') + ')' : ''));
+      }
+      if (ca.dividends_latest != null && ca.dividends_latest > 0) {
+        var divStr = ca.dividends_latest >= 1e9 ? '$' + (ca.dividends_latest / 1e9).toFixed(1) + 'B' :
+                     ca.dividends_latest >= 1e6 ? '$' + (ca.dividends_latest / 1e6).toFixed(0) + 'M' : '$' + ca.dividends_latest.toFixed(0);
+        caLines.push(lz('Dividends','股息') + ' ' + divStr);
+      }
+      if (caLines.length) caHtml += '<p class="muted" style="font-size:12px;margin:6px 0 0">' + caLines.join(' · ') + '</p>';
+      if (caHtml) { el('r_capalloc').innerHTML = caHtml; show('panel_capalloc', true); }
+      else show('panel_capalloc', false);
+    } else show('panel_capalloc', false);
 
     if (d.earnings) {
       var ev = d.earnings, eh = '', rv2 = d.revisions || {};

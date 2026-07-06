@@ -4219,6 +4219,61 @@ artifacts:
       FIREWALL: horizon_role=hold_thesis. MUST NOT feed board ordering, alert
       triage, top-setups gates, or push floor (LH-R1). fdr_family=long_hold (LH-R5).
 
+  # --- Long-Hold LT-3a: Capital Allocation Delta block ---
+  capital-allocation-delta:
+    path: "embedded: capital_allocation block inside site/stockdata/<TICKER>.json"
+    format: json
+    producer: engine/capital_allocation.py
+    known_extra_writers:
+      - "engine/stock_fundamentals.py — _compute_capital_allocation_block() calls compute_capital_allocation() inside panels()"
+    owner_program: long-hold
+    cadence: daily-engine
+    storage: git
+    asof_field: null
+    freshness_sla_hours: 30
+    schema: capital_allocation.v1
+    tier: display
+    horizon_role: hold_thesis
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - site/stockdata/<TICKER>.json
+    external_consumers: []
+    notes: >
+      LT-3a (Long-Hold External Foundation). Buyback execution reader + capital
+      allocation display block. Reads repurchases from statements_quarterly.parquet
+      (PaymentsForRepurchaseOfCommonStock), shares/debt_lt/dividends from
+      fundamentals_panel.parquet, and sbc from statements.parquet (sparse until
+      LT-1 backfill lands — null handled gracefully as 'unavailable').
+
+      FROZEN v1 display semantics (display conventions, not registered hypotheses):
+        capital_allocation_delta: 'accretive' (shares_yoy_change <= -0.5% AND
+          repurch_ttm > 0) | 'dilutive' (shares_yoy_change >= +3%, threshold from
+          scripts/research/missed_hold_study.py; note: stock_fundamentals.py uses a
+          separate multi-year dilution_pct=5.0 threshold) | 'neutral' |
+          'unavailable' (shares data missing).
+        buyback_yield: repurch_ttm / mcap.
+        net_buyback_after_sbc: (repurch_ttm - sbc_ttm) / mcap (null if sbc
+          unavailable or repurch_coverage='partial' to prevent period mismatch).
+        share_count_reduction_confirmed: shares_yoy_change <= -0.5%.
+        debt_funded_buyback_flag: repurch_ttm > 0 AND debt_lt latest > debt_lt prior FY.
+
+      PARTIAL COVERAGE FALLBACK: quarterly repurchases column is sparsely populated
+      (~1 quarter in TTM for 97% of names). When quarterly coverage is partial,
+      repurch_ttm falls back to fundamentals_panel.repurchases (annual, PIT-safe),
+      reflected in repurch_coverage='annual_fallback'. This ensures repurch_ttm
+      and sbc_ttm are on the same annual period footing.
+
+      POINT-IN-TIME: quarterly rows require filed date present AND filed <= build date.
+      Dedup on (ticker, fiscal_year, fiscal_quarter) retains latest-filed row.
+      TTM = trailing 4 filed quarters with period_end in the last 12 months.
+      Annual data gated by fundamentals_panel.asof_date field.
+
+      DISPLAY-ONLY — horizon_role=hold_thesis. MUST NOT feed board ordering, alert
+      triage, top-setups gates, or push floor (LH-R1). fdr_family=long_hold (LH-R5).
+      Coverage stamps: repurch_coverage (full|partial|annual_fallback|missing),
+      _horizon_role, _display_only, _version.
+
   # --- NW quant-synthesis B: research-queue EV-ranker ---
   research-queue:
     path: data/neuralweb/research_queue.json
