@@ -1079,7 +1079,10 @@ def main() -> int:
     # build (resumable, never fatal), then read the latest readings into a cross-sectional z.
     try:
         from collectors.equity_revisions import fetch_revisions
-        fetch_revisions(max_new=int(config.load().get("equity_profile", {}).get("per_build", 200)))
+        if _no_drip():
+            log.info("revision drip skipped (render lane — data/ write discarded)")
+        else:
+            fetch_revisions(max_new=int(config.load().get("equity_profile", {}).get("per_build", 200)))
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("revision drip skipped (%s)", e)
     revision_z: dict[str, float] = {}
@@ -1128,7 +1131,9 @@ def main() -> int:
     try:
         from engine import composite_score
         _legrows = {}
-        for _t in set(_factor_legs) | set(alpha_pt) | set(revision_z):
+        # sorted: set iteration is hash-seed-dependent per run; row order feeds
+        # float summation in the sector z-scores, so pin it for reproducibility
+        for _t in sorted(set(_factor_legs) | set(alpha_pt) | set(revision_z)):
             _fl = _factor_legs.get(_t) or {}
             _legrows[_t] = {"momentum": (alpha_pt.get(_t) or {}).get("alpha"),
                             "value": _fl.get("value"), "quality": _fl.get("quality"),
@@ -1965,7 +1970,9 @@ def main() -> int:
         row_by_t = {r.get("ticker"): r for _, r in cand}
         scored = [(t, p) for t, p in profiles.items()
                   if p.get("composite_z") is not None and t in row_by_t]
-        scored.sort(key=lambda kv: -(kv[1]["composite_z"]))
+        # ticker tiebreaker: identical composite_z must never leave board order to
+        # dict insertion order (reproducibility — same inputs, same board)
+        scored.sort(key=lambda kv: (-(kv[1]["composite_z"]), kv[0]))
         # ENTRY-QUALITY GATE (China's discipline, T4-validated: poor-entry top-momentum names
         # realize -0.7pp/mo and a -58% vs -41% worst drawdown) AND the new BOTTOMING-ALIGNMENT
         # gate. A name is BUYABLE only if its cycle/extension does NOT block (downtrend /
@@ -1987,13 +1994,13 @@ def main() -> int:
             return "aligned" if a.get("aligned") else ("near" if a.get("near") else None)
 
         def _asort(tp):
-            _t, p, _tier = tp
+            t, p, _tier = tp
             a = p.get("alignment") or {}
-            return ((a.get("score") or 0.0), (p.get("composite_z") or 0.0))
+            return (-(a.get("score") or 0.0), -(p.get("composite_z") or 0.0), t)
 
         elig = [(t, p, _atier(p)) for t, p in scored if _entry_ok(p) and _atier(p)]
-        aligned = sorted([x for x in elig if x[2] == "aligned"], key=_asort, reverse=True)
-        near = sorted([x for x in elig if x[2] == "near"], key=_asort, reverse=True)
+        aligned = sorted([x for x in elig if x[2] == "aligned"], key=_asort)
+        near = sorted([x for x in elig if x[2] == "near"], key=_asort)
         buyable = (aligned if len(aligned) >= ALIGN_MIN_KEEP
                    else aligned + near[: ALIGN_MIN_KEEP - len(aligned)])
 
@@ -2065,7 +2072,8 @@ def main() -> int:
 
         # Order recovery candidates by alpha desc (W8 verdict: no rank power; alpha is
         # the only validated sort leg; forward ledger will stratify by lane)
-        _recovery_cands.sort(key=lambda tp: -(tp[1].get("alpha") or tp[1].get("composite_z") or 0.0))
+        _recovery_cands.sort(
+            key=lambda tp: (-(tp[1].get("alpha") or tp[1].get("composite_z") or 0.0), tp[0]))
         _recovery_cands = _recovery_cands[:_RECOVERY_CAP]
         _recovery_tickers = {t for t, _ in _recovery_cands}
 
@@ -2085,7 +2093,7 @@ def main() -> int:
             w = (sig_verdict.get(t) or {}).get("weight") or 0.0
             pct = bisect.bisect_right(_czs, p.get("composite_z") or 0.0) / _bn
             return (0 if tier == "aligned" else 1,
-                    -(pct + 0.5 * w + ((coiled_by.get(t) or {}).get("bonus") or 0.0)))
+                    -(pct + 0.5 * w + ((coiled_by.get(t) or {}).get("bonus") or 0.0)), t)
         buyable = sorted(buyable, key=_combine_key)
 
         # W6-US fix 6: soft per-sector cap + dual-class dedup on the wide board.
@@ -2382,7 +2390,7 @@ def main() -> int:
         # ordered by alpha desc. The entry status BADGE is kept (not removed).
         def _alpha_key(r_tuple):
             t, p, _tier = r_tuple
-            return -(p.get("alpha") or 0.0)
+            return (-(p.get("alpha") or 0.0), t)
 
         buyable_trend = sorted(buyable, key=_alpha_key)    # alpha desc within trend
         # Recovery rows: tag and order by alpha desc
