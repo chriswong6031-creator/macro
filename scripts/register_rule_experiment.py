@@ -40,6 +40,7 @@ from engine.rule_experiments import (  # noqa: E402
     VALID_STATUSES,
     list_experiments,
     pooled_replay_trial_count,
+    reconcile_replay_accounting,
     register_experiment,
     update_experiment_status,
 )
@@ -101,10 +102,22 @@ def cmd_list(args: argparse.Namespace) -> int:
 
 
 def cmd_trial_count(args: argparse.Namespace) -> int:
-    """Print pooled replay trial count."""
+    """Print pooled replay trial count (both disclosure bases + drift check)."""
     registry_path = Path(args.registry) if args.registry else None
     n = pooled_replay_trial_count(registry_path)
-    print(f"Cumulative pooled replay trial count: {n}")
+    print(f"Cumulative pooled replay trial count (registry SUM basis): {n}")
+    rec = reconcile_replay_accounting(registry_path)
+    print(f"Trial-ledger max()-basis floor (DSR): {rec['ledger_max_floor']}")
+    if not rec["consistent"]:
+        print("[WARN] registry/ledger replay accounting DRIFT:", file=sys.stderr)
+        for eid, pair in sorted(rec["mismatches"].items()):
+            print(
+                f"  {eid}: registry={pair['registry']} ledger={pair['ledger']}",
+                file=sys.stderr,
+            )
+        for reason in rec["unattributed_ledger_rows"]:
+            print(f"  unattributed ledger row: {reason!r}", file=sys.stderr)
+        return 1
     return 0
 
 
