@@ -255,7 +255,7 @@ def test_pca_health_present_and_key_set():
     assert oos is not None, "oos_null should be populated on 700-row frame"
     assert set(oos.keys()) == _OOS_NULL_KEYS
     assert 0.0 <= oos["pctile_vs_null"] <= 1.0
-    assert oos["n_null_draws"] >= 30
+    assert oos["n_null_draws"] >= 200  # RUL-ORTH-8: >=200-draw within-window null
 
     # curvature_stability_tag
     tag = h["curvature_stability_tag"]
@@ -305,13 +305,31 @@ def test_pca_health_degradation_300_rows():
     assert h is not None, "pca_health should not be None on 300-row frame"
     # turnover needs >= 525 rows; must be None here
     assert h["pc1_loading_turnover_vs_2y"] is None
-    # oos_null: train=dy[:-21] must have >= 252 rows; dy ~ 299 rows; train=278 => may succeed
-    # but if it fails it must be None, not an exception — just assert no raise (already here)
+    # oos_null is None here twice over: train=278 rows yields <200 strided null draws
+    # (RUL-ORTH-8 floor), and _curve_frame's tenors are near-perfectly correlated so
+    # the degenerate-std guard trips (projected PC2/PC3 variance ~ 0)
+    assert h["oos_null"] is None
 
     # a frame too small for the main PCA returns None overall (not an exception)
     g = _curve_frame(n=100)
     result = yc.pca_decomposition(g)
     assert result is None
+
+
+def test_pca_health_degenerate_frame_oos_null_none():
+    """A rank-deficient curve (all tenors driven by one factor — the original _curve_frame)
+    must yield oos_null=None via the degenerate-std guard even with ample history, and the
+    pc3_to_pc4 gap must be None (denominator floor), never a spuriously huge 'stable' read."""
+    f = _curve_frame(n=700)
+    pca = yc.pca_decomposition(f)
+    assert pca is not None
+    h = pca["pca_health"]
+    assert h is not None
+    assert h["oos_null"] is None
+    gap34 = h["eigenvalue_gaps"]["pc3_to_pc4"]
+    assert gap34 is None or gap34 < 1e6, f"degenerate PC4 produced runaway gap {gap34}"
+    if gap34 is None:
+        assert h["curvature_stability_tag"] is None
 
 
 def test_pca_health_json_serializable():

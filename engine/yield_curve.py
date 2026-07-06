@@ -141,9 +141,12 @@ def _pca_health(dy: pd.DataFrame, vals_full: np.ndarray, vecs_full: np.ndarray) 
 
     # ---- eigenvalue_gaps -------------------------------------------------- #
     gaps: dict[str, float | None] = {}
+    # denominator floor: a numerically-zero eigenvalue (rank-deficient curve) must
+    # yield gap=None, not a spuriously huge "well-separated" ratio
+    _gap_floor = 1e-9 * float(max(np.clip(vals_full, 0.0, None).sum(), 0.0)) if n_full else 0.0
     for k, i, j in (("pc1_to_pc2", 0, 1), ("pc2_to_pc3", 1, 2), ("pc3_to_pc4", 2, 3)):
         try:
-            if j < n_full and vals_full[j] > 0:
+            if j < n_full and _gap_floor > 0 and vals_full[j] > _gap_floor:
                 gaps[k] = round(float(vals_full[i] / vals_full[j]), 4)
             else:
                 gaps[k] = None
@@ -153,8 +156,9 @@ def _pca_health(dy: pd.DataFrame, vals_full: np.ndarray, vecs_full: np.ndarray) 
 
     # ---- effective_dimension_pr ------------------------------------------- #
     try:
-        s = float(vals_full.sum())
-        s2 = float((vals_full ** 2).sum())
+        vals_pos = np.clip(vals_full, 0.0, None)  # eigh noise can dip negative; PR must stay >= 1
+        s = float(vals_pos.sum())
+        s2 = float((vals_pos ** 2).sum())
         out["effective_dimension_pr"] = round(s ** 2 / s2, 4) if s2 > 0 else None
     except Exception:  # noqa: BLE001
         out["effective_dimension_pr"] = None
@@ -197,14 +201,18 @@ def _pca_health(dy: pd.DataFrame, vals_full: np.ndarray, vecs_full: np.ndarray) 
 
             observed = _max_off_diag_corr(test_arr, pc3_train)
 
-            # deterministic null: contiguous 21-row slices in train, stride 5, cap 100
+            # deterministic null: contiguous 21-row slices in train, stride 2,
+            # cap 240 attempts — RUL-ORTH-8 binds every published orthogonality
+            # metric to a >=200-draw within-window null. Note: the null is
+            # in-window on the same frozen train PCs, so it is biased LOW vs a
+            # true out-of-sample reference — pctile_vs_null reads conservative
+            # (toward over-flagging); do not over-interpret high percentiles.
             n_train = len(train_arr)
-            # generate all possible start indices at stride 5
-            all_starts = list(range(0, n_train - 21 + 1, 5))
-            if len(all_starts) > 100:
-                # evenly space exactly 100 out of all_starts (deterministic)
-                step = (len(all_starts) - 1) / 99.0
-                indices = [int(round(step * k)) for k in range(100)]
+            all_starts = list(range(0, n_train - 21 + 1, 2))
+            if len(all_starts) > 240:
+                # evenly space exactly 240 out of all_starts (deterministic)
+                step = (len(all_starts) - 1) / 239.0
+                indices = [int(round(step * k)) for k in range(240)]
                 all_starts = [all_starts[i] for i in indices]
 
             null_draws: list[float] = []
@@ -217,7 +225,7 @@ def _pca_health(dy: pd.DataFrame, vals_full: np.ndarray, vecs_full: np.ndarray) 
                 except Exception:  # noqa: BLE001
                     continue
 
-            if len(null_draws) < 30 or observed is None:
+            if len(null_draws) < 200 or observed is None:
                 out["oos_null"] = None
             else:
                 null_arr = np.asarray(null_draws, float)
