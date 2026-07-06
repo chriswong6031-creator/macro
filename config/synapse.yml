@@ -4331,6 +4331,45 @@ artifacts:
       FIREWALL: horizon_role=hold_thesis. MUST NOT feed board ordering, alert
       triage, top-setups gates, or push floor (LH-R1). fdr_family=long_hold (LH-R5).
 
+  # --- Long-Hold PR-B1: per-fire S(f) sector benchmark (A1-to-spec) ---
+  per-fire-sector-benchmark:
+    path: data/research/per_fire_sector_benchmark.parquet
+    format: parquet
+    producer: scripts/research/build_per_fire_sector_benchmark.py
+    known_extra_writers: []
+    owner_program: long-hold
+    cadence: on-demand
+    storage: git
+    asof_field: fire_date
+    freshness_sla_hours: 8760
+    schema: per_fire_sector_benchmark.v1
+    tier: display
+    horizon_role: hold_thesis
+    weights: none
+    scored_path_surfaces: []
+    fdr_family: long_hold
+    consumers:
+      - scripts/research/build_per_fire_sector_benchmark.py
+    external_consumers: []
+    notes: >
+      PR-B1 (Long-Hold LT-1c retest-prep item 3). Per-fire A1-to-spec S(f) benchmark:
+      for each fire in gate_fires_baskets.parquet, S(f) = equal-weight mean 252d total
+      return across the constituent pool (every ticker in the fire tape with a fully
+      resolvable fill-anchored 252d forward price path at that fire's fire_date).
+      Fill convention: next-bar-after-fire_date (identical to long_hold_label_panel.py
+      _total_return convention). Era-stratified coverage % printed: post-2021-anchor /
+      2012-2021 (UPPER BOUND) / pre-2012 (UNREACHABLE — Polygon anchor 2021-07-06).
+      Fires with empty constituent pools receive sf_mean=null and explicit 'NO POOL'
+      coverage stamp — no silent fallback to winner-selected mean.
+      Delta vs old W1 §7 benchmark (cohort-year winner-selected mean) is computed and
+      reported in SF_BENCHMARK_BUILD_REPORT.md; expected delta < 0 (pool includes losers).
+      A2 §4 contact-freeze compliance: computes benchmarks ONLY — MUST NOT recompute
+      missed_hold verdicts, MUST NOT join features to 2024+ outcomes, MUST NOT re-run G1.
+      Schema: ticker, fire_date, sf_mean, sf_n_pool, fire_return_252d,
+      survivorship_biased (era-proxy), era, coverage_stamp.
+      FIREWALL: horizon_role=hold_thesis. MUST NOT feed entry-stack z-scores, board
+      ordering, alert triage, top-setups gates, or push floor. fdr_family=long_hold (LH-R5).
+
   # --- Long-Hold LT-3a: Capital Allocation Delta block ---
   capital-allocation-delta:
     path: "embedded: capital_allocation block inside site/stockdata/<TICKER>.json"
