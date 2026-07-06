@@ -271,7 +271,11 @@ def _extract_events(
 ) -> list[dict]:
     """Extract de-overlapped events for one sector pair.
 
-    Events = first _label ∈ {fading, deteriorating} after ≥15 trading days out of state.
+    Events = first _label ∈ {fading, deteriorating} after ≥15 consecutive trading days
+    out of state (i.e. NOT in {fading, deteriorating}).  Per §12: the required condition
+    is ≥15 consecutive trading days NOT in {fading, deteriorating} immediately before
+    the onset bar.  A 1-day flicker out of state does NOT re-arm a new onset.
+
     Returns list of event dicts.
     """
     # Align on common index
@@ -285,8 +289,9 @@ def _extract_events(
     idx = common
 
     events = []
-    last_event_i = -DEOVERLAP_MIN - 1   # allow first event immediately
-    last_was_reducing = False
+    in_reducing_state = False          # whether the previous bar was reducing
+    days_out_of_state = DEOVERLAP_MIN  # consecutive bars NOT in {fading/deteriorating}
+                                       # initialised to DEOVERLAP_MIN so first onset fires
 
     for i, date in enumerate(idx):
         cap_lab = cap_l.iloc[i]
@@ -294,15 +299,10 @@ def _extract_events(
 
         cap_red = _is_reducing(cap_lab)
 
-        # state transitions: detect exit from reducing
-        if last_was_reducing and not cap_red:
-            last_was_reducing = False
-
         if cap_red:
-            if not last_was_reducing:
-                # onset candidate: first time entering reducing
-                days_since_last = i - last_event_i
-                if days_since_last >= DEOVERLAP_MIN and not np.isnan(cap_px[i]):
+            if not in_reducing_state:
+                # onset candidate: first bar entering reducing state
+                if days_out_of_state >= DEOVERLAP_MIN and not np.isnan(cap_px[i]):
                     # No-lookahead audit: feature index must be ≤ i
                     # (features are computed with rolling windows ending at bar i)
                     # The _compute_label_series function only uses data up to bar i
@@ -370,12 +370,13 @@ def _extract_events(
                         "whipsaw": whipsaw,
                     }
                     events.append(ev)
-                    last_event_i = i
-                    last_was_reducing = True
-            else:
-                last_was_reducing = True   # still in reducing state
+            # Entering or remaining in reducing state — reset out-of-state counter
+            in_reducing_state = True
+            days_out_of_state = 0
         else:
-            last_was_reducing = False
+            # Not reducing: accumulate consecutive out-of-state days
+            in_reducing_state = False
+            days_out_of_state += 1
 
     return events
 
@@ -388,31 +389,40 @@ def _extract_cap_lags_ew(
     ew_labels: pd.Series,
     window_start: pd.Timestamp,
 ) -> list[dict]:
-    """EW onset while cap not reducing — descriptive escalation context only."""
+    """EW onset while cap not reducing — descriptive escalation context only.
+
+    Same ≥15-consecutive-days-out-of-state gate as _extract_events, applied to the
+    EW series.  A 1-day flicker out of state does NOT re-arm a new EW onset.
+    """
     common = ew_labels.index.intersection(cap_labels.index)
     common = common[common >= window_start]
     ew_l = ew_labels.reindex(common)
     cap_l = cap_labels.reindex(common)
 
     events = []
-    last_event_i = -DEOVERLAP_MIN - 1
-    last_was_ew_red = False
+    ew_in_reducing = False
+    ew_days_out = DEOVERLAP_MIN   # initialised so first onset can fire immediately
 
     for i, date in enumerate(common):
         ew_red = _is_reducing(ew_l.iloc[i])
         cap_red = _is_reducing(cap_l.iloc[i])
 
         if ew_red and not cap_red:
-            if not last_was_ew_red:
-                days_since = i - last_event_i
-                if days_since >= DEOVERLAP_MIN:
+            if not ew_in_reducing:
+                # EW onset candidate
+                if ew_days_out >= DEOVERLAP_MIN:
                     events.append({"date": str(date.date()), "ew_label": ew_l.iloc[i], "cap_label": cap_l.iloc[i]})
-                    last_event_i = i
-                    last_was_ew_red = True
-        elif not ew_red:
-            last_was_ew_red = False
+            # Entering or remaining in EW-reducing state
+            ew_in_reducing = True
+            ew_days_out = 0
+        elif ew_red:
+            # EW reducing but cap is also reducing — still count as in-state for EW
+            ew_in_reducing = True
+            ew_days_out = 0
         else:
-            last_was_ew_red = ew_red
+            # EW not reducing
+            ew_in_reducing = False
+            ew_days_out += 1
 
     return events
 

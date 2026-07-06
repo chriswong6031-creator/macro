@@ -1,7 +1,7 @@
 # Construction-Divergence R-1 Descriptive Record
 
-**Generated:** 2026-07-06T03:50:32.745495+00:00  
-**Git SHA:** cf792be38411322b1d1a49b5b0f2211364c6ec2d  
+**Generated:** 2026-07-06T03:57:58.568480+00:00  
+**Git SHA:** e729361002c136630c1d0f87d27b0d173f57cf89  
 **Status:** DESCRIPTIVE/ACCRUAL — not verdict-eligible  
 **Registration:** research/HEALTHCARE_MEMBER_DISPERSION_ROTATION_NOTE.md §12 (LOCKED)
 
@@ -19,12 +19,12 @@ A no-lookahead audit asserts that the maximum feature index used for each event'
 
 | Cohort | N |
 |---|---|
-| Divergent (cap onset, EW not reducing) | 582 |
-| Confirmed (both reducing) | 1102 |
-| Cap-lags-EW (EW onset, cap not reducing) [desc. only] | 797 |
-| **Total cap-onset events** | **1684** |
+| Divergent (cap onset, EW not reducing) | 315 |
+| Confirmed (both reducing) | 485 |
+| Cap-lags-EW (EW onset, cap not reducing) [desc. only] | 319 |
+| **Total cap-onset events** | **800** |
 
-**Power floor:** PASS (smaller cohort n=582 vs threshold=40; decades with data=3 vs required=2)
+**Power floor:** PASS (smaller cohort n=315 vs threshold=40; decades with data=3 vs required=2)
 
 ---
 
@@ -32,10 +32,10 @@ A no-lookahead audit asserts that the maximum feature index used for each event'
 
 | | Stress (SPY < 200d MA) | Calm | Total |
 |---|---|---|---|
-| Divergent | 115 | 467 | 582 |
-| Confirmed  | 240 | 862 | 1102 |
+| Divergent | 42 | 273 | 315 |
+| Confirmed  | 74 | 411 | 485 |
 
-Divergent rate in stress: 32.4% | in calm: 35.1%
+Divergent rate in stress: 36.2% | in calm: 39.9%
 
 ---
 
@@ -43,22 +43,22 @@ Divergent rate in stress: 32.4% | in calm: 35.1%
 
 | Cohort | N | Mean DD% | Median DD% | p10 DD% | p25 DD% | P(DD<−8%) |
 |---|---|---|---|---|---|---|
-| Divergent | 579 | -3.34 | -2.19 | -8.57 | -4.51 | 0.126 |
-| Confirmed | 1099 | -3.62 | -2.44 | -8.99 | -5.04 | 0.12 |
+| Divergent | 314 | -3.1 | -2.32 | -8.23 | -4.25 | 0.105 |
+| Confirmed | 483 | -3.37 | -2.56 | -8.16 | -4.92 | 0.112 |
 
 ## Forward Drawdown (Max Absolute) — 63d
 
 | Cohort | N | Mean DD% | Median DD% | p10 DD% | p25 DD% | P(DD<−8%) |
 |---|---|---|---|---|---|---|
-| Divergent | 570 | -5.75 | -3.55 | -13.85 | -7.49 | 0.239 |
-| Confirmed | 1090 | -6.16 | -3.78 | -15.47 | -8.02 | 0.252 |
+| Divergent | 312 | -5.31 | -3.48 | -12.35 | -6.9 | 0.224 |
+| Confirmed | 480 | -6.17 | -4.19 | -15.12 | -8.51 | 0.265 |
 
 ## Forward Return (descriptive) — 21d and 63d
 
 | Cohort | Mean ret21% | Median ret21% | Mean ret63% | Median ret63% |
 |---|---|---|---|---|
-| Divergent | 0.72 | 1.5 | 3.04 | 3.32 |
-| Confirmed | 1.05 | 1.28 | 3.01 | 3.45 |
+| Divergent | 0.73 | 1.55 | 3.42 | 3.42 |
+| Confirmed | 0.67 | 0.91 | 2.37 | 2.43 |
 
 ## Whipsaw Descriptive (leg = −8%, reversal grid {10,15,21} sessions)
 
@@ -71,53 +71,53 @@ Divergent rate in stress: 32.4% | in calm: 35.1%
 
 | Cohort × Stress | N | Mean DD% | Median DD% | P(DD<−8%) |
 |---|---|---|---|---|
-| Divergent / Stress | 115 | -4.82 | -3.23 | 0.243 |
-| Divergent / Calm | 464 | -2.97 | -2.05 | 0.097 |
-| Confirmed / Stress | 240 | -5.84 | -3.78 | 0.275 |
-| Confirmed / Calm | 859 | -3.0 | -2.24 | 0.077 |
+| Divergent / Stress | 42 | -4.76 | -2.82 | 0.262 |
+| Divergent / Calm | 272 | -2.84 | -2.24 | 0.081 |
+| Confirmed / Stress | 74 | -5.54 | -3.78 | 0.324 |
+| Confirmed / Calm | 409 | -2.97 | -2.45 | 0.073 |
 
 ## Block Bootstrap Effective-t (DD21 Contrast)
 
-Raw contrast (divergent minus confirmed mean DD21): **0.28%**
-t-raw: 1.173 | n_div: 579 | n_con: 1099
-Effective-t (divergent): t_eff=408 / t_raw=579 (ratio=0.705)
-Effective-t (confirmed): t_eff=598 / t_raw=1099 (ratio=0.544)
+Raw contrast (divergent minus confirmed mean DD21): **0.27%**
+t-raw: 0.947 | n_div: 314 | n_con: 483
+Effective-t (divergent): t_eff=287 / t_raw=314 (ratio=0.914)
+Effective-t (confirmed): t_eff=402 / t_raw=483 (ratio=0.832)
 *descriptive contrast only; no verdict-bearing BH test on this stat per §12*
 
 ## Per-Decade Cells
 
 | Decade | Cohort | N | DD21 Median% | DD63 Median% |
 |---|---|---|---|---|
-| 2000s | Divergent | 54 | -3.28 | -8.88 |
-| 2000s | Confirmed | 117 | -4.55 | -10.3 |
-| 2010s | Divergent | 316 | -1.5 | -2.97 |
-| 2010s | Confirmed | 541 | -1.98 | -3.11 |
-| 2020s | Divergent | 209 | -2.8 | -4.27 |
-| 2020s | Confirmed | 436 | -2.85 | -4.21 |
+| 2000s | Divergent | 31 | -3.16 | -8.25 |
+| 2000s | Confirmed | 42 | -2.92 | -7.21 |
+| 2010s | Divergent | 171 | -1.38 | -2.62 |
+| 2010s | Confirmed | 238 | -2.14 | -3.33 |
+| 2020s | Divergent | 111 | -2.83 | -3.84 |
+| 2020s | Confirmed | 201 | -3.01 | -4.67 |
 
 ## Ablations
 
 ### Condition-Label Shuffle (DD21)
 
-Real contrast: **0.28%** | Shuffle mean: 0.06% ± 0.28% | Percentile of real: **77.9th** | N draws: 999
+Real contrast: **0.27%** | Shuffle mean: 0.06% ± 0.34% | Percentile of real: **72.7th** | N draws: 999
 *negative contrast = divergent has deeper DD (opposite of early-exit hypothesis)*
 
 ### Condition-Label Shuffle (DD63)
 
-Real contrast: **0.41%** | Shuffle mean: 0.1% ± 0.46% | Percentile of real: **74.1th** | N draws: 999
+Real contrast: **0.85%** | Shuffle mean: 0.1% ± 0.6% | Percentile of real: **89.8th** | N draws: 999
 
 ### Placebo Condition (Sector Rotation, DD21)
 
 - note: placebo: each sector uses a different sector's EW label (rotation pairing)
-- placebo_div_dd_mean_pct: -3.58
-- placebo_con_dd_mean_pct: -3.26
-- placebo_contrast_pct: -0.32
-- placebo_div_n: 1396
-- placebo_con_n: 282
+- placebo_div_dd_mean_pct: -3.33
+- placebo_con_dd_mean_pct: -2.92
+- placebo_contrast_pct: -0.41
+- placebo_div_n: 666
+- placebo_con_n: 131
 
 ### Random Event Dates (DD21)
 
-Real contrast: **0.28%** | Placebo mean: 0.03% ± 0.23% | Percentile of real: **86.8th** | N draws: 999
+Real contrast: **0.27%** | Placebo mean: 0.0% ± 0.27% | Percentile of real: **81.4th** | N draws: 999
 
 ---
 
@@ -144,4 +144,4 @@ The divergent cohort represents the early-exit scenario where the cap-weight ETF
 
 ---
 
-*Run by scripts/study_construction_divergence.py | SHA cf792be38411 | 2026-07-06*
+*Run by scripts/study_construction_divergence.py | SHA e729361002c1 | 2026-07-06*

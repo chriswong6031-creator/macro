@@ -17,6 +17,7 @@ sys.path.insert(0, str(ROOT))
 from scripts.study_construction_divergence import (
     _block_collapse,
     _compute_label_series,
+    _extract_cap_lags_ew,
     _extract_events,
     _is_reducing,
     _panel_breadth,
@@ -116,6 +117,199 @@ class TestDeoverlapMinimum:
         for i in range(len(events) - 1):
             gap = events[i + 1]["bar_i"] - events[i]["bar_i"]
             assert gap >= DEOVERLAP_MIN, f"Gap {gap} < DEOVERLAP_MIN={DEOVERLAP_MIN}"
+
+    def test_flicker_does_not_rearm(self):
+        """A 1-day flicker out of reducing state must NOT produce a second event.
+
+        Synthetic label sequence (bar_i is relative to window_start within the common index):
+          bar_i 0..9  : "fading"   (first onset fires at bar_i 0)
+          bar_i 10    : "neutral"  (1-day flicker OUT — only 1 consecutive day out)
+          bar_i 11..20: "fading"   (re-enters — must NOT fire: only 1 out-of-state day)
+          bar_i 21..39: "neutral"  (19 days out)
+          bar_i 40    : "fading"   (must fire — 19 ≥ 15 consecutive days out)
+
+        With the corrected gate (≥15 consecutive days out of state required), exactly
+        2 events should be produced (bar_i 0 and bar_i 40), NOT 3.
+        """
+        n = 500
+        dates = _make_dates(n)
+        price = pd.Series(np.linspace(100, 80, n), index=dates, name="close")
+        spy = pd.Series(np.linspace(100, 110, n), index=dates, name="close")
+
+        # window_start at dates[300]; bar_i counts from 0 in the window
+        # bar_i 0  = dates[300], bar_i 10 = dates[310], etc.
+        labels_vals = ["neutral"] * n
+        for j in range(300, 310):   # bar_i 0..9
+            labels_vals[j] = "fading"
+        labels_vals[310] = "neutral"          # bar_i 10: 1-day flicker
+        for j in range(311, 321):   # bar_i 11..20
+            labels_vals[j] = "fading"
+        for j in range(321, 340):   # bar_i 21..39: 19 neutral days
+            labels_vals[j] = "neutral"
+        labels_vals[340] = "fading"           # bar_i 40
+
+        cap_labels = pd.Series(labels_vals, index=dates)
+        ew_labels  = pd.Series("neutral", index=dates)
+        window_start = dates[300]
+        lookahead_audit: dict = {}
+
+        events = _extract_events(
+            cap_labels, ew_labels, price, spy, "FLICKER_TEST", window_start, lookahead_audit
+        )
+
+        # bar_i is position within window (window_start-clipped common index)
+        bar_is = [e["bar_i"] for e in events]
+        assert 0 in bar_is, f"Expected onset at bar_i=0; got bar_is={bar_is}"
+        assert 11 not in bar_is, (
+            f"bar_i=11 fired (1-day flicker falsely re-armed the gate); bar_is={bar_is}"
+        )
+        assert 40 in bar_is, f"Expected onset at bar_i=40 (19 days out); got bar_is={bar_is}"
+        assert len(events) == 2, (
+            f"Expected exactly 2 events (bar_i 0 and 40), got {len(events)}: bar_is={bar_is}"
+        )
+
+    def test_fifteen_days_out_fires_new_event(self):
+        """Exactly DEOVERLAP_MIN consecutive out-of-state days arms a new onset.
+
+        Sequence (bar_i relative to window_start):
+          bar_i 0     : "fading"   (first onset)
+          bar_i 1..15 : "neutral"  (15 consecutive days out = exactly DEOVERLAP_MIN)
+          bar_i 16    : "fading"   (must fire — exactly 15 out-of-state days)
+        """
+        n = 500
+        dates = _make_dates(n)
+        price = pd.Series(np.linspace(100, 80, n), index=dates, name="close")
+        spy   = pd.Series(np.linspace(100, 110, n), index=dates, name="close")
+
+        labels_vals = ["neutral"] * n
+        labels_vals[300] = "fading"            # bar_i 0
+        for j in range(301, 316):              # bar_i 1..15: 15 neutral days
+            labels_vals[j] = "neutral"
+        labels_vals[316] = "fading"            # bar_i 16
+
+        cap_labels = pd.Series(labels_vals, index=dates)
+        ew_labels  = pd.Series("neutral", index=dates)
+        window_start = dates[300]
+        lookahead_audit: dict = {}
+
+        events = _extract_events(
+            cap_labels, ew_labels, price, spy, "GAP15_TEST", window_start, lookahead_audit
+        )
+
+        bar_is = [e["bar_i"] for e in events]
+        assert 0 in bar_is, f"Expected first onset at bar_i=0; got {bar_is}"
+        assert 16 in bar_is, (
+            f"Expected second onset at bar_i=16 (15 consecutive out-of-state days); got {bar_is}"
+        )
+        assert len(events) == 2, (
+            f"Expected exactly 2 events, got {len(events)}: {bar_is}"
+        )
+
+    def test_fourteen_days_out_does_not_fire(self):
+        """Exactly DEOVERLAP_MIN - 1 consecutive out-of-state days must NOT re-arm.
+
+        Sequence (bar_i relative to window_start):
+          bar_i 0     : "fading"   (first onset)
+          bar_i 1..14 : "neutral"  (14 consecutive days out — one short of threshold)
+          bar_i 15    : "fading"   (must NOT fire)
+        """
+        n = 500
+        dates = _make_dates(n)
+        price = pd.Series(np.linspace(100, 80, n), index=dates, name="close")
+        spy   = pd.Series(np.linspace(100, 110, n), index=dates, name="close")
+
+        labels_vals = ["neutral"] * n
+        labels_vals[300] = "fading"            # bar_i 0
+        for j in range(301, 315):              # bar_i 1..14: 14 neutral days
+            labels_vals[j] = "neutral"
+        labels_vals[315] = "fading"            # bar_i 15
+
+        cap_labels = pd.Series(labels_vals, index=dates)
+        ew_labels  = pd.Series("neutral", index=dates)
+        window_start = dates[300]
+        lookahead_audit: dict = {}
+
+        events = _extract_events(
+            cap_labels, ew_labels, price, spy, "GAP14_TEST", window_start, lookahead_audit
+        )
+
+        bar_is = [e["bar_i"] for e in events]
+        assert 0 in bar_is, f"Expected first onset at bar_i=0; got {bar_is}"
+        assert 15 not in bar_is, (
+            f"bar_i=15 incorrectly fired (only 14 out-of-state days, need 15); got {bar_is}"
+        )
+        assert len(events) == 1, (
+            f"Expected exactly 1 event, got {len(events)}: {bar_is}"
+        )
+
+
+# ---------------------------------------------------------------------------
+# Test (a2): cap-lags-ew out-of-state gate
+# ---------------------------------------------------------------------------
+
+class TestCapLagsEwOutOfStateGate:
+    """Verify _extract_cap_lags_ew applies the same ≥15 consecutive out-of-state rule."""
+
+    def test_ew_flicker_does_not_rearm(self):
+        """1-day EW flicker out of reducing must NOT produce a second cap-lags-ew event."""
+        n = 500
+        dates = _make_dates(n)
+
+        # EW: fading 300-309, neutral 310, fading 311-320, neutral 321-340, fading 341
+        # Cap: always neutral (so all EW onsets qualify as cap-lags-ew when cap not reducing)
+        ew_vals = ["neutral"] * n
+        for j in range(300, 310):
+            ew_vals[j] = "fading"
+        ew_vals[310] = "neutral"
+        for j in range(311, 321):
+            ew_vals[j] = "fading"
+        for j in range(321, 341):
+            ew_vals[j] = "neutral"
+        ew_vals[341] = "fading"
+
+        ew_labels  = pd.Series(ew_vals, index=dates)
+        cap_labels = pd.Series("neutral", index=dates)
+        window_start = dates[300]
+
+        events = _extract_cap_lags_ew(cap_labels, ew_labels, window_start)
+        bar_dates = [e["date"] for e in events]
+
+        # First event at bar 300 (date 300)
+        assert str(dates[300].date()) in bar_dates, (
+            f"Expected first EW onset at bar 300; got {bar_dates}"
+        )
+        # Bar 311 must NOT fire (only 1 day out)
+        assert str(dates[311].date()) not in bar_dates, (
+            f"Bar 311 fired on 1-day flicker (incorrect); dates={bar_dates}"
+        )
+        # Bar 341 must fire (20 consecutive days out at bars 321-340)
+        assert str(dates[341].date()) in bar_dates, (
+            f"Expected EW onset at bar 341 (20 days out); got {bar_dates}"
+        )
+
+    def test_ew_fifteen_days_out_fires(self):
+        """Exactly 15 consecutive EW-out-of-state days produces a new cap-lags-ew event."""
+        n = 500
+        dates = _make_dates(n)
+
+        ew_vals = ["neutral"] * n
+        ew_vals[300] = "fading"
+        for j in range(301, 316):   # 15 neutral days
+            ew_vals[j] = "neutral"
+        ew_vals[316] = "fading"
+
+        ew_labels  = pd.Series(ew_vals, index=dates)
+        cap_labels = pd.Series("neutral", index=dates)
+        window_start = dates[300]
+
+        events = _extract_cap_lags_ew(cap_labels, ew_labels, window_start)
+        bar_dates = [e["date"] for e in events]
+
+        assert str(dates[300].date()) in bar_dates
+        assert str(dates[316].date()) in bar_dates, (
+            f"Expected second event at bar 316 (15 out-of-state days); got {bar_dates}"
+        )
+        assert len(events) == 2, f"Expected 2 events, got {len(events)}: {bar_dates}"
 
 
 # ---------------------------------------------------------------------------
