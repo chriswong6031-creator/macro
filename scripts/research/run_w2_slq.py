@@ -520,7 +520,7 @@ def assign_lq_bands(
             log.warning(
                 "assign_lq_bands: proxy=%s date=%s has degenerate cross-section "
                 "(p33=%.6g >= p67=%.6g, n=%d) — bands left NaN for this date.",
-                proxy, date, p33, p67, len(valid_vals),
+                proxy, fire_date, p33, p67, len(valid_vals),
             )
             continue
 
@@ -548,7 +548,7 @@ def assign_lq_bands(
                 log.warning(
                     "assign_lq_bands: proxy=%s date=%s band=%.0f captures %d/%d fires "
                     "(>50%%) — near-degenerate cross-section.",
-                    proxy, date, band_val, n_band, len(valid_vals),
+                    proxy, fire_date, band_val, n_band, len(valid_vals),
                 )
 
     n_assigned = int(fires["lq_band"].notna().sum())
