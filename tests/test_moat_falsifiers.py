@@ -1,6 +1,6 @@
 """tests/test_moat_falsifiers.py — Long-Hold W2 PR-K: Moat Falsifier Sensors.
 
-Five test groups:
+Six test groups:
 
   A. Sensor logic (pure): each of the 4 sensors fires / does not fire on
      synthetic row-pairs, including edge cases.
@@ -17,8 +17,12 @@ Five test groups:
   E. Firewall: moat falsifier artifacts are hold_thesis with no
      scored_path_surfaces; the real registry allowlist test passes.
 
-All tests are deterministic.  Groups A–D use purely in-memory data.
-Group E does a read-only assertion against config/synapse.yml.
+  F. PIT gate: future-adjacent fiscal year rows are excluded when asof_date is
+     supplied; sensors that would fire on an excluded row do NOT fire; the gate
+     is a no-op when asof_date is None.
+
+All tests are deterministic.  Groups A–E use purely in-memory data (except
+Group E which reads config/synapse.yml).  Group F is the PIT mutation test.
 """
 from __future__ import annotations
 
@@ -38,6 +42,8 @@ from engine.moat_falsifiers import (  # noqa: E402
     _sensor_receivables_stretch,
     _sensor_inventory_build,
     _sensor_capex_intensity,
+    _pit_cutoff_year,
+    _apply_pit_gate,
     compute_moat_falsifiers,
     compute_base_rates,
     great_company_trap,
@@ -563,4 +569,215 @@ class TestFirewall:
         assert "great-company-trap" in source, (
             "tests/test_horizon_firewall.py _EXPECTED_HOLD_THESIS_ARTIFACTS does not "
             "include 'great-company-trap'. Update it."
+        )
+
+
+# ===========================================================================
+# Group F — PIT gate: future-adjacent fiscal year rows are excluded
+# ===========================================================================
+
+
+class TestPITGate:
+    """PIT gate: asof_date excludes fy >= asof_year rows before evaluation.
+
+    Mutation test design (per blocker fix requirement):
+    - Build a synthetic df with historical rows PLUS an adjacent "future" FY
+      row that WOULD fire a sensor if included.
+    - Verify that with asof_date set to a year <= the future FY, the sensor
+      does NOT fire (future row excluded).
+    - Verify that without asof_date (gate disabled), the sensor DOES fire
+      (positive control: proves the row genuinely fires when visible).
+    - Verify the gate is a no-op for past FYs that are legitimately prior
+      to asof_year.
+    """
+
+    def _base_df(self, ticker: str = "PITCO") -> pd.DataFrame:
+        """Two historical rows (FY2023, FY2024) that do NOT fire margin compression.
+
+        FY2023: revenue=100, gp=50 (margin 50%)
+        FY2024: revenue=110, gp=58 (margin 52.7%) — margin IMPROVED, no fire
+        """
+        rows = [
+            {"ticker": ticker, "fy": 2023, "revenue": 100.0, "gross_profit": 50.0,
+             "op_income": 20.0, "receivables": 10.0, "inventory": 5.0, "capex": 8.0,
+             "assets": 200.0, "ni": 12.0, "cfo": 15.0, "cash": 20.0,
+             "equity": 80.0, "liabilities": 120.0, "cur_assets": 80.0, "cur_liab": 40.0},
+            {"ticker": ticker, "fy": 2024, "revenue": 110.0, "gross_profit": 58.0,
+             "op_income": 22.0, "receivables": 11.0, "inventory": 5.5, "capex": 8.5,
+             "assets": 210.0, "ni": 13.0, "cfo": 16.0, "cash": 21.0,
+             "equity": 85.0, "liabilities": 125.0, "cur_assets": 82.0, "cur_liab": 41.0},
+        ]
+        return pd.DataFrame(rows)
+
+    def _future_fy_row(self, ticker: str = "PITCO") -> dict:
+        """FY2025 row that WOULD fire margin_compression_despite_revenue_growth.
+
+        Adjacent to FY2024 (fy_gap=1 so the sensor evaluates the pair).
+        Revenue grows +10% from FY2024 (110 → 121) but gross margin drops
+        sharply (52.7% → 40%) — margin_compression fires if this row is visible.
+
+        This row is treated as "future" when asof_date is in year 2025
+        (cutoff_year=2025 → fy >= 2025 excluded).
+        """
+        return {
+            "ticker": ticker, "fy": 2025, "revenue": 121.0, "gross_profit": 48.4,
+            "op_income": 18.0, "receivables": 11.5, "inventory": 5.6, "capex": 9.0,
+            "assets": 220.0, "ni": 11.0, "cfo": 14.0, "cash": 22.0,
+            "equity": 88.0, "liabilities": 132.0, "cur_assets": 85.0, "cur_liab": 43.0,
+        }
+
+    def _df_with_future(self, ticker: str = "PITCO") -> pd.DataFrame:
+        """Base df with the future FY2026 row injected."""
+        return pd.concat(
+            [self._base_df(ticker), pd.DataFrame([self._future_fy_row(ticker)])],
+            ignore_index=True,
+        )
+
+    # ── _pit_cutoff_year unit tests ──────────────────────────────────────────
+
+    def test_pit_cutoff_year_returns_calendar_year(self) -> None:
+        assert _pit_cutoff_year("2026-07-05") == 2026
+
+    def test_pit_cutoff_year_none_returns_none(self) -> None:
+        assert _pit_cutoff_year(None) is None
+
+    def test_pit_cutoff_year_start_of_year(self) -> None:
+        assert _pit_cutoff_year("2026-01-01") == 2026
+
+    def test_pit_cutoff_year_end_of_year(self) -> None:
+        assert _pit_cutoff_year("2025-12-31") == 2025
+
+    def test_pit_cutoff_year_invalid_returns_none(self) -> None:
+        # Non-parseable string → None (gate disabled, not raised)
+        assert _pit_cutoff_year("not-a-date") is None
+
+    # ── _apply_pit_gate unit tests ───────────────────────────────────────────
+
+    def test_apply_pit_gate_removes_future_rows(self) -> None:
+        df = self._df_with_future()
+        gated = _apply_pit_gate(df, 2025)
+        assert 2025 not in gated["fy"].values
+        assert set(gated["fy"].values) == {2023, 2024}
+
+    def test_apply_pit_gate_noop_when_cutoff_none(self) -> None:
+        df = self._df_with_future()
+        gated = _apply_pit_gate(df, None)
+        assert len(gated) == len(df)
+
+    def test_apply_pit_gate_noop_on_empty(self) -> None:
+        empty = pd.DataFrame(columns=["fy", "ticker", "revenue"])
+        gated = _apply_pit_gate(empty, 2026)
+        assert gated.empty
+
+    # ── mutation test: future FY row does NOT change fired/fy_evaluated ──────
+
+    def test_future_fy_row_does_not_fire_with_asof_date(self) -> None:
+        """Core mutation test (blocker fix verification).
+
+        With asof_date=2025-01-15 (cutoff_year=2025), the FY2025 row is
+        excluded.  The most-recent evaluable pair is FY2024/FY2023, which
+        does NOT fire margin_compression (margin improved).  fired must be False.
+        """
+        df = self._df_with_future()
+        result = compute_moat_falsifiers("PITCO", df, asof_date="2025-01-15")
+        mc = result["sensors"]["margin_compression_despite_revenue_growth"]
+        assert mc["fired"] is False, (
+            f"margin_compression fired=True with asof_date=2025-01-15 — "
+            f"PIT gate failed to exclude FY2025 row.  fy_evaluated={mc['fy_evaluated']}"
+        )
+        assert mc["fy_evaluated"] != 2025, (
+            f"fy_evaluated={mc['fy_evaluated']} — PIT gate should have excluded FY2025"
+        )
+
+    def test_future_fy_row_fires_without_asof_date(self) -> None:
+        """Positive control: without asof_date, FY2025 row is visible and fires.
+
+        This confirms the row genuinely fires when not gated — proving the
+        previous test's non-fire is caused by the gate, not by a bad fixture.
+        """
+        df = self._df_with_future()
+        result = compute_moat_falsifiers("PITCO", df, asof_date=None)
+        mc = result["sensors"]["margin_compression_despite_revenue_growth"]
+        assert mc["fired"] is True, (
+            "Positive control failed: FY2025 row should fire margin_compression "
+            "when asof_date is None (no gate).  Check fixture construction."
+        )
+        assert mc["fy_evaluated"] == 2025, (
+            f"Expected fy_evaluated=2025, got {mc['fy_evaluated']}"
+        )
+
+    def test_asof_date_does_not_affect_legitimate_past_fy(self) -> None:
+        """FY2024 is legitimately prior to asof_year=2026 and must still evaluate."""
+        df = self._base_df()  # FY2023 and FY2024 only (no future row)
+        result = compute_moat_falsifiers("PITCO", df, asof_date="2026-07-05")
+        mc = result["sensors"]["margin_compression_despite_revenue_growth"]
+        # FY2024 pair: revenue +10%, margin improved → should NOT fire
+        assert mc["fired"] is False
+        assert mc["fy_evaluated"] == 2024
+
+    def test_asof_date_same_year_as_fy_excludes_it(self) -> None:
+        """asof_date in 2024 excludes any FY2024 rows (fy >= 2024 excluded).
+
+        Uses the base fixture (FY2023, FY2024) and excludes FY2024 by setting
+        asof_date to 2024-06-01.  The remaining single FY2023 row means no
+        year-pair is evaluable — fy_evaluated must be None.
+        """
+        ticker = "PITCO"
+        df = self._base_df(ticker)  # FY2023, FY2024
+        # asof_date in 2024: cutoff_year=2024 → exclude FY2024, only FY2023 remains
+        result = compute_moat_falsifiers(ticker, df, asof_date="2024-06-01")
+        mc = result["sensors"]["margin_compression_despite_revenue_growth"]
+        assert mc["fy_evaluated"] != 2024, (
+            "FY2024 row should be excluded when asof_date is in 2024"
+        )
+        # Only FY2023 remains → no year-pair → fy_evaluated must be None
+        assert mc["fy_evaluated"] is None
+
+    def test_base_rates_computed_over_pit_gated_universe(self) -> None:
+        """compute_base_rates with asof_date must exclude future FY rows.
+
+        Build a 10-ticker universe where FY2025 rows fire margin_compression
+        (adjacent to FY2024 — fy_gap=1 so the sensor evaluates the pair).
+        FY2024 rows do not fire.
+
+        With asof_date=2025-01-01 (cutoff_year=2025), FY2025 is excluded and
+        the base rate for FY2025 must be absent from the result.
+        Without asof_date, the FY2025 base rate must appear (positive control).
+        """
+        rows = []
+        for i in range(1, 11):
+            tk = f"BRTK{i:02d}"
+            # FY2023→FY2024: no fire (margin improved: 50% → 52.7%)
+            rows.append({"ticker": tk, "fy": 2023, "revenue": 100.0, "gross_profit": 50.0,
+                         "op_income": 20.0, "receivables": 10.0, "inventory": 5.0, "capex": 8.0,
+                         "assets": 200.0, "ni": 12.0, "cfo": 15.0, "cash": 20.0,
+                         "equity": 80.0, "liabilities": 120.0, "cur_assets": 80.0, "cur_liab": 40.0})
+            rows.append({"ticker": tk, "fy": 2024, "revenue": 110.0, "gross_profit": 58.0,
+                         "op_income": 22.0, "receivables": 11.0, "inventory": 5.3, "capex": 8.5,
+                         "assets": 210.0, "ni": 13.0, "cfo": 16.0, "cash": 21.0,
+                         "equity": 85.0, "liabilities": 125.0, "cur_assets": 82.0, "cur_liab": 41.0})
+            # FY2025: fires margin_compression (adjacent to FY2024, fy_gap=1;
+            #         revenue +10%: 110→121; margin collapses: 52.7%→40%)
+            rows.append({"ticker": tk, "fy": 2025, "revenue": 121.0, "gross_profit": 48.4,
+                         "op_income": 18.0, "receivables": 11.5, "inventory": 5.6, "capex": 9.0,
+                         "assets": 220.0, "ni": 11.0, "cfo": 14.0, "cash": 22.0,
+                         "equity": 88.0, "liabilities": 132.0, "cur_assets": 85.0, "cur_liab": 43.0})
+        df = pd.DataFrame(rows)
+
+        # Without asof_date: FY2025 base rate should appear (positive control)
+        rates_ungated = compute_base_rates(df, asof_date=None)
+        mc_ungated = rates_ungated["margin_compression_despite_revenue_growth"]
+        assert 2025 in mc_ungated, (
+            "Positive control: FY2025 base rate should be present without asof_date"
+        )
+        assert mc_ungated[2025] > 0.0, (
+            "Positive control: FY2025 base rate should be > 0 (all tickers fire)"
+        )
+
+        # With asof_date in 2025: FY2025 excluded from base rate computation
+        rates_gated = compute_base_rates(df, asof_date="2025-01-01")
+        mc_gated = rates_gated["margin_compression_despite_revenue_growth"]
+        assert 2025 not in mc_gated, (
+            f"PIT gate failed: FY2025 still in base rates after asof_date=2025-01-01. "
+            f"Found keys: {list(mc_gated.keys())}"
         )

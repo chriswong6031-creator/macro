@@ -12,6 +12,26 @@ handles event-schedule tripwires; this handles per-ticker financial-statement
 sensors — different scope, no shared base class, no TripwireResult reuse).
 The falsifier-sensor *concept* is consistent with masterplan §4-W2 wording.
 
+Point-in-time (PIT) gating
+---------------------------
+``data/edgar/statements.parquet`` contains a single ``as_of`` collection
+timestamp that is identical across every fiscal-year row of a given ticker;
+it cannot be used to reconstruct per-row filing availability.  No ``period_end``
+or ``filing_date`` column exists in the schema.
+
+When ``asof_date`` is supplied, a conservative PIT gate is applied: **any fiscal
+year row with fy >= calendar year of asof_date is excluded before evaluation.**
+Rationale: a Dec-FYE company's FY=N report is filed at earliest ~Feb N+1 and at
+latest ~April N+1 (plus SEC extension).  A row labeled fy=N where N equals the
+current calendar year cannot have been filed yet for Dec-FYE companies and is
+excluded.  Early-FYE companies (e.g. Jan/Feb FYE) with fy=current_year that
+genuinely filed before asof_date are also excluded — this is the conservative
+side-effect of not having per-row filing dates.
+
+When ``asof_date`` is None the gate is not applied and all rows are used.
+Callers from production render pipelines MUST pass ``asof_date`` to activate
+the PIT gate.
+
 Four falsifier sensors, each computed from ``data/edgar/statements.parquet``:
 
   1. margin_compression_despite_revenue_growth
@@ -83,8 +103,8 @@ Usage
 -----
   from engine.moat_falsifiers import compute_moat_falsifiers, great_company_trap
 
-  # per-ticker panel build
-  result = compute_moat_falsifiers(ticker, statements_df)
+  # per-ticker panel build (always pass asof_date in production)
+  result = compute_moat_falsifiers(ticker, statements_df, asof_date="2026-07-05")
   trap   = great_company_trap(
       crowding_z=crowding_z,
       insider_net_usd=insider_net,
@@ -122,6 +142,47 @@ _INV_BUILD_PP = 15.0                       # inventory growth > revenue growth +
 
 # capital_intensity_rising
 _CAPEX_INTENSITY_PP = 10.0                 # capex growth > revenue growth + 10pp
+
+
+# ── PIT helpers ───────────────────────────────────────────────────────────────
+
+def _pit_cutoff_year(asof_date: str | None) -> int | None:
+    """Return the first fiscal year that must be excluded for PIT safety.
+
+    Any row with ``fy >= _pit_cutoff_year(asof_date)`` is excluded.
+
+    Conservative rule: exclude fy >= calendar year of asof_date.
+    A fiscal year equal to the current calendar year cannot have been
+    publicly filed for Dec-FYE companies (whose 10-K is filed ~90-120d
+    after fiscal year-end, i.e. March–April of the following year).
+    Early-FYE companies whose fy=current_year genuinely filed before
+    asof_date are also excluded — the conservative side-effect of not
+    having per-row filing dates in the parquet schema.
+
+    Returns None when asof_date is None (no gate applied).
+    Returns None on parse failure (no gate applied; warning logged).
+    """
+    if asof_date is None:
+        return None
+    try:
+        year = pd.Timestamp(str(asof_date)).year
+        return int(year)
+    except Exception:  # noqa: BLE001
+        log.warning(
+            "moat_falsifiers: could not parse asof_date=%r — PIT gate disabled",
+            asof_date,
+        )
+        return None
+
+
+def _apply_pit_gate(df: pd.DataFrame, cutoff_year: int | None) -> pd.DataFrame:
+    """Return df with rows excluded where fy >= cutoff_year.
+
+    No-op when cutoff_year is None or the 'fy' column is absent.
+    """
+    if cutoff_year is None or "fy" not in df.columns or df.empty:
+        return df
+    return df[df["fy"] < cutoff_year].copy()
 
 
 # ── base-rate helpers ─────────────────────────────────────────────────────────
@@ -205,7 +266,10 @@ _SENSOR_FNS = {
 
 # ── base-rate computation ─────────────────────────────────────────────────────
 
-def compute_base_rates(statements_df: pd.DataFrame) -> dict[str, dict[int, float]]:
+def compute_base_rates(
+    statements_df: pd.DataFrame,
+    asof_date: str | None = None,
+) -> dict[str, dict[int, float]]:
     """Compute matched-control base rate for each sensor.
 
     Returns: {sensor_name: {fy: base_rate_fraction}} where base_rate is the
@@ -214,11 +278,26 @@ def compute_base_rates(statements_df: pd.DataFrame) -> dict[str, dict[int, float
 
     A sensor firing at base_rate ~0.5 fires half the universe — uninformative.
     A sensor firing at base_rate ~0.05 is selective and informative.
+
+    Parameters
+    ----------
+    statements_df:
+        Full statements frame (all tickers).
+    asof_date:
+        Optional ISO date string.  When provided, the PIT gate is applied
+        before computing base rates — rows with fy >= calendar year of
+        asof_date are excluded.  Pass the same value used in
+        ``compute_moat_falsifiers`` so base rates are computed over the
+        same PIT-gated universe.
     """
     if statements_df is None or statements_df.empty:
         return {name: {} for name in _SENSOR_FNS}
 
-    df = statements_df.copy()
+    cutoff_year = _pit_cutoff_year(asof_date)
+    df = _apply_pit_gate(statements_df, cutoff_year)
+
+    if df.empty:
+        return {name: {} for name in _SENSOR_FNS}
     if "fy" not in df.columns or "ticker" not in df.columns:
         return {name: {} for name in _SENSOR_FNS}
 
@@ -307,10 +386,13 @@ def compute_moat_falsifiers(
     base_rates:
         Pre-computed base rates from ``compute_base_rates()``.
         If None, base rates are omitted (no universe context).
-        Pass the result of ``compute_base_rates(statements_df)`` for
-        informative display.
+        Pass the result of ``compute_base_rates(statements_df, asof_date)``
+        to ensure base rates are computed over the same PIT-gated universe.
     asof_date:
-        Optional ISO date string for PIT awareness annotation only.
+        Optional ISO date string.  When provided, fiscal year rows with
+        fy >= calendar year of asof_date are excluded before evaluation
+        (PIT gate).  Always pass this in production render pipelines.
+        See module docstring for the gating rationale.
 
     Returns
     -------
@@ -325,7 +407,11 @@ def compute_moat_falsifiers(
     if statements_df is None or statements_df.empty:
         return _missing_result(ticker, asof_date, "statements_df empty or None")
 
-    grp_all = statements_df[statements_df["ticker"] == ticker].sort_values("fy").reset_index(drop=True)
+    # Apply PIT gate: exclude fiscal years not yet filed as of asof_date.
+    cutoff_year = _pit_cutoff_year(asof_date)
+    ticker_rows = statements_df[statements_df["ticker"] == ticker]
+    ticker_rows = _apply_pit_gate(ticker_rows, cutoff_year)
+    grp_all = ticker_rows.sort_values("fy").reset_index(drop=True)
     if grp_all.empty:
         return _missing_result(ticker, asof_date, "ticker not in statements.parquet")
 
@@ -571,7 +657,7 @@ def load_and_compute(
         log.warning("moat_falsifiers: cannot load %s: %s", path, exc)
         return _missing_result(ticker, asof_date, f"load error: {exc}"), {}
 
-    base_rates = compute_base_rates(df)
+    base_rates = compute_base_rates(df, asof_date=asof_date)
     result = compute_moat_falsifiers(ticker, df, base_rates=base_rates, asof_date=asof_date)
     return result, base_rates
 

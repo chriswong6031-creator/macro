@@ -1633,14 +1633,21 @@ def _compute_moat_block(
     ticker: str,
     statements_df: "pd.DataFrame | None",
     base_rates: dict,
+    asof_date: "str | None" = None,
 ) -> "dict | None":
     """Call compute_moat_falsifiers for one ticker; non-fatal.  Returns None when
-    statements_df is absent (panel is omitted from the JSON by the ``if v`` filter)."""
+    statements_df is absent (panel is omitted from the JSON by the ``if v`` filter).
+
+    asof_date activates the PIT gate — pass the render date (today's ISO date)
+    so fiscal year rows not yet publicly filed are excluded before evaluation.
+    """
     if statements_df is None or statements_df.empty:
         return None
     try:
         from engine.moat_falsifiers import compute_moat_falsifiers  # noqa: PLC0415
-        result = compute_moat_falsifiers(ticker, statements_df, base_rates=base_rates)
+        result = compute_moat_falsifiers(
+            ticker, statements_df, base_rates=base_rates, asof_date=asof_date,
+        )
         # Suppress missing-data results to keep JSON lean (panel hidden when absent)
         if result.get("sensor_coverage") == "missing":
             return None
@@ -1729,11 +1736,14 @@ def panels() -> dict[str, dict]:
     )
     _statements_df: pd.DataFrame | None = None
     _moat_base_rates: dict = {}
+    # Render date used for PIT gate: exclude fiscal year rows not yet publicly filed.
+    # ISO date string; compute_moat_falsifiers derives cutoff_year = calendar year.
+    _render_asof: str = str(pd.Timestamp.now(tz="UTC").date())
     try:
         _sp = config.data_dir() / "edgar" / "statements.parquet"
         if _sp.exists():
             _statements_df = pd.read_parquet(_sp)
-            _moat_base_rates = compute_base_rates(_statements_df)
+            _moat_base_rates = compute_base_rates(_statements_df, asof_date=_render_asof)
     except Exception as _mf_exc:  # noqa: BLE001
         log.warning("stock_fundamentals: moat_falsifiers base rates skipped (%s)", _mf_exc)
 
@@ -1789,7 +1799,7 @@ def panels() -> dict[str, dict]:
             # a matched-control universe base rate so display layer can show context.
             # MUST NOT feed board ordering, alert triage, top-setups gates, or push floor.
             "moat_falsifiers": _compute_moat_block(
-                str(t), _statements_df, _moat_base_rates,
+                str(t), _statements_df, _moat_base_rates, asof_date=_render_asof,
             ),
             # W2 PR-K — great-company-trap de-escalation overlay (LH-R10).
             # Assembled ONLY from existing signals; may ONLY lower conviction context.
