@@ -53,6 +53,18 @@ For EACH sensor a universe-level base rate is computed:
   OBJECTIVE.md Amendment A3 §W2-PR-K) are the locked definition; the base rate
   is a live display-context annotation, not an inferential anchor.
 
+Point-in-time gating
+--------------------
+``statements.parquet`` carries a ``period_end`` column (collectors/edgar_facts.py).
+Before any sensor is evaluated, fiscal rows whose availability date
+(``period_end + 120d`` — the conservative reporting-lag proxy used by the frames
+PIT panel, collectors/edgar.py) is AFTER the ``asof_date`` are dropped, so a
+not-yet-filed fiscal year can never fire a falsifier.  ``asof_date=None`` gates
+against today (the live display path).  Rows lacking ``period_end`` (legacy rows,
+synthetic frames) are kept — they cannot be gated, and this is a display-only
+module.  The same gate is applied inside ``compute_base_rates`` so the universe
+fire-frequency excludes not-yet-knowable fiscal years.
+
 Coverage stamps
 ---------------
 Every result dict carries:
@@ -109,6 +121,48 @@ log = logging.getLogger(__name__)
 _HORIZON_ROLE = "hold_thesis"
 _DISPLAY_ONLY = True
 _VERSION = "v1"
+
+# ── point-in-time gate ────────────────────────────────────────────────────────
+# A fiscal row is only "knowable" once its annual report is filed. statements.parquet
+# now carries `period_end` (collectors/edgar_facts.py); we approximate the filing/
+# availability date as period_end + _REPORTING_LAG_DAYS — the SAME 120-day
+# conservative proxy the frames PIT panel uses (collectors/edgar.py,
+# config edgar.reporting_lag_days). Rows whose availability date is AFTER the as-of
+# date are dropped BEFORE any sensor evaluates, so a not-yet-filed fiscal year can
+# never fire a falsifier (previously the module took the latest fiscal row with no
+# availability check — a point-in-time leak: FY range in the store runs to 2027).
+# Rows lacking period_end (legacy rows fetched before the column existed, and
+# purely-synthetic frames) cannot be gated and are KEPT — this is a display-only
+# module; dropping them would blank the panel until the weekly re-fetch re-stamps
+# period_end.  Coverage of the gate therefore tracks the collector's refresh cycle.
+_REPORTING_LAG_DAYS = 120
+
+
+def _resolve_asof(asof_date: str | None) -> "pd.Timestamp | None":
+    """Resolve the as-of instant for point-in-time gating.
+
+    None → today (the live display path always evaluates "as of now"); an explicit
+    ISO date string → that date (backtest / historical evaluation). Unparseable →
+    None (gate disabled, fail-open — a display-only module must not blank on a bad
+    date)."""
+    if asof_date is None:
+        return pd.Timestamp.now().normalize()
+    try:
+        return pd.to_datetime(asof_date).normalize()
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def _pit_filter(df: pd.DataFrame, asof_ts: "pd.Timestamp | None") -> pd.DataFrame:
+    """Drop rows not yet knowable as of ``asof_ts`` (period_end + 120d > asof_ts).
+
+    Rows with missing/blank period_end are KEPT (cannot be gated). No-op when
+    asof_ts is None or the frame carries no period_end column."""
+    if asof_ts is None or df is None or df.empty or "period_end" not in df.columns:
+        return df
+    avail = pd.to_datetime(df["period_end"], errors="coerce") + pd.Timedelta(days=_REPORTING_LAG_DAYS)
+    keep = avail.isna() | (avail <= asof_ts)   # NaT (no period_end) → keep
+    return df[keep]
 
 # ── sensor thresholds ─────────────────────────────────────────────────────────
 # margin_compression_despite_revenue_growth
@@ -205,7 +259,10 @@ _SENSOR_FNS = {
 
 # ── base-rate computation ─────────────────────────────────────────────────────
 
-def compute_base_rates(statements_df: pd.DataFrame) -> dict[str, dict[int, float]]:
+def compute_base_rates(
+    statements_df: pd.DataFrame,
+    asof_date: str | None = None,
+) -> dict[str, dict[int, float]]:
     """Compute matched-control base rate for each sensor.
 
     Returns: {sensor_name: {fy: base_rate_fraction}} where base_rate is the
@@ -214,12 +271,21 @@ def compute_base_rates(statements_df: pd.DataFrame) -> dict[str, dict[int, float
 
     A sensor firing at base_rate ~0.5 fires half the universe — uninformative.
     A sensor firing at base_rate ~0.05 is selective and informative.
+
+    Point-in-time: rows not yet filed as of ``asof_date`` (period_end + 120d after
+    the as-of date) are excluded so the universe fire-frequency is not polluted by
+    not-yet-knowable fiscal years. ``asof_date=None`` gates against today. Pass the
+    SAME asof_date used for ``compute_moat_falsifiers`` so both agree.
     """
     if statements_df is None or statements_df.empty:
         return {name: {} for name in _SENSOR_FNS}
 
     df = statements_df.copy()
     if "fy" not in df.columns or "ticker" not in df.columns:
+        return {name: {} for name in _SENSOR_FNS}
+
+    df = _pit_filter(df, _resolve_asof(asof_date))
+    if df.empty:
         return {name: {} for name in _SENSOR_FNS}
 
     df = df.sort_values(["ticker", "fy"])
@@ -310,7 +376,11 @@ def compute_moat_falsifiers(
         Pass the result of ``compute_base_rates(statements_df)`` for
         informative display.
     asof_date:
-        Optional ISO date string for PIT awareness annotation only.
+        Point-in-time as-of date (ISO string).  Fiscal rows not yet filed as of
+        this date (period_end + 120d after it) are DROPPED before sensor evaluation,
+        so a not-yet-filed fiscal year can never fire.  ``None`` gates against today
+        (the live display path).  Rows lacking period_end are kept (cannot be gated).
+        Pass the SAME asof_date to ``compute_base_rates`` so the universe agrees.
 
     Returns
     -------
@@ -325,9 +395,17 @@ def compute_moat_falsifiers(
     if statements_df is None or statements_df.empty:
         return _missing_result(ticker, asof_date, "statements_df empty or None")
 
-    grp_all = statements_df[statements_df["ticker"] == ticker].sort_values("fy").reset_index(drop=True)
+    asof_ts = _resolve_asof(asof_date)
+    ticker_rows = statements_df[statements_df["ticker"] == ticker]
+    # Point-in-time: drop fiscal rows whose 10-K is not yet filed as of asof_date
+    # (period_end + 120d after the as-of date) BEFORE selecting the latest row, so a
+    # not-yet-filed fiscal year can never fire a sensor.  Rows lacking period_end are
+    # kept (cannot be gated).  asof_date=None gates against today (live display path).
+    grp_all = _pit_filter(ticker_rows, asof_ts).sort_values("fy").reset_index(drop=True)
     if grp_all.empty:
-        return _missing_result(ticker, asof_date, "ticker not in statements.parquet")
+        reason = ("all rows post-asof (not yet filed)"
+                  if not ticker_rows.empty else "ticker not in statements.parquet")
+        return _missing_result(ticker, asof_date, reason)
 
     n_years = len(grp_all)
     # Determine coverage using all sensors' required cols
@@ -571,7 +649,7 @@ def load_and_compute(
         log.warning("moat_falsifiers: cannot load %s: %s", path, exc)
         return _missing_result(ticker, asof_date, f"load error: {exc}"), {}
 
-    base_rates = compute_base_rates(df)
+    base_rates = compute_base_rates(df, asof_date=asof_date)
     result = compute_moat_falsifiers(ticker, df, base_rates=base_rates, asof_date=asof_date)
     return result, base_rates
 

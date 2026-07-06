@@ -160,35 +160,38 @@ class TestConceptFallback:
             "ShareBasedCompensation": [(2023, 500.0)],
             "AllocatedShareBasedCompensationExpense": [(2023, 999.0)],
         })
-        result = ef._concept(usgaap, ef.FLOW["sbc"])
-        assert result[2023] == 500.0, "earlier concept in chain must win"
+        vals, ends = ef._concept(usgaap, ef.FLOW["sbc"])
+        assert vals[2023] == 500.0, "earlier concept in chain must win"
+        assert ends[2023] == "2023-12-31", "period_end carried out per fy"
 
     def test_fallback_used_when_primary_absent(self):
         usgaap = self._usgaap({
             "AllocatedShareBasedCompensationExpense": [(2022, 300.0)],
         })
-        result = ef._concept(usgaap, ef.FLOW["sbc"])
-        assert result[2022] == 300.0
+        vals, _ends = ef._concept(usgaap, ef.FLOW["sbc"])
+        assert vals[2022] == 300.0
 
     def test_depreciation_third_fallback_used(self):
         # Only "Depreciation" (third) is present — must be found
         usgaap = self._usgaap({
             "Depreciation": [(2021, 150.0)],
         })
-        result = ef._concept(usgaap, ef.FLOW["depreciation"])
-        assert result[2021] == 150.0, "third depreciation fallback 'Depreciation' must work"
+        vals, _ends = ef._concept(usgaap, ef.FLOW["depreciation"])
+        assert vals[2021] == 150.0, "third depreciation fallback 'Depreciation' must work"
 
     def test_research_dev_primary_extraction(self):
         usgaap = self._usgaap({
             "ResearchAndDevelopmentExpense": [(2022, 8000.0), (2023, 9500.0)],
         })
-        result = ef._concept(usgaap, ef.FLOW["research_dev"])
-        assert result == {2022: 8000.0, 2023: 9500.0}
+        vals, ends = ef._concept(usgaap, ef.FLOW["research_dev"])
+        assert vals == {2022: 8000.0, 2023: 9500.0}
+        assert ends == {2022: "2022-12-31", 2023: "2023-12-31"}
 
     def test_missing_concept_returns_empty(self):
         usgaap: dict = {}
-        result = ef._concept(usgaap, ef.FLOW["sbc"])
-        assert result == {}
+        vals, ends = ef._concept(usgaap, ef.FLOW["sbc"])
+        assert vals == {}
+        assert ends == {}
 
 
 # ---------------------------------------------------------------------------
@@ -263,8 +266,11 @@ class TestStatementsFor:
         rows = ef._statements_for(self._fake_cik())
         assert rows, "no rows returned"
         latest = rows[-1]
-        for col in ("sbc", "research_dev", "depreciation", "interest_exp", "op_income"):
+        for col in ("sbc", "research_dev", "depreciation", "interest_exp", "op_income",
+                    "period_end"):
             assert col in latest, f"column {col!r} absent from statement row"
+        # period_end carried through for point-in-time gating (fixture end = fy-12-31)
+        assert latest["period_end"] == "2023-12-31"
 
     def test_missing_companyfacts_returns_empty(self, monkeypatch):
         monkeypatch.setattr(ef, "_get_json", lambda *a, **k: None)

@@ -13,6 +13,12 @@ KEYLESS but PAYLOAD-bound (3.5-7.5 MB/filer) — so this is a WEEKLY, resumable,
 capped drip (skip filers fetched within refresh_days), never a per-build fetch.
 Honest caveats (shown on the page): values are lagged to the filing date; some
 concepts are sparse on smaller filers (custom tags) — those years simply omit them.
+
+Each row carries `period_end` (the winning filing's TRUE fiscal period-end date)
+so consumers can gate not-yet-filed fiscal rows point-in-time (availability ≈
+period_end + reporting-lag). Rows written before this column existed have
+period_end=NaN until their next drip re-fetch re-stamps it (consumers keep
+un-stamped rows ungated — display-only, self-heals within the ~monthly refresh).
 """
 from __future__ import annotations
 
@@ -115,13 +121,18 @@ def _get_json(url: str, retries: int = 3):
     return None
 
 
-def _annual(entries: list, instant: bool = False) -> dict[int, float]:
-    """{fiscal_year: value} from a concept's unit list. Apple (and others) tag
-    quarterly figures with fp="FY" too, so for FLOW concepts we keep only the
-    FULL-YEAR period (start→end ≈ 365 days); for INSTANT balances we take the
-    fiscal year-end value. Keyed by the period's own fiscal year (the `fy` field
-    is correct on the full-year/year-end entry), latest-filed wins on restatement."""
-    best: dict[int, tuple[tuple, float]] = {}
+def _annual(entries: list, instant: bool = False) -> dict[int, tuple[float, str]]:
+    """{fiscal_year: (value, period_end)} from a concept's unit list. Apple (and
+    others) tag quarterly figures with fp="FY" too, so for FLOW concepts we keep
+    only the FULL-YEAR period (start→end ≈ 365 days); for INSTANT balances we take
+    the fiscal year-end value. Keyed by the period's own fiscal year (the `fy` field
+    is correct on the full-year/year-end entry), latest-filed wins on restatement.
+
+    `period_end` (the winning entry's `end` date) is carried out so consumers can
+    gate not-yet-filed fiscal rows: statements.parquet previously kept no filing/
+    period column, so a row for a fiscal year whose 10-K is not yet filed was
+    indistinguishable from a filed one (point-in-time leak — engine/moat_falsifiers)."""
+    best: dict[int, tuple[tuple, float, str]] = {}
     for e in entries or []:
         if e.get("fp") != "FY" or e.get("form") not in ANNUAL_FORMS:
             continue
@@ -140,17 +151,21 @@ def _annual(entries: list, instant: bool = False) -> dict[int, float]:
                 continue
         rank = (e.get("filed", ""), end)       # latest filing, then latest period-end
         if fy not in best or rank > best[fy][0]:
-            best[fy] = (rank, float(val))
-    return {fy: v for fy, (_r, v) in best.items()}
+            best[fy] = (rank, float(val), end)
+    return {fy: (v, end) for fy, (_r, v, end) in best.items()}
 
 
 def _concept(usgaap: dict, names: list[str], unit: str = "USD",
-             instant: bool = False) -> dict[int, float]:
+             instant: bool = False) -> tuple[dict[int, float], dict[int, str]]:
     """Merge a fallback chain ACROSS fiscal years — a filer often migrates tags
     over time (e.g. AAPL: Revenues pre-2019, RevenueFromContractWithCustomer after),
     so taking the first non-empty concept would only cover one era. Earlier names
-    in the chain win on a year both report."""
+    in the chain win on a year both report.
+
+    Returns ``({fy: value}, {fy: period_end})``. The fiscal-year-end is identical
+    across a filing's annual concepts, so the latest (max) `end` seen per fy is kept."""
     combined: dict[int, float] = {}
+    ends: dict[int, str] = {}
     for nm in names:
         node = usgaap.get(nm)
         if not node:
@@ -158,9 +173,11 @@ def _concept(usgaap: dict, names: list[str], unit: str = "USD",
         entries = node.get("units", {}).get(unit)
         if not entries:
             continue
-        for fy, val in _annual(entries, instant=instant).items():
+        for fy, (val, end) in _annual(entries, instant=instant).items():
             combined.setdefault(fy, val)
-    return combined
+            if end and (fy not in ends or end > ends[fy]):
+                ends[fy] = end
+    return combined, ends
 
 
 def _statements_for(cik: int) -> list[dict]:
@@ -173,11 +190,21 @@ def _statements_for(cik: int) -> list[dict]:
     if not usgaap:
         return []
     series: dict[str, dict[int, float]] = {}
+    period_ends: dict[int, str] = {}
+
+    def _absorb(ends: dict[int, str]) -> None:
+        for fy, end in ends.items():
+            if end and (fy not in period_ends or end > period_ends[fy]):
+                period_ends[fy] = end
+
     for key, names in FLOW.items():
-        series[key] = _concept(usgaap, names, instant=False)
+        series[key], _ends = _concept(usgaap, names, instant=False)
+        _absorb(_ends)
     for key, names in BALANCE.items():
-        series[key] = _concept(usgaap, names, instant=True)
-    series["eps_diluted"] = _concept(usgaap, EPS, unit="USD/shares", instant=False)
+        series[key], _ends = _concept(usgaap, names, instant=True)
+        _absorb(_ends)
+    series["eps_diluted"], _ends = _concept(usgaap, EPS, unit="USD/shares", instant=False)
+    _absorb(_ends)
 
     years = sorted({fy for s in series.values() for fy in s}, reverse=True)[:KEEP_YEARS]
     rows = []
@@ -185,6 +212,9 @@ def _statements_for(cik: int) -> list[dict]:
         rec = {"fy": fy}
         for key, s in series.items():
             rec[key] = s.get(fy)
+        # PIT: fiscal period-end of this FY (the winning filing's `end`), so consumers
+        # can drop rows whose 10-K was not yet filed at a given as-of date.
+        rec["period_end"] = period_ends.get(fy)
         # derive revenue from gross profit + COGS when the revenue tag is absent
         # for that year (common when a filer only tags GrossProfit + COGS)
         if rec.get("revenue") is None and rec.get("gross_profit") is not None and rec.get("cogs") is not None:

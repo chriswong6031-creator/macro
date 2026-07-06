@@ -4019,6 +4019,11 @@ artifacts:
       triage, top-setups gates, or push floor (LH-R1). fdr_family=long_hold (LH-R5).
       Coverage stamps: sensor_coverage (full|partial|missing), coverage_n_years,
       base_rate_annual_fy per sensor, _horizon_role, _display_only, _version.
+      POINT-IN-TIME: statements.parquet carries period_end; fiscal rows not yet
+      filed as of the as-of date (period_end + 120d after it) are dropped before
+      any sensor evaluates (per-ticker AND base-rate paths), so a not-yet-filed
+      fiscal year cannot fire. asof_date=None gates against today. Rows lacking
+      period_end are kept (cannot be gated).
 
   great-company-trap:
     path: "embedded: great_company_trap fields inside site/stockdata/<TICKER>.json"
