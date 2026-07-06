@@ -645,6 +645,386 @@ def _ingest_oracle_scratch(
 
 
 # ---------------------------------------------------------------------------
+# Source (d): domain_registry adoption — A2 amendment (W7, RF-2)
+# ---------------------------------------------------------------------------
+
+DEFAULT_PROMOTION_QUEUE = ROOT / "data" / "oracle" / "promotion_queue.json"
+
+
+def _load_promotion_queue_json(pq_path: Path | None = None) -> dict:
+    """Load data/oracle/promotion_queue.json absent-safely."""
+    path = pq_path or DEFAULT_PROMOTION_QUEUE
+    if not isinstance(path, Path):
+        path = Path(path)
+    if not path.exists():
+        return {"candidates": [], "search_width": None}
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except Exception as exc:
+        print(f"  [WARN] adopt: failed to parse {path}: {exc}", file=sys.stderr)
+        return {"candidates": [], "search_width": None}
+
+
+def _oracle_track_for_registry_row(registry_row: dict) -> str:
+    """Determine the oracle track: 'reversion' or '63d'.
+
+    Mirrors adapter_oracle.is_reversion_track() logic (RF-13).
+    """
+    reversion = registry_row.get("reversion")
+    if isinstance(reversion, dict) and reversion.get("gauntlet") == "PASS":
+        return "reversion"
+    return "63d"
+
+
+def _trial_accounting_for_oracle_adoption(track: str) -> dict:
+    """Return trial_accounting for an adopted oracle compound (A2, RF-6).
+
+    Reversion track → mode='read_only'  (oracle_reversion_screen is read-only)
+    63d track       → mode='oracle_screen'  (oracle_screen counts its own trial)
+    """
+    if track == "reversion":
+        return {"mode": "read_only", "family": None, "declared_at": None}
+    return {"mode": "oracle_screen", "family": None, "declared_at": None}
+
+
+def _evaluation_plan_for_oracle_adoption(
+    track: str,
+    pq_entry: dict | None,
+    registry_row: dict,
+) -> dict:
+    """Build the evaluation_plan for an adopted oracle compound.
+
+    Read back from the domain gate (RF-13):
+      - Reversion track: uses REVERSION_FROZEN_RULERS + reversion block stats.
+      - 63d track: uses floor_passed stats from promotion_queue entry.
+    """
+    if track == "reversion":
+        rev = registry_row.get("reversion") or {}
+        ep = _evaluation_plan_for_oracle_reversion()
+        # Augment with actual values from the registry's reversion block
+        ep["observed_wr"] = rev.get("wr")
+        ep["observed_n"] = rev.get("n")
+        ep["observed_asym"] = rev.get("asym")
+        ep["observed_ret_exit"] = rev.get("ret_exit")
+        ep["gauntlet"] = rev.get("gauntlet")
+        return ep
+
+    # 63d track: read back floor stats from PQ entry
+    if pq_entry:
+        return {
+            "primary_metric": "effect_63d",
+            "secondary_metrics": ["hit_63d"],
+            "horizon_d": 63,
+            "min_n": 100,
+            "gate_effect_abs": 0.01,
+            "gate_hit_63d": 0.55,
+            "observed_effect_63d": pq_entry.get("effect_63d"),
+            "observed_hit_63d": pq_entry.get("hit_63d"),
+            "observed_n": pq_entry.get("n"),
+            "era_consistent": pq_entry.get("era_consistent_63d"),
+            "floor_passed": pq_entry.get("floor_passed"),
+            "horizon_role": "63d",
+            "fdr_scope": "batch",
+            "expected_half_life_d": None,
+            "defaulted": True,
+            "ruler_source": "oracle_promotion_queue.json floor_passed + PQ stats",
+        }
+    return _default_evaluation_plan()
+
+
+def _build_adoption_candidate(
+    compound_id: str,
+    registry_row: dict | None,
+    pq_entry: dict | None,
+) -> dict | None:
+    """Build a research_factory.candidate.v1 dict for an adopted oracle compound.
+
+    Returns None if the compound_id is not found in the registry (fails loudly
+    via the caller).  source='domain_registry', candidate_type='oracle_compound'.
+
+    Mechanism: captured from registry row (mechanism_en) or flagged missing.
+    trial_accounting and evaluation_plan are derived from the oracle track and
+    promotion-queue evidence (RF-6, RF-13).
+    """
+    if registry_row is None:
+        return None
+
+    track = _oracle_track_for_registry_row(registry_row)
+    trial_accounting = _trial_accounting_for_oracle_adoption(track)
+    evaluation_plan = _evaluation_plan_for_oracle_adoption(track, pq_entry, registry_row)
+
+    mechanism = (
+        registry_row.get("mechanism_en")
+        or registry_row.get("mechanism")
+        or ""
+    )
+    mechanism_missing = not bool(mechanism.strip())
+    if mechanism_missing:
+        mechanism = registry_row.get("name", compound_id)
+
+    flags: list[str] = []
+    if mechanism_missing:
+        flags.append("mechanism_missing_from_registry")
+
+    hypothesis = registry_row.get("name") or compound_id
+
+    # Candidate ID: deterministic slug using the compound_id
+    safe_cid = compound_id.lower().replace(":", "_").replace(" ", "_")[:40]
+    date_str = _now_iso()[:10].replace("-", "")
+    candidate_id = f"rf-{date_str}-adopt-{safe_cid}"
+
+    cand: dict = {
+        "schema": "research_factory.candidate.v1",
+        "authority": "display_only",
+        "candidate_id": candidate_id,
+        "created_at": _now_iso(),
+        "source": "domain_registry",
+        "candidate_type": "oracle_compound",
+        "domain": "oracle",
+        "status": "proposed",
+        "hypothesis": hypothesis,
+        "mechanism": mechanism,
+        "claim_shape": None,
+        "spec_ref": compound_id,   # the oracle compound_id is the spec_ref (RF-2)
+        "expected_failure_modes": [],
+        "decay_conditions": [],
+        "falsifiers": [],
+        "trial_accounting": trial_accounting,
+        "evaluation_plan": evaluation_plan,
+        "lineage": {
+            "respin_of": None,
+            "superseded_by": None,
+            "refinement_generation": 0,
+        },
+        "flags": sorted(flags),
+        "artifacts": {
+            "entry_rule": registry_row.get("entry_rule"),
+            "oracle_track": track,
+            "search_width_at_scan": (
+                pq_entry.get("search_width_at_scan")
+                if pq_entry else None
+            ),
+            "pq_entry": pq_entry,
+        },
+        "transition_log": [],
+    }
+    return cand
+
+
+def _load_existing_adopted_spec_refs(candidates_path: Path) -> set[str]:
+    """Return the set of spec_refs already adopted (source='domain_registry').
+
+    Used for idempotent re-adoption: keep-first on (source='domain_registry', spec_ref).
+    """
+    if not candidates_path.exists():
+        return set()
+    adopted: set[str] = set()
+    try:
+        for row in rf_ledger.load_jsonl(candidates_path):
+            if row.get("source") == "domain_registry":
+                sr = row.get("spec_ref")
+                if sr:
+                    adopted.add(sr)
+    except Exception:
+        pass
+    return adopted
+
+
+def adopt_oracle_compounds(
+    compound_ids: list[str],
+    *,
+    oracle_registry_path: Path | None = None,
+    promotion_queue_path: Path | None = None,
+    rf_dir: Path | None = None,
+    dry_run: bool = True,
+) -> "IngestResult":
+    """Adopt one or more oracle compounds into the factory ledger (A2, RF-2).
+
+    Adoption mode differs from normal ingest:
+      - source='domain_registry' (A2 enum value)
+      - dedup rule 1 (oracle compounds registry canonical hash) is WAIVED for
+        the explicitly declared spec_ref compounds; all other rules still apply.
+      - Idempotent: re-adoption of an already-adopted spec_ref is caught by a
+        keep-first check on (source='domain_registry', spec_ref).
+      - An unknown compound_id (not in the oracle registry) fails loudly.
+
+    Returns an IngestResult.  The candidates are built with the A2 trial_accounting
+    and evaluation_plan derived from the oracle track and promotion-queue evidence.
+    """
+    oracle_reg_path = oracle_registry_path or DEFAULT_ORACLE_REGISTRY
+    pq_path = promotion_queue_path or DEFAULT_PROMOTION_QUEUE
+    out_dir = rf_dir or DEFAULT_RF_DIR
+
+    # Load oracle registry (indexed by id)
+    registry_rows_list = _load_oracle_registry_indexed(oracle_reg_path)
+    registry_index: dict[str, dict] = {r.get("id", ""): r for r in registry_rows_list}
+
+    # Load promotion queue (indexed by compound_id)
+    pq_data = _load_promotion_queue_json(pq_path)
+    pq_index: dict[str, dict] = {
+        e.get("compound_id", ""): e for e in (pq_data.get("candidates") or [])
+    }
+
+    # Load already-adopted spec_refs for idempotency
+    already_adopted = _load_existing_adopted_spec_refs(out_dir / "candidates.jsonl")
+    # Also load existing candidate_ids for the regular factory-ledger dedup
+    existing_ids: set[str] = set()
+    for ec in rf_ledger.load_jsonl(out_dir / "candidates.jsonl"):
+        cid = ec.get("candidate_id")
+        if cid:
+            existing_ids.add(cid)
+
+    result = IngestResult()
+    local_seen_spec_refs: set[str] = set()  # within-batch idempotency
+
+    for cid in compound_ids:
+        # Idempotent: already adopted → skip (keep-first)
+        if cid in already_adopted or cid in local_seen_spec_refs:
+            print(
+                f"  [SKIP adopt] {cid}: already adopted "
+                f"(source='domain_registry', spec_ref in factory ledger — idempotent)",
+                file=sys.stderr,
+            )
+            continue
+        local_seen_spec_refs.add(cid)
+
+        # Fail loudly if compound_id not in oracle registry
+        registry_row = registry_index.get(cid)
+        if registry_row is None:
+            print(
+                f"  [ERROR adopt] {cid}: compound_id not found in oracle registry "
+                f"({oracle_reg_path}). Failing loudly per A2 spec.",
+                file=sys.stderr,
+            )
+            # Add as dropped with a distinct reason_code
+            dummy_cand = {
+                "candidate_id": f"rf-adopt-unknown-{cid[:32]}",
+                "source": "domain_registry",
+                "hypothesis": cid,
+                "mechanism": "",
+            }
+            result.add_dropped(dummy_cand, "adopt_unknown_compound_id",
+                               f"compound_id {cid!r} not found in oracle registry")
+            continue
+
+        pq_entry = pq_index.get(cid)
+        cand = _build_adoption_candidate(cid, registry_row, pq_entry)
+        if cand is None:
+            result.add_dropped(
+                {"candidate_id": f"rf-adopt-build-fail-{cid[:32]}", "hypothesis": cid},
+                "adopt_build_failed", f"_build_adoption_candidate returned None for {cid!r}",
+            )
+            continue
+
+        # Schema validation
+        from engine.research_factory.schema import validate_candidate
+        schema_errs = validate_candidate(cand)
+        if schema_errs:
+            reason_text = "schema validation failed: " + "; ".join(schema_errs)
+            result.add_dropped(cand, "schema_rejected", reason_text)
+            print(f"  [DROP schema_rejected] {cand['candidate_id']}: {schema_errs[:2]}", file=sys.stderr)
+            continue
+
+        # Dedup — rule 1 (oracle_compounds_registry canonical hash) WAIVED for
+        # the declared spec_ref; all other rules still apply.
+        # Check: factory_ledger (candidate_id collision)
+        if cand["candidate_id"] in existing_ids:
+            result.add_dropped(cand, "deduped",
+                               "candidate_id already in factory ledger (idempotent re-adoption)")
+            continue
+
+        # Rules 2/3/4 still apply (species, machine, trial-ledger family)
+        species_names = _load_species_names(DEFAULT_SPECIES_REGISTRY)
+        machine_hyps = _load_machine_registry_hypotheses(DEFAULT_MACHINE_REGISTRY)
+        trial_families = _load_trial_ledger_families(DEFAULT_TRIAL_LEDGER)
+
+        hyp_key = (cand.get("hypothesis") or "").lower().strip()[:120]
+        mech_key = (cand.get("mechanism") or "").lower().strip()[:120]
+        spec_ref_key = (cand.get("spec_ref") or "").lower().strip()
+
+        dup = None
+        if hyp_key and hyp_key in species_names:
+            dup = ("species_registry", hyp_key[:32], "hypothesis matches species registry")
+        elif mech_key and mech_key in species_names:
+            dup = ("species_registry", mech_key[:32], "mechanism matches species registry")
+        elif hyp_key and hyp_key in machine_hyps:
+            dup = ("machine_registry", hyp_key[:32], "hypothesis matches machine registry")
+        elif mech_key and mech_key in machine_hyps:
+            dup = ("machine_registry", mech_key[:32], "mechanism matches machine registry")
+        elif spec_ref_key and spec_ref_key in trial_families:
+            dup = ("trial_ledger", spec_ref_key[:32], "spec_ref matches trial-ledger family")
+
+        if dup:
+            result.add_dropped(cand, "deduped", f"matched in {dup[0]}: {dup[2]}")
+            print(f"  [DROP deduped] {cand['candidate_id']}: {dup[2]}", file=sys.stderr)
+            continue
+
+        # State transition: proposed → registered
+        cand = dict(cand)
+        cand["status"] = "registered"
+        from engine.research_factory.state import transition as state_transition, IllegalTransition
+        trans = _build_transition(
+            candidate_id=cand["candidate_id"],
+            from_state="proposed",
+            to_state="registered",
+            reason_code="adopt_oracle_registered",
+            reason_text=(
+                f"A2 adoption: oracle compound {cid!r} adopted as domain_registry pointer; "
+                f"dedup rule 1 waived for declared spec_ref; all other rules passed."
+            ),
+            actor="script",
+            actor_ref=None,
+        )
+
+        try:
+            state_transition(
+                from_state="proposed",
+                to_state="registered",
+                actor="script",
+                transition_row=trans,
+                candidate=cand,
+            )
+        except IllegalTransition as exc:
+            result.add_dropped(cand, "transition_rejected", str(exc))
+            print(f"  [DROP transition_rejected] {cand['candidate_id']}: {exc}", file=sys.stderr)
+            continue
+
+        existing_ids.add(cand["candidate_id"])
+        result.add_registered(cand, trans)
+
+        if not dry_run:
+            _write_candidate_and_transition(cand, trans, out_dir)
+
+    return result
+
+
+def _load_oracle_registry_indexed(oracle_registry_path: Path) -> list[dict]:
+    """Load the oracle compounds registry as a list of dicts (absent-safe)."""
+    if not oracle_registry_path.exists():
+        return []
+    try:
+        from engine.oracle.compounds import load_registry
+        compounds_dir = oracle_registry_path.parent
+        return load_registry(compounds_dir)
+    except Exception:
+        pass
+    # Fallback: pure stdlib
+    rows: list[dict] = []
+    try:
+        for line in oracle_registry_path.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                rows.append(json.loads(line))
+            except Exception:
+                continue
+    except OSError:
+        pass
+    return rows
+
+
+# ---------------------------------------------------------------------------
 # Source (c): research_queue
 # ---------------------------------------------------------------------------
 
@@ -1355,6 +1735,23 @@ def _build_parser() -> argparse.ArgumentParser:
                     help="Ingest high_ev_build_now rows from research_queue.json")
     ap.add_argument("--nominate", nargs="*", default=[],
                     help="Nominate specific IDs from research_queue (any bin)")
+    # A2 adoption mode (W7, RF-2)
+    ap.add_argument("--adopt-oracle", nargs="+", metavar="COMPOUND_ID", default=[],
+                    help=(
+                        "Adopt one or more existing oracle compounds by compound_id "
+                        "(A2 amendment, RF-2): builds candidates with source='domain_registry', "
+                        "candidate_type='oracle_compound', spec_ref=<compound_id>. "
+                        "Dedup rule 1 (oracle canonical hash) is waived for the declared spec_ref. "
+                        "Unknown compound_ids fail loudly. "
+                        "Idempotent: re-adoption of an already-adopted spec_ref is skipped."
+                    ))
+    ap.add_argument("--adopt-promotion-queue", action="store_true", default=False,
+                    help=(
+                        "Adopt every compound currently in data/oracle/promotion_queue.json "
+                        "(A2 amendment, RF-2). Equivalent to --adopt-oracle <all PQ compound_ids>."
+                    ))
+    ap.add_argument("--promotion-queue-path", type=Path, default=None,
+                    help="Override data/oracle/promotion_queue.json for adoption")
     # Respin / actor
     ap.add_argument("--respin-of", default=None,
                     help="Candidate ID this ingest is a respin of (RF-15)")
@@ -1391,11 +1788,64 @@ def main() -> int:
 
     dry_run = not args.write
 
-    if not any([args.manual, args.oracle_scratch, args.research_queue, args.nominate]):
+    adopt_ids: list[str] = list(getattr(args, "adopt_oracle", []) or [])
+    adopt_pq: bool = getattr(args, "adopt_promotion_queue", False)
+
+    has_normal_source = any([args.manual, args.oracle_scratch, args.research_queue, args.nominate])
+    has_adopt_source = bool(adopt_ids) or adopt_pq
+
+    if not has_normal_source and not has_adopt_source:
         ap.print_help()
         print("\n[ERROR] At least one source flag is required.", file=sys.stderr)
         return 1
 
+    out_dir = args.rf_dir or DEFAULT_RF_DIR
+    oracle_reg_path = args.oracle_registry or DEFAULT_ORACLE_REGISTRY
+    pq_path = getattr(args, "promotion_queue_path", None) or DEFAULT_PROMOTION_QUEUE
+
+    # --- Adoption mode (A2, RF-2) ---
+    if has_adopt_source:
+        # Collect compound_ids to adopt
+        compound_ids_to_adopt: list[str] = list(adopt_ids)
+
+        if adopt_pq:
+            pq_data = _load_promotion_queue_json(pq_path)
+            pq_compounds = [e.get("compound_id", "") for e in (pq_data.get("candidates") or [])]
+            pq_compounds = [c for c in pq_compounds if c]
+            print(
+                f"Adopt-promotion-queue: found {len(pq_compounds)} compounds in {pq_path}"
+            )
+            # Merge, preserving order, no duplicates
+            seen_adopt = set(compound_ids_to_adopt)
+            for c in pq_compounds:
+                if c not in seen_adopt:
+                    compound_ids_to_adopt.append(c)
+                    seen_adopt.add(c)
+
+        if not compound_ids_to_adopt:
+            print("[INFO] No compound_ids to adopt.", file=sys.stderr)
+            return 0
+
+        print(
+            f"\nAdopting {len(compound_ids_to_adopt)} oracle compound(s): "
+            + ", ".join(compound_ids_to_adopt)
+        )
+        print(f"Mode: {'DRY-RUN (use --write to commit)' if dry_run else 'WRITE'}")
+
+        adopt_result = adopt_oracle_compounds(
+            compound_ids_to_adopt,
+            oracle_registry_path=oracle_reg_path,
+            promotion_queue_path=pq_path,
+            rf_dir=out_dir,
+            dry_run=dry_run,
+        )
+        adopt_result.print_summary()
+
+        # If also running normal source modes, fall through to normal ingest below
+        if not has_normal_source:
+            return 0
+
+    # --- Normal source mode ---
     proposals: list[dict] = []
 
     # Source (a): manual
@@ -1439,7 +1889,6 @@ def main() -> int:
     print(f"Mode: {'DRY-RUN (use --write to commit)' if dry_run else 'WRITE'}")
 
     # Load existing candidate IDs from disk for within-factory dedup
-    out_dir = args.rf_dir or DEFAULT_RF_DIR
     existing_ids: set[str] = set()
     existing_cands = rf_ledger.load_jsonl(out_dir / "candidates.jsonl")
     for ec in existing_cands:
