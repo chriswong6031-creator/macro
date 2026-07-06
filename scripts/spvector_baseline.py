@@ -27,7 +27,11 @@ from lib import config, store
 
 COST_BPS = 3.0                       # liquid index ETF one-way (SPY/QQQ ~1-3 bps)
 INDICES = ["SPY", "_DJI", "_RUT", "_GSPC"]   # _GSPC = ^GSPC long backbone (price index)
-ST_TAX = 0.35                        # short-term cap-gains rate for the after-tax row
+# SCENARIO ASSUMPTION — not a tax ruling. Symbolic rate for the after-tax
+# sensitivity row.  Change this constant to run alternative scenarios;
+# outputs change proportionally but are not tax advice.  Default preserved
+# at 0.35 so existing report outputs are unchanged.  (RUL-F3.10)
+ST_TAX = 0.35
 
 
 def fetch_gspc() -> pd.DataFrame:

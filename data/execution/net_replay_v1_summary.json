@@ -1,0 +1,1440 @@
+{
+  "derived_from_surface": [
+    "exit_grid_v1",
+    "wait_grid_v1"
+  ],
+  "run_at": "2026-07-06T14:08:11.652784Z",
+  "verdict_criteria": "descriptive-only",
+  "not_modeled": [
+    "overnight_gap_on_fills",
+    "halt_limit_days",
+    "borrow",
+    "taxes"
+  ],
+  "cost_assumptions": {
+    "position_sizes_usd": [
+      10000,
+      100000,
+      1000000
+    ],
+    "adv_band_floors": [
+      {
+        "adv_threshold_usd": 50000000,
+        "floor_bps": 3
+      },
+      {
+        "adv_threshold_usd": 10000000,
+        "floor_bps": 8
+      },
+      {
+        "adv_threshold_usd": 0,
+        "floor_bps": 20
+      }
+    ],
+    "impact_eta": 0.1,
+    "cs_smooth_win_bars": 21,
+    "adv_window_bars": 21,
+    "reference_horizon_bars": 126,
+    "representative_sigma_daily": 0.025,
+    "charge_legs": "entry_AND_exit_2_one_way_legs_each",
+    "carry_instrument": "DTB3 (annualized percent, on-disk FRED store)",
+    "note": "THIS IS A SCENARIO ANALYSIS, NOT TAX ADVICE OR EXECUTION GUIDANCE. Frictions are approximations. No multi-name book claims are made."
+  },
+  "dtb3_rate_pct_annualized": 3.69,
+  "representative_adv_usd": 157970000.0,
+  "tier_adv_assumptions": {
+    "T1": 300000000,
+    "T2": 40000000,
+    "T3": 5000000
+  },
+  "tier_weights": {
+    "T1": 0.461,
+    "T2": 0.485,
+    "T3": 0.054
+  },
+  "perfire_available": false,
+  "degradation_note": "Perfire parquets are absent (gitignored, Mac-local). Cost model evaluated at summary-mean holding_bars per cell and tier-weighted representative ADV$. Precision loss: spread/impact not per-fire; individual name ADV$ variation not captured; Corwin-Schultz proxy not available (ADV-floor only). Gross-return statistics are EXACT copies from the registered summaries.",
+  "coverage": {
+    "massive_sample_coverage_n": 50,
+    "massive_sample_median_adv_usd": 57614.0
+  },
+  "exit_grid_v1_cells": {
+    "exit_grid_v1/hold_5": {
+      "cell_key": "exit_grid_v1/hold_5",
+      "n_fires": 49939,
+      "gross": {
+        "wr": 0.528,
+        "mean_ret": 0.0028,
+        "median_ret": 0.0027
+      },
+      "inferred_mean_holding_bars": 5.0,
+      "net_by_position_size": {
+        "pos_10k": {
+          "position_usd": 10000,
+          "gross_mean_ret": 0.0028,
+          "net_mean_ret": 0.019878,
+          "gross_wr": 0.528,
+          "net_cost_bps": -170.7808,
+          "mean_cost_decomp": {
+            "spread_bps": 6.0,
+            "impact_bps": 0.3978,
+            "carry_credit_bps": 177.1786,
+            "total_net_bps": -170.7808
+          },
+          "carry_freed_days": 175.3
+        },
+        "pos_100k": {
+          "position_usd": 100000,
+          "gross_mean_ret": 0.0028,
+          "net_mean_ret": 0.019792,
+          "gross_wr": 0.528,
+          "net_cost_bps": -169.9206,
+          "mean_cost_decomp": {
+            "spread_bps": 6.0,
+            "impact_bps": 1.258,
+            "carry_credit_bps": 177.1786,
+            "total_net_bps": -169.9206
+          },
+          "carry_freed_days": 175.3
+        },
+        "pos_1m": {
+          "position_usd": 1000000,
+          "gross_mean_ret": 0.0028,
+          "net_mean_ret": 0.01952,
+          "gross_wr": 0.528,
+          "net_cost_bps": -167.2004,
+          "mean_cost_decomp": {
+            "spread_bps": 6.0,
+            "impact_bps": 3.9782,
+            "carry_credit_bps": 177.1786,
+            "total_net_bps": -167.2004
+          },
+          "carry_freed_days": 175.3
+        }
+      },
+      "cost_assumptions_note": "Cost model assumptions (printed verbatim per RUL-F3.9): (1) one-way spread_bps = max(Corwin-Schultz proxy [trailing 21-bar smooth] at fire date, ADV$-banded floor: ADV>50M\u21923bps, 10-50M\u21928bps, <10M\u219220bps); (2) impact_bps = IMPACT_ETA*sigma*sqrt(participation)*10000, where participation = position_usd / ADV$ at fire date; (3) both spread and impact charged on ENTRY AND EXIT (2 one-way legs); (4) cash-carry CREDIT on capital-freed days vs hold(126) reference at DTB3 rate (annualized %, converted to per-bar via days/365); (5) per-position sizes {10k, 100k, 1m} \u2014 NOT book AUM, no multi-name claims."
+    },
+    "exit_grid_v1/hold_10": {
+      "cell_key": "exit_grid_v1/hold_10",
+      "n_fires": 49939,
+      "gross": {
+        "wr": 0.5553,
+        "mean_ret": 0.0088,
+        "median_ret": 0.0079
+      },
+      "inferred_mean_holding_bars": 10.0,
+      "net_by_position_size": {
+        "pos_10k": {
+          "position_usd": 10000,
+          "gross_mean_ret": 0.0088,
+          "net_mean_ret": 0.025146,
+          "gross_wr": 0.5553,
+          "net_cost_bps": -163.4593,
+          "mean_cost_decomp": {
+            "spread_bps": 6.0,
+            "impact_bps": 0.3978,
+            "carry_credit_bps": 169.8571,
+            "total_net_bps": -163.4593
+          },
+          "carry_freed_days": 168.0
+        },
+        "pos_100k": {
+          "position_usd": 100000,
+          "gross_mean_ret": 0.0088,
+          "net_mean_ret": 0.02506,
+          "gross_wr": 0.5553,
+          "net_cost_bps": -162.5991,
+          "mean_cost_decomp": {
+            "spread_bps": 6.0,
+            "impact_bps": 1.258,
+            "carry_credit_bps": 169.8571,
+            "total_net_bps": -162.5991
+          },
+          "carry_freed_days": 168.0
+        },
+        "pos_1m": {
+          "position_usd": 1000000,
+          "gross_mean_ret": 0.0088,
+          "net_mean_ret": 0.024788,
+          "gross_wr": 0.5553,
+          "net_cost_bps": -159.8789,
+          "mean_cost_decomp": {
+            "spread_bps": 6.0,
+            "impact_bps": 3.9782,
+            "carry_credit_bps": 169.8571,
+            "total_net_bps": -159.8789
+          },
+          "carry_freed_days": 168.0
+        }
+      },
+      "cost_assumptions_note": "Cost model assumptions (printed verbatim per RUL-F3.9): (1) one-way spread_bps = max(Corwin-Schultz proxy [trailing 21-bar smooth] at fire date, ADV$-banded floor: ADV>50M\u21923bps, 10-50M\u21928bps, <10M\u219220bps); (2) impact_bps = IMPACT_ETA*sigma*sqrt(participation)*10000, where participation = position_usd / ADV$ at fire date; (3) both spread and impact charged on ENTRY AND EXIT (2 one-way legs); (4) cash-carry CREDIT on capital-freed days vs hold(126) reference at DTB3 rate (annualized %, converted to per-bar via days/365); (5) per-position sizes {10k, 100k, 1m} \u2014 NOT book AUM, no multi-name claims."
+    },
+    "exit_grid_v1/hold_21": {
+      "cell_key": "exit_grid_v1/hold_21",
+      "n_fires": 49939,
+      "gross": {
+        "wr": 0.5767,
+        "mean_ret": 0.0193,
+        "median_ret": 0.0163
+      },
+      "inferred_mean_holding_bars": 21.0,
+      "net_by_position_size": {
+        "pos_10k": {
+          "position_usd": 10000,
+          "gross_mean_ret": 0.0193,
+          "net_mean_ret": 0.034035,
+          "gross_wr": 0.5767,
+          "net_cost_bps": -147.3522,
+          "mean_cost_decomp": {
+            "spread_bps": 6.0,
+            "impact_bps": 0.3978,
+            "carry_credit_bps": 153.75,
+            "total_net_bps": -147.3522
+          },
+          "carry_freed_days": 152.1
+        },
+        "pos_100k": {
+          "position_usd": 100000,
+          "gross_mean_ret": 0.0193,
+          "net_mean_ret": 0.033949,
+          "gross_wr": 0.5767,
+          "net_cost_bps": -146.492,
+          "mean_cost_decomp": {
+            "spread_bps": 6.0,
+            "impact_bps": 1.258,
+            "carry_credit_bps": 153.75,
+            "total_net_bps": -146.492
+          },
+          "carry_freed_days": 152.1
+        },
+        "pos_1m": {
+          "position_usd": 1000000,
+          "gross_mean_ret": 0.0193,
+          "net_mean_ret": 0.033677,
+          "gross_wr": 0.5767,
+          "net_cost_bps": -143.7718,
+          "mean_cost_decomp": {
+            "spread_bps": 6.0,
+            "impact_bps": 3.9782,
+            "carry_credit_bps": 153.75,
+            "total_net_bps": -143.7718
+          },
+          "carry_freed_days": 152.1
+        }
+      },
+      "cost_assumptions_note": "Cost model assumptions (printed verbatim per RUL-F3.9): (1) one-way spread_bps = max(Corwin-Schultz proxy [trailing 21-bar smooth] at fire date, ADV$-banded floor: ADV>50M\u21923bps, 10-50M\u21928bps, <10M\u219220bps); (2) impact_bps = IMPACT_ETA*sigma*sqrt(participation)*10000, where participation = position_usd / ADV$ at fire date; (3) both spread and impact charged on ENTRY AND EXIT (2 one-way legs); (4) cash-carry CREDIT on capital-freed days vs hold(126) reference at DTB3 rate (annualized %, converted to per-bar via days/365); (5) per-position sizes {10k, 100k, 1m} \u2014 NOT book AUM, no multi-name claims."
+    },
+    "exit_grid_v1/hold_42": {
+      "cell_key": "exit_grid_v1/hold_42",
+      "n_fires": 49939,
+      "gross": {
+        "wr": 0.5642,
+        "mean_ret": 0.026,
+        "median_ret": 0.0194
+      },
+      "inferred_mean_holding_bars": 42.0,
+      "net_by_position_size": {
+        "pos_10k": {
+          "position_usd": 10000,
+          "gross_mean_ret": 0.026,
+          "net_mean_ret": 0.03766,
+          "gross_wr": 0.5642,
+          "net_cost_bps": -116.6022,
+          "mean_cost_decomp": {
+            "spread_bps": 6.0,
+            "impact_bps": 0.3978,
+            "carry_credit_bps": 123.0,
+            "total_net_bps": -116.6022
+          },
+          "carry_freed_days": 121.7
+        },
+        "pos_100k": {
+          "position_usd": 100000,
+          "gross_mean_ret": 0.026,
+          "net_mean_ret": 0.037574,
+          "gross_wr": 0.5642,
+          "net_cost_bps": -115.742,
+          "mean_cost_decomp": {
+            "spread_bps": 6.0,
+            "impact_bps": 1.258,
+            "carry_credit_bps": 123.0,
+            "total_net_bps": -115.742
+          },
+          "carry_freed_days": 121.7
+        },
+        "pos_1m": {
+          "position_usd": 1000000,
+          "gross_mean_ret": 0.026,
+          "net_mean_ret": 0.037302,
+          "gross_wr": 0.5642,
+          "net_cost_bps": -113.0218,
+          "mean_cost_decomp": {
+            "spread_bps": 6.0,
+            "impact_bps": 3.9782,
+            "carry_credit_bps": 123.0,
+            "total_net_bps": -113.0218
+          },
+          "carry_freed_days": 121.7
+        }
+      },
+      "cost_assumptions_note": "Cost model assumptions (printed verbatim per RUL-F3.9): (1) one-way spread_bps = max(Corwin-Schultz proxy [trailing 21-bar smooth] at fire date, ADV$-banded floor: ADV>50M\u21923bps, 10-50M\u21928bps, <10M\u219220bps); (2) impact_bps = IMPACT_ETA*sigma*sqrt(participation)*10000, where participation = position_usd / ADV$ at fire date; (3) both spread and impact charged on ENTRY AND EXIT (2 one-way legs); (4) cash-carry CREDIT on capital-freed days vs hold(126) reference at DTB3 rate (annualized %, converted to per-bar via days/365); (5) per-position sizes {10k, 100k, 1m} \u2014 NOT book AUM, no multi-name claims."
+    },
+    "exit_grid_v1/hold_63": {
+      "cell_key": "exit_grid_v1/hold_63",
+      "n_fires": 49939,
+      "gross": {
+        "wr": 0.5849,
+        "mean_ret": 0.0426,
+        "median_ret": 0.031
+      },
+      "inferred_mean_holding_bars": 63.0,
+      "net_by_position_size": {
+        "pos_10k": {
+          "position_usd": 10000,
+          "gross_mean_ret": 0.0426,
+          "net_mean_ret": 0.051185,
+          "gross_wr": 0.5849,
+          "net_cost_bps": -85.8522,
+          "mean_cost_decomp": {
+            "spread_bps": 6.0,
+            "impact_bps": 0.3978,
+            "carry_credit_bps": 92.25,
+            "total_net_bps": -85.8522
+          },
+          "carry_freed_days": 91.2
+        },
+        "pos_100k": {
+          "position_usd": 100000,
+          "gross_mean_ret": 0.0426,
+          "net_mean_ret": 0.051099,
+          "gross_wr": 0.5849,
+          "net_cost_bps": -84.992,
+          "mean_cost_decomp": {
+            "spread_bps": 6.0,
+            "impact_bps": 1.258,
+            "carry_credit_bps": 92.25,
+            "total_net_bps": -84.992
+          },
+          "carry_freed_days": 91.2
+        },
+        "pos_1m": {
+          "position_usd": 1000000,
+          "gross_mean_ret": 0.0426,
+          "net_mean_ret": 0.050827,
+          "gross_wr": 0.5849,
+          "net_cost_bps": -82.2718,
+          "mean_cost_decomp": {
+            "spread_bps": 6.0,
+            "impact_bps": 3.9782,
+            "carry_credit_bps": 92.25,
+            "total_net_bps": -82.2718
+          },
+          "carry_freed_days": 91.2
+        }
+      },
+      "cost_assumptions_note": "Cost model assumptions (printed verbatim per RUL-F3.9): (1) one-way spread_bps = max(Corwin-Schultz proxy [trailing 21-bar smooth] at fire date, ADV$-banded floor: ADV>50M\u21923bps, 10-50M\u21928bps, <10M\u219220bps); (2) impact_bps = IMPACT_ETA*sigma*sqrt(participation)*10000, where participation = position_usd / ADV$ at fire date; (3) both spread and impact charged on ENTRY AND EXIT (2 one-way legs); (4) cash-carry CREDIT on capital-freed days vs hold(126) reference at DTB3 rate (annualized %, converted to per-bar via days/365); (5) per-position sizes {10k, 100k, 1m} \u2014 NOT book AUM, no multi-name claims."
+    },
+    "exit_grid_v1/hold_126": {
+      "cell_key": "exit_grid_v1/hold_126",
+      "n_fires": 49939,
+      "gross": {
+        "wr": 0.5899,
+        "mean_ret": 0.0732,
+        "median_ret": 0.043
+      },
+      "inferred_mean_holding_bars": 126.0,
+      "net_by_position_size": {
+        "pos_10k": {
+          "position_usd": 10000,
+          "gross_mean_ret": 0.0732,
+          "net_mean_ret": 0.07256,
+          "gross_wr": 0.5899,
+          "net_cost_bps": 6.3978,
+          "mean_cost_decomp": {
+            "spread_bps": 6.0,
+            "impact_bps": 0.3978,
+            "carry_credit_bps": 0.0,
+            "total_net_bps": 6.3978
+          },
+          "carry_freed_days": 0.0
+        },
+        "pos_100k": {
+          "position_usd": 100000,
+          "gross_mean_ret": 0.0732,
+          "net_mean_ret": 0.072474,
+          "gross_wr": 0.5899,
+          "net_cost_bps": 7.258,
+          "mean_cost_decomp": {
+            "spread_bps": 6.0,
+            "impact_bps": 1.258,
+            "carry_credit_bps": 0.0,
+            "total_net_bps": 7.258
+          },
+          "carry_freed_days": 0.0
+        },
+        "pos_1m": {
+          "position_usd": 1000000,
+          "gross_mean_ret": 0.0732,
+          "net_mean_ret": 0.072202,
+          "gross_wr": 0.5899,
+          "net_cost_bps": 9.9782,
+          "mean_cost_decomp": {
+            "spread_bps": 6.0,
+            "impact_bps": 3.9782,
+            "carry_credit_bps": 0.0,
+            "total_net_bps": 9.9782
+          },
+          "carry_freed_days": 0.0
+        }
+      },
+      "cost_assumptions_note": "Cost model assumptions (printed verbatim per RUL-F3.9): (1) one-way spread_bps = max(Corwin-Schultz proxy [trailing 21-bar smooth] at fire date, ADV$-banded floor: ADV>50M\u21923bps, 10-50M\u21928bps, <10M\u219220bps); (2) impact_bps = IMPACT_ETA*sigma*sqrt(participation)*10000, where participation = position_usd / ADV$ at fire date; (3) both spread and impact charged on ENTRY AND EXIT (2 one-way legs); (4) cash-carry CREDIT on capital-freed days vs hold(126) reference at DTB3 rate (annualized %, converted to per-bar via days/365); (5) per-position sizes {10k, 100k, 1m} \u2014 NOT book AUM, no multi-name claims."
+    },
+    "exit_grid_v1/ema_trail_s8": {
+      "cell_key": "exit_grid_v1/ema_trail_s8",
+      "n_fires": 49939,
+      "gross": {
+        "wr": 0.623,
+        "mean_ret": 0.0445,
+        "median_ret": 0.0148
+      },
+      "inferred_mean_holding_bars": 18.0,
+      "net_by_position_size": {
+        "pos_10k": {
+          "position_usd": 10000,
+          "gross_mean_ret": 0.0445,
+          "net_mean_ret": 0.059675,
+          "gross_wr": 0.623,
+          "net_cost_bps": -151.7451,
+          "mean_cost_decomp": {
+            "spread_bps": 6.0,
+            "impact_bps": 0.3978,
+            "carry_credit_bps": 158.1429,
+            "total_net_bps": -151.7451
+          },
+          "carry_freed_days": 156.4
+        },
+        "pos_100k": {
+          "position_usd": 100000,
+          "gross_mean_ret": 0.0445,
+          "net_mean_ret": 0.059588,
+          "gross_wr": 0.623,
+          "net_cost_bps": -150.8849,
+          "mean_cost_decomp": {
+            "spread_bps": 6.0,
+            "impact_bps": 1.258,
+            "carry_credit_bps": 158.1429,
+            "total_net_bps": -150.8849
+          },
+          "carry_freed_days": 156.4
+        },
+        "pos_1m": {
+          "position_usd": 1000000,
+          "gross_mean_ret": 0.0445,
+          "net_mean_ret": 0.059316,
+          "gross_wr": 0.623,
+          "net_cost_bps": -148.1647,
+          "mean_cost_decomp": {
+            "spread_bps": 6.0,
+            "impact_bps": 3.9782,
+            "carry_credit_bps": 158.1429,
+            "total_net_bps": -148.1647
+          },
+          "carry_freed_days": 156.4
+        }
+      },
+      "cost_assumptions_note": "Cost model assumptions (printed verbatim per RUL-F3.9): (1) one-way spread_bps = max(Corwin-Schultz proxy [trailing 21-bar smooth] at fire date, ADV$-banded floor: ADV>50M\u21923bps, 10-50M\u21928bps, <10M\u219220bps); (2) impact_bps = IMPACT_ETA*sigma*sqrt(participation)*10000, where participation = position_usd / ADV$ at fire date; (3) both spread and impact charged on ENTRY AND EXIT (2 one-way legs); (4) cash-carry CREDIT on capital-freed days vs hold(126) reference at DTB3 rate (annualized %, converted to per-bar via days/365); (5) per-position sizes {10k, 100k, 1m} \u2014 NOT book AUM, no multi-name claims."
+    },
+    "exit_grid_v1/trail_stop_8pct": {
+      "cell_key": "exit_grid_v1/trail_stop_8pct",
+      "n_fires": 49939,
+      "gross": {
+        "wr": 0.4194,
+        "mean_ret": 0.0185,
+        "median_ret": -0.0226
+      },
+      "inferred_mean_holding_bars": 44.7,
+      "net_by_position_size": {
+        "pos_10k": {
+          "position_usd": 10000,
+          "gross_mean_ret": 0.0185,
+          "net_mean_ret": 0.029766,
+          "gross_wr": 0.4194,
+          "net_cost_bps": -112.6551,
+          "mean_cost_decomp": {
+            "spread_bps": 6.0,
+            "impact_bps": 0.3978,
+            "carry_credit_bps": 119.0529,
+            "total_net_bps": -112.6551
+          },
+          "carry_freed_days": 117.8
+        },
+        "pos_100k": {
+          "position_usd": 100000,
+          "gross_mean_ret": 0.0185,
+          "net_mean_ret": 0.029679,
+          "gross_wr": 0.4194,
+          "net_cost_bps": -111.7949,
+          "mean_cost_decomp": {
+            "spread_bps": 6.0,
+            "impact_bps": 1.258,
+            "carry_credit_bps": 119.0529,
+            "total_net_bps": -111.7949
+          },
+          "carry_freed_days": 117.8
+        },
+        "pos_1m": {
+          "position_usd": 1000000,
+          "gross_mean_ret": 0.0185,
+          "net_mean_ret": 0.029407,
+          "gross_wr": 0.4194,
+          "net_cost_bps": -109.0747,
+          "mean_cost_decomp": {
+            "spread_bps": 6.0,
+            "impact_bps": 3.9782,
+            "carry_credit_bps": 119.0529,
+            "total_net_bps": -109.0747
+          },
+          "carry_freed_days": 117.8
+        }
+      },
+      "cost_assumptions_note": "Cost model assumptions (printed verbatim per RUL-F3.9): (1) one-way spread_bps = max(Corwin-Schultz proxy [trailing 21-bar smooth] at fire date, ADV$-banded floor: ADV>50M\u21923bps, 10-50M\u21928bps, <10M\u219220bps); (2) impact_bps = IMPACT_ETA*sigma*sqrt(participation)*10000, where participation = position_usd / ADV$ at fire date; (3) both spread and impact charged on ENTRY AND EXIT (2 one-way legs); (4) cash-carry CREDIT on capital-freed days vs hold(126) reference at DTB3 rate (annualized %, converted to per-bar via days/365); (5) per-position sizes {10k, 100k, 1m} \u2014 NOT book AUM, no multi-name claims."
+    },
+    "exit_grid_v1/trail_stop_12pct": {
+      "cell_key": "exit_grid_v1/trail_stop_12pct",
+      "n_fires": 49939,
+      "gross": {
+        "wr": 0.443,
+        "mean_ret": 0.0274,
+        "median_ret": -0.0223
+      },
+      "inferred_mean_holding_bars": 57.9,
+      "net_by_position_size": {
+        "pos_10k": {
+          "position_usd": 10000,
+          "gross_mean_ret": 0.0274,
+          "net_mean_ret": 0.036727,
+          "gross_wr": 0.443,
+          "net_cost_bps": -93.2747,
+          "mean_cost_decomp": {
+            "spread_bps": 6.0,
+            "impact_bps": 0.3978,
+            "carry_credit_bps": 99.6725,
+            "total_net_bps": -93.2747
+          },
+          "carry_freed_days": 98.6
+        },
+        "pos_100k": {
+          "position_usd": 100000,
+          "gross_mean_ret": 0.0274,
+          "net_mean_ret": 0.036641,
+          "gross_wr": 0.443,
+          "net_cost_bps": -92.4145,
+          "mean_cost_decomp": {
+            "spread_bps": 6.0,
+            "impact_bps": 1.258,
+            "carry_credit_bps": 99.6725,
+            "total_net_bps": -92.4145
+          },
+          "carry_freed_days": 98.6
+        },
+        "pos_1m": {
+          "position_usd": 1000000,
+          "gross_mean_ret": 0.0274,
+          "net_mean_ret": 0.036369,
+          "gross_wr": 0.443,
+          "net_cost_bps": -89.6943,
+          "mean_cost_decomp": {
+            "spread_bps": 6.0,
+            "impact_bps": 3.9782,
+            "carry_credit_bps": 99.6725,
+            "total_net_bps": -89.6943
+          },
+          "carry_freed_days": 98.6
+        }
+      },
+      "cost_assumptions_note": "Cost model assumptions (printed verbatim per RUL-F3.9): (1) one-way spread_bps = max(Corwin-Schultz proxy [trailing 21-bar smooth] at fire date, ADV$-banded floor: ADV>50M\u21923bps, 10-50M\u21928bps, <10M\u219220bps); (2) impact_bps = IMPACT_ETA*sigma*sqrt(participation)*10000, where participation = position_usd / ADV$ at fire date; (3) both spread and impact charged on ENTRY AND EXIT (2 one-way legs); (4) cash-carry CREDIT on capital-freed days vs hold(126) reference at DTB3 rate (annualized %, converted to per-bar via days/365); (5) per-position sizes {10k, 100k, 1m} \u2014 NOT book AUM, no multi-name claims."
+    },
+    "exit_grid_v1/trail_stop_15pct": {
+      "cell_key": "exit_grid_v1/trail_stop_15pct",
+      "n_fires": 49939,
+      "gross": {
+        "wr": 0.4674,
+        "mean_ret": 0.0353,
+        "median_ret": -0.0149
+      },
+      "inferred_mean_holding_bars": 70.1,
+      "net_by_position_size": {
+        "pos_10k": {
+          "position_usd": 10000,
+          "gross_mean_ret": 0.0353,
+          "net_mean_ret": 0.042839,
+          "gross_wr": 0.4674,
+          "net_cost_bps": -75.3928,
+          "mean_cost_decomp": {
+            "spread_bps": 6.0,
+            "impact_bps": 0.3978,
+            "carry_credit_bps": 81.7906,
+            "total_net_bps": -75.3928
+          },
+          "carry_freed_days": 80.9
+        },
+        "pos_100k": {
+          "position_usd": 100000,
+          "gross_mean_ret": 0.0353,
+          "net_mean_ret": 0.042753,
+          "gross_wr": 0.4674,
+          "net_cost_bps": -74.5326,
+          "mean_cost_decomp": {
+            "spread_bps": 6.0,
+            "impact_bps": 1.258,
+            "carry_credit_bps": 81.7906,
+            "total_net_bps": -74.5326
+          },
+          "carry_freed_days": 80.9
+        },
+        "pos_1m": {
+          "position_usd": 1000000,
+          "gross_mean_ret": 0.0353,
+          "net_mean_ret": 0.042481,
+          "gross_wr": 0.4674,
+          "net_cost_bps": -71.8124,
+          "mean_cost_decomp": {
+            "spread_bps": 6.0,
+            "impact_bps": 3.9782,
+            "carry_credit_bps": 81.7906,
+            "total_net_bps": -71.8124
+          },
+          "carry_freed_days": 80.9
+        }
+      },
+      "cost_assumptions_note": "Cost model assumptions (printed verbatim per RUL-F3.9): (1) one-way spread_bps = max(Corwin-Schultz proxy [trailing 21-bar smooth] at fire date, ADV$-banded floor: ADV>50M\u21923bps, 10-50M\u21928bps, <10M\u219220bps); (2) impact_bps = IMPACT_ETA*sigma*sqrt(participation)*10000, where participation = position_usd / ADV$ at fire date; (3) both spread and impact charged on ENTRY AND EXIT (2 one-way legs); (4) cash-carry CREDIT on capital-freed days vs hold(126) reference at DTB3 rate (annualized %, converted to per-bar via days/365); (5) per-position sizes {10k, 100k, 1m} \u2014 NOT book AUM, no multi-name claims."
+    },
+    "exit_grid_v1/trail_stop_20pct": {
+      "cell_key": "exit_grid_v1/trail_stop_20pct",
+      "n_fires": 49939,
+      "gross": {
+        "wr": 0.5161,
+        "mean_ret": 0.0451,
+        "median_ret": 0.0087
+      },
+      "inferred_mean_holding_bars": 88.9,
+      "net_by_position_size": {
+        "pos_10k": {
+          "position_usd": 10000,
+          "gross_mean_ret": 0.0451,
+          "net_mean_ret": 0.049894,
+          "gross_wr": 0.5161,
+          "net_cost_bps": -47.9404,
+          "mean_cost_decomp": {
+            "spread_bps": 6.0,
+            "impact_bps": 0.3978,
+            "carry_credit_bps": 54.3382,
+            "total_net_bps": -47.9404
+          },
+          "carry_freed_days": 53.7
+        },
+        "pos_100k": {
+          "position_usd": 100000,
+          "gross_mean_ret": 0.0451,
+          "net_mean_ret": 0.049808,
+          "gross_wr": 0.5161,
+          "net_cost_bps": -47.0802,
+          "mean_cost_decomp": {
+            "spread_bps": 6.0,
+            "impact_bps": 1.258,
+            "carry_credit_bps": 54.3382,
+            "total_net_bps": -47.0802
+          },
+          "carry_freed_days": 53.7
+        },
+        "pos_1m": {
+          "position_usd": 1000000,
+          "gross_mean_ret": 0.0451,
+          "net_mean_ret": 0.049536,
+          "gross_wr": 0.5161,
+          "net_cost_bps": -44.36,
+          "mean_cost_decomp": {
+            "spread_bps": 6.0,
+            "impact_bps": 3.9782,
+            "carry_credit_bps": 54.3382,
+            "total_net_bps": -44.36
+          },
+          "carry_freed_days": 53.7
+        }
+      },
+      "cost_assumptions_note": "Cost model assumptions (printed verbatim per RUL-F3.9): (1) one-way spread_bps = max(Corwin-Schultz proxy [trailing 21-bar smooth] at fire date, ADV$-banded floor: ADV>50M\u21923bps, 10-50M\u21928bps, <10M\u219220bps); (2) impact_bps = IMPACT_ETA*sigma*sqrt(participation)*10000, where participation = position_usd / ADV$ at fire date; (3) both spread and impact charged on ENTRY AND EXIT (2 one-way legs); (4) cash-carry CREDIT on capital-freed days vs hold(126) reference at DTB3 rate (annualized %, converted to per-bar via days/365); (5) per-position sizes {10k, 100k, 1m} \u2014 NOT book AUM, no multi-name claims."
+    },
+    "exit_grid_v1/barrier_s5_t8": {
+      "cell_key": "exit_grid_v1/barrier_s5_t8",
+      "n_fires": 49939,
+      "gross": {
+        "wr": 0.4723,
+        "mean_ret": 0.0111,
+        "median_ret": -0.0506
+      },
+      "inferred_mean_holding_bars": 20.5,
+      "net_by_position_size": {
+        "pos_10k": {
+          "position_usd": 10000,
+          "gross_mean_ret": 0.0111,
+          "net_mean_ret": 0.025913,
+          "gross_wr": 0.4723,
+          "net_cost_bps": -148.1335,
+          "mean_cost_decomp": {
+            "spread_bps": 6.0,
+            "impact_bps": 0.3978,
+            "carry_credit_bps": 154.5313,
+            "total_net_bps": -148.1335
+          },
+          "carry_freed_days": 152.9
+        },
+        "pos_100k": {
+          "position_usd": 100000,
+          "gross_mean_ret": 0.0111,
+          "net_mean_ret": 0.025827,
+          "gross_wr": 0.4723,
+          "net_cost_bps": -147.2733,
+          "mean_cost_decomp": {
+            "spread_bps": 6.0,
+            "impact_bps": 1.258,
+            "carry_credit_bps": 154.5313,
+            "total_net_bps": -147.2733
+          },
+          "carry_freed_days": 152.9
+        },
+        "pos_1m": {
+          "position_usd": 1000000,
+          "gross_mean_ret": 0.0111,
+          "net_mean_ret": 0.025555,
+          "gross_wr": 0.4723,
+          "net_cost_bps": -144.5531,
+          "mean_cost_decomp": {
+            "spread_bps": 6.0,
+            "impact_bps": 3.9782,
+            "carry_credit_bps": 154.5313,
+            "total_net_bps": -144.5531
+          },
+          "carry_freed_days": 152.9
+        }
+      },
+      "cost_assumptions_note": "Cost model assumptions (printed verbatim per RUL-F3.9): (1) one-way spread_bps = max(Corwin-Schultz proxy [trailing 21-bar smooth] at fire date, ADV$-banded floor: ADV>50M\u21923bps, 10-50M\u21928bps, <10M\u219220bps); (2) impact_bps = IMPACT_ETA*sigma*sqrt(participation)*10000, where participation = position_usd / ADV$ at fire date; (3) both spread and impact charged on ENTRY AND EXIT (2 one-way legs); (4) cash-carry CREDIT on capital-freed days vs hold(126) reference at DTB3 rate (annualized %, converted to per-bar via days/365); (5) per-position sizes {10k, 100k, 1m} \u2014 NOT book AUM, no multi-name claims."
+    },
+    "exit_grid_v1/barrier_s5_t15": {
+      "cell_key": "exit_grid_v1/barrier_s5_t15",
+      "n_fires": 49939,
+      "gross": {
+        "wr": 0.3653,
+        "mean_ret": 0.0161,
+        "median_ret": -0.053
+      },
+      "inferred_mean_holding_bars": 24.3,
+      "net_by_position_size": {
+        "pos_10k": {
+          "position_usd": 10000,
+          "gross_mean_ret": 0.0161,
+          "net_mean_ret": 0.030355,
+          "gross_wr": 0.3653,
+          "net_cost_bps": -142.5458,
+          "mean_cost_decomp": {
+            "spread_bps": 6.0,
+            "impact_bps": 0.3978,
+            "carry_credit_bps": 148.9436,
+            "total_net_bps": -142.5458
+          },
+          "carry_freed_days": 147.3
+        },
+        "pos_100k": {
+          "position_usd": 100000,
+          "gross_mean_ret": 0.0161,
+          "net_mean_ret": 0.030269,
+          "gross_wr": 0.3653,
+          "net_cost_bps": -141.6856,
+          "mean_cost_decomp": {
+            "spread_bps": 6.0,
+            "impact_bps": 1.258,
+            "carry_credit_bps": 148.9436,
+            "total_net_bps": -141.6856
+          },
+          "carry_freed_days": 147.3
+        },
+        "pos_1m": {
+          "position_usd": 1000000,
+          "gross_mean_ret": 0.0161,
+          "net_mean_ret": 0.029997,
+          "gross_wr": 0.3653,
+          "net_cost_bps": -138.9654,
+          "mean_cost_decomp": {
+            "spread_bps": 6.0,
+            "impact_bps": 3.9782,
+            "carry_credit_bps": 148.9436,
+            "total_net_bps": -138.9654
+          },
+          "carry_freed_days": 147.3
+        }
+      },
+      "cost_assumptions_note": "Cost model assumptions (printed verbatim per RUL-F3.9): (1) one-way spread_bps = max(Corwin-Schultz proxy [trailing 21-bar smooth] at fire date, ADV$-banded floor: ADV>50M\u21923bps, 10-50M\u21928bps, <10M\u219220bps); (2) impact_bps = IMPACT_ETA*sigma*sqrt(participation)*10000, where participation = position_usd / ADV$ at fire date; (3) both spread and impact charged on ENTRY AND EXIT (2 one-way legs); (4) cash-carry CREDIT on capital-freed days vs hold(126) reference at DTB3 rate (annualized %, converted to per-bar via days/365); (5) per-position sizes {10k, 100k, 1m} \u2014 NOT book AUM, no multi-name claims."
+    },
+    "exit_grid_v1/barrier_s8_t15": {
+      "cell_key": "exit_grid_v1/barrier_s8_t15",
+      "n_fires": 49939,
+      "gross": {
+        "wr": 0.4671,
+        "mean_ret": 0.0219,
+        "median_ret": -0.0803
+      },
+      "inferred_mean_holding_bars": 29.1,
+      "net_by_position_size": {
+        "pos_10k": {
+          "position_usd": 10000,
+          "gross_mean_ret": 0.0219,
+          "net_mean_ret": 0.035455,
+          "gross_wr": 0.4671,
+          "net_cost_bps": -135.5457,
+          "mean_cost_decomp": {
+            "spread_bps": 6.0,
+            "impact_bps": 0.3978,
+            "carry_credit_bps": 141.9435,
+            "total_net_bps": -135.5457
+          },
+          "carry_freed_days": 140.4
+        },
+        "pos_100k": {
+          "position_usd": 100000,
+          "gross_mean_ret": 0.0219,
+          "net_mean_ret": 0.035369,
+          "gross_wr": 0.4671,
+          "net_cost_bps": -134.6855,
+          "mean_cost_decomp": {
+            "spread_bps": 6.0,
+            "impact_bps": 1.258,
+            "carry_credit_bps": 141.9435,
+            "total_net_bps": -134.6855
+          },
+          "carry_freed_days": 140.4
+        },
+        "pos_1m": {
+          "position_usd": 1000000,
+          "gross_mean_ret": 0.0219,
+          "net_mean_ret": 0.035097,
+          "gross_wr": 0.4671,
+          "net_cost_bps": -131.9653,
+          "mean_cost_decomp": {
+            "spread_bps": 6.0,
+            "impact_bps": 3.9782,
+            "carry_credit_bps": 141.9435,
+            "total_net_bps": -131.9653
+          },
+          "carry_freed_days": 140.4
+        }
+      },
+      "cost_assumptions_note": "Cost model assumptions (printed verbatim per RUL-F3.9): (1) one-way spread_bps = max(Corwin-Schultz proxy [trailing 21-bar smooth] at fire date, ADV$-banded floor: ADV>50M\u21923bps, 10-50M\u21928bps, <10M\u219220bps); (2) impact_bps = IMPACT_ETA*sigma*sqrt(participation)*10000, where participation = position_usd / ADV$ at fire date; (3) both spread and impact charged on ENTRY AND EXIT (2 one-way legs); (4) cash-carry CREDIT on capital-freed days vs hold(126) reference at DTB3 rate (annualized %, converted to per-bar via days/365); (5) per-position sizes {10k, 100k, 1m} \u2014 NOT book AUM, no multi-name claims."
+    },
+    "exit_grid_v1/barrier_s8_t25": {
+      "cell_key": "exit_grid_v1/barrier_s8_t25",
+      "n_fires": 49939,
+      "gross": {
+        "wr": 0.4102,
+        "mean_ret": 0.0267,
+        "median_ret": -0.0815
+      },
+      "inferred_mean_holding_bars": 42.0,
+      "net_by_position_size": {
+        "pos_10k": {
+          "position_usd": 10000,
+          "gross_mean_ret": 0.0267,
+          "net_mean_ret": 0.038363,
+          "gross_wr": 0.4102,
+          "net_cost_bps": -116.625,
+          "mean_cost_decomp": {
+            "spread_bps": 6.0,
+            "impact_bps": 0.3978,
+            "carry_credit_bps": 123.0228,
+            "total_net_bps": -116.625
+          },
+          "carry_freed_days": 121.7
+        },
+        "pos_100k": {
+          "position_usd": 100000,
+          "gross_mean_ret": 0.0267,
+          "net_mean_ret": 0.038276,
+          "gross_wr": 0.4102,
+          "net_cost_bps": -115.7648,
+          "mean_cost_decomp": {
+            "spread_bps": 6.0,
+            "impact_bps": 1.258,
+            "carry_credit_bps": 123.0228,
+            "total_net_bps": -115.7648
+          },
+          "carry_freed_days": 121.7
+        },
+        "pos_1m": {
+          "position_usd": 1000000,
+          "gross_mean_ret": 0.0267,
+          "net_mean_ret": 0.038004,
+          "gross_wr": 0.4102,
+          "net_cost_bps": -113.0446,
+          "mean_cost_decomp": {
+            "spread_bps": 6.0,
+            "impact_bps": 3.9782,
+            "carry_credit_bps": 123.0228,
+            "total_net_bps": -113.0446
+          },
+          "carry_freed_days": 121.7
+        }
+      },
+      "cost_assumptions_note": "Cost model assumptions (printed verbatim per RUL-F3.9): (1) one-way spread_bps = max(Corwin-Schultz proxy [trailing 21-bar smooth] at fire date, ADV$-banded floor: ADV>50M\u21923bps, 10-50M\u21928bps, <10M\u219220bps); (2) impact_bps = IMPACT_ETA*sigma*sqrt(participation)*10000, where participation = position_usd / ADV$ at fire date; (3) both spread and impact charged on ENTRY AND EXIT (2 one-way legs); (4) cash-carry CREDIT on capital-freed days vs hold(126) reference at DTB3 rate (annualized %, converted to per-bar via days/365); (5) per-position sizes {10k, 100k, 1m} \u2014 NOT book AUM, no multi-name claims."
+    }
+  },
+  "wait_grid_v1_cells": {
+    "wait_grid_v1/delay1_hold21": {
+      "cell_key": "wait_grid_v1/delay1_hold21",
+      "n_fires": 49939,
+      "gross": {
+        "wr": 0.5767,
+        "mean_ret": 0.0193,
+        "median_ret": 0.0163
+      },
+      "inferred_mean_holding_bars": 21.0,
+      "net_by_position_size": {
+        "pos_10k": {
+          "position_usd": 10000,
+          "gross_mean_ret": 0.0193,
+          "net_mean_ret": 0.034035,
+          "gross_wr": 0.5767,
+          "net_cost_bps": -147.3522,
+          "mean_cost_decomp": {
+            "spread_bps": 6.0,
+            "impact_bps": 0.3978,
+            "carry_credit_bps": 153.75,
+            "total_net_bps": -147.3522
+          },
+          "carry_freed_days": 152.1
+        },
+        "pos_100k": {
+          "position_usd": 100000,
+          "gross_mean_ret": 0.0193,
+          "net_mean_ret": 0.033949,
+          "gross_wr": 0.5767,
+          "net_cost_bps": -146.492,
+          "mean_cost_decomp": {
+            "spread_bps": 6.0,
+            "impact_bps": 1.258,
+            "carry_credit_bps": 153.75,
+            "total_net_bps": -146.492
+          },
+          "carry_freed_days": 152.1
+        },
+        "pos_1m": {
+          "position_usd": 1000000,
+          "gross_mean_ret": 0.0193,
+          "net_mean_ret": 0.033677,
+          "gross_wr": 0.5767,
+          "net_cost_bps": -143.7718,
+          "mean_cost_decomp": {
+            "spread_bps": 6.0,
+            "impact_bps": 3.9782,
+            "carry_credit_bps": 153.75,
+            "total_net_bps": -143.7718
+          },
+          "carry_freed_days": 152.1
+        }
+      },
+      "cost_assumptions_note": "Cost model assumptions (printed verbatim per RUL-F3.9): (1) one-way spread_bps = max(Corwin-Schultz proxy [trailing 21-bar smooth] at fire date, ADV$-banded floor: ADV>50M\u21923bps, 10-50M\u21928bps, <10M\u219220bps); (2) impact_bps = IMPACT_ETA*sigma*sqrt(participation)*10000, where participation = position_usd / ADV$ at fire date; (3) both spread and impact charged on ENTRY AND EXIT (2 one-way legs); (4) cash-carry CREDIT on capital-freed days vs hold(126) reference at DTB3 rate (annualized %, converted to per-bar via days/365); (5) per-position sizes {10k, 100k, 1m} \u2014 NOT book AUM, no multi-name claims."
+    },
+    "wait_grid_v1/delay1_hold63": {
+      "cell_key": "wait_grid_v1/delay1_hold63",
+      "n_fires": 49939,
+      "gross": {
+        "wr": 0.5849,
+        "mean_ret": 0.0426,
+        "median_ret": 0.031
+      },
+      "inferred_mean_holding_bars": 63.0,
+      "net_by_position_size": {
+        "pos_10k": {
+          "position_usd": 10000,
+          "gross_mean_ret": 0.0426,
+          "net_mean_ret": 0.051185,
+          "gross_wr": 0.5849,
+          "net_cost_bps": -85.8522,
+          "mean_cost_decomp": {
+            "spread_bps": 6.0,
+            "impact_bps": 0.3978,
+            "carry_credit_bps": 92.25,
+            "total_net_bps": -85.8522
+          },
+          "carry_freed_days": 91.2
+        },
+        "pos_100k": {
+          "position_usd": 100000,
+          "gross_mean_ret": 0.0426,
+          "net_mean_ret": 0.051099,
+          "gross_wr": 0.5849,
+          "net_cost_bps": -84.992,
+          "mean_cost_decomp": {
+            "spread_bps": 6.0,
+            "impact_bps": 1.258,
+            "carry_credit_bps": 92.25,
+            "total_net_bps": -84.992
+          },
+          "carry_freed_days": 91.2
+        },
+        "pos_1m": {
+          "position_usd": 1000000,
+          "gross_mean_ret": 0.0426,
+          "net_mean_ret": 0.050827,
+          "gross_wr": 0.5849,
+          "net_cost_bps": -82.2718,
+          "mean_cost_decomp": {
+            "spread_bps": 6.0,
+            "impact_bps": 3.9782,
+            "carry_credit_bps": 92.25,
+            "total_net_bps": -82.2718
+          },
+          "carry_freed_days": 91.2
+        }
+      },
+      "cost_assumptions_note": "Cost model assumptions (printed verbatim per RUL-F3.9): (1) one-way spread_bps = max(Corwin-Schultz proxy [trailing 21-bar smooth] at fire date, ADV$-banded floor: ADV>50M\u21923bps, 10-50M\u21928bps, <10M\u219220bps); (2) impact_bps = IMPACT_ETA*sigma*sqrt(participation)*10000, where participation = position_usd / ADV$ at fire date; (3) both spread and impact charged on ENTRY AND EXIT (2 one-way legs); (4) cash-carry CREDIT on capital-freed days vs hold(126) reference at DTB3 rate (annualized %, converted to per-bar via days/365); (5) per-position sizes {10k, 100k, 1m} \u2014 NOT book AUM, no multi-name claims."
+    },
+    "wait_grid_v1/delay2_hold21": {
+      "cell_key": "wait_grid_v1/delay2_hold21",
+      "n_fires": 49939,
+      "gross": {
+        "wr": 0.5749,
+        "mean_ret": 0.0194,
+        "median_ret": 0.0161
+      },
+      "inferred_mean_holding_bars": 21.0,
+      "net_by_position_size": {
+        "pos_10k": {
+          "position_usd": 10000,
+          "gross_mean_ret": 0.0194,
+          "net_mean_ret": 0.034135,
+          "gross_wr": 0.5749,
+          "net_cost_bps": -147.3522,
+          "mean_cost_decomp": {
+            "spread_bps": 6.0,
+            "impact_bps": 0.3978,
+            "carry_credit_bps": 153.75,
+            "total_net_bps": -147.3522
+          },
+          "carry_freed_days": 152.1
+        },
+        "pos_100k": {
+          "position_usd": 100000,
+          "gross_mean_ret": 0.0194,
+          "net_mean_ret": 0.034049,
+          "gross_wr": 0.5749,
+          "net_cost_bps": -146.492,
+          "mean_cost_decomp": {
+            "spread_bps": 6.0,
+            "impact_bps": 1.258,
+            "carry_credit_bps": 153.75,
+            "total_net_bps": -146.492
+          },
+          "carry_freed_days": 152.1
+        },
+        "pos_1m": {
+          "position_usd": 1000000,
+          "gross_mean_ret": 0.0194,
+          "net_mean_ret": 0.033777,
+          "gross_wr": 0.5749,
+          "net_cost_bps": -143.7718,
+          "mean_cost_decomp": {
+            "spread_bps": 6.0,
+            "impact_bps": 3.9782,
+            "carry_credit_bps": 153.75,
+            "total_net_bps": -143.7718
+          },
+          "carry_freed_days": 152.1
+        }
+      },
+      "cost_assumptions_note": "Cost model assumptions (printed verbatim per RUL-F3.9): (1) one-way spread_bps = max(Corwin-Schultz proxy [trailing 21-bar smooth] at fire date, ADV$-banded floor: ADV>50M\u21923bps, 10-50M\u21928bps, <10M\u219220bps); (2) impact_bps = IMPACT_ETA*sigma*sqrt(participation)*10000, where participation = position_usd / ADV$ at fire date; (3) both spread and impact charged on ENTRY AND EXIT (2 one-way legs); (4) cash-carry CREDIT on capital-freed days vs hold(126) reference at DTB3 rate (annualized %, converted to per-bar via days/365); (5) per-position sizes {10k, 100k, 1m} \u2014 NOT book AUM, no multi-name claims."
+    },
+    "wait_grid_v1/delay2_hold63": {
+      "cell_key": "wait_grid_v1/delay2_hold63",
+      "n_fires": 49939,
+      "gross": {
+        "wr": 0.5874,
+        "mean_ret": 0.0433,
+        "median_ret": 0.0315
+      },
+      "inferred_mean_holding_bars": 63.0,
+      "net_by_position_size": {
+        "pos_10k": {
+          "position_usd": 10000,
+          "gross_mean_ret": 0.0433,
+          "net_mean_ret": 0.051885,
+          "gross_wr": 0.5874,
+          "net_cost_bps": -85.8522,
+          "mean_cost_decomp": {
+            "spread_bps": 6.0,
+            "impact_bps": 0.3978,
+            "carry_credit_bps": 92.25,
+            "total_net_bps": -85.8522
+          },
+          "carry_freed_days": 91.2
+        },
+        "pos_100k": {
+          "position_usd": 100000,
+          "gross_mean_ret": 0.0433,
+          "net_mean_ret": 0.051799,
+          "gross_wr": 0.5874,
+          "net_cost_bps": -84.992,
+          "mean_cost_decomp": {
+            "spread_bps": 6.0,
+            "impact_bps": 1.258,
+            "carry_credit_bps": 92.25,
+            "total_net_bps": -84.992
+          },
+          "carry_freed_days": 91.2
+        },
+        "pos_1m": {
+          "position_usd": 1000000,
+          "gross_mean_ret": 0.0433,
+          "net_mean_ret": 0.051527,
+          "gross_wr": 0.5874,
+          "net_cost_bps": -82.2718,
+          "mean_cost_decomp": {
+            "spread_bps": 6.0,
+            "impact_bps": 3.9782,
+            "carry_credit_bps": 92.25,
+            "total_net_bps": -82.2718
+          },
+          "carry_freed_days": 91.2
+        }
+      },
+      "cost_assumptions_note": "Cost model assumptions (printed verbatim per RUL-F3.9): (1) one-way spread_bps = max(Corwin-Schultz proxy [trailing 21-bar smooth] at fire date, ADV$-banded floor: ADV>50M\u21923bps, 10-50M\u21928bps, <10M\u219220bps); (2) impact_bps = IMPACT_ETA*sigma*sqrt(participation)*10000, where participation = position_usd / ADV$ at fire date; (3) both spread and impact charged on ENTRY AND EXIT (2 one-way legs); (4) cash-carry CREDIT on capital-freed days vs hold(126) reference at DTB3 rate (annualized %, converted to per-bar via days/365); (5) per-position sizes {10k, 100k, 1m} \u2014 NOT book AUM, no multi-name claims."
+    },
+    "wait_grid_v1/delay3_hold21": {
+      "cell_key": "wait_grid_v1/delay3_hold21",
+      "n_fires": 49939,
+      "gross": {
+        "wr": 0.5745,
+        "mean_ret": 0.0195,
+        "median_ret": 0.0159
+      },
+      "inferred_mean_holding_bars": 21.0,
+      "net_by_position_size": {
+        "pos_10k": {
+          "position_usd": 10000,
+          "gross_mean_ret": 0.0195,
+          "net_mean_ret": 0.034235,
+          "gross_wr": 0.5745,
+          "net_cost_bps": -147.3522,
+          "mean_cost_decomp": {
+            "spread_bps": 6.0,
+            "impact_bps": 0.3978,
+            "carry_credit_bps": 153.75,
+            "total_net_bps": -147.3522
+          },
+          "carry_freed_days": 152.1
+        },
+        "pos_100k": {
+          "position_usd": 100000,
+          "gross_mean_ret": 0.0195,
+          "net_mean_ret": 0.034149,
+          "gross_wr": 0.5745,
+          "net_cost_bps": -146.492,
+          "mean_cost_decomp": {
+            "spread_bps": 6.0,
+            "impact_bps": 1.258,
+            "carry_credit_bps": 153.75,
+            "total_net_bps": -146.492
+          },
+          "carry_freed_days": 152.1
+        },
+        "pos_1m": {
+          "position_usd": 1000000,
+          "gross_mean_ret": 0.0195,
+          "net_mean_ret": 0.033877,
+          "gross_wr": 0.5745,
+          "net_cost_bps": -143.7718,
+          "mean_cost_decomp": {
+            "spread_bps": 6.0,
+            "impact_bps": 3.9782,
+            "carry_credit_bps": 153.75,
+            "total_net_bps": -143.7718
+          },
+          "carry_freed_days": 152.1
+        }
+      },
+      "cost_assumptions_note": "Cost model assumptions (printed verbatim per RUL-F3.9): (1) one-way spread_bps = max(Corwin-Schultz proxy [trailing 21-bar smooth] at fire date, ADV$-banded floor: ADV>50M\u21923bps, 10-50M\u21928bps, <10M\u219220bps); (2) impact_bps = IMPACT_ETA*sigma*sqrt(participation)*10000, where participation = position_usd / ADV$ at fire date; (3) both spread and impact charged on ENTRY AND EXIT (2 one-way legs); (4) cash-carry CREDIT on capital-freed days vs hold(126) reference at DTB3 rate (annualized %, converted to per-bar via days/365); (5) per-position sizes {10k, 100k, 1m} \u2014 NOT book AUM, no multi-name claims."
+    },
+    "wait_grid_v1/delay3_hold63": {
+      "cell_key": "wait_grid_v1/delay3_hold63",
+      "n_fires": 49939,
+      "gross": {
+        "wr": 0.5885,
+        "mean_ret": 0.0441,
+        "median_ret": 0.032
+      },
+      "inferred_mean_holding_bars": 63.0,
+      "net_by_position_size": {
+        "pos_10k": {
+          "position_usd": 10000,
+          "gross_mean_ret": 0.0441,
+          "net_mean_ret": 0.052685,
+          "gross_wr": 0.5885,
+          "net_cost_bps": -85.8522,
+          "mean_cost_decomp": {
+            "spread_bps": 6.0,
+            "impact_bps": 0.3978,
+            "carry_credit_bps": 92.25,
+            "total_net_bps": -85.8522
+          },
+          "carry_freed_days": 91.2
+        },
+        "pos_100k": {
+          "position_usd": 100000,
+          "gross_mean_ret": 0.0441,
+          "net_mean_ret": 0.052599,
+          "gross_wr": 0.5885,
+          "net_cost_bps": -84.992,
+          "mean_cost_decomp": {
+            "spread_bps": 6.0,
+            "impact_bps": 1.258,
+            "carry_credit_bps": 92.25,
+            "total_net_bps": -84.992
+          },
+          "carry_freed_days": 91.2
+        },
+        "pos_1m": {
+          "position_usd": 1000000,
+          "gross_mean_ret": 0.0441,
+          "net_mean_ret": 0.052327,
+          "gross_wr": 0.5885,
+          "net_cost_bps": -82.2718,
+          "mean_cost_decomp": {
+            "spread_bps": 6.0,
+            "impact_bps": 3.9782,
+            "carry_credit_bps": 92.25,
+            "total_net_bps": -82.2718
+          },
+          "carry_freed_days": 91.2
+        }
+      },
+      "cost_assumptions_note": "Cost model assumptions (printed verbatim per RUL-F3.9): (1) one-way spread_bps = max(Corwin-Schultz proxy [trailing 21-bar smooth] at fire date, ADV$-banded floor: ADV>50M\u21923bps, 10-50M\u21928bps, <10M\u219220bps); (2) impact_bps = IMPACT_ETA*sigma*sqrt(participation)*10000, where participation = position_usd / ADV$ at fire date; (3) both spread and impact charged on ENTRY AND EXIT (2 one-way legs); (4) cash-carry CREDIT on capital-freed days vs hold(126) reference at DTB3 rate (annualized %, converted to per-bar via days/365); (5) per-position sizes {10k, 100k, 1m} \u2014 NOT book AUM, no multi-name claims."
+    },
+    "wait_grid_v1/delay5_hold21": {
+      "cell_key": "wait_grid_v1/delay5_hold21",
+      "n_fires": 49939,
+      "gross": {
+        "wr": 0.5757,
+        "mean_ret": 0.0196,
+        "median_ret": 0.0156
+      },
+      "inferred_mean_holding_bars": 21.0,
+      "net_by_position_size": {
+        "pos_10k": {
+          "position_usd": 10000,
+          "gross_mean_ret": 0.0196,
+          "net_mean_ret": 0.034335,
+          "gross_wr": 0.5757,
+          "net_cost_bps": -147.3522,
+          "mean_cost_decomp": {
+            "spread_bps": 6.0,
+            "impact_bps": 0.3978,
+            "carry_credit_bps": 153.75,
+            "total_net_bps": -147.3522
+          },
+          "carry_freed_days": 152.1
+        },
+        "pos_100k": {
+          "position_usd": 100000,
+          "gross_mean_ret": 0.0196,
+          "net_mean_ret": 0.034249,
+          "gross_wr": 0.5757,
+          "net_cost_bps": -146.492,
+          "mean_cost_decomp": {
+            "spread_bps": 6.0,
+            "impact_bps": 1.258,
+            "carry_credit_bps": 153.75,
+            "total_net_bps": -146.492
+          },
+          "carry_freed_days": 152.1
+        },
+        "pos_1m": {
+          "position_usd": 1000000,
+          "gross_mean_ret": 0.0196,
+          "net_mean_ret": 0.033977,
+          "gross_wr": 0.5757,
+          "net_cost_bps": -143.7718,
+          "mean_cost_decomp": {
+            "spread_bps": 6.0,
+            "impact_bps": 3.9782,
+            "carry_credit_bps": 153.75,
+            "total_net_bps": -143.7718
+          },
+          "carry_freed_days": 152.1
+        }
+      },
+      "cost_assumptions_note": "Cost model assumptions (printed verbatim per RUL-F3.9): (1) one-way spread_bps = max(Corwin-Schultz proxy [trailing 21-bar smooth] at fire date, ADV$-banded floor: ADV>50M\u21923bps, 10-50M\u21928bps, <10M\u219220bps); (2) impact_bps = IMPACT_ETA*sigma*sqrt(participation)*10000, where participation = position_usd / ADV$ at fire date; (3) both spread and impact charged on ENTRY AND EXIT (2 one-way legs); (4) cash-carry CREDIT on capital-freed days vs hold(126) reference at DTB3 rate (annualized %, converted to per-bar via days/365); (5) per-position sizes {10k, 100k, 1m} \u2014 NOT book AUM, no multi-name claims."
+    },
+    "wait_grid_v1/delay5_hold63": {
+      "cell_key": "wait_grid_v1/delay5_hold63",
+      "n_fires": 49939,
+      "gross": {
+        "wr": 0.5881,
+        "mean_ret": 0.0441,
+        "median_ret": 0.0318
+      },
+      "inferred_mean_holding_bars": 63.0,
+      "net_by_position_size": {
+        "pos_10k": {
+          "position_usd": 10000,
+          "gross_mean_ret": 0.0441,
+          "net_mean_ret": 0.052685,
+          "gross_wr": 0.5881,
+          "net_cost_bps": -85.8522,
+          "mean_cost_decomp": {
+            "spread_bps": 6.0,
+            "impact_bps": 0.3978,
+            "carry_credit_bps": 92.25,
+            "total_net_bps": -85.8522
+          },
+          "carry_freed_days": 91.2
+        },
+        "pos_100k": {
+          "position_usd": 100000,
+          "gross_mean_ret": 0.0441,
+          "net_mean_ret": 0.052599,
+          "gross_wr": 0.5881,
+          "net_cost_bps": -84.992,
+          "mean_cost_decomp": {
+            "spread_bps": 6.0,
+            "impact_bps": 1.258,
+            "carry_credit_bps": 92.25,
+            "total_net_bps": -84.992
+          },
+          "carry_freed_days": 91.2
+        },
+        "pos_1m": {
+          "position_usd": 1000000,
+          "gross_mean_ret": 0.0441,
+          "net_mean_ret": 0.052327,
+          "gross_wr": 0.5881,
+          "net_cost_bps": -82.2718,
+          "mean_cost_decomp": {
+            "spread_bps": 6.0,
+            "impact_bps": 3.9782,
+            "carry_credit_bps": 92.25,
+            "total_net_bps": -82.2718
+          },
+          "carry_freed_days": 91.2
+        }
+      },
+      "cost_assumptions_note": "Cost model assumptions (printed verbatim per RUL-F3.9): (1) one-way spread_bps = max(Corwin-Schultz proxy [trailing 21-bar smooth] at fire date, ADV$-banded floor: ADV>50M\u21923bps, 10-50M\u21928bps, <10M\u219220bps); (2) impact_bps = IMPACT_ETA*sigma*sqrt(participation)*10000, where participation = position_usd / ADV$ at fire date; (3) both spread and impact charged on ENTRY AND EXIT (2 one-way legs); (4) cash-carry CREDIT on capital-freed days vs hold(126) reference at DTB3 rate (annualized %, converted to per-bar via days/365); (5) per-position sizes {10k, 100k, 1m} \u2014 NOT book AUM, no multi-name claims."
+    },
+    "wait_grid_v1/delay10_hold21": {
+      "cell_key": "wait_grid_v1/delay10_hold21",
+      "n_fires": 49939,
+      "gross": {
+        "wr": 0.5596,
+        "mean_ret": 0.0166,
+        "median_ret": 0.012
+      },
+      "inferred_mean_holding_bars": 21.0,
+      "net_by_position_size": {
+        "pos_10k": {
+          "position_usd": 10000,
+          "gross_mean_ret": 0.0166,
+          "net_mean_ret": 0.031335,
+          "gross_wr": 0.5596,
+          "net_cost_bps": -147.3522,
+          "mean_cost_decomp": {
+            "spread_bps": 6.0,
+            "impact_bps": 0.3978,
+            "carry_credit_bps": 153.75,
+            "total_net_bps": -147.3522
+          },
+          "carry_freed_days": 152.1
+        },
+        "pos_100k": {
+          "position_usd": 100000,
+          "gross_mean_ret": 0.0166,
+          "net_mean_ret": 0.031249,
+          "gross_wr": 0.5596,
+          "net_cost_bps": -146.492,
+          "mean_cost_decomp": {
+            "spread_bps": 6.0,
+            "impact_bps": 1.258,
+            "carry_credit_bps": 153.75,
+            "total_net_bps": -146.492
+          },
+          "carry_freed_days": 152.1
+        },
+        "pos_1m": {
+          "position_usd": 1000000,
+          "gross_mean_ret": 0.0166,
+          "net_mean_ret": 0.030977,
+          "gross_wr": 0.5596,
+          "net_cost_bps": -143.7718,
+          "mean_cost_decomp": {
+            "spread_bps": 6.0,
+            "impact_bps": 3.9782,
+            "carry_credit_bps": 153.75,
+            "total_net_bps": -143.7718
+          },
+          "carry_freed_days": 152.1
+        }
+      },
+      "cost_assumptions_note": "Cost model assumptions (printed verbatim per RUL-F3.9): (1) one-way spread_bps = max(Corwin-Schultz proxy [trailing 21-bar smooth] at fire date, ADV$-banded floor: ADV>50M\u21923bps, 10-50M\u21928bps, <10M\u219220bps); (2) impact_bps = IMPACT_ETA*sigma*sqrt(participation)*10000, where participation = position_usd / ADV$ at fire date; (3) both spread and impact charged on ENTRY AND EXIT (2 one-way legs); (4) cash-carry CREDIT on capital-freed days vs hold(126) reference at DTB3 rate (annualized %, converted to per-bar via days/365); (5) per-position sizes {10k, 100k, 1m} \u2014 NOT book AUM, no multi-name claims."
+    },
+    "wait_grid_v1/delay10_hold63": {
+      "cell_key": "wait_grid_v1/delay10_hold63",
+      "n_fires": 49939,
+      "gross": {
+        "wr": 0.5826,
+        "mean_ret": 0.0421,
+        "median_ret": 0.0303
+      },
+      "inferred_mean_holding_bars": 63.0,
+      "net_by_position_size": {
+        "pos_10k": {
+          "position_usd": 10000,
+          "gross_mean_ret": 0.0421,
+          "net_mean_ret": 0.050685,
+          "gross_wr": 0.5826,
+          "net_cost_bps": -85.8522,
+          "mean_cost_decomp": {
+            "spread_bps": 6.0,
+            "impact_bps": 0.3978,
+            "carry_credit_bps": 92.25,
+            "total_net_bps": -85.8522
+          },
+          "carry_freed_days": 91.2
+        },
+        "pos_100k": {
+          "position_usd": 100000,
+          "gross_mean_ret": 0.0421,
+          "net_mean_ret": 0.050599,
+          "gross_wr": 0.5826,
+          "net_cost_bps": -84.992,
+          "mean_cost_decomp": {
+            "spread_bps": 6.0,
+            "impact_bps": 1.258,
+            "carry_credit_bps": 92.25,
+            "total_net_bps": -84.992
+          },
+          "carry_freed_days": 91.2
+        },
+        "pos_1m": {
+          "position_usd": 1000000,
+          "gross_mean_ret": 0.0421,
+          "net_mean_ret": 0.050327,
+          "gross_wr": 0.5826,
+          "net_cost_bps": -82.2718,
+          "mean_cost_decomp": {
+            "spread_bps": 6.0,
+            "impact_bps": 3.9782,
+            "carry_credit_bps": 92.25,
+            "total_net_bps": -82.2718
+          },
+          "carry_freed_days": 91.2
+        }
+      },
+      "cost_assumptions_note": "Cost model assumptions (printed verbatim per RUL-F3.9): (1) one-way spread_bps = max(Corwin-Schultz proxy [trailing 21-bar smooth] at fire date, ADV$-banded floor: ADV>50M\u21923bps, 10-50M\u21928bps, <10M\u219220bps); (2) impact_bps = IMPACT_ETA*sigma*sqrt(participation)*10000, where participation = position_usd / ADV$ at fire date; (3) both spread and impact charged on ENTRY AND EXIT (2 one-way legs); (4) cash-carry CREDIT on capital-freed days vs hold(126) reference at DTB3 rate (annualized %, converted to per-bar via days/365); (5) per-position sizes {10k, 100k, 1m} \u2014 NOT book AUM, no multi-name claims."
+    }
+  }
+}

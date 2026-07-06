@@ -1,0 +1,331 @@
+{
+  "derived_from_surface": [
+    "exit_grid_v1",
+    "wait_grid_v1"
+  ],
+  "run_at": "2026-07-06T14:08:23.992872Z",
+  "verdict_criteria": "descriptive-only",
+  "THIS_IS": "SCENARIO_ANALYSIS_NOT_TAX_ADVICE",
+  "scenario_rates": [
+    0.0,
+    0.15,
+    0.2,
+    0.35,
+    0.4
+  ],
+  "house_law_note": "All exit-grid holds (\u2264126 bars) are SHORT-TERM by construction. The within-grid tax kink is zero. The ST vs LT comparison requires reaching the 252d horizon.",
+  "hold21_source": {
+    "exp_id": "exit_grid_v1 / wait_grid_v1",
+    "gross_mean_ret_per_cycle": 0.0193,
+    "wr": 0.577,
+    "n_fires": 49939,
+    "cycles_per_year": 12.0
+  },
+  "hold126_reference": {
+    "gross_mean_ret_per_cycle": 0.073,
+    "wr": 0.59,
+    "cycles_per_year": 2.0
+  },
+  "exit_grid_scenarios": {
+    "hold_21": [
+      {
+        "scenario_rate": 0.0,
+        "scenario_label": "0%",
+        "gross_per_cycle_mean_ret": 0.0193,
+        "cycles_per_year": 12.0,
+        "gross_annual_compounded": 0.257837,
+        "after_tax_annual_compounded": 0.257837,
+        "tax_drag_annual_bps": 0.0,
+        "hold_bars": 21,
+        "n_fires": 49939,
+        "wr": 0.577,
+        "note": "ALL exit-grid holds (\u2264126 bars) are SHORT-TERM by construction; LT rate comparison requires 252d horizon."
+      },
+      {
+        "scenario_rate": 0.15,
+        "scenario_label": "15%",
+        "gross_per_cycle_mean_ret": 0.0193,
+        "cycles_per_year": 12.0,
+        "gross_annual_compounded": 0.257837,
+        "after_tax_annual_compounded": 0.21563,
+        "tax_drag_annual_bps": 422.06,
+        "hold_bars": 21,
+        "n_fires": 49939,
+        "wr": 0.577,
+        "note": "ALL exit-grid holds (\u2264126 bars) are SHORT-TERM by construction; LT rate comparison requires 252d horizon."
+      },
+      {
+        "scenario_rate": 0.2,
+        "scenario_label": "20%",
+        "gross_per_cycle_mean_ret": 0.0193,
+        "cycles_per_year": 12.0,
+        "gross_annual_compounded": 0.257837,
+        "after_tax_annual_compounded": 0.201853,
+        "tax_drag_annual_bps": 559.84,
+        "hold_bars": 21,
+        "n_fires": 49939,
+        "wr": 0.577,
+        "note": "ALL exit-grid holds (\u2264126 bars) are SHORT-TERM by construction; LT rate comparison requires 252d horizon."
+      },
+      {
+        "scenario_rate": 0.35,
+        "scenario_label": "35%",
+        "gross_per_cycle_mean_ret": 0.0193,
+        "cycles_per_year": 12.0,
+        "gross_annual_compounded": 0.257837,
+        "after_tax_annual_compounded": 0.161374,
+        "tax_drag_annual_bps": 964.63,
+        "hold_bars": 21,
+        "n_fires": 49939,
+        "wr": 0.577,
+        "note": "ALL exit-grid holds (\u2264126 bars) are SHORT-TERM by construction; LT rate comparison requires 252d horizon."
+      },
+      {
+        "scenario_rate": 0.4,
+        "scenario_label": "40%",
+        "gross_per_cycle_mean_ret": 0.0193,
+        "cycles_per_year": 12.0,
+        "gross_annual_compounded": 0.257837,
+        "after_tax_annual_compounded": 0.148161,
+        "tax_drag_annual_bps": 1096.76,
+        "hold_bars": 21,
+        "n_fires": 49939,
+        "wr": 0.577,
+        "note": "ALL exit-grid holds (\u2264126 bars) are SHORT-TERM by construction; LT rate comparison requires 252d horizon."
+      }
+    ],
+    "hold_126_reference": [
+      {
+        "scenario_rate": 0.0,
+        "scenario_label": "0%",
+        "gross_per_cycle_mean_ret": 0.073,
+        "cycles_per_year": 2.0,
+        "gross_annual_compounded": 0.151329,
+        "after_tax_annual_compounded": 0.151329,
+        "tax_drag_annual_bps": 0.0,
+        "hold_bars": 126,
+        "n_fires": 49939,
+        "wr": 0.59,
+        "note": "ALL exit-grid holds (\u2264126 bars) are SHORT-TERM by construction; LT rate comparison requires 252d horizon."
+      },
+      {
+        "scenario_rate": 0.15,
+        "scenario_label": "15%",
+        "gross_per_cycle_mean_ret": 0.073,
+        "cycles_per_year": 2.0,
+        "gross_annual_compounded": 0.151329,
+        "after_tax_annual_compounded": 0.12795,
+        "tax_drag_annual_bps": 233.79,
+        "hold_bars": 126,
+        "n_fires": 49939,
+        "wr": 0.59,
+        "note": "ALL exit-grid holds (\u2264126 bars) are SHORT-TERM by construction; LT rate comparison requires 252d horizon."
+      },
+      {
+        "scenario_rate": 0.2,
+        "scenario_label": "20%",
+        "gross_per_cycle_mean_ret": 0.073,
+        "cycles_per_year": 2.0,
+        "gross_annual_compounded": 0.151329,
+        "after_tax_annual_compounded": 0.120211,
+        "tax_drag_annual_bps": 311.18,
+        "hold_bars": 126,
+        "n_fires": 49939,
+        "wr": 0.59,
+        "note": "ALL exit-grid holds (\u2264126 bars) are SHORT-TERM by construction; LT rate comparison requires 252d horizon."
+      },
+      {
+        "scenario_rate": 0.35,
+        "scenario_label": "35%",
+        "gross_per_cycle_mean_ret": 0.073,
+        "cycles_per_year": 2.0,
+        "gross_annual_compounded": 0.151329,
+        "after_tax_annual_compounded": 0.097152,
+        "tax_drag_annual_bps": 541.77,
+        "hold_bars": 126,
+        "n_fires": 49939,
+        "wr": 0.59,
+        "note": "ALL exit-grid holds (\u2264126 bars) are SHORT-TERM by construction; LT rate comparison requires 252d horizon."
+      },
+      {
+        "scenario_rate": 0.4,
+        "scenario_label": "40%",
+        "gross_per_cycle_mean_ret": 0.073,
+        "cycles_per_year": 2.0,
+        "gross_annual_compounded": 0.151329,
+        "after_tax_annual_compounded": 0.089518,
+        "tax_drag_annual_bps": 618.11,
+        "hold_bars": 126,
+        "n_fires": 49939,
+        "wr": 0.59,
+        "note": "ALL exit-grid holds (\u2264126 bars) are SHORT-TERM by construction; LT rate comparison requires 252d horizon."
+      }
+    ]
+  },
+  "long_hold_252d_source": "parquet",
+  "long_hold_252d_cohort_stats": [
+    {
+      "cohort": "honest_cohort",
+      "survivorship_biased": false,
+      "n_fires_with_252d": 2105,
+      "mean_252d_ret": 0.368409,
+      "median_252d_ret": 0.172118,
+      "wr_252d": 0.6599
+    },
+    {
+      "cohort": "survivor_biased",
+      "survivorship_biased": true,
+      "n_fires_with_252d": 11110,
+      "mean_252d_ret": 0.43907,
+      "median_252d_ret": 0.222801,
+      "wr_252d": 0.7315
+    }
+  ],
+  "long_hold_252d_scenarios": {
+    "honest_cohort": [
+      {
+        "cohort": "honest_cohort",
+        "survivorship_biased": false,
+        "scenario_st_rate": 0.0,
+        "scenario_lt_rate": 0.0,
+        "scenario_label": "0%",
+        "gross_252d_mean_ret": 0.368409,
+        "gross_annual_approx": 0.368409,
+        "after_tax_annual_lt": 0.368409,
+        "tax_drag_annual_bps": 0.0,
+        "n_fires": 2105,
+        "wr": 0.6599,
+        "survivorship_note": "Non-survivor-biased cohort (honest 252d matured fires)."
+      },
+      {
+        "cohort": "honest_cohort",
+        "survivorship_biased": false,
+        "scenario_st_rate": 0.15,
+        "scenario_lt_rate": 0.15,
+        "scenario_label": "15%",
+        "gross_252d_mean_ret": 0.368409,
+        "gross_annual_approx": 0.368409,
+        "after_tax_annual_lt": 0.313148,
+        "tax_drag_annual_bps": 552.61,
+        "n_fires": 2105,
+        "wr": 0.6599,
+        "survivorship_note": "Non-survivor-biased cohort (honest 252d matured fires)."
+      },
+      {
+        "cohort": "honest_cohort",
+        "survivorship_biased": false,
+        "scenario_st_rate": 0.2,
+        "scenario_lt_rate": 0.15,
+        "scenario_label": "20%",
+        "gross_252d_mean_ret": 0.368409,
+        "gross_annual_approx": 0.368409,
+        "after_tax_annual_lt": 0.313148,
+        "tax_drag_annual_bps": 552.61,
+        "n_fires": 2105,
+        "wr": 0.6599,
+        "survivorship_note": "Non-survivor-biased cohort (honest 252d matured fires)."
+      },
+      {
+        "cohort": "honest_cohort",
+        "survivorship_biased": false,
+        "scenario_st_rate": 0.35,
+        "scenario_lt_rate": 0.2,
+        "scenario_label": "35%",
+        "gross_252d_mean_ret": 0.368409,
+        "gross_annual_approx": 0.368409,
+        "after_tax_annual_lt": 0.294727,
+        "tax_drag_annual_bps": 736.82,
+        "n_fires": 2105,
+        "wr": 0.6599,
+        "survivorship_note": "Non-survivor-biased cohort (honest 252d matured fires)."
+      },
+      {
+        "cohort": "honest_cohort",
+        "survivorship_biased": false,
+        "scenario_st_rate": 0.4,
+        "scenario_lt_rate": 0.2,
+        "scenario_label": "40%",
+        "gross_252d_mean_ret": 0.368409,
+        "gross_annual_approx": 0.368409,
+        "after_tax_annual_lt": 0.294727,
+        "tax_drag_annual_bps": 736.82,
+        "n_fires": 2105,
+        "wr": 0.6599,
+        "survivorship_note": "Non-survivor-biased cohort (honest 252d matured fires)."
+      }
+    ],
+    "survivor_biased": [
+      {
+        "cohort": "survivor_biased",
+        "survivorship_biased": true,
+        "scenario_st_rate": 0.0,
+        "scenario_lt_rate": 0.0,
+        "scenario_label": "0%",
+        "gross_252d_mean_ret": 0.43907,
+        "gross_annual_approx": 0.43907,
+        "after_tax_annual_lt": 0.43907,
+        "tax_drag_annual_bps": 0.0,
+        "n_fires": 11110,
+        "wr": 0.7315,
+        "survivorship_note": "UPPER BOUND \u2014 survivor-biased cohort includes only names that matured with positive 252d outcomes; true long-hold return is lower."
+      },
+      {
+        "cohort": "survivor_biased",
+        "survivorship_biased": true,
+        "scenario_st_rate": 0.15,
+        "scenario_lt_rate": 0.15,
+        "scenario_label": "15%",
+        "gross_252d_mean_ret": 0.43907,
+        "gross_annual_approx": 0.43907,
+        "after_tax_annual_lt": 0.37321,
+        "tax_drag_annual_bps": 658.61,
+        "n_fires": 11110,
+        "wr": 0.7315,
+        "survivorship_note": "UPPER BOUND \u2014 survivor-biased cohort includes only names that matured with positive 252d outcomes; true long-hold return is lower."
+      },
+      {
+        "cohort": "survivor_biased",
+        "survivorship_biased": true,
+        "scenario_st_rate": 0.2,
+        "scenario_lt_rate": 0.15,
+        "scenario_label": "20%",
+        "gross_252d_mean_ret": 0.43907,
+        "gross_annual_approx": 0.43907,
+        "after_tax_annual_lt": 0.37321,
+        "tax_drag_annual_bps": 658.61,
+        "n_fires": 11110,
+        "wr": 0.7315,
+        "survivorship_note": "UPPER BOUND \u2014 survivor-biased cohort includes only names that matured with positive 252d outcomes; true long-hold return is lower."
+      },
+      {
+        "cohort": "survivor_biased",
+        "survivorship_biased": true,
+        "scenario_st_rate": 0.35,
+        "scenario_lt_rate": 0.2,
+        "scenario_label": "35%",
+        "gross_252d_mean_ret": 0.43907,
+        "gross_annual_approx": 0.43907,
+        "after_tax_annual_lt": 0.351256,
+        "tax_drag_annual_bps": 878.14,
+        "n_fires": 11110,
+        "wr": 0.7315,
+        "survivorship_note": "UPPER BOUND \u2014 survivor-biased cohort includes only names that matured with positive 252d outcomes; true long-hold return is lower."
+      },
+      {
+        "cohort": "survivor_biased",
+        "survivorship_biased": true,
+        "scenario_st_rate": 0.4,
+        "scenario_lt_rate": 0.2,
+        "scenario_label": "40%",
+        "gross_252d_mean_ret": 0.43907,
+        "gross_annual_approx": 0.43907,
+        "after_tax_annual_lt": 0.351256,
+        "tax_drag_annual_bps": 878.14,
+        "n_fires": 11110,
+        "wr": 0.7315,
+        "survivorship_note": "UPPER BOUND \u2014 survivor-biased cohort includes only names that matured with positive 252d outcomes; true long-hold return is lower."
+      }
+    ]
+  },
+  "survivorship_note": "The survivor-biased cohort (2021+ fires that matured to 252d) is an UPPER BOUND on long-hold performance. Both cohorts are printed. The honest cohort is the decision-relevant comparator."
+}
