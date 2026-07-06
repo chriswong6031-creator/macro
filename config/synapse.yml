@@ -5168,6 +5168,37 @@ artifacts:
       scripts/build_neuralweb_health.py. Display/ops only — no authority.
 
   # --- PR-D: NW daily brief surface ---
+
+  # ============================================================
+  # CYCLE-PATTERN INTELLIGENCE — CPI substrate v0 (2026-07-06)
+  # Registered here; calibration-lane wiring lands in a follow-on PR.
+  # Freshness SLAs are generous (1440h) on monthly/on-demand artifacts so
+  # the bus does not false-alarm before that wiring is in place.
+  # ============================================================
+
+  cycle-pattern-entities:
+    path: data/cycle_pattern/entities.parquet
+    format: parquet
+    producer: scripts/build_cycle_pattern_lake.py
+    known_extra_writers: []
+    owner_program: cycle-intelligence
+    cadence: on-demand
+    storage: git
+    asof_field: null
+    freshness_sla_hours: 1440  # generous: monthly rebuild; bus alarm suppressed until calibration-lane wiring lands
+    schema: cycle_pattern.entities.v0
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      PR-C site copy of data/neuralweb/health.json for frontend/admin consumption.
+      Exact mirror written atomically alongside the data copy by
+      scripts/build_neuralweb_health.py. Display/ops only — no authority.
+
+  # --- PR-D: NW daily brief surface ---
   neuralweb-daily-brief:
     path: data/neuralweb/daily_brief.json
     format: json
@@ -5237,3 +5268,109 @@ artifacts:
       PR-D compact history of daily brief snapshots. One row per as_of date;
       upserted (same as_of → replace row) by scripts/build_neuralweb_brief --finalize.
       Chronologically sorted. Used for delta detection in next run. Display/ops only.
+
+  cycle-pattern-state-monthly:
+    path: data/cycle_pattern/state_monthly.parquet
+    format: parquet
+    producer: scripts/build_cycle_pattern_lake.py
+    known_extra_writers: []
+    owner_program: cycle-intelligence
+    cadence: on-demand
+    storage: git
+    asof_field: date
+    freshness_sla_hours: 1440  # generous: monthly rebuild; bus alarm suppressed until calibration-lane wiring lands
+    schema: cycle_pattern.state_monthly.v0
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      CPI substrate v0 — 12,519-row month-block panel of cycle state across all entities.
+      Key columns: entity_id, native_id, date, phase, pos, osc_slope, signal, timing_state,
+      above200d, rs_63d, proj_next/central/lo/hi, stance, divergence, overdue, quad,
+      liquidity, hazard_epoch. PIT-clean: all feature columns are forward-available at date.
+      Rebuilt on-demand after forward-log backfills complete.
+
+  cycle-pattern-outcomes:
+    path: data/cycle_pattern/outcomes.parquet
+    format: parquet
+    producer: scripts/build_cycle_pattern_outcomes.py
+    known_extra_writers: []
+    owner_program: cycle-intelligence
+    cadence: on-demand
+    storage: git
+    asof_field: date
+    freshness_sla_hours: 1440  # generous: monthly rebuild; bus alarm suppressed until calibration-lane wiring lands
+    schema: cycle_pattern.outcomes.v0
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      CPI substrate v0 — label-side outcomes parquet keyed (entity_id, date).
+      Strict PIT discipline: outcome columns (forward returns, phase transitions) are
+      separated from state_monthly features; never mixed at query time.
+      Producer script is built in the calibration-outcomes parallel lane; file will
+      exist before calibration-lane consumers are wired.
+
+  cycle-pattern-truths:
+    path: data/cycle_pattern/truths.jsonl
+    format: jsonl
+    producer: scripts/seed_cycle_truths.py
+    known_extra_writers: []
+    owner_program: cycle-intelligence
+    cadence: on-demand
+    storage: git
+    asof_field: last_reviewed
+    freshness_sla_hours: 1440  # generous: seeded once; re-seeded on major cycle-theory updates
+    schema: cycle_pattern.truths.v0
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/neuralweb/daily_brief.py
+    external_consumers: []
+    notes: >
+      PR-D compact history of daily brief snapshots. One row per as_of date;
+      upserted (same as_of → replace row) by scripts/build_neuralweb_brief --finalize.
+      Chronologically sorted. Used for delta detection in next run. Display/ops only.
+      - scripts/build_measurement.py
+    external_consumers: []
+    notes: >
+      CPI substrate v0 — 15-seed truth ledger (truths.jsonl) for cycle-pattern
+      claims. Fields: truth_id, statement, target, scope, effect_class, status,
+      n_summary, ci_summary, pit_class, era_stability, evidence_refs, falsifiers,
+      monitoring, allowed_consumers, forbidden_consumers, owner_program, created,
+      last_reviewed, next_review_due, version, notes. Display tier only — feeds
+      pages/NW as qualitative context; not a scored surface. No arithmetic on
+      truth rows before Article-3 validation passes.
+
+  signal-archive-context-daily:
+    path: data/signal_archive/context_daily.parquet
+    format: parquet
+    producer: scripts/archive_context_snapshots.py
+    known_extra_writers: []
+    owner_program: cycle-intelligence
+    cadence: daily-engine
+    storage: git
+    asof_field: date
+    freshness_sla_hours: 48
+    schema: signal_archive.context_daily.v0
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      Append-only daily context snapshot keyed by date (keep-FIRST idempotent).
+      Captures regime quad, liquidity label, cycle_tag, transition_state,
+      regime_confidence, market_verdict, vol_regime_verdict, and related macro
+      state at each calendar date. Sources: data/regime/latest.json,
+      data/market_state/latest.json, fear-greed parquet. Feeds CPI calibration
+      context alignment; all sources absent-safe.
