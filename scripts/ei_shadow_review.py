@@ -853,10 +853,19 @@ def evaluate_f1d_shadow(df: pd.DataFrame) -> "dict[str, Any]":
                     _q_clusters = qual_mat63["cluster"].to_numpy()
                     _nq_labels = notqual_mat63["stopped_63d"].astype(float).to_numpy()
                     _nq_clusters = notqual_mat63["cluster"].to_numpy()
+                    # A1b fix: the registered flip criterion (registry EI-F1D-RW
+                    # flip_criterion + P2_5_INTERACTION_PREREG.md §6.3) specifies
+                    # one-sided 95% (z=1.645). _wilson_cluster_bootstrap uses
+                    # two-sided idiom (alpha/2, 1-alpha/2 quantiles), so the
+                    # one-sided 95th percentile requires alpha=0.10 here, which
+                    # returns the 5th and 95th percentiles. D_upper is the
+                    # relevant bound for the flip criterion (Wilson_upper < 0).
+                    # NOTE: the anti-chase sibling uses alpha=0.05 (two-sided 95%,
+                    # z≈1.96) per its own registered convention — do not touch it.
                     _w = _wilson_cluster_bootstrap(
                         _q_labels, _q_clusters,
                         _nq_labels, _nq_clusters,
-                        alpha=0.05,  # 95% confidence (z=1.645)
+                        alpha=0.10,  # one-sided 95th percentile (z=1.645) per §6.3
                         n_bootstrap=N_BOOTSTRAP,
                     )
                     wilson_upper_63 = _w.get("D_upper")
@@ -1041,6 +1050,13 @@ def main(argv: list[str] | None = None) -> int:
             "flip_verdict": "NOT FLIP ELIGIBLE — F1D ledger absent or empty; accrual not started",
         }
     else:
+        # A1 fix: join forward outcomes to the F1D ledger before evaluating.
+        # Without this join, stopped_63d/matured_63d columns never exist on the
+        # F1D frame, so D_f, Wilson bounds, the +3.34pp falsification tripwire,
+        # and flip_eligible are permanently None/False. Mirror the anti-chase
+        # call exactly — same horizons, same join helper.
+        log.info("Joining forward outcomes for F1D ledger (horizons=%s)...", HORIZONS)
+        f1d_df = join_forward_outcomes(f1d_df, horizons=HORIZONS)
         log.info("Evaluating F1D shadow criteria...")
         f1d_result = evaluate_f1d_shadow(f1d_df)
         print_f1d_report(f1d_result)
