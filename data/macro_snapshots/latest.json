@@ -1,8 +1,8 @@
 {
   "schema": "macro_snapshot.v1",
-  "asof": "2026-07-05",
+  "asof": "2026-07-06",
   "oldest_component_asof": "2026-07-02",
-  "macro_context_id": "186b40e3a6ddfcba",
+  "macro_context_id": "a3e333211af405c0",
   "labels": {
     "us": {
       "us_quad": "Q1",
@@ -10,8 +10,8 @@
       "us_fused_risk": "risk-on",
       "us_vol_regime": "normalizing",
       "us_risk_radar": "caution",
-      "us_rate_pressure": null,
-      "cross_asset_verdict": "diverge"
+      "us_rate_pressure": "pressure",
+      "cross_asset_verdict": "mixed"
     },
     "market": {
       "market_state_verdict": "RISK_OFF"
@@ -59,7 +59,7 @@
     "data/china_regime/latest.json": "2026-07-03",
     "data/hk_regime/latest.json": "2026-07-03",
     "data/canada_regime/latest.json": "2026-07-03",
-    "data/dispersion/regime.json": "2026-07-05"
+    "data/dispersion/regime.json": "2026-07-06"
   },
   "gaps": [],
   "display_only": true

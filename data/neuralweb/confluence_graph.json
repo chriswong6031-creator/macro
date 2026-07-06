@@ -1,7 +1,7 @@
 {
   "schema": "neuralweb.confluence_graph.v1",
   "artifact_id": "confluence-graph",
-  "asof": "2026-07-05",
+  "asof": "2026-07-06",
   "is_context_only": true,
   "display_only": true,
   "hard_law": "HARD LAW: confluence never gates, never ranks, never raises a priority.  All edges are display_only=True.  Cross-engine hard gates require their own pre-registered gauntlet (China falsification precedent).  Edge promotion beyond display requires a registered gauntlet result in config/qual_ladder.yml.",
@@ -19,7 +19,7 @@
       "type": "engine",
       "label": "altdata_conv",
       "meta": {
-        "n_spine_rows": 12
+        "n_spine_rows": 14
       }
     },
     {
@@ -83,7 +83,7 @@
       "type": "engine",
       "label": "macro_context",
       "meta": {
-        "n_spine_rows": 10
+        "n_spine_rows": 20
       }
     },
     {
@@ -91,7 +91,7 @@
       "type": "engine",
       "label": "options_entry",
       "meta": {
-        "n_spine_rows": 388
+        "n_spine_rows": 403
       }
     },
     {
@@ -124,6 +124,14 @@
       "label": "reflex.cortex_attention",
       "meta": {
         "n_spine_rows": 2
+      }
+    },
+    {
+      "id": "engine:reflex.options_flow_attention",
+      "type": "engine",
+      "label": "reflex.options_flow_attention",
+      "meta": {
+        "n_spine_rows": 1
       }
     },
     {
@@ -1338,6 +1346,274 @@
         "direction": null,
         "onset_date": null
       }
+    },
+    {
+      "id": "entity:REZI",
+      "type": "entity",
+      "label": "REZI",
+      "meta": {}
+    },
+    {
+      "id": "subsector:smarthomesecurity",
+      "type": "subsector",
+      "label": "smarthomesecurity",
+      "meta": {
+        "subtype": "rotation_subsector"
+      }
+    },
+    {
+      "id": "entity:SPGI",
+      "type": "entity",
+      "label": "SPGI",
+      "meta": {}
+    },
+    {
+      "id": "subsector:bigdataproviders",
+      "type": "subsector",
+      "label": "bigdataproviders",
+      "meta": {
+        "subtype": "rotation_subsector"
+      }
+    },
+    {
+      "id": "entity:COIN",
+      "type": "entity",
+      "label": "COIN",
+      "meta": {}
+    },
+    {
+      "id": "subsector:blockchainpayments",
+      "type": "subsector",
+      "label": "blockchainpayments",
+      "meta": {
+        "subtype": "rotation_subsector"
+      }
+    },
+    {
+      "id": "entity:LRN",
+      "type": "entity",
+      "label": "LRN",
+      "meta": {}
+    },
+    {
+      "id": "subsector:educationcurriculum",
+      "type": "subsector",
+      "label": "educationcurriculum",
+      "meta": {
+        "subtype": "rotation_subsector"
+      }
+    },
+    {
+      "id": "entity:MSCI",
+      "type": "entity",
+      "label": "MSCI",
+      "meta": {}
+    },
+    {
+      "id": "entity:CVSA",
+      "type": "entity",
+      "label": "CVSA",
+      "meta": {}
+    },
+    {
+      "id": "entity:AAPL",
+      "type": "entity",
+      "label": "AAPL",
+      "meta": {}
+    },
+    {
+      "id": "subsector:varealityapplications",
+      "type": "subsector",
+      "label": "varealityapplications",
+      "meta": {
+        "subtype": "rotation_subsector"
+      }
+    },
+    {
+      "id": "entity:WMB",
+      "type": "entity",
+      "label": "WMB",
+      "meta": {}
+    },
+    {
+      "id": "subsector:commenergygaslng",
+      "type": "subsector",
+      "label": "commenergygaslng",
+      "meta": {
+        "subtype": "rotation_subsector"
+      }
+    },
+    {
+      "id": "entity:XEL",
+      "type": "entity",
+      "label": "XEL",
+      "meta": {}
+    },
+    {
+      "id": "subsector:energybaseutilities",
+      "type": "subsector",
+      "label": "energybaseutilities",
+      "meta": {
+        "subtype": "rotation_subsector"
+      }
+    },
+    {
+      "id": "entity:TRNO",
+      "type": "entity",
+      "label": "TRNO",
+      "meta": {}
+    },
+    {
+      "id": "subsector:realestatewarehousing",
+      "type": "subsector",
+      "label": "realestatewarehousing",
+      "meta": {
+        "subtype": "rotation_subsector"
+      }
+    },
+    {
+      "id": "entity:AEP",
+      "type": "entity",
+      "label": "AEP",
+      "meta": {}
+    },
+    {
+      "id": "entity:CWEN",
+      "type": "entity",
+      "label": "CWEN",
+      "meta": {}
+    },
+    {
+      "id": "subsector:energycleanutilities",
+      "type": "subsector",
+      "label": "energycleanutilities",
+      "meta": {
+        "subtype": "rotation_subsector"
+      }
+    },
+    {
+      "id": "entity:RNG",
+      "type": "entity",
+      "label": "RNG",
+      "meta": {}
+    },
+    {
+      "id": "subsector:softwarecollaboration",
+      "type": "subsector",
+      "label": "softwarecollaboration",
+      "meta": {
+        "subtype": "rotation_subsector"
+      }
+    },
+    {
+      "id": "entity:CPRI",
+      "type": "entity",
+      "label": "CPRI",
+      "meta": {}
+    },
+    {
+      "id": "subsector:consumerluxury",
+      "type": "subsector",
+      "label": "consumerluxury",
+      "meta": {
+        "subtype": "rotation_subsector"
+      }
+    },
+    {
+      "id": "entity:RL",
+      "type": "entity",
+      "label": "RL",
+      "meta": {}
+    },
+    {
+      "id": "entity:HUBG",
+      "type": "entity",
+      "label": "HUBG",
+      "meta": {}
+    },
+    {
+      "id": "subsector:transportationwarehousing",
+      "type": "subsector",
+      "label": "transportationwarehousing",
+      "meta": {
+        "subtype": "rotation_subsector"
+      }
+    },
+    {
+      "id": "entity:ODFL",
+      "type": "entity",
+      "label": "ODFL",
+      "meta": {}
+    },
+    {
+      "id": "subsector:transportationtrucking",
+      "type": "subsector",
+      "label": "transportationtrucking",
+      "meta": {
+        "subtype": "rotation_subsector"
+      }
+    },
+    {
+      "id": "entity:FCX",
+      "type": "entity",
+      "label": "FCX",
+      "meta": {}
+    },
+    {
+      "id": "subsector:energycleanmaterials",
+      "type": "subsector",
+      "label": "energycleanmaterials",
+      "meta": {
+        "subtype": "rotation_subsector"
+      }
+    },
+    {
+      "id": "entity:TDC",
+      "type": "entity",
+      "label": "TDC",
+      "meta": {}
+    },
+    {
+      "id": "subsector:softwaredataanalytics",
+      "type": "subsector",
+      "label": "softwaredataanalytics",
+      "meta": {
+        "subtype": "rotation_subsector"
+      }
+    },
+    {
+      "id": "entity:CALM",
+      "type": "entity",
+      "label": "CALM",
+      "meta": {}
+    },
+    {
+      "id": "subsector:commagrilivestock",
+      "type": "subsector",
+      "label": "commagrilivestock",
+      "meta": {
+        "subtype": "rotation_subsector"
+      }
+    },
+    {
+      "id": "entity:CLSK",
+      "type": "entity",
+      "label": "CLSK",
+      "meta": {}
+    },
+    {
+      "id": "subsector:fintechblockchain",
+      "type": "subsector",
+      "label": "fintechblockchain",
+      "meta": {
+        "subtype": "rotation_subsector"
+      }
+    },
+    {
+      "id": "entity:FWRD",
+      "type": "entity",
+      "label": "FWRD",
+      "meta": {}
     },
     {
       "id": "macro:fx_dollar",
@@ -4967,6 +5243,36 @@
       "note": "structural: data/subsector_rotation/snapshots.jsonl consumed by scripts/build_subsector_rotation.py"
     },
     {
+      "src": "module:engine/spine.py",
+      "dst": "artifact:subsector-sponsorship-spine",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: engine/spine.py writes data/spine/subsector_sponsorship.parquet"
+    },
+    {
+      "src": "artifact:subsector-sponsorship-spine",
+      "dst": "module:engine/neuralweb/confluence.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/spine/subsector_sponsorship.parquet consumed by engine/neuralweb/confluence.py"
+    },
+    {
+      "src": "artifact:subsector-sponsorship-spine",
+      "dst": "module:scripts/build_stock_library.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/spine/subsector_sponsorship.parquet consumed by scripts/build_stock_library.py"
+    },
+    {
       "src": "module:engine/index_leadership_track.py",
       "dst": "artifact:index-leadership-snapshots",
       "edge_type": "feeds",
@@ -7587,6 +7893,46 @@
       "note": "structural: data/research/missed_hold_study_results.parquet consumed by scripts/research/missed_hold_study.py"
     },
     {
+      "src": "module:scripts/research/build_expect_drift_panel.py",
+      "dst": "artifact:long-hold-expect-drift-panel",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/research/build_expect_drift_panel.py writes data/research/expect_drift_panel.parquet"
+    },
+    {
+      "src": "artifact:long-hold-expect-drift-panel",
+      "dst": "module:scripts/research/build_expect_drift_panel.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/research/expect_drift_panel.parquet consumed by scripts/research/build_expect_drift_panel.py"
+    },
+    {
+      "src": "module:scripts/research/build_expect_drift_panel.py",
+      "dst": "artifact:long-hold-expect-drift-manifest",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/research/build_expect_drift_panel.py writes data/research/expect_drift_panel_manifest.json"
+    },
+    {
+      "src": "artifact:long-hold-expect-drift-manifest",
+      "dst": "module:scripts/research/build_expect_drift_panel.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/research/expect_drift_panel_manifest.json consumed by scripts/research/build_expect_drift_panel.py"
+    },
+    {
       "src": "module:engine/stock_fundamentals.py",
       "dst": "artifact:long-hold-compounder-features",
       "edge_type": "feeds",
@@ -7665,6 +8011,86 @@
       "display_only": true,
       "regime": null,
       "note": "structural: embedded: great_company_trap fields inside site/stockdata/<TICKER>.json consumed by site/stockdata/<TICKER>.json"
+    },
+    {
+      "src": "module:scripts/research/build_insider_lh_panel.py",
+      "dst": "artifact:insider-lh-panel",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/research/build_insider_lh_panel.py writes data/research/insider_lh_panel.parquet"
+    },
+    {
+      "src": "artifact:insider-lh-panel",
+      "dst": "module:scripts/research/insider_lh_ruler_p_study.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/research/insider_lh_panel.parquet consumed by scripts/research/insider_lh_ruler_p_study.py"
+    },
+    {
+      "src": "module:scripts/research/build_insider_lh_panel.py",
+      "dst": "artifact:insider-lh-panel-manifest",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/research/build_insider_lh_panel.py writes data/research/insider_lh_panel_manifest.json"
+    },
+    {
+      "src": "artifact:insider-lh-panel-manifest",
+      "dst": "module:scripts/research/build_insider_lh_panel.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/research/insider_lh_panel_manifest.json consumed by scripts/research/build_insider_lh_panel.py"
+    },
+    {
+      "src": "module:scripts/research/insider_lh_ruler_p_study.py",
+      "dst": "artifact:insider-lh-ruler-p-results",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/research/insider_lh_ruler_p_study.py writes data/research/insider_lh_ruler_p_results.parquet"
+    },
+    {
+      "src": "artifact:insider-lh-ruler-p-results",
+      "dst": "module:scripts/research/insider_lh_ruler_p_study.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/research/insider_lh_ruler_p_results.parquet consumed by scripts/research/insider_lh_ruler_p_study.py"
+    },
+    {
+      "src": "module:engine/capital_allocation.py",
+      "dst": "artifact:capital-allocation-delta",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: engine/capital_allocation.py writes embedded: capital_allocation block inside site/stockdata/<TICKER>.json"
+    },
+    {
+      "src": "artifact:capital-allocation-delta",
+      "dst": "module:site/stockdata/<TICKER>.json",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: embedded: capital_allocation block inside site/stockdata/<TICKER>.json consumed by site/stockdata/<TICKER>.json"
     },
     {
       "src": "module:engine/neuralweb/research_queue.py",
@@ -7967,6 +8393,16 @@
       "note": "structural: <RESEARCH_FACTORY_MONITOR> writes data/research_factory/paper_monitor.jsonl"
     },
     {
+      "src": "module:scripts/build_factor_intelligence_state.py",
+      "dst": "artifact:factor-intelligence-state",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_factor_intelligence_state.py writes data/neuralweb/factor_intelligence_state.json"
+    },
+    {
       "src": "module:scripts/build_forex.py",
       "dst": "artifact:forex-latest",
       "edge_type": "feeds",
@@ -7987,6 +8423,76 @@
       "note": "structural: data/forex/latest.json consumed by engine/neuralweb/world_state.py"
     },
     {
+      "src": "artifact:forex-latest",
+      "dst": "module:engine/neuralweb/cortex.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/forex/latest.json consumed by engine/neuralweb/cortex.py"
+    },
+    {
+      "src": "artifact:forex-latest",
+      "dst": "module:engine/neuralweb/ask_brain.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/forex/latest.json consumed by engine/neuralweb/ask_brain.py"
+    },
+    {
+      "src": "artifact:forex-latest",
+      "dst": "module:scripts/build_site.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/forex/latest.json consumed by scripts/build_site.py"
+    },
+    {
+      "src": "artifact:forex-latest",
+      "dst": "module:admin/neural_web.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/forex/latest.json consumed by admin/neural_web.py"
+    },
+    {
+      "src": "module:scripts/build_factor_intelligence_state.py",
+      "dst": "artifact:site-factor-intelligence-state",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_factor_intelligence_state.py writes site/neuralwebdata/factor_intelligence_state.json"
+    },
+    {
+      "src": "module:scripts/build_factor_intelligence_state.py",
+      "dst": "artifact:factor-state-history",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_factor_intelligence_state.py writes data/factordata/factor_state_history.jsonl"
+    },
+    {
+      "src": "module:scripts/build_factor_intelligence_state.py",
+      "dst": "artifact:fire-coordinates",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_factor_intelligence_state.py writes data/factordata/fire_coordinates.jsonl"
+    },
+    {
       "src": "module:scripts/build_transmission.py",
       "dst": "artifact:transmission-latest",
       "edge_type": "feeds",
@@ -7998,13 +8504,33 @@
     },
     {
       "src": "artifact:transmission-latest",
-      "dst": "module:engine/neuralweb/world_state.py",
+      "dst": "module:engine/neuralweb/cortex.py",
       "edge_type": "feeds",
       "n": null,
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "structural: data/transmission/latest.json consumed by engine/neuralweb/world_state.py"
+      "note": "structural: data/transmission/latest.json consumed by engine/neuralweb/cortex.py"
+    },
+    {
+      "src": "artifact:transmission-latest",
+      "dst": "module:engine/neuralweb/ask_brain.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/transmission/latest.json consumed by engine/neuralweb/ask_brain.py"
+    },
+    {
+      "src": "module:engine/neuralweb/factor_contradictions.py",
+      "dst": "artifact:factor-contradictions-ledger",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: engine/neuralweb/factor_contradictions.py writes data/neuralweb/factor_contradictions.jsonl"
     },
     {
       "src": "module:scripts/build_bonds.py",
@@ -8038,13 +8564,23 @@
     },
     {
       "src": "artifact:commodity-latest",
-      "dst": "module:engine/neuralweb/world_state.py",
+      "dst": "module:engine/neuralweb/cortex.py",
       "edge_type": "feeds",
       "n": null,
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "structural: data/commodity/latest.json consumed by engine/neuralweb/world_state.py"
+      "note": "structural: data/commodity/latest.json consumed by engine/neuralweb/cortex.py"
+    },
+    {
+      "src": "artifact:commodity-latest",
+      "dst": "module:engine/neuralweb/ask_brain.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/commodity/latest.json consumed by engine/neuralweb/ask_brain.py"
     },
     {
       "src": "module:engine/china_run.py",
@@ -8227,6 +8763,16 @@
       "note": "structural: data/macro_snapshots/transitions.jsonl consumed by engine/neuralweb/world_state.py"
     },
     {
+      "src": "module:scripts/build_macro_context.py",
+      "dst": "artifact:macro-context-latest",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_macro_context.py writes data/macro_context/latest.json"
+    },
+    {
       "src": "data/regime/latest.json",
       "dst": "data/market_state/latest.json",
       "edge_type": "contradicts",
@@ -8264,17 +8810,7 @@
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "pair_id=briefing-divergences kind=directional-opposition severity=tension a=32 ticker-level demand-vs-supply divergences b=n_divergences=32, top tickers=['AMZN', 'APTV', 'LVS', 'GM', "
-    },
-    {
-      "src": "data/regime/latest.json:cross_asset_confirm (bonds/FX)",
-      "dst": "data/regime/latest.json:regime (equity)",
-      "edge_type": "contradicts",
-      "n": null,
-      "stable": null,
-      "display_only": true,
-      "regime": null,
-      "note": "pair_id=cross_asset_confirm-diverge kind=directional-opposition severity=tension a=bonds+FX cross-asset leg readings b=cross_asset_confirm verdict=diverge, agree_pct=50"
+      "note": "pair_id=briefing-divergences kind=directional-opposition severity=tension a=35 ticker-level demand-vs-supply divergences b=n_divergences=35, top tickers=['MGM', 'COST', 'HPQ', 'APTV',"
     },
     {
       "src": "engine:altdata",
@@ -8394,6 +8930,214 @@
       "note": "extension detector not wired on the board ledger — counts pending; display-only declaration per RO-6. Pin context available per-name via options_entry state (pin_risk, wall distances)."
     },
     {
+      "src": "entity:REZI",
+      "dst": "subsector:smarthomesecurity",
+      "edge_type": "sponsorship_support",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "sponsorship_state=CONFIRMED_LEADERSHIP confidence_tier=medium direction=1 (display-only; sponsorship_score not aggregated)",
+      "sponsorship_score": 0.872,
+      "confidence_tier": "medium",
+      "direction": 1
+    },
+    {
+      "src": "entity:SPGI",
+      "dst": "subsector:bigdataproviders",
+      "edge_type": "sponsorship_support",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "sponsorship_state=TAILWIND confidence_tier=high direction=1 (display-only; sponsorship_score not aggregated)",
+      "sponsorship_score": 1.179,
+      "confidence_tier": "high",
+      "direction": 1
+    },
+    {
+      "src": "entity:COIN",
+      "dst": "subsector:blockchainpayments",
+      "edge_type": "sponsorship_support",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "sponsorship_state=CONFIRMED_LEADERSHIP confidence_tier=medium direction=1 (display-only; sponsorship_score not aggregated)",
+      "sponsorship_score": 0.994,
+      "confidence_tier": "medium",
+      "direction": 1
+    },
+    {
+      "src": "entity:LRN",
+      "dst": "subsector:educationcurriculum",
+      "edge_type": "sponsorship_support",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "sponsorship_state=TAILWIND confidence_tier=medium direction=1 (display-only; sponsorship_score not aggregated)",
+      "sponsorship_score": 1.218,
+      "confidence_tier": "medium",
+      "direction": 1
+    },
+    {
+      "src": "entity:MSCI",
+      "dst": "subsector:bigdataproviders",
+      "edge_type": "sponsorship_support",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "sponsorship_state=TAILWIND confidence_tier=high direction=1 (display-only; sponsorship_score not aggregated)",
+      "sponsorship_score": 1.179,
+      "confidence_tier": "high",
+      "direction": 1
+    },
+    {
+      "src": "entity:CVSA",
+      "dst": "subsector:educationcurriculum",
+      "edge_type": "sponsorship_support",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "sponsorship_state=TAILWIND confidence_tier=medium direction=1 (display-only; sponsorship_score not aggregated)",
+      "sponsorship_score": 1.218,
+      "confidence_tier": "medium",
+      "direction": 1
+    },
+    {
+      "src": "entity:AAPL",
+      "dst": "subsector:varealityapplications",
+      "edge_type": "sponsorship_support",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "sponsorship_state=TAILWIND confidence_tier=medium direction=1 (display-only; sponsorship_score not aggregated)",
+      "sponsorship_score": 2.124,
+      "confidence_tier": "medium",
+      "direction": 1
+    },
+    {
+      "src": "entity:TRNO",
+      "dst": "subsector:realestatewarehousing",
+      "edge_type": "sponsorship_support",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "sponsorship_state=CONFIRMED_LEADERSHIP confidence_tier=medium direction=1 (display-only; sponsorship_score not aggregated)",
+      "sponsorship_score": 0.233,
+      "confidence_tier": "medium",
+      "direction": 1
+    },
+    {
+      "src": "entity:RNG",
+      "dst": "subsector:softwarecollaboration",
+      "edge_type": "sponsorship_contradicts",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "sponsorship_state=HEADWIND confidence_tier=medium direction=1 (display-only; sponsorship_score not aggregated)",
+      "sponsorship_score": 0.296,
+      "confidence_tier": "medium",
+      "direction": 1
+    },
+    {
+      "src": "entity:CPRI",
+      "dst": "subsector:consumerluxury",
+      "edge_type": "sponsorship_support",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "sponsorship_state=CONFIRMED_LEADERSHIP confidence_tier=medium direction=1 (display-only; sponsorship_score not aggregated)",
+      "sponsorship_score": 0.055,
+      "confidence_tier": "medium",
+      "direction": 1
+    },
+    {
+      "src": "entity:RL",
+      "dst": "subsector:consumerluxury",
+      "edge_type": "sponsorship_support",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "sponsorship_state=CONFIRMED_LEADERSHIP confidence_tier=medium direction=1 (display-only; sponsorship_score not aggregated)",
+      "sponsorship_score": 0.055,
+      "confidence_tier": "medium",
+      "direction": 1
+    },
+    {
+      "src": "entity:HUBG",
+      "dst": "subsector:transportationwarehousing",
+      "edge_type": "sponsorship_support",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "sponsorship_state=TAILWIND confidence_tier=medium direction=1 (display-only; sponsorship_score not aggregated)",
+      "sponsorship_score": 1.389,
+      "confidence_tier": "medium",
+      "direction": 1
+    },
+    {
+      "src": "entity:ODFL",
+      "dst": "subsector:transportationtrucking",
+      "edge_type": "sponsorship_contradicts",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "sponsorship_state=HEADWIND confidence_tier=high direction=1 (display-only; sponsorship_score not aggregated)",
+      "sponsorship_score": -0.69,
+      "confidence_tier": "high",
+      "direction": 1
+    },
+    {
+      "src": "entity:FCX",
+      "dst": "subsector:energycleanmaterials",
+      "edge_type": "sponsorship_contradicts",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "sponsorship_state=HEADWIND confidence_tier=medium direction=1 (display-only; sponsorship_score not aggregated)",
+      "sponsorship_score": -1.329,
+      "confidence_tier": "medium",
+      "direction": 1
+    },
+    {
+      "src": "entity:CLSK",
+      "dst": "subsector:fintechblockchain",
+      "edge_type": "sponsorship_contradicts",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "sponsorship_state=HEADWIND confidence_tier=medium direction=-1 (display-only; sponsorship_score not aggregated)",
+      "sponsorship_score": -2.45,
+      "confidence_tier": "medium",
+      "direction": -1
+    },
+    {
+      "src": "entity:FWRD",
+      "dst": "subsector:transportationwarehousing",
+      "edge_type": "sponsorship_support",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "sponsorship_state=TAILWIND confidence_tier=medium direction=-1 (display-only; sponsorship_score not aggregated)",
+      "sponsorship_score": 1.389,
+      "confidence_tier": "medium",
+      "direction": -1
+    },
+    {
       "src": "macro:rates_transmission",
       "dst": "sector:xlb",
       "edge_type": "headwind",
@@ -8432,40 +9176,19 @@
       "display_only": true,
       "regime": null,
       "note": "rates headwind: asset=XLV net=-0.327 verdict=headwind source_lobe=rates_transmission asof=2026-07-02"
-    },
-    {
-      "src": "macro:fx_dollar",
-      "dst": "regime:Q1",
-      "edge_type": "contradicts",
-      "n": null,
-      "stable": null,
-      "display_only": true,
-      "regime": null,
-      "note": "cross_asset diverge: fx_dollar contradicts regime:Q1 asof=2026-07-02 source_lobe=contradictions/cross_asset_confirm"
-    },
-    {
-      "src": "macro:rates_credit",
-      "dst": "regime:Q1",
-      "edge_type": "contradicts",
-      "n": null,
-      "stable": null,
-      "display_only": true,
-      "regime": null,
-      "note": "cross_asset diverge: rates_credit contradicts regime:Q1 asof=2026-07-02 source_lobe=contradictions/cross_asset_confirm"
     }
   ],
   "contradiction_summary": {
-    "n": 5,
+    "n": 4,
     "by_severity": {
       "note": 2,
-      "tension": 3
+      "tension": 2
     },
     "top_pair_ids": [
       "regime-vs-market_state",
       "regime_vector-vs-risk_radar",
       "vol_regime-vs-market_state",
-      "briefing-divergences",
-      "cross_asset_confirm-diverge"
+      "briefing-divergences"
     ]
   },
   "contradiction_records": [
@@ -8521,32 +9244,16 @@
       "pair_id": "briefing-divergences",
       "a": {
         "artifact": "site/intelligence/by_ticker.json (demand/tape)",
-        "reading": "32 ticker-level demand-vs-supply divergences"
+        "reading": "35 ticker-level demand-vs-supply divergences"
       },
       "b": {
         "artifact": "site/intelligence/briefing.json",
-        "reading": "n_divergences=32, top tickers=['AMZN', 'APTV', 'LVS', 'GM', 'MGM']"
+        "reading": "n_divergences=35, top tickers=['MGM', 'COST', 'HPQ', 'APTV', 'LVS']"
       },
       "kind": "directional-opposition",
       "severity": "tension",
       "as_of": "2026-07-06",
-      "note": "32 ticker-level demand (news_dir) vs supply (alt+radar) direction disagreements detected by engine/briefing.py.  Top 5: AMZN, APTV, LVS, GM, MGM.  These are pre-computed; no recomputation here.  Display-only context (news_dir×supply_dir sign-product < 0 or early_edge/crowded_top labels).",
-      "display_only": true
-    },
-    {
-      "pair_id": "cross_asset_confirm-diverge",
-      "a": {
-        "artifact": "data/regime/latest.json:cross_asset_confirm (bonds/FX)",
-        "reading": "bonds+FX cross-asset leg readings"
-      },
-      "b": {
-        "artifact": "data/regime/latest.json:regime (equity)",
-        "reading": "cross_asset_confirm verdict=diverge, agree_pct=50"
-      },
-      "kind": "directional-opposition",
-      "severity": "tension",
-      "as_of": "2026-07-02",
-      "note": "cross_asset_confirm signals 'diverge': bonds/FX and equity readings disagree.  Bonds/FX diverge from the equity read — fast-family caution the equity gauges don't yet show (credit).  Note: MOVE-vs-VIX, dollar/EM-FX, FX carry are COINCIDENT not leading (engine/cross_asset_confirm.py:15-20).  Display-only macro context.",
+      "note": "35 ticker-level demand (news_dir) vs supply (alt+radar) direction disagreements detected by engine/briefing.py.  Top 5: MGM, COST, HPQ, APTV, LVS.  These are pre-computed; no recomputation here.  Display-only context (news_dir×supply_dir sign-product < 0 or early_edge/crowded_top labels).",
       "display_only": true
     }
   ],
@@ -8556,7 +9263,7 @@
   ],
   "schema_version": 1,
   "produced_by": "engine/neuralweb/confluence.py",
-  "produced_at": "2026-07-06T09:27:48Z",
-  "inputs_hash": "sha256:0ae7a112e9dcd13b75308d9d98cb62d4f45bf59b956aede7366ec10dfb14d3cc",
+  "produced_at": "2026-07-06T09:47:27Z",
+  "inputs_hash": "sha256:80bfc0e0111cbdbe270b3b153faf06650cd84e8519c16a88811eb2af91a29f72",
   "tier": "display"
 }

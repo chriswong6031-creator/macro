@@ -20,7 +20,9 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | institutional-sector-intelligence | 2 |
 | intl-fix | 1 |
 | long-hold | 16 |
+| macro-context-rail | 11 |
 | neural-web | 28 |
+| nw-macro-context-rail | 3 |
 | nw-mastermind-bridge | 2 |
 | nw-rails | 3 |
 | options-alpha | 7 |
@@ -37,8 +39,8 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 89 |
-| infrastructure | 40 |
+| display | 102 |
+| infrastructure | 41 |
 | scored | 4 |
 | shadow | 38 |
 
@@ -46,7 +48,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 165 |
+| git | 179 |
 | gitignored-local | 4 |
 | r2 | 2 |
 
@@ -163,6 +165,22 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | long-hold-labels-manifest | `data/research/long_hold_labels_manifest.json` | json | on-demand | display | 1 | 0 |
 | moat-falsifier-sensors | `embedded: per-ticker moat sensor fields inside site/stockdata/<TICKER>.json` | json | daily-engine | display | 1 | 0 |
 
+### macro-context-rail
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| forex-latest | `data/forex/latest.json` | json | daily-engine | display | 5 | 0 |
+| commodity-latest | `data/commodity/latest.json` | json | daily-engine | display | 2 | 0 |
+| transmission-latest | `data/transmission/latest.json` | json | daily-engine | display | 2 | 0 |
+| bond-health | `data/bonds/bond_health.json` | json | daily-engine | display | 1 | 0 |
+| canada-regime-latest | `data/canada_regime/latest.json` | json | daily-engine | display | 1 | 0 |
+| china-regime-latest | `data/china_regime/latest.json` | json | asia-close | display | 1 | 0 |
+| hk-regime-latest | `data/hk_regime/latest.json` | json | asia-close | display | 1 | 0 |
+| site-alerts-triage | `site/factordata/alerts_triage.json` | json | daily-engine | display | 1 | 0 |
+| site-factor-series | `site/factordata/factor_series.json` | json | daily-engine | display | 1 | 0 |
+| site-intelligence-briefing | `site/intelligence/briefing.json` | json | daily-engine | display | 1 | 0 |
+| macro-context-latest | `data/macro_context/latest.json` | json | daily-engine | display | 0 | 0 |
+
 ### neural-web
 
 | id | path | format | cadence | tier | consumers | external consumers |
@@ -195,6 +213,14 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | research-queue | `data/neuralweb/research_queue.json` | json | on-demand | infrastructure | 0 | 0 |
 | risk-radar-review-log | `data/risk_radar/review_log.jsonl` | jsonl | weekly | display | 0 | 0 |
 | rule-experiment-summaries | `data/rule_experiments/results/<EXP_ID>_summary.json` | json | on-demand | display | 0 | 0 |
+
+### nw-macro-context-rail
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| macro-snapshots-latest | `data/macro_snapshots/latest.json` | json | daily-engine | display | 1 | 0 |
+| macro-snapshots-ledger | `data/macro_snapshots/ledger.parquet` | parquet | daily-engine | infrastructure | 1 | 0 |
+| macro-transitions | `data/macro_snapshots/transitions.jsonl` | jsonl | daily-engine | display | 1 | 0 |
 
 ### nw-mastermind-bridge
 
@@ -555,6 +581,13 @@ Artifacts below have `known_extra_writers` — additional code paths that write 
 - **declared producer:** `engine/board_ledger.py`
 - **extra writers:**
   - engine/hk_run.py — calls board_ledger via lane='HK'; store_df.to_parquet L44
+
+### canada-regime-latest
+
+- **path:** `data/canada_regime/latest.json`
+- **declared producer:** `engine/canada_run.py`
+- **extra writers:**
+  - scripts/build_vector.py — invokes build_canada.main() as a side-effect hook (build_canada is called from build_vector; see scripts/build_vector.py:3116-3117)
 
 ### capital-allocation-delta
 
