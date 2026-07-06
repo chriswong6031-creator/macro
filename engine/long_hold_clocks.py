@@ -203,6 +203,19 @@ def thesis_clock_from_panel(
     prev_rev: float | None = None
 
     for row in panel_rows:   # rows already ascending by fy
+        # PIT guard: skip rows whose filing is not yet available as of ref.
+        # asof_date encodes when this period's filing became available in the
+        # panel (period_end + ~120d lag).  Rows without asof_date pass through
+        # (legacy data without the column is treated as already available).
+        raw_asof = row.get("asof_date")
+        if raw_asof is not None:
+            try:
+                asof = raw_asof.date() if hasattr(raw_asof, "date") else date.fromisoformat(str(raw_asof)[:10])
+                if asof > ref:
+                    continue
+            except (ValueError, TypeError):
+                pass
+
         has_positive = _positive_delta(row, prev_rev)
         raw_pe = row.get("period_end")
         if has_positive and raw_pe is not None:
@@ -217,22 +230,31 @@ def thesis_clock_from_panel(
                     best_period_end = pe
             except (ValueError, TypeError):
                 pass
-        # Advance prev_rev for the next iteration (revenue growing criterion)
-        prev_rev = _num(row.get("revenue")) or prev_rev
+        # Advance prev_rev for the next iteration (revenue growing criterion).
+        # Distinguish 0.0 (valid) from missing (None) so a zero-revenue row
+        # does not silently retain the prior year's value.
+        v_rev = _num(row.get("revenue"))
+        if v_rev is not None:
+            prev_rev = v_rev
 
     if best_period_end is None:
         return None
 
-    days_since = (ref - best_period_end).days
+    # Clamp days_since at 0 — a negative value indicates a future-dated
+    # period_end (data error); show 0 rather than a misleading negative.
+    days_since = max(0, (ref - best_period_end).days)
     return {
         "date_last_confirmation": best_period_end.isoformat(),
         "days_since": days_since,
         "definition_version": "v1",
         "definition_note": (
-            "Days since latest EDGAR fiscal-period-end with positive fundamental delta. "
+            "Days since latest EDGAR fiscal-period-end (PIT: asof_date <= today) "
+            "with positive fundamental delta. "
             "Positive delta (v1): ROA improving OR CFO > 0 OR revenue growing vs prior year. "
-            "Source: data/edgar/fundamentals_panel.parquet (period_end + 120d filing lag; "
-            "PIT via asof_date). Display-only; not a validated signal."
+            "Note: CFO > 0 holds for ~94% of rows, so for most names this field reflects "
+            "days since the latest available filing period rather than a discriminating "
+            "fundamental confirmation. "
+            "Source: data/edgar/fundamentals_panel.parquet. Display-only; not a validated signal."
         ),
         "_horizon_role": "hold_thesis",
         "_display_only": True,
