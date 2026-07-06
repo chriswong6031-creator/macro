@@ -1,8 +1,8 @@
 {
   "schema": "altdata.by_ticker.v2",
-  "as_of": "2026-07-05",
-  "generated_utc": "2026-07-05T23:07:18.821576+00:00",
-  "n_tickers": 4849,
+  "as_of": "2026-07-06",
+  "generated_utc": "2026-07-06T00:05:07.515247+00:00",
+  "n_tickers": 4848,
   "note": "Per-ticker weighted alt-data rollup. convergence_score = distinct independent channels (count); weighted_score ranks by channel quality. Donors / position-size recorded as context, never a voting channel.",
   "tickers": {
     "TDG": {
@@ -123,18 +123,6 @@
       "trump_linked": false,
       "affiliated": false
     },
-    "CARR": {
-      "ticker": "CARR",
-      "channels": [
-        "congress_cluster"
-      ],
-      "weighted_score": 0.8,
-      "congress_net": 9,
-      "congress_members": 3,
-      "convergence_score": 1,
-      "trump_linked": false,
-      "affiliated": false
-    },
     "VLTO": {
       "ticker": "VLTO",
       "channels": [
@@ -188,6 +176,18 @@
       "clinical_phase3_starts": 1,
       "clinical_halts": 0,
       "convergence_score": 4,
+      "trump_linked": false,
+      "affiliated": false
+    },
+    "CARR": {
+      "ticker": "CARR",
+      "channels": [
+        "congress_buy"
+      ],
+      "weighted_score": 0.45,
+      "congress_net": 7,
+      "congress_members": 2,
+      "convergence_score": 1,
       "trump_linked": false,
       "affiliated": false
     },
@@ -583,15 +583,6 @@
       "trump_linked": false,
       "affiliated": false
     },
-    "KRC": {
-      "ticker": "KRC",
-      "channels": [],
-      "weighted_score": 0,
-      "lobbying_usd": 60000.0,
-      "convergence_score": 0,
-      "trump_linked": false,
-      "affiliated": false
-    },
     "ALHC": {
       "ticker": "ALHC",
       "channels": [],
@@ -692,6 +683,17 @@
       "weighted_score": 0,
       "lobbying_usd": 0.0,
       "convergence_score": 0,
+      "trump_linked": false,
+      "affiliated": false
+    },
+    "HL": {
+      "ticker": "HL",
+      "channels": [
+        "special_situation"
+      ],
+      "weighted_score": 0.4,
+      "lobbying_usd": 0.0,
+      "convergence_score": 1,
       "trump_linked": false,
       "affiliated": false
     },
@@ -30508,16 +30510,6 @@
     },
     "GOLL4": {
       "ticker": "GOLL4",
-      "channels": [
-        "special_situation"
-      ],
-      "weighted_score": 0.4,
-      "convergence_score": 1,
-      "trump_linked": false,
-      "affiliated": false
-    },
-    "HL": {
-      "ticker": "HL",
       "channels": [
         "special_situation"
       ],

@@ -1,6 +1,6 @@
 {
-  "generated_utc": "2026-07-05T23:07:12.682084+00:00",
-  "as_of": "2026-07-05",
+  "generated_utc": "2026-07-06T00:05:00.876726+00:00",
+  "as_of": "2026-07-06",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
   "note": "Deterministic alt-data signals + normalized event feed for the reasoning brain. Display/context-only \u2014 not a scored axis.",
@@ -5996,15 +5996,6 @@
           "parties": "D"
         },
         {
-          "ticker": "CARR",
-          "net": 9,
-          "buys": 9,
-          "sells": 0,
-          "members": 3,
-          "est_usd": 121004.0,
-          "parties": "D/Democratic/R"
-        },
-        {
           "ticker": "VLTO",
           "net": 9,
           "buys": 9,
@@ -6038,6 +6029,15 @@
           "sells": 2,
           "members": 3,
           "est_usd": 206004.0,
+          "parties": "Democratic/R"
+        },
+        {
+          "ticker": "CARR",
+          "net": 7,
+          "buys": 7,
+          "sells": 0,
+          "members": 2,
+          "est_usd": 105004.0,
           "parties": "Democratic/R"
         },
         {
@@ -43775,13 +43775,6 @@
         "top_issue": "Taxation/Internal Revenue Code"
       },
       {
-        "ticker": "KRC",
-        "spend_usd": 60000.0,
-        "filings": 1,
-        "spike_x": null,
-        "top_issue": "Veterans"
-      },
-      {
         "ticker": "ALHC",
         "spend_usd": 45000.0,
         "filings": 2,
@@ -43857,6 +43850,13 @@
         "filings": 1,
         "spike_x": null,
         "top_issue": "Defense"
+      },
+      {
+        "ticker": "HL",
+        "spend_usd": 0.0,
+        "filings": 1,
+        "spike_x": null,
+        "top_issue": "Natural Resources"
       }
     ],
     "offexchange": [

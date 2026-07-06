@@ -1019,6 +1019,11 @@
   .pc-shaken{background:color-mix(in srgb,var(--warn) 10%,transparent);color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 28%,transparent)}
   /* W9-A sector-capitulating safety chip (display-only; no rank power) */
   .nb-sector-cap{flex:none;font-size:8px;font-weight:700;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap;background:color-mix(in srgb,var(--warn) 8%,transparent);color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 22%,transparent)}
+  /* W1.5 earnings-blackout chip (display-only; no rank power; hygiene context) */
+  .nb-earn-soon{flex:none;font-size:8px;font-weight:700;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap;cursor:help;background:color-mix(in srgb,var(--warn) 10%,transparent);color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 28%,transparent)}
+  /* W1.5 board-level suppressed-today note + stale-store warning */
+  .nb-eb-note{font-size:11px;padding:5px 11px;margin:4px 0;border-radius:6px;color:var(--warn);border:1px dashed color-mix(in srgb,var(--warn) 35%,var(--line));background:color-mix(in srgb,var(--warn) 5%,transparent);cursor:help}
+  .nb-eb-stale{color:var(--muted);border-color:var(--line);background:transparent}
   /* W5b liquidity chip (display-only; no rank/gate power) */
   .nb-liq{flex:none;font-size:8px;font-weight:700;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap;cursor:help}
   .nb-liq.liq-deep{color:var(--up);background:color-mix(in srgb,var(--up) 9%,transparent);border:1px solid color-mix(in srgb,var(--up) 28%,transparent)}
@@ -1922,6 +1927,8 @@
         
       </div>
       
+      
+      
       <div class="nbgrid" data-showmore-rows="3">
       
       
@@ -1947,6 +1954,9 @@
             
             
             <span class="nb-hold hold-intact" data-tip-en="Base 0d · inv $83.63 · W6-C hold tracker (display-only). INTACT=basing below +5% · LAUNCHED=extended or overbought · BROKEN=closed below trough." data-tip-zh="基础期0天 · 止损 $83.63。仅供参考。"><span class="l-en">Base 0d</span><span class="l-zh">筑底0天</span></span>
+            
+            
+            
             
             
             <span class="nb-lane lane-continuation" data-tip-en="Continuation lane — ARMED-tier: weekly trend already rising, 3-day/daily re-triggering. Relabeled from 'trend' per P2.4 (H-MISLABEL: |Δ|=2.79pp vs PRIME, BH q=0.12, below 5pp materiality). No rank change." data-tip-zh="延续通道——ARMED层级：周线趋势已上行，3日/日线再触发。依P2.4从「趋势」重标（H-MISLABEL：|Δ|=2.79pp vs PRIME，BH q=0.12，低于5pp重要性阈值）。不影响排名。"><span class="l-en">Continuation</span><span class="l-zh">延续</span></span>
@@ -2106,6 +2116,9 @@
             <span class="nb-hold hold-intact" data-tip-en="Base 0d · inv $93.19 · W6-C hold tracker (display-only). INTACT=basing below +5% · LAUNCHED=extended or overbought · BROKEN=closed below trough." data-tip-zh="基础期0天 · 止损 $93.19。仅供参考。"><span class="l-en">Base 0d</span><span class="l-zh">筑底0天</span></span>
             
             
+            
+            
+            
             <span class="nb-lane lane-continuation" data-tip-en="Continuation lane — ARMED-tier: weekly trend already rising, 3-day/daily re-triggering. Relabeled from 'trend' per P2.4 (H-MISLABEL: |Δ|=2.79pp vs PRIME, BH q=0.12, below 5pp materiality). No rank change." data-tip-zh="延续通道——ARMED层级：周线趋势已上行，3日/日线再触发。依P2.4从「趋势」重标（H-MISLABEL：|Δ|=2.79pp vs PRIME，BH q=0.12，低于5pp重要性阈值）。不影响排名。"><span class="l-en">Continuation</span><span class="l-zh">延续</span></span>
             
             
@@ -2253,6 +2266,9 @@
             <span class="nb-coiled fire"><span class="l-en">⚡ Coiled·FIRE</span><span class="l-zh">⚡ 蓄势·触发</span></span>
             
             <span class="nb-hold hold-intact" data-tip-en="Base 17d · inv $21.64 · W6-C hold tracker (display-only). INTACT=basing below +5% · LAUNCHED=extended or overbought · BROKEN=closed below trough." data-tip-zh="基础期17天 · 止损 $21.64。仅供参考。"><span class="l-en">Base 17d</span><span class="l-zh">筑底17天</span></span>
+            
+            
+            
             
             
             <span class="nb-lane lane-continuation" data-tip-en="Continuation lane — ARMED-tier: weekly trend already rising, 3-day/daily re-triggering. Relabeled from 'trend' per P2.4 (H-MISLABEL: |Δ|=2.79pp vs PRIME, BH q=0.12, below 5pp materiality). No rank change." data-tip-zh="延续通道——ARMED层级：周线趋势已上行，3日/日线再触发。依P2.4从「趋势」重标（H-MISLABEL：|Δ|=2.79pp vs PRIME，BH q=0.12，低于5pp重要性阈值）。不影响排名。"><span class="l-en">Continuation</span><span class="l-zh">延续</span></span>
@@ -2426,6 +2442,9 @@
             <span class="nb-hold hold-launched" data-tip-en="Base 11d · inv $390.93 · W6-C hold tracker (display-only). INTACT=basing below +5% · LAUNCHED=extended or overbought · BROKEN=closed below trough." data-tip-zh="基础期11天 · 止损 $390.93。仅供参考。"><span class="l-en">↑ Launched</span><span class="l-zh">↑ 突破</span></span>
             
             
+            
+            
+            
             <span class="nb-lane lane-continuation" data-tip-en="Continuation lane — ARMED-tier: weekly trend already rising, 3-day/daily re-triggering. Relabeled from 'trend' per P2.4 (H-MISLABEL: |Δ|=2.79pp vs PRIME, BH q=0.12, below 5pp materiality). No rank change." data-tip-zh="延续通道——ARMED层级：周线趋势已上行，3日/日线再触发。依P2.4从「趋势」重标（H-MISLABEL：|Δ|=2.79pp vs PRIME，BH q=0.12，低于5pp重要性阈值）。不影响排名。"><span class="l-en">Continuation</span><span class="l-zh">延续</span></span>
             
             
@@ -2593,6 +2612,9 @@
             <span class="nb-hold hold-intact" data-tip-en="Base 3d · inv $25.99 · W6-C hold tracker (display-only). INTACT=basing below +5% · LAUNCHED=extended or overbought · BROKEN=closed below trough." data-tip-zh="基础期3天 · 止损 $25.99。仅供参考。"><span class="l-en">Base 3d</span><span class="l-zh">筑底3天</span></span>
             
             
+            
+            
+            
             <span class="nb-lane lane-bottoming" data-tip-en="Bottoming lane — PRIME-equivalent: fresh base setup entering from washout (weekly just turning up). P2.4 v2 label." data-tip-zh="筑底通道——PRIME等级：从洗盘底部新鲜起步（周线刚刚转上）。P2.4 v2标签。"><span class="l-en">Bottoming</span><span class="l-zh">筑底</span></span>
             
             
@@ -2738,6 +2760,9 @@
             <span class="nb-hold hold-launched" data-tip-en="Base 11d · inv $61.71 · W6-C hold tracker (display-only). INTACT=basing below +5% · LAUNCHED=extended or overbought · BROKEN=closed below trough." data-tip-zh="基础期11天 · 止损 $61.71。仅供参考。"><span class="l-en">↑ Launched</span><span class="l-zh">↑ 突破</span></span>
             
             
+            
+            
+            
             <span class="nb-lane lane-bottoming" data-tip-en="Bottoming lane — PRIME-equivalent: fresh base setup entering from washout (weekly just turning up). P2.4 v2 label." data-tip-zh="筑底通道——PRIME等级：从洗盘底部新鲜起步（周线刚刚转上）。P2.4 v2标签。"><span class="l-en">Bottoming</span><span class="l-zh">筑底</span></span>
             
             
@@ -2880,6 +2905,9 @@
             
             
             <span class="nb-hold hold-launched" data-tip-en="Base 72d · inv $19.84 · W6-C hold tracker (display-only). INTACT=basing below +5% · LAUNCHED=extended or overbought · BROKEN=closed below trough." data-tip-zh="基础期72天 · 止损 $19.84。仅供参考。"><span class="l-en">↑ Launched</span><span class="l-zh">↑ 突破</span></span>
+            
+            
+            
             
             
             <span class="nb-lane lane-continuation" data-tip-en="Continuation lane — ARMED-tier: weekly trend already rising, 3-day/daily re-triggering. Relabeled from 'trend' per P2.4 (H-MISLABEL: |Δ|=2.79pp vs PRIME, BH q=0.12, below 5pp materiality). No rank change." data-tip-zh="延续通道——ARMED层级：周线趋势已上行，3日/日线再触发。依P2.4从「趋势」重标（H-MISLABEL：|Δ|=2.79pp vs PRIME，BH q=0.12，低于5pp重要性阈值）。不影响排名。"><span class="l-en">Continuation</span><span class="l-zh">延续</span></span>
@@ -3031,6 +3059,9 @@
             <span class="nb-hold hold-intact" data-tip-en="Base 0d · inv $52.01 · W6-C hold tracker (display-only). INTACT=basing below +5% · LAUNCHED=extended or overbought · BROKEN=closed below trough." data-tip-zh="基础期0天 · 止损 $52.01。仅供参考。"><span class="l-en">Base 0d</span><span class="l-zh">筑底0天</span></span>
             
             
+            
+            
+            
             <span class="nb-lane lane-continuation" data-tip-en="Continuation lane — ARMED-tier: weekly trend already rising, 3-day/daily re-triggering. Relabeled from 'trend' per P2.4 (H-MISLABEL: |Δ|=2.79pp vs PRIME, BH q=0.12, below 5pp materiality). No rank change." data-tip-zh="延续通道——ARMED层级：周线趋势已上行，3日/日线再触发。依P2.4从「趋势」重标（H-MISLABEL：|Δ|=2.79pp vs PRIME，BH q=0.12，低于5pp重要性阈值）。不影响排名。"><span class="l-en">Continuation</span><span class="l-zh">延续</span></span>
             
             
@@ -3178,6 +3209,9 @@
             
             
             <span class="nb-hold hold-intact" data-tip-en="Base 0d · inv $183.53 · W6-C hold tracker (display-only). INTACT=basing below +5% · LAUNCHED=extended or overbought · BROKEN=closed below trough." data-tip-zh="基础期0天 · 止损 $183.53。仅供参考。"><span class="l-en">Base 0d</span><span class="l-zh">筑底0天</span></span>
+            
+            
+            
             
             
             <span class="nb-lane lane-bottoming" data-tip-en="Bottoming lane — PRIME-equivalent: fresh base setup entering from washout (weekly just turning up). P2.4 v2 label." data-tip-zh="筑底通道——PRIME等级：从洗盘底部新鲜起步（周线刚刚转上）。P2.4 v2标签。"><span class="l-en">Bottoming</span><span class="l-zh">筑底</span></span>
@@ -3336,6 +3370,9 @@
             <span class="nb-hold hold-intact" data-tip-en="Base 11d · inv $44.33 · W6-C hold tracker (display-only). INTACT=basing below +5% · LAUNCHED=extended or overbought · BROKEN=closed below trough." data-tip-zh="基础期11天 · 止损 $44.33。仅供参考。"><span class="l-en">Base 11d</span><span class="l-zh">筑底11天</span></span>
             
             
+            
+            
+            
             <span class="nb-lane lane-bottoming" data-tip-en="Bottoming lane — PRIME-equivalent: fresh base setup entering from washout (weekly just turning up). P2.4 v2 label." data-tip-zh="筑底通道——PRIME等级：从洗盘底部新鲜起步（周线刚刚转上）。P2.4 v2标签。"><span class="l-en">Bottoming</span><span class="l-zh">筑底</span></span>
             
             
@@ -3489,6 +3526,9 @@
             <span class="nb-hold hold-intact" data-tip-en="Base 3d · inv $8.29 · W6-C hold tracker (display-only). INTACT=basing below +5% · LAUNCHED=extended or overbought · BROKEN=closed below trough." data-tip-zh="基础期3天 · 止损 $8.29。仅供参考。"><span class="l-en">Base 3d</span><span class="l-zh">筑底3天</span></span>
             
             
+            
+            
+            
             <span class="nb-lane lane-bottoming" data-tip-en="Bottoming lane — PRIME-equivalent: fresh base setup entering from washout (weekly just turning up). P2.4 v2 label." data-tip-zh="筑底通道——PRIME等级：从洗盘底部新鲜起步（周线刚刚转上）。P2.4 v2标签。"><span class="l-en">Bottoming</span><span class="l-zh">筑底</span></span>
             
             
@@ -3631,6 +3671,9 @@
             
             
             <span class="nb-hold hold-launched" data-tip-en="Base 6d · inv $115.40 · W6-C hold tracker (display-only). INTACT=basing below +5% · LAUNCHED=extended or overbought · BROKEN=closed below trough." data-tip-zh="基础期6天 · 止损 $115.40。仅供参考。"><span class="l-en">↑ Launched</span><span class="l-zh">↑ 突破</span></span>
+            
+            
+            
             
             
             <span class="nb-lane lane-bottoming" data-tip-en="Bottoming lane — PRIME-equivalent: fresh base setup entering from washout (weekly just turning up). P2.4 v2 label." data-tip-zh="筑底通道——PRIME等级：从洗盘底部新鲜起步（周线刚刚转上）。P2.4 v2标签。"><span class="l-en">Bottoming</span><span class="l-zh">筑底</span></span>
@@ -3786,6 +3829,9 @@
             <span class="nb-hold hold-launched" data-tip-en="Base 58d · inv $56.47 · W6-C hold tracker (display-only). INTACT=basing below +5% · LAUNCHED=extended or overbought · BROKEN=closed below trough." data-tip-zh="基础期58天 · 止损 $56.47。仅供参考。"><span class="l-en">↑ Launched</span><span class="l-zh">↑ 突破</span></span>
             
             
+            
+            
+            
             <span class="nb-lane lane-bottoming" data-tip-en="Bottoming lane — PRIME-equivalent: fresh base setup entering from washout (weekly just turning up). P2.4 v2 label." data-tip-zh="筑底通道——PRIME等级：从洗盘底部新鲜起步（周线刚刚转上）。P2.4 v2标签。"><span class="l-en">Bottoming</span><span class="l-zh">筑底</span></span>
             
             
@@ -3937,6 +3983,9 @@
             
             
             <span class="nb-hold hold-intact" data-tip-en="Base 4d · inv $44.29 · W6-C hold tracker (display-only). INTACT=basing below +5% · LAUNCHED=extended or overbought · BROKEN=closed below trough." data-tip-zh="基础期4天 · 止损 $44.29。仅供参考。"><span class="l-en">Base 4d</span><span class="l-zh">筑底4天</span></span>
+            
+            
+            
             
             
             <span class="nb-lane lane-continuation" data-tip-en="Continuation lane — ARMED-tier: weekly trend already rising, 3-day/daily re-triggering. Relabeled from 'trend' per P2.4 (H-MISLABEL: |Δ|=2.79pp vs PRIME, BH q=0.12, below 5pp materiality). No rank change." data-tip-zh="延续通道——ARMED层级：周线趋势已上行，3日/日线再触发。依P2.4从「趋势」重标（H-MISLABEL：|Δ|=2.79pp vs PRIME，BH q=0.12，低于5pp重要性阈值）。不影响排名。"><span class="l-en">Continuation</span><span class="l-zh">延续</span></span>
@@ -4096,6 +4145,9 @@
             <span class="nb-hold hold-launched" data-tip-en="Base 18d · inv $70.26 · W6-C hold tracker (display-only). INTACT=basing below +5% · LAUNCHED=extended or overbought · BROKEN=closed below trough." data-tip-zh="基础期18天 · 止损 $70.26。仅供参考。"><span class="l-en">↑ Launched</span><span class="l-zh">↑ 突破</span></span>
             
             
+            
+            
+            
             <span class="nb-lane lane-continuation" data-tip-en="Continuation lane — ARMED-tier: weekly trend already rising, 3-day/daily re-triggering. Relabeled from 'trend' per P2.4 (H-MISLABEL: |Δ|=2.79pp vs PRIME, BH q=0.12, below 5pp materiality). No rank change." data-tip-zh="延续通道——ARMED层级：周线趋势已上行，3日/日线再触发。依P2.4从「趋势」重标（H-MISLABEL：|Δ|=2.79pp vs PRIME，BH q=0.12，低于5pp重要性阈值）。不影响排名。"><span class="l-en">Continuation</span><span class="l-zh">延续</span></span>
             
             
@@ -4247,6 +4299,9 @@
             <span class="nb-px" data-sym="NJR" data-mkt="us">$57.49</span>
           </div>
           <div class="nb-chiprow">
+            
+            
+            
             
             
             
@@ -4406,6 +4461,9 @@
             <span class="nb-hold hold-intact" data-tip-en="Base 12d · inv $34.32 · W6-C hold tracker (display-only). INTACT=basing below +5% · LAUNCHED=extended or overbought · BROKEN=closed below trough." data-tip-zh="基础期12天 · 止损 $34.32。仅供参考。"><span class="l-en">Base 12d</span><span class="l-zh">筑底12天</span></span>
             
             
+            
+            
+            
             <span class="nb-lane lane-continuation" data-tip-en="Continuation lane — ARMED-tier: weekly trend already rising, 3-day/daily re-triggering. Relabeled from 'trend' per P2.4 (H-MISLABEL: |Δ|=2.79pp vs PRIME, BH q=0.12, below 5pp materiality). No rank change." data-tip-zh="延续通道——ARMED层级：周线趋势已上行，3日/日线再触发。依P2.4从「趋势」重标（H-MISLABEL：|Δ|=2.79pp vs PRIME，BH q=0.12，低于5pp重要性阈值）。不影响排名。"><span class="l-en">Continuation</span><span class="l-zh">延续</span></span>
             
             
@@ -4436,7 +4494,7 @@
           
           <div class="nb-conv">
             
-            <span class="nb-cscore band-neutral" data-tip-en="Timing / readiness score — buy-readiness blend: how washed out (room to recover) × turning up NOW trigger × survivability × bounded edge multiplier. NOT a conviction rank or α sort — see the verdict for edge quality and the α chip for selection rank." data-tip-zh="择时/就绪度——买入就绪度综合：回调空间×当前反转触发×可持续性×有界优势乘数。并非信念排名或 α 排序——边缘质量见结论，选股排名见 α 标记。">37</span>
+            <span class="nb-cscore band-neutral" data-tip-en="Timing / readiness score — buy-readiness blend: how washed out (room to recover) × turning up NOW trigger × survivability × bounded edge multiplier. NOT a conviction rank or α sort — see the verdict for edge quality and the α chip for selection rank." data-tip-zh="择时/就绪度——买入就绪度综合：回调空间×当前反转触发×可持续性×有界优势乘数。并非信念排名或 α 排序——边缘质量见结论，选股排名见 α 标记。">36</span>
             
             <span class="nb-edge-pct edge-lo" data-tip-en="Edge percentile — this name's within-market rank (0–100) by the multi-factor conviction composite (selection + entry + quality; tailwind demoted to display-only for US per W9-B — negative tercile spreads both panels). This is the monotone cross-sectional rank; WAB ranks 98/100 here while a deep-washout laggard ranks lower. Higher = stronger relative edge — green flags the top (≥80). NOT the timing-readiness score to the left." data-tip-zh="优势百分位——该标的按多因子信念综合（选股+入场+质量；顺风因子按W9-B降级为仅供参考）在全市场内的排名（0–100）。数值越高＝相对优势越强，绿色标记最高档（≥80）。此处 WAB 排98/100，而深度回调的落后者排名较低。并非左侧的择时就绪度。"><span class="ep-k"><span class="l-en">Edge</span><span class="l-zh">优势</span></span><span class="ep-v">33<span class="ep-u">%ile</span></span></span>
             <span class="nb-verdict"><span class="l-en">Lagging — relative weakness</span><span class="l-zh">落后 — 相对弱势</span></span>
@@ -4553,6 +4611,9 @@
             
             
             <span class="nb-hold hold-launched" data-tip-en="Base 9d · inv $101.20 · W6-C hold tracker (display-only). INTACT=basing below +5% · LAUNCHED=extended or overbought · BROKEN=closed below trough." data-tip-zh="基础期9天 · 止损 $101.20。仅供参考。"><span class="l-en">↑ Launched</span><span class="l-zh">↑ 突破</span></span>
+            
+            
+            
             
             
             <span class="nb-lane lane-continuation" data-tip-en="Continuation lane — ARMED-tier: weekly trend already rising, 3-day/daily re-triggering. Relabeled from 'trend' per P2.4 (H-MISLABEL: |Δ|=2.79pp vs PRIME, BH q=0.12, below 5pp materiality). No rank change." data-tip-zh="延续通道——ARMED层级：周线趋势已上行，3日/日线再触发。依P2.4从「趋势」重标（H-MISLABEL：|Δ|=2.79pp vs PRIME，BH q=0.12，低于5pp重要性阈值）。不影响排名。"><span class="l-en">Continuation</span><span class="l-zh">延续</span></span>
@@ -4722,6 +4783,9 @@
             
             
             
+            
+            
+            
             <span class="nb-lane lane-continuation" data-tip-en="Continuation lane — ARMED-tier: weekly trend already rising, 3-day/daily re-triggering. Relabeled from 'trend' per P2.4 (H-MISLABEL: |Δ|=2.79pp vs PRIME, BH q=0.12, below 5pp materiality). No rank change." data-tip-zh="延续通道——ARMED层级：周线趋势已上行，3日/日线再触发。依P2.4从「趋势」重标（H-MISLABEL：|Δ|=2.79pp vs PRIME，BH q=0.12，低于5pp重要性阈值）。不影响排名。"><span class="l-en">Continuation</span><span class="l-zh">延续</span></span>
             
             
@@ -4869,6 +4933,9 @@
             <span class="nb-px" data-sym="MSCI" data-mkt="us">$603.11</span>
           </div>
           <div class="nb-chiprow">
+            
+            
+            
             
             
             
@@ -5025,6 +5092,9 @@
             
             
             <span class="nb-hold hold-launched" data-tip-en="Base 18d · inv $264.54 · W6-C hold tracker (display-only). INTACT=basing below +5% · LAUNCHED=extended or overbought · BROKEN=closed below trough." data-tip-zh="基础期18天 · 止损 $264.54。仅供参考。"><span class="l-en">↑ Launched</span><span class="l-zh">↑ 突破</span></span>
+            
+            
+            
             
             
             <span class="nb-lane lane-bottoming" data-tip-en="Bottoming lane — PRIME-equivalent: fresh base setup entering from washout (weekly just turning up). P2.4 v2 label." data-tip-zh="筑底通道——PRIME等级：从洗盘底部新鲜起步（周线刚刚转上）。P2.4 v2标签。"><span class="l-en">Bottoming</span><span class="l-zh">筑底</span></span>
