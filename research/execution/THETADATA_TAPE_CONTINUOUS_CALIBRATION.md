@@ -52,7 +52,12 @@ and does not trigger suspend (the session was not meaningfully measured).
 2. **At least one high-VIX session** (VIX>=20 on session date)
 3. **At least one calm session** (VIX<20 on session date)
 4. **At least 2 distinct roots** measured across all sessions (e.g. SPY + QQQ)
-5. **Zero real failures** — no session with `status=ok` and `pass=False`
+5. **At least 2 distinct expiry dates** covered across all sessions
+6. **At least 2 distinct moneyness buckets** (e.g. ATM + OTM-call) across all sessions
+7. **Zero real failures** — no session with `status=ok` and `pass=False`
+
+Per RUL-F3.12: "≥5 sessions spanning high-VIX and calm, multiple roots/expiries/moneyness."
+All six coverage conditions are required, matching the ruling verbatim.
 
 `production_ready=True` does NOT automatically flip `direction_reliable=True` in the root
 gate. That flip requires explicit Fable/human adjudication (ratified separately, per §7.1
@@ -85,14 +90,23 @@ The metric labelled `per_trade_agreement` is computed between:
 - **Quote rule (truth):** Lee-Ready classification using ThetaData NBBO at trade execution
 - **Tick rule:** sign of price change from previous trade
 
-This is the same methodology as the ratified #1292 session. **Difference from the
-initial calibration:** the initial session used Databento as an independent source for
-NBBO; these sessions use ThetaData's own NBBO. There is no cross-provider oracle.
+This is the same methodology as the ratified #1292 session — both the ratified session
+and all sessions measured here use ThetaData's own NBBO via the identical
+quote-rule-vs-tick-rule code path (`engine.flow_signing.compare_trade_signs`). There is
+no external third-party oracle in either case. The metric is labelled
+`quote_rule_self_consistency` in every session record; this property applies equally to
+the ratified #1292 session and to all sessions measured by this harness.
 
-The metric is labelled `quote_rule_self_consistency` in every session record. This does
-NOT invalidate the measurement — the NBBO at execution is ThetaData's own timestamp-matched
-quote, which is the correct reference for tape signing. It means: we cannot separate
-"ThetaData NBBO accuracy" from "signing methodology accuracy" in a single-source test.
+Note: the `0.777 Databento truth` figure in THETADATA_PROBE.md §4.4 is the **bar-data
+baseline** (root gate, `per_trade_agreement=0.7774`, a different instrument — minute-bar
+tick-rule signing, not trade+NBBO tape signing). It is not an oracle used in the tape
+calibration. The metric is measured identically for both the #1292 session and all new
+sessions; the `quote_rule_self_consistency` label documents that no cross-provider
+validation is possible — not that the method changed.
+
+The drop in agreement (0.88→0.67–0.72) between the ratified session and the multi-session
+harness is driven by the expansion to PUT contracts + multiple roots + additional dates,
+as documented in §5.
 
 ---
 
@@ -194,7 +208,9 @@ python -m scripts.calibrate_thetadata_tape_sessions --summary
 
 Root `direction_reliable` in `signing_gate.json` stays `false` for bar sources
 **permanently**. This is a verdict about minute-bar tick-rule signing (agreement≈0.777,
-recovery≈0.41 on Databento truth), which does not change based on tape sessions.
+recovery≈0.41 — measured against ThetaData-sourced bar data; the `0.777` figure is the
+bar-data baseline in THETADATA_PROBE.md §4.4, not a Databento-sourced oracle), which does
+not change based on tape sessions.
 
 The `thetadata_tape` sub-key is a **separate, source-specific authority** for tape-sourced
 features only. `direction_reliable_tape=True` (once the suspend is cleared and sessions

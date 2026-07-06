@@ -24,13 +24,16 @@ rule and tick rule agree. Net-sign recovery = fraction of contracts where the
 minute-aggregated tick-rule net sign matches the quote-rule net sign.
 
 For ThetaData tape sessions: the NBBO IS available in trade_quote records. The quote rule
-is thus fully applicable — this is not a "self-consistency approximation" but a direct
-implementation of the same method used in the ratified #1292 session. The difference from
-a Databento external-oracle comparison is: we do not have an independent third-party
-truth source, so we cannot cross-validate between providers. This is documented plainly in
-every session record and in the continuous-calibration doc. The agreement metric is
-unchanged; what changes is the provenance of the NBBO: ThetaData-sourced rather than
-Databento-sourced. The measure is labelled 'quote_rule_self_consistency' to distinguish it.
+is thus fully applicable — this is the same method used in the ratified #1292 session
+(which also used ThetaData's own NBBO via the identical quote-rule-vs-tick-rule code path).
+Both the #1292 session and all sessions measured here are 'quote_rule_self_consistency'
+measurements: no external third-party oracle is available, so we cannot cross-validate
+between providers. The metric is labelled 'quote_rule_self_consistency' in every record to
+document this plainly. The '0.777 Databento truth' in THETADATA_PROBE.md §4.4 is the
+separate bar-data baseline (root gate per_trade_agreement=0.7774 — a different instrument
+from the tape calibration). The real driver of the 0.88→0.67–0.72 drop between the
+ratified session and the multi-session harness is the expansion to puts + multiple roots +
+additional dates (correctly documented in §5 of the calibration doc).
 
 HOUSE LAW COMPLIANCE (RUL-F3.12)
 ---------------------------------
@@ -40,7 +43,9 @@ HOUSE LAW COMPLIANCE (RUL-F3.12)
 - Suspend: ANY session with per_trade_agreement < 0.75 sets direction_reliable_tape=false
   with suspend_reason until manual review.
 - production_ready=true ONLY when >=5 sessions, at least one high-VIX and one calm,
-  multiple roots (>=2), all passing.
+  multiple roots (>=2), multiple expiries (>=2 distinct expiry dates across sessions),
+  multiple moneyness buckets (>=2 distinct buckets across sessions), all passing.
+  (Per RUL-F3.12: "spanning high-VIX and calm, multiple roots/expiries/moneyness.")
 
 USAGE
 -----
@@ -454,10 +459,13 @@ def _build_session_record(
 
     Agreement methodology note: agreement is computed between the Lee-Ready quote rule
     (using ThetaData NBBO at execution) and the tick rule. This is the same methodology
-    as the ratified #1292 session. There is no external third-party oracle for new dates
-    — the NBBO comes from ThetaData, not Databento. This is documented plainly here and
-    means cross-provider validation is absent. The metric is labelled
-    'quote_rule_self_consistency' to distinguish it from the Databento-oracle comparison.
+    as the ratified #1292 session — both use ThetaData's own NBBO via the identical
+    quote-rule-vs-tick-rule code path (engine.flow_signing.compare_trade_signs). No
+    external third-party oracle exists for either session; the metric is labelled
+    'quote_rule_self_consistency' in every record to document this plainly. This property
+    is NOT new to the multi-session harness — it also applies to the ratified #1292
+    session. The '0.777 Databento truth' referenced in THETADATA_PROBE.md §4.4 is the
+    bar-data baseline (root gate, a different instrument), not the tape calibration oracle.
     """
     vix = _vix_for_date(day)
     regime = _vix_regime(vix)
@@ -582,12 +590,17 @@ def _compute_aggregate(sessions: list[dict]) -> dict:
         "multi_moneyness": multi_moneyness,
     }
 
-    # production_ready: >=5 ok sessions, high-VIX AND calm, multi-root, all passing
+    # production_ready: >=5 ok sessions passing, high-VIX AND calm, multi-root,
+    # multi-expiry, multi-moneyness, zero real failures.
+    # Per RUL-F3.12: ">=5 sessions spanning high-VIX and calm, multiple
+    # roots/expiries/moneyness."  All six conditions are required.
     production_ready = (
         sessions_passed >= SESSIONS_NEEDED
         and has_high_vix
         and has_calm
         and multi_root
+        and multi_expiry
+        and multi_moneyness
         and len(real_fails) == 0
     )
 
@@ -634,6 +647,8 @@ def _compute_aggregate(sessions: list[dict]) -> dict:
             "high_vix_needed": True,
             "calm_needed": True,
             "multi_root_needed": True,
+            "multi_expiry_needed": True,
+            "multi_moneyness_needed": True,
             "zero_fails_needed": True,
         },
         "bar_agreement": AGREEMENT_BAR,
@@ -676,11 +691,58 @@ def update_gate(jsonl_path: Optional[Path] = None, gate_path: Optional[Path] = N
                      for k, v in existing_gate.items()
                      if k != "thetadata_tape"}
 
-    # Build new thetadata_tape block: merge aggregate over existing sub-key
-    # (preserving prior calibration_contracts, per_trade_agreement, etc.)
+    # Build new thetadata_tape block.
+    #
+    # IMPORTANT: the pre-existing thetadata_tape sub-key may contain stale single-session
+    # scalars from the ratified #1292 measurement (per_trade_agreement=0.8848,
+    # net_sign_recovery=0.8, n_trades=16366, acceptance_criteria, status='measured',
+    # window=...).  These scalars must NOT sit at the same level as the multi-session
+    # aggregate — a consumer reading thetadata_tape.per_trade_agreement=0.8848 /
+    # acceptance_criteria.agreement_ok=true would silently contradict an active suspend.
+    #
+    # Resolution: move any pre-existing single-session scalars into a nested sub-key
+    # 'single_session_ratified', then write the aggregate at the top level of
+    # thetadata_tape.  The aggregate keys (sessions_passed, direction_reliable_tape,
+    # suspend_reason, production_ready, conditions_covered, …) are the authoritative
+    # current state for any downstream consumer.
     existing_td = dict(existing_gate.get("thetadata_tape") or {})
+
+    # Keys that belong to the single-session ratified measurement (not aggregate keys)
+    _SINGLE_SESSION_KEYS = {
+        "status", "insufficient_n", "asof", "generated", "signing_source",
+        "n_trades", "n_contracts", "min_n_trades", "window",
+        "per_trade_agreement", "per_trade_size_weighted", "net_sign_recovery",
+        "acceptance_criteria", "direction_reliable_tape", "note",
+        "calibration_contracts",
+    }
+    # Aggregate keys produced by _compute_aggregate — these win unconditionally
+    _AGGREGATE_KEYS = {
+        "sessions_n", "sessions_measurable", "sessions_passed", "conditions_covered",
+        "all_roots_covered", "last_session", "last_session_window",
+        "direction_reliable_tape", "production_ready", "suspend_reason",
+        "production_ready_criteria", "bar_agreement", "bar_recovery", "updated", "note",
+    }
+
+    # Preserve any existing single-session scalars under single_session_ratified
+    # (only if they are not already stashed there and only if they don't conflict
+    #  with aggregate keys — e.g. direction_reliable_tape belongs to aggregate).
+    single_session_snapshot = {
+        k: v for k, v in existing_td.items()
+        if k in _SINGLE_SESSION_KEYS and k not in _AGGREGATE_KEYS and k != "single_session_ratified"
+    }
+    # Merge: start from existing sub-key (to keep any unknown keys), apply aggregate on top
     new_td = dict(existing_td)
-    new_td.update(aggregate)  # aggregate keys win; existing measurement keys preserved
+    if single_session_snapshot:
+        # Stash pre-existing single-session scalars under a nested key so they are
+        # still readable (for provenance) but do not conflict with the active aggregate
+        existing_ratified = dict(existing_td.get("single_session_ratified") or {})
+        existing_ratified.update(single_session_snapshot)
+        new_td["single_session_ratified"] = existing_ratified
+        # Remove the now-stashed scalars from the top level to avoid contradiction
+        for k in single_session_snapshot:
+            new_td.pop(k, None)
+    # Unconditionally apply aggregate keys — these always override
+    new_td.update(aggregate)
 
     new_gate = dict(existing_gate)
     new_gate["thetadata_tape"] = new_td

@@ -7,7 +7,11 @@ Tests:
   4. dry-run fixture: run_session with dry_run=True produces a well-formed session record
   5. production_ready=False with fewer than 5 sessions
   6. production_ready=False with no high-VIX session
-  7. update_gate preserves prior per_trade_agreement from thetadata_tape single-session key
+  7. update_gate moves prior single-session scalars under single_session_ratified (no
+     top-level contradiction between stale per_trade_agreement and active aggregate)
+  8. direction_reliable never auto-flipped even with 5+ passing sessions
+  9. production_ready=False with no multi-expiry coverage (RUL-F3.12)
+  10. production_ready=False with no multi-moneyness coverage (RUL-F3.12)
 """
 from __future__ import annotations
 
@@ -304,9 +308,20 @@ def test_production_ready_false_no_high_vix(tmp_data: Path, gate_with_root_keys:
 # Test 7: update_gate preserves existing thetadata_tape measurement keys
 # ────────────────────────────────────────────────────────────────────────────
 
-def test_update_gate_preserves_prior_tape_measurement(tmp_data: Path):
-    """update_gate must preserve prior per_trade_agreement from the single-session thetadata_tape key."""
-    # Simulate a gate that already has the #1292 ratified single-session result
+def test_update_gate_namespaces_prior_tape_measurement(tmp_data: Path):
+    """update_gate must move stale single-session scalars under single_session_ratified.
+
+    The prior #1292 ratified measurement (per_trade_agreement=0.8848, acceptance_criteria
+    agreement_ok=True, direction_reliable_tape=True) must NOT remain at the top level of
+    thetadata_tape when a multi-session aggregate is present — that would silently
+    contradict an active suspend (sessions_passed=0, direction_reliable_tape=False).
+
+    After update_gate: the prior single-session scalars are under single_session_ratified;
+    the aggregate keys (sessions_n, sessions_passed, direction_reliable_tape, etc.) are
+    authoritative at the top level; no top-level agreement_ok=True coexists with
+    direction_reliable_tape=False.
+    """
+    # Simulate a gate with the #1292 ratified single-session result in thetadata_tape
     gate = {
         "scored": False,
         "direction_reliable": False,
@@ -321,27 +336,56 @@ def test_update_gate_preserves_prior_tape_measurement(tmp_data: Path):
             "net_sign_recovery": 0.80,
             "n_trades": 16366,
             "n_contracts": 15,
+            "acceptance_criteria": {"agreement_ok": True, "recovery_ok": True},
             "direction_reliable_tape": True,
         },
     }
     gate_path = tmp_data / "options_flow" / "signing_gate.json"
     gate_path.write_text(json.dumps(gate, indent=2))
 
-    sessions = [_make_ok_session("2025-04-07", ["SPY"], vix=47.0)]
-    jsonl_path = _write_sessions(tmp_data, sessions)
+    # Write a FAILING session — simulates suspend condition
+    fail_session = _make_fail_session("2025-04-07", ["SPY"], vix=47.0, agr=0.62)
+    jsonl_path = _write_sessions(tmp_data, [fail_session])
 
     m = _import_module(tmp_data)
     with patch("lib.config.data_dir", return_value=tmp_data):
-        m.update_gate(jsonl_path=jsonl_path, gate_path=gate_path)
+        agg = m.update_gate(jsonl_path=jsonl_path, gate_path=gate_path)
 
     written = json.loads(gate_path.read_text())
     td = written["thetadata_tape"]
-    # Prior measurement keys must be preserved (update_gate merges, not overwrites)
-    assert td.get("n_trades") == 16366, "Prior n_trades must be preserved"
-    assert td.get("n_contracts") == 15, "Prior n_contracts must be preserved"
-    # New aggregate keys must be added
+
+    # Aggregate state must reflect the failing session
+    assert agg["direction_reliable_tape"] is False, "Aggregate must show suspend active"
+    assert "suspend_reason" in agg, "suspend_reason must be populated"
+    assert td["direction_reliable_tape"] is False, "thetadata_tape top-level must show suspend"
+
+    # The stale 0.8848 per_trade_agreement must NOT live at the top level (it would
+    # silently read as reliable while the aggregate says suspended)
+    assert td.get("per_trade_agreement") != 0.8848, (
+        "Stale single-session per_trade_agreement=0.8848 must NOT be at thetadata_tape "
+        "top level — it contradicts the active suspend"
+    )
+
+    # The stale acceptance_criteria.agreement_ok=True must not be at the top level
+    top_level_ac = td.get("acceptance_criteria")
+    if top_level_ac is not None:
+        assert top_level_ac.get("agreement_ok") is not True, (
+            "Stale acceptance_criteria.agreement_ok=True must NOT coexist with "
+            "direction_reliable_tape=False at the top level"
+        )
+
+    # The prior measurement must be accessible under single_session_ratified
+    ratified = td.get("single_session_ratified")
+    assert ratified is not None, (
+        "Prior single-session scalars must be preserved under single_session_ratified"
+    )
+    assert ratified.get("n_trades") == 16366, "Prior n_trades must be in single_session_ratified"
+    assert ratified.get("n_contracts") == 15, "Prior n_contracts must be in single_session_ratified"
+
+    # Aggregate keys must be present at top level
     assert "sessions_n" in td
     assert td["sessions_n"] == 1
+
     # Root direction_reliable untouched
     assert written["direction_reliable"] is False
 
@@ -376,3 +420,79 @@ def test_direction_reliable_never_auto_flipped(tmp_data: Path, gate_with_root_ke
     # production_ready can be True (all conditions met)
     assert agg["conditions_covered"]["high_vix"] is True
     assert agg["conditions_covered"]["calm"] is True
+
+
+# ────────────────────────────────────────────────────────────────────────────
+# Test 9: production_ready=False with no multi-expiry coverage (RUL-F3.12)
+# ────────────────────────────────────────────────────────────────────────────
+
+def test_production_ready_false_no_multi_expiry(tmp_data: Path, gate_with_root_keys: dict):
+    """production_ready must be False if sessions cover only a single expiry date.
+
+    RUL-F3.12 requires 'multiple roots/expiries/moneyness' — multi_expiry is mandatory.
+    A set of 5 single-expiry passing sessions must NOT flip production_ready=True.
+    """
+    def _make_single_expiry_session(day_str: str, roots: list[str], vix: float) -> dict:
+        s = _make_ok_session(day_str, roots, vix)
+        # Only one expiry date — all sessions cover the same single expiry
+        s["expiries_covered"] = ["20250407"]
+        return s
+
+    sessions = [
+        _make_single_expiry_session("2025-04-07", ["SPY", "QQQ"], vix=47.0),
+        _make_single_expiry_session("2025-04-08", ["SPY", "QQQ"], vix=52.0),
+        _make_single_expiry_session("2024-12-16", ["SPY", "QQQ"], vix=15.0),
+        _make_single_expiry_session("2025-01-14", ["SPY", "QQQ"], vix=18.0),
+        _make_single_expiry_session("2025-02-21", ["SPY", "QQQ"], vix=16.0),
+    ]
+    jsonl_path = _write_sessions(tmp_data, sessions)
+    gate_path = tmp_data / "options_flow" / "signing_gate.json"
+
+    m = _import_module(tmp_data)
+    with patch("lib.config.data_dir", return_value=tmp_data):
+        agg = m.update_gate(jsonl_path=jsonl_path, gate_path=gate_path)
+
+    assert agg["production_ready"] is False, (
+        "production_ready must be False when only one expiry date is covered "
+        "(RUL-F3.12 requires multi-expiry)"
+    )
+    assert agg["conditions_covered"]["multi_expiry"] is False
+    assert agg["sessions_passed"] == 5, "Sessions themselves pass — only expiry condition fails"
+
+
+# ────────────────────────────────────────────────────────────────────────────
+# Test 10: production_ready=False with no multi-moneyness coverage (RUL-F3.12)
+# ────────────────────────────────────────────────────────────────────────────
+
+def test_production_ready_false_no_multi_moneyness(tmp_data: Path, gate_with_root_keys: dict):
+    """production_ready must be False if sessions cover only a single moneyness bucket.
+
+    RUL-F3.12 requires 'multiple roots/expiries/moneyness' — multi_moneyness is mandatory.
+    A set of 5 ATM-only passing sessions must NOT flip production_ready=True.
+    """
+    def _make_atm_only_session(day_str: str, roots: list[str], vix: float) -> dict:
+        s = _make_ok_session(day_str, roots, vix)
+        # Only ATM — no OTM or ITM contracts
+        s["moneyness_buckets"] = ["ATM"]
+        return s
+
+    sessions = [
+        _make_atm_only_session("2025-04-07", ["SPY", "QQQ"], vix=47.0),
+        _make_atm_only_session("2025-04-08", ["SPY", "QQQ"], vix=52.0),
+        _make_atm_only_session("2024-12-16", ["SPY", "QQQ"], vix=15.0),
+        _make_atm_only_session("2025-01-14", ["SPY", "QQQ"], vix=18.0),
+        _make_atm_only_session("2025-02-21", ["SPY", "QQQ"], vix=16.0),
+    ]
+    jsonl_path = _write_sessions(tmp_data, sessions)
+    gate_path = tmp_data / "options_flow" / "signing_gate.json"
+
+    m = _import_module(tmp_data)
+    with patch("lib.config.data_dir", return_value=tmp_data):
+        agg = m.update_gate(jsonl_path=jsonl_path, gate_path=gate_path)
+
+    assert agg["production_ready"] is False, (
+        "production_ready must be False when only ATM moneyness is covered "
+        "(RUL-F3.12 requires multi-moneyness)"
+    )
+    assert agg["conditions_covered"]["multi_moneyness"] is False
+    assert agg["sessions_passed"] == 5, "Sessions themselves pass — only moneyness condition fails"
