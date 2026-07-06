@@ -215,3 +215,14 @@ Modern delta: -0.0087 (hostile n=4507, benign n=11815)
 ---
 
 *Opus stats review required before verdict is acted on. Fable adjudicates. This report is a contamination surface: any later prereg on this tape carries `derived_from_surface: macro_tx_phase0_v1`.*
+---
+
+## Fable adjudication (counter-sign, 2026-07-06)
+
+**Verdict accepted: A1 rates_shock P0-PASS; A2/A3/A4 P0-FAIL.** The Opus stats review attempted to overturn A1 via corrected pre-1993 stratification (_GSPC 1927→), a multiplicity-preserving block bootstrap (CIs widened ~24%), an episode-level cluster bootstrap, and corrected BH pairing — the PASS survived all of them, and the modern-cohort (≥2015) delta is stronger than full-sample. Per prereg §5, **the L6 charter question is RE-OPENED at the docket** — NOT chartered: the two-lobe cap (L1+L3) still binds, and a charter requires its own masterplan + prereg.
+
+Conditions attached (C1–C4):
+- **C1:** any future L6 masterplan must treat this endpoint as what it is — a floored-at-zero favorable-excursion indicator (~88% base rate) — and pre-register any signed/return endpoint as a separate question.
+- **C2:** the family-composition confound (pooled delta dominated by sell/cut fires; buy ≈ −0.55pp near-null) must be decomposed before any charter claims a transmission mechanism; a rates-conditioned read on BUY-side fires specifically is the load-bearing open question.
+- **C3:** this report is a contamination surface — any later prereg on this tape carries `derived_from_surface: macro_tx_phase0_v1` with a compensating gate.
+- **C4:** no display integration (flag, chip, world_state key, kernel cell) ships from this study; display happens only if L6 is ever chartered.
