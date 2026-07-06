@@ -18,7 +18,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | hk-canada | 2 |
 | institutional-sector-intelligence | 2 |
 | intl-fix | 1 |
-| long-hold | 4 |
+| long-hold | 5 |
 | neural-web | 25 |
 | nw-rails | 1 |
 | options-alpha | 7 |
@@ -34,7 +34,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 65 |
+| display | 66 |
 | infrastructure | 32 |
 | scored | 4 |
 | shadow | 36 |
@@ -43,7 +43,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 132 |
+| git | 133 |
 | gitignored-local | 3 |
 | r2 | 2 |
 
@@ -132,6 +132,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
+| long-hold-clocks | `embedded: entry_clock + thesis_clock inside site/stockdata/<TICKER>.json` | json | daily-engine | display | 1 | 0 |
 | long-hold-dead-name-prices | `data/edgar/dead_name_prices.parquet` | parquet | on-demand | infrastructure | 1 | 0 |
 | long-hold-killtest-results | `data/research/missed_hold_study_results.parquet` | parquet | on-demand | display | 1 | 0 |
 | long-hold-labels | `data/research/long_hold_labels.parquet` | parquet | on-demand | display | 1 | 0 |
@@ -590,6 +591,14 @@ Artifacts below have `known_extra_writers` — additional code paths that write 
 - **declared producer:** `engine/neuralweb/lagging.py`
 - **extra writers:**
   - scripts/build_kernel_diagnostics.py — thin CLI wrapper; calls write_lagging() defined in the producer; no independent write logic
+
+### long-hold-clocks
+
+- **path:** `embedded: entry_clock + thesis_clock inside site/stockdata/<TICKER>.json`
+- **declared producer:** `engine/long_hold_clocks.py`
+- **extra writers:**
+  - scripts/build_stock_library.py — calls entry_clock() per name after sig_verdict build
+  - engine/stock_fundamentals.py — calls thesis_clocks_from_parquet() inside panels()
 
 ### long-hold-dead-name-prices
 
