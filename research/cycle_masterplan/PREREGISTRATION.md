@@ -451,3 +451,17 @@ pipeline error. **Outcome handling:** promoted cells → factory candidates (sta
 this artifact as evidence) + display-class truth candidacy; zero promotions → a scoped null truth
 for the two lattices; exploration tables ship to the measurement research surface either way. No
 page-authority change this wave.
+
+### Lattice batch-1 results (2026-07-06 — criteria above UNCHANGED)
+
+**48 of 135 cells clear the frozen gate** (sanity gate: KG-2 reproduced). Adjudication
+(`CPI_LATTICE1_VERDICT.md`): the cross-family phase-pooled baseline conflates family base-rate
+offsets with phase effects (CN cells mirror-signed vs US/country per phase) — the 48 promotions are
+classified confirmatory-only (CPI-019, display/structural) with ONE substantive lead: CN Downturn ×
+broken-trend deep vol-adjusted tail (CPI-020, candidate; rdd gap −0.0597, CI₉₅ [−0.119, −0.028],
+n=145, era-stable) pending a within-family re-test. All 48 filed as factory candidates (`screened`,
+authority display_only, truth_guard 0 flags). **Batch-2 pre-commitment: lattice baselines go
+within-family (to be frozen as §15 before any batch-2 run).** Process disclosure: an implementer
+scratch dry-run preceded the criteria commit; §14 text is character-identical pre/post (see verdict
+doc). Artifacts: `data/cycle_pattern/lattice/batch1.json`, `batch1_cells.parquet`; budget
+`rf.cycle_pattern.lattice_v0` n=135 declared pre-p-value.

@@ -304,6 +304,5 @@ def test_smoke_completes_and_writes_nothing_real():
     assert cands_after == cands_before, "smoke must not touch pattern_candidates.jsonl"
     ledger_after = real_ledger.read_text() if real_ledger.exists() else None
     assert ledger_after == ledger_before, "smoke must not touch the real trial ledger"
-    assert "lattice_v0" not in (ledger_after or ""), (
-        "smoke must declare its budget to a SCRATCH ledger, never the real one"
-    )
+    # (byte-equality above is the leak check; the family MAY legitimately exist in the
+    # ledger once the real run has declared it — do not assert absence)
