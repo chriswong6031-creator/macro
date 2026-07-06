@@ -649,7 +649,18 @@ def get_entry_dates(
     # node's fires for the next N sessions.  Deterministic left-to-right scan.
     cooldown_n = compound.get("cooldown_sessions")
     if cooldown_n and isinstance(cooldown_n, int) and cooldown_n > 0:
-        result = _apply_cooldown(result, cooldown_n)
+        # Build per-node trading-session index from the panel so cooldown counts
+        # actual panel sessions, not Mon–Fri calendar business days (which include
+        # market holidays that are NOT trading sessions — fixing bdate_range bug).
+        node_date_indices: dict[str, pd.DatetimeIndex] = {}
+        for _node in result:
+            if _node == "__blocked__":
+                continue
+            try:
+                node_date_indices[_node] = panel.xs(_node, level="node").index
+            except KeyError:
+                node_date_indices[_node] = pd.DatetimeIndex([])
+        result = _apply_cooldown(result, cooldown_n, node_date_indices)
 
     return result
 
@@ -657,11 +668,18 @@ def get_entry_dates(
 def _apply_cooldown(
     entries: dict[str, pd.DatetimeIndex],
     cooldown_sessions: int,
+    node_date_indices: dict[str, pd.DatetimeIndex],
 ) -> dict[str, pd.DatetimeIndex]:
     """Apply per-node cooldown suppression to an entry-dates dict.
 
     After a kept fire on a node, suppresses that node's subsequent fires
-    within cooldown_sessions trading days (chronological, left-to-right).
+    within cooldown_sessions TRADING SESSIONS (positional gap within the node's
+    own panel date index), left-to-right.
+
+    node_date_indices: mapping node -> sorted DatetimeIndex of all trading dates
+    for that node in the panel.  Used to count actual sessions rather than
+    Mon–Fri calendar business days (which include market holidays).
+
     Returns a new dict with the same keys but filtered DatetimeIndex values.
     """
     result: dict[str, pd.DatetimeIndex] = {}
@@ -672,20 +690,22 @@ def _apply_cooldown(
         sorted_dates = dates.sort_values()
         kept: list[pd.Timestamp] = []
         last_fire: pd.Timestamp | None = None
+        last_fire_pos: int = -1
+        panel_dates = node_date_indices.get(node, pd.DatetimeIndex([]))
         for d in sorted_dates:
             if last_fire is None:
                 kept.append(d)
                 last_fire = d
+                last_fire_pos = int(panel_dates.searchsorted(d, side="left"))
             else:
-                # Count trading-day gap: number of dates in [last_fire+1, d]
-                # Use positional difference on the sorted list
-                gap = int((d - last_fire) / pd.Timedelta("1D"))
-                # Approximate trading-day gap: use calendar days / 1.4
-                # More precisely: count business days between last_fire and d
-                bdays = len(pd.bdate_range(last_fire, d)) - 1  # -1: start exclusive
-                if bdays >= cooldown_sessions:
+                # Count sessions between last_fire and d using positional gap
+                # within the node's own panel (actual trading sessions, no holidays).
+                d_pos = int(panel_dates.searchsorted(d, side="left"))
+                sessions_gap = d_pos - last_fire_pos
+                if sessions_gap >= cooldown_sessions:
                     kept.append(d)
                     last_fire = d
+                    last_fire_pos = d_pos
                 # else: suppressed
         if kept:
             result[node] = pd.DatetimeIndex(kept)

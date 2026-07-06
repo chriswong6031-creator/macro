@@ -1,9 +1,11 @@
 """Oracle Reversion-Capture + Drawdown-Asymmetry Screener.
 
-Standalone analysis tool — read-only by default (prints a report; writes
-nothing unless --write-csv is passed).  Zero overlap with the existing
-scripts/oracle_screen.py tier-1 pipeline; does NOT touch trial_ledger or
-registry.
+Standalone analysis tool — prints a report and, unless --no-trial-ledger is
+passed, appends one row per compound to the reversion trial ledger
+(reversion_trial_ledger.jsonl alongside the compounds registry).  This ledger
+satisfies W3_SPEC §2 "every screen appends to the trial ledger — mining legal
+because counted."  Does NOT touch the tier-1 trial_ledger.jsonl (the 63d
+promotion pipeline ledger) or the registry.
 
 METRIC DEFINITION (per entry, window W sessions, time-exit E sessions)
 -----------------------------------------------------------------------
@@ -72,6 +74,7 @@ inline:
 from __future__ import annotations
 
 import argparse
+import datetime
 import json
 import logging
 import sys
@@ -1226,6 +1229,88 @@ def screen_compound(
 
 
 # ---------------------------------------------------------------------------
+# Trial-ledger writer (W3_SPEC §2 — append-only, one row per screen)
+# ---------------------------------------------------------------------------
+
+_FROZEN_GATES = {
+    "leg1_n": 100,
+    "leg2_wr": 0.62,
+    "leg3_asym": 1.5,
+    "leg4_ret": 0.01,
+}
+
+
+def _gate_verdicts(stats: dict) -> dict[str, str]:
+    """Return per-leg PASS/FAIL verdicts for the four frozen gates."""
+    n = stats.get("n", 0) or 0
+    wr = stats.get("WR") or 0.0
+    asym = stats.get("asym") or 0.0
+    ret = stats.get("mean_ret_exit") or 0.0
+    return {
+        "leg1": "P" if n >= _FROZEN_GATES["leg1_n"] else "F",
+        "leg2": "P" if wr >= _FROZEN_GATES["leg2_wr"] else "F",
+        "leg3": "P" if asym >= _FROZEN_GATES["leg3_asym"] else "F",
+        "leg4": "P" if ret >= _FROZEN_GATES["leg4_ret"] else "F",
+    }
+
+
+def _append_reversion_trial_ledger(
+    ledger_path: Path,
+    result: dict,
+    grammar_version: str,
+) -> None:
+    """Append one row to the reversion trial ledger (W3_SPEC §2).
+
+    Idempotent-safe: the ledger is append-only; each run adds a row.
+    The row includes enough info for the multiple-comparisons count to be
+    machine-verifiable (compound_id + params_hash + screened_at + verdicts).
+    """
+    import hashlib
+
+    compound_id = result.get("compound_id", "?")
+    all_stats = result.get("all", {}) or {}
+    n = all_stats.get("n", 0) or 0
+    wr = all_stats.get("WR") or None
+    asym = all_stats.get("asym") or None
+    ret_exit = all_stats.get("mean_ret_exit") or None
+    window = result.get("window", 25)
+    exit_sessions = result.get("exit_sessions", 21)
+    exit_mode = result.get("exit_mode", "time")
+
+    gates = _gate_verdicts(all_stats)
+    passed_legs14 = all(v == "P" for v in gates.values())
+
+    # Stable params hash: compound_id + window + exit_sessions + exit_mode + grammar_version
+    params_str = f"{compound_id}|{window}|{exit_sessions}|{exit_mode}|{grammar_version}"
+    params_hash = hashlib.sha256(params_str.encode()).hexdigest()[:12]
+
+    row = {
+        "compound_id": compound_id,
+        "screener": "oracle_reversion_screen_v1",
+        "grammar_version": grammar_version,
+        "params_hash": params_hash,
+        "screened_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        "window": window,
+        "exit_sessions": exit_sessions,
+        "exit_mode": exit_mode,
+        "n": n,
+        "WR": round(wr, 4) if wr is not None else None,
+        "asym": round(asym, 4) if asym is not None else None,
+        "ret_exit": round(ret_exit, 6) if ret_exit is not None else None,
+        "leg1": gates["leg1"],
+        "leg2": gates["leg2"],
+        "leg3": gates["leg3"],
+        "leg4": gates["leg4"],
+        "passed_legs14": passed_legs14,
+        "disclaimer": "EXPLORATORY — no claim language; counts toward search width",
+    }
+
+    ledger_path.parent.mkdir(parents=True, exist_ok=True)
+    with ledger_path.open("a", encoding="utf-8") as fh:
+        fh.write(json.dumps(row, separators=(",", ":"), default=str) + "\n")
+
+
+# ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
 
@@ -1305,6 +1390,15 @@ def main() -> int:
     )
     ap.add_argument("--dry-run", action="store_true",
                     help="No-op flag for interface parity with oracle_screen; this tool is read-only by default")
+    ap.add_argument(
+        "--no-trial-ledger",
+        action="store_true",
+        help=(
+            "Skip writing to the reversion trial ledger. "
+            "Default: each screen appends one row to reversion_trial_ledger.jsonl "
+            "alongside registry.jsonl (satisfies W3_SPEC §2 mining-legal count)."
+        ),
+    )
     args = ap.parse_args()
 
     # Resolve data directory
@@ -1353,6 +1447,12 @@ def main() -> int:
         ap.error("Provide --compound <id>, --all-pending, or --inline-rule + --inline-id")
         return 1
 
+    from engine.oracle.compounds import GRAMMAR_VERSION
+
+    ledger_path = compounds_dir / "reversion_trial_ledger.jsonl"
+    if not args.no_trial_ledger:
+        log.info("Trial-ledger enabled: %s", ledger_path)
+
     failures: list[str] = []
     for compound in targets:
         try:
@@ -1366,6 +1466,8 @@ def main() -> int:
             )
             if result is None:
                 failures.append(compound.get("id", "?"))
+            elif not args.no_trial_ledger:
+                _append_reversion_trial_ledger(ledger_path, result, GRAMMAR_VERSION)
         except Exception as exc:  # noqa: BLE001
             log.error("screen_compound %s FAILED: %s", compound.get("id"), exc)
             failures.append(compound.get("id", "?"))

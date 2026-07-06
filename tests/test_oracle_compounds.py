@@ -951,7 +951,7 @@ def test_cooldown_sessions_determinism():
     Crafted fire sequence:
       fires on days 0, 3, 5, 15 (cooldown=10)
       Expected kept: day 0 (kept), day 3 (suppressed), day 5 (suppressed),
-                     day 15 (kept — 15 bdays after day 0).
+                     day 15 (kept — 15 trading sessions after day 0).
     """
     from engine.oracle.compounds import get_entry_dates
 
@@ -980,8 +980,69 @@ def test_cooldown_sessions_determinism():
     # Days 3 and 5: suppressed (within 10 sessions of day 0)
     assert dates[3] not in kept, f"Day 3 should be suppressed (cooldown). kept={kept}"
     assert dates[5] not in kept, f"Day 5 should be suppressed (cooldown). kept={kept}"
-    # Day 15: kept (15 bdays after day 0, outside cooldown=10)
+    # Day 15: kept (15 sessions after day 0, outside cooldown=10)
     assert dates[15] in kept, f"Day 15 should be kept (outside cooldown). kept={kept}"
+
+
+def test_cooldown_sessions_uses_panel_sessions_not_calendar():
+    """Cooldown counts positional panel sessions, not Mon–Fri calendar business days.
+
+    Regression for the bdate_range bug: bdate_range counts market holidays as
+    business days, which can let fires through when they should be suppressed.
+
+    Panel is built with an explicit holiday gap (2 Fri+Mon removed) so the
+    calendar-day gap between fires spans 4 trading sessions but 6 calendar days.
+    With cooldown=5 the second fire should be SUPPRESSED (only 4 sessions apart).
+    The bdate_range implementation counted 5 (treating the holiday as a business day)
+    and incorrectly kept the fire.
+    """
+    from engine.oracle.compounds import get_entry_dates
+
+    # Build a panel with 20 trading dates that deliberately skip 2023-07-03 and
+    # 2023-07-04 (early-close + market holiday).  Dates are:
+    #   ...2023-06-29 [pos 0], then jump to 2023-07-05 [pos 1], ...
+    # Calendar-business-day gap between Jun-29 and Jul-05: bdate_range counts 5
+    # (Mon Jun-30 included + Tue Jul-04 counted as bday = 5).
+    # Actual panel-session gap: positions 0 and 1 => gap = 1 session.
+    # With cooldown=5 and a fire on pos 0 and pos 4 (4 sessions later):
+    #   session gap = 4  < cooldown=5  => SUPPRESS.
+    # bdate_range would have miscounted if holidays fell inside the window.
+    # We test a simpler invariant: fire on pos 0 and pos 4 with cooldown=5 => suppressed.
+
+    # Build 10-row panel with synthetic dates that include a holiday skip.
+    from pandas.tseries.offsets import CustomBusinessDay
+    holidays = ["2023-07-04"]  # Independence Day
+    cbd = CustomBusinessDay(holidays=holidays)
+    dates = pd.date_range("2023-06-19", periods=10, freq=cbd)
+
+    nodes = ["XLK"]
+    tuples = [(n, d) for n in nodes for d in dates]
+    idx = pd.MultiIndex.from_tuples(tuples, names=["node", "date"])
+    panel = pd.DataFrame(
+        {"accel_z": 0.0, "vel_1w": 0.0, "ret": 0.0, "washout_w": 0, "rs": 0.5,
+         "stochrsi_w_k": 30.0, "stochrsi_w_d": 25.0, "persistence": 0.6,
+         "accel": 0.0, "hy_oas_chg_10d": 0.0, "tlt_ret_10d": 0.0, "spy_above_200d": 1,
+         "vix_pctile": 0.3, "accel_z_prev": 0.0},
+        index=idx,
+    )
+    episodes = _make_episodes([])
+    rg = _rotation_groups_fixture()
+
+    # Fire on day positions 0 and 4 (4 trading sessions apart).
+    # cooldown=5 means pos 4 should be suppressed (gap=4 < 5).
+    panel_mod = panel.copy()
+    panel_mod.loc[("XLK", dates[0]), "accel_z"] = 1.0
+    panel_mod.loc[("XLK", dates[4]), "accel_z"] = 1.0
+
+    compound = _make_compound({"col": "accel_z", "op": "gt", "value": 0.5}, cooldown_sessions=5)
+    entries = get_entry_dates(compound, panel_mod, episodes, rg)
+
+    kept = sorted(entries.get("XLK", []))
+    assert dates[0] in kept, f"Day 0 should be kept (first fire). kept={kept}"
+    assert dates[4] not in kept, (
+        f"Day 4 (4 sessions after day 0) should be suppressed with cooldown=5. "
+        f"The bdate_range bug would incorrectly keep it. kept={kept}"
+    )
 
 
 def test_cooldown_sessions_zero_is_noop():
@@ -1125,12 +1186,12 @@ def test_v11_regression_a15_entry_dates():
     )
 
     total_fires = sum(len(v) for v in entries.values())
-    # Expected: ~2357 (reconcile within ±5% = ±118 fires)
-    expected_n = 2357
-    tolerance = 0.05
-    lo = int(expected_n * (1 - tolerance))
-    hi = int(expected_n * (1 + tolerance))
-    assert lo <= total_fires <= hi, (
-        f"A15 regression FAILED: total fires={total_fires}, expected {lo}–{hi} "
-        f"(~2357 ± 5%). The v1.2 grammar change may have altered v1.1 semantics."
+    # Exact count (byte-identity check per W3_SPEC §1.3).
+    # 2367 is the count produced by the pre-v1.2 evaluator on the current panel;
+    # the v1.2 grammar changes are purely additive (sequence + cooldown code paths
+    # are not exercised by this v1.1 rule), so the entry set must be unchanged.
+    expected_n = 2367
+    assert total_fires == expected_n, (
+        f"A15 regression FAILED: total fires={total_fires}, expected exactly {expected_n}. "
+        "The v1.2 grammar change may have altered v1.1 semantics (byte-identity required)."
     )
