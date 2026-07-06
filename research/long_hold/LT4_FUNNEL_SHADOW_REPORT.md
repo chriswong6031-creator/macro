@@ -17,7 +17,7 @@ The gate is a simple AND-conjunction.  If a stock fails any one of four survival
 There is no active thesis tier.  The ceiling is "shadow candidate."  The W3/W4 waves that would unlock the active thesis are deferred per the G1 ruling.
 
 **What the study context says (explicitly NOT a gate input):**  
-The expectation-drift descriptive pass (ED-7 confirmed absorption) showed RBC = 0.041 — a very small effect size.  SUE was wrong-sign at the trap ruler (see EXPECT_DRIFT_RULER_P_RESULTS.md).  Neither of these study results feeds the funnel.  The funnel gates are entirely based on accounting survival checks, not on any earnings-momentum or drift study result.
+Per the corrected Ruler-P record (#1642, re-run on the #1610-fixed panel): the only descriptive pass in the expectation-drift family is ED-2 `sue_streak` (protective sign, RBC = −0.061, q = 0.068 — a very small effect); the earlier ED-7 "confirmed absorption" pass was a substrate artifact and is NULL (see EXPECT_DRIFT_RULER_P_RESULTS.md, revision note). Neither of these study results feeds the funnel.  The funnel gates are entirely based on accounting survival checks, not on any earnings-momentum or drift study result.
 
 ---
 
@@ -75,7 +75,7 @@ The ceiling is `thesis_candidate_shadow`.  No `active_thesis` state exists anywh
 
 The following are included in the per-stock output for display transparency, but they do NOT affect the funnel state:
 
-- **expectation_state** (from engine/expectation_state.py): ED-7 descriptive pass showed RBC = 0.041 (tiny effect); SUE was wrong-sign at the trap ruler (EXPECT_DRIFT_RULER_P_RESULTS.md).  These study results are explicitly excluded from the gate.
+- **expectation_state** (from engine/expectation_state.py): per the corrected record (#1642), ED-2 sue_streak is the family's only descriptive pass (protective, tiny effect RBC = −0.061); the ED-7 pass was a substrate artifact → NULL (EXPECT_DRIFT_RULER_P_RESULTS.md, revision note).  These study results are explicitly excluded from the gate.
 - **capital_allocation_delta** (from engine/capital_allocation.py): shown as context; only the `'dilutive'` value feeds the candidate upgrade test.
 - **insider context** (from positioning.insider block): printed for transparency only.
 
@@ -111,7 +111,7 @@ The following are included in the per-stock output for display transparency, but
 
 - **kind:** track_record
 - **come_back_on:** 2026-10-01
-- **note:** Review funnel population stability after one quarter of nightly builds.  Check: state counts stable (watch_for_thesis / thesis_candidate_shadow proportions not drifting >±5pp week-over-week).  If unstable, audit data coverage changes (LT-1 backfill, period_end PIT gate).
+- **protocol:** snapshot comparison (no longitudinal store yet — the snapshot script overwrites its parquet and is on-demand).  At come-back, re-run `build_thesis_funnel_snapshot.py` and compare state counts against the 2026-07-06 baseline (1,002 / 255 / 246, total 1,503).  Investigate any state-proportion drift >5pp; audit data coverage changes (LT-1 backfill, period_end PIT gate) before reading drift as real.  If longitudinal tracking is wanted sooner, wire an append/archive hook into nightly first (sole-advancer law).
 
 ---
 
