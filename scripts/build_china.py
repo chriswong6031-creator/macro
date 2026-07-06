@@ -924,6 +924,8 @@ def main() -> int:
             ("china divergence radar", "scripts.build_china_radar", "build"),
             # central-intelligence synthesis MUST run after the surfaces, before the hub/bus
             ("china central analysis", "scripts.build_china_synthesis", "build"),
+            # historical regime analog finder — display-only context (W2.3)
+            ("china analogs", "scripts.build_china_analogs", "build"),
         ):
             try:
                 import importlib
