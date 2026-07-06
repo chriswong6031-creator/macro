@@ -2533,26 +2533,39 @@ class TestStartupReachabilityTimeout:
     """
 
     def test_startup_uses_fifteen_second_default(self, monkeypatch):
-        """With no THETA_CONNECT_TIMEOUT env, startup probe passes connect_timeout=15."""
+        """With no THETA_CONNECT_TIMEOUT env, startup probe passes connect_timeout=15.
+
+        Drives the real poller.main() code path so a revert of the production
+        line back to bare td.reachable() (no connect_timeout arg) would fail here.
+        """
         monkeypatch.delenv("THETA_CONNECT_TIMEOUT", raising=False)
         captured: list[int | None] = []
 
         def fake_reachable(connect_timeout: int | None = None) -> bool:
             captured.append(connect_timeout)
-            return True  # always reachable
+            return True  # reachable → main continues; _cfg stub aborts cleanly
 
         import scripts.live_flow_poller as poller
+
+        class _StopAfterReachable(Exception):
+            pass
+
         monkeypatch.setattr("collectors.thetadata.reachable", fake_reachable)
-        # Simulate the startup path directly (avoids full run() setup)
-        import os
-        startup_timeout = int(os.environ.get("THETA_CONNECT_TIMEOUT", "15"))
-        fake_reachable(connect_timeout=startup_timeout)
+        # Abort immediately after reachable() so we don't need a full environment.
+        monkeypatch.setattr(poller, "_cfg", lambda: (_ for _ in ()).throw(_StopAfterReachable()))
+
+        with pytest.raises(_StopAfterReachable):
+            poller.main(["--once"])
 
         assert captured == [15], (
             f"startup probe should pass connect_timeout=15 by default; got {captured}")
 
     def test_startup_respects_env_override(self, monkeypatch):
-        """THETA_CONNECT_TIMEOUT=30 → startup probe passes connect_timeout=30."""
+        """THETA_CONNECT_TIMEOUT=30 → startup probe passes connect_timeout=30.
+
+        Drives the real poller.main() code path so a revert of the production
+        line back to bare td.reachable() (no connect_timeout arg) would fail here.
+        """
         monkeypatch.setenv("THETA_CONNECT_TIMEOUT", "30")
         captured: list[int | None] = []
 
@@ -2560,16 +2573,22 @@ class TestStartupReachabilityTimeout:
             captured.append(connect_timeout)
             return True
 
-        import os
-        startup_timeout = int(os.environ.get("THETA_CONNECT_TIMEOUT", "15"))
-        fake_reachable(connect_timeout=startup_timeout)
+        import scripts.live_flow_poller as poller
+
+        class _StopAfterReachable(Exception):
+            pass
+
+        monkeypatch.setattr("collectors.thetadata.reachable", fake_reachable)
+        monkeypatch.setattr(poller, "_cfg", lambda: (_ for _ in ()).throw(_StopAfterReachable()))
+
+        with pytest.raises(_StopAfterReachable):
+            poller.main(["--once"])
 
         assert captured == [30], (
             f"startup probe should pass connect_timeout=30 when env=30; got {captured}")
 
     def test_startup_aborts_when_unreachable(self, monkeypatch, tmp_path):
         """Startup probe returning False → run() returns exit code 1."""
-        monkeypatch.delenv("THETA_CONNECT_TIMEOUT", raising=False)
         monkeypatch.setenv("THETA_CONNECT_TIMEOUT", "15")
 
         import scripts.live_flow_poller as poller
