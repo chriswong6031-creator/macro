@@ -6,8 +6,8 @@ ladder, strongest-confirmed -> earliest, each tier weighted by its held-out bala
 earliness-vs-stop-out (research/signal_engine/TIERED_CASCADE.md, 110 held-out US names):
 
   TIER  WEIGHT  definition                                              held-out stop-out
-  T1    1.00    3D MACD-RSI x 3D StochRSI, buy-filter endorsed (master)   38.3%   (= signal_gate TAKE)
-  T2    0.80    2D MACD-RSI cross  & 3D StochRSI crossed (recent)         40.6%
+  T1    0.90    3D MACD-RSI x 3D StochRSI, buy-filter endorsed (master)   38.3%   (= signal_gate TAKE)
+  T2    1.00    2D MACD-RSI cross  & 3D StochRSI crossed (recent)         40.6%   (operator re-ranked above T1 2026-07-06)
   T3    0.60    2D MACD-RSI PROJECTED<=1-2d & 3D StochRSI already crossed 42.3%   (the early prediction)
   T4    0.40    2D MACD-RSI PROJECTED & 2D StochRSI crossed & ABOVE-200MA 43.1%   (earliest; anti-falling-knife)
 
@@ -45,7 +45,9 @@ FRESH_TICKS = 2                   # just-crossed window: this bar through 2 tick
 EARLY_CROSS_BARS = 1.5            # 2D cross "projected within ~1-2 days" (bars-to-zero on the 2D grid)
 MIN_HISTORY = 200
 
-WEIGHTS = {"T1": 1.0, "T2": 0.8, "T3": 0.6, "T4": 0.4}
+# operator-ratified 2026-07-06 — T2 ranked above T1 for entry quality (fills nearer the
+# trough, confirmed-bar low repaint ~9%); T1 remains the highest-precision confirmed state.
+WEIGHTS = {"T1": 0.9, "T2": 1.0, "T3": 0.6, "T4": 0.4}
 _BLANK = {"tier": None, "weight": 0.0, "sub": None, "eligible": False,
           "bars_to_cross": None, "asof": None, "not_topped": True, "ticks": None,
           "provisional": False}
