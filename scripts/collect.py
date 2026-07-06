@@ -173,6 +173,7 @@ def all_adapters() -> dict:
         ("china_news", "collectors.china_news", "ChinaNewsAdapter"),           # CCTV 新闻联播 official policy-tone series (keyless; display-only news/sentiment panel)
         ("china_news_wire", "collectors.china_news_wire", "ChinaNewsWireAdapter"),  # multi-source flash-wire daily tone -> media-sentiment index (engine/china_news_intel.py)
         ("china_official_corpora", "collectors.china_official_corpora", "ChinaOfficialCorporaAdapter"),  # official policy corpora (State Council/PBOC/NDRC/CSRC/People's Daily) -> date-keyed parquet + qbus; feeds the Communiqué Diff (engine/communique_diff.py, W4 B1)
+        ("china_filings", "collectors.china_filings", "ChinaFilingsAdapter"),  # CNInfo A-share filing metadata (SSE+SZSE): investigation/inquiry/earnings/restructuring events → data/china_filings/filings.parquet (W3.2)
         # Hong Kong / Hang Seng dashboard — see research/HK_DATA_AUDIT.md
         # (macro reused from china_macro; flows reused from china_connect/china_flows)
         ("hk_prices", "collectors.hk_prices", "HkPriceAdapter"),
