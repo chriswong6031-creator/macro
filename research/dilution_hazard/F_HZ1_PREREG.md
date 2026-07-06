@@ -2,7 +2,7 @@
 
 **Status:** PRE-REGISTERED — numeric thresholds frozen at commit time.
 Do NOT modify this document after the first commit.
-**Family:** `hazard` (FDR budget 3, declared before any run)
+**Family:** `dilution_hazard` (FDR budget 3, declared before any run)
 **Program:** next-lobes PR-2
 **Authored:** 2026-07-06
 **Author model:** claude-sonnet-4-6 (build lane)
@@ -36,10 +36,11 @@ This means:
 - Predicate (a) (shelf <=365d) and predicate (c) (>=1 event trailing 365d)
   require 365d of history to be fully PIT-correct; with only 90d of backfill,
   fires before the lookback horizon will falsely appear hazard-free.
-- **Implication:** The ACCRUAL-CONVERT branch (§6.3) is active until the
-  store accumulates >=365d of history. The n-floor check (§5) will fail
-  given an absent or freshly-seeded store. DEFER-on-floor (§6.2) is the
-  expected outcome of this PR.
+- **Implication:** The ACCRUAL-CONVERT branch (§12.3) is active until the
+  store accumulates >=365d of history. The n-floor check (§6) will also fail
+  given an absent or freshly-seeded store, but ACCRUAL-CONVERT fires first
+  (data gate precedes floor check). ACCRUAL-CONVERT is the expected outcome
+  of this PR (see §12.3).
 
 ---
 
@@ -106,13 +107,17 @@ any-dilution-activity).
 
 ### stop5
 
-Binary (0/1). A fire is stop5=1 if the forward close series for the ticker
-touches the -5% barrier within 5 trading days after fill_date (i.e.,
-fill+1..fill+5 inclusive). Defined exactly as in
-`scripts/research/entry_strata_phase0.py` (constant `STOP_MULT = 0.95`,
-line 86; graded at line 429). Module citation:
-`engine/grading.py` → `forward_metrics()` supplies the forward close series;
-`entry_strata_phase0.grade_fires()` computes stop5 as a bool column.
+Binary (0/1). Frozen implementation: `stop5 = 1` iff
+`fwd_mdd_5 <= (STOP_MULT - 1.0)`, where `fwd_mdd_5 = min(0, min(close[fill+1 .. fill+5]) / entry_price - 1)` is the maximum adverse excursion over fill+1..fill+5 (the minimum close in that window relative to entry, capped at 0 from below). `STOP_MULT = 0.95`, so the threshold is -0.05 (-5%).
+
+In plain terms: stop5=1 iff the minimum close at any point within 5 trading bars after the fill reaches or breaches the -5% level from the fill price.
+
+Source code: `entry_strata_phase0.py` line 428-429:
+```python
+fwd_5_ret = fm.get("fwd_mdd_5")
+rec["stop5"] = (fwd_5_ret is not None and fwd_5_ret <= (STOP_MULT - 1.0))
+```
+`engine/grading.forward_metrics()` computes `fwd_mdd_5`.
 
 **Degradation direction:** higher stop5 rate in the hazard arm = adverse.
 
@@ -150,7 +155,8 @@ analog. Frozen threshold: `DEAD_MONEY_21_THRESHOLD = 0.0`.
   and inherits cheap_trap survivorship caveats. Names that were active at fire
   time but subsequently delisted remain in the cohort if present in replay;
   however, fires where forward price paths are unavailable are excluded from
-  outcome computation (not from floor counting).
+  outcome computation and from the gradable counts used in floor enforcement
+  (see §6). Both membership counts and gradable counts are printed.
 
 ---
 
@@ -160,14 +166,29 @@ These floors are checked and printed to stdout before any p-value or rate is
 computed. A floor failure routes to DEFER-on-floor or ACCRUAL-CONVERT:
 
 ```
-N_FIRES_FLOOR        = 300   # minimum fires per arm (hazard vs. non-hazard)
-N_EPISODE_FLOOR      = 25    # minimum distinct episode clusters per arm
+N_FIRES_FLOOR        = 300   # minimum GRADABLE fires per arm (hazard vs. non-hazard)
+N_EPISODE_FLOOR      = 25    # minimum distinct episode clusters per arm (on gradable fires)
 ```
 
-If either floor is not met:
-- Print: "FLOOR NOT MET: [arm] has n_fires=[X] (need >=300) and
-  n_clusters=[Y] (need >=25). Routing to [DEFER-on-floor|ACCRUAL-CONVERT]."
-- Exit with code 0 (not an error — expected state for this PR).
+**Floor enforcement is on GRADABLE counts only** — fires for which a price
+path was available and outcomes (stop5, dead_money_21) were computed. Fires
+where the massive_stock_day store had no entry for the ticker are excluded
+from gradable counts (but their membership count is still printed for
+diagnostic purposes). Episode clusters are also counted on gradable fires only.
+
+Both membership count and gradable count are printed per arm before any
+statistic. Example output:
+```
+FLOOR [hazard_shelf_active]: hazard membership=450, gradable=312 (need >=300),
+  hazard n_clusters_gradable=38 (need >=25);
+  non_hazard membership=2100, gradable=1850 (need >=300),
+  non_hazard n_clusters_gradable=210 (need >=25) → PASS
+```
+
+If either floor is not met (on gradable counts):
+- Print the floor message including both membership and gradable counts.
+- Route to DEFER-on-floor. Exit with code 0 (not an error — expected for
+  early-lifecycle runs when closes are absent).
 
 ---
 
@@ -199,13 +220,13 @@ The primary verdict is on the `verdict_grade_2021plus` cohort. The
 
 ## 9. FDR Budget (Declared BEFORE Run)
 
-Family: `hazard`
+Family: `dilution_hazard`
 Declared budget: `3`
 Members: one per predicate — (A) shelf, (B) takedown, (C) trailing.
 
 ```python
-led = TrialLedger(path=data/trial_ledger.jsonl, family="hazard")
-led.log_declared_budget(3, family="hazard",
+led = TrialLedger(path=data/trial_ledger.jsonl, family="dilution_hazard")
+led.log_declared_budget(3, family="dilution_hazard",
     reason="F-HZ-1: 3 predicates (A=shelf, B=takedown, C=trailing) × 1 arm each")
 ```
 
@@ -224,7 +245,7 @@ registered when the harness is invoked).
 - No promotion language. No wiring decision.
 - A future promotion prereg must carry `derived_from_surface: f_hz1` and
   define its own FDR family + budget.
-- The word "validated" does not appear in any output of this study.
+- No alpha is claimed or confirmed in any output of this study.
 
 ---
 
@@ -297,5 +318,5 @@ result is modestly lower. This context is printed in the report when it runs.
 - `data/research/f_hz1_summary.json`: **committed** (single-writer = this
   script; written only when study actually runs — NOT written in this PR).
 - `data/trial_ledger.jsonl`: **committed** (append-only, multi-writer allowed).
-- `research/hazard/F_HZ1_REPORT.md`: **committed** when study runs.
+- `research/dilution_hazard/F_HZ1_REPORT.md`: **committed** when study runs.
   NOT written by this PR (data absent).

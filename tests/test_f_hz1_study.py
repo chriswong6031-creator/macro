@@ -27,6 +27,7 @@ from scripts.research.f_hz1_study import (
     check_data_gates,
     check_floors,
     compute_contrast,
+    compute_outcomes,
     declare_trial_budget,
     era_law_split,
     run_study,
@@ -89,7 +90,7 @@ class TestPreregConstants:
         assert F_HZ1_CONSTANTS.N_EPISODE_FLOOR == 25
 
     def test_fdr_family(self):
-        assert F_HZ1_CONSTANTS.FDR_FAMILY == "hazard"
+        assert F_HZ1_CONSTANTS.FDR_FAMILY == "dilution_hazard"
 
     def test_fdr_budget(self):
         assert F_HZ1_CONSTANTS.FDR_BUDGET == 3
@@ -272,8 +273,51 @@ class TestFloorGating:
         fires = self._labeled_fires(n_hazard=10, n_non_hazard=10)
         result = check_floors(fires, "hazard_shelf_active")
         assert "FLOOR" in result["message"]
-        assert "n_fires" in result["message"]
-        assert "n_clusters" in result["message"]
+        assert "gradable" in result["message"]
+        assert "n_clusters_gradable" in result["message"]
+
+    def test_floor_message_contains_both_membership_and_gradable(self):
+        """Floor message prints membership count and gradable count separately."""
+        fires = self._labeled_fires(n_hazard=10, n_non_hazard=10)
+        result = check_floors(fires, "hazard_shelf_active")
+        assert "membership" in result["message"]
+        assert "gradable" in result["message"]
+
+    def test_floor_result_has_member_keys(self):
+        """check_floors result dict includes hazard_n_fires_member keys."""
+        fires = self._labeled_fires(n_hazard=10, n_non_hazard=10)
+        result = check_floors(fires, "hazard_shelf_active")
+        assert "hazard_n_fires_member" in result
+        assert "non_hazard_n_fires_member" in result
+
+    def test_floor_enforces_on_gradable_counts(self):
+        """Floors enforce on gradable (non-NaN) counts, not membership counts.
+
+        When gradable=False for all fires, floor fails even if membership is large.
+        """
+        # Build fires above membership floor but all ungradable
+        rows = []
+        for i in range(F_HZ1_CONSTANTS.N_FIRES_FLOOR + 50):
+            rows.append({
+                "ticker": f"HZ{i:04d}",
+                "date": "2023-01-01",
+                "hazard_shelf_active": True,
+                "gradable": False,  # all ungradable
+            })
+        for i in range(F_HZ1_CONSTANTS.N_FIRES_FLOOR + 50):
+            rows.append({
+                "ticker": f"NZ{i:04d}",
+                "date": "2023-01-01",
+                "hazard_shelf_active": False,
+                "gradable": False,  # all ungradable
+            })
+        df = pd.DataFrame(rows)
+        df["episode_cluster"] = _assign_episode_cluster(df).values
+        result = check_floors(df, "hazard_shelf_active")
+        # Membership is above floor but gradable=0 → floor fails
+        assert result["hazard_n_fires_member"] >= F_HZ1_CONSTANTS.N_FIRES_FLOOR
+        assert result["hazard_n_fires"] == 0
+        assert result["pass"] is False
 
     def test_compute_contrast_returns_note_on_floor_fail(self, capsys):
         fires = self._labeled_fires(n_hazard=5, n_non_hazard=5)
@@ -390,7 +434,7 @@ class TestDataGates:
         entries = [json.loads(line) for line in ledger_path.read_text().splitlines() if line.strip()]
         budget_entries = [e for e in entries if e.get("kind") == "declared_budget"]
         assert len(budget_entries) >= 1
-        assert budget_entries[0]["family"] == F_HZ1_CONSTANTS.FDR_FAMILY
+        assert budget_entries[0]["family"] == "dilution_hazard"
         assert budget_entries[0]["n"] == F_HZ1_CONSTANTS.FDR_BUDGET
 
 
@@ -414,7 +458,7 @@ class TestTrialBudget:
         declare_trial_budget(ledger_path)
         entries = [json.loads(l) for l in ledger_path.read_text().splitlines() if l.strip()]
         b = entries[0]
-        assert b["family"] == "hazard"
+        assert b["family"] == "dilution_hazard"
         assert b["n"] == 3
 
 
@@ -467,3 +511,107 @@ class TestStoreAge:
         d = pd.DataFrame([{"filing_date": "2024-01-01"}])
         # max == min → span = 0
         assert _store_age_days(d) == 0
+
+
+# ---------------------------------------------------------------------------
+# 9. Synthetic-closes fixture: compute_outcomes produces non-NaN outcomes
+# ---------------------------------------------------------------------------
+
+class TestComputeOutcomesSyntheticCloses:
+    """Prove that compute_outcomes() produces gradable (non-NaN) stop5 and
+    dead_money_21 when a synthetic close series with enough forward bars is supplied.
+
+    This is the end-to-end gradability fixture required by the closes-loader PR.
+    """
+
+    def _make_close_series(
+        self,
+        start: str,
+        n_bars: int = 60,
+        start_price: float = 100.0,
+        daily_return: float = 0.0,
+    ) -> pd.Series:
+        """Build a flat (or trending) close series with a DatetimeIndex."""
+        import numpy as np
+        idx = pd.bdate_range(start=start, periods=n_bars)
+        prices = start_price * ((1 + daily_return) ** np.arange(n_bars))
+        return pd.Series(prices, index=idx)
+
+    def test_flat_close_gradable_no_stop5(self):
+        """Flat close: stop5=0 (no -5% hit), dead_money_21=0 (flat = 0% return >= 0 threshold fails → actually 0%<=0.0 so dead_money_21=1)."""
+        # flat close: fill price = start_price, fwd_ret_21 = 0.0 → dead_money_21=1 (<=0.0)
+        fire_date = "2023-06-01"
+        close = self._make_close_series(start="2023-05-01", n_bars=60, start_price=100.0, daily_return=0.0)
+        fires = _fires(("AAPL", fire_date))
+        fires["hazard_shelf_active"] = False
+        fires["episode_cluster"] = "AAPL_2023"
+
+        result = compute_outcomes(fires, closes={"AAPL": close})
+
+        # Must have at least one gradable row (price path was available)
+        assert result["gradable"].any(), "Expected at least one gradable fire with synthetic close"
+        # stop5 must not be NaN for gradable rows
+        gradable_rows = result[result["gradable"] == True]  # noqa: E712
+        assert not gradable_rows["stop5"].isna().any(), "stop5 must be non-NaN for gradable fires"
+        assert not gradable_rows["dead_money_21"].isna().any(), "dead_money_21 must be non-NaN for gradable fires"
+
+    def test_declining_close_triggers_stop5(self):
+        """Declining close that drops >5% within 5 bars → stop5=1."""
+        fire_date = "2023-06-01"
+        # -2% per day: after 3 days, cumulative ≈ -5.9% → stop5=1
+        close = self._make_close_series(
+            start="2023-05-01", n_bars=60, start_price=100.0, daily_return=-0.02
+        )
+        fires = _fires(("AAPL", fire_date))
+        fires["hazard_shelf_active"] = True
+        fires["episode_cluster"] = "AAPL_2023"
+
+        result = compute_outcomes(fires, closes={"AAPL": close})
+
+        gradable_rows = result[result["gradable"] == True]  # noqa: E712
+        assert len(gradable_rows) >= 1, "Expected gradable fire"
+        assert float(gradable_rows["stop5"].iloc[0]) == 1.0, "Expected stop5=1 for -2%/day series"
+
+    def test_rising_close_no_stop5_no_dead_money(self):
+        """Rising close: stop5=0, dead_money_21=0 (positive 21d return)."""
+        fire_date = "2023-06-01"
+        close = self._make_close_series(
+            start="2023-05-01", n_bars=60, start_price=100.0, daily_return=0.005
+        )
+        fires = _fires(("AAPL", fire_date))
+        fires["hazard_shelf_active"] = False
+        fires["episode_cluster"] = "AAPL_2023"
+
+        result = compute_outcomes(fires, closes={"AAPL": close})
+
+        gradable_rows = result[result["gradable"] == True]  # noqa: E712
+        assert len(gradable_rows) >= 1, "Expected gradable fire"
+        assert float(gradable_rows["stop5"].iloc[0]) == 0.0, "Rising series: stop5 must be 0"
+        assert float(gradable_rows["dead_money_21"].iloc[0]) == 0.0, "Rising series: dead_money_21 must be 0"
+
+    def test_missing_ticker_stays_ungradable(self):
+        """Fire for ticker not in closes dict → gradable=False, outcomes NaN."""
+        fire_date = "2023-06-01"
+        close = self._make_close_series(start="2023-05-01", n_bars=60)
+        fires = _fires(("AAPL", fire_date))
+        fires["hazard_shelf_active"] = False
+        fires["episode_cluster"] = "AAPL_2023"
+
+        # Pass closes only for a different ticker
+        result = compute_outcomes(fires, closes={"MSFT": close})
+
+        assert not result["gradable"].any(), "AAPL not in closes → must be ungradable"
+        assert result["stop5"].isna().all()
+        assert result["dead_money_21"].isna().all()
+
+    def test_no_closes_dict_all_ungradable(self):
+        """Empty closes dict → all fires ungradable."""
+        fires = _fires(("AAPL", "2023-06-01"), ("MSFT", "2023-06-02"))
+        fires["hazard_shelf_active"] = True
+        fires["episode_cluster"] = "cluster"
+
+        result = compute_outcomes(fires, closes={})
+
+        assert not result["gradable"].any()
+        assert result["stop5"].isna().all()
+        assert result["dead_money_21"].isna().all()

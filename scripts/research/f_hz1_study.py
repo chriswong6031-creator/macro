@@ -1,7 +1,7 @@
 """F-HZ-1 — Dilution-Hazard Phase-0 Study Harness.
 
-Pre-registered in: research/hazard/F_HZ1_PREREG.md (commit BEFORE running).
-Family: hazard (FDR budget=3: predicates A=shelf, B=takedown, C=trailing).
+Pre-registered in: research/dilution_hazard/F_HZ1_PREREG.md (commit BEFORE running).
+Family: dilution_hazard (FDR budget=3: predicates A=shelf, B=takedown, C=trailing).
 Adjacent prior: research/entry_stack/W1_SEV_REPORT.md
   (S-EV earnings-window: stop5 NULL, mae21 NULL — mechanistically distinct but noted).
 
@@ -11,11 +11,11 @@ Data gates:
   Both absent → print combined gate status and exit 0.
 
 Floor check (printed BEFORE any statistic):
-  N_FIRES_FLOOR   = 300  fires per arm
-  N_EPISODE_FLOOR = 25   episode clusters per arm
+  N_FIRES_FLOOR   = 300  gradable fires per arm (non-NaN outcomes)
+  N_EPISODE_FLOOR = 25   episode clusters per arm (on gradable fires)
   Fail → DEFER-on-floor (exit 0).
 
-FDR: family='hazard', declared_budget=3, logged idempotently BEFORE outcomes.
+FDR: family='dilution_hazard', declared_budget=3, logged idempotently BEFORE outcomes.
 
 Usage:
     python scripts/research/f_hz1_study.py
@@ -52,7 +52,7 @@ _DILUTION_PATH  = _CANONICAL_DATA / "edgar" / "dilution_events.parquet"
 _BOARDED_PATH   = _CANONICAL_DATA / "replay" / "replay_boarded.parquet"
 _LEDGER_PATH    = _CANONICAL_DATA / "trial_ledger.jsonl"
 _SUMMARY_OUT    = _CANONICAL_DATA / "research" / "f_hz1_summary.json"
-_REPORT_OUT     = _REPO_ROOT / "research" / "hazard" / "F_HZ1_REPORT.md"
+_REPORT_OUT     = _REPO_ROOT / "research" / "dilution_hazard" / "F_HZ1_REPORT.md"
 
 # ---------------------------------------------------------------------------
 # F_HZ1_CONSTANTS — single source of truth; imported by tests
@@ -88,7 +88,7 @@ class F_HZ1_CONSTANTS:
     N_EPISODE_FLOOR: int = 25
 
     # FDR
-    FDR_FAMILY: str = "hazard"
+    FDR_FAMILY: str = "dilution_hazard"
     FDR_BUDGET: int = 3
 
     # Minimum store age for reliable predicate A/C (365-day lookback)
@@ -100,7 +100,7 @@ class F_HZ1_CONSTANTS:
 # ---------------------------------------------------------------------------
 
 def declare_trial_budget(ledger_path: Path | None = None) -> None:
-    """Log declared budget for family='hazard', n=3, BEFORE any outcome computation.
+    """Log declared budget for family='dilution_hazard', n=3, BEFORE any outcome computation.
 
     Idempotent: repeated calls with the same (family, n, reason) do not append
     duplicate rows (TrialLedger.log_declared_budget dedup guarantee).
@@ -375,11 +375,14 @@ def compute_outcomes(
 
         fires.at[idx, "gradable"] = True
 
-        fwd_5  = fm.get("fwd_ret_5")
-        fwd_21 = fm.get("fwd_ret_21")
+        # stop5: path touch — minimum close within fill+1..fill+5 reaches -5% barrier.
+        # Uses fwd_mdd_5 (= min(0, min(close[fill+1..fill+5]) / entry - 1)) per
+        # entry_strata_phase0.py:429 and grading.forward_metrics() definition.
+        fwd_mdd_5 = fm.get("fwd_mdd_5")
+        fwd_21    = fm.get("fwd_ret_21")
 
-        if fwd_5 is not None:
-            fires.at[idx, "stop5"] = float(fwd_5 <= (F_HZ1_CONSTANTS.STOP_MULT - 1.0))
+        if fwd_mdd_5 is not None:
+            fires.at[idx, "stop5"] = float(fwd_mdd_5 <= (F_HZ1_CONSTANTS.STOP_MULT - 1.0))
 
         if fwd_21 is not None:
             fires.at[idx, "fwd_ret_21"]    = float(fwd_21)
@@ -399,22 +402,44 @@ def check_floors(
 ) -> dict[str, Any]:
     """Check n-fires and n-episode-cluster floors for hazard vs non-hazard arms.
 
+    Floors are enforced on GRADABLE counts (fires with non-NaN outcomes, i.e.
+    fires where price paths were available). Membership counts (all fires in the
+    predicate arm) are also printed for diagnostic purposes.
+
+    Both gradable n_fires and gradable n_clusters must meet the floor thresholds.
+    Episode clusters are counted only on gradable fires.
+
     Returns a dict with keys:
         pass: bool
-        hazard_n_fires: int
-        non_hazard_n_fires: int
-        hazard_n_clusters: int
-        non_hazard_n_clusters: int
+        hazard_n_fires: int              — gradable fires in hazard arm
+        non_hazard_n_fires: int          — gradable fires in non-hazard arm
+        hazard_n_fires_member: int       — all membership fires in hazard arm
+        non_hazard_n_fires_member: int   — all membership fires in non-hazard arm
+        hazard_n_clusters: int           — gradable episode clusters in hazard arm
+        non_hazard_n_clusters: int       — gradable episode clusters in non-hazard arm
         message: str
     """
     hazard_fires     = fires[fires[predicate_col] == True]  # noqa: E712
     non_hazard_fires = fires[fires[predicate_col] == False]  # noqa: E712
 
-    hz_n   = len(hazard_fires)
-    nhz_n  = len(non_hazard_fires)
+    # Membership counts (all fires in the arm, regardless of gradability)
+    hz_n_member  = len(hazard_fires)
+    nhz_n_member = len(non_hazard_fires)
 
-    hz_cl  = hazard_fires[episode_col].nunique() if episode_col in hazard_fires.columns else 0
-    nhz_cl = non_hazard_fires[episode_col].nunique() if episode_col in non_hazard_fires.columns else 0
+    # Gradable counts (fires with price paths available → non-NaN outcomes)
+    if "gradable" in hazard_fires.columns:
+        hz_gradable  = hazard_fires[hazard_fires["gradable"] == True]   # noqa: E712
+        nhz_gradable = non_hazard_fires[non_hazard_fires["gradable"] == True]  # noqa: E712
+    else:
+        # If no gradable column, treat all as gradable (pre-outcome-compute call)
+        hz_gradable  = hazard_fires
+        nhz_gradable = non_hazard_fires
+
+    hz_n   = len(hz_gradable)
+    nhz_n  = len(nhz_gradable)
+
+    hz_cl  = hz_gradable[episode_col].nunique() if episode_col in hz_gradable.columns else 0
+    nhz_cl = nhz_gradable[episode_col].nunique() if episode_col in nhz_gradable.columns else 0
 
     fires_ok    = (hz_n >= F_HZ1_CONSTANTS.N_FIRES_FLOOR and nhz_n >= F_HZ1_CONSTANTS.N_FIRES_FLOOR)
     clusters_ok = (hz_cl >= F_HZ1_CONSTANTS.N_EPISODE_FLOOR and nhz_cl >= F_HZ1_CONSTANTS.N_EPISODE_FLOOR)
@@ -422,19 +447,21 @@ def check_floors(
 
     msg = (
         f"FLOOR [{predicate_col}]: "
-        f"hazard n_fires={hz_n} (need >={F_HZ1_CONSTANTS.N_FIRES_FLOOR}), "
-        f"hazard n_clusters={hz_cl} (need >={F_HZ1_CONSTANTS.N_EPISODE_FLOOR}), "
-        f"non_hazard n_fires={nhz_n} (need >={F_HZ1_CONSTANTS.N_FIRES_FLOOR}), "
-        f"non_hazard n_clusters={nhz_cl} (need >={F_HZ1_CONSTANTS.N_EPISODE_FLOOR}) "
+        f"hazard membership={hz_n_member}, gradable={hz_n} (need >={F_HZ1_CONSTANTS.N_FIRES_FLOOR}), "
+        f"hazard n_clusters_gradable={hz_cl} (need >={F_HZ1_CONSTANTS.N_EPISODE_FLOOR}); "
+        f"non_hazard membership={nhz_n_member}, gradable={nhz_n} (need >={F_HZ1_CONSTANTS.N_FIRES_FLOOR}), "
+        f"non_hazard n_clusters_gradable={nhz_cl} (need >={F_HZ1_CONSTANTS.N_EPISODE_FLOOR}) "
         f"→ {'PASS' if passed else 'FAIL'}"
     )
 
     return {
         "pass": passed,
-        "hazard_n_fires":       hz_n,
-        "non_hazard_n_fires":   nhz_n,
-        "hazard_n_clusters":    hz_cl,
-        "non_hazard_n_clusters": nhz_cl,
+        "hazard_n_fires":            hz_n,
+        "non_hazard_n_fires":        nhz_n,
+        "hazard_n_fires_member":     hz_n_member,
+        "non_hazard_n_fires_member": nhz_n_member,
+        "hazard_n_clusters":         hz_cl,
+        "non_hazard_n_clusters":     nhz_cl,
         "message": msg,
     }
 
@@ -561,6 +588,68 @@ def _build_stamp(fires: pd.DataFrame) -> dict[str, Any]:
 
 
 # ---------------------------------------------------------------------------
+# Closes loader (RUN branch only — called after data gates pass)
+# ---------------------------------------------------------------------------
+
+_MASSIVE_DIR = _CANONICAL_DATA / "massive_stock_day"
+
+
+def _load_closes(
+    tickers: list[str],
+    massive_dir: Path | None = None,
+) -> dict[str, pd.Series]:
+    """Load split-adjusted close series for the given tickers from massive_stock_day.
+
+    Follows EXACTLY the pattern used by scripts/run_rule_replay._load_closes
+    (canonical data-path resolution + split_adjust from scripts.replay_standout_pipeline
+    per the rails program §3.2). Returns {} for any ticker not found.
+
+    Called only in the RUN branch after data gates pass. If the store directory
+    is absent, returns an empty dict (graceful degradation — floors will fail).
+    """
+    mass_dir = massive_dir or _MASSIVE_DIR
+
+    try:
+        from scripts.replay_standout_pipeline import split_adjust as _split_adjust
+    except ImportError:
+        log.warning(
+            "Could not import split_adjust from scripts.replay_standout_pipeline; "
+            "falling back to identity (splits NOT adjusted — test-mode only)"
+        )
+        def _split_adjust(s: pd.Series) -> pd.Series:  # type: ignore[misc]
+            return s
+
+    closes: dict[str, pd.Series] = {}
+    missing: list[str] = []
+
+    for ticker in tickers:
+        path = mass_dir / f"{ticker}.parquet"
+        if not path.exists():
+            missing.append(ticker)
+            continue
+        try:
+            df = pd.read_parquet(path)
+            if "close" not in df.columns:
+                missing.append(ticker)
+                continue
+            c = df["close"].dropna()
+            if not isinstance(c.index, pd.DatetimeIndex):
+                c.index = pd.to_datetime(c.index)
+            c = c.sort_index()
+            closes[ticker] = _split_adjust(c)
+        except Exception as exc:  # noqa: BLE001
+            log.warning("Failed to load %s: %s", ticker, exc)
+            missing.append(ticker)
+
+    if missing:
+        log.info(
+            "Closes missing for %d/%d tickers (%.1f%%) — these fires will be ungradable",
+            len(missing), len(tickers), 100 * len(missing) / max(1, len(tickers)),
+        )
+    return closes
+
+
+# ---------------------------------------------------------------------------
 # Main runner
 # ---------------------------------------------------------------------------
 
@@ -569,12 +658,18 @@ def run_study(
     boarded_path: Path | None = None,
     ledger_path: Path | None = None,
     closes: dict[str, pd.Series] | None = None,
+    massive_dir: Path | None = None,
 ) -> dict[str, Any]:
     """Run F-HZ-1 study, returning a result dict.
 
     Always declares the trial budget before any computation (idempotent).
     Returns gate_status dict if data gates fail or floors not met.
     Returns full study result if study runs.
+
+    `closes` may be supplied directly (for tests). If None, the RUN branch
+    loads closes from massive_stock_day via _load_closes() after gates pass.
+    If the store is unreachable, _load_closes() returns {} and floors fail.
+    `massive_dir` overrides the massive_stock_day directory for testing.
     """
     dilution_path = dilution_path or _DILUTION_PATH
     boarded_path  = boarded_path  or _BOARDED_PATH
@@ -640,7 +735,25 @@ def run_study(
         print(f"  {pred_col}: {n_hazard:,} hazard fires / {n_total:,} total "
               f"({n_hazard / n_total:.1%})")
 
-    # ── Step 7: Compute outcomes ───────────────────────────────────────────
+    # ── Step 7: Load closes and compute outcomes ───────────────────────────
+    # Load closes from massive_stock_day (RUN branch — gates already passed).
+    # If closes were injected by caller (tests), use them directly.
+    if closes is None:
+        mass_dir = massive_dir or _MASSIVE_DIR
+        if not mass_dir.exists():
+            print(
+                f"GATE FAIL [massive_stock_day]: {mass_dir} not found. "
+                "Mac-local store is required for outcome computation. "
+                "Outcomes will be NaN; floors will fail. "
+                "Routing to DEFER-on-floor."
+            )
+            closes = {}
+        else:
+            all_tickers = list(fires_raw["ticker"].dropna().unique())
+            print(f"Loading closes for {len(all_tickers):,} tickers from {mass_dir}...")
+            closes = _load_closes(all_tickers, mass_dir)
+            print(f"Closes loaded for {len(closes):,}/{len(all_tickers):,} tickers")
+
     print("Computing outcomes (stop5, dead_money_21)...")
     primary_labeled = compute_outcomes(primary_labeled, closes)
     n_gradable = int(primary_labeled["gradable"].sum())
@@ -713,7 +826,7 @@ def run_study(
     # ── Step 11: Assemble summary JSON ─────────────────────────────────────
     summary: dict[str, Any] = {
         "study":              "F-HZ-1",
-        "prereg":             "research/hazard/F_HZ1_PREREG.md",
+        "prereg":             "research/dilution_hazard/F_HZ1_PREREG.md",
         "adjacent_prior":     "research/entry_stack/W1_SEV_REPORT.md",
         "adjacent_prior_note": (
             "W1-SEV (S-EV earnings-window): stop5 NULL, mae21 NULL. "
@@ -766,8 +879,8 @@ def _write_report(summary: dict[str, Any], report_path: Path) -> None:
     a("# F-HZ-1 Dilution-Hazard Phase-0 Report")
     a("")
     a(f"**Status:** DESCRIPTIVE-ONLY. No alpha claim. No promotion.")
-    a(f"**Pre-registration:** research/hazard/F_HZ1_PREREG.md")
-    a(f"**Family:** `hazard` (budget=3)")
+    a(f"**Pre-registration:** research/dilution_hazard/F_HZ1_PREREG.md")
+    a(f"**Family:** `dilution_hazard` (budget=3)")
     a(f"**Ran at:** {summary.get('ran_at', 'unknown')}")
     a(f"**Adjacent prior:** {summary.get('adjacent_prior_note', '')}")
     a("")
@@ -818,11 +931,11 @@ def _write_report(summary: dict[str, Any], report_path: Path) -> None:
     a("")
     a("DESCRIPTIVE-ONLY. No FDR correction applied. No promotion.")
     a("A future promotion prereg must carry `derived_from_surface: f_hz1`.")
-    a("The word 'validated' does not appear in this report.")
+    a("No alpha is claimed or confirmed by this report; it is a surface description only.")
     a("")
     a("---")
     a("*Generated by scripts/research/f_hz1_study.py*")
-    a("*Family: hazard | Budget declared: 3*")
+    a("*Family: dilution_hazard | Budget declared: 3*")
 
     report_path.write_text("\n".join(lines), encoding="utf-8")
 
@@ -847,6 +960,10 @@ def main(argv: list[str] | None = None) -> int:
         "--ledger-path", type=Path, default=None,
         help=f"Override trial_ledger.jsonl path (default: {_LEDGER_PATH})",
     )
+    parser.add_argument(
+        "--massive-dir", type=Path, default=None,
+        help=f"Override massive_stock_day directory path (default: {_MASSIVE_DIR})",
+    )
     args = parser.parse_args(argv)
 
     logging.basicConfig(
@@ -859,6 +976,7 @@ def main(argv: list[str] | None = None) -> int:
         dilution_path=args.dilution_path,
         boarded_path=args.boarded_path,
         ledger_path=args.ledger_path,
+        massive_dir=args.massive_dir,
     )
 
     if result.get("ran"):
