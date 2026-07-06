@@ -18,7 +18,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | hk-canada | 2 |
 | institutional-sector-intelligence | 2 |
 | intl-fix | 1 |
-| long-hold | 6 |
+| long-hold | 8 |
 | neural-web | 27 |
 | nw-rails | 2 |
 | options-alpha | 7 |
@@ -34,7 +34,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 68 |
+| display | 70 |
 | infrastructure | 37 |
 | scored | 4 |
 | shadow | 36 |
@@ -43,7 +43,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 140 |
+| git | 142 |
 | gitignored-local | 3 |
 | r2 | 2 |
 
@@ -132,12 +132,14 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
+| great-company-trap | `embedded: great_company_trap fields inside site/stockdata/<TICKER>.json` | json | daily-engine | display | 1 | 0 |
 | long-hold-clocks | `embedded: entry_clock + thesis_clock inside site/stockdata/<TICKER>.json` | json | daily-engine | display | 1 | 0 |
 | long-hold-compounder-features | `embedded: financials.multiyear.compounder inside site/stockdata/<TICKER>.json` | json | daily-engine | display | 1 | 0 |
 | long-hold-dead-name-prices | `data/edgar/dead_name_prices.parquet` | parquet | on-demand | infrastructure | 1 | 0 |
 | long-hold-killtest-results | `data/research/missed_hold_study_results.parquet` | parquet | on-demand | display | 1 | 0 |
 | long-hold-labels | `data/research/long_hold_labels.parquet` | parquet | on-demand | display | 1 | 0 |
 | long-hold-labels-manifest | `data/research/long_hold_labels_manifest.json` | json | on-demand | display | 1 | 0 |
+| moat-falsifier-sensors | `embedded: per-ticker moat sensor fields inside site/stockdata/<TICKER>.json` | json | daily-engine | display | 1 | 0 |
 
 ### neural-web
 
@@ -557,6 +559,13 @@ Artifacts below have `known_extra_writers` — additional code paths that write 
   - engine/market_state_tune.py — a6_auto_apply lane-i events on every tune() call
   - engine/risk_radar_intl_tune.py — a6_auto_apply lane-i events on every tune() call
 
+### great-company-trap
+
+- **path:** `embedded: great_company_trap fields inside site/stockdata/<TICKER>.json`
+- **declared producer:** `engine/moat_falsifiers.py`
+- **extra writers:**
+  - engine/stock_fundamentals.py — _compute_trap_block() calls great_company_trap() inside panels()
+
 ### hub-signal-snapshots
 
 - **path:** `data/hub/signal_snapshots.jsonl`
@@ -620,6 +629,13 @@ Artifacts below have `known_extra_writers` — additional code paths that write 
 - **declared producer:** `engine/market_state.py`
 - **extra writers:**
   - scripts/build_site.py — calls market_state.persist() at line 1700; build_site is the runner, market_state.py is the author
+
+### moat-falsifier-sensors
+
+- **path:** `embedded: per-ticker moat sensor fields inside site/stockdata/<TICKER>.json`
+- **declared producer:** `engine/moat_falsifiers.py`
+- **extra writers:**
+  - engine/stock_fundamentals.py — _compute_moat_block() calls compute_moat_falsifiers() inside panels()
 
 ### name-score-calls
 

@@ -1627,6 +1627,64 @@ def _analyst(t, deep, rev=None) -> dict | None:
     return out
 
 
+# ── W2 PR-K helpers — called from panels() ───────────────────────────────────
+
+def _compute_moat_block(
+    ticker: str,
+    statements_df: "pd.DataFrame | None",
+    base_rates: dict,
+) -> "dict | None":
+    """Call compute_moat_falsifiers for one ticker; non-fatal.  Returns None when
+    statements_df is absent (panel is omitted from the JSON by the ``if v`` filter)."""
+    if statements_df is None or statements_df.empty:
+        return None
+    try:
+        from engine.moat_falsifiers import compute_moat_falsifiers  # noqa: PLC0415
+        result = compute_moat_falsifiers(ticker, statements_df, base_rates=base_rates)
+        # Suppress missing-data results to keep JSON lean (panel hidden when absent)
+        if result.get("sensor_coverage") == "missing":
+            return None
+        return result
+    except Exception as exc:  # noqa: BLE001
+        log.debug("stock_fundamentals: moat_falsifiers skipped for %s (%s)", ticker, exc)
+        return None
+
+
+def _compute_trap_block(
+    ticker: str,
+    analyst_rev: dict,
+    insider: dict,
+) -> "dict | None":
+    """Assemble great_company_trap inputs from existing loaded structures; non-fatal.
+    crowding_z is basket-level (not per-ticker in this context) — passed as None.
+    Returns None when all inputs are unavailable (panel hidden from JSON)."""
+    try:
+        from engine.moat_falsifiers import great_company_trap  # noqa: PLC0415
+        rev_row = analyst_rev.get(ticker)
+        revision_dir: str | None = rev_row.get("direction") if rev_row else None
+        ins_row = insider.get(ticker)
+        # insider net_usd_mn is in millions; great_company_trap expects USD
+        insider_net_usd: float | None = None
+        if ins_row:
+            mn = ins_row.get("net_usd_mn")
+            if mn is not None:
+                try:
+                    insider_net_usd = float(mn) * 1e6
+                except (TypeError, ValueError):
+                    pass
+        # Only emit the block when at least one input is available
+        if revision_dir is None and insider_net_usd is None:
+            return None
+        return great_company_trap(
+            crowding_z=None,
+            insider_net_usd=insider_net_usd,
+            revision_direction=revision_dir,
+        )
+    except Exception as exc:  # noqa: BLE001
+        log.debug("stock_fundamentals: great_company_trap skipped for %s (%s)", ticker, exc)
+        return None
+
+
 def panels() -> dict[str, dict]:
     """{ticker: {profile, valuation, financials, factors, positioning, analyst,
     thesis_clock}}
@@ -1661,6 +1719,23 @@ def panels() -> dict[str, dict]:
         _thesis_clocks = thesis_clocks_from_parquet()
     except Exception as _tc_exc:  # noqa: BLE001
         log.warning("stock_fundamentals: thesis_clocks skipped (%s)", _tc_exc)
+
+    # W2 PR-K: moat falsifier sensors + great-company-trap overlay (display-only;
+    # horizon_role=hold_thesis; MUST NOT feed entry-stack scored surfaces — LH-R1).
+    from engine.moat_falsifiers import (  # noqa: PLC0415
+        compute_base_rates,
+        compute_moat_falsifiers,
+        great_company_trap,
+    )
+    _statements_df: pd.DataFrame | None = None
+    _moat_base_rates: dict = {}
+    try:
+        _sp = config.data_dir() / "edgar" / "statements.parquet"
+        if _sp.exists():
+            _statements_df = pd.read_parquet(_sp)
+            _moat_base_rates = compute_base_rates(_statements_df)
+    except Exception as _mf_exc:  # noqa: BLE001
+        log.warning("stock_fundamentals: moat_falsifiers base rates skipped (%s)", _mf_exc)
 
     M = _context_frame(fund, table, statements)
     nm_top_thr = _num(M["net_margin"].quantile(2 / 3)) if "net_margin" in M else None
@@ -1708,6 +1783,19 @@ def panels() -> dict[str, dict]:
             # Days since latest EDGAR period_end with positive fundamental delta (v1).
             # DISPLAY-ONLY; horizon_role=hold_thesis; must NOT feed entry-stack surfaces.
             "thesis_clock": _thesis_clocks.get(str(t)) or None,
+            # W2 PR-K — moat falsifier sensors (DISPLAY-ONLY; horizon_role=hold_thesis).
+            # Four sensors from statements.parquet: margin compression, receivables
+            # stretch, inventory build, capital intensity rising.  Each sensor carries
+            # a matched-control universe base rate so display layer can show context.
+            # MUST NOT feed board ordering, alert triage, top-setups gates, or push floor.
+            "moat_falsifiers": _compute_moat_block(
+                str(t), _statements_df, _moat_base_rates,
+            ),
+            # W2 PR-K — great-company-trap de-escalation overlay (LH-R10).
+            # Assembled ONLY from existing signals; may ONLY lower conviction context.
+            "great_company_trap": _compute_trap_block(
+                str(t), analyst_rev, insider,
+            ),
         }
         out[str(t)] = _clean({k: v for k, v in blocks.items() if v})
     log.info("stock_fundamentals: %d names with panels (factors %d, deep %d, short %s)",
