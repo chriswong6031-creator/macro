@@ -1,21 +1,34 @@
 {
   "schema": "risk_state.v1",
-  "built": "2026-07-04 03:13:58 UTC",
+  "built": "2026-07-06 16:13:36 UTC",
   "session": {
     "region": "us",
-    "open": false,
-    "local_time": "2026-07-03 23:13 EDT"
+    "open": true,
+    "local_time": "2026-07-06 12:13 EDT"
   },
-  "live_active": false,
-  "stale": true,
-  "stale_reason": "market closed",
+  "live_active": true,
+  "stale": false,
+  "stale_reason": null,
   "delayed_min": 15,
   "feed": "\u224815-min delayed (Polygon Standard / Yahoo)",
   "realtime": false,
   "nightly_asof": "2026-07-02",
   "polygon_status": "ok",
-  "n_live_symbols": 0,
-  "movers": [],
+  "n_live_symbols": 12,
+  "movers": [
+    {
+      "sym": "SPY",
+      "chg_pct": 0.81
+    },
+    {
+      "sym": "QQQ",
+      "chg_pct": 1.83
+    },
+    {
+      "sym": "VIX",
+      "chg_pct": -1.55
+    }
+  ],
   "display": {
     "verdict": "RISK_OFF",
     "label_en": "Risk-off",
@@ -28,18 +41,18 @@
   "live": {
     "verdict": "RISK_OFF",
     "score": 40,
-    "raw_score": 69,
+    "raw_score": 72,
     "color": "red",
     "label_en": "Risk-off",
     "label_zh": "\u907f\u9669",
-    "headline_en": "Risk-off \u2014 the market is under stress and trend is down. Defend capital first; let washouts confirm before buying.",
-    "headline_zh": "\u907f\u9669 \u2014 \u5e02\u573a\u627f\u538b\u3001\u8d8b\u52bf\u5411\u4e0b\u3002\u4f18\u5148\u4fdd\u4f4f\u672c\u91d1\uff1b\u5f85\u6e05\u6d17\u786e\u8ba4\u540e\u518d\u4e70\u5165\u3002",
+    "headline_en": "Risk-off \u2014 stress is elevated; defend capital first.",
+    "headline_zh": "\u907f\u9669 \u2014 \u538b\u529b\u5347\u9ad8\uff1b\u4f18\u5148\u9632\u5b88\u3002",
     "radar": {
       "state": "caution",
-      "state_ungated": "risk-off",
-      "top_score": 84,
-      "label_en": "Growth scare / defensive rotation",
-      "label_zh": "\u589e\u957f\u6050\u614c/\u9632\u5fa1\u8f6e\u52a8",
+      "state_ungated": "elevated",
+      "top_score": 59,
+      "label_en": "Bubble / blow-off unwind",
+      "label_zh": "\u6ce1\u6cab/\u89c1\u9876\u56de\u5410",
       "context_gate": {
         "met": false,
         "spy_below_200dma": false,
@@ -53,20 +66,20 @@
     "overrides": [
       {
         "kind": "radar",
-        "note_en": "Forced to Risk-off by the Risk Radar above (underlying read already risk-off).",
-        "note_zh": "\u7531\u4e0a\u65b9\u98ce\u9669\u96f7\u8fbe\u5f3a\u5236\u4e3a\u300c\u907f\u9669\u300d\uff08\u5e95\u5c42\u8bfb\u6570\u5df2\u4e3a\u907f\u9669\uff09\u3002"
+        "note_en": "Risk Radar forces Risk-off.",
+        "note_zh": "\u98ce\u9669\u96f7\u8fbe\u5f3a\u5236\u4e3a\u300c\u907f\u9669\u300d\u3002"
       }
     ]
   },
   "nightly": {
     "verdict": "RISK_OFF",
     "score": 40,
-    "raw_score": 68,
+    "raw_score": 70,
     "color": "red",
     "label_en": "Risk-off",
     "label_zh": "\u907f\u9669",
-    "headline_en": "Risk-off \u2014 the market is under stress and trend is down. Defend capital first; let washouts confirm before buying.",
-    "headline_zh": "\u907f\u9669 \u2014 \u5e02\u573a\u627f\u538b\u3001\u8d8b\u52bf\u5411\u4e0b\u3002\u4f18\u5148\u4fdd\u4f4f\u672c\u91d1\uff1b\u5f85\u6e05\u6d17\u786e\u8ba4\u540e\u518d\u4e70\u5165\u3002",
+    "headline_en": "Risk-off \u2014 stress is elevated; defend capital first.",
+    "headline_zh": "\u907f\u9669 \u2014 \u538b\u529b\u5347\u9ad8\uff1b\u4f18\u5148\u9632\u5b88\u3002",
     "radar": {
       "state": "caution",
       "state_ungated": null,
@@ -80,8 +93,8 @@
     "overrides": [
       {
         "kind": "radar",
-        "note_en": "Forced to Risk-off by the Risk Radar above (underlying read already risk-off).",
-        "note_zh": "\u7531\u4e0a\u65b9\u98ce\u9669\u96f7\u8fbe\u5f3a\u5236\u4e3a\u300c\u907f\u9669\u300d\uff08\u5e95\u5c42\u8bfb\u6570\u5df2\u4e3a\u907f\u9669\uff09\u3002"
+        "note_en": "Risk Radar forces Risk-off.",
+        "note_zh": "\u98ce\u9669\u96f7\u8fbe\u5f3a\u5236\u4e3a\u300c\u907f\u9669\u300d\u3002"
       }
     ]
   },
@@ -89,9 +102,9 @@
     {
       "key": "trend",
       "label_en": "Trend & technicals",
-      "score": 88,
-      "basis": "carried",
-      "asof": "2026-07-02"
+      "score": 92,
+      "basis": "live",
+      "asof": "live"
     },
     {
       "key": "risk",
@@ -104,13 +117,13 @@
       "key": "vol",
       "label_en": "Volatility regime",
       "score": 80,
-      "basis": "carried",
-      "asof": "2026-07-02"
+      "basis": "live",
+      "asof": "live"
     },
     {
       "key": "breadth",
       "label_en": "Breadth & participation",
-      "score": 56,
+      "score": 68,
       "basis": "carried",
       "asof": "2026-07-02"
     },
@@ -130,10 +143,10 @@
     }
   ],
   "legs_asof": {
-    "tape_trend": "2026-07-02",
-    "volatility": "2026-07-02",
-    "radar_fast": "2026-07-02",
-    "credit_hy_oas": "2026-06-30",
+    "tape_trend": "live",
+    "volatility": "live",
+    "radar_fast": "live",
+    "credit_hy_oas": "2026-07-02",
     "breadth": "2026-07-02",
     "liquidity": "2026-07-02",
     "macro_stress": "2026-07-02",
