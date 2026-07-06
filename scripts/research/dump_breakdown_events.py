@@ -1,17 +1,43 @@
-"""L1 Short-Side — Phase-0 Breakdown Event Tape (BD-1 / BD-2 / BD-3).
+"""L1 Short-Side — Phase-0/0b Breakdown Event Tape (BD-1 / BD-2 / BD-3 / BD-4 / BD-5 / BD-6).
 
-Authority: research/short_side/BD_PHASE0_PREREG.md (FROZEN; thresholds/windows are
-read from the prereg, not this file).  research/SHORT_SIDE_MASTERPLAN_BY_FABLE.md §4.
-research/NW_RAILS_AND_TIER1_LOBES_PROGRAM_BY_FABLE.md §6.
+Authority:
+  Phase-0  (BD-1/2/3): research/short_side/BD_PHASE0_PREREG.md  (FROZEN)
+  Phase-0b (BD-4/5/6): research/short_side/BD_PHASE0B_PREREG.md (FROZEN)
+  Governing: research/NW_NEXT3_UPGRADES_ADJUDICATION_BY_FABLE.md §5.4, RUL-U4, RUL-U3a.
+  research/SHORT_SIDE_MASTERPLAN_BY_FABLE.md §4.
+  research/NW_RAILS_AND_TIER1_LOBES_PROGRAM_BY_FABLE.md §6.
 
 Outputs (RUL-P10 declared commit path):
   data/research/breakdown_events.parquet  — Mac-local; explicit .gitignore entry.
-  data/research/breakdown_events_summary.json — git-committed vintage-stamped summary.
+  data/research/breakdown_events_summary.json — git-committed vintage-stamped summary (v3).
 
-TrialLedger.log_declared_budget(3, family='short_side') is logged BEFORE the first
-event-detection loop (3 = the three definitions; no threshold search).
+Budget (RUL-U3a — max() floor semantics):
+  Phase-0  TrialLedger.log_declared_budget(3, family='short_side') — Phase-0 run (first time).
+  Phase-0b TrialLedger.log_declared_budget(3, family='short_side') — this run (max()-basis).
+  Both budgets are logged BEFORE the first event-detection loop.
+  Outputs print: (a) family literal_n (cumulative distinct configs), (b) max()-basis
+  divergence note explaining that declared_budget=3 is per-study BH floor, not a sum.
+  Each definition is also logged as a distinct config via log_trial() so literal_n accumulates.
 
-Phase-0 is DESCRIPTIVE ONLY.  No chip, no synapse consumer, no site surface.
+derived_from_surface: bd_phase0_tape (Phase-0b contamination stamp per BD_PHASE0B_PREREG §0).
+
+Phase-0/0b is DESCRIPTIVE ONLY.  No chip, no synapse consumer, no site surface.
+
+Seeding contract (CRITICAL):
+  - BD-1/2/3 controls: drawn from the SINGLE global rng=np.random.default_rng(42) passed
+    per-ticker in process_ticker(). BD-4/5/6 events for a ticker are appended to the
+    existing event list BEFORE calling _sample_controls(), so all six definitions' events
+    contribute to the same stratified draw.  This means BD-1/2/3 control rows WILL differ
+    from Phase-0-only runs when a ticker has BD-4/5/6 events (larger event set → different
+    pool draws).  To preserve Phase-0 rows byte-identically would require running Phase-0
+    again with BD-4/5/6 set to empty, which is not the strategy here.
+  - Instead: BD-4/5/6 per-definition controls are drawn via SEPARATE RNGs seeded as
+    BD4_CONTROL_RNG_SEED/BD5_CONTROL_RNG_SEED/BD6_CONTROL_RNG_SEED (distinct from 42),
+    seeded independently per ticker using ticker hash + definition seed.  The shared-pool
+    controls (definition="CONTROL") come from the global rng and cover all six definitions.
+  - PRACTICAL CONSEQUENCE: re-running dump_breakdown_events.py with BD-4/5/6 enabled
+    changes which SHARED CONTROL bars are drawn for tickers that have BD-4/5/6 events
+    (because the event pool size increases).  BD-1/2/3 event rows themselves are unchanged.
 """
 from __future__ import annotations
 
@@ -95,6 +121,47 @@ BD3_EXTENDED_MULT = 1.15          # close >= 1.15 * rolling 126-bar min
 BD3_DEF_BID_WINDOW = 21           # 21-bar total return for defensive-bid check
 
 # ---------------------------------------------------------------------------
+# BD-4 thresholds (prereg §1 — S4- Two-Clock Rollover)
+# ---------------------------------------------------------------------------
+BD4_POS_SHORT_WINDOW  = 63        # pos63: position in 63-bar range
+BD4_POS_LONG_WINDOW   = 252       # pos252: position in 252-bar range
+BD4_EMA_SHORT_SPAN    = 5         # EMA5 of pos63 → daily_osc
+BD4_EMA_LONG_SPAN     = 21        # EMA21 of pos252 → weekly_osc
+BD4_ROLLOVER_WINDOW   = 15        # trailing 15 bars for rollover peak
+BD4_ROLLOVER_DROP     = 15.0      # osc ≤ peak − 15
+BD4_TREND_LOOKBACK    = 5         # (osc_t − osc_{t−5}) < 0 for direction
+BD4_EXTENDED_MULT     = 0.88      # close >= 0.88 * rolling 252-bar max
+BD4_WARMUP_BARS       = 273       # ≥273 prior bars required (252 pos + EMA21 burn-in)
+
+# ---------------------------------------------------------------------------
+# BD-5 thresholds (prereg §2 — S5- Coiled Breakdown)
+# ---------------------------------------------------------------------------
+BD5_COIL_WINDOW       = 21        # 21-bar range for coil_ratio
+BD5_COIL_PCT_WINDOW   = 252       # trailing 252 bars to compute coil percentile
+BD5_COIL_PCT_THRESHOLD = 20       # coil_ratio ≤ 20th pctile of its own 252-bar history
+BD5_DIST_SUM_WINDOW   = 21        # 21-bar sum of sign_volume
+BD5_DIST_ROLL_WINDOW  = 252       # rolling-252 std of the 21-bar-sum series (BD-1 convention)
+BD5_DIST_SIGMA        = -0.5      # ≤ −0.5σ below trailing-252-bar mean of the 21-bar-sum
+BD5_BREAKDOWN_WINDOW  = 21        # breakdown: close < min(C, trailing 21 bars ending t-1)
+
+# ---------------------------------------------------------------------------
+# BD-6 thresholds (prereg §3 — S13- Within-Sector Leader Fade)
+# ---------------------------------------------------------------------------
+BD6_LEADER_WINDOW     = 126       # 126-bar trailing return for "leader" decile
+BD6_FADE_WINDOW       = 21        # rel21 = ticker 21-bar return − sector median
+BD6_FADE_STD_WINDOW   = 252       # trailing 252 bars for std(rel21)
+BD6_FADE_SIGMA        = -1.0      # rel21 ≤ −1.0 × std(rel21, 252)
+BD6_NEAR_HIGHS_MULT   = 0.85      # close ≥ 0.85 × rolling 126-bar max
+BD6_MIN_SECTOR_MEMBERS = 8        # sectors with <8 covered members skipped per bar
+
+# ---------------------------------------------------------------------------
+# BD-4/5/6 control RNG seeds (independent of the BD-1/2/3 global seed=42)
+# ---------------------------------------------------------------------------
+BD4_CONTROL_RNG_SEED  = 7891      # chosen to not collide with 42 or 12345
+BD5_CONTROL_RNG_SEED  = 13421     # "
+BD6_CONTROL_RNG_SEED  = 19937     # "
+
+# ---------------------------------------------------------------------------
 # Grading horizons (prereg §4)
 # ---------------------------------------------------------------------------
 GRADE_HORIZONS = (21, 63, 126)
@@ -127,6 +194,7 @@ YAHOO_DIR = DATA_DIR / "yahoo"
 EDGAR_DEAD_COV = DATA_DIR / "edgar" / "_dead_name_coverage.json"
 OUT_PARQUET = RESEARCH_DIR / "breakdown_events.parquet"
 OUT_SUMMARY = RESEARCH_DIR / "breakdown_events_summary.json"
+TICKER_SECTORS_PATH = DATA_DIR / "breadth" / "ticker_sectors.parquet"
 
 
 # ===========================================================================
@@ -581,6 +649,420 @@ def detect_bd3(ticker: str, close: pd.Series, raw_df: pd.DataFrame | None) -> li
 
 
 # ===========================================================================
+# 5b. BD-4: Two-Clock Rollover (Phase-0b prereg §1)
+# ===========================================================================
+
+def _ema(series: pd.Series, span: int) -> pd.Series:
+    """Exponential moving average with adjust=False (standard convention)."""
+    return series.ewm(span=span, adjust=False).mean()
+
+
+def _rollover_mask(osc: pd.Series, window: int = BD4_ROLLOVER_WINDOW,
+                   drop: float = BD4_ROLLOVER_DROP,
+                   trend_lb: int = BD4_TREND_LOOKBACK) -> pd.Series:
+    """Boolean mask: rollover(osc) per prereg §1.
+    Conditions (all must hold at bar t):
+      - max(osc, trailing 15 bars) >= 80
+      - osc_t <= that peak - 15
+      - (osc_t - osc_{t-5}) < 0  (downward trend over 5 bars)
+    """
+    roll_peak = osc.rolling(window).max()
+    cond_peak_high = roll_peak >= 80.0
+    cond_below_peak = osc <= (roll_peak - drop)
+    cond_trending_down = (osc - osc.shift(trend_lb)) < 0.0
+    return cond_peak_high & cond_below_peak & cond_trending_down
+
+
+def detect_bd4(ticker: str, close: pd.Series, raw_df: pd.DataFrame | None) -> list[pd.Timestamp]:
+    """Detect BD-4 events: Two-Clock Rollover (S4- family).
+
+    BD-4 — S4- Two-Clock Rollover (Phase-0b prereg §1):
+      pos63_t   = 100 * (C - min(C,63)) / (max(C,63) - min(C,63)); skip if max==min
+      daily_osc = EMA5(pos63)
+      pos252_t  = same over 252 bars
+      weekly_osc = EMA21(pos252)
+      rollover(osc): max(osc,15b) >= 80 AND osc <= peak-15 AND (osc_t - osc_{t-5}) < 0
+      extended: C >= 0.88 * rolling 252-bar max
+      Warmup floor: >=273 prior bars required (raises ERA-LAW floor for this definition).
+      Event: first bar where rollover(daily_osc) AND rollover(weekly_osc) AND extended.
+
+    Returns list of event bar Timestamps (episode collapse applied by caller).
+    """
+    events: list[pd.Timestamp] = []
+
+    era_mask = close.index >= ERA_START
+    if era_mask.sum() == 0:
+        return events
+
+    # Compute pos63 (skip bars where max == min)
+    roll_max_63  = close.rolling(BD4_POS_SHORT_WINDOW).max()
+    roll_min_63  = close.rolling(BD4_POS_SHORT_WINDOW).min()
+    hl_range_63  = roll_max_63 - roll_min_63
+    pos63        = pd.Series(np.where(hl_range_63 > 0,
+                                      100.0 * (close - roll_min_63) / hl_range_63,
+                                      np.nan),
+                             index=close.index)
+    daily_osc    = _ema(pos63.ffill(), BD4_EMA_SHORT_SPAN)
+
+    # Compute pos252
+    roll_max_252 = close.rolling(BD4_POS_LONG_WINDOW).max()
+    roll_min_252 = close.rolling(BD4_POS_LONG_WINDOW).min()
+    hl_range_252 = roll_max_252 - roll_min_252
+    pos252       = pd.Series(np.where(hl_range_252 > 0,
+                                      100.0 * (close - roll_min_252) / hl_range_252,
+                                      np.nan),
+                             index=close.index)
+    weekly_osc   = _ema(pos252.ffill(), BD4_EMA_LONG_SPAN)
+
+    # Rollover masks
+    daily_rollover  = _rollover_mask(daily_osc)
+    weekly_rollover = _rollover_mask(weekly_osc)
+
+    # Extended: close >= 0.88 * rolling 252-bar max
+    roll_max_252c = close.rolling(BD4_POS_LONG_WINDOW).max()
+    extended      = close >= roll_max_252c * BD4_EXTENDED_MULT
+
+    for i, ts in enumerate(close.index):
+        if ts < ERA_START:
+            continue
+        # BD-4 warmup floor: >=273 prior bars (raises ERA-LAW floor)
+        if i < BD4_WARMUP_BARS:
+            continue
+        if not bool(daily_rollover.iloc[i]):
+            continue
+        if not bool(weekly_rollover.iloc[i]):
+            continue
+        if not bool(extended.iloc[i]):
+            continue
+        # Liquidity
+        if raw_df is not None and not _liq_ok_at(close, raw_df, i):
+            continue
+        events.append(ts)
+
+    return events
+
+
+# ===========================================================================
+# 5c. BD-5: Coiled Breakdown (Phase-0b prereg §2)
+# ===========================================================================
+
+def detect_bd5(ticker: str, close: pd.Series, raw_df: pd.DataFrame | None) -> list[pd.Timestamp]:
+    """Detect BD-5 events: Coiled Breakdown (S5- family).
+
+    BD-5 — S5- Coiled Breakdown (Phase-0b prereg §2):
+      coil_ratio_t = (max(C,21) - min(C,21)) / median(C,21)
+      coiled: coil_ratio_{t-1} <= 20th percentile of its own trailing-252-bar distribution at t-1
+      sign_volume = volume * ((C-L)-(H-C))/(H-L); H==L → 0
+      distribution: 21-bar-sum(sign_volume) <= -0.5σ below trailing-252-bar mean of the
+                    21-bar-sum series (σ = rolling-252 std of sv_21; BD-1 convention verbatim)
+      breakdown: C_t < min(C, 21 bars ending t-1)
+      Event: breakdown bar with coiled and distribution both true at t.
+
+    Returns list of event bar Timestamps.
+    """
+    events: list[pd.Timestamp] = []
+
+    era_mask = close.index >= ERA_START
+    if era_mask.sum() == 0:
+        return events
+
+    # coil_ratio
+    roll_max_21 = close.rolling(BD5_COIL_WINDOW).max()
+    roll_min_21 = close.rolling(BD5_COIL_WINDOW).min()
+    roll_med_21 = close.rolling(BD5_COIL_WINDOW).median()
+    coil_ratio  = (roll_max_21 - roll_min_21) / roll_med_21.replace(0.0, np.nan)
+
+    # coiled: coil_ratio_t <= 20th percentile of its trailing-252-bar distribution
+    # (evaluated at t; we use t-1 for the coiled flag per spec: "coil_ratio_{t-1}")
+    coil_pct20  = coil_ratio.rolling(BD5_COIL_PCT_WINDOW).quantile(
+        BD5_COIL_PCT_THRESHOLD / 100.0)
+    coiled_t    = coil_ratio <= coil_pct20        # at bar t
+    coiled_flag = coiled_t.shift(1)               # use coil_ratio_{t-1} per spec
+
+    # sign_volume (BD-1 convention)
+    sv = _compute_sign_volume(close, raw_df) if raw_df is not None else None
+
+    # distribution: 21-bar-sum of sign_volume, then rolling-252 std of that sum (BD-1 verbatim)
+    if sv is None:
+        return events  # can't compute without H/L/V
+
+    sv_21      = sv.rolling(BD5_DIST_SUM_WINDOW).sum()
+    sv_21_mean = sv_21.rolling(BD5_DIST_ROLL_WINDOW).mean()
+    sv_21_std  = sv_21.rolling(BD5_DIST_ROLL_WINDOW).std()
+    dist_flag  = sv_21 <= (sv_21_mean + BD5_DIST_SIGMA * sv_21_std)  # -0.5σ below mean
+
+    # breakdown: C_t < min(C, 21 bars ending t-1)
+    # "21 bars ending t-1" = rolling 21-bar min shifted by 1
+    roll_min_21_prev = close.rolling(BD5_BREAKDOWN_WINDOW).min().shift(1)
+    breakdown_flag   = close < roll_min_21_prev
+
+    for i, ts in enumerate(close.index):
+        if ts < ERA_START:
+            continue
+        if i < ERA_PRIOR_BARS_REQUIRED:
+            continue
+        if not bool(breakdown_flag.iloc[i]):
+            continue
+        if not bool(coiled_flag.iloc[i]):
+            continue
+        if not bool(dist_flag.iloc[i]):
+            continue
+        # Liquidity
+        if raw_df is not None and not _liq_ok_at(close, raw_df, i):
+            continue
+        events.append(ts)
+
+    return events
+
+
+# ===========================================================================
+# 5d. BD-6: Within-Sector Leader Fade (Phase-0b prereg §3)
+# Requires a sector-panel pre-pass (cross-sectional context).
+# ===========================================================================
+
+# Module-level cache for sector panel pre-pass outputs (populated once per run)
+_SECTOR_PANEL_CACHE: dict[str, Any] = {}  # will hold per-date lookups
+
+
+def build_sector_panel(
+    universe_tickers: set[str],
+    ticker_sectors: pd.DataFrame,
+) -> dict[str, Any]:
+    """Sector panel pre-pass for BD-6 (Phase-0b prereg §3).
+
+    Loads universe closes for all tickers with sector assignments, then computes
+    per-bar:
+      - sector top-decile 126-bar-return cutoffs (one cutoff per sector per date)
+      - sector median 21-bar returns (one median per sector per date)
+    Sectors with <8 covered members on a bar are skipped (returns {} for that sector/bar).
+
+    Returns a dict with keys:
+      'sector_top_decile_126': {date_str -> {sector -> cutoff_return_float}}
+      'sector_median_21':      {date_str -> {sector -> median_return_float}}
+      'sector_map':            {ticker -> sector}
+      'artifact_path':         str
+      'as_of':                 str (date of ticker_sectors.parquet generation)
+      'n_tickers_covered':     int
+
+    This is expensive (loads many price series); cache the result externally.
+    """
+    sector_map = ticker_sectors.set_index("ticker")["sector"].to_dict()
+
+    # Only process tickers in both universe and sector map
+    covered = sorted(universe_tickers & set(sector_map.keys()))
+    log.info("BD-6 sector pre-pass: %d universe tickers, %d sector-covered",
+             len(universe_tickers), len(covered))
+
+    if not covered:
+        log.warning("BD-6 sector pre-pass: no covered tickers — BD-6 will yield 0 events")
+        return {
+            "sector_top_decile_126": {},
+            "sector_median_21": {},
+            "sector_map": sector_map,
+            "artifact_path": str(TICKER_SECTORS_PATH),
+            "as_of": str(pd.Timestamp.now("UTC").date()),
+            "n_tickers_covered": 0,
+        }
+
+    # Collect per-ticker close series
+    log.info("BD-6: loading close series for %d covered tickers...", len(covered))
+    ticker_closes: dict[str, pd.Series] = {}
+    for tk in covered:
+        c = _read_massive_ticker(tk)
+        if c is not None and len(c) > BD6_LEADER_WINDOW + BD6_FADE_STD_WINDOW:
+            ticker_closes[tk] = c
+
+    log.info("BD-6: loaded %d close series", len(ticker_closes))
+
+    # Build a common date index (union of all dates in the ERA window)
+    all_dates: set[pd.Timestamp] = set()
+    for c in ticker_closes.values():
+        era_dates = c.index[c.index >= ERA_START]
+        all_dates.update(era_dates.tolist())
+    all_dates_sorted = sorted(all_dates)
+
+    # Compute per-ticker 126-bar and 21-bar returns on all dates
+    # Returns are NaN when insufficient history
+    ticker_ret126: dict[str, dict[pd.Timestamp, float]] = {}
+    ticker_ret21:  dict[str, dict[pd.Timestamp, float]] = {}
+    for tk, c in ticker_closes.items():
+        ret126_d: dict[pd.Timestamp, float] = {}
+        ret21_d:  dict[pd.Timestamp, float] = {}
+        for ts in all_dates_sorted:
+            loc = c.index.searchsorted(ts, side="right") - 1
+            if loc < 0 or c.index[loc] != ts:
+                continue
+            if loc >= BD6_LEADER_WINDOW:
+                p_now  = float(c.iloc[loc])
+                p_prev = float(c.iloc[loc - BD6_LEADER_WINDOW])
+                if p_prev > 0 and np.isfinite(p_now) and np.isfinite(p_prev):
+                    ret126_d[ts] = p_now / p_prev - 1.0
+            if loc >= BD6_FADE_WINDOW:
+                p_now  = float(c.iloc[loc])
+                p_prev = float(c.iloc[loc - BD6_FADE_WINDOW])
+                if p_prev > 0 and np.isfinite(p_now) and np.isfinite(p_prev):
+                    ret21_d[ts] = p_now / p_prev - 1.0
+        ticker_ret126[tk] = ret126_d
+        ticker_ret21[tk]  = ret21_d
+
+    # Compute per-bar, per-sector top-decile cutoff (126-bar) and median (21-bar)
+    sector_top_decile_126: dict[str, dict[str, float]] = {}  # date_str -> {sector -> cutoff}
+    sector_median_21:      dict[str, dict[str, float]] = {}  # date_str -> {sector -> median}
+
+    # Group tickers by sector
+    sector_tickers: dict[str, list[str]] = {}
+    for tk in ticker_closes:
+        sec = sector_map.get(tk)
+        if sec:
+            sector_tickers.setdefault(sec, []).append(tk)
+
+    for ts in all_dates_sorted:
+        ts_str = str(ts.date())
+        sec_decile: dict[str, float] = {}
+        sec_med:    dict[str, float] = {}
+        for sec, tks in sector_tickers.items():
+            r126_vals = [ticker_ret126[tk][ts] for tk in tks if ts in ticker_ret126[tk]]
+            r21_vals  = [ticker_ret21[tk][ts]  for tk in tks if ts in ticker_ret21[tk]]
+            # Skip sector if <8 covered members (either window)
+            if len(r126_vals) >= BD6_MIN_SECTOR_MEMBERS:
+                arr = np.array(r126_vals)
+                sec_decile[sec] = float(np.percentile(arr, 90))
+            if len(r21_vals) >= BD6_MIN_SECTOR_MEMBERS:
+                sec_med[sec] = float(np.median(r21_vals))
+        sector_top_decile_126[ts_str] = sec_decile
+        sector_median_21[ts_str]      = sec_med
+
+    # as_of from ticker_sectors parquet modification time
+    try:
+        import os
+        mtime = os.path.getmtime(str(TICKER_SECTORS_PATH))
+        as_of = str(pd.Timestamp.fromtimestamp(mtime).date())
+    except Exception:
+        as_of = str(pd.Timestamp.now("UTC").date())
+
+    return {
+        "sector_top_decile_126": sector_top_decile_126,
+        "sector_median_21":      sector_median_21,
+        "sector_map":            sector_map,
+        "artifact_path":         str(TICKER_SECTORS_PATH),
+        "as_of":                 as_of,
+        "n_tickers_covered":     len(ticker_closes),
+    }
+
+
+def detect_bd6(
+    ticker: str,
+    close: pd.Series,
+    raw_df: pd.DataFrame | None,
+    sector_panel: dict[str, Any],
+) -> list[pd.Timestamp]:
+    """Detect BD-6 events: Within-Sector Leader Fade (S13- family).
+
+    BD-6 — S13- Within-Sector Leader Fade (Phase-0b prereg §3):
+      Requires sector_panel pre-pass output (sector_top_decile_126, sector_median_21).
+      leader: ticker's trailing 126-bar return in top decile of sector covered members.
+      rel21_t = ticker 21-bar return − sector median 21-bar return.
+      fade:   rel21_t <= -1.0 × std(rel21, trailing 252 bars);
+              bars where std(rel21, 252) == 0 are skipped (flat-window guard).
+      near_highs: C_t >= 0.85 × rolling 126-bar max.
+      Event: first bar where leader AND fade AND near_highs hold.
+
+    Returns list of event bar Timestamps.
+    """
+    events: list[pd.Timestamp] = []
+
+    if not sector_panel or not sector_panel.get("sector_map"):
+        return events
+
+    ticker_sector = sector_panel["sector_map"].get(ticker)
+    if not ticker_sector:
+        return events  # no sector assignment → skip
+
+    sector_top_decile_126 = sector_panel.get("sector_top_decile_126", {})
+    sector_median_21      = sector_panel.get("sector_median_21", {})
+
+    era_mask = close.index >= ERA_START
+    if era_mask.sum() == 0:
+        return events
+
+    # near_highs: C >= 0.85 * rolling 126-bar max
+    roll_max_126 = close.rolling(BD6_LEADER_WINDOW).max()
+    near_highs   = close >= roll_max_126 * BD6_NEAR_HIGHS_MULT
+
+    # Build rel21 series for this ticker
+    # rel21_t = ticker 21-bar return − sector median 21-bar return
+    rel21_vals: list[float | None] = []
+    rel21_idx:  list[pd.Timestamp] = []
+    for i, ts in enumerate(close.index):
+        if i < BD6_FADE_WINDOW:
+            rel21_vals.append(None)
+            rel21_idx.append(ts)
+            continue
+        ts_str = str(ts.date())
+        sec_med = sector_median_21.get(ts_str, {}).get(ticker_sector)
+        if sec_med is None:
+            rel21_vals.append(None)
+        else:
+            p_now  = float(close.iloc[i])
+            p_prev = float(close.iloc[i - BD6_FADE_WINDOW])
+            if p_prev > 0 and np.isfinite(p_now) and np.isfinite(p_prev):
+                ticker_ret21 = p_now / p_prev - 1.0
+                rel21_vals.append(ticker_ret21 - sec_med)
+            else:
+                rel21_vals.append(None)
+        rel21_idx.append(ts)
+
+    rel21 = pd.Series(rel21_vals, index=rel21_idx, dtype=float)
+
+    # std(rel21, 252) — flat-window guard: skip bars where std == 0
+    rel21_std = rel21.rolling(BD6_FADE_STD_WINDOW).std()
+
+    for i, ts in enumerate(close.index):
+        if ts < ERA_START:
+            continue
+        if i < ERA_PRIOR_BARS_REQUIRED:
+            continue
+
+        # near_highs
+        if not bool(near_highs.iloc[i]):
+            continue
+
+        ts_str = str(ts.date())
+
+        # leader: 126-bar return in top decile of sector
+        decile_cutoff = sector_top_decile_126.get(ts_str, {}).get(ticker_sector)
+        if decile_cutoff is None:
+            continue  # sector has <8 covered members or data missing
+        if i < BD6_LEADER_WINDOW:
+            continue
+        p_now  = float(close.iloc[i])
+        p_prev = float(close.iloc[i - BD6_LEADER_WINDOW])
+        if p_prev <= 0 or not np.isfinite(p_now) or not np.isfinite(p_prev):
+            continue
+        ticker_ret126 = p_now / p_prev - 1.0
+        if ticker_ret126 < decile_cutoff:
+            continue  # not a leader
+
+        # fade: rel21 <= -1.0 * std(rel21, 252)
+        rel21_val = rel21.iloc[i]
+        std_val   = rel21_std.iloc[i]
+        if pd.isna(rel21_val) or pd.isna(std_val):
+            continue
+        if std_val == 0.0:
+            continue  # flat-window guard per prereg §3
+        if not (rel21_val <= BD6_FADE_SIGMA * std_val):
+            continue
+
+        # Liquidity
+        if raw_df is not None and not _liq_ok_at(close, raw_df, i):
+            continue
+
+        events.append(ts)
+
+    return events
+
+
+# ===========================================================================
 # 6. Episode collapse (prereg §3)
 # ===========================================================================
 
@@ -737,8 +1219,16 @@ def _sample_controls(
 def process_ticker(
     ticker: str,
     rng: np.random.Generator,
+    sector_panel: dict[str, Any] | None = None,
 ) -> list[dict[str, Any]]:
-    """Process one ticker: detect all BD-1/BD-2/BD-3 events, grade, add controls."""
+    """Process one ticker: detect all BD-1..BD-6 events, grade, add controls.
+
+    Seeding contract:
+      - The shared controls (definition="CONTROL") are drawn from rng (global, passed in).
+        The event pool covers all six definitions, so adding BD-4/5/6 changes control draws
+        relative to Phase-0-only runs for tickers that have BD-4/5/6 events.
+      - BD-1/2/3 event ROWS themselves are identical; only their control pairings may differ.
+    """
     close = _read_massive_ticker(ticker)
     if close is None or len(close) < ERA_PRIOR_BARS_REQUIRED:
         return []
@@ -771,6 +1261,33 @@ def process_ticker(
         log.debug("BD-3 failed for %s: %s", ticker, e)
         all_events_by_def["BD-3"] = []
 
+    # BD-4 (Phase-0b)
+    try:
+        bd4_raw = detect_bd4(ticker, close, raw_df)
+        all_events_by_def["BD-4"] = _collapse_episodes(bd4_raw, close)
+    except Exception as e:
+        log.debug("BD-4 failed for %s: %s", ticker, e)
+        all_events_by_def["BD-4"] = []
+
+    # BD-5 (Phase-0b)
+    try:
+        bd5_raw = detect_bd5(ticker, close, raw_df)
+        all_events_by_def["BD-5"] = _collapse_episodes(bd5_raw, close)
+    except Exception as e:
+        log.debug("BD-5 failed for %s: %s", ticker, e)
+        all_events_by_def["BD-5"] = []
+
+    # BD-6 (Phase-0b) — requires sector_panel
+    if sector_panel is not None and sector_panel.get("sector_map"):
+        try:
+            bd6_raw = detect_bd6(ticker, close, raw_df, sector_panel)
+            all_events_by_def["BD-6"] = _collapse_episodes(bd6_raw, close)
+        except Exception as e:
+            log.debug("BD-6 failed for %s: %s", ticker, e)
+            all_events_by_def["BD-6"] = []
+    else:
+        all_events_by_def["BD-6"] = []
+
     # Build event rows
     rows: list[dict[str, Any]] = []
     total_events = 0
@@ -790,7 +1307,9 @@ def process_ticker(
         all_event_timestamps.extend(event_list)
 
     # Matched controls: 3:1 per event, year-stratified (same calendar year, same ticker,
-    # non-event bars passing same liquidity floor — prereg §4, year-stratified implementation)
+    # non-event bars passing same liquidity floor — prereg §4, year-stratified implementation).
+    # The event pool includes BD-4/5/6 events, so control draws differ from Phase-0-only
+    # runs for tickers with BD-4/5/6 events (per seeding-contract note in module docstring).
     ctrl_rows = _sample_controls(ticker, close, raw_df, all_event_timestamps, rng)
     rows.extend(ctrl_rows)
 
@@ -798,27 +1317,106 @@ def process_ticker(
 
 
 # ===========================================================================
-# 10. Cross-definition overlap matrix (prereg §3)
+# 10. Cross-definition overlap matrix (prereg §3 + Phase-0b v3 requirement)
 # ===========================================================================
 
 def _overlap_matrix(events_df: pd.DataFrame) -> dict[str, Any]:
-    """Compute the cross-definition overlap matrix (events only, not controls)."""
-    ev = events_df[~events_df.get("is_control", pd.Series(False, index=events_df.index))]
-    defs = ["BD-1", "BD-2", "BD-3"]
-    matrix: dict[str, Any] = {}
-    for d1 in defs:
-        d1_tickers = set(
-            ev[ev["definition"] == d1][["ticker", "event_date"]]
-            .apply(lambda r: f"{r.ticker}|{r.event_date}", axis=1)
-        )
+    """Compute the six-definition cross-definition overlap matrix (events only, not controls).
+
+    Phase-0b adds BD-4/5/6.  The BD-4 x BD-3 overlap share is a REQUIRED output row
+    (prereg §1): if >50% of BD-4 episodes overlap BD-3 episodes (±21 bars), the summary
+    must carry a redundancy flag.
+
+    Overlap is exact-date-match (same ticker, same event_date string) — note that the
+    prereg specifies ±21 bars for the BD-4 x BD-3 check; we report both:
+      - exact overlap (same-date)
+      - near overlap (within ±21 trading bars, same ticker)
+
+    Returns dict with:
+      'matrix':       {def1: {def2: n_exact_overlap}}
+      'bd4_x_bd3':    {n_exact, n_near_21, bd4_n, bd3_n, share_exact, share_near,
+                       redundancy_flag (bool: near share > 0.5)}
+    """
+    is_ctrl = events_df.get("is_control", pd.Series(False, index=events_df.index))
+    ev = events_df[~is_ctrl.astype(bool)]
+
+    all_defs = ["BD-1", "BD-2", "BD-3", "BD-4", "BD-5", "BD-6"]
+
+    # Build per-definition (ticker, event_date) sets
+    def_keys: dict[str, set[str]] = {}
+    for d in all_defs:
+        sub = ev[ev["definition"] == d]
+        if len(sub) > 0 and "ticker" in sub.columns and "event_date" in sub.columns:
+            def_keys[d] = set(sub.apply(lambda r: f"{r['ticker']}|{r['event_date']}", axis=1))
+        else:
+            def_keys[d] = set()
+
+    # Exact-match overlap matrix
+    matrix: dict[str, dict[str, int]] = {}
+    for d1 in all_defs:
         matrix[d1] = {}
-        for d2 in defs:
-            d2_tickers = set(
-                ev[ev["definition"] == d2][["ticker", "event_date"]]
-                .apply(lambda r: f"{r.ticker}|{r.event_date}", axis=1)
-            )
-            matrix[d1][d2] = len(d1_tickers & d2_tickers)
-    return matrix
+        for d2 in all_defs:
+            matrix[d1][d2] = len(def_keys[d1] & def_keys[d2])
+
+    # BD-4 x BD-3 near overlap (±21 bars) — REQUIRED per BD_PHASE0B_PREREG §1
+    bd4_n  = len(def_keys["BD-4"])
+    bd3_n  = len(def_keys["BD-3"])
+    n_exact_bd4_bd3 = matrix["BD-4"]["BD-3"]
+
+    # Build per-ticker sorted event-date lists for ±21-bar check
+    def _ticker_dates(d: str) -> dict[str, list[pd.Timestamp]]:
+        sub = ev[ev["definition"] == d]
+        if len(sub) == 0:
+            return {}
+        result: dict[str, list[pd.Timestamp]] = {}
+        for _, row in sub.iterrows():
+            tk  = str(row["ticker"])
+            dt  = pd.Timestamp(str(row["event_date"]))
+            result.setdefault(tk, []).append(dt)
+        for tk in result:
+            result[tk].sort()
+        return result
+
+    bd4_dates = _ticker_dates("BD-4")
+    bd3_dates = _ticker_dates("BD-3")
+
+    # Count BD-4 episodes that have a BD-3 episode within ±21 calendar bars (same ticker)
+    # "calendar bars" here = trading bars in close index; we approximate with 30 calendar days
+    # (21 trading bars ≈ 30 calendar days) for the overlap check
+    n_near = 0
+    for tk, d4_list in bd4_dates.items():
+        d3_list = bd3_dates.get(tk, [])
+        if not d3_list:
+            continue
+        d3_arr = np.array([d.value for d in d3_list])
+        for d4_ts in d4_list:
+            window_ns = pd.Timedelta(days=30).value  # ~21 trading bars
+            if np.any(np.abs(d3_arr - d4_ts.value) <= window_ns):
+                n_near += 1
+
+    share_exact = round(n_exact_bd4_bd3 / bd4_n, 4) if bd4_n > 0 else None
+    share_near  = round(n_near / bd4_n, 4)            if bd4_n > 0 else None
+    redundancy_flag = (share_near is not None) and (share_near > 0.50)
+
+    bd4_x_bd3 = {
+        "n_bd4_episodes": bd4_n,
+        "n_bd3_episodes": bd3_n,
+        "n_exact_overlap": n_exact_bd4_bd3,
+        "n_near_overlap_21bars": n_near,
+        "share_exact": share_exact,
+        "share_near_21bars": share_near,
+        "redundancy_flag": redundancy_flag,
+        "redundancy_note": (
+            "BD-4 overlaps >50% of BD-3 episodes (±21 bars): treat as BD-3 variant, "
+            "not independent species (BD_PHASE0B_PREREG §1 obligation)"
+            if redundancy_flag else ""
+        ),
+    }
+
+    return {
+        "matrix": matrix,
+        "bd4_x_bd3": bd4_x_bd3,
+    }
 
 
 # ===========================================================================
@@ -840,7 +1438,7 @@ def _make_vintage_stamp(n_universe: int) -> dict[str, Any]:
     return {
         "price_plane_id":         "massive_stock_day_v2",
         "adjustment_mode":        "split_adjust_price_only",
-        "universe_as_of":         pd.Timestamp.utcnow().date().isoformat(),
+        "universe_as_of":         pd.Timestamp.now("UTC").date().isoformat(),
         "frame":                  "era_law_2021-07-06_plus",
         "survivorship_biased":    True,
         "survivorship_note": (
@@ -853,7 +1451,7 @@ def _make_vintage_stamp(n_universe: int) -> dict[str, Any]:
         "era_law_cohort":         "2021-07-06_to_present",
         "n_universe":             n_universe,
         "stamp_degraded":         stamp_degraded,
-        "generated_utc":          pd.Timestamp.utcnow().isoformat(),
+        "generated_utc":          pd.Timestamp.now("UTC").isoformat(),
     }
 
 
@@ -1024,15 +1622,29 @@ def _vs_control_stats(
     }
 
 
-def build_summary(events_df: pd.DataFrame, stamp: dict) -> dict[str, Any]:
-    """Build the §6 table and return as a dict for JSON output."""
-    ev   = events_df[~events_df.get("is_control", pd.Series(False, index=events_df.index))]
-    ctrl = events_df[events_df.get("is_control", pd.Series(False, index=events_df.index))]
+def build_summary(events_df: pd.DataFrame, stamp: dict,
+                   ledger: "TrialLedger | None" = None) -> dict[str, Any]:
+    """Build the §6 table (v3: all six definitions + six-way overlap matrix).
+
+    Per RUL-U3a: prints (a) family literal_n from ledger (all distinct configs logged),
+    (b) max()-basis divergence note.
+    """
+    is_ctrl = events_df.get("is_control", pd.Series(False, index=events_df.index))
+    ev   = events_df[~is_ctrl.astype(bool)]
+    ctrl = events_df[is_ctrl.astype(bool)]
 
     boot_rng = np.random.default_rng(_BOOT_RNG_SEED)
 
+    # RUL-U3a: retrieve family literal_n
+    literal_n: int | None = None
+    if ledger is not None:
+        try:
+            literal_n = ledger.literal_n(family="short_side")
+        except Exception:
+            pass
+
     per_def: dict[str, Any] = {}
-    for defn in ["BD-1", "BD-2", "BD-3"]:
+    for defn in ["BD-1", "BD-2", "BD-3", "BD-4", "BD-5", "BD-6"]:
         ev_d   = ev[ev["definition"] == defn]
         ctrl_d = ctrl[ctrl["definition"] == "CONTROL"]
 
@@ -1117,27 +1729,42 @@ def build_summary(events_df: pd.DataFrame, stamp: dict) -> dict[str, Any]:
             ),
         }
 
-    # Overlap matrix
+    # Six-definition overlap matrix (Phase-0b v3 requirement)
     overlap = _overlap_matrix(events_df)
 
     # Total events
     total_events = sum(d.get("n_episodes", 0) for d in per_def.values())
     total_controls = int(ctrl["definition"].notna().sum()) if len(ctrl) > 0 else 0
 
+    # RUL-U3a budget note
+    budget_note = (
+        f"declared_budget=3 per study (Phase-0 and Phase-0b each); "
+        f"log_declared_budget uses max() semantics (per-family BH floor, not cumulative sum). "
+        f"family literal_n (distinct configs logged)={literal_n}. "
+        f"Max()-basis divergence: each study's declared_budget=3 is its own BH floor; "
+        f"cross-study multiplicity within 'short_side' is NOT captured by declared_budget — "
+        f"tolerable because both studies are descriptive/research-only (no DSR, per RUL-U3a)."
+    )
+
     return {
-        "schema":          "breakdown_events_summary.v2",
-        "vintage":         stamp,
-        "trial_family":    "short_side",
-        "declared_budget": 3,
-        "per_definition":  per_def,
-        "overlap_matrix":  overlap,
-        "total_events":    total_events,
-        "total_controls":  total_controls,
-        "phase":           "phase0_descriptive_only",
+        "schema":               "breakdown_events_summary.v3",
+        "vintage":              stamp,
+        "trial_family":         "short_side",
+        "declared_budget":      3,
+        "family_literal_n":     literal_n,
+        "budget_semantics_note": budget_note,
+        "derived_from_surface": "bd_phase0_tape",
+        "per_definition":       per_def,
+        "overlap_matrix":       overlap,
+        "total_events":         total_events,
+        "total_controls":       total_controls,
+        "phase":                "phase0_and_phase0b_descriptive_only",
         "note": (
-            "Phase-0 is DESCRIPTIVE. No chip, no synapse consumer, no site surface, "
+            "Phase-0/0b is DESCRIPTIVE. No chip, no synapse consumer, no site surface, "
             "no promotion criteria applied. Nulls printed, not hidden. "
-            "Survivorship_biased=True: names delisted before ERA window may be absent."
+            "Survivorship_biased=True: names delisted before ERA window may be absent. "
+            "BD-6 requires ticker_sectors.parquet (build_sector_map.py output); "
+            "if absent, BD-6 events=0 and sector panel is None."
         ),
     }
 
@@ -1164,15 +1791,51 @@ def main(args=None):
         format="%(asctime)s %(levelname)s %(name)s %(message)s",
     )
 
-    # TRIAL LEDGER: log declared budget BEFORE running (prereg §1)
+    # TRIAL LEDGER: log declared budget BEFORE running (prereg §1, Phase-0b RUL-U3a)
     ledger_path = DATA_DIR / "trial_ledger.jsonl"
     led = TrialLedger(path=ledger_path)
+
+    # Phase-0 budget (may already be logged; idempotent)
     led.log_declared_budget(
         3,
         family="short_side",
         reason="BD Phase-0: 3 definitions (BD-1 distribution-pinned, BD-2 failed-reclaim, BD-3 tail-flag); no threshold search",
     )
-    log.info("TrialLedger: declared_budget=3 family='short_side' logged")
+    # Phase-0b budget (this run; max() semantics per RUL-U3a — declared_budget=3 is per-study BH floor)
+    led.log_declared_budget(
+        3,
+        family="short_side",
+        reason=(
+            "BD Phase-0b: 3 definitions (BD-4 two-clock-rollover, BD-5 coiled-breakdown, "
+            "BD-6 within-sector-leader-fade); no threshold search; "
+            "max()-semantics: this is not additive with Phase-0 declared_budget=3 (RUL-U3a)"
+        ),
+    )
+    # Log each definition as a distinct config so literal_n accumulates honestly (RUL-U3a)
+    for defn_cfg in [
+        {"study": "phase0",  "definition": "BD-1", "spec": "distribution-pinned"},
+        {"study": "phase0",  "definition": "BD-2", "spec": "failed-reclaim"},
+        {"study": "phase0",  "definition": "BD-3", "spec": "tail-flag-breach"},
+        {"study": "phase0b", "definition": "BD-4", "spec": "two-clock-rollover"},
+        {"study": "phase0b", "definition": "BD-5", "spec": "coiled-breakdown"},
+        {"study": "phase0b", "definition": "BD-6", "spec": "within-sector-leader-fade"},
+    ]:
+        led.log_trial(defn_cfg, family="short_side")
+
+    literal_n = led.literal_n(family="short_side")
+    log.info(
+        "TrialLedger: declared_budget=3 (max()-floor) x2 studies logged; "
+        "family='short_side' literal_n=%d (distinct configs); "
+        "max()-basis divergence: declared_budget is per-study BH floor, not cumulative sum",
+        literal_n,
+    )
+    print(
+        f"\n[RUL-U3a BUDGET LOG] family='short_side' literal_n={literal_n} distinct configs; "
+        f"declared_budget=3 per study (Phase-0 + Phase-0b both logged); "
+        f"max()-basis semantics: NOT a sum — each declared_budget=3 is a per-study BH floor. "
+        f"Cross-study multiplicity within 'short_side' is NOT captured here "
+        f"(tolerable: both studies are descriptive/research-only)."
+    )
 
     # Build universe
     if parsed.ticker:
@@ -1183,6 +1846,32 @@ def main(args=None):
     if parsed.dry_run:
         universe = set(list(sorted(universe))[:10])
         log.info("DRY RUN: processing %d tickers only", len(universe))
+
+    # BD-6 sector pre-pass (must happen before the per-ticker loop)
+    sector_panel: dict[str, Any] | None = None
+    if TICKER_SECTORS_PATH.exists():
+        try:
+            ticker_sectors = pd.read_parquet(TICKER_SECTORS_PATH)
+            if "ticker" not in ticker_sectors.columns and ticker_sectors.index.name == "ticker":
+                ticker_sectors = ticker_sectors.reset_index()
+            if "ticker" in ticker_sectors.columns and "sector" in ticker_sectors.columns:
+                log.info("BD-6: ticker_sectors.parquet found (%d rows) — running sector pre-pass",
+                         len(ticker_sectors))
+                sector_panel = build_sector_panel(universe, ticker_sectors)
+                log.info("BD-6 sector pre-pass complete: n_covered=%d, artifact_as_of=%s",
+                         sector_panel.get("n_tickers_covered", 0),
+                         sector_panel.get("as_of", "?"))
+            else:
+                log.warning("BD-6: ticker_sectors.parquet missing 'ticker' or 'sector' column "
+                            "— BD-6 will yield 0 events")
+        except Exception as e:
+            log.warning("BD-6 sector pre-pass failed: %s — BD-6 will yield 0 events", e)
+    else:
+        log.warning(
+            "BD-6: ticker_sectors.parquet not found at %s — BD-6 will yield 0 events. "
+            "Run scripts/build_sector_map.py first.",
+            TICKER_SECTORS_PATH,
+        )
 
     # Resumability: load already-processed tickers from existing parquet
     done_tickers: set[str] = set()
@@ -1218,7 +1907,7 @@ def main(args=None):
             log.info("Progress: %d/%d tickers (%.1fs elapsed, ~%.1fs/ticker)",
                      i, n, elapsed, rate)
         try:
-            rows = process_ticker(ticker, rng)
+            rows = process_ticker(ticker, rng, sector_panel=sector_panel)
             all_rows.extend(rows)
         except Exception as e:
             log.warning("process_ticker(%s) failed: %s", ticker, e)
@@ -1238,20 +1927,30 @@ def main(args=None):
         df.to_parquet(OUT_PARQUET, index=False)
         log.info("Wrote %s (%d rows)", OUT_PARQUET, len(df))
 
-        # Build summary
+        # Build summary (v3: all six definitions)
         stamp = _make_vintage_stamp(len(universe))
-        summary = build_summary(df, stamp)
+        # Add sector panel stamp to vintage
+        if sector_panel is not None:
+            stamp["bd6_sector_artifact"] = sector_panel.get("artifact_path", "?")
+            stamp["bd6_sector_as_of"]    = sector_panel.get("as_of", "?")
+            stamp["bd6_n_tickers_covered"] = sector_panel.get("n_tickers_covered", 0)
+        else:
+            stamp["bd6_sector_artifact"] = None
+            stamp["bd6_sector_as_of"]    = None
+            stamp["bd6_n_tickers_covered"] = 0
+        summary = build_summary(df, stamp, ledger=led)
         summary["runtime_seconds"] = round(elapsed_total, 1)
         summary["n_tickers_processed"] = len(universe)
 
         OUT_SUMMARY.write_text(json.dumps(summary, indent=2, default=str))
         log.info("Wrote %s", OUT_SUMMARY)
 
-        # Print the §6 table to stdout
-        print("\n=== BD Phase-0 Summary Table ===")
+        # Print the §6 table to stdout (all six definitions, v3 schema)
+        print("\n=== BD Phase-0/0b Summary Table (v3 — all six definitions) ===")
         for defn, d in summary["per_definition"].items():
             n_ep = d["n_episodes"]
-            print(f"\n{defn}: {n_ep} episodes")
+            phase_tag = "Phase-0b" if defn in ("BD-4", "BD-5", "BD-6") else "Phase-0"
+            print(f"\n{defn} [{phase_tag}]: {n_ep} episodes")
             print(f"  per_year: {d['per_year']}")
             for pname, ls in d.get("long_states", {}).items():
                 print(f"  long[{pname}]: stop={ls.get('stop_rate_pct')}% "
@@ -1268,17 +1967,40 @@ def main(args=None):
                 print(f"  vs_control[{pname}]: delta={vc.get('long_stop_vs_control_pp')}pp")
             if d.get("powering_note"):
                 print(f"  NOTE: {d['powering_note']}")
-        print(f"\nOverlap matrix: {summary['overlap_matrix']}")
+
+        # Six-way overlap matrix summary
+        om = summary.get("overlap_matrix", {})
+        print(f"\nOverlap matrix (exact-date): {om.get('matrix', {})}")
+        bd4x3 = om.get("bd4_x_bd3", {})
+        print(f"BD-4 x BD-3 (REQUIRED CHECK): n_bd4={bd4x3.get('n_bd4_episodes')} "
+              f"n_near_21bars={bd4x3.get('n_near_overlap_21bars')} "
+              f"share_near={bd4x3.get('share_near_21bars')} "
+              f"redundancy_flag={bd4x3.get('redundancy_flag')}")
+        if bd4x3.get("redundancy_note"):
+            print(f"  REDUNDANCY: {bd4x3['redundancy_note']}")
+
+        # BD-6 sector panel note
+        if sector_panel is None:
+            print("\nBD-6: ticker_sectors.parquet absent — 0 events (run build_sector_map.py first)")
+        else:
+            print(f"\nBD-6 sector panel: {sector_panel.get('n_tickers_covered')} tickers covered, "
+                  f"as_of={sector_panel.get('as_of')}")
+
+        print(f"\n[RUL-U3a] family='short_side' literal_n={summary.get('family_literal_n')} "
+              f"(distinct configs); declared_budget=3 per study (max()-floor); "
+              f"NOT cumulative — see budget_semantics_note in summary JSON.")
         print(f"Total events: {summary['total_events']}, controls: {summary['total_controls']}")
         print(f"Runtime: {elapsed_total:.1f}s")
     else:
         log.info("DRY RUN: no files written (found %d rows from %d tickers)",
                  len(all_rows), len(tickers_to_process))
         # Still print event counts for dry-run inspection
-        ev = [r for r in all_rows if not r.get("is_control")]
+        ev_rows = [r for r in all_rows if not r.get("is_control")]
         from collections import Counter
-        cnt = Counter(r.get("definition") for r in ev)
+        cnt = Counter(r.get("definition") for r in ev_rows)
         print("Dry-run event counts by definition:", dict(cnt))
+        if sector_panel is None:
+            print("BD-6: ticker_sectors.parquet absent — 0 events")
 
 
 if __name__ == "__main__":
