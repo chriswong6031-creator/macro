@@ -31,10 +31,11 @@ Seeding contract (CRITICAL):
     from Phase-0-only runs when a ticker has BD-4/5/6 events (larger event set → different
     pool draws).  To preserve Phase-0 rows byte-identically would require running Phase-0
     again with BD-4/5/6 set to empty, which is not the strategy here.
-  - Instead: BD-4/5/6 per-definition controls are drawn via SEPARATE RNGs seeded as
-    BD4_CONTROL_RNG_SEED/BD5_CONTROL_RNG_SEED/BD6_CONTROL_RNG_SEED (distinct from 42),
-    seeded independently per ticker using ticker hash + definition seed.  The shared-pool
-    controls (definition="CONTROL") come from the global rng and cover all six definitions.
+  - BD-4/5/6 share the SAME pooled control draw as BD-1/2/3 (the shared-pool controls,
+    definition="CONTROL", come from the global rng and cover all six definitions).
+    BD4_CONTROL_RNG_SEED/BD5_CONTROL_RNG_SEED/BD6_CONTROL_RNG_SEED (lines 160-162) are
+    declared-but-unused — reserved for future per-definition separate draws, not currently
+    wired.  See report §7 (BD_PHASE0B_REPORT.md) for the honest seeding narrative.
   - PRACTICAL CONSEQUENCE: re-running dump_breakdown_events.py with BD-4/5/6 enabled
     changes which SHARED CONTROL bars are drawn for tickers that have BD-4/5/6 events
     (because the event pool size increases).  BD-1/2/3 event rows themselves are unchanged.
@@ -1330,7 +1331,12 @@ def _overlap_matrix(events_df: pd.DataFrame) -> dict[str, Any]:
     Overlap is exact-date-match (same ticker, same event_date string) — note that the
     prereg specifies ±21 bars for the BD-4 x BD-3 check; we report both:
       - exact overlap (same-date)
-      - near overlap (within ±21 trading bars, same ticker)
+      - near overlap (within ±21 business days, same ticker)
+        Uses np.busday_count (Mon-Fri) as proxy for trading bars; over-inclusive by
+        at most ~1 bar (US market holidays not excluded), making the redundancy_flag
+        conservative (slightly more likely to trigger).  Prior implementation used
+        pd.Timedelta(days=30) which could under-count near-overlaps around US holiday
+        clusters by 0-1 bar.
 
     Returns dict with:
       'matrix':       {def1: {def2: n_exact_overlap}}
@@ -1380,18 +1386,28 @@ def _overlap_matrix(events_df: pd.DataFrame) -> dict[str, Any]:
     bd4_dates = _ticker_dates("BD-4")
     bd3_dates = _ticker_dates("BD-3")
 
-    # Count BD-4 episodes that have a BD-3 episode within ±21 calendar bars (same ticker)
-    # "calendar bars" here = trading bars in close index; we approximate with 30 calendar days
-    # (21 trading bars ≈ 30 calendar days) for the overlap check
+    # Count BD-4 episodes that have a BD-3 episode within ±21 trading bars (same ticker).
+    # We use np.busday_count (Mon-Fri business days) as a proxy for trading bars.
+    # Business days over-count by at most ~1 bar vs true trading days (US holidays not
+    # excluded), making this slightly conservative (over-inclusive → more redundancy flags).
+    # This is anti-conservative compared to the prior pd.Timedelta(days=30) proxy which
+    # could under-count near-overlaps by 0-1 bar around US holiday clusters.
+    # Corrects finding #1 from W-0B code review (2026-07-06).
+    _NEAR_WINDOW_BDAYS = 21  # per BD_PHASE0B_PREREG §1
     n_near = 0
     for tk, d4_list in bd4_dates.items():
         d3_list = bd3_dates.get(tk, [])
         if not d3_list:
             continue
-        d3_arr = np.array([d.value for d in d3_list])
+        d3_dates_arr = np.array([d.date() for d in d3_list], dtype="datetime64[D]")
         for d4_ts in d4_list:
-            window_ns = pd.Timedelta(days=30).value  # ~21 trading bars
-            if np.any(np.abs(d3_arr - d4_ts.value) <= window_ns):
+            d4_date = np.datetime64(d4_ts.date(), "D")
+            # np.busday_count returns signed count; we want abs distance in bdays
+            bday_diffs = np.abs(np.busday_count(
+                np.minimum(d3_dates_arr, d4_date),
+                np.maximum(d3_dates_arr, d4_date),
+            ))
+            if np.any(bday_diffs <= _NEAR_WINDOW_BDAYS):
                 n_near += 1
 
     share_exact = round(n_exact_bd4_bd3 / bd4_n, 4) if bd4_n > 0 else None

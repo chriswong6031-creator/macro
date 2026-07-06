@@ -1734,6 +1734,98 @@ class TestV3SummarySchema:
         )
         assert bd4x3["redundancy_note"], "redundancy_note should be non-empty when flag is True"
 
+    def test_v3_near_overlap_uses_business_days_not_calendar_days(self):
+        """±21 near-overlap check uses business days (not calendar days / ns-timestamp proxy).
+
+        Regression guard for the fix described in W-0B code review finding #1 (2026-07-06):
+        the prior implementation used pd.Timedelta(days=30) as an ~21-trading-bar proxy,
+        which could under-count near-overlaps by 0-1 bar around US holiday clusters.
+        The corrected implementation uses np.busday_count (Mon-Fri business days), which
+        is conservative (slightly over-inclusive: at most ~1 bar, because US market
+        holidays are not explicitly excluded from the weekday count).
+
+        This test exercises the non-exact-date near-overlap path: BD-4 event on day T,
+        BD-3 event 15 business days later on the same ticker.  This should be flagged as
+        near-overlap (15 <= 21) regardless of whether 15 bdays spans >=30 calendar days.
+        """
+        from scripts.research.dump_breakdown_events import build_summary
+
+        bd3_date = pd.Timestamp("2023-01-03")  # a Tuesday
+        # 15 business days after 2023-01-03 = 2023-01-24 (Mon-Fri, no holiday exclusion)
+        bd4_date = pd.Timestamp("2023-01-24")
+        # Verify: np.busday_count gives 15
+        import numpy as np
+        bdays = np.busday_count(bd3_date.date(), bd4_date.date())
+        assert bdays == 15, f"fixture sanity: expected 15 bdays, got {bdays}"
+        # Calendar days between them: 21 calendar days exactly
+        cal_days = (bd4_date - bd3_date).days
+        # The near-overlap should fire because 15 bdays <= 21 threshold
+
+        def _row(defn, dt):
+            return {
+                "ticker": "ZZZ",
+                "definition": defn,
+                "event_date": str(dt.date()),
+                "is_control": False,
+                "censored": False,
+                "long_state_clean8_21": TerminalState.STOPPED,
+                "long_state_clean15_126": TerminalState.STOPPED,
+                "short_state_short21": TerminalStateShort.ADVERSE_TRIGGERED,
+                "short_state_short126": TerminalStateShort.ADVERSE_TRIGGERED,
+            }
+
+        rows = [_row("BD-3", bd3_date), _row("BD-4", bd4_date)]
+        df = pd.DataFrame(rows)
+        stamp = {"generated_utc": "2026-07-06T00:00:00", "price_plane_id": "test"}
+        summary = build_summary(df, stamp)
+        bd4x3 = summary["overlap_matrix"]["bd4_x_bd3"]
+        assert bd4x3["n_near_overlap_21bars"] == 1, (
+            f"BD-4 event {bd4_date.date()} is {bdays} bdays ({cal_days} cal days) from "
+            f"BD-3 event {bd3_date.date()} — should count as near-overlap (15 <= 21 bdays). "
+            f"Got n_near_overlap_21bars={bd4x3['n_near_overlap_21bars']}"
+        )
+        assert bd4x3["redundancy_flag"] is True, (
+            "1/1 BD-4 episode overlapping BD-3 (15 bdays) should set redundancy_flag=True"
+        )
+
+    def test_v3_no_near_overlap_beyond_21_bdays(self):
+        """BD-4 event more than 21 bdays from any BD-3 event is NOT flagged as near-overlap."""
+        from scripts.research.dump_breakdown_events import build_summary
+        import numpy as np
+
+        bd3_date = pd.Timestamp("2023-01-03")
+        # 30 business days later: 2023-02-14
+        bd4_date = bd3_date + pd.offsets.BDay(30)
+        bdays = np.busday_count(bd3_date.date(), bd4_date.date())
+        assert bdays == 30, f"fixture sanity: expected 30 bdays, got {bdays}"
+
+        def _row(defn, dt):
+            return {
+                "ticker": "ZZZ",
+                "definition": defn,
+                "event_date": str(dt.date()),
+                "is_control": False,
+                "censored": False,
+                "long_state_clean8_21": TerminalState.STOPPED,
+                "long_state_clean15_126": TerminalState.STOPPED,
+                "short_state_short21": TerminalStateShort.ADVERSE_TRIGGERED,
+                "short_state_short126": TerminalStateShort.ADVERSE_TRIGGERED,
+            }
+
+        rows = [_row("BD-3", bd3_date), _row("BD-4", bd4_date)]
+        df = pd.DataFrame(rows)
+        stamp = {"generated_utc": "2026-07-06T00:00:00", "price_plane_id": "test"}
+        summary = build_summary(df, stamp)
+        bd4x3 = summary["overlap_matrix"]["bd4_x_bd3"]
+        assert bd4x3["n_near_overlap_21bars"] == 0, (
+            f"BD-4 event {bd4_date.date()} is {bdays} bdays from BD-3 event {bd3_date.date()} "
+            f"— should NOT count as near-overlap (30 > 21 bdays). "
+            f"Got n_near_overlap_21bars={bd4x3['n_near_overlap_21bars']}"
+        )
+        assert bd4x3["redundancy_flag"] is False, (
+            "0/1 BD-4 episodes overlapping should set redundancy_flag=False"
+        )
+
     def test_v3_budget_semantics_note_present(self):
         """budget_semantics_note key is present and mentions max() and literal_n."""
         from scripts.research.dump_breakdown_events import build_summary
