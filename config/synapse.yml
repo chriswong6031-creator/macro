@@ -398,6 +398,7 @@ artifacts:
       - scripts/build_hk.py
       - scripts/build_hk_library.py
       - scripts/us_board_studies.py
+      - scripts/validate_options_entry.py
     external_consumers: []
     notes: "Producer: scripts/grade_us_board.py:11 append-only per as_of, lane, ticker, horizon."
 
