@@ -2362,6 +2362,24 @@
       "state": "LT-4 shipped; snapshot built; population accruing",
       "next_step": "Per-stock funnel state computed daily via panels(). Standalone snapshot (scripts/research/build_thesis_funnel_snapshot.py) overwrites thesis_funnel_states.parquet on-demand; wire to nightly if longitudinal population tracking is needed before 2026-10-01 review. Return 2026-10-01 to review population stability. Do NOT wire to board ordering or entry gates (W3-locked).",
       "phase_hint": "LT-4 (long-hold external foundation)"
+    },
+    {
+      "id": "china-intel-hub-command",
+      "name": "China Intelligence Hub — command apparatus track record",
+      "kind": "track_record",
+      "priority": "medium",
+      "cadence": "daily",
+      "what": "Per-ticker edge-remaining × opportunity ranking of China names (5-desk fusion: news/altdata/radar/board/special-sits). Snapshot ledger at data/china_hub/signal_snapshots.jsonl accrues date/ticker/opportunity/edge/stage/lean rows daily under CN_LANE=asia. Forward IC across the cross-sectional ranking is the target metric. Gate: n_dates≥25 (≈2026-08-15). Display-only until gauntleted.",
+      "source": "engine/china_intel_hub.py",
+      "storage": "data/china_hub/signal_snapshots.jsonl",
+      "started": "2026-07-06",
+      "come_back_on": "2026-08-15",
+      "come_back_note": "Check n_dates>=25 and compute rank IC across opportunity_score vs forward 20d return vs CSI300. IC is computed over rows with signal_core>0 only (board_only_unranked excluded from ranking). Priced rows only (veto_blind=False) form the cleaner IC sample.",
+      "maturation": "n_dates>=25 then FDR gate",
+      "status": "accruing",
+      "state": "active",
+      "next_step": "Accrue 25 sessions, then run IC check vs 20d forward RS vs CSI300.",
+      "phase_hint": "display_only"
     }
   ]
 }
