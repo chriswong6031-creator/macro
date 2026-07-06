@@ -15,6 +15,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | cycle-intelligence | 4 |
 | engine-fix | 16 |
 | entry-stack-expansion | 2 |
+| factor-intelligence | 5 |
 | hk-canada | 2 |
 | institutional-sector-intelligence | 2 |
 | intl-fix | 1 |
@@ -24,8 +25,9 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | nw-rails | 3 |
 | options-alpha | 7 |
 | options-nw-entry-intelligence | 3 |
-| oracle | 20 |
+| oracle | 23 |
 | qualitative-intelligence | 23 |
+| research-factory | 3 |
 | sector-pulse | 3 |
 | setup-species | 6 |
 | signal-commons | 7 |
@@ -35,16 +37,16 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 72 |
-| infrastructure | 39 |
+| display | 81 |
+| infrastructure | 40 |
 | scored | 4 |
-| shadow | 36 |
+| shadow | 37 |
 
 ### Artifacts by storage
 
 | storage | count |
 |---|---|
-| git | 145 |
+| git | 156 |
 | gitignored-local | 4 |
 | r2 | 2 |
 
@@ -108,6 +110,16 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 |---|---|---|---|---|---|---|
 | bottom-sensors-json | `site/neuralwebdata/bottom_sensors.json` | json | daily-engine | display | 1 | 1 |
 | bottom-sensors-parquet | `data/neuralweb/bottom_sensors.parquet` | parquet | daily-engine | display | 1 | 0 |
+
+### factor-intelligence
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| factor-contradictions-ledger | `data/neuralweb/factor_contradictions.jsonl` | jsonl | nightly-factor-panel | display | 0 | 0 |
+| factor-intelligence-state | `data/neuralweb/factor_intelligence_state.json` | json | nightly-factor-panel | display | 0 | 0 |
+| factor-state-history | `data/factordata/factor_state_history.jsonl` | jsonl | nightly-factor-panel | display | 0 | 0 |
+| fire-coordinates | `data/factordata/fire_coordinates.jsonl` | jsonl | nightly-factor-panel | display | 0 | 0 |
+| site-factor-intelligence-state | `site/neuralwebdata/factor_intelligence_state.json` | json | nightly-factor-panel | display | 0 | 0 |
 
 ### hk-canada
 
@@ -221,10 +233,13 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | site-basket-oracle-state | `site/basketdata/oracle_state.json` | json | daily-engine | display | 4 | 0 |
 | site-basket-flow | `site/basketdata/flow.json` | json | daily-engine | display | 2 | 1 |
 | index-leadership-snapshots | `data/index_leadership/snapshots.jsonl` | jsonl | daily-engine | shadow | 2 | 0 |
+| oracle-qual-filter-accrual | `data/oracle/qual_filter_accrual.json` | json | daily-engine | display | 2 | 0 |
+| oracle-qual-filter-stamps | `data/oracle/qual_filter_stamps.jsonl` | jsonl | daily-engine | shadow | 2 | 0 |
 | oracle-reversion-forward-ledger | `data/oracle/reversion_forward/<compound_id>.jsonl` | jsonl | daily-engine | shadow | 2 | 0 |
 | radar-track-record | `data/radar/track_record.json` | json | daily-engine | display | 2 | 0 |
 | site-marketdata-subsector-rotation | `site/marketdata/subsector_rotation.json` | json | daily-engine | display | 2 | 0 |
 | subsector-rotation-snapshots | `data/subsector_rotation/snapshots.jsonl` | jsonl | daily-engine | shadow | 2 | 0 |
+| oracle-qual-filter-registry | `data/oracle/qual_filters/registry.jsonl` | jsonl | on-demand | infrastructure | 1 | 0 |
 | oracle-reversion-authority | `data/oracle/reversion_authority.json` | json | daily-engine | infrastructure | 1 | 0 |
 | oracle-reversion-kill-requeue | `data/oracle/reversion_kill_requeue.jsonl` | jsonl | on-demand | infrastructure | 1 | 0 |
 | oracle-reversion-promotion-queue | `data/oracle/reversion_promotion_queue.json` | json | daily-engine | infrastructure | 1 | 0 |
@@ -262,6 +277,14 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | thematic-desk-theses | `data/thematic_desk/theses.jsonl` | jsonl | daily-engine | shadow | 2 | 0 |
 | foresight-earliness-log | `data/foresight/earliness_log.jsonl` | jsonl | daily-engine | shadow | 1 | 0 |
 | site-foresight-cascade | `site/basketdata/foresight_cascade.json` | json | daily-engine | display | 0 | 1 |
+
+### research-factory
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| research-factory-candidates | `data/research_factory/candidates.jsonl` | jsonl | on-demand | display | 0 | 0 |
+| research-factory-paper-monitor | `data/research_factory/paper_monitor.jsonl` | jsonl | on-demand | display | 0 | 0 |
+| research-factory-transitions | `data/research_factory/transitions.jsonl` | jsonl | on-demand | display | 0 | 0 |
 
 ### sector-pulse
 
@@ -685,6 +708,28 @@ Artifacts below have `known_extra_writers` — additional code paths that write 
 - **declared producer:** `engine/regime_vector.py`
 - **extra writers:**
   - engine/run.py — calls regime_vector.py:487 and stores result at line 681; run.py is the orchestrator
+
+### research-factory-candidates
+
+- **path:** `data/research_factory/candidates.jsonl`
+- **declared producer:** `<RESEARCH_FACTORY_INGEST>`
+- **extra writers:**
+  - scripts/research_factory_ingest.py — W2 ingest writer (planned)
+
+### research-factory-paper-monitor
+
+- **path:** `data/research_factory/paper_monitor.jsonl`
+- **declared producer:** `<RESEARCH_FACTORY_MONITOR>`
+- **extra writers:**
+  - scripts/research_factory_monitor.py — W6 nightly monitor writer (planned)
+
+### research-factory-transitions
+
+- **path:** `data/research_factory/transitions.jsonl`
+- **declared producer:** `<RESEARCH_FACTORY_INGEST>`
+- **extra writers:**
+  - scripts/research_factory_ingest.py — W2 transition writer (planned)
+  - scripts/research_factory_decide.py — W5 decision recorder (planned)
 
 ### research-queue
 

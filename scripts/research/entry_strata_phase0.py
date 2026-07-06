@@ -728,6 +728,7 @@ def r1_estimate(
     rng_seed: int = RNG_SEED,
     entry_quality_bands: bool = False,
     computable_mask: "pd.Series | None" = None,
+    extra_fe_cols: "list[str] | None" = None,
 ) -> dict[str, Any]:
     """R1 estimator: date-FE stratified difference with block-bootstrap CIs.
 
@@ -767,6 +768,13 @@ def r1_estimate(
         it, every sparse family's FE contrast conflates "absent" with "not
         applicable". Mask definition per family in feature_meta.json.
         When None, no rows are dropped (identical to prior behaviour).
+    extra_fe_cols:
+        A3 RUL-30 kill-arm mechanics. When provided, the FE cell key is extended
+        by the values of each listed column: a row with date=D, nc2_band=1 gets
+        cell key "D|nc2_1" (or "D|date_...|nc2_1" etc.).  Rows with NaN in ANY
+        extra col are dropped BEFORE demeaning; the dropped count is reported in
+        the result as 'n_dropped_extra_fe'.  Default None = byte-identical legacy
+        behaviour (key not read, no drop, n_dropped_extra_fe=0).
 
     Returns
     -------
@@ -785,10 +793,13 @@ def r1_estimate(
         stratum      — stratum_col
         mask_n_dropped — int: rows dropped by computable_mask (0 when mask is None)
         mask_coverage  — float: fraction of rows retained (1.0 when mask is None)
+        n_dropped_extra_fe — int: rows dropped due to NaN in extra_fe_cols (0 when None)
     """
     required = {"date", outcome_col, stratum_col}
     if entry_quality_bands:
         required.add("eq_band")
+    if extra_fe_cols:
+        required.update(extra_fe_cols)
     missing = required - set(graded.columns)
     if missing:
         raise ValueError(f"r1_estimate: missing columns {missing}")
@@ -867,6 +878,18 @@ def r1_estimate(
     if entry_quality_bands:
         df["_fe"] = df["_fe"] + "|eq" + df["eq_band"].astype(str)
 
+    # --- A3 RUL-30: extra FE cols extend cell key; NaN rows dropped first ----
+    n_dropped_extra_fe = 0
+    if extra_fe_cols:
+        any_nan = pd.concat(
+            [df[c].isna() for c in extra_fe_cols], axis=1
+        ).any(axis=1)
+        n_dropped_extra_fe = int(any_nan.sum())
+        if n_dropped_extra_fe:
+            df = df[~any_nan].copy()
+        for c in extra_fe_cols:
+            df["_fe"] = df["_fe"] + "|" + c + "_" + df[c].astype(str)
+
     # --- drop singleton FE cells (no variation within cell) -------------------
     cell_counts = df["_fe"].value_counts()
     multi_cells = cell_counts[cell_counts > 1].index
@@ -876,6 +899,7 @@ def r1_estimate(
             outcome_col, stratum_col, fe_granularity,
             f"too few rows after dropping singleton FE cells ({len(df_fe)})",
             mask_n_dropped=mask_n_dropped, mask_coverage=mask_coverage,
+            n_dropped_extra_fe=n_dropped_extra_fe,
         )
 
     # --- within-FE demeaning --------------------------------------------------
@@ -911,13 +935,24 @@ def r1_estimate(
         boot_x = x_arr[boot_idx]
         boot_fe = fe_vals[boot_idx]
 
-        # fast demeaning in bootstrap
-        boot_y_dm = np.empty_like(boot_y)
-        boot_x_dm = np.empty_like(boot_x)
-        for cell in np.unique(boot_fe):
-            m = boot_fe == cell
-            boot_y_dm[m] = boot_y[m] - boot_y[m].mean()
-            boot_x_dm[m] = boot_x[m] - boot_x[m].mean()
+        # Vectorised within-FE demeaning — avoids a Python loop over all unique
+        # FE cells (O(n_cells) Python overhead → O(1) via factorize + np.add.at).
+        # Mathematically identical to the per-cell for-loop above.
+        codes, _ = pd.factorize(boot_fe)
+        _n_cells = codes.max() + 1 if len(codes) else 0
+        if _n_cells == 0:
+            boot_coefs.append(0.0)
+            continue
+        _counts = np.zeros(_n_cells)
+        _ysum   = np.zeros(_n_cells)
+        _xsum   = np.zeros(_n_cells)
+        np.add.at(_counts, codes, 1.0)
+        np.add.at(_ysum,   codes, boot_y)
+        np.add.at(_xsum,   codes, boot_x)
+        _ymean = _ysum / np.maximum(_counts, 1)
+        _xmean = _xsum / np.maximum(_counts, 1)
+        boot_y_dm = boot_y - _ymean[codes]
+        boot_x_dm = boot_x - _xmean[codes]
 
         boot_coefs.append(_ols_coef(boot_y_dm, boot_x_dm))
 
@@ -938,21 +973,22 @@ def r1_estimate(
     n_control   = int((df[stratum_col] == 0).sum())
 
     return {
-        "coef":             round(coef, 6),
-        "ci_lo":            round(ci_lo, 6),
-        "ci_hi":            round(ci_hi, 6),
-        "n_total":          len(df),
-        "n_treatment":      n_treatment,
-        "n_control":        n_control,
-        "n_blocks":         n_blocks,
-        "fe_granularity":   fe_granularity,
-        "sector_fallback":  sector_fallback,
-        "naive_diff":       round(naive_diff, 6) if np.isfinite(naive_diff) else None,
-        "p_value":          round(p_value, 6),
-        "outcome":          outcome_col,
-        "stratum":          stratum_col,
-        "mask_n_dropped":   mask_n_dropped,
-        "mask_coverage":    round(mask_coverage, 6),
+        "coef":                 round(coef, 6),
+        "ci_lo":                round(ci_lo, 6),
+        "ci_hi":                round(ci_hi, 6),
+        "n_total":              len(df),
+        "n_treatment":          n_treatment,
+        "n_control":            n_control,
+        "n_blocks":             n_blocks,
+        "fe_granularity":       fe_granularity,
+        "sector_fallback":      sector_fallback,
+        "naive_diff":           round(naive_diff, 6) if np.isfinite(naive_diff) else None,
+        "p_value":              round(p_value, 6),
+        "outcome":              outcome_col,
+        "stratum":              stratum_col,
+        "mask_n_dropped":       mask_n_dropped,
+        "mask_coverage":        round(mask_coverage, 6),
+        "n_dropped_extra_fe":   n_dropped_extra_fe,
     }
 
 
@@ -964,6 +1000,7 @@ def _empty_r1_result(
     *,
     mask_n_dropped: int = 0,
     mask_coverage: float = 1.0,
+    n_dropped_extra_fe: int = 0,
 ) -> dict[str, Any]:
     return {
         "coef": None, "ci_lo": None, "ci_hi": None,
@@ -973,7 +1010,273 @@ def _empty_r1_result(
         "naive_diff": None, "p_value": None,
         "outcome": outcome, "stratum": stratum,
         "mask_n_dropped": mask_n_dropped, "mask_coverage": round(mask_coverage, 6),
+        "n_dropped_extra_fe": n_dropped_extra_fe,
         "note": reason,
+    }
+
+
+# ---------------------------------------------------------------------------
+# R1-interaction estimator — Frisch-Waugh two-flag interaction (A3 RUL-30)
+# ---------------------------------------------------------------------------
+
+def r1_interaction_estimate(
+    graded: pd.DataFrame,
+    outcome_col: str,
+    flag_a_col: str,
+    flag_b_col: str,
+    *,
+    fe_granularity: str = "date",
+    sector_col: str | None = None,
+    era_col: str | None = None,
+    n_bootstrap: int = N_BOOTSTRAP,
+    rng_seed: int = RNG_SEED,
+    computable_mask: "pd.Series | None" = None,
+) -> dict[str, Any]:
+    """R1 interaction estimator: marginal interaction effect via Frisch-Waugh.
+
+    Encodes A3 RUL-30 marginality-vs-A law for families B/C/D.  The coefficient
+    is the effect of flag_a × flag_b above and beyond both main effects,
+    estimated within FE cells (same cell key logic as r1_estimate).
+
+    Estimation steps
+    ----------------
+    1. Drop rows where flag_a or flag_b is NaN (and computable_mask if given).
+    2. Build FE cell key identically to r1_estimate (date or era×sector-week).
+    3. Drop singleton FE cells.
+    4. Within-cell demean: outcome, flag_a, flag_b, and their product (interaction).
+    5. Frisch-Waugh partial out: regress demeaned_interaction on [demeaned_a,
+       demeaned_b] and take residuals; do the same for demeaned_outcome.
+    6. OLS of residualized outcome on residualized interaction → interaction coef.
+    7. Episode-block bootstrap (same BLOCK_RADIUS law) for 95% CI and p-value.
+
+    Parameters
+    ----------
+    graded:
+        Graded fire DataFrame.  Must contain outcome_col, flag_a_col, flag_b_col,
+        and 'date'.
+    outcome_col:
+        Outcome variable (e.g. 'stop5').
+    flag_a_col:
+        First binary flag (e.g. 'w2_deep').
+    flag_b_col:
+        Second binary flag (e.g. 'wbull_turn').
+    fe_granularity, sector_col, era_col, n_bootstrap, rng_seed, computable_mask:
+        Same semantics as r1_estimate.
+
+    Returns
+    -------
+    dict with keys matching r1_estimate shape (for effect_table-style consumption):
+        coef         — interaction coefficient (Frisch-Waugh)
+        ci_lo, ci_hi — block-bootstrap 95% CI
+        p_value      — two-sided bootstrap p-value
+        n_total      — rows after all filtering
+        n_treat      — count(flag_a==1 & flag_b==1)
+        n_ctrl       — count(flag_a==0 | flag_b==0)
+        n_treatment  — alias for n_treat (effect_table compat)
+        n_control    — alias for n_ctrl  (effect_table compat)
+        n_est        — rows entering the FE estimation (post singleton-drop)
+        n_blocks     — number of episode blocks
+        fe_granularity, sector_fallback, naive_diff
+        outcome      — outcome_col
+        stratum      — "{flag_a_col}×{flag_b_col}" (interaction label)
+        mask_n_dropped, mask_coverage
+    """
+    required = {"date", outcome_col, flag_a_col, flag_b_col}
+    missing = required - set(graded.columns)
+    if missing:
+        raise ValueError(f"r1_interaction_estimate: missing columns {missing}")
+
+    # --- computable_mask -------------------------------------------------------
+    mask_n_dropped = 0
+    mask_coverage = 1.0
+    if computable_mask is not None:
+        aligned_mask = computable_mask.reindex(graded.index).fillna(False).astype(bool)
+        n_before = len(graded)
+        graded = graded[aligned_mask].copy()
+        mask_n_dropped = n_before - len(graded)
+        mask_coverage = len(graded) / max(n_before, 1)
+
+    interaction_label = f"{flag_a_col}×{flag_b_col}"
+
+    # --- subset to rows where both flags are non-NaN --------------------------
+    df = graded.copy()
+    df["date"] = pd.to_datetime(df["date"])
+    df[outcome_col] = pd.to_numeric(df[outcome_col], errors="coerce")
+    df[flag_a_col]  = pd.to_numeric(df[flag_a_col],  errors="coerce")
+    df[flag_b_col]  = pd.to_numeric(df[flag_b_col],  errors="coerce")
+    df = df[
+        df[outcome_col].notna() & df[flag_a_col].notna() & df[flag_b_col].notna()
+    ].copy()
+    df["_interaction"] = df[flag_a_col] * df[flag_b_col]
+    df = df.reset_index(drop=True)
+
+    if len(df) < 10:
+        return {
+            "coef": None, "ci_lo": None, "ci_hi": None,
+            "n_total": len(df), "n_treat": 0, "n_ctrl": 0,
+            "n_treatment": 0, "n_control": 0, "n_est": 0,
+            "n_blocks": 0, "fe_granularity": fe_granularity,
+            "sector_fallback": False, "naive_diff": None,
+            "p_value": None, "outcome": outcome_col, "stratum": interaction_label,
+            "mask_n_dropped": mask_n_dropped, "mask_coverage": round(mask_coverage, 6),
+            "note": "insufficient rows after filtering",
+        }
+
+    # --- era column -----------------------------------------------------------
+    if era_col and era_col in df.columns:
+        df["_era"] = df[era_col]
+    else:
+        df["_era"] = df["date"].apply(_assign_era)
+
+    # --- sector coverage check ------------------------------------------------
+    sector_fallback = False
+    if sector_col and sector_col in df.columns:
+        covered = df[sector_col].notna().mean()
+        if covered < 0.50:
+            sector_fallback = True
+        _eff_sector = None if sector_fallback else sector_col
+    else:
+        sector_fallback = (sector_col is not None)
+        _eff_sector = None
+
+    # --- build FE column (same logic as r1_estimate) --------------------------
+    if fe_granularity == "date":
+        df["_fe"] = df["date"].astype(str)
+    elif fe_granularity == "era_sector_wk":
+        df["_week"] = df["date"].dt.isocalendar().week.astype(str)
+        df["_sector_fe"] = df[sector_col].fillna("none") if sector_col and sector_col in df.columns else "none"
+        df["_fe"] = df["_era"] + "|" + df["_sector_fe"] + "|" + df["_week"]
+    else:
+        raise ValueError(f"Unknown fe_granularity: {fe_granularity!r}. Use 'date' or 'era_sector_wk'.")
+
+    # --- drop singleton FE cells ----------------------------------------------
+    cell_counts = df["_fe"].value_counts()
+    multi_cells = cell_counts[cell_counts > 1].index
+    df_fe = df[df["_fe"].isin(multi_cells)].copy()
+    n_est = len(df_fe)
+    if n_est < 10:
+        return {
+            "coef": None, "ci_lo": None, "ci_hi": None,
+            "n_total": len(df), "n_treat": int((df[flag_a_col] == 1).sum() if len(df) else 0),
+            "n_ctrl": 0, "n_treatment": 0, "n_control": 0, "n_est": n_est,
+            "n_blocks": 0, "fe_granularity": fe_granularity,
+            "sector_fallback": sector_fallback, "naive_diff": None,
+            "p_value": None, "outcome": outcome_col, "stratum": interaction_label,
+            "mask_n_dropped": mask_n_dropped, "mask_coverage": round(mask_coverage, 6),
+            "note": f"too few rows after dropping singleton FE cells ({n_est})",
+        }
+
+    # --- within-FE demean: outcome, a, b, interaction -------------------------
+    fe_vals = df_fe["_fe"].to_numpy()
+    y_arr  = df_fe[outcome_col].to_numpy(dtype=float)
+    a_arr  = df_fe[flag_a_col].to_numpy(dtype=float)
+    b_arr  = df_fe[flag_b_col].to_numpy(dtype=float)
+    ab_arr = df_fe["_interaction"].to_numpy(dtype=float)
+
+    y_dm  = np.empty_like(y_arr)
+    a_dm  = np.empty_like(a_arr)
+    b_dm  = np.empty_like(b_arr)
+    ab_dm = np.empty_like(ab_arr)
+    for cell in np.unique(fe_vals):
+        m = fe_vals == cell
+        y_dm[m]  = y_arr[m]  - y_arr[m].mean()
+        a_dm[m]  = a_arr[m]  - a_arr[m].mean()
+        b_dm[m]  = b_arr[m]  - b_arr[m].mean()
+        ab_dm[m] = ab_arr[m] - ab_arr[m].mean()
+
+    # --- Frisch-Waugh: partial a and b out of both demeaned_ab and demeaned_y -
+    def _partial_out_ab(y: np.ndarray) -> np.ndarray:
+        Z = np.column_stack([a_dm, b_dm])
+        try:
+            coefs, _, _, _ = np.linalg.lstsq(Z, y, rcond=None)
+            return y - Z @ coefs
+        except np.linalg.LinAlgError:
+            return y - y.mean()
+
+    ab_res = _partial_out_ab(ab_dm)
+    y_res  = _partial_out_ab(y_dm)
+
+    coef = _ols_coef(y_res, ab_res)
+
+    # --- naive interaction difference -----------------------------------------
+    treat_mask = (df[flag_a_col] == 1) & (df[flag_b_col] == 1)
+    ctrl_mask  = ~treat_mask
+    t_out = df.loc[treat_mask, outcome_col].dropna()
+    c_out = df.loc[ctrl_mask,  outcome_col].dropna()
+    naive_diff = (float(t_out.mean()) - float(c_out.mean())) if (len(t_out) > 0 and len(c_out) > 0) else np.nan
+
+    # --- episode blocks -------------------------------------------------------
+    blocks = _make_blocks(df_fe, _eff_sector or "__none__", "date")
+    if len(blocks) == 0:
+        blocks = [df_fe.index.to_numpy()]
+    n_blocks = len(blocks)
+
+    # --- block-bootstrap 95% CI -----------------------------------------------
+    rng = np.random.default_rng(rng_seed)
+    boot_coefs: list[float] = []
+
+    for _ in range(n_bootstrap):
+        chosen = rng.integers(0, n_blocks, size=n_blocks)
+        boot_idx = np.concatenate([blocks[i] for i in chosen])
+        by  = y_arr[boot_idx]
+        ba  = a_arr[boot_idx]
+        bb  = b_arr[boot_idx]
+        bab = ab_arr[boot_idx]
+        bfe = fe_vals[boot_idx]
+
+        by_dm  = np.empty_like(by)
+        ba_dm  = np.empty_like(ba)
+        bb_dm  = np.empty_like(bb)
+        bab_dm = np.empty_like(bab)
+        for cell in np.unique(bfe):
+            m = bfe == cell
+            by_dm[m]  = by[m]  - by[m].mean()
+            ba_dm[m]  = ba[m]  - ba[m].mean()
+            bb_dm[m]  = bb[m]  - bb[m].mean()
+            bab_dm[m] = bab[m] - bab[m].mean()
+
+        bZ = np.column_stack([ba_dm, bb_dm])
+        try:
+            bc, _, _, _ = np.linalg.lstsq(bZ, bab_dm, rcond=None)
+            bab_res = bab_dm - bZ @ bc
+            bc2, _, _, _ = np.linalg.lstsq(bZ, by_dm, rcond=None)
+            by_res = by_dm - bZ @ bc2
+        except np.linalg.LinAlgError:
+            bab_res = bab_dm - bab_dm.mean()
+            by_res  = by_dm  - by_dm.mean()
+
+        boot_coefs.append(_ols_coef(by_res, bab_res))
+
+    boot_arr = np.array(boot_coefs)
+    ci_lo = float(np.percentile(boot_arr, 2.5))
+    ci_hi = float(np.percentile(boot_arr, 97.5))
+    p_value = float(min(1.0, 2.0 * min(
+        (boot_arr <= 0).mean(),
+        (boot_arr >= 0).mean(),
+    )))
+
+    n_treat = int(((df[flag_a_col] == 1) & (df[flag_b_col] == 1)).sum())
+    n_ctrl  = int(len(df) - n_treat)
+
+    return {
+        "coef":             round(coef, 6),
+        "ci_lo":            round(ci_lo, 6),
+        "ci_hi":            round(ci_hi, 6),
+        "n_total":          len(df),
+        "n_treat":          n_treat,
+        "n_ctrl":           n_ctrl,
+        "n_treatment":      n_treat,
+        "n_control":        n_ctrl,
+        "n_est":            n_est,
+        "n_blocks":         n_blocks,
+        "fe_granularity":   fe_granularity,
+        "sector_fallback":  sector_fallback,
+        "naive_diff":       round(naive_diff, 6) if np.isfinite(naive_diff) else None,
+        "p_value":          round(p_value, 6),
+        "outcome":          outcome_col,
+        "stratum":          interaction_label,
+        "mask_n_dropped":   mask_n_dropped,
+        "mask_coverage":    round(mask_coverage, 6),
     }
 
 

@@ -278,12 +278,12 @@
     "score": 68
   },
   "reshoring": {
-    "label": "fading",
+    "label": "neutral",
     "name": "Reshoring & Industrial Capex",
     "name_zh": "\u56de\u6d41\u4e0e\u5de5\u4e1a\u8d44\u672c\u5f00\u652f",
     "rank": 15,
-    "reco": "trim",
-    "score": 62
+    "reco": "hold",
+    "score": 61
   },
   "retail": {
     "label": "neutral",

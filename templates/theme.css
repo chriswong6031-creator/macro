@@ -856,18 +856,19 @@ html[data-lang="zh"] .lang-toggle .zh-opt { color: #fff; }
   border: 1px solid color-mix(in srgb, var(--c, var(--muted)) 34%, transparent); }
 .sig-gate.sig-take { --c: var(--ok); }
 .sig-gate.sig-pending { --c: var(--warn); }
+.sig-gate.sig-t2 { --c: var(--ok); opacity:.82; }
 .sig-gate.sig-early { --c: var(--muted); }
 .sig-gate .sig-w { font-size:9.5px; font-weight:700; letter-spacing:.2px; opacity:.7;
   padding-left:3px; border-left:1px solid color-mix(in srgb, var(--c, var(--muted)) 30%, transparent); }
 /* provisional-basis marker (W6 #22): a T3 fresh fire is graded on an incomplete resample
    bucket and repaints at a measured 23.8% US / 15.1% CN — flagged wherever the tier renders
    (_sig_badge, Top-setups strip, discovery chip). Dashed border = tentative by design. */
-.prov-flag { display:inline-block; font-size:9px; font-weight:700; letter-spacing:.3px;
-  text-transform:uppercase; line-height:1; padding:1.5px 4px; border-radius:4px; margin-left:3px;
+.prov-flag { display:inline-block; font-size:9px; font-weight:800; letter-spacing:.4px;
+  text-transform:uppercase; line-height:1; padding:2px 5px; border-radius:4px; margin-left:4px;
   vertical-align:1px; white-space:nowrap; cursor:help;
-  background: color-mix(in srgb, var(--warn) 14%, var(--panel));
-  color: color-mix(in srgb, var(--warn) 78%, var(--text));
-  border: 1px dashed color-mix(in srgb, var(--warn) 45%, transparent); }
+  background: color-mix(in srgb, var(--warn) 22%, var(--panel));
+  color: color-mix(in srgb, var(--warn) 92%, var(--text));
+  border: 1.5px solid color-mix(in srgb, var(--warn) 60%, transparent); }
 
 /* ---- Collapsible "Show more" lists (buy/add & reduce/avoid columns) -------------------
    Keeps long action lists short: 7 rows on a wide screen, 5 on a narrow one, the rest behind

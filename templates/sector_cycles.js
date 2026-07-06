@@ -17,6 +17,40 @@
 
   var DATA = window.SECTOR_CYCLES, NARR = window.SECTOR_NARR || {};
   if (!DATA || !DATA.sectors) return;
+
+  /* FIX 1b — strip "(Equal-Weight)" / "（等权）" suffixes from all string values at boot */
+  (function deepStrip(obj) {
+    if (!obj || typeof obj !== 'object') return;
+    var ewRe = /\s*[（(]\s*(?:equal[-\s]?weight(?:ed)?|等权(?:重)?)\s*[）)]/gi;
+    var keys = Object.keys(obj);
+    for (var _k = 0; _k < keys.length; _k++) {
+      var _key = keys[_k], _val = obj[_key];
+      if (typeof _val === 'string') { obj[_key] = _val.replace(ewRe, ''); }
+      else if (_val && typeof _val === 'object') { deepStrip(_val); }
+    }
+  }(DATA));
+  (function deepStrip(obj) {
+    if (!obj || typeof obj !== 'object') return;
+    var ewRe = /\s*[（(]\s*(?:equal[-\s]?weight(?:ed)?|等权(?:重)?)\s*[）)]/gi;
+    var keys = Object.keys(obj);
+    for (var _k = 0; _k < keys.length; _k++) {
+      var _key = keys[_k], _val = obj[_key];
+      if (typeof _val === 'string') { obj[_key] = _val.replace(ewRe, ''); }
+      else if (_val && typeof _val === 'object') { deepStrip(_val); }
+    }
+  }(NARR));
+  if (window.SECTOR_DNA) {
+    (function deepStrip(obj) {
+      if (!obj || typeof obj !== 'object') return;
+      var ewRe = /\s*[（(]\s*(?:equal[-\s]?weight(?:ed)?|等权(?:重)?)\s*[）)]/gi;
+      var keys = Object.keys(obj);
+      for (var _k = 0; _k < keys.length; _k++) {
+        var _key = keys[_k], _val = obj[_key];
+        if (typeof _val === 'string') { obj[_key] = _val.replace(ewRe, ''); }
+        else if (_val && typeof _val === 'object') { deepStrip(_val); }
+      }
+    }(window.SECTOR_DNA));
+  }
   var META = DATA.meta, PHASES = DATA.phases, SECTORS = DATA.sectors;
   var BASKETS = DATA.baskets || [];
   var NASDAQ = DATA.nasdaq || [];
@@ -976,6 +1010,7 @@
       keyActivate(row);
     });
     def.classList.remove("show"); foc.classList.add("show");
+    _initDnaToggle(foc);
   }
 
   // washout↔euphoria state signature (the Phase-0-stable read) — rendered when present
@@ -1126,6 +1161,7 @@
     function ul(items) { return '<ul>' + items.map(function (x) { return '<li>' + x + '</li>'; }).join("") + '</ul>'; }
     return '<div class="cyc-grp cyc-grp-3 sc-dna">' +
       '<div class="cyc-lbl">' + L("Cycle DNA — why it rhymes", "周期基因 — 历史为何押韵") + conf + '</div>' +
+      '<div class="sc-dna-body">' +
       (sum ? '<p class="sc-dna-sum">' + sum + '</p>' : "") +
       (drv.length ? '<div class="sc-dna-drv">' + drv.map(function (x) { return '<span>' + x + '</span>'; }).join("") + '</div>' : "") +
       ((bots.length || tops.length) ? '<div class="sc-dna-sig">' +
@@ -1134,7 +1170,27 @@
       '</div>' : "") +
       (cyc ? '<div class="sc-dna-rhythm">' + L("Median full cycle ≈ ", "中位完整周期约 ") + cyc + L(" months", " 个月") + '</div>' : "") +
       (analog ? '<div class="sc-dna-analog"><span class="sc-dna-ana-k">' + L("Closest analog", "最相似的历史") + '</span> ' + analog + '</div>' : "") +
+      '</div>' +
+      '<button type="button" class="sc-dna-more"><span class="l-en">See more ▾</span><span class="l-zh">展开更多 ▾</span></button>' +
     '</div>';
+  }
+
+  // Wire up the sc-dna-body clamp + See more/less toggle after injection.
+  // Called from renderPanel() after foc.innerHTML is set.
+  // Delegates on container so it's payload-agnostic (works for all DNA sections).
+  function _initDnaToggle(container) {
+    container.querySelectorAll(".sc-dna-more").forEach(function (btn) {
+      var body = btn.previousElementSibling;
+      if (!body || !body.classList.contains("sc-dna-body")) return;
+      if (body.scrollHeight <= body.clientHeight + 8) { btn.hidden = true; body.classList.add("open"); return; }
+      btn.hidden = false;
+      btn.addEventListener("click", function () {
+        var open = body.classList.toggle("open");
+        var enMore = btn.querySelector(".l-en"), zhMore = btn.querySelector(".l-zh");
+        if (enMore) enMore.textContent = open ? "See less ▴" : "See more ▾";
+        if (zhMore) zhMore.textContent = open ? "收起 ▴" : "展开更多 ▾";
+      });
+    });
   }
 
   // W3.4: Build the "Analyst note" block with TTL staleness badge, archetype check

@@ -193,7 +193,13 @@ def _record(
     # Severity clamp: P1-D severity is 'note' unconditionally.
     # Promotion to 'tension' only after H2 GATE-PASSED — never from this module.
     effective_severity = "note"
-    if severity not in ("note", "tension"):
+    if severity == "tension":
+        # RUL-NW12: pre-H2 tension clamp — log at debug so operators can see it.
+        log.debug(
+            "factor_contradictions: severity 'tension' clamped to 'note' "
+            "(pre-H2 gate; severity may only be promoted after H2 GATE-PASSED ruling)"
+        )
+    elif severity not in ("note", "tension"):
         log.warning(
             "factor_contradictions: invalid severity %r, clamping to 'note'", severity
         )

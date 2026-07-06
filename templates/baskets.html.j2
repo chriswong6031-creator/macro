@@ -105,6 +105,12 @@
   .tpill b { color:var(--text); font-variant-numeric:tabular-nums; }
   .tcard details > summary { font-size:11.5px; margin:6px 0 0; }
   .tcard .why { font-size:11.5px; color:var(--muted); margin:5px 0 0; max-width:none; }
+  .tmore > summary { font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted);
+    cursor:pointer; list-style:none; user-select:none; margin:6px 0 0; display:flex; align-items:center; gap:4px; }
+  .tmore > summary::-webkit-details-marker { display:none; }
+  .tmore > summary::before { content:'▾'; display:inline-block; transition:transform .15s; }
+  .tmore[open] > summary::before { transform:rotate(-180deg); }
+  .tflagrow { margin:2px 0 4px; }
 
   /* ---- 5-day rotation ---- */
   .rotwrap { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
@@ -228,12 +234,13 @@
     vertical-align:middle; margin-right:4px; border:0; padding:0; font-size:0; }
   .rot-sub { font-size:11.5px; color:var(--muted); margin:4px 0 8px; font-style:italic; }
   .rk20 { font-size:9.5px; opacity:.72; font-variant-numeric:tabular-nums; }
-  .pulse-bar { font-size:12px; background:var(--panel2); border:1px solid var(--line); border-radius:8px;
-    padding:7px 12px; margin-bottom:10px; display:flex; flex-wrap:wrap; gap:4px 12px; align-items:center; }
+  .pulse-bar { display:flex; flex-wrap:wrap; align-items:center; gap:6px 12px; font-size:12px;
+    padding:7px 10px; border:1px solid var(--line); border-radius:9px; background:var(--panel2); margin:0 0 10px; }
   .pulse-bar a { color:var(--link); text-decoration:none; }
   .pulse-bar a:hover { text-decoration:underline; }
-  .pulse-tag { font-size:10px; color:var(--muted); border:1px solid var(--line); border-radius:5px;
-    padding:0 5px; margin-left:auto; white-space:nowrap; }
+  .pulse-grp { white-space:normal; }
+  .pulse-size { border:1px solid color-mix(in srgb, var(--warn) 45%, var(--line)); border-left:3px solid var(--warn);
+    border-radius:7px; padding:2px 8px; background:color-mix(in srgb, var(--warn) 8%, transparent); }
   /* ---- Leadership Health (contested label / flip-distance / term-structure) — parity with _baskets_desk.html.j2 ---- */
   .flipcap { font-size:10.5px; color:var(--warn); margin:3px 0 0; font-variant-numeric:tabular-nums; }
   .termstrip { display:flex; flex-wrap:wrap; align-items:center; gap:4px 7px; margin:2px 0 6px; font-size:10.5px; }
@@ -262,12 +269,6 @@
   .anrow .rn { font-weight:650; white-space:nowrap; min-width:0; overflow:hidden; text-overflow:ellipsis; }
   .anwhy { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .ansc { font-variant-numeric:tabular-nums; font-weight:700; }
-  /* vol-regime sizing transparency chip (honest drawdown-control read; hidden when calm) */
-  .rs-chip { background:var(--panel2); border:1px solid var(--line); border-radius:9px; padding:9px 12px; margin:4px 0 10px; }
-  .rs-head { display:flex; align-items:baseline; gap:8px; }
-  .rs-ic { font-size:14px; } .rs-main { font-size:13px; } .rs-main b { font-variant-numeric:tabular-nums; }
-  .rs-decomp { margin-top:3px; font-variant-numeric:tabular-nums; }
-  .rs-note { margin-top:4px; font-style:italic; line-height:1.45; }
 </style>
 </head>
 <body>
@@ -308,26 +309,6 @@
       '等权重美国主题篮子，对标标普 500。用于观察哪些主题在走强或走弱。') }}</p>
   </header>
 
-  {# Market Risk Radar strip — the SAME canonical drawdown-risk read shown on macro.html
-     (engine/risk_radar.py → latest.json.risk_radar), so the headline number always agrees
-     across pages. The risk_state engine (latest.json.risk_state) supplies the de-gross sizing
-     guidance (gross factor / leadership cap). Shows only at caution or worse. #}
-  {% set rr = risk_radar if (risk_radar and risk_radar.state in ['caution', 'elevated', 'risk-off']) else None %}
-  {% if rr or risk_state %}
-  {% set _rstate = rr.state if rr else risk_state.state %}
-  {% set rrcol = 'var(--down)' if _rstate=='risk-off' else ('var(--orange)' if _rstate=='elevated' else 'var(--warn)') %}
-  {% set rric = '🛑' if _rstate=='risk-off' else ('🚨' if _rstate=='elevated' else '⚠️') %}
-  {% set rr_state_zh = {'risk-off': '避险', 'elevated': '升高', 'caution': '警戒', 'watch': '观察'} %}
-  <div class="panel pad" style="border-left:4px solid {{ rrcol }};border-radius:0;margin-top:10px">
-    <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px">
-      <b style="color:{{ rrcol }}">{{ rric }} {{ t('Market Risk Radar', '市场风险雷达') if rr else t('Market risk state', '市场风险状态') }}: {{ t(_rstate|upper, rr_state_zh.get(_rstate, _rstate)) }}{% if rr %} · {{ rr.top_score|round|int }}/100 — {{ t(rr.dominant_label_en, rr.dominant_label_zh) }}{% elif risk_state %} · {{ risk_state.score|round|int }}/100{% endif %}</b>
-      {% if risk_state and risk_state.gross_factor %}<span class="muted" style="font-size:12px">{{ t('suggested gross', '建议总仓位') }} ×{{ '%.2f'|format(risk_state.gross_factor) }}</span>{% endif %}
-    </div>
-    <div class="muted" style="font-size:12.5px;margin-top:5px">{{ t(
-      'Risk is elevated. Keep sizing modest and prefer clean entries over chasing extended leaders.',
-      '风险偏高。控制仓位，优先选择干净入场点，避免追涨已延展的龙头。') }}{% if risk_state and risk_state.cap_leadership %} {{ t('Leadership chases are capped at this risk level.', '当前风险水平下，追逐龙头的仓位被上限约束。') }}{% endif %}</div>
-  </div>
-  {% endif %}
 
   <!-- prevailing-narrative scorecard → the Narrative Rotation playbook (filled client-side) -->
   <section id="nr-scorecard" data-alloc="allocation.json" data-page="allocation.html"></section>
@@ -338,7 +319,6 @@
     <p class="sub">{{ t(
       'Shortlist by action: buy now, wait for a pullback, or reduce / avoid. Click a theme to see the stocks.',
       '按操作分类：立即买入、等待回调、减仓/回避。点击主题查看成分股。') }}</p>
-    <div id="regime-sizing-chip"></div>
     <div id="actnow"></div>
   </section>
 
@@ -413,7 +393,7 @@
         <div class="fl-k">{{ t('Cohesion gate', '共动门') }} <span title="the one measured-but-modest, stress-conditional signal">ⓘ</span></div>
         {% if RG.elevated and cohering %}
         <div class="fl-v"><span class="fl-dot warn"></span><b style="color:var(--warn)">{{ t('Active', '激活') }}</b> <span class="muted">{{ t('rotation may be forming', '轮动或在形成') }}</span></div>
-        <div class="fl-chips">{% for g in cohering %}<span class="chip">{{ t(g.name, g.name_zh) }}</span>{% endfor %}</div>
+        <div class="fl-chips">{% for g in cohering %}<span class="chip">{{ t(g.name | replace(' (Equal-Weight)',''), g.name_zh | replace(' (Equal-Weight)','') | replace('（等权）','')) }}</span>{% endfor %}</div>
         {% else %}
         <div class="fl-v"><span class="fl-dot"></span><span class="muted">{{ t('inactive', '未激活') }} · VIX {% if RG.pctile is not none %}{{ (RG.pctile*100)|round|int }}%ile{% else %}—{% endif %}</span></div>
         {% endif %}
@@ -428,7 +408,7 @@
         {% for g in col[:5] %}
         <div class="fl-row">
           <span class="fl-stage" style="color:{{ STAGE.get(g.stage,('·','var(--muted)'))[1] }}" title="{{ g.stage }}">{{ STAGE.get(g.stage,('·','var(--muted)'))[0] }}</span>
-          <span class="fl-nm">{{ t(g.name, g.name_zh) }}{% if g.leadership.breadth=='narrow' %} <span class="chip" style="font-size:10px" title="one name dominates the move">⚠{{ t('narrow','集中') }}</span>{% endif %}</span>
+          <span class="fl-nm">{{ t(g.name | replace(' (Equal-Weight)',''), g.name_zh | replace(' (Equal-Weight)','') | replace('（等权）','')) }}{% if g.leadership.breadth=='narrow' %} <span class="chip" style="font-size:10px" title="one name dominates the move">⚠{{ t('narrow','集中') }}</span>{% endif %}</span>
           <div class="fl-bar"><span style="width:{{ (g.read_quality*100)|round|int }}%"></span></div>
           <span class="fl-rq">{{ '%.2f'|format(g.read_quality) }}</span>
         </div>
@@ -498,6 +478,18 @@ const BASKETS = {{ baskets_json|safe }};
 const CHART   = {{ chart_json|safe }};
 const THEME   = BASKETS.theme_intel || null;
 const THEME_ALERTS = {{ theme_alerts_json|safe }};
+/* FIX 1c — strip "(Equal-Weight)" / "（等权）" suffixes from all string values at boot.
+   deepStrip covers THEME (same object ref inside BASKETS) and the THEME_ALERTS array. */
+function deepStrip(obj) {
+  if (!obj || typeof obj !== 'object') return;
+  const ewRe = /\s*[（(]\s*(?:equal[-\s]?weight(?:ed)?|等权(?:重)?)\s*[）)]/gi;
+  for (const k of Object.keys(obj)) {
+    const v = obj[k];
+    if (typeof v === 'string') obj[k] = v.replace(ewRe, '');
+    else if (v && typeof v === 'object') deepStrip(v);
+  }
+}
+deepStrip(BASKETS); deepStrip(THEME_ALERTS);
 const L = (en,zh)=>`<span class="l-en">${en}</span><span class="l-zh">${zh==null?en:zh}</span>`;
 // ---- Velocity / Heat helpers (W4 rotation-scorecard upgrade) ------------------
 // All labels are DESCRIPTIVE — they characterise current rank/score trajectory; no
@@ -508,13 +500,6 @@ const HEAT_PILL = {
   cooling: ['heat-pill cooling', '▽', 'cooling', '降温'],
   broken:  ['heat-pill broken',  '✕', 'broken',  '破位'],
 };
-function heatPill(t){
-  const h = t && t.pulse_heat;
-  if(!h || h==='idle') return '';
-  const p = HEAT_PILL[h];
-  if(!p) return '';
-  return `<span class="${p[0]}" data-tip-en="${esc(p[2])} — descriptive, not a forecast" data-tip-zh="${esc(p[3])} — 描述性，非预测">${p[1]} ${L(p[2],p[3])}</span>`;
-}
 function heatDot(t){
   const h = t && t.pulse_heat;
   if(!h || h==='idle') return '';
@@ -531,16 +516,17 @@ function rankTrajectory(t){
   return fmt5 + fmt20;
 }
 function actNowPulseBar(themes){
-  if(!themes||!themes.length) return '';
-  const byHeat = h => themes.filter(t=>t.pulse_heat===h).sort((a,b)=>(a.rank||999)-(b.rank||999)).slice(0,3);
+  const sizePill = renderRegimeSizing();
+  const byHeat = h => (themes||[]).filter(t=>t.pulse_heat===h).sort((a,b)=>(a.rank||999)-(b.rank||999)).slice(0,3);
   const heating = byHeat('heating'), cooling = byHeat('cooling');
-  if(!heating.length && !cooling.length) return '';
   const BASE = window.BASKET_BASE||'basket/';
   const links = arr => arr.map(t=>`<a href="${BASE}${encodeURIComponent(t.id)}.html">${L(esc(t.name),esc(t.name_zh))}</a>`).join(', ');
   const parts = [];
-  if(heating.length) parts.push(`🔥 ${L('Heating','加热')}: ${links(heating)}`);
-  if(cooling.length) parts.push(`❄ ${L('Cooling','降温')}: ${links(cooling)}`);
-  return `<div class="pulse-bar">${parts.join(' · ')}<span class="pulse-tag">${L('descriptive — not a forecast','描述性 — 非预测')}</span></div>`;
+  if(sizePill) parts.push(sizePill);
+  if(heating.length) parts.push(`<span class="pulse-grp">🔥 ${L('Heating','加热')}: ${links(heating)}</span>`);
+  if(cooling.length) parts.push(`<span class="pulse-grp">❄ ${L('Cooling','降温')}: ${links(cooling)}</span>`);
+  if(!parts.length) return '';
+  return `<div class="pulse-bar">${parts.join('')}</div>`;
 }
 
 const TBL_COLS = ['1d','5d','20d','60d','MTD','YTD'];
@@ -673,7 +659,7 @@ function renderCards(){
         const ref=b.reference?` · tracks ${esc(b.reference.label)} (r ${b.reference.corr.toFixed(2)})`:'';
         return `<div class="card" style="--c:${colorOf[b.id]}" data-id="${b.id}">
           <div class="nm"><span class="dot" style="background:${colorOf[b.id]}"></span>${esc(b.name)}</div>
-          <div class="meta">${b.n_members} members · equal-weighted · since ${esc(b.created)}${ref}</div>
+          <div class="meta">${b.n_members} members · since ${esc(b.created)}${ref}</div>
           <div class="th">${esc(b.thesis)}</div>
           <div class="perf">${kpi(hzLabel(bhz),b.perf?.[bhz])}${kpi('YTD',b.perf?.ytd)}<span class="spark">${sparkSvg(spk,{w:96,h:30,color:colorOf[b.id]})}</span></div>
         </div>`; }).join('');
@@ -827,7 +813,7 @@ function termStrip(t){
     <span class="tspat">${L(pat,patZh)}</span><span class="tstag">${L('shape read, not a signal','形态读数，非信号')}</span></div>`;
 }
 function themeCard(t){
-  const lc=LABEL_COLOR[t.label]||LABEL_COLOR.neutral, rc=RECO_COLOR[t.reco]||RECO_COLOR.hold;
+  const lc=LABEL_COLOR[t.label]||LABEL_COLOR.neutral;
   const r20=t.perf&&t.perf['20d']?t.perf['20d'].rel:null;
   const spk=sparkTail(ratio(CHART.baskets[t.id]||[]),40);
   const b=t.breadth||{}, im=t.impulse||{}, tx=t.textures||{};
@@ -835,15 +821,43 @@ function themeCard(t){
   const top=(t.leadership&&t.leadership.top)||[];
   const ss=t.signal_strength||null;
   const obc = ob.value>=0.6?'neg':ob.value>=0.35?'warn':'';
-  const flags=[];
-  if(ce.flag) flags.push(`<span class="tflag up">✦ ${L('clean entry','干净入场')}</span>`);
-  if(rr.band==='high'||rr.band==='elevated') flags.push(`<span class="tflag ${rr.band==='high'?'dn':'wn'}">⚠ ${L('roll-over','回落风险')}</span>`);
-  // A4: absolute-drawdown cracks — muted amber, descriptive only (title carries the abs 5d %).
   const ck=absCracks(t);
-  if(ck) flags.push(`<span class="tflag wn" style="opacity:.88" title="descriptive — the absolute tape, not a forecast: 5d ${ck.p5!=null?fmtPct(ck.p5):'—'} abs${ck.legImp?` · ±3% impulse ${ck.up3} up / ${ck.down3} down`:''}">▾ ${L('CRACKS — falling in absolute terms','裂痕 — 绝对价格下行')}</span>`);
-  // backtested signal-strength chip — the validated risk reads stand out; title is plain
-  // English (never L() inside an attribute — it leaks span markup into the tooltip text).
-  if(ss&&ss.grade==='backtested') flags.push(`<span class="tflag dn" title="${esc(ss.en||'')} (HAC t ${ss.t_hac}, n ${ss.n})">🔬 ${L('backtested risk','已回测风险')}</span>`);
+  // Leadership Health: contested modifier on the label chip (display-only).
+  const contested=isContested(t);
+  const cTex=contested?contestedTextures(t,(_basketOf(t.id)||{}).cycle):[];
+  const labelChip = contested
+    ? `<span class="tlabel" style="background:${lc[0]};border:1px solid ${lc[1]};color:${lc[2]}" title="contested — faster descriptive textures disagree with the validated label: ${esc(cTex.map(x=>x[0]).join(' | '))}. A shape/fragility read, not a forecast.">${L(t.label_en+' · contested',(t.label_zh||t.label_en)+' · 存在分歧')}</span>`
+    : badge('tlabel',lc,t.label_en,t.label_zh);
+  // Row 3: single highest-priority flag glyph-only with data-tip-en/zh
+  let flagRow='';
+  if(ck){
+    const tipEn='descriptive — the absolute tape, not a forecast: 5d '+(ck.p5!=null?fmtPct(ck.p5):'—')+' abs'+(ck.legImp?' · ±3% impulse '+ck.up3+' up / '+ck.down3+' down':'');
+    const tipZh='描述性 — 绝对价格走势，非预测：5日 '+(ck.p5!=null?fmtPct(ck.p5):'—')+(ck.legImp?' · ±3%脉冲 '+ck.up3+'涨/'+ck.down3+'跌':'');
+    flagRow=`<div class="tflagrow"><span class="tflag wn" style="opacity:.88" data-tip-en="${esc(tipEn)}" data-tip-zh="${esc(tipZh)}">▾</span></div>`;
+  } else if(rr.band==='high'||rr.band==='elevated'){
+    const tipEn='Roll-over risk: '+rr.band+(rr.reasons&&rr.reasons.length?' — '+rr.reasons.join(' · '):'');
+    const tipZh='回落风险：'+(rr.band_zh||rr.band)+(rr.reasons&&rr.reasons.length?' — '+rr.reasons.join(' · '):'');
+    flagRow=`<div class="tflagrow"><span class="tflag ${rr.band==='high'?'dn':'wn'}" data-tip-en="${esc(tipEn)}" data-tip-zh="${esc(tipZh)}">⚠</span></div>`;
+  } else if(ss&&ss.grade==='backtested'){
+    const tipEn=(ss.en||'')+' (HAC t '+ss.t_hac+', n '+ss.n+')';
+    const tipZh=(ss.zh||ss.en||'');
+    flagRow=`<div class="tflagrow"><span class="tflag dn" data-tip-en="${esc(tipEn)}" data-tip-zh="${esc(tipZh)}">🔬</span></div>`;
+  } else if(earlyCracks(t)){
+    const tipEn='Early cracks: '+(rr.reasons||[]).join(' · ');
+    const tipZh='初现裂痕：'+(rr.reasons||[]).join(' · ');
+    flagRow=`<div class="tflagrow"><span class="tflag wn" data-tip-en="${esc(tipEn)}" data-tip-zh="${esc(tipZh)}">◌</span></div>`;
+  } else if(ce.flag){
+    const tipEn='Clean entry — this theme has a technically clean setup right now.';
+    const tipZh='干净入场 — 当前具备技术上干净的入场机会。';
+    flagRow=`<div class="tflagrow"><span class="tflag up" data-tip-en="${esc(tipEn)}" data-tip-zh="${esc(tipZh)}">✦</span></div>`;
+  }
+  // Full flag set for expander txrow
+  const allFlags=[];
+  if(ce.flag) allFlags.push(`<span class="tflag up">✦ ${L('clean entry','干净入场')}</span>`);
+  if(rr.band==='high'||rr.band==='elevated') allFlags.push(`<span class="tflag ${rr.band==='high'?'dn':'wn'}">⚠ ${L('roll-over','回落风险')}</span>`);
+  else if(earlyCracks(t)) allFlags.push(`<span class="tflag mut" title="descriptive — a shape/fragility read, not a forecast: ${esc((rr.reasons||[]).join(' · '))}">◌ ${L('early cracks','初现裂痕')}</span>`);
+  if(ck) allFlags.push(`<span class="tflag wn" style="opacity:.88" title="descriptive — the absolute tape, not a forecast: 5d ${ck.p5!=null?fmtPct(ck.p5):'—'} abs${ck.legImp?' · ±3% impulse '+ck.up3+' up / '+ck.down3+' down':''}">▾ ${L('CRACKS — falling in absolute terms','裂痕 — 绝对价格下行')}</span>`);
+  if(ss&&ss.grade==='backtested') allFlags.push(`<span class="tflag dn" title="${esc(ss.en||'')} (HAC t ${ss.t_hac}, n ${ss.n})">🔬 ${L('backtested risk','已回测风险')}</span>`);
   const bullPill = ba.in_bull
     ? `🐂 ${ba.approx_months!=null?ba.approx_months+'mo':''} ${L(ba.stage||'','')||esc(ba.stage_zh||'')}`
     : `🐻 ${L('downtrend','下行')}`;
@@ -857,48 +871,42 @@ function themeCard(t){
     sigPills.push(`<span class="tpill ${wc}" title="whale accumulation (Chaikin money-flow %ile): ${esc(tape.whale.label_en||'')}">🐋 ${Math.round(w)}${tape.whale.trend_5d>0?'↑':tape.whale.trend_5d<0?'↓':''}</span>`);}
   if(tape&&tape.flow&&tape.flow.cmf!=null){const f=tape.flow.cmf, fc=f>0.05?'up':f<-0.05?'dn':'';
     sigPills.push(`<span class="tpill ${fc}" title="net money flow (CMF): ${esc(tape.flow.label_en||'')}">${f>0.05?'▸ '+L('inflow','流入'):f<-0.05?'▸ '+L('outflow','流出'):'▸ '+L('flat','均衡')}</span>`);}
-  // Leadership Health: contested modifier on the label chip (display-only; the label itself
-  // and its color are untouched — the modifier only says faster textures disagree).
-  const contested=isContested(t);
-  const cTex=contested?contestedTextures(t,(_basketOf(t.id)||{}).cycle):[];
-  const labelChip = contested
-    ? `<span class="tlabel" style="background:${lc[0]};border:1px solid ${lc[1]};color:${lc[2]}" title="contested — faster descriptive textures disagree with the validated label: ${esc(cTex.map(x=>x[0]).join(' | '))}. A shape/fragility read, not a forecast.">${L(t.label_en+' · contested',(t.label_zh||t.label_en)+' · 存在分歧')}</span>`
-    : badge('tlabel',lc,t.label_en,t.label_zh);
   return `<div class="tcard" id="theme-${t.id}" style="--tc:${lc[2]}">
     <div class="top">
-      ${labelChip}${heatPill(t)}
+      ${labelChip}${heatDot(t)}
       <a class="nm" href="basket/${t.id}.html" title="open full theme detail">${L(esc(t.name),esc(t.name_zh))}</a>
       <span class="sc">${t.score}<small>/100</small></span>
     </div>
-    ${flipCaption(t)}
     <div class="subrow">
       <span>#${t.rank}</span>
       ${recoChip(t)}
       <span class="${cls(r20)}">${fmtPct(r20)} 20d</span>
       <span class="spark">${sparkSvg(spk,{w:84,h:24,color:lc[2]})}</span>
     </div>
-    ${compBar(t.components,(THEME&&THEME.weights)||{trend:.26,breadth:.18,impulse:.07,macro:.18,mtf:.16,volhole:.05,crowding:.10})}
-    ${termStrip(t)}
-    ${sigPills.length?`<div class="txrow sigrow">${sigPills.join('')}</div>`:''}
-    <div class="txrow">
-      <span class="tpill" title="bull-market age">${bullPill}</span>
-      <span class="tpill ${obc}" title="overbought / extension">${L('OB','超买')} ${esc(ob.band||'—')}</span>
-      ${flags.join('')}
-    </div>
-    <div class="treason">${esc((t.reasons||[]).join(' · '))}</div>
-    <div class="tstats">
-      <span class="tpill">${L('above 50d','站上50日')} <b>${b.pct50==null?'—':Math.round(b.pct50*100)+'%'}</b></span>
-      <span class="tpill">${L('+3% / −3%','+3% / −3%')} <b class="pos">${im.up3||0}</b>/<b class="neg">${im.down3||0}</b></span>
-      <span class="tpill">${L('adv/dec','涨/跌')} <b class="pos">${t.adv||0}</b>/<b class="neg">${t.dec||0}</b></span>
-    </div>
-    <details><summary>${L('why &amp; components','理由与分项')}</summary>
+    ${flagRow}
+    <details class="tmore"><summary>${L('More','更多')}</summary>
+      ${flipCaption(t)}
+      ${compBar(t.components,(THEME&&THEME.weights)||{trend:.26,breadth:.18,impulse:.07,macro:.18,mtf:.16,volhole:.05,crowding:.10})}
+      ${compLegend(t.components)}
+      ${termStrip(t)}
+      <div class="txrow">
+        <span class="tpill" title="bull-market age">${bullPill}</span>
+        <span class="tpill ${obc}" title="overbought / extension">${L('OB','超买')} ${esc(ob.band||'—')}</span>
+        ${allFlags.join('')}
+        ${sigPills.join('')}
+      </div>
+      <div class="treason">${esc((t.reasons||[]).join(' · '))}</div>
+      <div class="tstats">
+        <span class="tpill">${L('above 50d','站上50日')} <b>${b.pct50==null?'—':Math.round(b.pct50*100)+'%'}</b></span>
+        <span class="tpill">${L('+3% / −3%','+3% / −3%')} <b class="pos">${im.up3||0}</b>/<b class="neg">${im.down3||0}</b></span>
+        <span class="tpill">${L('adv/dec','涨/跌')} <b class="pos">${t.adv||0}</b>/<b class="neg">${t.dec||0}</b></span>
+      </div>
       <div class="why">${recoNoEntry(t)?RECO_NOENTRY_WHY():L(esc(t.reco_why_en),esc(t.reco_why_zh))}</div>
       ${contested?`<div class="why" style="opacity:.9">${L('Contested — faster textures disagreeing with the label (descriptive, not a forecast)','存在分歧 — 与标签相悖的更快纹理（描述性，非预测）')}: ${cTex.map(x=>L(esc(x[0]),esc(x[1]))).join(' · ')}</div>`:''}
       ${ss?`<div class="why" style="opacity:.82">${L('Signal grade','信号评级')}: <b>${esc(ss.grade)}</b> — ${L(esc(ss.en||''),esc(ss.zh||''))}</div>`:''}
-      ${compLegend(t.components)}
       ${top.length?`<div class="why">${L('leaders','领涨')}: ${top.map(x=>esc(x.ticker)).join(', ')}${t.leadership.breadth==='narrow'?' ⚠':''}</div>`:''}
+      <a class="detail-link" href="basket/${t.id}.html">${L('Full detail · holdings buy/avoid →','完整详情 · 成分可买/回避 →')}</a>
     </details>
-    <a class="detail-link" href="basket/${t.id}.html">${L('Full detail · holdings buy/avoid →','完整详情 · 成分可买/回避 →')}</a>
   </div>`;
 }
 function renderThemeDesk(){
@@ -972,7 +980,13 @@ function renderRotation(){
   rotEl.innerHTML=subtitle+`<div class="rotwrap" style="margin-top:6px">${col('Weekly climbers','本周上升','▲',rot.climbers||[])}${col('Weekly fallers','本周下降','▽',rot.fallers||[])}</div>`;
 }
 function renderActNow(){
-  const sec=document.getElementById('actnow-section'); if(!THEME||!THEME.act_now){ if(sec) sec.style.display='none'; return; }
+  const sec=document.getElementById('actnow-section');
+  if(!THEME||!THEME.act_now){
+    const pulseOnly=actNowPulseBar(THEME&&THEME.themes||[]);
+    if(!pulseOnly){ if(sec) sec.style.display='none'; return; }
+    const el=document.getElementById('actnow'); if(el) el.innerHTML=pulseOnly;
+    return;
+  }
   const a=THEME.act_now;
   const ACT={enter:['ENTER','建仓','#16a34a'],accumulate:['ACCUMULATE','加仓','#22c55e'],trim:['TRIM','减仓','#f97316'],avoid:['AVOID','回避','#ef4444']};
   const row=x=>{const ac=ACT[x.action]||['','',cssv('--muted')];
@@ -998,40 +1012,35 @@ function renderActNow(){
     ${anCol('red',`🔻 ${L('Reduce / avoid','减仓 / 回避')}`,red,L('none','无'))}
   </div>`;
 }
-// Honest TRANSPARENCY chip: shows WHY basket gross is trimmed (the live vol-regime sizing
-// overlay). Subtract-only — shows NOTHING when calm (no "100% — calm" noise). Deliberately a
+// Honest TRANSPARENCY: returns the sizing pill HTML string (empty string when calm).
+// Subtract-only — shows NOTHING when calm (no "100% — calm" noise). Deliberately a
 // drawdown-control transparency read, NOT a performance claim: the backtest (PR #428) found the
 // drawdown value is mechanical vol-targeting; the regime layer adds no measured edge, so the
 // decomposition leads with vol-target and the note says so. Never implies the overlay lifts returns.
 function renderRegimeSizing(){
-  const host=document.getElementById('regime-sizing-chip'); if(!host) return;
   const rs=THEME&&THEME.regime_sizing;
-  if(!rs||!rs.active||(rs.gross_scalar||1)>=1.0){ host.innerHTML=''; return; }   // inert when calm
+  if(!rs||!rs.active||(rs.gross_scalar||1)>=1.0) return '';   // inert when calm
   const pct=Math.round((rs.gross_scalar||1)*100);
   const mech=Math.round((rs.mech_scalar||1)*100), reg=Math.round((rs.regime_caution||1)*100), sc=Math.round((rs.scored_cut||1)*100);
   const demoted=(THEME.themes||[]).filter(t=>t&&t.regime_demoted).length;
-  const sev=((rs.regime_caution||1)<1)?'var(--down)':'var(--warn)';
-  const regLbl={'backwardation-stress':L('stress in the volatility market','波动率市场承压'),'warning':L('warning signs building','风险信号增多')}[rs.regime];
-  const factors=[`${L('volatility target','波动率目标')} ${mech}%`];
-  if(reg<100) factors.push(`${L('risk regime','风险状态')} ${reg}%`);
-  if(sc<100) factors.push(`${L('signal mix','信号组合')} ${sc}%`);
-  const decompStr=factors.length>1?`${factors.join(' · ')} → ${pct}%`:factors[0];
-  // Audit #30: the regime-state caution failed its additive-value gate over the mechanical
-  // vol-target, so it is DISPLAY-ONLY (not applied to gross). Surface the shadow so the user
-  // still sees the risk-off context without it silently docking exposure.
+  const regLblEn={'backwardation-stress':'stress in the volatility market','warning':'warning signs building'}[rs.regime]||'';
+  const regLblZh={'backwardation-stress':'波动率市场承压','warning':'风险信号增多'}[rs.regime]||'';
+  const factorsEn=[`volatility target ${mech}%`];
+  if(reg<100) factorsEn.push(`risk regime ${reg}%`);
+  if(sc<100) factorsEn.push(`signal mix ${sc}%`);
+  const factorsZh=[`波动率目标 ${mech}%`];
+  if(reg<100) factorsZh.push(`风险状态 ${reg}%`);
+  if(sc<100) factorsZh.push(`信号组合 ${sc}%`);
   const cautionScored=!!(rs.caution_passport&&rs.caution_passport.verdict==='scored');
   const shadow=Math.round((rs.regime_caution_shadow||1)*100);
-  let shadowLine='';
-  if(!cautionScored && shadow<100 && regLbl){
-    shadowLine=`<div class="rs-note muted xs" style="opacity:.85">${L('Note: the vol-regime is risk-off ('+regLbl+'), which would suggest a further ×'+shadow+'% caution — but that caution has no measured drawdown edge over plain vol-targeting, so it is shown for awareness only and does NOT reduce your positions.','提示：波动率状态偏离风险（'+regLbl+'），本会再施加约 ×'+shadow+'% 的审慎——但该审慎相较单纯波动率目标没有可测的回撤优势，因此仅作提示，不会减少您的仓位。')}</div>`;
+  let tipSuffix='';
+  if(!cautionScored && shadow<100 && regLblEn){
+    tipSuffix=' | Note: the vol-regime is risk-off ('+regLblEn+'), which would suggest a further ×'+shadow+'% caution — but that caution has no measured drawdown edge over plain vol-targeting, so it is shown for awareness only and does NOT reduce your positions.';
   }
-  host.innerHTML=`<div class="rs-chip" style="border-left:3px solid ${sev}">
-    <div class="rs-head"><span class="rs-ic">⚠</span>
-      <span class="rs-main">${L('Choppy markets — basket positions trimmed to','市场波动加大 — 篮子仓位已缩减至常规水平的')} <b>${pct}%</b>${L(' of normal','')}${(cautionScored&&regLbl)?' ('+regLbl+')':''}</span></div>
-    <div class="rs-decomp muted sm">${L('How it\'s set','计算方式')}: ${decompStr}${demoted?` · ${demoted} ${L('theme(s) eased to hold-only','个主题降为仅持有')}`:''}</div>
-    <div class="rs-note muted xs">${L('Volatile markets get smaller position sizes. This does not change the basket ranking.','市场波动加大时仓位会缩小，但不改变篮子排名。')}</div>
-    ${shadowLine}
-  </div>`;
+  const tipSuffixZh=(!cautionScored && shadow<100 && regLblZh)?(' | 提示：波动率状态偏离风险（'+regLblZh+'），本会再施加约 ×'+shadow+'% 的审慎——但该审慎相较单纯波动率目标没有可测的回撤优势，因此仅作提示，不会减少您的仓位。'):'';
+  const tipEn='How it\'s set: '+factorsEn.join(' · ')+' → '+pct+'%'+(demoted?' · '+demoted+' theme(s) eased to hold-only':'')+' | Volatile markets get smaller position sizes. This does not change the basket ranking.'+tipSuffix;
+  const tipZh='计算方式：'+factorsZh.join(' · ')+' → '+pct+'%'+(demoted?' · '+demoted+'个主题降为仅持有':'')+' | 市场波动加大时仓位会缩小，但不改变篮子排名。'+tipSuffixZh;
+  return `<span class="pulse-size" data-tip-en="${esc(tipEn)}" data-tip-zh="${esc(tipZh)}">⚠ ${L('positions sized to '+pct+'%','仓位缩至 '+pct+'%')}</span>`;
 }
 function renderConcentration(){
   const sec=document.getElementById('concentration-section'); if(!THEME){ if(sec) sec.style.display='none'; return; }
@@ -1154,7 +1163,7 @@ function renderBell(){
 
 function boot(){
   document.getElementById('asof').textContent=BASKETS.as_of||'—';
-  renderActNow(); renderRegimeSizing(); renderMacroCtx(); renderThemeDesk(); renderConcentration(); renderRotation(); renderScorecards(); renderBell();
+  renderActNow(); renderMacroCtx(); renderThemeDesk(); renderConcentration(); renderRotation(); renderScorecards(); renderBell();
   renderStory();
   renderTabs(document.getElementById('btbl-mode'), TBL_MODES, btblMode, v=>{ btblMode=v; localStorage.setItem('fw-btbl-mode',v); renderBTable(); });
   renderTabs(document.getElementById('chart-modes'), [['rel','vs S&P 500'],['abs','Absolute']], chartMode, v=>{ chartMode=v; renderChart(); });
