@@ -83,6 +83,49 @@ def _today() -> str:
     return date.today().isoformat()
 
 
+_REGIME_HISTORY_CACHE: dict = {}  # {path_str: DataFrame}
+
+
+def _regime_chip_for_date(date_str: str) -> dict | None:
+    """Look up quad/liquidity/cycle for a given date in regime_history.parquet.
+
+    Returns {quad, quad_name, liquidity, cycle} if found, else None.
+    Degrades cleanly: missing parquet or date not in index → None, no exception.
+    Neutral/descriptive context only — no directional language.
+    """
+    try:
+        p = config.ROOT / "data" / "china_regime" / "regime_history.parquet"
+        pstr = str(p)
+        if pstr not in _REGIME_HISTORY_CACHE:
+            if not p.exists():
+                return None
+            _df = pd.read_parquet(p, columns=["quad", "quad_name", "liquidity", "cycle"])
+            _df.index = pd.to_datetime(_df.index)
+            _REGIME_HISTORY_CACHE[pstr] = _df.sort_index()
+        df = _REGIME_HISTORY_CACHE[pstr]
+        if df is None or df.empty:
+            return None
+        # Backward as-of join: latest regime row AT/BEFORE the event date.
+        # Exact-match would drop weekend-dated announcements and future-dated
+        # unlocks (regime_history is trading-days-only, ends today). PIT-honest:
+        # never reads a regime row later than the event date.
+        ts = pd.Timestamp(str(date_str)[:10])
+        pos = df.index.get_indexer([ts], method="ffill")[0]
+        if pos < 0:
+            return None  # event predates regime history
+        row = df.iloc[pos]
+        quad = str(row["quad"])
+        quad_name = str(row["quad_name"])
+        liquidity = str(row["liquidity"])
+        cycle = str(row["cycle"])
+        if any(v in ("nan", "", "None", "none") for v in (quad, quad_name)):
+            return None
+        return {"quad": quad, "quad_name": quad_name, "liquidity": liquidity, "cycle": cycle}
+    except Exception as e:  # noqa: BLE001
+        log.debug("china_special_sits: regime chip lookup failed (%s)", e)
+        return None
+
+
 def _asof_status(parquet: Path) -> tuple[str | None, str]:
     """Return (asof_str, 'ok'|'missing'|'stale') for a parquet artifact."""
     if not parquet.exists():
@@ -159,10 +202,11 @@ def _unlock_block() -> dict | None:
         events = []
         for _, row in fwd.head(_MAX_ROWS).iterrows():
             float_pct = _safe_float(row.get("_float_pct")) if "_float_pct" in row.index else None
-            events.append({
+            unlock_date = row[date_col].strftime("%Y-%m-%d") if pd.notna(row[date_col]) else None
+            ev: dict = {
                 "ticker":      str(row.get("ticker") or row.get(code_col) or ""),
                 "name":        str(row.get(name_col) or ""),
-                "unlock_date": row[date_col].strftime("%Y-%m-%d") if pd.notna(row[date_col]) else None,
+                "unlock_date": unlock_date,
                 "lock_type":   str(row.get(type_col) or "") if type_col else "",
                 # float_pct: percent (0-100 scale); 5.0 = 5% of pre-unlock float
                 "float_pct":   float_pct,
@@ -170,7 +214,14 @@ def _unlock_block() -> dict | None:
                 "float_ratio": float_pct,
                 "large_flag":  float_pct is not None and float_pct >= 5.0,
                 "mktcap_yi":   _safe_float(row.get(mktcap_col)) if mktcap_col else None,
-            })
+            }
+            # Cycle-context chip (W5): stamp regime quad/liquidity/cycle at unlock date.
+            # Muted/descriptive only — no directional language.
+            if unlock_date:
+                chip = _regime_chip_for_date(unlock_date)
+                if chip:
+                    ev["regime_chip"] = chip
+            events.append(ev)
 
         n_large = sum(1 for e in events if e["large_flag"])
 
@@ -243,16 +294,24 @@ def _inquiry_block() -> dict | None:
 
         rows = []
         for _, r in letters.head(_MAX_ROWS).iterrows():
-            rows.append({
+            letter_date = str(r.get("announcementTime") or "")
+            letter: dict = {
                 "secCode":    str(r.get("secCode") or ""),
                 "secName":    str(r.get("secName") or ""),
                 "title":      str(r.get("announcementTitle") or ""),
-                "date":       str(r.get("announcementTime") or ""),
+                "date":       letter_date,
                 "pdf_url":    str(r.get("adjunctUrl") or ""),
                 "has_reply":  str(r.get("secCode") or "") in replies,
                 "type_name":  str(r.get("announcementTypeName") or ""),
                 # Note: no 'kind' key — list is letters-only; register_claims must not filter on kind
-            })
+            }
+            # Cycle-context chip (W5): stamp regime quad/liquidity/cycle at letter date.
+            # Muted/descriptive only — no directional language.
+            if letter_date:
+                chip = _regime_chip_for_date(letter_date[:10])
+                if chip:
+                    letter["regime_chip"] = chip
+            rows.append(letter)
 
         return {
             "asof": asof, "status": status,

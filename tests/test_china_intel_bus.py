@@ -149,6 +149,175 @@ def test_policy_phrase_old_events_excluded(monkeypatch):
     assert result["n_events_recent"] == 0  # old event filtered out (defensive path)
 
 
+# ── W5: cycle-context regime chip helper ──────────────────────────────────────
+
+def test_regime_chip_for_date_missing_parquet(monkeypatch, tmp_path):
+    """Missing regime_history.parquet → returns None, no exception."""
+    import types
+    import engine.china_intel_bus as _bus
+    fake_config = types.SimpleNamespace(ROOT=tmp_path)
+    monkeypatch.setattr(_bus, "config", fake_config)
+    # Clear the cache to force fresh lookup
+    _bus._REGIME_HISTORY_CACHE.clear()
+    result = _bus._regime_chip_for_date("2026-07-01")
+    assert result is None
+
+
+def test_regime_chip_for_date_happy_path(tmp_path, monkeypatch):
+    """Valid parquet with known date → returns chip dict with expected keys."""
+    import pandas as pd
+    import types
+    import engine.china_intel_bus as _bus
+
+    p = tmp_path / "data" / "china_regime"
+    p.mkdir(parents=True)
+    df = pd.DataFrame({
+        "quad": ["Q1"],
+        "quad_name": ["Goldilocks"],
+        "liquidity": ["expanding"],
+        "cycle": ["early"],
+    }, index=pd.DatetimeIndex(["2026-07-01"]))
+    df.to_parquet(p / "regime_history.parquet")
+
+    fake_config = types.SimpleNamespace(ROOT=tmp_path)
+    monkeypatch.setattr(_bus, "config", fake_config)
+    _bus._REGIME_HISTORY_CACHE.clear()
+
+    result = _bus._regime_chip_for_date("2026-07-01")
+    assert result is not None
+    assert result["quad"] == "Q1"
+    assert result["quad_name"] == "Goldilocks"
+    assert result["liquidity"] == "expanding"
+    assert result["cycle"] == "early"
+
+
+def test_regime_chip_for_date_not_in_index(tmp_path, monkeypatch):
+    """Date not in parquet index → returns None, no exception."""
+    import pandas as pd
+    import types
+    import engine.china_intel_bus as _bus
+
+    p = tmp_path / "data" / "china_regime"
+    p.mkdir(parents=True)
+    df = pd.DataFrame({
+        "quad": ["Q1"],
+        "quad_name": ["Goldilocks"],
+        "liquidity": ["expanding"],
+        "cycle": ["early"],
+    }, index=pd.DatetimeIndex(["2026-07-01"]))
+    df.to_parquet(p / "regime_history.parquet")
+
+    fake_config = types.SimpleNamespace(ROOT=tmp_path)
+    monkeypatch.setattr(_bus, "config", fake_config)
+    _bus._REGIME_HISTORY_CACHE.clear()
+
+    result = _bus._regime_chip_for_date("1990-01-01")
+    assert result is None
+
+
+def test_regime_chip_weekend_date_backward_asof(tmp_path, monkeypatch):
+    """Weekend-dated event (regime_history is trading-days-only) maps back to
+    the prior trading day's row — exact-match would silently drop the chip."""
+    import pandas as pd
+    import types
+    import engine.china_intel_bus as _bus
+
+    p = tmp_path / "data" / "china_regime"
+    p.mkdir(parents=True)
+    df = pd.DataFrame({
+        "quad": ["Q2", "Q3"],
+        "quad_name": ["Reflation", "Stagflation"],
+        "liquidity": ["expanding", "contracting"],
+        "cycle": ["early", "late"],
+    }, index=pd.DatetimeIndex(["2026-07-02", "2026-07-03"]))  # Thu, Fri
+    df.to_parquet(p / "regime_history.parquet")
+
+    fake_config = types.SimpleNamespace(ROOT=tmp_path)
+    monkeypatch.setattr(_bus, "config", fake_config)
+    _bus._REGIME_HISTORY_CACHE.clear()
+
+    result = _bus._regime_chip_for_date("2026-07-05")  # Sunday announcement
+    assert result is not None
+    assert result["quad"] == "Q3"  # Friday's row, never a later one
+
+
+def test_policy_phrase_events_get_regime_chips(tmp_path, monkeypatch):
+    """recent_events get regime_chip stamped when parquet has the date."""
+    import pandas as pd
+    import types
+    from datetime import date, timedelta
+    import engine.china_intel_bus as _bus
+
+    # Write fixture parquet
+    p = tmp_path / "data" / "china_regime"
+    p.mkdir(parents=True)
+    today = date.today().isoformat()
+    df = pd.DataFrame({
+        "quad": ["Q2"],
+        "quad_name": ["Reflation"],
+        "liquidity": ["neutral"],
+        "cycle": ["mid"],
+    }, index=pd.DatetimeIndex([today]))
+    df.to_parquet(p / "regime_history.parquet")
+
+    fake_config = types.SimpleNamespace(ROOT=tmp_path)
+    monkeypatch.setattr(_bus, "config", fake_config)
+    _bus._REGIME_HISTORY_CACHE.clear()
+
+    payload = {
+        "schema": "communique_diff.v1",
+        "asof": today,
+        "events": [
+            {"event_id": "cd_x", "kind": "APPEARED", "organ": "pboc",
+             "phrase": "适度宽松", "gloss": "moderately loose", "domain": "monetary",
+             "polarity": 0, "review_status": "PROVISIONAL", "asof": today, "evidence_url": ""},
+        ],
+        "cold_start_organs": [],
+        "counts": {"n_events": 1, "n_appeared": 1, "n_dropped": 0,
+                   "n_lead_shift": 0, "n_cold_start_organs": 0},
+    }
+    monkeypatch.setattr(_bus, "_read_json", lambda rel: payload if "communique_diff" in rel else None)
+
+    result = _bus._policy_phrase_block()
+    assert result is not None
+    assert len(result["recent_events"]) == 1
+    ev = result["recent_events"][0]
+    assert "regime_chip" in ev
+    assert ev["regime_chip"]["quad"] == "Q2"
+    assert ev["regime_chip"]["quad_name"] == "Reflation"
+
+
+def test_policy_phrase_events_no_chip_when_no_parquet(monkeypatch, tmp_path):
+    """recent_events have no regime_chip when parquet is absent — no crash."""
+    import types
+    from datetime import date
+    import engine.china_intel_bus as _bus
+
+    fake_config = types.SimpleNamespace(ROOT=tmp_path)
+    monkeypatch.setattr(_bus, "config", fake_config)
+    _bus._REGIME_HISTORY_CACHE.clear()
+
+    today = date.today().isoformat()
+    payload = {
+        "schema": "communique_diff.v1",
+        "asof": today,
+        "events": [
+            {"event_id": "cd_y", "kind": "DROPPED", "organ": "ndrc",
+             "phrase": "房住不炒", "gloss": "housing not for spec", "domain": "real_estate",
+             "polarity": 0, "review_status": "PROVISIONAL", "asof": today, "evidence_url": ""},
+        ],
+        "cold_start_organs": [],
+        "counts": {"n_events": 1, "n_appeared": 0, "n_dropped": 1,
+                   "n_lead_shift": 0, "n_cold_start_organs": 0},
+    }
+    monkeypatch.setattr(_bus, "_read_json", lambda rel: payload if "communique_diff" in rel else None)
+
+    result = _bus._policy_phrase_block()
+    assert result is not None
+    ev = result["recent_events"][0]
+    assert "regime_chip" not in ev  # no parquet → no chip, no crash
+
+
 # ── v4: narrative_divergence block ───────────────────────────────────────────
 
 def test_narrative_divergence_block_no_parquet(monkeypatch, tmp_path):

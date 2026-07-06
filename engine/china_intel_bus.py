@@ -76,6 +76,54 @@ def _read_json(rel: str) -> dict | list | None:
 
 
 # --------------------------------------------------------------------------- #
+# cycle-context chip helper (W5)
+# --------------------------------------------------------------------------- #
+_REGIME_HISTORY_CACHE: dict = {}  # {path_str: DataFrame}
+
+
+def _regime_chip_for_date(date_str: str) -> dict | None:
+    """Look up quad/liquidity/cycle for a given date in regime_history.parquet.
+
+    Returns {quad, quad_name, liquidity, cycle} if found, else None.
+    Degrades cleanly: missing parquet or date not in index → None, no exception.
+    Neutral/descriptive context only — no directional language.
+    """
+    try:
+        import pandas as pd
+        p = config.ROOT / "data" / "china_regime" / "regime_history.parquet"
+        pstr = str(p)
+        if pstr not in _REGIME_HISTORY_CACHE:
+            if not p.exists():
+                return None
+            _df = pd.read_parquet(p, columns=["quad", "quad_name", "liquidity", "cycle"])
+            _df.index = pd.to_datetime(_df.index)
+            _REGIME_HISTORY_CACHE[pstr] = _df.sort_index()
+        df = _REGIME_HISTORY_CACHE[pstr]
+        if df is None or df.empty:
+            return None
+        # Backward as-of join: latest regime row AT/BEFORE the event date.
+        # Exact-match would drop weekend-dated announcements and future-dated
+        # unlocks (regime_history is trading-days-only, ends today). PIT-honest:
+        # never reads a regime row later than the event date.
+        ts = pd.Timestamp(str(date_str)[:10])
+        pos = df.index.get_indexer([ts], method="ffill")[0]
+        if pos < 0:
+            return None  # event predates regime history
+        row = df.iloc[pos]
+        quad = str(row["quad"])
+        quad_name = str(row["quad_name"])
+        liquidity = str(row["liquidity"])
+        cycle = str(row["cycle"])
+        # Skip NaN / "nan" rows
+        if any(v in ("nan", "", "None", "none") for v in (quad, quad_name)):
+            return None
+        return {"quad": quad, "quad_name": quad_name, "liquidity": liquidity, "cycle": cycle}
+    except Exception as e:  # noqa: BLE001
+        log.debug("china_intel_bus: regime chip lookup failed (%s)", e)
+        return None
+
+
+# --------------------------------------------------------------------------- #
 # per-surface compact readers — enriched (v2)
 # --------------------------------------------------------------------------- #
 def _news_block() -> dict | None:
@@ -247,6 +295,16 @@ def _policy_phrase_block() -> dict | None:
             org = e.get("organ", "")
             if org:
                 organs_seen.add(org)
+        # Stamp cycle-context chips onto each event (W5).  Uses the event's own asof
+        # date (or the block asof as fallback).  Chips are muted/descriptive context only.
+        stamped = []
+        for e in recent[:8]:
+            ev = dict(e)
+            ev_date = str(ev.get("asof") or asof)[:10]
+            chip = _regime_chip_for_date(ev_date)
+            if chip:
+                ev["regime_chip"] = chip
+            stamped.append(ev)
         return {
             "asof": asof,  # "last diff run" — communique_diff stamps run day, not corpus freshness
             "n_events_recent": len(recent),
@@ -255,7 +313,7 @@ def _policy_phrase_block() -> dict | None:
             "n_lead_shift": type_counts.get("LEAD_SHIFT", 0),
             "organs_covered": sorted(organs_seen),
             "cold_start_organs": cold_start_organs,
-            "recent_events": recent[:8],   # cap for transport
+            "recent_events": stamped,   # cap for transport already applied above
             "is_context_only": True,
             "claim_family": "communique_diff",
             "note_en": "Salience-only — direction unproven (accruing)",

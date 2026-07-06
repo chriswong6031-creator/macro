@@ -59,6 +59,9 @@
   table.ss td { padding:7px 9px; border-bottom:1px solid var(--line); vertical-align:top; }
   .large-flag { font-size:9px; font-weight:800; padding:2px 7px; border-radius:6px; text-transform:uppercase; letter-spacing:.03em;
     color:#e0973a; background:color-mix(in srgb,#e0973a 13%,transparent); border:1px solid color-mix(in srgb,#e0973a 30%,transparent); }
+  /* cycle-context regime chips (W5) — muted/neutral only, no up/down coloring */
+  .regime-chips { display:flex; flex-wrap:wrap; gap:4px; margin-top:3px; }
+  .rg-chip { font-size:9px; font-weight:600; padding:1px 6px; border-radius:5px; background:color-mix(in srgb,var(--muted) 10%,transparent); color:var(--muted); border:1px solid color-mix(in srgb,var(--muted) 22%,transparent); letter-spacing:.03em; }
   /* callout / empty state */
   .callout { border-radius:12px; padding:13px 16px; margin:14px 0; border:1px solid var(--line); background:var(--panel2); font-size:13.5px; line-height:1.6; }
   .empty-state { font-size:12.5px; color:var(--muted); padding:10px 0; font-style:italic; }
@@ -176,6 +179,7 @@
             <a href="china_altdata.html">🛰️ <span class="l-en">Alternative Data</span><span class="l-zh">另类数据</span><span class="d"><span class="l-en">Smart-money convergence · signal lab</span><span class="l-zh">主力共振 · 信号实验室</span></span></a>
             <a href="china_policy_watch.html">🏛️ <span class="l-en">PBoC & Policy Watch</span><span class="l-zh">央行与政策观察</span><span class="d"><span class="l-en">Rate corridor · liquidity · sector policy</span><span class="l-zh">利率走廊 · 流动性 · 行业政策</span></span></a>
             <a href="china_radar.html">📡 <span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span><span class="d"><span class="l-en">Policy/flow signal vs sector price</span><span class="l-zh">政策/资金信号 vs 板块价格</span></span></a>
+            <a href="china_special_situations.html">⚡ <span class="l-en">Special Situations</span><span class="l-zh">特殊事件</span><span class="d"><span class="l-en">Unlocks · inquiry letters · preannouncements · pledge stress</span><span class="l-zh">解禁 · 问询函 · 业绩预告 · 质押风险</span></span></a>
             <a href="narrative_radar.html">🧭 <span class="l-en">Narrative Basket Radar</span><span class="l-zh">主题篮子雷达</span><span class="d"><span class="l-en">Which THS theme is running · global driver · member entries</span><span class="l-zh">哪个同花顺主题正在运行 · 全球驱动 · 成员入场</span></span></a>
           </div>
         </div>
@@ -412,7 +416,10 @@
       <tr>
         <td>688729.SS</td>
         <td>屹唐股份</td>
-        <td>2026-07-08</td>
+        <td>
+          2026-07-08
+          <div class="regime-chips"><span class="rg-chip">Q3</span><span class="rg-chip"><span class="l-en">Stagflation</span><span class="l-zh">滞胀</span></span><span class="rg-chip"><span class="l-en">neutral</span><span class="l-zh">中性</span></span><span class="rg-chip"><span class="l-en">mid</span><span class="l-zh">中期</span>-<span class="l-en">cycle</span><span class="l-zh">周期</span></span></div>
+        </td>
         <td style="font-size:11.5px;color:var(--muted)">首发原股东限售股份,首发战略配售股份</td>
         <td>
             713.1% <span class="large-flag" data-tip-en="≥5% of pre-unlock float" data-tip-zh="占解禁前流通市值≥5%">!</span>
@@ -421,7 +428,10 @@
       <tr>
         <td>301499.SZ</td>
         <td>维科精密</td>
-        <td>2026-07-21</td>
+        <td>
+          2026-07-21
+          <div class="regime-chips"><span class="rg-chip">Q3</span><span class="rg-chip"><span class="l-en">Stagflation</span><span class="l-zh">滞胀</span></span><span class="rg-chip"><span class="l-en">neutral</span><span class="l-zh">中性</span></span><span class="rg-chip"><span class="l-en">mid</span><span class="l-zh">中期</span>-<span class="l-en">cycle</span><span class="l-zh">周期</span></span></div>
+        </td>
         <td style="font-size:11.5px;color:var(--muted)">首发原股东限售股份</td>
         <td>
             300.0% <span class="large-flag" data-tip-en="≥5% of pre-unlock float" data-tip-zh="占解禁前流通市值≥5%">!</span>
@@ -430,7 +440,10 @@
       <tr>
         <td>920005.SS</td>
         <td>鼎佳精密</td>
-        <td>2026-07-31</td>
+        <td>
+          2026-07-31
+          <div class="regime-chips"><span class="rg-chip">Q3</span><span class="rg-chip"><span class="l-en">Stagflation</span><span class="l-zh">滞胀</span></span><span class="rg-chip"><span class="l-en">neutral</span><span class="l-zh">中性</span></span><span class="rg-chip"><span class="l-en">mid</span><span class="l-zh">中期</span>-<span class="l-en">cycle</span><span class="l-zh">周期</span></span></div>
+        </td>
         <td style="font-size:11.5px;color:var(--muted)">公开发行原股东限售股份,公开发行战略配售股份</td>
         <td>
             286.0% <span class="large-flag" data-tip-en="≥5% of pre-unlock float" data-tip-zh="占解禁前流通市值≥5%">!</span>
@@ -439,7 +452,10 @@
       <tr>
         <td>600930.SS</td>
         <td>华电新能</td>
-        <td>2026-07-16</td>
+        <td>
+          2026-07-16
+          <div class="regime-chips"><span class="rg-chip">Q3</span><span class="rg-chip"><span class="l-en">Stagflation</span><span class="l-zh">滞胀</span></span><span class="rg-chip"><span class="l-en">neutral</span><span class="l-zh">中性</span></span><span class="rg-chip"><span class="l-en">mid</span><span class="l-zh">中期</span>-<span class="l-en">cycle</span><span class="l-zh">周期</span></span></div>
+        </td>
         <td style="font-size:11.5px;color:var(--muted)">首发原股东限售股份,首发战略配售股份</td>
         <td>
             232.6% <span class="large-flag" data-tip-en="≥5% of pre-unlock float" data-tip-zh="占解禁前流通市值≥5%">!</span>
@@ -448,7 +464,10 @@
       <tr>
         <td>301609.SZ</td>
         <td>山大电力</td>
-        <td>2026-07-23</td>
+        <td>
+          2026-07-23
+          <div class="regime-chips"><span class="rg-chip">Q3</span><span class="rg-chip"><span class="l-en">Stagflation</span><span class="l-zh">滞胀</span></span><span class="rg-chip"><span class="l-en">neutral</span><span class="l-zh">中性</span></span><span class="rg-chip"><span class="l-en">mid</span><span class="l-zh">中期</span>-<span class="l-en">cycle</span><span class="l-zh">周期</span></span></div>
+        </td>
         <td style="font-size:11.5px;color:var(--muted)">首发原股东限售股份,首发战略配售股份</td>
         <td>
             210.6% <span class="large-flag" data-tip-en="≥5% of pre-unlock float" data-tip-zh="占解禁前流通市值≥5%">!</span>
@@ -457,7 +476,10 @@
       <tr>
         <td>300140.SZ</td>
         <td>节能环境</td>
-        <td>2026-07-20</td>
+        <td>
+          2026-07-20
+          <div class="regime-chips"><span class="rg-chip">Q3</span><span class="rg-chip"><span class="l-en">Stagflation</span><span class="l-zh">滞胀</span></span><span class="rg-chip"><span class="l-en">neutral</span><span class="l-zh">中性</span></span><span class="rg-chip"><span class="l-en">mid</span><span class="l-zh">中期</span>-<span class="l-en">cycle</span><span class="l-zh">周期</span></span></div>
+        </td>
         <td style="font-size:11.5px;color:var(--muted)">定向增发机构配售股份</td>
         <td>
             203.4% <span class="large-flag" data-tip-en="≥5% of pre-unlock float" data-tip-zh="占解禁前流通市值≥5%">!</span>
@@ -466,7 +488,10 @@
       <tr>
         <td>688603.SS</td>
         <td>天承科技</td>
-        <td>2026-07-10</td>
+        <td>
+          2026-07-10
+          <div class="regime-chips"><span class="rg-chip">Q3</span><span class="rg-chip"><span class="l-en">Stagflation</span><span class="l-zh">滞胀</span></span><span class="rg-chip"><span class="l-en">neutral</span><span class="l-zh">中性</span></span><span class="rg-chip"><span class="l-en">mid</span><span class="l-zh">中期</span>-<span class="l-en">cycle</span><span class="l-zh">周期</span></span></div>
+        </td>
         <td style="font-size:11.5px;color:var(--muted)">首发原股东限售股份</td>
         <td>
             163.0% <span class="large-flag" data-tip-en="≥5% of pre-unlock float" data-tip-zh="占解禁前流通市值≥5%">!</span>
@@ -475,7 +500,10 @@
       <tr>
         <td>603262.SS</td>
         <td>技源集团</td>
-        <td>2026-07-23</td>
+        <td>
+          2026-07-23
+          <div class="regime-chips"><span class="rg-chip">Q3</span><span class="rg-chip"><span class="l-en">Stagflation</span><span class="l-zh">滞胀</span></span><span class="rg-chip"><span class="l-en">neutral</span><span class="l-zh">中性</span></span><span class="rg-chip"><span class="l-en">mid</span><span class="l-zh">中期</span>-<span class="l-en">cycle</span><span class="l-zh">周期</span></span></div>
+        </td>
         <td style="font-size:11.5px;color:var(--muted)">首发原股东限售股份,首发战略配售股份</td>
         <td>
             160.8% <span class="large-flag" data-tip-en="≥5% of pre-unlock float" data-tip-zh="占解禁前流通市值≥5%">!</span>
@@ -521,6 +549,7 @@
         <b>600759</b> ST洲际 <span class="reply-tag"><span class="l-en">replied</span><span class="l-zh">已回复</span></span>
         <div style="font-size:11.5px;color:var(--muted);margin-top:3px">大华会计师事务所关于洲际油气股份有限公司2025年年度报告信息披露监管问询函专说明</div>
             <a href="https://static.cninfo.com.cn/finalpage/2026-07-06/1225410348.PDF" target="_blank" rel="noopener noreferrer" style="font-size:10.5px;color:var(--link)"><span class="l-en">PDF ↗</span><span class="l-zh">PDF ↗</span></a>
+        <div class="regime-chips"><span class="rg-chip">Q3</span><span class="rg-chip"><span class="l-en">Stagflation</span><span class="l-zh">滞胀</span></span><span class="rg-chip"><span class="l-en">neutral</span><span class="l-zh">中性</span></span><span class="rg-chip"><span class="l-en">mid</span><span class="l-zh">中期</span>-<span class="l-en">cycle</span><span class="l-zh">周期</span></span></div>
       </div>
       <div class="inq-meta">2026-07-05</div>
     </div>
@@ -529,6 +558,7 @@
         <b>603378</b> *ST亚士
         <div style="font-size:11.5px;color:var(--muted);margin-top:3px">关于《亚士创能科技（上海）股份有限公司股票交易异常波动有关事项的问询函》的回函</div>
             <a href="https://static.cninfo.com.cn/finalpage/2026-07-06/1225410308.PDF" target="_blank" rel="noopener noreferrer" style="font-size:10.5px;color:var(--link)"><span class="l-en">PDF ↗</span><span class="l-zh">PDF ↗</span></a>
+        <div class="regime-chips"><span class="rg-chip">Q3</span><span class="rg-chip"><span class="l-en">Stagflation</span><span class="l-zh">滞胀</span></span><span class="rg-chip"><span class="l-en">neutral</span><span class="l-zh">中性</span></span><span class="rg-chip"><span class="l-en">mid</span><span class="l-zh">中期</span>-<span class="l-en">cycle</span><span class="l-zh">周期</span></span></div>
       </div>
       <div class="inq-meta">2026-07-05</div>
     </div>
@@ -537,6 +567,7 @@
         <b>603260</b> 合盛硅业 <span class="reply-tag"><span class="l-en">replied</span><span class="l-zh">已回复</span></span>
         <div style="font-size:11.5px;color:var(--muted);margin-top:3px">天健会计师事务所(特殊普通合伙)关于合盛硅业股份有限公司2025年年度报告的信息披露监管问询函专项说明</div>
             <a href="https://static.cninfo.com.cn/finalpage/2026-07-04/1225410055.PDF" target="_blank" rel="noopener noreferrer" style="font-size:10.5px;color:var(--link)"><span class="l-en">PDF ↗</span><span class="l-zh">PDF ↗</span></a>
+        <div class="regime-chips"><span class="rg-chip">Q3</span><span class="rg-chip"><span class="l-en">Stagflation</span><span class="l-zh">滞胀</span></span><span class="rg-chip"><span class="l-en">neutral</span><span class="l-zh">中性</span></span><span class="rg-chip"><span class="l-en">mid</span><span class="l-zh">中期</span>-<span class="l-en">cycle</span><span class="l-zh">周期</span></span></div>
       </div>
       <div class="inq-meta">2026-07-03</div>
     </div>
@@ -545,6 +576,7 @@
         <b>688766</b> 普冉股份 <span class="reply-tag"><span class="l-en">replied</span><span class="l-zh">已回复</span></span>
         <div style="font-size:11.5px;color:var(--muted);margin-top:3px">立信会计师事务所（特殊普通合伙）关于普冉半导体（上海）股份有限公司发行股份、可转换公司债券及支付现金购买资产并募集配套资金申请的审核问询函中相关财务问题的专项核查意见</div>
             <a href="https://static.cninfo.com.cn/finalpage/2026-07-04/1225409824.PDF" target="_blank" rel="noopener noreferrer" style="font-size:10.5px;color:var(--link)"><span class="l-en">PDF ↗</span><span class="l-zh">PDF ↗</span></a>
+        <div class="regime-chips"><span class="rg-chip">Q3</span><span class="rg-chip"><span class="l-en">Stagflation</span><span class="l-zh">滞胀</span></span><span class="rg-chip"><span class="l-en">neutral</span><span class="l-zh">中性</span></span><span class="rg-chip"><span class="l-en">mid</span><span class="l-zh">中期</span>-<span class="l-en">cycle</span><span class="l-zh">周期</span></span></div>
       </div>
       <div class="inq-meta">2026-07-03</div>
     </div>
@@ -553,6 +585,7 @@
         <b>688007</b> 光峰科技 <span class="reply-tag"><span class="l-en">replied</span><span class="l-zh">已回复</span></span>
         <div style="font-size:11.5px;color:var(--muted);margin-top:3px">天健会计师事务所（特殊普通合伙）关于深圳光峰科技股份有限公司2025年年度报告的信息披露监管问询函专项说明</div>
             <a href="https://static.cninfo.com.cn/finalpage/2026-07-04/1225409461.PDF" target="_blank" rel="noopener noreferrer" style="font-size:10.5px;color:var(--link)"><span class="l-en">PDF ↗</span><span class="l-zh">PDF ↗</span></a>
+        <div class="regime-chips"><span class="rg-chip">Q3</span><span class="rg-chip"><span class="l-en">Stagflation</span><span class="l-zh">滞胀</span></span><span class="rg-chip"><span class="l-en">neutral</span><span class="l-zh">中性</span></span><span class="rg-chip"><span class="l-en">mid</span><span class="l-zh">中期</span>-<span class="l-en">cycle</span><span class="l-zh">周期</span></span></div>
       </div>
       <div class="inq-meta">2026-07-03</div>
     </div>
@@ -561,6 +594,7 @@
         <b>688096</b> 京源环保 <span class="reply-tag"><span class="l-en">replied</span><span class="l-zh">已回复</span></span>
         <div style="font-size:11.5px;color:var(--muted);margin-top:3px">北京德皓国际会计师事务所(特殊普通合伙)关于江苏京源环保股份有限公司2025年年度报告的信息披露监管问询函中有关财务事项的专项说明</div>
             <a href="https://static.cninfo.com.cn/finalpage/2026-07-04/1225408411.PDF" target="_blank" rel="noopener noreferrer" style="font-size:10.5px;color:var(--link)"><span class="l-en">PDF ↗</span><span class="l-zh">PDF ↗</span></a>
+        <div class="regime-chips"><span class="rg-chip">Q3</span><span class="rg-chip"><span class="l-en">Stagflation</span><span class="l-zh">滞胀</span></span><span class="rg-chip"><span class="l-en">neutral</span><span class="l-zh">中性</span></span><span class="rg-chip"><span class="l-en">mid</span><span class="l-zh">中期</span>-<span class="l-en">cycle</span><span class="l-zh">周期</span></span></div>
       </div>
       <div class="inq-meta">2026-07-03</div>
     </div>
@@ -569,6 +603,7 @@
         <b>301149</b> 隆华新材 <span class="reply-tag"><span class="l-en">replied</span><span class="l-zh">已回复</span></span>
         <div style="font-size:11.5px;color:var(--muted);margin-top:3px">关于山东隆华新材料股份有限公司申请向不特定对象发行可转换公司债券的审核问询函中有关财务会计问题的专项说明（容诚专字[2026]251Z0128号）</div>
             <a href="https://static.cninfo.com.cn/finalpage/2026-07-04/1225408019.PDF" target="_blank" rel="noopener noreferrer" style="font-size:10.5px;color:var(--link)"><span class="l-en">PDF ↗</span><span class="l-zh">PDF ↗</span></a>
+        <div class="regime-chips"><span class="rg-chip">Q3</span><span class="rg-chip"><span class="l-en">Stagflation</span><span class="l-zh">滞胀</span></span><span class="rg-chip"><span class="l-en">neutral</span><span class="l-zh">中性</span></span><span class="rg-chip"><span class="l-en">mid</span><span class="l-zh">中期</span>-<span class="l-en">cycle</span><span class="l-zh">周期</span></span></div>
       </div>
       <div class="inq-meta">2026-07-03</div>
     </div>
@@ -577,6 +612,7 @@
         <b>920579</b> 机科股份 <span class="reply-tag"><span class="l-en">replied</span><span class="l-zh">已回复</span></span>
         <div style="font-size:11.5px;color:var(--muted);margin-top:3px">中银国际证券股份有限公司关于对机科发展科技股份有限公司的年报问询函的专项核查意见</div>
             <a href="https://static.cninfo.com.cn/finalpage/2026-07-03/1225410013.PDF" target="_blank" rel="noopener noreferrer" style="font-size:10.5px;color:var(--link)"><span class="l-en">PDF ↗</span><span class="l-zh">PDF ↗</span></a>
+        <div class="regime-chips"><span class="rg-chip">Q3</span><span class="rg-chip"><span class="l-en">Stagflation</span><span class="l-zh">滞胀</span></span><span class="rg-chip"><span class="l-en">neutral</span><span class="l-zh">中性</span></span><span class="rg-chip"><span class="l-en">mid</span><span class="l-zh">中期</span>-<span class="l-en">cycle</span><span class="l-zh">周期</span></span></div>
       </div>
       <div class="inq-meta">2026-07-02</div>
     </div>
@@ -675,11 +711,11 @@
 
   
   <h2 class="sec">🔄 <span class="l-en">Buyback Tape</span><span class="l-zh">回购台账</span>
-      <span class="status-chip sc-ok">ok</span><span style="font-size:11px;color:var(--muted)">2026-07-06</span>
+      <span class="status-chip sc-ok">ok</span><span style="font-size:11px;color:var(--muted)">2026-07-05</span>
   </h2>
   <div class="ss-card">
     <div class="sc-hd">
-      <span class="sc-num">232</span>
+      <span class="sc-num">229</span>
       <span class="sc-lbl"><span class="l-en">active programs</span><span class="l-zh">活跃计划</span></span>
     </div>
     <table class="ss">
@@ -752,7 +788,7 @@
 
   
   <h2 class="sec">⛓️ <span class="l-en">Pledge Stress</span><span class="l-zh">质押压力</span>
-      <span class="status-chip sc-ok">ok</span><span style="font-size:11px;color:var(--muted)">2026-07-06</span>
+      <span class="status-chip sc-ok">ok</span><span style="font-size:11px;color:var(--muted)">2026-07-05</span>
   </h2>
   <div class="ss-card">
     <div class="sc-hd">
@@ -871,7 +907,7 @@
 
   
   <h2 class="sec">📦 <span class="l-en">Block-Trade Anomalies</span><span class="l-zh">大宗交易异常</span>
-      <span class="status-chip sc-ok">ok</span><span style="font-size:11px;color:var(--muted)">2026-07-06</span>
+      <span class="status-chip sc-ok">ok</span><span style="font-size:11px;color:var(--muted)">2026-07-05</span>
   </h2>
   <div class="ss-card">
     <div style="font-size:12px;font-weight:700;margin-bottom:6px"><span class="l-en">Largest premium trades</span><span class="l-zh">最大溢价成交</span></div>

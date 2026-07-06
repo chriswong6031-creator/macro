@@ -30,6 +30,9 @@
   table.ss td { padding:7px 9px; border-bottom:1px solid var(--line); vertical-align:top; }
   .large-flag { font-size:9px; font-weight:800; padding:2px 7px; border-radius:6px; text-transform:uppercase; letter-spacing:.03em;
     color:#e0973a; background:color-mix(in srgb,#e0973a 13%,transparent); border:1px solid color-mix(in srgb,#e0973a 30%,transparent); }
+  /* cycle-context regime chips (W5) — muted/neutral only, no up/down coloring */
+  .regime-chips { display:flex; flex-wrap:wrap; gap:4px; margin-top:3px; }
+  .rg-chip { font-size:9px; font-weight:600; padding:1px 6px; border-radius:5px; background:color-mix(in srgb,var(--muted) 10%,transparent); color:var(--muted); border:1px solid color-mix(in srgb,var(--muted) 22%,transparent); letter-spacing:.03em; }
   /* callout / empty state */
   .callout { border-radius:12px; padding:13px 16px; margin:14px 0; border:1px solid var(--line); background:var(--panel2); font-size:13.5px; line-height:1.6; }
   .empty-state { font-size:12.5px; color:var(--muted); padding:10px 0; font-style:italic; }
@@ -115,7 +118,12 @@
       <tr>
         <td>{{ ev.ticker }}</td>
         <td>{{ ev.name }}</td>
-        <td>{{ ev.unlock_date or '—' }}</td>
+        <td>
+          {{ ev.unlock_date or '—' }}
+          {%- if ev.get('regime_chip') %}{%- set _rc = ev.regime_chip %}
+          <div class="regime-chips"><span class="rg-chip">{{ _rc.quad }}</span><span class="rg-chip">{{ td(_rc.quad_name) }}</span><span class="rg-chip">{{ td(_rc.liquidity) }}</span><span class="rg-chip">{{ td(_rc.cycle) }}-{{ t('cycle','周期') }}</span></div>
+          {%- endif %}
+        </td>
         <td style="font-size:11.5px;color:var(--muted)">{{ ev.lock_type or '—' }}</td>
         <td>
           {%- if ev.float_pct is not none %}
@@ -173,6 +181,9 @@
           {%- else %}
             <a href="https://static.cninfo.com.cn/{{ ltr.pdf_url }}" target="_blank" rel="noopener noreferrer" style="font-size:10.5px;color:var(--link)">{{ t('PDF ↗', 'PDF ↗') }}</a>
           {%- endif %}
+        {%- endif %}
+        {%- if ltr.get('regime_chip') %}{%- set _rc = ltr.regime_chip %}
+        <div class="regime-chips"><span class="rg-chip">{{ _rc.quad }}</span><span class="rg-chip">{{ td(_rc.quad_name) }}</span><span class="rg-chip">{{ td(_rc.liquidity) }}</span><span class="rg-chip">{{ td(_rc.cycle) }}-{{ t('cycle','周期') }}</span></div>
         {%- endif %}
       </div>
       <div class="inq-meta">{{ ltr.date }}</div>

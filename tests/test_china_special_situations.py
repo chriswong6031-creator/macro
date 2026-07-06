@@ -428,3 +428,121 @@ def test_register_claims_sidecar_dedup_next_day(tmp_path, monkeypatch):
 
 
 import engine.china_special_situations as css
+
+
+# ── W5: cycle-context regime chips ────────────────────────────────────────────
+
+def test_regime_chip_missing_parquet(monkeypatch, tmp_path):
+    """Missing regime_history.parquet → _regime_chip_for_date returns None, no crash."""
+    import engine.china_special_situations as _css
+    import lib.config as cfg
+    monkeypatch.setattr(cfg, "ROOT", tmp_path)
+    _css._REGIME_HISTORY_CACHE.clear()
+    result = _css._regime_chip_for_date("2026-07-01")
+    assert result is None
+
+
+def test_regime_chip_happy_path(tmp_path, monkeypatch):
+    """Valid parquet → _regime_chip_for_date returns correct chip dict."""
+    import pandas as pd
+    import engine.china_special_situations as _css
+    import lib.config as cfg
+
+    p = tmp_path / "data" / "china_regime"
+    p.mkdir(parents=True)
+    df = pd.DataFrame({
+        "quad": ["Q3"],
+        "quad_name": ["Stagflation"],
+        "liquidity": ["contracting"],
+        "cycle": ["late"],
+    }, index=pd.DatetimeIndex(["2026-06-15"]))
+    df.to_parquet(p / "regime_history.parquet")
+
+    monkeypatch.setattr(cfg, "ROOT", tmp_path)
+    _css._REGIME_HISTORY_CACHE.clear()
+
+    result = _css._regime_chip_for_date("2026-06-15")
+    assert result is not None
+    assert result["quad"] == "Q3"
+    assert result["quad_name"] == "Stagflation"
+    assert result["liquidity"] == "contracting"
+    assert result["cycle"] == "late"
+
+
+def test_unlock_events_get_regime_chips(tmp_path, monkeypatch):
+    """FUTURE-dated unlock events map back to the latest available regime row.
+
+    Production shape: regime_history ends TODAY (the nightly cannot write future
+    rows), while unlock events are filtered to date >= today. The backward
+    as-of join must stamp the latest known regime, not KeyError on the future date.
+    """
+    import pandas as pd
+    import lib.config as cfg
+    import engine.china_special_situations as _css
+
+    data_dir = tmp_path / "data"
+    monkeypatch.setattr("lib.config.data_dir", lambda: data_dir)
+    monkeypatch.setattr("lib.config.load", lambda: {"storage": {"site_dir": str(tmp_path / "site")}})
+    monkeypatch.setattr(cfg, "ROOT", tmp_path)
+    _css._REGIME_HISTORY_CACHE.clear()
+
+    tomorrow = (pd.Timestamp.today() + pd.Timedelta(days=1))
+    tomorrow_str = tomorrow.strftime("%Y-%m-%d")
+    today = pd.Timestamp.today().strftime("%Y-%m-%d")
+    last_trading = (pd.Timestamp.today() - pd.Timedelta(days=3)).strftime("%Y-%m-%d")
+
+    # Regime history ends BEFORE the unlock date (the only shape the nightly emits)
+    rp = data_dir / "china_regime"
+    rp.mkdir(parents=True)
+    rdf = pd.DataFrame({
+        "quad": ["Q1"],
+        "quad_name": ["Goldilocks"],
+        "liquidity": ["expanding"],
+        "cycle": ["early"],
+    }, index=pd.DatetimeIndex([last_trading]))
+    rdf.to_parquet(rp / "regime_history.parquet")
+
+    # Write unlock fixture
+    up = data_dir / "china_unlocks" / "detail.parquet"
+    up.parent.mkdir(parents=True, exist_ok=True)
+    _make_parquet(up, [{
+        "ticker": "600519.SS", "简称": "TestA", "解禁时间": tomorrow_str,
+        "限售股类型": "首发原股东限售股", "占解禁前流通市值比例": 0.10,
+        "实际解禁市值": 5e8, "asof": today,
+    }])
+
+    snap = _css.scan()
+    events = (snap.get("unlocks") or {}).get("events") or []
+    assert len(events) == 1
+    assert "regime_chip" in events[0]
+    assert events[0]["regime_chip"]["quad"] == "Q1"
+
+
+def test_unlock_events_no_chip_when_no_parquet(tmp_path, monkeypatch):
+    """Unlock events have no regime_chip when parquet absent — no crash."""
+    import pandas as pd
+    import lib.config as cfg
+    import engine.china_special_situations as _css
+
+    data_dir = tmp_path / "data"
+    monkeypatch.setattr("lib.config.data_dir", lambda: data_dir)
+    monkeypatch.setattr("lib.config.load", lambda: {"storage": {"site_dir": str(tmp_path / "site")}})
+    # Use tmp_path as ROOT → no regime_history.parquet exists there
+    monkeypatch.setattr(cfg, "ROOT", tmp_path)
+    _css._REGIME_HISTORY_CACHE.clear()
+
+    tomorrow = (pd.Timestamp.today() + pd.Timedelta(days=1)).strftime("%Y-%m-%d")
+    today = pd.Timestamp.today().strftime("%Y-%m-%d")
+
+    up = data_dir / "china_unlocks" / "detail.parquet"
+    up.parent.mkdir(parents=True, exist_ok=True)
+    _make_parquet(up, [{
+        "ticker": "600519.SS", "简称": "TestA", "解禁时间": tomorrow,
+        "限售股类型": "首发原股东限售股", "占解禁前流通市值比例": 0.06,
+        "实际解禁市值": 2e8, "asof": today,
+    }])
+
+    snap = _css.scan()
+    events = (snap.get("unlocks") or {}).get("events") or []
+    assert len(events) == 1
+    assert "regime_chip" not in events[0]  # no parquet → no chip, no crash
