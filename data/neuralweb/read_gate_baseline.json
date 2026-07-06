@@ -87,6 +87,13 @@
       "severity": "WARN"
     },
     {
+      "module": "scripts/build_stock_library.py",
+      "artifact_id": "species-registry",
+      "line_no": 2750,
+      "severity": "HARD",
+      "note": "false positive \u2014 comment-only reference (Registry: data/species/registry.json) in docstring; no runtime read"
+    },
+    {
       "module": "scripts/build_subsector_rotation_pages.py",
       "artifact_id": "site-marketdata-subsector-rotation",
       "line_no": 5,
