@@ -18,8 +18,9 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | hk-canada | 2 |
 | institutional-sector-intelligence | 2 |
 | intl-fix | 1 |
-| long-hold | 4 |
+| long-hold | 5 |
 | neural-web | 25 |
+| nw-rails | 1 |
 | options-alpha | 7 |
 | options-nw-entry-intelligence | 3 |
 | oracle | 20 |
@@ -33,7 +34,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 64 |
+| display | 66 |
 | infrastructure | 35 |
 | scored | 4 |
 | shadow | 36 |
@@ -42,7 +43,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 134 |
+| git | 136 |
 | gitignored-local | 3 |
 | r2 | 2 |
 
@@ -131,6 +132,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
+| long-hold-clocks | `embedded: entry_clock + thesis_clock inside site/stockdata/<TICKER>.json` | json | daily-engine | display | 1 | 0 |
 | long-hold-dead-name-prices | `data/edgar/dead_name_prices.parquet` | parquet | on-demand | infrastructure | 1 | 0 |
 | long-hold-killtest-results | `data/research/missed_hold_study_results.parquet` | parquet | on-demand | display | 1 | 0 |
 | long-hold-labels | `data/research/long_hold_labels.parquet` | parquet | on-demand | display | 1 | 0 |
@@ -165,6 +167,12 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | lagging-signals | `data/neuralweb/lagging_signals.json` | json | daily-engine | infrastructure | 0 | 0 |
 | research-queue | `data/neuralweb/research_queue.json` | json | on-demand | infrastructure | 0 | 0 |
 | risk-radar-review-log | `data/risk_radar/review_log.jsonl` | jsonl | weekly | display | 0 | 0 |
+
+### nw-rails
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| dispersion-regime | `data/dispersion/regime.json` | json | daily-engine | display | 2 | 0 |
 
 ### options-alpha
 
@@ -251,7 +259,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
-| us-board-ledger-retro-grades | `data/us_board_ledger/retro_grades.parquet` | parquet | daily-engine | infrastructure | 8 | 0 |
+| us-board-ledger-retro-grades | `data/us_board_ledger/retro_grades.parquet` | parquet | daily-engine | infrastructure | 9 | 0 |
 | signal-archive-mtf | `data/signal_archive/mtf_signals_latest.json` | json | daily-engine | display | 6 | 0 |
 | site-signals-per-ticker | `site/signals/<SYM>.json` | json | daily-engine | display | 3 | 2 |
 | signal-archive-track-record | `data/signal_archive/track_record.parquet` | parquet | daily-engine | shadow | 4 | 0 |
@@ -348,6 +356,12 @@ flowchart LR
     C_engine_oracle_panel_py["engine/oracle/panel.py"]
     C_engine_oracle_timemachine_py["engine/oracle/timemachine.py"]
     OVF_site_baskets_json["...+6 more"]
+    P_scripts_grade_us_board_py(("scripts/grade_us_board.py"))
+    A_us_board_ledger_retro_grades["us-board-ledger-retro-grades"]
+    C_engine_china_standout_track_py["engine/china_standout_track.py"]
+    C_engine_spine_py["engine/spine.py"]
+    C_engine_track_record_py["engine/track_record.py"]
+    OVF_us_board_ledger_retro_grades["...+5 more"]
     P_engine_radar_py(("engine/radar.py"))
     A_radar_theses["radar-theses"]
     C_engine_ai_desk_scorer_py["engine/ai_desk_scorer.py"]
@@ -363,12 +377,6 @@ flowchart LR
     P_engine_altdata_emit_py(("engine/altdata_emit.py"))
     A_site_altdata_mastermind["site-altdata-mastermind"]
     OVF_site_altdata_mastermind["...+4 more"]
-    P_scripts_grade_us_board_py(("scripts/grade_us_board.py"))
-    A_us_board_ledger_retro_grades["us-board-ledger-retro-grades"]
-    C_engine_china_standout_track_py["engine/china_standout_track.py"]
-    C_engine_spine_py["engine/spine.py"]
-    C_engine_track_record_py["engine/track_record.py"]
-    OVF_us_board_ledger_retro_grades["...+4 more"]
     P_engine_neuralweb_world_state_py(("engine/neuralweb/world_state.py"))
     A_world_state["world-state"]
     C_scripts_build_feeds_py["scripts/build_feeds.py"]
@@ -436,6 +444,12 @@ flowchart LR
     A_site_baskets_json --> C_engine_oracle_panel_py
     A_site_baskets_json --> C_engine_oracle_timemachine_py
     A_site_baskets_json --> OVF_site_baskets_json
+    P_scripts_grade_us_board_py --> A_us_board_ledger_retro_grades
+    A_us_board_ledger_retro_grades --> C_engine_board_ledger_py
+    A_us_board_ledger_retro_grades --> C_engine_china_standout_track_py
+    A_us_board_ledger_retro_grades --> C_engine_spine_py
+    A_us_board_ledger_retro_grades --> C_engine_track_record_py
+    A_us_board_ledger_retro_grades --> OVF_us_board_ledger_retro_grades
     P_engine_radar_py --> A_radar_theses
     A_radar_theses --> C_engine_ai_desk_scorer_py
     A_radar_theses --> C_engine_hub_track_record_py
@@ -454,12 +468,6 @@ flowchart LR
     A_site_altdata_mastermind --> C_engine_radar_ticker_py
     A_site_altdata_mastermind --> C_engine_china_intel_analysis_py
     A_site_altdata_mastermind --> OVF_site_altdata_mastermind
-    P_scripts_grade_us_board_py --> A_us_board_ledger_retro_grades
-    A_us_board_ledger_retro_grades --> C_engine_board_ledger_py
-    A_us_board_ledger_retro_grades --> C_engine_china_standout_track_py
-    A_us_board_ledger_retro_grades --> C_engine_spine_py
-    A_us_board_ledger_retro_grades --> C_engine_track_record_py
-    A_us_board_ledger_retro_grades --> OVF_us_board_ledger_retro_grades
     P_engine_neuralweb_world_state_py --> A_world_state
     A_world_state --> C_scripts_build_feeds_py
     A_world_state --> C_scripts_notify_py
@@ -586,6 +594,14 @@ Artifacts below have `known_extra_writers` — additional code paths that write 
 - **declared producer:** `engine/neuralweb/lagging.py`
 - **extra writers:**
   - scripts/build_kernel_diagnostics.py — thin CLI wrapper; calls write_lagging() defined in the producer; no independent write logic
+
+### long-hold-clocks
+
+- **path:** `embedded: entry_clock + thesis_clock inside site/stockdata/<TICKER>.json`
+- **declared producer:** `engine/long_hold_clocks.py`
+- **extra writers:**
+  - scripts/build_stock_library.py — calls entry_clock() per name after sig_verdict build
+  - engine/stock_fundamentals.py — calls thesis_clocks_from_parquet() inside panels()
 
 ### long-hold-dead-name-prices
 

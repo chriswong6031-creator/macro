@@ -87,6 +87,9 @@ lanes:
         note: W4 reflexivity overlay — display-only, runs after build_stock_board_v2
       - id: build_impulse
         module: scripts.build_impulse
+      - id: build_dispersion_regime
+        module: scripts.build_dispersion_regime
+        note: NW Rails W2 PR-4 — L3 dispersion regime lens (display-only, seconds)
       - id: build_congress
         module: scripts.build_congress
       - id: build_foresight

@@ -34,3 +34,17 @@ No per-sector claims (own registration required). No K/killer-feature sweeps ins
 
 ## Amendment log
 - (none)
+
+## Counter-sign (Fable, 2026-07-06) — REGISTERED WITH CONDITIONS
+
+Adjudication after a two-lens Opus red-team (house-law + statistics; independent numeric recompute against `W2_arm_node_aggregates.csv` and the harness code). The registration STANDS; the CONFIRMED — DISPLAY-WITH-EDGE verdict on the registered run STANDS; the following conditions are binding corrections and caveats of record:
+
+- **C1 (fdr_family).** §3's "3 reads; BH q=0.10" is corrected to: "2 BH-corrected placebo reads (R1, R2; fdr_family=`ota_w2_member_transmission_confirm`, budget=2) + 1 independent CI-gated out-of-time read (R3; not BH-pooled, no p-value)." The harness BH-corrects only R1/R2 (`bh_correct([pval_wr21, pval_ret21])`, script line ~1489) — that is the intended family.
+- **C2 (secondary).** `ep_onset_in` is DEMOTED to appendix-descriptive: not a registered read, no placebo, no inference; it must not be quoted as a finding. Any future `ep_onset_in` claim requires its own registration.
+- **C3 (R3 baseline honesty).** R3's holdout OUT arm is the FULL-HISTORY OUT baseline (script lines ~1550-1551), not a holdout-period OUT. "The only genuinely new evidence" is softened to "IN-side out-of-time persistence against a fixed OUT baseline." A holdout-period-matched OUT (or holdout-vs-own-placebo) is REQUIRED before any future promotion request treats R3 as decisive.
+- **C4 (power honesty).** Standing caveat of record: R3 passed on a bootstrap CI lower bound at n=15 holdout windows while MDE@80% = 39.3pp for an ~11pp effect — CI-suggestive, not adequately powered. The §5 forward ledger, not R3, is the decisive out-of-time arbiter. Status-log phrasing "the lift held out-of-time" is amended accordingly.
+- **C5 (class vs authority).** §5's "promotion to confirmer tier" targets Neural Web bus authority (initiator→confirmer, Article-2 operator-signed event), NOT an Oracle confidence class. The Oracle class ceiling remains display_with_edge for this modern-track single-regime-arc design.
+- **C6 (derived-from-seen-surface).** R1/R2 re-test the identical positive estimand seen in W2 (#1509) under a corrected, stricter placebo — confirmatory-of-a-seen-surface, not independent discovery. R3 is the only fresh test and is underpowered per C4. Noted here as the registration's honesty handicap.
+- **C7 (MDE provenance).** §3's "design effect from the observed ICC" is corrected to "assumed cluster design effect 1.5× (ICC not computed; RESULTS disclosed-limitation #7); MDE is order-of-magnitude only."
+- **C8 (factual fix).** W2_REPORT.md adjudication "6 of 9 nodes positive" corrected to **7 of 9** (XLB/XLE/XLF/XLI/XLK/XLRE/XLV positive; XLP/XLU negative), matching Appendix C and the independent recompute.
+- **C9 (window accounting).** 4 of 35 armed windows (ids 4, 9, 10, 17) had zero qualifying member fires → effective independent n = 31 windows (the declared clustering unit). Pooled Δ is leveraged by two high-WR windows; LOO drop-best Δ = 0.1040, still above the corrected placebo p95 = 0.1013 — a ~1.5pp cushion, stated honestly (the corrected symmetric placebo nearly doubled the bar from the W2-era 5.65pp).
