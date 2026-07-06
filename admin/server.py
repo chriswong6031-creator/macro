@@ -25,9 +25,9 @@ from http.cookies import SimpleCookie
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
-from . import (ai_cost, auth, brief, config_store, content, experiments, flags,
-               ga4, github_api, github_config, gitops, health, neural_web, services,
-               settings, system, umami, uptime_board, users, vector_override)
+from . import (actions, ai_cost, auth, brief, config_store, content, experiments,
+               flags, ga4, github_api, github_config, gitops, health, neural_web,
+               services, settings, system, umami, uptime_board, users, vector_override)
 from .paths import STATIC
 
 _CTYPES = {".html": "text/html; charset=utf-8",
@@ -374,6 +374,24 @@ class Handler(BaseHTTPRequestHandler):
                     push=bool(b.get("push")),
                     confirm=bool(b.get("confirm")),
                 ))
+
+            if path == "/api/actions":
+                surface = b.get("surface", "")
+                action = b.get("action", "")
+                direction_note = b.get("direction_note", "")
+                alert_emit_ts = b.get("alert_emit_ts")
+                if not surface:
+                    return self._json({"ok": False, "error": "surface required"}, 400)
+                if action not in actions.VALID_ACTIONS:
+                    return self._json({"ok": False,
+                                       "error": f"action must be one of {sorted(actions.VALID_ACTIONS)}"}, 400)
+                row = actions.append_action(
+                    surface=surface,
+                    action=action,
+                    direction_note=direction_note,
+                    alert_emit_ts=alert_emit_ts,
+                )
+                return self._json({"ok": True, "row": row})
 
             return self._json({"error": f"unknown route {path}"}, 404)
         except Exception as e:  # noqa: BLE001

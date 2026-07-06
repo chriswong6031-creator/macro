@@ -200,17 +200,34 @@ RENDER.experiments = async () => {
         ${e.surfaced ? `<div class="note mono muted">↳ ${esc(e.surfaced)}</div>` : ""}</div>`).join("")}</div>`;
   }
   html += `<div class="section">All experiments <span class="cnt">${exps.length}</span></div>
-    <table><thead><tr><th>Experiment</th><th>Kind</th><th>Status</th><th>Cadence</th><th class="r">Come back</th><th>Next step</th></tr></thead><tbody>
+    <table><thead><tr><th>Experiment</th><th>Kind</th><th>Status</th><th>Cadence</th><th class="r">Come back</th><th>Next step</th><th>Log action</th></tr></thead><tbody>
     ${exps.map(e => `<tr${e.ready ? ' class="hl"' : ""}>
       <td><b>${esc(e.name)}</b><div class="sub">${esc(e.what || "")}</div><div class="note mono muted">${esc(e.source || "")}</div></td>
       <td class="sub">${esc(e.kind || "")}</td>
       <td>${EXP_STATUS_PILL(e.status)}</td>
       <td class="sub">${esc(e.cadence || "")}</td>
       <td class="r">${EXP_DUE(e)}</td>
-      <td class="sub" style="max-width:340px">${esc(e.next_step || "")}${e.state ? `<div class="note mono muted">${esc(e.state)}</div>` : ""}</td></tr>`).join("")}
+      <td class="sub" style="max-width:340px">${esc(e.next_step || "")}${e.state ? `<div class="note mono muted">${esc(e.state)}</div>` : ""}</td>
+      <td style="white-space:nowrap">
+        <button class="btn exp-act-btn" data-exp-id="${esc(e.id || "")}" data-action="acted">Acted</button>
+        <button class="btn exp-act-btn" data-exp-id="${esc(e.id || "")}" data-action="dismissed">Dismiss</button>
+        <button class="btn exp-act-btn" data-exp-id="${esc(e.id || "")}" data-action="snoozed">Snooze</button>
+      </td></tr>`).join("")}
     </tbody></table>
     ${d.note ? `<div class="sub" style="margin-top:10px">${esc(d.note)}</div>` : ""}`;
   v.innerHTML = html;
+  // L4 action capture: wire up Acted/Dismiss/Snooze buttons (NW Rails PR-8)
+  v.querySelectorAll(".exp-act-btn").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      const expId = btn.dataset.expId;
+      const action = btn.dataset.action;
+      const note = window.prompt(`Direction note (optional, ≤280 chars) for "${action}" on ${expId}:`);
+      if (note === null) return; // user cancelled
+      const r = await post("/api/actions", { surface: expId, action, direction_note: note });
+      if (r.ok) toast(`Logged: ${action} — ${expId}`);
+      else toast(r.error || "action log failed", true);
+    });
+  });
 };
 
 /* ---- BTC OVERRIDE (owner view — Override-Registry W3, D2/D3) ------------- */

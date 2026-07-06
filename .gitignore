@@ -114,6 +114,10 @@ data/sec_insider/insider_panel.parquet
 # scripts.sue_deep_phase0; the small deep ic_scorecard.json IS committed, the 54MB panel is not).
 data/edgar/sue_deep_closes.parquet
 
+# PR-5 (L1 short-side): BD Phase-0 event tape — Mac-local, regenerable from massive_stock_day.
+# Summary JSON (breakdown_events_summary.json) IS committed (RUL-P10 path b).
+data/research/breakdown_events.parquet
+
 # Admin dashboard: local-only secrets / GA4 service-account keys (never commit)
 admin/.env
 admin/secrets/
@@ -268,3 +272,7 @@ data/rule_experiments/results/*_perfire.parquet
 # only (not gitignored previously; made explicit per RUL-P10 to prevent accidental staging
 # by the nightly blanket git add data/).
 data/replay/*.parquet
+# NW Rails PR-8 / RUL-P10 (path a): operator action ledger.
+# Admin server is the single intraday writer; MUST NOT be staged by the nightly
+# blanket `git add data/` sweep. Off-band backup rides the admin host's path.
+data/operator/

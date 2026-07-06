@@ -136,6 +136,31 @@ def signal_frame(daily_close: pd.Series, daily_high: pd.Series | None = None,
                          "early": early})
 
 
+def fresh_breach_mask(daily_close: pd.Series) -> pd.Series:
+    """Return a boolean Series (3B-indexed) of fresh EMA8 breaches.
+
+    A 'fresh breach' fires on the 3B bar where:
+      (1) close < ema_trail  (below)
+      (2) previous 3B bar was NOT below (first time under)
+      (3) ema_trail was rising into the breach (slope: bar-1 > bar-3)
+
+    The result index is the 3B-resample end-dates.  Reindex to a daily
+    index with method='ffill' to map breach dates back to daily bars.
+
+    This is the canonical single source of truth for the fresh_breach
+    construction used by both analyze() and dump_breakdown_events.py.
+    """
+    sf = signal_frame(daily_close)
+    if sf.empty:
+        return pd.Series(dtype=bool)
+    trail = sf["ema_trail"]
+    c = sf["close"]
+    below = c < trail
+    prev_below = below.shift(1, fill_value=False)
+    rising_into = (trail.shift(1) > trail.shift(3))
+    return (below & ~prev_below & rising_into).fillna(False)
+
+
 def _swing_highs(s, w=2):
     v = s.to_numpy()
     return [i for i in range(w, len(v) - w) if v[i] == v[i - w:i + w + 1].max()]
