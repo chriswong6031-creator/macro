@@ -416,6 +416,8 @@ class TestRealRegistryFirewallClean:
             # W2 PR-K moat falsifier sensors and great-company-trap overlay
             "moat-falsifier-sensors",
             "great-company-trap",
+            # LT-3a buyback execution reader + capital allocation display block
+            "capital-allocation-delta",
         }
         reg = load_registry(REPO_ROOT)
         hold_arts = {
