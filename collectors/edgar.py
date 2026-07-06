@@ -393,10 +393,14 @@ PANEL_NUMERIC = ["assets", "equity", "debt_lt", "shares", "ni", "gross_profit",
 # LT-1c: capex is NOT available from the EDGAR frames API (it is a sub-line of the
 # cash-flow statement that the frames endpoint does not serve as a standalone concept).
 # Instead it is joined from data/edgar/statements.parquet (statements-lane provenance)
-# by (ticker, fy) inside fetch_panel after the frames build, inheriting the SAME
-# asof_date convention (period_end + reporting_lag_days) as the existing panel rows.
-# Coverage is bounded by statements.parquet ticker×fy intersection (~87% of rows that
-# have a statements entry; see LT1_DATA_REPAIR_REPORT.md for statements coverage).
+# by (ticker, fy) inside fetch_panel after the frames build.  PIT gate: each joined
+# value is accepted only if statements.period_end + reporting_lag_days <= panel
+# asof_date; otherwise the value is NaN'd.  This prevents look-ahead for non-Dec-FYE
+# filers where the panel's calendar-year period_end proxy diverges from the true
+# fiscal end recorded in statements.parquet (empirically 49 of 7295 capex-bearing
+# rows, median 365d early, max 1096d — see review notes for PR #1633).
+# Coverage after gating is bounded by statements.parquet ticker×fy intersection
+# (~87% of rows that have a statements entry; see LT1_DATA_REPAIR_REPORT.md).
 PANEL_STATEMENTS_JOIN = ["capex"]  # fields joined from statements.parquet post-build
 
 
@@ -406,16 +410,27 @@ def _panel_path():
     return p
 
 
-def _join_statements_fields(panel: pd.DataFrame, fields: list[str]) -> pd.DataFrame:
+def _join_statements_fields(
+    panel: pd.DataFrame,
+    fields: list[str],
+    reporting_lag_days: int = 120,
+) -> pd.DataFrame:
     """Join selected fields from data/edgar/statements.parquet into the panel by
     (ticker, fy).  Fields in `fields` that already exist in the panel are
     overwritten only where the panel value is NaN (statements-lane fills gaps).
 
-    PIT discipline: the joined values inherit the panel row's asof_date
-    (period_end + reporting_lag_days), which is an identical or slightly more
-    conservative lag than the statement's own period_end + 120d gate.  This is
-    correct: we are not introducing any new look-ahead beyond what the panel
-    already carries.
+    PIT discipline: for each joined value the function reads the statements row's
+    own period_end and gates the value on
+        statements.period_end + reporting_lag_days <= panel.asof_date
+    Values that fail this gate are set to NaN — they were not yet knowable at the
+    panel row's point-in-time cutoff.  Rows whose statements.period_end is missing
+    are accepted without a PIT check (conservative: we cannot verify, but this
+    affects <1% of rows empirically).
+
+    This is stricter than the original approach of inheriting the panel row's
+    asof_date, which silently treated the panel's calendar-year period_end proxy
+    as the true fiscal year end — a look-ahead for non-Dec-FYE filers and any FY
+    whose statements.period_end differs from the frames-API period_end.
 
     Returns the panel with `fields` added (or filled).  Rows with no matching
     statement entry get NaN for the joined fields.  Never raises — on any error
@@ -433,8 +448,13 @@ def _join_statements_fields(panel: pd.DataFrame, fields: list[str]) -> pd.DataFr
                 panel = panel.copy()
                 panel[f] = float("nan")
         return panel
+
+    # Include period_end from statements so we can PIT-gate each joined value.
+    read_cols = ["ticker", "fy", "period_end"] + [
+        f for f in fields if f != "period_end"
+    ]
     try:
-        stmt = pd.read_parquet(stmt_path, columns=["ticker", "fy"] + fields)
+        stmt = pd.read_parquet(stmt_path, columns=read_cols)
     except Exception as exc:  # noqa: BLE001
         log.warning("statements.parquet load failed (%s) — %s will be all-NaN", exc, fields)
         for f in fields:
@@ -443,11 +463,38 @@ def _join_statements_fields(panel: pd.DataFrame, fields: list[str]) -> pd.DataFr
                 panel[f] = float("nan")
         return panel
 
+    stmt["period_end"] = pd.to_datetime(stmt["period_end"], errors="coerce")
+    # statements-lane asof: the date from which the value is knowable
+    stmt["_stmt_asof"] = stmt["period_end"] + pd.Timedelta(days=reporting_lag_days)
+
     # Deduplicate (ticker, fy) — keep last row if any duplicates exist
     stmt = stmt.drop_duplicates(subset=["ticker", "fy"], keep="last")
 
     panel = panel.copy()
     merged = panel.merge(stmt, on=["ticker", "fy"], how="left", suffixes=("", "_stmt"))
+
+    # PIT gate: null out any joined field value where the statement's own
+    # asof date is AFTER the panel row's asof_date (look-ahead prevention).
+    # Rows where _stmt_asof is NaT (no period_end in statements) are kept as-is.
+    if "_stmt_asof" in merged.columns and "asof_date" in merged.columns:
+        stmt_asof = merged["_stmt_asof"]
+        panel_asof = merged["asof_date"]
+        lookahead_mask = stmt_asof.notna() & (stmt_asof > panel_asof)
+        n_gated = int(lookahead_mask.sum())
+        if n_gated:
+            log.warning(
+                "panel statements join: PIT gate nulled %d rows where "
+                "stmt period_end + %dd > panel asof_date (non-Dec-FYE or FY mismatch)",
+                n_gated, reporting_lag_days,
+            )
+            for f in fields:
+                # Determine which column name the statements value landed in after merge.
+                # If f was already in the panel the merge suffixed it as f_stmt;
+                # otherwise it kept its original name.
+                stmt_col = f"{f}_stmt" if f in panel.columns else f
+                if stmt_col in merged.columns:
+                    merged.loc[lookahead_mask, stmt_col] = float("nan")
+
     for f in fields:
         stmt_col = f"{f}_stmt" if f in panel.columns else f
         if stmt_col in merged.columns:
@@ -457,6 +504,13 @@ def _join_statements_fields(panel: pd.DataFrame, fields: list[str]) -> pd.DataFr
                 merged = merged.drop(columns=[stmt_col])
             else:
                 merged = merged.rename(columns={stmt_col: f})
+
+    # Drop the temporary join helper column
+    if "_stmt_asof" in merged.columns:
+        merged = merged.drop(columns=["_stmt_asof"])
+    if "period_end_stmt" in merged.columns:
+        merged = merged.drop(columns=["period_end_stmt"])
+
     log.info("panel statements join: %d rows, fields %s coverage: %s",
              len(merged),
              fields,
@@ -559,9 +613,10 @@ def fetch_panel(force: bool = False, max_age_days: int = 7,
 
     # LT-1c: join capex (and other PANEL_STATEMENTS_JOIN fields) from statements.parquet.
     # These fields are not available from the EDGAR frames API; they carry statements-lane
-    # provenance but inherit the same asof_date convention (period_end + lag) as the panel.
+    # provenance.  PIT gate: values are nulled where statements.period_end + lag > panel
+    # asof_date to prevent look-ahead from non-Dec-FYE filers and FY mismatch cases.
     if PANEL_STATEMENTS_JOIN:
-        panel = _join_statements_fields(panel, PANEL_STATEMENTS_JOIN)
+        panel = _join_statements_fields(panel, PANEL_STATEMENTS_JOIN, reporting_lag_days=lag)
 
     panel.to_parquet(panel_p)
     all_numeric = PANEL_NUMERIC + [f for f in PANEL_STATEMENTS_JOIN if f in panel.columns]
