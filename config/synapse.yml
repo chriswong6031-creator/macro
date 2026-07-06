@@ -4274,6 +4274,44 @@ artifacts:
       Coverage stamps: repurch_coverage (full|partial|annual_fallback|missing),
       _horizon_role, _display_only, _version.
 
+  # --- Long-Hold LT-2c: expectation_state per-stock display block ---
+  long-hold-expectation-state:
+    path: "embedded: expectation_state inside site/stockdata/<TICKER>.json"
+    format: json
+    producer: engine/expectation_state.py
+    known_extra_writers:
+      - "engine/stock_fundamentals.py — expectation_states() called inside panels(); result keyed as 'expectation_state'"
+    owner_program: long-hold
+    cadence: daily-engine
+    storage: git
+    asof_field: null
+    freshness_sla_hours: 30
+    schema: expectation_state.v1
+    tier: display
+    horizon_role: hold_thesis
+    weights: none
+    scored_path_surfaces: []
+    fdr_family: long_hold
+    consumers:
+      - site/stockdata/<TICKER>.json
+    external_consumers: []
+    notes: >
+      LT-2c (Long-Hold External Foundation). Per-stock expectation-state display
+      block computed at build time (PIT-as-of-today). Sources: data/edgar/eps_quarterly.parquet
+      (SUE construction per engine/sue.py), data/edgar/earnings_8k_dates.parquet
+      (reference event E(f)), data/yahoo/<TICKER>.parquet (price for drift/flag features).
+      Fields: last_event_date (most recent 8-K 2.02 filing_date within 120 calendar days),
+      sue_latest (PIT SUE_q at today), sue_streak (consecutive quarters d_q > 0, capped 8),
+      pead_drift_20d (cumulative stock-minus-SPY return E(f)+1 to min(E(f)+20, today)),
+      bad_news_absorption (ED-4 binary: d_q<0, no new low in 10 sessions, momentum>=0 vs SPY),
+      good_news_hold (ED-5 binary: d_q>0, gap >=2%, held at session 10).
+      Definitions: research/long_hold/EXPECT_DRIFT_FAMILY_PREREG.md §2.
+      Benchmark: SPY (market fallback per prereg §1 when sector basket unavailable).
+      Firewall annotations in every output dict: _horizon_role='hold_thesis', _display_only=True.
+      DISPLAY-ONLY — G1-DEFERRED ruling 2026-07-06. FIREWALL: horizon_role=hold_thesis.
+      MUST NOT feed board ordering, alert triage, top-setups gates, or push floor (LH-R1).
+      fdr_family=long_hold (LH-R5).
+
   # --- NW quant-synthesis B: research-queue EV-ranker ---
   research-queue:
     path: data/neuralweb/research_queue.json
