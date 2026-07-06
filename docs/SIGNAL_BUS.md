@@ -18,11 +18,11 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | hk-canada | 2 |
 | institutional-sector-intelligence | 2 |
 | intl-fix | 1 |
-| long-hold | 3 |
+| long-hold | 4 |
 | neural-web | 25 |
 | options-alpha | 7 |
 | options-nw-entry-intelligence | 3 |
-| oracle | 17 |
+| oracle | 20 |
 | qualitative-intelligence | 23 |
 | sector-pulse | 3 |
 | setup-species | 6 |
@@ -33,8 +33,8 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 63 |
-| infrastructure | 32 |
+| display | 64 |
+| infrastructure | 35 |
 | scored | 4 |
 | shadow | 36 |
 
@@ -42,7 +42,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 130 |
+| git | 134 |
 | gitignored-local | 3 |
 | r2 | 2 |
 
@@ -132,6 +132,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
 | long-hold-dead-name-prices | `data/edgar/dead_name_prices.parquet` | parquet | on-demand | infrastructure | 1 | 0 |
+| long-hold-killtest-results | `data/research/missed_hold_study_results.parquet` | parquet | on-demand | display | 1 | 0 |
 | long-hold-labels | `data/research/long_hold_labels.parquet` | parquet | on-demand | display | 1 | 0 |
 | long-hold-labels-manifest | `data/research/long_hold_labels_manifest.json` | json | on-demand | display | 1 | 0 |
 
@@ -200,6 +201,9 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | radar-track-record | `data/radar/track_record.json` | json | daily-engine | display | 2 | 0 |
 | site-marketdata-subsector-rotation | `site/marketdata/subsector_rotation.json` | json | daily-engine | display | 2 | 0 |
 | subsector-rotation-snapshots | `data/subsector_rotation/snapshots.jsonl` | jsonl | daily-engine | shadow | 2 | 0 |
+| oracle-reversion-authority | `data/oracle/reversion_authority.json` | json | daily-engine | infrastructure | 1 | 0 |
+| oracle-reversion-kill-requeue | `data/oracle/reversion_kill_requeue.jsonl` | jsonl | on-demand | infrastructure | 1 | 0 |
+| oracle-reversion-promotion-queue | `data/oracle/reversion_promotion_queue.json` | json | daily-engine | infrastructure | 1 | 0 |
 | oracle-reversion-state | `site/basketdata/oracle_reversion_state.json` | json | daily-engine | display | 1 | 0 |
 | oracle-turn-desk | `site/basketdata/oracle_turn_desk.json` | json | daily-engine | display | 1 | 0 |
 | oracle-turn-desk-ledger | `data/oracle/turn_desk_ledger.jsonl` | jsonl | daily-engine | shadow | 1 | 0 |

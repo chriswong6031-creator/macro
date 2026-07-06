@@ -468,6 +468,89 @@ def _fmt(v: float | None, decimals: int = 2) -> str:
     return f"{v:.{decimals}f}"
 
 
+# ---------------------------------------------------------------------------
+# W4.b — Power analysis: MDE@80% + UNDERPOWERED-ACCRUING class
+# ---------------------------------------------------------------------------
+
+def _mde_at_80pct(n: int, sigma: float, alpha: float = 0.05) -> float | None:
+    """Minimum detectable effect at 80% power (α=0.05, normal approximation).
+
+    Formula (one-sample, one-sided, comparing mean vs 0):
+        MDE = (z_alpha + z_power) * sigma / sqrt(n)
+    where z_alpha = 1.645 (one-sided α=0.05), z_power = 0.842 (80% power).
+
+    This is the smallest true mean ret_exit that this sample size would detect
+    with 80% power at α=0.05.
+
+    Per W4_SPEC.md §W4.b: 'α=0.05, normal approx from observed per-entry σ and n'.
+    Reporting ONLY — gates are untouched.
+
+    Returns None if n <= 0 or sigma is non-finite.
+    """
+    if n <= 0:
+        return None
+    if sigma is None or not np.isfinite(sigma) or sigma <= 0:
+        return None
+    # z_alpha = 1.645 (one-sided 5%); z_power = 0.842 (80% power)
+    z_alpha: float = 1.645
+    z_power: float = 0.842
+    return (z_alpha + z_power) * sigma / np.sqrt(n)
+
+
+def _is_underpowered_accruing(
+    stats: dict,
+    sigma: float | None,
+    alpha: float = 0.05,
+) -> bool:
+    """Return True if this compound leg is UNDERPOWERED-ACCRUING.
+
+    UNDERPOWERED-ACCRUING (W4.b definition):
+      - Leg FAILS on CI/placebo grounds
+      - All point estimates are in the PASSING direction
+      - Power < 50% at the observed effect (i.e. the sample is too small to
+        reliably detect even the observed effect)
+
+    'Point estimates in passing direction' means:
+      - mean_ret_exit > 0
+      - WR > 0 (above zero)
+      - asym > 0 (upside > downside)
+
+    'Power < 50%' uses the observed mean_ret_exit as the hypothesized effect:
+      achieved_power = P(z > z_alpha - effect/se) where se = sigma/sqrt(n)
+      < 0.5 when effect/se < z_alpha, i.e. the standardized effect < 1.645.
+
+    Reporting ONLY — this class does NOT change gate verdicts.
+    """
+    n = stats.get("n", 0)
+    wr = stats.get("WR")
+    mean_ret = stats.get("mean_ret_exit")
+    asym_v = stats.get("asym")
+
+    if n <= 0:
+        return False
+
+    # All point estimates must be in the passing direction
+    wr_passing = (wr is not None and not np.isnan(wr) and wr > 0)
+    ret_passing = (mean_ret is not None and not np.isnan(mean_ret) and mean_ret > 0)
+    asym_passing = (asym_v is None or np.isnan(asym_v) or asym_v > 0)
+
+    if not (wr_passing and ret_passing and asym_passing):
+        return False
+
+    # Power < 50% at the observed effect
+    if sigma is None or not np.isfinite(sigma) or sigma <= 0 or mean_ret is None:
+        return False
+
+    se = sigma / np.sqrt(n)
+    if se <= 0:
+        return False
+
+    # achieved_power ~ Phi(effect/se - z_alpha); < 50% when effect/se < z_alpha
+    z_alpha: float = 1.645
+    standardized = float(mean_ret) / se
+    return standardized < z_alpha  # power < 50%
+
+
 def _print_compound_report(
     compound_id: str,
     name: str,
@@ -754,6 +837,65 @@ def _gauntlet_placebo(
     return real_mean, pctile95
 
 
+# ---------------------------------------------------------------------------
+# W4.b — kill_requeue writer
+# ---------------------------------------------------------------------------
+
+def _write_kill_requeue(
+    compound_id: str,
+    data_dir: Path,
+    n_at_kill: int,
+    point_estimates: dict,
+    asof: str,
+) -> None:
+    """Append a row to data/oracle/reversion_kill_requeue.jsonl.
+
+    Per W4_SPEC.md §W4.b:
+    - append-only, keep-first by compound_id::killed_at
+    - every UNDERPOWERED-ACCRUING fail writes a row
+    - requeue_at_n = 2 × n_at_kill (operator must re-screen at 2× the sample)
+
+    NEVER auto-rescreens; this is a reminder only.
+    """
+    path = data_dir / "oracle" / "reversion_kill_requeue.jsonl"
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+    # Keep-first: do not write if this compound already has an entry
+    if path.exists():
+        for line in path.read_text().splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                existing = json.loads(line)
+                if existing.get("compound_id") == compound_id:
+                    log.debug(
+                        "kill_requeue: %s already has an entry (keep-first law) — skip",
+                        compound_id,
+                    )
+                    return
+            except Exception:  # noqa: BLE001
+                pass
+
+    row = {
+        "compound_id": compound_id,
+        "killed_at_asof": asof,
+        "n_at_kill": n_at_kill,
+        "point_estimates": point_estimates,
+        "requeue_at_n": 2 * n_at_kill,
+        "note": (
+            "UNDERPOWERED-ACCRUING fail. A re-screen at requeue_at_n is a NEW "
+            "counted trial (counted-trials law). NEVER auto-rescreens."
+        ),
+    }
+    with path.open("a") as fh:
+        fh.write(json.dumps(row, default=str) + "\n")
+    log.info(
+        "kill_requeue: wrote %s (n_at_kill=%d, requeue_at_n=%d)",
+        compound_id, n_at_kill, 2 * n_at_kill,
+    )
+
+
 def run_gauntlet(
     compound: dict,
     entries_df: pd.DataFrame,
@@ -761,6 +903,7 @@ def run_gauntlet(
     window: int,
     exit_sessions: int,
     exit_mode: ExitMode,
+    data_dir: Path | None = None,
 ) -> bool:
     """Run the full 6-leg PASS gate on a compound.
 
@@ -927,6 +1070,52 @@ def run_gauntlet(
     )
 
     all_pass = leg1 and leg2 and leg3 and leg4 and leg5 and leg6
+
+    # --- W4.b: MDE@80% (α=0.05) per leg-verdict ---
+    # Compute per-entry standard deviation for the all-regime sample
+    sigma: float | None = None
+    if not entries_df.empty and "ret_exit" in entries_df.columns:
+        ret_vals = entries_df["ret_exit"].dropna()
+        if len(ret_vals) > 1:
+            sigma = float(ret_vals.std(ddof=1))
+
+    n_all = all_stats["n"]
+    mde = _mde_at_80pct(n_all, sigma) if sigma is not None else None
+    mde_str = _pct(mde) if mde is not None else "n/a (sigma unavailable)"
+
+    print()
+    print(f"  Power context (W4.b — reporting only, gates untouched):")
+    print(f"    n={n_all}  sigma={_pct(sigma)}  MDE@80%(α=0.05)={mde_str}")
+
+    if not all_pass:
+        # Check UNDERPOWERED-ACCRUING class
+        is_up = _is_underpowered_accruing(all_stats, sigma)
+        if is_up:
+            print(
+                f"  *** UNDERPOWERED-ACCRUING — leg FAILed on CI/placebo grounds "
+                f"but point estimates all in PASSING direction and power<50% at "
+                f"observed effect. Accrue more data before concluding. ***"
+            )
+            # W4.b: write kill_requeue row if data_dir is available
+            if data_dir is not None:
+                from datetime import datetime, timezone as _tz
+                _asof = datetime.now(_tz.utc).strftime("%Y-%m-%d")
+                _point_ests = {
+                    "mean_ret_exit": all_stats.get("mean_ret_exit"),
+                    "WR": all_stats.get("WR"),
+                    "asym": all_stats.get("asym"),
+                    "n": n_all,
+                }
+                _write_kill_requeue(
+                    compound.get("id", "?"),
+                    data_dir,
+                    n_at_kill=n_all,
+                    point_estimates=_point_ests,
+                    asof=_asof,
+                )
+        else:
+            print(f"  (power class: adequately powered for current n, or estimates not uniformly positive)")
+
     print()
     if all_pass:
         print("  *** REVERSION GAUNTLET PASS ***")
@@ -1011,7 +1200,8 @@ def screen_compound(
     )
 
     if gauntlet:
-        run_gauntlet(compound, entries_df, panel, window, exit_sessions, exit_mode)
+        run_gauntlet(compound, entries_df, panel, window, exit_sessions, exit_mode,
+                     data_dir=data_dir)
 
     return {
         "compound_id": compound_id,
