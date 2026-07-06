@@ -1076,34 +1076,84 @@ function nwHero(d) {
   </div>`;
 }
 /* Signature system map — core → group anchors (on a ring) → lobe nodes */
+const NW_STATUS_MAP = (s) => s === "fresh" ? "fresh" : s === "stale" ? "stale"
+  : (s === "missing" || s === "degraded") ? "missing" : "unknown";
+
+/* Shorten a lobe label for the map: the group is already labelled, so drop the
+   redundant group-ish prefix ("Kernel Estimates" → "Estimates" inside KERNEL). */
+function nwMapLabel(label) {
+  return String(label || "")
+    .replace(/^Site Neuralweb /i, "Site ")
+    .replace(/^Neuralweb /i, "")
+    .replace(/^Reflex Firings /i, "")
+    .replace(/^Ops Push /i, "")
+    .replace(/^Rule Experiment /i, "Experiment ")
+    .replace(/^Cortex Attention /i, "Attention ")
+    .replace(/^Bottom Sensors /i, "Sensors ")
+    .replace(/^Options Entry /i, "Options ")
+    .replace(/^Site Qledger /i, "Site QLedger ")
+    .trim();
+}
+
+/* Radial dendrogram: core → group hubs → named lobe leaves, with curved
+   hue-coloured synapse links. Deterministic layout (angle from index). */
 function nwSystemMap(d) {
   const groups = (d.groups || []).filter(g => g.lobes && g.lobes.length);
   if (!groups.length) return "";
-  const W = 900, H = 480, cx = W / 2, cy = H / 2, R = 155;
-  const N = groups.length;
-  let edges = "", ganchors = "", lnodes = "", labels = "";
-  groups.forEach((g, gi) => {
-    const ang = -Math.PI / 2 + gi * 2 * Math.PI / N;
-    const gx = cx + R * Math.cos(ang), gy = cy + R * Math.sin(ang);
-    edges += `<line class="map-edge" x1="${cx}" y1="${cy}" x2="${gx.toFixed(1)}" y2="${gy.toFixed(1)}" style="stroke-width:1.6"/>`;
-    ganchors += `<circle cx="${gx.toFixed(1)}" cy="${gy.toFixed(1)}" r="7" style="fill:var(--grp-${g.key});opacity:.9"/>`;
-    const lx = cx + (R + 34) * Math.cos(ang), ly = cy + (R + 34) * Math.sin(ang);
-    labels += `<text class="map-label" x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="middle">${esc(g.label)} · ${g.lobes.length}</text>`;
-    const m = g.lobes.length, lr = Math.min(48, 14 + m * 2.2);
-    g.lobes.forEach((l, li) => {
-      const a2 = li * 2 * Math.PI / m;
-      const nx = gx + lr * Math.cos(a2), ny = gy + lr * Math.sin(a2);
-      const stt = l.status === "fresh" ? "fresh" : l.status === "stale" ? "stale" : (l.status === "missing" || l.status === "degraded") ? "missing" : "stale";
-      edges += `<line class="map-edge" x1="${gx.toFixed(1)}" y1="${gy.toFixed(1)}" x2="${nx.toFixed(1)}" y2="${ny.toFixed(1)}"/>`;
-      lnodes += `<circle class="map-node" data-lobe="${esc(l.id)}" data-status="${stt}" cx="${nx.toFixed(1)}" cy="${ny.toFixed(1)}" r="4.2" style="fill:var(--grp-${g.key})"></circle>`;
+  const W = 1160, H = 820, cx = W / 2, cy = H / 2;
+  const coreR = 30, hubR = 150, leafR = 248, rimR = 374;
+  const P = (r, a) => [cx + r * Math.cos(a), cy + r * Math.sin(a)];
+  /* d3-style radial link: control points held at the mid radius so branches fan cleanly */
+  const link = (r0, a0, r1, a1) => {
+    const [x0, y0] = P(r0, a0), [x1, y1] = P(r1, a1);
+    const rm = (r0 + r1) / 2;
+    const [b0x, b0y] = P(rm, a0), [b1x, b1y] = P(rm, a1);
+    return `M${x0.toFixed(1)},${y0.toFixed(1)}C${b0x.toFixed(1)},${b0y.toFixed(1)} ${b1x.toFixed(1)},${b1y.toFixed(1)} ${x1.toFixed(1)},${y1.toFixed(1)}`;
+  };
+  const trunc = (s, n) => s.length > n ? s.slice(0, n - 1).trimEnd() + "…" : s;
+
+  const L = groups.reduce((s, g) => s + g.lobes.length, 0);
+  const GAP = 0.10;                                  // angular gap between groups (rad)
+  const slice = (2 * Math.PI - GAP * groups.length) / L;
+  let a = -Math.PI / 2 + GAP / 2;                     // first leaf starts at top
+
+  let trunks = "", hubs = "", arms = "", glabels = "";
+  groups.forEach(g => {
+    const hue = `var(--grp-${g.key})`;
+    const n = g.lobes.length, aStart = a, gc = aStart + n * slice / 2;
+    const [hx, hy] = P(hubR, gc);
+    trunks += `<path class="map-link trunk" style="stroke:${hue}" d="${link(coreR + 2, gc, hubR, gc)}"/>`;
+    hubs += `<circle class="map-hub" cx="${hx.toFixed(1)}" cy="${hy.toFixed(1)}" r="6" style="fill:${hue}"/>`;
+    const [gx, gy] = P(rimR, gc);
+    glabels += `<text class="map-group-label" x="${gx.toFixed(1)}" y="${gy.toFixed(1)}" text-anchor="middle" dy="0.32em" style="fill:${hue}">${esc(g.label.toUpperCase())} · ${n}</text>`;
+    g.lobes.forEach((l, i) => {
+      const al = aStart + (i + 0.5) * slice;
+      const [lx, ly] = P(leafR, al);
+      const [tx, ty] = P(leafR + 10, al);
+      let deg = ((al * 180 / Math.PI) % 360 + 360) % 360;
+      const left = deg > 90 && deg < 270;
+      const rot = left ? deg + 180 : deg;
+      arms += `<g class="map-arm">`
+        + `<path class="map-link" style="stroke:${hue}" d="${link(hubR, gc, leafR, al)}"/>`
+        + `<circle class="map-node" data-lobe="${esc(l.id)}" data-status="${NW_STATUS_MAP(l.status)}" cx="${lx.toFixed(1)}" cy="${ly.toFixed(1)}" style="fill:${hue}"/>`
+        + `<text class="map-leaf-label" x="${tx.toFixed(1)}" y="${ty.toFixed(1)}" dy="0.31em" text-anchor="${left ? "end" : "start"}" transform="rotate(${rot.toFixed(1)},${tx.toFixed(1)},${ty.toFixed(1)})">${esc(trunc(nwMapLabel(l.label), 18))}</text>`
+        + `</g>`;
     });
+    a = aStart + n * slice + GAP;
   });
-  return `<div class="systemmap"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Neural Web system map">
-    <defs><linearGradient id="nw-core-grad" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#6a8dff"/><stop offset="1" stop-color="#38e0d4"/></linearGradient></defs>
-    ${edges}${ganchors}${lnodes}${labels}
-    <text x="${cx}" y="${cy - 42}" text-anchor="middle" class="map-label" style="fill:var(--text);font-size:12px;font-weight:600">Neural Web</text>
-    <circle class="map-core" cx="${cx}" cy="${cy}" r="30"/>
+
+  return `<div class="systemmap"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Neural Web system map — core, ${groups.length} groups, ${L} lobes">
+    <defs>
+      <radialGradient id="nw-core-grad" cx="0.42" cy="0.4" r="0.6">
+        <stop offset="0" stop-color="#a9c0ff"/><stop offset="0.5" stop-color="#5b7cff"/><stop offset="1" stop-color="#38c8d4"/>
+      </radialGradient>
+    </defs>
+    <g class="map-links">${trunks}</g>
+    <g class="map-arms">${arms}</g>
+    <g class="map-hubs">${hubs}</g>
+    <g class="map-glabels">${glabels}</g>
+    <circle class="map-core" cx="${cx}" cy="${cy}" r="${coreR}"/>
+    <text class="map-core-label" x="${cx}" y="${cy}" text-anchor="middle" dy="0.32em">NEURAL<tspan x="${cx}" dy="1.05em">WEB</tspan></text>
   </svg></div>`;
 }
 /* Honest badge for the plain-English description layer.

@@ -948,42 +948,88 @@ input:focus, select:focus {
 .systemmap svg {
   display: block;
   width: 100%;
-  max-height: 480px;
   height: auto;
+  max-height: 680px;
+  animation: fadeInUp var(--dur) var(--ease);
 }
 
-/* SVG inline classes the JS emits */
+/* Core orb */
 .map-core {
   fill: url(#nw-core-grad);
-  filter: drop-shadow(0 0 10px rgba(106,141,255,.5));
+  filter: drop-shadow(0 0 18px rgba(106,141,255,.6));
   cursor: default;
 }
-
-.map-node {
-  cursor: pointer;
-  transition: filter var(--dur) var(--ease), r var(--dur) var(--ease);
+.map-core-label {
+  fill: #fff;
+  font-family: var(--sans);
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: .12em;
+  pointer-events: none;
 }
 
-.map-node:hover {
-  filter: brightness(1.35) drop-shadow(0 0 8px currentColor);
-}
-
-.map-node[data-status="fresh"]   { opacity: 1; }
-.map-node[data-status="stale"]   { opacity: .75; }
-.map-node[data-status="missing"] { opacity: .5; }
-
-.map-edge {
-  stroke: rgba(255,255,255,.07);
-  stroke-width: 1;
+/* Synapse links — curved, coloured by group hue (inline style) */
+.map-link {
   fill: none;
+  stroke-width: 1.25;
+  opacity: .4;
+  transition: opacity var(--dur) var(--ease), stroke-width var(--dur) var(--ease);
+}
+.map-link.trunk { stroke-width: 2.4; opacity: .62; }
+
+/* Group hubs */
+.map-hub {
+  stroke: rgba(255,255,255,.3);
+  stroke-width: 1;
 }
 
-.map-label {
+/* Lobe leaf nodes — fill = group hue (inline), ring = status */
+.map-node {
+  r: 4.6;
+  cursor: pointer;
+  stroke-width: 1.6;
+  transition: r var(--dur) var(--ease), filter var(--dur) var(--ease);
+}
+.map-node[data-status="fresh"]   { stroke: var(--ok);    }
+.map-node[data-status="stale"]   { stroke: var(--warn);  }
+.map-node[data-status="missing"] { stroke: var(--bad);   }
+.map-node[data-status="unknown"] { stroke: var(--faint); }
+
+/* Labels with a dark halo so they read cleanly over links */
+.map-leaf-label {
   fill: var(--muted);
   font-family: var(--sans);
-  font-size: 10px;
+  font-size: 10.5px;
+  paint-order: stroke;
+  stroke: #0b0e16;
+  stroke-width: 3px;
+  stroke-linejoin: round;
   pointer-events: none;
   user-select: none;
+  transition: fill var(--dur) var(--ease);
+}
+.map-group-label {
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .09em;
+  paint-order: stroke;
+  stroke: #0b0e16;
+  stroke-width: 3.5px;
+  stroke-linejoin: round;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* Arm hover — highlight branch, node and label together */
+.map-arm { cursor: pointer; }
+.map-arm:hover .map-link { opacity: .95; stroke-width: 2.2; }
+.map-arm:hover .map-node { r: 7; filter: drop-shadow(0 0 7px rgba(255,255,255,.55)); }
+.map-arm:hover .map-leaf-label { fill: var(--text); }
+
+@media (prefers-reduced-motion: reduce) {
+  .systemmap svg { animation: none; }
+  .map-node, .map-link, .map-leaf-label { transition: none; }
 }
 
 /* --------------------------------------------------------------------------
