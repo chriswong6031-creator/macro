@@ -2381,7 +2381,7 @@ artifacts:
     storage: git
     asof_field: asof
     freshness_sla_hours: 30
-    schema: china_intel.briefing.v4
+    schema: china_intel.briefing.v5
     tier: display
     horizon_role: context
     weights: none
@@ -2390,7 +2390,28 @@ artifacts:
       - engine/master_brain.py
     external_consumers:
       - mastermind:vendored
-    notes: "Producer: engine/china_intel_bus.py write_text. schema=china_intel.briefing.v4 constant at china_intel_bus.py. v4 adds policy_phrase (communique_diff) + narrative_divergence (GDELT tone) blocks (additive)."
+    notes: "Producer: engine/china_intel_bus.py write_text. schema=china_intel.briefing.v5 constant at china_intel_bus.py. v5 adds special_situations block (additive over v4 policy_phrase + narrative_divergence)."
+    qual_ladder_ref: china_intel.news_dir
+
+  site-china-special-sits:
+    path: site/chinaspecialdata/special.json
+    format: json
+    producer: engine/china_special_situations.py
+    known_extra_writers: []
+    owner_program: china-intel-hub
+    cadence: asia-close
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 30
+    schema: china_special_sits.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/china_intel_bus.py
+    external_consumers: []
+    notes: "Producer: engine/china_special_situations.py build(). Fuses unlocks/inquiry/preannounce/ST/buyback/pledge/block-trades into context-only JSON for the Special Situations desk page and hub card. schema=china_special_sits.v1."
     qual_ladder_ref: china_intel.news_dir
 
   # --- 3 consumers ---

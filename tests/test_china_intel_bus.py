@@ -14,7 +14,7 @@ from engine import china_intel_bus as bus
 def test_briefing_shape(monkeypatch):
     monkeypatch.setattr(bus, "_read_json", lambda rel: None)   # no surfaces built
     b = bus.briefing(asof="2026-06-20")
-    assert b["schema"] == "china_intel.briefing.v4"
+    assert b["schema"] == "china_intel.briefing.v5"
     assert b["is_context_only"] is True
     assert b["asof"] == "2026-06-20"
     for k in ("news", "policy", "altdata", "radar", "analysis"):
@@ -289,3 +289,62 @@ def test_digest_text_includes_divergence_z():
 
 
 import pytest
+
+
+# ── v5: special_situations block ─────────────────────────────────────────────
+
+def test_special_situations_block_missing_file(monkeypatch):
+    """Missing chinaspecialdata/special.json → block returns None, no exception."""
+    monkeypatch.setattr(bus, "_read_json", lambda rel: None)
+    result = bus._special_situations_block()
+    assert result is None
+
+
+def test_special_situations_block_happy_path(monkeypatch):
+    """Valid special.json → block returns compact summary."""
+    payload = {
+        "schema": "china_special_sits.v1",
+        "asof": "2026-07-06",
+        "unlocks": {"n_events_30d": 5, "n_large": 2, "events": [
+            {"ticker": "600000.SS", "name": "浦发银行", "unlock_date": "2026-07-15",
+             "float_ratio": 8.2, "large_flag": True, "mktcap_yi": 12.5}
+        ]},
+        "inquiry": {"n_letters": 3, "letters": [
+            {"secCode": "000001", "secName": "平安银行", "title": "关注函",
+             "date": "2026-07-05", "has_reply": False, "kind": "letter"}
+        ]},
+        "preannounce": {"n_total": 45},
+        "buyback": {"n_active": 12},
+        "pledge": {"n_high": 8},
+        "st": {"count": 211},
+        "block_trades": {"n_names": 50},
+    }
+    monkeypatch.setattr(bus, "_read_json",
+                        lambda rel: payload if "chinaspecialdata" in rel else None)
+    result = bus._special_situations_block()
+    assert result is not None
+    assert result["asof"] == "2026-07-06"
+    assert result["n_unlocks"] == 5
+    assert result["n_inquiry"] == 3
+    assert result["n_st"] == 211
+    assert result["top_unlock"]["ticker"] == "600000.SS"
+    assert result["top_unlock"]["large_flag"] is True
+    assert result["newest_letter"]["secCode"] == "000001"
+    assert result["is_context_only"] is True
+
+
+# ── v5 integration: block surfaces in briefing ──────────────────────────────
+
+def test_briefing_includes_v5_blocks(monkeypatch):
+    """briefing() always has special_situations key (may be None)."""
+    monkeypatch.setattr(bus, "_read_json", lambda rel: None)
+    b = bus.briefing(asof="2026-07-06")
+    assert "special_situations" in b
+    assert b["special_situations"] is None  # None when artifact absent
+
+
+def test_briefing_schema_is_v5(monkeypatch):
+    """Schema string must be v5."""
+    monkeypatch.setattr(bus, "_read_json", lambda rel: None)
+    b = bus.briefing(asof="2026-07-06")
+    assert b["schema"] == "china_intel.briefing.v5"

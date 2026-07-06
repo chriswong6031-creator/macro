@@ -3,7 +3,7 @@
 LEAF · CONTEXT-ONLY · NEVER A SCORE/SIZE. The China sibling of the macro master_brain brief:
 it fans the FIVE China intelligence surfaces — News, Central-Bank/Policy, Alternative Data,
 Divergence Radar, and the central-intelligence Analysis — into ONE schema-versioned,
-machine-readable rollup (`china_intel.briefing.v4`) for hub display. The blocks assembled here
+machine-readable rollup (`china_intel.briefing.v5`) for hub display. The blocks assembled here
 are hub-display surfaces only; they reach the China Mastermind only via the digest summary
 line (see `_digest_text`). It DECOUPLES by reading each surface's already-emitted JSON off disk
 (build-order is the only dependency); every reader degrades to None and NOTHING here raises
@@ -17,6 +17,10 @@ v4 (additive over v3): policy_phrase block (communique_diff APPEARED/DROPPED/LEA
 events from site/communique_diff/latest.json) + narrative_divergence block (GDELT onshore/
 offshore tone divergence z-score from data/missing_tape/tone_divergence.parquet). Both blocks
 degrade cleanly to None when their artifacts are absent. Schema bumped to v4.
+
+v5 (additive over v4): special_situations block reading site/chinaspecialdata/special.json
+(unlock overhang, inquiry letters, preannouncements, buybacks, pledge stress, ST watch,
+block-trade anomalies). Degrades cleanly when artifact absent. Schema bumped to v5.
 """
 from __future__ import annotations
 
@@ -29,7 +33,7 @@ from lib import config
 
 log = logging.getLogger(__name__)
 
-SCHEMA = "china_intel.briefing.v4"
+SCHEMA = "china_intel.briefing.v5"
 MAX_STALE_OK = 35
 
 DISCLAIMER = (
@@ -407,12 +411,68 @@ def _digest_text(b: dict) -> str:
 
 
 # --------------------------------------------------------------------------- #
+# v5: special_situations block
+# --------------------------------------------------------------------------- #
+def _special_situations_block() -> dict | None:
+    """Compact summary of the special-situations desk for the hub card.
+
+    Reads site/chinaspecialdata/special.json and extracts: counts per category,
+    top unlock event, newest inquiry letter. Degrades to None when absent.
+    """
+    data = _read_json("chinaspecialdata/special.json")
+    if not data or not isinstance(data, dict):
+        return None
+    out: dict = {
+        # data_asof = worst (oldest) per-input asof from the engine scan; falls back to asof
+        "asof": data.get("data_asof") or data.get("asof"),
+        "is_context_only": True,
+    }
+    # counts per category
+    for key, cnt_field in (
+        ("unlocks",     "n_events_30d"),
+        ("inquiry",     "n_letters"),
+        ("preannounce", "n_total"),
+        ("buyback",     "n_active"),
+        ("pledge",      "n_high"),
+        ("st",          "count"),
+        ("block_trades", "n_names"),
+    ):
+        blk = data.get(key) or {}
+        out[f"n_{key}"] = blk.get(cnt_field) if isinstance(blk, dict) else None
+
+    # top unlock (for hub card)
+    unlock_events = (data.get("unlocks") or {}).get("events") or []
+    if unlock_events:
+        top = unlock_events[0]
+        out["top_unlock"] = {
+            "ticker":      top.get("ticker"),
+            "name":        top.get("name"),
+            "unlock_date": top.get("unlock_date"),
+            "float_ratio": top.get("float_ratio"),
+            "large_flag":  top.get("large_flag"),
+        }
+
+    # newest inquiry letter (for hub card)
+    inq_letters = (data.get("inquiry") or {}).get("letters") or []
+    if inq_letters:
+        newest = inq_letters[0]
+        out["newest_letter"] = {
+            "secCode": newest.get("secCode"),
+            "secName": newest.get("secName"),
+            "date":    newest.get("date"),
+            "has_reply": newest.get("has_reply"),
+        }
+
+    return out
+
+
+# --------------------------------------------------------------------------- #
 # public
 # --------------------------------------------------------------------------- #
 def _staleness(b: dict) -> tuple[dict, int]:
     sa, worst = {}, 0
     for k in ("news", "policy", "altdata", "radar", "analysis",
-              "policy_phrase", "narrative_divergence"):
+              "policy_phrase", "narrative_divergence", "special_situations"):
         d = (b.get(k) or {}).get("asof") if isinstance(b.get(k), dict) else None
         sa[k] = d
         if d:
@@ -425,7 +485,7 @@ def _staleness(b: dict) -> tuple[dict, int]:
 
 
 def briefing(asof: date | str | None = None) -> dict:
-    """Assemble the context-only `china_intel.briefing.v2`. Always valid; never raises."""
+    """Assemble the context-only `china_intel.briefing.v5`. Always valid; never raises."""
     b = {
         "schema": SCHEMA, "is_context_only": True,
         "generated_utc": datetime.now(timezone.utc).isoformat(),
@@ -433,6 +493,7 @@ def briefing(asof: date | str | None = None) -> dict:
         "news": None, "policy": None, "altdata": None, "radar": None, "analysis": None,
         "regime": None, "discovery": None,
         "policy_phrase": None, "narrative_divergence": None,
+        "special_situations": None,
         "disclaimer": DISCLAIMER, "disclaimer_zh": DISCLAIMER_ZH,
     }
     for key, fn in (("news", _news_block), ("policy", _policy_block),
@@ -440,7 +501,8 @@ def briefing(asof: date | str | None = None) -> dict:
                     ("analysis", _analysis_block), ("regime", _regime_block),
                     ("discovery", _discovery_block),
                     ("policy_phrase", _policy_phrase_block),
-                    ("narrative_divergence", _narrative_divergence_block)):
+                    ("narrative_divergence", _narrative_divergence_block),
+                    ("special_situations", _special_situations_block)):
         try:
             b[key] = fn()
         except Exception as e:  # noqa: BLE001
@@ -454,7 +516,8 @@ def briefing(asof: date | str | None = None) -> dict:
     b["what_changed"] = a.get("what_changed") or {}
     b["salience"] = a.get("what_matters") or []
     b["surfaces_present"] = [k for k in ("news", "policy", "altdata", "radar", "analysis",
-                                        "policy_phrase", "narrative_divergence") if b.get(k)]
+                                        "policy_phrase", "narrative_divergence",
+                                        "special_situations") if b.get(k)]
     b["surface_asof"], b["max_staleness_days"] = _staleness(b)
     b["digest"] = _digest_text(b)
     return b
@@ -474,7 +537,7 @@ def build() -> dict | None:
              "surfaces_present": b["surfaces_present"],
              "max_staleness_days": b["max_staleness_days"], "text": b["digest"]},
             ensure_ascii=False, separators=(",", ":"), default=str))
-        log.info("china_intel_bus: wrote briefing v4 (%d surfaces, %d conviction)",
+        log.info("china_intel_bus: wrote briefing v5 (%d surfaces, %d conviction)",
                  len(b["surfaces_present"]), len(b["conviction"]))
         return b
     except Exception as e:  # noqa: BLE001

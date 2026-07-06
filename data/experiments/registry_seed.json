@@ -2237,6 +2237,27 @@
       "phase_hint": "G1-Retest"
     },
     {
+      "id": "qledger-w6-cn-special-sits",
+      "name": "qledger W6 Gate — cn_special_sits (China inquiry-letter and unlock events)",
+      "kind": "qledger_promotion",
+      "priority": "medium",
+      "cadence": "daily",
+      "what": "Salience-only qledger claims for two cn_special_sits families: (1) inquiry-letter events (exchange-issued 问询函 from CNInfo, per-company, macro bench=510300.SS); (2) large-unlock events (≥5% of pre-unlock float, direction=0). Gate: n_dates>=25. No direction until mechanism independently validated.",
+      "source": "engine/china_special_situations.py register_claims (called from scripts/build_china_special_situations.py, asia-close lane only)",
+      "storage": "site/qledger/track_record.json",
+      "track_json": "site/qledger/track_record.json",
+      "hook": "qledger_promotion",
+      "claim_family": "cn_special_sits",
+      "started": "2026-07-06",
+      "come_back_on": "2026-09-15",
+      "come_back_note": "n_dates>=25 required before any promotion scan; salience-only until then",
+      "maturation": "n_dates>=25 AND wilson_ci_low>0. Direction stays 0 (salience-only) until mechanism independently validated.",
+      "status": "accruing",
+      "state": "UNGRADED — W2 build just shipped; claims begin accruing from 2026-07-06.",
+      "next_step": "Review at n_dates=25 (~2026-09-15). Check inquiry-letter vs unlock sub-families separately.",
+      "phase_hint": "W6 §3 gate"
+    },
+    {
       "id": "expect-drift-ruler-p",
       "name": "Expect-Drift LH — Ruler-P study (cheap_trap vs tactical_only, 252d)",
       "kind": "offline_study",
