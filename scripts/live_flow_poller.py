@@ -929,9 +929,13 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0912, PLR0915
         log.info("poller: --rth-only outside RTH window — exiting cleanly")
         return 0
 
-    # Check terminal reachable
+    # Check terminal reachable — startup probe uses a tolerant 15s default so a
+    # slow-starting ThetaTerminal doesn't abort the poller unnecessarily.
+    # Override via THETA_CONNECT_TIMEOUT env (same variable that controls the
+    # per-root retry timeout in thetadata.py).
     from collectors import thetadata as td
-    if not td.reachable():
+    startup_timeout = int(os.environ.get("THETA_CONNECT_TIMEOUT", "15"))
+    if not td.reachable(connect_timeout=startup_timeout):
         log.error("poller: Theta Terminal not reachable — abort")
         return 1
 
