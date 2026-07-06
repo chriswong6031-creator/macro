@@ -632,3 +632,147 @@ def test_regime_block_carries_sector_rs_and_liquidity_overlay(tmp_path):
     assert isinstance(regime["sector_rs"], list)
     assert len(regime["sector_rs"]) >= 1
     assert regime["sector_rs"][0]["ticker"] == "XLK"
+
+
+# ---------------------------------------------------------------------------
+# Tests 18-21: RUL-NW2 — factor_weather canonical source (PR-2)
+# ---------------------------------------------------------------------------
+
+def _make_state_artifact(root: Path, factor_weather: dict | None = None, as_of: str = "2026-07-05") -> Path:
+    """Write a synthetic factor_intelligence_state.json to tmp root."""
+    fw = factor_weather if factor_weather is not None else {
+        "style_regime": "growth",
+        "style_regime_pending": None,
+        "style_regime_hold_days": 12,
+        "factor_leader": "momentum",
+        "factor_leader_ic": 0.042,
+        "etf_pulse_summary": "IWF/IWD_20d=+0.0120; QQQ/SPY_20d=+0.0085; IWM/SPY_20d=-0.0031",
+        "ratio_iwf_iwd_20d": 0.012,
+        "ratio_qqq_spy_20d": 0.0085,
+        "ratio_iwm_spy_20d": -0.0031,
+        "display_only": True,
+    }
+    state = {
+        "schema": "neuralweb.factor_intelligence_state.v1",
+        "as_of": as_of,
+        "produced_at": f"{as_of}T06:00:00Z",
+        "is_context_only": True,
+        "display_only": True,
+        "factor_weather": fw,
+        "panel": None,
+        "scorecard": None,
+        "contradictions": None,
+        "attention": None,
+        "hypotheses": None,
+        "latest_board_coordinates": None,
+        "allowed_actions": {
+            "may_rank": False,
+            "may_originate": False,
+            "may_deescalate": False,
+            "authority_source": "constitution.grant_authority + prereg gates; this block is a mirror, never a switch",
+        },
+        "gaps": [],
+    }
+    dest = root / "data" / "neuralweb" / "factor_intelligence_state.json"
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    dest.write_text(json.dumps(state), encoding="utf-8")
+    return dest
+
+
+def test_rulnw2_artifact_present_lobe_from_artifact(tmp_path):
+    """Test 18 (RUL-NW2a): artifact present → factor_weather block comes from artifact
+    and factor_state_as_of is set to artifact's as_of.
+    """
+    from engine.neuralweb.world_state import _compose_factor_weather
+
+    _make_state_artifact(tmp_path, as_of="2026-07-05")
+
+    result = _compose_factor_weather(root=tmp_path)
+
+    # factor_state_as_of must carry the artifact's as_of
+    assert result.get("factor_state_as_of") == "2026-07-05", (
+        f"expected factor_state_as_of='2026-07-05', got {result.get('factor_state_as_of')!r}"
+    )
+
+    # lobe fields come from the artifact
+    assert result.get("style_regime") == "growth"
+    assert result.get("factor_leader") == "momentum"
+    assert abs(result.get("factor_leader_ic") - 0.042) < 1e-9
+
+    # display_only is always True
+    assert result.get("display_only") is True
+
+    # factor_state_as_of key exists (11th key check)
+    assert "factor_state_as_of" in result
+
+
+def test_rulnw2_artifact_absent_fallback_path(tmp_path):
+    """Test 19 (RUL-NW2b): artifact absent → legacy fallback used, factor_state_as_of null.
+
+    No panel/ETF data in tmp_path, so all fallback fields will be null — but the
+    key invariants are: no raise, factor_state_as_of is None, display_only True.
+    """
+    from engine.neuralweb.world_state import _compose_factor_weather
+
+    # Artifact file is NOT created — only the directory may or may not exist.
+    result = _compose_factor_weather(root=tmp_path)
+
+    assert result.get("factor_state_as_of") is None, (
+        f"expected factor_state_as_of=None on fallback, got {result.get('factor_state_as_of')!r}"
+    )
+    assert result.get("display_only") is True
+    # Must carry all 11 keys (no raise)
+    assert "style_regime" in result
+    assert "factor_state_as_of" in result
+
+
+def test_rulnw2_artifact_corrupt_json_fallback(tmp_path):
+    """Test 20 (RUL-NW2c): artifact exists but is corrupt JSON → fallback, factor_state_as_of null.
+    """
+    from engine.neuralweb.world_state import _compose_factor_weather
+
+    dest = tmp_path / "data" / "neuralweb" / "factor_intelligence_state.json"
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    dest.write_text("{ this is not valid JSON {{{{", encoding="utf-8")
+
+    result = _compose_factor_weather(root=tmp_path)
+
+    assert result.get("factor_state_as_of") is None, (
+        f"expected factor_state_as_of=None on corrupt artifact, got {result.get('factor_state_as_of')!r}"
+    )
+    assert result.get("display_only") is True
+    # No raise
+    assert isinstance(result, dict)
+
+
+def test_rulnw2_artifact_missing_factor_weather_block_fallback(tmp_path):
+    """Test 21 (RUL-NW2d): artifact present but factor_weather key absent → fallback.
+
+    The state artifact exists and is valid JSON, but lacks the factor_weather block
+    (e.g. from a partial build run). The function must fall back to the legacy path
+    and return factor_state_as_of: null.
+    """
+    from engine.neuralweb.world_state import _compose_factor_weather
+
+    # Write artifact WITHOUT factor_weather key
+    state_no_fw = {
+        "schema": "neuralweb.factor_intelligence_state.v1",
+        "as_of": "2026-07-05",
+        "is_context_only": True,
+        "display_only": True,
+        # factor_weather intentionally omitted
+        "panel": None,
+        "gaps": [],
+    }
+    dest = tmp_path / "data" / "neuralweb" / "factor_intelligence_state.json"
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    dest.write_text(json.dumps(state_no_fw), encoding="utf-8")
+
+    result = _compose_factor_weather(root=tmp_path)
+
+    assert result.get("factor_state_as_of") is None, (
+        f"expected factor_state_as_of=None when factor_weather block missing from artifact, "
+        f"got {result.get('factor_state_as_of')!r}"
+    )
+    assert result.get("display_only") is True
+    assert isinstance(result, dict)
