@@ -524,17 +524,52 @@ def run_program_wide_fdr(
         dict keyed by hypothesis_id with:
           - p_value
           - survives_program_fdr (bool)
-          - program_fdr_marginal (bool): True if within-family q=0.10 passes
-            but program-wide fails (or if the hypothesis is not tested)
+          - program_fdr_marginal (bool): True iff the hypothesis clears its
+            within-family q=0.10 BH correction BUT fails the program-wide
+            BH-FDR correction (AMENDMENT_LH_R11_MULTI_FAMILY.md §LH-R11.2).
+            Hypotheses that fail BOTH corrections are NOT marginal.
     """
     assert len(hypothesis_ids) == len(p_values), "ids and p_values must have same length"
-    survive = _bh_fdr(p_values)
+
+    # Program-wide BH-FDR over all Σ hypotheses
+    survive_program = _bh_fdr(p_values)
+
+    # Build a lookup from hypothesis_id -> index in the input list
+    hid_to_idx = {hid: i for i, hid in enumerate(hypothesis_ids)}
+
+    # Within-family BH-FDR (q=0.10) — descriptive only per LH-R11.2, but used
+    # here to compute the program_fdr_marginal flag.
+    # Group each family's p-values, run BH, record per-hid result.
+    survive_within_family: dict[str, bool] = {}
+    # Collect family membership from ROSTER for the submitted hypothesis_ids
+    hid_set = set(hypothesis_ids)
+    family_to_hids: dict[str, list[str]] = {}
+    for h in ROSTER:
+        hid = h["hypothesis_id"]
+        if hid in hid_set:
+            fam = h["family"]
+            family_to_hids.setdefault(fam, []).append(hid)
+    # Any submitted hid not in ROSTER gets a placeholder family of its own
+    roster_hids = {h["hypothesis_id"] for h in ROSTER}
+    for hid in hypothesis_ids:
+        if hid not in roster_hids:
+            family_to_hids.setdefault(f"__unknown_{hid}__", []).append(hid)
+
+    for fam_hids in family_to_hids.values():
+        fam_ps = [p_values[hid_to_idx[hid]] for hid in fam_hids]
+        fam_survive = _bh_fdr(fam_ps, q=PROGRAM_FDR_Q)
+        for hid, s in zip(fam_hids, fam_survive):
+            survive_within_family[hid] = s
+
     result = {}
-    for hid, p, s in zip(hypothesis_ids, p_values, survive):
+    for hid, p, s_prog in zip(hypothesis_ids, p_values, survive_program):
+        s_within = survive_within_family.get(hid, False)
+        # program_fdr_marginal: clears within-family q but fails program-wide
+        marginal = s_within and (not s_prog)
         result[hid] = {
             "p_value": p,
-            "survives_program_fdr": s,
-            "program_fdr_marginal": (not s),
+            "survives_program_fdr": s_prog,
+            "program_fdr_marginal": marginal,
         }
     return result
 
@@ -726,19 +761,28 @@ def run_prep_mode() -> None:
 def _run_outcome_contact_on_data(
     fire_rows: list[dict],
     label_rows: list[dict],
+    *,
+    cluster_count: Optional[int] = None,
+    operator_ack: bool = False,
 ) -> dict:
     """Execute the outcome-contact analysis on supplied data.
 
     Args:
         fire_rows: list of dicts with keys: ticker, fire_date, features...
         label_rows: list of dicts with keys: ticker, fire_date, label, ...
+        cluster_count: honest compounder episode-cluster count; must be >= CLUSTER_FLOOR.
+        operator_ack: must be True to proceed.
 
     Returns:
         Analysis result dict.
 
-    NOTE: This function is ONLY reached after check_no_run_gate() passes.
-    It must never be called with real OOS-2 data before the gate clears.
+    NOTE: This function enforces the hard no-run gate as its FIRST statement.
+    No caller can bypass the refusal — it is not only in main().
     """
+    # Hard no-run gate — enforced here unconditionally so no future caller
+    # can reach outcome-contact logic without satisfying both conditions.
+    check_no_run_gate(cluster_count=cluster_count, operator_ack=operator_ack)
+
     # Join fire features to labels
     label_map = {(r["ticker"], r["fire_date"]): r for r in label_rows}
     joined = []

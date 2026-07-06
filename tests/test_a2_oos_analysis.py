@@ -148,6 +148,24 @@ class TestRosterIntegrity:
         h = roster_sha256()
         int(h, 16)  # raises ValueError if not hex
 
+    def test_roster_sha256_matches_freeze_anchor(self):
+        """Roster SHA-256 must equal the literal constant recorded in A2_FREEZE_ANCHOR_NOTE.md.
+
+        This is the machine-verifiable freeze record (LH-R11.1). Any change to
+        the in-code ROSTER table changes this hash. The test is intentionally
+        brittle: if it fails, someone modified the frozen roster without a
+        ratified amendment.
+        """
+        FREEZE_ANCHOR_HASH = "b52165f8c9227199ca55a68165c7d21b2e971526d6358e5289bf9a831430bcbc"
+        actual = roster_sha256()
+        assert actual == FREEZE_ANCHOR_HASH, (
+            f"Roster SHA-256 changed!\n"
+            f"  Expected (freeze anchor): {FREEZE_ANCHOR_HASH}\n"
+            f"  Actual:                   {actual}\n"
+            f"The frozen A2 roster (LH-R11.1) must not change without a ratified amendment.\n"
+            f"Reference: research/long_hold/A2_FREEZE_ANCHOR_NOTE.md"
+        )
+
 
 # ---------------------------------------------------------------------------
 # 2. Gate refusal logic
@@ -167,9 +185,9 @@ class TestGateRefusal:
         cluster_count,
         operator_ack,
         *,
-        match_fragment: str = "HARD REFUSAL",
+        expect_reason: str,
     ):
-        """Helper: assert check_no_run_gate raises SystemExit."""
+        """Helper: assert check_no_run_gate raises SystemExit with the specific reason string."""
         with pytest.raises(SystemExit) as exc_info:
             check_no_run_gate(
                 cluster_count=cluster_count,
@@ -178,39 +196,70 @@ class TestGateRefusal:
         assert exc_info.value.code != 0, (
             "Gate must exit with non-zero code on refusal"
         )
+        # Verify the specific refusal reason appears in the exception value string
+        # (the gate prints to stderr; the code itself is the exit code integer,
+        # so we re-run capturing stderr for the reason check)
+        import io
+        import contextlib
+        stderr_buf = io.StringIO()
+        try:
+            with contextlib.redirect_stderr(stderr_buf):
+                check_no_run_gate(
+                    cluster_count=cluster_count,
+                    operator_ack=operator_ack,
+                )
+        except SystemExit:
+            pass
+        stderr_text = stderr_buf.getvalue()
+        assert expect_reason in stderr_text, (
+            f"Expected refusal reason substring {expect_reason!r} not found in stderr.\n"
+            f"Stderr was:\n{stderr_text}"
+        )
 
     def test_under_floor_with_ack_refuses(self):
         """Under-floor cluster count REFUSES even with --operator-ack.
 
         Synthetic data: cluster_count = CLUSTER_FLOOR - 1 (floor not met).
-        Expected: SystemExit (gate refuses).
+        Expected: SystemExit with cluster-floor reason.
         """
         under_floor = CLUSTER_FLOOR - 1  # e.g. 24
         self._assert_refuses(
             cluster_count=under_floor,
             operator_ack=True,
+            expect_reason="CLUSTER FLOOR NOT MET",
         )
 
     def test_at_floor_without_ack_refuses(self):
         """Floor-met cluster count REFUSES without --operator-ack.
 
         Synthetic data: cluster_count = CLUSTER_FLOOR (floor met), no ack.
-        Expected: SystemExit (gate refuses).
+        Expected: SystemExit with missing-ack reason.
         """
         self._assert_refuses(
             cluster_count=CLUSTER_FLOOR,
             operator_ack=False,
+            expect_reason="OPERATOR ACK NOT PROVIDED",
         )
 
     def test_under_floor_without_ack_refuses(self):
-        """Under-floor AND no-ack: REFUSES.
+        """Under-floor AND no-ack: REFUSES with both reasons.
 
         Synthetic data: cluster_count = 0, operator_ack = False.
-        Expected: SystemExit (gate refuses).
+        Both cluster-floor and missing-ack reasons must appear.
         """
-        self._assert_refuses(
-            cluster_count=0,
-            operator_ack=False,
+        import io
+        import contextlib
+        stderr_buf = io.StringIO()
+        with pytest.raises(SystemExit) as exc_info:
+            with contextlib.redirect_stderr(stderr_buf):
+                check_no_run_gate(cluster_count=0, operator_ack=False)
+        assert exc_info.value.code != 0
+        stderr_text = stderr_buf.getvalue()
+        assert "CLUSTER FLOOR NOT MET" in stderr_text, (
+            f"Expected cluster-floor reason; got: {stderr_text}"
+        )
+        assert "OPERATOR ACK NOT PROVIDED" in stderr_text, (
+            f"Expected missing-ack reason; got: {stderr_text}"
         )
 
     def test_none_cluster_count_with_ack_refuses(self):
@@ -218,14 +267,21 @@ class TestGateRefusal:
         self._assert_refuses(
             cluster_count=None,
             operator_ack=True,
+            expect_reason="CLUSTER COUNT NOT PROVIDED",
         )
 
     def test_none_cluster_count_without_ack_refuses(self):
-        """Missing cluster_count AND no-ack REFUSES."""
-        self._assert_refuses(
-            cluster_count=None,
-            operator_ack=False,
-        )
+        """Missing cluster_count AND no-ack REFUSES with both reasons."""
+        import io
+        import contextlib
+        stderr_buf = io.StringIO()
+        with pytest.raises(SystemExit) as exc_info:
+            with contextlib.redirect_stderr(stderr_buf):
+                check_no_run_gate(cluster_count=None, operator_ack=False)
+        assert exc_info.value.code != 0
+        stderr_text = stderr_buf.getvalue()
+        assert "CLUSTER COUNT NOT PROVIDED" in stderr_text
+        assert "OPERATOR ACK NOT PROVIDED" in stderr_text
 
     def test_at_floor_with_ack_proceeds(self):
         """BOTH conditions met: cluster_count >= floor AND operator_ack -> proceeds.
@@ -263,6 +319,7 @@ class TestGateRefusal:
 
         Uses synthetic fire_rows and label_rows — never reads real data.
         Verifies the function returns a result dict with required keys.
+        The gate is passed by supplying cluster_count=CLUSTER_FLOOR and operator_ack=True.
         """
         # Synthetic fire rows (no real data)
         synthetic_fires = [
@@ -294,13 +351,31 @@ class TestGateRefusal:
                 "missed_hold": False,
             },
         ]
-        result = _run_outcome_contact_on_data(synthetic_fires, synthetic_labels)
+        result = _run_outcome_contact_on_data(
+            synthetic_fires,
+            synthetic_labels,
+            cluster_count=CLUSTER_FLOOR,
+            operator_ack=True,
+        )
         assert "roster_sha256" in result
         assert "n_joined" in result
         assert result["n_joined"] == 2
         assert result["n_missed_hold"] == 1
         assert result["n_tactical_only"] == 1
         assert result["roster_sha256"] == roster_sha256()
+
+    def test_outcome_contact_without_gate_refuses(self):
+        """_run_outcome_contact_on_data refuses if called without gate args.
+
+        This test verifies fix-3: the gate is enforced INSIDE the function,
+        not only in main(). Even a direct call without proper args is refused.
+        """
+        synthetic_fires = [{"ticker": "SYNTH_A", "fire_date": "2025-03-01"}]
+        synthetic_labels = [{"ticker": "SYNTH_A", "fire_date": "2025-03-01", "label": "compounder"}]
+        # Default args: cluster_count=None, operator_ack=False -> gate REFUSES
+        with pytest.raises(SystemExit) as exc_info:
+            _run_outcome_contact_on_data(synthetic_fires, synthetic_labels)
+        assert exc_info.value.code != 0
 
 
 # ---------------------------------------------------------------------------
@@ -354,15 +429,83 @@ class TestBHFDR:
         surviving_p = [p for p, s in zip(p_values, survive) if s]
         assert sorted(surviving_p) == [0.001, 0.008]
 
-    def test_program_wide_fdr_returns_marginal_flag(self):
-        """run_program_wide_fdr marks non-surviving hypotheses as marginal."""
-        hids = ["H1", "H2", "H3"]
-        p_values = [0.001, 0.09, 0.50]
+    def test_program_fdr_marginal_truth_table(self):
+        """Truth table for program_fdr_marginal — all 4 combinations.
+
+        Per AMENDMENT_LH_R11_MULTI_FAMILY.md §LH-R11.2:
+        program_fdr_marginal = survives_within_family AND (NOT survives_program_fdr)
+
+        Combination  | within_family | program_fdr | marginal
+        -------------|---------------|-------------|--------
+        A (survive)  | True          | True        | False   (fully survives)
+        B (marginal) | True          | False       | True    (marginal — the LH-R11.2 case)
+        C (fail both)| False         | False       | False   (fails both — not marginal)
+        D (impossible)| False        | True        | False   (program survives => within survives too)
+
+        We construct 4 hypotheses with p-values that force these 4 states,
+        using a single-family group so within-family = program-wide (same set).
+        To isolate combinations B and C we use TWO families:
+          - Family X (tight q): two hyps, one strong (A), one middling (B)
+            B clears within-family but fails across all Σ
+          - Family Y (null): one hyp always fails (C)
+        """
+        # Use actual ROSTER hypotheses so family membership resolves correctly.
+        # We need 3 hypotheses: pick F1-01, F1-02 (Family X), and F2-01 (Family Y).
+        # Set p-values so:
+        #   F1-01: very small -> survives both (A)
+        #   F1-02: moderate -> within-family passes, program-wide fails (B)
+        #   F2-01: large -> fails both (C)
+        #
+        # To force B: F1-02 must survive within F1 family (2 hypotheses, q=0.10)
+        # but fail program-wide (3 hypotheses total, stricter per-hypothesis threshold).
+        #
+        # BH within F1 family (m=2, q=0.10):
+        #   sorted: [0.001, 0.07]; thresholds: [0.05, 0.10]
+        #   0.001 <= 0.05 -> YES; 0.07 <= 0.10 -> YES. Both survive within-family.
+        # BH program-wide (m=3, q=0.10):
+        #   sorted: [0.001, 0.07, 0.90]; thresholds: [0.0333, 0.0667, 0.10]
+        #   0.001 <= 0.0333 -> YES; 0.07 > 0.0667 -> NO; 0.90 -> NO.
+        #   Only F1-01 survives program-wide.
+        #
+        # Results:
+        #   F1-01: within=True, program=True -> marginal=False (A)
+        #   F1-02: within=True, program=False -> marginal=True  (B)
+        #   F2-01: within=False, program=False -> marginal=False (C)
+        hids = ["F1-01", "F1-02", "F2-01"]
+        p_values = [0.001, 0.07, 0.90]
         result = run_program_wide_fdr(hids, p_values)
-        assert result["H1"]["survives_program_fdr"] is True
-        assert result["H1"]["program_fdr_marginal"] is False
-        assert result["H3"]["survives_program_fdr"] is False
-        assert result["H3"]["program_fdr_marginal"] is True
+
+        # Combination A: survives both -> marginal=False
+        assert result["F1-01"]["survives_program_fdr"] is True
+        assert result["F1-01"]["program_fdr_marginal"] is False, (
+            "A: fully-surviving hypothesis must NOT be marginal"
+        )
+
+        # Combination B: survives within-family but fails program-wide -> marginal=True
+        assert result["F1-02"]["survives_program_fdr"] is False
+        assert result["F1-02"]["program_fdr_marginal"] is True, (
+            "B: hypothesis that clears within-family q but fails program-wide MUST be marginal"
+        )
+
+        # Combination C: fails both -> marginal=False
+        assert result["F2-01"]["survives_program_fdr"] is False
+        assert result["F2-01"]["program_fdr_marginal"] is False, (
+            "C: hypothesis that fails both corrections must NOT be marginal"
+        )
+
+    def test_program_wide_fdr_returns_marginal_flag(self):
+        """run_program_wide_fdr marks non-surviving hypotheses as marginal only when within-family passes."""
+        # Use two real ROSTER hypotheses from the same family so within-family BH
+        # is run over them. F1-01 (very low p) survives both; F1-09 (high p) fails both.
+        hids = ["F1-01", "F1-09"]
+        p_values = [0.001, 0.90]
+        result = run_program_wide_fdr(hids, p_values)
+        # F1-01: strong signal — survives program-wide AND within-family -> not marginal
+        assert result["F1-01"]["survives_program_fdr"] is True
+        assert result["F1-01"]["program_fdr_marginal"] is False
+        # F1-09: fails both -> NOT marginal (fails within-family too with p=0.90 vs q=0.10 threshold)
+        assert result["F1-09"]["survives_program_fdr"] is False
+        assert result["F1-09"]["program_fdr_marginal"] is False
 
     def test_program_wide_fdr_full_roster_size(self):
         """Sanity: run_program_wide_fdr handles all 29 hypotheses."""
