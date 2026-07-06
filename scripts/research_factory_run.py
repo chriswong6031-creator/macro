@@ -137,19 +137,15 @@ def _route_candidate(
         projected = adapter_result.get("projected_state", "registered")
         re_refused = adapter_result.get("re_screen_refused", False)
 
-        if re_refused:
-            result["action"] = "no_action"
-            result["reason"] = (
-                f"oracle 63d re-screen refused (compound already screened per RF-13); "
-                f"projected={projected!r}"
-            )
-        elif projected == "screened":
-            result["action"] = "transition_screened"
-            result["reason"] = (
-                f"oracle compound {spec_ref!r} projected as screened "
-                f"(domain_status={adapter_result.get('domain_status')!r})"
-            )
-        elif projected == "numeric_rejected":
+        # Terminal transitions (numeric_rejected, awaiting_data) are dispatched
+        # FIRST — re_screen_refused must NOT suppress a terminal projection.  The
+        # re_refused flag means "do not re-invoke the 63d screen counter", not "take
+        # no factory action".  A refuted 63d compound has re_refused=True AND
+        # projected='numeric_rejected'; the kill_evidence the adapter built must be
+        # recorded (RF-5, RF-10).  re_refused is checked afterward only to handle
+        # the "screened-or-beyond but NOT terminal" case (accruing/promoted) where no
+        # auto-action should be taken.
+        if projected == "numeric_rejected":
             result["action"] = "transition_numeric_rejected"
             result["reason"] = (
                 f"oracle compound {spec_ref!r} projected as numeric_rejected "
@@ -161,6 +157,19 @@ def _route_candidate(
                 f"oracle compound {spec_ref!r} has blocked_missing_column "
                 f"— awaiting data"
             )
+        elif projected == "screened":
+            if re_refused:
+                result["action"] = "no_action"
+                result["reason"] = (
+                    f"oracle 63d re-screen refused (compound already screened per RF-13); "
+                    f"projected={projected!r}"
+                )
+            else:
+                result["action"] = "transition_screened"
+                result["reason"] = (
+                    f"oracle compound {spec_ref!r} projected as screened "
+                    f"(domain_status={adapter_result.get('domain_status')!r})"
+                )
         elif projected == "paper":
             result["action"] = "no_action"
             result["reason"] = (
@@ -172,6 +181,13 @@ def _route_candidate(
             result["reason"] = (
                 f"oracle compound {spec_ref!r} projected as promote_eligible "
                 f"(promoted) — requires human gate decision (RF-5)"
+            )
+        elif re_refused:
+            # Non-terminal projection with re-screen refused; generic no-action
+            result["action"] = "no_action"
+            result["reason"] = (
+                f"oracle 63d re-screen refused (compound already screened per RF-13); "
+                f"projected={projected!r}"
             )
         else:
             result["action"] = "no_action"

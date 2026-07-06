@@ -322,9 +322,15 @@ def route_compound(
         if projected_state == "numeric_rejected":
             rev = compound.get("reversion") or {}
             n_at_kill = rev.get("n") or 0
-            # Determine kill_class from reversion verdict (best proxy from block)
-            gauntlet_result = rev.get("gauntlet", "")
-            verdict_label = "REFUTED" if gauntlet_result != "PASS" else None
+            # Source the real verdict label from the reversion block so that
+            # UNDERPOWERED-ACCRUING verdicts are not laundered into 'falsified'
+            # (RF-10 kill_class fidelity; required for W6 requeue pointer).
+            # Priority: verdict_class > verdict > synthesise from gauntlet result.
+            verdict_label: str | None = (
+                rev.get("verdict_class")
+                or rev.get("verdict")
+                or ("REFUTED" if rev.get("gauntlet", "") != "PASS" else None)
+            )
             kill_evidence = {
                 "n_at_kill": n_at_kill,
                 "kill_class": _kill_class_from_verdict(verdict_label),

@@ -703,3 +703,181 @@ class TestCortexRouteAllWithFixture:
         results = route_all(tmp_path)
         assert results[0]["self_ref_excluded"] is True
         assert results[0]["firings_evidence"] is None
+
+
+# ===========================================================================
+# 12. Runner: refuted 63d compound → transition_numeric_rejected (major fix)
+#
+# Regression for finding: re_screen_refused must NOT suppress a terminal
+# numeric_rejected projection.  A refuted 63d compound (domain_status='refuted')
+# sets re_screen_refused=True AND projected='numeric_rejected'.  The runner must
+# emit action='transition_numeric_rejected' with kill_evidence — not 'no_action'.
+# ===========================================================================
+
+class TestRunnerRefuted63dTransition:
+    """Runner-level regression: refuted 63d compound gets transition, not no_action."""
+
+    def _write_candidates(self, rf_dir: Path, spec_ref: str) -> None:
+        rf_dir.mkdir(parents=True, exist_ok=True)
+        candidate = {
+            "schema": "research_factory.candidate.v1",
+            "authority": "display_only",
+            "candidate_id": "rf-cx-001",
+            "created_at": "2026-07-06T00:00:00Z",
+            "source": "oracle_brainstorm",
+            "candidate_type": "oracle_compound",
+            "domain": "oracle",
+            "status": "registered",
+            "hypothesis": "test refuted 63d",
+            "mechanism": "test",
+            "spec_ref": spec_ref,
+            "trial_accounting": {"mode": "read_only", "family": None},
+        }
+        (rf_dir / "candidates.jsonl").write_text(json.dumps(candidate) + "\n")
+
+    def _write_registry(self, tmp_path: Path, compound_id: str) -> None:
+        """Write a 63d-track compound (no reversion block) with status 'refuted'."""
+        oracle_dir = tmp_path / "oracle" / "compounds"
+        oracle_dir.mkdir(parents=True, exist_ok=True)
+        compound = {
+            "id": compound_id,
+            "status": "refuted",
+            "family": "X",
+            "entry_rule": {"col": "washout_w", "op": "gt", "value": 0},
+            "universe": {"tier": "s"},
+            # No 'reversion' block → 63d track
+        }
+        (oracle_dir / "registry.jsonl").write_text(json.dumps(compound) + "\n")
+
+    def test_refuted_63d_compound_yields_transition_numeric_rejected(self, tmp_path):
+        """Refuted 63d compound: action must be 'transition_numeric_rejected', not 'no_action'.
+
+        This is the core regression for RF-5 / RF-10 (finding: major).
+        re_screen_refused=True (correct — do not re-run the 63d screen counter)
+        must not override the terminal projected_state='numeric_rejected'.
+        """
+        rf_dir = tmp_path / "research_factory"
+        self._write_candidates(rf_dir, "CX_REFUTED")
+        self._write_registry(tmp_path, "CX_REFUTED")
+
+        from scripts.research_factory_run import run
+        summary = run(rf_dir=rf_dir, data_dir=tmp_path, dry_run=True, count=False)
+
+        assert len(summary["routes"]) == 1
+        route = summary["routes"][0]
+        assert route["action"] == "transition_numeric_rejected", (
+            f"Expected 'transition_numeric_rejected', got {route['action']!r}. "
+            f"reason: {route.get('reason')}"
+        )
+        assert route["projected_state"] == "numeric_rejected"
+
+    def test_refuted_63d_compound_kill_evidence_in_adapter_result(self, tmp_path):
+        """The adapter_result for a refuted 63d compound must carry kill_evidence."""
+        from engine.research_factory.adapter_oracle import route_compound
+        compound = {
+            "id": "CX",
+            "status": "refuted",
+            "family": "X",
+        }
+        result = route_compound(compound, data_dir=tmp_path, count=False)
+        assert result["projected_state"] == "numeric_rejected"
+        assert result["re_screen_refused"] is True, (
+            "re_screen_refused should still be True (do not re-run screen)"
+        )
+        # kill_evidence must be populated despite re_screen_refused (RF-10)
+        assert result["kill_evidence"] is not None, (
+            "kill_evidence must be populated for numeric_rejected even when re_screen_refused"
+        )
+        assert "n_at_kill" in result["kill_evidence"]
+        assert "kill_class" in result["kill_evidence"]
+
+
+# ===========================================================================
+# 13. Kill-class fidelity: underpowered-accruing reversion (minor fix)
+#
+# Reversion compounds whose registry reversion block carries
+# verdict_class='UNDERPOWERED-ACCRUING' (or verdict='UNDERPOWERED-ACCRUING')
+# must map to kill_class='underpowered_accruing', not 'falsified'.
+# ===========================================================================
+
+class TestUnderpoweredAccruingKillClassFidelity:
+    """Minor fix regression: real verdict sourced from reversion block."""
+
+    def _underpowered_reversion_compound(self, via_field: str = "verdict_class") -> dict:
+        """Reversion track compound with an UNDERPOWERED-ACCRUING verdict label.
+
+        gauntlet='PASS' is required for the reversion track discriminator
+        (is_reversion_track returns True only when gauntlet=='PASS').
+        The compound's domain status is 'refuted' so it projects to
+        'numeric_rejected'.  The real kill verdict is UNDERPOWERED-ACCRUING
+        and is stored in verdict_class / verdict rather than being synthesised
+        from the gauntlet result.
+        """
+        rev_block: dict = {
+            "gauntlet": "PASS",   # required to land on the reversion track
+            "n": 42,
+            "wr": 0.49,
+            "asym": 0.8,
+            "ret_exit": 0.001,
+            "risk_on": {"n": 20, "wr": 0.48},
+            "risk_off": {"n": 22, "wr": 0.50},
+        }
+        # Stamp the real verdict label into whichever field this test checks
+        rev_block[via_field] = "UNDERPOWERED-ACCRUING"
+        return {
+            "id": "A_UNDERPOWERED",
+            "family": "A",
+            "status": "refuted",
+            "reversion": rev_block,
+        }
+
+    def test_verdict_class_field_maps_underpowered_accruing(self, tmp_path):
+        """verdict_class='UNDERPOWERED-ACCRUING' → kill_class='underpowered_accruing'."""
+        from engine.research_factory.adapter_oracle import route_compound
+        compound = self._underpowered_reversion_compound(via_field="verdict_class")
+        result = route_compound(compound, data_dir=tmp_path, count=False)
+        assert result["projected_state"] == "numeric_rejected"
+        ke = result["kill_evidence"]
+        assert ke is not None
+        assert ke["kill_class"] == "underpowered_accruing", (
+            f"Expected 'underpowered_accruing', got {ke['kill_class']!r}. "
+            f"verdict_class in block should take priority over gauntlet synthesis."
+        )
+
+    def test_verdict_field_maps_underpowered_accruing(self, tmp_path):
+        """verdict='UNDERPOWERED-ACCRUING' → kill_class='underpowered_accruing' (fallback field)."""
+        from engine.research_factory.adapter_oracle import route_compound
+        compound = self._underpowered_reversion_compound(via_field="verdict")
+        result = route_compound(compound, data_dir=tmp_path, count=False)
+        ke = result["kill_evidence"]
+        assert ke is not None
+        assert ke["kill_class"] == "underpowered_accruing", (
+            f"Expected 'underpowered_accruing', got {ke['kill_class']!r}."
+        )
+
+    def test_no_verdict_field_falls_back_to_gauntlet_synthesis(self, tmp_path):
+        """Without verdict_class/verdict in block, fallback synthesises from gauntlet.
+
+        On the reversion track (gauntlet='PASS'), the fallback synthesis
+        yields None (gauntlet==PASS branch), which maps to 'falsified'.
+        This is the pre-existing behaviour for old registry rows that predate
+        the verdict_class field — they still record 'falsified', which is
+        correct (a PASS-gauntlet compound that ends up refuted is effectively
+        falsified unless explicitly marked otherwise).
+        """
+        from engine.research_factory.adapter_oracle import route_compound
+        compound = {
+            "id": "A_NO_VERDICT",
+            "family": "A",
+            "status": "refuted",
+            "reversion": {
+                "gauntlet": "PASS",   # reversion track; no verdict_class/verdict
+                "n": 30,
+                "wr": 0.45,
+            },
+        }
+        result = route_compound(compound, data_dir=tmp_path, count=False)
+        ke = result["kill_evidence"]
+        assert ke is not None
+        # Fallback: no verdict_class/verdict → gauntlet=='PASS' → synthesised None → 'falsified'
+        assert ke["kill_class"] == "falsified"
