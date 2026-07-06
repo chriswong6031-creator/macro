@@ -390,11 +390,78 @@ PANEL_NUMERIC = ["assets", "equity", "debt_lt", "shares", "ni", "gross_profit",
                  # with asof_date = period_end + reporting_lag_days (120d conservative proxy).
                  "op_income", "interest_exp"]
 
+# LT-1c: capex is NOT available from the EDGAR frames API (it is a sub-line of the
+# cash-flow statement that the frames endpoint does not serve as a standalone concept).
+# Instead it is joined from data/edgar/statements.parquet (statements-lane provenance)
+# by (ticker, fy) inside fetch_panel after the frames build, inheriting the SAME
+# asof_date convention (period_end + reporting_lag_days) as the existing panel rows.
+# Coverage is bounded by statements.parquet ticker×fy intersection (~87% of rows that
+# have a statements entry; see LT1_DATA_REPAIR_REPORT.md for statements coverage).
+PANEL_STATEMENTS_JOIN = ["capex"]  # fields joined from statements.parquet post-build
+
 
 def _panel_path():
     p = config.data_dir() / "edgar" / "fundamentals_panel.parquet"
     p.parent.mkdir(parents=True, exist_ok=True)
     return p
+
+
+def _join_statements_fields(panel: pd.DataFrame, fields: list[str]) -> pd.DataFrame:
+    """Join selected fields from data/edgar/statements.parquet into the panel by
+    (ticker, fy).  Fields in `fields` that already exist in the panel are
+    overwritten only where the panel value is NaN (statements-lane fills gaps).
+
+    PIT discipline: the joined values inherit the panel row's asof_date
+    (period_end + reporting_lag_days), which is an identical or slightly more
+    conservative lag than the statement's own period_end + 120d gate.  This is
+    correct: we are not introducing any new look-ahead beyond what the panel
+    already carries.
+
+    Returns the panel with `fields` added (or filled).  Rows with no matching
+    statement entry get NaN for the joined fields.  Never raises — on any error
+    the panel is returned unchanged with a warning logged.
+
+    Provenance note: fields joined via this function carry statements-lane
+    provenance (sourced from the SEC companyfacts collector edgar_facts.py rather
+    than from the EDGAR frames API used by the rest of the panel).
+    """
+    stmt_path = config.data_dir() / "edgar" / "statements.parquet"
+    if not stmt_path.exists():
+        log.warning("statements.parquet not found — %s will be all-NaN", fields)
+        for f in fields:
+            if f not in panel.columns:
+                panel = panel.copy()
+                panel[f] = float("nan")
+        return panel
+    try:
+        stmt = pd.read_parquet(stmt_path, columns=["ticker", "fy"] + fields)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("statements.parquet load failed (%s) — %s will be all-NaN", exc, fields)
+        for f in fields:
+            if f not in panel.columns:
+                panel = panel.copy()
+                panel[f] = float("nan")
+        return panel
+
+    # Deduplicate (ticker, fy) — keep last row if any duplicates exist
+    stmt = stmt.drop_duplicates(subset=["ticker", "fy"], keep="last")
+
+    panel = panel.copy()
+    merged = panel.merge(stmt, on=["ticker", "fy"], how="left", suffixes=("", "_stmt"))
+    for f in fields:
+        stmt_col = f"{f}_stmt" if f in panel.columns else f
+        if stmt_col in merged.columns:
+            if f in panel.columns:
+                # Fill NaN values in existing column from statements
+                merged[f] = merged[f].where(merged[f].notna(), merged[stmt_col])
+                merged = merged.drop(columns=[stmt_col])
+            else:
+                merged = merged.rename(columns={stmt_col: f})
+    log.info("panel statements join: %d rows, fields %s coverage: %s",
+             len(merged),
+             fields,
+             {f: int(merged[f].notna().sum()) for f in fields if f in merged.columns})
+    return merged
 
 
 def _panel_meta_path():
@@ -489,20 +556,30 @@ def fetch_panel(force: bool = False, max_age_days: int = 7,
     panel["period_end"] = pd.to_datetime(panel["period_end"], errors="coerce")
     panel["asof_date"] = panel["period_end"] + pd.Timedelta(days=lag)
     panel = panel.dropna(subset=["period_end"]).sort_values(["ticker", "fy"]).reset_index(drop=True)
+
+    # LT-1c: join capex (and other PANEL_STATEMENTS_JOIN fields) from statements.parquet.
+    # These fields are not available from the EDGAR frames API; they carry statements-lane
+    # provenance but inherit the same asof_date convention (period_end + lag) as the panel.
+    if PANEL_STATEMENTS_JOIN:
+        panel = _join_statements_fields(panel, PANEL_STATEMENTS_JOIN)
+
     panel.to_parquet(panel_p)
+    all_numeric = PANEL_NUMERIC + [f for f in PANEL_STATEMENTS_JOIN if f in panel.columns]
     _panel_meta_path().write_text(json.dumps({
         "built": datetime.now(timezone.utc).isoformat(),
         "fy_min": int(panel["fy"].min()), "fy_max": int(panel["fy"].max()),
         "reporting_lag_days": lag, "n_rows": int(len(panel)),
         "n_tickers": int(panel["ticker"].nunique()),
+        "statements_join_fields": PANEL_STATEMENTS_JOIN,
+        "capex_coverage": int(panel["capex"].notna().sum()) if "capex" in panel.columns else 0,
     }))
     log.info("edgar panel: %d rows, %d tickers, FY%d..%d",
              len(panel), panel["ticker"].nunique(), panel["fy"].min(), panel["fy"].max())
 
     # refresh the live latest-FY slice (back-compat with equity_factors live path)
     latest = panel[panel["fy"] == panel["fy"].max()].set_index("ticker")
-    keep = ["cik"] + PANEL_NUMERIC
-    latest[keep].to_parquet(_cache_path())
+    keep = ["cik"] + PANEL_NUMERIC + [f for f in PANEL_STATEMENTS_JOIN if f in panel.columns]
+    latest[[c for c in keep if c in latest.columns]].to_parquet(_cache_path())
     (config.data_dir() / "edgar" / "_meta.json").write_text(json.dumps({
         "built": datetime.now(timezone.utc).isoformat(), "fy": int(panel["fy"].max()),
         "n_tickers": int(len(latest)), "n_universe": len(universe),

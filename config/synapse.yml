@@ -3823,6 +3823,34 @@ artifacts:
       Horizon_role=context: this is a raw price store consumed only by the label
       harness; it has no direct behavioral surface.
 
+  # --- Long-Hold LT-1c: expanded ticker sector map ---
+  ticker-sectors:
+    path: data/breadth/ticker_sectors.parquet
+    format: parquet
+    producer: scripts/build_sector_map.py
+    known_extra_writers: []
+    owner_program: long-hold
+    cadence: on-demand
+    storage: git
+    asof_field: null
+    freshness_sla_hours: 8760
+    schema: implicit
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/research/long_hold_label_panel.py
+    external_consumers: []
+    notes: >
+      LT-1c: GICS + SIC-derived ticker->sector map. Sources: data/breadth/constituents.parquet
+      (S&P 500, gics_sp500), data/midcap_breadth/constituents.parquet (S&P 400, gics_sp400),
+      data/smallcap_breadth/constituents.parquet (S&P 600, gics_sp600), plus SIC text from
+      data/profile/profiles.parquet and numeric SIC from data/edgar/cik_sic.json.
+      Current coverage: 1516 tickers total, 1508/2589 sp1500_pit_membership (58.2%).
+      GICS entries are authoritative; sic_mapped entries are derived from SEC SIC codes.
+      FIREWALL: horizon_role=context. No scored_path_surfaces. Display-only context artifact.
+
   # --- Long-Hold label panel (W1 PR-E) ---
   long-hold-labels:
     path: data/research/long_hold_labels.parquet
