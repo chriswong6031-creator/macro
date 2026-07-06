@@ -46,11 +46,14 @@ def _make_oracle_candidate(
 ) -> dict:
     """Minimal oracle-shaped candidate for testing.
 
-    Permutation probe uses SIGN-FLIP permutation:
-      insensitive fixture: WR ≈ 50% (balanced outcomes). Sign-flipping barely changes WR.
-        real WR ≈ 50%, permuted p95 ≈ 50% >= 0.95 * 50% = 47.5% → insensitive=True
-      sensitive fixture: WR ≈ 100% (all positive). Sign-flipping destroys WR.
-        real WR = 100%, permuted p95 ≈ 50% < 0.95 * 100% = 95% → insensitive=False
+    Permutation probe uses SIGN-FLIP permutation and a p-value decision rule:
+      p = fraction of permuted WRs >= real_WR
+      input_insensitive=True when p > 0.10 (real WR not distinguishable from null)
+
+      insensitive fixture: WR = 50% (balanced outcomes).
+        ~50% of sign-permuted draws produce WR >= 50% → p ≈ 0.50 > 0.10 → insensitive=True
+      sensitive fixture: WR = 100% (all positive outcomes).
+        ~0% of sign-permuted draws produce WR >= 100% → p ≈ 0 < 0.10 → insensitive=False
     """
     outcomes = None
     if include_outcomes:
@@ -197,7 +200,7 @@ class TestBuildChallengeInput:
 
 class TestPermutationProbe:
     def test_insensitive_fixture_flags_true(self):
-        """Balanced-outcome fixture (WR=50%): sign-permuted WR ≈ 50% >= 47.5% → insensitive."""
+        """Balanced-outcome fixture (WR=50%): ~50% of sign-permuted draws >= 50% → p≈0.50 > 0.10 → insensitive."""
         from engine.research_factory.probes import permutation_probe
         candidate = _make_oracle_candidate(
             candidate_id="rf-test-insensitive",
@@ -205,15 +208,16 @@ class TestPermutationProbe:
             outcomes_insensitive=True,  # builds balanced outcomes: 50% WR
         )
         result = permutation_probe(candidate)
-        # real WR = 50%; permuted (sign-flip) WR ≈ 50%; threshold = 0.95*50% = 47.5%
-        # → 50% >= 47.5% → input_insensitive = True
+        # real WR = 50%; sign-permuted WR clusters at ~50%; p ≈ 0.50 > 0.10 → insensitive=True
         assert result["input_insensitive"] is True
         assert isinstance(result["real_metric"], float)
-        assert isinstance(result["permuted_p95"], float)
+        assert isinstance(result["permuted_p_value"], float)
+        # p-value should be large (near 0.50) for a balanced fixture
+        assert result["permuted_p_value"] > 0.10
         assert result["n_permutations"] > 0
 
     def test_sensitive_fixture_flags_false(self):
-        """All-positive outcomes (WR=100%): sign-permuted WR ≈ 50% < 95% → NOT insensitive."""
+        """All-positive outcomes (WR=100%): ~0% of sign-permuted draws >= 100% → p≈0 < 0.10 → NOT insensitive."""
         from engine.research_factory.probes import permutation_probe
         candidate = _make_oracle_candidate(
             candidate_id="rf-test-sensitive",
@@ -221,10 +225,11 @@ class TestPermutationProbe:
             outcomes_insensitive=False,  # builds all-positive outcomes: 100% WR
         )
         result = permutation_probe(candidate)
-        # real WR = 100%; permuted (sign-flip) WR ≈ 50%; threshold = 0.95*100% = 95%
-        # → 50% < 95% → input_insensitive = False
+        # real WR = 100%; sign-permuted WR ≈ 50%; p ≈ 0 (no perm reaches 100%) → insensitive=False
         assert result["input_insensitive"] is False
         assert abs(result["real_metric"] - 1.0) < 0.01
+        # p-value should be very small (near 0) for all-positive outcomes
+        assert result["permuted_p_value"] < 0.10
 
     def test_missing_data_returns_not_applicable(self):
         """No per-fire data → not_applicable sentinel, never null."""
@@ -248,7 +253,7 @@ class TestPermutationProbe:
         r1 = permutation_probe(candidate)
         r2 = permutation_probe(candidate)
         assert r1["input_insensitive"] == r2["input_insensitive"]
-        assert r1["permuted_p95"] == r2["permuted_p95"]
+        assert r1["permuted_p_value"] == r2["permuted_p_value"]
 
 
 # ===========================================================================
@@ -667,3 +672,173 @@ class TestEndToEnd:
         assert t2["from"] == "challenged" and t2["to"] == "human_review"
         assert t1["actor"] == "script"
         assert t2["actor"] == "script"
+
+
+# ===========================================================================
+# 17. Outcome-blindness whitelist (RF-7b — finding 2 fix)
+# ===========================================================================
+
+class TestOutcomeBlindnessWhitelist:
+    """Verify that outcome-revealing scalars in reversion_screen are blocked."""
+
+    def test_outcome_revealing_scalars_not_in_aggregate_metrics(self, tmp_path):
+        """best_fire_return, per_fire_max_gain must not appear in aggregate_metrics."""
+        from engine.research_factory.challenge import build_challenge_input
+
+        cand = _make_oracle_candidate()
+        # Inject outcome-revealing scalars into reversion_screen
+        cand["artifacts"]["reversion_screen"] = {
+            "n": 200,
+            "WR": 0.68,
+            "gauntlet": "PASS",
+            # These should be blocked by the whitelist:
+            "best_fire_return": 0.44,
+            "per_fire_max_gain": 0.51,
+            "max_drawdown_realized": -0.12,
+            "post_fire_alpha": 0.07,
+        }
+
+        packet = build_challenge_input(cand, root=tmp_path)
+        agg = packet["aggregate_metrics"]
+
+        # Outcome-revealing scalars must NOT appear
+        assert "best_fire_return" not in agg, "best_fire_return leaked into aggregate_metrics"
+        assert "per_fire_max_gain" not in agg, "per_fire_max_gain leaked into aggregate_metrics"
+        assert "max_drawdown_realized" not in agg, "max_drawdown_realized leaked into aggregate_metrics"
+        assert "post_fire_alpha" not in agg, "post_fire_alpha leaked into aggregate_metrics"
+
+        # Whitelisted keys must still be present
+        assert agg.get("WR") == 0.68 or agg.get("n") == 200
+
+    def test_whitelisted_keys_pass_through(self, tmp_path):
+        """Aggregate keys in _AGGREGATE_METRIC_KEYS pass through the whitelist."""
+        from engine.research_factory.challenge import build_challenge_input, _AGGREGATE_METRIC_KEYS
+
+        cand = _make_oracle_candidate()
+        cand["artifacts"]["reversion_screen"] = {
+            "n": 150,
+            "wr": 0.65,
+            "asym": 1.8,
+            "ret_exit": 0.015,
+            "gauntlet": "PASS",
+            "outcome_poison": 0.99,  # must be blocked
+        }
+
+        packet = build_challenge_input(cand, root=tmp_path)
+        agg = packet["aggregate_metrics"]
+
+        assert "outcome_poison" not in agg
+        # At least some whitelisted keys should be present (may be overridden by reversion block)
+        # The reversion block from the fixture also sets n/wr; either source is fine
+        assert "n" in agg or "wr" in agg or "WR" in agg
+
+
+# ===========================================================================
+# 18. State machine enforcement via _transition (finding 3 fix)
+# ===========================================================================
+
+class TestStateMachineEnforcement:
+    """Verify _transition routes through state.transition and raises on violations."""
+
+    def test_illegal_transition_pair_raises(self, tmp_path):
+        """_transition must raise IllegalTransition on disallowed from→to pair."""
+        from engine.research_factory.challenge import _transition
+        from engine.research_factory.state import IllegalTransition
+
+        rf_dir = tmp_path / "data" / "research_factory"
+        rf_dir.mkdir(parents=True)
+        (rf_dir / "transitions.jsonl").write_text("", encoding="utf-8")
+
+        with pytest.raises(IllegalTransition):
+            _transition(
+                "rf-test-illegal",
+                from_state="paper",           # paper→challenged is NOT in allowed matrix
+                to_state="challenged",
+                reason_code="test",
+                reason_text="should fail",
+                challenge_ref="challenges/rf-test-illegal.json",
+                root=tmp_path,
+            )
+
+        # Nothing should have been written
+        lines = [
+            l for l in (rf_dir / "transitions.jsonl").read_text().splitlines()
+            if l.strip()
+        ]
+        assert lines == [], "No row should be written when state machine rejects"
+
+    def test_script_actor_blocked_from_human_gate_target(self, tmp_path):
+        """Script actor cannot transition to 'paper' (human-gate target)."""
+        from engine.research_factory.challenge import _transition
+        from engine.research_factory.state import IllegalTransition
+
+        rf_dir = tmp_path / "data" / "research_factory"
+        rf_dir.mkdir(parents=True)
+        (rf_dir / "transitions.jsonl").write_text("", encoding="utf-8")
+
+        # human_review → paper is allowed pair, but only for human actors (fable/operator)
+        with pytest.raises(IllegalTransition, match="script"):
+            _transition(
+                "rf-test-actor-gate",
+                from_state="human_review",
+                to_state="paper",
+                reason_code="test",
+                reason_text="script actor trying to enter paper",
+                root=tmp_path,
+            )
+
+    def test_idempotency_guard_blocks_re_run(self, tmp_path):
+        """apply_challenge_transitions must raise ValueError if candidate already past screened."""
+        from engine.research_factory.challenge import (
+            build_challenge_input, write_challenge, apply_challenge_transitions,
+        )
+
+        cand = _make_oracle_candidate(candidate_id="rf-idempotency-test")
+        cid = cand["candidate_id"]
+
+        rf_dir = tmp_path / "data" / "research_factory"
+        rf_dir.mkdir(parents=True)
+        transitions_path = rf_dir / "transitions.jsonl"
+        transitions_path.write_text("", encoding="utf-8")
+
+        packet = build_challenge_input(cand, root=tmp_path)
+        resp = _make_valid_reviewer_response(cid)
+        challenge_path = write_challenge(cid, packet, reviewer_response=resp, root=tmp_path)
+
+        # First call should succeed
+        apply_challenge_transitions(cid, challenge_path, root=tmp_path)
+
+        # Second call on same candidate (now in human_review) must raise
+        with pytest.raises(ValueError, match="already in state"):
+            apply_challenge_transitions(cid, challenge_path, root=tmp_path)
+
+        # Verify only 2 transition rows (not 4) in the log
+        lines = [l for l in transitions_path.read_text().splitlines() if l.strip()]
+        assert len(lines) == 2, f"Expected 2 rows but got {len(lines)}"
+
+    def test_legal_transitions_still_write(self, tmp_path):
+        """Valid screened→challenged→human_review pair writes two rows."""
+        from engine.research_factory.challenge import (
+            build_challenge_input, write_challenge, apply_challenge_transitions,
+        )
+
+        cand = _make_oracle_candidate(candidate_id="rf-legal-transitions-test")
+        cid = cand["candidate_id"]
+
+        rf_dir = tmp_path / "data" / "research_factory"
+        rf_dir.mkdir(parents=True)
+        (rf_dir / "transitions.jsonl").write_text("", encoding="utf-8")
+
+        packet = build_challenge_input(cand, root=tmp_path)
+        challenge_path = write_challenge(cid, packet, root=tmp_path)
+        apply_challenge_transitions(cid, challenge_path, root=tmp_path)
+
+        lines = [
+            l for l in (rf_dir / "transitions.jsonl").read_text().splitlines()
+            if l.strip()
+        ]
+        assert len(lines) == 2
+        row = json.loads(lines[0])
+        assert row["from"] == "screened"
+        assert row["to"] == "challenged"
+        assert row["actor"] == "script"

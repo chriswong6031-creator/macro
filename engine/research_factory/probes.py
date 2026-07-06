@@ -194,9 +194,11 @@ _NOT_APPLICABLE_SENTINEL = {
     "note": "no per-fire outcome arrays present in artifacts",
 }
 
-# Threshold: if the permuted headline reaches within this fraction of the real,
-# the probe flags input_insensitive=True.
-_INSENSITIVE_MARGIN = 0.95   # permuted p95 >= 0.95 * real_metric => input insensitive
+# Permutation p-value threshold: flag input_insensitive when the real WR is NOT
+# distinguishable from the sign-flip null (p > threshold means the null cannot
+# be rejected at that level).  This is n-aware by construction — the null
+# spread enters the p-value, not a fixed ratio of the real metric.
+_INSENSITIVE_P_THRESHOLD = 0.10   # p > 0.10 → real WR not distinguishable from null
 
 # Permutation count and seed derivation
 _N_PERMUTATIONS = 200
@@ -231,16 +233,27 @@ def permutation_probe(candidate: dict) -> dict[str, Any]:
     """Run a label-permutation robustness check.
 
     When per-fire outcome arrays are present in the candidate's artifacts
-    (under any of the recognised paths below), runs N=200 label permutations
-    seeded from the candidate_id hash and checks whether the permuted headline
-    metric (win-rate) reaches within _INSENSITIVE_MARGIN of the real metric.
+    (under any of the recognised paths below), runs N=200 sign-permutations
+    seeded from the candidate_id hash and computes a permutation p-value:
+
+        p = fraction of permuted WRs >= real_WR
+
+    Flags input_insensitive=True when p > _INSENSITIVE_P_THRESHOLD (0.10),
+    i.e. the real WR cannot be distinguished from the sign-flip null at the
+    10% level.  This is n-aware by construction: the null spread enters the
+    p-value, so the same true WR does not flip the flag purely on sample size.
+
+    A genuine reversion edge (e.g. WR=0.55-0.65 at n=200) will have few
+    permuted WRs >= real_WR, yielding a small p-value and input_insensitive=False.
+    An input-insensitive rule (WR ≈ 50% at any n) will have ~50% of permuted
+    WRs >= real_WR, yielding p ≈ 0.50 >> 0.10 → input_insensitive=True.
 
     Returns
     -------
     dict with keys:
         "input_insensitive"  : bool | "not_applicable"
         "real_metric"        : float | None
-        "permuted_p95"       : float | None
+        "permuted_p_value"   : float | None  (fraction of perms >= real)
         "n_permutations"     : int
         "note"               : str (diagnostic)
 
@@ -282,26 +295,26 @@ def permutation_probe(candidate: dict) -> dict[str, Any]:
             "note": "permutation loop produced no valid metrics",
         }
 
-    permuted_metrics.sort()
-    # p95 of permuted distribution
-    idx = max(0, int(0.95 * len(permuted_metrics)) - 1)
-    p95 = permuted_metrics[idx]
+    # Permutation p-value: fraction of permuted WRs >= real WR.
+    # Large p → real WR is not unusual relative to sign-flip null → insensitive.
+    # Small p → real WR is in the tail of the null → genuine edge.
+    n_perm = len(permuted_metrics)
+    n_ge_real = sum(1 for m in permuted_metrics if m >= real_metric)
+    perm_p_value = n_ge_real / n_perm
 
-    # Flag: insensitive when permuted p95 reaches within margin of real
-    if real_metric <= 0:
-        input_insensitive = True
-    else:
-        input_insensitive = p95 >= _INSENSITIVE_MARGIN * real_metric
+    # input_insensitive=True when p > threshold (real WR not distinguishable from null)
+    input_insensitive = perm_p_value > _INSENSITIVE_P_THRESHOLD
 
     return {
         "input_insensitive": input_insensitive,
         "real_metric": real_metric,
-        "permuted_p95": p95,
-        "n_permutations": len(permuted_metrics),
+        "permuted_p_value": perm_p_value,
+        "n_permutations": n_perm,
         "note": (
             f"seed={seed}; real_wr={real_metric:.4f}; "
-            f"permuted_p95={p95:.4f}; "
-            f"threshold={_INSENSITIVE_MARGIN * real_metric:.4f}; "
+            f"perm_p={perm_p_value:.4f} "
+            f"(n_ge_real={n_ge_real}/{n_perm}); "
+            f"threshold={_INSENSITIVE_P_THRESHOLD}; "
             f"insensitive={input_insensitive}"
         ),
     }

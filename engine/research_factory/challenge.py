@@ -49,10 +49,15 @@ _EXCLUDED_KEYS = frozenset({
     "transition_log",
 })
 
-# Which aggregate metrics to include (outcome-blind summary)
+# Which aggregate metrics to include (outcome-blind summary).
+# Used as a WHITELIST for the reversion_screen artifact path (RF-7b):
+# only these keys are emitted; any outcome-revealing scalar not listed here
+# is silently dropped even if it appears in the reversion_screen dict.
 _AGGREGATE_METRIC_KEYS = frozenset({
     "n", "WR", "wr", "asym", "ret_exit", "mean_ret_exit",
     "mean_MFE", "mean_MAE",
+    # Gauntlet / risk-regime summary keys (safe — no per-fire outcome signal)
+    "gauntlet", "search_width_at_scan", "risk_on", "risk_off", "asof",
 })
 
 # ---------------------------------------------------------------------------
@@ -318,16 +323,17 @@ def _extract_aggregate_metrics(candidate: dict) -> dict[str, Any]:
             if k in rev_block:
                 out[k] = rev_block[k]
 
-    # Screen artifact (reversion_screen)
+    # Screen artifact (reversion_screen) — WHITELIST ONLY (RF-7b).
+    # We must not pass outcome-revealing scalars such as best_fire_return,
+    # per_fire_max_gain, or max_drawdown_realized even if they are not lists.
+    # Only the keys in _AGGREGATE_METRIC_KEYS are emitted; everything else is
+    # dropped.  This mirrors the reversion-block path (lines above) which also
+    # uses a fixed key set.
     rev_screen = artifacts.get("reversion_screen") or {}
     if isinstance(rev_screen, dict):
-        for k, val in rev_screen.items():
-            if k in _EXCLUDED_KEYS:
-                continue
-            if isinstance(val, list):
-                # Skip series data
-                continue
-            out[k] = val
+        for k in _AGGREGATE_METRIC_KEYS:
+            if k in rev_screen:
+                out[k] = rev_screen[k]
 
     # screen_result artifact
     screen_result = artifacts.get("screen_result") or {}
@@ -527,6 +533,25 @@ def write_challenge(
 # State transitions after a valid challenge write (RF-5, RF-7)
 # ---------------------------------------------------------------------------
 
+def _load_candidate(candidate_id: str, root: Path) -> dict | None:
+    """Load the candidate dict from candidates.jsonl (absent-safe).
+
+    Returns the most-recent row for ``candidate_id``, or None if not found.
+    Used by _transition to give state.transition a candidate context for the
+    screened-gate, as_of-monotonic, and respin checks (RF-5/RF-6).
+    """
+    from engine.research_factory.ledger import load_jsonl, DEFAULT_RF_DIR
+
+    cands_path = root / DEFAULT_RF_DIR / "candidates.jsonl"
+    rows = load_jsonl(cands_path)
+    # Most-recent row wins (last occurrence per candidate_id)
+    candidate = None
+    for row in rows:
+        if row.get("candidate_id") == candidate_id:
+            candidate = row
+    return candidate
+
+
 def _transition(
     candidate_id: str,
     from_state: str,
@@ -538,10 +563,16 @@ def _transition(
 ) -> None:
     """Append one transition row to transitions.jsonl.
 
-    Mechanical actor ('script').  Does NOT validate candidate existence.
+    Routes through engine.research_factory.state.transition to enforce the
+    RF-5 allowed-pair matrix, actor-class gate (script actors barred from
+    human-gate targets), mandatory-field-per-destination gate, and monotonic
+    as_of — raising IllegalTransition on any violation.
+
+    Mechanical actor ('script').
     """
     from engine.research_factory.ledger import append_row, DEFAULT_RF_DIR
     from engine.research_factory.schema import validate_transition
+    from engine.research_factory.state import transition as state_transition
 
     _root = root or Path(".")
     now = datetime.now(timezone.utc).isoformat(timespec="seconds")
@@ -563,11 +594,51 @@ def _transition(
     if to_state == "human_review":
         row["review_packet_ref"] = challenge_ref or f"challenges/{candidate_id}.json"
 
+    # Load candidate for screened-gate + monotonic as_of checks (absent-safe).
+    candidate = _load_candidate(candidate_id, _root)
+
+    # Enforce the state machine BEFORE writing.  Raises IllegalTransition on any violation.
+    state_transition(
+        from_state=from_state,
+        to_state=to_state,
+        actor="script",
+        transition_row=row,
+        candidate=candidate,
+    )
+
     transitions_path = _root / DEFAULT_RF_DIR / "transitions.jsonl"
     append_row(transitions_path, row, validate_fn=validate_transition)
     log.info(
         "transition: %s %s→%s (reason=%s)", candidate_id, from_state, to_state, reason_code
     )
+
+
+def _get_candidate_current_status(candidate_id: str, root: Path) -> str | None:
+    """Read the candidate's current status from the transitions log.
+
+    Scans transitions.jsonl for the last transition row for this candidate_id
+    and returns the ``to`` state.  Falls back to reading the candidate row's
+    ``status`` field if no transition rows exist.  Returns None when the
+    candidate cannot be found at all.
+    """
+    from engine.research_factory.ledger import load_jsonl, DEFAULT_RF_DIR
+
+    # Prefer the last transition row (transitions.jsonl is authoritative)
+    transitions_path = root / DEFAULT_RF_DIR / "transitions.jsonl"
+    rows = load_jsonl(transitions_path)
+    last_to: str | None = None
+    for row in rows:
+        if row.get("candidate_id") == candidate_id:
+            last_to = row.get("to")
+    if last_to is not None:
+        return last_to
+
+    # Fall back to the candidate row's status field
+    candidate = _load_candidate(candidate_id, root)
+    if candidate is not None:
+        return candidate.get("status")
+
+    return None
 
 
 def apply_challenge_transitions(
@@ -583,7 +654,24 @@ def apply_challenge_transitions(
       challenged → human_review  (unconditional — every challenged candidate enters the queue)
 
     Both are mechanical (actor='script').
+
+    Idempotency guard (RF-5 audit-log integrity): if the candidate is already
+    past ``screened`` (i.e. a prior run already applied the transitions), this
+    call raises ValueError rather than appending spurious out-of-order rows to
+    the append-only audit log.  Re-running --ingest-response on a candidate
+    that is already in ``challenged`` or ``human_review`` is a caller error.
     """
+    _root = root or Path(".")
+    current_status = _get_candidate_current_status(candidate_id, _root)
+
+    if current_status not in (None, "screened"):
+        raise ValueError(
+            f"apply_challenge_transitions: candidate {candidate_id!r} is already in "
+            f"state {current_status!r} — cannot re-apply screened→challenged→human_review. "
+            f"Re-running --ingest-response on a candidate that is already past 'screened' "
+            f"would corrupt the append-only audit log."
+        )
+
     challenge_ref = str(challenge_path)
 
     _transition(

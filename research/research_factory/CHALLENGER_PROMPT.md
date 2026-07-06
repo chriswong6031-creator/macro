@@ -47,7 +47,7 @@ Ask:
 - The `trial_ledger_families` list in `dedup_context` shows all registered families. Is this candidate's family already counted? If a new family has not been registered before the screen, flag `data` blocker (trial counting may have been sidestepped).
 - Win-rate as the primary metric: is it computed on independent draws? Are fires clustered (multiple nodes, same week)? Cluster-adjusted standard errors may be required.
 - OOS holdout: is the split pre-registered, or does it appear chosen post-hoc to maximize the holdout metric? The regime split (single-regime path) — was the path chosen before or after seeing the data?
-- Is the timing-placebo (Leg 6) a matched placebo, or could it be defeated by regime clustering?
+- Is the timing-placebo (Leg 6) a matched placebo, or could it be defeated by regime clustering? **Important:** when the `gauntlet_legs` block contains only a `gauntlet_overall` verdict (no individual leg5/leg6 entries), the OOS holdout (Leg 5) and timing placebo (Leg 6) are subsumed in the aggregate verdict and their individual p-values are unavailable. Treat their absence as a gap to note, not as evidence of a pass or fail — do not assert an individual leg verdict that is not in the packet.
 - MDE@80%: if power is low, the PASS verdict may be a Type-II error; note accrual recommendation without treating it as a kill.
 - What would the expected WR be under random-timing null? If the timing placebo p-value is marginal, flag it.
 
@@ -102,7 +102,7 @@ The following table is embedded per RF-14. Check the candidate's hypothesis and 
 ## MECHANICAL PROBES (already computed — do not re-derive)
 
 The packet's `mechanical_probes` block contains pre-computed flags:
-- `input_insensitive`: if `true`, the permutation probe found that win-rate reaches within 95% of real on shuffled labels — a strong overfit signal; incorporate in your assessment.
+- `input_insensitive`: if `true`, the permutation probe found that the real win-rate is not distinguishable from a sign-permuted null (permutation p-value > 0.10, i.e. more than 10% of sign-permuted label draws produce an equal or higher WR). This is n-aware by construction. A true edge (WR 0.55–0.65 at n≥100) will typically have p < 0.05; flag=true indicates the rule may be insensitive to the actual outcome signs. Incorporate in your assessment but note the probe is advisory (RF-7a).
 - `near_dup.flagged`: if `true`, the structural near-dup check fired; the nearest match is listed.
 - `mechanism_spec_mismatch`: if `true`, the mechanism text does not reference the rule's columns.
 - `recent_only_columns`: if `true`, the rule uses 2021+-only columns that prevent cross-era promotion.
