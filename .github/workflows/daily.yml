@@ -1019,6 +1019,21 @@ jobs:
         # engine-render.yml (express lane) also runs this step — its regime/market_state
         # recompute would otherwise drift ahead of the committed world_state copies.
         run: python -m scripts.build_world_state || echo "::warning::build_world_state failed (non-fatal) — keeping last committed world_state"
+      - name: fetch oracle panels from R2 (PR-C1 sponsorship shim)
+        if: always()
+        # PR-C1 (RUL-7): oracle panel_s.parquet + panel_m.parquet are built off-render
+        # on the Mac (scripts/oracle_nightly.py + publish_oracle_panels.py) and published
+        # to R2 under the oracle/ prefix.  Download them here so build_bottom_sensors can
+        # populate sponsorship_state for the ~1,489+ sector-mapped tickers.
+        # Absent-object-safe: if R2 objects are missing the connector degrades to
+        # 'unavailable' — this step NEVER crashes the build (always exits 0).
+        # No-op when R2 creds are absent (non-prod builds, forks).
+        env:
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: python -m scripts.fetch_oracle_panels || echo "::warning::fetch_oracle_panels failed (non-fatal — sponsorship_state will be unavailable)"
       - name: build bottom-sensor envelope (NW Rails B0)
         if: always()
         # Display-only (no ranking/gating/money-path) — assembles the bottom-sensor

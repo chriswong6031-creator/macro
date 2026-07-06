@@ -224,6 +224,11 @@ ObsidianBrain/
 # also excluded to avoid stale snapshots in git.
 # Mirror pattern: data/massive_stock_day/*.parquet above.
 data/oracle/*.parquet
+# RUL-P10 explicit entries: panel_s/m must never ride a blanket 'git add data/'
+# (45 MB total — R2 only, served via scripts/publish_oracle_panels.py).
+# Already covered by the glob above; explicit lines guard against glob removal.
+data/oracle/panel_s.parquet
+data/oracle/panel_m.parquet
 data/oracle/manifest.json
 # Oracle graph outputs (O1) — heavy JSON artifacts; published to R2 per D5
 data/oracle/graph_s.json

@@ -82,6 +82,14 @@ table.qa-tbl td.dash { color:var(--muted); }
 .eqb-C { background:color-mix(in srgb,var(--warn) 15%,transparent); color:var(--warn); }
 .eqb-D { background:color-mix(in srgb,#d23f3f 15%,transparent); color:#d23f3f; }
 
+/* sponsorship state badges (PR-C1: oracle panel connector) */
+.sp-badge { display:inline-block; padding:2px 7px; border-radius:5px; font-size:11px; font-weight:700; white-space:nowrap; }
+.sp-tailwind  { background:color-mix(in srgb,var(--up) 15%,transparent); color:var(--up); border:1px solid color-mix(in srgb,var(--up) 30%,transparent); }
+.sp-headwind  { background:color-mix(in srgb,#d23f3f 15%,transparent); color:#d23f3f; border:1px solid color-mix(in srgb,#d23f3f 30%,transparent); }
+.sp-neutral   { background:var(--panel2); color:var(--muted); border:1px solid var(--line); }
+.sp-stale     { background:color-mix(in srgb,var(--warn) 10%,transparent); color:var(--warn); border:1px solid color-mix(in srgb,var(--warn) 25%,transparent); }
+.sp-unavailable { color:var(--muted); }
+
 /* dist coloring — zh UP/DOWN token flip applies via --up/--down vars */
 .dist-near { color:var(--up); font-weight:600; }   /* near 21d low = potential bottom */
 .dist-far  { color:var(--down); font-weight:600; } /* far from 21d low = chase risk */
@@ -145,6 +153,19 @@ html[data-lang="zh"] .dist-far  { color:var(--down); } /* --down already swapped
   {% endif %}
   {% endfor %}
   {% endif %}
+  {# Sponsorship coverage counts (PR-C1) #}
+  {% if sponsorship_populated is defined and sponsorship_populated > 0 %}
+  <div class="qa-stat qs-accent">
+    <div class="qs-val">{{ sponsorship_populated }}</div>
+    <div class="qs-lbl">{{ t('Sponsorship populated', '赞助状态已填充') }}</div>
+  </div>
+  {% endif %}
+  {% if sponsorship_unavailable is defined and sponsorship_unavailable > 0 %}
+  <div class="qa-stat">
+    <div class="qs-val">{{ sponsorship_unavailable }}</div>
+    <div class="qs-lbl">{{ t('Sponsorship unavailable', '赞助状态不可用') }}</div>
+  </div>
+  {% endif %}
 </div>
 
 {# ── Filter controls ── #}
@@ -171,6 +192,15 @@ html[data-lang="zh"] .dist-far  { color:var(--down); } /* --down already swapped
     <option value="T3">T3</option>
     <option value="T4">T4</option>
     <option value="none">{{ t('No tier', '无层级') }}</option>
+  </select>
+  <label for="qa-sp-filter">{{ t('Sponsorship:', '赞助状态：') }}</label>
+  <select id="qa-sp-filter" onchange="qaFilter()">
+    <option value="">{{ t('All', '全部') }}</option>
+    <option value="tailwind">tailwind</option>
+    <option value="headwind">headwind</option>
+    <option value="neutral">neutral</option>
+    <option value="stale">stale</option>
+    <option value="unavailable">unavailable</option>
   </select>
 </div>
 <div class="qa-count"><span id="qa-count-num">{{ n_rows }}</span> {{ t('rows shown', '行显示') }}</div>
@@ -209,6 +239,9 @@ html[data-lang="zh"] .dist-far  { color:var(--down); } /* --down already swapped
   <th onclick="qaSort('hold_state')" data-col="hold_state"
     data-tip-en="Hold state from the hold engine (launched / intact / basing / stopped). Dash = no active hold record."
     data-tip-zh="持有状态来自持有引擎（launched/intact/basing/stopped）。横线=无活跃持有记录。">{{ t('Hold State','持有状态') }} <span class="sort-ind">↕</span></th>
+  <th onclick="qaSort('sponsorship_state')" data-col="sponsorship_state"
+    data-tip-en="Oracle panel sponsorship: tailwind = sector vel>0 &amp; accel>0; headwind = vel&lt;0 &amp; accel&lt;0; neutral = mixed; stale = panel row older than 5 trading days; unavailable = no sector mapping or panel absent (PR-C1)."
+    data-tip-zh="Oracle面板赞助状态：tailwind=板块速度>0且加速度>0；headwind=速度&lt;0且加速度&lt;0；neutral=混合；stale=面板行超过5个交易日；unavailable=无板块映射或面板缺失（PR-C1）。">{{ t('Sponsorship','赞助状态') }} <span class="sort-ind">↕</span></th>
 </tr>
 </thead>
 <tbody id="qa-tbody">
@@ -224,6 +257,7 @@ html[data-lang="zh"] .dist-far  { color:var(--down); } /* --down already swapped
 {% set squeeze = r.get('squeeze_state') %}
 {% set earn_days = r.get('earnings_days_to') %}
 {% set hold_st = r.get('hold_state') %}
+{% set sp_st = r.get('sponsorship_state') or 'unavailable' %}
 <tr
   data-sym="{{ sym }}"
   data-symbol="{{ sym }}"
@@ -238,7 +272,8 @@ html[data-lang="zh"] .dist-far  { color:var(--down); } /* --down already swapped
   data-entry_quality_band="{{ eqb if eqb is not none else '' }}"
   data-squeeze_state="{{ squeeze if squeeze is not none else '' }}"
   data-earnings_days_to="{{ earn_days if earn_days is not none else '' }}"
-  data-hold_state="{{ hold_st if hold_st is not none else '' }}">
+  data-hold_state="{{ hold_st if hold_st is not none else '' }}"
+  data-sponsorship_state="{{ sp_st }}">
   <td class="sym">{{ sym }}</td>
   <td><span class="bs-badge bs-{{ state }}">{{ state }}</span></td>
   <td>
@@ -266,6 +301,13 @@ html[data-lang="zh"] .dist-far  { color:var(--down); } /* --down already swapped
   <td>{% if squeeze is not none and squeeze != '' %}{{ squeeze }}{% else %}<span class="dash">—</span>{% endif %}</td>
   <td class="num">{% if earn_days is not none %}{{ earn_days | int }}{% else %}<span class="dash">—</span>{% endif %}</td>
   <td>{% if hold_st is not none and hold_st != '' %}{{ hold_st }}{% else %}<span class="dash">—</span>{% endif %}</td>
+  <td>
+    {% if sp_st and sp_st != 'unavailable' %}
+      <span class="sp-badge sp-{{ sp_st }}">{{ sp_st }}</span>
+    {% else %}
+      <span class="sp-unavailable dash">—</span>
+    {% endif %}
+  </td>
 </tr>
 {% endfor %}
 </tbody>
@@ -280,14 +322,16 @@ html[data-lang="zh"] .dist-far  { color:var(--down); } /* --down already swapped
     <p><strong>These labels are display-only.</strong> They rank nothing, gate nothing, and trigger no alerts. No label here has earned ranking authority in a pre-registered backtest family. Promotion of any label to ranking or gating authority requires its own pre-registered study with a published protocol.</p>
     <p><strong>State meanings (v1):</strong> HOLD_LAUNCHED = a name the hold engine has marked as launched (take-anchored). FRESH_FIRE_DURABLE_CAND = fresh T1–T3 signal within 2 ticks, coiled setup, near 21-day low. FRESH_FIRE_TACTICAL = fresh T1–T3 signal, not coiled. CHASE_RISK = signal present but stale or far from low. DEAD_MONEY_RISK = hold engine shows basing with minimal movement. EARLY_WATCH = drawing down from 126-day high with a near cross-signal. KNIFE_RISK = knife-block condition binding. WATCH = default.</p>
     <p><strong>Overlays:</strong> EVENT_BLACKOUT = earnings within 3 trading days (per-row fresh rule). COILED = volatility compressed. STAR = high-conviction setup flag.</p>
-    <p><strong>Missing fields</strong> render as a dash (—). Sponsorship state arrives in a parallel PR (lane B2). RS repair state is stamped unavailable until Entry Intelligence #1302 W0.4 series exists.</p>
+    <p><strong>Sponsorship column (PR-C1):</strong> tailwind = sector oracle vel&gt;0 &amp; accel&gt;0 (sector rotating in); headwind = vel&lt;0 &amp; accel&lt;0 (sector rotating out); neutral = mixed signals; stale = oracle panel row older than 5 trading days; unavailable = no sector mapping or panel absent. Populated for ~91% of names when oracle panels are present; unmapped tickers show dash (—).</p>
+    <p><strong>Missing fields</strong> render as a dash (—). RS repair state is stamped unavailable until Entry Intelligence #1302 W0.4 series exists.</p>
   </div>
   <div class="plain-zh l-zh">
     <p><strong>用途：</strong>本页展示<em>底部传感器包络</em>——每次夜间运行为每支美股分配的描述性状态标签集合。这是一个质量保证（QA）界面，不是信号板。</p>
     <p><strong>这些标签仅用于展示。</strong>不进行排名、不作为门控条件、不触发任何警报。此处任何标签均未在预注册回测家族中获得排名权限。任何标签若要升级为排名或门控权限，需通过独立的、具有公开协议的预注册研究。</p>
     <p><strong>状态含义（v1）：</strong>HOLD_LAUNCHED = 持有引擎标记为已启动的标的（以成交价为锚点）。FRESH_FIRE_DURABLE_CAND = 2个周期内的T1–T3新鲜信号，且处于蓄势状态、接近21日低点。FRESH_FIRE_TACTICAL = 新鲜T1–T3信号，未处于蓄势状态。CHASE_RISK = 信号存在但陈旧或远离低点。DEAD_MONEY_RISK = 持有引擎显示横盘整理且价格变动极小。EARLY_WATCH = 从126日高点下跌且接近交叉信号。KNIFE_RISK = 刀锋阻断条件触发。WATCH = 默认状态。</p>
     <p><strong>叠加标志：</strong>EVENT_BLACKOUT = 3个交易日内有财报（逐行实时规则）。COILED = 波动压缩。STAR = 高确信度形态标志。</p>
-    <p><strong>缺失字段</strong>显示为横线（—）。赞助状态将由并行PR（通道B2）提供。RS修复状态标注为不可用，直至入场智能#1302 W0.4系列数据可用。</p>
+    <p><strong>赞助状态列（PR-C1）：</strong>tailwind = 板块oracle速度&gt;0且加速度&gt;0（板块轮动向上）；headwind = 速度&lt;0且加速度&lt;0（板块轮动向下）；neutral = 信号混合；stale = oracle面板行超过5个交易日；unavailable = 无板块映射或面板缺失。当oracle面板存在时，约91%的名称可获得赞助状态；未映射的代码显示横线（—）。</p>
+    <p><strong>缺失字段</strong>显示为横线（—）。RS修复状态标注为不可用，直至入场智能#1302 W0.4系列数据可用。</p>
   </div>
 </div>
 
@@ -306,12 +350,15 @@ html[data-lang="zh"] .dist-far  { color:var(--down); } /* --down already swapped
     var sym = document.getElementById('qa-sym-filter').value.trim().toUpperCase();
     var state = document.getElementById('qa-state-filter').value;
     var tier = document.getElementById('qa-tier-filter').value;
+    var spEl = document.getElementById('qa-sp-filter');
+    var sp = spEl ? spEl.value : '';
     var shown = 0;
     rows.forEach(function(r){
       var ms = !sym || r.dataset.sym.indexOf(sym) !== -1;
       var mst = !state || r.dataset.state === state;
       var mt = !tier || r.dataset.tier === tier;
-      var vis = ms && mst && mt;
+      var msp = !sp || r.dataset.sponsorship_state === sp;
+      var vis = ms && mst && mt && msp;
       r.style.display = vis ? '' : 'none';
       if(vis) shown++;
     });
