@@ -335,17 +335,22 @@ def _extract_aggregate_metrics(candidate: dict) -> dict[str, Any]:
             if k in rev_screen:
                 out[k] = rev_screen[k]
 
-    # screen_result artifact
+    # screen_result artifact (oracle 63d screen per-section dicts) — WHITELIST ONLY (RF-7b).
+    # Per-section dicts from adapter_oracle.py contain outcome-revealing scalars such as
+    # best_fire_return, max_drawdown_realized, per_fire_max_gain, post_fire_alpha.
+    # The blocklist + isinstance(v,list) filter used before was insufficient: it passed
+    # all scalars not named in _EXCLUDED_KEYS, leaking realized outcomes to the reviewer.
+    # Only keys in _AGGREGATE_METRIC_KEYS are emitted; everything else is silently dropped.
     screen_result = artifacts.get("screen_result") or {}
     if isinstance(screen_result, dict):
-        # Only include aggregate-level keys
         for section in ("all", "risk_on", "risk_off"):
             section_data = screen_result.get(section) or {}
             if isinstance(section_data, dict):
-                agg: dict[str, Any] = {}
-                for k, v in section_data.items():
-                    if k not in _EXCLUDED_KEYS and not isinstance(v, list):
-                        agg[k] = v
+                agg: dict[str, Any] = {
+                    k: section_data[k]
+                    for k in _AGGREGATE_METRIC_KEYS
+                    if k in section_data
+                }
                 if agg:
                     out[f"screen_{section}"] = agg
 
@@ -689,7 +694,7 @@ def apply_challenge_transitions(
         to_state="human_review",
         reason_code="challenger_advisory_complete",
         reason_text=(
-            "Reviewer advisory received and validated; unconditionally "
+            "Reviewer advisory received and schema-checked; unconditionally "
             "entering human_review queue (RF-7: every challenged candidate enters the queue)."
         ),
         challenge_ref=challenge_ref,

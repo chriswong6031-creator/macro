@@ -298,9 +298,11 @@ def permutation_probe(candidate: dict) -> dict[str, Any]:
     # Permutation p-value: fraction of permuted WRs >= real WR.
     # Large p → real WR is not unusual relative to sign-flip null → insensitive.
     # Small p → real WR is in the tail of the null → genuine edge.
+    # Bias-corrected (add-one) estimator: avoids reporting p=0 when n_ge_real=0,
+    # which would overstate significance at N=200 perms (min nonzero = 1/201 ≈ 0.005).
     n_perm = len(permuted_metrics)
     n_ge_real = sum(1 for m in permuted_metrics if m >= real_metric)
-    perm_p_value = n_ge_real / n_perm
+    perm_p_value = (n_ge_real + 1) / (n_perm + 1)
 
     # input_insensitive=True when p > threshold (real WR not distinguishable from null)
     input_insensitive = perm_p_value > _INSENSITIVE_P_THRESHOLD
@@ -313,9 +315,13 @@ def permutation_probe(candidate: dict) -> dict[str, Any]:
         "note": (
             f"seed={seed}; real_wr={real_metric:.4f}; "
             f"perm_p={perm_p_value:.4f} "
-            f"(n_ge_real={n_ge_real}/{n_perm}); "
+            f"(n_ge_real={n_ge_real}/{n_perm}; bias-corrected (n+1)/(N+1)); "
             f"threshold={_INSENSITIVE_P_THRESHOLD}; "
-            f"insensitive={input_insensitive}"
+            f"insensitive={input_insensitive}; "
+            f"probe scores win-rate only — a rule whose edge lives in MFE/MAE asymmetry "
+            f"with WR~0.52 may show input_insensitive=True even if the oracle reversion "
+            f"ruler (which scores WR + MFE/MAE safety) would pass it; reviewer should "
+            f"not over-weight a true input_insensitive flag for MFE/MAE-asymmetric rules"
         ),
     }
 

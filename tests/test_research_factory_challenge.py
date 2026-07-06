@@ -732,6 +732,77 @@ class TestOutcomeBlindnessWhitelist:
         # The reversion block from the fixture also sets n/wr; either source is fine
         assert "n" in agg or "wr" in agg or "WR" in agg
 
+    def test_screen_result_outcome_scalars_blocked(self, tmp_path):
+        """screen_result per-section outcome-revealing scalars must not reach the packet.
+
+        Regression test for the sibling-path leak: screen_result sections
+        (all/risk_on/risk_off) must use the same WHITELIST as reversion_screen.
+        The old blocklist + isinstance(v,list) filter let per-fire realized
+        outcome scalars (best_fire_return, max_drawdown_realized, per_fire_max_gain,
+        post_fire_alpha) through to aggregate_metrics / screen_* keys.
+        """
+        import json as _json
+        from engine.research_factory.challenge import build_challenge_input
+
+        cand = _make_oracle_candidate()
+        # Inject outcome-revealing scalars into screen_result (the oracle 63d screen artifact)
+        cand["artifacts"]["screen_result"] = {
+            "all": {
+                "n": 120,
+                "WR": 0.61,
+                "best_fire_return": 0.44,        # outcome-revealing — must be blocked
+                "max_drawdown_realized": -0.20,   # outcome-revealing — must be blocked
+                "per_fire_max_gain": 0.51,        # outcome-revealing — must be blocked
+                "post_fire_alpha": 0.07,          # outcome-revealing — must be blocked
+            },
+            "risk_on": {
+                "n": 80,
+                "WR": 0.65,
+                "best_fire_return": 0.55,
+                "max_drawdown_realized": -0.15,
+                "per_fire_max_gain": 0.60,
+                "post_fire_alpha": 0.09,
+            },
+            "risk_off": {
+                "n": 40,
+                "wr": 0.52,
+                "best_fire_return": 0.22,
+                "max_drawdown_realized": -0.30,
+                "per_fire_max_gain": 0.35,
+                "post_fire_alpha": 0.02,
+            },
+        }
+
+        packet = build_challenge_input(cand, root=tmp_path)
+
+        # Check via json.dumps membership (mirrors reversion_screen test pattern)
+        packet_json = _json.dumps(packet)
+
+        # Outcome-revealing scalars must NOT appear anywhere in the packet
+        assert "best_fire_return" not in packet_json, \
+            "best_fire_return leaked into challenge packet from screen_result"
+        assert "max_drawdown_realized" not in packet_json, \
+            "max_drawdown_realized leaked into challenge packet from screen_result"
+        assert "per_fire_max_gain" not in packet_json, \
+            "per_fire_max_gain leaked into challenge packet from screen_result"
+        assert "post_fire_alpha" not in packet_json, \
+            "post_fire_alpha leaked into challenge packet from screen_result"
+
+        # Whitelisted aggregate keys should still be present in the screen_* sections
+        agg = packet["aggregate_metrics"]
+        # n and WR are in _AGGREGATE_METRIC_KEYS — they must survive for each section
+        screen_all = agg.get("screen_all", {})
+        assert screen_all.get("n") == 120, "screen_all.n should survive whitelist"
+        assert screen_all.get("WR") == 0.61, "screen_all.WR should survive whitelist"
+
+        screen_risk_on = agg.get("screen_risk_on", {})
+        assert screen_risk_on.get("n") == 80
+        assert screen_risk_on.get("WR") == 0.65
+
+        screen_risk_off = agg.get("screen_risk_off", {})
+        assert screen_risk_off.get("n") == 40
+        assert screen_risk_off.get("wr") == 0.52
+
 
 # ===========================================================================
 # 18. State machine enforcement via _transition (finding 3 fix)

@@ -164,6 +164,7 @@ def _emit_governance_event(candidate_id: str, challenge_ref: str, *, root: Path)
             authored_by="research_factory_challenge_pack",
             evidence={"challenge_ref": challenge_ref},
             note=f"Challenger packet complete; candidate {candidate_id!r} entering human_review.",
+            root=root,
         )
         if ok:
             print(
