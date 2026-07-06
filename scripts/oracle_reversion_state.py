@@ -132,8 +132,9 @@ def _compute_live_stats(
     For single-regime signals, only count fires in the operating regime.
 
     base_rate: unconditional trailing 21-session WR on the same universe (buy-anytime
-    rate, computed from the full panel as the fraction of 21-session returns > 0).
-    Per PREREG.md, this is the entry-timing LIFT measure.
+    rate, computed PIT as of each matured fire's exit_date per ORACLE_REVERSION_PROMOTION_PREREG.md).
+    For each matured fire, the denominator is restricted to panel dates <= that fire's exit_date
+    so the lift_lb is never contaminated by future returns.
     """
     matured = [r for r in rows if r.get("matured") is True]
 
@@ -158,8 +159,30 @@ def _compute_live_stats(
     from engine.neuralweb.constitution import wilson_lower as _wilson_lower
     wl = _wilson_lower(hits, n, z=1.645)
 
-    # Base rate: unconditional trailing 21-session WR from the panel
-    base_rate = _compute_base_rate(panel_data_dir, tier, operating_regime)
+    # Base rate: PIT unconditional 21-session WR — computed as-of each fire's exit_date,
+    # then averaged across fires. This ensures the denominator never uses future returns.
+    panel_cache: pd.DataFrame | None = None
+    panel_path = panel_data_dir / "oracle" / f"panel_{tier}.parquet"
+    if panel_path.exists():
+        try:
+            panel_cache = pd.read_parquet(panel_path)
+        except Exception:  # noqa: BLE001
+            panel_cache = None
+
+    pit_base_rates: list[float] = []
+    for r in matured:
+        exit_date_str = r.get("exit_date")
+        if not exit_date_str:
+            continue
+        try:
+            as_of = pd.Timestamp(exit_date_str)
+        except Exception:  # noqa: BLE001
+            continue
+        br = _compute_base_rate_pit(panel_cache, tier, operating_regime, as_of)
+        if br is not None:
+            pit_base_rates.append(br)
+
+    base_rate: float | None = float(np.mean(pit_base_rates)) if pit_base_rates else None
 
     lift_lb: float | None = None
     if base_rate is not None and base_rate > 0:
@@ -175,36 +198,45 @@ def _compute_live_stats(
     }
 
 
-def _compute_base_rate(data_dir: Path, tier: str, operating_regime: str) -> float | None:
-    """Unconditional trailing 21-session WR on the panel (buy-anytime rate).
+def _compute_base_rate_pit(
+    panel: pd.DataFrame | None,
+    tier: str,
+    operating_regime: str,
+    as_of: pd.Timestamp,
+) -> float | None:
+    """PIT unconditional 21-session WR on the panel, restricted to dates <= as_of.
 
-    Returns None if panel is unavailable.
+    This is the buy-anytime denominator for lift_lb, computed as of each matured
+    fire's exit_date so the ratio is never contaminated by future returns.
+    Per ORACLE_REVERSION_PROMOTION_PREREG.md: base_rate is the UNCONDITIONAL trailing
+    21-session win-rate, computed PIT as of each grading.
+
+    Returns None if panel is unavailable or has too few observations.
     """
-    p = data_dir / "oracle" / f"panel_{tier}.parquet"
-    if not p.exists():
+    if panel is None:
+        return None
+    if "ret" not in panel.columns:
         return None
     try:
-        panel = pd.read_parquet(p)
-        if "ret" not in panel.columns:
+        # Restrict to dates up to (and including) as_of
+        all_dates = panel.index.get_level_values("date").unique().sort_values()
+        pit_dates = all_dates[all_dates <= as_of]
+        if len(pit_dates) < 22:  # need at least 21 sessions of history
             return None
+        pit_panel = panel.loc[panel.index.get_level_values("date").isin(pit_dates)]
 
-        ret_series = panel["ret"].sort_index()
-
-        # For each (node, date) compute 21-session forward return
-        # We use the panel as-is: for each node's sorted ret series,
-        # compute rolling 21-session cumulative return
         results: list[float] = []
-        for node in panel.index.get_level_values("node").unique():
+        for node in pit_panel.index.get_level_values("node").unique():
             try:
-                node_ret = panel.xs(node, level="node")["ret"].sort_index().fillna(0)
+                node_ret = pit_panel.xs(node, level="node")["ret"].sort_index().fillna(0)
                 lvl = (1 + node_ret).cumprod()
-                # 21-session forward return at each date
+                # 21-session forward return at each date within the PIT window
                 fwd = lvl.shift(-21) / lvl - 1
                 fwd = fwd.dropna()
-                if operating_regime in ("risk_off", "risk_on") and "spy_above_200d" in panel.columns:
+                if operating_regime in ("risk_off", "risk_on") and "spy_above_200d" in pit_panel.columns:
                     try:
-                        regime_col = panel.xs(node, level="node")["spy_above_200d"].sort_index()
-                        vix_col = panel.xs(node, level="node").get("vix_pctile", pd.Series(dtype=float))
+                        regime_col = pit_panel.xs(node, level="node")["spy_above_200d"].sort_index()
+                        vix_col = pit_panel.xs(node, level="node").get("vix_pctile", pd.Series(dtype=float))
                         if vix_col is not None and len(vix_col) > 0:
                             is_risk_off = (regime_col == 0) | (vix_col >= 0.70)
                         else:

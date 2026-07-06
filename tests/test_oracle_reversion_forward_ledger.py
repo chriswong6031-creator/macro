@@ -575,3 +575,208 @@ def test_authority_always_display():
                 f"authority_level must ALWAYS be 'display', got: {sig['authority_level']}"
             assert sig["article2_surface"] == "display", \
                 f"article2_surface must ALWAYS be 'display', got: {sig['article2_surface']}"
+
+
+# ---------------------------------------------------------------------------
+# Test K — PIT guard isolation: ONLY the ledger's exit_ts > latest_date guard
+#          prevents grading (not _per_entry_rows' window/exit guard).
+#
+# This test fails if the guard at oracle_reversion_forward_ledger.py:317
+# (`if exit_ts > latest_date: continue`) is removed. It does NOT rely on
+# _per_entry_rows' own guards (exec_pos+window >= n or exit_pos >= n).
+# ---------------------------------------------------------------------------
+
+def test_pit_guard_is_independently_load_bearing():
+    """The ledger PIT guard at line 317 is independently necessary.
+
+    We seed a row where:
+      - fire_date/exec_date are early in the panel (exec_pos=6, well inside n=60)
+      - the 25-session window and 21-session exit would both fit inside the panel
+        (exec_pos=6, exec_pos+21=27<60, exec_pos+25=31<60)
+      - BUT exit_date stored in the ledger is set to a far-future calendar date
+        (2099-01-01) that is > latest_date
+
+    Without the PIT guard: _grade_rows would call _per_entry_rows with this fire.
+    Since exec_pos is early and both exec_pos+21 and exec_pos+25 are < n,
+    _per_entry_rows grades the entry successfully → ret_exit is filled → matured=True.
+
+    With the PIT guard: exit_ts = 2099-01-01 > latest_date → skip to_grade → matured=False.
+    """
+    from scripts.oracle_reversion_forward_ledger import _grade_rows
+
+    with tempfile.TemporaryDirectory() as tmp_str:
+        tmp = Path(tmp_str)
+        # 60-session panel; exec at position 6 → exec+21=27 < 60, exec+25=31 < 60
+        panel = _setup_data_dir(tmp, n_days=60, washout_last_day=False)
+        from engine.oracle.compounds import augment_panel_with_derived
+        all_dates = panel.index.get_level_values("date").unique().sort_values()
+        latest_date = all_dates[-1]  # day 59
+
+        fire_ts = all_dates[5]
+        exec_ts = all_dates[6]
+        # Deliberately store a far-future exit_date (not in the panel at all)
+        # so exit_ts > latest_date fires the PIT guard, NOT _per_entry_rows' guard.
+        far_future_exit = "2099-01-01"
+
+        compound = _make_registry_compound()
+
+        seed_row = {
+            "compound_id": "TEST_WASHOUT",
+            "node": "node_A",
+            "tier": "s",
+            "fire_date": fire_ts.isoformat()[:10],
+            "exec_date": exec_ts.isoformat()[:10],
+            "exit_date": far_future_exit,
+            "regime": "risk_on",
+            "ret_exit": None,
+            "mfe": None,
+            "mae": None,
+            "matured": False,
+        }
+
+        import pandas as pd
+        panel_full = pd.read_parquet(tmp / "oracle" / "panel_s.parquet")
+        panel_aug = augment_panel_with_derived(panel_full.copy())
+
+        graded = _grade_rows([seed_row], compound, panel_aug, latest_date)
+
+        assert len(graded) == 1
+        assert graded[0]["matured"] is False, (
+            "PIT guard failure: exit_date=2099-01-01 > latest_date but row was graded. "
+            "The guard `if exit_ts > latest_date: continue` at line 317 is not operating."
+        )
+        assert graded[0]["ret_exit"] is None, (
+            "ret_exit must remain None when PIT guard blocks grading"
+        )
+
+
+# ---------------------------------------------------------------------------
+# Test L — Grading numeric contract: ret_exit value must equal _per_entry_rows output.
+#
+# Mutation-proof: if exit_sessions is changed or the return is sign-flipped,
+# this test fails. It does NOT just assert ret_exit is not None (which would
+# pass even with a corrupted grading horizon).
+# ---------------------------------------------------------------------------
+
+def test_pit_matured_grading_value_matches_per_entry_rows():
+    """Graded ret_exit must equal the value produced by _per_entry_rows directly.
+
+    Verifies the NUMERIC correctness of the grading contract, not just that
+    ret_exit is non-None. A wrong exit horizon (+5 sessions), a sign flip, or
+    a window mismatch would all produce a different value and fail this test.
+    """
+    from scripts.oracle_reversion_forward_ledger import run_reversion_forward_ledger
+    from scripts.oracle_reversion_screen import _per_entry_rows
+    from engine.oracle.compounds import augment_panel_with_derived
+
+    with tempfile.TemporaryDirectory() as tmp_str:
+        tmp = Path(tmp_str)
+        # 120-day panel; fire at position 10, exec at 11, exit at 32 (11+21=32)
+        panel = _setup_data_dir(tmp, n_days=120, washout_last_day=False)
+        import pandas as pd
+        all_dates = panel.index.get_level_values("date").unique().sort_values()
+
+        fire_ts = all_dates[10]
+        exec_ts = all_dates[11]
+        exit_ts = all_dates[32]   # exec_pos(11) + exit_sessions(21) = 32
+
+        seed_row = {
+            "compound_id": "TEST_WASHOUT",
+            "node": "node_A",
+            "tier": "s",
+            "fire_date": fire_ts.isoformat()[:10],
+            "exec_date": exec_ts.isoformat()[:10],
+            "exit_date": exit_ts.isoformat()[:10],
+            "regime": "risk_on",
+            "ret_exit": None,
+            "mfe": None,
+            "mae": None,
+            "matured": False,
+        }
+        _seed_ledger(tmp, "TEST_WASHOUT", [seed_row])
+
+        run_reversion_forward_ledger(tmp, dry_run=False)
+
+        ledger_path = tmp / "oracle" / "reversion_forward" / "TEST_WASHOUT.jsonl"
+        rows = [json.loads(l) for l in ledger_path.read_text().splitlines() if l.strip()]
+        seeded = [r for r in rows if r["node"] == "node_A"
+                  and r["fire_date"] == fire_ts.isoformat()[:10]]
+        assert seeded, "Seeded row not in ledger"
+        ledger_ret = seeded[0]["ret_exit"]
+        assert ledger_ret is not None, "Matured row must have ret_exit"
+        assert isinstance(ledger_ret, float), "ret_exit must be float"
+
+        # Independently compute expected ret_exit via _per_entry_rows
+        panel_full = pd.read_parquet(tmp / "oracle" / "panel_s.parquet")
+        panel_aug = augment_panel_with_derived(panel_full.copy())
+
+        per_entry = _per_entry_rows(
+            {"node_A": pd.DatetimeIndex([fire_ts])},
+            panel_aug,
+            window=25,
+            exit_sessions=21,
+            exit_mode="time",
+        )
+        assert per_entry, "_per_entry_rows returned no rows for the seeded fire"
+        expected_ret = per_entry[0]["ret_exit"]
+        assert expected_ret is not None, "_per_entry_rows produced None ret_exit for a valid entry"
+
+        assert abs(ledger_ret - expected_ret) < 1e-9, (
+            f"ret_exit value mismatch: ledger={ledger_ret:.8f} vs _per_entry_rows={expected_ret:.8f}. "
+            "This indicates a wrong exit horizon, window, or return computation in _grade_rows."
+        )
+
+
+# ---------------------------------------------------------------------------
+# Test M — PIT base_rate: differs from full-panel base_rate when panel has a
+#          regime break after the grading date.
+#
+# Verifies that _compute_base_rate_pit returns a value that is NOT equal to the
+# full-panel base rate when future panel data would materially shift the result.
+# ---------------------------------------------------------------------------
+
+def test_pit_base_rate_differs_from_full_panel():
+    """base_rate computed PIT (as_of) must differ from the full-panel base_rate
+    when a regime break after as_of would change the result.
+
+    Seeds two fires graded at different dates and verifies that restricting the
+    denominator to panel dates <= as_of produces a different result from using
+    the full panel.
+    """
+    from scripts.oracle_reversion_state import _compute_base_rate_pit
+    import numpy as np
+
+    # Build a panel with 120 sessions where returns are deliberately negative
+    # in the LAST 30 sessions (simulating a bear-market break).
+    # A full-panel base_rate would be dragged down by the bear tail;
+    # a PIT base_rate at as_of = session[89] would not see it.
+    rng = np.random.default_rng(42)
+    n_days = 120
+    dates = pd.bdate_range("2023-01-02", periods=n_days, name="date")
+
+    node = "node_A"
+    # Sessions 0-89: mild positive drift (ret ~ +0.3%)
+    ret_bull = rng.normal(0.003, 0.008, 90)
+    # Sessions 90-119: strong negative drift (ret ~ -0.8%) — regime break
+    ret_bear = rng.normal(-0.008, 0.008, 30)
+    ret = np.concatenate([ret_bull, ret_bear])
+
+    df = pd.DataFrame({"ret": ret, "node": node}, index=dates)
+    panel = df.reset_index().set_index(["node", "date"])
+
+    # as_of = end of bull period (session 89)
+    as_of_bull = dates[89]
+    # as_of = end of full panel (session 119)
+    as_of_full = dates[-1]
+
+    pit_bull = _compute_base_rate_pit(panel, "s", "dual", as_of_bull)
+    pit_full = _compute_base_rate_pit(panel, "s", "dual", as_of_full)
+
+    assert pit_bull is not None, "_compute_base_rate_pit returned None for bull-end as_of"
+    assert pit_full is not None, "_compute_base_rate_pit returned None for full-panel as_of"
+
+    # The bear-regime tail should push pit_full lower than pit_bull
+    assert pit_bull > pit_full, (
+        f"PIT base_rate at bull-end ({pit_bull:.4f}) should exceed full-panel rate ({pit_full:.4f}). "
+        "This suggests the as_of truncation is not applied correctly."
+    )
