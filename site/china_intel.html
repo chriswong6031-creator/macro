@@ -156,6 +156,59 @@
   .band.cautious,.band.tightening { color:#d23f3f; background:color-mix(in srgb,#d23f3f 13%,transparent); }
   .band.steady,.band.building,.band.neutral,.band.unknown { color:var(--muted); background:var(--panel2); }
   .disc { font-size:11.5px; color:var(--muted); margin-top:14px; line-height:1.55; }
+  /* ── command list ── */
+  .cmd-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; margin:12px 0; }
+  table.cmd-tbl { border-collapse:collapse; width:100%; min-width:680px; font-size:12.5px; }
+  table.cmd-tbl th { text-align:left; padding:6px 9px; background:var(--panel2); color:var(--muted); font-weight:600; border-bottom:2px solid var(--line); white-space:nowrap; }
+  table.cmd-tbl td { padding:7px 9px; border-bottom:1px solid var(--line); vertical-align:middle; }
+  table.cmd-tbl tr:last-child td { border-bottom:none; }
+  .cmd-ticker { font-family:ui-monospace,Menlo,monospace; font-size:11px; color:var(--link); font-weight:700; white-space:nowrap; }
+  .cmd-name { font-size:12px; font-weight:600; max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .cmd-desk-dots { display:flex; gap:3px; align-items:center; }
+  .cmd-dot { width:9px; height:9px; border-radius:50%; flex-shrink:0; }
+  .cmd-dot.up { background:var(--up); }
+  .cmd-dot.down { background:var(--down); }
+  .cmd-dot.neutral { background:var(--muted); opacity:.35; }
+  .cmd-dot.absent { background:transparent; border:1px solid var(--line); }
+  .stage-chip { font-size:9.5px; font-weight:700; padding:2px 7px; border-radius:6px; text-transform:uppercase; letter-spacing:.04em; white-space:nowrap; }
+  .stage-emerging { color:#1f9a55; background:color-mix(in srgb,#1f9a55 14%,transparent); border:1px solid #1f9a5540; }
+  .stage-early { color:#5b8def; background:color-mix(in srgb,#5b8def 14%,transparent); border:1px solid #5b8def40; }
+  .stage-consensus { color:var(--muted); background:var(--panel2); border:1px solid var(--line); }
+  .stage-exhausted { color:#d23f3f; background:color-mix(in srgb,#d23f3f 12%,transparent); border:1px solid #d23f3f40; }
+  .stage-faltering { color:#e0973a; background:color-mix(in srgb,#e0973a 12%,transparent); border:1px solid #e0973a40; }
+  .stage-distribution { color:#e0973a; background:color-mix(in srgb,#e0973a 12%,transparent); border:1px solid #e0973a40; }
+  .stage-quiet { color:var(--muted); background:var(--panel2); border:1px solid var(--line); opacity:.6; }
+  .stage-discovery { color:#8b5cf6; background:color-mix(in srgb,#8b5cf6 13%,transparent); border:1px solid #8b5cf640; }
+  .edge-bar { display:inline-block; width:48px; height:5px; background:var(--panel2); border-radius:3px; overflow:hidden; vertical-align:middle; margin-right:4px; }
+  .edge-bar > i { display:block; height:100%; background:var(--link); border-radius:3px; }
+  .opp-score { font-weight:800; font-variant-numeric:tabular-nums; font-size:13px; }
+  .rs-chip { font-size:10px; font-weight:700; padding:1px 6px; border-radius:5px; white-space:nowrap; }
+  .rs-pos { color:var(--up); background:color-mix(in srgb,var(--up) 12%,transparent); }
+  .rs-neg { color:var(--down); background:color-mix(in srgb,var(--down) 12%,transparent); }
+  .rs-neu { color:var(--muted); background:var(--panel2); }
+  .cmd-read { font-size:11px; color:var(--muted); max-width:240px; line-height:1.4; }
+  .cmd-fals { font-size:10px; color:#e0973a; margin-top:2px; }
+  .cmd-expander { font-size:11.5px; color:var(--link); cursor:pointer; margin-top:8px; display:inline-block; }
+  /* ── discovery queue ── */
+  .disc-queue { display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:10px; margin:12px 0; }
+  .disc-card { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:12px 14px; }
+  .disc-card.off-desk { border-left:3px solid #8b5cf6; }
+  .disc-card .disc-ticker { font-family:ui-monospace,Menlo,monospace; font-size:11px; color:var(--link); font-weight:700; }
+  .disc-card .disc-name { font-size:12.5px; font-weight:700; margin:3px 0; }
+  .disc-card .disc-reason { font-size:11px; color:var(--muted); margin-top:3px; line-height:1.4; }
+  .disc-card .disc-meta { display:flex; gap:5px; flex-wrap:wrap; margin-top:6px; align-items:center; }
+  .lane-chip { font-size:9px; font-weight:700; padding:1px 6px; border-radius:5px; text-transform:uppercase; letter-spacing:.04em; background:var(--panel2); color:var(--muted); border:1px solid var(--line); }
+  .exp-chip { font-size:9px; font-weight:700; padding:1px 6px; border-radius:5px; color:#e0973a; background:color-mix(in srgb,#e0973a 13%,transparent); border:1px solid #e0973a44; }
+  .offdesk-chip { font-size:9px; font-weight:700; padding:1px 6px; border-radius:5px; color:#8b5cf6; background:color-mix(in srgb,#8b5cf6 13%,transparent); border:1px solid #8b5cf640; }
+  .disc-score-bar { height:3px; border-radius:2px; background:var(--link); margin-top:5px; }
+  /* ── analogs card ── */
+  .analogs-card { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:15px 17px; margin:14px 0; }
+  .analogs-query { display:flex; flex-wrap:wrap; gap:7px; margin:8px 0 12px; }
+  .aq-chip { font-size:11px; padding:3px 9px; border-radius:999px; background:var(--panel2); border:1px solid var(--line); color:var(--text); }
+  .fan-table { border-collapse:collapse; font-size:12px; margin:8px 0; }
+  .fan-table th { padding:4px 8px; color:var(--muted); font-weight:600; border-bottom:1px solid var(--line); }
+  .fan-table td { padding:5px 8px; border-bottom:1px solid var(--line); font-variant-numeric:tabular-nums; }
+  .fan-table tr:last-child td { border-bottom:none; }
   /* ── surface cards (spoke links) ── */
   .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(232px,1fr)); gap:14px; margin:14px 0; }
   a.scard { display:block; background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:15px 17px; color:var(--text); transition:border-color .15s, transform .15s; text-decoration:none; }
@@ -461,6 +514,8 @@
     </div>
   </div>
 </nav>
+
+
 
 
 
@@ -835,6 +890,12 @@ Alt-data accumulation: 000563.SZ(000563.SZ), 000166.SZ(000166.SZ), 603789.SS(603
 Radar divergences: Sector net-flow→Semiconductors negative; Offshore ETF gap (KWEB/MCHI/CQQQ)→CSI 300 (onshore) positive; Southbound flow→Semiconductors negative; Sector net-flow→Defense positive; Sector net-flow→Coal positive (ledger: unproven)</div></details>
 
   
+
+  
+
+  
+
+  
   <h2 class="sec">🗺️ <span class="l-en">China Suite Directory</span><span class="l-zh">中国页面目录</span></h2>
   <div class="suite">
 
@@ -890,8 +951,8 @@ Radar divergences: Sector net-flow→Semiconductors negative; Offshore ETF gap (
 
   
   <div class="xmit">
-    🔌 <b><span class="l-en">Transmission to Mastermind</span><span class="l-zh">通往 Mastermind 的传导</span></b> — <span class="l-en">these surfaces + the cross-surface synthesis are bundled, schema-versioned and machine-readable at</span><span class="l-zh">这些面板＋跨面板综合被打包为带版本的机读契约：</span> <code>site/china_intel/briefing.json</code> (<code>china_intel.briefing.v5</code>) <span class="l-en">and</span><span class="l-zh">与</span> <code>digest.json</code>. <span class="l-en">The future China Mastermind reads them as context — never a size or a trade.</span><span class="l-zh">未来的中国 Mastermind 将其作为背景读取——绝非仓位或交易。</span>
-    <br><span class="s" style="color:var(--muted)"><span class="l-en">Surfaces present</span><span class="l-zh">已就绪面板</span>: news · policy · altdata · radar · analysis · policy_phrase · special_situations</span>
+    🔌 <b><span class="l-en">Transmission to Mastermind</span><span class="l-zh">通往 Mastermind 的传导</span></b> — <span class="l-en">these surfaces + the cross-surface synthesis are bundled, schema-versioned and machine-readable at</span><span class="l-zh">这些面板＋跨面板综合被打包为带版本的机读契约：</span> <code>site/china_intel/briefing.json</code> (<code>china_intel.briefing.v6</code>) <span class="l-en">and</span><span class="l-zh">与</span> <code>digest.json</code>. <span class="l-en">The future China Mastermind reads them as context — never a size or a trade.</span><span class="l-zh">未来的中国 Mastermind 将其作为背景读取——绝非仓位或交易。</span>
+    <br><span class="s" style="color:var(--muted)"><span class="l-en">Surfaces present</span><span class="l-zh">已就绪面板</span>: news · policy · altdata · radar · analysis · policy_phrase · special_situations · command</span>
   </div>
 
   <p class="disc"><span class="l-en">Context only — not a signal, score or trade. A fan-in of five display/context-only China intelligence surfaces (news, central-bank & policy, alternative data, divergence radar, central analysis), bundled for the China Mastermind to read as background. Nothing here is an input to any score, signal, regime or allocation.</span><span class="l-zh">仅作背景，非信号、评分或交易。这是五个仅供展示／背景的中国情报面板（新闻、央行与政策、另类数据、背离雷达、中央分析）的汇总，供中国 Mastermind 作为背景读取。其中没有任何内容会进入任何评分、信号、区制或配置。</span></p>
