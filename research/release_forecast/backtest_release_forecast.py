@@ -509,5 +509,284 @@ def main():
     return summary
 
 
+# ---------------------------------------------------------------------------
+# V2 Backtest (PREREG_V2.md — shelter leg + component upgrade)
+# ---------------------------------------------------------------------------
+# NOTE: run_walk_forward_full is already V2 (shelter_nowcast in feature_names).
+# The V2 backtest re-runs the same walk-forward with the new feature set and
+# compares to the V1 summary loaded from backtest_v1_summary.json.
+
+
+def run_backtest_v2() -> dict:
+    """Run V2 backtest for cpi_headline and cpi_core (NFP unchanged).
+
+    The V2 model is already encoded in run_walk_forward_full (shelter_nowcast
+    appended to feature_names per PREREG_V2.md §3). This function re-runs the
+    walk-forward and computes metrics using the same era classification and kill
+    rule as V1, then returns a summary dict with both v1 and v2 metrics for
+    the CPI targets.
+
+    NFP is excluded from V2 re-run (owned by parallel agent, unchanged).
+    """
+    print("=== Macro Release Intelligence: Walk-Forward Backtest V2 ===")
+    print("SPEC: research/release_forecast/PREREG_V2.md (frozen before run)\n")
+    root = _REPO
+
+    # Load V1 summary for comparison
+    v1_path = _RESULTS_DIR / "backtest_v1_summary.json"
+    v1_summary: dict[str, Any] = {}
+    if v1_path.exists():
+        with open(v1_path) as f:
+            v1_summary = json.load(f)
+    else:
+        print("  WARNING: backtest_v1_summary.json not found — V1 comparison unavailable")
+
+    summary_v2: dict[str, Any] = {}
+
+    for release in ["cpi_headline", "cpi_core"]:
+        print(f"Running V2 walk-forward: {release} ...")
+        from engine.release_forecast import run_walk_forward_full
+        wf = run_walk_forward_full(release, root)
+        results = wf["results"]
+        print(f"  {len(results)} predictions")
+
+        errors_accum = np.array([r["actual"] - r["predicted"] for r in results])
+
+        def get_period(r):
+            p = r.get("period")
+            return pd.Timestamp(p) if p is not None else None
+
+        rows_all = [r for r in results if get_period(r) is not None]
+        rows_pre2010 = [r for r in rows_all if _era(get_period(r)) == "pre_2010"]
+        rows_2010_2020 = [r for r in rows_all if _era(get_period(r)) == "2010_2020"]
+        rows_covid = [r for r in rows_all if _era(get_period(r)) == "covid"]
+        rows_2020_recovery = [r for r in rows_all if _era(get_period(r)) == "2020_recovery"]
+        rows_2021 = [r for r in rows_all if _era(get_period(r)) == "2021_plus"]
+        # 2015+ stable feature window — note: shelter available ~2016-01 so 2016+ is more precise
+        # but we keep 2015+ label to match V1 supplementary row
+        rows_2015_plus = [r for r in rows_all if get_period(r) >= pd.Timestamp("2015-01-01")]
+        # 2016+ shelter active: first meaningful shelter window (ZORI history starts 2015-01;
+        # lease-reset window M-12..M-6 needs 7 months → first usable M ~ 2016-01)
+        rows_2016_plus = [r for r in rows_all if get_period(r) >= pd.Timestamp("2016-01-01")]
+
+        m_full = _compute_metrics(rows_all, errors_accum)
+        m_pre2010 = _compute_metrics(rows_pre2010, errors_accum)
+        m_2010_2020 = _compute_metrics(rows_2010_2020, errors_accum)
+        m_covid = _compute_metrics(rows_covid, errors_accum)
+        m_2020_recovery = _compute_metrics(rows_2020_recovery, errors_accum)
+        m_2021 = _compute_metrics(rows_2021, errors_accum)
+        m_2015_plus = _compute_metrics(rows_2015_plus, errors_accum)
+        m_2016_plus = _compute_metrics(rows_2016_plus, errors_accum)
+
+        killed = _check_kill_rule(m_full, m_2021)
+        status = "benchmark_only" if killed else "active"
+
+        print(f"  Kill rule V2: {'TRIGGERED -> benchmark_only' if killed else 'NOT triggered -> active'}")
+        print(f"  Full: MAE model={m_full.get('mae_model')} vs naive={m_full.get('mae_naive')}")
+        print(f"  2021+: MAE model={m_2021.get('mae_model')} vs naive={m_2021.get('mae_naive')}")
+
+        # Count shelter-leg predictions (M4 fix: count shelter_nowcast presence directly
+        # from the feature row flag, not via n_features_used proxy which conflates
+        # shelter presence with other feature availability changes).
+        n_with_shelter = sum(
+            1 for r in rows_all
+            if r.get("shelter_nowcast_present", False)
+        )
+        print(f"  Predictions with shelter_nowcast active: {n_with_shelter} / {len(rows_all)}")
+        print()
+
+        era_metrics_v2 = {
+            "full": m_full,
+            "pre_2010": m_pre2010,
+            "2010_2020": m_2010_2020,
+            "covid_months_2020_03_06": m_covid,
+            "2020_recovery": m_2020_recovery,
+            "2021_plus": m_2021,
+            "2015_plus_stable_features": m_2015_plus,
+            "2016_plus_shelter_active": m_2016_plus,
+        }
+
+        summary_v2[release] = {
+            "status": status,
+            "benchmark_only": killed,
+            "n_predictions": len(results),
+            "n_eval_predictions": len(results),
+            "n_with_shelter_active": n_with_shelter,
+            "era_metrics": era_metrics_v2,
+            "v1_era_metrics": v1_summary.get(release, {}).get("era_metrics", {}),
+        }
+
+    return summary_v2
+
+
+def generate_results_v2_md(summary_v2: dict) -> str:
+    """Generate RESULTS_V2.md with V1-vs-V2 comparison tables."""
+    import datetime as _dt
+    today = _dt.date.today().isoformat()
+
+    lines = []
+    lines.append("# Backtest Results V2 — MRI CPI Component Upgrade (Shelter Leg)")
+    lines.append("")
+    lines.append(f"**Run date:** {today}")
+    lines.append("**Spec:** research/release_forecast/PREREG_V2.md (frozen before run)")
+    lines.append("**Changes vs V1:** shelter_nowcast leg added to cpi_headline (feature 9) and cpi_core (feature 8).")
+    lines.append("**Algorithm:** Ridge (lambda=1.0, numpy closed-form), expanding window, min 60 obs — UNCHANGED")
+    lines.append("**Kill rule:** model MAE >= naive MAE in BOTH full AND 2021+ slice -> benchmark_only — UNCHANGED")
+    lines.append("**NFP:** unchanged from V1 — not re-run.")
+    lines.append("")
+    lines.append("## Summary")
+    lines.append("")
+    lines.append("| Release | Status | N predictions | N with shelter active |")
+    lines.append("|---------|--------|---------------|-----------------------|")
+    for rel, data in summary_v2.items():
+        status = data.get("status", "unknown")
+        n = data.get("n_predictions", 0)
+        n_shelter = data.get("n_with_shelter_active", 0)
+        lines.append(f"| {rel} | **{status}** | {n} | {n_shelter} |")
+    lines.append("")
+
+    for rel, data in summary_v2.items():
+        status = data.get("status", "unknown")
+        killed = data.get("benchmark_only", False)
+        era_v2 = data.get("era_metrics", {})
+        era_v1 = data.get("v1_era_metrics", {})
+
+        lines.append(f"---")
+        lines.append(f"## {rel}")
+        lines.append("")
+        lines.append(f"**V2 Status:** {status}")
+        if killed:
+            lines.append("**Kill rule V2 TRIGGERED:** model MAE >= naive MAE in full AND 2021+ slice. TARGET IS NOW BENCHMARK_ONLY. No v3.")
+        else:
+            lines.append("**Kill rule V2:** NOT triggered. Model beats naive in at least one window.")
+        lines.append(f"**Total predictions:** {data.get('n_predictions', 0)}")
+        lines.append(f"**Predictions with shelter active:** {data.get('n_with_shelter_active', 0)}")
+        lines.append("")
+
+        lines.append("### V2 Era-Split Metrics")
+        lines.append("")
+        lines.append(render_era_table(era_v2, rel))
+        lines.append("")
+
+        lines.append("### V1 vs V2 Comparison Table")
+        lines.append("")
+        lines.append("Key question: does the shelter leg fix cpi_core's 2021+ loss to naive (V1: MAE model=0.1355 vs naive=0.1297)?")
+        lines.append("")
+        lines.append("| Era | n | MAE_v1 | MAE_v2 | MAE_naive | Cov_v1 | Cov_v2 | Skew_HR_v1 | Skew_HR_v2 |")
+        lines.append("|-----|---|--------|--------|-----------|--------|--------|------------|------------|")
+
+        era_order = ["full", "pre_2010", "2010_2020", "2021_plus", "2015_plus_stable_features", "2016_plus_shelter_active"]
+        era_labels = {
+            "full": "Full",
+            "pre_2010": "pre-2010",
+            "2010_2020": "2010–2020-02",
+            "2021_plus": "2021+",
+            "2015_plus_stable_features": "2015+ (stable feature set)",
+            "2016_plus_shelter_active": "2016+ (shelter active)",
+        }
+        for era in era_order:
+            mv1 = era_v1.get(era, {})
+            mv2 = era_v2.get(era, {})
+            if not mv2:
+                continue
+            n = mv2.get("n", 0)
+            mae_v1 = _fmt_num(mv1.get("mae_model")) if mv1 else "—"
+            mae_v2 = _fmt_num(mv2.get("mae_model"))
+            mae_naive = _fmt_num(mv2.get("mae_naive"))
+            cov_v1 = _fmt_pct(mv1.get("coverage_p10_p90")) if mv1 else "—"
+            cov_v2 = _fmt_pct(mv2.get("coverage_p10_p90"))
+            shr_v1 = _fmt_num(mv1.get("skew_hit_rate"), 3) if mv1 else "—"
+            shr_v2 = _fmt_num(mv2.get("skew_hit_rate"), 3)
+            label = era_labels.get(era, era)
+            lines.append(f"| {label} | {n} | {mae_v1} | {mae_v2} | {mae_naive} | {cov_v1} | {cov_v2} | {shr_v1} | {shr_v2} |")
+        lines.append("")
+
+        m_full = era_v2.get("full", {})
+        m_2021 = era_v2.get("2021_plus", {})
+        lines.append("### Kill Rule Detail (V2)")
+        lines.append("")
+        lines.append(f"- Full window: MAE model={_fmt_num(m_full.get('mae_model'))} vs naive={_fmt_num(m_full.get('mae_naive'))}")
+        lines.append(f"- 2021+ slice: MAE model={_fmt_num(m_2021.get('mae_model'))} vs naive={_fmt_num(m_2021.get('mae_naive'))}")
+        lines.append(f"- Kill triggered: {'YES -> benchmark_only (NO V3)' if killed else 'NO -> active'}")
+        lines.append("")
+
+        # Primary question: cpi_core 2021+ verdict
+        if rel == "cpi_core":
+            m_2021_v1_mae = era_v1.get("2021_plus", {}).get("mae_model")
+            m_2021_v2_mae = m_2021.get("mae_model")
+            m_2021_naive = m_2021.get("mae_naive")
+            lines.append("### cpi_core 2021+ VERDICT (primary question)")
+            lines.append("")
+            lines.append(f"- V1 MAE model (2021+): {_fmt_num(m_2021_v1_mae)}")
+            lines.append(f"- V2 MAE model (2021+): {_fmt_num(m_2021_v2_mae)}")
+            lines.append(f"- Naive MAE (2021+): {_fmt_num(m_2021_naive)}")
+            if m_2021_v2_mae is not None and m_2021_naive is not None:
+                if m_2021_v2_mae < m_2021_naive:
+                    lines.append(f"- **VERDICT: FIXED** — shelter leg fixes cpi_core's 2021+ loss to naive.")
+                    lines.append(f"  V2 beats naive: {_fmt_num(m_2021_v2_mae)} < {_fmt_num(m_2021_naive)} (improvement of {_fmt_num(m_2021_naive - m_2021_v2_mae)} pp MAE).")
+                else:
+                    delta = m_2021_v2_mae - m_2021_v1_mae if m_2021_v1_mae else None
+                    lines.append(f"- **VERDICT: NOT FIXED** — cpi_core still loses to naive in 2021+.")
+                    lines.append(f"  V2 MAE {_fmt_num(m_2021_v2_mae)} vs naive {_fmt_num(m_2021_naive)}.")
+                    if delta is not None:
+                        direction = "improved" if delta < 0 else "worsened"
+                        lines.append(f"  Change vs V1: {_fmt_num(abs(delta))} pp {direction}.")
+                    if killed:
+                        lines.append("  Kill rule triggered (both full+2021+ lose). cpi_core is BENCHMARK_ONLY. No v3.")
+            lines.append("")
+
+    lines.append("---")
+    lines.append("## Data Sources Used in V2")
+    lines.append("")
+    lines.append("- **ZORI:** `data/zori/national.parquet` (fetched by `scripts/collect_zori.py`)")
+    lines.append("  - History: 2015-01-31 through latest available (137 months as of 2026-07-07)")
+    lines.append("  - PIT lag: 45 days conservative (PREREG_V2.md §1.1)")
+    lines.append("  - Revision status: revision_optimistic (Zillow re-benchmarks periodically)")
+    lines.append("  - Knowability: ZORI for month M is usable at decision date D if M_end_of_month + 45 days <= D")
+    lines.append("")
+    lines.append("- **CPI Shelter (CUSR0000SAH1):** `data/fred/CUSR0000SAH1.parquet`")
+    lines.append("  - Latest-revised (not ALFRED-vintaged) — declared revision_optimistic")
+    lines.append("  - Full history available from 1947-01")
+    lines.append("")
+    lines.append("- **Shelter nowcast:** (1-k)*cpi_shelter_mom_last + k*zori_signal, k=0.35 frozen")
+    lines.append("  - Divergence guard: k halved to 0.175 when |zori_signal - cpi_shelter_mom| > 3*sigma_24m")
+    lines.append("  - First usable in predictions: ~2016-01 (when ZORI lease-reset window M-12..M-6 has data)")
+    lines.append("")
+    lines.append("*Pre-registered spec frozen before any results were observed. Anti-mining: 2 of 2 attempts used.*")
+
+    return "\n".join(lines)
+
+
+def main_v2() -> dict:
+    """Run V2 backtest for CPI targets only and write results."""
+    summary_v2 = run_backtest_v2()
+
+    # Write JSON
+    json_path = _RESULTS_DIR / "backtest_v2_summary.json"
+    with open(json_path, "w") as f:
+        json.dump(summary_v2, f, indent=2, default=str)
+    print(f"Written: {json_path}")
+
+    # Write Markdown
+    md = generate_results_v2_md(summary_v2)
+    md_path = Path(__file__).resolve().parent / "RESULTS_V2.md"
+    with open(md_path, "w") as f:
+        f.write(md)
+    print(f"Written: {md_path}")
+
+    print("\n" + "=" * 70)
+    print(md)
+    print("=" * 70)
+
+    return summary_v2
+
+
 if __name__ == "__main__":
-    main()
+    import argparse as _argparse
+    _parser = _argparse.ArgumentParser(description="MRI walk-forward backtest")
+    _parser.add_argument("--v2", action="store_true", help="Run V2 CPI backtest (shelter leg)")
+    _args = _parser.parse_args()
+    if _args.v2:
+        main_v2()
+    else:
+        main()

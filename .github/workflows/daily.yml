@@ -183,6 +183,14 @@ jobs:
         run: |
           python scripts/fetch_finviz_themes.py \
             || echo "::warning::Finviz themes fetch failed (non-fatal) — keeping committed snapshot"
+      - name: collect ZORI national rent index (MRI shelter leg; non-fatal)
+        # Fetches Zillow's public ZORI CSV (keyless) and writes data/zori/national.parquet.
+        # data/zori/national.parquet is git-tracked (un-ignored by .gitignore negation);
+        # metro-level parquet files under data/zori/ remain untracked (size).
+        # collect_zori.py raises RuntimeError on HTTP failure — shell-level guard mandatory.
+        run: |
+          python scripts/collect_zori.py \
+            || echo "::warning::ZORI collection failed (non-fatal) — shelter leg will use cached parquet"
       - name: commit data
         run: |
           git config user.name "dashboard-bot"
