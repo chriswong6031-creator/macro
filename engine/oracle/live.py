@@ -525,7 +525,6 @@ def build_oracle_state(
     # This is ADDITIVE and does not rename or remove any existing field.
     try:
         from engine.oracle.personality_context import append_personality_context  # noqa: PLC0415
-        repo_root = data_dir.parent if data_dir.name != "data" else data_dir.parent
         # Resolve repo root: data_dir = <repo>/data
         _repo = data_dir.parent
         complexes_out = append_personality_context(

@@ -564,6 +564,31 @@ def _compose_stock_personality_summary(
             log.warning("stock_personality_summary: aggregate not a dict — null block")
             return dict(_null)
 
+        # Staleness gate — same threshold as engine/oracle/contract.py (MAX_TRADING_DAYS=2).
+        # Uses the pandas.bdate_range idiom from contract.py:206-208: count business days
+        # between as_of and now; if >2 trading days stale, honor the docstring promise
+        # ("absent or stale aggregate ⇒ {available: False}") and return the null block.
+        _agg_as_of = raw.get("as_of")
+        try:
+            import pandas as _pd  # noqa: PLC0415 — lazy import, mirrors world_state pattern
+            _asof_dt = datetime.fromisoformat(str(_agg_as_of)).replace(tzinfo=timezone.utc)
+            _now = datetime.now(timezone.utc)
+            _bdays = max(0, len(_pd.bdate_range(_asof_dt.date(), _now.date())) - 1)
+            if _bdays > 2:
+                log.warning(
+                    "stock_personality_summary: aggregate as_of=%r is %d trading days stale "
+                    "(>2) — returning {available: false, note: stale}",
+                    _agg_as_of, _bdays,
+                )
+                return {"available": False, "note": "stale", "as_of": _agg_as_of, "display_only": True}
+        except Exception:  # noqa: BLE001
+            # Unparseable as_of → treat as stale
+            log.warning(
+                "stock_personality_summary: cannot parse as_of=%r — returning stale null block",
+                _agg_as_of,
+            )
+            return {"available": False, "note": "stale", "as_of": _agg_as_of, "display_only": True}
+
         label_dist = raw.get("label_distributions") or {}
 
         def _top3(axis_key: str) -> list:

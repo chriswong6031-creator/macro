@@ -4,21 +4,27 @@ All tests are hermetic: synthetic in-memory fixtures, tmp_path I/O only,
 no real market data loaded from disk.
 
 Test coverage:
-1.  personality_context_fabricated   — shares + coverage correct for synthetic complex
-2.  personality_context_absent_agg   — absent aggregate ⇒ field absent on complex
-3.  personality_context_zero_cov     — complex with no matched tickers ⇒ zero coverage block
-4.  personality_context_top3         — top3 shares sum <= 1, descending order
-5.  personality_context_tinderbox    — tinderbox_share computed correctly
-6.  personality_context_event_ovr    — event_override_share computed correctly
-7.  personality_context_confidence   — confidence_class always "descriptive"
-8.  oracle_payload_valid_with_ctx    — validate_payload passes with personality_context
-9.  oracle_payload_valid_without_ctx — validate_payload passes with no personality_context
-10. world_state_sp_summary_present   — stock_personality_summary block in world_state
-11. world_state_sp_summary_absent    — absent aggregate ⇒ {"available": False}, no crash
-12. world_state_sp_summary_keys      — correct keys when aggregate present
-13. adapter_join_rows                — adapt_personality_context emits rows by ticker
-14. adapter_absent_aggregate         — absent aggregate ⇒ zero rows + gap note
-15. payload_version_bumped           — PAYLOAD_VERSION now >= 1.2.0 (B1 member roll-up)
+1.  personality_context_fabricated        — shares + coverage correct for synthetic complex
+2.  personality_context_absent_agg        — absent aggregate ⇒ field absent on complex
+3.  personality_context_zero_cov          — complex with no matched tickers ⇒ zero coverage block
+4.  personality_context_top3              — top3 shares sum <= 1, descending order
+5.  personality_context_tinderbox         — tinderbox_share computed correctly
+6.  personality_context_event_ovr         — event_override_share computed correctly
+7.  personality_context_confidence        — confidence_class always "descriptive"
+8.  oracle_payload_valid_with_ctx         — validate_payload passes with personality_context
+9.  oracle_payload_valid_without_ctx      — validate_payload passes with no personality_context
+10. world_state_sp_summary_present        — stock_personality_summary block in world_state
+11. world_state_sp_summary_absent         — absent aggregate ⇒ {"available": False}, no crash
+12. world_state_sp_summary_keys           — correct keys when aggregate present
+13. adapter_join_rows                     — adapt_personality_context emits rows by ticker
+14. adapter_absent_aggregate              — absent aggregate ⇒ zero rows + gap note
+15. payload_version_bumped                — PAYLOAD_VERSION now >= 1.2.0 (B1 member roll-up)
+16. personality_as_of_present_fresh       — fresh aggregate ⇒ personality_as_of emitted
+17. personality_stale_gate_omits_field    — stale aggregate ⇒ personality_context absent
+18. personality_as_of_matches_aggregate   — personality_as_of matches aggregate.as_of
+19. world_state_stale_gate_returns_null   — stale agg in world_state ⇒ available=false/stale
+20. coverage_honesty_nondict_record       — non-dict per_ticker record excluded from coverage
+21. share_denominators_field_emitted      — share_denominators present in output block
 """
 from __future__ import annotations
 
@@ -378,3 +384,165 @@ def test_payload_version_bumped():
     assert (major, minor) >= (1, 2), (
         f"PAYLOAD_VERSION {PAYLOAD_VERSION} should be >= 1.2.0 after B1 roll-up"
     )
+
+
+# ---------------------------------------------------------------------------
+# 16–21  Staleness gate + honesty tests (Opus review findings 1, 2, 3, 6)
+# ---------------------------------------------------------------------------
+
+from engine.oracle.personality_context import (
+    append_personality_context,
+    _is_aggregate_stale,
+)
+from datetime import date, timedelta
+
+
+def _make_aggregate(as_of: str, per_ticker: dict | None = None) -> dict:
+    """Build a minimal site aggregate dict with given as_of."""
+    return {
+        "schema": "stock_personality.v1",
+        "as_of": as_of,
+        "n_tickers": 1,
+        "coverage": 1.0,
+        "label_distributions": {
+            "archetype": {"quality_compounder": 1},
+            "chart_personality": {"smooth_compounder_grind": 1},
+        },
+        "per_ticker": per_ticker if per_ticker is not None else {
+            "AAPL": _make_per_ticker("AAPL", arch="quality_compounder",
+                                     chart=["smooth_compounder_grind"])
+        },
+    }
+
+
+# A fresh as_of = today (0 trading days stale)
+_TODAY_ISO = date.today().isoformat()
+# A stale as_of = 10 calendar days ago (always > 2 trading days)
+_STALE_ISO = (date.today() - timedelta(days=10)).isoformat()
+
+
+def test_personality_as_of_present_fresh():
+    """Fresh aggregate ⇒ personality_context is emitted and contains personality_as_of."""
+    complexes = [{"id": "ai_compute", "name": "AI Compute", "state": "quiet"}]
+    complexes_def = [_make_complex_def("ai_compute", ["node_a"])]
+    agg = _make_aggregate(_TODAY_ISO)
+
+    result = append_personality_context(
+        complexes, complexes_def, repo="/dev/null",
+        site_aggregate=agg,
+        theme_ticker_map=_THEME_MAP,
+    )
+    ctx = result[0].get("personality_context")
+    assert ctx is not None, "Fresh aggregate must emit personality_context"
+    assert ctx.get("personality_as_of") == _TODAY_ISO, (
+        f"personality_as_of should equal aggregate as_of ({_TODAY_ISO}); "
+        f"got {ctx.get('personality_as_of')!r}"
+    )
+
+
+def test_personality_stale_gate_omits_field():
+    """Stale aggregate (>2 trading days) ⇒ personality_context field absent on complex.
+
+    This test FAILS on pre-fix code (before the staleness gate was added to
+    append_personality_context) — the field would be present even for stale aggregates.
+    """
+    complexes = [{"id": "ai_compute", "name": "AI Compute", "state": "quiet"}]
+    complexes_def = [_make_complex_def("ai_compute", ["node_a"])]
+    agg = _make_aggregate(_STALE_ISO)  # 10 calendar days ago — clearly stale
+
+    result = append_personality_context(
+        complexes, complexes_def, repo="/dev/null",
+        site_aggregate=agg,
+        theme_ticker_map=_THEME_MAP,
+    )
+    assert "personality_context" not in result[0], (
+        f"Stale aggregate (as_of={_STALE_ISO}) must NOT emit personality_context; "
+        f"got: {result[0].get('personality_context')}"
+    )
+
+
+def test_personality_as_of_matches_aggregate():
+    """personality_as_of in the emitted block matches the aggregate's as_of."""
+    complexes = [{"id": "ai_compute", "name": "AI Compute", "state": "quiet"}]
+    complexes_def = [_make_complex_def("ai_compute", ["node_a"])]
+    # Use yesterday: guaranteed 1 trading day stale (fresh)
+    yesterday = (date.today() - timedelta(days=1)).isoformat()
+    agg = _make_aggregate(yesterday)
+
+    result = append_personality_context(
+        complexes, complexes_def, repo="/dev/null",
+        site_aggregate=agg,
+        theme_ticker_map=_THEME_MAP,
+    )
+    ctx = result[0].get("personality_context")
+    # Note: yesterday may or may not be stale depending on weekday — only assert if present
+    if ctx is not None:
+        assert ctx.get("personality_as_of") == yesterday
+
+
+def test_world_state_stale_gate_returns_null(tmp_path):
+    """world_state._compose_stock_personality_summary with stale as_of ⇒ available=False.
+
+    This test FAILS on pre-fix code (before the staleness gate was added to
+    _compose_stock_personality_summary) — available=True would be returned for stale data.
+    """
+    stale_agg = {
+        "schema": "stock_personality.v1",
+        "as_of": _STALE_ISO,  # 10 calendar days ago — clearly stale
+        "n_tickers": 2,
+        "coverage": 1.0,
+        "label_distributions": {
+            "archetype": {"quality_compounder": 2},
+            "chart_personality": {"smooth_compounder_grind": 1},
+        },
+        "per_ticker": {
+            "AAPL": {"arch": "quality_compounder", "own": [], "modes": ["normal"],
+                     "chart": [], "dna": None, "micro": []},
+        },
+    }
+    _write_sp_aggregate(tmp_path, stale_agg)
+    result = _compose_stock_personality_summary(root=tmp_path)
+    assert result.get("available") is False, (
+        f"Stale aggregate (as_of={_STALE_ISO}) must return available=False; got {result}"
+    )
+    assert result.get("note") == "stale", f"Expected note='stale'; got {result.get('note')!r}"
+    assert result.get("as_of") == _STALE_ISO
+
+
+def test_coverage_honesty_nondict_record():
+    """Non-dict per_ticker record must NOT count as covered (finding 6).
+
+    Pre-fix behavior: a ticker present in per_ticker but with a non-dict value
+    (e.g. None or a string) would count toward n_nodes_with_data, producing
+    coverage=1.0 with empty shares.  Post-fix: such records are excluded.
+    """
+    per_ticker_with_nondict = {
+        "AAPL": None,   # non-dict — should NOT count as covered
+        "MSFT": "bad",  # non-dict — should NOT count as covered
+        "GOOG": _make_per_ticker("GOOG", arch="secular_growth"),  # usable
+    }
+    theme_map = {
+        "node_a": ["AAPL", "MSFT"],  # both non-dict → node_a NOT covered
+        "node_b": ["GOOG"],          # dict → node_b covered
+    }
+    cdef = _make_complex_def("test_cov", ["node_a", "node_b"])
+    ctx = compute_personality_context_for_complex(cdef, per_ticker_with_nondict, theme_map)
+    assert ctx is not None
+    # node_b is covered (GOOG is a dict), node_a is not → coverage = 1/2 = 0.5
+    assert ctx["member_coverage"] == 0.5, (
+        f"Expected coverage=0.5 (only node_b covered); got {ctx['member_coverage']}"
+    )
+    # Shares should reflect GOOG only — 1 ticker covered
+    archetypes = dict(ctx["dominant_member_archetypes"])
+    assert "secular_growth" in archetypes
+
+
+def test_share_denominators_field_emitted():
+    """share_denominators honesty field is present in the emitted block."""
+    cdef = _make_complex_def("test_sd", ["node_a", "node_b"])
+    ctx = compute_personality_context_for_complex(cdef, _PER_TICKER, _THEME_MAP)
+    assert ctx is not None
+    sd = ctx.get("share_denominators")
+    assert isinstance(sd, dict), f"share_denominators must be a dict; got {type(sd)}"
+    assert sd.get("archetypes_and_flags") == "covered_tickers"
+    assert sd.get("chart_labels") == "label_emissions"
