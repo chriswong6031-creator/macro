@@ -205,16 +205,19 @@ def _pin_probability(by_strike: list[dict], spot: float, max_pain: float | None)
     score_i = (callOI + putOI) * avgGamma / (1 + (|K - spot| / spot * 100)^2)
     probability = min(0.95, bestScore / totalScore)
 
-    We use the by_strike ladder from gex_model which carries call_oi + put_oi.
-    avgGamma is not directly in the ladder; we use |net_mn| as a proxy.
+    We use the by_strike ladder from gex_model which carries call_oi + put_oi and,
+    since the gross-gamma fix (PR #1832 / feat/prophet-nightly), also call_gamma_mn
+    and put_gamma_mn — the per-side unsigned dollar-gamma per strike aggregated across
+    expiries.
 
-    OURS (deviation from spec §7.4): spec uses avgGamma = (callGamma + putGamma) / 2,
-    which is an unsigned aggregate and is highest at balanced high-OI strikes.
-    We substitute |net_mn| (signed net dollar-gamma), which collapses to ~0 when
-    call and put gamma are equal — the opposite of the spec's intent at true pin strikes.
-    A strike with high, offsetting call/put gamma gets net_mn≈0 and score≈0, under-ranking
-    it vs the spec.  The deviation is documented here as OURS; correcting it would require
-    per-side dollar-gamma columns in the walls ladder (not currently computed).
+    OURS (fidelity restored in feat/prophet-nightly): spec uses avgGamma =
+    (callGamma + putGamma) / 2, which is an unsigned aggregate and is highest at
+    balanced high-OI strikes (true pin strikes). We now use:
+        avg_gamma = (call_gamma_mn + put_gamma_mn) / 2
+    directly from the ladder.  When those fields are absent (legacy callers / thin
+    stubs that only carry net_mn), we fall back to |net_mn| with an explicit comment
+    noting the deviation. The fallback preserves backward-compat; all production paths
+    through gex_model.strike_walls emit call_gamma_mn + put_gamma_mn since the same PR.
 
     Returns None when there are fewer than 3 usable strikes (thin chain guard).
     """
@@ -226,13 +229,27 @@ def _pin_probability(by_strike: list[dict], spot: float, max_pain: float | None)
         k = row.get("K")
         call_oi = row.get("call_oi") or 0
         put_oi = row.get("put_oi") or 0
-        net_mn = row.get("net_mn")
         total_oi = call_oi + put_oi
-        if k is None or total_oi <= 0 or net_mn is None:
+        if k is None or total_oi <= 0:
             continue
-        # avgGamma proxy = |net_mn| normalised to per-contract (not needed for relative ranking)
+
+        # Prefer spec-faithful gross gamma (call_gamma_mn + put_gamma_mn always >= 0)
+        call_gamma_mn = row.get("call_gamma_mn")
+        put_gamma_mn = row.get("put_gamma_mn")
+        if call_gamma_mn is not None and put_gamma_mn is not None:
+            avg_gamma = (call_gamma_mn + put_gamma_mn) / 2.0
+        else:
+            # Legacy fallback: |net_mn| under-ranks balanced strikes (see old OURS note)
+            net_mn = row.get("net_mn")
+            if net_mn is None:
+                continue
+            avg_gamma = abs(net_mn)
+
+        if avg_gamma <= 0:
+            continue
+
         dNorm = abs(k - spot) / (spot * 0.01)  # in units of 1% of spot
-        score = (total_oi * abs(net_mn)) / (1.0 + dNorm ** 2)
+        score = (total_oi * avg_gamma) / (1.0 + dNorm ** 2)
         scores.append((score, k))
 
     if len(scores) < 3:

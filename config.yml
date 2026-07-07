@@ -114,7 +114,12 @@ fred:
     # ADPMNUSNERSA: ADP monthly SA total-private payrolls; ALFRED vintages available;
     #   note 2022 methodology redesign (Moody's Analytics collaboration) which re-revised
     #   the full history — backtest era-splits at 2022 boundary per MRI-R9.
-    UNRATE, RSAFS, JTSJOL, ADPMNUSNERSA]
+    UNRATE, RSAFS, JTSJOL, ADPMNUSNERSA,
+    # MRI-PR-H: NFP decomposition + AHE/hours targets. All monthly, ~1 initial-release row/period.
+    # USPRIV/USGOVT: 1939→, ALFRED vintages expected. CES0500000003/AWHAETP: 2006-03→, ALFRED
+    # vintages expected. Note: if ALFRED has no vintage history for a series on the keyed
+    # collect run, the series returns empty and the model falls back gracefully (absent leg).
+    USPRIV, USGOVT, CES0500000003, AWHAETP]
   series:
     rates:
       DGS2: us2y
@@ -357,6 +362,11 @@ fred:
                                         # 2022 methodology redesign re-revised full history; era-split at 2022
       UNRATE: unemployment_rate         # unemployment rate (monthly, %) — promoted from macro_surprise ad-hoc
       RSAFS: retail_sales               # advance retail & food services sales (monthly, $M SA) — promoted from macro_surprise ad-hoc
+      # MRI-PR-H: NFP decomposition + AHE/hours targets (2006-03→)
+      USPRIV: nfp_private               # private payrolls (thousands SA, 1939→) — decomposition private leg
+      USGOVT: nfp_government            # government payrolls (thousands SA, 1939→) — decomposition government leg
+      CES0500000003: avg_hourly_earnings  # avg hourly earnings total private ($/hr SA, 2006-03→) — AHE target
+      AWHAETP: avg_weekly_hours         # avg weekly hours total private (hrs/wk SA, 2006-03→) — hours target
   retries: 3
   backoff_base_s: 5
   batch_size: 80
@@ -942,6 +952,22 @@ cleveland_nowcast:                 # Cleveland Fed daily inflation nowcast (MRI-
   month_url: "https://www.clevelandfed.org/-/media/files/webcharts/inflationnowcasting/nowcast_month.json?sc_lang=en"
   retries: 3
   timeout: 60
+
+kalshi_releases:                   # Kalshi macro-release bracket markets (MRI PR-K; keyless, no auth)
+  # Keyless v2 trade API: api.elections.kalshi.com/trade-api/v2/markets
+  # Series collected (LIVE VERIFIED 2026-07-07 via direct API probe):
+  #   KXCPI       → US CPI headline MoM % SA bracket markets
+  #                 "Will CPI rise more than X%?" — P(YES) = P(CPI MoM > X pct)
+  #   KXPAYROLLS  → US non-farm payrolls MoM change, thousands
+  #                 "Will above X jobs be added?" — P(YES) = P(NFP MoM > X k jobs)
+  #   KXJOBLESSCLAIMS → US initial jobless claims, weekly level
+  #                 "How many claims will there be the week ending [date]?"
+  # Bracket structure: each event has 9-14 exceedance binaries at 0.1pp (CPI)
+  # or 10-25k (NFP) step intervals. Storage: first-seen append-only parquet.
+  # Collector: collectors/kalshi_releases.py. Fail-open — any fetch/parse
+  # error is logged and skipped; never raises into the collect lane.
+  retries: 3
+  timeout: 30
 
 ofr_fsi:                           # distinct from the OFR funding-rates collector (collectors/ofr.py, group "ofr")
   fsi_url: https://www.financialresearch.gov/financial-stress-index/data/fsi.csv

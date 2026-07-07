@@ -2,28 +2,28 @@
   "families": {
     "altdata": {
       "horizon_curve": {
-        "5": 0.002903
+        "5": 0.002432
       },
       "recency_trend": {
         "252d": {
-          "n_eff": 94,
-          "mean": 0.004928,
-          "wilson_ci_low": 0.463027
+          "n_eff": 112,
+          "mean": 0.003913,
+          "wilson_ci_low": 0.461249
         },
         "756d": {
-          "n_eff": 94,
-          "mean": 0.004928,
-          "wilson_ci_low": 0.463027
+          "n_eff": 112,
+          "mean": 0.003913,
+          "wilson_ci_low": 0.461249
         },
         "all": {
-          "n_eff": 94,
-          "mean": 0.004928,
-          "wilson_ci_low": 0.463027
+          "n_eff": 112,
+          "mean": 0.003913,
+          "wilson_ci_low": 0.461249
         }
       },
       "staleness": {
-        "date_last": "2026-06-24",
-        "days_since_last_fire": 13
+        "date_last": "2026-06-28",
+        "days_since_last_fire": 9
       },
       "armed": false
     },
@@ -83,54 +83,54 @@
     },
     "radar": {
       "horizon_curve": {
-        "5": 0.004471
+        "5": -0.001473
       },
       "recency_trend": {
         "252d": {
-          "n_eff": 915,
-          "mean": 0.007196,
-          "wilson_ci_low": 0.503122
+          "n_eff": 1806,
+          "mean": -0.001988,
+          "wilson_ci_low": 0.484702
         },
         "756d": {
-          "n_eff": 915,
-          "mean": 0.007196,
-          "wilson_ci_low": 0.503122
+          "n_eff": 1806,
+          "mean": -0.001988,
+          "wilson_ci_low": 0.484702
         },
         "all": {
-          "n_eff": 915,
-          "mean": 0.007196,
-          "wilson_ci_low": 0.503122
+          "n_eff": 1806,
+          "mean": -0.001988,
+          "wilson_ci_low": 0.484702
         }
       },
       "staleness": {
-        "date_last": "2026-06-26",
-        "days_since_last_fire": 11
+        "date_last": "2026-06-30",
+        "days_since_last_fire": 7
       },
       "armed": false
     },
     "track_record": {
       "horizon_curve": {
-        "5": 0.048661,
-        "10": 0.057269,
-        "21": 0.071669,
-        "63": 0.111151,
-        "126": 0.157826
+        "5": 0.048845,
+        "10": 0.057467,
+        "21": 0.071925,
+        "63": 0.111662,
+        "126": 0.158617
       },
       "recency_trend": {
         "252d": {
-          "n_eff": 972,
-          "mean": 0.025476,
-          "wilson_ci_low": 0.713341
+          "n_eff": 980,
+          "mean": 0.025824,
+          "wilson_ci_low": 0.71353
         },
         "756d": {
-          "n_eff": 2928,
-          "mean": 0.025849,
-          "wilson_ci_low": 0.748631
+          "n_eff": 2960,
+          "mean": 0.026066,
+          "wilson_ci_low": 0.74856
         },
         "all": {
-          "n_eff": 55386,
-          "mean": 0.024921,
-          "wilson_ci_low": 0.733
+          "n_eff": 55492,
+          "mean": 0.024984,
+          "wilson_ci_low": 0.732984
         }
       },
       "staleness": {
@@ -168,10 +168,10 @@
       "armed": true
     }
   },
-  "generated_from": "sha256:2cace08c37a5551ca752e65ab9533d2b78d2948392c53b1ecade99d0cbe9f23b",
+  "generated_from": "sha256:32489edcf3e717d2b5079ef85e95229ac365359b877144b50dd3f0703e6639be",
   "schema_version": 1,
   "produced_by": "engine/neuralweb/decay.py",
-  "produced_at": "2026-07-07T08:54:00Z",
-  "inputs_hash": "sha256:4c9704700c0293adc1829691940672114c30e4bb3b8ecb7912c1d4be9c2d7beb",
+  "produced_at": "2026-07-07T15:18:29Z",
+  "inputs_hash": "sha256:0d942e00a0fe745d3293fc647cf8692a60ebbc1ddb9c47311fcf79a59c77b9e7",
   "tier": "infrastructure"
 }

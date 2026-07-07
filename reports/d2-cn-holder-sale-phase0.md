@@ -1,6 +1,14 @@
 # d2_cn_holder_sale_calendar — Phase-0 Honest Harness
 
-**Family:** `d2_cn_holder_sale_calendar`  **Verdict:** **PASS**
+**Family:** `d2_cn_holder_sale_calendar`  **Verdict:** **DIRECTIONAL FAIL (anti-hypothesis)**
+
+---
+
+## ADJUDICATION AMENDMENT (2026-07-07)
+
+FABLE RULING (verbatim, for the report amendment): The d2_cn_holder_sale_calendar phase-0 verdict label "PASS" is overruled to "DIRECTIONAL FAIL — anti-hypothesis finding". The frozen pre-registration required direction NEGATIVE and monotone in planned size; the canonical run shows POSITIVE excess returns during execution windows (C1 +0.63%/21d t=2.41), strongest in the LARGEST planned-sale tercile (C5 t=4.11), with the monotonicity gate failing. Statistical significance in the anti-registered direction does not satisfy a directional gate. The finding is registered as a descriptive observation (plausible selection mechanism: major holders schedule exits from names strong enough to absorb them) and is display-only; any positive-direction hypothesis requires a fresh pre-registration with a new trial budget.
+
+---
 
 Pre-registered per: `research/SIGNAL_LAB_FRONTIER_DAY2_FABLE_ADJUDICATION_2026-07-06.md`
 item 3 — authorised 2026-07-06, executed-window variant, LG-CN-SUPPLY slot.
@@ -83,11 +91,11 @@ Many 减持 plans go unexecuted or partially executed. The base rate (proxy):
 
 ## Verdict and interpretation
 
-**Verdict: PASS**
+**Verdict: DIRECTIONAL FAIL (anti-hypothesis)**
 
-Both primary gates cleared (|t_HAC| >= 2 and BH q <= 0.10). The execution-window forced-supply drift is statistically detectable in this dataset.
-This warrants promotion to the LG-CN-SUPPLY slot pending further robustness review.
-**Do NOT use the word 'validated' — this is a Phase-0 harness result.** The signal is display-only until the full gauntlet is run.
+*(Overruled by adjudication amendment 2026-07-07 — see top of report.)*
+
+Statistical gates G1/G2/G3 cleared, but direction is POSITIVE (anti-registered). The execution-window shows statistically significant POSITIVE excess returns, contrary to the pre-registered NEGATIVE direction. Monotonicity gate G4 also failed (large tercile most positive, not most negative). This is a descriptive observation only; the signal is display-only. Promotion requires a fresh pre-registration in the positive direction with a new trial budget.
 
 ### Caveats
 

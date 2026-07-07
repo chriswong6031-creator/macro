@@ -139,12 +139,12 @@ These don't flip a shipped verdict today; they guarantee a future DT-W1a repeat 
 
 Ordered by stakes × exposure × cheapness. Each is a bounded re-run of *inference only* (events/thresholds frozen), mirroring the DT-W1a repair pattern.
 
-1. **EI-RC-1** *(DISPATCHED 2026-07-07)*: P1.3 T24/T21 (and T18) under within-month demeaning + month-block bootstrap on the frozen episode panel. Decides whether the F3 anti-chase hard-gate warrant stands or the gate stays shadow-pending-forward-ledger. T02 expected to survive; include it as the internal positive control.
+1. **EI-RC-1** *(RESOLVED 2026-07-07, RC-RUL-1 — F3 hard-gate warrant WITHDRAWN; T24/T21/T09 → 0; T02 reaffirmed −9.66pp)*: P1.3 T24/T21 (and T18) under within-month demeaning + month-block bootstrap on the frozen episode panel. Decides whether the F3 anti-chase hard-gate warrant stands or the gate stays shadow-pending-forward-ledger. T02 expected to survive; include it as the internal positive control.
 2. **GATE-AMEND** *(DONE 2026-07-07 — R1-A1 in `R1_CHARTER.md`, L3-A1 in `L3_PREREG.md`)*: amend the two gates to require a calendar-time control (month-block or within-period demeaning) + resolve the L3 cluster-definition ambiguity. Zero re-run cost; prevents two future false-PASS factories. Highest value-per-token in this memo.
-3. **OTA-RC-1** *(DISPATCHED 2026-07-07)*: W2 member-transmission with (i) episode-level clustering (merge cross-node windows in the same macro episode), (ii) holdout-period-matched OUT baseline for R3. Expected outcome per the study's own probes: CONFIRMED→PARTIAL, forward ledger remains arbiter.
-4. **OTA-RC-2** *(queued behind ORC-RC-1)*: re-run the reversion gauntlet Leg-6 placebo with episode-block draws + episode-clustered CIs on Legs 2/5 for SEQ_TLT_RELIEF_WASHOUT (and, cheaply, the rest of the registered compound family — same screen, same fix).
-5. **ORC-RC-1** *(DISPATCHED 2026-07-07)*: compound gauntlet G3 placebo with calendar-block structure; priority on A17 (n=73, 2021+) since A15 feeds an external paper. Also re-express P3's `ep_in_onset_21d` secondary under calendar-block CI before it is cited anywhere.
-6. **HC-RC-1** *(DISPATCHED 2026-07-07)*: R-1 construction divergence — fix CD-1/CD-2 (globally date-sorted events, real ±7d cross-sector block collapse into the SE) and read DD63 stress-stratified. This is the audit's one *false-null* candidate; a real de-escalation key may be sitting under a broken control.
+3. **OTA-RC-1** *(RESOLVED 2026-07-07, RC-RUL-2 — CONFIRMED STANDS; episode-cluster and period-matched CIs keep LB>0; expected downgrade did not materialize)*: W2 member-transmission with (i) episode-level clustering (merge cross-node windows in the same macro episode), (ii) holdout-period-matched OUT baseline for R3.
+4. **OTA-RC-2** *(RESOLVED 2026-07-07, RC-RUL-5 — SPLIT: WR/holdout legs stand on episode CIs, clustering mild (610 eps/157 mo); Leg-6 timing claim WITHDRAWN (+2.37% < time-shift p95 +3.75%); stays `screened`, promotion blocked; base-10 sweep registered as follow-up)*: reversion gauntlet under episode-cluster CIs + time-preserving Leg-6 placebo.
+5. **ORC-RC-1** *(RESOLVED 2026-07-07, RC-RUL-3 — A15 reaffirmed p=0.0095; **A9 PASS WITHDRAWN** p=0.139; A17-modern stands p=0.013; P3 secondary strengthened p=0.0045)*: compound gauntlet G3 placebo with calendar-block structure.
+6. **HC-RC-1** *(RESOLVED 2026-07-07, RC-RUL-4 — lock REAFFIRMED on repaired machinery; no masked effect; DD63 tail = descriptive watch item)*: R-1 construction divergence — fix CD-1/CD-2 and read DD63 stress-stratified.
 7. **LH-RC-1** *(DONE 2026-07-07 — fragility caveat attached to `EXPECT_DRIFT_RULER_P_RESULTS.md` display tier)*: promote expect_drift's existing 88-day-block CI from decorative to gate for ED-2, or attach a "BH gate not time-controlled; pass concentrated 2022-23" caveat until Ruler-H (~2027-H2). Caveat path taken; re-gate remains optional.
 8. **Citation guard** *(DONE 2026-07-07 — banners on `final_report.md` + `tuning_report.md`)*: explicit "no inference / test-leaked — do not cite" banner (matches the S7 SPEC ruling).
 
@@ -162,3 +162,9 @@ Deliberately **not** queued: all printed nulls and n-floor deferrals (anti-conse
 ---
 
 *Audit lanes: entry_intel (Opus), long_hold (Opus), species+bottom-backtest (Opus), oracle turn-asymmetry (Opus), rule_replay+dispersion (Opus), cross-repo sweep (Sonnet census). Synthesis and ranking: Fable main loop. No `data/` writes, no script executions, no verdict changes.*
+
+---
+
+## 9. Resolution postscript (2026-07-07)
+
+The queue in §7 was executed the next day: Phase A (gate amendments R1-A1/L3-A1, citation banners, ED-2 caveat) in PR #1841; re-check evidence in PRs #1850/#1855/#1864/#1866/#1869; rulings in `research/TIME_CONFOUND_RECHECK_ADJUDICATION.md` (RC-RUL-1..5). Net outcome: **two full flips** (the F3 anti-chase hard-gate warrant withdrawn — the audit's #1 item; the A9 compound gauntlet PASS withdrawn), **one partial withdrawal** (SEQ_TLT's Leg-6 timing claim; its WR/holdout legs stand and its clustering proved mild), **five survivals** under harder rulers (T02, W2 member-transmission, A15, A17-modern, R-1's null), and **one strengthening** (P3's `ep_in_onset_21d` under month-block CI). Every re-check froze events, passed a reproduction gate, and carried calibration controls. The ranked table in §2 should be read together with the adjudication's scoreboard.

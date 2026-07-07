@@ -183,6 +183,14 @@ jobs:
         run: |
           python scripts/fetch_finviz_themes.py \
             || echo "::warning::Finviz themes fetch failed (non-fatal) — keeping committed snapshot"
+      - name: collect ZORI national rent index (MRI shelter leg; non-fatal)
+        # Fetches Zillow's public ZORI CSV (keyless) and writes data/zori/national.parquet.
+        # data/zori/national.parquet is git-tracked (un-ignored by .gitignore negation);
+        # metro-level parquet files under data/zori/ remain untracked (size).
+        # collect_zori.py raises RuntimeError on HTTP failure — shell-level guard mandatory.
+        run: |
+          python scripts/collect_zori.py \
+            || echo "::warning::ZORI collection failed (non-fatal) — shelter leg will use cached parquet"
       - name: commit data
         run: |
           git config user.name "dashboard-bot"
@@ -454,6 +462,31 @@ jobs:
           # Reads only committed data; returns 0 on error.
           run_py "thematic foresight desk (build_foresight)" scripts.build_foresight
           exit 0
+      - name: Prophet nightly (plan refresh + ledger advancement + R2 mirror)
+        # AFTER build_site: reads site/factordata/us_standouts.json (just written).
+        # Originates new prophet.trade_plan/v1 envelopes, runs the management engine
+        # for every active plan, advances the forward outcome ledger (nightly is the
+        # SOLE advancer — idempotent per plan ID), and optionally mirrors
+        # site/prophet/index.json to R2 key "prophet/index.json".
+        # Artifacts committed by "commit engine outputs" below (site/ + data/ covers
+        # site/prophet/** and data/prophet/ledger.jsonl — no extra git add needed).
+        # continue-on-error: true — a prophet failure must never abort the nightly deploy.
+        # R2 creds: passed when present; build_prophet skips upload gracefully when absent.
+        # Wall-time: seconds (no heavy compute; reads committed parquets + standouts JSON).
+        continue-on-error: true
+        env:
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: |
+          set +e
+          echo "::group::build_prophet (plan refresh + ledger advancement)"
+          python -m scripts.build_prophet --publish > /tmp/prophet.log 2>&1; rc=$?
+          cat /tmp/prophet.log
+          echo "::endgroup::"
+          [ "$rc" -ne 0 ] && echo "::warning title=build_prophet::rc=$rc (non-fatal — prophet artifacts degrade gracefully)"
+          exit 0
       - name: regional + desk builders (parallelised — independent clusters, barrier before the hub)
         # The ~22 builders between build_site and the landing hub split into mutually
         # INDEPENDENT clusters (each internally ordered by its own data deps). They used
@@ -588,6 +621,19 @@ jobs:
         # which could run inside cl_china only because both its deps lived in that one cluster).
         # Additive (the builder returns 0 on any failure), so it can never break the deploy.
         run: python -m scripts.build_sector_central
+      - name: flow_idx R2 mirror (heatmap flow layer freshness)
+        # Mirror site/flow/index.json → R2 key live_flow/flow_idx.json so the live
+        # options-flow heatmap layer can read a fresh manifest without a full site deploy.
+        # Runs AFTER the parallel band (cl_gex → build_options_flow produced the file).
+        # Graceful: skips silently when R2 creds are absent. Never fails the build.
+        continue-on-error: true
+        env:
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: |
+          python -m scripts.mirror_flow_idx || echo "::warning::flow_idx R2 mirror failed (non-fatal)"
       - name: build bitcoin vector + landing hub
         # installs the landing hub at index.html (rendered from stored engine
         # state, so ordering vs build_site no longer matters — build_site writes

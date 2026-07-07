@@ -263,3 +263,108 @@ same-night FRED/ALFRED refresh; ALFRED vintage fetch requires FRED_API_KEY —
 already injected in daily.yml). Compute is trivial (a few monthly series);
 render-budget impact ≈ 0. All writes fail-open; a dead collector degrades the
 card, never the build.
+
+## 9. Codex "Economic Release Replication Machine" adjudication (2026-07-07 second wave)
+
+Source: research/ECONOMIC_RELEASE_REPLICATION_MACHINE.md (Codex, doc-only
+handoff). Verdict: the doc is the institutional-architecture layer this
+program was pointed at; roughly 40% was already built by waves A-E on the
+same day, and the deltas below are adopted into THIS program. Rulings:
+
+- **MRI-R11 (no parallel system).** Codex's "Macro Release Lab" as a separate
+  structure (engine/release_lab/, data/release_lab/) is REJECTED — same-lane
+  duplication. Every adopted capability lands inside macro-release-intel's
+  existing paths (engine/release_forecast*, data/release_forecast/,
+  site/macrodata/release_forecast.json). The Codex doc is a design source,
+  not a second program.
+- **MRI-R12 (Cleveland history basis).** The Cleveland nowcast daily paths
+  backfilled from the public endpoint carry obs_date as published; they may
+  be used in DESCRIPTIVE comparison tables labeled "as re-served by the
+  Cleveland endpoint". PIT-graded statistics keep the first_seen_asof rule
+  from MRI-R6 unchanged.
+- **MRI-R13 (gates).** Codex's consensus-relative gates are re-pointed at the
+  benchmark set (no consensus feed exists — MRI-R5 stands). The §7 forward
+  gates are pre-registered and UNCHANGED. Adopted as supplementary REPORTED
+  (non-binding) diagnostics: interval_60 coverage vs [50%,75%], grade vs
+  first release AND vs latest revision separately, and market-reaction
+  usefulness. Codex's maturity horizons (18-24 CPI / 24-36 NFP prints)
+  are adopted as display copy ("earned-trust horizon"), not as gates.
+- **MRI-R14 (committee discipline).** Model-committee ensembling with learned
+  weights is DEFERRED until forward-ledger maturity; until then one frozen
+  spec per target (§6 anti-mining). Codex's own "weights must not be
+  optimized until enough frozen observations" is made binding.
+- **MRI-R15 (surprise distribution).** p_hot/p_cold/p_inline computed
+  deterministically from our walk-forward residual distribution relative to
+  the benchmark median (±0.35σ inline band from §3.4). No new authority; a
+  restatement of existing quantiles.
+- **MRI-R16 (market-implied prior).** collectors/prediction_markets.py
+  (exists; Polymarket Gamma, keyless, append-only snapshots) fills
+  benchmark_set.market_implied where a matching CPI/jobs event trades.
+  Market-expectation CONTEXT only: never fused into the model point
+  (prior-blending REJECTED — a model that ingests the market prior cannot
+  detect a stale market prior), never a gate.
+- **MRI-R17 (reaction layer).** A per-release "expected market sensitivity"
+  chip is adopted as a DESCRIPTIVE join of release_playbook cells with the
+  current regime label. The conditional reaction-function regression is
+  deferred until playbook n grows; positioning inputs are FORBIDDEN
+  (Signal Commons: positioning fusion illegal).
+- **MRI-R18 (paid data).** PriceStats/Manheim-paid/LinkUp/Revelio/ADP-paid
+  all SKIP (house W6 paid-data SKIP-ALL). Public Manheim mid-month value is
+  a possible future keyless collector pending a licensing read.
+- **Spec-attempt ledger.** Adding the shelter stock-adjustment leg (Codex
+  §5.2, fed by the merged #1758 ZORI product) is pre-registered as spec
+  attempt #2 of 2 for BOTH cpi_core and cpi_headline (§6 anti-mining).
+  If attempt #2 fails its target's kill rule, that target goes
+  benchmark-only; there is no v3 without a program-level adjudication.
+
+Adopted build waves: **PR-F** ledger schema v2 (release_id/prediction_id/
+inputs_hash/horizon_hours; dual grading first-vs-latest; EOD h0/h1 market-
+reaction fields on scored rows; weekly claims target for ledger velocity;
+engine module split for parallel component work). **PR-G** CPI component
+upgrade (shelter stock-adjustment leg with lease-reset smoothing and
+shrink-to-BLS-momentum divergence guard; per-component contrib_pp; known/
+proxy/residual weight-share decomposition driving confidence v2; backtest
+v2 re-run with full legs). **PR-H** NFP decomposition (private/government
+split, AHE + hours as v2 targets, birth-death prior table from published
+BLS CES tables, JOLTS leg, revisions-risk field). **PR-I** market-implied
+benchmark + surprise_distribution + sensitivity chip. **PR-K** UI v2
+(component breakdown, known/residual bar, market-implied row, sensitivity).
+
+### 9.1 Second-wave reconciliation (2026-07-07, Fable main loop)
+
+The same external doc was independently adjudicated twice on 2026-07-07 (this
+file §9 via #1877, and a parallel Fable lane whose branch predated #1877 —
+closed PR #1879). The verdicts CONVERGED on every major call: no parallel
+system, benchmark honesty, committee/ensemble deferral to ledger maturity,
+component attribution + market-implied benchmark as adopted deltas. This
+section reconciles the second lane's remainder into canonical numbering.
+
+- **MRI-R19 (attribution law).** Component contributions (PR-G) are the
+  linear model's own exact decomposition (coef × z-value, in pp), published
+  as-is with the residual share printed. They may never be manually adjusted,
+  re-weighted for narrative, or hidden when unflattering.
+- **MRI-R20 (quirk law).** Release-quirk flags are deterministic calendar
+  facts with citations (CPI annual weight-update/seasonal-revision print; CPI
+  health-insurance reset window; NFP CES benchmark + population-control
+  print; claims holiday weeks; 4-vs-5-week survey gaps). They annotate
+  uncertainty on the card; they never shift the point, intervals, or skew.
+  Strike/weather flags require a free feed (come-back C-7). Build wave:
+  PR-G/PR-K.
+- **§6 application — claims (evidence attached).** The second lane ran the
+  weekly-claims walk-forward offline from committed ICSA vintages
+  (research/release_forecast/CLAIMS_BACKTEST.md). Its ridge spec (attempt 1)
+  FAILED naive_prior (MAE 40.8k vs 28.7k full window; 24.0 vs 14.8 2021+).
+  The #1877 frozen IC4WSA spec (attempt 2) was evaluated under the same
+  protocol: MAE 43.9k vs naive 27.9k (full window); 17.7k vs 14.8k (2021+) —
+  FAILED on both arms. Per §6, claims mode = benchmark_only, enforced in the
+  producer. Benchmarks (naive_prior, trailing_4w, ar_model) are graded on the
+  forward ledger either way — 52 prints/yr of ledger velocity is the point,
+  not the model point. There is no attempt 3 without a program-level adjudication.
+- **Market-implied sources.** MRI-R16 stands; #1876 adds a Kalshi
+  release-ladder collector (KXCPI / KXPAYROLLS / KXJOBLESSCLAIMS, first-seen
+  snapshots, implied_median only — implied_mean REJECTED as
+  tail-assumption-dishonest on an open-ended ladder). PR-I joins whichever
+  source has a matching market; context only, never fused (MRI-R16).
+- **Naming.** The second lane's "Package F/F1..F4" labels are retired in
+  favor of this file's PR-F..PR-K wave names; its Kalshi collector is PR-I
+  groundwork.

@@ -37,6 +37,7 @@ curated, not generated. Do not build an extractor.
 | Parallel shock-vector classifier beside `market_drivers` (12-type re-vocabulary) | REJECT-REDUNDANT — `snapshot()` is the canonical shock read; crosswalk printed | TI-R1, `TECH_INTERNALS_CODEX_ADJUDICATION_BY_FABLE.md` |
 | Shock→archetype beneficiary/casualty ("shelter") map as an NW/brain feed | KILLED — laundered directional escalation on nulled continuation claims | TI-R5, `TECH_INTERNALS_CODEX_ADJUDICATION_BY_FABLE.md` |
 | LLM classification of narrative-only shock types (tariff/regulatory/cyber/edge/consumer) into calibrated keys | FORBIDDEN — no deterministic price basis; A7 ORIGINATE ban | TI-R1, `TECH_INTERNALS_CODEX_ADJUDICATION_BY_FABLE.md` |
+| Held-position ledger / live position monitor / held-risk engine inside Macro Dashboard (Codex held-position memo placement) | FORBIDDEN — build lives in Mastermind repo; restates NWC-U4/NWP-U18/RUL-F3.2. Fused per-position risk score also struck | PRD-R1/PRD-R2, `PORTFOLIO_RISK_DESK_MASTERPLAN_BY_FABLE.md` |
 
 ## 2. Killed / refuted signal families and theses
 

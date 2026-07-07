@@ -7022,6 +7022,48 @@ artifacts:
       MRI-R6. The collector is fail-open: any fetch or parse error logs a
       warning and leaves the store unchanged.
 
+  # --- infrastructure: Kalshi bracket-market snapshot store ---
+  kalshi-releases-store:
+    path: data/prediction_markets/kalshi_releases.parquet
+    format: parquet
+    producer: collectors/kalshi_releases.py
+    known_extra_writers: []
+    owner_program: macro-release-intel
+    cadence: collect
+    storage: git
+    asof_field: null
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/build_release_forecast.py
+    notes: >
+      MRI PR-K: Kalshi macro-release bracket-market snapshot store.
+      Keyless (no API key required). Keyed (asof_date, release_type, period,
+      strike, is_summary) with keep-first semantics — a row already in the
+      store is never overwritten or re-dated (MRI-R6 PIT law). Three release
+      types collected: cpi (KXCPI series, headline MoM % SA), nfp (KXPAYROLLS
+      series, MoM change in thousands), claims (KXJOBLESSCLAIMS series, weekly
+      level). Each event's bracket ladder is stored as individual rows plus one
+      summary row (is_summary=True) holding implied_median and
+      p_above_lowest_strike (S(k_min)) derived from the exceedance-binary CDF.
+      implied_mean is intentionally absent: on an open-ended bracket ladder the
+      mean requires a tail assumption that cannot be stated honestly, and
+      append-only PIT rows cannot be corrected after the fact.
+      monotonicity_corrected (bool) records whether the survival ladder required
+      isotonic clamping before median/tail computation. The market_implied leg
+      of benchmark_set.market_implied in release_forecast.v1 reads from this
+      store; the join uses implied_median only. The asof_field is null at the
+      artifact level because each row carries asof_date per-row; PIT comparisons
+      filter on asof_date <= decision_date. The collector is fail-open: any
+      fetch or parse error logs a warning and leaves the store unchanged.
+      Same-day re-runs are safe (first-seen dedup is idempotent).
+      Tickers LIVE VERIFIED 2026-07-07: KXCPI (CPI MoM % SA), KXPAYROLLS
+      (NFP k jobs), KXJOBLESSCLAIMS (initial claims level).
+
   # --- display: release forecast latest snapshot ---
   release-forecast-latest:
     path: data/release_forecast/latest.json

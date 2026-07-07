@@ -1,0 +1,14 @@
+### Narrative-Emergence Scout · Desk Note  
+**Canada / TSX** — 2026-07-06  
+
+**Watch-Hypothesis: Base Metals & Copper (ca_base_metals) — FORMING**  
+The dominant narrative remains **Big Banks** (score 1.61, durability 0.75, crowded z=1.72). The gap to the challenger Insurers is wide (margin 0.89), and absorption (0.38) suggests no immediate handoff. However, **Base Metals & Copper** sits at rank 3 with a positive score (0.54), no crowding (z=0.41), and rising breadth (44% of constituents participating). Its durability (0.54) is still below the threshold of a robust leader, but the pattern fits an early-stage theme that could gain traction if commodity tailwinds persist.  
+
+This is **not a conclusion** — theme-candidate emergence is noisy (~90% false positives), and the detector’s momentum rank provides no return-forecast edge. It is a framing hypothesis: *if* a new leadership cycle begins, Base Metals & Copper would be the most plausible candidate right now, given its relative score and avoidance of crowding.
+
+**Kill-Criterion (falsifiable, 4-week horizon):**  
+If, by 2026-08-03, the theme’s breadth (currently 0.444) **falls below 0.3** or its momentum score **slips below 0.20** (roughly the score of the 5th-place theme), the forming-hypothesis is invalidated. In that case, the dominant Banks-insurance duopoly would remain unchallenged.
+
+**Accountability**  
+- Track record on this detector is **n=0** (no prior calls); no validation edge beyond drawdown control.  
+- I **never size, never fade** the dominant theme, and I attach zero certainty to this view. It is a conditional, disposable lens — nothing more.

@@ -191,6 +191,15 @@
     {%- if waves_adjudication.moratorium %}
     <span style="color:var(--muted)">{{ t('generation moratorium in force until wave-1 + spike verdicts booked and queue &lt; 3','生成暂停令生效——第一波+尖峰候选裁决登记且排队数降至3以下前不启动新波次') }}.</span>
     {%- endif %}
+    {%- if waves_adjudication.day3_results %}
+    {%- set d3 = waves_adjudication.day3_results %}
+    <div style="margin-top:10px;border-left:3px solid var(--accent,#4a9);padding-left:10px">
+      <strong>{{ t(d3.label, d3.label_zh) }}</strong>
+      {{ t(d3.families_tested~' families tested → '~d3.pass_count~' PASS, '~d3.accrue_count~' ACCRUE, '~d3.directional_fail_count~' DIRECTIONAL FAIL, '~d3.park_count~' PARK, '~d3.null_count~' NULL, gaming DATA-BLOCKED.',
+           d3.families_tested~'个家族测试 → '~d3.pass_count~' 通过, '~d3.accrue_count~' 积累中, '~d3.directional_fail_count~' 方向性否决, '~d3.park_count~' 暂存, '~d3.null_count~' 无效, 博彩数据受阻。') }}
+      <span style="color:var(--muted)">{{ t(d3.queue_status, d3.queue_status_zh) }}</span>
+    </div>
+    {%- endif %}
   </div>
   {%- endif %}
   <div class="scroll"><table class="frontier-table">

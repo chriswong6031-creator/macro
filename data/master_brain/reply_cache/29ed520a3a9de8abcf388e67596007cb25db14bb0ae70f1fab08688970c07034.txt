@@ -1,0 +1,22 @@
+{
+  "regime_context": "The Hong Kong detector shows a single absorbing narrative (Banks) with high absorption (0.57) and is one of only two eligible themes (Banks, High-Dividend Blue Chips) under the absolute-trend gate. Momentum ranks are not future-return signals (rank-IC ≈0); the only validated edge is drawdown control via the gate.",
+  "theses": [
+    {
+      "subject": "Banks (H + HK)",
+      "lean": "overweight",
+      "conviction": "low",
+      "horizon_d": 21,
+      "thesis": "Banks is the headline one-narrative theme, absorbing flow and passing the absolute-trend gate (eligible=true). The gate’s validated risk-control edge supports staying with the dominant theme while it holds, without predicting returns. Mixed durability and the theme’s unscorable nature keep conviction low.",
+      "evidence": [
+        "headline: one_narrative=true, absorption=0.57, weight=0.25",
+        "eligible=true (absolute-trend gate passed)",
+        "crowded=false (no sizing caution)",
+        "rotation: one_narrative dominant, directional=false (no confirmed handoff)"
+      ],
+      "dissent": "Banks ranks only 5th in momentum and has mixed durability; the gate can flip rapidly, removing the risk-control foundation. The unscorable proxy makes graded verification impossible.",
+      "falsifier_text": "If Banks (hk_banks) flips to eligible=false in the next detector update (monthly cadence), the gate support is lost."
+    }
+  ],
+  "emerging_watch": null,
+  "confidence": "low"
+}

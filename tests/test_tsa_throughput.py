@@ -249,3 +249,23 @@ def test_is_us_federal_holiday_non_holiday():
     assert not _is_us_federal_holiday(pd.Timestamp("2019-07-02")), (
         "2019-07-02 should not be a federal holiday"
     )
+
+
+def test_parse_fixture_ignores_decoy_second_table():
+    """Parser must only extract rows from the FIRST table.
+
+    The fixture HTML contains a second 'decoy' table with dates in Jun 2025
+    (values 9,999,999 and 8,888,888) that would contaminate the result if
+    rows from all tables were concatenated.  The parser should return only
+    the 8 rows from the first table and none from the second.
+    """
+    html = FIXTURE_HTML.read_text()
+    df = parse_tsa_html(html)
+    # Only 8 rows from the first table (Jan 2026 + late Dec 2025 dates)
+    assert len(df) == 8, (
+        f"Expected 8 rows (first table only), got {len(df)} — "
+        "decoy second-table rows may have leaked in"
+    )
+    # Decoy sentinel values must not appear
+    assert 9_999_999 not in df["passengers"].values, "Decoy row 9,999,999 leaked from second table"
+    assert 8_888_888 not in df["passengers"].values, "Decoy row 8,888,888 leaked from second table"

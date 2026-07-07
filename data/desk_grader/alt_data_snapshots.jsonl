@@ -228,3 +228,8 @@
 {"date":"2026-07-07","ticker":"LHX","rank":null,"score":21,"lean":1,"broken":true}
 {"date":"2026-07-07","ticker":"VRT","rank":null,"score":20,"lean":1,"broken":true}
 {"date":"2026-07-07","ticker":"VST","rank":null,"score":14,"lean":1,"broken":true}
+{"date":"2026-07-07","ticker":"KNOP","rank":30,"score":32,"lean":1,"broken":false}
+{"date":"2026-07-07","ticker":"ORLY","rank":null,"score":27,"lean":1,"entry_tier":"T2","broken":true}
+{"date":"2026-07-07","ticker":"PFE","rank":null,"score":26,"lean":1,"broken":true}
+{"date":"2026-07-07","ticker":"QBTS","rank":null,"score":25,"lean":1,"broken":true}
+{"date":"2026-07-07","ticker":"CAMT","rank":null,"score":11,"lean":1,"broken":true}

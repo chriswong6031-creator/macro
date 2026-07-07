@@ -5,14 +5,14 @@
     {
       "name": "AI Desk",
       "slug": "ai_desk",
-      "scored": 2,
+      "scored": 3,
       "open": 24,
-      "hit_rate": 0.5,
-      "dir_accuracy": 0.5,
+      "hit_rate": 0.667,
+      "dir_accuracy": 0.667,
       "conviction_monotone": null,
       "regimes": [],
       "health": "cold",
-      "health_note": "only 2 scored \u2014 check-by windows still maturing; treat as provisional"
+      "health_note": "only 3 scored \u2014 check-by windows still maturing; treat as provisional"
     },
     {
       "name": "Policy Intent",
@@ -30,7 +30,7 @@
       "name": "Alt-Data Brain",
       "slug": "altdata",
       "scored": 0,
-      "open": 147,
+      "open": 154,
       "hit_rate": null,
       "dir_accuracy": null,
       "conviction_monotone": null,
@@ -54,7 +54,7 @@
       "name": "Stock Desk",
       "slug": "stock_desk",
       "scored": 2,
-      "open": 88,
+      "open": 91,
       "hit_rate": 0.5,
       "dir_accuracy": 0.0,
       "conviction_monotone": null,
@@ -66,7 +66,7 @@
       "name": "Demand Chain",
       "slug": "demand_chain",
       "scored": 0,
-      "open": 39,
+      "open": 40,
       "hit_rate": null,
       "dir_accuracy": null,
       "conviction_monotone": null,
@@ -144,6 +144,12 @@
       },
       {
         "family": "c1b_commodity_flip_protective_phase0",
+        "itemized": 0,
+        "declared": 36,
+        "effective_n": 36
+      },
+      {
+        "family": "cycle_pattern_ft",
         "itemized": 0,
         "declared": 36,
         "effective_n": 36
@@ -357,6 +363,12 @@
         "itemized": 12,
         "declared": 0,
         "effective_n": 12
+      },
+      {
+        "family": "cycle_pattern_analog",
+        "itemized": 0,
+        "declared": 9,
+        "effective_n": 9
       },
       {
         "family": "esx_ev_blackout",
@@ -675,10 +687,16 @@
         "itemized": 2,
         "declared": 0,
         "effective_n": 2
+      },
+      {
+        "family": "cortex",
+        "itemized": 0,
+        "declared": 1,
+        "effective_n": 1
       }
     ],
-    "total_families": 99,
-    "total_effective_n": 2373
+    "total_families": 102,
+    "total_effective_n": 2419
   },
   "summary_note": "0/6 desk loops live; 6 still cold (windows maturing). Display-only \u2014 track records calibrate conviction, never size a position."
 }

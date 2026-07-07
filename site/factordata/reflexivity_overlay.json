@@ -2,97 +2,49 @@
   "schema": "reflexivity_overlay.v1",
   "is_context_only": true,
   "as_of": "2026-07-06",
-  "generated_utc": "2026-07-07T08:07:03Z",
+  "generated_utc": "2026-07-07T17:17:40Z",
   "note": "Risk-clustering read: 'is this the same hidden trade?'. NOT an alpha claim. Board-level, held-agnostic (US only, v1). Display-only per R-F / Signal Commons R7.",
   "factor_caveat": "Per-name secondary betas (oil/usd/btc/gold/china) are OOS-unstable and excluded. Similarity uses high-tier factors only (mkt/growth/size/rates, scope=single). Trust the MEMBERSHIP leg more than the factor leg for individual names.",
   "board_concentration": {
     "n": 12,
-    "n_eff": 6.21,
+    "n_eff": 5.36,
     "basis": "membership-jaccard+high-tier-factor-cosine",
-    "note": "Supersedes sector-only HHI effective_bets in build_stock_board_v2 per R-B. N_eff = participation-ratio of similarity-matrix eigenvalues. 12 candidates \u2248 6.21 independent bets."
+    "note": "Supersedes sector-only HHI effective_bets in build_stock_board_v2 per R-B. N_eff = participation-ratio of similarity-matrix eigenvalues. 12 candidates \u2248 5.36 independent bets."
   },
   "same_thesis_groups": [
     {
       "members": [
         "BEN",
+        "DBX",
         "GEV",
         "MATX",
         "P",
         "STT"
       ],
-      "size": 5,
-      "basis": "factor-cosine",
-      "label": "us_sector_financials"
+      "size": 6,
+      "basis": "membership-jaccard",
+      "label": "Industrials"
+    },
+    {
+      "members": [
+        "BIO",
+        "OMCL",
+        "PAHC"
+      ],
+      "size": 3,
+      "basis": "membership-jaccard",
+      "label": "Health Care"
     }
   ],
-  "earnings_coverage_frac": 0.917,
+  "earnings_coverage_frac": 0.833,
   "by_ticker": {
-    "NEE": {
-      "verdict": "new",
-      "max_similarity": 0.3333,
-      "basis": "membership-only:r2=0.11<0.2",
-      "nearest": [
-        {
-          "ticker": "HE",
-          "combined": 0.3333,
-          "membership_jaccard": 0.3333,
-          "factor_cosine": null,
-          "factor_basis": "beta-read-thin:r2=0.11<0.2",
-          "shared_groups": [
-            "sector:Utilities"
-          ],
-          "same_earnings_week": false
-        },
-        {
-          "ticker": "BMY",
-          "combined": 0.0,
-          "membership_jaccard": 0.0,
-          "factor_cosine": null,
-          "factor_basis": "beta-read-thin:r2=0.11<0.2",
-          "shared_groups": [
-            "basket:power_grid"
-          ],
-          "same_earnings_week": true
-        },
-        {
-          "ticker": "BMY",
-          "combined": 0.0,
-          "membership_jaccard": 0.0,
-          "factor_cosine": null,
-          "factor_basis": "beta-read-thin:r2=0.11<0.2",
-          "shared_groups": [],
-          "same_earnings_week": false
-        }
-      ],
-      "earnings_leg": {
-        "next_date": "2026-08-06",
-        "same_week_peers": [
-          "GEV"
-        ],
-        "has_data": true
-      },
-      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
-      "why_en": "Distinct bet \u2014 nearest peer HE at 33% similarity.",
-      "why_zh": "\u72ec\u7acb\u62bc\u6ce8 \u2014 \u6700\u8fd1\u7684\u5019\u9009\u540d\u79f0 HE\uff0c\u76f8\u4f3c\u5ea6 33%\u3002"
-    },
     "HE": {
       "verdict": "new",
-      "max_similarity": 0.3333,
+      "max_similarity": 0.0,
       "basis": "membership-only:r2=0.18<0.2",
       "nearest": [
         {
-          "ticker": "NEE",
-          "combined": 0.3333,
-          "membership_jaccard": 0.3333,
-          "factor_cosine": null,
-          "factor_basis": "beta-read-thin:r2=0.11<0.2",
-          "shared_groups": [
-            "sector:Utilities"
-          ],
-          "same_earnings_week": false
-        },
-        {
-          "ticker": "BMY",
+          "ticker": "MATX",
           "combined": 0.0,
           "membership_jaccard": 0.0,
           "factor_cosine": null,
@@ -108,55 +60,62 @@
           "factor_basis": "beta-read-thin:r2=0.18<0.2",
           "shared_groups": [],
           "same_earnings_week": false
+        },
+        {
+          "ticker": "BEN",
+          "combined": 0.0,
+          "membership_jaccard": 0.0,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:r2=0.18<0.2",
+          "shared_groups": [],
+          "same_earnings_week": true
         }
       ],
       "earnings_leg": {
         "next_date": "2026-08-06",
         "same_week_peers": [
           "BEN",
-          "NWSA",
+          "DBX",
           "PARR"
         ],
         "has_data": true
       },
       "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
-      "why_en": "Distinct bet \u2014 nearest peer NEE at 33% similarity.",
-      "why_zh": "\u72ec\u7acb\u62bc\u6ce8 \u2014 \u6700\u8fd1\u7684\u5019\u9009\u540d\u79f0 NEE\uff0c\u76f8\u4f3c\u5ea6 33%\u3002"
+      "why_en": "Distinct bet \u2014 nearest peer MATX at 0% similarity.",
+      "why_zh": "\u72ec\u7acb\u62bc\u6ce8 \u2014 \u6700\u8fd1\u7684\u5019\u9009\u540d\u79f0 MATX\uff0c\u76f8\u4f3c\u5ea6 0%\u3002"
     },
-    "BMY": {
-      "verdict": "new",
-      "max_similarity": 0.3333,
-      "basis": "membership-only:r2=0.19<0.2",
+    "MATX": {
+      "verdict": "duplicate",
+      "max_similarity": 0.9152,
+      "basis": "membership+high-tier-factor",
       "nearest": [
         {
-          "ticker": "OMCL",
-          "combined": 0.3333,
-          "membership_jaccard": 0.3333,
-          "factor_cosine": null,
-          "factor_basis": "beta-read-thin:r2=0.19<0.2",
-          "shared_groups": [
-            "sector:Health Care"
-          ],
-          "same_earnings_week": true
-        },
-        {
-          "ticker": "BIO",
-          "combined": 0.3333,
-          "membership_jaccard": 0.3333,
-          "factor_cosine": null,
-          "factor_basis": "beta-read-thin:r2=0.19<0.2",
-          "shared_groups": [
-            "sector:Health Care"
-          ],
-          "same_earnings_week": true
-        },
-        {
-          "ticker": "NEE",
-          "combined": 0.0,
+          "ticker": "STT",
+          "combined": 0.9152,
           "membership_jaccard": 0.0,
-          "factor_cosine": null,
-          "factor_basis": "beta-read-thin:r2=0.11<0.2",
+          "factor_cosine": 0.9152,
+          "factor_basis": "high-tier-factors:4of4",
           "shared_groups": [],
+          "same_earnings_week": false
+        },
+        {
+          "ticker": "BEN",
+          "combined": 0.8208,
+          "membership_jaccard": 0.0,
+          "factor_cosine": 0.8208,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [],
+          "same_earnings_week": false
+        },
+        {
+          "ticker": "GEV",
+          "combined": 0.6685,
+          "membership_jaccard": 0.2,
+          "factor_cosine": 0.6685,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [
+            "sector:Industrials"
+          ],
           "same_earnings_week": false
         }
       ],
@@ -164,14 +123,13 @@
         "next_date": "2026-07-30",
         "same_week_peers": [
           "BIO",
-          "MATX",
           "OMCL"
         ],
         "has_data": true
       },
       "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
-      "why_en": "Distinct bet \u2014 nearest peer OMCL at 33% similarity.",
-      "why_zh": "\u72ec\u7acb\u62bc\u6ce8 \u2014 \u6700\u8fd1\u7684\u5019\u9009\u540d\u79f0 OMCL\uff0c\u76f8\u4f3c\u5ea6 33%\u3002"
+      "why_en": "Same bet as STT \u2014 shared factor profile (similarity 92%).",
+      "why_zh": "\u4e0e STT \u62bc\u6ce8\u76f8\u540c \u2014 \u5171\u540c\u56e0\u5b50\u655e\u53e3\uff08\u76f8\u4f3c\u5ea6 92%\uff09\u3002"
     },
     "STT": {
       "verdict": "duplicate",
@@ -257,8 +215,8 @@
       "earnings_leg": {
         "next_date": "2026-08-07",
         "same_week_peers": [
+          "DBX",
           "HE",
-          "NWSA",
           "PARR"
         ],
         "has_data": true
@@ -266,106 +224,6 @@
       "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
       "why_en": "Same bet as STT \u2014 us_sector_financials, Financials (similarity 96%).",
       "why_zh": "\u4e0e STT \u62bc\u6ce8\u76f8\u540c \u2014 us_sector_financials\u3001Financials\uff08\u76f8\u4f3c\u5ea6 96%\uff09\u3002"
-    },
-    "OMCL": {
-      "verdict": "duplicate",
-      "max_similarity": 1.0,
-      "basis": "membership-only:r2=0.14<0.2",
-      "nearest": [
-        {
-          "ticker": "BIO",
-          "combined": 1.0,
-          "membership_jaccard": 1.0,
-          "factor_cosine": null,
-          "factor_basis": "beta-read-thin:r2=0.14<0.2",
-          "shared_groups": [
-            "sector:Health Care"
-          ],
-          "same_earnings_week": true
-        },
-        {
-          "ticker": "BMY",
-          "combined": 0.3333,
-          "membership_jaccard": 0.3333,
-          "factor_cosine": null,
-          "factor_basis": "beta-read-thin:r2=0.19<0.2",
-          "shared_groups": [
-            "sector:Health Care"
-          ],
-          "same_earnings_week": true
-        },
-        {
-          "ticker": "NEE",
-          "combined": 0.0,
-          "membership_jaccard": 0.0,
-          "factor_cosine": null,
-          "factor_basis": "beta-read-thin:r2=0.11<0.2",
-          "shared_groups": [],
-          "same_earnings_week": false
-        }
-      ],
-      "earnings_leg": {
-        "next_date": "2026-07-30",
-        "same_week_peers": [
-          "BIO",
-          "BMY",
-          "MATX"
-        ],
-        "has_data": true
-      },
-      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
-      "why_en": "Same bet as BIO \u2014 Health Care (similarity 100%).",
-      "why_zh": "\u4e0e BIO \u62bc\u6ce8\u76f8\u540c \u2014 Health Care\uff08\u76f8\u4f3c\u5ea6 100%\uff09\u3002"
-    },
-    "BIO": {
-      "verdict": "duplicate",
-      "max_similarity": 1.0,
-      "basis": "membership-only:r2=0.14<0.2",
-      "nearest": [
-        {
-          "ticker": "OMCL",
-          "combined": 1.0,
-          "membership_jaccard": 1.0,
-          "factor_cosine": null,
-          "factor_basis": "beta-read-thin:r2=0.14<0.2",
-          "shared_groups": [
-            "sector:Health Care"
-          ],
-          "same_earnings_week": true
-        },
-        {
-          "ticker": "BMY",
-          "combined": 0.3333,
-          "membership_jaccard": 0.3333,
-          "factor_cosine": null,
-          "factor_basis": "beta-read-thin:r2=0.19<0.2",
-          "shared_groups": [
-            "sector:Health Care"
-          ],
-          "same_earnings_week": true
-        },
-        {
-          "ticker": "NEE",
-          "combined": 0.0,
-          "membership_jaccard": 0.0,
-          "factor_cosine": null,
-          "factor_basis": "beta-read-thin:r2=0.11<0.2",
-          "shared_groups": [],
-          "same_earnings_week": false
-        }
-      ],
-      "earnings_leg": {
-        "next_date": "2026-07-30",
-        "same_week_peers": [
-          "BMY",
-          "MATX",
-          "OMCL"
-        ],
-        "has_data": true
-      },
-      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
-      "why_en": "Same bet as OMCL \u2014 Health Care (similarity 100%).",
-      "why_zh": "\u4e0e OMCL \u62bc\u6ce8\u76f8\u540c \u2014 Health Care\uff08\u76f8\u4f3c\u5ea6 100%\uff09\u3002"
     },
     "GEV": {
       "verdict": "duplicate",
@@ -404,47 +262,137 @@
       ],
       "earnings_leg": {
         "next_date": "2026-07-22",
-        "same_week_peers": [
-          "NEE"
-        ],
+        "same_week_peers": [],
         "has_data": true
       },
       "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
       "why_en": "Same bet as P \u2014 shared factor profile (similarity 84%).",
       "why_zh": "\u4e0e P \u62bc\u6ce8\u76f8\u540c \u2014 \u5171\u540c\u56e0\u5b50\u655e\u53e3\uff08\u76f8\u4f3c\u5ea6 84%\uff09\u3002"
     },
-    "MATX": {
-      "verdict": "duplicate",
-      "max_similarity": 0.9152,
-      "basis": "membership+high-tier-factor",
+    "PEP": {
+      "verdict": "new",
+      "max_similarity": 0.0,
+      "basis": "membership-only:r2=0.11<0.2",
       "nearest": [
         {
+          "ticker": "HE",
+          "combined": 0.0,
+          "membership_jaccard": 0.0,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:r2=0.18<0.2",
+          "shared_groups": [],
+          "same_earnings_week": false
+        },
+        {
+          "ticker": "MATX",
+          "combined": 0.0,
+          "membership_jaccard": 0.0,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:r2=0.11<0.2",
+          "shared_groups": [],
+          "same_earnings_week": false
+        },
+        {
           "ticker": "STT",
-          "combined": 0.9152,
+          "combined": 0.0,
           "membership_jaccard": 0.0,
-          "factor_cosine": 0.9152,
-          "factor_basis": "high-tier-factors:4of4",
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:r2=0.11<0.2",
           "shared_groups": [],
           "same_earnings_week": false
-        },
+        }
+      ],
+      "earnings_leg": {
+        "next_date": "2026-07-09",
+        "same_week_peers": [],
+        "has_data": true
+      },
+      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
+      "why_en": "Distinct bet \u2014 nearest peer HE at 0% similarity.",
+      "why_zh": "\u72ec\u7acb\u62bc\u6ce8 \u2014 \u6700\u8fd1\u7684\u5019\u9009\u540d\u79f0 HE\uff0c\u76f8\u4f3c\u5ea6 0%\u3002"
+    },
+    "DBX": {
+      "verdict": "duplicate",
+      "max_similarity": 1.0,
+      "basis": "membership-only:r2=0.10<0.2",
+      "nearest": [
         {
-          "ticker": "BEN",
-          "combined": 0.8208,
-          "membership_jaccard": 0.0,
-          "factor_cosine": 0.8208,
-          "factor_basis": "high-tier-factors:4of4",
-          "shared_groups": [],
-          "same_earnings_week": false
-        },
-        {
-          "ticker": "GEV",
-          "combined": 0.6685,
-          "membership_jaccard": 0.2,
-          "factor_cosine": 0.6685,
-          "factor_basis": "high-tier-factors:4of4",
+          "ticker": "P",
+          "combined": 1.0,
+          "membership_jaccard": 1.0,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:r2=0.10<0.2",
           "shared_groups": [
-            "sector:Industrials"
+            "sector:Information Technology"
           ],
+          "same_earnings_week": false
+        },
+        {
+          "ticker": "HE",
+          "combined": 0.0,
+          "membership_jaccard": 0.0,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:r2=0.18<0.2",
+          "shared_groups": [],
+          "same_earnings_week": true
+        },
+        {
+          "ticker": "MATX",
+          "combined": 0.0,
+          "membership_jaccard": 0.0,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:r2=0.10<0.2",
+          "shared_groups": [],
+          "same_earnings_week": false
+        }
+      ],
+      "earnings_leg": {
+        "next_date": "2026-08-06",
+        "same_week_peers": [
+          "BEN",
+          "HE",
+          "PARR"
+        ],
+        "has_data": true
+      },
+      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
+      "why_en": "Same bet as P \u2014 Information Technology (similarity 100%).",
+      "why_zh": "\u4e0e P \u62bc\u6ce8\u76f8\u540c \u2014 Information Technology\uff08\u76f8\u4f3c\u5ea6 100%\uff09\u3002"
+    },
+    "OMCL": {
+      "verdict": "duplicate",
+      "max_similarity": 1.0,
+      "basis": "membership-only:r2=0.14<0.2",
+      "nearest": [
+        {
+          "ticker": "BIO",
+          "combined": 1.0,
+          "membership_jaccard": 1.0,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:r2=0.14<0.2",
+          "shared_groups": [
+            "sector:Health Care"
+          ],
+          "same_earnings_week": true
+        },
+        {
+          "ticker": "PAHC",
+          "combined": 1.0,
+          "membership_jaccard": 1.0,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:r2=0.14<0.2",
+          "shared_groups": [
+            "sector:Health Care"
+          ],
+          "same_earnings_week": false
+        },
+        {
+          "ticker": "HE",
+          "combined": 0.0,
+          "membership_jaccard": 0.0,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:r2=0.18<0.2",
+          "shared_groups": [],
           "same_earnings_week": false
         }
       ],
@@ -452,14 +400,108 @@
         "next_date": "2026-07-30",
         "same_week_peers": [
           "BIO",
-          "BMY",
+          "MATX"
+        ],
+        "has_data": true
+      },
+      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
+      "why_en": "Same bet as BIO \u2014 Health Care (similarity 100%).",
+      "why_zh": "\u4e0e BIO \u62bc\u6ce8\u76f8\u540c \u2014 Health Care\uff08\u76f8\u4f3c\u5ea6 100%\uff09\u3002"
+    },
+    "BIO": {
+      "verdict": "duplicate",
+      "max_similarity": 1.0,
+      "basis": "membership-only:r2=0.14<0.2",
+      "nearest": [
+        {
+          "ticker": "OMCL",
+          "combined": 1.0,
+          "membership_jaccard": 1.0,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:r2=0.14<0.2",
+          "shared_groups": [
+            "sector:Health Care"
+          ],
+          "same_earnings_week": true
+        },
+        {
+          "ticker": "PAHC",
+          "combined": 1.0,
+          "membership_jaccard": 1.0,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:r2=0.14<0.2",
+          "shared_groups": [
+            "sector:Health Care"
+          ],
+          "same_earnings_week": false
+        },
+        {
+          "ticker": "HE",
+          "combined": 0.0,
+          "membership_jaccard": 0.0,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:r2=0.18<0.2",
+          "shared_groups": [],
+          "same_earnings_week": false
+        }
+      ],
+      "earnings_leg": {
+        "next_date": "2026-07-30",
+        "same_week_peers": [
+          "MATX",
           "OMCL"
         ],
         "has_data": true
       },
       "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
-      "why_en": "Same bet as STT \u2014 shared factor profile (similarity 92%).",
-      "why_zh": "\u4e0e STT \u62bc\u6ce8\u76f8\u540c \u2014 \u5171\u540c\u56e0\u5b50\u655e\u53e3\uff08\u76f8\u4f3c\u5ea6 92%\uff09\u3002"
+      "why_en": "Same bet as OMCL \u2014 Health Care (similarity 100%).",
+      "why_zh": "\u4e0e OMCL \u62bc\u6ce8\u76f8\u540c \u2014 Health Care\uff08\u76f8\u4f3c\u5ea6 100%\uff09\u3002"
+    },
+    "PAHC": {
+      "verdict": "duplicate",
+      "max_similarity": 1.0,
+      "basis": "membership-only:r2=0.15<0.2",
+      "nearest": [
+        {
+          "ticker": "OMCL",
+          "combined": 1.0,
+          "membership_jaccard": 1.0,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:r2=0.14<0.2",
+          "shared_groups": [
+            "sector:Health Care"
+          ],
+          "same_earnings_week": null
+        },
+        {
+          "ticker": "BIO",
+          "combined": 1.0,
+          "membership_jaccard": 1.0,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:r2=0.14<0.2",
+          "shared_groups": [
+            "sector:Health Care"
+          ],
+          "same_earnings_week": null
+        },
+        {
+          "ticker": "HE",
+          "combined": 0.0,
+          "membership_jaccard": 0.0,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:r2=0.18<0.2",
+          "shared_groups": [],
+          "same_earnings_week": null
+        }
+      ],
+      "earnings_leg": {
+        "next_date": null,
+        "same_week_peers": [],
+        "has_data": false
+      },
+      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
+      "why_en": "Same bet as OMCL \u2014 Health Care (similarity 100%).",
+      "why_zh": "\u4e0e OMCL \u62bc\u6ce8\u76f8\u540c \u2014 Health Care\uff08\u76f8\u4f3c\u5ea6 100%\uff09\u3002"
     },
     "PARR": {
       "verdict": "new",
@@ -498,8 +540,8 @@
         "next_date": "2026-08-04",
         "same_week_peers": [
           "BEN",
-          "HE",
-          "NWSA"
+          "DBX",
+          "HE"
         ],
         "has_data": true
       },
@@ -507,57 +549,22 @@
       "why_en": "Distinct bet \u2014 nearest peer MATX at 17% similarity.",
       "why_zh": "\u72ec\u7acb\u62bc\u6ce8 \u2014 \u6700\u8fd1\u7684\u5019\u9009\u540d\u79f0 MATX\uff0c\u76f8\u4f3c\u5ea6 17%\u3002"
     },
-    "NWSA": {
-      "verdict": "new",
-      "max_similarity": 0.0,
-      "basis": "membership-only:r2=0.14<0.2",
-      "nearest": [
-        {
-          "ticker": "NEE",
-          "combined": 0.0,
-          "membership_jaccard": 0.0,
-          "factor_cosine": null,
-          "factor_basis": "beta-read-thin:r2=0.11<0.2",
-          "shared_groups": [],
-          "same_earnings_week": false
-        },
-        {
-          "ticker": "HE",
-          "combined": 0.0,
-          "membership_jaccard": 0.0,
-          "factor_cosine": null,
-          "factor_basis": "beta-read-thin:r2=0.11<0.2",
-          "shared_groups": [],
-          "same_earnings_week": false
-        },
-        {
-          "ticker": "BMY",
-          "combined": 0.0,
-          "membership_jaccard": 0.0,
-          "factor_cosine": null,
-          "factor_basis": "beta-read-thin:r2=0.19<0.2",
-          "shared_groups": [],
-          "same_earnings_week": true
-        }
-      ],
-      "earnings_leg": {
-        "next_date": "2026-08-04",
-        "same_week_peers": [
-          "BEN",
-          "HE",
-          "PARR"
-        ],
-        "has_data": true
-      },
-      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
-      "why_en": "Distinct bet \u2014 nearest peer NEE at 0% similarity.",
-      "why_zh": "\u72ec\u7acb\u62bc\u6ce8 \u2014 \u6700\u8fd1\u7684\u5019\u9009\u540d\u79f0 NEE\uff0c\u76f8\u4f3c\u5ea6 0%\u3002"
-    },
     "P": {
       "verdict": "duplicate",
-      "max_similarity": 0.8358,
+      "max_similarity": 1.0,
       "basis": "membership+high-tier-factor",
       "nearest": [
+        {
+          "ticker": "DBX",
+          "combined": 1.0,
+          "membership_jaccard": 1.0,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:r2=0.10<0.2",
+          "shared_groups": [
+            "sector:Information Technology"
+          ],
+          "same_earnings_week": null
+        },
         {
           "ticker": "GEV",
           "combined": 0.8358,
@@ -575,15 +582,6 @@
           "factor_basis": "high-tier-factors:4of4",
           "shared_groups": [],
           "same_earnings_week": null
-        },
-        {
-          "ticker": "STT",
-          "combined": 0.082,
-          "membership_jaccard": 0.0,
-          "factor_cosine": 0.082,
-          "factor_basis": "high-tier-factors:4of4",
-          "shared_groups": [],
-          "same_earnings_week": null
         }
       ],
       "earnings_leg": {
@@ -592,100 +590,12 @@
         "has_data": false
       },
       "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
-      "why_en": "Same bet as GEV \u2014 shared factor profile (similarity 84%).",
-      "why_zh": "\u4e0e GEV \u62bc\u6ce8\u76f8\u540c \u2014 \u5171\u540c\u56e0\u5b50\u655e\u53e3\uff08\u76f8\u4f3c\u5ea6 84%\uff09\u3002"
+      "why_en": "Same bet as DBX \u2014 Information Technology (similarity 100%).",
+      "why_zh": "\u4e0e DBX \u62bc\u6ce8\u76f8\u540c \u2014 Information Technology\uff08\u76f8\u4f3c\u5ea6 100%\uff09\u3002"
     }
   },
   "pair_basis": {
-    "NEE__HE": {
-      "membership_jaccard": 0.3333,
-      "factor_cosine": null,
-      "combined": 0.3333,
-      "factor_basis": "beta-read-thin:r2=0.11<0.2",
-      "shared_groups": [
-        "sector:Utilities"
-      ]
-    },
-    "NEE__BMY": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.18<0.2",
-      "shared_groups": []
-    },
-    "NEE__STT": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.11<0.2",
-      "shared_groups": []
-    },
-    "NEE__BEN": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.18<0.2",
-      "shared_groups": []
-    },
-    "HE__OMCL": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.18<0.2",
-      "shared_groups": []
-    },
-    "NEE__BIO": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.18<0.2",
-      "shared_groups": []
-    },
-    "NEE__GEV": {
-      "membership_jaccard": 0.1429,
-      "factor_cosine": null,
-      "combined": 0.1429,
-      "factor_basis": "beta-read-thin:r2=0.11<0.2",
-      "shared_groups": [
-        "basket:power_grid"
-      ]
-    },
-    "NEE__MATX": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.18<0.2",
-      "shared_groups": []
-    },
-    "NEE__PARR": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.18<0.2",
-      "shared_groups": []
-    },
-    "HE__CVSA": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.18<0.2",
-      "shared_groups": []
-    },
-    "HE__NWSA": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.18<0.2",
-      "shared_groups": []
-    },
-    "NEE__P": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.11<0.2",
-      "shared_groups": []
-    },
-    "HE__BMY": {
+    "HE__MATX": {
       "membership_jaccard": 0.0,
       "factor_cosine": null,
       "combined": 0.0,
@@ -706,6 +616,27 @@
       "factor_basis": "beta-read-thin:r2=0.18<0.2",
       "shared_groups": []
     },
+    "HE__GEV": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.18<0.2",
+      "shared_groups": []
+    },
+    "HE__PEP": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.18<0.2",
+      "shared_groups": []
+    },
+    "HE__DBX": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.18<0.2",
+      "shared_groups": []
+    },
     "HE__OMCL": {
       "membership_jaccard": 0.0,
       "factor_cosine": null,
@@ -720,14 +651,7 @@
       "factor_basis": "beta-read-thin:r2=0.18<0.2",
       "shared_groups": []
     },
-    "HE__GEV": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.18<0.2",
-      "shared_groups": []
-    },
-    "HE__MATX": {
+    "HE__PAHC": {
       "membership_jaccard": 0.0,
       "factor_cosine": null,
       "combined": 0.0,
@@ -741,13 +665,6 @@
       "factor_basis": "beta-read-thin:r2=0.18<0.2",
       "shared_groups": []
     },
-    "HE__NWSA": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.18<0.2",
-      "shared_groups": []
-    },
     "HE__P": {
       "membership_jaccard": 0.0,
       "factor_cosine": null,
@@ -755,71 +672,76 @@
       "factor_basis": "beta-read-thin:r2=0.18<0.2",
       "shared_groups": []
     },
-    "BMY__STT": {
+    "MATX__STT": {
       "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.19<0.2",
+      "factor_cosine": 0.9152,
+      "combined": 0.9152,
+      "factor_basis": "high-tier-factors:4of4",
       "shared_groups": []
     },
-    "BMY__BEN": {
+    "MATX__BEN": {
       "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.19<0.2",
+      "factor_cosine": 0.8208,
+      "combined": 0.8208,
+      "factor_basis": "high-tier-factors:4of4",
       "shared_groups": []
     },
-    "BMY__OMCL": {
-      "membership_jaccard": 0.3333,
-      "factor_cosine": null,
-      "combined": 0.3333,
-      "factor_basis": "beta-read-thin:r2=0.19<0.2",
+    "MATX__GEV": {
+      "membership_jaccard": 0.2,
+      "factor_cosine": 0.6685,
+      "combined": 0.6685,
+      "factor_basis": "high-tier-factors:4of4",
       "shared_groups": [
-        "sector:Health Care"
+        "sector:Industrials"
       ]
     },
-    "BMY__BIO": {
-      "membership_jaccard": 0.3333,
-      "factor_cosine": null,
-      "combined": 0.3333,
-      "factor_basis": "beta-read-thin:r2=0.19<0.2",
-      "shared_groups": [
-        "sector:Health Care"
-      ]
-    },
-    "BMY__MATW": {
+    "MATX__PEP": {
       "membership_jaccard": 0.0,
       "factor_cosine": null,
       "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.19<0.2",
+      "factor_basis": "beta-read-thin:r2=0.11<0.2",
       "shared_groups": []
     },
-    "BMY__MATX": {
+    "MATX__DBX": {
       "membership_jaccard": 0.0,
       "factor_cosine": null,
       "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.19<0.2",
+      "factor_basis": "beta-read-thin:r2=0.10<0.2",
       "shared_groups": []
     },
-    "BMY__PARR": {
+    "MATX__OMCL": {
       "membership_jaccard": 0.0,
       "factor_cosine": null,
       "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.19<0.2",
+      "factor_basis": "beta-read-thin:r2=0.14<0.2",
       "shared_groups": []
     },
-    "BMY__NWSA": {
+    "MATX__BIO": {
       "membership_jaccard": 0.0,
       "factor_cosine": null,
       "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.19<0.2",
+      "factor_basis": "beta-read-thin:r2=0.14<0.2",
       "shared_groups": []
     },
-    "BMY__P": {
+    "MATX__PAHC": {
       "membership_jaccard": 0.0,
       "factor_cosine": null,
       "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.19<0.2",
+      "factor_basis": "beta-read-thin:r2=0.15<0.2",
+      "shared_groups": []
+    },
+    "MATX__PARR": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": 0.1663,
+      "combined": 0.1663,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": []
+    },
+    "MATX__P": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": 0.2576,
+      "combined": 0.2576,
+      "factor_basis": "high-tier-factors:4of4",
       "shared_groups": []
     },
     "STT__BEN": {
@@ -831,6 +753,27 @@
         "basket:us_sector_financials",
         "sector:Financials"
       ]
+    },
+    "STT__GEV": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": 0.6074,
+      "combined": 0.6074,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": []
+    },
+    "STT__PEP": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.11<0.2",
+      "shared_groups": []
+    },
+    "STT__DBX": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.10<0.2",
+      "shared_groups": []
     },
     "STT__OMCL": {
       "membership_jaccard": 0.0,
@@ -846,18 +789,11 @@
       "factor_basis": "beta-read-thin:r2=0.14<0.2",
       "shared_groups": []
     },
-    "STT__GEV": {
+    "STT__PAHC": {
       "membership_jaccard": 0.0,
-      "factor_cosine": 0.6074,
-      "combined": 0.6074,
-      "factor_basis": "high-tier-factors:4of4",
-      "shared_groups": []
-    },
-    "STT__MATX": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": 0.9152,
-      "combined": 0.9152,
-      "factor_basis": "high-tier-factors:4of4",
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.15<0.2",
       "shared_groups": []
     },
     "STT__PARR": {
@@ -867,18 +803,32 @@
       "factor_basis": "high-tier-factors:4of4",
       "shared_groups": []
     },
-    "STT__NWSA": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.14<0.2",
-      "shared_groups": []
-    },
     "STT__P": {
       "membership_jaccard": 0.0,
       "factor_cosine": 0.082,
       "combined": 0.082,
       "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": []
+    },
+    "BEN__GEV": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": 0.4744,
+      "combined": 0.4744,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": []
+    },
+    "BEN__PEP": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.11<0.2",
+      "shared_groups": []
+    },
+    "BEN__DBX": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.10<0.2",
       "shared_groups": []
     },
     "BEN__OMCL": {
@@ -895,18 +845,11 @@
       "factor_basis": "beta-read-thin:r2=0.14<0.2",
       "shared_groups": []
     },
-    "BEN__GEV": {
+    "BEN__PAHC": {
       "membership_jaccard": 0.0,
-      "factor_cosine": 0.4744,
-      "combined": 0.4744,
-      "factor_basis": "high-tier-factors:4of4",
-      "shared_groups": []
-    },
-    "BEN__MATX": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": 0.8208,
-      "combined": 0.8208,
-      "factor_basis": "high-tier-factors:4of4",
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.15<0.2",
       "shared_groups": []
     },
     "BEN__PARR": {
@@ -916,19 +859,140 @@
       "factor_basis": "high-tier-factors:4of4",
       "shared_groups": []
     },
-    "BEN__NWSA": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.14<0.2",
-      "shared_groups": []
-    },
     "BEN__P": {
       "membership_jaccard": 0.0,
       "factor_cosine": 0.0,
       "combined": 0.0,
       "factor_basis": "high-tier-factors:4of4",
       "shared_groups": []
+    },
+    "GEV__PEP": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.11<0.2",
+      "shared_groups": []
+    },
+    "GEV__DBX": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.10<0.2",
+      "shared_groups": []
+    },
+    "GEV__OMCL": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.14<0.2",
+      "shared_groups": []
+    },
+    "GEV__BIO": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.14<0.2",
+      "shared_groups": []
+    },
+    "GEV__PAHC": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.15<0.2",
+      "shared_groups": []
+    },
+    "GEV__PARR": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": 0.0,
+      "combined": 0.0,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": []
+    },
+    "GEV__P": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": 0.8358,
+      "combined": 0.8358,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": []
+    },
+    "PEP__DBX": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.11<0.2",
+      "shared_groups": []
+    },
+    "PEP__OMCL": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.11<0.2",
+      "shared_groups": []
+    },
+    "PEP__BIO": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.11<0.2",
+      "shared_groups": []
+    },
+    "PEP__PAHC": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.11<0.2",
+      "shared_groups": []
+    },
+    "PEP__PARR": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.11<0.2",
+      "shared_groups": []
+    },
+    "PEP__P": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.11<0.2",
+      "shared_groups": []
+    },
+    "DBX__OMCL": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.10<0.2",
+      "shared_groups": []
+    },
+    "DBX__BIO": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.10<0.2",
+      "shared_groups": []
+    },
+    "DBX__PAHC": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.10<0.2",
+      "shared_groups": []
+    },
+    "DBX__PARR": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.10<0.2",
+      "shared_groups": []
+    },
+    "DBX__P": {
+      "membership_jaccard": 1.0,
+      "factor_cosine": null,
+      "combined": 1.0,
+      "factor_basis": "beta-read-thin:r2=0.10<0.2",
+      "shared_groups": [
+        "sector:Information Technology"
+      ]
     },
     "OMCL__BIO": {
       "membership_jaccard": 1.0,
@@ -939,28 +1003,16 @@
         "sector:Health Care"
       ]
     },
-    "OMCL__GEV": {
-      "membership_jaccard": 0.0,
+    "OMCL__PAHC": {
+      "membership_jaccard": 1.0,
       "factor_cosine": null,
-      "combined": 0.0,
+      "combined": 1.0,
       "factor_basis": "beta-read-thin:r2=0.14<0.2",
-      "shared_groups": []
-    },
-    "OMCL__MATX": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.14<0.2",
-      "shared_groups": []
+      "shared_groups": [
+        "sector:Health Care"
+      ]
     },
     "OMCL__PARR": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.14<0.2",
-      "shared_groups": []
-    },
-    "OMCL__NWSA": {
       "membership_jaccard": 0.0,
       "factor_cosine": null,
       "combined": 0.0,
@@ -974,28 +1026,16 @@
       "factor_basis": "beta-read-thin:r2=0.14<0.2",
       "shared_groups": []
     },
-    "BIO__GEV": {
-      "membership_jaccard": 0.0,
+    "BIO__PAHC": {
+      "membership_jaccard": 1.0,
       "factor_cosine": null,
-      "combined": 0.0,
+      "combined": 1.0,
       "factor_basis": "beta-read-thin:r2=0.14<0.2",
-      "shared_groups": []
-    },
-    "BIO__MATX": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.14<0.2",
-      "shared_groups": []
+      "shared_groups": [
+        "sector:Health Care"
+      ]
     },
     "BIO__PARR": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.14<0.2",
-      "shared_groups": []
-    },
-    "BIO__NWSA": {
       "membership_jaccard": 0.0,
       "factor_cosine": null,
       "combined": 0.0,
@@ -1009,62 +1049,18 @@
       "factor_basis": "beta-read-thin:r2=0.14<0.2",
       "shared_groups": []
     },
-    "GEV__MATX": {
-      "membership_jaccard": 0.2,
-      "factor_cosine": 0.6685,
-      "combined": 0.6685,
-      "factor_basis": "high-tier-factors:4of4",
-      "shared_groups": [
-        "sector:Industrials"
-      ]
-    },
-    "GEV__PARR": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": 0.0,
-      "combined": 0.0,
-      "factor_basis": "high-tier-factors:4of4",
-      "shared_groups": []
-    },
-    "GEV__NWSA": {
+    "PAHC__PARR": {
       "membership_jaccard": 0.0,
       "factor_cosine": null,
       "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.14<0.2",
+      "factor_basis": "beta-read-thin:r2=0.15<0.2",
       "shared_groups": []
     },
-    "GEV__P": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": 0.8358,
-      "combined": 0.8358,
-      "factor_basis": "high-tier-factors:4of4",
-      "shared_groups": []
-    },
-    "MATX__PARR": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": 0.1663,
-      "combined": 0.1663,
-      "factor_basis": "high-tier-factors:4of4",
-      "shared_groups": []
-    },
-    "MATX__NWSA": {
+    "PAHC__P": {
       "membership_jaccard": 0.0,
       "factor_cosine": null,
       "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.14<0.2",
-      "shared_groups": []
-    },
-    "MATX__P": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": 0.2576,
-      "combined": 0.2576,
-      "factor_basis": "high-tier-factors:4of4",
-      "shared_groups": []
-    },
-    "PARR__NWSA": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.14<0.2",
+      "factor_basis": "beta-read-thin:r2=0.15<0.2",
       "shared_groups": []
     },
     "PARR__P": {
@@ -1072,13 +1068,6 @@
       "factor_cosine": 0.0,
       "combined": 0.0,
       "factor_basis": "high-tier-factors:4of4",
-      "shared_groups": []
-    },
-    "NWSA__P": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": null,
-      "combined": 0.0,
-      "factor_basis": "beta-read-thin:r2=0.14<0.2",
       "shared_groups": []
     }
   },
@@ -1090,8 +1079,8 @@
     "new_note": "similarity < 0.35 \u2192 distinct bet"
   },
   "n_eff_by_lane": {
-    "entry_open": 5.1,
-    "setting_up": 2.0
+    "entry_open": 5.0,
+    "setting_up": 1.0
   },
   "source_passport": {
     "factor_betas": {
