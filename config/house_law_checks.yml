@@ -506,10 +506,13 @@ checks:
     selftest: true
     allowlist: data/research_factory/authority_allowlist.json
     ratchet:
-      date: "2026-08-15"
+      date: "2026-09-15"
       action: >
-        Declare or allowlist the ~92 bare-WARN non-Article-2 factory readers that
-        currently produce warnings but do not fail.
+        Bare-WARN debt drained 2026-07-06 (all 23 non-Article-2 readers declared in
+        authority_allowlist.json). Remaining: operator review of the 4 cycle_pattern
+        cross-lake entries (apply_cycle_pattern_lattice_batch2_outcomes writes factory
+        transitions; 3 truth_guard flag-only importers) — ratify or remove their
+        allowlist entries, then set this ratchet to null.
     known_limits:
       - Literal-path scan only; misses dynamic path construction.
     owner_program: research-factory
