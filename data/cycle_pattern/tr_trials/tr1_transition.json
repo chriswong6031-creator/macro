@@ -1,0 +1,538 @@
+{
+  "schema": "cycle_pattern_tr_trial.v1",
+  "registered_ref": "PREREGISTRATION.md \u00a716",
+  "run_at": "2026-07-07T00:27:45.188473+00:00",
+  "embargo": "date<2024-01-01",
+  "panel_epoch": "price_c4414dcb",
+  "n_rows_pre_embargo": 16429,
+  "n_labeled": {
+    "1m": 16323,
+    "3m": 16177
+  },
+  "candidate_count_printed": 6,
+  "trial_family": "rf.cycle_pattern.tr_v0",
+  "config": {
+    "first_test_year": 2010,
+    "embargo_m": 6,
+    "min_train_rows": 400,
+    "boot_draws": 800,
+    "boot_seed": 7,
+    "fdr_q": 0.1,
+    "sign_stability_min": 9,
+    "n_cells_family": 6,
+    "lr": 0.15,
+    "iters": 600,
+    "l2": 1.0,
+    "laplace_alpha": 1.0,
+    "classes": [
+      "Trough",
+      "Recovery",
+      "Expansion",
+      "Peak",
+      "Downturn"
+    ],
+    "design": [
+      "ph_Trough",
+      "ph_Recovery",
+      "ph_Expansion",
+      "ph_Peak",
+      "ph_Downturn",
+      "age_b1",
+      "age_b2",
+      "age_b3",
+      "age_b4",
+      "age_b5",
+      "log_age_ratio",
+      "amp_proxy",
+      "pos_osc_s",
+      "osc_slope_s",
+      "mom_score",
+      "rs_63d",
+      "vol_pctile",
+      "fam_country",
+      "fam_cn",
+      "dir_up"
+    ],
+    "l2_exempt": [
+      "age_b1",
+      "age_b2",
+      "age_b3",
+      "age_b4",
+      "age_b5"
+    ],
+    "calibration": "none (raw softmax probabilities gated; disclosed, \u00a716)"
+  },
+  "sanity_gate": {
+    "passed": true,
+    "table": [
+      {
+        "family": "us_sector",
+        "peak_self_3m": 0.5688,
+        "recovery_self_3m": 0.2678,
+        "ok": true
+      },
+      {
+        "family": "country",
+        "peak_self_3m": 0.5171,
+        "recovery_self_3m": 0.2168,
+        "ok": true
+      },
+      {
+        "family": "cn_sector",
+        "peak_self_3m": 0.5546,
+        "recovery_self_3m": 0.2131,
+        "ok": true
+      }
+    ],
+    "reason": "Peak self-persistence > Recovery self-persistence in every family (3m baseline diagonal)"
+  },
+  "baseline_transition_matrices": {
+    "1m": {
+      "us_sector": {
+        "Trough": [
+          0.5764,
+          0.2118,
+          0.0912,
+          0.0214,
+          0.0992
+        ],
+        "Recovery": [
+          0.1995,
+          0.4647,
+          0.2944,
+          0.0341,
+          0.0073
+        ],
+        "Expansion": [
+          0.0423,
+          0.127,
+          0.5698,
+          0.2437,
+          0.0172
+        ],
+        "Peak": [
+          0.0102,
+          0.0264,
+          0.2085,
+          0.7406,
+          0.0142
+        ],
+        "Downturn": [
+          0.1797,
+          0.0391,
+          0.1484,
+          0.1875,
+          0.4453
+        ]
+      },
+      "country": {
+        "Trough": [
+          0.6408,
+          0.1627,
+          0.0935,
+          0.0112,
+          0.0917
+        ],
+        "Recovery": [
+          0.2505,
+          0.4637,
+          0.2486,
+          0.0229,
+          0.0143
+        ],
+        "Expansion": [
+          0.0731,
+          0.0995,
+          0.6115,
+          0.1827,
+          0.0333
+        ],
+        "Peak": [
+          0.0109,
+          0.0057,
+          0.2108,
+          0.729,
+          0.0436
+        ],
+        "Downturn": [
+          0.203,
+          0.0237,
+          0.2504,
+          0.1134,
+          0.4095
+        ]
+      },
+      "cn_sector": {
+        "Trough": [
+          0.6941,
+          0.0983,
+          0.055,
+          0.0066,
+          0.146
+        ],
+        "Recovery": [
+          0.251,
+          0.4297,
+          0.2833,
+          0.0266,
+          0.0095
+        ],
+        "Expansion": [
+          0.063,
+          0.0949,
+          0.6563,
+          0.141,
+          0.0448
+        ],
+        "Peak": [
+          0.0067,
+          0.0052,
+          0.1606,
+          0.7405,
+          0.087
+        ],
+        "Downturn": [
+          0.2098,
+          0.018,
+          0.1115,
+          0.1283,
+          0.5324
+        ]
+      }
+    },
+    "3m": {
+      "us_sector": {
+        "Trough": [
+          0.2997,
+          0.248,
+          0.2316,
+          0.1172,
+          0.1035
+        ],
+        "Recovery": [
+          0.2383,
+          0.2678,
+          0.3145,
+          0.1646,
+          0.0147
+        ],
+        "Expansion": [
+          0.0914,
+          0.1493,
+          0.4178,
+          0.3171,
+          0.0243
+        ],
+        "Peak": [
+          0.0479,
+          0.0693,
+          0.2773,
+          0.5688,
+          0.0367
+        ],
+        "Downturn": [
+          0.1875,
+          0.0938,
+          0.2109,
+          0.3203,
+          0.1875
+        ]
+      },
+      "country": {
+        "Trough": [
+          0.3629,
+          0.2413,
+          0.2719,
+          0.0731,
+          0.0509
+        ],
+        "Recovery": [
+          0.343,
+          0.2168,
+          0.2803,
+          0.1156,
+          0.0443
+        ],
+        "Expansion": [
+          0.1641,
+          0.1127,
+          0.4058,
+          0.2577,
+          0.0596
+        ],
+        "Peak": [
+          0.0665,
+          0.0375,
+          0.2825,
+          0.5171,
+          0.0964
+        ],
+        "Downturn": [
+          0.2306,
+          0.0654,
+          0.3356,
+          0.2083,
+          0.1601
+        ]
+      },
+      "cn_sector": {
+        "Trough": [
+          0.4354,
+          0.1704,
+          0.1757,
+          0.0743,
+          0.1441
+        ],
+        "Recovery": [
+          0.3052,
+          0.2131,
+          0.3013,
+          0.1344,
+          0.0461
+        ],
+        "Expansion": [
+          0.1755,
+          0.076,
+          0.4663,
+          0.1821,
+          0.1002
+        ],
+        "Peak": [
+          0.0602,
+          0.0141,
+          0.1829,
+          0.5546,
+          0.1881
+        ],
+        "Downturn": [
+          0.2805,
+          0.0488,
+          0.2354,
+          0.178,
+          0.2573
+        ]
+      }
+    }
+  },
+  "per_fold": {
+    "1m": {
+      "n_folds": 14,
+      "test_years": [
+        2010,
+        2011,
+        2012,
+        2013,
+        2014,
+        2015,
+        2016,
+        2017,
+        2018,
+        2019,
+        2020,
+        2021,
+        2022,
+        2023
+      ],
+      "n_train_per_fold": [
+        5299,
+        5923,
+        6561,
+        7220,
+        7890,
+        8562,
+        9263,
+        10079,
+        10903,
+        11731,
+        12565,
+        13405,
+        14245,
+        15085
+      ],
+      "n_test_per_fold": [
+        626,
+        653,
+        664,
+        672,
+        680,
+        765,
+        818,
+        828,
+        828,
+        840,
+        840,
+        840,
+        855,
+        803
+      ]
+    },
+    "3m": {
+      "n_folds": 14,
+      "test_years": [
+        2010,
+        2011,
+        2012,
+        2013,
+        2014,
+        2015,
+        2016,
+        2017,
+        2018,
+        2019,
+        2020,
+        2021,
+        2022,
+        2023
+      ],
+      "n_train_per_fold": [
+        5299,
+        5923,
+        6561,
+        7220,
+        7890,
+        8562,
+        9263,
+        10079,
+        10903,
+        11731,
+        12565,
+        13405,
+        14245,
+        15085
+      ],
+      "n_test_per_fold": [
+        626,
+        653,
+        664,
+        672,
+        680,
+        765,
+        818,
+        828,
+        828,
+        840,
+        840,
+        840,
+        855,
+        657
+      ]
+    }
+  },
+  "ledger": {
+    "us_sector": {
+      "1m": {
+        "delta_brier": 0.002968,
+        "brier_baseline": 0.109817,
+        "brier_model": 0.106849,
+        "ci90": [
+          0.001456,
+          0.004692
+        ],
+        "boot_p": 0.005,
+        "ci_excludes_zero": true,
+        "years_positive": 11,
+        "n_years": 14,
+        "sign_stable": true,
+        "n_oos": 1647,
+        "n_months": 167,
+        "bh_pass": true,
+        "verdict": "PASS"
+      },
+      "3m": {
+        "delta_brier": 0.000499,
+        "brier_baseline": 0.137011,
+        "brier_model": 0.136512,
+        "ci90": [
+          -0.001265,
+          0.002171
+        ],
+        "boot_p": 0.2971,
+        "ci_excludes_zero": false,
+        "years_positive": 8,
+        "n_years": 14,
+        "sign_stable": false,
+        "n_oos": 1625,
+        "n_months": 165,
+        "bh_pass": false,
+        "verdict": "FAIL"
+      }
+    },
+    "country": {
+      "1m": {
+        "delta_brier": 0.005457,
+        "brier_baseline": 0.113246,
+        "brier_model": 0.10779,
+        "ci90": [
+          0.003962,
+          0.006973
+        ],
+        "boot_p": 0.0012,
+        "ci_excludes_zero": true,
+        "years_positive": 13,
+        "n_years": 14,
+        "sign_stable": true,
+        "n_oos": 5104,
+        "n_months": 167,
+        "bh_pass": true,
+        "verdict": "PASS"
+      },
+      "3m": {
+        "delta_brier": 0.002677,
+        "brier_baseline": 0.145036,
+        "brier_model": 0.142359,
+        "ci90": [
+          0.001247,
+          0.004021
+        ],
+        "boot_p": 0.0012,
+        "ci_excludes_zero": true,
+        "years_positive": 12,
+        "n_years": 14,
+        "sign_stable": true,
+        "n_oos": 5042,
+        "n_months": 165,
+        "bh_pass": true,
+        "verdict": "PASS"
+      }
+    },
+    "cn_sector": {
+      "1m": {
+        "delta_brier": 0.00658,
+        "brier_baseline": 0.107654,
+        "brier_model": 0.101074,
+        "ci90": [
+          0.005088,
+          0.008213
+        ],
+        "boot_p": 0.0012,
+        "ci_excludes_zero": true,
+        "years_positive": 14,
+        "n_years": 14,
+        "sign_stable": true,
+        "n_oos": 3961,
+        "n_months": 167,
+        "bh_pass": true,
+        "verdict": "PASS"
+      },
+      "3m": {
+        "delta_brier": 0.001425,
+        "brier_baseline": 0.147905,
+        "brier_model": 0.146479,
+        "ci90": [
+          -0.000207,
+          0.002993
+        ],
+        "boot_p": 0.0749,
+        "ci_excludes_zero": false,
+        "years_positive": 10,
+        "n_years": 14,
+        "sign_stable": true,
+        "n_oos": 3899,
+        "n_months": 165,
+        "bh_pass": true,
+        "verdict": "FAIL"
+      }
+    }
+  },
+  "n_cells_pass": 4
+}

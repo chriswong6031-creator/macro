@@ -548,3 +548,50 @@ families; Peak persists), 2 rdd_63d (Peak = shallower vol-adjusted tails within 
 (structure is NOT a family-composition artifact — falsifier answered). Adjudication:
 `CPI_LATTICE2_VERDICT.md`. Artifacts: `data/cycle_pattern/lattice/batch2.json`,
 `batch2_cells.parquet`; budget `rf.cycle_pattern.lattice_v1` n=135 declared pre-p-value.
+
+---
+
+## 16 · TR-1 next-phase transition model — family `cycle_pattern_tr` (registered 2026-07-06, PRE-RUN)
+
+**Two-commit discipline as §12–§15.** NEW TARGET (masterplan §5, capability C4 "what comes next") and NEW capacity: a multinomial model of the next phase. This is NOT an additive-feature trial on the pooled hazard logistic — the CPI-018 suspension (additive FT trials) does not apply: different target, different model, its own named baseline.
+
+**Substrate (frozen):** hazard panel `price_c4414dcb` + `derive_phase` (W4.4 verbatim) → `phase_v2` per (id, month-end). Labels: `next_phase_1m` = phase_v2 at the NEXT consecutive month-end; `next_phase_3m` = phase_v2 at the 3rd consecutive month-end; a calendar gap breaks the chain → NaN (the §14 `phase_persist_3m` convention). Rows with NaN current phase or NaN label are excluded. **Embargo:** rows ≥ 2024-01-01 excluded from fit AND gate. Walk-forward: the W4.2 expanding-origin ANNUAL date-block harness verbatim (first test year 2010, 6-month embargo between train end and test start, test years 2010–2023 = 14 blocks).
+
+**Baseline (frozen):** family-stratified empirical transition matrix estimated on each train fold: P(next_phase_h = k | phase_v2_t = j, family), Laplace-smoothed (α = 1 across the 5 classes); fallback for an unseen (j, family) row = family-pooled row, then the global row (the KM fallback-chain convention).
+
+**Model (frozen):** multinomial L2 softmax regression, pure numpy, extending the W4.2 hand-rolled logistic conventions (train-fold standardization of continuous features; lr = 0.15, iters = 600, l2 = 1.0). Features = current-phase one-hot (5) + the shipped W2.5-bound hazard feature set EXACTLY as used by the shipped model (log_age_ratio, amp_proxy, pos_osc_s, osc_slope_s, mom_score, rs_63d, vol_pctile, age-bucket dummies, family dummies, direction) — NO new covariates: this trial tests MODEL CAPACITY over existing PIT-pure columns, not new information. NO calibration layer in v0 (raw softmax probabilities are gated; disclosed).
+
+**Cells (6):** horizon {1m, 3m} × family {us_sector, country, cn_sector}. One pooled fit per fold (family dummies); evaluation per family cell. Multiclass Brier = (1/5)·Σ_k (p_k − y_k)² per row, averaged over the cell's OOS rows.
+
+| id | claim | success criterion | judged by | E[pass\|null] | FDR family |
+|---|---|---|---|---|---|
+| **TR1-{fam}-{h}** | the softmax model beats the family transition-matrix baseline on OOS multiclass Brier | paired ΔBrier(baseline − model) month-block bootstrap CI₉₀ excludes 0 on the positive side AND survives BH-FDR q=0.10 within `cycle_pattern_tr` AND sign-stability ≥ 9 of 14 test years | `data/cycle_pattern/tr_trials/tr1_transition.json` → `ledger.<fam>.<h>` | 0.05/cell | `cycle_pattern_tr` (q=0.10) |
+
+**Budget:** 6 cells, declared as `rf.cycle_pattern.tr_v0` in `data/trial_ledger.jsonl` at run time BEFORE any p-value. No other horizons, families, feature substitutions, or calibration variants may be evaluated under this registration. **Sanity gate (pipeline, printed, not a claim):** the full-pre-embargo-sample baseline diagonal must show Peak self-persistence > Recovery self-persistence in every family (the §15 batch-2 structure), else abort sys.exit(2).
+
+**Outcome handling (frozen):** passing cells → a display-class truth + factory candidate (status `screened`, trial_family `tr_v0`, authority display_only) per §15 conventions; page/UI unchanged; shipped-surface adoption is a SEPARATE wave. 0/6 → ONE scoped null truth ("next-phase dynamics carry no model-capacity edge beyond the family empirical transition matrix on existing PIT-pure columns") with falsifier naming the reopening conditions (new information per FT reopening rules, or the regime-vintage spine). Either way the exploration tables ship to the measurement research surface.
+
+### TR-1 results (2026-07-06 — criteria above UNCHANGED; §16 two-commit discipline observed)
+
+| id | result | date |
+|---|---|---|
+| **TR1-us_sector-1m** | **PASS** — ΔBrier +0.0030, CI₉₀ [+0.0015, +0.0047], boot p=0.005, years+ 11/14, BH-pass. | 2026-07-06 |
+| **TR1-us_sector-3m** | **FAIL** — ΔBrier +0.0005, CI₉₀ [−0.0013, +0.0022] straddles 0; years+ 8/14; no BH. | 2026-07-06 |
+| **TR1-country-1m** | **PASS** — ΔBrier +0.0055, CI₉₀ [+0.0040, +0.0070], boot p=0.0012, years+ 13/14, BH-pass. | 2026-07-06 |
+| **TR1-country-3m** | **PASS** — ΔBrier +0.0027, CI₉₀ [+0.0012, +0.0040], boot p=0.0012, years+ 12/14, BH-pass. | 2026-07-06 |
+| **TR1-cn_sector-1m** | **PASS** — ΔBrier +0.0066, CI₉₀ [+0.0051, +0.0082], boot p=0.0012, years+ 14/14, BH-pass. | 2026-07-06 |
+| **TR1-cn_sector-3m** | **FAIL** — ΔBrier +0.0014, CI₉₀ [−0.0002, +0.0030] straddles 0; years+ 10/14 (BH-pass but the CI leg fails). | 2026-07-06 |
+
+**Verdict: 4 of 6 cells pass — the program's first gate-passing cells** (after 18 additive-FT
+cells, 0 passes: the §13 synthesis holds — capacity entered as a NEW MODEL on a NEW TARGET, not as
+new columns on the pooled hazard). Sanity gate reproduced the §15 structure (Peak self-persistence
+> Recovery in every family, 3m baseline diagonal). The edge is HORIZON-CONCENTRATED: 1m passes in
+all three families (uplift 2.7% / 4.8% / 6.1% of a strong baseline Brier 0.110/0.113/0.108); 3m
+passes only in country (+1.8%). Per frozen outcome handling: display truth
+`cycle_truth_tr1_next_phase_softmax_skill_v1` appended + 4 factory candidates (`screened`,
+trial_family `tr_v0`, authority display_only, truth_guard 0 flags); the failing 3m cells are
+recorded here and in the artifact — no shipped-surface change, adoption is a SEPARATE wave.
+Exploration tables (full-sample family transition matrices, both horizons) ship inside the
+artifact. Full adjudication: `research/cycle_masterplan/CPI_TR1_VERDICT.md`. Artifacts:
+`data/cycle_pattern/tr_trials/tr1_transition.json`; budget `rf.cycle_pattern.tr_v0` n=6 declared
+pre-p-value (2026-07-07T00:27Z, before any evaluation).
