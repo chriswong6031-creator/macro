@@ -757,7 +757,7 @@
   /* ---- W4.3 / UI-HZ-1 turn-hazard rows (MEASURED cards only) --------------
      Renders the calibrated turn-hazard row set from band.now.hazard: P(turn ≤ h)
      for h = 1m / 3m / 6m, each cell carrying its VISIBLE evidence badge from the
-     W4.2 gate ledger (PASS = calibrated model probability, validated vs the
+     W4.2 gate ledger (PASS = calibrated model probability, passed the W4.2 gate vs the
      family-stratified KM baseline; PRIOR = KM base rate, shown muted with the
      KM-prior wording). No naked probabilities — every number is badged (UI-HZ-1).
      The hover (title attr) carries: cell verdict wording, epoch, BACKTEST-cohort
@@ -802,7 +802,7 @@
     return '<div class="cyc-hazard">' +
       '<span class="hz-label" title="' + esc(
         'P(next confirmed turn within horizon) for the open ' + (dir || '?') + '-leg. ' +
-        'PASS cells: isotonic-calibrated discrete-time hazard model (validated vs KM, W4.2 gate). ' +
+        'PASS cells: isotonic-calibrated discrete-time hazard model (calibration-gated vs KM, W4.2 gate). ' +
         'PRIOR cells: KM base rate, shown muted. Display-only context — never a signal.'
       ) + '"><span class="l-en">Turn hazard (calibrated)</span><span class="l-zh">转折风险（校准）</span></span>' +
       cells.join('<span class="hz-sep"> · </span>') +

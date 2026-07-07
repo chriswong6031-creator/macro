@@ -72,6 +72,12 @@ jobs:
       # guard goes red. Keeps the last-good site live instead.
       - name: guard — no git conflict markers in committed content
         run: python3 scripts/check_conflict_markers.py
+      # Guard (BC-2): refuse to deploy if any user-facing surface carries an affirmative
+      # "validated" claim that cannot be traced to a stored, leak-free artifact or an
+      # allowlisted justification. Negated/hedged uses ("no validated edge", "unvalidated")
+      # are ignored automatically. Law source: CLAUDE.md §Epistemics.
+      - name: guard — no unearned 'validated' claims in user-facing surfaces
+        run: python3 scripts/check_validated_claims.py
       - uses: actions/upload-pages-artifact@v3
         with:
           path: site/
