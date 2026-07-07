@@ -1045,3 +1045,258 @@ class TestClaimsCapturePathIntegration:
         assert claims_stats["mae_naive_prior"] == pytest.approx(4.0, abs=0.1), (
             f"Expected mae_naive_prior=4.0, got {claims_stats['mae_naive_prior']}"
         )
+
+
+# ============================================================
+# 12. EXPECTATION READ — MRI-R22
+# ============================================================
+
+from scripts.build_release_forecast import (
+    _build_projection_ledger_rows,
+    _check_release_day_capture,
+    _EXPECTATION_BAND_THRESHOLD,
+)
+
+
+def _make_projection_item_with_expectation_read(
+    release_type: str = "cpi_headline",
+    period: str = "2026-06",
+    release_date: str = "2026-07-10",
+    proj_point: float = 0.42,
+    expectation_read: dict | None = None,
+    sigma_scale_pp: float = 0.3073,
+) -> dict:
+    """Build a minimal upcoming item as produced by _build_upcoming_block + _enrich_upcoming_block."""
+    return {
+        "release": "cpi",
+        "release_type": release_type,
+        "period": period,
+        "release_date": release_date,
+        "days_to": 3,
+        "projection": {"point": proj_point, "p10": 0.1, "p25": 0.2, "p50": 0.35, "p75": 0.5, "p90": 0.65},
+        "confidence": 0.60,
+        "input_completeness": 0.75,
+        "benchmark_set": {
+            "naive_prior": 0.47, "trailing_3m": 0.66, "ar_model": 0.86,
+            "cleveland_nowcast": -0.061, "market_implied": None,
+        },
+        "surprise_skew": {"sigma_scale_pp": sigma_scale_pp, "sigma": -0.16, "tag": "inline"},
+        "pit": {"inputs_hash": "abc123"},
+        "regime_axis": "inflation",
+        "policy_backdrop": {},
+        "quirk_flags": [],
+        "expectation_read": expectation_read,
+    }
+
+
+class TestExpectationReadProducer:
+    """Tests for expectation_read wiring in producer: ledger freezing, scored-row hit, scoreboard."""
+
+    def test_expectation_read_frozen_in_ledger_row(self):
+        """Projection ledger row must carry frozen expectation_read dict."""
+        from datetime import date
+        today = date(2026, 7, 7)
+        er = {"tag": "above_expectations", "delta_pp": 0.4848, "standardized": 1.58,
+              "expectation_median": -0.0612, "sources": ["cleveland_nowcast"], "n_sources": 1}
+        item = _make_projection_item_with_expectation_read(expectation_read=er)
+        policy_backdrop = {"fed_stance": None, "gap_bp": None,
+                           "implied_cuts_12m": None, "next_fomc": None}
+        rows = _build_projection_ledger_rows(today, [item], policy_backdrop)
+        assert len(rows) == 1
+        row = rows[0]
+        assert "expectation_read" in row, "expectation_read must be frozen in ledger projection row"
+        assert row["expectation_read"]["tag"] == "above_expectations"
+        assert row["expectation_read"]["n_sources"] == 1
+
+    def test_null_expectation_read_frozen_as_none(self):
+        """When expectation_read is None (empty expectation set), ledger row carries null."""
+        from datetime import date
+        today = date(2026, 7, 7)
+        item = _make_projection_item_with_expectation_read(expectation_read=None)
+        policy_backdrop = {"fed_stance": None, "gap_bp": None,
+                           "implied_cuts_12m": None, "next_fomc": None}
+        rows = _build_projection_ledger_rows(today, [item], policy_backdrop)
+        assert rows[0].get("expectation_read") is None
+
+    def test_sigma_scale_pp_frozen_in_ledger_row(self):
+        """sigma_scale_pp must be frozen in the projection ledger row for scoring."""
+        from datetime import date
+        today = date(2026, 7, 7)
+        item = _make_projection_item_with_expectation_read(sigma_scale_pp=0.3073)
+        policy_backdrop = {"fed_stance": None, "gap_bp": None,
+                           "implied_cuts_12m": None, "next_fomc": None}
+        rows = _build_projection_ledger_rows(today, [item], policy_backdrop)
+        assert rows[0].get("sigma_scale_pp") == pytest.approx(0.3073, abs=1e-6)
+
+    def test_expectation_hit_above_expectations_correct(self, tmp_root: Path):
+        """When actual falls above the frozen expectation_median+0.35σ, expectation_hit=True
+        for a frozen tag='above_expectations'."""
+        # Setup: frozen tag='above_expectations', expectation_median=-0.06, sigma=0.3073
+        # Actual = 0.50 → std = (0.50 - (-0.06)) / 0.3073 = 1.82 → above → hit=True
+        er = {"tag": "above_expectations", "delta_pp": 0.48, "standardized": 1.58,
+              "expectation_median": -0.06, "sources": ["cleveland_nowcast"], "n_sources": 1}
+        proj_row = {
+            "schema": 2, "row_type": "projection",
+            "asof_night": "2026-07-07", "release": "cpi_headline", "period": "2026-06",
+            "release_date": "2026-07-10",
+            "projection_mode": None, "projection_point": 0.42,
+            "projection_p10": 0.1, "projection_p90": 0.65,
+            "benchmark_naive_prior": 0.47, "benchmark_trailing_3m": 0.66,
+            "benchmark_ar_model": 0.86, "benchmark_cleveland": -0.06,
+            "surprise_skew_sigma": -0.16, "surprise_skew_tag": "inline",
+            "fed_stance": None, "gap_bp": None, "implied_cuts_12m": None, "next_fomc": None,
+            "expectation_read": er,
+            "sigma_scale_pp": 0.3073,
+        }
+
+        # Provide vintage with actual = 0.50 MoM
+        # CPI: need prior month level + current month level
+        # prior month 2026-05 level: 315.0
+        # current month 2026-06 level: 315.0 * (1 + 0.50/100) = 316.575
+        _make_vintage_parquet(tmp_root, [
+            {"series": "CPIAUCSL", "period": "2026-05-01", "value": 315.0,
+             "realtime_start": "2026-06-12", "realtime_end": "2099-01-01"},
+            {"series": "CPIAUCSL", "period": "2026-06-01", "value": 316.575,
+             "realtime_start": "2026-07-10", "realtime_end": "2099-01-01"},
+        ])
+
+        today = date(2026, 7, 10)
+        scored = _check_release_day_capture(today, tmp_root, [proj_row])
+
+        assert len(scored) == 1
+        sr = scored[0]
+        # actual ≈ (316.575/315.0 - 1)*100 = 0.50%
+        # frozen tag='above_expectations', frozen_median=-0.06, sigma=0.3073
+        # actual_std = (0.50 - (-0.06)) / 0.3073 = 1.82 > 0.35 → actual_tag='above_expectations'
+        # frozen_tag == actual_tag → hit = True
+        assert sr.get("expectation_hit") is True, (
+            f"Expected expectation_hit=True when actual=0.5 and frozen tag='above_expectations'; "
+            f"got {sr.get('expectation_hit')!r}"
+        )
+
+    def test_expectation_hit_tag_mismatch_is_false(self, tmp_root: Path):
+        """When actual falls in a different band than the frozen tag, expectation_hit=False."""
+        # frozen tag='above_expectations', but actual is well below expectation_median
+        # expectation_median = 0.4, sigma = 0.3073
+        # actual = 0.10 → std = (0.10 - 0.4) / 0.3073 = -0.976 → below_expectations ≠ above
+        er = {"tag": "above_expectations", "delta_pp": 0.1, "standardized": 0.5,
+              "expectation_median": 0.4, "sources": ["cleveland_nowcast"], "n_sources": 1}
+        proj_row = {
+            "schema": 2, "row_type": "projection",
+            "asof_night": "2026-07-07", "release": "cpi_headline", "period": "2026-06",
+            "release_date": "2026-07-10",
+            "projection_mode": None, "projection_point": 0.5,
+            "projection_p10": 0.1, "projection_p90": 0.9,
+            "benchmark_naive_prior": 0.4, "benchmark_trailing_3m": 0.4,
+            "benchmark_ar_model": 0.4, "benchmark_cleveland": 0.4,
+            "surprise_skew_sigma": None, "surprise_skew_tag": None,
+            "fed_stance": None, "gap_bp": None, "implied_cuts_12m": None, "next_fomc": None,
+            "expectation_read": er,
+            "sigma_scale_pp": 0.3073,
+        }
+
+        # actual = 0.10 MoM → prior=315.0, current=315.315
+        _make_vintage_parquet(tmp_root, [
+            {"series": "CPIAUCSL", "period": "2026-05-01", "value": 315.0,
+             "realtime_start": "2026-06-12", "realtime_end": "2099-01-01"},
+            {"series": "CPIAUCSL", "period": "2026-06-01", "value": 315.315,
+             "realtime_start": "2026-07-10", "realtime_end": "2099-01-01"},
+        ])
+
+        today = date(2026, 7, 10)
+        scored = _check_release_day_capture(today, tmp_root, [proj_row])
+
+        assert len(scored) == 1
+        sr = scored[0]
+        assert sr.get("expectation_hit") is False, (
+            f"Expected expectation_hit=False when actual is below_expectations but frozen='above'; "
+            f"got {sr.get('expectation_hit')!r}"
+        )
+
+    def test_expectation_hit_none_when_frozen_read_null(self, tmp_root: Path):
+        """expectation_hit is null when the frozen expectation_read is None."""
+        proj_row = {
+            "schema": 2, "row_type": "projection",
+            "asof_night": "2026-07-07", "release": "cpi_headline", "period": "2026-06",
+            "release_date": "2026-07-10",
+            "projection_mode": None, "projection_point": 0.42,
+            "projection_p10": 0.1, "projection_p90": 0.9,
+            "benchmark_naive_prior": 0.47, "benchmark_trailing_3m": 0.66,
+            "benchmark_ar_model": 0.86, "benchmark_cleveland": None,
+            "surprise_skew_sigma": None, "surprise_skew_tag": None,
+            "fed_stance": None, "gap_bp": None, "implied_cuts_12m": None, "next_fomc": None,
+            "expectation_read": None,   # frozen read was null
+            "sigma_scale_pp": None,
+        }
+
+        _make_vintage_parquet(tmp_root, [
+            {"series": "CPIAUCSL", "period": "2026-05-01", "value": 315.0,
+             "realtime_start": "2026-06-12", "realtime_end": "2099-01-01"},
+            {"series": "CPIAUCSL", "period": "2026-06-01", "value": 316.26,
+             "realtime_start": "2026-07-10", "realtime_end": "2099-01-01"},
+        ])
+
+        today = date(2026, 7, 10)
+        scored = _check_release_day_capture(today, tmp_root, [proj_row])
+
+        assert len(scored) == 1
+        assert scored[0].get("expectation_hit") is None, (
+            "expectation_hit must be None when frozen expectation_read was null"
+        )
+
+    def test_scoreboard_expectation_read_hit_rate_n0_honest(self):
+        """Scoreboard with no scored rows: expectation_read_hit_rate is None (n=0 honest)."""
+        sb = _build_scoreboard([], accrual_start="2026-07-07")
+        # No releases yet → by_release is empty; fields are per-release so absent
+        assert sb["by_release"] == {}
+
+    def test_scoreboard_expectation_read_hit_rate_field_present_when_scored(self):
+        """Scoreboard emits expectation_read_hit_rate (None) when scored rows have no hit data."""
+        scored = _scored_row(release="cpi_headline")
+        scored["actual"] = 0.30
+        scored["frozen_projection_point"] = 0.28
+        scored["interval_hit"] = True
+        scored["skew_hit"] = True
+        # No expectation_hit in this row (not set)
+        sb = _build_scoreboard([scored], accrual_start="2026-07-07")
+        cpi_stats = sb["by_release"].get("cpi_headline", {})
+        assert "expectation_read_hit_rate" in cpi_stats, (
+            "expectation_read_hit_rate must be present in scoreboard even with n=0"
+        )
+        # n=0 → None (honest)
+        assert cpi_stats["expectation_read_hit_rate"] is None
+        assert cpi_stats["expectation_read_hit_rate_n"] == 0
+
+    def test_scoreboard_expectation_read_hit_rate_computes_correctly(self):
+        """Scoreboard correctly aggregates expectation_hit values."""
+        scored1 = _scored_row(release="cpi_headline", period="2026-05")
+        scored1["actual"] = 0.25
+        scored1["frozen_projection_point"] = 0.28
+        scored1["interval_hit"] = True
+        scored1["skew_hit"] = False
+        scored1["expectation_hit"] = True   # hit
+
+        scored2 = _scored_row(release="cpi_headline", period="2026-06")
+        scored2["actual"] = 0.30
+        scored2["frozen_projection_point"] = 0.27
+        scored2["interval_hit"] = False
+        scored2["skew_hit"] = True
+        scored2["expectation_hit"] = False  # miss
+
+        sb = _build_scoreboard([scored1, scored2], accrual_start="2026-07-07")
+        cpi_stats = sb["by_release"]["cpi_headline"]
+        assert cpi_stats["expectation_read_hit_rate_n"] == 2
+        assert cpi_stats["expectation_read_hit_rate"] == pytest.approx(0.5, abs=1e-4)
+
+    def test_enrichments_list_includes_expectation_read(self, tmp_root: Path, monkeypatch):
+        """The enrichments list in latest.json must include 'expectation_read'."""
+        import scripts.build_release_forecast as producer
+        monkeypatch.setattr(producer, "_find_upcoming_releases", lambda *a, **k: [])
+        monkeypatch.setattr(producer, "_read_policy_backdrop", lambda *a, **k: {
+            "fed_stance": None, "gap_bp": None,
+            "implied_cuts_12m": None, "next_fomc": None, "guidance_direction": None,
+        })
+        result = producer.build(tmp_root, dry_run=True)
+        assert "expectation_read" in result.get("enrichments", []), (
+            "enrichments list must include 'expectation_read'"
+        )

@@ -1,13 +1,14 @@
 """MRI PR-I — display-only enrichments for the release_forecast.v2 artifact.
 
-Three pure functions called by scripts/build_release_forecast.py after projections
+Four pure functions called by scripts/build_release_forecast.py after projections
 are built. All are fail-open: any exception → return None, caller logs and continues.
 
-BINDINGS (MRI-R15 / MRI-R16 / MRI-R17):
+BINDINGS (MRI-R15 / MRI-R16 / MRI-R17 / MRI-R22):
   - display_only=True: no field here gates, scores, or sizes any position.
   - No LLM calls, no origination of values.
   - Market-implied read (R16) is NEVER fused into model math — context only.
   - Reaction-sensitivity (R17) is a pure lookup; no regression, no positioning inputs.
+  - Expectation read (R22) is NEVER fused into model math — context only.
 
 --------
 1. compute_surprise_distribution (MRI-R15)
@@ -62,6 +63,33 @@ Context only — never fed into model math.
 Pure lookup of research/release_playbook/results/playbook_v1.json.
 Returns historical market-sensitivity means for h1 hot/cold buckets, 2021plus era.
 Prefers regime-conditioned cell if current regime matches and n>=8.
+
+--------
+4. compute_expectation_read (MRI-R22)
+--------
+Given our point forecast, a subset of the benchmark_set that constitutes the
+EXPECTATION SET (cleveland_nowcast + market-implied central value from Kalshi/
+Polymarket), and sigma_scale_pp, compute whether we are above / below / aligned
+with market+nowcast expectations.
+
+Expectation set:
+  - cleveland_nowcast (CPI family only)
+  - Kalshi implied_median (preferred) or Polymarket 'implied' if numeric
+
+Trend benchmarks (naive_prior, trailing_3m, ar_model) are NOT part of this set.
+
+Read:
+  expectation_median = median of available expectation values
+  delta_pp           = point - expectation_median
+  standardized       = delta_pp / sigma_scale_pp
+  tag                = 'above_expectations' if standardized > +0.35
+                       'below_expectations' if standardized < -0.35
+                       'aligned' otherwise
+
+Returns {tag, delta_pp (4dp), standardized (2dp), expectation_median, sources, n_sources}
+or None when:
+  - expectation set is empty (no expectation sources available)
+  - point is None or sigma_scale_pp is None/zero
 """
 from __future__ import annotations
 
@@ -466,4 +494,93 @@ def get_reaction_sensitivity(
 
     except Exception as exc:
         log.debug("get_reaction_sensitivity(%s) failed: %s", release_type, exc)
+        return None
+
+
+# ── 4. Expectation read (MRI-R22) ─────────────────────────────────────────────
+
+# Band threshold matches the inline band in compute_surprise_distribution (MRI-R15 §3.4)
+_EXPECTATION_BAND_THRESHOLD = 0.35  # ±σ
+
+
+def compute_expectation_read(
+    point: float | None,
+    expectation_values: dict[str, float | None],
+    sigma_scale_pp: float | None,
+) -> dict | None:
+    """Compute the expectation read for a projected release print (MRI-R22).
+
+    Args:
+        point: our point forecast value (pp units, same scale as expectation_values).
+        expectation_values: dict mapping source name → value (float or None).
+            Valid EXPECTATION SET members are:
+              'cleveland_nowcast' — Cleveland Fed nowcast (CPI family only)
+              'kalshi'            — Kalshi implied_median (preferred market source)
+              'polymarket'        — Polymarket numeric implied value (fallback)
+            Trend benchmark keys (naive_prior, trailing_3m, ar_model) are ignored.
+        sigma_scale_pp: trailing realized-surprise standard deviation in pp units.
+            Same as surprise_skew.sigma_scale_pp from the projection artifact.
+
+    Returns:
+        {
+          'tag':                'above_expectations' | 'below_expectations' | 'aligned',
+          'delta_pp':           float (4 dp), our point - expectation_median,
+          'standardized':       float (2 dp), delta_pp / sigma_scale_pp,
+          'expectation_median': float, median of available expectation values,
+          'sources':            [str], names of sources used (in input order),
+          'n_sources':          int,
+        }
+        or None when:
+          - expectation set is empty (all values None or dict empty)
+          - point is None
+          - sigma_scale_pp is None or <= 0
+
+    Display-only — must never be fused into model math (MRI-R22 binding).
+    """
+    try:
+        if point is None:
+            return None
+        if sigma_scale_pp is None or sigma_scale_pp <= 0:
+            return None
+
+        point_f = float(point)
+        sigma_f = float(sigma_scale_pp)
+
+        # Only EXPECTATION SET sources are eligible; trend benchmarks are excluded.
+        _EXPECTATION_KEYS = ("cleveland_nowcast", "kalshi", "polymarket")
+
+        sources: list[str] = []
+        values: list[float] = []
+        for key in _EXPECTATION_KEYS:
+            if key in expectation_values:
+                v = expectation_values[key]
+                if v is not None and np.isfinite(float(v)):
+                    sources.append(key)
+                    values.append(float(v))
+
+        if not values:
+            return None  # empty expectation set → null read
+
+        expectation_median = float(np.median(values))
+        delta_pp = point_f - expectation_median
+        standardized = delta_pp / sigma_f
+
+        if standardized > _EXPECTATION_BAND_THRESHOLD:
+            tag = "above_expectations"
+        elif standardized < -_EXPECTATION_BAND_THRESHOLD:
+            tag = "below_expectations"
+        else:
+            tag = "aligned"
+
+        return {
+            "tag": tag,
+            "delta_pp": round(delta_pp, 4),
+            "standardized": round(standardized, 2),
+            "expectation_median": round(expectation_median, 4),
+            "sources": sources,
+            "n_sources": len(sources),
+        }
+
+    except Exception as exc:
+        log.debug("compute_expectation_read failed: %s", exc)
         return None

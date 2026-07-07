@@ -56,6 +56,9 @@ _TRACKED_RELEASES = [
     ("claims",       "claims", "growth"),
 ]
 
+# MRI-R22: expectation-read band threshold (must match engine/release_market_context.py)
+_EXPECTATION_BAND_THRESHOLD = 0.35
+
 # Claims mode — set by §6 backtest verdict (research/release_forecast/CLAIMS_BACKTEST.md).
 # Attempt 1 (ridge): MAE 40.839k vs naive 28.673k (full), 24.042k vs 14.790k (2021+) — FAILED.
 # Attempt 2 (IC4WSA spec): MAE 43.855k vs naive 27.914k (full), 17.685k vs 14.755k (2021+) — FAILED.
@@ -588,6 +591,10 @@ def _build_projection_ledger_rows(
             "next_fomc": policy_backdrop.get("next_fomc"),
             # MRI-R20: freeze quirk flag codes (list of code strings) as annotation
             "quirk_flag_codes": [f["code"] for f in (item.get("quirk_flags") or [])],
+            # MRI-R22: freeze expectation_read snapshot so forward grading can score it
+            "expectation_read": item.get("expectation_read"),
+            # freeze sigma_scale_pp for scoring: needed to re-derive bands at score time
+            "sigma_scale_pp": (item.get("surprise_skew") or {}).get("sigma_scale_pp"),
         }
         rows.append(row)
     return rows
@@ -844,6 +851,36 @@ def _check_release_day_capture(
             actual_direction = "hotter" if actual > bench_median else ("cooler" if actual < bench_median else "inline")
             skew_hit = bool(our_direction == actual_direction)
 
+        # MRI-R22: expectation_hit — did the actual fall in the same sign bucket as the frozen tag?
+        # Frozen read: {tag, expectation_median, ...}; re-derive bands using frozen sigma_scale_pp.
+        expectation_hit: bool | None = None
+        try:
+            frozen_er = t1_proj.get("expectation_read")
+            frozen_sigma = t1_proj.get("sigma_scale_pp")
+            if (
+                frozen_er is not None
+                and isinstance(frozen_er, dict)
+                and frozen_er.get("tag") is not None
+                and frozen_sigma is not None
+                and frozen_sigma > 0
+                and actual is not None
+            ):
+                frozen_tag = frozen_er["tag"]
+                frozen_median = frozen_er.get("expectation_median")
+                if frozen_median is not None:
+                    actual_delta = actual - float(frozen_median)
+                    actual_std = actual_delta / float(frozen_sigma)
+                    if actual_std > _EXPECTATION_BAND_THRESHOLD:
+                        actual_tag = "above_expectations"
+                    elif actual_std < -_EXPECTATION_BAND_THRESHOLD:
+                        actual_tag = "below_expectations"
+                    else:
+                        actual_tag = "aligned"
+                    expectation_hit = bool(frozen_tag == actual_tag)
+        except Exception as exc:
+            log.debug("expectation_hit computation failed for %s/%s: %s", release_type, period_str, exc)
+            expectation_hit = None
+
         scored_row = {
             "schema": 2,
             "row_type": "scored",
@@ -867,6 +904,8 @@ def _check_release_day_capture(
             "skew_hit": skew_hit,
             "projection_mode": proj_mode,
             "benchmark_trailing_key": "trailing_4w" if release_type == "claims" else "trailing_3m",
+            # MRI-R22: expectation read grading
+            "expectation_hit": expectation_hit,
         }
         scored_rows.append(scored_row)
         log.info("scored: %s/%s — actual=%.4f vs proj=%.4f", release_type, period_str, actual, proj_point or float("nan"))
@@ -1226,6 +1265,7 @@ def _build_scoreboard(
                 "skew_hits": [],
                 "revision_errors": [],     # |proj - actual_latest|
                 "reaction_dgs10_h0_abs": [],  # |dgs10_h0_bp| for hot/cold rows
+                "expectation_hits": [],    # MRI-R22: expectation_read hit/miss
             }
         g = per_release[rt]
         g["n"] += 1
@@ -1261,6 +1301,11 @@ def _build_scoreboard(
         if sh is not None:
             g["skew_hits"].append(bool(sh))
 
+        # MRI-R22: expectation_hit accumulation
+        eh = row.get("expectation_hit")
+        if eh is not None:
+            g["expectation_hits"].append(bool(eh))
+
         # mae_vs_actual_latest: use revision data if available
         key = (rt, row.get("period", ""))
         actual_latest = revision_latest.get(key)
@@ -1292,6 +1337,8 @@ def _build_scoreboard(
         n_interval_50 = len(g["interval_50_hits"])
         k_skew = sum(g["skew_hits"])
         n_skew = len(g["skew_hits"])
+        k_exp = sum(g["expectation_hits"])
+        n_exp = len(g["expectation_hits"])
 
         def _mae(errs: list[float]) -> float | None:
             return round(float(np.mean(errs)), 4) if errs else None
@@ -1325,6 +1372,14 @@ def _build_scoreboard(
             # Reaction usefulness descriptor (MRI-R17)
             "reaction_mean_abs_dgs10_h0_bp": reaction_dgs10_mean_abs,
             "reaction_n": len(g["reaction_dgs10_h0_abs"]),
+            # MRI-R22: expectation read hit rate (reported-only; null until data accrues)
+            "expectation_read_hit_rate": round(k_exp / n_exp, 4) if n_exp > 0 else None,
+            "expectation_read_hit_rate_n": n_exp,
+            "expectation_read_hit_rate_note": (
+                "Fraction of prints where actual fell in the same band as frozen expectation_read tag "
+                "(above_expectations / below_expectations / aligned, ±0.35·σ_scale). "
+                "Display-only (MRI-R22). Null until data accrues."
+            ),
         }
         if rt == "claims":
             _entry["block_note"] = (
@@ -1370,6 +1425,7 @@ def _enrich_upcoming_block(upcoming_block: list[dict], root: Path) -> None:
     try:
         from engine.release_market_context import (
             compute_surprise_distribution,
+            compute_expectation_read,
             get_kalshi_implied,
             get_market_implied_benchmark,
             get_reaction_sensitivity,
@@ -1437,6 +1493,48 @@ def _enrich_upcoming_block(upcoming_block: list[dict], root: Path) -> None:
             if bench is not None:
                 bench["market_implied"] = None
             item["market_implied"] = None
+
+        # MRI-R22: expectation_read — our point vs EXPECTATION SET median
+        # Expectation set: cleveland_nowcast + kalshi implied_median (preferred)
+        # or polymarket numeric implied (fallback). Trend benchmarks are EXCLUDED.
+        # Reuse already-fetched market_implied (mi) and Cleveland value from bench.
+        try:
+            proj_point = (item.get("projection") or {}).get("point")
+            sigma_scale = (item.get("surprise_skew") or {}).get("sigma_scale_pp")
+
+            # Build expectation_values from sources already attached this pass
+            _exp_vals: dict[str, float | None] = {}
+
+            # Cleveland (from benchmark_set — already enriched above)
+            _cleveland = (bench or {}).get("cleveland_nowcast")
+            if _cleveland is not None:
+                _exp_vals["cleveland_nowcast"] = _cleveland
+
+            # Market-implied: prefer Kalshi implied_median, fallback Polymarket numeric
+            # mi was set in the MRI-R16 block above (either Kalshi or Polymarket result)
+            _mi = item.get("market_implied")
+            if _mi is not None:
+                # Kalshi result carries 'implied_median' (numeric); Polymarket carries
+                # 'implied' as an outcome string (not necessarily numeric — skip if str).
+                _kalshi_med = _mi.get("implied_median") if _mi.get("source") == "kalshi" else None
+                _poly_implied = _mi.get("implied") if _mi.get("source") != "kalshi" else None
+                if _kalshi_med is not None:
+                    try:
+                        _exp_vals["kalshi"] = float(_kalshi_med)
+                    except (TypeError, ValueError):
+                        pass
+                elif _poly_implied is not None:
+                    try:
+                        _exp_vals["polymarket"] = float(_poly_implied)
+                    except (TypeError, ValueError):
+                        pass  # Polymarket outcome strings are non-numeric; skip
+
+            item["expectation_read"] = compute_expectation_read(
+                proj_point, _exp_vals, sigma_scale
+            )
+        except Exception as exc:
+            log.debug("expectation_read enrichment failed for %s: %s", rt, exc)
+            item["expectation_read"] = None
 
         # MRI-R17: reaction_sensitivity
         try:
@@ -1540,7 +1638,7 @@ def build(root: Path, dry_run: bool = False) -> dict:
             "can_size": False,
             "can_trade": False,
         },
-        "enrichments": ["surprise_distribution", "market_implied", "reaction_sensitivity", "quirk_flags"],
+        "enrichments": ["surprise_distribution", "market_implied", "reaction_sensitivity", "quirk_flags", "expectation_read"],
         "upcoming": upcoming_block,
         "last_scored": last_scored,
         "scoreboard_ref": "data/release_forecast/scoreboard.json",
