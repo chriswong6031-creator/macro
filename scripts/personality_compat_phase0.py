@@ -28,6 +28,23 @@ House-law citations
 - DT-R14 / #1841 time-confound law: two-way (ticker × quarter) clustering
           satisfies the calendar-time control requirement for ticker-cluster CIs.
           Do NOT weaken to one-way ticker-only clustering.
+
+Bootstrap estimator (two-way Cameron-Gelbach-Miller style)
+----------------------------------------------------------
+Each iteration independently draws B_T tickers (with replacement from the set of
+unique tickers) and B_Q quarters (with replacement from the set of unique quarters).
+Row i is included in the bootstrap sample with multiplicity
+    mult(i) = count(ticker_i in B_T) * count(quarter_i in B_Q)
+i.e., rows are weighted by the product of both draw multiplicities.
+
+WHY nested-within resampling is INVALID: the "resample tickers, then within each
+selected ticker resample that ticker's quarters" scheme is one-way ticker clustering
+in disguise.  Quarter-level common shocks appear in ALL tickers simultaneously, but
+the nested scheme never resamples a quarter across multiple tickers — the calendar
+axis is only resampled within each ticker's own set.  This leaves cross-sectional
+correlations induced by common calendar shocks uncontrolled while the CI ostensibly
+claims two-way validity.  The independent-draw scheme above treats tickers and
+quarters symmetrically, giving each dimension its own resampling degree of freedom.
 """
 from __future__ import annotations
 
@@ -116,14 +133,19 @@ _STOCKS_DEEP_DIR = _DATA_DIR / "stocks"
 # Archetype PIT join helpers
 # ---------------------------------------------------------------------------
 def _load_archetype_history() -> dict[str, pd.DataFrame]:
-    """Load archetype history, return per-ticker lookup dict (sorted by asof_date)."""
+    """Load archetype history, return per-ticker lookup dict (sorted by asof_date).
+
+    N1: sort deterministically by ["ticker", "asof_date", "fy"] before groupby
+    so that per-ticker slices are stable across pandas versions.
+    """
     if not _ARCHETYPE_PATH.exists():
         return {}
     df = pd.read_parquet(_ARCHETYPE_PATH)
     df["asof_date"] = pd.to_datetime(df["asof_date"])
+    df = df.sort_values(["ticker", "asof_date", "fy"]).reset_index(drop=True)
     result: dict[str, pd.DataFrame] = {}
-    for tk, g in df.groupby("ticker"):
-        result[str(tk)] = g.sort_values("asof_date").reset_index(drop=True)
+    for tk, g in df.groupby("ticker", sort=False):
+        result[str(tk)] = g.reset_index(drop=True)
     return result
 
 
@@ -159,10 +181,15 @@ def _load_gate_fires_corpus(gate_fires_path: Path | None = None) -> pd.DataFrame
     """Load gate-fires corpus; regenerate via dump_gate_fires.py if absent."""
     path = gate_fires_path or _GATE_FIRES_DEEP_PATH
     if not path.exists():
-        log.info("gate_fires_deep.parquet absent — regenerating via dump_gate_fires.py...")
+        # N3: log prominently when spawning the regeneration subprocess
+        log.warning(
+            "[REGISTER] gate_fires_deep.parquet absent — spawning subprocess: "
+            "scripts/research/dump_gate_fires.py --panel deep  (this may take minutes)"
+        )
         import subprocess
         dump = _REPO_ROOT / "scripts" / "research" / "dump_gate_fires.py"
         subprocess.run([sys.executable, str(dump), "--panel", "deep"], check=True)
+        log.info("[REGISTER] gate_fires regeneration complete: %s", path)
 
     if not path.exists():
         log.warning("gate_fires_deep.parquet still absent after regeneration attempt")
@@ -274,9 +301,41 @@ def _grade_fire(ticker: str, fire_date: pd.Timestamp,
 # ---------------------------------------------------------------------------
 # Corpora hash (used to lock --run to a matching --register file)
 # ---------------------------------------------------------------------------
-def _corpora_hash(tr_n: int, gf_n: int, replay_n: int) -> str:
-    """Stable hash of corpus sizes to guard --run against stale registration."""
-    payload = f"tr={tr_n}|gf={gf_n}|replay={replay_n}"
+def _file_sig(path: Path) -> str:
+    """Content hash (SHA-256 first 16KB) for small files; size+mtime for large ones."""
+    if not path.exists():
+        return "absent"
+    stat = path.stat()
+    # For small files (< 50MB) take a partial content hash; otherwise size+mtime
+    if stat.st_size < 50 * 1024 * 1024:
+        h = hashlib.sha256()
+        with open(path, "rb") as fh:
+            h.update(fh.read(16384))  # first 16KB is stable enough for drift detection
+        return h.hexdigest()[:16]
+    return f"size={stat.st_size}|mtime={int(stat.st_mtime)}"
+
+
+def _corpora_hash(
+    tr_n: int,
+    gf_n: int,
+    replay_n: int,
+    collapse_map: dict | None = None,
+) -> str:
+    """Stable hash covering corpus sizes, collapse map, and store file signatures.
+
+    Covering collapse_map and the parquet store signatures ensures that a store
+    rebuild between --register and --run (e.g. after a data update) breaks the
+    hash, forcing a fresh --register.
+    """
+    collapse_str = json.dumps(sorted((collapse_map or {}).items()), sort_keys=True)
+    arch_sig = _file_sig(_ARCHETYPE_PATH)
+    pit_sig = _file_sig(_PIT_LABELS_PATH)
+    payload = (
+        f"tr={tr_n}|gf={gf_n}|replay={replay_n}"
+        f"|collapse={collapse_str}"
+        f"|arch={arch_sig}"
+        f"|pit={pit_sig}"
+    )
     return hashlib.sha256(payload.encode()).hexdigest()[:12]
 
 
@@ -308,6 +367,23 @@ def _quarter(dates: pd.Series) -> pd.Series:
     return dates.dt.to_period("Q").astype(str)
 
 
+def _build_cluster_index(ids: np.ndarray) -> tuple[np.ndarray, list[np.ndarray]]:
+    """Precompute cluster membership for vectorized two-way bootstrap.
+
+    Returns
+    -------
+    unique_ids  : sorted array of unique cluster identifiers
+    idx_by_id   : list[array] — idx_by_id[k] = row indices belonging to unique_ids[k]
+
+    Precomputing these once per bootstrap call eliminates the per-iteration np.where
+    scans required by the nested scheme, cutting cost from O(n_iter * n_clusters * n_rows)
+    to O(n_iter * n_clusters) + O(n_rows) precompute.
+    """
+    unique_ids, inverse = np.unique(ids, return_inverse=True)
+    idx_by_id = [np.where(inverse == k)[0] for k in range(len(unique_ids))]
+    return unique_ids, idx_by_id
+
+
 def _two_way_cluster_se(
     outcome: np.ndarray,
     label: np.ndarray,
@@ -316,11 +392,37 @@ def _two_way_cluster_se(
     n_boot: int = 2000,
     rng_seed: int = 42,
 ) -> dict[str, float]:
-    """Two-way cluster bootstrap (ticker × quarter) for a binary outcome ~ binary label.
+    """Genuine two-way cluster bootstrap (ticker × quarter) — DT-R14 / #1841 compliant.
 
-    Implements a simple cluster bootstrap: resample ticker clusters WITH REPLACEMENT,
-    then within each selected ticker resample quarter clusters. The estimand is
-    P(STOPPED | label=1) - P(STOPPED | label=0).
+    Estimand: P(STOPPED | label=1) − P(STOPPED | label=0).
+
+    ESTIMATOR (independent-draw two-way scheme)
+    --------------------------------------------
+    Each bootstrap iteration:
+      1. Draw B_T tickers with replacement from all unique tickers (size = n_unique_tickers).
+      2. INDEPENDENTLY draw B_Q quarters with replacement from all unique quarters
+         (size = n_unique_quarters).
+      3. Row i is included with multiplicity mult(i) = count(ticker_i in B_T)
+         × count(quarter_i in B_Q), i.e., weighted by the product of both
+         draw multiplicities (Cameron, Gelbach, Miller 2011 two-way scheme).
+      4. Compute weighted P(STOPPED|label=1) − P(STOPPED|label=0) on the
+         resulting weighted sample.
+
+    WHY NESTED-WITHIN IS INVALID: the "resample tickers, then within each selected
+    ticker resample that ticker's quarters" scheme is one-way ticker clustering in
+    disguise.  Cross-ticker calendar shocks live in the quarter dimension, but
+    nested resampling only ever resamples quarters within each individual ticker —
+    it never transfers a quarter across tickers.  This leaves the cross-sectional
+    component of quarter-level common shocks uncontrolled while the CI ostensibly
+    claims two-way validity.  The independent-draw scheme above treats tickers and
+    quarters symmetrically.
+
+    VECTORISED IMPLEMENTATION (F4)
+    --------------------------------
+    Ticker→row and quarter→row index arrays are precomputed ONCE via
+    _build_cluster_index.  Per iteration: np.bincount over the drawn cluster
+    indices produces a weight vector in O(n_clusters) time; the full row-weight
+    array is assembled in O(n_rows) via array indexing — no per-cluster np.where.
 
     Parameters
     ----------
@@ -328,15 +430,15 @@ def _two_way_cluster_se(
     label        : 0/1 binary label array (1 = this cell's personality label).
     ticker_ids   : string array of ticker identifiers.
     quarter_ids  : string array of quarter identifiers (e.g. '2022Q1').
-    n_boot       : number of bootstrap resamples.
+    n_boot       : bootstrap resamples (2000 for registered family).
     rng_seed     : for reproducibility.
 
     Returns dict with keys:
-        observed_delta   : P(STOPPED|label=1) - P(STOPPED|label=0)
-        p_value          : two-sided p-value from bootstrap
-        ci_lo, ci_hi     : 95% CI from bootstrap percentiles
-        n_ticker_clusters : effective number of unique ticker clusters
-        n_quarter_clusters: effective number of unique quarter clusters
+        observed_delta    : P(STOPPED|label=1) - P(STOPPED|label=0)
+        p_value           : two-sided p-value from bootstrap
+        ci_lo, ci_hi      : 95% CI from bootstrap percentiles
+        n_ticker_clusters : number of unique ticker clusters
+        n_quarter_clusters: number of unique quarter clusters
         n_treated         : fires in label=1 group
         n_control         : fires in label=0 group
     """
@@ -352,50 +454,54 @@ def _two_way_cluster_se(
             "n_treated": n1, "n_control": n0,
         }
 
-    p1 = outcome[label == 1].mean()
-    p0 = outcome[label == 0].mean()
-    observed_delta = float(p1 - p0)
+    # Observed delta
+    p1 = float(np.average(outcome[label == 1]))
+    p0 = float(np.average(outcome[label == 0]))
+    observed_delta = p1 - p0
 
-    unique_tickers = np.unique(ticker_ids)
-    unique_quarters = np.unique(quarter_ids)
+    # Precompute cluster index maps (F4: done ONCE, not per iteration)
+    unique_tickers, t_idx_by_id = _build_cluster_index(ticker_ids)
+    unique_quarters, q_idx_by_id = _build_cluster_index(quarter_ids)
     n_tickers = len(unique_tickers)
     n_quarters = len(unique_quarters)
+    n_rows = len(outcome)
+
+    # Precompute per-row cluster membership integers (for bincount weight lookup)
+    # ticker_inv[i] = index into unique_tickers for row i
+    _, ticker_inv = np.unique(ticker_ids, return_inverse=True)
+    _, quarter_inv = np.unique(quarter_ids, return_inverse=True)
 
     boot_deltas: list[float] = []
     for _ in range(n_boot):
-        # Resample ticker clusters (with replacement)
-        sampled_tickers = rng.choice(unique_tickers, size=n_tickers, replace=True)
-        # Build mask for selected ticker-quarter combinations
-        idx_parts = []
-        for t in sampled_tickers:
-            t_mask = ticker_ids == t
-            t_quarters = np.unique(quarter_ids[t_mask])
-            if len(t_quarters) == 0:
-                continue
-            # Resample quarter clusters within this ticker
-            sampled_qs = rng.choice(t_quarters, size=len(t_quarters), replace=True)
-            for q in sampled_qs:
-                combo = np.where(t_mask & (quarter_ids == q))[0]
-                if len(combo) > 0:
-                    idx_parts.append(combo)
+        # 1. Draw B_T ticker indices and B_Q quarter indices INDEPENDENTLY
+        bt = rng.integers(0, n_tickers, size=n_tickers)   # indices into unique_tickers
+        bq = rng.integers(0, n_quarters, size=n_quarters)  # indices into unique_quarters
 
-        if not idx_parts:
+        # 2. Row weight = count(ticker_i in B_T) * count(quarter_i in B_Q)
+        #    via bincount — O(n_clusters) per iteration, no np.where
+        t_counts = np.bincount(bt, minlength=n_tickers)   # shape (n_tickers,)
+        q_counts = np.bincount(bq, minlength=n_quarters)  # shape (n_quarters,)
+
+        # Row-level weights: product of ticker draw count × quarter draw count
+        w = t_counts[ticker_inv].astype(np.float64) * q_counts[quarter_inv].astype(np.float64)
+
+        total_w = w.sum()
+        if total_w == 0:
             boot_deltas.append(float("nan"))
             continue
 
-        boot_idx = np.concatenate(idx_parts)
-        b_outcome = outcome[boot_idx]
-        b_label = label[boot_idx]
-
-        b1 = int((b_label == 1).sum())
-        b0 = int((b_label == 0).sum())
-        if b1 == 0 or b0 == 0:
+        # Weighted group means
+        lbl1 = label == 1
+        lbl0 = label == 0
+        w1 = w[lbl1]; w0 = w[lbl0]
+        sw1 = w1.sum(); sw0 = w0.sum()
+        if sw1 == 0 or sw0 == 0:
             boot_deltas.append(float("nan"))
             continue
 
-        bp1 = b_outcome[b_label == 1].mean()
-        bp0 = b_outcome[b_label == 0].mean()
-        boot_deltas.append(float(bp1 - bp0))
+        bp1 = float(np.dot(outcome[lbl1].astype(np.float64), w1) / sw1)
+        bp0 = float(np.dot(outcome[lbl0].astype(np.float64), w0) / sw0)
+        boot_deltas.append(bp1 - bp0)
 
     deltas = np.array([d for d in boot_deltas if not np.isnan(d)])
     if len(deltas) < 100:
@@ -406,7 +512,8 @@ def _two_way_cluster_se(
             "n_treated": n1, "n_control": n0,
         }
 
-    # Two-sided p-value: fraction of resamples where |boot_delta| >= |observed_delta|
+    # Two-sided p-value: fraction of bootstrap deltas where deviation from the
+    # bootstrap mean >= |observed_delta|  (bootstrap pivot test)
     p_value = float(np.mean(np.abs(deltas - deltas.mean()) >= abs(observed_delta)))
     ci_lo = float(np.percentile(deltas, 2.5))
     ci_hi = float(np.percentile(deltas, 97.5))
@@ -571,34 +678,37 @@ def _disguise_regression_impl(
     label_idx = 1  # "label" is second column (after intercept)
     observed_coef = float(beta[label_idx])
 
-    # Cluster-robust bootstrap for the label coefficient
+    # Genuine two-way cluster bootstrap for the label coefficient (F1+F4).
+    # Matches the estimator used in _two_way_cluster_se: independent draws of
+    # tickers and quarters; row weight = count_ticker × count_quarter.
     rng = np.random.default_rng(rng_seed)
-    unique_tickers = np.unique(t_ids)
-    n_tickers = len(unique_tickers)
+
+    # Precompute cluster index maps once
+    _, t_inv = np.unique(t_ids, return_inverse=True)
+    _, q_inv = np.unique(q_ids, return_inverse=True)
+    n_tickers = int(t_inv.max()) + 1
+    n_quarters = int(q_inv.max()) + 1
 
     boot_coefs: list[float] = []
     for _ in range(n_boot):
-        bt = rng.choice(unique_tickers, size=n_tickers, replace=True)
-        idx_parts = []
-        for t in bt:
-            t_mask = t_ids == t
-            t_qs = np.unique(q_ids[t_mask])
-            if len(t_qs) == 0:
-                continue
-            bq = rng.choice(t_qs, size=len(t_qs), replace=True)
-            for q in bq:
-                combo = np.where(t_mask & (q_ids == q))[0]
-                if len(combo) > 0:
-                    idx_parts.append(combo)
-        if not idx_parts:
+        # Independent draws for both dimensions
+        bt = rng.integers(0, n_tickers, size=n_tickers)
+        bq = rng.integers(0, n_quarters, size=n_quarters)
+
+        t_counts = np.bincount(bt, minlength=n_tickers)
+        q_counts = np.bincount(bq, minlength=n_quarters)
+        w = (t_counts[t_inv] * q_counts[q_inv]).astype(np.float64)
+        if w.sum() == 0:
             continue
-        bidx = np.concatenate(idx_parts)
-        bX = X_arr[bidx]
-        by = y_arr[bidx]
+
+        # Weighted OLS: (X'WX)^-1 X'Wy
+        W = np.diag(w)
+        bX = X_arr
+        by = y_arr
         try:
-            bXtX = bX.T @ bX
-            bXty = bX.T @ by
-            bbeta = np.linalg.lstsq(bXtX, bXty, rcond=None)[0]
+            XtWX = bX.T @ (w[:, None] * bX)
+            XtWy = bX.T @ (w * by)
+            bbeta = np.linalg.lstsq(XtWX, XtWy, rcond=None)[0]
             boot_coefs.append(float(bbeta[label_idx]))
         except Exception:
             continue
@@ -633,7 +743,19 @@ def _disguise_regression_impl(
 # ---------------------------------------------------------------------------
 def cmd_register(args: argparse.Namespace, smoke: bool = False,
                  smoke_tickers: list[str] | None = None) -> dict[str, Any]:
-    """Count corpora, collapse archetypes by n (BEFORE outcomes), write registration."""
+    """Count corpora, collapse archetypes by n (BEFORE outcomes), write registration.
+
+    F6: refuses to overwrite an existing registration file unless --force is given.
+    """
+    # F6: guard against silent overwrite of an existing non-smoke registration
+    if not smoke:
+        if _REGISTRATION_PATH.exists() and not getattr(args, "force", False):
+            log.error(
+                "Registration file already exists: %s. "
+                "Pass --force to overwrite (this invalidates any previous --run).",
+                _REGISTRATION_PATH,
+            )
+            sys.exit(1)
 
     log.info("[REGISTER] Loading corpora...")
     tr_fires = _load_track_record_corpus()
@@ -651,10 +773,9 @@ def cmd_register(args: argparse.Namespace, smoke: bool = False,
     tr_n = len(tr_fires)
     gf_n = len(gf_fires)
     replay_n = len(replay_fires)
-    corpus_hash = _corpora_hash(tr_n, gf_n, replay_n)
 
-    log.info("Corpus sizes: track_record=%d, gate_fires=%d, replay=%d (hash=%s)",
-             tr_n, gf_n, replay_n, corpus_hash)
+    log.info("Corpus sizes: track_record=%d, gate_fires=%d, replay=%d",
+             tr_n, gf_n, replay_n)
 
     # Attach archetype PIT labels (BEFORE outcome read, to count attachable n)
     arch_lookup = _load_archetype_history()
@@ -684,6 +805,19 @@ def cmd_register(args: argparse.Namespace, smoke: bool = False,
         collapsed_archetypes = sorted(all_fires["archetype_pit"].dropna().unique().tolist())
     else:
         collapsed_archetypes = ["other_archetype"]
+
+    # F7: include collapse map in the hash so a different collapse (data update) breaks the hash
+    # Build collapse_map: original_label -> post-collapse label
+    if not all_fires.empty and "archetype_pit" in all_fires.columns:
+        arch_counts_raw = all_fires["archetype_pit"].value_counts().to_dict()
+    else:
+        arch_counts_raw = {}
+    collapse_map: dict[str, str] = {
+        k: (k if k in collapsed_archetypes else "other_archetype")
+        for k in arch_counts_raw
+    }
+    corpus_hash = _corpora_hash(tr_n, gf_n, replay_n, collapse_map=collapse_map)
+    log.info("Corpus hash: %s", corpus_hash)
 
     # Enumerate cell family
     family_cells: list[dict[str, Any]] = []
@@ -1129,6 +1263,9 @@ def _write_report(
                         lines.append(f"| {lbl} | {cnt} | {testable} |")
                     lines.append("")
 
+    # F8: BH denominator note
+    n_tested_cells = sum(1 for r in cell_results if r.get("status") == "tested")
+    n_insuf_cells = sum(1 for r in cell_results if r.get("status") == "insufficient_n")
     lines += [
         "## 3. Primary results (P(STOPPED) delta, two-way cluster-robust)",
         "",
@@ -1136,6 +1273,11 @@ def _write_report(
         "> time control are anti-conservative. The two-way (ticker × quarter) clustering",
         "> below satisfies the calendar-time control law. Do NOT interpret one-way",
         "> ticker-only CIs as the primary inference.",
+        "",
+        f"> **BH denominator = {n_tested_cells} tested cells** (insufficient_n cells are never",
+        f"> tested per R-SP11 and excluded; {n_insuf_cells} cells excluded on this basis).",
+        "> The registered budget is the conservative pre-declared upper bound covering all cells",
+        "> including those that turn out to have insufficient n.",
         "",
         "| corpus | axis | label | n | delta | p_value | ci_lo | ci_hi | BH-reject | n_ticker_clust | n_quarter_clust | status |",
         "|--------|------|-------|---|-------|---------|-------|-------|-----------|----------------|-----------------|--------|",
@@ -1159,12 +1301,23 @@ def _write_report(
                 f"| {delta} | {pv} | {cil} | {cih} | {bhr} | {ntc} | {nqc} | tested |"
             )
 
+    # F5: check if mktcap was available in any survivor's disguise run
+    any_mktcap = any(r.get("disguise", {}).get("mktcap_available", False) for r in fdr_survivors)
+    mktcap_note = (
+        "> **log(mktcap) INCLUDED** in disguise regression (market_cap column present)."
+        if any_mktcap else
+        "> **log(mktcap) OMITTED** from disguise regression: `market_cap` column unavailable"
+        " in archetype history for this run. Size confound is only partially controlled"
+        " via sector fixed effects. Interpret disguise verdict with this caveat."
+    )
     lines += [
         "",
         "## 4. Disguise verdict (FDR survivors only)",
         "",
         "Regression: `outcome ~ label + sector FE + log(mktcap) + era FE`, cluster-robust.",
         "A label stamped `redundant_with_sector_size` is barred from chips implying differentiation.",
+        "",
+        mktcap_note,
         "",
     ]
     if not fdr_survivors:
@@ -1174,12 +1327,14 @@ def _write_report(
         for r in fdr_survivors:
             d = r.get("disguise", {})
             verdict = r.get("verdict", "?")
+            # F5: per-survivor mktcap note
+            mc_flag = "" if d.get("mktcap_available", False) else " [log(mktcap) OMITTED — size confound partial]"
             lines.append(
                 f"- **{r['corpus']} / {r['axis']} / {r['label']}**: "
                 f"label_coef={d.get('label_coef', float('nan')):.4f} "
                 f"p={d.get('label_p', float('nan')):.4f} "
                 f"CI=[{d.get('ci_lo', float('nan')):.4f}, {d.get('ci_hi', float('nan')):.4f}] "
-                f"→ **{verdict}**"
+                f"→ **{verdict}**{mc_flag}"
             )
 
     lines += [
@@ -1222,8 +1377,8 @@ def _write_report(
     ]
     if smoke:
         lines.append(
-            "---\n\n**[SMOKE WATERMARK]** This report is a smoke-test output on a small",
-            )
+            "---\n\n**[SMOKE WATERMARK]** This report is a smoke-test output on a small"
+        )
         lines.append("subset of tickers. Results are not valid for scientific conclusions.")
 
     path.write_text("\n".join(lines))
@@ -1233,7 +1388,12 @@ def _write_report(
 # --smoke mode
 # ---------------------------------------------------------------------------
 def cmd_smoke(args: argparse.Namespace, n_tickers: int) -> None:
-    """Full pipeline on N tickers; SMOKE watermark; no ledger writes; outputs to /tmp."""
+    """Full pipeline on N tickers; SMOKE watermark; no ledger writes; outputs to /tmp.
+
+    F2: builds per-ticker PIT labels via build_stock_personality.py FIRST so that
+    chart/micro cells are populated end-to-end in the smoke run.  Without this step,
+    personality_pit_labels.parquet is absent and all chart/micro cells return null.
+    """
     log.info("[SMOKE] Pipeline on %d tickers", n_tickers)
 
     # Pick N tickers from deep panel
@@ -1243,6 +1403,33 @@ def cmd_smoke(args: argparse.Namespace, n_tickers: int) -> None:
         return
     all_tickers = sorted(p.stem for p in stock_dir.glob("*.parquet"))[:n_tickers]
     log.info("[SMOKE] Tickers: %s", all_tickers)
+
+    # F2: build PIT personality labels for the smoke tickers before running compat study
+    pit_out = Path("/tmp/personality_pit_labels_smoke.parquet")
+    tickers_csv = ",".join(all_tickers)
+    log.info("[SMOKE] Building per-ticker PIT labels → %s ...", pit_out)
+    import subprocess
+    build_script = _REPO_ROOT / "scripts" / "build_stock_personality.py"
+    result = subprocess.run(
+        [
+            sys.executable, str(build_script),
+            "--tickers", tickers_csv,
+            "--panel", "deep",
+            "--out", str(pit_out),
+        ],
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        log.warning(
+            "[SMOKE] build_stock_personality.py failed (chart/micro cells will be null):\n%s",
+            result.stderr[-2000:] if result.stderr else "(no stderr)",
+        )
+    else:
+        log.info("[SMOKE] PIT labels built: %s", pit_out)
+        # Redirect the module-level path so _load_pit_labels() picks up the smoke file
+        global _PIT_LABELS_PATH
+        _PIT_LABELS_PATH = pit_out
 
     # Register (no ledger write)
     registration = cmd_register(args, smoke=True, smoke_tickers=all_tickers)
@@ -1272,6 +1459,8 @@ def main() -> None:
     parser.add_argument("--n-boot", type=int, default=2000,
                         help="Bootstrap resamples for cluster-robust SE (default 2000; "
                              "smoke mode uses 200 internally)")
+    parser.add_argument("--force", action="store_true",
+                        help="(--register only) overwrite an existing registration file")
     parser.add_argument("--log-level", default="INFO",
                         choices=["DEBUG", "INFO", "WARNING", "ERROR"])
     args = parser.parse_args()

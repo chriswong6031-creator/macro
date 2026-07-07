@@ -81,10 +81,14 @@ _MIN_BARS = 300
 # Archetype PIT join
 # ---------------------------------------------------------------------------
 def _load_archetype_history(path: Path) -> pd.DataFrame:
-    """Load archetype history with sorted DatetimeIndex on asof_date."""
+    """Load archetype history with sorted DatetimeIndex on asof_date.
+
+    N1: sort deterministically by ["ticker", "asof_date", "fy"] so per-ticker
+    slices are stable across pandas versions.
+    """
     df = pd.read_parquet(path)
     df["asof_date"] = pd.to_datetime(df["asof_date"])
-    df = df.sort_values(["ticker", "asof_date"]).reset_index(drop=True)
+    df = df.sort_values(["ticker", "asof_date", "fy"]).reset_index(drop=True)
     return df
 
 
@@ -162,6 +166,10 @@ def _chart_micro_series_for_ticker(
     for i, (dt, feat_row) in enumerate(feat_df.iterrows()):
         path_features_dict: dict[str, Any] = dict(feat_row)
         # _pf_n_bars reads from path_features["coverage"]["n_bars"] per engine convention
+        # F3: n_bars = true depth at this date in the UNFILTERED history frame
+        # (i+1 is correct because _chart_micro_series_for_ticker is called with
+        # the full, pre-filter ohlcv; date-range slicing happens in _process_ticker
+        # AFTER this function returns, so row position == true bar count).
         path_features_dict["coverage"] = {"n_bars": i + 1}  # bars available up to this row
 
         chart_labels, _, _ = _classify_chart(path_features_dict, tech=None)
@@ -195,22 +203,36 @@ def _process_ticker(
     start: pd.Timestamp | None,
     end: pd.Timestamp | None,
 ) -> pd.DataFrame:
-    """Full PIT label pipeline for one ticker."""
+    """Full PIT label pipeline for one ticker.
+
+    F3: features are computed over FULL history so that n_bars in the coverage
+    sub-dict reflects the true depth at each date (not the position within the
+    --start-filtered window).  Only AFTER computing the full feature series do
+    we slice the output rows to the requested date range.
+
+    Boundary invariant: a date early in a truncated window still gets n_bars
+    equal to the true count of bars at-or-before that date in unfiltered history,
+    which is >= CHART_MIN_BARS when the history is sufficient.
+    """
     ohlcv = _load_ohlcv(ticker, panel)
     if ohlcv is None or len(ohlcv) < _MIN_BARS:
         log.debug("Skipping %s: insufficient bars", ticker)
         return pd.DataFrame()
 
-    # Date filter
-    if start is not None:
-        ohlcv = ohlcv[ohlcv.index >= start]
-    if end is not None:
-        ohlcv = ohlcv[ohlcv.index <= end]
-    if len(ohlcv) < _MIN_BARS:
+    # F3: do NOT filter ohlcv before computing features — compute over full history
+    # so that n_bars = true depth, not position within a truncated window.
+    # The date-range filter is applied to the OUTPUT rows after feature computation.
+
+    # Chart + micro series (uses FULL ohlcv)
+    label_df = _chart_micro_series_for_ticker(ticker, ohlcv)
+    if label_df.empty:
         return pd.DataFrame()
 
-    # Chart + micro series
-    label_df = _chart_micro_series_for_ticker(ticker, ohlcv)
+    # Apply date range filter to output rows (not to the feature input)
+    if start is not None:
+        label_df = label_df[label_df["date"] >= start]
+    if end is not None:
+        label_df = label_df[label_df["date"] <= end]
     if label_df.empty:
         return pd.DataFrame()
 
