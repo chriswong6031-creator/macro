@@ -2609,6 +2609,25 @@
       "state": "Registered 2026-07-07 at operator request (register in admin/site alerts, not agent memory). No build dispatched.",
       "next_step": "On come-back: read sector gate verdicts from data/*/scorecards/ + truths.jsonl; if green, draft stock-panel prereg; if failed, close as dead-by-inheritance.",
       "phase_hint": "pre-charter"
+    },
+    {
+      "id": "ftosc2-down-oscillator-retest",
+      "name": "FT-OSC-2: down-direction oscillator covariate re-test on post-2026-07 accrual",
+      "kind": "forward_accrual",
+      "priority": "medium",
+      "cadence": "quarterly",
+      "what": "FT-OSC-1 family kill fired (up/6m CI includes 0) but the down/6m cell showed real incremental skill (dBrier +0.0028, CI90 [+0.0014,+0.0045], p=0.0012, BH-pass). Per the post-kill pairlet law, FT-OSC-2 re-tests the DOWN-only join on data that did not exist when the hypothesis was generated: stamps accrued after 2026-07-07, >=2 quarters. Tops-timing is where the hazard model already has skill and where the operator's stock-top interest lives.",
+      "source": "scripts/run_falsosc_trial_v1.py (restricted rerun, direction=down, post-2026-07-07 stamps only)",
+      "storage": "data/hazard/falsosc_trial_v1.json",
+      "hook": "come_back",
+      "started": "2026-07-07",
+      "come_back_on": "2027-01-15",
+      "come_back_note": "Rerun the FALS-OSC harness restricted to down/6m on stamps dated > 2026-07-07. n_oos < 300 -> DEFERRED (extend one quarter), not FAIL. Positive CI-excluding-zero -> down-only covariates join the next hazard model epoch (down cells only).",
+      "maturation": ">=2 quarters of LIVE monthly stamps post 2026-07-07; paired dBrier > 0 with month-block-bootstrap 90% CI excluding 0.",
+      "status": "registered",
+      "state": "Registered 2026-07-07 by chair adjudication of the FT-OSC-1 kill run (PR #1835). No evaluation run.",
+      "next_step": "Wait for accrual. Come back 2027-01-15.",
+      "phase_hint": "pre-evaluation"
     }
   ]
 }
