@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="theme.css">
 <script>
   window.SUPABASE_CFG = {"url": "https://fsldfzlxyavsuwqbceod.supabase.co", "anonKey": "sb_publishable_f33VG8fZuyIZPl_lZIDX3w_RFuuZtpv"};
-  window.COMMITTEE_GENERATED = "2026-07-07 05:15";
+  window.COMMITTEE_GENERATED = "2026-07-07 05:59";
 </script>
 <style>
 * { box-sizing:border-box; }
@@ -1294,44 +1294,153 @@ details.memo-raw pre { font-size:11px; overflow-x:auto; color:var(--muted); whit
   };
   var _GENERIC_SEGS = /^(latest|state|current|index|calls|data|summary|snapshot)$/i;
 
+  // Cleaned (delimiters→spaces), UNTRUNCATED segment for an artifact/module id.
+  // Shared by the EN labeler (which titleCases + truncates) and the ZH labeler
+  // (which translates then caps) so zh never sees a mid-word "…" fragment.
+  function _artifactSeg(id) {
+    var raw = id.replace(/^(module:|artifact:)/, '');
+    // subkey suffix wins (e.g. "…/latest.json:regime_vector")
+    var colonIdx = raw.indexOf(':');
+    if (colonIdx !== -1) {
+      var subkey = raw.slice(colonIdx + 1).replace(/[_\-./<>]/g, ' ').trim();
+      if (subkey.length >= 3) return subkey.replace(/\bslew\b/gi, 'Skew');
+    }
+    var noExt = raw.replace(/\.(json|parquet|py|csv)$/, '');
+    var parts = noExt.split('/');
+    var seg = parts[parts.length - 1] || '';
+    if (_GENERIC_SEGS.test(seg) || seg.length < 3) seg = parts[parts.length - 2] || seg;
+    return seg.replace(/[_\-./<>]/g, ' ').trim().replace(/\bslew\b/gi, 'Skew');
+  }
+
   function friendlyArtifactLabel(id) {
-    // 1. Curated lookup first
     var raw = id.replace(/^(module:|artifact:)/, '');
     if (ENDPOINT_NAMES[raw]) return ENDPOINT_NAMES[raw][0];
     if (ENDPOINT_NAMES[id])  return ENDPOINT_NAMES[id][0];
-
-    // 2. If id has a :subkey suffix, prefer the subkey
-    var colonIdx = raw.indexOf(':');
-    if (colonIdx !== -1) {
-      var subkey = raw.slice(colonIdx + 1).replace(/[_\-./]/g, ' ').trim();
-      if (subkey.length >= 3) {
-        return titleCaseFix(subkey);
-      }
-    }
-
-    // 3. Strip path extension and split by slash
-    var noExt = raw.replace(/\.(json|parquet|py|csv)$/, '');
-    var parts = noExt.split('/');
-    var lastPart = parts[parts.length - 1] || '';
-
-    // 4. If last segment is generic or too short, use parent directory
-    var seg = lastPart;
-    if (_GENERIC_SEGS.test(seg) || seg.length < 3) {
-      seg = parts[parts.length - 2] || seg;
-    }
-
-    // 5. Clean up: replace delimiters, titleCase, fix "Slew" → "Skew"
-    seg = seg.replace(/[_\-./]/g, ' ').trim();
-    seg = seg.replace(/\bslew\b/gi, 'Skew');
+    var seg = _artifactSeg(id);
     if (seg.length > 20) seg = seg.slice(0, 18) + '…';
     return titleCaseFix(seg);
+  }
+
+  // Token dictionary for translating auto-derived wiring/artifact labels to zh.
+  // These labels come from module/artifact IDs (file paths, data-artifact names),
+  // so we translate word-by-word and join without spaces (Chinese has none);
+  // unknown one-off tokens stay as-is, acronyms/brands map to themselves, and
+  // stray file-extension tokens map to '' so they drop out.
+  var ARTIFACT_WORD_ZH = {
+    'build':'构建','site':'站点','ledger':'账本','regime':'周期','china':'中国',
+    'state':'状态','states':'状态','radar':'雷达','sector':'板块','subsector':'子板块',
+    'oracle':'Oracle','options':'期权','hold':'持有','long':'长期','cycle':'周期','cycles':'周期',
+    'altdata':'另类数据','signal':'信号','signals':'信号','desk':'台','log':'日志','intel':'情报',
+    'intelligence':'智能','history':'历史','track':'追踪','audit':'审计','panel':'面板','board':'板',
+    'pattern':'形态','reversion':'反转','reversal':'反转','brain':'大脑','phase0':'阶段0',
+    'operator':'操作员','index':'指数','neuralweb':'智脑','spine':'脊梁',
+    'thesis':'论点','theses':'论点','forward':'前瞻','fwd':'前瞻','foresight':'前瞻',
+    'validate':'验证','validation':'验证','cortex':'皮层','context':'上下文','record':'记录',
+    'qledger':'Q账本','qbus':'Q总线','basket':'篮子','baskets':'篮子','basketdata':'篮子数据',
+    'central':'中枢','news':'新闻','entry':'入场','ticker':'代码','intl':'国际',
+    'funnel':'漏斗','risk':'风险','vol':'波动','registry':'登记表','event':'事件',
+    'priors':'先验','prior':'先验','factor':'因子','research':'研究','hub':'枢纽','daily':'每日',
+    'flow':'流','gate':'闸门','kernel':'核心','insider':'内部人','stock':'股票',
+    'snapshot':'快照','snapshots':'快照','live':'实时','covariance':'协方差','factory':'工厂',
+    'name':'名称','theme':'主题','brief':'简报','briefing':'简报','grade':'评分','grades':'评分',
+    'grader':'评分器','grading':'评分','score':'评分','scorer':'评分器','scorecard':'记分卡',
+    'tape':'盘口','expect':'预期','expectation':'预期','anticipation':'预期','drift':'漂移',
+    'manifest':'清单','mastermind':'操盘大脑','sensors':'传感器','allocation':'配置',
+    'narrative':'叙事','reflex':'反射','reflexivity':'反身性','firings':'触发','fire':'触发',
+    'hazard':'危险','master':'主','library':'库','outcomes':'结果','results':'结果','result':'结果',
+    'exposure':'敞口','attention':'注意','importance':'重要度','special':'特殊','breadth':'广度',
+    'qual':'质化','overlay':'叠加','push':'推送','rule':'规则','shadow':'影子','health':'健康',
+    'healthcheck':'健康检查','backfill':'回填','rotation':'轮动','ruler':'标尺','experiments':'实验',
+    'experiment':'实验','queue':'队列','polygon':'Polygon','demand':'需求','sleeve':'分段',
+    'trial':'试验','claim':'声明','claims':'声明','accountability':'问责','closure':'闭合',
+    'confluence':'汇聚','situations':'情形','situation':'情形','seed':'种子','leadership':'领导力',
+    'study':'研究','filter':'过滤','ops':'运维','sanity':'合理性','impulse':'脉冲','calibrate':'校准',
+    'backtest':'回测','alerts':'警报','alert':'警报','run':'运行','pulse':'脉冲','accrual':'累积',
+    'calls':'调用','latest':'最新','promotion':'晋升','half':'半','policy':'政策','intent':'意图',
+    'coverage':'覆盖','fetch':'获取','dead':'死','prices':'价格','price':'价格','truths':'真值',
+    'whitehouse':'白宫','feed':'数据流','feeds':'馈送','monitor':'监控','earliness':'提前度',
+    'ivspread':'IV价差','contradictions':'矛盾','contra':'反向','read':'读取','benchmark':'基准',
+    'missing':'缺失','ontology':'本体','falsifiers':'证伪','falsifier':'证伪','clocks':'时钟',
+    'moat':'护城河','decisions':'决策','decision':'决策','summaries':'摘要','summary':'摘要',
+    'contracts':'合约','contract':'合约','skew':'偏斜','report':'报告','lab':'实验室',
+    'standouts':'突出','turn':'转折','thematic':'主题','dispersion':'离散','lagging':'滞后',
+    'review':'审查','reviews':'审查','canada':'加拿大','labels':'标签','label':'标签','group':'组',
+    'capital':'资本','plus':'加','world':'世界','governance':'治理','country':'国家',
+    'avoid1':'回避1','commodity':'商品','species':'物种','spvector':'SP向量','changes':'变更',
+    'freeze':'冻结','override':'覆盖','discovery':'发现','market':'市场','vector':'向量',
+    'archive':'归档','ca':'加拿大','hk':'香港','cn':'中国','by':'按','world':'世界',
+    'bottom':'底部','per':'每','graph':'图','memo':'备忘录','membership':'成员',
+    'archetypes':'原型','probation':'察看','sp1500':'标普1500','sp':'标普','delta':'差值',
+    // acronyms / brands / region+version codes kept as-is
+    'us':'美国','ai':'AI','iv':'IV','fx':'FX','etf':'ETF','ipo':'IPO','ttl':'TTL','ic':'IC',
+    'hmm':'HMM','btc':'BTC','gex':'GEX','pit':'PIT','bd':'BD','dt':'DT','lh':'LH','p':'P',
+    'c4':'C4','v0':'v0','v1':'v1','v2':'v2',
+    // long-tail meaningful words (each appears once or twice across artifact ids)
+    'value':'价值','page':'页','standout':'突出','bridge':'桥接','coherence':'一致性',
+    'financial':'金融','catalyst':'催化剂','sentiment':'情绪','families':'系列','family':'系列',
+    'addons':'附加','conditional':'条件','cells':'单元','froth':'泡沫','fragility':'脆性',
+    'cross':'交叉','asset':'资产','confirm':'确认','confirmers':'确认者','coordinates':'坐标',
+    'archetype':'原型','notify':'通知','common':'通用','ask':'问询','strategies':'策略',
+    'strategy':'策略','machine':'机器','map':'图谱','current':'当前','emergence':'涌现',
+    'hypothesis':'假设','hypotheses':'假设','inbox':'收件箱','markets':'市场','golden':'黄金',
+    'metabolism':'代谢','collinearity':'共线性','check':'检查','registration':'注册',
+    'keystone':'基石','position':'仓位','replay':'回放','reconstitution':'重构','dashboard':'仪表盘',
+    'timing':'择时','calibration':'校准','sectors':'板块','conviction':'信念','survivorship':'幸存',
+    'nonsurvivor':'非幸存','duel':'对决','sizes':'规模','action':'动作','actions':'动作',
+    'dedup':'去重','store':'存储','measurement':'测量','measure':'测量','book':'账簿','emit':'发出',
+    'export':'导出','studies':'研究','expansion':'扩张','evaluate':'评估','tilt':'倾斜',
+    'congress':'国会','filters':'过滤','fundamentals':'基本面','activity':'活动','playbook':'操作手册',
+    'macro':'宏观','entities':'实体','recovery':'复苏','plane':'面','analysis':'分析','bus':'总线',
+    'predictions':'预测','triage':'分诊','base':'基础','effect':'效应','scan':'扫描','decay':'衰减',
+    'midsmall':'中小','compounder':'复利者','features':'特征','feature':'特征','universe':'范围',
+    'communique':'公报','diff':'差异','candidates':'候选','cascade':'级联','server':'服务器',
+    'migrate':'迁移','timeline':'时间线','basis':'基差','quality':'质量','poller':'轮询器',
+    'direction':'方向','publish':'发布','screen':'筛选','holdings':'持仓','killtest':'击杀测试',
+    'quad':'象限','register':'登记','test':'测试','wiring':'布线','stamps':'标记','stamp':'标记',
+    'stamper':'标记器','fit':'拟合','authority':'权威','refresh':'刷新','stale':'过期','query':'查询',
+    'items':'项目','missed':'错过','shock':'冲击','monthly':'月度','model':'模型','models':'模型',
+    'lake':'数据湖','selfheal':'自愈','ingest':'摄取','committee':'委员会','enriched':'丰富',
+    'chain':'链','paper':'论文','member':'成员','life':'寿命','lives':'衰期','lockup':'锁定',
+    'kill':'击杀','requeue':'重排队','retro':'回溯','spotlight':'聚光','incremental':'增量',
+    'factors':'因子','great':'优质','company':'公司','trap':'陷阱','reflexes':'反射',
+    'tripwires':'绊线','earnings':'财报','transitions':'转换','transition':'转换','command':'指挥',
+    'watchlist':'自选','nightly':'每夜','sentinel':'哨兵','detail':'明细','promises':'承诺',
+    'stats':'统计','logs':'日志','open':'开放','passport':'通行证','estimates':'估计','estimate':'估计',
+    'timemachine':'时光机','sits':'特殊事件','conflict':'冲突','wall':'墙','pin':'钉','relief':'缓解',
+    'washout':'冲刷','front':'前端','emergent':'涌现','sleeves':'分段','recrawl':'重爬','official':'官方',
+    'binder':'装订','catalysts':'催化剂','sample':'样本','one':'一','tune':'调优','retire':'退役',
+    'gov':'政府','eff':'有效','congress':'国会','lockups':'锁定','anticipation':'预期',
+    // acronyms / proper nouns kept uppercase (so they don't render as lowercase mush)
+    'nfci':'NFCI','ohlcv':'OHLCV','reer':'REER','cnh':'CNH','mtf':'MTF','ui':'UI','doi':'DOI',
+    'gexr':'GEX','gamma':'Gamma','vanna':'Vanna','charm':'Charm','quiver':'Quiver','openfda':'OpenFDA',
+    'clinicaltrials':'临床试验','r2':'R2','nw':'智脑','placebo':'安慰剂','ipo':'IPO',
+    // stray file-extension / noise tokens → drop
+    'json':'','parquet':'','csv':'','py':'','md':'','js':'','j2':'','html':'','jsonl':'','yml':'','sql':''
+  };
+  function zhTokens(engLabel) {
+    // Word-by-word zh translation of an English friendly label. Translated (CJK)
+    // tokens pack with no space; unknown one-off tokens stay as-is, and a space is
+    // kept between two consecutive English tokens so rare untranslated runs stay
+    // readable ("Great Company Trap") instead of mushing ("greatcompanytrap").
+    if (!engLabel) return engLabel;
+    var res = '';
+    String(engLabel).split(/\s+/).forEach(function(w){
+      var zh = ARTIFACT_WORD_ZH[w.toLowerCase().replace(/…+$/, '')];
+      var piece = zh != null ? zh : w;
+      if (piece === '') return; // dropped token (file-ext / noise)
+      if (res && /[A-Za-z0-9]$/.test(res) && /^[A-Za-z0-9]/.test(piece)) res += ' ';
+      res += piece;
+    });
+    return res || engLabel;
   }
 
   function friendlyArtifactLabelZh(id) {
     var raw = id.replace(/^(module:|artifact:)/, '');
     if (ENDPOINT_NAMES[raw]) return ENDPOINT_NAMES[raw][1];
     if (ENDPOINT_NAMES[id])  return ENDPOINT_NAMES[id][1];
-    return friendlyArtifactLabel(id);
+    var zh = zhTokens(_artifactSeg(id));   // translate the UNTRUNCATED segment
+    if (zh.length > 12) zh = zh.slice(0, 11) + '…';
+    return zh;
   }
 
   // Designated lead engine per lobe (fallback: first engine in lobe)
@@ -1562,20 +1671,22 @@ details.memo-raw pre { font-size:11px; overflow-x:auto; color:var(--muted); whit
     rawNodes.forEach(function(n){
       if (defNodeSet[n.id] || wirNodeSet[n.id]) return;
       var parent = 'core';
-      var label, wtype;
+      var label, labelZh, wtype;
       if (n.type === 'thesis') {
         var tm = n.id.match(/thesis:\d{4}-\d{2}-\d{2}-radar-(.+)$/);
         var tsk = tm ? tm[1] : (n.id.split('-radar-')[1] || '');
         if (!tsk || _JUNK_SK.test(tsk)) return;
         label = titleCaseFix(tsk.replace(/_/g, ' '))
                   .replace(/^Mag7$/, 'Mag 7').replace(/^Payments Fintech$/, 'Payments & Fintech').replace(/^Non AI /, 'Non-AI ');
+        labelZh = THESIS_SK_ZH[tsk] || zhTokens(label);
         wtype = 'thesis';
         parent = defNodeSet['engine:radar'] ? 'engine:radar' : 'core';
       } else {
         label = titleCaseFix(String(n.label || n.id.split(':').pop().split('/').pop()).replace(/[_\-]/g, ' '));
+        labelZh = zhTokens(label);
         wtype = 'wiring-artifact';
       }
-      addWN({ id: n.id, type: wtype, label: label, labelZh: label, meta: n.meta || {} });
+      addWN({ id: n.id, type: wtype, label: label, labelZh: labelZh, meta: n.meta || {} });
       wirEdges.push({ src: n.id, dst: parent, edge_type: 'wiring' });
     });
 

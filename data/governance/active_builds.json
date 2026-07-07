@@ -1,66 +1,68 @@
 {
   "schema": "active_builds.v1",
-  "generated_at": "2026-07-07T02:59:21.971191+00:00",
+  "generated_at": "2026-07-07T07:07:39.542770+00:00",
   "base": {
-    "sha": "11f55e67294dfdf22170e1c5dd1ea3a9f44e3533"
+    "sha": "17245c495cb7463ae40d5744036066c667829107"
   },
   "merged_days": 14,
   "merged_truncated": true,
   "open_prs": [
     {
-      "number": 1787,
-      "title": "feat(neural-web): reverse feedback reader \u2014 mastermind_feedback_summary + synapse reg + nightly step (FB-R7/R8/R14)",
-      "head_ref": "feat/fb-feedback-reader",
-      "updated_at": "2026-07-07T01:58:25Z",
-      "is_draft": true,
+      "number": 1820,
+      "title": "feat(options): Package E \u2014 strike\u00d7expiry matrix engine + one-shot publisher",
+      "head_ref": "feat/momoedge-wave3-matrix",
+      "updated_at": "2026-07-07T07:06:55Z",
+      "is_draft": false,
       "merge_state": "UNSTABLE",
       "merge_state_raw": "UNSTABLE",
-      "files_count": 8,
+      "files_count": 4,
       "files_truncated": false,
       "files_error": false,
       "files": [
-        ".github/workflows/daily.yml",
         "config/synapse.yml",
-        "data/governance/mastermind_feedback_summary.json",
-        "docs/SIGNAL_BUS.md",
-        "engine/neuralweb/mastermind_feedback.py",
-        "scripts/build_mastermind_feedback_summary.py",
-        "tests/test_mastermind_feedback.py",
-        "tests/test_signal_bus_doc.py"
+        "engine/options_matrix.py",
+        "scripts/build_options_matrix.py",
+        "tests/test_options_matrix.py"
       ],
       "protected_paths_touched": [
-        ".github/workflows/daily.yml",
-        "config/synapse.yml",
-        "data/governance/mastermind_feedback_summary.json",
-        "docs/SIGNAL_BUS.md",
-        "engine/neuralweb/mastermind_feedback.py"
+        "config/synapse.yml"
       ]
     },
     {
-      "number": 1785,
-      "title": "feat(privacy): reverse-feedback privacy rail \u2014 data/private ignore + check_private_boundary CI guard + operator_grading host-path scrub (FB-R12/R13)",
-      "head_ref": "feat/fb-privacy-rail",
-      "updated_at": "2026-07-07T02:58:50Z",
-      "is_draft": true,
+      "number": 1819,
+      "title": "feat(committee): translate the dense-web small nodes to Chinese",
+      "head_ref": "claude/committee-wiring-i18n",
+      "updated_at": "2026-07-07T07:03:31Z",
+      "is_draft": false,
       "merge_state": "UNSTABLE",
       "merge_state_raw": "UNSTABLE",
-      "files_count": 8,
+      "files_count": 2,
       "files_truncated": false,
       "files_error": false,
       "files": [
-        ".github/workflows/ci.yml",
-        ".gitignore",
-        "data/governance/operator_grading.json",
-        "engine/operator_grading.py",
-        "research/MASTERMIND_FEEDBACK_CONTRACT_PROGRAM.md",
-        "scripts/check_private_boundary.py",
-        "tests/test_check_private_boundary.py",
-        "tests/test_operator_grading.py"
+        "site/committee.html",
+        "templates/committee.html.j2"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 1818,
+      "title": "fix(alerts): watchlist sentinel \u2014 adapt fetch to live two-table Supabase schema, require operator UUID",
+      "head_ref": "codex-docket/sentinel-schema-fix",
+      "updated_at": "2026-07-07T06:55:01Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 3,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        ".github/workflows/daily.yml",
+        "scripts/run_watchlist_sentinel.py",
+        "tests/test_watchlist_sentinel.py"
       ],
       "protected_paths_touched": [
-        ".github/workflows/ci.yml",
-        "data/governance/operator_grading.json",
-        "scripts/check_private_boundary.py"
+        ".github/workflows/daily.yml"
       ]
     },
     {
@@ -289,27 +291,6 @@
       "protected_paths_touched": []
     },
     {
-      "number": 1742,
-      "title": "feat(china-intel): F-C MPC communiqu\u00e9 phrase-diff leg \u2014 descriptive/unsigned (prereg follow-up)",
-      "head_ref": "feat/china-policy-events-fc-leg",
-      "updated_at": "2026-07-06T23:46:26Z",
-      "is_draft": false,
-      "merge_state": "DIRTY",
-      "merge_state_raw": "DIRTY",
-      "files_count": 6,
-      "files_truncated": false,
-      "files_error": false,
-      "files": [
-        "data/china_official/communiques.parquet",
-        "data/experiments/china_policy_events_results.json",
-        "reports/china-policy-events-phase0.md",
-        "scripts/_create_synthetic_communiques.py",
-        "scripts/china_policy_events_fc_leg.py",
-        "tests/test_china_policy_events_fc_leg.py"
-      ],
-      "protected_paths_touched": []
-    },
-    {
       "number": 1639,
       "title": "research(ontology): W4.7 \u2014 pos_v2 acceptance study [HOLD: peak gate IQR 48.8 > 25]",
       "head_ref": "wave/w4-7-axis-flip",
@@ -436,49 +417,28 @@
   ],
   "collisions": [
     {
-      "pr_a": 1787,
+      "pr_a": 1820,
       "pr_b": 1635,
       "shared_files": [
-        ".github/workflows/daily.yml",
-        "config/synapse.yml",
-        "docs/SIGNAL_BUS.md",
-        "tests/test_signal_bus_doc.py"
+        "config/synapse.yml"
       ],
-      "shared_count": 4,
+      "shared_count": 1,
       "any_protected": true
     },
     {
-      "pr_a": 1785,
-      "pr_b": 1763,
-      "shared_files": [
-        ".gitignore"
-      ],
-      "shared_count": 1,
-      "any_protected": false
-    },
-    {
-      "pr_a": 1785,
-      "pr_b": 1758,
-      "shared_files": [
-        ".gitignore"
-      ],
-      "shared_count": 1,
-      "any_protected": false
-    },
-    {
-      "pr_a": 1785,
-      "pr_b": 1752,
-      "shared_files": [
-        ".gitignore"
-      ],
-      "shared_count": 1,
-      "any_protected": false
-    },
-    {
-      "pr_a": 1785,
+      "pr_a": 1819,
       "pr_b": 1635,
       "shared_files": [
-        ".github/workflows/ci.yml"
+        "templates/committee.html.j2"
+      ],
+      "shared_count": 1,
+      "any_protected": false
+    },
+    {
+      "pr_a": 1818,
+      "pr_b": 1635,
+      "shared_files": [
+        ".github/workflows/daily.yml"
       ],
       "shared_count": 1,
       "any_protected": true
@@ -513,9 +473,164 @@
   ],
   "recent_merged": [
     {
+      "number": 1817,
+      "title": "fix(neural-web): heal registry-count drift 226->232 (momoedge Package A)",
+      "merged_at": "2026-07-07T06:37:02Z"
+    },
+    {
+      "number": 1816,
+      "title": "feat(gex): Package C \u2014 gex_structure_state emitter (6-state regime, display-only)",
+      "merged_at": "2026-07-07T06:47:45Z"
+    },
+    {
+      "number": 1815,
+      "title": "feat(options): Package A \u2014 options sensor contract (schemas + chain-heat aggregator)",
+      "merged_at": "2026-07-07T06:10:42Z"
+    },
+    {
+      "number": 1814,
+      "title": "feat(committee): new settings-gear menu + Chinese node labels + reconcile MDXAuth",
+      "merged_at": "2026-07-07T06:22:33Z"
+    },
+    {
+      "number": 1813,
+      "title": "feat(neural-web): 'all nodes' toggle restores the full dense synapse web",
+      "merged_at": "2026-07-07T05:49:38Z"
+    },
+    {
+      "number": 1812,
+      "title": "ops(live-flow): pin liveflow launchd lane to dedicated deploy worktree",
+      "merged_at": "2026-07-07T05:30:29Z"
+    },
+    {
+      "number": 1811,
+      "title": "research(momoedge): competitive RE + master build docket (options terminal + Oracle)",
+      "merged_at": "2026-07-07T05:29:22Z"
+    },
+    {
+      "number": 1810,
+      "title": "feat(alerts): watchlist buy-zone sentinel \u2014 Supabase watchlist x buy-zone enter-detection -> alert center + Discord (B6)",
+      "merged_at": "2026-07-07T05:38:49Z"
+    },
+    {
+      "number": 1809,
+      "title": "feat(nasdaq-internals): archetype-group taxonomy + descriptive internals artifact (TI-R2/R3/R5)",
+      "merged_at": "2026-07-07T05:00:22Z"
+    },
+    {
+      "number": 1808,
+      "title": "feat(nw): pathway + support-map consumer integrations \u2014 brief, ask_brain/cortex, committee, admin (W3)",
+      "merged_at": "2026-07-07T04:55:58Z"
+    },
+    {
+      "number": 1807,
+      "title": "feat(render): template\u2194site sync guard \u2014 root-cause fix for the -X theirs stale-copy resurrect (ui.template_site_sync)",
+      "merged_at": "2026-07-07T04:53:44Z"
+    },
+    {
+      "number": 1806,
+      "title": "feat(subsectors): Nasdaq Internals archetype panel on Nasdaq-100 tab (TI-R4)",
+      "merged_at": "2026-07-07T04:41:39Z"
+    },
+    {
+      "number": 1805,
+      "title": "research(tech-internals): Codex tech_archetype+shock_fit adjudication (TI-R1..R7)",
+      "merged_at": "2026-07-07T04:27:34Z"
+    },
+    {
+      "number": 1804,
+      "title": "research(nw): R6.1-lite latent-state feature manifest + PIT coverage audit (RUL-CC-8, parked reference)",
+      "merged_at": "2026-07-07T04:18:41Z"
+    },
+    {
+      "number": 1803,
+      "title": "feat(nw): Support Map library \u2014 dependency blast-radius embedded in health.json + admin (RUL-CC-6,7,14)",
+      "merged_at": "2026-07-07T04:18:39Z"
+    },
+    {
+      "number": 1802,
+      "title": "feat(nw): Mechanism Pathway Compiler v1 \u2014 display-only 'why the tape moved' artifact (RUL-CC-1..5,10..13)",
+      "merged_at": "2026-07-07T04:26:03Z"
+    },
+    {
+      "number": 1800,
+      "title": "feat(governance): Fable succession bench W0 \u2014 tiered adjudication ladder + packet tooling + opus RF actor (RUL-SUCC-1..12)",
+      "merged_at": "2026-07-07T04:06:40Z"
+    },
+    {
+      "number": 1799,
+      "title": "feat(governance): drain research-factory authority bare-WARN debt (RF-11) + backfill 2 unregistered guards",
+      "merged_at": "2026-07-07T03:58:39Z"
+    },
+    {
+      "number": 1798,
+      "title": "docs(research): NW core-cognition adjudication \u2014 MPC thin-accept, R7 kill/salvage, R6 park (RUL-CC-1..14)",
+      "merged_at": "2026-07-07T04:18:36Z"
+    },
+    {
+      "number": 1797,
+      "title": "feat(evidence-clock): daily-brief counts block + admin Observatory queue (EC-R5 surfaces)",
+      "merged_at": "2026-07-07T03:27:27Z"
+    },
+    {
+      "number": 1796,
+      "title": "feat(evidence-clock): Global Evidence Clock v1 \u2014 read-only review-queue aggregator (EC-R1..R8)",
+      "merged_at": "2026-07-07T03:43:34Z"
+    },
+    {
+      "number": 1795,
+      "title": "feat(neural-web): Ruling Graph / Case-Law Compiler v1 \u2014 500 quote-verified rulings + CI conflict guard",
+      "merged_at": "2026-07-07T03:24:03Z"
+    },
+    {
+      "number": 1794,
+      "title": "feat(neural-web): Entity/Thesis/Mechanism Registry v1 \u2014 display-only crosswalk (fable_exit \u00a705)",
+      "merged_at": "2026-07-07T03:26:24Z"
+    },
+    {
+      "number": 1793,
+      "title": "feat(governance): unified house-law CI guard registry + meta-guard",
+      "merged_at": "2026-07-07T03:20:21Z"
+    },
+    {
+      "number": 1792,
+      "title": "feat(stocks): per-name event-windows display block \u2014 earnings/FOMC/debt-maturity (Codex B5)",
+      "merged_at": "2026-07-07T04:07:06Z"
+    },
+    {
+      "number": 1791,
+      "title": "test: render-smoke dashboard.html.j2 in both modes (macro + stocks)",
+      "merged_at": "2026-07-07T03:02:40Z"
+    },
+    {
+      "number": 1790,
+      "title": "fix(committee): size synapse-map canvas to the real fullscreen viewport (no 100vh)",
+      "merged_at": "2026-07-07T03:07:13Z"
+    },
+    {
+      "number": 1789,
+      "title": "feat(governance): Active Build Map + DO_NOT_REBUILD registry \u2014 derived multi-agent collision intelligence",
+      "merged_at": "2026-07-07T03:05:37Z"
+    },
+    {
+      "number": 1788,
+      "title": "feat(stocks): per-ticker conviction delta \u2014 deterministic dossier diff + what-changed strip (Codex B4)",
+      "merged_at": "2026-07-07T03:16:48Z"
+    },
+    {
+      "number": 1787,
+      "title": "feat(neural-web): reverse feedback reader \u2014 mastermind_feedback_summary + synapse reg + nightly step (FB-R7/R8/R14)",
+      "merged_at": "2026-07-07T03:17:11Z"
+    },
+    {
       "number": 1786,
       "title": "fix(committee): synapse-map fullscreen fills the monitor + zooms in on large displays",
       "merged_at": "2026-07-07T01:58:51Z"
+    },
+    {
+      "number": 1785,
+      "title": "feat(privacy): reverse-feedback privacy rail \u2014 data/private ignore + check_private_boundary CI guard + operator_grading host-path scrub (FB-R12/R13)",
+      "merged_at": "2026-07-07T03:07:58Z"
     },
     {
       "number": 1784,
@@ -2856,161 +2971,6 @@
       "number": 1292,
       "title": "docs(options): signing-gate adjudication \u2014 tape ratified (scoped), bar verdict unchanged",
       "merged_at": "2026-07-05T00:04:38Z"
-    },
-    {
-      "number": 1291,
-      "title": "feat(options): thetadata v3 API adapter",
-      "merged_at": "2026-07-05T00:02:49Z"
-    },
-    {
-      "number": 1290,
-      "title": "feat(oracle): W-B4 sentinels + GRAMMAR_VERSION in trial identity",
-      "merged_at": "2026-07-04T23:54:04Z"
-    },
-    {
-      "number": 1289,
-      "title": "neural-web(W7a): first tenants \u2014 evidence-driven actionable flag (Article 3) + armed self-correction under governance (A6-ii)",
-      "merged_at": "2026-07-05T00:21:21Z"
-    },
-    {
-      "number": 1288,
-      "title": "docs(oracle): the Constitution + first live-accrual seed",
-      "merged_at": "2026-07-04T23:29:35Z"
-    },
-    {
-      "number": 1287,
-      "title": "fix(oracle-contract): trading-day-aware staleness (v1.1.0)",
-      "merged_at": "2026-07-04T23:22:57Z"
-    },
-    {
-      "number": 1286,
-      "title": "feat(congress): 14y deep-history backfill \u2192 real member reliability",
-      "merged_at": "2026-07-04T23:11:00Z"
-    },
-    {
-      "number": 1285,
-      "title": "feat(oracle): W-B1+W-B3 Research Factory + passive forward validation",
-      "merged_at": "2026-07-04T23:13:34Z"
-    },
-    {
-      "number": 1284,
-      "title": "neural-web(W4): flip-aware contradiction detector \u2014 labels lag their own scale (operator feedback)",
-      "merged_at": "2026-07-04T23:03:03Z"
-    },
-    {
-      "number": 1283,
-      "title": "feat(oracle): W-B2 Red Queen interface contract \u2014 payload versioning, confidence taxonomy, NEVER guarantees",
-      "merged_at": "2026-07-04T23:15:16Z"
-    },
-    {
-      "number": 1282,
-      "title": "docs(oracle): Institutional Backbone architecture",
-      "merged_at": "2026-07-04T22:46:16Z"
-    },
-    {
-      "number": 1281,
-      "title": "feat(oracle): A3 regime tag + B1 personality layer (Compound Library)",
-      "merged_at": "2026-07-04T22:57:05Z"
-    },
-    {
-      "number": 1280,
-      "title": "feat(oracle/panel): C1/C4 columns \u2014 stochrsi_w_k/d, washout_w, cohesion_rebuild",
-      "merged_at": "2026-07-04T23:06:08Z"
-    },
-    {
-      "number": 1279,
-      "title": "neural-web(W7a): the constitution in code \u2014 Wilson-gated authority, governance ledger, can_force Article-3 fix",
-      "merged_at": "2026-07-04T23:14:58Z"
-    },
-    {
-      "number": 1278,
-      "title": "docs(oracle): Compound Library \u2014 discovery-tier hypothesis ledger",
-      "merged_at": "2026-07-04T22:23:52Z"
-    },
-    {
-      "number": 1277,
-      "title": "fix(neural-web/W4): land stranded envelope-stamp fix + regenerate seed (post-merge race)",
-      "merged_at": "2026-07-04T22:09:12Z"
-    },
-    {
-      "number": 1276,
-      "title": "neural-web(W6a): reflex registry + firings ledgers + triage push spine (gated off)",
-      "merged_at": "2026-07-04T21:58:28Z"
-    },
-    {
-      "number": 1275,
-      "title": "neural-web(W4): confluence graph + contradiction detector (display-only)",
-      "merged_at": "2026-07-04T21:27:22Z"
-    },
-    {
-      "number": 1274,
-      "title": "docs(oracle): O-OPT Phase-0 pre-registration (options-tape \u00d7 rotation episodes)",
-      "merged_at": "2026-07-04T21:15:04Z"
-    },
-    {
-      "number": 1273,
-      "title": "feat(options): thetadata phase-A plumbing \u2014 terminal client + T1 backfill driver + signing re-calibration source",
-      "merged_at": "2026-07-04T21:05:53Z"
-    },
-    {
-      "number": 1272,
-      "title": "feat(oracle): P8 washout-confluence gauntlet \u2014 PENDING ADJUDICATION",
-      "merged_at": "2026-07-04T21:03:57Z"
-    },
-    {
-      "number": 1271,
-      "title": "neural-web(W3): decay curves + lagging-signal detector \u2014 W3 complete (display-only)",
-      "merged_at": "2026-07-04T20:53:23Z"
-    },
-    {
-      "number": 1270,
-      "title": "species(S7): Appendix A \u2014 zone-quality addendum (dev-only, exploratory)",
-      "merged_at": "2026-07-04T20:32:11Z"
-    },
-    {
-      "number": 1268,
-      "title": "docs(oracle): P8 washout-confluence pre-registration",
-      "merged_at": "2026-07-04T20:30:24Z"
-    },
-    {
-      "number": 1267,
-      "title": "feat(coverage): desk-universe yahoo price backfill + veto coverage tripwire",
-      "merged_at": "2026-07-04T20:21:54Z"
-    },
-    {
-      "number": 1266,
-      "title": "species(W2-explmem): explanation-memory v0 \u2014 attribution grader + Brier calibration",
-      "merged_at": "2026-07-04T20:16:44Z"
-    },
-    {
-      "number": 1265,
-      "title": "neural-web(W3): quarterly decision machinery armed (pre-registered, FDR-fenced) + weights measurement pre-registration",
-      "merged_at": "2026-07-04T20:34:10Z"
-    },
-    {
-      "number": 1264,
-      "title": "feat(desk-grader): unified 5-90d forward grader across intel-hub/alt-data/congress + leave tracking + notes loop",
-      "merged_at": "2026-07-04T20:25:18Z"
-    },
-    {
-      "number": 1263,
-      "title": "docs(options): live order flow + options tape brainstorm (ThetaData integration assessment)",
-      "merged_at": "2026-07-04T20:05:44Z"
-    },
-    {
-      "number": 1262,
-      "title": "neural-web(W3): reliability kernel estimates \u2014 shrunken cells over the spine index (display-first)",
-      "merged_at": "2026-07-04T19:55:19Z"
-    },
-    {
-      "number": 1261,
-      "title": "fix(neural-web/W2): adapt_track_record reads the real signal_archive store \u2014 index no longer drops US track-record rows",
-      "merged_at": "2026-07-04T19:25:24Z"
-    },
-    {
-      "number": 1260,
-      "title": "neural-web(W2): registration sweep \u2014 every outcome ledger on the bus",
-      "merged_at": "2026-07-04T19:07:34Z"
     }
   ]
 }

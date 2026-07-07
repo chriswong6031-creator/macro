@@ -2,14 +2,15 @@
 
 # Active Build Map
 
-Generated: 2026-07-07T02:59:21.971191+00:00  |  Open PRs: 18  |  Merged (window): 500  |  base: `11f55e67294dfdf22170e1c5dd1ea3a9f44e3533`
+Generated: 2026-07-07T07:07:39.542770+00:00  |  Open PRs: 18  |  Merged (window): 500  |  base: `17245c495cb7463ae40d5744036066c667829107`
 
 ## Open PRs
 
 | PR | Title | Branch | Updated | Flags |
 |----|-------|--------|---------|-------|
-| #1787 | feat(neural-web): reverse feedback reader — mastermind_feedback_summary + synapse reg + nightly step (FB-R7/R8/R14) | `feat/fb-feedback-reader` | 2026-07-07 | DRAFT / ⚠ protected:5 |
-| #1785 | feat(privacy): reverse-feedback privacy rail — data/private ignore + check_private_boundary CI guard + operator_grading host-path scrub (FB-R12/R13) | `feat/fb-privacy-rail` | 2026-07-07 | DRAFT / ⚠ protected:3 |
+| #1820 | feat(options): Package E — strike×expiry matrix engine + one-shot publisher | `feat/momoedge-wave3-matrix` | 2026-07-07 | ⚠ protected:1 |
+| #1819 | feat(committee): translate the dense-web small nodes to Chinese | `claude/committee-wiring-i18n` | 2026-07-07 | — |
+| #1818 | fix(alerts): watchlist sentinel — adapt fetch to live two-table Supabase schema, require operator UUID | `codex-docket/sentinel-schema-fix` | 2026-07-07 | ⚠ protected:1 |
 | #1780 | chore(policy): scheduled intel refresh 2026-07-06 | `policy-intel-refresh-20260706` | 2026-07-07 | ⚠ CONFLICTING |
 | #1763 | data(options): W5-B signed-tape pilot + resumable backfill state machine (20 names x 60d) | `feat/w5b-options-tape-pilot` | 2026-07-07 | — |
 | #1760 | data(china): block-trade tape archiver + SW-L1 mapping — F5-01 accrual infra | `feat/f501-cn-block-tape-archiver` | 2026-07-07 | — |
@@ -22,7 +23,6 @@ Generated: 2026-07-07T02:59:21.971191+00:00  |  Open PRs: 18  |  Merged (window)
 | #1745 | test(labor): WARN intensity phase-0 — DATA-BLOCKED (consolidated feed) | `feat/w2044-warn-intensity-phase0` | 2026-07-06 | — |
 | #1744 | test(rates): d2 rates-calendar flows phase-0 — SCORED V3 month-end extension (auction cycle + quarter-end + extension day) | `feat/d2-rates-calendar-flows-phase0` | 2026-07-06 | — |
 | #1743 | data(consumer): TSA daily throughput collector + display product (2019->) | `feat/w2061-tsa-throughput-product` | 2026-07-06 | — |
-| #1742 | feat(china-intel): F-C MPC communiqué phrase-diff leg — descriptive/unsigned (prereg follow-up) | `feat/china-policy-events-fc-leg` | 2026-07-06 | ⚠ CONFLICTING |
 | #1639 | research(ontology): W4.7 — pos_v2 acceptance study [HOLD: peak gate IQR 48.8 > 25] | `wave/w4-7-axis-flip` | 2026-07-06 | — |
 | #1635 | feat(nw-macro-rail): R5 — macro context intake & memory rail (world_state lobes, snapshot registry, spine stamps, weather page) | `feat/nw-macro-context` | 2026-07-06 | ⚠ CONFLICTING / ⚠ protected:15 |
 | #1565 | entry-stack(W2-SSQ): squeeze-release species phase0 study | `esx/ssq` | 2026-07-07 | ⚠ CONFLICTING / ⚠ protected:1 |
@@ -33,11 +33,9 @@ Generated: 2026-07-07T02:59:21.971191+00:00  |  Open PRs: 18  |  Merged (window)
 
 | PR A | PR B | Shared files | Files |
 |------|------|-------------|-------|
-| #1787 | #1635 | 4 ⚠ | `.github/workflows/daily.yml`, `config/synapse.yml`, `docs/SIGNAL_BUS.md`, `tests/test_signal_bus_doc.py` |
-| #1785 | #1763 | 1 | `.gitignore` |
-| #1785 | #1758 | 1 | `.gitignore` |
-| #1785 | #1752 | 1 | `.gitignore` |
-| #1785 | #1635 | 1 ⚠ | `.github/workflows/ci.yml` |
+| #1820 | #1635 | 1 ⚠ | `config/synapse.yml` |
+| #1819 | #1635 | 1 | `templates/committee.html.j2` |
+| #1818 | #1635 | 1 ⚠ | `.github/workflows/daily.yml` |
 | #1763 | #1758 | 1 | `.gitignore` |
 | #1763 | #1752 | 1 | `.gitignore` |
 | #1758 | #1752 | 1 | `.gitignore` |
@@ -46,7 +44,38 @@ Generated: 2026-07-07T02:59:21.971191+00:00  |  Open PRs: 18  |  Merged (window)
 
 | PR | Title | Merged |
 |----|-------|--------|
+| #1817 | fix(neural-web): heal registry-count drift 226->232 (momoedge Package A) | 2026-07-07 |
+| #1816 | feat(gex): Package C — gex_structure_state emitter (6-state regime, display-only) | 2026-07-07 |
+| #1815 | feat(options): Package A — options sensor contract (schemas + chain-heat aggregator) | 2026-07-07 |
+| #1814 | feat(committee): new settings-gear menu + Chinese node labels + reconcile MDXAuth | 2026-07-07 |
+| #1813 | feat(neural-web): 'all nodes' toggle restores the full dense synapse web | 2026-07-07 |
+| #1812 | ops(live-flow): pin liveflow launchd lane to dedicated deploy worktree | 2026-07-07 |
+| #1811 | research(momoedge): competitive RE + master build docket (options terminal + Oracle) | 2026-07-07 |
+| #1810 | feat(alerts): watchlist buy-zone sentinel — Supabase watchlist x buy-zone enter-detection -> alert center + Discord (B6) | 2026-07-07 |
+| #1809 | feat(nasdaq-internals): archetype-group taxonomy + descriptive internals artifact (TI-R2/R3/R5) | 2026-07-07 |
+| #1808 | feat(nw): pathway + support-map consumer integrations — brief, ask_brain/cortex, committee, admin (W3) | 2026-07-07 |
+| #1807 | feat(render): template↔site sync guard — root-cause fix for the -X theirs stale-copy resurrect (ui.template_site_sync) | 2026-07-07 |
+| #1806 | feat(subsectors): Nasdaq Internals archetype panel on Nasdaq-100 tab (TI-R4) | 2026-07-07 |
+| #1805 | research(tech-internals): Codex tech_archetype+shock_fit adjudication (TI-R1..R7) | 2026-07-07 |
+| #1804 | research(nw): R6.1-lite latent-state feature manifest + PIT coverage audit (RUL-CC-8, parked reference) | 2026-07-07 |
+| #1803 | feat(nw): Support Map library — dependency blast-radius embedded in health.json + admin (RUL-CC-6,7,14) | 2026-07-07 |
+| #1802 | feat(nw): Mechanism Pathway Compiler v1 — display-only 'why the tape moved' artifact (RUL-CC-1..5,10..13) | 2026-07-07 |
+| #1800 | feat(governance): Fable succession bench W0 — tiered adjudication ladder + packet tooling + opus RF actor (RUL-SUCC-1..12) | 2026-07-07 |
+| #1799 | feat(governance): drain research-factory authority bare-WARN debt (RF-11) + backfill 2 unregistered guards | 2026-07-07 |
+| #1798 | docs(research): NW core-cognition adjudication — MPC thin-accept, R7 kill/salvage, R6 park (RUL-CC-1..14) | 2026-07-07 |
+| #1797 | feat(evidence-clock): daily-brief counts block + admin Observatory queue (EC-R5 surfaces) | 2026-07-07 |
+| #1796 | feat(evidence-clock): Global Evidence Clock v1 — read-only review-queue aggregator (EC-R1..R8) | 2026-07-07 |
+| #1795 | feat(neural-web): Ruling Graph / Case-Law Compiler v1 — 500 quote-verified rulings + CI conflict guard | 2026-07-07 |
+| #1794 | feat(neural-web): Entity/Thesis/Mechanism Registry v1 — display-only crosswalk (fable_exit §05) | 2026-07-07 |
+| #1793 | feat(governance): unified house-law CI guard registry + meta-guard | 2026-07-07 |
+| #1792 | feat(stocks): per-name event-windows display block — earnings/FOMC/debt-maturity (Codex B5) | 2026-07-07 |
+| #1791 | test: render-smoke dashboard.html.j2 in both modes (macro + stocks) | 2026-07-07 |
+| #1790 | fix(committee): size synapse-map canvas to the real fullscreen viewport (no 100vh) | 2026-07-07 |
+| #1789 | feat(governance): Active Build Map + DO_NOT_REBUILD registry — derived multi-agent collision intelligence | 2026-07-07 |
+| #1788 | feat(stocks): per-ticker conviction delta — deterministic dossier diff + what-changed strip (Codex B4) | 2026-07-07 |
+| #1787 | feat(neural-web): reverse feedback reader — mastermind_feedback_summary + synapse reg + nightly step (FB-R7/R8/R14) | 2026-07-07 |
 | #1786 | fix(committee): synapse-map fullscreen fills the monitor + zooms in on large displays | 2026-07-07 |
+| #1785 | feat(privacy): reverse-feedback privacy rail — data/private ignore + check_private_boundary CI guard + operator_grading host-path scrub (FB-R12/R13) | 2026-07-07 |
 | #1784 | feat(stocks): Buy Decision Packet v0 — per-row dossier join + trim-only verb + not-now reasons (Codex B2+B3) | 2026-07-07 |
 | #1783 | feat(stocks): render great-company-trap de-escalation panel + activate crowding leg (B1) | 2026-07-07 |
 | #1782 | S11 Buyback-Floor Washout: EDGAR debt columns + phase-0 FALSIFIED (W5) | 2026-07-07 |
@@ -515,37 +544,6 @@ Generated: 2026-07-07T02:59:21.971191+00:00  |  Open PRs: 18  |  Merged (window)
 | #1294 | Remove duplicate Risk Radar from US stocks page | 2026-07-05 |
 | #1293 | Improve China subsector mobile tables | 2026-07-05 |
 | #1292 | docs(options): signing-gate adjudication — tape ratified (scoped), bar verdict unchanged | 2026-07-05 |
-| #1291 | feat(options): thetadata v3 API adapter | 2026-07-05 |
-| #1290 | feat(oracle): W-B4 sentinels + GRAMMAR_VERSION in trial identity | 2026-07-04 |
-| #1289 | neural-web(W7a): first tenants — evidence-driven actionable flag (Article 3) + armed self-correction under governance (A6-ii) | 2026-07-05 |
-| #1288 | docs(oracle): the Constitution + first live-accrual seed | 2026-07-04 |
-| #1287 | fix(oracle-contract): trading-day-aware staleness (v1.1.0) | 2026-07-04 |
-| #1286 | feat(congress): 14y deep-history backfill → real member reliability | 2026-07-04 |
-| #1285 | feat(oracle): W-B1+W-B3 Research Factory + passive forward validation | 2026-07-04 |
-| #1284 | neural-web(W4): flip-aware contradiction detector — labels lag their own scale (operator feedback) | 2026-07-04 |
-| #1283 | feat(oracle): W-B2 Red Queen interface contract — payload versioning, confidence taxonomy, NEVER guarantees | 2026-07-04 |
-| #1282 | docs(oracle): Institutional Backbone architecture | 2026-07-04 |
-| #1281 | feat(oracle): A3 regime tag + B1 personality layer (Compound Library) | 2026-07-04 |
-| #1280 | feat(oracle/panel): C1/C4 columns — stochrsi_w_k/d, washout_w, cohesion_rebuild | 2026-07-04 |
-| #1279 | neural-web(W7a): the constitution in code — Wilson-gated authority, governance ledger, can_force Article-3 fix | 2026-07-04 |
-| #1278 | docs(oracle): Compound Library — discovery-tier hypothesis ledger | 2026-07-04 |
-| #1277 | fix(neural-web/W4): land stranded envelope-stamp fix + regenerate seed (post-merge race) | 2026-07-04 |
-| #1276 | neural-web(W6a): reflex registry + firings ledgers + triage push spine (gated off) | 2026-07-04 |
-| #1275 | neural-web(W4): confluence graph + contradiction detector (display-only) | 2026-07-04 |
-| #1274 | docs(oracle): O-OPT Phase-0 pre-registration (options-tape × rotation episodes) | 2026-07-04 |
-| #1273 | feat(options): thetadata phase-A plumbing — terminal client + T1 backfill driver + signing re-calibration source | 2026-07-04 |
-| #1272 | feat(oracle): P8 washout-confluence gauntlet — PENDING ADJUDICATION | 2026-07-04 |
-| #1271 | neural-web(W3): decay curves + lagging-signal detector — W3 complete (display-only) | 2026-07-04 |
-| #1270 | species(S7): Appendix A — zone-quality addendum (dev-only, exploratory) | 2026-07-04 |
-| #1268 | docs(oracle): P8 washout-confluence pre-registration | 2026-07-04 |
-| #1267 | feat(coverage): desk-universe yahoo price backfill + veto coverage tripwire | 2026-07-04 |
-| #1266 | species(W2-explmem): explanation-memory v0 — attribution grader + Brier calibration | 2026-07-04 |
-| #1265 | neural-web(W3): quarterly decision machinery armed (pre-registered, FDR-fenced) + weights measurement pre-registration | 2026-07-04 |
-| #1264 | feat(desk-grader): unified 5-90d forward grader across intel-hub/alt-data/congress + leave tracking + notes loop | 2026-07-04 |
-| #1263 | docs(options): live order flow + options tape brainstorm (ThetaData integration assessment) | 2026-07-04 |
-| #1262 | neural-web(W3): reliability kernel estimates — shrunken cells over the spine index (display-first) | 2026-07-04 |
-| #1261 | fix(neural-web/W2): adapt_track_record reads the real signal_archive store — index no longer drops US track-record rows | 2026-07-04 |
-| #1260 | neural-web(W2): registration sweep — every outcome ledger on the bus | 2026-07-04 |
 
 ---
 
