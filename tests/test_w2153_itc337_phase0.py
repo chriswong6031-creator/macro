@@ -263,6 +263,84 @@ FOR FURTHER INFORMATION CONTACT: John Smith, (202) 000-0000.
         names = _extract_respondents_from_text(text)
         assert all("DECOY" not in n.upper() for n in names)
 
+    def test_complainant_not_extracted_itc_format(self):
+        """Amendment A4: complainant in (a) block must not appear in output.
+
+        ITC institution notices have a canonical format:
+          (a) The complainant is: Nokia Corp ...
+          (b) The respondents are the following entities...:
+              Apple Inc., Cupertino, CA.
+        Nokia is the complainant (filer); Apple is the respondent.
+        The parser must return Apple, not Nokia.
+        """
+        text = """
+SUMMARY: Notice is hereby given that a complaint was filed on
+January 1, 2023, under section 337 of the Tariff Act of 1930, as
+amended, 19 U.S.C. 1337, on behalf of Nokia Corp of Finland.
+
+    (2) For the purpose of the investigation so instituted, the
+following are hereby named as parties upon which this notice of
+investigation shall be served:
+
+    (a) The complainant is: Nokia Corp, Espoo, Finland.
+
+    (b) The respondents are the following entities alleged to be in
+violation of section 337, and are the parties upon which the
+complaint is to be served:
+
+Apple Inc., 1 Infinite Loop, Cupertino, CA 95014.
+Qualcomm Incorporated, 5775 Morehouse Drive, San Diego, CA 92121.
+
+    (c) The Office of Unfair Import Investigations, U.S. International
+Trade Commission, 500 E Street, SW., Suite 401, Washington, DC 20436.
+"""
+        names = _extract_respondents_from_text(text)
+        # Nokia (complainant) must NOT be in output
+        assert all("NOKIA" not in n.upper() for n in names), \
+            f"Complainant Nokia leaked into names: {names}"
+        # Apple and/or Qualcomm (respondents) must be in output
+        hits = sum(1 for n in names if any(
+            k in n.upper() for k in ("APPLE", "QUALCOMM")))
+        assert hits >= 1, f"Expected respondent names; got: {names}"
+
+    def test_on_behalf_of_preamble_not_extracted(self):
+        """Lines containing 'on behalf of' must be skipped even if in body."""
+        text = """
+    (b) The respondents are the following entities alleged to be in
+violation of section 337:
+
+March 8, 2021, under section 337 of the Tariff Act of 1930, as amended,
+on behalf of Canon Inc.
+
+Apple Inc., 1 Infinite Loop, Cupertino, CA 95014.
+
+    (c) The Office of Unfair Import Investigations.
+"""
+        names = _extract_respondents_from_text(text)
+        # "on behalf of Canon" line must not produce a Canon match
+        assert all("CANON" not in n.upper() for n in names), \
+            f"'on behalf of Canon' leaked: {names}"
+
+    def test_statute_boilerplate_not_extracted(self):
+        """Statute reference lines must be dropped, not treated as entity names."""
+        text = """
+    (b) The respondents are the following entities alleged to be in
+violation of section 337 of the Tariff Act of 1930, as amended,
+19 U.S.C. 1337. The respondents are:
+
+Intel Corporation, 2200 Mission College Boulevard, Santa Clara, CA.
+
+    (c) The Office of Unfair Import Investigations.
+"""
+        names = _extract_respondents_from_text(text)
+        # Should find Intel
+        assert any("INTEL" in n.upper() for n in names), \
+            f"Expected Intel in names; got: {names}"
+        # No name should be a statute phrase
+        for n in names:
+            assert "TARIFF ACT" not in n.upper(), f"Statute line in names: {n}"
+            assert "U.S.C." not in n.upper(), f"Statute line in names: {n}"
+
 
 # ===========================================================================
 # 5. _next_business_day — BD arithmetic
