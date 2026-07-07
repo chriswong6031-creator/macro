@@ -1,6 +1,7 @@
 """tests/test_watchlist_sentinel.py
 
-Unit tests for engine/watchlist_sentinel.py — Watchlist buy-zone sentinel (B6).
+Unit tests for engine/watchlist_sentinel.py and scripts/run_watchlist_sentinel.py
+— Watchlist buy-zone sentinel (B6).
 
 Covers the task requirements:
   1. Enter vs sitting-in-state — only ENTER fires
@@ -13,8 +14,14 @@ Covers the task requirements:
   8. None-safety: None values in state dicts don't crash
   9. format_discord_message: no advice verbs, no "validated" in output
  10. update_cooldown: advances correctly for alerted and non-alerted tickers
+ 11. _fetch_operator_watchlist: new two-table embedded-select query shape
+ 12. _fetch_operator_watchlist: missing operator UUID → skip (returns [])
+ 13. _fetch_operator_watchlist: empty/malformed symbol rows → None-safe
+ 14. Non-US tickers (BTC-USD, 600519.SS) in watchlist produce no alert and no crash
 """
 from __future__ import annotations
+
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -446,3 +453,220 @@ class TestFormatDiscordMessage:
         """format_discord_message must not crash on a minimal alert dict."""
         msg = format_discord_message({"ticker": "X"})
         assert "X" in msg
+
+
+# ---------------------------------------------------------------------------
+# _fetch_operator_watchlist — Supabase two-table schema
+# ---------------------------------------------------------------------------
+
+class TestFetchOperatorWatchlist:
+    """Tests for scripts/run_watchlist_sentinel._fetch_operator_watchlist.
+
+    The live Supabase schema (verified 2026-07-07):
+      watchlists        : {id, user_id, name, position, created_at}
+      watchlist_symbols : {id, watchlist_id, symbol, section, position, created_at}
+
+    The fetch uses ONE embedded PostgREST call:
+      GET /rest/v1/watchlists?select=id,user_id,watchlist_symbols(symbol)
+          &user_id=eq.{operator_uid}
+    """
+
+    def _mock_config(self, base_url="https://abc.supabase.co", service_key="sk_test", operator_uid="uid-123"):
+        """Return a dict of config.secret() side-effects."""
+        def _secret(key):
+            return {
+                "SUPABASE_SERVICE_KEY": service_key,
+                "SUPABASE_SERVICE_ROLE_KEY": None,
+                "SUPABASE_OPERATOR_USER_ID": operator_uid,
+            }.get(key)
+
+        def _load():
+            return {"watchlist": {"supabase": {"url": base_url}}}
+
+        return _secret, _load
+
+    def _import(self):
+        from scripts.run_watchlist_sentinel import _fetch_operator_watchlist
+        return _fetch_operator_watchlist
+
+    def test_embedded_select_url_and_params(self):
+        """Assert the request uses the embedded-select syntax against the live schema."""
+        _fetch_operator_watchlist = self._import()
+        secret_fn, load_fn = self._mock_config()
+
+        mock_resp = MagicMock()
+        mock_resp.status_code = 200
+        mock_resp.json.return_value = [
+            {"id": "list-1", "user_id": "uid-123", "watchlist_symbols": [{"symbol": "AAPL"}, {"symbol": "NVDA"}]},
+        ]
+
+        with patch("scripts.run_watchlist_sentinel.config.secret", side_effect=secret_fn), \
+             patch("scripts.run_watchlist_sentinel.config.load", side_effect=load_fn), \
+             patch("scripts.run_watchlist_sentinel.requests.get", return_value=mock_resp) as mock_get:
+            result = _fetch_operator_watchlist()
+
+        call_args = mock_get.call_args
+        url = call_args[0][0]
+        params = call_args[1]["params"]
+
+        assert url == "https://abc.supabase.co/rest/v1/watchlists"
+        assert params["select"] == "id,user_id,watchlist_symbols(symbol)"
+        assert params["user_id"] == "eq.uid-123"
+        # No 'order' or 'limit' keys (those belonged to the removed fallback)
+        assert "order" not in params
+        assert "limit" not in params
+
+        assert sorted(result) == ["AAPL", "NVDA"]
+
+    def test_missing_operator_uuid_returns_empty(self):
+        """SUPABASE_OPERATOR_USER_ID absent → log one line, return []."""
+        _fetch_operator_watchlist = self._import()
+        secret_fn, load_fn = self._mock_config(operator_uid=None)
+
+        with patch("scripts.run_watchlist_sentinel.config.secret", side_effect=secret_fn), \
+             patch("scripts.run_watchlist_sentinel.config.load", side_effect=load_fn), \
+             patch("scripts.run_watchlist_sentinel.requests.get") as mock_get:
+            result = _fetch_operator_watchlist()
+
+        # No HTTP request should have been issued
+        mock_get.assert_not_called()
+        assert result == []
+
+    def test_empty_symbol_list_returns_empty(self):
+        """Operator has watchlists but no symbols → []."""
+        _fetch_operator_watchlist = self._import()
+        secret_fn, load_fn = self._mock_config()
+
+        mock_resp = MagicMock()
+        mock_resp.status_code = 200
+        mock_resp.json.return_value = [
+            {"id": "list-1", "user_id": "uid-123", "watchlist_symbols": []},
+        ]
+
+        with patch("scripts.run_watchlist_sentinel.config.secret", side_effect=secret_fn), \
+             patch("scripts.run_watchlist_sentinel.config.load", side_effect=load_fn), \
+             patch("scripts.run_watchlist_sentinel.requests.get", return_value=mock_resp):
+            result = _fetch_operator_watchlist()
+
+        assert result == []
+
+    def test_malformed_symbol_rows_none_safe(self):
+        """None entries and rows missing 'symbol' key do not crash."""
+        _fetch_operator_watchlist = self._import()
+        secret_fn, load_fn = self._mock_config()
+
+        mock_resp = MagicMock()
+        mock_resp.status_code = 200
+        mock_resp.json.return_value = [
+            {
+                "id": "list-1",
+                "user_id": "uid-123",
+                "watchlist_symbols": [
+                    None,                   # None entry
+                    {},                     # missing 'symbol' key
+                    {"symbol": ""},         # empty string
+                    {"symbol": "  "},       # whitespace only
+                    {"symbol": "MSFT"},     # valid
+                ],
+            },
+        ]
+
+        with patch("scripts.run_watchlist_sentinel.config.secret", side_effect=secret_fn), \
+             patch("scripts.run_watchlist_sentinel.config.load", side_effect=load_fn), \
+             patch("scripts.run_watchlist_sentinel.requests.get", return_value=mock_resp):
+            result = _fetch_operator_watchlist()
+
+        assert result == ["MSFT"]
+
+    def test_symbols_deduped_and_sorted(self):
+        """Symbols from multiple list containers are deduped and returned sorted."""
+        _fetch_operator_watchlist = self._import()
+        secret_fn, load_fn = self._mock_config()
+
+        mock_resp = MagicMock()
+        mock_resp.status_code = 200
+        mock_resp.json.return_value = [
+            {"id": "list-1", "user_id": "uid-123", "watchlist_symbols": [{"symbol": "NVDA"}, {"symbol": "AAPL"}]},
+            {"id": "list-2", "user_id": "uid-123", "watchlist_symbols": [{"symbol": "AAPL"}, {"symbol": "MSFT"}]},
+        ]
+
+        with patch("scripts.run_watchlist_sentinel.config.secret", side_effect=secret_fn), \
+             patch("scripts.run_watchlist_sentinel.config.load", side_effect=load_fn), \
+             patch("scripts.run_watchlist_sentinel.requests.get", return_value=mock_resp):
+            result = _fetch_operator_watchlist()
+
+        assert result == ["AAPL", "MSFT", "NVDA"]
+
+    def test_non_200_response_returns_empty(self):
+        """Supabase 400 (e.g. column-does-not-exist) → log one line, return []."""
+        _fetch_operator_watchlist = self._import()
+        secret_fn, load_fn = self._mock_config()
+
+        mock_resp = MagicMock()
+        mock_resp.status_code = 400
+        mock_resp.text = '{"code":"42703","message":"column watchlists.doc does not exist"}'
+
+        with patch("scripts.run_watchlist_sentinel.config.secret", side_effect=secret_fn), \
+             patch("scripts.run_watchlist_sentinel.config.load", side_effect=load_fn), \
+             patch("scripts.run_watchlist_sentinel.requests.get", return_value=mock_resp):
+            result = _fetch_operator_watchlist()
+
+        assert result == []
+
+    def test_symbols_normalized_to_upper(self):
+        """Symbols stored in mixed case are upper-cased."""
+        _fetch_operator_watchlist = self._import()
+        secret_fn, load_fn = self._mock_config()
+
+        mock_resp = MagicMock()
+        mock_resp.status_code = 200
+        mock_resp.json.return_value = [
+            {"id": "list-1", "user_id": "uid-123", "watchlist_symbols": [{"symbol": "aapl"}, {"symbol": "Nvda"}]},
+        ]
+
+        with patch("scripts.run_watchlist_sentinel.config.secret", side_effect=secret_fn), \
+             patch("scripts.run_watchlist_sentinel.config.load", side_effect=load_fn), \
+             patch("scripts.run_watchlist_sentinel.requests.get", return_value=mock_resp):
+            result = _fetch_operator_watchlist()
+
+        assert result == ["AAPL", "NVDA"]
+
+
+# ---------------------------------------------------------------------------
+# Non-US symbols in watchlist — no alert, no crash
+# ---------------------------------------------------------------------------
+
+class TestNonUsTickers:
+    """BTC-USD, 600519.SS and other non-US symbols appear in the fetched ticker
+    list but will not exist in today_states (built from US artifacts only).
+    The downstream run_sentinel must silently ignore them.
+    """
+
+    TODAY = "2026-07-08"
+
+    def test_non_us_symbol_no_alert_no_crash(self):
+        """BTC-USD not in today_states → treated as not-in-window → no alert."""
+        today = {}  # no US artifact data for a crypto / foreign ticker
+        yesterday = {}
+        alerts = run_sentinel(
+            watched_tickers=["BTC-USD", "600519.SS"],
+            today_states=today,
+            yesterday_states=yesterday,
+            cooldown={},
+            today_str=self.TODAY,
+        )
+        assert alerts == []
+
+    def test_non_us_mixed_with_us_fires_only_us(self):
+        """Non-US tickers silently ignored; valid US ticker still fires."""
+        today = {"AAPL": _open_state()}
+        yesterday = {"AAPL": _closed_state()}
+        alerts = run_sentinel(
+            watched_tickers=["BTC-USD", "600519.SS", "AAPL"],
+            today_states=today,
+            yesterday_states=yesterday,
+            cooldown={},
+            today_str=self.TODAY,
+        )
+        assert len(alerts) == 1
+        assert alerts[0]["ticker"] == "AAPL"

@@ -13,9 +13,18 @@ Design invariants (house laws)
   written in this script (nightly path).  Same-day re-renders carry forward the
   existing state (idempotent: as_of == today → skip write).
 - Privacy: v1 reads the OPERATOR account watchlist only (SUPABASE_OPERATOR_USER_ID
-  identifies the row).  No other users' rows are logged or enumerated.
+  is REQUIRED).  No other users' rows are logged or enumerated.
 - Discord: uses DISCORD_WEBHOOK_WATCHLIST if set; falls back to DISCORD_WEBHOOK_URL.
   The webhook selection is logged once at startup.
+
+Supabase schema (live, verified 2026-07-07)
+-------------------------------------------
+  watchlists       : {id, user_id, name, position, created_at}  — one row per list container
+  watchlist_symbols: {id, watchlist_id, symbol, section, position, created_at}  — one row per ticker
+
+The fetch uses ONE embedded PostgREST call:
+  GET /rest/v1/watchlists?select=id,user_id,watchlist_symbols(symbol)&user_id=eq.{uid}
+This flattens all symbols across the operator's lists in a single round-trip.
 
 State files (committed JSON, advanced nightly)
 ----------------------------------------------
@@ -79,14 +88,21 @@ _ALERTS_JSONL = _ALERTS_DIR / "watchlist_alerts.jsonl"
 def _fetch_operator_watchlist() -> list[str]:
     """Fetch the operator's watchlist tickers from Supabase.
 
-    Returns a list of ticker strings, or [] on any failure.
+    Returns a sorted, deduplicated list of ticker strings (upper-cased), or []
+    on any failure.
 
     Requires env vars:
       SUPABASE_SERVICE_KEY (or SUPABASE_SERVICE_ROLE_KEY)  — service_role key
       SUPABASE_OPERATOR_USER_ID                             — operator's auth.users UUID
+                                                              (REQUIRED; absent → skip)
 
-    Falls back to the most-recently-updated row when SUPABASE_OPERATOR_USER_ID is
-    absent (single-account setups).  Logs one line and returns [] on failure.
+    Uses ONE embedded PostgREST call that joins watchlists → watchlist_symbols:
+      GET /rest/v1/watchlists?select=id,user_id,watchlist_symbols(symbol)
+          &user_id=eq.{operator_uid}
+
+    Live schema (verified 2026-07-07):
+      watchlists        : id, user_id, name, position, created_at
+      watchlist_symbols : id, watchlist_id, symbol, section, position, created_at
     """
     # --- Resolve Supabase URL from config (public, no secret) ----------
     sup_cfg = (config.load().get("watchlist", {}).get("supabase") or {})
@@ -106,22 +122,23 @@ def _fetch_operator_watchlist() -> list[str]:
         )
         return []
 
+    # --- Operator UUID is REQUIRED (multiple accounts exist; do not read other users' lists) ---
     operator_uid: str | None = config.secret("SUPABASE_OPERATOR_USER_ID")
+    if not operator_uid:
+        log.info("watchlist_sentinel: operator UUID not set — skipping")
+        return []
 
-    # --- Build query ----------------------------------------------------
+    # --- ONE embedded PostgREST call: watchlists + nested watchlist_symbols ---
     rest_url = base_url.rstrip("/") + "/rest/v1/watchlists"
     headers = {
         "apikey": service_key,
         "Authorization": f"Bearer {service_key}",
         "Accept": "application/json",
     }
-    params: dict[str, str] = {"select": "user_id,doc,updated_at"}
-    if operator_uid:
-        params["user_id"] = f"eq.{operator_uid}"
-    else:
-        # No operator UID — fetch the single most-recently-updated row
-        params["limit"] = "1"
-        params["order"] = "updated_at.desc"
+    params: dict[str, str] = {
+        "select": "id,user_id,watchlist_symbols(symbol)",
+        "user_id": f"eq.{operator_uid}",
+    }
 
     try:
         r = requests.get(rest_url, headers=headers, params=params, timeout=20)
@@ -141,18 +158,24 @@ def _fetch_operator_watchlist() -> list[str]:
         log.info("watchlist_sentinel: no watchlist rows found — empty list")
         return []
 
-    # Privacy: we only log counts, not individual UIDs or full docs.
-    log.info("watchlist_sentinel: fetched %d watchlist row(s)", len(rows))
-    row = rows[0]
-    doc = row.get("doc") or {}
-    items = doc.get("items") or []
-    tickers = [
-        it.get("t", "").strip().upper()
-        for it in items
-        if isinstance(it, dict) and it.get("t")
-    ]
-    tickers = [t for t in tickers if t]
-    log.info("watchlist_sentinel: %d ticker(s) in operator watchlist", len(tickers))
+    # Privacy: log counts only, never UIDs or symbols individually.
+    log.info("watchlist_sentinel: fetched %d watchlist container(s)", len(rows))
+
+    # Flatten symbols from all the operator's list containers, dedupe, sort.
+    seen: set[str] = set()
+    tickers: list[str] = []
+    for row in rows:
+        symbols = row.get("watchlist_symbols") or []
+        for entry in symbols:
+            if not isinstance(entry, dict):
+                continue
+            raw = (entry.get("symbol") or "").strip().upper()
+            if raw and raw not in seen:
+                seen.add(raw)
+                tickers.append(raw)
+
+    tickers.sort()
+    log.info("watchlist_sentinel: %d unique ticker(s) in operator watchlist", len(tickers))
     return tickers
 
 
