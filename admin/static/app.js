@@ -317,7 +317,7 @@ RENDER.experiments = async () => {
         ${e.surfaced ? `<div class="note mono muted">↳ ${esc(e.surfaced)}</div>` : ""}</div>`).join("")}</div>`;
   }
   html += `<div class="section">All experiments <span class="cnt">${exps.length}</span></div>
-    <table><thead><tr><th>Experiment</th><th>Type</th><th>Status</th><th>How often</th><th class="r">Come back</th><th>Next step</th><th>Your action</th></tr></thead><tbody>
+    <table class="exp-table"><thead><tr><th>Experiment</th><th>Type</th><th>Status</th><th>How often</th><th class="r">Come back</th><th>Next step</th><th>Your action</th></tr></thead><tbody>
     ${exps.map(e => `<tr${e.ready ? ' class="hl"' : ""}>
       <td><b>${esc(e.name)}</b><div class="sub">${esc(e.what || "")}</div><div class="note mono muted">${esc(e.source || "")}</div></td>
       <td class="sub">${esc(e.kind || "")}</td>
@@ -325,7 +325,7 @@ RENDER.experiments = async () => {
       <td class="sub">${esc(e.cadence || "")}</td>
       <td class="r">${EXP_DUE(e)}</td>
       <td class="sub" style="max-width:340px">${esc(e.next_step || "")}${e.state ? `<div class="note mono muted">${esc(e.state)}</div>` : ""}</td>
-      <td style="white-space:nowrap">
+      <td class="exp-actions">
         <button class="btn exp-act-btn" data-exp-id="${esc(e.id || "")}" data-action="acted">Acted</button>
         <button class="btn exp-act-btn" data-exp-id="${esc(e.id || "")}" data-action="dismissed">Dismiss</button>
         <button class="btn exp-act-btn" data-exp-id="${esc(e.id || "")}" data-action="snoozed">Snooze</button>
@@ -1380,8 +1380,30 @@ RENDER.alerts = async () => {
 };
 
 /* ---- boot --------------------------------------------------------------- */
+/* Wrap any table in the content area so wide tables scroll horizontally
+   (the shell column clips overflow, so a bare <table> would be cut off). */
+function wrapViewTables() {
+  const view = $("#view"); if (!view) return;
+  view.querySelectorAll("table").forEach(tbl => {
+    const p = tbl.parentElement;
+    if (!p || p.classList.contains("table-wrap")) return;
+    const w = document.createElement("div");
+    w.className = "table-wrap";
+    p.insertBefore(w, tbl);
+    w.appendChild(tbl);
+  });
+}
+let _tableObserver = null;
+function startTableObserver() {
+  if (_tableObserver) return;
+  const view = $("#view"); if (!view) return;
+  _tableObserver = new MutationObserver(() => wrapViewTables());
+  _tableObserver.observe(view, { childList: true, subtree: true });
+}
+
 async function boot() {
   renderSidebar();
+  startTableObserver();
   await refresh();
   route();
 }
