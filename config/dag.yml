@@ -210,6 +210,9 @@ lanes:
       - id: build_kernel_estimates
         module: scripts.build_kernel_estimates
         note: "neural-web W3 — reliability kernel estimates (engine × regime × horizon cells; display-first)"
+      - id: build_covariance_spine
+        module: scripts.build_covariance_spine
+        note: "R-ORTH PR-3 — covariance spine MVP (RUL-ORTH-1..11); lobe independence accounting + cross-block concentration; display-only, resilient"
       - id: build_kernel_diagnostics
         module: scripts.build_kernel_diagnostics
         note: "neural-web W3 PR3 — decay curves (kernel_families.json) + lagging-signal detector (lagging_signals.json); display-first, resilient"
