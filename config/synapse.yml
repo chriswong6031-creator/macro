@@ -5457,9 +5457,10 @@ artifacts:
     consumers: []
     external_consumers: []
     notes: >
-      PR-C site copy of data/neuralweb/health.json for frontend/admin consumption.
-      Exact mirror written atomically alongside the data copy by
-      scripts/build_neuralweb_health.py. Display/ops only — no authority.
+      CPI P1 substrate: stable entity id map for the cycle-pattern lake (~180 entities
+      across 9 families; basket/amalgam rows flagged pit_membership=False). Rebuilt by
+      scripts/build_cycle_pattern_lake.py. Infrastructure/display only — no authority.
+      (Notes were a copy-paste of the neuralweb-health artifact until 2026-07-06; fixed.)
 
   # --- PR-D: NW daily brief surface ---
 
@@ -5489,9 +5490,10 @@ artifacts:
       - scripts/build_index_hazard_panel.py
     external_consumers: []
     notes: >
-      PR-C site copy of data/neuralweb/health.json for frontend/admin consumption.
-      Exact mirror written atomically alongside the data copy by
-      scripts/build_neuralweb_health.py. Display/ops only — no authority.
+      CPI P1 substrate: stable entity id map for the cycle-pattern lake (~180 entities
+      across 9 families; basket/amalgam rows flagged pit_membership=False). Rebuilt by
+      scripts/build_cycle_pattern_lake.py. Infrastructure/display only — no authority.
+      (Notes were a copy-paste of the neuralweb-health artifact until 2026-07-06; fixed.)
 
   # --- PR-D: NW daily brief surface ---
   neuralweb-daily-brief:
