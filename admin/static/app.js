@@ -1061,9 +1061,10 @@ function nwIndependenceCard(indep) {
   const total = indep.n_lobes_total;
   const pctile = indep.pctile_vs_null;
   const available = indep.available;
-  const eilStr = (eil != null) ? Number(eil).toFixed(1) : "—";
+  // same >=2 measurable floor as the committee chip: a 1-engine PR is trivially 1.0
+  const eilStr = (eil != null && measurable != null && measurable >= 2) ? Number(eil).toFixed(1) : "—";
   const coverageStr = (measurable != null && total != null)
-    ? `${measurable} / ${total} engines measurable`
+    ? `${measurable} / ${total} engines measurable${measurable < 2 ? " — accruing" : ""}`
     : (available ? "accruing" : "spine not yet written");
   const pctileStr = (pctile != null) ? ` · ${(pctile * 100).toFixed(0)}th pctile vs null` : "";
   const sameBetHtml = (indep.same_bet_warning)

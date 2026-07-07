@@ -275,7 +275,7 @@ details.memo-raw pre { font-size:11px; overflow-x:auto; color:var(--muted); whit
         </div>
       </div>
     </div>
-    <div id="chip_indep_plain" style="display:none" class="plain-eng" style="margin-top:8px">
+    <div id="chip_indep_plain" class="plain-eng" style="display:none;margin-top:8px">
       <strong>{{ t('In plain English:', '用白话说：') }}</strong>
       <span id="chip_indep_plain_text"></span>
       <span id="chip_indep_same_bet" style="display:none"></span>
@@ -965,8 +965,8 @@ details.memo-raw pre { font-size:11px; overflow-x:auto; color:var(--muted); whit
       var eil = indep && indep.effective_independent_lobes != null ? indep.effective_independent_lobes : null;
       if (eil !== null && measurable !== null && measurable >= 2) {
         chipIV.textContent = eil.toFixed(1);
-        var subTxt = (measurable + '/' + (total || '?') + ' measurable / ' + measurable + '/' + (total || '?') + ' 可测');
-        if (chipIS) chipIS.textContent = subTxt;
+        if (chipIS) chipIS.innerHTML = '<span class="l-en">' + measurable + '/' + (total || '?') + ' measurable</span>'
+          + '<span class="l-zh">' + measurable + '/' + (total || '?') + ' 可测</span>';
         if (plainDiv) plainDiv.style.display = '';
         if (plainText) {
           plainText.innerHTML = '<span class="l-en">The "effective independent witnesses" number estimates how many of the ' + (total || '?') + ' active engines fire on unrelated information — '
@@ -978,7 +978,9 @@ details.memo-raw pre { font-size:11px; overflow-x:auto; color:var(--muted); whit
         }
       } else {
         chipIV.textContent = '—';
-        if (chipIS) chipIS.textContent = (measurable !== null ? (measurable + '/' + (total || '?') + ' measurable') : '') + ' accruing / 累积中';
+        var covPrefix = (measurable !== null ? (measurable + '/' + (total || '?') + ' ') : '');
+        if (chipIS) chipIS.innerHTML = '<span class="l-en">' + covPrefix + 'measurable — accruing</span>'
+          + '<span class="l-zh">' + covPrefix + '可测——累积中</span>';
         if (plainDiv) plainDiv.style.display = '';
         if (plainText) {
           plainText.innerHTML = '<span class="l-en">Independence data is accruing — fewer than 2 engines have enough history to measure co-firing correlation yet. '
@@ -989,8 +991,12 @@ details.memo-raw pre { font-size:11px; overflow-x:auto; color:var(--muted); whit
       }
       if (sameBetEl && indep && indep.same_bet_warning) {
         var sbw = indep.same_bet_warning;
+        var escIndep = function (s) {
+          return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        };
         sameBetEl.style.display = '';
-        sameBetEl.innerHTML = ' <strong>Same-bet warning / 相同押注警告:</strong> ' + (sbw.text || sbw.message || '');
+        sameBetEl.innerHTML = ' <strong><span class="l-en">Same-bet warning:</span><span class="l-zh">相同押注警告：</span></strong> '
+          + escIndep(sbw.text || sbw.message || '');
       }
     })();
 
