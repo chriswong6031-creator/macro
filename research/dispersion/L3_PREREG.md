@@ -127,3 +127,32 @@ hard constraint).
 - HARD CONSTRAINT: `gross_mult_live` is and remains 1.0 regardless of PASS/FAIL
   outcome. This study can only enable a display flag; sizing is governed by a separate
   measured selection-IR edge study (US_BOARD_MEASUREMENT §Study 3 precedent).
+
+---
+
+## Amendment L3-A1 (2026-07-07) — DT-R14 compliance + cluster-definition resolution
+
+**Authority:** Ruling DT-R14 + research/TIME_CONFOUND_EXPOSURE_AUDIT.md §4, finding DG-1.
+**Scope discipline:** amended BEFORE the verdict harness has been built or any verdict
+batch has run against this prereg (see Standing Notes: "The harness has not been built
+yet"). Frozen economic thresholds are untouched (criteria 1-3 and 5, the 8pp/5pp bars);
+only the inference machinery of criterion 4 and the cluster definition are amended —
+the same events-frozen/inference-only pattern as the DT-W1a repair.
+
+1. **Criterion 4 is amended to:** "Month-block (or global ±30d contiguous tape-time
+   block) bootstrap 90% CI for the stop5 gap excludes 0 (one-sided, H1: lean_out >
+   lean_in), computed on within-period cross-sectionally demeaned outcomes; all fires
+   within a drawn calendar block move together." A per-ticker `episode_id` bootstrap
+   does NOT satisfy this criterion.
+2. **Cluster definition resolved:** clusters = GLOBAL contiguous ±30d tape-time blocks
+   (per the Standing Note above), NOT per-ticker `episode_id`s. The n≥25 floor in
+   criterion 1 counts these blocks per arm. DISP_GATE_1_REPORT.md §9 measured
+   lean_in=17 / lean_out=20 such blocks on the 2022-2025 tape — below floor — so the
+   state as currently measured is DEFER on floors, consistent with the shipped
+   DISP-GATE-1 outcome.
+3. **Pre-declared DEFERRED/UNDERPOWERED path (per DT-R14):** if block floors are unmet,
+   the verdict is DEFER (accrue more tape), never FAIL — a low-power null must be
+   distinguishable from a refutation.
+4. The "×2-replicated" language in DISP_GATE_1_REPORT.md §9 is a sign-and-flip-rate
+   concordance across two panels, not a replicated inferential result; it must not be
+   cited as corroboration in any future verdict batch.

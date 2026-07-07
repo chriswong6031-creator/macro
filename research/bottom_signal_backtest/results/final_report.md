@@ -1,5 +1,14 @@
 # Bottom/Bounce Signal Backtest
 
+> **⚠️ NO INFERENCE / TEST-LEAKED — DO NOT CITE AS EVIDENCE (banner added 2026-07-07).**
+> Every number in this report is a point estimate selected by combo-max over hundreds of
+> candidates with **no CIs, no p-values, no multiplicity correction, and no calendar-time
+> control**; the base outcome swings ~5.2pp across calendar years and 16% of fires land in
+> 2022 alone. `research/species/s7_rs_repair_phase0/SPEC.md` rules the tuned outputs
+> test-leaked and forbids citing them; the load-bearing verdicts (PR #1207) were
+> re-adjudicated by the time-controlled S7 re-run. See
+> `research/TIME_CONFOUND_EXPOSURE_AUDIT.md` §3.6.
+
 ## Executive summary
 
 Ran the requested completed-candle base trigger on `data/baskets/ohlcv`: weekly price MACD bullish crossover aligned within 10 trading days of a completed 2W StochRSI bullish crossover from oversold, with a 20D per-ticker cooldown.
