@@ -247,6 +247,12 @@ lanes:
         module: scripts.build_mastermind
       - id: build_ai_desk_page
         module: scripts.build_ai_desk_page
+      - id: watchlist_sentinel
+        module: scripts.run_watchlist_sentinel
+        note: >
+          B6 Watchlist buy-zone sentinel — operator Supabase watchlist x buy-zone
+          enter-detection -> alert JSONL + Discord dispatch.  Fail-soft (missing
+          creds/table/network -> one log line, exit 0).  Same-day idempotent.
       - id: notify
         module: scripts.notify
       - id: push_alerts

@@ -114,6 +114,9 @@ _ORACLE_TIER = {
     "oracle_two_sided": "watch",
     "oracle_regime": "watch",
 }
+# Watchlist buy-zone enter-detection (B6).  Operator-account only, no validated
+# forward edge yet — capped at 'context' (display-only, never an 'act' trigger).
+_WATCHLIST_TIER = {"buy_zone_enter": "context"}
 
 # Source display metadata: label (EN/ZH), icon, and the page each alert deep-links to.
 SOURCES = {
@@ -128,6 +131,10 @@ SOURCES = {
     "demand":    {"label": "Demand Desk",      "label_zh": "需求台",     "icon": "🧭", "page": "demand.html"},
     "rotation":  {"label": "Subsector Rotation","label_zh": "子行业轮动", "icon": "🌀", "page": "subsector_rotation.html"},
     "oracle":    {"label": "Oracle Rotation",  "label_zh": "Oracle 轮动", "icon": "🔭", "page": "subsector_rotation.html"},
+    # B6 — Watchlist sentinel: operator-specific buy-zone enter-detection.
+    # Display-only; no validated backtest; tier capped at 'context' until
+    # a forward ledger earns a verdict.
+    "watchlist": {"label": "Watchlist Sentinel", "label_zh": "自选清单哨兵", "icon": "👁", "page": "watchlist.html"},
 }
 
 # Risk-OFF / stress alert families whose sign is unambiguous — only these get a
@@ -484,6 +491,7 @@ def _jsonl_raw(source: str, today: pd.Timestamp, cutoff: pd.Timestamp,
             "demand": "demand_alerts",
             "rotation": "subsector_rotation_alerts",
             "oracle": "oracle.alerts",
+            "watchlist": "watchlist_alerts",
         }[source]
         m = __import__("engine." + mod, fromlist=[mod])
         for e in m.load_events():
@@ -541,6 +549,7 @@ def build_triage(days: int = 30, today: date | None = None,
     raw += _jsonl_raw("demand", today_ts, cutoff, _DEMAND_TIER)
     raw += _jsonl_raw("rotation", today_ts, cutoff, _ROTATION_TIER)
     raw += _jsonl_raw("oracle", today_ts, cutoff, _ORACLE_TIER)
+    raw += _jsonl_raw("watchlist", today_ts, cutoff, _WATCHLIST_TIER)
 
     enriched: list[dict] = []
     for a in raw:
