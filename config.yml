@@ -114,7 +114,12 @@ fred:
     # ADPMNUSNERSA: ADP monthly SA total-private payrolls; ALFRED vintages available;
     #   note 2022 methodology redesign (Moody's Analytics collaboration) which re-revised
     #   the full history — backtest era-splits at 2022 boundary per MRI-R9.
-    UNRATE, RSAFS, JTSJOL, ADPMNUSNERSA]
+    UNRATE, RSAFS, JTSJOL, ADPMNUSNERSA,
+    # MRI-PR-H: NFP decomposition + AHE/hours targets. All monthly, ~1 initial-release row/period.
+    # USPRIV/USGOVT: 1939→, ALFRED vintages expected. CES0500000003/AWHAETP: 2006-03→, ALFRED
+    # vintages expected. Note: if ALFRED has no vintage history for a series on the keyed
+    # collect run, the series returns empty and the model falls back gracefully (absent leg).
+    USPRIV, USGOVT, CES0500000003, AWHAETP]
   series:
     rates:
       DGS2: us2y
@@ -357,6 +362,11 @@ fred:
                                         # 2022 methodology redesign re-revised full history; era-split at 2022
       UNRATE: unemployment_rate         # unemployment rate (monthly, %) — promoted from macro_surprise ad-hoc
       RSAFS: retail_sales               # advance retail & food services sales (monthly, $M SA) — promoted from macro_surprise ad-hoc
+      # MRI-PR-H: NFP decomposition + AHE/hours targets (2006-03→)
+      USPRIV: nfp_private               # private payrolls (thousands SA, 1939→) — decomposition private leg
+      USGOVT: nfp_government            # government payrolls (thousands SA, 1939→) — decomposition government leg
+      CES0500000003: avg_hourly_earnings  # avg hourly earnings total private ($/hr SA, 2006-03→) — AHE target
+      AWHAETP: avg_weekly_hours         # avg weekly hours total private (hrs/wk SA, 2006-03→) — hours target
   retries: 3
   backoff_base_s: 5
   batch_size: 80
