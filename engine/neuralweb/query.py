@@ -118,6 +118,7 @@ __all__ = [
     "adapt_reflexes",
     "adapt_cortex_attention",
     "adapt_options_entry",
+    "adapt_tech_signals",
     "build_index",
     "write_index",
     "load_index",
@@ -200,6 +201,7 @@ LEDGER_ENUM: tuple[str, ...] = (
     "reflexes",             # Neural Web W6a: per-reflex firings ledgers
     "cortex_attention",     # Neural Web W7b PR2: graded cortex attention claims
     "options_entry",        # Options→NW W-B (RO-5): ungraded-honest options state context
+    "tech_signals",         # Tech-signal suite W2 (DARK): display/context only; §3 gate required for promotion
 )
 
 # ---------------------------------------------------------------------------
@@ -1008,6 +1010,7 @@ def build_index(
         ("reflexes",       lambda: adapt_reflexes(root)),            # W6a — reflex firings ledgers
         ("cortex_attention", lambda: adapt_cortex_attention(root)),  # W7b PR2 — graded cortex attention
         ("options_entry",  lambda: adapt_options_entry(root)),       # Options→NW W-B — ungraded-honest context
+        ("tech_signals",   lambda: adapt_tech_signals(root)),        # W2 tech-signal suite — DARK display/context
     ]
 
     for name, fn in adapters:
@@ -1669,3 +1672,108 @@ def adapt_cortex_attention(
 
     df_out = pd.DataFrame(rows)
     return _ensure_columns(df_out), gaps
+
+
+# ---------------------------------------------------------------------------
+# adapt_tech_signals — Tech-signal suite NW context feed (DARK)
+# ---------------------------------------------------------------------------
+# GATE: these signals are display/context only (direction=0, outcome_graded=False,
+# is_context=True). Promotion to confirmer tier requires an Article-3 gauntlet
+# pass (n_dates>=25, Wilson CI lower-bound > 0 vs matched control). LLMs may
+# only de-escalate calibrated keys — never originate signals, scores, or
+# escalations. Nothing here is wired to allocation or masterminds.
+# ---------------------------------------------------------------------------
+
+def adapt_tech_signals(
+    root: Path | str | None = None,
+) -> tuple[pd.DataFrame, list[str]]:
+    """Adapt ``site/factordata/tech_lab.json`` → ledger='tech_signals'.
+
+    DARK — NW CONTEXT FEED (tech-signal suite W2)
+    ----------------------------------------------
+    Registers per-signal descriptive fire-metrics from ``engine.tech_catalog``
+    as display/context rows in the spine index.  Every row carries:
+
+      direction=0           — no directional claim; purely descriptive state
+      outcome_graded=False  — UNGRADED-HONEST; no §3 gauntlet has passed
+      is_context=True       — catch-all context flag per W1 R8
+
+    PROMOTION GATE: a signal family may only be promoted from display →
+    confirmer after an Article-3 gauntlet with n_dates>=25 and Wilson CI
+    lower-bound > 0 vs a matched control.  Until that gate fires, these rows
+    are invisible to every Article-2 surface (alert_triage, board_ordering,
+    top_setups, attention_queue, push_floor).
+
+    Fail-open: missing or unreadable tech_lab.json → gap note + zero rows.
+    The artifact is DARK at registration time (site/factordata/tech_lab.json
+    may not yet exist on a fresh clone); zero rows is the correct behaviour.
+    """
+    gaps: list[str] = []
+
+    if root is not None:
+        root_p = Path(root)
+    else:
+        try:
+            from lib import config as _cfg  # noqa: PLC0415
+            root_p = Path(_cfg.ROOT)
+        except Exception:  # noqa: BLE001
+            root_p = Path(".")
+
+    path = root_p / "site" / "factordata" / "tech_lab.json"
+    if not path.exists():
+        gaps.append("tech_signals: site/factordata/tech_lab.json absent — zero rows (DARK)")
+        return _empty_df(), gaps
+
+    try:
+        with open(path, encoding="utf-8") as fh:
+            payload = json.load(fh)
+    except Exception as e:  # noqa: BLE001
+        gaps.append(f"tech_signals: tech_lab.json unreadable ({e}) — zero rows")
+        return _empty_df(), gaps
+
+    # Extract top-level asof from generated_utc (ISO string → date prefix)
+    asof_raw = payload.get("generated_utc") or ""
+    asof = _str_date(asof_raw) if asof_raw else None
+    if not asof:
+        gaps.append("tech_signals: missing generated_utc — zero rows")
+        return _empty_df(), gaps
+
+    signals: dict = payload.get("signals") or {}
+    if not signals:
+        gaps.append("tech_signals: no signals block in tech_lab.json — zero rows")
+        return _empty_df(), gaps
+
+    rows: list[dict] = []
+    for sig_name, sig_meta in signals.items():
+        if not isinstance(sig_meta, dict):
+            continue
+        row: dict[str, Any] = {c: None for c in COLUMNS}
+        row["signal_id"]      = f"tech_signals:{asof}:{sig_name}"
+        row["engine"]         = "tech_signals"
+        row["family"]         = f"tech.{sig_name}"
+        row["ledger"]         = "tech_signals"
+        row["as_of"]          = asof
+        row["symbol"]         = sig_name          # signal name as the "symbol" key
+        row["scope_type"]     = "basket"           # cross-sectional; not a single entity
+        row["universe"]       = "tech_signals.lab"
+        row["horizon"]        = None
+        # CONTEXT record: direction=0 always — no directional claim (DARK gate)
+        row["direction"]      = 0
+        row["size_binding"]   = False
+        row["fill_basis"]     = "tech_lab_snapshot"
+        row["score"]          = None   # DARK context row carries no score (matches adapt_options_entry)
+        row["outcome_excess"] = None
+        # UNGRADED-HONEST: outcome_graded=False until §3 gauntlet passes
+        row["outcome_graded"] = False
+        row["graded_at"]      = None
+        row["is_context"]     = True
+        rows.append(row)
+
+    gaps.append(
+        f"tech_signals: {len(rows)} context rows emitted from tech_lab.json "
+        f"(asof={asof}, DARK — direction=0, ungraded-honest)"
+    )
+
+    if not rows:
+        return _empty_df(), gaps
+    return _ensure_columns(pd.DataFrame(rows)), gaps

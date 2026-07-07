@@ -449,6 +449,10 @@ jobs:
           # data/quiver/congress.parquet) + build_site (refreshes per-name stockdata + regime +
           # allocation that the watchlist scores against). Reads only committed data; returns 0 on error.
           run_py "congressional trades desk (build_congress)" scripts.build_congress
+          # Technical Lab hub — screener + lab profile page. Reads site/factordata/tech_screener.json
+          # + tech_lab.json (written by nightly tech signal engine). Falls back to sample fixture if
+          # absent; returns 0 on error — never breaks the build.
+          run_py "technical lab hub (build_tech_lab)" scripts.build_tech_lab
           # Thematic Foresight Desk — AFTER build_site (regime latest.json carries the
           # dislocation entry-overlay) + the engines' bottleneck/revision/demand leaves.
           # Reads only committed data; returns 0 on error.
