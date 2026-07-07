@@ -1574,6 +1574,131 @@ def test_no_engine_imports_after_ec_section():
         assert pattern not in code, f"Forbidden {label!r} found in non-comment lines"
 
 
+# ---------------------------------------------------------------------------
+# Section G: type-drift / hostile-artifact tests (opus review R3)
+# ---------------------------------------------------------------------------
+
+def _write_ec_raw_admin(root: Path, payload: dict) -> Path:
+    """Write raw evidence_clock.json payload to tmp root data tree."""
+    dest = root / "data" / "neuralweb" / "evidence_clock.json"
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    dest.write_text(json.dumps(payload), encoding="utf-8")
+    return dest
+
+
+def test_ec_section_rows_as_dict_no_crash(tmp_repo):
+    """rows is a dict (type drift) → _section_evidence_clock() must not raise; queue=[]."""
+    from admin import neural_web
+
+    _write_ec_raw_admin(tmp_repo, {
+        "schema": "neuralweb.evidence_clock.v1",
+        "as_of": "2026-07-06",
+        "generated_utc": "2026-07-06T10:00:00Z",
+        "authority": "display_only",
+        "summary": {},
+        "rows": {"bad": "dict instead of list"},  # type-drifted
+        "caveats": [],
+    })
+    old = _patch_ec_path(neural_web, tmp_repo)
+    try:
+        ec = neural_web._section_evidence_clock()
+    finally:
+        _restore_ec_path(neural_web, old)
+
+    assert ec.get("available") is True or ec.get("error") == "parse_error", (
+        f"Expected available=True or parse_error, got: {ec}"
+    )
+    if ec.get("available"):
+        assert ec["queue"] == [], f"Expected empty queue when rows is a dict, got: {ec['queue']}"
+
+
+def test_ec_section_row_entry_as_string_no_crash(tmp_repo):
+    """A non-dict row entry (string) is silently skipped; no AttributeError."""
+    from admin import neural_web
+
+    _write_ec_raw_admin(tmp_repo, {
+        "schema": "neuralweb.evidence_clock.v1",
+        "as_of": "2026-07-06",
+        "generated_utc": "2026-07-06T10:00:00Z",
+        "authority": "display_only",
+        "summary": {},
+        "rows": [
+            "this is not a dict",  # non-dict entry — must be skipped
+            {
+                "clock_id": "test-clock-1",
+                "source_system": "oracle",
+                "owner_program": "oracle-rotation",
+                "clock_type": "result",
+                "due_at": "2026-07-10",
+                "state": "due",
+                "readiness": {"blocking_reason": None},
+                "regenerate_cmd": None,
+                "acknowledged": False,
+                "packet": None,
+            },
+        ],
+        "caveats": [],
+    })
+    old = _patch_ec_path(neural_web, tmp_repo)
+    try:
+        ec = neural_web._section_evidence_clock()
+    finally:
+        _restore_ec_path(neural_web, old)
+
+    # Must not raise; the string entry is skipped
+    assert ec.get("available") is True or ec.get("error") == "parse_error", (
+        f"Expected available=True or parse_error, got: {ec}"
+    )
+    if ec.get("available"):
+        # Only the valid dict row should be in queue
+        queue_ids = [r["clock_id"] for r in ec["queue"]]
+        assert "test-clock-1" in queue_ids, f"Valid row not in queue: {queue_ids}"
+
+
+def test_ec_section_readiness_as_list_no_crash(tmp_repo):
+    """readiness is a list (type drift) → blocking_reason=None; no AttributeError."""
+    from admin import neural_web
+
+    _write_ec_raw_admin(tmp_repo, {
+        "schema": "neuralweb.evidence_clock.v1",
+        "as_of": "2026-07-06",
+        "generated_utc": "2026-07-06T10:00:00Z",
+        "authority": "display_only",
+        "summary": {},
+        "rows": [
+            {
+                "clock_id": "test-clock-readiness-drift",
+                "source_system": "oracle",
+                "owner_program": "oracle-rotation",
+                "clock_type": "result",
+                "due_at": "2026-07-10",
+                "state": "blocked",
+                "readiness": ["list", "not", "a", "dict"],  # type-drifted
+                "regenerate_cmd": None,
+                "acknowledged": False,
+                "packet": None,
+            },
+        ],
+        "caveats": [],
+    })
+    old = _patch_ec_path(neural_web, tmp_repo)
+    try:
+        ec = neural_web._section_evidence_clock()
+    finally:
+        _restore_ec_path(neural_web, old)
+
+    assert ec.get("available") is True or ec.get("error") == "parse_error", (
+        f"Expected available=True or parse_error, got: {ec}"
+    )
+    if ec.get("available"):
+        queue = ec["queue"]
+        assert len(queue) == 1
+        # blocking_reason must be None (not a crash), since readiness was not a dict
+        assert queue[0]["blocking_reason"] is None, (
+            f"blocking_reason should be None when readiness is not a dict: {queue[0]}"
+        )
+
+
 if __name__ == "__main__":
     import pytest as _pytest
     _pytest.main([__file__, "-v"])

@@ -1271,7 +1271,7 @@ function nwSectionEvidenceClock(ec) {
   const allStates = ["overdue","due","human_review","missing","stale","blocked","not_ready","promotion_eligible","accruing"];
   let chips = allStates
     .filter(s => (by[s] || 0) > 0)
-    .map(s => `<span class="statpill ${STATE_CLS[s] || 's-muted'}">${by[s]} ${esc(s.replace(/_/g," "))}</span>`)
+    .map(s => `<span class="statpill ${STATE_CLS[s] || 's-muted'}">${esc(String(by[s] ?? 0))} ${esc(s.replace(/_/g," "))}</span>`)
     .join(" ");
 
   let html = `<div class="card">

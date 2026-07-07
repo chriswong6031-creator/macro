@@ -579,27 +579,57 @@ def _build_evidence_clock(root: Path) -> dict:
     if raw.get("schema") != "neuralweb.evidence_clock.v1":
         return {"available": False}
 
-    summary = raw.get("summary") or {}
-    by_state = summary.get("by_state") or {}
+    # Type-guard summary: artifact may deliver a list or other non-dict (fix R2a)
+    summary_raw = raw.get("summary")
+    summary: dict = summary_raw if isinstance(summary_raw, dict) else {}
+
+    # Type-guard by_state: must be a dict keyed by state strings (fix R2b)
+    by_state_raw = summary.get("by_state")
+    by_state: dict = by_state_raw if isinstance(by_state_raw, dict) else {}
+
+    # Coerce every count value to int to guard against string artifacts (fix R2c)
+    _STATE_KEYS = (
+        "overdue", "due", "human_review", "missing", "stale",
+        "blocked", "not_ready", "promotion_eligible", "accruing",
+    )
+    counts: dict = {}
+    for _k in _STATE_KEYS:
+        _v = by_state.get(_k, 0)
+        counts[_k] = _v if isinstance(_v, int) else 0
+
+    n_ack_raw = summary.get("n_acknowledged")
+    n_ack: int = n_ack_raw if isinstance(n_ack_raw, int) else 0
+    counts["n_acknowledged"] = n_ack
+
+    # top_due: safe only when clock_id is a short public string (already in experiments.json)
     top_due_raw = summary.get("top_due")
     top_due = None
-    if isinstance(top_due_raw, dict) and top_due_raw.get("clock_id"):
-        top_due = {
-            "clock_id": top_due_raw.get("clock_id"),
-            "due_at": top_due_raw.get("due_at"),
-        }
+    if isinstance(top_due_raw, dict):
+        _cid = top_due_raw.get("clock_id")
+        if isinstance(_cid, str) and 0 < len(_cid) <= 120:
+            top_due = {
+                "clock_id": _cid,
+                "due_at": top_due_raw.get("due_at"),
+            }
 
-    counts = dict(by_state)
-    n_ack = summary.get("n_acknowledged")
-    if n_ack is not None:
-        counts["n_acknowledged"] = n_ack
+    # Reconstruct morning_line locally — never pass artifact prose through to the
+    # public site surface (fix R2, public-leak guard).
+    _parts = []
+    for _s in ("overdue", "due", "human_review", "missing", "stale", "blocked",
+               "not_ready", "promotion_eligible", "accruing"):
+        _n = counts.get(_s, 0)
+        if _n > 0:
+            _parts.append(f"{_n} {_s.replace('_', ' ')}")
+    morning_line = (", ".join(_parts) + "." if _parts else "0 items.") + (
+        f" Top due: {top_due['clock_id']}." if top_due else ""
+    )
 
     return {
         "available": True,
         "as_of": raw.get("as_of"),
         "counts": counts,
         "top_due": top_due,
-        "morning_line": summary.get("morning_line") or "",
+        "morning_line": morning_line,
     }
 
 
