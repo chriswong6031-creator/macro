@@ -2451,7 +2451,9 @@ notify:
   telegram:
     enabled: true                 # needs TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID secrets
   discord:
-    enabled: false                # needs DISCORD_WEBHOOK_URL secret
+    enabled: true                 # DISCORD_WEBHOOK_URL, or falls back to DISCORD_WEBHOOK_WATCHLIST
+                                   # (the one webhook that IS configured) so ops/heartbeat alerts
+                                   # actually deliver. send_discord no-ops when neither is present.
   # ping the telegram/discord channel when a tracked EXPERIMENT's results become ready
   # (a forward track-record's verdict advances, or a come-back date arrives) so you don't
   # have to watch the admin Experiments tab. Fires once per experiment, on transition only.

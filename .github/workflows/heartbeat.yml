@@ -31,4 +31,8 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          # fallback transport for _notify() — the Watchlist webhook is the one channel that
+          # is actually provisioned, so heartbeat FAILs reach a human (send_discord prefers
+          # DISCORD_WEBHOOK_URL when present, else uses this).
+          DISCORD_WEBHOOK_WATCHLIST: ${{ secrets.DISCORD_WEBHOOK_WATCHLIST }}
         run: python -m scripts.healthcheck
