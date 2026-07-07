@@ -261,6 +261,13 @@ def all_adapters() -> dict:
         # (the queue_buildout leg). Keyless; emp.lbl.gov is Cloudflare-gated so a
         # committed seed JSON keeps the engine live when network fetches fail.
         ("lbnl_queue", "collectors.lbnl_queue", "LbnlQueueAdapter"),
+        # ---- Day-3 SLF consolidation adapters (2026-07-07) ----
+        # w4_multistate_gaming_tape (SLF-B1): NY/NJ/PA/NV state gaming revenue collectors
+        # -> data/gaming_tape/; DATA-BLOCKED without network; adapters degrade gracefully.
+        ("gaming_ny", "collectors.gaming_ny", "NYGamingAdapter"),
+        ("gaming_nj", "collectors.gaming_nj", "NJGamingAdapter"),
+        ("gaming_pgcb", "collectors.gaming_pgcb", "PGCBGamingAdapter"),
+        ("gaming_nv", "collectors.gaming_nv", "NVGamingAdapter"),
     ]
     for key, mod, cls in specs:
         try:
@@ -863,6 +870,43 @@ def main() -> int:
             log.info("nyfed_pd: Thursday refresh complete")
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.warning("nyfed_pd step failed: %s", e)
+
+    # ---- Day-3 SLF consolidation standalone collectors (2026-07-07) ----
+
+    # w2104_cmdi_conditioning (SLF-A4): NY Fed CMDI weekly -> data/nyfed_cmdi/
+    # Idempotent; fetches the interactive-data Excel; parses Market/IG/HY sub-indices.
+    # Recommended: weekly (Friday after NY Fed update). Standalone function, not Adapter.
+    try:
+        from scripts.collect_nyfed_cmdi import collect_nyfed_cmdi as _collect_cmdi
+        _collect_cmdi()
+        log.info("nyfed_cmdi: refresh complete")
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("nyfed_cmdi step failed: %s", e)
+
+    # w2051_housing_hf (SLF-A7): Redfin high-frequency national + metro housing data
+    # -> data/redfin_hf/; ZORI (Zillow observed rent index) -> data/zori/
+    # Standalone scripts; idempotent; degrade gracefully if upstream unavailable.
+    try:
+        from scripts.collect_redfin_hf import run as _collect_redfin_hf
+        _collect_redfin_hf()
+        log.info("redfin_hf: refresh complete")
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("redfin_hf step failed: %s", e)
+    try:
+        from scripts.collect_zori import run as _collect_zori
+        _collect_zori()
+        log.info("zori: refresh complete")
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("zori step failed: %s", e)
+
+    # d2_cn_holder_sale_calendar (SLF-B3): Eastmoney 减持 plan execution windows
+    # -> data/cn_holder_sales/; china-altdata section; ~10-15 min full backfill, ~1 min incremental.
+    try:
+        from collectors.cn_holder_sale_calendar import collect as _cn_holder_collect
+        _cn_holder_collect()
+        log.info("cn_holder_sale_calendar: refresh complete")
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("cn_holder_sale_calendar step failed: %s", e)
 
     return 0 if ok > 0 else 1
 
