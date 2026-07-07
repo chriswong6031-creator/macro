@@ -677,7 +677,7 @@
       "src": "species:T1-T4@1.0"
     }
   ],
-  "generated_utc": "2026-07-07T03:12:48.280743+00:00",
+  "generated_utc": "2026-07-07T03:17:39.803351+00:00",
   "is_context_only": true,
   "notes": "Crosswalk only; local systems remain authoritative. No invented links; unknowns stay null.",
   "possible_duplicates": [
@@ -1822,7 +1822,7 @@
       "source_prs": [],
       "species_id": "S11",
       "trial_count": 2,
-      "validation_status": "phase0",
+      "validation_status": "falsified",
       "version": "1.0"
     },
     "species:S12@1.0": {
@@ -2664,7 +2664,7 @@
       "present": true
     },
     "data/trial_ledger.jsonl": {
-      "n": 975,
+      "n": 976,
       "present": true
     },
     "site/factordata/reflexivity_overlay.json": {
@@ -3138,6 +3138,12 @@
     "rf.cycle_pattern.tr_v0": {
       "first_ts": "2026-07-07T00:27:45.479117+00:00",
       "last_ts": "2026-07-07T00:27:45.479117+00:00",
+      "n_config_hashes": 1,
+      "n_trials": 1
+    },
+    "s11_buyback_floor": {
+      "first_ts": "2026-07-07T01:21:46.625099+00:00",
+      "last_ts": "2026-07-07T01:21:46.625099+00:00",
       "n_config_hashes": 1,
       "n_trials": 1
     },
