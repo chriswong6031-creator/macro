@@ -725,6 +725,96 @@ def _section_daily_brief() -> dict:
     }
 
 
+# ---- Section G: Evidence Clock (EC-R5) --------------------------------------
+
+_NW_EVIDENCE_CLOCK_JSON = _DATA_NW / "evidence_clock.json"
+
+# States shown in the queue (operator-facing); accruing/promotion_eligible skipped
+_EC_QUEUE_STATES = frozenset({
+    "overdue", "due", "human_review", "missing", "stale", "blocked", "not_ready"
+})
+
+
+def _section_evidence_clock() -> dict:
+    """Global Evidence Clock queue — operator HQ view.
+
+    Reads data/neuralweb/evidence_clock.json (committed artifact only).
+    No engine imports, no subprocess. Fail-open: missing/corrupt → available=False.
+
+    Returns
+    -------
+    dict with:
+        available    — bool
+        as_of        — str | None
+        generated_utc — str | None
+        summary      — full summary dict (when available)
+        queue        — top 25 rows in operator states, each trimmed
+        n_accruing   — int count of accruing/promotion_eligible rows
+        caveats      — passthrough from artifact
+    """
+    raw = _read_json(_NW_EVIDENCE_CLOCK_JSON)
+    if raw is None or raw.get("schema") != "neuralweb.evidence_clock.v1":
+        return {
+            "available": False,
+            "note": "data/neuralweb/evidence_clock.json not yet written (PR1 not yet merged or build failed)",
+        }
+
+    try:
+        # Type-guard summary (fix R3a)
+        summary_raw = raw.get("summary")
+        summary: dict = summary_raw if isinstance(summary_raw, dict) else {}
+
+        # Type-guard rows: must be a list (fix R3b)
+        all_rows_raw = raw.get("rows")
+        all_rows: list = all_rows_raw if isinstance(all_rows_raw, list) else []
+
+        # Split rows: operator queue vs. accruing/promotion_eligible
+        # Skip non-dict entries entirely (fix R3b)
+        queue_rows = []
+        n_accruing = 0
+        for row in all_rows:
+            if not isinstance(row, dict):
+                continue
+            state = row.get("state", "")
+            if state in _EC_QUEUE_STATES:
+                queue_rows.append(row)
+            else:
+                n_accruing += 1
+
+        # Trim each queue row to operator-safe fields only
+        def _trim_row(r: dict) -> dict:
+            # Type-guard readiness: must be a dict (fix R3c)
+            readiness = r.get("readiness")
+            readiness = readiness if isinstance(readiness, dict) else {}
+            return {
+                "clock_id": r.get("clock_id"),
+                "source_system": r.get("source_system"),
+                "owner_program": r.get("owner_program"),
+                "clock_type": r.get("clock_type"),
+                "due_at": r.get("due_at"),
+                "state": r.get("state"),
+                "blocking_reason": readiness.get("blocking_reason"),
+                "regenerate_cmd": r.get("regenerate_cmd"),
+                "acknowledged": r.get("acknowledged", False),
+                "packet": r.get("packet"),
+            }
+
+        return {
+            "available": True,
+            "as_of": raw.get("as_of"),
+            "generated_utc": raw.get("generated_utc"),
+            "summary": summary,
+            "queue": [_trim_row(r) for r in queue_rows[:25]],
+            "n_accruing": n_accruing,
+            "caveats": raw.get("caveats") or [],
+        }
+
+    except Exception:  # noqa: BLE001
+        # Belt-and-braces: artifact produced by a sibling PR may drift;
+        # never let a parse error darken the whole /api/neural_web panel
+        return {"available": False, "error": "parse_error"}
+
+
 # ---- Lobe Observatory helpers -----------------------------------------------
 
 # Group definitions: (key, label, hue, id-prefix-or-owner-key-list)
@@ -1382,6 +1472,7 @@ def panel() -> dict:
         governance         — Section D
         factor_intelligence — Section E (§D PR-4, RUL-NW7/NW8)
         daily_brief        — Section F (PR-D)
+        evidence_clock     — Section G (EC-R5)
     """
     return {
         "ok": True,
@@ -1391,4 +1482,5 @@ def panel() -> dict:
         "governance": _section_governance(),
         "factor_intelligence": _section_factor_intelligence(),
         "daily_brief": _section_daily_brief(),
+        "evidence_clock": _section_evidence_clock(),
     }

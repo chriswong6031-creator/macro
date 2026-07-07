@@ -698,3 +698,357 @@ def test_brief_schema_fields(tmp_path):
     assert brief["phase"] in ("engine", "final")
     assert isinstance(brief["caveats"], list)
     assert len(brief["caveats"]) > 0
+
+
+# ---------------------------------------------------------------------------
+# Evidence Clock section tests (EC-R5)
+# ---------------------------------------------------------------------------
+
+_FIXTURE_PATH = Path(__file__).resolve().parent / "fixtures" / "evidence_clock_sample.json"
+
+
+def _write_evidence_clock(tmp_path: Path, fixture_path: Path | None = None) -> None:
+    """Write evidence_clock.json into the tmp_path data/ tree."""
+    dest = tmp_path / "data" / "neuralweb" / "evidence_clock.json"
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    if fixture_path is None:
+        fixture_path = _FIXTURE_PATH
+    dest.write_bytes(fixture_path.read_bytes())
+
+
+def test_evidence_clock_section_present_with_artifact(tmp_path):
+    """With evidence_clock.json present, section is available with counts + morning_line."""
+    _make_minimal_root(tmp_path)
+    _make_health(tmp_path)
+    _make_world_state(tmp_path)
+    _make_cortex_memo(tmp_path)
+    _make_graph(tmp_path)
+    _make_mastermind_context(tmp_path)
+    _write_evidence_clock(tmp_path)
+
+    brief = build(root=tmp_path)
+
+    ec = brief.get("evidence_clock")
+    assert ec is not None, "evidence_clock key missing from brief"
+    assert ec["available"] is True
+    assert "counts" in ec
+    assert "morning_line" in ec
+    assert isinstance(ec["counts"], dict)
+    # Counts should have state keys
+    for state_key in ("overdue", "due", "accruing"):
+        assert state_key in ec["counts"], f"counts missing state key: {state_key}"
+    # morning_line is non-empty
+    assert ec["morning_line"], "morning_line should be non-empty"
+    # as_of is present
+    assert ec.get("as_of") == "2026-07-06"
+    # top_due present (fixture has a due row)
+    assert ec["top_due"] is not None
+    assert "clock_id" in ec["top_due"]
+
+
+def test_evidence_clock_section_absent_artifact(tmp_path):
+    """Without evidence_clock.json, section is available=False and gap is noted."""
+    _make_minimal_root(tmp_path)
+    _make_health(tmp_path)
+    _make_world_state(tmp_path)
+    _make_cortex_memo(tmp_path)
+    _make_graph(tmp_path)
+    _make_mastermind_context(tmp_path)
+    # Do NOT write evidence_clock.json
+
+    brief = build(root=tmp_path)
+
+    ec = brief.get("evidence_clock")
+    assert ec is not None, "evidence_clock key missing even when artifact absent"
+    assert ec["available"] is False
+
+    # Gap should be recorded
+    gaps = brief.get("_gaps", [])
+    assert any("evidence_clock" in g for g in gaps), (
+        f"Expected evidence_clock gap note, got: {gaps}"
+    )
+
+
+def test_evidence_clock_overdue_p3_attention(tmp_path):
+    """When overdue > 0, operator_attention gets a P3 evidence_clock item."""
+    _make_minimal_root(tmp_path)
+    _make_health(tmp_path)
+    _make_world_state(tmp_path)
+    _make_cortex_memo(tmp_path)
+    _make_graph(tmp_path)
+    _make_mastermind_context(tmp_path)
+    _write_evidence_clock(tmp_path)  # fixture has 1 overdue row
+
+    brief = build(root=tmp_path)
+
+    p3_items = [a for a in brief["operator_attention"] if a["priority"] == 3]
+    ec_items = [a for a in p3_items if a.get("area") == "evidence_clock"]
+    assert ec_items, (
+        "Expected a P3 evidence_clock operator_attention item when overdue > 0; "
+        f"got p3 items: {p3_items}"
+    )
+    assert "overdue" in ec_items[0]["summary"].lower()
+    assert "Observatory" in ec_items[0]["summary"]
+
+
+def test_evidence_clock_no_p3_when_no_overdue(tmp_path):
+    """When overdue == 0, no P3 evidence_clock attention item is added."""
+    _make_minimal_root(tmp_path)
+    _make_health(tmp_path)
+    _make_world_state(tmp_path)
+    _make_cortex_memo(tmp_path)
+    _make_graph(tmp_path)
+    _make_mastermind_context(tmp_path)
+
+    # Write a clock with zero overdue
+    import json as _json
+    no_overdue = {
+        "schema": "neuralweb.evidence_clock.v1",
+        "as_of": "2026-07-06",
+        "generated_utc": "2026-07-06T10:00:00Z",
+        "authority": "display_only",
+        "summary": {
+            "n_rows": 1,
+            "by_state": {
+                "overdue": 0, "due": 0, "human_review": 0, "missing": 0,
+                "stale": 0, "blocked": 0, "not_ready": 0,
+                "promotion_eligible": 0, "accruing": 1,
+            },
+            "n_acknowledged": 0,
+            "top_due": None,
+            "morning_line": "1 accruing.",
+        },
+        "rows": [],
+        "gaps": [],
+        "caveats": [],
+    }
+    dest = tmp_path / "data" / "neuralweb" / "evidence_clock.json"
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    dest.write_text(_json.dumps(no_overdue), encoding="utf-8")
+
+    brief = build(root=tmp_path)
+
+    ec_p3_items = [
+        a for a in brief["operator_attention"]
+        if a.get("priority") == 3 and a.get("area") == "evidence_clock"
+    ]
+    assert not ec_p3_items, (
+        f"Expected no P3 evidence_clock item when overdue=0, got: {ec_p3_items}"
+    )
+
+
+def test_evidence_clock_counts_only_no_internal_prose(tmp_path):
+    """Evidence clock section must not contain blocking_reason or readiness detail."""
+    _make_minimal_root(tmp_path)
+    _make_health(tmp_path)
+    _make_world_state(tmp_path)
+    _make_cortex_memo(tmp_path)
+    _make_graph(tmp_path)
+    _make_mastermind_context(tmp_path)
+    _write_evidence_clock(tmp_path)
+
+    brief = build(root=tmp_path)
+    ec = brief.get("evidence_clock", {})
+
+    # The public section must not contain row-level detail
+    assert "rows" not in ec, "evidence_clock section must not contain row-level rows"
+    assert "queue" not in ec, "evidence_clock section must not contain queue (internal)"
+
+    # Verify no blocking_reason leaked into section strings
+    all_strings = _collect_all_strings(ec)
+    for s in all_strings:
+        assert "blocking_reason" not in s, (
+            f"blocking_reason key leaked into evidence_clock section: {s!r}"
+        )
+        assert "not refreshed since" not in s, (
+            f"internal prose leaked into evidence_clock section: {s!r}"
+        )
+
+
+def test_evidence_clock_malformed_schema(tmp_path):
+    """evidence_clock.json with wrong schema → available=False, no crash."""
+    _make_minimal_root(tmp_path)
+    _make_health(tmp_path)
+    _make_world_state(tmp_path)
+    _make_cortex_memo(tmp_path)
+    _make_graph(tmp_path)
+    _make_mastermind_context(tmp_path)
+
+    import json as _json
+    dest = tmp_path / "data" / "neuralweb" / "evidence_clock.json"
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    dest.write_text(_json.dumps({"schema": "wrong.v99", "garbage": True}), encoding="utf-8")
+
+    brief = build(root=tmp_path)
+
+    ec = brief.get("evidence_clock", {})
+    assert ec["available"] is False
+
+
+# ---------------------------------------------------------------------------
+# R2 type-drift / hostile-artifact tests (opus review)
+# ---------------------------------------------------------------------------
+
+def _write_ec_raw(tmp_path: Path, payload: dict) -> None:
+    """Write a raw evidence_clock payload (schema pre-set) to the fixture tree."""
+    dest = tmp_path / "data" / "neuralweb" / "evidence_clock.json"
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    dest.write_text(json.dumps(payload), encoding="utf-8")
+
+
+def test_evidence_clock_summary_as_list_no_crash(tmp_path):
+    """summary is a list (type drift) → build() must not raise; available=True counts default 0."""
+    _make_minimal_root(tmp_path)
+    _make_health(tmp_path)
+    _make_world_state(tmp_path)
+    _make_cortex_memo(tmp_path)
+    _make_graph(tmp_path)
+    _make_mastermind_context(tmp_path)
+
+    _write_ec_raw(tmp_path, {
+        "schema": "neuralweb.evidence_clock.v1",
+        "as_of": "2026-07-06",
+        "generated_utc": "2026-07-06T10:00:00Z",
+        "authority": "display_only",
+        "summary": ["should", "be", "a", "dict"],  # type-drifted
+        "rows": [],
+        "caveats": [],
+    })
+
+    brief = build(root=tmp_path)
+    assert brief["schema"] == "neuralweb.daily_brief.v1"
+    ec = brief.get("evidence_clock", {})
+    assert ec["available"] is True
+    # All counts should default to 0
+    for k in ("overdue", "due", "accruing"):
+        assert ec["counts"][k] == 0, f"count for {k!r} should be 0 when summary drifted"
+
+
+def test_evidence_clock_by_state_as_list_no_crash(tmp_path):
+    """by_state is a list (type drift) → build() must not raise; counts default 0."""
+    _make_minimal_root(tmp_path)
+    _make_health(tmp_path)
+    _make_world_state(tmp_path)
+    _make_cortex_memo(tmp_path)
+    _make_graph(tmp_path)
+    _make_mastermind_context(tmp_path)
+
+    _write_ec_raw(tmp_path, {
+        "schema": "neuralweb.evidence_clock.v1",
+        "as_of": "2026-07-06",
+        "generated_utc": "2026-07-06T10:00:00Z",
+        "authority": "display_only",
+        "summary": {
+            "n_rows": 0,
+            "by_state": ["overdue", "due"],  # type-drifted: should be a dict
+            "n_acknowledged": 0,
+            "top_due": None,
+            "morning_line": "artifact prose",
+        },
+        "rows": [],
+        "caveats": [],
+    })
+
+    brief = build(root=tmp_path)
+    ec = brief.get("evidence_clock", {})
+    assert ec["available"] is True
+    assert isinstance(ec["counts"], dict)
+    for k in ("overdue", "due", "accruing"):
+        assert isinstance(ec["counts"][k], int)
+        assert ec["counts"][k] == 0
+
+
+def test_evidence_clock_overdue_as_string_no_crash(tmp_path):
+    """overdue count is a string (type drift) → coerced to 0; no TypeError on > 0."""
+    _make_minimal_root(tmp_path)
+    _make_health(tmp_path)
+    _make_world_state(tmp_path)
+    _make_cortex_memo(tmp_path)
+    _make_graph(tmp_path)
+    _make_mastermind_context(tmp_path)
+
+    _write_ec_raw(tmp_path, {
+        "schema": "neuralweb.evidence_clock.v1",
+        "as_of": "2026-07-06",
+        "generated_utc": "2026-07-06T10:00:00Z",
+        "authority": "display_only",
+        "summary": {
+            "n_rows": 1,
+            "by_state": {
+                "overdue": "one",  # type-drifted: string instead of int
+                "due": 0,
+                "human_review": 0,
+                "missing": 0,
+                "stale": 0,
+                "blocked": 0,
+                "not_ready": 0,
+                "promotion_eligible": 0,
+                "accruing": 0,
+            },
+            "n_acknowledged": 0,
+            "top_due": None,
+            "morning_line": "drift prose",
+        },
+        "rows": [],
+        "caveats": [],
+    })
+
+    # Must not raise TypeError on n_overdue > 0 comparison in P3 block
+    brief = build(root=tmp_path)
+    ec = brief.get("evidence_clock", {})
+    assert ec["available"] is True
+    # overdue coerced to 0 (string not int)
+    assert ec["counts"]["overdue"] == 0
+
+
+def test_evidence_clock_morning_line_no_artifact_passthrough(tmp_path):
+    """Hostile artifact morning_line containing internal path/thesis string must
+    NOT appear anywhere in the built section (public-leak guard R2)."""
+    _make_minimal_root(tmp_path)
+    _make_health(tmp_path)
+    _make_world_state(tmp_path)
+    _make_cortex_memo(tmp_path)
+    _make_graph(tmp_path)
+    _make_mastermind_context(tmp_path)
+
+    HOSTILE_PROSE = "INTERNAL: data/neuralweb/secret_thesis — do not publish"
+    _write_ec_raw(tmp_path, {
+        "schema": "neuralweb.evidence_clock.v1",
+        "as_of": "2026-07-06",
+        "generated_utc": "2026-07-06T10:00:00Z",
+        "authority": "display_only",
+        "summary": {
+            "n_rows": 2,
+            "by_state": {
+                "overdue": 1,
+                "due": 1,
+                "human_review": 0,
+                "missing": 0,
+                "stale": 0,
+                "blocked": 0,
+                "not_ready": 0,
+                "promotion_eligible": 0,
+                "accruing": 0,
+            },
+            "n_acknowledged": 0,
+            "top_due": None,
+            "morning_line": HOSTILE_PROSE,  # hostile: internal path/thesis
+        },
+        "rows": [],
+        "caveats": [],
+    })
+
+    brief = build(root=tmp_path)
+    ec = brief.get("evidence_clock", {})
+    assert ec["available"] is True
+
+    # The hostile prose must NOT appear anywhere in the built section
+    all_strings = _collect_all_strings(ec)
+    for s in all_strings:
+        assert HOSTILE_PROSE not in s, (
+            f"Artifact morning_line passthrough detected — hostile prose found in section: {s!r}"
+        )
+    # Confirm morning_line is local reconstruction (counts-based)
+    assert "overdue" in ec["morning_line"] or "due" in ec["morning_line"], (
+        f"morning_line should be reconstructed from counts, got: {ec['morning_line']!r}"
+    )
