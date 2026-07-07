@@ -6698,3 +6698,70 @@ artifacts:
       composites vs QQQ benchmark. Union-semantics overlap across groups is intentional
       (documented in membership.json notes). Producer: scripts/build_nasdaq_internals.py
       calling engine/nasdaq_internals.build(). asof is full ISO timestamp (UTC).
+
+  # --- watchlist sentinel (B6) ---
+  watchlist-alerts-jsonl:
+    path: data/alerts/watchlist_alerts.jsonl
+    format: jsonl
+    producer: scripts/run_watchlist_sentinel.py
+    known_extra_writers: []
+    owner_program: codex-docket-b6
+    cadence: daily-engine
+    storage: git
+    asof_field: ts
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/alert_triage.py
+      - engine/watchlist_alerts.py
+    notes: >
+      B6 Watchlist buy-zone sentinel alert JSONL.  Append-only; one JSON record
+      per buy-zone-enter event.  Read by engine/alert_triage.py via
+      engine/watchlist_alerts.load_events().  No scoring surface; display-only.
+
+  watchlist-sentinel-states:
+    path: data/alerts/watchlist_sentinel_states.json
+    format: json
+    producer: scripts/run_watchlist_sentinel.py
+    known_extra_writers: []
+    owner_program: codex-docket-b6
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/run_watchlist_sentinel.py
+    notes: >
+      B6: per-ticker state snapshot from the previous nightly run.  Enables
+      enter-detection (diff today vs yesterday).  Same-day idempotent — the
+      script skips writing when as_of already matches today.
+
+  watchlist-sentinel-cooldown:
+    path: data/alerts/watchlist_sentinel_cooldown.json
+    format: json
+    producer: scripts/run_watchlist_sentinel.py
+    known_extra_writers: []
+    owner_program: codex-docket-b6
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/run_watchlist_sentinel.py
+    notes: >
+      B6: per-ticker cooldown map (5-session re-alert suppressor).  Advanced
+      nightly by run_watchlist_sentinel.py.  Same-day idempotent.
