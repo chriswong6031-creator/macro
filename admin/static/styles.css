@@ -261,7 +261,7 @@ code, .mono { font-family: var(--mono); font-size: 12px; }
 .content {
   flex: 1;
   padding: 22px 26px 72px;
-  max-width: 1240px;
+  max-width: 1600px;   /* left-aligned (no auto margin); more usable width */
   width: 100%;
   animation: fadeInUp var(--dur) var(--ease);
 }
@@ -367,9 +367,9 @@ nav.tabs button:hover { color: var(--text); }
 nav.tabs button.active { color: var(--text); border-bottom-color: var(--accent); }
 
 main {
-  padding: 18px 20px 60px;
-  max-width: 1240px;
-  margin: 0 auto;
+  padding: 0;
+  max-width: none;   /* fill the shell column; content caps itself, left-aligned */
+  width: 100%;
 }
 
 /* --------------------------------------------------------------------------
@@ -494,6 +494,38 @@ main {
    9. TABLES
    -------------------------------------------------------------------------- */
 table { width: 100%; border-collapse: collapse; font-size: 13px; }
+
+/* Wide tables scroll horizontally inside their own container (the shell column
+   clips overflow, so tables are wrapped in .table-wrap by app.js). */
+.table-wrap {
+  overflow-x: auto;
+  overflow-y: hidden;
+  max-width: 100%;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+.table-wrap::-webkit-scrollbar { height: 9px; }
+.table-wrap::-webkit-scrollbar-thumb { background: var(--border); border-radius: 5px; }
+.table-wrap::-webkit-scrollbar-thumb:hover { background: var(--faint); }
+.table-wrap::-webkit-scrollbar-track { background: transparent; }
+
+/* Experiments table: fixed layout with narrow Status/How-often columns that wrap
+   to multiple rows; action buttons wrap instead of forcing the row wide. Fits a
+   normal desktop; scrolls (via .table-wrap) below 1080px. */
+.exp-table { table-layout: fixed; min-width: 1080px; }
+.exp-table th, .exp-table td { vertical-align: top; white-space: normal; }
+.exp-table th:nth-child(1), .exp-table td:nth-child(1) { width: 27%; }              /* Experiment */
+.exp-table th:nth-child(2), .exp-table td:nth-child(2) { width: 96px; }             /* Type */
+.exp-table th:nth-child(3), .exp-table td:nth-child(3) { width: 92px; }             /* Status */
+.exp-table th:nth-child(4), .exp-table td:nth-child(4) { width: 66px; }             /* How often */
+.exp-table th:nth-child(5), .exp-table td:nth-child(5) { width: 86px; }             /* Come back */
+.exp-table td.exp-actions { width: 150px; }
+/* keep short single-word cells (status pill, cadence) from breaking mid-word */
+.exp-table td:nth-child(3) .statpill { white-space: nowrap; }
+/* only long free-text/mono columns may break anywhere so they don't overflow */
+.exp-table td:nth-child(1), .exp-table td:nth-child(6) { overflow-wrap: anywhere; }
+.exp-table .mono { overflow-wrap: anywhere; }
+.exp-table .exp-act-btn { padding: 4px 8px; margin: 0 5px 5px 0; font-size: 12px; }
 
 th, td {
   text-align: left;
