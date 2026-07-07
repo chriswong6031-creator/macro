@@ -1686,6 +1686,7 @@ def _positioning(t, f, short, insider, short_flow=None) -> dict | None:
         block["short_flow"] = {
             "short_ratio_pct": _r((short_flow.get("short_ratio") or 0) * 100, 1),
             "trend_pp": _r(short_flow.get("trend_pp"), 2),
+            "ratio_z": _r(short_flow.get("ratio_z"), 2),
             "n_days": short_flow.get("n_days"),
             "asof": short_flow.get("asof"),
         }
