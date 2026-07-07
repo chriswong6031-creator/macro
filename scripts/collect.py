@@ -60,6 +60,7 @@ _CONCURRENT_HOSTS: dict[str, str] = {
     "bis": "bis", "uncertainty_indices": "uncertainty",
     "federal_register": "federalregister",  # federalregister.gov — distinct host, runs in parallel
     "cleveland_nowcast": "clevelandfed",    # clevelandfed.org — distinct host, runs in parallel (MRI-PR-A)
+    "kalshi_releases": "kalshi",           # api.elections.kalshi.com — keyless, distinct host (MRI PR-K)
 }
 
 
@@ -133,6 +134,7 @@ def all_adapters() -> dict:
         ("openfigi", "collectors.openfigi", "OpenFigiAdapter"),    # keyless CUSIP->ticker master -> unhides foreign/ADR 13F lines (engine/smart_money.full_cusip_map)
         ("ofr", "collectors.ofr", "OfrAdapter"),                   # OFR short-term funding monitor (repo/SOFR plumbing)
         ("prediction_markets", "collectors.prediction_markets", "PredictionMarketsAdapter"),  # Polymarket macro-event odds
+        ("kalshi_releases", "collectors.kalshi_releases", "KalshiReleasesAdapter"),  # Kalshi CPI/NFP/claims bracket markets → implied distribution snapshots (MRI PR-K; keyless)
         ("usaspending", "collectors.usaspending", "UsaspendingAdapter"),  # federal contract obligations + ASSISTANCE grants/loans per curated ticker -> Divergence Radar + gov_grant convergence channel
         # Beyond-Quiver alt-data/divergence sources (keyless except grants_gov; all degrade gracefully)
         ("edgar_8k", "collectors.edgar_8k", "Edgar8KAdapter"),     # SEC 8-K material-event velocity (theme_event radar leg) + per-ticker material_8k convergence channel
