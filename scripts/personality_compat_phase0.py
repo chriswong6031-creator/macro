@@ -859,6 +859,7 @@ def cmd_register(args: argparse.Namespace, smoke: bool = False,
             CORPUS_REPLAY: replay_n,
         },
         "corpus_hash": corpus_hash,
+        "collapse_map": collapse_map,
         "collapsed_archetypes": collapsed_archetypes,
         "archetype_attachable_n_by_label": arch_counts,
         "cell_family": family_cells,
@@ -946,7 +947,21 @@ def cmd_run(args: argparse.Namespace, smoke: bool = False,
         tr_n = len(tr_fires)
         gf_n = len(gf_fires)
         replay_n = len(replay_fires)
-        current_hash = _corpora_hash(tr_n, gf_n, replay_n)
+        # The registered hash was computed WITH the collapse map (F7); the run
+        # side must hash with the SAME map or identical corpora mismatch.
+        # Prefer the stored map; older registrations reconstruct it
+        # deterministically from collapsed_archetypes + attachable-n keys
+        # (both are post-collapse label sets — the map is identity-over-
+        # collapsed with everything else folding to other_archetype).
+        reg_collapse_map = registration.get("collapse_map")
+        if reg_collapse_map is None:
+            collapsed_set = set(registration.get("collapsed_archetypes") or [])
+            reg_collapse_map = {
+                k: (k if k in collapsed_set else "other_archetype")
+                for k in (registration.get("archetype_attachable_n_by_label") or {})
+            }
+        current_hash = _corpora_hash(tr_n, gf_n, replay_n,
+                                     collapse_map=reg_collapse_map)
         registered_hash = registration.get("corpus_hash", "")
         if current_hash != registered_hash:
             log.error(

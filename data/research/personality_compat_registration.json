@@ -1,0 +1,196 @@
+{
+  "study": "stock_personality_compat_phase0",
+  "registered_at": "2026-07-07",
+  "fdr_family": "stock_personality_compat",
+  "fdr_q": 0.05,
+  "min_cell_n": 50,
+  "archetype_collapse_min_n": 400,
+  "primary_ruler": "clean15_126",
+  "alt_ruler": "clean8_21",
+  "inference": "two_way_cluster_bootstrap (ticker x quarter) \u2014 satisfies DT-R14 / #1841 time-confound law",
+  "corpus_sizes": {
+    "track_record": 26439,
+    "gate_fires": 38250,
+    "replay": 0
+  },
+  "corpus_hash": "98301ad2465d",
+  "collapsed_archetypes": [
+    "cyclical",
+    "deep_value",
+    "distressed",
+    "financial",
+    "high_beta_momentum",
+    "mixed",
+    "other_archetype",
+    "rate_sensitive",
+    "secular_growth",
+    "speculative_unprofitable"
+  ],
+  "archetype_attachable_n_by_label": {
+    "mixed": 7708,
+    "rate_sensitive": 3354,
+    "cyclical": 2856,
+    "speculative_unprofitable": 1930,
+    "financial": 1665,
+    "other_archetype": 1033,
+    "distressed": 993,
+    "high_beta_momentum": 697,
+    "deep_value": 562,
+    "secular_growth": 556
+  },
+  "cell_family": [
+    {
+      "axis": "chart_personality",
+      "label": "smooth_compounder_grind",
+      "primary": "P(STOPPED)",
+      "ruler": "clean15_126"
+    },
+    {
+      "axis": "chart_personality",
+      "label": "stair_step_leader",
+      "primary": "P(STOPPED)",
+      "ruler": "clean15_126"
+    },
+    {
+      "axis": "chart_personality",
+      "label": "volatile_momentum_vehicle",
+      "primary": "P(STOPPED)",
+      "ruler": "clean15_126"
+    },
+    {
+      "axis": "chart_personality",
+      "label": "mean_reversion_rubber_band",
+      "primary": "P(STOPPED)",
+      "ruler": "clean15_126"
+    },
+    {
+      "axis": "chart_personality",
+      "label": "basing_accumulator",
+      "primary": "P(STOPPED)",
+      "ruler": "clean15_126"
+    },
+    {
+      "axis": "chart_personality",
+      "label": "event_gapper",
+      "primary": "P(STOPPED)",
+      "ruler": "clean15_126"
+    },
+    {
+      "axis": "chart_personality",
+      "label": "failed_breakout_trap",
+      "primary": "P(STOPPED)",
+      "ruler": "clean15_126"
+    },
+    {
+      "axis": "chart_personality",
+      "label": "defensive_range_stock",
+      "primary": "P(STOPPED)",
+      "ruler": "clean15_126"
+    },
+    {
+      "axis": "chart_personality",
+      "label": "mixed_chart",
+      "primary": "P(STOPPED)",
+      "ruler": "clean15_126"
+    },
+    {
+      "axis": "microstructure",
+      "label": "tight_spread_absorber",
+      "primary": "P(STOPPED)",
+      "ruler": "clean15_126"
+    },
+    {
+      "axis": "microstructure",
+      "label": "wide_spread_impact",
+      "primary": "P(STOPPED)",
+      "ruler": "clean15_126"
+    },
+    {
+      "axis": "microstructure",
+      "label": "gap_discontinuity_risk",
+      "primary": "P(STOPPED)",
+      "ruler": "clean15_126"
+    },
+    {
+      "axis": "microstructure",
+      "label": "slow_mean_reversion_liquidity",
+      "primary": "P(STOPPED)",
+      "ruler": "clean15_126"
+    },
+    {
+      "axis": "microstructure",
+      "label": "mixed_microstructure",
+      "primary": "P(STOPPED)",
+      "ruler": "clean15_126"
+    },
+    {
+      "axis": "archetype",
+      "label": "cyclical",
+      "primary": "P(STOPPED)",
+      "ruler": "clean15_126"
+    },
+    {
+      "axis": "archetype",
+      "label": "deep_value",
+      "primary": "P(STOPPED)",
+      "ruler": "clean15_126"
+    },
+    {
+      "axis": "archetype",
+      "label": "distressed",
+      "primary": "P(STOPPED)",
+      "ruler": "clean15_126"
+    },
+    {
+      "axis": "archetype",
+      "label": "financial",
+      "primary": "P(STOPPED)",
+      "ruler": "clean15_126"
+    },
+    {
+      "axis": "archetype",
+      "label": "high_beta_momentum",
+      "primary": "P(STOPPED)",
+      "ruler": "clean15_126"
+    },
+    {
+      "axis": "archetype",
+      "label": "mixed",
+      "primary": "P(STOPPED)",
+      "ruler": "clean15_126"
+    },
+    {
+      "axis": "archetype",
+      "label": "other_archetype",
+      "primary": "P(STOPPED)",
+      "ruler": "clean15_126"
+    },
+    {
+      "axis": "archetype",
+      "label": "rate_sensitive",
+      "primary": "P(STOPPED)",
+      "ruler": "clean15_126"
+    },
+    {
+      "axis": "archetype",
+      "label": "secular_growth",
+      "primary": "P(STOPPED)",
+      "ruler": "clean15_126"
+    },
+    {
+      "axis": "archetype",
+      "label": "speculative_unprofitable",
+      "primary": "P(STOPPED)",
+      "ruler": "clean15_126"
+    }
+  ],
+  "n_cells": 24,
+  "n_corpora": 2,
+  "total_registered_hypotheses": 48,
+  "smoke": false,
+  "watermarks": [
+    "FY2009+ archetype PIT coverage only (R-SP12)",
+    "Survivorship-flagged: data/stocks deep corpus is 220 names (survivors only)",
+    "gap-features-unavailable: data/stocks has no open column"
+  ]
+}
