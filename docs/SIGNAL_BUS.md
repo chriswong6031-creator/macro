@@ -26,6 +26,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | intl-fix | 1 |
 | long-hold | 22 |
 | mastermind-feedback-contract | 2 |
+| momoedge | 6 |
 | nasdaq-internals | 1 |
 | neural-web | 41 |
 | next3 | 3 |
@@ -47,18 +48,18 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 116 |
+| display | 121 |
 | infrastructure | 68 |
 | scored | 4 |
-| shadow | 38 |
+| shadow | 39 |
 
 ### Artifacts by storage
 
 | storage | count |
 |---|---|
-| git | 217 |
+| git | 219 |
 | gitignored-local | 6 |
-| r2 | 3 |
+| r2 | 7 |
 
 ## Artifacts by owner_program
 
@@ -227,6 +228,17 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 |---|---|---|---|---|---|---|
 | site-mastermind-nw-feedback | `site/mastermind/nw_feedback.json` | json | on-demand | display | 1 | 0 |
 | mastermind-feedback-summary | `data/governance/mastermind_feedback_summary.json` | json | daily-engine | display | 0 | 0 |
+
+### momoedge
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| options-flow-chain-heat | `live_flow/chain_heat_current.json` | json | collect | display | 1 | 1 |
+| options-structure-gex-state | `options_structure/gex_state/<ROOT>.json` | json | daily-engine | display | 1 | 1 |
+| options-structure-matrix | `options_structure/matrix/<ROOT>.json` | json | daily-engine | display | 1 | 1 |
+| prophet-management-state | `prophet/state/<ID>.json` | json | daily-engine | display | 1 | 1 |
+| prophet-trade-plan | `prophet/trade_plan/<ID>.json` | json | on-demand | display | 1 | 1 |
+| options-structure-structural | `options_structure/structural/<ROOT>.json` | json | daily-engine | shadow | 1 | 0 |
 
 ### nasdaq-internals
 
