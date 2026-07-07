@@ -61,3 +61,17 @@ R1 outputs are **display-only**. The promotion path is:
 3. Full PREREG gauntlet (separate program, outside R1): episode-clustered bootstrap, BH-FDR q≤0.10, n≥300/side fires and n≥25 episode-clusters per arm, OOS split declared and opened once
 
 No R1 output may be interpreted as a promotion verdict. The word "validated" must not appear in any R1 report.
+
+---
+
+## Amendment R1-A1 (2026-07-07) — calendar-time control mandatory in the promotion gauntlet
+
+**Authority:** Ruling DT-R14 (research/DANNYTRADES_NW_ADJUDICATION_AND_MASTERPLAN_BY_FABLE.md §7) + research/TIME_CONFOUND_EXPOSURE_AUDIT.md §4, finding RR-1. Amended before any promotion prereg has been written against an R1 surface; the descriptive charter above is untouched — only the future gauntlet spec (item 3) changes.
+
+Item 3 of the promotion boundary is amended. Any promotion gauntlet derived from an R1 surface MUST include, in its **primary** inference:
+
+1. **A calendar-time control:** within-period (calendar-month) demeaning of outcomes, or month/time-block resampling in which all fires inside a drawn calendar block move together. Episode-clustered bootstrap over ticker×ISO-week `episode_id` alone is insufficient — the replay cohort is 100% 2021-07-06+ (regime-limited), and under a strict ±30d tape-time reading it collapses to ~41 effective calendar blocks; ticker-week clusters treat cross-sectional co-movement within a market week as independent draws (the DT-W1a anti-conservative structure).
+2. **A control design matched to the test type:** time-permutation nulls for change tests; within-period cross-sectional permutation for level-threshold tests (within-unit permutation is structurally powerless for level tests).
+3. **A pre-declared UNDERPOWERED/DEFERRED verdict path**, so a ~40-effective-block null is distinguishable from a refutation.
+
+The n≥25 clusters-per-arm floor is retained but counts **calendar blocks** (±30d contiguous tape-time, global across tickers), not ticker×week `episode_id`s.

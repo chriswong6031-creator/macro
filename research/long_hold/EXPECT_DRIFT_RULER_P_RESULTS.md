@@ -6,6 +6,16 @@
 
 > **Authority ceiling:** DISPLAY ONLY. No SURVIVE/KILL vocabulary. All cells are UPPER BOUND (survivorship-biased). The word 'validated' does not appear in this document (CI-enforced).
 
+> **Time-confound caveat (2026-07-07, LH-RC-1 — research/TIME_CONFOUND_EXPOSURE_AUDIT.md §5).**
+> The DESCRIPTIVE_PASS gate hard-ANDs a raw iid Mann-Whitney p (no calendar-time control);
+> the time-blocked CI computed by the run script is reported but is NOT part of the verdict
+> gate, the reshuffle co-gate is stratified only annually, and ED-2's pass is concentrated
+> in the 2022-2023 sub-window (SUE features are wrong-signed in the 2020-2021 cell).
+> Display-tier readers should treat ED-2 `sue_streak` as **fragile at its q=0.068 margin**
+> pending either a DT-R14-compliant re-gate (month-level demeaning + time-block bootstrap
+> promoted into the verdict gate) or the ratifying Ruler-H (~2027-H2). MEDIUM exposure;
+> no verdict is changed by this caveat.
+
 ---
 
 ## In plain English
