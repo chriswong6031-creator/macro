@@ -555,6 +555,54 @@ def _brief_status(health: dict | None, brain_run: dict) -> str:
     return "ok"
 
 
+# ---- evidence clock section --------------------------------------------------
+
+def _build_evidence_clock(root: Path) -> dict:
+    """Read data/neuralweb/evidence_clock.json and return a counts-only block.
+
+    Public/site-safe: returns counts and morning_line only.  No blocking_reason
+    prose, no readiness detail, no internal row text.
+
+    Returns
+    -------
+    dict with key 'available' (bool) and, when available:
+        as_of, counts (by_state + n_acknowledged), top_due, morning_line
+    """
+    p = root / "data" / "neuralweb" / "evidence_clock.json"
+    try:
+        raw = json.loads(p.read_text(encoding="utf-8"))
+    except Exception:  # noqa: BLE001
+        return {"available": False}
+
+    if not isinstance(raw, dict):
+        return {"available": False}
+    if raw.get("schema") != "neuralweb.evidence_clock.v1":
+        return {"available": False}
+
+    summary = raw.get("summary") or {}
+    by_state = summary.get("by_state") or {}
+    top_due_raw = summary.get("top_due")
+    top_due = None
+    if isinstance(top_due_raw, dict) and top_due_raw.get("clock_id"):
+        top_due = {
+            "clock_id": top_due_raw.get("clock_id"),
+            "due_at": top_due_raw.get("due_at"),
+        }
+
+    counts = dict(by_state)
+    n_ack = summary.get("n_acknowledged")
+    if n_ack is not None:
+        counts["n_acknowledged"] = n_ack
+
+    return {
+        "available": True,
+        "as_of": raw.get("as_of"),
+        "counts": counts,
+        "top_due": top_due,
+        "morning_line": summary.get("morning_line") or "",
+    }
+
+
 # ---- main build function ------------------------------------------------------
 
 def build(root: Path | None = None, phase: str = "engine") -> dict:
@@ -596,6 +644,12 @@ def build(root: Path | None = None, phase: str = "engine") -> dict:
     if graph is None:
         gaps_noted.append("site/neuralwebdata/confluence_graph.json missing")
 
+    evidence_clock = _build_evidence_clock(root)
+    if not evidence_clock.get("available"):
+        gaps_noted.append(
+            "evidence_clock.json not present (PR1 not yet merged or build failed)"
+        )
+
     memo = _load_cortex_memo(root)
     if memo is None:
         gaps_noted.append("data/neuralweb/cortex/memo.json missing")
@@ -635,6 +689,21 @@ def build(root: Path | None = None, phase: str = "engine") -> dict:
         conformance_misses=conformance_misses,
     )
 
+    # P3: evidence-clock overdue items
+    if evidence_clock.get("available"):
+        n_overdue = (evidence_clock.get("counts") or {}).get("overdue", 0) or 0
+        if n_overdue > 0:
+            operator_attention.append({
+                "priority": 3,
+                "area": "evidence_clock",
+                "summary": (
+                    f"{n_overdue} evidence-clock item{'s' if n_overdue != 1 else ''} overdue"
+                    " — see admin Observatory"
+                ),
+                "action_type": "follow_up",
+            })
+            operator_attention.sort(key=lambda x: x["priority"])
+
     candidate_watch = _build_candidate_watch(health)
 
     brief_status = _brief_status(health, brain_run)
@@ -663,6 +732,7 @@ def build(root: Path | None = None, phase: str = "engine") -> dict:
         "what_is_stale": stale_lobes,
         "operator_attention": operator_attention,
         "candidate_watch": candidate_watch,
+        "evidence_clock": evidence_clock,
         "caveats": _CAVEATS,
         "_gaps": gaps_noted,
     }

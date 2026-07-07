@@ -1250,6 +1250,65 @@ RENDER.neural_web = async () => {
   });
   loadLegacyOps();
 };
+/* Section G — Evidence Clock (EC-R5) */
+function nwSectionEvidenceClock(ec) {
+  if (!ec) return nwMissing("evidence_clock section missing");
+  if (!ec.available) return nwMissing(ec.note || "data/neuralweb/evidence_clock.json not yet written (PR1 not yet merged)");
+
+  const sum = ec.summary || {};
+  const by = sum.by_state || {};
+  const ml = sum.morning_line || "";
+  const asOf = ec.as_of || "";
+
+  // State chip colours
+  const STATE_CLS = {
+    overdue: "s-bad", due: "s-warn", human_review: "s-warn",
+    missing: "s-bad", stale: "s-warn", blocked: "s-warn",
+    not_ready: "s-warn", promotion_eligible: "s-ok", accruing: "s-muted",
+  };
+
+  // Count chips — only non-zero states
+  const allStates = ["overdue","due","human_review","missing","stale","blocked","not_ready","promotion_eligible","accruing"];
+  let chips = allStates
+    .filter(s => (by[s] || 0) > 0)
+    .map(s => `<span class="statpill ${STATE_CLS[s] || 's-muted'}">${by[s]} ${esc(s.replace(/_/g," "))}</span>`)
+    .join(" ");
+
+  let html = `<div class="card">
+    <div class="kv"><span>As of</span><b>${esc(asOf)}</b></div>
+    <div style="margin:8px 0 4px">${chips || '<span class="muted">no items</span>'}</div>
+    <div class="sub" style="margin-top:6px">${esc(ml)}</div>
+  </div>`;
+
+  // Queue table
+  const queue = ec.queue || [];
+  if (queue.length > 0) {
+    html += `<div class="section" style="margin-top:14px">Action queue <span class="cnt">${queue.length}</span></div>
+      <table><thead><tr>
+        <th>Clock ID</th><th>State</th><th>Due</th><th>Owner</th><th>Blocking reason</th><th>Regen cmd</th>
+      </tr></thead><tbody>
+      ${queue.map(r => {
+        const stateCls = STATE_CLS[r.state] || "s-muted";
+        const cmd = r.regenerate_cmd ? `<code style="font-size:11px">${esc(r.regenerate_cmd)}</code>` : `<span class="muted">—</span>`;
+        return `<tr>
+          <td><b>${esc(r.clock_id || "")}</b>${r.acknowledged ? ' <span class="statpill s-muted">ack</span>' : ''}</td>
+          <td><span class="statpill ${stateCls}">${esc(r.state || "")}</span></td>
+          <td class="sub">${esc(r.due_at || "—")}</td>
+          <td class="sub">${esc(r.owner_program || "—")}</td>
+          <td class="sub" style="max-width:220px">${esc(r.blocking_reason || "")}</td>
+          <td>${cmd}</td>
+        </tr>`;
+      }).join("")}
+      </tbody></table>`;
+  }
+
+  if (ec.n_accruing > 0) {
+    html += `<div class="sub muted" style="margin-top:8px">${ec.n_accruing} accruing / promotion-eligible items not shown.</div>`;
+  }
+
+  return html;
+}
+
 async function loadLegacyOps() {
   const box = $("#nw-legacy"); if (!box) return;
   const d = await api("/api/neural_web");
@@ -1259,7 +1318,8 @@ async function loadLegacyOps() {
     ${nwCollapse("reflex_log", "B — Automatic reactions", nwSectionReflexLog(d.reflex_log), false)}
     ${nwCollapse("bus_graph", "C — How signals agree &amp; disagree", nwSectionBusGraph(d.bus_graph), false)}
     ${nwCollapse("governance", "D — Permissions &amp; change log", nwSectionGovernance(d.governance), false)}
-    ${nwCollapse("factor_intelligence", "E — Factor intelligence (what a stock's move is made of)", nwSectionFactorIntelligence(d.factor_intelligence), false)}`;
+    ${nwCollapse("factor_intelligence", "E — Factor intelligence (what a stock's move is made of)", nwSectionFactorIntelligence(d.factor_intelligence), false)}
+    ${nwCollapse("evidence_clock", "G — Evidence Clock (come-backs &amp; overdue actions)", nwSectionEvidenceClock(d.evidence_clock), false)}`;
 }
 
 /* ---- Lobe detail "page" (#/lobe/<id>) ----------------------------------- */

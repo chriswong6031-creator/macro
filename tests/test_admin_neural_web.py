@@ -1366,6 +1366,214 @@ def test_lobes_panel_returns_independence_key(tmp_repo):
         neural_web._CONFLUENCE_GRAPH = old_confluence
 
 
+# ---------------------------------------------------------------------------
+# Section G: Evidence Clock (EC-R5) — admin panel tests
+# ---------------------------------------------------------------------------
+
+_EC_FIXTURE = Path(__file__).resolve().parent / "fixtures" / "evidence_clock_sample.json"
+
+
+def _write_ec_artifact(root: Path, fixture: Path | None = None) -> None:
+    dest = root / "data" / "neuralweb" / "evidence_clock.json"
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    if fixture is None:
+        fixture = _EC_FIXTURE
+    dest.write_bytes(fixture.read_bytes())
+
+
+def _patch_ec_path(neural_web, root: Path) -> object:
+    """Patch _NW_EVIDENCE_CLOCK_JSON to point at tmp root. Returns old value."""
+    old = neural_web._NW_EVIDENCE_CLOCK_JSON
+    neural_web._NW_EVIDENCE_CLOCK_JSON = root / "data" / "neuralweb" / "evidence_clock.json"
+    return old
+
+
+def _restore_ec_path(neural_web, old) -> None:
+    neural_web._NW_EVIDENCE_CLOCK_JSON = old
+
+
+def test_panel_has_evidence_clock_section():
+    """panel() includes evidence_clock key at top level."""
+    from admin import neural_web
+    d = neural_web.panel()
+    assert "evidence_clock" in d, "Missing evidence_clock section in panel()"
+    ec = d["evidence_clock"]
+    assert "available" in ec
+
+
+def test_evidence_clock_section_present_artifact(tmp_repo):
+    """With evidence_clock.json present, section returns available=True with required keys."""
+    from admin import neural_web
+
+    _write_ec_artifact(tmp_repo)
+    old = _patch_ec_path(neural_web, tmp_repo)
+    try:
+        ec = neural_web._section_evidence_clock()
+    finally:
+        _restore_ec_path(neural_web, old)
+
+    assert ec["available"] is True
+    assert "as_of" in ec
+    assert "generated_utc" in ec
+    assert "summary" in ec
+    assert "queue" in ec
+    assert "n_accruing" in ec
+    assert "caveats" in ec
+    assert isinstance(ec["queue"], list)
+    # queue should have rows with operator states (overdue, due, human_review, stale from fixture)
+    assert len(ec["queue"]) > 0
+
+
+def test_evidence_clock_queue_trims_fields(tmp_repo):
+    """Queue rows have only the trimmed operator fields, not full row fields."""
+    from admin import neural_web
+
+    _write_ec_artifact(tmp_repo)
+    old = _patch_ec_path(neural_web, tmp_repo)
+    try:
+        ec = neural_web._section_evidence_clock()
+    finally:
+        _restore_ec_path(neural_web, old)
+
+    for row in ec["queue"]:
+        required = {"clock_id", "source_system", "owner_program", "clock_type",
+                    "due_at", "state", "blocking_reason", "regenerate_cmd",
+                    "acknowledged", "packet"}
+        missing = required - set(row.keys())
+        assert not missing, f"Queue row missing fields: {missing}"
+        # Internal fields must not appear
+        assert "allowed_actions" not in row, "allowed_actions must not appear in trimmed row"
+        assert "forbidden_actions" not in row, "forbidden_actions must not appear in trimmed row"
+        assert "evidence_refs" not in row, "evidence_refs must not appear in trimmed row"
+
+
+def test_evidence_clock_queue_skips_accruing(tmp_repo):
+    """Accruing/promotion_eligible rows are not in queue; n_accruing counts them."""
+    from admin import neural_web
+
+    _write_ec_artifact(tmp_repo)
+    old = _patch_ec_path(neural_web, tmp_repo)
+    try:
+        ec = neural_web._section_evidence_clock()
+    finally:
+        _restore_ec_path(neural_web, old)
+
+    for row in ec["queue"]:
+        assert row["state"] not in ("accruing", "promotion_eligible"), (
+            f"Accruing/promotion_eligible row appeared in queue: {row['state']}"
+        )
+    # Fixture has 2 accruing rows
+    assert ec["n_accruing"] == 2
+
+
+def test_evidence_clock_section_absent_artifact(tmp_repo):
+    """Missing evidence_clock.json → available=False, no crash."""
+    from admin import neural_web
+
+    # Ensure file does NOT exist at the patched path
+    ec_path = tmp_repo / "data" / "neuralweb" / "evidence_clock.json"
+    if ec_path.exists():
+        ec_path.unlink()
+
+    old = _patch_ec_path(neural_web, tmp_repo)
+    try:
+        ec = neural_web._section_evidence_clock()
+    finally:
+        _restore_ec_path(neural_web, old)
+
+    assert ec["available"] is False
+    assert "note" in ec
+
+
+def test_evidence_clock_section_malformed_artifact(tmp_repo):
+    """Malformed evidence_clock.json (wrong schema) → available=False."""
+    from admin import neural_web
+
+    dest = tmp_repo / "data" / "neuralweb" / "evidence_clock.json"
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    dest.write_text('{"schema": "wrong.v99", "garbage": true}', encoding="utf-8")
+
+    old = _patch_ec_path(neural_web, tmp_repo)
+    try:
+        ec = neural_web._section_evidence_clock()
+    finally:
+        _restore_ec_path(neural_web, old)
+
+    assert ec["available"] is False
+
+
+def test_evidence_clock_panel_integrated(tmp_repo):
+    """panel() with evidence_clock.json present returns it available=True in the full result."""
+    from admin import neural_web
+
+    _write_ec_artifact(tmp_repo)
+    old_ec = _patch_ec_path(neural_web, tmp_repo)
+    # Also patch the other paths so we get a clean fixture panel
+    old_root = neural_web._ROOT
+    neural_web._ROOT = tmp_repo
+    neural_web._DATA_NW = tmp_repo / "data" / "neuralweb"
+    neural_web._CONFIG = tmp_repo / "config"
+    neural_web._DATA_REFLEXES = tmp_repo / "data" / "reflexes"
+    neural_web._SPINE_ENVELOPE = neural_web._DATA_NW / "spine_index.parquet.envelope.json"
+    neural_web._SPINE_PARQUET = neural_web._DATA_NW / "spine_index.parquet"
+    neural_web._KERNEL_ENVELOPE = neural_web._DATA_NW / "kernel_estimates.parquet.envelope.json"
+    neural_web._KERNEL_FAMILIES = neural_web._DATA_NW / "kernel_families.json"
+    neural_web._KERNEL_DECISIONS = neural_web._DATA_NW / "kernel_decisions.json"
+    neural_web._LAGGING_SIGNALS = neural_web._DATA_NW / "lagging_signals.json"
+    neural_web._READ_GATE = neural_web._DATA_NW / "read_gate_baseline.json"
+    neural_web._CONFLUENCE_GRAPH = neural_web._DATA_NW / "confluence_graph.json"
+    neural_web._GOVERNANCE_JSONL = neural_web._DATA_NW / "governance.jsonl"
+    neural_web._CORTEX_MEMO = neural_web._DATA_NW / "cortex" / "memo.json"
+    neural_web._SYNAPSE_YML = neural_web._CONFIG / "synapse.yml"
+    neural_web._REFLEXES_YML = neural_web._CONFIG / "reflexes.yml"
+    try:
+        result = neural_web.panel()
+    finally:
+        neural_web._ROOT = old_root
+        neural_web._DATA_NW = old_root / "data" / "neuralweb"
+        neural_web._CONFIG = old_root / "config"
+        neural_web._DATA_REFLEXES = old_root / "data" / "reflexes"
+        neural_web._SPINE_ENVELOPE = neural_web._DATA_NW / "spine_index.parquet.envelope.json"
+        neural_web._SPINE_PARQUET = neural_web._DATA_NW / "spine_index.parquet"
+        neural_web._KERNEL_ENVELOPE = neural_web._DATA_NW / "kernel_estimates.parquet.envelope.json"
+        neural_web._KERNEL_FAMILIES = neural_web._DATA_NW / "kernel_families.json"
+        neural_web._KERNEL_DECISIONS = neural_web._DATA_NW / "kernel_decisions.json"
+        neural_web._LAGGING_SIGNALS = neural_web._DATA_NW / "lagging_signals.json"
+        neural_web._READ_GATE = neural_web._DATA_NW / "read_gate_baseline.json"
+        neural_web._CONFLUENCE_GRAPH = neural_web._DATA_NW / "confluence_graph.json"
+        neural_web._GOVERNANCE_JSONL = neural_web._DATA_NW / "governance.jsonl"
+        neural_web._CORTEX_MEMO = neural_web._DATA_NW / "cortex" / "memo.json"
+        neural_web._SYNAPSE_YML = neural_web._CONFIG / "synapse.yml"
+        neural_web._REFLEXES_YML = neural_web._CONFIG / "reflexes.yml"
+        _restore_ec_path(neural_web, old_ec)
+
+    assert result["ok"] is True
+    assert "evidence_clock" in result
+    assert result["evidence_clock"]["available"] is True
+
+
+def test_no_engine_imports_after_ec_section():
+    """Re-verify engine import guard still passes after Section G addition."""
+    src = (Path(__file__).resolve().parent.parent / "admin" / "neural_web.py").read_text()
+    import_lines = [
+        line for line in src.splitlines()
+        if line.strip() and not line.strip().startswith("#")
+        and not line.strip().startswith('"""')
+        and not line.strip().startswith("'")
+    ]
+    code = "\n".join(import_lines)
+    for pattern, label in [
+        ("from engine", "engine module import"),
+        ("import engine", "engine module import"),
+        ("from scripts", "scripts module import"),
+        ("import scripts", "scripts module import"),
+        ("subprocess.run", "subprocess.run call"),
+        ("subprocess.Popen", "subprocess.Popen call"),
+        ("import subprocess", "subprocess import"),
+    ]:
+        assert pattern not in code, f"Forbidden {label!r} found in non-comment lines"
+
+
 if __name__ == "__main__":
     import pytest as _pytest
     _pytest.main([__file__, "-v"])
