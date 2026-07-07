@@ -1,6 +1,6 @@
 # Oracle Red Queen Interface Contract
 
-**Version:** `1.0.0` (see Version Policy below)
+**Version:** `1.2.0` (see Version Policy below)
 **Effective:** 2026-07-04
 **Audience:** Red Queen session and any downstream consumer of `oracle_state.json`.
 **Source:** `engine/oracle/contract.py` — this document is the human-readable companion; the machine-enforceable rules live in code.
@@ -37,6 +37,8 @@ The field `payload_version` (string, semver) is present in every stamped payload
 | Major `X.0.0` | Semantic change to a required field, field removal, or type change | Breaking — coordinate with Red Queen before deploy |
 
 **Tolerant-reader rule (critical):** Consumers MUST NOT error on fields they do not recognize. Parallel Oracle waves (A3 regime tag, B1 personality fields) add minor-version additive fields to the payload; a consumer that errors on unknown keys will break when those waves merge.
+
+**v1.2.0 (R-SP19, W5):** B1 member roll-up landed — each complex dict in `complexes` now carries an optional `personality_context` sub-object (dominant archetypes/chart labels, tinderbox share, event-override share, member coverage) when `site/factordata/stock_personality.json` is present. Always `confidence_class: "descriptive"`. Absent aggregate → field omitted entirely (no null; tolerant-reader safe). See `engine/oracle/personality_context.py`.
 
 ---
 
