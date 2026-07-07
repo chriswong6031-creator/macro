@@ -25,7 +25,19 @@
     <key>ProgramArguments</key>
     <array>
         <string>/bin/bash</string>
-        <string>/Users/chriswong/Documents/Cluade/Macro Dashboard/scripts/launchd/theta_backfill_keepalive.sh</string>
+        <!--
+          Script path MUST be OUTSIDE ~/Documents/.  macOS TCC denies launchd
+          (Aqua) exec on files under ~/Documents/ → "Operation not permitted"
+          / exit 126, which spins a tight 60s restart loop.  Keep the script in
+          the ops worktree (same as WorkingDirectory below), e.g.
+          /Users/chriswong/theta-ops-wt/scripts/launchd/.  Copy it there after
+          checkout:
+            mkdir -p /Users/chriswong/theta-ops-wt/scripts/launchd
+            cp scripts/launchd/theta_backfill_keepalive.sh \
+               /Users/chriswong/theta-ops-wt/scripts/launchd/
+            chmod +x /Users/chriswong/theta-ops-wt/scripts/launchd/theta_backfill_keepalive.sh
+        -->
+        <string>/Users/chriswong/theta-ops-wt/scripts/launchd/theta_backfill_keepalive.sh</string>
     </array>
 
     <!-- Start immediately on load / login -->
