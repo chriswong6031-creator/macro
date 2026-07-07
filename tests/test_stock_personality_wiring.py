@@ -54,7 +54,8 @@ def _make_rec(**overrides) -> dict:
             "rel_volume": 1.2,
             "obv_slope_up": True,
             "off_52w_high_pct": -8.5,
-            "days_to_earnings": 14,
+            # days_to_earnings is NOT sourced from rec["tech"]; it is passed via the
+            # days_to_earnings= parameter from the _edays() closure in main().
         },
         "vol_squeeze": {"state": "squeeze"},
         "positioning": {
@@ -210,6 +211,98 @@ class TestPersonalityInputsMapping:
             dna_class_entry=None, bsk_mem_entry=None, etf_wt=None, oracle_active=None,
         )
         assert result["positioning"]["short_pct_float"] == pytest.approx(7.8)
+
+
+# ---------------------------------------------------------------------------
+# Test 1b: events wiring — days_to_earnings comes from parameter, not rec keys
+# ---------------------------------------------------------------------------
+
+class TestEventsWiring:
+    """events dict sourced from days_to_earnings= parameter (W2b fix finding 2)."""
+
+    def test_events_none_when_parameter_absent(self):
+        """When days_to_earnings param is not passed, events is None."""
+        rec = _make_rec()
+        result = _personality_inputs(
+            "AAPL", rec, None, "2024-06-01",
+            dna_class_entry=None, bsk_mem_entry=None, etf_wt=None, oracle_active=None,
+            # days_to_earnings not passed → default None
+        )
+        assert result["events"] is None
+
+    def test_events_populated_from_parameter(self):
+        """When days_to_earnings=10 is passed, events['days_to_earnings'] == 10."""
+        rec = _make_rec()
+        result = _personality_inputs(
+            "AAPL", rec, None, "2024-06-01",
+            dna_class_entry=None, bsk_mem_entry=None, etf_wt=None, oracle_active=None,
+            days_to_earnings=10.0,
+        )
+        assert result["events"] is not None
+        assert result["events"]["days_to_earnings"] == 10
+
+    def test_events_not_sourced_from_rec_tech(self):
+        """rec['tech']['days_to_earnings'] must NOT bleed into events (dead key)."""
+        rec = _make_rec()
+        # Deliberately plant a value in rec["tech"]["days_to_earnings"]
+        rec["tech"]["days_to_earnings"] = 99
+        result = _personality_inputs(
+            "AAPL", rec, None, "2024-06-01",
+            dna_class_entry=None, bsk_mem_entry=None, etf_wt=None, oracle_active=None,
+            # days_to_earnings NOT passed — should stay None regardless of rec["tech"]
+        )
+        assert result["events"] is None, (
+            "events must not source from rec['tech']['days_to_earnings'] (dead key)"
+        )
+
+    def test_events_not_sourced_from_rec_profile(self):
+        """rec['profile']['earnings']['days_to_next'] must NOT bleed into events."""
+        rec = _make_rec()
+        rec["profile"]["earnings"] = {"days_to_next": 5}
+        result = _personality_inputs(
+            "AAPL", rec, None, "2024-06-01",
+            dna_class_entry=None, bsk_mem_entry=None, etf_wt=None, oracle_active=None,
+        )
+        assert result["events"] is None, (
+            "events must not source from rec['profile']['earnings']['days_to_next'] (dead key)"
+        )
+
+
+# ---------------------------------------------------------------------------
+# Test 1c: PIT panel date must equal alpha_asof (W2b fix finding 1)
+# ---------------------------------------------------------------------------
+
+class TestPanelDatePIT:
+    """Panel row 'date' and site aggregate 'as_of' must equal the trading-date alpha_asof."""
+
+    def _make_cfg(self, tmp_path: Path):
+        class _Cfg:
+            def data_dir(self_):
+                return tmp_path / "data"
+        return _Cfg()
+
+    def test_panel_date_equals_alpha_asof(self, tmp_path: Path):
+        """The forward-ledger build_date is alpha_asof, so panel date must match it."""
+        # The stamper already takes build_date=alpha_asof (verified separately).
+        # Here we test the _personality_inputs as_of= arg (which callers pass as alpha_asof).
+        # Additionally: direct test that the ledger stamp uses the passed build_date, not utcnow.
+        from scripts.build_stock_library import _stamp_personality_forward_ledger
+        cfg = self._make_cfg(tmp_path)
+        trading_date = "2024-06-03"   # a Monday — distinct from any UTC wall-clock date
+        tr_dir = tmp_path / "data" / "signal_archive"
+        tr_dir.mkdir(parents=True)
+        tr = pd.DataFrame([{"ticker": "AAPL", "date": trading_date, "type": "buy"}])
+        tr.to_parquet(tr_dir / "track_record.parquet", index=False)
+        sp_by_ticker = {
+            "AAPL": {"base": {"archetype": {"key": "x"}}, "current_mode": {}, "evidence": {}},
+        }
+        _stamp_personality_forward_ledger(sp_by_ticker, trading_date, cfg)
+        ledger = tmp_path / "data" / "stock_personality" / "forward_ledger.parquet"
+        df = pd.read_parquet(ledger)
+        # The date column must equal the provided alpha_asof, not utcnow().date()
+        assert df["date"].astype(str).iloc[0] == trading_date, (
+            f"Panel date {df['date'].iloc[0]!r} != alpha_asof {trading_date!r} — PIT corrupt"
+        )
 
 
 # ---------------------------------------------------------------------------

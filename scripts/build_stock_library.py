@@ -796,6 +796,7 @@ def _personality_inputs(
     bsk_mem_entry: "list[dict] | None",
     etf_wt: "float | None",
     oracle_active: "bool | None",
+    days_to_earnings: "float | None" = None,
 ) -> dict:
     """Map a build_stock_library rec to engine.stock_personality.assess() kwargs.
 
@@ -824,7 +825,9 @@ def _personality_inputs(
     basket_membership  ← list of slug strings from bsk_mem_entry
     etf_weight_max     ← etf_wt (pre-loaded max weight_pct across all ETFs)
     oracle_episode     ← oracle_active (pre-mapped from oracle_state.json)
-    events             ← {"days_to_earnings": rec["tech"]["days_to_earnings"] if present}
+    events             ← {"days_to_earnings": days_to_earnings} when days_to_earnings is not
+                         None; otherwise None.  Caller passes _edays(ticker) from the
+                         earnings-calendar closure (engine.stock_fundamentals._load_earnings).
     archetype          ← rec["profile"]["archetype"]
     dna_class          ← dna_class_entry (T-1 by design)
     """
@@ -899,16 +902,14 @@ def _personality_inputs(
     # ---- basket_membership: list of slug strings ----
     _bsk = [m["slug"] for m in (bsk_mem_entry or []) if m.get("slug")]
 
-    # ---- events: days_to_earnings from rec ----
+    # ---- events: days_to_earnings from caller-provided parameter ----
+    # Caller passes _edays(ticker) from the earnings-calendar closure.
+    # rec["tech"] never carries days_to_earnings; rec["profile"]["earnings"]["days_to_next"]
+    # is also never populated — both were dead sourcing paths (W2b fix finding 2).
     _events: "dict | None" = None
-    _dte = _tech.get("days_to_earnings")
-    if _dte is None:
-        # also check under profile earnings field (set by _edays() in main)
-        _earn_block = _profile.get("earnings") or {}
-        _dte = _earn_block.get("days_to_next")
-    if _dte is not None:
+    if days_to_earnings is not None:
         try:
-            _events = {"days_to_earnings": int(_dte)}
+            _events = {"days_to_earnings": int(days_to_earnings)}
         except (TypeError, ValueError):
             pass
 
@@ -1011,17 +1012,18 @@ def _stamp_personality_forward_ledger(
         _new_df = pd.DataFrame(_rows)
         _fl_path = cfg.data_dir() / "stock_personality" / "forward_ledger.parquet"
         _fl_path.parent.mkdir(parents=True, exist_ok=True)
+        _appended = len(_new_df)  # tracks post-dedup rows actually written (default: all)
         if _fl_path.exists():
             try:
                 _exist = pd.read_parquet(_fl_path)
                 # Dedup on (ticker, date, type)
-                _key = ["ticker", "date", "type"]
                 _exist_keys = set(zip(_exist["ticker"], _exist["date"], _exist["type"]))
                 _new_df = _new_df[
                     ~_new_df.apply(
                         lambda r: (r["ticker"], r["date"], r["type"]) in _exist_keys, axis=1
                     )
                 ]
+                _appended = len(_new_df)  # post-dedup: rows actually being appended
                 if not _new_df.empty:
                     _new_df = pd.concat([_exist, _new_df], ignore_index=True)
                 else:
@@ -1029,7 +1031,7 @@ def _stamp_personality_forward_ledger(
             except Exception:  # noqa: BLE001 — corrupt existing → overwrite
                 pass
         _new_df.to_parquet(_fl_path, compression="snappy", index=False)
-        log.info("personality forward ledger: +%d new rows (total=%d)", len(_rows), len(_new_df))
+        log.info("personality forward ledger: +%d new rows (total=%d)", _appended, len(_new_df))
     except Exception as _fl_e:  # noqa: BLE001 — additive, never fatal
         log.warning("personality forward ledger stamp failed (%s)", _fl_e)
 
@@ -1259,7 +1261,9 @@ def main() -> int:
     # Reads site/basketdata/oracle_state.json once. Sector mapping mirrors engine.spotlight.GICS_TO_ETF
     # (ETF-based proxy). A complex is "active" when state not in {quiet, None}.
     # Cheaply importable: direct JSON read (no engine module).
-    _sp_oracle_active: "dict[str, bool]" = {}   # GICS sector string -> bool
+    # Semantics: dict contains only sectors that ARE in GICS_TO_ETF; .get(sector) returns
+    # None (unknown) for sectors outside the mapped key set — not False (mapped-and-quiet).
+    _sp_oracle_active: "dict[str, bool]" = {}   # GICS sector string -> bool; absent = unknown
     try:
         _oracle_st_p = site / "basketdata" / "oracle_state.json"
         if _oracle_st_p.exists():
@@ -1279,11 +1283,14 @@ def main() -> int:
             _etf_active: set[str] = set()
             for _cx in (_oracle_doc.get("complexes") or []):
                 _cstate = _cx.get("state")
+                _cx_id = _cx.get("id", "")
                 if _cstate and _cstate not in ("quiet",):
-                    _cxetf = _ORACLE_COMPLEX_TO_ETF.get(_cx.get("id", ""))
+                    _cxetf = _ORACLE_COMPLEX_TO_ETF.get(_cx_id)
                     if _cxetf:
                         _etf_active.add(_cxetf)
-            # Invert GICS_TO_ETF: sector -> bool
+                    else:
+                        log.debug("oracle complex '%s' not in _ORACLE_COMPLEX_TO_ETF — update map if this is a new complex", _cx_id)
+            # Invert GICS_TO_ETF: sector -> bool (only mapped sectors; absent = sector unknown)
             for _gs, _ge in _GICS_TO_ETF.items():
                 _sp_oracle_active[_gs] = _ge in _etf_active
     except Exception as _sp_orc_e:  # noqa: BLE001 — additive, never fatal
@@ -1298,8 +1305,8 @@ def main() -> int:
             log.info("species registry: %d entries loaded for setup_compatibility", len(_sp_species_entries))
     except Exception as _sp_reg_e:  # noqa: BLE001 — additive, never fatal
         log.debug("species registry load skipped (%s)", _sp_reg_e)
-    # Personality pass timing accumulator
-    _sp_t0 = time.time()
+    # Personality pass timing accumulator (sum of per-ticker personality try-block elapsed)
+    _sp_elapsed_acc: float = 0.0
     _sp_n_tickers = 0
     # Container for personality objects (ticker -> personality dict) for post-loop passes
     _sp_by_ticker: "dict[str, dict]" = {}
@@ -1993,6 +2000,7 @@ def main() -> int:
         # smart_money, basket_membership) are already on rec. OHLCV frame reuses _ohlcv
         # (loaded above for the tech/squeeze pass). path_personality.features() computes
         # only trailing windows (cheap snapshot API — no full-history series).
+        _sp_tick_t0 = time.time()
         try:
             import engine.path_personality as _ppath  # noqa: PLC0415
             import engine.stock_personality as _spers  # noqa: PLC0415
@@ -2011,6 +2019,7 @@ def main() -> int:
                 bsk_mem_entry=bsk_mem.get(ticker),
                 etf_wt=_sp_etf_wt.get(ticker),
                 oracle_active=_sp_oracle_active.get(sector),
+                days_to_earnings=_edays(ticker),
             )
             _sp_inputs["path_features"] = _pfeats
             _personality = _spers.assess(ticker, **_sp_inputs)
@@ -2020,6 +2029,7 @@ def main() -> int:
             rec["personality"] = _personality
             _sp_by_ticker[ticker] = _personality
             _sp_n_tickers += 1
+            _sp_elapsed_acc += time.time() - _sp_tick_t0
         except Exception as _sp_e:  # noqa: BLE001 — display chip; NEVER fatal
             log.debug("personality pass for %s skipped (%s)", ticker, _sp_e)
         _tech = rec.get("tech") or {}
@@ -2143,15 +2153,19 @@ def main() -> int:
             log.warning("W3 evidence collection for %s failed (%s)", ticker, _w3e)
         built += 1
     # ---- stock_personality.v1 benchmark gate ----------------------------------------
-    _sp_elapsed = time.time() - _sp_t0
-    log.info("personality pass: %.1fs over %d tickers", _sp_elapsed, _sp_n_tickers)
+    log.info("personality pass: %.1fs over %d tickers", _sp_elapsed_acc, _sp_n_tickers)
     # ---- stock_personality.v1 panel append ------------------------------------------
     # Append today's per-ticker label rows to data/stock_personality/panel/YYYY-MM/panel.parquet
     # (gitignored-local; R2-published via publish_r2). Fail-open: any write error is logged.
     if _sp_by_ticker:
         try:
-            import importlib.util as _imputl  # noqa: PLC0415
-            _today_str = str(pd.Timestamp.utcnow().date())
+            # PIT stamp: use alpha_asof (the trading-date source) so the (ticker, date) join
+            # is correct.  The 02:00-UTC cron makes utcnow().date() = trading date + 1.
+            if alpha_asof is None:
+                log.warning("personality panel: alpha_asof is None — falling back to wall-clock date (PIT may be off by 1 day)")
+                _today_str = str(pd.Timestamp.utcnow().date())
+            else:
+                _today_str = str(alpha_asof)[:10]
             _panel_month = _today_str[:7]   # "YYYY-MM"
             _panel_root = config.data_dir() / "stock_personality" / "panel" / _panel_month
             _panel_root.mkdir(parents=True, exist_ok=True)
@@ -2200,7 +2214,12 @@ def main() -> int:
     # Write site/factordata/stock_personality.json (slim, git-committed).
     try:
         if _sp_by_ticker:
-            _sp_today = str(pd.Timestamp.utcnow().date())
+            # PIT stamp: use alpha_asof (trading date) to match the panel row date.
+            if alpha_asof is None:
+                log.warning("stock_personality.json: alpha_asof is None — falling back to wall-clock date")
+                _sp_today = str(pd.Timestamp.utcnow().date())
+            else:
+                _sp_today = str(alpha_asof)[:10]
             # Coverage fractions across universe
             _all_cov: dict[str, list[float]] = {}
             _all_arch: dict[str, int] = {}
