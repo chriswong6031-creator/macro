@@ -1133,3 +1133,151 @@ class TestEndpointLabel:
     def test_bare_path_segment(self):
         from collectors.thetadata import _endpoint_label
         assert _endpoint_label("eod") == "eod"
+
+
+# ── Current-day per-expiration fallback tests ──────────────────────────────────
+
+class TestBulkTradeQuoteCurrentDayFallback:
+    """bulk_trade_quote: current-day wildcard fallback + DTE cap filter.
+
+    Hermetic — no network.  Mocks _stream_lines and list_expirations so that:
+      - The wildcard call raises _StreamTruncated with the "specifying an expiration"
+        message that ThetaData v3 returns for today's date.
+      - list_expirations returns a mix of in-cap and out-of-cap expirations.
+      - Per-expiration calls return rows only for the in-cap expirations.
+
+    Verifies:
+      1. Only in-cap expirations are fetched.
+      2. A different 400 (no "specifying an expiration" in body) → returns None.
+      3. All expirations failing individually → returns None.
+      4. Summary INFO log is emitted.
+    """
+
+    # Minimal valid trade_quote CSV row (23 fields)
+    _HEADER = (b"symbol,expiration,strike,right,trade_timestamp,quote_timestamp,"
+               b"sequence,ext_condition1,ext_condition2,ext_condition3,ext_condition4,"
+               b"condition,size,exchange,price,bid_size,bid_exchange,bid,bid_condition,"
+               b"ask_size,ask_exchange,ask,ask_condition\n")
+    _ROW_TMPL = (
+        'SPY,{exp},550.0,CALL,2026-07-06T10:00:00,2026-07-06T10:00:00,'
+        '1001,0,0,0,0,0,10,CBOE,2.50,5,CBOE,2.40,0,5,CBOE,2.60,0\n'
+    )
+
+    def _row_bytes(self, exp: str) -> bytes:
+        return (self._HEADER + self._ROW_TMPL.format(exp=exp).encode()).strip()
+
+    def test_current_day_fallback_dte_cap(self, monkeypatch):
+        """Wildcard 400 'specifying an expiration' → per-exp loop; DTE cap filters far exps."""
+        from collectors import thetadata as td
+        from collectors.thetadata import _StreamTruncated
+
+        session_date = "2026-07-06"
+
+        # Expirations: 2 in-cap (<=90 DTE from 2026-07-06 = up to ~2026-10-04),
+        # 1 out-of-cap (far future), 1 already expired (past target_date).
+        EXP_INCAP_1 = "2026-07-10"    # 4 DTE — in cap
+        EXP_INCAP_2 = "2026-08-01"    # 26 DTE — in cap
+        EXP_OUTCAP  = "2027-01-15"    # >90 DTE — filtered out
+        EXP_PAST    = "2026-07-01"    # past — filtered out
+
+        exps_returned = [EXP_PAST, EXP_INCAP_1, EXP_INCAP_2, EXP_OUTCAP]
+
+        fetched_exps: list[int] = []
+
+        def _mock_stream_lines(session, path, params):
+            exp_param = params.get("expiration")
+            if exp_param == "*":
+                raise _StreamTruncated(
+                    "HTTP 400: Cannot fetch current-day data without specifying an expiration"
+                )
+            # Record which expiration int was fetched
+            fetched_exps.append(exp_param)
+            # Return a row for this expiration
+            # Derive ISO from int
+            s = str(exp_param)
+            iso = f"{s[:4]}-{s[4:6]}-{s[6:8]}"
+            content = self._row_bytes(iso)
+            lines = content.split(b"\n")
+            return iter(lines)
+
+        monkeypatch.setattr("collectors.thetadata.reachable", lambda: True)
+        monkeypatch.setattr(td, "_stream_lines", _mock_stream_lines)
+        monkeypatch.setattr(td, "list_expirations", lambda sym: exps_returned)
+
+        df = td.bulk_trade_quote("SPY", "call", session_date, session_date,
+                                 near_dte_cap_days=90)
+
+        assert df is not None, "Expected a DataFrame, got None"
+        # Only in-cap expirations should have been fetched
+        from collectors.thetadata import _date_int
+        assert _date_int(EXP_INCAP_1) in fetched_exps
+        assert _date_int(EXP_INCAP_2) in fetched_exps
+        assert _date_int(EXP_OUTCAP) not in fetched_exps, (
+            "Out-of-cap expiration should not be fetched"
+        )
+        assert _date_int(EXP_PAST) not in fetched_exps, (
+            "Past expiration should not be fetched"
+        )
+        # Rows from both in-cap expirations are present
+        assert len(df) == 2
+        assert set(df["expiration"].astype(str)) == {EXP_INCAP_1, EXP_INCAP_2}
+
+    def test_different_400_returns_none(self, monkeypatch):
+        """A 400 without 'specifying an expiration' in the body → returns None (no fallback)."""
+        from collectors import thetadata as td
+        from collectors.thetadata import _StreamTruncated
+
+        def _mock_stream_lines(session, path, params):
+            raise _StreamTruncated("HTTP 400: some other error")
+
+        monkeypatch.setattr("collectors.thetadata.reachable", lambda: True)
+        monkeypatch.setattr(td, "_stream_lines", _mock_stream_lines)
+
+        result = td.bulk_trade_quote("SPY", "call", "2026-07-06", "2026-07-06")
+        assert result is None, f"Expected None for non-expiration 400, got {result}"
+
+    def test_all_per_exp_failures_returns_none(self, monkeypatch):
+        """All individual expiration fetches fail → returns None."""
+        from collectors import thetadata as td
+        from collectors.thetadata import _StreamTruncated
+
+        call_count = [0]
+
+        def _mock_stream_lines(session, path, params):
+            exp_param = params.get("expiration")
+            if exp_param == "*":
+                raise _StreamTruncated(
+                    "HTTP 400: Cannot fetch current-day data without specifying an expiration"
+                )
+            call_count[0] += 1
+            raise _StreamTruncated("HTTP 500: server error")
+
+        monkeypatch.setattr("collectors.thetadata.reachable", lambda: True)
+        monkeypatch.setattr(td, "_stream_lines", _mock_stream_lines)
+        monkeypatch.setattr(td, "list_expirations",
+                            lambda sym: ["2026-07-10", "2026-07-17"])
+
+        result = td.bulk_trade_quote("SPY", "call", "2026-07-06", "2026-07-06",
+                                     near_dte_cap_days=90)
+        assert result is None, "All-expirations-failed should return None"
+        assert call_count[0] == 2, f"Expected 2 per-exp calls, got {call_count[0]}"
+
+    def test_list_expirations_failure_returns_none(self, monkeypatch):
+        """list_expirations returns None → fallback returns None."""
+        from collectors import thetadata as td
+        from collectors.thetadata import _StreamTruncated
+
+        def _mock_stream_lines(session, path, params):
+            if params.get("expiration") == "*":
+                raise _StreamTruncated(
+                    "HTTP 400: Cannot fetch current-day data without specifying an expiration"
+                )
+            return iter([])
+
+        monkeypatch.setattr("collectors.thetadata.reachable", lambda: True)
+        monkeypatch.setattr(td, "_stream_lines", _mock_stream_lines)
+        monkeypatch.setattr(td, "list_expirations", lambda sym: None)
+
+        result = td.bulk_trade_quote("SPY", "call", "2026-07-06", "2026-07-06",
+                                     near_dte_cap_days=90)
+        assert result is None

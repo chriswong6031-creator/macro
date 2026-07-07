@@ -67,40 +67,36 @@
   -->
 
   <!--
-    Start weekdays at 09:25 ET (UTC-4 summer / UTC-5 winter).
-    Summer (EDT, UTC-4): 09:25 ET = 13:25 UTC
-    Winter (EST, UTC-5): 09:25 ET = 14:25 UTC
-    Add both so the agent fires correctly year-round.
-    launchd uses local system time; ensure system timezone = UTC and NTP is on,
-    OR switch to Hour/Minute in the local America/New_York timezone if the Mac
-    is set to ET.  The safest setup: set system timezone to America/New_York.
+    Mac is on Pacific time; 06:25 PT = 09:25 ET year-round (5 min before the
+    9:30 ET open).  ET and PT share DST transitions so the offset (PT = ET - 3h)
+    is constant year-round.  If the Mac's timezone changes, update these entries.
   -->
   <key>StartCalendarInterval</key>
   <array>
     <!-- Monday=1 ... Friday=5 -->
     <dict>
       <key>Weekday</key><integer>1</integer>
-      <key>Hour</key><integer>9</integer>
+      <key>Hour</key><integer>6</integer>
       <key>Minute</key><integer>25</integer>
     </dict>
     <dict>
       <key>Weekday</key><integer>2</integer>
-      <key>Hour</key><integer>9</integer>
+      <key>Hour</key><integer>6</integer>
       <key>Minute</key><integer>25</integer>
     </dict>
     <dict>
       <key>Weekday</key><integer>3</integer>
-      <key>Hour</key><integer>9</integer>
+      <key>Hour</key><integer>6</integer>
       <key>Minute</key><integer>25</integer>
     </dict>
     <dict>
       <key>Weekday</key><integer>4</integer>
-      <key>Hour</key><integer>9</integer>
+      <key>Hour</key><integer>6</integer>
       <key>Minute</key><integer>25</integer>
     </dict>
     <dict>
       <key>Weekday</key><integer>5</integer>
-      <key>Hour</key><integer>9</integer>
+      <key>Hour</key><integer>6</integer>
       <key>Minute</key><integer>25</integer>
     </dict>
   </array>

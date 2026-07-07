@@ -754,11 +754,14 @@
   function focusTierBadge(band, card) { return tierBadge(band, card); }
   function dualHint() { return '<span class="cyc-dual-hint">' + L("dual", "双轨") + '</span>'; }
 
-  /* ---- W4.3 turn-odds line (MEASURED cards only) -------------------------
-     Renders a compact "turn odds" row from band.now.hazard, showing P(turn ≤ h)
-     for h = 1m / 3m / 6m with a [model] / [prior] source badge.
-     The hover (title attr) carries: cell verdicts, epoch, BACKTEST-cohort note
-     (ruling A6: these are backtest-validated, live cohort accruing).
+  /* ---- W4.3 / UI-HZ-1 turn-hazard rows (MEASURED cards only) --------------
+     Renders the calibrated turn-hazard row set from band.now.hazard: P(turn ≤ h)
+     for h = 1m / 3m / 6m, each cell carrying its VISIBLE evidence badge from the
+     W4.2 gate ledger (PASS = calibrated model probability, validated vs the
+     family-stratified KM baseline; PRIOR = KM base rate, shown muted with the
+     KM-prior wording). No naked probabilities — every number is badged (UI-HZ-1).
+     The hover (title attr) carries: cell verdict wording, epoch, BACKTEST-cohort
+     note (ruling A6: these are backtest-validated, live cohort accruing).
      Renders nothing if hazard data is absent (non-MEASURED or scorer unavailable). */
   function hazardLine(band) {
     var hz = band.now && band.now.hazard;
@@ -771,28 +774,37 @@
       var c = hz[key];
       if (!c || c.p == null) return '';
       var pct = Math.round(c.p * 100);
-      var src = c.source === 'MODEL' ? '[model]' : '[prior]';
-      var srcZh = c.source === 'MODEL' ? '[模型]' : '[先验]';
-      var verdict = c.cell_verdict || c.source || '';
-      return '<span class="hz-cell" title="' + esc(
-        'Cell: ' + key + ' ' + dir + ' · verdict: ' + verdict +
-        ' · epoch: ' + epoch + revOpt +
-        ' · backtest-validated OOS (n≥9,246 person-periods); live cohort accruing (come-back: n_matured≥40 per cell)'
-      ) + '">' +
-        '<span class="l-en">' + label + ' ' + pct + '% <span class="hz-src">' + src + '</span></span>' +
-        '<span class="l-zh">' + labelZh + ' ' + pct + '% <span class="hz-src">' + srcZh + '</span></span>' +
+      var pass = (c.cell_verdict === 'PASS') || (c.source === 'MODEL');
+      var badge = pass
+        ? '<span class="hz-badge hz-pass"><span class="l-en">PASS</span><span class="l-zh">通过</span></span>'
+        : '<span class="hz-badge hz-prior"><span class="l-en">PRIOR</span><span class="l-zh">先验</span></span>';
+      var tip = pass
+        ? ('Calibrated model probability — the ' + dir + '/' + key + ' cell PASSED the W4.2 gate ' +
+           'vs the family-stratified KM baseline (OOS Brier + month-block bootstrap CI + BH-FDR). ' +
+           'Epoch: ' + epoch + revOpt +
+           ' · backtest-validated OOS; live cohort accruing (come-back: n_matured≥40 per cell)')
+        : ('KM base-rate prior — the ' + dir + '/' + key + ' cell did NOT pass the W4.2 gate; ' +
+           'this is the historical family-stratified base rate, not a validated model output. ' +
+           'Epoch: ' + epoch + revOpt);
+      return '<span class="hz-cell' + (pass ? '' : ' hz-muted') + '" title="' + esc(tip) + '">' +
+        '<span class="l-en">' + label + ' ' + pct + '%</span>' +
+        '<span class="l-zh">' + labelZh + ' ' + pct + '%</span> ' + badge +
       '</span>';
     }
 
     var cells = [
-      cell('1m', 'P(turn ≤ 1m)', 'P(转折≤1月)'),
+      cell('1m', 'P(turn ≤ 1m)', 'P(转折≤1月)'),
       cell('3m', '≤3m',  '≤3月'),
       cell('6m', '≤6m',  '≤6月'),
     ].filter(Boolean);
     if (!cells.length) return '';
 
     return '<div class="cyc-hazard">' +
-      '<span class="hz-label"><span class="l-en">Turn odds</span><span class="l-zh">转折概率</span></span>' +
+      '<span class="hz-label" title="' + esc(
+        'P(next confirmed turn within horizon) for the open ' + (dir || '?') + '-leg. ' +
+        'PASS cells: isotonic-calibrated discrete-time hazard model (validated vs KM, W4.2 gate). ' +
+        'PRIOR cells: KM base rate, shown muted. Display-only context — never a signal.'
+      ) + '"><span class="l-en">Turn hazard (calibrated)</span><span class="l-zh">转折风险（校准）</span></span>' +
       cells.join('<span class="hz-sep"> · </span>') +
       '</div>';
   }

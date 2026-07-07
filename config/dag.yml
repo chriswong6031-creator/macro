@@ -166,6 +166,7 @@ lanes:
             - scripts.build_policy_watch
             - scripts.build_index_changes
             - scripts.build_cycle_pattern_live
+            - scripts.build_cycle_pattern_state
       # serial post-band
       - id: build_sector_central
         module: scripts.build_sector_central

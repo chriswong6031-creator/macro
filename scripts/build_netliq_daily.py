@@ -3,7 +3,7 @@
 DATA INFRASTRUCTURE ONLY (cycle-pattern-intelligence program). This builder emits a
 context-tier artifact; it registers NO trial. FT-3 (netliq covariate on the pooled
 hazard) is NOT registered here: additive-feature FT trials on the pooled hazard are
-SUSPENDED by truth cycle_truth_ft2_credit_hazard_null_v1 (data/cycle_pattern/truths.jsonl)
+SUSPENDED by truth cycle_truth_ft2_credit_hazard_null_v1 (cycle-pattern truths ledger)
 and may only be registered later under that truth's reopening conditions.
 
 Formula — engine.canon (audit #28), IMPORTED not re-implemented:

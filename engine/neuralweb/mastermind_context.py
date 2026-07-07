@@ -103,6 +103,16 @@ _CLAIM_RELIABILITY_STANDING_LAW = (
 # Top-N families per desk to include in claim_reliability lobe (keep payload small)
 _CLAIM_RELIABILITY_TOP_FAMILIES_N = 5
 
+# Cycle-pattern standing law (CPI P6 wave 1 — display context only)
+_CYCLE_PATTERN_STANDING_LAW = (
+    "cycle-pattern turn-hazard is DISPLAY/CONTEXT ONLY (CPI consumer matrix). "
+    "Only cells with gate_status PASS carry validated model probabilities "
+    "(W4.2 vs family-stratified KM); PRIOR cells are KM base rates. "
+    "Nothing here may originate, score, escalate, rank, gate, or size — "
+    "board_rank / oracle_escalation / sector_central_direction_score / "
+    "position_sizing are forbidden consumers."
+)
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Helpers
@@ -476,6 +486,51 @@ def _summarize_claim_reliability(repo: Path) -> tuple[dict, str | None]:
     return lobe, None
 
 
+def _summarize_cycle_pattern(repo: Path) -> tuple[dict, str | None]:
+    """CPI P6 wave 1: compact cycle-pattern turn-hazard context.
+
+    Reads ONLY the committed adapter artifact
+    data/neuralweb/cycle_pattern_state.json (scripts/build_cycle_pattern_state.py)
+    — never the cycle-pattern lake directly (CPI consumer-matrix rule).
+
+    Counts-only in the lobe (the bottom_sensors discipline): gate verdicts,
+    entity/family counts, and the truth-registry summary. Per-entity hazard
+    rows stay in the artifact (read_cycle_pattern_state cortex tool).
+    Every probability downstream must carry its gate verdict — PRIOR cells
+    are KM base rates, not validated model output (UI-HZ-1: no naked
+    probabilities). Display/context only: may never originate, score, or
+    escalate.
+    """
+    state = _read_json(repo / "data" / "neuralweb" / "cycle_pattern_state.json")
+    if not state:
+        return {}, "data/neuralweb/cycle_pattern_state.json absent or unreadable"
+
+    entities = state.get("entities") or []
+    families: dict[str, int] = {}
+    n_with_hazard = 0
+    for e in entities:
+        if not isinstance(e, dict):
+            continue
+        fam = e.get("family") or "unknown"
+        families[fam] = families.get(fam, 0) + 1
+        if any(e.get(k) is not None for k in ("hazard_1m_p", "hazard_3m_p", "hazard_6m_p")):
+            n_with_hazard += 1
+
+    lobe: dict = {
+        "as_of": state.get("asof"),
+        "model_epoch": state.get("model_epoch"),
+        "gate_status": state.get("gate_status") or {},
+        "n_entities": len(entities),
+        "n_with_hazard": n_with_hazard,
+        "families": dict(sorted(families.items())),
+        "truth_summary": state.get("truth_summary") or {},
+        "standing_law": _CYCLE_PATTERN_STANDING_LAW,
+    }
+    if state.get("degraded_notes"):
+        lobe["degraded_notes"] = state["degraded_notes"]
+    return lobe, None
+
+
 # Registry: ordered list of (lobe_name, summarizer_fn)
 # Each fn signature: (repo: Path) -> (lobe_dict, gap_note | None)
 LOBE_SUMMARIZERS: dict[str, Any] = {
@@ -486,6 +541,7 @@ LOBE_SUMMARIZERS: dict[str, Any] = {
     "options_entry": _summarize_options_entry,
     "cortex": _summarize_cortex,
     "claim_reliability": _summarize_claim_reliability,
+    "cycle_pattern": _summarize_cycle_pattern,
 }
 
 # Map summarizer lobe names to their primary artifact IDs for manifest patching
@@ -497,6 +553,7 @@ _LOBE_TO_ARTIFACT_IDS: dict[str, list[str]] = {
     "options_entry": ["options-entry-gate"],
     "cortex": ["cortex-memo"],
     "claim_reliability": ["site-qledger-track-record"],
+    "cycle_pattern": ["cycle-pattern-state"],
 }
 
 
@@ -859,6 +916,7 @@ def build_context(
         "data/options_entry/state.parquet",
         "data/neuralweb/cortex/memo.json",
         "data/neuralweb/cortex/probation.json",
+        "data/neuralweb/cycle_pattern_state.json",
         "site/factordata/us_standouts.json",
         "site/altdata/mastermind.json",
         "site/basketdata/radar_ticker.json",

@@ -208,11 +208,15 @@ def _fetch_root(root: str, session_date: str,
     from collectors import thetadata as td
 
     try:
+        cfg = _cfg()
         kw: dict = {}
         if start_time:
             kw["start_time"] = start_time
         if end_time:
             kw["end_time"] = end_time
+        near_dte_cap = cfg.get("near_dte_cap_days", 90)
+        if near_dte_cap is not None:
+            kw["near_dte_cap_days"] = int(near_dte_cap)
 
         calls = td.bulk_trade_quote(root, "call", session_date, session_date, **kw)
         puts  = td.bulk_trade_quote(root, "put",  session_date, session_date, **kw)

@@ -9,8 +9,8 @@ SCOPE (CPI program, IX-1 substrate wave — NO trial, NO preregistration here):
 
 Universe (v0):
   - SPY                      family "us_market"  (US market index proxy)
-  - AAXJ/EEM/EFA/ILF/VGK/VPL/VXUS  family "bloc"  (the 7 bloc ETFs from
-    data/cycle_pattern/entities.parquet; tapes in data/yahoo/)
+  - AAXJ/EEM/EFA/ILF/VGK/VPL/VXUS  family "bloc"  (the 7 bloc ETFs from the
+    cycle-pattern entities registry, hardcoded here as BLOC_IDS; tapes in data/yahoo/)
 
 Detector config (documented choice):
   The member builder uses TURN_DETECTOR_DEFAULTS per family: 14% ZigZag for

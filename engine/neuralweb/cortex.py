@@ -102,6 +102,8 @@ _READ_TOOLS = frozenset({
     "read_factor_state",
     "list_factor_contradictions",
     "explain_factor_context",
+    # CPI P6 wave 1: read-only cycle-pattern turn-hazard state tool
+    "read_cycle_pattern_state",
 })
 _WRITE_TOOLS = frozenset({
     "flag_attention",
@@ -744,6 +746,41 @@ def _tool_read_factor_state(root: Path, _params: dict) -> dict:
         }
 
 
+def _tool_read_cycle_pattern_state(root: Path, _params: dict) -> dict:
+    """Read data/neuralweb/cycle_pattern_state.json (CPI P6 wave 1).
+
+    The committed CPI→NW adapter artifact: W4.2 hazard gate verdicts per cell
+    (gate_status), latest per-entity cycle state + turn-hazard probabilities,
+    and the truth-registry summary. DISPLAY-ONLY ceiling (CPI consumer matrix):
+    the cortex may cite this as context / to de-escalate a calibrated key; it
+    may never originate, score, or escalate from it. PRIOR cells are KM base
+    rates, not validated model output. Fails open with structured gaps when
+    the file is absent.  is_context_only always true.
+    """
+    p = _data(root, "neuralweb", "cycle_pattern_state.json")
+    if not p.exists():
+        return {
+            "is_context_only": True,
+            "display_only": True,
+            "gaps": ["data/neuralweb/cycle_pattern_state.json: absent — "
+                     "build_cycle_pattern_state has not run yet"],
+            "note": "Cycle-pattern state not yet built. Run the nightly "
+                    "build_cycle_pattern_state job.",
+        }
+    try:
+        state = json.loads(p.read_text(encoding="utf-8"))
+        # Ensure mandate fields are always present regardless of artifact version
+        state.setdefault("is_context_only", True)
+        state.setdefault("display_only", True)
+        return state
+    except Exception as exc:  # noqa: BLE001
+        return {
+            "is_context_only": True,
+            "display_only": True,
+            "gaps": [f"data/neuralweb/cycle_pattern_state.json: unreadable — {exc}"],
+        }
+
+
 def _tool_list_factor_contradictions(root: Path, params: dict) -> dict:
     """Read data/neuralweb/factor_contradictions.jsonl (RUL-NW3).
 
@@ -937,6 +974,8 @@ def dispatch_tool(
         return _tool_list_factor_contradictions(root, tool_params)
     elif tool_name == "explain_factor_context":
         return _tool_explain_factor_context(root, tool_params)
+    elif tool_name == "read_cycle_pattern_state":
+        return _tool_read_cycle_pattern_state(root, tool_params)
     elif tool_name == "flag_attention":
         return _tool_flag_attention(root, tool_params, now_str)
     elif tool_name == "write_memo":
@@ -1107,6 +1146,26 @@ def _tool_schemas() -> list[dict]:
                 "required": ["ticker"],
             },
         },
+        # --- CPI P6 wave 1: cycle-pattern turn-hazard state ---
+        {
+            "name": "read_cycle_pattern_state",
+            "description": (
+                "Read data/neuralweb/cycle_pattern_state.json — the committed CPI "
+                "cycle-pattern digest: W4.2 hazard gate verdicts per cell "
+                "(gate_status, up/down × 1m/3m/6m, PASS|PRIOR), latest per-entity "
+                "cycle phase + calibrated turn-hazard probabilities "
+                "(hazard_{1m,3m,6m}_p with per-horizon MODEL|PRIOR source), and the "
+                "truth-registry summary. DISPLAY-ONLY ceiling (CPI consumer matrix): "
+                "may be cited as context or to de-escalate a calibrated key; may "
+                "NEVER originate, score, or escalate a signal, and must never feed "
+                "board_rank, oracle_escalation, sector_central_direction_score, or "
+                "position_sizing. PRIOR cells are family-stratified KM base rates, "
+                "not validated model output — always report the cell verdict next "
+                "to any probability. is_context_only: true. Fails open with "
+                "structured gaps when absent."
+            ),
+            "input_schema": {"type": "object", "properties": {}, "required": []},
+        },
         {
             "name": "flag_attention",
             "description": "SHADOW-TIER WRITE: Flag items for operator attention. Appends to data/reflexes/cortex_attention/firings.jsonl. is_context_only always true.",
@@ -1210,12 +1269,17 @@ WHAT YOU MAY NEVER DO:
 • Influence any ranking outside the three shadow write-tools available to you.
 
 YOUR TOOLS:
-READ (14): read_world_state, query_spine, read_kernel, read_graph, read_contradictions,
+READ (15): read_world_state, query_spine, read_kernel, read_graph, read_contradictions,
            read_governance, read_artifact,
            read_options_entry_state, explain_options_context, query_options_confluence,
            list_options_contradictions,
-           read_factor_state, list_factor_contradictions, explain_factor_context
+           read_factor_state, list_factor_contradictions, explain_factor_context,
+           read_cycle_pattern_state
 WRITE (3, shadow-tier only): flag_attention, write_memo, stake_hypothesis
+
+CYCLE-PATTERN CEILING: read_cycle_pattern_state is display/context only. Cite turn-hazard
+probabilities ONLY with their cell verdict (PASS = validated vs KM; PRIOR = KM base rate).
+It may de-escalate a calibrated key; it may never originate, score, or escalate.
 
 DELIBERATION PROTOCOL:
 1. Start by reading world_state to understand the current macro regime.
