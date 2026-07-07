@@ -351,6 +351,8 @@ def make_release_id(release: str, period: str, sequence: str = "first") -> str:
         "cpi_core": "CPI_CORE",
         "nfp": "NFP",
         "claims": "CLAIMS",
+        "ahe": "AHE",
+        "awh": "AWH",
     }
     label = label_map.get(release, release.upper())
     return f"{label}:{period}:{sequence}"
@@ -531,7 +533,8 @@ def project_release(
     Parameters
     ----------
     release : str
-        One of 'cpi_headline', 'cpi_core', 'nfp', 'claims'.
+        One of 'cpi_headline', 'cpi_core', 'nfp', 'claims', 'ahe', 'awh'.
+        'ahe' and 'awh' are PR-H additions (AHE MoM % and avg weekly hours level).
     asof : date
         Decision date (the day before the target release is published).
     root : str | Path
@@ -566,10 +569,34 @@ def project_release(
             knowable_series_fn=knowable_series,
             min_quantile_obs=MIN_QUANTILE_OBS,
         )
+    elif release == "ahe":
+        # PR-H: AHE MoM % target
+        from engine.release_components_nfp import project_ahe
+        result = project_ahe(
+            asof, vintages,
+            knowable_series_fn=knowable_series,
+            survey_week_claims_fn=_survey_week_claims,
+            ridge_predict_fn=_ridge_predict,
+            walk_forward_fn=_walk_forward,
+            build_matrix_fn=_build_matrix,
+            compute_quantiles_fn=_compute_quantiles,
+            wilson_fn=_wilson,
+            min_train_obs=MIN_TRAIN_OBS,
+            min_quantile_obs=MIN_QUANTILE_OBS,
+            inline_band_sigma=INLINE_BAND_SIGMA,
+        )
+    elif release == "awh":
+        # PR-H: avg weekly hours level (persistence-only)
+        from engine.release_components_nfp import project_awh
+        result = project_awh(
+            asof, vintages,
+            knowable_series_fn=knowable_series,
+            min_quantile_obs=MIN_QUANTILE_OBS,
+        )
     else:
         raise ValueError(
             f"Unknown release type: {release!r}. "
-            "Use 'cpi_headline', 'cpi_core', 'nfp', or 'claims'."
+            "Use 'cpi_headline', 'cpi_core', 'nfp', 'claims', 'ahe', or 'awh'."
         )
 
     # Attach schema v2 fields
@@ -885,6 +912,7 @@ def _project_nfp(asof: date, vintages: pd.DataFrame, root: Path) -> dict:
             feats = {fn: None for fn in feature_names}
         rec = dict(feats)
         rec["target"] = row["change"]
+        rec["period"] = row["period"]  # needed for decomposition BD prior PIT
         records.append(rec)
 
     if len(records) < MIN_TRAIN_OBS + 1:
@@ -894,9 +922,16 @@ def _project_nfp(asof: date, vintages: pd.DataFrame, root: Path) -> dict:
     if not wf_results:
         return _empty_projection("nfp", asof, "no_walk_forward_results")
 
-    # Current features
-    asof_month = date(asof.year, asof.month, 1)
-    feats, prov = build_nfp_features(asof, asof_month, vintages, root)
+    # Current features — target ref_month is the next calendar month after the
+    # last knowable PAYEMS initial print (the period being predicted, not asof's
+    # own calendar month, which may lag the target by 0-2 months).
+    # FIX(M1): use the projection's actual target period, not date(asof.year, asof.month, 1).
+    target_ref_month = (
+        (pd.Timestamp(initial_prints["period"].iloc[-1]).to_period("M") + 1)
+        .to_timestamp()
+        .date()
+    )
+    feats, prov = build_nfp_features(asof, target_ref_month, vintages, root)
 
     # Current prediction
     train_recs = records
@@ -996,6 +1031,37 @@ def _project_nfp(asof: date, vintages: pd.DataFrame, root: Path) -> dict:
         "n_features_used": n_features_used,
     })
 
+    # PR-H: NFP decomposition (display-only) per PREREG_NFP_DECOMP_V1.md §2
+    # Annotate wf_results with period metadata for birth-death prior PIT calculation
+    wf_for_decomp = []
+    for r in wf_results:
+        meta = records[r["idx"]] if r["idx"] < len(records) else {}
+        wf_for_decomp.append({
+            "actual": r.get("actual"),
+            "predicted": r.get("predicted"),
+            "period": meta.get("period"),
+            "result_pos": r.get("result_pos"),
+        })
+
+    try:
+        from engine.release_components_nfp import (
+            build_nfp_components,
+            compute_nfp_revision_risk,
+        )
+        components = build_nfp_components(
+            point,
+            asof,
+            target_ref_month,
+            vintages,
+            wf_for_decomp,
+            knowable_series_fn=knowable_series,
+        )
+        revision_risk = compute_nfp_revision_risk(vintages)
+    except Exception as e:
+        log.debug("NFP decomposition/revision_risk failed: %s", e)
+        components = None
+        revision_risk = None
+
     return {
         "release": "nfp",
         "asof": asof.isoformat(),
@@ -1024,6 +1090,8 @@ def _project_nfp(asof: date, vintages: pd.DataFrame, root: Path) -> dict:
             "tag": tag,
             "inline_band": INLINE_BAND_SIGMA,
         },
+        "components": components,        # PR-H: private/govt/BD decomposition (display-only)
+        "revision_risk": revision_risk,  # PR-H: trailing 24m revision mean/sign (display-only)
         "pit_provenance": prov,
         "display_only": True,
         "authority": False,
@@ -1094,6 +1162,10 @@ def run_walk_forward_full(
         return _wf_cpi_full(release, vintages, root)
     elif release == "nfp":
         return _wf_nfp_full(vintages, root)
+    elif release == "ahe":
+        return _wf_ahe_full(vintages)
+    elif release == "awh":
+        return _wf_awh_full(vintages)
     else:
         raise ValueError(f"Unknown release: {release!r}")
 
@@ -1196,4 +1268,96 @@ def _wf_nfp_full(vintages: pd.DataFrame, root: Path) -> dict:
         "results": wf_results,
         "feature_names": feature_names,
         "metadata": {"release": "nfp", "n_records": len(records)},
+    }
+
+
+def _wf_ahe_full(vintages: pd.DataFrame) -> dict:
+    """Walk-forward for AHE MoM % target (CES0500000003). PR-H."""
+    from engine.release_components_nfp import build_ahe_features
+
+    feature_names = [
+        "ahe_mom_lag1", "ahe_mom_lag2", "ahe_mom_lag3",
+        "awh_mom_last", "jolts_mom_last", "icsa_level_z",
+    ]
+
+    all_series = knowable_series(vintages, "CES0500000003", date(2099, 1, 1))
+    if len(all_series) < 2:
+        return {"results": [], "feature_names": feature_names,
+                "metadata": {"release": "ahe", "n_records": 0}}
+
+    ahe_levels = all_series.copy()
+    ahe_levels["mom"] = ahe_levels["value"].pct_change() * 100.0
+    ahe_levels = ahe_levels.dropna(subset=["mom"]).reset_index(drop=True)
+
+    records = []
+    for _, row in ahe_levels.iterrows():
+        step_asof = (row["realtime_start"] - pd.Timedelta(days=1)).date()
+        ref_month_step = row["period"].date() if hasattr(row["period"], "date") else date(
+            pd.Timestamp(row["period"]).year, pd.Timestamp(row["period"]).month, 1
+        )
+        try:
+            feats, _ = build_ahe_features(
+                step_asof, ref_month_step, vintages,
+                knowable_series_fn=knowable_series,
+                survey_week_claims_fn=_survey_week_claims,
+            )
+        except Exception as e:
+            log.debug("AHE feature build failed at %s: %s", step_asof, e)
+            feats = {fn: None for fn in feature_names}
+        rec = dict(feats)
+        rec["target"] = float(row["mom"])
+        rec["period"] = row["period"]
+        rec["release_date"] = row["realtime_start"]
+        rec["asof"] = step_asof
+        records.append(rec)
+
+    wf_results = _walk_forward(records, feature_names, "target")
+
+    for r in wf_results:
+        meta_rec = records[r["idx"]]
+        r["period"] = meta_rec.get("period")
+        r["release_date"] = meta_rec.get("release_date")
+
+    return {
+        "results": wf_results,
+        "feature_names": feature_names,
+        "metadata": {"release": "ahe", "n_records": len(records)},
+    }
+
+
+def _wf_awh_full(vintages: pd.DataFrame) -> dict:
+    """Walk-forward for AWH level (AWHAETP). Persistence-only. PR-H."""
+    all_series = knowable_series(vintages, "AWHAETP", date(2099, 1, 1))
+    if len(all_series) < 2:
+        return {"results": [], "feature_names": [],
+                "metadata": {"release": "awh", "n_records": 0, "persistence_only": True}}
+
+    awh_sorted = all_series.sort_values("period").reset_index(drop=True)
+    levels = awh_sorted["value"].values
+
+    # For persistence model: predicted = levels[i-1], actual = levels[i]
+    results = []
+    for i in range(1, len(awh_sorted)):
+        row = awh_sorted.iloc[i]
+        prev_val = float(levels[i - 1])
+        actual_val = float(levels[i])
+        results.append({
+            "idx": i,
+            "result_pos": i - 1,
+            "predicted": prev_val,
+            "actual": actual_val,
+            "baseline_naive": prev_val,  # model IS naive
+            "baseline_trailing3m": float(np.mean(levels[max(0, i - 3):i])),
+            "baseline_ar3": prev_val,
+            "n_train": i,
+            "n_features_used": 1,
+            "input_completeness": 1.0,
+            "period": row["period"],
+            "release_date": row["realtime_start"],
+        })
+
+    return {
+        "results": results,
+        "feature_names": ["last_level"],
+        "metadata": {"release": "awh", "n_records": len(awh_sorted), "persistence_only": True},
     }

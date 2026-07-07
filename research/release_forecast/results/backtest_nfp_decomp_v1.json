@@ -1,0 +1,115 @@
+{
+  "ahe": {
+    "status": "no_data",
+    "benchmark_only": false,
+    "n_predictions": 0,
+    "era_metrics": {}
+  },
+  "awh": {
+    "status": "no_data",
+    "n_steps": 0
+  },
+  "nfp_decomp": {
+    "bd_prior_12month_profile": {
+      "1": 58.85,
+      "2": 226.94,
+      "3": 173.84,
+      "4": -151.66,
+      "5": 129.71,
+      "6": 37.27,
+      "7": 78.45,
+      "8": 17.44,
+      "9": 101.99,
+      "10": -80.61,
+      "11": 132.35,
+      "12": -89.44
+    },
+    "bd_prior_12month_profile_2023_view": {
+      "1": 263.79,
+      "2": 48.71,
+      "3": 57.45,
+      "4": -99.59,
+      "5": 96.13,
+      "6": 75.33,
+      "7": 94.44,
+      "8": -146.45,
+      "9": -123.64,
+      "10": -122.05,
+      "11": -168.41,
+      "12": -9.29
+    },
+    "decomp_spot_checks": [
+      {
+        "period": "2026-01-01",
+        "model_point": -26.0,
+        "private_trend": null,
+        "government_trend": null,
+        "bd_prior": 245.22,
+        "residual": -271.22,
+        "parts_sum_plus_residual": -26.0,
+        "reconstruction_error": 0.0,
+        "absent_parts": [
+          "private_trend",
+          "government_trend"
+        ]
+      },
+      {
+        "period": "2026-02-01",
+        "model_point": -899.0,
+        "private_trend": null,
+        "government_trend": null,
+        "bd_prior": 124.72,
+        "residual": -1023.72,
+        "parts_sum_plus_residual": -899.0,
+        "reconstruction_error": 0.0,
+        "absent_parts": [
+          "private_trend",
+          "government_trend"
+        ]
+      },
+      {
+        "period": "2026-03-01",
+        "model_point": -161.0,
+        "private_trend": null,
+        "government_trend": null,
+        "bd_prior": 142.21,
+        "residual": -303.21,
+        "parts_sum_plus_residual": -161.0,
+        "reconstruction_error": 0.0,
+        "absent_parts": [
+          "private_trend",
+          "government_trend"
+        ]
+      },
+      {
+        "period": "2026-04-01",
+        "model_point": 171.0,
+        "private_trend": null,
+        "government_trend": null,
+        "bd_prior": -167.59,
+        "residual": 338.59,
+        "parts_sum_plus_residual": 171.0,
+        "reconstruction_error": 0.0,
+        "absent_parts": [
+          "private_trend",
+          "government_trend"
+        ]
+      },
+      {
+        "period": "2026-05-01",
+        "model_point": 99.0,
+        "private_trend": null,
+        "government_trend": null,
+        "bd_prior": 122.46,
+        "residual": -23.46,
+        "parts_sum_plus_residual": 99.0,
+        "reconstruction_error": 0.0,
+        "absent_parts": [
+          "private_trend",
+          "government_trend"
+        ]
+      }
+    ],
+    "n_nfp_wf_steps": 293
+  }
+}
