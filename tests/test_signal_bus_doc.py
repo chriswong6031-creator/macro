@@ -73,8 +73,8 @@ def test_all_artifact_ids_present():
     with _SYNAPSE_YML.open(encoding="utf-8") as fh:
         registry = yaml.safe_load(fh)
     artifact_ids = list(registry.get("artifacts", {}).keys())
-    assert len(artifact_ids) == 232, (
-        f"Expected 232 artifacts in synapse.yml, found {len(artifact_ids)}. "
+    assert len(artifact_ids) == 239, (
+        f"Expected 239 artifacts in synapse.yml, found {len(artifact_ids)}. "
         "Update the test if the registry count changed intentionally."
         " (B6 watchlist sentinel added watchlist-alerts-jsonl, watchlist-sentinel-states,"
         " watchlist-sentinel-cooldown = 223->226;"
@@ -152,7 +152,10 @@ def test_all_artifact_ids_present():
         " watchlist-sentinel-cooldown = 223->226;"
         " momoedge Wave 1 Package A (#1815) options sensor contract added"
         " options-structure-gex-state, options-flow-chain-heat, options-structure-matrix,"
-        " options-structure-structural, prophet-trade-plan, prophet-management-state = 226->232)"
+        " options-structure-structural, prophet-trade-plan, prophet-management-state = 226->232;"
+        " MRI PR-C added cleveland-nowcast-store, release-forecast-latest,"
+        " release-forecast-ledger, release-forecast-scoreboard, site-release-forecast = 232->237;"
+        " momoedge Package E strike-expiry matrix landed in a racing merge = 237->239)"
     )
     content = generate(_SYNAPSE_YML)
     missing = [aid for aid in artifact_ids if aid not in content]

@@ -6825,3 +6825,150 @@ artifacts:
     notes: >
       B6: per-ticker cooldown map (5-session re-alert suppressor).  Advanced
       nightly by run_watchlist_sentinel.py.  Same-day idempotent.
+
+  # ============================================================
+  # MACRO RELEASE INTELLIGENCE (MRI) — PR-C artifacts
+  # ============================================================
+
+  # --- infrastructure: Cleveland Fed daily nowcast store ---
+  cleveland-nowcast-store:
+    path: data/cleveland_nowcast/nowcast.parquet
+    format: parquet
+    producer: collectors/cleveland_nowcast.py
+    known_extra_writers: []
+    owner_program: macro-release-intel
+    cadence: collect
+    storage: git
+    asof_field: null
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/build_release_forecast.py
+    notes: >
+      MRI PR-A: Cleveland Fed daily CPI and PCE inflation nowcast store
+      (MoM %). Keyed (target_period, series, obs_date) with keep-first
+      semantics — an already-recorded observation is never overwritten,
+      giving a true first-seen vintage record. The four series collected
+      are cpi_mom, core_cpi_mom, pce_mom, core_pce_mom. The asof_field is
+      null at the artifact level because each row carries first_seen_asof
+      per-row; PIT comparisons filter on obs_date <= decision_date per
+      MRI-R6. The collector is fail-open: any fetch or parse error logs a
+      warning and leaves the store unchanged.
+
+  # --- display: release forecast latest snapshot ---
+  release-forecast-latest:
+    path: data/release_forecast/latest.json
+    format: json
+    producer: scripts/build_release_forecast.py
+    known_extra_writers: []
+    owner_program: macro-release-intel
+    cadence: daily-engine
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 30
+    schema: release_forecast.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers:
+      - mastermind:context
+    notes: >
+      MRI PR-C: nightly pre-print projection for CPI (headline and core)
+      and NFP, schema release_forecast.v1. Contains the upcoming-releases
+      block with quantile projections, Cleveland nowcast benchmark
+      enrichment, policy_backdrop join (fed_stance, gap_bp,
+      implied_cuts_12m, next_fomc, guidance_direction — all read from
+      persisted regime artifacts, no LLM calls), and the most-recent
+      scored row per release type. display_only=True; all authority
+      booleans False (MRI-R7). The asof field is a full ISO UTC timestamp.
+      Mastermind receives this artifact as a compact manifest row
+      (annotate-only). CPI feeds the inflation axis of the quad; NFP feeds
+      the growth axis. Forward accrual began 2026-07-07; no backtest rows
+      ever enter this artifact.
+
+  # --- shadow: append-only forward ledger ---
+  release-forecast-ledger:
+    path: data/release_forecast/forward_ledger.jsonl
+    format: jsonl
+    producer: scripts/build_release_forecast.py
+    known_extra_writers: []
+    owner_program: macro-release-intel
+    cadence: daily-engine
+    storage: git
+    asof_field: asof_night
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: shadow
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/build_release_forecast.py
+    notes: >
+      MRI PR-C: append-only forward ledger for release projections and
+      scored actuals. Row types: projection (nightly frozen snapshot) and
+      scored (actual vs frozen T-1 projection, emitted on release day after
+      ALFRED initial print is available). Keyed (release, period, row_type,
+      asof_night) for idempotency — re-running the same night appends zero
+      duplicate rows. The nightly lane is the sole advancer (MRI-R8); no
+      intraday or backtest lane writes here. Scored rows carry our MAE,
+      benchmark MAEs, interval coverage hit, and skew-direction hit.
+
+  # --- display: scoreboard recomputed from scored rows only ---
+  release-forecast-scoreboard:
+    path: data/release_forecast/scoreboard.json
+    format: json
+    producer: scripts/build_release_forecast.py
+    known_extra_writers: []
+    owner_program: macro-release-intel
+    cadence: daily-engine
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    notes: >
+      MRI PR-C: scoreboard recomputed each night from scored ledger rows
+      only. Reports per release type: n, MAE ours vs each benchmark
+      (naive_prior, trailing_3m, ar_model, cleveland_nowcast), p10-p90
+      interval coverage rate, skew direction hit-rate with Wilson 95% CI.
+      With n=0 prints zeros and nulls honestly alongside a
+      forward_accrual_began date. No backtest numbers ever enter this
+      scoreboard (MRI-R8). The gateway to a graduated badge is defined in
+      the masterplan section 7 (n >= 12, MAE < naive, skew Wilson LB > 0.5).
+
+  # --- display: site copy of release forecast ---
+  site-release-forecast:
+    path: site/macrodata/release_forecast.json
+    format: json
+    producer: scripts/build_release_forecast.py
+    known_extra_writers: []
+    owner_program: macro-release-intel
+    cadence: daily-engine
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 30
+    schema: release_forecast.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers:
+      - site
+    notes: >
+      MRI PR-C: public-site display copy of data/release_forecast/latest.json,
+      written at the same time and carrying the same payload. Used by the
+      Release Radar UI section on macro.html (PR-D). display_only=True;
+      authority booleans all False. No additional logic beyond mirroring the
+      data artifact.

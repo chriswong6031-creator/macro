@@ -25,8 +25,9 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | institutional-sector-intelligence | 2 |
 | intl-fix | 1 |
 | long-hold | 22 |
+| macro-release-intel | 5 |
 | mastermind-feedback-contract | 2 |
-| momoedge | 6 |
+| momoedge | 8 |
 | nasdaq-internals | 1 |
 | neural-web | 41 |
 | next3 | 3 |
@@ -48,16 +49,16 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 121 |
-| infrastructure | 68 |
+| display | 126 |
+| infrastructure | 69 |
 | scored | 4 |
-| shadow | 39 |
+| shadow | 40 |
 
 ### Artifacts by storage
 
 | storage | count |
 |---|---|
-| git | 220 |
+| git | 227 |
 | gitignored-local | 6 |
 | r2 | 6 |
 
@@ -222,6 +223,16 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | per-fire-sector-benchmark | `data/research/per_fire_sector_benchmark.parquet` | parquet | on-demand | display | 1 | 0 |
 | ticker-sectors | `data/breadth/ticker_sectors.parquet` | parquet | on-demand | display | 1 | 0 |
 
+### macro-release-intel
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| cleveland-nowcast-store | `data/cleveland_nowcast/nowcast.parquet` | parquet | collect | infrastructure | 1 | 0 |
+| release-forecast-latest | `data/release_forecast/latest.json` | json | daily-engine | display | 0 | 1 |
+| release-forecast-ledger | `data/release_forecast/forward_ledger.jsonl` | jsonl | daily-engine | shadow | 1 | 0 |
+| site-release-forecast | `site/macrodata/release_forecast.json` | json | daily-engine | display | 0 | 1 |
+| release-forecast-scoreboard | `data/release_forecast/scoreboard.json` | json | daily-engine | display | 0 | 0 |
+
 ### mastermind-feedback-contract
 
 | id | path | format | cadence | tier | consumers | external consumers |
@@ -233,12 +244,14 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
+| prophet-trade-plan | `prophet/trade_plan/<ID>.json` | json | daily-engine | display | 2 | 1 |
 | options-flow-chain-heat | `live_flow/chain_heat_current.json` | json | collect | display | 1 | 1 |
 | options-structure-gex-state | `options_structure/gex_state/<ROOT>.json` | json | daily-engine | display | 1 | 1 |
 | options-structure-matrix | `options_structure/matrix/<ROOT>.json` | json | daily-engine | display | 1 | 1 |
 | prophet-management-state | `prophet/state/<ID>.json` | json | daily-engine | display | 1 | 1 |
-| prophet-trade-plan | `prophet/trade_plan/<ID>.json` | json | on-demand | display | 1 | 1 |
 | options-structure-structural | `options_structure/structural/<ROOT>.json` | json | daily-engine | shadow | 1 | 0 |
+| prophet-index | `site/prophet/index.json` | json | daily-engine | display | 0 | 1 |
+| prophet-ledger | `data/prophet/ledger.jsonl` | jsonl | daily-engine | display | 0 | 0 |
 
 ### nasdaq-internals
 
