@@ -468,7 +468,9 @@ def _make_claims_vintages(root: Path, n_weeks: int = 80) -> pd.DataFrame:
     base_date = pd.Timestamp("2010-01-02")  # First Saturday
     rows = []
     rng = np.random.default_rng(42)
-    icsa_vals = 200.0 + rng.standard_normal(n_weeks) * 10  # ~200k claims
+    # Raw ALFRED persons scale (~200,000), matching real ICSA/IC4WSA vintages;
+    # project_claims converts to thousands internally.
+    icsa_vals = 200000.0 + rng.standard_normal(n_weeks) * 10000
 
     for i in range(n_weeks):
         period = base_date + pd.Timedelta(weeks=i)
@@ -540,10 +542,10 @@ class TestClaimsProjection:
         if not ic4wsa.empty:
             expected_point = round(float(ic4wsa["value"].iloc[-1]) / 1000.0, 3)
             assert result["point"] == pytest.approx(expected_point, abs=0.001)
-            # Sanity: synthetic data is ~200k raw persons → ~0.2 in thousands
-            assert 0.1 <= result["point"] <= 1.0, (
-                f"point={result['point']} not in plausible thousands range [0.1, 1.0] "
-                "(synthetic ICSA ~200k raw → ~0.2 thousands)"
+            # Sanity: synthetic data is ~200,000 raw persons → ~200.0 in thousands
+            assert 150.0 <= result["point"] <= 260.0, (
+                f"point={result['point']} not in plausible thousands range [150, 260] "
+                "(synthetic ICSA ~200,000 raw persons → ~200.0 thousands)"
             )
 
     def test_claims_quantiles_when_enough_residuals(self, tmp_root: Path):
