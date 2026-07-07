@@ -91,7 +91,8 @@ def yahoo_closes(basis: str = "tr") -> pd.DataFrame:
 
 
 def build_features(pit_basis: str | None = None,
-                   pit_as_of: pd.Timestamp | str | None = None) -> pd.DataFrame:
+                   pit_as_of: pd.Timestamp | str | None = None,
+                   overrides: dict[str, pd.Series] | None = None) -> pd.DataFrame:
     """Assemble the daily feature frame.
 
     pit_basis : SHADOW point-in-time control (audit #5/#14/#39, masterplan W1a).
@@ -105,6 +106,14 @@ def build_features(pit_basis: str | None = None,
         any basis, so the frame stays internally consistent (avoids the partial-PIT
         hazard of #14 for the SHADOW frame — a full leg set moves together).
     pit_as_of : optional hard as-of cut passed through to engine.pit.series.
+    overrides : SHADOW injection seam (CPI P-D5-1, regime_v2_pit). Optional
+        {column_name: raw series} replacing the store read for that column before
+        the normal dedupe/union-reindex/ffill contract in put() — the injected
+        series flows through EXACTLY the same alignment as the store series, so
+        axes/regime run unchanged on top. None/{} (default) -> live behaviour,
+        byte-identical (the live path never passes this argument). An overridden
+        column bypasses the pit_basis router (the caller injected it explicitly).
+        Used by scripts/build_regime_v2_pit.py to feed vintage-as-of macro legs.
     """
     cfg = config.load()
     ecfg = cfg["engine"]
@@ -129,7 +138,12 @@ def build_features(pit_basis: str | None = None,
         _pit_cols = set(_pitmod.VINTAGED_SID_TO_COL.values()) | set(_pitmod.DEFAULT_RELEASE_LAGS)
 
     def put(name: str, s: pd.Series | None, ffill_limit: int | None = 5) -> None:
-        if _pit_series is not None and name in _pit_cols:
+        if overrides is not None and name in overrides:
+            # injected series replaces the store read; falls through to the same
+            # dedupe/union-reindex/ffill contract below (and skips the pit router —
+            # the caller supplied this column explicitly).
+            s = overrides[name]
+        elif _pit_series is not None and name in _pit_cols:
             # route this revision-prone column through the PIT accessor at the same
             # reindex/ffill contract used below, so axes/regime run unchanged.
             f[name] = _pit_series.series(name, as_of=pit_as_of, basis=pit_basis,
