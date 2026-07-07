@@ -1,6 +1,6 @@
 {
-  "generated_utc": "2026-07-06T23:39:04.428007+00:00",
-  "as_of": "2026-07-06",
+  "generated_utc": "2026-07-07T00:00:21.888699+00:00",
+  "as_of": "2026-07-07",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
   "note": "Deterministic alt-data signals + normalized event feed for the reasoning brain. Display/context-only \u2014 not a scored axis.",
@@ -6088,15 +6088,6 @@
           "parties": "D"
         },
         {
-          "ticker": "NVDA",
-          "net": -11,
-          "buys": 3,
-          "sells": 14,
-          "members": 7,
-          "est_usd": 24002.0,
-          "parties": "D/Democratic/R/Republican"
-        },
-        {
           "ticker": "MU",
           "net": -10,
           "buys": 2,
@@ -6106,22 +6097,13 @@
           "parties": "D/Democratic"
         },
         {
-          "ticker": "GOOGL",
+          "ticker": "NVDA",
           "net": -9,
-          "buys": 2,
-          "sells": 11,
-          "members": 5,
-          "est_usd": 16001.0,
-          "parties": "D/R/Republican"
-        },
-        {
-          "ticker": "PWR",
-          "net": -8,
-          "buys": 0,
-          "sells": 8,
-          "members": 3,
-          "est_usd": 0.0,
-          "parties": "D"
+          "buys": 3,
+          "sells": 12,
+          "members": 6,
+          "est_usd": 24002.0,
+          "parties": "D/Democratic/R/Republican"
         },
         {
           "ticker": "FBIN",
@@ -6169,6 +6151,15 @@
           "parties": "D/Democratic/R/Republican"
         },
         {
+          "ticker": "GOOGL",
+          "net": -7,
+          "buys": 2,
+          "sells": 9,
+          "members": 4,
+          "est_usd": 16001.0,
+          "parties": "D/R/Republican"
+        },
+        {
           "ticker": "CDW",
           "net": -7,
           "buys": 1,
@@ -6185,6 +6176,15 @@
           "members": 5,
           "est_usd": 81002.0,
           "parties": "D/Democratic/R"
+        },
+        {
+          "ticker": "INTU",
+          "net": -6,
+          "buys": 3,
+          "sells": 9,
+          "members": 5,
+          "est_usd": 24002.0,
+          "parties": "D/Democratic/R/Republican"
         }
       ]
     },
@@ -6410,12 +6410,6 @@
         "kind": "label_expansion",
         "drug": "SPINRAZA",
         "date": "2026-03-27"
-      },
-      {
-        "ticker": "GSK",
-        "kind": "label_expansion",
-        "drug": "WELLCOVORIN",
-        "date": "2026-03-09"
       }
     ],
     "hf": [
@@ -43701,18 +43695,18 @@
         "sample": "A Study of Orforglipron (LY3502970) Compared With Dulaglutide in Pediatric Participants With Type 2 Diabetes"
       },
       {
-        "ticker": "NVS",
-        "phase3_starts": 7,
-        "halts": 6,
-        "hot": true,
-        "sample": "An Extension Study to Assess Safety and Efficacy of Remibrutinib in Participants With Moderate to Severe HS"
-      },
-      {
         "ticker": "MRK",
         "phase3_starts": 6,
         "halts": 2,
         "hot": true,
         "sample": "A Clinical Trial of MK-1045 and Rituximab in People With Follicular Lymphoma (MK-1045-007)"
+      },
+      {
+        "ticker": "NVS",
+        "phase3_starts": 6,
+        "halts": 6,
+        "hot": true,
+        "sample": "An Extension Study to Assess Safety and Efficacy of Remibrutinib in Participants With Moderate to Severe HS"
       },
       {
         "ticker": "REGN",
@@ -47315,18 +47309,6 @@
         "why": "clinical_phase3_start: 1 new Phase-3 \u00b7 congress_cluster: 3 members net +7 \u00b7 fda_label_expansion: SPINRAZA \u00b7 special_situation: Acquisitions"
       },
       {
-        "ticker": "GSK",
-        "score": 4,
-        "weighted_score": 2.25,
-        "channel_list": [
-          "clinical_phase3_start",
-          "fda_approval",
-          "fda_label_expansion",
-          "special_situation"
-        ],
-        "why": "clinical_phase3_start: 7 new Phase-3 \u00b7 fda_approval: UTEBZI \u00b7 fda_label_expansion: WELLCOVORIN \u00b7 special_situation: M&A / Divestitures"
-      },
-      {
         "ticker": "NVDA",
         "score": 6,
         "weighted_score": 2.0,
@@ -47410,6 +47392,17 @@
           "trump"
         ],
         "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$199,467,629 \u00b7 hf_model_momentum: +3.5% model downloads \u00b7 special_situation: Other Situations \u00b7 trump: Amazon Com Inc"
+      },
+      {
+        "ticker": "GSK",
+        "score": 3,
+        "weighted_score": 1.55,
+        "channel_list": [
+          "clinical_phase3_start",
+          "fda_approval",
+          "special_situation"
+        ],
+        "why": "clinical_phase3_start: 7 new Phase-3 \u00b7 fda_approval: UTEBZI \u00b7 special_situation: M&A / Divestitures"
       },
       {
         "ticker": "AZN",

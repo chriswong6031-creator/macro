@@ -1,7 +1,7 @@
 {
   "schema": "altdata.by_ticker.v2",
-  "as_of": "2026-07-06",
-  "generated_utc": "2026-07-06T23:39:11.080266+00:00",
+  "as_of": "2026-07-07",
+  "generated_utc": "2026-07-07T00:00:28.487596+00:00",
   "n_tickers": 4865,
   "note": "Per-ticker weighted alt-data rollup. convergence_score = distinct independent channels (count); weighted_score ranks by channel quality. Donors / position-size recorded as context, never a voting channel.",
   "tickers": {
@@ -1162,13 +1162,12 @@
       "channels": [
         "clinical_phase3_start",
         "fda_approval",
-        "fda_label_expansion",
         "special_situation"
       ],
-      "weighted_score": 2.25,
+      "weighted_score": 1.55,
       "clinical_phase3_starts": 7,
       "clinical_halts": 0,
-      "convergence_score": 4,
+      "convergence_score": 3,
       "trump_linked": false,
       "affiliated": false
     },
@@ -2961,7 +2960,7 @@
         "clinical_phase3_start"
       ],
       "weighted_score": 0.35,
-      "clinical_phase3_starts": 7,
+      "clinical_phase3_starts": 6,
       "clinical_halts": 6,
       "congress_position_usd": 10325000.0,
       "convergence_score": 1,
