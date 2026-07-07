@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-07T09:10:29.653699+00:00",
+  "generated_at": "2026-07-07T12:06:07.569085+00:00",
   "ok": false,
   "fail_reasons": [
     "CHAINS STALE: latest chain file is 2026-07-05 (2 trading day(s) behind last_td=2026-07-07); threshold=1d \u2014 OI snapshot may have been missed"
@@ -15,6 +15,6 @@
     "chains_count": 19,
     "chains_age_trading_days": 2,
     "options_flow_creds_present": false,
-    "options_flow_summary_count": 368
+    "options_flow_summary_count": 369
   }
 }

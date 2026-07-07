@@ -1,6 +1,6 @@
 {
   "schema": "options_entry_coverage.v1",
-  "generated_at": "2026-07-07T09:10:29.687673+00:00",
+  "generated_at": "2026-07-07T12:06:07.600122+00:00",
   "as_of": "2026-07-07",
   "absent_stores": [],
   "feature_coverage": {
@@ -57,27 +57,27 @@
       },
       {
         "feature": "doi_pc",
-        "n_nonnull": 315,
+        "n_nonnull": 321,
         "n_total": 403,
-        "share_nonnull": 0.7816
+        "share_nonnull": 0.7965
       },
       {
         "feature": "fresh_contracts",
-        "n_nonnull": 348,
+        "n_nonnull": 353,
         "n_total": 403,
-        "share_nonnull": 0.8635
+        "share_nonnull": 0.8759
       },
       {
         "feature": "fresh_premium_mn",
-        "n_nonnull": 310,
+        "n_nonnull": 324,
         "n_total": 403,
-        "share_nonnull": 0.7692
+        "share_nonnull": 0.804
       },
       {
         "feature": "zerodte_share",
-        "n_nonnull": 368,
+        "n_nonnull": 369,
         "n_total": 403,
-        "share_nonnull": 0.9132
+        "share_nonnull": 0.9156
       },
       {
         "feature": "gamma_regime",
@@ -159,16 +159,16 @@
       },
       {
         "feature": "src_flow_asof",
-        "n_nonnull": 368,
+        "n_nonnull": 369,
         "n_total": 403,
-        "share_nonnull": 0.9132
+        "share_nonnull": 0.9156
       }
     ],
     "ticker_coverage": {
       "n_tickers": 403,
       "n_rows": 403,
-      "n_tickers_ge75pct_features": 346,
-      "n_tickers_50to74pct_features": 29,
+      "n_tickers_ge75pct_features": 345,
+      "n_tickers_50to74pct_features": 30,
       "n_tickers_lt50pct_features": 28
     }
   },
@@ -369,14 +369,14 @@
       "sources": [
         {
           "source": "options_entry/state.parquet",
-          "latest_as_of": "2026-07-05",
-          "age_days_from_today": 2,
+          "latest_as_of": "2026-07-06",
+          "age_days_from_today": 1,
           "status": "FRESH"
         },
         {
           "source": "options_entry/gate.json",
-          "latest_as_of": "2026-07-06 08:36 UTC",
-          "age_days_from_today": 1,
+          "latest_as_of": "2026-07-07 08:53 UTC",
+          "age_days_from_today": 0,
           "status": "FRESH"
         },
         {
@@ -389,7 +389,7 @@
     },
     {
       "check": "audit_options_accrual_last_run",
-      "generated_at": "2026-07-07T09:10:29.653699+00:00",
+      "generated_at": "2026-07-07T12:06:07.569085+00:00",
       "ok": false,
       "fail_reasons": [
         "CHAINS STALE: latest chain file is 2026-07-05 (2 trading day(s) behind last_td=2026-07-07); threshold=1d \u2014 OI snapshot may have been missed"
@@ -401,7 +401,7 @@
   ],
   "_stamp": {
     "audit": "options_entry_coverage.v1",
-    "generated_at_utc": "2026-07-07T09:10:29.687665+00:00",
+    "generated_at_utc": "2026-07-07T12:06:07.600116+00:00",
     "as_of": "2026-07-07",
     "absent_stores": []
   }
