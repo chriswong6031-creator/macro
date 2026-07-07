@@ -417,8 +417,7 @@ def test_artifact_schema_stability(tmp_path: Path) -> None:
 def test_no_validated_string_in_output(tmp_path: Path) -> None:
     """The word 'validated' must not appear in any authored field of the artifact.
 
-    We exclude ledger_path (which may reflect a tmp_path name that contains
-    'validated' due to the pytest test function name), and check the fields
+    We exclude ledger_file (basename only; not a path) and check the fields
     whose content is authored by this module: schema, state, authority, contrasts,
     fdr_family, harness_version, etc.
     """
@@ -427,8 +426,8 @@ def test_no_validated_string_in_output(tmp_path: Path) -> None:
     from engine.operator_grading import grade
     result = grade(data_root=data_root)
 
-    # Check all authored fields (exclude ledger_path which reflects filesystem path)
-    authored = {k: v for k, v in result.items() if k != "ledger_path"}
+    # Check all authored fields (exclude ledger_file which is just the basename)
+    authored = {k: v for k, v in result.items() if k != "ledger_file"}
     authored_str = json.dumps(authored, default=str)
 
     assert "validated" not in authored_str.lower(), (
