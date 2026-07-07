@@ -48,6 +48,7 @@ data/canada_breadth/_closes_cache.parquet
 # R5: factor panel monthly partitions (off-render-path nightly artifact; R2-only by design,
 # regenerated every daily run; consumers join via (ticker,date) against the replay parquet).
 data/factordata/panel/
+data/stock_personality/panel/
 # hk_shorts: positions.parquet + turnover.parquet + coverage.json are GIT-tracked
 # (NOT R2) because they are not regenerable without re-scraping and are critical
 # evidence for the H2a phase-0 test.  Only the _closes_cache-equivalent rebuild

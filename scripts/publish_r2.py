@@ -67,12 +67,15 @@ DEFAULT_DIRS = [
                           #   THETADATA_STORE env (default data/thetadata_eod) + --dirs thetadata_eod
                           # Must run from the ops host (store host) where the parquets are
                           # materialised; the _DATA_DIR_MIN_FILES guard refuses CI partial checkouts.
+    "stock_personality",  # Stock-personality panel monthly partitions — gitignored-local,
+                          # published to R2 via this script (stock-personality program).
+                          # Source: data/stock_personality/panel/YYYY-MM/panel.parquet
 ]
 
 # Dirs whose source lives under data/ rather than site/ (per-ticker parquet stores
 # that are never rendered into site/ — published straight from the data plane).
 _DATA_DIRS = {
-    "hk_stocks_ext", "massive_stock_day", "thetadata_eod",
+    "hk_stocks_ext", "massive_stock_day", "thetadata_eod", "stock_personality",
     "attention",  # SLF-048 Wikipedia pageview store (data/attention/*.parquet,
                   # gitignored since 2026-07-06): deep history 2015-07→ lives on R2,
                   # kept CURRENT by daily.yml's collect job (fetch_r2 restore ->
