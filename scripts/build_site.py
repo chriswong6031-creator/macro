@@ -3462,6 +3462,18 @@ def main() -> int:
         (_msdir / "macro_signals.json").write_text(
             json.dumps(_msdata, indent=2, default=str))
         log.info("wrote macrodata/macro_signals.json")
+        # PR-D: Release Radar — copy the MRI producer's latest.json into macrodata/
+        # so the client-side fetch in dashboard.html.j2 can reach it.  Fail-open:
+        # absent until scripts/build_release_forecast.py (PR-C) has run; the UI
+        # degrades to its "accruing" placeholder when the JSON is missing.  The
+        # producer also writes the site copy itself later in the engine lane; this
+        # copy just guarantees build_site renders never strand a stale/missing file.
+        _rf_src = config.data_dir() / "release_forecast" / "latest.json"
+        if _rf_src.exists():
+            (_msdir / "release_forecast.json").write_bytes(_rf_src.read_bytes())
+            log.info("macrodata: copied release_forecast.json")
+        else:
+            log.debug("macrodata: release_forecast.json not yet produced (PR-C pending)")
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("macro_signals.json failed: %s", e)
     # landing-hub card stat (presence-gated by the .html existing)
