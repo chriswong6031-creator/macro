@@ -368,3 +368,4 @@ section reconciles the second lane's remainder into canonical numbering.
 - **Naming.** The second lane's "Package F/F1..F4" labels are retired in
   favor of this file's PR-F..PR-K wave names; its Kalshi collector is PR-I
   groundwork.
+- **MRI-R20 port (quirk flags).** Five deterministic calendar quirk flags (engine/release_quirks.py) were ported verbatim from closed PR #1884 (already adversarially reviewed) onto the Package I/K structure in this PR; the double-build collision that produced #1884 was resolved in favor of #1883's enrichment idiom, so quirk_flags now attach in _enrich_upcoming_block alongside surprise_distribution / market_implied / reaction_sensitivity, with quirk_flag_codes frozen on the projection ledger row and bilingual warning chips rendered on the Release Radar card.
