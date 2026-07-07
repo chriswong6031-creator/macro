@@ -1089,6 +1089,18 @@ jobs:
         # Output covered by 'git add data/' in 'commit engine outputs' below.
         # Benchmark: ~15s (per LT4_FUNNEL_SHADOW_REPORT.md); well under 30s threshold.
         run: python -m scripts.research.build_thesis_funnel_snapshot --write-history || echo "::warning::build_thesis_funnel_history failed (non-fatal — keeping last committed history)"
+      - name: entity/thesis/mechanism registry (neural-web — display-only crosswalk)
+        if: always()
+        # Wave B2 ETM crosswalk: builds data/neuralweb/entity_thesis_mechanism_registry.json
+        # from existing local artifacts (species, candidates, governance, reflexivity, config).
+        # Display-only; no authority to gate, rank, size, or originate signals (ETM-R1..R8).
+        # Output covered by 'git add data/ site/' in 'commit engine outputs' below.
+        run: |
+          set +e
+          python -m scripts.build_entity_thesis_mechanism_registry > /tmp/etm_registry.log 2>&1; rc=$?
+          cat /tmp/etm_registry.log
+          [ "$rc" -ne 0 ] && echo "::warning title=build_entity_thesis_mechanism_registry::rc=$rc (non-fatal)"
+          exit 0
       - name: build mastermind context (NW bridge)
         if: always()
         # NW → Mastermind bridge W1: compile data/neuralweb/mastermind_context.json and

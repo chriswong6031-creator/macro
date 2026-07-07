@@ -304,6 +304,9 @@ lanes:
           flag per sole-advancer law. Appends keep-FIRST rows (ticker, snapshot_date)
           to data/research/thesis_funnel_history.parquet. Runs after build_bottom_sensors.
           Display-only; no scored_path_surfaces; FIREWALL LH-R1.
+      - id: build_entity_thesis_mechanism_registry
+        module: scripts.build_entity_thesis_mechanism_registry
+        note: non-fatal; Wave B2 ETM crosswalk — display-only entity/thesis/mechanism registry (ETM-R1..R8); output data/neuralweb/entity_thesis_mechanism_registry.json
       - id: build_nw_mastermind_context
         module: scripts.build_nw_mastermind_context
         note: non-fatal; NW→Mastermind context bridge (macro #1567) — declares the live daily.yml engine step that was added without a dag.yml entry (merge-race drift)
