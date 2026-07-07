@@ -263,3 +263,77 @@ same-night FRED/ALFRED refresh; ALFRED vintage fetch requires FRED_API_KEY —
 already injected in daily.yml). Compute is trivial (a few monthly series);
 render-budget impact ≈ 0. All writes fail-open; a dead collector degrades the
 card, never the build.
+
+## 9. Package F — ERL docket adjudication (2026-07-07, Fable)
+
+An external doc-only handoff (`research/ECONOMIC_RELEASE_REPLICATION_MACHINE.md`,
+"Macro Release Lab") proposed a release-replication program. Adjudicated same
+day against this masterplan. Verdict: **~75-80% duplicate of MRI v1** (shipped
+2026-07-07); remainder split below. The proposal is RATIFIED as a delta package
+(F-waves) under `owner_program: macro-release-intel` — not a new program.
+
+**Duplicate (no build):** frozen pre-release ledger + PIT snapshots; ALFRED
+first-print grading; quantile bands + confidence; benchmark comparison; CPI
+component nowcast; NFP labor bridge; market-reaction study (shipped descriptive,
+PR-E); scoreboard + Release Radar UI; PCE/PPI/ISM/GDP/retail expansion (= C-4);
+prediction-market prior (= C-2); true consensus feed (= C-5).
+
+**Forbidden / killed by standing rulings:** "consensus" naming for the free
+benchmark set (MRI-R5); a consensus-drift model (blocked until C-5 lands a
+licensed feed); conditional market-reaction trading layer (MRI-R1/R3 — the
+descriptive playbook is the ceiling); ensemble-weight optimization before
+ledger maturity (anti-mining; the benchmark_set + scoreboard already runs the
+family competition — learned ensembles are a graduation-era proposal); paid
+microdata (house W6 paid-data SKIP-ALL); learned residual corrections (warning
+chips only until forward evidence accrues).
+
+**Delta (BUILD — F-waves, all display-only, authority unchanged):**
+
+- **F1 — claims lane** (§3.1 spec-vs-code gap closed): weekly ICSA level
+  projection (short ridge-AR + survey/holiday structure), walk-forward from
+  committed ALFRED vintages (2009→), auto-scored weekly rows on the forward
+  ledger + scoreboard. 52 prints/yr = the fastest calibration accrual in the
+  program; it exercises ledger/coverage/skew machinery ~4x faster than CPI+NFP.
+  §6 falsifier applies verbatim: if walk-forward MAE fails to beat naive_prior
+  era-split, claims ships benchmark-only with an honest null card.
+- **F2 — v1 spec completion + attribution:** implement the frozen §3.2 legs
+  missing from code (shelter momentum + ZORI lead read-only from #1758; food /
+  PPI-core; WTI pass-through) with fail-open dormancy where data is not yet
+  collected; per-leg contribution attribution (exact linear decomposition of
+  the ridge model: coef × z-value, in pp); leg observability classes
+  `known | proxy | residual` + `observable_weight_share`; `inputs_hash`
+  (sha256 over canonical leg values) on every frozen ledger row.
+  **Decision rule frozen before the re-run:** production uses full-spec legs
+  only if full-spec walk-forward MAE ≤ as-built MAE on the 2010+ slice per
+  release; otherwise as-built stands and the null is printed. GASREGW/ADP leg
+  activation stays queued on nightly parquet accrual (unchanged from v1).
+- **F3 — release-quirk flags:** deterministic calendar table (CPI annual
+  weight-update + seasonal-factor-revision print; CPI health-insurance reset
+  window; NFP CES benchmark-revision + population-control print; claims
+  holiday weeks; 4-vs-5-week survey-gap months) → `quirk_flags[]` on upcoming
+  rows + UI chip. Flags cite BLS documentation inline. No weather/strike flags
+  in v1 (needs a feed; come-back C-7).
+- **F4 (= C-2 executed) — Kalshi market-implied benchmark:** keyless read
+  adapter → bracket-implied median for CPI/NFP releases →
+  `benchmark_set.market_implied`; snapshot store is first-seen/append-only
+  (Cleveland pattern, no retroactive backfill); graded on the scoreboard as a
+  benchmark; never an input to our projection.
+
+**New rulings:**
+
+- **MRI-R11 (attribution law).** Component contributions are the linear
+  model's own exact decomposition, published as-is with the residual share
+  printed. They may never be manually adjusted, re-weighted for narrative, or
+  hidden when unflattering.
+- **MRI-R12 (quirk law).** Quirk flags are deterministic calendar facts with
+  citations. They annotate uncertainty on the card; they never shift the point
+  projection, intervals, or skew.
+
+**New come-backs:** **C-6** UNRATE + AHE MoM as projection targets (labor/wage
+axes) — own prereg wave, earliest after F-waves settle and first forward prints
+score. **C-7** strike/weather reference-week flags if a free feed lands.
+
+**F-wave PRs:** PR-F1 (adjudication docs + claims lane + tests, Opus stats
+review), PR-F2 (spec-completion legs + attribution + inputs_hash + re-run
+report + quirk flags + UI, Opus stats review), PR-K (Kalshi collector,
+isolated), PR-F4 (market_implied join + scoreboard grading, after PR-F2 + PR-K).
