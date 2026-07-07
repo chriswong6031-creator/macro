@@ -1604,6 +1604,111 @@ def _support_map_for_lobe(lobe_id: str) -> dict:
         return _null
 
 
+# ---- Section I: Mechanism Pathways QA (W3, RUL-CC-1) -----------------------
+
+_NW_MECHANISM_PATHWAYS_JSON = _DATA_NW / "mechanism_pathways.json"
+_NW_MECHANISM_PATHWAYS_HISTORY_JSONL = _DATA_NW / "mechanism_pathways_history.jsonl"
+
+# Tail depth for history emission-mix analysis
+_MP_HISTORY_TAIL = 30
+
+
+def _section_mechanism_pathways() -> dict:
+    """MPC QA section — emission mix, current pathway summary, stale-leg listing.
+
+    Reads data/neuralweb/mechanism_pathways.json (committed artifact only) and
+    data/neuralweb/mechanism_pathways_history.jsonl (tail of _MP_HISTORY_TAIL rows).
+    Fail-open: missing or malformed artifact → honest placeholder.
+    No engine imports, no subprocess.
+    """
+    # --- current artifact ---
+    mp = _read_json(_NW_MECHANISM_PATHWAYS_JSON)
+    if mp is None or mp.get("schema") != "neuralweb.mechanism_pathways.v1":
+        return {
+            "available": False,
+            "note": (
+                "data/neuralweb/mechanism_pathways.json not yet written "
+                "(pre-W1 clone or first nightly has not run yet)"
+            ),
+        }
+
+    pathways: list = mp.get("pathways") or []
+    no_pathway_rec: dict | None = mp.get("no_pathway")
+    primary_family = pathways[0].get("family", "") if pathways else None
+    primary_direction = pathways[0].get("direction_en", "") if pathways else None
+    coverage = pathways[0].get("coverage_score") if pathways else None
+    coverage_basis = pathways[0].get("coverage_basis") if pathways else None
+    coherence = pathways[0].get("coherence", "") if pathways else None
+    stale_legs: list = pathways[0].get("stale_legs") or [] if pathways else []
+    alt_families: list = [pw.get("family", "") for pw in pathways[1:3]]
+
+    current_summary: dict = {
+        "as_of": mp.get("as_of"),
+        "has_pathway": bool(pathways),
+        "primary_family": primary_family,
+        "primary_direction": primary_direction,
+        "coverage_score": coverage,
+        "coverage_basis": coverage_basis,
+        "coherence": coherence,
+        "stale_legs": stale_legs,
+        "stale_legs_count": len(stale_legs),
+        "alternate_families": alt_families,
+    }
+    if no_pathway_rec:
+        current_summary["no_pathway"] = {
+            "reason": no_pathway_rec.get("reason", ""),
+            "printed": no_pathway_rec.get("printed", True),
+        }
+
+    # --- history emission mix ---
+    history_mix: dict = {
+        "available": False,
+        "tail_rows": 0,
+        "pathway_count": 0,
+        "no_pathway_count": 0,
+        "no_pathway_reasons": {},
+    }
+
+    hist_path = _NW_MECHANISM_PATHWAYS_HISTORY_JSONL
+    if hist_path.exists():
+        try:
+            rows: list[dict] = []
+            for line in hist_path.read_text(encoding="utf-8").splitlines():
+                line = line.strip()
+                if line:
+                    try:
+                        rows.append(json.loads(line))
+                    except Exception:  # noqa: BLE001
+                        pass
+            # Take tail
+            tail = rows[-_MP_HISTORY_TAIL:] if len(rows) > _MP_HISTORY_TAIL else rows
+            pathway_n = sum(1 for r in tail if r.get("pathways_count", 0) > 0)
+            no_pathway_n = len(tail) - pathway_n
+            reason_counts: dict[str, int] = {}
+            for r in tail:
+                reason = r.get("no_pathway_reason")
+                if reason:
+                    reason_counts[reason] = reason_counts.get(reason, 0) + 1
+            history_mix = {
+                "available": True,
+                "tail_rows": len(tail),
+                "pathway_count": pathway_n,
+                "no_pathway_count": no_pathway_n,
+                "no_pathway_reasons": reason_counts,
+            }
+        except Exception:  # noqa: BLE001
+            pass
+
+    return {
+        "available": True,
+        "current": current_summary,
+        "history_emission_mix": history_mix,
+        "schema": mp.get("schema"),
+        "display_only": True,
+        "not_a_signal": True,
+    }
+
+
 # ---- Top-level panel entry point -------------------------------------------
 
 def panel() -> dict:
@@ -1618,6 +1723,7 @@ def panel() -> dict:
         daily_brief        — Section F (PR-D)
         evidence_clock     — Section G (EC-R5)
         support_map        — Section H (RUL-CC-14)
+        mechanism_pathways — Section I (W3, RUL-CC-1)
     """
     return {
         "ok": True,
@@ -1629,4 +1735,5 @@ def panel() -> dict:
         "daily_brief": _section_daily_brief(),
         "evidence_clock": _section_evidence_clock(),
         "support_map": _section_support_map(),
+        "mechanism_pathways": _section_mechanism_pathways(),
     }

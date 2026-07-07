@@ -334,6 +334,14 @@ details.memo-raw pre { font-size:11px; overflow-x:auto; color:var(--muted); whit
       <div id="brief_brain_row" style="margin-bottom:8px;font-size:13px;color:var(--muted)"></div>
       <div id="brief_changed_list"></div>
       <div id="brief_stale_list"></div>
+      <div id="brief_pathway_block" style="display:none;margin:10px 0 6px 0;padding:8px 10px;border-left:3px solid var(--accent,#4da3ff);background:var(--card-bg,rgba(255,255,255,.04))">
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;margin-bottom:4px">{{ t('Why the tape moved', '行情变动原因') }}</div>
+        <div id="brief_pathway_primary" style="font-size:13px;margin-bottom:3px"></div>
+        <div id="brief_pathway_coverage" style="font-size:12px;color:var(--muted)"></div>
+        <div id="brief_pathway_legs" style="font-size:12px;color:var(--muted)"></div>
+        <div id="brief_pathway_alts" style="font-size:12px;color:var(--muted)"></div>
+        <div id="brief_pathway_null" style="font-size:13px;color:var(--muted)"></div>
+      </div>
       <div id="brief_attn_list"></div>
       <details id="brief_expander" style="margin-top:8px">
         <summary style="cursor:pointer;font-size:12px;color:var(--muted)">{{ t('Show all items…', '显示全部…') }}</summary>
@@ -539,6 +547,7 @@ details.memo-raw pre { font-size:11px; overflow-x:auto; color:var(--muted); whit
     setupLazyReveal();
     loadGraph();
     loadDailyBrief();
+    loadMechanismPathways();
     loadMemo();
     loadKernelFamilies();
     setupQuickTries();
@@ -2612,6 +2621,92 @@ details.memo-raw pre { font-size:11px; overflow-x:auto; color:var(--muted); whit
       .catch(function () {
         if (loadEl) loadEl.style.display = 'none';
         if (errEl) errEl.style.display = '';
+      });
+  }
+
+  // ── MPC: Why the tape moved (W3) ─────────────────────────────────────────
+  function loadMechanismPathways() {
+    var blockEl = document.getElementById('brief_pathway_block');
+    if (!blockEl) return;
+    var escB = function (s) {
+      return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    };
+    fetch('neuralwebdata/mechanism_pathways.json')
+      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(function (d) {
+        var pathways = d.pathways || [];
+        var noPathway = d.no_pathway || null;
+
+        if (!pathways.length) {
+          // No pathway emitted — honest display (RUL-CC-4)
+          var reason = noPathway ? (noPathway.reason || 'unknown') : 'unknown';
+          var nullEl = document.getElementById('brief_pathway_null');
+          if (nullEl) {
+            nullEl.innerHTML = '<span class="l-en">no pathway emitted: </span>'
+              + '<span class="l-zh">未发出路径: </span>'
+              + '<span style="color:var(--muted)">' + escB(reason) + '</span>';
+          }
+          blockEl.style.display = '';
+          return;
+        }
+
+        var pw = pathways[0];
+        var family = pw.family || '';
+        var direction = pw.direction_en || '';
+        var cov = pw.coverage_score != null ? pw.coverage_score : (pw.coverage_basis || 'n/a');
+        var coherence = pw.coherence || '';
+        var staleCount = (pw.stale_legs || []).length;
+
+        // Evidence leg names from nodes (asset-class/ETF/driver level, RUL-CC-10)
+        var legNames = [];
+        var nodes = pw.nodes || [];
+        for (var i = 0; i < nodes.length && legNames.length < 3; i++) {
+          if (nodes[i].pathway_role === 'required_leg' && nodes[i].entity) {
+            legNames.push(nodes[i].entity);
+          }
+        }
+
+        // Alternates — family names only
+        var altFams = [];
+        for (var j = 1; j < pathways.length && altFams.length < 2; j++) {
+          if (pathways[j].family) altFams.push(pathways[j].family);
+        }
+
+        // Coherence badge color
+        var cohColor = coherence === 'supported' ? 'var(--up)' : coherence === 'conflicted' ? 'var(--down)' : 'var(--warn,#e6a817)';
+
+        var primaryEl = document.getElementById('brief_pathway_primary');
+        if (primaryEl) {
+          primaryEl.innerHTML = '<span style="font-weight:600">' + escB(family) + '</span>'
+            + (direction ? ' &mdash; <span style="color:var(--muted)">' + escB(direction) + '</span>' : '')
+            + ' <span style="padding:1px 5px;border-radius:3px;font-size:11px;background:' + cohColor + ';color:#fff">'
+            + escB(coherence) + '</span>';
+        }
+
+        var covEl = document.getElementById('brief_pathway_coverage');
+        if (covEl) {
+          covEl.innerHTML = '<span class="l-en">Coverage: </span><span class="l-zh">覆盖率: </span>'
+            + escB(String(cov))
+            + (staleCount ? ' &bull; <span style="color:var(--down)">' + staleCount + '<span class="l-en"> stale leg(s)</span><span class="l-zh"> 个过期腿</span></span>' : '');
+        }
+
+        var legsEl = document.getElementById('brief_pathway_legs');
+        if (legsEl && legNames.length) {
+          legsEl.innerHTML = '<span class="l-en">Evidence: </span><span class="l-zh">证据: </span>'
+            + escB(legNames.join(' · '));
+        }
+
+        var altsEl = document.getElementById('brief_pathway_alts');
+        if (altsEl && altFams.length) {
+          altsEl.innerHTML = '<span class="l-en">Alternates: </span><span class="l-zh">备选: </span>'
+            + escB(altFams.join(', '));
+        }
+
+        blockEl.style.display = '';
+      })
+      .catch(function () {
+        // Artifact absent until first nightly — hide block silently (no console error)
+        if (blockEl) blockEl.style.display = 'none';
       });
   }
 
