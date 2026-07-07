@@ -5239,6 +5239,71 @@ artifacts:
       vendor/macro_src/site/neuralwebdata/mastermind_context.json with zero new sync
       plumbing (site/ is in the sparse set). See NW_MASTERMIND_BRIDGE_PROGRAM.md §3.2.
 
+  # --- Mastermind Feedback Contract W2 (FB-R7/R8/R14) ---
+  # Reverse bridge: Mastermind → NW counts-only feedback reader.
+  # Source artifact (externally produced by Mastermind, pushed twice daily):
+  # site/mastermind/nw_feedback.json — registered with owner: mastermind.
+  # Macro-side summary: data/governance/mastermind_feedback_summary.json.
+  # Authority: context_only at birth; all five booleans false (FB-R10).
+  # No tickers, no fill/decision/position IDs, no notional (FB-R8).
+
+  site-mastermind-nw-feedback:
+    path: site/mastermind/nw_feedback.json
+    format: json
+    producer: <MASTERMIND_EXTERNAL>
+    owner_program: mastermind-feedback-contract
+    cadence: on-demand
+    storage: git
+    asof_field: generated_at
+    freshness_sla_hours: 30
+    schema: mastermind_nw_feedback.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/neuralweb/mastermind_feedback.py
+    external_consumers: []
+    notes: >
+      Externally produced by Mastermind (sole writer: bridge/nw_feedback.py).
+      Pushed twice daily via export_macro_snapshot.py. Counts-only: no tickers,
+      no fill IDs, no notional (FB-R8). Schema mastermind_nw_feedback.v1 (v2
+      additive: decision_flow/outcome_mix/context_audit blocks). The Macro-side
+      reader (engine/neuralweb/mastermind_feedback.py) accepts both v1 and v2;
+      unknown schema treated as absent with gap note. No Macro engine may write
+      under site/mastermind/ (FB-R2). See MASTERMIND_FEEDBACK_CONTRACT_PROGRAM.md.
+
+  mastermind-feedback-summary:
+    path: data/governance/mastermind_feedback_summary.json
+    format: json
+    producer: scripts/build_mastermind_feedback_summary.py
+    known_extra_writers:
+      - "engine/neuralweb/mastermind_feedback.py — build_and_write() writes the artifact"
+    owner_program: mastermind-feedback-contract
+    cadence: daily-engine
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 30
+    schema: neuralweb.mastermind_feedback_summary.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      Mastermind → NW reverse bridge summary (W2, FB-R7/R8/R14). Counts-only:
+      gate_failures, rejected_decisions, lock_conflicts, stale_freezes,
+      thesis counts, run counts, per_book breakdown. state: present|stale|absent;
+      stale/absent → totals null, never fabricated zeros. Staleness threshold:
+      4 calendar days (FB-R14). Leak-proof by whitelist construction — no tickers,
+      fill IDs, notional, or host paths ever reach this artifact (test-enforced).
+      Authority: is_context_only=true, all five booleans false (FB-R10).
+      v2 passthrough blocks (decision_flow/outcome_mix/context_audit) appear when
+      source schema is mastermind_nw_feedback.v2. Metric families registered per §3:
+      context_engagement/decision_flow/outcome_mix LIVE; fill_slippage/warning_outcome_delta
+      BLOCKED (printed with reasons, never faked). See MASTERMIND_FEEDBACK_CONTRACT_PROGRAM.md.
+
   # --- Research Factory W1 (RF-11) ---
   # Three durable orchestration ledgers at display tier, horizon-agnostic context.
   # Authority ceiling: A0-A2 display-only (no scored-path authority).

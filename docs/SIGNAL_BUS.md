@@ -24,6 +24,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | institutional-sector-intelligence | 2 |
 | intl-fix | 1 |
 | long-hold | 22 |
+| mastermind-feedback-contract | 2 |
 | neural-web | 34 |
 | next3 | 3 |
 | nw-mastermind-bridge | 2 |
@@ -44,7 +45,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 107 |
+| display | 109 |
 | infrastructure | 64 |
 | scored | 4 |
 | shadow | 38 |
@@ -53,7 +54,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 204 |
+| git | 206 |
 | gitignored-local | 6 |
 | r2 | 3 |
 
@@ -209,6 +210,13 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | moat-falsifier-sensors | `embedded: per-ticker moat sensor fields inside site/stockdata/<TICKER>.json` | json | daily-engine | display | 1 | 0 |
 | per-fire-sector-benchmark | `data/research/per_fire_sector_benchmark.parquet` | parquet | on-demand | display | 1 | 0 |
 | ticker-sectors | `data/breadth/ticker_sectors.parquet` | parquet | on-demand | display | 1 | 0 |
+
+### mastermind-feedback-contract
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| site-mastermind-nw-feedback | `site/mastermind/nw_feedback.json` | json | on-demand | display | 1 | 0 |
+| mastermind-feedback-summary | `data/governance/mastermind_feedback_summary.json` | json | daily-engine | display | 0 | 0 |
 
 ### neural-web
 
@@ -790,6 +798,13 @@ Artifacts below have `known_extra_writers` — additional code paths that write 
 - **declared producer:** `engine/market_state.py`
 - **extra writers:**
   - scripts/build_site.py — calls market_state.persist() at line 1700; build_site is the runner, market_state.py is the author
+
+### mastermind-feedback-summary
+
+- **path:** `data/governance/mastermind_feedback_summary.json`
+- **declared producer:** `scripts/build_mastermind_feedback_summary.py`
+- **extra writers:**
+  - engine/neuralweb/mastermind_feedback.py — build_and_write() writes the artifact
 
 ### moat-falsifier-sensors
 
