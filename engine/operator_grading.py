@@ -678,7 +678,7 @@ def grade(
         "wilson_floor": WILSON_FLOOR,
         "fdr_newly_registered": fdr_newly_registered,
         "bh_imported_from": "engine.btc_override_ledger._bh" if _BH_IMPORTED else None,
-        "ledger_path": str(ledger_path),
+        "ledger_file": ledger_path.name,
         "ledger_present": ledger_present,
         "n_actions_total": result["n_actions_total"],
         "n_unmatched_actions": result["n_unmatched_actions"],

@@ -20,6 +20,7 @@ Enforcement: a PreToolUse hook (`.claude/hooks/model_routing_guard.py`, wired in
 ## House laws (short list; details in research/ masterplans)
 
 - **Git:** branch off **fresh `origin/main`** (never reuse a squash-merged branch); finish via commit → push → PR → same-day squash-merge. Stash stack is repo-global — never bare `git stash`/`pop`. Main checkout is often occupied by other agents; work in worktrees, never touch main checkout's git state.
+- **Before proposing/adjudicating new work:** read `docs/ACTIVE_BUILD_MAP.md` (open-PR lanes/collisions; regen `python scripts/build_active_build_map.py`) and `research/DO_NOT_REBUILD.md` (standing kills/forbidden designs). Don't re-propose in-flight or killed topics; adjudications that kill a topic append a row to the registry in the same PR.
 - **Epistemics:** display-only until gauntleted; pre-registered gates; nulls are printed, not hidden. The word "validated" in user-facing text is CI-enforced (`scripts/check_validated_claims.py`). LLMs may only de-escalate calibrated keys — never originate signals, scores, or escalations.
 - **Ledgers:** nightly is the sole advancer of forward ledgers; intraday lanes discard `data/` writes.
 - **Ops:** known-spurious CI: "Workers Builds: macro" red X is ignorable. Bilingual (EN/ZH) UI; no translated text in `title=` attributes (CI-guarded).

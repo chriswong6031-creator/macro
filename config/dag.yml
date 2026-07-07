@@ -519,6 +519,19 @@ lanes:
                     site/neuralwebdata/daily_brief.json,
                     data/neuralweb/daily_brief_history.jsonl]
 
+  # ── daily.yml / active_build_map ─────────────────────────────────────────
+  - workflow: .github/workflows/daily.yml
+    job: active_build_map
+    steps:
+      - id: build_active_build_map
+        module: scripts.build_active_build_map
+        note: >
+          Advisory air-traffic-control artifact for multi-agent sessions.
+          Reads GitHub PR state via gh CLI (open PRs, file collisions, recent merges);
+          writes docs/ACTIVE_BUILD_MAP.md and data/governance/active_builds.json.
+          Fail-open: gh unavailable or any gh error exits 0 and leaves existing output files untouched.
+          ADVISORY ONLY — gates nothing in CI or the pipeline.
+
   # ── asia-close.yml / asia ───────────────────────────────────────────────
   - workflow: .github/workflows/asia-close.yml
     job: asia

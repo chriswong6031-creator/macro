@@ -1601,6 +1601,46 @@ jobs:
           done
           echo "::warning::could not push cortex after 5 attempts (non-fatal — downstream reads last committed)"
 
+  # Light advisory job: generates docs/ACTIVE_BUILD_MAP.md and
+  # data/governance/active_builds.json — a map of open PRs, file collisions,
+  # and recent merges for multi-agent session air-traffic control.
+  # ADVISORY ONLY: fail-open, no merge gating, exit 0 even if gh errors.
+  active_build_map:
+    needs: collect
+    if: always()
+    runs-on: [self-hosted, macstudio]
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - run: git pull origin main
+      - name: python 3.12 (Homebrew venv — self-hosted runner)
+        run: |
+          VENV="$HOME/.cache/mm-venv-${RUNNER_NAME:-default}"
+          [ -x "$VENV/bin/python" ] || /opt/homebrew/bin/python3.12 -m venv "$VENV"
+          echo "$VENV/bin" >> "$GITHUB_PATH"
+      - name: generate active build map
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python -m scripts.build_active_build_map || echo "::warning::active_build_map generation failed (non-fatal — fail-open)"
+      - name: commit active build map outputs
+        run: |
+          git config user.name "dashboard-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add docs/ACTIVE_BUILD_MAP.md data/governance/active_builds.json
+          if git diff --cached --quiet; then echo "no active build map changes"; exit 0; fi
+          git commit -m "docs: active build map $(date -u +%F)"
+          for i in 1 2 3 4 5; do
+            if git pull --rebase -X theirs origin main && git push; then
+              echo "pushed active build map on attempt $i"; exit 0
+            fi
+            git rebase --abort 2>/dev/null || true
+            echo "active-build-map push attempt $i lost a race; re-syncing"; sleep $((i * 7))
+          done
+          echo "::warning::could not push active build map after 5 attempts (non-fatal)"
+
   publish:
     # GitHub Pages can't serve a /site folder from a branch — deploy the
     # artifact instead (repo Settings -> Pages -> Source: GitHub Actions)

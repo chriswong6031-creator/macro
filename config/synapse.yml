@@ -6193,3 +6193,32 @@ artifacts:
       regime_history.parquet or latest.json; zero consumers this wave. on-demand
       cadence: nightly wiring + W4.4 cell re-keying come with the preregistered
       follow-up wave, NOT here.
+
+  # ============================================================
+  # ACTIVE BUILD MAP (active-build-map program)
+  # ============================================================
+
+  active-builds:
+    path: data/governance/active_builds.json
+    format: json
+    producer: scripts/build_active_build_map.py
+    known_extra_writers: []
+    owner_program: active-build-map
+    cadence: daily-engine
+    storage: git
+    asof_field: generated_at
+    freshness_sla_hours: 36
+    schema: active_builds.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      Advisory air-traffic-control artifact for multi-agent sessions.
+      Records open PRs (with file lists and protected-path flags), pairwise
+      file collision pairs, and recent merges (14-day window). Fail-open:
+      gh unavailable or errored → exit 0, file untouched.
+      ADVISORY ONLY — gates nothing in CI or the pipeline. Single writer:
+      scripts/build_active_build_map.py (active_build_map nightly job).

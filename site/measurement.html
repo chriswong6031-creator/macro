@@ -2507,19 +2507,19 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
     <div class="pm-status-row">
       
       <div class="pm-status-chip pm-chip-candidate">
-        candidate: 2
+        candidate: 1
       </div>
       
       <div class="pm-status-chip pm-chip-display">
-        display: 8
+        display: 10
       </div>
       
       <div class="pm-status-chip pm-chip-promoted_null">
-        promoted_null: 10
+        promoted_null: 11
       </div>
       
       <div class="pm-status-chip pm-chip-structural" style="font-weight:400;background:none;border:none;padding-left:0">
-        <span class="l-en">20 active total</span><span class="l-zh">共 20 条有效</span>
+        <span class="l-en">22 active total</span><span class="l-zh">共 22 条有效</span>
       </div>
     </div>
 
@@ -2734,16 +2734,16 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
         </tr>
         
         <tr>
-          <td class="pm-truth-id">cycle_truth_cn_downturn_broken_trend_tail_candidate_v1</td>
-          <td class="pm-stmt">LEAD (not displayed): CN Shenwan sectors in Downturn phase with broken trend (below 200d) show materially deeper vol-adjusted 63d forward drawdowns than the cross-family Downturn baseline (rdd gap -0.0597, CI95 [-0.119,-0.028], boot p~0.000, n=145 months, era-stable pre/post-2018). Strongest genuinely-new risk cell of lattice batch 1. Requires a §15 within-CN-family baseline re-test before any display or consumption.</td>
+          <td class="pm-truth-id">cycle_truth_cn_downturn_broken_trend_tail_null_v1</td>
+          <td class="pm-stmt">The CN Downturn × broken-trend deep vol-adjusted 63d tail claim (batch-1 lead, ex-CPI-020) does NOT survive the §15 within-family re-test: gap vs CN's own Downturn baseline −0.0350 (CI95 [−0.0688, −0.0021], boot p=0.04, n=145 months, era-stable) — directionally persistent at ~60% smaller magnitude than the cross-family estimate (−0.0597; §14 baseline confound), and killed by BH-FDR q=0.10 across the declared 135-cell family. The risk-relevant survivor is the SAME cell on turn_event_3m: broken-trend CN downturns show a turn DEFICIT (−0.086, BH-pass) — longer downturns, unproven deeper tails.</td>
           <td>
             
-            <span class="pm-status-candidate">CANDIDATE</span>
+            <span class="pm-status-null">NULL</span>
             
           </td>
-          <td class="pm-meta">risk_only</td>
+          <td class="pm-meta">null</td>
           <td class="pm-meta">pit_pure</td>
-          <td class="pm-meta">2026-10-06</td>
+          <td class="pm-meta">2027-01-06</td>
         </tr>
         
         <tr>
@@ -2788,6 +2788,32 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
         <tr>
           <td class="pm-truth-id">cycle_truth_lattice1_confirmatory_and_baseline_confound_v1</td>
           <td class="pm-stmt">Lattice batch 1 (135 PIT-pure shrunken cells, no quad) independently reproduces era-stable phase-conditional structure in turn arrival, persistence and vol-adjusted drawdown (48/135 cells clear the frozen §14 gate; KG-2 raw-DD direction reproduced). HOWEVER the cross-family phase-pooled baseline conflates family base-rate offsets with phase effects (CN cells mirror-signed vs US/country in the same phase). Per-cell gaps are confirmatory context only, never per-cell edges; lattice batch 2 must use within-family baselines (to be frozen as §15).</td>
+          <td>
+            
+            <span class="pm-status-display">DISPLAY</span>
+            
+          </td>
+          <td class="pm-meta">structural</td>
+          <td class="pm-meta">pit_pure</td>
+          <td class="pm-meta">2026-10-06</td>
+        </tr>
+        
+        <tr>
+          <td class="pm-truth-id">cycle_truth_lattice2_within_family_structure_v1</td>
+          <td class="pm-stmt">Lattice batch 2 (same 135 PIT-pure cells as batch 1, WITHIN-FAMILY baselines): 27/135 promote under the frozen §15 gate. Phase-conditional turn-arrival and persistence structure is real WITHIN every family (not a family-composition artifact): turn arrival is phase-graded (Trough/Recovery/Downturn elevated, Expansion/Peak deferred), Recovery is fragile in all three families (persist −0.17 us / −0.17 country / −0.25 cn), Peak persists. Two vol-adjusted risk cells: Peak carries SHALLOWER rdd_63d tails within country (+0.049) and CN (+0.071) — KG-2/CPI-002 direction in stricter form. Trend integrity conditions turn arrival within family-phase: broken-trend CN downturns grind (turn deficit −0.086) while intact-trend ones resolve (+0.160). Confirmatory/structural — phase labels share mechanics with turn labels; these are NOT tradeable edges.</td>
+          <td>
+            
+            <span class="pm-status-display">DISPLAY</span>
+            
+          </td>
+          <td class="pm-meta">structural</td>
+          <td class="pm-meta">pit_pure</td>
+          <td class="pm-meta">2026-10-06</td>
+        </tr>
+        
+        <tr>
+          <td class="pm-truth-id">cycle_truth_tr1_next_phase_softmax_skill_v1</td>
+          <td class="pm-stmt">TR-1 (§16, the program's first gate-passing cells): a pure-numpy L2 softmax over EXISTING PIT-pure hazard-panel columns (current-phase one-hot + the shipped W2.5-bound feature set; no new covariates, no calibration layer) beats the family-stratified Laplace(α=1) transition-matrix baseline on OOS multiclass Brier in 4/6 frozen cells: all three families at 1m (ΔBrier +0.0030 us_sector / +0.0055 country / +0.0066 cn_sector — 2.7%/4.8%/6.1% of a strong baseline, CI90 excl 0, years+ 11/13/14 of 14, BH q=0.10) and country at 3m (+0.0027, 12/14). NOT established at 3m for us_sector (+0.0005, CI straddles, 8/14) or cn_sector (+0.0014, CI straddles). Mechanism is model capacity, not new information: continuous within-phase state (pos_osc/slope/momentum/age) anticipates phase-boundary crossings the discrete matrix cannot see — hence the 1m concentration. A display-class next-phase probability (masterplan C4), NOT a tradeable edge.</td>
           <td>
             
             <span class="pm-status-display">DISPLAY</span>
@@ -3000,6 +3026,32 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
         
         <div class="nl-due">
           <span class="l-en">Review due:</span><span class="l-zh">复查日期：</span> 2026-10-06
+        </div>
+        
+      </div>
+      
+      <div class="nl-card">
+        <div class="nl-card-hd">
+          <span class="nl-card-id">cycle_truth_cn_downturn_broken_trend_tail_null_v1</span>
+          <span class="nl-ruled-badge"><span class="l-en">RULED OUT</span><span class="l-zh">已排除</span></span>
+        </div>
+        <div class="nl-stmt">The CN Downturn × broken-trend deep vol-adjusted 63d tail claim (batch-1 lead, ex-CPI-020) does NOT survive the §15 within-family re-test: gap vs CN's own Downturn baseline −0.0350 (CI95 [−0.0688, −0.0021], boot p=0.04, n=145 months, era-stable) — directionally persistent at ~60% smaller magnitude than the cross-family estimate (−0.0597; §14 baseline confound), and killed by BH-FDR q=0.10 across the declared 135-cell family. The risk-relevant survivor is the SAME cell on turn_event_3m: broken-trend CN downturns show a turn DEFICIT (−0.086, BH-pass) — longer downturns, unproven deeper tails.</div>
+        
+        <div class="nl-ci">gap_wf −0.0350 CI95 [−0.0688, −0.0021]; boot p=0.04; BH q=0.10 FAIL</div>
+        
+        <div class="nl-refs-label"><span class="l-en">Evidence</span><span class="l-zh">证据</span></div>
+        <ul class="nl-refs-list">
+          
+          <li>research/cycle_masterplan/CPI_LATTICE2_VERDICT.md</li>
+          
+          <li>data/cycle_pattern/lattice/batch2.json</li>
+          
+          <li>research/cycle_masterplan/PREREGISTRATION.md</li>
+          
+        </ul>
+        
+        <div class="nl-due">
+          <span class="l-en">Review due:</span><span class="l-zh">复查日期：</span> 2027-01-06
         </div>
         
       </div>
@@ -4526,8 +4578,8 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
       <div class="eg-subhd">
         <h3><span class="l-en">Trial Budgets by Family</span><span class="l-zh">按族分类的试验预算</span></h3>
         <span class="eg-subhd-meta">
-          <span class="l-en">968 rows · 94 families</span>
-          <span class="l-zh">968 行 · 94 个族</span>
+          <span class="l-en">974 rows · 97 families</span>
+          <span class="l-zh">974 行 · 97 个族</span>
         </span>
       </div>
       <div class="eg-table-wrap">
@@ -4677,6 +4729,12 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
             <td class="eg-mono">dt_replication</td>
             <td class="eg-num">8</td>
             <td class="eg-mono eg-ts">2026-07-06T23:35:47</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">dt_replication_64y</td>
+            <td class="eg-num">4</td>
+            <td class="eg-mono eg-ts">2026-07-07T00:02:10</td>
           </tr>
           
           <tr>
@@ -4986,6 +5044,18 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
           </tr>
           
           <tr>
+            <td class="eg-mono">rf.cycle_pattern.lattice_v1</td>
+            <td class="eg-num">1</td>
+            <td class="eg-mono eg-ts">2026-07-06T23:58:26</td>
+          </tr>
+          
+          <tr>
+            <td class="eg-mono">rf.cycle_pattern.tr_v0</td>
+            <td class="eg-num">1</td>
+            <td class="eg-mono eg-ts">2026-07-07T00:27:45</td>
+          </tr>
+          
+          <tr>
             <td class="eg-mono">s13_reversal_sleeve</td>
             <td class="eg-num">2</td>
             <td class="eg-mono eg-ts">2026-07-04T01:55:21</td>
@@ -5109,8 +5179,8 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
       </table>
       </div>
       <div class="eg-footnote">
-        <span class="l-en">Source: <code>data/trial_ledger.jsonl</code> (968 rows total).</span>
-        <span class="l-zh">来源：<code>data/trial_ledger.jsonl</code>（共 968 行）。</span>
+        <span class="l-en">Source: <code>data/trial_ledger.jsonl</code> (974 rows total).</span>
+        <span class="l-zh">来源：<code>data/trial_ledger.jsonl</code>（共 974 行）。</span>
       </div>
     </div>
     
@@ -5405,7 +5475,7 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
       </dl>
       <dl class="mh-prov-cell">
         <dt><span class="l-en">Generated at (UTC)</span><span class="l-zh">生成时间（UTC）</span></dt>
-        <dd>2026-07-07T00:19:05.384043Z</dd>
+        <dd>2026-07-07T01:44:37.643483Z</dd>
       </dl>
       
       <dl class="mh-prov-cell">
