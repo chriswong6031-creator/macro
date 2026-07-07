@@ -741,6 +741,34 @@ checks:
     owner_program: engine-fix-masterplan
     notes: null
 
+  - law_id: governance.private_boundary
+    summary: >
+      data/private/ and data/operator/ must stay gitignored, and committed
+      feedback artifacts (data/governance/*.json[l], site/mastermind/*.json)
+      may carry only counts — no tickers, fill/position/decision IDs, host
+      paths, dollar amounts, or secret env-var patterns (FB-R12/FB-R13).
+    source_ref:
+      - scripts/check_private_boundary.py
+      - research/MASTERMIND_FEEDBACK_CONTRACT_PROGRAM.md
+      - "FB-R12 FB-R13"
+    severity: hard
+    check_script: scripts/check_private_boundary.py
+    ci_wiring:
+      - workflow: .github/workflows/ci.yml
+        job: private-boundary
+        lane: pr_ci
+    selftest: true
+    allowlist: inline
+    ratchet: null
+    known_limits:
+      - site/mastermind/mastermind_snapshot.json is exempt from the private-key,
+        dollar-amount, and secret-env scans (FB-R1 paper book publishes tickers
+        by design) but not from host-path scans.
+    owner_program: mastermind-feedback-contract
+    notes: >
+      Landed on main concurrently with this registry (2026-07-06); registered
+      during the registry PR's merge-with-main — the census pass caught it.
+
   # ── Discipline-only laws (no check_script, no ci_wiring) ──────────────────
 
   - law_id: nw.article1.no_llm_origination

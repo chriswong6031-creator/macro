@@ -9,7 +9,7 @@
   "wilson_floor": 25,
   "fdr_newly_registered": false,
   "bh_imported_from": "engine.btc_override_ledger._bh",
-  "ledger_path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/data/operator/action_ledger.jsonl",
+  "ledger_file": "action_ledger.jsonl",
   "ledger_present": false,
   "n_actions_total": 0,
   "n_unmatched_actions": 0,

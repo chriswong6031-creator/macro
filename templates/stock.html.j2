@@ -526,6 +526,24 @@
   #panel_smartmoney .sm-spark { width:66px; height:18px; flex:none; }
   #panel_smartmoney .sm-spark polyline { fill:none; stroke:var(--link); stroke-width:1.5; }
 {% include "_stock_decision.css.j2" %}
+  /* B1: Great-company-trap de-escalation panel (display-only, hold_thesis, LH-R10) */
+  .trap-head { padding:5px 11px; border-radius:8px; font-size:12.5px; font-weight:600;
+               margin-bottom:9px; }
+  .trap-head-warn { background:color-mix(in srgb,var(--warn) 15%,transparent);
+                    color:var(--warn); }
+  .trap-head-ok   { background:color-mix(in srgb,var(--up) 10%,transparent);
+                    color:var(--up); }
+  .trap-leg { display:grid; grid-template-columns:20px 1fr auto; gap:6px; align-items:center;
+              padding:4px 0; font-size:12.5px; border-bottom:1px solid var(--line); }
+  .trap-leg:last-of-type { border-bottom:none; }
+  .trap-icon { font-size:13px; text-align:center; }
+  .trap-na   .trap-icon { color:var(--muted); }
+  .trap-fired .trap-icon { color:var(--warn); }
+  .trap-ok   .trap-icon { color:var(--up); }
+  .trap-label { color:var(--text); }
+  .trap-status { font-size:11px; color:var(--muted); text-align:right; }
+  .trap-fired .trap-status { color:var(--warn); font-weight:600; }
+  .trap-foot { color:var(--muted); font-size:11px; margin:8px 0 0; font-style:italic; }
   /* W6-C HOLD tracker panel (display-only — basing state / invalidation line) */
   .hold-panel { margin:6px 0; padding:8px 12px; border-radius:8px; background:var(--panel2);
                border-left:3px solid var(--muted); font-size:13px; color:var(--text); }
@@ -658,6 +676,14 @@
         {{ help('A plain-language read on whether the accounting is deteriorating — composed from this name\'s accruals (are earnings backed by cash?), working-capital trends (inventory &amp; receivables vs sales), gross profitability, capital discipline (asset growth / dilution) and balance-sheet safety, using the same SEC-derived factor ranks shown below plus multi-year SEC companyfacts trends where they exist. DISPLAY-ONLY context: it is NOT part of any score, ranking or trading signal, and it deliberately does NOT change the technical / alpha call above — it is a fundamental cross-check for you to weigh. Lagged to the filing date; annual data, sparse for some filers.',
           '用通俗语言判断会计质量是否在恶化——综合该标的的应计利润（盈利是否有现金支撑）、营运资本趋势（存货与应收对销售）、毛利能力、资本纪律（资产增长／股本稀释）与资产负债表安全性，即下方相同的 SEC 因子排名，并在可得时叠加 SEC companyfacts 多年趋势。仅作背景展示：不计入任何评分、排名或交易信号，且刻意不改变上方的技术／阿尔法判断——它只是供你权衡的基本面交叉验证。滞后至申报日；年度数据，对部分公司不全。') }}</h2>
       <div id="r_aq"></div>
+    </div>
+
+    <!-- B1: great-company-trap de-escalation panel (display-only; hold_thesis; LH-R10) -->
+    <div class="panel" id="panel_trap" style="display:none">
+      <h2>⚠ {{ t('Great-company-trap check', '优质公司陷阱检查') }}
+        {{ help('Three independent de-escalation legs applied to high-quality names: (1) Basket-level crowding — is the theme this stock belongs to showing elevated institutional co-movement / extension? (2) Net insider selling — are insiders selling net > $500k? (3) Analyst consensus downgrading — is the net-buy count declining? Any firing leg is a caution flag only (never a sell or a score input). DISPLAY-ONLY context — does not affect any score, rank, or entry decision (LH-R10).',
+          '针对高质量标的的三个独立降级腿：(1) 篮子层面拥挤——该股所属主题是否出现机构共振或超延伸？(2) 内部人净卖出——内部人净卖出是否超过50万美元？(3) 分析师共识下调——净买入计数是否在下降？任何触发腿仅为谨慎提示（从不作为卖出信号或评分输入）。仅供展示——不影响任何评分、排名或入场决策（LH-R10）。') }}</h2>
+      <div id="r_trap"></div>
     </div>
 
     <div class="panel" id="panel_earn" style="display:none">
@@ -953,7 +979,7 @@
              low_beta:['Low beta','低贝塔'], accruals:['Low accruals','低应计'], short_interest:['Low short int.','低做空'] };
 
   function hideFundamentals() {
-    ['panel_profile','panel_demand','panel_val','panel_fin','panel_aq','panel_earn','panel_fac','panel_alpha','panel_gex','panel_pos','panel_analyst']
+    ['panel_profile','panel_demand','panel_val','panel_fin','panel_aq','panel_trap','panel_earn','panel_fac','panel_alpha','panel_gex','panel_pos','panel_analyst']
       .forEach(function (id) { show(id, false); });
     show('r_archetype', false); show('r_glance', false);
   }
@@ -1611,6 +1637,57 @@
       '<div class="es-chips">' + chip + '</div></div>';
     box.style.display = '';
   }
+  // B1: Great-company-trap de-escalation panel (display-only, hold_thesis, LH-R10).
+  // Renders three independent legs: crowding / insider_net / revision_direction.
+  // Neutral downgrade-only wording; NEVER implies a sell or a score change.
+  function renderGreatCompanyTrap(d) {
+    var box = el('r_trap'), gct = d && d.great_company_trap;
+    var panel = el('panel_trap');
+    if (!box || !panel) return;
+    if (!gct || gct._display_only === undefined) { show('panel_trap', false); return; }
+    var legs = gct.legs || {};
+    var isZh = lang() === 'zh';
+    function legHtml(legKey, labelEn, labelZh) {
+      var leg = legs[legKey] || {};
+      var avail = leg.available !== false;
+      var fired = !!leg.fired;
+      var val = leg.value;
+      var valStr = '';
+      if (legKey === 'crowding' && val != null)
+        valStr = ' (z = ' + (typeof val === 'number' ? val.toFixed(2) : val) + ')';
+      else if (legKey === 'insider_net' && val != null)
+        valStr = ' ($' + (val / 1e6).toFixed(1) + 'M)';
+      else if (legKey === 'revision_direction' && val != null)
+        valStr = ' (' + esc(val) + ')';
+      var icon, cls;
+      if (!avail) { icon = '–'; cls = 'trap-na'; }
+      else if (fired) { icon = '⚠'; cls = 'trap-fired'; }
+      else { icon = '✓'; cls = 'trap-ok'; }
+      return '<div class="trap-leg ' + cls + '">' +
+        '<span class="trap-icon">' + icon + '</span>' +
+        '<span class="trap-label">' + esc(isZh ? labelZh : labelEn) + valStr + '</span>' +
+        '<span class="trap-status">' + (
+          !avail ? (isZh ? '暂无数据' : 'unavailable') :
+          fired  ? (isZh ? '触发' : 'active') :
+                   (isZh ? '未触发' : 'inactive')
+        ) + '</span></div>';
+    }
+    var anyFired = !!(gct.trap_signals_present);
+    var headCls = anyFired ? 'trap-head trap-head-warn' : 'trap-head trap-head-ok';
+    var headLabel = anyFired
+      ? (isZh ? '⚠ 检测到降级信号' : '⚠ De-escalation caution active')
+      : (isZh ? '✓ 未检测到降级信号' : '✓ No de-escalation legs active');
+    var html = '<div class="' + headCls + '">' + esc(headLabel) + '</div>' +
+      legHtml('crowding',          'Basket crowding elevated', '篮子拥挤') +
+      legHtml('insider_net',       'Net insider selling',      '内部人净卖出') +
+      legHtml('revision_direction','Analyst consensus downgrading', '分析师共识下调') +
+      '<p class="trap-foot">' + (isZh
+        ? '仅供展示 · 不影响任何评分或入场决策 (LH-R10 · display-only)'
+        : 'Display-only context — no effect on any score or entry decision (LH-R10)') + '</p>';
+    box.innerHTML = html;
+    show('panel_trap', true);
+  }
+
   // internal state -> friendly "LABEL · ACTION" (mirrors engine/cycles.STATE_DISPLAY)
   var DISP = {{ state_display_json | safe }};
   // alert-feed conviction notes keyed by event type — the slimmed events embedded
@@ -2125,6 +2202,7 @@
     document.getElementById('r_cal').innerHTML = cs;
 
     renderFundamentals(d);
+    renderGreatCompanyTrap(d);   // B1: de-escalation overlay (display-only, LH-R10)
     renderDemandContext(d);
     renderFundFlow(d);
     // (relative-strength → evidence.rel_strength; fragility → falsifiers — both in SV.mount.

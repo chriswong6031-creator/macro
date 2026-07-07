@@ -484,3 +484,15 @@ html[data-theme="light"] .sc-openpage { color: #fff; }
   .scc-page *, .sc-page .sc-hint-tap { animation: none !important; transition: none !important; }
 }
 
+
+/* ---- UI-HZ-1: calibrated turn-hazard surfaces --------------------------------
+   Card chip (.cc-hz) + detail-sidebar row set (.sc-hazard reuses .cyc-hazard from
+   cycle.css, incl. the hz-badge PASS/PRIOR evidence classes). PRIOR cells are
+   muted — a KM base rate is context, not a validated model output. */
+.cc-hz { display: flex; align-items: center; gap: 5px; font-size: 11px;
+  color: var(--text); font-variant-numeric: tabular-nums; cursor: help; }
+.cc-hz .cc-hz-k { font-size: 9.5px; font-weight: 700; letter-spacing: .05em;
+  text-transform: uppercase; color: var(--muted); }
+.cc-hz b { font-weight: 700; }
+.cc-hz.hz-muted { color: var(--muted); opacity: .8; }
+.sc-page .sc-hazard { margin-top: 12px; margin-bottom: 0; }

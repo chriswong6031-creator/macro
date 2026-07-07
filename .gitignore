@@ -300,6 +300,11 @@ data/replay/*.parquet
 # Admin server is the single intraday writer; MUST NOT be staged by the nightly
 # blanket `git add data/` sweep. Off-band backup rides the admin host's path.
 data/operator/
+# Mastermind Feedback Contract PR-A (FB-R12): reserved private plane for any
+# future Mastermind raw-feedback mirror.  MUST NOT be staged by the nightly
+# blanket `git add data/` sweep.  No writer exists in v1 — the rail is
+# pre-built so the path is safe before any data ever lands here.
+data/private/
 
 # SLF-001 SEC FTD collector (feat/slf001-sec-ftd-collector-phase0).
 # panel.parquet is 184MB / 22.4M rows — R2 data-plane law: must NOT enter git.

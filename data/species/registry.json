@@ -1436,7 +1436,7 @@
       "species_id": "S11",
       "version": "1.0",
       "name": "Buyback-Floor Washout",
-      "validation_status": "phase0",
+      "validation_status": "falsified",
       "deployment_status": "unshipped",
       "mechanism": "Companies that are actually shrinking their share count during a washout provide a buyback floor — realized buyback activity (not announcements) signals management confidence at a price they consider cheap. Keys on realized share-count DECLINE (from EDGAR quarterly); never on buyback announcements. CN precedent: buybacks kept a capped confirmer role. Debt-funded buybacks are the named failure mode. Gated on same EDGAR extraction as S10.",
       "horizon_class": "positional",
@@ -1523,9 +1523,9 @@
         "flip_criteria": "§1.3 template at positional horizons. Debt-funded buyback detection required. Gated on EDGAR re-crawl."
       },
       "gating": {
-        "come_back_on": "2026-07-03",
-        "cadence": "quarterly",
-        "maturation": "W5+ phase-0. Same EDGAR re-crawl gate as S10. Completion date populates come_back_on. GATE CLEARED: backfill completed 2026-07-03 — same store as S10 (data/edgar/statements_quarterly.parquet)."
+        "come_back_on": null,
+        "cadence": "none",
+        "maturation": "FALSIFIED 2026-07-06 (W5 phase-0). 9,392 matured washout-at-filing fires; clean buyback arm A vs washout-without-buyback control C at clean15_126: stop-out spread +0.25pp (any-decline) / −1.28pp (material), sign-unstable across time halves, per-name majority 43.6%/36.7% (minority), BH q=0.677 — below every registered gate (n≥300/side was the only gate met). Debt-funded arm B confirmed adverse (material: 70.82% stop-out vs 64.45% control), validating the rejection rule's premise but not the species. Terminal. See research/species/W5_S11_REPORT.md + §1.6 graveyard."
       },
       "trial_count": 2
     },

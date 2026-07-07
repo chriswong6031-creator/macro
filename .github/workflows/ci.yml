@@ -159,6 +159,16 @@ on:
       # are caught before merge (not just in the nightly calibration run).
       - "scripts/check_validated_claims.py"
       - "data/regime/validated_claims_allowlist.json"
+      # Mastermind Feedback Contract PR-A (FB-R12/R13): privacy-boundary guard.
+      # Any change to the guard script, its tests, committed governance/feedback
+      # artifacts, .gitignore, or operator_grading must re-prove the rail holds.
+      - "scripts/check_private_boundary.py"
+      - "tests/test_check_private_boundary.py"
+      - "data/governance/*.json"
+      - "site/mastermind/*.json"
+      - ".gitignore"
+      - "engine/operator_grading.py"
+      - "research/MASTERMIND_FEEDBACK_CONTRACT_PROGRAM.md"
   workflow_dispatch:
 
 permissions:
@@ -573,6 +583,27 @@ jobs:
         run: python scripts/check_cycle_pattern_authority.py --selftest
       - name: cycle-pattern authority test suite
         run: python -m pytest tests/test_check_cycle_pattern_authority.py -q
+
+  private-boundary:
+    # Mastermind Feedback Contract PR-A (FB-R12/R13): privacy-boundary guard.
+    # Verifies that data/private/ and data/operator/ are gitignored, and that
+    # committed feedback artifacts carry only counts — no tickers, fill/position/
+    # decision IDs, host paths, dollar amounts, or secret env-var patterns.
+    # Mirrors cycle-pattern-authority structure.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest
+      - name: privacy-boundary guard selftest (gate fires on planted violations)
+        run: python3 scripts/check_private_boundary.py --selftest
+      - name: privacy-boundary guard (hard fail on committed private fields or missing rail)
+        run: python3 scripts/check_private_boundary.py
+      - name: privacy-boundary test suite
+        run: python3 -m pytest tests/test_check_private_boundary.py -q
 
   contract-drift:
     # NW Rails PR-7 (R4 contract governance): checks that each artifact in

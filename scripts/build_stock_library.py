@@ -3240,6 +3240,18 @@ def main() -> int:
                     r["confluence_plus"] = {"k": _c_votes, "groups": _c_groups}
             except Exception as _cpe:  # noqa: BLE001 — display-only; never fatal
                 pass
+            # B2+B3 Buy Decision Packet dossier — compact per-row join (display-only).
+            # Built LAST in the loop so all chips (conviction, signal, hold, earnings_soon,
+            # near_miss_reason) are already attached.  Fail-open: error → dossier absent.
+            # ext_grade sourced from ext_map (available in this scope) — NOT on the row.
+            try:
+                from engine import stock_dossier as _sd
+                _ds_ext_grade = (ext_map.get(t) or {}).get("grade")
+                _ds = _sd.build_dossier(r, ext_grade=_ds_ext_grade)
+                if _ds:
+                    r["dossier"] = _ds
+            except Exception as _dse:  # noqa: BLE001 — display-only; never fatal
+                pass
         # W6-US fix 8 (cont): log FRESH-BUY rows with shallow depth for US-2 ledger study.
         # Shallow = cand_depth_pct < 5.0% (less than 5% pullback from the pre-cycle high).
         # The live ETN case: off_high=-2.2%, cand_depth_pct likely ~2-3%.

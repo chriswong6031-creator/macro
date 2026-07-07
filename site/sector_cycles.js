@@ -960,6 +960,7 @@
             '<span>' + nextTxt + '</span>' +
             '<span class="cc-tilt ' + tilt.cls + '">' + tilt.ar + ' ' + L(tilt.lab[0], tilt.lab[1]) + '</span>' +
             rsTxt + '</div>' +
+          hazardCardChip(s) +
         '</div>';
       card.addEventListener("click", function () { isBasketRec(s) ? toggleBasket(s.id) : toggleFocus(s.id); });
       grid.appendChild(card);
@@ -1028,6 +1029,80 @@
       '<div class="sc-sig-bar"><i style="width:' + clamp(sc2, 2, 100) + '%"></i></div>' +
       (detail.length ? '<div class="sc-sig-d">' + detail.join(" · ") + '</div>' : "") +
     '</div>';
+  }
+
+  /* ---- UI-HZ-1: calibrated turn-hazard surfaces --------------------------------
+     Data path: s.now.hazard is stamped by engine/sector_cycles._stamp_hazard() —
+     the SAME engine/hazard_score path build_cycle.py uses. We render the engine's
+     own per-record stamp (family + direction already resolved per record) instead
+     of re-joining the CPI live view here: no second entity mapping, no new lake
+     reader in a page builder. Each cell carries its W4.2 gate verdict from the
+     model ledger (cell_verdict), so every visible number gets an evidence badge:
+     PASS = calibrated model probability (passed the W4.2 calibration gate vs family-stratified KM);
+     PRIOR = KM base rate, muted. No naked probabilities. Display-only context. */
+  function _hzPass(c) { return !!c && c.p != null && (c.cell_verdict === "PASS" || c.source === "MODEL"); }
+  function _hzTip(hz, key, pass) {
+    var epoch = hz.epoch || "", dir = hz.direction || "";
+    var revOpt = hz.revision_optimistic ? " · revision-optimistic (quad not PIT-vintaged)" : "";
+    return pass
+      ? ("Calibrated model probability — the " + dir + "/" + key + " cell PASSED the W4.2 gate " +
+         "vs the family-stratified KM baseline (OOS Brier + month-block bootstrap CI + BH-FDR). " +
+         "Epoch: " + epoch + revOpt + " · backtest-validated OOS; live cohort accruing")
+      : ("KM base-rate prior — the " + dir + "/" + key + " cell did NOT pass the W4.2 gate; " +
+         "this is the historical family-stratified base rate, not a validated model output. " +
+         "Epoch: " + epoch + revOpt);
+  }
+  function _hzBadge(pass) {
+    return pass ? '<span class="hz-badge hz-pass">' + L("PASS", "通过") + '</span>'
+                : '<span class="hz-badge hz-prior">' + L("PRIOR", "先验") + '</span>';
+  }
+  // Full 1m/3m/6m row set for the detail sidebar (mirrors cycle.html's hazardLine).
+  function hazardLineHTML(s) {
+    var hz = s.now && s.now.hazard;
+    if (!hz) return "";
+    function cell(key, label, labelZh) {
+      var c = hz[key];
+      if (!c || c.p == null) return "";
+      var pass = _hzPass(c);
+      return '<span class="hz-cell' + (pass ? '' : ' hz-muted') + '" title="' + esc(_hzTip(hz, key, pass)) + '">' +
+        L(label, labelZh) + ' ' + Math.round(c.p * 100) + '% ' + _hzBadge(pass) + '</span>';
+    }
+    var cells = [
+      cell("1m", "P(turn ≤ 1m)", "P(转折≤1月)"),
+      cell("3m", "≤3m", "≤3月"),
+      cell("6m", "≤6m", "≤6月")
+    ].filter(Boolean);
+    if (!cells.length) return "";
+    return '<div class="cyc-hazard sc-hazard">' +
+      '<span class="hz-label" title="' + esc(L(
+        "P(next confirmed turn within horizon) for the open " + (hz.direction || "?") + "-leg. " +
+        "PASS cells: isotonic-calibrated hazard model (calibration-gated vs KM, W4.2 gate). " +
+        "PRIOR cells: KM base rate, shown muted. Display-only context — never a signal.",
+        "开放周期段在各时间窗内出现下一个已确认拐点的概率。PASS=经W4.2门槛校准的模型输出；PRIOR=KM基准率（弱化显示）。仅供展示，绝非信号。")) + '">' +
+      L("Turn hazard (calibrated)", "转折风险（校准）") + '</span>' +
+      cells.join('<span class="hz-sep"> · </span>') +
+      '</div>';
+  }
+  // Compact card chip: the horizon/direction-appropriate probability. Prefer 3m when
+  // its gate cell PASSED for this record's direction (down-legs: down/3m PASS); else
+  // fall back to a passing 1m (up-legs: up/1m is the only PASS cell); else show the
+  // 3m KM prior, PRIOR-badged and muted. The badge is never omitted.
+  function _hzPick(hz) {
+    if (_hzPass(hz["3m"])) return { key: "3m", c: hz["3m"], pass: true };
+    if (_hzPass(hz["1m"])) return { key: "1m", c: hz["1m"], pass: true };
+    if (hz["3m"] && hz["3m"].p != null) return { key: "3m", c: hz["3m"], pass: false };
+    if (hz["1m"] && hz["1m"].p != null) return { key: "1m", c: hz["1m"], pass: false };
+    return null;
+  }
+  function hazardCardChip(s) {
+    var hz = s.now && s.now.hazard;
+    if (!hz) return "";
+    var pick = _hzPick(hz);
+    if (!pick) return "";
+    return '<div class="cc-hz' + (pick.pass ? '' : ' hz-muted') + '" title="' + esc(_hzTip(hz, pick.key, pick.pass)) + '">' +
+      '<span class="cc-hz-k">' + L("Turn ≤" + pick.key, "转折≤" + (pick.key === "3m" ? "3月" : pick.key === "1m" ? "1月" : "6月")) + '</span> ' +
+      '<b>' + Math.round(pick.c.p * 100) + '%</b> ' + _hzBadge(pick.pass) +
+      '</div>';
   }
 
   // prominent projected next-turn card (the user-requested "best-guess point", honestly framed).
@@ -1314,6 +1389,7 @@
           fact(L("RS vs ", "相对") + benchLabel() + L(" (63d)", "(63日)"), rsVal) +
           fact(L(WIN_Y + "y change", WIN_Y + "年涨跌"), (nw.ret_win_pct >= 0 ? "+" : "") + nw.ret_win_pct + "%") +
         '</div>' +
+        hazardLineHTML(s) +
       '</div>' +
       '<div class="cyc-grp cyc-grp-3">' +
         readHTML +

@@ -301,7 +301,23 @@ def _action(conv: dict, rec: dict) -> dict:
     """The ACT-NOW lane (the "when / how much"): one buy-frame verb derived from the
     size + cycle block + band + trust tier. Decoupled from the NAME rank so a strong
     name in a bad tape reads 'Strong name (rank) · WAIT (act)' instead of a green
-    'High conviction' badge fighting a 0% size."""
+    'High conviction' badge fighting a 0% size.
+
+    Verb demotion precedence (lower = stronger):
+      0. avoid/0% size            → WAIT or AVOID (existing gate)
+      1. HK screen tier           → WATCH (existing gate)
+      2. hard_down                → AVOID (existing gate)
+      3. TRIM ONLY (new B2+B3)    → TRIM ONLY (demotes BUY only; see below)
+      4. default                  → BUY
+
+    TRIM ONLY trigger (strictly demotion-only, never escalation):
+      extension read is parabolic or stretched (own-history ext grade)
+      AND hold state is intact or launched (structure has not broken; W6-C).
+      Meaning: "already ran but structure intact — do not add, trim into strength."
+      Never fires on a WAIT/AVOID/WATCH path (no escalation possible).
+      Source keys: rec["ext"]["grade"] (parabolic|stretched) and
+                   rec["hold"]["state"] (intact|launched).
+    """
     size = conv.get("size") or {}
     pct = _num(size.get("pct"))
     bucket = size.get("bucket")
@@ -331,6 +347,16 @@ def _action(conv: dict, rec: dict) -> dict:
         return _a("WATCH", "观察", "screen")
     if hard_down:
         return _a("AVOID", "回避", "avoid")
+    # ── TRIM ONLY (B2+B3): demotion from BUY when already-ran + structure intact ──
+    # Source: rec["ext"]["grade"] for extension read; rec["hold"]["state"] for
+    # hold/basing state (W6-C tracker).  Both keys may be absent (fail-open: no TRIM).
+    # This can ONLY demote BUY — it never escalates a WAIT/AVOID/WATCH verb.
+    _ext_grade = _g(rec, "ext", "grade")
+    _hold_state = _g(rec, "hold", "state")
+    _is_extended = _ext_grade in ("parabolic", "stretched")
+    _hold_intact = _hold_state in ("intact", "launched")
+    if _is_extended and _hold_intact:
+        return _a("TRIM ONLY", "只减仓", "trim")
     return _a("BUY", "买入", "go")
 
 

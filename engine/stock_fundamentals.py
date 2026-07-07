@@ -1760,13 +1760,74 @@ def _compute_moat_block(
         return None
 
 
+def _load_basket_crowding_z_map() -> "dict[str, float]":
+    """Return {ticker: max_crowding_z} using pre-computed basket data — loaded once.
+
+    Reads site/allocationdata/allocation.json (the nightly basket allocation payload,
+    which already contains basket-level crowding_z computed by engine.theme_crowding)
+    and data/baskets/membership.json (ticker→basket mapping).
+
+    For a ticker belonging to multiple baskets, takes the MAX crowding_z (most
+    conservative / cautious de-escalation reading).
+
+    Fails soft to {} when either file is absent or unreadable — the trap block
+    will simply show crowding leg as unavailable.
+
+    DISPLAY-ONLY; never feeds scores or entry-stack surfaces (LH-R10 / LH-R1).
+    """
+    try:
+        alloc_path = config.ROOT / "site" / "allocationdata" / "allocation.json"
+        if not alloc_path.exists():
+            return {}
+        alloc = json.loads(alloc_path.read_text(encoding="utf-8"))
+        # Build basket_id -> crowding_z from the ranks table
+        basket_cz: dict[str, float] = {}
+        for row in alloc.get("ranks") or []:
+            bid = row.get("id")
+            cz = (row.get("crowding") or {}).get("crowding_z")
+            if bid and cz is not None:
+                try:
+                    basket_cz[bid] = float(cz)
+                except (TypeError, ValueError):
+                    pass
+        if not basket_cz:
+            return {}
+        # Load ticker -> basket membership
+        mem_path = config.data_dir() / "baskets" / "membership.json"
+        if not mem_path.exists():
+            return {}
+        mem = json.loads(mem_path.read_text(encoding="utf-8"))
+        ticker_cz: dict[str, float] = {}
+        for slug, basket in (mem.get("baskets") or {}).items():
+            cz = basket_cz.get(slug)
+            if cz is None:
+                continue
+            for member in (basket.get("members") or []):
+                tick = member.get("ticker")
+                if not tick or member.get("removed"):
+                    continue
+                # max across all baskets the ticker belongs to
+                if tick not in ticker_cz or cz > ticker_cz[tick]:
+                    ticker_cz[tick] = cz
+        return ticker_cz
+    except Exception as exc:  # noqa: BLE001
+        log.debug("stock_fundamentals: basket crowding_z map skipped (%s)", exc)
+        return {}
+
+
 def _compute_trap_block(
     ticker: str,
     analyst_rev: dict,
     insider: dict,
+    crowding_z: "float | None" = None,
 ) -> "dict | None":
     """Assemble great_company_trap inputs from existing loaded structures; non-fatal.
-    crowding_z is basket-level (not per-ticker in this context) — passed as None.
+
+    crowding_z is the basket-level crowding z-score for this ticker (max across
+    any basket the ticker belongs to), sourced from _load_basket_crowding_z_map()
+    called once per panels() run.  Pass None when unavailable (leg shows as
+    unavailable in the display, never suppresses the block).
+
     Returns None when all inputs are unavailable (panel hidden from JSON)."""
     try:
         from engine.moat_falsifiers import great_company_trap  # noqa: PLC0415
@@ -1783,10 +1844,10 @@ def _compute_trap_block(
                 except (TypeError, ValueError):
                     pass
         # Only emit the block when at least one input is available
-        if revision_dir is None and insider_net_usd is None:
+        if revision_dir is None and insider_net_usd is None and crowding_z is None:
             return None
         return great_company_trap(
-            crowding_z=None,
+            crowding_z=crowding_z,
             insider_net_usd=insider_net_usd,
             revision_direction=revision_dir,
         )
@@ -1923,6 +1984,15 @@ def panels() -> dict[str, dict]:
     except Exception as _es_exc:  # noqa: BLE001
         log.warning("stock_fundamentals: expectation_states skipped (%s)", _es_exc)
 
+    # W2 PR-K + B1: basket-level crowding_z per ticker — loaded ONCE for the whole run.
+    # Sourced from site/allocationdata/allocation.json (pre-computed by the allocation
+    # nightly job; basket_crowding() in engine.theme_crowding runs there) joined with
+    # data/baskets/membership.json.  Takes MAX crowding_z across all baskets a ticker
+    # belongs to (most conservative down-size context).  DISPLAY-ONLY; never feeds
+    # entry-stack surfaces (LH-R10 / LH-R1).  Fails soft to {} when unavailable.
+    _basket_crowding_z: dict[str, float] = _load_basket_crowding_z_map()
+    log.info("stock_fundamentals: basket crowding_z map: %d tickers", len(_basket_crowding_z))
+
     # W2 PR-K: moat falsifier sensors + great-company-trap overlay (display-only;
     # horizon_role=hold_thesis; MUST NOT feed entry-stack scored surfaces — LH-R1).
     from engine.moat_falsifiers import (  # noqa: PLC0415
@@ -2018,10 +2088,12 @@ def panels() -> dict[str, dict]:
             # a matched-control universe base rate so display layer can show context.
             # MUST NOT feed board ordering, alert triage, top-setups gates, or push floor.
             "moat_falsifiers": _t_moat,
-            # W2 PR-K — great-company-trap de-escalation overlay (LH-R10).
+            # W2 PR-K + B1 — great-company-trap de-escalation overlay (LH-R10).
             # Assembled ONLY from existing signals; may ONLY lower conviction context.
+            # crowding_z: basket-level crowding from _basket_crowding_z (loaded once).
             "great_company_trap": _compute_trap_block(
                 str(t), analyst_rev, insider,
+                crowding_z=_basket_crowding_z.get(str(t)),
             ),
             # LT-3a — capital allocation delta block (DISPLAY-ONLY; horizon_role=hold_thesis).
             # Buyback execution (TTM repurchases from statements_quarterly.parquet),
