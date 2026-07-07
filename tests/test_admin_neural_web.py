@@ -1246,6 +1246,126 @@ artifacts:
         neural_web._NW_DAILY_BRIEF_JSON = neural_web._DATA_NW / "daily_brief.json"
 
 
+# ---------------------------------------------------------------------------
+# R-ORTH PR-4: independence reader tests (admin/neural_web.py)
+# ---------------------------------------------------------------------------
+
+def _make_spine_fixture_for_admin(nw_dir: Path, active: bool = False) -> None:
+    """Write a minimal covariance_spine.json into nw_dir for admin tests."""
+    spine = {
+        "schema": "neuralweb.covariance_spine.v1",
+        "as_of": "2026-07-04",
+        "display_only": True,
+        "authority": "context",
+        "descriptive_not_gauntleted": True,
+        "blocks": {
+            "lobes": {
+                "effective_independent_lobes": 2.1,
+                "n_lobes_measurable": 3,
+                "n_lobes_total": 17,
+                "null_reference": {"pctile_vs_null": 0.6, "n_null_draws": 200},
+                "same_bet_warning": {"active": active, "text": "test warning" if active else ""},
+                "highest_overlap_pairs": [
+                    {"a": "us_board", "b": "oracle_rotation", "corr": 0.72, "n_shared_weeks": 40}
+                ],
+                "clusters": [{"engines": ["us_board", "oracle_rotation"], "mean_corr": 0.72}],
+                "coverage": {},
+            }
+        },
+        "coverage": {},
+        "missing_inputs": [],
+        "committee_annotations": [],
+        "allowed_actions": ["display"],
+        "forbidden_actions": ["score"],
+    }
+    (nw_dir / "covariance_spine.json").write_text(json.dumps(spine), encoding="utf-8")
+
+
+def test_lobes_panel_independence_failopen_absent(tmp_repo):
+    """lobes_panel() returns independence key with null values when spine is absent."""
+    from admin import neural_web
+
+    old_path = neural_web._COVARIANCE_SPINE
+    neural_web._COVARIANCE_SPINE = tmp_repo / "data" / "neuralweb" / "covariance_spine.json"
+    try:
+        # Ensure file does not exist
+        spine_path = tmp_repo / "data" / "neuralweb" / "covariance_spine.json"
+        if spine_path.exists():
+            spine_path.unlink()
+        result = neural_web._read_independence_summary()
+        assert result["effective_independent_lobes"] is None
+        assert result["n_lobes_measurable"] is None
+        assert result["descriptive_not_gauntleted"] is True
+        assert result["display_only"] is True
+        assert result["available"] is False
+    finally:
+        neural_web._COVARIANCE_SPINE = old_path
+
+
+def test_lobes_panel_independence_present(tmp_repo):
+    """lobes_panel() includes non-null independence summary when spine is present."""
+    from admin import neural_web
+
+    nw_dir = tmp_repo / "data" / "neuralweb"
+    _make_spine_fixture_for_admin(nw_dir)
+    old_path = neural_web._COVARIANCE_SPINE
+    neural_web._COVARIANCE_SPINE = nw_dir / "covariance_spine.json"
+    try:
+        result = neural_web._read_independence_summary()
+        assert result["effective_independent_lobes"] == 2.1
+        assert result["n_lobes_measurable"] == 3
+        assert result["n_lobes_total"] == 17
+        assert result["pctile_vs_null"] == 0.6
+        assert result["available"] is True
+        assert result["descriptive_not_gauntleted"] is True
+        assert result["display_only"] is True
+        # same_bet_warning is null when active=False
+        assert result["same_bet_warning"] is None
+    finally:
+        neural_web._COVARIANCE_SPINE = old_path
+
+
+def test_lobes_panel_independence_same_bet_active(tmp_repo):
+    """same_bet_warning propagated when active=True."""
+    from admin import neural_web
+
+    nw_dir = tmp_repo / "data" / "neuralweb"
+    _make_spine_fixture_for_admin(nw_dir, active=True)
+    old_path = neural_web._COVARIANCE_SPINE
+    neural_web._COVARIANCE_SPINE = nw_dir / "covariance_spine.json"
+    try:
+        result = neural_web._read_independence_summary()
+        assert result["same_bet_warning"] is not None
+        assert result["same_bet_warning"]["active"] is True
+    finally:
+        neural_web._COVARIANCE_SPINE = old_path
+
+
+def test_lobes_panel_returns_independence_key(tmp_repo):
+    """lobes_panel() result dict includes 'independence' key."""
+    from admin import neural_web
+
+    nw_dir = tmp_repo / "data" / "neuralweb"
+    _make_spine_fixture_for_admin(nw_dir)
+    old_spine = neural_web._COVARIANCE_SPINE
+    old_synapse = neural_web._SYNAPSE_YML
+    old_health = neural_web._NW_HEALTH_JSON
+    old_confluence = neural_web._CONFLUENCE_GRAPH
+    neural_web._COVARIANCE_SPINE = nw_dir / "covariance_spine.json"
+    neural_web._SYNAPSE_YML = tmp_repo / "config" / "synapse.yml"
+    neural_web._NW_HEALTH_JSON = nw_dir / "health.json"
+    neural_web._CONFLUENCE_GRAPH = nw_dir / "confluence_graph.json"
+    try:
+        result = neural_web.lobes_panel()
+        assert "independence" in result, "lobes_panel() must return 'independence' key"
+        assert result["independence"]["descriptive_not_gauntleted"] is True
+    finally:
+        neural_web._COVARIANCE_SPINE = old_spine
+        neural_web._SYNAPSE_YML = old_synapse
+        neural_web._NW_HEALTH_JSON = old_health
+        neural_web._CONFLUENCE_GRAPH = old_confluence
+
+
 if __name__ == "__main__":
     import pytest as _pytest
     _pytest.main([__file__, "-v"])

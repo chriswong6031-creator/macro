@@ -1053,6 +1053,40 @@ function nwRing(frac, size = 34) {
     <circle class="ring-track" cx="${cc}" cy="${cc}" r="${r}"/>
     <circle class="ring-fill ${cls}" cx="${cc}" cy="${cc}" r="${r}" stroke-dasharray="${dash}"/></svg></span>`;
 }
+function nwIndependenceCard(indep) {
+  /* R-ORTH PR-4: independence summary card for the observatory hero area. */
+  if (!indep) return "";
+  const eil = indep.effective_independent_lobes;
+  const measurable = indep.n_lobes_measurable;
+  const total = indep.n_lobes_total;
+  const pctile = indep.pctile_vs_null;
+  const available = indep.available;
+  // same >=2 measurable floor as the committee chip: a 1-engine PR is trivially 1.0
+  const eilStr = (eil != null && measurable != null && measurable >= 2) ? Number(eil).toFixed(1) : "—";
+  const coverageStr = (measurable != null && total != null)
+    ? `${measurable} / ${total} engines measurable${measurable < 2 ? " — accruing" : ""}`
+    : (available ? "accruing" : "spine not yet written");
+  const pctileStr = (pctile != null) ? ` · ${(pctile * 100).toFixed(0)}th pctile vs null` : "";
+  const sameBetHtml = (indep.same_bet_warning)
+    ? `<div class="note" style="color:var(--warn);margin-top:4px">Same-bet warning: ${esc(indep.same_bet_warning.text || indep.same_bet_warning.message || "active")}</div>` : "";
+  const caveat = `<span class="sub" style="font-style:italic">Descriptive only — not gauntleted (F-ORTH-1)</span>`;
+  return `<div class="card" style="margin-bottom:10px;padding:10px 14px">
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <div>
+        <div class="eyebrow">Independent witnesses (R-ORTH)</div>
+        <div style="font-size:22px;font-weight:700;letter-spacing:-.02em">${esc(eilStr)}</div>
+        <div class="sub">${esc(coverageStr)}${esc(pctileStr)}</div>
+      </div>
+      <div style="flex:1;min-width:200px;font-size:12px;line-height:1.5;color:var(--fg2)">
+        Estimates how many of the ${total != null ? total : "?"} active engines fire on unrelated information.
+        Based on participation-ratio of the engine co-firing correlation matrix (≥30 active-weeks floor).
+        ${caveat}
+      </div>
+    </div>
+    ${sameBetHtml}
+  </div>`;
+}
+
 function nwHero(d) {
   const st = d.overall_status || "unknown";
   const sc = d.summary_counts || {};
@@ -1073,7 +1107,8 @@ function nwHero(d) {
       ${sc.not_locally_verifiable ? chip("R2-only", sc.not_locally_verifiable, "") : ""}
     </div>
     <div class="nw-hero-note">${note}</div>
-  </div>`;
+  </div>
+  ${nwIndependenceCard(d.independence)}`;
 }
 /* Signature system map — core → group anchors (on a ring) → lobe nodes */
 const NW_STATUS_MAP = (s) => s === "fresh" ? "fresh" : s === "stale" ? "stale"
@@ -1303,6 +1338,7 @@ async function renderLobeDetail(id) {
       ${d.desc_status === "auto" ? `<div class="note muted" style="margin-bottom:8px">Auto-generated from the signal registry — a hand-written summary hasn't been added yet.</div>` : ""}
       <div style="line-height:1.55">${esc(d.description || "No description registered for this lobe.")}</div>
       ${d.description_technical && d.description_technical !== d.description ? `<details style="margin-top:12px"><summary class="note muted" style="cursor:pointer;user-select:none">Technical note (from the signal registry)</summary><div class="note mono muted" style="margin-top:6px;line-height:1.5">${esc(d.description_technical)}</div></details>` : ""}
+      ${d.independence_note ? `<details style="margin-top:12px"><summary class="note muted" style="cursor:pointer;user-select:none">Independence note (R-ORTH covariance spine)</summary><div class="note muted" style="margin-top:6px;line-height:1.5">${esc(d.independence_note)}${d.co_fire_cluster ? ` Co-fire cluster engines: ${esc(d.co_fire_cluster.join(", "))}.` : ""}</div></details>` : ""}
       <div class="note muted" style="margin-top:10px">Producer <code>${esc(d.producer || "?")}</code> · artifact <code>${esc(d.path || "?")}</code> · source ${esc(d.purpose_source || "config/synapse.yml")}</div>
     </div>
     <div class="section">Data transmission</div>

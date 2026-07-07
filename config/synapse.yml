@@ -5874,7 +5874,8 @@ artifacts:
     horizon_role: context
     weights: none
     scored_path_surfaces: []
-    consumers: []
+    consumers:
+      - engine/neuralweb/confluence.py  # R-ORTH PR-4: reads lobes block to embed independence summary in confluence_graph.json (display-only)
     external_consumers: []
     notes: >
       R-ORTH PR-3 (RUL-ORTH-1..11) — covariance spine rail (not a lobe).
@@ -5889,7 +5890,9 @@ artifacts:
       same_bet_warning fires when largest cluster has >=3 engines with mean
       intra-cluster |corr|>0.60. Site mirror site/neuralwebdata/covariance_spine.json
       is owned by the separate site-covariance-spine artifact (same producer,
-      atomic temp+rename).
+      atomic temp+rename). R-ORTH PR-4: confluence.py reads this artifact's lobes
+      block to embed an independence summary in confluence_graph.json (display-only,
+      no gate or rank authority).
 
   site-covariance-spine:
     path: site/neuralwebdata/covariance_spine.json
