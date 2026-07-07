@@ -2142,7 +2142,20 @@
         '<span class="muted">' + (tr.value_change_pct != null ? (tr.value_change_pct > 0 ? '+' : '') + Math.round(tr.value_change_pct) + '% $ · ' : '') +
         tr.holders_first + '→' + tr.holders_last + ' ' + lz('holders', '持有人') + ' / ' + tr.n_quarters + 'Q</span></div>';
     }
-    el('r_smartmoney').innerHTML = head + vipline + trendLine + '<table>' + th + rows + '</table>' +
+    // Realized price move since the filing became public — DESCRIPTIVE, not a signal.
+    var sinceFilingLine = '';
+    if (s.since_filing && s.since_filing.available_on) {
+      var sf = s.since_filing;
+      var sfRet = sf.ret_pct != null ? (sf.ret_pct >= 0 ? '+' : '') + sf.ret_pct.toFixed(1) + '%' : '—';
+      var sfEx = sf.ex_spy_pct != null ? (sf.ex_spy_pct >= 0 ? '+' : '') + sf.ex_spy_pct.toFixed(1) + '%' : '—';
+      var sfCol = sf.ret_pct == null ? 'muted' : sf.ret_pct >= 0 ? 'pos' : 'neg';
+      var sfExCol = sf.ex_spy_pct == null ? 'muted' : sf.ex_spy_pct >= 0 ? 'pos' : 'neg';
+      sinceFilingLine = '<p class="srcline sm-asof" style="margin:-2px 0 10px">' +
+        lz('Stock since filing public', '申报公开后股价走势') + ' (' + esc(sf.available_on) + ', ' + (sf.days || '?') + lz('d', '个交易日') + '): ' +
+        '<b class="' + sfCol + '">' + sfRet + '</b>' +
+        ' · ' + lz('vs SPY', '相对标普') + ': <b class="' + sfExCol + '">' + sfEx + '</b></p>';
+    }
+    el('r_smartmoney').innerHTML = head + vipline + trendLine + sinceFilingLine + '<table>' + th + rows + '</table>' +
       '<p class="srcline">' + lz(
         '13F filed quarterly, ~45-day lag — long-only US stakes ≥ $100M only (no shorts/options/non-US). Context on who holds it, not a real-time signal.',
         '13F 季度申报、约45天滞后 —— 仅美股多头持仓（≥1亿美元，不含空头／期权／非美）。仅作「谁持有」背景，非实时信号。') + '</p>';

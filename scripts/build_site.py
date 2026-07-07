@@ -2358,7 +2358,7 @@ def build_smartmoney_data(site: Path) -> dict | None:
     factordata/smartmoney.json (consumed by the per-stock "who holds this" panel +
     a future consensus board). Additive — any failure logs and skips. CONTEXT only,
     never wired into any score. See collectors/edgar_13f.py + engine/smart_money.py."""
-    from engine.smart_money import compute_smart_money
+    from engine.smart_money import compute_smart_money, enrich_since_filing
     try:
         sm = compute_smart_money()
     except Exception as e:  # noqa: BLE001 — additive, never fatal
@@ -2366,6 +2366,12 @@ def build_smartmoney_data(site: Path) -> dict | None:
         return None
     if not sm:
         return None
+    # Attach realized price-since-filing context (DESCRIPTIVE, not a score/signal).
+    # Best-effort: any failure is silently skipped per-ticker and never blocks the build.
+    try:
+        enrich_since_filing(sm.get("by_ticker") or {})
+    except Exception as e:  # noqa: BLE001 — enrichment is additive only
+        log.warning("since-filing enrichment failed (non-fatal): %s", e)
     fdir = site / "factordata"
     fdir.mkdir(parents=True, exist_ok=True)
     (fdir / "smartmoney.json").write_text(json.dumps(sm, separators=(",", ":"), default=str))
