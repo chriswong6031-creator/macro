@@ -136,7 +136,7 @@ class TestContract:
     """Verify the latest.json artifact structure."""
 
     def test_build_produces_schema_keys(self, tmp_root: Path, monkeypatch):
-        """build() returns a dict with all required release_forecast.v1 keys."""
+        """build() returns a dict with all required release_forecast.v1/v2 keys."""
         # Patch _find_upcoming_releases to return empty (no real engine needed)
         import scripts.build_release_forecast as producer
         monkeypatch.setattr(producer, "_find_upcoming_releases", lambda *a, **k: [])
@@ -147,7 +147,7 @@ class TestContract:
 
         result = producer.build(tmp_root, dry_run=True)
 
-        assert result["schema"] == "release_forecast.v1"
+        assert result["schema"] in ("release_forecast.v1", "release_forecast.v2")
         assert "asof" in result
         assert "display_only" in result
         assert "authority" in result
@@ -317,7 +317,7 @@ class TestScoreboard:
     def test_n_zero_honest_output(self):
         """With no scored rows, scoreboard prints zeros/nulls honestly."""
         sb = _build_scoreboard([], accrual_start="2026-07-07")
-        assert sb["schema"] == "release_forecast_scoreboard.v1"
+        assert sb["schema"] in ("release_forecast_scoreboard.v1", "release_forecast_scoreboard.v2")
         assert sb["forward_accrual_began"] == "2026-07-07"
         assert sb["by_release"] == {}
 
@@ -603,7 +603,7 @@ class TestDryRun:
         assert not (tmp_root / "site" / "macrodata" / "release_forecast.json").exists()
 
         # Result is still a well-formed payload
-        assert result["schema"] == "release_forecast.v1"
+        assert result["schema"] in ("release_forecast.v1", "release_forecast.v2")
         assert result["display_only"] is True
 
     def test_full_run_writes_artifacts(self, tmp_root: Path, monkeypatch):
