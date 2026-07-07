@@ -134,7 +134,7 @@
         "private_fields": []
       },
       "statistics": {
-        "fdr_family": "entry-stack-decline-geometry",
+        "fdr_family": "esx_decline_geometry",
         "trial_budget_change": false,
         "evidence_floor_met": false,
         "outcome_data_seen": false,

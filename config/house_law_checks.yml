@@ -1009,3 +1009,31 @@ checks:
     notes: >
       External Cloudflare Workers build status; not under our control.
       Never block a merge on this red X.
+
+  - law_id: governance.adjudication_packet
+    summary: >
+      Post-Fable succession bench: adjudication packets must be schema-complete
+      per tier and pass hard blockers HB-1..13 — effective-tier law kills
+      omission/understatement laundering, tier-2 needs a refute-stance panel
+      (>=2) plus operator sign-off, authority/privacy evidence floors (HB-11/12)
+      are machine-enforced, and invariant classes (A7 origination, trial-budget
+      laundering, null-history deletion) are never approvable (RUL-SUCC-1..12).
+    source_ref:
+      - research/FABLE_SUCCESSION_OPERATING_SYSTEM.md
+      - "PR #1800"
+    severity: manual
+    check_script: scripts/check_adjudication_packet.py
+    ci_wiring: []
+    selftest: true
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - Not yet wired into pr_ci — RUL-SUCC-12 defers CI wiring to succession
+        bench W1 (dag-conformance drift risk on same-day workflow edits). Until
+        then run manually or via tests/test_adjudication_packet.py.
+      - Validates the queue file only when invoked; opus-driven Research Factory
+        gates invoke it as a subprocess via scripts/research_factory_decide.py.
+    owner_program: fable-succession-bench
+    notes: >
+      W1 wires this into pr_ci and upgrades severity to hard (upgrade needs no
+      ruling; downgrades do).

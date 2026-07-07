@@ -526,7 +526,7 @@ def _make_clean_t1_packet() -> dict:
         },
         "privacy": None,
         "statistics": {
-            "fdr_family": "entry_stack",
+            "fdr_family": "esx_decline_geometry",
             "trial_budget_change": False,
             "evidence_floor_met": True,
             "outcome_data_seen": False,
@@ -590,7 +590,7 @@ def _make_drill_packet(tier_override: int | None = None) -> dict:
         },
         "privacy": None,
         "statistics": {
-            "fdr_family": "entry_stack",
+            "fdr_family": "esx_decline_geometry",
             "trial_budget_change": False,
             "evidence_floor_met": True,
             "outcome_data_seen": False,
@@ -657,7 +657,7 @@ def _make_t2_packet_with_panel(panel: list, decided_by: str = "operator") -> dic
             "private_fields": [],
         },
         "statistics": {
-            "fdr_family": "nw_lobes",
+            "fdr_family": "macro_tx",
             "trial_budget_change": False,
             "evidence_floor_met": True,
             "outcome_data_seen": False,

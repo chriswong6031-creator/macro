@@ -810,6 +810,16 @@ def _build_parser() -> argparse.ArgumentParser:
     )
 
     ap.add_argument(
+        "--governance-root", type=Path, default=None,
+        dest="governance_root",
+        help=(
+            "Override the repo root used for the governance ledger write "
+            "(root/data/neuralweb/governance.jsonl). Default: repo root. "
+            "For hermetic tests — production runs must not set this."
+        ),
+    )
+
+    ap.add_argument(
         "--dry-run", action="store_true", default=False,
         help="Validate and print without writing anything",
     )
@@ -826,6 +836,7 @@ def main() -> int:  # noqa: C901 — complexity is inherent in a multi-path deci
     seed_path = args.experiments_seed or DEFAULT_EXPERIMENTS_SEED
     regime_path = args.regime_path or DEFAULT_REGIME_PATH
     requeue_path = args.requeue_path or DEFAULT_REQUEUE_PATH
+    governance_root = args.governance_root or ROOT
 
     candidate_id = args.candidate
     decision = args.decision
@@ -1153,7 +1164,7 @@ def main() -> int:  # noqa: C901 — complexity is inherent in a multi-path deci
             decision=decision,
             actor=actor,
             actor_ref=actor_ref,
-            root=ROOT,
+            root=governance_root,
             dry_run=dry_run,
             packet_ref=packet_ref,
         )

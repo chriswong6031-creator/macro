@@ -87,7 +87,7 @@ def _decided_packet(packet_id: str, outcome: str, decided_by: str = "opus") -> d
             "mastermind_booleans_unchanged": None,
         },
         "statistics": {
-            "fdr_family": "test-family",
+            "fdr_family": "esx_decline_geometry",
             "trial_budget_change": False,
             "evidence_floor_met": True,
             "outcome_data_seen": False,
@@ -293,7 +293,7 @@ def _make_clean_t1_queue_packet(packet_id: str, outcome: str = "paper") -> dict:
             "nondelegable": False,
         },
         "statistics": {
-            "fdr_family": "test_family",
+            "fdr_family": "esx_decline_geometry",
             "trial_budget_change": False,
             "evidence_floor_met": True,
             "outcome_data_seen": False,
@@ -431,6 +431,7 @@ class TestDecideCLIIntegration:
             "--regime-path", str(paths["regime_path"]),
             "--requeue-path", str(paths["requeue_path"]),
             "--adjudication-queue", str(paths["adj_queue"]),
+            "--governance-root", str(paths["fake_root"]),
             "--candidate", self.CANDIDATE_ID,
             "--decision", "paper",
             "--actor", "opus",
@@ -469,6 +470,22 @@ class TestDecideCLIIntegration:
             f"Expected actor='opus', got actor={new_row.get('actor')!r}"
         )
 
+        # Hermeticity: the governance event must land under fake_root, never
+        # in the real repo ledger (--governance-root redirect).
+        gov_path = paths["fake_root"] / "data" / "neuralweb" / "governance.jsonl"
+        assert gov_path.exists(), (
+            f"Governance event not written under --governance-root: {gov_path}"
+        )
+        gov_rows = [
+            json.loads(line)
+            for line in gov_path.read_text(encoding="utf-8").splitlines()
+            if line.strip()
+        ]
+        assert any(
+            r.get("evidence", {}).get("packet_ref") == self.PACKET_ID
+            for r in gov_rows
+        ), f"Governance event missing packet_ref evidence: {gov_rows}"
+
     def test_negative_outcome_mismatch_exit2_no_row_appended(self, tmp_path: Path):
         """CLI with mismatched packet decision.outcome → exit 2, no transition appended.
 
@@ -492,6 +509,7 @@ class TestDecideCLIIntegration:
             "--regime-path", str(paths["regime_path"]),
             "--requeue-path", str(paths["requeue_path"]),
             "--adjudication-queue", str(paths["adj_queue"]),
+            "--governance-root", str(paths["fake_root"]),
             "--candidate", self.CANDIDATE_ID,
             "--decision", "rejected",  # mismatches packet outcome='paper'
             "--actor", "opus",

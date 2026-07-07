@@ -196,7 +196,7 @@ def _clean_t1_packet() -> dict:
             "nondelegable": False,
         },
         "statistics": {
-            "fdr_family": "entry_stack",
+            "fdr_family": "esx_decline_geometry",
             "trial_budget_change": False,
             "evidence_floor_met": True,
             "outcome_data_seen": False,
@@ -256,7 +256,7 @@ def _drill_packet(tier_override: int = 1) -> dict:
             "nondelegable": False,
         },
         "statistics": {
-            "fdr_family": "entry_stack",
+            "fdr_family": "esx_decline_geometry",
             "trial_budget_change": False,
             "evidence_floor_met": True,
             "outcome_data_seen": False,
@@ -321,7 +321,7 @@ def _t2_packet_good() -> dict:
             "private_fields": [],
         },
         "statistics": {
-            "fdr_family": "nw_lobes",
+            "fdr_family": "macro_tx",
             "trial_budget_change": False,
             "evidence_floor_met": True,
             "outcome_data_seen": False,

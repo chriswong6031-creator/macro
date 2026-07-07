@@ -9,7 +9,7 @@ The Research Factory's Batch B involves wrapping graded cortex hypotheses with c
 ## What was decided (the holding)
 
 - **R1:** Challenge only evaluator-passed rows plus Fable-nominated rows. Skip `registered`/`insufficient-n` rows with no verdict.
-- **R2:** Cortex lens added to `research/research_factory/CHALLENGER_PROMPT.md` as Lens 6. CODEOWNERS tracking deferred to W-CODEGEN (separate program).
+- **R2:** Cortex lens added to `research/research_factory/CHALLENGER_PROMPT.md` as Lens 6. CODEOWNERS tracking deferred to W-CODEGEN (separate program; no_build per RF-U3 — OS/identity boundary + branch protection required first).
 - **R3:** Cortex budget stays 3/week — reaffirmed. No raise before the funnel has kill-rate evidence (this matches the original factory charter's RF-3).
 - **R4 (RF-13 timestamp check):** the seam claiming that `spec_ref` registration timestamp ≥ `registered_at` was enforced was docstring-only; now enforced as a warn-and-flag in `engine/research_factory/adapter_cortex.py`.
 - **R5 (doc correction):** the claim that the factory reads `TrialLedger().effective_n('cortex')` was aspirational; no build needed — Batch B mechanics don't require it.
