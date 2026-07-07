@@ -1,24 +1,22 @@
-"""engine/dannytrades_chip.py — a display-only per-stock CONTRARIAN read derived from
-the reconstructed DannyTrades stack (engine/dannytrades.py), wired onto the US stock
-detail page.
+"""engine/dannytrades_chip.py — a display-only per-stock DESCRIPTIVE positioning
+readout derived from the reconstructed DannyTrades stack (engine/dannytrades.py),
+wired onto the US stock detail page.
 
-Evidence status after DT-W1a (2026-07-06, research/dannytrades/DT_W1_RESULTS.md and
-research/DANNYTRADES_NW_ADJUDICATION_AND_MASTERPLAN_BY_FABLE.md §7):
+Evidence status after DT-W1a + DT-W2 (2026-07-06; research/dannytrades/
+DT_W1_RESULTS.md, DT_W2_64Y_RESULTS.md, and
+research/DANNYTRADES_NW_ADJUDICATION_AND_MASTERPLAN_BY_FABLE.md §7-§8):
 
-  1. EXTENSION band (composite-score percentile) — retained as a WEAK TILT display.
-     Original evidence: forward-63d return fell monotonically across score deciles
-     (Spearman −0.88) on a 64-year, 114-name SURVIVOR panel with no time control.
-     The 2021+ survivorship-honest PIT replication, time-controlled (month-block,
-     ~60 effective months, single bull regime), found NO significant effect.
-  2. WHALE line — DROPPED as a directional claim per the frozen DT-W1 consequence
-     rule (H1∧H2∧H3 all FAILED time-controlled: the raw fade/bounce lifts were
-     ~85-90% calendar-month base rate). Accumulation values remain as descriptive
-     data only; no fade/bounce claim may be derived from them. Restoration path:
-     a new prereg in which the 64-year panel survives month-block time control
-     (adjudication DT-R13).
+  ALL directional reads are RETIRED. The 2021+ survivorship-honest, time-controlled
+  replication (DT-W1a) failed all four contrarian reads; the 64-year month-block
+  settlement (DT-W2) failed three of four, and the one pooled survivor
+  (whale-surge fade, p=0.004) is a PRE-2010 phenomenon — null 2011-2026
+  (−0.5pp, CI spans zero, p=0.33) on top of survivor-flatter — so restoration
+  was DENIED (adjudication §8, DT-R15). The chip now reports only:
+    - extension percentile of the composite vs its own 2y history (descriptive band)
+    - accumulation level/motion (descriptive values, no direction)
+  state is always "neutral" (enum kept for dt_contra_state.json schema stability).
 
-NEVER scored, never a price target — a contextual caution chip with its measured
-status printed in the caveat. Pure function of one stock's OHLCV.
+NEVER scored, never a price target, no tilt claims. Pure function of one stock's OHLCV.
 """
 from __future__ import annotations
 
@@ -31,15 +29,16 @@ WHALE_WIN = 63          # ~3-month accumulation window (daily)
 WHALE_CHG = 63          # 3-month change = Danny's "whales entering/leaving"
 SCORE_PCT_WIN = 504     # ~2y self-history for the extension percentile
 
-_CAVEAT = ("Contrarian read — the INVERSE of the indicator's usual framing; display-only, "
-           "extension band only. Measured on a 64y survivor panel (decile Spearman −0.88, "
-           "no time control); the 2021+ survivorship-honest, time-controlled replication "
-           "(DT-W1a, ~60 effective months) found NO significant effect, and whale-based "
-           "fade/bounce claims were dropped. A weak tilt at best, never a trade.")
-_CAVEAT_ZH = ("逆向解读 — 与该指标常规用法相反；仅供展示，仅保留位置分位。原始证据来自64年"
-              "幸存股样本（分位 Spearman −0.88，未控制时间因素）；2021年后无幸存偏差、"
-              "控制月度基准的复检（DT-W1a，有效样本约60个月）未发现显著效应，"
-              "“鲸鱼”方向性判断已移除。至多是微弱倾斜，绝非交易信号。")
+_CAVEAT = ("Descriptive positioning readout only — no directional read. Time-controlled "
+           "replication retired all contrarian claims (2026-07-06): the 2021+ "
+           "survivorship-honest panel was all-null (DT-W1a), and on the 64y panel the one "
+           "pooled survivor (accumulation-surge fade) is null in the modern era "
+           "(2011-2026 CI spans zero) and survivor-flattered (DT-W2). Values describe "
+           "where the name sits; they do not predict.")
+_CAVEAT_ZH = ("仅为描述性位置读数 — 无方向性判断。控制时间因素的复检已于2026-07-06退役全部"
+              "逆向解读：2021年后无幸存偏差样本全部无效应（DT-W1a）；64年样本中唯一合并显著项"
+              "（吸筹激增后转弱）在2011-2026年代为零效应且受幸存偏差夸大（DT-W2）。"
+              "数值仅描述所处位置，不构成预测。")
 
 
 def _band(p: float) -> str:
@@ -78,14 +77,12 @@ def assess(close: pd.Series, high: pd.Series | None, low: pd.Series | None,
     rising = (wchg is not None and wchg > 5)
     falling = (wchg is not None and wchg < -5)
 
-    # DT-W1a consequence (frozen rule, adjudication §7): the extension band is the ONLY
-    # state driver; whale motion carries NO directional claim (descriptive data only).
-    if band == "extended":
-        state, en, zh = "fade", "Extended — fade risk", "高位 — 谨防回吐"
-    elif band == "washed":
-        state, en, zh = "bounce", "Washed-out — contrarian setup", "超卖 — 逆向机会"
-    else:
-        state, en, zh = "neutral", "Neutral", "中性"
+    # DT-W2 consequence (frozen rule, adjudication §8): H4 failed on BOTH panels →
+    # ALL directional tilt claims retired. The chip is a descriptive positioning
+    # readout only; state stays "neutral" (enum stability for dt_contra_state.json).
+    state = "neutral"
+    en = f"Extension {int(round(spct * 100))}th percentile"
+    zh = f"位置分位 {int(round(spct * 100))}"
 
     whale_state = ("entering" if rising else "leaving" if falling else "quiet")
     whale_lbl = {"entering": ("Accumulation rising", "吸筹上升"),
@@ -100,21 +97,13 @@ def assess(close: pd.Series, high: pd.Series | None, low: pd.Series | None,
          "label": {"en": f"{whale_lbl[0]} · {int(round(w))}%",
                    "zh": f"{whale_lbl[1]} · {int(round(w))}%"}},
     ]
-    detail_en = {
-        "fade": "High DannyTrades composite percentile — on the long survivor panel this is "
-                "where forward returns faded (unreplicated time-controlled 2021+). A caution "
-                "tilt only; don't chase.",
-        "bounce": "Low composite percentile — the washed-out side of the long survivor panel "
-                  "(unreplicated time-controlled 2021+). A weak contrarian tilt, not a trigger.",
-        "neutral": "Mid-range composite percentile — no contrarian extension or washout tilt here.",
-    }[state]
-    detail_zh = {
-        "fade": "DannyTrades 综合分位偏高 — 在长期幸存股样本中此处未来回报曾转弱"
-                "（2021年后控制时间因素未复现）。仅为谨慎倾斜，勿追高。",
-        "bounce": "综合分位偏低 — 长期幸存股样本中的超卖一侧（2021年后控制时间因素未复现）。"
-                  "微弱逆向倾斜，并非触发信号。",
-        "neutral": "综合分位处于中段 — 无逆向高位或超卖的倾斜。",
-    }[state]
+    detail_en = ("Descriptive positioning readout: where the DannyTrades composite sits in its "
+                 "own 2-year history, plus the accumulation level. No directional implication — "
+                 "both contrarian reads were retired after time-controlled replication failed "
+                 "(DT-W1a/DT-W2, 2026-07-06).")
+    detail_zh = ("描述性位置读数：DannyTrades 综合分在自身两年历史中的分位，以及吸筹水平。"
+                 "无方向性含义 — 两项逆向解读在控制时间因素的复检失败后已于 2026-07-06 退役"
+                 "（DT-W1a/DT-W2）。")
 
     return {
         "state": state,

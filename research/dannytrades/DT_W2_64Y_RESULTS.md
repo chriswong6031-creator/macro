@@ -204,3 +204,34 @@ display purposes. DT-W2 settles whether the 64y result was a calendar artifact.
   diff=3, BH q=0.10, n_boot=1000, seed=11). Nothing tuned.
 - **Survivorship bias:** deliberate survivor panel. Both caveats (survivor-flattered +
   no time-control in original t≈−3.9) must be cited with this study.
+
+---
+
+## Adversarial review addendum (Opus review + Fable ratification, 2026-07-06)
+
+The four verdicts above were independently reproduced to the digit (H1 lift −0.0141,
+CI [−0.0252, −0.0031], p=0.0040; seed/boot-count stable; estimand/CI pairing coherent;
+controls behave as designed) — **verdicts CLEAN as reported.**
+
+**Era-split of H1 (required disclosure — the decisive diagnostic):**
+
+| Era | lift (TC) | 95% CI | p | CI excl 0 |
+|---|---|---|---|---|
+| 1962–1994 | −0.0220 | [−0.0392, −0.0057] | 0.006 | Yes |
+| 1995–2010 | −0.0185 | [−0.0345, −0.0021] | 0.014 | Yes |
+| **2011–2026** | **−0.0048** | **[−0.0231, +0.0137]** | **0.33** | **No** |
+
+Robust to within-era re-demeaning and to a median-year split (>2005: p=0.32).
+Threshold neighborhood: dies at whale_chg>+8 (CI includes zero), barely holds at +12.
+Multiplicity: H1 survives combined 8-test BH across both replication families
+(threshold 0.0125) and Bonferroni×8 — the p-value is genuinely small, it is the
+*regime coverage* that fails. Interpretation note: the H1 event group's raw mean
+forward return is +1.22% (base +1.63%) — the "fade" is relative underperformance
+vs the cross-section, never an absolute down-move.
+
+**Fable ruling on the consequence branches:** H1's pooled survival is a pre-2010
+phenomenon, null in the only regime a live surface would operate in, sitting on a
+survivor panel that flatters the claimed direction, after the honest-panel test
+(DT-W1a) already failed. **Restoration DENIED** — see adjudication §8 (DT-R15).
+H4's failure fires the pre-registered consequence (b): all directional tilt claims
+retired from the chip (applied in this PR).
