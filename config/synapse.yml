@@ -164,6 +164,7 @@ artifacts:
       - engine/signal_archive.py
       - scripts/build_conditional_cells.py
       - scripts/build_hazard_panel.py
+      - scripts/build_index_hazard_panel.py
       - scripts/build_site.py
       - scripts/calibrate_regime_hmm.py
       - scripts/collinearity_phase0.py
@@ -740,6 +741,37 @@ artifacts:
       - scripts/build_cycle.py
     external_consumers: []
     notes: "Scored tier: model refit via scripts/fit_cycle_hazard.py runs only after OOS validation pass. weights=measured (allocation_bootstrap in payload)."
+
+  # --- 0 consumers (IX-1 substrate; the trial wave decides wiring/cadence) ---
+  hazard-panel-index-v0:
+    path: data/hazard/panel_index_v0.parquet
+    format: parquet
+    producer: scripts/build_index_hazard_panel.py
+    known_extra_writers: []
+    owner_program: cycle-intelligence
+    cadence: on-demand
+    storage: git
+    asof_field: null
+    freshness_sla_hours: 8760
+    schema: hazard.panel_index.v0
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      IX-1 SUBSTRATE (2026-07-06): index-level person-period hazard panel — SPY
+      (family us_market) + 7 bloc ETFs (family bloc), built with the member-panel
+      pipeline (imported functions) at the us_sector detector config (close_price
+      basis, 14% ZigZag, detector v2 — same epoch stamp price_c4414dcb), PLUS
+      FT-4-style constituent-structure covariates: sync_family from
+      data/leadlag/sync_gauge.json (us_sector for SPY, country for blocs) and
+      phase_breadth_late/early + pos_dispersion from the member-panel cross-section
+      at t (country cross-section excludes the blocs themselves). Substrate only —
+      NOT wired into nightly lanes; the future preregistered IX-1 turn-hazard trial
+      decides cadence and consumers. Never mutates the member panel or its epoch.
+      Census: research/cycle_masterplan/IX1_SUBSTRATE_CENSUS.md.
 
   # --- 4 consumers ---
   regime-spvector-latest:
@@ -5451,7 +5483,8 @@ artifacts:
     horizon_role: context
     weights: none
     scored_path_surfaces: []
-    consumers: []
+    consumers:
+      - scripts/build_index_hazard_panel.py
     external_consumers: []
     notes: >
       PR-C site copy of data/neuralweb/health.json for frontend/admin consumption.
