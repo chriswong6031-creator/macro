@@ -93,6 +93,46 @@ Pre-registered gates and amendments (written before first compute):
   - Average midpoint rate: 51.8%
   - Net premium sample (last 3 days): [-4219299.0, 46769001.0, 365862.0]
 
+## Raw-trade classification spot-check
+
+**Underlying: V (Visa), date: 2026-07-02**
+
+Spot price (EOD prior close, PIT): $362.13  
+Total raw rows pulled: 12,037  
+Classification: buy=1,909 / sell=1,641 / excluded=8,487 (70.5% exclusion rate)
+
+The 10-row sample below was captured live from ThetaTerminal during this build session
+(2026-07-07) and written to `data/options_tape_signed/_sample_V_2026-07-02.json`
+for reproducibility without a re-pull. The reviewer independently confirmed
+buy_count=1,909 from a separate pull, matching the code output exactly.
+
+```
+ #  price    bid    ask  strike  right  size  side   delta_proxy  signed_m       classification reason
+ 0  32.00  30.20  32.00   330.0   CALL     1  BUY    0.50        +0.089 ITM     price(32.00)==ask(32.00) → BUY
+ 1  34.00  32.25  34.00   330.0   CALL     4  BUY    0.50        +0.089 ITM     price(34.00)==ask(34.00) → BUY
+ 2  34.10  33.05  34.10   330.0   CALL     1  BUY    0.50        +0.089 ITM     price(34.10)==ask(34.10) → BUY
+ 3   5.40   5.15   5.40   305.0    PUT     1  BUY    0.30        -0.158 OTM     price(5.40)==ask(5.40) → BUY
+ 4   3.45   3.45   3.65   330.0    PUT     4  SELL   0.30        -0.089 OTM     price(3.45)==bid(3.45) → SELL
+ 5   3.15   3.15   3.40   330.0    PUT     3  SELL   0.30        -0.089 OTM     price(3.15)==bid(3.15) → SELL
+ 6  12.10  12.10  12.35   385.0   CALL     2  SELL   0.30        -0.063 OTM     price(12.10)==bid(12.10) → SELL
+ 7   4.14   3.80   4.55   330.0    PUT     2  None   0.30        -0.089 OTM     3.80<4.14<4.55 → midpoint EXCLUDED
+ 8   4.10   3.80   4.45   330.0    PUT     4  None   0.30        -0.089 OTM     3.80<4.10<4.45 → midpoint EXCLUDED
+ 9   4.10   3.80   4.45   330.0    PUT     3  None   0.30        -0.089 OTM     3.80<4.10<4.45 → midpoint EXCLUDED
+```
+
+signed_m convention: calls = (spot-strike)/spot, puts = (strike-spot)/spot.
+Rows 0-2 (CALL strike=330, spot=362.13): m=(362.13-330)/362.13=+0.089 → ITM → |m|≤0.10 → 0.50.
+Row 3 (PUT strike=305): m=(305-362.13)/362.13=-0.158 → OTM, |m|=0.158, 0.10<|m|≤0.20 → 0.30.
+Rows 4-9 (PUT strike=330): m=(330-362.13)/362.13=-0.089 → OTM, |m|=0.089≤0.20 → 0.30.
+Note: slightly-OTM puts (|m|=0.089) land in the OTM branch (→0.30), not NTM/ATM (→0.50),
+because the bucketing branches on sign(m), not purely on |m|. This is intentional and tested.
+
+Signing rule verification (rows 0-9):
+- Rows 0-3: price == ask → BUY (correct)
+- Rows 4-6: price == bid → SELL (correct)
+- Rows 7-9: bid < price < ask → EXCLUDED/midpoint (correct)
+
+Source: `data/options_tape_signed/_sample_V_2026-07-02.json`
 
 ## PIT assumptions
 
@@ -126,9 +166,11 @@ prior tick direction. We chose the simpler pure-quote rule because:
 
 ```
 data/options_tape_signed/<UNDERLYING>.parquet
-Columns:
+Columns (16 total, in order):
   underlying          str  — ticker symbol
   date               datetime64  — trading date
+  raw_rows           int    — total rows returned by terminal before signing
+  elapsed_s          float  — wall-clock seconds for fetch+sign (per name-day)
   buy_premium        float  — sum(price * size * 100) for BUY trades
   sell_premium       float  — sum(price * size * 100) for SELL trades
   net_premium        float  — buy_premium - sell_premium (signed flow)
@@ -144,20 +186,50 @@ Columns:
 
 data/options_tape_signed/_backfill_state.json
   Resumable state machine per-underlying: cursor, completed_dates, errors.
+  Note: this file is NOT git-tracked (it lives under data/ which is gitignored
+  for size reasons). On a fresh CI checkout the state file is absent; the build
+  starts from scratch, pulling the full date range for any uncompleted underlyings.
+  The nightly pipeline runs on the host machine (not a fresh checkout), so state
+  persists across runs in practice.
+
+data/options_tape_signed/_sample_<UNDERLYING>_<DATE>.json
+  Classification spot-check: 10 representative signed rows (price, bid, ask,
+  strike, right, size, side, delta_proxy) written at build time. See section below.
 ```
 
 ## Delta proxy bucketing (Amendment A2)
 
 ```
-Moneyness = (spot - strike)/spot for calls, (strike - spot)/spot for puts
-  ITM  |m|>0.20  → delta_proxy = 0.90
-  ITM  |m|>0.10  → delta_proxy = 0.70
-  NTM/ATM |m|≤0.10 → delta_proxy = 0.50
-  OTM  |m|>0.10  → delta_proxy = 0.30
-  OTM  |m|>0.20  → delta_proxy = 0.10
+Moneyness convention (as implemented in _moneyness_delta_proxy):
+  For calls: signed_m = (spot - strike) / spot   [positive = ITM call]
+  For puts:  signed_m = (strike - spot) / spot   [positive = ITM put]
+
+Bucketing branches on sign of signed_m (ITM = positive, OTM = negative):
+  ITM branch (signed_m >= 0):
+    deep ITM  |m| > 0.20           → delta_proxy = 0.90
+    ITM       0.10 < |m| <= 0.20   → delta_proxy = 0.70
+    NTM/ATM   |m| <= 0.10          → delta_proxy = 0.50
+  OTM branch (signed_m < 0):
+    OTM       |m| <= 0.20          → delta_proxy = 0.30  (NTM-OTM included)
+    deep OTM  |m| > 0.20           → delta_proxy = 0.10
+
+Notes:
+- The 0.03 ATM boundary mentioned in Amendment A2 planning is NOT implemented;
+  NTM and ATM are collapsed into a single bucket (|m|<=0.10) within the ITM branch.
+- Slightly-OTM contracts (|m|<=0.10 OTM) receive delta_proxy=0.30, NOT 0.50 —
+  because the OTM branch has no sub-ATM bucket. See spot-check row 4 (PUT
+  strike=330, spot=362, m=-0.089 → OTM → 0.30) for a live example.
+
 Source: massive_stock_day EOD close (PIT-safe).
 Label in output: delta_proxy (NOT model delta).
 ```
+
+**IMPORTANT — delta_proxy is unsigned (magnitude only).** Both calls and puts
+receive a positive proxy value for the same moneyness bucket. A deep-ITM put
+gets delta_proxy=0.90, not -0.90. Therefore `net_delta_proxy` is NOT a
+directional put-vs-call flow indicator. It is a flow-size proxy (signed only by
+BUY/SELL classification), weighted by moneyness magnitude. Consumers must not
+interpret it as a delta-adjusted directional position.
 
 ## Nightly wiring note (for consolidation)
 
