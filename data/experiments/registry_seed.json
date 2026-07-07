@@ -2628,6 +2628,25 @@
       "state": "Registered 2026-07-07 by chair adjudication of the FT-OSC-1 kill run (PR #1835). No evaluation run.",
       "next_step": "Wait for accrual. Come back 2027-01-15.",
       "phase_hint": "pre-evaluation"
+    },
+    {
+      "id": "cnhar2-cn-analog-calibration",
+      "name": "CN-HAR-2: China-sector analog retrieval — calibration repair + forward confirmation",
+      "kind": "forward_accrual",
+      "priority": "medium",
+      "cadence": "quarterly",
+      "what": "HAR-1 printed promoted_null overall, but cn_sector (n=137 turns) beat both the KM null AND the honest analog-shuffle null with CIs excluding zero — real regime-fingerprint information — failing only the cone-coverage floor (0.445 vs 0.60; band too narrow). CN-HAR-2: conformal calibration layer (fit pre-2024 only) + mid-span queries so trajectory shape actually engages; confirmatory verdict only on turn-spans completing after 2026-07-07.",
+      "source": "scripts/run_har1_eval.py (calibrated variant; prereg data/trial_ledger.jsonl CN-HAR-2)",
+      "storage": "data/cycle_pattern/har_scorecard.json",
+      "hook": "come_back",
+      "started": "2026-07-07",
+      "come_back_on": "2027-07-01",
+      "come_back_note": "Need >=25 NEW cn_sector realized turns post 2026-07-07 (~30/yr cohort rate). Fewer -> DEFERRED one quarter. Pass = coverage >=0.60 AND both gap CIs > 0 on forward spans -> charter SHADOW display row for china cycle cards.",
+      "maturation": ">=25 new cn_sector realized turns post 2026-07-07; coverage >=0.60; gap_vs_km and gap_vs_shuffle month-block CI90 both > 0.",
+      "status": "registered",
+      "state": "Registered 2026-07-07 by chair adjudication of HAR-1 (#1838). No evaluation run.",
+      "next_step": "Wait for accrual. Come back 2027-07-01.",
+      "phase_hint": "pre-evaluation"
     }
   ]
 }

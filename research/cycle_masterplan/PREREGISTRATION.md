@@ -802,3 +802,17 @@ n_oos_queries=242. Overall verdict: **promoted_null**.
 Verdict: promoted_null. n_pass=0, n_fail_or_null=3, n_deferred=0. truth_id=`CPI-017`.
 
 Full scorecard: `data/cycle_pattern/har_scorecard.json`. Verdict adjudication by program chair.
+
+### §18 addendum — CN-HAR-2 (registered 2026-07-07, post-HAR-1 pairlet)
+
+HAR-1's overall promoted_null stands. Its cn_sector family, uniquely, beat BOTH the KM null
+(gap +1.91, CI90 [+1.38,+2.53]) and the corrected within-era analog-shuffle null (gap +1.15,
+CI90 [+0.62,+1.75]) on 137 turns, failing promotion only on the cone-coverage floor
+(0.445 < 0.60) — and HAR-1's shape leg was inert (single-point queries; R5 disclosure), so the
+signal is fingerprint+family matching. CN-HAR-2 (trial_ledger, cycle_pattern_analog, n=1):
+conformal calibration layer fitted on pre-2024 spans only + mid-span query points; confirmatory
+verdict ONLY on cn_sector spans completing after 2026-07-07 (>=25 new turns; fewer -> DEFERRED);
+backtest re-runs are DESCRIPTIVE only. Admin clock: cnhar2-cn-analog-calibration, 2027-07-01.
+Housekeeping in the same PR: removed the defective duplicate cycle_pattern_analog budget line
+(ts 2026-07-07T10:21:51, run-time re-declaration; #1838 review MF-1) — the frozen
+2026-07-07T02:00:02Z declaration is the binding one.
