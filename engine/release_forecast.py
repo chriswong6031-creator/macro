@@ -244,10 +244,15 @@ def build_cpi_features(
     vintages: pd.DataFrame,
     root: Path,
     release_type: str = "cpi_headline",
+    ref_month: date | pd.Timestamp | None = None,
 ) -> tuple[dict[str, float | None], dict]:
     """Build feature dict for CPI prediction at decision date asof.
 
     release_type: 'cpi_headline' or 'cpi_core'.
+    ref_month: the CPI reference month M the target print covers (PREREG_V1.md §2.3
+        feature 7 anchors gasoline_mom on M, not on asof's calendar month — at the
+        decision date asof is already inside M+1). When None, derived as the month
+        after the last knowable own-series initial print.
     Returns (features_dict, provenance_dict).
     features_dict: {feature_name: value_or_None}
     provenance_dict: {revision_optimistic_legs, unrevised_legs, absent_legs, ...}
@@ -301,17 +306,30 @@ def build_cpi_features(
             try:
                 gasregw = pd.read_parquet(gasregw_path)
                 gasregw.index = pd.to_datetime(gasregw.index)
-                # Get reference month and prior month weekly averages
                 asof_ts = pd.Timestamp(asof)
-                cur_month = asof_ts.to_period("M")
-                prior_month = (cur_month - 1).to_timestamp()
-                cur_month_ts = cur_month.to_timestamp()
-                # average gasoline for reference month M (weeks falling in M)
+                # Anchor on the reference month M the target print covers — at the
+                # decision date asof already sits in the release month M+1, so
+                # month(asof) would average the wrong month's weeks.
+                if ref_month is None:
+                    own_prints = knowable_series(vintages, own_series, asof)
+                    if own_prints.empty:
+                        raise ValueError("no knowable prints to derive ref_month")
+                    ref_start = (
+                        pd.Timestamp(own_prints["period"].iloc[-1]).to_period("M") + 1
+                    ).to_timestamp()
+                else:
+                    ref_start = pd.Timestamp(ref_month).to_period("M").to_timestamp()
+                ref_end = ref_start + pd.offsets.MonthBegin(1)
+                prior_start = ref_start - pd.offsets.MonthBegin(1)
+                # average gasoline for reference month M (weeks falling in M) vs M-1;
+                # PIT: never read weekly observations dated on/after asof
                 gasregw_col = gasregw.columns[0]
-                cur_m_mask = (gasregw.index >= cur_month_ts) & (gasregw.index < asof_ts)
-                prior_m_mask = (gasregw.index >= prior_month) & (gasregw.index < cur_month_ts)
+                cur_hi = min(ref_end, asof_ts)
+                cur_m_mask = (gasregw.index >= ref_start) & (gasregw.index < cur_hi)
+                prior_m_mask = (gasregw.index >= prior_start) & (gasregw.index < ref_start)
                 cur_avg = gasregw.loc[cur_m_mask, gasregw_col].mean() if cur_m_mask.any() else np.nan
                 prior_avg = gasregw.loc[prior_m_mask, gasregw_col].mean() if prior_m_mask.any() else np.nan
+                prov["gasoline_ref_month"] = str(ref_start.date())
                 if np.isfinite(cur_avg) and np.isfinite(prior_avg) and prior_avg != 0:
                     features["gasoline_mom"] = float((cur_avg / prior_avg - 1) * 100)
                 else:
@@ -632,6 +650,7 @@ def project_release(
     release: str,
     asof: date,
     root: str | Path,
+    ref_month: date | None = None,
 ) -> dict:
     """Generate a point-in-time projection for a macro release.
 
@@ -643,6 +662,10 @@ def project_release(
         Decision date (the day before the target release is published).
     root : str | Path
         Repository root (data/ subdirectories are read from here).
+    ref_month : date | None
+        Reference month the upcoming print covers (CPI only — anchors the
+        gasoline_mom leg per PREREG_V1.md §2.3). None derives it from the last
+        knowable initial print. Ignored for NFP, which derives its own.
 
     Returns
     -------
@@ -653,9 +676,9 @@ def project_release(
     vintages = load_vintages(root)
 
     if release == "cpi_headline":
-        return _project_cpi(release, asof, vintages, root)
+        return _project_cpi(release, asof, vintages, root, ref_month=ref_month)
     elif release == "cpi_core":
-        return _project_cpi(release, asof, vintages, root)
+        return _project_cpi(release, asof, vintages, root, ref_month=ref_month)
     elif release == "nfp":
         return _project_nfp(asof, vintages, root)
     else:
@@ -667,8 +690,13 @@ def _project_cpi(
     asof: date,
     vintages: pd.DataFrame,
     root: Path,
+    ref_month: date | None = None,
 ) -> dict:
-    """Internal: CPI projection for a single asof date."""
+    """Internal: CPI projection for a single asof date.
+
+    ref_month: reference month of the upcoming print (from the event calendar);
+    None derives it as last-knowable-print month + 1.
+    """
     own_series = "CPIAUCSL" if release == "cpi_headline" else "CPILFESL"
     lag_key = "cpi_hl_mom" if release == "cpi_headline" else "cpi_core_mom"
 
@@ -700,7 +728,9 @@ def _project_cpi(
     for _, row in mom_series.iterrows():
         # asof for building features = the day BEFORE this period's realtime_start
         step_asof = (row["realtime_start"] - pd.Timedelta(days=1)).date()
-        feats, _ = build_cpi_features(step_asof, vintages, root, release_type=release)
+        feats, _ = build_cpi_features(
+            step_asof, vintages, root, release_type=release, ref_month=row["period"]
+        )
         rec = dict(feats)
         rec["target"] = row["mom"]
         records.append(rec)
@@ -713,8 +743,17 @@ def _project_cpi(
     if not wf_results:
         return _empty_projection(release, asof, "no_walk_forward_results")
 
-    # Build current features
-    feats, prov = build_cpi_features(asof, vintages, root, release_type=release)
+    # Build current features — the upcoming print covers the month after the last
+    # knowable initial print (unless the caller pinned it from the event calendar)
+    if ref_month is None:
+        ref_month = (
+            (pd.Timestamp(mom_series["period"].iloc[-1]).to_period("M") + 1)
+            .to_timestamp()
+            .date()
+        )
+    feats, prov = build_cpi_features(
+        asof, vintages, root, release_type=release, ref_month=ref_month
+    )
 
     # Compute current prediction using all available training data
     train_recs = records  # all knowable at asof
@@ -1135,7 +1174,9 @@ def _wf_cpi_full(release: str, vintages: pd.DataFrame, root: Path) -> dict:
     for _, row in mom_series.iterrows():
         step_asof = (row["realtime_start"] - pd.Timedelta(days=1)).date()
         try:
-            feats, _ = build_cpi_features(step_asof, vintages, root, release_type=release)
+            feats, _ = build_cpi_features(
+                step_asof, vintages, root, release_type=release, ref_month=row["period"]
+            )
         except Exception as e:
             log.debug("CPI feature build failed at %s: %s", step_asof, e)
             feats = {fn: None for fn in feature_names}

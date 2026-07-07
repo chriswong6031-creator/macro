@@ -261,12 +261,17 @@ def _read_policy_backdrop(root: Path, today: date) -> dict:
 # 4. Projection driver
 # ---------------------------------------------------------------------------
 
-def _run_projection(release_type: str, asof: date, root: Path) -> dict | None:
+def _run_projection(
+    release_type: str, asof: date, root: Path, period_str: str | None = None
+) -> dict | None:
     """Call engine.release_forecast.project_release and return the result dict.
+    period_str ("YYYY-MM", from the event calendar) pins the reference month the
+    upcoming print covers — the gasoline_mom leg is anchored on it (PREREG_V1.md §2.3).
     Returns None on any error (fail-open)."""
     try:
         from engine.release_forecast import project_release
-        return project_release(release_type, asof, root)
+        ref_month = date.fromisoformat(period_str + "-01") if period_str else None
+        return project_release(release_type, asof, root, ref_month=ref_month)
     except Exception as e:
         log.warning("project_release(%s, %s) failed: %s", release_type, asof, e)
         return None
@@ -302,7 +307,7 @@ def _build_upcoming_block(
 
         # Run projection (T-1 of release date, but today is valid when > release date)
         proj_asof = today
-        proj = _run_projection(rt, proj_asof, root)
+        proj = _run_projection(rt, proj_asof, root, period_str=period_str)
 
         if proj is None:
             # Emit a null projection placeholder
