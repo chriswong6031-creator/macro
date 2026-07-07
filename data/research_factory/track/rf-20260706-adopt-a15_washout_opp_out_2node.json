@@ -34,5 +34,15 @@
       "source": "challenger major (overfit lens)",
       "spec": "fires cluster across nodes in the same washout windows; effective n << raw n. Before any promote_eligible proposal, a cluster-adjusted SE (cluster = washout window) must accompany the WR \u2014 raw-n SEs are inadmissible"
     }
-  ]
+  ],
+  "paper_status": "warmup",
+  "monitor_action": "continue",
+  "monitor_as_of": "2026-07-07",
+  "n_matured": 0,
+  "observed_metric_value": null,
+  "decay_flags": [],
+  "data_health_flags": [
+    "warmup_n=0_below_floor_10"
+  ],
+  "falsifier_verdict": "ungradable"
 }

@@ -1781,11 +1781,19 @@
       "repeat_fire_proxy_note": "repeat_fire proxies extension (>=3 prior fires in 21d for same (engine,symbol)) until per-ticker price context lands; NOT a genuine extension metric",
       "flagged": []
     },
+    "reflex.options_flow_attention": {
+      "n_recent_fires": 1,
+      "n_hostile_regime": 0,
+      "n_breadth_unconfirmed": 0,
+      "n_repeat_fire": 0,
+      "repeat_fire_proxy_note": "repeat_fire proxies extension (>=3 prior fires in 21d for same (engine,symbol)) until per-ticker price context lands; NOT a genuine extension metric",
+      "flagged": []
+    },
     "track_record": {
-      "n_recent_fires": 1250,
+      "n_recent_fires": 1230,
       "n_hostile_regime": 0,
       "n_breadth_unconfirmed": 245,
-      "n_repeat_fire": 25,
+      "n_repeat_fire": 20,
       "repeat_fire_proxy_note": "repeat_fire proxies extension (>=3 prior fires in 21d for same (engine,symbol)) until per-ticker price context lands; NOT a genuine extension metric",
       "flagged": [
         {
@@ -3421,7 +3429,7 @@
   "gaps": [],
   "schema_version": 1,
   "produced_by": "engine/neuralweb/lagging.py",
-  "produced_at": "2026-07-06T08:37:06Z",
-  "inputs_hash": "sha256:43ad4b276cff0ec436c068bfe69db11f8038be1501917b155e9a720aaa8ba35d",
+  "produced_at": "2026-07-07T08:54:01Z",
+  "inputs_hash": "sha256:29f621867b12f4e07eb06d8e1c4ad8a603a2b94a40f88a8038f954202de7ef95",
   "tier": "infrastructure"
 }

@@ -295,12 +295,12 @@
   "counts": {
     "edges_by_kind": {
       "governed_by": 10,
-      "member_of_thesis": 6,
+      "member_of_thesis": 8,
       "mirrored_experiment": 18,
       "rf_candidate_of_mechanism": 7
     },
     "rows_by_type": {
-      "entity": 6,
+      "entity": 8,
       "mechanism": 8,
       "species_link": 21,
       "thesis": 2
@@ -317,22 +317,31 @@
       "src": "entity:US:AVGO"
     },
     {
-      "dst": "thesis:consumer_discretionary",
+      "dst": "thesis:us_sector_financials",
       "kind": "member_of_thesis",
       "source": {
         "detail": "same_thesis_groups.members",
         "path": "site/factordata/reflexivity_overlay.json"
       },
-      "src": "entity:US:CVSA"
+      "src": "entity:US:BEN"
     },
     {
-      "dst": "thesis:consumer_discretionary",
+      "dst": "thesis:us_sector_financials",
       "kind": "member_of_thesis",
       "source": {
         "detail": "same_thesis_groups.members",
         "path": "site/factordata/reflexivity_overlay.json"
       },
-      "src": "entity:US:MATW"
+      "src": "entity:US:GEV"
+    },
+    {
+      "dst": "thesis:us_sector_financials",
+      "kind": "member_of_thesis",
+      "source": {
+        "detail": "same_thesis_groups.members",
+        "path": "site/factordata/reflexivity_overlay.json"
+      },
+      "src": "entity:US:MATX"
     },
     {
       "dst": "thesis:ai_infrastructure_capex_complex",
@@ -344,13 +353,22 @@
       "src": "entity:US:NVDA"
     },
     {
-      "dst": "thesis:consumer_discretionary",
+      "dst": "thesis:us_sector_financials",
       "kind": "member_of_thesis",
       "source": {
         "detail": "same_thesis_groups.members",
         "path": "site/factordata/reflexivity_overlay.json"
       },
-      "src": "entity:US:PJT"
+      "src": "entity:US:P"
+    },
+    {
+      "dst": "thesis:us_sector_financials",
+      "kind": "member_of_thesis",
+      "source": {
+        "detail": "same_thesis_groups.members",
+        "path": "site/factordata/reflexivity_overlay.json"
+      },
+      "src": "entity:US:STT"
     },
     {
       "dst": "thesis:ai_infrastructure_capex_complex",
@@ -677,7 +695,7 @@
       "src": "species:T1-T4@1.0"
     }
   ],
-  "generated_utc": "2026-07-07T03:25:52.518959+00:00",
+  "generated_utc": "2026-07-07T08:57:11.621293+00:00",
   "is_context_only": true,
   "notes": "Crosswalk only; local systems remain authoritative. No invented links; unknowns stay null.",
   "possible_duplicates": [
@@ -866,7 +884,7 @@
   "rows": {
     "entity:US:AVGO": {
       "authority": "display_only",
-      "funnel_as_of": "2026-07-06",
+      "funnel_as_of": "2026-07-07",
       "funnel_state": "not_eligible",
       "market": "US",
       "registry_id": "entity:US:AVGO",
@@ -877,35 +895,48 @@
       ],
       "ticker": "AVGO"
     },
-    "entity:US:CVSA": {
+    "entity:US:BEN": {
       "authority": "display_only",
-      "funnel_as_of": "2026-07-06",
+      "funnel_as_of": "2026-07-07",
       "funnel_state": "thesis_candidate_shadow",
       "market": "US",
-      "registry_id": "entity:US:CVSA",
+      "registry_id": "entity:US:BEN",
       "registry_type": "entity",
       "source_paths": [],
       "thesis_ids": [
-        "thesis:consumer_discretionary"
+        "thesis:us_sector_financials"
       ],
-      "ticker": "CVSA"
+      "ticker": "BEN"
     },
-    "entity:US:MATW": {
+    "entity:US:GEV": {
       "authority": "display_only",
-      "funnel_as_of": "2026-07-06",
-      "funnel_state": "watch_for_thesis",
+      "funnel_as_of": "2026-07-07",
+      "funnel_state": "thesis_candidate_shadow",
       "market": "US",
-      "registry_id": "entity:US:MATW",
+      "registry_id": "entity:US:GEV",
       "registry_type": "entity",
       "source_paths": [],
       "thesis_ids": [
-        "thesis:consumer_discretionary"
+        "thesis:us_sector_financials"
       ],
-      "ticker": "MATW"
+      "ticker": "GEV"
+    },
+    "entity:US:MATX": {
+      "authority": "display_only",
+      "funnel_as_of": "2026-07-07",
+      "funnel_state": "not_eligible",
+      "market": "US",
+      "registry_id": "entity:US:MATX",
+      "registry_type": "entity",
+      "source_paths": [],
+      "thesis_ids": [
+        "thesis:us_sector_financials"
+      ],
+      "ticker": "MATX"
     },
     "entity:US:NVDA": {
       "authority": "display_only",
-      "funnel_as_of": "2026-07-06",
+      "funnel_as_of": "2026-07-07",
       "funnel_state": "not_eligible",
       "market": "US",
       "registry_id": "entity:US:NVDA",
@@ -916,22 +947,35 @@
       ],
       "ticker": "NVDA"
     },
-    "entity:US:PJT": {
+    "entity:US:P": {
       "authority": "display_only",
-      "funnel_as_of": "2026-07-06",
+      "funnel_as_of": "2026-07-07",
       "funnel_state": "not_eligible",
       "market": "US",
-      "registry_id": "entity:US:PJT",
+      "registry_id": "entity:US:P",
       "registry_type": "entity",
       "source_paths": [],
       "thesis_ids": [
-        "thesis:consumer_discretionary"
+        "thesis:us_sector_financials"
       ],
-      "ticker": "PJT"
+      "ticker": "P"
+    },
+    "entity:US:STT": {
+      "authority": "display_only",
+      "funnel_as_of": "2026-07-07",
+      "funnel_state": "thesis_candidate_shadow",
+      "market": "US",
+      "registry_id": "entity:US:STT",
+      "registry_type": "entity",
+      "source_paths": [],
+      "thesis_ids": [
+        "thesis:us_sector_financials"
+      ],
+      "ticker": "STT"
     },
     "entity:US:VRT": {
       "authority": "display_only",
-      "funnel_as_of": "2026-07-06",
+      "funnel_as_of": "2026-07-07",
       "funnel_state": "not_eligible",
       "market": "US",
       "registry_id": "entity:US:VRT",
@@ -2611,18 +2655,20 @@
         "VRT"
       ]
     },
-    "thesis:consumer_discretionary": {
+    "thesis:us_sector_financials": {
       "authority": "display_only",
-      "basis": "membership-jaccard",
-      "label": "Consumer Discretionary",
+      "basis": "factor-cosine",
+      "label": "us_sector_financials",
       "members": [
-        "CVSA",
-        "MATW",
-        "PJT"
+        "BEN",
+        "GEV",
+        "MATX",
+        "P",
+        "STT"
       ],
-      "registry_id": "thesis:consumer_discretionary",
+      "registry_id": "thesis:us_sector_financials",
       "registry_type": "thesis",
-      "size": 3,
+      "size": 5,
       "source": "reflexivity_overlay.same_thesis_groups",
       "source_paths": [
         "site/factordata/reflexivity_overlay.json"
@@ -2644,7 +2690,7 @@
       "present": true
     },
     "data/neuralweb/governance.jsonl": {
-      "n": 19,
+      "n": 23,
       "present": true
     },
     "data/research/thesis_funnel_states.parquet": {

@@ -1,6 +1,6 @@
 {
   "schema": "neuralweb_cycle_pattern_state.v1",
-  "asof": "2026-07-06",
+  "asof": "2026-07-07",
   "model_epoch": "price_c4414dcb",
   "gate_status": {
     "up": {
@@ -2132,14 +2132,14 @@
     }
   ],
   "truth_summary": {
-    "n_active": 20,
-    "n_promoted_null": 10,
+    "n_active": 23,
+    "n_promoted_null": 12,
     "latest_truth_ids": [
-      "cycle_truth_cn_downturn_broken_trend_tail_candidate_v1",
-      "cycle_truth_ft1_breadth_hazard_null_v1",
-      "cycle_truth_ft2_credit_hazard_null_v1",
       "cycle_truth_ft4_structure_hazard_null_v1",
-      "cycle_truth_lattice1_confirmatory_and_baseline_confound_v1"
+      "cycle_truth_lattice1_confirmatory_and_baseline_confound_v1",
+      "cycle_truth_lattice2_within_family_structure_v1",
+      "cycle_truth_tr1_next_phase_softmax_skill_v1",
+      "cycle_truth_ix1_index_transfer_null_v1"
     ]
   },
   "display_only": true,

@@ -1689,7 +1689,33 @@
           "us7y",
           "us10y",
           "us30y"
-        ]
+        ],
+        "pca_health": {
+          "eigenvalue_gaps": {
+            "pc1_to_pc2": 8.6841,
+            "pc2_to_pc3": 2.1639,
+            "pc3_to_pc4": 2.6206
+          },
+          "effective_dimension_pr": 1.4473,
+          "pc1_loading_turnover_vs_2y": 0.00136,
+          "oos_null": {
+            "observed": 0.3722,
+            "null_median": 0.5127,
+            "null_p90": 0.7431,
+            "pctile_vs_null": 0.1917,
+            "n_null_draws": 240
+          },
+          "vol_match_multipliers": {
+            "pc2": 2.95,
+            "pc3": 4.33
+          },
+          "curvature_stability_tag": "stable",
+          "window_set": {
+            "full_window_d": 1260,
+            "compare_window_d": 504,
+            "oos_horizon_d": 21
+          }
+        }
       }
     },
     "slopes": {

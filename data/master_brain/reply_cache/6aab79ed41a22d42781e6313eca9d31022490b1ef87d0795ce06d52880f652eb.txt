@@ -1,0 +1,24 @@
+{
+  "stance": "All sector-level flow signals are display-only with no forward edge. High-rs sectors like Health Care, Industrials, and Financials show low cohesion and concentration in small-cap outliers—the apparent momentum is a coincident dispersion artifact, not a durable theme.",
+  "candidates": [
+    {
+      "subject": "Health Care",
+      "lean": "avoid",
+      "rationale": "rs_pctile 1.0 but cohesion only 0.181 (not cohering), with leadership alpha negative; the extreme price rank masks fragile, mean-reverting dispersion, not a systemic sector move.",
+      "strength": "moderate"
+    },
+    {
+      "subject": "Industrials",
+      "lean": "avoid",
+      "rationale": "rs_pctile 0.897 yet cohesion 0.211 (low, not cohering) and top alpha contributors like HNI show negative alpha; the surge is narrow and likely coincident, not predictive.",
+      "strength": "moderate"
+    },
+    {
+      "subject": "Financials",
+      "lean": "avoid",
+      "rationale": "rs_pctile 0.77 and emerging, but cohesion 0.315 fails the cohering gate and leadership is driven by micro-cap names (DAVE, SEZL); the sector read is a survivorship-biased statistical illusion.",
+      "strength": "moderate"
+    }
+  ],
+  "key_risk": "A surge in VIX to elevated stress levels (>25) could flip the flow lens's edge (historically stress-conditional), making the low-cohesion dispersion actually a precursor to a genuine rotation; in that scenario, avoiding these sectors would be wrong."
+}

@@ -1,6 +1,6 @@
 {
   "schema": "neuralweb.covariance_spine.v1",
-  "as_of": "2026-07-06",
+  "as_of": "2026-07-07",
   "display_only": true,
   "authority": "context",
   "descriptive_not_gauntleted": true,
@@ -8,13 +8,15 @@
     "rates": {
       "dominant_pc_share": 0.8244,
       "first3_var": 0.9632,
-      "effective_dimension_pr": null,
+      "effective_dimension_pr": 1.4473,
       "pc3_to_pc4_gap": null,
       "oos_pctile_vs_null": null,
-      "curvature_stability_tag": null,
-      "vol_match_multipliers": null,
-      "source": "data/regime/latest.json#yield_curve",
-      "pca_health_note": "pca_health pending next nightly render"
+      "curvature_stability_tag": "stable",
+      "vol_match_multipliers": {
+        "pc2": 2.95,
+        "pc3": 4.33
+      },
+      "source": "data/regime/latest.json#yield_curve"
     },
     "factors": {
       "dominant_factor_pc_share": 0.5001,
@@ -26,17 +28,16 @@
     },
     "dispersion": {
       "state": "lean_in",
-      "dispersion_pctile": 0.8,
+      "dispersion_pctile": 0.79,
       "avg_corr": 0.07,
-      "dominant_equity_pc_share": null,
-      "effective_universe_bets_pr": null,
-      "idio_dispersion_share": null,
-      "eigen_note": "eigen block absent — lands via sibling PR"
+      "dominant_equity_pc_share": 0.1881,
+      "effective_universe_bets_pr": 21.72,
+      "idio_dispersion_share": 0.6039
     },
     "lobes": {
       "effective_independent_lobes": 1.0,
       "n_lobes_measurable": 1,
-      "n_lobes_total": 17,
+      "n_lobes_total": 18,
       "null_reference": {
         "null_median": 1.0,
         "null_p90": 1.0,
@@ -62,10 +63,11 @@
           "cn_importance_v0_pit": 3,
           "desk:ai_desk": 2,
           "hk_board": 1,
-          "options_entry": 2,
+          "options_entry": 3,
           "policy": 3,
           "radar": 3,
           "reflex.cortex_attention": 1,
+          "reflex.options_flow_attention": 1,
           "us_board": 2,
           "us_importance_v0": 2,
           "us_importance_v0_pit": 2
@@ -90,10 +92,11 @@
       "cn_importance_v0_pit": 3,
       "desk:ai_desk": 2,
       "hk_board": 1,
-      "options_entry": 2,
+      "options_entry": 3,
       "policy": 3,
       "radar": 3,
       "reflex.cortex_attention": 1,
+      "reflex.options_flow_attention": 1,
       "us_board": 2,
       "us_importance_v0": 2,
       "us_importance_v0_pit": 2

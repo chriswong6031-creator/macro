@@ -1,0 +1,19 @@
+# Crowding-Skeptic Desk Note
+**As of 2026-07-06 • US Market**
+
+## Most Over‑Extended / Crowded Theme: Cybersecurity
+**Crowding_z = 2.23 | Thinning breadth = 0.40 | Durability_bar = 0.71**
+
+Cybersecurity is the clearest crowding flag in the scan. At 2.23z, the theme is stretched relative to its own history while participation has narrowed to just 40% of members. That combination—high crowding and thinning internal breadth—makes it vulnerable to a sharp consolidation if the cohort loses a single leader or encounters a sector rotation. The durability bar is still respectable (0.71), so the narrative isn’t broken, but the *size* of a bet should be reined in materially.
+
+**Action: SIZE‑DOWN, not fade.** The only validated edge from crowding is drawdown control via capital restraint; no short signal.
+
+## Sharpest Bear Case on the Current Long: Memory, HBM & Storage
+*Theme weight 0.25 • Score 5.17 • Crowding_z 0.29 • Breadth 1.00*
+
+The headline theme is not crowded, and breadth is perfect (1.00). The falsification challenge therefore comes from **cyclical over‑capacity risk and secular substitution**.  
+- **HBM oversupply cycle.** Memory is a classic boom‑bust complex. The current AI‑driven scramble for HBM has attracted massive capex from incumbents and new entrants. By 2H‑2026, the first signs of spot price softening could emerge, just as in past DRAM cycles.  
+- **NVIDIA’s roadmap & packaging shifts.** Next‑generation GPU architectures may reduce HBM‑per‑chip demand through advanced logic‑on‑logic stacking or photonics, lowering long‑term volume growth assumptions.  
+- **Valuation air after a strong run.** Even if fundamentals remain robust, the sheer magnitude of the score (5.17) and the fact that the theme is the undisputed leader inject asymmetric downside: mean‑reversion after a blow‑off phase tends to be swift.
+
+**Falsifiable check‑by:** Monitor monthly HBM contract prices and any production‑cut announcements from Samsung/SK hynix through September 2026. If spot pricing flattens while quarterly capex guidance is raised, the bear case strengthens—sizing down further would be prudent.

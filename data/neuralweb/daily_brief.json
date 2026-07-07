@@ -1,0 +1,438 @@
+{
+  "schema": "neuralweb.daily_brief.v1",
+  "produced_at": "2026-07-07T08:57:13.523997+00:00",
+  "as_of": "2026-07-02",
+  "status": "degraded",
+  "phase": "engine",
+  "did_the_brain_run": {
+    "cortex_status": "degraded",
+    "tool_call_batches": 0,
+    "individual_tool_calls": 0,
+    "context_stale": false,
+    "summary": "cortex degraded — zero_tool_calls"
+  },
+  "what_changed": [
+    {
+      "kind": "first_run",
+      "id": "system",
+      "summary": "no prior brief found — this is the first run",
+      "severity": "info",
+      "evidence_path": "data/neuralweb/daily_brief_history.jsonl"
+    }
+  ],
+  "what_contradicted": [
+    {
+      "id": "",
+      "summary": "contradiction ",
+      "severity": "info",
+      "delta_vs_prior": "new",
+      "evidence_path": "site/neuralwebdata/confluence_graph.json"
+    },
+    {
+      "id": "",
+      "summary": "contradiction ",
+      "severity": "watch",
+      "delta_vs_prior": "new",
+      "evidence_path": "site/neuralwebdata/confluence_graph.json"
+    },
+    {
+      "id": "",
+      "summary": "contradiction ",
+      "severity": "info",
+      "delta_vs_prior": "new",
+      "evidence_path": "site/neuralwebdata/confluence_graph.json"
+    },
+    {
+      "id": "",
+      "summary": "contradiction ",
+      "severity": "watch",
+      "delta_vs_prior": "new",
+      "evidence_path": "site/neuralwebdata/confluence_graph.json"
+    }
+  ],
+  "what_is_stale": [
+    {
+      "id": "risk-radar-review-log",
+      "as_of": null,
+      "age_hours": null,
+      "freshness_sla_hours": 200,
+      "severity": "watch"
+    },
+    {
+      "id": "site-qledger-track-record",
+      "as_of": "2026-07-05T11:12:30.618479+00:00",
+      "age_hours": 45.75,
+      "freshness_sla_hours": 30,
+      "severity": "warn"
+    },
+    {
+      "id": "reflex-firings-pattern",
+      "as_of": null,
+      "age_hours": null,
+      "freshness_sla_hours": 9999,
+      "severity": "watch"
+    },
+    {
+      "id": "reflex-firings-regime-selfheal",
+      "as_of": null,
+      "age_hours": null,
+      "freshness_sla_hours": 9999,
+      "severity": "watch"
+    },
+    {
+      "id": "reflex-firings-commodity-shock",
+      "as_of": null,
+      "age_hours": null,
+      "freshness_sla_hours": 9999,
+      "severity": "watch"
+    },
+    {
+      "id": "reflex-push-dedup-store",
+      "as_of": null,
+      "age_hours": null,
+      "freshness_sla_hours": 9999,
+      "severity": "watch"
+    },
+    {
+      "id": "ops-push-basket-freeze",
+      "as_of": null,
+      "age_hours": null,
+      "freshness_sla_hours": 9999,
+      "severity": "watch"
+    },
+    {
+      "id": "ops-push-signal-sanity",
+      "as_of": null,
+      "age_hours": null,
+      "freshness_sla_hours": 9999,
+      "severity": "watch"
+    },
+    {
+      "id": "ops-push-healthcheck",
+      "as_of": null,
+      "age_hours": null,
+      "freshness_sla_hours": 9999,
+      "severity": "watch"
+    },
+    {
+      "id": "hypothesis-inbox",
+      "as_of": null,
+      "age_hours": null,
+      "freshness_sla_hours": 9999,
+      "severity": "watch"
+    },
+    {
+      "id": "machine-registry",
+      "as_of": null,
+      "age_hours": null,
+      "freshness_sla_hours": 9999,
+      "severity": "watch"
+    },
+    {
+      "id": "cortex-attention-grades",
+      "as_of": null,
+      "age_hours": null,
+      "freshness_sla_hours": 30,
+      "severity": "watch"
+    },
+    {
+      "id": "research-queue",
+      "as_of": null,
+      "age_hours": null,
+      "freshness_sla_hours": 168,
+      "severity": "watch"
+    },
+    {
+      "id": "rule-experiment-summaries",
+      "as_of": null,
+      "age_hours": null,
+      "freshness_sla_hours": 8760,
+      "severity": "watch"
+    },
+    {
+      "id": "factor-intelligence-state",
+      "as_of": null,
+      "age_hours": null,
+      "freshness_sla_hours": 30,
+      "severity": "watch"
+    },
+    {
+      "id": "site-factor-intelligence-state",
+      "as_of": null,
+      "age_hours": null,
+      "freshness_sla_hours": 30,
+      "severity": "watch"
+    },
+    {
+      "id": "factor-contradictions-ledger",
+      "as_of": null,
+      "age_hours": null,
+      "freshness_sla_hours": 30,
+      "severity": "watch"
+    },
+    {
+      "id": "neuralweb-health",
+      "as_of": null,
+      "age_hours": null,
+      "freshness_sla_hours": 30,
+      "severity": "watch"
+    },
+    {
+      "id": "site-neuralweb-health",
+      "as_of": null,
+      "age_hours": null,
+      "freshness_sla_hours": 30,
+      "severity": "watch"
+    },
+    {
+      "id": "neuralweb-daily-brief",
+      "as_of": null,
+      "age_hours": null,
+      "freshness_sla_hours": 30,
+      "severity": "watch"
+    },
+    {
+      "id": "site-neuralweb-daily-brief",
+      "as_of": null,
+      "age_hours": null,
+      "freshness_sla_hours": 30,
+      "severity": "watch"
+    },
+    {
+      "id": "neuralweb-daily-brief-history",
+      "as_of": null,
+      "age_hours": null,
+      "freshness_sla_hours": 30,
+      "severity": "watch"
+    },
+    {
+      "id": "evidence-clock-reviews",
+      "as_of": null,
+      "age_hours": null,
+      "freshness_sla_hours": 9999,
+      "severity": "watch"
+    }
+  ],
+  "why_the_tape_moved": {
+    "available": true,
+    "no_pathway": {
+      "reason": "trigger_stale",
+      "printed": true
+    },
+    "alternates": [],
+    "note": "no pathway emitted: trigger_stale"
+  },
+  "operator_attention": [
+    {
+      "priority": 1,
+      "area": "world_state",
+      "summary": "live_overlay is stale in world_state.json — regime read may lag",
+      "action_type": "inspect"
+    },
+    {
+      "priority": 1,
+      "area": "cortex",
+      "summary": "cortex degraded — inspect data/neuralweb/cortex/memo.json and run_status",
+      "action_type": "ops_fix"
+    },
+    {
+      "priority": 2,
+      "area": "risk-radar-review-log",
+      "summary": "lobe risk-radar-review-log is watch — age Noneh vs SLA 200h",
+      "action_type": "inspect"
+    },
+    {
+      "priority": 2,
+      "area": "site-qledger-track-record",
+      "summary": "lobe site-qledger-track-record is warn — age 45.75h vs SLA 30h",
+      "action_type": "inspect"
+    },
+    {
+      "priority": 2,
+      "area": "reflex-firings-pattern",
+      "summary": "lobe reflex-firings-pattern is watch — age Noneh vs SLA 9999h",
+      "action_type": "inspect"
+    },
+    {
+      "priority": 2,
+      "area": "reflex-firings-regime-selfheal",
+      "summary": "lobe reflex-firings-regime-selfheal is watch — age Noneh vs SLA 9999h",
+      "action_type": "inspect"
+    },
+    {
+      "priority": 2,
+      "area": "reflex-firings-commodity-shock",
+      "summary": "lobe reflex-firings-commodity-shock is watch — age Noneh vs SLA 9999h",
+      "action_type": "inspect"
+    },
+    {
+      "priority": 2,
+      "area": "reflex-push-dedup-store",
+      "summary": "lobe reflex-push-dedup-store is watch — age Noneh vs SLA 9999h",
+      "action_type": "inspect"
+    },
+    {
+      "priority": 2,
+      "area": "ops-push-basket-freeze",
+      "summary": "lobe ops-push-basket-freeze is watch — age Noneh vs SLA 9999h",
+      "action_type": "inspect"
+    },
+    {
+      "priority": 2,
+      "area": "ops-push-signal-sanity",
+      "summary": "lobe ops-push-signal-sanity is watch — age Noneh vs SLA 9999h",
+      "action_type": "inspect"
+    },
+    {
+      "priority": 2,
+      "area": "ops-push-healthcheck",
+      "summary": "lobe ops-push-healthcheck is watch — age Noneh vs SLA 9999h",
+      "action_type": "inspect"
+    },
+    {
+      "priority": 2,
+      "area": "hypothesis-inbox",
+      "summary": "lobe hypothesis-inbox is watch — age Noneh vs SLA 9999h",
+      "action_type": "inspect"
+    },
+    {
+      "priority": 2,
+      "area": "machine-registry",
+      "summary": "lobe machine-registry is watch — age Noneh vs SLA 9999h",
+      "action_type": "inspect"
+    },
+    {
+      "priority": 2,
+      "area": "cortex-attention-grades",
+      "summary": "lobe cortex-attention-grades is watch — age Noneh vs SLA 30h",
+      "action_type": "inspect"
+    },
+    {
+      "priority": 2,
+      "area": "research-queue",
+      "summary": "lobe research-queue is watch — age Noneh vs SLA 168h",
+      "action_type": "inspect"
+    },
+    {
+      "priority": 2,
+      "area": "rule-experiment-summaries",
+      "summary": "lobe rule-experiment-summaries is watch — age Noneh vs SLA 8760h",
+      "action_type": "inspect"
+    },
+    {
+      "priority": 2,
+      "area": "factor-intelligence-state",
+      "summary": "lobe factor-intelligence-state is watch — age Noneh vs SLA 30h",
+      "action_type": "inspect"
+    },
+    {
+      "priority": 2,
+      "area": "site-factor-intelligence-state",
+      "summary": "lobe site-factor-intelligence-state is watch — age Noneh vs SLA 30h",
+      "action_type": "inspect"
+    },
+    {
+      "priority": 2,
+      "area": "factor-contradictions-ledger",
+      "summary": "lobe factor-contradictions-ledger is watch — age Noneh vs SLA 30h",
+      "action_type": "inspect"
+    },
+    {
+      "priority": 2,
+      "area": "neuralweb-health",
+      "summary": "lobe neuralweb-health is watch — age Noneh vs SLA 30h",
+      "action_type": "inspect"
+    },
+    {
+      "priority": 2,
+      "area": "site-neuralweb-health",
+      "summary": "lobe site-neuralweb-health is watch — age Noneh vs SLA 30h",
+      "action_type": "inspect"
+    },
+    {
+      "priority": 2,
+      "area": "neuralweb-daily-brief",
+      "summary": "lobe neuralweb-daily-brief is watch — age Noneh vs SLA 30h",
+      "action_type": "inspect"
+    },
+    {
+      "priority": 2,
+      "area": "site-neuralweb-daily-brief",
+      "summary": "lobe site-neuralweb-daily-brief is watch — age Noneh vs SLA 30h",
+      "action_type": "inspect"
+    },
+    {
+      "priority": 2,
+      "area": "neuralweb-daily-brief-history",
+      "summary": "lobe neuralweb-daily-brief-history is watch — age Noneh vs SLA 30h",
+      "action_type": "inspect"
+    },
+    {
+      "priority": 2,
+      "area": "evidence-clock-reviews",
+      "summary": "lobe evidence-clock-reviews is watch — age Noneh vs SLA 9999h",
+      "action_type": "inspect"
+    },
+    {
+      "priority": 2,
+      "area": "dag_conformance",
+      "summary": "producer engine/altdata_emit.py not declared in daily.yml — update config/dag.yml",
+      "action_type": "ops_fix"
+    },
+    {
+      "priority": 2,
+      "area": "contradictions",
+      "summary": "4 new contradiction(s) detected — inspect confluence_graph.json",
+      "action_type": "follow_up"
+    },
+    {
+      "priority": 3,
+      "area": "confluence-graph",
+      "summary": "lobe confluence-graph has gaps: stable edges (Tier-S): data/oracle/graph_s.json absent — gitignored/Mac-local on this run, stable edges (Tier-M): data/oracle/graph_m.json absent — gitignored/Mac-local on this run",
+      "action_type": "follow_up"
+    },
+    {
+      "priority": 3,
+      "area": "evidence-clock",
+      "summary": "lobe evidence-clock has gaps: freshness: data/neuralweb/health.json not present (first nightly will create it), cortex: data/neuralweb/machine_registry.jsonl not present (empty by design)",
+      "action_type": "follow_up"
+    },
+    {
+      "priority": 3,
+      "area": "evidence_clock",
+      "summary": "6 evidence-clock items overdue — see admin Observatory",
+      "action_type": "follow_up"
+    }
+  ],
+  "candidate_watch": {
+    "note": "bottom_sensors lobe not found in health record"
+  },
+  "evidence_clock": {
+    "available": true,
+    "as_of": "2026-07-07",
+    "counts": {
+      "overdue": 6,
+      "due": 10,
+      "human_review": 0,
+      "missing": 1,
+      "stale": 1,
+      "blocked": 2,
+      "not_ready": 0,
+      "promotion_eligible": 0,
+      "accruing": 166,
+      "n_acknowledged": 0
+    },
+    "top_due": {
+      "clock_id": "qledger:placebo",
+      "due_at": "2026-06-22"
+    },
+    "morning_line": "6 overdue, 10 due, 1 missing, 1 stale, 2 blocked, 166 accruing. Top due: qledger:placebo."
+  },
+  "caveats": [
+    "deterministic: all text is template-filled from structured artifact values; no LLM or NLP",
+    "display-only: no signals or scoring authority; context only",
+    "no trading authority: this brief contains no buy/sell/hold recommendations",
+    "contradiction records are display-only annotations per hard law (engine/neuralweb/contradictions.py)"
+  ],
+  "_gaps": []
+}

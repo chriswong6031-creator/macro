@@ -1,6 +1,6 @@
 {
   "schema": "calibration_hub.v1",
-  "as_of": "2026-07-06",
+  "as_of": "2026-07-07",
   "desks": [
     {
       "name": "AI Desk",
@@ -42,7 +42,7 @@
       "name": "Divergence Radar",
       "slug": "radar",
       "scored": 0,
-      "open": 105,
+      "open": 112,
       "hit_rate": null,
       "dir_accuracy": null,
       "conviction_monotone": null,
@@ -54,7 +54,7 @@
       "name": "Stock Desk",
       "slug": "stock_desk",
       "scored": 2,
-      "open": 86,
+      "open": 88,
       "hit_rate": 0.5,
       "dir_accuracy": 0.0,
       "conviction_monotone": null,
@@ -66,7 +66,7 @@
       "name": "Demand Chain",
       "slug": "demand_chain",
       "scored": 0,
-      "open": 37,
+      "open": 39,
       "hit_rate": null,
       "dir_accuracy": null,
       "conviction_monotone": null,
@@ -99,6 +99,18 @@
         "itemized": 0,
         "declared": 150,
         "effective_n": 150
+      },
+      {
+        "family": "rf.cycle_pattern.lattice_v0",
+        "itemized": 0,
+        "declared": 135,
+        "effective_n": 135
+      },
+      {
+        "family": "rf.cycle_pattern.lattice_v1",
+        "itemized": 0,
+        "declared": 135,
+        "effective_n": 135
       },
       {
         "family": "cross_asset_phase0",
@@ -149,6 +161,12 @@
         "effective_n": 36
       },
       {
+        "family": "hk_canada_h3",
+        "itemized": 10,
+        "declared": 30,
+        "effective_n": 30
+      },
+      {
         "family": "china_validation",
         "itemized": 0,
         "declared": 24,
@@ -176,6 +194,12 @@
         "family": "hyoas_z_timer_phase0",
         "itemized": 0,
         "declared": 24,
+        "effective_n": 24
+      },
+      {
+        "family": "slf048_wiki_attention",
+        "itemized": 24,
+        "declared": 0,
         "effective_n": 24
       },
       {
@@ -215,6 +239,24 @@
         "effective_n": 15
       },
       {
+        "family": "replay",
+        "itemized": 0,
+        "declared": 15,
+        "effective_n": 15
+      },
+      {
+        "family": "slf055_dealer_stress",
+        "itemized": 15,
+        "declared": 0,
+        "effective_n": 15
+      },
+      {
+        "family": "slf056_funding_tail",
+        "itemized": 14,
+        "declared": 0,
+        "effective_n": 14
+      },
+      {
         "family": "baskets_abs_escape",
         "itemized": 3,
         "declared": 12,
@@ -251,6 +293,24 @@
         "effective_n": 12
       },
       {
+        "family": "esx_fund_repair",
+        "itemized": 0,
+        "declared": 12,
+        "effective_n": 12
+      },
+      {
+        "family": "esx_htf_turn",
+        "itemized": 12,
+        "declared": 12,
+        "effective_n": 12
+      },
+      {
+        "family": "esx_insider_sponsor",
+        "itemized": 10,
+        "declared": 12,
+        "effective_n": 12
+      },
+      {
         "family": "esx_lq_bands",
         "itemized": 0,
         "declared": 12,
@@ -269,9 +329,33 @@
         "effective_n": 12
       },
       {
+        "family": "macro_tx",
+        "itemized": 0,
+        "declared": 12,
+        "effective_n": 12
+      },
+      {
         "family": "quad_nfci_phase0",
         "itemized": 0,
         "declared": 12,
+        "effective_n": 12
+      },
+      {
+        "family": "rf.cycle_pattern.ft_v0",
+        "itemized": 0,
+        "declared": 12,
+        "effective_n": 12
+      },
+      {
+        "family": "short_side",
+        "itemized": 12,
+        "declared": 6,
+        "effective_n": 12
+      },
+      {
+        "family": "slf006_auction_absorption",
+        "itemized": 12,
+        "declared": 0,
         "effective_n": 12
       },
       {
@@ -301,6 +385,36 @@
       {
         "family": "crypto_voltarget_phase0",
         "itemized": 0,
+        "declared": 8,
+        "effective_n": 8
+      },
+      {
+        "family": "dt_replication",
+        "itemized": 8,
+        "declared": 0,
+        "effective_n": 8
+      },
+      {
+        "family": "esx_macro_release",
+        "itemized": 8,
+        "declared": 8,
+        "effective_n": 8
+      },
+      {
+        "family": "esx_pos_reset",
+        "itemized": 4,
+        "declared": 8,
+        "effective_n": 8
+      },
+      {
+        "family": "esx_sponsorship",
+        "itemized": 0,
+        "declared": 8,
+        "effective_n": 8
+      },
+      {
+        "family": "esx_washout_x_turn",
+        "itemized": 8,
         "declared": 8,
         "effective_n": 8
       },
@@ -365,6 +479,12 @@
         "effective_n": 8
       },
       {
+        "family": "slf051_cn_margin_impulse",
+        "itemized": 8,
+        "declared": 0,
+        "effective_n": 8
+      },
+      {
         "family": "stock_conviction_phase0",
         "itemized": 0,
         "declared": 8,
@@ -401,9 +521,45 @@
         "effective_n": 8
       },
       {
+        "family": "long_hold.expect_drift",
+        "itemized": 0,
+        "declared": 7,
+        "effective_n": 7
+      },
+      {
+        "family": "w2031_kev_vendor_shock",
+        "itemized": 7,
+        "declared": 0,
+        "effective_n": 7
+      },
+      {
         "family": "esx_null_competitors",
         "itemized": 6,
         "declared": 6,
+        "effective_n": 6
+      },
+      {
+        "family": "rf.cycle_pattern.ft_v1",
+        "itemized": 0,
+        "declared": 6,
+        "effective_n": 6
+      },
+      {
+        "family": "rf.cycle_pattern.tr_v0",
+        "itemized": 0,
+        "declared": 6,
+        "effective_n": 6
+      },
+      {
+        "family": "slf001_ftd_pressure",
+        "itemized": 6,
+        "declared": 0,
+        "effective_n": 6
+      },
+      {
+        "family": "w2096_nhtsa_defect",
+        "itemized": 6,
+        "declared": 0,
         "effective_n": 6
       },
       {
@@ -413,7 +569,31 @@
         "effective_n": 5
       },
       {
+        "family": "dt_replication_64y",
+        "itemized": 4,
+        "declared": 0,
+        "effective_n": 4
+      },
+      {
+        "family": "esx_decline_geometry",
+        "itemized": 4,
+        "declared": 4,
+        "effective_n": 4
+      },
+      {
         "family": "esx_ts_adx",
+        "itemized": 4,
+        "declared": 4,
+        "effective_n": 4
+      },
+      {
+        "family": "esx_underwater",
+        "itemized": 4,
+        "declared": 4,
+        "effective_n": 4
+      },
+      {
+        "family": "esx_vol_transition",
         "itemized": 4,
         "declared": 4,
         "effective_n": 4
@@ -449,10 +629,40 @@
         "effective_n": 4
       },
       {
-        "family": "short_side",
+        "family": "rf.cycle_pattern.ix_v0",
+        "itemized": 0,
+        "declared": 4,
+        "effective_n": 4
+      },
+      {
+        "family": "long_hold.insider_sponsor_lh",
         "itemized": 0,
         "declared": 3,
         "effective_n": 3
+      },
+      {
+        "family": "esx_htf_turn_dose",
+        "itemized": 2,
+        "declared": 2,
+        "effective_n": 2
+      },
+      {
+        "family": "esx_sub_x_turn",
+        "itemized": 2,
+        "declared": 2,
+        "effective_n": 2
+      },
+      {
+        "family": "esx_support_dose",
+        "itemized": 0,
+        "declared": 2,
+        "effective_n": 2
+      },
+      {
+        "family": "s11_buyback_floor",
+        "itemized": 0,
+        "declared": 2,
+        "effective_n": 2
       },
       {
         "family": "s13_reversal_sleeve",
@@ -467,8 +677,8 @@
         "effective_n": 2
       }
     ],
-    "total_families": 64,
-    "total_effective_n": 1807
+    "total_families": 99,
+    "total_effective_n": 2373
   },
   "summary_note": "0/6 desk loops live; 6 still cold (windows maturing). Display-only \u2014 track records calibrate conviction, never size a position."
 }

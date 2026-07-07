@@ -24,7 +24,6 @@
     "quantum_computing",
     "regional_banks",
     "reshoring",
-    "retail",
     "robotics_automation",
     "semicap_equipment",
     "space_economy",
@@ -42,8 +41,8 @@
   ],
   "held": [
     "memory_storage",
+    "ai_neoclouds",
     "managed_care",
-    "ai_infra",
     "cybersecurity"
   ],
   "leader": "memory_storage",

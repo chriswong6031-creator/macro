@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "produced_by": "engine/neuralweb/kernel.py",
-  "produced_at": "2026-07-06T08:37:04Z",
+  "produced_at": "2026-07-07T08:53:58Z",
   "inputs_hash": "sha256:2cace08c37a5551ca752e65ab9533d2b78d2948392c53b1ecade99d0cbe9f23b",
   "tier": "infrastructure",
   "artifact_path": "data/neuralweb/kernel_estimates.parquet",

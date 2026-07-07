@@ -2030,7 +2030,7 @@
   "fused_risk": {
     "label": "risk-on",
     "label_en": "Risk-on (regime supportive)",
-    "label_zh": "\u504frisk-on\uff08\u4f53\u5236\u652f\u6301\uff09",
+    "label_zh": "\u504f\u98ce\u9669\u504f\u597d\uff08\u4f53\u5236\u652f\u6301\uff09",
     "gross_factor": 1.0,
     "gross_mapping_version": "2026-07-01.v1",
     "confidence": 0.112,
@@ -2044,7 +2044,7 @@
     "degraded": false,
     "quad_prior_state": "risk-on",
     "risk_state_state": "risk-on",
-    "risk_state_score": 15.7,
+    "risk_state_score": 11.8,
     "positioning_override": false,
     "favor_entries": false,
     "cap_leadership": false,

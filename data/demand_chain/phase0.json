@@ -1,16 +1,16 @@
 {
   "schema": "demand_chain_phase0.v1",
-  "as_of": "2026-07-06",
+  "as_of": "2026-07-07",
   "verdict": "PENDING",
   "n_decided": 0,
   "hits": 0,
   "hit_rate": null,
   "binom_p_two_sided": null,
   "dir_accuracy": null,
-  "open": 37,
+  "open": 39,
   "min_n_for_verdict": 20,
   "historically_backtestable": false,
   "why_not": "Annual capex/RPO cadence (~3-6 obs; AI pool is one market-wide series → n≈5 periods) plus NO point-in-time consensus history → any in-sample backtest is a tiny-n, look-ahead-contaminated placebo. Forward-scored ledger only.",
-  "note": "0 decided / 37 open. Need ≥20 decided before a verdict means anything; the forward record is still accruing (theses grade as their ~6-month horizons elapse). The signal is NOT back-testable historically (annual cadence, no point-in-time consensus history), so this forward ledger is the only honest path.",
-  "note_zh": "已判定 0 个／未结 37 个。需至少 20 个已判定才有意义；前向记录仍在累积（随约6个月持有期到期逐步判定）。该信号无法用历史数据回测（年度频率、无时点共识历史），故此前向记录是唯一诚实的验证路径。"
+  "note": "0 decided / 39 open. Need ≥20 decided before a verdict means anything; the forward record is still accruing (theses grade as their ~6-month horizons elapse). The signal is NOT back-testable historically (annual cadence, no point-in-time consensus history), so this forward ledger is the only honest path.",
+  "note_zh": "已判定 0 个／未结 39 个。需至少 20 个已判定才有意义；前向记录仍在累积（随约6个月持有期到期逐步判定）。该信号无法用历史数据回测（年度频率、无时点共识历史），故此前向记录是唯一诚实的验证路径。"
 }

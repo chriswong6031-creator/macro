@@ -1,7 +1,7 @@
 {
   "schema": "neuralweb.evidence_clock.v1",
   "as_of": "2026-07-07",
-  "generated_utc": "2026-07-07T03:18:35Z",
+  "generated_utc": "2026-07-07T08:57:14Z",
   "authority": "display_only",
   "summary": {
     "n_rows": 186,
@@ -742,6 +742,7 @@
           "reliability",
           "contradictions",
           "bottom_sensors",
+          "cortex",
           "claim_reliability"
         ]
       },
@@ -6142,7 +6143,6 @@
     }
   ],
   "gaps": [
-    "freshness: data/neuralweb/health.json not present (first nightly will create it)",
     "cortex: data/neuralweb/machine_registry.jsonl not present (empty by design)"
   ],
   "caveats": [

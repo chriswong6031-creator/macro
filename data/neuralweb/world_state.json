@@ -3985,7 +3985,7 @@
         "reason": "version-matched + fresh",
         "calibration_version": "w2.7-loro-v1",
         "calibration_generated_at": "2026-07-02T12:32:51Z",
-        "calibration_age_days": 3
+        "calibration_age_days": 4
       },
       "lag_passport": {
         "basis": "per_leg_schedule",
@@ -4566,9 +4566,9 @@
     ],
     "freshness": {
       "asof": "2026-07-02",
-      "built_at": "2026-07-06T07:24:53Z",
-      "age_days": 4,
-      "age_sessions": 2,
+      "built_at": "2026-07-07T07:14:04Z",
+      "age_days": 5,
+      "age_sessions": 3,
       "max_age_sessions": 1,
       "stale": true,
       "note": "contract asof vs build time; the daily build lands post-close (22:40 UTC) so a consumer reading intraday should expect asof = prior session — recompute age against built_at at read time."
@@ -4603,7 +4603,7 @@
     "date": "2026-07-02"
   },
   "rotation": {
-    "asof": "2026-07-06",
+    "asof": "2026-07-07",
     "regime": {
       "n_active_complexes": 0,
       "breadth": null,
@@ -4748,7 +4748,7 @@
   },
   "alerts": {
     "asof": "2026-07-02",
-    "generated_utc": "2026-07-06 07:25",
+    "generated_utc": "2026-07-07 07:14",
     "total": 60,
     "critical": 2,
     "major": 58,
@@ -4766,10 +4766,11 @@
     "ratio_iwf_iwd_20d": -0.07698902203786362,
     "ratio_qqq_spy_20d": -0.03142390693527464,
     "ratio_iwm_spy_20d": 0.04690760725468124,
-    "display_only": true
+    "display_only": true,
+    "factor_state_as_of": null
   },
   "options_weather": {
-    "as_of": "2026-07-05",
+    "as_of": "2026-07-06",
     "n_roots": 19,
     "median_iv30": null,
     "median_skew": null,
@@ -4777,8 +4778,47 @@
     "share_skew_rising": null,
     "median_ivspread_rel": null,
     "share_pin_risk": null,
-    "opex_days": 11,
+    "opex_days": 10,
     "note": "sector-ETF/index options weather (raw aggregates; no composite — RO-2). Gamma-regime evidence is vol-conditioning with era-dependent sign (W-E1); never directional.",
+    "display_only": true
+  },
+  "cycle_pattern": {
+    "as_of": "2026-07-07",
+    "model_epoch": "price_c4414dcb",
+    "gate_status": {
+      "up": {
+        "1m": "PASS",
+        "3m": "PRIOR",
+        "6m": "PRIOR"
+      },
+      "down": {
+        "1m": "PASS",
+        "3m": "PASS",
+        "6m": "PASS"
+      }
+    },
+    "n_entities": 141,
+    "n_with_hazard": 88,
+    "families": {
+      "bloc": 7,
+      "cn_basket": 22,
+      "cn_sector": 31,
+      "country": 24,
+      "us_basket": 46,
+      "us_sector": 11
+    },
+    "truth_summary": {
+      "n_active": 23,
+      "n_promoted_null": 12,
+      "latest_truth_ids": [
+        "cycle_truth_ft4_structure_hazard_null_v1",
+        "cycle_truth_lattice1_confirmatory_and_baseline_confound_v1",
+        "cycle_truth_lattice2_within_family_structure_v1",
+        "cycle_truth_tr1_next_phase_softmax_skill_v1",
+        "cycle_truth_ix1_index_transfer_null_v1"
+      ]
+    },
+    "note": "CPI cycle-pattern lobe (P6 wave 1): calibrated turn-hazard context. Counts + gate verdicts only — per-entity rows live in the adapter artifact (read_cycle_pattern_state). PRIOR cells are KM base rates. Context/display only; may never originate, score, or escalate.",
     "display_only": true
   },
   "qi": null,
@@ -4786,8 +4826,8 @@
   "live_overlay": {
     "source": "data/regime/latest.json:freshness",
     "asof": "2026-07-02",
-    "built_at": "2026-07-06T07:24:53Z",
-    "age_days": 4,
+    "built_at": "2026-07-07T07:14:04Z",
+    "age_days": 5,
     "stale": true
   },
   "contradictions": {
@@ -4811,13 +4851,13 @@
     "data/market_state/latest.json": "2026-07-02",
     "data/regime/latest.json": "2026-07-02",
     "data/breadth/breadth.parquet": "2026-07-02",
-    "site/basketdata/oracle_state.json": "2026-07-06",
+    "site/basketdata/oracle_state.json": "2026-07-07",
     "data/run_status.json": "2026-07-05T11:06:14.896278+00:00",
     "site/factordata/alerts_triage.json": "2026-07-02"
   },
   "schema_version": 1,
   "produced_by": "engine/neuralweb/world_state.py",
-  "produced_at": "2026-07-06T08:39:30Z",
-  "inputs_hash": "sha256:e1de4b930964deed7ee303877e3440959dd4fea5ffbf3ff796c2a5c7ee15de5a",
+  "produced_at": "2026-07-07T08:56:46Z",
+  "inputs_hash": "sha256:42a5ca9984da50c28703de3968e0890e8e95e7937cd7c0695b62f8fb190dc503",
   "tier": "infrastructure"
 }

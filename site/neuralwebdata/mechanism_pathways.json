@@ -1,0 +1,36 @@
+{
+  "schema": "neuralweb.mechanism_pathways.v1",
+  "as_of": "2026-07-07",
+  "display_only": true,
+  "not_a_signal": true,
+  "authority": {
+    "tier": "display",
+    "horizon_role": "context",
+    "weights": "none",
+    "scored_path_surfaces": [],
+    "may_rank": false,
+    "may_gate": false,
+    "may_size": false,
+    "may_escalate": false,
+    "display_only": true,
+    "not_a_signal": true,
+    "forbidden_uses": [
+      "ranking",
+      "sizing",
+      "alert_escalation",
+      "claim_validation",
+      "board_ordering",
+      "mastermind_arming"
+    ]
+  },
+  "pathways": [],
+  "no_pathway": {
+    "reason": "trigger_stale",
+    "printed": true,
+    "trigger_context": {
+      "source": "data/regime/latest.json",
+      "asof": "2026-07-02",
+      "sla_days": 5
+    }
+  }
+}
