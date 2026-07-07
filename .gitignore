@@ -328,3 +328,9 @@ data/options_tape_signed/*.parquet
 # The throwaway ledger is also worktree-local, not the canonical tracked ledger.
 data/comment_letter_events/
 data/trial_ledger_d2_local.jsonl
+
+# A10 block-tape archiver (feat/f501-cn-block-tape-archiver).
+# ~12MB, 38 parquets — R2 data-plane law: must NOT enter git.
+# Yearly mrtj_YYYY.parquet + mrmx_YYYY.parquet + sw_l1_map.parquet +
+# sw_l1_constituents.parquet are Mac-local/server-local only.
+data/china_block_tape/
