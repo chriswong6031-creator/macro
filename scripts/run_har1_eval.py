@@ -19,15 +19,18 @@ GATE SUMMARY (verbatim from §18)
        verdict = promoted_null (retrieval theater).
 
 NULLS
-  Null #1 (median-half-cycle / KM):
-    Family-stratified KM from data/hazard/km_baseline_price_c4414dcb.json,
-    evaluated at each query's current age_m.
-  Null #2 (age-only family KM):
-    Same KM table, same queries — this IS the KM null (age-only family KM).
-    Note: both nulls use the same KM table because the KM already conditions
-    on age, so "median-half-cycle" and "age-only KM" refer to the same
-    distribution.  The scorecard prints both columns; the gate requires beating
-    BOTH, where null #2 is the harder bar (age-aware KM vs HAR).
+  Prereg names two distinct nulls:
+    Null #1: "frozen median-half-cycle projection" — a fixed projection off the
+      median completed half-cycle length.
+    Null #2: "age-only family KM" — age-conditioned family survival curve.
+
+  PREREG-FIDELITY DEVIATION: This implementation collapses both to the SAME
+  KM table (km_baseline_price_c4414dcb.json), because the family-stratified KM
+  already conditions on age.  The KM IS the harder/more-informed bar; failing
+  it implies failing a naive median-projection null too.  This does not flip
+  verdicts here (all families fail other gates), but is disclosed in both the
+  docstring and the scorecard's implementation_notes.
+  Gap column is labeled gap_vs_km throughout.
 
 OOS WINDOW
   2024+ embargo per sibling convention (date >= 2024-01-01).
@@ -37,12 +40,16 @@ OOS WINDOW
   (walk-forward discipline; no analog from the same span is retrieved).
 
 ANALOG-SHUFFLE NULL
-  Permute the mapping from analog to its realized_dur_m WITHIN ERA (calendar
-  year of end_date).  Holds the time-structure fixed.  Run >= 200 permutations.
-  Seed = 42 (deterministic).  CRPS is re-scored under permuted assignments.
+  Permute the mapping from RETRIEVED ANALOG to its realized_dur_m WITHIN ERA
+  (calendar year of analog end_date), holding the retrieval fixed.  Tests
+  whether shape/fingerprint match carries information above within-era
+  time-structure.  Run >= 200 permutations.  Seed = 42 (deterministic).
+  Implementation: for each query, identify the k analog_ids retrieved by HAR,
+  determine their era(s), build a pool from the FULL library for those era(s),
+  draw k durations from that pool, re-score CRPS.
   HAR beats its own shuffle null if:
-    delta_crps_vs_km_null > 0 AND delta_crps_vs_km_null > shuffle_p50_delta
-    i.e., the true delta beats the median permutation delta.
+    gap_vs_shuffle CI90 excludes 0 (ci_shuffle_excludes_zero)
+    AND gap_vs_km > gap_vs_shuffle (same-margin criterion, §18 criterion #6).
 
 MONTH-BLOCK BOOTSTRAP
   Primary (never row/ticker bootstrap).  800 draws, seed=7.
@@ -269,64 +276,88 @@ def _span_to_query_inputs(span_row: pd.Series, library_at_query: pd.DataFrame
 def _shuffle_crps(
     query_rows: pd.DataFrame,
     analog_result_rows: list[dict],
+    analog_library: pd.DataFrame,
     rng: np.random.Generator,
     n_shuffle: int = SHUFFLE_N,
 ) -> np.ndarray:
     """Shuffle analog->outcome mapping within era.  Returns array of shape
     (n_shuffle, len(query_rows)) of CRPS values under the permuted mapping.
 
-    Within-era shuffle: permute realized_dur_m of analogs, where "era" =
-    calendar year of the analog's end_date.  This holds time-structure fixed.
+    §18 specification: permute the mapping from RETRIEVED ANALOG to its
+    realized_dur_m WITHIN ERA (calendar year of end_date), while holding
+    the retrieval fixed (same k analog_ids, same query distances).  This
+    tests whether the SHAPE/FINGERPRINT match carries information — i.e.,
+    whether HAR beats a within-era resample of the durations of the SAME
+    analogs it would retrieve.
 
-    For each query: the HAR emits a distribution {p10..p90} based on the
-    k nearest analogs' remaining_m.  Under the shuffle, we substitute the
-    analogs' realized_dur_m values with permuted ones from the SAME era.
+    Implementation:
+      For each permutation:
+        For each query:
+          Take the k analog_ids that HAR actually retrieved.
+          Look up their realized_dur_m from the analog_library.
+          Identify their era (calendar year of end_date).
+          Build an era pool from ALL library rows with the same era(s).
+          Permute: draw k durations from that pool (with replacement).
+          Compute CRPS of (permuted distribution, realized_remaining).
 
-    Since the distribution is empirical over k analogs' remaining_m values,
-    under permutation we replace each analog's realized_dur_m with a randomly
-    drawn realized_dur_m from the same era in the library.
-
-    Returns array of shape (n_shuffle, n_queries), where each row is one
-    permutation's per-query CRPS.
+    This correctly breaks the shape→outcome linkage while preserving era
+    time-structure, and uses the RETRIEVED analog set (not the OOS targets).
     """
-    # Build era -> realized_dur_m pool from the library
-    # analog_result_rows: list of dicts with 'analog_ids', 'k_effective_months', etc.
-    # We need the full library to get the era pool
-    # For efficiency, re-use the library from the caller
+    # Index library by span_id for O(1) lookup
+    lib_by_id: dict = {}
+    if "span_id" in analog_library.columns:
+        for _, row in analog_library.iterrows():
+            lib_by_id[str(row["span_id"])] = row
+
+    # Build era pool from the FULL library (not OOS targets): era -> realized_dur_m
+    lib_cp = analog_library.copy()
+    lib_cp["era"] = pd.to_datetime(lib_cp["end_date"]).dt.year
+    era_pool_lib: dict[int, np.ndarray] = {}
+    for era, grp in lib_cp.groupby("era"):
+        era_pool_lib[int(era)] = grp["realized_dur_m"].values.astype(float)
+
+    # Fallback era pool: OOS query rows (used when no library analog found)
+    query_rows_cp = query_rows.copy()
+    query_rows_cp["era"] = pd.to_datetime(query_rows_cp["end_date"]).dt.year
+    era_pool_oos: dict[int, np.ndarray] = {}
+    for era, grp in query_rows_cp.groupby("era"):
+        era_pool_oos[int(era)] = grp["realized_dur_m"].values.astype(float)
+
     n_q = len(query_rows)
     shuffle_crps_matrix = np.full((n_shuffle, n_q), float("nan"))
 
-    # Build era pools: era -> list of realized_dur_m
-    # We'll use the analog library's end_date year as era
-    # This is built from the analog result rows' analog_ids
-    # However, for a proper shuffle we need the full pool across all analogs
-    # that appeared in any query — build a single era pool
-    era_dur_pool: dict[int, list[float]] = {}
-    for res in analog_result_rows:
-        for aid in res.get("analog_ids", []):
-            pass  # analog ids don't carry end_date directly here
-
-    # Alternative: use query rows' realized_dur_m by era (the outcomes available
-    # in the OOS window — this is what we're permuting)
-    # Era = calendar year of end_date
-    query_rows_cp = query_rows.copy()
-    query_rows_cp["era"] = pd.to_datetime(query_rows_cp["end_date"]).dt.year
-
-    era_pool: dict[int, np.ndarray] = {}
-    for era, grp in query_rows_cp.groupby("era"):
-        era_pool[int(era)] = grp["realized_dur_m"].values.astype(float)
-
     for perm_idx in range(n_shuffle):
-        # For each query, substitute its analog outcomes with permuted ones
-        # from the same era
         for q_idx, (_, qrow) in enumerate(query_rows_cp.iterrows()):
-            era = int(qrow["era"])
-            pool = era_pool.get(era, np.array([qrow["realized_dur_m"]]))
-            # Draw k values from the era pool (with replacement)
+            res = analog_result_rows[q_idx]
+            analog_ids = res.get("analog_ids", [])
+
+            if analog_ids and lib_by_id:
+                # Determine eras of the RETRIEVED analogs
+                analog_eras: set[int] = set()
+                for aid in analog_ids:
+                    arow = lib_by_id.get(str(aid))
+                    if arow is not None:
+                        try:
+                            analog_eras.add(int(pd.Timestamp(arow["end_date"]).year))
+                        except Exception:
+                            pass
+                # Build pool from those eras in the library
+                pool_parts = []
+                for era in analog_eras:
+                    if era in era_pool_lib:
+                        pool_parts.append(era_pool_lib[era])
+                pool = (np.concatenate(pool_parts)
+                        if pool_parts else np.array([float(qrow["realized_dur_m"])]))
+            else:
+                # Fallback: use OOS query era pool
+                era = int(qrow["era"])
+                pool = era_pool_oos.get(era, np.array([float(qrow["realized_dur_m"])]))
+
+            # Draw k durations from the era pool (analog set permuted)
             perm_durs = rng.choice(pool, size=K_NEIGHBORS, replace=True)
-            current_age = float(qrow["realized_dur_m"])  # realized, not current query age
-            # Remaining time under permuted analogs
-            perm_remaining = np.maximum(perm_durs - 0.0, 0.0)  # age at query ≈ 0 (start)
+            # Remaining time = permuted duration (query at age≈0, age_m=0.5)
+            current_age_m = 0.5  # matches query age in run_evaluation
+            perm_remaining = np.maximum(perm_durs - current_age_m, 0.0)
             p10 = float(np.percentile(perm_remaining, 10))
             p25 = float(np.percentile(perm_remaining, 25))
             p50 = float(np.percentile(perm_remaining, 50))
@@ -462,9 +493,11 @@ def run_evaluation(
     print(f"\nOverall CRPS: HAR={np.nanmean(crps_har):.4f}, KM={np.nanmean(crps_km):.4f}, "
           f"n_valid={int(np.isfinite(crps_har).sum())}")
 
-    # Shuffle null
+    # Shuffle null — permute analog→outcome within era using the FULL library
     print(f"Running shuffle null ({SHUFFLE_N} permutations, seed={SHUFFLE_SEED})…")
-    shuffle_matrix = _shuffle_crps(oos_lib, har_results, shuffle_rng, SHUFFLE_N)
+    shuffle_matrix = _shuffle_crps(
+        oos_lib, har_results, library, shuffle_rng, SHUFFLE_N
+    )
     # Per-query mean CRPS under shuffle
     crps_shuffle_mean = np.nanmean(shuffle_matrix, axis=0)  # shape (n_queries,)
     print(f"Shuffle CRPS (mean over {SHUFFLE_N} perms): {np.nanmean(crps_shuffle_mean):.4f}")
@@ -594,6 +627,11 @@ def run_evaluation(
             "post_2018_improves": (cell.get("gap_post_2018_vs_km") or 0) > 0,
             "cone_coverage_pass": (cell.get("cone_coverage_p25_p75") or 0) >= CONE_COVERAGE_MIN,
             "shuffle_ci_excludes_zero": cell.get("ci_shuffle_excludes_zero", False),
+            # §18 "same margin": gap_vs_km > gap_vs_shuffle (HAR beats KM null
+            # by more than it beats the shuffle null)
+            "gap_km_exceeds_gap_shuffle": (
+                (cell.get("gap_vs_km") or 0.0) > (cell.get("gap_vs_shuffle") or 0.0)
+            ),
         }
         cell["criteria"] = criteria
 
@@ -670,11 +708,38 @@ def run_evaluation(
                 "the query span began)."
             ),
             (
-                "SHUFFLE NULL DESIGN: Per §18, within-era analog shuffle permutes "
-                "realized_dur_m within calendar year of end_date. Implementation: "
-                "for each query, draw k values from the same era pool in the OOS window. "
-                "This preserves the era distribution of cycle lengths while destroying "
-                "the trajectory-match signal."
+                "SHUFFLE NULL DESIGN (FIXED post-review): Per §18, the shuffle permutes "
+                "the mapping from RETRIEVED ANALOGS to their realized_dur_m within era "
+                "(calendar year of analog end_date), holding the retrieval fixed. "
+                "Implementation: for each query, the k analog_ids retrieved by HAR are "
+                "identified; their era(s) are used to build a pool from the FULL library "
+                "(not the OOS targets); k durations are drawn from that pool. "
+                "This correctly tests whether the shape/fingerprint match carries "
+                "information beyond within-era time-structure."
+            ),
+            (
+                "SINGLE-NULL DISCLOSURE (prereg-fidelity deviation): "
+                "PREREGISTRATION.md §18 names TWO distinct nulls: "
+                "(1) 'frozen median-half-cycle projection' and "
+                "(2) 'age-only family KM'. "
+                "This implementation collapses both to the SAME KM table "
+                "(km_baseline_price_c4414dcb.json), because the family-stratified KM "
+                "already conditions on age, making (1) and (2) identical distributions. "
+                "The scorecard's gap_vs_km covers one null, not two. "
+                "Conservative direction: the KM is the harder/more-informed bar "
+                "(age-aware), so failing it implies failing a naive median-projection too. "
+                "The deviation does not alter verdicts in this run (all three families "
+                "fail other gates), but is disclosed here per prereg-fidelity policy."
+            ),
+            (
+                "TRAJECTORY-SHAPE INERTNESS DISCLOSURE: At query time (age_m=0.5) the "
+                "elapsed fraction is 0.5 / median(realized_dur_m) ≈ 0.085, giving "
+                "n_pts = ceil(0.085 × 10) = 1. HAR therefore compares exactly ONE grid "
+                "point (norm_pos_0, the span-start value, nearly constant across spans). "
+                "Trajectory-shape retrieval is effectively inert; HAR retrieves on "
+                "fingerprint + family penalty only. Results attributed to HAR (including "
+                "cn_sector's KM/shuffle gap) reflect fingerprint + family matching, "
+                "NOT trajectory-shape similarity."
             ),
             (
                 "REVISION_OPTIMISTIC DISCLOSURE (P-D5-1): The macro fingerprint "
@@ -729,9 +794,12 @@ def _build_truth_entry(scorecard: dict) -> dict:
             f"the BACKTEST cohort OOS window (end_date>=2024-01-01). "
             f"Overall verdict: {overall}. "
             f"Per-family: {'; '.join(fam_summaries)}. "
-            f"Analog-shuffle null (within-era permutation, {SHUFFLE_N} draws) is the "
-            f"primary gate: if HAR does not beat its own shuffle, verdict=promoted_null "
-            f"(retrieval theater). "
+            f"Analog-shuffle null (within-era permutation of retrieved analogs, "
+            f"{SHUFFLE_N} draws) is the primary gate: if HAR does not beat its own "
+            f"shuffle, verdict=promoted_null (retrieval theater). "
+            f"TRAJECTORY-SHAPE INERTNESS: at query time (age_m=0.5) n_pts=1, so HAR "
+            f"retrieves on fingerprint+family only — not trajectory shape. Any KM/shuffle "
+            f"gap reflects fingerprint+family matching, not shape similarity. "
             f"Macro fingerprint revision_optimistic (P-D5-1, quad/liquidity not PIT-vintaged)."
         ),
         "scope": {
@@ -753,7 +821,7 @@ def _build_truth_entry(scorecard: dict) -> dict:
         ),
         "evidence_refs": [
             "data/cycle_pattern/har_scorecard.json",
-            "research/cycle_masterplan/PREREGISTRATION.md §18",
+            "research/cycle_masterplan/PREREGISTRATION.md",
         ],
         "allowed_consumers": ["measurement_surface", "honesty_display", "research_factory"],
         "forbidden_consumers": [
@@ -878,24 +946,41 @@ def main(argv=None):
     with open(args.km) as f:
         km_baseline = json.load(f)
 
-    # ANTI-MINING LAW: declare budget BEFORE any p-value
+    # ANTI-MINING LAW: assert the FROZEN budget line already exists; do NOT
+    # re-declare at eval time (that was Wave-1's double-declaration ding).
+    # The frozen criteria-commit budget lives at ts=2026-07-07T02:00:02Z in
+    # data/trial_ledger.jsonl (config_hash=47f398fc8a61ec0f).  This run
+    # asserts it is present; if missing the ledger is corrupted and we abort.
     if not args.smoke:
         try:
-            from engine.trial_ledger import TrialLedger  # noqa: PLC0415
-            led = TrialLedger(
-                path=_REPO / "data" / "trial_ledger.jsonl",
-                family=TRIAL_FAMILY,
-            )
-            led.log_declared_budget(
-                N_CELLS, family=TRIAL_FAMILY,
-                reason=(
-                    f"PREREGISTRATION.md §18 HAR-1: 3 families × 3 horizons = {N_CELLS} cells; "
-                    f"fdr_family={TRIAL_FAMILY}; run_at={datetime.now(timezone.utc).isoformat()}"
-                ),
-            )
-            print(f"Declared trial budget: {TRIAL_FAMILY} n={N_CELLS}")
+            import json as _json  # noqa: PLC0415
+            ledger_path = _REPO / "data" / "trial_ledger.jsonl"
+            FROZEN_TS = "2026-07-07T02:00:02.000000+00:00"
+            FROZEN_HASH = "47f398fc8a61ec0f"
+            found = False
+            with open(ledger_path) as _lf:
+                for _line in _lf:
+                    _entry = _json.loads(_line)
+                    if (
+                        _entry.get("family") == TRIAL_FAMILY
+                        and _entry.get("kind") == "declared_budget"
+                        and _entry.get("ts", "").startswith("2026-07-07T02:00:02")
+                        and _entry.get("config_hash") == FROZEN_HASH
+                    ):
+                        found = True
+                        break
+            if not found:
+                raise RuntimeError(
+                    f"Frozen budget declaration for {TRIAL_FAMILY} "
+                    f"(ts={FROZEN_TS}, hash={FROZEN_HASH}) NOT FOUND in "
+                    f"{ledger_path}. Ledger may be corrupted — do not run."
+                )
+            print(f"Frozen budget verified: {TRIAL_FAMILY} n={N_CELLS} "
+                  f"(ts={FROZEN_TS}, hash={FROZEN_HASH})")
+        except RuntimeError:
+            raise
         except Exception as e:
-            print(f"[WARN] trial_ledger declaration failed (non-fatal): {e}")
+            print(f"[WARN] trial_ledger assertion check failed (non-fatal): {e}")
 
     t0 = time.time()
     scorecard = run_evaluation(library, km_baseline, smoke=args.smoke)

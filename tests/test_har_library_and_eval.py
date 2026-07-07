@@ -287,9 +287,11 @@ class TestShuffleDeterminism:
         rng1 = np.random.default_rng(42)
         rng2 = np.random.default_rng(42)
         analog_results = [{"analog_ids": []} for _ in range(5)]
+        # Empty library: shuffle falls back to OOS era pool
+        empty_lib = pd.DataFrame(columns=["span_id", "end_date", "realized_dur_m"])
 
-        mat1 = _shuffle_crps(query_rows, analog_results, rng1, n_shuffle=10)
-        mat2 = _shuffle_crps(query_rows, analog_results, rng2, n_shuffle=10)
+        mat1 = _shuffle_crps(query_rows, analog_results, empty_lib, rng1, n_shuffle=10)
+        mat2 = _shuffle_crps(query_rows, analog_results, empty_lib, rng2, n_shuffle=10)
 
         np.testing.assert_array_equal(mat1, mat2,
                                       err_msg="Shuffle not deterministic with same seed")
@@ -310,11 +312,13 @@ class TestShuffleDeterminism:
         ]
         query_rows = pd.DataFrame(rows)
         analog_results = [{"analog_ids": []} for _ in range(10)]
+        # Empty library: shuffle falls back to OOS era pool
+        empty_lib = pd.DataFrame(columns=["span_id", "end_date", "realized_dur_m"])
 
         rng1 = np.random.default_rng(42)
         rng2 = np.random.default_rng(99)
-        mat1 = _shuffle_crps(query_rows, analog_results, rng1, n_shuffle=20)
-        mat2 = _shuffle_crps(query_rows, analog_results, rng2, n_shuffle=20)
+        mat1 = _shuffle_crps(query_rows, analog_results, empty_lib, rng1, n_shuffle=20)
+        mat2 = _shuffle_crps(query_rows, analog_results, empty_lib, rng2, n_shuffle=20)
 
         # Should differ at least somewhere
         assert not np.allclose(mat1, mat2, equal_nan=True), \

@@ -777,14 +777,26 @@ not reopen it.
 
 ### HAR-1 results (2026-07-07 — criteria above UNCHANGED; §18 two-commit discipline observed)
 
+> **Review fixes applied (2026-07-07):** Five MUST-FIX items addressed per code review.
+> (R1) Runtime `log_declared_budget` call removed; frozen T02:00:02Z budget line is now asserted
+> (no longer re-declared with a mismatched config_hash at eval time). (R2) Shuffle null
+> re-implemented: now correctly permutes the RETRIEVED ANALOG → realized_dur_m mapping within
+> era using the FULL library pool, not the OOS query targets. Shuffle CRPS numbers updated.
+> (R3) Same-margin criterion (gap_vs_km > gap_vs_shuffle, §18 criterion #6) added to criteria
+> dict; it was previously dropped. (R4) Single-null disclosure added to implementation_notes:
+> both prereg nulls collapse to the same KM table; noted as a conservative deviation. (R5)
+> Trajectory-shape inertness disclosed: at age_m=0.5, n_pts=1 so HAR retrieves on
+> fingerprint+family only — no trajectory-shape comparison occurs. Statement in truths.jsonl
+> updated accordingly. Verdicts unchanged (all three families → promoted_null or FAIL).
+
 n_oos_queries=242. Overall verdict: **promoted_null**.
 
 
 | family | n_turns | CRPS_HAR | CRPS_KM | gap_vs_km | CI90_km | gap_vs_shuffle | CI90_shuffle | coverage | verdict |
 |---|---|---|---|---|---|---|---|---|---|
-| us_sector | 26 | 4.632832 | 5.510247 | 0.877415 | [-0.693663, 2.881158] | 1.471032 | [-1.967062, 4.373046] | 0.5 | **promoted_null** |
-| country | 79 | 3.083373 | 4.63148 | 1.548107 | [0.875633, 2.165431] | -0.044298 | [-0.782553, 0.775113] | 0.3924 | **promoted_null** |
-| cn_sector | 137 | 2.898902 | 4.804597 | 1.905695 | [1.377511, 2.530548] | 0.708841 | [0.305962, 1.168429] | 0.4453 | **FAIL** |
+| us_sector | 26 | 4.632832 | 5.510247 | 0.877415 | [-0.693663, 2.881158] | 1.848006 | [-1.236332, 4.459639] | 0.5 | **promoted_null** |
+| country | 79 | 3.083373 | 4.63148 | 1.548107 | [0.875633, 2.165431] | 0.138679 | [-0.488385, 0.699536] | 0.3924 | **promoted_null** |
+| cn_sector | 137 | 2.898902 | 4.804597 | 1.905695 | [1.377511, 2.530548] | 1.15374 | [0.618974, 1.75154] | 0.4453 | **FAIL** |
 
 **Analog-shuffle null (PRIMARY, §18):** FIRED. HAR must beat within-era permuted assignments by the same margin as the KM null.
 Verdict: promoted_null. n_pass=0, n_fail_or_null=3, n_deferred=0. truth_id=`CPI-017`.
