@@ -1,9 +1,9 @@
 {
   "schema": "grading_closure.v1",
-  "generated_at": "2026-07-07T12:06:07.481697+00:00",
+  "generated_at": "2026-07-07T12:32:27.024195+00:00",
   "n_ledgers": 27,
-  "n_closed": 7,
-  "n_grader_starved": 20,
+  "n_closed": 8,
+  "n_grader_starved": 19,
   "n_log_only": 0,
   "ledgers": [
     {
@@ -11,9 +11,9 @@
       "path": "data/qledger/claims.jsonl",
       "storage": "present",
       "grader_wired": "Y:scripts/grade_qledger.py",
-      "n_logged": 9663,
-      "n_graded": 3497,
-      "last_graded_at": "2026-07-07T09:10:23.217831+00:00",
+      "n_logged": 9655,
+      "n_graded": 5632,
+      "last_graded_at": "2026-07-07T12:32:19.008340+00:00",
       "tune_step": "N",
       "verdict": "CLOSED"
     },
@@ -22,9 +22,9 @@
       "path": "data/qledger/grades.jsonl",
       "storage": "present",
       "grader_wired": "Y:scripts/grade_qledger.py",
-      "n_logged": 3497,
-      "n_graded": 3497,
-      "last_graded_at": "2026-07-07T09:10:23.217831+00:00",
+      "n_logged": 5632,
+      "n_graded": 5632,
+      "last_graded_at": "2026-07-07T12:32:19.008340+00:00",
       "tune_step": "N",
       "verdict": "CLOSED"
     },
@@ -243,10 +243,10 @@
       "storage": "present",
       "grader_wired": "Y:scripts/grade_policy_calendar.py",
       "n_logged": 57,
-      "n_graded": 0,
-      "last_graded_at": null,
+      "n_graded": 27,
+      "last_graded_at": "2026-07-07",
       "tune_step": "N",
-      "verdict": "GRADER-STARVED"
+      "verdict": "CLOSED"
     },
     {
       "key": "froth_fragility_log",
