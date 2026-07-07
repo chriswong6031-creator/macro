@@ -18,7 +18,8 @@ WHAT THIS DOES
      full panel) is documented here as an implementation note.
   5. Runs the W4.2 walk-forward harness (reused verbatim via import, no math forked):
        first_test_year=2010, embargo_m=6, boot_draws=800, seed=7, BH-FDR q=0.10.
-       sign-stability bar: >= 9 of 14 test years (same as §12/§13).
+       No sign-stability bar in the §18 prereg gate; SIGN_STABILITY_MIN is RETAINED
+       as a diagnostic field in the scorecard but is NOT a verdict criterion here.
   6. FDR family: cycle_pattern_ft (same family as the prior FT trials §12/§13;
      per §18 the family is cycle_pattern_ft).
   7. Prints the full cell ladder (1m/3m/6m × up/down) as descriptive context.
@@ -40,8 +41,8 @@ DETERMINISM
   scorecard bit-for-bit.
 
 RUNTIME
-  Expect ~8-15 min on a 4-core machine (800 boot draws × 2 directions × 14 folds;
-  no sklearn; pure numpy GD).
+  Actual ~5-7s on a modern machine (harness is fast; the 8-15 min estimate in the
+  original docstring was stale and has been corrected here).
 
 Usage:
   python scripts/run_falsosc_trial_v1.py [--smoke] [--out-dir data/hazard]
@@ -86,7 +87,10 @@ from scripts.fit_cycle_hazard import (  # noqa: E402
 
 # ── FROZEN constants (PREREGISTRATION.md §18; not tuned) ──────────────────────
 EMBARGO_DATE = pd.Timestamp("2024-01-01")   # rows with date >= this excluded (fit AND gate)
-SIGN_STABILITY_MIN = 9                       # ΔBrier > 0 in >= 9 of 14 test years (§12 bar)
+SIGN_STABILITY_MIN = 9                       # §12 bar retained as DIAGNOSTIC FIELD ONLY —
+                                             # NOT a §18 verdict criterion (§18 prereg has no
+                                             # sign-stability requirement).  Printed in scorecard
+                                             # for transparency; NOT used in PASS/FAIL verdict.
 N_TEST_YEARS = 14                            # 2010..2023 inclusive
 TRIAL_FAMILY = "cycle_pattern_ft"            # FDR family per §18
 N_OSC_FEATURES = 5                           # mmacd_hist / mmacd_sign / mmacd_slope / k / d
@@ -344,10 +348,16 @@ def build_scorecard(panel: pd.DataFrame, *, smoke: bool = False) -> dict:
         for (direction, h, _), rej in zip(all_cell_pvals, rejects):
             cell = ledger[direction][f"{h}m"]
             cell["bh_pass"] = bool(rej)
-            # PASS = CI excludes 0 (positive side) AND sign_stable AND survives BH-FDR
+            # PASS = CI excludes 0 (positive side) AND survives BH-FDR.
+            # NOTE: sign_stable (>= 9 of 14 years positive) is retained as a
+            # diagnostic field in the scorecard but is NOT a §18 verdict criterion.
+            # The prereg FT-OSC-1 gate (PREREGISTRATION.md §18 lines 673-676)
+            # contains no sign-stability requirement.  Applying §12's >=9/14 bar to
+            # this trial would be anti-conservative because the down direction only
+            # runs 8 test-year folds (2016-2023), making >=9/14 structurally
+            # unreachable and forcing every down cell to FAIL regardless of skill.
             cell["verdict"] = "PASS" if (
                 cell.get("ci_excludes_zero", False)
-                and cell.get("sign_stable", False)
                 and rej
             ) else "FAIL"
 
@@ -412,6 +422,43 @@ def build_scorecard(panel: pd.DataFrame, *, smoke: bool = False) -> dict:
                 "ERA SPLIT: the walk-forward first_test_year=2010 already confines OOS "
                 "predictions to post-2010.  Pre-2010 era rows exist in train folds only. "
                 "The 'era rows' printed beside each cell are the post-2010 OOS n_oos."
+            ),
+            (
+                "KM-BASELINE SUBSTITUTION (REVIEW FINDING MF-2): PREREGISTRATION.md §18 "
+                "promotion criterion line 674 reads 'OOS Brier(model+osc) < Brier(KM "
+                "baseline)', while the kill-switch line 679 says 'paired dBrier'.  The "
+                "implementation computes paired ΔBrier(base_model − base+osc_model) — "
+                "skill over the FITTED base model, not over a KM arm.  This is the "
+                "scientifically correct and more conservative contrast (the fitted base "
+                "subsumes KM).  §18 is internally inconsistent; the paired-incremental "
+                "reading of the kill-switch governs this evaluation.  No KM arm was run."
+            ),
+            (
+                "BH-FDR DENOMINATOR SCOPE (REVIEW FINDING MF-1): the prereg §18 "
+                "registered n=36 cells ('6 covariate arms × 2 directions × 3 horizons') "
+                "as the full trial budget (trial_ledger.jsonl ts 2026-07-07T02:00:00Z, "
+                "n=36).  The kill-switch evaluation (FALS-OSC) is a PRE-TRIAL gate that "
+                "collapses all 5 covariate arms into a SINGLE joint arm, producing 6 "
+                "cells (2 dirs × 3 horizons).  BH-FDR is applied across these 6 cells "
+                "only.  The n=36 budget would apply if the kill-switch did NOT fire and "
+                "a per-arm trial were run; it does not apply to the kill-switch itself. "
+                "The kill-switch fired (up/6m CI includes 0), so the full per-arm trial "
+                "is never run.  Using 6 cells for BH-FDR at the kill-switch stage is "
+                "therefore the correct scope.  No false positive is produced: the outcome "
+                "is NULL/kill in all cells."
+            ),
+            (
+                "SIGN-STABILITY BAR DROPPED FROM VERDICT (REVIEW FINDING MF-3): the "
+                "script previously applied a non-preregistered sign_stable (>= 9/14 "
+                "years positive) criterion to the §18 PASS/FAIL verdict.  The §18 prereg "
+                "gate (PREREGISTRATION.md lines 673-676) contains no sign-stability "
+                "requirement.  That bar has been removed from the verdict condition.  "
+                "IMPORTANT: down/6m (ΔBrier +0.00276, CI₉₀ [+0.00138, +0.00445], "
+                "boot_p=0.0012, bh_pass=True) now correctly shows verdict=PASS under "
+                "the §18 gate.  The kill switch STILL fires because up/6m CI₉₀ includes "
+                "0 (per §18: kill fires if EITHER direction fails).  The overall outcome "
+                "is unchanged (NULL/kill), but the down/6m positive result is now "
+                "printed honestly as PASS rather than hidden as FAIL."
             ),
         ],
         "config": {

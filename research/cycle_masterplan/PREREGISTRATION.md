@@ -730,8 +730,16 @@ evaluation has run. Column descriptions and oscillator computation details are i
 
 ### FT-OSC-1 results (2026-07-07 — criteria above UNCHANGED; §18 two-commit discipline observed)
 
-Runtime: 6.5s. Subsample: 5841/16429 embargoed rows (35.6%; cn_sector=0% by construction — see implementation_notes in artifact).
+> **Review fixes applied (2026-07-07):** Three disclosures added per reviewer findings.
+> (MF-1) BH-FDR was applied across 6 cells (kill-switch scope: 2 dirs × 3 horizons,
+> covariate arms collapsed into single joint arm); prereg n=36 is the full per-arm budget
+> that would apply only if the kill-switch did not fire. (MF-2) The baseline comparison is
+> paired ΔBrier vs the fitted base model — not vs a KM arm — which is the correct
+> conservative reading of §18's kill-switch "paired dBrier" clause. (MF-3) A non-preregistered
+> sign_stable bar (≥9/14 years positive) was removed from the PASS/FAIL verdict; the §18 gate
+> contains no such requirement. **Corrected verdicts below.**
 
+Runtime: 6.5s. Subsample: 5841/16429 embargoed rows (35.6%; cn_sector=0% by construction — see implementation_notes in artifact).
 
 | id | result | date |
 |---|---|---|
@@ -740,7 +748,13 @@ Runtime: 6.5s. Subsample: 5841/16429 embargoed rows (35.6%; cn_sector=0% by cons
 | **FT-OSC-1-up-6m** | **FAIL** — ΔBrier +0.0037, CI₉₀ [-0.003746, 0.010398], boot_p=0.211, years+=7/11, n_oos=3784 |
 | **FT-OSC-1-down-1m** | **FAIL** — ΔBrier +0.0013, CI₉₀ [-0.009577, 0.012478], boot_p=0.4632, years+=4/8, n_oos=925 |
 | **FT-OSC-1-down-3m** | **FAIL** — ΔBrier +0.0020, CI₉₀ [-0.002632, 0.006158], boot_p=0.2235, years+=6/8, n_oos=925 |
-| **FT-OSC-1-down-6m** | **FAIL** — ΔBrier +0.0028, CI₉₀ [0.001378, 0.00445], boot_p=0.0012, years+=7/8, n_oos=925 |
+| **FT-OSC-1-down-6m** | **PASS** — ΔBrier +0.0028, CI₉₀ [0.001378, 0.00445], boot_p=0.0012, bh_pass=True, years+=7/8, n_oos=925 |
+
+> **Notable result — down/6m PASSES the §18 gate:** ΔBrier +0.00276, CI₉₀ [+0.00138,
+> +0.00445] excludes 0, boot_p=0.0012, BH-FDR survives. This is a genuine incremental
+> signal in the down-regime direction. The kill-switch STILL FIRES because up/6m CI₉₀
+> includes 0 (§18: kill fires if EITHER direction fails). The down/6m result is printed
+> honestly here and in truths.jsonl; it does not unblock the oscillator family for use.
 
 **Kill condition (FALS-OSC):** **KILL SWITCH FIRED**.
   up/6m: CI₉₀=[-0.003746, 0.010398], ci_lo=-0.003746, kill=True.

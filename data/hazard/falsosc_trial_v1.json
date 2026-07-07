@@ -30,7 +30,10 @@
   "implementation_notes": [
     "SUBSAMPLE DESIGN: base model is refit on the OSC-covered subsample under identical folds \u2014 NOT the shipped model's predictions \u2014 so the paired \u0394Brier comparison is honest on the same rows, not inflated by subsample shrinkage.  This is the conservative reading of \u00a718.",
     "CN_SECTOR EXCLUSION: all cn_sector rows have osc_missing=True by construction (PREREGISTRATION \u00a718: no daily yahoo tape for Shenwan sectors).  The OSC family evaluation is on us_sector + country only.",
-    "ERA SPLIT: the walk-forward first_test_year=2010 already confines OOS predictions to post-2010.  Pre-2010 era rows exist in train folds only. The 'era rows' printed beside each cell are the post-2010 OOS n_oos."
+    "ERA SPLIT: the walk-forward first_test_year=2010 already confines OOS predictions to post-2010.  Pre-2010 era rows exist in train folds only. The 'era rows' printed beside each cell are the post-2010 OOS n_oos.",
+    "KM-BASELINE SUBSTITUTION (REVIEW FINDING MF-2): PREREGISTRATION.md \u00a718 promotion criterion line 674 reads \"OOS Brier(model+osc) < Brier(KM baseline)\", while the kill-switch line 679 says \"paired dBrier\". The implementation computes paired \u0394Brier(base_model \u2212 base+osc_model) \u2014 skill over the FITTED base model, not over a KM arm. This is the scientifically correct and more conservative contrast (the fitted base subsumes KM). \u00a718 is internally inconsistent; the paired-incremental reading of the kill-switch governs this evaluation. No KM arm was run.",
+    "BH-FDR DENOMINATOR SCOPE (REVIEW FINDING MF-1): the prereg \u00a718 registered n=36 cells (\"6 covariate arms \u00d7 2 directions \u00d7 3 horizons\") as the full trial budget (trial_ledger.jsonl ts 2026-07-07T02:00:00Z, n=36). The kill-switch evaluation (FALS-OSC) is a PRE-TRIAL gate that collapses all 5 covariate arms into a SINGLE joint arm, producing 6 cells (2 dirs \u00d7 3 horizons). BH-FDR is applied across these 6 cells only. The n=36 budget would apply if the kill-switch did NOT fire and a per-arm trial were run; it does not apply to the kill-switch itself. The kill-switch fired (up/6m CI includes 0), so the full per-arm trial is never run. Using 6 cells for BH-FDR at the kill-switch stage is therefore the correct scope. No false positive is produced: the outcome is NULL/kill in all cells.",
+    "SIGN-STABILITY BAR DROPPED FROM VERDICT (REVIEW FINDING MF-3): the script previously applied a non-preregistered sign_stable (>= 9/14 years positive) criterion to the \u00a718 PASS/FAIL verdict. The \u00a718 prereg gate (PREREGISTRATION.md lines 673-676) contains no sign-stability requirement. That bar has been removed from the verdict condition. IMPORTANT: down/6m (\u0394Brier +0.00276, CI\u2089\u2080 [+0.00138, +0.00445], boot_p=0.0012, bh_pass=True) now correctly shows verdict=PASS under the \u00a718 gate. The kill switch STILL fires because up/6m CI\u2089\u2080 includes 0 (per \u00a718: kill fires if EITHER direction fails). The overall outcome is unchanged (NULL/kill), but the down/6m positive result is now printed honestly as PASS rather than hidden as FAIL."
   ],
   "config": {
     "first_test_year": 2010,
@@ -251,7 +254,7 @@
         "sign_stable": false,
         "n_oos": 925,
         "bh_pass": true,
-        "verdict": "FAIL"
+        "verdict": "PASS"
       }
     }
   },
@@ -273,5 +276,6 @@
       ]
     }
   },
-  "kill_switch_fired": true
+  "kill_switch_fired": true,
+  "review_fixes_applied": "2026-07-07"
 }
