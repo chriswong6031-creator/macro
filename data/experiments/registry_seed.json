@@ -2590,6 +2590,25 @@
       "state": "machine_registry.jsonl absent (2026-07-06); cortex loop failing at turn 0 (Connection error — corrupted token); ops action outstanding.",
       "next_step": "Ops: re-set CLAUDE_CODE_OAUTH_TOKEN as a clean single-line secret (gh secret set). Check cortex CI run after next nightly. Once registrations appear, open research/RF_CORTEX_BATCH_FOR_FABLE.md and execute §3.",
       "phase_hint": "Research Factory · Batch B · cortex"
+    },
+    {
+      "id": "stock-top-hazard-arm-comeback",
+      "name": "Single-stock top-hazard arm — conditional come-back (extend CPI turn-hazard to individual stocks as an AVOID/trim risk lens)",
+      "kind": "parked_research",
+      "priority": "medium",
+      "cadence": "on-trigger",
+      "what": "Operator ask (2026-07-07): can the CPI turn-hazard model find TOPS in individual stocks? Adjudication: the METHOD transfers, the fitted model does not (IX-1 member→index transfer already a published null — cycle_truth_ix1_index_transfer_null_v1). Down-direction cells are the model's strong side at sector level, stock covariates (monthly MACD/StochRSI via engine/cycles) are already computed nightly, and stock tops give a much larger, less time-clustered event sample. Prerequisites before any build: (1) vol-scaled ZigZag turn definition per stock (14% sector threshold is wrong for single names), (2) survivorship-clean training panel incl. delisted names, (3) per-archetype KM baseline, (4) sector-level FT-OSC-1 / PHASE-CLOCK-1 verdicts in. Output framing is AVOID/trim/risk lens only (L1 AVOID-not-SHORT) — never a short signal, never an entry gate (W0.4 DON'T-TEST), never a return target (KG-1/CYC-U29).",
+      "source": "research/cycle_masterplan/PREREGISTRATION.md (Wave 0 prereg, 2026-07-07)",
+      "storage": "data/cycle_pattern/truths.jsonl",
+      "hook": "come_back",
+      "started": "2026-07-07",
+      "come_back_on": "2026-10-07",
+      "come_back_note": "Conditional: proceed ONLY IF sector-level FT-OSC-1 and/or PHASE-CLOCK-1 gates have verdicts AND the sector hazard surfaces (C3/C4) have held live ~2 quarters. If sector gates failed, the stock arm is dead by inheritance — close this without building. If passed, charter the stock arm with the 4 prerequisites in 'what'.",
+      "maturation": "Sector-level gate verdicts (FT-OSC-1, PHASE-CLOCK-1) + 2 quarters of live C3/C4 hold. Then: pre-register a stock-panel trial (new fdr_family) before any fit.",
+      "status": "parked",
+      "state": "Registered 2026-07-07 at operator request (register in admin/site alerts, not agent memory). No build dispatched.",
+      "next_step": "On come-back: read sector gate verdicts from data/*/scorecards/ + truths.jsonl; if green, draft stock-panel prereg; if failed, close as dead-by-inheritance.",
+      "phase_hint": "pre-charter"
     }
   ]
 }
