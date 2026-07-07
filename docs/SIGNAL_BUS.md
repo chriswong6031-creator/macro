@@ -14,6 +14,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | btc-vector | 5 |
 | china-alpha | 7 |
 | china-intel-hub | 2 |
+| codex-b5 | 1 |
 | cycle-intelligence | 14 |
 | dannytrades | 1 |
 | engine-fix | 16 |
@@ -44,7 +45,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 111 |
+| display | 112 |
 | infrastructure | 65 |
 | scored | 4 |
 | shadow | 38 |
@@ -53,7 +54,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 209 |
+| git | 210 |
 | gitignored-local | 6 |
 | r2 | 3 |
 
@@ -93,6 +94,12 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 |---|---|---|---|---|---|---|
 | site-china-special-sits | `site/chinaspecialdata/special.json` | json | asia-close | display | 2 | 0 |
 | site-china-intel-command | `site/china_intel/command.json` | json | asia-close | display | 1 | 0 |
+
+### codex-b5
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| event-windows | `embedded: event_windows block inside site/stockdata/<TICKER>.json` | json | daily-engine | display | 1 | 0 |
 
 ### cycle-intelligence
 
@@ -672,6 +679,13 @@ Artifacts below have `known_extra_writers` — additional code paths that write 
 - **declared producer:** `engine/neuralweb/confluence.py`
 - **extra writers:**
   - scripts/build_confluence_graph.py — thin CLI wrapper; calls build_and_write() defined in the producer; no independent write logic
+
+### event-windows
+
+- **path:** `embedded: event_windows block inside site/stockdata/<TICKER>.json`
+- **declared producer:** `engine/event_landmine.py`
+- **extra writers:**
+  - engine/stock_fundamentals.py — compose() called inside panels(); result keyed as 'event_windows'
 
 ### experiments-registry-seed
 
