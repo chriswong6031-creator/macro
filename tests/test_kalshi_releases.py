@@ -3,17 +3,18 @@
 No live network access: all payloads are inline fixtures.  Tests cover:
 
   bracket_to_distribution math:
-    - happy path: correct median, mean, p_above_0, n_brackets
+    - happy path: correct median, p_above_lowest_strike, n_brackets
     - single bracket: degenerate distribution handled without crash
     - missing prices: None survivals excluded correctly
     - zero volume / all-missing: null distribution returned
-    - monotonic CDF enforcement: out-of-order strikes sorted before computation
-    - boundary cases: p_above_0 at exact bracket edge, at bottom/top of range
+    - isotonic survival clamp: non-monotone ladder corrected (negative mass prevented)
+    - boundary cases: p_above_lowest_strike at bottom of range
 
   _parse_event_period:
     - CPI event ticker KXCPI-26JUN → ('cpi', '2026-06')
     - NFP event ticker KXPAYROLLS-26JUL → ('nfp', '2026-07')
     - Claims ticker KXJOBLESSCLAIMS-26JUL09 → ('claims', '2026-07-09')
+    - Claims ticker single-digit day KXJOBLESSCLAIMS-26JUL9 → ('claims', '2026-07-09')
     - Unrecognised ticker → (None, None)
 
   _mid_price:
@@ -32,6 +33,7 @@ No live network access: all payloads are inline fixtures.  Tests cover:
     - new rows written on first run
     - same key on second run: no duplicate, row count unchanged
     - different asof_date: new rows appended (not blocked)
+    - dtype preservation: strike stays float64, is_summary stays bool after dedup
 
   fail-open:
     - malformed market entry (missing strike) skipped silently
@@ -153,6 +155,12 @@ class TestParseEventPeriod:
         assert rt == "claims"
         assert period == "2026-01-12"
 
+    def test_claims_single_digit_day(self):
+        """N1: single-digit day (e.g. KXJOBLESSCLAIMS-26JUL9) must not be silently dropped."""
+        rt, period = _parse_event_period("KXJOBLESSCLAIMS-26JUL9")
+        assert rt == "claims"
+        assert period == "2026-07-09"
+
     def test_unrecognised_returns_none_pair(self):
         rt, period = _parse_event_period("KXSOMETHINGELSE-26JUL")
         assert rt is None
@@ -186,13 +194,12 @@ class TestBracketsToDistribution:
         assert d["implied_median"] is not None
         assert 0.15 <= d["implied_median"] <= 0.25
 
-        # Mean should be slightly above median (right-skewed distribution)
-        assert d["implied_mean"] is not None
-        assert d["implied_mean"] > d["implied_median"] - 0.5  # crude bound
+        # p_above_lowest_strike: S(k_min) = S(-0.1) = 0.99
+        assert d["p_above_lowest_strike"] is not None
+        assert abs(d["p_above_lowest_strike"] - 0.99) < 0.01
 
-        # p_above_0: S(0.0) = 0.95
-        assert d["p_above_0"] is not None
-        assert abs(d["p_above_0"] - 0.95) < 0.05
+        # Ladder is already monotone — no correction needed
+        assert d["monotonicity_corrected"] is False
 
         assert d["n_brackets"] == 6
 
@@ -206,9 +213,9 @@ class TestBracketsToDistribution:
         assert d["implied_median"] is not None
         assert 50000 <= d["implied_median"] <= 75000
 
-        # p_above_0: S(0) = 0.99
-        assert d["p_above_0"] is not None
-        assert abs(d["p_above_0"] - 0.99) < 0.01
+        # p_above_lowest_strike: S(k_min) = S(0) = 0.99
+        assert d["p_above_lowest_strike"] is not None
+        assert abs(d["p_above_lowest_strike"] - 0.99) < 0.01
 
     def test_single_bracket_returns_that_strike_as_median(self):
         """Degenerate case: one bracket with price."""
@@ -221,8 +228,7 @@ class TestBracketsToDistribution:
         """All None survivals → null distribution."""
         d = self._dist([0.1, 0.2, 0.3], [None, None, None])
         assert d["implied_median"] is None
-        assert d["implied_mean"] is None
-        assert d["p_above_0"] is None
+        assert d["p_above_lowest_strike"] is None
         assert d["n_brackets"] == 0
 
     def test_empty_inputs_returns_null_distribution(self):
@@ -271,23 +277,44 @@ class TestBracketsToDistribution:
         assert d["implied_median"] is not None
         assert abs(d["implied_median"] - 0.25) < 1e-6
 
-    def test_p_above_0_at_exact_bracket(self):
-        """p_above_0 when 0.0 is exactly in the strikes list."""
+    def test_p_above_lowest_strike_is_first_survival(self):
+        """p_above_lowest_strike is always S(k_min), the first survival value."""
         strikes   = [-0.1, 0.0, 0.1, 0.2]
         survivals = [0.99, 0.80, 0.50, 0.20]
         d = self._dist(strikes, survivals)
-        # S(0.0) should be returned directly: 0.80
-        assert d["p_above_0"] is not None
-        assert abs(d["p_above_0"] - 0.80) < 0.01
+        # k_min = -0.1, S(-0.1) = 0.99
+        assert d["p_above_lowest_strike"] is not None
+        assert abs(d["p_above_lowest_strike"] - 0.99) < 0.01
 
-    def test_p_above_0_below_lowest_strike_returns_first_survival(self):
-        """When 0.0 is below the lowest strike, S(0) = S(k[0])."""
+    def test_p_above_lowest_strike_positive_ladder(self):
+        """Ladder with positive-only strikes — k_min = 0.5, S(0.5) = 0.90."""
         strikes   = [0.5, 1.0, 1.5]
         survivals = [0.90, 0.60, 0.20]
         d = self._dist(strikes, survivals)
-        # 0.0 < 0.5 (lowest strike) → p_above_0 = S(0.5) = 0.90
-        assert d["p_above_0"] is not None
-        assert abs(d["p_above_0"] - 0.90) < 0.01
+        assert d["p_above_lowest_strike"] is not None
+        assert abs(d["p_above_lowest_strike"] - 0.90) < 0.01
+
+    def test_non_monotone_survival_clamp(self):
+        """Non-monotone ladder [0.95,0.80,0.50,0.60,0.10] — clamp enforces isotonic.
+
+        Without the clamp the bracket [0.50→0.60] produces negative mass.
+        After clamping [0.95,0.80,0.50,0.50,0.10] all masses are >= 0.
+        """
+        strikes   = [0.1, 0.2, 0.3, 0.4, 0.5]
+        survivals = [0.95, 0.80, 0.50, 0.60, 0.10]  # 0.60 > 0.50: inversion
+        d = self._dist(strikes, survivals)
+
+        assert d["monotonicity_corrected"] is True
+        assert d["implied_median"] is not None
+        # Reconstruct the clamped survivals and verify all masses >= 0
+        ss_clamped = [0.95, 0.80, 0.50, 0.50, 0.10]
+        cdfs = [1.0 - s for s in ss_clamped]
+        masses = [cdfs[0]]  # bottom tail
+        for i in range(1, len(cdfs)):
+            masses.append(cdfs[i] - cdfs[i - 1])
+        masses.append(1.0 - cdfs[-1])  # top tail
+        for mass in masses:
+            assert mass >= 0.0, f"Negative mass after clamp: {mass}"
 
 
 # ---------------------------------------------------------------------------
@@ -312,8 +339,8 @@ class TestUpsertParquet:
             "price_type": "mid",
             "is_summary": is_summary,
             "implied_median": 0.25 if is_summary else None,
-            "implied_mean": 0.26 if is_summary else None,
-            "p_above_0": 0.80 if is_summary else None,
+            "p_above_lowest_strike": 0.80 if is_summary else None,
+            "monotonicity_corrected": False if is_summary else None,
             "n_brackets": 6 if is_summary else None,
             "event_ticker": "KXCPI-26JUN",
             "close_time": "2026-07-14T12:25:00Z",
@@ -387,6 +414,44 @@ class TestUpsertParquet:
         assert len(result) == 1
         # The first row's value survives
         assert abs(result.iloc[0]["p_survival"] - 0.60) < 1e-9
+
+    def test_parquet_dtypes_preserved_after_dedup_write(self, store_path):
+        """B1: strike must be float64 and is_summary must be bool in stored parquet.
+
+        The dedup logic must NOT coerce key columns to str before persisting.
+        A summary row (strike=NaN, is_summary=True) followed by a duplicate
+        write is the worst case: previously the str coercion turned strike into
+        'nan' and is_summary into 'True' (string).
+        """
+        # First write: bracket row + summary row
+        rows = [
+            self._make_row(strike=0.2, is_summary=False),
+            self._make_row(strike=float("nan"), is_summary=True),
+        ]
+        df = pd.DataFrame(rows)
+        # Ensure correct input dtypes
+        df["strike"] = df["strike"].astype(float)
+        df["is_summary"] = df["is_summary"].astype(bool)
+        _upsert_parquet(store_path, df)
+
+        # Second write (same rows): triggers the dedup path
+        _upsert_parquet(store_path, df.copy())
+
+        result = pd.read_parquet(store_path)
+        assert len(result) == 2, "dedup should not create duplicates"
+        assert result["strike"].dtype == float, (
+            f"strike dtype should be float, got {result['strike'].dtype}"
+        )
+        assert result["is_summary"].dtype == bool, (
+            f"is_summary dtype should be bool, got {result['is_summary'].dtype}"
+        )
+        # Summary row should have NaN strike, not the string 'nan'
+        summary_rows = result[result["is_summary"] == True]
+        assert len(summary_rows) == 1
+        import math
+        assert math.isnan(summary_rows.iloc[0]["strike"]), (
+            "summary row strike should be NaN float, not a string"
+        )
 
 
 # ---------------------------------------------------------------------------

@@ -7048,13 +7048,19 @@ artifacts:
       types collected: cpi (KXCPI series, headline MoM % SA), nfp (KXPAYROLLS
       series, MoM change in thousands), claims (KXJOBLESSCLAIMS series, weekly
       level). Each event's bracket ladder is stored as individual rows plus one
-      summary row (is_summary=True) holding implied_median, implied_mean, and
-      p_above_0 derived from the exceedance-binary CDF. The market_implied leg
+      summary row (is_summary=True) holding implied_median and
+      p_above_lowest_strike (S(k_min)) derived from the exceedance-binary CDF.
+      implied_mean is intentionally absent: on an open-ended bracket ladder the
+      mean requires a tail assumption that cannot be stated honestly, and
+      append-only PIT rows cannot be corrected after the fact.
+      monotonicity_corrected (bool) records whether the survival ladder required
+      isotonic clamping before median/tail computation. The market_implied leg
       of benchmark_set.market_implied in release_forecast.v1 reads from this
-      store; the join is a separate later PR. The asof_field is null at the
+      store; the join uses implied_median only. The asof_field is null at the
       artifact level because each row carries asof_date per-row; PIT comparisons
       filter on asof_date <= decision_date. The collector is fail-open: any
       fetch or parse error logs a warning and leaves the store unchanged.
+      Same-day re-runs are safe (first-seen dedup is idempotent).
       Tickers LIVE VERIFIED 2026-07-07: KXCPI (CPI MoM % SA), KXPAYROLLS
       (NFP k jobs), KXJOBLESSCLAIMS (initial claims level).
 
