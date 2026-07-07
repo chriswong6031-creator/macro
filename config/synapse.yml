@@ -6508,11 +6508,11 @@ artifacts:
   options-structure-gex-state:
     path: options_structure/gex_state/<ROOT>.json
     format: json
-    producer: engine/options_structure.py
+    producer: scripts/build_gex_board.py
     known_extra_writers: []
     owner_program: momoedge
     cadence: daily-engine
-    storage: r2
+    storage: git
     asof_field: asof
     freshness_sla_hours: 30
     schema: options_structure.gex_state/v1
@@ -6525,13 +6525,16 @@ artifacts:
     external_consumers:
       - terminal:gex-tab
     notes: >
-      Per-symbol dealer gamma structure state (Package A, MomoEdge parity).
+      Per-symbol dealer gamma structure state (Package C, MomoEdge parity).
+      Emitted by scripts/build_gex_board.py via engine/gex_state.compute_gex_state()
+      after each name's board payload is computed — ZERO new network calls, derived only.
       6-state gamma_regime (PIN|DRIFT|RANGE|TRANSITION|TREND|CASCADE), stability_pct,
       flip, walls, magnet, max_pain, pin_probability, gravity, oi_delta_clusters.
       DISPLAY-ONLY until GEX→forward-vol gate (~Sept 2026). Single-name regime is a
       near-constant product attribute (structurally_constant), NOT a time-varying signal.
       regime_passport preserved in all consumers. authority_tier=display; reliability
       flags assumption-signed on all GEX/gamma fields.
+      Thin-chain / no_options names emit nothing (compute_gex_state returns None).
 
   # --- options-flow.chain_heat: contract-day accumulation campaigns ---
   options-flow-chain-heat:

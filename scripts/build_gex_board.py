@@ -276,6 +276,37 @@ def _write_archive_snapshot(manifest: list[dict], data_dir: Path) -> None:
         log.warning("gex: archive snapshot skipped: %s", e)
 
 
+def _write_gex_state(model: dict, key: str, gex_state_dir: "Path") -> None:
+    """Derive, validate, and write options_structure.gex_state/<KEY>.json.
+
+    Package C emitter — zero new network calls; derived entirely from the model
+    already computed by _build_one.  A failure here is NEVER fatal to the board
+    build (additive side-effect, logged and swallowed).
+    """
+    from engine.gex_state import compute_gex_state
+    from engine.options_structure import validate_gex_state
+    from datetime import date
+
+    try:
+        asof = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S+00:00")
+        state = compute_gex_state(model, key, asof=asof)
+        if state is None:
+            log.debug("gex_state: %s skipped (thin/no options)", key)
+            return
+
+        errors = validate_gex_state(state)
+        if errors:
+            log.warning("gex_state: %s schema errors: %s", key, errors)
+            return
+
+        gex_state_dir.mkdir(parents=True, exist_ok=True)
+        out_path = gex_state_dir / f"{key}.json"
+        out_path.write_text(json.dumps(state, default=float, allow_nan=False, separators=(",", ":")))
+        log.debug("gex_state: wrote %s", out_path)
+    except Exception as e:  # noqa: BLE001 — never abort the board for a gex_state failure
+        log.warning("gex_state: %s failed: %s", key, e)
+
+
 def main() -> int:
     from concurrent.futures import ThreadPoolExecutor
     from collectors.cboe import GexAdapter
@@ -283,6 +314,7 @@ def main() -> int:
     site = config.ROOT / config.load()["storage"]["site_dir"]
     out_dir = site / "gex"
     out_dir.mkdir(parents=True, exist_ok=True)
+    gex_state_dir = site / "options_structure" / "gex_state"
 
     core_keys = {key for _, key, *_ in UNIVERSE}
     universe = list(UNIVERSE) + _basket_universe(core_keys)
@@ -306,6 +338,8 @@ def main() -> int:
             model, mrow = res
             (out_dir / f"{mrow['key']}.json").write_text(
                 json.dumps(model, default=float, allow_nan=False, separators=(",", ":")))
+            # Package C: emit gex_state after board payload — zero new network calls
+            _write_gex_state(model, mrow["key"], gex_state_dir)
             return mrow
         except Exception as e:  # noqa: BLE001 — one bad symbol never aborts the board
             log.warning("gex: %s errored: %s", row["key"], e)
