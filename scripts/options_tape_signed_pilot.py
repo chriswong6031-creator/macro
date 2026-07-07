@@ -690,27 +690,52 @@ def _write_report(stats: dict[str, Any], out_path: Path) -> None:
 
     a("### Projected full-build wall-clock")
     a("")
-    if not np.isnan(avg_s):
-        # Full 20 names x 60 days = 1200 name-days
-        # With concurrency=6: 200 serial batches at P95 seconds each
-        full_1200_serial = 1200 * avg_s
-        full_1200_conc = (1200 / CONCURRENT_UNDERLYINGS) * p95_s if not np.isnan(p95_s) else float("nan")
-        full_1200_conc_min = full_1200_conc / 60 if not np.isnan(full_1200_conc) else float("nan")
+    total_wall_s = stats.get("total_wall_s", float("nan"))
+    nd_done = stats.get("name_days_completed", 0)
+    if not np.isnan(avg_s) and not np.isnan(total_wall_s) and nd_done > 0:
+        # Scale from MEASURED wall-clock (total_wall_s covers 1200 name-days with
+        # concurrency=6, so it is the actual real-world build time for the pilot).
+        # All projections are linear extrapolations from this measured anchor.
+        pilot_min = total_wall_s / 60
 
-        # Full backfill 2012-06-01 to now: ~3,500 trading days x 20 names = 70,000 name-days
-        # With concurrency=6: 11,667 rounds at avg_s each
-        full_backfill_s = 70000 / CONCURRENT_UNDERLYINGS * avg_s
+        # Full backfill: ~3,500 trading days x 20 names = 70,000 name-days
+        # Rate: total_wall_s / nd_done seconds of wall-clock per name-day (with concurrency)
+        nd_rate_wall = total_wall_s / nd_done  # wall-s per name-day (concurrent)
+        full_backfill_s = nd_rate_wall * 70000
         full_backfill_h = full_backfill_s / 3600
 
-        a(f"- **20 names x 60 days pilot (concurrent={CONCURRENT_UNDERLYINGS}):**")
-        a(f"  {full_1200_conc_min:.0f} min projected (P95 per-batch x 200 batches)")
-        a(f"- **Full backfill to 2012-06-01 (20 names x ~3500 trading days):**")
-        a(f"  {full_backfill_h:.1f} hours at measured throughput")
-        a(f"- **Extension to 500 names (full pilot universe):**")
-        a(f"  {full_backfill_h * 500 / 20:.0f} hours (linear scale, same concurrency ceiling)")
+        # 500 names x 60 days (linear scale of pilot)
+        ext_500_60d_min = pilot_min * (500 / max(nd_done / stats.get("trading_dates_target", 60), 1))
+        # Simpler: pilot covered 20 names x 60d; scale by name count
+        ext_500_60d_h = pilot_min * (500.0 / 20) / 60
+
+        # 500 names x full backfill
+        ext_500_full_h = full_backfill_h * (500.0 / 20)
+
+        # Nightly incremental (1 new day x 20 names = 20 name-days)
+        nightly_min = nd_rate_wall * 20 / 60
+
+        a(f"**Measured actual:** 20 names x 60 days = {total_wall_s:.0f}s ({pilot_min:.1f} min)."
+          f" This is the ground truth.")
         a("")
-        a("> NOTE: SPY and QQQ dominate P95 (2M+ rows/day each). Separating ETFs from")
-        a("> single-names into two concurrent pools would reduce per-batch time significantly.")
+        a(f"- **20 names x 60 days pilot:** {pilot_min:.1f} min (measured, not projected)")
+        a(f"- **Full backfill to 2012-06-01 (20 names x ~3500 trading days):**")
+        a(f"  ~3500/60 x {pilot_min:.1f} min = {pilot_min:.1f} min x"
+          f" {3500//60} = ~{full_backfill_h:.0f} hours at measured throughput")
+        a(f"- **Extension to 500 names (full pilot universe, 60 days):**")
+        a(f"  500/20 x {pilot_min:.1f} min = ~{ext_500_60d_h:.0f} hours")
+        a(f"- **Extension to 500 names x full backfill:**")
+        a(f"  500/20 x {full_backfill_h:.0f} hours = ~{ext_500_full_h:.0f} hours"
+          f" (~{ext_500_full_h/24:.0f} days serial)")
+        a(f"  → Strategy: run incremental nightly, full backfill offline as a batch job")
+        a("")
+        a(f"**Nightly incremental (1 new day, 20 names):** {pilot_min:.1f} min / 60 ="
+          f" ~{nightly_min:.2f} min ({nightly_min*60:.0f} sec) per day")
+        a("")
+        a("> NOTE: SPY and QQQ dominate P95 (2M+ rows/day each, 25-70s each vs 1-12s for single-names).")
+        a("> Separating ETFs from single-names into two concurrent pools would reduce the tail significantly.")
+        a(f"> The actual {pilot_min:.1f} min vs {(1200/CONCURRENT_UNDERLYINGS)*p95_s/60:.0f} min"
+          f" P95-projected reflects that P95 is a per-name metric, not per-batch.")
     else:
         a("_(No throughput data — pilot did not complete any name-days)_")
 
@@ -818,9 +843,18 @@ def _write_report(stats: dict[str, Any], out_path: Path) -> None:
     a("")
     a("2. **Incremental pull:** read `_backfill_state.json`; for each underlying, pull only")
     a("   dates after the cursor. Typical nightly load: 1 date x 20 names = 20 name-days.")
-    a(f"  Estimated: {20 * avg_s / CONCURRENT_UNDERLYINGS / 60:.1f} min/night"
-      f" (at measured avg={avg_s:.1f}s/name-day, concurrent={CONCURRENT_UNDERLYINGS})"
-      if not np.isnan(avg_s) else "   Estimated: TBD (pilot throughput not yet measured)")
+    if not np.isnan(total_wall_s) and nd_done > 0:
+        # Use measured wall-clock: total_wall_s / nd_done = wall-s per name-day (concurrent)
+        nd_rate_wall_nightly = total_wall_s / nd_done
+        nightly_min_est = nd_rate_wall_nightly * 20 / 60
+        nightly_sec_est = nightly_min_est * 60
+        pilot_min_nightly = total_wall_s / 60
+        trading_dates_target = stats.get("trading_dates_target", 60)
+        a(f"   Estimated: ~{nightly_sec_est:.0f} sec/night"
+          f" (measured: {pilot_min_nightly:.1f} min / {trading_dates_target} dates,"
+          f" wall-clock for 20 concurrent names)")
+    else:
+        a("   Estimated: TBD (pilot throughput not yet measured)")
     a("")
     a("3. **Consolidation target:** `scripts/collect.py` nightly job.")
     a("   Add a `collect_options_tape` stage after existing theta stages.")
@@ -828,8 +862,9 @@ def _write_report(stats: dict[str, Any], out_path: Path) -> None:
     a("")
     a("4. **Extension to 500 names:** add to `PILOT_UNDERLYINGS` list in this script,")
     a("   or pass via `--underlyings` flag (future). Concurrency ceiling = 6 connections.")
-    a("   At 500 names, nightly incremental load: ~500/6 * avg_s = "
-      f"{500/6*avg_s/60:.0f} min/night" if not np.isnan(avg_s) else "TBD.")
+    if not np.isnan(total_wall_s) and nd_done > 0:
+        nightly_500_min = (total_wall_s / nd_done) * 500 / 60
+        a(f"   At 500 names, nightly incremental load: ~{nightly_500_min:.0f} min/night")
     a("")
     a("5. **R2 storage (future):** at 500 names x 3500 trading days, the store will grow")
     a("   to ~10-50 GB compressed parquet. If this exceeds git budget, move to R2 bucket")

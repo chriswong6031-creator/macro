@@ -67,14 +67,14 @@ Pre-registered gates and amendments (written before first compute):
 - **Extension to 500 names (full pilot universe, 60 days):**
   500/20 x 22.9 min = ~10 hours
 - **Extension to 500 names x full backfill:**
-  500/20 x 22 hours = ~550 hours (~23 days serial)
+  500/20 x 22 hours = ~556 hours (~23 days serial)
   → Strategy: run incremental nightly, full backfill offline as a batch job
 
 **Nightly incremental (1 new day, 20 names):** 22.9 min / 60 = ~0.38 min (23 sec) per day
 
 > NOTE: SPY and QQQ dominate P95 (2M+ rows/day each, 25-70s each vs 1-12s for single-names).
 > Separating ETFs from single-names into two concurrent pools would reduce the tail significantly.
-> The actual 22.9 min vs 61 min projected reflects that P95 is a per-name metric, not per-batch.
+> The actual 22.9 min vs 61 min P95-projected reflects that P95 is a per-name metric, not per-batch.
 
 ## Data quality spot-check
 
@@ -176,7 +176,7 @@ Label in output: delta_proxy (NOT model delta).
 
 4. **Extension to 500 names:** add to `PILOT_UNDERLYINGS` list in this script,
    or pass via `--underlyings` flag (future). Concurrency ceiling = 6 connections.
-   At 500 names, nightly incremental load: ~500/6 * avg_s = 7 min/night
+   At 500 names, nightly incremental load: ~10 min/night
 
 5. **R2 storage (future):** at 500 names x 3500 trading days, the store will grow
    to ~10-50 GB compressed parquet. If this exceeds git budget, move to R2 bucket
