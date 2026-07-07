@@ -70,6 +70,21 @@ AMENDMENT A2: SECTOR MAPPING
   absent for a ticker, it is excluded from the G2 sector check but included
   in return statistics.
 
+AMENDMENT A3: E2 ADVERSE CLASSIFIER TIGHTENING (pre-registered before re-run;
+  prompted by reviewer finding that original filter admitted FAVORABLE outcomes)
+  The original E2 title-keyword filter admitted:
+    (a) "FINAL DETERMINATION" titles regardless of outcome (no-violation FDs
+        are favorable/neutral for the respondent — opposite-signed).
+    (b) "VIOLATION" titles that include "NO VIOLATION" findings.
+    (c) Terminated/dismissed/settled investigations (neutral/favorable).
+  This contaminated the E2 sample with events whose price impact is OPPOSITE
+  to the pre-registered NEGATIVE direction hypothesis, making the E2 NULL
+  uninterpretable against the directional pre-registration.
+  Fix: require at least one affirmative adverse keyword (EXCLUSION ORDER,
+  CEASE AND DESIST, or VIOLATION) AND exclude titles containing negative-outcome
+  patterns (NO VIOLATION, TERMINATED, DISMISS, SETTLED). "FINAL DETERMINATION"
+  alone is dropped as an admitting keyword (too ambiguous).
+
 ===========================================================================
 DATA SOURCES
 ===========================================================================
@@ -94,11 +109,11 @@ Run:
     python -m scripts.w2153_itc337_phase0
 
 Writes:
-    data/itc337/fr_docs_institution.parquet   — FR institution notices
-    data/itc337/fr_docs_adverse.parquet       — FR adverse determination notices
-    data/itc337/events_e1.parquet             — mapped institution events
-    data/itc337/events_e2.parquet             — mapped adverse events
-    reports/w2153-itc337-phase0.md            — gate report
+    data_local_itc337/fr_docs_institution.parquet   — FR institution notices
+    data_local_itc337/fr_docs_adverse.parquet       — FR adverse determination notices
+    data_local_itc337/events_e1.parquet             — mapped institution events
+    data_local_itc337/events_e2.parquet             — mapped adverse events
+    reports/w2153-itc337-phase0.md                  — gate report
 """
 from __future__ import annotations
 
@@ -126,7 +141,7 @@ from engine.validation import newey_west_tstat, benjamini_hochberg  # noqa: E402
 # ---------------------------------------------------------------------------
 FAMILY     = "w2153_itc337"
 REPORT_PATH = ROOT / "reports" / "w2153-itc337-phase0.md"
-ITC337_DIR  = Path("/Users/chriswong/Documents/Cluade/Macro Dashboard/data/itc337")
+ITC337_DIR  = ROOT / "data_local_itc337"  # local copy (write-safe; original in data/itc337/)
 
 # Price stores (real dirs, not git-tracked)
 PRICE_DAY_DIR   = Path("/Users/chriswong/Documents/Cluade/Macro Dashboard/data/massive_stock_day")
@@ -590,7 +605,16 @@ def build_institution_events(rmap: dict, cache_dir: Path) -> pd.DataFrame:
                  "respondent", "ticker", "event_type"])
     ev_df["event_date"] = pd.to_datetime(ev_df["event_date"])
     ev_df["avail_date"] = pd.to_datetime(ev_df["avail_date"])
-    ev_df = ev_df.drop_duplicates(subset=["inv_num", "ticker"], keep="first")
+    # Dedup: when inv_num parsed successfully, dedup on (inv_num, ticker).
+    # When inv_num is empty (parse failed), fall back to (doc_num, ticker) to
+    # avoid over-collapsing distinct events for the same ticker.
+    # Conservative direction: any remaining dups are removed, cannot inflate NULL.
+    mask_has_inv = ev_df["inv_num"] != ""
+    deduped_inv = ev_df[mask_has_inv].drop_duplicates(subset=["inv_num", "ticker"], keep="first")
+    deduped_doc = ev_df[~mask_has_inv].drop_duplicates(subset=["doc_num", "ticker"], keep="first")
+    inv_success_rate = mask_has_inv.mean() if len(ev_df) > 0 else float("nan")
+    print(f"  E1 inv_num extraction success rate: {inv_success_rate:.1%}")
+    ev_df = pd.concat([deduped_inv, deduped_doc], ignore_index=True)
     ev_df = ev_df.sort_values("event_date")
 
     save_path = cache_dir / "events_e1.parquet"
@@ -638,12 +662,37 @@ def build_adverse_events(rmap: dict, cache_dir: Path) -> pd.DataFrame:
         title    = row["title"]
         dockets  = str(row.get("docket_ids", ""))
 
-        # Filter by title keywords — must indicate a violation finding
+        # Filter by title keywords — must indicate an AFFIRMATIVE violation finding.
+        # CLASSIFIER FIX (Amendment A3, pre-registered before re-run):
+        # The original filter admitted "FINAL DETERMINATION" and "VIOLATION" without
+        # excluding negative outcomes. This misclassified:
+        #   - "NO VIOLATION" final determinations (FAVORABLE for respondent)
+        #   - Terminated/dismissed/settled investigations (neutral/favorable)
+        # Fix: require at least one affirmative adverse keyword AND exclude
+        # negative-outcome title patterns. EXCLUSION ORDER and CEASE AND DESIST
+        # are inherently adverse; they are kept as-is.
+        # "VIOLATION" alone is kept only when "NO VIOLATION" is absent.
+        # "FINAL DETERMINATION" alone without EXCLUSION ORDER/C&D is dropped
+        # (too ambiguous — final determinations can be no-violation).
         title_up = title.upper()
-        adverse_keywords = ("VIOLATION", "EXCLUSION ORDER", "CEASE AND DESIST",
-                            "FINAL DETERMINATION")
-        if not any(kw in title_up for kw in adverse_keywords):
+
+        # Exclude negative-outcome or non-violation titles immediately
+        _exclude_patterns = (
+            "NO VIOLATION", "NO SECTION 337 VIOLATION",
+            "TERMINATED", "DISMISS", "SETTLED", "SETTLEMENT",
+            "TEMPORARY RELIEF DENIED",
+        )
+        if any(ep in title_up for ep in _exclude_patterns):
             continue
+
+        # Require at least one affirmative adverse indicator
+        # EXCLUSION ORDER and CEASE AND DESIST are unambiguously adverse.
+        # VIOLATION (without NO VIOLATION already excluded above) signals an adverse finding.
+        # FINAL DETERMINATION alone is NOT sufficient — too many no-violation FDs.
+        affirmative_keywords = ("EXCLUSION ORDER", "CEASE AND DESIST", "VIOLATION")
+        if not any(kw in title_up for kw in affirmative_keywords):
+            continue
+
         # Must be 337 related
         if "337" not in title_up and "337" not in dockets:
             continue
@@ -683,7 +732,13 @@ def build_adverse_events(rmap: dict, cache_dir: Path) -> pd.DataFrame:
                  "respondent", "ticker", "event_type"])
     ev_df["event_date"] = pd.to_datetime(ev_df["event_date"])
     ev_df["avail_date"] = pd.to_datetime(ev_df["avail_date"])
-    ev_df = ev_df.drop_duplicates(subset=["inv_num", "ticker"], keep="first")
+    # Dedup: fall back to doc_num when inv_num is empty to avoid over-collapsing.
+    mask_has_inv = ev_df["inv_num"] != ""
+    deduped_inv = ev_df[mask_has_inv].drop_duplicates(subset=["inv_num", "ticker"], keep="first")
+    deduped_doc = ev_df[~mask_has_inv].drop_duplicates(subset=["doc_num", "ticker"], keep="first")
+    inv_success_rate = mask_has_inv.mean() if len(ev_df) > 0 else float("nan")
+    print(f"  E2 inv_num extraction success rate: {inv_success_rate:.1%}")
+    ev_df = pd.concat([deduped_inv, deduped_doc], ignore_index=True)
     ev_df = ev_df.sort_values("event_date")
 
     save_path = cache_dir / "events_e2.parquet"

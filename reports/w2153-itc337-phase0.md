@@ -62,13 +62,13 @@ ITC cases are most frequently filed against US-listed companies.
 
 | Metric | E1 (institution) | E2 (adverse final) |
 |--------|-----------------|-------------------|
-| Total respondent-notice rows | 320 | 351 |
-| Rows with mapped US ticker | 99 | 94 |
-| Unique US tickers mapped | 36 | 42 |
+| Total respondent-notice rows | 320 | 257 |
+| Rows with mapped US ticker | 99 | 60 |
+| Unique US tickers mapped | 36 | 31 |
 
 **E1 mapped tickers:** AAPL, AMD, AMZN, AVGO, CAJ, CAT, CSCO, DD, DELL, ERIC, GLW, GM, GOOGL, HON, HPE, HPQ, IDCC, INTC, LLY, MDT, MRVL, MSFT, MSI, MU, NLST, NOK, NTDOY, NTGR, NVDA, QCOM, SONY, SWKS, SYK, TSLA, TSM, ZBRA  
-**E2 mapped tickers:** AAPL, ABT, AMD, AMZN, AVGO, CAJ, CSCO, DD, DE, DELL, DOW, EMR, ERIC, F, GM, GOOGL, HMC, HON, HPQ, IBM, IDCC, INTC, MMM, MSFT, MSI, MU, NFLX, NLST, NOK, NTDOY, NVDA, NVO, PFE, PHG, QCOM, SNY, SONY, TM, TSM, TXN, WOLF, ZBH  
-**Tickers with price data:** AAPL, ABT, AMD, AMZN, AVGO, CAJ, CAT, CSCO, DD, DE, DELL, DOW, EMR, ERIC, F, GLW, GM, GOOGL, HMC, HON, HPE, HPQ, IBM, IDCC, INTC, LLY, MDT, MMM, MRVL, MSFT, MSI, MU, NFLX, NOK, NTGR, NVDA, NVO, PFE, PHG, QCOM, SNY, SONY, SWKS, SYK, TM, TSLA, TSM, TXN, WOLF, ZBH, ZBRA
+**E2 mapped tickers:** AAPL, ABT, AMD, AMZN, AVGO, CAJ, CSCO, DD, DE, DOW, ERIC, F, GOOGL, HPQ, IDCC, INTC, MMM, MSFT, MSI, NLST, NOK, NVDA, PFE, PHG, QCOM, SNY, SONY, TSM, TXN, WOLF, ZBH  
+**Tickers with price data:** AAPL, ABT, AMD, AMZN, AVGO, CAJ, CAT, CSCO, DD, DE, DELL, DOW, ERIC, F, GLW, GM, GOOGL, HON, HPE, HPQ, IDCC, INTC, LLY, MDT, MMM, MRVL, MSFT, MSI, MU, NOK, NTGR, NVDA, PFE, PHG, QCOM, SNY, SONY, SWKS, SYK, TSLA, TSM, TXN, WOLF, ZBH, ZBRA
 
 ---
 
@@ -142,58 +142,48 @@ the medium-term settlement/order-risk repricing.
 over 5d, 21d. Final determinations are typically telegraphed by the ALJ's
 initial determination weeks earlier, so much of the news may be priced in.
 
-**E2_adverse_5d** (powered (n_dates=61)):
-  - Events: 92
-  - Calendar dates: 61
-  - Mean beta-adj AR: 0.4668%
-  - NW HAC: mean=0.00467, HAC-t=1.122, p=0.2618, n=61
+**E2_adverse_5d** (powered (n_dates=41)):
+  - Events: 59
+  - Calendar dates: 41
+  - Mean beta-adj AR: 0.5958%
+  - NW HAC: mean=0.00596, HAC-t=1.235, p=0.2169, n=41
 
-**E2_adverse_21d** (powered (n_dates=61)):
-  - Events: 92
-  - Calendar dates: 61
-  - Mean beta-adj AR: -2.6178%
-  - NW HAC: mean=-0.02618, HAC-t=-1.282, p=0.1998, n=61
+**E2_adverse_21d** (powered (n_dates=41)):
+  - Events: 59
+  - Calendar dates: 41
+  - Mean beta-adj AR: -3.5239%
+  - NW HAC: mean=-0.03524, HAC-t=-1.649, p=0.0992, n=41
 
 **Per-ticker breakdown (E2, in study window):**
 
 | Ticker | n events | Mean AR % |
 |--------|----------|-----------|
-| AAPL | 11 | 0.723 |
+| AAPL | 7 | 0.396 |
 | ABT | 1 | 0.917 |
 | AMD | 2 | 14.159 |
-| AMZN | 2 | -44.917 |
-| AVGO | 4 | 1.67 |
+| AMZN | 1 | -79.703 |
+| AVGO | 2 | 1.67 |
 | CAJ | 3 | 5.671 |
-| CSCO | 2 | 3.718 |
+| CSCO | 1 | 3.718 |
 | DD | 2 | -4.787 |
 | DE | 2 | 6.904 |
-| DELL | 2 | 1.1 |
 | DOW | 1 | -2.915 |
-| EMR | 2 | 2.94 |
 | ERIC | 1 | -12.139 |
 | F | 1 | -9.535 |
-| GM | 1 | -4.674 |
-| GOOGL | 4 | -23.415 |
-| HMC | 1 | 2.132 |
-| HON | 3 | 3.441 |
-| HPQ | 2 | -5.075 |
-| IBM | 1 | 1.47 |
-| IDCC | 3 | -2.494 |
-| INTC | 3 | -0.622 |
+| GOOGL | 3 | 3.239 |
+| HPQ | 1 | -5.075 |
+| IDCC | 2 | -1.367 |
+| INTC | 2 | -5.302 |
 | MMM | 1 | -1.072 |
-| MSFT | 4 | 1.79 |
+| MSFT | 3 | 1.79 |
 | MSI | 4 | -0.586 |
-| MU | 1 | -0.287 |
-| NFLX | 1 | -5.882 |
-| NOK | 6 | 13.547 |
+| NOK | 3 | 13.547 |
 | NVDA | 2 | -76.91 |
-| NVO | 1 | 14.076 |
 | PFE | 1 | 13.619 |
-| PHG | 5 | -7.887 |
+| PHG | 2 | -8.485 |
 | QCOM | 3 | 3.582 |
 | SNY | 1 | -4.206 |
 | SONY | 3 | -0.23 |
-| TM | 1 | 2.747 |
 | TSM | 1 | -2.489 |
 | TXN | 1 | -0.78 |
 | WOLF | 1 | 2.893 |
@@ -209,24 +199,24 @@ initial determination weeks earlier, so much of the news may be priced in.
 
 | Cell | n_dates | mean_AR% | HAC-t | p | q (BH) | H0 rejected |
 |------|---------|---------|-------|---|--------|-------------|
-| E1_institution_5d | 57 | 0.7762 | 1.898 | 0.0577 | 0.2308 | NO |
+| E1_institution_5d | 57 | 0.7762 | 1.898 | 0.0577 | 0.1984 | NO |
 | E1_institution_21d | 56 | -0.0243 | -0.018 | 0.9859 | 0.9859 | NO |
-| E2_adverse_5d | 61 | 0.4668 | 1.122 | 0.2618 | 0.3491 | NO |
-| E2_adverse_21d | 61 | -2.6178 | -1.282 | 0.1998 | 0.3491 | NO |
+| E2_adverse_5d | 41 | 0.5958 | 1.235 | 0.2169 | 0.2892 | NO |
+| E2_adverse_21d | 41 | -3.5239 | -1.649 | 0.0992 | 0.1984 | NO |
 
 **G1 result: FAIL**
   - Passing cells: none
   - E1_institution_5d: FAIL (mean_ar=0.7762%, t=1.898, neg_dir=False, |t|≥2=False, BH_reject=False)
   - E1_institution_21d: FAIL (mean_ar=-0.0243%, t=-0.018, neg_dir=True, |t|≥2=False, BH_reject=False)
-  - E2_adverse_5d: FAIL (mean_ar=0.4668%, t=1.122, neg_dir=False, |t|≥2=False, BH_reject=False)
-  - E2_adverse_21d: FAIL (mean_ar=-2.6178%, t=-1.282, neg_dir=True, |t|≥2=False, BH_reject=False)
+  - E2_adverse_5d: FAIL (mean_ar=0.5958%, t=1.235, neg_dir=False, |t|≥2=False, BH_reject=False)
+  - E2_adverse_21d: FAIL (mean_ar=-3.5239%, t=-1.649, neg_dir=True, |t|≥2=False, BH_reject=False)
 
 ### G2 — Sector Diversity (≥2 GICS-2 sectors among contributing tickers)
 
 **G2 result: PASS**  
   - Sectors represented: ['15', '20', '25', '35', '45', '50']  
   - Number of distinct GICS-2 sectors: 6  
-  - Tickers with sector code: ['AAPL', 'AMD', 'AMZN', 'AVGO', 'CAJ', 'CAT', 'CSCO', 'DD', 'DELL', 'ERIC', 'GLW', 'GM', 'GOOGL', 'HON', 'HPE', 'HPQ', 'IDCC', 'INTC', 'LLY', 'MDT', 'MRVL', 'MSFT', 'MSI', 'MU', 'NOK', 'NTGR', 'NVDA', 'QCOM', 'SONY', 'SWKS', 'SYK', 'TSLA', 'TSM', 'ZBRA', 'ABT', 'DE', 'DOW', 'EMR', 'F', 'HMC', 'IBM', 'MMM', 'NFLX', 'NVO', 'PFE', 'PHG', 'SNY', 'TM', 'TXN', 'WOLF', 'ZBH']  
+  - Tickers with sector code: ['AAPL', 'AMD', 'AMZN', 'AVGO', 'CAJ', 'CAT', 'CSCO', 'DD', 'DELL', 'ERIC', 'GLW', 'GM', 'GOOGL', 'HON', 'HPE', 'HPQ', 'IDCC', 'INTC', 'LLY', 'MDT', 'MRVL', 'MSFT', 'MSI', 'MU', 'NOK', 'NTGR', 'NVDA', 'QCOM', 'SONY', 'SWKS', 'SYK', 'TSLA', 'TSM', 'ZBRA', 'ABT', 'DE', 'DOW', 'F', 'MMM', 'PFE', 'PHG', 'SNY', 'TXN', 'WOLF', 'ZBH']  
   - Tickers missing sector code (excluded from count): []
 
 ### FINAL VERDICT: **NULL — no pre-registered gate passed**
