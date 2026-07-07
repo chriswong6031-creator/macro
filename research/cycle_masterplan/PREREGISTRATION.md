@@ -646,3 +646,84 @@ decomposition) ship inside the artifact. Full adjudication:
 `research/cycle_masterplan/CPI_IX1_VERDICT.md`. Artifacts:
 `data/cycle_pattern/ix_trials/ix1_transfer.json`; budget `rf.cycle_pattern.ix_v0` n=4 declared
 pre-p-value (2026-07-07T01:04:24Z, before any evaluation).
+
+---
+
+## 18 · Cycle projection overhaul — Wave 0 preregistration (2026-07-07)
+
+**Two-commit discipline (as §12–§17).** Substrate PR adds monthly oscillator PIT columns to
+the CPI lake (`state_monthly.parquet`). Gates below are FROZEN at this commit.
+DO NOT run any trial/evaluation until this section is merged — preregistration strictly
+precedes evaluation (ordering is the entire point). No hazard model, `hazard_score.py`, or
+UI is touched by this wave.
+
+**Substrate (frozen):** `data/cycle_pattern/state_monthly.parquet` extended with columns
+`mmacd_hist`, `mmacd_sign`, `mmacd_slope`, `mstoch_k`, `mstoch_d`, `osc_missing`.
+Pinned math per ESX-RUL-31 + RUL-33-OSCSPECIES: RSI-MACD via `engine/confluence_tiers._rsi_macd`;
+StochRSI K/D via `engine/confluence_tiers._stoch_rsi_kd` (14/3/3, 0-100 scale). Applied on
+monthly-resampled ("ME") close from the yahoo daily tape. Completed monthly bar = month-end ≤
+stamp date (incomplete in-progress bar dropped). `osc_missing=True` for entities with <40
+completed monthly bars at stamp date, or with no daily yahoo tape (China Shenwan sectors).
+
+---
+
+### FT-OSC-1 gate
+
+**Claim:** The oscillator covariate family (monthly MACD hist/sign/slope + monthly StochRSI K&D)
+joins the CPI turn-hazard model design iff, on the BACKTEST cohort, post-2010 era row:
+OOS Brier(model+osc) < Brier(KM baseline) AND month-block-bootstrap 90% CI on paired dBrier
+excludes 0 AND survives BH-FDR q=0.10 within cycle_pattern_ft AND n_oos >= 3,000 monthly
+cell-observations for that (direction x horizon) cell.
+Demotion: any promoted cell failing the gate on 2 consecutive LIVE quarterly re-grades reverts
+to PRIOR.
+Kill-switch FALS-OSC (runs FIRST, before any UI work): if the 6m-cell paired dBrier 90%
+month-block CI does not exclude 0 for EITHER direction, the entire oscillator covariate family
+is a printed NULL to truths.jsonl; columns stay in the lake, model design reverts.
+
+**Trial budget:** 36 cells (6 covariate arms × 2 directions × 3 horizons); declared as
+`cycle_pattern_ft` in `data/trial_ledger.jsonl` at criteria-commit time (2026-07-07T02:00:00Z).
+FDR family: `cycle_pattern_ft` (q=0.10).
+
+---
+
+### PHASE-CLOCK-1 gate
+
+**Claim:** The 6-state monthly phase-clock (capitulation / basing / early_expansion /
+late_expansion / rolling_over / early_contraction; FROZEN thresholds 20/80 and sign/slope
+rules, NOT fitted) promotes from display to default headline for a family iff
+dBrier(phase-conditioned survival vs age-only family KM) < 0 at h=6m with month-block-bootstrap
+90% CI excluding 0, survives BH-FDR q=0.10 within cycle_pattern_ft, AND the post-2010 era row
+independently shows dBrier < 0, on the 2024+ embargoed OOS window; cells with N<8 confirmed
+turns pool to family level (pooling printed, never hidden).
+Falsifier phase_clock_no_lift: if phase-conditioned 6m Brier is not strictly below age-only KM
+Brier for >=2 of 3 families on post-2010 embargoed OOS, phase-clock is promoted_null and all
+cards ship the KM prior.
+
+**Trial budget:** 18 gate cells (3 families × 2 directions × 3 horizons); declared as
+`cycle_pattern_ft` in `data/trial_ledger.jsonl` at criteria-commit time (2026-07-07T02:00:01Z).
+FDR family: `cycle_pattern_ft` (q=0.10).
+
+---
+
+### HAR-1 gate
+
+**Claim:** Historical-analog retrieval (kNN over normalized completed half-cycles + macro
+fingerprint, analogs capped at <=2 per rolling 24-month era window, effective-N reported in
+months) promotes from SHADOW to display-default per family iff OOS CRPS beats BOTH nulls
+(frozen median-half-cycle projection AND age-only family KM) with month-block-bootstrap 90%
+CI excluding 0, survives BH-FDR q=0.10 within cycle_pattern_analog, the post-2018 era row also
+improves, cone coverage >= 0.60, >=25 realized turns in the eval fold for that family, AND beats
+the within-era analog-shuffle null by the same pre-declared margin. Failing any criterion it
+stays SHADOW and ships the null (dead-stays-dead).
+
+**Trial budget:** 9 cells (3 families × 3 horizons); declared as `cycle_pattern_analog` in
+`data/trial_ledger.jsonl` at criteria-commit time (2026-07-07T02:00:02Z).
+FDR family: `cycle_pattern_analog` (q=0.10, NEW family — registered in
+`config/ruling_graph.yml` meta.known_fdr_families in this same PR).
+
+---
+
+**Amendment log entry (2026-07-07):** Wave 0 substrate + three gates preregistered. No
+evaluation has run. Column descriptions and oscillator computation details are in
+`engine/cycle_pattern/lake.py`. Trial-budget declarations in `data/trial_ledger.jsonl`
+(entries ts 2026-07-07T02:00:00Z through T02:00:02Z). Gate criteria above are FROZEN on merge.

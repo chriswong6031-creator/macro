@@ -138,6 +138,51 @@ def test_meta_covers_all_columns_with_pit_class(state, tmp_path):
 
 
 # --------------------------------------------------------------------------- #
+# monthly oscillator columns (Wave 0 substrate)
+# --------------------------------------------------------------------------- #
+def test_osc_columns_present(state):
+    """All six oscillator columns must be present in the state lake."""
+    for col in ("mmacd_hist", "mmacd_sign", "mmacd_slope", "mstoch_k", "mstoch_d", "osc_missing"):
+        assert col in state.columns, f"oscillator column {col!r} missing from state lake"
+
+
+def test_osc_missing_china_always_true(state):
+    """All China sector rows must carry osc_missing=True (no yahoo daily tape)."""
+    cn = state[state["engine"] == "china_sector_cycles"]
+    assert len(cn) == 4900
+    assert cn["osc_missing"].all(), "China sectors must be osc_missing=True (no yahoo tape)"
+    for col in ("mmacd_hist", "mmacd_sign", "mmacd_slope", "mstoch_k", "mstoch_d"):
+        assert cn[col].isna().all(), f"China {col} must be NaN when osc_missing=True"
+
+
+def test_osc_nonnull_for_liquid_entities(state):
+    """US sector and country entities with enough history must have non-null oscillators."""
+    # XLK and XLY have backfill from 2010-12-31 — well above the 40-bar threshold.
+    xlk = state[(state["native_id"] == "XLK") & (~state["osc_missing"])]
+    assert len(xlk) > 0, "XLK must have at least one non-missing oscillator row"
+    assert xlk["mmacd_hist"].notna().all()
+    assert xlk["mstoch_k"].between(0, 100).all(), "mstoch_k must be in [0, 100]"
+    assert xlk["mstoch_d"].between(0, 100).all(), "mstoch_d must be in [0, 100]"
+    assert xlk["mmacd_sign"].isin([-1.0, 1.0, 0.0]).all(), "mmacd_sign must be -1/0/+1"
+
+
+def test_osc_missing_early_periods_us(state):
+    """Rows with fewer than 40 completed monthly bars at stamp date must be osc_missing."""
+    # XLC launched 2018; backfill goes back to ~2019; early rows have <40 monthly bars.
+    xlc = state[state["native_id"] == "XLC"]
+    missing_xlc = xlc[xlc["osc_missing"]]
+    assert len(missing_xlc) > 0, "XLC early rows must be osc_missing (new ETF)"
+    # All missing rows should be NaN for float oscillator columns.
+    for col in ("mmacd_hist", "mstoch_k"):
+        assert missing_xlc[col].isna().all()
+
+
+def test_osc_row_count_unchanged(state):
+    """Adding oscillator columns must not change the row count (12519)."""
+    assert len(state) == 12519, f"row count changed: {len(state)} != 12519"
+
+
+# --------------------------------------------------------------------------- #
 # determinism + config wiring
 # --------------------------------------------------------------------------- #
 def test_deterministic_rebuild(entities, state):

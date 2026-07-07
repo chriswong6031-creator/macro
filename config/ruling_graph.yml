@@ -66,6 +66,7 @@ meta:
   known_fdr_families:
     - alpha_grammar_confluence_v1
     - cortex
+    - cycle_pattern_analog
     - cycle_pattern_ft
     - cycle_pattern_lattice
     - dilution_hazard
