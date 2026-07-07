@@ -290,6 +290,7 @@ function mtfTapeHtml(th){
       <div class="sbx" style="flex:1"><div class="v" style="font-size:15px">${fl.dollar_vol_surge!=null?fl.dollar_vol_surge+'×':'—'}</div><div class="k">${L('vol surge','量能脉冲')}<br>${L('vs 63d median','对比63日中位')}</div></div>
     </div>`;
     if(cov.coverage_pct!=null) h+=`<div class="muted sm" style="margin-top:7px">${L('Flow coverage','资金流覆盖')}: ${cov.n_with_volume||0}/${cov.n_live||0} ${L('members with volume','成分股有成交量')} (${Math.round(cov.coverage_pct*100)}%)</div>`;
+    if(t.danny_caveat) h+=`<div class="disc" style="margin-top:4px">${L(esc(t.danny_caveat.en||''),esc(t.danny_caveat.zh||''))}</div>`;
   }
   h+=`<div class="disc">${L('MTF gates against the long-term trend; whale and flow are context only.','多周期用于约束长期趋势；巨鲸与资金流仅作背景。')}</div></div>`;
   return h;

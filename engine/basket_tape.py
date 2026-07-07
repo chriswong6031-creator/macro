@@ -10,7 +10,10 @@ the basket candle so a THEME gets the same reads a stock does:
     realised-volatility percentile, resolved into a regime: IN_HOLE (coiling, no edge yet),
     COILED_UP/COILED_DOWN (pressed against an edge) or EXPANSION_UP/DOWN (the box just broke).
   • Whale accumulation — dannytrades.whale_accumulation (Chaikin-money-flow percentile 0–100):
-    are institutions accumulating the basket, and is that rising?
+    describes the accumulation-level band of the basket. DISPLAY-ONLY, descriptive — DT-W1a
+    (2026-07-06) found all DannyTrades directional reads FAILED time-controlled replication
+    (~60 effective months, month-block control); whale-based directional claims (fade/bounce)
+    were dropped. Labels and fields are descriptive-only (accumulation level), not forecasts.
   • Volume — basket TRADED DOLLAR-VOLUME and its surge z-score (raw share volume is meaningless
     across different-priced members; dollars are the right unit).
   • Net inflow/outflow — Chaikin Money Flow on the candle (dollar-weighted close-in-range), i.e.
@@ -20,6 +23,13 @@ The vol-hole leg is the ONE piece wired into the score (an expansion that RESOLV
 the only directional content; a squeeze itself is "coiled, wait"). Whale / volume / net-flow
 are DISPLAY-ONLY context (`directional: False`) — useful colour, but cross-sectional flow has
 ~0 validated forward edge (house finding), so they describe state, they don't forecast.
+
+DT-W1a evidence status (adjudication 2026-07-06,
+research/DANNYTRADES_NW_ADJUDICATION_AND_MASTERPLAN_BY_FABLE.md §7):
+  - All DannyTrades directional reads FAILED time-controlled replication.
+  - danny.buy / danny.sell / danny.buy_strong: descriptive composite-checklist state flags —
+    NOT directional buy/sell signals; present for structural completeness only.
+  - out["danny_caveat"]: imported from engine.dannytrades_chip._CAVEAT for downstream display.
 """
 from __future__ import annotations
 
@@ -29,6 +39,7 @@ import numpy as np
 import pandas as pd
 
 from engine import dannytrades as dt
+from engine.dannytrades_chip import _CAVEAT as _DT_CAVEAT_EN, _CAVEAT_ZH as _DT_CAVEAT_ZH
 
 log = logging.getLogger(__name__)
 
@@ -97,19 +108,21 @@ def _volhole(close: pd.Series, high: pd.Series, low: pd.Series) -> dict:
 
 
 def _whale(close, high, low, dvol) -> dict:
+    # DT-W1a (2026-07-06): directional reads failed time-controlled replication.
+    # Labels are accumulation-level descriptions only — no directional/promise framing.
     w = dt.whale_accumulation(high, low, close, dvol)
     cur = float(w.iloc[-1]) if pd.notna(w.iloc[-1]) else None
     d5 = float(w.iloc[-1] - w.iloc[-6]) if len(w.dropna()) > 6 and pd.notna(w.iloc[-6]) else None
     if cur is None:
         band, en, zh = "unknown", "—", "—"
     elif cur >= dt.CFG["whale_soar"]:
-        band, en, zh = "soaring", "Whales soaring in", "巨鲸大举吸筹"
+        band, en, zh = "soaring", "Accumulation high", "吸筹水平高"
     elif cur >= dt.CFG["whale_momentum"]:
-        band, en, zh = "accumulating", "Accumulating", "持续吸筹"
+        band, en, zh = "accumulating", "Accumulation elevated", "吸筹水平偏高"
     elif cur >= 35:
-        band, en, zh = "building", "Building", "吸筹初现"
+        band, en, zh = "building", "Accumulation moderate", "吸筹水平中等"
     else:
-        band, en, zh = "distributing", "Distributing / retail", "派发 / 散户主导"
+        band, en, zh = "distributing", "Accumulation low", "吸筹水平偏低"
     return {"accumulation": round(cur, 1) if cur is not None else None,
             "trend_5d": round(d5, 1) if d5 is not None else None,
             "band": band, "label_en": en, "label_zh": zh,
@@ -172,12 +185,15 @@ def basket_tape(candle: pd.DataFrame | None, coverage: dict | None = None) -> di
             last = sig.iloc[-1]
             out["whale"] = _whale(close, high, low, dvol)
             out["flow"] = _flow(close, high, low, dvol)
+            # DT-W1a: buy/sell/buy_strong are composite-checklist STATE flags, not
+            # directional signals — directional reads failed time-controlled replication.
             out["danny"] = {
                 "score": round(float(last["score"]), 1) if pd.notna(last["score"]) else None,
                 "buy": bool(last["danny_buy"]), "buy_strong": bool(last["danny_buy_strong"]),
                 "sell": bool(last["danny_sell"]), "ribbon": int(last["ribbon"]),
                 "above_poc": bool(last["above_poc"]), "directional": False,
             }
+            out["danny_caveat"] = {"en": _DT_CAVEAT_EN, "zh": _DT_CAVEAT_ZH}
         else:
             out["whale"] = out["flow"] = None
         if coverage:
