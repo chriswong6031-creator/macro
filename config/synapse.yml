@@ -4477,6 +4477,37 @@ artifacts:
       Coverage stamps: repurch_coverage (full|partial|annual_fallback|missing),
       _horizon_role, _display_only, _version.
 
+  # --- Codex B5: event-windows display block ---
+  event-windows:
+    path: "embedded: event_windows block inside site/stockdata/<TICKER>.json"
+    format: json
+    producer: engine/event_landmine.py
+    known_extra_writers:
+      - "engine/stock_fundamentals.py — compose() called inside panels(); result keyed as 'event_windows'"
+    owner_program: codex-b5
+    cadence: daily-engine
+    storage: git
+    asof_field: null
+    freshness_sla_hours: 30
+    schema: event_windows.v1
+    tier: display
+    horizon_role: display_context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - site/stockdata/<TICKER>.json
+    external_consumers: []
+    notes: >
+      Codex B5 — per-name event-windows display composition. Three legs:
+        earnings: next earnings date (calendar days away) from data/earnings/earnings.parquet.
+        fomc_within: next FOMC decision date (calendar days away) from the hardcoded
+          _FOMC_MEETINGS list in engine/catalyst_tone.py (through 2026-12).
+        debt: EDGAR balance-sheet snapshot (current_debt, long_term_debt, cash, net_debt,
+          period_end, filed) from data/edgar/statements_quarterly.parquet (PR #1782 columns).
+      FDA/PDUFA leg: SKIPPED — no credible free forward source.
+      DISPLAY-ONLY — horizon_role=display_context. MUST NOT feed board ordering, alert
+      triage, top-setups gates, or push floor. _display_only=True sentinel on all blocks.
+
   # --- Long-Hold LT-2c: expectation_state per-stock display block ---
   long-hold-expectation-state:
     path: "embedded: expectation_state inside site/stockdata/<TICKER>.json"

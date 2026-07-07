@@ -544,6 +544,15 @@
   .trap-status { font-size:11px; color:var(--muted); text-align:right; }
   .trap-fired .trap-status { color:var(--warn); font-weight:600; }
   .trap-foot { color:var(--muted); font-size:11px; margin:8px 0 0; font-style:italic; }
+  /* Codex B5: event-windows panel (display-only) */
+  .evwin-row { display:grid; grid-template-columns:140px 1fr auto; gap:6px; align-items:baseline;
+               padding:5px 0; border-bottom:1px solid color-mix(in srgb,var(--muted) 18%,transparent);
+               font-size:13px; }
+  .evwin-row:last-of-type { border-bottom:none; }
+  .evwin-label { color:var(--muted); font-size:12px; }
+  .evwin-val { color:var(--text); }
+  .evwin-note { font-size:11.5px; text-align:right; }
+  .evwin-foot { color:var(--muted); font-size:11px; margin:8px 0 0; font-style:italic; }
   /* W6-C HOLD tracker panel (display-only — basing state / invalidation line) */
   .hold-panel { margin:6px 0; padding:8px 12px; border-radius:8px; background:var(--panel2);
                border-left:3px solid var(--muted); font-size:13px; color:var(--text); }
@@ -684,6 +693,14 @@
         {{ help('Three independent de-escalation legs applied to high-quality names: (1) Basket-level crowding — is the theme this stock belongs to showing elevated institutional co-movement / extension? (2) Net insider selling — are insiders selling net > $500k? (3) Analyst consensus downgrading — is the net-buy count declining? Any firing leg is a caution flag only (never a sell or a score input). DISPLAY-ONLY context — does not affect any score, rank, or entry decision (LH-R10).',
           '针对高质量标的的三个独立降级腿：(1) 篮子层面拥挤——该股所属主题是否出现机构共振或超延伸？(2) 内部人净卖出——内部人净卖出是否超过50万美元？(3) 分析师共识下调——净买入计数是否在下降？任何触发腿仅为谨慎提示（从不作为卖出信号或评分输入）。仅供展示——不影响任何评分、排名或入场决策（LH-R10）。') }}</h2>
       <div id="r_trap"></div>
+    </div>
+
+    <!-- Codex B5: event-windows display panel (display-only; horizon_role=display_context) -->
+    <div class="panel" id="panel_evwin" style="display:none">
+      <h2>🗓 {{ t('Event windows', '事件窗口') }}
+        {{ help('Upcoming event-calendar context for this name: next earnings date (calendar days away), next FOMC meeting (calendar days away), and the most recent EDGAR balance-sheet debt snapshot (current debt due within ~12 months, long-term debt, cash, net debt). DISPLAY-ONLY context — descriptive facts only, does not affect any score, rank, or entry decision. Debt figures in USD as reported; lagged to the most recent SEC filing date shown.',
+          '当前标的即将到来的事件日历背景：下次财报日期（距今日历天数）、下次FOMC会议（距今日历天数），以及最新EDGAR资产负债表债务快照（约12个月内到期的流动债务、长期债务、现金、净债务）。仅供展示——纯描述性事实，不影响任何评分、排名或入场决策。债务数据为美元报告值，滞后至所示最新SEC申报日期。') }}</h2>
+      <div id="r_evwin"></div>
     </div>
 
     <div class="panel" id="panel_earn" style="display:none">
@@ -1688,6 +1705,81 @@
     show('panel_trap', true);
   }
 
+  // Codex B5: Event-windows panel (display-only, descriptive facts, horizon_role=display_context).
+  // Renders three legs: upcoming earnings date, next FOMC date, EDGAR debt snapshot.
+  // Fail-soft: individual legs are hidden when absent; panel hidden when no legs present.
+  function renderEventWindows(d) {
+    var box = el('r_evwin'), panel = el('panel_evwin');
+    if (!box || !panel) return;
+    var ew = d && d.event_windows;
+    if (!ew || ew._display_only === undefined) { show('panel_evwin', false); return; }
+    var isZh = lang() === 'zh';
+    function fmtUSD(v) {
+      if (v == null) return null;
+      var abs = Math.abs(v), neg = v < 0;
+      var s;
+      if (abs >= 1e12) s = (neg ? '-' : '') + (abs / 1e12).toFixed(2) + 'T';
+      else if (abs >= 1e9) s = (neg ? '-' : '') + (abs / 1e9).toFixed(2) + 'B';
+      else if (abs >= 1e6) s = (neg ? '-' : '') + (abs / 1e6).toFixed(1) + 'M';
+      else s = (neg ? '-$' : '$') + abs.toLocaleString();
+      return (abs >= 1e6 ? (neg ? '-$' : '$') : '') + s;
+    }
+    var rows = [];
+
+    // Leg 1: earnings
+    var earn = ew.earnings;
+    if (earn && earn.date) {
+      var td = earn.tdays, ts = earn.time ? ' · ' + earn.time : '';
+      var dstr = td === 0 ? (isZh ? '今天' : 'today')
+               : td === 1 ? (isZh ? '明天' : 'tomorrow')
+               : (isZh ? td + '天后' : 'in ' + td + 'd');
+      rows.push('<div class="evwin-row"><span class="evwin-label">' +
+        esc(isZh ? '下次财报' : 'Next earnings') + '</span><span class="evwin-val">' +
+        esc(earn.date) + ts + '</span><span class="evwin-note muted">' +
+        esc(dstr) + '</span></div>');
+    }
+
+    // Leg 2: FOMC
+    var fomc = ew.fomc_within;
+    if (fomc && fomc.date) {
+      var fd = fomc.tdays;
+      var fdstr = fd === 0 ? (isZh ? '今天' : 'today')
+                : fd === 1 ? (isZh ? '明天' : 'tomorrow')
+                : (isZh ? fd + '天后' : 'in ' + fd + 'd');
+      rows.push('<div class="evwin-row"><span class="evwin-label">' +
+        esc(isZh ? 'FOMC会议' : 'Next FOMC') + '</span><span class="evwin-val">' +
+        esc(fomc.date) + '</span><span class="evwin-note muted">' +
+        esc(fdstr) + '</span></div>');
+    }
+
+    // Leg 3: debt snapshot
+    var debt = ew.debt;
+    if (debt) {
+      var dfields = [];
+      if (debt.current_debt != null) dfields.push((isZh ? '流动债务: ' : 'Current debt: ') + esc(fmtUSD(debt.current_debt)));
+      if (debt.long_term_debt != null) dfields.push((isZh ? '长期债务: ' : 'LT debt: ') + esc(fmtUSD(debt.long_term_debt)));
+      if (debt.cash != null) dfields.push((isZh ? '现金: ' : 'Cash: ') + esc(fmtUSD(debt.cash)));
+      if (debt.net_debt != null) {
+        var ndSign = debt.net_debt < 0 ? 'pos' : debt.net_debt > 0 ? 'neg' : '';
+        dfields.push((isZh ? '净债务: ' : 'Net debt: ') + '<b class="' + ndSign + '">' + esc(fmtUSD(debt.net_debt)) + '</b>');
+      }
+      if (dfields.length) {
+        var filedNote = debt.filed ? (isZh ? ' · 申报日: ' : ' · filed ') + esc(debt.filed) : '';
+        rows.push('<div class="evwin-row evwin-debt"><span class="evwin-label">' +
+          esc(isZh ? 'EDGAR债务快照' : 'EDGAR debt snapshot') + '</span>' +
+          '<span class="evwin-val">' + dfields.join(' · ') + '</span>' +
+          '<span class="evwin-note muted">' + esc(isZh ? '期末: ' : 'period end: ') + esc(debt.period_end || '') + esc(filedNote) + '</span></div>');
+      }
+    }
+
+    if (!rows.length) { show('panel_evwin', false); return; }
+    box.innerHTML = rows.join('') +
+      '<p class="evwin-foot muted">' + esc(isZh
+        ? '仅供展示 · 纯描述性事实 · 不影响任何评分或入场决策 (Codex B5 · display-only)'
+        : 'Display-only context — descriptive facts only, no effect on any score or entry decision (Codex B5)') + '</p>';
+    show('panel_evwin', true);
+  }
+
   // internal state -> friendly "LABEL · ACTION" (mirrors engine/cycles.STATE_DISPLAY)
   var DISP = {{ state_display_json | safe }};
   // alert-feed conviction notes keyed by event type — the slimmed events embedded
@@ -2203,6 +2295,7 @@
 
     renderFundamentals(d);
     renderGreatCompanyTrap(d);   // B1: de-escalation overlay (display-only, LH-R10)
+    renderEventWindows(d);       // Codex B5: event-windows display block (display-only)
     renderDemandContext(d);
     renderFundFlow(d);
     // (relative-strength → evidence.rel_strength; fragility → falsifiers — both in SV.mount.

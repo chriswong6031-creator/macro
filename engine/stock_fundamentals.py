@@ -2025,6 +2025,12 @@ def panels() -> dict[str, dict]:
     except Exception as _ca_exc:  # noqa: BLE001
         log.warning("stock_fundamentals: capital_allocation inputs skipped (%s)", _ca_exc)
 
+    # Codex B5 — event-windows compose (DISPLAY-ONLY; horizon_role=display_context).
+    # Reuses _quarterly_df already loaded above for capital_allocation — no second read.
+    # Reuses `earnings` dict already loaded above.
+    # MUST NOT feed board ordering, alert triage, top-setups gates, or push floor.
+    from engine.event_landmine import compose as _ew_compose  # noqa: PLC0415
+
     M = _context_frame(fund, table, statements)
     nm_top_thr = _num(M["net_margin"].quantile(2 / 3)) if "net_margin" in M else None
 
@@ -2122,6 +2128,17 @@ def panels() -> dict[str, dict]:
                 capital_allocation_block=_t_ca,
                 expectation_state=_expect_states.get(str(t)) or None,
                 insider_context=(insider.get(t) or None),
+            ),
+            # Codex B5 — event-windows display block (DISPLAY-ONLY; horizon_role=display_context).
+            # Composes upcoming earnings date, next FOMC meeting, and debt-maturity context
+            # from pre-loaded inputs (no new I/O per ticker).
+            # Legs: earnings (date/tdays), fomc_within (date/tdays), debt (balance-sheet).
+            # FDA/PDUFA: SKIPPED — no free forward source; see engine/event_landmine.py TODO.
+            # MUST NOT feed board ordering, alert triage, top-setups gates, or push floor.
+            "event_windows": _ew_compose(
+                str(t),
+                earnings_row=earnings.get(str(t)),
+                quarterly_df=_quarterly_df,
             ),
         }
         out[str(t)] = _clean({k: v for k, v in blocks.items() if v})
