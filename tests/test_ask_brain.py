@@ -203,8 +203,10 @@ def test_read_tool_schemas_no_write_tools():
     assert "explain_options_context" in names
     assert "query_options_confluence" in names
     assert "list_options_contradictions" in names
-    # 7 original + 4 options + 3 factor = 14 total read tools
-    assert len(names) == 14
+    # Cycle-pattern tool (CPI P6 wave 1) must also be present
+    assert "read_cycle_pattern_state" in names
+    # 7 original + 4 options + 3 factor + 1 cycle-pattern = 15 total read tools
+    assert len(names) == 15
 
 
 def test_dispatch_refuses_write_tools():
@@ -1228,7 +1230,7 @@ def test_classify_question_factor_jargon_only_does_not_seed_explain_factor_conte
 # --- 15d. Schema count ---
 
 def test_read_tool_schemas_count_and_options_tools_present():
-    """_read_tool_schemas() returns exactly 14 tools (7 core + 4 options + 3 factor)."""
+    """_read_tool_schemas() returns exactly 15 tools (7 core + 4 options + 3 factor + 1 cycle-pattern)."""
     schemas = ab._read_tool_schemas()
     names = {s["name"] for s in schemas}
     # All four options tools present
@@ -1239,9 +1241,11 @@ def test_read_tool_schemas_count_and_options_tools_present():
         "list_options_contradictions",
     ):
         assert tool in names, f"{tool} missing from _read_tool_schemas()"
+    # Cycle-pattern read tool (CPI P6 wave 1) present
+    assert "read_cycle_pattern_state" in names
     # Total count
-    assert len(schemas) == 14, (
-        f"Expected 14 read tools, got {len(schemas)}: {sorted(names)}"
+    assert len(schemas) == 15, (
+        f"Expected 15 read tools, got {len(schemas)}: {sorted(names)}"
     )
     # Write tools absent
     for write_tool in ("flag_attention", "write_memo", "stake_hypothesis"):

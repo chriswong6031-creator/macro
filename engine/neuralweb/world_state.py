@@ -443,6 +443,81 @@ def _compose_options_weather(
     return out
 
 
+_CYCLE_PATTERN_NULL: dict = {
+    "as_of": None,
+    "model_epoch": None,
+    "gate_status": None,
+    "n_entities": None,
+    "n_with_hazard": None,
+    "families": None,
+    "truth_summary": None,
+    "note": (
+        "CPI cycle-pattern lobe (P6 wave 1): calibrated turn-hazard context. "
+        "Counts + gate verdicts only — per-entity rows live in the adapter "
+        "artifact (read_cycle_pattern_state). PRIOR cells are KM base rates. "
+        "Context/display only; may never originate, score, or escalate."
+    ),
+    "display_only": True,
+}
+
+
+def _compose_cycle_pattern(root: "Path | str | None" = None) -> dict:
+    """Compose the cycle_pattern sub-block (CPI P6 wave 1).
+
+    Follows the _compose_factor_weather / _compose_options_weather discipline:
+    all data loading internal, display_only=True always, try/except at the
+    wiring site returns the null-filled fallback.
+
+    Reads ONLY the committed adapter artifact
+    data/neuralweb/cycle_pattern_state.json (built by
+    scripts/build_cycle_pattern_state.py) — never the cycle-pattern lake
+    directly (CPI consumer-matrix rule: the NW lobe consumes the compact
+    summary, not raw lake parquets).
+
+    Counts-only in world_state (the bottom_sensors discipline): the per-entity
+    hazard rows stay in the adapter artifact, reachable via the
+    read_cycle_pattern_state cortex tool. gate_status carries the W4.2
+    per-cell PASS|PRIOR verdicts so every downstream display can badge its
+    numbers (no naked probabilities — UI-HZ-1).
+    """
+    repo = _repo_root(root)
+    path = repo / "data" / "neuralweb" / "cycle_pattern_state.json"
+
+    out = dict(_CYCLE_PATTERN_NULL)
+    if not path.exists():
+        return out
+    try:
+        state = json.loads(path.read_text(encoding="utf-8"))
+        if not isinstance(state, dict):
+            log.warning("cycle_pattern: adapter artifact is not a dict — null lobe")
+            return out
+        entities = state.get("entities") or []
+        families: dict[str, int] = {}
+        n_with_hazard = 0
+        for e in entities:
+            if not isinstance(e, dict):
+                continue
+            fam = e.get("family") or "unknown"
+            families[fam] = families.get(fam, 0) + 1
+            if e.get("hazard_1m_p") is not None or e.get("hazard_3m_p") is not None \
+                    or e.get("hazard_6m_p") is not None:
+                n_with_hazard += 1
+        out["as_of"] = _clean(state.get("asof"))
+        out["model_epoch"] = _clean(state.get("model_epoch"))
+        out["gate_status"] = state.get("gate_status") or None
+        out["n_entities"] = len(entities)
+        out["n_with_hazard"] = n_with_hazard
+        out["families"] = dict(sorted(families.items())) or None
+        out["truth_summary"] = state.get("truth_summary") or None
+        if state.get("degraded_notes"):
+            out["degraded_notes"] = state["degraded_notes"]
+    except Exception as exc:  # noqa: BLE001
+        log.warning("cycle_pattern: compose failed — %s", exc)
+    # display_only is ALWAYS True regardless of artifact content.
+    out["display_only"] = True
+    return out
+
+
 def _compose_factor_weather(
     root: "Path | str | None" = None,
     prefer_artifact: bool = True,
@@ -912,6 +987,13 @@ def build_world_state(
             "share_pin_risk": None, "opex_days": None,
             "note": "lobe failed — null fallback", "display_only": True,
         }
+    # ── 6c. cycle_pattern lobe (CPI P6 wave 1) — one wiring line, loading inside ──
+    try:
+        cycle_pattern_block: dict = _compose_cycle_pattern(root=repo)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("world_state: cycle_pattern lobe failed — %s", exc)
+        gaps.append(f"cycle_pattern: {exc}")
+        cycle_pattern_block = dict(_CYCLE_PATTERN_NULL)
 
     # ── 7. Contradictions summary (W4) ───────────────────────────────────────
     contradictions_block: dict | None = None
@@ -957,6 +1039,7 @@ def build_world_state(
         "alerts": alerts_block,
         "factor_weather": factor_weather_block,  # §5.4 wiring line (RULING-B)
         "options_weather": options_weather_block,  # Options→NW W-B wiring line (RO-1)
+        "cycle_pattern": cycle_pattern_block,  # CPI P6 wave-1 wiring line (display-only)
         "qi": None,
         "qi_note": (
             "pending joint QI border ruling (masterplan W1) — "

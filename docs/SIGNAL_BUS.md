@@ -13,7 +13,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | btc-vector | 5 |
 | china-alpha | 7 |
 | china-intel-hub | 2 |
-| cycle-intelligence | 13 |
+| cycle-intelligence | 14 |
 | dannytrades | 1 |
 | engine-fix | 16 |
 | entry-stack-expansion | 2 |
@@ -42,7 +42,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 105 |
+| display | 106 |
 | infrastructure | 63 |
 | scored | 4 |
 | shadow | 38 |
@@ -51,7 +51,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 201 |
+| git | 202 |
 | gitignored-local | 6 |
 | r2 | 3 |
 
@@ -95,6 +95,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | sector-cycles-forward-log | `data/sector_cycles/forward_log.parquet` | parquet | daily-engine | shadow | 5 | 0 |
 | hazard-model | `data/hazard/model_price_c4414dcb.json` | json | on-demand | scored | 4 | 0 |
 | cycle-pattern-entities | `data/cycle_pattern/entities.parquet` | parquet | on-demand | infrastructure | 1 | 0 |
+| cycle-pattern-state | `data/neuralweb/cycle_pattern_state.json` | json | daily-engine | display | 1 | 0 |
 | cycle-pattern-truths | `data/cycle_pattern/truths.jsonl` | jsonl | on-demand | display | 1 | 0 |
 | cycle-pattern-outcomes | `data/cycle_pattern/outcomes.parquet` | parquet | on-demand | infrastructure | 0 | 0 |
 | cycle-pattern-state-daily-live | `data/cycle_pattern/state_daily_live.parquet` | parquet | daily-engine | infrastructure | 0 | 0 |
