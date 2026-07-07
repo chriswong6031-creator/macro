@@ -5,6 +5,9 @@ Deliverable: data/edgar/statements_quarterly.parquet
   Schema: ticker, fiscal_year (int), fiscal_quarter (int 1-4), period_end (date),
           filed (date), revenue, cogs, gross_profit, op_income, ni, cfo, capex,
           shares (CommonStockSharesOutstanding), repurchases (PaymentsForRepurchaseOfCommonStock),
+          long_term_debt (LongTermDebtNoncurrent), current_debt (DebtCurrent→LongTermDebtCurrent),
+          cash (CashAndCashEquivalentsAtCarryingValue),
+          net_debt (= long_term_debt + current_debt − cash; None when no debt tags present),
           as_of (ISO timestamp)
   Dedup rule: for each (ticker, fiscal_year, fiscal_quarter) key, the LATEST-FILED row wins
               on re-runs (idempotent; restatements update the stored value).
@@ -85,6 +88,18 @@ BALANCE_Q = {
 REPURCHASE_Q = {
     "repurchases": ["PaymentsForRepurchaseOfCommonStock",
                     "PaymentsForRepurchaseOfEquity"],
+}
+# BALANCE / INSTANT (USD): debt + cash, as-of the fiscal quarter-end date.  Needed
+# for the S11 (Buyback-Floor Washout) rejection rule "net-debt rising concurrent with
+# buyback → demote to context" — the debt-funded-buyback failure mode.  net_debt is
+# derived per row (long_term_debt + current_debt − cash).  current_debt prefers the
+# total DebtCurrent tag and falls back to LongTermDebtCurrent (current portion of LTD
+# only) when DebtCurrent is untagged — a documented undercount for names with untagged
+# short-term borrowings, acceptable for the QoQ *direction* the rule keys on.
+BALANCE_USD_Q = {
+    "long_term_debt": ["LongTermDebtNoncurrent"],
+    "current_debt": ["DebtCurrent", "LongTermDebtCurrent"],
+    "cash": ["CashAndCashEquivalentsAtCarryingValue"],
 }
 QUARTERLY_FP = {"Q1", "Q2", "Q3", "Q4"}
 QUARTERLY_FORMS = {"10-Q", "10-Q/A", "10-K", "10-K/A"}  # 10-K includes Q4 quarterly data
@@ -193,6 +208,8 @@ def _statements_quarterly(cik: int, ua: str) -> list[dict]:
         series[key] = _concept_q(usgaap, names, instant=False)
     for key, names in BALANCE_Q.items():
         series[key] = _concept_q(usgaap, names, unit="shares", instant=True)
+    for key, names in BALANCE_USD_Q.items():
+        series[key] = _concept_q(usgaap, names, unit="USD", instant=True)
     for key, names in REPURCHASE_Q.items():
         series[key] = _concept_q(usgaap, names, instant=False)
 
@@ -221,6 +238,14 @@ def _statements_quarterly(cik: int, ua: str) -> list[dict]:
             row["gross_profit"] = row["revenue"] - row["cogs"]
         if row.get("revenue") is None and row.get("gross_profit") is not None and row.get("cogs") is not None:
             row["revenue"] = row["gross_profit"] + row["cogs"]
+        # Derive net_debt = total debt − cash.  None only when NO debt tag is present
+        # (a missing single component is treated as 0; missing cash is treated as 0 —
+        # documented in BALANCE_USD_Q: the QoQ direction, not the absolute level, binds).
+        ltd, cur, csh = row.get("long_term_debt"), row.get("current_debt"), row.get("cash")
+        if ltd is None and cur is None:
+            row["net_debt"] = None
+        else:
+            row["net_debt"] = (ltd or 0.0) + (cur or 0.0) - (csh or 0.0)
         row["period_end"] = period_end
         row["filed"] = filed
         rows.append(row)
