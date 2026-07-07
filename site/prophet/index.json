@@ -1,0 +1,115 @@
+{
+  "schema": "prophet.index/v1",
+  "asof": "2026-07-07",
+  "cadence": "nightly-EOD",
+  "authority_tier": "display",
+  "gate_go": false,
+  "plan_count": 6,
+  "active_count": 5,
+  "plans": [
+    {
+      "id": "UBER-BULL-20260623",
+      "asset": "UBER",
+      "direction": "BULL",
+      "entry": 74.43,
+      "invalidation": 66.55,
+      "targets": [
+        86.25,
+        98.07
+      ],
+      "trigger": 75.59,
+      "option_contract": null,
+      "_r_unit": 7.88,
+      "_conviction_score": 70,
+      "_signal_date": "2026-06-23",
+      "phase": "pre_trigger",
+      "management_confidence": 68.0,
+      "recommended_action": "wait"
+    },
+    {
+      "id": "COIN-BULL-20260702",
+      "asset": "COIN",
+      "direction": "BULL",
+      "entry": 165.5,
+      "invalidation": 154.0805,
+      "targets": [
+        182.6293,
+        199.7585
+      ],
+      "trigger": 168.9,
+      "option_contract": null,
+      "_r_unit": 11.4195,
+      "_conviction_score": 67,
+      "_signal_date": "2026-07-02",
+      "phase": "invalidated",
+      "management_confidence": 8.0,
+      "recommended_action": "invalidated"
+    },
+    {
+      "id": "LRN-BULL-20260605",
+      "asset": "LRN",
+      "direction": "BULL",
+      "entry": 90.44,
+      "invalidation": 70.26,
+      "targets": [
+        120.71,
+        150.98
+      ],
+      "trigger": 91.66,
+      "option_contract": null,
+      "_r_unit": 20.18,
+      "_conviction_score": 62,
+      "_signal_date": "2026-06-05",
+      "phase": "pre_trigger",
+      "management_confidence": 67.8,
+      "recommended_action": "wait"
+    },
+    {
+      "id": "BA-BULL-20260702",
+      "asset": "BA",
+      "direction": "BULL",
+      "entry": 226.5,
+      "invalidation": 183.53,
+      "targets": [
+        290.955,
+        355.41
+      ],
+      "trigger": 228.5,
+      "option_contract": {
+        "right": "C",
+        "strike": 220.0,
+        "expiry": "2026-09-18",
+        "entry_premium": 18.35,
+        "freshness": "EOD mark",
+        "delta_approx": 0.6232,
+        "note": "delta-targeted (0.60)"
+      },
+      "_r_unit": 42.97,
+      "_conviction_score": 46,
+      "_signal_date": "2026-07-02",
+      "phase": "pre_trigger",
+      "management_confidence": 57.8,
+      "recommended_action": "wait"
+    },
+    {
+      "id": "SBUX-BULL-20260702",
+      "asset": "SBUX",
+      "direction": "BULL",
+      "entry": 104.3,
+      "invalidation": 83.63,
+      "targets": [
+        135.305,
+        166.31
+      ],
+      "trigger": 104.9,
+      "option_contract": null,
+      "_r_unit": 20.67,
+      "_conviction_score": 42,
+      "_signal_date": "2026-07-02",
+      "phase": "pre_trigger",
+      "management_confidence": 67.8,
+      "recommended_action": "wait"
+    }
+  ],
+  "note": "DISPLAY-ONLY. All plans are display-tier artifacts. No signal has passed a forward ledger gate. The word 'validated' is forbidden in user-facing text. Nightly is the sole advancer of the forward ledger."
+}

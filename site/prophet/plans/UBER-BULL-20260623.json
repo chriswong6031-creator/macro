@@ -1,0 +1,34 @@
+{
+  "schema": "prophet.trade_plan/v1",
+  "id": "UBER-BULL-20260623",
+  "asof": "2026-07-07",
+  "asset": "UBER",
+  "direction": "BULL",
+  "thesis": "UBER [TURN SIGNALED] \u2014 conviction 70/100 (neutral). Drivers: tailwind. Cautions: accounting watch. Entry grade: strong. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; no validated signal; display-tier artifact.",
+  "source_engines": [
+    "us_standouts_buy_lane",
+    "neural_web"
+  ],
+  "trigger": 75.59,
+  "entry": 74.43,
+  "invalidation": 66.55,
+  "targets": [
+    86.25,
+    98.07
+  ],
+  "horizon_days": 45,
+  "min_hold_days": 10,
+  "tranche": 1,
+  "option_contract": null,
+  "management_ref": "prophet/state/UBER-BULL-20260623.json",
+  "authority_tier": "display",
+  "reliability": {
+    "plan": "display \u2014 us_standouts buy-lane originated; display-only until forward ledger gate passes",
+    "option_premium": "null \u2014 symbol not in ThetaData store"
+  },
+  "_signal_date": "2026-06-23",
+  "_conviction_score": 70,
+  "_act_level": 1,
+  "_r_unit": 7.88,
+  "_gate_go": false
+}
