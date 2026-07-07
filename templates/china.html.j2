@@ -533,13 +533,16 @@
     <div class="act-grid">
       {% macro sactcol(cls, title_en, title_zh, items) %}
       {% if items %}
-      <div class="act-col {{ cls }}">
+      <div class="act-col {{ cls }} lst-wrap">
         <h3>{{ t(title_en, title_zh) }} · {{ items|length }}</h3>
+        <div class="lst-collapse is-collapsed">
         {% for it in items %}
         <div class="act-item"><a class="an" href="sectors/{{ it.ticker }}.html">{{ td(it.name) }}</a>
           <div class="at">{{ td(it.label) }}{% if it.days is not none %} · ~{{ it.days }}{{ t('d', '天') }}{% endif %}</div>
         </div>
         {% endfor %}
+        </div>
+        {% if items|length > 5 %}<button class="lst-more" type="button" aria-expanded="false"><span class="lm-show">{{ t('Show more', '显示更多') }} ▾</span><span class="lm-hide">{{ t('Show less', '收起') }} ▴</span></button>{% endif %}
       </div>
       {% endif %}
       {% endmacro %}
