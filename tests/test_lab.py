@@ -324,3 +324,128 @@ def test_bench_returns_series():
 
     s = lab.bench("_GSPC")
     assert isinstance(s, pd.Series)
+
+
+# ---------------------------------------------------------------------------
+# 13. characterize() returns a dict and writes indicator_characterization.json
+# ---------------------------------------------------------------------------
+
+def test_characterize_returns_dict_and_writes_json():
+    """characterize() must return a dict with per-indicator keys and write JSON."""
+    import json
+    import tempfile
+    from pathlib import Path
+    from unittest import mock
+    from engine import lab
+
+    universe = _fake_universe(n_tickers=3, n_bars=600)
+
+    # Patch the _LAB_DIR so the test does not write to the real data dir
+    with tempfile.TemporaryDirectory() as tmpdir:
+        fake_lab_dir = Path(tmpdir) / "lab"
+        with mock.patch.object(lab, "_LAB_DIR", fake_lab_dir):
+            result = lab.characterize(["rsi", "macd_hist"], universe)
+
+    assert isinstance(result, dict), "characterize() must return a dict"
+    assert "rsi" in result, "Result must contain 'rsi' key"
+    assert "macd_hist" in result, "Result must contain 'macd_hist' key"
+
+    for name in ("rsi", "macd_hist"):
+        entry = result[name]
+        assert isinstance(entry, dict), f"Entry for {name!r} must be a dict"
+        # Status must not be 'pending' (stub is gone)
+        assert entry.get("status") != "pending", (
+            f"Entry for {name!r} still shows stub status 'pending'"
+        )
+        # Must have the four characterization sections
+        for section in ("base_rate", "persistence", "regime", "orthogonality"):
+            assert section in entry, (
+                f"Entry for {name!r} missing section '{section}'"
+            )
+
+
+def test_characterize_unknown_indicator():
+    """characterize() must mark unknown indicator names rather than raising."""
+    import tempfile
+    from pathlib import Path
+    from unittest import mock
+    from engine import lab
+
+    universe = _fake_universe(n_tickers=2, n_bars=300)
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        fake_lab_dir = Path(tmpdir) / "lab"
+        with mock.patch.object(lab, "_LAB_DIR", fake_lab_dir):
+            result = lab.characterize(["__not_a_real_indicator__"], universe)
+
+    assert result["__not_a_real_indicator__"]["status"] == "unknown_indicator"
+
+
+def test_characterize_writes_json():
+    """characterize() must write data/lab/indicator_characterization.json."""
+    import json
+    import tempfile
+    from pathlib import Path
+    from unittest import mock
+    from engine import lab
+
+    universe = _fake_universe(n_tickers=2, n_bars=300)
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        fake_lab_dir = Path(tmpdir) / "lab"
+        with mock.patch.object(lab, "_LAB_DIR", fake_lab_dir):
+            lab.characterize(["rsi"], universe)
+            json_path = fake_lab_dir / "indicator_characterization.json"
+            assert json_path.exists(), "indicator_characterization.json must be written"
+            data = json.loads(json_path.read_text())
+            assert "rsi" in data
+
+
+# ---------------------------------------------------------------------------
+# 14. list_signals() passthrough and catalog_backtest() returns a Trial
+# ---------------------------------------------------------------------------
+
+def test_list_signals_returns_list():
+    """list_signals() must return a list of dicts with signal_id keys."""
+    from engine import lab
+
+    sigs = lab.list_signals()
+    assert isinstance(sigs, list), "list_signals() must return a list"
+    # Catalog may be empty if source modules are missing — just check types
+    for entry in sigs:
+        assert isinstance(entry, dict), "Each signal entry must be a dict"
+        assert "signal_id" in entry, "Each entry must have 'signal_id'"
+
+
+def test_list_signals_family_filter():
+    """list_signals(family=...) must filter to the given family."""
+    from engine import lab
+
+    all_sigs = lab.list_signals()
+    if not all_sigs:
+        return  # empty catalog in CI; skip
+    first_family = all_sigs[0]["family"]
+    filtered = lab.list_signals(family=first_family)
+    assert all(s["family"] == first_family for s in filtered), (
+        "list_signals(family=...) returned signals from a different family"
+    )
+
+
+def test_catalog_backtest_returns_trial():
+    """catalog_backtest(signal_id, universe) must return a Trial."""
+    from engine import lab, tech_catalog
+
+    # Pick the first available signal from the catalog
+    sigs = tech_catalog.list_signals()
+    if not sigs:
+        pytest.skip("tech_catalog returned an empty catalog; skipping")
+
+    signal_id = sigs[0]["signal_id"]
+    universe = _fake_universe(n_tickers=2, n_bars=600)
+
+    trial = lab.catalog_backtest(signal_id, universe, cost_bps=5.0)
+    assert isinstance(trial, lab.Trial), (
+        f"catalog_backtest must return a Trial, got {type(trial)}"
+    )
+    assert trial.survivorship_biased is True
+    assert isinstance(trial.stats, dict)

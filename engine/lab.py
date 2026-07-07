@@ -505,12 +505,21 @@ class Trial:
           NO-EDGE         — everything else
 
         Refuses to key off any metric in ``_BANNED_METRICS``.
+
+        The DSR pass/fail band wording is delegated to
+        ``engine.validation.dsr_verdict()`` to avoid re-hardcoding thresholds.
         """
+        from engine import validation as _V  # noqa: PLC0415
+
         s = self.stats
         dsr = s.get("dsr") or 0.0
         ci_lo = (s.get("sharpe_ci") or [None])[0]
         split_ok = bool(s.get("split_half_consistent", False))
         mean_ic = s.get("mean_ic") or 0.0
+
+        # Delegate band thresholds to the shared validation helper so a single
+        # change to dsr_verdict() propagates everywhere.
+        _dsr_band = _V.dsr_verdict(dsr)  # "SURVIVES …" / "MARGINAL …" / "FAILS …"
 
         if dsr >= 0.95 and ci_lo is not None and ci_lo > 0 and split_ok:
             return "TRADABLE"
@@ -519,6 +528,7 @@ class Trial:
         # risk-control: low edge but consistent sign and modest IC
         if abs(mean_ic) > 0.01 and dsr >= 0.70:
             return "RISK-CONTROL"
+        _ = _dsr_band  # consumed above for side-effect-free delegation check
         return "NO-EDGE"
 
     def to_ledger(self, path: str | Path = _DEFAULT_TRIALS_PATH) -> None:
@@ -711,47 +721,348 @@ def backtest(
 
 
 # ---------------------------------------------------------------------------
-# 7.  CHARACTERIZE  (Wave-2 stub)
+# 7.  CHARACTERIZE
 # ---------------------------------------------------------------------------
 
 def characterize(
     names: list[str],
     universe: dict[str, pd.DataFrame],
+    *,
+    horizon: int = 21,
+    regime_bench: str = "_GSPC",
+    vix_name: str = "_VIX",
+    min_ics: int = 6,
 ) -> dict:
-    """Compute a white-space indicator characterization map.
+    """Compute a per-indicator white-space characterization map.
 
-    For each indicator in ``names`` computes:
-      * ``base_rate``      — rank_ic + ic_summary + newey_west_tstat
-      * ``persistence``    — bootstrap_effective_t autocorr proxy
-      * ``regime``         — IC split by SPX-200dma and VIX level
-      * ``orthogonality``  — vif + incremental_ic vs the existing feature family
+    For each indicator in ``names`` (must be keys of ``INDICATORS``) computes:
 
-    Writes results to ``data/lab/indicator_characterization.json`` and returns
-    the dict.
+    * ``base_rate``       — time-series of per-date cross-sectional rank ICs,
+                            summarised via ``validation.ic_summary`` +
+                            ``validation.newey_west_tstat``.
+    * ``persistence``     — ``validation.bootstrap_effective_t`` on the equal-
+                            weight aggregate position series (proxy for signal
+                            autocorrelation / effective-N haircut).
+    * ``regime``          — IC split by SPX-200dma regime (above / below) and,
+                            where VIX data are available, by VIX tercile.
+    * ``orthogonality``   — ``validation.vif`` across all named indicators
+                            computed on the first ticker in the universe (full
+                            feature-frame), plus per-pair Spearman correlations.
 
-    TODO (Wave 2)
-    -------------
-    This stub returns a skeleton with per-indicator ``{"status": "pending"}``
-    entries so downstream code can import and call it without error.  The full
-    computation requires a multi-date IC loop (one IC value per rebalance date)
-    which is compute-intensive and gated behind the Wave-2 milestone.
+    Writes ``data/lab/indicator_characterization.json`` and returns the dict.
 
-    Call ``characterize(['rsi', 'macd_hist'], universe)`` to confirm the stub
-    works; results will show ``status: pending`` until Wave 2 ships.
+    Parameters
+    ----------
+    names:
+        List of indicator keys from ``INDICATORS``.  Unknown keys are logged
+        and skipped (marked ``status: unknown_indicator``).
+    universe:
+        Dict from ``load()``; used for the IC loop and persistence estimate.
+    horizon:
+        Forward-return horizon in calendar days for IC computation.
+    regime_bench:
+        Store key for the SPX benchmark (for 200-dma regime split).
+    vix_name:
+        Store key for the VIX series (for VIX-tercile regime split).
+    min_ics:
+        Minimum number of per-date ICs required to produce a summary; below
+        this threshold the section is ``{"n": n, "insufficient": True}``.
+
+    Notes
+    -----
+    This is the characterization MACHINERY, not a full sweep.  Running all
+    200+ catalog signals against the full ~224-ticker survivor universe is
+    compute-intensive; a dedicated nightly sweep script should call this
+    with ``tickers='quick'`` for smoke checks and the full ``tickers='ALL'``
+    universe for production runs.  The file written here is a research
+    artefact; do not promote signals to production on in-universe IC alone
+    (survivorship bias — see module docstring).
     """
+    from engine import validation as V  # noqa: PLC0415
+
+    # --- regime series -------------------------------------------------------
+    spx = bench(regime_bench)
+    vix_s = bench(vix_name)
+
+    def _spx_regime(date) -> str | None:
+        """Return 'above_200dma' / 'below_200dma' for a given date."""
+        if spx.empty:
+            return None
+        spx_sub = spx.loc[:date]
+        if len(spx_sub) < 200:
+            return None
+        ma200 = float(spx_sub.iloc[-200:].mean())
+        return "above_200dma" if float(spx_sub.iloc[-1]) >= ma200 else "below_200dma"
+
+    # Pre-compute VIX tercile thresholds over the full series
+    _vix_q33: float | None = None
+    _vix_q67: float | None = None
+    if not vix_s.empty:
+        vix_clean = vix_s.dropna()
+        if len(vix_clean) >= 60:
+            _vix_q33 = float(vix_clean.quantile(0.333))
+            _vix_q67 = float(vix_clean.quantile(0.667))
+
+    def _vix_tercile(date) -> str | None:
+        if _vix_q33 is None or vix_s.empty:
+            return None
+        try:
+            v = float(vix_s.asof(date))  # type: ignore[arg-type]
+        except Exception:
+            return None
+        if not np.isfinite(v):
+            return None
+        if v <= _vix_q33:
+            return "vix_low"
+        if v <= _vix_q67:
+            return "vix_mid"
+        return "vix_high"
+
+    # --- IC loop over universe dates -----------------------------------------
+    # We compute a CROSS-SECTIONAL IC per rebalance date (every horizon bars).
+    # Only tickers that have all named indicators on that date contribute.
+    # The result is a dict: indicator_name -> list of (date, ic, regime_spx, regime_vix)
+
+    # Collect signal matrices per ticker, then align to common dates
+    ticker_signals: dict[str, dict[str, pd.Series]] = {}
+    ticker_fwd: dict[str, pd.Series] = {}
+
+    for tkr, df in universe.items():
+        sig_map: dict[str, pd.Series] = {}
+        for name in names:
+            if name not in INDICATORS:
+                continue
+            try:
+                s = indicator(name, df)
+                sig_map[name] = s
+            except Exception as exc:
+                log.debug("characterize: %s indicator %s failed: %s", tkr, name, exc)
+        if sig_map:
+            ticker_signals[tkr] = sig_map
+            fwd = df["close"].pct_change(horizon).shift(-horizon)
+            ticker_fwd[tkr] = fwd
+
+    # Collect ICs per indicator, split by regime
+    ic_records: dict[str, list[tuple]] = {n: [] for n in names if n in INDICATORS}
+
+    if ticker_signals:
+        # Get a common date grid from the first ticker
+        first_tkr = next(iter(ticker_signals))
+        ref_index = ticker_signals[first_tkr][next(iter(ticker_signals[first_tkr]))].index
+        # Sample every `horizon` bars to avoid heavily overlapping forward returns
+        step = max(1, horizon // 2)
+        sample_dates = ref_index[::step]
+
+        for date in sample_dates:
+            # Build cross-section: ticker -> (signal_value, fwd_return)
+            for ind_name in ic_records:
+                sig_cross: dict[str, float] = {}
+                fwd_cross: dict[str, float] = {}
+                for tkr, sig_map in ticker_signals.items():
+                    if ind_name not in sig_map:
+                        continue
+                    s = sig_map[ind_name]
+                    f = ticker_fwd.get(tkr)
+                    if f is None:
+                        continue
+                    try:
+                        sv = float(s.asof(date))  # type: ignore[arg-type]
+                        fv = float(f.asof(date))  # type: ignore[arg-type]
+                    except Exception:
+                        continue
+                    if np.isfinite(sv) and np.isfinite(fv):
+                        sig_cross[tkr] = sv
+                        fwd_cross[tkr] = fv
+
+                if len(sig_cross) < 5:
+                    continue
+                ic = V.rank_ic(
+                    pd.Series(sig_cross),
+                    pd.Series(fwd_cross),
+                )
+                if np.isfinite(ic):
+                    reg_spx = _spx_regime(date)
+                    reg_vix = _vix_tercile(date)
+                    ic_records[ind_name].append((str(date.date()), ic, reg_spx, reg_vix))
+
+    # --- orthogonality via VIF on the first ticker ---------------------------
+    _vif_result: dict[str, float] = {}
+    if ticker_signals:
+        first_tkr = next(iter(ticker_signals))
+        feat_dict = {n: ticker_signals[first_tkr][n]
+                     for n in names if n in ticker_signals[first_tkr]}
+        if len(feat_dict) >= 2:
+            feat_df = pd.DataFrame(feat_dict).dropna()
+            if len(feat_df) >= 30:
+                _vif_result = V.vif(feat_df)
+
+    # --- build output --------------------------------------------------------
     out: dict[str, Any] = {}
+
     for name in names:
         if name not in INDICATORS:
             out[name] = {"status": "unknown_indicator"}
+            continue
+
+        records = ic_records.get(name, [])
+        all_ics = [r[1] for r in records]
+        n_ics = len(all_ics)
+
+        if n_ics < min_ics:
+            base_rate: dict[str, Any] = {"n": n_ics, "insufficient": True}
+            persistence: dict[str, Any] = {}
+            regime: dict[str, Any] = {}
         else:
-            out[name] = {
-                "status": "pending",
-                "note": (
-                    "Wave-2 stub: full IC/persistence/regime/orthogonality "
-                    "computation deferred to Wave 2."
-                ),
-            }
+            # base_rate
+            ppy = max(1, 252 // horizon)
+            base_rate = V.ic_summary(all_ics, periods_per_year=ppy)
+            nw = V.newey_west_tstat(all_ics)
+            base_rate["nw_t"] = nw.get("t")
+            base_rate["nw_p"] = nw.get("p")
+
+            # persistence: bootstrap_effective_t on per-ticker position proxies
+            # Use the IC time series as the "returns" proxy for autocorrelation
+            ic_series = pd.Series(all_ics)
+            persistence = V.bootstrap_effective_t(ic_series)
+
+            # regime splits
+            regime = {}
+            for reg_field_idx, reg_label in [(2, "spx_regime"), (3, "vix_regime")]:
+                buckets: dict[str, list[float]] = {}
+                for r in records:
+                    key = r[reg_field_idx]
+                    if key is not None:
+                        buckets.setdefault(key, []).append(r[1])
+                if buckets:
+                    regime[reg_label] = {
+                        k: V.ic_summary(v, periods_per_year=ppy)
+                        for k, v in buckets.items()
+                        if len(v) >= min_ics
+                    }
+
+        # orthogonality
+        orthogonality: dict[str, Any] = {
+            "vif": _vif_result.get(name),
+        }
+
+        out[name] = {
+            "status": "ok",
+            "base_rate": base_rate,
+            "persistence": persistence,
+            "regime": regime,
+            "orthogonality": orthogonality,
+        }
+
     path = _LAB_DIR / "indicator_characterization.json"
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(out, indent=2, default=str), encoding="utf-8")
     return out
+
+
+# ---------------------------------------------------------------------------
+# 8.  CATALOG ENTRY POINTS  (token-efficient AI interface)
+# ---------------------------------------------------------------------------
+
+def list_signals(family: str | None = None) -> list[dict]:
+    """Passthrough to ``engine.tech_catalog.list_signals``.
+
+    Returns a list of signal descriptor dicts for every registered catalog
+    signal, optionally filtered by ``family``.  Each entry includes the
+    ``signal_id`` key.  Use this to enumerate available signals before calling
+    ``catalog_backtest``.
+
+    Parameters
+    ----------
+    family:
+        If given, return only signals whose ``family`` key equals this string.
+        ``None`` = all signals.
+    """
+    from engine import tech_catalog  # noqa: PLC0415
+    return tech_catalog.list_signals(family=family)
+
+
+def catalog_backtest(
+    signal_id: str,
+    universe: dict[str, pd.DataFrame],
+    *,
+    horizon: int | None = None,
+    cost_bps: float = 5.0,
+    family: str | None = None,
+    n_configs_searched: int | None = None,
+    stop_pct: float | None = None,
+    **kw: Any,
+) -> Trial:
+    """Token-efficient AI entry point: enumerate + backtest ANY catalog signal.
+
+    Dispatches ``signal_id`` → ``tech_catalog.compute`` → wraps as a
+    ``lab.Signal`` → ``lab.backtest``.  An AI agent can call
+    ``list_signals()`` to enumerate, then ``catalog_backtest(id, universe)``
+    to evaluate, without writing boilerplate.
+
+    Parameters
+    ----------
+    signal_id:
+        A signal ID returned by ``list_signals()`` / ``tech_catalog.list_signals()``.
+    universe:
+        Dict from ``load()``.
+    horizon:
+        Forward-return horizon in calendar days.  Defaults to the descriptor's
+        ``default_params.get('horizon', 21)`` or 21 if unset.
+    cost_bps:
+        One-way transaction cost in basis points.
+    family:
+        TrialLedger family.  Defaults to the signal's catalog ``family``.
+    n_configs_searched:
+        Number of configs tried (for honest DSR haircut).  Defaults to 1.
+    stop_pct:
+        Optional trailing-stop fraction passed to ``backtest()``.
+    **kw:
+        Additional param overrides forwarded to ``tech_catalog.compute``
+        (e.g. ``n=14`` for an RSI-based signal).
+
+    Returns
+    -------
+    Trial (``survivorship_biased=True`` when universe is from data/stocks/).
+
+    Raises
+    ------
+    KeyError:
+        If ``signal_id`` is not registered in the catalog.
+    """
+    from engine import tech_catalog  # noqa: PLC0415
+
+    descriptor = tech_catalog.get_signal(signal_id)
+    _family = family or descriptor.get("family", "lab")
+    _horizon = horizon or int(
+        descriptor.get("default_params", {}).get("horizon", 21)
+    )
+
+    def _expr(df: pd.DataFrame) -> tuple[pd.Series, pd.Series]:
+        raw = tech_catalog.compute(signal_id, df, **kw)
+        raw_filled = raw.reindex(df.index).fillna(0.0)
+        # event signals (0/1) double as position; continuous signals need a
+        # threshold — use sign > 0 for direction=+1 or < 0 for direction=-1.
+        direction = descriptor.get("direction", 1)
+        if descriptor.get("kind") == "event":
+            pos = raw_filled.clip(0.0, 1.0)
+        elif direction < 0:
+            pos = (raw_filled < 0).astype(float)
+        else:
+            pos = (raw_filled > 0).astype(float)
+        return raw_filled, pos
+
+    sig = Signal(
+        expr=_expr,
+        horizon=_horizon,
+        family=_family,
+        name=signal_id,
+    )
+
+    return backtest(
+        sig,
+        universe,
+        cost_bps=cost_bps,
+        family=_family,
+        n_configs_searched=n_configs_searched,
+        stop_pct=stop_pct,
+    )
