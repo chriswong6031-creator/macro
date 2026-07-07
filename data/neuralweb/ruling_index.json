@@ -1,0 +1,3628 @@
+{
+  "schema": "neuralweb.ruling_index.v1",
+  "built_from": "research/**/*.md",
+  "as_of": "2026-07-06",
+  "n_rulings": 180,
+  "rulings": [
+    {
+      "id": "DT-R1",
+      "files": [
+        {
+          "path": "research/DANNYTRADES_NW_ADJUDICATION_AND_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 13,
+          "context": "Status: rulings of record DT-R1..DT-R12. Two builds authorized (DT-W1, DT-NW-1),"
+        },
+        {
+          "path": "research/DANNYTRADES_PHASE0.md",
+          "first_line_no": 8,
+          "context": "rulings DT-R1..R12; §7 Amendment DT-W1a 2026-07-06: all four contrarian reads FAILED time-controlled replication on the 2021+ survivorship-honest PIT panel — whale line dropped from the chip, extensio"
+        }
+      ],
+      "n_mentions": 3,
+      "truncated": false
+    },
+    {
+      "id": "DT-R10",
+      "files": [
+        {
+          "path": "research/DANNYTRADES_NW_ADJUDICATION_AND_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 156,
+          "context": "- **DT-R10 (record hygiene).** The phase-0 header's \"Not wired into any live"
+        }
+      ],
+      "n_mentions": 1,
+      "truncated": false
+    },
+    {
+      "id": "DT-R11",
+      "files": [
+        {
+          "path": "research/DANNYTRADES_NW_ADJUDICATION_AND_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 161,
+          "context": "- **DT-R11 (architecture constraints).** (a) Any DannyTrades-derived number is"
+        }
+      ],
+      "n_mentions": 1,
+      "truncated": false
+    },
+    {
+      "id": "DT-R12",
+      "files": [
+        {
+          "path": "research/DANNYTRADES_NW_ADJUDICATION_AND_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 13,
+          "context": "Status: rulings of record DT-R1..DT-R12. Two builds authorized (DT-W1, DT-NW-1),"
+        },
+        {
+          "path": "research/dannytrades/DT_W1_RESULTS.md",
+          "first_line_no": 5,
+          "context": "**Era law:** data/massive_stock_day/ 2021-07-06+ (DT-R12); no pre-2021 volume claims"
+        }
+      ],
+      "n_mentions": 4,
+      "truncated": false
+    },
+    {
+      "id": "DT-R13",
+      "files": [
+        {
+          "path": "research/DANNYTRADES_NW_ADJUDICATION_AND_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 322,
+          "context": "- **DT-R13 (restoration path).** Whale-based directional claims may return"
+        },
+        {
+          "path": "research/dannytrades/DT_W2_64Y_RESULTS.md",
+          "first_line_no": 1,
+          "context": "# DT-W2: 64-Year Month-Block Time-Control Re-Run — DT-R13 Settlement"
+        }
+      ],
+      "n_mentions": 9,
+      "truncated": false
+    },
+    {
+      "id": "DT-R14",
+      "files": [
+        {
+          "path": "research/DANNYTRADES_NW_ADJUDICATION_AND_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 326,
+          "context": "- **DT-R14 (time-control law).** Every future DannyTrades-family study — and"
+        },
+        {
+          "path": "research/ENTRY_INTELLIGENCE_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 132,
+          "context": "- 2026-07-06 — PM0 PREREG REGISTERED (dispatched-in lane). Signal Commons R2 gate condition met by P1.3 completion (2026-07-05); DT-R7 (#1732) declared the price-memory bundle DISPATCHABLE inside EI. "
+        },
+        {
+          "path": "research/TIME_CONFOUND_EXPOSURE_AUDIT.md",
+          "first_line_no": 4,
+          "context": "**Authority:** DT-W1a (research/dannytrades/DT_W1_RESULTS.md) + Ruling DT-R14 (research/DANNYTRADES_NW_ADJUDICATION_AND_MASTERPLAN_BY_FABLE.md §7)"
+        },
+        {
+          "path": "research/dannytrades/DT_W2_64Y_RESULTS.md",
+          "first_line_no": 3,
+          "context": "**Authority:** research/DANNYTRADES_NW_ADJUDICATION_AND_MASTERPLAN_BY_FABLE.md §7 (DT-R13, DT-R14)"
+        },
+        {
+          "path": "research/entry_intel/PM0_PRICE_MEMORY_BUNDLE_PREREG.md",
+          "first_line_no": 11,
+          "context": "**Revision r3, 2026-07-06 (pre-approval):** **DT-R14 landed on main mid-registration** (`research/TIME_CONFOUND_EXPOSURE_AUDIT.md`, #1755): on regime-limited replay cohorts, episode (ticker×ISO-week) "
+        }
+      ],
+      "n_mentions": 24,
+      "truncated": true
+    },
+    {
+      "id": "DT-R15",
+      "files": [
+        {
+          "path": "research/DANNYTRADES_NW_ADJUDICATION_AND_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 366,
+          "context": "- **DT-R15 (restoration DENIED; whale family CLOSED).** Pooled significance"
+        },
+        {
+          "path": "research/DANNYTRADES_PHASE0.md",
+          "first_line_no": 8,
+          "context": "rulings DT-R1..R12; §7 Amendment DT-W1a 2026-07-06: all four contrarian reads FAILED time-controlled replication on the 2021+ survivorship-honest PIT panel — whale line dropped from the chip, extensio"
+        },
+        {
+          "path": "research/dannytrades/DT_W2_64Y_RESULTS.md",
+          "first_line_no": 235,
+          "context": "(DT-W1a) already failed. **Restoration DENIED** — see adjudication §8 (DT-R15)."
+        }
+      ],
+      "n_mentions": 3,
+      "truncated": false
+    },
+    {
+      "id": "DT-R16",
+      "files": [
+        {
+          "path": "research/DANNYTRADES_NW_ADJUDICATION_AND_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 377,
+          "context": "- **DT-R16 (era-split disclosure law).** Any multi-decade pooled verdict in"
+        }
+      ],
+      "n_mentions": 1,
+      "truncated": false
+    },
+    {
+      "id": "DT-R2",
+      "files": [
+        {
+          "path": "research/DANNYTRADES_NW_ADJUDICATION_AND_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 79,
+          "context": "| 1 | Extension/no-chase engine + state JSON | `engine/extension.py` ext_z (live, ≥8 consumers); F3 anti-chase hard-gate **shadow** accruing (flip ≥2026-Q4, R-P2.1); `cycles.py` DON'T-CHASE tag (live)"
+        },
+        {
+          "path": "research/ENTRY_INTELLIGENCE_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 132,
+          "context": "- 2026-07-06 — PM0 PREREG REGISTERED (dispatched-in lane). Signal Commons R2 gate condition met by P1.3 completion (2026-07-05); DT-R7 (#1732) declared the price-memory bundle DISPATCHABLE inside EI. "
+        },
+        {
+          "path": "research/entry_intel/PM0_PRICE_MEMORY_BUNDLE_PREREG.md",
+          "first_line_no": 27,
+          "context": "- **DT-R7 / DT-R2 (hard ceiling, permanent):** every output of this family is **display-only candidate at most**. No artifact of this family may ever emit price-level trade-instruction fields — `neare"
+        }
+      ],
+      "n_mentions": 6,
+      "truncated": false
+    },
+    {
+      "id": "DT-R3",
+      "files": [
+        {
+          "path": "research/DANNYTRADES_NW_ADJUDICATION_AND_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 80,
+          "context": "| 2 | `sponsorship_pressure_proxy` ensemble + decay/retail/uncertainty | `sponsorship_state` frozen §C3 (display); SRSS shadow (#1479); CN 主力 flow velocity (IC≈−0.008, display); ETF flow (ISI R3 displ"
+        },
+        {
+          "path": "research/entry_intel/PM0_PRICE_MEMORY_BUNDLE_PREREG.md",
+          "first_line_no": 123,
+          "context": "- **No composite.** The five features are never summed, averaged, or fused into a \"price-memory score\" — that is the forbidden composite shape (Signal Commons R3 analog; DT-R3 precedent)."
+        }
+      ],
+      "n_mentions": 3,
+      "truncated": false
+    },
+    {
+      "id": "DT-R4",
+      "files": [
+        {
+          "path": "research/DANNYTRADES_NW_ADJUDICATION_AND_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 80,
+          "context": "| 2 | `sponsorship_pressure_proxy` ensemble + decay/retail/uncertainty | `sponsorship_state` frozen §C3 (display); SRSS shadow (#1479); CN 主力 flow velocity (IC≈−0.008, display); ETF flow (ISI R3 displ"
+        }
+      ],
+      "n_mentions": 3,
+      "truncated": false
+    },
+    {
+      "id": "DT-R5",
+      "files": [
+        {
+          "path": "research/DANNYTRADES_NW_ADJUDICATION_AND_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 81,
+          "context": "| 3 | 5-definition volatility-void box family | `engine/vol_squeeze.py` = defs 1+2 live (BBW+HVP dual gate, TTM Keltner); Danny `volatility_hole` already tested → null-as-buy; S-SQ species authorized "
+        }
+      ],
+      "n_mentions": 2,
+      "truncated": false
+    },
+    {
+      "id": "DT-R6",
+      "files": [
+        {
+          "path": "research/DANNYTRADES_NW_ADJUDICATION_AND_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 82,
+          "context": "| 4 | `big_leader_core_eligible` + passports | `thesis_funnel.py` AND-gate shadow (LH-R2-shaped); LH-R12 Σ-ceiling 29/40; hold-book overlap = standing CUT; LEADER_STARTER_SIZE = NO-GO; theme momentum "
+        }
+      ],
+      "n_mentions": 2,
+      "truncated": false
+    },
+    {
+      "id": "DT-R7",
+      "files": [
+        {
+          "path": "research/DANNYTRADES_NW_ADJUDICATION_AND_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 83,
+          "context": "| 5 | Support-ladder DCA policy object | `poc_proxy` computed (live in chip/basket_tape); `hold.py` invalidation levels; WAIT-GRID-1 (delay ladder ≠ price ladder); **price-memory bundle parked behind "
+        },
+        {
+          "path": "research/ENTRY_INTELLIGENCE_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 53,
+          "context": "Kill list (standing, from ChatGPT-plan adjudication): hand-asserted weights; 12-sector × 8-class backtest matrix; options-flow layer (parked; ThetaData program at STOP); overhead-supply/volume-profile"
+        },
+        {
+          "path": "research/SIGNAL_COMMONS_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 51,
+          "context": "| AVWAP / volume-profile bundle | EI §2 ruling (R2) | ~~EI P1.3 completes~~ GATE MET 2026-07-05; DISPATCHED 2026-07-06 per DT-R7 → EI `research/entry_intel/PM0_PRICE_MEMORY_BUNDLE_PREREG.md` (one fami"
+        },
+        {
+          "path": "research/entry_intel/PM0_PRICE_MEMORY_BUNDLE_PREREG.md",
+          "first_line_no": 16,
+          "context": "3. **DT-R7** (`DANNYTRADES_NW_ADJUDICATION_AND_MASTERPLAN_BY_FABLE.md` §3, PR #1732, 2026-07-06): the bundle is declared **DISPATCHABLE inside EI** as one family with one FDR budget; the DCA policy ob"
+        }
+      ],
+      "n_mentions": 19,
+      "truncated": false
+    },
+    {
+      "id": "DT-R8",
+      "files": [
+        {
+          "path": "research/DANNYTRADES_NW_ADJUDICATION_AND_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 84,
+          "context": "| 6 | Monthly trim & thesis-break desk | TRIM-GRID-1 (6 cells, descriptive); EXIT-GRID-1 regret ledger (15 cells); reduce-gate = board's only validated edge; RUL-F3.15 role taxonomy = charter-ready sp"
+        }
+      ],
+      "n_mentions": 2,
+      "truncated": false
+    },
+    {
+      "id": "DT-R9",
+      "files": [
+        {
+          "path": "research/DANNYTRADES_NW_ADJUDICATION_AND_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 85,
+          "context": "| 7 | Churn-regret / conviction-hold ledger | L4 `action_ledger.jsonl` (accruing); DQ-2 harness (3 frozen contrasts, n≥25 floor, RUL-N8); W-EX exposure log (RUL-U6: zero stats); M3 regret card queued "
+        }
+      ],
+      "n_mentions": 2,
+      "truncated": false
+    },
+    {
+      "id": "LH-R1",
+      "files": [
+        {
+          "path": "research/LONG_HOLD_THESIS_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 78,
+          "context": "## 3. Rulings (LH-R1 … LH-R10)"
+        },
+        {
+          "path": "research/NW_TOP3_LOBE_POWER_UP_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 71,
+          "context": "Codex's five cross-lobe \"power moves\" are mostly slogans (no artifact, no gate, no tier). Dispositions: #1 (Oracle context-not-gate) — correct, already law; cite China falsification. #2 (Entry→Long-Ho"
+        },
+        {
+          "path": "research/long_hold/AMENDMENT_LH_R11_MULTI_FAMILY.md",
+          "first_line_no": 30,
+          "context": "**Firewall caveat (retained from red-team B2):** because the LH-R1 CI wall guards artifact *output paths*, not feature computation, an admissible entry-vocabulary family carries a manual `feature_prov"
+        },
+        {
+          "path": "research/long_hold/OBJECTIVE.md",
+          "first_line_no": 552,
+          "context": "This firewall is stated here as a pre-registered constraint (LH-R1) and is enforced"
+        },
+        {
+          "path": "research/long_hold/WASHOUT_TIMEFRAME_HYPOTHESIS.md",
+          "first_line_no": 14,
+          "context": "**BLOCKER B2 — the LH-R1 CI firewall does not enforce feature-circularity.** `check_synapse_reads.py` matches artifact *output paths* (`data/research/long_hold_*`), not feature computation. Washout fe"
+        },
+        {
+          "path": "research/pca_factor_orthogonality/R_ORTH_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 56,
+          "context": "- **Census, NW core lane:** registration recipe verified (synapse.yml required keys, dag-conformance, SIGNAL_BUS byte-freshness, read-gate consumer declarations, LH-R1 exemption via `horizon_role: con"
+        }
+      ],
+      "n_mentions": 9,
+      "truncated": false
+    },
+    {
+      "id": "LH-R10",
+      "files": [
+        {
+          "path": "research/LONG_HOLD_THESIS_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 78,
+          "context": "## 3. Rulings (LH-R1 … LH-R10)"
+        },
+        {
+          "path": "research/long_hold/AMENDMENT_A2_G1_RETEST.md",
+          "first_line_no": 20,
+          "context": "| F3 | `long_hold.expect_drift` | 7 | `EXPECT_DRIFT_FAMILY_PREREG.md` | New (LT-2). Coordinates with species S9 per LH-R10 |"
+        },
+        {
+          "path": "research/long_hold/EXPECT_DRIFT_FAMILY_PREREG.md",
+          "first_line_no": 6,
+          "context": "**Coordination (LH-R10):** species S9 (post-event absorption) owns entry-horizon claims on event absorption; this family is the hold-ruler analog. No S9 claim is re-registered here."
+        },
+        {
+          "path": "research/long_hold/OBJECTIVE.md",
+          "first_line_no": 728,
+          "context": "### §W2-PR-K.5 Great-company-trap overlay (LH-R10)"
+        }
+      ],
+      "n_mentions": 7,
+      "truncated": false
+    },
+    {
+      "id": "LH-R11",
+      "files": [
+        {
+          "path": "research/LONG_HOLD_THESIS_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 90,
+          "context": "- **LH-R11 (multi-family roster; RATIFIED 2026-07-06).** Fixed pre-registered roster of at-entry families testing `missed_hold`; freeze anchor = the commit of the A2 OOS-analysis script; DEFERRED left"
+        },
+        {
+          "path": "research/NW_TOP3_LOBE_POWER_UP_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 64,
+          "context": "| **L2** multi-family FDR battery | **KILL as duplicate; salvage one artifact (BUILD NOW)** | LH-R11 (program-wide HLZ/BH q=0.10 as sole ratifying correction) + A2 roster (F1 m=9, F2 m=10, F3 m=7, F4 "
+        },
+        {
+          "path": "research/NW_TOP3_LOBE_POWER_UP_ANALYSIS_BY_CODEX.md",
+          "first_line_no": 624,
+          "context": "- future families only inside the LH-R11/LH-R12 ceiling"
+        },
+        {
+          "path": "research/long_hold/A2_FREEZE_ANCHOR_NOTE.md",
+          "first_line_no": 3,
+          "context": "**Status:** FREEZE ANCHOR — this note records the LH-R11.1 roster freeze event."
+        },
+        {
+          "path": "research/long_hold/AMENDMENT_A2_G1_RETEST.md",
+          "first_line_no": 3,
+          "context": "**Status:** REGISTERED 2026-07-06 (operator + Fable), per the G1 ruling (`W1_KILLTEST_RESULTS.md §12`: \"pre-register as Amendment A2 before any further feature-outcome contact\") and LH-R11 (ratified 2"
+        },
+        {
+          "path": "research/long_hold/AMENDMENT_LH_R11_MULTI_FAMILY.md",
+          "first_line_no": 1,
+          "context": "# Long-Hold Masterplan — AMENDMENT LH-R11: multiple at-entry families vs `missed_hold`"
+        },
+        {
+          "path": "research/long_hold/EXPECT_DRIFT_FAMILY_PREREG.md",
+          "first_line_no": 7,
+          "context": "**Provenance (LH-R11.3 / B2):** features use EDGAR event dates, EDGAR EPS, and the same price stores as the label panel. No feature re-expresses the daily washout-proximity selection variable. `featur"
+        },
+        {
+          "path": "research/long_hold/EXPECT_DRIFT_RULER_P_RESULTS.md",
+          "first_line_no": 42,
+          "context": "| BH q threshold | 0.1 (DESCRIPTIVE per LH-R11.2) |"
+        },
+        {
+          "path": "research/long_hold/LT_EXTERNAL_FOUNDATION_ADJUDICATION.md",
+          "first_line_no": 12,
+          "context": "Epistemically house-compatible and directionally right: staged admission instead of a fused score, falsifiers before conviction, replication before novelty, display-only until gauntleted. Its funnel a"
+        }
+      ],
+      "n_mentions": 31,
+      "truncated": true
+    },
+    {
+      "id": "LH-R12",
+      "files": [
+        {
+          "path": "research/DANNYTRADES_NW_ADJUDICATION_AND_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 82,
+          "context": "| 4 | `big_leader_core_eligible` + passports | `thesis_funnel.py` AND-gate shadow (LH-R2-shaped); LH-R12 Σ-ceiling 29/40; hold-book overlap = standing CUT; LEADER_STARTER_SIZE = NO-GO; theme momentum "
+        },
+        {
+          "path": "research/LONG_HOLD_THESIS_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 91,
+          "context": "- **LH-R12 (program hypothesis ceiling).** Σ registered hypotheses across all long_hold roster families ≤ 40. Additions beyond the ceiling require dropping registered hypotheses by amendment. Σ after "
+        },
+        {
+          "path": "research/NW_TOP3_LOBE_POWER_UP_ANALYSIS_BY_CODEX.md",
+          "first_line_no": 624,
+          "context": "- future families only inside the LH-R11/LH-R12 ceiling"
+        },
+        {
+          "path": "research/long_hold/A2_FREEZE_ANCHOR_NOTE.md",
+          "first_line_no": 31,
+          "context": "| **Σ** | | **29** | ≤ 40 (LH-R12) |"
+        },
+        {
+          "path": "research/long_hold/AMENDMENT_A2_G1_RETEST.md",
+          "first_line_no": 14,
+          "context": "## 2. Registered roster (Σ = 29 ≤ 40 per LH-R12)"
+        },
+        {
+          "path": "research/long_hold/LT_EXTERNAL_FOUNDATION_ADJUDICATION.md",
+          "first_line_no": 41,
+          "context": "- **LH-R12 (program hypothesis ceiling).** Σ registered hypotheses across all long_hold roster families ≤ **40**. Any addition beyond the ceiling requires dropping registered hypotheses by amendment. "
+        }
+      ],
+      "n_mentions": 9,
+      "truncated": false
+    },
+    {
+      "id": "LH-R13",
+      "files": [
+        {
+          "path": "research/DANNYTRADES_NW_ADJUDICATION_AND_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 110,
+          "context": "- **DT-R4 (DT-W1 authorized).** One pre-registered **replication** (LH-R13"
+        },
+        {
+          "path": "research/LONG_HOLD_THESIS_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 92,
+          "context": "- **LH-R13 (calibration, not discovery).** External-factor replication confers zero authority and is not re-run as long-hold work (generic cross-sectional ICs already exist in `ic_scorecard.json`/`sue"
+        },
+        {
+          "path": "research/long_hold/LT_EXTERNAL_FOUNDATION_ADJUDICATION.md",
+          "first_line_no": 18,
+          "context": "| §2.1–2.4, 2.5, 2.7, 2.8, 2.9, 2.10 external factor families (QMJ/MSCI/S&P quality, gross profitability, accruals, asset growth, net issuance, shareholder yield) | **ALREADY SHIPPED + ALREADY MEASURE"
+        }
+      ],
+      "n_mentions": 5,
+      "truncated": false
+    },
+    {
+      "id": "LH-R14",
+      "files": [
+        {
+          "path": "research/LONG_HOLD_THESIS_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 93,
+          "context": "- **LH-R14 (two-ruler discipline).** Each roster family declares exactly two rulers: Ruler-P (powered): `cheap_trap` vs `tactical_only` at 252d on fires ≤ 2023-12-31 only, survivorship-stamped, author"
+        },
+        {
+          "path": "research/long_hold/AMENDMENT_A2_G1_RETEST.md",
+          "first_line_no": 33,
+          "context": "- Ruler-P studies (LH-R14) operate ONLY on fires with fire_date ≤ 2023-12-31 (`cheap_trap` vs `tactical_only`), survivorship-stamped, display-ceiling. The 2024+ cohorts are untouched by any feature-ou"
+        },
+        {
+          "path": "research/long_hold/EXPECT_DRIFT_FAMILY_PREREG.md",
+          "first_line_no": 32,
+          "context": "## 3. Rulers (LH-R14)"
+        },
+        {
+          "path": "research/long_hold/LT4_FUNNEL_SHADOW_REPORT.md",
+          "first_line_no": 122,
+          "context": "- **piotroski / altman retest**: bundled with W1 killtest re-evaluation (LH-R14 Ruler-H)"
+        },
+        {
+          "path": "research/long_hold/LT_EXTERNAL_FOUNDATION_ADJUDICATION.md",
+          "first_line_no": 43,
+          "context": "- **LH-R14 (two-ruler discipline).** Each roster family declares exactly two rulers: **Ruler-P** (powered, near-term): `cheap_trap` vs `tactical_only` at 252d on fires with fire_date ≤ 2023-12-31 only"
+        }
+      ],
+      "n_mentions": 5,
+      "truncated": false
+    },
+    {
+      "id": "LH-R2",
+      "files": [
+        {
+          "path": "research/DANNYTRADES_NW_ADJUDICATION_AND_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 82,
+          "context": "| 4 | `big_leader_core_eligible` + passports | `thesis_funnel.py` AND-gate shadow (LH-R2-shaped); LH-R12 Σ-ceiling 29/40; hold-book overlap = standing CUT; LEADER_STARTER_SIZE = NO-GO; theme momentum "
+        },
+        {
+          "path": "research/LONG_HOLD_THESIS_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 81,
+          "context": "- **LH-R2 (no fused admission).** No single verdict may combine entry state + fundamentals + ownership + expectation drift. Admission to thesis tracking is a transparent AND-gate of independently regi"
+        },
+        {
+          "path": "research/long_hold/LT4_FUNNEL_SHADOW_REPORT.md",
+          "first_line_no": 7,
+          "context": "**Ruling:** LH-R2 (transparent AND-gate; no composite, no behavioral surface)"
+        },
+        {
+          "path": "research/long_hold/LT_EXTERNAL_FOUNDATION_ADJUDICATION.md",
+          "first_line_no": 32,
+          "context": "| §4 admission funnel Stages A–G | **ADOPT as LT-4 shadow funnel** | LH-R2-compliant: transparent AND-gate of independently registered flags; states stop at `thesis_candidate_shadow` (W3 lock). No com"
+        },
+        {
+          "path": "research/long_hold/OBJECTIVE.md",
+          "first_line_no": 691,
+          "context": "\"moat score\" is produced (LH-R2, Signal Commons R3)."
+        }
+      ],
+      "n_mentions": 7,
+      "truncated": false
+    },
+    {
+      "id": "LH-R3",
+      "files": [
+        {
+          "path": "research/LONG_HOLD_THESIS_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 82,
+          "context": "- **LH-R3 (survivorship stamps).** Every long-horizon artifact carries `survivorship_biased` + dead-name `coverage_frac` fields (ic_scorecard precedent). 756d results are **refused as headline numbers"
+        },
+        {
+          "path": "research/long_hold/AMENDMENT_A2_G1_RETEST.md",
+          "first_line_no": 11,
+          "context": "- Inference frame: OBJECTIVE §6.3/§6.4 unchanged — episode-clustering (name × macro-regime, ±10d), Mann-Whitney U / rank-biserial for continuous features, Fisher exact for binary, within-regime label-"
+        },
+        {
+          "path": "research/long_hold/EXPECT_DRIFT_RULER_P_RESULTS.md",
+          "first_line_no": 154,
+          "context": "- **Survivorship bias:** all Ruler-P cells are UPPER BOUND (pre-2021-07 tickers survivorship-biased per LH-R3)."
+        },
+        {
+          "path": "research/long_hold/INSIDER_LH_RULER_P_RESULTS.md",
+          "first_line_no": 73,
+          "context": "- **Survivorship bias:** all Ruler-P cells are UPPER BOUND (pre-2021-07 tickers survivorship-biased per LH-R3)."
+        },
+        {
+          "path": "research/long_hold/LT_EXTERNAL_FOUNDATION_ADJUDICATION.md",
+          "first_line_no": 34,
+          "context": "| §6 methodology | **ADOPT where it matches OBJECTIVE.md** | Episode-clustering, PIT stamps, printed nulls already law (LH-R3/R4). Paper's per-family testing menu (7 comparisons/family) is Σ-inflation"
+        },
+        {
+          "path": "research/long_hold/OBJECTIVE.md",
+          "first_line_no": 317,
+          "context": "| **756d** | **REFUSED** | ~3 years; refused until `data/edgar/dead_name_prices.parquet` achieves ≥ 50% coverage of the 1,083-name dead universe (LH-R3). No 756d results may be published under any wav"
+        }
+      ],
+      "n_mentions": 9,
+      "truncated": false
+    },
+    {
+      "id": "LH-R4",
+      "files": [
+        {
+          "path": "research/LONG_HOLD_THESIS_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 83,
+          "context": "- **LH-R4 (effective-n discipline).** Raw fire counts are banned as inferential n. Every statistic carries cluster-robust / block-bootstrap CIs on (name × macro-regime) blocks; per-horizon minimum flo"
+        },
+        {
+          "path": "research/long_hold/A2_FREEZE_ANCHOR_NOTE.md",
+          "first_line_no": 59,
+          "context": "1. **Honest compounder episode-cluster count >= 25** (LH-R4 floor;"
+        },
+        {
+          "path": "research/long_hold/AMENDMENT_A2_G1_RETEST.md",
+          "first_line_no": 10,
+          "context": "- Evaluation trigger: honest compounder episode-clusters ≥ **25** (LH-R4 floor). Projected ~2027-H2 at the observed ~14 clusters/year accrual."
+        },
+        {
+          "path": "research/long_hold/AMENDMENT_LH_R11_MULTI_FAMILY.md",
+          "first_line_no": 10,
+          "context": "The masterplan governs FDR *isolation* (LH-R5) and effective-n (LH-R4) but not: (1) how many feature families may test the same `missed_hold` outcome; (2) a program-wide correction across families; (3"
+        },
+        {
+          "path": "research/long_hold/EXPECT_DRIFT_FAMILY_PREREG.md",
+          "first_line_no": 39,
+          "context": "- n-floor: ≥25 episode-clusters per arm per cell (LH-R4); episode-clustering name × macro-regime ±10d."
+        },
+        {
+          "path": "research/long_hold/EXPECT_DRIFT_RULER_P_RESULTS.md",
+          "first_line_no": 149,
+          "context": "- **Episode-cluster dedup:** ± 14 calendar days (≈ ± 10 trading days, documented deviation from LH-R4)"
+        },
+        {
+          "path": "research/long_hold/INSIDER_LH_RULER_P_RESULTS.md",
+          "first_line_no": 68,
+          "context": "- **Episode-cluster dedup:** ±14 calendar days (≈±10 trading days, documented deviation from LH-R4)"
+        }
+      ],
+      "n_mentions": 7,
+      "truncated": false
+    },
+    {
+      "id": "LH-R5",
+      "files": [
+        {
+          "path": "research/LONG_HOLD_THESIS_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 84,
+          "context": "- **LH-R5 (FDR isolation).** All long-hold claims register under dedicated `fdr_family='long_hold'` with its own quarterly batch. A test asserts no long_hold key appears in any entry desk's FDR groupi"
+        },
+        {
+          "path": "research/long_hold/AMENDMENT_LH_R11_MULTI_FAMILY.md",
+          "first_line_no": 10,
+          "context": "The masterplan governs FDR *isolation* (LH-R5) and effective-n (LH-R4) but not: (1) how many feature families may test the same `missed_hold` outcome; (2) a program-wide correction across families; (3"
+        },
+        {
+          "path": "research/long_hold/OBJECTIVE.md",
+          "first_line_no": 755,
+          "context": "FDR family: `long_hold` (LH-R5)."
+        },
+        {
+          "path": "research/long_hold/W1_KILLTEST_RESULTS.md",
+          "first_line_no": 5,
+          "context": "**FDR family:** `long_hold` (isolated per LH-R5)"
+        }
+      ],
+      "n_mentions": 5,
+      "truncated": false
+    },
+    {
+      "id": "LH-R6",
+      "files": [
+        {
+          "path": "research/LONG_HOLD_THESIS_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 85,
+          "context": "- **LH-R6 (LLM law application).** Thesis status transitions (watch → active → challenged → falsified) are fired ONLY by deterministic falsifier tripwires; the transition write is an append-only gover"
+        },
+        {
+          "path": "research/NW_TOP3_LOBE_POWER_UP_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 65,
+          "context": "| **L3** thesis-transition ledger | **DEFER — W3-locked; design amendments recorded** | The design is already law (LH-R6 deterministic tripwires only / LH-R7 nightly sole advancer / W3 PR-M) and W3 is"
+        }
+      ],
+      "n_mentions": 3,
+      "truncated": false
+    },
+    {
+      "id": "LH-R7",
+      "files": [
+        {
+          "path": "research/LONG_HOLD_THESIS_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 86,
+          "context": "- **LH-R7 (ledger law application).** The thesis ledger and long-horizon label store are forward ledgers → nightly is sole advancer. The quarterly review scheduler is a workflow_dispatch that writes r"
+        },
+        {
+          "path": "research/NW_TOP3_LOBE_POWER_UP_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 65,
+          "context": "| **L3** thesis-transition ledger | **DEFER — W3-locked; design amendments recorded** | The design is already law (LH-R6 deterministic tripwires only / LH-R7 nightly sole advancer / W3 PR-M) and W3 is"
+        }
+      ],
+      "n_mentions": 2,
+      "truncated": false
+    },
+    {
+      "id": "LH-R8",
+      "files": [
+        {
+          "path": "research/LONG_HOLD_THESIS_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 87,
+          "context": "- **LH-R8 (kernel clock).** No long-hold feature conditions on kernel estimates before the 2026-10-01 decision batch (Signal Commons R1)."
+        }
+      ],
+      "n_mentions": 1,
+      "truncated": false
+    },
+    {
+      "id": "LH-R9",
+      "files": [
+        {
+          "path": "research/LONG_HOLD_THESIS_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 88,
+          "context": "- **LH-R9 (paid-data respect).** No wave depends on transcripts, consensus revenue revisions, per-analyst accuracy, or supply-chain feeds. Features needing them are listed in §5 as deferred behind the"
+        },
+        {
+          "path": "research/NW_NEXT_LOBES_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 36,
+          "context": "| 4 | Long-Term Thesis / Expectations-Drift | **KILL** (as charter) | existing-program work | Duplicates the chartered, mostly-shipped long-hold thesis program (G1 run+DEFERRED; F3 Ruler-P run; A2 ros"
+        }
+      ],
+      "n_mentions": 2,
+      "truncated": false
+    },
+    {
+      "id": "RO-1",
+      "files": [
+        {
+          "path": "research/OPTIONS_NW_ENTRY_INTELLIGENCE_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 25,
+          "context": "- **RO-1 — `options_entry_state` ADOPTED AMENDED.** Build `engine/options_entry_state.py` + `scripts/build_options_entry_state.py` → `data/options_entry/state.parquet` as a **display-tier, raw-fields-"
+        }
+      ],
+      "n_mentions": 2,
+      "truncated": false
+    },
+    {
+      "id": "RO-10",
+      "files": [
+        {
+          "path": "research/OPTIONS_NW_ENTRY_INTELLIGENCE_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 16,
+          "context": "- Its Phase E (\"buy Cboe open/close\") **violates the W6 SKIP-ALL zero-spend user decision**; and the ThetaData tape it treats as future is already entitled with its signing sub-gate PASSED. Re-scoped "
+        }
+      ],
+      "n_mentions": 3,
+      "truncated": false
+    },
+    {
+      "id": "RO-11",
+      "files": [
+        {
+          "path": "research/OPTIONS_HISTORY_GAUNTLET_E1.md",
+          "first_line_no": 238,
+          "context": "- No kernel conditioning (blocked by RO-11 until 2026-10/2027-05)."
+        },
+        {
+          "path": "research/OPTIONS_NW_ENTRY_INTELLIGENCE_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 15,
+          "context": "- It proposes kernel conditioning at 10–63D — **hard-blocked by Signal Commons R1** until the NW clocks (kernel-FDR 2026-10, weights ~2027-05). Denied (RO-11)."
+        },
+        {
+          "path": "research/OPTIONS_OPEX_VANNA_CHARM_ADJUDICATION.md",
+          "first_line_no": 252,
+          "context": "- **RO-11 (no kernel conditioning before NW clocks 2026-10 / ~2027-05):** nothing here touches"
+        }
+      ],
+      "n_mentions": 6,
+      "truncated": false
+    },
+    {
+      "id": "RO-12",
+      "files": [
+        {
+          "path": "research/OPTIONS_ALPHA_MASTERPLAN.md",
+          "first_line_no": 208,
+          "context": "### W-C additions (registered 2026-07-05, per NW masterplan RO-3/RO-4/RO-12)"
+        },
+        {
+          "path": "research/OPTIONS_NW_ENTRY_INTELLIGENCE_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 36,
+          "context": "- **RO-12 — Ownership boundaries.** The options-alpha program owns the options stack, §4 registry, and ALL stamp columns (A9 single-writer: only `scripts/stamp_options_state.py` writes stamps). This p"
+        }
+      ],
+      "n_mentions": 2,
+      "truncated": false
+    },
+    {
+      "id": "RO-13",
+      "files": [
+        {
+          "path": "research/OPTIONS_NW_ENTRY_INTELLIGENCE_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 37,
+          "context": "- **RO-13 — Oracle review COMPLETE (2026-07-05): edge + sector lobe remain DEFERRED with a concrete unblock path.** Adjudicated under ORACLE_CONSTITUTION.md (Fable = adjudication per its §V routing; t"
+        }
+      ],
+      "n_mentions": 2,
+      "truncated": false
+    },
+    {
+      "id": "RO-2",
+      "files": [
+        {
+          "path": "research/NW_QUANT_SYNTHESIS_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 18,
+          "context": "- **FR-1** — `utility_router` and `meta_router`-with-sizing: **REJECTED** (R3 \"positioning fusion illegal\" / RO-2 \"fused composites rejected\"). `expected_edge − λ·MAE − cost − crowding − uncertainty` "
+        },
+        {
+          "path": "research/OPTIONS_NW_ENTRY_INTELLIGENCE_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 14,
+          "context": "- Its two flagship outputs (`options_entry_quality_shadow` −3..+3, `options_convexity_shadow` 0–100) are **fused escalating composites — the exact shape Signal Commons R3 forbids**. Rejected (RO-2)."
+        },
+        {
+          "path": "research/OPTIONS_OPEX_VANNA_CHARM_ADJUDICATION.md",
+          "first_line_no": 231,
+          "context": "1. `options_entry_state` new raw columns (display-only, RO-2 compliant — no composites):"
+        }
+      ],
+      "n_mentions": 7,
+      "truncated": false
+    },
+    {
+      "id": "RO-3",
+      "files": [
+        {
+          "path": "research/CODEX_NW_GAP_MAP_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 24,
+          "context": "12. **KILLS/GATES Codex missed:** B2_REPAIR_STACK duplicates long-hold G1's registered F1 family (G1-DEFERRED on n-floor to ~2027-H2 — re-testing would double-dip a frozen family); TOP_RISK_DEESCALATI"
+        },
+        {
+          "path": "research/OPTIONS_ALPHA_MASTERPLAN.md",
+          "first_line_no": 208,
+          "context": "### W-C additions (registered 2026-07-05, per NW masterplan RO-3/RO-4/RO-12)"
+        },
+        {
+          "path": "research/OPTIONS_NW_ENTRY_INTELLIGENCE_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 27,
+          "context": "- **RO-3 — Top-risk de-escalation ADOPTED as the flagship output.** De-escalation/caution-only is exactly what R3 permits survivors to become and what doctrine §2.1 already allows (\"confirmers may onl"
+        },
+        {
+          "path": "research/OPTIONS_OPEX_VANNA_CHARM_ADJUDICATION.md",
+          "first_line_no": 244,
+          "context": "caution/de-escalation phrasing only (RO-3)."
+        }
+      ],
+      "n_mentions": 9,
+      "truncated": false
+    },
+    {
+      "id": "RO-4",
+      "files": [
+        {
+          "path": "research/OPTIONS_ALPHA_MASTERPLAN.md",
+          "first_line_no": 208,
+          "context": "### W-C additions (registered 2026-07-05, per NW masterplan RO-3/RO-4/RO-12)"
+        },
+        {
+          "path": "research/OPTIONS_NW_ENTRY_INTELLIGENCE_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 28,
+          "context": "- **RO-4 — New bucket registrations with FDR accounting.** Register S-IVSPREAD-F (fire-conditioned ivspread_rel>0), S-SKEW_DECEL (skew high & falling at fire), S-TOP_RISK (extended + skew rising | put"
+        }
+      ],
+      "n_mentions": 2,
+      "truncated": false
+    },
+    {
+      "id": "RO-5",
+      "files": [
+        {
+          "path": "research/OPTIONS_NW_ENTRY_INTELLIGENCE_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 29,
+          "context": "- **RO-5 — NW spine adapter ADOPTED AMENDED.** `adapt_options_entry()` in `engine/neuralweb/query.py` + `options_entry` in LEDGER_ENUM, folding **ungraded-honest** (`outcome_graded=False`, like `adapt"
+        }
+      ],
+      "n_mentions": 2,
+      "truncated": false
+    },
+    {
+      "id": "RO-6",
+      "files": [
+        {
+          "path": "research/OPTIONS_NW_ENTRY_INTELLIGENCE_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 30,
+          "context": "- **RO-6 — Confluence edges: no ruling required, 4 adopted, 1 rejected, 1 deferred.** Display-only edges via existing confluence machinery need no Fable ruling (Entry-Stack §7 precedent; every edge `d"
+        }
+      ],
+      "n_mentions": 3,
+      "truncated": false
+    },
+    {
+      "id": "RO-7",
+      "files": [
+        {
+          "path": "research/OPTIONS_NW_ENTRY_INTELLIGENCE_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 31,
+          "context": "- **RO-7 — Cortex read tools ADOPTED.** `read_options_entry_state`, `explain_options_context`, `query_options_confluence`, `list_options_contradictions` added to `_READ_TOOLS` behind the A7 whitelist/"
+        },
+        {
+          "path": "research/factor_intelligence/NW_INTEGRATION_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 37,
+          "context": "**RUL-NW3 (cortex tools).** THREE in v1: `read_factor_state`, `list_factor_contradictions`, `explain_factor_context`. `query_factor_attention` is FOLDED into `read_factor_state` (the state artifact ca"
+        }
+      ],
+      "n_mentions": 3,
+      "truncated": false
+    },
+    {
+      "id": "RO-8",
+      "files": [
+        {
+          "path": "research/OPTIONS_NW_ENTRY_INTELLIGENCE_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 32,
+          "context": "- **RO-8 — Reflex ADOPTED AMENDED.** Do NOT rebuild `reflexes.py` — register `options_flow_attention` in `config/reflexes.yml` (claim_family `reflex.options_flow_attention`, `is_context_only=True`, si"
+        }
+      ],
+      "n_mentions": 1,
+      "truncated": false
+    },
+    {
+      "id": "RO-9",
+      "files": [
+        {
+          "path": "research/DANNYTRADES_NW_ADJUDICATION_AND_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 80,
+          "context": "| 2 | `sponsorship_pressure_proxy` ensemble + decay/retail/uncertainty | `sponsorship_state` frozen §C3 (display); SRSS shadow (#1479); CN 主力 flow velocity (IC≈−0.008, display); ETF flow (ISI R3 displ"
+        },
+        {
+          "path": "research/OPTIONS_NW_ENTRY_INTELLIGENCE_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 16,
+          "context": "- Its Phase E (\"buy Cboe open/close\") **violates the W6 SKIP-ALL zero-spend user decision**; and the ThetaData tape it treats as future is already entitled with its signing sub-gate PASSED. Re-scoped "
+        }
+      ],
+      "n_mentions": 6,
+      "truncated": false
+    },
+    {
+      "id": "RUL-1",
+      "files": [
+        {
+          "path": "research/CHINA_INTEL_CYCLES_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 71,
+          "context": "- **RUL-1 (no new pipeline):** China policy/filing events plug into the existing"
+        },
+        {
+          "path": "research/CHINA_POLICY_EVENTS_PREREG.md",
+          "first_line_no": 4,
+          "context": "Program: `research/CHINA_INTEL_CYCLES_MASTERPLAN_BY_FABLE.md` W2 (RUL-1, RUL-2, RUL-5)"
+        },
+        {
+          "path": "research/CODEX_NW_GAP_MAP_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 96,
+          "context": "- **RUL-1 (no new lobes):** this program charters ZERO lobes. L1/L3 remain the chartered set (two-lobe cap). Wave B ships as R1 experiment batches; the qledger table and evidence panel are display/gov"
+        },
+        {
+          "path": "research/DANNYTRADES_NW_ADJUDICATION_AND_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 80,
+          "context": "| 2 | `sponsorship_pressure_proxy` ensemble + decay/retail/uncertainty | `sponsorship_state` frozen §C3 (display); SRSS shadow (#1479); CN 主力 flow velocity (IC≈−0.008, display); ETF flow (ISI R3 displ"
+        },
+        {
+          "path": "research/ENTRY_STACK_EXPANSION_AMENDMENT1_BY_FABLE.md",
+          "first_line_no": 4,
+          "context": "**New rulings:** RUL-13 through RUL-17. Prior rulings RUL-1..12 unchanged."
+        },
+        {
+          "path": "research/ENTRY_STACK_EXPANSION_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 270,
+          "context": "- **RUL-1:** Volume-confirmation confirmers are DEAD (H4) — no W1/W2 family may include them; volume appears only inside S-SQ release confirmation and D1's event definition."
+        },
+        {
+          "path": "research/entry_stack/A3_CANDIDATE_BOOK_DRAFT.md",
+          "first_line_no": 22,
+          "context": "| Volume confirmers (OBV-div, dry-up, up/down ratio, capitulation spike) | **H4 FALSIFIED** | same; ESX RUL-1 |"
+        },
+        {
+          "path": "research/nontech_bottom/W0_INVENTORY.md",
+          "first_line_no": 439,
+          "context": "- RUL-1: Generic oscillators (OBV, CMF, RVOL, ADX as positive filter, KST, Fib/Elliott) REJECTED."
+        }
+      ],
+      "n_mentions": 13,
+      "truncated": false
+    },
+    {
+      "id": "RUL-10",
+      "files": [
+        {
+          "path": "research/CHINA_INTEL_CYCLES_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 107,
+          "context": "- **RUL-10 (routing):** Sonnet builds (agentType `builder`), Opus reviews/red-teams"
+        },
+        {
+          "path": "research/CODEX_NW_GAP_MAP_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 31,
+          "context": "2. **INFEASIBLE AS WRITTEN (house-law lens B2):** \"nightly BD-2/BD-3 event stamper, end-of-collect\" — BD-2 requires `replay_boarded` STOPPED-fire state and BD detection needs `massive_stock_day` price"
+        },
+        {
+          "path": "research/ENTRY_STACK_EXPANSION_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 279,
+          "context": "- **RUL-10 ⟦RT⟧:** Replay-mismatch handling uses only legal registry moves (accruing + deployment revert + come_back_on); no new lifecycle states."
+        }
+      ],
+      "n_mentions": 4,
+      "truncated": false
+    },
+    {
+      "id": "RUL-11",
+      "files": [
+        {
+          "path": "research/ENTRY_STACK_EXPANSION_AMENDMENT1_BY_FABLE.md",
+          "first_line_no": 53,
+          "context": "9. **COILED double-counting:** RUL-11 already covers it (no fire testifies twice); envelope fields are descriptive display and never feed FDR or confluence-lift as evidence."
+        },
+        {
+          "path": "research/ENTRY_STACK_EXPANSION_AMENDMENT2_BY_FABLE.md",
+          "first_line_no": 22,
+          "context": "Per RUL-17.1, all non-technical bottom inference rides inside Entry-Stack Expansion: families are `esx_*` keys in the trial ledger, studies run on the frozen fire tape under the frozen grader (RUL-9),"
+        },
+        {
+          "path": "research/ENTRY_STACK_EXPANSION_AMENDMENT3_BY_FABLE.md",
+          "first_line_no": 144,
+          "context": "| esx_serial_fuel / esx_episode_spacing / nth-fire ordinal | **REJECTED — owned** | S6 Failed-Fire Fuel (registered species, phase0-PASSED OOS) owns the serial-failure construct; its pre-registered pr"
+        },
+        {
+          "path": "research/ENTRY_STACK_EXPANSION_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 235,
+          "context": "7. ⟦RT: cross-artifact double-count guard, RUL-11⟧ The quarterly FDR sweep and any confluence-lift edge must EXCLUDE `backfill-v1` rows drawn from a fire-set already counted in a phase0 verdict — the "
+        },
+        {
+          "path": "research/entry_stack/A3_CANDIDATE_BOOK_DRAFT.md",
+          "first_line_no": 195,
+          "context": "7. No fire testifies twice (RUL-11): A3 families run on the frozen ESX tape; COILED overlap handled"
+        },
+        {
+          "path": "research/entry_stack/W1_SEV_REPORT.md",
+          "first_line_no": 107,
+          "context": "**RUL-11 dedup (pooled panel):** The pooled covered set is date-deduped on"
+        },
+        {
+          "path": "research/nontech_bottom/W0_INVENTORY.md",
+          "first_line_no": 390,
+          "context": "- RUL-11 (Masterplan): no fire testifies twice — FDR sweeps and confluence edges must exclude backfill-v1 rows whose fire-set already produced a phase-0 verdict."
+        }
+      ],
+      "n_mentions": 10,
+      "truncated": false
+    },
+    {
+      "id": "RUL-12",
+      "files": [
+        {
+          "path": "research/ENTRY_STACK_EXPANSION_AMENDMENT2_BY_FABLE.md",
+          "first_line_no": 72,
+          "context": "A market-level regressor is constant within a date, so the R1 date-FE estimator **absorbs it completely** — Tier-B families cannot legally use R1 as-is. R1-M is pre-registered here: unit = fire; no da"
+        },
+        {
+          "path": "research/ENTRY_STACK_EXPANSION_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 61,
+          "context": "- **R1 (exposure-artifact control).** Every stratum comparison must control for fire-date composition. ⟦RT: estimator pinned, RUL-12⟧ The registered estimator is a **date-fixed-effects stratified diff"
+        },
+        {
+          "path": "research/entry_stack/W0_BASELINES.md",
+          "first_line_no": 31,
+          "context": "## FE Granularity Choices (Frozen per RUL-12)"
+        },
+        {
+          "path": "research/entry_stack/W1_NC_REPORT.md",
+          "first_line_no": 34,
+          "context": "- FE granularity: `date` (frozen per RUL-12)"
+        },
+        {
+          "path": "research/entry_stack/W1_STS_REPORT.md",
+          "first_line_no": 109,
+          "context": "- FE granularity: `date` (frozen per RUL-12)"
+        },
+        {
+          "path": "research/entry_stack/W2_SLQ_REPORT.md",
+          "first_line_no": 58,
+          "context": "**FE granularity:** `date` (frozen per RUL-12)"
+        },
+        {
+          "path": "research/entry_stack/W2_SQL_REPORT.md",
+          "first_line_no": 83,
+          "context": "- FE granularity: `date` (frozen per RUL-12)"
+        },
+        {
+          "path": "research/nontech_bottom/W0_INVENTORY.md",
+          "first_line_no": 405,
+          "context": "The W0 fire tape and study harness are fully implemented and frozen. Two fire-tape parquets live in git at data/research/ (deep: 38,250 fires, 220 tickers, 1962–2026; baskets: 113,542 fires, 2,495 tic"
+        }
+      ],
+      "n_mentions": 16,
+      "truncated": false
+    },
+    {
+      "id": "RUL-13",
+      "files": [
+        {
+          "path": "research/ENTRY_STACK_EXPANSION_AMENDMENT1_BY_FABLE.md",
+          "first_line_no": 4,
+          "context": "**New rulings:** RUL-13 through RUL-17. Prior rulings RUL-1..12 unchanged."
+        },
+        {
+          "path": "research/ENTRY_STACK_EXPANSION_AMENDMENT2_BY_FABLE.md",
+          "first_line_no": 3,
+          "context": "**Status:** RATIFIED 2026-07-05. Amends `research/ENTRY_STACK_EXPANSION_MASTERPLAN_BY_FABLE.md` (#1356) and rides on Amendment 1 (RUL-13..17, same day)."
+        },
+        {
+          "path": "research/ENTRY_STACK_EXPANSION_AMENDMENT3_BY_FABLE.md",
+          "first_line_no": 4,
+          "context": "(#1356) and rides on Amendments 1–2 (RUL-13..26)."
+        },
+        {
+          "path": "research/entry_stack/A3_CANDIDATE_BOOK_DRAFT.md",
+          "first_line_no": 185,
+          "context": "1. 21d primaries per RUL-13: stop5 + mae21 co-primary + zone_held_21/stop_vol_21 (RUL-14);"
+        },
+        {
+          "path": "research/entry_stack/SPONSORSHIP_CENSUS.md",
+          "first_line_no": 161,
+          "context": "per RUL-13. The `accel` spread (vel_1w − vel_3m) captures short-horizon acceleration relative to"
+        },
+        {
+          "path": "research/entry_stack/W1_SEV_REPORT.md",
+          "first_line_no": 513,
+          "context": "### mae21 Addendum (Amendment 1 RUL-13 — computed at adjudication)"
+        },
+        {
+          "path": "research/entry_stack/W2_SLQ_REPORT.md",
+          "first_line_no": 10,
+          "context": "**Horizon doctrine (RUL-13):** 21d primaries. 63d+ NOT used for entry verdicts."
+        },
+        {
+          "path": "research/entry_stack/W2_SQL_REPORT.md",
+          "first_line_no": 7,
+          "context": "**Horizon doctrine (RUL-13):** 63d/126d metrics are the HOLDABILITY lane only."
+        },
+        {
+          "path": "research/entry_stack/W2_SUR_REPORT.md",
+          "first_line_no": 1895,
+          "context": "Per RUL-13, mae63 is removed from the primary verdict table. It appears here in a clearly-labeled holdability appendix only. All adjudication is based on the 21d horizon metrics above."
+        },
+        {
+          "path": "research/nontech_bottom/W0_INVENTORY.md",
+          "first_line_no": 42,
+          "context": "- RUL-13 (Amendment 1): primary horizon = 21 trading days (mae21 co-primary). Phase 0/1 studies used 63d as primary — legally compliant for the existing research base but new Codex W2 studies must use"
+        }
+      ],
+      "n_mentions": 46,
+      "truncated": true
+    },
+    {
+      "id": "RUL-14",
+      "files": [
+        {
+          "path": "research/ENTRY_STACK_EXPANSION_AMENDMENT1_BY_FABLE.md",
+          "first_line_no": 39,
+          "context": "| **Vol-scaled entry zone as co-primary metric** | **ADOPTED** | RUL-14, lane B1 |"
+        },
+        {
+          "path": "research/ENTRY_STACK_EXPANSION_AMENDMENT2_BY_FABLE.md",
+          "first_line_no": 12,
+          "context": "The paper's raw materials are far more built than it assumed, and far less connected than it hoped. **Sponsor layer:** a strict-PIT per-transaction SEC Form 4 panel exists (2.31M rows, 16,834 tickers,"
+        },
+        {
+          "path": "research/entry_stack/A2_INSIDER_REPORT.md",
+          "first_line_no": 97,
+          "context": "zone_held_21/stop_vol_21 (RUL-14), and state_rot in EFFECT_OUTCOMES."
+        },
+        {
+          "path": "research/entry_stack/A3_CANDIDATE_BOOK_DRAFT.md",
+          "first_line_no": 171,
+          "context": "declined. RUL-14 vol-scaled outcomes already handle the vol confound the honest way."
+        },
+        {
+          "path": "research/entry_stack/W0_BASELINES.md",
+          "first_line_no": 197,
+          "context": "## RUL-14 Note — Vol-Scaled Entry Zone Co-Primaries (B1 PR, 2026-07-05)"
+        },
+        {
+          "path": "research/entry_stack/W2_SUR_REPORT.md",
+          "first_line_no": 109,
+          "context": "> **zone_held_21 NOTE (RUL-14):** zone_held_21 is the registered bar under the program constitution; the vol-zone contrast (zone_held_21 vs stop5) informs whether a fixed −5% stop mismeasures high-vol"
+        },
+        {
+          "path": "research/nontech_bottom/W0_INVENTORY.md",
+          "first_line_no": 418,
+          "context": "- zone_held_21 and stop_vol_21 (RUL-14 vol-scaled entry zone co-primary metrics) — not implemented anywhere. Queue behind the W1 harness fix (PR #1408) merging."
+        }
+      ],
+      "n_mentions": 59,
+      "truncated": true
+    },
+    {
+      "id": "RUL-15",
+      "files": [
+        {
+          "path": "research/ENTRY_STACK_EXPANSION_AMENDMENT1_BY_FABLE.md",
+          "first_line_no": 69,
+          "context": "### C2. RUL-15 — Bottom-sensor envelope + frozen state labels v1 (lane B0; display-only)"
+        },
+        {
+          "path": "research/ENTRY_STACK_EXPANSION_AMENDMENT2_BY_FABLE.md",
+          "first_line_no": 27,
+          "context": "- **Display layer:** bound descriptive fields on the single RUL-15 `bottom_sensors` envelope — `sponsor_present`, `repair_present`, `event_clear`, `macro_relief`, `support_legs` (ordinal 0–3+), plus t"
+        },
+        {
+          "path": "research/NW_TOP3_LOBE_POWER_UP_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 56,
+          "context": "| **E4** bottom_sensors v2 | **SPLIT → diagnose + build the buildable half (BUILD NOW)** | (a) sponsorship_state: implemented but starved — diagnose the panel_s ticker-mapping gap and fix the wiring ("
+        },
+        {
+          "path": "research/nontech_bottom/W0_INVENTORY.md",
+          "first_line_no": 152,
+          "context": "| bottom_sensors.parquet envelope (RUL-15, Amendment 1 §C2) | research/ENTRY_STACK_EXPANSION_AMENDMENT1_BY_FABLE.md:71–91 | none | Schema specified; earnings_next_date binds from live earnings.parquet"
+        }
+      ],
+      "n_mentions": 16,
+      "truncated": false
+    },
+    {
+      "id": "RUL-16",
+      "files": [
+        {
+          "path": "research/ENTRY_STACK_EXPANSION_AMENDMENT1_BY_FABLE.md",
+          "first_line_no": 40,
+          "context": "| **Sector/subsector sponsorship connector + stratification** | **ADOPTED** | RUL-16, lane B2 |"
+        },
+        {
+          "path": "research/ENTRY_STACK_EXPANSION_AMENDMENT2_BY_FABLE.md",
+          "first_line_no": 30,
+          "context": "No engine named `bottom_*` is registered in `config/synapse.yml`; the `bottom_sponsor`/`bottom_macro_release` names are retired to avoid collision with `esx_sponsorship` (RUL-16, a different construct"
+        },
+        {
+          "path": "research/NW_NEXT_LOBES_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 33,
+          "context": "| 1 | Sponsorship / Forced-Flow Absorption | **GO-MODIFIED** | data-ops publish gap + existing wave | Publish path = #1664 PR-C1. Science verdict on sector vel/accel = the already-registered `esx_spon"
+        },
+        {
+          "path": "research/NW_TOP3_LOBE_POWER_UP_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 56,
+          "context": "| **E4** bottom_sensors v2 | **SPLIT → diagnose + build the buildable half (BUILD NOW)** | (a) sponsorship_state: implemented but starved — diagnose the panel_s ticker-mapping gap and fix the wiring ("
+        },
+        {
+          "path": "research/entry_stack/SPONSORSHIP_CENSUS.md",
+          "first_line_no": 4,
+          "context": "**Lane:** B0/B2 (Amendment 1 §C3, RUL-16)"
+        },
+        {
+          "path": "research/nontech_bottom/W0_INVENTORY.md",
+          "first_line_no": 81,
+          "context": "- bottom_sponsor.corporate_action NW lobe → altdata_models.py activist_13d + special_situation channels + Amendment 1 RUL-16 esx_sponsorship (naming collision; corporate_action sub-channel is NOT esx_"
+        }
+      ],
+      "n_mentions": 17,
+      "truncated": false
+    },
+    {
+      "id": "RUL-17",
+      "files": [
+        {
+          "path": "research/ENTRY_STACK_EXPANSION_AMENDMENT1_BY_FABLE.md",
+          "first_line_no": 4,
+          "context": "**New rulings:** RUL-13 through RUL-17. Prior rulings RUL-1..12 unchanged."
+        },
+        {
+          "path": "research/ENTRY_STACK_EXPANSION_AMENDMENT2_BY_FABLE.md",
+          "first_line_no": 22,
+          "context": "Per RUL-17.1, all non-technical bottom inference rides inside Entry-Stack Expansion: families are `esx_*` keys in the trial ledger, studies run on the frozen fire tape under the frozen grader (RUL-9),"
+        },
+        {
+          "path": "research/nontech_bottom/W0_INVENTORY.md",
+          "first_line_no": 485,
+          "context": "- RUL-17/5 (Amendment 1): NON_TECH work rides INSIDE Entry-Stack Expansion; a parallel program would double-account fires and species."
+        }
+      ],
+      "n_mentions": 4,
+      "truncated": false
+    },
+    {
+      "id": "RUL-18",
+      "files": [
+        {
+          "path": "research/ENTRY_STACK_EXPANSION_AMENDMENT2_BY_FABLE.md",
+          "first_line_no": 6,
+          "context": "**New rulings:** RUL-18 through RUL-26. Prior rulings unchanged."
+        }
+      ],
+      "n_mentions": 2,
+      "truncated": false
+    },
+    {
+      "id": "RUL-19",
+      "files": [
+        {
+          "path": "research/ENTRY_STACK_EXPANSION_AMENDMENT2_BY_FABLE.md",
+          "first_line_no": 24,
+          "context": "### RUL-19 — Two-layer Neural Web collapse"
+        },
+        {
+          "path": "research/entry_stack/A2_INSIDER_REPORT.md",
+          "first_line_no": 632,
+          "context": "4. **Disposition:** no entry chip; no re-run of these contrasts (family reserve now 2). Insider sponsorship remains eligible ONLY as (a) a holdability-lane hypothesis coordinated with the esx_ql_overl"
+        }
+      ],
+      "n_mentions": 4,
+      "truncated": false
+    },
+    {
+      "id": "RUL-2",
+      "files": [
+        {
+          "path": "research/CHINA_INTEL_CYCLES_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 75,
+          "context": "- **RUL-2 (conditioning is descriptive):** cycle/regime conditioning cuts (quad,"
+        },
+        {
+          "path": "research/CHINA_POLICY_EVENTS_PREREG.md",
+          "first_line_no": 4,
+          "context": "Program: `research/CHINA_INTEL_CYCLES_MASTERPLAN_BY_FABLE.md` W2 (RUL-1, RUL-2, RUL-5)"
+        },
+        {
+          "path": "research/CODEX_NW_GAP_MAP_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 97,
+          "context": "- **RUL-2 (labels before models):** no meta-model, classifier, or trained router on any surface until its family reaches its registered floors. Codex's meta-labeling task list is adopted as a *labels "
+        },
+        {
+          "path": "research/ENTRY_STACK_EXPANSION_AMENDMENT2_BY_FABLE.md",
+          "first_line_no": 57,
+          "context": "Every signal form carries a `(source_event_date, known_date, pit_basis)` triple in spine meta and `feature_meta.json`; a study lacking it is invalid per RUL-2. Frozen table:"
+        },
+        {
+          "path": "research/ENTRY_STACK_EXPANSION_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 271,
+          "context": "- **RUL-2:** Every stratum study runs the R1 estimator and cites adjacency (R2); a study lacking either is invalid regardless of result."
+        },
+        {
+          "path": "research/OPTIONS_ALPHA_MASTERPLAN.md",
+          "first_line_no": 216,
+          "context": "> **H4 ADJACENCY (RUL-2 citation, entry-stack law):** S-VOI2 uses options vol>OI (a fresh"
+        },
+        {
+          "path": "research/OPTIONS_NW_ENTRY_INTELLIGENCE_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 57,
+          "context": "| **W-C — Prereg + harness extension** (options-alpha co-owned) | OPTIONS_ALPHA_MASTERPLAN §4 amendment: register S-IVSPREAD-F, S-SKEW_DECEL, S-TOP_RISK, S-PIN_RISK, S-VOI2 (era specs + enlarged-famil"
+        },
+        {
+          "path": "research/entry_stack/A2_INSIDER_REPORT.md",
+          "first_line_no": 15,
+          "context": "## Adjacency Citation (R2 — RUL-2)"
+        },
+        {
+          "path": "research/entry_stack/A2_MACRO_POS_REPORT.md",
+          "first_line_no": 88,
+          "context": "## Adjacency Citations (RUL-2)"
+        },
+        {
+          "path": "research/entry_stack/W1_NC_REPORT.md",
+          "first_line_no": 10,
+          "context": "**Adjacency (R2 per RUL-2):**"
+        },
+        {
+          "path": "research/entry_stack/W1_SEV_REPORT.md",
+          "first_line_no": 7,
+          "context": "**Adjacency (R2 per RUL-2):** No falsified relative; `event_blackout` slot pre-sanctioned in"
+        },
+        {
+          "path": "research/entry_stack/W1_STS_REPORT.md",
+          "first_line_no": 30,
+          "context": "## Adjacency Citation (R2 — RUL-2)"
+        },
+        {
+          "path": "research/entry_stack/W2_SLQ_REPORT.md",
+          "first_line_no": 23,
+          "context": "**Adjacency (R2 per RUL-2):** None. Census: zero EOD spread proxies repo-wide prior to W0 (masterplan §3 F4). No falsified relative."
+        },
+        {
+          "path": "research/entry_stack/W2_SQL_REPORT.md",
+          "first_line_no": 16,
+          "context": "**Adjacency (R2 per RUL-2):**"
+        }
+      ],
+      "n_mentions": 19,
+      "truncated": false
+    },
+    {
+      "id": "RUL-20",
+      "files": [
+        {
+          "path": "research/ENTRY_STACK_EXPANSION_AMENDMENT2_BY_FABLE.md",
+          "first_line_no": 32,
+          "context": "### RUL-20 — Horizon routing (application of RUL-13)"
+        },
+        {
+          "path": "research/entry_stack/A2_INSIDER_REPORT.md",
+          "first_line_no": 96,
+          "context": "`computable_mask`. This path includes mae21 (co-primary, A2 RUL-20),"
+        }
+      ],
+      "n_mentions": 3,
+      "truncated": false
+    },
+    {
+      "id": "RUL-21",
+      "files": [
+        {
+          "path": "research/ENTRY_STACK_EXPANSION_AMENDMENT2_BY_FABLE.md",
+          "first_line_no": 36,
+          "context": "### RUL-21 — One reconciled bar set (paper §5.3 deleted)"
+        },
+        {
+          "path": "research/entry_stack/A2_INSIDER_REPORT.md",
+          "first_line_no": 593,
+          "context": "**CHIP promotion bar (A2 RUL-21):** stop5 FE-coef ≥2pp, CI excluding 0,"
+        },
+        {
+          "path": "research/entry_stack/A2_MACRO_POS_REPORT.md",
+          "first_line_no": 145,
+          "context": "BH families are NOT pooled across macro and pos (RUL-21)."
+        },
+        {
+          "path": "research/entry_stack/A3_CANDIDATE_BOOK_DRAFT.md",
+          "first_line_no": 104,
+          "context": "Kill line: CHIP bar (RUL-21) incl. NC-2-proxy marginality; else null printed and buried."
+        }
+      ],
+      "n_mentions": 9,
+      "truncated": false
+    },
+    {
+      "id": "RUL-22",
+      "files": [
+        {
+          "path": "research/ENTRY_STACK_EXPANSION_AMENDMENT2_BY_FABLE.md",
+          "first_line_no": 46,
+          "context": "### RUL-22 — Power triage (binding; drives the tranche plan)"
+        }
+      ],
+      "n_mentions": 1,
+      "truncated": false
+    },
+    {
+      "id": "RUL-23",
+      "files": [
+        {
+          "path": "research/ENTRY_STACK_EXPANSION_AMENDMENT2_BY_FABLE.md",
+          "first_line_no": 55,
+          "context": "### RUL-23 — Per-feed known-date law (mandatory, machine-checked)"
+        },
+        {
+          "path": "research/entry_stack/A2_INSIDER_REPORT.md",
+          "first_line_no": 29,
+          "context": "**Known-date law (A2 RUL-23, frozen):** `filing_date` is the known_date for"
+        }
+      ],
+      "n_mentions": 3,
+      "truncated": false
+    },
+    {
+      "id": "RUL-24",
+      "files": [
+        {
+          "path": "research/ENTRY_STACK_EXPANSION_AMENDMENT2_BY_FABLE.md",
+          "first_line_no": 51,
+          "context": "| **B — coarse-cell only** | `esx_macro_release`, `esx_pos_reset` | market-level; ~400–700 stress-turn fires 2003+; NAAIM/COT weekly | Phase0 at engine×horizon only, R1-M estimator (RUL-24), condition"
+        },
+        {
+          "path": "research/entry_stack/A2_MACRO_POS_REPORT.md",
+          "first_line_no": 10,
+          "context": "**Estimator:** R1-M (market-level, no date FE, RUL-24). Controls partialled via Frisch-Waugh."
+        }
+      ],
+      "n_mentions": 22,
+      "truncated": true
+    },
+    {
+      "id": "RUL-25",
+      "files": [
+        {
+          "path": "research/ENTRY_STACK_EXPANSION_AMENDMENT2_BY_FABLE.md",
+          "first_line_no": 74,
+          "context": "### RUL-25 — Anti-fusion + dose-response"
+        },
+        {
+          "path": "research/ENTRY_STACK_EXPANSION_AMENDMENT3_BY_FABLE.md",
+          "first_line_no": 180,
+          "context": "(RUL-25 honored; ordinal test only, esx_support_dose precedent, with the honest caveat that these"
+        },
+        {
+          "path": "research/entry_stack/A2_INSIDER_REPORT.md",
+          "first_line_no": 613,
+          "context": "come-back scheduling and the esx_support_dose dose-response study (RUL-25)."
+        },
+        {
+          "path": "research/entry_stack/A2_MACRO_POS_REPORT.md",
+          "first_line_no": 107,
+          "context": "**Anti-fusion (Signal Commons R3, A2 RUL-25):** No fused positioning/macro"
+        },
+        {
+          "path": "research/entry_stack/A3_CANDIDATE_BOOK_DRAFT.md",
+          "first_line_no": 111,
+          "context": "RUL-25). Budget tiny."
+        }
+      ],
+      "n_mentions": 8,
+      "truncated": false
+    },
+    {
+      "id": "RUL-26",
+      "files": [
+        {
+          "path": "research/ENTRY_STACK_EXPANSION_AMENDMENT2_BY_FABLE.md",
+          "first_line_no": 6,
+          "context": "**New rulings:** RUL-18 through RUL-26. Prior rulings unchanged."
+        },
+        {
+          "path": "research/entry_stack/A2_INSIDER_REPORT.md",
+          "first_line_no": 5,
+          "context": "**Amendment:** Entry-Stack Expansion Amendment 2 (A2 RUL-26)."
+        },
+        {
+          "path": "research/entry_stack/A2_MACRO_POS_REPORT.md",
+          "first_line_no": 8,
+          "context": "**Amendment:** Entry-Stack Expansion Amendment 2 (A2 RUL-26)."
+        },
+        {
+          "path": "research/long_hold/AMENDMENT_A2_G1_RETEST.md",
+          "first_line_no": 21,
+          "context": "| F4 | `long_hold.insider_sponsor_lh` | 3 | `INSIDER_SPONSOR_LH_FAMILY_PREREG.md` | New (LT-3). Entry-ruler insider tests remain with ESX Amendment 2 RUL-26 — different program, different ruler, no sh"
+        },
+        {
+          "path": "research/long_hold/INSIDER_SPONSOR_LH_FAMILY_PREREG.md",
+          "first_line_no": 6,
+          "context": "**Coordination:** entry-ruler insider hypotheses (I1/I2/I3) belong to ESX Amendment 2 RUL-26 (`entry_stack` program). This family shares data lanes but registers claims ONLY at the long-hold ruler. No"
+        },
+        {
+          "path": "research/long_hold/LT_EXTERNAL_FOUNDATION_ADJUDICATION.md",
+          "first_line_no": 24,
+          "context": "| §2.15 insider buying | **ADOPT → insider_sponsor_lh family** | 2.3M Form-4 rows 2006→; `net_usd_mcap` survives BH-FDR in mid/small habitat (IC 0.029, t=2.9, `research/INSIDER_FACTOR.md`). W1 dropped"
+        }
+      ],
+      "n_mentions": 9,
+      "truncated": false
+    },
+    {
+      "id": "RUL-27",
+      "files": [
+        {
+          "path": "research/ENTRY_STACK_EXPANSION_AMENDMENT2_BY_FABLE.md",
+          "first_line_no": 113,
+          "context": "## F. Addendum 1 — T1 verdicts + T2/T3 re-adjudication (Fable, 2026-07-06; RUL-27..29)"
+        },
+        {
+          "path": "research/ENTRY_STACK_EXPANSION_AMENDMENT3_BY_FABLE.md",
+          "first_line_no": 14,
+          "context": "**New rulings:** RUL-27 through RUL-34. Prior rulings unchanged."
+        },
+        {
+          "path": "research/entry_stack/A3_CANDIDATE_BOOK_DRAFT.md",
+          "first_line_no": 224,
+          "context": "`research/ENTRY_STACK_EXPANSION_AMENDMENT3_BY_FABLE.md` (RUL-27..34).** All four red-team"
+        }
+      ],
+      "n_mentions": 7,
+      "truncated": false
+    },
+    {
+      "id": "RUL-28",
+      "files": [
+        {
+          "path": "research/ENTRY_STACK_EXPANSION_AMENDMENT2_BY_FABLE.md",
+          "first_line_no": 121,
+          "context": "### RUL-28 — T3 shrunk; evidence-hostile display barred"
+        },
+        {
+          "path": "research/ENTRY_STACK_EXPANSION_AMENDMENT3_BY_FABLE.md",
+          "first_line_no": 36,
+          "context": "de-confounder ⟦RT blocker → RUL-28⟧. COILED-FIRE recall recompute remains deferred."
+        },
+        {
+          "path": "research/NW_NEXT_LOBES_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 47,
+          "context": "- **RUL-N3 (sponsorship vocabulary + sign):** only the frozen C3 neutral vocabulary (`tailwind/headwind/neutral/stale/unavailable`) may surface. The memo's supportive mechanism labels (`forced_flow_re"
+        },
+        {
+          "path": "research/SETUP_SPECIES_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 280,
+          "context": "*A3 SURVIVORS (display-candidates, not graveyard): **E `esx_decline_geometry`** (flush-vs-grind path shape — the one clean cross-panel full-battery survivor) and **F `esx_underwater`** (real but ADVER"
+        },
+        {
+          "path": "research/entry_stack/A3_HTF_REPORT.md",
+          "first_line_no": 6,
+          "context": "**Verdict ceiling:** DISPLAY-CANDIDATE / NULL / KILLED (RUL-28)."
+        },
+        {
+          "path": "research/entry_stack/A3_STRUCT_REPORT.md",
+          "first_line_no": 6,
+          "context": "**Verdict ceiling:** DISPLAY-CANDIDATE / NULL / KILLED (RUL-28)."
+        }
+      ],
+      "n_mentions": 69,
+      "truncated": true
+    },
+    {
+      "id": "RUL-29",
+      "files": [
+        {
+          "path": "research/ENTRY_STACK_EXPANSION_AMENDMENT2_BY_FABLE.md",
+          "first_line_no": 125,
+          "context": "### RUL-29 — Insider horizon partition (coordination)"
+        },
+        {
+          "path": "research/ENTRY_STACK_EXPANSION_AMENDMENT3_BY_FABLE.md",
+          "first_line_no": 30,
+          "context": "the gate's own admission structure ⟦RT blocker → RUL-29⟧."
+        },
+        {
+          "path": "research/entry_stack/A3_CANDIDATE_BOOK_DRAFT.md",
+          "first_line_no": 229,
+          "context": "| esx_htf_turn (draft A; endorsed by all lanes) | **REGISTERED, budget 12** | fixed: admission-leg decomposition promoted from context to BINDING control (RUL-29 — operative read within ¬wbull subset)"
+        },
+        {
+          "path": "research/entry_stack/A3_HTF_REPORT.md",
+          "first_line_no": 41,
+          "context": "RUL-29: Operative read for A1 = ¬wbull subset. Pooled read carries wbull FE covariate."
+        }
+      ],
+      "n_mentions": 18,
+      "truncated": false
+    },
+    {
+      "id": "RUL-3",
+      "files": [
+        {
+          "path": "research/CHINA_INTEL_CYCLES_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 80,
+          "context": "- **RUL-3 (backfill priority):** curated communiqués first (MPC quarterly readouts,"
+        },
+        {
+          "path": "research/CODEX_NW_GAP_MAP_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 98,
+          "context": "- **RUL-3 (avoid-long quarantine + contamination stamp):** PR-C2 is avoid-long ONLY. **The PR-C2 prereg is itself written after seeing the Phase-0 descriptive surface and therefore carries `derived_fr"
+        },
+        {
+          "path": "research/ENTRY_STACK_EXPANSION_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 272,
+          "context": "- **RUL-3:** Null-competitors NC-1/NC-2 run first and appear as the first table in every W1/W2 report; NC-2 marginality = coefficient survives entry_quality-band fixed effects."
+        },
+        {
+          "path": "research/NW_NEXT3_UPGRADES_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 14,
+          "context": "**Codex's evidence census is honest** — all fourteen checkable data claims verified EXACT (BD-1/2/3 episode counts and stop-rate gaps to two decimals; the 403×28 state table; per-feature non-null coun"
+        },
+        {
+          "path": "research/entry_stack/A2_INSIDER_REPORT.md",
+          "first_line_no": 36,
+          "context": "## NC Yardstick (RUL-3) — First Table"
+        },
+        {
+          "path": "research/entry_stack/A2_MACRO_POS_REPORT.md",
+          "first_line_no": 30,
+          "context": "## NC Yardstick (RUL-3) — First Table"
+        },
+        {
+          "path": "research/entry_stack/A3_HTF_REPORT.md",
+          "first_line_no": 17,
+          "context": "## NC Yardstick (RUL-3) — from W1_NC_REPORT.md"
+        },
+        {
+          "path": "research/entry_stack/A3_STRUCT_REPORT.md",
+          "first_line_no": 16,
+          "context": "## NC Yardstick (RUL-3) — from W1_NC_REPORT.md"
+        },
+        {
+          "path": "research/entry_stack/W0_BASELINES.md",
+          "first_line_no": 138,
+          "context": "### NC-2 Entry Quality Bands (RUL-3)"
+        },
+        {
+          "path": "research/entry_stack/W1_NC_REPORT.md",
+          "first_line_no": 3,
+          "context": "**Status:** W1 report only — no promotion, no product change (RUL-3)."
+        },
+        {
+          "path": "research/entry_stack/W1_SEV_REPORT.md",
+          "first_line_no": 30,
+          "context": "## NC Yardstick (RUL-3)"
+        },
+        {
+          "path": "research/entry_stack/W1_STS_REPORT.md",
+          "first_line_no": 9,
+          "context": "## NC Yardstick (RUL-3) — Reproduced from W1_NC_REPORT.md"
+        },
+        {
+          "path": "research/entry_stack/W2_SLQ_REPORT.md",
+          "first_line_no": 3,
+          "context": "**Status:** W2 study report only — no promotion decision (RUL-3)."
+        },
+        {
+          "path": "research/entry_stack/W2_SQL_REPORT.md",
+          "first_line_no": 3,
+          "context": "**Status:** W2 report only — no promotion, no product change (RUL-3)."
+        },
+        {
+          "path": "research/entry_stack/W2_SUR_REPORT.md",
+          "first_line_no": 3,
+          "context": "**Status:** W2 study report only — no promotion decision (RUL-3)."
+        },
+        {
+          "path": "research/nontech_bottom/W0_INVENTORY.md",
+          "first_line_no": 438,
+          "context": "- RUL-3: NC-2 (entry_quality band FE) marginality test required for every promoted stratum."
+        },
+        {
+          "path": "research/short_side/BD_AVOID1_PHASE1_PREREG.md",
+          "first_line_no": 22,
+          "context": "**Compensating gate rationale:** Phase-0 observed BD-2: +9.66pp and BD-3: +16.81pp (both exceeding the masterplan's ≥5pp bar). Both definitions were selected BECAUSE they cleared the Phase-0 descripti"
+        }
+      ],
+      "n_mentions": 40,
+      "truncated": true
+    },
+    {
+      "id": "RUL-30",
+      "files": [
+        {
+          "path": "research/ENTRY_STACK_EXPANSION_AMENDMENT3_BY_FABLE.md",
+          "first_line_no": 73,
+          "context": "sign-stable ≥3/4 eras, survives the RUL-30 battery, ticker-half sign agreement on baskets) — it"
+        },
+        {
+          "path": "research/entry_stack/A3_CANDIDATE_BOOK_DRAFT.md",
+          "first_line_no": 233,
+          "context": "| esx_decline_geometry (mechanism lane) | **REGISTERED, budget 4** — non-momentum flagship | genuinely new dimension (path shape: flush vs grind), scale-free, no depth/age/amplitude ingredient; full R"
+        },
+        {
+          "path": "research/entry_stack/A3_HTF_REPORT.md",
+          "first_line_no": 73,
+          "context": "**Kill-arm battery — +nc2_band FE (RUL-30):**"
+        },
+        {
+          "path": "research/entry_stack/A3_STRUCT_REPORT.md",
+          "first_line_no": 72,
+          "context": "**¬bear_ctx decomposition (kill-only per RUL-30):**"
+        }
+      ],
+      "n_mentions": 30,
+      "truncated": true
+    },
+    {
+      "id": "RUL-31",
+      "files": [
+        {
+          "path": "research/ENTRY_STACK_EXPANSION_AMENDMENT3_BY_FABLE.md",
+          "first_line_no": 99,
+          "context": "### RUL-31 — HTF PIT + faithful-math law ⟦RT blocker integrated⟧"
+        },
+        {
+          "path": "research/signal_engine/TIERED_CASCADE.md",
+          "first_line_no": 334,
+          "context": "dropping the in-progress tail bar per RUL-31 PIT gate). 3D leg uses `_tf_bars(c, 3)` — session"
+        }
+      ],
+      "n_mentions": 4,
+      "truncated": false
+    },
+    {
+      "id": "RUL-32",
+      "files": [
+        {
+          "path": "research/ENTRY_STACK_EXPANSION_AMENDMENT3_BY_FABLE.md",
+          "first_line_no": 92,
+          "context": "| NC-2-proxy band-FE | ALL families | 63-bar close-min proximity proxy terciles as FE (shared harness helper, RUL-32) |"
+        },
+        {
+          "path": "research/entry_stack/A3_STRUCT_REPORT.md",
+          "first_line_no": 167,
+          "context": "arm (BINDING per RUL-32) also CI-excluding-0. Sign-stable ≥3/4 eras required."
+        }
+      ],
+      "n_mentions": 4,
+      "truncated": false
+    },
+    {
+      "id": "RUL-33",
+      "files": [
+        {
+          "path": "research/ENTRY_STACK_EXPANSION_AMENDMENT3_BY_FABLE.md",
+          "first_line_no": 140,
+          "context": "### RUL-33 — Rejection record (citable; do not re-walk)"
+        }
+      ],
+      "n_mentions": 1,
+      "truncated": false
+    },
+    {
+      "id": "RUL-34",
+      "files": [
+        {
+          "path": "research/ENTRY_STACK_EXPANSION_AMENDMENT3_BY_FABLE.md",
+          "first_line_no": 14,
+          "context": "**New rulings:** RUL-27 through RUL-34. Prior rulings unchanged."
+        }
+      ],
+      "n_mentions": 4,
+      "truncated": false
+    },
+    {
+      "id": "RUL-4",
+      "files": [
+        {
+          "path": "research/CHINA_INTEL_CYCLES_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 85,
+          "context": "- **RUL-4 (filings = metadata only):** title/category/ticker/URL/publish-time only"
+        },
+        {
+          "path": "research/CODEX_NW_GAP_MAP_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 34,
+          "context": "5. **NO CLOCK (stats lens F3):** the draft attached the masterplan's n≥300/side floor to a forward ledger with no maturity clock. Fixed: registered arrival-rate estimate + come-back date in the prereg"
+        },
+        {
+          "path": "research/ENTRY_STACK_EXPANSION_AMENDMENT2_BY_FABLE.md",
+          "first_line_no": 39,
+          "context": "- **HYGIENE VETO:** vetoed-set FE degradation on stop5 (primary) AND mae21 (co-primary) ≥2pp, block-bootstrap 95% CI excluding 0; vetoed volume ≤10% of fires; per-row freshness fail-open (F1 rule). On"
+        },
+        {
+          "path": "research/ENTRY_STACK_EXPANSION_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 273,
+          "context": "- **RUL-4:** S-EV is the only candidate permitted to target a hard gate, and only under hygiene semantics with the F1 per-row fail-open rule."
+        },
+        {
+          "path": "research/entry_stack/A2_INSIDER_REPORT.md",
+          "first_line_no": 4,
+          "context": "**Status:** Phase-0 study report only — no promotion, no product change (RUL-4)."
+        },
+        {
+          "path": "research/entry_stack/A2_MACRO_POS_REPORT.md",
+          "first_line_no": 7,
+          "context": "**Status:** Phase-0 study report only — no promotion, no product change (RUL-4)."
+        },
+        {
+          "path": "research/entry_stack/A3_CANDIDATE_BOOK_DRAFT.md",
+          "first_line_no": 193,
+          "context": "5. Recall printed beside every effect; no hard gates (RUL-4); chips/strata ceiling; display-first."
+        },
+        {
+          "path": "research/entry_stack/W1_SEV_REPORT.md",
+          "first_line_no": 4,
+          "context": "**Status:** W1 study report only — no promotion, no product change (RUL-4 / HYGIENE semantics)."
+        },
+        {
+          "path": "research/nontech_bottom/W0_INVENTORY.md",
+          "first_line_no": 170,
+          "context": "- RUL-4 (Masterplan §10): S-EV is the ONLY candidate permitted to target a hard gate, and only under hygiene semantics with the F1 per-row fail-open rule."
+        }
+      ],
+      "n_mentions": 15,
+      "truncated": false
+    },
+    {
+      "id": "RUL-5",
+      "files": [
+        {
+          "path": "research/CHINA_INTEL_CYCLES_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 90,
+          "context": "- **RUL-5 (phrase polarity stays unsigned):** `phrase_book.yml` polarities remain"
+        },
+        {
+          "path": "research/CHINA_POLICY_EVENTS_PREREG.md",
+          "first_line_no": 4,
+          "context": "Program: `research/CHINA_INTEL_CYCLES_MASTERPLAN_BY_FABLE.md` W2 (RUL-1, RUL-2, RUL-5)"
+        },
+        {
+          "path": "research/CODEX_NW_GAP_MAP_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 100,
+          "context": "- **RUL-5 (FDR accounting):** Wave-B experiments pool into flat `fdr_family='replay'` with budgets logged BEFORE runs. Declared budgets: WAIT-GRID-1 = 10 cells (pooled sum 15→25), DISP-GATE-1 = 6 prim"
+        },
+        {
+          "path": "research/ENTRY_STACK_EXPANSION_AMENDMENT3_BY_FABLE.md",
+          "first_line_no": 208,
+          "context": "the full battery, replicated in sign on baskets (RUL-5 style)."
+        },
+        {
+          "path": "research/ENTRY_STACK_EXPANSION_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 274,
+          "context": "- **RUL-5:** Trigger species register (with adjacent_falsified + fixtures) BEFORE first compute; expect-null studies (S-TS) pre-register the null as the expected outcome, with non-null defined as pool"
+        },
+        {
+          "path": "research/NW_FINAL3_LOBES_ADJUDICATION_AND_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 145,
+          "context": "## 7. Trial-budget ledger (running, per RUL-5 conventions)"
+        },
+        {
+          "path": "research/entry_stack/A3_STRUCT_REPORT.md",
+          "first_line_no": 163,
+          "context": "**PRE-REGISTERED EXPECT-NULL (RUL-5).** Registered expectation IS a null."
+        },
+        {
+          "path": "research/entry_stack/W1_STS_REPORT.md",
+          "first_line_no": 48,
+          "context": "## Pre-Registered Expect-Null Declaration (RUL-5)"
+        },
+        {
+          "path": "research/nontech_bottom/W0_INVENTORY.md",
+          "first_line_no": 437,
+          "context": "- RUL-5: Expect-null protocol — non-null requires pooled FE coefficient with BH-adjusted CI excluding 0. Single-era excursions are noise by pre-registration."
+        },
+        {
+          "path": "research/rule_replay/TRIM_GRID_1_REPORT.md",
+          "first_line_no": 138,
+          "context": "## Trial budget accounting (RUL-5)"
+        },
+        {
+          "path": "research/rule_replay/WAIT_GRID_1_REPORT.md",
+          "first_line_no": 29,
+          "context": "**cumulative pooled SUM is 25** and is printed here per RUL-5. These two numbers"
+        }
+      ],
+      "n_mentions": 25,
+      "truncated": true
+    },
+    {
+      "id": "RUL-6",
+      "files": [
+        {
+          "path": "research/CHINA_INTEL_CYCLES_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 93,
+          "context": "- **RUL-6 (kills):** attention proxies, satellite/physical proxies, hub region"
+        },
+        {
+          "path": "research/CODEX_NW_GAP_MAP_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 101,
+          "context": "- **RUL-6 (de-escalation shape):** evidence panel + qledger table expose only trust/accrual fields ({family, horizon, n_obs, n_dates, hit_rate, wilson_ci_low, state, clocks}); no escalation-eligible c"
+        },
+        {
+          "path": "research/ENTRY_STACK_EXPANSION_AMENDMENT1_BY_FABLE.md",
+          "first_line_no": 36,
+          "context": "| Per-name options sensors | DEFERRED | RUL-6 clock (~2027-01) |"
+        },
+        {
+          "path": "research/ENTRY_STACK_EXPANSION_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 275,
+          "context": "- **RUL-6:** Derivatives-shape throttle is accrue-only until the skew ledger holds ≥120 dates; the W5 auto-revisit is the only path back."
+        }
+      ],
+      "n_mentions": 4,
+      "truncated": false
+    },
+    {
+      "id": "RUL-7",
+      "files": [
+        {
+          "path": "research/CHINA_INTEL_CYCLES_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 95,
+          "context": "- **RUL-7 (analog finder is context):** k-NN over regime vectors emits descriptive"
+        },
+        {
+          "path": "research/CODEX_NW_GAP_MAP_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 37,
+          "context": "8. **Narrative fixes (non-blocking):** PR-B1 is not \"zero engine change\" — the runner's `_GRID_BUILDERS` dict must gain a grid builder + registered hashes (`scripts/run_rule_replay.py:155/175`); PR-C4"
+        },
+        {
+          "path": "research/ENTRY_STACK_EXPANSION_AMENDMENT2_BY_FABLE.md",
+          "first_line_no": 38,
+          "context": "House floor wins wherever the two differ; per RUL-7 bars may be raised, never lowered:"
+        },
+        {
+          "path": "research/ENTRY_STACK_EXPANSION_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 123,
+          "context": "**RUL-F6-OPDEF (W1 builder ruling, 2026-07-05):** The phrase \"ADX14 rising-vs-low at fire\" in the line above is a terse label, not a complete operationalization. The W1 builder chose `adx14 > 20 AND a"
+        },
+        {
+          "path": "research/NW_NEXT_LOBES_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 24,
+          "context": "3. **INCOMPLETE (sponsorship review):** \"regenerate + commit the panels; zero code cost.\" Panels are gitignored and 45MB combined — they cannot ride git, and a local regen is invisible to the runner ("
+        },
+        {
+          "path": "research/entry_stack/A2_INSIDER_REPORT.md",
+          "first_line_no": 55,
+          "context": "### CI caveat (RUL-7 freeze, 2026-07-05):"
+        },
+        {
+          "path": "research/entry_stack/A2_MACRO_POS_REPORT.md",
+          "first_line_no": 50,
+          "context": "### CI caveat (RUL-7 freeze, 2026-07-05):"
+        },
+        {
+          "path": "research/entry_stack/W0_BASELINES.md",
+          "first_line_no": 165,
+          "context": "## RUL-7 THRESHOLD FREEZE (W0 GATE)"
+        },
+        {
+          "path": "research/entry_stack/W1_NC_REPORT.md",
+          "first_line_no": 267,
+          "context": "### CI caveat (RUL-7 freeze, 2026-07-05):"
+        },
+        {
+          "path": "research/entry_stack/W1_SEV_REPORT.md",
+          "first_line_no": 49,
+          "context": "### CI caveat (RUL-7 freeze, 2026-07-05):"
+        },
+        {
+          "path": "research/entry_stack/W1_STS_REPORT.md",
+          "first_line_no": 77,
+          "context": "new ruling per RUL-7."
+        },
+        {
+          "path": "research/nontech_bottom/W0_INVENTORY.md",
+          "first_line_no": 432,
+          "context": "- RUL-7: Promotion thresholds frozen at W0. CHIP floor: stop5 FE-coef >= 2pp, block-bootstrap 95% CI excluding 0, BH q<=0.10, sign-stable 3/4 eras, beats both NCs, MFE/|MAE| conjunctive."
+        }
+      ],
+      "n_mentions": 31,
+      "truncated": true
+    },
+    {
+      "id": "RUL-8",
+      "files": [
+        {
+          "path": "research/CHINA_INTEL_CYCLES_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 98,
+          "context": "- **RUL-8 (hub contract):** the China lens reads `site/china_intel/briefing.json`"
+        },
+        {
+          "path": "research/CODEX_NW_GAP_MAP_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 75,
+          "context": "| N | Operator action capture on alerts | **GO (admin-side)** | PR-C4 — alert IDs + admin Alerts capture + missing `overrode` button. NO public write endpoint (RUL-8) |"
+        },
+        {
+          "path": "research/ENTRY_STACK_EXPANSION_AMENDMENT2_BY_FABLE.md",
+          "first_line_no": 28,
+          "context": "- **Inference layer:** pre-registered `esx_*` stratum families (§C) in the existing trial ledger. Only families with a filed phase0 verdict may emit `SpinePrediction` rows (display-first, `size_bindin"
+        },
+        {
+          "path": "research/ENTRY_STACK_EXPANSION_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 277,
+          "context": "- **RUL-8:** Backfilled spine rows carry `version: backfill-v1` and are excluded from any live-accrual claim."
+        },
+        {
+          "path": "research/NW_NEXT_LOBES_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 81,
+          "context": "Deferred ledger (with named unblocks): ABS-1b options-hostile arm (S-TOP_RISK accrual ~2026-Q4); F-HZ-2 → A2 G1-Retest clock (~2027-H2); F-HZ-3 clean-flag extension (mae21-null prior at the operative "
+        }
+      ],
+      "n_mentions": 6,
+      "truncated": false
+    },
+    {
+      "id": "RUL-9",
+      "files": [
+        {
+          "path": "research/CHINA_INTEL_CYCLES_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 103,
+          "context": "- **RUL-9 (render budget):** all backfills and event studies run off the render"
+        },
+        {
+          "path": "research/CODEX_NW_GAP_MAP_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 104,
+          "context": "- **RUL-9 (merge sequencing):** PR-B1 → PR-B2 merge strictly in sequence (both append `registry.jsonl` + `trial_ledger.jsonl`). Any PR adding synapse entries regenerates `SIGNAL_BUS.md` in the same PR"
+        },
+        {
+          "path": "research/ENTRY_STACK_EXPANSION_AMENDMENT2_BY_FABLE.md",
+          "first_line_no": 22,
+          "context": "Per RUL-17.1, all non-technical bottom inference rides inside Entry-Stack Expansion: families are `esx_*` keys in the trial ledger, studies run on the frozen fire tape under the frozen grader (RUL-9),"
+        },
+        {
+          "path": "research/ENTRY_STACK_EXPANSION_AMENDMENT3_BY_FABLE.md",
+          "first_line_no": 56,
+          "context": "(`gate_fires_{deep,baskets}.parquet`), RUL-9 grader, RUL-13 21d primaries (stop5 + mae21 +"
+        },
+        {
+          "path": "research/ENTRY_STACK_EXPANSION_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 42,
+          "context": "| ⟦RT⟧ Metric-definition split: `research/entry_timing/wave1.py` clean15 = **1.20 barrier + 0.97 durable-hold floor**; `engine/grading.terminal_state` CLEAN_LIFTOFF = **1.15 / 126d race**. Every cited"
+        },
+        {
+          "path": "research/entry_stack/A2_INSIDER_REPORT.md",
+          "first_line_no": 87,
+          "context": "*Grader: engine/grading.py (program barriers, RUL-9).*"
+        },
+        {
+          "path": "research/entry_stack/A2_MACRO_POS_REPORT.md",
+          "first_line_no": 82,
+          "context": "*Grader: engine/grading.py (program barriers, RUL-9).*"
+        },
+        {
+          "path": "research/entry_stack/A3_HTF_REPORT.md",
+          "first_line_no": 634,
+          "context": "*Grader: engine/grading.py (program barriers, RUL-9).*"
+        },
+        {
+          "path": "research/entry_stack/A3_STRUCT_REPORT.md",
+          "first_line_no": 431,
+          "context": "*Grader: engine/grading.py (program barriers, RUL-9).*"
+        },
+        {
+          "path": "research/entry_stack/W0_BASELINES.md",
+          "first_line_no": 3,
+          "context": "**Status:** W0 recompute under the program grader (RUL-9)."
+        },
+        {
+          "path": "research/entry_stack/W1_NC_REPORT.md",
+          "first_line_no": 299,
+          "context": "*Grader: engine/grading.py (program barriers, RUL-9).*"
+        },
+        {
+          "path": "research/entry_stack/W1_SEV_REPORT.md",
+          "first_line_no": 81,
+          "context": "*Grader: engine/grading.py (program barriers, RUL-9).*"
+        },
+        {
+          "path": "research/entry_stack/W1_STS_REPORT.md",
+          "first_line_no": 350,
+          "context": "*Grader: engine/grading.py (program barriers, RUL-9).*"
+        },
+        {
+          "path": "research/entry_stack/W2_SLQ_REPORT.md",
+          "first_line_no": 574,
+          "context": "*Grader: engine/grading.py (program barriers, RUL-9).*"
+        },
+        {
+          "path": "research/entry_stack/W2_SQL_REPORT.md",
+          "first_line_no": 360,
+          "context": "*Grader: engine/grading.py (program barriers, RUL-9).*"
+        },
+        {
+          "path": "research/entry_stack/W2_SUR_REPORT.md",
+          "first_line_no": 1929,
+          "context": "*Grader: engine/grading.py (program barriers, RUL-9).*"
+        },
+        {
+          "path": "research/nontech_bottom/W0_INVENTORY.md",
+          "first_line_no": 433,
+          "context": "- RUL-9: One grader (engine/grading.py barriers: rot liftoff 1.08/21d, pos liftoff 1.15/126d, stop 0.95, cushion 1.05). All studies use this grader; no recomputation with different barriers."
+        }
+      ],
+      "n_mentions": 28,
+      "truncated": true
+    },
+    {
+      "id": "RUL-C1",
+      "files": [
+        {
+          "path": "research/NW_CODEX_THREE_LOBES_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 56,
+          "context": "- **RUL-C1 (no charters):** no new lobe is chartered by this program. The two-lobe cap (docket §6) stays at L1+L3. Everything below is a rail wave, an existing-artifact wave, or a registered study — t"
+        },
+        {
+          "path": "research/NW_NEXT3_UPGRADES_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 72,
+          "context": "- **RUL-U1 (zero charters):** no lobe is chartered; the cap stays L1+L3. All four builds are waves on existing tissue (L1 tape, options program audit rail, DQ rail). Same accounting as RUL-C1/RUL-N1."
+        },
+        {
+          "path": "research/fable_exit/03_FABLE_SUCCESSION_BENCH_AND_ADJUDICATION_PACK_HANDOFF.md",
+          "first_line_no": 191,
+          "context": "- RUL-C1"
+        }
+      ],
+      "n_mentions": 4,
+      "truncated": false
+    },
+    {
+      "id": "RUL-C10",
+      "files": [
+        {
+          "path": "research/NW_CODEX_THREE_LOBES_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 65,
+          "context": "- **RUL-C10 (LLM law):** nothing in this program lets an LLM score, escalate, or originate. W-B carries qledger *measured* statistics into the bridge (display tier, additive); the cortex may cite them"
+        }
+      ],
+      "n_mentions": 1,
+      "truncated": false
+    },
+    {
+      "id": "RUL-C11",
+      "files": [
+        {
+          "path": "research/NW_CODEX_THREE_LOBES_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 45,
+          "context": "3. **UNBUILDABLE AS WRITTEN:** registering L6-P0 through `scripts/register_rule_experiment.py`. The CLI is RuleSpec-shaped (`--spec-hashes` required per exit/cohort grid; `declared_budget = len(spec_h"
+        },
+        {
+          "path": "research/macro_tx/L6_PHASE0_PREREG.md",
+          "first_line_no": 9,
+          "context": "- Primary: `data/neuralweb/spine_index.parquet` via `engine/neuralweb/query.py`; rows with `ledger='track_record'`, `horizon=21`, `outcome_graded == True`. (Secondary horizons 5 and 63 computed and pr"
+        }
+      ],
+      "n_mentions": 6,
+      "truncated": false
+    },
+    {
+      "id": "RUL-C2",
+      "files": [
+        {
+          "path": "research/NW_CODEX_THREE_LOBES_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 57,
+          "context": "- **RUL-C2 (naming):** the bridge lobe key is `claim_reliability`, never `reliability` — `lobes['reliability']` already exists in `mastermind_context.py` with kernel-FDR-governance scope and a test-en"
+        }
+      ],
+      "n_mentions": 1,
+      "truncated": false
+    },
+    {
+      "id": "RUL-C3",
+      "files": [
+        {
+          "path": "research/NW_CODEX_THREE_LOBES_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 58,
+          "context": "- **RUL-C3 (QI ownership boundary):** qledger and its grading semantics belong to the QI program (frozen since #1180; joint substrate ruling open). Legal here: read-only coverage/accountability diagno"
+        }
+      ],
+      "n_mentions": 3,
+      "truncated": false
+    },
+    {
+      "id": "RUL-C4",
+      "files": [
+        {
+          "path": "research/NW_CODEX_THREE_LOBES_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 59,
+          "context": "- **RUL-C4 (L6-P0 legal shape):** the Phase-0 is a registered measurement, not a live conditioner. Constraints it must carry: (a) **per-axis, never fused** — the Signal Commons R3 positioning-fusion r"
+        }
+      ],
+      "n_mentions": 1,
+      "truncated": false
+    },
+    {
+      "id": "RUL-C5",
+      "files": [
+        {
+          "path": "research/NW_CODEX_THREE_LOBES_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 60,
+          "context": "- **RUL-C5 (NARR-3 contradiction arbitration — no build):** \"when narrative and price disagree, who wins\" is retro-gradeable: contradiction records land in committed artifacts (`world_state.json`, con"
+        },
+        {
+          "path": "research/NW_NEXT3_UPGRADES_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 32,
+          "context": "| 6-U1 exposure joiner (PR-E) | **GO-MODIFIED (build now)** → W-EX | The one missing DQ substrate: #1669 grades *actions* against qledger, but nothing records *exposures* (what the operator could have"
+        }
+      ],
+      "n_mentions": 2,
+      "truncated": false
+    },
+    {
+      "id": "RUL-C6",
+      "files": [
+        {
+          "path": "research/NW_CODEX_THREE_LOBES_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 61,
+          "context": "- **RUL-C6 (NARR-2 story decay — no build):** family-level decay curves for qledger claims are calendar-gated on 21d/63d grade maturation. Registered as a come-back experiment (~2026-10-01). The kerne"
+        }
+      ],
+      "n_mentions": 1,
+      "truncated": false
+    },
+    {
+      "id": "RUL-C7",
+      "files": [
+        {
+          "path": "research/NW_CODEX_THREE_LOBES_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 62,
+          "context": "- **RUL-C7 (reflexivity wave stays under its rulings):** R-A (held-agnostic), R-E (US board only), R-F/R7 (display-only, `is_context_only`, no behavioral consumer) all stand. The earnings-week leg shi"
+        }
+      ],
+      "n_mentions": 2,
+      "truncated": false
+    },
+    {
+      "id": "RUL-C8",
+      "files": [
+        {
+          "path": "research/NW_CODEX_THREE_LOBES_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 47,
+          "context": "5. **MISLEADING:** RUL-C8's \"zero render-path additions.\" `build_reflexivity_overlay.py:233/253` re-renders `site/us_stocks_v2.html` via `build_stock_board_v2.render()` — W-D is display/render work on"
+        }
+      ],
+      "n_mentions": 4,
+      "truncated": false
+    },
+    {
+      "id": "RUL-C9",
+      "files": [
+        {
+          "path": "research/NW_CODEX_THREE_LOBES_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 64,
+          "context": "- **RUL-C9 (registration hygiene):** every new artifact registers in `config/synapse.yml` (tier, horizon_role, scored_path_surfaces, weights) with `docs/SIGNAL_BUS.md` regenerated in the same PR; ever"
+        },
+        {
+          "path": "research/fable_exit/03_FABLE_SUCCESSION_BENCH_AND_ADJUDICATION_PACK_HANDOFF.md",
+          "first_line_no": 192,
+          "context": "- RUL-C9"
+        }
+      ],
+      "n_mentions": 2,
+      "truncated": false
+    },
+    {
+      "id": "RUL-F3",
+      "files": [
+        {
+          "path": "research/DANNYTRADES_NW_ADJUDICATION_AND_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 84,
+          "context": "| 6 | Monthly trim & thesis-break desk | TRIM-GRID-1 (6 cells, descriptive); EXIT-GRID-1 regret ledger (15 cells); reduce-gate = board's only validated edge; RUL-F3.15 role taxonomy = charter-ready sp"
+        },
+        {
+          "path": "research/NW_FINAL3_LOBES_ADJUDICATION_AND_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 36,
+          "context": "## 2. Rulings (RUL-F3.x)"
+        },
+        {
+          "path": "research/NW_NEXT3_UPGRADES_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 6,
+          "context": "**Sibling programs (same day; ownership seniority where surfaces touch, in ratification order):** #1664 gap-map (owns BD-AVOID-1/PR-C2 [in-flight, worktree codexgap-c2 — prereg + stamper written; its "
+        },
+        {
+          "path": "research/execution/EXIT_TAX_SCENARIOS_REPORT.md",
+          "first_line_no": 16,
+          "context": "## The question (RUL-F3.10)"
+        },
+        {
+          "path": "research/execution/NET_REPLAY_V1_REPORT.md",
+          "first_line_no": 17,
+          "context": "## Forking-paths contamination note (RUL-F3.9)"
+        },
+        {
+          "path": "research/execution/THETADATA_TAPE_CONTINUOUS_CALIBRATION.md",
+          "first_line_no": 3,
+          "context": "**Authority:** RUL-F3.12 (`research/NW_FINAL3_LOBES_ADJUDICATION_AND_MASTERPLAN_BY_FABLE.md`)"
+        },
+        {
+          "path": "research/rule_replay/R1_CHARTER.md",
+          "first_line_no": 33,
+          "context": "| `scaled(legs=[(fraction, leg_policy), ...])` | fractions > 0, sum to 1.0; each leg from v1 vocabulary or `profit_take(pct)` | **Amendment: RUL-F3.5** (Final-3 masterplan, 2026-07-06) + **PR-F3.3**. "
+        },
+        {
+          "path": "research/rule_replay/TRIM_GRID_1_REPORT.md",
+          "first_line_no": 18,
+          "context": "## RUL-F3.2 fire-tape counterfactual framing"
+        }
+      ],
+      "n_mentions": 49,
+      "truncated": true
+    },
+    {
+      "id": "RUL-F6",
+      "files": [
+        {
+          "path": "research/ENTRY_STACK_EXPANSION_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 123,
+          "context": "**RUL-F6-OPDEF (W1 builder ruling, 2026-07-05):** The phrase \"ADX14 rising-vs-low at fire\" in the line above is a terse label, not a complete operationalization. The W1 builder chose `adx14 > 20 AND a"
+        },
+        {
+          "path": "research/entry_stack/W1_STS_REPORT.md",
+          "first_line_no": 70,
+          "context": "## Stratum Operationalization (§3 F6 + RUL-F6-OPDEF)"
+        }
+      ],
+      "n_mentions": 3,
+      "truncated": false
+    },
+    {
+      "id": "RUL-LIVE1",
+      "files": [
+        {
+          "path": "research/NEURAL_WEB_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 204,
+          "context": "- 2026-07-06 — **Live-activation wave (Codex docket adjudicated + shipped same-day):** Codex `research/NEURAL_WEB_LIVE_ACTIVATION_RESEARCH_BY_CODEX.md` verified by 6-lane census then adjudicated in `r"
+        },
+        {
+          "path": "research/NW_LIVE_ACTIVATION_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 80,
+          "context": "- **RUL-LIVE1**: Cortex model calls route through the llm_auth waterfall; no"
+        }
+      ],
+      "n_mentions": 2,
+      "truncated": false
+    },
+    {
+      "id": "RUL-LIVE2",
+      "files": [
+        {
+          "path": "research/NW_LIVE_ACTIVATION_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 83,
+          "context": "- **RUL-LIVE2**: Status taxonomy ok/warn/degraded/skipped. Zero-tool"
+        }
+      ],
+      "n_mentions": 1,
+      "truncated": false
+    },
+    {
+      "id": "RUL-LIVE3",
+      "files": [
+        {
+          "path": "research/NW_LIVE_ACTIVATION_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 87,
+          "context": "- **RUL-LIVE3**: Fail-open preserved — cortex/health/brief failures never block"
+        }
+      ],
+      "n_mentions": 1,
+      "truncated": false
+    },
+    {
+      "id": "RUL-LIVE4",
+      "files": [
+        {
+          "path": "research/NW_LIVE_ACTIVATION_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 89,
+          "context": "- **RUL-LIVE4**: Bottom sensors wired display-only; benchmark law ≤30s recorded"
+        }
+      ],
+      "n_mentions": 1,
+      "truncated": false
+    },
+    {
+      "id": "RUL-LIVE5",
+      "files": [
+        {
+          "path": "research/NW_LIVE_ACTIVATION_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 91,
+          "context": "- **RUL-LIVE5**: health.json is DERIVED from synapse.yml + committed artifacts —"
+        }
+      ],
+      "n_mentions": 1,
+      "truncated": false
+    },
+    {
+      "id": "RUL-LIVE6",
+      "files": [
+        {
+          "path": "research/NW_LIVE_ACTIVATION_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 28,
+          "context": "| health.json (engine job) can carry same-day cortex status | REFUTED AS SPECCED | cortex is a separate job (needs: engine) running AFTER the engine commit with its own narrow commit lane — Codex's si"
+        }
+      ],
+      "n_mentions": 3,
+      "truncated": false
+    },
+    {
+      "id": "RUL-LIVE7",
+      "files": [
+        {
+          "path": "research/NW_LIVE_ACTIVATION_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 99,
+          "context": "- **RUL-LIVE7**: The brief is deterministic — no LLM prose, no trading verbs"
+        }
+      ],
+      "n_mentions": 1,
+      "truncated": false
+    },
+    {
+      "id": "RUL-LIVE8",
+      "files": [
+        {
+          "path": "research/NW_LIVE_ACTIVATION_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 102,
+          "context": "- **RUL-LIVE8**: context_stale self-detection — cortex flags deliberation over"
+        }
+      ],
+      "n_mentions": 1,
+      "truncated": false
+    },
+    {
+      "id": "RUL-LIVE9",
+      "files": [
+        {
+          "path": "research/NW_LIVE_ACTIVATION_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 106,
+          "context": "- **RUL-LIVE9**: No new authority anywhere: health tier=infrastructure, brief"
+        }
+      ],
+      "n_mentions": 1,
+      "truncated": false
+    },
+    {
+      "id": "RUL-N1",
+      "files": [
+        {
+          "path": "research/NW_NEXT3_UPGRADES_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 72,
+          "context": "- **RUL-U1 (zero charters):** no lobe is chartered; the cap stays L1+L3. All four builds are waves on existing tissue (L1 tape, options program audit rail, DQ rail). Same accounting as RUL-C1/RUL-N1."
+        },
+        {
+          "path": "research/NW_NEXT_LOBES_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 45,
+          "context": "- **RUL-N1 (zero lobes):** this program charters ZERO lobes. L1/L3 remain the chartered set (two-lobe cap, RUL-P1). Both build waves here are rail-consumers: PR-1 executes a rails-queue item; PR-2 is "
+        }
+      ],
+      "n_mentions": 2,
+      "truncated": false
+    },
+    {
+      "id": "RUL-N10",
+      "files": [
+        {
+          "path": "research/NW_NEXT_LOBES_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 54,
+          "context": "- **RUL-N10 (merge discipline):** PR-1 and PR-2 build in separate pre-created worktrees off fresh origin/main; any synapse.yml-touching PR regenerates SIGNAL_BUS.md in-PR and rebase-checks before merg"
+        }
+      ],
+      "n_mentions": 1,
+      "truncated": false
+    },
+    {
+      "id": "RUL-N2",
+      "files": [
+        {
+          "path": "research/NW_NEXT3_UPGRADES_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 14,
+          "context": "**Codex's evidence census is honest** — all fourteen checkable data claims verified EXACT (BD-1/2/3 episode counts and stop-rate gaps to two decimals; the 403×28 state table; per-feature non-null coun"
+        },
+        {
+          "path": "research/NW_NEXT_LOBES_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 46,
+          "context": "- **RUL-N2 (decision chain struck):** the memo's operating-stack chain (`fire → sponsorship → fragility → abstention → thesis → realized`, memo line 570) is the prohibited fused-escalation shape in na"
+        }
+      ],
+      "n_mentions": 5,
+      "truncated": false
+    },
+    {
+      "id": "RUL-N3",
+      "files": [
+        {
+          "path": "research/NW_NEXT_LOBES_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 33,
+          "context": "| 1 | Sponsorship / Forced-Flow Absorption | **GO-MODIFIED** | data-ops publish gap + existing wave | Publish path = #1664 PR-C1. Science verdict on sector vel/accel = the already-registered `esx_spon"
+        }
+      ],
+      "n_mentions": 3,
+      "truncated": false
+    },
+    {
+      "id": "RUL-N4",
+      "files": [
+        {
+          "path": "research/NW_NEXT_LOBES_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 48,
+          "context": "- **RUL-N4 (qledger substrate):** `grades.jsonl` (2,815 rows) is the live counterfactual substrate for operator grading; the \"zero graded\" framing is discarded (§0.5.1). The DQ-2 harness joins by `cla"
+        }
+      ],
+      "n_mentions": 2,
+      "truncated": false
+    },
+    {
+      "id": "RUL-N5",
+      "files": [
+        {
+          "path": "research/NW_NEXT_LOBES_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 49,
+          "context": "- **RUL-N5 (n-before-stat):** PR-2 (and any successor study here) prints achieved fire-n and episode-cluster-n BEFORE any statistic; DEFER on a floor miss is an expected, printed outcome, not a failur"
+        }
+      ],
+      "n_mentions": 2,
+      "truncated": false
+    },
+    {
+      "id": "RUL-N6",
+      "files": [
+        {
+          "path": "research/NW_NEXT3_UPGRADES_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 25,
+          "context": "| 4-U4 avoided-loss counterfactual | **GO-MODIFIED (build now)** → W-BE | The census lane called it premature; that conflates *forward accrual* with *retro decision-economics*. The Phase-0 tape (26,77"
+        },
+        {
+          "path": "research/NW_NEXT_LOBES_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 35,
+          "context": "| 3 | Cash-Patience / Abstention | **GO-MODIFIED** | R1 experiment waves, not a lobe | Unconditional delay ladder = #1664 PR-B1 (WAIT-GRID-1, 10 cells, frozen spec). Regime-conditioned skip = #1664 PR"
+        },
+        {
+          "path": "research/short_side/BD_ECON1_PREREG.md",
+          "first_line_no": 44,
+          "context": "Per definition: (a) **avoided drawdown**: distribution (mean/median/p90) of `fwd_mdd_21` among flagged fires that stopped; (b) **missed upside**: distribution of `fwd_ret_21` and `fwd_mfe_21` among fl"
+        },
+        {
+          "path": "research/short_side/BD_ECON1_REPORT.md",
+          "first_line_no": 92,
+          "context": "Avoided drawdown (§4a) and missed upside (§4b) printed with equal prominence per RUL-N6 symmetric-cost law."
+        }
+      ],
+      "n_mentions": 8,
+      "truncated": false
+    },
+    {
+      "id": "RUL-N7",
+      "files": [
+        {
+          "path": "research/NW_NEXT_LOBES_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 25,
+          "context": "4. **REVIEW-OF-REVIEW (three-way resolution, printed):** the PR-0 ratification reviewer charged this doc's \"mae21 p=0.653\" citation as a fabricated statistic. Source reading settles it: the mae21 Adde"
+        }
+      ],
+      "n_mentions": 5,
+      "truncated": false
+    },
+    {
+      "id": "RUL-N8",
+      "files": [
+        {
+          "path": "research/DANNYTRADES_NW_ADJUDICATION_AND_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 85,
+          "context": "| 7 | Churn-regret / conviction-hold ledger | L4 `action_ledger.jsonl` (accruing); DQ-2 harness (3 frozen contrasts, n≥25 floor, RUL-N8); W-EX exposure log (RUL-U6: zero stats); M3 regret card queued "
+        },
+        {
+          "path": "research/NW_NEXT_LOBES_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 52,
+          "context": "- **RUL-N8 (DQ-2 shape):** the harness is pure after-the-fact measurement. No summary statistic publishes below **n≥25 graded operator actions** (the cortex A2 Wilson floor); below floor the artifact "
+        }
+      ],
+      "n_mentions": 3,
+      "truncated": false
+    },
+    {
+      "id": "RUL-N9",
+      "files": [
+        {
+          "path": "research/NW_NEXT_LOBES_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 53,
+          "context": "- **RUL-N9 (no re-litigation):** nothing in this program re-tests: G1's frozen family, esx_insider_sponsor's null, esx_ev_blackout's operative-panel mae results (mae21 null; k=3-pooled mae63 NOT MET),"
+        }
+      ],
+      "n_mentions": 2,
+      "truncated": false
+    },
+    {
+      "id": "RUL-NW1",
+      "files": [
+        {
+          "path": "research/FACTOR_INTELLIGENCE_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 581,
+          "context": "- 2026-07-06 — **NW integration wave shipped same-day** (Codex docket verified 9-lane + red-teamed, adjudicated in `research/factor_intelligence/NW_INTEGRATION_ADJUDICATION_BY_FABLE.md`, RUL-NW1..14):"
+        },
+        {
+          "path": "research/NEURAL_WEB_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 204,
+          "context": "- 2026-07-06 — **Live-activation wave (Codex docket adjudicated + shipped same-day):** Codex `research/NEURAL_WEB_LIVE_ACTIVATION_RESEARCH_BY_CODEX.md` verified by 6-lane census then adjudicated in `r"
+        },
+        {
+          "path": "research/NW_LIVE_ACTIVATION_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 97,
+          "context": "narrow-allowlist commit (RUL-NW1 pattern). History rows are as_of-keyed"
+        },
+        {
+          "path": "research/factor_intelligence/NW_INTEGRATION_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 25,
+          "context": "**RUL-NW1 (who commits the state artifact).** The Option A/B binary is REJECTED as posed — A is two-run stale AND still requires a factor-job push to exist at all. RULING: the **factor_panel job itsel"
+        }
+      ],
+      "n_mentions": 4,
+      "truncated": false
+    },
+    {
+      "id": "RUL-NW10",
+      "files": [
+        {
+          "path": "research/factor_intelligence/NW_INTEGRATION_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 55,
+          "context": "**RUL-NW10 (the long-term pool — chartered).** This is the program's real deliverable, missing from the docket. Three committed, append-only, factor-job-advanced accrual artifacts:"
+        }
+      ],
+      "n_mentions": 1,
+      "truncated": false
+    },
+    {
+      "id": "RUL-NW11",
+      "files": [
+        {
+          "path": "research/factor_intelligence/NW_INTEGRATION_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 61,
+          "context": "**RUL-NW11 (registration + guards).** Every new committed artifact gets a `config/synapse.yml` entry (producer = the factor job script); every new workflow step gets its `config/dag.yml` entry; `scrip"
+        }
+      ],
+      "n_mentions": 1,
+      "truncated": false
+    },
+    {
+      "id": "RUL-NW12",
+      "files": [
+        {
+          "path": "research/factor_intelligence/NW_INTEGRATION_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 63,
+          "context": "**RUL-NW12 (severity clamp logging).** `factor_contradictions.py::_record()` silently downgrades `severity='tension'` to `'note'` with no log line (warning fires only for invalid values). Add a debug-"
+        }
+      ],
+      "n_mentions": 1,
+      "truncated": false
+    },
+    {
+      "id": "RUL-NW13",
+      "files": [
+        {
+          "path": "research/factor_intelligence/NW_INTEGRATION_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 65,
+          "context": "**RUL-NW13 (prereg status line).** PREREGISTRATION.md line 5 still reads \"DRAFT — pending Fable merge\" although the lock clause activated at PR #1357's merge. Administrative correction to \"LOCKED at m"
+        },
+        {
+          "path": "research/factor_intelligence/PREREGISTRATION.md",
+          "first_line_no": 5,
+          "context": "**Status:** LOCKED at merge (PR #1357, 2026-07-05). Administrative status-line correction 2026-07-06 per RUL-NW13 (research/factor_intelligence/NW_INTEGRATION_ADJUDICATION_BY_FABLE.md) — no gate conte"
+        }
+      ],
+      "n_mentions": 3,
+      "truncated": false
+    },
+    {
+      "id": "RUL-NW14",
+      "files": [
+        {
+          "path": "research/factor_intelligence/NW_INTEGRATION_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 67,
+          "context": "**RUL-NW14 (ops tail).** `register_h45` is legal from today (ISO-W28). Dispatch `gh workflow run factor_ops.yml -f action=register_h45` after the build wave and inspect the run log — the log doubles a"
+        }
+      ],
+      "n_mentions": 2,
+      "truncated": false
+    },
+    {
+      "id": "RUL-NW2",
+      "files": [
+        {
+          "path": "research/factor_intelligence/NW_INTEGRATION_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 35,
+          "context": "**RUL-NW2 (world_state canonical source).** YES. `_compose_factor_weather()` reads `data/neuralweb/factor_intelligence_state.json` as canonical (present in every fresh checkout, one-run stale — accept"
+        }
+      ],
+      "n_mentions": 1,
+      "truncated": false
+    },
+    {
+      "id": "RUL-NW3",
+      "files": [
+        {
+          "path": "research/factor_intelligence/NW_INTEGRATION_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 37,
+          "context": "**RUL-NW3 (cortex tools).** THREE in v1: `read_factor_state`, `list_factor_contradictions`, `explain_factor_context`. `query_factor_attention` is FOLDED into `read_factor_state` (the state artifact ca"
+        }
+      ],
+      "n_mentions": 1,
+      "truncated": false
+    },
+    {
+      "id": "RUL-NW4",
+      "files": [
+        {
+          "path": "research/factor_intelligence/NW_INTEGRATION_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 39,
+          "context": "**RUL-NW4 (Ask-the-Brain).** Immediately, same wave — read-only, display-only. Factor trigger-term classifier branch added to `_classify_question()`; factor tools added to `_ASK_READ_TOOLS`. A string "
+        }
+      ],
+      "n_mentions": 1,
+      "truncated": false
+    },
+    {
+      "id": "RUL-NW5",
+      "files": [
+        {
+          "path": "research/factor_intelligence/NW_INTEGRATION_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 41,
+          "context": "**RUL-NW5 (Lane 2 probation).** Already ruled by masterplan §5.3: cortex selections from `factor_contradictions.jsonl` accrue to CORTEX probation via the existing `_tool_flag_attention`. No separate `"
+        }
+      ],
+      "n_mentions": 1,
+      "truncated": false
+    },
+    {
+      "id": "RUL-NW6",
+      "files": [
+        {
+          "path": "research/FACTOR_INTELLIGENCE_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 581,
+          "context": "- 2026-07-06 — **NW integration wave shipped same-day** (Codex docket verified 9-lane + red-teamed, adjudicated in `research/factor_intelligence/NW_INTEGRATION_ADJUDICATION_BY_FABLE.md`, RUL-NW1..14):"
+        },
+        {
+          "path": "research/factor_intelligence/NW_INTEGRATION_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 43,
+          "context": "**RUL-NW6 (shadow-ledger floor before A3).** Minimum **25 episode-clustered would-have-fired events spanning ≥3 calendar months** (EI R6 convention), graded at the relevant hypothesis's own falsifier,"
+        }
+      ],
+      "n_mentions": 2,
+      "truncated": false
+    },
+    {
+      "id": "RUL-NW7",
+      "files": [
+        {
+          "path": "research/factor_intelligence/NW_INTEGRATION_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 45,
+          "context": "**RUL-NW7 (factors.html role).** Both: it stays the expert research surface AND gains a compact NW-integration status panel (top, after the header panel). Chip vocabulary: `DISPLAY / SHADOW / ACCRUING"
+        }
+      ],
+      "n_mentions": 1,
+      "truncated": false
+    },
+    {
+      "id": "RUL-NW8",
+      "files": [
+        {
+          "path": "research/FACTOR_INTELLIGENCE_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 581,
+          "context": "- 2026-07-06 — **NW integration wave shipped same-day** (Codex docket verified 9-lane + red-teamed, adjudicated in `research/factor_intelligence/NW_INTEGRATION_ADJUDICATION_BY_FABLE.md`, RUL-NW1..14):"
+        },
+        {
+          "path": "research/factor_intelligence/NW_INTEGRATION_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 47,
+          "context": "**RUL-NW8 (where H status surfaces).** The state artifact is the single source; **factors.html + admin render it now. The committee per-ticker predictive lane is DEFERRED to P4** (masterplan §5.5 alre"
+        }
+      ],
+      "n_mentions": 3,
+      "truncated": false
+    },
+    {
+      "id": "RUL-NW9",
+      "files": [
+        {
+          "path": "research/factor_intelligence/NW_INTEGRATION_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 53,
+          "context": "**RUL-NW9 (allowed_actions is inert).** The state artifact's `allowed_actions` block is DESCRIPTIVE self-documentation only. It carries a sibling field `\"authority_source\": \"constitution.grant_authori"
+        }
+      ],
+      "n_mentions": 1,
+      "truncated": false
+    },
+    {
+      "id": "RUL-ORTH-1",
+      "files": [
+        {
+          "path": "research/pca_factor_orthogonality/R_ORTH_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 25,
+          "context": "**RUL-ORTH-1 (rail, not lobe).** R-ORTH is a rail: `tier: infrastructure` (JSON state) / `tier: display` (any rendered surface), `horizon_role: context`, `owner_program: nw-rails`, `scored_path_surfac"
+        }
+      ],
+      "n_mentions": 1,
+      "truncated": false
+    },
+    {
+      "id": "RUL-ORTH-10",
+      "files": [
+        {
+          "path": "research/pca_factor_orthogonality/R_ORTH_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 43,
+          "context": "**RUL-ORTH-10 (leverage/friction).** Only `vol_match_multipliers` (√(λ₁/λᵢ)) ship now, inside `pca_health` and the rates block, as a governance annotation (\"orthogonal curve bets need ~3–4× notional t"
+        }
+      ],
+      "n_mentions": 1,
+      "truncated": false
+    },
+    {
+      "id": "RUL-ORTH-11",
+      "files": [
+        {
+          "path": "research/pca_factor_orthogonality/R_ORTH_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 45,
+          "context": "**RUL-ORTH-11 (deterministic annotations).** All committee annotations (`same_bet_warning`, `dominant_overlap_cluster`, concentration warnings) are generated by deterministic rules in the engine. LLM "
+        }
+      ],
+      "n_mentions": 1,
+      "truncated": false
+    },
+    {
+      "id": "RUL-ORTH-12",
+      "files": [
+        {
+          "path": "research/pca_factor_orthogonality/R_ORTH_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 47,
+          "context": "**RUL-ORTH-12 (factor residual layer deferred).** Codex §9's per-name residual factor coordinates are DEFERRED: the substrate is weak (factor series history ~3y, annual fundamentals, zero FDR survivor"
+        }
+      ],
+      "n_mentions": 1,
+      "truncated": false
+    },
+    {
+      "id": "RUL-ORTH-2",
+      "files": [
+        {
+          "path": "research/pca_factor_orthogonality/R_ORTH_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 27,
+          "context": "**RUL-ORTH-2 (registration).** `data/neuralweb/covariance_spine.json` (+ compact history parquet) is registered in `config/synapse.yml` as context-only, with `docs/SIGNAL_BUS.md` regenerated via `scri"
+        }
+      ],
+      "n_mentions": 1,
+      "truncated": false
+    },
+    {
+      "id": "RUL-ORTH-3",
+      "files": [
+        {
+          "path": "research/pca_factor_orthogonality/R_ORTH_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 29,
+          "context": "**RUL-ORTH-3 (pca_health placement).** Yield-curve PCA health lives **inline** in `engine/yield_curve.py` as an additive optional sub-block `shape[\"pca\"][\"pca_health\"]`, computed in `pca_decomposition"
+        }
+      ],
+      "n_mentions": 1,
+      "truncated": false
+    },
+    {
+      "id": "RUL-ORTH-4",
+      "files": [
+        {
+          "path": "research/pca_factor_orthogonality/R_ORTH_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 31,
+          "context": "**RUL-ORTH-4 (lobe evidence substrate).** `data/neuralweb/spine_index.parquet` is the sole lobe fire/intensity substrate. R-ORTH derives per-engine evidence vectors from it (engine-week direction-weig"
+        }
+      ],
+      "n_mentions": 1,
+      "truncated": false
+    },
+    {
+      "id": "RUL-ORTH-5",
+      "files": [
+        {
+          "path": "research/pca_factor_orthogonality/R_ORTH_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 33,
+          "context": "**RUL-ORTH-5 (visibility before replay).** Effective-witness fields ARE visible on committee/admin surfaces immediately, as display-only descriptive context with an explicit \"descriptive — not gauntle"
+        }
+      ],
+      "n_mentions": 1,
+      "truncated": false
+    },
+    {
+      "id": "RUL-ORTH-6",
+      "files": [
+        {
+          "path": "research/dispersion/DISP_EIGEN_1_PREREG.md",
+          "first_line_no": 5,
+          "context": "(RUL-ORTH-6); gated tests listed below are frozen but NOT yet run."
+        },
+        {
+          "path": "research/pca_factor_orthogonality/R_ORTH_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 35,
+          "context": "**RUL-ORTH-6 (DISP-EIGEN-1).** Separate prereg family, NOT an extension of DISP-GATE-1 — but its gate activation is **DEFERRED** until DISP-GATE-1's basis non-stationarity blocker (34.8% expanding-vs-"
+        }
+      ],
+      "n_mentions": 6,
+      "truncated": false
+    },
+    {
+      "id": "RUL-ORTH-7",
+      "files": [
+        {
+          "path": "research/pca_factor_orthogonality/R_ORTH_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 37,
+          "context": "**RUL-ORTH-7 (Residual RV lobe bar).** Charter is drafted only if ALL FOUR `RORTH-RV-*` experiments (registered in the prereg, runs deferred) show net-of-cost lift that (a) survives the flat `replay` "
+        },
+        {
+          "path": "research/pca_factor_orthogonality/R_ORTH_PREREG.md",
+          "first_line_no": 32,
+          "context": "Charter bar (RUL-ORTH-7): a Residual Relative-Value lobe may be drafted only if ALL FOUR pass net-of-cost, FDR-pooled, incremental to existing lobes, and outside-crisis. Any single failure closes the "
+        }
+      ],
+      "n_mentions": 2,
+      "truncated": false
+    },
+    {
+      "id": "RUL-ORTH-8",
+      "files": [
+        {
+          "path": "research/PCA_FACTOR_ORTHOGONALITY_NEURAL_WEB_REPORT_BY_CODEX.md",
+          "first_line_no": 11,
+          "context": "> null-calibrated bands per RUL-ORTH-8."
+        },
+        {
+          "path": "research/dispersion/DISP_EIGEN_1_PREREG.md",
+          "first_line_no": 60,
+          "context": "2. **`null_calibration_law` (RUL-ORTH-8)** — any stability statistic derived from"
+        },
+        {
+          "path": "research/pca_factor_orthogonality/R_ORTH_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 39,
+          "context": "**RUL-ORTH-8 (null-calibration law).** Any orthogonality/stability/decay metric published by this program must carry its within-window null (contiguous-block resample, ≥200 draws) and be displayed as "
+        },
+        {
+          "path": "research/pca_factor_orthogonality/R_ORTH_PREREG.md",
+          "first_line_no": 10,
+          "context": "2. The null-calibration law (RUL-ORTH-8): every orthogonality/stability statistic ships with its within-window contiguous-block null (≥200 draws) and is displayed as a percentile vs that null."
+        }
+      ],
+      "n_mentions": 6,
+      "truncated": false
+    },
+    {
+      "id": "RUL-ORTH-9",
+      "files": [
+        {
+          "path": "research/pca_factor_orthogonality/R_ORTH_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 41,
+          "context": "**RUL-ORTH-9 (no recomputation).** Board-candidate breadth stays in `reflexivity.py`; theme ENB stays in `foresight_enb.py`; alpha-candidate overlap stays in `alpha_overlap.py`; factor decorrelation s"
+        }
+      ],
+      "n_mentions": 1,
+      "truncated": false
+    },
+    {
+      "id": "RUL-OVC-1",
+      "files": [
+        {
+          "path": "research/OPTIONS_ALPHA_MASTERPLAN.md",
+          "first_line_no": 432,
+          "context": "| 2026-07-06 | **OVC ADJUDICATION** (Codex OPEX/vanna/charm study, 30 findings): ported 4 artifacts from ephemeral Codex worktree; Opus adversarial review found 2 fatal gaps (no vol/size control on he"
+        },
+        {
+          "path": "research/OPTIONS_OPEX_VANNA_CHARM_ADJUDICATION.md",
+          "first_line_no": 182,
+          "context": "- **RUL-OVC-1 (Family C — accept).** `vanna_relief_buy_pressure` (IV falling 5d × top-tercile"
+        }
+      ],
+      "n_mentions": 2,
+      "truncated": false
+    },
+    {
+      "id": "RUL-OVC-2",
+      "files": [
+        {
+          "path": "research/OPTIONS_ALPHA_MASTERPLAN.md",
+          "first_line_no": 264,
+          "context": "> (RUL-OVC-2/4/5/6 + §7 kill list): signed_charm_pressure (vol proxy, partial IC ≈ 0),"
+        },
+        {
+          "path": "research/OPTIONS_OPEX_VANNA_CHARM_ADJUDICATION.md",
+          "first_line_no": 187,
+          "context": "- **RUL-OVC-2 (Family B — context only).** Un-normalized Greek intensity is a size/liquidity"
+        }
+      ],
+      "n_mentions": 2,
+      "truncated": false
+    },
+    {
+      "id": "RUL-OVC-3",
+      "files": [
+        {
+          "path": "research/OPTIONS_OPEX_VANNA_CHARM_ADJUDICATION.md",
+          "first_line_no": 191,
+          "context": "- **RUL-OVC-3 (Family A — accept as display state + gate).** Front-week charm/gamma"
+        }
+      ],
+      "n_mentions": 1,
+      "truncated": false
+    },
+    {
+      "id": "RUL-OVC-4",
+      "files": [
+        {
+          "path": "research/OPTIONS_OPEX_VANNA_CHARM_ADJUDICATION.md",
+          "first_line_no": 200,
+          "context": "- **RUL-OVC-4 (Family D — no bucket).** Era3-only, ~4 roots/date, stale-carry construction."
+        }
+      ],
+      "n_mentions": 1,
+      "truncated": false
+    },
+    {
+      "id": "RUL-OVC-5",
+      "files": [
+        {
+          "path": "research/OPTIONS_OPEX_VANNA_CHARM_ADJUDICATION.md",
+          "first_line_no": 203,
+          "context": "- **RUL-OVC-5 (Family E — reject).** Quad states are sign-unstable across eras (the study says"
+        }
+      ],
+      "n_mentions": 1,
+      "truncated": false
+    },
+    {
+      "id": "RUL-OVC-6",
+      "files": [
+        {
+          "path": "research/OPTIONS_OPEX_VANNA_CHARM_ADJUDICATION.md",
+          "first_line_no": 206,
+          "context": "- **RUL-OVC-6 (Family F — phantom evidence replaced; pin real but not OPEX-specific).** The"
+        }
+      ],
+      "n_mentions": 1,
+      "truncated": false
+    },
+    {
+      "id": "RUL-OVC-7",
+      "files": [
+        {
+          "path": "research/OPTIONS_OPEX_VANNA_CHARM_ADJUDICATION.md",
+          "first_line_no": 216,
+          "context": "- **RUL-OVC-7 (Family G — accept).** F-29/F-30 are restatements of house law (display/shadow"
+        }
+      ],
+      "n_mentions": 1,
+      "truncated": false
+    },
+    {
+      "id": "RUL-OVC-8",
+      "files": [
+        {
+          "path": "research/OPTIONS_OPEX_VANNA_CHARM_ADJUDICATION.md",
+          "first_line_no": 220,
+          "context": "- **RUL-OVC-8 (naming/plumbing).** W-OVC must harmonize `opex_days` (calendar) vs `td_to_opex`"
+        }
+      ],
+      "n_mentions": 1,
+      "truncated": false
+    },
+    {
+      "id": "RUL-P1",
+      "files": [
+        {
+          "path": "research/NW_CODEX_THREE_LOBES_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 56,
+          "context": "- **RUL-C1 (no charters):** no new lobe is chartered by this program. The two-lobe cap (docket §6) stays at L1+L3. Everything below is a rail wave, an existing-artifact wave, or a registered study — t"
+        },
+        {
+          "path": "research/NW_NEXT_LOBES_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 45,
+          "context": "- **RUL-N1 (zero lobes):** this program charters ZERO lobes. L1/L3 remain the chartered set (two-lobe cap, RUL-P1). Both build waves here are rail-consumers: PR-1 executes a rails-queue item; PR-2 is "
+        },
+        {
+          "path": "research/NW_RAILS_AND_TIER1_LOBES_PROGRAM_BY_FABLE.md",
+          "first_line_no": 33,
+          "context": "- **RUL-P1 (guardrail compliance):** exactly two lobes are chartered by this program: **L1 Short-Side** and **L3 Dispersion**. The exit-regret ledger ships as **R1's first registered rule-experiment b"
+        }
+      ],
+      "n_mentions": 3,
+      "truncated": false
+    },
+    {
+      "id": "RUL-P10",
+      "files": [
+        {
+          "path": "research/CODEX_NW_GAP_MAP_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 31,
+          "context": "2. **INFEASIBLE AS WRITTEN (house-law lens B2):** \"nightly BD-2/BD-3 event stamper, end-of-collect\" — BD-2 requires `replay_boarded` STOPPED-fire state and BD detection needs `massive_stock_day` price"
+        },
+        {
+          "path": "research/NW_CODEX_THREE_LOBES_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 64,
+          "context": "- **RUL-C9 (registration hygiene):** every new artifact registers in `config/synapse.yml` (tier, horizon_role, scored_path_surfaces, weights) with `docs/SIGNAL_BUS.md` regenerated in the same PR; ever"
+        },
+        {
+          "path": "research/NW_NEXT3_UPGRADES_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 78,
+          "context": "- **RUL-U6 (W-EX measurement-substrate-only):** the exposure log computes NO statistics, NO contrasts, registers NO trials. #1669's three contrasts stay frozen; any exposure-conditioned contrast is a "
+        },
+        {
+          "path": "research/NW_NEXT_LOBES_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 15,
+          "context": "4. **Operator instrumentation is LIVE, not missing:** PR-8/#1550 shipped `admin/actions.py` (append + fsync), `POST /api/actions` behind `_guard(write=True)` (`admin/server.py:378-394`), Experiments-t"
+        },
+        {
+          "path": "research/NW_RAILS_AND_TIER1_LOBES_PROGRAM_BY_FABLE.md",
+          "first_line_no": 42,
+          "context": "- **RUL-P10 (new data stores must declare their commit path):** every new write path in this program states, in its PR, one of: (a) explicit `.gitignore` entry (Mac-local/server-local store), (b) git-"
+        },
+        {
+          "path": "research/rule_replay/R1_CHARTER.md",
+          "first_line_no": 51,
+          "context": "The `.gitignore` explicitly lists `data/rule_experiments/results/*_perfire.parquet` (shipped in PR-1, RUL-P10)."
+        }
+      ],
+      "n_mentions": 14,
+      "truncated": false
+    },
+    {
+      "id": "RUL-P2",
+      "files": [
+        {
+          "path": "research/NW_RAILS_AND_TIER1_LOBES_PROGRAM_BY_FABLE.md",
+          "first_line_no": 34,
+          "context": "- **RUL-P2 (R1 shape):** R1 v1 is a **fire-tape × policy-grid replay**, not a gate re-run engine. Entry events come from the existing production fire tape; rules parametrize *cohort filter*, *fill del"
+        }
+      ],
+      "n_mentions": 1,
+      "truncated": false
+    },
+    {
+      "id": "RUL-P3",
+      "files": [
+        {
+          "path": "research/CODEX_NW_GAP_MAP_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 32,
+          "context": "3. **FORKING-PATHS VIOLATION (stats lens F1):** the draft required a `derived_from_surface` stamp only for a hypothetical future short-entry prereg — but PR-C2's own avoid-long prereg selects BD-2/BD-"
+        },
+        {
+          "path": "research/NW_CODEX_THREE_LOBES_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 66,
+          "context": "- **RUL-C11 (L6-P0 FDR family — a considered deviation, logged):** the flat `fdr_family='replay'` mandated by the docket governs the **rule-replay tape** (exit/cohort/delay grids over replay_boarded);"
+        },
+        {
+          "path": "research/NW_RAILS_AND_TIER1_LOBES_PROGRAM_BY_FABLE.md",
+          "first_line_no": 35,
+          "context": "- **RUL-P3 (governor is law):** the R1 runner MUST refuse any policy grid not registered in the rule-experiment registry before the run (content-hash match). No interactive/exploratory mode exists. Ev"
+        },
+        {
+          "path": "research/rule_replay/EXIT_GRID_1_REPORT.md",
+          "first_line_no": 18,
+          "context": "## Forking-paths contamination note (RUL-P3)"
+        },
+        {
+          "path": "research/rule_replay/R1_CHARTER.md",
+          "first_line_no": 15,
+          "context": "## Governor law — RUL-P3 (verbatim)"
+        },
+        {
+          "path": "research/rule_replay/TRIM_GRID_1_REPORT.md",
+          "first_line_no": 24,
+          "context": "## Forking-paths contamination note (RUL-P3 / RUL-F3.5)"
+        },
+        {
+          "path": "research/short_side/BD_ECON1_PREREG.md",
+          "first_line_no": 56,
+          "context": "- **2026-07-06 (pre-commit disclosure, logged per RUL-P3 spirit):** after this prereg was drafted but before commit, the orchestrator ran a coarse feasibility join (calendar-day ±30d approximation, no"
+        }
+      ],
+      "n_mentions": 9,
+      "truncated": false
+    },
+    {
+      "id": "RUL-P4",
+      "files": [
+        {
+          "path": "research/NW_RAILS_AND_TIER1_LOBES_PROGRAM_BY_FABLE.md",
+          "first_line_no": 36,
+          "context": "- **RUL-P4 (R3 minimum):** R1 outputs refuse to serialize without a **vintage stamp**: `price_plane_id`, `adjustment_mode`, `universe_as_of`, `frame` (pit basis), `survivorship_biased`, `coverage_frac"
+        },
+        {
+          "path": "research/short_side/BD_PHASE0_PREREG.md",
+          "first_line_no": 20,
+          "context": "- Vintage stamp mandatory on the summary (program RUL-P4)."
+        }
+      ],
+      "n_mentions": 2,
+      "truncated": false
+    },
+    {
+      "id": "RUL-P5",
+      "files": [
+        {
+          "path": "research/DANNYTRADES_NW_ADJUDICATION_AND_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 231,
+          "context": "*What.* Promotion, not invention (RUL-P5 pattern): expose the already-computed"
+        },
+        {
+          "path": "research/NW_RAILS_AND_TIER1_LOBES_PROGRAM_BY_FABLE.md",
+          "first_line_no": 37,
+          "context": "- **RUL-P5 (L3 is promotion, not invention):** the dispersion lens promotes the EXISTING `engine/dispersion.py` output (lean_in/lean_out/neutral, gross_mult clamped 1.0) to a registered nightly artifa"
+        }
+      ],
+      "n_mentions": 2,
+      "truncated": false
+    },
+    {
+      "id": "RUL-P6",
+      "files": [
+        {
+          "path": "research/NW_RAILS_AND_TIER1_LOBES_PROGRAM_BY_FABLE.md",
+          "first_line_no": 38,
+          "context": "- **RUL-P6 (L1 asymmetry is a question):** the short-side charter pre-registers \"do bottoming edges invert?\" as a hypothesis, never a premise. Phase-0 builds the breakdown event tape and grades it wit"
+        },
+        {
+          "path": "research/SHORT_SIDE_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 14,
+          "context": "- Per docket L1 and RUL-P6 of the build program: **asymmetry is a question, never a premise.** Nothing below assumes bottoming edges invert. Phase-0 exists to measure whether they do."
+        },
+        {
+          "path": "research/short_side/BD_PHASE0_PREREG.md",
+          "first_line_no": 5,
+          "context": "**Governing charter:** `research/SHORT_SIDE_MASTERPLAN_BY_FABLE.md` §4; build spec `research/NW_RAILS_AND_TIER1_LOBES_PROGRAM_BY_FABLE.md` §6 (RUL-P6 paired-contrast law)."
+        }
+      ],
+      "n_mentions": 6,
+      "truncated": false
+    },
+    {
+      "id": "RUL-P7",
+      "files": [
+        {
+          "path": "research/NW_RAILS_AND_TIER1_LOBES_PROGRAM_BY_FABLE.md",
+          "first_line_no": 33,
+          "context": "- **RUL-P1 (guardrail compliance):** exactly two lobes are chartered by this program: **L1 Short-Side** and **L3 Dispersion**. The exit-regret ledger ships as **R1's first registered rule-experiment b"
+        }
+      ],
+      "n_mentions": 2,
+      "truncated": false
+    },
+    {
+      "id": "RUL-P8",
+      "files": [
+        {
+          "path": "research/DANNYTRADES_NW_ADJUDICATION_AND_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 81,
+          "context": "| 3 | 5-definition volatility-void box family | `engine/vol_squeeze.py` = defs 1+2 live (BBW+HVP dual gate, TTM Keltner); Danny `volatility_hole` already tested → null-as-buy; S-SQ species authorized "
+        },
+        {
+          "path": "research/NW_RAILS_AND_TIER1_LOBES_PROGRAM_BY_FABLE.md",
+          "first_line_no": 40,
+          "context": "- **RUL-P8 (ESX under NC-2 deferral):** ESX Amendment-2 T1 studies (`esx_insider_sponsor`, `esx_macro_release`, `esx_pos_reset`) and W2 S-SQ are AUTHORIZED to run post-Fable at phase0 for display/cont"
+        },
+        {
+          "path": "research/SIGNAL_LAB_FRONTIER_FABLE_ADJUDICATION_2026-07-06.md",
+          "first_line_no": 34,
+          "context": "| SLF-007 | COT exhaustion matrix | **KILL (illegal shape + owned elsewhere).** A cross-asset crowding *matrix* is the fused escalating composite Signal Commons R3 explicitly rules illegal. The legal "
+        }
+      ],
+      "n_mentions": 6,
+      "truncated": false
+    },
+    {
+      "id": "RUL-P9",
+      "files": [
+        {
+          "path": "research/NW_CODEX_THREE_LOBES_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 63,
+          "context": "- **RUL-C8 (bandwidth accounting, restated per red-team):** zero new lobes, zero new nightly graders. W-A rides the existing end-of-collect audit call chain in `scripts/collect.py` (seconds); W-B is a"
+        },
+        {
+          "path": "research/NW_RAILS_AND_TIER1_LOBES_PROGRAM_BY_FABLE.md",
+          "first_line_no": 41,
+          "context": "- **RUL-P9 (bandwidth):** nightly additions in this program: dispersion lens JSON (≪30s) and the operator action ledger (server-side, zero render cost). Everything else is off-render (manual/ops lane)"
+        },
+        {
+          "path": "research/NW_TOP3_LOBE_POWER_UP_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 126,
+          "context": "- **RUL-T3-4:** The PR-A2 nightly step is granted as the explicit program amendment RUL-P9 requires, conditional on its benchmark gate."
+        }
+      ],
+      "n_mentions": 3,
+      "truncated": false
+    },
+    {
+      "id": "RUL-SUCC-1",
+      "files": [
+        {
+          "path": "research/FABLE_SUCCESSION_OPERATING_SYSTEM.md",
+          "first_line_no": 34,
+          "context": "### RUL-SUCC-1 — Bench Chartered"
+        }
+      ],
+      "n_mentions": 1,
+      "truncated": false
+    },
+    {
+      "id": "RUL-SUCC-10",
+      "files": [
+        {
+          "path": "research/FABLE_SUCCESSION_OPERATING_SYSTEM.md",
+          "first_line_no": 109,
+          "context": "### RUL-SUCC-10 — Authority Evidence Floor"
+        }
+      ],
+      "n_mentions": 3,
+      "truncated": false
+    },
+    {
+      "id": "RUL-SUCC-11",
+      "files": [
+        {
+          "path": "research/FABLE_SUCCESSION_OPERATING_SYSTEM.md",
+          "first_line_no": 122,
+          "context": "### RUL-SUCC-11 — Privacy Evidence Floor"
+        }
+      ],
+      "n_mentions": 3,
+      "truncated": false
+    },
+    {
+      "id": "RUL-SUCC-12",
+      "files": [
+        {
+          "path": "research/FABLE_SUCCESSION_OPERATING_SYSTEM.md",
+          "first_line_no": 133,
+          "context": "### RUL-SUCC-12 — W0 Scope"
+        }
+      ],
+      "n_mentions": 1,
+      "truncated": false
+    },
+    {
+      "id": "RUL-SUCC-2",
+      "files": [
+        {
+          "path": "research/FABLE_SUCCESSION_OPERATING_SYSTEM.md",
+          "first_line_no": 28,
+          "context": "Fable ratified both amendments. They are encoded in RUL-SUCC-2, RUL-SUCC-3, and RUL-SUCC-4 below."
+        }
+      ],
+      "n_mentions": 2,
+      "truncated": false
+    },
+    {
+      "id": "RUL-SUCC-3",
+      "files": [
+        {
+          "path": "research/FABLE_SUCCESSION_OPERATING_SYSTEM.md",
+          "first_line_no": 28,
+          "context": "Fable ratified both amendments. They are encoded in RUL-SUCC-2, RUL-SUCC-3, and RUL-SUCC-4 below."
+        }
+      ],
+      "n_mentions": 3,
+      "truncated": false
+    },
+    {
+      "id": "RUL-SUCC-4",
+      "files": [
+        {
+          "path": "research/FABLE_SUCCESSION_OPERATING_SYSTEM.md",
+          "first_line_no": 28,
+          "context": "Fable ratified both amendments. They are encoded in RUL-SUCC-2, RUL-SUCC-3, and RUL-SUCC-4 below."
+        }
+      ],
+      "n_mentions": 7,
+      "truncated": false
+    },
+    {
+      "id": "RUL-SUCC-5",
+      "files": [
+        {
+          "path": "research/FABLE_SUCCESSION_OPERATING_SYSTEM.md",
+          "first_line_no": 70,
+          "context": "### RUL-SUCC-5 — Speed Law"
+        }
+      ],
+      "n_mentions": 1,
+      "truncated": false
+    },
+    {
+      "id": "RUL-SUCC-6",
+      "files": [
+        {
+          "path": "research/FABLE_SUCCESSION_OPERATING_SYSTEM.md",
+          "first_line_no": 76,
+          "context": "### RUL-SUCC-6 — Packet Schema"
+        }
+      ],
+      "n_mentions": 1,
+      "truncated": false
+    },
+    {
+      "id": "RUL-SUCC-7",
+      "files": [
+        {
+          "path": "research/FABLE_SUCCESSION_OPERATING_SYSTEM.md",
+          "first_line_no": 89,
+          "context": "### RUL-SUCC-7 — RF Actor Law Amendment"
+        }
+      ],
+      "n_mentions": 3,
+      "truncated": false
+    },
+    {
+      "id": "RUL-SUCC-8",
+      "files": [
+        {
+          "path": "research/FABLE_SUCCESSION_OPERATING_SYSTEM.md",
+          "first_line_no": 97,
+          "context": "### RUL-SUCC-8 — Golden Case Law"
+        }
+      ],
+      "n_mentions": 3,
+      "truncated": false
+    },
+    {
+      "id": "RUL-SUCC-9",
+      "files": [
+        {
+          "path": "research/FABLE_SUCCESSION_OPERATING_SYSTEM.md",
+          "first_line_no": 103,
+          "context": "### RUL-SUCC-9 — Ruling Index"
+        }
+      ],
+      "n_mentions": 1,
+      "truncated": false
+    },
+    {
+      "id": "RUL-T3-1",
+      "files": [
+        {
+          "path": "research/NW_TOP3_LOBE_POWER_UP_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 123,
+          "context": "- **RUL-T3-1:** O1/O2/O3/O4/E2/E5/M7 are closed as proposed (duplicate, null, locked, or illegal). Re-opening any of them requires a new prereg that cites and distinguishes the closing evidence above."
+        }
+      ],
+      "n_mentions": 1,
+      "truncated": false
+    },
+    {
+      "id": "RUL-T3-2",
+      "files": [
+        {
+          "path": "research/NW_TOP3_LOBE_POWER_UP_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 124,
+          "context": "- **RUL-T3-2:** Clock-first ordering is the standing prioritization rule for lobe power-up work: ledger-openers with pre-registered gates outrank capability builds."
+        }
+      ],
+      "n_mentions": 1,
+      "truncated": false
+    },
+    {
+      "id": "RUL-T3-3",
+      "files": [
+        {
+          "path": "research/NW_TOP3_LOBE_POWER_UP_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 125,
+          "context": "- **RUL-T3-3:** Truth-maintenance work (sentinels, baselines, schema conformance) is RAIL work under the docket taxonomy and lives with the NW rails program; the PR-A1 conformance test is the permanen"
+        }
+      ],
+      "n_mentions": 1,
+      "truncated": false
+    },
+    {
+      "id": "RUL-T3-4",
+      "files": [
+        {
+          "path": "research/NW_TOP3_LOBE_POWER_UP_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 126,
+          "context": "- **RUL-T3-4:** The PR-A2 nightly step is granted as the explicit program amendment RUL-P9 requires, conditional on its benchmark gate."
+        }
+      ],
+      "n_mentions": 1,
+      "truncated": false
+    },
+    {
+      "id": "RUL-T3-5",
+      "files": [
+        {
+          "path": "research/NW_TOP3_LOBE_POWER_UP_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 127,
+          "context": "- **RUL-T3-5:** No new model may publish a confidence number that is not a Wilson/Jeffreys bound from graded history (D-7 restated for this program); all calibration primitives converge on `engine/gra"
+        }
+      ],
+      "n_mentions": 1,
+      "truncated": false
+    },
+    {
+      "id": "RUL-U1",
+      "files": [
+        {
+          "path": "research/NW_NEXT3_UPGRADES_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 72,
+          "context": "- **RUL-U1 (zero charters):** no lobe is chartered; the cap stays L1+L3. All four builds are waves on existing tissue (L1 tape, options program audit rail, DQ rail). Same accounting as RUL-C1/RUL-N1."
+        }
+      ],
+      "n_mentions": 1,
+      "truncated": false
+    },
+    {
+      "id": "RUL-U10",
+      "files": [
+        {
+          "path": "research/NW_NEXT3_UPGRADES_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 82,
+          "context": "- **RUL-U10 (language):** \"avoid candidate,\" \"building history,\" \"descriptive,\" \"come-back\" used precisely; the word \"validated\" appears nowhere in any artifact this program ships; every report carrie"
+        }
+      ],
+      "n_mentions": 1,
+      "truncated": false
+    },
+    {
+      "id": "RUL-U2",
+      "files": [
+        {
+          "path": "research/NW_NEXT3_UPGRADES_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 73,
+          "context": "- **RUL-U2 (ownership seniority):** where this program touches a surface owned by #1664/#1666/#1673, the earlier program owns it. Named: BD-AVOID-1 and everything in codexgap-c2 (untouchable until PR-"
+        }
+      ],
+      "n_mentions": 2,
+      "truncated": false
+    },
+    {
+      "id": "RUL-U3",
+      "files": [
+        {
+          "path": "research/NW_NEXT3_UPGRADES_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 74,
+          "context": "- **RUL-U3 (BD-ECON-1 lawful shape):** retro decision-economics on the existing Phase-0 tape is legal now because every input is already computed and graded; it is registered (family `short_side`, dec"
+        },
+        {
+          "path": "research/short_side/BD_ECON1_PREREG.md",
+          "first_line_no": 5,
+          "context": "**Governing docs:** `research/SHORT_SIDE_MASTERPLAN_BY_FABLE.md`; `research/NW_NEXT3_UPGRADES_ADJUDICATION_BY_FABLE.md` (RUL-U3); `research/short_side/BD_PHASE0_PREREG.md` (parent tape)."
+        }
+      ],
+      "n_mentions": 2,
+      "truncated": false
+    },
+    {
+      "id": "RUL-U4",
+      "files": [
+        {
+          "path": "research/NW_NEXT3_UPGRADES_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 76,
+          "context": "- **RUL-U4 (Phase-0b lawful shape):** a descriptive tape extension under the Phase-0 apparatus (same universe, liquidity floor, era window, episode collapse, paired two-sided grading, seeded random-ba"
+        },
+        {
+          "path": "research/short_side/BD_ECON1_PREREG.md",
+          "first_line_no": 48,
+          "context": "Per definition: ≥300 flagged fires AND ≥100 distinct contributing BD episodes, printed BEFORE any statistic. Miss → **P0-DEFER** for that definition: counts + arrival note printed, no statistics, come"
+        },
+        {
+          "path": "research/short_side/BD_PHASE0B_PREREG.md",
+          "first_line_no": 5,
+          "context": "**Governing docs:** `research/SHORT_SIDE_MASTERPLAN_BY_FABLE.md` §3–§4; `research/NW_NEXT3_UPGRADES_ADJUDICATION_BY_FABLE.md` (RUL-U4); parent apparatus `research/short_side/BD_PHASE0_PREREG.md`."
+        },
+        {
+          "path": "research/short_side/BD_PHASE0B_REPORT.md",
+          "first_line_no": 4,
+          "context": "**Governing:** `research/NW_NEXT3_UPGRADES_ADJUDICATION_BY_FABLE.md` §5.4, RUL-U4, RUL-U3a"
+        }
+      ],
+      "n_mentions": 8,
+      "truncated": false
+    },
+    {
+      "id": "RUL-U5",
+      "files": [
+        {
+          "path": "research/NW_NEXT3_UPGRADES_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 77,
+          "context": "- **RUL-U5 (W-OC read-only fence):** the coverage audit reads state.parquet, gate.json, the stamped ledger, and registry constants; it writes ONLY `data/options_entry/coverage.json` + its own docs tab"
+        }
+      ],
+      "n_mentions": 2,
+      "truncated": false
+    },
+    {
+      "id": "RUL-U6",
+      "files": [
+        {
+          "path": "research/DANNYTRADES_NW_ADJUDICATION_AND_MASTERPLAN_BY_FABLE.md",
+          "first_line_no": 85,
+          "context": "| 7 | Churn-regret / conviction-hold ledger | L4 `action_ledger.jsonl` (accruing); DQ-2 harness (3 frozen contrasts, n≥25 floor, RUL-N8); W-EX exposure log (RUL-U6: zero stats); M3 regret card queued "
+        },
+        {
+          "path": "research/NW_NEXT3_UPGRADES_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 78,
+          "context": "- **RUL-U6 (W-EX measurement-substrate-only):** the exposure log computes NO statistics, NO contrasts, registers NO trials. #1669's three contrasts stay frozen; any exposure-conditioned contrast is a "
+        }
+      ],
+      "n_mentions": 3,
+      "truncated": false
+    },
+    {
+      "id": "RUL-U7",
+      "files": [
+        {
+          "path": "research/NW_NEXT3_UPGRADES_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 31,
+          "context": "| 5-U5 analogue library | **REGISTER come-back** | Genuinely unowned and a good idea in research form — but premature until the W-E0 single-name manifest completes, and epistemically hazardous as a li"
+        }
+      ],
+      "n_mentions": 3,
+      "truncated": false
+    },
+    {
+      "id": "RUL-U8",
+      "files": [
+        {
+          "path": "research/NW_NEXT3_UPGRADES_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 80,
+          "context": "- **RUL-U8 (merge discipline):** W0 merges first (provenance + preregs). W-OC and W-EX build in parallel pre-created worktrees but merge SERIALLY with synapse.yml rebase-check and pinned-count re-bump"
+        }
+      ],
+      "n_mentions": 1,
+      "truncated": false
+    },
+    {
+      "id": "RUL-U9",
+      "files": [
+        {
+          "path": "research/NW_NEXT3_UPGRADES_ADJUDICATION_BY_FABLE.md",
+          "first_line_no": 81,
+          "context": "- **RUL-U9 (LLM law):** nothing in this program lets an LLM originate, score, or escalate. W-EX rows are deterministic joins of committed artifacts; BD studies are arithmetic on frozen tapes."
+        }
+      ],
+      "n_mentions": 1,
+      "truncated": false
+    }
+  ]
+}

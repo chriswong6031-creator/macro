@@ -1,892 +1,1323 @@
 {
-  "schema": "validated_allowlist.v1",
-  "purpose": "W4.6 / BC-2 (PREREGISTRATION.md §4). Each entry justifies an AFFIRMATIVE use of the word 'validated'/'已验证' in a user-facing surface by naming the backing evidence artifact or the reason the use is legitimate. scripts/check_validated_claims.py fails CI on any affirmative 'validated' claim that matches NO entry here (negated/hedged uses — 'no validated edge', 'not a validated', 'unvalidated', '未验证' — are ignored automatically). Keep entries phrase-scoped, not file:line-scoped, so they survive page regeneration. Adding an entry is a claim of record: it must cite an artifact or a documented study.",
-  "notes": "The `match` field is a case-insensitive substring that must appear on the same line as the token. `backing` names the artifact/doc that earns it. Order does not matter.",
-  "allow": [
-    {
-      "match": "validated absolute-trend drawdown gate",
-      "backing": "research/SECTOR_CONFLUENCE.md + allocation panel 04 (multi-decade sector-ETF backtest; edge = drawdown/shake-out control via the absolute-trend gate). engine.sector_central _trend_gates.",
-      "surfaces": ["sector_central", "allocation"]
-    },
-    {
-      "match": "validated for drawdown/staying-power control",
-      "backing": "same as the absolute-trend drawdown gate: risk-control lever, explicitly NOT return alpha.",
-      "surfaces": ["sector_central"]
-    },
-    {
-      "match": "validated edge = drawdown control",
-      "backing": "allocation_scorecard: the allocation algorithm's only validated edge is drawdown control (sector backtest panel 04).",
-      "surfaces": ["allocation"]
-    },
-    {
-      "match": "validated edge on this page is drawdown control",
-      "backing": "allocation desk: leans graded against reality; validated edge is drawdown control.",
-      "surfaces": ["allocation"]
-    },
-    {
-      "match": "validated edge is risk control, not alpha",
-      "backing": "allocation panel 04 sector backtest.",
-      "surfaces": ["allocation"]
-    },
-    {
-      "match": "validated on multi-decade sector",
-      "backing": "allocation panel 04: the algorithm is validated on multi-decade sector-ETF history; edge = drawdown control.",
-      "surfaces": ["allocation"]
-    },
-    {
-      "match": "validated MACD-2D",
-      "backing": "research/SECTOR_CONFLUENCE.md — the MACD-2D x StochRSI-3D confluence gate (signal_gate T1/T2/T3); the buy gate guarding setups.json.",
-      "surfaces": ["us_stocks_v2", "subsectors", "discovery"]
-    },
-    {
-      "match": "validated MACD-RSI",
-      "backing": "same confluence-cascade gate (T1-T4), research/SECTOR_CONFLUENCE.md.",
-      "surfaces": ["subsectors"]
-    },
-    {
-      "match": "validated regime state machine",
-      "backing": "the ladder/regime state machine base rates (SPDR-calibrated); rotation CONTEXT, not alpha.",
-      "surfaces": ["subsectors_china", "subsectors"]
-    },
-    {
-      "match": "validated sector state machine",
-      "backing": "the sector regime state machine (rotation context).",
-      "surfaces": ["subsectors"]
-    },
-    {
-      "match": "validated buy/sell engine",
-      "backing": "research/SECTOR_CONFLUENCE.md — the confluence engine driving the Sector setups board; MEASURED forward-63d SPY excess base rate.",
-      "surfaces": ["sector"]
-    },
-    {
-      "match": "phase-0 validated",
-      "backing": "research/RESIDUAL_ALPHA_MOMENTUM.md — residual momentum phase-0 validated as a modest, regime-decayed edge (context, not a buy list).",
-      "surfaces": ["sector"]
-    },
-    {
-      "match": "the validated GO legs",
-      "backing": "data/regime/anticipation_gate.json — the OOS-validated GO legs (validated:true cells); display-only legs never score.",
-      "surfaces": ["anticipation"]
-    },
-    {
-      "match": "validated OOS",
-      "backing": "data/regime/anticipation_gate.json — per-leg out-of-sample validation flag.",
-      "surfaces": ["anticipation"]
-    },
-    {
-      "match": "validated legs",
-      "backing": "data/regime/anticipation_gate.json go_legs (OOS-validated direction legs).",
-      "surfaces": ["anticipation"]
-    },
-    {
-      "match": "validated core",
-      "backing": "anticipation RISK cone — the always-shown empirical forward distribution (the validated core; direction is coloured only where OOS-validated).",
-      "surfaces": ["anticipation"]
-    },
-    {
-      "match": "cone validated",
-      "backing": "data/regime/anticipation_gate.json — cone calibration validation.",
-      "surfaces": ["anticipation"]
-    },
-    {
-      "match": "up-lean (green, validated)",
-      "backing": "data/regime/anticipation_gate.json — direction shown in colour ONLY where OOS-validated.",
-      "surfaces": ["anticipation"]
-    },
-    {
-      "match": "down-lean (red, validated)",
-      "backing": "data/regime/anticipation_gate.json — direction shown in colour ONLY where OOS-validated.",
-      "surfaces": ["anticipation"]
-    },
-    {
-      "match": "direction (validated)",
-      "backing": "data/regime/anticipation_gate.json — the direction column is populated only for OOS-validated legs.",
-      "surfaces": ["anticipation"]
-    },
-    {
-      "match": "= validated / scored",
-      "backing": "anticipation drivers legend: star = validated/scored (data/regime/anticipation_gate.json).",
-      "surfaces": ["anticipation"]
-    },
-    {
-      "match": "risk · validated",
-      "backing": "anticipation RISK block — the validated risk cone.",
-      "surfaces": ["anticipation"]
-    },
-    {
-      "match": "validated index vol",
-      "backing": "engine/vol_regime + data/vol/regime.json — the index vol-regime read; DSR 0.9998 on 1990+ history (HAC t~-10), the one validated read on gex.html.",
-      "surfaces": ["gex"]
-    },
-    {
-      "match": "validated gate",
-      "backing": "sector_central trend-breadth gate — the validated absolute-trend drawdown gate (see above); gex.html vol-regime gate.",
-      "surfaces": ["sector_central", "anticipation"]
-    },
-    {
-      "match": "validated +0.1-0.15 sharpe lever",
-      "backing": "the net-liquidity Sharpe lever (engine.regime.liquidity_overlay; research/ validated overlay) — HOW MUCH to own.",
-      "surfaces": ["dashboard", "vector"]
-    },
-    {
-      "match": "稳健、已验证的优势",
-      "backing": "spvector: leave-one-crisis-out + AQR permutation null (p=0.0); ~40% shallower max drawdown, higher Sharpe.",
-      "surfaces": ["spvector"]
-    },
-    {
-      "match": "edge is validated by leave-one-crisis-out",
-      "backing": "spvector: leave-one-crisis-out + AQR-style permutation null (real Sharpe & drawdown beat every random-timing shuffle, p=0.0); ALFRED point-in-time.",
-      "surfaces": ["spvector"]
-    },
-    {
-      "match": "validated washouts",
-      "backing": "spvector Fed-put-gated re-deploy — buys validated washouts (the spvector overlay study).",
-      "surfaces": ["spvector"]
-    },
-    {
-      "match": "validated engine.factor_exposure",
-      "backing": "engine.factor_exposure — the validated factor-exposure engine (factor_exposure.js is a faithful client port).",
-      "surfaces": ["factor_exposure"]
-    },
-    {
-      "match": "within the validated regime",
-      "backing": "HK desk — SIZING within the live risk regime (the vol/risk regime read is the validated overlay); NEVER a validated alpha.",
-      "surfaces": ["hk"]
-    },
-    {
-      "match": "validated selection edge",
-      "backing": "HK desk — used in the negated sense ('HK has no validated selection edge'); honest disclaimer.",
-      "surfaces": ["hk"]
-    },
-    {
-      "match": "hk's validated edge is the global-risk overlay",
-      "backing": "research/CHINA_HK_STOCK_SIGNALS.md — HK's validated edge is the global-risk (S&P beta) overlay, measured 40y monthly.",
-      "surfaces": ["hk"]
-    },
-    {
-      "match": "must have a stored",
-      "backing": "measurement.html — this is the STATEMENT of the validated-artifact doctrine itself (BC-2's own prose).",
-      "surfaces": ["measurement"]
-    },
-    {
-      "match": "the word \"validated\"",
-      "backing": "measurement.html — quotes the doctrine (the word 'validated' requires a stored artifact).",
-      "surfaces": ["measurement"]
-    },
-    {
-      "match": "已验证\"一词",
-      "backing": "measurement.html zh — quotes the doctrine.",
-      "surfaces": ["measurement"]
-    },
-    {
-      "match": "tr-validated",
-      "backing": "sector_central CSS class name (.tr-validated) — a style token, not a claim.",
-      "surfaces": ["sector_central"]
-    },
-    {
-      "match": "validated absolute-trend",
-      "backing": "sector_central meta description + prose — the validated absolute-trend drawdown gate (panel 04 backtest).",
-      "surfaces": ["sector_central"]
-    },
-    {
-      "match": "validated sleeve-size chip",
-      "backing": "CN drawdown radar sleeve-size chip (china_drawdown_edge_validated; research/CHINA_HK_STOCK_SIGNALS.md — CN fwd-drawdown edge). Payload-gated, display-only.",
-      "surfaces": ["baskets_desk"]
-    },
-    {
-      "match": "validated drawdown-control siz",
-      "backing": "CN drawdown-control sleeve-size channel (research/CHINA_HK_STOCK_SIGNALS.md — CN forward-drawdown edge). Sizes only, never selects.",
-      "surfaces": ["baskets_desk", "china"]
-    },
-    {
-      "match": "validated drawdown control channel",
-      "backing": "the absolute-trend drawdown gate — the one validated channel (allocation panel 04). Size, not return.",
-      "surfaces": ["allocation", "china"]
-    },
-    {
-      "match": "validated α leg",
-      "backing": "research/RESIDUAL_ALPHA_MOMENTUM.md — the sector-neutral residual-momentum leg (positive-IC selection leg); the board rank stays this validated α leg.",
-      "surfaces": ["canada", "china", "us_stocks"]
-    },
-    {
-      "match": "validated sector-neutral residual",
-      "backing": "research/RESIDUAL_ALPHA_MOMENTUM.md — sector-neutral residual momentum (positive-IC), shared across US/China/Canada engines.",
-      "surfaces": ["canada", "us_stocks", "china"]
-    },
-    {
-      "match": "validated us/china engine",
-      "backing": "research/RESIDUAL_ALPHA_MOMENTUM.md — residual-momentum construction shared with the validated US/China engines.",
-      "surfaces": ["canada"]
-    },
-    {
-      "match": "validated sector-neutral residual-momentum leg",
-      "backing": "research/RESIDUAL_ALPHA_MOMENTUM.md — the α selection leg (positive IC).",
-      "surfaces": ["canada"]
-    },
-    {
-      "match": "validated a-share",
-      "backing": "research/CHINA_HK_STOCK_SIGNALS.md — the validated A-share effects: within-sector 3M reversal (Sharpe 0.58) and low-vol defensive tilt (Sharpe 0.98). MEASURED, ~35y.",
-      "surfaces": ["china", "china_lookup", "subsectors_china"]
-    },
-    {
-      "match": "validated mean-reversion",
-      "backing": "research/CHINA_HK_STOCK_SIGNALS.md — A-share within-sector mean-reversion (the validated effect).",
-      "surfaces": ["china"]
-    },
-    {
-      "match": "validated reversal",
-      "backing": "research/CHINA_HK_STOCK_SIGNALS.md — the validated A-share within-sector reversal context (high-variance, not a buy list).",
-      "surfaces": ["china", "china_lookup"]
-    },
-    {
-      "match": "validated effect",
-      "backing": "research/CHINA_HK_STOCK_SIGNALS.md — A-share mean-reversion entry, the validated effect (momentum is NOT).",
-      "surfaces": ["china"]
-    },
-    {
-      "match": "validated defensive tilt",
-      "backing": "research/CHINA_HK_STOCK_SIGNALS.md — low-vol defensive tilt, Sharpe 0.98 vs market 0.88.",
-      "surfaces": ["china"]
-    },
-    {
-      "match": "validated lenses",
-      "backing": "china screener — the two validated A-share lenses (reversal + low-vol); research/CHINA_HK_STOCK_SIGNALS.md.",
-      "surfaces": ["china"]
-    },
-    {
-      "match": "validated screens",
-      "backing": "china — the two validated A-share screens (reversal + low-vol confluence).",
-      "surfaces": ["china"]
-    },
-    {
-      "match": "validated construction saw",
-      "backing": "research/CHINA_HK_STOCK_SIGNALS.md — the validated reversal construction's historical single-name drawdowns (deep by design).",
-      "surfaces": ["china"]
-    },
-    {
-      "match": "validated short-term",
-      "backing": "china_lookup — the validated short-term timing read (cycle ladder + A-share reversal).",
-      "surfaces": ["china_lookup"]
-    },
-    {
-      "match": "validated global-risk-beta",
-      "backing": "research/CHINA_HK_STOCK_SIGNALS.md — HK global-risk-beta exposure (the validated HK edge), 40y monthly.",
-      "surfaces": ["hk", "hk_lookup"]
-    },
-    {
-      "match": "validated credit/vol/margin regime",
-      "backing": "the credit/vol/margin regime gate (vol_regime + credit/liquidity overlays) — the validated conditioning regime; gated-confluence read.",
-      "surfaces": ["stock", "us_stocks"]
-    },
-    {
-      "match": "validated macro de-risk",
-      "backing": "the validated macro de-risk read (engine.regime; vol-regime + liquidity overlay). Reused, not new.",
-      "surfaces": ["hk", "vector", "dashboard"]
-    },
-    {
-      "match": "validated de-risk score",
-      "backing": "engine.regime macro de-risk score — the validated overlay (reused).",
-      "surfaces": ["hk"]
-    },
-    {
-      "match": "validated condition gauges",
-      "backing": "dashboard condition gauges — the validated macro tilt (recession & drawdown-risk de-risk; vol_regime + macro_risk_score).",
-      "surfaces": ["dashboard"]
-    },
-    {
-      "match": "validated index dealer-gamma",
-      "backing": "engine/gex index dealer-gamma read (S&P500) — validated at the index level; ground truth for the market-wide gamma regime.",
-      "surfaces": ["gex", "stock"]
-    },
-    {
-      "match": "validated at the index level",
-      "backing": "engine/gex — GEX validated at the INDEX level (per-name is display-only).",
-      "surfaces": ["gex"]
-    },
-    {
-      "match": "validated index dealer",
-      "backing": "engine/gex index dealer-gamma read (validated at index level).",
-      "surfaces": ["gex"]
-    },
-    {
-      "match": "validated signal",
-      "backing": "alerts / anticipation — 'backed by a validated signal' surfaces a hit-rate/IC/DSR ONLY where engine.signal_lab already validated that family (recession composite, quad, BTC risk regime, commodity risk index, etc.).",
-      "surfaces": ["alerts", "anticipation"]
-    },
-    {
-      "match": "signal_lab already validated",
-      "backing": "engine.signal_lab — a hit-rate/IC/DSR is shown ONLY where signal_lab already validated the family.",
-      "surfaces": ["alerts"]
-    },
-    {
-      "match": "已验证该族",
-      "backing": "engine.signal_lab zh — same signal_lab family-validation gate.",
-      "surfaces": ["alerts"]
-    },
-    {
-      "match": "validated read",
-      "backing": "anticipation/impulse — the RISK cone is the validated read (empirical forward distribution); direction is a measured coin-flip.",
-      "surfaces": ["anticipation", "impulse", "china_lookup"]
-    },
-    {
-      "match": "validated out-of-sample",
-      "backing": "data/regime/anticipation_gate.json — direction shown only where OOS-validated; the lean is a validated out-of-sample read.",
-      "surfaces": ["anticipation", "intl_stock", "canada_stock"]
-    },
-    {
-      "match": "validated label",
-      "backing": "baskets lifecycle — the slow, validated lifecycle label (the consolidated basket state machine); flagged when faster textures disagree.",
-      "surfaces": ["baskets", "basket_detail"]
-    },
-    {
-      "match": "validated) lifecycle label",
-      "backing": "baskets — the (slow, validated) lifecycle label vs faster descriptive textures.",
-      "surfaces": ["baskets", "basket_detail"]
-    },
-    {
-      "match": "validated risk reads",
-      "backing": "baskets — the validated basket RISK reads (risk labels are the measured leg; see baskets-signal-calibration).",
-      "surfaces": ["baskets"]
-    },
-    {
-      "match": "validated mark",
-      "backing": "allocation REDUCE side — a VALIDATED mark (absolute-trend / recession-deterioration drawdown gate, panel 04).",
-      "surfaces": ["allocation"]
-    },
-    {
-      "match": "validated marker",
-      "backing": "allocation — the VALIDATED marker on the reduce side (absolute-trend drawdown gate).",
-      "surfaces": ["allocation"]
-    },
-    {
-      "match": "validated risk gate",
-      "backing": "narrative-basket deterioration risk gate — the validated absolute-trend / recession-deterioration drawdown gate (panel 04).",
-      "surfaces": ["dashboard", "allocation"]
-    },
-    {
-      "match": "validated drawdown gate",
-      "backing": "the absolute-trend drawdown gate (panel 04) — size down below long-term trend.",
-      "surfaces": ["dashboard", "allocation"]
-    },
-    {
-      "match": "已验证风险门槛",
-      "backing": "zh — the validated absolute-trend/recession-deterioration risk gate (panel 04).",
-      "surfaces": ["dashboard", "allocation"]
-    },
-    {
-      "match": "已验证的回撤门槛",
-      "backing": "zh — the validated drawdown gate (panel 04).",
-      "surfaces": ["dashboard"]
-    },
-    {
-      "match": "validated dual-momentum book",
-      "backing": "allocation — the validated dual-momentum book (names above their own 200d, panel-04 absolute-trend logic).",
-      "surfaces": ["allocation"]
-    },
-    {
-      "match": "validated channel",
-      "backing": "allocation — trend (drawdown control) is the one validated channel; also LVMUY contemporaneous co-move (altdata_quiver).",
-      "surfaces": ["allocation", "china_altdata"]
-    },
-    {
-      "match": "one validated edge",
-      "backing": "allocation panel 04 — the ONE validated edge (multi-decade sector backtest; drawdown control).",
-      "surfaces": ["allocation"]
-    },
-    {
-      "match": "validated drawdown / sharpe engine",
-      "backing": "spvector — the validated drawdown/Sharpe engine (leave-one-crisis-out + AQR permutation null).",
-      "surfaces": ["spvector", "china", "bonds"]
-    },
-    {
-      "match": "validated fed-put gate",
-      "backing": "spvector — the validated Fed-put re-deploy gate (spvector overlay study).",
-      "surfaces": ["spvector"]
-    },
-    {
-      "match": "validated washouts",
-      "backing": "spvector — Fed-put-gated re-deploy buys validated washouts.",
-      "surfaces": ["spvector"]
-    },
-    {
-      "match": "validated 1990",
-      "backing": "engine/vol_regime — validated on 1990+ history (term-structure + MOVE + VRP; DSR 0.9998).",
-      "surfaces": ["gex"]
-    },
-    {
-      "match": "reference (validated, 1990",
-      "backing": "vol_regime reference band — validated 1990→2026.",
-      "surfaces": ["gex"]
-    },
-    {
-      "match": "validated 1998-2026",
-      "backing": "research/SECTOR_CONFLUENCE.md — the sector confluence engine validated 1998-2026.",
-      "surfaces": ["sector", "discovery"]
-    },
-    {
-      "match": "validated point-in-time",
-      "backing": "reports / factor phase-0 — validated point-in-time (leak-free; e.g. insider Form-4 over S&P 1500, profitability/low-vol).",
-      "surfaces": ["report", "us_stocks", "factors"]
-    },
-    {
-      "match": "validated on the 2023-2025",
-      "backing": "factors — a factor tagged VALIDATED survives BH-FDR AND positive mean IC on the 2023-2025 price panel.",
-      "surfaces": ["factors"]
-    },
-    {
-      "match": "tagged validated",
-      "backing": "factors — only a factor tagged VALIDATED (survives BH-FDR, positive mean IC) is scored/wired.",
-      "surfaces": ["factors"]
-    },
-    {
-      "match": "标记为 validated",
-      "backing": "factors zh — only VALIDATED (BH-FDR + positive IC) factors are scored.",
-      "surfaces": ["factors"]
-    },
-    {
-      "match": "validated (survives bh",
-      "backing": "factors — VALIDATED = survives BH-FDR and positive mean IC.",
-      "surfaces": ["factors"]
-    },
-    {
-      "match": "validated blow-off tail",
-      "backing": "the parabolic (>2σ from 200d) blow-off / bubble-pullback flag (research/ bubble-pullback study).",
-      "surfaces": ["us_stocks", "stock"]
-    },
-    {
-      "match": "validated bubble-pullback",
-      "backing": "the >2σ parabolic bubble-pullback flag (bubble-pullback study).",
-      "surfaces": ["stock"]
-    },
-    {
-      "match": "validated leading leg",
-      "backing": "cycle_cause / leading-legs — a leg validated vs NBER/equities (e.g. jobless-claims 1967-2026); validate-leading-legs.yml.",
-      "surfaces": ["dashboard", "macro"]
-    },
-    {
-      "match": "validated vs nber",
-      "backing": "leading-legs — jobless-claims leg validated vs NBER 1967-2026.",
-      "surfaces": ["dashboard"]
-    },
-    {
-      "match": "strongest validated object",
-      "backing": "dashboard — the strongest validated object in the system (the vol/macro de-risk overlay), engine-scored.",
-      "surfaces": ["dashboard"]
-    },
-    {
-      "match": "validated, served masterminds gtaa",
-      "backing": "cross-asset trend is the validated, live masterminds GTAA primary factor (W_REGIME 0.45; china-masterminds).",
-      "surfaces": ["vector", "dashboard"]
-    },
-    {
-      "match": "validated china external-driver radar",
-      "backing": "engine/risk_radar_intl — the validated China external-driver radar (breadth collapse, US-rate shock, US-CN spread, USD). china-drawdown-edge-validated.",
-      "surfaces": ["china", "measurement"]
-    },
-    {
-      "match": "calibrated, validated",
-      "backing": "engine/risk_radar_intl.py — the calibrated, validated intl risk radar (drawdown-side).",
-      "surfaces": ["market_state_board"]
-    },
-    {
-      "match": "validated-confluence buy-gate",
-      "backing": "signal_gate — the validated-confluence buy-GATE badge (MACD-2D × StochRSI-3D; research/SECTOR_CONFLUENCE.md).",
-      "surfaces": ["sig_badge"]
-    },
-    {
-      "match": "validated inside china_masterminds",
-      "backing": "china_masterminds — scored legs are those already validated inside the china_masterminds GTAA (china-masterminds).",
-      "surfaces": ["china"]
-    },
-    {
-      "match": "china_masterminds中已验证",
-      "backing": "china_masterminds zh — scored legs validated inside china_masterminds.",
-      "surfaces": ["china"]
-    },
-    {
-      "match": "validated regime state machine",
-      "backing": "the SPDR-calibrated regime state machine (rotation context).",
-      "surfaces": ["subsectors_china", "subsectors"]
-    },
-    {
-      "match": "validated \"don",
-      "backing": "subsectors — the validated 'don't chase the leader a subsector is distributing' signal (index-leadership study).",
-      "surfaces": ["subsectors"]
-    },
-    {
-      "match": "validated as the guidance family",
-      "backing": "china_altdata — Tushare 业绩预告 guidance surprise validated as a family (forward-IC finds ~3M post-announcement drift, correct sign); display/measure, not scored.",
-      "surfaces": ["china_altdata"]
-    },
-    {
-      "match": "validated as: ",
-      "backing": "alerts — an alert family's scorecard name ('Validated as: <scorecard>') from engine.signal_lab.",
-      "surfaces": ["alerts"]
-    },
-    {
-      "match": "how it was validated",
-      "backing": "baskets flow-velocity 'how it was validated' expander (the flow detection-layer validation note).",
-      "surfaces": ["baskets"]
-    },
-    {
-      "match": "what is actually validated",
-      "backing": "allocation panel 04 heading — 'What is actually validated — sector backtest'.",
-      "surfaces": ["allocation"]
-    },
-    {
-      "match": "now validated rather than just hand",
-      "backing": "cycle — the resolve_state stance is now engine-derived (validated crosswalk) rather than hand-drawn (W1.2/W3.6).",
-      "surfaces": ["cycle"]
-    },
-    {
-      "match": "cache-validated ticker",
-      "backing": "baskets membership — every member is a real, cache-validated ticker (data-plane existence check, not a signal claim).",
-      "surfaces": ["baskets"]
-    },
-    {
-      "match": "validated against the live index",
-      "backing": "empty-state starter chips validated against the live index membership (data check).",
-      "surfaces": ["subsectors"]
-    },
-    {
-      "match": "validated the milkshake",
-      "backing": "report_second_act narrative — the war episode validated the Milkshake mechanism (a report prose claim about a historical episode, not a live signal).",
-      "surfaces": ["report_second_act"]
-    },
-    {
-      "match": "validated by this quarter",
-      "backing": "report — a Factor Watch addition validated by this quarter's trade (report prose about a realized event).",
-      "surfaces": ["report_bessent"]
-    },
-    {
-      "match": "reaction function is being",
-      "backing": "report_second_act — 'the reaction function is being validated, not faded' (report prose about a policy episode).",
-      "surfaces": ["report_second_act"]
-    },
-    {
-      "match": "proven",
-      "backing": "policy-watch status token t('proven','已验证') — a policy-follow-through status, not a signal-edge claim.",
-      "surfaces": ["macro", "whitehouse"]
-    },
-    {
-      "match": "validated stats live in the cave",
-      "backing": "display-only cluster whose validated stats live in the caveat/help (rigorously validated to have NO forward edge — an honest anti-claim surfaced as measurement).",
-      "surfaces": ["factors", "discovery"]
-    },
-    {
-      "match": "rigorously validated to have no forward edge",
-      "backing": "an honest NULL result surfaced as measurement (the cross-group cluster validated to have NO edge).",
-      "surfaces": ["discovery", "factors"]
-    },
-    {
-      "match": "one validated",
-      "backing": "intl desk — 'CN/HK/CA finally render the one validated' intl risk radar (engine/risk_radar_intl).",
-      "surfaces": ["china", "market_state_board"]
-    },
-    {
-      "match": "'validated', '已验证'",
-      "backing": "SCORED-chip label pair: the ✓ Validated pill renders ONLY when the underlying read scored=True (engine.vol_regime / signal_lab / sector_central set the flag). The chip is hidden otherwise — the label is engine-gated, not free prose.",
-      "surfaces": ["gex", "stock", "vector"]
-    },
-    {
-      "match": "'validated','已验证'",
-      "backing": "SCORED-chip label pair (L()/T()), engine-gated (scored=True) — hidden when not validated. sector_central_china / stock pill.",
-      "surfaces": ["sector_central", "stock"]
-    },
-    {
-      "match": "t('validated','已验证')",
-      "backing": "the carry 'Validated' caveat label (commodities) — shown only when a carry caveat exists (engine-populated).",
-      "surfaces": ["commodities"]
-    },
-    {
-      "match": "已验证的板块状态机",
-      "backing": "zh — the SPDR-calibrated validated sector state machine (rotation context).",
-      "surfaces": ["subsectors"]
-    },
-    {
-      "match": "已验证的状态机",
-      "backing": "zh — the validated regime state machine (rotation context).",
-      "surfaces": ["subsectors_china"]
-    },
-    {
-      "match": "已验证的 macd-2d",
-      "backing": "zh — research/SECTOR_CONFLUENCE.md MACD-2D × StochRSI-3D confluence gate.",
-      "surfaces": ["us_stocks_v2"]
-    },
-    {
-      "match": "已验证的反转／低波",
-      "backing": "zh — research/CHINA_HK_STOCK_SIGNALS.md validated A-share reversal/low-vol signals (read-alongside background).",
-      "surfaces": ["china_lookup"]
-    },
-    {
-      "match": "已验证的a股均值回归",
-      "backing": "zh — validated A-share mean-reversion reference (research/CHINA_HK_STOCK_SIGNALS.md).",
-      "surfaces": ["china_lookup"]
-    },
-    {
-      "match": "已验证的a股优势",
-      "backing": "zh — the validated A-share edge (within-sector deepest-drawdown reversal; research/CHINA_HK_STOCK_SIGNALS.md).",
-      "surfaces": ["cn_reversal_sleeve"]
-    },
-    {
-      "match": "已验证的全球风险贝塔",
-      "backing": "zh — research/CHINA_HK_STOCK_SIGNALS.md HK global-risk-beta (the validated HK edge), read-alongside background.",
-      "surfaces": ["hk_lookup"]
-    },
-    {
-      "match": "已验证的“别去追",
-      "backing": "zh — the validated 'don't chase a distributing leader' subsector signal (index-leadership study).",
-      "surfaces": ["subsectors"]
-    },
-    {
-      "match": "已验证的每日持仓数据",
-      "backing": "etfs coverage note — SPDR/ARK/Global X have validated (verified-present) daily holdings data. A data-coverage statement, not a signal-edge claim.",
-      "surfaces": ["etfs"]
-    },
-    {
-      "match": "逐股覆盖已验证",
-      "backing": "stock — per-name GEX coverage is validated (data-coverage / roadmap note), not a signal claim.",
-      "surfaces": ["stock"]
-    },
-    {
-      "match": "在已验证状态内进行仓位管理",
-      "backing": "zh — HK: SIZING within the validated risk regime (the vol/risk-regime overlay), never a validated alpha.",
-      "surfaces": ["hk", "hk_lookup"]
-    },
-    {
-      "match": "the word \"validated.\"",
-      "backing": "measurement.html — the STATEMENT of the validated-artifact doctrine itself (BC-2's own prose).",
-      "surfaces": ["measurement"]
-    },
-    {
-      "match": "reasoning trace, the validated",
-      "backing": "sector_central meta/prose — the validated absolute-trend drawdown gate (panel 04).",
-      "surfaces": ["sector_central"]
-    },
-    {
-      "match": "whichever horizon validated",
-      "backing": "anticipation code COMMENT — surfaces the scored lean from whichever horizon is OOS-validated (data/regime/anticipation_gate.json).",
-      "surfaces": ["anticipation"]
-    },
-    {
-      "match": "means validated+weighted",
-      "backing": "dashboard code COMMENT — gate_scored=True means the family is validated+weighted (engine.signal_lab); display-only otherwise.",
-      "surfaces": ["dashboard"]
-    },
-    {
-      "match": "forward odds (validated pathway)",
-      "backing": "sector_central_china code COMMENT — the forward-odds pathway is shown only where the pathway is validated (china_sector_pathway gate).",
-      "surfaces": ["sector_central"]
-    },
-    {
-      "match": "validated within-sector 3m reversal",
-      "backing": "cn_reversal_sleeve template COMMENT — the validated within-sector 3M reversal edge (research/CHINA_HK_STOCK_SIGNALS.md).",
-      "surfaces": ["cn_reversal_sleeve"]
-    },
-    {
-      "match": "validated drawdown-control channel",
-      "backing": "baskets_desk COMMENT — the sleeve-size chip binds the validated drawdown-control channel (CN forward-drawdown edge); payload-gated.",
-      "surfaces": ["baskets_desk"]
-    },
-    {
-      "match": "one read on this page that is validated",
-      "backing": "engine/vol_regime — the one VALIDATED read on gex.html: VIX/VIX3M term structure + MOVE + VRP composite, 1990+ history, DSR 0.9998, HAC t~-10 (subtract-only sizing nudge).",
-      "surfaces": ["gex"]
-    },
-    {
-      "match": "validated on 1990+ history",
-      "backing": "engine/vol_regime — validated on 1990+ history (term structure + MOVE + VRP).",
-      "surfaces": ["gex"]
-    },
-    {
-      "match": "confirmer / context — validated",
-      "backing": "a confirmer/context leg validated but not a standalone quantitative signal (leading-legs / signal_lab family validation).",
-      "surfaces": ["dashboard", "macro"]
-    },
-    {
-      "match": "确认/背景 — 已验证",
-      "backing": "zh — a validated confirmer/context leg (not a standalone signal).",
-      "surfaces": ["dashboard", "macro"]
-    },
-    {
-      "match": "scored — validated & wired",
-      "backing": "dashboard 'Scored — validated & wired into a number' section header — the objects that are engine-scored (signal_lab-validated families).",
-      "surfaces": ["dashboard"]
-    },
-    {
-      "match": "validated & wired into a number",
-      "backing": "dashboard — the validated (signal_lab) + wired-into-a-number objects.",
-      "surfaces": ["dashboard"]
-    },
-    {
-      "match": "validated, served masterminds",
-      "backing": "cross-asset trend = the validated, live masterminds GTAA primary factor (W_REGIME 0.45).",
-      "surfaces": ["vector", "dashboard"]
-    },
-    {
-      "match": "edge basis",
-      "backing": "theme/basket 'Edge basis' label — the basis on which the theme's edge was validated (allocation panel 04 sector backtest); a provenance label.",
-      "surfaces": ["allocation", "baskets"]
-    },
-    {
-      "match": "validated enterprise ai spend",
-      "backing": "report_second_act narrative — a historical episode (Microsoft/OpenAI investment validated enterprise AI spending); report prose, not a live signal.",
-      "surfaces": ["report_second_act"]
-    },
-    {
-      "match": "validated china's",
-      "backing": "report narrative — historical episodes (Kairos/Huawei validated China's AI/nuclear stack); report prose about realized events.",
-      "surfaces": ["report_second_act"]
-    },
-    {
-      "match": "validated nuclear",
-      "backing": "report_second_act — Kairos Power deal validated nuclear as the AI-baseload play (report prose).",
-      "surfaces": ["report_second_act"]
-    },
-    {
-      "match": "validated the commercial",
-      "backing": "report_second_act — a funding round validated the commercial launch (report prose about a realized event).",
-      "surfaces": ["report_second_act"]
-    },
-    {
-      "match": "validated the group revenue",
-      "backing": "report_second_act — grid load forecasts validated the group revenue (report prose).",
-      "surfaces": ["report_second_act"]
-    },
-    {
-      "match": "validated china's innovative drug",
-      "backing": "report narrative — mega-deals validated China's innovative-drug story (report prose).",
-      "surfaces": ["report_second_act"]
-    },
-    {
-      "match": "validated china's domestic ai",
-      "backing": "report narrative — Huawei Ascend validated China's domestic AI stack (report prose).",
-      "surfaces": ["report_second_act"]
-    },
-    {
-      "match": "validated risk side",
-      "backing": "us_stocks narrative-basket ai-bdg tooltip — the VALIDATED risk side (absolute-trend / recession-deterioration drawdown gate; allocation panel 04, multi-decade backtest).",
-      "surfaces": ["us_stocks"]
-    },
-    {
-      "match": "已验证的风险侧",
-      "backing": "zh — the validated risk side (absolute-trend / recession-deterioration drawdown gate; panel 04).",
-      "surfaces": ["us_stocks"]
-    },
-    {
-      "match": ">validated</span><span class=\"l-zh\">已验证",
-      "backing": "dual-span (l-en/l-zh) SCORED-chip / caveat label — engine-gated (scored=True / caveat present); commodities carry caveat + gex/stock scored pill. Hidden when not validated.",
-      "surfaces": ["commodities", "gex", "stock"]
-    },
-    {
-      "match": "l-en\">validated</span>",
-      "backing": "dual-span validated label (l-en half) — engine-gated scored chip / carry caveat.",
-      "surfaces": ["commodities", "gex", "stock"]
-    },
-    {
-      "match": "the validated, after-cost number",
-      "backing": "cross-asset / masterminds — gross Sharpe is contested; the validated, after-cost number is the one cited (masterminds GTAA net-of-cost study).",
-      "surfaces": ["crossasset", "vector"]
-    },
-    {
-      "match": "note\":\"validated forward-drawdown",
-      "backing": "engine-stamped data note — the China external-driver radar registry entry ('Validated forward-drawdown component'; engine/risk_radar_intl). Display-only metadata.",
-      "surfaces": ["china", "measurement"]
-    },
-    {
-      "match": "cross-asset trend =",
-      "backing": "crossasset — cross-asset trend = time-series momentum, the validated managed-futures primary factor (masterminds GTAA).",
-      "surfaces": ["crossasset"]
-    },
-    {
-      "match": "雷达已验证的美元",
-      "backing": "election-cycle modulator zh — trust the radar's validated USD/rate/CNH factors over the calendar year itself (engine/risk_radar_intl; election-cycle-modulator).",
-      "surfaces": ["macro"]
-    },
-    {
-      "match": "midterm year",
-      "backing": "election-cycle modulator — the midterm-year window is a Risk-Radar MODULATOR whose factors (USD/rate/spread) are the validated radar legs, not the calendar. election-cycle-modulator.",
-      "surfaces": ["macro"]
-    },
-    {
-      "match": "narrative basket — the narrative resolution",
-      "backing": "us_stocks narrative-basket ai-bdg tooltip — references the validated risk side (absolute-trend drawdown gate, panel 04). Same tooltip on every theme card.",
-      "surfaces": ["us_stocks"]
-    },
-    {
-      "match": "均已验证",
-      "backing": "generated SECTOR_NARR body prose — an analog/narrative note that a pattern held at listed historical dates (descriptive cycle-DNA, not a live scored claim).",
-      "surfaces": ["sector_cycles"]
-    },
-    {
-      "match": "window.sector_cycles=",
-      "backing": "generated cycle data payload — 'validated' appears inside descriptive DNA/analog narrative bodies (cycle-DNA prose), not as a scored field.",
-      "surfaces": ["sector_cycles"]
-    },
-    {
-      "match": "window.sector_dna=",
-      "backing": "generated cycle-DNA payload — descriptive analog narrative bodies; 'validated' is prose context, not a scored field.",
-      "surfaces": ["sector_cycles"]
-    },
-    {
-      "match": "const baskets =",
-      "backing": "generated basket payload — 'validated' appears inside descriptive construction/analog prose, not a scored field.",
-      "surfaces": ["baskets_china_ths"]
-    },
-    {
-      "match": "validated weekly directional confirmer",
-      "backing": "engine.cn_ai_semis_confirmer / china_narrative_radar (#773): global AI-semis (SMH+SOXX+TSM) 4w log-momentum → next-week CPO basket return, t=3.27 univariate, horse-race stable (SPY + CN controls), pre-2024 split survives; validation script scripts/china_global_theme_backtest.py. The 'validated' tag is engine-emitted only for baskets where t=3.27 survives (ths_cpo); other baskets carry partial/weak honesty tags.",
-      "surfaces": ["narrative_radar"]
-    },
-    {
-      "match": "cpo basket return (validated #773",
-      "backing": "same AI-semis→CPO confirmer as above (#773, t=3.27, horse-race stable) — the source-caption restatement; backing artifact engine.cn_ai_semis_confirmer + scripts/china_global_theme_backtest.py.",
-      "surfaces": ["narrative_radar"]
-    },
-    {
-      "match": "validated entry confluence (T1–T3)",
-      "backing": "T1–T3 confluence buy-gate (signal_gate.is_buyable, #736) + Lane R admission licensed by the W8-C CT-LANE deep-panel row in research/signal_engine/DURABLE_BOTTOM_FRAMEWORK.md decisions ledger (2026-07-03): CT_LANE n=7392 vs ALIGNED n=5272, stop5/clean15 deltas −0.16pp/−0.6pp, sign-stable both time halves — counter-trend buyables admitted as equal citizens, no ranking edge claimed (harness wave8_ctlane.py --gates). The tooltip's own copy repeats the no-edge disclaimer.",
-      "surfaces": ["us_stocks"]
-    },
-    {
-      "match": "validated on two panels: stop-out",
-      "backing": "W8-B-OOS SHAKEN confirmatory PASS, research/signal_engine/DURABLE_BOTTOM_FRAMEWORK.md decisions ledger (2026-07-03): n=8009 stop5 42.5 vs FRESH 47.1 (−4.59pp), clean15 +1.59pp NI, sign-stable all four splits (tickerA/tickerB/pre/post); confirmed on the deep panel (35.8 vs 40.3). The Wave-8 ship decision in the same ledger explicitly licenses the SHAKEN chip's validated copy (display-only, no rank power).",
-      "surfaces": ["us_stocks"]
-    },
-    {
-      "match": "validated confluence buy",
-      "backing": "the T1-T4 confluence buy-GATE (signal_gate; research/SECTOR_CONFLUENCE.md) — same gate as the existing 'validated-confluence buy-gate' sig_badge entry. Badge/tooltip renders ONLY on an engine-emitted gate verdict: engine/altdata_emit.py _entry_badge stamps entry_tier from signal_gate verdicts ('entry_tier (T1/T2/T3) = validated confluence buy gate signal'); intel-hub entrybadge renders only when entry_gate.buyable (engine/intel_hub.py payload). Covers the ⚡ prime-entry tooltip EN+zh (已验证共振买入 / 已验证汇流买入信号).",
-      "surfaces": ["intelligence_hub", "alt_data"]
-    },
-    {
-      "match": "validated t1-t4 confluence",
-      "backing": "code/CSS comments naming the same T1-T4 confluence buy gate (signal_gate; research/SECTOR_CONFLUENCE.md) — the prime-entry badge plumbing in intelligence_hub (jinja macro comment + .egate style-block comment), not free prose; the displayed badge itself is gated by the entry above.",
-      "surfaces": ["intelligence_hub"]
-    },
-    {
-      "match": "validated 2d-macd",
-      "backing": "research/SECTOR_CONFLUENCE.md — the MACD-2D × StochRSI-3D confluence turn (same signal as the 'validated MACD-2D' entry); engine/china_sector_turn reuses it as the leg-A turn marker for the CN sector washout→turn boost. Display re-rank only, never a filter (the legend copy states this). Covers the JS comment + legend line EN+zh (已验证的 2D-MACD × 3D-StochRSI).",
-      "surfaces": ["china"]
-    },
-    {
-      "match": "'VALIDATED EDGE','已验证优势'",
-      "backing": "Reversal Sleeve strategy-card tag (template t() form) — the validated A-share within-sector 3M reversal edge: +0.56%/mo, Sharpe 0.58, 388 rebalances (research/CHINA_HK_STOCK_SIGNALS.md; ENGINE_FIX_MASTERPLAN.md §Selection); productized per W5-A/W5-B CONFIRM-ON-AVAILABLE-PLANE verdict, both time-halves positive (research/china_alpha/w5/W5B_INTEGRATION.md, 2026-07-03). No-gate invariant enforced (#823); card copy itself carries the high-variance/small-size caveat.",
-      "surfaces": ["baskets_china", "cn_reversal_sleeve"]
-    },
-    {
-      "match": "validated edge</span><span class=\"l-zh\">已验证优势",
-      "backing": "same Reversal Sleeve tag, rendered dual-span form (research/CHINA_HK_STOCK_SIGNALS.md within-sector 3M reversal + research/china_alpha/w5/W5B_INTEGRATION.md CONFIRM verdict).",
-      "surfaces": ["baskets_china", "cn_reversal_sleeve"]
-    },
-    {
-      "match": "已验证\"门槛",
-      "backing": "desk-grader fine-print zh span — quotes the grader's own 'proven' (zh 已验证) tier THRESHOLD: engine/desk_grader.py _proven_status needs n>=40 matured obs + significant Newey-West HAC t of the right sign, and the daily HAC IC needs MIN_DATES_IC=6 grading dates. A statement of the gate's mechanics (doctrine-quote, like the measurement.html entries); the EN twin span on the adjacent line says 'the \"proven\" gate'.",
-      "surfaces": ["desk_grader", "intelligence_hub"]
-    },
-    {
-      "match": "p1.3 validated",
-      "backing": "EI P1.3 trio ablation, round 2 CONFORMANT (valid permutation null + positive/negative statistic-calibration controls): F3 anti-chase ext_z>2 verdict SHIPS-AS-HARD-GATE — stop −0.43pp@21d/−5.00pp@63d at 4.6% fire cost, BH q≤0.01, sign-stable (research/ENTRY_INTELLIGENCE_MASTERPLAN_BY_FABLE.md decisions ledger 2026-07-05; P1_3_TRIO_ABLATION_PREREG.md). F3_ANTICHASE registry entry merged #1472; ships shadow-first per Article 2 — the tooltip itself discloses 'display context only — gate not wired in P2.4'.",
-      "surfaces": ["dashboard"]
-    }
-  ]
+ "schema": "validated_allowlist.v1",
+ "purpose": "W4.6 / BC-2 (PREREGISTRATION.md §4). Each entry justifies an AFFIRMATIVE use of the word 'validated'/'已验证' in a user-facing surface by naming the backing evidence artifact or the reason the use is legitimate. scripts/check_validated_claims.py fails CI on any affirmative 'validated' claim that matches NO entry here (negated/hedged uses — 'no validated edge', 'not a validated', 'unvalidated', '未验证' — are ignored automatically). Keep entries phrase-scoped, not file:line-scoped, so they survive page regeneration. Adding an entry is a claim of record: it must cite an artifact or a documented study.",
+ "notes": "The `match` field is a case-insensitive substring that must appear on the same line as the token. `backing` names the artifact/doc that earns it. Order does not matter.",
+ "allow": [
+  {
+   "match": "validated absolute-trend drawdown gate",
+   "backing": "research/SECTOR_CONFLUENCE.md + allocation panel 04 (multi-decade sector-ETF backtest; edge = drawdown/shake-out control via the absolute-trend gate). engine.sector_central _trend_gates.",
+   "surfaces": [
+    "sector_central",
+    "allocation"
+   ]
+  },
+  {
+   "match": "validated for drawdown/staying-power control",
+   "backing": "same as the absolute-trend drawdown gate: risk-control lever, explicitly NOT return alpha.",
+   "surfaces": [
+    "sector_central"
+   ]
+  },
+  {
+   "match": "validated edge = drawdown control",
+   "backing": "allocation_scorecard: the allocation algorithm's only validated edge is drawdown control (sector backtest panel 04).",
+   "surfaces": [
+    "allocation"
+   ]
+  },
+  {
+   "match": "validated edge on this page is drawdown control",
+   "backing": "allocation desk: leans graded against reality; validated edge is drawdown control.",
+   "surfaces": [
+    "allocation"
+   ]
+  },
+  {
+   "match": "validated edge is risk control, not alpha",
+   "backing": "allocation panel 04 sector backtest.",
+   "surfaces": [
+    "allocation"
+   ]
+  },
+  {
+   "match": "validated on multi-decade sector",
+   "backing": "allocation panel 04: the algorithm is validated on multi-decade sector-ETF history; edge = drawdown control.",
+   "surfaces": [
+    "allocation"
+   ]
+  },
+  {
+   "match": "validated MACD-2D",
+   "backing": "research/SECTOR_CONFLUENCE.md — the MACD-2D x StochRSI-3D confluence gate (signal_gate T1/T2/T3); the buy gate guarding setups.json.",
+   "surfaces": [
+    "us_stocks_v2",
+    "subsectors",
+    "discovery"
+   ]
+  },
+  {
+   "match": "validated MACD-RSI",
+   "backing": "same confluence-cascade gate (T1-T4), research/SECTOR_CONFLUENCE.md.",
+   "surfaces": [
+    "subsectors"
+   ]
+  },
+  {
+   "match": "validated regime state machine",
+   "backing": "the ladder/regime state machine base rates (SPDR-calibrated); rotation CONTEXT, not alpha.",
+   "surfaces": [
+    "subsectors_china",
+    "subsectors"
+   ]
+  },
+  {
+   "match": "validated sector state machine",
+   "backing": "the sector regime state machine (rotation context).",
+   "surfaces": [
+    "subsectors"
+   ]
+  },
+  {
+   "match": "validated buy/sell engine",
+   "backing": "research/SECTOR_CONFLUENCE.md — the confluence engine driving the Sector setups board; MEASURED forward-63d SPY excess base rate.",
+   "surfaces": [
+    "sector"
+   ]
+  },
+  {
+   "match": "phase-0 validated",
+   "backing": "research/RESIDUAL_ALPHA_MOMENTUM.md — residual momentum phase-0 validated as a modest, regime-decayed edge (context, not a buy list).",
+   "surfaces": [
+    "sector"
+   ]
+  },
+  {
+   "match": "the validated GO legs",
+   "backing": "data/regime/anticipation_gate.json — the OOS-validated GO legs (validated:true cells); display-only legs never score.",
+   "surfaces": [
+    "anticipation"
+   ]
+  },
+  {
+   "match": "validated OOS",
+   "backing": "data/regime/anticipation_gate.json — per-leg out-of-sample validation flag.",
+   "surfaces": [
+    "anticipation"
+   ]
+  },
+  {
+   "match": "validated legs",
+   "backing": "data/regime/anticipation_gate.json go_legs (OOS-validated direction legs).",
+   "surfaces": [
+    "anticipation"
+   ]
+  },
+  {
+   "match": "validated core",
+   "backing": "anticipation RISK cone — the always-shown empirical forward distribution (the validated core; direction is coloured only where OOS-validated).",
+   "surfaces": [
+    "anticipation"
+   ]
+  },
+  {
+   "match": "cone validated",
+   "backing": "data/regime/anticipation_gate.json — cone calibration validation.",
+   "surfaces": [
+    "anticipation"
+   ]
+  },
+  {
+   "match": "up-lean (green, validated)",
+   "backing": "data/regime/anticipation_gate.json — direction shown in colour ONLY where OOS-validated.",
+   "surfaces": [
+    "anticipation"
+   ]
+  },
+  {
+   "match": "down-lean (red, validated)",
+   "backing": "data/regime/anticipation_gate.json — direction shown in colour ONLY where OOS-validated.",
+   "surfaces": [
+    "anticipation"
+   ]
+  },
+  {
+   "match": "direction (validated)",
+   "backing": "data/regime/anticipation_gate.json — the direction column is populated only for OOS-validated legs.",
+   "surfaces": [
+    "anticipation"
+   ]
+  },
+  {
+   "match": "= validated / scored",
+   "backing": "anticipation drivers legend: star = validated/scored (data/regime/anticipation_gate.json).",
+   "surfaces": [
+    "anticipation"
+   ]
+  },
+  {
+   "match": "risk · validated",
+   "backing": "anticipation RISK block — the validated risk cone.",
+   "surfaces": [
+    "anticipation"
+   ]
+  },
+  {
+   "match": "validated index vol",
+   "backing": "engine/vol_regime + data/vol/regime.json — the index vol-regime read; DSR 0.9998 on 1990+ history (HAC t~-10), the one validated read on gex.html.",
+   "surfaces": [
+    "gex"
+   ]
+  },
+  {
+   "match": "validated gate",
+   "backing": "sector_central trend-breadth gate — the validated absolute-trend drawdown gate (see above); gex.html vol-regime gate.",
+   "surfaces": [
+    "sector_central",
+    "anticipation"
+   ]
+  },
+  {
+   "match": "validated +0.1-0.15 sharpe lever",
+   "backing": "the net-liquidity Sharpe lever (engine.regime.liquidity_overlay; research/ validated overlay) — HOW MUCH to own.",
+   "surfaces": [
+    "dashboard",
+    "vector"
+   ]
+  },
+  {
+   "match": "稳健、已验证的优势",
+   "backing": "spvector: leave-one-crisis-out + AQR permutation null (p=0.0); ~40% shallower max drawdown, higher Sharpe.",
+   "surfaces": [
+    "spvector"
+   ]
+  },
+  {
+   "match": "edge is validated by leave-one-crisis-out",
+   "backing": "spvector: leave-one-crisis-out + AQR-style permutation null (real Sharpe & drawdown beat every random-timing shuffle, p=0.0); ALFRED point-in-time.",
+   "surfaces": [
+    "spvector"
+   ]
+  },
+  {
+   "match": "validated washouts",
+   "backing": "spvector Fed-put-gated re-deploy — buys validated washouts (the spvector overlay study).",
+   "surfaces": [
+    "spvector"
+   ]
+  },
+  {
+   "match": "validated engine.factor_exposure",
+   "backing": "engine.factor_exposure — the validated factor-exposure engine (factor_exposure.js is a faithful client port).",
+   "surfaces": [
+    "factor_exposure"
+   ]
+  },
+  {
+   "match": "within the validated regime",
+   "backing": "HK desk — SIZING within the live risk regime (the vol/risk regime read is the validated overlay); NEVER a validated alpha.",
+   "surfaces": [
+    "hk"
+   ]
+  },
+  {
+   "match": "validated selection edge",
+   "backing": "HK desk — used in the negated sense ('HK has no validated selection edge'); honest disclaimer.",
+   "surfaces": [
+    "hk"
+   ]
+  },
+  {
+   "match": "hk's validated edge is the global-risk overlay",
+   "backing": "research/CHINA_HK_STOCK_SIGNALS.md — HK's validated edge is the global-risk (S&P beta) overlay, measured 40y monthly.",
+   "surfaces": [
+    "hk"
+   ]
+  },
+  {
+   "match": "must have a stored",
+   "backing": "measurement.html — this is the STATEMENT of the validated-artifact doctrine itself (BC-2's own prose).",
+   "surfaces": [
+    "measurement"
+   ]
+  },
+  {
+   "match": "the word \"validated\"",
+   "backing": "measurement.html — quotes the doctrine (the word 'validated' requires a stored artifact).",
+   "surfaces": [
+    "measurement"
+   ]
+  },
+  {
+   "match": "已验证\"一词",
+   "backing": "measurement.html zh — quotes the doctrine.",
+   "surfaces": [
+    "measurement"
+   ]
+  },
+  {
+   "match": "tr-validated",
+   "backing": "sector_central CSS class name (.tr-validated) — a style token, not a claim.",
+   "surfaces": [
+    "sector_central"
+   ]
+  },
+  {
+   "match": "validated absolute-trend",
+   "backing": "sector_central meta description + prose — the validated absolute-trend drawdown gate (panel 04 backtest).",
+   "surfaces": [
+    "sector_central"
+   ]
+  },
+  {
+   "match": "validated sleeve-size chip",
+   "backing": "CN drawdown radar sleeve-size chip (china_drawdown_edge_validated; research/CHINA_HK_STOCK_SIGNALS.md — CN fwd-drawdown edge). Payload-gated, display-only.",
+   "surfaces": [
+    "baskets_desk"
+   ]
+  },
+  {
+   "match": "validated drawdown-control siz",
+   "backing": "CN drawdown-control sleeve-size channel (research/CHINA_HK_STOCK_SIGNALS.md — CN forward-drawdown edge). Sizes only, never selects.",
+   "surfaces": [
+    "baskets_desk",
+    "china"
+   ]
+  },
+  {
+   "match": "validated drawdown control channel",
+   "backing": "the absolute-trend drawdown gate — the one validated channel (allocation panel 04). Size, not return.",
+   "surfaces": [
+    "allocation",
+    "china"
+   ]
+  },
+  {
+   "match": "validated α leg",
+   "backing": "research/RESIDUAL_ALPHA_MOMENTUM.md — the sector-neutral residual-momentum leg (positive-IC selection leg); the board rank stays this validated α leg.",
+   "surfaces": [
+    "canada",
+    "china",
+    "us_stocks"
+   ]
+  },
+  {
+   "match": "validated sector-neutral residual",
+   "backing": "research/RESIDUAL_ALPHA_MOMENTUM.md — sector-neutral residual momentum (positive-IC), shared across US/China/Canada engines.",
+   "surfaces": [
+    "canada",
+    "us_stocks",
+    "china"
+   ]
+  },
+  {
+   "match": "validated us/china engine",
+   "backing": "research/RESIDUAL_ALPHA_MOMENTUM.md — residual-momentum construction shared with the validated US/China engines.",
+   "surfaces": [
+    "canada"
+   ]
+  },
+  {
+   "match": "validated sector-neutral residual-momentum leg",
+   "backing": "research/RESIDUAL_ALPHA_MOMENTUM.md — the α selection leg (positive IC).",
+   "surfaces": [
+    "canada"
+   ]
+  },
+  {
+   "match": "validated a-share",
+   "backing": "research/CHINA_HK_STOCK_SIGNALS.md — the validated A-share effects: within-sector 3M reversal (Sharpe 0.58) and low-vol defensive tilt (Sharpe 0.98). MEASURED, ~35y.",
+   "surfaces": [
+    "china",
+    "china_lookup",
+    "subsectors_china"
+   ]
+  },
+  {
+   "match": "validated mean-reversion",
+   "backing": "research/CHINA_HK_STOCK_SIGNALS.md — A-share within-sector mean-reversion (the validated effect).",
+   "surfaces": [
+    "china"
+   ]
+  },
+  {
+   "match": "validated reversal",
+   "backing": "research/CHINA_HK_STOCK_SIGNALS.md — the validated A-share within-sector reversal context (high-variance, not a buy list).",
+   "surfaces": [
+    "china",
+    "china_lookup"
+   ]
+  },
+  {
+   "match": "validated effect",
+   "backing": "research/CHINA_HK_STOCK_SIGNALS.md — A-share mean-reversion entry, the validated effect (momentum is NOT).",
+   "surfaces": [
+    "china"
+   ]
+  },
+  {
+   "match": "validated defensive tilt",
+   "backing": "research/CHINA_HK_STOCK_SIGNALS.md — low-vol defensive tilt, Sharpe 0.98 vs market 0.88.",
+   "surfaces": [
+    "china"
+   ]
+  },
+  {
+   "match": "validated lenses",
+   "backing": "china screener — the two validated A-share lenses (reversal + low-vol); research/CHINA_HK_STOCK_SIGNALS.md.",
+   "surfaces": [
+    "china"
+   ]
+  },
+  {
+   "match": "validated screens",
+   "backing": "china — the two validated A-share screens (reversal + low-vol confluence).",
+   "surfaces": [
+    "china"
+   ]
+  },
+  {
+   "match": "validated construction saw",
+   "backing": "research/CHINA_HK_STOCK_SIGNALS.md — the validated reversal construction's historical single-name drawdowns (deep by design).",
+   "surfaces": [
+    "china"
+   ]
+  },
+  {
+   "match": "validated short-term",
+   "backing": "china_lookup — the validated short-term timing read (cycle ladder + A-share reversal).",
+   "surfaces": [
+    "china_lookup"
+   ]
+  },
+  {
+   "match": "validated global-risk-beta",
+   "backing": "research/CHINA_HK_STOCK_SIGNALS.md — HK global-risk-beta exposure (the validated HK edge), 40y monthly.",
+   "surfaces": [
+    "hk",
+    "hk_lookup"
+   ]
+  },
+  {
+   "match": "validated credit/vol/margin regime",
+   "backing": "the credit/vol/margin regime gate (vol_regime + credit/liquidity overlays) — the validated conditioning regime; gated-confluence read.",
+   "surfaces": [
+    "stock",
+    "us_stocks"
+   ]
+  },
+  {
+   "match": "validated macro de-risk",
+   "backing": "the validated macro de-risk read (engine.regime; vol-regime + liquidity overlay). Reused, not new.",
+   "surfaces": [
+    "hk",
+    "vector",
+    "dashboard"
+   ]
+  },
+  {
+   "match": "validated de-risk score",
+   "backing": "engine.regime macro de-risk score — the validated overlay (reused).",
+   "surfaces": [
+    "hk"
+   ]
+  },
+  {
+   "match": "validated condition gauges",
+   "backing": "dashboard condition gauges — the validated macro tilt (recession & drawdown-risk de-risk; vol_regime + macro_risk_score).",
+   "surfaces": [
+    "dashboard"
+   ]
+  },
+  {
+   "match": "validated index dealer-gamma",
+   "backing": "engine/gex index dealer-gamma read (S&P500) — validated at the index level; ground truth for the market-wide gamma regime.",
+   "surfaces": [
+    "gex",
+    "stock"
+   ]
+  },
+  {
+   "match": "validated at the index level",
+   "backing": "engine/gex — GEX validated at the INDEX level (per-name is display-only).",
+   "surfaces": [
+    "gex"
+   ]
+  },
+  {
+   "match": "validated index dealer",
+   "backing": "engine/gex index dealer-gamma read (validated at index level).",
+   "surfaces": [
+    "gex"
+   ]
+  },
+  {
+   "match": "validated signal",
+   "backing": "alerts / anticipation — 'backed by a validated signal' surfaces a hit-rate/IC/DSR ONLY where engine.signal_lab already validated that family (recession composite, quad, BTC risk regime, commodity risk index, etc.).",
+   "surfaces": [
+    "alerts",
+    "anticipation"
+   ]
+  },
+  {
+   "match": "signal_lab already validated",
+   "backing": "engine.signal_lab — a hit-rate/IC/DSR is shown ONLY where signal_lab already validated the family.",
+   "surfaces": [
+    "alerts"
+   ]
+  },
+  {
+   "match": "已验证该族",
+   "backing": "engine.signal_lab zh — same signal_lab family-validation gate.",
+   "surfaces": [
+    "alerts"
+   ]
+  },
+  {
+   "match": "validated read",
+   "backing": "anticipation/impulse — the RISK cone is the validated read (empirical forward distribution); direction is a measured coin-flip.",
+   "surfaces": [
+    "anticipation",
+    "impulse",
+    "china_lookup"
+   ]
+  },
+  {
+   "match": "validated out-of-sample",
+   "backing": "data/regime/anticipation_gate.json — direction shown only where OOS-validated; the lean is a validated out-of-sample read.",
+   "surfaces": [
+    "anticipation",
+    "intl_stock",
+    "canada_stock"
+   ]
+  },
+  {
+   "match": "validated label",
+   "backing": "baskets lifecycle — the slow, validated lifecycle label (the consolidated basket state machine); flagged when faster textures disagree.",
+   "surfaces": [
+    "baskets",
+    "basket_detail"
+   ]
+  },
+  {
+   "match": "validated) lifecycle label",
+   "backing": "baskets — the (slow, validated) lifecycle label vs faster descriptive textures.",
+   "surfaces": [
+    "baskets",
+    "basket_detail"
+   ]
+  },
+  {
+   "match": "validated risk reads",
+   "backing": "baskets — the validated basket RISK reads (risk labels are the measured leg; see baskets-signal-calibration).",
+   "surfaces": [
+    "baskets"
+   ]
+  },
+  {
+   "match": "validated mark",
+   "backing": "allocation REDUCE side — a VALIDATED mark (absolute-trend / recession-deterioration drawdown gate, panel 04).",
+   "surfaces": [
+    "allocation"
+   ]
+  },
+  {
+   "match": "validated marker",
+   "backing": "allocation — the VALIDATED marker on the reduce side (absolute-trend drawdown gate).",
+   "surfaces": [
+    "allocation"
+   ]
+  },
+  {
+   "match": "validated risk gate",
+   "backing": "narrative-basket deterioration risk gate — the validated absolute-trend / recession-deterioration drawdown gate (panel 04).",
+   "surfaces": [
+    "dashboard",
+    "allocation"
+   ]
+  },
+  {
+   "match": "validated drawdown gate",
+   "backing": "the absolute-trend drawdown gate (panel 04) — size down below long-term trend.",
+   "surfaces": [
+    "dashboard",
+    "allocation"
+   ]
+  },
+  {
+   "match": "已验证风险门槛",
+   "backing": "zh — the validated absolute-trend/recession-deterioration risk gate (panel 04).",
+   "surfaces": [
+    "dashboard",
+    "allocation"
+   ]
+  },
+  {
+   "match": "已验证的回撤门槛",
+   "backing": "zh — the validated drawdown gate (panel 04).",
+   "surfaces": [
+    "dashboard"
+   ]
+  },
+  {
+   "match": "validated dual-momentum book",
+   "backing": "allocation — the validated dual-momentum book (names above their own 200d, panel-04 absolute-trend logic).",
+   "surfaces": [
+    "allocation"
+   ]
+  },
+  {
+   "match": "validated channel",
+   "backing": "allocation — trend (drawdown control) is the one validated channel; also LVMUY contemporaneous co-move (altdata_quiver).",
+   "surfaces": [
+    "allocation",
+    "china_altdata"
+   ]
+  },
+  {
+   "match": "one validated edge",
+   "backing": "allocation panel 04 — the ONE validated edge (multi-decade sector backtest; drawdown control).",
+   "surfaces": [
+    "allocation"
+   ]
+  },
+  {
+   "match": "validated drawdown / sharpe engine",
+   "backing": "spvector — the validated drawdown/Sharpe engine (leave-one-crisis-out + AQR permutation null).",
+   "surfaces": [
+    "spvector",
+    "china",
+    "bonds"
+   ]
+  },
+  {
+   "match": "validated fed-put gate",
+   "backing": "spvector — the validated Fed-put re-deploy gate (spvector overlay study).",
+   "surfaces": [
+    "spvector"
+   ]
+  },
+  {
+   "match": "validated washouts",
+   "backing": "spvector — Fed-put-gated re-deploy buys validated washouts.",
+   "surfaces": [
+    "spvector"
+   ]
+  },
+  {
+   "match": "validated 1990",
+   "backing": "engine/vol_regime — validated on 1990+ history (term-structure + MOVE + VRP; DSR 0.9998).",
+   "surfaces": [
+    "gex"
+   ]
+  },
+  {
+   "match": "reference (validated, 1990",
+   "backing": "vol_regime reference band — validated 1990→2026.",
+   "surfaces": [
+    "gex"
+   ]
+  },
+  {
+   "match": "validated 1998-2026",
+   "backing": "research/SECTOR_CONFLUENCE.md — the sector confluence engine validated 1998-2026.",
+   "surfaces": [
+    "sector",
+    "discovery"
+   ]
+  },
+  {
+   "match": "validated point-in-time",
+   "backing": "reports / factor phase-0 — validated point-in-time (leak-free; e.g. insider Form-4 over S&P 1500, profitability/low-vol).",
+   "surfaces": [
+    "report",
+    "us_stocks",
+    "factors"
+   ]
+  },
+  {
+   "match": "validated on the 2023-2025",
+   "backing": "factors — a factor tagged VALIDATED survives BH-FDR AND positive mean IC on the 2023-2025 price panel.",
+   "surfaces": [
+    "factors"
+   ]
+  },
+  {
+   "match": "tagged validated",
+   "backing": "factors — only a factor tagged VALIDATED (survives BH-FDR, positive mean IC) is scored/wired.",
+   "surfaces": [
+    "factors"
+   ]
+  },
+  {
+   "match": "标记为 validated",
+   "backing": "factors zh — only VALIDATED (BH-FDR + positive IC) factors are scored.",
+   "surfaces": [
+    "factors"
+   ]
+  },
+  {
+   "match": "validated (survives bh",
+   "backing": "factors — VALIDATED = survives BH-FDR and positive mean IC.",
+   "surfaces": [
+    "factors"
+   ]
+  },
+  {
+   "match": "validated blow-off tail",
+   "backing": "the parabolic (>2σ from 200d) blow-off / bubble-pullback flag (research/ bubble-pullback study).",
+   "surfaces": [
+    "us_stocks",
+    "stock"
+   ]
+  },
+  {
+   "match": "validated bubble-pullback",
+   "backing": "the >2σ parabolic bubble-pullback flag (bubble-pullback study).",
+   "surfaces": [
+    "stock"
+   ]
+  },
+  {
+   "match": "validated leading leg",
+   "backing": "cycle_cause / leading-legs — a leg validated vs NBER/equities (e.g. jobless-claims 1967-2026); validate-leading-legs.yml.",
+   "surfaces": [
+    "dashboard",
+    "macro"
+   ]
+  },
+  {
+   "match": "validated vs nber",
+   "backing": "leading-legs — jobless-claims leg validated vs NBER 1967-2026.",
+   "surfaces": [
+    "dashboard"
+   ]
+  },
+  {
+   "match": "strongest validated object",
+   "backing": "dashboard — the strongest validated object in the system (the vol/macro de-risk overlay), engine-scored.",
+   "surfaces": [
+    "dashboard"
+   ]
+  },
+  {
+   "match": "validated, served masterminds gtaa",
+   "backing": "cross-asset trend is the validated, live masterminds GTAA primary factor (W_REGIME 0.45; china-masterminds).",
+   "surfaces": [
+    "vector",
+    "dashboard"
+   ]
+  },
+  {
+   "match": "validated china external-driver radar",
+   "backing": "engine/risk_radar_intl — the validated China external-driver radar (breadth collapse, US-rate shock, US-CN spread, USD). china-drawdown-edge-validated.",
+   "surfaces": [
+    "china",
+    "measurement"
+   ]
+  },
+  {
+   "match": "calibrated, validated",
+   "backing": "engine/risk_radar_intl.py — the calibrated, validated intl risk radar (drawdown-side).",
+   "surfaces": [
+    "market_state_board"
+   ]
+  },
+  {
+   "match": "validated-confluence buy-gate",
+   "backing": "signal_gate — the validated-confluence buy-GATE badge (MACD-2D × StochRSI-3D; research/SECTOR_CONFLUENCE.md).",
+   "surfaces": [
+    "sig_badge"
+   ]
+  },
+  {
+   "match": "validated inside china_masterminds",
+   "backing": "china_masterminds — scored legs are those already validated inside the china_masterminds GTAA (china-masterminds).",
+   "surfaces": [
+    "china"
+   ]
+  },
+  {
+   "match": "china_masterminds中已验证",
+   "backing": "china_masterminds zh — scored legs validated inside china_masterminds.",
+   "surfaces": [
+    "china"
+   ]
+  },
+  {
+   "match": "validated regime state machine",
+   "backing": "the SPDR-calibrated regime state machine (rotation context).",
+   "surfaces": [
+    "subsectors_china",
+    "subsectors"
+   ]
+  },
+  {
+   "match": "validated \"don",
+   "backing": "subsectors — the validated 'don't chase the leader a subsector is distributing' signal (index-leadership study).",
+   "surfaces": [
+    "subsectors"
+   ]
+  },
+  {
+   "match": "validated as the guidance family",
+   "backing": "china_altdata — Tushare 业绩预告 guidance surprise validated as a family (forward-IC finds ~3M post-announcement drift, correct sign); display/measure, not scored.",
+   "surfaces": [
+    "china_altdata"
+   ]
+  },
+  {
+   "match": "validated as: ",
+   "backing": "alerts — an alert family's scorecard name ('Validated as: <scorecard>') from engine.signal_lab.",
+   "surfaces": [
+    "alerts"
+   ]
+  },
+  {
+   "match": "how it was validated",
+   "backing": "baskets flow-velocity 'how it was validated' expander (the flow detection-layer validation note).",
+   "surfaces": [
+    "baskets"
+   ]
+  },
+  {
+   "match": "what is actually validated",
+   "backing": "allocation panel 04 heading — 'What is actually validated — sector backtest'.",
+   "surfaces": [
+    "allocation"
+   ]
+  },
+  {
+   "match": "now validated rather than just hand",
+   "backing": "cycle — the resolve_state stance is now engine-derived (validated crosswalk) rather than hand-drawn (W1.2/W3.6).",
+   "surfaces": [
+    "cycle"
+   ]
+  },
+  {
+   "match": "cache-validated ticker",
+   "backing": "baskets membership — every member is a real, cache-validated ticker (data-plane existence check, not a signal claim).",
+   "surfaces": [
+    "baskets"
+   ]
+  },
+  {
+   "match": "validated against the live index",
+   "backing": "empty-state starter chips validated against the live index membership (data check).",
+   "surfaces": [
+    "subsectors"
+   ]
+  },
+  {
+   "match": "validated the milkshake",
+   "backing": "report_second_act narrative — the war episode validated the Milkshake mechanism (a report prose claim about a historical episode, not a live signal).",
+   "surfaces": [
+    "report_second_act"
+   ]
+  },
+  {
+   "match": "validated by this quarter",
+   "backing": "report — a Factor Watch addition validated by this quarter's trade (report prose about a realized event).",
+   "surfaces": [
+    "report_bessent"
+   ]
+  },
+  {
+   "match": "reaction function is being",
+   "backing": "report_second_act — 'the reaction function is being validated, not faded' (report prose about a policy episode).",
+   "surfaces": [
+    "report_second_act"
+   ]
+  },
+  {
+   "match": "proven",
+   "backing": "policy-watch status token t('proven','已验证') — a policy-follow-through status, not a signal-edge claim.",
+   "surfaces": [
+    "macro",
+    "whitehouse"
+   ]
+  },
+  {
+   "match": "validated stats live in the cave",
+   "backing": "display-only cluster whose validated stats live in the caveat/help (rigorously validated to have NO forward edge — an honest anti-claim surfaced as measurement).",
+   "surfaces": [
+    "factors",
+    "discovery"
+   ]
+  },
+  {
+   "match": "rigorously validated to have no forward edge",
+   "backing": "an honest NULL result surfaced as measurement (the cross-group cluster validated to have NO edge).",
+   "surfaces": [
+    "discovery",
+    "factors"
+   ]
+  },
+  {
+   "match": "one validated",
+   "backing": "intl desk — 'CN/HK/CA finally render the one validated' intl risk radar (engine/risk_radar_intl).",
+   "surfaces": [
+    "china",
+    "market_state_board"
+   ]
+  },
+  {
+   "match": "'validated', '已验证'",
+   "backing": "SCORED-chip label pair: the ✓ Validated pill renders ONLY when the underlying read scored=True (engine.vol_regime / signal_lab / sector_central set the flag). The chip is hidden otherwise — the label is engine-gated, not free prose.",
+   "surfaces": [
+    "gex",
+    "stock",
+    "vector"
+   ]
+  },
+  {
+   "match": "'validated','已验证'",
+   "backing": "SCORED-chip label pair (L()/T()), engine-gated (scored=True) — hidden when not validated. sector_central_china / stock pill.",
+   "surfaces": [
+    "sector_central",
+    "stock"
+   ]
+  },
+  {
+   "match": "t('validated','已验证')",
+   "backing": "the carry 'Validated' caveat label (commodities) — shown only when a carry caveat exists (engine-populated).",
+   "surfaces": [
+    "commodities"
+   ]
+  },
+  {
+   "match": "已验证的板块状态机",
+   "backing": "zh — the SPDR-calibrated validated sector state machine (rotation context).",
+   "surfaces": [
+    "subsectors"
+   ]
+  },
+  {
+   "match": "已验证的状态机",
+   "backing": "zh — the validated regime state machine (rotation context).",
+   "surfaces": [
+    "subsectors_china"
+   ]
+  },
+  {
+   "match": "已验证的 macd-2d",
+   "backing": "zh — research/SECTOR_CONFLUENCE.md MACD-2D × StochRSI-3D confluence gate.",
+   "surfaces": [
+    "us_stocks_v2"
+   ]
+  },
+  {
+   "match": "已验证的反转／低波",
+   "backing": "zh — research/CHINA_HK_STOCK_SIGNALS.md validated A-share reversal/low-vol signals (read-alongside background).",
+   "surfaces": [
+    "china_lookup"
+   ]
+  },
+  {
+   "match": "已验证的a股均值回归",
+   "backing": "zh — validated A-share mean-reversion reference (research/CHINA_HK_STOCK_SIGNALS.md).",
+   "surfaces": [
+    "china_lookup"
+   ]
+  },
+  {
+   "match": "已验证的a股优势",
+   "backing": "zh — the validated A-share edge (within-sector deepest-drawdown reversal; research/CHINA_HK_STOCK_SIGNALS.md).",
+   "surfaces": [
+    "cn_reversal_sleeve"
+   ]
+  },
+  {
+   "match": "已验证的全球风险贝塔",
+   "backing": "zh — research/CHINA_HK_STOCK_SIGNALS.md HK global-risk-beta (the validated HK edge), read-alongside background.",
+   "surfaces": [
+    "hk_lookup"
+   ]
+  },
+  {
+   "match": "已验证的“别去追",
+   "backing": "zh — the validated 'don't chase a distributing leader' subsector signal (index-leadership study).",
+   "surfaces": [
+    "subsectors"
+   ]
+  },
+  {
+   "match": "已验证的每日持仓数据",
+   "backing": "etfs coverage note — SPDR/ARK/Global X have validated (verified-present) daily holdings data. A data-coverage statement, not a signal-edge claim.",
+   "surfaces": [
+    "etfs"
+   ]
+  },
+  {
+   "match": "逐股覆盖已验证",
+   "backing": "stock — per-name GEX coverage is validated (data-coverage / roadmap note), not a signal claim.",
+   "surfaces": [
+    "stock"
+   ]
+  },
+  {
+   "match": "在已验证状态内进行仓位管理",
+   "backing": "zh — HK: SIZING within the validated risk regime (the vol/risk-regime overlay), never a validated alpha.",
+   "surfaces": [
+    "hk",
+    "hk_lookup"
+   ]
+  },
+  {
+   "match": "the word \"validated.\"",
+   "backing": "measurement.html — the STATEMENT of the validated-artifact doctrine itself (BC-2's own prose).",
+   "surfaces": [
+    "measurement"
+   ]
+  },
+  {
+   "match": "reasoning trace, the validated",
+   "backing": "sector_central meta/prose — the validated absolute-trend drawdown gate (panel 04).",
+   "surfaces": [
+    "sector_central"
+   ]
+  },
+  {
+   "match": "whichever horizon validated",
+   "backing": "anticipation code COMMENT — surfaces the scored lean from whichever horizon is OOS-validated (data/regime/anticipation_gate.json).",
+   "surfaces": [
+    "anticipation"
+   ]
+  },
+  {
+   "match": "means validated+weighted",
+   "backing": "dashboard code COMMENT — gate_scored=True means the family is validated+weighted (engine.signal_lab); display-only otherwise.",
+   "surfaces": [
+    "dashboard"
+   ]
+  },
+  {
+   "match": "forward odds (validated pathway)",
+   "backing": "sector_central_china code COMMENT — the forward-odds pathway is shown only where the pathway is validated (china_sector_pathway gate).",
+   "surfaces": [
+    "sector_central"
+   ]
+  },
+  {
+   "match": "validated within-sector 3m reversal",
+   "backing": "cn_reversal_sleeve template COMMENT — the validated within-sector 3M reversal edge (research/CHINA_HK_STOCK_SIGNALS.md).",
+   "surfaces": [
+    "cn_reversal_sleeve"
+   ]
+  },
+  {
+   "match": "validated drawdown-control channel",
+   "backing": "baskets_desk COMMENT — the sleeve-size chip binds the validated drawdown-control channel (CN forward-drawdown edge); payload-gated.",
+   "surfaces": [
+    "baskets_desk"
+   ]
+  },
+  {
+   "match": "one read on this page that is validated",
+   "backing": "engine/vol_regime — the one VALIDATED read on gex.html: VIX/VIX3M term structure + MOVE + VRP composite, 1990+ history, DSR 0.9998, HAC t~-10 (subtract-only sizing nudge).",
+   "surfaces": [
+    "gex"
+   ]
+  },
+  {
+   "match": "validated on 1990+ history",
+   "backing": "engine/vol_regime — validated on 1990+ history (term structure + MOVE + VRP).",
+   "surfaces": [
+    "gex"
+   ]
+  },
+  {
+   "match": "confirmer / context — validated",
+   "backing": "a confirmer/context leg validated but not a standalone quantitative signal (leading-legs / signal_lab family validation).",
+   "surfaces": [
+    "dashboard",
+    "macro"
+   ]
+  },
+  {
+   "match": "确认/背景 — 已验证",
+   "backing": "zh — a validated confirmer/context leg (not a standalone signal).",
+   "surfaces": [
+    "dashboard",
+    "macro"
+   ]
+  },
+  {
+   "match": "scored — validated & wired",
+   "backing": "dashboard 'Scored — validated & wired into a number' section header — the objects that are engine-scored (signal_lab-validated families).",
+   "surfaces": [
+    "dashboard"
+   ]
+  },
+  {
+   "match": "validated & wired into a number",
+   "backing": "dashboard — the validated (signal_lab) + wired-into-a-number objects.",
+   "surfaces": [
+    "dashboard"
+   ]
+  },
+  {
+   "match": "validated, served masterminds",
+   "backing": "cross-asset trend = the validated, live masterminds GTAA primary factor (W_REGIME 0.45).",
+   "surfaces": [
+    "vector",
+    "dashboard"
+   ]
+  },
+  {
+   "match": "edge basis",
+   "backing": "theme/basket 'Edge basis' label — the basis on which the theme's edge was validated (allocation panel 04 sector backtest); a provenance label.",
+   "surfaces": [
+    "allocation",
+    "baskets"
+   ]
+  },
+  {
+   "match": "validated enterprise ai spend",
+   "backing": "report_second_act narrative — a historical episode (Microsoft/OpenAI investment validated enterprise AI spending); report prose, not a live signal.",
+   "surfaces": [
+    "report_second_act"
+   ]
+  },
+  {
+   "match": "validated china's",
+   "backing": "report narrative — historical episodes (Kairos/Huawei validated China's AI/nuclear stack); report prose about realized events.",
+   "surfaces": [
+    "report_second_act"
+   ]
+  },
+  {
+   "match": "validated nuclear",
+   "backing": "report_second_act — Kairos Power deal validated nuclear as the AI-baseload play (report prose).",
+   "surfaces": [
+    "report_second_act"
+   ]
+  },
+  {
+   "match": "validated the commercial",
+   "backing": "report_second_act — a funding round validated the commercial launch (report prose about a realized event).",
+   "surfaces": [
+    "report_second_act"
+   ]
+  },
+  {
+   "match": "validated the group revenue",
+   "backing": "report_second_act — grid load forecasts validated the group revenue (report prose).",
+   "surfaces": [
+    "report_second_act"
+   ]
+  },
+  {
+   "match": "validated china's innovative drug",
+   "backing": "report narrative — mega-deals validated China's innovative-drug story (report prose).",
+   "surfaces": [
+    "report_second_act"
+   ]
+  },
+  {
+   "match": "validated china's domestic ai",
+   "backing": "report narrative — Huawei Ascend validated China's domestic AI stack (report prose).",
+   "surfaces": [
+    "report_second_act"
+   ]
+  },
+  {
+   "match": "validated risk side",
+   "backing": "us_stocks narrative-basket ai-bdg tooltip — the VALIDATED risk side (absolute-trend / recession-deterioration drawdown gate; allocation panel 04, multi-decade backtest).",
+   "surfaces": [
+    "us_stocks"
+   ]
+  },
+  {
+   "match": "已验证的风险侧",
+   "backing": "zh — the validated risk side (absolute-trend / recession-deterioration drawdown gate; panel 04).",
+   "surfaces": [
+    "us_stocks"
+   ]
+  },
+  {
+   "match": ">validated</span><span class=\"l-zh\">已验证",
+   "backing": "dual-span (l-en/l-zh) SCORED-chip / caveat label — engine-gated (scored=True / caveat present); commodities carry caveat + gex/stock scored pill. Hidden when not validated.",
+   "surfaces": [
+    "commodities",
+    "gex",
+    "stock"
+   ]
+  },
+  {
+   "match": "l-en\">validated</span>",
+   "backing": "dual-span validated label (l-en half) — engine-gated scored chip / carry caveat.",
+   "surfaces": [
+    "commodities",
+    "gex",
+    "stock"
+   ]
+  },
+  {
+   "match": "the validated, after-cost number",
+   "backing": "cross-asset / masterminds — gross Sharpe is contested; the validated, after-cost number is the one cited (masterminds GTAA net-of-cost study).",
+   "surfaces": [
+    "crossasset",
+    "vector"
+   ]
+  },
+  {
+   "match": "note\":\"validated forward-drawdown",
+   "backing": "engine-stamped data note — the China external-driver radar registry entry ('Validated forward-drawdown component'; engine/risk_radar_intl). Display-only metadata.",
+   "surfaces": [
+    "china",
+    "measurement"
+   ]
+  },
+  {
+   "match": "cross-asset trend =",
+   "backing": "crossasset — cross-asset trend = time-series momentum, the validated managed-futures primary factor (masterminds GTAA).",
+   "surfaces": [
+    "crossasset"
+   ]
+  },
+  {
+   "match": "雷达已验证的美元",
+   "backing": "election-cycle modulator zh — trust the radar's validated USD/rate/CNH factors over the calendar year itself (engine/risk_radar_intl; election-cycle-modulator).",
+   "surfaces": [
+    "macro"
+   ]
+  },
+  {
+   "match": "midterm year",
+   "backing": "election-cycle modulator — the midterm-year window is a Risk-Radar MODULATOR whose factors (USD/rate/spread) are the validated radar legs, not the calendar. election-cycle-modulator.",
+   "surfaces": [
+    "macro"
+   ]
+  },
+  {
+   "match": "narrative basket — the narrative resolution",
+   "backing": "us_stocks narrative-basket ai-bdg tooltip — references the validated risk side (absolute-trend drawdown gate, panel 04). Same tooltip on every theme card.",
+   "surfaces": [
+    "us_stocks"
+   ]
+  },
+  {
+   "match": "均已验证",
+   "backing": "generated SECTOR_NARR body prose — an analog/narrative note that a pattern held at listed historical dates (descriptive cycle-DNA, not a live scored claim).",
+   "surfaces": [
+    "sector_cycles"
+   ]
+  },
+  {
+   "match": "window.sector_cycles=",
+   "backing": "generated cycle data payload — 'validated' appears inside descriptive DNA/analog narrative bodies (cycle-DNA prose), not as a scored field.",
+   "surfaces": [
+    "sector_cycles"
+   ]
+  },
+  {
+   "match": "window.sector_dna=",
+   "backing": "generated cycle-DNA payload — descriptive analog narrative bodies; 'validated' is prose context, not a scored field.",
+   "surfaces": [
+    "sector_cycles"
+   ]
+  },
+  {
+   "match": "const baskets =",
+   "backing": "generated basket payload — 'validated' appears inside descriptive construction/analog prose, not a scored field.",
+   "surfaces": [
+    "baskets_china_ths"
+   ]
+  },
+  {
+   "match": "validated weekly directional confirmer",
+   "backing": "engine.cn_ai_semis_confirmer / china_narrative_radar (#773): global AI-semis (SMH+SOXX+TSM) 4w log-momentum → next-week CPO basket return, t=3.27 univariate, horse-race stable (SPY + CN controls), pre-2024 split survives; validation script scripts/china_global_theme_backtest.py. The 'validated' tag is engine-emitted only for baskets where t=3.27 survives (ths_cpo); other baskets carry partial/weak honesty tags.",
+   "surfaces": [
+    "narrative_radar"
+   ]
+  },
+  {
+   "match": "cpo basket return (validated #773",
+   "backing": "same AI-semis→CPO confirmer as above (#773, t=3.27, horse-race stable) — the source-caption restatement; backing artifact engine.cn_ai_semis_confirmer + scripts/china_global_theme_backtest.py.",
+   "surfaces": [
+    "narrative_radar"
+   ]
+  },
+  {
+   "match": "validated entry confluence (T1–T3)",
+   "backing": "T1–T3 confluence buy-gate (signal_gate.is_buyable, #736) + Lane R admission licensed by the W8-C CT-LANE deep-panel row in research/signal_engine/DURABLE_BOTTOM_FRAMEWORK.md decisions ledger (2026-07-03): CT_LANE n=7392 vs ALIGNED n=5272, stop5/clean15 deltas −0.16pp/−0.6pp, sign-stable both time halves — counter-trend buyables admitted as equal citizens, no ranking edge claimed (harness wave8_ctlane.py --gates). The tooltip's own copy repeats the no-edge disclaimer.",
+   "surfaces": [
+    "us_stocks"
+   ]
+  },
+  {
+   "match": "validated on two panels: stop-out",
+   "backing": "W8-B-OOS SHAKEN confirmatory PASS, research/signal_engine/DURABLE_BOTTOM_FRAMEWORK.md decisions ledger (2026-07-03): n=8009 stop5 42.5 vs FRESH 47.1 (−4.59pp), clean15 +1.59pp NI, sign-stable all four splits (tickerA/tickerB/pre/post); confirmed on the deep panel (35.8 vs 40.3). The Wave-8 ship decision in the same ledger explicitly licenses the SHAKEN chip's validated copy (display-only, no rank power).",
+   "surfaces": [
+    "us_stocks"
+   ]
+  },
+  {
+   "match": "validated confluence buy",
+   "backing": "the T1-T4 confluence buy-GATE (signal_gate; research/SECTOR_CONFLUENCE.md) — same gate as the existing 'validated-confluence buy-gate' sig_badge entry. Badge/tooltip renders ONLY on an engine-emitted gate verdict: engine/altdata_emit.py _entry_badge stamps entry_tier from signal_gate verdicts ('entry_tier (T1/T2/T3) = validated confluence buy gate signal'); intel-hub entrybadge renders only when entry_gate.buyable (engine/intel_hub.py payload). Covers the ⚡ prime-entry tooltip EN+zh (已验证共振买入 / 已验证汇流买入信号).",
+   "surfaces": [
+    "intelligence_hub",
+    "alt_data"
+   ]
+  },
+  {
+   "match": "validated t1-t4 confluence",
+   "backing": "code/CSS comments naming the same T1-T4 confluence buy gate (signal_gate; research/SECTOR_CONFLUENCE.md) — the prime-entry badge plumbing in intelligence_hub (jinja macro comment + .egate style-block comment), not free prose; the displayed badge itself is gated by the entry above.",
+   "surfaces": [
+    "intelligence_hub"
+   ]
+  },
+  {
+   "match": "validated 2d-macd",
+   "backing": "research/SECTOR_CONFLUENCE.md — the MACD-2D × StochRSI-3D confluence turn (same signal as the 'validated MACD-2D' entry); engine/china_sector_turn reuses it as the leg-A turn marker for the CN sector washout→turn boost. Display re-rank only, never a filter (the legend copy states this). Covers the JS comment + legend line EN+zh (已验证的 2D-MACD × 3D-StochRSI).",
+   "surfaces": [
+    "china"
+   ]
+  },
+  {
+   "match": "'VALIDATED EDGE','已验证优势'",
+   "backing": "Reversal Sleeve strategy-card tag (template t() form) — the validated A-share within-sector 3M reversal edge: +0.56%/mo, Sharpe 0.58, 388 rebalances (research/CHINA_HK_STOCK_SIGNALS.md; ENGINE_FIX_MASTERPLAN.md §Selection); productized per W5-A/W5-B CONFIRM-ON-AVAILABLE-PLANE verdict, both time-halves positive (research/china_alpha/w5/W5B_INTEGRATION.md, 2026-07-03). No-gate invariant enforced (#823); card copy itself carries the high-variance/small-size caveat.",
+   "surfaces": [
+    "baskets_china",
+    "cn_reversal_sleeve"
+   ]
+  },
+  {
+   "match": "validated edge</span><span class=\"l-zh\">已验证优势",
+   "backing": "same Reversal Sleeve tag, rendered dual-span form (research/CHINA_HK_STOCK_SIGNALS.md within-sector 3M reversal + research/china_alpha/w5/W5B_INTEGRATION.md CONFIRM verdict).",
+   "surfaces": [
+    "baskets_china",
+    "cn_reversal_sleeve"
+   ]
+  },
+  {
+   "match": "已验证\"门槛",
+   "backing": "desk-grader fine-print zh span — quotes the grader's own 'proven' (zh 已验证) tier THRESHOLD: engine/desk_grader.py _proven_status needs n>=40 matured obs + significant Newey-West HAC t of the right sign, and the daily HAC IC needs MIN_DATES_IC=6 grading dates. A statement of the gate's mechanics (doctrine-quote, like the measurement.html entries); the EN twin span on the adjacent line says 'the \"proven\" gate'.",
+   "surfaces": [
+    "desk_grader",
+    "intelligence_hub"
+   ]
+  },
+  {
+   "match": "p1.3 validated",
+   "backing": "EI P1.3 trio ablation, round 2 CONFORMANT (valid permutation null + positive/negative statistic-calibration controls): F3 anti-chase ext_z>2 verdict SHIPS-AS-HARD-GATE — stop −0.43pp@21d/−5.00pp@63d at 4.6% fire cost, BH q≤0.01, sign-stable (research/ENTRY_INTELLIGENCE_MASTERPLAN_BY_FABLE.md decisions ledger 2026-07-05; P1_3_TRIO_ABLATION_PREREG.md). F3_ANTICHASE registry entry merged #1472; ships shadow-first per Article 2 — the tooltip itself discloses 'display context only — gate not wired in P2.4'.",
+   "surfaces": [
+    "dashboard"
+   ]
+  },
+  {
+   "match": "validated vs family-stratified km",
+   "backing": "CPI W4.2 HZ gate (research/cycle_masterplan/PREREGISTRATION.md 'HZ results (W4.2, 2026-07-03)'): 4/6 cells PASS on pre-registered paired-dBrier criteria — leak-free out-of-fold isotonic-calibrated predictions vs the correctly-specified family-stratified KM baseline, date-block bootstrap CIs excluding 0, sign-stability, BH-corrected (HZ-up-1m dBrier +0.0140 CI [+0.0068,+0.0209]; HZ-dn-1m +0.0141; HZ-dn-3m/6m marginal PASS). Fit artifact data/hazard/model_price_c4414dcb.json. The sector_cycles legend attaches 'validated' ONLY to PASS cells; PRIOR cells ship the KM base rate and say so.",
+   "surfaces": [
+    "sector_cycles"
+   ]
+  },
+  {
+   "match": "validated vs km, w4.2 gate",
+   "backing": "Same W4.2 HZ gate evidence as the family-stratified-KM entry above (PREREGISTRATION.md HZ results table, 2026-07-03; 4/6 PASS, 2 PRIOR). The phrase names the gate explicitly — a doctrine-quote of which cells earned calibrated-model probabilities vs which ship the KM prior.",
+   "surfaces": [
+    "sector_cycles"
+   ]
+  }
+ ]
 }

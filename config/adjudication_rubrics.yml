@@ -1,0 +1,353 @@
+# config/adjudication_rubrics.yml — Adjudication Rubrics v1
+#
+# Machine-readable law for the post-Fable three-tier adjudication ladder.
+# Ratified: 2026-07-06 (RUL-SUCC-1..12, Fable succession operating system).
+# Source doc: research/FABLE_SUCCESSION_OPERATING_SYSTEM.md
+#
+# This file is the SINGLE SOURCE OF TRUTH for tier mapping, packet
+# completeness requirements, and hard-blocker rule definitions. The
+# check script scripts/check_adjudication_packet.py reads this file;
+# any change here changes enforcement.
+#
+# NEVER add a decision class whose effect would permit an LLM to originate
+# signals, scores, ranks, or escalations on a scored path (Article 1, A7).
+
+# ---------------------------------------------------------------------------
+# Meta
+# ---------------------------------------------------------------------------
+meta:
+  schema_version: 1
+  ratified_by: "fable/operator amendment"
+  ratified_on: "2026-07-06"
+  source_doc: "research/FABLE_SUCCESSION_OPERATING_SYSTEM.md"
+  law: >
+    This file is the single source of truth for tier mapping and packet
+    completeness for all post-Fable adjudication decisions. Operator may
+    amend after adversarial review; Fable adjudicated the founding text on
+    the ratified_on date above.
+
+# ---------------------------------------------------------------------------
+# Escalation defaults
+# ---------------------------------------------------------------------------
+escalation:
+  stale_after_days: 14
+  action: operator_summary
+
+# ---------------------------------------------------------------------------
+# Tiers
+# ---------------------------------------------------------------------------
+tiers:
+  t0:
+    name: "Tier 0 — ROUTINE"
+    packet_required: false
+    minimal_packet_note: >
+      Minimal packet required only when an opus actor drives a Research
+      Factory gate (rf_gate_clean_caselaw class). All other t0 classes
+      need no packet.
+    deciders:
+      - opus
+      - operator
+    panel: null
+    operator_signoff: false
+
+  t1:
+    name: "Tier 1 — CONSEQUENTIAL"
+    packet_required: true
+    deciders:
+      - opus
+      - operator
+    panel: null
+    operator_signoff: false
+
+  t2:
+    name: "Tier 2 — CONSTITUTIONAL"
+    packet_required: true
+    deciders:
+      - operator
+    panel:
+      min_reviewers: 2
+      stance: refute
+      stance_note: >
+        Every panel entry must have stance == "refute" AND a resolved verdict
+        (refuted|stands). Entries with stance == "approve" or a missing stance
+        do NOT count toward the >=2 minimum — the requirement is adversarial
+        review, not approval.
+    operator_signoff: true
+
+# ---------------------------------------------------------------------------
+# Decision classes
+# Each class maps to exactly one tier.
+# ---------------------------------------------------------------------------
+decision_classes:
+  # ── Tier 0 ──────────────────────────────────────────────────────────────
+  - class: rf_gate_clean_caselaw
+    tier: 0
+    description: "Research Factory gate: paper/defer/reject with clean caselaw"
+
+  - class: doc_only_merge
+    tier: 0
+    description: "Documentation-only merge; no engine or scored-path change"
+
+  - class: display_only_change
+    tier: 0
+    description: "Display-only UI or rendering change; no scored-path logic"
+
+  - class: taxonomy_with_precedent
+    tier: 0
+    description: "Taxonomy or labeling change that has direct ratified precedent"
+
+  - class: send_to_review
+    tier: 0
+    description: "Route a packet or proposal to a review lane for assessment"
+
+  - class: return_for_evidence
+    tier: 0
+    description: "Return a proposal with a request for more supporting evidence"
+
+  # ── Tier 1 ──────────────────────────────────────────────────────────────
+  - class: scoped_build
+    tier: 1
+    description: "Build of a scoped, pre-registered artifact within a program"
+
+  - class: retire
+    tier: 1
+    description: "Retirement of an active artifact, signal family, or lobe"
+
+  - class: new_fdr_family_within_program
+    tier: 1
+    description: "New FDR family that stays inside an existing chartered program"
+
+  - class: comeback_clock_move_gt_90d
+    tier: 1
+    description: "Come-back clock moved more than 90 days into the future"
+
+  - class: taxonomy_no_precedent
+    tier: 1
+    description: "Taxonomy or labeling change with no ratified precedent"
+
+  - class: cross_program_ownership
+    tier: 1
+    description: "Ownership transfer of an artifact across programs"
+
+  - class: ops_budget_within_render
+    tier: 1
+    description: "Ops or compute budget change that stays within the render budget"
+
+  # ── Tier 2 ──────────────────────────────────────────────────────────────
+  - class: new_lobe_charter
+    tier: 2
+    description: "Charter a new Neural Web lobe"
+
+  - class: two_lobe_cap_exception
+    tier: 2
+    description: "Exception to the two-lobe-per-session cap rule"
+
+  - class: authority_promotion_above_A2
+    tier: 2
+    description: "Promote any actor authority above Article-2 ceiling"
+
+  - class: scored_path_behavior_change
+    tier: 2
+    description: "Any change to logic on a scored path (board_rank, oracle_escalation, position_sizing, etc.)"
+
+  - class: fdr_family_cross_program
+    tier: 2
+    description: "New FDR family that spans or moves across program boundaries"
+
+  - class: qledger_grading_semantics
+    tier: 2
+    description: "Change to qledger grading rules, outcome definitions, or horizon semantics"
+
+  - class: held_book_fill_schema
+    tier: 2
+    description: "Change to the held book or fill schema used by the allocator"
+
+  - class: public_private_boundary
+    tier: 2
+    description: "Move data or logic across the public/private boundary"
+
+  - class: public_write_endpoint
+    tier: 2
+    description: "Add or modify a public-facing write endpoint"
+
+  - class: mastermind_trading_authority
+    tier: 2
+    description: "Any change to Mastermind trading authority or allocation surface"
+
+  - class: cortex_budget_increase
+    tier: 2
+    description: "Increase to the cortex compute or token budget"
+
+  - class: article_2_3_amendment
+    tier: 2
+    description: "Amendment to Article 2 or Article 3 of the operating system"
+
+# ---------------------------------------------------------------------------
+# Invariants — hard block on sight, any actor, any tier
+# ---------------------------------------------------------------------------
+invariants:
+  - class: article_1_amendment_or_a7_origination
+    reason: >
+      Article 1 and A7 are inviolable: no LLM may originate signals,
+      scores, ranks, or gates on any scored path. No amendment allowed.
+
+  - class: trial_budget_laundering
+    reason: >
+      Trial budget laundering disguises a new experiment as bookkeeping;
+      always blocks to enforce pre-registration integrity.
+
+  - class: delete_negative_or_null_history
+    reason: >
+      Deleting negative or null historical results violates the epistemic
+      honesty law; nulls are printed, not hidden.
+
+# ---------------------------------------------------------------------------
+# Required fields per tier
+# ---------------------------------------------------------------------------
+required_fields:
+  t0_minimal:
+    - schema
+    - packet_id
+    - tier
+    - created_at
+    - created_by
+    - request
+    - decision
+
+  t1:
+    - schema
+    - packet_id
+    - tier
+    - created_at
+    - created_by
+    - request
+    - scope
+    - case_law
+    - authority
+    - statistics
+    - clocks
+    - allowed_outcomes
+    - blocked_outcomes
+    - escalation
+    - decision
+
+  t2:
+    - schema
+    - packet_id
+    - tier
+    - created_at
+    - created_by
+    - request
+    - scope
+    - case_law
+    - authority
+    - statistics
+    - clocks
+    - allowed_outcomes
+    - blocked_outcomes
+    - escalation
+    - privacy
+    - build_collision
+    - review
+    - decision
+
+# ---------------------------------------------------------------------------
+# Evidence floor triggers (read by check_adjudication_packet.py for HB-11/12)
+# ---------------------------------------------------------------------------
+authority_floor:
+  trigger:
+    any_of:
+      - requested_ceiling != current_ceiling
+      - article2_surfaces_touched non-empty
+      - class == authority_promotion_above_A2
+  required:
+    - authority.article_citation           # non-null article citation
+    - authority.article3_evidence.n        # actual n
+    - authority.article3_evidence.hits     # actual hits / n_events
+    - authority.article3_evidence.wilson_lb    # Wilson lower bound
+    - authority.article3_evidence.staleness_days  # days since evidence asof
+    - case_law_scan non-empty              # ruling_hits or deferred_or_killed_hits
+
+privacy_floor:
+  trigger:
+    any_of:
+      - privacy_class in [host_private, mastermind_private]
+      - private_fields non-empty
+      - class in [public_private_boundary, held_book_fill_schema, public_write_endpoint]
+  required:
+    - privacy.privacy_class                # must be present
+    - privacy.public_paths_touched         # list, may be empty
+    - privacy.private_fields               # list, may be empty
+    - privacy.mastermind_booleans_unchanged == true  # hard boolean
+
+# ---------------------------------------------------------------------------
+# Hard-blocker rule catalogue (cited by rule id in check output)
+# ---------------------------------------------------------------------------
+hard_blockers:
+  HB-1:
+    rule: "decision.outcome present AND in blocked_outcomes"
+    description: "The chosen outcome is in the packet's own blocked_outcomes list"
+
+  HB-2:
+    rule: "tier 2 decided without >=2 panel entries with verdicts"
+    description: "Constitutional decisions require an adversarial panel of >=2 reviewers, each with a verdict"
+
+  HB-3:
+    rule: "tier 2 decided with decided_by != operator"
+    description: "Only the operator may sign off a constitutional (tier 2) decision"
+
+  HB-4:
+    rule: "decision_class matches an invariant"
+    description: "Invariant classes are never approvable regardless of tier, actor, or panel"
+
+  HB-5:
+    rule: "statistics.outcome_data_seen true AND preregistration_ref null"
+    description: "Outcome data was seen before a pre-registration reference was recorded — post-hoc analysis block"
+
+  HB-6:
+    rule: "statistics.trial_budget_change true AND fdr_family null"
+    description: "Trial budget changes must name an FDR family"
+
+  HB-7:
+    rule: "tier >=1 with empty ruling_hits AND empty deferred_or_killed_hits AND duplicate_risk != low"
+    description: "No caselaw scan evidence despite non-low duplicate_risk — scan must be performed"
+
+  HB-8:
+    rule: "missing required fields for its tier"
+    description: "Packet is missing one or more fields required for its declared tier"
+
+  HB-9:
+    rule: "unknown decision_class"
+    description: "decision_class is not registered in the rubrics"
+
+  HB-10:
+    rule: "packet tier lower than rubric tier for its decision_class (tier laundering)"
+    description: "Packet claims a lower tier than the rubrics assign to its decision_class"
+
+  HB-11:
+    rule: "authority floor unmet"
+    description: "Packet touches authority (ceiling change, article2_surfaces, or authority_promotion_above_A2) but authority floor fields are incomplete (RUL-SUCC-10)"
+
+  HB-12:
+    rule: "privacy floor unmet"
+    description: "Packet touches private data or privacy-sensitive classes but privacy floor fields are incomplete (RUL-SUCC-11)"
+
+  HB-13:
+    rule: "tier field missing while decision_class maps to a known tier"
+    description: "Packet omits the tier field entirely; tier must be declared for any registered decision_class"
+
+# ---------------------------------------------------------------------------
+# Warn rules
+# ---------------------------------------------------------------------------
+warn_rules:
+  W-1:
+    rule: "undecided packet older than stale_after_days without escalated=true"
+    description: "Stale undecided packet should be escalated or resolved"
+
+  W-2:
+    rule: "duplicate_risk high with empty deferred_or_killed_hits"
+    description: "High duplicate risk but no deferred/killed hits listed — caselaw may be incomplete"
+
+  W-3:
+    rule: "decided packet missing rationale"
+    description: "Decided packets should include a decision rationale for audit trail"

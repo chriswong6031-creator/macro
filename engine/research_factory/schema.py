@@ -325,8 +325,9 @@ def validate_candidate(row: dict) -> list[str]:
 # Validator: transition.v1 (§5.2)
 # ---------------------------------------------------------------------------
 
-# Actor enum
-ACTORS = frozenset({"script", "codex", "sonnet", "fable", "operator"})
+# Actor enum — mirrors state.py ALL_ACTORS (RF-5/RF-5b RUL-SUCC-7).
+# "opus" is a model adjudicator; packet_ref enforcement lives in state.py.
+ACTORS = frozenset({"script", "codex", "sonnet", "fable", "operator", "opus"})
 # Human actors — require actor_ref (RF-5)
 HUMAN_ACTORS = frozenset({"fable", "operator"})
 
