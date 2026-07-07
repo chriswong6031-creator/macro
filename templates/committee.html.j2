@@ -108,7 +108,6 @@ body { padding-bottom:56px; }
 #graph_canvas { width:100%; height:640px; display:block; cursor:grab; touch-action:none; }
 @media(max-width:719px){ #graph_canvas { height:420px; } }
 #graph_canvas:active { cursor:grabbing; }
-#graph_canvas.fullscreen-canvas { height:100vh !important; }
 .graph-controls { position:absolute; top:10px; right:10px; display:flex; gap:5px; z-index:10; }
 .gc-btn { width:32px; height:32px; border-radius:8px; border:1px solid color-mix(in srgb,var(--line) 60%,transparent); background:color-mix(in srgb,var(--panel) 70%,transparent); color:var(--text); font-size:14px; cursor:pointer; display:flex; align-items:center; justify-content:center; backdrop-filter:blur(6px); transition:background .15s; }
 .gc-btn:hover { background:color-mix(in srgb,var(--link) 20%,var(--panel)); }
@@ -1730,23 +1729,49 @@ details.memo-raw pre { font-size:11px; overflow-x:auto; color:var(--muted); whit
       });
     }
 
+    // True when the synapse map's wrapper is the active fullscreen element.
+    function isGraphFullscreen() {
+      var wrapEl = document.getElementById('graph_wrap');
+      var fsEl = document.fullscreenElement || document.webkitFullscreenElement;
+      return !!(fsEl && wrapEl && (fsEl === wrapEl || fsEl.contains(wrapEl)));
+    }
+
     // Setup canvas (DPR-aware)
     function resizeCanvas() {
       var wrapEl = document.getElementById('graph_wrap');
-      // offsetWidth can be 0 pre-layout or while a parent is display:none;
-      // ResizeObserver refits once real dimensions arrive.
-      var cw = (wrapEl && wrapEl.offsetWidth) || canvas.offsetWidth || 800;
-      var ch = canvas.offsetHeight || 640;
-      if (ch < 100) ch = 640;
+      var fs = isGraphFullscreen();
+      var cw, ch;
+      if (fs) {
+        // Fullscreen: size the canvas explicitly to the fullscreen viewport.
+        // A CSS `height:100vh` class is unreliable here — `vh` resolves against
+        // the document viewport, not the fullscreened element — so the canvas
+        // could stay 640px and render as a strip across the top of the screen.
+        cw = (wrapEl && wrapEl.clientWidth)  || window.innerWidth;
+        ch = (wrapEl && wrapEl.clientHeight) || window.innerHeight;
+        canvas.style.width  = cw + 'px';
+        canvas.style.height = ch + 'px';
+      } else {
+        // Normal: drop any fullscreen inline sizing so the stylesheet size
+        // (width:100%, height:640px) applies again, then measure it.
+        canvas.style.width  = '';
+        canvas.style.height = '';
+        // offsetWidth can be 0 pre-layout or while a parent is display:none;
+        // ResizeObserver refits once real dimensions arrive.
+        cw = (wrapEl && wrapEl.offsetWidth) || canvas.offsetWidth || 800;
+        ch = canvas.offsetHeight || 640;
+        if (ch < 100) ch = 640;
+      }
       canvas.width  = cw * _graphDpr;
       canvas.height = ch * _graphDpr;
-      canvas.style.width  = cw + 'px';
-      canvas.style.height = ch + 'px';
-      // Zoom to fit on first draw
-      zoomToFit(cw, ch);
+      // Zoom to fit; fullscreen allows a larger scale so a big display zooms IN.
+      zoomToFit(cw, ch, fs ? 4.5 : 2);
     }
 
-    function zoomToFit(cw, ch) {
+    function zoomToFit(cw, ch, maxScale) {
+      // Fullscreen fills a whole monitor, so allow a larger fit scale: on a big
+      // display the graph zooms IN to fill the screen (past the wiring-label
+      // min-zoom of 1.4, so titles render) instead of floating small in the middle.
+      if (maxScale == null) maxScale = isGraphFullscreen() ? 4.5 : 2;
       // Fit only the ACTIVE layer (default web, or default+wiring when toggled on);
       // stale wiring positions must not blow up the bounding box when wiring is off.
       var minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
@@ -1762,7 +1787,7 @@ details.memo-raw pre { font-size:11px; overflow-x:auto; color:var(--muted); whit
       var pad = 44; // FIX 5: 44px margin to fill both width and height
       var scaleX = (cw - 2*pad) / (maxX - minX || 1);
       var scaleY = (ch - 2*pad) / (maxY - minY || 1);
-      var s = Math.min(scaleX, scaleY, 2);
+      var s = Math.min(scaleX, scaleY, maxScale);
       var midX = (minX+maxX)/2, midY = (minY+maxY)/2;
       _graphView.scale = s;
       _graphView.tx = cw/2 - midX*s;
@@ -1786,9 +1811,14 @@ details.memo-raw pre { font-size:11px; overflow-x:auto; color:var(--muted); whit
       if (wrap && wrap.requestFullscreen) wrap.requestFullscreen();
       else if (wrap && wrap.webkitRequestFullscreen) wrap.webkitRequestFullscreen();
     });
-    document.addEventListener('fullscreenchange', function(){
+    function onFullscreenChange(){
+      // Resize now (snappy) and again after the browser settles the transition,
+      // so the canvas grows/shrinks to match the fullscreen viewport and re-fits.
+      resizeCanvas();
       setTimeout(resizeCanvas, 100);
-    });
+    }
+    document.addEventListener('fullscreenchange', onFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', onFullscreenChange);
 
     // Controls
     document.getElementById('gc_plus').addEventListener('click', function(){
