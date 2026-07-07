@@ -218,7 +218,352 @@ def _next_thursday_claims(today: date, horizon_days: int) -> list[dict]:
 
 
 # ---------------------------------------------------------------------------
-# 2. Cleveland nowcast benchmark enrichment
+# 2. Market-implied join (MRI-R16, come-back C-2)
+# ---------------------------------------------------------------------------
+
+# Kalshi store path (relative to repo root)
+_KALSHI_STORE_RELPATH = "data/prediction_markets/kalshi_releases.parquet"
+
+# Release-type mapping: build_release_forecast release_type -> Kalshi release_type.
+# cpi_core has NO Kalshi market (KXCPI covers headline MoM only).  Never proxy
+# headline for core (MRI-R16: whichever source has a matching market; no proxy).
+_KALSHI_RELEASE_TYPE_MAP: dict[str, str | None] = {
+    "cpi_headline": "cpi",    # KXCPI strikes in headline MoM % — use as-is
+    "cpi_core":     None,     # no KXCPI market for core; always None
+    "nfp":          "nfp",    # KXPAYROLLS strikes in count of jobs — normalize to thousands
+    "claims":       "claims", # KXJOBLESSCLAIMS strikes in count of claims — normalize to thousands
+}
+
+# Unit normalization comment (cite collectors/kalshi_releases.py _SERIES_CONFIG):
+#   KXCPI:           units="pct_mom"    — strikes already in pct MoM; use as-is
+#   KXPAYROLLS:      units="k_jobs"     — strikes documented as "level in jobs" (raw count);
+#                                          our NFP artifact convention is THOUSANDS;
+#                                          normalize: implied_median / 1_000
+#   KXJOBLESSCLAIMS: units="level"      — strikes in raw claims count;
+#                                          our claims convention is THOUSANDS;
+#                                          normalize: implied_median / 1_000
+
+
+def _read_market_implied(
+    root: Path,
+    release_type: str,
+    period_str: str,
+    today: date,
+) -> float | None:
+    """Read the Kalshi implied_median for (release_type, period_str) as of today.
+
+    Returns the implied_median from the LATEST summary row with
+    asof_date <= today for the matching (kalshi_release_type, period).
+
+    Unit normalization (cite collectors/kalshi_releases.py _SERIES_CONFIG):
+      cpi_headline: KXCPI pct_mom — strikes in pct MoM → use as-is
+      nfp:          KXPAYROLLS k_jobs — strikes in raw job count → divide by 1_000
+      claims:       KXJOBLESSCLAIMS level — strikes in raw claim count → divide by 1_000
+      cpi_core:     no Kalshi market → always None (never proxy headline for core)
+
+    Fail-open: absent file / no matching row / null implied_median → None.
+    Polymarket: no CPI/NFP bracket ladders as of 2026-07-07 — documented hook,
+    returns None.  Wire when a matching Polymarket source is verified.
+    """
+    # Polymarket hook: no CPI/NFP bracket ladders as of 2026-07-07.
+    # def _read_polymarket_implied(...) -> float | None: return None  # no matching market yet
+
+    kalshi_release = _KALSHI_RELEASE_TYPE_MAP.get(release_type)
+    if kalshi_release is None:
+        return None  # cpi_core or unknown
+
+    store_path = root / _KALSHI_STORE_RELPATH
+    if not store_path.exists():
+        return None
+
+    try:
+        df = pd.read_parquet(store_path)
+        if df.empty:
+            return None
+
+        # Filter to summary rows only
+        if "is_summary" in df.columns:
+            df = df[df["is_summary"].astype(bool)]
+        else:
+            return None
+
+        if df.empty:
+            return None
+
+        # Normalize asof_date to date
+        df = df.copy()
+        df["asof_date_parsed"] = pd.to_datetime(df["asof_date"]).dt.date
+
+        today_d = today if isinstance(today, date) else date.fromisoformat(str(today))
+
+        mask = (
+            (df["release_type"] == kalshi_release) &
+            (df["period"] == period_str) &
+            (df["asof_date_parsed"] <= today_d)
+        )
+        sub = df[mask]
+        if sub.empty:
+            return None
+
+        # Latest summary row: largest asof_date
+        latest_row = sub.loc[sub["asof_date_parsed"].idxmax()]
+        implied_median = latest_row.get("implied_median")
+        if implied_median is None or (isinstance(implied_median, float) and np.isnan(implied_median)):
+            return None
+
+        val = float(implied_median)
+
+        # Unit normalization: divide by 1_000 for NFP and claims to match artifact convention
+        if kalshi_release in ("nfp", "claims"):
+            # KXPAYROLLS: "level in jobs" (raw count) → thousands
+            # KXJOBLESSCLAIMS: "level" (raw claim count) → thousands
+            val = val / 1_000.0
+
+        return round(val, 4)
+
+    except Exception as e:
+        log.debug("_read_market_implied(%s, %s): failed — %s", release_type, period_str, e)
+        return None
+
+
+# ---------------------------------------------------------------------------
+# 2a. Surprise distribution (MRI-R15)
+# ---------------------------------------------------------------------------
+
+# Inline band sigma (must match engine/release_forecast.py INLINE_BAND_SIGMA = 0.35)
+_INLINE_BAND_SIGMA = 0.35
+
+
+def _compute_surprise_distribution(
+    point: float | None,
+    benchmark_set: dict,
+    residuals: list[float] | None,
+) -> dict | None:
+    """Deterministic restatement of existing projection quantities as a
+    probability triplet {p_hot, p_cold, p_inline}.
+
+    p_hot   = P(point + ε > bench_median + 0.35σ)
+    p_cold  = P(point + ε < bench_median - 0.35σ)
+    p_inline = 1 - p_hot - p_cold
+
+    where ε ~ empirical walk-forward residuals (the same distribution used for
+    quantile bands in the engine) and σ = std(residuals, ddof=1).
+
+    Returns None when:
+      - point is None (benchmark_only or projection failed)
+      - residuals are absent or fewer than 24 observations (MIN_QUANTILE_OBS)
+      - all benchmark_set values are null (no bench_median computable)
+
+    This is a RESTATEMENT of quantities already computed in the engine — no new
+    statistical claims are made (MRI-R15).
+    """
+    if point is None:
+        return None
+    if not residuals or len(residuals) < 24:
+        return None
+
+    import numpy as _np
+    errs = _np.array(residuals, dtype=float)
+
+    err_std = float(_np.std(errs, ddof=1))
+    if err_std <= 0:
+        return None
+
+    # Benchmark median over non-null benchmark values
+    bench_vals = [
+        v for v in [
+            benchmark_set.get("naive_prior"),
+            benchmark_set.get("trailing_3m"),
+            benchmark_set.get("trailing_4w"),
+            benchmark_set.get("ar_model"),
+            benchmark_set.get("cleveland_nowcast"),
+        ]
+        if v is not None
+    ]
+    if not bench_vals:
+        return None
+
+    bench_median = float(_np.median(bench_vals))
+
+    # Thresholds in outcome space
+    upper = bench_median + _INLINE_BAND_SIGMA * err_std
+    lower = bench_median - _INLINE_BAND_SIGMA * err_std
+
+    # point + ε > upper  ↔  ε > upper - point
+    # point + ε < lower  ↔  ε < lower - point
+    p_hot   = float(_np.mean(errs > (upper - point)))
+    p_cold  = float(_np.mean(errs < (lower - point)))
+    p_inline = max(0.0, 1.0 - p_hot - p_cold)  # clamp to [0,1] for float rounding
+
+    return {
+        "p_hot":    round(p_hot, 2),
+        "p_cold":   round(p_cold, 2),
+        "p_inline": round(p_inline, 2),
+    }
+
+
+# ---------------------------------------------------------------------------
+# 2b. Sensitivity chip (MRI-R17)
+# ---------------------------------------------------------------------------
+
+# Playbook file path (relative to repo root)
+_PLAYBOOK_RELPATH = "research/release_playbook/results/playbook_v1.json"
+
+# Sensitivity thresholds: derived from playbook h1 |mean dgs10_bp| across
+# release types (era='all', regime=None, buckets hot+cold).
+# CPI: max abs = cold mean 3.27 bp  → medium
+# NFP: max abs = hot  mean 3.88 bp  → high
+# claims: no playbook data          → null
+# Tercile-style cuts: LOW < 2 bp, MEDIUM 2–3.5 bp, HIGH >= 3.5 bp
+# Derivation: see research/release_playbook/results/playbook_v1.json
+# (4 data points: CPI-hot 1.15, CPI-cold 3.27, NFP-hot 3.88, NFP-cold 3.06)
+_SENSITIVITY_LOW_THRESHOLD_BP = 2.0    # abs(mean h1 dgs10 bp) < 2.0 -> low
+_SENSITIVITY_HIGH_THRESHOLD_BP = 3.5   # abs(mean h1 dgs10 bp) >= 3.5 -> high
+# MEDIUM = [2.0, 3.5)
+
+# Cache for the loaded playbook
+_playbook_cache: list[dict] | None = None
+
+
+def _load_playbook(root: Path) -> list[dict] | None:
+    """Load release_playbook.json; cache in module-level var. Fail-open."""
+    global _playbook_cache
+    if _playbook_cache is not None:
+        return _playbook_cache
+    pb_path = root / _PLAYBOOK_RELPATH
+    if not pb_path.exists():
+        return None
+    try:
+        with open(pb_path, encoding="utf-8") as fh:
+            _playbook_cache = json.load(fh)
+        return _playbook_cache
+    except Exception as e:
+        log.debug("_load_playbook: failed to load %s — %s", pb_path, e)
+        return None
+
+
+def _compute_sensitivity(
+    root: Path,
+    release_type: str,
+    policy_backdrop: dict,
+) -> dict | None:
+    """Build a sensitivity chip for a release type.
+
+    Descriptive join of release_playbook cells with the current regime label.
+    Weather-report framing — no equity-direction language (MRI-R1).
+    Positioning inputs FORBIDDEN (Signal Commons: positioning fusion illegal).
+
+    Returns {tag: 'low'|'medium'|'high', basis: {...}, note: str}
+    or None when the playbook lacks usable cells for this release type.
+
+    Sensitivity thresholds (deterministic, pre-stated):
+      tag='low'    when max abs(mean dgs10_h1_bp) across hot/cold buckets < 2.0 bp
+      tag='medium' when 2.0 <= max abs < 3.5 bp
+      tag='high'   when max abs >= 3.5 bp
+    These cuts are derived from playbook (era='all', regime=None, outcome='dgs10_bp',
+    horizon='h1', buckets hot+cold) — see _SENSITIVITY_LOW_THRESHOLD_BP /
+    _SENSITIVITY_HIGH_THRESHOLD_BP comments.
+
+    Fail-open: absent playbook / unknown release_type → None.
+    """
+    # Map release_type to playbook 'release' key
+    release_map = {
+        "cpi_headline": "cpi",
+        "cpi_core":     "cpi",
+        "nfp":          "nfp",
+        "claims":       None,  # no playbook data for claims
+    }
+    pb_release = release_map.get(release_type)
+    if pb_release is None:
+        return None  # no playbook data → null sensitivity (fail-open honest)
+
+    playbook = _load_playbook(root)
+    if not playbook:
+        return None
+
+    # Derive regime from policy_backdrop: fed_stance -> quad proxy
+    # The playbook has regime ∈ {None, 'Q1', 'Q2', 'Q3', 'Q4'} where regime=None
+    # is the era-wide unconditional row.  We use the unconditional row (regime=None)
+    # as the basis for the sensitivity tag — the conditional (per-regime) rows are
+    # surfaced in basis for context only.
+    # Positioning inputs FORBIDDEN; we do not read any positioning field here.
+
+    def _get_playbook_rows(release: str, era: str, regime: str | None, horizon: str) -> list[dict]:
+        return [
+            r for r in playbook
+            if r.get("release") == release
+            and r.get("era") == era
+            and r.get("regime") == regime
+            and r.get("horizon") == horizon
+        ]
+
+    # Unconditional h1 rows (era='all', regime=None) for hot + cold
+    h1_unconditional = _get_playbook_rows(pb_release, "all", None, "h1")
+    hot_rows = [r for r in h1_unconditional if r.get("bucket") == "hot"]
+    cold_rows = [r for r in h1_unconditional if r.get("bucket") == "cold"]
+
+    if not hot_rows and not cold_rows:
+        return None  # no data -> null (fail-open honest)
+
+    # Compute max abs(mean dgs10_bp) for threshold classification
+    dgs10_vals: list[float] = []
+    for row in hot_rows + cold_rows:
+        if row.get("outcome") == "dgs10_bp" and row.get("mean") is not None:
+            dgs10_vals.append(abs(float(row["mean"])))
+
+    if not dgs10_vals:
+        return None
+
+    max_abs_bp = max(dgs10_vals)
+
+    if max_abs_bp < _SENSITIVITY_LOW_THRESHOLD_BP:
+        tag = "low"
+    elif max_abs_bp < _SENSITIVITY_HIGH_THRESHOLD_BP:
+        tag = "medium"
+    else:
+        tag = "high"
+
+    # Build basis: collect h1 unconditional rows for all outcomes
+    # (weather-report framing: rate/FX/equity reactions as historical descriptives)
+    basis_rows: list[dict] = []
+    for outcome in ("dgs10_bp", "t10y2y_bp", "dollar_pct", "spy_pct"):
+        for bucket in ("hot", "cold", "inline"):
+            rows = [
+                r for r in h1_unconditional
+                if r.get("outcome") == outcome and r.get("bucket") == bucket
+            ]
+            if rows:
+                r0 = rows[0]
+                basis_rows.append({
+                    "bucket": bucket,
+                    "outcome": outcome,
+                    "horizon": "h1",
+                    "era": "all",
+                    "n": r0.get("n"),
+                    "mean": r0.get("mean"),
+                    "ci_lo": r0.get("ci_lo"),
+                    "ci_hi": r0.get("ci_hi"),
+                })
+
+    note = (
+        f"Historical h1 rate/FX/equity reactions by surprise bucket "
+        f"(unconditional, era='all', n varies). "
+        f"Max abs mean DGS10 h1 move: {max_abs_bp:.2f} bp → '{tag}' sensitivity. "
+        f"Thresholds: low<{_SENSITIVITY_LOW_THRESHOLD_BP}bp, "
+        f"medium {_SENSITIVITY_LOW_THRESHOLD_BP}-{_SENSITIVITY_HIGH_THRESHOLD_BP}bp, "
+        f"high>={_SENSITIVITY_HIGH_THRESHOLD_BP}bp. "
+        f"Weather-report context only — not investment advice (MRI-R1/R17)."
+    )
+
+    return {
+        "tag": tag,
+        "basis": basis_rows,
+        "note": note,
+    }
+
+
+# ---------------------------------------------------------------------------
+# 3. Cleveland nowcast benchmark enrichment
 # ---------------------------------------------------------------------------
 
 def _read_cleveland_nowcast(root: Path, release_type: str, period_str: str, today: date) -> float | None:
@@ -434,7 +779,13 @@ def _build_upcoming_block(
         cleveland_val = _read_cleveland_nowcast(root, rt, period_str, today)
         if "benchmark_set" in proj:
             proj["benchmark_set"]["cleveland_nowcast"] = cleveland_val
-        # market_implied stays null (come-back C-2)
+
+        # Enrich market_implied benchmark (MRI-R16, come-back C-2 executed).
+        # cpi_core -> always None (no Kalshi market).
+        # nfp/claims implied_median is normalized to thousands to match artifact units.
+        market_implied_val = _read_market_implied(root, rt, period_str, today)
+        if "benchmark_set" in proj:
+            proj["benchmark_set"]["market_implied"] = market_implied_val
 
         # Determine target (for display)
         if rt in ("cpi_headline", "cpi_core"):
@@ -460,6 +811,27 @@ def _build_upcoming_block(
                 "p90": proj.get("p90"),
             }
 
+        # Surprise distribution (MRI-R15): p_hot/p_cold/p_inline.
+        # Computed for releases WITH a live projection (NOT benchmark_only claims).
+        # Requires the engine to have emitted walk-forward residuals on the proj dict.
+        surprise_dist: dict | None = None
+        if not _is_bmo:
+            _residuals = proj.get("walk_forward_residuals") or proj.get("residuals")
+            _pt = proj.get("point")
+            _bs = proj.get("benchmark_set", {})
+            surprise_dist = _compute_surprise_distribution(_pt, _bs, _residuals)
+
+        # Sensitivity chip (MRI-R17): descriptive join with release_playbook.
+        sensitivity = _compute_sensitivity(root, rt, policy_backdrop)
+
+        # Quirk flags (MRI-R20): deterministic calendar annotations.
+        try:
+            from engine.release_quirks import compute_quirk_flags
+            quirk_flags = compute_quirk_flags(rt, period_str)
+        except Exception as _qe:
+            log.debug("quirk_flags failed for %s/%s: %s", rt, period_str, _qe)
+            quirk_flags = []
+
         row = {
             "release": ev["release"],
             "release_type": rt,
@@ -472,6 +844,9 @@ def _build_upcoming_block(
             "input_completeness": proj.get("input_completeness") if not _is_bmo else None,
             "benchmark_set": proj.get("benchmark_set", {}),
             "surprise_skew": proj.get("surprise_skew", {}) if not _is_bmo else {},
+            "surprise_distribution": surprise_dist,
+            "sensitivity": sensitivity,
+            "quirk_flags": quirk_flags,
             "pit": proj.get("pit_provenance", {}),
             "regime_axis": ev["regime_axis"],
             "policy_backdrop": policy_backdrop,
@@ -580,8 +955,18 @@ def _build_projection_ledger_rows(
             "benchmark_trailing_4w": (item.get("benchmark_set") or {}).get("trailing_4w") if release_type == "claims" else None,
             "benchmark_ar_model": (item.get("benchmark_set") or {}).get("ar_model"),
             "benchmark_cleveland": (item.get("benchmark_set") or {}).get("cleveland_nowcast"),
+            # MRI-R16: freeze market_implied on the projection ledger row
+            "benchmark_market_implied": (item.get("benchmark_set") or {}).get("market_implied"),
             "surprise_skew_sigma": (item.get("surprise_skew") or {}).get("sigma"),
             "surprise_skew_tag": (item.get("surprise_skew") or {}).get("tag"),
+            # MRI-R15: freeze surprise_distribution probabilities
+            "p_hot": (item.get("surprise_distribution") or {}).get("p_hot"),
+            "p_cold": (item.get("surprise_distribution") or {}).get("p_cold"),
+            "p_inline": (item.get("surprise_distribution") or {}).get("p_inline"),
+            # MRI-R17: freeze sensitivity tag
+            "sensitivity_tag": (item.get("sensitivity") or {}).get("tag"),
+            # MRI-R20: freeze quirk flag codes as JSON array string
+            "quirk_flag_codes": json.dumps([f["code"] for f in (item.get("quirk_flags") or [])]),
             "fed_stance": policy_backdrop.get("fed_stance"),
             "gap_bp": policy_backdrop.get("gap_bp"),
             "implied_cuts_12m": policy_backdrop.get("implied_cuts_12m"),
@@ -1208,6 +1593,19 @@ def _build_scoreboard(
         reaction_by_key[key] = r
 
     # Per release-type aggregation
+    # Build projection ledger index for frozen market_implied values:
+    # scored rows are joined to their T-1 projection row via (release, period).
+    # The T-1 projection row carries benchmark_market_implied (frozen at prediction time).
+    proj_by_key: dict[tuple[str, str], dict] = {}
+    for r in ledger:
+        if r.get("row_type") == "projection":
+            key = (r.get("release", ""), r.get("period", ""))
+            # Keep the last T-1 projection row (latest asof_night before release)
+            # This mirrors the T-1 selection in _check_release_day_capture.
+            existing = proj_by_key.get(key)
+            if existing is None or r.get("asof_night", "") > existing.get("asof_night", ""):
+                proj_by_key[key] = r
+
     per_release: dict[str, dict] = {}
     for row in scored:
         rt = row.get("release", "unknown")
@@ -1219,6 +1617,8 @@ def _build_scoreboard(
                 "trailing_abs_errors": [],
                 "ar_abs_errors": [],
                 "cleveland_abs_errors": [],
+                "market_implied_abs_errors": [],  # MRI-R16: graded only over rows with non-null frozen value
+                "n_market_implied": 0,            # count of rows with non-null frozen market_implied
                 "interval_hits": [],       # p10-p90
                 "interval_50_hits": [],    # p25-p75
                 "skew_hits": [],
@@ -1244,6 +1644,17 @@ def _build_scoreboard(
             v = row.get(bench_key)
             if v is not None:
                 g[err_key].append(abs(v))
+
+        # MRI-R16: market_implied MAE — graded ONLY over scored rows whose frozen
+        # benchmark_market_implied was non-null at prediction time.
+        # Join T-1 projection ledger row for the frozen market_implied value.
+        _proj_key = (rt, row.get("period", ""))
+        _proj_row = proj_by_key.get(_proj_key)
+        if _proj_row is not None:
+            _frozen_mi = _proj_row.get("benchmark_market_implied")
+            if _frozen_mi is not None and actual is not None:
+                g["market_implied_abs_errors"].append(abs(actual - float(_frozen_mi)))
+                g["n_market_implied"] += 1
 
         ih = row.get("interval_hit")
         if ih is not None:
@@ -1308,6 +1719,9 @@ def _build_scoreboard(
             trailing_label: _mae(g["trailing_abs_errors"]),
             "mae_ar_model": _mae(g["ar_abs_errors"]),
             "mae_cleveland": _mae(g["cleveland_abs_errors"]),
+            # MRI-R16: market_implied MAE graded only over rows with non-null frozen value
+            "mae_market_implied": _mae(g["market_implied_abs_errors"]),
+            "n_market_implied": g["n_market_implied"],
             # Schema v2 additions
             "mae_vs_actual_latest": _mae(g["revision_errors"]),
             "p10_p90_coverage": round(k_interval / n_interval, 4) if n_interval > 0 else None,

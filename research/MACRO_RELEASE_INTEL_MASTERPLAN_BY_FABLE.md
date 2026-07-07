@@ -216,7 +216,8 @@ any Article-2 surface; kernel cells only via the standard quarterly FDR batch
 
 Come-backs: **C-1** world_state lobe + macro_weather/mastermind summarizer +
 ask_brain routing after #1635 resolves. **C-2** market-implied distribution
-adapter (Kalshi/prediction-market read API) as a benchmark_set member. **C-3**
+adapter (Kalshi/prediction-market read API) as a benchmark_set member — EXECUTED
+(#1876 Kalshi collector + PR-I join; see §9.1). **C-3**
 kernel-cell registration at the 2026-10 FDR batch iff forward n ≥ gate. **C-4**
 PCE/PPI/retail-sales expansion. **C-5** true consensus feed if a licensed
 source ever lands (drop "benchmark" labels only then).
@@ -368,3 +369,21 @@ section reconciles the second lane's remainder into canonical numbering.
 - **Naming.** The second lane's "Package F/F1..F4" labels are retired in
   favor of this file's PR-F..PR-K wave names; its Kalshi collector is PR-I
   groundwork.
+
+**PR-I shipped (2026-07-07).** MRI-R15/R16/R17/R20 implemented in this wave.
+Units decisions: KXCPI strikes are headline MoM % (used as-is); KXPAYROLLS and
+KXJOBLESSCLAIMS strikes are raw counts normalized ÷1,000 to match artifact
+thousands convention (cited in `_read_market_implied` comment referencing
+`collectors/kalshi_releases.py _SERIES_CONFIG`). cpi_core always returns None
+(no KXCPI market for core; headline never proxied for core per MRI-R16).
+Sensitivity thresholds derived from `research/release_playbook/results/playbook_v1.json`
+(era='all', regime=None, outcome='dgs10_bp', horizon='h1', hot+cold buckets):
+CPI max-abs mean = 3.27 bp (cold) → tag='medium'; NFP max-abs mean = 3.88 bp
+(hot) → tag='high'; claims = null (no playbook data, fail-open honest).
+Tercile-style cuts: low <2 bp, medium 2–3.5 bp, high ≥3.5 bp. Quirk flags:
+five calendar rules implemented — `cpi_weight_update` (Jan CPI), `cpi_health_insurance_reset`
+(Apr+Oct CPI prints since Oct 2023), `nfp_benchmark_revision` (Jan NFP),
+`nfp_five_week_gap` (pure calendar: 35-day gap between reference Saturdays),
+`claims_holiday_week` (period-end Saturday within ±3 days of New Year's/Jul 4/
+Thanksgiving/Christmas). All flags are pure annotations; none alter point/
+intervals/skew. Come-back C-2 marked EXECUTED in §4.

@@ -2154,6 +2154,28 @@
   .rr-policy{margin:8px 0 4px;font-size:11px;display:flex;flex-wrap:wrap;gap:4px 10px}
   .rr-policy-item{color:var(--muted)}
   .rr-policy-item b{color:var(--text);font-weight:600}
+  /* surprise-distribution bar */
+  .rr-surp-bar{display:flex;height:7px;border-radius:4px;overflow:hidden;
+    border:1px solid var(--line);margin:6px 0 2px}
+  .rr-surp-cold{background:color-mix(in srgb,var(--up) 55%,transparent)}
+  .rr-surp-inline{background:color-mix(in srgb,var(--muted) 40%,transparent)}
+  .rr-surp-hot{background:color-mix(in srgb,var(--down) 55%,transparent)}
+  .rr-surp-legend{display:flex;gap:8px;font-size:9.5px;color:var(--muted);
+    font-variant-numeric:tabular-nums;margin-bottom:4px}
+  /* sensitivity chip */
+  .rr-sens{display:inline-flex;align-items:center;gap:5px;padding:2px 9px;
+    border-radius:12px;font-size:11px;font-weight:600;margin:4px 2px 4px 0}
+  .rr-sens-low{background:color-mix(in srgb,var(--up) 15%,transparent);
+    color:var(--up);border:1px solid color-mix(in srgb,var(--up) 30%,transparent)}
+  .rr-sens-medium{background:color-mix(in srgb,var(--warn) 15%,transparent);
+    color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 30%,transparent)}
+  .rr-sens-high{background:color-mix(in srgb,var(--down) 15%,transparent);
+    color:var(--down);border:1px solid color-mix(in srgb,var(--down) 30%,transparent)}
+  /* quirk chips */
+  .rr-quirk{display:inline-flex;align-items:center;gap:4px;padding:1px 7px;
+    border-radius:10px;font-size:10.5px;font-weight:500;margin:2px 3px 2px 0;
+    background:color-mix(in srgb,var(--warn) 12%,transparent);
+    color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 25%,transparent)}
   .rr-scoreboard{margin-top:10px;padding-top:9px;border-top:1px solid var(--line)}
   .rr-scoreboard-title{font-size:10.5px;font-weight:700;text-transform:uppercase;
     letter-spacing:.08em;color:var(--muted);margin-bottom:5px}
@@ -2262,6 +2284,14 @@
       /* Cleveland nowcast: CPI family only; not shown for claims */
       if (!isClaims && (rel||'').toLowerCase()==='cpi' && bs.cleveland_nowcast != null)
         items.push(['Cleveland nowcast', fmtNum(bs.cleveland_nowcast,2)]);
+      /* Market-implied (Kalshi): rendered when non-null; cpi_core always null */
+      if (bs.market_implied != null) {
+        var miVal = isClaims ? fmtK(bs.market_implied) : fmtNum(bs.market_implied,2);
+        items.push([
+          '<span class="l-en">Market-implied (Kalshi)</span><span class="l-zh">市场隐含（Kalshi）</span>',
+          miVal
+        ]);
+      }
       if (!items.length) return '';
       var rows = items.map(function(r){
         return '<div class="rr-bench-row"><span class="rr-bench-name">'+r[0]+'</span><span class="rr-bench-val">'+esc(r[1])+'</span></div>';
@@ -2270,6 +2300,55 @@
         +'<div class="rr-bench-label"><span class="l-en">Benchmarks 基准</span><span class="l-zh">基准对比（非共识）</span></div>'
         +rows
         +'</div>';
+    }
+
+    /* surprise distribution bar (p_cold / p_inline / p_hot) */
+    function surpriseDistBar(sd){
+      if (!sd || sd.p_hot == null || sd.p_cold == null || sd.p_inline == null) return '';
+      var pCold = Math.round((sd.p_cold||0)*100);
+      var pInl  = Math.round((sd.p_inline||0)*100);
+      var pHot  = Math.round((sd.p_hot||0)*100);
+      /* three-segment bar: cold | inline | hot */
+      return '<div class="rr-surp-bar">'
+        +'<div class="rr-surp-cold" style="width:'+pCold+'%"></div>'
+        +'<div class="rr-surp-inline" style="width:'+pInl+'%"></div>'
+        +'<div class="rr-surp-hot" style="width:'+pHot+'%"></div>'
+        +'</div>'
+        +'<div class="rr-surp-legend">'
+        +'<span><span class="l-en">Cold '+pCold+'%</span><span class="l-zh">冷 '+pCold+'%</span></span>'
+        +'<span><span class="l-en">Inline '+pInl+'%</span><span class="l-zh">中性 '+pInl+'%</span></span>'
+        +'<span><span class="l-en">Hot '+pHot+'%</span><span class="l-zh">热 '+pHot+'%</span></span>'
+        +'</div>';
+    }
+
+    /* sensitivity chip */
+    function sensitivityChip(sens){
+      if (!sens || !sens.tag) return '';
+      var tag = (sens.tag||'').toLowerCase();
+      var cls = 'rr-sens-'+tag;
+      var tagEN = {low:'Low sensitivity',medium:'Med. sensitivity',high:'High sensitivity'}[tag]||tag;
+      var tagZH = {low:'低敏感度',medium:'中等敏感度',high:'高敏感度'}[tag]||tag;
+      var note = sens.note ? ' data-note="'+esc(sens.note)+'"' : '';
+      return '<span class="rr-sens '+esc(cls)+'"'+note+'>'
+        +'<span class="l-en">'+esc(tagEN)+'</span>'
+        +'<span class="l-zh">'+esc(tagZH)+'</span>'
+        +'</span>';
+    }
+
+    /* quirk chips (bilingual; cite in aria-label; NEVER in title= per CI guard) */
+    function quirkChips(flags){
+      if (!flags || !Array.isArray(flags) || !flags.length) return '';
+      return flags.map(function(f){
+        var textEN = esc(f.en||f.code||'');
+        var textZH = esc(f.zh||f.code||'');
+        /* cite surfaced in aria-label only — never in title= (CI-enforced ban on
+           translated title= attributes; cite is EN-only and non-translated) */
+        var ariaLabel = esc((f.en||f.code||'')+(f.cite?' ('+f.cite+')':''));
+        return '<span class="rr-quirk" aria-label="'+ariaLabel+'">'
+          +'<span class="l-en">'+textEN+'</span>'
+          +'<span class="l-zh">'+textZH+'</span>'
+          +'</span>';
+      }).join('');
     }
 
     /* policy backdrop strip */
@@ -2397,6 +2476,12 @@
         +benchStrip(item.benchmark_set, rel)
         /* skew chip: suppressed in benchmark_only mode */
         +(!isBenchmarkOnly&&item.surprise_skew?'<div>'+skewChip(item.surprise_skew)+'</div>':'')
+        /* surprise distribution bar: suppressed in benchmark_only mode */
+        +(!isBenchmarkOnly&&item.surprise_distribution?surpriseDistBar(item.surprise_distribution):'')
+        /* sensitivity chip */
+        +(item.sensitivity?'<div>'+sensitivityChip(item.sensitivity)+'</div>':'')
+        /* quirk chips (MRI-R20): calendar-fact annotations */
+        +(item.quirk_flags&&item.quirk_flags.length?'<div>'+quirkChips(item.quirk_flags)+'</div>':'')
         /* policy backdrop */
         +policyStrip(item.policy_backdrop)
         +'</div>';  /* end .rr-card */
