@@ -6,6 +6,9 @@ Tests:
   3. date_collapsed_nw: collapses multiple same-date obs to one before NW
   4. beta estimation: returns None when insufficient data
   5. fwd_ret: handles edge cases (insufficient forward data)
+  6. run_split_half: within-cell median split (not global-median)
+  7. _get_ar_col: yahoo uses excess_ar, massive uses ar
+  8. ledger path is throwaway (not canonical trial_ledger.jsonl)
 """
 from __future__ import annotations
 
@@ -21,6 +24,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from scripts.d2_comment_letter_release_phase0 import (  # noqa: E402
     build_reviews,
     date_collapsed_nw,
+    run_split_half,
+    _get_ar_col,
+    LEDGER_PATH,
     REVIEW_GAP_DAYS,
     SUBSTANTIVE_MIN_UPLOADS,
     LIGHT_MAX_UPLOADS,
@@ -199,3 +205,90 @@ def test_prereg_constants():
     assert REVIEW_GAP_DAYS == 180, "AM-2 gap rule must be 180 days"
     assert SUBSTANTIVE_MIN_UPLOADS == 3, "Substantive threshold must be 3"
     assert LIGHT_MAX_UPLOADS == 2, "Light max must be 2"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 7. _get_ar_col: yahoo uses excess_ar, massive uses ar (AM-4)
+# ─────────────────────────────────────────────────────────────────────────────
+def test_get_ar_col_yahoo_uses_excess():
+    """Yahoo store should use excess_ar (peer-baseline-adjusted)."""
+    assert _get_ar_col("yahoo", "h5") == "excess_ar_h5"
+    assert _get_ar_col("yahoo", "h21") == "excess_ar_h21"
+
+
+def test_get_ar_col_massive_uses_ar():
+    """Massive store should use raw beta-adjusted ar."""
+    assert _get_ar_col("massive", "h5") == "ar_h5"
+    assert _get_ar_col("massive", "h21") == "ar_h21"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 8. run_split_half: within-cell median split, not global median
+# ─────────────────────────────────────────────────────────────────────────────
+def _make_results_df(store: str, substance: str, dates: list, ar_values: list) -> pd.DataFrame:
+    """Build a minimal results DataFrame for split-half testing."""
+    rows = []
+    for d, ar in zip(dates, ar_values):
+        rows.append({
+            "store": store,
+            "substance": substance,
+            "t0": pd.Timestamp(d),
+            "ar_h5": ar,
+            "ar_h21": ar,
+            "excess_ar_h5": ar,
+            "excess_ar_h21": ar,
+        })
+    return pd.DataFrame(rows)
+
+
+def test_split_half_uses_within_cell_median():
+    """Split-half must split on EACH cell's own median, not the global median.
+
+    If yahoo events are all in 2005-2010 and massive events are all in 2022-2025,
+    a global median split puts ALL yahoo events in the first half (n_second=0 for yahoo)
+    and ALL massive events in the second half (n_first=0 for massive). The within-cell
+    split should give each store ~half its events in each half.
+    """
+    import pandas as pd
+    # Yahoo: 20 events spread 2005-2010 (all before 2021)
+    yahoo_dates = [f"200{y}-06-01" for y in range(5, 10)] * 4
+    yahoo_df = _make_results_df("yahoo", "substantive", yahoo_dates, [0.01] * 20)
+
+    # Massive: 20 events spread 2022-2024 (all after 2021)
+    massive_dates = [f"202{y}-06-01" for y in range(2, 5)] * 7
+    massive_dates = massive_dates[:20]
+    massive_df = _make_results_df("massive", "substantive", massive_dates, [0.01] * 20)
+
+    combined = pd.concat([yahoo_df, massive_df], ignore_index=True)
+
+    result = run_split_half(combined)
+
+    # Each store should have events in BOTH halves (within-cell split)
+    yahoo_first = result.get("first_substantive_h5_yahoo", {})
+    yahoo_second = result.get("second_substantive_h5_yahoo", {})
+    massive_first = result.get("first_substantive_h5_massive", {})
+    massive_second = result.get("second_substantive_h5_massive", {})
+
+    # Both halves should have some events (not zero)
+    assert yahoo_first.get("n", 0) > 0, "Yahoo first half should have events (within-cell split)"
+    assert yahoo_second.get("n", 0) > 0, "Yahoo second half should have events (within-cell split)"
+    assert massive_first.get("n", 0) > 0, "Massive first half should have events (within-cell split)"
+    assert massive_second.get("n", 0) > 0, "Massive second half should have events (within-cell split)"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 9. LEDGER_PATH is a throwaway local path (not canonical trial_ledger.jsonl)
+# ─────────────────────────────────────────────────────────────────────────────
+def test_ledger_path_is_not_canonical():
+    """LEDGER_PATH must NOT point at the canonical data/trial_ledger.jsonl.
+
+    The canonical ledger is a tracked shared file. Writing to it from a
+    worktree script dirties it on every run (house-law violation).
+    """
+    # The canonical path fragment that must NOT appear
+    canonical_fragment = "data/trial_ledger.jsonl"
+    # Our path must not resolve to the canonical name
+    assert LEDGER_PATH.name != "trial_ledger.jsonl", (
+        f"LEDGER_PATH {LEDGER_PATH} resolves to the canonical trial_ledger.jsonl — "
+        "use a throwaway local name instead"
+    )
