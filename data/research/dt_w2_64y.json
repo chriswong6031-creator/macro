@@ -1,0 +1,287 @@
+{
+  "study": "DT-W2",
+  "prereg_authority": "DANNYTRADES_NW_ADJUDICATION \u00a77 DT-R13 DT-R14",
+  "coverage": {
+    "n_tickers_attempted": 115,
+    "n_tickers_fetched": 112,
+    "fetch_success_pct": 97.4,
+    "n_fetch_failed": 3,
+    "failed_fetch_tickers": [
+      "RE",
+      "ABC",
+      "PXD"
+    ],
+    "n_tickers_usable": 112,
+    "total_gap_excluded_months": 0,
+    "pool_ticker_months_total": 54199,
+    "pool_rows_with_whale_and_fwd": 53216,
+    "n_calendar_months": 775,
+    "panel_fwd_1m_range_pct": [
+      -25.065,
+      25.709
+    ],
+    "store_latest_date": "2026-07-06",
+    "store_earliest_date": "1962-01-02",
+    "approx_history_span": "~1962-2026 (65 years)",
+    "study_run_date": "2026-07-07T00:02:10.770884+00:00",
+    "powered": true,
+    "power_threshold_months": 240,
+    "panel_type": "SURVIVOR_PANEL_DELIBERATE",
+    "survivorship_caveat": "Panel deliberately retains original survivor bias. Results are survivor-flattered in the contrarian/bottoming direction. DT-W1a (survivorship-honest 2021+ panel) found all four reads FAILED time-controlled.",
+    "era_law": "yfinance OHLCV cache, auto-adjusted, full history from ~1962 (phase-0 replication)",
+    "dtw1a_h1_lift": "-0.0062",
+    "dtw1a_h4_sp": "+0.0548"
+  },
+  "h1": {
+    "n": 10914,
+    "n_months": 774,
+    "lift": -0.0141,
+    "ci95": [
+      -0.0252,
+      -0.0031
+    ],
+    "mean_fwd_dm": -0.162,
+    "base_fwd_dm": 0.0,
+    "mask": "whale_chg > +10",
+    "expected_sign": "negative",
+    "basis": "time-controlled (primary)",
+    "p_exact": 0.004,
+    "bh_survived": true,
+    "ci_excludes_zero_at_sign": true,
+    "verdict": "SURVIVES"
+  },
+  "h2": {
+    "n": 10922,
+    "n_months": 774,
+    "lift": 0.0053,
+    "ci95": [
+      -0.0046,
+      0.0157
+    ],
+    "mean_fwd_dm": 0.142,
+    "base_fwd_dm": 0.0,
+    "mask": "whale_chg < -10",
+    "expected_sign": "positive",
+    "basis": "time-controlled (primary)",
+    "p_exact": 0.149,
+    "bh_survived": false,
+    "ci_excludes_zero_at_sign": false,
+    "verdict": "FAILED"
+  },
+  "h3": {
+    "n": 2715,
+    "n_months": 774,
+    "lift": -0.0135,
+    "ci95": [
+      -0.0394,
+      0.0124
+    ],
+    "mean_fwd_dm": -0.09,
+    "base_fwd_dm": 0.0,
+    "mask": "whale > 75",
+    "expected_sign": "negative",
+    "basis": "time-controlled (primary)",
+    "p_exact": 0.169,
+    "bh_survived": false,
+    "ci_excludes_zero_at_sign": false,
+    "verdict": "FAILED"
+  },
+  "h4": {
+    "n": 53552,
+    "n_months": 770,
+    "spearman_per_month_mean": 0.0083,
+    "ci95": [
+      -0.0266,
+      0.0401
+    ],
+    "spearman_pooled_equal_count": -0.9636,
+    "spearman_pooled_equal_width": -0.9758,
+    "by_decile_mean_pooled_eq": [
+      2.5535,
+      1.8581,
+      1.5137,
+      1.6775,
+      1.5215,
+      1.4894,
+      1.4247,
+      1.4056,
+      1.35,
+      1.3418
+    ],
+    "decile_sizes_pooled_eq": [
+      5356,
+      5355,
+      5355,
+      5355,
+      5355,
+      5355,
+      5355,
+      5355,
+      5355,
+      5356
+    ],
+    "expected_sign": "spearman < 0",
+    "basis": "per-month cross-sectional decile Spearman (primary)",
+    "p_exact": 0.665,
+    "bh_survived": false,
+    "ci_excludes_zero_at_sign": false,
+    "verdict": "FAILED"
+  },
+  "h1_raw": {
+    "n": 10914,
+    "p_up": 0.5469,
+    "base_p_up": 0.5695,
+    "lift": -0.0226,
+    "ci95": [
+      -0.0323,
+      -0.0139
+    ],
+    "mean_fwd": 1.223,
+    "base_fwd": 1.626,
+    "mean_ret_diff": -0.403,
+    "basis": "raw ticker-cluster only (superseded)",
+    "note": "original 64y study had no time control; this is what that looked like"
+  },
+  "h2_raw": {
+    "n": 10922,
+    "p_up": 0.5893,
+    "base_p_up": 0.5695,
+    "lift": 0.0198,
+    "ci95": [
+      0.0119,
+      0.0278
+    ],
+    "mean_fwd": 2.111,
+    "base_fwd": 1.626,
+    "mean_ret_diff": 0.484,
+    "basis": "raw ticker-cluster only (superseded)",
+    "note": "superseded by time-controlled; calendar confound not removed"
+  },
+  "h3_raw": {
+    "n": 2715,
+    "p_up": 0.54,
+    "base_p_up": 0.5695,
+    "lift": -0.0295,
+    "ci95": [
+      -0.0494,
+      -0.0107
+    ],
+    "mean_fwd": 1.132,
+    "base_fwd": 1.626,
+    "mean_ret_diff": -0.494,
+    "basis": "raw ticker-cluster only (superseded)",
+    "note": "superseded by time-controlled; calendar confound not removed"
+  },
+  "controls": {
+    "c1_within_ticker_time_permutation": {
+      "label": "within-ticker time permutation (change tests H1/H2)",
+      "h1_neg_ctrl": {
+        "n": 14839,
+        "p_up": 0.568,
+        "base_p_up": 0.5695,
+        "lift": -0.0014,
+        "ci95": [
+          -0.008,
+          0.0047
+        ],
+        "mean_fwd": 1.534,
+        "base_fwd": 1.626,
+        "mean_ret_diff": -0.092
+      },
+      "h2_neg_ctrl": {
+        "n": 14976,
+        "p_up": 0.5675,
+        "base_p_up": 0.5695,
+        "lift": -0.002,
+        "ci95": [
+          -0.0085,
+          0.0047
+        ],
+        "mean_fwd": 1.583,
+        "base_fwd": 1.626,
+        "mean_ret_diff": -0.043
+      }
+    },
+    "c2_within_month_cross_ticker_permutation": {
+      "label": "within-month cross-ticker whale permutation (level tests H3/H4)",
+      "mechanism": "shuffles which ticker holds which whale value each month; breaks selection channel",
+      "h3_neg_ctrl_level": {
+        "n": 2715,
+        "p_up": 0.5543,
+        "base_p_up": 0.5695,
+        "lift": -0.0151,
+        "ci95": [
+          -0.0364,
+          0.006
+        ],
+        "mean_fwd": 1.114,
+        "base_fwd": 1.626,
+        "mean_ret_diff": -0.512
+      }
+    },
+    "c3_within_ticker_time_permutation_demeaned": {
+      "label": "within-ticker time permutation on time-controlled (demeaned) series",
+      "h1_neg_ctrl_tc": {
+        "n": 15067,
+        "n_months": 774,
+        "lift": -0.0016,
+        "ci95": [
+          -0.0076,
+          0.0049
+        ],
+        "mean_fwd_dm": -0.036,
+        "base_fwd_dm": 0.0
+      },
+      "h2_neg_ctrl_tc": {
+        "n": 15013,
+        "n_months": 774,
+        "lift": -0.0029,
+        "ci95": [
+          -0.0095,
+          0.0036
+        ],
+        "mean_fwd_dm": -0.086,
+        "base_fwd_dm": 0.0
+      }
+    },
+    "c4_positive_injection": {
+      "label": "inject +2pp into fwd_1m on H2-mask rows",
+      "h2_pos_ctrl": {
+        "n": 10922,
+        "n_months": 774,
+        "lift": 0.0984,
+        "ci95": [
+          0.0882,
+          0.1094
+        ],
+        "mean_fwd_dm": 1.562,
+        "base_fwd_dm": 0.0
+      }
+    }
+  },
+  "bh_correction": {
+    "q": 0.1,
+    "m": 4,
+    "p_values_exact": [
+      0.004,
+      0.149,
+      0.169,
+      0.665
+    ],
+    "survived": [
+      true,
+      false,
+      false,
+      false
+    ],
+    "method": "exact one-sided bootstrap tail fractions"
+  },
+  "consequence_branch": {
+    "branch": "C: SURVIVES \u2014 H1 survive time control on 64y survivor panel",
+    "rationale": "H1 survive month-block time control on 64y panel. Each surviving read is eligible for a restoration prereg (display-only ceiling unchanged). DT-R13: restoration path open for surviving reads only. Caveat: survivor-flattered panel \u2014 must be replicated on honest panel before any chip change.",
+    "h1_verdict": "SURVIVES",
+    "h2_verdict": "FAILED",
+    "h3_verdict": "FAILED",
+    "h4_verdict": "FAILED"
+  }
+}

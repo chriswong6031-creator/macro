@@ -48,7 +48,7 @@ Sequencing: W0 → W1 → W2 on the spine track; W3, W4, W5 parallel; W6 anytime
 | Cross-asset beta expansion | Existing secondary betas fail OOS (persist 0.02–0.22) — evidence against | A consumer program demands a specific beta and funds its stability test |
 | Narrative-to-money extra legs | `foresight_divergence` ledger still in phase-0 accrual | Ledger grades out |
 | Kernel-as-conditioner | NW standing clocks (R1) | 2026-10 / ~2027-05 clocks |
-| AVWAP / volume-profile bundle | EI §2 ruling (R2) | EI P1.3 completes → bundled phase-0 in EI program |
+| AVWAP / volume-profile bundle | EI §2 ruling (R2) | ~~EI P1.3 completes~~ GATE MET 2026-07-05; DISPATCHED 2026-07-06 per DT-R7 → EI `research/entry_intel/PM0_PRICE_MEMORY_BUNDLE_PREREG.md` (one family, one FDR budget) |
 | Edge-budget gauge; expected-but-absent anti-signals | Good ideas, vague consumers | Backlog; revisit post-W3 |
 | ETF creation/redemption flows | ~~No data source~~ → W6 verdict: free SEC N-PORT + ProShares files + our own dated `data/etf_holdings/` shares-outstanding deltas give a good-enough proxy | A consumer program funds the free-proxy build; no paid ETF-flow feed clears the bar |
 | Expectation-drift paid legs (transcripts, revenue-revision direction, per-analyst accuracy) | W6: single unlock is FMP Ultimate (~$99/mo); user chose SKIP ALL 2026-07-05 | §7 re-buy trigger: (a) a chartered expectation-drift wave OR our own accruing PIT tape shows a measured lead, AND (b) FMP survives a PIT-integrity audit vs our self-recorded snapshots (SUE-collapse scar), AND (c) net cost is favorable after weighing Quiver consolidation |

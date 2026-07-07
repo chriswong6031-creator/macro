@@ -522,6 +522,81 @@ def _build_instrument_rows(
 
 
 # ---------------------------------------------------------------------------
+# Expanding-median pre-computation (shared with the index-level panel builder)
+# ---------------------------------------------------------------------------
+
+def _precompute_medians_cache(
+    all_turns_cache: dict[str, tuple[str, list[dict]]],
+    month_ends_full: pd.DatetimeIndex,
+) -> dict[str, dict[str, dict[str, dict]]]:
+    """Per-instrument expanding half-cycle medians at each month-end (PIT).
+
+    Moved verbatim out of build_panel() so scripts/build_index_hazard_panel.py can
+    reuse the identical median math. medians_cache[iid][direction][month_str] =
+    {'med': float|None, 'n': int}.
+    """
+    medians_cache: dict[str, dict[str, dict[str, dict]]] = {}
+
+    for iid, (family, turns) in all_turns_cache.items():
+        medians_cache[iid] = {"up": {}, "down": {}}
+        conf_turns = [t for t in turns if not t.get("provisional")]
+        conf_sorted = sorted(conf_turns, key=lambda t: t["date"])
+        for t_end in month_ends_full:
+            # Turns confirmed by t_end
+            conf_at_t = [t for t in conf_sorted if pd.Timestamp(t["confirmed_at"]) <= t_end]
+            if len(conf_at_t) < 2:
+                for d in ["up", "down"]:
+                    medians_cache[iid][d][t_end.strftime("%Y-%m")] = {"med": None, "n": 0}
+                continue
+            up_lens, dn_lens = [], []
+            for i in range(1, len(conf_at_t)):
+                prev_t = pd.Timestamp(conf_at_t[i - 1]["date"])
+                curr_t = pd.Timestamp(conf_at_t[i]["date"])
+                kind = conf_at_t[i]["k"]
+                dur = (curr_t - prev_t).days / 30.44
+                if kind == "peak":
+                    up_lens.append(dur)
+                else:
+                    dn_lens.append(dur)
+            medians_cache[iid]["up"][t_end.strftime("%Y-%m")] = {
+                "med": float(np.median(up_lens)) if up_lens else None,
+                "n": len(up_lens),
+            }
+            medians_cache[iid]["down"][t_end.strftime("%Y-%m")] = {
+                "med": float(np.median(dn_lens)) if dn_lens else None,
+                "n": len(dn_lens),
+            }
+    return medians_cache
+
+
+def _precompute_family_median_cache(
+    all_turns_cache: dict[str, tuple[str, list[dict]]],
+    medians_cache: dict[str, dict[str, dict[str, dict]]],
+    month_ends_full: pd.DatetimeIndex,
+    families: list[str],
+) -> dict[str, dict[str, dict[str, float | None]]]:
+    """Per-family pooled medians at each month-end (PIT). Moved verbatim out of
+    build_panel(); parameterized by the family list so the index-level builder can
+    reuse it for its own families."""
+    family_med_cache: dict[str, dict[str, dict[str, float | None]]] = {
+        fam: {"up": {}, "down": {}} for fam in families
+    }
+    for t_end in month_ends_full:
+        t_str = t_end.strftime("%Y-%m")
+        for fam in families:
+            fam_ids = [iid for iid, (f, _) in all_turns_cache.items() if f == fam]
+            for direction in ["up", "down"]:
+                vals = [
+                    medians_cache[iid][direction][t_str]["med"]
+                    for iid in fam_ids
+                    if t_str in medians_cache.get(iid, {}).get(direction, {})
+                    and medians_cache[iid][direction][t_str]["med"] is not None
+                ]
+                family_med_cache[fam][direction][t_str] = float(np.median(vals)) if vals else None
+    return family_med_cache
+
+
+# ---------------------------------------------------------------------------
 # rho_hat estimation (ruling A2)
 # ---------------------------------------------------------------------------
 
@@ -888,58 +963,15 @@ def build_panel(
 
     print("Pre-computing expanding medians per instrument...")
     # medians_cache[iid][direction][month_end_str] = {'med', 'n'}
-    medians_cache: dict[str, dict[str, dict[str, dict]]] = {}
-
-    for iid, (family, turns) in all_turns_cache.items():
-        medians_cache[iid] = {"up": {}, "down": {}}
-        conf_turns = [t for t in turns if not t.get("provisional")]
-        conf_sorted = sorted(conf_turns, key=lambda t: t["date"])
-        for t_end in month_ends_full:
-            # Turns confirmed by t_end
-            conf_at_t = [t for t in conf_sorted if pd.Timestamp(t["confirmed_at"]) <= t_end]
-            if len(conf_at_t) < 2:
-                for d in ["up", "down"]:
-                    medians_cache[iid][d][t_end.strftime("%Y-%m")] = {"med": None, "n": 0}
-                continue
-            up_lens, dn_lens = [], []
-            for i in range(1, len(conf_at_t)):
-                prev_t = pd.Timestamp(conf_at_t[i - 1]["date"])
-                curr_t = pd.Timestamp(conf_at_t[i]["date"])
-                kind = conf_at_t[i]["k"]
-                dur = (curr_t - prev_t).days / 30.44
-                if kind == "peak":
-                    up_lens.append(dur)
-                else:
-                    dn_lens.append(dur)
-            medians_cache[iid]["up"][t_end.strftime("%Y-%m")] = {
-                "med": float(np.median(up_lens)) if up_lens else None,
-                "n": len(up_lens),
-            }
-            medians_cache[iid]["down"][t_end.strftime("%Y-%m")] = {
-                "med": float(np.median(dn_lens)) if dn_lens else None,
-                "n": len(dn_lens),
-            }
+    medians_cache = _precompute_medians_cache(all_turns_cache, month_ends_full)
 
     # Per-family pooled medians at each month-end
     print("Pre-computing family pooled medians...")
     # family_med_cache[family][direction][month_end_str] = float|None
-    family_med_cache: dict[str, dict[str, dict[str, float | None]]] = {
-        "us_sector": {"up": {}, "down": {}},
-        "country": {"up": {}, "down": {}},
-        "cn_sector": {"up": {}, "down": {}},
-    }
-    for t_end in month_ends_full:
-        t_str = t_end.strftime("%Y-%m")
-        for fam in ["us_sector", "country", "cn_sector"]:
-            fam_ids = [iid for iid, (f, _) in all_turns_cache.items() if f == fam]
-            for direction in ["up", "down"]:
-                vals = [
-                    medians_cache[iid][direction][t_str]["med"]
-                    for iid in fam_ids
-                    if t_str in medians_cache.get(iid, {}).get(direction, {})
-                    and medians_cache[iid][direction][t_str]["med"] is not None
-                ]
-                family_med_cache[fam][direction][t_str] = float(np.median(vals)) if vals else None
+    family_med_cache = _precompute_family_median_cache(
+        all_turns_cache, medians_cache, month_ends_full,
+        families=["us_sector", "country", "cn_sector"],
+    )
 
     # Closure helpers for the row builder
     def _per_id_med_fn(iid: str, t_end: pd.Timestamp) -> dict:

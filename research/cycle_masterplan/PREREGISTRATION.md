@@ -465,3 +465,86 @@ within-family (to be frozen as §15 before any batch-2 run).** Process disclosur
 scratch dry-run preceded the criteria commit; §14 text is character-identical pre/post (see verdict
 doc). Artifacts: `data/cycle_pattern/lattice/batch1.json`, `batch1_cells.parquet`; budget
 `rf.cycle_pattern.lattice_v0` n=135 declared pre-p-value.
+
+---
+
+## 15 · CPI lattice batch 2 — WITHIN-FAMILY baselines, family `cycle_pattern_lattice_v1` (registered 2026-07-06, PRE-RUN)
+
+**Two-commit discipline:** this section + the frozen runner
+(`scripts/build_cycle_pattern_lattice_batch2.py`) + tests are committed BEFORE any run against the
+real panel (unit tests excluding the real-panel smoke run pre-commit; the smoke and the real run
+happen only after the criteria commit — tightening the §14 process disclosure). The results commit
+appends a results block below WITHOUT moving any criterion.
+
+**Motive (binding, from the §14 adjudication):** the §14 baseline (phase-pooled ACROSS families)
+conflates family base-rate offsets with phase effects (truth
+`cycle_truth_lattice1_confirmatory_and_baseline_confound_v1`). Per the §14 batch-2 pre-commitment,
+batch 2 re-tests the SAME 135-cell search space against WITHIN-FAMILY baselines. The cross-family
+gap is demoted to a **disclosed diagnostic** (point estimate only, no CI, no gate role).
+
+**Frozen design — everything §14 unless stated:** same substrate (hazard panel `price_c4414dcb` +
+W4.4-convention forward joins, machinery reused verbatim via import), same embargo (rows ≥
+2024-01-01 excluded from estimates AND gate), same lattices (L-A `phase_v2`(5)×`family`(3) = 15;
+L-B `phase_v2`(5)×`trend_pass`(2)×`family`(3) = 30), same 3 targets (`rdd_63d`, `turn_event_3m`,
+`phase_persist_3m`), same estimator (James-Stein shrinkage, month-block bootstrap 800 draws seed 7,
+collapse below 12 months pinned to the pool mean), same era split (pre/post-2018 sign agreement,
+point estimates only), same KG-2 raw-DD sanity abort (pipeline check, not a claim).
+
+**THE change — frozen baseline pools:**
+- **L-A cell (phase p, family f):** baseline pool = ALL rows of family f (all phases, same
+  target). Gap = shrunk cell mean − family-pooled mean. James-Stein group = the 5 phase cells of
+  family f. Bootstrap: month-block resample of family-f dates; per draw, gap = cell mean − family
+  mean on the same resample. Question tested: *does this phase differ from the family's own norm?*
+- **L-B cell (phase p, trend t, family f):** baseline pool = rows of family f × phase p (both
+  trend_pass values, same target). James-Stein group = the 2 trend cells of (f, p). Bootstrap pool
+  = family-f × phase-p rows. Question tested: *does the trend split matter within this
+  family-phase?* — the nested interaction, exactly the CPI-020 falsifier's "against CN's own
+  Downturn baseline."
+- Era signs: gap sign recomputed per era under the SAME within-family pool definition (pool
+  recomputed within each era; point estimates only).
+- Diagnostic columns (no gate role): `gap_xfam` + `pooled_xfam` — the §14-style cross-family
+  phase-pooled gap and its baseline, point estimates only.
+
+| id | claim | success (PROMOTION) criterion | judged by | E[pass\|null] | FDR family |
+|---|---|---|---|---|---|
+| **LT2-cell** (any of the 135) | the cell's outcome differs from its WITHIN-FAMILY baseline | within-family gap CI₉₅ excludes 0 AND n_months ≥ 40 AND era-split sign agreement (pre-2018 AND post-2018 within-family gaps share the full-sample sign) AND survives BH-FDR q=0.10 across ALL 135 gap tests | `data/cycle_pattern/lattice/batch2.json` → `promotions[]` | ~0.05/cell pre-FDR | `cycle_pattern_lattice_v1` (q=0.10) |
+| **LT2-020** (named re-test of CPI-020) | CN Downturn × broken-trend deep vol-adjusted tail survives its own family×phase baseline | the specific cell (L-B, `phase_v2`=Downturn, `family`=cn_sector, `trend_pass`=0, `rdd_63d`) clears the full LT2-cell gate above | same artifact → `named_retest` | ~0.05 pre-FDR | member of the 135 — NO extra budget |
+
+**Budget:** 135, declared as `rf.cycle_pattern.lattice_v1` pre-p-value (the named re-test is one of
+the 135, not additional). Candidate count printed BEFORE any evaluation (anti-mining law).
+
+**Outcome handling (frozen):**
+- **LT2-020 PASS** → truth `cycle_truth_cn_downturn_broken_trend_tail_candidate_v1` transitions
+  `candidate → display` (effect_class risk_only, display-class; forbidden consumers unchanged —
+  board_rank / oracle_escalation / sector_central_direction_score / position_sizing stay barred).
+  **FAIL** → `candidate → retired` per its registered auto_demote_rule, and a scoped null truth
+  records the kill.
+- **The 48 §14 factory candidates are resolved mechanically by this batch:** a §14 candidate whose
+  cell FAILS the within-family gate → `screened → numeric_rejected` (evidence: batch2.json); a §14
+  candidate whose cell PASSES keeps `screened` with batch2.json appended as evidence. No §14
+  candidate may advance past `screened` on batch-1 evidence alone.
+- Newly promoted cells → factory candidates (status `screened`, trial_family `lattice_v1`) +
+  display-class truth candidacy; **zero promotions** → a scoped null truth for the within-family
+  lattices ("phase/trend conditioning adds nothing beyond family norms"); exploration tables ship
+  to the measurement research surface either way. No page-authority change this wave.
+- CPI-019's monitoring metric `batch2_within_family_retest` is satisfied either way (notes
+  appended; version bump only if its statement changes).
+
+### Lattice batch-2 results (2026-07-06 — criteria above UNCHANGED; §15 two-commit discipline observed)
+
+**27 of 135 cells clear the frozen within-family gate** (sanity gate: KG-2 reproduced). **The named
+LT2-020 re-test FAILS**: within-family gap −0.0350, CI₉₅ [−0.0688, −0.0021], boot p=0.04, era-stable
+— standalone-significant but does NOT survive BH-FDR q=0.10 across the declared 135 (~60% of the
+batch-1 magnitude was the §14 family-composition confound; xfam diagnostic on the same cell −0.073).
+Per frozen outcome handling: `cycle_truth_cn_downturn_broken_trend_tail_candidate_v1` →
+**retired**; scoped null `cycle_truth_cn_downturn_broken_trend_tail_null_v1` appended. Survivors:
+15 turn_event_3m (incl. the CN broken-trend Downturn turn-DEFICIT pair −0.086/+0.160, BH-pass — the
+risk story survives as duration, not depth), 10 phase_persist_3m (Recovery fragile in all 3
+families; Peak persists), 2 rdd_63d (Peak = shallower vol-adjusted tails within country +0.049 / CN
++0.071 — KG-2/CPI-002 in stricter form). All 27 → factory candidates (`screened`, trial_family
+`lattice_v1`, truth_guard 0 flags); truth `cycle_truth_lattice2_within_family_structure_v1`
+(display/structural). §14 candidates resolved mechanically: **33 → numeric_rejected**
+(transitions.jsonl, kill evidence = batch2.json), 15 keep screened. CPI-019 monitoring satisfied
+(structure is NOT a family-composition artifact — falsifier answered). Adjudication:
+`CPI_LATTICE2_VERDICT.md`. Artifacts: `data/cycle_pattern/lattice/batch2.json`,
+`batch2_cells.parquet`; budget `rf.cycle_pattern.lattice_v1` n=135 declared pre-p-value.

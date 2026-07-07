@@ -2431,6 +2431,57 @@ def main(argv: list[str] | None = None) -> int:
         log.error("panel build produced no rows — check logs above")
         return 1
 
+    # ---- dna_class reference emit (R-SP9/R-SP10) --------------------------------
+    # Write site/factordata/dna_class.json: per-ticker {dna_class, style_regime}
+    # from the latest date in the panel. The engine job consumes this T-1 by design
+    # (engine and factor_panel are parallel siblings).
+    # Fail-open: absent columns (pre-P1-C partitions) → per_ticker:{} + note field.
+    try:
+        _as_of_str = str(panel["date"].max()) if "date" in panel.columns else "unknown"
+        _latest_rows = panel[panel["date"] == panel["date"].max()] if "date" in panel.columns else pd.DataFrame()
+        _per_ticker_dna: dict = {}
+        if not _latest_rows.empty and "ticker" in _latest_rows.columns:
+            _has_dna = "dna_class" in _latest_rows.columns
+            _has_sr = "style_regime" in _latest_rows.columns
+            if _has_dna or _has_sr:
+                for _, _row in _latest_rows.iterrows():
+                    _tk = str(_row["ticker"])
+                    _dc = _row.get("dna_class") if _has_dna else None
+                    _sr = _row.get("style_regime") if _has_sr else None
+                    # Skip rows where dna_class is NaN/None and style_regime is also absent
+                    if _dc is None and _sr is None:
+                        continue
+                    import math as _math  # noqa: PLC0415
+                    if isinstance(_dc, float) and _math.isnan(_dc):
+                        _dc = None
+                    if isinstance(_sr, float) and _math.isnan(_sr):
+                        _sr = None
+                    _per_ticker_dna[_tk] = {
+                        "dna_class": _dc,
+                        "style_regime": _sr,
+                        "as_of": _as_of_str,
+                    }
+        _dna_note = None
+        if not _per_ticker_dna:
+            _dna_note = "dna_class and style_regime columns absent (pre-P1-C partition); per_ticker is empty"
+        _dna_out = {
+            "schema": "dna_class_ref.v1",
+            "as_of": _as_of_str,
+            "per_ticker": _per_ticker_dna,
+        }
+        if _dna_note:
+            _dna_out["note"] = _dna_note
+        _site_fd = out_root / "site" / "factordata"
+        _site_fd.mkdir(parents=True, exist_ok=True)
+        _dna_path = _site_fd / "dna_class.json"
+        import json as _json  # noqa: PLC0415
+        _dna_path.write_text(_json.dumps(_dna_out, default=str))
+        log.info("dna_class.json: %d tickers, as_of=%s → %s",
+                 len(_per_ticker_dna), _as_of_str, _dna_path)
+    except Exception as _dna_e:  # noqa: BLE001 — additive, never fatal
+        log.warning("dna_class.json emit failed (%s) — continuing", _dna_e)
+    # ---------------------------------------------------------------------------
+
     log.info("DONE: %d rows × %d columns", len(panel), len(panel.columns))
     log.info("columns: %s", sorted(panel.columns.tolist()))
     return 0

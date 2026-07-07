@@ -164,6 +164,7 @@ artifacts:
       - engine/signal_archive.py
       - scripts/build_conditional_cells.py
       - scripts/build_hazard_panel.py
+      - scripts/build_index_hazard_panel.py
       - scripts/build_site.py
       - scripts/calibrate_regime_hmm.py
       - scripts/collinearity_phase0.py
@@ -740,6 +741,37 @@ artifacts:
       - scripts/build_cycle.py
     external_consumers: []
     notes: "Scored tier: model refit via scripts/fit_cycle_hazard.py runs only after OOS validation pass. weights=measured (allocation_bootstrap in payload)."
+
+  # --- 0 consumers (IX-1 substrate; the trial wave decides wiring/cadence) ---
+  hazard-panel-index-v0:
+    path: data/hazard/panel_index_v0.parquet
+    format: parquet
+    producer: scripts/build_index_hazard_panel.py
+    known_extra_writers: []
+    owner_program: cycle-intelligence
+    cadence: on-demand
+    storage: git
+    asof_field: null
+    freshness_sla_hours: 8760
+    schema: hazard.panel_index.v0
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      IX-1 SUBSTRATE (2026-07-06): index-level person-period hazard panel — SPY
+      (family us_market) + 7 bloc ETFs (family bloc), built with the member-panel
+      pipeline (imported functions) at the us_sector detector config (close_price
+      basis, 14% ZigZag, detector v2 — same epoch stamp price_c4414dcb), PLUS
+      FT-4-style constituent-structure covariates: sync_family from
+      data/leadlag/sync_gauge.json (us_sector for SPY, country for blocs) and
+      phase_breadth_late/early + pos_dispersion from the member-panel cross-section
+      at t (country cross-section excludes the blocs themselves). Substrate only —
+      NOT wired into nightly lanes; the future preregistered IX-1 turn-hazard trial
+      decides cadence and consumers. Never mutates the member panel or its epoch.
+      Census: research/cycle_masterplan/IX1_SUBSTRATE_CENSUS.md.
 
   # --- 4 consumers ---
   regime-spvector-latest:
@@ -1445,6 +1477,7 @@ artifacts:
       - scripts/audit_sizes.py
       - scripts/build_track_record.py
       - scripts/validate_signals.py
+      - scripts/build_stock_library.py
     external_consumers: []
     notes: >
       federated Stage-B (PR #1139): US next-bar fill via grading.fill_index; SPINE_HORIZONS
@@ -2134,6 +2167,7 @@ artifacts:
       - engine/oracle/alerts.py
       - engine/oracle/tilt.py
       - scripts/oracle_nightly.py
+      - scripts/build_stock_library.py
     external_consumers: []
     notes: "Producer: engine/oracle/live.py:395 write_text. schema=oracle_state.v1 inline constant at live.py:78."
 
@@ -5451,7 +5485,8 @@ artifacts:
     horizon_role: context
     weights: none
     scored_path_surfaces: []
-    consumers: []
+    consumers:
+      - scripts/build_index_hazard_panel.py
     external_consumers: []
     notes: >
       PR-C site copy of data/neuralweb/health.json for frontend/admin consumption.
@@ -5665,6 +5700,46 @@ artifacts:
       with WARNING; never silently dropped. Built after all three cycle
       builders so today's stamps are present before the view rebuilds.
 
+  fed-net-liquidity:
+    path: data/macro/fed_net_liquidity.parquet
+    format: parquet
+    producer: scripts/build_netliq_daily.py
+    known_extra_writers: []
+    owner_program: cycle-intelligence
+    cadence: daily-engine
+    storage: git
+    asof_field: date
+    freshness_sla_hours: 96  # WALCL is weekly (H.4.1 Wednesdays) and the DTS/RRP tail pauses over long weekends; 96h avoids false alarms without hiding a dead collector (the stale-guard already freezes the tail)
+    schema: macro.fed_net_liquidity.v0
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      CPI DATA INFRASTRUCTURE — daily net Fed liquidity panel derived via
+      engine.canon (the ONE formula, audit #28): netliq_bn = WALCL_bn − RRP_bn −
+      TGA_bn, all BILLIONS (WALCL/TGA stored in millions → /1000; RRPONTSYD
+      already billions; a missing drain contributes 0 via fillna, never
+      annihilating the balance-sheet trend). Columns: date (union of component
+      real-observation dates), walcl_bn, rrp_bn, tga_bn, netliq_bn, netliq_d13w
+      (65-row change), netliq_d26w (130-row change), netliq_pctile_expanding
+      (PIT-pure expanding percentile of the level — appending future rows never
+      changes past values). Stale-guard: frame TRUNCATED at min(component last
+      real obs) + 10 business days so a dead component collector cannot
+      silently ffill a drain flat; per-component last-obs dates recorded in the
+      data/macro/fed_net_liquidity_meta.json sidecar (deterministic, no
+      timestamps). Deterministic idempotent full rebuild each engine run;
+      components refreshed upstream by the collect job (collectors/fred.py,
+      collectors/treasury.py — TGA parquet is git-tracked and nightly-collected;
+      the CPI prereg §13 "TGA absent" claim meant absent-from-the-registry, not
+      absent-from-disk). consumers=[] BY DESIGN: FT-3 (netliq covariate on the
+      pooled hazard) is NOT registered — additive-feature FT trials are
+      SUSPENDED by truth cycle_truth_ft2_credit_hazard_null_v1
+      (data/cycle_pattern/truths.jsonl); FT-3 may only be registered under that
+      truth's reopening conditions.
+
   # --- PR-A3: Operator-tape outcome resolution ---
   oracle-operator-tape-outcomes:
     path: data/oracle/operator_tape_outcomes.jsonl
@@ -5818,6 +5893,104 @@ artifacts:
       ordering (sort by ticker) for stable diffs. DT-W1 replication verdict will
       rewrite the chip caveat string (single source) if warranted.
 
+  # stock-personality program
+  stock-personality-panel:
+    path: "data/stock_personality/panel/YYYY-MM/panel.parquet"
+    format: parquet
+    producer: scripts/build_stock_library.py
+    known_extra_writers: []
+    owner_program: stock-personality
+    cadence: daily-engine
+    storage: gitignored-local
+    asof_field: date
+    freshness_sla_hours: 30
+    schema: stock_personality.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/publish_r2.py
+    external_consumers: []
+    notes: "Gitignored-local; published to R2 by publish_r2. Forward ledger is git-tracked separately."
+
+  site-stock-personality:
+    path: "site/factordata/stock_personality.json"
+    format: json
+    producer: scripts/build_stock_library.py
+    known_extra_writers: []
+    owner_program: stock-personality
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: stock_personality.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: "Slim site aggregate: schema, as_of, n_tickers, coverage, label_distributions, per_ticker slim dict."
+
+  stock-personality-block:
+    path: "embedded: personality block inside site/stockdata/<TICKER>.json"
+    format: json
+    producer: scripts/build_stock_library.py
+    known_extra_writers: []
+    owner_program: stock-personality
+    cadence: daily-engine
+    storage: r2
+    asof_field: null
+    freshness_sla_hours: 30
+    schema: stock_personality.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: "Per-ticker personality object embedded in the stockdata JSON blob, published to R2 with the rest of stockdata."
+
+  dna-class-ref:
+    path: "site/factordata/dna_class.json"
+    format: json
+    producer: scripts/build_factor_panel.py
+    known_extra_writers: []
+    owner_program: stock-personality
+    cadence: nightly-factor-panel
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: dna_class_ref.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/build_stock_library.py
+    external_consumers: []
+    notes: "T-1 by design: factor_panel job and engine job are parallel siblings."
+
+  stock-personality-forward-ledger:
+    path: "data/stock_personality/forward_ledger.parquet"
+    format: parquet
+    producer: scripts/build_stock_library.py
+    known_extra_writers: []
+    owner_program: stock-personality
+    cadence: daily-engine
+    storage: git
+    asof_field: date
+    freshness_sla_hours: 30
+    schema: stock_personality.v1
+    tier: shadow
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: "Git-tracked append-only ledger. Nightly engine job is sole advancer; intraday lanes discard data/ writes per house law."
+
   # --- R-ORTH PR-3: covariance spine (RUL-ORTH-1..11) ---
   covariance-spine:
     path: data/neuralweb/covariance_spine.json
@@ -5834,7 +6007,8 @@ artifacts:
     horizon_role: context
     weights: none
     scored_path_surfaces: []
-    consumers: []
+    consumers:
+      - engine/neuralweb/confluence.py  # R-ORTH PR-4: reads lobes block to embed independence summary in confluence_graph.json (display-only)
     external_consumers: []
     notes: >
       R-ORTH PR-3 (RUL-ORTH-1..11) — covariance spine rail (not a lobe).
@@ -5849,7 +6023,9 @@ artifacts:
       same_bet_warning fires when largest cluster has >=3 engines with mean
       intra-cluster |corr|>0.60. Site mirror site/neuralwebdata/covariance_spine.json
       is owned by the separate site-covariance-spine artifact (same producer,
-      atomic temp+rename).
+      atomic temp+rename). R-ORTH PR-4: confluence.py reads this artifact's lobes
+      block to embed an independence summary in confluence_graph.json (display-only,
+      no gate or rank authority).
 
   site-covariance-spine:
     path: site/neuralwebdata/covariance_spine.json

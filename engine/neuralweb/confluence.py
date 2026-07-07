@@ -117,6 +117,90 @@ def _node(nid: str, ntype: str, label: str, meta: dict | None = None) -> dict:
     return {"id": nid, "type": ntype, "label": label, "meta": meta or {}}
 
 
+# ---------------------------------------------------------------------------
+# R-ORTH PR-4: independence block reader
+# ---------------------------------------------------------------------------
+
+def _read_independence_block(repo: Path, gaps: list[str]) -> dict:
+    """Read the lobes block from data/neuralweb/covariance_spine.json fail-open.
+
+    Returns a top-level "independence" dict for embedding in confluence_graph.json.
+    If the file is absent or the lobes block is null, returns a null-valued dict
+    and appends a gap note; never raises.
+
+    Fields:
+      effective_independent_lobes  — participation-ratio estimate (float | null)
+      n_lobes_measurable           — engines with >= 30 active weeks (int | null)
+      n_lobes_total                — total engines in spine_index (int | null)
+      pctile_vs_null               — lobes pctile vs. 200 circular-shift draws (float | null)
+      same_bet_warning             — warning object or null
+      dominant_overlap_cluster     — largest cluster engine list or null
+      descriptive_not_gauntleted   — always True (F-ORTH-1 house law)
+      display_only                 — always True
+      source                       — "data/neuralweb/covariance_spine.json"
+    """
+    _null = {
+        "effective_independent_lobes": None,
+        "n_lobes_measurable": None,
+        "n_lobes_total": None,
+        "pctile_vs_null": None,
+        "same_bet_warning": None,
+        "dominant_overlap_cluster": None,
+        "descriptive_not_gauntleted": True,
+        "display_only": True,
+        "source": "data/neuralweb/covariance_spine.json",
+    }
+
+    spine_path = repo / "data" / "neuralweb" / "covariance_spine.json"
+    if not spine_path.exists():
+        gaps.append(
+            "independence: data/neuralweb/covariance_spine.json absent — "
+            "independence block null; run scripts/build_covariance_spine.py"
+        )
+        return _null
+
+    raw = _read_json(spine_path)
+    if raw is None:
+        gaps.append("independence: covariance_spine.json unreadable — independence block null")
+        return _null
+
+    lobes = (raw.get("blocks") or {}).get("lobes")
+    if lobes is None:
+        gaps.append(
+            "independence: covariance_spine.json has no lobes block — "
+            "spine_index.parquet may be absent or too sparse"
+        )
+        return _null
+
+    # Extract pctile from nested null_reference
+    null_ref = lobes.get("null_reference") or {}
+    pctile = null_ref.get("pctile_vs_null")
+
+    # dominant_overlap_cluster: largest cluster by engine list length
+    clusters = lobes.get("clusters") or []
+    dominant: list | None = None
+    if clusters:
+        largest = max(clusters, key=lambda c: len(c.get("engines") or []))
+        dominant = largest.get("engines") or None
+
+    sbw = lobes.get("same_bet_warning")
+    # Only propagate the warning object when active; pass null otherwise
+    same_bet = sbw if (sbw and sbw.get("active")) else None
+
+    return {
+        "effective_independent_lobes": lobes.get("effective_independent_lobes"),
+        "n_lobes_measurable": lobes.get("n_lobes_measurable"),
+        "n_lobes_total": lobes.get("n_lobes_total"),
+        "pctile_vs_null": pctile,
+        "same_bet_warning": same_bet,
+        "dominant_overlap_cluster": dominant,
+        "descriptive_not_gauntleted": True,
+        "display_only": True,
+        "source": "data/neuralweb/covariance_spine.json",
+    }
+
+
+
 def _edge(
     src: str,
     dst: str,
@@ -774,6 +858,9 @@ def build_graph(
     except Exception:  # noqa: BLE001
         pass
 
+    # ── R-ORTH PR-4: independence block (additive, fail-open) ─────────────────
+    independence = _read_independence_block(repo, gaps)
+
     # ── Assemble payload ──────────────────────────────────────────────────────
     payload: dict[str, Any] = {
         "schema": _SCHEMA,
@@ -791,6 +878,7 @@ def build_graph(
             "top_pair_ids": top_pair_ids,
         },
         "contradiction_records": contra_records,
+        "independence": independence,
         "gaps": gaps,
         "produced_by": "engine/neuralweb/confluence.py",
         "produced_at": now.strftime("%Y-%m-%dT%H:%M:%SZ"),
