@@ -13,7 +13,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | btc-vector | 5 |
 | china-alpha | 7 |
 | china-intel-hub | 2 |
-| cycle-intelligence | 10 |
+| cycle-intelligence | 11 |
 | dannytrades | 1 |
 | engine-fix | 16 |
 | entry-stack-expansion | 2 |
@@ -42,7 +42,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | tier | count |
 |---|---|
 | display | 103 |
-| infrastructure | 58 |
+| infrastructure | 59 |
 | scored | 4 |
 | shadow | 37 |
 
@@ -50,7 +50,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 195 |
+| git | 196 |
 | gitignored-local | 5 |
 | r2 | 2 |
 
@@ -98,6 +98,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | cycle-pattern-outcomes | `data/cycle_pattern/outcomes.parquet` | parquet | on-demand | infrastructure | 0 | 0 |
 | cycle-pattern-state-daily-live | `data/cycle_pattern/state_daily_live.parquet` | parquet | daily-engine | infrastructure | 0 | 0 |
 | cycle-pattern-state-monthly | `data/cycle_pattern/state_monthly.parquet` | parquet | on-demand | infrastructure | 0 | 0 |
+| regime-v2-pit | `data/regime/regime_v2_pit.parquet` | parquet | on-demand | infrastructure | 0 | 0 |
 | signal-archive-context-daily | `data/signal_archive/context_daily.parquet` | parquet | daily-engine | infrastructure | 0 | 0 |
 
 ### dannytrades

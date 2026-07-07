@@ -5896,3 +5896,36 @@ artifacts:
       factors_effective_bets, dispersion_state, same_bet_warning (bool).
       Idempotent: existing row with same as_of is replaced. Written atomically
       by scripts/build_covariance_spine.py alongside the main artifact.
+
+  # --- CPI P-D5-1 phase 4a: regime-vintage PIT spine ---
+  regime-v2-pit:
+    path: data/regime/regime_v2_pit.parquet
+    format: parquet
+    producer: scripts/build_regime_v2_pit.py
+    known_extra_writers: []
+    owner_program: cycle-intelligence
+    cadence: on-demand
+    storage: git
+    asof_field: null
+    freshness_sla_hours: 8760
+    schema: regime.v2_pit.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      CPI P-D5-1 (regime_v2_pit) phase 4a — the regime-vintage point-in-time spine.
+      Full-history re-run of the live quad classification (same engine.regime/axes/
+      transition code via the engine.inputs.build_features overrides seam) with the
+      five revision-leaky macro legs (payrolls, indpro, wei, gdpnow, sticky_cpi) read
+      as-of each date from data/fred_vintage/vintages.parquet (initial releases stamped
+      at realtime_start); all market-priced legs untouched. Schema = the 29
+      regime_history columns + pit_class {pit_vintage, revised_latest, mixed} +
+      fallback_notes (legs that read latest-revised pre vintage coverage) +
+      vintage_store_asof. Divergence sidecar: data/regime/regime_v2_pit_divergence.json
+      (+ research/REGIME_V2_PIT_DIVERGENCE_AUDIT.md). ADDITIVE — never writes
+      regime_history.parquet or latest.json; zero consumers this wave. on-demand
+      cadence: nightly wiring + W4.4 cell re-keying come with the preregistered
+      follow-up wave, NOT here.
