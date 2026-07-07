@@ -281,6 +281,7 @@ artifacts:
       - scripts/sample_qledger_placebo.py
       - scripts/shadow_importance_v0.py
       - scripts/shadow_importance_v0_pit.py
+      - engine/neuralweb/evidence_clock.py
     external_consumers: []
     qual_ladder_ref: null
     notes: "QI-owned ledger. Producer: engine/qledger.py:326 append-only per-claim row. Backfill writers are additive only (never overwrite)."
@@ -714,6 +715,7 @@ artifacts:
       - engine/qledger.py
       - engine/track_record.py
       - scripts/china_max_phase0.py
+      - engine/neuralweb/evidence_clock.py
     external_consumers: []
     notes: "Producer: engine/species_registry.py:365 sync/write. Daily mirror: species_registry.sync() in daily.yml. Additive writes from backfill scripts do not overwrite existing entries."
 
@@ -819,6 +821,8 @@ artifacts:
       - engine/experiments_registry.py
       - engine/falsifier_tripwires.py
       - scripts/build_site.py
+      - engine/neuralweb/evidence_clock.py
+      - scripts/check_evidence_clock.py
     external_consumers: []
     notes: "Three writers — engine/species_registry.py (daily mirror of species into the seed), backfill_forward_logs.py, build_measurement.py. All additive/idempotent; no single-writer enforcement — this is the rot class the masterplan targets in N1."
 
@@ -1723,6 +1727,7 @@ artifacts:
       - scripts/measure_incremental_ic.py
       - scripts/run_kernel_decisions.py
       - scripts/strategy_lab.py
+      - engine/neuralweb/evidence_clock.py
     external_consumers: []
     notes: >
       exempt: not a prediction-outcome ledger — tracks N-trials spent, not claims vs outcomes.
@@ -3153,6 +3158,7 @@ artifacts:
     scored_path_surfaces: []
     consumers:
       - engine/neuralweb/cortex.py
+      - engine/neuralweb/evidence_clock.py
     external_consumers: []
     notes: >
       W7a: Neural Web constitutional governance ledger.  Append-only JSONL — one event
@@ -3275,6 +3281,7 @@ artifacts:
     consumers:
       - engine/experiments_registry.py
       - scripts/evaluate_cortex_hypotheses.py
+      - engine/neuralweb/evidence_clock.py
     external_consumers: []
     notes: >
       W7b PR2: Append-only machine-registration ledger for cortex-proposed
@@ -5004,6 +5011,7 @@ artifacts:
     consumers:
       - scripts/register_rule_experiment.py
       - scripts/run_rule_replay.py
+      - engine/neuralweb/evidence_clock.py
     external_consumers: []
     notes: >
       NW Rails R1 anti-fishing governor registry. Append-only JSONL; single writer is
@@ -5201,7 +5209,8 @@ artifacts:
     horizon_role: context
     weights: none
     scored_path_surfaces: []
-    consumers: []
+    consumers:
+      - engine/neuralweb/evidence_clock.py
     external_consumers:
       - mastermind:anchor
     notes: >
@@ -5325,7 +5334,8 @@ artifacts:
     horizon_role: context
     weights: none
     scored_path_surfaces: []
-    consumers: []
+    consumers:
+      - engine/neuralweb/evidence_clock.py
     notes: >
       Research Factory W1 (RF-11). Candidate identity ledger — append-only JSONL.
       Authority ceiling A0-A2 display-only; every row carries authority='display_only'.
@@ -5541,6 +5551,7 @@ artifacts:
     consumers:
       - admin/neural_web.py
       - engine/neuralweb/daily_brief.py
+      - engine/neuralweb/evidence_clock.py
     external_consumers: []
     notes: >
       PR-C canonical NW lobe-status surface. Machine-readable operating-truth
@@ -5767,6 +5778,7 @@ artifacts:
     scored_path_surfaces: []
     consumers:
       - engine/neuralweb/daily_brief.py
+      - engine/neuralweb/evidence_clock.py
     external_consumers: []
     notes: >
       PR-D compact history of daily brief snapshots. One row per as_of date;
@@ -6349,3 +6361,58 @@ artifacts:
       is the closest legal cadence value for this git artifact — it is not nightly.
       Come-back waves W2-W4: cortex read-only tools, admin panel tab, Research Factory
       packet hook (registered in research/RULING_GRAPH_ADJUDICATION_BY_FABLE.md §Come-back).
+
+  # --- Global Evidence Clock (EC-R1..R8, 2026-07-06) ---
+  evidence-clock:
+    path: data/neuralweb/evidence_clock.json
+    format: json
+    producer: scripts/build_evidence_clock.py
+    known_extra_writers: []
+    owner_program: neural-web
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: neuralweb.evidence_clock.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/check_evidence_clock.py
+    external_consumers: []
+    notes: >
+      Global Evidence Clock v1 (EC-R1..R8) — read-only display-only aggregator.
+      Reads every review-clock source in the repo and writes ONE artifact answering
+      "what is due / stale / underpowered / blocked today". No LLM in the loop.
+      Never promotes, retires, or mutates any source system. No site/ copy (authed
+      admin console + daily brief counts only). Reviews ledger is operator-written
+      (evidence-clock-reviews); builder reads it but never writes it. Ratified
+      2026-07-06 by research/evidence_clock/ADJUDICATION_BY_FABLE.md.
+
+  evidence-clock-reviews:
+    path: data/neuralweb/evidence_clock_reviews.jsonl
+    format: jsonl
+    producer: "<HAND_MAINTAINED>"
+    known_extra_writers: []
+    owner_program: neural-web
+    cadence: on-demand
+    storage: git
+    asof_field: reviewed_on
+    freshness_sla_hours: 9999
+    schema: neuralweb.evidence_clock_reviews.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/build_evidence_clock.py
+      - engine/neuralweb/evidence_clock.py
+    external_consumers: []
+    notes: >
+      Operator-maintained attention-snooze ledger for the evidence clock. Append-only.
+      Each row: {clock_id, reviewed_on, note, outcome}. A review within snooze_days
+      (7d) sets acknowledged=true on the matching clock row and excludes it from
+      top_due/morning_line counts. Real state changes must flow through the source
+      system — this ledger is attention routing only. freshness_sla_hours=9999 because
+      the file is optional (builder handles absence gracefully).

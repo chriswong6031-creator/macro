@@ -1,0 +1,39 @@
+schema: evidence_clock.config.v1
+grace_days: 7
+snooze_days: 7
+packet_stub_cap: 10
+sources:
+  experiments:
+    enabled: true
+  research_factory:
+    enabled: true
+  qledger:
+    enabled: true
+  trial_ledger:
+    enabled: true
+    family_cap: 15
+  freshness:
+    enabled: true
+  governance:
+    enabled: true
+  cortex:
+    enabled: true
+  rule_experiments:
+    enabled: true
+  cycle_pattern:
+    enabled: true
+  species:
+    enabled: true
+expected_artifacts:
+  - path: data/neuralweb/MISSING_ARTIFACT_FOR_TESTS.json
+    producer: "python -m scripts.build_missing_test"
+    note: "test fixture — intentionally missing"
+declared_clocks:
+  - clock_id: "declared:test-clock-future"
+    subject_id: test_future
+    subject_type: family
+    owner_program: test
+    clock_type: fdr_batch_due
+    due_at: "2099-01-01"
+    note: "test fixture — far future"
+migration_note: "test fixture"

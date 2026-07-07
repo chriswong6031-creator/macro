@@ -322,6 +322,9 @@ lanes:
       - id: research_factory_monitor
         module: scripts.research_factory_monitor
         note: non-fatal; Research Factory W6 — paper monitor, regime-aware decay, nightly forward-ledger wiring (RF-8/RF-9/RF-10); data/research_factory/ writes covered by 'git add data/' in commit step
+      - id: build_evidence_clock
+        module: scripts.build_evidence_clock
+        note: non-fatal; Global Evidence Clock v1 (EC-R1..R8) — read-only review-queue aggregator; writes data/neuralweb/evidence_clock.json; always exits 0
       - id: build_options_flow_attention
         module: scripts.build_options_flow_attention
         note: non-fatal reflex; neural-web W-D — direction-free options-flow attention trigger (nightly EOD fold)

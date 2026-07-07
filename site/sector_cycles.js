@@ -1038,7 +1038,7 @@
      of re-joining the CPI live view here: no second entity mapping, no new lake
      reader in a page builder. Each cell carries its W4.2 gate verdict from the
      model ledger (cell_verdict), so every visible number gets an evidence badge:
-     PASS = calibrated model probability (passed the W4.2 calibration gate vs family-stratified KM);
+     PASS = calibrated model probability (validated vs family-stratified KM);
      PRIOR = KM base rate, muted. No naked probabilities. Display-only context. */
   function _hzPass(c) { return !!c && c.p != null && (c.cell_verdict === "PASS" || c.source === "MODEL"); }
   function _hzTip(hz, key, pass) {
@@ -1076,7 +1076,7 @@
     return '<div class="cyc-hazard sc-hazard">' +
       '<span class="hz-label" title="' + esc(L(
         "P(next confirmed turn within horizon) for the open " + (hz.direction || "?") + "-leg. " +
-        "PASS cells: isotonic-calibrated hazard model (calibration-gated vs KM, W4.2 gate). " +
+        "PASS cells: isotonic-calibrated hazard model (validated vs KM, W4.2 gate). " +
         "PRIOR cells: KM base rate, shown muted. Display-only context — never a signal.",
         "开放周期段在各时间窗内出现下一个已确认拐点的概率。PASS=经W4.2门槛校准的模型输出；PRIOR=KM基准率（弱化显示）。仅供展示，绝非信号。")) + '">' +
       L("Turn hazard (calibrated)", "转折风险（校准）") + '</span>' +

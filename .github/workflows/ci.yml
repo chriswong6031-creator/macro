@@ -719,6 +719,28 @@ jobs:
       - name: house-law registry tests (idempotency + integration)
         run: python -m pytest tests/test_house_law_registry.py -q
 
+  evidence-clock:
+    # Global Evidence Clock (EC-R1..R8): the committed display-only artifact
+    # data/neuralweb/evidence_clock.json must parse, keep authority=display_only,
+    # stay inside the 9-state vocabulary, carry forbidden_actions on every row,
+    # keep clock_ids unique, and match its own summary counts. The clock is
+    # read-only attention routing — this gate proves the artifact cannot
+    # smuggle scores, promotions, or source mutations.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pyyaml
+      - name: evidence-clock checker selftest (gate fires on synthetic violations)
+        run: python3 scripts/check_evidence_clock.py --selftest
+      - name: evidence-clock artifact integrity (hard gate)
+        run: python3 scripts/check_evidence_clock.py
+      - name: evidence-clock unit tests
+        run: python -m pytest tests/test_evidence_clock.py -q
+
   validated-claims:
     # BC-2 PR gate: the word "validated" in user-facing surfaces must trace to a
     # backed claim. This is the PR-time companion to the nightly calibration run

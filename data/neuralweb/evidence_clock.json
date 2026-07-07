@@ -1,0 +1,6153 @@
+{
+  "schema": "neuralweb.evidence_clock.v1",
+  "as_of": "2026-07-07",
+  "generated_utc": "2026-07-07T03:18:35Z",
+  "authority": "display_only",
+  "summary": {
+    "n_rows": 186,
+    "by_state": {
+      "overdue": 6,
+      "due": 10,
+      "human_review": 0,
+      "missing": 1,
+      "stale": 1,
+      "blocked": 2,
+      "not_ready": 0,
+      "promotion_eligible": 0,
+      "accruing": 166
+    },
+    "n_acknowledged": 0,
+    "top_due": {
+      "clock_id": "qledger:placebo",
+      "due_at": "2026-06-22",
+      "owner_program": null
+    },
+    "morning_line": "16 due/overdue, 1 missing, 166 accruing, 1 stale, 2 blocked. Top due: qledger:placebo."
+  },
+  "rows": [
+    {
+      "clock_id": "qledger:placebo",
+      "source_system": "qledger",
+      "subject_id": "placebo",
+      "subject_type": "claim_family",
+      "owner_program": null,
+      "clock_type": "check_by",
+      "due_at": "2026-06-22",
+      "as_of": null,
+      "state": "overdue",
+      "date_state": "overdue",
+      "readiness": {
+        "n_open": 342,
+        "n_past_check_by": 156
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "data/qledger/claims.jsonl"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": {
+        "reason_due": "check_by reached 2026-06-22",
+        "source_evidence": [
+          "data/qledger/claims.jsonl"
+        ],
+        "missing_evidence": [],
+        "allowed_decisions": [
+          "inspect",
+          "defer",
+          "reject",
+          "paper"
+        ],
+        "blocked_decisions": [
+          "promote",
+          "authority_change"
+        ]
+      }
+    },
+    {
+      "clock_id": "qledger:china_news",
+      "source_system": "qledger",
+      "subject_id": "china_news",
+      "subject_type": "claim_family",
+      "owner_program": null,
+      "clock_type": "check_by",
+      "due_at": "2026-06-26",
+      "as_of": null,
+      "state": "overdue",
+      "date_state": "overdue",
+      "readiness": {
+        "n_open": 812,
+        "n_past_check_by": 332
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "data/qledger/claims.jsonl"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": {
+        "reason_due": "check_by reached 2026-06-26",
+        "source_evidence": [
+          "data/qledger/claims.jsonl"
+        ],
+        "missing_evidence": [],
+        "allowed_decisions": [
+          "inspect",
+          "defer",
+          "reject",
+          "paper"
+        ],
+        "blocked_decisions": [
+          "promote",
+          "authority_change"
+        ]
+      }
+    },
+    {
+      "clock_id": "qledger:cn_importance_v0",
+      "source_system": "qledger",
+      "subject_id": "cn_importance_v0",
+      "subject_type": "claim_family",
+      "owner_program": null,
+      "clock_type": "check_by",
+      "due_at": "2026-06-26",
+      "as_of": null,
+      "state": "overdue",
+      "date_state": "overdue",
+      "readiness": {
+        "n_open": 752,
+        "n_past_check_by": 292
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "data/qledger/claims.jsonl"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": {
+        "reason_due": "check_by reached 2026-06-26",
+        "source_evidence": [
+          "data/qledger/claims.jsonl"
+        ],
+        "missing_evidence": [],
+        "allowed_decisions": [
+          "inspect",
+          "defer",
+          "reject",
+          "paper"
+        ],
+        "blocked_decisions": [
+          "promote",
+          "authority_change"
+        ]
+      }
+    },
+    {
+      "clock_id": "qledger:cn_importance_v0_pit",
+      "source_system": "qledger",
+      "subject_id": "cn_importance_v0_pit",
+      "subject_type": "claim_family",
+      "owner_program": null,
+      "clock_type": "check_by",
+      "due_at": "2026-06-26",
+      "as_of": null,
+      "state": "overdue",
+      "date_state": "overdue",
+      "readiness": {
+        "n_open": 752,
+        "n_past_check_by": 292
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "data/qledger/claims.jsonl"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": {
+        "reason_due": "check_by reached 2026-06-26",
+        "source_evidence": [
+          "data/qledger/claims.jsonl"
+        ],
+        "missing_evidence": [],
+        "allowed_decisions": [
+          "inspect",
+          "defer",
+          "reject",
+          "paper"
+        ],
+        "blocked_decisions": [
+          "promote",
+          "authority_change"
+        ]
+      }
+    },
+    {
+      "clock_id": "qledger:us_importance_v0",
+      "source_system": "qledger",
+      "subject_id": "us_importance_v0",
+      "subject_type": "claim_family",
+      "owner_program": null,
+      "clock_type": "check_by",
+      "due_at": "2026-06-26",
+      "as_of": null,
+      "state": "overdue",
+      "date_state": "overdue",
+      "readiness": {
+        "n_open": 1888,
+        "n_past_check_by": 20
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "data/qledger/claims.jsonl"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": {
+        "reason_due": "check_by reached 2026-06-26",
+        "source_evidence": [
+          "data/qledger/claims.jsonl"
+        ],
+        "missing_evidence": [],
+        "allowed_decisions": [
+          "inspect",
+          "defer",
+          "reject",
+          "paper"
+        ],
+        "blocked_decisions": [
+          "promote",
+          "authority_change"
+        ]
+      }
+    },
+    {
+      "clock_id": "qledger:us_importance_v0_pit",
+      "source_system": "qledger",
+      "subject_id": "us_importance_v0_pit",
+      "subject_type": "claim_family",
+      "owner_program": null,
+      "clock_type": "check_by",
+      "due_at": "2026-06-26",
+      "as_of": null,
+      "state": "overdue",
+      "date_state": "overdue",
+      "readiness": {
+        "n_open": 1888,
+        "n_past_check_by": 20
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "data/qledger/claims.jsonl"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": {
+        "reason_due": "check_by reached 2026-06-26",
+        "source_evidence": [
+          "data/qledger/claims.jsonl"
+        ],
+        "missing_evidence": [],
+        "allowed_decisions": [
+          "inspect",
+          "defer",
+          "reject",
+          "paper"
+        ],
+        "blocked_decisions": [
+          "promote",
+          "authority_change"
+        ]
+      }
+    },
+    {
+      "clock_id": "experiments:species-S10",
+      "source_system": "experiments",
+      "subject_id": "species-S10",
+      "subject_type": "species_phase0",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-07-03",
+      "as_of": "2026-07-03",
+      "state": "due",
+      "date_state": "due",
+      "readiness": {
+        "maturation": "W5+ phase-0. Gated on quarterly EDGAR extraction (one-time paced re-crawl, ~1,334 names). Completion date populates come_back_on definitively. GATE CLEARED: backfill completed 2026-07-03 — 54,853 ticker-quarters, 1,331 tickers, FY2009-2027, 0 failures (data/edgar/statements_quarterly.parquet).",
+        "cadence": "quarterly",
+        "status": "registered",
+        "floor": "undeclared"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": {
+        "reason_due": "come_back_on reached 2026-07-03",
+        "source_evidence": [],
+        "missing_evidence": [],
+        "allowed_decisions": [
+          "inspect",
+          "defer",
+          "reject",
+          "paper"
+        ],
+        "blocked_decisions": [
+          "promote",
+          "authority_change"
+        ]
+      }
+    },
+    {
+      "clock_id": "experiments:species-S11",
+      "source_system": "experiments",
+      "subject_id": "species-S11",
+      "subject_type": "species_phase0",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-07-03",
+      "as_of": "2026-07-03",
+      "state": "due",
+      "date_state": "due",
+      "readiness": {
+        "maturation": "W5+ phase-0. Same EDGAR re-crawl gate as S10. Completion date populates come_back_on. GATE CLEARED: backfill completed 2026-07-03 — same store as S10 (data/edgar/statements_quarterly.parquet).",
+        "cadence": "quarterly",
+        "status": "registered",
+        "floor": "undeclared"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": {
+        "reason_due": "come_back_on reached 2026-07-03",
+        "source_evidence": [],
+        "missing_evidence": [],
+        "allowed_decisions": [
+          "inspect",
+          "defer",
+          "reject",
+          "paper"
+        ],
+        "blocked_decisions": [
+          "promote",
+          "authority_change"
+        ]
+      }
+    },
+    {
+      "clock_id": "species:S10",
+      "source_system": "species",
+      "subject_id": "S10",
+      "subject_type": "hypothesis",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-07-03",
+      "as_of": "2026-07-03",
+      "state": "due",
+      "date_state": "due",
+      "readiness": {
+        "validation_status": "phase0",
+        "deployment_status": "unshipped",
+        "cadence": "quarterly"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "data/species/registry.json"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": {
+        "reason_due": "come_back_on reached 2026-07-03",
+        "source_evidence": [
+          "data/species/registry.json"
+        ],
+        "missing_evidence": [],
+        "allowed_decisions": [
+          "inspect",
+          "defer",
+          "reject",
+          "paper"
+        ],
+        "blocked_decisions": [
+          "promote",
+          "authority_change"
+        ]
+      }
+    },
+    {
+      "clock_id": "experiments:calibration-hub",
+      "source_system": "experiments",
+      "subject_id": "calibration-hub",
+      "subject_type": "calibration",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-07-05",
+      "as_of": "2026-06-15",
+      "state": "due",
+      "date_state": "due",
+      "readiness": {
+        "maturation": "desk COLD until overall.n>=10 (_MIN_SAMPLE); then calibrated needs hit_rate>=0.5 AND conviction monotone.",
+        "cadence": "on-build",
+        "status": "collecting",
+        "floor": "undeclared"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": {
+        "reason_due": "come_back_on reached 2026-07-05",
+        "source_evidence": [],
+        "missing_evidence": [],
+        "allowed_decisions": [
+          "inspect",
+          "defer",
+          "reject",
+          "paper"
+        ],
+        "blocked_decisions": [
+          "promote",
+          "authority_change"
+        ]
+      }
+    },
+    {
+      "clock_id": "experiments:expect-drift-ruler-p",
+      "source_system": "experiments",
+      "subject_id": "expect-drift-ruler-p",
+      "subject_type": "offline_study",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-07-06",
+      "as_of": "2026-07-06",
+      "state": "due",
+      "date_state": "due",
+      "readiness": {
+        "maturation": "Ruler-H on OOS-2 at G1-Retest trigger (~2027-H2); program-wide BH q=0.10",
+        "cadence": "on-demand",
+        "status": "complete",
+        "floor": "undeclared"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:insider-lh-ruler-p",
+      "source_system": "experiments",
+      "subject_id": "insider-lh-ruler-p",
+      "subject_type": "offline_study",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-07-06",
+      "as_of": "2026-07-06",
+      "state": "due",
+      "date_state": "due",
+      "readiness": {
+        "maturation": "Ruler-H on OOS-2 at G1-Retest trigger (~2027-H2); program-wide BH q=0.10",
+        "cadence": "on-demand",
+        "status": "complete",
+        "floor": "undeclared"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "rule_experiments:disp_gate_1",
+      "source_system": "rule_experiments",
+      "subject_id": "disp_gate_1",
+      "subject_type": "experiment",
+      "owner_program": null,
+      "clock_type": "awaiting_execution",
+      "due_at": "2026-07-07",
+      "as_of": "2026-07-06",
+      "state": "due",
+      "date_state": "due",
+      "readiness": {
+        "n_floor": 25,
+        "declared_budget": 6
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "data/rule_experiments/registry.jsonl"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "rule_experiments:exit_grid_v1",
+      "source_system": "rule_experiments",
+      "subject_id": "exit_grid_v1",
+      "subject_type": "experiment",
+      "owner_program": null,
+      "clock_type": "awaiting_execution",
+      "due_at": "2026-07-07",
+      "as_of": "2026-07-06",
+      "state": "due",
+      "date_state": "due",
+      "readiness": {
+        "n_floor": 300,
+        "declared_budget": 15
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "data/rule_experiments/registry.jsonl"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "rule_experiments:trim_grid_v1",
+      "source_system": "rule_experiments",
+      "subject_id": "trim_grid_v1",
+      "subject_type": "experiment",
+      "owner_program": null,
+      "clock_type": "awaiting_execution",
+      "due_at": "2026-07-07",
+      "as_of": "2026-07-06",
+      "state": "due",
+      "date_state": "due",
+      "readiness": {
+        "n_floor": 300,
+        "declared_budget": 6
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "data/rule_experiments/registry.jsonl"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "rule_experiments:wait_grid_v1",
+      "source_system": "rule_experiments",
+      "subject_id": "wait_grid_v1",
+      "subject_type": "experiment",
+      "owner_program": null,
+      "clock_type": "awaiting_execution",
+      "due_at": "2026-07-07",
+      "as_of": "2026-07-06",
+      "state": "due",
+      "date_state": "due",
+      "readiness": {
+        "n_floor": 300,
+        "declared_budget": 10
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "data/rule_experiments/registry.jsonl"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "expected_artifact:data/neuralweb/research_queue.json",
+      "source_system": "declared",
+      "subject_id": "data/neuralweb/research_queue.json",
+      "subject_type": "artifact",
+      "owner_program": null,
+      "clock_type": "expected_artifact",
+      "due_at": null,
+      "as_of": null,
+      "state": "missing",
+      "date_state": "missing",
+      "readiness": {
+        "note": "manual builder; referenced by research_factory_ingest",
+        "blocking_reason": "artifact missing on disk; run: python -m scripts.build_research_queue"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "data/neuralweb/research_queue.json"
+      ],
+      "regenerate_cmd": "python -m scripts.build_research_queue",
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "freshness:mastermind_context",
+      "source_system": "freshness",
+      "subject_id": "mastermind_context",
+      "subject_type": "artifact",
+      "owner_program": "nw-mastermind-bridge",
+      "clock_type": "freshness_sla",
+      "due_at": null,
+      "as_of": "2026-07-02",
+      "state": "stale",
+      "date_state": "stale",
+      "readiness": {
+        "as_of": "2026-07-02",
+        "stale_chips": [
+          "market",
+          "reliability",
+          "contradictions",
+          "bottom_sensors",
+          "claim_reliability"
+        ]
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "data/neuralweb/mastermind_context.json"
+      ],
+      "regenerate_cmd": "python -m scripts.build_nw_mastermind_context",
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:missing-come-back",
+      "source_system": "experiments",
+      "subject_id": "missing_come_back_on",
+      "subject_type": "experiment",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": null,
+      "as_of": null,
+      "state": "blocked",
+      "date_state": "accruing",
+      "readiness": {
+        "n_missing": 9,
+        "ids": [
+          "deribit-butterfly",
+          "walk-forward-harness",
+          "hkca_h_incl_connect_events",
+          "species-S1",
+          "species-S2",
+          "species-T1-T4",
+          "species-CN-WASHOUT",
+          "species-CN-REVERSAL",
+          "species-DISLOC"
+        ],
+        "blocking_reason": "9 entries lack come_back_on (RF-9)"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "qledger:falsifier_coverage",
+      "source_system": "qledger",
+      "subject_id": "falsifier_coverage",
+      "subject_type": "claim_family",
+      "owner_program": null,
+      "clock_type": "evidence_floor",
+      "due_at": null,
+      "as_of": null,
+      "state": "blocked",
+      "date_state": "accruing",
+      "readiness": {
+        "n_claims": 9069,
+        "n_with_falsifier": 146,
+        "falsifier_coverage": "1.6%",
+        "blocking_reason": "falsifier coverage 1.6%; not a promotion-grade substrate"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "data/qledger/claims.jsonl"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:radar-ic",
+      "source_system": "experiments",
+      "subject_id": "radar-ic",
+      "subject_type": "track_record",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-07-12",
+      "as_of": "2026-06-20",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "21d horizon; n_matured>=30; Spearman IC over matured + rolling ~90; per-state directional accuracy.",
+        "cadence": "daily",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:clinicaltrials-phase3",
+      "source_system": "experiments",
+      "subject_id": "clinicaltrials-phase3",
+      "subject_type": "data_collection",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-07-14",
+      "as_of": "2026-06-20",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "no forward maturation for the feed itself; lead-time must be validated via a Phase-0 event study before any scoring.",
+        "cadence": "weekly",
+        "status": "collecting"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:anticipation-forward-cone",
+      "source_system": "experiments",
+      "subject_id": "anticipation-forward-cone",
+      "subject_type": "validation",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-07-15",
+      "as_of": null,
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "Phase-0 measures Brier skill (direction), Rank-IC (DD quantiles), HAC-t (cone edges); load_gate() reads per-asset GO/NEUTRAL; scored legs only when GO.",
+        "cadence": "on-build",
+        "status": "proven"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:bottom-radar-calibration",
+      "source_system": "experiments",
+      "subject_id": "bottom-radar-calibration",
+      "subject_type": "calibration",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-07-15",
+      "as_of": null,
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "Phase-0 walk-forward fits curve on in-sample entries vs forward outcomes; gate GO iff expectancy>0 net of preset stop.",
+        "cadence": "on-build",
+        "status": "collecting"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:regime-snap-veto",
+      "source_system": "experiments",
+      "subject_id": "regime-snap-veto",
+      "subject_type": "validation",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-07-15",
+      "as_of": null,
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "validate_stress_gate.py tests veto efficacy on historical entries (below-threshold stop-out rate); forward_log tracks live veto TP/FP.",
+        "cadence": "on-build + daily accrual",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:signal-lab-registry",
+      "source_system": "experiments",
+      "subject_id": "signal-lab-registry",
+      "subject_type": "validation",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-07-15",
+      "as_of": null,
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "all phase0 verdicts published in reports/*.md -> ic_scorecard.json + curated registry -> single JSON with tiers (scored/confirmer/display/killed/pending). Assembled registry, not a time-accrual.",
+        "cadence": "on-build",
+        "status": "proven"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:thematic-desk",
+      "source_system": "experiments",
+      "subject_id": "thematic-desk",
+      "subject_type": "track_record",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-07-16",
+      "as_of": "2026-06-23",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "score_ledger() grades a thesis when check_by<=today; display-only, no significance gate.",
+        "cadence": "daily",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:ai-desk-tracker",
+      "source_system": "experiments",
+      "subject_id": "ai-desk-tracker",
+      "subject_type": "track_record",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-07-17",
+      "as_of": "2026-06-15",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "call matures at check_by; >=10-20 matured for per-conviction accuracy; high-conviction >55% hit could upgrade to sizing context.",
+        "cadence": "daily",
+        "status": "measuring"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "data/ai_desk/track_record.json"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:hub-track-record",
+      "source_system": "experiments",
+      "subject_id": "hub-track-record",
+      "subject_type": "track_record",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-07-20",
+      "as_of": "2026-06-21",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "proven when n_matured>=40 AND daily HAC-t>=2.0 AND mean_ic>0; _daily_ic needs >=6 matured snapshot-dates/horizon (each >=10 truthy-lean names).",
+        "cadence": "daily",
+        "status": "measuring"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "site/intel_hub/track_record.json"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:macro-tx-phase0",
+      "source_system": "experiments",
+      "subject_id": "macro-tx-phase0",
+      "subject_type": "study",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-07-20",
+      "as_of": "2026-07-06",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "Runs on existing graded history (spine_index track_record ledger) — no accrual wait; the gate is build+review latency, not calendar.",
+        "cadence": "once",
+        "status": null
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:opex-vanna-charm-wovc",
+      "source_system": "experiments",
+      "subject_id": "opex-vanna-charm-wovc",
+      "subject_type": "signal_research",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-07-20",
+      "as_of": "2026-07-06",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "stamps ship (W-OVC) -> n>=30 fires/bucket -> BH-FDR over 28-test family",
+        "cadence": "one_shot",
+        "status": "registered_awaiting_build"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:vol-shock-scorecard",
+      "source_system": "experiments",
+      "subject_id": "vol-shock-scorecard",
+      "subject_type": "track_record",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-07-20",
+      "as_of": null,
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "append daily firing -> resolve 10d-forward rows with realized outcome -> compute hit_rate + by_band; needs a batch of resolved rows for a read.",
+        "cadence": "daily",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:froth-fragility-scorecard",
+      "source_system": "experiments",
+      "subject_id": "froth-fragility-scorecard",
+      "subject_type": "track_record",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-07-27",
+      "as_of": null,
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "append daily -> resolve matured outcomes over horizon (max-DD + directional) -> hit_rate by band/quadrant/hit_type; provisional flag until enough resolved.",
+        "cadence": "daily",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:next3-reason-codes-after-c4",
+      "source_system": "experiments",
+      "subject_id": "next3-reason-codes-after-c4",
+      "subject_type": "re-check",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-07-27",
+      "as_of": "2026-07-06",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "Blocked on PR-C4 (not started as of 2026-07-06).",
+        "cadence": "once",
+        "status": null
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:sector-central-grader",
+      "source_system": "experiments",
+      "subject_id": "sector-central-grader",
+      "subject_type": "track_record",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-07-28",
+      "as_of": "2026-06-28",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "grade() needs >=3 matured obs/horizon; cross-sectional rank-IC needs distinct call-dates each >=3 scores; stable IC target >=100 obs.",
+        "cadence": "daily",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:index-leadership",
+      "source_system": "experiments",
+      "subject_id": "index-leadership",
+      "subject_type": "track_record",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-07-29",
+      "as_of": "2026-06-30",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "n_matured>=40 at a horizon AND Newey-West HAC-t>=2.0 (running or coiling) AND mean_ic>0; per-date IC needs >=8 calls/date and >=6 IC-eligible dates; verdict accruing->measuring(any_matured)->validated(proven).",
+        "cadence": "daily",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "data/index_leadership/track_record.json"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:intl-radar-global-breadth",
+      "source_system": "experiments",
+      "subject_id": "intl-radar-global-breadth",
+      "subject_type": "track_record",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-07-31",
+      "as_of": "2026-07-02",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "Standard radar audit thresholds; leg stays ACCRUING (cannot arm conjunction escalator) until its escalations have a graded record.",
+        "cadence": "daily",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:hk-shorts-positions-h2a",
+      "source_system": "experiments",
+      "subject_id": "hk-shorts-positions-h2a",
+      "subject_type": "phase0",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-08-01",
+      "as_of": "2026-07-03",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "Phase-0 at W3: rank-IC on >=6 independent weekly cross-sections with >=50 names each at 21d horizon. DSR n_trials=30 + split-half sign stability.",
+        "cadence": "weekly (SFC releases ~Friday T+7)",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "data/hk_shorts/coverage.json"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:species-S13",
+      "source_system": "experiments",
+      "subject_id": "species-S13",
+      "subject_type": "species_phase0",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-08-01",
+      "as_of": "2026-07-03",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "W1 phase-0 COMPLETE 2026-07-04 (research/species/W1_S13_REPORT.md): PASSED as the 3M-formation construction (PIT-era +0.49%/mo excess, DSR 0.991 SURVIVES; modern era +0.34%/mo DSR 0.908 marginal); 1M variant CLOSED (modern DSR 0.760 fails). K2 TRIGGERED: mega-cap flip measured (2024–26 −11.8%/yr) → REGIME-SCOPED, hostile cell live — no surface may imply current tradability. K3 clean (top name 3.1%), K4 sign sanity passed (IC −0.011). Survivorship bound: 69.4% member-price coverage — positives are optimistic; re-confirm on the massive-store panel before promotion past display. Monthly review re-reads the regime cell.",
+        "cadence": "monthly",
+        "status": "registered"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:species-S6",
+      "source_system": "experiments",
+      "subject_id": "species-S6",
+      "subject_type": "species_phase0",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-08-01",
+      "as_of": "2026-07-03",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "W1 phase-0 COMPLETE 2026-07-04 (research/species/W1_S6_REPORT.md): PASSED both variants — failed2×COILED clean8_21 spread +4.29pp (m2d_s3d, q=0.032) / +3.79pp (base3d, q=0.080), n floors met, both halves positive, per-name majority 52-53%; failed2 side ALSO stops out less within COILED (−4.9pp m2d_s3d). Standalone form buys liftoff with WORSE stop-outs — interaction only, as registered. OOS came in stronger than in-sample. CONSTRAINT: spreads below the ≥5pp §1.2 promotion floor → DISPLAY-CHIP CANDIDACY ONLY; monthly review decides chip wiring; near-miss ledger accrues the forward read.",
+        "cadence": "monthly",
+        "status": "registered"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:subsector-scan",
+      "source_system": "experiments",
+      "subject_id": "subsector-scan",
+      "subject_type": "track_record",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-08-01",
+      "as_of": null,
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "phase0.json publishes pass/fail backtest; forward grading measures flagged-subsector return spread vs median over 2-4wk.",
+        "cadence": "daily",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:theme-emergence-ledger",
+      "source_system": "experiments",
+      "subject_id": "theme-emergence-ledger",
+      "subject_type": "track_record",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-08-01",
+      "as_of": null,
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "append on emergence-threshold cross; grade +20D realized basket return vs baseline theme universe.",
+        "cadence": "daily",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "species:S13",
+      "source_system": "species",
+      "subject_id": "S13",
+      "subject_type": "hypothesis",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-08-01",
+      "as_of": "2026-07-03",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "validation_status": "phase0",
+        "deployment_status": "unshipped",
+        "cadence": "monthly"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "data/species/registry.json"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "species:S6",
+      "source_system": "species",
+      "subject_id": "S6",
+      "subject_type": "hypothesis",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-08-01",
+      "as_of": "2026-07-03",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "validation_status": "phase0",
+        "deployment_status": "unshipped",
+        "cadence": "monthly"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "data/species/registry.json"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:rf-batch-b-cortex-watch",
+      "source_system": "experiments",
+      "subject_id": "rf-batch-b-cortex-watch",
+      "subject_type": "data_collection",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-08-03",
+      "as_of": "2026-07-06",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "Trigger: machine_registry.jsonl exists with >=1 row having an evaluator verdict. No numeric maturation gate — this is a pipeline-health watch, not a forward-return accrual.",
+        "cadence": "on-trigger",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:institutional-floor-phase0",
+      "source_system": "experiments",
+      "subject_id": "institutional-floor-phase0",
+      "subject_type": "pit_vintage",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-08-10",
+      "as_of": "2026-06-18",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "incremental_ic.json is FINAL (mom_12_1 h21 incremental IC 0.0259, t_hac 3.30, surviving_frac 0.751, OPTIMISTIC survivor bound). Live shadow forward-IC still needs first fully-elapsed h21.",
+        "cadence": "daily snapshot + nightly maturation",
+        "status": "proven"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:shadow-book",
+      "source_system": "experiments",
+      "subject_id": "shadow-book",
+      "subject_type": "track_record",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-08-10",
+      "as_of": "2026-06-18",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "row matures when p0+h < len(closes) AND close date<=asof; per-horizon IC needs >=10 names/date; ic_summary emits IC-IR/HAC-t only at >=6 distinct matured dates.",
+        "cadence": "daily snapshot + nightly maturation",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:china-intel-hub-command",
+      "source_system": "experiments",
+      "subject_id": "china-intel-hub-command",
+      "subject_type": "track_record",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-08-15",
+      "as_of": "2026-07-06",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "n_dates>=25 then FDR gate",
+        "cadence": "daily",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:guidance-gap-ledger",
+      "source_system": "experiments",
+      "subject_id": "guidance-gap-ledger",
+      "subject_type": "track_record",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-08-15",
+      "as_of": null,
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "append daily non-NEUTRAL (theme,tilt); grade on forward T4 revision-breadth resolution vs tilt direction.",
+        "cadence": "daily",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:next3-analogue-library",
+      "source_system": "experiments",
+      "subject_id": "next3-analogue-library",
+      "subject_type": "study",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-08-15",
+      "as_of": "2026-07-06",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "Gated on W-E0 backfill depth, not calendar; RUL-U7 fences bind any build.",
+        "cadence": "once",
+        "status": null
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:signal-sanity",
+      "source_system": "experiments",
+      "subject_id": "signal-sanity",
+      "subject_type": "track_record",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-08-15",
+      "as_of": null,
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "forward_log appends daily {fired_signals,n_fired,regime,outcome}; grade on whether high-n_fired days precede directional moves / vol.",
+        "cadence": "daily",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:market-state-tune",
+      "source_system": "experiments",
+      "subject_id": "market-state-tune",
+      "subject_type": "calibration",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-08-21",
+      "as_of": "2026-06-26",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "H21=21bd per snapshot; tuner gated until MIN_GRADED=20 graded calls; MAX_STEP=3.0, clamped bounds, do-no-harm re-backtest guard.",
+        "cadence": "daily",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:ca-confluence-gate-calibration",
+      "source_system": "experiments",
+      "subject_id": "ca-confluence-gate-calibration",
+      "subject_type": "phase0_followup",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-08-24",
+      "as_of": "2026-07-03",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "stable-negative T3 on live cohort => wire per-market demote; sign-flip/null => clear flag",
+        "cadence": "once",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:hkca-board-forward-ledger",
+      "source_system": "experiments",
+      "subject_id": "hkca-board-forward-ledger",
+      "subject_type": "track_record",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-08-24",
+      "as_of": "2026-07-03",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "First single 21d grade: ~21 trading days after first render write (~2026-07-27 per market). Stable rank-IC read (>=5 matured IC dates with >=5 names each): approx 2026-08-24. 63d read: approx 2026-10. Graduation (W7) is a 2026-Q4 event gated on ledger maturity. scorecard() returns status='accruing' until gate is met.",
+        "cadence": "daily",
+        "status": "registered"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:subsector-rotation",
+      "source_system": "experiments",
+      "subject_id": "subsector-rotation",
+      "subject_type": "track_record",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-08-25",
+      "as_of": "2026-06-28",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "n_matured>=40 at a horizon AND HAC-t>=2.0 on emerging_score IC AND mean_ic>0; needs >=3 priceable members, >=10 subsectors/date, >=6 IC-days.",
+        "cadence": "daily",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "data/subsector_rotation/track_record.json"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:spvector-overlay",
+      "source_system": "experiments",
+      "subject_id": "spvector-overlay",
+      "subject_type": "track_record",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-08-31",
+      "as_of": "2026-06-20",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "regime_ledger appends daily {regime,vector_state,realized_5d_return}; resolve forward outcomes; per-regime forward Sharpe + hit-rate.",
+        "cadence": "daily",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:vector-btc-impulse",
+      "source_system": "experiments",
+      "subject_id": "vector-btc-impulse",
+      "subject_type": "calibration",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-08-31",
+      "as_of": "2026-06-25",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "gated by fire-rarity not row count; ~15 matured live act-tier fires for a meaningful DOWN hit-rate; regime falsifier needs >=8 graded 90d quarters.",
+        "cadence": "daily (hourly signals)",
+        "status": "measuring"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:dislocation-accrual",
+      "source_system": "experiments",
+      "subject_id": "dislocation-accrual",
+      "subject_type": "data_collection",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-09-15",
+      "as_of": "2026-06-12",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "a (date,horizon) matures when the h-th bar after date exists and <=asof; finder threshold >=50 matured obs for power. A state->forward-return grader must first be BUILT.",
+        "cadence": "daily accrual (grade not wired)",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:event-risk-track",
+      "source_system": "experiments",
+      "subject_id": "event-risk-track",
+      "subject_type": "track_record",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-09-15",
+      "as_of": null,
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "append on event-window + fragility co-occurrence; grade forward (event-window realized vol >= typical OR sustained fragility). Display-only, accruing.",
+        "cadence": "daily / event-driven",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:next3-lobe-impact-attribution",
+      "source_system": "experiments",
+      "subject_id": "next3-lobe-impact-attribution",
+      "subject_type": "study",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-09-15",
+      "as_of": "2026-07-06",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "Dual floor: #1669 n>=25 per contrast + W-EX exposure depth.",
+        "cadence": "once",
+        "status": null
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:next3-weekly-decision-review",
+      "source_system": "experiments",
+      "subject_id": "next3-weekly-decision-review",
+      "subject_type": "re-check",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-09-15",
+      "as_of": "2026-07-06",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "Same floor as attribution; the two may ship as one wave.",
+        "cadence": "once",
+        "status": null
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:qledger-w6-altdata",
+      "source_system": "experiments",
+      "subject_id": "qledger-w6-altdata",
+      "subject_type": "qledger_promotion",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-09-15",
+      "as_of": "2026-07-02",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "n_dates>=25 independent date clusters AND Wilson-CI lower bound >0 vs matched control (§3 gate). Auto-alerts on first-cross. grader_quiet_days>=2 fires broken-not-quiet warn.",
+        "cadence": "daily",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "site/qledger/track_record.json"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:qledger-w6-china-news",
+      "source_system": "experiments",
+      "subject_id": "qledger-w6-china-news",
+      "subject_type": "qledger_promotion",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-09-15",
+      "as_of": "2026-07-02",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "n_dates>=25 AND wilson_ci_low>0; salience families gate on |excess|>placebo instead of directional hit-rate.",
+        "cadence": "daily",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "site/qledger/track_record.json"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:qledger-w6-cn-importance-pit",
+      "source_system": "experiments",
+      "subject_id": "qledger-w6-cn-importance-pit",
+      "subject_type": "qledger_promotion",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-09-15",
+      "as_of": "2026-07-02",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "n_dates>=25 AND wilson_ci_low>0 (§3 gate).",
+        "cadence": "daily",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "site/qledger/track_record.json"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:qledger-w6-cn-special-sits",
+      "source_system": "experiments",
+      "subject_id": "qledger-w6-cn-special-sits",
+      "subject_type": "qledger_promotion",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-09-15",
+      "as_of": "2026-07-06",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "n_dates>=25 AND wilson_ci_low>0. Direction stays 0 (salience-only) until mechanism independently validated.",
+        "cadence": "daily",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "site/qledger/track_record.json"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:qledger-w6-communique-diff",
+      "source_system": "experiments",
+      "subject_id": "qledger-w6-communique-diff",
+      "subject_type": "qledger_promotion",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-09-15",
+      "as_of": "2026-07-02",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "n_dates>=25 AND wilson_ci_low>0 AND phrase polarity human-reviewed (§3 gate + D9).",
+        "cadence": "daily",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "site/qledger/track_record.json"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:qledger-w6-extraction-8k",
+      "source_system": "experiments",
+      "subject_id": "qledger-w6-extraction-8k",
+      "subject_type": "qledger_promotion",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-09-15",
+      "as_of": "2026-07-02",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "n_dates>=25 AND wilson_ci_low>0 AND regime-stratification (§3).",
+        "cadence": "daily",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "site/qledger/track_record.json"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:qledger-w6-missing-tape",
+      "source_system": "experiments",
+      "subject_id": "qledger-w6-missing-tape",
+      "subject_type": "qledger_promotion",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-09-15",
+      "as_of": "2026-07-02",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "n_dates>=25 (§3 gate); wilson_ci_low>0 for salience magnitude. W6 surface step deferred.",
+        "cadence": "daily",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "site/qledger/track_record.json"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:qledger-w6-policy-watch",
+      "source_system": "experiments",
+      "subject_id": "qledger-w6-policy-watch",
+      "subject_type": "qledger_promotion",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-09-15",
+      "as_of": "2026-07-02",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "n_dates>=25 AND wilson_ci_low>0; remove grandfathered gate on promotion.",
+        "cadence": "daily",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "site/qledger/track_record.json"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:qledger-w6-radar",
+      "source_system": "experiments",
+      "subject_id": "qledger-w6-radar",
+      "subject_type": "qledger_promotion",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-09-15",
+      "as_of": "2026-07-02",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "n_dates>=25 AND Wilson-CI lower bound >0 vs matched control (§3 gate).",
+        "cadence": "daily",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "site/qledger/track_record.json"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:qledger-w6-us-importance-pit",
+      "source_system": "experiments",
+      "subject_id": "qledger-w6-us-importance-pit",
+      "subject_type": "qledger_promotion",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-09-15",
+      "as_of": "2026-07-02",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "n_dates>=25 AND wilson_ci_low>0 (§3 gate).",
+        "cadence": "daily",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "site/qledger/track_record.json"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:qledger-w6-whitehouse",
+      "source_system": "experiments",
+      "subject_id": "qledger-w6-whitehouse",
+      "subject_type": "qledger_promotion",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-09-15",
+      "as_of": "2026-07-02",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "n_dates>=25 AND wilson_ci_low>0 (§3 gate); context-only, not a direction bet.",
+        "cadence": "daily",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "site/qledger/track_record.json"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:risk-radar-intl-can-force",
+      "source_system": "experiments",
+      "subject_id": "risk-radar-intl-can-force",
+      "subject_type": "track_record",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-09-15",
+      "as_of": "2026-06-26",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "can_force per market: n_graded>=30 AND n_alerts>=8 AND realized alert-state DD lift >=1.25x base.",
+        "cadence": "daily",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:risk-radar-legs-validation",
+      "source_system": "experiments",
+      "subject_id": "risk-radar-legs-validation",
+      "subject_type": "validation",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-09-15",
+      "as_of": "2026-06-23",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "CI gate: >=3 validated legs still clear 1.2x (passing now). Opus retune: risk_radar_audit h21=21bd grading; risk_radar_review needs min_graded>=30 before writing calibration.json.",
+        "cadence": "on-build (CI) + daily accrual",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:w3c-margin-velocity-substrate",
+      "source_system": "experiments",
+      "subject_id": "w3c-margin-velocity-substrate",
+      "subject_type": "infrastructure",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-09-29",
+      "as_of": null,
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": null,
+        "cadence": null,
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "declared:cortex-fdr-batch-2026-10",
+      "source_system": "declared",
+      "subject_id": "cortex_kernel_batch",
+      "subject_type": "family",
+      "owner_program": "neural-web",
+      "clock_type": "fdr_batch_due",
+      "due_at": "2026-10-01",
+      "as_of": null,
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "note": "kernel FDR batch; NW masterplan standing clock"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "config/evidence_clock.yml"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:country-fx-driven-turns",
+      "source_system": "experiments",
+      "subject_id": "country-fx-driven-turns",
+      "subject_type": "track_record",
+      "owner_program": "cycle-intelligence",
+      "clock_type": "come_back_on",
+      "due_at": "2026-10-01",
+      "as_of": "2026-07-02",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "n>=30 currency-driven turns matured at 63d/126d; compare forward MDD split by fx_flag with a sign test / KS on the two distributions.",
+        "cadence": "daily",
+        "status": "registered"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "data/country_cycles/forward_log.parquet"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:narr-2-story-decay",
+      "source_system": "experiments",
+      "subject_id": "narr-2-story-decay",
+      "subject_type": "study",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-10-01",
+      "as_of": "2026-07-06",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "Calendar-gated on qledger 21d/63d grade maturation (claims began ~2026-06; 63d matures ~2026-09+). QI program owns qledger semantics; this is a read-only surface extension.",
+        "cadence": "quarterly",
+        "status": null
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:narr-3-contradiction-arbitration",
+      "source_system": "experiments",
+      "subject_id": "narr-3-contradiction-arbitration",
+      "subject_type": "study",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-10-01",
+      "as_of": "2026-07-06",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "Needs BOTH contradiction-record depth (accruing since 2026-07-04) and 21d qledger grade maturation. Any study registers its own prereg with frozen gates before overlap is computed.",
+        "cadence": "quarterly",
+        "status": null
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:neuralweb-kernel-q1-batch",
+      "source_system": "experiments",
+      "subject_id": "neuralweb-kernel-q1-batch",
+      "subject_type": "parked_research",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-10-01",
+      "as_of": "2026-07-04",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "n_eff >= 25 per cell AND date_last within 380d; quarterly cadence enforced in code (exits 1 before FIRST_BATCH_DUE).",
+        "cadence": "quarterly (manual: python3 scripts/run_kernel_decisions.py)",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:species-S12",
+      "source_system": "experiments",
+      "subject_id": "species-S12",
+      "subject_type": "species_phase0",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-10-01",
+      "as_of": "2026-07-03",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "W5+ phase-0. Hard clause: ≥8 distinct rate-relief episodes with ≥1 outside 2020-21. Gated on W0.5 regime_vector (rate_pressure) stamping and W0.7 archetype v2.",
+        "cadence": "quarterly",
+        "status": "registered"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:species-S3",
+      "source_system": "experiments",
+      "subject_id": "species-S3",
+      "subject_type": "species_phase0",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-10-01",
+      "as_of": "2026-07-03",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "W1 RULING 2026-07-04: moved to W3+ per the pre-registered fallback — the reconstruction check's overlap window DOES NOT EXIST (forward_log: 7 days of states, ZERO logged de-escalation verdicts). Retro-deriving without a verification window is the exact un-checked reconstruction the gate prohibits. ENABLING FIX SHIPPED: deescalation_eligible/reason + dislocation_active now logged in every forward_log row, so the overlap window accrues from 2026-07-04; the W3 retro-derivation runs when ~60+ overlap days exist (≈2026-10-01, unchanged come-back) and the Opus reconstruction check becomes decidable.",
+        "cadence": "quarterly",
+        "status": "registered"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:species-S4",
+      "source_system": "experiments",
+      "subject_id": "species-S4",
+      "subject_type": "species_phase0",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-10-01",
+      "as_of": "2026-07-03",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "W2 phase-0. Promotion requires both comparators beaten. If event adds nothing, declare UI/labeling problem and close S4.",
+        "cadence": "quarterly",
+        "status": "registered"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:species-S5",
+      "source_system": "experiments",
+      "subject_id": "species-S5",
+      "subject_type": "species_phase0",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-10-01",
+      "as_of": "2026-07-03",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "W2 phase-0. Requires W0.4 peer metrics (peer_washout_pct, peer_reclaim_pct). Per-leg ablations against COILED baseline. Cohort vol-compression leg: ablation first, then inclusion decision.",
+        "cadence": "quarterly",
+        "status": "registered"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:species-S7",
+      "source_system": "experiments",
+      "subject_id": "species-S7",
+      "subject_type": "species_phase0",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-10-01",
+      "as_of": "2026-07-03",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "W3 phase-0. Gated on W0.4 within-cohort RS-rank series persistence. Both signs admissible. || 2026-07-04 phase-0 EXECUTED (research/species/s7_rs_repair_phase0, brought forward from W3 on external-evidence grounds): REPAIR sign supported on dev 2022-24 F1/P1 (stop-out Δ −5.7pp, 90% CI [−8.7,−1.9]; clean8_21 Δ +8.8pp CI [+4.6,+11.8]; rs_low promotion bar MET; within-month permutation placebo p≈0.000) but MIXED on 2025-26 holdout (Δ −2.7pp spans 0 at n=725; signs held on both primaries; rs_low bar flipped) → stays phase0 per frozen rule. Re-read on W0.4 series + come_back_on; in-harness rank approximation used, production series may differ.",
+        "cadence": "quarterly",
+        "status": "registered"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:species-S8",
+      "source_system": "experiments",
+      "subject_id": "species-S8",
+      "subject_type": "species_phase0",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-10-01",
+      "as_of": "2026-07-03",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "W5+ phase-0. Gated on revisions PIT archive ≥2 quarters (2026-10-01 estimated). W0.6 adds estimate dispersion + revenue revisions to fatten the archive.",
+        "cadence": "quarterly",
+        "status": "registered"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:species-S9",
+      "source_system": "experiments",
+      "subject_id": "species-S9",
+      "subject_type": "species_phase0",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-10-01",
+      "as_of": "2026-07-03",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "W3 phase-0. Earnings events only first. Wider news-tone version gated on W0.6.",
+        "cadence": "quarterly",
+        "status": "registered"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:thesis-funnel-shadow",
+      "source_system": "experiments",
+      "subject_id": "thesis-funnel-shadow",
+      "subject_type": "track_record",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-10-01",
+      "as_of": "2026-07-06",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "Snapshot-comparison protocol (no longitudinal store yet): quarterly snapshot vs 2026-07-06 baseline. If longitudinal tracking is wanted before the review, wire an append/archive hook into nightly first (sole-advancer law). No predictive authority until W3 unlock and G1-Retest (~2027-H2).",
+        "cadence": "quarterly",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:w3c-lhb-backfill",
+      "source_system": "experiments",
+      "subject_id": "w3c-lhb-backfill",
+      "subject_type": "infrastructure",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-10-01",
+      "as_of": null,
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": null,
+        "cadence": null,
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:w5a-reversal-rederive",
+      "source_system": "experiments",
+      "subject_id": "w5a-reversal-rederive",
+      "subject_type": "phase0_verdict",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-10-01",
+      "as_of": null,
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": null,
+        "cadence": null,
+        "status": "confirmed"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:w5b-reversal-sleeve-integration",
+      "source_system": "experiments",
+      "subject_id": "w5b-reversal-sleeve-integration",
+      "subject_type": "integration_verdict",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-10-01",
+      "as_of": null,
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": null,
+        "cadence": null,
+        "status": "shipped"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "species:S12",
+      "source_system": "species",
+      "subject_id": "S12",
+      "subject_type": "hypothesis",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-10-01",
+      "as_of": "2026-07-03",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "validation_status": "phase0",
+        "deployment_status": "unshipped",
+        "cadence": "quarterly"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "data/species/registry.json"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "species:S15",
+      "source_system": "species",
+      "subject_id": "S15",
+      "subject_type": "hypothesis",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-10-01",
+      "as_of": "2026-07-03",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "validation_status": "phase0",
+        "deployment_status": "unshipped",
+        "cadence": "quarterly"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "data/species/registry.json"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "species:S3",
+      "source_system": "species",
+      "subject_id": "S3",
+      "subject_type": "hypothesis",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-10-01",
+      "as_of": "2026-07-03",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "validation_status": "phase0",
+        "deployment_status": "unshipped",
+        "cadence": "quarterly"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "data/species/registry.json"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "species:S4",
+      "source_system": "species",
+      "subject_id": "S4",
+      "subject_type": "hypothesis",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-10-01",
+      "as_of": "2026-07-03",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "validation_status": "phase0",
+        "deployment_status": "unshipped",
+        "cadence": "quarterly"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "data/species/registry.json"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "species:S5",
+      "source_system": "species",
+      "subject_id": "S5",
+      "subject_type": "hypothesis",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-10-01",
+      "as_of": "2026-07-03",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "validation_status": "phase0",
+        "deployment_status": "unshipped",
+        "cadence": "quarterly"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "data/species/registry.json"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "species:S7",
+      "source_system": "species",
+      "subject_id": "S7",
+      "subject_type": "hypothesis",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-10-01",
+      "as_of": "2026-07-03",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "validation_status": "phase0",
+        "deployment_status": "unshipped",
+        "cadence": "quarterly"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "data/species/registry.json"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "species:S8",
+      "source_system": "species",
+      "subject_id": "S8",
+      "subject_type": "hypothesis",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-10-01",
+      "as_of": "2026-07-03",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "validation_status": "phase0",
+        "deployment_status": "unshipped",
+        "cadence": "quarterly"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "data/species/registry.json"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "species:S9",
+      "source_system": "species",
+      "subject_id": "S9",
+      "subject_type": "hypothesis",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-10-01",
+      "as_of": "2026-07-03",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "validation_status": "phase0",
+        "deployment_status": "unshipped",
+        "cadence": "quarterly"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "data/species/registry.json"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:exit_crowding_phase0",
+      "source_system": "experiments",
+      "subject_id": "exit_crowding_phase0",
+      "subject_type": "phase0_battery",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-10-04",
+      "as_of": "2026-07-04",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "L4 gate needs n >= 60 matured 21d fires on the sector-ETF PRIMARY lane; each leg additionally splits 2018-19/2020-22/2023-> (>=20/era to report an era mean). BH q<=0.10 within the 16-trial EXIT-CROWD sub-family, printed ONLY when L1-L4 all complete. Below floor => ACCRUE, never KILL (§4).",
+        "cadence": "daily snapshot accrual + on-manifest run",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:species-S14",
+      "source_system": "experiments",
+      "subject_id": "species-S14",
+      "subject_type": "species_phase0",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-10-05",
+      "as_of": "2026-07-05",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "Phase-0 W1. Requires ≥25 logged failed-breakout fire events for statistical feasibility (MIN_N=25 server clamp). Come-back 2026-10-05 allows one full quarter of accrual. The research queue ranker (nw-quant-synthesis B) lists S14 as its first ranked customer.",
+        "cadence": "quarterly",
+        "status": "registered"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "species:S14",
+      "source_system": "species",
+      "subject_id": "S14",
+      "subject_type": "hypothesis",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-10-05",
+      "as_of": "2026-07-03",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "validation_status": "phase0",
+        "deployment_status": "unshipped",
+        "cadence": "quarterly"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "data/species/registry.json"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "cycle_pattern:CPI-002",
+      "source_system": "cycle_pattern",
+      "subject_id": "CPI-002",
+      "subject_type": "truth",
+      "owner_program": "cycle-intelligence",
+      "clock_type": "next_review_due",
+      "due_at": "2026-10-06",
+      "as_of": "2026-07-06",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "status": "display",
+        "cadence": "annual",
+        "effect_class": "risk_only"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "data/cycle_pattern/truths.jsonl",
+        "research/cycle_masterplan/W04_KEYSTONE_VERDICT.md",
+        "data/research/keystone_tr0/study_tables.json",
+        "data/research/keystone_tr0/manifest.json"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "cycle_pattern:CPI-004",
+      "source_system": "cycle_pattern",
+      "subject_id": "CPI-004",
+      "subject_type": "truth",
+      "owner_program": "cycle-intelligence",
+      "clock_type": "next_review_due",
+      "due_at": "2026-10-06",
+      "as_of": "2026-07-06",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "status": "display",
+        "cadence": "annual",
+        "effect_class": "risk_only"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "data/cycle_pattern/truths.jsonl",
+        "research/cycle_masterplan/W42_HAZARD_VERDICT.md",
+        "data/hazard/model_price_c4414dcb.json"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "cycle_pattern:CPI-005",
+      "source_system": "cycle_pattern",
+      "subject_id": "CPI-005",
+      "subject_type": "truth",
+      "owner_program": "cycle-intelligence",
+      "clock_type": "next_review_due",
+      "due_at": "2026-10-06",
+      "as_of": "2026-07-06",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "status": "display",
+        "cadence": "annual",
+        "effect_class": "risk_only"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "data/cycle_pattern/truths.jsonl",
+        "research/cycle_masterplan/W42_HAZARD_VERDICT.md",
+        "data/hazard/model_price_c4414dcb.json"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "cycle_pattern:CPI-009",
+      "source_system": "cycle_pattern",
+      "subject_id": "CPI-009",
+      "subject_type": "truth",
+      "owner_program": "cycle-intelligence",
+      "clock_type": "next_review_due",
+      "due_at": "2026-10-06",
+      "as_of": "2026-07-06",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "status": "candidate",
+        "cadence": "quarterly",
+        "effect_class": "positive"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "data/cycle_pattern/truths.jsonl",
+        "research/cycle_masterplan/W44_CONDITIONAL_CELLS_VERDICT.md",
+        "data/cycle_ontology/conditional_cells_20260703.json"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "cycle_pattern:CPI-011",
+      "source_system": "cycle_pattern",
+      "subject_id": "CPI-011",
+      "subject_type": "truth",
+      "owner_program": "cycle-intelligence",
+      "clock_type": "next_review_due",
+      "due_at": "2026-10-06",
+      "as_of": "2026-07-06",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "status": "display",
+        "cadence": "quarterly",
+        "effect_class": "structural"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "data/cycle_pattern/truths.jsonl",
+        "research/cycle_masterplan/W24_FIRST_SCORECARDS.md",
+        "data/cycle_ontology/cone_recalibration.json"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "cycle_pattern:CPI-013",
+      "source_system": "cycle_pattern",
+      "subject_id": "CPI-013",
+      "subject_type": "truth",
+      "owner_program": "cycle-intelligence",
+      "clock_type": "next_review_due",
+      "due_at": "2026-10-06",
+      "as_of": "2026-07-06",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "status": "display",
+        "cadence": "quarterly",
+        "effect_class": "structural"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "data/cycle_pattern/truths.jsonl",
+        "research/cycle_masterplan/W04_KEYSTONE_VERDICT.md",
+        "data/baskets/membership.json"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "cycle_pattern:CPI-014",
+      "source_system": "cycle_pattern",
+      "subject_id": "CPI-014",
+      "subject_type": "truth",
+      "owner_program": "cycle-intelligence",
+      "clock_type": "next_review_due",
+      "due_at": "2026-10-06",
+      "as_of": "2026-07-06",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "status": "display",
+        "cadence": "monthly",
+        "effect_class": "structural"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "data/cycle_pattern/truths.jsonl",
+        "data/sector_cycles/forward_log.parquet",
+        "data/country_cycles/forward_log.parquet",
+        "data/china_sector_cycles/forward_log.parquet"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "cycle_pattern:CPI-015",
+      "source_system": "cycle_pattern",
+      "subject_id": "CPI-015",
+      "subject_type": "truth",
+      "owner_program": "cycle-intelligence",
+      "clock_type": "next_review_due",
+      "due_at": "2026-10-06",
+      "as_of": "2026-07-06",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "status": "display",
+        "cadence": "quarterly",
+        "effect_class": "structural"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "data/cycle_pattern/truths.jsonl",
+        "data/sector_cycles/narratives.json",
+        "data/sector_cycles/cycle_dna.json",
+        "data/sector_cycles/leg_context.json"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "cycle_pattern:cycle_truth_lattice1_confirmatory_and_baseline_confound_v1",
+      "source_system": "cycle_pattern",
+      "subject_id": "cycle_truth_lattice1_confirmatory_and_baseline_confound_v1",
+      "subject_type": "truth",
+      "owner_program": "cycle-intelligence",
+      "clock_type": "next_review_due",
+      "due_at": "2026-10-06",
+      "as_of": "2026-07-07T00:03:51.963718+00:00",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "status": "display",
+        "cadence": "next lattice batch",
+        "effect_class": "structural"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "data/cycle_pattern/truths.jsonl",
+        "research/cycle_masterplan/CPI_LATTICE1_VERDICT.md",
+        "data/cycle_pattern/lattice/batch1.json",
+        "research/cycle_masterplan/PREREGISTRATION.md"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "cycle_pattern:cycle_truth_lattice2_within_family_structure_v1",
+      "source_system": "cycle_pattern",
+      "subject_id": "cycle_truth_lattice2_within_family_structure_v1",
+      "subject_type": "truth",
+      "owner_program": "cycle-intelligence",
+      "clock_type": "next_review_due",
+      "due_at": "2026-10-06",
+      "as_of": "2026-07-06",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "status": "display",
+        "cadence": "next lattice batch",
+        "effect_class": "structural"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "data/cycle_pattern/truths.jsonl",
+        "research/cycle_masterplan/CPI_LATTICE2_VERDICT.md",
+        "data/cycle_pattern/lattice/batch2.json",
+        "research/cycle_masterplan/PREREGISTRATION.md"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "cycle_pattern:cycle_truth_tr1_next_phase_softmax_skill_v1",
+      "source_system": "cycle_pattern",
+      "subject_id": "cycle_truth_tr1_next_phase_softmax_skill_v1",
+      "subject_type": "truth",
+      "owner_program": "cycle-intelligence",
+      "clock_type": "next_review_due",
+      "due_at": "2026-10-06",
+      "as_of": "2026-07-06",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "status": "display",
+        "cadence": "next TR wave (or annual review)",
+        "effect_class": "structural"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "data/cycle_pattern/truths.jsonl",
+        "research/cycle_masterplan/CPI_TR1_VERDICT.md",
+        "data/cycle_pattern/tr_trials/tr1_transition.json",
+        "research/cycle_masterplan/PREREGISTRATION.md"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:china-venue-divergence",
+      "source_system": "experiments",
+      "subject_id": "china-venue-divergence",
+      "subject_type": "track_record",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-10-06",
+      "as_of": "2026-07-06",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "n_resolved>=3 per pair per outcome metric; grading: (fwd>0 when sign=positive) else (fwd<0). No edge claimed — Phase-0 accumulation only.",
+        "cadence": "daily (asia-close lane only)",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:next3-bd-conditioning-census",
+      "source_system": "experiments",
+      "subject_id": "next3-bd-conditioning-census",
+      "subject_type": "study",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-10-15",
+      "as_of": "2026-07-06",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "Blocked on two external clocks (2026-10-15 options gate; DISP-GATE-1 basis) + BD-AVOID-1 accrual.",
+        "cadence": "once",
+        "status": null
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:options-entry-gate-maturation",
+      "source_system": "experiments",
+      "subject_id": "options-entry-gate-maturation",
+      "subject_type": "validation",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-10-15",
+      "as_of": "2026-07-05",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "n>=30 per condition bucket AND bootstrap 95%-CI excludes 0 in beneficial direction AND BH q<=0.10 over the 22-test family. S-TOP_RISK and S-PIN_RISK are caution-only (de-escalation only, never short per RO-3). Status transitions: building_history -> scorable (any bucket ready) -> signal (any bucket passes FDR-corrected CI). Scored gate (scored=true) requires W5 passage.",
+        "cadence": "daily (live-accrual, nightly stamp pass)",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:hazard-live-reliability-down-1m",
+      "source_system": "experiments",
+      "subject_id": "hazard-live-reliability-down-1m",
+      "subject_type": "phase0",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-11-01",
+      "as_of": null,
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": null,
+        "cadence": null,
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:hazard-live-reliability-up-1m",
+      "source_system": "experiments",
+      "subject_id": "hazard-live-reliability-up-1m",
+      "subject_type": "phase0",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-11-01",
+      "as_of": null,
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": null,
+        "cadence": null,
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:sector-pulse-heat-archive",
+      "source_system": "experiments",
+      "subject_id": "sector-pulse-heat-archive",
+      "subject_type": "phase0_verdict",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-11-01",
+      "as_of": "2026-06-18",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": ">=90 archived sessions in the signal_archive 'baskets' stream with >=21 subsequent sessions of basket tape per snapshot; archive-lane HAC-t on the same pre-registered per-tier claims. Confirms/denies: broken dd-edge holding on the live 46-wide board, heating/hot/cooling staying refuted at real board width.",
+        "cadence": "daily (engine.signal_archive 'baskets' snapshot per build; forward grades accrue automatically)",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:skew-ivspread-validation-clock",
+      "source_system": "experiments",
+      "subject_id": "skew-ivspread-validation-clock",
+      "subject_type": "validation",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-12-15",
+      "as_of": "2026-07-05",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "Cross-sectional IC gate: 120 dates x >=15 names, HAC t>2 (existing §4 S-CWIV/S-XZZ rows). Fire-conditioned gate: n>=30 per bucket (W-C rows, come-back 2026-10-15). Skew: 13 trading-day snapshots as of 2026-07-05 (~356 tickers/day). IV-spread: 6 trading-day snapshots (~344 tickers/day).",
+        "cadence": "daily (live-accrual snapshot)",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:demand-chain",
+      "source_system": "experiments",
+      "subject_id": "demand-chain",
+      "subject_type": "track_record",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2026-12-21",
+      "as_of": "2026-06-19",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "n_matured>=threshold, HAC-t>=2.0, mean_ic>0 for proven; phase0 verdict needs n_decided>=20 (only 8 open).",
+        "cadence": "daily",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:china-sector-cycles-cone-coverage",
+      "source_system": "experiments",
+      "subject_id": "china-sector-cycles-cone-coverage",
+      "subject_type": "track_record",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2027-01-01",
+      "as_of": "2026-07-02",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "BACKTEST complete (12,519 stamps). LIVE cohort needs n_eff ≥ 40 per cell before promotion from accruing. Per W24_FIRST_SCORECARDS.md (CC-1/CC-2/CC-3 verdict verdicts recorded against frozen ledger).",
+        "cadence": "monthly",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "data/china_sector_cycles/scorecards/promises_price_v1_zz14_v0.json"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:china-sector-cycles-reliability",
+      "source_system": "experiments",
+      "subject_id": "china-sector-cycles-reliability",
+      "subject_type": "track_record",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2027-01-01",
+      "as_of": "2026-07-02",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "BACKTEST complete (12,519 stamps). LIVE cohort needs n_eff ≥ 40 per cell before promotion from accruing. Per W24_FIRST_SCORECARDS.md (CC-1/CC-2/CC-3 verdict verdicts recorded against frozen ledger).",
+        "cadence": "monthly",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "data/china_sector_cycles/scorecards/promises_price_v1_zz14_v0.json"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:china-sector-cycles-turn-pr",
+      "source_system": "experiments",
+      "subject_id": "china-sector-cycles-turn-pr",
+      "subject_type": "track_record",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2027-01-01",
+      "as_of": "2026-07-02",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "BACKTEST complete (12,519 stamps). LIVE cohort needs n_eff ≥ 40 per cell before promotion from accruing. Per W24_FIRST_SCORECARDS.md (CC-1/CC-2/CC-3 verdict verdicts recorded against frozen ledger).",
+        "cadence": "monthly",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "data/china_sector_cycles/scorecards/promises_price_v1_zz14_v0.json"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:country-cycles-cone-coverage",
+      "source_system": "experiments",
+      "subject_id": "country-cycles-cone-coverage",
+      "subject_type": "track_record",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2027-01-01",
+      "as_of": "2026-07-02",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "BACKTEST complete (12,519 stamps). LIVE cohort needs n_eff ≥ 40 per cell before promotion from accruing. Per W24_FIRST_SCORECARDS.md (CC-1/CC-2/CC-3 verdict verdicts recorded against frozen ledger).",
+        "cadence": "monthly",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "data/country_cycles/scorecards/promises_price_v1_zz14_v0.json"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:country-cycles-reliability",
+      "source_system": "experiments",
+      "subject_id": "country-cycles-reliability",
+      "subject_type": "track_record",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2027-01-01",
+      "as_of": "2026-07-02",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "BACKTEST complete (12,519 stamps). LIVE cohort needs n_eff ≥ 40 per cell before promotion from accruing. Per W24_FIRST_SCORECARDS.md (CC-1/CC-2/CC-3 verdict verdicts recorded against frozen ledger).",
+        "cadence": "monthly",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "data/country_cycles/scorecards/promises_price_v1_zz14_v0.json"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:country-cycles-turn-pr",
+      "source_system": "experiments",
+      "subject_id": "country-cycles-turn-pr",
+      "subject_type": "track_record",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2027-01-01",
+      "as_of": "2026-07-02",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "BACKTEST complete (12,519 stamps). LIVE cohort needs n_eff ≥ 40 per cell before promotion from accruing. Per W24_FIRST_SCORECARDS.md (CC-1/CC-2/CC-3 verdict verdicts recorded against frozen ledger).",
+        "cadence": "monthly",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "data/country_cycles/scorecards/promises_price_v1_zz14_v0.json"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:hazard-live-reliability-down-3m",
+      "source_system": "experiments",
+      "subject_id": "hazard-live-reliability-down-3m",
+      "subject_type": "phase0",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2027-01-01",
+      "as_of": null,
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": null,
+        "cadence": null,
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:sector-cycles-cone-coverage",
+      "source_system": "experiments",
+      "subject_id": "sector-cycles-cone-coverage",
+      "subject_type": "track_record",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2027-01-01",
+      "as_of": "2026-07-02",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "BACKTEST complete (12,519 stamps). LIVE cohort needs n_eff ≥ 40 per cell before promotion from accruing. Per W24_FIRST_SCORECARDS.md (CC-1/CC-2/CC-3 verdict verdicts recorded against frozen ledger).",
+        "cadence": "monthly",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "data/sector_cycles/scorecards/promises_price_v1_zz14_v0.json"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:sector-cycles-reliability",
+      "source_system": "experiments",
+      "subject_id": "sector-cycles-reliability",
+      "subject_type": "track_record",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2027-01-01",
+      "as_of": "2026-07-02",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "BACKTEST complete (12,519 stamps). LIVE cohort needs n_eff ≥ 40 per cell before promotion from accruing. Per W24_FIRST_SCORECARDS.md (CC-1/CC-2/CC-3 verdict verdicts recorded against frozen ledger).",
+        "cadence": "monthly",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "data/sector_cycles/scorecards/promises_price_v1_zz14_v0.json"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:sector-cycles-turn-pr",
+      "source_system": "experiments",
+      "subject_id": "sector-cycles-turn-pr",
+      "subject_type": "track_record",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2027-01-01",
+      "as_of": "2026-07-02",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "BACKTEST complete (12,519 stamps). LIVE cohort needs n_eff ≥ 40 per cell before promotion from accruing. Per W24_FIRST_SCORECARDS.md (CC-1/CC-2/CC-3 verdict verdicts recorded against frozen ledger).",
+        "cadence": "monthly",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "data/sector_cycles/scorecards/promises_price_v1_zz14_v0.json"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:hk-h4-reversal-phase0",
+      "source_system": "experiments",
+      "subject_id": "hk-h4-reversal-phase0",
+      "subject_type": "phase0_battery",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2027-01-03",
+      "as_of": null,
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": null,
+        "cadence": null,
+        "status": "closed"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:c7-canada-momentum",
+      "source_system": "experiments",
+      "subject_id": "c7-canada-momentum",
+      "subject_type": "phase0",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2027-01-15",
+      "as_of": "2026-07-03",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "names mom_res DSR>=0.90 @ program n_trials=30 AND split-half sign-stable AND >=6 independent momentum episodes; OR survivorship-clean CA names panel reproduces the point estimate.",
+        "cadence": "quarterly re-run (accrual as CA names panel deepens)",
+        "status": "accrue"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:h2a-sfc-short-positions",
+      "source_system": "experiments",
+      "subject_id": "h2a-sfc-short-positions",
+      "subject_type": "phase0_validation",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2027-01-15",
+      "as_of": null,
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": null,
+        "cadence": null,
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:hkca-h3-ah-discount-tilt",
+      "source_system": "experiments",
+      "subject_id": "hkca-h3-ah-discount-tilt",
+      "subject_type": "signal_research",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2027-01-15",
+      "as_of": null,
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "2027-01-15",
+        "cadence": null,
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:risk-radar-flow-legs",
+      "source_system": "experiments",
+      "subject_id": "risk-radar-flow-legs",
+      "subject_type": "calibration",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2027-02-16",
+      "as_of": "2026-06-10",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": ">=252 rows in BOTH series (_FLOW_MIN_HISTORY); then auto-join vol scare-type + forward-outcome validation; legs INERT until then.",
+        "cadence": "daily",
+        "status": "collecting"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:rf-rf-20260706-adopt-a15_washout_opp_out_2node",
+      "source_system": "experiments",
+      "subject_id": "rf-rf-20260706-adopt-a15_washout_opp_out_2node",
+      "subject_type": "track_record",
+      "owner_program": "oracle-rotation",
+      "clock_type": "come_back_on",
+      "due_at": "2027-03-13",
+      "as_of": "2026-07-06",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "n>=100 matured obs at 21d horizon; primary_metric=WR; expected_half_life_d=250 (operator-set)",
+        "cadence": "nightly",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "data/research_factory/track/rf-20260706-adopt-a15_washout_opp_out_2node.json"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:hazard-live-reliability-down-6m",
+      "source_system": "experiments",
+      "subject_id": "hazard-live-reliability-down-6m",
+      "subject_type": "phase0",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2027-04-01",
+      "as_of": null,
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": null,
+        "cadence": null,
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "declared:nw-weights-review-2027-05",
+      "source_system": "declared",
+      "subject_id": "nw_weights",
+      "subject_type": "authority",
+      "owner_program": "neural-web",
+      "clock_type": "human_review_due",
+      "due_at": "2027-05-01",
+      "as_of": null,
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "note": "NW weights review; NW masterplan standing clock"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "config/evidence_clock.yml"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:cycle-pit-backfill-w23",
+      "source_system": "experiments",
+      "subject_id": "cycle-pit-backfill-w23",
+      "subject_type": "backfill",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2027-05-01",
+      "as_of": "2026-07-02",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "n_stamps=594; no forward outcomes here (W2.4 domain); re-run on D3 basis bump. engine_fingerprint guards stale artifacts.",
+        "cadence": "on_basis_bump",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "data/{sector,country,china_sector}_cycles/backfill_manifest.json"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:market-state-pit",
+      "source_system": "experiments",
+      "subject_id": "market-state-pit",
+      "subject_type": "track_record",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2027-05-01",
+      "as_of": "2026-07-03",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "n_rows >= 250 (keep-first calendar days) AND ms_verdict shows forward-IC signal vs cycle turns in hold-out; promote to model feature only if IC clears Newey-West t>=1.96 at 3m+ horizon.",
+        "cadence": "daily",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:market-state-weights-vs-equal",
+      "source_system": "experiments",
+      "subject_id": "market-state-weights-vs-equal",
+      "subject_type": "parked_research",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2027-05-01",
+      "as_of": "2026-07-04",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "n >= 250 trading days of component-logged entries with graded.any_dd5_within_h21 resolved (h21 matured ~21bd after as_of).",
+        "cadence": "quarterly measurement (not nightly; components accrue nightly via market_state_audit)",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:revisions-breadth",
+      "source_system": "experiments",
+      "subject_id": "revisions-breadth",
+      "subject_type": "data_collection",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2027-06-16",
+      "as_of": "2026-06-16",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "~1y forward PIT vintages, then clear FDR/DSR via scripts/factor_ic_scorecard.py (which does NOT yet consume this parquet). Display-only, correctly blocked.",
+        "cadence": "daily drip (~200 stalest/run)",
+        "status": "blocked"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:web-traffic-nowcast",
+      "source_system": "experiments",
+      "subject_id": "web-traffic-nowcast",
+      "subject_type": "parked_research",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2027-06-28",
+      "as_of": "2026-06-28",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "~1y forward PIT vintages before backtest-trustworthy; Phase-0 gate (abnormal-traffic vs earnings-surprise IC) required before scoring; free-proxy grade weak (STRONG grade is PAID SimilarWeb, does not transfer).",
+        "cadence": "daily (wiki live)",
+        "status": "collecting"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:china-policy-events-fb-banks-rel",
+      "source_system": "experiments",
+      "subject_id": "china-policy-events-fb-banks-rel",
+      "subject_type": "forward_accrual",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2027-07-01",
+      "as_of": "2026-07-06",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "K>=19 at H=20 AND Newey-West HAC-t>=2.0 positive AND BH-FDR q<=0.10 AND DSR>=0.90 AND split-half same sign.",
+        "cadence": "per_event",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "data/experiments/china_policy_events_results.json"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:expect-drift-ruler-h-accrual",
+      "source_system": "experiments",
+      "subject_id": "expect-drift-ruler-h-accrual",
+      "subject_type": "track_record",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2027-07-01",
+      "as_of": "2026-07-06",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": ">= 25 episode-cluster honest compounder fires in OOS-2 AND program-wide BH q=0.10",
+        "cadence": "none",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:hk-southbound-holdings-panel",
+      "source_system": "experiments",
+      "subject_id": "hk-southbound-holdings-panel",
+      "subject_type": "data_collection",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2027-07-01",
+      "as_of": "2024-07-03",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "H1 phase-0 at ~104 weekly cross-sections (W3, ~2026-09-30); ACCRUE-lean until then. Full statistical power (n>=3y panel) ~2027-07-01. Do NOT wire to HKCA board before H1 phase-0 pass.",
+        "cadence": "daily (nightly Asia collect group — hk_southbound_holdings adapter)",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "data/hk_southbound/backfill_gap_audit.json"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:hkca-h1-southbound-holdings",
+      "source_system": "experiments",
+      "subject_id": "hkca-h1-southbound-holdings",
+      "subject_type": "phase0_backtest",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2027-07-01",
+      "as_of": "2026-07-03",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "NO-GO at n~2 regimes (2026-07). Not wired. Context-chip only. Full statistical power ~2027-07 at >=3y depth.",
+        "cadence": "annual (full-power re-run gate)",
+        "status": "decided"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "reports/hk-southbound-h1-phase0.json"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:insider-lh-ruler-h-accrual",
+      "source_system": "experiments",
+      "subject_id": "insider-lh-ruler-h-accrual",
+      "subject_type": "track_record",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2027-07-01",
+      "as_of": "2026-07-06",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": ">=25 episode-cluster missed_hold fires in OOS-2 AND program-wide BH q=0.10",
+        "cadence": "none",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:revisions-history-accrual",
+      "source_system": "experiments",
+      "subject_id": "revisions-history-accrual",
+      "subject_type": "collecting",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2027-07-01",
+      "as_of": "2026-06-16",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "~252 trading-day snapshots (1 calendar year) before a statistically-powered cross-sectional IC test is trustworthy. Collector already running; history started 2026-06-16.",
+        "cadence": "daily (nightly collect lane)",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:sedi-insider-accrual",
+      "source_system": "experiments",
+      "subject_id": "sedi-insider-accrual",
+      "subject_type": "data_collection",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2027-07-01",
+      "as_of": null,
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": null,
+        "cadence": null,
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:short-interest-history-accrual",
+      "source_system": "experiments",
+      "subject_id": "short-interest-history-accrual",
+      "subject_type": "collecting",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2027-07-01",
+      "as_of": "2026-07-06",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "~26 bi-monthly vintages for first walk-forward year; tracking requires a full calendar year of settlement snapshots (FINRA publishes ~24-26 per year). Come-back 2027-07-01 to assess data density and decide whether to build a true vintage matrix for PIT analysis.",
+        "cadence": "bi-monthly (FINRA settlement cadence ~15th and month-end)",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:washout-tf-family-b1-block",
+      "source_system": "experiments",
+      "subject_id": "washout-tf-family-b1-block",
+      "subject_type": "parked_research",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2027-07-01",
+      "as_of": "2026-07-06",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "B1 data-blocked: requires >=34 completed monthly bars per name (~3 trading years) AND n>=25 episode-cluster floor after PIT/dedup. Cannot be run honestly until W1 PR-G dead-name spike lands AND monthly history matures. Expected earliest honest run: ~2027-H2 after a Fable masterplan amendment (B3).",
+        "cadence": "N/A (blocked on data maturity)",
+        "status": "parked"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:h-plc-post-placement-drift",
+      "source_system": "experiments",
+      "subject_id": "h-plc-post-placement-drift",
+      "subject_type": "data_collection",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2027-07-03",
+      "as_of": null,
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": null,
+        "cadence": null,
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:hk-shorts-turnover-accrual",
+      "source_system": "experiments",
+      "subject_id": "hk-shorts-turnover-accrual",
+      "subject_type": "phase0",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2027-07-03",
+      "as_of": "2026-07-03",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": ">=252 trading days accrued. Phase-0 IC: rank-IC of daily turnover_zscore vs next-1d/5d excess-vs-_HSI. DSR n_trials=30 + split-half.",
+        "cadence": "daily (trading days, Asia session)",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:hkca-x1-atwin-readthrough",
+      "source_system": "experiments",
+      "subject_id": "hkca-x1-atwin-readthrough",
+      "subject_type": "validation",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2027-07-03",
+      "as_of": null,
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": null,
+        "cadence": null,
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:r1-removal-risk-gate",
+      "source_system": "experiments",
+      "subject_id": "r1-removal-risk-gate",
+      "subject_type": "phase0_calibration",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2027-07-03",
+      "as_of": null,
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": null,
+        "cadence": null,
+        "status": "no_go"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:w2c-hc-readthrough",
+      "source_system": "experiments",
+      "subject_id": "w2c-hc-readthrough",
+      "subject_type": "phase0_verdict",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2027-07-03",
+      "as_of": null,
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": null,
+        "cadence": null,
+        "status": "closed_no_go"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:w3a-abnormal-turnover",
+      "source_system": "experiments",
+      "subject_id": "w3a-abnormal-turnover",
+      "subject_type": "phase0_verdict",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2027-07-03",
+      "as_of": null,
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": null,
+        "cadence": null,
+        "status": "closed_no_go"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:w3b-max-lottery-screen",
+      "source_system": "experiments",
+      "subject_id": "w3b-max-lottery-screen",
+      "subject_type": "phase0_verdict",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2027-07-03",
+      "as_of": null,
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": null,
+        "cadence": null,
+        "status": "closed_no_go"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:hkca-cbank-season-pead",
+      "source_system": "experiments",
+      "subject_id": "hkca-cbank-season-pead",
+      "subject_type": "phase0_backtest",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2027-08-01",
+      "as_of": "2026-07-03",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "In-tree backtest, no forward ledger. Season leg decision-grade NOW (101/65 non-overlapping episodes). PEAD structurally under-powered on 5y panel (20 events, 2 misses). DSR>=0.90 the only GO door — not cleared (XFN DSR 0.013).",
+        "cadence": "quarterly",
+        "status": "registered"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:c5-ciro-short-delta",
+      "source_system": "experiments",
+      "subject_id": "c5-ciro-short-delta",
+      "subject_type": "phase0_verdict",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2028-01-15",
+      "as_of": null,
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": null,
+        "cadence": null,
+        "status": "accrue-data"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:ciro-short-panel",
+      "source_system": "experiments",
+      "subject_id": "ciro-short-panel",
+      "subject_type": "data_collection",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2028-01-15",
+      "as_of": null,
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": null,
+        "cadence": null,
+        "status": "frozen-historical"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:hkca-c1b-commodity-flip-protective",
+      "source_system": "experiments",
+      "subject_id": "hkca-c1b-commodity-flip-protective",
+      "subject_type": "phase0_backtest",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2028-01-15",
+      "as_of": null,
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": null,
+        "cadence": null,
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:hkca-h5-peg-liquidity",
+      "source_system": "experiments",
+      "subject_id": "hkca-h5-peg-liquidity",
+      "subject_type": "phase0_backtest",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2028-01-15",
+      "as_of": "2026-07-03",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "In-tree backtest, no forward ledger. Conditioner-grade: bar = directional consistency + drawdown separation + split-half sign stability, NOT DSR>=0.90 (few regimes 2018->, per masterplan §6.1). Binding effective-N = independent debounced episodes (5 EASY / ~8 econ-distinct TIGHT), NOT daily rows (bootstrap t_eff=t_raw because signal is a persistent regime block not a daily event).",
+        "cadence": "quarterly",
+        "status": "registered"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:china-policy-events-fa-banks-rel",
+      "source_system": "experiments",
+      "subject_id": "china-policy-events-fa-banks-rel",
+      "subject_type": "forward_accrual",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2028-07-01",
+      "as_of": "2026-07-06",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "K>=28 at H=20 AND Newey-West HAC-t>=2.0 positive AND BH-FDR q<=0.10 AND DSR>=0.90 AND split-half same sign.",
+        "cadence": "per_event",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "data/experiments/china_policy_events_results.json"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "experiments:china-policy-events-fb-restate-rel",
+      "source_system": "experiments",
+      "subject_id": "china-policy-events-fb-restate-rel",
+      "subject_type": "forward_accrual",
+      "owner_program": null,
+      "clock_type": "come_back_on",
+      "due_at": "2029-01-01",
+      "as_of": "2026-07-06",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "maturation": "K>=25 at H=20 AND Newey-West HAC-t>=2.0 positive AND BH-FDR q<=0.10 AND DSR>=0.90 AND split-half same sign.",
+        "cadence": "per_event",
+        "status": "accruing"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "data/experiments/china_policy_events_results.json"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "qledger:altdata",
+      "source_system": "qledger",
+      "subject_id": "altdata",
+      "subject_type": "claim_family",
+      "owner_program": null,
+      "clock_type": "check_by",
+      "due_at": null,
+      "as_of": null,
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "n_open": 133,
+        "n_past_check_by": 0
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "data/qledger/claims.jsonl"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "qledger:policy",
+      "source_system": "qledger",
+      "subject_id": "policy",
+      "subject_type": "claim_family",
+      "owner_program": null,
+      "clock_type": "check_by",
+      "due_at": null,
+      "as_of": null,
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "n_open": 13,
+        "n_past_check_by": 0
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "data/qledger/claims.jsonl"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "qledger:radar",
+      "source_system": "qledger",
+      "subject_id": "radar",
+      "subject_type": "claim_family",
+      "owner_program": null,
+      "clock_type": "check_by",
+      "due_at": null,
+      "as_of": null,
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "n_open": 2489,
+        "n_past_check_by": 0
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "data/qledger/claims.jsonl"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "trial_ledger:alpha_grammar_confluence_v1",
+      "source_system": "trial_ledger",
+      "subject_id": "alpha_grammar_confluence_v1",
+      "subject_type": "family",
+      "owner_program": null,
+      "clock_type": "fdr_batch_due",
+      "due_at": null,
+      "as_of": "2026-07-05",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "n_trials": 565,
+        "last_ts": "2026-07-05T13:53:25.947929+00:00"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "data/trial_ledger.jsonl"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "trial_ledger:esx_ev_blackout",
+      "source_system": "trial_ledger",
+      "subject_id": "esx_ev_blackout",
+      "subject_type": "family",
+      "owner_program": null,
+      "clock_type": "fdr_batch_due",
+      "due_at": null,
+      "as_of": "2026-07-05",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "n_trials": 10,
+        "last_ts": "2026-07-05T11:40:59.754264+00:00"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "data/trial_ledger.jsonl"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "trial_ledger:esx_htf_turn",
+      "source_system": "trial_ledger",
+      "subject_id": "esx_htf_turn",
+      "subject_type": "family",
+      "owner_program": null,
+      "clock_type": "fdr_batch_due",
+      "due_at": null,
+      "as_of": "2026-07-06",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "n_trials": 13,
+        "last_ts": "2026-07-06T07:44:15.597040+00:00"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "data/trial_ledger.jsonl"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "trial_ledger:esx_insider_sponsor",
+      "source_system": "trial_ledger",
+      "subject_id": "esx_insider_sponsor",
+      "subject_type": "family",
+      "owner_program": null,
+      "clock_type": "fdr_batch_due",
+      "due_at": null,
+      "as_of": "2026-07-06",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "n_trials": 12,
+        "last_ts": "2026-07-06T07:15:43.583041+00:00"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "data/trial_ledger.jsonl"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "trial_ledger:esx_macro_release",
+      "source_system": "trial_ledger",
+      "subject_id": "esx_macro_release",
+      "subject_type": "family",
+      "owner_program": null,
+      "clock_type": "fdr_batch_due",
+      "due_at": null,
+      "as_of": "2026-07-06",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "n_trials": 10,
+        "last_ts": "2026-07-06T08:15:24.484276+00:00"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "data/trial_ledger.jsonl"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "trial_ledger:esx_ql_overlay",
+      "source_system": "trial_ledger",
+      "subject_id": "esx_ql_overlay",
+      "subject_type": "family",
+      "owner_program": null,
+      "clock_type": "fdr_batch_due",
+      "due_at": null,
+      "as_of": "2026-07-05",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "n_trials": 11,
+        "last_ts": "2026-07-05T12:48:18.382978+00:00"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "data/trial_ledger.jsonl"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "trial_ledger:hk_canada_h3",
+      "source_system": "trial_ledger",
+      "subject_id": "hk_canada_h3",
+      "subject_type": "family",
+      "owner_program": null,
+      "clock_type": "fdr_batch_due",
+      "due_at": null,
+      "as_of": "2026-07-06",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "n_trials": 11,
+        "last_ts": "2026-07-06T11:09:22.144203+00:00"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "data/trial_ledger.jsonl"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "trial_ledger:intl_bridge",
+      "source_system": "trial_ledger",
+      "subject_id": "intl_bridge",
+      "subject_type": "family",
+      "owner_program": null,
+      "clock_type": "fdr_batch_due",
+      "due_at": null,
+      "as_of": "2026-07-02",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "n_trials": 18,
+        "last_ts": "2026-07-02T11:28:17.901682+00:00"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "data/trial_ledger.jsonl"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "trial_ledger:other",
+      "source_system": "trial_ledger",
+      "subject_id": "other_84_families",
+      "subject_type": "family",
+      "owner_program": null,
+      "clock_type": "fdr_batch_due",
+      "due_at": null,
+      "as_of": "2026-07-07",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "n_trials": 201,
+        "n_families": 84
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "data/trial_ledger.jsonl"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "trial_ledger:regime",
+      "source_system": "trial_ledger",
+      "subject_id": "regime",
+      "subject_type": "family",
+      "owner_program": null,
+      "clock_type": "fdr_batch_due",
+      "due_at": null,
+      "as_of": "2026-07-02",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "n_trials": 23,
+        "last_ts": "2026-07-02T05:09:29.505012+00:00"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "data/trial_ledger.jsonl"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "trial_ledger:sector_pulse_heat",
+      "source_system": "trial_ledger",
+      "subject_id": "sector_pulse_heat",
+      "subject_type": "family",
+      "owner_program": null,
+      "clock_type": "fdr_batch_due",
+      "due_at": null,
+      "as_of": "2026-07-04",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "n_trials": 13,
+        "last_ts": "2026-07-04T00:50:42.438310+00:00"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "data/trial_ledger.jsonl"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "trial_ledger:short_side",
+      "source_system": "trial_ledger",
+      "subject_id": "short_side",
+      "subject_type": "family",
+      "owner_program": null,
+      "clock_type": "fdr_batch_due",
+      "due_at": null,
+      "as_of": "2026-07-06",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "n_trials": 24,
+        "last_ts": "2026-07-06T15:14:57.191136+00:00"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "data/trial_ledger.jsonl"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "trial_ledger:slf006_auction_absorption",
+      "source_system": "trial_ledger",
+      "subject_id": "slf006_auction_absorption",
+      "subject_type": "family",
+      "owner_program": null,
+      "clock_type": "fdr_batch_due",
+      "due_at": null,
+      "as_of": "2026-07-06",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "n_trials": 12,
+        "last_ts": "2026-07-06T11:06:06.640443+00:00"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "data/trial_ledger.jsonl"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "trial_ledger:slf048_wiki_attention",
+      "source_system": "trial_ledger",
+      "subject_id": "slf048_wiki_attention",
+      "subject_type": "family",
+      "owner_program": null,
+      "clock_type": "fdr_batch_due",
+      "due_at": null,
+      "as_of": "2026-07-06",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "n_trials": 24,
+        "last_ts": "2026-07-06T11:09:50.477983+00:00"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "data/trial_ledger.jsonl"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "trial_ledger:slf055_dealer_stress",
+      "source_system": "trial_ledger",
+      "subject_id": "slf055_dealer_stress",
+      "subject_type": "family",
+      "owner_program": null,
+      "clock_type": "fdr_batch_due",
+      "due_at": null,
+      "as_of": "2026-07-06",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "n_trials": 15,
+        "last_ts": "2026-07-06T11:37:27.012383+00:00"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "data/trial_ledger.jsonl"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "trial_ledger:slf056_funding_tail",
+      "source_system": "trial_ledger",
+      "subject_id": "slf056_funding_tail",
+      "subject_type": "family",
+      "owner_program": null,
+      "clock_type": "fdr_batch_due",
+      "due_at": null,
+      "as_of": "2026-07-06",
+      "state": "accruing",
+      "date_state": "accruing",
+      "readiness": {
+        "n_trials": 14,
+        "last_ts": "2026-07-06T11:06:52.261461+00:00"
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "data/trial_ledger.jsonl"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    }
+  ],
+  "gaps": [
+    "freshness: data/neuralweb/health.json not present (first nightly will create it)",
+    "cortex: data/neuralweb/machine_registry.jsonl not present (empty by design)"
+  ],
+  "caveats": [
+    "display_only: routes attention; cannot promote, retire, or mutate any source system",
+    "deterministic: no LLM in the loop; all text template-filled from source ledgers",
+    "date-due is not decision-ready: rows demote to not_ready/blocked when evidence floors are unmet"
+  ]
+}

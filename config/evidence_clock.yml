@@ -1,0 +1,47 @@
+schema: evidence_clock.config.v1
+grace_days: 7
+snooze_days: 7
+packet_stub_cap: 10
+sources:
+  experiments:
+    enabled: true
+  research_factory:
+    enabled: true
+  qledger:
+    enabled: true
+  trial_ledger:
+    enabled: true
+    family_cap: 15
+  freshness:
+    enabled: true
+  governance:
+    enabled: true
+  cortex:
+    enabled: true
+  rule_experiments:
+    enabled: true
+  cycle_pattern:
+    enabled: true
+  species:
+    enabled: true
+expected_artifacts:
+  - path: data/neuralweb/research_queue.json
+    producer: "python -m scripts.build_research_queue"
+    note: "manual builder; referenced by research_factory_ingest"
+declared_clocks:
+  - clock_id: "declared:cortex-fdr-batch-2026-10"
+    subject_id: cortex_kernel_batch
+    subject_type: family
+    owner_program: neural-web
+    clock_type: fdr_batch_due
+    due_at: "2026-10-01"
+    note: "kernel FDR batch; NW masterplan standing clock"
+    trial_family: cortex
+  - clock_id: "declared:nw-weights-review-2027-05"
+    subject_id: nw_weights
+    subject_type: authority
+    owner_program: neural-web
+    clock_type: human_review_due
+    due_at: "2027-05-01"
+    note: "NW weights review; NW masterplan standing clock"
+migration_note: "declared_clocks is a stopgap; prefer registering come-backs in data/experiments/registry_seed.json (RF-9)."
