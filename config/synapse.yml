@@ -6256,3 +6256,41 @@ artifacts:
       gh unavailable or errored → exit 0, file untouched.
       ADVISORY ONLY — gates nothing in CI or the pipeline. Single writer:
       scripts/build_active_build_map.py (active_build_map nightly job).
+  # --- Ruling Graph v1 (RUL-CL-1/11/12) ---
+  # Display/context-only case-law registry. on-demand: regenerated at PR-time by
+  # scripts/build_ruling_graph.py, not by the nightly engine. daily-engine would be
+  # incorrect (no nightly run), so on-demand (the nearest legal cadence value) is used.
+  # This artifact never gates, ranks, scores, or blocks builds (RUL-CL-12).
+  site-neuralweb-ruling-graph:
+    path: site/neuralwebdata/ruling_graph.json
+    format: json
+    producer: scripts/build_ruling_graph.py
+    known_extra_writers: []
+    owner_program: neural-web
+    cadence: on-demand
+    storage: git
+    asof_field: null
+    freshness_sla_hours: 8760
+    schema: neuralweb.ruling_graph.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      Advisory air-traffic-control artifact for multi-agent sessions.
+      Records open PRs (with file lists and protected-path flags), pairwise
+      file collision pairs, and recent merges (14-day window). Fail-open:
+      gh unavailable or errored → exit 0, file untouched.
+      ADVISORY ONLY — gates nothing in CI or the pipeline. Single writer:
+      scripts/build_active_build_map.py (active_build_map nightly job).
+      Display/context-only case-law registry (RUL-CL-12: authority_ceiling A1_EXPLAIN;
+      all authority booleans false; never gates, ranks, scores, or blocks a build).
+      Public rows only (public_research privacy_class; RUL-CL-9). Source of truth is
+      config/ruling_graph.yml; this JSON is a deterministic build product
+      (scripts/build_ruling_graph.py). CI: scripts/check_ruling_conflicts.py + ruling-graph
+      job in .github/workflows/ci.yml. Cadence note: on-demand (PR-time regeneration)
+      is the closest legal cadence value for this git artifact — it is not nightly.
+      Come-back waves W2-W4: cortex read-only tools, admin panel tab, Research Factory
+      packet hook (registered in research/RULING_GRAPH_ADJUDICATION_BY_FABLE.md §Come-back).

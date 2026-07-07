@@ -156,6 +156,14 @@ on:
       - ".gitignore"
       - "engine/operator_grading.py"
       - "research/MASTERMIND_FEEDBACK_CONTRACT_PROGRAM.md"
+      # Ruling Graph v1: canonical case-law store, conflict checker, tests, generated docs.
+      - "config/ruling_graph.yml"
+      - "scripts/build_ruling_graph.py"
+      - "scripts/check_ruling_conflicts.py"
+      - "tests/test_ruling_graph.py"
+      - "docs/NEURAL_WEB_CASE_LAW.md"
+      - "site/neuralwebdata/ruling_graph.json"
+      - "data/neuralweb/ruling_conflicts_allowlist.json"
   workflow_dispatch:
 
 permissions:
@@ -591,6 +599,41 @@ jobs:
         run: python3 scripts/check_private_boundary.py
       - name: privacy-boundary test suite
         run: python3 -m pytest tests/test_check_private_boundary.py -q
+
+  ruling-graph:
+    # Ruling Graph v1 (RUL-CL-1/6/7/8/11/12): canonical case-law registry guard.
+    # Checks that:
+    #   - committed site JSON + case-law doc match YAML regeneration (--check)
+    #   - conflict checker finds no hard violations in changed files
+    #   - conflict checker selftest fires on planted violations
+    #   - all test_ruling_graph.py assertions pass
+    # The graph is display-only (RUL-CL-12: authority_ceiling A1_EXPLAIN).
+    # Mirrors cycle-pattern-authority pattern.
+    # fetch-depth 0 + explicit base fetch: the checker needs `git merge-base HEAD
+    # origin/main` for its diff-scoped H1/H2/W1 scans. On a shallow checkout there
+    # is no base ref, the checker degrades to skip-diff-checks, and the job goes
+    # green while guarding nothing — the #1195 shallow-cut incident class (see the
+    # board-contradictions job above).
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pyyaml
+      - name: build check (committed outputs match YAML regeneration byte-for-byte)
+        run: python scripts/build_ruling_graph.py --check
+      - name: conflict checker (hard fail on new FDR family or privacy boundary violations)
+        run: |
+          git fetch origin ${{ github.base_ref || 'main' }}
+          RULING_DIFF_BASE="origin/${{ github.base_ref || 'main' }}" python scripts/check_ruling_conflicts.py
+      - name: conflict checker selftest (gate fires on planted violations)
+        run: python scripts/check_ruling_conflicts.py --selftest
+      - name: ruling graph test suite
+        run: python -m pytest tests/test_ruling_graph.py -q
 
   contract-drift:
     # NW Rails PR-7 (R4 contract governance): checks that each artifact in
