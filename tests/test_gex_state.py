@@ -221,20 +221,22 @@ class TestRegimePassport:
         assert result == source  # exact copy, not a reconstruction
 
     def test_passport_rebuilt_when_absent(self):
-        """When source_passport is None, passport is rebuilt from symbol."""
+        """When source_passport is None, passport is rebuilt from symbol.
+        basis must be 'assumption' to match gex_engine._gamma_regime_passport exactly."""
         result = _make_regime_passport("SPY", None)
-        assert result["basis"] == "dealer-short-assumption"
+        assert result["basis"] == "assumption"
         assert result["is_index_product"] is True
         assert result["structurally_constant"] is False  # index → not structurally constant
 
     def test_passport_single_name(self):
         result = _make_regime_passport("NVDA", None)
+        assert result["basis"] == "assumption"
         assert result["is_index_product"] is False
         assert result["structurally_constant"] is True  # single name → constant product attribute
 
     def test_passport_none_symbol(self):
         result = _make_regime_passport(None, None)
-        assert result["basis"] == "dealer-short-assumption"
+        assert result["basis"] == "assumption"
         assert result["is_index_product"] is None
         assert result["structurally_constant"] is None
 
@@ -586,3 +588,117 @@ class TestComputeGexStateRegimes:
             assert state is not None, f"ratio={ratio} dist={dist} returned None"
             errors = validate_gex_state(state)
             assert errors == [], f"ratio={ratio} dist={dist} validation errors: {errors}"
+
+
+# ===========================================================================
+# 11. Noise-floor regression (Fix 1): spot=500, net_gex=0.5 $mn must NOT trigger noise-floor
+# ===========================================================================
+
+class TestNoisFloorRegression:
+    """Regression for the 1000x noise-floor constant bug (1.0 $mn instead of 0.001 $mn).
+
+    Spec §6.1: noise floor = max(1000, spot * 100) raw dollars
+              = max(0.001, spot * 100 / 1e6) $mn.
+    For spot=500 the floor is max(0.001, 0.05) = 0.05 $mn ($50,000).
+    A name with total_abs=0.5 $mn ($500,000) must NOT hit the noise floor
+    and must NOT be forced to RANGE.  With the buggy constant (1.0 $mn),
+    0.5 < 1.0 would have triggered noise_floor_hit=True.
+    """
+
+    def test_500k_net_gex_not_noise_floor_spot_500(self):
+        """$500K net GEX (0.5 $mn) at spot=500 clears spec noise floor of $50K."""
+        # 0.5 $mn split 60/40 → stability_ratio = 0.60
+        by_strike = [
+            _make_strike(510.0,  0.3),   # positive
+            _make_strike(490.0, -0.2),   # negative
+        ]
+        pct, ratio, noise = _stability_from_walls(by_strike, 500.0)
+        # Must NOT hit noise floor: total_abs=0.5 $mn >> spec floor=0.05 $mn
+        assert noise is False, (
+            f"noise_floor_hit=True for 0.5 $mn total at spot=500 — "
+            f"spec floor is 0.05 $mn ($50K), constant was 1000x too large"
+        )
+        assert pct == pytest.approx(60.0)
+        assert ratio == pytest.approx(0.60)
+
+    def test_noise_floor_value_at_spot_500(self):
+        """Noise floor at spot=500 should be 0.05 $mn ($50,000), not 1.0 $mn."""
+        # Values just below the correct floor (0.04 $mn) must trip the guard
+        by_strike = [_make_strike(500.0, 0.04)]
+        pct, ratio, noise = _stability_from_walls(by_strike, 500.0)
+        assert noise is True, "0.04 $mn total at spot=500 should trip spec noise floor of 0.05 $mn"
+
+    def test_noise_floor_value_at_spot_500_just_above(self):
+        """Values just above the spec floor (0.06 $mn) must NOT trip the guard."""
+        by_strike = [_make_strike(500.0, 0.06)]
+        pct, ratio, noise = _stability_from_walls(by_strike, 500.0)
+        assert noise is False, "0.06 $mn total at spot=500 should clear spec noise floor of 0.05 $mn"
+
+    def test_noise_floor_value_at_spot_10(self):
+        """At spot=10, spec floor = max(0.001, 10*100/1e6) = max(0.001, 0.001) = 0.001 $mn."""
+        # 0.0005 $mn below floor → trips
+        by_strike = [_make_strike(10.0, 0.0005)]
+        pct, ratio, noise = _stability_from_walls(by_strike, 10.0)
+        assert noise is True
+
+    def test_small_name_not_forced_range_when_above_floor(self):
+        """A small single name with 0.5 $mn GEX at spot=500 must not be classified RANGE
+        solely because of the noise floor — it has real GEX structure."""
+        by_strike = [
+            _make_strike(510.0,  0.3),
+            _make_strike(490.0, -0.2),
+            _make_strike(505.0,  0.1),
+            _make_strike(495.0, -0.1),
+        ]
+        model = _make_model(spot=500.0, by_strike=by_strike)
+        state = compute_gex_state(model, "NVDA", asof=ASOF)
+        assert state is not None
+        # With a 0.6 stability ratio it should be RANGE (from classifier),
+        # not RANGE-from-noise-floor — the noise flag should be absent from the note.
+        assert "noise-floor" not in state["reliability"]["note"]
+
+
+# ===========================================================================
+# 12. Passport propagation regression (Fix 2): gex_model.build_model must include
+#     regime_passport in summary so that compute_gex_state copies it verbatim.
+# ===========================================================================
+
+class TestPassportPropagationFromBuildModel:
+    """Regression for the passport propagation gap.
+
+    gex_model.build_model constructs summary but (pre-fix) never copied
+    regime_passport from compute_gex.  As a result source_passport was always
+    None and _make_regime_passport always rebuilt it — emitting basis='assumption'
+    while the engine emits basis='assumption' (but any future drift in either
+    would go undetected).  The fix adds regime_passport to the summary dict.
+    """
+
+    def test_build_model_summary_carries_regime_passport(self):
+        """build_model summary must contain 'regime_passport' propagated from compute_gex."""
+        import pandas as pd
+        from engine.gex_model import build_model
+
+        # Minimal chain: 50 rows to clear the thin_chain guard
+        n = 50
+        spot = 500.0
+        rng = range(n)
+        chain = pd.DataFrame({
+            "K": [spot * (0.9 + 0.004 * i) for i in rng],
+            "T": [0.083] * n,            # ~1 month
+            "iv": [0.20] * n,
+            "oi": [1000] * n,
+            "is_call": [i % 2 == 0 for i in rng],
+            "expiry": [pd.Timestamp("2026-08-15")] * n,
+        })
+        model = build_model(chain, spot, meta={"key": "SPY"})
+        assert model is not None, "build_model returned None for a valid 50-row chain"
+        summary = model.get("summary", {})
+        assert "regime_passport" in summary, (
+            "build_model summary is missing 'regime_passport' — "
+            "gex_state.compute_gex_state will always rebuild it instead of copying verbatim"
+        )
+        passport = summary["regime_passport"]
+        assert isinstance(passport, dict)
+        assert passport.get("basis") == "assumption", (
+            f"Expected basis='assumption' (from gex_engine), got {passport.get('basis')!r}"
+        )

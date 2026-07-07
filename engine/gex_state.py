@@ -26,8 +26,10 @@ DESIGN CHOICES (documented here because some thresholds are OURS):
     per-name parquet carries 'spot' + 'net_gex_bn' per date — the by-strike history
     is NOT stored (the daily collector only writes the summary row), so oi_delta
     computation falls back to empty lists with a note.
-  • regime_passport: COPIED VERBATIM from gex_engine._gamma_regime_passport — never
-    re-derived here.
+  • regime_passport: propagated verbatim from gex_engine._gamma_regime_passport via
+    gex_model.build_model → summary['regime_passport'] → compute_gex_state source_passport.
+    Falls back to _make_regime_passport (identical logic, basis='assumption') when the
+    build_model caller omits it (test stubs / legacy paths).
 
 EPISTEMIC LAWS (binding):
   • No "validated" wording anywhere in this module.
@@ -58,7 +60,9 @@ _CLOSE_FLIP_PCT = 0.005  # |dist_to_flip_pct| / 100 < 0.5%
 # returns RANGE as a safe fallback and sets a regime_noise_floor=True reliability flag.
 # OURS: spec says UNKNOWN; we map that to RANGE + flag to avoid a 7th regime value
 # that the schema validator would reject.
-_NOISE_FLOOR_MULTIPLIER = 100.0  # noise_floor = max(1000, spot * _NOISE_FLOOR_MULTIPLIER)
+# Spec §6.1: max(1000, spot * 100) in raw dollars = max(0.001, spot * 100 / 1e6) in $mn.
+# The constant term is 0.001 $mn ($1,000) — NOT 1.0 $mn ($1,000,000).
+_NOISE_FLOOR_MULTIPLIER = 100.0  # noise_floor = max(0.001, spot * _NOISE_FLOOR_MULTIPLIER / 1e6)
 
 # ── oi_delta fallback note ────────────────────────────────────────────────────
 _OI_DELTA_NOTE = (
@@ -73,12 +77,18 @@ _OI_DELTA_NOTE = (
 def _make_regime_passport(symbol: str | None, source_passport: dict | None = None) -> dict:
     """Copy the regime_passport verbatim from the engine summary when present;
     otherwise rebuild it from first principles (identical logic to
-    gex_engine._gamma_regime_passport)."""
+    gex_engine._gamma_regime_passport).
+
+    The fallback uses basis='assumption' to match gex_engine._gamma_regime_passport
+    exactly (not 'dealer-short-assumption').  In production the rebuild path should
+    rarely fire because gex_model.build_model now propagates regime_passport from
+    compute_gex into summary; this fallback exists only for test stubs and legacy callers.
+    """
     if source_passport and isinstance(source_passport, dict) and source_passport.get("basis"):
         return dict(source_passport)
     is_index = bool(symbol) and str(symbol).upper() in _INDEX_PRODUCTS
     return {
-        "basis": "dealer-short-assumption",
+        "basis": "assumption",
         "structurally_constant": (not is_index) if symbol else None,
         "is_index_product": is_index if symbol else None,
         "verdict": "display-only",
@@ -145,6 +155,15 @@ def _stability_from_walls(by_strike: list[dict], spot: float) -> tuple[float | N
     The walls ladder (gex_model.strike_walls) carries net_mn ($ million) per strike.
     We filter to within ±20% of spot per the spec, then compute the ratio.
 
+    OURS (deviation from spec §6.1): spec sums over ALL strikes within ±20% of spot.
+    The input walls.by_strike is produced by gex_model.strike_walls with
+    wall_window_pct=0.12 (±12%) and wall_max_strikes=40 (top-40 by absolute dollar-gamma).
+    The ±20% filter below is therefore a no-op — the input is already truncated to the
+    ±12% heaviest-strike subset.  This means stability_pct is computed over a biased,
+    heaviest-strike window that is narrower than the spec prescribes.  The deviation is
+    documented here as OURS; sourcing stability from a full ±20% ladder would require
+    passing the raw chain through separately and is deferred.
+
     Returns (stability_pct, stability_ratio, noise_floor_hit).
     """
     if not by_strike or not spot or spot <= 0:
@@ -168,7 +187,8 @@ def _stability_from_walls(by_strike: list[dict], spot: float) -> tuple[float | N
             neg_gex += abs(net_mn)
 
     total_abs = pos_gex + neg_gex
-    noise_floor = max(1.0, spot * _NOISE_FLOOR_MULTIPLIER / 1_000_000.0)  # in $mn
+    # Spec §6.1: max(1000, spot * 100) raw dollars → max(0.001, spot * 100 / 1e6) $mn.
+    noise_floor = max(0.001, spot * _NOISE_FLOOR_MULTIPLIER / 1_000_000.0)  # in $mn
     if total_abs < noise_floor:
         return None, None, True  # noise_floor_hit=True
 
@@ -186,8 +206,15 @@ def _pin_probability(by_strike: list[dict], spot: float, max_pain: float | None)
     probability = min(0.95, bestScore / totalScore)
 
     We use the by_strike ladder from gex_model which carries call_oi + put_oi.
-    avgGamma is not directly in the ladder; we use |net_mn| as a proxy (it is
-    proportional to the net absolute gamma concentration per strike).
+    avgGamma is not directly in the ladder; we use |net_mn| as a proxy.
+
+    OURS (deviation from spec §7.4): spec uses avgGamma = (callGamma + putGamma) / 2,
+    which is an unsigned aggregate and is highest at balanced high-OI strikes.
+    We substitute |net_mn| (signed net dollar-gamma), which collapses to ~0 when
+    call and put gamma are equal — the opposite of the spec's intent at true pin strikes.
+    A strike with high, offsetting call/put gamma gets net_mn≈0 and score≈0, under-ranking
+    it vs the spec.  The deviation is documented here as OURS; correcting it would require
+    per-side dollar-gamma columns in the walls ladder (not currently computed).
 
     Returns None when there are fewer than 3 usable strikes (thin chain guard).
     """

@@ -285,7 +285,6 @@ def _write_gex_state(model: dict, key: str, gex_state_dir: "Path") -> None:
     """
     from engine.gex_state import compute_gex_state
     from engine.options_structure import validate_gex_state
-    from datetime import date
 
     try:
         asof = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S+00:00")
