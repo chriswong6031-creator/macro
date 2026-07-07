@@ -57,13 +57,37 @@
       "pit_class": "pit_pure",
       "source": "hazard price_c4414dcb price feature"
     },
+    "mmacd_hist": {
+      "pit_class": "pit_pure",
+      "source": "monthly RSI-MACD (confluence_tiers._rsi_macd, pinned ESX-RUL-31)"
+    },
+    "mmacd_sign": {
+      "pit_class": "pit_pure",
+      "source": "monthly RSI-MACD (confluence_tiers._rsi_macd, pinned ESX-RUL-31)"
+    },
+    "mmacd_slope": {
+      "pit_class": "pit_pure",
+      "source": "monthly RSI-MACD (confluence_tiers._rsi_macd, pinned ESX-RUL-31)"
+    },
     "mom_score": {
       "pit_class": "pit_pure",
       "source": "hazard price_c4414dcb price feature"
     },
+    "mstoch_d": {
+      "pit_class": "pit_pure",
+      "source": "monthly StochRSI K/D (confluence_tiers._stoch_rsi_kd, pinned ESX-RUL-31)"
+    },
+    "mstoch_k": {
+      "pit_class": "pit_pure",
+      "source": "monthly StochRSI K/D (confluence_tiers._stoch_rsi_kd, pinned ESX-RUL-31)"
+    },
     "native_id": {
       "pit_class": "pit_pure",
       "source": "registry+backfill key"
+    },
+    "osc_missing": {
+      "pit_class": "pit_pure",
+      "source": "True: <40 completed monthly bars or no daily tape (no-yahoo engines)"
     },
     "osc_slope": {
       "pit_class": "engine_stamped",
