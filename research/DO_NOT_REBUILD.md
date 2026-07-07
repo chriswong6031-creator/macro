@@ -34,6 +34,9 @@ curated, not generated. Do not build an extractor.
 | rs-based member-dispersion gates | DON'T-TEST — rs is zero-sum tautology (R-4) | Healthcare member-dispersion adjudication |
 | Short-side lobe as directional shorting | FORBIDDEN — L1 is AVOID-not-SHORT evidence only | NW rails+lobes program (2026-07-06) |
 | Signal-engine verdicts at non-pre-declared horizons | FORBIDDEN — verdicts only at registered `horizon_role` ruler | Backtest-horizon ladder law |
+| Parallel shock-vector classifier beside `market_drivers` (12-type re-vocabulary) | REJECT-REDUNDANT — `snapshot()` is the canonical shock read; crosswalk printed | TI-R1, `TECH_INTERNALS_CODEX_ADJUDICATION_BY_FABLE.md` |
+| Shock→archetype beneficiary/casualty ("shelter") map as an NW/brain feed | KILLED — laundered directional escalation on nulled continuation claims | TI-R5, `TECH_INTERNALS_CODEX_ADJUDICATION_BY_FABLE.md` |
+| LLM classification of narrative-only shock types (tariff/regulatory/cyber/edge/consumer) into calibrated keys | FORBIDDEN — no deterministic price basis; A7 ORIGINATE ban | TI-R1, `TECH_INTERNALS_CODEX_ADJUDICATION_BY_FABLE.md` |
 
 ## 2. Killed / refuted signal families and theses
 
@@ -83,6 +86,7 @@ curated, not generated. Do not build an extractor.
 | G1 | DEFERRED | Long-hold thesis program (#1507/#1588) |
 | W-F (options) | PARKED until preconditions (1)+(2) | Options→NW masterplan |
 | CODEOWNERS / branch protection | DEFERRED to RF codegen lane scope | ABM-R3; `RF_CODEGEN_LANE_FOR_FABLE.md` |
+| Per-ticker multi-label business-model exposure tags (tech) | DEFERRED — group-level taxonomy only; revive needs revenue-geography ingestion + own adjudication | TI-R2, `TECH_INTERNALS_CODEX_ADJUDICATION_BY_FABLE.md` |
 
 ## 5. Incorporated by reference
 
