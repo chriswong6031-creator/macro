@@ -290,8 +290,8 @@ details.memo-raw pre { font-size:11px; overflow-x:auto; color:var(--muted); whit
     </div>
     <div class="plain-eng">
       <strong>{{ t('In plain English:', '用白话说：') }}</strong>
-      {{ t('Each node is an engine, sector, regime, thesis, episode, module, or data artifact. The web shows all 551 structural relationships — feeds edges form the faint mesh, confirms (green) and contradicts (red) pulses highlight confirmed/contradicted signal pairs. Module and artifact nodes are inferred from the structural feeds edges (display-only). Zoom/pan to explore; click a node to see its neighbors.',
-      '每个节点代表引擎、板块、周期、论点、事件、模块或数据工件。网络展示全部551条结构关系——馈入边形成隐约网格，确认（绿色）和矛盾（红色）脉冲突出显示已确认/矛盾的信号对。模块和工件节点从结构性馈入边推断（展示用）。缩放/平移以探索；点击节点查看其邻居。') }}
+      {{ t('This is a curated map of the brain — engines grouped into four lobes (US Equity, China &amp; Intl, Signals &amp; Options, Macro &amp; Meta), each linked to the sectors, regimes, and theses they reason about. Bright <span style="color:var(--up)">green</span> and <span style="color:var(--down)">red</span> pulses are the only <em>graded</em> signals (co-firing confirms / contradictions). Thin structural links are for legibility (display-only). Toggle "wiring" to reveal the raw data-plumbing underlay. Zoom and pan to explore; click any node for its connections.',
+      '这是大脑的精选地图——引擎分为四个叶区（美股、中国及国际、信号与期权、宏观与元），分别连接至其推理的板块、周期和论点。亮<span style="color:var(--up)">绿色</span>和<span style="color:var(--down)">红色</span>脉冲是唯一<em>评分</em>信号（共触发确认/矛盾）。细结构连线仅供展示。切换"布线"可显示原始数据管道底层。缩放平移以探索；点击任意节点查看其连接。') }}
     </div>
     <div class="cm-loading" id="graph_loading">{{ t('Loading synapse map…', '加载突触地图中…') }}</div>
     <div class="graph-wrap" id="graph_wrap">
@@ -300,6 +300,7 @@ details.memo-raw pre { font-size:11px; overflow-x:auto; color:var(--muted); whit
         <button class="gc-btn" id="gc_plus" aria-label="Zoom in">+</button>
         <button class="gc-btn" id="gc_minus" aria-label="Zoom out">−</button>
         <button class="gc-btn" id="gc_fit" aria-label="Fit all" style="font-size:11px;width:auto;padding:0 8px"><span class="l-en">fit</span><span class="l-zh">适配</span></button>
+        <button class="gc-btn" id="gc_wire" style="font-size:11px;width:auto;padding:0 8px"><span class="l-en">wiring</span><span class="l-zh">布线</span></button>
         <button class="gc-btn" id="gc_fs" aria-label="Fullscreen" style="font-size:16px">⛶</button>
       </div>
       <div class="graph-tooltip" id="graph_tooltip"></div>
@@ -307,21 +308,19 @@ details.memo-raw pre { font-size:11px; overflow-x:auto; color:var(--muted); whit
     </div>
     <div id="graph_subset_note" style="font-size:0.82em;color:var(--muted);margin:0.5em 0 0.1em"></div>
     <div class="graph-legend" id="graph_legend">
-      <span class="gl-dot" style="background:#4da3ff"></span> <span class="l-en">Engine</span><span class="l-zh">引擎</span> &nbsp;
-      <span class="gl-dot" style="background:#8b7cf6"></span> <span class="l-en">Module</span><span class="l-zh">模块</span> &nbsp;
-      <span class="gl-dot" style="background:#38bdf8"></span> <span class="l-en">Artifact</span><span class="l-zh">数据工件</span> &nbsp;
-      <span class="gl-dot" style="background:#f59e0b"></span> <span class="l-en">Sector</span><span class="l-zh">板块</span> &nbsp;
+      <span class="gl-dot" style="background:#e2e8f0"></span> <span class="l-en">Core</span><span class="l-zh">核心</span> &nbsp;
+      <span class="gl-dot" style="background:#4da3ff"></span> <span class="l-en">US Equity</span><span class="l-zh">美股</span> &nbsp;
+      <span class="gl-dot" style="background:#f0883e"></span> <span class="l-en">China &amp; Intl</span><span class="l-zh">中国及国际</span> &nbsp;
+      <span class="gl-dot" style="background:#a78bfa"></span> <span class="l-en">Signals &amp; Options</span><span class="l-zh">信号与期权</span> &nbsp;
+      <span class="gl-dot" style="background:#2dd4bf"></span> <span class="l-en">Macro &amp; Meta</span><span class="l-zh">宏观与元</span> &nbsp;
       <span class="gl-dot" style="background:#f472b6"></span> <span class="l-en">Regime</span><span class="l-zh">周期</span> &nbsp;
-      <span class="gl-dot" style="background:#7d8aa0"></span> <span class="l-en">Thesis</span><span class="l-zh">论点</span> &nbsp;
-      <span class="gl-dot" style="background:#2dd4bf"></span> <span class="l-en">Episode</span><span class="l-zh">事件</span> &nbsp;&nbsp;
-      <span class="gl-line" style="background:rgba(34,197,94,.55);height:2px;border-radius:1px"></span> <span class="l-en">Confirms</span><span class="l-zh">确认</span> &nbsp;
-      <span class="gl-line" style="background:rgba(239,68,68,.6);height:2px;border-radius:1px;border-top:1px dashed rgba(239,68,68,.8)"></span> <span class="l-en">Contradicts</span><span class="l-zh">矛盾</span> &nbsp;
-      <span class="gl-dot" style="background:rgba(91,157,255,.4);width:8px;height:8px"></span> <span class="l-en">Moving light = signal transmission (refreshed nightly)</span><span class="l-zh">移动光点 = 信号传输（每晚刷新）</span>
+      <span class="gl-dot" style="background:#f5b301"></span> <span class="l-en">Sector</span><span class="l-zh">板块</span> &nbsp;
+      <span class="gl-dot" style="background:#7dd3fc"></span> <span class="l-en">Thesis</span><span class="l-zh">论点</span> &nbsp;&nbsp;
+      <span class="gl-line" style="background:rgba(34,197,94,.75);height:2.5px;border-radius:1px"></span> <span class="l-en">Confirms (graded)</span><span class="l-zh">确认（评分）</span> &nbsp;
+      <span class="gl-line" style="background:rgba(239,68,68,.75);height:2.5px;border-radius:1px;border-top:2px dashed rgba(239,68,68,.9)"></span> <span class="l-en">Contradicts (graded)</span><span class="l-zh">矛盾（评分）</span> &nbsp;
+      <span class="gl-line" style="background:rgba(100,130,180,.45);height:1px;border-radius:1px"></span> <span class="l-en">Structure (display-only)</span><span class="l-zh">结构（展示用）</span> &nbsp;
+      <span class="gl-dot" style="background:rgba(91,157,255,.5);width:7px;height:7px"></span> <span class="l-en">Moving light = signal transmission, refreshed nightly</span><span class="l-zh">移动光点 = 信号传输（每晚刷新）</span>
     </div>
-    <p style="font-size:11px;color:var(--muted);margin-top:6px">
-      <span class="l-en">All nodes shown, including module/artifact endpoints inferred from structural feeds edges (display-only).</span>
-      <span class="l-zh">显示所有节点，包括从结构性馈入边推断的模块/工件端点（展示用）。</span>
-    </p>
   </div>
 
   <!-- 3. NEURAL WEB DAILY BRIEF -->
@@ -802,7 +801,7 @@ details.memo-raw pre { font-size:11px; overflow-x:auto; color:var(--muted); whit
     };
   }
 
-  // ── Living synapse map (full engine rewrite) ──────────────────────────────
+  // ── Living synapse map (curated neural-web engine) ────────────────────────
   var _graphData = null;
   var _graphPositions = null;
   var _graphNodes = null;
@@ -818,44 +817,139 @@ details.memo-raw pre { font-size:11px; overflow-x:auto; color:var(--muted); whit
   var _graphDpr = Math.min(window.devicePixelRatio || 1, 2);
   var _graphHovered = null;
   var _tooltipThrottle = false;
+  var _graphShowWiring = false;
+  var _graphDefaultNodes = [];
+  var _graphDefaultEdges = [];
+  var _graphWiringNodes = [];
+  var _graphWiringEdges = [];
 
-  // Lobe center positions (normalized 0..1)
-  var LOBE_CENTERS = {
-    module:   { x: 0.16, y: 0.36 },
-    artifact: { x: 0.34, y: 0.60 },
-    engine:   { x: 0.52, y: 0.40 },
-    regime:   { x: 0.56, y: 0.12 },
-    sector:   { x: 0.80, y: 0.28 },
-    thesis:   { x: 0.28, y: 0.84 },
-    episode:  { x: 0.74, y: 0.78 }
+  // ── Curated display maps ──────────────────────────────────────────────────
+  var ENGINE_NAMES_EN = {
+    'altdata': 'Alt-Data', 'altdata_conv': 'Alt-Data Convergence',
+    'ca_board': 'Canada Board', 'china_news': 'China News',
+    'cn_board': 'China Board', 'cn_importance_v0': 'China Importance',
+    'cn_importance_v0_pit': 'China Importance (PIT)',
+    'desk:ai_desk': 'AI Desk', 'hk_board': 'Hong Kong Board',
+    'options_entry': 'Options Entry', 'placebo': 'Placebo (control)',
+    'policy': 'Policy', 'radar': 'Divergence Radar',
+    'reflex.cortex_attention': 'Cortex Attention',
+    'track_record': 'Track Record', 'us_board': 'US Board',
+    'us_importance_v0': 'US Importance', 'us_importance_v0_pit': 'US Importance (PIT)'
+  };
+  var ENGINE_NAMES_ZH = {
+    'altdata': '另类数据', 'altdata_conv': '另类数据汇合',
+    'ca_board': '加拿大板', 'china_news': '中国新闻',
+    'cn_board': '中国板', 'cn_importance_v0': '中国重要度',
+    'cn_importance_v0_pit': '中国重要度(PIT)',
+    'desk:ai_desk': 'AI 台', 'hk_board': '香港板',
+    'options_entry': '期权入场', 'placebo': '安慰剂(对照)',
+    'policy': '政策', 'radar': '背离雷达',
+    'reflex.cortex_attention': '皮层注意',
+    'track_record': '历史战绩', 'us_board': '美股板',
+    'us_importance_v0': '美股重要度', 'us_importance_v0_pit': '美股重要度(PIT)'
   };
 
-  var LOBE_NAMES_EN = { module:'MODULES', artifact:'ARTIFACTS', engine:'ENGINES', regime:'REGIMES', sector:'SECTORS', thesis:'THESES', episode:'EPISODES' };
-  var LOBE_NAMES_ZH = { module:'模块', artifact:'数据工件', engine:'引擎', regime:'周期', sector:'板块', thesis:'论点', episode:'事件' };
-
-  var NODE_COLORS = {
-    engine:   '#4da3ff',
-    module:   '#8b7cf6',
-    artifact: '#38bdf8',
-    sector:   '#f59e0b',
-    regime:   '#f472b6',
-    thesis:   '#7d8aa0',
-    episode:  '#2dd4bf'
+  // Map engine bare id (without engine: prefix) to lobe
+  var ENGINE_LOBE = {
+    'us_board': 'us', 'us_importance_v0': 'us', 'us_importance_v0_pit': 'us',
+    'radar': 'us', 'track_record': 'us',
+    'cn_board': 'intl', 'cn_importance_v0': 'intl', 'cn_importance_v0_pit': 'intl',
+    'china_news': 'intl', 'hk_board': 'intl', 'ca_board': 'intl',
+    'altdata': 'signals', 'altdata_conv': 'signals', 'options_entry': 'signals',
+    'policy': 'meta', 'reflex.cortex_attention': 'meta',
+    'placebo': 'meta', 'desk:ai_desk': 'meta'
   };
 
-  function nodeRadius(n, scale) {
-    var base;
+  var LOBE_COLORS = {
+    us: '#4da3ff', intl: '#f0883e', signals: '#a78bfa', meta: '#2dd4bf',
+    core: '#e2e8f0',
+    regime: '#f472b6', sector: '#f5b301', complex: '#f5b301',
+    thesis: '#7dd3fc', signal: '#94a3b8',
+    'wiring-module': '#8b7cf6', 'wiring-artifact': '#38bdf8'
+  };
+
+  var COMPLEX_MEMBERS = {
+    'complex:ai_compute': ['sector:xlk'],
+    'complex:software': ['sector:xlk', 'sector:xlc'],
+    'complex:healthcare_defensive': ['sector:xlv'],
+    'complex:consumer_staples_defensive': ['sector:xlp'],
+    'complex:energy_commodities': ['sector:xle', 'sector:xlb'],
+    'complex:financials_rates': ['sector:xlf'],
+    'complex:long_duration_growth': ['sector:xlre', 'sector:xlu'],
+    'complex:short_duration_value': ['sector:xli', 'sector:xly']
+  };
+  // Reverse: gics → complex
+  var GICS_TO_COMPLEX = {};
+  Object.keys(COMPLEX_MEMBERS).forEach(function(cx){
+    COMPLEX_MEMBERS[cx].forEach(function(gics){ if (!GICS_TO_COMPLEX[gics]) GICS_TO_COMPLEX[gics] = cx; });
+  });
+
+  // Lobe anchor angles (degrees from center) and radii (normalized)
+  // FIX 5: increased r from 0.26 → 0.34 to push lobes apart and fill the frame
+  var LOBE_ANCHORS = {
+    us:      { angle: 200, r: 0.34 },
+    intl:    { angle: 320, r: 0.34 },
+    signals: { angle: 90,  r: 0.34 },
+    meta:    { angle: 20,  r: 0.34 }
+  };
+
+  // Title-case a slug, then repair common acronyms the naive \b\w pass mangles
+  // ("ai_agents" → "Ai Agents" → "AI Agents"). Used by every fallback label path.
+  function titleCaseFix(s) {
+    s = String(s).replace(/\b\w/g, function(c){ return c.toUpperCase(); });
+    return s
+      .replace(/\bAi\b/g, 'AI').replace(/\bUs\b/g, 'US').replace(/\bIv\b/g, 'IV')
+      .replace(/\bDoi\b/g, 'DOI').replace(/\bGex\b/g, 'GEX').replace(/\bIpo\b/g, 'IPO')
+      .replace(/\bEtf\b/g, 'ETF').replace(/\bHk\b/g, 'HK').replace(/\bCn\b/g, 'CN')
+      .replace(/\bPit\b/g, 'PIT').replace(/\bFx\b/g, 'FX');
+  }
+
+  function engineLabelEn(id) {
+    var bare = id.replace(/^engine:/, '');
+    if (ENGINE_NAMES_EN[bare]) return ENGINE_NAMES_EN[bare];
+    if (ENGINE_NAMES_EN[id])   return ENGINE_NAMES_EN[id];
+    // Fallback: strip common prefixes, titleCase
+    var s = bare.replace(/^(desk:|reflex\.)/, '').replace(/[_:]/g,' ');
+    s = s.replace(/\bv0\b/g,'').replace(/\bpit\b/i,'(PIT)').trim();
+    return titleCaseFix(s);
+  }
+  function engineLabelZh(id) {
+    var bare = id.replace(/^engine:/, '');
+    return ENGINE_NAMES_ZH[bare] || ENGINE_NAMES_ZH[id] || engineLabelEn(id);
+  }
+
+  function nodeDisplayColor(n) {
+    if (n.type === 'core') return LOBE_COLORS.core;
+    if (n.type === 'hub')  return LOBE_COLORS.sector; // sectors_hub → sector amber
+    if (n.type === 'engine') return LOBE_COLORS[n._lobe] || '#4da3ff';
+    if (n.type === 'regime') return LOBE_COLORS.regime;
+    if (n.type === 'sector' || n.type === 'complex') return LOBE_COLORS.sector;
+    if (n.type === 'thesis') return LOBE_COLORS.thesis;
+    if (n.type === 'signal') return LOBE_COLORS.signal;
+    if (n.type === 'wiring-module') return LOBE_COLORS['wiring-module'];
+    if (n.type === 'wiring-artifact') return LOBE_COLORS['wiring-artifact'];
+    return '#94a3b8';
+  }
+
+  function nodeRadius(n) {
+    if (n.type === 'core')   return 18; // FIX 6: r~18
+    if (n.type === 'hub')    return 11; // FIX 2: hub nodes r~11
     if (n.type === 'engine') {
       var rows = (n.meta && n.meta.n_spine_rows) ? n.meta.n_spine_rows : 1;
-      base = Math.min(20, 7 + 2.0 * Math.log10(rows + 1));
-    } else if (n.type === 'regime')   { base = 10; }
-    else if (n.type === 'sector')     { base = 8; }
-    else if (n.type === 'module')     { base = 4; }
-    else if (n.type === 'artifact')   { base = 4.5; }
-    else if (n.type === 'thesis')     { base = 3.2; }
-    else /* episode */                { base = 3.6; }
-    return base;
+      return Math.min(18, 7 + 2.0 * Math.log10(rows + 1));
+    }
+    if (n.type === 'regime')           return 9;
+    if (n.type === 'complex')          return 8;
+    if (n.type === 'sector')           return 6;
+    if (n.type === 'thesis')           return 5;
+    if (n.type === 'signal')           return 4.5; // FIX 3: r~4.5
+    if (n.type === 'wiring-module')    return 3.5;
+    if (n.type === 'wiring-artifact')  return 3;
+    return 4;
   }
+
+  var TYPE_LABEL_EN = { core:'CORE', hub:'HUB', engine:'ENGINE', regime:'REGIME', complex:'COMPLEX', sector:'SECTOR', thesis:'THESIS', signal:'SIGNAL', 'wiring-module':'MODULE', 'wiring-artifact':'ARTIFACT' };
+  var TYPE_LABEL_ZH = { core:'核心', hub:'枢纽', engine:'引擎', regime:'周期', complex:'复合板块', sector:'板块', thesis:'论点', signal:'信号', 'wiring-module':'模块', 'wiring-artifact':'工件' };
 
   function loadGraph() {
     document.getElementById('graph_loading').style.display = 'block';
@@ -871,23 +965,296 @@ details.memo-raw pre { font-size:11px; overflow-x:auto; color:var(--muted); whit
       });
   }
 
-  function materializeInferredNodes(nodes, edges) {
-    var knownIds = {};
-    nodes.forEach(function(n){ knownIds[n.id] = true; });
-    var extra = {};
-    edges.forEach(function(e){
-      [e.src, e.dst].forEach(function(id){
-        if (!knownIds[id] && !extra[id]) {
-          var type = 'artifact';
-          if (id.indexOf('module:') === 0) type = 'module';
-          var labelRaw = id.replace(/^(module:|artifact:)/, '').split('/').pop().split(':').pop();
-          labelRaw = labelRaw.replace(/\.(json|parquet|py|csv)$/, '');
-          if (labelRaw.length > 18) labelRaw = labelRaw.slice(0, 16) + '…';
-          extra[id] = { id: id, type: type, label: labelRaw, meta: {}, _inferred: true };
-        }
+  // ── Curated endpoint names for materialized synapse nodes ────────────────
+  var ENDPOINT_NAMES = {
+    'data/regime/latest.json':                            ['Regime State',            '周期状态'],
+    'data/market_state/latest.json':                      ['Market State',             '市场状态'],
+    'data/regime/latest.json:regime_vector':              ['Regime Vector',            '周期向量'],
+    'data/regime/latest.json:risk_radar':                 ['Risk Radar',               '风险雷达'],
+    'data/regime/latest.json:vol_regime':                 ['Vol Regime',               '波动周期'],
+    'data/regime/latest.json:cross_asset_confirm (bonds/FX)': ['Cross-Asset Confirm', '跨资产确认'],
+    'site/basketdata/oracle_state.json':                  ['Oracle State',             'Oracle状态'],
+    'data/sector_central/calls.parquet':                  ['Sector Central',           '板块中枢'],
+    'site/intelligence/briefing.json':                    ['Briefing',                 '简报'],
+    'site/intelligence/by_ticker.json (demand/tape)':     ['Ticker Intel',             '个股情报'],
+    'us_board.buy_lane':                                  ['US Board · Buy',           '美股板·买入'],
+    'us_board.watch_lane':                                ['US Board · Watch',         '美股板·观察'],
+    'us_board.extended_names':                            ['US Board · Extended',      '美股板·延伸'],
+    'options.skew_decel':                                 ['Skew Decel',               '偏斜减速'],
+    'options.skew_rising':                                ['Skew Rising',              '偏斜上升'],
+    'options.skew_rising_or_call_wall_pin':               ['Skew / Call-Wall Pin',     '偏斜/看涨墙'],
+    'options.ivspread_positive_call_doi':                 ['IV Spread · Call DOI',     'IV价差·看涨DOI']
+  };
+  var _GENERIC_SEGS = /^(latest|state|current|index|calls|data|summary|snapshot)$/i;
+
+  function friendlyArtifactLabel(id) {
+    // 1. Curated lookup first
+    var raw = id.replace(/^(module:|artifact:)/, '');
+    if (ENDPOINT_NAMES[raw]) return ENDPOINT_NAMES[raw][0];
+    if (ENDPOINT_NAMES[id])  return ENDPOINT_NAMES[id][0];
+
+    // 2. If id has a :subkey suffix, prefer the subkey
+    var colonIdx = raw.indexOf(':');
+    if (colonIdx !== -1) {
+      var subkey = raw.slice(colonIdx + 1).replace(/[_\-./]/g, ' ').trim();
+      if (subkey.length >= 3) {
+        return titleCaseFix(subkey);
+      }
+    }
+
+    // 3. Strip path extension and split by slash
+    var noExt = raw.replace(/\.(json|parquet|py|csv)$/, '');
+    var parts = noExt.split('/');
+    var lastPart = parts[parts.length - 1] || '';
+
+    // 4. If last segment is generic or too short, use parent directory
+    var seg = lastPart;
+    if (_GENERIC_SEGS.test(seg) || seg.length < 3) {
+      seg = parts[parts.length - 2] || seg;
+    }
+
+    // 5. Clean up: replace delimiters, titleCase, fix "Slew" → "Skew"
+    seg = seg.replace(/[_\-./]/g, ' ').trim();
+    seg = seg.replace(/\bslew\b/gi, 'Skew');
+    if (seg.length > 20) seg = seg.slice(0, 18) + '…';
+    return titleCaseFix(seg);
+  }
+
+  function friendlyArtifactLabelZh(id) {
+    var raw = id.replace(/^(module:|artifact:)/, '');
+    if (ENDPOINT_NAMES[raw]) return ENDPOINT_NAMES[raw][1];
+    if (ENDPOINT_NAMES[id])  return ENDPOINT_NAMES[id][1];
+    return friendlyArtifactLabel(id);
+  }
+
+  // Designated lead engine per lobe (fallback: first engine in lobe)
+  var LOBE_LEAD = { us: 'engine:us_board', intl: 'engine:cn_board', signals: 'engine:altdata', meta: 'engine:policy' };
+
+  // Endpoint-to-cluster routing (FIX 3)
+  function endpointCluster(id, allRegimesId, defNodeSet) {
+    var raw = id.replace(/^(module:|artifact:)/, '');
+    if (/regime|risk_radar|vol_regime|cross_asset|market_state/i.test(raw)) return allRegimesId;
+    if (/us_board/i.test(raw)) return 'engine:us_board';
+    if (/options|skew|ivspread/i.test(raw)) return 'engine:options_entry';
+    if (/oracle/i.test(raw)) return 'engine:radar';
+    if (/briefing|by_ticker|intelligence/i.test(raw)) return 'engine:policy';
+    if (/sector_central/i.test(raw)) return 'sectors_hub';
+    return 'core';
+  }
+
+  // Build both the DEFAULT layer and WIRING layer from raw graph data
+  function buildCuratedGraph(data) {
+    var rawNodes = data.nodes || [];
+    var rawEdges = data.edges || [];
+
+    // Index raw nodes by id
+    var rawById = {};
+    rawNodes.forEach(function(n){ rawById[n.id] = n; });
+
+    // ── DEFAULT LAYER ─────────────────────────────────────────────────────
+    var defNodes = [];   // {id, type, label, labelZh, meta, _lobe, _anchor}
+    var defEdges = [];   // {src, dst, edge_type}
+    var defNodeSet = {}; // id → node
+
+    function addDN(n) {
+      if (!defNodeSet[n.id]) { defNodeSet[n.id] = n; defNodes.push(n); }
+    }
+    function addDE(src, dst, et) {
+      defEdges.push({ src: src, dst: dst, edge_type: et });
+    }
+
+    // 1. Core
+    addDN({ id: 'core', type: 'core', label: 'Neural Web', labelZh: '神经网', meta: {}, _lobe: 'core', _anchor: { x: 0.5, y: 0.5 } });
+
+    // 2. Synthetic hub nodes (FIX 2)
+    var sectorsHubId = 'sectors_hub';
+    addDN({ id: sectorsHubId, type: 'hub', label: 'Sectors', labelZh: '板块中心', meta: {}, _lobe: 'sector' });
+
+    // 3. Engines
+    var engNodes = rawNodes.filter(function(n){ return n.type === 'engine'; });
+    // Track which lobe leads exist
+    var lobeLeadExists = {};
+    engNodes.forEach(function(n){
+      var bare = n.id.replace(/^engine:/, '');
+      var lobe = ENGINE_LOBE[bare] || ENGINE_LOBE[n.id] || 'meta';
+      var isLead = (LOBE_LEAD[lobe] === n.id);
+      if (isLead) lobeLeadExists[lobe] = true;
+      addDN({
+        id: n.id, type: 'engine',
+        label: engineLabelEn(n.id), labelZh: engineLabelZh(n.id),
+        meta: n.meta || {}, _lobe: lobe, _rawLabel: n.label, _isLobeLead: isLead
       });
     });
-    return nodes.concat(Object.keys(extra).map(function(k){ return extra[k]; }));
+
+    // STRUCTURE edges (FIX 2 hierarchy):
+    // core → each lobe lead (4 spokes); core → sectors_hub; core → All Regimes (added below)
+    // Each non-lead engine → its lobe lead (or core if no lead in lobe)
+    engNodes.forEach(function(n){
+      var bare = n.id.replace(/^engine:/, '');
+      var lobe = ENGINE_LOBE[bare] || ENGINE_LOBE[n.id] || 'meta';
+      var leadId = LOBE_LEAD[lobe];
+      if (n._isLobeLead || n.id === leadId) {
+        addDE(n.id, 'core', 'structure'); // lead → core
+      } else if (leadId && defNodeSet[leadId]) {
+        addDE(n.id, leadId, 'structure'); // non-lead → lead
+      } else {
+        addDE(n.id, 'core', 'structure'); // fallback
+      }
+    });
+    // If a lobe lead doesn't exist, fall back: pick highest n_spine_rows in that lobe
+    Object.keys(LOBE_LEAD).forEach(function(lobe){
+      if (!lobeLeadExists[lobe]) {
+        var lobeEngs = defNodes.filter(function(n){ return n.type === 'engine' && n._lobe === lobe; });
+        if (lobeEngs.length) {
+          var best = lobeEngs.reduce(function(a, b){
+            var ra = (a.meta && a.meta.n_spine_rows) || 0;
+            var rb = (b.meta && b.meta.n_spine_rows) || 0;
+            return rb > ra ? b : a;
+          });
+          best._isLobeLead = true;
+          // Reroute: best → core, others → best
+          defEdges = defEdges.filter(function(e){ return !(e.src === best.id && e.dst === 'core' && e.edge_type === 'structure'); });
+          addDE(best.id, 'core', 'structure');
+          lobeEngs.forEach(function(n){
+            if (n.id !== best.id) {
+              defEdges = defEdges.filter(function(e){ return !(e.src === n.id && e.dst === 'core' && e.edge_type === 'structure'); });
+              addDE(n.id, best.id, 'structure');
+            }
+          });
+        }
+      }
+    });
+
+    // 4. Regimes
+    var regNodes = rawNodes.filter(function(n){ return n.type === 'regime'; });
+    var allRegimesId = null;
+    regNodes.forEach(function(n){
+      var label = (n.label || n.id.replace(/^regime:/, '').replace(/__all__/, 'All Regimes')).replace(/_/g,' ');
+      var labelZh = (n.label || n.id.replace(/^regime:/, '').replace(/__all__/, '所有周期')).replace(/_/g,' ');
+      if (/all/i.test(label)) { label = 'All Regimes'; labelZh = '所有周期'; allRegimesId = n.id; }
+      addDN({ id: n.id, type: 'regime', label: label, labelZh: labelZh, meta: n.meta || {} });
+    });
+    // If no "all" regime exists, create synthetic
+    if (!allRegimesId) {
+      allRegimesId = 'regime:__all__';
+      addDN({ id: allRegimesId, type: 'regime', label: 'All Regimes', labelZh: '所有周期', meta: {} });
+    }
+    addDE(allRegimesId, 'core', 'structure'); // All Regimes → core (hub spoke)
+    addDE(sectorsHubId, 'core', 'structure'); // Sectors hub → core (hub spoke)
+    regNodes.forEach(function(n){
+      if (n.id !== allRegimesId) addDE(n.id, allRegimesId, 'structure');
+    });
+
+    // 5. Sectors: complexes → sectors_hub; GICS → complex or sectors_hub (FIX 2)
+    var sectorNodes = rawNodes.filter(function(n){ return n.type === 'sector'; });
+    var complexNodes = sectorNodes.filter(function(n){ return n.id.indexOf('complex:') === 0; });
+    var gicsNodes    = sectorNodes.filter(function(n){ return n.id.indexOf('sector:') === 0; });
+    complexNodes.forEach(function(n){
+      var label = titleCaseFix(n.label || n.id.replace(/^complex:/, '').replace(/_/g,' '));
+      addDN({ id: n.id, type: 'complex', label: label, labelZh: n.labelZh || label, meta: n.meta || {} });
+      addDE(n.id, sectorsHubId, 'structure'); // complex → sectors_hub (not core)
+    });
+    gicsNodes.forEach(function(n){
+      var label = (n.label || n.id.replace(/^sector:/, '').toUpperCase());
+      addDN({ id: n.id, type: 'sector', label: label, labelZh: n.labelZh || label, meta: n.meta || {} });
+      var cx = GICS_TO_COMPLEX[n.id];
+      if (cx && defNodeSet[cx]) addDE(n.id, cx, 'structure');
+      else addDE(n.id, sectorsHubId, 'structure'); // unmapped → sectors_hub
+    });
+
+    // 6. Radar theses: dedupe by sectorkey, FILTER junk.
+    // Junk tokens are anchored (^…$) so real keys like "funk"/"brotherhood" survive.
+    var _JUNK_SK = /^(unknown|unk|na|n_?a|none|misc|other|tbd|placeholder)$|^us[_-]?sector/i;
+    var thesisNodes = rawNodes.filter(function(n){ return n.type === 'thesis'; });
+    var thesisBySectorKey = {};
+    thesisNodes.forEach(function(n){
+      // id format: thesis:<date>-radar-<sectorkey>. Tolerate date-shape drift by
+      // also splitting on "-radar-"; skip if no sectorkey can be extracted so a
+      // raw id ("thesis:2026-…-radar-") is never emitted as a label.
+      var m = n.id.match(/thesis:\d{4}-\d{2}-\d{2}-radar-(.+)$/);
+      var sk = m ? m[1] : (n.id.split('-radar-')[1] || '');
+      if (!sk || _JUNK_SK.test(sk)) return;
+      var existing = thesisBySectorKey[sk];
+      if (!existing || (n.id > existing.id)) thesisBySectorKey[sk] = n;
+    });
+    var thesisKeys = Object.keys(thesisBySectorKey).sort(function(a, b){
+      return thesisBySectorKey[b].id.localeCompare(thesisBySectorKey[a].id);
+    });
+    var thesisCap = 16;
+    var thesisOverflow = thesisKeys.length > thesisCap ? thesisKeys.slice(thesisCap) : [];
+    thesisKeys.slice(0, thesisCap).forEach(function(sk){
+      var n = thesisBySectorKey[sk];
+      var label = titleCaseFix(sk.replace(/_/g, ' '));
+      // small fixups (anchored so unrelated keys aren't rewritten)
+      label = label.replace(/^Mag7$/, 'Mag 7')
+                   .replace(/^Payments Fintech$/, 'Payments & Fintech')
+                   .replace(/^Non AI /, 'Non-AI ');
+      addDN({ id: n.id, type: 'thesis', label: label, labelZh: label, meta: n.meta || {}, _sectorKey: sk });
+      // Link to radar engine if present
+      var radarId = 'engine:radar';
+      if (defNodeSet[radarId]) addDE(n.id, radarId, 'structure');
+      else addDE(n.id, 'core', 'structure');
+    });
+
+    // 7. Confirms / contradicts edges + materialize missing endpoints (FIX 3)
+    var synapseEdges = rawEdges.filter(function(e){ return e.edge_type === 'confirms' || e.edge_type === 'contradicts'; });
+    synapseEdges.forEach(function(e){
+      [e.src, e.dst].forEach(function(id){
+        if (!defNodeSet[id]) {
+          // Materialize a signal endpoint with curated label
+          var label = friendlyArtifactLabel(id);
+          var labelZh = friendlyArtifactLabelZh(id);
+          var sn = { id: id, type: 'signal', label: label, labelZh: labelZh, meta: {}, _synapseEndpoint: true };
+          addDN(sn);
+          // FIX 3: Route endpoint to owning cluster, not always core
+          var clusterTarget = endpointCluster(id, allRegimesId, defNodeSet);
+          if (!defNodeSet[clusterTarget]) clusterTarget = 'core';
+          addDE(id, clusterTarget, 'structure');
+        }
+      });
+      if (e.src !== e.dst) defEdges.push({ src: e.src, dst: e.dst, edge_type: e.edge_type }); // skip degenerate self-synapse
+    });
+
+    // INVARIANT: every node has degree ≥ 1
+    var degreeOf = {};
+    defEdges.forEach(function(e){
+      degreeOf[e.src] = (degreeOf[e.src] || 0) + 1;
+      degreeOf[e.dst] = (degreeOf[e.dst] || 0) + 1;
+    });
+    defNodes.forEach(function(n){
+      if (!degreeOf[n.id] && n.id !== 'core') {
+        addDE(n.id, 'core', 'structure');
+      }
+    });
+
+    // ── WIRING LAYER ──────────────────────────────────────────────────────
+    var wirNodes = [];
+    var wirEdges = [];
+    var wirNodeSet = {};
+    function addWN(n) { if (!wirNodeSet[n.id] && !defNodeSet[n.id]) { wirNodeSet[n.id] = n; wirNodes.push(n); } }
+    var feedsEdges = rawEdges.filter(function(e){ return e.edge_type === 'feeds'; });
+    feedsEdges.forEach(function(e){
+      [e.src, e.dst].forEach(function(id){
+        if (!defNodeSet[id] && !wirNodeSet[id]) {
+          var isModule = id.indexOf('module:') === 0;
+          addWN({
+            id: id,
+            type: isModule ? 'wiring-module' : 'wiring-artifact',
+            label: friendlyArtifactLabel(id), labelZh: friendlyArtifactLabel(id),
+            meta: {}
+          });
+        }
+      });
+      wirEdges.push({ src: e.src, dst: e.dst, edge_type: 'wiring' });
+    });
+
+    return {
+      defaultNodes: defNodes, defaultEdges: defEdges,
+      wiringNodes: wirNodes, wiringEdges: wirEdges,
+      synapseCount: synapseEdges.length,
+      thesisOverflow: thesisOverflow,
+      engineCount: engNodes.length
+    };
   }
 
   function buildSpatialGrid(positions, cellSize) {
@@ -934,21 +1301,212 @@ details.memo-raw pre { font-size:11px; overflow-x:auto; color:var(--muted); whit
     return { cx: mx + perpX*offset, cy: my + perpY*offset };
   }
 
-  function initGraph(data) {
-    var allNodes = materializeInferredNodes(data.nodes || [], data.edges || []);
-    var allEdges = data.edges || [];
-    _graphNodes = allNodes;
-    _graphEdges = allEdges;
+  // ── Force-directed layout ─────────────────────────────────────────────────
+  function runForceLayout(nodes, edges, W, H, wiringMode) {
+    var prng = mulberry32(42);
+    var positions = {};
+    var radii = {};
 
-    // Update hero stat chips
-    var engCount = allNodes.filter(function(n){ return n.type==='engine'; }).length;
+    // FIX 5: sector hub placed at same direction as sector cluster
+    var SECTORS_HUB_ANCHOR = { x: 0.78 * W, y: 0.74 * H };
+    var ALL_REGIMES_ANCHOR  = { x: 0.5  * W, y: 0.10 * H };
+
+    // Compute anchor positions for each node
+    function nodeAnchor(n) {
+      if (n.type === 'core') return { x: 0.5 * W, y: 0.5 * H };
+      if (n.type === 'hub')  return SECTORS_HUB_ANCHOR;
+      if (n.type === 'engine') {
+        var la = LOBE_ANCHORS[n._lobe] || LOBE_ANCHORS.meta;
+        var ang = la.angle * Math.PI / 180;
+        return { x: (0.5 + la.r * Math.cos(ang)) * W, y: (0.5 + la.r * Math.sin(ang)) * H };
+      }
+      if (n.type === 'regime') return ALL_REGIMES_ANCHOR;
+      if (n.type === 'complex') return { x: 0.82 * W, y: 0.78 * H };
+      if (n.type === 'sector') {
+        var cx2 = GICS_TO_COMPLEX[n.id];
+        if (cx2) return { x: 0.86 * W, y: 0.82 * H };
+        return { x: 0.82 * W, y: 0.78 * H };
+      }
+      if (n.type === 'thesis') {
+        // Near radar anchor (us lobe)
+        var ra = LOBE_ANCHORS.us;
+        var ang2 = ra.angle * Math.PI / 180;
+        return { x: (0.5 + ra.r * 1.55 * Math.cos(ang2)) * W, y: (0.5 + ra.r * 1.55 * Math.sin(ang2)) * H };
+      }
+      if (n.type === 'signal') {
+        // FIX 3: signal nodes anchored near their cluster (handled by structure edge spring)
+        return { x: 0.5 * W, y: 0.35 * H };
+      }
+      // wiring nodes: spread around
+      return { x: (0.1 + prng() * 0.8) * W, y: (0.1 + prng() * 0.8) * H };
+    }
+
+    // Seed positions = anchor + jitter
+    nodes.forEach(function(n){
+      var a = nodeAnchor(n);
+      var jitter = n.type === 'engine' ? 50 : n.type === 'wiring-module' || n.type === 'wiring-artifact' ? 80 : 35;
+      positions[n.id] = {
+        x: a.x + (prng() - 0.5) * jitter,
+        y: a.y + (prng() - 0.5) * jitter,
+        ax: a.x, ay: a.y
+      };
+      radii[n.id] = nodeRadius(n);
+    });
+
+    // Engine lobe: spread lobemates around lobe angle ±25°
+    var lobeEngines = {};
+    nodes.filter(function(n){ return n.type === 'engine'; }).forEach(function(n){
+      var l = n._lobe || 'meta';
+      if (!lobeEngines[l]) lobeEngines[l] = [];
+      lobeEngines[l].push(n);
+    });
+    Object.keys(lobeEngines).forEach(function(lobe){
+      var ns = lobeEngines[lobe];
+      var la = LOBE_ANCHORS[lobe] || LOBE_ANCHORS.meta;
+      ns.forEach(function(n, i){
+        var spread = (ns.length > 1) ? (i / (ns.length - 1) - 0.5) * 65 : 0; // FIX 5: wider spread
+        var baseAng = la.angle * Math.PI / 180;
+        var perpAng = baseAng + Math.PI / 2;
+        var p = positions[n.id];
+        p.ax += Math.cos(perpAng) * spread;
+        p.ay += Math.sin(perpAng) * spread;
+        p.x = p.ax + (prng() - 0.5) * 10;
+        p.y = p.ay + (prng() - 0.5) * 10;
+      });
+    });
+
+    // Similarly spread regime/complex/thesis nodes
+    var regimes = nodes.filter(function(n){ return n.type === 'regime'; });
+    regimes.forEach(function(n, i){
+      var spread = regimes.length > 1 ? (i / (regimes.length - 1) - 0.5) * (W * 0.65) : 0;
+      positions[n.id].x = 0.5 * W + spread + (prng() - 0.5) * 10;
+      positions[n.id].ax = positions[n.id].x;
+    });
+    var complexes = nodes.filter(function(n){ return n.type === 'complex'; });
+    complexes.forEach(function(n, i){
+      var a2 = (i / Math.max(complexes.length, 1)) * 2 * Math.PI;
+      positions[n.id].x = 0.82 * W + Math.cos(a2) * 65;
+      positions[n.id].y = 0.78 * H + Math.sin(a2) * 50;
+      positions[n.id].ax = positions[n.id].x;
+      positions[n.id].ay = positions[n.id].y;
+    });
+    var theses = nodes.filter(function(n){ return n.type === 'thesis'; });
+    var radarPos = null;
+    nodes.forEach(function(n){ if (n.id === 'engine:radar' && positions[n.id]) radarPos = positions[n.id]; });
+    theses.forEach(function(n, i){
+      var ang3 = (i / Math.max(theses.length, 1)) * 2 * Math.PI;
+      var rx = radarPos ? radarPos.x : 0.35 * W;
+      var ry = radarPos ? radarPos.y : 0.74 * H;
+      positions[n.id] = { x: rx + Math.cos(ang3) * 75, y: ry + Math.sin(ang3) * 55, ax: rx, ay: ry };
+    });
+
+    // Build adjacency for spring
+    var adj = {};
+    nodes.forEach(function(n){ adj[n.id] = []; });
+    edges.forEach(function(e){
+      if (adj[e.src]) adj[e.src].push(e);
+      if (adj[e.dst]) adj[e.dst].push(e);
+    });
+
+    // Iterations scale DOWN as node count grows so the synchronous O(n²) sim can
+    // never freeze the tab, even if the graph accrues far more nodes over time
+    // (default view is ~72 today; signal endpoints grow with graded synapses).
+    var iters = wiringMode ? 90
+      : nodes.length > 400 ? 60
+      : nodes.length > 200 ? 110
+      : 280;
+    var margin = 32;
+
+    for (var it = 0; it < iters; it++) {
+      var cool = 1 - it / iters;
+      var forces = {};
+      nodes.forEach(function(n){ forces[n.id] = { x: 0, y: 0 }; });
+
+      // FIX 5: Repulsion between all pairs — increased repulsion constant
+      for (var a = 0; a < nodes.length; a++) {
+        for (var b = a + 1; b < nodes.length; b++) {
+          var na = nodes[a], nb = nodes[b];
+          var pa = positions[na.id], pb3 = positions[nb.id];
+          var dx2 = pa.x - pb3.x, dy2 = pa.y - pb3.y;
+          var dist2 = Math.sqrt(dx2*dx2 + dy2*dy2) || 0.1;
+          var minSep = radii[na.id] + radii[nb.id] + 22; // FIX 5: wider min sep
+          var rep = (minSep * minSep) / (dist2 * dist2) * 1.2; // FIX 5: stronger repulsion
+          if (rep > 20) rep = 20; // FIX 5: higher cap
+          forces[na.id].x += (dx2 / dist2) * rep;
+          forces[na.id].y += (dy2 / dist2) * rep;
+          forces[nb.id].x -= (dx2 / dist2) * rep;
+          forces[nb.id].y -= (dy2 / dist2) * rep;
+        }
+      }
+
+      // Spring attraction along edges
+      edges.forEach(function(e){
+        var pa2 = positions[e.src], pb4 = positions[e.dst];
+        if (!pa2 || !pb4) return;
+        var dx3 = pb4.x - pa2.x, dy3 = pb4.y - pa2.y;
+        var dist3 = Math.sqrt(dx3*dx3 + dy3*dy3) || 0.1;
+        var ra2 = radii[e.src] || 5, rb2 = radii[e.dst] || 5;
+        var isStruct = (e.edge_type === 'structure');
+        var restLen = isStruct ? (ra2 + rb2 + 35) : (ra2 + rb2 + 22); // FIX 5: longer rest lengths
+        var stiffness = isStruct ? 0.035 : 0.10;
+        var delta = (dist3 - restLen) * stiffness;
+        var fx = (dx3 / dist3) * delta, fy = (dy3 / dist3) * delta;
+        forces[e.src].x += fx; forces[e.src].y += fy;
+        forces[e.dst].x -= fx; forces[e.dst].y -= fy;
+      });
+
+      // FIX 5: Cluster anchor pull — stronger to keep lobes distinct
+      nodes.forEach(function(n){
+        var p2 = positions[n.id];
+        if (p2.ax == null) return;
+        // FIX 5: stronger anchor for engines and hubs
+        var anchorStr = (n.type === 'engine') ? 0.05 : (n.type === 'hub') ? 0.06 : (n.type === 'regime') ? 0.025 : 0.015;
+        forces[n.id].x += (p2.ax - p2.x) * anchorStr;
+        forces[n.id].y += (p2.ay - p2.y) * anchorStr;
+      });
+
+      // Very mild gravity to center (weakened to let nodes spread)
+      nodes.forEach(function(n){
+        var p3 = positions[n.id];
+        forces[n.id].x += (0.5 * W - p3.x) * 0.002; // FIX 5: weaker gravity
+        forces[n.id].y += (0.5 * H - p3.y) * 0.002;
+      });
+
+      // Apply forces
+      nodes.forEach(function(n){
+        if (n.type === 'core') return; // pin core
+        var p4 = positions[n.id];
+        var f = forces[n.id];
+        var speed = cool * 4.0; // FIX 5: higher max speed
+        p4.x += Math.max(-speed, Math.min(speed, f.x));
+        p4.y += Math.max(-speed, Math.min(speed, f.y));
+        p4.x = Math.max(margin, Math.min(W - margin, p4.x));
+        p4.y = Math.max(margin, Math.min(H - margin, p4.y));
+      });
+    }
+
+    return { positions: positions, radii: radii };
+  }
+
+  function initGraph(data) {
+    var curatedResult = buildCuratedGraph(data);
+    _graphDefaultNodes = curatedResult.defaultNodes;
+    _graphDefaultEdges = curatedResult.defaultEdges;
+    _graphWiringNodes  = curatedResult.wiringNodes;
+    _graphWiringEdges  = curatedResult.wiringEdges;
+
+    var synapseCount   = curatedResult.synapseCount;
+    var thesisOverflow = curatedResult.thesisOverflow || [];
+    var engCount2      = curatedResult.engineCount;
+
+    // Update hero chips
     var chipN = document.getElementById('chip_neurons_val');
     var chipS = document.getElementById('chip_synapses_val');
     var chipE = document.getElementById('chip_engines_val');
     var chipA = document.getElementById('chip_asof_val');
-    if (chipN) chipN.textContent = allNodes.length;
-    if (chipS) chipS.textContent = allEdges.length;
-    if (chipE) chipE.textContent = engCount;
+    if (chipN) chipN.textContent = _graphDefaultNodes.length;
+    if (chipS) chipS.textContent = synapseCount;
+    if (chipE) chipE.textContent = engCount2;
     if (chipA && data.asof) chipA.textContent = data.asof.slice(0,10);
 
     // R-ORTH PR-4: independence chip (chip_indep)
@@ -1000,108 +1558,175 @@ details.memo-raw pre { font-size:11px; overflow-x:auto; color:var(--muted); whit
       }
     })();
 
-    // Subset note
-    var subEl = document.getElementById('graph_subset_note');
-    if (subEl) {
-      var orig = (data.nodes||[]).length;
-      var inferred = allNodes.length - orig;
-      subEl.innerHTML = '<span class="l-en">'+allNodes.length+' nodes ('+orig+' from graph + '+inferred+' inferred module/artifact endpoints), '+allEdges.length+' edges (feeds mesh + confirms/contradicts pulses).</span>'
-        + '<span class="l-zh">'+allNodes.length+'个节点（'+orig+'来自图谱 + '+inferred+'个推断的模块/工件端点），'+allEdges.length+'条边。</span>';
+    // Active node/edge sets (switch by wiring toggle)
+    var allNodes, allEdges;
+    function activateLayer() {
+      if (_graphShowWiring) {
+        allNodes = _graphDefaultNodes.concat(_graphWiringNodes);
+        allEdges = _graphDefaultEdges.concat(_graphWiringEdges);
+      } else {
+        allNodes = _graphDefaultNodes;
+        allEdges = _graphDefaultEdges;
+      }
+      _graphNodes = allNodes;
+      _graphEdges = allEdges;
     }
+    activateLayer();
 
-    // Group by type for lobe layout
-    var byType = {};
-    allNodes.forEach(function(n){
-      if (!byType[n.type]) byType[n.type] = [];
-      byType[n.type].push(n);
-    });
+    // Subset note
+    function updateSubsetNote() {
+      var subEl = document.getElementById('graph_subset_note');
+      if (!subEl) return;
+      var en = 'Showing ' + _graphDefaultNodes.length + ' nodes ('
+        + engCount2 + ' engines, '
+        + _graphDefaultNodes.filter(function(n){ return n.type==='regime'; }).length + ' regimes, '
+        + (_graphDefaultNodes.filter(function(n){ return n.type==='sector'||n.type==='complex'; }).length) + ' sectors, '
+        + _graphDefaultNodes.filter(function(n){ return n.type==='thesis'; }).length + ' radar theses) &mdash; '
+        + synapseCount + ' graded synapses.'
+        + (thesisOverflow.length ? ' (' + thesisOverflow.length + ' thesis keys capped for clarity.)' : '')
+        + (_graphShowWiring ? ' <strong>+' + _graphWiringNodes.length + ' wiring nodes, ' + _graphWiringEdges.length + ' plumbing edges shown.</strong>' : ' Toggle &#8220;wiring&#8221; for the full dataflow plumbing.');
+      var zh = '显示' + _graphDefaultNodes.length + '个节点（'
+        + engCount2 + '个引擎，'
+        + _graphDefaultNodes.filter(function(n){ return n.type==='regime'; }).length + '个周期，'
+        + (_graphDefaultNodes.filter(function(n){ return n.type==='sector'||n.type==='complex'; }).length) + '个板块，'
+        + _graphDefaultNodes.filter(function(n){ return n.type==='thesis'; }).length + '个雷达论点）&mdash;'
+        + synapseCount + '个评分突触。'
+        + (thesisOverflow.length ? '（' + thesisOverflow.length + '个论点主题已上限压缩。）' : '')
+        + (_graphShowWiring ? '<strong>+' + _graphWiringNodes.length + '个布线节点，' + _graphWiringEdges.length + '条管道边已显示。</strong>' : '切换"布线"查看完整数据管道。');
+      subEl.innerHTML = '<span class="l-en">' + en + '</span><span class="l-zh">' + zh + '</span>';
+    }
+    updateSubsetNote();
 
     var canvas = document.getElementById('graph_canvas');
     var W = canvas.offsetWidth || 800;
-    var H = parseInt(canvas.style.height || canvas.getAttribute('height')) || 640;
-    // Use actual rendered height
-    H = canvas.getBoundingClientRect().height || H;
+    var H = canvas.getBoundingClientRect().height || 640;
     if (H < 100) H = 640;
 
-    var prng = mulberry32(42);
-    var positions = {};
-    var radii = {};
-
-    // Phyllotaxis spiral per lobe
-    Object.keys(LOBE_CENTERS).forEach(function(type){
-      var ns = byType[type] || [];
-      if (!ns.length) return;
-      var lc = LOBE_CENTERS[type];
-      var lcx = lc.x * W, lcy = lc.y * H;
-      var lobeR = Math.sqrt(ns.length) * (type==='thesis'||type==='episode' ? 22 : 18);
-
-      ns.forEach(function(n, i){
-        var r = lobeR * Math.sqrt(i / Math.max(ns.length, 1));
-        var theta = i * 2.39996;
-        var jx = (prng() - 0.5) * 4;
-        var jy = (prng() - 0.5) * 4;
-        positions[n.id] = { x: lcx + r*Math.cos(theta) + jx, y: lcy + r*Math.sin(theta) + jy };
-        radii[n.id] = nodeRadius(n, 1);
-      });
-
-      // Collision relaxation within lobe
-      for (var iter = 0; iter < 30; iter++) {
-        for (var a = 0; a < ns.length; a++) {
-          for (var b = a+1; b < ns.length; b++) {
-            var pa = positions[ns[a].id], pb2 = positions[ns[b].id];
-            var ddx = pa.x - pb2.x, ddy = pa.y - pb2.y;
-            var dist = Math.sqrt(ddx*ddx + ddy*ddy) || 0.01;
-            var minD = radii[ns[a].id] + radii[ns[b].id] + 3;
-            if (dist < minD) {
-              var push = (minD - dist) / dist * 0.5;
-              pa.x += ddx*push*0.5; pa.y += ddy*push*0.5;
-              pb2.x -= ddx*push*0.5; pb2.y -= ddy*push*0.5;
-            }
-          }
-          // Keep in bounds with margin
-          var p = positions[ns[a].id];
-          p.x = Math.max(8, Math.min(W-8, p.x));
-          p.y = Math.max(8, Math.min(H-8, p.y));
-        }
-      }
-    });
-
+    // Force-directed layout
+    var layoutResult = runForceLayout(allNodes, allEdges.filter(function(e){ return e.edge_type !== 'wiring'; }), W, H, false);
+    var positions = layoutResult.positions;
+    var radii = layoutResult.radii;
     _graphPositions = positions;
 
-    // Precompute bezier control points for all edges
+    // Precompute bezier for all edges
     allEdges.forEach(function(e, i){
-      var pa = positions[e.src], pb = positions[e.dst];
-      if (!pa || !pb) return;
-      var bz = computeBezier(pa, pb, i);
+      var pa2 = positions[e.src], pb5 = positions[e.dst];
+      if (!pa2 || !pb5) return;
+      var bz = computeBezier(pa2, pb5, i);
       e._cx = bz.cx; e._cy = bz.cy;
     });
 
-    // Seed dust particles
+    // Seed dust
     if (!_graphReducedMotion) {
       _graphDust = [];
       var dprng = mulberry32(99);
-      for (var di = 0; di < 50; di++) {
+      for (var di2 = 0; di2 < 40; di2++) {
         _graphDust.push({
           x: dprng()*W, y: dprng()*H,
-          vx: (dprng()-0.5)*0.3, vy: (dprng()-0.5)*0.3,
-          alpha: 0.02 + dprng()*0.03
+          vx: (dprng()-0.5)*0.25, vy: (dprng()-0.5)*0.25,
+          alpha: 0.015 + dprng()*0.02
         });
       }
     }
 
-    // Build spatial grid for hit testing
     var _spatialGrid = buildSpatialGrid(positions, 40);
 
-    // Separate edge lists for pulse spawning
-    var feedsEdges = allEdges.filter(function(e){ return e.edge_type==='feeds' && e._cx!=null; });
     var confirmEdges = allEdges.filter(function(e){ return e.edge_type==='confirms' && e._cx!=null; });
     var contradictEdges = allEdges.filter(function(e){ return e.edge_type==='contradicts' && e._cx!=null; });
 
-    // Pre-seed travelers on all confirms/contradicts edges
+    // Pre-seed travelers on graded edges
     if (!_graphReducedMotion) {
       _graphPulses = [];
+      var seedPrng = mulberry32(77);
       confirmEdges.concat(contradictEdges).forEach(function(e){
-        _graphPulses.push({ edge: e, t: Math.random(), type: e.edge_type, persistent: true });
+        _graphPulses.push({ edge: e, t: seedPrng(), type: e.edge_type, persistent: true });
+      });
+    }
+
+    // Wiring toggle
+    // Cheap, cached placement for the wiring (plumbing) layer. The default web
+    // NEVER moves; wiring nodes are seeded near their placed neighbours and given
+    // a short wiring-only relaxation (default nodes held fixed). O(w²·iters) with
+    // a distance cutoff — a few ms — instead of the full O(n²) force sim, which
+    // froze the tab for ~6 s on 500+ nodes.
+    var _wiringLaidOut = false;
+    function placeWiringNodes() {
+      var wprng = mulberry32(4242);
+      var wadj = {};
+      _graphWiringNodes.forEach(function(n){ wadj[n.id] = []; });
+      _graphWiringEdges.forEach(function(e){
+        if (wadj[e.src]) wadj[e.src].push(e.dst);
+        if (wadj[e.dst]) wadj[e.dst].push(e.src);
+      });
+      // Seed: centroid of already-placed neighbours (default web), else phyllotaxis ring.
+      _graphWiringNodes.forEach(function(n, i){
+        if (positions[n.id]) return;
+        var sx = 0, sy = 0, k = 0;
+        (wadj[n.id] || []).forEach(function(nb){ var p = positions[nb]; if (p) { sx += p.x; sy += p.y; k++; } });
+        if (k) {
+          positions[n.id] = { x: sx/k + (wprng()-0.5)*44, y: sy/k + (wprng()-0.5)*44 };
+        } else {
+          var ang = i * 2.39996;
+          var rr = Math.min(W, H) * 0.55 * Math.sqrt(i / Math.max(_graphWiringNodes.length, 1));
+          positions[n.id] = { x: W*0.5 + Math.cos(ang)*rr, y: H*0.5 + Math.sin(ang)*rr };
+        }
+        if (!radii[n.id]) radii[n.id] = nodeRadius(n);
+      });
+      // Wiring-only relaxation; default nodes are read but never moved.
+      var wn = _graphWiringNodes;
+      for (var it = 0; it < 16; it++) {
+        for (var a = 0; a < wn.length; a++) {
+          var pa = positions[wn[a].id];
+          var fx = 0, fy = 0;
+          for (var b = 0; b < wn.length; b++) {
+            if (a === b) continue;
+            var pb = positions[wn[b].id];
+            var dx = pa.x - pb.x, dy = pa.y - pb.y;
+            var d2 = dx*dx + dy*dy || 1;
+            if (d2 < 6400) { var f = 620 / d2; fx += dx*f; fy += dy*f; }
+          }
+          var nbrs = wadj[wn[a].id] || [];
+          for (var c = 0; c < nbrs.length; c++) {
+            var pn = positions[nbrs[c]];
+            if (pn) { fx += (pn.x - pa.x)*0.02; fy += (pn.y - pa.y)*0.02; }
+          }
+          pa.x += Math.max(-12, Math.min(12, fx));
+          pa.y += Math.max(-12, Math.min(12, fy));
+        }
+      }
+    }
+
+    var _wireBtn = document.getElementById('gc_wire');
+    if (_wireBtn) {
+      _wireBtn.addEventListener('click', function(){
+        _graphShowWiring = !_graphShowWiring;
+        _wireBtn.style.color = _graphShowWiring ? 'var(--up)' : '';
+        _wireBtn.style.borderColor = _graphShowWiring ? 'var(--up)' : '';
+        activateLayer();
+        if (_graphShowWiring && !_wiringLaidOut) {
+          placeWiringNodes();   // cheap; cached so repeat toggles are instant
+          _wiringLaidOut = true;
+        }
+        // Recompute beziers for the active edges + rebuild grid from active nodes only
+        var activePos = {};
+        allNodes.forEach(function(n){ if (positions[n.id]) activePos[n.id] = positions[n.id]; });
+        allEdges.forEach(function(e, i){
+          var pp1 = positions[e.src], pp2 = positions[e.dst];
+          if (!pp1 || !pp2) return;
+          var bz2 = computeBezier(pp1, pp2, i);
+          e._cx = bz2.cx; e._cy = bz2.cy;
+        });
+        _spatialGrid = buildSpatialGrid(activePos, 40);
+        // Reseed graded pulses (references may have new bezier control points)
+        if (!_graphReducedMotion) {
+          var ce2 = allEdges.filter(function(e){ return e.edge_type==='confirms' && e._cx!=null; });
+          var de2 = allEdges.filter(function(e){ return e.edge_type==='contradicts' && e._cx!=null; });
+          var sp2 = mulberry32(77);
+          _graphPulses = ce2.concat(de2).map(function(e){ return { edge: e, t: sp2(), type: e.edge_type, persistent: true }; });
+        }
+        updateSubsetNote();
+        zoomToFit(canvas.clientWidth || W, canvas.clientHeight || H);
+        if (_graphReducedMotion) drawFrame(performance.now());
       });
     }
 
@@ -1122,14 +1747,19 @@ details.memo-raw pre { font-size:11px; overflow-x:auto; color:var(--muted); whit
     }
 
     function zoomToFit(cw, ch) {
-      if (!Object.keys(positions).length) return;
+      // Fit only the ACTIVE layer (default web, or default+wiring when toggled on);
+      // stale wiring positions must not blow up the bounding box when wiring is off.
       var minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-      Object.keys(positions).forEach(function(id){
-        var p = positions[id];
+      var any = false;
+      allNodes.forEach(function(n){
+        var p = positions[n.id];
+        if (!p) return;
+        any = true;
         if (p.x < minX) minX = p.x; if (p.x > maxX) maxX = p.x;
         if (p.y < minY) minY = p.y; if (p.y > maxY) maxY = p.y;
       });
-      var pad = 40;
+      if (!any) return;
+      var pad = 44; // FIX 5: 44px margin to fill both width and height
       var scaleX = (cw - 2*pad) / (maxX - minX || 1);
       var scaleY = (ch - 2*pad) / (maxY - minY || 1);
       var s = Math.min(scaleX, scaleY, 2);
@@ -1279,6 +1909,7 @@ details.memo-raw pre { font-size:11px; overflow-x:auto; color:var(--muted); whit
       _graphHovered = hit;
       canvas.style.cursor = hit ? 'pointer' : 'grab';
 
+      var isZhH = document.documentElement.getAttribute('data-lang') === 'zh';
       var tooltip = document.getElementById('graph_tooltip');
       if (hit) {
         var n = allNodes.filter(function(x){ return x.id===hit; })[0];
@@ -1286,13 +1917,14 @@ details.memo-raw pre { font-size:11px; overflow-x:auto; color:var(--muted); whit
           var degIn  = allEdges.filter(function(e2){ return e2.dst===hit; }).length;
           var degOut = allEdges.filter(function(e2){ return e2.src===hit; }).length;
           var rows = (n.meta && n.meta.n_spine_rows) ? n.meta.n_spine_rows : null;
-          tooltip.innerHTML = '<strong>' + esc(n.label||n.id) + '</strong><br>'
+          var displayLabel = isZhH ? (n.labelZh || n.label || n.id) : (n.label || n.id);
+          var typeLabelH = isZhH ? (TYPE_LABEL_ZH[n.type] || n.type) : (TYPE_LABEL_EN[n.type] || n.type);
+          tooltip.innerHTML = '<strong>' + esc(displayLabel) + '</strong><br>'
             + '<span style="font-size:10px;color:var(--muted)">'+esc(n.id)+'</span><br>'
-            + '<span style="font-size:11px">type: '+esc(n.type)+(rows?' · spine rows: '+rows:'')+'</span><br>'
+            + '<span style="font-size:11px">'+esc(typeLabelH)+(rows?' · spine rows: '+rows:'')+'</span><br>'
             + '<span style="font-size:11px;color:var(--muted)">in: '+degIn+' · out: '+degOut+'</span>';
           var cx = e.clientX - rect.left + 14;
           var cy = e.clientY - rect.top  - 10;
-          // Keep in bounds
           if (cx + 270 > rect.width) cx = e.clientX - rect.left - 280;
           tooltip.style.left = cx + 'px';
           tooltip.style.top  = cy + 'px';
@@ -1313,57 +1945,61 @@ details.memo-raw pre { font-size:11px; overflow-x:auto; color:var(--muted); whit
       ic.classList.add('visible');
 
       var rows = (n.meta && n.meta.n_spine_rows) ? n.meta.n_spine_rows : null;
-      var conns = { confirms: [], contradicts: [], feeds: [] };
+      var conns = { confirms: [], contradicts: [], structure: [], wiring: [] };
       allEdges.forEach(function(e){
         if (e.src === id || e.dst === id) {
           var otherId = e.src === id ? e.dst : e.src;
           var otherN = allNodes.filter(function(x){ return x.id===otherId; })[0];
           var label = otherN ? (otherN.label||otherN.id) : otherId;
-          if (label.length > 20) label = label.slice(0,18)+'…';
-          conns[e.edge_type] = conns[e.edge_type] || [];
-          conns[e.edge_type].push({ id: otherId, label: label });
+          if (label.length > 22) label = label.slice(0,20)+'…';
+          var et = e.edge_type || 'structure';
+          conns[et] = conns[et] || [];
+          conns[et].push({ id: otherId, label: label });
         }
       });
 
-      var isZh = document.documentElement.getAttribute('data-lang')==='zh';
-      var typeLabel = isZh
-        ? (LOBE_NAMES_ZH[n.type] || n.type)
-        : (LOBE_NAMES_EN[n.type] || n.type);
+      var isZhS = document.documentElement.getAttribute('data-lang')==='zh';
+      var displayLabel = isZhS ? (n.labelZh || n.label || n.id) : (n.label || n.id);
+      var typeLabel = isZhS ? (TYPE_LABEL_ZH[n.type] || n.type) : (TYPE_LABEL_EN[n.type] || n.type);
+      var lobeStr = (n._lobe && n._lobe !== 'core') ? (' · ' + n._lobe) : '';
 
-      var html = '<div class="graph-info-title">'+esc(n.label||n.id)+'</div>'
-        + '<div class="graph-info-type">'+esc(typeLabel)+(rows?' · '+rows+' spine rows':'')+'</div>'
+      var html = '<div class="graph-info-title">'+esc(displayLabel)+'</div>'
+        + '<div class="graph-info-type">'+esc(typeLabel)+esc(lobeStr)+(rows?' · '+rows+' spine rows':'')+'</div>'
         + '<div style="font-size:10px;color:var(--muted);word-break:break-all;margin-bottom:6px">'+esc(n.id)+'</div>';
 
       if (conns.confirms.length) {
-        html += '<div class="graph-info-section">'+(isZh?'确认':'Confirms')+'</div>';
+        html += '<div class="graph-info-section" style="color:var(--up)">'+(isZhS?'确认（评分）':'Confirms (graded)')+'</div>';
         conns.confirms.slice(0,8).forEach(function(nb){
           html += '<span class="graph-nbr-chip" data-id="'+esc(nb.id)+'">'+esc(nb.label)+'</span>';
         });
         if (conns.confirms.length > 8) html += '<span class="graph-nbr-chip" style="color:var(--muted)">+' + (conns.confirms.length-8) + '</span>';
       }
       if (conns.contradicts.length) {
-        html += '<div class="graph-info-section">'+(isZh?'矛盾':'Contradicts')+'</div>';
+        html += '<div class="graph-info-section" style="color:var(--down)">'+(isZhS?'矛盾（评分）':'Contradicts (graded)')+'</div>';
         conns.contradicts.slice(0,8).forEach(function(nb){
           html += '<span class="graph-nbr-chip" data-id="'+esc(nb.id)+'">'+esc(nb.label)+'</span>';
         });
       }
-      if (conns.feeds.length) {
-        html += '<div class="graph-info-section">'+(isZh?'馈入 ('+conns.feeds.length+')':'Feeds ('+conns.feeds.length+')')+'</div>';
-        conns.feeds.slice(0,6).forEach(function(nb){
+      if (conns.structure.length) {
+        html += '<div class="graph-info-section">'+(isZhS?'结构连接 ('+conns.structure.length+')':'Structure ('+conns.structure.length+')')+'</div>';
+        conns.structure.slice(0,8).forEach(function(nb){
           html += '<span class="graph-nbr-chip" data-id="'+esc(nb.id)+'">'+esc(nb.label)+'</span>';
         });
-        if (conns.feeds.length > 6) html += '<span class="graph-nbr-chip" style="color:var(--muted)">+' + (conns.feeds.length-6) + '</span>';
+        if (conns.structure.length > 8) html += '<span class="graph-nbr-chip" style="color:var(--muted)">+' + (conns.structure.length-8) + '</span>';
+      }
+      if (conns.wiring && conns.wiring.length) {
+        html += '<div class="graph-info-section">'+(isZhS?'布线 ('+conns.wiring.length+')':'Wiring ('+conns.wiring.length+')')+'</div>';
+        conns.wiring.slice(0,5).forEach(function(nb){
+          html += '<span class="graph-nbr-chip" data-id="'+esc(nb.id)+'">'+esc(nb.label)+'</span>';
+        });
+        if (conns.wiring.length > 5) html += '<span class="graph-nbr-chip" style="color:var(--muted)">+' + (conns.wiring.length-5) + '</span>';
       }
 
       ic.innerHTML = html;
-      // Chip click → select neighbor + pan
       ic.querySelectorAll('.graph-nbr-chip[data-id]').forEach(function(chip){
         chip.addEventListener('click', function(){
           var nid = chip.dataset.id;
-          if (positions[nid]) {
-            animatePanTo(nid);
-            selectNode(nid);
-          }
+          if (positions[nid]) { animatePanTo(nid); selectNode(nid); }
         });
       });
     }
@@ -1418,52 +2054,31 @@ details.memo-raw pre { font-size:11px; overflow-x:auto; color:var(--muted); whit
       return { r: parseInt(hex.slice(1,3),16)||0, g: parseInt(hex.slice(3,5),16)||0, b: parseInt(hex.slice(5,7),16)||0 };
     }
 
-    // Spawn a faint feeds pulse
-    function maybeSpawnFeedsTravel(dt) {
-      if (_graphReducedMotion) return;
-      if (!feedsEdges.length) return;
-      _graphSpawnTimer += dt;
-      if (_graphSpawnTimer > 140) {
-        _graphSpawnTimer = 0;
-        if (_graphPulses.filter(function(p){ return !p.persistent; }).length < 40) {
-          var e = feedsEdges[Math.floor(Math.random() * feedsEdges.length)];
-          _graphPulses.push({ edge: e, t: 0, type: 'feeds', persistent: false, speed: 0.00025 + Math.random()*0.0002 });
-        }
-      }
-    }
-
     var lastFrameTime = 0;
 
     function drawFrame(ts) {
       var dt = ts - lastFrameTime; lastFrameTime = ts;
-      if (dt > 200) dt = 16; // cap on first frame or tab-switch
-
-      // Spawn feeds travelers
-      maybeSpawnFeedsTravel(dt);
+      if (dt > 200) dt = 16;
 
       // Update pulses
       if (!_graphReducedMotion) {
-        var COL_UP2   = cssVar('--up');
-        var COL_DOWN2 = cssVar('--down');
-        var COL_LINK2 = cssVar('--link');
         _graphPulses.forEach(function(pulse){
-          var speed = pulse.speed || (pulse.type==='feeds' ? 0.00025 : 0.00035);
+          var speed = pulse.speed || 0.00035;
           pulse.t += dt * speed;
           if (pulse.persistent && pulse.t > 1) pulse.t -= 1;
         });
         _graphPulses = _graphPulses.filter(function(p){ return p.t <= 1 || p.persistent; });
       }
 
-      var ctx = document.getElementById('graph_canvas').getContext('2d');
-      var cw = document.getElementById('graph_canvas').width;
-      var ch = document.getElementById('graph_canvas').height;
+      var cvs = document.getElementById('graph_canvas');
+      var ctx = cvs.getContext('2d');
+      var cw = cvs.width, ch = cvs.height;
       ctx.clearRect(0, 0, cw, ch);
       ctx.save();
       ctx.scale(_graphDpr, _graphDpr);
 
       var canW = cw / _graphDpr, canH = ch / _graphDpr;
 
-      // Transform
       ctx.save();
       ctx.translate(_graphView.tx, _graphView.ty);
       ctx.scale(_graphView.scale, _graphView.scale);
@@ -1472,71 +2087,101 @@ details.memo-raw pre { font-size:11px; overflow-x:auto; color:var(--muted); whit
       var COL_UP3   = cssVar('--up');
       var COL_DOWN3 = cssVar('--down');
       var COL_LINK3 = cssVar('--link');
+      var isZhD = document.documentElement.getAttribute('data-lang') === 'zh';
 
-      // Dust
+      // Ambient dust
       if (!_graphReducedMotion && _graphDust.length) {
         _graphDust.forEach(function(d){
           d.x += d.vx; d.y += d.vy;
           if (d.x < 0) d.x = W; if (d.x > W) d.x = 0;
           if (d.y < 0) d.y = H; if (d.y > H) d.y = 0;
           ctx.beginPath();
-          ctx.arc(d.x, d.y, 1.2/scale, 0, 2*Math.PI);
+          ctx.arc(d.x, d.y, 0.9/scale, 0, 2*Math.PI);
           ctx.fillStyle = hexAlpha(COL_LINK3, d.alpha);
           ctx.fill();
         });
       }
 
-      // Neighbor set for dimming
       var neighborSet = _selectedNode ? getNeighborSet(_selectedNode) : null;
 
-      // Draw feeds edges (faint mesh)
-      allEdges.forEach(function(e, i){
-        if (e.edge_type !== 'feeds') return;
+      // ── LAYER 1: Wiring edges (dimmest, underlay) ──────────────────────
+      if (_graphShowWiring) {
+        allEdges.forEach(function(e){
+          if (e.edge_type !== 'wiring') return;
+          var pa = positions[e.src], pb = positions[e.dst];
+          if (!pa || !pb || e._cx == null) return;
+          var alpha = 0.10;
+          if (neighborSet) {
+            if (!neighborSet[e.src] && !neighborSet[e.dst]) alpha = 0.025;
+            else alpha = 0.22;
+          }
+          ctx.globalAlpha = alpha;
+          ctx.strokeStyle = '#6b7a90';
+          ctx.lineWidth = 0.5 / scale;
+          ctx.setLineDash([]);
+          ctx.beginPath();
+          ctx.moveTo(pa.x, pa.y);
+          ctx.quadraticCurveTo(e._cx, e._cy, pb.x, pb.y);
+          ctx.stroke();
+        });
+        ctx.globalAlpha = 1;
+      }
+
+      // ── LAYER 2: Structure edges ────────────────────────────────────────
+      allEdges.forEach(function(e){
+        if (e.edge_type !== 'structure') return;
         var pa = positions[e.src], pb = positions[e.dst];
         if (!pa || !pb || e._cx == null) return;
-        var alpha = 0.07;
+        // Color by child node's type (src is typically the "child")
+        var childNode = allNodes.filter(function(n){ return n.id === e.src; })[0];
+        var col = childNode ? nodeDisplayColor(childNode) : '#5b7090';
+        var baseAlpha = 0.32;
         if (neighborSet) {
-          if (!neighborSet[e.src] && !neighborSet[e.dst]) alpha = 0.018;
-          else alpha = 0.18;
+          if (!neighborSet[e.src] && !neighborSet[e.dst]) baseAlpha = 0.06;
+          else if (_selectedNode === e.src || _selectedNode === e.dst) baseAlpha = 0.7;
         }
-        ctx.globalAlpha = alpha;
-        ctx.strokeStyle = hexAlpha('#7090b0', 1);
-        ctx.lineWidth = 0.6 / scale;
+        ctx.globalAlpha = baseAlpha;
+        ctx.strokeStyle = hexAlpha(col, 1);
+        ctx.lineWidth = 1.1 / scale;
         ctx.setLineDash([]);
         ctx.beginPath();
         ctx.moveTo(pa.x, pa.y);
         ctx.quadraticCurveTo(e._cx, e._cy, pb.x, pb.y);
         ctx.stroke();
       });
+      ctx.globalAlpha = 1;
 
-      // Draw confirms/contradicts edges
-      allEdges.forEach(function(e, i){
-        var pa = positions[e.src], pb = positions[e.dst];
-        if (!pa || !pb || e._cx == null) return;
-        if (e.edge_type === 'feeds') return;
+      // ── LAYER 3: Graded edges (confirms / contradicts) ─────────────────
+      allEdges.forEach(function(e){
         var isConf = e.edge_type === 'confirms';
         var isContra = e.edge_type === 'contradicts';
+        if (!isConf && !isContra) return;
+        var pa = positions[e.src], pb = positions[e.dst];
+        if (!pa || !pb || e._cx == null) return;
 
-        var alpha = isConf ? 0.55 : 0.6;
-        var lw = isConf ? 1.8 : 1.8;
+        var alpha = 0.80, lw = 2.4; // FIX 6: slightly brighter base
         if (neighborSet) {
-          if (!neighborSet[e.src] && !neighborSet[e.dst]) { alpha *= 0.12; }
-          else if (_selectedNode === e.src || _selectedNode === e.dst) { alpha = Math.min(1, alpha * 1.8); lw *= 1.6; }
+          if (!neighborSet[e.src] && !neighborSet[e.dst]) { alpha = 0.09; lw = 1; }
+          else if (_selectedNode === e.src || _selectedNode === e.dst) { alpha = 0.98; lw = 3.0; }
         }
 
         ctx.globalAlpha = alpha;
         ctx.lineWidth = lw / scale;
 
-        if (isContra) { ctx.setLineDash([6/scale, 5/scale]); }
-        else { ctx.setLineDash([]); }
-
-        // Gradient stroke src→dst
         var col = isConf ? COL_UP3 : COL_DOWN3;
-        var grd;
+        if (isContra) ctx.setLineDash([7/scale, 5/scale]);
+        else ctx.setLineDash([]);
+
+        // FIX 6: stronger glow so green/red pulses pop against structure links
+        if (alpha > 0.5) {
+          ctx.shadowBlur = 10 / scale; // FIX 6: increased from 6 → 10
+          ctx.shadowColor = hexAlpha(col, 0.65); // FIX 6: increased from 0.45 → 0.65
+        }
+
         try {
-          grd = ctx.createLinearGradient(pa.x, pa.y, pb.x, pb.y);
-          var rgb = parseHex(col.length===7?col:'#5b9dff');
-          grd.addColorStop(0, 'rgba('+rgb.r+','+rgb.g+','+rgb.b+',0.2)');
+          var grd = ctx.createLinearGradient(pa.x, pa.y, pb.x, pb.y);
+          var rgb = parseHex(col.length===7?col:'#22c55e');
+          grd.addColorStop(0, 'rgba('+rgb.r+','+rgb.g+','+rgb.b+',0.3)');
           grd.addColorStop(1, 'rgba('+rgb.r+','+rgb.g+','+rgb.b+',1)');
           ctx.strokeStyle = grd;
         } catch(ex) { ctx.strokeStyle = col; }
@@ -1545,18 +2190,88 @@ details.memo-raw pre { font-size:11px; overflow-x:auto; color:var(--muted); whit
         ctx.moveTo(pa.x, pa.y);
         ctx.quadraticCurveTo(e._cx, e._cy, pb.x, pb.y);
         ctx.stroke();
+        ctx.shadowBlur = 0; ctx.shadowColor = 'transparent';
         ctx.setLineDash([]);
       });
-
       ctx.globalAlpha = 1;
 
-      // Draw nodes
+      // ── LOBE HULLS (zoomed out) ─────────────────────────────────────────
+      if (scale < 1.3 && scale >= 0.28) {
+        var LOBE_EN = { us:'US EQUITY', intl:'CHINA & INTL', signals:'SIGNALS & OPTIONS', meta:'MACRO & META' };
+        var LOBE_ZH = { us:'美股', intl:'中国及国际', signals:'信号与期权', meta:'宏观与元' };
+        Object.keys(LOBE_ANCHORS).forEach(function(lobe){
+          var la2 = LOBE_ANCHORS[lobe];
+          var ang4 = la2.angle * Math.PI / 180;
+          var cx = (0.5 + la2.r * Math.cos(ang4)) * W;
+          var cy2 = (0.5 + la2.r * Math.sin(ang4)) * H;
+          var col2 = LOBE_COLORS[lobe] || '#4da3ff';
+          // FIX 6: Soft radial hull with raised alpha + 1px tinted ring
+          try {
+            var hullGrd = ctx.createRadialGradient(cx, cy2, 0, cx, cy2, 100);
+            hullGrd.addColorStop(0, hexAlpha(col2, 0.10)); // FIX 6: raised from 0.07
+            hullGrd.addColorStop(0.7, hexAlpha(col2, 0.05));
+            hullGrd.addColorStop(1, hexAlpha(col2, 0.0));
+            ctx.fillStyle = hullGrd;
+            ctx.beginPath();
+            ctx.ellipse(cx, cy2, 100, 78, 0, 0, 2*Math.PI);
+            ctx.fill();
+            // Tinted ring
+            ctx.strokeStyle = hexAlpha(col2, 0.18);
+            ctx.lineWidth = 1.0 / scale;
+            ctx.setLineDash([]);
+            ctx.stroke();
+          } catch(ex){}
+          // Label chip
+          if (scale >= 0.35) {
+            var lobeNm = isZhD ? LOBE_ZH[lobe] : LOBE_EN[lobe];
+            var fs3 = Math.max(7.5, 8/scale);
+            ctx.font = '700 ' + fs3 + 'px -apple-system,sans-serif';
+            ctx.fillStyle = hexAlpha(col2, 0.55);
+            ctx.textAlign = 'center';
+            ctx.fillText(lobeNm, cx, cy2 - 78 / scale);
+          }
+        });
+        // Sector ring label
+        if (scale >= 0.35) {
+          var fs4 = Math.max(7.5, 8/scale);
+          ctx.font = '600 ' + fs4 + 'px -apple-system,sans-serif';
+          ctx.fillStyle = hexAlpha(LOBE_COLORS.sector, 0.5);
+          ctx.textAlign = 'center';
+          ctx.fillText(isZhD ? '板块' : 'SECTORS', 0.78*W, 0.56*H);
+        }
+        // Regime arc label
+        if (scale >= 0.35) {
+          ctx.font = '600 ' + Math.max(7.5, 8/scale) + 'px -apple-system,sans-serif';
+          ctx.fillStyle = hexAlpha(LOBE_COLORS.regime, 0.5);
+          ctx.textAlign = 'center';
+          ctx.fillText(isZhD ? '周期' : 'REGIMES', 0.5*W, 0.07*H);
+        }
+      }
+
+      // ── NODES ──────────────────────────────────────────────────────────
+
+      // Label collision state — built per frame
+      var placedBoxes = [];
+      var labelPriorityOrder = [];
+      var forceShowLabels = {};  // nodeId → true (hovered/selected/neighbor)
+      if (neighborSet) {
+        Object.keys(neighborSet).forEach(function(id){ forceShowLabels[id] = true; });
+      }
+      if (_graphHovered) forceShowLabels[_graphHovered] = true;
+      if (_selectedNode) forceShowLabels[_selectedNode] = true;
+
+      // Sort by draw priority for label placement
+      var priorityMap = { core: 0, hub: 0, engine: 1, regime: 2, complex: 3, thesis: 4, sector: 5, signal: 6, 'wiring-module': 7, 'wiring-artifact': 8 };
+
+      // Draw nodes (all), collect label candidates
+      var labelCandidates = [];
       allNodes.forEach(function(n, i){
         var p = positions[n.id];
         if (!p) return;
         var r = radii[n.id] || 4;
-        var isBreathing = !_graphReducedMotion && (n.type==='engine'||n.type==='regime');
-        var displayR = isBreathing ? r*(1+0.05*Math.sin(_graphPhase*0.8 + i*0.7)) : r;
+        var isCore = n.type === 'core';
+        var breathing = !_graphReducedMotion && (n.type === 'engine' || isCore || n.type === 'hub');
+        var displayR = breathing ? r * (1 + 0.05 * Math.sin(_graphPhase * (isCore ? 0.5 : n.type === 'hub' ? 0.6 : 0.8) + i * 0.7)) : r;
 
         var alpha = 1;
         if (neighborSet && !neighborSet[n.id]) alpha = 0.12;
@@ -1565,21 +2280,60 @@ details.memo-raw pre { font-size:11px; overflow-x:auto; color:var(--muted); whit
 
         ctx.globalAlpha = alpha;
 
-        // Glow for engine/regime
-        if ((n.type==='engine'||n.type==='regime') && scale > 0.3) {
-          ctx.shadowBlur = 12 / scale;
-          ctx.shadowColor = hexAlpha(NODE_COLORS[n.type]||'#4da3ff', 0.6*alpha);
+        var col = nodeDisplayColor(n);
+
+        // FIX 6: Core — layered radial glow (outer soft halo + bright inner core) + breathing
+        if (isCore && !_graphReducedMotion) {
+          var haloPulse = 0.5 + 0.5 * Math.sin(_graphPhase * 0.5);
+          // Outer soft halo
+          try {
+            var haloGrd = ctx.createRadialGradient(p.x, p.y, displayR, p.x, p.y, displayR * 3.5);
+            haloGrd.addColorStop(0, hexAlpha(col, 0.18 * haloPulse * alpha));
+            haloGrd.addColorStop(0.5, hexAlpha(col, 0.08 * haloPulse * alpha));
+            haloGrd.addColorStop(1, hexAlpha(col, 0.0));
+            ctx.fillStyle = haloGrd;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, displayR * 3.5, 0, 2*Math.PI);
+            ctx.fill();
+          } catch(ex){}
+          // Bright inner corona
+          try {
+            var coronaGrd = ctx.createRadialGradient(p.x, p.y, displayR * 0.6, p.x, p.y, displayR * 1.8);
+            coronaGrd.addColorStop(0, hexAlpha(col, 0.45 * alpha));
+            coronaGrd.addColorStop(1, hexAlpha(col, 0.0));
+            ctx.fillStyle = coronaGrd;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, displayR * 1.8, 0, 2*Math.PI);
+            ctx.fill();
+          } catch(ex){}
         }
 
-        // Radial gradient fill
-        var col = NODE_COLORS[n.type] || '#7d8aa0';
-        var grd2;
+        // FIX 6: Hub nodes — subtle glow
+        if (n.type === 'hub' && scale > 0.25) {
+          try {
+            var hubGrd = ctx.createRadialGradient(p.x, p.y, displayR * 0.5, p.x, p.y, displayR * 2.2);
+            hubGrd.addColorStop(0, hexAlpha(col, 0.25 * alpha));
+            hubGrd.addColorStop(1, hexAlpha(col, 0.0));
+            ctx.fillStyle = hubGrd;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, displayR * 2.2, 0, 2*Math.PI);
+            ctx.fill();
+          } catch(ex){}
+        }
+
+        // Glow for prominent nodes
+        if ((n.type === 'engine' || isCore || n.type === 'hub') && scale > 0.25) {
+          ctx.shadowBlur = (isCore ? 24 : n.type === 'hub' ? 14 : 12) / scale; // FIX 6: stronger core glow
+          ctx.shadowColor = hexAlpha(col, (isCore ? 0.9 : 0.65) * alpha);
+        }
+
+        // Radial gradient soma
         try {
-          grd2 = ctx.createRadialGradient(p.x - displayR*0.3, p.y - displayR*0.3, 0, p.x, p.y, displayR);
-          grd2.addColorStop(0, hexAlpha(col, 0.95));
-          grd2.addColorStop(1, hexAlpha(col, 0.4));
+          var grd2 = ctx.createRadialGradient(p.x - displayR*0.32, p.y - displayR*0.32, 0, p.x, p.y, displayR);
+          grd2.addColorStop(0, hexAlpha(col, 0.96));
+          grd2.addColorStop(1, hexAlpha(col, 0.38));
           ctx.fillStyle = grd2;
-        } catch(ex) { ctx.fillStyle = hexAlpha(col, 0.7); }
+        } catch(ex) { ctx.fillStyle = hexAlpha(col, 0.72); }
 
         ctx.beginPath();
         ctx.arc(p.x, p.y, displayR, 0, 2*Math.PI);
@@ -1587,65 +2341,67 @@ details.memo-raw pre { font-size:11px; overflow-x:auto; color:var(--muted); whit
         ctx.shadowBlur = 0; ctx.shadowColor = 'transparent';
 
         // Rim
-        var rimAlpha = isHovered || isSelected ? 0.9 : 0.35;
+        var rimAlpha = isHovered ? 1 : isSelected ? 0.95 : 0.4;
         ctx.strokeStyle = isSelected ? COL_LINK3 : hexAlpha(col, rimAlpha);
-        ctx.lineWidth = (isHovered || isSelected ? 2 : 1) / scale;
+        ctx.lineWidth = (isHovered || isSelected ? 2.2 : 1.0) / scale;
+        ctx.globalAlpha = Math.min(alpha * 1.2, 1);
         ctx.stroke();
 
-        // Labels
-        var showLabel = false;
-        if (n.type==='engine'||n.type==='regime') showLabel = scale >= 0.5;
-        else if (n.type==='sector') showLabel = scale >= 0.7;
-        else if (n.type==='module'||n.type==='artifact') showLabel = scale >= 1.4;
-        else showLabel = scale >= 1.8;
-        if (isHovered || isSelected || (neighborSet && neighborSet[n.id])) showLabel = true;
+        ctx.globalAlpha = 1;
 
-        if (showLabel) {
-          var fontSize = Math.max(9, Math.min(13, 10/scale)) / scale;
-          ctx.font = ((n.type==='engine'||isSelected)?'700 ':'') + fontSize + 'px -apple-system,sans-serif';
-          ctx.fillStyle = isSelected ? COL_LINK3 : (alpha < 0.5 ? hexAlpha('#8b93a1', 0.5) : '#e0e8ff');
-          ctx.textAlign = 'center';
-          ctx.globalAlpha = Math.max(alpha, 0.3);
-          var label = (n.label || n.id.split(':').pop().split('/').pop()).replace(/_/g,' ');
-          if (label.length > 16) label = label.slice(0,14)+'…';
-          ctx.fillText(label, p.x, p.y + displayR + (10/scale));
+        // Queue label candidate
+        labelCandidates.push({ n: n, p: p, displayR: displayR, alpha: alpha, isHovered: isHovered, isSelected: isSelected, priority: priorityMap[n.type] != null ? priorityMap[n.type] : 9 });
+      });
+
+      // ── LABEL COLLISION PASS ──────────────────────────────────────────
+      labelCandidates.sort(function(a, b){ return a.priority - b.priority; });
+      var isZhLabel = document.documentElement.getAttribute('data-lang') === 'zh';
+
+      labelCandidates.forEach(function(lc2){
+        var n = lc2.n, p = lc2.p;
+        var force = forceShowLabels[n.id];
+
+        // Min-zoom gate per priority
+        var minZoom = 0;
+        if (n.type === 'core' || n.type === 'hub' || n.type === 'engine') minZoom = 0;
+        else if (n.type === 'regime' || n.type === 'complex') minZoom = 0.48;
+        else if (n.type === 'thesis' || n.type === 'sector') minZoom = 0.82;
+        else if (n.type === 'signal') minZoom = 1.0;
+        else minZoom = 1.4; // wiring
+
+        if (!force && scale < minZoom) return;
+
+        var isBold = (n.type === 'core' || n.type === 'hub' || n.type === 'engine' || lc2.isSelected);
+        var fontSizePx = Math.max(10, Math.min(13, 11 / scale));
+        var fontSizeCanvas = fontSizePx / scale;
+        ctx.font = (isBold ? '700 ' : '') + fontSizeCanvas + 'px -apple-system,sans-serif';
+
+        var rawLabel = isZhLabel ? (n.labelZh || n.label || n.id) : (n.label || n.id);
+        var label = rawLabel.replace(/_/g, ' ');
+        if (label.length > 18) label = label.slice(0, 16) + '…';
+
+        var tw = ctx.measureText(label).width;
+        var lx = p.x - tw / 2;
+        var ly = p.y + lc2.displayR + (fontSizeCanvas * 0.3) + 2 / scale;
+        var box = { x1: lx - 2/scale, y1: ly - fontSizeCanvas, x2: lx + tw + 2/scale, y2: ly + 2/scale };
+
+        // Overlap test (skip if not forced)
+        if (!force) {
+          for (var bi = 0; bi < placedBoxes.length; bi++) {
+            var pb6 = placedBoxes[bi];
+            if (box.x1 < pb6.x2 && box.x2 > pb6.x1 && box.y1 < pb6.y2 && box.y2 > pb6.y1) return; // overlap → skip
+          }
         }
+        placedBoxes.push(box);
 
+        ctx.fillStyle = lc2.isSelected ? COL_LINK3 : (lc2.alpha < 0.5 ? hexAlpha('#8b99b5', 0.5) : '#e6edf7');
+        ctx.globalAlpha = Math.max(lc2.alpha, 0.25);
+        ctx.textAlign = 'center';
+        ctx.fillText(label, p.x, ly);
         ctx.globalAlpha = 1;
       });
 
-      // Draw lobe boundary circles + labels (only when zoomed in enough)
-      if (scale < 1.2) {
-        var isZh2 = document.documentElement.getAttribute('data-lang')==='zh';
-        Object.keys(LOBE_CENTERS).forEach(function(type){
-          var ns2 = (byType[type]||[]);
-          if (!ns2.length) return;
-          var lc2 = LOBE_CENTERS[type];
-          var lcx2 = lc2.x * W, lcy2 = lc2.y * H;
-          var lobeR2 = Math.sqrt(ns2.length) * (type==='thesis'||type==='episode'?22:18) + 14;
-          ctx.save();
-          ctx.setLineDash([4/scale, 6/scale]);
-          ctx.strokeStyle = hexAlpha(NODE_COLORS[type]||'#4da3ff', 0.18);
-          ctx.lineWidth = 1/scale;
-          ctx.beginPath();
-          ctx.arc(lcx2, lcy2, lobeR2, 0, 2*Math.PI);
-          ctx.stroke();
-          ctx.setLineDash([]);
-          // Lobe label chip
-          if (scale >= 0.35) {
-            var nm = isZh2 ? LOBE_NAMES_ZH[type] : LOBE_NAMES_EN[type];
-            var chipLabel = nm + ' · ' + ns2.length;
-            var fs2 = Math.max(8, 9/scale);
-            ctx.font = '600 ' + fs2 + 'px -apple-system,sans-serif';
-            ctx.fillStyle = hexAlpha(NODE_COLORS[type]||'#4da3ff', 0.55);
-            ctx.textAlign = 'center';
-            ctx.fillText(chipLabel, lcx2, lcy2 - lobeR2 - (3/scale));
-          }
-          ctx.restore();
-        });
-      }
-
-      // Draw pulse travelers
+      // ── PULSE TRAVELERS ───────────────────────────────────────────────
       if (!_graphReducedMotion) {
         _graphPulses.forEach(function(pulse){
           var e = pulse.edge;
@@ -1653,9 +2409,8 @@ details.memo-raw pre { font-size:11px; overflow-x:auto; color:var(--muted); whit
           if (!pa2 || !pb2 || e._cx == null) return;
           var t2 = pulse.t;
 
-          // Bezier position at t
           function bezierAt(t3) {
-            var mt = 1-t3;
+            var mt = 1 - t3;
             return {
               x: mt*mt*pa2.x + 2*mt*t3*e._cx + t3*t3*pb2.x,
               y: mt*mt*pa2.y + 2*mt*t3*e._cy + t3*t3*pb2.y
@@ -1663,36 +2418,33 @@ details.memo-raw pre { font-size:11px; overflow-x:auto; color:var(--muted); whit
           }
 
           var pos2 = bezierAt(t2);
-          var isFeeds2 = pulse.type==='feeds';
-          var isConf2  = pulse.type==='confirms';
-          var pAlpha = isFeeds2 ? 0.5 : 0.85;
-          var pR = isFeeds2 ? 1.6/scale : 3/scale;
-          var pCol = isFeeds2 ? COL_LINK3 : (isConf2 ? COL_UP3 : COL_DOWN3);
+          var isConf2 = pulse.type === 'confirms';
+          var pAlpha = 0.88;
+          var pR = 3.0 / scale;
+          var pCol = isConf2 ? COL_UP3 : COL_DOWN3;
 
-          // Dim if selected and not connected
-          if (neighborSet && !neighborSet[e.src] && !neighborSet[e.dst]) pAlpha *= 0.15;
+          if (neighborSet && !neighborSet[e.src] && !neighborSet[e.dst]) pAlpha *= 0.1;
 
-          // 4-ghost fading tail
+          // Fading ghost tail
           for (var ghost = 3; ghost >= 0; ghost--) {
-            var ghostT = Math.max(0, t2 - ghost*0.03);
+            var ghostT = Math.max(0, t2 - ghost * 0.035);
             var ghostPos = bezierAt(ghostT);
-            var ghostAlpha = pAlpha * (1 - ghost*0.22) * (isFeeds2 ? 0.35 : 0.55);
-            ctx.globalAlpha = ghostAlpha;
+            ctx.globalAlpha = pAlpha * (1 - ghost * 0.22) * 0.55;
             ctx.beginPath();
-            ctx.arc(ghostPos.x, ghostPos.y, pR*(1-ghost*0.18), 0, 2*Math.PI);
+            ctx.arc(ghostPos.x, ghostPos.y, pR * (1 - ghost * 0.18), 0, 2*Math.PI);
             ctx.fillStyle = pCol;
             ctx.fill();
           }
 
-          // Main dot
+          // Main dot with glow
           ctx.globalAlpha = pAlpha;
-          ctx.shadowBlur = isFeeds2 ? 4/scale : 8/scale;
-          ctx.shadowColor = hexAlpha(pCol, 0.7);
+          ctx.shadowBlur = 9 / scale;
+          ctx.shadowColor = hexAlpha(pCol, 0.75);
           ctx.beginPath();
           ctx.arc(pos2.x, pos2.y, pR, 0, 2*Math.PI);
           ctx.fillStyle = pCol;
           ctx.fill();
-          ctx.shadowBlur = 0; ctx.shadowColor='transparent';
+          ctx.shadowBlur = 0; ctx.shadowColor = 'transparent';
           ctx.globalAlpha = 1;
         });
       }
