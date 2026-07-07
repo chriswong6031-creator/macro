@@ -1,10 +1,10 @@
 {
   "schema": "risk_state.v1",
-  "built": "2026-07-07 19:43:45 UTC",
+  "built": "2026-07-07 21:16:36 UTC",
   "session": {
     "region": "us",
-    "open": true,
-    "local_time": "2026-07-07 15:43 EDT"
+    "open": false,
+    "local_time": "2026-07-07 17:16 EDT"
   },
   "live_active": true,
   "stale": false,
@@ -14,33 +14,25 @@
   "realtime": false,
   "nightly_asof": "2026-07-06",
   "polygon_status": "ok",
-  "n_live_symbols": 12,
+  "n_live_symbols": 5,
   "movers": [
     {
       "sym": "SPY",
-      "chg_pct": -0.6
+      "chg_pct": -0.49
     },
     {
       "sym": "QQQ",
-      "chg_pct": -2.12
-    },
-    {
-      "sym": "VIX",
-      "chg_pct": 2.58
+      "chg_pct": -1.77
     }
   ],
   "display": {
-    "verdict": "RISK_OFF",
-    "label_en": "Risk-off",
-    "label_zh": "\u907f\u9669",
-    "color": "red",
+    "verdict": "MIXED",
+    "label_en": "Mixed",
+    "label_zh": "\u6df7\u5408",
+    "color": "yellow",
     "score": 56,
-    "band_changed": false,
-    "pending": {
-      "verdict": "MIXED",
-      "ticks": 1,
-      "needs": 2
-    }
+    "band_changed": true,
+    "pending": null
   },
   "live": {
     "verdict": "MIXED",
@@ -54,7 +46,7 @@
     "radar": {
       "state": "caution",
       "state_ungated": "caution",
-      "top_score": 67,
+      "top_score": 77,
       "label_en": "Growth scare / defensive rotation",
       "label_zh": "\u589e\u957f\u6050\u614c/\u9632\u5fa1\u8f6e\u52a8",
       "context_gate": {
@@ -148,7 +140,7 @@
   ],
   "legs_asof": {
     "tape_trend": "live",
-    "volatility": "live",
+    "volatility": "2026-07-06",
     "radar_fast": "live",
     "credit_hy_oas": "2026-07-03",
     "breadth": "2026-07-06",
