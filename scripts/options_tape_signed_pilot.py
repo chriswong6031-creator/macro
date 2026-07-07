@@ -24,15 +24,32 @@ PRE-REGISTRATION (written before computing, 2026-07-06):
     but NOT delta.  The thetadata_eod store (data/thetadata_eod) has no
     per-ticker data yet (backfill not run).  Therefore: delta is NOT available
     from any local store for most contracts.  We use moneyness-bucket proxy for
-    delta-weighted volume:
-      deep ITM (|moneyness| > 0.20): proxy delta = 0.90
-      ITM (0.10 < |moneyness| <= 0.20): proxy delta = 0.70
-      NTM (0.03 < |moneyness| <= 0.10): proxy delta = 0.50
-      ATM (|moneyness| <= 0.03): proxy delta = 0.50
-      OTM (0.10 < |moneyness| <= 0.20): proxy delta = 0.30
-      deep OTM (|moneyness| > 0.20): proxy delta = 0.10
-    where moneyness = (strike - underlying_price) / underlying_price for calls,
-    = (underlying_price - strike) / underlying_price for puts.
+    delta-weighted volume.
+
+    Moneyness convention (matches _moneyness_delta_proxy implementation):
+      For calls: signed_m = (spot - strike) / spot   [positive = ITM call]
+      For puts:  signed_m = (strike - spot) / spot   [positive = ITM put]
+    Bucketing branches on sign of signed_m (ITM = positive, OTM = negative):
+      ITM branch (signed_m >= 0):
+        deep ITM  |m| > 0.20            → proxy delta = 0.90
+        ITM       0.10 < |m| <= 0.20    → proxy delta = 0.70
+        NTM/ATM   |m| <= 0.10           → proxy delta = 0.50
+      OTM branch (signed_m < 0):
+        OTM       |m| <= 0.20           → proxy delta = 0.30  (NTM-OTM included)
+        deep OTM  |m| > 0.20            → proxy delta = 0.10
+    Note 1: the 0.03 ATM boundary listed in early planning is NOT implemented;
+    NTM and ATM are collapsed into the single bucket |m|<=0.10 within the ITM branch.
+    Note 2: slightly-OTM (NTM-OTM) contracts with |m|<=0.10 receive delta_proxy=0.30,
+    NOT 0.50 — because they fall in the OTM branch, which has no sub-ATM bucket.
+
+    IMPORTANT: delta_proxy is an UNSIGNED magnitude. Both calls and puts
+    receive a positive proxy value (e.g., a deep-ITM put gets delta_proxy=0.90,
+    not -0.90). Therefore net_delta_proxy is NOT a directional put-vs-call flow
+    indicator — it is a signed premium-volume proxy weighted by moneyness
+    magnitude, where sign comes from BUY/SELL classification only.
+    Consumers must not interpret net_delta_proxy as a delta-adjusted
+    directional position.
+
     underlying_price is sourced from the last available close in massive_stock_day.
     This proxy is STATED, not hidden.  Delta column in output is labeled
     'delta_proxy' to distinguish from model delta.
@@ -48,10 +65,13 @@ SIGNING RULE (simple quote rule, NOT Lee-Ready):
 
 OUTPUTS per underlying:
   data/options_tape_signed/<UNDERLYING>.parquet
-    Columns: underlying, date, buy_premium, sell_premium, net_premium,
+    Columns (16 total): underlying, date, raw_rows, elapsed_s,
+             buy_premium, sell_premium, net_premium,
              buy_delta_proxy, sell_delta_proxy, net_delta_proxy,
              buy_count, sell_count, excluded_count, total_count,
              exclusion_rate, mid_rate
+    raw_rows: total rows returned by the terminal before signing.
+    elapsed_s: wall-clock seconds for the fetch+sign step (per name-day).
 
   data/options_tape_signed/_backfill_state.json
     Resumable state machine: {version, underlyings: {sym: {cursor: YYYYMMDD,
@@ -275,15 +295,49 @@ def _load_spot(underlying: str, as_of: date,
         return float("nan")
 
 
+def _save_classification_sample(
+    df_signed: pd.DataFrame,
+    underlying: str,
+    trade_date: date,
+    out_dir: Path,
+    n: int = 10,
+) -> None:
+    """Save first N signed rows (with NBBO, price, strike, right, side) to a JSON sidecar.
+
+    File: data/options_tape_signed/_sample_<UNDERLYING>_<DATE>.json
+    Written once at build time so the report can reference it without a live re-pull.
+    Columns captured: price, bid, ask, strike, right, size, side, delta_proxy.
+    """
+    cols = [c for c in ["price", "bid", "ask", "strike", "right", "size", "side", "delta_proxy"]
+            if c in df_signed.columns]
+    sample = df_signed[cols].head(n)
+    out = {
+        "underlying": underlying,
+        "date": trade_date.isoformat(),
+        "n_rows": len(sample),
+        "note": (
+            "First 10 raw signed rows for this name-day. "
+            "side=BUY: price>=ask; side=SELL: price<=bid; side=null: midpoint/excluded."
+        ),
+        "rows": sample.to_dict(orient="records"),
+    }
+    sidecar = out_dir / f"_sample_{underlying}_{trade_date.isoformat()}.json"
+    sidecar.write_text(json.dumps(out, indent=2, default=str))
+
+
 def _fetch_and_sign_one_day(
     underlying: str,
     trade_date: date,
     stock_day_dir: Path,
+    out_dir: Path | None = None,
 ) -> dict[str, Any] | None:
     """Pull trade_quote for one underlying, one day; sign; aggregate.
 
     Returns dict with keys: underlying, date, <metrics>, raw_rows, elapsed_s.
     Returns None on terminal error (caller records as error in state).
+
+    If out_dir is provided, saves first 10 signed rows to a JSON sidecar
+    (_sample_<UNDERLYING>_<DATE>.json) for report spot-check reproducibility.
     """
     t0 = time.perf_counter()
     session = _session()
@@ -330,6 +384,14 @@ def _fetch_and_sign_one_day(
 
     df_signed = _sign_trades(df, spot=spot)
     agg = _aggregate_day(df_signed)
+
+    # Save first-10-row classification sample for report reproducibility (build-time capture).
+    # Sidecar written once; does not affect aggregation or state.
+    if out_dir is not None:
+        try:
+            _save_classification_sample(df_signed, underlying, trade_date, out_dir)
+        except Exception as exc:
+            log.debug("sample save skipped for %s %s: %s", underlying, trade_date, exc)
 
     log.info(
         "done: %s %s rows=%d buy=%d sell=%d excl=%d (%.1fs)",
@@ -553,7 +615,7 @@ def run_pilot(
         with ThreadPoolExecutor(max_workers=CONCURRENT_UNDERLYINGS) as executor:
             for sym in syms_this_day:
                 f = executor.submit(
-                    _fetch_and_sign_one_day, sym, trade_date, stock_day_dir
+                    _fetch_and_sign_one_day, sym, trade_date, stock_day_dir, out_dir
                 )
                 futures[f] = sym
 

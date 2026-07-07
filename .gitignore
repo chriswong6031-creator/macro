@@ -320,7 +320,12 @@ data/sec_ftd/*.parquet
 # W5-B Options Tape Signed Pilot (feat/w5b-options-tape-pilot).
 # Per-ticker parquets are R2-plane only (projected 10-50 GB at 500 names x full backfill).
 # Mirrors pattern: data/massive_stock_day/*.parquet above.
-# _backfill_state.json IS tracked (resumable state machine; tiny JSON anchor).
+# _backfill_state.json is NOT git-tracked (it lives under data/ which is gitignored).
+# On a fresh checkout the state file is absent; the build detects this and starts from scratch,
+# pulling the full date range for any underlyings not yet in completed_dates.
+# The *.parquet ignore already permits the JSON (only *.parquet is blocked), so
+# git-adding the state file is possible if persistence across checkouts is needed;
+# currently it is not added — nightly CI always runs on the host machine, not a fresh checkout.
 data/options_tape_signed/*.parquet
 
 # D2 comment-letter release phase-0: EDGAR quarter indexes + computed event returns.
