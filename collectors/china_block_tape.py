@@ -11,7 +11,8 @@ will feed F5-01 premium/discount backtesting.
              成交总量, 成交总额, 成交总额/流通市值
     History: serves from ~2005-01-04 (confirmed back to 2004-11-01; 2004-10 fails).
              Treats each (name, date) as a single aggregate row; 折溢率 = price ratio
-             (close÷cross - 1, signed). Returns data consistently across all periods.
+             (cross_price÷close - 1, signed; positive = block crossed ABOVE close).
+             Returns data consistently across all periods.
     Coverage: 50-400 rows/3-day window, declining in 2020 vs 2022+ uptick.
 
   stock_dzjy_mrmx(start_date, end_date)  — PER-TRADE DETAIL
@@ -26,7 +27,15 @@ will feed F5-01 premium/discount backtesting.
   data/china_block_tape/
     mrtj_YYYY.parquet   — yearly partitions for per-name aggregate (mrtj feed)
     mrmx_YYYY.parquet   — yearly partitions for per-trade detail (mrmx feed)
-    sw_l1_map.parquet   — Shenwan L1 per-stock snapshot (snapshot_date column)
+    sw_l1_map.parquet   — Shenwan L1 industry-level list (snapshot_date column).
+                        NOTE: this is a HARDCODED 31-industry list with NO
+                        per-stock → industry mapping (no ticker column). It
+                        cannot link block-trade names to SW-L1 industries.
+                        Akshare's constituent APIs (index_component_sw,
+                        stock_industry_clf_hist_sw) were unavailable at build
+                        time (schema mismatch / SSL errors). A future re-snapshot
+                        is needed once per-stock constituent data becomes
+                        accessible; SW classifications drift over time.
 
   Each yearly parquet is APPEND-ONLY by date: a re-run skips dates already stored.
   The PIT write-path: collect date D on day D+1 (or later); never overwrite an
@@ -37,7 +46,8 @@ will feed F5-01 premium/discount backtesting.
   mrtj schema:
     date (str YYYY-MM-DD), ticker (str e.g. "000001.SZ"), name (str),
     chg_pct (float, 涨跌幅), close (float, 收盘价), cross_price (float, 成交价),
-    premium_ratio (float, 折溢率 — close/cross - 1, raw ratio NOT percent),
+    premium_ratio (float, 折溢率 — cross_price/close - 1, raw ratio NOT percent;
+                   positive means block crossed ABOVE the day's close),
     n_trades (int, 成交笔数), vol_lots (float, 成交总量), amt_wan (float, 成交总额 万元),
     amt_pct_mktcap (float, 成交总额/流通市值), asof (str YYYY-MM-DD, collection date)
 
@@ -333,11 +343,24 @@ def _date_chunks(start_yyyymmdd: str, end_yyyymmdd: str, chunk_days: int = CHUNK
 # ── SW L1 mapping snapshot ──────────────────────────────────────────────────────
 
 def refresh_sw_l1_map() -> int:
-    """Build / refresh the Shenwan L1 static map from the hardcoded SW_L1 dict.
+    """Build / refresh the Shenwan L1 industry-level reference list.
+
+    IMPORTANT LIMITATIONS:
+      - This writes an INDUSTRY-LEVEL list only, NOT a per-stock constituent map.
+      - There is NO ticker column: block-trade names cannot be mapped to SW-L1
+        industries using this file alone.
+      - The 31-industry list is derived from the hardcoded china_sectors.SW_L1 dict,
+        not from a live akshare constituent query. Akshare's per-stock constituent
+        APIs (index_component_sw, stock_industry_clf_hist_sw) were unavailable at
+        build time due to schema mismatch / SSL certificate errors on swsresearch.com.
+      - SW classifications DRIFT over time. This snapshot reflects the SW 2021
+        L1 industry taxonomy as of the snapshot_date. A fresh re-snapshot is needed
+        after any SW reclassification cycle (typically annual).
 
     Writes data/china_block_tape/sw_l1_map.parquet with columns:
       sw_code (str, e.g. '801010'), sw_code_si (str, e.g. '801010.SI'),
-      cn_name (str), en_name (str), snapshot_date (str YYYY-MM-DD).
+      cn_name (str), en_name (str), snapshot_date (str YYYY-MM-DD),
+      pe_ttm (float, optional), pb (float, optional), div_pct (float, optional).
 
     Also enriches with live valuation data (PE/PB/div) from sw_index_first_info()
     if available. Returns number of industries written.
