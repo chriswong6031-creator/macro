@@ -191,7 +191,10 @@ jobs:
           # writes the TRACKED site/qledger/track_record.json (un-ignored by #1139).
           # Left unstaged it blocks `git pull --rebase` ("unstaged changes") and the
           # whole data push silently dies after 5 attempts — 07-03/07-04 collections
-          # were lost exactly this way (the sentinel staging-gap pattern).
+          # were lost exactly this way (the sentinel staging-gap pattern). The
+          # --autostash on the rebase below is the durable guard: it survives ANY
+          # stray tracked write collect leaves outside data/+site/qledger/ (e.g.
+          # reports/*.md graders), not just the qledger paths we happen to stage here.
           git add data/ site/qledger/
           if git diff --cached --quiet; then echo "no data changes to commit"; exit 0; fi
           git commit -m "data: daily collection $(date -u +%F)"
@@ -199,7 +202,7 @@ jobs:
           # pipeline (the data is collected; the next run re-syncs). Retry rebase+push,
           # preferring our freshly-collected data on any conflict.
           for i in 1 2 3 4 5; do
-            if git pull --rebase -X theirs origin main && git push; then
+            if git pull --rebase --autostash -X theirs origin main && git push; then
               echo "pushed data on attempt $i"; exit 0
             fi
             git rebase --abort 2>/dev/null || true
@@ -1241,7 +1244,7 @@ jobs:
           # best-effort push (see commit-data). The deploy below uses the uploaded
           # artifact, so it never depends on this commit landing.
           for i in 1 2 3 4 5; do
-            if git pull --rebase -X theirs origin main; then
+            if git pull --rebase --autostash -X theirs origin main; then
               # post-rebase template↔site re-sync (ui.template_site_sync): -X theirs can
               # resurrect this run's checkout-time template copies over a reword that merged
               # mid-nightly (2026-07-07: engine-render commit 2ae709f9f0 reverted #1793's
@@ -1357,7 +1360,7 @@ jobs:
           git commit -m "factor-series: month-end walk $(date -u +%F)"
           # best-effort push (different file from engine's outputs → rebases clean)
           for i in 1 2 3 4 5; do
-            if git pull --rebase -X theirs origin main && git push; then
+            if git pull --rebase --autostash -X theirs origin main && git push; then
               echo "pushed factor series on attempt $i"; exit 0
             fi
             git rebase --abort 2>/dev/null || true
@@ -1446,7 +1449,7 @@ jobs:
           git commit -m "factor-intelligence: nightly state artifact + pool $(date -u +%F)"
           # best-effort push (own files -> rebases clean against engine/factor_series)
           for i in 1 2 3 4 5; do
-            if git pull --rebase -X theirs origin main && git push; then
+            if git pull --rebase --autostash -X theirs origin main && git push; then
               echo "pushed factor intelligence outputs on attempt $i"; exit 0
             fi
             git rebase --abort 2>/dev/null || true
@@ -1520,7 +1523,7 @@ jobs:
           git commit -m "stock-briefs: AI research briefs + accountable leans $(date -u +%F)"
           # best-effort push (own files → rebases clean against engine/factor_series)
           for i in 1 2 3 4 5; do
-            if git pull --rebase -X theirs origin main && git push; then
+            if git pull --rebase --autostash -X theirs origin main && git push; then
               echo "pushed stock briefs on attempt $i"; exit 0
             fi
             git rebase --abort 2>/dev/null || true
@@ -1662,7 +1665,7 @@ jobs:
           git commit -m "cortex: attention grades + A2 earn-in + hypothesis metabolism $(date -u +%F)"
           # Retry-rebase push loop (stock_briefs pattern)
           for i in 1 2 3 4 5; do
-            if git pull --rebase -X theirs origin main && git push; then
+            if git pull --rebase --autostash -X theirs origin main && git push; then
               echo "pushed cortex outputs on attempt $i"; exit 0
             fi
             git rebase --abort 2>/dev/null || true
@@ -1702,7 +1705,7 @@ jobs:
           if git diff --cached --quiet; then echo "no active build map changes"; exit 0; fi
           git commit -m "docs: active build map $(date -u +%F)"
           for i in 1 2 3 4 5; do
-            if git pull --rebase -X theirs origin main && git push; then
+            if git pull --rebase --autostash -X theirs origin main && git push; then
               echo "pushed active build map on attempt $i"; exit 0
             fi
             git rebase --abort 2>/dev/null || true

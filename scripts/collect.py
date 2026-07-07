@@ -59,6 +59,7 @@ _CONCURRENT_HOSTS: dict[str, str] = {
     "jodi": "jodi", "french": "french", "frbsf_sentiment": "frbsf",
     "bis": "bis", "uncertainty_indices": "uncertainty",
     "federal_register": "federalregister",  # federalregister.gov — distinct host, runs in parallel
+    "cleveland_nowcast": "clevelandfed",    # clevelandfed.org — distinct host, runs in parallel (MRI-PR-A)
 }
 
 
@@ -114,6 +115,7 @@ def all_adapters() -> dict:
         ("jodi", "collectors.jodi", "JodiAdapter"),                    # JODI monthly closing oil stocks by country (Strategic Reserves page)
         ("worldbank", "collectors.worldbank", "WorldBankAdapter"),     # World Bank reserve assets -> gold value/share (Strategic Reserves page)
         ("ofr_fsi", "collectors.ofr_fsi", "OfrFsiAdapter"),            # OFR Financial Stress Index (functional + regional decomposition)
+        ("cleveland_nowcast", "collectors.cleveland_nowcast", "ClevelandNowcastAdapter"),  # Cleveland Fed daily CPI/PCE nowcast (MRI-PR-A; fail-open, keyless)
         ("rate_futures", "collectors.rate_futures", "RateFuturesAdapter"),  # ZQ/SR3 implied Fed-policy path (display-only, research/DATA_SIGNAL_EXPANSION_2026.md #2)
         ("uncertainty_indices", "collectors.uncertainty_indices", "UncertaintyIndicesAdapter"),  # EPU + GPR (threat/act) daily text-uncertainty (display-only, narrative-quant-framework P0)
         # FINRA short interest (Phase 3) is ticker-indexed, fetched from build_factors (like EDGAR), not here.

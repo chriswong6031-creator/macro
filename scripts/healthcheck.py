@@ -14,6 +14,12 @@ Two failure conditions:
     consecutive failures). One flaky source is graceful degradation, not death; a
     broad cluster means collection itself is down.
 Individual circuit-broken sources are reported as warnings but don't fail the check.
+
+A third tripwire, check_committed_data_freshness, detects silent data freezes where
+the pipeline keeps running but collected bars stop landing in git (e.g. a failed push
+loop after collection).  It reads a small set of witness parquet files from the
+committed tree and fails when any witness is more than fail_after_sessions business
+days stale.
 """
 from __future__ import annotations
 
@@ -21,6 +27,8 @@ import json
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
+
+import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
@@ -90,6 +98,96 @@ def check_r2_freshness(now: datetime) -> dict:
         return {"ok": True, "fail_reasons": [], "warnings": [f"r2 freshness check skipped: {e!r}"]}
 
 
+def _sessions_stale(through_date: object, now: datetime, holidays: list[str]) -> int:
+    """Business days between *through_date* (inclusive end) and *now* (exclusive end).
+
+    ``through_date`` may be a ``pandas.Timestamp``, ``datetime.date``, or any object
+    that coerces to an ISO-formatted date string.  Returns 0 when through_date >= now
+    (file is current or in the future).  ``holidays`` is a list of ISO date strings
+    (``"YYYY-MM-DD"``) that are excluded from the business-day count.
+
+    Pure function — no I/O, safe to unit-test."""
+    hols = np.array([np.datetime64(h, "D") for h in holidays], dtype="datetime64[D]")
+    try:
+        from_d = np.datetime64(str(through_date)[:10], "D")
+    except (TypeError, ValueError):
+        return 0  # undatable — caller decides how to handle
+    to_d = np.datetime64(now.date().isoformat(), "D")
+    if from_d >= to_d:
+        return 0
+    return int(np.busday_count(from_d, to_d, holidays=hols))
+
+
+def check_committed_data_freshness(now: datetime, cfg: dict | None = None) -> dict:
+    """SILENT-FREEZE tripwire: verifies committed market-data stores are still advancing.
+
+    The daily pipeline can keep running (last_run fresh, circuit-breakers clear) while
+    a failed git-push loop silently freezes bars in the committed tree — dashboards
+    show a fresh render timestamp but stale prices.  This probe reads a small set of
+    witness parquet files directly from the committed tree, extracts their honest
+    data-through date via ``engine.tushare_freshness.frame_asof``, and fails when any
+    witness exceeds ``fail_after_sessions`` business days stale (warns at
+    ``warn_after_sessions``).
+
+    Degrade-never-raise: any unhandled exception degrades to a single warning so a bug
+    here can never take the liveness probe down.  A MISSING witness file emits a warning
+    (stores get renamed) but never hard-fails."""
+    try:
+        try:
+            from engine.tushare_freshness import frame_asof  # noqa: PLC0415
+        except Exception as imp_err:  # noqa: BLE001
+            return {"ok": True, "fail_reasons": [],
+                    "warnings": [f"data freshness check skipped: {imp_err!r}"]}
+
+        import pandas as pd  # noqa: PLC0415 — guarded import; pandas is a hard dep
+
+        if cfg is None:
+            cfg = (config.load().get("healthcheck", {}) or {}).get("data_freshness", {}) or {}
+
+        warn_after = int(cfg.get("warn_after_sessions", 1))
+        fail_after = int(cfg.get("fail_after_sessions", 2))
+        witnesses = list(cfg.get("witnesses", []) or [])
+        raw_holidays = list(cfg.get("holidays", []) or [])
+
+        fail, warn = [], []
+
+        for w in witnesses:
+            label = w.get("label", w.get("path", "unknown"))
+            rel_path = w.get("path", "")
+            p = config.ROOT / rel_path
+            if not p.exists():
+                warn.append(f"data-freeze witness missing (skipped): {label} — {rel_path}")
+                continue
+            try:
+                df = pd.read_parquet(p)
+                through = frame_asof(df)
+            except Exception as read_err:  # noqa: BLE001
+                warn.append(f"data-freeze witness unreadable (skipped): {label} — {read_err!r}")
+                continue
+
+            if through is None:
+                warn.append(f"data-freeze witness undatable (skipped): {label}")
+                continue
+
+            stale = _sessions_stale(through, now, raw_holidays)
+            if stale > fail_after:
+                fail.append(
+                    f"data-freeze: {label} {stale} trading-day{'s' if stale != 1 else ''} stale"
+                    f" (through {str(through)[:10]}, limit {fail_after})"
+                    f" — collected data not landing in git"
+                )
+            elif stale > warn_after:
+                warn.append(
+                    f"data-freeze warn: {label} {stale} trading-day{'s' if stale != 1 else ''} stale"
+                    f" (through {str(through)[:10]}, warn_limit {warn_after})"
+                )
+
+        return {"ok": not fail, "fail_reasons": fail, "warnings": warn}
+
+    except Exception as e:  # noqa: BLE001 — never let the add-on break liveness
+        return {"ok": True, "fail_reasons": [], "warnings": [f"data freshness check skipped: {e!r}"]}
+
+
 def _notify(report: dict) -> None:
     """Best-effort outbound alert via the W6b push spine.
     The non-zero exit is the primary signal; push_ops_alert() dispatches raw
@@ -133,8 +231,16 @@ def main() -> int:
     report["fail_reasons"] = report["fail_reasons"] + r2["fail_reasons"]
     report["warnings"] = report["warnings"] + r2["warnings"]
     report["ok"] = report["ok"] and r2["ok"]
+    # Silent-data-freeze tripwire: committed market-data bars must still be advancing.
+    # A failed push loop leaves last_run fresh + circuit-breakers clear while bars freeze.
+    freshness_cfg = cfg.get("data_freshness", None)
+    freshness = check_committed_data_freshness(now, freshness_cfg)
+    report["fail_reasons"] = report["fail_reasons"] + freshness["fail_reasons"]
+    report["warnings"] = report["warnings"] + freshness["warnings"]
+    report["ok"] = report["ok"] and freshness["ok"]
     print(f"last_run age: {report['age_hours']}h | circuit-broken: {report['tripped'] or 'none'} "
-          f"| signals: {'ok' if sanity['ok'] else 'FAIL'} | r2: {'ok' if r2['ok'] else 'FAIL'}")
+          f"| signals: {'ok' if sanity['ok'] else 'FAIL'} | r2: {'ok' if r2['ok'] else 'FAIL'} "
+          f"| data-freeze: {'ok' if freshness['ok'] else 'FAIL'}")
     for w in report["warnings"]:
         print(f"::warning::{w}")
     if report["ok"]:
