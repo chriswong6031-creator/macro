@@ -6498,3 +6498,33 @@ artifacts:
       top_due/morning_line counts. Real state changes must flow through the source
       system — this ledger is attention routing only. freshness_sla_hours=9999 because
       the file is optional (builder handles absence gracefully).
+
+  # --- nasdaq-internals (TI-R2/R3/R5, program: nasdaq-internals) ---
+  nasdaq-internals:
+    path: site/marketdata/nasdaq_internals.json
+    format: json
+    producer: scripts/build_nasdaq_internals.py
+    known_extra_writers: []
+    owner_program: nasdaq-internals
+    cadence: daily-engine
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 30
+    schema: nasdaq_internals.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers:
+      - mastermind:context
+    notes: >
+      Nasdaq-100 archetype-group rotation-state artifact (TI-R1..R7).
+      Seven tech-archetype groups (ai_compute_supply, ai_capex_spenders, edge_device,
+      software_enterprise, cyber, digital_services_media, megacap_quality) drawn from
+      data/baskets_nasdaq/membership.json archetype_groups partition. DISPLAY-ONLY —
+      no forecast, no onset/episode/routing fields. States are descriptive RRG-style
+      (leading/improving/weakening/lagging) with 2-day hysteresis. Equal-weight member
+      composites vs QQQ benchmark. Union-semantics overlap across groups is intentional
+      (documented in membership.json notes). Producer: scripts/build_nasdaq_internals.py
+      calling engine/nasdaq_internals.build(). asof is full ISO timestamp (UTC).

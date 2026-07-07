@@ -25,6 +25,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | intl-fix | 1 |
 | long-hold | 22 |
 | mastermind-feedback-contract | 2 |
+| nasdaq-internals | 1 |
 | neural-web | 41 |
 | next3 | 3 |
 | nw-mastermind-bridge | 2 |
@@ -45,7 +46,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 115 |
+| display | 116 |
 | infrastructure | 65 |
 | scored | 4 |
 | shadow | 38 |
@@ -54,7 +55,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 213 |
+| git | 214 |
 | gitignored-local | 6 |
 | r2 | 3 |
 
@@ -217,6 +218,12 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 |---|---|---|---|---|---|---|
 | site-mastermind-nw-feedback | `site/mastermind/nw_feedback.json` | json | on-demand | display | 1 | 0 |
 | mastermind-feedback-summary | `data/governance/mastermind_feedback_summary.json` | json | daily-engine | display | 0 | 0 |
+
+### nasdaq-internals
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| nasdaq-internals | `site/marketdata/nasdaq_internals.json` | json | daily-engine | display | 0 | 1 |
 
 ### neural-web
 

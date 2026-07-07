@@ -152,6 +152,7 @@ lanes:
             - scripts.build_cohort_metrics
             - scripts.build_news
             - scripts.build_methodology
+            - scripts.build_nasdaq_internals
           cl_special:
             - scripts.build_special_situations
           cl_misc:
