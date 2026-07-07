@@ -277,4 +277,9 @@ LOBE_DESCRIPTIONS = {
         "full": "Each day this feed assembles the current market regime, risk-radar verdict, breadth conditions, sector-rotation summary, data-health status, and alert census into one unified snapshot. Any unavailable source leaves that section null rather than fabricated — gaps are listed explicitly. Ten other parts of the system read this feed. A planned qualitative-intelligence section is currently null, pending a cross-team ruling.",
         "src_fp": "280c564245a5e3d4",
     },
+    "release-forecast-latest": {
+        "short": "Before each major data release, this feed shows our projection alongside several reference benchmarks and the current Fed policy backdrop — display only, never conditions any trade.",
+        "full": "Each night before CPI and jobs report releases, this feed publishes our quantitative projection (point estimate plus a confidence band) for the upcoming print, compares it against reference benchmarks including the Cleveland Fed nowcast, and attaches the current Fed policy context: stance, the market-versus-Fed-dots gap in basis points, implied cuts over the next twelve months, and the next meeting date. The surprise-skew field shows which direction our projection leans relative to the benchmark set, in units of historical forecast error. A running scoreboard accumulates actual versus projected accuracy as prints land. Everything here is display-only and horizon-agnostic context — it never gates alerts, conditions entries, or changes any score. Forward accrual began in July 2026.",
+        "src_fp": "18153b17f4e42daf",
+    },
 }

@@ -25,6 +25,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | institutional-sector-intelligence | 2 |
 | intl-fix | 1 |
 | long-hold | 22 |
+| macro-release-intel | 5 |
 | mastermind-feedback-contract | 2 |
 | momoedge | 6 |
 | nasdaq-internals | 1 |
@@ -48,16 +49,16 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 121 |
-| infrastructure | 68 |
+| display | 124 |
+| infrastructure | 69 |
 | scored | 4 |
-| shadow | 39 |
+| shadow | 40 |
 
 ### Artifacts by storage
 
 | storage | count |
 |---|---|
-| git | 220 |
+| git | 225 |
 | gitignored-local | 6 |
 | r2 | 6 |
 
@@ -221,6 +222,16 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | moat-falsifier-sensors | `embedded: per-ticker moat sensor fields inside site/stockdata/<TICKER>.json` | json | daily-engine | display | 1 | 0 |
 | per-fire-sector-benchmark | `data/research/per_fire_sector_benchmark.parquet` | parquet | on-demand | display | 1 | 0 |
 | ticker-sectors | `data/breadth/ticker_sectors.parquet` | parquet | on-demand | display | 1 | 0 |
+
+### macro-release-intel
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| cleveland-nowcast-store | `data/cleveland_nowcast/nowcast.parquet` | parquet | collect | infrastructure | 1 | 0 |
+| release-forecast-latest | `data/release_forecast/latest.json` | json | daily-engine | display | 0 | 1 |
+| release-forecast-ledger | `data/release_forecast/forward_ledger.jsonl` | jsonl | daily-engine | shadow | 1 | 0 |
+| site-release-forecast | `site/macrodata/release_forecast.json` | json | daily-engine | display | 0 | 1 |
+| release-forecast-scoreboard | `data/release_forecast/scoreboard.json` | json | daily-engine | display | 0 | 0 |
 
 ### mastermind-feedback-contract
 

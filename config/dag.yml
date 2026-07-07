@@ -284,6 +284,24 @@ lanes:
                    data/treasury/tga.parquet]
           outputs: [data/macro/fed_net_liquidity.parquet,
                     data/macro/fed_net_liquidity_meta.json]
+      - id: build_release_forecast
+        module: scripts.build_release_forecast
+        note: >
+          non-fatal; MRI PR-C nightly producer (macro-release-intel program).
+          Emits the release_forecast.v1 artifact: CPI (headline + core) and NFP
+          projections, Cleveland nowcast benchmark enrichment, policy_backdrop
+          join (fed_stance/gap_bp/implied_cuts_12m/next_fomc/guidance_direction
+          from persisted regime artifacts — no LLM calls). Runs AFTER collect
+          (release-day capture needs same-night ALFRED vintage refresh).
+          display_only=True; all authority booleans False (MRI-R7).
+          Ledger is append-only (MRI-R8); idempotent per asof_night.
+          inputs: [data/fred_vintage/vintages.parquet,
+                   data/cleveland_nowcast/nowcast.parquet,
+                   data/regime/latest.json]
+          outputs: [data/release_forecast/latest.json,
+                    data/release_forecast/forward_ledger.jsonl,
+                    data/release_forecast/scoreboard.json,
+                    site/macrodata/release_forecast.json]
       - id: signal_sanity
         module: scripts.signal_sanity
       - id: build_whitehouse_page_only
