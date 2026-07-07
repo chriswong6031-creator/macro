@@ -153,6 +153,57 @@ checks:
     owner_program: engine-fix-masterplan
     notes: null
 
+  - law_id: ui.template_site_sync
+    summary: >
+      Every plain-copy page asset (a non-.j2 file directly under templates/ that
+      also ships as site/<name>) must byte-match its template at every commit.
+      2026-07-07 incident: the scope=all engine-render run (110 min, checkout
+      9208ef4920) pushed commit 2ae709f9f0 whose site/sector_cycles.js was
+      byte-identical to the CHECKOUT-TIME template blob — the push step's
+      `git pull --rebase -X theirs` resolved the conflict against #1793's
+      de-escalation (merged mid-render) in favor of the stale copy, resurrecting
+      "validated" wording and reddening validated-claims on main (fixed in #1799).
+      Render lanes self-heal via --fix post-rebase; PR CI + the publish gate keep
+      one-sided template/site edits from arming the divergence window.
+    source_ref:
+      - scripts/check_template_site_sync.py
+      - "2026-07-07 incident (commits 2ae709f9f0 → bc81006240 / #1799)"
+    severity: hard
+    check_script: scripts/check_template_site_sync.py
+    ci_wiring:
+      - workflow: .github/workflows/ci.yml
+        job: template-site-sync
+        lane: pr_ci
+      - workflow: .github/workflows/pages.yml
+        job: publish
+        lane: publish
+      - workflow: .github/workflows/render.yml
+        job: render
+        lane: render
+      - workflow: .github/workflows/engine-render.yml
+        job: engine-render
+        lane: render
+      - workflow: .github/workflows/daily.yml
+        job: engine
+        lane: scheduled
+    selftest: true
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - Direct children of templates/ only; .j2 render inputs and the
+        templates/fonts/ binary copytree are out of scope.
+      - Pairs whose site copy does not exist yet are skipped (new asset not
+        yet shipped).
+      - theme.js is compared against its baked form (Supabase config injected
+        by lib.site_assets); in stdlib-only contexts (pages.yml publish) this
+        degrades to a token-split prefix/suffix compare.
+    owner_program: engine-fix-masterplan
+    notes: >
+      In the three render lanes the wiring is `--fix` inside the push retry
+      loop (post-rebase, pre-push) — a self-heal, not a gate: the lane re-copies
+      every pair from post-rebase templates/ and folds the delta into a
+      follow-up "render-sync" commit.
+
   # ── Git hygiene ────────────────────────────────────────────────────────────
 
   - law_id: git.no_conflict_markers

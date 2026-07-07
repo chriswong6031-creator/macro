@@ -1224,8 +1224,18 @@ jobs:
           # best-effort push (see commit-data). The deploy below uses the uploaded
           # artifact, so it never depends on this commit landing.
           for i in 1 2 3 4 5; do
-            if git pull --rebase -X theirs origin main && git push; then
-              echo "pushed engine outputs on attempt $i"; exit 0
+            if git pull --rebase -X theirs origin main; then
+              # post-rebase template↔site re-sync (ui.template_site_sync): -X theirs can
+              # resurrect this run's checkout-time template copies over a reword that merged
+              # mid-nightly (2026-07-07: engine-render commit 2ae709f9f0 reverted #1793's
+              # site-side de-escalation in sector_cycles.js this way). templates/ is now
+              # fresh post-rebase main — re-copy and fold any delta into a follow-up commit.
+              python -m scripts.check_template_site_sync --fix || true
+              if ! git diff --quiet -- site/; then
+                git add site/ && git commit -m "render-sync: re-copy template assets post-rebase (site==templates guard)" \
+                  || echo "::warning::render-sync commit failed (non-fatal — pages publish gate backstops divergence)"
+              fi
+              if git push; then echo "pushed engine outputs on attempt $i"; exit 0; fi
             fi
             git rebase --abort 2>/dev/null || true
             echo "engine push attempt $i lost a race; re-syncing"; sleep $((i * 7))

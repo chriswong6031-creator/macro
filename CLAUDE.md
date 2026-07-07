@@ -23,7 +23,7 @@ Enforcement: a PreToolUse hook (`.claude/hooks/model_routing_guard.py`, wired in
 - **Before proposing/adjudicating new work:** read `docs/ACTIVE_BUILD_MAP.md` (open-PR lanes/collisions; regen `python scripts/build_active_build_map.py`) and `research/DO_NOT_REBUILD.md` (standing kills/forbidden designs). Don't re-propose in-flight or killed topics; adjudications that kill a topic append a row to the registry in the same PR.
 - **Epistemics:** display-only until gauntleted; pre-registered gates; nulls are printed, not hidden. The word "validated" in user-facing text is CI-enforced (`scripts/check_validated_claims.py`). LLMs may only de-escalate calibrated keys — never originate signals, scores, or escalations.
 - **Ledgers:** nightly is the sole advancer of forward ledgers; intraday lanes discard `data/` writes.
-- **Ops:** known-spurious CI: "Workers Builds: macro" red X is ignorable. Bilingual (EN/ZH) UI; no translated text in `title=` attributes (CI-guarded).
+- **Ops:** known-spurious CI: "Workers Builds: macro" red X is ignorable. Bilingual (EN/ZH) UI; no translated text in `title=` attributes (CI-guarded). Plain-copy page assets are PAIRED: editing `templates/<name>` (non-.j2 that also ships as `site/<name>`) requires the byte-matching site copy in the same PR — run `python -m scripts.check_template_site_sync --fix` (CI-guarded; render lanes self-heal post-rebase).
 
 ## Memory frontmatter contract
 
