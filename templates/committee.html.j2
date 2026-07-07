@@ -108,7 +108,6 @@ body { padding-bottom:56px; }
 #graph_canvas { width:100%; height:640px; display:block; cursor:grab; touch-action:none; }
 @media(max-width:719px){ #graph_canvas { height:420px; } }
 #graph_canvas:active { cursor:grabbing; }
-#graph_canvas.fullscreen-canvas { height:100vh !important; }
 .graph-controls { position:absolute; top:10px; right:10px; display:flex; gap:5px; z-index:10; }
 .gc-btn { width:32px; height:32px; border-radius:8px; border:1px solid color-mix(in srgb,var(--line) 60%,transparent); background:color-mix(in srgb,var(--panel) 70%,transparent); color:var(--text); font-size:14px; cursor:pointer; display:flex; align-items:center; justify-content:center; backdrop-filter:blur(6px); transition:background .15s; }
 .gc-btn:hover { background:color-mix(in srgb,var(--link) 20%,var(--panel)); }
@@ -1740,21 +1739,32 @@ details.memo-raw pre { font-size:11px; overflow-x:auto; color:var(--muted); whit
     // Setup canvas (DPR-aware)
     function resizeCanvas() {
       var wrapEl = document.getElementById('graph_wrap');
-      // In fullscreen the wrapper fills the monitor, but the canvas keeps its
-      // fixed 640px CSS height unless we grow it to 100vh — without this,
-      // fullscreen shows a small strip floating in a black field.
-      canvas.classList.toggle('fullscreen-canvas', isGraphFullscreen());
-      // offsetWidth can be 0 pre-layout or while a parent is display:none;
-      // ResizeObserver refits once real dimensions arrive.
-      var cw = (wrapEl && wrapEl.offsetWidth) || canvas.offsetWidth || 800;
-      var ch = canvas.offsetHeight || 640;
-      if (ch < 100) ch = 640;
+      var fs = isGraphFullscreen();
+      var cw, ch;
+      if (fs) {
+        // Fullscreen: size the canvas explicitly to the fullscreen viewport.
+        // A CSS `height:100vh` class is unreliable here — `vh` resolves against
+        // the document viewport, not the fullscreened element — so the canvas
+        // could stay 640px and render as a strip across the top of the screen.
+        cw = (wrapEl && wrapEl.clientWidth)  || window.innerWidth;
+        ch = (wrapEl && wrapEl.clientHeight) || window.innerHeight;
+        canvas.style.width  = cw + 'px';
+        canvas.style.height = ch + 'px';
+      } else {
+        // Normal: drop any fullscreen inline sizing so the stylesheet size
+        // (width:100%, height:640px) applies again, then measure it.
+        canvas.style.width  = '';
+        canvas.style.height = '';
+        // offsetWidth can be 0 pre-layout or while a parent is display:none;
+        // ResizeObserver refits once real dimensions arrive.
+        cw = (wrapEl && wrapEl.offsetWidth) || canvas.offsetWidth || 800;
+        ch = canvas.offsetHeight || 640;
+        if (ch < 100) ch = 640;
+      }
       canvas.width  = cw * _graphDpr;
       canvas.height = ch * _graphDpr;
-      canvas.style.width  = cw + 'px';
-      canvas.style.height = ch + 'px';
-      // Zoom to fit on first draw
-      zoomToFit(cw, ch);
+      // Zoom to fit; fullscreen allows a larger scale so a big display zooms IN.
+      zoomToFit(cw, ch, fs ? 4.5 : 2);
     }
 
     function zoomToFit(cw, ch, maxScale) {
