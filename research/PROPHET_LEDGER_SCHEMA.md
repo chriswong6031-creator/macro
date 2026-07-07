@@ -35,10 +35,18 @@
 | Value | Definition |
 |---|---|
 | `T1_HIT` | Price reached or exceeded T1 before invalidation or horizon expiry |
-| `T2_HIT` | Price reached or exceeded T2 (terminal target) |
+| `T2_HIT` | Price reached or exceeded T2 (terminal target) **without a prior close >= T1** — see first-trigger note below |
 | `INVALIDATED` | Price crossed the `invalidation` level |
 | `EXPIRED` | Plan reached `horizon_days` without hitting T1 or invalidation |
 | `CLOSED_EARLY` | Operator manually closed the plan before horizon expiry |
+
+> **First-trigger design:** the outcome scanner closes the plan on the *first* close
+> that crosses any trigger and records that outcome permanently.  A plan that touches
+> T1 then later T2 is recorded as `T1_HIT` only.  `T2_HIT` fires only when a close
+> clears T2 without any prior close >= T1 (typically a gap day that skips T1 entirely).
+> **Do not read `T2_HIT` frequency as "ever reached T2"** — it is "cleared T2 in a
+> single close jump, bypassing T1."  This is intentional: the ledger records the
+> first-observable-close outcome, not the eventual maximum reach of the move.
 
 ---
 

@@ -157,12 +157,16 @@ def strike_walls(chain: pd.DataFrame, spot: float, cf: dict) -> dict:
     mult, pm = cf["contract_multiplier"], cf["pct_move"]
     dg = _dollar_gamma(c, spot, mult, pm)                       # unsigned $gamma
     sign = np.where(c["is_call"], 1.0, -1.0)
+    is_call = c["is_call"].to_numpy(bool)
     c = c.assign(_net=sign * dg, _absdg=dg.abs(),
-                 _coi=np.where(c["is_call"], c["oi"], 0.0),
-                 _poi=np.where(~c["is_call"], c["oi"], 0.0),
-                 _cv=np.where(c["is_call"], c.get("volume", 0.0), 0.0),
-                 _pv=np.where(~c["is_call"], c.get("volume", 0.0), 0.0))
+                 _cdg=np.where(is_call, dg, 0.0),               # call gross dollar-gamma
+                 _pdg=np.where(~is_call, dg, 0.0),              # put  gross dollar-gamma
+                 _coi=np.where(is_call, c["oi"], 0.0),
+                 _poi=np.where(~is_call, c["oi"], 0.0),
+                 _cv=np.where(is_call, c.get("volume", 0.0), 0.0),
+                 _pv=np.where(~is_call, c.get("volume", 0.0), 0.0))
     g = c.groupby("K").agg(net=("_net", "sum"), absdg=("_absdg", "sum"),
+                           cdg=("_cdg", "sum"), pdg=("_pdg", "sum"),
                            coi=("_coi", "sum"), poi=("_poi", "sum"),
                            cv=("_cv", "sum"), pv=("_pv", "sum")).reset_index()
     # keep the structurally biggest strikes, then present high→low
@@ -179,7 +183,10 @@ def strike_walls(chain: pd.DataFrame, spot: float, cf: dict) -> dict:
     rows = [{"K": _f(r.K), "net_mn": round(float(r.net) / 1e6, 2),
              "pct": round(float(r.net) / mx * 100, 1),
              "call_oi": int(r.coi), "put_oi": int(r.poi),
-             "call_vol": int(r.cv), "put_vol": int(r.pv)}
+             "call_vol": int(r.cv), "put_vol": int(r.pv),
+             # per-side gross dollar-gamma ($mn) for pin_probability (spec §7.4 avgGamma)
+             "call_gamma_mn": round(float(r.cdg) / 1e6, 4),
+             "put_gamma_mn": round(float(r.pdg) / 1e6, 4)}
             for r in g.itertuples()]
     return {"by_strike": rows, "call_wall": _f(call_wall), "put_wall": _f(put_wall),
             "largest_oi": _f(largest_oi), "max_abs_mn": round(mx / 1e6, 2)}
