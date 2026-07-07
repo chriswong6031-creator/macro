@@ -762,3 +762,15 @@ Runtime: 6.5s. Subsample: 5841/16429 embargoed rows (35.6%; cn_sector=0% by cons
 Per §18: oscillator covariate family is a printed NULL to truths.jsonl; columns stay in the lake; model design reverts. truth_id=`cycle_truth_falsosc_osc_covariate_null_v1`.
 
 Full scorecard: `data/hazard/falsosc_trial_v1.json`. Era-split rows are post-2010 OOS (walk-forward first_test_year=2010). Verdict adjudication by program chair.
+
+### §18 addendum — FT-OSC-2 (registered 2026-07-07, post-kill pairlet)
+
+FT-OSC-1's family kill fired on the up/6m cell, but the down/6m cell printed real incremental
+skill (paired dBrier +0.0028, CI90 [+0.0014, +0.0045], boot_p=0.0012, BH-pass within the 6-cell
+kill scope; n_oos=925, below the standalone 3,000 floor). Per the post-kill pairlet discipline,
+FT-OSC-2 re-tests the DOWN-direction-only oscillator join on a time-based holdout: stamps accrued
+strictly after 2026-07-07, >=2 quarters, same paired-dBrier machinery restricted to down/6m.
+Registered BEFORE any evaluation in data/trial_ledger.jsonl (FT-OSC-2, cycle_pattern_ft, n=1) and
+data/experiments/registry_seed.json (come-back 2027-01-15). n_oos < 300 -> DEFERRED, not FAIL.
+The FT-OSC-1 family null (cycle_truth_falsosc_osc_covariate_null_v1) stands; this addendum does
+not reopen it.
