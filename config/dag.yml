@@ -123,6 +123,9 @@ lanes:
         module: scripts.build_congress
       - id: build_foresight
         module: scripts.build_foresight
+      - id: build_prophet
+        module: scripts.build_prophet
+        note: Prophet nightly — plan refresh + ledger advancement + R2 mirror (non-fatal; display-only)
       # parallel band
       - id: band
         cluster:
@@ -171,6 +174,8 @@ lanes:
       # serial post-band
       - id: build_sector_central
         module: scripts.build_sector_central
+      - id: mirror_flow_idx
+        module: scripts.mirror_flow_idx
       - id: build_vector
         module: scripts.build_vector
       - id: master_brain_scorer
