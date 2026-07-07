@@ -138,11 +138,8 @@ def test_all_artifact_ids_present():
         " (pin drifted: registry carried 210 while pin said 205 — racing merges"
         " during the 2026-07-06 CPI wave train; repaired here);"
         " CPI P6 wave 1 added cycle-pattern-state = 210->211;"
-<<<<<<< HEAD
-        " feedback-contract W2 added site-mastermind-nw-feedback, mastermind-feedback-summary = 211->213)"
-=======
-        " active-build-map added active-builds = 211->212)"
->>>>>>> origin/main
+        " active-build-map added active-builds = 211->212;"
+        " feedback-contract W2 added site-mastermind-nw-feedback, mastermind-feedback-summary = 212->214)"
     )
     content = generate(_SYNAPSE_YML)
     missing = [aid for aid in artifact_ids if aid not in content]
