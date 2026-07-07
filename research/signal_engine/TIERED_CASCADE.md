@@ -381,3 +381,41 @@ allocator or auto-trade logic.
 
 Full adjudication and pre-registration: `research/signal_engine/HTF_SUPER_TIERS_ADJUDICATION_AND_PREREG.md`
 Phase-0 study results: `research/signal_engine/HTF_SUPER_TIERS_PHASE0.md`
+
+---
+
+## §10 — G-T2X: the pre-registered T2×confluence-overlay gauntlet (EXECUTED 2026-07-06)
+
+**What it is.** G-T2X (locked pre-registration: `TIER_ENTRY_DEEPDIVE.md` §6) is the gauntlet that
+decides whether cross-confluence overlays convert T2's entry-price advantage (§8) into a real,
+eligibility-grade edge: T2 tier-onset events × five overlays — 2W washout (`w_setup`), fire-day
+turnover-z > 0, sector-cycle phase ∈ {bottoming, recovering}, NW dispersion-regime lens,
+not-extended (`fill_premium_20d` < 8%) — one pass each, no threshold tuning. Promotion needs ALL
+of: 21d benchmark-excess CI-low > 0, stop-out_21 ≤ 50% US / 52% CN, clean8_21 ≥ 33%,
+retention ≥ 25% with ≥ 300 fires per market, split-half directional consistency.
+
+**Standing rule (division of labor).** Display and ranking changes (the §8 operator re-weight,
+the §9 S1 badge) do NOT require G-T2X — they change what the operator sees, not what the gate
+admits. Any **eligibility** change (BUYABLE_TIERS, gate semantics, an overlay-filtered T2 class)
+DOES require a G-T2X-grade pass first.
+
+**Status: executed 2026-07-06** — first run, verbatim per the lock (`scripts/_bt_g_t2x.py`; full
+results + caveats: `G_T2X_RESULTS.md`). US 7,981 / CN 1,945 T2 onsets (v3 base reproduced to
+machine precision). Outcome:
+
+| Overlay | Verdict | Note |
+|---|---|---|
+| OV1 · 2W washout | **KILL** | filtered excess ≤ base both markets; stop-out worse (US 57.2%) |
+| OV2 · turnover-z > 0 | **KILL** | anti-selects in US; CN kill is a 7bp coin-flip vs base |
+| OV3 · sector-cycle phase | **NOT-RUN** | no point-in-time per-stock sector-phase history exists; no proxy improvised |
+| OV4 · NW dispersion lens | **NOT-RUN** | NW L3 series has no PIT history (NW live only since 2026-07); re-arms as sensors accrue |
+| OV5 · fill-premium < 8% | **KILL** | stop-out improves (47.4%) but excess does not beat base |
+
+**Honest reading of the kills.** They are triggered by the pre-registered *relative* rule
+(filtered excess ≤ unfiltered base) on a base whose own CI straddles zero — rule-triggered, not
+statistically decisive. OV1/OV5 US were positive in 2015-2021 and negative in 2021-2026
+(regime-change pattern, not proven dead-forever): **re-probe eligible ≥ 2027-01** with fresh
+forward data. OV3/OV4 are the open half of the registration and re-arm once PIT history accrues.
+
+**Net.** As of 2026-07-06 no overlay earns a T2 eligibility change; T2's demonstrated edge remains
+entry/fill quality (§8), and the tested overlays remain display-context only.
