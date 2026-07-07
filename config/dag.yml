@@ -261,6 +261,21 @@ lanes:
           inputs: [data/regime/latest.json, data/market_state/latest.json,
                    data/sentiment_crypto/fear_greed.parquet]
           outputs: [data/signal_archive/context_daily.parquet]
+      - id: build_netliq_daily
+        module: scripts.build_netliq_daily
+        note: >
+          non-fatal; CPI net-liquidity DATA INFRASTRUCTURE — deterministic full
+          rebuild of the daily net-liquidity panel via engine.canon (the ONE
+          audit-#28 formula: WALCL_bn − RRP_bn − TGA_bn, billions). Derived
+          cols: netliq_d13w/d26w (65/130-row changes) + netliq_pctile_expanding
+          (PIT-pure expanding percentile). Stale-guard truncates the frame at
+          min(component last real obs)+10bd; per-component last-obs dates land
+          in the meta sidecar. Registers NO trial (FT-3 suspended by
+          cycle_truth_ft2_credit_hazard_null_v1).
+          inputs: [data/fred/WALCL.parquet, data/fred/RRPONTSYD.parquet,
+                   data/treasury/tga.parquet]
+          outputs: [data/macro/fed_net_liquidity.parquet,
+                    data/macro/fed_net_liquidity_meta.json]
       - id: signal_sanity
         module: scripts.signal_sanity
       - id: build_whitehouse_page_only
