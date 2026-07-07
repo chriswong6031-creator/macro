@@ -6568,7 +6568,7 @@ artifacts:
   options-structure-matrix:
     path: options_structure/matrix/<ROOT>.json
     format: json
-    producer: engine/options_structure.py
+    producer: scripts/build_options_matrix.py
     known_extra_writers: []
     owner_program: momoedge
     cadence: daily-engine
@@ -6585,11 +6585,13 @@ artifacts:
     external_consumers:
       - terminal:prism-tab
     notes: >
-      Strike × expiration matrix for PRISM tab (Package A schema; Package E builder).
-      Lenses: GEX (assumption-signed), OI (reliable), VOL (reliable), delta_oi (reliable),
-      UNUSUAL (deferred — needs 30d per-strike baseline). heat_seeker note field
-      CI-enforced as "descriptive — not a recommendation". GEX cells assumption-signed;
-      delta_oi is doctrine-aligned (signing-free). authority_tier=display.
+      Strike × expiration matrix for PRISM tab. Engine: engine/options_matrix.py
+      (Package E). Schema defined in engine/options_structure.py (Package A).
+      Lenses: GEX (assumption-signed), OI (reliable), VOL (reliable), delta_oi (reliable).
+      UNUSUAL deferred (needs 30d per-strike baseline). VEX deferred (greeks-path stability).
+      heat_seeker note field CI-enforced as "descriptive — not a recommendation".
+      GEX sign: calls +, puts − (dealer-short assumption). delta_oi = OI[t-1]−OI[t-2] (both lagged).
+      NOT wired into nightly schedule — scheduling follows when PRISM tab is ready.
 
   # --- options-structure.structural: structural detector state (shadow) ---
   options-structure-structural:
