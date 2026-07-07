@@ -30,11 +30,13 @@ sys.path.insert(0, str(_REPO))
 
 from scripts.build_release_forecast import (
     _append_ledger_rows,
+    _build_projection_ledger_rows,
     _build_scoreboard,
     _build_upcoming_block,
     _check_release_day_capture,
     _CLAIMS_MODE,
     _compute_actual_from_print,
+    _get_initial_print,
     _ledger_key,
     _load_ledger,
     _read_cleveland_nowcast,
@@ -890,3 +892,156 @@ class TestB1ClaimsProjectionIntegration:
         # Point/quantiles/confidence must all be null
         assert card.get("confidence") is None, "confidence must be null in benchmark_only mode"
         assert card.get("input_completeness") is None, "input_completeness must be null in benchmark_only mode"
+
+
+# ============================================================
+# 11. CLAIMS CAPTURE PATH — end-to-end integration (FIX-6)
+#     Requires committed data/fred_vintage/vintages.parquet
+# ============================================================
+
+class TestClaimsCapturePathIntegration:
+    """Verify the full claims capture path end-to-end against real committed ICSA vintages.
+
+    Release Thursday 2026-06-11 → ICSA vintage period 2026-06-06 (Sat, Thu−5d)
+    ICSA initial print: 229,000 raw persons → 229.0 thousands.
+
+    Asserts:
+      - _get_initial_print returns 229000.0 (raw persons from ALFRED)
+      - _compute_actual_from_print returns 229.0 (thousands)
+      - _check_release_day_capture produces exactly one scored row
+      - actual = 229.0 thousands (plausible range)
+      - benchmark MAEs computable (surprise_vs_naive populated)
+      - our-model fields (our_surprise, interval_hit, skew_hit) are None in benchmark_only mode
+      - scoreboard emits a claims entry with mae_naive_prior populated and mae_ours None
+    """
+
+    @_CLAIMS_INT_MARK
+    def test_get_initial_print_thursday_to_saturday_mapping(self):
+        """_get_initial_print must map Thursday period to preceding Saturday for ICSA lookup."""
+        # Thursday 2026-06-11 → Saturday 2026-06-06 (−5 days)
+        raw = _get_initial_print(
+            _REPO_ROOT,
+            release_type="claims",
+            period_str="2026-06-11",   # Thursday date (as stored in ledger)
+            release_date_str="2026-06-11",
+        )
+        assert raw is not None, (
+            "_get_initial_print returned None for claims 2026-06-11. "
+            "Likely Thursday→Saturday period mapping failed or ICSA missing in vintages.parquet."
+        )
+        # Raw value from ALFRED is in persons (expected ~229000.0)
+        assert 100_000.0 <= raw <= 1_000_000.0, f"raw_print={raw} out of plausible persons range"
+        # Specifically: 2026-06-06 period, realtime_start 2026-06-11, value 229000.0
+        assert raw == pytest.approx(229_000.0, abs=1.0), (
+            f"Expected ICSA initial print 229000.0 for period 2026-06-06, got {raw}"
+        )
+
+    @_CLAIMS_INT_MARK
+    def test_compute_actual_claims_returns_thousands(self):
+        """_compute_actual_from_print for claims returns raw_print / 1000.0."""
+        actual = _compute_actual_from_print(
+            "claims", 229_000.0, _REPO_ROOT, "2026-06-11"
+        )
+        assert actual is not None, "_compute_actual_from_print returned None for claims"
+        assert actual == pytest.approx(229.0, abs=0.01), (
+            f"Expected 229.0 thousands (229000 / 1000), got {actual}"
+        )
+
+    @_CLAIMS_INT_MARK
+    def test_full_claims_capture_path_produces_scored_row(self):
+        """End-to-end: a benchmark_only claims projection ledger row produces exactly one
+        scored row when _check_release_day_capture runs on/after the release date."""
+        # Build a synthetic benchmark_only claims projection row for Thu 2026-06-11
+        proj_row = {
+            "schema": 2,
+            "row_type": "projection",
+            "asof_night": "2026-06-10",          # T-1 (day before release)
+            "release": "claims",
+            "period": "2026-06-11",              # Thursday release date (ledger period)
+            "release_date": "2026-06-11",
+            "projection_mode": "benchmark_only",  # FIX-3: projection_mode written to ledger
+            "projection_point": None,             # benchmark_only: null
+            "projection_p10": None,
+            "projection_p90": None,
+            "benchmark_naive_prior": 225.0,      # thousands (synthetic prior)
+            "benchmark_trailing_4w": 222.0,
+            "benchmark_ar_model": 223.0,
+            "benchmark_cleveland": None,
+        }
+        existing_ledger = [proj_row]
+
+        # Run capture as of the release day (2026-06-11 = Thursday)
+        today = date(2026, 6, 11)
+        scored_rows = _check_release_day_capture(today, _REPO_ROOT, existing_ledger)
+
+        assert len(scored_rows) == 1, (
+            f"Expected exactly 1 scored row for claims 2026-06-11, got {len(scored_rows)}. "
+            "FIX-1 (ICSA in _FRED_VINTAGE_SERIES) or FIX-2 (Thursday→Saturday mapping) may be missing."
+        )
+        sr = scored_rows[0]
+
+        # actual must be thousands-scale and match the known initial print
+        assert sr["actual"] is not None, "actual must not be None in scored row"
+        assert sr["actual"] == pytest.approx(229.0, abs=0.1), (
+            f"Expected actual=229.0 thousands (ICSA 229000 / 1000), got {sr['actual']}"
+        )
+
+        # Our-model fields must be None in benchmark_only mode (FIX-3 guard works)
+        assert sr.get("our_surprise") is None, (
+            f"our_surprise must be None in benchmark_only mode, got {sr.get('our_surprise')}"
+        )
+        assert sr.get("interval_hit") is None, (
+            f"interval_hit must be None in benchmark_only mode, got {sr.get('interval_hit')}"
+        )
+        assert sr.get("skew_hit") is None, (
+            f"skew_hit must be None in benchmark_only mode, got {sr.get('skew_hit')}"
+        )
+
+        # Benchmark surprises must be computable
+        assert sr.get("surprise_vs_naive") is not None, "surprise_vs_naive must be populated"
+        expected_vs_naive = round(229.0 - 225.0, 4)
+        assert sr["surprise_vs_naive"] == pytest.approx(expected_vs_naive, abs=0.01), (
+            f"Expected surprise_vs_naive={expected_vs_naive}, got {sr['surprise_vs_naive']}"
+        )
+
+        # projection_mode must be carried through to scored row
+        assert sr.get("projection_mode") == "benchmark_only", (
+            f"projection_mode in scored row must be 'benchmark_only', got {sr.get('projection_mode')!r}"
+        )
+
+    @_CLAIMS_INT_MARK
+    def test_claims_scoreboard_from_real_capture(self):
+        """Scoreboard from a real-data claims scored row: mae_naive_prior populated, mae_ours None."""
+        proj_row = {
+            "schema": 2,
+            "row_type": "projection",
+            "asof_night": "2026-06-10",
+            "release": "claims",
+            "period": "2026-06-11",
+            "release_date": "2026-06-11",
+            "projection_mode": "benchmark_only",
+            "projection_point": None,
+            "projection_p10": None,
+            "projection_p90": None,
+            "benchmark_naive_prior": 225.0,
+            "benchmark_trailing_4w": 222.0,
+            "benchmark_ar_model": 223.0,
+            "benchmark_cleveland": None,
+        }
+        today = date(2026, 6, 11)
+        scored_rows = _check_release_day_capture(today, _REPO_ROOT, [proj_row])
+        assert len(scored_rows) == 1, "Expected 1 scored row (prerequisite)"
+
+        sb = _build_scoreboard(scored_rows, accrual_start="2026-01-01")
+        claims_stats = sb["by_release"].get("claims")
+        assert claims_stats is not None, "claims entry missing from scoreboard"
+        assert claims_stats["n"] == 1, f"Expected n=1, got {claims_stats['n']}"
+        # mae_ours must be None (no projection point in benchmark_only)
+        assert claims_stats["mae_ours"] is None, (
+            f"mae_ours must be None in benchmark_only mode, got {claims_stats['mae_ours']}"
+        )
+        # mae_naive_prior must be populated (|229.0 - 225.0| = 4.0)
+        assert claims_stats["mae_naive_prior"] is not None, "mae_naive_prior must be populated"
+        assert claims_stats["mae_naive_prior"] == pytest.approx(4.0, abs=0.1), (
+            f"Expected mae_naive_prior=4.0, got {claims_stats['mae_naive_prior']}"
+        )

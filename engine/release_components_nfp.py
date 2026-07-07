@@ -252,20 +252,21 @@ def project_claims(
             continue
         # Most recent IC4WSA reading
         ic4_pred = float(ic4_avail.iloc[-1]["value"])
-        residuals.append(icsa_val - ic4_pred)
+        # Residuals in thousands (matching benchmark units)
+        residuals.append((icsa_val - ic4_pred) / 1000.0)
 
     residuals_arr = np.array(residuals, dtype=float)
 
-    # Quantiles: p10/p25/p50/p75/p90 from expanding residuals
-    point = ic4wsa_last
+    # Quantiles: p10/p25/p50/p75/p90 from expanding residuals (all in thousands)
+    point = ic4wsa_last / 1000.0  # convert raw persons → thousands to match benchmark_set units
     if len(residuals_arr) >= min_quantile_obs:
         qs = np.quantile(residuals_arr, [0.10, 0.25, 0.50, 0.75, 0.90])
         quantiles = {
-            "p10": round(point + qs[0], 1),
-            "p25": round(point + qs[1], 1),
-            "p50": round(point + qs[2], 1),
-            "p75": round(point + qs[3], 1),
-            "p90": round(point + qs[4], 1),
+            "p10": round(point + qs[0], 3),
+            "p25": round(point + qs[1], 3),
+            "p50": round(point + qs[2], 3),
+            "p75": round(point + qs[3], 3),
+            "p90": round(point + qs[4], 3),
         }
     else:
         quantiles = {"p10": None, "p25": None, "p50": None, "p75": None, "p90": None}
@@ -308,7 +309,7 @@ def project_claims(
         "asof": asof.isoformat(),
         "target": "icsa_level",
         "regime_axis": "growth",
-        "point": round(point, 1),
+        "point": round(point, 3),  # thousands (ic4wsa_last / 1000.0)
         "p10": quantiles["p10"],
         "p25": quantiles["p25"],
         "p50": quantiles["p50"],
@@ -316,15 +317,15 @@ def project_claims(
         "p90": quantiles["p90"],
         "n_residuals": len(residuals_arr),
         "benchmark_set": {
-            "naive_prior": round(icsa_last / 1000.0, 2),  # convert raw persons to thousands
+            "naive_prior": round(icsa_last / 1000.0, 3),  # thousands
             "trailing_4w": trailing_4w,                    # already in thousands
             "ar_model": ar3_pred,                          # already in thousands
             "cleveland_nowcast": None,
             "market_implied": None,
         },
         "inputs_used": {
-            "ic4wsa_last": round(ic4wsa_last, 1),
-            "icsa_last": round(icsa_last, 1),
+            "ic4wsa_last_raw": round(ic4wsa_last, 1),  # raw persons (informational)
+            "icsa_last_raw": round(icsa_last, 1),       # raw persons (informational)
         },
         "surprise_skew": {"sigma": None, "tag": None},
         "pit_provenance": {

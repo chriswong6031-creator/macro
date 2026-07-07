@@ -27,8 +27,8 @@ to trigger. (The model beating naive in one slice but not the other would NOT tr
 
 ### Attempt 1 Kill Rule
 
-| Window | MAE model (k) | MAE naive (k) | Model beats naive? |
-|--------|--------------|---------------|-------------------|
+| Window | MAE model (thousands) | MAE naive (thousands) | Model beats naive? |
+|--------|----------------------|----------------------|-------------------|
 | Full (all) | 40.839 | 28.673 | **NO** |
 | 2021+ slice | 24.042 | 14.790 | **NO** |
 
@@ -58,11 +58,11 @@ walk-forward prediction falls in 2010. Era counts verified: {2010_2020: 502, cov
 
 The ridge model fails the kill rule for two structurally different reasons:
 
-1. **COVID distortion (2020-03..06):** MAE model=1135k vs naive=686k. Lag-based models
+1. **COVID distortion (2020-03..06):** MAE model=1,135 thousand vs naive=686 thousand. Lag-based models
    catastrophically under-predict the COVID spike.
-2. **Post-COVID regime shift (2021+):** Even excluding COVID, the ridge model (24.0k)
-   fails to beat naive (14.8k) in 2021+. AR3 (22.7k) also fails.
-3. **2010-2019 (stable era):** The ridge model (11.3k) DOES beat naive (12.2k). This
+2. **Post-COVID regime shift (2021+):** Even excluding COVID, the ridge model (24.0 thousand)
+   fails to beat naive (14.8 thousand) in 2021+. AR3 (22.7 thousand) also fails.
+3. **2010-2019 (stable era):** The ridge model (11.3 thousand) DOES beat naive (12.2 thousand). This
    result is printed, not hidden. The verdict rests on full window + 2021+ failure.
 
 ---
@@ -86,8 +86,8 @@ The ridge model fails the kill rule for two structurally different reasons:
 
 ### Attempt 2 Kill Rule
 
-| Window | MAE IC4WSA (k) | MAE naive (k) | Model beats naive? |
-|--------|---------------|---------------|-------------------|
+| Window | MAE IC4WSA (thousands) | MAE naive (thousands) | Model beats naive? |
+|--------|----------------------|----------------------|-------------------|
 | Full (all) | 43.855 | 27.914 | **NO** |
 | 2021+ slice | 17.685 | 14.755 | **NO** |
 
@@ -111,23 +111,23 @@ Units: thousands of initial claims. IC4WSA = 4-week MA of ICSA, used as point pr
 
 ### Attempt 2 Slice Verdicts
 
-- **Full window (n=890):** IC4WSA 43.855k vs naive 27.914k → model LOSES. Kill rule arm 1 triggered.
-- **2021+ slice (n=286):** IC4WSA 17.685k vs naive 14.755k → model LOSES. Kill rule arm 2 triggered.
-- **2010–2020 slice (n=531):** IC4WSA 12.262k vs naive 12.409k → model beats naive by 0.147k.
+- **Full window (n=890):** IC4WSA 43.855 thousand vs naive 27.914 thousand → model LOSES. Kill rule arm 1 triggered.
+- **2021+ slice (n=286):** IC4WSA 17.685 thousand vs naive 14.755 thousand → model LOSES. Kill rule arm 2 triggered.
+- **2010–2020 slice (n=531):** IC4WSA 12.262 thousand vs naive 12.409 thousand → model beats naive by 0.147 thousand.
 
-The IC4WSA spec DOES beat naive on the 2010–2020 stable era (by 0.147k). This result is printed,
+The IC4WSA spec DOES beat naive on the 2010–2020 stable era (by 0.147 thousand). This result is printed,
 not hidden. The kill rule verdict rests on the full window and 2021+ failures. The 2010–2020 pass
 does NOT override the verdict; both arms must be non-failing for the model to be active.
 
 ### Attempt 2 Diagnosis
 
-1. **COVID distortion (2020-03..06):** MAE IC4WSA=1434k vs naive=686k. The IC4WSA 4-week moving
+1. **COVID distortion (2020-03..06):** MAE IC4WSA=1,434 thousand vs naive=686 thousand. The IC4WSA 4-week moving
    average cannot adjust fast enough during the COVID spike.
-2. **Post-COVID regime shift (2021+):** IC4WSA (17.7k) fails to beat naive (14.8k). The AR1 random-walk
+2. **Post-COVID regime shift (2021+):** IC4WSA (17.7 thousand) fails to beat naive (14.8 thousand). The AR1 random-walk
    structure of weekly claims is very hard to beat in the post-COVID inflation era.
 3. **Tracking error:** IC4WSA is a lagging MA of ICSA — by construction it cannot outpredict the
    naive prior in a near-random-walk series at most horizons.
-4. **2010-2019 (stable era):** IC4WSA (12.3k) barely beats naive (12.5k). The smoothing provides
+4. **2010-2019 (stable era):** IC4WSA (12.3 thousand) barely beats naive (12.5 thousand). The smoothing provides
    minimal benefit in stable periods.
 
 ---
@@ -150,7 +150,7 @@ Per MRI §6, the claims upcoming card ships:
 {
   "projection": {
     "mode": "benchmark_only",
-    "reason": "Walk-forward MAE (IC4WSA spec attempt 2: 43.9k full, 17.7k 2021+) fails to beat naive_prior..."
+    "reason": "Walk-forward MAE (IC4WSA spec attempt 2: 43.9 thousand full, 17.7 thousand 2021+) fails to beat naive_prior..."
   },
   "benchmark_set": {
     "naive_prior": <last ICSA initial print in thousands>,
@@ -172,7 +172,7 @@ The scoreboard grades mae_naive_prior, mae_trailing_4w, mae_ar_model going forwa
 - **MRI-R9 (era law):** Weekly claims residuals have strong autocorrelation. The effective n
   for statistical inference is substantially smaller than the row count. Coverage and skew
   hit-rates carry this caveat.
-- **Unit:** thousands (raw ICSA/1000). ~215k = 215,000 initial claims.
+- **Unit:** thousands (raw ICSA/1000). ~215 = 215,000 initial claims (215 thousand).
 - **Trailing benchmark:** trailing_4w (mean of last 4 prints); trailing_3m applies to monthly releases.
 - **IC4WSA walk-forward:** point = IC4WSA / 1000 (thousands); actual = ICSA / 1000 (thousands).
   IC4WSA published strictly before each ICSA print (PIT law preserved).

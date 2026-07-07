@@ -523,7 +523,8 @@ class TestClaimsProjection:
         assert result["pit_provenance"]["authority"] is False
 
     def test_claims_point_equals_last_ic4wsa(self, tmp_root: Path):
-        """Point estimate must equal the last IC4WSA initial print knowable at asof."""
+        """Point estimate must equal the last IC4WSA initial print knowable at asof,
+        expressed in thousands (ic4wsa_last / 1000.0)."""
         _make_claims_vintages(tmp_root, n_weeks=60)
         from engine.release_forecast import load_vintages, knowable_series
         from engine.release_components_nfp import project_claims
@@ -534,11 +535,16 @@ class TestClaimsProjection:
             knowable_series_fn=knowable_series,
             min_quantile_obs=24,
         )
-        # Last IC4WSA knowable at asof
+        # Last IC4WSA knowable at asof — point is now in thousands (FIX-4)
         ic4wsa = knowable_series(vintages, "IC4WSA", asof)
         if not ic4wsa.empty:
-            expected_point = round(float(ic4wsa["value"].iloc[-1]), 1)
-            assert result["point"] == pytest.approx(expected_point, abs=0.11)
+            expected_point = round(float(ic4wsa["value"].iloc[-1]) / 1000.0, 3)
+            assert result["point"] == pytest.approx(expected_point, abs=0.001)
+            # Sanity: synthetic data is ~200k raw persons → ~0.2 in thousands
+            assert 0.1 <= result["point"] <= 1.0, (
+                f"point={result['point']} not in plausible thousands range [0.1, 1.0] "
+                "(synthetic ICSA ~200k raw → ~0.2 thousands)"
+            )
 
     def test_claims_quantiles_when_enough_residuals(self, tmp_root: Path):
         """With n>=24 residuals, quantiles are non-null and ordered p10<=p25<=p50<=p75<=p90."""

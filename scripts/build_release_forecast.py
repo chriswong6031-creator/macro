@@ -63,8 +63,8 @@ _TRACKED_RELEASES = [
 # Both attempts failed; no attempt 3 without program-level adjudication (anti-mining law).
 _CLAIMS_MODE = "benchmark_only"
 _CLAIMS_BENCHMARK_ONLY_REASON = (
-    "Walk-forward MAE (IC4WSA spec attempt 2: 43.9k full, 17.7k 2021+) fails to beat "
-    "naive_prior (27.9k full, 14.8k 2021+). §6 kill rule triggered on both windows: "
+    "Walk-forward MAE (IC4WSA spec attempt 2: 43.9 thousand full, 17.7 thousand 2021+) fails to beat "
+    "naive_prior (27.9 thousand full, 14.8 thousand 2021+). §6 kill rule triggered on both windows: "
     "benchmark-only mode (research/release_forecast/CLAIMS_BACKTEST.md). "
     "No attempt 3 without program-level adjudication."
 )
@@ -91,6 +91,7 @@ _FRED_VINTAGE_SERIES = {
     "cpi_headline": "CPIAUCSL",
     "cpi_core":     "CPILFESL",
     "nfp":          "PAYEMS",
+    "claims":       "ICSA",
 }
 
 # Wilson CI helper (reused from engine/release_forecast.py pattern)
@@ -565,6 +566,7 @@ def _build_projection_ledger_rows(
             "inputs_hash": _inputs_hash,
             "horizon_days": _horizon_days,
             "days_to": item.get("days_to"),
+            "projection_mode": item.get("projection", {}).get("mode"),
             "projection_point": item.get("projection", {}).get("point"),
             "projection_p10": item.get("projection", {}).get("p10"),
             "projection_p25": item.get("projection", {}).get("p25"),
@@ -624,9 +626,13 @@ def _get_initial_print(
             if col in vdf.columns:
                 vdf[col] = pd.to_datetime(vdf[col])
 
-        # Target period: weekly claims use full ISO date; monthly releases append "-01"
+        # Target period: monthly releases append "-01"; claims require Thursday→Saturday mapping.
+        # The producer stores period = Thursday release date (YYYY-MM-DD), but ALFRED stores
+        # ICSA with period = week-ending Saturday (release_thursday − 5 days).
+        # Verified: ICSA period 2009-05-30 (Sat) has realtime_start 2009-06-04 (Thu).
         if release_type == "claims":
-            target_ts = pd.Timestamp(period_str)
+            thursday_ts = pd.Timestamp(period_str)
+            target_ts = thursday_ts - pd.Timedelta(days=5)  # map to preceding Saturday
         else:
             target_ts = pd.Timestamp(period_str + "-01")
         release_ts = pd.Timestamp(release_date_str)
@@ -715,6 +721,11 @@ def _compute_actual_from_print(
         except Exception as e:
             log.debug("NFP change computation failed: %s", e)
             return None
+
+    elif release_type == "claims":
+        # ICSA is reported in raw persons; benchmark_set and projection use thousands.
+        # Return the initial print divided by 1000.0 to match benchmark units.
+        return round(raw_initial_print / 1000.0, 3)
 
     return None
 
