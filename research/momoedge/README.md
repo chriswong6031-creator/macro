@@ -1,11 +1,11 @@
 # MomoEdge Competitive Study — Reverse-Engineering + Build Docket
 
-Competitive study of **MomoEdge** (momoedge.ai), an "Oracle Terminal" options product, to guide MomoEdge-parity builds in **our Terminal** (`charting-app`) and a future **Oracle** desk (Macro Dashboard). Produced 2026-07-07 from (a) full public JS/HTML source reverse-engineering and (b) ~142 authenticated in-app screenshots. Raw competitor source archived outside git at `~/Documents/Cluade/momoedge_source_archive/` (3.9 MB, 65 JS files) for re-reference.
+Competitive study of **MomoEdge** (momoedge.ai), an "Oracle Terminal" options product, to guide MomoEdge-parity builds in **our Terminal** (`charting-app`) and a future **Prophet** desk (Macro Dashboard; named Prophet because "Oracle" is our rotation lobe). Produced 2026-07-07 from (a) full public JS/HTML source reverse-engineering and (b) ~142 authenticated in-app screenshots. Raw competitor source archived outside git at `~/Documents/Cluade/momoedge_source_archive/` (3.9 MB, 65 JS files) for re-reference.
 
 This bundle supersedes/extends the earlier single-file study `research/MOMOEDGE_ORACLE_COMPETITIVE_FEATURE_STUDY_FOR_FABLE.md` (which was screenshot-less and inferred structure). Here we have the **actual client code**, so scoring formulas, the confidence model, and gate thresholds are extracted verbatim.
 
 ## Start here
-- **`MASTER_BUILD_DOCKET.md`** — the spine. Parity matrix (8 surfaces × NOW/NOW-SOFT/NEW-DATA/PAID-TAPE), the shared-R2 data-bridge design + new JSON schemas, the sequenced build packages (A→Flow→Heatmap→GEX→PRISM→Tutorial→Oracle+Alerts), epistemics guardrails, and 7 operator questions.
+- **`MASTER_BUILD_DOCKET.md`** — the spine. Parity matrix (8 surfaces × NOW/NOW-SOFT/NEW-DATA/PAID-TAPE), the shared-R2 data-bridge design + new JSON schemas, the sequenced build packages (A→Flow→Heatmap→GEX→PRISM→Tutorial→Prophet+Alerts), epistemics guardrails, and 7 operator questions.
 
 ## Source-RE specs (extracted from MomoEdge client JS — exact formulas/thresholds)
 - `oracle_spec.md` — **the crown jewel.** Full V1 (9-factor) + V2 (7-phase weighted) live-confidence engine, signal schema, client/server split, T2 gating (SOFI pattern), OCC option construction, 7-gate flow auto-logger, performance engine.

@@ -1,6 +1,6 @@
 """engine/options_structure.py — Options Sensor Contract: dataclasses + validators + chain-heat aggregator.
 
-Package A of the MomoEdge-parity Options Terminal + Oracle build.
+Package A of the MomoEdge-parity Options Terminal + Prophet build.
 
 Six schemas are defined here; each carries authority_tier and reliability metadata.
 No schema in this module claims "validated" status (CI-enforced law); every artifact
@@ -11,8 +11,8 @@ Schemas (all DISPLAY-ONLY until gauntleted):
   options_flow.chain_heat/v1       — contract-day accumulation campaigns
   options_structure.matrix/v1      — strike × expiration matrix (PRISM)
   options_structure.structural/v1  — structural detector state (shadow tier)
-  oracle.trade_plan/v1             — oracle base trade plan envelope
-  oracle.management_state/v1       — oracle live management confidence state
+  prophet.trade_plan/v1             — prophet base trade plan envelope
+  prophet.management_state/v1       — prophet live management confidence state
 
 EPISTEMIC LAWS (binding on this module):
   • "validated" MUST NOT appear in any user-facing string.
@@ -527,7 +527,7 @@ def validate_structural(d: dict) -> list[str]:
 
 
 # ===========================================================================
-# 5. Schema: oracle.trade_plan/v1
+# 5. Schema: prophet.trade_plan/v1
 # ===========================================================================
 
 _DIRECTION_VALUES = frozenset({"BULL", "BEAR"})
@@ -535,18 +535,18 @@ _TRANCHE_VALUES   = frozenset({1, 2})
 
 
 @dataclass
-class OracleTradePlan:
-    """Oracle base trade plan envelope.
+class ProphetTradePlan:
+    """Prophet base trade plan envelope.
 
-    schema: oracle.trade_plan/v1
+    schema: prophet.trade_plan/v1
     authority_tier: display
 
-    The Neural Web ORIGINATES candidates; the Oracle MANAGES them.
+    The Neural Web ORIGINATES candidates; the Prophet MANAGES them.
     LLMs may narrate but MUST NOT originate signals, scores, or escalations.
     This schema carries the static plan; live management state lives in
-    oracle.management_state/v1 at oracle/state/<id>.json.
+    prophet.management_state/v1 at prophet/state/<id>.json.
     """
-    schema: str = "oracle.trade_plan/v1"
+    schema: str = "prophet.trade_plan/v1"
     id: str = ""                        # stable UUID or composite key
     asof: str = ""                      # plan creation timestamp
     asset: str = ""
@@ -561,10 +561,10 @@ class OracleTradePlan:
     min_hold_days: int | None = None
     tranche: int = 1                    # 1 or 2
     option_contract: dict | None = None  # type, strike, expiry, entry_premium
-    management_ref: str = ""            # "oracle/state/<id>.json"
+    management_ref: str = ""            # "prophet/state/<id>.json"
     authority_tier: str = AUTHORITY_DISPLAY
     reliability: dict = field(default_factory=lambda: {
-        "plan": "display — NW-originated; Oracle manages; LLM narrates only",
+        "plan": "display — NW-originated; Prophet manages; LLM narrates only",
         "option_premium": "display — EOD/delayed, not NBBO-live",
     })
 
@@ -572,7 +572,7 @@ class OracleTradePlan:
 def validate_trade_plan(d: dict) -> list[str]:
     """Return error strings; empty = clean."""
     errors: list[str] = []
-    if d.get("schema") != "oracle.trade_plan/v1":
+    if d.get("schema") != "prophet.trade_plan/v1":
         errors.append(f"schema mismatch: {d.get('schema')!r}")
     if not d.get("id"):
         errors.append("id is required")
@@ -596,7 +596,7 @@ def validate_trade_plan(d: dict) -> list[str]:
 
 
 # ===========================================================================
-# 6. Schema: oracle.management_state/v1
+# 6. Schema: prophet.management_state/v1
 # ===========================================================================
 
 _PHASE_VALUES = frozenset({
@@ -611,20 +611,20 @@ MANAGEMENT_CONFIDENCE_CEILING = 92   # honest uncertainty cap (mirrors MomoEdge)
 
 
 @dataclass
-class OracleManagementState:
-    """Oracle live management confidence state.
+class ProphetManagementState:
+    """Prophet live management confidence state.
 
-    schema: oracle.management_state/v1
+    schema: prophet.management_state/v1
     authority_tier: display
 
     This is a TRADE-MANAGEMENT score, NOT a pick-rank score.  The Neural Web
-    produces pick candidates; the Oracle manages active trades.  These two
+    produces pick candidates; the Prophet manages active trades.  These two
     surfaces must stay separated.
 
     Confidence ceiling: 92 (uncertainty is honest; certainty is forbidden).
     """
-    schema: str = "oracle.management_state/v1"
-    id: str = ""                        # matches oracle.trade_plan/v1 id
+    schema: str = "prophet.management_state/v1"
+    id: str = ""                        # matches prophet.trade_plan/v1 id
     asof: str = ""
     phase: str = "pre_trigger"          # 7-phase lifecycle
     management_confidence: float | None = None   # EMA-smoothed, ≤92
@@ -657,7 +657,7 @@ class OracleManagementState:
 def validate_management_state(d: dict) -> list[str]:
     """Return error strings; empty = clean."""
     errors: list[str] = []
-    if d.get("schema") != "oracle.management_state/v1":
+    if d.get("schema") != "prophet.management_state/v1":
         errors.append(f"schema mismatch: {d.get('schema')!r}")
     if not d.get("id"):
         errors.append("id is required")
@@ -690,8 +690,8 @@ _VALIDATORS = {
     "options_flow.chain_heat/v1":      validate_chain_heat_feed,
     "options_structure.matrix/v1":     validate_matrix,
     "options_structure.structural/v1": validate_structural,
-    "oracle.trade_plan/v1":            validate_trade_plan,
-    "oracle.management_state/v1":      validate_management_state,
+    "prophet.trade_plan/v1":            validate_trade_plan,
+    "prophet.management_state/v1":      validate_management_state,
 }
 
 

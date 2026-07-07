@@ -1,7 +1,7 @@
 # Options Sensor Contract — Package A
 
 **Author:** Build agent (Sonnet), 2026-07-07
-**Program:** MomoEdge-parity Options Terminal + Oracle (MASTER_BUILD_DOCKET.md)
+**Program:** MomoEdge-parity Options Terminal + Prophet (MASTER_BUILD_DOCKET.md)
 **Status:** DISPLAY-ONLY — no schema has passed a forward ledger gate.
 
 ---
@@ -10,7 +10,7 @@
 
 This document is the canonical specification for the six options-sensor schemas
 introduced in Package A.  Every later build stage (Flow, Heatmap, GEX, PRISM,
-Oracle) MUST read from these schemas, not invent its own.  Each schema carries
+Prophet) MUST read from these schemas, not invent its own.  Each schema carries
 `authority_tier` and `reliability` metadata; the word "validated" is forbidden in
 user-facing text (CI-enforced by `scripts/check_validated_claims.py`).
 
@@ -238,22 +238,22 @@ ledger gate and explicit adjudication.
 
 ---
 
-## 5. Schema: `oracle.trade_plan/v1`
+## 5. Schema: `prophet.trade_plan/v1`
 
-**Artifact path:** `oracle/trade_plan/<ID>.json` (site or R2)
-**Producer:** Neural Web (NW originates; Oracle does not re-originate)
+**Artifact path:** `prophet/trade_plan/<ID>.json` (site or R2)
+**Producer:** Neural Web (NW originates; Prophet does not re-originate)
 **Cadence:** on-demand (when NW emits a candidate)
 **Authority tier:** `display`
-**Consumers:** Oracle management engine, Oracle desk UI
+**Consumers:** Prophet management engine, Prophet desk UI
 
 The STATIC plan envelope.  The Neural Web is the **sole originator** of trade
-candidates; the Oracle **manages** active trades; LLMs **narrate**.  This
+candidates; the Prophet **manages** active trades; LLMs **narrate**.  This
 separation is non-negotiable (house law).  Live management state lives in a
-separate artifact at `oracle/state/<ID>.json` (schema `oracle.management_state/v1`).
+separate artifact at `prophet/state/<ID>.json` (schema `prophet.management_state/v1`).
 
 | Field | Type | Units | Semantics |
 |---|---|---|---|
-| `schema` | string | — | `"oracle.trade_plan/v1"` |
+| `schema` | string | — | `"prophet.trade_plan/v1"` |
 | `id` | string | — | Stable UUID or composite key (asset-direction-date-seq) |
 | `asof` | string | ISO-8601 | Plan creation timestamp |
 | `asset` | string | — | Underlying (ticker or index symbol) |
@@ -268,22 +268,22 @@ separate artifact at `oracle/state/<ID>.json` (schema `oracle.management_state/v
 | `min_hold_days` | int\|null | days | Minimum hold before exiting |
 | `tranche` | int | — | 1 (initial) or 2 (scale-in on trigger) |
 | `option_contract` | dict\|null | — | `{type, strike, expiry, entry_premium}` |
-| `management_ref` | string | — | Path to `oracle.management_state/v1` artifact |
+| `management_ref` | string | — | Path to `prophet.management_state/v1` artifact |
 | `authority_tier` | string | — | `"display"` |
 | `reliability` | dict | — | `{plan, option_premium}` |
 
 ---
 
-## 6. Schema: `oracle.management_state/v1`
+## 6. Schema: `prophet.management_state/v1`
 
-**Artifact path:** `oracle/state/<ID>.json` (site or R2)
-**Producer:** `engine/oracle_management.py` (Package 6 — future)
+**Artifact path:** `prophet/state/<ID>.json` (site or R2)
+**Producer:** `engine/prophet_management.py` (Package 6 — future)
 **Cadence:** intraday or daily-engine
 **Authority tier:** `display`
-**Consumers:** Oracle desk UI, forward outcome ledger
+**Consumers:** Prophet desk UI, forward outcome ledger
 
 The LIVE management confidence state.  This is a **TRADE-MANAGEMENT score**, NOT
-a pick-rank score.  The Neural Web produces pick candidates; the Oracle manages
+a pick-rank score.  The Neural Web produces pick candidates; the Prophet manages
 active trades.  These two surfaces must stay separated (docket §4).
 
 **Confidence ceiling: 92.**  `management_confidence` must never exceed 92.
@@ -294,8 +294,8 @@ Uncertainty is honest; certainty is forbidden.
 
 | Field | Type | Units | Semantics |
 |---|---|---|---|
-| `schema` | string | — | `"oracle.management_state/v1"` |
-| `id` | string | — | Matches `oracle.trade_plan/v1.id` |
+| `schema` | string | — | `"prophet.management_state/v1"` |
+| `id` | string | — | Matches `prophet.trade_plan/v1.id` |
 | `asof` | string | ISO-8601 | State computation timestamp |
 | `phase` | string | — | Current lifecycle phase (7 valid values) |
 | `management_confidence` | float\|null | 0–92 | EMA-smoothed confidence; ceiling = 92 |
@@ -321,7 +321,7 @@ The implementation (`engine/options_structure.py`, `ChainHeatCampaign`, and all
 `synapse.yml` consumer rows) uses `right` instead.  This is intentional — `right` is
 the canonical options-market term and avoids collision with Python's reserved keyword
 pattern.  All four downstream readers (Terminal flow-tab, Neural Web context sensors,
-oracle management engine, and oracle desk UI) MUST consume `right`, not `type`.
+prophet management engine, and prophet desk UI) MUST consume `right`, not `type`.
 
 ### 7.2 `aggregate_chain_heat()` session_date parameter
 
@@ -339,8 +339,8 @@ Several `options-structure-*` synapse rows list `engine/options_structure.py` as
 both producer AND consumer.  These entries reflect a contract-before-builder pattern:
 the module defines the dataclasses and validators (schema layer) that future builder
 scripts in the same file (or calling it) will consume.  They are not circular data
-dependencies.  Similarly, `oracle-trade-plan` lists `producer: engine/neuralweb/world_state.py`
-which does not yet write to `oracle/trade_plan/` (the builder is Package 6, future
+dependencies.  Similarly, `prophet-trade-plan` lists `producer: engine/neuralweb/world_state.py`
+which does not yet write to `prophet/trade_plan/` (the builder is Package 6, future
 scope).  DAG-conformance CI is green because it does not check that the producer path
 performs actual writes.  Both patterns are accepted contract-before-builder entries
 and do not require action before Package 6 is wired.

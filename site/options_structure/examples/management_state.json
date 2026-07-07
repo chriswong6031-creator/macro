@@ -1,5 +1,5 @@
 {
-  "schema": "oracle.management_state/v1",
+  "schema": "prophet.management_state/v1",
   "id": "nvda-bull-20260707-001",
   "asof": "2026-07-07T20:05:00-04:00",
   "phase": "triggered_pre_t1",

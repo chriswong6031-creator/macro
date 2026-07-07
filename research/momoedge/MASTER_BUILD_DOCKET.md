@@ -1,4 +1,6 @@
-# MASTER BUILD DOCKET — MomoEdge-parity Options Terminal + Oracle
+# MASTER BUILD DOCKET — MomoEdge-parity Options Terminal + Prophet
+
+> **NAMING RULING (operator, 2026-07-06):** our pick/trade-lifecycle desk is named **PROPHET** — never "Oracle", which is reserved for (a) the existing rotation lobe (`ORACLE_CONSTITUTION.md`) and (b) MomoEdge's product when discussed as the competitor. All our schemas/keys use `prophet.*` / `prophet/` (see `research/OPTIONS_SENSOR_CONTRACT.md`). "Oracle" below refers to MomoEdge's product unless it names the rotation lobe.
 
 **Author:** Opus (synthesis pass), 2026-07-07
 **Inputs read (all of `/tmp/momoedge_specs/`):** source-RE specs (`flow_spec`, `chain_heat_spec`, `gex_spec`, `gex_ui_spec`, `structural_spec`, `prism_spec`, `heatmap_spec`, `oracle_spec`, `alerts_infra_spec`, `tutorial_spec`); screenshot specs (`flow/gex/heatmap/oracle/prism/tutorial_FEATURE_SPEC`); our-stack maps (`our_terminal_map`, `our_data_contracts`); prior study `research/MOMOEDGE_ORACLE_COMPETITIVE_FEATURE_STUDY_FOR_FABLE.md`.
@@ -99,7 +101,7 @@ Legend for gap class:
 
 | MomoEdge feature (`oracle_spec`) | What we have | Gap | Notes |
 |---|---|---|---|
-| Base signal rows (asset/thesis/entry/inval/targets/horizon) | Neural Web produces candidates; no `oracle_trade_plan` envelope | NOW (define) | Define `oracle_trade_plan.v1`. **NW originates; Oracle does not re-originate.** |
+| Base signal rows (asset/thesis/entry/inval/targets/horizon) | Neural Web produces candidates; no `prophet_trade_plan` envelope | NOW (define) | Define `prophet_trade_plan.v1`. **NW originates; Oracle does not re-originate.** |
 | V2 phase-aware live confidence (7 phases, weighted components) | none | NOW | **Zero paid tape.** Price+geometry+macro only. Biggest net-new win. |
 | Trade-at-a-glance geometry rail (STOP/ENTRY/LIVE/T1/T2, R-units) | none | NOW | Pure geometry from plan + live price. |
 | V2 diagnostics (validity/progress/pace/retention/overlay bars + change reason) | none | NOW | Legibility layer over the confidence score. |
@@ -233,23 +235,23 @@ Register in `config/synapse.yml` (Signal Bus). All carry `authority_tier ∈ {di
 }
 ```
 
-**`oracle/trade_plan/<ID>.json`** — schema `oracle.trade_plan/v1` (Package G, Oracle)
+**`prophet/trade_plan/<ID>.json`** — schema `prophet.trade_plan/v1` (Package G, Oracle)
 ```json
 {
-  "schema":"oracle.trade_plan/v1","id":"...","asof":"...",
+  "schema":"prophet.trade_plan/v1","id":"...","asof":"...",
   "asset":"NVDA","direction":"BULL","thesis":"...","source_engines":["neural_web"],
   "trigger":910,"entry":905,"invalidation":870,"targets":[950,980,1050],
   "horizon_days":90,"min_hold_days":14,"tranche":1,
   "option_contract":{"type":"CALL","strike":910,"expiry":"2026-09-19","entry_premium":5.1},
-  "management":{  // computed each tick, NOT in the plan file — see oracle/state
-    "ref":"oracle/state/<ID>.json"
+  "management":{  // computed each tick, NOT in the plan file — see prophet/state
+    "ref":"prophet/state/<ID>.json"
   }
 }
 ```
-**`oracle/state/<ID>.json`** — schema `oracle.management_state/v1` (live, EMA-smoothed)
+**`prophet/state/<ID>.json`** — schema `prophet.management_state/v1` (live, EMA-smoothed)
 ```json
 {
-  "schema":"oracle.management_state/v1","id":"...","asof":"...",
+  "schema":"prophet.management_state/v1","id":"...","asof":"...",
   "phase":"triggered_pre_t1","management_confidence":72.2,"raw_confidence":73.1,
   "delta_vs_base":6.2,"recommended_action":"hold",   // wait|enter|hold|trim|trail|exit|invalidated
   "components":{"validity":81,"progress":40,"pace":66,"retention":50,"overlay":55},
@@ -261,7 +263,7 @@ Register in `config/synapse.yml` (Signal Bus). All carry `authority_tier ∈ {di
 ```
 
 ### 2.4 Terminal wiring for new keys
-Per `our_terminal_map §3`: add each new `f` param to `isValidF()`/`backendPath()`/`r2Key()` in `terminal/app/api/flow/route.ts`, add a fixture, add a tab to the `TabKey` union in `OptionsHubView.tsx` (or a new `/heatmap`, `/oracle` page + `AppNav.tsx` entry). Reuse existing chart primitives (`GexStrikeLadder`, `TideChart`, `Sparkline`).
+Per `our_terminal_map §3`: add each new `f` param to `isValidF()`/`backendPath()`/`r2Key()` in `terminal/app/api/flow/route.ts`, add a fixture, add a tab to the `TabKey` union in `OptionsHubView.tsx` (or a new `/heatmap`, `/prophet` page + `AppNav.tsx` entry). Reuse existing chart primitives (`GexStrikeLadder`, `TideChart`, `Sparkline`).
 
 ---
 
@@ -314,9 +316,9 @@ Model routing per `CLAUDE.md`: **Sonnet builds** each package; **Opus reviews** 
 - **HONEST-BUT-THINNER:** rewrite lesson copy to OUR epistemics — GEX lesson teaches "levels map, sign assumed"; Flow lesson teaches "magnitude reliable, side soft"; keep the confidence-pillar lesson (progress/pace/retention/market) since that maps to the Oracle we build next. Ask-Momo narrates; never originates.
 
 ### Package 6 — ORACLE + ALERTS *(Sonnet build core; Opus review of confidence model + bounds; Fable adjudicates authority)*
-- **Scope (Oracle):** `oracle_trade_plan.v1` envelope; V2 phase-aware management confidence (7 phases, weighted components, phase bounds, EMA smoothing, ceiling 92); trade-at-a-glance geometry rail; V2 diagnostics bars + change-reason; tranche 1→2; performance dashboard + outcome-close schema; option card w/ live premium; macro orb.
+- **Scope (Oracle):** `prophet_trade_plan.v1` envelope; V2 phase-aware management confidence (7 phases, weighted components, phase bounds, EMA smoothing, ceiling 92); trade-at-a-glance geometry rail; V2 diagnostics bars + change-reason; tranche 1→2; performance dashboard + outcome-close schema; option card w/ live premium; macro orb.
 - **Scope (Alerts, Package H):** 13-type matrix, in-app/sound/push channels, presets, quiet hours, rate caps, dedup by alertId. Structural/flow/whale/score-90 alerts as **display**, not ranking authority.
-- **Files:** Macro Dashboard `engine/oracle_management.py` (V2 confidence, writes `oracle/state/<ID>.json`), `scripts/build_oracle.py` (nightly plan + performance ledger); charting-app Oracle page + alert-prefs UI + Supabase alert tables.
+- **Files:** Macro Dashboard `engine/prophet_management.py` (V2 confidence, writes `prophet/state/<ID>.json`), `scripts/build_prophet.py` (nightly plan + performance ledger); charting-app Oracle page + alert-prefs UI + Supabase alert tables.
 - **Consumes:** Neural Web candidates (plan origination), live price, macro/regime, all options-structure sensors from Packages B–E as **context/risk overlays**.
 - **Net-new engine (Macro Dashboard):** the whole management-confidence engine (no paid tape); forward outcome ledger (schema-before-authority).
 - **HONEST-BUT-THINNER / doctrine:** **This is a trade-MANAGEMENT score, explicitly NOT a Neural-Web pick rank** (their own split; preserve it). LLM/Oracle **may not originate a signal or escalate** — NW originates candidates, Oracle manages, LLM narrates. Options-flow/GEX/structural sensors enter as **context-only → confirmer → filter → rank-contributor**, each step gated by a pre-registered forward ledger (house law). Confidence ceiling preserved (uncertainty is honest). Performance dashboard ships its outcome schema **before** the surface is labeled "authority" — never a track record without a pre-registered ledger.
@@ -347,9 +349,9 @@ Bilingual (EN/ZH) UI required; **no translated text in `title=` attributes** (CI
 
 1. **Paid tape decision.** Databento TBBO for a focused universe (~$0 under signup credit per `our_data_contracts §5 gaps`) would upgrade Flow direction from soft to reliable and unlock true sweep/aggressor. Fund it now for a **narrow validation use case** (does signed direction add forward edge?), or stay EOD-honest indefinitely? Everything in this docket ships without it — this only affects whether Flow direction ever graduates from "soft."
 
-2. **Oracle candidate origination.** The Oracle management layer needs base trade plans. Confirm: **Neural Web is the sole originator** (Oracle never re-picks), and NW already emits enough structure (entry/inval/targets/horizon) to populate `oracle_trade_plan.v1` — or do we need an NW change to emit that envelope? This gates Package 6 scope.
+2. **Oracle candidate origination.** The Oracle management layer needs base trade plans. Confirm: **Neural Web is the sole originator** (Oracle never re-picks), and NW already emits enough structure (entry/inval/targets/horizon) to populate `prophet_trade_plan.v1` — or do we need an NW change to emit that envelope? This gates Package 6 scope.
 
-3. **Terminal vs Macro Dashboard home for Oracle UI.** Engines + ledgers live in Macro Dashboard (nightly, `site/`). The interactive Oracle *desk* could render there (`site/oracle.html`) OR as a Terminal tab reading R2. Recommend: **engine + ledger in Macro Dashboard; UI as a Terminal tab** (consistent with Flow/GEX). Confirm.
+3. **Terminal vs Macro Dashboard home for Prophet UI.** Engines + ledgers live in Macro Dashboard (nightly, `site/`). The interactive Prophet *desk* could render there (`site/prophet.html`) OR as a Terminal tab reading R2. Recommend: **engine + ledger in Macro Dashboard; UI as a Terminal tab** (consistent with Flow/GEX). Confirm.
 
 4. **UNUSUAL lens baseline funding.** The PRISM UNUSUAL lens + Flow rarity scores need a **trailing 30d per-strike volume median** built from EOD history (NEW‑DATA, $0 but a build). Priority — ship PRISM with GEX/OI/VOL/Δ-OI first and add UNUSUAL when the baseline accrues, or block PRISM on it? Recommend: **ship without UNUSUAL, add later** (their own "NO HIST" fallback is the honest pattern).
 

@@ -6614,9 +6614,9 @@ artifacts:
       a gated context sensor. LLMs may only narrate; escalation requires a pre-registered
       forward ledger gate and explicit adjudication. Package D builder is future scope.
 
-  # --- oracle.trade_plan: oracle base trade plan envelope ---
-  oracle-trade-plan:
-    path: oracle/trade_plan/<ID>.json
+  # --- prophet.trade_plan: Prophet base trade plan envelope ---
+  prophet-trade-plan:
+    path: prophet/trade_plan/<ID>.json
     format: json
     producer: engine/neuralweb/world_state.py
     known_extra_writers: []
@@ -6625,7 +6625,7 @@ artifacts:
     storage: git
     asof_field: asof
     freshness_sla_hours: 9999
-    schema: oracle.trade_plan/v1
+    schema: prophet.trade_plan/v1
     tier: display
     horizon_role: tactical_entry
     weights: none
@@ -6639,11 +6639,11 @@ artifacts:
       Neural Web ORIGINATES candidates; Oracle MANAGES; LLMs NARRATE.
       source_engines must be non-empty (CI-validated by validate_trade_plan()).
       Static plan carries trigger/entry/invalidation/targets/horizon/tranche/option_contract;
-      live management state lives in oracle.management_state/v1. authority_tier=display.
+      live management state lives in prophet.management_state/v1. authority_tier=display.
 
-  # --- oracle.management_state: oracle live management confidence state ---
-  oracle-management-state:
-    path: oracle/state/<ID>.json
+  # --- prophet.management_state: Prophet live management confidence state ---
+  prophet-management-state:
+    path: prophet/state/<ID>.json
     format: json
     producer: engine/options_structure.py
     known_extra_writers: []
@@ -6652,7 +6652,7 @@ artifacts:
     storage: git
     asof_field: asof
     freshness_sla_hours: 30
-    schema: oracle.management_state/v1
+    schema: prophet.management_state/v1
     tier: display
     horizon_role: tactical_entry
     weights: none

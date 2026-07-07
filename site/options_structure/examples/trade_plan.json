@@ -1,5 +1,5 @@
 {
-  "schema": "oracle.trade_plan/v1",
+  "schema": "prophet.trade_plan/v1",
   "id": "nvda-bull-20260707-001",
   "asof": "2026-07-07T20:05:00-04:00",
   "asset": "NVDA",
@@ -19,10 +19,10 @@
     "expiry": "2026-09-19",
     "entry_premium": 5.1
   },
-  "management_ref": "oracle/state/nvda-bull-20260707-001.json",
+  "management_ref": "prophet/state/nvda-bull-20260707-001.json",
   "authority_tier": "display",
   "reliability": {
-    "plan": "display — NW-originated; Oracle manages; LLM narrates only",
+    "plan": "display — NW-originated; Prophet manages; LLM narrates only",
     "option_premium": "display — EOD/delayed, not NBBO-live"
   }
 }

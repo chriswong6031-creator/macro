@@ -352,12 +352,12 @@ def test_structural_valid_states():
 
 
 # ===========================================================================
-# 5. ORACLE TRADE PLAN
+# 5. PROPHET TRADE PLAN
 # ===========================================================================
 
 def _trade_plan_clean() -> dict:
     return {
-        "schema": "oracle.trade_plan/v1",
+        "schema": "prophet.trade_plan/v1",
         "id": "nvda-bull-20260707-001",
         "asof": NOW_ISO,
         "asset": "NVDA",
@@ -377,7 +377,7 @@ def _trade_plan_clean() -> dict:
             "expiry": "2026-09-19",
             "entry_premium": 5.1,
         },
-        "management_ref": "oracle/state/nvda-bull-20260707-001.json",
+        "management_ref": "prophet/state/nvda-bull-20260707-001.json",
         "authority_tier": AUTHORITY_DISPLAY,
     }
 
@@ -421,12 +421,12 @@ def test_trade_plan_bear():
 
 
 # ===========================================================================
-# 6. ORACLE MANAGEMENT STATE
+# 6. PROPHET MANAGEMENT STATE
 # ===========================================================================
 
 def _management_state_clean() -> dict:
     return {
-        "schema": "oracle.management_state/v1",
+        "schema": "prophet.management_state/v1",
         "id": "nvda-bull-20260707-001",
         "asof": NOW_ISO,
         "phase": "triggered_pre_t1",
