@@ -404,6 +404,76 @@ def _summary_counts(lobes: list[dict], cortex: dict) -> dict:
     }
 
 
+# ---- support-impact enrichment (RUL-CC-14) -----------------------------------
+
+_SUPPORT_MAP_TOP_N = 10  # max items in transitive_downstream_top
+
+
+def _embed_support_impact(lobes: list[dict], root: Path) -> None:
+    """Embed a compact support_impact block into each stale/missing/degraded lobe.
+
+    Mutates the lobe dicts in-place.  Fail-open: if support_map is unavailable
+    or raises, the block is set to {available: False, note: <reason>} and the
+    overall build is not interrupted.
+
+    Block shape (on success):
+      {
+        direct_consumers: [module_path, ...],
+        transitive_downstream_count: int,
+        transitive_downstream_top: [{artifact_id, hop, via_module}, ...],
+        bound: "upper",
+        note: "<overattribution explanation>",
+        available: true,
+      }
+
+    RUL-CC-14: bound='upper' is mandatory; the note explains the over-attribution.
+    Language law: results described as downstream surfaces that read this artifact.
+    """
+    _AFFECTED = frozenset({"stale", "missing", "degraded"})
+    affected_lobes = [lobe for lobe in lobes if lobe.get("status") in _AFFECTED]
+    if not affected_lobes:
+        return
+
+    try:
+        from engine.neuralweb.support_map import (  # noqa: PLC0415
+            consumers_direct,
+            downstream,
+            load_graph,
+        )
+        graph = load_graph(root)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("health: support_map unavailable — skipping support_impact: %s", exc)
+        _err_note = f"support_map unavailable: {exc}"
+        for lobe in affected_lobes:
+            lobe["support_impact"] = {"available": False, "note": _err_note}
+        return
+
+    for lobe in affected_lobes:
+        art_id = lobe.get("id", "")
+        try:
+            direct = consumers_direct(graph, art_id)
+            transitive = downstream(graph, art_id)
+            top = [
+                {"artifact_id": r["artifact_id"], "hop": r["hop"], "via_module": r["via_module"]}
+                for r in transitive[:_SUPPORT_MAP_TOP_N]
+            ]
+            lobe["support_impact"] = {
+                "direct_consumers": [c["module"] for c in direct],
+                "transitive_downstream_count": len(transitive),
+                "transitive_downstream_top": top,
+                "bound": "upper",
+                "note": (
+                    "Downstream surfaces that read this artifact directly or transitively. "
+                    "Bound is upper: shared-producer inversion may fold in additional "
+                    "artifacts beyond those that directly depend on this one."
+                ),
+                "available": True,
+            }
+        except Exception as exc:  # noqa: BLE001
+            log.warning("health: support_impact failed for %s: %s", art_id, exc)
+            lobe["support_impact"] = {"available": False, "note": f"error: {exc}"}
+
+
 # ---- main build function -----------------------------------------------------
 
 def build(root: Path | None = None, cortex_source: str = "previous_run") -> dict:
@@ -461,6 +531,10 @@ def build(root: Path | None = None, cortex_source: str = "previous_run") -> dict
                 "gaps": [f"error: {exc}"],
             }
         lobes.append(rec)
+
+    # Support-impact enrichment (RUL-CC-14): embed compact blast-radius block
+    # for each stale/missing/degraded lobe.  Load graph once per build.
+    _embed_support_impact(lobes, root)
 
     # Cortex section
     cortex = _cortex_section(root, cortex_source=cortex_source)
