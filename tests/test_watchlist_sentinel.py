@@ -144,27 +144,32 @@ class TestInWindow:
 
 class TestCooldownBlocks:
     def test_no_history_does_not_block(self):
-        assert _cooldown_blocks("NVDA", False, {}, "2026-07-08") is False
+        assert _cooldown_blocks("NVDA", {}, "2026-07-08") is False
 
-    def test_within_cooldown_and_continuous_blocks(self):
+    def test_within_cooldown_blocks(self):
+        """Active cooldown (sessions_since < threshold) always suppresses re-entry."""
         cooldown = {"NVDA": {"last_alert": "2026-07-05", "last_in_window": True, "sessions_since": 2}}
-        # prev_in_window=True means it was continuously in-window — cooldown applies
-        assert _cooldown_blocks("NVDA", prev_in_window=True, cooldown=cooldown, today_str="2026-07-08") is True
+        assert _cooldown_blocks("NVDA", cooldown=cooldown, today_str="2026-07-08") is True
+
+    def test_within_cooldown_out_of_window_still_blocks(self):
+        """Whipsaw: ticker left window but cooldown still active → suppress re-entry."""
+        cooldown = {"NVDA": {"last_alert": "2026-07-05", "last_in_window": False, "sessions_since": 2}}
+        assert _cooldown_blocks("NVDA", cooldown=cooldown, today_str="2026-07-08") is True
 
     def test_cooldown_expired_does_not_block(self):
+        """sessions_since == COOLDOWN_SESSIONS → cooldown expired → permit."""
         cooldown = {"NVDA": {"last_alert": "2026-07-01", "last_in_window": True, "sessions_since": COOLDOWN_SESSIONS}}
-        # sessions_since == COOLDOWN_SESSIONS → not < threshold → does not block
-        assert _cooldown_blocks("NVDA", prev_in_window=True, cooldown=cooldown, today_str="2026-07-08") is False
+        assert _cooldown_blocks("NVDA", cooldown=cooldown, today_str="2026-07-08") is False
 
-    def test_re_enter_after_leave_clears_cooldown(self):
-        # prev_in_window=False means the window closed — cooldown reset, permit re-entry
-        cooldown = {"NVDA": {"last_alert": "2026-07-05", "last_in_window": False, "sessions_since": 1}}
-        assert _cooldown_blocks("NVDA", prev_in_window=False, cooldown=cooldown, today_str="2026-07-08") is False
-
-    def test_fresh_entry_not_blocked(self):
-        # sessions_since=0 after alert was just set → still within COOLDOWN
+    def test_fresh_entry_blocks(self):
+        """sessions_since=0 (just alerted) → still within COOLDOWN."""
         cooldown = {"NVDA": {"last_alert": "2026-07-08", "last_in_window": True, "sessions_since": 0}}
-        assert _cooldown_blocks("NVDA", prev_in_window=True, cooldown=cooldown, today_str="2026-07-08") is True
+        assert _cooldown_blocks("NVDA", cooldown=cooldown, today_str="2026-07-08") is True
+
+    def test_no_entry_for_ticker_does_not_block(self):
+        """Map has other tickers but not this one → permit."""
+        cooldown = {"AAPL": {"last_alert": "2026-07-05", "last_in_window": True, "sessions_since": 1}}
+        assert _cooldown_blocks("NVDA", cooldown=cooldown, today_str="2026-07-08") is False
 
 
 # ---------------------------------------------------------------------------
@@ -229,31 +234,28 @@ class TestRunSentinel:
         alerts = run_sentinel(["NVDA"], today, yesterday, {}, today_str=self.TODAY)
         assert alerts == []
 
-    def test_cooldown_blocks_continuous_window(self):
-        """Same ticker still in continuous window within cooldown → suppressed."""
+    def test_cooldown_blocks_whipsaw_reentry(self):
+        """Ticker that left window and re-entered within cooldown window is suppressed."""
+        # sessions_since=2 < COOLDOWN_SESSIONS=5 → suppress
+        cooldown = {"NVDA": {"last_alert": "2026-07-06", "last_in_window": False, "sessions_since": 2}}
         today = {"NVDA": _open_state()}
-        yesterday = {"NVDA": _open_state()}  # continuous — but yesterday_in=True so no enter anyway
-        # Actually yesterday_in=True means NOT entering → the test above covers continuous stay
-        # This test: ticker enters on day 1, is in cooldown, re-enters after still being in window
-        # Simulate: yesterday not in window (so we'd normally fire), but cooldown blocks because
-        # prev_in_window=True in the cooldown check is about the state *at the last check*.
-        # Cooldown check: prev_in_window comes from yesterday_in_window, not from cooldown map.
-        # prev_in_window=False (yesterday closed) → cooldown cleared → fires regardless.
-        # So cooldown only blocks when yesterday_in=True AND sessions_since < threshold.
-        # But if yesterday_in=True AND today_in=True → "sitting", no enter fire at all!
-        # Conclusion: cooldown acts as a secondary guard; the primary is enter-detection.
-        # The relevant case: ticker exits window then re-enters BUT cooldown hasn't expired.
-        # In that case prev_in_window=False → cooldown is CLEARED → fires.
-        # So cooldown is only relevant when prev_in_window=True (continuous stay) which
-        # is the same as "sitting" (no enter). Cooldown's main purpose: suppress repeated
-        # same-day or next-day re-triggers when the window opens/closes/reopens rapidly.
-        # Test: ticker was NOT in window yesterday (→ enter fires), BUT was in-window 2 sessions ago
-        # with sessions_since=2. Since prev_in_window=False, cooldown is cleared.
-        cooldown = {"NVDA": {"last_alert": "2026-07-06", "last_in_window": True, "sessions_since": 2}}
-        today = {"NVDA": _open_state()}
-        yesterday = {"NVDA": _closed_state()}  # left window → prev_in_window=False
+        yesterday = {"NVDA": _closed_state()}  # entering now
         alerts = run_sentinel(["NVDA"], today, yesterday, cooldown, today_str=self.TODAY)
-        # prev_in_window=False clears the cooldown check → fires
+        assert alerts == [], "cooldown should suppress whipsaw re-entry within 5 sessions"
+
+    def test_cooldown_permits_after_expiry(self):
+        """Ticker re-enters after cooldown has expired → permitted."""
+        cooldown = {"NVDA": {"last_alert": "2026-06-30", "last_in_window": False, "sessions_since": 5}}
+        today = {"NVDA": _open_state()}
+        yesterday = {"NVDA": _closed_state()}
+        alerts = run_sentinel(["NVDA"], today, yesterday, cooldown, today_str=self.TODAY)
+        assert len(alerts) == 1, "cooldown expired (sessions_since==COOLDOWN_SESSIONS) — should fire"
+
+    def test_cooldown_no_entry_permits(self):
+        """No cooldown history → always permitted on ENTER."""
+        today = {"NVDA": _open_state()}
+        yesterday = {"NVDA": _closed_state()}
+        alerts = run_sentinel(["NVDA"], today, yesterday, {}, today_str=self.TODAY)
         assert len(alerts) == 1
 
     def test_multiple_tickers_independent(self):
@@ -328,11 +330,26 @@ class TestUpdateCooldown:
         new_cd = update_cooldown(old_cd, ["NVDA"], today, [], self.TODAY)
         assert new_cd["NVDA"]["sessions_since"] == 3
 
-    def test_not_in_window_drops_entry(self):
-        """Ticker left the window → dropped from cooldown so next ENTER is fresh."""
+    def test_not_in_window_retains_entry_within_cooldown(self):
+        """Ticker left the window within cooldown window → entry retained for whipsaw suppression."""
         today = {"NVDA": _closed_state()}
         old_cd = {"NVDA": {"last_alert": "2026-07-07", "last_in_window": True, "sessions_since": 2}}
         new_cd = update_cooldown(old_cd, ["NVDA"], today, [], self.TODAY)
+        assert "NVDA" in new_cd
+        assert new_cd["NVDA"]["sessions_since"] == 3
+        assert new_cd["NVDA"]["last_in_window"] is False
+
+    def test_not_in_window_drops_entry_after_expiry(self):
+        """Ticker left the window after cooldown expired → not tracked."""
+        today = {"NVDA": _closed_state()}
+        old_cd = {"NVDA": {"last_alert": "2026-06-30", "last_in_window": False, "sessions_since": 5}}
+        new_cd = update_cooldown(old_cd, ["NVDA"], today, [], self.TODAY)
+        assert "NVDA" not in new_cd
+
+    def test_not_in_window_no_history_not_tracked(self):
+        """Ticker out of window with no cooldown history → nothing stored."""
+        today = {"NVDA": _closed_state()}
+        new_cd = update_cooldown({}, ["NVDA"], today, [], self.TODAY)
         assert "NVDA" not in new_cd
 
     def test_multiple_tickers(self):

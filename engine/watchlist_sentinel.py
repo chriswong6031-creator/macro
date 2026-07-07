@@ -8,8 +8,8 @@ Design rules
 - ZERO network calls, zero LLM calls, zero file I/O.  All state is passed in.
 - No new signals — only reads already-computed engine states.
 - Alert only on ENTER of the clean window (transition-detection, not steady-state).
-  Cooldown: skip the same ticker for 5 sessions after it last alerted, unless it
-  left and re-entered the window in the interim.
+  Cooldown: skip the same ticker for 5 sessions after it last alerted, even if
+  it briefly left and re-entered the window in the interim (whipsaw suppression).
 - Emitted strings are descriptive only (state names, codes, dates).
   No advice verbs ("buy", "sell", "add", "avoid") beyond quoting engine state labels.
 
@@ -121,29 +121,23 @@ def _reason_codes(state: dict[str, Any]) -> list[str]:
 
 def _cooldown_blocks(
     ticker: str,
-    prev_in_window: bool,
     cooldown: dict[str, dict[str, Any]],
     today_str: str,
 ) -> bool:
     """Return True when the cooldown suppresses this ticker.
 
-    Cooldown is lifted when the ticker LEFT the window since its last alert
-    (prev_in_window=False while still in cooldown → the window closed, so the
-    next ENTER is a genuine re-entry and is permitted).
+    Suppression is keyed off sessions_since the last alert — regardless of
+    whether the ticker temporarily left and re-entered the window in the
+    interim (whipsaw suppression).  update_cooldown advances sessions_since
+    and retains entries even when the ticker is out-of-window so that
+    re-entries within the cooldown window are still suppressed.
     """
     entry = cooldown.get(ticker)
     if entry is None:
-        return False  # no history — permit
+        return False  # no recent alert history — permit
 
     sessions_since: int = entry.get("sessions_since", COOLDOWN_SESSIONS + 1)
-    last_in_window: bool = entry.get("last_in_window", False)
 
-    # If the ticker was NOT in the window yesterday, the window has closed/re-opened;
-    # treat this as a genuine new entry regardless of cooldown.
-    if not prev_in_window:
-        return False
-
-    # Still continuously in window: apply cooldown
     if sessions_since < COOLDOWN_SESSIONS:
         log.debug(
             "watchlist_sentinel: %s in cooldown (%d/%d sessions)",
@@ -208,8 +202,8 @@ def run_sentinel(
                 log.debug("watchlist_sentinel: %s — already in window (no new entry)", ticker)
             continue
 
-        # Check cooldown (blocks if still in continuous window within cooldown window)
-        if _cooldown_blocks(ticker, yesterday_in, cooldown, today_str):
+        # Check cooldown (blocks if ticker alerted recently and hasn't left the window)
+        if _cooldown_blocks(ticker, cooldown, today_str):
             continue
 
         reasons = _reason_codes(today_state)
@@ -246,11 +240,13 @@ def update_cooldown(
     """Advance the cooldown map for the next nightly run.
 
     Rules:
-    - For every watched ticker: record whether it is in-window today
-      and increment sessions_since if it is still in-window.
     - For tickers that just alerted: reset sessions_since to 0 (fresh alert).
-    - For tickers that LEFT the window: clear their cooldown entry so the
-      next ENTER is detected cleanly.
+    - For tickers with an active cooldown (sessions_since < COOLDOWN_SESSIONS):
+      retain the entry and increment sessions_since even when the ticker has
+      LEFT the window (whipsaw suppression — a brief out-and-back does not
+      reset the cooldown clock).
+    - Once sessions_since >= COOLDOWN_SESSIONS the entry is dropped; the next
+      ENTER on any future day fires freely.
 
     Parameters
     ----------
@@ -279,27 +275,33 @@ def update_cooldown(
         ticker = ticker.strip().upper()
         state = today_states.get(ticker) or {}
         in_win = _in_window(state)
-
-        if not in_win:
-            # Window closed — drop from cooldown so next entry is detected fresh
-            continue
-
         old = cooldown.get(ticker) or {}
+        old_sessions = old.get("sessions_since", COOLDOWN_SESSIONS)
+
         if ticker in alerted_set:
-            # Just alerted — start fresh cooldown
+            # Just alerted — start fresh cooldown regardless of window state
             new_map[ticker] = {
                 "last_alert": today_str,
-                "last_in_window": True,
+                "last_in_window": in_win,
                 "sessions_since": 0,
             }
-        else:
-            # Still in window but not alerting
-            sessions = old.get("sessions_since", COOLDOWN_SESSIONS)
+        elif old and old_sessions + 1 < COOLDOWN_SESSIONS:
+            # Active cooldown not yet expired — retain entry even if ticker left
+            # the window (whipsaw suppression).  Increment sessions_since.
+            new_map[ticker] = {
+                "last_alert": old.get("last_alert", today_str),
+                "last_in_window": in_win,
+                "sessions_since": old_sessions + 1,
+            }
+        elif in_win and old:
+            # Still in window, cooldown expired — keep tracking in-window state
+            # so the next alerted run can reset correctly.
             new_map[ticker] = {
                 "last_alert": old.get("last_alert", today_str),
                 "last_in_window": True,
-                "sessions_since": sessions + 1,
+                "sessions_since": old_sessions + 1,
             }
+        # else: no active cooldown and not in window — nothing to track
 
     return new_map
 
