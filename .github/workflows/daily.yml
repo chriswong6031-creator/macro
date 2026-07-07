@@ -1102,6 +1102,21 @@ jobs:
           cat /tmp/etm_registry.log
           [ "$rc" -ne 0 ] && echo "::warning title=build_entity_thesis_mechanism_registry::rc=$rc (non-fatal)"
           exit 0
+      - name: build mechanism pathways (NW core-cognition W1 — MPC v1)
+        if: always()
+        # MPC v1 (RUL-CC-1..13): deterministic display-only pathway compiler.
+        # Reads emitted artifacts only: data/regime/latest.json (market_drivers),
+        # data/transmission/latest.json (chains), data/neuralweb/factor_intelligence_state.json.
+        # Writes: data/neuralweb/mechanism_pathways.json, mechanism_pathways_history.jsonl,
+        # site/neuralwebdata/mechanism_pathways.json.
+        # All outputs covered by 'git add data/ site/' in 'commit engine outputs' below.
+        # Fail-soft: stale trigger or insufficient coverage → no_pathway artifact (never raises).
+        run: |
+          set +e
+          python -m scripts.build_mechanism_pathways > /tmp/mechanism_pathways.log 2>&1; rc=$?
+          cat /tmp/mechanism_pathways.log
+          [ "$rc" -ne 0 ] && echo "::warning title=build_mechanism_pathways::rc=$rc (non-fatal)"
+          exit 0
       - name: build mastermind context (NW bridge)
         if: always()
         # NW → Mastermind bridge W1: compile data/neuralweb/mastermind_context.json and

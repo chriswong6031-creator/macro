@@ -5689,6 +5689,85 @@ artifacts:
       upserted (same as_of → replace row) by scripts/build_neuralweb_brief --finalize.
       Chronologically sorted. Used for delta detection in next run. Display/ops only.
 
+  # --- W1 NW Core-Cognition: Mechanism Pathway Compiler v1 ---
+  mechanism-pathways:
+    path: data/neuralweb/mechanism_pathways.json
+    format: json
+    producer: scripts/build_mechanism_pathways.py
+    known_extra_writers: []
+    owner_program: neural-web
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: neuralweb.mechanism_pathways.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/neuralweb/daily_brief.py
+      - admin/neural_web.py
+      - engine/neuralweb/ask_brain.py
+    external_consumers: []
+    notes: >
+      MPC v1 (RUL-CC-1..13): deterministic display-only compiler reading emitted
+      artifacts only (market_drivers, transmission, factor_intelligence_state).
+      Trigger precedence: market_drivers clear → risk_radar scare → factor rotation
+      → snap_unattributed null. Stale trigger → no_pathway(reason=trigger_stale).
+      Coverage score float; coherence categorical (supported/partial/conflicted).
+      confidence_ceiling=context_only always. Forbidden: ranking, sizing,
+      alert_escalation, board_ordering, mastermind_arming (RUL-CC-1).
+      W1 registered consumers (W3 will wire daily_brief, ask_brain, admin QA).
+
+  site-mechanism-pathways:
+    path: site/neuralwebdata/mechanism_pathways.json
+    format: json
+    producer: scripts/build_mechanism_pathways.py
+    known_extra_writers: []
+    owner_program: neural-web
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: neuralweb.mechanism_pathways.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - templates/committee.html.j2
+    external_consumers: []
+    notes: >
+      Site mirror of data/neuralweb/mechanism_pathways.json for client-side
+      consumption. Exact copy written atomically alongside the data artifact by
+      scripts/build_mechanism_pathways.py. Display/context only — no authority.
+
+  mechanism-pathways-history:
+    path: data/neuralweb/mechanism_pathways_history.jsonl
+    format: jsonl
+    producer: scripts/build_mechanism_pathways.py
+    known_extra_writers: []
+    owner_program: neural-web
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: neuralweb.mechanism_pathways.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/build_mechanism_pathways.py
+    external_consumers: []
+    notes: >
+      Append-only daily digest of mechanism pathway snapshots. One compact row per
+      as_of (keep-first: same-day reruns skip if as_of already present). Fields:
+      as_of, schema, pathways_count, primary_family, no_pathway_reason. Written
+      by scripts/build_mechanism_pathways.py alongside the main artifact.
+      Display/ops only — no authority.
+
   entity-thesis-mechanism-registry:
     path: data/neuralweb/entity_thesis_mechanism_registry.json
     format: json
