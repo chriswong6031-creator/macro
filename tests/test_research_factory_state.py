@@ -21,6 +21,7 @@ import pytest
 
 from engine.research_factory.state import (
     ALLOWED_TRANSITIONS,
+    MODEL_ADJUDICATORS,
     IllegalTransition,
     transition,
 )
@@ -747,3 +748,114 @@ class TestAllowedTransitionsSmoke:
                     f"Allowed transition {from_state!r} → {to_state!r} raised "
                     f"IllegalTransition: {exc}"
                 )
+
+
+# ---------------------------------------------------------------------------
+# 7. Model adjudicator (opus) — RF-5b / RUL-SUCC-7
+# ---------------------------------------------------------------------------
+
+class TestModelAdjudicatorRF5b:
+    """Model adjudicator (opus) gate — RF-5b/RUL-SUCC-7 semantics."""
+
+    def test_opus_to_paper_with_actor_ref_and_packet_ref_accepted(self):
+        """opus with actor_ref + packet_ref may transition to a human-gate target."""
+        row = _make_transition_row(**{
+            "from": "human_review",
+            "to": "paper",
+            "actor": "opus",
+            "actor_ref": "opus-session-20260706",
+            "packet_ref": "adj-2026-07-06-example",
+            "review_packet_ref": "data/research_factory/review/test.json",
+            "seed_entry_ref": "data/research_factory/seeds/rf-test-001.json",
+            "regime_at_entry": "bull",
+            "expected_half_life_d": 90,
+        })
+        # Should not raise — opus with both refs satisfies RF-5b
+        transition("human_review", "paper", "opus", row)
+
+    def test_opus_to_paper_missing_packet_ref_rejected(self):
+        """opus without packet_ref must be rejected from human-gate targets (RF-5b)."""
+        row = _make_transition_row(**{
+            "from": "human_review",
+            "to": "paper",
+            "actor": "opus",
+            "actor_ref": "opus-session-20260706",
+            # packet_ref intentionally absent
+            "review_packet_ref": "data/research_factory/review/test.json",
+            "seed_entry_ref": "data/research_factory/seeds/rf-test-001.json",
+            "regime_at_entry": "bull",
+            "expected_half_life_d": 90,
+        })
+        with pytest.raises(IllegalTransition, match="packet_ref"):
+            transition("human_review", "paper", "opus", row)
+
+    def test_opus_to_rejected_with_actor_ref_and_packet_ref_accepted(self):
+        """opus may reject a candidate when both actor_ref and packet_ref are present."""
+        row = _make_transition_row(**{
+            "from": "human_review",
+            "to": "rejected",
+            "actor": "opus",
+            "actor_ref": "opus-session-20260706",
+            "packet_ref": "adj-2026-07-06-example",
+            "kill_evidence": {"n_at_kill": 12, "kill_class": "falsified"},
+            "review_packet_ref": "data/research_factory/review/test.json",
+        })
+        # Should not raise
+        transition("human_review", "rejected", "opus", row)
+
+    def test_sonnet_with_packet_ref_still_rejected_from_human_gate(self):
+        """packet_ref is NOT a loophole for script actors (sonnet must remain barred)."""
+        row = _make_transition_row(**{
+            "from": "human_review",
+            "to": "paper",
+            "actor": "sonnet",
+            "actor_ref": "some-session",
+            "packet_ref": "adj-2026-07-06-example",  # packet_ref does not help scripts
+            "review_packet_ref": "data/research_factory/review/test.json",
+            "seed_entry_ref": "data/research_factory/seeds/rf-test-001.json",
+            "regime_at_entry": "bull",
+            "expected_half_life_d": 90,
+        })
+        with pytest.raises(IllegalTransition, match="script class.*not permitted"):
+            transition("human_review", "paper", "sonnet", row)
+
+    def test_opus_respin_registration_rejected(self):
+        """opus (model adjudicator) may NOT register a respin — respin remains human-only
+        (RUL-SUCC-7 ruling: trial-spending commitment requires full human accountability)."""
+        candidate = _make_candidate(
+            lineage={"respin_of": "rf-test-parent-001", "superseded_by": None,
+                     "refinement_generation": 1},
+        )
+        row = _make_transition_row(**{
+            "from": "proposed",
+            "to": "registered",
+            "actor": "opus",
+            "actor_ref": "opus-session-20260706",
+            "packet_ref": "adj-2026-07-06-example",
+        })
+        with pytest.raises(IllegalTransition, match="respin"):
+            transition("proposed", "registered", "opus", row, candidate=candidate)
+
+    def test_opus_non_gate_transition_accepted_without_packet_ref(self):
+        """For non-human-gate transitions, opus is treated like a script actor
+        and needs no packet_ref (RF-5b: packet_ref only applies at human-gate targets)."""
+        # proposed→registered is a non-human-gate transition; opus should be accepted
+        # without packet_ref (just like script actors)
+        candidate = _make_candidate(
+            lineage={"respin_of": None, "superseded_by": None, "refinement_generation": 0},
+        )
+        row = _make_transition_row(**{
+            "from": "proposed",
+            "to": "registered",
+            "actor": "opus",
+            "actor_ref": None,   # not required for non-gate transitions
+            # no packet_ref either
+        })
+        # Should not raise — non-gate transition with opus is unrestricted
+        transition("proposed", "registered", "opus", row, candidate=candidate)
+
+    def test_model_adjudicators_set_contains_opus(self):
+        """Sanity: MODEL_ADJUDICATORS exports as expected."""
+        assert "opus" in MODEL_ADJUDICATORS
+        assert "fable" not in MODEL_ADJUDICATORS
+        assert "script" not in MODEL_ADJUDICATORS

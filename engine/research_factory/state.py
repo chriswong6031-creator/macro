@@ -40,16 +40,24 @@ ALLOWED_TRANSITIONS: dict[str, frozenset[str]] = {
 }
 
 # ---------------------------------------------------------------------------
-# Actor-class rules (RF-5)
+# Actor-class rules (RF-5 / RF-5b RUL-SUCC-7)
 # ---------------------------------------------------------------------------
 # Script actors (mechanical): ingest/engine artefact-driven transitions.
 SCRIPT_ACTORS = frozenset({"script", "codex", "sonnet"})
 # Human-gate actors: require actor_ref.
 HUMAN_ACTORS = frozenset({"fable", "operator"})
-ALL_ACTORS = SCRIPT_ACTORS | HUMAN_ACTORS
+# Model adjudicators (RF-5b, RUL-SUCC-7): Opus may execute gate decisions
+# with a machine-checkable audit artifact (packet_ref required for human-gate
+# targets).  See research/FABLE_SUCCESSION_OPERATING_SYSTEM.md for the
+# succession protocol; adjudication packets live in
+# data/neuralweb/adjudication_queue.json (existence is NOT validated here —
+# state.py stays filesystem-pure; use scripts/check_adjudication_packet.py).
+MODEL_ADJUDICATORS = frozenset({"opus"})
+ALL_ACTORS = SCRIPT_ACTORS | HUMAN_ACTORS | MODEL_ADJUDICATORS
 
 # Script actors are NEVER permitted to enter these states (RF-5).
-# Only human actors may author them.
+# Only human actors (fable/operator) or model adjudicators (opus, with both
+# actor_ref AND packet_ref) may author them.
 _HUMAN_GATE_TARGETS: frozenset[str] = frozenset({
     "paper",
     "deferred",
@@ -242,9 +250,33 @@ def transition(
     if actor in SCRIPT_ACTORS and to_state in _HUMAN_GATE_TARGETS:
         raise IllegalTransition(
             f"actor={actor!r} (script class) is not permitted to transition "
-            f"to {to_state!r} — only human actors (fable/operator) may author "
+            f"to {to_state!r} — only human actors (fable/operator) or model "
+            f"adjudicators (opus, with actor_ref+packet_ref) may author "
             f"this state (RF-5)"
         )
+
+    # 4b. RF-5b (RUL-SUCC-7): model adjudicators entering human-gate targets
+    # require BOTH a non-empty actor_ref AND a non-empty packet_ref.
+    # For non-human-gate transitions, model adjudicators are treated like
+    # script actors — no additional constraints.
+    if actor in MODEL_ADJUDICATORS and to_state in _HUMAN_GATE_TARGETS:
+        actor_ref_ma = transition_row.get("actor_ref")
+        packet_ref_ma = transition_row.get("packet_ref")
+        if not actor_ref_ma:
+            raise IllegalTransition(
+                f"actor={actor!r} (model adjudicator) transitioning to "
+                f"{to_state!r} requires a non-empty 'actor_ref' "
+                f"(session/PR reference) in the transition row (RF-5b/RUL-SUCC-7)"
+            )
+        if not packet_ref_ma:
+            raise IllegalTransition(
+                f"actor={actor!r} (model adjudicator) transitioning to "
+                f"{to_state!r} requires a non-empty 'packet_ref' "
+                f"(adjudication packet id, e.g. 'adj-2026-07-06-example') in "
+                f"the transition row (RF-5b/RUL-SUCC-7). Packets live in "
+                f"data/neuralweb/adjudication_queue.json; existence is validated "
+                f"separately by scripts/check_adjudication_packet.py."
+            )
 
     # 5. Human actors require actor_ref.
     if actor in HUMAN_ACTORS:
@@ -288,16 +320,19 @@ def transition(
     # (lineage.respin_of non-null, proposed→registered) requires a human actor.
     # Clock resurfacing (deferred→human_review, awaiting_data→registered|screened)
     # is mechanical A2 attention-routing and is NOT gated here.
+    # RUL-SUCC-7 RULING: respin registration remains human-only (fable/operator).
+    # Model adjudicators (opus) are NOT permitted to register respins — the
+    # trial-spending commitment requires full human accountability.
     if to_state == "registered" and from_state == "proposed":
         lineage = (candidate or {}).get("lineage") or {}
         respin_of = lineage.get("respin_of")
         if respin_of:
-            if actor in SCRIPT_ACTORS:
+            if actor in SCRIPT_ACTORS or actor in MODEL_ADJUDICATORS:
                 raise IllegalTransition(
-                    f"actor={actor!r} (script class) is not permitted to register a "
+                    f"actor={actor!r} is not permitted to register a "
                     f"respin candidate (lineage.respin_of={respin_of!r}) — respin "
                     f"registration re-spends trials and requires a human actor "
-                    f"(fable/operator) with actor_ref (RF-5)"
+                    f"(fable/operator) with actor_ref (RF-5/RUL-SUCC-7)"
                 )
 
     # Passed all checks.
