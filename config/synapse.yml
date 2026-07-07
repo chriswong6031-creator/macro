@@ -90,6 +90,7 @@ artifacts:
       - scripts/notify.py
       - scripts/refresh_regime_if_stale.py
       - engine/neuralweb/cortex.py
+      - engine/neuralweb/covariance_spine.py
     external_consumers:
       - mastermind:anchor
       - mastermind:vendored
@@ -2641,6 +2642,7 @@ artifacts:
       - engine/neuralweb/kernel.py
       - engine/neuralweb/decay.py
       - engine/neuralweb/lagging.py
+      - engine/neuralweb/covariance_spine.py
     external_consumers: []
     notes: >
       Read-side derived index: unions spine (data/spine/predictions.parquet),
@@ -4977,6 +4979,7 @@ artifacts:
     consumers:
       - scripts/build_site.py
       - templates/dashboard.html.j2
+      - engine/neuralweb/covariance_spine.py
     external_consumers: []
     notes: >
       L3 chartered lobe (NW Rails program §5). Promotes engine/dispersion.py output
