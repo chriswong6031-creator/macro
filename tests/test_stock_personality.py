@@ -147,14 +147,28 @@ class TestChartEventGapper:
 
 class TestChartFailedBreakoutTrap:
     def test_positive(self):
+        # R-SP21 v1.1 anchors: rate >= 0.92 (~universe p90) AND ft_rate <= 0.45
         pf = _make_path_features(
-            failed_breakout_rate_63=0.65,
+            failed_breakout_rate_63=0.95,
+            breakout_ft_rate_63=0.30,
             event_gap_contrib_252=0.05,
             gap_share_252=0.10,
         )
         labels, _, _ = _classify_chart(pf, {})
         assert labels is not None
         assert "failed_breakout_trap" in labels
+
+    def test_high_rate_alone_insufficient(self):
+        # R-SP21: universe base rate of breakout failure is high (p50=0.81);
+        # a high failure rate WITHOUT weak follow-through must not label.
+        pf = _make_path_features(
+            failed_breakout_rate_63=0.95,
+            breakout_ft_rate_63=0.60,
+            event_gap_contrib_252=0.05,
+            gap_share_252=0.10,
+        )
+        labels, _, _ = _classify_chart(pf, {})
+        assert "failed_breakout_trap" not in (labels or [])
 
     def test_negative(self):
         pf = _make_path_features(
@@ -168,8 +182,10 @@ class TestChartFailedBreakoutTrap:
 
 class TestChartMeanReversionRubberBand:
     def test_positive(self):
+        # R-SP21 v1.1 anchors: trend_persist_60 <= -0.19 (~p10) AND trend_persist_126 <= 0
         pf = _make_path_features(
-            trend_persist_60=-0.15,
+            trend_persist_60=-0.25,
+            trend_persist_126=-0.05,
             event_gap_contrib_252=0.05,
             gap_share_252=0.10,
             failed_breakout_rate_63=0.30,
@@ -180,6 +196,18 @@ class TestChartMeanReversionRubberBand:
 
     def test_negative(self):
         pf = _make_path_features(trend_persist_60=0.05)
+        labels, _, _ = _classify_chart(pf, {})
+        assert "mean_reversion_rubber_band" not in (labels or [])
+
+    def test_short_horizon_alone_insufficient(self):
+        # R-SP21: anti-persistence must be horizon-consistent; negative 60d
+        # autocorr with positive 126d persistence must not label.
+        pf = _make_path_features(
+            trend_persist_60=-0.25,
+            trend_persist_126=0.08,
+            event_gap_contrib_252=0.05,
+            gap_share_252=0.10,
+        )
         labels, _, _ = _classify_chart(pf, {})
         assert "mean_reversion_rubber_band" not in (labels or [])
 
