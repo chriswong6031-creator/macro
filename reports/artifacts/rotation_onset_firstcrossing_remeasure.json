@@ -1,0 +1,128 @@
+{
+  "meta": {
+    "script": "scripts/research/rotation_onset_firstcrossing_remeasure.py",
+    "run_date": "2026-07-06",
+    "tile_date_range": "1999-01-26 to 2026-07-01",
+    "latest_etf_price_date": "2026-07-02",
+    "entry_lag_sessions": 1,
+    "horizons": [
+      10,
+      21
+    ]
+  },
+  "methods_note": "PREDICATE PROXY — LABELED IMPERFECT. The raw oracle panel (accel_z, vel_1w, vel_3m from engine/oracle/panel.py) is NOT available in this worktree; only Time Machine tile data (rs_ratio, rs_mom per date per node) is committed. Tile rs_mom = vel_1w - vel_3m = accel (the raw, un-normalized velocity difference), confirmed by panel.py code. However, panel.py applies WEEKS velocity divisors that change the magnitude of accel before z-scoring. When we z-score the tile rs_mom over a 252-day window, the resulting accel_z has a DIFFERENT scale than the FSM's true accel_z — measured: only 37.3% (133/357) of catalog onset dates have tile-based accel_z_5d >= 1.0 at the onset date (mean=0.72, median=0.77 vs threshold=1.0), confirming the proxy fires at a different (higher absolute accel) threshold than the FSM. Therefore: the 'first-crossing universe' in this report is NOT the true FSM first-crossings; it is the set of dates where the tile-based accel_z_5d proxy fires. This is a stricter predicate than the FSM, capturing only the highest-accel crossings. The catalog baseline (Step 1) is exact and reproduces Codex numbers perfectly (n=356, mean=0.53%). The inflation and first-crossing measurements should be interpreted as: 'high-accel threshold crossings vs catalog-survived episodes' — the true FSM inflation is likely higher than measured here because more catalog onsets fired at lower accel values that the proxy misses. Conditions implemented: (1) tile-accel_z_5d >= 1.0, (2) >=3/5 tile-accel_z > 0 [sign exact], (3) tile-rs_mom > 0 [exact]. Hysteresis: 5 sessions, matching FSM. Confirmation filter NOT applied (measuring survivorship). Catalog-match window: +-3 sessions.",
+  "step1_catalog_baseline": {
+    "n_catalog_episodes": 357,
+    "description": "Tier-s sector-ETF IN episodes from tm_episodes.json, onset+1 entry",
+    "h10d": {
+      "n": 356,
+      "mean": 0.00534,
+      "hit": 0.58708,
+      "t_hac": 4.3931
+    },
+    "h21d": {
+      "n": 355,
+      "mean": 0.00438,
+      "hit": 0.52676,
+      "t_hac": 2.17368
+    }
+  },
+  "step2_first_crossing_universe": {
+    "n_first_crossings_total": 1238,
+    "n_matched_to_catalog": 110,
+    "n_died_young": 1128,
+    "proxy_coverage_of_catalog": {
+      "n_catalog_onsets_where_proxy_fires_at_onset_date": 133,
+      "pct_catalog_covered": 37.3,
+      "mean_accel_z_5d_at_catalog_onsets": 0.72,
+      "median_accel_z_5d_at_catalog_onsets": 0.77,
+      "note": "Only 37.3% of catalog onset dates have tile-accel_z_5d >= 1.0. Proxy is STRICTER than FSM — it fires at higher absolute accel values than the FSM uses. The 110 matched crossings are a subset of catalog detected by both proxy and FSM."
+    }
+  },
+  "step3_first_crossing_results": {
+    "description": "All real-time onset first-crossings (proxy predicate, no confirmation filter), onset+1 entry",
+    "full_universe": {
+      "h10d": {
+        "n": 1235,
+        "mean": -0.0005,
+        "hit": 0.48502,
+        "t_hac": -0.63338
+      },
+      "h21d": {
+        "n": 1233,
+        "mean": -0.00032,
+        "hit": 0.48986,
+        "t_hac": -0.26299
+      }
+    },
+    "died_young_subset": {
+      "description": "First-crossings NOT matched to any catalog episode (within +-3 sessions)",
+      "h10d": {
+        "n": 1126,
+        "mean": -0.00102,
+        "hit": 0.4778,
+        "t_hac": -1.30237
+      },
+      "h21d": {
+        "n": 1125,
+        "mean": -0.001,
+        "hit": 0.48178,
+        "t_hac": -0.81566
+      }
+    }
+  },
+  "step3_inflation": {
+    "catalog_mean_10d_pct": 0.53417,
+    "fc_universe_mean_10d_pct": -0.05033,
+    "inflation_10d_pp": 0.5845,
+    "catalog_mean_21d_pct": 0.43792,
+    "fc_universe_mean_21d_pct": -0.03243,
+    "inflation_21d_pp": 0.47035,
+    "n_ratio_fc_over_catalog": 3.4691,
+    "materiality_assessment": "MATERIAL if |inflation_10d_pp| > 0.15 or sign/significance flips at 21d"
+  },
+  "step4_era_split_catalog": {
+    "1999-2008": {
+      "h10d": {
+        "n": 113,
+        "mean": 0.00772,
+        "hit": 0.64602,
+        "t_hac": 4.36694
+      },
+      "h21d": {
+        "n": 113,
+        "mean": 0.00793,
+        "hit": 0.54867,
+        "t_hac": 4.76068
+      }
+    },
+    "2009-2016": {
+      "h10d": {
+        "n": 95,
+        "mean": 0.00188,
+        "hit": 0.55789,
+        "t_hac": 0.94594
+      },
+      "h21d": {
+        "n": 95,
+        "mean": 0.00164,
+        "hit": 0.51579,
+        "t_hac": 0.43427
+      }
+    },
+    "2017-2026": {
+      "h10d": {
+        "n": 148,
+        "mean": 0.00575,
+        "hit": 0.56081,
+        "t_hac": 2.93878
+      },
+      "h21d": {
+        "n": 147,
+        "mean": 0.00342,
+        "hit": 0.51701,
+        "t_hac": 1.04886
+      }
+    }
+  }
+}
