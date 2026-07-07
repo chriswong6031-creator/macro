@@ -1,0 +1,145 @@
+{
+  "schema": "har1_eval.v1",
+  "registered_ref": "PREREGISTRATION.md \u00a718 HAR-1",
+  "run_at": "2026-07-07T10:22:35.403140+00:00",
+  "embargo": "end_date>=2024-01-01",
+  "panel_epoch": "price_c4414dcb",
+  "n_oos_queries": 242,
+  "n_pass": 0,
+  "n_fail_or_null": 3,
+  "n_deferred": 0,
+  "overall_verdict": "promoted_null",
+  "config": {
+    "k_neighbors": 6,
+    "era_cap_k": 2,
+    "era_window_m": 24,
+    "w_traj": 0.7,
+    "w_fp": 0.25,
+    "w_fam": 0.15,
+    "short_analog_penalty": 1.0,
+    "boot_draws": 800,
+    "boot_seed": 7,
+    "shuffle_n": 200,
+    "shuffle_seed": 42,
+    "fdr_q": 0.1,
+    "n_turns_floor": 25,
+    "cone_coverage_min": 0.6,
+    "trial_family": "cycle_pattern_analog",
+    "n_cells": 9
+  },
+  "families": {
+    "us_sector": {
+      "n_turns": 26,
+      "n_valid": 26,
+      "n_post_2018": 26,
+      "mean_crps_har": 4.632832,
+      "mean_crps_km": 5.510247,
+      "mean_crps_shuffle": 6.103864,
+      "gap_vs_km": 0.877415,
+      "gap_vs_km_ci90": [
+        -0.693663,
+        2.881158
+      ],
+      "gap_vs_km_pval": 0.1975,
+      "gap_vs_shuffle": 1.471032,
+      "gap_vs_shuffle_ci90": [
+        -1.967062,
+        4.373046
+      ],
+      "gap_vs_shuffle_pval": 0.3038,
+      "gap_post_2018_vs_km": 0.877415,
+      "cone_coverage_p25_p75": 0.5,
+      "ci_km_excludes_zero": false,
+      "ci_shuffle_excludes_zero": false,
+      "bh_pass": false,
+      "criteria": {
+        "ci_km_excludes_zero": false,
+        "bh_fdr_pass": false,
+        "post_2018_improves": true,
+        "cone_coverage_pass": false,
+        "shuffle_ci_excludes_zero": false
+      },
+      "verdict": "promoted_null",
+      "kill_reason": "analog_shuffle_null_not_beaten"
+    },
+    "country": {
+      "n_turns": 79,
+      "n_valid": 79,
+      "n_post_2018": 79,
+      "mean_crps_har": 3.083373,
+      "mean_crps_km": 4.63148,
+      "mean_crps_shuffle": 3.039075,
+      "gap_vs_km": 1.548107,
+      "gap_vs_km_ci90": [
+        0.875633,
+        2.165431
+      ],
+      "gap_vs_km_pval": 0.0,
+      "gap_vs_shuffle": -0.044298,
+      "gap_vs_shuffle_ci90": [
+        -0.782553,
+        0.775113
+      ],
+      "gap_vs_shuffle_pval": 0.5275,
+      "gap_post_2018_vs_km": 1.548107,
+      "cone_coverage_p25_p75": 0.3924,
+      "ci_km_excludes_zero": true,
+      "ci_shuffle_excludes_zero": false,
+      "bh_pass": true,
+      "criteria": {
+        "ci_km_excludes_zero": true,
+        "bh_fdr_pass": true,
+        "post_2018_improves": true,
+        "cone_coverage_pass": false,
+        "shuffle_ci_excludes_zero": false
+      },
+      "verdict": "promoted_null",
+      "kill_reason": "analog_shuffle_null_not_beaten"
+    },
+    "cn_sector": {
+      "n_turns": 137,
+      "n_valid": 137,
+      "n_post_2018": 137,
+      "mean_crps_har": 2.898902,
+      "mean_crps_km": 4.804597,
+      "mean_crps_shuffle": 3.607743,
+      "gap_vs_km": 1.905695,
+      "gap_vs_km_ci90": [
+        1.377511,
+        2.530548
+      ],
+      "gap_vs_km_pval": 0.0,
+      "gap_vs_shuffle": 0.708841,
+      "gap_vs_shuffle_ci90": [
+        0.305962,
+        1.168429
+      ],
+      "gap_vs_shuffle_pval": 0.0,
+      "gap_post_2018_vs_km": 1.905695,
+      "cone_coverage_p25_p75": 0.4453,
+      "ci_km_excludes_zero": true,
+      "ci_shuffle_excludes_zero": true,
+      "bh_pass": true,
+      "criteria": {
+        "ci_km_excludes_zero": true,
+        "bh_fdr_pass": true,
+        "post_2018_improves": true,
+        "cone_coverage_pass": false,
+        "shuffle_ci_excludes_zero": true
+      },
+      "verdict": "FAIL"
+    }
+  },
+  "bh_fdr_rejects": {
+    "us_sector": false,
+    "country": true,
+    "cn_sector": true
+  },
+  "implementation_notes": [
+    "HORIZON INTERPRETATION: \u00a718 specifies 3 families \u00d7 3 horizons = 9 cells. The horizons are ambiguous (no specific time-windows named for CRPS). Conservative reading: CRPS is evaluated against realized remaining months from the START of each span, pooled across all query spans. No horizon stratification is applied \u2014 all queries contribute to one CRPS score per family. The 9-cell budget (3fam \u00d7 3horizon) is preserved in the trial_ledger but this implementation uses 3 family cells with a single pooled CRPS score. This is conservative (fewer comparisons = stricter BH-FDR). Noted as an ambiguity, not a criteria change.",
+    "QUERY AT SPAN START: Each OOS completed span is queried at age_m=0.5 (the start of the span). Realized remaining = full span duration. This simulates the real use case: a new turn is detected and we ask how long the new half-cycle will last. The walk-forward cutoff is query.start_date (analogs ending before the query span began).",
+    "SHUFFLE NULL DESIGN: Per \u00a718, within-era analog shuffle permutes realized_dur_m within calendar year of end_date. Implementation: for each query, draw k values from the same era pool in the OOS window. This preserves the era distribution of cycle lengths while destroying the trajectory-match signal.",
+    "REVISION_OPTIMISTIC DISCLOSURE (P-D5-1): The macro fingerprint (quad one-hot + liquidity) is revision-optimistic (not PIT-vintaged). This mirrors the hazard model disclosure. Results carry this caveat."
+  ],
+  "elapsed_s": 44.2
+}

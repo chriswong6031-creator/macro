@@ -774,3 +774,19 @@ Registered BEFORE any evaluation in data/trial_ledger.jsonl (FT-OSC-2, cycle_pat
 data/experiments/registry_seed.json (come-back 2027-01-15). n_oos < 300 -> DEFERRED, not FAIL.
 The FT-OSC-1 family null (cycle_truth_falsosc_osc_covariate_null_v1) stands; this addendum does
 not reopen it.
+
+### HAR-1 results (2026-07-07 — criteria above UNCHANGED; §18 two-commit discipline observed)
+
+n_oos_queries=242. Overall verdict: **promoted_null**.
+
+
+| family | n_turns | CRPS_HAR | CRPS_KM | gap_vs_km | CI90_km | gap_vs_shuffle | CI90_shuffle | coverage | verdict |
+|---|---|---|---|---|---|---|---|---|---|
+| us_sector | 26 | 4.632832 | 5.510247 | 0.877415 | [-0.693663, 2.881158] | 1.471032 | [-1.967062, 4.373046] | 0.5 | **promoted_null** |
+| country | 79 | 3.083373 | 4.63148 | 1.548107 | [0.875633, 2.165431] | -0.044298 | [-0.782553, 0.775113] | 0.3924 | **promoted_null** |
+| cn_sector | 137 | 2.898902 | 4.804597 | 1.905695 | [1.377511, 2.530548] | 0.708841 | [0.305962, 1.168429] | 0.4453 | **FAIL** |
+
+**Analog-shuffle null (PRIMARY, §18):** FIRED. HAR must beat within-era permuted assignments by the same margin as the KM null.
+Verdict: promoted_null. n_pass=0, n_fail_or_null=3, n_deferred=0. truth_id=`CPI-017`.
+
+Full scorecard: `data/cycle_pattern/har_scorecard.json`. Verdict adjudication by program chair.
