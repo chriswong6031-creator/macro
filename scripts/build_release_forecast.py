@@ -551,7 +551,8 @@ def _compute_sensitivity(
         f"Max abs mean DGS10 h1 move: {max_abs_bp:.2f} bp → '{tag}' sensitivity. "
         f"Thresholds: low<{_SENSITIVITY_LOW_THRESHOLD_BP}bp, "
         f"medium {_SENSITIVITY_LOW_THRESHOLD_BP}-{_SENSITIVITY_HIGH_THRESHOLD_BP}bp, "
-        f"high>={_SENSITIVITY_HIGH_THRESHOLD_BP}bp. "
+        f"high>={_SENSITIVITY_HIGH_THRESHOLD_BP}bp "
+        f"(cut-points hand-set from the 4 playbook summary cells, v1). "
         f"Weather-report context only — not investment advice (MRI-R1/R17)."
     )
 

@@ -42,7 +42,7 @@ _FLAG_META: dict[str, dict[str, str]] = {
     "cpi_weight_update": {
         "en": "January CPI: BLS annual expenditure-weight update + seasonal-factor revision",
         "zh": "1月CPI：BLS年度支出权重更新 + 季节性调整修订",
-        "cite": "https://www.bls.gov/cpi/additional-resources/chained-cpi-methodology.htm",
+        "cite": "https://www.bls.gov/cpi/methods/weight-update-faqs.htm",
     },
     "cpi_health_insurance_reset": {
         "en": "CPI health-insurance retained-earnings update (BLS semiannual, Apr + Oct prints since Oct 2023)",

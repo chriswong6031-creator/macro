@@ -666,3 +666,51 @@ class TestTemplateSiteSync:
         """check_template_site_sync must pass after PR-I UI changes."""
         rc = sync_check_main(["--check"])
         assert rc == 0, "template↔site sync check failed"
+
+
+# ---------------------------------------------------------------------------
+# 8. Live-path regression: MRI-R15 must not ship dead (review B1)
+# ---------------------------------------------------------------------------
+
+from scripts.build_release_forecast import _run_projection
+
+_VINTAGES = _REPO / "data" / "fred_vintage" / "vintages.parquet"
+_LIVE_MARK = pytest.mark.skipif(
+    not _VINTAGES.exists(), reason="committed vintages.parquet absent"
+)
+
+
+class TestSurpriseDistributionLivePath:
+    """The engine must EMIT walk_forward_residuals and the producer must be able
+    to compute a non-null surprise_distribution from a real projection — the
+    field is worthless if it is only reachable with fabricated residual lists.
+    """
+
+    @_LIVE_MARK
+    def test_cpi_projection_emits_residuals(self) -> None:
+        proj = _run_projection("cpi_headline", date(2026, 7, 7), _REPO, period_str="2026-06")
+        assert proj is not None
+        res = proj.get("walk_forward_residuals")
+        assert isinstance(res, list) and len(res) >= 24, (
+            "engine did not emit walk_forward_residuals — MRI-R15 is dead on the live path"
+        )
+
+    @_LIVE_MARK
+    def test_cpi_live_surprise_distribution_non_null(self) -> None:
+        proj = _run_projection("cpi_headline", date(2026, 7, 7), _REPO, period_str="2026-06")
+        assert proj is not None
+        out = _compute_surprise_distribution(
+            proj.get("point"), proj.get("benchmark_set", {}),
+            proj.get("walk_forward_residuals"),
+        )
+        assert out is not None, "live CPI projection yields null surprise_distribution"
+        assert round(out["p_hot"] + out["p_cold"] + out["p_inline"], 1) == pytest.approx(1.0, abs=0.05)
+
+    @_LIVE_MARK
+    def test_nfp_projection_emits_residuals(self) -> None:
+        proj = _run_projection("nfp", date(2026, 7, 7), _REPO, period_str="2026-06")
+        assert proj is not None
+        res = proj.get("walk_forward_residuals")
+        assert isinstance(res, list) and len(res) >= 24, (
+            "engine did not emit walk_forward_residuals for NFP"
+        )
