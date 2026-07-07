@@ -149,42 +149,54 @@ def test_gex_cell_formula():
 # ─────────────────────────────────────────────────────────────────────────────
 
 def test_delta_oi_pit_safety(tmp_path):
-    """delta_oi must use OI[t-1] − OI[t-2]; never the same-day (t) OI.
+    """delta_oi must use OI[t-1] − OI[t-2]; never t0 (same-day/future) OI.
 
     Strategy: write three dates of OI for a single strike:
       t2 (2026-07-04): call OI = 800
-      t1 (2026-07-07): call OI = 1000  ← this is OI[t-1] for asof=t1
-      t0 (same day):   call OI = 9999  ← same-day OI must NEVER appear
+      t1 (2026-07-07): call OI = 1000  ← this is OI[t-1] for asof="2026-07-07"
+      t0 (2026-07-08): call OI = 9999  ← FUTURE row; must NEVER appear in output
 
-    When we call build_matrix(asof="2026-07-07"), expected delta_oi.call = 1000 - 800 = 200.
-    If lookahead occurred, delta_oi.call would involve 9999.
+    When build_matrix(asof="2026-07-07") runs:
+      - call_oi   must equal 1000  (OI[t-1]), not 9999
+      - delta_oi.call must equal 200 (= 1000 − 800)
+    If lookahead were present, call_oi or delta_oi.call would involve 9999.
+    This is a discrimination test: the assertion would FAIL if the code
+    used OI[t] instead of OI[t-1] or OI[t-1] instead of OI[t-2].
     """
     root = "SPY"
     expiry = "2026-08-15"
     spot = 500.0
 
-    # Write t2 (2026-07-04)
+    # t2 (2026-07-04): OI = 800
     t2_rows = [_base_oi_row(root, 500.0, expiry, "C", 800)]
-    # Write t1 (2026-07-07) — this is what build_matrix uses as OI[t-1]
+    # t1 (2026-07-07): OI = 1000 — the reference day
     t1_rows = [_base_oi_row(root, 500.0, expiry, "C", 1000)]
 
     store = _make_store(tmp_path, root, t1_rows, t2_rows)
 
-    # Also write a "same-day" OI entry with a FUTURE date (2026-07-08) to confirm
-    # it does NOT appear. We pass asof="2026-07-07" so t1 is the reference.
-    # (We don't add t0 rows because the test is that t-1 vs t-2 is correct.)
+    # Write the FUTURE row (2026-07-08, OI=9999) directly into the parquet so
+    # _load_parquets sees it.  build_matrix must never incorporate this row.
+    oi_base = store / "oi" / root
+    oi_base.mkdir(parents=True, exist_ok=True)
+    future_row = pd.DataFrame([{
+        "root": root, "expiration": expiry, "strike": 500.0,
+        "right": "C", "open_interest": 9999, "date": "2026-07-08",
+    }])
+    future_parquet = oi_base / "2026.parquet"
+    if future_parquet.exists():
+        existing = pd.read_parquet(future_parquet)
+        future_row = pd.concat([existing, future_row], ignore_index=True)
+    future_row.to_parquet(future_parquet, index=False)
 
-    # Need underlying_price for spot — write a minimal greeks-like structure
-    # by injecting it as eod close
+    # Write greeks for spot extraction
     greeks_path = store / "greeks" / root
     greeks_path.mkdir(parents=True, exist_ok=True)
-    greeks_df = pd.DataFrame([{
+    pd.DataFrame([{
         "root": root, "expiration": expiry, "strike": 500.0, "right": "C",
         "date": "2026-07-07", "implied_vol": 0.20,
         "underlying_price": spot,
         "delta": 0.5, "theta": -0.1, "vega": 0.2, "rho": 0.0, "iv_error": 0.0,
-    }])
-    greeks_df.to_parquet(greeks_path / "2026.parquet", index=False)
+    }]).to_parquet(greeks_path / "2026.parquet", index=False)
 
     payload = build_matrix(root, store=str(store), asof="2026-07-07")
 
@@ -197,13 +209,20 @@ def test_delta_oi_pit_safety(tmp_path):
     assert len(target) == 1, f"Expected exactly one cell for 500/{expiry}, got {len(target)}"
 
     cell = target[0]
+
+    # call_oi must be OI[t-1]=1000, not the future 9999
+    assert cell["call_oi"] == 1000, (
+        f"call_oi should be OI[t-1]=1000, got {cell['call_oi']} "
+        "(9999 means future OI leaked in)"
+    )
+
+    # delta_oi.call must be OI[t-1] − OI[t-2] = 1000 − 800 = 200
     d_call = cell["delta_oi"]["call"]
     assert d_call is not None, "delta_oi.call should not be None"
-    # OI[t-1] = 1000, OI[t-2] = 800  →  delta = 200
-    assert d_call == 200, f"Expected delta_oi.call=200 (t-1 minus t-2), got {d_call}"
-
-    # Verify call_oi = OI[t-1] = 1000 (not the same-day value)
-    assert cell["call_oi"] == 1000, f"call_oi should be OI[t-1]=1000, got {cell['call_oi']}"
+    assert d_call == 200, (
+        f"Expected delta_oi.call=200 (OI[t-1]−OI[t-2]=1000−800), got {d_call} "
+        "(non-200 means wrong date window was used)"
+    )
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -211,20 +230,28 @@ def test_delta_oi_pit_safety(tmp_path):
 # ─────────────────────────────────────────────────────────────────────────────
 
 def test_heat_seeker_pass():
-    """heat_seeker returns a pick when one cell strongly dominates."""
-    # Build cells: one dominant cell at strike=490 for GEX
-    # dominant: gex=10e6; second-best: gex=1e6 → ratio=10 > 1.5
-    # Total OI must exceed 5000
-    spot = 500.0
+    """heat_seeker returns a pick when one cell strongly dominates.
+
+    spot=500.3 so the nearest strike is 500.0 (|0.3| < |9.7|).
+    The 500.0 strike is excluded (spot-row exclusion, prism_spec §5).
+    Dominant cell at 510.0 (GEX=10M) vs second at 520.0 (GEX=1M) → ratio=10 > 1.5.
+    Total OI must exceed 5000.
+    """
+    spot = 500.3   # nearest-to-spot = 500.0 (will be excluded)
     cells = [
-        {"strike": 490.0, "expiry": "2026-07-18", "gex": 10_000_000.0,
-         "call_oi": 3000, "put_oi": 3000, "call_vol": 100, "put_vol": 100, "_dte": 11.0},
-        {"strike": 510.0, "expiry": "2026-07-18", "gex": 1_000_000.0,
-         "call_oi": 500, "put_oi": 500, "call_vol": 50, "put_vol": 50, "_dte": 11.0},
+        # spot-adjacent row — excluded by prism_spec §5
+        {"strike": 500.0, "expiry": "2026-07-18", "gex": 50_000_000.0,
+         "call_oi": 2000, "put_oi": 2000, "call_vol": 200, "put_vol": 200, "_dte": 11.0},
+        # dominant candidate (should be the heat_seeker pick)
+        {"strike": 510.0, "expiry": "2026-07-18", "gex": 10_000_000.0,
+         "call_oi": 1500, "put_oi": 1000, "call_vol": 100, "put_vol": 50, "_dte": 11.0},
+        # second candidate
+        {"strike": 520.0, "expiry": "2026-07-18", "gex": 1_000_000.0,
+         "call_oi": 300, "put_oi": 200, "call_vol": 30, "put_vol": 20, "_dte": 11.0},
     ]
     hs = _heat_seeker(cells, spot, "GEX")
     assert hs is not None, "Expected a heat_seeker pick"
-    assert hs["strike"] == 490.0
+    assert hs["strike"] == 510.0, f"Expected 510.0, got {hs['strike']}"
     assert hs["lens"] == "GEX"
     assert hs["confidence"] > 0.15
     assert hs["note"] == "descriptive — not a recommendation"
@@ -400,11 +427,16 @@ def test_heat_seeker_note_field_exact():
     """heat_seeker note must be exactly 'descriptive — not a recommendation'.
 
     This is enforced by validate_matrix (Package A contract).
+    spot=500.3 so nearest = 500.0 is excluded; 490.0 dominates the remaining set.
     """
-    spot = 500.0
+    spot = 500.3   # nearest-to-spot = 500.0 (excluded)
     cells = [
+        # spot-adjacent (excluded)
+        {"strike": 500.0, "expiry": "2026-07-18", "gex": 50_000_000.0,
+         "call_oi": 2000, "put_oi": 2000, "call_vol": 200, "put_vol": 200, "_dte": 11.0},
+        # dominant pick after exclusion
         {"strike": 490.0, "expiry": "2026-07-18", "gex": 10_000_000.0,
-         "call_oi": 3000, "put_oi": 3000, "call_vol": 100, "put_vol": 100, "_dte": 11.0},
+         "call_oi": 1500, "put_oi": 1500, "call_vol": 100, "put_vol": 100, "_dte": 11.0},
         {"strike": 510.0, "expiry": "2026-07-18", "gex": 500_000.0,
          "call_oi": 500, "put_oi": 500, "call_vol": 50, "put_vol": 50, "_dte": 11.0},
     ]
@@ -485,3 +517,42 @@ def test_gex_sign_convention(tmp_path):
         assert (cell_510["gex"] or 0) > 0, "Call-dominant strike should have positive GEX"
     if cell_490:
         assert (cell_490["gex"] or 0) < 0, "Put-dominant strike should have negative GEX"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 13. spot_row_exclusion — nearest strike, not exact-match (prism_spec §5)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_heat_seeker_excludes_nearest_not_exact():
+    """heat_seeker must exclude the NEAREST-to-spot strike, not an exact spot match.
+
+    Scenario: spot=500.5, strikes=[500.0, 510.0, 520.0].
+      nearest-to-spot = 500.0 (|500.0-500.5|=0.5 < |510.0-500.5|=9.5)
+      Strike 500.0 carries the largest GEX (50M) and should be EXCLUDED.
+      Under the old exact-match code (abs(strike-spot)<1e-6), 500.0 would NOT
+      be excluded (0.5 != 0) and would become the heat_seeker pick.
+      Under the correct nearest-strike code, 500.0 is excluded; the top
+      remaining candidate is 510.0 (GEX=5M) → heat_seeker picks 510.0.
+    """
+    spot = 500.5   # intentionally NOT equal to any strike
+    cells = [
+        # Nearest-to-spot — must be excluded per spec
+        {"strike": 500.0, "expiry": "2026-07-18", "gex": 50_000_000.0,
+         "call_oi": 4000, "put_oi": 2000, "call_vol": 200, "put_vol": 100, "_dte": 11.0},
+        # Second candidate — should become the pick after 500.0 is excluded
+        {"strike": 510.0, "expiry": "2026-07-18", "gex": 5_000_000.0,
+         "call_oi": 1500, "put_oi": 1000, "call_vol": 80, "put_vol": 40, "_dte": 11.0},
+        # Third candidate
+        {"strike": 520.0, "expiry": "2026-07-18", "gex": 200_000.0,
+         "call_oi": 300, "put_oi": 200, "call_vol": 20, "put_vol": 10, "_dte": 11.0},
+    ]
+    hs = _heat_seeker(cells, spot, "GEX")
+    # The nearest strike (500.0) must NOT be selected
+    assert hs is not None, "Expected a heat_seeker pick from non-nearest strikes"
+    assert hs["strike"] != 500.0, (
+        f"Strike 500.0 is nearest to spot=500.5 and must be excluded, "
+        f"but heat_seeker picked {hs['strike']}"
+    )
+    assert hs["strike"] == 510.0, (
+        f"Expected 510.0 (top non-nearest candidate), got {hs['strike']}"
+    )

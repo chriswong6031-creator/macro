@@ -301,7 +301,7 @@ def _heat_seeker(
 
     Gates (per prism_spec §5):
       - total chain OI must exceed _MIN_TOTAL_OI (5000)
-      - candidates: value > 0; exclude spot-adjacent row
+      - candidates: value > 0; exclude spot-adjacent row (nearest strike to spot)
       - DTE penalty applied for GEX (prism_spec §5: dte < 0.5 days)
       - standout ratio: top / second-best must beat per-lens threshold
       - confidence = min(1, (ratio-1)/3) must beat _MIN_CONFIDENCE (0.15)
@@ -313,6 +313,13 @@ def _heat_seeker(
     if total_oi < _MIN_TOTAL_OI:
         return None
 
+    # identify the nearest-to-spot strike (one per underlying, across all cells)
+    # prism_spec §5 excludeSpotRow: drop the strike closest to spot, not exact match
+    all_strikes = [c.get("strike", 0.0) for c in cells if c.get("strike") is not None]
+    nearest_strike: float | None = (
+        min(all_strikes, key=lambda k: abs(k - spot)) if all_strikes else None
+    )
+
     # build candidate list
     candidates: list[tuple[float, float, dict]] = []  # (scored_val, raw_val, cell)
 
@@ -321,8 +328,8 @@ def _heat_seeker(
         expiry = c.get("expiry", "")
         dte_val = c.get("_dte", 1.0)
 
-        # exclude spot-adjacent row (nearest strike to spot)
-        if abs(strike - spot) < 1e-6:
+        # exclude nearest-to-spot strike (prism_spec §5 excludeSpotRow)
+        if nearest_strike is not None and abs(strike - nearest_strike) < 1e-6:
             continue
 
         if lens == "GEX":
