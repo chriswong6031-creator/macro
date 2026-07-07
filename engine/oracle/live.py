@@ -519,6 +519,22 @@ def build_oracle_state(
 
     n_active_complexes = sum(1 for c in complexes_out if c["state"] != "quiet")
 
+    # --- 4b. R-SP19 personality_context additive wave ---
+    # Appends personality_context to each complex dict from the stock-personality
+    # site aggregate.  Fail-open: absent aggregate ⇒ no field emitted.
+    # This is ADDITIVE and does not rename or remove any existing field.
+    try:
+        from engine.oracle.personality_context import append_personality_context  # noqa: PLC0415
+        repo_root = data_dir.parent if data_dir.name != "data" else data_dir.parent
+        # Resolve repo root: data_dir = <repo>/data
+        _repo = data_dir.parent
+        complexes_out = append_personality_context(
+            complexes_out, complexes_def, repo=_repo
+        )
+    except Exception:  # noqa: BLE001
+        log.warning("oracle_live: personality_context wave failed — skipping (fail-open)",
+                    exc_info=True)
+
     # --- 4.5. A3 rotation tag (computed from active_ep_map + complexes_def) ---
     try:
         rotation_tag = _compute_regime_tag(complexes_def, active_ep_map)

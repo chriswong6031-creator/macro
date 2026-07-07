@@ -6200,9 +6200,12 @@ artifacts:
     horizon_role: context
     weights: none
     scored_path_surfaces: []
-    consumers: []
+    consumers:
+      - scripts/oracle_nightly.py
+      - engine/neuralweb/world_state.py
+      - engine/neuralweb/query.py
     external_consumers: []
-    notes: "Slim site aggregate: schema, as_of, n_tickers, coverage, label_distributions, per_ticker slim dict."
+    notes: "Slim site aggregate: schema, as_of, n_tickers, coverage, label_distributions, per_ticker slim dict. R-SP19: oracle_nightly reads via engine/oracle/personality_context.py to append personality_context to complexes. R-SP20: world_state reads for stock_personality_summary sub-block; query.py reads for adapt_personality_context spine adapter."
 
   stock-personality-block:
     path: "embedded: personality block inside site/stockdata/<TICKER>.json"
