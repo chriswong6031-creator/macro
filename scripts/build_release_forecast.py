@@ -1368,6 +1368,7 @@ def _enrich_upcoming_block(upcoming_block: list[dict], root: Path) -> None:
     try:
         from engine.release_market_context import (
             compute_surprise_distribution,
+            get_kalshi_implied,
             get_market_implied_benchmark,
             get_reaction_sensitivity,
         )
@@ -1376,6 +1377,7 @@ def _enrich_upcoming_block(upcoming_block: list[dict], root: Path) -> None:
         return
 
     snapshots_path = root / "data" / "prediction_markets" / "snapshots.parquet"
+    kalshi_path = snapshots_path.parent / "kalshi_releases.parquet"
     playbook_path = root / "research" / "release_playbook" / "results" / "playbook_v1.json"
 
     # Read current regime label (for reaction sensitivity regime preference)
@@ -1411,10 +1413,13 @@ def _enrich_upcoming_block(upcoming_block: list[dict], root: Path) -> None:
             log.debug("surprise_distribution enrichment failed for %s: %s", rt, exc)
             item["surprise_distribution"] = None
 
-        # MRI-R16: market_implied
+        # MRI-R16: market_implied — Kalshi release ladder preferred (implied_median,
+        # per masterplan §9.1), Polymarket event match as fallback.
         try:
             release_date_str = item.get("release_date")
-            mi = get_market_implied_benchmark(rt, release_date_str, snapshots_path)
+            mi = get_kalshi_implied(rt, item.get("period"), kalshi_path)
+            if mi is None:
+                mi = get_market_implied_benchmark(rt, release_date_str, snapshots_path)
             # Attach to benchmark_set.market_implied (context only, never model math)
             if bench is not None:
                 bench["market_implied"] = mi

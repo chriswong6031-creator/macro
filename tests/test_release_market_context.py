@@ -434,3 +434,61 @@ class TestReactionSensitivity:
         p.write_text("NOT VALID JSON {{{")
         result = get_reaction_sensitivity("cpi_headline", p)
         assert result is None
+
+
+# ---------------------------------------------------------------------------
+# Kalshi implied read (masterplan §9.1 — preferred market_implied source)
+# ---------------------------------------------------------------------------
+
+import pandas as pd
+from engine.release_market_context import get_kalshi_implied
+
+
+def _kalshi_frame(rows):
+    cols = ["asof_date", "release_type", "period", "strike", "p_survival",
+            "price_type", "is_summary", "implied_median",
+            "p_above_lowest_strike", "monotonicity_corrected", "n_brackets",
+            "event_ticker", "close_time"]
+    return pd.DataFrame(rows, columns=cols)
+
+
+def test_kalshi_summary_row_preferred_latest_asof(tmp_path):
+    path = tmp_path / "kalshi_releases.parquet"
+    _kalshi_frame([
+        ["2026-07-06", "cpi", "2026-06", float("nan"), None, "summary", True,
+         0.12, 0.61, False, 7, "KXCPI-26JUN", None],
+        ["2026-07-07", "cpi", "2026-06", float("nan"), None, "summary", True,
+         0.10, 0.58, False, 7, "KXCPI-26JUN", None],
+        # non-summary bracket row must be ignored
+        ["2026-07-07", "cpi", "2026-06", 0.3, 0.42, "mid", False,
+         None, None, None, None, "KXCPI-26JUN", None],
+    ]).to_parquet(path, index=False)
+    out = get_kalshi_implied("cpi_headline", "2026-06", path)
+    assert out is not None
+    assert out["source"] == "kalshi"
+    assert abs(out["implied_median"] - 0.10) < 1e-9  # latest asof wins
+    assert out["asof"] == "2026-07-07"
+    assert out["n_brackets"] == 7
+
+
+def test_kalshi_core_cpi_not_mapped(tmp_path):
+    path = tmp_path / "kalshi_releases.parquet"
+    _kalshi_frame([
+        ["2026-07-07", "cpi", "2026-06", float("nan"), None, "summary", True,
+         0.10, 0.58, False, 7, "KXCPI-26JUN", None],
+    ]).to_parquet(path, index=False)
+    # Kalshi tracks headline only; core must not borrow the headline ladder
+    assert get_kalshi_implied("cpi_core", "2026-06", path) is None
+
+
+def test_kalshi_absent_file_and_period_failopen(tmp_path):
+    assert get_kalshi_implied("cpi_headline", "2026-06",
+                              tmp_path / "missing.parquet") is None
+    path = tmp_path / "kalshi_releases.parquet"
+    _kalshi_frame([
+        ["2026-07-07", "nfp", "2026-07", float("nan"), None, "summary", True,
+         110000.0, 0.55, False, 9, "KXPAYROLLS-26JUL", None],
+    ]).to_parquet(path, index=False)
+    assert get_kalshi_implied("cpi_headline", "2026-06", path) is None
+    out = get_kalshi_implied("nfp", "2026-07", path)
+    assert out is not None and out["implied_median"] == 110000.0

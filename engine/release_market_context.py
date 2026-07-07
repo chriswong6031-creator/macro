@@ -222,6 +222,58 @@ _RELEASE_EVENT_KEYS: dict[str, str] = {
 }
 
 
+# Kalshi bracket-ladder store (collectors/kalshi_releases.py, #1876).
+# Summary rows carry implied_median per (asof_date, release_type, period).
+_KALSHI_RELEASE_MAP = {
+    "cpi_headline": "cpi",   # Kalshi KXCPI tracks headline MoM only
+    "nfp": "nfp",
+    "claims": "claims",
+}
+
+
+def get_kalshi_implied(
+    release_type: str,
+    period: str | None,
+    kalshi_path: Path,
+) -> dict | None:
+    """Return the latest Kalshi implied read for (release_type, period), or None.
+
+    Reads summary rows (is_summary=True) from the first-seen snapshot store and
+    returns the most recent asof_date's implied_median for the matching period.
+    Context only — never fused into model math (MRI-R16). implied_mean is not
+    stored upstream by design (open-ended ladder; tail assumption dishonest).
+    """
+    try:
+        kalshi_type = _KALSHI_RELEASE_MAP.get(release_type)
+        if kalshi_type is None or period is None or not kalshi_path.exists():
+            return None
+        df = pd.read_parquet(kalshi_path)
+        if df.empty or "is_summary" not in df.columns:
+            return None
+        sub = df[
+            (df["is_summary"] == True)  # noqa: E712 — parquet bool column
+            & (df["release_type"] == kalshi_type)
+            & (df["period"] == str(period))
+        ]
+        sub = sub[sub["implied_median"].notna()]
+        if sub.empty:
+            return None
+        row = sub.sort_values("asof_date").iloc[-1]
+        return {
+            "source": "kalshi",
+            "event_ticker": row.get("event_ticker"),
+            "implied_median": float(row["implied_median"]),
+            "p_above_lowest_strike": (
+                float(row["p_above_lowest_strike"])
+                if pd.notna(row.get("p_above_lowest_strike")) else None
+            ),
+            "n_brackets": int(row["n_brackets"]) if pd.notna(row.get("n_brackets")) else None,
+            "asof": str(row["asof_date"]),
+        }
+    except Exception:
+        return None
+
+
 def get_market_implied_benchmark(
     release_type: str,
     release_date_str: str | None,
