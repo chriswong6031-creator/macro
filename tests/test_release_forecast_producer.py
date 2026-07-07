@@ -32,9 +32,11 @@ from scripts.build_release_forecast import (
     _append_ledger_rows,
     _build_scoreboard,
     _check_release_day_capture,
+    _claims_period_for_release_date,
     _compute_actual_from_print,
     _ledger_key,
     _load_ledger,
+    _next_thursday,
     _read_cleveland_nowcast,
     _read_policy_backdrop,
     _wilson,
@@ -641,3 +643,250 @@ class TestDryRun:
         # No duplicates: each (release, period, row_type, asof_night) appears once
         keys = [_ledger_key(r) for r in rows]
         assert len(keys) == len(set(keys)), "Duplicate ledger keys detected"
+
+
+# ============================================================
+# 8. CLAIMS — weekly period format, benchmark_only mode, scoreboard
+# ============================================================
+
+class TestClaimsHelpers:
+    """Unit tests for claims-specific helper functions."""
+
+    def test_next_thursday_from_monday(self):
+        """From Monday, next Thursday is 3 days later."""
+        monday = date(2026, 7, 6)  # Monday (weekday=0)
+        assert monday.weekday() == 0  # sanity
+        thu = _next_thursday(monday)
+        assert thu == date(2026, 7, 9)  # Thursday
+        assert thu.weekday() == 3
+
+    def test_next_thursday_from_thursday(self):
+        """From Thursday itself, next Thursday is 7 days later (not same day)."""
+        thu = date(2026, 7, 9)  # Thursday (weekday=3)
+        assert thu.weekday() == 3  # sanity
+        next_thu = _next_thursday(thu)
+        assert next_thu == date(2026, 7, 16)
+        assert next_thu.weekday() == 3
+
+    def test_next_thursday_from_friday(self):
+        """From Friday, next Thursday is 6 days later."""
+        fri = date(2026, 7, 10)  # Friday (weekday=4)
+        assert fri.weekday() == 4
+        next_thu = _next_thursday(fri)
+        assert next_thu == date(2026, 7, 16)
+        assert next_thu.weekday() == 3
+
+    def test_claims_period_from_release_date(self):
+        """Claims released Thursday; period = release_date - 5 days (prior Saturday)."""
+        # Thursday 2026-07-09 → Saturday 2026-07-04
+        release_date = date(2026, 7, 9)
+        period_str = _claims_period_for_release_date(release_date)
+        assert period_str == "2026-07-04"
+        # Verify it's a Saturday
+        period_date = date(2026, 7, 4)
+        assert period_date.weekday() == 5  # Saturday
+
+    def test_claims_period_iso_format(self):
+        """Period string must be a full ISO date (YYYY-MM-DD)."""
+        period_str = _claims_period_for_release_date(date(2026, 7, 9))  # Thursday
+        # Must be parseable as a date
+        parsed = date.fromisoformat(period_str)
+        assert isinstance(parsed, date)
+
+
+class TestClaimsActualComputation:
+    """_compute_actual_from_print for claims: raw level / 1000."""
+
+    def test_claims_raw_to_thousands(self, tmp_root: Path):
+        """Claims actual = raw_initial_print / 1000, rounded to 2 decimals."""
+        raw = 215000.0
+        actual = _compute_actual_from_print("claims", raw, tmp_root, "2026-07-05")
+        assert actual == pytest.approx(215.0, abs=1e-4)
+
+    def test_claims_actual_odd_value(self, tmp_root: Path):
+        """Claims actual with a non-round value."""
+        raw = 215482.0
+        actual = _compute_actual_from_print("claims", raw, tmp_root, "2026-07-05")
+        assert actual == pytest.approx(215.48, abs=1e-3)
+
+    def test_initial_print_weekly_period(self, tmp_root: Path):
+        """_get_initial_print for claims uses full ISO date period, not YYYY-MM-01."""
+        from scripts.build_release_forecast import _get_initial_print
+
+        # Write a vintage parquet with a weekly-format period (Saturday)
+        period_str = "2026-07-05"  # Saturday
+        release_date_str = "2026-07-10"  # Thursday
+        _make_vintage_parquet(tmp_root, [
+            {
+                "series": "ICSA",
+                "period": period_str,  # full ISO date
+                "value": 215000.0,
+                "realtime_start": release_date_str,
+                "realtime_end": "2099-12-31",
+            },
+        ])
+        raw = _get_initial_print(tmp_root, "claims", period_str, release_date_str)
+        assert raw == pytest.approx(215000.0, abs=1.0)
+
+    def test_initial_print_monthly_still_uses_month_format(self, tmp_root: Path):
+        """_get_initial_print for CPI uses YYYY-MM-01 period, not weekly format."""
+        from scripts.build_release_forecast import _get_initial_print
+
+        _make_vintage_parquet(tmp_root, [
+            {
+                "series": "CPIAUCSL",
+                "period": "2026-06-01",
+                "value": 316.260,
+                "realtime_start": "2026-07-10",
+                "realtime_end": "2099-12-31",
+            },
+        ])
+        # period_str "2026-06" → internally target_ts = 2026-06-01
+        raw = _get_initial_print(tmp_root, "cpi_headline", "2026-06", "2026-07-10")
+        assert raw == pytest.approx(316.260, abs=1e-3)
+
+
+class TestClaimsLedger:
+    """Weekly claims ledger: period is full ISO date; dedup works correctly."""
+
+    def test_claims_weekly_period_dedup(self, tmp_root: Path):
+        """Claims ledger row with weekly period string deduplicates correctly."""
+        ledger_path = tmp_root / "data" / "release_forecast" / "forward_ledger.jsonl"
+        row = {
+            "row_type": "projection",
+            "asof_night": "2026-07-07",
+            "release": "claims",
+            "period": "2026-07-05",  # full ISO date (Saturday)
+            "release_date": "2026-07-10",
+            "days_to": 3,
+            "projection_point": None,
+            "projection_p10": None,
+            "projection_p90": None,
+            "confidence": None,
+            "input_completeness": None,
+            "benchmark_naive_prior": 215.0,
+            "benchmark_trailing": 217.0,
+            "benchmark_trailing_key": "trailing_4w",
+            "benchmark_ar_model": 214.5,
+            "benchmark_cleveland": None,
+            "projection_mode": "benchmark_only",
+            "surprise_skew_sigma": None,
+            "surprise_skew_tag": None,
+            "fed_stance": None,
+            "gap_bp": None,
+            "implied_cuts_12m": None,
+            "next_fomc": None,
+        }
+        _append_ledger_rows(ledger_path, [row])
+        _append_ledger_rows(ledger_path, [row])  # second run same night
+        rows = _load_ledger(ledger_path)
+        assert len(rows) == 1, f"Expected 1 row after double append, got {len(rows)}"
+
+    def test_claims_different_weekly_periods_not_duped(self, tmp_root: Path):
+        """Two different weekly periods for claims each get their own ledger row."""
+        ledger_path = tmp_root / "data" / "release_forecast" / "forward_ledger.jsonl"
+
+        def _make_row(period_str: str, asof_night: str) -> dict:
+            return {
+                "row_type": "projection",
+                "asof_night": asof_night,
+                "release": "claims",
+                "period": period_str,
+                "release_date": "2026-07-10",
+                "days_to": 3,
+                "projection_point": None,
+                "projection_p10": None,
+                "projection_p90": None,
+                "confidence": None,
+                "input_completeness": None,
+                "benchmark_naive_prior": 215.0,
+                "benchmark_trailing": 217.0,
+                "benchmark_trailing_key": "trailing_4w",
+                "benchmark_ar_model": 214.5,
+                "benchmark_cleveland": None,
+                "projection_mode": "benchmark_only",
+                "surprise_skew_sigma": None,
+                "surprise_skew_tag": None,
+                "fed_stance": None,
+                "gap_bp": None,
+                "implied_cuts_12m": None,
+                "next_fomc": None,
+            }
+
+        row1 = _make_row("2026-07-05", "2026-07-07")
+        row2 = _make_row("2026-07-12", "2026-07-07")
+        _append_ledger_rows(ledger_path, [row1, row2])
+        rows = _load_ledger(ledger_path)
+        assert len(rows) == 2, f"Two different periods must produce 2 ledger rows, got {len(rows)}"
+
+
+class TestClaimsScoreboard:
+    """Scoreboard claims entry: block_note present; trailing_4w label used."""
+
+    def _make_claims_scored(self, actual_k: float = 215.0, proj_k: float | None = None) -> dict:
+        """Minimal scored row for claims."""
+        return {
+            "row_type": "scored",
+            "asof_night": "2026-07-14",
+            "release": "claims",
+            "period": "2026-07-05",
+            "release_date": "2026-07-10",
+            "actual": actual_k,
+            "raw_initial_print": None,
+            "frozen_asof_night": "2026-07-07",
+            "frozen_projection_point": proj_k,
+            "frozen_projection_p10": None,
+            "frozen_projection_p90": None,
+            "our_surprise": None,  # null in benchmark_only mode
+            "surprise_vs_naive": round(actual_k - 213.0, 4),
+            "surprise_vs_trailing": round(actual_k - 217.0, 4),
+            "surprise_vs_ar": round(actual_k - 214.5, 4),
+            "surprise_vs_cleveland": None,
+            "interval_hit": None,  # null in benchmark_only mode
+            "skew_hit": None,  # null in benchmark_only mode
+            "benchmark_trailing_key": "trailing_4w",
+            "projection_mode": "benchmark_only",
+        }
+
+    def test_claims_scoreboard_block_note(self):
+        """Claims scoreboard entry must contain block_note (MRI-R9 caveat)."""
+        scored = self._make_claims_scored()
+        sb = _build_scoreboard([scored], accrual_start="2026-07-07")
+        claims_stats = sb["by_release"].get("claims")
+        assert claims_stats is not None, "claims entry missing from scoreboard"
+        assert "block_note" in claims_stats, "block_note must be present for claims"
+        assert "autocorrelation" in claims_stats["block_note"].lower() or \
+               "serial" in claims_stats["block_note"].lower() or \
+               "MRI-R9" in claims_stats["block_note"], (
+            f"block_note must mention autocorrelation/serial correlation or MRI-R9: {claims_stats['block_note']!r}"
+        )
+
+    def test_claims_scoreboard_trailing_label_is_4w(self):
+        """Claims scoreboard must use mae_trailing_4w label, not mae_trailing_3m."""
+        scored = self._make_claims_scored()
+        sb = _build_scoreboard([scored], accrual_start="2026-07-07")
+        claims_stats = sb["by_release"]["claims"]
+        assert "mae_trailing_4w" in claims_stats, "Claims scoreboard must have mae_trailing_4w"
+        assert "mae_trailing_3m" not in claims_stats, "Claims scoreboard must NOT have mae_trailing_3m"
+
+    def test_claims_n_counts(self):
+        """n must equal number of scored rows for claims."""
+        scored1 = self._make_claims_scored(actual_k=215.0)
+        scored2 = self._make_claims_scored(actual_k=218.0)
+        scored2["period"] = "2026-07-12"
+        scored2["asof_night"] = "2026-07-21"
+        sb = _build_scoreboard([scored1, scored2], accrual_start="2026-07-07")
+        claims_stats = sb["by_release"]["claims"]
+        assert claims_stats["n"] == 2
+
+    def test_claims_benchmark_only_mae_ours_null(self):
+        """In benchmark_only mode, mae_ours is None since our_surprise is None."""
+        scored = self._make_claims_scored(proj_k=None)
+        scored["our_surprise"] = None
+        scored["frozen_projection_point"] = None
+        sb = _build_scoreboard([scored], accrual_start="2026-07-07")
+        claims_stats = sb["by_release"]["claims"]
+        # With proj_point=None and our_surprise=None, mae_ours should be None
+        assert claims_stats["mae_ours"] is None, (
+            "mae_ours must be None in benchmark_only mode (no model projection)"
+        )

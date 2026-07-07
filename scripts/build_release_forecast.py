@@ -27,7 +27,7 @@ import json
 import logging
 import math
 import sys
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 import numpy as np
@@ -48,12 +48,22 @@ _SITE_RELPATH = "site/macrodata/release_forecast.json"
 # Ledger key fields (idempotency guard)
 _LEDGER_KEY = ("release", "period", "row_type", "asof_night")
 
-# Releases tracked by MRI v1
+# Releases tracked by MRI v1 + F1 claims lane
 _TRACKED_RELEASES = [
-    ("cpi_headline", "cpi", "inflation"),
-    ("cpi_core",     "cpi", "inflation"),
-    ("nfp",          "nfp", "growth"),
+    ("cpi_headline", "cpi",    "inflation"),
+    ("cpi_core",     "cpi",    "inflation"),
+    ("nfp",          "nfp",    "growth"),
+    ("claims",       "claims", "growth"),
 ]
+
+# Claims ships in benchmark_only mode per F1 backtest (kill rule triggered):
+# MAE model 40.839 vs naive 28.673 (full), 24.042 vs 14.790 (2021+)
+_CLAIMS_MODE = "benchmark_only"
+_CLAIMS_BENCHMARK_ONLY_REASON = (
+    "Walk-forward MAE (40.8k) fails to beat naive_prior (28.7k) on the era-split table "
+    "(full window) and 2021+ slice (24.0k vs 14.8k). F1 kill rule triggered: "
+    "benchmark-only mode per MRI §6 falsifier."
+)
 
 # CPI family mapping for Cleveland nowcast (series name in nowcast.parquet)
 _CLEVELAND_SERIES_MAP = {
@@ -66,6 +76,7 @@ _FRED_VINTAGE_SERIES = {
     "cpi_headline": "CPIAUCSL",
     "cpi_core":     "CPILFESL",
     "nfp":          "PAYEMS",
+    "claims":       "ICSA",
 }
 
 # Wilson CI helper (reused from engine/release_forecast.py pattern)
@@ -82,6 +93,25 @@ def _wilson(k: int, n: int, z: float = 1.96) -> list[float] | None:
 # ---------------------------------------------------------------------------
 # 1. Upcoming release discovery
 # ---------------------------------------------------------------------------
+
+def _next_thursday(from_date: date) -> date:
+    """Return the next Thursday strictly after from_date (claims print day)."""
+    days_ahead = (3 - from_date.weekday()) % 7  # Thursday=3
+    if days_ahead == 0:
+        days_ahead = 7
+    return from_date + timedelta(days=days_ahead)
+
+
+def _claims_period_for_release_date(release_date: date) -> str:
+    """Claims released on Thursday cover the week ending the prior Saturday.
+
+    ICSA period convention: Saturday of the reference week.
+    Release date = Thursday 08:30 ET; reference week ended Saturday = release_date - 5 days.
+    Returns ISO date string of that Saturday.
+    """
+    sat = release_date - timedelta(days=5)
+    return sat.isoformat()
+
 
 def _find_upcoming_releases(today: date, horizon_days: int = 40) -> list[dict]:
     """Return upcoming CPI and NFP release dates within horizon_days.
@@ -146,6 +176,39 @@ def _find_upcoming_releases(today: date, horizon_days: int = 40) -> list[dict]:
                 "period": period_str,
                 "regime_axis": "growth",
             })
+        elif etype == "CLAIMS":
+            # Claims: next Thursday release; period = Saturday of the covered week
+            period_str = _claims_period_for_release_date(ev_date)
+            upcoming.append({
+                "release_type": "claims",
+                "release": "claims",
+                "release_date": ev_date.isoformat(),
+                "period": period_str,
+                "regime_axis": "growth",
+            })
+
+    # Ensure at least the next 2 claims Thursdays are included (defensive fallback
+    # if CLAIMS events were not returned by event_calendar for some reason)
+    claims_dates_seen = {
+        ev["release_date"]
+        for ev in upcoming
+        if ev.get("release_type") == "claims"
+    }
+    next_thu = _next_thursday(today)
+    fallback_added = 0
+    while fallback_added < 2 and (next_thu - today).days <= horizon_days:
+        if next_thu.isoformat() not in claims_dates_seen:
+            period_str = _claims_period_for_release_date(next_thu)
+            upcoming.append({
+                "release_type": "claims",
+                "release": "claims",
+                "release_date": next_thu.isoformat(),
+                "period": period_str,
+                "regime_axis": "growth",
+            })
+            claims_dates_seen.add(next_thu.isoformat())
+            fallback_added += 1
+        next_thu = next_thu + timedelta(days=7)
 
     return upcoming
 
@@ -336,8 +399,26 @@ def _build_upcoming_block(
         # Determine target (for display)
         if rt in ("cpi_headline", "cpi_core"):
             target = "mom_sa_pct"
+        elif rt == "claims":
+            target = "icsa_level_k"
         else:
             target = "change_thousands"
+
+        # Claims ships benchmark_only: replace projection block with honest null
+        if rt == "claims" and _CLAIMS_MODE == "benchmark_only":
+            projection_block = {
+                "mode": "benchmark_only",
+                "reason": _CLAIMS_BENCHMARK_ONLY_REASON,
+            }
+        else:
+            projection_block = {
+                "point": proj.get("point"),
+                "p10": proj.get("p10"),
+                "p25": proj.get("p25"),
+                "p50": proj.get("p50"),
+                "p75": proj.get("p75"),
+                "p90": proj.get("p90"),
+            }
 
         row = {
             "release": ev["release"],
@@ -346,18 +427,11 @@ def _build_upcoming_block(
             "release_date": release_date,
             "days_to": days_to,
             "target": target,
-            "projection": {
-                "point": proj.get("point"),
-                "p10": proj.get("p10"),
-                "p25": proj.get("p25"),
-                "p50": proj.get("p50"),
-                "p75": proj.get("p75"),
-                "p90": proj.get("p90"),
-            },
-            "confidence": proj.get("confidence"),
-            "input_completeness": proj.get("input_completeness"),
+            "projection": projection_block,
+            "confidence": proj.get("confidence") if rt != "claims" or _CLAIMS_MODE != "benchmark_only" else None,
+            "input_completeness": proj.get("input_completeness") if rt != "claims" or _CLAIMS_MODE != "benchmark_only" else None,
             "benchmark_set": proj.get("benchmark_set", {}),
-            "surprise_skew": proj.get("surprise_skew", {}),
+            "surprise_skew": proj.get("surprise_skew", {}) if rt != "claims" or _CLAIMS_MODE != "benchmark_only" else {},
             "pit": proj.get("pit_provenance", {}),
             "regime_axis": ev["regime_axis"],
             "policy_backdrop": policy_backdrop,
@@ -418,22 +492,32 @@ def _build_projection_ledger_rows(
     asof_night = today.isoformat()
     rows = []
     for item in upcoming_block:
+        rt = item.get("release_type", "")
+        bs = item.get("benchmark_set") or {}
+        # Claims uses trailing_4w key; others use trailing_3m
+        if rt == "claims":
+            bench_trailing = bs.get("trailing_4w")
+        else:
+            bench_trailing = bs.get("trailing_3m")
+        proj = item.get("projection") or {}
         row = {
             "row_type": "projection",
             "asof_night": asof_night,
-            "release": item.get("release_type"),
+            "release": rt,
             "period": item.get("period"),
             "release_date": item.get("release_date"),
             "days_to": item.get("days_to"),
-            "projection_point": item.get("projection", {}).get("point"),
-            "projection_p10": item.get("projection", {}).get("p10"),
-            "projection_p90": item.get("projection", {}).get("p90"),
+            "projection_point": proj.get("point"),
+            "projection_p10": proj.get("p10"),
+            "projection_p90": proj.get("p90"),
+            "projection_mode": proj.get("mode"),  # "benchmark_only" or None
             "confidence": item.get("confidence"),
             "input_completeness": item.get("input_completeness"),
-            "benchmark_naive_prior": (item.get("benchmark_set") or {}).get("naive_prior"),
-            "benchmark_trailing_3m": (item.get("benchmark_set") or {}).get("trailing_3m"),
-            "benchmark_ar_model": (item.get("benchmark_set") or {}).get("ar_model"),
-            "benchmark_cleveland": (item.get("benchmark_set") or {}).get("cleveland_nowcast"),
+            "benchmark_naive_prior": bs.get("naive_prior"),
+            "benchmark_trailing": bench_trailing,  # trailing_4w for claims, trailing_3m for others
+            "benchmark_trailing_key": "trailing_4w" if rt == "claims" else "trailing_3m",
+            "benchmark_ar_model": bs.get("ar_model"),
+            "benchmark_cleveland": bs.get("cleveland_nowcast"),
             "surprise_skew_sigma": (item.get("surprise_skew") or {}).get("sigma"),
             "surprise_skew_tag": (item.get("surprise_skew") or {}).get("tag"),
             "fed_stance": policy_backdrop.get("fed_stance"),
@@ -480,8 +564,12 @@ def _get_initial_print(
             if col in vdf.columns:
                 vdf[col] = pd.to_datetime(vdf[col])
 
-        # Target period (first of month)
-        target_ts = pd.Timestamp(period_str + "-01")
+        # Target period: weekly releases (claims) use full ISO date; monthly use "YYYY-MM"
+        if release_type == "claims":
+            # period_str is a Saturday date string like "2026-07-05"
+            target_ts = pd.Timestamp(period_str)
+        else:
+            target_ts = pd.Timestamp(period_str + "-01")
         release_ts = pd.Timestamp(release_date_str)
 
         mask = (
@@ -569,6 +657,10 @@ def _compute_actual_from_print(
             log.debug("NFP change computation failed: %s", e)
             return None
 
+    elif release_type == "claims":
+        # ICSA: target is the level in thousands; raw_initial_print is in raw units (~200000)
+        return round(raw_initial_print / 1000.0, 2)
+
     return None
 
 
@@ -646,30 +738,32 @@ def _check_release_day_capture(
         proj_point = t1_proj.get("projection_point")
         proj_p10 = t1_proj.get("projection_p10")
         proj_p90 = t1_proj.get("projection_p90")
+        proj_mode = t1_proj.get("projection_mode")  # "benchmark_only" or None
 
-        # Compute surprise vs our projection
-        our_surprise = round(actual - proj_point, 4) if proj_point is not None else None
+        # Compute surprise vs our projection (null for benchmark_only mode)
+        our_surprise = round(actual - proj_point, 4) if (proj_point is not None and proj_mode != "benchmark_only") else None
 
-        # Benchmarks
+        # Benchmarks — claims uses "benchmark_trailing" key (trailing_4w); others use "benchmark_trailing_3m"
         bench_naive = t1_proj.get("benchmark_naive_prior")
-        bench_trailing = t1_proj.get("benchmark_trailing_3m")
+        bench_trailing = t1_proj.get("benchmark_trailing")  # unified key (trailing_4w or trailing_3m)
         bench_ar = t1_proj.get("benchmark_ar_model")
         bench_cleveland = t1_proj.get("benchmark_cleveland")
+        bench_trailing_key = t1_proj.get("benchmark_trailing_key", "trailing_3m")
 
         def _surprise_vs(bench: float | None) -> float | None:
             if bench is None or actual is None:
                 return None
             return round(actual - bench, 4)
 
-        # Interval hit: actual within [proj_p10, proj_p90]
+        # Interval hit: only meaningful when not in benchmark_only mode
         interval_hit: bool | None = None
-        if proj_p10 is not None and proj_p90 is not None:
+        if proj_p10 is not None and proj_p90 is not None and proj_mode != "benchmark_only":
             interval_hit = bool(proj_p10 <= actual <= proj_p90)
 
-        # Skew direction hit: did our skew_tag correctly call the direction vs benchmark median?
+        # Skew direction hit: null for benchmark_only mode (no model projection)
         skew_hit: bool | None = None
         bench_vals = [v for v in [bench_naive, bench_trailing, bench_ar, bench_cleveland] if v is not None]
-        if bench_vals and proj_point is not None and actual is not None:
+        if bench_vals and proj_point is not None and actual is not None and proj_mode != "benchmark_only":
             bench_median = float(np.median(bench_vals))
             our_direction = "hotter" if proj_point > bench_median else ("cooler" if proj_point < bench_median else "inline")
             actual_direction = "hotter" if actual > bench_median else ("cooler" if actual < bench_median else "inline")
@@ -687,9 +781,11 @@ def _check_release_day_capture(
             "frozen_projection_point": proj_point,
             "frozen_projection_p10": proj_p10,
             "frozen_projection_p90": proj_p90,
+            "projection_mode": proj_mode,
             "our_surprise": our_surprise,
             "surprise_vs_naive": _surprise_vs(bench_naive),
-            "surprise_vs_trailing": _surprise_vs(bench_trailing),
+            "surprise_vs_trailing": _surprise_vs(bench_trailing),  # trailing_4w for claims, trailing_3m for others
+            "benchmark_trailing_key": bench_trailing_key,
             "surprise_vs_ar": _surprise_vs(bench_ar),
             "surprise_vs_cleveland": _surprise_vs(bench_cleveland),
             "interval_hit": interval_hit,
@@ -739,10 +835,10 @@ def _build_scoreboard(
             g["our_abs_errors"].append(abs(actual - proj))
 
         for bench_key, err_key in [
-            ("surprise_vs_naive", "naive_abs_errors"),
-            ("surprise_vs_trailing", "trailing_abs_errors"),
-            ("surprise_vs_ar", "ar_abs_errors"),
-            ("surprise_vs_cleveland", "cleveland_abs_errors"),
+            ("surprise_vs_naive",    "naive_abs_errors"),
+            ("surprise_vs_trailing", "trailing_abs_errors"),  # trailing_4w for claims, trailing_3m for others
+            ("surprise_vs_ar",       "ar_abs_errors"),
+            ("surprise_vs_cleveland","cleveland_abs_errors"),
         ]:
             v = row.get(bench_key)
             if v is not None:
@@ -767,11 +863,13 @@ def _build_scoreboard(
         def _mae(errs: list[float]) -> float | None:
             return round(float(np.mean(errs)), 4) if errs else None
 
-        release_stats[rt] = {
+        # Claims uses trailing_4w label; all others use trailing_3m
+        trailing_label = "mae_trailing_4w" if rt == "claims" else "mae_trailing_3m"
+        entry: dict = {
             "n": n,
             "mae_ours": _mae(g["our_abs_errors"]),
             "mae_naive_prior": _mae(g["naive_abs_errors"]),
-            "mae_trailing_3m": _mae(g["trailing_abs_errors"]),
+            trailing_label: _mae(g["trailing_abs_errors"]),
             "mae_ar_model": _mae(g["ar_abs_errors"]),
             "mae_cleveland": _mae(g["cleveland_abs_errors"]),
             "p10_p90_coverage": round(k_interval / n_interval, 4) if n_interval > 0 else None,
@@ -780,6 +878,14 @@ def _build_scoreboard(
             "skew_hit_rate_n": n_skew,
             "skew_hit_rate_wilson_ci": _wilson(k_skew, n_skew),
         }
+        if rt == "claims":
+            entry["block_note"] = (
+                "MRI-R9: weekly claims residuals have strong autocorrelation. "
+                "Reported MAE and coverage are computed on individual weekly prints; "
+                "effective sample size is smaller than n due to serial correlation. "
+                "Era-split results in CLAIMS_BACKTEST.md are the authoritative reference."
+            )
+        release_stats[rt] = entry
 
     return {
         "schema": "release_forecast_scoreboard.v1",

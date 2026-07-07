@@ -714,3 +714,232 @@ class TestGasolineRefMonthAnchoring:
         )
         assert "gasoline_mom" not in feats
         assert prov.get("gasoline_absent") is True
+
+
+# ---------------------------------------------------------------------------
+# F1. Claims features — PIT guard and contract
+# ---------------------------------------------------------------------------
+
+def _make_icsa_vintages(
+    periods: list[pd.Timestamp],
+    values: list[float],
+    delays_days: list[int],
+    ccsa_periods: list[pd.Timestamp] | None = None,
+    ccsa_values: list[float] | None = None,
+    ccsa_delays: list[int] | None = None,
+) -> pd.DataFrame:
+    """Build a synthetic ICSA (+ optionally CCSA) vintages DataFrame."""
+    rows = []
+    for p, v, d in zip(periods, values, delays_days):
+        rows.append({
+            "series": "ICSA",
+            "period": p,
+            "value": v,
+            "realtime_start": p + pd.Timedelta(days=d),
+            "realtime_end": pd.Timestamp("2099-12-31"),
+        })
+    if ccsa_periods is not None:
+        for p, v, d in zip(ccsa_periods, ccsa_values or [], ccsa_delays or []):
+            rows.append({
+                "series": "CCSA",
+                "period": p,
+                "value": v,
+                "realtime_start": p + pd.Timedelta(days=d),
+                "realtime_end": pd.Timestamp("2099-12-31"),
+            })
+    return pd.DataFrame(rows)
+
+
+class TestClaimsPITGuard:
+    """Claims features must obey PIT law — ICSA values with realtime_start > asof excluded."""
+
+    def test_future_icsa_excluded(self):
+        """An ICSA print released after asof must NOT appear in lag features."""
+        from engine.release_forecast import build_claims_features
+
+        # 4 periods, Saturdays; delayed 6 days (so realtime_start = period + 6d = Thursday)
+        periods = [pd.Timestamp(f"2026-06-{d:02d}") for d in [6, 13, 20, 27]]
+        # Last period released 20 days later (future at our asof)
+        delays = [6, 6, 6, 20]
+        values = [215000.0, 218000.0, 220000.0, 999999.0]  # last value must NOT appear
+        vintages = _make_icsa_vintages(periods, values, delays)
+
+        # asof = 2026-07-07; last period's realtime_start = 2026-06-27 + 20 = 2026-07-17 > asof
+        asof = date(2026, 7, 7)
+        feats, prov = build_claims_features(asof, vintages)
+
+        # lag1 must be 220.0k (2026-06-20), NOT 999.999k (2026-06-27)
+        assert feats["icsa_lag1"] == pytest.approx(220.0, abs=1e-6), (
+            f"Future ICSA leaked into lag1: {feats['icsa_lag1']}"
+        )
+        assert feats["icsa_lag1"] != pytest.approx(999.999, abs=1.0), (
+            "Future ICSA value (999999) should not appear as lag1"
+        )
+
+    def test_all_icsa_future_gives_none_features(self):
+        """If asof is before all ICSA realtime_starts, all lag features are None."""
+        from engine.release_forecast import build_claims_features
+
+        periods = [pd.Timestamp("2026-06-06")]
+        delays = [30]  # realtime_start = 2026-07-06
+        values = [215000.0]
+        vintages = _make_icsa_vintages(periods, values, delays)
+
+        # asof before release
+        asof = date(2026, 6, 10)
+        feats, prov = build_claims_features(asof, vintages)
+
+        assert feats["icsa_lag1"] is None
+        assert feats["icsa_lag2"] is None
+        assert feats["icsa_lag3"] is None
+        assert feats["icsa_trailing_4w"] is None
+
+    def test_values_in_thousands(self):
+        """All returned ICSA feature values must be in thousands (raw / 1000)."""
+        from engine.release_forecast import build_claims_features
+
+        raw_val = 215000.0
+        periods = [pd.Timestamp("2026-06-06")]
+        delays = [6]
+        values = [raw_val]
+        vintages = _make_icsa_vintages(periods, values, delays)
+
+        asof = date(2026, 6, 20)
+        feats, _ = build_claims_features(asof, vintages)
+
+        expected_k = raw_val / 1000.0
+        assert feats["icsa_lag1"] == pytest.approx(expected_k, abs=1e-6), (
+            f"icsa_lag1 must be in thousands: expected {expected_k}, got {feats['icsa_lag1']}"
+        )
+
+    def test_trailing_4w_is_mean_of_4(self):
+        """trailing_4w must be the mean of the last 4 known initial prints, in thousands."""
+        from engine.release_forecast import build_claims_features
+
+        raw_vals = [200000.0, 210000.0, 220000.0, 230000.0]
+        periods = [pd.Timestamp("2026-06-06") + pd.Timedelta(weeks=i) for i in range(4)]
+        delays = [6, 6, 6, 6]
+        vintages = _make_icsa_vintages(periods, raw_vals, delays)
+
+        asof = date(2026, 7, 10)
+        feats, _ = build_claims_features(asof, vintages)
+
+        expected_k = sum(raw_vals) / 4 / 1000.0
+        assert feats["icsa_trailing_4w"] == pytest.approx(expected_k, abs=1e-6)
+
+
+class TestClaimsHolidayDummy:
+    """_claims_holiday_dummy must be deterministic and cover the known holidays."""
+
+    def test_christmas_week(self):
+        """Week containing Dec 25 must return 1."""
+        from engine.release_forecast import _claims_holiday_dummy
+        # Saturday Dec 21 2024 → week Dec 21..Dec 27 → contains Dec 25
+        period = date(2024, 12, 21)
+        assert _claims_holiday_dummy(period) == 1
+
+    def test_independence_day_week(self):
+        """Week containing July 4 must return 1."""
+        from engine.release_forecast import _claims_holiday_dummy
+        # Saturday June 29 2024 → week Jun 29..Jul 5 → contains Jul 4
+        period = date(2024, 6, 29)
+        assert _claims_holiday_dummy(period) == 1
+
+    def test_thanksgiving_week(self):
+        """Week containing Thanksgiving (4th Thursday of November) must return 1."""
+        from engine.release_forecast import _claims_holiday_dummy
+        # Thanksgiving 2024 = Nov 28; Saturday Nov 23 → week Nov 23..Nov 29 → contains Nov 28
+        period = date(2024, 11, 23)
+        assert _claims_holiday_dummy(period) == 1
+
+    def test_new_years_week(self):
+        """Week containing Jan 1 must return 1."""
+        from engine.release_forecast import _claims_holiday_dummy
+        # Saturday Dec 28 2024 → week Dec 28..Jan 3 2025 → contains Jan 1 2025
+        period = date(2024, 12, 28)
+        assert _claims_holiday_dummy(period) == 1
+
+    def test_ordinary_week_returns_zero(self):
+        """An ordinary week with no holidays must return 0."""
+        from engine.release_forecast import _claims_holiday_dummy
+        # Saturday March 1 2025 → week Mar 1..Mar 7 → no major holidays
+        period = date(2025, 3, 1)
+        assert _claims_holiday_dummy(period) == 0
+
+    def test_timestamp_input(self):
+        """pd.Timestamp input must produce same result as date input."""
+        from engine.release_forecast import _claims_holiday_dummy
+        period_date = date(2024, 12, 21)
+        period_ts = pd.Timestamp(period_date)
+        assert _claims_holiday_dummy(period_ts) == _claims_holiday_dummy(period_date)
+
+    def test_determinism(self):
+        """Same period must always produce the same result."""
+        from engine.release_forecast import _claims_holiday_dummy
+        period = date(2025, 3, 1)
+        assert _claims_holiday_dummy(period) == _claims_holiday_dummy(period)
+
+
+class TestClaimsProjectionContract:
+    """_project_claims output must satisfy the claims-specific contract."""
+
+    def _minimal_claims_vintages(self) -> pd.DataFrame:
+        """Minimal ICSA + CCSA vintages with 80+ weeks of history for MIN_TRAIN_OBS."""
+        n = 90
+        base = pd.Timestamp("2024-01-06")  # Saturday
+        periods = [base + pd.Timedelta(weeks=i) for i in range(n)]
+        icsa_rows = []
+        ccsa_rows = []
+        for i, p in enumerate(periods):
+            icsa_rows.append({
+                "series": "ICSA",
+                "period": p,
+                "value": 215000.0 + i * 100,
+                "realtime_start": p + pd.Timedelta(days=6),
+                "realtime_end": pd.Timestamp("2099-12-31"),
+            })
+            ccsa_rows.append({
+                "series": "CCSA",
+                "period": p,
+                "value": 1800000.0 + i * 1000,
+                "realtime_start": p + pd.Timedelta(days=6),
+                "realtime_end": pd.Timestamp("2099-12-31"),
+            })
+        return pd.DataFrame(icsa_rows + ccsa_rows)
+
+    def test_claims_contract_keys(self, tmp_path):
+        """_project_claims must return all required contract keys."""
+        from engine.release_forecast import _project_claims
+        vintages = self._minimal_claims_vintages()
+        asof = date(2025, 10, 1)
+        result = _project_claims(asof, vintages, tmp_path)
+
+        assert result["release"] == "claims"
+        assert result["display_only"] is True
+        assert result["authority"] is False
+
+        bs = result.get("benchmark_set", {})
+        # Claims benchmark_set must have trailing_4w, NOT trailing_3m
+        assert "trailing_4w" in bs, "Claims benchmark_set must have trailing_4w"
+        assert "trailing_3m" not in bs, "Claims benchmark_set must NOT have trailing_3m"
+        assert "naive_prior" in bs
+        assert "ar_model" in bs
+        assert "cleveland_nowcast" in bs  # always None for claims
+        assert bs["cleveland_nowcast"] is None, "Cleveland nowcast must be None for claims"
+        assert "market_implied" in bs
+
+    def test_empty_projection_claims_benchmark_keys(self):
+        """_empty_projection for claims must have trailing_4w, not trailing_3m."""
+        from engine.release_forecast import _empty_projection
+        result = _empty_projection("claims", date(2026, 1, 1), "test")
+        bs = result.get("benchmark_set", {})
+        assert "trailing_4w" in bs, "Empty claims projection must have trailing_4w"
+        assert "trailing_3m" not in bs, "Empty claims projection must NOT have trailing_3m"
+
+    def test_empty_projection_cpi_benchmark_keys(self):
+        """_empty_projection for cpi_headline must still have trailing_3m, not trailing_4w."""
+        from engine.release_forecast import _empty_projection
+        result = _empty_projection("cpi_headline", date(2026, 1, 1), "test")
+        bs = result.get("benchmark_set", {})
+        assert "trailing_3m" in bs, "CPI empty projection must have trailing_3m"
+        assert "trailing_4w" not in bs, "CPI empty projection must NOT have trailing_4w"

@@ -681,8 +681,10 @@ def project_release(
         return _project_cpi(release, asof, vintages, root, ref_month=ref_month)
     elif release == "nfp":
         return _project_nfp(asof, vintages, root)
+    elif release == "claims":
+        return _project_claims(asof, vintages, root)
     else:
-        raise ValueError(f"Unknown release type: {release!r}. Use 'cpi_headline', 'cpi_core', or 'nfp'.")
+        raise ValueError(f"Unknown release type: {release!r}. Use 'cpi_headline', 'cpi_core', 'nfp', or 'claims'.")
 
 
 def _project_cpi(
@@ -1082,8 +1084,403 @@ def _project_nfp(asof: date, vintages: pd.DataFrame, root: Path) -> dict:
     }
 
 
+# ---------------------------------------------------------------------------
+# Claims feature builder and projection
+# ---------------------------------------------------------------------------
+
+# US federal holidays (deterministic, no feed needed) for holiday-week dummy.
+# Coverage: New Year's Day, Independence Day, Thanksgiving (4th Thu Nov), Christmas.
+# The dummy is 1 if the ICSA report week CONTAINS one of these dates.
+def _us_federal_holiday_dates(year: int) -> list[date]:
+    """Return key US federal holiday dates for a given year (claims-distortion set only).
+
+    Covers: New Year's Day, Independence Day, Thanksgiving (4th Thursday Nov), Christmas.
+    These are the four holidays known to distort initial claims filings.
+    """
+    import calendar as _cal
+    holidays = [
+        date(year, 1, 1),    # New Year's Day
+        date(year, 7, 4),    # Independence Day
+        date(year, 12, 25),  # Christmas
+    ]
+    # Thanksgiving = 4th Thursday of November
+    # Find the 4th Thursday: count Thursdays from Nov 1
+    thu_count = 0
+    for day in range(1, 32):
+        d = date(year, 11, day)
+        if d.weekday() == 3:  # Thursday
+            thu_count += 1
+            if thu_count == 4:
+                holidays.append(d)
+                break
+    return holidays
+
+
+def _claims_holiday_dummy(period: pd.Timestamp | date) -> int:
+    """Return 1 if the ICSA report week (period=Saturday, week is Sat..Fri) contains
+    a major US holiday known to distort claims; 0 otherwise.
+
+    Period convention: ICSA period is the Saturday of the reference week.
+    The full week span is [period, period + 6 days].
+    """
+    if isinstance(period, pd.Timestamp):
+        period = period.date()
+    week_start = period
+    week_end = period + timedelta(days=6)
+    year_start = week_start.year
+    year_end = week_end.year
+    # Collect holidays for both years that might span the week
+    all_holidays = _us_federal_holiday_dates(year_start)
+    if year_end != year_start:
+        all_holidays += _us_federal_holiday_dates(year_end)
+    for h in all_holidays:
+        if week_start <= h <= week_end:
+            return 1
+    return 0
+
+
+def _last_n_level_lags(
+    vintages: pd.DataFrame, series: str, asof: date, n: int = 3
+) -> list[float | None]:
+    """Return the last n level values from initial-print series knowable at asof.
+
+    Returns [lag1, lag2, lag3] where lag1 = most recent, lag3 = oldest.
+    Used for ICSA/CCSA where the target is the level in thousands.
+    """
+    df = knowable_series(vintages, series, asof)
+    if df.empty:
+        return [None] * n
+    levels = df.set_index("period")["value"]
+    result = []
+    for i in range(1, n + 1):
+        if len(levels) >= i:
+            result.append(float(levels.iloc[-i]))
+        else:
+            result.append(None)
+    return result
+
+
+def build_claims_features(
+    asof: date,
+    vintages: pd.DataFrame,
+    ref_period: pd.Timestamp | date | None = None,
+) -> tuple[dict[str, float | None], dict]:
+    """Build feature dict for weekly ICSA level projection at decision date asof.
+
+    Features (all ICSA level in raw units — divided by 1000 for modelling in thousands):
+      icsa_lag1, icsa_lag2, icsa_lag3: last 3 known initial prints (thousands)
+      icsa_trailing_4w: mean of last 4 known initial prints (thousands)
+      ccsa_lag1: CCSA last known initial print (thousands), if PIT-available
+      holiday_dummy: 1 if the ref_period week contains a major US holiday
+
+    ref_period: the Saturday period date of the upcoming report week. When None,
+      it is derived as the period after the last knowable ICSA initial print.
+
+    Returns (features_dict, provenance_dict).
+    """
+    absent_legs: list[str] = []
+    prov: dict = {
+        "revision_optimistic_legs": [],
+        "unrevised_legs": [],
+        "absent_legs": [],
+        "display_only": True,
+        "authority": False,
+    }
+
+    # ICSA lags (levels in thousands)
+    icsa_levels = _last_n_level_lags(vintages, "ICSA", asof, n=4)
+    lag1 = icsa_levels[0]
+    lag2 = icsa_levels[1]
+    lag3 = icsa_levels[2]
+    # trailing_4w mean: use up to 4 lags
+    t4_vals = [v for v in icsa_levels[:4] if v is not None]
+    trailing_4w = (sum(t4_vals) / len(t4_vals) / 1000.0) if len(t4_vals) >= 1 else None
+
+    features: dict[str, float | None] = {
+        "icsa_lag1": (lag1 / 1000.0) if lag1 is not None else None,
+        "icsa_lag2": (lag2 / 1000.0) if lag2 is not None else None,
+        "icsa_lag3": (lag3 / 1000.0) if lag3 is not None else None,
+        "icsa_trailing_4w": trailing_4w,
+    }
+    if lag1 is None:
+        absent_legs.append("icsa_lag1")
+    if lag2 is None:
+        absent_legs.append("icsa_lag2")
+    if lag3 is None:
+        absent_legs.append("icsa_lag3")
+    if trailing_4w is None:
+        absent_legs.append("icsa_trailing_4w")
+
+    # CCSA lag1 (PIT-available)
+    ccsa_df = knowable_series(vintages, "CCSA", asof)
+    if not ccsa_df.empty:
+        ccsa_val = float(ccsa_df["value"].iloc[-1]) / 1000.0
+        features["ccsa_lag1"] = ccsa_val
+    else:
+        features["ccsa_lag1"] = None
+        absent_legs.append("ccsa_lag1")
+
+    # Holiday dummy (deterministic calendar)
+    if ref_period is not None:
+        period_ts = pd.Timestamp(ref_period)
+        features["holiday_dummy"] = float(_claims_holiday_dummy(period_ts.date() if hasattr(period_ts, 'date') else period_ts))
+        prov["holiday_ref_period"] = str(period_ts.date())
+    else:
+        # Derive as the next period after the last knowable ICSA print
+        icsa_df = knowable_series(vintages, "ICSA", asof)
+        if not icsa_df.empty:
+            last_period = icsa_df["period"].iloc[-1]
+            next_period = (pd.Timestamp(last_period) + pd.Timedelta(days=7)).date()
+            features["holiday_dummy"] = float(_claims_holiday_dummy(next_period))
+            prov["holiday_ref_period"] = str(next_period)
+        else:
+            features["holiday_dummy"] = 0.0
+            prov["holiday_ref_period"] = None
+
+    prov["absent_legs"] = absent_legs
+    return features, prov
+
+
+def _project_claims(asof: date, vintages: pd.DataFrame, root: Path) -> dict:
+    """Internal: weekly ICSA level projection for a single asof date.
+
+    Target: ICSA initial print in thousands.
+    """
+    feature_names = [
+        "icsa_lag1", "icsa_lag2", "icsa_lag3",
+        "icsa_trailing_4w", "ccsa_lag1", "holiday_dummy",
+    ]
+
+    # All ICSA initial prints knowable at asof (level in thousands)
+    initial_prints = knowable_series(vintages, "ICSA", asof)
+    if len(initial_prints) < 4:
+        return _empty_projection("claims", asof, "insufficient_data")
+
+    # Convert to thousands for modelling
+    level_series = initial_prints.copy()
+    level_series["level_k"] = level_series["value"] / 1000.0
+    level_series = level_series.dropna(subset=["level_k"]).reset_index(drop=True)
+
+    # Build records for walk-forward
+    records = []
+    for idx, row in level_series.iterrows():
+        step_asof = (row["realtime_start"] - pd.Timedelta(days=1)).date()
+        period_ts = row["period"]
+        try:
+            feats, _ = build_claims_features(step_asof, vintages, ref_period=period_ts)
+        except Exception as e:
+            log.debug("claims feature build failed at %s: %s", step_asof, e)
+            feats = {fn: None for fn in feature_names}
+        rec = dict(feats)
+        rec["target"] = row["level_k"]
+        records.append(rec)
+
+    if len(records) < MIN_TRAIN_OBS + 1:
+        return _empty_projection("claims", asof, "insufficient_history")
+
+    wf_results = _walk_forward(records, feature_names, "target")
+    if not wf_results:
+        return _empty_projection("claims", asof, "no_walk_forward_results")
+
+    # Current features for the next (unknown) week
+    icsa_df = knowable_series(vintages, "ICSA", asof)
+    if not icsa_df.empty:
+        last_period = icsa_df["period"].iloc[-1]
+        next_ref = pd.Timestamp(last_period) + pd.Timedelta(days=7)
+    else:
+        next_ref = None
+
+    feats, prov = build_claims_features(asof, vintages, ref_period=next_ref)
+
+    # Current prediction using all available training data
+    X_all = _build_matrix(records, feature_names)
+    y_all = np.array([r["target"] for r in records], dtype=float)
+    valid_target = ~np.isnan(y_all)
+    X_all = X_all[valid_target]
+    y_all = y_all[valid_target]
+
+    pred_features = np.array(
+        [feats.get(fn) if feats.get(fn) is not None else np.nan for fn in feature_names],
+        dtype=float,
+    )
+    n_possible = len(feature_names)
+    n_present = int(np.sum(~np.isnan(pred_features)))
+    input_completeness = n_present / n_possible if n_possible > 0 else 0.0
+
+    pred_avail_mask = ~np.isnan(pred_features)
+    if pred_avail_mask.any():
+        X_sel = X_all[:, pred_avail_mask]
+        row_complete = ~np.any(np.isnan(X_sel), axis=1)
+        X_clean = X_sel[row_complete]
+        y_clean = y_all[row_complete]
+        x_pred = pred_features[pred_avail_mask]
+        n_features_used = int(pred_avail_mask.sum())
+    else:
+        X_clean = np.empty((0, 0))
+        y_clean = np.empty(0)
+        x_pred = np.empty(0)
+        n_features_used = 0
+
+    if n_features_used > 0 and len(y_clean) >= MIN_TRAIN_OBS:
+        point = _ridge_predict(X_clean, y_clean, x_pred)
+    else:
+        point = None
+
+    errors = np.array([r["actual"] - r["predicted"] for r in wf_results])
+    quantiles = _compute_quantiles(errors, point if point is not None else 0.0)
+
+    confidence, interval_rank = None, None
+    if point is not None and len(errors) >= MIN_QUANTILE_OBS:
+        cur_width = np.quantile(errors, 0.90) - np.quantile(errors, 0.10)
+        hist_widths = []
+        for k in range(MIN_QUANTILE_OBS, len(errors) + 1):
+            e_sub = errors[:k]
+            hist_widths.append(np.quantile(e_sub, 0.90) - np.quantile(e_sub, 0.10))
+        if hist_widths:
+            pctile = float(np.mean(np.array(hist_widths) <= cur_width))
+            interval_rank = round(1.0 - pctile, 4)
+            confidence = round(interval_rank * input_completeness, 4)
+
+    # Baselines (in thousands)
+    y_levels = level_series["level_k"].values
+    naive = float(y_levels[-1]) if len(y_levels) > 0 else None
+    trailing_4w = float(np.mean(y_levels[-4:])) if len(y_levels) >= 4 else (float(np.mean(y_levels)) if len(y_levels) > 0 else None)
+
+    # AR3 on levels
+    ar3_pred_claims = None
+    if len(y_all) >= 4:
+        x_ar3_pred = np.array([y_levels[-i] for i in range(1, 4)], dtype=float)
+        if not np.any(np.isnan(x_ar3_pred)):
+            X_ar3 = np.full((len(y_all), 3), np.nan)
+            for i in range(3, len(y_levels) + 1):
+                ri = i - 3
+                if ri < len(y_all):
+                    for lag in range(1, 4):
+                        si = i - lag - 1
+                        if 0 <= si < len(y_levels):
+                            X_ar3[ri, lag - 1] = y_levels[si]
+            row_complete_ar3 = ~np.any(np.isnan(X_ar3), axis=1)
+            X_ar3_clean = X_ar3[row_complete_ar3]
+            y_ar3_clean = y_all[row_complete_ar3]
+            try:
+                if X_ar3_clean.shape[0] >= 4:
+                    pred_raw = _ridge_predict(X_ar3_clean, y_ar3_clean, x_ar3_pred)
+                    ar3_pred_claims = float(pred_raw) if np.isfinite(pred_raw) else None
+            except Exception:
+                ar3_pred_claims = None
+
+    # Surprise skew: (point - naive) / sigma of trailing 24 realized surprises
+    sigma, tag = None, None
+    if point is not None and naive is not None and len(errors) >= MIN_QUANTILE_OBS:
+        err_std = float(np.std(errors[-24:] if len(errors) >= 24 else errors, ddof=1))
+        if err_std > 0:
+            sigma = round((point - naive) / err_std, 4)
+            if abs(sigma) <= INLINE_BAND_SIGMA:
+                tag = "inline"
+            elif sigma > INLINE_BAND_SIGMA:
+                tag = "hotter"
+            else:
+                tag = "cooler"
+
+    prov.update({
+        "n_train": int(len(y_all)),
+        "n_features_used": n_features_used,
+    })
+
+    return {
+        "release": "claims",
+        "asof": asof.isoformat(),
+        "point": round(point, 2) if point is not None else None,
+        "p10": quantiles["p10"],
+        "p25": quantiles["p25"],
+        "p50": quantiles["p50"],
+        "p75": quantiles["p75"],
+        "p90": quantiles["p90"],
+        "confidence": confidence,
+        "confidence_components": {
+            "interval_rank": interval_rank,
+            "input_completeness": round(input_completeness, 4),
+        },
+        "input_completeness": round(input_completeness, 4),
+        "benchmark_set": {
+            "naive_prior": round(naive, 2) if naive is not None else None,
+            "trailing_4w": round(trailing_4w, 2) if trailing_4w is not None else None,
+            "ar_model": round(ar3_pred_claims, 2) if ar3_pred_claims is not None else None,
+            "cleveland_nowcast": None,   # n/a for claims
+            "market_implied": None,
+        },
+        "surprise_skew": {
+            "sigma": sigma,
+            "tag": tag,
+            "inline_band": INLINE_BAND_SIGMA,
+        },
+        "pit_provenance": prov,
+        "display_only": True,
+        "authority": False,
+    }
+
+
+def _wf_claims_full(vintages: pd.DataFrame, root: Path) -> dict:
+    """Full walk-forward for claims (ICSA level in thousands)."""
+    feature_names = [
+        "icsa_lag1", "icsa_lag2", "icsa_lag3",
+        "icsa_trailing_4w", "ccsa_lag1", "holiday_dummy",
+    ]
+
+    all_series = knowable_series(vintages, "ICSA", date(2099, 1, 1))
+    all_series = all_series.copy()
+    all_series["level_k"] = all_series["value"] / 1000.0
+    all_series = all_series.dropna(subset=["level_k"]).reset_index(drop=True)
+
+    records = []
+    for _, row in all_series.iterrows():
+        step_asof = (row["realtime_start"] - pd.Timedelta(days=1)).date()
+        period_ts = row["period"]
+        try:
+            feats, _ = build_claims_features(step_asof, vintages, ref_period=period_ts)
+        except Exception as e:
+            log.debug("claims feature build failed at %s: %s", step_asof, e)
+            feats = {fn: None for fn in feature_names}
+        rec = dict(feats)
+        rec["target"] = row["level_k"]
+        rec["period"] = period_ts
+        rec["release_date"] = row["realtime_start"]
+        rec["asof"] = step_asof
+        records.append(rec)
+
+    wf_results = _walk_forward(records, feature_names, "target")
+
+    for r in wf_results:
+        meta_rec = records[r["idx"]]
+        r["period"] = meta_rec.get("period")
+        r["release_date"] = meta_rec.get("release_date")
+
+    return {
+        "results": wf_results,
+        "feature_names": feature_names,
+        "metadata": {"release": "claims", "n_records": len(records)},
+    }
+
+
 def _empty_projection(release: str, asof: date, reason: str) -> dict:
     """Return a null projection dict with display_only=True."""
+    # Claims uses trailing_4w benchmark key; all others use trailing_3m
+    if release == "claims":
+        bench = {
+            "naive_prior": None,
+            "trailing_4w": None,
+            "ar_model": None,
+            "cleveland_nowcast": None,
+            "market_implied": None,
+        }
+    else:
+        bench = {
+            "naive_prior": None,
+            "trailing_3m": None,
+            "ar_model": None,
+            "cleveland_nowcast": None,
+            "market_implied": None,
+        }
     return {
         "release": release,
         "asof": asof.isoformat(),
@@ -1096,13 +1493,7 @@ def _empty_projection(release: str, asof: date, reason: str) -> dict:
         "confidence": None,
         "confidence_components": {"interval_rank": None, "input_completeness": 0.0},
         "input_completeness": 0.0,
-        "benchmark_set": {
-            "naive_prior": None,
-            "trailing_3m": None,
-            "ar_model": None,
-            "cleveland_nowcast": None,
-            "market_implied": None,
-        },
+        "benchmark_set": bench,
         "surprise_skew": {"sigma": None, "tag": None, "inline_band": INLINE_BAND_SIGMA},
         "pit_provenance": {
             "revision_optimistic_legs": [],
@@ -1142,6 +1533,8 @@ def run_walk_forward_full(
         return _wf_cpi_full(release, vintages, root)
     elif release == "nfp":
         return _wf_nfp_full(vintages, root)
+    elif release == "claims":
+        return _wf_claims_full(vintages, root)
     else:
         raise ValueError(f"Unknown release: {release!r}")
 

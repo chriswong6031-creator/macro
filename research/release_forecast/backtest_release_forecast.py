@@ -206,7 +206,7 @@ def run_backtest() -> dict:
     root = _REPO
     summary: dict[str, Any] = {}
 
-    for release in ["cpi_headline", "cpi_core", "nfp"]:
+    for release in ["cpi_headline", "cpi_core", "nfp", "claims"]:
         print(f"Running walk-forward: {release} ...")
         wf = run_walk_forward_full(release, root)
         results = wf["results"]
@@ -266,6 +266,24 @@ def run_backtest() -> dict:
                 "2021_plus": m_2021,
                 "2010_2020_excl_covid": _compute_metrics(rows_2010_2020, errors_accum),
                 "2015_plus_stable_features": m_2015_plus,
+            }
+        elif release == "claims":
+            # Claims: add 2010-2019 pre-COVID visibility slice per MRI-R9 task spec
+            rows_2010_2019 = [
+                r for r in rows_all
+                if get_period(r) is not None
+                and get_period(r) >= pd.Timestamp("2010-01-01")
+                and get_period(r) < pd.Timestamp("2020-01-01")
+            ]
+            m_2010_2019 = _compute_metrics(rows_2010_2019, errors_accum)
+            era_metrics = {
+                "full": m_full_or_2010plus,
+                "pre_2010": m_pre2010,
+                "2010_2020": m_2010_2020,
+                "2010_2019_pre_covid": m_2010_2019,
+                "covid_months_2020_03_06": m_covid,
+                "2020_recovery": m_2020_recovery,
+                "2021_plus": m_2021,
             }
         else:
             era_metrics = {
@@ -330,6 +348,11 @@ def render_era_table(era_metrics: dict, release: str) -> str:
             "covid_months_2020_03_06", "2020_recovery", "2021_plus",
             "2010_2020_excl_covid", "2015_plus_stable_features",
         ]
+    elif release == "claims":
+        eras = [
+            "full", "pre_2010", "2010_2020", "2010_2019_pre_covid",
+            "covid_months_2020_03_06", "2020_recovery", "2021_plus",
+        ]
     else:
         eras = [
             "full", "pre_2010", "2010_2020", "covid_months_2020_03_06",
@@ -341,6 +364,7 @@ def render_era_table(era_metrics: dict, release: str) -> str:
         "full_2010_plus": "Full (2010+, per prereg)",
         "pre_2010": "pre-2010",
         "2010_2020": "2010–2020-02",
+        "2010_2019_pre_covid": "2010–2019 (pre-COVID visibility)",
         "covid_months_2020_03_06": "COVID (2020-03..06)",
         "2020_recovery": "2020-07..12 (recovery gap)",
         "2021_plus": "2021+",
@@ -469,7 +493,7 @@ def main():
     # Write per-step predictions for reproducibility (Fix: metrics recomputable without re-executing)
     root = _REPO
     steps: dict[str, list[dict]] = {}
-    for release in ["cpi_headline", "cpi_core", "nfp"]:
+    for release in ["cpi_headline", "cpi_core", "nfp", "claims"]:
         from engine.release_forecast import run_walk_forward_full
         wf = run_walk_forward_full(release, root)
         results = wf["results"]
