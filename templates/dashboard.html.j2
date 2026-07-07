@@ -2168,6 +2168,52 @@
   .rr-asof{font-size:10px;color:var(--muted);margin-top:10px}
   .rr-footer{font-size:10px;color:var(--muted);margin-top:12px;
     padding-top:8px;border-top:1px solid var(--line);line-height:1.5}
+  /* v2 component breakdown bar */
+  .rr-comp-section{margin:8px 0 4px}
+  .rr-comp-label{font-size:10px;font-weight:700;text-transform:uppercase;
+    letter-spacing:.08em;color:var(--muted);margin-bottom:4px}
+  .rr-comp-rows{display:flex;flex-direction:column;gap:3px}
+  .rr-comp-row{display:flex;align-items:center;gap:5px;font-size:10.5px}
+  .rr-comp-name{width:110px;flex-shrink:0;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .rr-comp-bar-wrap{flex:1;position:relative;height:8px;border-radius:3px;
+    background:var(--panel);border:1px solid var(--line);overflow:hidden}
+  .rr-comp-bar-fill-pos{position:absolute;top:0;bottom:0;left:50%;
+    background:color-mix(in srgb,var(--down) 55%,transparent);border-radius:0 2px 2px 0}
+  .rr-comp-bar-fill-neg{position:absolute;top:0;bottom:0;right:50%;
+    background:color-mix(in srgb,var(--up) 55%,transparent);border-radius:2px 0 0 2px}
+  .rr-comp-val{width:40px;flex-shrink:0;text-align:right;font-variant-numeric:tabular-nums;
+    font-size:10px;color:var(--text)}
+  .rr-comp-muted{color:var(--muted);font-style:italic}
+  /* v2 confidence composition bar */
+  .rr-conf-section{margin:6px 0 4px}
+  .rr-conf-bar-wrap{display:flex;height:7px;border-radius:4px;overflow:hidden;
+    border:1px solid var(--line)}
+  .rr-conf-seg-known{background:color-mix(in srgb,var(--up) 70%,transparent)}
+  .rr-conf-seg-proxy{background:color-mix(in srgb,var(--warn) 65%,transparent)}
+  .rr-conf-seg-residual{background:color-mix(in srgb,var(--muted) 40%,transparent)}
+  .rr-conf-legend{display:flex;gap:10px;margin-top:3px;font-size:9.5px;color:var(--muted)}
+  .rr-conf-leg-dot{display:inline-block;width:7px;height:7px;border-radius:2px;margin-right:2px;vertical-align:middle}
+  /* v2 market-implied row */
+  .rr-mkt-row{display:flex;align-items:center;gap:8px;
+    font-size:11px;padding:3px 0;border-top:1px dashed var(--line);margin-top:4px}
+  .rr-mkt-label{color:var(--muted)}
+  .rr-mkt-val{font-weight:600;font-variant-numeric:tabular-nums}
+  .rr-mkt-source{font-size:9.5px;padding:1px 5px;border-radius:3px;
+    background:var(--panel);border:1px solid var(--line);color:var(--muted)}
+  /* v2 surprise distribution gauge */
+  .rr-sdist-wrap{display:flex;align-items:center;gap:6px;margin:4px 0}
+  .rr-sdist-bar-wrap{flex:1;display:flex;height:7px;border-radius:4px;overflow:hidden;
+    border:1px solid var(--line)}
+  .rr-sdist-hot{background:color-mix(in srgb,var(--down) 60%,transparent)}
+  .rr-sdist-inline{background:color-mix(in srgb,var(--warn) 50%,transparent)}
+  .rr-sdist-cold{background:color-mix(in srgb,var(--up) 60%,transparent)}
+  .rr-sdist-legend{display:flex;gap:7px;font-size:9.5px;color:var(--muted)}
+  /* v2 reaction sensitivity footer */
+  .rr-sens-footer{margin-top:6px;padding-top:5px;border-top:1px solid var(--line);
+    font-size:10px;color:var(--muted);line-height:1.6}
+  .rr-sens-note{font-size:9px;color:var(--muted);font-style:italic;margin-top:1px}
+  /* v2 revision risk (NFP) */
+  .rr-rev-risk{font-size:10.5px;color:var(--muted);margin:3px 0}
   </style>
   <div class="panel span12" id="release-radar">
     <h2>{{ t('Release Radar', '数据发布雷达') }}
@@ -2351,6 +2397,172 @@
         +'</div>';
     }
 
+    /* v2: component breakdown bar (CPI: energy/shelter/core_persistence/pipeline;
+       NFP: private/government/birth-death/residual) */
+    function componentsBar(components, rel){
+      if (!Array.isArray(components) || !components.length) return '';
+      /* find max |contrib_pp| for scaling; guard against all-zero */
+      var maxAbs = 0;
+      components.forEach(function(c){ if (c && c.contrib_pp != null) maxAbs = Math.max(maxAbs, Math.abs(c.contrib_pp)); });
+      if (maxAbs === 0) return '';
+      var COMP_NAME_EN = {
+        energy:'Energy', shelter:'Shelter', core_persistence:'Core persist.',
+        pipeline:'Pipeline', private:'Private', government:'Govt.',
+        'birth-death':'Birth-death', residual:'Residual'
+      };
+      var COMP_NAME_ZH = {
+        energy:'能源', shelter:'住房', core_persistence:'核心持续',
+        pipeline:'管道', private:'私人', government:'政府',
+        'birth-death':'出生死亡', residual:'残差'
+      };
+      var rows = components.map(function(c){
+        if (!c || c.contrib_pp == null) return '';
+        var name = c.name || '';
+        var isResidual = name === 'residual' || name === 'birth-death';
+        var pct = Math.abs(c.contrib_pp) / maxAbs * 50;  /* max 50% from center */
+        var isPos = c.contrib_pp >= 0;
+        var nameEN = COMP_NAME_EN[name] || name;
+        var nameZH = COMP_NAME_ZH[name] || name;
+        var barFill = isPos
+          ? '<div class="rr-comp-bar-fill-pos" style="width:'+pct.toFixed(1)+'%"></div>'
+          : '<div class="rr-comp-bar-fill-neg" style="width:'+pct.toFixed(1)+'%"></div>';
+        var valStr = (c.contrib_pp > 0 ? '+' : '') + fmtNum(c.contrib_pp, 3) + 'pp';
+        var nameSpan = '<span class="rr-comp-name'+(isResidual?' rr-comp-muted':'')+'">'
+          +'<span class="l-en">'+esc(nameEN)+'</span>'
+          +'<span class="l-zh">'+esc(nameZH)+'</span>'
+          +'</span>';
+        return '<div class="rr-comp-row">'
+          +nameSpan
+          +'<div class="rr-comp-bar-wrap">'+barFill+'</div>'
+          +'<span class="rr-comp-val'+(isResidual?' rr-comp-muted':'')+'">'+esc(valStr)+'</span>'
+          +(isResidual?'<span class="rr-comp-muted" style="font-size:9px">'
+            +'<span class="l-en">(plug residual)</span>'
+            +'<span class="l-zh">(残差)</span>'
+            +'</span>':'')
+          +'</div>';
+      }).join('');
+      return '<div class="rr-comp-section">'
+        +'<div class="rr-comp-label">'
+        +'<span class="l-en">What is driving the number</span>'
+        +'<span class="l-zh">驱动因素分解</span>'
+        +'</div>'
+        +'<div class="rr-comp-rows">'+rows+'</div>'
+        +'</div>';
+    }
+
+    /* v2: known/proxy/residual confidence composition bar */
+    function confidenceBar(cv2, cv2comps){
+      if (cv2 == null || !cv2comps) return '';
+      var wk = cv2comps.w_known != null ? cv2comps.w_known : 0;
+      var wp = cv2comps.w_proxy != null ? cv2comps.w_proxy : 0;
+      var wr = cv2comps.w_residual != null ? cv2comps.w_residual : 0;
+      var total = wk + wp + wr;
+      if (total <= 0) return '';
+      var pK = (wk/total*100).toFixed(1), pP = (wp/total*100).toFixed(1), pR = (100 - parseFloat(pK) - parseFloat(pP)).toFixed(1);
+      return '<div class="rr-conf-section">'
+        +'<div class="rr-comp-label">'
+        +'<span class="l-en">Data quality composition</span>'
+        +'<span class="l-zh">数据质量构成</span>'
+        +'</div>'
+        +'<div class="rr-conf-bar-wrap">'
+        +'<div class="rr-conf-seg-known" style="width:'+pK+'%"></div>'
+        +'<div class="rr-conf-seg-proxy" style="width:'+pP+'%"></div>'
+        +'<div class="rr-conf-seg-residual" style="width:'+pR+'%"></div>'
+        +'</div>'
+        +'<div class="rr-conf-legend">'
+        +'<span><span class="rr-conf-leg-dot" style="background:color-mix(in srgb,var(--up) 70%,transparent)"></span>'
+        +'<span class="l-en">Known '+pK+'%</span><span class="l-zh">已知 '+pK+'%</span></span>'
+        +'<span><span class="rr-conf-leg-dot" style="background:color-mix(in srgb,var(--warn) 65%,transparent)"></span>'
+        +'<span class="l-en">Proxy '+pP+'%</span><span class="l-zh">代理 '+pP+'%</span></span>'
+        +'<span><span class="rr-conf-leg-dot" style="background:color-mix(in srgb,var(--muted) 40%,transparent)"></span>'
+        +'<span class="l-en">Residual '+pR+'%</span><span class="l-zh">残差 '+pR+'%</span></span>'
+        +'</div>'
+        +'</div>';
+    }
+
+    /* v2: market-implied benchmark row (Kalshi or Polymarket shape) */
+    function marketImpliedRow(mi){
+      if (!mi || mi == null) return '';
+      var src = (mi.source || '').toLowerCase();
+      var valStr = '—';
+      if (src === 'kalshi' && mi.implied_median != null)
+        valStr = fmtNum(mi.implied_median, 2);
+      else if (src === 'polymarket' && mi.implied != null)
+        valStr = fmtNum(mi.implied, 2);
+      if (valStr === '—') return '';
+      var srcLabel = src === 'kalshi' ? 'Kalshi' : src === 'polymarket' ? 'Polymarket' : esc(mi.source||'');
+      return '<div class="rr-mkt-row">'
+        +'<span class="rr-mkt-label">'
+        +'<span class="l-en">Market-implied</span>'
+        +'<span class="l-zh">市场隐含</span>'
+        +'</span>'
+        +'<span class="rr-mkt-val">'+esc(valStr)+'</span>'
+        +'<span class="rr-mkt-source">'+esc(srcLabel)+'</span>'
+        +'</div>';
+    }
+
+    /* v2: surprise distribution 3-segment gauge */
+    function surpriseDistGauge(sd){
+      if (!sd) return '';
+      var ph = sd.p_hot, pi = sd.p_inline, pc = sd.p_cold;
+      if (ph == null && pi == null && pc == null) return '';
+      var phPct = (ph != null ? ph : 0) * 100;
+      var piPct = (pi != null ? pi : 0) * 100;
+      var pcPct = (pc != null ? pc : 0) * 100;
+      return '<div class="rr-sdist-wrap">'
+        +'<div class="rr-sdist-bar-wrap">'
+        +'<div class="rr-sdist-hot" style="width:'+phPct.toFixed(1)+'%"></div>'
+        +'<div class="rr-sdist-inline" style="width:'+piPct.toFixed(1)+'%"></div>'
+        +'<div class="rr-sdist-cold" style="width:'+pcPct.toFixed(1)+'%"></div>'
+        +'</div>'
+        +'<div class="rr-sdist-legend">'
+        +'<span><span class="l-en">Hot '+phPct.toFixed(0)+'%</span><span class="l-zh">热 '+phPct.toFixed(0)+'%</span></span>'
+        +'<span><span class="l-en">Inline '+piPct.toFixed(0)+'%</span><span class="l-zh">中性 '+piPct.toFixed(0)+'%</span></span>'
+        +'<span><span class="l-en">Cold '+pcPct.toFixed(0)+'%</span><span class="l-zh">冷 '+pcPct.toFixed(0)+'%</span></span>'
+        +'</div>'
+        +'</div>';
+    }
+
+    /* v2: reaction sensitivity footer (10y bp + SPY % for hot and cold prints) */
+    function reactionSensRow(rs){
+      if (!rs) return '';
+      var h10 = rs.dgs10_h1_hot_bp, c10 = rs.dgs10_h1_cold_bp;
+      var hS = rs.spy_h1_hot_pct, cS = rs.spy_h1_cold_pct;
+      if (h10 == null && c10 == null && hS == null && cS == null) return '';
+      var n = rs.regime_cells_used != null ? rs.regime_cells_used : null;
+      var note = rs.note ? esc(rs.note) : '';
+      var hotParts = [];
+      if (h10 != null) hotParts.push('10y '+(h10>0?'+':'')+fmtNum(h10,0)+'bp');
+      if (hS != null) hotParts.push('SPY '+(hS>0?'+':'')+fmtNum(hS,2)+'%');
+      var coldParts = [];
+      if (c10 != null) coldParts.push('10y '+(c10>0?'+':'')+fmtNum(c10,0)+'bp');
+      if (cS != null) coldParts.push('SPY '+(cS>0?'+':'')+fmtNum(cS,2)+'%');
+      var hotStr = hotParts.length ? hotParts.join(', ') : '—';
+      var coldStr = coldParts.length ? coldParts.join(', ') : '—';
+      var nStr = n != null ? ' (n='+n+')' : '';
+      return '<div class="rr-sens-footer">'
+        +'<span class="l-en">Hot print historically: <b>'+esc(hotStr)+'</b> next session'+nStr+'</span>'
+        +'<span class="l-zh">历史上热数据：<b>'+esc(hotStr)+'</b>（次交易日）'+nStr+'</span>'
+        +'<br>'
+        +'<span class="l-en">Cold print historically: <b>'+esc(coldStr)+'</b> next session</span>'
+        +'<span class="l-zh">历史上冷数据：<b>'+esc(coldStr)+'</b>（次交易日）</span>'
+        +(note?'<div class="rr-sens-note">'+note+'</div>':'')
+        +'</div>';
+    }
+
+    /* v2: revision risk line (NFP card only) */
+    function revisionRiskLine(rr){
+      if (!rr) return '';
+      var mk = rr.mean_k, pu = rr.pct_upward;
+      if (mk == null && pu == null) return '';
+      var mkStr = mk != null ? fmtNum(mk, 1)+'k' : '—';
+      var puStr = pu != null ? fmtNum(pu, 0)+'%' : '—';
+      return '<div class="rr-rev-risk">'
+        +'<span class="l-en">First-print revision risk: avg <b>'+esc(mkStr)+'</b>, <b>'+esc(puStr)+'</b> revised up</span>'
+        +'<span class="l-zh">首次发布修正风险：平均 <b>'+esc(mkStr)+'</b>，<b>'+esc(puStr)+'</b> 向上修正</span>'
+        +'</div>';
+    }
+
     /* render one upcoming card */
     function renderCard(item){
       var rel = item.release || '';
@@ -2397,8 +2609,23 @@
         +benchStrip(item.benchmark_set, rel)
         /* skew chip: suppressed in benchmark_only mode */
         +(!isBenchmarkOnly&&item.surprise_skew?'<div>'+skewChip(item.surprise_skew)+'</div>':'')
+        /* v2: surprise distribution gauge (next to skew chip row) */
+        +(!isBenchmarkOnly?surpriseDistGauge(item.surprise_distribution||null):'')
         /* policy backdrop */
         +policyStrip(item.policy_backdrop)
+        /* v2: component breakdown bar (CPI and NFP) */
+        +(!isBenchmarkOnly?componentsBar(item.components||null, rel):'')
+        /* v2: confidence composition bar */
+        +(!isBenchmarkOnly?confidenceBar(
+            (item.confidence_v2 != null ? item.confidence_v2 : null),
+            (item.confidence_components_v2 || null)
+          ):'')
+        /* v2: market-implied benchmark row (Kalshi/Polymarket) */
+        +(item.benchmark_set?marketImpliedRow(item.benchmark_set.market_implied||null):'')
+        /* v2: NFP revision risk */
+        +(!isBenchmarkOnly&&rel.toLowerCase()==='nfp'?revisionRiskLine(item.revision_risk||null):'')
+        /* v2: reaction sensitivity footer */
+        +(!isBenchmarkOnly?reactionSensRow(item.reaction_sensitivity||null):'')
         +'</div>';  /* end .rr-card */
     }
 
