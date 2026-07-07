@@ -617,3 +617,32 @@ pre-p-value (2026-07-07T00:27Z, before any evaluation).
 **Budget:** 4 cells, declared as `rf.cycle_pattern.ix_v0` at run time BEFORE any p-value. No other horizons, entities, feature sets, stacking variants, or calibration variants may be evaluated under this registration. **Sanity gate (pipeline, printed, not a claim):** on the full pre-embargo index panel, the pooled down-leg y3 event rate must exceed the pooled up-leg y3 event rate (down legs turn faster — the substrate census structure), else abort sys.exit(2).
 
 **Outcome handling (frozen):** passing cells → a display-class truth + factory candidates (status `screened`, trial_family `ix_v0`, authority display_only); engine-backing the markets.html US row is a SEPARATE adoption wave requiring its own review — no page/UI change this wave regardless of outcome. 0/4 → ONE scoped null truth ("the member-trained hazard does not transfer to index level against index age-pooled KM"). Falsifiers/reopening: (a) an index-covariate stacking trial (member scores + sync/phase-breadth/dispersion fit at index level) under a new registration naming this result; (b) accrued post-embargo data. Exploration tables ship to the measurement research surface either way.
+
+### IX-1 results (2026-07-07 — criteria above UNCHANGED; §17 two-commit discipline observed)
+
+| id | result | date |
+|---|---|---|
+| **IX1-up-1m** | **FAIL** — ΔBrier +0.0099, CI₉₀ [−0.0056, +0.0247] straddles 0, boot p=0.126; years+ 8/14; no BH. Directionally positive but unearned. | 2026-07-07 |
+| **IX1-up-3m** | **FAIL** — ΔBrier −0.0018, CI₉₀ [−0.0195, +0.0135] straddles 0, p=0.592; years+ 8/14; no BH. No transfer signal. | 2026-07-07 |
+| **IX1-dn-1m** | **FAIL (sign-stability leg)** — ΔBrier +0.0335, CI₉₀ [+0.0084, +0.0590] excludes 0, p=0.011, BH-pass — but years+ 5/13 (bar ≥9). Pooled gain is year-concentrated, not reliable. | 2026-07-07 |
+| **IX1-dn-3m** | **FAIL (sign-stability leg)** — ΔBrier +0.0290, CI₉₀ [+0.0129, +0.0455] excludes 0, p=0.001, BH-pass — but years+ 7/13. Same shape. | 2026-07-07 |
+
+**Verdict: 0 of 4 cells pass.** The frozen conjunction did exactly its anti-flukiness job: both down
+cells clear the CI and BH legs on pooled magnitude, but the gains are episodic — the per-year gap
+is dominated by 2021 (+0.31/+0.25 year-mean vs cell means +0.033/+0.029) with 2020 harmful
+(−0.16/−0.06), so the sign-stability leg (≥9 positive years) fails at 5/13 and 7/13. Up-direction
+transfer shows no earned skill at all. Disclosed denominator note: 2017 has ZERO index down-leg OOS
+rows, so the down cells are judged on 13 test years; the frozen bar stays ≥9 (a year with no rows
+cannot count positive). Per-entity decomposition (diagnostic): the down-cell pooled gains are broad
+(7 of 8 entities positive at 1m, SPY the largest at +0.095) with ILF the sole drag; at up/3m SPY is
+the largest drag (−0.027). Sanity gate reproduced the census structure (pooled y3 down 0.850 > up
+0.438). Per frozen outcome handling: 0/4 → ONE scoped null truth
+`cycle_truth_ix1_index_transfer_null_v1` appended (promoted_null; the down cells' passing CI/BH
+legs and the year-concentration are named inside the statement); NO factory candidates; page/UI
+unchanged. Reopening requires a NEW registration naming this null — the §17 falsifiers: (a) the
+index-covariate stacking trial, (b) accrued post-embargo data (more down-leg years directly test
+the failed leg). Exploration tables (full pre-embargo index KM table + per-entity ΔBrier
+decomposition) ship inside the artifact. Full adjudication:
+`research/cycle_masterplan/CPI_IX1_VERDICT.md`. Artifacts:
+`data/cycle_pattern/ix_trials/ix1_transfer.json`; budget `rf.cycle_pattern.ix_v0` n=4 declared
+pre-p-value (2026-07-07T01:04:24Z, before any evaluation).
