@@ -300,7 +300,7 @@
         "hostile": [
           "distressed — hygiene screens handle these before cascade"
         ],
-        "note": "Tier-A cascade: no archetype restriction; archetype enters as S1/S2 context"
+        "note": "Tier-A cascade: no archetype restriction; archetype enters as S1/S2 context. HTF super-tiers: S1 badge (2W+3D confluence, display-only, rank-neutral, 2026-07-06) and S2 shadow (3D+1W+2W-pending, never displayed, parked ≥2026-10) are defined in engine/confluence_tiers.py and propagated via signal_gate htf_s1/htf_s2 keys. See TIERED_CASCADE.md §9."
       },
       "regime_scope": {
         "hypothesized_supportive": [

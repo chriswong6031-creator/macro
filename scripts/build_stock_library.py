@@ -1682,6 +1682,63 @@ def main() -> int:
                 rec["sector_pulse"] = _sp_row
         except Exception as _spe2:  # noqa: BLE001 — additive; must not break the stockdata build
             pass
+        # ---- confluence block (frozen Terminal contract, 2026-07-06) ---------------
+        # Top-level block in each stockdata JSON consumed by the charting-app Terminal.
+        # Shape: {tier, weight, sub, ticks, bars_to_cross, provisional, not_topped,
+        #         htf_s1, htf_s2, asof} (null-safe; all keys always present).
+        # Source: signal_gate verdict already computed above. Keep cheap — no new loads.
+        try:
+            _sv = sig_verdict.get(ticker) or {}
+            rec["confluence"] = {
+                "tier": _sv.get("tier_cascade"),
+                "weight": _sv.get("weight"),
+                "sub": _sv.get("tier_sub"),
+                "ticks": _sv.get("ticks"),
+                "bars_to_cross": _sv.get("bars_to_cross"),
+                "provisional": bool(_sv.get("provisional")),
+                "not_topped": bool(_sv.get("not_topped", True)),
+                "htf_s1": bool(_sv.get("htf_s1", False)),
+                "htf_s2": bool(_sv.get("htf_s2", False)),
+                "asof": _sv.get("asof"),
+            }
+        except Exception:  # noqa: BLE001 — additive; never fatal
+            rec["confluence"] = {"tier": None, "weight": None, "sub": None, "ticks": None,
+                                 "bars_to_cross": None, "provisional": False,
+                                 "not_topped": True, "htf_s1": False, "htf_s2": False,
+                                 "asof": None}
+        # ---- sniper pre-compute (frozen Terminal contract, 2026-07-06) -----------
+        # Compute w2_washout/w2_stoch_d + days_since_63d_low here (close is in scope).
+        # coiled is deferred to after coiled_by is built (after the main loop) and injected
+        # in the final to_write loop. Store partial sniper block now; complete later.
+        try:
+            from engine import setup_tier as _st  # lazy import; module cached after first use
+            _ws = _st.w_setup(close)
+            _w2_washout = False
+            _w2_stoch_d: float | None = None
+            if _ws:
+                _w2d = (_ws.get("w2") or {})
+                _stoch_val = _w2d.get("stoch")
+                if _stoch_val is not None:
+                    _w2_washout = bool(_stoch_val <= _st.W2_STOCH_WASHOUT)
+                    _w2_stoch_d = float(_stoch_val)
+            # days_since_63d_low: trading sessions since close hit its 63-session low
+            _ds63: int | None = None
+            _c63 = close.dropna()
+            if len(_c63) >= 63:
+                _w63 = _c63.iloc[-63:]
+                _low63_pos = int(_w63.argmin())
+                _ds63 = int(len(_w63) - 1 - _low63_pos)
+            _asof_snap = str(close.index[-1].date()) if len(close) else None
+            rec["sniper"] = {
+                "w2_washout": _w2_washout,
+                "w2_stoch_d": _w2_stoch_d,
+                "days_since_63d_low": _ds63,
+                "coiled": None,          # filled after coiled_by is computed below
+                "asof": _asof_snap,
+            }
+        except Exception:  # noqa: BLE001 — additive; never fatal
+            rec["sniper"] = {"w2_washout": False, "w2_stoch_d": None,
+                             "days_since_63d_low": None, "coiled": None, "asof": None}
         safe = ticker.replace("=", "_").replace("^", "_")
         to_write.append((safe, rec))            # deferred: write after percentile scoring
         idx = {"t": ticker, "n": name, "s": sector, "st": rec["ladder"]["state"]}
@@ -1933,6 +1990,17 @@ def main() -> int:
     except Exception as _e:  # noqa: BLE001 — additive; board degrades gracefully without bonus
         log.warning("coiled bonus skipped (%s)", _e)
         coiled_by = {}
+    # Inject coiled into sniper blocks now that coiled_by is available.
+    # sniper["coiled"] was left as None during the main loop because coiled_by
+    # is a cross-sectional compute (needs the full cohort to set fractions).
+    for _safe, _rec in to_write:
+        try:
+            _t = _rec.get("ticker", _safe.replace("_", "="))
+            _sniper = _rec.get("sniper")
+            if _sniper is not None:
+                _sniper["coiled"] = bool((coiled_by.get(_t) or {}).get("coiled")) or None
+        except Exception:  # noqa: BLE001 — additive; never fatal
+            pass
     # G6a donor-sector context chip: compute once cross-sectionally after the loop.
     # Uses the same sector map as the COILED bonus (_coil_sector).  DISPLAY-ONLY —
     # never a gate, never changes ranking.  Additive + graceful: failure -> None.
