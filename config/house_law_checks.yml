@@ -1,0 +1,900 @@
+schema: house_law_checks.v1
+updated: "2026-07-06"
+
+# Canonical registry of every house law and its enforcement status.
+# Maintained by scripts/check_house_law_registry.py (meta-guard).
+# To add a new guard: (1) create scripts/check_<slug>.py, (2) add an entry here,
+# (3) wire the new ci.yml / pages.yml step. The meta-guard blocks merges of
+# unregistered check_*.py files. Severity downgrades or entry removals require
+# an operator/Fable ruling recorded in the PR.
+
+checks:
+
+  # ── UI / rendering guards ──────────────────────────────────────────────────
+
+  - law_id: ui.inline_js_parses
+    summary: >
+      Every inline <script> block in committed site HTML must be syntactically
+      valid JavaScript. A syntax error blanks the page silently (IIFE aborts).
+    source_ref:
+      - scripts/check_inline_js.py
+      - "PRs #152 #155"
+    severity: hard
+    check_script: scripts/check_inline_js.py
+    ci_wiring:
+      - workflow: .github/workflows/ci.yml
+        job: inline-js
+        lane: pr_ci
+      - workflow: .github/workflows/pages.yml
+        job: publish
+        lane: publish
+      - workflow: .github/workflows/render.yml
+        job: render
+        lane: render
+      - workflow: .github/workflows/engine-render.yml
+        job: engine-render
+        lane: render
+    selftest: false
+    selftest_exempt_reason: >
+      Thin node --check wrapper; functional coverage provided by
+      tests/test_check_inline_js.py.
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - Scans committed site/; does not cover dynamically generated fragments
+        injected by JavaScript at runtime.
+    owner_program: engine-fix-masterplan
+    notes: null
+
+  - law_id: ui.site_js_parses
+    summary: >
+      Every standalone site/*.js bundle (loaded via <script src=...>) must parse
+      without syntax errors. Smart-quote delimiters once blanked markets.html for
+      ~2 days (PR #1004 → #1353).
+    source_ref:
+      - scripts/check_site_js.py
+      - "PR #1353"
+    severity: hard
+    check_script: scripts/check_site_js.py
+    ci_wiring:
+      - workflow: .github/workflows/ci.yml
+        job: inline-js
+        lane: pr_ci
+      - workflow: .github/workflows/pages.yml
+        job: publish
+        lane: publish
+    selftest: false
+    selftest_exempt_reason: >
+      Thin node --check wrapper; covered by the same CI job as ui.inline_js_parses.
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - Skips vendor/CDN bundles that are not committed to site/.
+    owner_program: engine-fix-masterplan
+    notes: null
+
+  - law_id: ui.nav_gap
+    summary: >
+      Every page's shared nav menu must maintain a top gap (body top padding).
+      A page that zeroes body padding jams the menu against the viewport top.
+    source_ref:
+      - scripts/check_nav_gap.py
+      - "PR #471"
+    severity: hard
+    check_script: scripts/check_nav_gap.py
+    ci_wiring:
+      - workflow: .github/workflows/ci.yml
+        job: nav-gap
+        lane: pr_ci
+      - workflow: .github/workflows/pages.yml
+        job: publish
+        lane: publish
+    selftest: false
+    selftest_exempt_reason: >
+      Covered by tests/test_check_nav_gap.py.
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - Scans committed site/ HTML; does not cover pages generated only at runtime.
+    owner_program: engine-fix-masterplan
+    notes: null
+
+  - law_id: ui.nav_mega
+    summary: >
+      Every page that renders the shared nav must carry the Research mega-menu.
+      An out-of-loop or hand-static page can freeze the nav without the mega-menu.
+    source_ref:
+      - scripts/check_nav_mega.py
+    severity: hard
+    check_script: scripts/check_nav_mega.py
+    ci_wiring:
+      - workflow: .github/workflows/ci.yml
+        job: nav-mega
+        lane: pr_ci
+      - workflow: .github/workflows/pages.yml
+        job: publish
+        lane: publish
+    selftest: false
+    selftest_exempt_reason: >
+      No dedicated selftest; the check is deterministic over committed site HTML.
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - Only catches pages already committed to site/; new pages built outside the
+        render loop are not caught until they land in site/.
+    owner_program: engine-fix-masterplan
+    notes: null
+
+  - law_id: ui.title_i18n
+    summary: >
+      Translated (CJK / t() / zh-interpolated) text must never appear inside HTML
+      title= attributes. The dual-span l-en/l-zh mechanism cannot operate in
+      attributes, so a bilingual title= renders both languages mashed together.
+      Law source: CLAUDE.md ("no translated text in title= attributes").
+    source_ref:
+      - scripts/check_title_i18n.py
+      - CLAUDE.md
+    severity: hard
+    check_script: scripts/check_title_i18n.py
+    ci_wiring:
+      - workflow: .github/workflows/ci.yml
+        job: title-i18n
+        lane: pr_ci
+      - workflow: .github/workflows/pages.yml
+        job: publish
+        lane: publish
+    selftest: false
+    selftest_exempt_reason: >
+      No selftest flag; scans template source deterministically.
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - Scans templates/ source; does not re-scan rendered site/ HTML.
+    owner_program: engine-fix-masterplan
+    notes: null
+
+  # ── Git hygiene ────────────────────────────────────────────────────────────
+
+  - law_id: git.no_conflict_markers
+    summary: >
+      No committed file may contain literal git conflict markers
+      (<<<<<<< / ======= / >>>>>>>). A merge once shipped markers inside
+      templates/dashboard.html.j2; Jinja treats them as plain text, so they
+      rendered visibly. Selftest proves the guard fires before it is trusted.
+    source_ref:
+      - scripts/check_conflict_markers.py
+      - "2026-07-03 incident"
+    severity: hard
+    check_script: scripts/check_conflict_markers.py
+    ci_wiring:
+      - workflow: .github/workflows/ci.yml
+        job: conflict-markers
+        lane: pr_ci
+      - workflow: .github/workflows/pages.yml
+        job: publish
+        lane: publish
+    selftest: true
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - Scans templates/, engine/, scripts/, site/; does not cover binary or
+        gitignored files.
+    owner_program: engine-fix-masterplan
+    notes: >
+      Selftest flag is spelled --self-test (hyphenated).
+
+  # ── Epistemics guards ──────────────────────────────────────────────────────
+
+  - law_id: epistemics.validated_claims
+    summary: >
+      Every affirmative use of the word "validated" (EN + ZH "已验证") in
+      user-facing surfaces must trace to a stored, leak-free, pre-registered
+      artifact or an allowlisted justification. Negated/hedged uses are ignored.
+      Law source: CLAUDE.md ("The word 'validated' in user-facing text is
+      CI-enforced").
+    source_ref:
+      - scripts/check_validated_claims.py
+      - CLAUDE.md
+      - "PREREGISTRATION.md §4, D2 §4.3"
+    severity: hard
+    check_script: scripts/check_validated_claims.py
+    ci_wiring:
+      - workflow: .github/workflows/cycle-calibration.yml
+        job: calibrate
+        lane: scheduled
+      - workflow: .github/workflows/ci.yml
+        job: validated-claims
+        lane: pr_ci
+      - workflow: .github/workflows/pages.yml
+        job: publish
+        lane: publish
+    selftest: true
+    allowlist: data/regime/validated_claims_allowlist.json
+    ratchet: null
+    known_limits:
+      - Scans templates/, site/*.js, generated *_data.js only; does not scan
+        research/*.md (frozen Fable ruling 2026-07-06 — see
+        epistemics.research_docs_not_scanned).
+    owner_program: engine-fix-masterplan
+    notes: null
+
+  - law_id: epistemics.trial_registration
+    summary: >
+      Every multiple-testing harness (validate_* / *_phase0 scripts) must register
+      its trial budget in the trial ledger. An unregistered harness makes DSR/kill/FDR
+      deflation calculations dishonest.
+    source_ref:
+      - scripts/check_trial_registration.py
+      - "engine/trial_ledger.py"
+    severity: hard
+    check_script: scripts/check_trial_registration.py
+    ci_wiring:
+      - workflow: .github/workflows/ci.yml
+        job: trial-budgets
+        lane: pr_ci
+    selftest: false
+    selftest_exempt_reason: >
+      No selftest flag; deterministic scan over script names vs trial ledger.
+    allowlist: inline
+    ratchet: null
+    known_limits:
+      - Allowlist (LEGACY_UNREGISTERED) only shrinks; new scripts must register.
+      - Scans script names by file pattern; does not parse script contents.
+    owner_program: engine-fix-masterplan
+    notes: >
+      Allowlist is inline in the script (LEGACY_UNREGISTERED constant) and only shrinks.
+
+  - law_id: epistemics.no_literal_ntrials
+    summary: >
+      No new code may call deflated_sharpe with a caller-asserted literal n_trials
+      instead of ledger=; literal trial counts make budget tracking impossible.
+    source_ref:
+      - tests/test_no_literal_ntrials.py
+    severity: hard
+    check_script: tests/test_no_literal_ntrials.py
+    ci_wiring:
+      - workflow: .github/workflows/ci.yml
+        job: trial-budgets
+        lane: pr_ci
+    selftest: false
+    selftest_exempt_reason: >
+      This entry is a pytest suite, not a standalone script; pytest is the test runner.
+    allowlist: inline
+    ratchet: null
+    known_limits:
+      - Allowlist (LEGACY_LITERAL_NTRIALS) only shrinks.
+    owner_program: engine-fix-masterplan
+    notes: >
+      check_script points at the test file because enforcement is via pytest, not a
+      standalone guard script. This suite ran in NO workflow until 2026-07-06 — the
+      registry wiring pass caught the gap and the file was added to the trial-budgets
+      pytest invocation the same day.
+
+  - law_id: epistemics.badge_passport
+    summary: >
+      Every conviction badge rendered in a desk brief must carry a provenance
+      passport. A badge without a passport is an unearned claim.
+    source_ref:
+      - scripts/check_badge_passport.py
+      - "engine/passport.py"
+      - "audit #41"
+    severity: hard
+    check_script: scripts/check_badge_passport.py
+    ci_wiring:
+      - workflow: .github/workflows/ci.yml
+        job: outcome-spine
+        lane: pr_ci
+    selftest: false
+    selftest_exempt_reason: >
+      No selftest flag; deterministic scan over site/ HTML.
+    allowlist: inline
+    ratchet: null
+    known_limits:
+      - Allowlist (LEGACY_NO_PASSPORT) is fully drained — no new items allowed.
+    owner_program: engine-fix-masterplan
+    notes: null
+
+  - law_id: epistemics.claim_passport
+    summary: >
+      Every qual-ladder field that reaches a scored consumer must have a registered
+      claim passport entry in config/qual_ladder.yml. Grandfathered debt entries
+      (state=DISPLAY) must be cleared once the §3 gate passes.
+    source_ref:
+      - scripts/check_claim_passport.py
+      - config/qual_ladder.yml
+    severity: hard
+    check_script: scripts/check_claim_passport.py
+    ci_wiring:
+      - workflow: .github/workflows/ci.yml
+        job: house-law-registry
+        lane: pr_ci
+    selftest: false
+    selftest_exempt_reason: >
+      No selftest flag; deterministic scan over engine/*.py vs qual_ladder.yml.
+      Script exits 0 on the live repo (15 grandfathered DEBT entries, PASS result).
+    allowlist: config/qual_ladder.yml
+    ratchet: null
+    known_limits:
+      - 15 grandfathered DEBT entries (altdata.signal_score, policy.dir) are
+        DISPLAY-state (gated); must be cleared once §3 gate passes.
+      - ADVISORY unregistered fields (31+) are printed but do not fail the check.
+    owner_program: qualitative-intelligence-masterplan
+    notes: >
+      Wired into house-law-registry job (exit 0 confirmed 2026-07-06).
+
+  # ── Contracts guards ───────────────────────────────────────────────────────
+
+  - law_id: contracts.reliability_contract
+    summary: >
+      A field that has been gated out (reliability state < threshold) must not
+      render directionally in any template or site page. Audit #46.
+    source_ref:
+      - scripts/check_reliability_contract.py
+      - "audit #46"
+    severity: hard
+    check_script: scripts/check_reliability_contract.py
+    ci_wiring:
+      - workflow: .github/workflows/ci.yml
+        job: trial-budgets
+        lane: pr_ci
+    selftest: false
+    selftest_exempt_reason: >
+      No selftest flag; deterministic scan over site/ and templates/.
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - Literal-path scan; does not catch dynamically computed field references.
+    owner_program: engine-fix-masterplan
+    notes: null
+
+  - law_id: contracts.artifact_drift
+    summary: >
+      Each artifact in site/factordata/contracts/artifact_manifest.json must not
+      drift from the live artifact's actual top-level JSON fields. Schema drift
+      between producer and consumer is invisible at trade time without this gate.
+    source_ref:
+      - scripts/check_contract_drift.py
+      - "site/factordata/contracts/artifact_manifest.json"
+      - "NW Rails PR-7 R4"
+    severity: warn
+    check_script: scripts/check_contract_drift.py
+    ci_wiring:
+      - workflow: .github/workflows/ci.yml
+        job: contract-drift
+        lane: pr_ci
+    selftest: false
+    selftest_exempt_reason: >
+      No selftest flag; deterministic comparison of manifest vs live artifacts.
+    allowlist: null
+    ratchet:
+      date: "2026-07-13"
+      action: >
+        Drop --warn-only in the ci.yml contract-drift job step AND flip this
+        entry's severity warn->hard in the same PR (the script's default is
+        already hard-fail; keep step and registry in lockstep).
+    known_limits:
+      - Wildcard artifacts (per_stock_intel, per_stock_signal) are skipped when
+        no live sample is present — normal on CI runners.
+    owner_program: nw-rails-lobes
+    notes: null
+
+  - law_id: contracts.board_contradictions
+    summary: >
+      The standout board must not show loud labels that contradict its own quiet
+      fields: FRESH on stale/extended cross, urgency=imminent on blocked label,
+      green band on Lagging verdict, negative-alpha slot-1 while positive-alpha
+      rows exist in the same lane.
+    source_ref:
+      - scripts/check_board_contradictions.py
+      - "engine/desk_scorer.py"
+    severity: hard
+    check_script: scripts/check_board_contradictions.py
+    ci_wiring:
+      - workflow: .github/workflows/ci.yml
+        job: board-contradictions
+        lane: pr_ci
+      - workflow: .github/workflows/pages.yml
+        job: publish
+        lane: publish
+    selftest: false
+    selftest_exempt_reason: >
+      No selftest flag; deterministic validation of JSON artifact fields.
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - PR gate skips when the artifact is not touched by the PR (deploy-gate
+        twin in pages.yml covers every fresh render).
+    owner_program: us-stocks-prebreakout
+    notes: null
+
+  # ── Cycles guards ──────────────────────────────────────────────────────────
+
+  - law_id: cycles.cross_page_consistency
+    summary: >
+      The same instrument must show the same pos_v2/phase_v2 across every page
+      that renders it (cycle / country_cycles / markets / sector), within
+      tolerance, or carry a declared basis label.
+    source_ref:
+      - scripts/check_cycle_consistency.py
+      - "W3.6 ruling R3-M3"
+    severity: hard
+    check_script: scripts/check_cycle_consistency.py
+    ci_wiring:
+      - workflow: .github/workflows/ci.yml
+        job: cycle-consistency
+        lane: pr_ci
+    selftest: false
+    selftest_exempt_reason: >
+      No selftest flag; deterministic cross-page scan of committed site/ JSON.
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - Tolerance is set by the checker; basis labels must be machine-readable.
+    owner_program: cycle-intelligence
+    notes: null
+
+  - law_id: cycles.ontology_js_sync
+    summary: >
+      The committed site/cycle_ontology.js must exactly match what
+      engine/cycle_ontology.py produces at HEAD. A stale committed JS is
+      especially dangerous around the ONTOLOGY_AXIS flag-day axis-flip.
+    source_ref:
+      - scripts/gen_ontology_js.py
+      - engine/cycle_ontology.py
+      - "W1.5 A10/A12 ruling"
+    severity: hard
+    check_script: null
+    ci_wiring:
+      - workflow: .github/workflows/ci.yml
+        job: cycle-ontology-js
+        lane: pr_ci
+    selftest: false
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - Enforced by `python3 -m scripts.gen_ontology_js --check` (diff mode);
+        does not validate semantic correctness of the ontology itself.
+    owner_program: cycle-intelligence
+    notes: >
+      check_script is null because enforcement is via gen_ontology_js --check
+      (a generator in diff/check mode), not a dedicated check_*.py script.
+
+  # ── Authority guards ───────────────────────────────────────────────────────
+
+  - law_id: authority.cycle_pattern
+    summary: >
+      No Article-2 money-path module (alert_triage / board_ordering / top_setups)
+      may read the cycle-pattern lake (data/cycle_pattern/). The CPI substrate is
+      display-only (context tier); lake outputs must never reach scored/board/alert
+      pipelines.
+    source_ref:
+      - scripts/check_cycle_pattern_authority.py
+      - "CPI P2"
+    severity: hard_for_protected_paths
+    check_script: scripts/check_cycle_pattern_authority.py
+    ci_wiring:
+      - workflow: .github/workflows/ci.yml
+        job: cycle-pattern-authority
+        lane: pr_ci
+      - workflow: .github/workflows/cycle-calibration.yml
+        job: calibrate
+        lane: scheduled
+    selftest: true
+    allowlist: inline
+    ratchet: null
+    known_limits:
+      - Literal-path scan only; misses dynamic path construction (e.g.
+        f"data/cycle_pattern/{name}") that assembles the forbidden path at runtime.
+      - _ALLOWED_READER_PREFIXES list: money-path modules are never exemptable.
+    owner_program: cycle-intelligence
+    notes: null
+
+  - law_id: authority.research_factory
+    summary: >
+      No Article-2 money-path module may read data/research_factory/ or import
+      engine.research_factory. The factory is display-only (A0-A2 ceiling);
+      factory outputs must never reach scored/board/alert pipelines.
+    source_ref:
+      - scripts/check_research_factory_authority.py
+      - "RF-11 Research Factory W1"
+    severity: hard_for_protected_paths
+    check_script: scripts/check_research_factory_authority.py
+    ci_wiring:
+      - workflow: .github/workflows/ci.yml
+        job: research-factory-authority
+        lane: pr_ci
+    selftest: true
+    allowlist: data/research_factory/authority_allowlist.json
+    ratchet:
+      date: "2026-08-15"
+      action: >
+        Declare or allowlist the ~92 bare-WARN non-Article-2 factory readers that
+        currently produce warnings but do not fail.
+    known_limits:
+      - Literal-path scan only; misses dynamic path construction.
+    owner_program: research-factory
+    notes: null
+
+  # ── Neural Web guards ──────────────────────────────────────────────────────
+
+  - law_id: nw.synapse_registry
+    summary: >
+      The synapse.yml registry must be internally consistent: all paths exist,
+      enums are valid, no duplicate artifact paths.
+    source_ref:
+      - scripts/check_synapse_registry.py
+      - config/synapse.yml
+    severity: hard
+    check_script: scripts/check_synapse_registry.py
+    ci_wiring:
+      - workflow: .github/workflows/ci.yml
+        job: synapse-read-gate
+        lane: pr_ci
+    selftest: true
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - Validates registry internal consistency; does not verify that artifact
+        content matches the declared schema.
+    owner_program: neural-web
+    notes: null
+
+  - law_id: nw.synapse_reads
+    summary: >
+      Every file that reads a registered synapse artifact must either appear in the
+      baseline or be declared in config/synapse.yml. Article-2 money-path violations
+      are hard-fail; other undeclared reads are warn-tier.
+    source_ref:
+      - scripts/check_synapse_reads.py
+      - data/neuralweb/read_gate_baseline.json
+      - config/synapse.yml
+    severity: hard_for_protected_paths
+    check_script: scripts/check_synapse_reads.py
+    ci_wiring:
+      - workflow: .github/workflows/ci.yml
+        job: synapse-read-gate
+        lane: pr_ci
+    selftest: true
+    allowlist: data/neuralweb/read_gate_baseline.json
+    ratchet: null
+    known_limits:
+      - Literal-path scan only; misses string-assembled artifact paths.
+    owner_program: neural-web
+    notes: >
+      Allowlist also includes config/synapse.yml consumer declarations.
+
+  - law_id: nw.factor_boundaries
+    summary: >
+      No Article-2 module may write to synapse artifact paths or reference
+      forbidden fields (RUL-NW9/NW11 display-only law). Factor outputs are
+      display-only and must never reach scored/alert pipelines.
+    source_ref:
+      - scripts/check_factor_boundaries.py
+      - "RUL-NW9 RUL-NW11"
+    severity: hard
+    check_script: scripts/check_factor_boundaries.py
+    ci_wiring:
+      - workflow: .github/workflows/ci.yml
+        job: synapse-read-gate
+        lane: pr_ci
+    selftest: true
+    allowlist: inline
+    ratchet: null
+    known_limits:
+      - Literal-path scan; does not catch dynamically constructed paths.
+      - Inline _ALLOWED_ACTIONS_ALLOWLIST_PREFIXES exempts allowed_actions
+        readers; editing that list silently widens the exemption.
+    owner_program: factor-intelligence
+    notes: null
+
+  - law_id: nw.dag_conformance
+    summary: >
+      The per-workflow build-module sequences declared in config/dag.yml must
+      exactly match the live .github/workflows/ files. Any undeclared drift
+      (lane mismatch not covered by a divergences entry) fails CI.
+    source_ref:
+      - scripts/check_dag_conformance.py
+      - config/dag.yml
+      - "Neural Web W5a"
+    severity: hard
+    check_script: scripts/check_dag_conformance.py
+    ci_wiring:
+      - workflow: .github/workflows/ci.yml
+        job: dag-conformance
+        lane: pr_ci
+    selftest: true
+    allowlist: config/dag.yml
+    ratchet: null
+    known_limits:
+      - Textual (AST-level) lane comparison; does not verify execution ordering
+        across parallel bands.
+      - Two suspect drift entries exist from W5a adoption and are tracked but
+        not yet resolved.
+    owner_program: neural-web
+    notes: >
+      Allowlist is config/dag.yml divergences section.
+
+  # ── Operations guards ──────────────────────────────────────────────────────
+
+  - law_id: ops.hazard_model_freshness
+    summary: >
+      The hazard model artifact must not be stale beyond a configured threshold.
+      Permanent warn (ops telemetry); --strict flag exists for opt-in hard mode.
+    source_ref:
+      - scripts/check_hazard_model_freshness.py
+    severity: warn
+    check_script: scripts/check_hazard_model_freshness.py
+    ci_wiring:
+      - workflow: .github/workflows/cycle-calibration.yml
+        job: calibrate
+        lane: scheduled
+    selftest: false
+    selftest_exempt_reason: >
+      No selftest flag; ops telemetry check, permanent warn by design (--strict
+      exists for opt-in hard mode).
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - Warn-only by design; --strict flag must be opted into explicitly.
+    owner_program: cycle-intelligence
+    notes: >
+      Permanent warn — this check is ops telemetry, not a gate.
+
+  - law_id: ops.extraction_drift
+    summary: >
+      Re-score the extraction anchor set against the current LLM model. Gate:
+      field_agree_rate >= 0.85. Requires Anthropic API key; run at model upgrades.
+    source_ref:
+      - scripts/check_extraction_drift.py
+      - research/QUALITATIVE_INTELLIGENCE_UPGRADE_BY_FABLE.md
+    severity: manual
+    check_script: scripts/check_extraction_drift.py
+    ci_wiring: []
+    selftest: false
+    selftest_exempt_reason: >
+      --dry-run flag validates anchor schema and gate math without LLM calls;
+      full run requires Anthropic API key (not available in CI).
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - Requires ANTHROPIC_API_KEY; cannot run in CI without secrets exposure.
+      - --dry-run validates structure only; does not test model agreement.
+    owner_program: qualitative-intelligence-masterplan
+    notes: >
+      Manual run required at each LLM model upgrade. Gate threshold: field_agree_rate >= 0.85.
+
+  - law_id: ops.live_worker
+    summary: >
+      Pre-flight probe for Cloudflare live-quotes worker deploys. Verifies that
+      the worker is reachable and returning expected schema.
+    source_ref:
+      - scripts/check_live_worker.py
+    severity: manual
+    check_script: scripts/check_live_worker.py
+    ci_wiring: []
+    selftest: false
+    selftest_exempt_reason: >
+      No selftest flag; requires live Cloudflare worker endpoint — not available in CI.
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - Requires live Cloudflare endpoint; not runnable in CI.
+    owner_program: live-options-flow
+    notes: >
+      Run manually before each live-quotes worker deploy.
+
+  # ── Meta-guard ─────────────────────────────────────────────────────────────
+
+  - law_id: meta.house_law_registry
+    summary: >
+      The house-law registry (config/house_law_checks.yml) must be internally
+      consistent and cover every scripts/check_*.py file in the repo. An
+      unregistered check_*.py blocks merges.
+    source_ref:
+      - scripts/check_house_law_registry.py
+      - config/house_law_checks.yml
+    severity: hard
+    check_script: scripts/check_house_law_registry.py
+    ci_wiring:
+      - workflow: .github/workflows/ci.yml
+        job: house-law-registry
+        lane: pr_ci
+    selftest: true
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - Census only auto-covers scripts/check_*.py — guard-shaped pytest files
+        (e.g. tests/test_no_literal_ntrials.py) and harness hooks are voluntary
+        entries; adding them is required but not mechanically enforced by census.
+      - Wiring check is textual (job steps mention the script basename), not
+        execution-order-aware.
+    owner_program: engine-fix-masterplan
+    notes: null
+
+  # ── Governance hook ────────────────────────────────────────────────────────
+
+  - law_id: governance.model_routing
+    summary: >
+      Agent/Task spawns must name an explicit model or use a pinned agent type
+      (builder/reviewer). Fable spawns are banned. Workflow scripts whose agent()
+      calls carry no model:/agentType: routing are denied.
+      Law source: CLAUDE.md §Model routing, enforcement via PreToolUse hook.
+    source_ref:
+      - .claude/hooks/model_routing_guard.py
+      - .claude/settings.json
+      - CLAUDE.md
+    severity: hard
+    check_script: .claude/hooks/model_routing_guard.py
+    ci_wiring:
+      - workflow: .claude/settings.json
+        job: PreToolUse
+        lane: hook
+    selftest: false
+    selftest_exempt_reason: >
+      Harness hook, fail-open by design. Not a standalone script; tested by the
+      PreToolUse harness, not by pytest or a --selftest flag.
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - Fail-open by design (hook errors do not block the tool call).
+      - Only fires at tool-use time; does not audit committed workflow YAML files.
+    owner_program: engine-fix-masterplan
+    notes: null
+
+  # ── Discipline-only laws (no check_script, no ci_wiring) ──────────────────
+
+  - law_id: nw.article1.no_llm_origination
+    summary: >
+      LLMs may only de-escalate calibrated keys — never originate signals, scores,
+      or escalations. Article 1 of the Neural Web constitution.
+    source_ref:
+      - engine/neuralweb
+      - CLAUDE.md
+    severity: discipline
+    check_script: null
+    ci_wiring: []
+    selftest: false
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - Enforced by architecture and review; no static scan exists for this constraint.
+    owner_program: neural-web
+    notes: null
+
+  - law_id: ledgers.nightly_sole_advancer
+    summary: >
+      The nightly pipeline is the sole advancer of forward ledgers. Intraday lanes
+      must discard any data/ writes. Law source: CLAUDE.md.
+    source_ref:
+      - CLAUDE.md
+      - .github/workflows/daily.yml
+    severity: discipline
+    check_script: null
+    ci_wiring: []
+    selftest: false
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - Enforced by nightly pipeline architecture and code review; no static scan.
+    owner_program: engine-fix-masterplan
+    notes: null
+
+  - law_id: git.fresh_branch_squash_flow
+    summary: >
+      Branch off fresh origin/main; finish via commit→push→PR→same-day squash-merge.
+      Stash stack is repo-global — never bare git stash/pop. Law source: CLAUDE.md.
+    source_ref:
+      - CLAUDE.md
+    severity: discipline
+    check_script: null
+    ci_wiring: []
+    selftest: false
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - Enforced by team convention and code review; no static scan.
+    owner_program: engine-fix-masterplan
+    notes: null
+
+  - law_id: epistemics.display_only_until_gauntleted
+    summary: >
+      All signals/scores are display-only until formally gauntleted. Partially
+      mechanized by authority.* and nw.factor_boundaries guards (see those
+      law_ids).
+    source_ref:
+      - CLAUDE.md
+      - "law_ids: authority.cycle_pattern, authority.research_factory, nw.factor_boundaries"
+    severity: discipline
+    check_script: null
+    ci_wiring: []
+    selftest: false
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - Partially mechanized by authority.* and nw.factor_boundaries; the rest is
+        enforced by review.
+    owner_program: engine-fix-masterplan
+    notes: >
+      Cross-reference: authority.cycle_pattern, authority.research_factory,
+      nw.factor_boundaries.
+
+  - law_id: epistemics.preregistered_gates
+    summary: >
+      All statistical experiments must use pre-registered gates. Partially
+      mechanized by epistemics.trial_registration and epistemics.no_literal_ntrials.
+    source_ref:
+      - CLAUDE.md
+      - "law_ids: epistemics.trial_registration, epistemics.no_literal_ntrials"
+    severity: discipline
+    check_script: null
+    ci_wiring: []
+    selftest: false
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - Partially mechanized; pre-registration of the hypothesis itself is by review.
+    owner_program: engine-fix-masterplan
+    notes: null
+
+  - law_id: epistemics.nulls_are_printed
+    summary: >
+      Null results must be printed and surfaced — never hidden. A null finding
+      that is not displayed is an epistemics violation.
+    source_ref:
+      - CLAUDE.md
+    severity: discipline
+    check_script: null
+    ci_wiring: []
+    selftest: false
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - Enforced by code review and report standards; no static scan.
+    owner_program: engine-fix-masterplan
+    notes: null
+
+  - law_id: epistemics.research_docs_not_scanned
+    summary: >
+      research/*.md files are NOT scanned for promotion language or the word
+      "validated". "Validated" is legitimate scientific vocabulary in research
+      verdicts. The enforcement boundary is user-facing surfaces only
+      (templates/, site/). FROZEN RULING: Fable 2026-07-06.
+    source_ref:
+      - CLAUDE.md
+      - scripts/check_validated_claims.py
+    severity: discipline
+    check_script: null
+    ci_wiring: []
+    selftest: false
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - Intentional carve-out; research verdicts use "validated" as scientific
+        vocabulary. Enforced at the scanner level in check_validated_claims.py.
+    owner_program: engine-fix-masterplan
+    notes: >
+      FROZEN RULING (Fable 2026-07-06): research/*.md is NOT scanned for
+      promotion language. "Validated" is legitimate scientific vocabulary in
+      research verdicts. The enforcement boundary is user-facing surfaces
+      (templates/, site/). This rationale must not be reversed without a new
+      Fable ruling.
+
+  # ── Known-spurious CI status ───────────────────────────────────────────────
+
+  - law_id: ci.workers_builds_spurious
+    summary: >
+      The "Workers Builds: macro" red X on PRs is a known external false-red from
+      Cloudflare Workers. It must NOT block merges. Law source: CLAUDE.md.
+    source_ref:
+      - CLAUDE.md
+    severity: known_spurious
+    check_script: null
+    ci_wiring: []
+    selftest: false
+    allowlist: null
+    ratchet: null
+    known_limits: []
+    owner_program: engine-fix-masterplan
+    notes: >
+      External Cloudflare Workers build status; not under our control.
+      Never block a merge on this red X.

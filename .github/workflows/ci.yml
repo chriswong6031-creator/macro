@@ -39,6 +39,7 @@ on:
       - "tests/test_grading.py"
       - "tests/test_trial_ledger.py"
       - "tests/test_trial_registration_lint.py"
+      - "tests/test_no_literal_ntrials.py"
       # W4 outcome spine: the shared signal-id→outcome contract + partial-pooling + badge passport.
       - "engine/spine.py"
       - "engine/pooling.py"
@@ -146,6 +147,18 @@ on:
       - "scripts/check_cycle_pattern_authority.py"
       - "config/cycle_pattern/**"
       - "tests/test_check_cycle_pattern_authority.py"
+      # House-law registry meta-guard: any change to the registry, the meta-guard
+      # script, the generated docs, or the test suite must re-prove the registry
+      # is complete and consistent.
+      - "config/house_law_checks.yml"
+      - "scripts/check_house_law_registry.py"
+      - "docs/HOUSE_LAW_CI_GUARD_SUITE.md"
+      - "docs/**"
+      - "tests/test_house_law_registry.py"
+      # validated-claims guard: wire as PR gate so unearned 'validated' claims
+      # are caught before merge (not just in the nightly calibration run).
+      - "scripts/check_validated_claims.py"
+      - "data/regime/validated_claims_allowlist.json"
   workflow_dispatch:
 
 permissions:
@@ -289,7 +302,7 @@ jobs:
       - name: reliability-contract guard (no gated field rendered directionally, audit #46)
         run: python3 scripts/check_reliability_contract.py
       - name: grading rebuild + trial ledger tests
-        run: python -m pytest tests/test_grading.py tests/test_trial_ledger.py tests/test_trial_registration_lint.py -q
+        run: python -m pytest tests/test_grading.py tests/test_trial_ledger.py tests/test_trial_registration_lint.py tests/test_no_literal_ntrials.py -q
 
   outcome-spine:
     # W4 (audit #13/#19/#23/#41/#42): the outcome spine + partial-pooling closed loop. The
@@ -586,3 +599,49 @@ jobs:
         run: python scripts/check_contract_drift.py --warn-only
       - name: contract drift unit tests
         run: python -m pytest tests/test_contract_drift.py -q
+
+  house-law-registry:
+    # Meta-guard: verifies config/house_law_checks.yml is complete and honest.
+    # Three checks in sequence:
+    #   1. selftest: synthetic assertions prove the meta-guard catches violations.
+    #   2. live check: every scripts/check_*.py is registered, every registered
+    #      script exists, all ci_wiring points to real jobs that mention the script.
+    #   3. docs-drift: regenerate docs and fail if the committed file is stale.
+    #   4. pytest: idempotency + integration tests.
+    # Also runs check_claim_passport.py (exit 0 confirmed 2026-07-06; hard gate).
+    # Triggers on: config/house_law_checks.yml, the meta-guard script,
+    # docs/HOUSE_LAW_CI_GUARD_SUITE.md, and tests/test_house_law_registry.py.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pyyaml
+      - name: meta-guard selftest (synthetic assertions — gate fires on violations)
+        run: python3 scripts/check_house_law_registry.py --selftest
+      - name: meta-guard live check (census + wiring + selftest truth + ratchets)
+        run: python3 scripts/check_house_law_registry.py
+      - name: docs-drift check (committed docs must match regen output byte-for-byte)
+        run: |
+          python3 scripts/check_house_law_registry.py --emit-docs
+          git diff --exit-code docs/HOUSE_LAW_CI_GUARD_SUITE.md
+      - name: claim-passport lint (no unregistered qual field reaching scored consumer)
+        run: python3 scripts/check_claim_passport.py
+      - name: house-law registry tests (idempotency + integration)
+        run: python -m pytest tests/test_house_law_registry.py -q
+
+  validated-claims:
+    # BC-2 PR gate: the word "validated" in user-facing surfaces must trace to a
+    # backed claim. This is the PR-time companion to the nightly calibration run
+    # (cycle-calibration.yml/calibrate). A sibling builder is fixing the current
+    # findings — wire it regardless; final verification happens after both land.
+    # Law source: CLAUDE.md ("The word 'validated' in user-facing text is CI-enforced").
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: validated-claims selftest (gate fires on synthetic unearned claim)
+        run: python3 scripts/check_validated_claims.py --selftest
+      - name: no unearned 'validated' claims in user-facing surfaces
+        run: python3 scripts/check_validated_claims.py
