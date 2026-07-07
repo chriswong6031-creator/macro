@@ -25,7 +25,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Any
 
 log = logging.getLogger(__name__)
@@ -188,6 +188,7 @@ def aggregate_chain_heat(
     events: list[dict],
     min_premium_mn: float = _CHAIN_HEAT_PREMIUM_MN_DEFAULT,
     min_alerts: int = _CHAIN_HEAT_MIN_ALERTS_DEFAULT,
+    session_date: str | None = None,
 ) -> list[dict]:
     """Aggregate live_flow.feed/v1 event dicts into chain-heat campaigns.
 
@@ -200,7 +201,7 @@ def aggregate_chain_heat(
     events:
         List of event dicts in live_flow.feed/v1 format (output of
         engine/live_flow.py:process_batch).  Required keys per event:
-            root, strike, exp (YYYY-MM-DD), right ("C"|"P"),
+            root, strike, exp (YYYY-MM-DD), right ("C"|"P" or "CALL"/"PUT"),
             premium (float, in dollars), ts (ISO-8601 str).
         Optional keys: ask_share (float 0-1).
     min_premium_mn:
@@ -209,6 +210,13 @@ def aggregate_chain_heat(
     min_alerts:
         Minimum number of component events.  Campaigns formed from fewer events
         are suppressed.
+    session_date:
+        Trading session date as "YYYY-MM-DD" string.  Used to compute ``dte``
+        (days to expiry) deterministically.  When None, ``dte`` is set to None
+        for all campaigns.  The caller (poller writer) is responsible for
+        stamping the correct session date — this keeps the function PIT-safe
+        and fully deterministic (same inputs → same outputs regardless of wall
+        clock).
 
     Returns
     -------
@@ -276,17 +284,28 @@ def aggregate_chain_heat(
         if g["alert_count"] < min_alerts:
             continue
 
-        ts_sorted = sorted(t for t in g["ts_list"] if t)
-        first_seen = ts_sorted[0]  if ts_sorted else ""
-        last_seen  = ts_sorted[-1] if ts_sorted else ""
+        # Parse timestamps to aware datetimes before sorting so that mixed
+        # UTC offsets (e.g. 'Z' vs '-04:00') are ordered correctly.
+        raw_ts = [t for t in g["ts_list"] if t]
+        parsed_ts: list[tuple[datetime, str]] = []
+        for raw in raw_ts:
+            try:
+                dt = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+                parsed_ts.append((dt, raw))
+            except Exception:  # noqa: BLE001
+                pass
+        parsed_ts.sort(key=lambda x: x[0])
+
+        first_seen = parsed_ts[0][1]  if parsed_ts else ""
+        last_seen  = parsed_ts[-1][1] if parsed_ts else ""
 
         # span in minutes
         span_minutes: float = 0.0
-        if len(ts_sorted) >= 2:
+        if len(parsed_ts) >= 2:
             try:
-                t0 = datetime.fromisoformat(first_seen.replace("Z", "+00:00"))
-                t1 = datetime.fromisoformat(last_seen.replace("Z", "+00:00"))
-                span_minutes = (t1 - t0).total_seconds() / 60.0
+                t0 = parsed_ts[0][0]
+                t1 = parsed_ts[-1][0]
+                span_minutes = max(0.0, (t1 - t0).total_seconds() / 60.0)
             except Exception:  # noqa: BLE001
                 span_minutes = 0.0
 
@@ -297,14 +316,17 @@ def aggregate_chain_heat(
 
         lean = _campaign_lean(ask_share)
 
-        # DTE from expiry string
+        # DTE from expiry string relative to session_date (PIT-safe; pure).
+        # When session_date is None, dte is left as None — the writer stamps
+        # it using the correct session date before persisting.
         dte: int | None = None
-        try:
-            exp_date = datetime.strptime(g["expiry"], "%Y-%m-%d").date()
-            today    = datetime.now(timezone.utc).date()
-            dte = (exp_date - today).days
-        except Exception:  # noqa: BLE001
-            pass
+        if session_date:
+            try:
+                exp_date     = datetime.strptime(g["expiry"], "%Y-%m-%d").date()
+                session_dt   = datetime.strptime(session_date, "%Y-%m-%d").date()
+                dte = (exp_date - session_dt).days
+            except Exception:  # noqa: BLE001
+                pass
 
         # Build option_symbol (simplified OCC format for display)
         root_padded = g["root"].ljust(6)

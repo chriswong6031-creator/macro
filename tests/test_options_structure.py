@@ -160,11 +160,11 @@ def _chain_heat_clean() -> dict:
         "session_date": SESSION,
         "campaigns": [
             {
-                "option_symbol": "SMH   260618P00530000",
+                "option_symbol": "SMH   260727P00530000",
                 "ticker": "SMH",
                 "right": "PUT",
                 "strike": 530.0,
-                "expiry": "2026-06-18",
+                "expiry": "2026-07-27",
                 "dte": 20,
                 "total_premium_mn": 11.97,
                 "alert_count": 29,
@@ -701,3 +701,77 @@ class TestAggregateChainHeat:
         assert c["total_premium_mn"] == pytest.approx(11.97, abs=0.05)
         assert c["lean"] == "accumulation"   # ask_share=0.91 >= 0.65
         assert c["direction_reliability"] == "soft"
+
+    def test_dte_pinned_against_session_date(self):
+        """dte is derived from session_date, not wall clock.
+
+        This is the regression test for the pure-function correctness defect:
+        the original implementation called datetime.now(timezone.utc).date()
+        inside the aggregator, making dte non-deterministic across wall-clock
+        days (same inputs → different dte on different days).  The fix accepts
+        session_date as an explicit argument; this test pins the result against
+        a fixed reference date so the test is immune to when it runs.
+        """
+        # expiry 2026-07-27; session 2026-07-07 → dte = 20
+        ev1 = _make_event(exp="2026-07-27", premium=2_000_000.0, ts=_ts("10:00"))
+        ev2 = _make_event(exp="2026-07-27", premium=2_000_000.0, ts=_ts("10:10"))
+        result = aggregate_chain_heat(
+            [ev1, ev2],
+            min_premium_mn=3.0,
+            min_alerts=2,
+            session_date="2026-07-07",
+        )
+        assert len(result) == 1
+        assert result[0]["dte"] == 20, (
+            f"dte should be 20 (expiry 2026-07-27 minus session 2026-07-07); "
+            f"got {result[0]['dte']!r} — the function must use session_date, not wall clock"
+        )
+
+    def test_dte_negative_when_expired(self):
+        """dte is negative for a past expiry (session_date provided)."""
+        ev1 = _make_event(exp="2026-06-18", premium=2_000_000.0, ts=_ts("10:00"))
+        ev2 = _make_event(exp="2026-06-18", premium=2_000_000.0, ts=_ts("10:10"))
+        result = aggregate_chain_heat(
+            [ev1, ev2],
+            min_premium_mn=3.0,
+            min_alerts=2,
+            session_date="2026-07-07",
+        )
+        assert len(result) == 1
+        assert result[0]["dte"] == -19  # 2026-06-18 is 19 days before 2026-07-07
+
+    def test_dte_is_none_without_session_date(self):
+        """When session_date is omitted, dte=None (no wall-clock read performed)."""
+        ev1 = _make_event(exp="2026-07-27", premium=2_000_000.0, ts=_ts("10:00"))
+        ev2 = _make_event(exp="2026-07-27", premium=2_000_000.0, ts=_ts("10:10"))
+        result = aggregate_chain_heat([ev1, ev2], min_premium_mn=3.0, min_alerts=2)
+        assert len(result) == 1
+        assert result[0]["dte"] is None, (
+            "dte must be None when session_date is not supplied — "
+            "the aggregator must NOT read the wall clock"
+        )
+
+    def test_span_mixed_utc_offsets_no_negative(self):
+        """Span computation is correct (non-negative) with mixed UTC offset strings.
+
+        Latent bug: lexicographic sort on raw strings mis-orders events when
+        UTC offsets differ (e.g. '10:00:00Z' sorts before '09:00:00-04:00'
+        even though the -04:00 event is actually 4 hours later in wall time).
+        Fix: parse to aware datetimes before sorting.
+        """
+        # 10:00Z  = 10:00 UTC
+        # 09:00-04:00 = 13:00 UTC  (later by 3 hours)
+        ts_earlier = "2026-07-07T10:00:00Z"
+        ts_later   = "2026-07-07T09:00:00-04:00"  # 13:00 UTC
+
+        ev1 = _make_event(premium=2_000_000.0, ts=ts_earlier)
+        ev2 = _make_event(premium=2_000_000.0, ts=ts_later)
+        result = aggregate_chain_heat([ev1, ev2], min_premium_mn=3.0, min_alerts=2)
+        assert len(result) == 1
+        c = result[0]
+        # span must be 180 min (3 hours), not -180
+        assert c["span_minutes"] == pytest.approx(180.0, abs=0.1), (
+            f"span_minutes={c['span_minutes']} — negative span indicates lexicographic "
+            "sort bug; timestamps must be parsed to aware datetimes before ordering"
+        )
+        assert c["span_minutes"] >= 0.0, "span_minutes must never be negative"

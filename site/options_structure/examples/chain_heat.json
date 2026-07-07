@@ -4,11 +4,11 @@
   "session_date": "2026-07-07",
   "campaigns": [
     {
-      "option_symbol": "SMH   260618P00530000",
+      "option_symbol": "SMH   260727P00530000",
       "ticker": "SMH",
       "right": "PUT",
       "strike": 530.0,
-      "expiry": "2026-06-18",
+      "expiry": "2026-07-27",
       "dte": 20,
       "total_premium_mn": 11.97,
       "alert_count": 29,

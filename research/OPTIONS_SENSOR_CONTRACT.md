@@ -312,14 +312,49 @@ Uncertainty is honest; certainty is forbidden.
 
 ---
 
-## 7. Synapse.yml registration
+## 7. Implementation notes for downstream readers
+
+### 7.1 `right` field name vs docket §2.3 `type` field
+
+Docket §2.3 draft used `type` (`'PUT'`/`'CALL'`) as the campaign object field name.
+The implementation (`engine/options_structure.py`, `ChainHeatCampaign`, and all
+`synapse.yml` consumer rows) uses `right` instead.  This is intentional — `right` is
+the canonical options-market term and avoids collision with Python's reserved keyword
+pattern.  All four downstream readers (Terminal flow-tab, Neural Web context sensors,
+oracle management engine, and oracle desk UI) MUST consume `right`, not `type`.
+
+### 7.2 `aggregate_chain_heat()` session_date parameter
+
+`aggregate_chain_heat()` accepts an explicit `session_date: str | None` argument
+(format `YYYY-MM-DD`) to compute `dte` (days to expiry) deterministically.  When
+`session_date` is `None`, `dte` is `None` in all output campaigns.  The writer
+(poller) is responsible for passing the correct trading session date before
+persisting.  The function MUST NOT read the wall clock (`datetime.now()`); doing
+so would make the same event list yield different `dte` values on different
+calendar days (PIT-unsafe, non-deterministic).
+
+### 7.3 Synapse.yml self-consumer entries
+
+Several `options-structure-*` synapse rows list `engine/options_structure.py` as
+both producer AND consumer.  These entries reflect a contract-before-builder pattern:
+the module defines the dataclasses and validators (schema layer) that future builder
+scripts in the same file (or calling it) will consume.  They are not circular data
+dependencies.  Similarly, `oracle-trade-plan` lists `producer: engine/neuralweb/world_state.py`
+which does not yet write to `oracle/trade_plan/` (the builder is Package 6, future
+scope).  DAG-conformance CI is green because it does not check that the producer path
+performs actual writes.  Both patterns are accepted contract-before-builder entries
+and do not require action before Package 6 is wired.
+
+---
+
+## 8. Synapse.yml registration
 
 All six schemas are registered in `config/synapse.yml` under `owner_program: momoedge`.
 See that file for producer, cadence, storage, freshness SLA, and consumer lists.
 
 ---
 
-## 8. Build status (Package A)
+## 9. Build status (Package A)
 
 | Deliverable | Status |
 |---|---|
