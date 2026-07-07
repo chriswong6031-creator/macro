@@ -48,6 +48,9 @@ _CORTEX_MEMO = _DATA_NW / "cortex" / "memo.json"
 _SYNAPSE_YML = _CONFIG / "synapse.yml"
 _REFLEXES_YML = _CONFIG / "reflexes.yml"
 
+# R-ORTH PR-4: covariance spine (independence display)
+_COVARIANCE_SPINE = _DATA_NW / "covariance_spine.json"
+
 # Factor intelligence (§D PR-4 — RUL-NW7/NW8)
 _FACTOR_STATE = _DATA_NW / "factor_intelligence_state.json"
 _FACTOR_FIRINGS = _ROOT / "data" / "reflexes" / "factor_attention" / "firings.jsonl"
@@ -109,6 +112,62 @@ def _parse_yaml_reflexes(path: Path) -> dict | None:
         return yaml.safe_load(path.read_text(encoding="utf-8"))
     except Exception:  # noqa: BLE001
         return None
+
+
+def _read_independence_summary() -> dict:
+    """Read the lobes block from covariance_spine.json fail-open (R-ORTH PR-4).
+
+    Returns a dict with independence fields, all null when the file is absent.
+    Display-only; never gates, ranks, or scores.
+
+    Fields:
+      effective_independent_lobes  — participation-ratio estimate or null
+      n_lobes_measurable           — engines with >= 30 active weeks or null
+      n_lobes_total                — total engines in spine_index or null
+      pctile_vs_null               — lobes pctile vs. circular-shift null or null
+      same_bet_warning             — warning object when active, else null
+      dominant_overlap_cluster     — largest cluster engine list or null
+      descriptive_not_gauntleted   — always True
+      display_only                 — always True
+      available                    — True when the spine file was readable
+    """
+    _null: dict = {
+        "effective_independent_lobes": None,
+        "n_lobes_measurable": None,
+        "n_lobes_total": None,
+        "pctile_vs_null": None,
+        "same_bet_warning": None,
+        "dominant_overlap_cluster": None,
+        "descriptive_not_gauntleted": True,
+        "display_only": True,
+        "available": False,
+    }
+    raw = _read_json(_COVARIANCE_SPINE)
+    if raw is None:
+        return _null
+    lobes = (raw.get("blocks") or {}).get("lobes")
+    if lobes is None:
+        return _null
+    null_ref = lobes.get("null_reference") or {}
+    pctile = null_ref.get("pctile_vs_null")
+    clusters = lobes.get("clusters") or []
+    dominant: list | None = None
+    if clusters:
+        largest = max(clusters, key=lambda c: len(c.get("engines") or []))
+        dominant = largest.get("engines") or None
+    sbw = lobes.get("same_bet_warning")
+    same_bet = sbw if (sbw and sbw.get("active")) else None
+    return {
+        "effective_independent_lobes": lobes.get("effective_independent_lobes"),
+        "n_lobes_measurable": lobes.get("n_lobes_measurable"),
+        "n_lobes_total": lobes.get("n_lobes_total"),
+        "pctile_vs_null": pctile,
+        "same_bet_warning": same_bet,
+        "dominant_overlap_cluster": dominant,
+        "descriptive_not_gauntleted": True,
+        "display_only": True,
+        "available": True,
+    }
 
 
 def _tail_jsonl(p: Path, n: int = 20) -> list[dict]:
@@ -1030,6 +1089,9 @@ def lobes_panel() -> dict:
         ds = ls.get("desc_status", "auto")
         desc_health[ds] = desc_health.get(ds, 0) + 1
 
+    # --- R-ORTH PR-4: independence summary (fail-open) ---
+    independence = _read_independence_summary()
+
     return {
         "ok": True,
         "source": source,
@@ -1040,6 +1102,7 @@ def lobes_panel() -> dict:
         "graph": graph_info,
         "groups": groups,
         "lobes": lobes_flat,
+        "independence": independence,
     }
 
 
@@ -1215,7 +1278,66 @@ def lobe_detail(lobe_id: str) -> dict:
     p_short, p_full, desc_status = _plain_desc(lobe_id, raw_notes)
     description = p_full or description_technical
 
-    return {
+    # --- R-ORTH PR-4: independence note for this lobe (fail-open) ---
+    # Match lobe to spine overlap data using best-effort name-containment.
+    # The spine uses engine names (e.g. "us_board", "oracle_rotation") while lobe ids
+    # use the synapse artifact key (e.g. "oracle-state", "spine-index").  We match by
+    # checking if the lobe_id (with hyphens→underscores) appears as a substring of any
+    # spine engine name, or vice-versa.  Imperfect; documented here, not over-engineered.
+    independence_note: str | None = None
+    co_fire_cluster: list | None = None
+    spine_raw = _read_json(_COVARIANCE_SPINE)
+    if spine_raw:
+        lobes_block = (spine_raw.get("blocks") or {}).get("lobes")
+        if lobes_block:
+            lobe_key = lobe_id.replace("-", "_")
+            producer_key = (art.get("producer") or "").replace("-", "_").replace("/", "_")
+
+            def _name_match(engine_name: str) -> bool:
+                """Return True if this lobe is plausibly the named spine engine."""
+                en = engine_name.lower()
+                # Direct containment in either direction
+                if lobe_key in en or en in lobe_key:
+                    return True
+                # Also try producer basename (last path component without .py)
+                prod_base = producer_key.split("_")[-1] if producer_key else ""
+                if prod_base and len(prod_base) > 3 and prod_base in en:
+                    return True
+                return False
+
+            # Check if lobe appears in highest_overlap_pairs
+            for pair in (lobes_block.get("highest_overlap_pairs") or []):
+                if _name_match(pair.get("a", "")) or _name_match(pair.get("b", "")):
+                    partner = pair.get("b") if _name_match(pair.get("a", "")) else pair.get("a")
+                    corr = pair.get("corr")
+                    independence_note = (
+                        f"This engine appears in the top-overlap pairs from the R-ORTH covariance "
+                        f"spine (highest |corr| pairs). Co-firing correlation with '{partner}': "
+                        f"{corr:.2f} (|r|={abs(corr):.2f}). "
+                        f"Descriptive only — not gauntleted."
+                    ) if corr is not None else (
+                        f"This engine appears in the top-overlap pairs with '{partner}'. "
+                        f"Descriptive only — not gauntleted."
+                    )
+                    break
+
+            # Check if lobe appears in dominant cluster
+            clusters = lobes_block.get("clusters") or []
+            if clusters:
+                largest = max(clusters, key=lambda c: len(c.get("engines") or []))
+                cluster_engines = largest.get("engines") or []
+                if any(_name_match(e) for e in cluster_engines):
+                    co_fire_cluster = cluster_engines
+                    if independence_note is None:
+                        independence_note = (
+                            f"This engine is in the largest co-firing cluster "
+                            f"({len(cluster_engines)} engines). "
+                            f"These engines show elevated intra-cluster correlation — "
+                            f"they may be measuring similar market conditions. "
+                            f"Descriptive only — not gauntleted."
+                        )
+
+    out: dict = {
         "ok": True,
         "id": lobe_id,
         "label": _humanize_label(lobe_id),
@@ -1241,6 +1363,11 @@ def lobe_detail(lobe_id: str) -> dict:
         "health_detail": health_lobe,
         "missing": not exists_locally,
     }
+    if independence_note is not None:
+        out["independence_note"] = independence_note
+    if co_fire_cluster is not None:
+        out["co_fire_cluster"] = co_fire_cluster
+    return out
 
 
 # ---- Top-level panel entry point -------------------------------------------

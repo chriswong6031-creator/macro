@@ -267,6 +267,18 @@ details.memo-raw pre { font-size:11px; overflow-x:auto; color:var(--muted); whit
       <div class="nw-chip" id="chip_asof">
         <div><div class="nw-chip-val" id="chip_asof_val" style="font-size:13px">—</div><div class="nw-chip-label"><span class="l-en">Last refresh</span><span class="l-zh">最近刷新</span></div></div>
       </div>
+      <div class="nw-chip" id="chip_indep">
+        <div>
+          <div class="nw-chip-val" id="chip_indep_val">—</div>
+          <div class="nw-chip-label"><span class="l-en">Independent witnesses</span><span class="l-zh">独立证人</span></div>
+          <div class="nw-chip-sub" id="chip_indep_sub" style="font-size:10px;color:var(--muted);margin-top:1px">—</div>
+        </div>
+      </div>
+    </div>
+    <div id="chip_indep_plain" class="plain-eng" style="display:none;margin-top:8px">
+      <strong>{{ t('In plain English:', '用白话说：') }}</strong>
+      <span id="chip_indep_plain_text"></span>
+      <span id="chip_indep_same_bet" style="display:none"></span>
     </div>
   </div>
 
@@ -938,6 +950,55 @@ details.memo-raw pre { font-size:11px; overflow-x:auto; color:var(--muted); whit
     if (chipS) chipS.textContent = allEdges.length;
     if (chipE) chipE.textContent = engCount;
     if (chipA && data.asof) chipA.textContent = data.asof.slice(0,10);
+
+    // R-ORTH PR-4: independence chip (chip_indep)
+    (function() {
+      var indep = data.independence || null;
+      var chipIV = document.getElementById('chip_indep_val');
+      var chipIS = document.getElementById('chip_indep_sub');
+      var plainDiv = document.getElementById('chip_indep_plain');
+      var plainText = document.getElementById('chip_indep_plain_text');
+      var sameBetEl = document.getElementById('chip_indep_same_bet');
+      if (!chipIV) return;
+      var measurable = indep && indep.n_lobes_measurable != null ? indep.n_lobes_measurable : null;
+      var total = indep && indep.n_lobes_total != null ? indep.n_lobes_total : null;
+      var eil = indep && indep.effective_independent_lobes != null ? indep.effective_independent_lobes : null;
+      if (eil !== null && measurable !== null && measurable >= 2) {
+        chipIV.textContent = eil.toFixed(1);
+        if (chipIS) chipIS.innerHTML = '<span class="l-en">' + measurable + '/' + (total || '?') + ' measurable</span>'
+          + '<span class="l-zh">' + measurable + '/' + (total || '?') + ' 可测</span>';
+        if (plainDiv) plainDiv.style.display = '';
+        if (plainText) {
+          plainText.innerHTML = '<span class="l-en">The "effective independent witnesses" number estimates how many of the ' + (total || '?') + ' active engines fire on unrelated information — '
+            + eil.toFixed(1) + ' out of ' + measurable + ' measurable engines. Closer to ' + measurable + ' = more diverse. Based on a participation-ratio of the engine co-firing correlation matrix. '
+            + '<em>Descriptive only — not gauntleted.</em></span>'
+            + '<span class="l-zh">"有效独立证人"数字估算' + (total || '?') + '个活跃引擎中有多少引擎基于不相关信息触发——'
+            + measurable + '个可测引擎中有' + eil.toFixed(1) + '个独立。数值越接近' + measurable + '代表多样性越强。基于引擎共触发相关矩阵的参与比率。'
+            + '<em>仅描述性——未过关卡。</em></span>';
+        }
+      } else {
+        chipIV.textContent = '—';
+        var covPrefix = (measurable !== null ? (measurable + '/' + (total || '?') + ' ') : '');
+        if (chipIS) chipIS.innerHTML = '<span class="l-en">' + covPrefix + 'measurable — accruing</span>'
+          + '<span class="l-zh">' + covPrefix + '可测——累积中</span>';
+        if (plainDiv) plainDiv.style.display = '';
+        if (plainText) {
+          plainText.innerHTML = '<span class="l-en">Independence data is accruing — fewer than 2 engines have enough history to measure co-firing correlation yet. '
+            + '<em>Descriptive only — not gauntleted.</em></span>'
+            + '<span class="l-zh">独立性数据累积中——目前可测量共触发相关性的引擎不足2个。'
+            + '<em>仅描述性——未过关卡。</em></span>';
+        }
+      }
+      if (sameBetEl && indep && indep.same_bet_warning) {
+        var sbw = indep.same_bet_warning;
+        var escIndep = function (s) {
+          return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        };
+        sameBetEl.style.display = '';
+        sameBetEl.innerHTML = ' <strong><span class="l-en">Same-bet warning:</span><span class="l-zh">相同押注警告：</span></strong> '
+          + escIndep(sbw.text || sbw.message || '');
+      }
+    })();
 
     // Subset note
     var subEl = document.getElementById('graph_subset_note');

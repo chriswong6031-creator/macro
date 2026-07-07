@@ -982,6 +982,18 @@ jobs:
         # Fixes P-D5-3 'no PIT context history' class going forward.
         # Every source is absent-safe; always exits 0.
         run: python -m scripts.archive_context_snapshots || true
+      - name: CPI net-liquidity artifact (data infrastructure — non-fatal)
+        # Deterministic full rebuild of data/macro/fed_net_liquidity.parquet (+ the
+        # fed_net_liquidity_meta.json sidecar) from the three component parquets the
+        # collect job refreshed tonight (data/fred/WALCL + RRPONTSYD, data/treasury/tga)
+        # via engine.canon.load_net_liquidity_components — the ONE netliq formula
+        # (audit #28): WALCL_bn − RRP_bn − TGA_bn, billions. Stale-guard truncates the
+        # frame at min(component last real obs)+10bd so a dead component collector can
+        # never silently ffill a drain flat for weeks. Context-tier ONLY — registers
+        # no trial (FT-3 suspended by cycle_truth_ft2_credit_hazard_null_v1; see the
+        # fed-net-liquidity notes in config/synapse.yml). Output covered by
+        # 'git add data/' in 'commit engine outputs' below.
+        run: python -m scripts.build_netliq_daily || echo "::warning::build_netliq_daily failed (non-fatal — last committed artifact stands)"
       - name: signal sanity (correctness tripwire — warn mode)
         if: always()   # validate whatever DID build, even if an earlier optional builder failed
         # The CORRECTNESS dead-man's switch over the per-ticker boards BOTH books select from

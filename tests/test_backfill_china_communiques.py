@@ -11,6 +11,9 @@ Covers (NO live network — all HTTP mocked or bypassed):
   8. Resumability: existing doc_id is skipped
   9. upsert_rows keep-FIRST semantics
   10. Explicit gap row emitted for CEWC 2017
+  11. Listing-date parsing from hui12 spans (Bug 1 fix)
+  12. Page-range synthesis covers the missing -3 gap (Bug 2 fix)
+  13. publish_date lands from listing while meeting_date stays body-derived
 
 Run: .venv/bin/python -m pytest tests/test_backfill_china_communiques.py -v
   or: .venv/bin/python -m tests.test_backfill_china_communiques
@@ -21,7 +24,7 @@ import hashlib
 import sys
 import tempfile
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, call, patch
 
 import pandas as pd
 import pytest
@@ -40,12 +43,15 @@ from scripts.backfill_china_communiques import (  # noqa: E402
     _is_cewc,
     _is_politburo_econ,
     _listing_may_be_politburo_econ,
+    _parse_listing_entries,
     _pboc_article_hrefs,
+    _pboc_fetch_article,
     _pboc_page_urls,
     extract_meeting_date,
     extract_meeting_year,
     extract_quarter,
     fetch_cewc,
+    fetch_pboc_mpc,
     fetch_politburo_econ,
     load_existing,
     make_doc_id,
@@ -62,18 +68,23 @@ FIXTURES_DIR = Path(__file__).parent / "fixtures" / "data" / "china_communiques"
 
 _PBOC_INDEX_HTML = (FIXTURES_DIR / "pboc_index_page1.html").read_text(encoding="utf-8")
 _PBOC_PAGE2_HTML = (FIXTURES_DIR / "pboc_index_page2.html").read_text(encoding="utf-8")
+_PBOC_PAGE3_HTML = (FIXTURES_DIR / "pboc_index_page3.html").read_text(encoding="utf-8")
 _PBOC_ARTICLE_HTML = (FIXTURES_DIR / "pboc_article_2021q1.html").read_text(encoding="utf-8")
 
 
 # ---------------------------------------------------------------------------
-# 1. PBoC pagination URL extraction
+# 1. PBoC pagination URL extraction (with page-range synthesis)
 # ---------------------------------------------------------------------------
 
 class TestPbocPaginationHrefs:
-    def test_extracts_page2_href(self) -> None:
+    def test_extracts_page2_and_synthesises_page3_from_page4(self) -> None:
+        # Page 1 footer lists -2 and -4 only; synthesis must fill -3.
         pages = _pboc_page_urls(_PBOC_INDEX_HTML, PBOC_INDEX_URL)
-        assert len(pages) == 1
-        assert pages[0].endswith("af7dde41-2.html")
+        # Should produce pages 2, 3, 4 (synthesis fills the gap at 3)
+        assert len(pages) == 3
+        assert any("af7dde41-2.html" in p for p in pages)
+        assert any("af7dde41-3.html" in p for p in pages)  # synthesised gap
+        assert any("af7dde41-4.html" in p for p in pages)
 
     def test_no_duplicates(self) -> None:
         # Page HTML with two identical pagination links
@@ -82,7 +93,8 @@ class TestPbocPaginationHrefs:
             '<a href="af7dde41-2.html">2</a><a href="af7dde41-2.html">next</a>'
         )
         pages = _pboc_page_urls(html_dup, PBOC_INDEX_URL)
-        assert pages.count(pages[0]) == 1
+        urls_2 = [p for p in pages if "af7dde41-2.html" in p]
+        assert len(urls_2) == 1
 
     def test_no_pages_in_single_page(self) -> None:
         # A listing with no af7dde41-N.html links → empty
@@ -92,10 +104,22 @@ class TestPbocPaginationHrefs:
 
     def test_sibling_url_constructed_correctly(self) -> None:
         pages = _pboc_page_urls(_PBOC_INDEX_HTML, PBOC_INDEX_URL)
-        # Should be a sibling of index.html in the same directory
+        # Should be siblings of index.html in the same directory
         expected_base = PBOC_INDEX_URL.rsplit("/", 1)[0]
-        assert pages[0].startswith(expected_base)
-        assert "af7dde41-2.html" in pages[0]
+        assert all(p.startswith(expected_base) for p in pages)
+        assert any("af7dde41-2.html" in p for p in pages)
+
+    def test_synthesis_gap_fills_missing_page3(self) -> None:
+        """Explicit test: when footer links -2 and -4 but not -3, -3 must be synthesised."""
+        html = (
+            '<a href="af7dde41-2.html">2</a>'
+            '<a href="af7dde41-4.html">4</a>'
+        )
+        pages = _pboc_page_urls(html, PBOC_INDEX_URL)
+        page_nums = {p.rsplit("/", 1)[-1] for p in pages}
+        assert "af7dde41-3.html" in page_nums, (
+            "Page 3 must be synthesised when footer only links -2 and -4"
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -566,6 +590,223 @@ class TestPbocPaginationHashFlexibility:
         )
         pages = _pboc_page_urls(html, PBOC_INDEX_URL)
         assert len(pages) == 1
+
+
+# ---------------------------------------------------------------------------
+# 13. Listing-date parsing from hui12 spans (Bug 1 fix)
+# ---------------------------------------------------------------------------
+
+class TestListingDateParsing:
+    """_parse_listing_entries extracts (href, publish_date) pairs from a listing page."""
+
+    def test_extracts_date_from_hui12_span(self) -> None:
+        """hui12 span with valid YYYY-MM-DD adjacent to article link is captured."""
+        html = """
+        <table><tr><td>
+          <font><a href="/zhengcehuobisi/125207/3870933/3870936/db112f50a19144d1ab7ac217a69f2fa5/index.html">
+            2021年第一季度货币政策委员会例会
+          </a></font><span class="hui12">2021-03-31</span>
+        </td></tr></table>
+        """
+        entries = _parse_listing_entries(html)
+        assert len(entries) == 1
+        href, pub = entries[0]
+        assert "db112f50" in href
+        assert pub == "2021-03-31"
+
+    def test_missing_hui12_span_returns_none(self) -> None:
+        """Entry without a hui12 span yields publish_date=None (not a crash)."""
+        html = """
+        <table><tr><td>
+          <font><a href="/goutongjiaoliu/113456/113469/2025092212542380264/index.html">
+            2009年第一季度货币政策委员会例会
+          </a></font>
+        </td></tr></table>
+        """
+        entries = _parse_listing_entries(html)
+        assert len(entries) == 1
+        href, pub = entries[0]
+        assert "2025092212542380264" in href
+        assert pub is None
+
+    def test_malformed_hui12_date_returns_none(self) -> None:
+        """hui12 span with bad content (not YYYY-MM-DD) yields None, not a crash."""
+        html = """
+        <table><tr><td>
+          <font><a href="/zhengcehuobisi/125207/3870933/3870936/aabbccdd11223344aabbccdd11223344/index.html">title</a></font>
+          <span class="hui12">not-a-date</span>
+        </td></tr></table>
+        """
+        entries = _parse_listing_entries(html)
+        assert len(entries) == 1
+        _, pub = entries[0]
+        assert pub is None
+
+    def test_parses_page1_fixture_correctly(self) -> None:
+        """Page1 fixture: two entries have hui12 dates, one does not."""
+        entries = _parse_listing_entries(_PBOC_INDEX_HTML)
+        assert len(entries) == 3
+        dates = [pub for _, pub in entries]
+        # Two entries with dates, one without
+        non_null = [d for d in dates if d is not None]
+        null_count = sum(1 for d in dates if d is None)
+        assert len(non_null) == 2
+        assert null_count == 1
+        assert "2021-03-31" in non_null
+        assert "2020-12-28" in non_null
+
+    def test_deduplication_no_repeated_hrefs(self) -> None:
+        """Duplicate anchors in HTML yield only one entry per href."""
+        html = """
+        <table>
+          <tr><td><a href="/zhengcehuobisi/125207/3870933/3870936/db112f50a19144d1ab7ac217a69f2fa5/index.html">A</a>
+          <span class="hui12">2021-03-31</span></td></tr>
+          <tr><td><a href="/zhengcehuobisi/125207/3870933/3870936/db112f50a19144d1ab7ac217a69f2fa5/index.html">B (dup)</a>
+          <span class="hui12">2021-03-31</span></td></tr>
+        </table>
+        """
+        entries = _parse_listing_entries(html)
+        assert len(entries) == 1
+
+    def test_invalid_date_values_rejected(self) -> None:
+        """YYYY-MM-DD pattern that is not a real calendar date is rejected."""
+        html = """
+        <table><tr><td>
+          <font><a href="/zhengcehuobisi/125207/3870933/3870936/ffffffffffffffffffffffffffffffff/index.html">title</a></font>
+          <span class="hui12">2021-13-45</span>
+        </td></tr></table>
+        """
+        entries = _parse_listing_entries(html)
+        assert len(entries) == 1
+        _, pub = entries[0]
+        assert pub is None, "Month=13 or day=45 should be rejected as invalid date"
+
+
+# ---------------------------------------------------------------------------
+# 14. Page-range synthesis covers the missing -3 gap (Bug 2 fix)
+# ---------------------------------------------------------------------------
+
+class TestPageRangeSynthesis:
+    """fetch_pboc_mpc must synthesise page 3 when footer only links -2 and -4."""
+
+    def _make_mock_response(self, html_content: str, encoding: str = "utf-8"):
+        """Helper: fake requests response object."""
+        mock_resp = MagicMock()
+        mock_resp.content = html_content.encode(encoding)
+        mock_resp.headers = {"content-type": f"text/html; charset={encoding}"}
+        mock_resp.raise_for_status = MagicMock()
+        return mock_resp
+
+    def test_synthesis_generates_page3_url(self) -> None:
+        """_pboc_page_urls with footer linking -2 and -4 must produce 3 pages (2,3,4)."""
+        html = '<a href="af7dde41-2.html">2</a><a href="af7dde41-4.html">4</a>'
+        pages = _pboc_page_urls(html, PBOC_INDEX_URL)
+        filenames = {p.rsplit("/", 1)[-1] for p in pages}
+        assert "af7dde41-2.html" in filenames
+        assert "af7dde41-3.html" in filenames, "Gap at page 3 must be synthesised"
+        assert "af7dde41-4.html" in filenames
+        assert len(filenames) == 3
+
+    def test_fetch_pboc_mpc_fetches_synthesised_page(self) -> None:
+        """When fetch_pboc_mpc runs, it must attempt to fetch the synthesised page 3
+        even though page 1's footer only links pages 2 and 4 (not 3)."""
+        # Build minimal page HTMLs: page1 footer → -2 and -4 (gap at -3)
+        page1_html = _PBOC_INDEX_HTML  # fixture has -2 and -4 in footer
+        # Page 2: links to -3 and -4 in its footer (extending discovery)
+        page2_html = _PBOC_PAGE2_HTML
+        # Pages 3 and 4: minimal, no new hrefs
+        empty_page_html = """<html><body><table></table>
+        <div class="pages"><a href="af7dde41-2.html">2</a></div></body></html>"""
+
+        fetched_urls: list[str] = []
+
+        def fake_get(url: str, **kwargs):
+            fetched_urls.append(url)
+            if "af7dde41-2.html" in url:
+                return self._make_mock_response(page2_html)
+            elif "af7dde41-3.html" in url:
+                return self._make_mock_response(empty_page_html)
+            elif "af7dde41-4.html" in url:
+                return self._make_mock_response(empty_page_html)
+            else:
+                # index.html
+                return self._make_mock_response(page1_html)
+
+        mock_session = MagicMock()
+        mock_session.get.side_effect = fake_get
+
+        with patch("scripts.backfill_china_communiques._pboc_fetch_article", return_value=None), \
+             patch("scripts.backfill_china_communiques.time.sleep"):
+            fetch_pboc_mpc(mock_session, known_ids=set(), limit=0, dry_run=False)
+
+        page3_fetched = any("af7dde41-3.html" in u for u in fetched_urls)
+        assert page3_fetched, (
+            f"Page 3 (synthesised gap) was never fetched. Fetched URLs: {fetched_urls}"
+        )
+
+
+# ---------------------------------------------------------------------------
+# 15. publish_date from listing, meeting_date stays body-derived
+# ---------------------------------------------------------------------------
+
+class TestPublishDateFromListing:
+    """_pboc_fetch_article: listing_publish_date takes precedence over body-extracted date."""
+
+    def _make_session(self, html: str, encoding: str = "utf-8") -> MagicMock:
+        mock_resp = MagicMock()
+        mock_resp.content = html.encode(encoding)
+        mock_resp.headers = {"content-type": f"text/html; charset={encoding}"}
+        mock_resp.raise_for_status = MagicMock()
+        session = MagicMock()
+        session.get.return_value = mock_resp
+        return session
+
+    def test_listing_publish_date_used_when_provided(self) -> None:
+        """When listing_publish_date is passed, publish_date in the row equals that value."""
+        session = self._make_session(_PBOC_ARTICLE_HTML)
+        href = "/zhengcehuobisi/125207/3870933/3870936/db112f50a19144d1ab7ac217a69f2fa5/index.html"
+        with patch("scripts.backfill_china_communiques.time.sleep"):
+            row = _pboc_fetch_article(session, href, listing_publish_date="2021-03-31")
+        assert row is not None
+        assert row["publish_date"] == "2021-03-31"
+
+    def test_meeting_date_stays_body_derived(self) -> None:
+        """Even with listing_publish_date provided, meeting_date is still from body text."""
+        session = self._make_session(_PBOC_ARTICLE_HTML)
+        href = "/zhengcehuobisi/125207/3870933/3870936/db112f50a19144d1ab7ac217a69f2fa5/index.html"
+        with patch("scripts.backfill_china_communiques.time.sleep"):
+            row = _pboc_fetch_article(session, href, listing_publish_date="2021-03-31")
+        assert row is not None
+        # The fixture body contains "2021年3月29日" — body-extracted meeting date
+        assert row["meeting_date"] == "2021-03-29"
+        # publish_date and meeting_date are different — listing date vs meeting date
+        assert row["publish_date"] != row["meeting_date"]
+
+    def test_fallback_to_body_date_when_listing_date_absent(self) -> None:
+        """When listing_publish_date is None, publish_date falls back to body-extracted date."""
+        session = self._make_session(_PBOC_ARTICLE_HTML)
+        href = "/zhengcehuobisi/125207/3870933/3870936/db112f50a19144d1ab7ac217a69f2fa5/index.html"
+        with patch("scripts.backfill_china_communiques.time.sleep"):
+            row = _pboc_fetch_article(session, href, listing_publish_date=None)
+        assert row is not None
+        # Without listing date, publish_date falls back to meeting_date (body-extracted)
+        assert row["publish_date"] == row["meeting_date"]
+
+    def test_publish_date_none_when_both_absent(self) -> None:
+        """No listing date + no body date → publish_date is None."""
+        # Article HTML with no Chinese date in body
+        html_no_date = """<html><body>
+        <title>货币政策委员会例会</title>
+        <div class="zoom1">
+          <p>中国人民银行货币政策委员会第一季度例会在北京召开。</p>
+        </div></body></html>"""
+        session = self._make_session(html_no_date)
+        href = "/zhengcehuobisi/125207/3870933/3870936/aaaa1234bbbb5678cccc9012dddd3456/index.html"
+        with patch("scripts.backfill_china_communiques.time.sleep"):
+            row = _pboc_fetch_article(session, href, listing_publish_date=None)
+        assert row is not None
+        assert row["publish_date"] is None
+        assert row["meeting_date"] is None
 
 
 if __name__ == "__main__":
