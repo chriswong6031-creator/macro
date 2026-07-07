@@ -595,3 +595,25 @@ Exploration tables (full-sample family transition matrices, both horizons) ship 
 artifact. Full adjudication: `research/cycle_masterplan/CPI_TR1_VERDICT.md`. Artifacts:
 `data/cycle_pattern/tr_trials/tr1_transition.json`; budget `rf.cycle_pattern.tr_v0` n=6 declared
 pre-p-value (2026-07-07T00:27Z, before any evaluation).
+
+---
+
+## 17 · IX-1 index-level turn hazard — TRANSFER test, family `cycle_pattern_ix` (registered 2026-07-07, PRE-RUN)
+
+**Two-commit discipline as §12–§16.** NEW UNIT OF ANALYSIS (masterplan §5, capability C5): does the member-trained hazard model TRANSFER to index-level entities, beating each index's own age-pooled KM? The CPI-017 member-level FT-4 null left the index-level target explicitly open; this is that trial. Not an additive-feature trial on the pooled member hazard (CPI-018 suspension does not apply: different evaluation unit, its own named baseline; the member model is used as-trained, unchanged).
+
+**Substrate (frozen):** model arm trains on the MEMBER panel `data/hazard/panel_price_c4414dcb.parquet`; evaluation rows come from the INDEX panel `data/hazard/panel_index_v0.parquet` (8 entities: SPY = us_market + 7 blocs, epoch `price_c4414dcb`, built by #1769 with schema parity). **Embargo:** rows ≥ 2024-01-01 excluded from ALL fitting and the gate. Walk-forward: the W4.2 expanding-origin ANNUAL harness verbatim (first test year 2010, 6-month embargo, test years 2010–2023 = 14 blocks).
+
+**Model arm (frozen):** per direction, the W4.2 discrete-time L2 logistic with the shipped W2.5-bound feature set, fit on member-panel train rows EXACTLY as the §12/§13 baseline arm does (train-fold standardization from member rows; leak-free out-of-fold PAV calibration fit on member out-of-fold predictions), then SCORED on the index-panel rows of the fold's test window (index features standardized with the member train-fold parameters; PAV applied as fit). No index-row fitting anywhere. The index FT-4 covariates present in panel_index_v0 (sync_family, phase_breadth_*, pos_dispersion) are NOT used by the model arm — reserved for a future stacking trial (see falsifiers).
+
+**Baseline (frozen):** age-POOLED per-entity KM: P(y_h = 1 | entity, direction) estimated on INDEX-panel train rows via `engine/index_km.py` conventions (fallback to the entity's family pool below 30 train rows per (entity, direction), then to the global index pool — the substrate census shows SPY-down and VXUS-down will use fallback in early folds; disclosed, not tuned).
+
+**Cells (4):** direction {up, dn} × horizon {1m, 3m}, each pooled across ALL 8 index entities' OOS test rows. Brier per row; paired ΔBrier(KM − model).
+
+| id | claim | success criterion | judged by | E[pass\|null] | FDR family |
+|---|---|---|---|---|---|
+| **IX1-{dir}-{h}** | the member-trained hazard model beats the index age-pooled KM on OOS Brier at index level | paired ΔBrier(KM − model) month-block bootstrap CI₉₀ excludes 0 on the positive side AND survives BH-FDR q=0.10 within `cycle_pattern_ix` AND sign-stability ≥ 9 of 14 test years | `data/cycle_pattern/ix_trials/ix1_transfer.json` → `ledger.<dir>.<h>` | 0.05/cell | `cycle_pattern_ix` (q=0.10) |
+
+**Budget:** 4 cells, declared as `rf.cycle_pattern.ix_v0` at run time BEFORE any p-value. No other horizons, entities, feature sets, stacking variants, or calibration variants may be evaluated under this registration. **Sanity gate (pipeline, printed, not a claim):** on the full pre-embargo index panel, the pooled down-leg y3 event rate must exceed the pooled up-leg y3 event rate (down legs turn faster — the substrate census structure), else abort sys.exit(2).
+
+**Outcome handling (frozen):** passing cells → a display-class truth + factory candidates (status `screened`, trial_family `ix_v0`, authority display_only); engine-backing the markets.html US row is a SEPARATE adoption wave requiring its own review — no page/UI change this wave regardless of outcome. 0/4 → ONE scoped null truth ("the member-trained hazard does not transfer to index level against index age-pooled KM"). Falsifiers/reopening: (a) an index-covariate stacking trial (member scores + sync/phase-breadth/dispersion fit at index level) under a new registration naming this result; (b) accrued post-embargo data. Exploration tables ship to the measurement research surface either way.
