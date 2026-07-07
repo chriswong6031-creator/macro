@@ -24,7 +24,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | intl-fix | 1 |
 | long-hold | 22 |
 | mastermind-feedback-contract | 2 |
-| neural-web | 34 |
+| neural-web | 35 |
 | next3 | 3 |
 | nw-mastermind-bridge | 2 |
 | nw-rails | 7 |
@@ -44,7 +44,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 108 |
+| display | 109 |
 | infrastructure | 64 |
 | scored | 4 |
 | shadow | 38 |
@@ -53,7 +53,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 205 |
+| git | 206 |
 | gitignored-local | 6 |
 | r2 | 3 |
 
@@ -249,6 +249,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | risk-radar-review-log | `data/risk_radar/review_log.jsonl` | jsonl | weekly | display | 0 | 0 |
 | rule-experiment-summaries | `data/rule_experiments/results/<EXP_ID>_summary.json` | json | on-demand | display | 0 | 0 |
 | site-neuralweb-health | `site/neuralwebdata/health.json` | json | daily-engine | infrastructure | 0 | 0 |
+| site-neuralweb-ruling-graph | `site/neuralwebdata/ruling_graph.json` | json | on-demand | display | 0 | 0 |
 
 ### next3
 
