@@ -2705,6 +2705,10 @@ prediction_markets:
     fed_next:  {match: "Fed Decision", pick: nearest_end, label_en: "Next Fed decision", label_zh: "下次美联储决议"}
     fed_cuts:  {match: "rate cuts in", pick: max_volume,  label_en: "Fed cuts this year", label_zh: "今年降息次数"}
     recession: {match: "recession",    pick: max_volume,  label_en: "US recession",       label_zh: "美国衰退"}
+    # MRI-R16 — market-implied CPI/NFP benchmarks (display context only, never fused into model math).
+    # Title substrings match Polymarket events; snapshots accrue nightly → history backtestable.
+    cpi_print: {match: "CPI",           pick: nearest_end, label_en: "CPI outcome market",  label_zh: "CPI市场预期"}
+    nfp_print: {match: "nonfarm",       pick: nearest_end, label_en: "NFP outcome market",  label_zh: "非农市场预期"}
 
 # =============================================================================
 # BIS global credit cycle (collectors/bis.py + engine/credit_cycle.py) — the

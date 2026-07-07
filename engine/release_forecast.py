@@ -788,10 +788,11 @@ def _project_cpi(
     ar3_pred = _compute_ar3(mom_series["mom"].values, feature_names[:3], feats, y_all, X_all, pred_features)
 
     # Surprise skew
-    sigma, tag = None, None
+    sigma, tag, sigma_scale_pp = None, None, None
     if point is not None and naive is not None and len(errors) >= MIN_QUANTILE_OBS:
         err_std = float(np.std(errors, ddof=1))
         if err_std > 0:
+            sigma_scale_pp = round(err_std, 4)
             sigma = round((point - naive) / err_std, 4)
             if abs(sigma) <= INLINE_BAND_SIGMA:
                 tag = "inline"
@@ -834,6 +835,7 @@ def _project_cpi(
         },
         "surprise_skew": {
             "sigma": sigma,
+            "sigma_scale_pp": sigma_scale_pp,
             "tag": tag,
             "inline_band": INLINE_BAND_SIGMA,
         },
@@ -1014,10 +1016,11 @@ def _project_nfp(asof: date, vintages: pd.DataFrame, root: Path) -> dict:
             except Exception:
                 ar3_pred = None
 
-    sigma, tag = None, None
+    sigma, tag, sigma_scale_pp = None, None, None
     if point is not None and naive is not None and len(errors) >= MIN_QUANTILE_OBS:
         err_std = float(np.std(errors, ddof=1))
         if err_std > 0:
+            sigma_scale_pp = round(err_std, 4)
             sigma = round((point - naive) / err_std, 4)
             if abs(sigma) <= INLINE_BAND_SIGMA:
                 tag = "inline"
@@ -1087,6 +1090,7 @@ def _project_nfp(asof: date, vintages: pd.DataFrame, root: Path) -> dict:
         },
         "surprise_skew": {
             "sigma": sigma,
+            "sigma_scale_pp": sigma_scale_pp,
             "tag": tag,
             "inline_band": INLINE_BAND_SIGMA,
         },
@@ -1123,7 +1127,7 @@ def _empty_projection(release: str, asof: date, reason: str) -> dict:
             "cleveland_nowcast": None,
             "market_implied": None,
         },
-        "surprise_skew": {"sigma": None, "tag": None, "inline_band": INLINE_BAND_SIGMA},
+        "surprise_skew": {"sigma": None, "sigma_scale_pp": None, "tag": None, "inline_band": INLINE_BAND_SIGMA},
         "pit_provenance": {
             "revision_optimistic_legs": [],
             "unrevised_legs": [],

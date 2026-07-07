@@ -1344,6 +1344,103 @@ def _build_scoreboard(
 
 
 # ---------------------------------------------------------------------------
+# 8d. PR-I enrichments (MRI-R15 / MRI-R16 / MRI-R17)
+# ---------------------------------------------------------------------------
+
+def _benchmark_median(benchmark_set: dict) -> float | None:
+    """Compute median across available benchmark values for the surprise-distribution band."""
+    vals = [
+        v for v in [
+            benchmark_set.get("naive_prior"),
+            benchmark_set.get("trailing_3m"),
+            benchmark_set.get("ar_model"),
+            benchmark_set.get("cleveland_nowcast"),
+        ]
+        if v is not None and math.isfinite(float(v))
+    ]
+    if not vals:
+        return None
+    return float(np.median(vals))
+
+
+def _enrich_upcoming_block(upcoming_block: list[dict], root: Path) -> None:
+    """Attach PR-I enrichment fields to each upcoming entry in-place. Fail-open."""
+    try:
+        from engine.release_market_context import (
+            compute_surprise_distribution,
+            get_kalshi_implied,
+            get_market_implied_benchmark,
+            get_reaction_sensitivity,
+        )
+    except Exception as exc:
+        log.warning("release_market_context import failed — enrichments skipped: %s", exc)
+        return
+
+    snapshots_path = root / "data" / "prediction_markets" / "snapshots.parquet"
+    kalshi_path = snapshots_path.parent / "kalshi_releases.parquet"
+    playbook_path = root / "research" / "release_playbook" / "results" / "playbook_v1.json"
+
+    # Read current regime label (for reaction sensitivity regime preference)
+    current_regime: str | None = None
+    try:
+        regime_path = root / "data" / "regime" / "latest.json"
+        if regime_path.exists():
+            with open(regime_path, encoding="utf-8") as fh:
+                regime_data = json.load(fh)
+            current_regime = regime_data.get("quad") or regime_data.get("label") or None
+    except Exception as exc:
+        log.debug("regime read for enrichment failed: %s", exc)
+
+    for item in upcoming_block:
+        rt = item.get("release_type", "")
+        proj = item.get("projection", {})
+        skew = item.get("surprise_skew", {})
+        bench = item.get("benchmark_set", {})
+
+        # MRI-R15: surprise_distribution
+        try:
+            # sigma_scale_pp is the pp-scale std the CDF integrates over;
+            # skew["sigma"] is the standardized POSITION, not the scale.
+            sigma = skew.get("sigma_scale_pp") if skew else None
+            bench_med = _benchmark_median(bench) if bench else None
+            if sigma and bench_med is not None:
+                item["surprise_distribution"] = compute_surprise_distribution(
+                    proj, bench_med, sigma
+                )
+            else:
+                item["surprise_distribution"] = None
+        except Exception as exc:
+            log.debug("surprise_distribution enrichment failed for %s: %s", rt, exc)
+            item["surprise_distribution"] = None
+
+        # MRI-R16: market_implied — Kalshi release ladder preferred (implied_median,
+        # per masterplan §9.1), Polymarket event match as fallback.
+        try:
+            release_date_str = item.get("release_date")
+            mi = get_kalshi_implied(rt, item.get("period"), kalshi_path)
+            if mi is None:
+                mi = get_market_implied_benchmark(rt, release_date_str, snapshots_path)
+            # Attach to benchmark_set.market_implied (context only, never model math)
+            if bench is not None:
+                bench["market_implied"] = mi
+            item["market_implied"] = mi  # also at top level for UI discovery
+        except Exception as exc:
+            log.debug("market_implied enrichment failed for %s: %s", rt, exc)
+            if bench is not None:
+                bench["market_implied"] = None
+            item["market_implied"] = None
+
+        # MRI-R17: reaction_sensitivity
+        try:
+            item["reaction_sensitivity"] = get_reaction_sensitivity(
+                rt, playbook_path, current_regime
+            )
+        except Exception as exc:
+            log.debug("reaction_sensitivity enrichment failed for %s: %s", rt, exc)
+            item["reaction_sensitivity"] = None
+
+
+# ---------------------------------------------------------------------------
 # 9. Main build
 # ---------------------------------------------------------------------------
 
@@ -1368,6 +1465,9 @@ def build(root: Path, dry_run: bool = False) -> dict:
     # 3. Build upcoming projection block
     upcoming_block = _build_upcoming_block(today, root, upcoming_releases, policy_backdrop)
     log.info("built %d upcoming projection entries", len(upcoming_block))
+
+    # 3a. PR-I enrichments — fail-open per field; any exception → null + log
+    _enrich_upcoming_block(upcoming_block, root)
 
     # 4. Load existing ledger
     ledger_path = root / _LEDGER_RELPATH
@@ -1421,6 +1521,7 @@ def build(root: Path, dry_run: bool = False) -> dict:
             "can_size": False,
             "can_trade": False,
         },
+        "enrichments": ["surprise_distribution", "market_implied", "reaction_sensitivity"],
         "upcoming": upcoming_block,
         "last_scored": last_scored,
         "scoreboard_ref": "data/release_forecast/scoreboard.json",
