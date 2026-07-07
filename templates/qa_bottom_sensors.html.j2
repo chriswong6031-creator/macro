@@ -90,6 +90,13 @@ table.qa-tbl td.dash { color:var(--muted); }
 .sp-stale     { background:color-mix(in srgb,var(--warn) 10%,transparent); color:var(--warn); border:1px solid color-mix(in srgb,var(--warn) 25%,transparent); }
 .sp-unavailable { color:var(--muted); }
 
+/* decline-shape descriptor (Amendment 3 family E; display-only decline-SHAPE read,
+   NOT a buy signal — deliberately neutral/informational hues, no green=good semantics) */
+.dg-badge { display:inline-block; padding:2px 7px; border-radius:5px; font-size:11px; font-weight:700; white-space:nowrap; }
+.dg-flush { background:color-mix(in srgb,#5b8def 15%,transparent); color:#5b8def; border:1px solid color-mix(in srgb,#5b8def 30%,transparent); }
+.dg-mixed { background:var(--panel2); color:var(--muted); border:1px solid var(--line); }
+.dg-grind { background:color-mix(in srgb,var(--warn) 10%,transparent); color:var(--warn); border:1px solid color-mix(in srgb,var(--warn) 25%,transparent); }
+
 /* dist coloring — zh UP/DOWN token flip applies via --up/--down vars */
 .dist-near { color:var(--up); font-weight:600; }   /* near 21d low = potential bottom */
 .dist-far  { color:var(--down); font-weight:600; } /* far from 21d low = chase risk */
@@ -227,6 +234,9 @@ html[data-lang="zh"] .dist-far  { color:var(--down); } /* --down already swapped
   <th onclick="qaSort('dist_126d_high_pct')" data-col="dist_126d_high_pct"
     data-tip-en="Distance below the prior 126-session rolling high (negative = below peak)."
     data-tip-zh="低于前126交易日滚动高点的距离（负值=低于高点）。">{{ t('Dist 126d High%','距126日高点%') }} <span class="sort-ind">↕</span></th>
+  <th onclick="qaSort('decline_geometry')" data-col="decline_geometry"
+    data-tip-en="Decline shape — display-only, a SHAPE read, NOT a buy signal and NOT an escalation. Cross-sectional tercile of the trailing-63-session loss-Herfindahl: flush = losses concentrated in a few large down-days (forced-supply pattern that empties); grind = losses spread evenly (distribution pattern that persists); mixed = middle tercile. Dash = uncomputable."
+    data-tip-zh="下跌形态——仅展示，是一种形态描述，非买入信号，也非升级信号。基于过去63个交易日亏损赫芬达尔指数的横截面三分位：flush=跌幅集中于少数几个大跌日（强制抛售型，抛压释放后趋于枯竭）；grind=跌幅均匀分布（派发型，抛压持续）；mixed=中间三分位。横线=不可计算。">{{ t('Decline Shape','下跌形态') }} <span class="sort-ind">↕</span></th>
   <th onclick="qaSort('entry_quality_band')" data-col="entry_quality_band"
     data-tip-en="Entry quality band (A/B/C/D) from the entry quality engine. Dash = unavailable."
     data-tip-zh="入场质量评级（A/B/C/D），来自入场质量引擎。横线=不可用。">{{ t('EQ Band','入场质量') }} <span class="sort-ind">↕</span></th>
@@ -245,6 +255,17 @@ html[data-lang="zh"] .dist-far  { color:var(--down); } /* --down already swapped
 </tr>
 </thead>
 <tbody id="qa-tbody">
+{# decline-shape per-value popover framing (§F.3): descriptive, display-only, not a buy signal #}
+{% set dg_tip_en = {
+  'flush': 'Decline shape: flush — losses concentrated in few large down-days (forced-supply pattern); display-only, not a buy signal.',
+  'grind': 'Decline shape: grind — losses spread evenly (distribution pattern).',
+  'mixed': 'Decline shape: mixed — middle tercile of the decline-concentration cross-section; display-only.'
+} %}
+{% set dg_tip_zh = {
+  'flush': '下跌形态：flush——跌幅集中于少数几个大跌日（强制抛售型）；仅展示，非买入信号。',
+  'grind': '下跌形态：grind——跌幅均匀分布（派发型）。',
+  'mixed': '下跌形态：mixed——下跌集中度横截面的中间三分位；仅展示。'
+} %}
 {% for r in rows %}
 {% set sym = r.symbol | default('') %}
 {% set state = r.bottom_state | default('WATCH') %}
@@ -253,6 +274,7 @@ html[data-lang="zh"] .dist-far  { color:var(--down); } /* --down already swapped
 {% set ticks = r.get('trigger_age_ticks') %}
 {% set dist21 = r.get('dist_21d_low_pct') %}
 {% set dist126 = r.get('dist_126d_high_pct') %}
+{% set dgeo = r.get('decline_geometry') %}
 {% set eqb = r.get('entry_quality_band') %}
 {% set squeeze = r.get('squeeze_state') %}
 {% set earn_days = r.get('earnings_days_to') %}
@@ -269,6 +291,7 @@ html[data-lang="zh"] .dist-far  { color:var(--down); } /* --down already swapped
   data-trigger_age_ticks="{{ ticks if ticks is not none else '' }}"
   data-dist_21d_low_pct="{{ dist21 if dist21 is not none else '' }}"
   data-dist_126d_high_pct="{{ dist126 if dist126 is not none else '' }}"
+  data-decline_geometry="{{ dgeo if dgeo is not none else '' }}"
   data-entry_quality_band="{{ eqb if eqb is not none else '' }}"
   data-squeeze_state="{{ squeeze if squeeze is not none else '' }}"
   data-earnings_days_to="{{ earn_days if earn_days is not none else '' }}"
@@ -294,6 +317,13 @@ html[data-lang="zh"] .dist-far  { color:var(--down); } /* --down already swapped
   </td>
   <td class="num">
     {% if dist126 is not none %}{{ '%.1f'|format(dist126) }}%{% else %}<span class="dash">—</span>{% endif %}
+  </td>
+  <td>
+    {% if dgeo %}
+      <span class="dg-badge dg-{{ dgeo }}"
+        data-tip-en="{{ dg_tip_en.get(dgeo, '') }}"
+        data-tip-zh="{{ dg_tip_zh.get(dgeo, '') }}">{{ dgeo }}</span>
+    {% else %}<span class="dash">—</span>{% endif %}
   </td>
   <td>
     {% if eqb is not none and eqb != '' %}<span class="eqb-chip eqb-{{ eqb }}">{{ eqb }}</span>{% else %}<span class="dash">—</span>{% endif %}
@@ -323,6 +353,7 @@ html[data-lang="zh"] .dist-far  { color:var(--down); } /* --down already swapped
     <p><strong>State meanings (v1):</strong> HOLD_LAUNCHED = a name the hold engine has marked as launched (take-anchored). FRESH_FIRE_DURABLE_CAND = fresh T1–T3 signal within 2 ticks, coiled setup, near 21-day low. FRESH_FIRE_TACTICAL = fresh T1–T3 signal, not coiled. CHASE_RISK = signal present but stale or far from low. DEAD_MONEY_RISK = hold engine shows basing with minimal movement. EARLY_WATCH = drawing down from 126-day high with a near cross-signal. KNIFE_RISK = knife-block condition binding. WATCH = default.</p>
     <p><strong>Overlays:</strong> EVENT_BLACKOUT = earnings within 3 trading days (per-row fresh rule). COILED = volatility compressed. STAR = high-conviction setup flag.</p>
     <p><strong>Sponsorship column (PR-C1):</strong> tailwind = sector oracle vel&gt;0 &amp; accel&gt;0 (sector rotating in); headwind = vel&lt;0 &amp; accel&lt;0 (sector rotating out); neutral = mixed signals; stale = oracle panel row older than 5 trading days; unavailable = no sector mapping or panel absent. Populated for ~91% of names when oracle panels are present; unmapped tickers show dash (—).</p>
+    <p><strong>Decline Shape column (Amendment 3, family E):</strong> a descriptive read of the <em>shape</em> of the trailing-63-session decline path — <strong>flush</strong> = the loss concentrated in a few large down-days (a forced-supply pattern that tends to empty), <strong>grind</strong> = the loss spread evenly across many days (a distribution pattern that tends to persist), <strong>mixed</strong> = the middle tercile. It is <strong>display-only</strong>: a SHAPE read, not a buy signal, not an escalation, ranking nothing. It is assigned by the current-day cross-sectional tercile of the loss-Herfindahl and is graded on a shadow forward-ledger before it could ever earn weight — its promotion case is blocked until a separate equity-band cache lands.</p>
     <p><strong>Missing fields</strong> render as a dash (—). RS repair state is stamped unavailable until Entry Intelligence #1302 W0.4 series exists.</p>
   </div>
   <div class="plain-zh l-zh">
@@ -331,6 +362,7 @@ html[data-lang="zh"] .dist-far  { color:var(--down); } /* --down already swapped
     <p><strong>状态含义（v1）：</strong>HOLD_LAUNCHED = 持有引擎标记为已启动的标的（以成交价为锚点）。FRESH_FIRE_DURABLE_CAND = 2个周期内的T1–T3新鲜信号，且处于蓄势状态、接近21日低点。FRESH_FIRE_TACTICAL = 新鲜T1–T3信号，未处于蓄势状态。CHASE_RISK = 信号存在但陈旧或远离低点。DEAD_MONEY_RISK = 持有引擎显示横盘整理且价格变动极小。EARLY_WATCH = 从126日高点下跌且接近交叉信号。KNIFE_RISK = 刀锋阻断条件触发。WATCH = 默认状态。</p>
     <p><strong>叠加标志：</strong>EVENT_BLACKOUT = 3个交易日内有财报（逐行实时规则）。COILED = 波动压缩。STAR = 高确信度形态标志。</p>
     <p><strong>赞助状态列（PR-C1）：</strong>tailwind = 板块oracle速度&gt;0且加速度&gt;0（板块轮动向上）；headwind = 速度&lt;0且加速度&lt;0（板块轮动向下）；neutral = 信号混合；stale = oracle面板行超过5个交易日；unavailable = 无板块映射或面板缺失。当oracle面板存在时，约91%的名称可获得赞助状态；未映射的代码显示横线（—）。</p>
+    <p><strong>下跌形态列（修正案3，家族E）：</strong>对过去63个交易日下跌路径<em>形态</em>的描述性解读——<strong>flush</strong>=跌幅集中于少数几个大跌日（强制抛售型，抛压释放后趋于枯竭）；<strong>grind</strong>=跌幅均匀分布于多日（派发型，抛压持续）；<strong>mixed</strong>=中间三分位。该列<strong>仅用于展示</strong>：是一种形态描述，非买入信号，非升级信号，不进行任何排名。它由当日亏损赫芬达尔指数的横截面三分位分配，并在影子前瞻账本中接受评分，之后才可能获得权重——其升级资格在独立的股价区间缓存落地前处于封锁状态。</p>
     <p><strong>缺失字段</strong>显示为横线（—）。RS修复状态标注为不可用，直至入场智能#1302 W0.4系列数据可用。</p>
   </div>
 </div>

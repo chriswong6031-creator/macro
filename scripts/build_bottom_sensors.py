@@ -116,6 +116,33 @@ def build(root: Path) -> int:
     )
     log.info("wrote %s (%d rows)", json_path, len(clean_records))
 
+    # ── Shadow forward-ledger accrual (Amendment 3 §F.3 — display chip + forward
+    #    ledger, no rank/bonus change).  Append-only, dedup by (date, symbol);
+    #    grades decline_geometry / underwater_state live before either earns
+    #    weight (CHIP-blocked, RUL-28).  Fail-soft: a ledger failure never blocks
+    #    the envelope write.  Keyed on the data vintage (as_of), not wall-clock.
+    try:
+        from engine.neuralweb import bottom_sensors_shadow as _bss  # noqa: PLC0415
+
+        ledger_date = as_of or None   # data vintage (always populated); skip if absent
+        if ledger_date:
+            recs = [
+                {
+                    "symbol": rec.get("symbol"),
+                    "decline_geometry": rec.get("decline_geometry"),
+                    "decline_herf": rec.get("decline_herf"),
+                    "underwater_state": rec.get("underwater_state"),
+                    "underwater_bars": rec.get("underwater_bars"),
+                }
+                for rec in clean_records
+            ]
+            book_path = root / _bss.BOOK_PATH
+            n_appended = _bss.snapshot(ledger_date, recs, path=str(book_path))
+            log.info("shadow-ledger: appended %d rows for %s", n_appended, ledger_date)
+            print(f"[bottom_sensors shadow-ledger] +{n_appended} rows @ {ledger_date}", flush=True)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("shadow-ledger accrual failed (non-fatal): %s", exc)
+
     # ── Label distribution summary ────────────────────────────────────────────
     if "bottom_state" in df.columns:
         dist = df["bottom_state"].value_counts().to_dict()
