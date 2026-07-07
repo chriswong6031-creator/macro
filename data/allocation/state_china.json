@@ -4,6 +4,7 @@
   "eligible": [
     "cn_ai_compute",
     "cn_brokers",
+    "cn_coal",
     "cn_consumer_elec",
     "cn_defense",
     "cn_pharma_cxo",
@@ -13,8 +14,8 @@
   ],
   "held": [
     "cn_ai_compute",
-    "cn_rare_earth",
     "cn_robotics",
+    "cn_rare_earth",
     "cn_pharma_cxo"
   ],
   "leader": "cn_ai_compute",

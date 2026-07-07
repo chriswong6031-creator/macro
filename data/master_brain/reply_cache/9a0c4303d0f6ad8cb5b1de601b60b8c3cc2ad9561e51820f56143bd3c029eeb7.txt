@@ -1,0 +1,34 @@
+**DESK NOTE — Narrative-Emergence Scout**  
+*2026-07-06 | US market | For internal monitoring only — not investment advice, no position size implied*
+
+---
+
+**Watch-Hypothesis (FORMING): Industrial Services & Specialty Engineering Cluster**  
+*Source: `theme_candidates` no. 3 — a noisy, display-only radar group*
+
+**Tickers** (6): ACM, EXPO, FCN, J, KBR, TTEK  
+**Cohesion**: 0.525 (cohesion_chg +0.255, moderately rising)  
+**IPO wave**: None  
+**Label**: “Industrials” (cross-sector overlap minimal)
+
+**Minimal thesis**  
+These appear to be engineering, consulting, and technical-services firms (construction management, environmental, government services). A clustering is forming but is **early, unvalidated, and not yet a recognised theme** in the rotation basket. The cohesion gain suggests tightening price correlations, but the group is small (n=6) and breadth is limited. No narrative catalyst is obvious from the macro-narrative flow (geopolitics dominant, but unrelated headlines). This could be a false start.
+
+**Why it might matter**  
+If these names continue to co-move and attract independent narrative (e.g., infrastructure resilience, re-industrialisation sub-theme), a durable “Specialty Engineering & Professional Services” basket could emerge. Currently, the rotation leader is *Memory, HBM & Storage* — a completely different area — so this candidate represents a potential early divergence.
+
+**Kill-criterion (falsifiable, time-bound)**  
+The hypothesis is **dead** if, by the next two detector runs (approx. 2–3 weeks), **either**:  
+- Cohesion drops below 0.30 (reversion to noise), **or**  
+- The equal-weighted group breaks below its 20-day moving average on an absolute-trend basis (i.e., sustained daily close < MA20 for 3+ sessions), signalling that any nascent momentum has failed.
+
+**Conditional lean (not a forecast)**  
+*If* this cluster holds cohesion >0.45 over the next 2 weeks and its equal-weighted absolute trend remains intact (price > MA20), I would raise it to “high-watch” status for potential narrative recognition. But even then, no trading action — only a signal to revisit durability and breadth before the next rotation report.
+
+**Governor reminders**  
+- The detector’s theme_candidates are **noisy (~10% persist)**, with **zero forward edge**.  
+- This note does **not** suggest fading the current leader or predicting a handoff.  
+- Attention/inflow spikes tend to mark tops; this group has no media attention yet — that’s neutral.  
+- No position, weight, or size is derived from this. All conclusions are conditional and falsifiable.  
+
+*Accountability: I will revisit this hypothesis in the next desk note and explicitly confirm or retire it based on the kill-criterion.*

@@ -1,6 +1,6 @@
 {
-  "date": "2026-07-02",
-  "generated_utc": "2026-07-07 13:13",
+  "date": "2026-07-06",
+  "generated_utc": "2026-07-07 13:31",
   "business_cycle": {
     "available": true,
     "asof": "2026-07-31",
@@ -4223,8 +4223,8 @@
   "fear_euphoria": {
     "fe_score": 88,
     "band": "Greed",
-    "roro": 0.21701720372446487,
-    "roro_state": "neutral",
+    "roro": 0.514675906206615,
+    "roro_state": "risk-on",
     "legs": [
       {
         "key": "vix",

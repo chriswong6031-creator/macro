@@ -1,7 +1,7 @@
 {
   "schema": "influence.graph.v1",
   "as_of": "2026-06-19",
-  "generated_utc": "2026-07-07T08:54:17.250918+00:00",
+  "generated_utc": "2026-07-07T15:18:49.284086+00:00",
   "note": "Curated multi-actor influence graph: important people and the investable names/themes they are affiliated with (control, holdings, public advocacy, partnerships). Public-record only. provenance = FACT (filing/widely-reported structural fact) | DISCLOSED (self-reported trade/holding) | INFERRED (analytical link). The LLM extractor grows candidate edges; a human promotes them here.",
   "n_actors": 22,
   "n_entities": 19,
@@ -800,10 +800,11 @@
       ],
       "n_actors": 4,
       "alt_corroborated": true,
-      "alt_score": 2,
-      "alt_weighted": 0.9,
+      "alt_score": 3,
+      "alt_weighted": 1.25,
       "alt_channels": [
         "affiliation",
+        "hf_model_momentum",
         "special_situation"
       ],
       "top_holder": {
@@ -846,12 +847,11 @@
       ],
       "n_actors": 4,
       "alt_corroborated": true,
-      "alt_score": 5,
-      "alt_weighted": 2.15,
+      "alt_score": 4,
+      "alt_weighted": 1.8,
       "alt_channels": [
         "13f_add",
         "affiliation",
-        "hf_model_momentum",
         "special_situation",
         "trump"
       ],
@@ -896,12 +896,12 @@
       "n_actors": 4,
       "alt_corroborated": true,
       "alt_score": 4,
-      "alt_weighted": 1.65,
+      "alt_weighted": 2.05,
       "alt_channels": [
         "affiliation",
-        "cnbc_pick",
         "patent_cluster",
-        "trump"
+        "trump",
+        "unusual_options"
       ],
       "top_holder": {
         "owner": "VANGUARD GROUP INC",
@@ -998,12 +998,13 @@
       ],
       "n_actors": 2,
       "alt_corroborated": true,
-      "alt_score": 5,
-      "alt_weighted": 2.15,
+      "alt_score": 6,
+      "alt_weighted": 2.45,
       "alt_channels": [
         "13f_add",
         "affiliation",
         "app_demand",
+        "github_momentum",
         "gov_contract",
         "patent_cluster"
       ],
@@ -1093,12 +1094,13 @@
       ],
       "n_actors": 2,
       "alt_corroborated": true,
-      "alt_score": 4,
-      "alt_weighted": 1.7,
+      "alt_score": 5,
+      "alt_weighted": 2.05,
       "alt_channels": [
         "13f_add",
         "affiliation",
         "app_demand",
+        "hf_model_momentum",
         "special_situation"
       ],
       "top_holder": {
@@ -1229,11 +1231,10 @@
       ],
       "n_actors": 1,
       "alt_corroborated": true,
-      "alt_score": 3,
-      "alt_weighted": 1.15,
+      "alt_score": 2,
+      "alt_weighted": 0.9,
       "alt_channels": [
         "affiliation",
-        "cnbc_pick",
         "patent_cluster"
       ],
       "top_holder": {
@@ -1659,6 +1660,30 @@
   "n_candidates": 0,
   "filings": [
     {
+      "date": "2026-07-06",
+      "form": "8-K",
+      "company": "American Bitcoin Corp.",
+      "ticker": "ABTC",
+      "items": "3.03,5.03,8.01,9.01",
+      "url": "https://www.sec.gov/Archives/edgar/data/1755953/000119312526296396/abtc-20260702.htm"
+    },
+    {
+      "date": "2026-07-06",
+      "form": "8-K",
+      "company": "American Bitcoin Corp.",
+      "ticker": "ABTC",
+      "items": "3.03,5.03,8.01,9.01",
+      "url": "https://www.sec.gov/Archives/edgar/data/1755953/000119312526296396/abtc-ex3_1.htm"
+    },
+    {
+      "date": "2026-07-06",
+      "form": "8-K",
+      "company": "American Bitcoin Corp.",
+      "ticker": "ABTC",
+      "items": "3.03,5.03,8.01,9.01",
+      "url": "https://www.sec.gov/Archives/edgar/data/1755953/000119312526296396/abtc-ex99_1.htm"
+    },
+    {
       "date": "2026-07-01",
       "form": "425",
       "company": "Trump Media & Technology Group Corp.",
@@ -1721,30 +1746,6 @@
       "ticker": "HUT",
       "items": "5.07",
       "url": "https://www.sec.gov/Archives/edgar/data/1964789/000110465926073505/tm2617732d1_8k.htm"
-    },
-    {
-      "date": "2026-06-10",
-      "form": "8-K",
-      "company": "Trump Media & Technology Group Corp.",
-      "ticker": null,
-      "items": "7.01,9.01",
-      "url": "https://www.sec.gov/Archives/edgar/data/1849635/000114036126024735/ef20075853_8k.htm"
-    },
-    {
-      "date": "2026-06-10",
-      "form": "425",
-      "company": "Trump Media & Technology Group Corp.",
-      "ticker": null,
-      "items": "",
-      "url": "https://www.sec.gov/Archives/edgar/data/1849635/000114036126024736/ef20075853_425.htm"
-    },
-    {
-      "date": "2026-06-10",
-      "form": "8-K",
-      "company": "Hut 8 Corp.",
-      "ticker": "HUT",
-      "items": "1.01,2.03,9.01",
-      "url": "https://www.sec.gov/Archives/edgar/data/1964789/000110465926071952/tm2617190d1_8k.htm"
     },
     {
       "date": "2026-06-10",

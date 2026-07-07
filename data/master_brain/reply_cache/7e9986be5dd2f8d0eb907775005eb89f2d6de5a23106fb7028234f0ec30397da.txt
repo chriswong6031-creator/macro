@@ -1,0 +1,42 @@
+**CROWDING-SKEPTIC DESK NOTE — Canada / TSX, 2026-07-06**
+
+---
+
+### Most over‑extended / crowded theme: **Big Banks (ca_banks)**
+
+**Crowding signature**  
+- crowding_z = +1.72, `crowded = true`  
+- breadth = 1.0 (all constituents participating — usually a late‑cycle sign)  
+- RS‑stretch elevated as the top‑scoring name by a wide margin (score = 1.608 vs. 0.715 for Insurers)  
+- market‑cap weight in the TSX is huge (~25% allocated in the detector’s headline weight)  
+
+**Why this matters for sizing**  
+Crowding flags suggest the theme is **over‑owned, not over‑forecast**. When breadth is perfect and crowding is high, the asymmetry is negative: any shock to the banking narrative (credit cycle, housing, regulatory) will unwind a large, homogeneous investor base. The absolute‑trend gate may still be intact, but the **drawdown‑control edge** that the gate provides works by reducing exposure when trend health deteriorates. Right now, the durability bar is 0.75 — decent, but the Hurst is `mixed`, not `trend`, so the persistence of the move is uncertain. **The only validated edge here is to size down — not to exit or fade.** If the trend remains healthy, a smaller position captures most of the grind; if it lurches, the smaller position preserves capital.
+
+---
+
+### Sharp bear case on each “long” (the top‑5 eligible themes by score)
+
+1. **Big Banks (ZEB.TO)**  
+   *Crowding‑skeptic bear case:* The sector’s perfect breadth typically marks the top of the participation cycle. Housing‑linked balance sheets face resets in a higher‑for‑longer rate environment, and the mixed Hurst suggests the leadership could stall even without a macro shock. A storm in uninsured mortgages or a credit‑rating downgrade triggers an outsized unwind because crowding means no marginal buyers.
+
+2. **Insurers (ca_insurers, unscorable)**  
+   *Crowding‑skeptic bear case:* crowding_z +1.81 is the highest in the list. The trend looks “strong” (`trend` Hurst), but that strength is also what makes it vulnerable: catastrophe loss events are unpredictable and the sector is pricing in a goldilocks soft‑landing. A single catastrophe quarter or a sudden shift in interest‑rate expectations could expose how one‑sided the positioning has become. Size accordingly — the trend has no basket‑level drawdown forecasting edge.
+
+3. **Base Metals & Copper (XBM.TO)**  
+   *Crowding‑skeptic bear case:* breadth is only 0.444 — leadership is already narrowing. The durability bar is a mere 0.54, and the Hurst is `mixed`. This looks like a classic “top‑heavy” commodity rally: the big names hold up but the mid‑tier is leaking. If China’s fiscal‑stimulus‑driven demand disappoints, the correction could be sharp because retail‑led ETF flows have piled in late (ZEB.TO as proxy? Actually XBM.TO, but still). The bear case is not about copper fundamentals; it’s about a fragile trend structure that tends to snap back violently.
+
+4. **Rails & Industrials (ca_rails_ind, unscorable)**  
+   *Crowding‑skeptic bear case:* the score is already fading (0.295, rank 4). Breadth is a moderate 0.706, but the durability bar is just 0.58 and Hurst `mixed`. The theme is a beta proxy for the Canadian economy; if trade‑war fears or a growth scare materialize, this cyclical pocket often falls first. The bear case is simply that the rally has been carried by a handful of large‑cap industrials, leaving it ill‑equipped to withstand a broad economic disappointment.
+
+5. **Pipelines & Midstream (ca_pipelines, unscorable)**  
+   *Crowding‑skeptic bear case:* crowded (z=1.33) with a `trend` Hurst — the “too calm” problem. Breadth is only 0.444, meaning the move is concentrated in a few stable‑yield names. The bear case is a shift in the long‑end of the yield curve that makes the dividend‑yield premium less attractive, or a policy shock (emissions caps, pipeline regulation). Because crowding is high, even a moderate repricing can overshoot.
+
+---
+
+### One falsifiable conditional lean
+
+**Conditional:** If, by **2026-09-30** (end of Q3), the S&P/TSX Composite’s absolute‑trend gate flips negative (e.g., a weekly close below its long‑term moving average) **and** the Big Banks’ durability bar drops below 0.60 while breadth declines toward 0.75, **then** I would expect the Big Banks theme to deliver a larger drawdown than the broad TSX, validating the size‑down signal derived from today’s crowding flag.  
+**Check‑by horizon:** quarterly, with the Q3 earnings season as a natural catalyst.
+
+*This is a fallible, falsifiable conditional, not a prediction. It draws only on the crowding and absolute‑trend risk‑control logic — no edge extracted from momentum rank or rotation timing.*

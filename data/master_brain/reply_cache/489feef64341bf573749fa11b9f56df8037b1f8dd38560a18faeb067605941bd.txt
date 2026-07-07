@@ -1,0 +1,22 @@
+{
+  "regime_context": "The TSX thematic detector shows 'Big Banks' as the dominant eligible leader with a wide margin over the second-ranked theme. The absolute-trend gate has historically helped control drawdowns in this market ('gate_helps': true); momentum ranks carry no forward return edge. Rotation is broad (75% of themes eligible), and the leading theme is crowded—a caution, not a fade signal.",
+  "theses": [
+    {
+      "subject": "Big Banks",
+      "lean": "overweight",
+      "conviction": "low",
+      "horizon_d": 20,
+      "thesis": "Big Banks is the prevailing narrative: it holds the top eligible rank with high durability (0.75), full breadth (1.0), and a trend-gate pass. The validated absolute-trend discipline favors staying with the theme for risk control, not return prediction. Crowding (z=1.72) suggests a size-down bias, but the direction remains overweight as long as the trend persists.",
+      "evidence": [
+        "rank=1, score=1.608, eligible=true (absolute-trend gate passed)",
+        "durability_bar=0.75, breadth=1.0 — cohesion is strong",
+        "gate_helps=true — the only validated edge in this market",
+        "broad rotation (12 of 16 themes eligible) supports a market-wide trend bid, not a single-narrative squeeze"
+      ],
+      "dissent": "Crowding is elevated, and momentum ranks have zero forward return edge; a mean-reversion or macro shock could stall the theme rapidly, especially given the high unscheduled-surprise share (0.5) in macro headlines.",
+      "falsifier_text": "ZEB.TO closes below its 50-day simple moving average on any trading day — this would indicate the absolute-trend gate has broken and the lean should be neutralized."
+    }
+  ],
+  "emerging_watch": null,
+  "confidence": "low"
+}

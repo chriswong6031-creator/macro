@@ -1,0 +1,271 @@
+{
+  "schema": "release_forecast.v1",
+  "asof": "2026-07-07T15:22:07Z",
+  "display_only": true,
+  "authority": {
+    "can_score": false,
+    "can_size": false,
+    "can_trade": false
+  },
+  "upcoming": [
+    {
+      "release": "cpi",
+      "release_type": "cpi_headline",
+      "period": "2026-06",
+      "release_date": "2026-07-14",
+      "days_to": 7,
+      "target": "mom_sa_pct",
+      "projection": {
+        "point": 0.4618,
+        "p10": 0.1675,
+        "p25": 0.304,
+        "p50": 0.4807,
+        "p75": 0.6437,
+        "p90": 0.844
+      },
+      "confidence": 0.4911,
+      "input_completeness": 0.875,
+      "benchmark_set": {
+        "naive_prior": 0.4729,
+        "trailing_3m": 0.6594,
+        "ar_model": 0.8628,
+        "cleveland_nowcast": -0.0612913952296244,
+        "market_implied": null
+      },
+      "surprise_skew": {
+        "sigma": -0.0367,
+        "tag": "inline",
+        "inline_band": 0.35
+      },
+      "pit": {
+        "revision_optimistic_legs": [],
+        "unrevised_legs": [
+          "gasoline_mom"
+        ],
+        "absent_legs": [
+          "gasoline_mom"
+        ],
+        "display_only": true,
+        "authority": false,
+        "gasoline_absent": true,
+        "n_train": 352,
+        "n_features_used": 7
+      },
+      "regime_axis": "inflation",
+      "policy_backdrop": {
+        "fed_stance": "hawkish",
+        "gap_bp": 7,
+        "implied_cuts_12m": -1.0,
+        "next_fomc": "2026-07-29",
+        "guidance_direction": "on_hold"
+      }
+    },
+    {
+      "release": "cpi",
+      "release_type": "cpi_core",
+      "period": "2026-06",
+      "release_date": "2026-07-14",
+      "days_to": 7,
+      "target": "mom_sa_pct",
+      "projection": {
+        "point": 0.223,
+        "p10": 0.0807,
+        "p25": 0.1511,
+        "p50": 0.2268,
+        "p75": 0.2916,
+        "p90": 0.3601
+      },
+      "confidence": 0.0372,
+      "input_completeness": 1.0,
+      "benchmark_set": {
+        "naive_prior": 0.2081,
+        "trailing_3m": 0.2601,
+        "ar_model": 0.1956,
+        "cleveland_nowcast": 0.232322464774341,
+        "market_implied": null
+      },
+      "surprise_skew": {
+        "sigma": 0.115,
+        "tag": "inline",
+        "inline_band": 0.35
+      },
+      "pit": {
+        "revision_optimistic_legs": [],
+        "unrevised_legs": [],
+        "absent_legs": [],
+        "display_only": true,
+        "authority": false,
+        "gasoline_absent": true,
+        "n_train": 352,
+        "n_features_used": 7
+      },
+      "regime_axis": "inflation",
+      "policy_backdrop": {
+        "fed_stance": "hawkish",
+        "gap_bp": 7,
+        "implied_cuts_12m": -1.0,
+        "next_fomc": "2026-07-29",
+        "guidance_direction": "on_hold"
+      }
+    },
+    {
+      "release": "nfp",
+      "release_type": "nfp",
+      "period": "2026-07",
+      "release_date": "2026-08-07",
+      "days_to": 31,
+      "target": "change_thousands",
+      "projection": {
+        "point": null,
+        "p10": -258.3244,
+        "p25": -116.8455,
+        "p50": -5.3215,
+        "p75": 108.6174,
+        "p90": 259.3338
+      },
+      "confidence": null,
+      "input_completeness": 0.625,
+      "benchmark_set": {
+        "naive_prior": 265.0,
+        "trailing_3m": 178.33,
+        "ar_model": 98.74,
+        "cleveland_nowcast": null,
+        "market_implied": null
+      },
+      "surprise_skew": {
+        "sigma": null,
+        "tag": null,
+        "inline_band": 0.35
+      },
+      "pit": {
+        "revision_optimistic_legs": [
+          "awhman_mom"
+        ],
+        "unrevised_legs": [
+          "withheld_tax_yoy",
+          "adp_change"
+        ],
+        "absent_legs": [
+          "claims_survey_week_icsa",
+          "claims_survey_week_ccsa",
+          "adp_change"
+        ],
+        "display_only": true,
+        "authority": false,
+        "withheld_tax_start": "2023-02-14",
+        "n_train": 353,
+        "n_features_used": 5
+      },
+      "regime_axis": "growth",
+      "policy_backdrop": {
+        "fed_stance": "hawkish",
+        "gap_bp": 7,
+        "implied_cuts_12m": -1.0,
+        "next_fomc": "2026-07-29",
+        "guidance_direction": "on_hold"
+      }
+    },
+    {
+      "release": "cpi",
+      "release_type": "cpi_headline",
+      "period": "2026-07",
+      "release_date": "2026-08-12",
+      "days_to": 36,
+      "target": "mom_sa_pct",
+      "projection": {
+        "point": 0.4618,
+        "p10": 0.1675,
+        "p25": 0.304,
+        "p50": 0.4807,
+        "p75": 0.6437,
+        "p90": 0.844
+      },
+      "confidence": 0.4911,
+      "input_completeness": 0.875,
+      "benchmark_set": {
+        "naive_prior": 0.4729,
+        "trailing_3m": 0.6594,
+        "ar_model": 0.8628,
+        "cleveland_nowcast": -0.214285552310614,
+        "market_implied": null
+      },
+      "surprise_skew": {
+        "sigma": -0.0367,
+        "tag": "inline",
+        "inline_band": 0.35
+      },
+      "pit": {
+        "revision_optimistic_legs": [],
+        "unrevised_legs": [
+          "gasoline_mom"
+        ],
+        "absent_legs": [
+          "gasoline_mom"
+        ],
+        "display_only": true,
+        "authority": false,
+        "gasoline_absent": true,
+        "n_train": 352,
+        "n_features_used": 7
+      },
+      "regime_axis": "inflation",
+      "policy_backdrop": {
+        "fed_stance": "hawkish",
+        "gap_bp": 7,
+        "implied_cuts_12m": -1.0,
+        "next_fomc": "2026-07-29",
+        "guidance_direction": "on_hold"
+      }
+    },
+    {
+      "release": "cpi",
+      "release_type": "cpi_core",
+      "period": "2026-07",
+      "release_date": "2026-08-12",
+      "days_to": 36,
+      "target": "mom_sa_pct",
+      "projection": {
+        "point": 0.223,
+        "p10": 0.0807,
+        "p25": 0.1511,
+        "p50": 0.2268,
+        "p75": 0.2916,
+        "p90": 0.3601
+      },
+      "confidence": 0.0372,
+      "input_completeness": 1.0,
+      "benchmark_set": {
+        "naive_prior": 0.2081,
+        "trailing_3m": 0.2601,
+        "ar_model": 0.1956,
+        "cleveland_nowcast": 0.232180876007138,
+        "market_implied": null
+      },
+      "surprise_skew": {
+        "sigma": 0.115,
+        "tag": "inline",
+        "inline_band": 0.35
+      },
+      "pit": {
+        "revision_optimistic_legs": [],
+        "unrevised_legs": [],
+        "absent_legs": [],
+        "display_only": true,
+        "authority": false,
+        "gasoline_absent": true,
+        "n_train": 352,
+        "n_features_used": 7
+      },
+      "regime_axis": "inflation",
+      "policy_backdrop": {
+        "fed_stance": "hawkish",
+        "gap_bp": 7,
+        "implied_cuts_12m": -1.0,
+        "next_fomc": "2026-07-29",
+        "guidance_direction": "on_hold"
+      }
+    }
+  ],
+  "last_scored": [],
+  "scoreboard_ref": "data/release_forecast/scoreboard.json"
+}
