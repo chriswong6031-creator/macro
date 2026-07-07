@@ -2647,6 +2647,28 @@
       "state": "Registered 2026-07-07 by chair adjudication of HAR-1 (#1838). No evaluation run.",
       "next_step": "Wait for accrual. Come back 2027-07-01.",
       "phase_hint": "pre-evaluation"
+    },
+    {
+      "id": "stock-personality-compat",
+      "name": "Stock Personality — Setup Compatibility Phase 0 (pre-registered, not yet run)",
+      "kind": "research_study",
+      "priority": "high",
+      "cadence": "on-demand",
+      "what": "Pre-registered study (§4 of research/STOCK_PERSONALITY_MASTERPLAN_BY_FABLE.md): does the personality cell of a ticker as of the fire date shift P(STOPPED) for board/gate fires vs the corpus baseline? Cell family: chart_personality (9 labels) + microstructure (5 labels) + collapsed archetypes (variable after n-collapse). Two-way cluster-robust inference (ticker × quarter; satisfies DT-R14/#1841 time-confound law). BH-FDR q=0.05 across all registered hypotheses. Disguise regression (outcome ~ label + sector FE + log_mktcap + era FE) for FDR survivors. Corpora: track_record buy/rebuy + gate_fires_deep + replay (when available). PIT archetype join: greatest asof_date <= fire_date (R-SP12, FY2009+ only). chart/micro labels from scripts/build_stock_personality.py (causal feature_series).",
+      "source": "scripts/personality_compat_phase0.py + scripts/build_stock_personality.py",
+      "storage": "data/research/personality_compat_phase0.parquet + research/STOCK_PERSONALITY_SETUP_COMPAT_PHASE0.md",
+      "track_json": "data/research/personality_compat_registration.json",
+      "hook": "static",
+      "claim_family": "stock_personality_compat",
+      "registered_on": "2026-07-07",
+      "started": "2026-07-07",
+      "come_back_on": "2026-12-15",
+      "come_back_note": "Re-look: n>=50 per collapsed cell OR 2026-12-15 whichever FIRST (§4 clock). Promotion needs n>=150 per collapsed cell + >=2 quarters + R-SP13 disguise test pass.",
+      "maturation": "n>=50 per collapsed cell (primary threshold). Promotion eligible at n>=150 per collapsed cell AND >=2 quarters of accrual. Calendar re-look 2026-12-15 whichever comes first.",
+      "status": "registered",
+      "state": "W3 ship: harness + trial-ledger registration + experiments-registry entry LANDED. Full --run deferred to host-side post-merge (needs build_stock_personality.py PIT labels to run). Registration file written to data/research/personality_compat_registration.json on first --register run.",
+      "next_step": "Post-merge host lane: (1) run scripts/build_stock_personality.py --panel deep to generate data/research/personality_pit_labels.parquet; (2) run python scripts/personality_compat_phase0.py --register to lock corpus sizes + trial budget; (3) run python scripts/personality_compat_phase0.py --run to grade + test; (4) review STOCK_PERSONALITY_SETUP_COMPAT_PHASE0.md; (5) schedule come-back 2026-12-15 for promotion review.",
+      "phase_hint": "W3 pre-registration"
     }
   ]
 }
