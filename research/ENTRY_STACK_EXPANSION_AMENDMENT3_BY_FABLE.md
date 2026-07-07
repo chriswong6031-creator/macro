@@ -235,3 +235,74 @@ no re-dump of the fire tape; no exit work.
 *Filed by Fable, 2026-07-06. Census wf_eb240cc2 (8 agents); ideation + red-team wf_817d5705
 (8 opus agents, 4×SHIP-WITH-FIXES). The candidate-book record preserves the full brainstorm and
 triage trail.*
+
+---
+
+## F. Adjudication (main-loop ruling, 2026-07-06)
+
+Both phase0 studies ran on the frozen deep + baskets tapes (reports: `A3_HTF_REPORT.md`,
+`A3_STRUCT_REPORT.md`). Two opus review lenses (overfit-statistics + deployment-doctrine,
+wf_984c2fb8) checked the results before this ruling. All verdicts respect the RUL-28 ceiling
+(DISPLAY-CANDIDATE / NULL / KILLED; CHIP promotion blocked until the true eq_band lands). One
+grader, RUL-9; 21d primaries, RUL-13.
+
+### F.1 Verdict table
+
+| Family | Verdict | Key evidence |
+|---|---|---|
+| **E `esx_decline_geometry` (flush)** | **DISPLAY-CANDIDATE** | The cleanest result in the program. Flush-vs-rest stop5 −1.00pp (deep) / −2.34pp (baskets), both CI-excl-0; survives the FULL RUL-30 battery — nc2 proximity FE (−2.06/−3.35pp, *grows*) AND rv63 vol-level FE (−1.14/−2.85pp) — on BOTH panels; era-sign-stable 4/4 both; ticker-half agree both; mae21 co-primary confirms. Mechanically orthogonal to every shipped construct (no depth/age/proximity/cohort ingredient). |
+| **F `esx_underwater`** | **ADVERSE-CONTEXT** (real, AVOID sign) | Statistically the strongest effect, but adverse: long-underwater = stop5 +2.35pp (deep) / +6.31pp (baskets) WORSE; all three co-primaries agree; survives the age63 pure-age kill-arm (so NOT H2 re-derived) and survives inside ¬bear_ctx (not a pure bear-regime artifact). A caution axis, never a buy signal — de-escalation-eligible only (LLM-de-escalation house law). |
+| **A1 `esx_htf_turn` weekly** | **DISPLAY-CANDIDATE-CAVEATED** (baskets-only) | Operative ¬wbull stop5 −2.57pp, recall 74%, era 4/4, ticker-half agree, mae21 confirms; admission-leg decomposition (RUL-29) convincing — effect lives in the fromos3-admitted subset, not re-reading the gate's confirm3 weekly leg. BUT ~⅔ is proximity: nc2 FE attenuates to a thin −0.83pp residual (≈8% of the −10.1pp baskets proximity yardstick). NULL on deep (mega-caps rarely wash out; era-1 wrong-sign = the low-vol-bull "edge sleeps" pattern). Shadow observation only; no user chip until off-panel replication or eq_band. |
+| **A3m `esx_htf_turn` monthly** | **NULL (by non-replication)** — overrides the report's mechanical DISPLAY-CANDIDATE | Wins on deep only (operative −2.40pp, survives nc2 −3.22pp, era 4/4) but was **pre-registered expect-weak** (+4pp monthly state prior vs +19pp weekly) and **fails the larger baskets OOS** (era 1/3, one era 0 fires, operative CI incl 0). Deep-only win on the survivor-biased panel where the monthly bar has 64y to converge, failing the decisive OOS, is the textbook overfit/survivorship signature. The report's grader has no non-replication clause; the adjudication supplies it. Held as a shadow observation; no verdict weight. |
+| **A2 `esx_htf_turn` 2W** | **NULL** | Baskets operative −0.73pp is knife-edge (p=0.050) and the mae21 co-primary fails to confirm at the governed horizon (p=0.066); deep NULL. Consistent with the pre-registered "2W turn catastrophically late." |
+| **B `esx_htf_turn_dose`** | **NULL / DESCRIPTIVE** | Monotone gradient real (baskets 23.2→20.6→18.5→**18.7**%; the leg-3 reversal is a confound tell) and the ordinal per-unit coef is CI-excl-0, but it is NOT proximity-de-confounded (no nc2 arm on the ordinal) and the legs are same-source collinear. Most parsimoniously the proximity gradient. Falsifier logged (F.3). Also partially re-measures the shipped `bottom_confidence` tf_score construct. |
+| **C `esx_washout_x_turn`** | **KILLED** | The operator's literal 2W-washout × turn seed adds NEGATIVE marginal value once proximity is removed: nc2 kills contrast-i (−0.29pp CI incl 0) and the marginality interaction is adverse (+0.014 baskets / +0.024 deep). Re-confirms the H1 depth kill fire-conditionally. |
+| **D `esx_sub_x_turn`** | **NULL** | Cross-panel SIGN flip on the interaction (baskets −0.0194 CI-excl-0 vs deep +0.0183 wrong-signed) — disqualifying for an expect-null probe. |
+| **G `esx_vol_transition`** | **NULL (expect-null confirmed)** | Vol term-structure MOTION adds nothing once vol LEVEL is controlled: deep era 1/4, ticker-half DISAGREE. Settles the vol-family question. |
+
+### F.2 What the program learned (headline)
+
+1. **A genuinely new, cross-panel-replicated non-momentum dimension exists: decline path-SHAPE.**
+   Flush-shaped declines (loss concentrated in few large down-days = forced supply that empties)
+   give measurably better fresh-entry stops than grind-shaped declines (loss spread evenly =
+   voluntary distribution that persists) — orthogonal to depth, age, proximity, and cohort, and
+   the only A3 survivor of the full de-confound battery on both panels. This is E, and it is the
+   deployable output of the program.
+2. **The operator's literal "2W/1M StochRSI washout" seed is confirmed dead in its position form**
+   and dead in its interaction form (C KILLED, A3m NULL-by-non-replication, A2 NULL) — but its
+   **motion form survives on the broad tradeable universe** (A1 weekly-turn on baskets), mostly
+   as a proximity restatement with a thin genuine turn-marginal. This is the honest resolution of
+   the H1 lineage: cycle-scale *position* is dead; cycle-scale *weekly motion* carries a small
+   real marginal on small/mid-caps that mega-caps do not show.
+3. **The vol-family question is settled** (G): vol term-structure motion adds nothing over vol
+   level. **The dose/HTF-confluence intuition** (B) is a proximity gradient, not a mechanism.
+4. **RUL-29 (admission-leg) and RUL-30 (kill-arm battery) earned their keep:** the nc2 arm killed
+   C and 2/3 of A1; the admission-leg decomposition proved A1 is not re-reading confirm3; the
+   non-replication override caught the one place the mechanical grader over-promoted (A3m).
+
+### F.3 Deployment ruling & clocks
+
+- **Ship (separate W3 PR, nightly display-path, ≤+30s render benchmark GATE):** E `decline_geometry`
+  as a **display-only** descriptor field (flush / mixed / grind, trailing-63-bar loss-Herfindahl
+  tercile) on the `bottom_sensors` envelope + a shadow forward-ledger, mirroring the COILED-FIRE
+  "display chip + forward-ledger, no rank/bonus change" ship-shape. EN/ZH descriptive framing, no
+  translated `title=`, the word "validated" absent (CI-enforced), `is_display_only=True`. Frame as
+  a decline-shape read, NOT an escalation.
+- **Shadow-only (no user surface):** F `underwater` as an adverse/caution field feeding the
+  de-escalation lane only; A1 weekly-turn (baskets) + A3m monthly-turn (deep) as shadow-ledger
+  observations pending off-panel replication.
+- **Buried:** C (KILLED); A2, B, D, G (NULL). Recorded in the graveyard so nobody re-walks them.
+- **Falsifier logged for B:** re-run the ordinal dose with the nc2_band (+ rv63) FE kill-arm; the
+  prediction is collapse to CI-incl-0 (as A1's bulk and every C arm did). If it does not collapse,
+  B re-opens.
+- **Come-back clocks:** (i) when the true eq_band (cand_price/dcl_price pivot) cache lands, re-run
+  E, A1-baskets, A3m-deep through the real NC-2 marginality FE and re-open their CHIP cases
+  (RUL-28); (ii) re-grade E's shadow ledger at the monthly review — if its live edge proves
+  bear-regime-only (deep ¬bear_ctx was CI-incl-0), cap it to baskets; (iii) A1/A3m re-eval when a
+  second era of forward fires accrues on the off-panel. **Interactions/confluences (esx_degree_alignment,
+  A4) stay deferred (RUL-27): only E survived as a clean marginal, so only E-based confluences
+  would be eligible in a follow-up amendment — interactions of nulls are not purchased.**
+
+*Adjudicated by the main loop (Opus; Fable window exhausted), 2026-07-06. Reviews: 2 opus lenses
+(wf_984c2fb8), convergent on E-ships/F-adverse/C-killed; the A3m NULL-by-non-replication override
+adopts the overfit lens over the report's mechanical grader per house law.*

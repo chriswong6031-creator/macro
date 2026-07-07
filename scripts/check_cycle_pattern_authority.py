@@ -103,6 +103,7 @@ _MONEY_PATH_MODULES: frozenset[str] = frozenset([
 _ALLOWED_READER_PREFIXES: tuple[str, ...] = (
     "engine/cycle_pattern/",
     "scripts/build_cycle_pattern_",
+    "scripts/apply_cycle_pattern_",   # frozen prereg outcome appliers (owner program)
     "scripts/seed_cycle_truths.py",
     "scripts/build_measurement.py",
     "engine/research_factory/adapter_cycle_pattern.py",

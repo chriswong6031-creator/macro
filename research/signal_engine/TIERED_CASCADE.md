@@ -312,3 +312,72 @@ The following numbers predate this change and need re-measurement before being u
 - The T3 tooltip repaint copy rendered on display boards
 
 These are LEFT UNCHANGED here — recalibration is a separate clock.
+
+---
+
+## §9 — S1 HTF-sponsorship badge (2026-07-06)
+
+**Status:** display-only, rank-neutral. S1 fires as a supplementary badge alongside the existing
+T1–T4 tier display. It does NOT change tier values, WEIGHTS, `_CASCADE_RANK`, `BUYABLE_TIERS`,
+board ORDER, or any existing pinned tests.
+
+### Definition
+
+**S1** = 2-week confluence-active **AND** 3-day confluence-active **AND** not-topped (3D basis).
+
+Confluence-active on each timeframe = MACD-RSI (RSI-based MACD, same as production) crossed up
+within **FW=2 native bars** (ratified) AND StochRSI K ≥ D (crossed up within 8 native bars and
+still constructive). Not-topped veto uses the 3D basis: stoch_ob OR stoch_bear OR macd_bear on the
+3D timeframe blocks the badge regardless of higher-TF state.
+
+**Resampling:** 2W and 1W legs use completed-bucket resample (`W-FRI` / `2W-FRI` offset rules
+dropping the in-progress tail bar per RUL-31 PIT gate). 3D leg uses `_tf_bars(c, 3)` — session
+buckets with known-date mapping, identical to production `tier_stream()`.
+
+**S2** = shadow field only — never displayed. S2 = 3D active AND 1W active AND 2W MACD pending
+(hist < 0, slope > 0, 0 < bars-to-cross ≤ 1.0 native 2W bar) AND not-topped (3D basis). Parked
+pending ≥ n=50 accruing fires; revisit ≥ 2026-10.
+
+### Measured performance (same-ruler, HTF_SUPER_TIERS_PHASE0.md)
+
+| Metric | S1 | T1 (master, reference) |
+|--------|----|-----------------------|
+| Close-only stop-out (−5%) | **27.2%** | 30.4% |
+| Intraday-low stop-out (−5%) | **35.0%** | 37.5% |
+| 21d excess return (vs SPY) | **+0.90%** CI [+0.16, +1.67] | — |
+| Fill quality vs T1 | −0.9pp (fills slightly worse) | reference |
+| n events (US, FW=2) | 427 | — |
+
+S1 ⊂ T1-active: S1 fires predominantly during active T1 windows (overlap ~68%). Its role is
+**durability and long-hold context** — confirming higher-timeframe sponsorship for names already
+in a T1/T2 confirmed state. It is NOT a standalone entry signal and is NOT fed to the conviction
+allocator or auto-trade logic.
+
+### Implementation
+
+- `engine/confluence_tiers.py`: `HTF_FW=2`, `HTF_CONF_W=8`, `HTF_BTC=1.0`, `_HTF_BLANK`,
+  `_completed_resample()`, `_htf_confluence_active()`, `_htf_2w_pending()`,
+  `_htf_not_topped_3d()`, `_compute_htf()` (cascade last-bar), `_compute_htf_stream()`
+  (tier_stream vectorized path). `cascade()` returns `{"htf": {"s1": bool, "s2": bool}}` in the
+  result dict. `tier_stream()` returns additional `s1`, `s2` boolean columns.
+- `engine/signal_gate.py`: `"htf_s1"`, `"htf_s2"` added to `_VERDICT_KEYS` and propagated
+  through `gate()` from the cascade `htf` dict. `buy_signal(None)` returns these as `False`.
+- `templates/_sig_badge.html.j2`: S1 chip rendered BEFORE the eligible block when `sig.htf_s1`
+  is true. CSS class `sig-htf-s1` (purple `#7c6ece`) added to `templates/theme.css`.
+- `scripts/build_stock_library.py`: `confluence` block (htf_s1/htf_s2) and `sniper` block
+  (w2_washout, w2_stoch_d, days_since_63d_low, coiled) added to the per-ticker stockdata JSON.
+  `sniper.coiled` is injected in a second pass after `coiled_by` is computed cross-sectionally.
+- `tests/test_htf_super_tiers.py`: 32 tests covering blank/short-history paths, truncation
+  invariance, S2 pending leg, signal_gate passthrough, tier_stream columns, structural keys.
+
+### Clocks
+
+| Clock | Date | Action |
+|-------|------|--------|
+| S2 shadow revisit | ≥ 2026-10 | Check if S2 has accrued ≥ 50 fires; authorize display if n is sufficient |
+| S1 recalibration | ≥ 2027-01 | Re-measure stop-out and excess-return with live accrual |
+
+### Reference
+
+Full adjudication and pre-registration: `research/signal_engine/HTF_SUPER_TIERS_ADJUDICATION_AND_PREREG.md`
+Phase-0 study results: `research/signal_engine/HTF_SUPER_TIERS_PHASE0.md`

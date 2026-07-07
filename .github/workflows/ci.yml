@@ -85,6 +85,10 @@ on:
       - "tests/test_anticipation.py"
       - "tests/test_canon.py"
       - "tests/test_whitehouse_w5.py"
+      # CPI net-liquidity artifact (data infrastructure): builder + contract tests
+      # must re-run together so a canon-formula or stale-guard regression fails RED.
+      - "scripts/build_netliq_daily.py"
+      - "tests/test_build_netliq_daily.py"
       # collector-registry tripwire (#1052 post-mortem): scripts/collect.py shipped as a
       # 0-byte file and merged green because nothing here covered the collection entrypoint.
       # lib/** is included because the registry import chain runs through lib.config/lib.store.
@@ -384,7 +388,8 @@ jobs:
           tests/test_canon.py tests/test_whitehouse_w5.py
           tests/test_board_ledger.py tests/test_grade_us_board.py
           tests/test_options_stamp.py tests/test_sector_pulse_wiring.py
-          tests/test_news_page_render.py tests/test_china_lens_hub.py -q
+          tests/test_news_page_render.py tests/test_china_lens_hub.py
+          tests/test_build_netliq_daily.py -q
 
   collector-registry:
     # 2026-07-03 (#1052 post-mortem): PR #1052's squash-merge shipped scripts/collect.py as

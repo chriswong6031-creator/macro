@@ -90,6 +90,7 @@ artifacts:
       - scripts/notify.py
       - scripts/refresh_regime_if_stale.py
       - engine/neuralweb/cortex.py
+      - engine/neuralweb/covariance_spine.py
     external_consumers:
       - mastermind:anchor
       - mastermind:vendored
@@ -1443,8 +1444,8 @@ artifacts:
       - engine/neuralweb/query.py
       - scripts/audit_sizes.py
       - scripts/build_track_record.py
-      - scripts/build_stock_library.py
       - scripts/validate_signals.py
+      - scripts/build_stock_library.py
     external_consumers: []
     notes: >
       federated Stage-B (PR #1139): US next-bar fill via grading.fill_index; SPINE_HORIZONS
@@ -2643,6 +2644,7 @@ artifacts:
       - engine/neuralweb/kernel.py
       - engine/neuralweb/decay.py
       - engine/neuralweb/lagging.py
+      - engine/neuralweb/covariance_spine.py
     external_consumers: []
     notes: >
       Read-side derived index: unions spine (data/spine/predictions.parquet),
@@ -4979,6 +4981,7 @@ artifacts:
     consumers:
       - scripts/build_site.py
       - templates/dashboard.html.j2
+      - engine/neuralweb/covariance_spine.py
     external_consumers: []
     notes: >
       L3 chartered lobe (NW Rails program §5). Promotes engine/dispersion.py output
@@ -5664,6 +5667,46 @@ artifacts:
       with WARNING; never silently dropped. Built after all three cycle
       builders so today's stamps are present before the view rebuilds.
 
+  fed-net-liquidity:
+    path: data/macro/fed_net_liquidity.parquet
+    format: parquet
+    producer: scripts/build_netliq_daily.py
+    known_extra_writers: []
+    owner_program: cycle-intelligence
+    cadence: daily-engine
+    storage: git
+    asof_field: date
+    freshness_sla_hours: 96  # WALCL is weekly (H.4.1 Wednesdays) and the DTS/RRP tail pauses over long weekends; 96h avoids false alarms without hiding a dead collector (the stale-guard already freezes the tail)
+    schema: macro.fed_net_liquidity.v0
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      CPI DATA INFRASTRUCTURE — daily net Fed liquidity panel derived via
+      engine.canon (the ONE formula, audit #28): netliq_bn = WALCL_bn − RRP_bn −
+      TGA_bn, all BILLIONS (WALCL/TGA stored in millions → /1000; RRPONTSYD
+      already billions; a missing drain contributes 0 via fillna, never
+      annihilating the balance-sheet trend). Columns: date (union of component
+      real-observation dates), walcl_bn, rrp_bn, tga_bn, netliq_bn, netliq_d13w
+      (65-row change), netliq_d26w (130-row change), netliq_pctile_expanding
+      (PIT-pure expanding percentile of the level — appending future rows never
+      changes past values). Stale-guard: frame TRUNCATED at min(component last
+      real obs) + 10 business days so a dead component collector cannot
+      silently ffill a drain flat; per-component last-obs dates recorded in the
+      data/macro/fed_net_liquidity_meta.json sidecar (deterministic, no
+      timestamps). Deterministic idempotent full rebuild each engine run;
+      components refreshed upstream by the collect job (collectors/fred.py,
+      collectors/treasury.py — TGA parquet is git-tracked and nightly-collected;
+      the CPI prereg §13 "TGA absent" claim meant absent-from-the-registry, not
+      absent-from-disk). consumers=[] BY DESIGN: FT-3 (netliq covariate on the
+      pooled hazard) is NOT registered — additive-feature FT trials are
+      SUSPENDED by truth cycle_truth_ft2_credit_hazard_null_v1
+      (data/cycle_pattern/truths.jsonl); FT-3 may only be registered under that
+      truth's reopening conditions.
+
   # --- PR-A3: Operator-tape outcome resolution ---
   oracle-operator-tape-outcomes:
     path: data/oracle/operator_tape_outcomes.jsonl
@@ -5914,3 +5957,85 @@ artifacts:
     consumers: []
     external_consumers: []
     notes: "Git-tracked append-only ledger. Nightly engine job is sole advancer; intraday lanes discard data/ writes per house law."
+
+  # --- R-ORTH PR-3: covariance spine (RUL-ORTH-1..11) ---
+  covariance-spine:
+    path: data/neuralweb/covariance_spine.json
+    format: json
+    producer: scripts/build_covariance_spine.py
+    known_extra_writers: []
+    owner_program: nw-rails
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 48
+    schema: neuralweb.covariance_spine.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/neuralweb/confluence.py  # R-ORTH PR-4: reads lobes block to embed independence summary in confluence_graph.json (display-only)
+    external_consumers: []
+    notes: >
+      R-ORTH PR-3 (RUL-ORTH-1..11) — covariance spine rail (not a lobe).
+      Measures structural concentration and independence across four blocks:
+      rates PCA (yield_curve shape), factor-return correlation PCA, dispersion
+      regime pass-through, and NW engine firing independence (lobes block).
+      Display-only hard law: authority="context"; never scores, sizes, gates,
+      ranks, or originates a trade. Fail-open: each block guarded independently;
+      missing inputs noted, builder always exits 0. Lobes block: effective_independent_lobes
+      via participation-ratio of measurable-engine correlation matrix (>=30 active
+      weeks floor; RUL-ORTH-8 null via 200 deterministic circular-shift draws).
+      same_bet_warning fires when largest cluster has >=3 engines with mean
+      intra-cluster |corr|>0.60. Site mirror site/neuralwebdata/covariance_spine.json
+      is owned by the separate site-covariance-spine artifact (same producer,
+      atomic temp+rename). R-ORTH PR-4: confluence.py reads this artifact's lobes
+      block to embed an independence summary in confluence_graph.json (display-only,
+      no gate or rank authority).
+
+  site-covariance-spine:
+    path: site/neuralwebdata/covariance_spine.json
+    format: json
+    producer: scripts/build_covariance_spine.py
+    known_extra_writers: []
+    owner_program: nw-rails
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 48
+    schema: neuralweb.covariance_spine.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      R-ORTH PR-3 site copy of data/neuralweb/covariance_spine.json for frontend
+      consumption. Exact mirror written atomically alongside the data copy by
+      scripts/build_covariance_spine.py. Display-only; no authority.
+
+  covariance-spine-history:
+    path: data/neuralweb/covariance_spine_history.parquet
+    format: parquet
+    producer: scripts/build_covariance_spine.py
+    known_extra_writers: []
+    owner_program: nw-rails
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 48
+    schema: neuralweb.covariance_spine_history.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      R-ORTH PR-3 history ledger — one row per as_of with headline scalars:
+      effective_independent_lobes, n_lobes_measurable, rates_dominant_pc_share,
+      factors_effective_bets, dispersion_state, same_bet_warning (bool).
+      Idempotent: existing row with same as_of is replaced. Written atomically
+      by scripts/build_covariance_spine.py alongside the main artifact.

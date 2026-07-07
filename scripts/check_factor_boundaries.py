@@ -128,6 +128,10 @@ _ALLOWED_ACTIONS_ALLOWLIST_PREFIXES = [
     "scripts/build_site.py",
     "engine/neuralweb/cortex.py",
     "engine/neuralweb/ask_brain.py",
+    # R-ORTH rail state builder: emits allowed_actions/forbidden_actions as a
+    # descriptive mirror only (RUL-ORTH-11; same RUL-NW9 category as the factor
+    # state builder). It never reads the field to switch behavior.
+    "engine/neuralweb/covariance_spine.py",
     "docs/research/",
 ]
 

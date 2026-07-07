@@ -95,7 +95,7 @@ def is_buyable(v: dict | None) -> bool:
 _VERDICT_KEYS = ("eligible", "tier", "sub", "reason", "state", "above200",
                  "weekly_bull", "early_now", "asof", "last",
                  "tier_cascade", "weight", "tier_sub", "bars_to_cross", "fresh_bars", "ticks",
-                 "provisional")
+                 "provisional", "htf_s1", "htf_s2")
 
 
 def _bars_since(daily_close, marker) -> int | None:
@@ -218,6 +218,11 @@ def gate(ticker: str, daily_close) -> dict:
     # criterion (T1/T2 measured 5.3%/8.8%, fine). Boards badge it so the trader knows the tier
     # may vanish when the bucket completes (calibration/provisional_replay.json).
     v["provisional"] = bool(casc.get("provisional")) and tier_c == "T3"
+    # HTF super-tier (S1/S2): display-only, rank-neutral, 2026-07-06.
+    # Sourced from cascade() htf dict; defaults to False when absent (thin history / exception).
+    _htf = casc.get("htf") or {}
+    v["htf_s1"] = bool(_htf.get("s1", False))
+    v["htf_s2"] = bool(_htf.get("s2", False))
     if tier_c and not v.get("eligible"):      # T2/T4 (or a fresh re-trigger) extend eligibility
         v.update(eligible=True, reason=f"tier {tier_c} (weight {v['weight']})")
     v["result"] = res
@@ -292,13 +297,14 @@ def compact(v: dict | None) -> dict:
 # us_stocks.html + the discovery Buy-zone picks). Unlike compact() it drops the §7 marker
 # payload ("last"/"state"/...) — those can carry NaN, and the boards only need the tier +
 # freshness — so it is safe to persist with allow_nan=False. is_buyable() reads from this.
-_BUY_KEYS = ("eligible", "tier_cascade", "tier_sub", "ticks", "bars_to_cross", "provisional")
+_BUY_KEYS = ("eligible", "tier_cascade", "tier_sub", "ticks", "bars_to_cross", "provisional",
+             "htf_s1", "htf_s2")
 
 
 def buy_signal(v: dict | None) -> dict:
-    """Slim, JSON-safe buy verdict: confluence tier + freshness only, no markers."""
+    """Slim, JSON-safe buy verdict: confluence tier + freshness + HTF badges, no markers."""
     if not v:
-        return {"eligible": False, "tier_cascade": None}
+        return {"eligible": False, "tier_cascade": None, "htf_s1": False, "htf_s2": False}
     return {k: v.get(k) for k in _BUY_KEYS}
 
 
