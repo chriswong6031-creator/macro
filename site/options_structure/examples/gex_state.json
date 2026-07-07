@@ -1,0 +1,37 @@
+{
+  "schema": "options_structure.gex_state/v1",
+  "asof": "2026-07-07T20:05:00-04:00",
+  "root": "SPY",
+  "spot": 543.2,
+  "net_gex_bn": 1.8,
+  "gamma_regime": "RANGE",
+  "stability_pct": 71,
+  "gamma_flip": 539.0,
+  "dist_to_flip_pct": 0.77,
+  "call_wall": 550.0,
+  "put_wall": 535.0,
+  "magnet": 542.0,
+  "max_pain": 541.0,
+  "pin_probability": 0.34,
+  "gravity_direction": "up",
+  "gravity_up_pct": 63,
+  "cascade_trigger": null,
+  "upside_trigger": 548.0,
+  "oi_delta_clusters": {
+    "new_oi": [{"strike": 550, "delta": 4200}],
+    "exit_oi": []
+  },
+  "regime_passport": {
+    "basis": "dealer-short-assumption",
+    "structurally_constant": false,
+    "is_index_product": true,
+    "verdict": "robust-assumption",
+    "note": "Index ETF product — dealer-sign assumption is relatively stable for large liquid indices. Display-only until GEX→forward-vol gate (~Sept 2026)."
+  },
+  "authority_tier": "display",
+  "reliability": {
+    "levels": "display-only-until-gate",
+    "regime": "assumption-signed",
+    "note": "Direction soft — sign not NBBO-confirmed. All levels are descriptive maps, not forecasts."
+  }
+}

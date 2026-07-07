@@ -1,0 +1,31 @@
+{
+  "schema": "options_flow.chain_heat/v1",
+  "asof": "2026-07-07T12:06:00Z",
+  "session_date": "2026-07-07",
+  "campaigns": [
+    {
+      "option_symbol": "SMH   260727P00530000",
+      "ticker": "SMH",
+      "right": "PUT",
+      "strike": 530.0,
+      "expiry": "2026-07-27",
+      "dte": 20,
+      "total_premium_mn": 11.97,
+      "alert_count": 29,
+      "span_minutes": 91.0,
+      "first_seen": "2026-07-07T09:35:00Z",
+      "last_seen": "2026-07-07T11:06:00Z",
+      "ask_share": 0.91,
+      "lean": "accumulation",
+      "direction_reliability": "soft",
+      "authority_tier": "display"
+    }
+  ],
+  "authority_tier": "display",
+  "reliability": {
+    "lean": "soft — ask_share heuristic, not NBBO-confirmed",
+    "premium_magnitude": "reliable",
+    "direction": "soft",
+    "note": "lean='accumulation'|'distribution'|'contested' is derived from ask_share (tick-rule, net recovery ~0.41). Magnitude is the reliable headline."
+  }
+}

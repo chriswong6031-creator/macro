@@ -6499,6 +6499,176 @@ artifacts:
       system — this ledger is attention routing only. freshness_sla_hours=9999 because
       the file is optional (builder handles absence gracefully).
 
+  # ============================================================
+  # MOMOEDGE OPTIONS SENSOR CONTRACT — Package A (2026-07-07)
+  # research/OPTIONS_SENSOR_CONTRACT.md
+  # ============================================================
+
+  # --- options-structure.gex_state: per-symbol dealer gamma structure state ---
+  options-structure-gex-state:
+    path: options_structure/gex_state/<ROOT>.json
+    format: json
+    producer: engine/options_structure.py
+    known_extra_writers: []
+    owner_program: momoedge
+    cadence: daily-engine
+    storage: r2
+    asof_field: asof
+    freshness_sla_hours: 30
+    schema: options_structure.gex_state/v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/options_structure.py
+    external_consumers:
+      - terminal:gex-tab
+    notes: >
+      Per-symbol dealer gamma structure state (Package A, MomoEdge parity).
+      6-state gamma_regime (PIN|DRIFT|RANGE|TRANSITION|TREND|CASCADE), stability_pct,
+      flip, walls, magnet, max_pain, pin_probability, gravity, oi_delta_clusters.
+      DISPLAY-ONLY until GEX→forward-vol gate (~Sept 2026). Single-name regime is a
+      near-constant product attribute (structurally_constant), NOT a time-varying signal.
+      regime_passport preserved in all consumers. authority_tier=display; reliability
+      flags assumption-signed on all GEX/gamma fields.
+
+  # --- options-flow.chain_heat: contract-day accumulation campaigns ---
+  options-flow-chain-heat:
+    path: live_flow/chain_heat_current.json
+    format: json
+    producer: engine/options_structure.py
+    known_extra_writers: []
+    owner_program: momoedge
+    cadence: collect
+    storage: r2
+    asof_field: asof
+    freshness_sla_hours: 1
+    schema: options_flow.chain_heat/v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/options_structure.py
+    external_consumers:
+      - terminal:flow-tab
+    notes: >
+      Contract-day accumulation campaigns (Package A / Package B chain-heat aggregator).
+      Groups live_flow.feed/v1 events by (root+strike+expiry+right); emits campaigns
+      meeting min_premium_mn=3.0M and min_alerts=2 gates. lean=accumulation|distribution|
+      contested derived from ask_share (tick-rule, NOT NBBO). direction_reliability=soft
+      always; premium_magnitude reliable. 120s cadence matching live poller.
+      aggregate_chain_heat() in engine/options_structure.py is the canonical producer.
+
+  # --- options-structure.matrix: strike×expiration matrix (PRISM) ---
+  options-structure-matrix:
+    path: options_structure/matrix/<ROOT>.json
+    format: json
+    producer: engine/options_structure.py
+    known_extra_writers: []
+    owner_program: momoedge
+    cadence: daily-engine
+    storage: r2
+    asof_field: asof
+    freshness_sla_hours: 30
+    schema: options_structure.matrix/v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/options_structure.py
+    external_consumers:
+      - terminal:prism-tab
+    notes: >
+      Strike × expiration matrix for PRISM tab (Package A schema; Package E builder).
+      Lenses: GEX (assumption-signed), OI (reliable), VOL (reliable), delta_oi (reliable),
+      UNUSUAL (deferred — needs 30d per-strike baseline). heat_seeker note field
+      CI-enforced as "descriptive — not a recommendation". GEX cells assumption-signed;
+      delta_oi is doctrine-aligned (signing-free). authority_tier=display.
+
+  # --- options-structure.structural: structural detector state (shadow) ---
+  options-structure-structural:
+    path: options_structure/structural/<ROOT>.json
+    format: json
+    producer: engine/options_structure.py
+    known_extra_writers: []
+    owner_program: momoedge
+    cadence: daily-engine
+    storage: r2
+    asof_field: asof
+    freshness_sla_hours: 30
+    schema: options_structure.structural/v1
+    tier: shadow
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/options_structure.py
+    external_consumers: []
+    notes: >
+      Structural detector state: squeeze_state + cascade_state (NONE|BUILDING|ACTIVE),
+      flow proximity to gamma flip and walls, plain-language explanation.
+      authority_tier=shadow always — context-only until gauntlet. Feeds Neural Web as
+      a gated context sensor. LLMs may only narrate; escalation requires a pre-registered
+      forward ledger gate and explicit adjudication. Package D builder is future scope.
+
+  # --- prophet.trade_plan: Prophet base trade plan envelope ---
+  prophet-trade-plan:
+    path: prophet/trade_plan/<ID>.json
+    format: json
+    producer: engine/neuralweb/world_state.py
+    known_extra_writers: []
+    owner_program: momoedge
+    cadence: on-demand
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 9999
+    schema: prophet.trade_plan/v1
+    tier: display
+    horizon_role: tactical_entry
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/options_structure.py
+    external_consumers:
+      - terminal:oracle-tab
+    notes: >
+      Oracle base trade plan envelope (Package A schema; Package 6 builder).
+      Neural Web ORIGINATES candidates; Oracle MANAGES; LLMs NARRATE.
+      source_engines must be non-empty (CI-validated by validate_trade_plan()).
+      Static plan carries trigger/entry/invalidation/targets/horizon/tranche/option_contract;
+      live management state lives in prophet.management_state/v1. authority_tier=display.
+
+  # --- prophet.management_state: Prophet live management confidence state ---
+  prophet-management-state:
+    path: prophet/state/<ID>.json
+    format: json
+    producer: engine/options_structure.py
+    known_extra_writers: []
+    owner_program: momoedge
+    cadence: daily-engine
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 30
+    schema: prophet.management_state/v1
+    tier: display
+    horizon_role: tactical_entry
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/options_structure.py
+    external_consumers:
+      - terminal:oracle-tab
+    notes: >
+      Oracle live management confidence state (Package A schema; Package 6 builder).
+      Trade-management score ONLY — NOT a pick-rank score (NW originates picks).
+      7-phase lifecycle: pre_trigger→triggered_pre_t1→at_t1→between_t1_t2→at_t2→
+      overtime→invalidated. confidence_ceiling=92 (uncertainty is honest; certainty forbidden).
+      Components: validity/progress/pace/retention/overlay. authority_tier=display until
+      forward ledger gate passes. authority field hardcoded to "trade-management-only-NOT-pick-rank".
+
   # --- nasdaq-internals (TI-R2/R3/R5, program: nasdaq-internals) ---
   nasdaq-internals:
     path: site/marketdata/nasdaq_internals.json

@@ -1,0 +1,20 @@
+{
+  "schema": "options_structure.structural/v1",
+  "asof": "2026-07-07T20:05:00-04:00",
+  "root": "NVDA",
+  "squeeze_state": "BUILDING",
+  "cascade_state": "NONE",
+  "top_relevance_score": 72,
+  "contributing_flows": 4,
+  "flow_near_flip": true,
+  "flow_near_wall": false,
+  "dealer_regime": "TRANSITION",
+  "explanation": "Accumulation pattern detected near the gamma flip level in a TRANSITION regime. Structural context only — not a directional call.",
+  "vol_ladder_suppressed": false,
+  "authority_tier": "shadow",
+  "allowed_authority": "context-only-until-gauntlet",
+  "reliability": {
+    "structural_state": "shadow — context sensor only, not a signal",
+    "note": "LLMs may only narrate. Escalation requires a pre-registered forward ledger gate."
+  }
+}
