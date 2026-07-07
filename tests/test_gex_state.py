@@ -516,6 +516,51 @@ class TestPinProbability:
         assert prob is not None
         assert 0.0 < prob <= 0.95
 
+    def test_perfectly_balanced_net_zero_uses_gross_gamma(self):
+        """True discriminating test for the gross-gamma fix.
+
+        A strike with net_mn=0 (perfectly offsetting call/put gamma) carries
+        zero information under the OLD |net_mn| formula — avg_gamma collapses to
+        abs(0)=0 and the strike is SKIPPED by the avg_gamma<=0 guard.  That leaves
+        only 2 valid strikes (the fillers), so _pin_probability returns None.
+
+        Under the NEW (call_gamma_mn + put_gamma_mn)/2 formula the balanced strike
+        contributes avg_gamma=100, passes the guard, and a valid probability is
+        returned.
+
+        This test fails identically on the old code and passes only on the new code —
+        something the existing test_balanced_high_oi_outscores_small_one_sided cannot
+        claim (its local _score helper never calls production code).
+        """
+        spot = 500.0
+        # Perfectly balanced: huge call and put gamma cancel exactly → net_mn = 0.
+        # OLD code: avg_gamma = |0| = 0 → skipped → only 2 valid strikes → None.
+        # NEW code: avg_gamma = (100 + 100) / 2 = 100 → valid score → prob returned.
+        by_strike = [
+            self._make_strike_gross(
+                500.0, net_mn=0.0,
+                call_gamma_mn=100.0, put_gamma_mn=100.0,
+                coi=10000, poi=10000,
+            ),
+            self._make_strike_gross(
+                490.0, net_mn=2.0,
+                call_gamma_mn=1.0, put_gamma_mn=1.0,
+                coi=500, poi=500,
+            ),
+            self._make_strike_gross(
+                510.0, net_mn=2.0,
+                call_gamma_mn=1.0, put_gamma_mn=1.0,
+                coi=500, poi=500,
+            ),
+        ]
+        prob = _pin_probability(by_strike, spot, max_pain=spot)
+        # NEW code must return a valid probability; OLD |net_mn| code returns None.
+        assert prob is not None, (
+            "net_mn=0 balanced strike must score under gross-gamma formula "
+            "(old |net_mn| code would return None — fewer than 3 valid strikes)"
+        )
+        assert 0.0 < prob <= 0.95
+
     def test_legacy_fallback_net_mn(self):
         """Rows without call_gamma_mn/put_gamma_mn fall back to |net_mn| gracefully."""
         # Legacy rows (no gross gamma fields)

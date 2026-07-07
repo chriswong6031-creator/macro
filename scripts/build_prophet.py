@@ -221,6 +221,19 @@ def _determine_outcome(
       3. T1_HIT        — any close >= T1 after signal_date (and T2 not yet hit)
       4. EXPIRED       — days since signal_date >= horizon_days
 
+    DESIGN (first-trigger-closes): the loop breaks on the FIRST trigger hit and
+    records that outcome permanently.  A plan that touches T1 then later T2 is
+    recorded as T1_HIT only.  T2_HIT fires only when the price clears T2 without
+    a prior close >= T1 (i.e., a gap day that skips T1).  This is intentional:
+    the ledger records first-observable-close outcomes, not eventual maximum reach.
+    Ledger consumers must not read T2_HIT frequency as "ever reached T2" — it
+    reflects "cleared T2 in a single close without a prior T1 close."
+
+    PIT correctness: `after = price_history_pit[index > sig_ts]` uses strict
+    greater-than so the signal day's own close is excluded (plan was not live yet).
+    If the PIT frame ends before signal_date + horizon_days, the plan stays open
+    indefinitely — this is correct behaviour, not a missed-expiry bug.
+
     Stock result = (close_price_on_close_date / entry - 1) * 100 (%).
     Option result = null (premium-mark data not available in this pipeline).
 
@@ -264,9 +277,6 @@ def _determine_outcome(
     closes = after[close_col].dropna()
     if closes.empty:
         return None, None, None, None
-
-    # Check horizon expiry first (so T1/T2 checks below carry a guard)
-    days_since_signal = (closes.index[-1] - sig_ts).days
 
     # Scan chronologically for first trigger hit
     close_date_str: str | None = None
