@@ -62,9 +62,17 @@ P3 secondary `ep_in_onset_21d` under calendar-month block bootstrap (142 months)
 
 **Ruling: the R-1 "null held" LOCK is REAFFIRMED — now on repaired machinery.** The audit's false-null concern is resolved: with real calendar-block inference, no clear masked effect emerges (the pooled DD63 marginal does not survive stratification). Consequential rulings: (a) `scripts/study_construction_divergence_tc.py` is the **mandatory apparatus** for any future R-1 verdict batch — the original script's inference path (CD-1/2/3 defects) is retired for inferential use, retained as historical record; (b) the DD63 tail asymmetry (divergent cohort's p10 genuinely shallower) is logged as a **descriptive watch item** for the accrual — if a future batch tests it, the test must be pre-registered on the repaired apparatus with a quantile-difference bootstrap.
 
-## RC-RUL-5 — SEQ_TLT_RELIEF_WASHOUT (OTA-RC-2)
+## RC-RUL-5 — SEQ_TLT_RELIEF_WASHOUT (OTA-RC-2, PR #1869)
 
-Re-check dispatched 2026-07-07 (episode-cluster CIs on the gauntlet legs + time-shift Leg-6 placebo). Ruling to be appended when the evidence lands. Until then the audit's HIGH exposure rating stands and the signal remains at registry status `screened` (display ceiling), as shipped.
+**Evidence** (`research/ORACLE_SEQ_TC_RECHECK.md`; reproduction exact to rounding): 745 fires collapse to **610 episodes across 157 calendar months (2002-10→2026-05, mean 1.22 fires/episode)** — the clustering the audit feared is MILD; this signal is not a 2021+ concentration artifact. Episode-cluster 95% CIs (2000 draws): full WR [0.637, 0.707] — LB clears the Leg-2 bar (0.62); holdout WR [0.631, 0.744] — LB clears the Leg-5 bar (0.58); ret_exit [+1.86%, +2.88%] excludes zero; asym [1.50, 2.04] — LB exactly at the 1.5 bar. **Leg-6 under a circular time-shift placebo: observed +2.37% vs p95 +3.75% — DOES NOT CLEAR** (the shipped independent-draw bar of +1.16% is an independence-assuming null and is hereby retired for verdict use).
+
+**Rulings (split verdict):**
+
+1. **Registration STANDS at registry status `screened`** — the display ceiling the signal already had. The conditional-shape evidence (WR, holdout replication, asymmetry) survives honest episode-cluster inference at its pre-registered bars.
+2. **The affirmative Leg-6 timing claim is WITHDRAWN.** Under a null that preserves the fire sequence's temporal structure, +2.37% is not distinguishable from a fortunate calendar offset at the 5% level. Interpretation discipline both ways: the single-offset circular shift has low effective null degrees of freedom (each draw is one fully-correlated portfolio), so this is a wide, conservative bar — failing it does not prove the signal is calendar luck; it removes the affirmative timing evidence.
+3. **Promotion path BLOCKED:** any advance beyond `screened` (P3-style registration shot, sizing input, NW authority above display) requires first clearing a pre-registered time-preserving placebo with adequate power. Design guidance for that prereg: per-episode independent block shifts (preserves local clustering, restores null df) or a washout-conditioned placebo that isolates the *ordering* value — the redundancy audit already established the causal ordering IS the claimed edge, so that is the null to beat.
+4. **Standing law (extends RC-RUL-3):** the reversion screen's Leg-6 independent-draw placebo is retired as a verdict instrument for all future gauntlet rounds; time-preserving nulls are required. `scripts/research/oracle_seq_tc_recheck.py` generalizes.
+5. **Follow-up registered (not run):** the other 10 rows of the published reversion base passed the same retired Leg-6 machinery. Before ANY of them is promoted beyond display, sweep them with the time-shift placebo (the re-check script takes a spec id; cheap). Display status is unaffected meanwhile.
 
 ---
 
@@ -80,8 +88,9 @@ Re-check dispatched 2026-07-07 (episode-cluster CIs on the gauntlet legs + time-
 | ORC-RC-1 (A17-modern) | MEDIUM-HIGH | Stood (p=0.013, n=73 caveat) |
 | ORC-RC-1 (P3 secondary) | exposed | Stood and **strengthened** (p=0.0045) |
 | HC-RC-1 (R-1 false-null) | LOW-MED masked effect | No masked effect — lock reaffirmed |
+| OTA-RC-2 (SEQ_TLT) | MEDIUM, registered→marginal | **Split** — WR/holdout legs stand on episode CIs (clustering was mild: 610 episodes/157 months); Leg-6 timing claim withdrawn (+2.37% < time-shift p95 +3.75%); promotion blocked pending time-preserving placebo |
 
-Two flips, five survivals, one strengthening — the audit's ranking was directionally right (its #1 item flipped; the survivals were all in the MEDIUM band), and the re-check pattern (frozen events, inference-only, reproduction gates, positive controls) held everywhere. DT-R14 is confirmed as load-bearing beyond the DannyTrades family.
+Two full flips, one partial withdrawal, five survivals, one strengthening — the audit's ranking was directionally right (its #1 item flipped; the survivals were mostly in the MEDIUM band), and the re-check pattern (frozen events, inference-only, reproduction gates, positive controls) held everywhere. DT-R14 is confirmed as load-bearing beyond the DannyTrades family — and equally, a survival under the harder ruler is as informative as a flip.
 
 ## File actions shipped with this adjudication
 
