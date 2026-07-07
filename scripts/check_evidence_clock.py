@@ -72,6 +72,15 @@ def _violations(payload: dict) -> list[str]:
                 f"summary.by_state[{state!r}]={count} does not match actual count {actual}"
             )
 
+    # 4b. clock_id uniqueness
+    clock_id_counts: dict[str, int] = {}
+    for row in rows:
+        cid = row.get("clock_id", "")
+        clock_id_counts[cid] = clock_id_counts.get(cid, 0) + 1
+    for cid, count in clock_id_counts.items():
+        if count > 1:
+            errs.append(f"duplicate clock_id {cid!r} appears {count} times in rows")
+
     for i, row in enumerate(rows):
         prefix = f"row[{i}] clock_id={row.get('clock_id')!r}"
 
@@ -238,6 +247,14 @@ def _run_selftest(root: Path) -> int:
     p = _good_payload()
     p["summary"]["by_state"] = {"due": 5}
     _test("summary by_state mismatch", p, "by_state")
+
+    # Test 10: duplicate clock_ids
+    p = _good_payload()
+    dup_row = copy.deepcopy(p["rows"][0])  # same clock_id "test:foo"
+    p["rows"].append(dup_row)
+    p["summary"]["n_rows"] = 2
+    p["summary"]["by_state"] = {"accruing": 2}
+    _test("duplicate clock_id", p, "duplicate clock_id")
 
     print()
     if all_passed:

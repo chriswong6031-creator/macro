@@ -28,6 +28,7 @@ if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
 from engine.neuralweb.evidence_clock import (
+    _adapt_cycle_pattern,
     _adapt_experiments,
     _adapt_expected_artifacts,
     _adapt_governance,
@@ -40,6 +41,7 @@ from engine.neuralweb.evidence_clock import (
     _base_row,
     _build_summary,
     _date_state,
+    _synapse_producer,
     build,
 )
 
@@ -627,3 +629,260 @@ class TestRealRepoBuild:
             for ref in (row.get("evidence_refs") or []):
                 assert not Path(ref).is_absolute(), \
                     f"{row['clock_id']} has absolute evidence_ref: {ref!r}"
+
+    def test_real_build_clock_ids_unique(self):
+        """All clock_ids in a real build must be unique."""
+        payload = build(_REPO_ROOT, today=TODAY)
+        from collections import Counter
+        ids = [r["clock_id"] for r in payload["rows"]]
+        dupes = {k: v for k, v in Counter(ids).items() if v > 1}
+        assert dupes == {}, f"Duplicate clock_ids found: {dupes}"
+
+
+# ---------------------------------------------------------------------------
+# (i) Fix #1 regression: ack accounting — acked stale does not reduce n_due
+# ---------------------------------------------------------------------------
+
+class TestAckAccounting:
+    def test_acked_stale_does_not_reduce_morning_line_due_count(self):
+        """2 unacked due + 1 acked stale → morning_line says 2 due/overdue."""
+        rows = [
+            _base_row(
+                clock_id="experiments:unacked-due-1",
+                source_system="experiments",
+                subject_id="unacked-due-1",
+                subject_type="experiment",
+                owner_program=None,
+                clock_type="come_back_on",
+                due_at=TODAY,
+                as_of=None,
+                state="due",
+                date_state="due",
+            ),
+            _base_row(
+                clock_id="experiments:unacked-due-2",
+                source_system="experiments",
+                subject_id="unacked-due-2",
+                subject_type="experiment",
+                owner_program=None,
+                clock_type="come_back_on",
+                due_at=TODAY,
+                as_of=None,
+                state="due",
+                date_state="due",
+            ),
+            _base_row(
+                clock_id="freshness:some-lobe",
+                source_system="freshness",
+                subject_id="some-lobe",
+                subject_type="artifact",
+                owner_program=None,
+                clock_type="freshness_sla",
+                due_at=None,
+                as_of=None,
+                state="stale",
+                date_state="stale",
+            ),
+        ]
+        # Ack the stale row only
+        rows[2]["acknowledged"] = True
+
+        summary = _build_summary(rows, TODAY)
+        # n_acknowledged counts all acked rows = 1
+        assert summary["n_acknowledged"] == 1
+        # morning_line due count must still be 2 (ack was on stale, not due/overdue)
+        assert "2 due/overdue" in summary["morning_line"], (
+            f"Expected '2 due/overdue' in morning_line but got: {summary['morning_line']!r}"
+        )
+
+    def test_acked_due_reduces_morning_line_count(self):
+        """1 acked due + 1 unacked due → morning_line says 1 due/overdue."""
+        rows = [
+            _base_row(
+                clock_id="experiments:acked-due",
+                source_system="experiments",
+                subject_id="acked-due",
+                subject_type="experiment",
+                owner_program=None,
+                clock_type="come_back_on",
+                due_at=TODAY,
+                as_of=None,
+                state="due",
+                date_state="due",
+            ),
+            _base_row(
+                clock_id="experiments:unacked-due",
+                source_system="experiments",
+                subject_id="unacked-due",
+                subject_type="experiment",
+                owner_program=None,
+                clock_type="come_back_on",
+                due_at=TODAY,
+                as_of=None,
+                state="due",
+                date_state="due",
+            ),
+        ]
+        rows[0]["acknowledged"] = True
+
+        summary = _build_summary(rows, TODAY)
+        assert summary["n_acknowledged"] == 1
+        assert "1 due/overdue" in summary["morning_line"], (
+            f"Expected '1 due/overdue' in morning_line but got: {summary['morning_line']!r}"
+        )
+
+
+# ---------------------------------------------------------------------------
+# (j) Fix #2: cycle_pattern clock_id dedup + retirement skip
+# ---------------------------------------------------------------------------
+
+class TestCyclePatternDedup:
+    def test_duplicate_truth_id_produces_one_row(self):
+        """A truths.jsonl with two rows for the same truth_id → only one clock row."""
+        with _TempRoot() as root:
+            import json as _json
+            lines = [
+                _json.dumps({
+                    "truth_id": "dupe_truth_v1",
+                    "status": "display",
+                    "next_review_due": FUTURE,
+                }) + "\n",
+                _json.dumps({
+                    "truth_id": "dupe_truth_v1",
+                    "status": "display",
+                    "next_review_due": FUTURE,
+                }) + "\n",
+            ]
+            (root.path / "data" / "cycle_pattern").mkdir(parents=True, exist_ok=True)
+            with open(root.path / "data/cycle_pattern/truths.jsonl", "w") as f:
+                f.writelines(lines)
+            cfg = _minimal_config()
+            rows, gaps = _adapt_cycle_pattern(root.path, cfg, TODAY)
+
+        cycle_ids = [r["clock_id"] for r in rows]
+        assert cycle_ids.count("cycle_pattern:dupe_truth_v1") == 1
+
+    def test_retired_truth_id_skipped(self):
+        """A truth with status='retired' is not emitted as a clock row."""
+        with _TempRoot() as root:
+            import json as _json
+            lines = [
+                _json.dumps({
+                    "truth_id": "candidate_v1",
+                    "status": "candidate",
+                    "next_review_due": FUTURE,
+                }) + "\n",
+                _json.dumps({
+                    "truth_id": "candidate_v1",
+                    "status": "retired",
+                    "next_review_due": FUTURE,
+                }) + "\n",
+            ]
+            (root.path / "data" / "cycle_pattern").mkdir(parents=True, exist_ok=True)
+            with open(root.path / "data/cycle_pattern/truths.jsonl", "w") as f:
+                f.writelines(lines)
+            cfg = _minimal_config()
+            rows, gaps = _adapt_cycle_pattern(root.path, cfg, TODAY)
+
+        # retired is last occurrence → kept by dedup but then skipped
+        assert not any(r["clock_id"] == "cycle_pattern:candidate_v1" for r in rows)
+
+    def test_promoted_null_truth_id_skipped(self):
+        """A truth with status='promoted_null' is not emitted as a clock row."""
+        with _TempRoot() as root:
+            import json as _json
+            line = _json.dumps({
+                "truth_id": "null_v1",
+                "status": "promoted_null",
+                "next_review_due": FUTURE,
+            }) + "\n"
+            (root.path / "data" / "cycle_pattern").mkdir(parents=True, exist_ok=True)
+            with open(root.path / "data/cycle_pattern/truths.jsonl", "w") as f:
+                f.write(line)
+            cfg = _minimal_config()
+            rows, gaps = _adapt_cycle_pattern(root.path, cfg, TODAY)
+
+        assert not any(r["clock_id"] == "cycle_pattern:null_v1" for r in rows)
+
+
+# ---------------------------------------------------------------------------
+# (k) Fix #3: _synapse_producer strips .py correctly for paths ending in p.py
+# ---------------------------------------------------------------------------
+
+class TestSynapseProducer:
+    def test_producer_ending_in_p_py_not_mangled(self):
+        """Producer 'scripts/gen_map.py' must yield 'python -m scripts.gen_map', not 'python -m scripts.gen_ma'."""
+        reg = {
+            "artifacts": {
+                "gen-map": {
+                    "path": "data/neuralweb/map.json",
+                    "producer": "scripts/gen_map.py",
+                }
+            }
+        }
+        result = _synapse_producer(reg, "data/neuralweb/map.json")
+        assert result == "python -m scripts.gen_map", f"Got: {result!r}"
+
+    def test_producer_without_py_extension_unchanged(self):
+        """Producer without .py suffix is returned as-is when no slash present."""
+        reg = {
+            "artifacts": {
+                "nightly": {
+                    "path": "data/neuralweb/nightly.json",
+                    "producer": "make nightly",
+                }
+            }
+        }
+        result = _synapse_producer(reg, "data/neuralweb/nightly.json")
+        assert result == "make nightly", f"Got: {result!r}"
+
+    def test_producer_with_slash_and_py(self):
+        """Producer 'scripts/build_ec.py' → 'python -m scripts.build_ec'."""
+        reg = {
+            "artifacts": {
+                "ec": {
+                    "path": "data/neuralweb/evidence_clock.json",
+                    "producer": "scripts/build_evidence_clock.py",
+                }
+            }
+        }
+        result = _synapse_producer(reg, "data/neuralweb/evidence_clock.json")
+        assert result == "python -m scripts.build_evidence_clock", f"Got: {result!r}"
+
+
+# ---------------------------------------------------------------------------
+# (l) Fix #8: qledger overdue — oldest past-check_by enables overdue state
+# ---------------------------------------------------------------------------
+
+class TestQledgerOverdue:
+    def test_old_past_check_by_yields_overdue(self):
+        """Claims with check_by more than grace_days ago → desk row is overdue."""
+        # check_by 30 days ago, grace=0 → overdue
+        old_check_by = (TODAY - timedelta(days=30)).isoformat()
+        claims = [
+            {"desk": "altdata", "status": "open", "check_by": old_check_by, "falsifier": None},
+        ]
+        with _TempRoot() as root:
+            root.write_jsonl("data/qledger/claims.jsonl", claims)
+            cfg = _minimal_config()
+            rows, gaps = _adapt_qledger(root.path, cfg, TODAY)
+
+        desk_row = next(r for r in rows if r["clock_id"] == "qledger:altdata")
+        assert desk_row["state"] == "overdue", (
+            f"Expected overdue but got {desk_row['state']!r}; due_at={desk_row['due_at']!r}"
+        )
+
+    def test_recent_past_check_by_within_grace_yields_due(self):
+        """Claims with check_by yesterday (grace=0) → overdue (no grace for check_by)."""
+        yesterday = (TODAY - timedelta(days=1)).isoformat()
+        claims = [
+            {"desk": "radar", "status": "open", "check_by": yesterday, "falsifier": None},
+        ]
+        with _TempRoot() as root:
+            root.write_jsonl("data/qledger/claims.jsonl", claims)
+            cfg = _minimal_config()
+            rows, gaps = _adapt_qledger(root.path, cfg, TODAY)
+
+        desk_row = next(r for r in rows if r["clock_id"] == "qledger:radar")
+        # grace=0 and check_by yesterday → overdue
+        assert desk_row["state"] == "overdue"

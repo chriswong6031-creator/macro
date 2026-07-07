@@ -24,7 +24,6 @@ from __future__ import annotations
 
 import json
 import logging
-import re
 from collections import defaultdict
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
@@ -91,7 +90,8 @@ def _synapse_producer(synapse_reg: dict, artifact_path: str) -> str | None:
         if entry.get("path") == artifact_path:
             prod = entry.get("producer")
             if prod:
-                return f"python -m {prod.replace('/', '.').rstrip('.py')}" if "/" in prod else prod
+                prod_mod = prod[:-3] if prod.endswith(".py") else prod
+                return f"python -m {prod_mod.replace('/', '.')}" if "/" in prod_mod else prod_mod
     return None
 
 
@@ -100,7 +100,7 @@ def _synapse_producer(synapse_reg: dict, artifact_path: str) -> str | None:
 # ---------------------------------------------------------------------------
 
 def _today() -> date:
-    return date.today()
+    return datetime.now(timezone.utc).date()
 
 
 def _parse_date(val: str | None) -> date | None:
@@ -194,7 +194,7 @@ def _adapt_experiments(root: Path, cfg: dict, today: date) -> tuple[list[dict], 
         with open(path, encoding="utf-8") as f:
             data = json.load(f)
     except Exception as exc:
-        gaps.append(f"experiments: could not load {path}: {exc}")
+        gaps.append(f"experiments: could not load {path.relative_to(root)}: {exc}")
         return rows, gaps
 
     grace = cfg.get("grace_days", 7)
@@ -302,7 +302,7 @@ def _adapt_research_factory(root: Path, cfg: dict, today: date, exp_ids: set[str
             )
             rows.append(row)
     except FileNotFoundError:
-        gaps.append(f"research_factory: queue.json not found at {queue_path}")
+        gaps.append(f"research_factory: queue.json not found at {queue_path.relative_to(root)}")
     except Exception as exc:
         gaps.append(f"research_factory: could not load queue.json: {exc}")
 
@@ -317,8 +317,8 @@ def _adapt_research_factory(root: Path, cfg: dict, today: date, exp_ids: set[str
             status = cand.get("status", "")
             if status not in blocking_states:
                 continue
-            # Check if any experiments seed entry references this candidate
-            if cid in exp_ids or any(cid in eid for eid in exp_ids):
+            # Check if any experiments seed entry references this candidate (exact match only)
+            if cid in exp_ids:
                 continue
             row = _base_row(
                 clock_id=f"research_factory:{cid}",
@@ -337,7 +337,7 @@ def _adapt_research_factory(root: Path, cfg: dict, today: date, exp_ids: set[str
             )
             rows.append(row)
     except FileNotFoundError:
-        gaps.append(f"research_factory: candidates.jsonl not found at {cands_path}")
+        gaps.append(f"research_factory: candidates.jsonl not found at {cands_path.relative_to(root)}")
     except Exception as exc:
         gaps.append(f"research_factory: could not load candidates.jsonl: {exc}")
 
@@ -358,11 +358,13 @@ def _adapt_qledger(root: Path, cfg: dict, today: date) -> tuple[list[dict], list
         with open(path, encoding="utf-8") as f:
             claims = [json.loads(l) for l in f if l.strip()]
     except Exception as exc:
-        gaps.append(f"qledger: could not load {path}: {exc}")
+        gaps.append(f"qledger: could not load {path.relative_to(root)}: {exc}")
         return rows, gaps
 
     # Per-desk rollup (open claims only)
-    desk_stats: dict[str, dict] = defaultdict(lambda: {"n_open": 0, "n_past_check_by": 0})
+    desk_stats: dict[str, dict] = defaultdict(
+        lambda: {"n_open": 0, "n_past_check_by": 0, "oldest_past_cb": None}
+    )
     n_total = len(claims)
     n_with_falsifier = sum(1 for c in claims if c.get("falsifier"))
 
@@ -374,16 +376,19 @@ def _adapt_qledger(root: Path, cfg: dict, today: date) -> tuple[list[dict], list
         cb = _parse_date(c.get("check_by"))
         if cb and cb < today:
             desk_stats[desk]["n_past_check_by"] += 1
+            old = desk_stats[desk]["oldest_past_cb"]
+            if old is None or cb < old:
+                desk_stats[desk]["oldest_past_cb"] = cb
 
     for desk, stats in sorted(desk_stats.items()):
         n_open = stats["n_open"]
         n_past = stats["n_past_check_by"]
         if n_open == 0:
             continue
-        # Earliest past-check_by date if any
-        due_at = today if n_past > 0 else None
+        # Use oldest past-check_by as due_at so _date_state can yield overdue
+        due_at = stats["oldest_past_cb"] if n_past > 0 else None
         ds = _date_state(due_at, 0, today)  # grace=0 for check_by
-        state = "due" if n_past > 0 else "accruing"
+        state = ds if n_past > 0 else "accruing"
         row = _base_row(
             clock_id=f"qledger:{desk}",
             source_system="qledger",
@@ -441,7 +446,7 @@ def _adapt_trial_ledger(root: Path, cfg: dict, today: date) -> tuple[list[dict],
         with open(path, encoding="utf-8") as f:
             trials = [json.loads(l) for l in f if l.strip()]
     except Exception as exc:
-        gaps.append(f"trial_ledger: could not load {path}: {exc}")
+        gaps.append(f"trial_ledger: could not load {path.relative_to(root)}: {exc}")
         return rows, gaps
 
     family_cap = cfg.get("sources", {}).get("trial_ledger", {}).get("family_cap", 15)
@@ -632,7 +637,7 @@ def _adapt_governance(root: Path, cfg: dict, today: date) -> tuple[list[dict], l
             )
             rows.append(row)
     except Exception as exc:
-        gaps.append(f"governance: could not load {gov_path}: {exc}")
+        gaps.append(f"governance: could not load {gov_path.relative_to(root)}: {exc}")
 
     # Probation files
     probation_paths = [
@@ -666,7 +671,7 @@ def _adapt_governance(root: Path, cfg: dict, today: date) -> tuple[list[dict], l
             )
             rows.append(row)
         except Exception as exc:
-            gaps.append(f"governance: could not process {prob_path}: {exc}")
+            gaps.append(f"governance: could not process {prob_path.relative_to(root)}: {exc}")
 
     return rows, gaps
 
@@ -690,7 +695,7 @@ def _adapt_cortex(root: Path, cfg: dict, today: date) -> tuple[list[dict], list[
         with open(path, encoding="utf-8") as f:
             entries = [json.loads(l) for l in f if l.strip()]
     except Exception as exc:
-        gaps.append(f"cortex: could not load {path}: {exc}")
+        gaps.append(f"cortex: could not load {path.relative_to(root)}: {exc}")
         return rows, gaps
 
     for entry in entries:
@@ -731,7 +736,7 @@ def _adapt_rule_experiments(root: Path, cfg: dict, today: date) -> tuple[list[di
         with open(path, encoding="utf-8") as f:
             all_recs = [json.loads(l) for l in f if l.strip()]
     except Exception as exc:
-        gaps.append(f"rule_experiments: could not load {path}: {exc}")
+        gaps.append(f"rule_experiments: could not load {path.relative_to(root)}: {exc}")
         return rows, gaps
 
     # Group by exp_id, find latest status
@@ -778,19 +783,30 @@ def _adapt_cycle_pattern(root: Path, cfg: dict, today: date) -> tuple[list[dict]
     rows: list[dict] = []
     grace = cfg.get("grace_days", 7)
 
+    # Retirement statuses — rows with these are skipped (they are finished / invalidated)
+    RETIRED_STATUSES = {"retired", "promoted_null"}
+
     try:
         with open(path, encoding="utf-8") as f:
-            truths = [json.loads(l) for l in f if l.strip()]
+            truths_raw = [json.loads(l) for l in f if l.strip()]
     except Exception as exc:
-        gaps.append(f"cycle_pattern: could not load {path}: {exc}")
+        gaps.append(f"cycle_pattern: could not load {path.relative_to(root)}: {exc}")
         return rows, gaps
 
-    for truth in truths:
+    # Dedup by truth_id keeping LAST occurrence in file order (latest edit wins)
+    deduped: dict[str, dict] = {}
+    for truth in truths_raw:
+        tid = truth.get("truth_id", "unknown")
+        deduped[tid] = truth  # later entry overwrites earlier
+
+    for truth_id, truth in deduped.items():
+        # Skip retired / finalized-null rows
+        if truth.get("status") in RETIRED_STATUSES:
+            continue
         nrd = _parse_date(truth.get("next_review_due"))
         if nrd is None:
             continue
         ds = _date_state(nrd, grace, today)
-        truth_id = truth.get("truth_id", "unknown")
         row = _base_row(
             clock_id=f"cycle_pattern:{truth_id}",
             source_system="cycle_pattern",
@@ -830,7 +846,7 @@ def _adapt_species(root: Path, cfg: dict, today: date) -> tuple[list[dict], list
         with open(path, encoding="utf-8") as f:
             data = json.load(f)
     except Exception as exc:
-        gaps.append(f"species: could not load {path}: {exc}")
+        gaps.append(f"species: could not load {path.relative_to(root)}: {exc}")
         return rows, gaps
 
     species_list = data.get("species") or []
@@ -975,7 +991,7 @@ def _apply_precedence(rows: list[dict], root: Path, today: date) -> None:
             with open(health_path, encoding="utf-8") as f:
                 health = json.load(f)
             lobes = health.get("lobes") or health.get("lobe_health") or {}
-            for lode_id, lobe_data in (lobes.items() if isinstance(lobes, dict) else []):
+            for lobe_id, lobe_data in (lobes.items() if isinstance(lobes, dict) else []):
                 if isinstance(lobe_data, dict):
                     if lobe_data.get("status") in ("stale", "missing"):
                         lp = lobe_data.get("path")
@@ -1068,11 +1084,11 @@ def _apply_acks(rows: list[dict], root: Path, snooze_days: int, today: date) -> 
 # Packet stubs (EC-R4)
 # ---------------------------------------------------------------------------
 
-def _attach_packet_stubs(rows: list[dict], cap: int) -> None:
+def _attach_packet_stubs(rows: list[dict], cap: int, root: Path) -> None:
     """Add inline packet stubs to the top `cap` due/overdue rows."""
     due_rows = [r for r in rows if r["state"] in ("due", "overdue")]
     for row in due_rows[:cap]:
-        missing = [r for r in (row.get("evidence_refs") or []) if not Path(r).exists()]
+        missing = [r for r in (row.get("evidence_refs") or []) if not (root / r).exists()]
         row["packet"] = {
             "reason_due": (
                 f"{row['clock_type']} reached {row.get('due_at') or 'now'}"
@@ -1110,8 +1126,12 @@ def _build_summary(rows: list[dict], today: date) -> dict:
             }
             break
 
-    # morning_line
-    n_due = by_state.get("due", 0) + by_state.get("overdue", 0) - n_acknowledged
+    # morning_line: only subtract acks on due/overdue rows (not stale/blocked acks)
+    n_ack_due = sum(
+        1 for r in rows
+        if r.get("acknowledged") and r.get("state") in ("due", "overdue")
+    )
+    n_due = by_state.get("due", 0) + by_state.get("overdue", 0) - n_ack_due
     n_due = max(0, n_due)
     n_accruing = by_state.get("accruing", 0)
     n_stale = by_state.get("stale", 0)
@@ -1239,7 +1259,7 @@ def build(root: Path, today: date | None = None) -> dict:
 
     # Packet stubs
     try:
-        _attach_packet_stubs(all_rows, packet_cap)
+        _attach_packet_stubs(all_rows, packet_cap, root)
     except Exception as exc:
         all_gaps.append(f"packet_stubs: {exc}")
 

@@ -106,6 +106,23 @@ it to the `sources:` block in `config/evidence_clock.yml`, and call it in `build
 
 ---
 
+## Caution: "validated" strings from the experiments adapter
+
+`readiness.maturation` and `readiness.status` values in clock rows are copied
+verbatim from the experiments registry (`data/experiments/registry_seed.json`).
+That registry may contain the word "validated" as a descriptive string (e.g.
+`maturation: "partially validated"`).
+
+**EC-R5 (no site/ copy) is the load-bearing guard.** The artifact is only ever
+served through the authed admin console, so `scripts/check_validated_claims.py`
+(which scans `site/` for the word "validated") does not fire on it.
+
+Any future v2 that renders clock rows to `site/` **must** strip or rephrase
+`maturation`/`readiness.status` fields before writing to site — otherwise
+`check_validated_claims.py` will hard-fail CI.
+
+---
+
 ## Explicit non-goals
 
 The evidence clock:

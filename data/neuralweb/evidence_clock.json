@@ -1,30 +1,318 @@
 {
   "schema": "neuralweb.evidence_clock.v1",
-  "as_of": "2026-07-06",
-  "generated_utc": "2026-07-07T03:04:36Z",
+  "as_of": "2026-07-07",
+  "generated_utc": "2026-07-07T03:18:35Z",
   "authority": "display_only",
   "summary": {
-    "n_rows": 201,
+    "n_rows": 186,
     "by_state": {
-      "overdue": 0,
-      "due": 16,
+      "overdue": 6,
+      "due": 10,
       "human_review": 0,
       "missing": 1,
       "stale": 1,
       "blocked": 2,
       "not_ready": 0,
       "promotion_eligible": 0,
-      "accruing": 181
+      "accruing": 166
     },
     "n_acknowledged": 0,
     "top_due": {
-      "clock_id": "experiments:species-S10",
-      "due_at": "2026-07-03",
+      "clock_id": "qledger:placebo",
+      "due_at": "2026-06-22",
       "owner_program": null
     },
-    "morning_line": "16 due/overdue, 1 missing, 181 accruing, 1 stale, 2 blocked. Top due: experiments:species-S10."
+    "morning_line": "16 due/overdue, 1 missing, 166 accruing, 1 stale, 2 blocked. Top due: qledger:placebo."
   },
   "rows": [
+    {
+      "clock_id": "qledger:placebo",
+      "source_system": "qledger",
+      "subject_id": "placebo",
+      "subject_type": "claim_family",
+      "owner_program": null,
+      "clock_type": "check_by",
+      "due_at": "2026-06-22",
+      "as_of": null,
+      "state": "overdue",
+      "date_state": "overdue",
+      "readiness": {
+        "n_open": 342,
+        "n_past_check_by": 156
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "data/qledger/claims.jsonl"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": {
+        "reason_due": "check_by reached 2026-06-22",
+        "source_evidence": [
+          "data/qledger/claims.jsonl"
+        ],
+        "missing_evidence": [],
+        "allowed_decisions": [
+          "inspect",
+          "defer",
+          "reject",
+          "paper"
+        ],
+        "blocked_decisions": [
+          "promote",
+          "authority_change"
+        ]
+      }
+    },
+    {
+      "clock_id": "qledger:china_news",
+      "source_system": "qledger",
+      "subject_id": "china_news",
+      "subject_type": "claim_family",
+      "owner_program": null,
+      "clock_type": "check_by",
+      "due_at": "2026-06-26",
+      "as_of": null,
+      "state": "overdue",
+      "date_state": "overdue",
+      "readiness": {
+        "n_open": 812,
+        "n_past_check_by": 332
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "data/qledger/claims.jsonl"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": {
+        "reason_due": "check_by reached 2026-06-26",
+        "source_evidence": [
+          "data/qledger/claims.jsonl"
+        ],
+        "missing_evidence": [],
+        "allowed_decisions": [
+          "inspect",
+          "defer",
+          "reject",
+          "paper"
+        ],
+        "blocked_decisions": [
+          "promote",
+          "authority_change"
+        ]
+      }
+    },
+    {
+      "clock_id": "qledger:cn_importance_v0",
+      "source_system": "qledger",
+      "subject_id": "cn_importance_v0",
+      "subject_type": "claim_family",
+      "owner_program": null,
+      "clock_type": "check_by",
+      "due_at": "2026-06-26",
+      "as_of": null,
+      "state": "overdue",
+      "date_state": "overdue",
+      "readiness": {
+        "n_open": 752,
+        "n_past_check_by": 292
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "data/qledger/claims.jsonl"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": {
+        "reason_due": "check_by reached 2026-06-26",
+        "source_evidence": [
+          "data/qledger/claims.jsonl"
+        ],
+        "missing_evidence": [],
+        "allowed_decisions": [
+          "inspect",
+          "defer",
+          "reject",
+          "paper"
+        ],
+        "blocked_decisions": [
+          "promote",
+          "authority_change"
+        ]
+      }
+    },
+    {
+      "clock_id": "qledger:cn_importance_v0_pit",
+      "source_system": "qledger",
+      "subject_id": "cn_importance_v0_pit",
+      "subject_type": "claim_family",
+      "owner_program": null,
+      "clock_type": "check_by",
+      "due_at": "2026-06-26",
+      "as_of": null,
+      "state": "overdue",
+      "date_state": "overdue",
+      "readiness": {
+        "n_open": 752,
+        "n_past_check_by": 292
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "data/qledger/claims.jsonl"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": {
+        "reason_due": "check_by reached 2026-06-26",
+        "source_evidence": [
+          "data/qledger/claims.jsonl"
+        ],
+        "missing_evidence": [],
+        "allowed_decisions": [
+          "inspect",
+          "defer",
+          "reject",
+          "paper"
+        ],
+        "blocked_decisions": [
+          "promote",
+          "authority_change"
+        ]
+      }
+    },
+    {
+      "clock_id": "qledger:us_importance_v0",
+      "source_system": "qledger",
+      "subject_id": "us_importance_v0",
+      "subject_type": "claim_family",
+      "owner_program": null,
+      "clock_type": "check_by",
+      "due_at": "2026-06-26",
+      "as_of": null,
+      "state": "overdue",
+      "date_state": "overdue",
+      "readiness": {
+        "n_open": 1888,
+        "n_past_check_by": 20
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "data/qledger/claims.jsonl"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": {
+        "reason_due": "check_by reached 2026-06-26",
+        "source_evidence": [
+          "data/qledger/claims.jsonl"
+        ],
+        "missing_evidence": [],
+        "allowed_decisions": [
+          "inspect",
+          "defer",
+          "reject",
+          "paper"
+        ],
+        "blocked_decisions": [
+          "promote",
+          "authority_change"
+        ]
+      }
+    },
+    {
+      "clock_id": "qledger:us_importance_v0_pit",
+      "source_system": "qledger",
+      "subject_id": "us_importance_v0_pit",
+      "subject_type": "claim_family",
+      "owner_program": null,
+      "clock_type": "check_by",
+      "due_at": "2026-06-26",
+      "as_of": null,
+      "state": "overdue",
+      "date_state": "overdue",
+      "readiness": {
+        "n_open": 1888,
+        "n_past_check_by": 20
+      },
+      "allowed_actions": [
+        "inspect",
+        "print_gap"
+      ],
+      "forbidden_actions": [
+        "promote",
+        "mutate_source_state",
+        "score"
+      ],
+      "evidence_refs": [
+        "data/qledger/claims.jsonl"
+      ],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": {
+        "reason_due": "check_by reached 2026-06-26",
+        "source_evidence": [
+          "data/qledger/claims.jsonl"
+        ],
+        "missing_evidence": [],
+        "allowed_decisions": [
+          "inspect",
+          "defer",
+          "reject",
+          "paper"
+        ],
+        "blocked_decisions": [
+          "promote",
+          "authority_change"
+        ]
+      }
+    },
     {
       "clock_id": "experiments:species-S10",
       "source_system": "experiments",
@@ -242,21 +530,7 @@
       "regenerate_cmd": null,
       "acknowledged": false,
       "review": null,
-      "packet": {
-        "reason_due": "come_back_on reached 2026-07-06",
-        "source_evidence": [],
-        "missing_evidence": [],
-        "allowed_decisions": [
-          "inspect",
-          "defer",
-          "reject",
-          "paper"
-        ],
-        "blocked_decisions": [
-          "promote",
-          "authority_change"
-        ]
-      }
+      "packet": null
     },
     {
       "clock_id": "experiments:insider-lh-ruler-p",
@@ -288,276 +562,6 @@
       "regenerate_cmd": null,
       "acknowledged": false,
       "review": null,
-      "packet": {
-        "reason_due": "come_back_on reached 2026-07-06",
-        "source_evidence": [],
-        "missing_evidence": [],
-        "allowed_decisions": [
-          "inspect",
-          "defer",
-          "reject",
-          "paper"
-        ],
-        "blocked_decisions": [
-          "promote",
-          "authority_change"
-        ]
-      }
-    },
-    {
-      "clock_id": "qledger:china_news",
-      "source_system": "qledger",
-      "subject_id": "china_news",
-      "subject_type": "claim_family",
-      "owner_program": null,
-      "clock_type": "check_by",
-      "due_at": "2026-07-06",
-      "as_of": null,
-      "state": "due",
-      "date_state": "due",
-      "readiness": {
-        "n_open": 812,
-        "n_past_check_by": 253
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [
-        "data/qledger/claims.jsonl"
-      ],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": {
-        "reason_due": "check_by reached 2026-07-06",
-        "source_evidence": [
-          "data/qledger/claims.jsonl"
-        ],
-        "missing_evidence": [],
-        "allowed_decisions": [
-          "inspect",
-          "defer",
-          "reject",
-          "paper"
-        ],
-        "blocked_decisions": [
-          "promote",
-          "authority_change"
-        ]
-      }
-    },
-    {
-      "clock_id": "qledger:cn_importance_v0",
-      "source_system": "qledger",
-      "subject_id": "cn_importance_v0",
-      "subject_type": "claim_family",
-      "owner_program": null,
-      "clock_type": "check_by",
-      "due_at": "2026-07-06",
-      "as_of": null,
-      "state": "due",
-      "date_state": "due",
-      "readiness": {
-        "n_open": 752,
-        "n_past_check_by": 226
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [
-        "data/qledger/claims.jsonl"
-      ],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": {
-        "reason_due": "check_by reached 2026-07-06",
-        "source_evidence": [
-          "data/qledger/claims.jsonl"
-        ],
-        "missing_evidence": [],
-        "allowed_decisions": [
-          "inspect",
-          "defer",
-          "reject",
-          "paper"
-        ],
-        "blocked_decisions": [
-          "promote",
-          "authority_change"
-        ]
-      }
-    },
-    {
-      "clock_id": "qledger:cn_importance_v0_pit",
-      "source_system": "qledger",
-      "subject_id": "cn_importance_v0_pit",
-      "subject_type": "claim_family",
-      "owner_program": null,
-      "clock_type": "check_by",
-      "due_at": "2026-07-06",
-      "as_of": null,
-      "state": "due",
-      "date_state": "due",
-      "readiness": {
-        "n_open": 752,
-        "n_past_check_by": 226
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [
-        "data/qledger/claims.jsonl"
-      ],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": {
-        "reason_due": "check_by reached 2026-07-06",
-        "source_evidence": [
-          "data/qledger/claims.jsonl"
-        ],
-        "missing_evidence": [],
-        "allowed_decisions": [
-          "inspect",
-          "defer",
-          "reject",
-          "paper"
-        ],
-        "blocked_decisions": [
-          "promote",
-          "authority_change"
-        ]
-      }
-    },
-    {
-      "clock_id": "qledger:placebo",
-      "source_system": "qledger",
-      "subject_id": "placebo",
-      "subject_type": "claim_family",
-      "owner_program": null,
-      "clock_type": "check_by",
-      "due_at": "2026-07-06",
-      "as_of": null,
-      "state": "due",
-      "date_state": "due",
-      "readiness": {
-        "n_open": 342,
-        "n_past_check_by": 140
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [
-        "data/qledger/claims.jsonl"
-      ],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": {
-        "reason_due": "check_by reached 2026-07-06",
-        "source_evidence": [
-          "data/qledger/claims.jsonl"
-        ],
-        "missing_evidence": [],
-        "allowed_decisions": [
-          "inspect",
-          "defer",
-          "reject",
-          "paper"
-        ],
-        "blocked_decisions": [
-          "promote",
-          "authority_change"
-        ]
-      }
-    },
-    {
-      "clock_id": "qledger:us_importance_v0",
-      "source_system": "qledger",
-      "subject_id": "us_importance_v0",
-      "subject_type": "claim_family",
-      "owner_program": null,
-      "clock_type": "check_by",
-      "due_at": "2026-07-06",
-      "as_of": null,
-      "state": "due",
-      "date_state": "due",
-      "readiness": {
-        "n_open": 1888,
-        "n_past_check_by": 4
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [
-        "data/qledger/claims.jsonl"
-      ],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
-      "clock_id": "qledger:us_importance_v0_pit",
-      "source_system": "qledger",
-      "subject_id": "us_importance_v0_pit",
-      "subject_type": "claim_family",
-      "owner_program": null,
-      "clock_type": "check_by",
-      "due_at": "2026-07-06",
-      "as_of": null,
-      "state": "due",
-      "date_state": "due",
-      "readiness": {
-        "n_open": 1888,
-        "n_past_check_by": 4
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [
-        "data/qledger/claims.jsonl"
-      ],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
       "packet": null
     },
     {
@@ -567,7 +571,7 @@
       "subject_type": "experiment",
       "owner_program": null,
       "clock_type": "awaiting_execution",
-      "due_at": "2026-07-06",
+      "due_at": "2026-07-07",
       "as_of": "2026-07-06",
       "state": "due",
       "date_state": "due",
@@ -599,7 +603,7 @@
       "subject_type": "experiment",
       "owner_program": null,
       "clock_type": "awaiting_execution",
-      "due_at": "2026-07-06",
+      "due_at": "2026-07-07",
       "as_of": "2026-07-06",
       "state": "due",
       "date_state": "due",
@@ -631,7 +635,7 @@
       "subject_type": "experiment",
       "owner_program": null,
       "clock_type": "awaiting_execution",
-      "due_at": "2026-07-06",
+      "due_at": "2026-07-07",
       "as_of": "2026-07-06",
       "state": "due",
       "date_state": "due",
@@ -663,7 +667,7 @@
       "subject_type": "experiment",
       "owner_program": null,
       "clock_type": "awaiting_execution",
-      "due_at": "2026-07-06",
+      "due_at": "2026-07-07",
       "as_of": "2026-07-06",
       "state": "due",
       "date_state": "due",
@@ -3432,42 +3436,6 @@
       "packet": null
     },
     {
-      "clock_id": "cycle_pattern:CPI-001",
-      "source_system": "cycle_pattern",
-      "subject_id": "CPI-001",
-      "subject_type": "truth",
-      "owner_program": "cycle-intelligence",
-      "clock_type": "next_review_due",
-      "due_at": "2026-10-06",
-      "as_of": "2026-07-06",
-      "state": "accruing",
-      "date_state": "accruing",
-      "readiness": {
-        "status": "promoted_null",
-        "cadence": "annual",
-        "effect_class": "null"
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [
-        "data/cycle_pattern/truths.jsonl",
-        "research/cycle_masterplan/W04_KEYSTONE_VERDICT.md",
-        "data/research/keystone_tr0/study_tables.json",
-        "data/research/keystone_tr0/manifest.json"
-      ],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
       "clock_id": "cycle_pattern:CPI-002",
       "source_system": "cycle_pattern",
       "subject_id": "CPI-002",
@@ -3497,42 +3465,6 @@
         "research/cycle_masterplan/W04_KEYSTONE_VERDICT.md",
         "data/research/keystone_tr0/study_tables.json",
         "data/research/keystone_tr0/manifest.json"
-      ],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
-      "clock_id": "cycle_pattern:CPI-003",
-      "source_system": "cycle_pattern",
-      "subject_id": "CPI-003",
-      "subject_type": "truth",
-      "owner_program": "cycle-intelligence",
-      "clock_type": "next_review_due",
-      "due_at": "2026-10-06",
-      "as_of": "2026-07-06",
-      "state": "accruing",
-      "date_state": "accruing",
-      "readiness": {
-        "status": "promoted_null",
-        "cadence": "annual",
-        "effect_class": "null"
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [
-        "data/cycle_pattern/truths.jsonl",
-        "research/cycle_masterplan/W04_KEYSTONE_VERDICT.md",
-        "data/research/keystone_tr0/study_tables.json",
-        "data/regime/ladder_calibration.json"
       ],
       "regenerate_cmd": null,
       "acknowledged": false,
@@ -3610,112 +3542,6 @@
       "packet": null
     },
     {
-      "clock_id": "cycle_pattern:CPI-006",
-      "source_system": "cycle_pattern",
-      "subject_id": "CPI-006",
-      "subject_type": "truth",
-      "owner_program": "cycle-intelligence",
-      "clock_type": "next_review_due",
-      "due_at": "2026-10-06",
-      "as_of": "2026-07-06",
-      "state": "accruing",
-      "date_state": "accruing",
-      "readiness": {
-        "status": "promoted_null",
-        "cadence": "annual",
-        "effect_class": "null"
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [
-        "data/cycle_pattern/truths.jsonl",
-        "research/cycle_masterplan/W42_HAZARD_VERDICT.md",
-        "data/hazard/model_price_c4414dcb.json"
-      ],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
-      "clock_id": "cycle_pattern:CPI-007",
-      "source_system": "cycle_pattern",
-      "subject_id": "CPI-007",
-      "subject_type": "truth",
-      "owner_program": "cycle-intelligence",
-      "clock_type": "next_review_due",
-      "due_at": "2026-10-06",
-      "as_of": "2026-07-06",
-      "state": "accruing",
-      "date_state": "accruing",
-      "readiness": {
-        "status": "promoted_null",
-        "cadence": "annual",
-        "effect_class": "null"
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [
-        "data/cycle_pattern/truths.jsonl",
-        "research/cycle_masterplan/W46_BINDING_CALIBRATION_VERDICT.md",
-        "data/regime/ladder_risk_calibration.json"
-      ],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
-      "clock_id": "cycle_pattern:CPI-008",
-      "source_system": "cycle_pattern",
-      "subject_id": "CPI-008",
-      "subject_type": "truth",
-      "owner_program": "cycle-intelligence",
-      "clock_type": "next_review_due",
-      "due_at": "2026-10-06",
-      "as_of": "2026-07-06",
-      "state": "accruing",
-      "date_state": "accruing",
-      "readiness": {
-        "status": "promoted_null",
-        "cadence": "annual",
-        "effect_class": "null"
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [
-        "data/cycle_pattern/truths.jsonl",
-        "research/cycle_masterplan/W51_LEADLAG_VERDICT.md",
-        "data/cycle_hazard/leadlag_phase0.json",
-        "data/leadlag/frozen_pairs.json"
-      ],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
       "clock_id": "cycle_pattern:CPI-009",
       "source_system": "cycle_pattern",
       "subject_id": "CPI-009",
@@ -3751,42 +3577,6 @@
       "packet": null
     },
     {
-      "clock_id": "cycle_pattern:CPI-010",
-      "source_system": "cycle_pattern",
-      "subject_id": "CPI-010",
-      "subject_type": "truth",
-      "owner_program": "cycle-intelligence",
-      "clock_type": "next_review_due",
-      "due_at": "2026-10-06",
-      "as_of": "2026-07-06",
-      "state": "accruing",
-      "date_state": "accruing",
-      "readiness": {
-        "status": "promoted_null",
-        "cadence": "quarterly",
-        "effect_class": "null"
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [
-        "data/cycle_pattern/truths.jsonl",
-        "research/cycle_masterplan/W24_FIRST_SCORECARDS.md",
-        "data/sector_cycles/scorecards/promises_price_v1_zz14_v0.json",
-        "data/country_cycles/scorecards/promises_price_v1_zz14_v0.json"
-      ],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
       "clock_id": "cycle_pattern:CPI-011",
       "source_system": "cycle_pattern",
       "subject_id": "CPI-011",
@@ -3815,42 +3605,6 @@
         "data/cycle_pattern/truths.jsonl",
         "research/cycle_masterplan/W24_FIRST_SCORECARDS.md",
         "data/cycle_ontology/cone_recalibration.json"
-      ],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
-      "clock_id": "cycle_pattern:CPI-012",
-      "source_system": "cycle_pattern",
-      "subject_id": "CPI-012",
-      "subject_type": "truth",
-      "owner_program": "cycle-intelligence",
-      "clock_type": "next_review_due",
-      "due_at": "2026-10-06",
-      "as_of": "2026-07-06",
-      "state": "accruing",
-      "date_state": "accruing",
-      "readiness": {
-        "status": "promoted_null",
-        "cadence": "quarterly",
-        "effect_class": "null"
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [
-        "data/cycle_pattern/truths.jsonl",
-        "research/cycle_masterplan/W24_FIRST_SCORECARDS.md",
-        "data/sector_cycles/scorecards/promises_price_v1_zz14_v0.json",
-        "data/country_cycles/scorecards/promises_price_v1_zz14_v0.json"
       ],
       "regenerate_cmd": null,
       "acknowledged": false,
@@ -3958,112 +3712,6 @@
         "data/sector_cycles/narratives.json",
         "data/sector_cycles/cycle_dna.json",
         "data/sector_cycles/leg_context.json"
-      ],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
-      "clock_id": "cycle_pattern:cycle_truth_cn_downturn_broken_trend_tail_candidate_v1",
-      "source_system": "cycle_pattern",
-      "subject_id": "cycle_truth_cn_downturn_broken_trend_tail_candidate_v1",
-      "subject_type": "truth",
-      "owner_program": "cycle-intelligence",
-      "clock_type": "next_review_due",
-      "due_at": "2026-10-06",
-      "as_of": "2026-07-06",
-      "state": "accruing",
-      "date_state": "accruing",
-      "readiness": {
-        "status": "candidate",
-        "cadence": "next lattice batch",
-        "effect_class": "risk_only"
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [
-        "data/cycle_pattern/truths.jsonl",
-        "research/cycle_masterplan/CPI_LATTICE1_VERDICT.md",
-        "data/cycle_pattern/lattice/batch1.json"
-      ],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
-      "clock_id": "cycle_pattern:cycle_truth_cn_downturn_broken_trend_tail_candidate_v1",
-      "source_system": "cycle_pattern",
-      "subject_id": "cycle_truth_cn_downturn_broken_trend_tail_candidate_v1",
-      "subject_type": "truth",
-      "owner_program": "cycle-intelligence",
-      "clock_type": "next_review_due",
-      "due_at": "2026-10-06",
-      "as_of": "2026-07-07T00:03:51.962901+00:00",
-      "state": "accruing",
-      "date_state": "accruing",
-      "readiness": {
-        "status": "retired",
-        "cadence": "next lattice batch",
-        "effect_class": "risk_only"
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [
-        "data/cycle_pattern/truths.jsonl",
-        "research/cycle_masterplan/CPI_LATTICE1_VERDICT.md",
-        "data/cycle_pattern/lattice/batch1.json"
-      ],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
-      "clock_id": "cycle_pattern:cycle_truth_lattice1_confirmatory_and_baseline_confound_v1",
-      "source_system": "cycle_pattern",
-      "subject_id": "cycle_truth_lattice1_confirmatory_and_baseline_confound_v1",
-      "subject_type": "truth",
-      "owner_program": "cycle-intelligence",
-      "clock_type": "next_review_due",
-      "due_at": "2026-10-06",
-      "as_of": "2026-07-06",
-      "state": "accruing",
-      "date_state": "accruing",
-      "readiness": {
-        "status": "display",
-        "cadence": "next lattice batch",
-        "effect_class": "structural"
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [
-        "data/cycle_pattern/truths.jsonl",
-        "research/cycle_masterplan/CPI_LATTICE1_VERDICT.md",
-        "data/cycle_pattern/lattice/batch1.json",
-        "research/cycle_masterplan/PREREGISTRATION.md"
       ],
       "regenerate_cmd": null,
       "acknowledged": false,
@@ -4780,186 +4428,6 @@
         "score"
       ],
       "evidence_refs": [],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
-      "clock_id": "cycle_pattern:cycle_truth_cn_downturn_broken_trend_tail_null_v1",
-      "source_system": "cycle_pattern",
-      "subject_id": "cycle_truth_cn_downturn_broken_trend_tail_null_v1",
-      "subject_type": "truth",
-      "owner_program": "cycle-intelligence",
-      "clock_type": "next_review_due",
-      "due_at": "2027-01-06",
-      "as_of": "2026-07-06",
-      "state": "accruing",
-      "date_state": "accruing",
-      "readiness": {
-        "status": "promoted_null",
-        "cadence": "annual review",
-        "effect_class": "null"
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [
-        "data/cycle_pattern/truths.jsonl",
-        "research/cycle_masterplan/CPI_LATTICE2_VERDICT.md",
-        "data/cycle_pattern/lattice/batch2.json",
-        "research/cycle_masterplan/PREREGISTRATION.md"
-      ],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
-      "clock_id": "cycle_pattern:cycle_truth_ft1_breadth_hazard_null_v1",
-      "source_system": "cycle_pattern",
-      "subject_id": "cycle_truth_ft1_breadth_hazard_null_v1",
-      "subject_type": "truth",
-      "owner_program": "cycle-intelligence",
-      "clock_type": "next_review_due",
-      "due_at": "2027-01-06",
-      "as_of": "2026-07-06",
-      "state": "accruing",
-      "date_state": "accruing",
-      "readiness": {
-        "status": "promoted_null",
-        "cadence": "annual review",
-        "effect_class": "null"
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [
-        "data/cycle_pattern/truths.jsonl",
-        "research/cycle_masterplan/CPI_FT1_FT4_VERDICT.md",
-        "data/cycle_pattern/ft_trials/ft1_breadth.json",
-        "research/cycle_masterplan/PREREGISTRATION.md"
-      ],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
-      "clock_id": "cycle_pattern:cycle_truth_ft2_credit_hazard_null_v1",
-      "source_system": "cycle_pattern",
-      "subject_id": "cycle_truth_ft2_credit_hazard_null_v1",
-      "subject_type": "truth",
-      "owner_program": "cycle-intelligence",
-      "clock_type": "next_review_due",
-      "due_at": "2027-01-06",
-      "as_of": "2026-07-06",
-      "state": "accruing",
-      "date_state": "accruing",
-      "readiness": {
-        "status": "promoted_null",
-        "cadence": "annual review",
-        "effect_class": "null"
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [
-        "data/cycle_pattern/truths.jsonl",
-        "research/cycle_masterplan/CPI_FT2_VERDICT.md",
-        "data/cycle_pattern/ft_trials/ft2_credit.json",
-        "research/cycle_masterplan/PREREGISTRATION.md"
-      ],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
-      "clock_id": "cycle_pattern:cycle_truth_ft4_structure_hazard_null_v1",
-      "source_system": "cycle_pattern",
-      "subject_id": "cycle_truth_ft4_structure_hazard_null_v1",
-      "subject_type": "truth",
-      "owner_program": "cycle-intelligence",
-      "clock_type": "next_review_due",
-      "due_at": "2027-01-06",
-      "as_of": "2026-07-06",
-      "state": "accruing",
-      "date_state": "accruing",
-      "readiness": {
-        "status": "promoted_null",
-        "cadence": "annual review",
-        "effect_class": "null"
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [
-        "data/cycle_pattern/truths.jsonl",
-        "research/cycle_masterplan/CPI_FT1_FT4_VERDICT.md",
-        "data/cycle_pattern/ft_trials/ft4_structure.json",
-        "research/cycle_masterplan/PREREGISTRATION.md"
-      ],
-      "regenerate_cmd": null,
-      "acknowledged": false,
-      "review": null,
-      "packet": null
-    },
-    {
-      "clock_id": "cycle_pattern:cycle_truth_ix1_index_transfer_null_v1",
-      "source_system": "cycle_pattern",
-      "subject_id": "cycle_truth_ix1_index_transfer_null_v1",
-      "subject_type": "truth",
-      "owner_program": "cycle-intelligence",
-      "clock_type": "next_review_due",
-      "due_at": "2027-01-07",
-      "as_of": "2026-07-07",
-      "state": "accruing",
-      "date_state": "accruing",
-      "readiness": {
-        "status": "promoted_null",
-        "cadence": "next IX wave (or annual review)",
-        "effect_class": "null"
-      },
-      "allowed_actions": [
-        "inspect",
-        "print_gap"
-      ],
-      "forbidden_actions": [
-        "promote",
-        "mutate_source_state",
-        "score"
-      ],
-      "evidence_refs": [
-        "data/cycle_pattern/truths.jsonl",
-        "research/cycle_masterplan/CPI_IX1_VERDICT.md",
-        "data/cycle_pattern/ix_trials/ix1_transfer.json",
-        "research/cycle_masterplan/PREREGISTRATION.md"
-      ],
       "regenerate_cmd": null,
       "acknowledged": false,
       "review": null,
