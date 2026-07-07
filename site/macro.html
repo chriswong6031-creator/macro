@@ -2828,6 +2828,14 @@
   .rr-asof{font-size:10px;color:var(--muted);margin-top:10px}
   .rr-footer{font-size:10px;color:var(--muted);margin-top:12px;
     padding-top:8px;border-top:1px solid var(--line);line-height:1.5}
+  /* MRI-R20 quirk flag chips */
+  .rr-quirk-row{display:flex;flex-wrap:wrap;gap:4px;margin:5px 0 2px}
+  .rr-quirk-chip{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;
+    border-radius:4px;font-size:9.5px;line-height:1.4;
+    background:color-mix(in srgb,var(--warn) 18%,transparent);
+    border:1px solid color-mix(in srgb,var(--warn) 40%,transparent);
+    color:var(--text)}
+  .rr-quirk-icon{font-size:10px}
   </style>
   <div class="panel span12" id="release-radar">
     <h2><span class="l-en">Release Radar</span><span class="l-zh">数据发布雷达</span>
@@ -3010,6 +3018,23 @@
         +'</div>';
     }
 
+    /* MRI-R20: quirk flag chips (bilingual warning chips — pure annotation) */
+    function quirkChips(flags){
+      if (!Array.isArray(flags) || !flags.length) return '';
+      var chips = flags.map(function(f){
+        var en = f.en || f.code || '';
+        var zh = f.zh || f.en || f.code || '';
+        var cite = f.cite || '';
+        return '<span class="rr-quirk-chip"'
+          +(cite?' data-cite="'+esc(cite)+'"':'')+' aria-label="'+esc(cite)+'">'
+          +'<span class="rr-quirk-icon">&#9888;</span>'
+          +'<span class="l-en">'+esc(en)+'</span>'
+          +'<span class="l-zh">'+esc(zh)+'</span>'
+          +'</span>';
+      }).join('');
+      return '<div class="rr-quirk-row">'+chips+'</div>';
+    }
+
     /* render one upcoming card */
     function renderCard(item){
       var rel = item.release || '';
@@ -3058,6 +3083,8 @@
         +(!isBenchmarkOnly&&item.surprise_skew?'<div>'+skewChip(item.surprise_skew)+'</div>':'')
         /* policy backdrop */
         +policyStrip(item.policy_backdrop)
+        /* MRI-R20: quirk flag chips (hidden when empty) */
+        +(item.quirk_flags&&item.quirk_flags.length?quirkChips(item.quirk_flags):'')
         +'</div>';  /* end .rr-card */
     }
 

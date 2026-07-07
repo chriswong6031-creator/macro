@@ -586,6 +586,8 @@ def _build_projection_ledger_rows(
             "gap_bp": policy_backdrop.get("gap_bp"),
             "implied_cuts_12m": policy_backdrop.get("implied_cuts_12m"),
             "next_fomc": policy_backdrop.get("next_fomc"),
+            # MRI-R20: freeze quirk flag codes (list of code strings) as annotation
+            "quirk_flag_codes": [f["code"] for f in (item.get("quirk_flags") or [])],
         }
         rows.append(row)
     return rows
@@ -1376,6 +1378,12 @@ def _enrich_upcoming_block(upcoming_block: list[dict], root: Path) -> None:
         log.warning("release_market_context import failed — enrichments skipped: %s", exc)
         return
 
+    try:
+        from engine.release_quirks import compute_quirk_flags as _compute_quirk_flags
+    except Exception as exc:  # pragma: no cover
+        log.warning("release_quirks import failed — quirk_flags enrichment skipped: %s", exc)
+        _compute_quirk_flags = None
+
     snapshots_path = root / "data" / "prediction_markets" / "snapshots.parquet"
     kalshi_path = snapshots_path.parent / "kalshi_releases.parquet"
     playbook_path = root / "research" / "release_playbook" / "results" / "playbook_v1.json"
@@ -1438,6 +1446,17 @@ def _enrich_upcoming_block(upcoming_block: list[dict], root: Path) -> None:
         except Exception as exc:
             log.debug("reaction_sensitivity enrichment failed for %s: %s", rt, exc)
             item["reaction_sensitivity"] = None
+
+        # MRI-R20: quirk_flags — deterministic calendar annotations (pure display)
+        try:
+            if _compute_quirk_flags is not None:
+                period_str = item.get("period") or ""
+                item["quirk_flags"] = _compute_quirk_flags(rt, period_str)
+            else:
+                item["quirk_flags"] = []
+        except Exception as exc:
+            log.debug("quirk_flags enrichment failed for %s: %s", rt, exc)
+            item["quirk_flags"] = []
 
 
 # ---------------------------------------------------------------------------
@@ -1521,7 +1540,7 @@ def build(root: Path, dry_run: bool = False) -> dict:
             "can_size": False,
             "can_trade": False,
         },
-        "enrichments": ["surprise_distribution", "market_implied", "reaction_sensitivity"],
+        "enrichments": ["surprise_distribution", "market_implied", "reaction_sensitivity", "quirk_flags"],
         "upcoming": upcoming_block,
         "last_scored": last_scored,
         "scoreboard_ref": "data/release_forecast/scoreboard.json",
