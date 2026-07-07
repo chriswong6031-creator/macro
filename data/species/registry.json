@@ -2235,6 +2235,70 @@
           "reason": "R-SP16 schema legalization (STOCK_PERSONALITY_MASTERPLAN_BY_FABLE.md): 'shadow'/'shadow_ledger' are not legal enums; live shadow forward ledger (since 2026-07-05) maps to validation_status=accruing + deployment_status=ledger_fields (additive ledger columns only — production ordering untouched). Backfilled archetype_scope/regime_scope/market_scope/trial_count (8 = P2.5 config grid C1-C8). Semantic content and custom fields (primary_config, tracked_variants) unchanged."
         }
       ]
+    },
+    {
+      "species_id": "S16",
+      "version": "1.0",
+      "name": "Squeeze Release",
+      "horizon_class": "rotational",
+      "validation_status": "accruing",
+      "deployment_status": "unshipped",
+      "mechanism": "Multi-week volatility compression ends with a direction-and-volume-confirmed release bar (FIRED_UP state from engine/vol_squeeze.assess_series). The release bar — not the quiet base — is the event. Requires dual BBWP+HVP percentile gate, min_duration>=5 bars compression, directional break of the squeeze box within release_window bars, and vol_confirm=1.3x average volume confirmation. Fidelity-pinned to engine/vol_squeeze.DEFAULTS (pctile_thresh=25, min_duration=5, release_window=3, vol_confirm=1.3).",
+      "adjacent_falsified": "H2 aged-quiet-base/calm-VCP arming (SETUP_SPECIES section 1.6; calm-base anticipatory arming showed worst stop-outs 46-48%). Mechanical difference: S16 acts ONLY on the confirmed release bar with direction + 1.3x volume confirmation — confirmation vs anticipation. An arming variant is BANNED from this family per masterplan section 9. Context kill: trend/location guards (falsified as exposure artifacts); volume-confirmation confirmers (H4, dead).",
+      "evidence_stack": {
+        "phase0_study": "research/entry_stack/W2_SSQ_REPORT.md",
+        "harness": "scripts/research/run_w2_ssq.py",
+        "engine": "engine/vol_squeeze.assess_series (FIRED_UP state onsets)",
+        "panels": "deep (H/L available) + baskets (H/L available); delisted NOT APPLICABLE (needs H/L)",
+        "grader": "engine/grading (RUL-9)",
+        "design": "R1 date-FE stratified difference; episode-block bootstrap; BH q<=0.10 family esx_sq_phase0; RUL-13 primary horizons 21d; RUL-14 co-primaries zone_held_21/stop_vol_21"
+      },
+      "rejection_rules": [
+        "FIRED_DOWN onsets are BANNED from the long study (direction fixture in tests)",
+        "Any arming variant (entering during COILED/COMPRESSED state) is BANNED from this family",
+        "Event = first bar of FIRED_UP state (dedup consecutive FIRED_UP bars)",
+        "Needs H/L: delisted close-only panel NOT APPLICABLE"
+      ],
+      "archetype_scope": {
+        "primary": "US",
+        "excluded": [
+          "HK",
+          "CA"
+        ],
+        "cn_note": "CN secondary only if species pre-registers its own CN test (not in phase0)"
+      },
+      "regime_scope": {
+        "learnable_projection": "vol_regime x horizon (engine x horizon cells)",
+        "note": "Squeeze release is directionally agnostic until release bar — regime provides context"
+      },
+      "market_scope": "US primary; deep panel (224 names 64y) + baskets panel (2519 names 2014+)",
+      "fixtures": "tests/test_run_w2_ssq.py (event-onset dedup fixture; direction fixture: FIRED_DOWN never enters long study; injected-effect marginality test)",
+      "ledger_binding": {
+        "ledger": "data/trial_ledger.jsonl",
+        "since": "2026-07-05",
+        "flip_criteria": {
+          "stop5": "stop-out within 5 bars of T+1 fill",
+          "fwd_mdd_21": "max adverse excursion 21d (RUL-13 primary)",
+          "rotational_liftoff": "clean8_21 (1.08/21d) rotational liftoff",
+          "zone_held_21": "vol-scaled zone held at 21d (RUL-14 co-primary)",
+          "dead_money": "dead-money outcome",
+          "cushion_rot": "cushion incidence rotational"
+        }
+      },
+      "gating": {
+        "come_back_on": "monthly review after phase0 report adjudication",
+        "cadence": "monthly",
+        "maturation": "phase0 → accruing after adjudication sign-off"
+      },
+      "trial_count": 12,
+      "_lifecycle_log": [
+        {
+          "from": "phase0",
+          "to": "accruing",
+          "reviewer": "Opus (review) + Fable (sign-off) 2026-07-07",
+          "reason": "DT-R14 F2-corrected recomputation (2026-07-07): all three bases NON-INFERIOR — primary date-FE CI_hi=+0.0022, month-block bootstrap (demeaned, F2-corrected) CI_hi=-0.0047, within-month demeaning OLS CI_hi=-0.0050; all < +0.01 threshold. Opus review 2026-07-07: merge CLEAN-WITH-FIXES (applied); N/A-STRUCTURAL gatefire exemption RATIFIED by Fable for S16 (co-fire definitionally ~100% for the gate-adjacent form; independence-bearing forms standalone 41.9% / COILED 48.0% both pass); phase0->accruing sign-off CONDITIONAL-APPROVED."
+        }
+      ]
     }
   ]
 }
