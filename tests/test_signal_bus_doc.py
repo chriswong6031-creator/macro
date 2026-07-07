@@ -73,8 +73,8 @@ def test_all_artifact_ids_present():
     with _SYNAPSE_YML.open(encoding="utf-8") as fh:
         registry = yaml.safe_load(fh)
     artifact_ids = list(registry.get("artifacts", {}).keys())
-    assert len(artifact_ids) == 202, (
-        f"Expected 202 artifacts in synapse.yml, found {len(artifact_ids)}. "
+    assert len(artifact_ids) == 203, (
+        f"Expected 203 artifacts in synapse.yml, found {len(artifact_ids)}. "
         "Update the test if the registry count changed intentionally."
         " (W7b added machine-registry, cortex-attention-grades, cortex-probation = 104->107;"
         " W6b added ops-push-basket-freeze, ops-push-signal-sanity, ops-push-healthcheck = 107->110;"
@@ -131,7 +131,8 @@ def test_all_artifact_ids_present():
         " NEXT3 W-EX added operator-exposure-log, operator-exposure-summary = 189->191;"
         " (pin drifted: registry carried 198 while pin said 191 — racing merges; repaired here);"
         " DT-NW-1 added dt-contra-state = 198->199;"
-        " R-ORTH PR-3 added covariance-spine, site-covariance-spine, covariance-spine-history = 199->202)"
+        " R-ORTH PR-3 added covariance-spine, site-covariance-spine, covariance-spine-history = 199->202;"
+        " CPI IX-1 substrate added hazard-panel-index-v0 = 202->203)"
     )
     content = generate(_SYNAPSE_YML)
     missing = [aid for aid in artifact_ids if aid not in content]
