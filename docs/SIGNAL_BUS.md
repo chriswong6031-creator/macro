@@ -24,7 +24,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | intl-fix | 1 |
 | long-hold | 22 |
 | mastermind-feedback-contract | 2 |
-| neural-web | 35 |
+| neural-web | 36 |
 | next3 | 3 |
 | nw-mastermind-bridge | 2 |
 | nw-rails | 7 |
@@ -45,7 +45,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | tier | count |
 |---|---|
 | display | 109 |
-| infrastructure | 64 |
+| infrastructure | 65 |
 | scored | 4 |
 | shadow | 38 |
 
@@ -53,7 +53,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 206 |
+| git | 207 |
 | gitignored-local | 6 |
 | r2 | 3 |
 
@@ -243,6 +243,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | reflex-firings-regime-selfheal | `data/reflexes/regime_stale_selfheal/firings.jsonl` | jsonl | on-demand | infrastructure | 1 | 0 |
 | reflex-push-dedup-store | `data/alert_triage/push_sent.jsonl` | jsonl | on-demand | infrastructure | 1 | 0 |
 | site-neuralweb-daily-brief | `site/neuralwebdata/daily_brief.json` | json | daily-engine | display | 1 | 0 |
+| entity-thesis-mechanism-registry | `data/neuralweb/entity_thesis_mechanism_registry.json` | json | daily-engine | infrastructure | 0 | 0 |
 | hypothesis-inbox | `data/neuralweb/cortex/hypothesis_inbox.jsonl` | jsonl | nightly-cortex | infrastructure | 0 | 0 |
 | lagging-signals | `data/neuralweb/lagging_signals.json` | json | daily-engine | infrastructure | 0 | 0 |
 | research-queue | `data/neuralweb/research_queue.json` | json | on-demand | infrastructure | 0 | 0 |

@@ -5647,6 +5647,30 @@ artifacts:
       upserted (same as_of → replace row) by scripts/build_neuralweb_brief --finalize.
       Chronologically sorted. Used for delta detection in next run. Display/ops only.
 
+  entity-thesis-mechanism-registry:
+    path: data/neuralweb/entity_thesis_mechanism_registry.json
+    format: json
+    producer: scripts/build_entity_thesis_mechanism_registry.py
+    known_extra_writers: []
+    owner_program: neural-web
+    cadence: daily-engine
+    storage: git
+    asof_field: generated_utc
+    freshness_sla_hours: 30
+    schema: neuralweb.entity_thesis_mechanism.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      Entity/Thesis/Mechanism crosswalk (ETM-R1..R8, research/fable_exit/05 handoff).
+      Deterministic, display-only conceptual lineage graph over existing local ID systems
+      (species, research-factory candidates, governance events, reflexivity thesis groups,
+      trial ledger). Crosswalk only — local systems remain authoritative; no scores, no
+      ranking, no gating; suggestions (possible_duplicates) are token-overlap context only.
+
   cycle-pattern-state-monthly:
     path: data/cycle_pattern/state_monthly.parquet
     format: parquet

@@ -132,6 +132,15 @@ on:
       - "tests/test_signal_bus_doc.py"
       - "tests/test_synapse_registry.py"
       - "tests/test_neuralweb_envelope.py"
+      # Wave B2 ETM registry: builder, integrity gate, config, and both test files must
+      # re-run together so a schema drift or authority violation fails RED before merging.
+      # engine/neuralweb/** above already covers engine/neuralweb/entity_thesis_mechanism_registry.py.
+      - "scripts/build_entity_thesis_mechanism_registry.py"
+      - "scripts/check_entity_thesis_registry.py"
+      - "config/entity_thesis_mechanism_registry.yml"
+      - "tests/test_entity_thesis_registry.py"
+      - "tests/test_check_entity_thesis_registry.py"
+      - "data/neuralweb/entity_thesis_mechanism_registry.json"
       # NW Rails PR-7 R4 contract governance: schema drift check + test suite.
       - "scripts/check_contract_drift.py"
       - "scripts/export_signal_contracts.py"
@@ -520,7 +529,11 @@ jobs:
       - name: install minimal deps
         run: pip install pytest pandas numpy pyarrow pyyaml
       - name: neural-web registry + envelope + bus-doc freshness tests
-        run: python -m pytest tests/test_synapse_registry.py tests/test_neuralweb_envelope.py tests/test_signal_bus_doc.py -q
+        run: python -m pytest tests/test_synapse_registry.py tests/test_neuralweb_envelope.py tests/test_signal_bus_doc.py tests/test_entity_thesis_registry.py tests/test_check_entity_thesis_registry.py -q
+      - name: "HARD | entity/thesis/mechanism registry integrity (ETM-C1..C7)"
+        run: |
+          python3 -m scripts.check_entity_thesis_registry --selftest
+          python3 -m scripts.check_entity_thesis_registry
 
   dag-conformance:
     # W5a (Neural Web): config/dag.yml declares the per-workflow-step lane inventory;
