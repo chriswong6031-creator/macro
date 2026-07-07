@@ -104,6 +104,8 @@ _READ_TOOLS = frozenset({
     "explain_factor_context",
     # CPI P6 wave 1: read-only cycle-pattern turn-hazard state tool
     "read_cycle_pattern_state",
+    # W3 MPC consumer: read-only mechanism pathway artifact
+    "read_mechanism_pathways",
 })
 _WRITE_TOOLS = frozenset({
     "flag_attention",
@@ -781,6 +783,50 @@ def _tool_read_cycle_pattern_state(root: Path, _params: dict) -> dict:
         }
 
 
+def _tool_read_mechanism_pathways(root: Path, _params: dict) -> dict:
+    """Read data/neuralweb/mechanism_pathways.json (MPC W1 artifact).
+
+    Returns the mechanism pathway artifact JSON: primary pathway (family,
+    direction, coverage_score or coverage_basis, coherence, evidence_legs,
+    stale_legs), alternates (family names only), and/or no_pathway record
+    with printed reason.
+
+    DISPLAY-ONLY ceiling (RUL-CC-1): may be cited as context only.
+    Forbidden: ranking, sizing, alert_escalation, claim_validation,
+    board_ordering, mastermind_arming. is_context_only always true.
+    Fails open with structured gaps when absent.
+    """
+    p = _data(root, "neuralweb", "mechanism_pathways.json")
+    if not p.exists():
+        return {
+            "is_context_only": True,
+            "display_only": True,
+            "not_a_signal": True,
+            "gaps": [
+                "data/neuralweb/mechanism_pathways.json: absent — "
+                "build_mechanism_pathways has not run yet"
+            ],
+            "note": (
+                "Mechanism pathway artifact not yet built. "
+                "Run the nightly build_mechanism_pathways job."
+            ),
+        }
+    try:
+        artifact = json.loads(p.read_text(encoding="utf-8"))
+        # Mandate fields always present regardless of artifact version
+        artifact.setdefault("is_context_only", True)
+        artifact.setdefault("display_only", True)
+        artifact.setdefault("not_a_signal", True)
+        return artifact
+    except Exception as exc:  # noqa: BLE001
+        return {
+            "is_context_only": True,
+            "display_only": True,
+            "not_a_signal": True,
+            "gaps": [f"data/neuralweb/mechanism_pathways.json: unreadable — {exc}"],
+        }
+
+
 def _tool_list_factor_contradictions(root: Path, params: dict) -> dict:
     """Read data/neuralweb/factor_contradictions.jsonl (RUL-NW3).
 
@@ -976,6 +1022,8 @@ def dispatch_tool(
         return _tool_explain_factor_context(root, tool_params)
     elif tool_name == "read_cycle_pattern_state":
         return _tool_read_cycle_pattern_state(root, tool_params)
+    elif tool_name == "read_mechanism_pathways":
+        return _tool_read_mechanism_pathways(root, tool_params)
     elif tool_name == "flag_attention":
         return _tool_flag_attention(root, tool_params, now_str)
     elif tool_name == "write_memo":
@@ -1166,6 +1214,27 @@ def _tool_schemas() -> list[dict]:
             ),
             "input_schema": {"type": "object", "properties": {}, "required": []},
         },
+        # --- W3 MPC consumer: mechanism pathway artifact ---
+        {
+            "name": "read_mechanism_pathways",
+            "description": (
+                "Read data/neuralweb/mechanism_pathways.json — the committed MPC "
+                "artifact (neuralweb.mechanism_pathways.v1): primary pathway "
+                "(family, direction, coverage_score or coverage_basis, coherence "
+                "categorical supported/partial/conflicted, evidence leg names, "
+                "stale_legs), alternates (family names only, ≤2), and/or "
+                "no_pathway record with printed reason. "
+                "DISPLAY-ONLY ceiling (RUL-CC-1): may be cited as context only. "
+                "Forbidden: ranking, sizing, alert_escalation, claim_validation, "
+                "board_ordering, mastermind_arming. No ticker-level details "
+                "(RUL-CC-10) — driver/asset-class/ETF level only. "
+                "Language law (RUL-CC-5): "
+                "use 'consistent with / supported / unsupported / conflicted / missing'; "
+                "banned: caused/proved/validated. "
+                "is_context_only: true. Fails open with structured gaps when absent."
+            ),
+            "input_schema": {"type": "object", "properties": {}, "required": []},
+        },
         {
             "name": "flag_attention",
             "description": "SHADOW-TIER WRITE: Flag items for operator attention. Appends to data/reflexes/cortex_attention/firings.jsonl. is_context_only always true.",
@@ -1269,17 +1338,22 @@ WHAT YOU MAY NEVER DO:
 • Influence any ranking outside the three shadow write-tools available to you.
 
 YOUR TOOLS:
-READ (15): read_world_state, query_spine, read_kernel, read_graph, read_contradictions,
+READ (16): read_world_state, query_spine, read_kernel, read_graph, read_contradictions,
            read_governance, read_artifact,
            read_options_entry_state, explain_options_context, query_options_confluence,
            list_options_contradictions,
            read_factor_state, list_factor_contradictions, explain_factor_context,
-           read_cycle_pattern_state
+           read_cycle_pattern_state, read_mechanism_pathways
 WRITE (3, shadow-tier only): flag_attention, write_memo, stake_hypothesis
 
 CYCLE-PATTERN CEILING: read_cycle_pattern_state is display/context only. Cite turn-hazard
 probabilities ONLY with their cell verdict (PASS = validated vs KM; PRIOR = KM base rate).
 It may de-escalate a calibrated key; it may never originate, score, or escalate.
+
+MECHANISM-PATHWAY CEILING: read_mechanism_pathways is display/context only (RUL-CC-1).
+Use 'consistent with / supported / unsupported / conflicted / missing' language.
+NEVER use 'caused / proved / validated'. No ticker-level details (RUL-CC-10).
+Forbidden uses: ranking, sizing, alert_escalation, board_ordering, mastermind_arming.
 
 DELIBERATION PROTOCOL:
 1. Start by reading world_state to understand the current macro regime.

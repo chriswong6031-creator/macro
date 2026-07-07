@@ -137,6 +137,8 @@ _ASK_READ_TOOLS = frozenset({
     "explain_factor_context",
     # CPI P6 wave 1: cycle-pattern turn-hazard read tool (display/context only)
     "read_cycle_pattern_state",
+    # W3 MPC consumer: mechanism pathway artifact (display/context only, RUL-CC-1)
+    "read_mechanism_pathways",
 })
 
 # Customer-facing system prompt
@@ -522,6 +524,7 @@ def _dispatch_read_tool(tool_name: str, tool_params: dict, root: Path) -> dict:
         _tool_list_factor_contradictions,
         _tool_explain_factor_context,
         _tool_read_cycle_pattern_state,
+        _tool_read_mechanism_pathways,
     )
 
     if tool_name == "read_world_state":
@@ -554,6 +557,8 @@ def _dispatch_read_tool(tool_name: str, tool_params: dict, root: Path) -> dict:
         return _tool_explain_factor_context(root, tool_params)
     elif tool_name == "read_cycle_pattern_state":
         return _tool_read_cycle_pattern_state(root, tool_params)
+    elif tool_name == "read_mechanism_pathways":
+        return _tool_read_mechanism_pathways(root, tool_params)
     # Unreachable given the whitelist guard above
     return {"error": f"dispatcher: unhandled tool {tool_name!r}"}
 

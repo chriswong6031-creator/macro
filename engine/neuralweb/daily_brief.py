@@ -134,6 +134,18 @@ def _load_cortex_memo(root: Path) -> dict | None:
     return _read_json(p)
 
 
+def _load_mechanism_pathways(root: Path) -> dict | None:
+    """Load data/neuralweb/mechanism_pathways.json (W1 artifact).
+
+    Returns None when the file is absent (first nightly has not run yet).
+    """
+    p = root / "data" / "neuralweb" / "mechanism_pathways.json"
+    d = _read_json(p)
+    if d and d.get("schema") == "neuralweb.mechanism_pathways.v1":
+        return d
+    return None
+
+
 def _load_history(root: Path) -> list[dict]:
     p = root / "data" / "neuralweb" / "daily_brief_history.jsonl"
     if not p.exists():
@@ -633,6 +645,163 @@ def _build_evidence_clock(root: Path) -> dict:
     }
 
 
+# ---- why_the_tape_moved section (W3, RUL-CC-5/10) ----------------------------
+
+def _build_why_the_tape_moved(mp: dict | None) -> dict:
+    """Build the why_the_tape_moved brief section from the MPC artifact.
+
+    Consumes neuralweb.mechanism_pathways.v1 (W1 artifact).
+    RUL-CC-10: driver/asset-class/ETF level only — no ticker-level details.
+    RUL-CC-5: banned words 'caused/proved/proof/validated' must not appear.
+    Always present in the brief (never omitted), with honest placeholder when
+    the artifact is absent (first nightly has not run yet).
+
+    Returns a dict with:
+        available  — bool
+        primary    — dict (present when a pathway exists)
+        no_pathway — dict (present when no pathway emitted)
+        alternates — list[str] (family names only, ≤2)
+        note       — str (honest placeholder when absent)
+    """
+    if mp is None:
+        return {
+            "available": False,
+            "note": (
+                "mechanism_pathways.json not yet written — "
+                "first nightly build has not run yet"
+            ),
+        }
+
+    pathways: list[dict] = mp.get("pathways") or []
+    no_pathway_rec: dict | None = mp.get("no_pathway")
+
+    if not pathways:
+        # No pathway emitted — print reason honestly (never omit)
+        reason = "unknown"
+        if no_pathway_rec and isinstance(no_pathway_rec, dict):
+            reason = no_pathway_rec.get("reason", "unknown")
+        return {
+            "available": True,
+            "no_pathway": {"reason": reason, "printed": True},
+            "alternates": [],
+            "note": f"no pathway emitted: {reason}",
+        }
+
+    # Primary pathway
+    primary_pw: dict = pathways[0]
+    family = primary_pw.get("family", "")
+    direction_en = primary_pw.get("direction_en", "")
+    coverage_score = primary_pw.get("coverage_score")
+    coverage_basis = primary_pw.get("coverage_basis")
+    coherence = primary_pw.get("coherence", "")
+    stale_legs: list[str] = primary_pw.get("stale_legs") or []
+    stale_count = len(stale_legs)
+
+    # Evidence leg names (up to 3) — asset-class/ETF/driver level (RUL-CC-10)
+    nodes: list[dict] = primary_pw.get("nodes") or []
+    leg_names: list[str] = []
+    for nd in nodes:
+        if nd.get("pathway_role") == "required_leg":
+            entity = nd.get("entity", "")
+            if entity:
+                leg_names.append(entity)
+        if len(leg_names) >= 3:
+            break
+
+    # Alternates — family names only (RUL-CC-10)
+    alt_families: list[str] = []
+    for pw in pathways[1:3]:
+        alt_fam = pw.get("family", "")
+        if alt_fam:
+            alt_families.append(alt_fam)
+
+    # Coverage display: prefer float; fall back to coverage_basis string
+    if coverage_score is not None:
+        cov_display: str | float = round(coverage_score, 2)
+    elif coverage_basis:
+        cov_display = coverage_basis
+    else:
+        cov_display = "n/a"
+
+    primary_block = {
+        "family": family,
+        "direction": direction_en,
+        "coverage": cov_display,
+        "coherence": coherence,
+        "evidence_legs": leg_names,
+        "stale_legs_count": stale_count,
+    }
+
+    result: dict = {
+        "available": True,
+        "as_of": mp.get("as_of"),
+        "primary": primary_block,
+        "alternates": alt_families,
+    }
+    # Include no_pathway if emitted alongside pathways (should not happen per spec
+    # but be honest about whatever the artifact says)
+    if no_pathway_rec:
+        result["no_pathway"] = {
+            "reason": no_pathway_rec.get("reason", ""),
+            "printed": no_pathway_rec.get("printed", True),
+        }
+    return result
+
+
+# ---- stale enrichment (W3, W2 support_impact embed) -------------------------
+
+def _enrich_stale_with_support_impact(
+    stale_items: list[dict],
+    health: dict | None,
+) -> list[dict]:
+    """Enrich stale lobe items with support_impact from health.json (W2 embed).
+
+    For each stale lobe, if health.json's lobe record carries the
+    ``support_impact`` key (written by W2 support_map embed), append one line:
+        degrades N downstream artifact(s); direct consumers: X, Y
+
+    Additive only — stale_items items are shallow-copied and new keys added.
+    Cap direct consumer names at 3 (per charter).
+    """
+    if not health or not stale_items:
+        return stale_items
+
+    # Build lobe_id → health lobe record lookup
+    lobe_map: dict[str, dict] = {}
+    for lobe in health.get("lobes") or []:
+        lid = lobe.get("id")
+        if lid:
+            lobe_map[lid] = lobe
+
+    enriched: list[dict] = []
+    for item in stale_items:
+        lobe_id = item.get("id", "")
+        lobe_rec = lobe_map.get(lobe_id)
+        if lobe_rec is None:
+            enriched.append(item)
+            continue
+
+        support_impact: dict | None = lobe_rec.get("support_impact")
+        if not support_impact or not isinstance(support_impact, dict):
+            enriched.append(item)
+            continue
+
+        # support_impact expected keys: downstream_count (int), direct_consumers (list[str])
+        downstream_count: int = support_impact.get("downstream_count", 0)
+        direct_consumers: list[str] = (support_impact.get("direct_consumers") or [])[:3]
+
+        enriched_item = dict(item)
+        if downstream_count:
+            consumers_str = ", ".join(direct_consumers) if direct_consumers else "—"
+            enriched_item["support_impact_note"] = (
+                f"degrades {downstream_count} downstream artifact(s); "
+                f"direct consumers: {consumers_str}"
+            )
+        enriched.append(enriched_item)
+
+    return enriched
+
+
 # ---- main build function ------------------------------------------------------
 
 def build(root: Path | None = None, phase: str = "engine") -> dict:
@@ -678,6 +847,12 @@ def build(root: Path | None = None, phase: str = "engine") -> dict:
     if not evidence_clock.get("available"):
         gaps_noted.append(
             "evidence_clock.json not present (PR1 not yet merged or build failed)"
+        )
+
+    mp = _load_mechanism_pathways(root)
+    if mp is None:
+        gaps_noted.append(
+            "mechanism_pathways.json missing (first nightly has not run yet)"
         )
 
     memo = _load_cortex_memo(root)
@@ -750,6 +925,12 @@ def build(root: Path | None = None, phase: str = "engine") -> dict:
         if brief_status == "ok":
             brief_status = "warn"
 
+    # ---- why_the_tape_moved (W3) ----
+    why_the_tape_moved = _build_why_the_tape_moved(mp)
+
+    # ---- stale enrichment with support_impact (W3, W2 embed) ----
+    stale_lobes = _enrich_stale_with_support_impact(stale_lobes, health)
+
     return {
         "schema": SCHEMA,
         "produced_at": now,
@@ -760,6 +941,7 @@ def build(root: Path | None = None, phase: str = "engine") -> dict:
         "what_changed": what_changed,
         "what_contradicted": what_contradicted,
         "what_is_stale": stale_lobes,
+        "why_the_tape_moved": why_the_tape_moved,
         "operator_attention": operator_attention,
         "candidate_watch": candidate_watch,
         "evidence_clock": evidence_clock,

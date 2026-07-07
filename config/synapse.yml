@@ -5709,16 +5709,19 @@ artifacts:
       - engine/neuralweb/daily_brief.py
       - admin/neural_web.py
       - engine/neuralweb/ask_brain.py
+      - engine/neuralweb/cortex.py
     external_consumers: []
     notes: >
       MPC v1 (RUL-CC-1..13): deterministic display-only compiler reading emitted
       artifacts only (market_drivers, transmission, factor_intelligence_state).
       Trigger precedence: market_drivers clear → risk_radar scare → factor rotation
-      → snap_unattributed null. Stale trigger → no_pathway(reason=trigger_stale).
+      → no_attributable_driver null. Stale trigger → no_pathway(reason=trigger_stale).
       Coverage score float; coherence categorical (supported/partial/conflicted).
       confidence_ceiling=context_only always. Forbidden: ranking, sizing,
       alert_escalation, board_ordering, mastermind_arming (RUL-CC-1).
-      W1 registered consumers (W3 will wire daily_brief, ask_brain, admin QA).
+      W3 wired: daily_brief why_the_tape_moved + stale enrichment; ask_brain +
+      cortex read_mechanism_pathways tool; committee.html.j2 client-side block;
+      admin Section I QA panel.
 
   site-mechanism-pathways:
     path: site/neuralwebdata/mechanism_pathways.json
