@@ -101,8 +101,11 @@ news_vector events by topic slice.
    credit→credit_stress, rates→real_rate_shock, bubble→ai_semis, global→usd_shock;
    vol/growth scares have no clean family → `no_pathway(reason=scare_unattributed)`.
 3. else factor-rotation persistent flip → primary = factor_rotation family.
-4. `regime_snap` snap==True alone (no 1–3) → `no_pathway(reason=snap_unattributed)`; the snap is
-   recorded as trigger context, not narrated into a family it cannot support.
+4. no attributable trigger (incl. regime-snap-only days) → `no_pathway(reason=no_attributable_driver)`;
+   broad flips are recorded as trigger context, never narrated into a family they cannot support.
+   *Build-time amendment (ratified 2026-07-06):* the snap boolean lives in `data/regime/regime_snap.json`,
+   a site-builder product outside the RUL-CC-11 read-set, so v1 cannot key on `snap==True`; the branch-4
+   null is therefore labeled `no_attributable_driver` rather than `snap_unattributed`.
 Ties resolve by this fixed order. The market_drivers ranked `scores` list seeds alternates (≤2) in all
 cases. At most 1 primary + 2 alternates per day.
 
