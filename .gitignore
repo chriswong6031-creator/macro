@@ -307,3 +307,9 @@ data/operator/
 # _manifest.json (freshness anchor, if created) is kept via negation.
 data/sec_ftd/*.parquet
 !data/sec_ftd/_manifest.json
+
+# W2104 NY Fed CMDI collector (feat/w2104-cmdi-conditioning-phase0).
+# cmdi_weekly.parquet (~24 KB) + cmdi_monthly.parquet (~7 KB) — regenerable each
+# nightly run from the NY Fed interactive data URL; must NOT be committed to git.
+# The collector (scripts/collect_nyfed_cmdi.py) regenerates them idempotently.
+data/nyfed_cmdi/

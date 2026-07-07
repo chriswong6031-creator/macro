@@ -19,6 +19,7 @@ from scripts.cmdi_phase0 import (
     bootstrap_auc_ci,
     newey_west_tstat,
     build_signals,
+    forward_max_drawdown,
     make_drawdown_label,
 )
 
@@ -168,6 +169,26 @@ class TestDrawdownLabel:
         non_nan = lbl.dropna()
         assert set(non_nan.unique()).issubset({0.0, 1.0}), \
             f"Labels must be binary, got {non_nan.unique()}"
+
+    def test_tail_truncation_returns_nan(self):
+        """Dates near the tail where forward window is incomplete must be NaN.
+
+        SHOULD-FIX reviewer item: forward_max_drawdown() must return NaN when
+        end_date > last_date to prevent partial-window mislabeling of tail obs.
+        """
+        # 30-day series; horizon=21d. Last valid date is day 0..8 (end_date<=day29).
+        # Days 9..29 have end_date > last_date -> should all be NaN.
+        idx = pd.date_range("2020-01-01", periods=30, freq="D")
+        prices = pd.Series(100.0, index=idx)
+        dd = forward_max_drawdown(prices, horizon_days=21)
+        last_date = idx[-1]
+        for d, v in dd.items():
+            end_date = d + pd.Timedelta(days=21)
+            if end_date > last_date:
+                assert np.isnan(v), (
+                    f"Date {d.date()} has end_date {end_date.date()} > last {last_date.date()}: "
+                    f"expected NaN, got {v}"
+                )
 
 
 # ============================================================================ #

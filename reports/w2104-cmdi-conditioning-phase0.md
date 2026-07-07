@@ -22,8 +22,8 @@ CMDI data is available weekly with only a few days of lag. We apply a conservati
 | HY OAS (FRED BAMLH0A0HYM2) | 1999-02-28 -> 2026-07-31 | 330 months |
 
 **Forward label base rates** (SPY drawdown <= -5% within horizon):
-- 21d horizon: 53 events / 403 months (13.2%)
-- 63d horizon: 108 events / 403 months (26.8%)
+- 21d horizon: 53 events / 402 months (13.2%)
+- 63d horizon: 108 events / 400 months (27.0%)
 
 ## Signal First-Valid Dates (post lag + min-history)
 
@@ -54,12 +54,12 @@ Overlap: monthly series — each obs is one calendar month, no overlap correctio
 | ig_3m_chg_pctile | 21d | 227 | 34 | 0.5888 | 0.4869 | 0.6951 | N | (context) | -9.372 | 0.0000 |
 | hy_level_pctile | 21d | 232 | 34 | 0.5797 | 0.4569 | 0.6970 | N | **FAIL** | -4.930 | 0.0000 |
 | hy_3m_chg_pctile | 21d | 227 | 34 | 0.6096 | 0.5144 | 0.7054 | Y | (context) | -8.294 | 0.0000 |
-| market_level_pctile | 63d | 232 | 68 | 0.5677 | 0.4799 | 0.6548 | N | **FAIL** | -2.083 | 0.0372 |
-| market_3m_chg_pctile | 63d | 227 | 67 | 0.5923 | 0.5121 | 0.6703 | Y | (context) | -3.520 | 0.0004 |
-| ig_level_pctile | 63d | 232 | 68 | 0.5895 | 0.5016 | 0.6734 | Y | (context) | -2.426 | 0.0153 |
-| ig_3m_chg_pctile | 63d | 227 | 67 | 0.5918 | 0.5089 | 0.6704 | Y | (context) | -3.320 | 0.0009 |
-| hy_level_pctile | 63d | 232 | 68 | 0.5518 | 0.4696 | 0.6335 | N | **FAIL** | -2.355 | 0.0185 |
-| hy_3m_chg_pctile | 63d | 227 | 67 | 0.5694 | 0.4890 | 0.6445 | N | (context) | -3.597 | 0.0003 |
+| market_level_pctile | 63d | 230 | 68 | 0.5682 | 0.4828 | 0.6531 | N | **FAIL** | -2.037 | 0.0416 |
+| market_3m_chg_pctile | 63d | 225 | 67 | 0.5961 | 0.5160 | 0.6735 | Y | (context) | -3.407 | 0.0007 |
+| ig_level_pctile | 63d | 230 | 68 | 0.5913 | 0.5091 | 0.6731 | Y | (context) | -2.346 | 0.0190 |
+| ig_3m_chg_pctile | 63d | 225 | 67 | 0.5975 | 0.5167 | 0.6748 | Y | (context) | -3.198 | 0.0014 |
+| hy_level_pctile | 63d | 230 | 68 | 0.5492 | 0.4695 | 0.6372 | N | **FAIL** | -2.334 | 0.0196 |
+| hy_3m_chg_pctile | 63d | 225 | 67 | 0.5715 | 0.4928 | 0.6497 | N | (context) | -3.503 | 0.0005 |
 
 ### HY OAS Baseline (Full Coverage — display only)
 
@@ -67,8 +67,8 @@ These numbers show HY OAS evaluated on its own full date range (back to 1999). T
 
 | Series | Horizon | N | N_events | AUC | 95% CI lo | 95% CI hi |
 |---|---|---|---|---|---|---|
-| HY OAS z-score (full) | 21d | 330 | 49 | 0.6731 | 0.5777 | 0.7613 |
-| HY OAS z-score (full) | 63d | 330 | 97 | 0.6251 | 0.5586 | 0.6927 |
+| HY OAS z-score (full) | 21d | 329 | 49 | 0.6720 | 0.5816 | 0.7611 |
+| HY OAS z-score (full) | 63d | 327 | 97 | 0.6215 | 0.5484 | 0.6909 |
 
 ## T2 — CMDI vs HY OAS Baseline (Gated Cells, Identical Dates)
 
@@ -79,9 +79,9 @@ Gate: CMDI beats HY-OAS AUC (identical dates) at >= 1 gated cell.
 | Gated Cell | CMDI AUC | HY OAS AUC (identical N) | N identical | CMDI Beats |
 |---|---|---|---|---|
 | market_level_pctile_21d | 0.5897 | 0.5893 | 232 | YES |
-| market_level_pctile_63d | 0.5677 | 0.5399 | 232 | YES |
+| market_level_pctile_63d | 0.5682 | 0.5361 | 230 | YES |
 | hy_level_pctile_21d | 0.5797 | 0.5893 | 232 | NO |
-| hy_level_pctile_63d | 0.5518 | 0.5399 | 232 | YES |
+| hy_level_pctile_63d | 0.5492 | 0.5361 | 230 | YES |
 
 **T2 GATE: PASS** (CMDI beats HY-OAS on identical dates at 3/4 gated cell(s))
 
@@ -94,44 +94,56 @@ Gate: each removal produces AUC > 0.50 (same direction). At least one gated cell
 | Crisis excised | AUC | > 0.50 |
 |---|---|---|
 | -2008 | 0.4325 | NO |
+| -2010 | 0.5884 | YES |
 | -2011 | 0.6093 | YES |
 | -2015-16 | 0.5918 | YES |
-| -2020 | 0.5993 | YES |
+| -2018-Q4 | 0.6074 | YES |
+| -2020 | 0.5957 | YES |
 | -2022 | 0.5921 | YES |
 | -2023-03 | 0.5945 | YES |
+| -2025 | 0.6091 | YES |
 
 ### market_level_pctile_63d — LOCO UNSTABLE
 
 | Crisis excised | AUC | > 0.50 |
 |---|---|---|
-| -2008 | 0.4590 | NO |
-| -2011 | 0.5812 | YES |
-| -2015-16 | 0.5687 | YES |
-| -2020 | 0.5787 | YES |
-| -2022 | 0.5727 | YES |
-| -2023-03 | 0.5691 | YES |
+| -2008 | 0.4600 | NO |
+| -2010 | 0.5691 | YES |
+| -2011 | 0.5816 | YES |
+| -2015-16 | 0.5695 | YES |
+| -2018-Q4 | 0.5836 | YES |
+| -2020 | 0.5846 | YES |
+| -2022 | 0.5734 | YES |
+| -2023-03 | 0.5697 | YES |
+| -2025 | 0.5813 | YES |
 
 ### hy_level_pctile_21d — LOCO UNSTABLE
 
 | Crisis excised | AUC | > 0.50 |
 |---|---|---|
 | -2008 | 0.4205 | NO |
+| -2010 | 0.5751 | YES |
 | -2011 | 0.6052 | YES |
 | -2015-16 | 0.5757 | YES |
-| -2020 | 0.5815 | YES |
+| -2018-Q4 | 0.5938 | YES |
+| -2020 | 0.5775 | YES |
 | -2022 | 0.5915 | YES |
 | -2023-03 | 0.5831 | YES |
+| -2025 | 0.6048 | YES |
 
 ### hy_level_pctile_63d — LOCO UNSTABLE
 
 | Crisis excised | AUC | > 0.50 |
 |---|---|---|
-| -2008 | 0.4497 | NO |
-| -2011 | 0.5718 | YES |
-| -2015-16 | 0.5501 | YES |
-| -2020 | 0.5561 | YES |
-| -2022 | 0.5606 | YES |
-| -2023-03 | 0.5567 | YES |
+| -2008 | 0.4466 | NO |
+| -2010 | 0.5445 | YES |
+| -2011 | 0.5689 | YES |
+| -2015-16 | 0.5476 | YES |
+| -2018-Q4 | 0.5615 | YES |
+| -2020 | 0.5603 | YES |
+| -2022 | 0.5584 | YES |
+| -2023-03 | 0.5541 | YES |
+| -2025 | 0.5684 | YES |
 
 **T3 GATE: FAIL** (no gated cell fully LOCO-stable)
 
@@ -149,7 +161,7 @@ Failed gates: T1, T3. CMDI remains a context signal — high readings are inform
 
 ## Honest-N
 
-Monthly series, ~232 monthly obs usable (after lag + min-history). Independent 'crisis' events in-sample: 6 excision windows tested in LOCO. AUC CI via bootstrap resampling positives/negatives independently (correct for binary AUC, not block-bootstrap which is for return series). NW lags=6 covers 6-month serial correlation at 63d horizon.
+Monthly series, ~232 monthly obs usable (after lag + min-history). Independent 'crisis' events in-sample: 9 excision windows tested in LOCO. AUC CI via bootstrap resampling positives/negatives independently (correct for binary AUC, not block-bootstrap which is for return series). NW lags=6 covers 6-month serial correlation at 63d horizon.
 
 ## Nightly Wiring (for consolidation)
 

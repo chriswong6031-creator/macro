@@ -65,10 +65,13 @@ TESTS:
           sufficient; CI is reported but not gated given HY-OAS is our baseline,
           not a null-hypothesis of no information).
 
-  T3 LOCO: leave-one-crisis-out stability. Crises: 2008, 2011, 2015-16, 2020,
-          2022, 2023-03. Each removal must produce same-direction AUC >0.50
-          (not necessarily above gate threshold; stability, not magnitude).
-          GATE: all 6 LOCO AUCs > 0.50 (same direction, crisis-stable).
+  T3 LOCO: leave-one-crisis-out stability. Crises: 2008, 2010 (flash-crash),
+          2011, 2015-16, 2018-Q4, 2020 (extended to cover Aug-2020),
+          2022, 2023-03, 2025 (tariff selloff). 9 windows cover all 34
+          drawdown event-months (Amendment A4 — original 6 windows left
+          14 event-months/41% uncovered). Each removal must produce
+          same-direction AUC >0.50 (stability, not magnitude).
+          GATE: all LOCO AUCs > 0.50 (same direction, crisis-stable).
 
 =============================================================================
 FINAL VERDICT:
@@ -136,13 +139,24 @@ H63 = 63     # 63 calendar days (~42 trading days, ~2 calendar months)
 DRAWDOWN_THRESH = -0.05
 
 # Crisis windows for LOCO (inclusive start/end of removal)
+# AMENDMENT A4 (registered here before computing): expand windows to cover the
+# full set of 34 event-months identified in the drawdown label. The six original
+# windows (2008, 2011, 2015-16, 2020, 2022, 2023-03) left 14 event-months (41%)
+# uncovered, including: 2018-Q4 (Sep/Nov/Dec 2018 draw-months), 2025 tariff selloff
+# (Feb/Mar 2025), 2010 flash-crash (May 2010), and Aug-2020 post-COVID retest.
+# Fix: extend 2020 window to 2020-12-31 (captures Aug-2020); add 2010 flash-crash
+# (2010-04-01 to 2010-08-31); add 2018-Q4 (2018-07-01 to 2019-01-31); add 2025
+# tariff selloff (2025-01-01 to 2025-06-30). Verdict remains FAIL regardless.
 CRISES = {
     "2008": ("2007-09-01", "2009-06-30"),
+    "2010": ("2010-04-01", "2010-08-31"),   # A4: flash-crash
     "2011": ("2011-06-01", "2011-12-31"),
     "2015-16": ("2015-06-01", "2016-03-31"),
-    "2020": ("2020-01-01", "2020-06-30"),
+    "2018-Q4": ("2018-07-01", "2019-01-31"),  # A4: Q4 2018 drawdown
+    "2020": ("2020-01-01", "2020-12-31"),    # A4: extended to cover Aug-2020
     "2022": ("2022-01-01", "2022-12-31"),
     "2023-03": ("2023-01-01", "2023-06-30"),
+    "2025": ("2025-01-01", "2025-06-30"),   # A4: tariff selloff
 }
 
 AUC_GATE = 0.60
@@ -278,12 +292,23 @@ def build_hyoas_baseline(lag: int = LAG_MONTHS) -> pd.Series:
 # ============================================================================ #
 def forward_max_drawdown(spy_close: pd.Series, horizon_days: int) -> pd.Series:
     """For each date, compute the worst drawdown (minimum peak-to-trough ratio - 1)
-    in the next horizon_days calendar days. Returns negative numbers; NaN at tail."""
+    in the next horizon_days calendar days. Returns negative numbers; NaN at tail.
+
+    SHOULD-FIX (reviewer): return NaN when the forward window is incomplete, i.e.,
+    when the last available SPY date is within horizon_days of the current date.
+    This prevents mislabeling tail months (e.g., 2026-06 for 21d, 2026-05/06 for 63d)
+    as 'no drawdown' based on a partial 2-day window instead of the full horizon.
+    """
     out = {}
     vals = spy_close.values
     dates = spy_close.index
+    last_date = dates[-1]
     for i, d in enumerate(dates):
         end_date = d + pd.Timedelta(days=horizon_days)
+        # Incomplete window: the full horizon extends beyond the last available date
+        if end_date > last_date:
+            out[d] = np.nan
+            continue
         future_mask = (dates > d) & (dates <= end_date)
         if not future_mask.any():
             out[d] = np.nan
@@ -791,41 +816,14 @@ def main() -> None:
         out.append("| Crisis excised | AUC | > 0.50 |")
         out.append("|---|---|---|")
         for cz, auc in loco.items():
-            ok = "YES" if not np.isnan(auc) and auc > LOCO_DIRECTION else "NO"
-            out.append(f"| -{cz} | {auc:.4f} if not np.isnan(auc) else 'nan' | {ok} |")
-        out.append("")
-
-    # Fix the f-string issue above
-    # rewrite LOCO section cleanly
-    out_loco = []
-    out_loco.append("## T3 — Leave-One-Crisis-Out Stability (Gated Cells)")
-    out_loco.append("")
-    out_loco.append("Gate: each removal produces AUC > 0.50 (same direction). "
-                    "At least one gated cell must be fully LOCO-stable.")
-    out_loco.append("")
-    for key, loco in loco_results.items():
-        stable = loco_stable_per_key.get(key, False)
-        out_loco.append(f"### {key} — LOCO {'STABLE' if stable else 'UNSTABLE'}")
-        out_loco.append("")
-        out_loco.append("| Crisis excised | AUC | > 0.50 |")
-        out_loco.append("|---|---|---|")
-        for cz, auc in loco.items():
             auc_str = f"{auc:.4f}" if not np.isnan(auc) else "nan"
             ok = "YES" if not np.isnan(auc) and auc > LOCO_DIRECTION else "NO"
-            out_loco.append(f"| -{cz} | {auc_str} | {ok} |")
-        out_loco.append("")
+            out.append(f"| -{cz} | {auc_str} | {ok} |")
+        out.append("")
 
-    out_loco.append(f"**T3 GATE: {'PASS' if t3_pass else 'FAIL'}** "
-                    f"({'>=1 gated cell LOCO-stable' if t3_pass else 'no gated cell fully LOCO-stable'})")
-    out_loco.append("")
-
-    # Rebuild output replacing the flawed LOCO section
-    # Find and replace T3 section
-    t3_start = next((i for i, l in enumerate(out) if l.startswith("## T3")), None)
-    if t3_start is not None:
-        out = out[:t3_start] + out_loco
-    else:
-        out.extend(out_loco)
+    out.append(f"**T3 GATE: {'PASS' if t3_pass else 'FAIL'}** "
+               f"({'>=1 gated cell LOCO-stable' if t3_pass else 'no gated cell fully LOCO-stable'})")
+    out.append("")
 
     # Gate summary
     out.append("## Gate Summary")
