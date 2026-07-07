@@ -1,9 +1,9 @@
 {
   "schema": "grading_closure.v1",
-  "generated_at": "2026-07-06T13:22:18.436215+00:00",
-  "n_ledgers": 26,
+  "generated_at": "2026-07-07T09:10:29.564013+00:00",
+  "n_ledgers": 27,
   "n_closed": 7,
-  "n_grader_starved": 19,
+  "n_grader_starved": 20,
   "n_log_only": 0,
   "ledgers": [
     {
@@ -11,9 +11,9 @@
       "path": "data/qledger/claims.jsonl",
       "storage": "present",
       "grader_wired": "Y:scripts/grade_qledger.py",
-      "n_logged": 9069,
-      "n_graded": 2815,
-      "last_graded_at": "2026-07-05T11:12:30.537501+00:00",
+      "n_logged": 9573,
+      "n_graded": 3497,
+      "last_graded_at": "2026-07-07T09:10:23.217831+00:00",
       "tune_step": "N",
       "verdict": "CLOSED"
     },
@@ -22,9 +22,9 @@
       "path": "data/qledger/grades.jsonl",
       "storage": "present",
       "grader_wired": "Y:scripts/grade_qledger.py",
-      "n_logged": 2815,
-      "n_graded": 2815,
-      "last_graded_at": "2026-07-05T11:12:30.537501+00:00",
+      "n_logged": 3497,
+      "n_graded": 3497,
+      "last_graded_at": "2026-07-07T09:10:23.217831+00:00",
       "tune_step": "N",
       "verdict": "CLOSED"
     },
@@ -287,6 +287,17 @@
       "storage": "present",
       "grader_wired": "Y:engine/species_registry.py",
       "n_logged": 43,
+      "n_graded": 0,
+      "last_graded_at": null,
+      "tune_step": "N",
+      "verdict": "GRADER-STARVED"
+    },
+    {
+      "key": "bd_avoid1_ledger",
+      "path": "data/research/bd_avoid1_ledger.parquet",
+      "storage": "absent-by-design until first ops-lane stamp run; Mac-local only (requires massive_stock_day + replay_boarded)",
+      "grader_wired": "Y:scripts/research/bd_avoid1_stamper.py",
+      "n_logged": 0,
       "n_graded": 0,
       "last_graded_at": null,
       "tune_step": "N",
