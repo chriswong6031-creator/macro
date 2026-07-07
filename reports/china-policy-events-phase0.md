@@ -34,11 +34,11 @@ Verified and cached: `data/experiments/rrr_date_semantics_check.json`
 | F-A RRR ease | rrr_change < 0 | **26** | 2008-10-08 → 2025-05-07 |
 | F-B LPR cut | 1y or 5y diff < 0 | **15** | 2019-08-20 → 2025-05-20 |
 | F-X RRR hike | rrr_change > 0 | 27 | 2006–2011 era (exploratory only) |
-| F-C MPC communiques | communiques.parquet | — | **BLOCKED-DATA** |
+| F-C MPC communiques | communiques.parquet (68 docs, post-fix) | **39** | 2009 Q1 → 2026 Q1 |
 
 Event counts match prereg (26/15). Same-date merge applied within each family.
 
-F-C is BLOCKED-DATA because `data/china_official/communiques.parquet` was absent on main when the study started. Per prereg: if the file is absent, verdict = BLOCKED-DATA — do not wait.
+F-C was BLOCKED-DATA when phase-0 first ran: `data/china_official/communiques.parquet` was absent. The W1.1 backfill collector (`scripts/backfill_china_communiques.py --family pboc_mpc`) was run on the manual Mac lane on 2026-07-06. Two collector bugs (null publish_date for 47/48 rows; missing 2011–2015 listing pages) were identified and fixed the same day; the re-collect yielded 68 docs with publish_date non-null for all 68. F-C was re-run the same day as a pre-registered exploratory leg under the existing budget headroom. The first (buggy) run produced n_usable=1; the post-fix run produced n_usable=39. Both are documented in the run_history field of the results JSON and in the "Run history / data honesty" paragraph of the F-C section below.
 
 ---
 
@@ -119,9 +119,67 @@ Easing events (F-A) did not produce positive SHCOMP drift at H=20 (mean = −0.1
 F-A: 12 events with ETF coverage (2012+), mean = not the verdict instrument.
 F-B: all 15 events have ETF coverage. Qualitatively similar to SHCOMP results.
 
-### F-C MPC Communiques
+### F-C MPC Communiqués (exploratory / unsigned / descriptive)
 
-**BLOCKED-DATA** — `data/china_official/communiques.parquet` is absent. Per prereg, this is the correct status. Do not compute outcomes speculatively.
+**Script:** `scripts/china_policy_events_fc.py` | **Run date:** 2026-07-06 (post-fix re-run)
+
+**Event definition:** Consecutive pboc_mpc communiqués (sorted by meeting_year, meeting_quarter) are diffed against the 46-formula phrase book (`data/china_official/phrase_book.yml`). An event fires when ≥1 formula appeared or dropped between a previous and current quarter's readout. The first document is baseline only (cold-start rule: cannot distinguish "appeared" from "always present"). Same-date episodes merge to one (union of changes).
+
+**Anchor:** publish_date (prereg primary); fallback to meeting_date if publish_date is null; drop the pair if both are null (per prereg spec).
+
+**Coverage:** 68 docs, 2009 Q1 → 2026 Q1. One article (`/3871092/index.html`) had an empty body and was legitimately skipped (empty body → no row emitted). All 68 collected rows have non-null publish_date from the PBoC listing-page CMS stamps.
+
+**Document and pair counts:**
+
+| Metric | Count |
+|---|---|
+| pboc_mpc docs (after dedup) | 68 |
+| Explicit-gap rows dropped | 0 |
+| Consecutive pairs diffed | 67 |
+| Pairs with ≥1 phrase change | 39 |
+| Pairs dropped (anchor null) | 0 |
+| Anchor fallbacks (meeting_date) | 0 |
+| Final episodes (CAR-ready) | **39** |
+
+**Per-Horizon Descriptive CARs — SHCOMP absolute log (n=39)**
+
+No t-statistics, no p-values, no FDR — unsigned, descriptive only per RUL-5.
+
+| H | n_usable | Mean CAR | Median CAR |
+|---|---|---|---|
+| 5 | 39 | +0.46% | +0.34% |
+| 10 | 39 | +0.34% | −0.08% |
+| **20** | 39 | **+0.30%** | **+0.92%** |
+| 40 | 39 | +0.85% | +0.27% |
+| 60 | 39 | +0.20% | −0.63% |
+
+**Conditioning tables (quad / liquidity / cycle) — cells n<5 show n only per prereg rule:**
+
+| Dimension | Label | n | Mean CAR@H20 | Median CAR@H20 |
+|---|---|---|---|---|
+| quad | Q1 (goldilocks) | 17 | +1.13% | +1.52% |
+| quad | Q2 (reflationary) | 12 | −1.12% | −0.84% |
+| quad | Q3 (stagflation) | 5 | +0.82% | +2.50% |
+| quad | Q4 (recessionary) | 5 | +0.38% | −1.16% |
+| liquidity | contracting | 19 | +0.49% | +0.92% |
+| liquidity | expanding | 12 | +1.38% | +1.95% |
+| liquidity | neutral | 8 | −1.76% | −1.53% |
+| cycle | mid | 33 | +0.64% | +0.92% |
+| cycle | late | 6 | −1.55% | +0.19% |
+
+All conditioning observations are descriptive only. No t-stats, no verdict language.
+
+**Run history / data honesty:**
+
+The first F-C computation ran on the pre-fix parquet (48 docs, 47 of 48 null anchor dates) and yielded n_usable=1: only the 2019-Q4 document carried a parseable anchor (2019-12-27), giving a single-observation CAR@H20 of approximately −7.58%. This was observed before any collector fix and is documented in the run_history field of the results JSON.
+
+Two collector bugs were then identified and fixed on the same day (2026-07-06):
+- Bug 1 (publish_date null): `_pboc_fetch_article` was trying to extract the publish date from body text (which fails for most MPC readouts). The fix reads the CMS publish stamp directly from the `<span class="hui12">YYYY-MM-DD</span>` adjacent to each article link on the listing page — the reliable source shown in the live HTML.
+- Bug 2 (years 2011–2015 missing): The pagination harvester only read the page-1 footer, which linked pages 2 and 4 but not 3. The fix synthesises the full page range (pages 2 through maxN, filling gaps), so all 4 listing pages are now fetched.
+
+This was a data-completeness repair: no event definition, no threshold, no horizon, and no gate was changed. The leg is descriptive/unsigned and carries no verdict in any case.
+
+> **In plain English:** We measured whether MPC quarterly readout communiqués, when their policy-language formula set changes (a phrase appears or disappears), are followed by predictable moves in the Shanghai Composite index. After fixing two bugs in the date-extraction and pagination logic of the collector, all 68 documents have publish dates and 39 of the 67 consecutive quarterly pairs show at least one formula change — all 39 have usable anchor dates. The overall average forward return is near-zero (mean +0.30% at 20 trading days, median +0.92%). By quad: goldilocks-regime events show the largest positive tilt (+1.13% mean), reflationary events are mildly negative (−1.12%). By liquidity: expanding-liquidity events are higher (+1.38%), neutral-liquidity events drag (−1.76%). These are purely descriptive patterns in a small, unsigned sample. No conclusion is drawn. The leg is exploratory only.
 
 ---
 
@@ -231,7 +289,7 @@ No-go families (T1 F-A SHCOMP, T3 F-A real estate, T4 F-B SHCOMP) are not regist
 | F-B → SHCOMP | No | −0.392 | 0/5 | **NO-GO** |
 | F-B → banks | Yes | 1.007 | 1/5 (split-half) | **ACCRUE** |
 | F-B → real estate | Yes (barely) | 0.145 | 0/5 | **ACCRUE** |
-| F-C communiques | — | — | — | **BLOCKED-DATA** |
+| F-C communiques | — (unsigned) | — (no FDR) | — | **EXPLORATORY-DESCRIPTIVE** (n=39, mean@H20 +0.30%) |
 
 > **In plain English, the full summary:** PBoC rate cuts (RRR and LPR) do not reliably move the A-share market over a 4-week horizon. The broad market results are null-to-negative. Banks show the most consistent positive tilt — LPR cuts in particular produce a modest positive spread vs the market that almost survives our stats bar — but we don't have enough events yet to be confident. Real estate, despite being the sector most directly affected by rate cuts, shows no consistent positive response after netting out the market.
 >

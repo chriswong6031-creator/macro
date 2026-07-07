@@ -231,24 +231,95 @@ PBOC_SOURCE = "pbc.gov.cn"
 # rather than silently yielding zero pages.
 _PBOC_PAGE_HREF_RE = re.compile(r'([0-9a-f]{8})-(\d+)\.html')
 
+# Strict YYYY-MM-DD validation for CMS publish-date spans
+_HUI12_DATE_RE = re.compile(r'^\d{4}-\d{2}-\d{2}$')
+
 
 def _pboc_page_urls(html: str, base_url: str) -> list[str]:
-    """Parse the EasyPortal page-footer links for <hash>-N.html pattern.
+    """Parse the EasyPortal page-footer links for <hash>-N.html pattern and
+    synthesise the FULL page range, filling any gaps.
+
+    The PBoC listing page's footer only links to some page numbers (e.g. -2 and
+    -4 are present but -3 is absent).  This function:
+      (a) Collects all (prefix, N) pairs from every <hash>-N.html href found;
+      (b) For each distinct prefix, generates ALL pages from 2 up to the highest
+          N discovered, filling gaps;
+      (c) Also iterates over every listing page already fetched and extends the
+          range if a later page reveals a higher N (handled at call-site via
+          repeated calls — see fetch_pboc_mpc).
 
     Matches any 8-hex-char prefix, not the hardcoded 'af7dde41', so a CMS
     redeploy that changes the hash is detected rather than silently returning
     zero pages and truncating the backfill to page 1 only.
 
-    Returns deduplicated sibling URLs in discovered order.
+    Returns deduplicated sibling URLs for pages 2..maxN in ascending order.
+    Page 1 (index.html) is always handled separately by the caller.
     """
-    pages: list[str] = []
     dir_url = base_url.rsplit("/", 1)[0]
+
+    # Collect max N per prefix
+    prefix_max: dict[str, int] = {}
     for m in _PBOC_PAGE_HREF_RE.finditer(html):
-        prefix, n = m.group(1), m.group(2)
-        page_url = f"{dir_url}/{prefix}-{n}.html"
-        if page_url not in pages:
-            pages.append(page_url)
+        prefix, n_str = m.group(1), m.group(2)
+        n = int(n_str)
+        if n >= 2:  # page 1 = index.html (handled by caller)
+            prefix_max[prefix] = max(prefix_max.get(prefix, 2), n)
+
+    pages: list[str] = []
+    for prefix, max_n in sorted(prefix_max.items()):
+        for k in range(2, max_n + 1):
+            url = f"{dir_url}/{prefix}-{k}.html"
+            if url not in pages:
+                pages.append(url)
+
     return pages
+
+
+def _parse_listing_entries(html: str) -> list[tuple[str, str | None]]:
+    """Parse a PBoC listing page and return [(href, publish_date_or_None)].
+
+    For each anchor whose href matches _PBOC_HREF_RE, capture the adjacent
+    ``<span class="hui12">YYYY-MM-DD</span>`` immediately following the anchor
+    in the same <td>.  The date is validated strictly as YYYY-MM-DD; if absent
+    or malformed, publish_date_or_None is None.
+
+    Uses BeautifulSoup (already imported in _pboc_fetch_article).
+    """
+    from bs4 import BeautifulSoup
+    soup = BeautifulSoup(html, "html.parser")
+    results: list[tuple[str, str | None]] = []
+    seen_hrefs: set[str] = set()
+
+    for a in soup.find_all("a", href=_PBOC_HREF_RE):
+        href = a["href"]
+        if href in seen_hrefs:
+            continue
+        seen_hrefs.add(href)
+
+        # Look for the hui12 span in the same parent td (or immediate parent)
+        publish_date: str | None = None
+        parent = a.parent  # typically <td> or <font> inside <td>
+        # Walk up at most 2 levels to find a td
+        for _ in range(3):
+            if parent is None:
+                break
+            span = parent.find("span", class_="hui12")
+            if span:
+                raw = span.get_text(strip=True)
+                if _HUI12_DATE_RE.match(raw):
+                    # Additional validation: parse as a real date
+                    try:
+                        year, month, day = raw.split("-")
+                        date(int(year), int(month), int(day))  # raises ValueError on bad date
+                        publish_date = raw
+                    except ValueError:
+                        publish_date = None
+                break
+            parent = parent.parent
+
+        results.append((href, publish_date))
+
+    return results
 
 
 def _pboc_article_hrefs(html: str) -> list[str]:
@@ -256,8 +327,18 @@ def _pboc_article_hrefs(html: str) -> list[str]:
     return list(dict.fromkeys(_PBOC_HREF_RE.findall(html)))
 
 
-def _pboc_fetch_article(session: Any, href: str) -> dict | None:
-    """Fetch a PBoC MPC article and return a row dict or None on failure."""
+def _pboc_fetch_article(
+    session: Any,
+    href: str,
+    listing_publish_date: str | None = None,
+) -> dict | None:
+    """Fetch a PBoC MPC article and return a row dict or None on failure.
+
+    listing_publish_date: YYYY-MM-DD string captured from the listing page's
+    ``<span class="hui12">`` adjacent to the article link.  When present this
+    is used as publish_date (more reliable than body-text extraction).
+    meeting_date logic is unchanged — it is always derived from body text.
+    """
     url = urljoin(PBOC_BASE, href)
     try:
         content, ct = _get(session, url)
@@ -311,13 +392,17 @@ def _pboc_fetch_article(session: Any, href: str) -> dict | None:
     body_sha256 = hashlib.sha256(body.encode("utf-8")).hexdigest()
     fetched_at = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
+    # publish_date: use listing CMS stamp if available (most reliable); fall back
+    # to body-extracted meeting_date as a rough approximation.
+    publish_date = listing_publish_date if listing_publish_date is not None else meeting_date
+
     return {
         "doc_id": doc_id,
         "family": "pboc_mpc",
         "meeting_year": meeting_year,
         "meeting_quarter": meeting_quarter,
         "meeting_date": meeting_date,
-        "publish_date": meeting_date,   # Best approximation; article page rarely has a separate publish date
+        "publish_date": publish_date,
         "title": title,
         "body": body,
         "body_sha256": body_sha256,
@@ -329,7 +414,22 @@ def _pboc_fetch_article(session: Any, href: str) -> dict | None:
 
 def fetch_pboc_mpc(session: Any, known_ids: set[str],
                    limit: int | None = None, dry_run: bool = False) -> list[dict]:
-    """Discover all PBoC MPC article URLs then fetch each."""
+    """Discover all PBoC MPC article URLs then fetch each.
+
+    Page-range synthesis: the footer of page 1 may only link to a SUBSET of
+    pages (e.g. -2 and -4 but not -3).  We:
+      1. Parse page 1 footer hrefs → initial page list;
+      2. Fetch each discovered page and re-parse ITS footer, extending the
+         max-N when a later page reveals a higher page number;
+      3. Any gap between 2 and maxN is synthesised and fetched.
+    This ensures years 2011–2015 (on pages 3–4 of the CMS) are not skipped.
+
+    Listing publish dates: each listing page is parsed with _parse_listing_entries()
+    which returns (href, publish_date_or_None) pairs.  The listing CMS stamp is
+    threaded through to _pboc_fetch_article as listing_publish_date so that the
+    parquet publish_date column is populated from the reliable CMS stamp rather
+    than from body-text date extraction.
+    """
     log.info("PBOC MPC: fetching index %s", PBOC_INDEX_URL)
     try:
         content, ct = _get(session, PBOC_INDEX_URL, pace=False)
@@ -338,11 +438,34 @@ def fetch_pboc_mpc(session: Any, known_ids: set[str],
         return []
     html = _decode_html(content, ct)
 
-    # Collect page URLs from pagination hrefs
-    extra_pages = _pboc_page_urls(html, PBOC_INDEX_URL)
-    all_page_urls = [PBOC_INDEX_URL] + extra_pages
-    log.info("PBOC MPC: found %d listing pages", len(all_page_urls))
-    if len(extra_pages) == 0:
+    # --- Page-range synthesis ---
+    # Start from hrefs found on page 1; build a frontier of pages to fetch.
+    # As each page is fetched we re-parse its footer and extend the range.
+    dir_url = PBOC_INDEX_URL.rsplit("/", 1)[0]
+
+    # prefix → max_N discovered so far
+    prefix_max: dict[str, int] = {}
+
+    def _update_prefix_max(page_html: str) -> None:
+        for m in _PBOC_PAGE_HREF_RE.finditer(page_html):
+            pfx, n_str = m.group(1), m.group(2)
+            n = int(n_str)
+            if n >= 2:
+                prefix_max[pfx] = max(prefix_max.get(pfx, 2), n)
+
+    _update_prefix_max(html)  # seed from page 1
+
+    # href → listing publish_date (str or None)
+    listing_dates: dict[str, str | None] = {}
+
+    def _harvest_listing(page_html: str) -> None:
+        for href, pub in _parse_listing_entries(page_html):
+            if href not in listing_dates:
+                listing_dates[href] = pub
+
+    _harvest_listing(html)  # harvest page 1
+
+    if not prefix_max:
         log.warning(
             "PBOC MPC: only 1 listing page discovered — pagination hrefs not found. "
             "The CMS hash prefix may have changed or the index structure differs. "
@@ -351,45 +474,60 @@ def fetch_pboc_mpc(session: Any, known_ids: set[str],
             69, PBOC_INDEX_URL,
         )
 
-    all_hrefs: list[str] = []
-    for page_url in all_page_urls:
-        if page_url == PBOC_INDEX_URL:
-            page_html = html
-        else:
-            try:
-                pcontent, pct = _get(session, page_url)
-                page_html = _decode_html(pcontent, pct)
-            except Exception as exc:
-                log.warning("PBOC pagination fetch failed %s: %s", page_url, exc)
-                continue
-        hrefs = _pboc_article_hrefs(page_html)
-        log.info("PBOC MPC: page %s → %d article hrefs", page_url, len(hrefs))
-        all_hrefs.extend(hrefs)
+    # Fetch all pages 2..maxN (re-checking maxN after each page in case footer
+    # reveals a higher N, though in practice the PBoC site is static).
+    fetched_extra: set[str] = set()
+    # Loop until we've fetched everything up to the current known max
+    changed = True
+    while changed:
+        changed = False
+        for prefix, max_n in list(prefix_max.items()):
+            for k in range(2, max_n + 1):
+                page_url = f"{dir_url}/{prefix}-{k}.html"
+                if page_url in fetched_extra:
+                    continue
+                fetched_extra.add(page_url)
+                changed = True
+                try:
+                    pcontent, pct = _get(session, page_url)
+                    page_html = _decode_html(pcontent, pct)
+                except Exception as exc:
+                    log.warning("PBOC pagination fetch failed %s: %s", page_url, exc)
+                    continue
+                _update_prefix_max(page_html)
+                _harvest_listing(page_html)
+                hrefs_on_page = _pboc_article_hrefs(page_html)
+                log.info("PBOC MPC: page %s → %d article hrefs", page_url, len(hrefs_on_page))
 
-    # Deduplicate preserving order
-    seen: set[str] = set()
-    unique_hrefs: list[str] = []
-    for h in all_hrefs:
-        if h not in seen:
-            seen.add(h)
-            unique_hrefs.append(h)
+    all_page_urls = [PBOC_INDEX_URL] + sorted(fetched_extra)
+    log.info("PBOC MPC: fetched %d listing pages total (1 index + %d extra)",
+             len(all_page_urls), len(fetched_extra))
+    log.info("PBOC MPC: %d unique hrefs with listing dates captured", len(listing_dates))
 
-    log.info("PBOC MPC: %d unique article hrefs discovered", len(unique_hrefs))
+    # Build unique hrefs list preserving discovery order
+    all_hrefs_ordered: list[str] = []
+    seen_hrefs: set[str] = set()
+    # Order: page 1 entries first (already in listing_dates from _harvest_listing),
+    # then page 2..N in page order.  listing_dates is insertion-ordered (Python 3.7+).
+    for href in listing_dates:
+        if href not in seen_hrefs:
+            seen_hrefs.add(href)
+            all_hrefs_ordered.append(href)
+
+    log.info("PBOC MPC: %d unique article hrefs discovered", len(all_hrefs_ordered))
     if dry_run:
-        for h in unique_hrefs:
+        for h in all_hrefs_ordered:
             print(f"  [DRY-RUN pboc_mpc] {urljoin(PBOC_BASE, h)}")
         return []
 
     rows: list[dict] = []
-    for i, href in enumerate(unique_hrefs):
+    for i, href in enumerate(all_hrefs_ordered):
         if limit is not None and len(rows) >= limit:
             log.info("PBOC MPC: limit=%d reached", limit)
             break
-        url = urljoin(PBOC_BASE, href)
-        # For resumability: build tentative doc_id from URL alone (title not yet known)
-        # — we skip only if the URL is already known via checking existing data
-        # We'll check after fetching title
-        row = _pboc_fetch_article(session, href)
+        # Pass the listing CMS publish date so the parquet column is populated
+        listing_pub = listing_dates.get(href)
+        row = _pboc_fetch_article(session, href, listing_publish_date=listing_pub)
         if row is None:
             continue
         if row["doc_id"] in known_ids:
@@ -397,9 +535,9 @@ def fetch_pboc_mpc(session: Any, known_ids: set[str],
             continue
         rows.append(row)
         known_ids.add(row["doc_id"])
-        log.info("PBOC MPC [%d/%d]: %s | yr=%s Q=%s",
-                 i + 1, len(unique_hrefs), row["title"][:60],
-                 row["meeting_year"], row["meeting_quarter"])
+        log.info("PBOC MPC [%d/%d]: %s | yr=%s Q=%s pub=%s",
+                 i + 1, len(all_hrefs_ordered), row["title"][:60],
+                 row["meeting_year"], row["meeting_quarter"], row["publish_date"])
     return rows
 
 
