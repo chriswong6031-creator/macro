@@ -159,6 +159,8 @@ def build() -> dict:
         return degraded
 
     # Normal path — mirror assess() field names verbatim per spec §5.
+    # History entries are kept slim: eigen block is intentionally excluded
+    # (bulk SVD fields would bloat the 252-entry rolling history list).
     today_entry = {
         "as_of": as_of,
         "state": result["state"],
@@ -181,19 +183,27 @@ def build() -> dict:
         # must travel with the artifact per spec §5)
         "passport": result["passport"],
         # rolling 252-day state history (maintained in-place each nightly run)
+        # NOTE: eigen block is excluded from history rows (kept slim).
         "history": history,
         # convenience display labels (from dispersion._LABEL)
         "label": result.get("label"),
         "label_zh": result.get("label_zh"),
+        # eigen-concentration block (display-only; DISP-EIGEN-1, activation DEFERRED)
+        # emitted at top-level only — NOT in history rows (size discipline).
+        "eigen": result.get("eigen"),
     }
 
     out_path.write_text(json.dumps(output, indent=2, default=str))
     elapsed = time.perf_counter() - t0
+    eigen_summary = (
+        f"eigen.dom_pc={output['eigen']['dominant_equity_pc_share']}"
+        if output.get("eigen") else "eigen=None"
+    )
     log.info(
-        "dispersion regime: %s (pctile=%s, avg_corr=%s) → gross_mult_live=1.0 "
+        "dispersion regime: %s (pctile=%s, avg_corr=%s, %s) → gross_mult_live=1.0 "
         "written to %s in %.2fs",
         output["state"], output["dispersion_pctile"], output["avg_corr"],
-        out_path, elapsed,
+        eigen_summary, out_path, elapsed,
     )
     return output
 

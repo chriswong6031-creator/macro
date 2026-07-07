@@ -272,6 +272,12 @@ Closed, with sources; the registry's `adjacent_falsified` field points here.
 | HK: residual momentum, southbound-Δ, COILED, G6a, and every US bottom mechanism tested | WAVE3/6, HK_CANADA masterplan |
 | US residual momentum as modern-era alpha (DSR ≈ 0.001, Sharpe −0.29 modern era) — context leg only | reports/residual-alpha-phase0 |
 | Politician-trades feed (dead); pre-FOMC event-risk score | memory/event_calendar doctrine |
+| **A3 washout×turn interaction** (`esx_washout_x_turn`) — the operator's literal 2W-StochRSI-washout × HTF-turn seed; KILLED as a proximity shadow with adverse marginality interaction; re-confirms the H1 depth kill fire-conditionally | ENTRY_STACK Amendment 3 §F |
+| **A3 HTF-turn 2W/monthly rungs** (`esx_htf_turn` A2/A3m) — A2 NULL (knife-edge, mae21 co-primary fails); A3m monthly NULL-by-non-replication (deep-only win, fails baskets OOS, pre-registered expect-weak) | ENTRY_STACK Amendment 3 §F |
+| **A3 HTF turn-count dose** (`esx_htf_turn_dose`) — monotone but NOT proximity-de-confounded (leg-3 non-monotone tell); re-measures shipped bottom_confidence tf_score; falsifier logged | ENTRY_STACK Amendment 3 §F |
+| **A3 sub×turn** (`esx_sub_x_turn`) & **vol term-structure motion** (`esx_vol_transition`, expect-null) — cross-panel interaction sign flip / vol MOTION adds nothing over vol LEVEL | ENTRY_STACK Amendment 3 §F |
+
+*A3 SURVIVORS (display-candidates, not graveyard): **E `esx_decline_geometry`** (flush-vs-grind path shape — the one clean cross-panel full-battery survivor) and **F `esx_underwater`** (real but ADVERSE — de-escalation context only). **A1 `esx_htf_turn` weekly** = DISPLAY-CANDIDATE-CAVEATED, baskets-only, mostly proximity. All CHIP-blocked until eq_band (RUL-28).*
 
 **In plain English:** we've already paid tuition on these. The registry forces every new
 species to name its nearest dead neighbor and say why it is mechanically different — before

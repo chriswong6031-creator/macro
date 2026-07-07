@@ -2,20 +2,23 @@
 the reconstructed DannyTrades stack (engine/dannytrades.py), wired onto the US stock
 detail page.
 
-It surfaces the TWO findings that survived the phase-0 gate (research/DANNYTRADES_PHASE0.md)
-— both contrarian, i.e. the INVERSE of how Danny trades them:
+Evidence status after DT-W1a (2026-07-06, research/dannytrades/DT_W1_RESULTS.md and
+research/DANNYTRADES_NW_ADJUDICATION_AND_MASTERPLAN_BY_FABLE.md §7):
 
-  1. EXTENSION — a high composite score flags an *extended* name that tends to
-     mean-revert: forward-63d return falls monotonically across all ten score deciles
-     (Spearman −0.88). High score → "don't chase".
-  2. WHALE FADE — "whales entering" (his rising-accumulation tell) precedes
-     UNDER-performance, not out-: monthly IC of the accumulation change is −0.023
-     (t ≈ −3.9); "whales leaving" precedes out-performance. So hot+rising whale
-     accumulation = distribution/fade risk; bled-out = a bounce setup.
+  1. EXTENSION band (composite-score percentile) — retained as a WEAK TILT display.
+     Original evidence: forward-63d return fell monotonically across score deciles
+     (Spearman −0.88) on a 64-year, 114-name SURVIVOR panel with no time control.
+     The 2021+ survivorship-honest PIT replication, time-controlled (month-block,
+     ~60 effective months, single bull regime), found NO significant effect.
+  2. WHALE line — DROPPED as a directional claim per the frozen DT-W1 consequence
+     rule (H1∧H2∧H3 all FAILED time-controlled: the raw fade/bounce lifts were
+     ~85-90% calendar-month base rate). Accumulation values remain as descriptive
+     data only; no fade/bounce claim may be derived from them. Restoration path:
+     a new prereg in which the 64-year panel survives month-block time control
+     (adjudication DT-R13).
 
-NEVER scored, never a price target — a contextual caution chip with the validated
-stats printed in its caveat. Pure function of one stock's OHLCV. Honest limits: the
-validation is on a 114-name large-cap SURVIVOR panel; treat as a tilt, not a trade.
+NEVER scored, never a price target — a contextual caution chip with its measured
+status printed in the caveat. Pure function of one stock's OHLCV.
 """
 from __future__ import annotations
 
@@ -28,14 +31,15 @@ WHALE_WIN = 63          # ~3-month accumulation window (daily)
 WHALE_CHG = 63          # 3-month change = Danny's "whales entering/leaving"
 SCORE_PCT_WIN = 504     # ~2y self-history for the extension percentile
 
-_CAVEAT = ("Contrarian read — the INVERSE of the indicator's usual framing. Validated "
-           "(display-only) that a high composite flags lower forward-63d returns "
-           "(decile Spearman −0.88) and that rising 'whale accumulation' precedes "
-           "under-performance (monthly IC t≈−3.9). Large-cap survivor sample; a tilt, "
-           "not a trade.")
-_CAVEAT_ZH = ("逆向解读 — 与该指标常规用法相反。经验证（仅供展示）：高综合分预示未来63日"
-              "回报更低（分位单调 Spearman −0.88），且“鲸鱼吸筹”上升反而领先跑输"
-              "（月度 IC t≈−3.9）。样本为大盘幸存股；是倾斜而非交易信号。")
+_CAVEAT = ("Contrarian read — the INVERSE of the indicator's usual framing; display-only, "
+           "extension band only. Measured on a 64y survivor panel (decile Spearman −0.88, "
+           "no time control); the 2021+ survivorship-honest, time-controlled replication "
+           "(DT-W1a, ~60 effective months) found NO significant effect, and whale-based "
+           "fade/bounce claims were dropped. A weak tilt at best, never a trade.")
+_CAVEAT_ZH = ("逆向解读 — 与该指标常规用法相反；仅供展示，仅保留位置分位。原始证据来自64年"
+              "幸存股样本（分位 Spearman −0.88，未控制时间因素）；2021年后无幸存偏差、"
+              "控制月度基准的复检（DT-W1a，有效样本约60个月）未发现显著效应，"
+              "“鲸鱼”方向性判断已移除。至多是微弱倾斜，绝非交易信号。")
 
 
 def _band(p: float) -> str:
@@ -71,25 +75,21 @@ def assess(close: pd.Series, high: pd.Series | None, low: pd.Series | None,
         return None
 
     band = _band(spct)
-    entering = (wchg is not None and wchg > 5 and w >= 55)      # hot + rising → fade
-    leaving = (wchg is not None and wchg < -5)                  # bleeding out → improving
+    rising = (wchg is not None and wchg > 5)
+    falling = (wchg is not None and wchg < -5)
 
-    # contrarian verdict — the extension band (Spearman −0.88, the stronger leg) leads;
-    # the whale change is a secondary tilt that can resolve a mid-range band.
+    # DT-W1a consequence (frozen rule, adjudication §7): the extension band is the ONLY
+    # state driver; whale motion carries NO directional claim (descriptive data only).
     if band == "extended":
         state, en, zh = "fade", "Extended — fade risk", "高位 — 谨防回吐"
     elif band == "washed":
         state, en, zh = "bounce", "Washed-out — contrarian setup", "超卖 — 逆向机会"
-    elif entering:
-        state, en, zh = "fade", "Whales crowding — fade risk", "鲸鱼拥挤 — 谨防回吐"
-    elif leaving:
-        state, en, zh = "bounce", "Accumulation bleeding — improving", "吸筹枯竭 — 转好"
     else:
         state, en, zh = "neutral", "Neutral", "中性"
 
-    whale_state = ("entering" if entering else "leaving" if leaving else "quiet")
-    whale_lbl = {"entering": ("Whales entering (fade)", "鲸鱼吸筹（宜淡出）"),
-                 "leaving": ("Whales leaving (improving)", "鲸鱼撤离（转好）"),
+    whale_state = ("entering" if rising else "leaving" if falling else "quiet")
+    whale_lbl = {"entering": ("Accumulation rising", "吸筹上升"),
+                 "leaving": ("Accumulation falling", "吸筹回落"),
                  "quiet": ("Accumulation quiet", "吸筹平静")}[whale_state]
 
     chips = [
@@ -101,16 +101,19 @@ def assess(close: pd.Series, high: pd.Series | None, low: pd.Series | None,
                    "zh": f"{whale_lbl[1]} · {int(round(w))}%"}},
     ]
     detail_en = {
-        "fade": "High DannyTrades composite / hot-and-rising accumulation — historically "
-                "this is where forward returns fade. Don't chase; wait for a reset.",
-        "bounce": "Bled-out accumulation with a low composite — the washed-out side where "
-                  "forward returns have historically been better. A contrarian setup, not a trigger.",
-        "neutral": "Mid-range composite and accumulation — no contrarian extension or washout edge here.",
+        "fade": "High DannyTrades composite percentile — on the long survivor panel this is "
+                "where forward returns faded (unreplicated time-controlled 2021+). A caution "
+                "tilt only; don't chase.",
+        "bounce": "Low composite percentile — the washed-out side of the long survivor panel "
+                  "(unreplicated time-controlled 2021+). A weak contrarian tilt, not a trigger.",
+        "neutral": "Mid-range composite percentile — no contrarian extension or washout tilt here.",
     }[state]
     detail_zh = {
-        "fade": "DannyTrades 综合分偏高 / 吸筹过热且上升 — 历史上正是未来回报转弱之处。勿追高，等待回落。",
-        "bounce": "吸筹枯竭且综合分偏低 — 超卖一侧，历史上未来回报更佳。逆向机会，并非触发信号。",
-        "neutral": "综合分与吸筹均处中位 — 无逆向高位或超卖的边际。",
+        "fade": "DannyTrades 综合分位偏高 — 在长期幸存股样本中此处未来回报曾转弱"
+                "（2021年后控制时间因素未复现）。仅为谨慎倾斜，勿追高。",
+        "bounce": "综合分位偏低 — 长期幸存股样本中的超卖一侧（2021年后控制时间因素未复现）。"
+                  "微弱逆向倾斜，并非触发信号。",
+        "neutral": "综合分位处于中段 — 无逆向高位或超卖的倾斜。",
     }[state]
 
     return {
