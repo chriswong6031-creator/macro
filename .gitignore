@@ -316,3 +316,9 @@ data/private/
 # _manifest.json (freshness anchor, if created) is kept via negation.
 data/sec_ftd/*.parquet
 !data/sec_ftd/_manifest.json
+
+# W5-B Options Tape Signed Pilot (feat/w5b-options-tape-pilot).
+# Per-ticker parquets are R2-plane only (projected 10-50 GB at 500 names x full backfill).
+# Mirrors pattern: data/massive_stock_day/*.parquet above.
+# _backfill_state.json IS tracked (resumable state machine; tiny JSON anchor).
+data/options_tape_signed/*.parquet
