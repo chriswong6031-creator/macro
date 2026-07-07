@@ -3,7 +3,7 @@
 LEAF · CONTEXT-ONLY · NEVER A SCORE/SIZE. The China sibling of the macro master_brain brief:
 it fans the FIVE China intelligence surfaces — News, Central-Bank/Policy, Alternative Data,
 Divergence Radar, and the central-intelligence Analysis — into ONE schema-versioned,
-machine-readable rollup (`china_intel.briefing.v4`) for hub display. The blocks assembled here
+machine-readable rollup (`china_intel.briefing.v6`) for hub display. The blocks assembled here
 are hub-display surfaces only; they reach the China Mastermind only via the digest summary
 line (see `_digest_text`). It DECOUPLES by reading each surface's already-emitted JSON off disk
 (build-order is the only dependency); every reader degrades to None and NOTHING here raises
@@ -17,6 +17,14 @@ v4 (additive over v3): policy_phrase block (communique_diff APPEARED/DROPPED/LEA
 events from site/communique_diff/latest.json) + narrative_divergence block (GDELT onshore/
 offshore tone divergence z-score from data/missing_tape/tone_divergence.parquet). Both blocks
 degrade cleanly to None when their artifacts are absent. Schema bumped to v4.
+
+v5 (additive over v4): special_situations block reading site/chinaspecialdata/special.json
+(unlock overhang, inquiry letters, preannouncements, buybacks, pledge stress, ST watch,
+block-trade anomalies). Degrades cleanly when artifact absent. Schema bumped to v5.
+
+v6 (additive over v5): command block reading site/china_intel/command.json (W4 command
+apparatus — per-ticker fusion, edge-remaining ranking, discovery lanes). Compact top-10
+rows + counts + asof. Degrades cleanly when artifact absent. Schema bumped to v6.
 """
 from __future__ import annotations
 
@@ -29,7 +37,7 @@ from lib import config
 
 log = logging.getLogger(__name__)
 
-SCHEMA = "china_intel.briefing.v4"
+SCHEMA = "china_intel.briefing.v6"
 MAX_STALE_OK = 35
 
 DISCLAIMER = (
@@ -64,6 +72,54 @@ def _read_json(rel: str) -> dict | list | None:
         return json.loads(p.read_text())
     except Exception as e:  # noqa: BLE001
         log.debug("china_intel_bus: read %s failed (%s)", rel, e)
+        return None
+
+
+# --------------------------------------------------------------------------- #
+# cycle-context chip helper (W5)
+# --------------------------------------------------------------------------- #
+_REGIME_HISTORY_CACHE: dict = {}  # {path_str: DataFrame}
+
+
+def _regime_chip_for_date(date_str: str) -> dict | None:
+    """Look up quad/liquidity/cycle for a given date in regime_history.parquet.
+
+    Returns {quad, quad_name, liquidity, cycle} if found, else None.
+    Degrades cleanly: missing parquet or date not in index → None, no exception.
+    Neutral/descriptive context only — no directional language.
+    """
+    try:
+        import pandas as pd
+        p = config.ROOT / "data" / "china_regime" / "regime_history.parquet"
+        pstr = str(p)
+        if pstr not in _REGIME_HISTORY_CACHE:
+            if not p.exists():
+                return None
+            _df = pd.read_parquet(p, columns=["quad", "quad_name", "liquidity", "cycle"])
+            _df.index = pd.to_datetime(_df.index)
+            _REGIME_HISTORY_CACHE[pstr] = _df.sort_index()
+        df = _REGIME_HISTORY_CACHE[pstr]
+        if df is None or df.empty:
+            return None
+        # Backward as-of join: latest regime row AT/BEFORE the event date.
+        # Exact-match would drop weekend-dated announcements and future-dated
+        # unlocks (regime_history is trading-days-only, ends today). PIT-honest:
+        # never reads a regime row later than the event date.
+        ts = pd.Timestamp(str(date_str)[:10])
+        pos = df.index.get_indexer([ts], method="ffill")[0]
+        if pos < 0:
+            return None  # event predates regime history
+        row = df.iloc[pos]
+        quad = str(row["quad"])
+        quad_name = str(row["quad_name"])
+        liquidity = str(row["liquidity"])
+        cycle = str(row["cycle"])
+        # Skip NaN / "nan" rows
+        if any(v in ("nan", "", "None", "none") for v in (quad, quad_name)):
+            return None
+        return {"quad": quad, "quad_name": quad_name, "liquidity": liquidity, "cycle": cycle}
+    except Exception as e:  # noqa: BLE001
+        log.debug("china_intel_bus: regime chip lookup failed (%s)", e)
         return None
 
 
@@ -239,6 +295,16 @@ def _policy_phrase_block() -> dict | None:
             org = e.get("organ", "")
             if org:
                 organs_seen.add(org)
+        # Stamp cycle-context chips onto each event (W5).  Uses the event's own asof
+        # date (or the block asof as fallback).  Chips are muted/descriptive context only.
+        stamped = []
+        for e in recent[:8]:
+            ev = dict(e)
+            ev_date = str(ev.get("asof") or asof)[:10]
+            chip = _regime_chip_for_date(ev_date)
+            if chip:
+                ev["regime_chip"] = chip
+            stamped.append(ev)
         return {
             "asof": asof,  # "last diff run" — communique_diff stamps run day, not corpus freshness
             "n_events_recent": len(recent),
@@ -247,7 +313,7 @@ def _policy_phrase_block() -> dict | None:
             "n_lead_shift": type_counts.get("LEAD_SHIFT", 0),
             "organs_covered": sorted(organs_seen),
             "cold_start_organs": cold_start_organs,
-            "recent_events": recent[:8],   # cap for transport
+            "recent_events": stamped,   # cap for transport already applied above
             "is_context_only": True,
             "claim_family": "communique_diff",
             "note_en": "Salience-only — direction unproven (accruing)",
@@ -401,9 +467,153 @@ def _digest_text(b: dict) -> str:
         risk = " [RISK FLAG]" if nd.get("risk_flag") else ""
         trend = f" trend: {nd.get('trend_5d')}" if nd.get("trend_5d") else ""
         parts.append(f"Onshore/offshore tone divergence z={z:+.2f}{trend}{risk} (direction=0, accruing)")
+    # command line: top-2 ranked names for Mastermind transport
+    cmd = b.get("command")
+    if cmd and cmd.get("top10"):
+        top2 = cmd["top10"][:2]
+        cmd_line_parts = []
+        for row in top2:
+            ticker = row.get("ticker") or "?"
+            stage = row.get("stage") or "?"
+            edge = row.get("edge_remaining")
+            edge_str = f" edge={edge:.0%}" if isinstance(edge, float) else ""
+            cmd_line_parts.append(f"{ticker} ({stage}{edge_str})")
+        parts.append("COMMAND TOP-2: " + " · ".join(cmd_line_parts)
+                     + f" (universe={cmd.get('n_universe','?')}, context-only)")
     if not parts:
         return "China intelligence bus: no surfaces built yet."
     return "\n".join(parts)
+
+
+# --------------------------------------------------------------------------- #
+# v5: special_situations block
+# --------------------------------------------------------------------------- #
+def _special_situations_block() -> dict | None:
+    """Compact summary of the special-situations desk for the hub card.
+
+    Reads site/chinaspecialdata/special.json and extracts: counts per category,
+    top unlock event, newest inquiry letter. Degrades to None when absent.
+    """
+    data = _read_json("chinaspecialdata/special.json")
+    if not data or not isinstance(data, dict):
+        return None
+    out: dict = {
+        # data_asof = worst (oldest) per-input asof from the engine scan; falls back to asof
+        "asof": data.get("data_asof") or data.get("asof"),
+        "is_context_only": True,
+    }
+    # counts per category
+    for key, cnt_field in (
+        ("unlocks",     "n_events_30d"),
+        ("inquiry",     "n_letters"),
+        ("preannounce", "n_total"),
+        ("buyback",     "n_active"),
+        ("pledge",      "n_high"),
+        ("st",          "count"),
+        ("block_trades", "n_names"),
+    ):
+        blk = data.get(key) or {}
+        out[f"n_{key}"] = blk.get(cnt_field) if isinstance(blk, dict) else None
+
+    # top unlock (for hub card)
+    unlock_events = (data.get("unlocks") or {}).get("events") or []
+    if unlock_events:
+        top = unlock_events[0]
+        out["top_unlock"] = {
+            "ticker":      top.get("ticker"),
+            "name":        top.get("name"),
+            "unlock_date": top.get("unlock_date"),
+            "float_ratio": top.get("float_ratio"),
+            "large_flag":  top.get("large_flag"),
+        }
+
+    # newest inquiry letter (for hub card)
+    inq_letters = (data.get("inquiry") or {}).get("letters") or []
+    if inq_letters:
+        newest = inq_letters[0]
+        out["newest_letter"] = {
+            "secCode": newest.get("secCode"),
+            "secName": newest.get("secName"),
+            "date":    newest.get("date"),
+            "has_reply": newest.get("has_reply"),
+        }
+
+    return out
+
+
+# --------------------------------------------------------------------------- #
+# v6: command block — compact top-10 from the W4 command apparatus
+# --------------------------------------------------------------------------- #
+def _command_block() -> dict | None:
+    """Compact command summary from site/china_intel/command.json (W4 apparatus).
+
+    Reads the already-built artifact (build order: build_china_intel_hub runs first).
+    Returns None when artifact absent — degrade-safe.  Additive over v5 (prefix-match safe).
+
+    Contract: returns {asof, n_universe, counts, top10, discovery_n, is_context_only}.
+    Analogs are handled separately via _analogs_block_from_command().
+    """
+    try:
+        data = _read_json("china_intel/command.json")
+        if not isinstance(data, dict):
+            return None
+        command = data.get("command") or []
+        return {
+            "asof": data.get("as_of"),
+            "n_universe": data.get("n_universe"),
+            "counts": data.get("counts"),
+            "top10": [
+                {
+                    "ticker": d.get("ticker"),
+                    "name": d.get("name"),
+                    "stage": d.get("stage"),
+                    "opportunity_score": d.get("opportunity_score"),
+                    "edge_remaining": d.get("edge_remaining"),
+                    "leading_gap": d.get("leading_gap"),
+                }
+                for d in command[:10]
+            ],
+            "discovery_n": len(data.get("discovery") or []),
+            "is_context_only": True,
+        }
+    except Exception as e:  # noqa: BLE001
+        log.debug("china_intel_bus: command block failed (%s)", e)
+        return None
+
+
+# --------------------------------------------------------------------------- #
+# v6: analogs block — reads site/china_intel/analogs.json (separate from command)
+# --------------------------------------------------------------------------- #
+def _analogs_block() -> dict | None:
+    """Read site/china_intel/analogs.json (schema china_intel.analogs.v1).
+
+    Separate from the command block so the template K4 can read b.analogs independently.
+    Returns None when artifact absent — NOT added to surfaces_present until non-None
+    (the artifact does not exist today; auto-lights when a parallel program ships it).
+    """
+    try:
+        d = _read_json("china_intel/analogs.json")
+        if not isinstance(d, dict):
+            return None
+        if d.get("schema") != "china_intel.analogs.v1":
+            log.debug("china_intel_bus: analogs schema mismatch: %s", d.get("schema"))
+            return None
+        if not d.get("fan") or not d.get("query"):
+            return None
+        return {
+            "as_of": d.get("as_of"),
+            "coverage": d.get("coverage"),
+            "query": d.get("query"),
+            "analogs": (d.get("analogs") or [])[:12],
+            "fan": d.get("fan"),
+            "method_note": d.get("method_note"),
+            "disclaimer_en": d.get("disclaimer_en"),
+            "disclaimer_zh": d.get("disclaimer_zh"),
+            "n_analogs": len(d.get("analogs") or []),
+        }
+    except Exception as e:  # noqa: BLE001
+        log.debug("china_intel_bus: analogs block failed (%s)", e)
+        return None
 
 
 # --------------------------------------------------------------------------- #
@@ -412,7 +622,7 @@ def _digest_text(b: dict) -> str:
 def _staleness(b: dict) -> tuple[dict, int]:
     sa, worst = {}, 0
     for k in ("news", "policy", "altdata", "radar", "analysis",
-              "policy_phrase", "narrative_divergence"):
+              "policy_phrase", "narrative_divergence", "special_situations", "command"):
         d = (b.get(k) or {}).get("asof") if isinstance(b.get(k), dict) else None
         sa[k] = d
         if d:
@@ -425,7 +635,7 @@ def _staleness(b: dict) -> tuple[dict, int]:
 
 
 def briefing(asof: date | str | None = None) -> dict:
-    """Assemble the context-only `china_intel.briefing.v2`. Always valid; never raises."""
+    """Assemble the context-only `china_intel.briefing.v6`. Always valid; never raises."""
     b = {
         "schema": SCHEMA, "is_context_only": True,
         "generated_utc": datetime.now(timezone.utc).isoformat(),
@@ -433,6 +643,8 @@ def briefing(asof: date | str | None = None) -> dict:
         "news": None, "policy": None, "altdata": None, "radar": None, "analysis": None,
         "regime": None, "discovery": None,
         "policy_phrase": None, "narrative_divergence": None,
+        "special_situations": None, "command": None,
+        "analogs": None,   # v6: separate from command; NOT in surfaces_present until non-None
         "disclaimer": DISCLAIMER, "disclaimer_zh": DISCLAIMER_ZH,
     }
     for key, fn in (("news", _news_block), ("policy", _policy_block),
@@ -440,7 +652,10 @@ def briefing(asof: date | str | None = None) -> dict:
                     ("analysis", _analysis_block), ("regime", _regime_block),
                     ("discovery", _discovery_block),
                     ("policy_phrase", _policy_phrase_block),
-                    ("narrative_divergence", _narrative_divergence_block)):
+                    ("narrative_divergence", _narrative_divergence_block),
+                    ("special_situations", _special_situations_block),
+                    ("command", _command_block),
+                    ("analogs", _analogs_block)):
         try:
             b[key] = fn()
         except Exception as e:  # noqa: BLE001
@@ -453,8 +668,10 @@ def briefing(asof: date | str | None = None) -> dict:
     b["flagged_tickers"] = a.get("flagged_tickers") or []
     b["what_changed"] = a.get("what_changed") or {}
     b["salience"] = a.get("what_matters") or []
+    # analogs NOT in surfaces_present until the artifact ships (degrade-safe)
     b["surfaces_present"] = [k for k in ("news", "policy", "altdata", "radar", "analysis",
-                                        "policy_phrase", "narrative_divergence") if b.get(k)]
+                                        "policy_phrase", "narrative_divergence",
+                                        "special_situations", "command") if b.get(k)]
     b["surface_asof"], b["max_staleness_days"] = _staleness(b)
     b["digest"] = _digest_text(b)
     return b
@@ -474,7 +691,7 @@ def build() -> dict | None:
              "surfaces_present": b["surfaces_present"],
              "max_staleness_days": b["max_staleness_days"], "text": b["digest"]},
             ensure_ascii=False, separators=(",", ":"), default=str))
-        log.info("china_intel_bus: wrote briefing v4 (%d surfaces, %d conviction)",
+        log.info("china_intel_bus: wrote briefing v5 (%d surfaces, %d conviction)",
                  len(b["surfaces_present"]), len(b["conviction"]))
         return b
     except Exception as e:  # noqa: BLE001

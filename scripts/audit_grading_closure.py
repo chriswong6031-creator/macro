@@ -168,8 +168,12 @@ INVENTORY: list[dict[str, Any]] = [
         "key": "breadth_divergence_forward_log",
         "path": "data/breadth_divergence/forward_log.parquet",
         "format": "parquet",
-        "grader": None,           # LOG-ONLY — no grader wired
-        "grade_field": None,
+        # PR-A2: nightly grader wired in scripts/grade_breadth_divergence.py,
+        # called from collect.py end-of-collect block.  Grades rows whose h21
+        # outcome window has matured; idempotent.  Verdict = GRADER-STARVED until
+        # the first stamp matures (~21 business days after first elevated/high fire).
+        "grader": "scripts/grade_breadth_divergence.py",
+        "grade_field": "fwd_dd",      # nullable float; non-null = graded
         "grade_ts_field": None,
         "tune_step": False,
         "storage_note": None,
@@ -179,7 +183,11 @@ INVENTORY: list[dict[str, Any]] = [
         "key": "risk_radar_forward_log",
         "path": "data/risk_radar/forward_log.jsonl",
         "format": "jsonl",
-        "grader": None,           # LOG-ONLY — no US risk-radar grader wired
+        # PR-A2 (§0.5.1): US grader IS wired — engine/risk_radar_audit.py
+        # grade_log/scorecard/snapshot_and_grade called from engine/run.py:614.
+        # Prior None was a hardcoded inventory error; verdict = GRADER-STARVED
+        # (time-starved: n=8 rows, none matured to h21 yet as of 2026-07-06).
+        "grader": "engine/risk_radar_audit.py",
         "grade_field": "graded",
         "grade_ts_field": None,
         "tune_step": False,
@@ -283,9 +291,14 @@ INVENTORY: list[dict[str, Any]] = [
         "key": "foresight_policy_calendar_ledger",
         "path": "data/foresight/policy_calendar_ledger.jsonl",
         "format": "jsonl",
-        "grader": None,          # LOG-ONLY — no grader in engine/foresight_grader.py
-        "grade_field": None,
-        "grade_ts_field": None,
+        # PR-A2 (GO-IF-TRIVIAL): date-accuracy grader wired in
+        # scripts/grade_policy_calendar.py (called from collect.py end-of-collect).
+        # After next_comment_close_date passes, checks federal_register/documents.parquet
+        # for whether the predicted comment-close event occurred (accurate bool).
+        # Verdict = GRADER-STARVED until first matured entry (~2026-08-01 earliest).
+        "grader": "scripts/grade_policy_calendar.py",
+        "grade_field": "graded_date",    # ISO date string; non-null = graded
+        "grade_ts_field": "graded_date",
         "tune_step": False,
         "storage_note": None,
     },
@@ -333,6 +346,23 @@ INVENTORY: list[dict[str, Any]] = [
         "grade_ts_field": None,
         "tune_step": False,
         "storage_note": "absent-by-design: seeded when EI-F1D-RW species accrues its first ledger row",
+    },
+    # ── BD-AVOID-1 Phase-1 forward ledger (L1 Short-Side Lobe) ──────────────
+    # Mac-side ops lane; pre-registered 2026-07-06.
+    # Verdict floor: n>=300 events/side; come-back BD-2>=2026-10-01, BD-3>=2027-01-01.
+    # Long-side (clean8_21) feeds verdict; short-side grades are quarantined (RUL-3).
+    {
+        "key": "bd_avoid1_ledger",
+        "path": "data/research/bd_avoid1_ledger.parquet",
+        "format": "parquet",
+        "grader": "scripts/research/bd_avoid1_stamper.py",
+        "grade_field": "long_state_clean8_21",  # non-null = graded at 21d horizon
+        "grade_ts_field": "stamped_at",
+        "tune_step": False,
+        "storage_note": (
+            "absent-by-design until first ops-lane stamp run; "
+            "Mac-local only (requires massive_stock_day + replay_boarded)"
+        ),
     },
 ]
 

@@ -858,6 +858,8 @@ html[data-lang="zh"] .lang-toggle .zh-opt { color: #fff; }
 .sig-gate.sig-pending { --c: var(--warn); }
 .sig-gate.sig-t2 { --c: var(--ok); opacity:.82; }
 .sig-gate.sig-early { --c: var(--muted); }
+/* S1 HTF-sponsorship badge (display-only, rank-neutral, 2026-07-06) */
+.sig-gate.sig-htf-s1 { --c: #7c6ece; font-size:10px; font-weight:800; letter-spacing:.3px; }
 .sig-gate .sig-w { font-size:9.5px; font-weight:700; letter-spacing:.2px; opacity:.7;
   padding-left:3px; border-left:1px solid color-mix(in srgb, var(--c, var(--muted)) 30%, transparent); }
 /* provisional-basis marker (W6 #22): a T3 fresh fire is graded on an incomplete resample

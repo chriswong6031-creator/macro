@@ -12,7 +12,6 @@
     "ca_pipelines",
     "ca_rails_ind",
     "ca_reits",
-    "ca_silver_royalty",
     "ca_tech",
     "ca_utilities"
   ],
@@ -20,7 +19,7 @@
     "ca_banks",
     "ca_base_metals",
     "ca_rails_ind",
-    "ca_silver_royalty"
+    "ca_pipelines"
   ],
   "leader": "ca_banks",
   "names": {

@@ -144,7 +144,36 @@
       "agreement_ok": true,
       "recovery_ok": true
     },
-    "direction_reliable_tape": true,
-    "note": "ThetaData tape-sourced calibration (trade+NBBO at execution). Per \u00a77.1 of LIVE_ORDER_FLOW_BRAINSTORM_BY_FABLE.md, direction_reliable in the root gate is flipped only by Fable adjudication after both acceptance bars are met. n_trades=16,366, n_contracts=15. Agreement: 0.8848 (bar 0.75), recovery: 0.8 (bar 0.75)."
+    "direction_reliable_tape": false,
+    "note": "Tape-sourced (trade+NBBO) calibration. Root direction_reliable stays false for bar sources PERMANENTLY \u2014 this sub-key is source-specific and does not grant bar signing. production_ready=True requires manual/Fable adjudication to flip any downstream consumption gate.",
+    "sessions_n": 3,
+    "sessions_measurable": 3,
+    "sessions_passed": 0,
+    "conditions_covered": {
+      "high_vix": true,
+      "calm": true,
+      "multi_root": true,
+      "multi_expiry": true,
+      "multi_moneyness": false
+    },
+    "all_roots_covered": [
+      "NVDA",
+      "QQQ",
+      "SPY"
+    ],
+    "last_session": "2025-01-14",
+    "last_session_window": "2025-01-14T14:30\u20132025-01-14T14:50",
+    "production_ready": false,
+    "suspend_reason": "3 session(s) failed agreement bar (agreement_ok=False or recovery_ok=False). Manual review required before resuming. Failed dates: ['2025-04-07', '2024-12-16', '2025-01-14']",
+    "production_ready_criteria": {
+      "sessions_ok_needed": 5,
+      "high_vix_needed": true,
+      "calm_needed": true,
+      "multi_root_needed": true,
+      "zero_fails_needed": true
+    },
+    "bar_agreement": 0.75,
+    "bar_recovery": 0.75,
+    "updated": "2026-07-06T14:10:15.896693+00:00"
   }
 }

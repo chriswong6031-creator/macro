@@ -523,11 +523,14 @@ class TestSeedRegistryValid:
         )
 
     def test_data_gated_species_have_come_back_on(self):
-        """S8, S10, S11, S12 must have gating.come_back_on set."""
+        """Pending data-gated species (S8, S10, S11, S12) must have gating.come_back_on
+        set — unless they have reached a terminal status (falsified/retired), which has
+        no come-back (S11 was falsified at W5 phase-0, 2026-07-06)."""
         registry = load(REGISTRY_PATH)
         gated = {"S8", "S10", "S11", "S12"}
+        terminal = {"falsified", "retired"}
         for e in registry.get("species", []):
-            if e["species_id"] in gated:
+            if e["species_id"] in gated and e.get("validation_status") not in terminal:
                 come_back = e.get("gating", {}).get("come_back_on")
                 assert come_back is not None, (
                     f"Species {e['species_id']} is data-gated but has no gating.come_back_on"

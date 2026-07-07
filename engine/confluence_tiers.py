@@ -50,7 +50,14 @@ MIN_HISTORY = 200
 WEIGHTS = {"T1": 0.9, "T2": 1.0, "T3": 0.6, "T4": 0.4}
 _BLANK = {"tier": None, "weight": 0.0, "sub": None, "eligible": False,
           "bars_to_cross": None, "asof": None, "not_topped": True, "ticks": None,
-          "provisional": False}
+          "provisional": False, "htf": {"s1": False, "s2": False}}
+
+# HTF super-tier constants (S1/S2 display-only, rank-neutral, 2026-07-06)
+# Frozen per research/signal_engine/HTF_SUPER_TIERS_ADJUDICATION_AND_PREREG.md Part 2.
+HTF_FW = 2           # freshness window: MACD cross within this many native TF bars (FW=2 ratified)
+HTF_CONF_W = 8       # StochRSI cross window (same as CONF_W — use the module constant)
+HTF_BTC = 1.0        # bars-to-cross threshold for S2 2W MACD pending leg
+_HTF_BLANK = {"s1": False, "s2": False}
 
 
 def _veto_confirm() -> int:
@@ -65,6 +72,20 @@ def _veto_confirm() -> int:
         return max(1, int(os.environ.get("VETO_HYSTERESIS_CONFIRM", "1")))
     except (TypeError, ValueError):
         return 1
+
+
+def _t3_persist() -> int:
+    """Persistence window for T3 firing (env ``CONFLUENCE_T3_PERSIST``). Unset/2 = the T3 raw
+    condition must hold on N=2 consecutive evaluable sessions before T3 fires (the repaint-
+    hardening default). N=1 restores the legacy single-session behaviour. Measured at N=2 on a
+    2026-07-06 backtest (110 held-out US + CN names): repaint US 15.5%->9.4% / CN 16%->0%,
+    mean 21d excess +0.16%->+0.41%, median lead 11.0->10.5 sessions, event count -35%.
+    This is a DE-ESCALATION (strictly fewer fires). Calibration/provisional_replay repaint
+    figures (23.8% US / 15.1% CN) and the T3 tooltip copy predate this change."""
+    try:
+        return max(1, int(os.environ.get("CONFLUENCE_T3_PERSIST", "2")))
+    except (TypeError, ValueError):
+        return 2
 
 
 def _ema(s, span):
@@ -148,6 +169,9 @@ def cascade(daily_close: pd.Series, *, take_active: bool = False,
             return v
         di = c.index
         last = len(di) - 1
+        # HTF super-tier (S1/S2): display-only, rank-neutral, computed once per call.
+        # Kept inside the try so any HTF failure degrades to {"s1":False,"s2":False} via _BLANK.
+        htf = _compute_htf(daily_close)
 
         # 2D RSI-MACD: confirmed cross (T2 leg) + imminent-cross projection (T3/T4 leg)
         sm, smk = _tf_bars(c, 2)
@@ -223,7 +247,8 @@ def cascade(daily_close: pd.Series, *, take_active: bool = False,
         idx3 = np.where(mb3_d.fillna(False).to_numpy())[0]
         cross3_date = di[int(idx3[-1])] if len(idx3) else None
         t1_ticks = _ticks_since(sk3, take_date if take_date is not None else cross3_date)
-        blank = dict(_BLANK, asof=str(di[last].date()), not_topped=not_topped, ticks=t1_ticks)
+        blank = dict(_BLANK, asof=str(di[last].date()), not_topped=not_topped, ticks=t1_ticks,
+                     htf=htf)
         if not not_topped:
             return blank                                # topped/rolled-over: never a fresh buy
 
@@ -238,7 +263,21 @@ def cascade(daily_close: pd.Series, *, take_active: bool = False,
         t2_ticks = _ticks_since(smk, di[int(idx2[-1])]) if len(idx2) else None
         t2_active = bool(t2_ticks is not None and t2_ticks <= FRESH_TICKS and long_bias)
         # T3 = 2D MACD projected <=1-2d AND 3D stoch already crossed (ABOUT TO cross — anticipation)
-        t3_active = bool((imm2_d & recent3_d & confirm3 & rsi_ok).iloc[last])
+        # Persistence hardening (CONFLUENCE_T3_PERSIST, default 2): T3 only fires when the 2D
+        # imminence condition (imm2) holds for at least N consecutive 2D-bucket evaluations (the
+        # repainting component). The stable legs (recent3/confirm3/rsi_ok) are checked on the
+        # current daily bar only. N=1 restores legacy single-bucket firing. Cuts repaint
+        # US 15.5%->9.4% / CN 16%->0% at the cost of ~0.5 sessions median lead (DE-ESCALATION).
+        _t3_n = _t3_persist()
+        if _t3_n <= 1:
+            t3_active = bool((imm2_d & recent3_d & confirm3 & rsi_ok).iloc[last])
+        else:
+            # imm2 is a 2D-frequency series; check the last N buckets are ALL True, then verify
+            # the stable daily-level legs hold on today's bar. Rolling min over the 2D-TF imm2
+            # and map to the last daily bar via imm2_d (ffill from 2D known-dates).
+            imm2_persist = imm2.rolling(_t3_n, min_periods=_t3_n).min().fillna(False)
+            imm2_persist_d = td(imm2_persist.astype(float), smk).fillna(0).astype(bool)
+            t3_active = bool((imm2_persist_d & recent3_d & confirm3 & rsi_ok).iloc[last])
         # T4 = 2D MACD projected AND 2D stoch crossed AND above the 200MA (earliest about-to-cross)
         confirm2 = (wbull_d | fromos2_d)
         t4_active = bool((imm2_d & recent2_d & above200 & confirm2 & rsi_ok).iloc[last])
@@ -266,6 +305,7 @@ def cascade(daily_close: pd.Series, *, take_active: bool = False,
             # completes — above the ~15% flip criterion. T1/T2 measured fine (5.3%/8.8%), so
             # only T3 carries the flag (calibration/provisional_replay.json repaint.by_tier).
             "provisional": tier == "T3",
+            "htf": htf,   # S1/S2 display-only badges (rank-neutral)
         }
     except Exception:
         return dict(_BLANK)
@@ -395,7 +435,17 @@ def tier_stream(daily_close: pd.Series, *, fresh_ticks: int | None = None) -> pd
 
         t1_fresh = (last_cross3 >= 0) & (t1_ticks <= ft)                    # raw-cross T1 fallback
         t2_active = (last_t2 >= 0) & (t2_ticks <= ft) & long_bias_np
-        t3_active = imm2_np & recent3_np & confirm3_np & rsi_ok_np
+        # T3 persistence hardening (CONFLUENCE_T3_PERSIST, default 2): apply rolling all-True
+        # over N consecutive 2D-bucket evaluations of imm2 (the repainting component) before
+        # mapping to daily — matching cascade()'s 2D-TF rolling-min approach. N=1 = legacy.
+        _t3_n = _t3_persist()
+        if _t3_n <= 1:
+            imm2_persist_d = imm2_d.fillna(False)
+        else:
+            imm2_persist_tf = imm2.rolling(_t3_n, min_periods=_t3_n).min().fillna(False)
+            imm2_persist_d = td(imm2_persist_tf.astype(float), smk).fillna(0).astype(bool)
+        imm2_persist_np = imm2_persist_d.to_numpy().astype(bool)
+        t3_active = imm2_persist_np & recent3_np & confirm3_np & rsi_ok_np
         t4_active = imm2_np & recent2_np & above200_np & confirm2_np & rsi_ok_np
 
         tier = np.array([None] * n, dtype=object)
@@ -421,8 +471,15 @@ def tier_stream(daily_close: pd.Series, *, fresh_ticks: int | None = None) -> pd
             else:
                 continue
             elig[i] = True
+        # HTF super-tier streams (S1/S2): display-only, rank-neutral boolean columns.
+        # Computed on the completed-bucket basis (same convention as the T1-T4 stream).
+        htf_s1, htf_s2 = _compute_htf_stream(daily_close)
+        # Align to di (the dropna'd close index) — reindex fills missing dates with False.
+        htf_s1 = htf_s1.reindex(di, fill_value=False).fillna(False).astype(bool)
+        htf_s2 = htf_s2.reindex(di, fill_value=False).fillna(False).astype(bool)
         return pd.DataFrame({"tier": tier, "weight": weight, "ticks": ticks,
-                             "not_topped": not_topped, "eligible": elig, "sub": sub}, index=di)
+                             "not_topped": not_topped, "eligible": elig, "sub": sub,
+                             "s1": htf_s1.to_numpy(), "s2": htf_s2.to_numpy()}, index=di)
     except Exception:
         return pd.DataFrame()
 
@@ -432,3 +489,168 @@ def _last_true_pos(mask: np.ndarray) -> np.ndarray:
     n = len(mask)
     idx = np.where(mask, np.arange(n), -1)
     return np.maximum.accumulate(idx)
+
+
+# ---------------------------------------------------------------------------
+# HTF super-tier helpers (S1/S2 — display-only, rank-neutral, 2026-07-06)
+# Pre-registration: research/signal_engine/HTF_SUPER_TIERS_ADJUDICATION_AND_PREREG.md Part 2.
+# Reference implementation: scripts/_bt_htf_super_tiers.py (validated; logic must match exactly).
+# ---------------------------------------------------------------------------
+
+def _completed_resample(daily: pd.Series, rule: str):
+    """Return completed bars only — the in-progress tail bucket is dropped.
+    Pattern: entry_primitives._completed_resample (RUL-31 PIT gate).
+    Returns (tf_close, known_dt) where known_dt is a pd.Series of Timestamps
+    indexed by the TF bar labels (same index as tf_close).
+    """
+    last_obs = daily.index.max()
+    raw = daily.resample(rule).last().dropna()
+    raw = raw[raw.index <= last_obs]
+    known = (
+        daily.resample(rule)
+        .apply(lambda x: x.dropna().index.max())
+        .reindex(raw.index)
+        .dropna()
+    )
+    raw = raw.reindex(known.index)
+    known_dt = pd.Series(pd.to_datetime(known.values), index=known.index)
+    return raw, known_dt
+
+
+def _htf_confluence_active(c: pd.Series, di: pd.DatetimeIndex, rule: str) -> pd.Series:
+    """Per-TF confluence-active state (daily boolean) for W-FRI or 2W-FRI resamples.
+
+    confluence-active on TF = MACD-RSI crossed up within HTF_FW native bars
+                               AND StochRSI K >= D (crossed up within HTF_CONF_W native bars).
+    Not-topped veto is applied for the 3D leg via _htf_confluence_active_3d; here it is
+    NOT applied so callers can compose the veto themselves (S1 uses 3D veto only).
+
+    Returns a daily boolean Series (ffill from completed known-dates).
+    """
+    td = lambda s, kn, how="ffill": _to_daily(s, kn, di, how)  # noqa: E731
+    if rule == "3D":
+        # 3D uses _tf_bars (session buckets, known-date mapped) — same as production tier_stream
+        ss, sk = _tf_bars(c, 3)
+    else:
+        ss, sk = _completed_resample(c, rule)
+
+    k, d = _stoch_rsi_kd(ss)
+    sb = _xup(k, d)
+    recent = _since(sb) <= HTF_CONF_W
+    m, s = _rsi_macd(ss)
+    mb = _xup(m, s)
+    mb_since = _since(mb)
+
+    # not-topped on this TF (stoch ob/bear + macd bear) — used for compositing
+    stoch_ob = (k >= OB) | (d >= OB)
+    stoch_bear = k < d
+    macd_bear = m < s
+    not_topped_tf = ~(stoch_ob | stoch_bear | macd_bear)
+
+    mb_since_d = td(mb_since.fillna(999), sk).fillna(999)
+    k_d, d_d = td(k, sk), td(d, sk)
+    nt_d = td(not_topped_tf.fillna(False), sk).fillna(False)
+
+    stoch_ok_d = (k_d >= d_d).fillna(False)
+    macd_fresh_d = mb_since_d <= HTF_FW
+
+    active_d = (macd_fresh_d & stoch_ok_d & nt_d).fillna(False)
+    return active_d
+
+
+def _htf_2w_pending(c: pd.Series, di: pd.DatetimeIndex) -> pd.Series:
+    """2W MACD pending leg for S2: hist < 0, slope > 0, 0 < btc <= HTF_BTC.
+    Uses 2W-FRI completed resample; returns daily boolean Series.
+    """
+    td = lambda s, kn, how="ffill": _to_daily(s, kn, di, how)  # noqa: E731
+    s2w, kn2w = _completed_resample(c, "2W-FRI")
+    m2w, s2w_s = _rsi_macd(s2w)
+    h2w = m2w - s2w_s
+    slope2w = h2w - h2w.shift(1)
+    btc2w = (-h2w / slope2w).where((slope2w > 0) & (h2w < 0), other=np.nan)
+
+    h2w_d = td(h2w, kn2w)
+    slope2w_d = td(slope2w, kn2w)
+    btc2w_d = td(btc2w, kn2w)
+
+    pending_d = (
+        (h2w_d < 0) & (slope2w_d > 0) & (btc2w_d > 0) & (btc2w_d <= HTF_BTC)
+    ).fillna(False)
+    return pending_d
+
+
+def _htf_not_topped_3d(c: pd.Series, di: pd.DatetimeIndex) -> pd.Series:
+    """Production 3D not-topped veto (daily boolean) — same as cascade()."""
+    ss3, sk3 = _tf_bars(c, 3)
+    k3, d3 = _stoch_rsi_kd(ss3)
+    m3, s3 = _rsi_macd(ss3)
+    td = lambda s, kn: _to_daily(s, kn, di)  # noqa: E731
+    k3_d, d3_d = td(k3, sk3), td(d3, sk3)
+    m3_d, s3_d = td(m3, sk3), td(s3, sk3)
+    stoch_ob = (k3_d >= OB) | (d3_d >= OB)
+    stoch_bear = k3_d < d3_d
+    macd_bear = m3_d < s3_d
+    return ~(stoch_ob | stoch_bear | macd_bear).fillna(True)
+
+
+def _compute_htf(c: pd.Series) -> dict:
+    """Compute S1 and S2 HTF super-tier booleans for the LAST bar.
+
+    S1 = 2W confluence-active AND 3D confluence-active AND not_topped (3D).
+    S2 = 3D confluence-active AND 1W confluence-active AND 2W MACD pending AND not_topped (3D).
+
+    Both booleans are for the most-recent daily bar (today's state).
+    Returns {"s1": bool, "s2": bool}. Never raises.
+    """
+    try:
+        c = c.dropna()
+        if not isinstance(c.index, pd.DatetimeIndex):
+            c = c.copy()
+            c.index = pd.to_datetime(c.index)
+        if len(c) < MIN_HISTORY:
+            return dict(_HTF_BLANK)
+        di = c.index
+
+        act_3d = _htf_confluence_active(c, di, "3D")
+        act_1w = _htf_confluence_active(c, di, "W-FRI")
+        act_2w = _htf_confluence_active(c, di, "2W-FRI")
+        pend_2w = _htf_2w_pending(c, di)
+        not_topped = _htf_not_topped_3d(c, di)
+
+        last = len(di) - 1
+        s1 = bool(act_2w.iloc[last] and act_3d.iloc[last] and not_topped.iloc[last])
+        s2 = bool(act_3d.iloc[last] and act_1w.iloc[last] and pend_2w.iloc[last] and not_topped.iloc[last])
+        return {"s1": s1, "s2": s2}
+    except Exception:
+        return dict(_HTF_BLANK)
+
+
+def _compute_htf_stream(c: pd.Series) -> tuple[pd.Series, pd.Series]:
+    """Vectorized per-day S1/S2 boolean streams (completed-bucket basis).
+
+    Returns (s1_series, s2_series) as daily boolean pd.Series aligned to c.index.
+    Uses the same completed-resample convention as the rest of tier_stream().
+    Never raises — returns two all-False series on error.
+    """
+    try:
+        c = c.dropna()
+        if not isinstance(c.index, pd.DatetimeIndex):
+            c = c.copy()
+            c.index = pd.to_datetime(c.index)
+        if len(c) < MIN_HISTORY:
+            false_s = pd.Series(False, index=c.index)
+            return false_s, false_s
+        di = c.index
+
+        act_3d = _htf_confluence_active(c, di, "3D")
+        act_1w = _htf_confluence_active(c, di, "W-FRI")
+        act_2w = _htf_confluence_active(c, di, "2W-FRI")
+        pend_2w = _htf_2w_pending(c, di)
+        not_topped = _htf_not_topped_3d(c, di)
+
+        s1 = (act_2w & act_3d & not_topped).fillna(False).reindex(di, fill_value=False)
+        s2 = (act_3d & act_1w & pend_2w & not_topped).fillna(False).reindex(di, fill_value=False)
+        return s1, s2
+    except Exception:
+        false_s = pd.Series(False, index=c.index if hasattr(c, "index") else pd.DatetimeIndex([]))
+        return false_s, false_s

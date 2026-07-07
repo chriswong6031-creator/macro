@@ -130,3 +130,58 @@ def test_thetadata_eod_full_tree_syncable():
     """A materialised thetadata_eod store (many parquets) must be accepted."""
     from scripts.publish_r2 import _DATA_DIR_MIN_FILES
     assert _data_dir_syncable("thetadata_eod", _DATA_DIR_MIN_FILES + 1)[0]
+
+
+# ── attention append-only registration (SLF-048 deep-history store) ──────────
+
+def test_attention_in_data_dirs_not_default():
+    """attention is a data-dir store (data/attention/*.parquet, gitignored; R2 holds
+    2015-07→ deep history) — never a nightly DEFAULT: only the collect job's gated
+    lane (or a host-side ATTENTION_STORE publish) may touch it."""
+    from scripts.publish_r2 import DEFAULT_DIRS, _DATA_DIRS
+    assert "attention" in _DATA_DIRS
+    assert "attention" not in DEFAULT_DIRS
+
+
+def test_attention_rebuilt_window_passes_min_files():
+    # A restore-failed collector run recreates all ~966 filenames as real-but-short
+    # files, so the min-files partial-checkout guard can NOT protect this dir —
+    # that's the job of the append-only guard + the total-bytes floor.
+    assert _data_dir_syncable("attention", 966)[0]
+
+
+def test_append_only_guard_blocks_shorter_local():
+    # shallow ~120d rebuild (≈5 KB/file) vs R2 deep-history object (≈50 KB)
+    from scripts.publish_r2 import _append_only_guarded
+    assert _append_only_guarded("attention", 5_000, 50_000)
+
+
+def test_append_only_guard_allows_growth_equal_and_new():
+    from scripts.publish_r2 import _append_only_guarded
+    assert not _append_only_guarded("attention", 50_100, 50_000)  # host append: bigger
+    assert not _append_only_guarded("attention", 50_000, 50_000)  # byte-equal rewrite
+    assert not _append_only_guarded("attention", 5_000, None)     # no remote object yet
+
+
+def test_append_only_guard_scoped_to_registered_dirs():
+    # ohlc JSON legitimately shrinks between renders — must never be guarded
+    from scripts.publish_r2 import _append_only_guarded
+    assert not _append_only_guarded("ohlc", 5_000, 50_000)
+
+
+def test_attention_shallow_rebuild_refused():
+    """The per-dir bytes floor: a from-scratch collector rebuild has the deep store's
+    file COUNT but ~1/6 of its bytes. It also covers the empty-remote case the
+    per-file append-only guard can't compare against (fresh/wiped bucket)."""
+    ok, why = _data_dir_syncable("attention", 966, total_bytes=7_400_000)
+    assert not ok and "shallow rebuild" in why
+
+
+def test_attention_deep_store_syncable():
+    assert _data_dir_syncable("attention", 966, total_bytes=31_500_000)[0]
+
+
+def test_bytes_floor_scoped_to_registered_dirs():
+    """Dirs without a _DATA_DIR_MIN_BYTES entry are unaffected by tiny trees."""
+    assert _data_dir_syncable("massive_stock_day", 14906, total_bytes=1)[0]
+    assert _data_dir_syncable("stockdata", 2, total_bytes=1)[0]

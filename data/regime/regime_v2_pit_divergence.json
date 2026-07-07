@@ -1,0 +1,285 @@
+{
+  "schema_version": 1,
+  "headline": {
+    "pct_dates_quad_divergent": 4.69,
+    "pct_vintage_covered_dates_divergent": 8.78,
+    "worst_era": "2020_plus",
+    "worst_era_pct": 17.15
+  },
+  "overall": {
+    "n_comparable_dates": 14396,
+    "pct_quad_divergent": 4.69,
+    "pct_raw_quad_divergent": 3.2,
+    "vintage_covered_dates": {
+      "from": "1997-01-10",
+      "n_dates": 7690,
+      "pct_quad_divergent": 8.78
+    }
+  },
+  "by_era": {
+    "pre_2008": {
+      "n_dates": 9568,
+      "pct_quad_divergent": 2.19
+    },
+    "2008_09": {
+      "n_dates": 523,
+      "pct_quad_divergent": 0.0
+    },
+    "2010_19": {
+      "n_dates": 2608,
+      "pct_quad_divergent": 6.67
+    },
+    "2020_plus": {
+      "n_dates": 1697,
+      "pct_quad_divergent": 17.15
+    }
+  },
+  "per_axis": {
+    "growth": {
+      "n_dates": 14449,
+      "pct_sign_divergent": 2.53,
+      "mean_abs_score_delta": 0.0335,
+      "max_abs_score_delta": 0.4
+    },
+    "inflation": {
+      "n_dates": 14396,
+      "pct_sign_divergent": 0.76,
+      "mean_abs_score_delta": 0.0138,
+      "max_abs_score_delta": 0.16
+    }
+  },
+  "divergence_run_lengths": {
+    "n_runs": 59,
+    "mean_bd": 11.4,
+    "median_bd": 7.0,
+    "p90_bd": 27.0,
+    "max_bd": 82
+  },
+  "transition_shifts": {
+    "2008_09": {
+      "n_revised_transitions": 19,
+      "n_pit_transitions_in_window": 19,
+      "matched": [
+        {
+          "revised_date": "2008-02-06",
+          "from": "Q4",
+          "to": "Q1",
+          "pit_date": "2008-02-06",
+          "shift_days": 0
+        },
+        {
+          "revised_date": "2008-02-18",
+          "from": "Q1",
+          "to": "Q2",
+          "pit_date": "2008-02-18",
+          "shift_days": 0
+        },
+        {
+          "revised_date": "2008-03-14",
+          "from": "Q2",
+          "to": "Q3",
+          "pit_date": "2008-03-14",
+          "shift_days": 0
+        },
+        {
+          "revised_date": "2008-03-27",
+          "from": "Q3",
+          "to": "Q4",
+          "pit_date": "2008-03-27",
+          "shift_days": 0
+        },
+        {
+          "revised_date": "2008-04-08",
+          "from": "Q4",
+          "to": "Q1",
+          "pit_date": "2008-04-08",
+          "shift_days": 0
+        },
+        {
+          "revised_date": "2008-05-26",
+          "from": "Q1",
+          "to": "Q3",
+          "pit_date": "2008-05-26",
+          "shift_days": 0
+        },
+        {
+          "revised_date": "2008-07-23",
+          "from": "Q3",
+          "to": "Q4",
+          "pit_date": "2008-07-23",
+          "shift_days": 0
+        },
+        {
+          "revised_date": "2008-08-06",
+          "from": "Q4",
+          "to": "Q1",
+          "pit_date": "2008-08-06",
+          "shift_days": 0
+        },
+        {
+          "revised_date": "2008-09-15",
+          "from": "Q1",
+          "to": "Q4",
+          "pit_date": "2008-09-15",
+          "shift_days": 0
+        },
+        {
+          "revised_date": "2009-01-23",
+          "from": "Q4",
+          "to": "Q3",
+          "pit_date": "2009-01-23",
+          "shift_days": 0
+        },
+        {
+          "revised_date": "2009-03-02",
+          "from": "Q3",
+          "to": "Q4",
+          "pit_date": "2009-03-02",
+          "shift_days": 0
+        },
+        {
+          "revised_date": "2009-03-23",
+          "from": "Q4",
+          "to": "Q2",
+          "pit_date": "2009-03-23",
+          "shift_days": 0
+        },
+        {
+          "revised_date": "2009-05-27",
+          "from": "Q2",
+          "to": "Q3",
+          "pit_date": "2009-05-27",
+          "shift_days": 0
+        },
+        {
+          "revised_date": "2009-07-06",
+          "from": "Q3",
+          "to": "Q4",
+          "pit_date": "2009-07-06",
+          "shift_days": 0
+        },
+        {
+          "revised_date": "2009-08-07",
+          "from": "Q4",
+          "to": "Q2",
+          "pit_date": "2009-08-07",
+          "shift_days": 0
+        },
+        {
+          "revised_date": "2009-09-02",
+          "from": "Q2",
+          "to": "Q4",
+          "pit_date": "2009-09-02",
+          "shift_days": 0
+        },
+        {
+          "revised_date": "2009-10-15",
+          "from": "Q4",
+          "to": "Q3",
+          "pit_date": "2009-10-15",
+          "shift_days": 0
+        },
+        {
+          "revised_date": "2009-12-07",
+          "from": "Q3",
+          "to": "Q4",
+          "pit_date": "2009-12-07",
+          "shift_days": 0
+        },
+        {
+          "revised_date": "2009-12-29",
+          "from": "Q4",
+          "to": "Q2",
+          "pit_date": "2009-12-29",
+          "shift_days": 0
+        }
+      ]
+    },
+    "2020": {
+      "n_revised_transitions": 5,
+      "n_pit_transitions_in_window": 6,
+      "matched": [
+        {
+          "revised_date": "2020-01-21",
+          "from": "Q2",
+          "to": "Q4",
+          "pit_date": "2020-01-21",
+          "shift_days": 0
+        },
+        {
+          "revised_date": "2020-04-14",
+          "from": "Q4",
+          "to": "Q3",
+          "pit_date": null,
+          "shift_days": null
+        },
+        {
+          "revised_date": "2020-05-21",
+          "from": "Q3",
+          "to": "Q2",
+          "pit_date": "2020-05-21",
+          "shift_days": 0
+        },
+        {
+          "revised_date": "2020-09-16",
+          "from": "Q2",
+          "to": "Q1",
+          "pit_date": "2020-09-16",
+          "shift_days": 0
+        },
+        {
+          "revised_date": "2020-12-01",
+          "from": "Q1",
+          "to": "Q2",
+          "pit_date": "2020-10-27",
+          "shift_days": -35
+        }
+      ]
+    }
+  },
+  "control": {
+    "n_common_dates": 14396,
+    "fresh_revised_vs_committed_quad_match_pct": 100.0,
+    "note": "control: the fresh latest-revised rebuild vs the committed regime_history.parquet; <100% reflects store data drift since the last engine run, NOT the PIT change"
+  },
+  "vintage_store_asof": "2026-06-25",
+  "frame_asof": "2026-07-02",
+  "pit_class_counts": {
+    "revised_latest": 6789,
+    "mixed": 6072,
+    "pit_vintage": 1618
+  },
+  "fallback_coverage": {
+    "payrolls": {
+      "sid": "PAYEMS",
+      "vintage_from": "1997-01-10",
+      "n_dates_active": 14416,
+      "n_dates_fallback": 6726
+    },
+    "indpro": {
+      "sid": "INDPRO",
+      "vintage_from": "1997-01-17",
+      "n_dates_active": 14227,
+      "n_dates_fallback": 6542
+    },
+    "wei": {
+      "sid": "WEI",
+      "vintage_from": "2020-04-21",
+      "n_dates_active": 4754,
+      "n_dates_fallback": 3141
+    },
+    "gdpnow": {
+      "sid": "GDPNOW",
+      "vintage_from": "2016-08-04",
+      "n_dates_active": 3846,
+      "n_dates_fallback": 1266
+    },
+    "sticky_cpi": {
+      "sid": "STICKCPIM157SFRBATL",
+      "vintage_from": "2014-03-18",
+      "n_dates_active": 14396,
+      "n_dates_fallback": 11188
+    }
+  },
+  "columns_dropped_vs_regime_history": []
+}

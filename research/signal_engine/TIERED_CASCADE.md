@@ -270,3 +270,152 @@ T1 fires, the entry window may have passed. T2 is now the board's primary “act
 - `engine/confluence_tiers.py` — WEIGHTS dict (T1 1.00→0.90, T2 0.80→1.00)
 - `engine/signal_gate.py` — _CASCADE_RANK (T2=0, T1=1) + tier_rank docstring/T1-pending=2
 - `templates/basket_detail.html.j2` — client-side TIER_W dict synced
+
+---
+
+## Amendment 2026-07-06 — T3 2-session persistence hardening (CONFLUENCE_T3_PERSIST)
+
+**Date:** 2026-07-06  **PR:** feat/t3-persistence-hardening  **Status:** shipped
+
+### Change
+
+T3 now requires the `imm2` (2D MACD imminence) condition to hold for **N=2 consecutive
+completed 2D-bucket evaluations** before the tier fires. N is controlled by the env var
+`CONFLUENCE_T3_PERSIST` (default 2). N=1 restores the legacy single-session behavior.
+
+The implementation checks `imm2.rolling(N).min()` at the 2D-TF level before mapping to the
+daily grid — applied in both `cascade()` (stateless live path) and `tier_stream()`
+(vectorized completed-bucket path). The stable legs (`recent3`, `confirm3`, `rsi_ok`) are
+checked at the current daily bar only (they do not contribute to the repaint problem).
+
+### Measured trade-off (backtest /tmp/tier_deepdive/v3/, 2026-07-06)
+
+| Metric | T3 (N=1, legacy) | T3p (N=2, new default) |
+|---|---|---|
+| US repaint rate | 15.5% | 9.4% |
+| CN repaint rate | 16.0% | 0.0% |
+| US 21d excess mean | +0.16% | +0.41% |
+| US median lead vs T1 | 11.0 sessions | 10.5 sessions |
+| US event count | 3,208 | 2,041 (~36% fewer) |
+| CN event count | 750 | 485 (~35% fewer) |
+
+### What this is NOT
+
+**De-escalation only.** T4 is untouched. The priority cascade order is unchanged (T3 still
+ranks above T4). BUYABLE_TIERS unchanged. T3 still carries `provisional=True` (it remains
+projection-based).
+
+### Stale documentation (recalibration clock, separate task)
+
+The following numbers predate this change and need re-measurement before being updated:
+- `calibration/provisional_replay.json` repaint figures: 23.8% US / 15.1% CN (T3 section)
+- The T3 tooltip repaint copy rendered on display boards
+
+These are LEFT UNCHANGED here — recalibration is a separate clock.
+
+---
+
+## §9 — S1 HTF-sponsorship badge (2026-07-06)
+
+**Status:** display-only, rank-neutral. S1 fires as a supplementary badge alongside the existing
+T1–T4 tier display. It does NOT change tier values, WEIGHTS, `_CASCADE_RANK`, `BUYABLE_TIERS`,
+board ORDER, or any existing pinned tests.
+
+### Definition
+
+**S1** = 2-week confluence-active **AND** 3-day confluence-active **AND** not-topped (3D basis).
+
+Confluence-active on each timeframe = MACD-RSI (RSI-based MACD, same as production) crossed up
+within **FW=2 native bars** (ratified) AND StochRSI K ≥ D (crossed up within 8 native bars and
+still constructive). Not-topped veto uses the 3D basis: stoch_ob OR stoch_bear OR macd_bear on the
+3D timeframe blocks the badge regardless of higher-TF state.
+
+**Resampling:** 2W and 1W legs use completed-bucket resample (`W-FRI` / `2W-FRI` offset rules
+dropping the in-progress tail bar per RUL-31 PIT gate). 3D leg uses `_tf_bars(c, 3)` — session
+buckets with known-date mapping, identical to production `tier_stream()`.
+
+**S2** = shadow field only — never displayed. S2 = 3D active AND 1W active AND 2W MACD pending
+(hist < 0, slope > 0, 0 < bars-to-cross ≤ 1.0 native 2W bar) AND not-topped (3D basis). Parked
+pending ≥ n=50 accruing fires; revisit ≥ 2026-10.
+
+### Measured performance (same-ruler, HTF_SUPER_TIERS_PHASE0.md)
+
+| Metric | S1 | T1 (master, reference) |
+|--------|----|-----------------------|
+| Close-only stop-out (−5%) | **27.2%** | 30.4% |
+| Intraday-low stop-out (−5%) | **35.0%** | 37.5% |
+| 21d excess return (vs SPY) | **+0.90%** CI [+0.16, +1.67] | — |
+| Fill quality vs T1 | −0.9pp (fills slightly worse) | reference |
+| n events (US, FW=2) | 427 | — |
+
+S1 ⊂ T1-active: S1 fires predominantly during active T1 windows (overlap ~68%). Its role is
+**durability and long-hold context** — confirming higher-timeframe sponsorship for names already
+in a T1/T2 confirmed state. It is NOT a standalone entry signal and is NOT fed to the conviction
+allocator or auto-trade logic.
+
+### Implementation
+
+- `engine/confluence_tiers.py`: `HTF_FW=2`, `HTF_CONF_W=8`, `HTF_BTC=1.0`, `_HTF_BLANK`,
+  `_completed_resample()`, `_htf_confluence_active()`, `_htf_2w_pending()`,
+  `_htf_not_topped_3d()`, `_compute_htf()` (cascade last-bar), `_compute_htf_stream()`
+  (tier_stream vectorized path). `cascade()` returns `{"htf": {"s1": bool, "s2": bool}}` in the
+  result dict. `tier_stream()` returns additional `s1`, `s2` boolean columns.
+- `engine/signal_gate.py`: `"htf_s1"`, `"htf_s2"` added to `_VERDICT_KEYS` and propagated
+  through `gate()` from the cascade `htf` dict. `buy_signal(None)` returns these as `False`.
+- `templates/_sig_badge.html.j2`: S1 chip rendered BEFORE the eligible block when `sig.htf_s1`
+  is true. CSS class `sig-htf-s1` (purple `#7c6ece`) added to `templates/theme.css`.
+- `scripts/build_stock_library.py`: `confluence` block (htf_s1/htf_s2) and `sniper` block
+  (w2_washout, w2_stoch_d, days_since_63d_low, coiled) added to the per-ticker stockdata JSON.
+  `sniper.coiled` is injected in a second pass after `coiled_by` is computed cross-sectionally.
+- `tests/test_htf_super_tiers.py`: 32 tests covering blank/short-history paths, truncation
+  invariance, S2 pending leg, signal_gate passthrough, tier_stream columns, structural keys.
+
+### Clocks
+
+| Clock | Date | Action |
+|-------|------|--------|
+| S2 shadow revisit | ≥ 2026-10 | Check if S2 has accrued ≥ 50 fires; authorize display if n is sufficient |
+| S1 recalibration | ≥ 2027-01 | Re-measure stop-out and excess-return with live accrual |
+
+### Reference
+
+Full adjudication and pre-registration: `research/signal_engine/HTF_SUPER_TIERS_ADJUDICATION_AND_PREREG.md`
+Phase-0 study results: `research/signal_engine/HTF_SUPER_TIERS_PHASE0.md`
+
+---
+
+## §10 — G-T2X: the pre-registered T2×confluence-overlay gauntlet (EXECUTED 2026-07-06)
+
+**What it is.** G-T2X (locked pre-registration: `TIER_ENTRY_DEEPDIVE.md` §6) is the gauntlet that
+decides whether cross-confluence overlays convert T2's entry-price advantage (§8) into a real,
+eligibility-grade edge: T2 tier-onset events × five overlays — 2W washout (`w_setup`), fire-day
+turnover-z > 0, sector-cycle phase ∈ {bottoming, recovering}, NW dispersion-regime lens,
+not-extended (`fill_premium_20d` < 8%) — one pass each, no threshold tuning. Promotion needs ALL
+of: 21d benchmark-excess CI-low > 0, stop-out_21 ≤ 50% US / 52% CN, clean8_21 ≥ 33%,
+retention ≥ 25% with ≥ 300 fires per market, split-half directional consistency.
+
+**Standing rule (division of labor).** Display and ranking changes (the §8 operator re-weight,
+the §9 S1 badge) do NOT require G-T2X — they change what the operator sees, not what the gate
+admits. Any **eligibility** change (BUYABLE_TIERS, gate semantics, an overlay-filtered T2 class)
+DOES require a G-T2X-grade pass first.
+
+**Status: executed 2026-07-06** — first run, verbatim per the lock (`scripts/_bt_g_t2x.py`; full
+results + caveats: `G_T2X_RESULTS.md`). US 7,981 / CN 1,945 T2 onsets (v3 base reproduced to
+machine precision). Outcome:
+
+| Overlay | Verdict | Note |
+|---|---|---|
+| OV1 · 2W washout | **KILL** | filtered excess ≤ base both markets; stop-out worse (US 57.2%) |
+| OV2 · turnover-z > 0 | **KILL** | anti-selects in US; CN kill is a 7bp coin-flip vs base |
+| OV3 · sector-cycle phase | **NOT-RUN** | no point-in-time per-stock sector-phase history exists; no proxy improvised |
+| OV4 · NW dispersion lens | **NOT-RUN** | NW L3 series has no PIT history (NW live only since 2026-07); re-arms as sensors accrue |
+| OV5 · fill-premium < 8% | **KILL** | stop-out improves (47.4%) but excess does not beat base |
+
+**Honest reading of the kills.** They are triggered by the pre-registered *relative* rule
+(filtered excess ≤ unfiltered base) on a base whose own CI straddles zero — rule-triggered, not
+statistically decisive. OV1/OV5 US were positive in 2015-2021 and negative in 2021-2026
+(regime-change pattern, not proven dead-forever): **re-probe eligible ≥ 2027-01** with fresh
+forward data. OV3/OV4 are the open half of the registration and re-arm once PIT history accrues.
+
+**Net.** As of 2026-07-06 no overlay earns a T2 eligibility change; T2's demonstrated edge remains
+entry/fill quality (§8), and the tested overlays remain display-context only.

@@ -32,6 +32,7 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 
+from engine.signal_frontier_docket import page_frontier_rows, phase0_summary
 from lib import config
 
 # Tier metadata: order on the page + bilingual labels + a one-line honest blurb.
@@ -261,6 +262,26 @@ REGISTRY: list[dict] = [
          hit=0.748, n=5700, wired="macro.html dial (NFCI rule) + signal_lab odds",
          extra=[("Q1/Q2 loose vs tight hit", "74.8% vs 38.3%"), ("HAC t (loosening)", "+7.0"),
                 ("caveat", "tight fires ~5% days, 0 post-2012")]),
+
+    _row("Repo/SOFR tail stress (p99 dispersion)",
+         "回购/SOFR尾部压力（p99分散度）", "US macro", "confirmer",
+         why="p99-dispersion composite of SOFR/repo spreads predicts S&P ≥5% drawdown onset "
+             "with AUC 0.61 at 21d horizon — above the 0.50 coin-flip baseline and above a "
+             "VIX-matching baseline. LOO-stable across sub-periods (leave-one-out subsample "
+             "consistency). Study produces a drawdown predictor, not a cross-sectional "
+             "return predictor: ic/t_hac/q_fdr are not defined for this study design and are "
+             "left None. No score impact; recommended for risk-radar de-escalation panel "
+             "candidacy pending program review.",
+         why_zh="SOFR/回购利差 p99 分散度综合指标在 21 日期限内预测标普≥5% 回撤，AUC=0.61，"
+                "高于掷硬币基线（0.50）和 VIX 匹配基线，且剔除子区间后保持稳健（LOO一致）。"
+                "本研究为回撤预测设计，非横截面收益研究，故 ic/t_hac/q_fdr 均留 None。"
+                "无评分影响；待项目审议后纳入风险雷达降级面板候选。",
+         source="reports/slf056-funding-tail-phase0.md", horizon="21d drawdown onset",
+         wired="none — risk-radar de-escalation panel candidacy pending program review",
+         dsr_family="slf056_funding_tail",
+         extra=[("AUC (21d drawdown ≥5%)", "0.61"), ("LOO-stable", "yes"),
+                ("vs VIX baseline", "beats"), ("n trials in ledger", "14"),
+                ("score impact", "none — display-only")]),
 
     # ---- DISPLAY-ONLY -------------------------------------------------------
     _row("Impulse Tracker (early-ignition screen)",
@@ -1098,6 +1119,59 @@ REGISTRY: list[dict] = [
          wired="display-only on main until its own can_force gate matures (NOT duplicated by intl_bridge)",
          extra=[("composite lift", "2.07× (p=0.01), CSI300-confirmed"),
                 ("governance", "risk_radar_intl_audit.can_force (≥30 graded, ≥8 alerts, lift ≥1.25×)")]),
+    # ---- Day-3 SLF confirmer entries (2026-07-07) ----
+    _row("Month-end bond-index extension day  (TLT / IEF last-day lift)",
+         "月末债券指数展期日（TLT / IEF 尾日上涨）", "Rates", "confirmer",
+         why="Bond index managers buy longer-duration bonds on the last trading day of each month "
+             "to match their benchmark's new duration. TLT last-day mean return +0.183%/day "
+             "(t_HAC=3.63, BH q=0.0009, n=287 months 2002-2026); IEF t=5.02, q~0. "
+             "Known documented effect confirmed live. G2 split-half same-sign: both halves positive "
+             "(H1=+0.258%, H2=+0.108%). G3 last-day > avg-other-days baseline: confirmed. "
+             "Timing overlay candidacy: TLT/IEF entry-timing conditioner on last trading day of month. "
+             "V1 (auction-cycle) and V2 (quarter-end pension rebalance) both NULL — only V3 survives.",
+         why_zh="债券指数经理在每月最后一个交易日买入久期更长的债券以匹配基准新久期。"
+                "TLT 月末日平均收益 +0.183%/天（t_HAC=3.63，BH q=0.0009，n=287个月，2002-2026）；"
+                "IEF t=5.02，q≈0。已知文献效应，已在样本外确认。"
+                "V1（拍卖周期）和V2（季末养老金再平衡）均为NULL——仅V3通过。",
+         source="reports/d2-rates-calendar-flows-phase0.md; TLT/IEF Yahoo daily 2002-2026",
+         horizon="1d (last trading day of month)",
+         ic=None, t_hac=3.63, n=287,
+         fdr_survivor=True,
+         wired="none — timing overlay candidacy pending program review",
+         dsr_family="d2_rates_calendar_flows",
+         dsr_n_trials=11,
+         dsr_basis="frozen-quote",
+         extra=[("TLT last-day mean", "+0.183%/day, t_HAC=3.63, BH q=0.0009"),
+                ("IEF last-day mean", "+0.110%/day, t_HAC=5.02, BH q~0"),
+                ("V1 auction-cycle verdict", "NULL"),
+                ("V2 QE-rebalance verdict", "NULL")]),
+    _row("SEC comment-letter release drift  (substantive-review, 21d)",
+         "SEC意见函披露漂移（实质性审查，21日）", "US S&P (broad)", "confirmer",
+         why="When the SEC releases the full UPLOAD/CORRESP correspondence for a substantive "
+             "review (≥3 SEC letters) on EDGAR, stocks drift lower over the next 21 trading days "
+             "(massive store, post-2021): mean beta-adj AR -3.34%, t=-3.26, BH q=0.0044, n=1084. "
+             "MANDATORY CAVEAT: effect concentrated 2023-2025 — first split-half not significant "
+             "(first-half t=-1.396, p=0.163); second half highly significant (t=-5.008, p~0). "
+             "Accrual required before any promotion. Light-review cells and yahoo-store cells "
+             "are NULL. 7 of 8 pre-registered cells fail; single passing cell rides on post-2021 "
+             "massive store only (survivorship bias present in both stores).",
+         why_zh="当SEC在EDGAR上发布实质性审查（≥3封SEC来函）的完整往来信件时，"
+                "股票在随后21个交易日内下跌（massive数据集，2021年后）：beta调整异常收益均值-3.34%，"
+                "t=-3.26，BH q=0.0044，n=1084。"
+                "强制警示：效应集中于2023-2025年——前半样本不显著（t=-1.396，p=0.163）；"
+                "后半样本高度显著（t=-5.008，p~0）。需积累更多数据方可晋升。",
+         source="reports/d2-comment-letter-release-phase0.md; EDGAR 2005-2026, massive+yahoo stores",
+         horizon="21d",
+         ic=None, t_hac=-3.26, n=1084,
+         fdr_survivor=True,
+         wired="none",
+         dsr_family="d2_comment_letter_release",
+         dsr_n_trials=8,
+         dsr_basis="frozen-quote",
+         extra=[("passing cell", "substantive/h21/massive: t=-3.26, q=0.0044, n=1084"),
+                ("temporal caveat", "first-half t=-1.396 (p=0.163) not significant; concentrated 2023-2025"),
+                ("survivorship", "both stores: only tickers alive at collection date"),
+                ("7 of 8 cells", "NULL; promotion requires further accrual")]),
 ]
 
 
@@ -1122,6 +1196,174 @@ _FACTOR_LABEL = {
     "composite_orth": ("Composite (orthogonalised)", "综合（正交化）"),
     "sue": ("SUE (earnings surprise)", "盈余惊喜"),
 }
+
+
+def _frontier_row(name, name_zh, market, readiness, readiness_zh, thesis, thesis_zh,
+                  build, build_zh, gate, gate_zh, source, priority="P1",
+                  fable_verdict="PENDING") -> dict:
+    return {
+        "name": name, "name_zh": name_zh, "market": market,
+        "readiness": readiness, "readiness_zh": readiness_zh,
+        "thesis": thesis, "thesis_zh": thesis_zh,
+        "build": build, "build_zh": build_zh,
+        "gate": gate, "gate_zh": gate_zh,
+        "source": source, "priority": priority,
+        "fable_verdict": fable_verdict,
+    }
+
+
+# Research backlog surfaced on the page. These are NOT validation verdicts and
+# never influence a score until a pre-registered Phase-0 report earns a registry row.
+FRONTIER: list[dict] = [
+    _frontier_row(
+        "SEC fails-to-deliver pressure",
+        "SEC 交割失败压力",
+        "US equities", "free data / new collector", "免费数据 / 新采集",
+        "FTD balances are a short-sale constraint/informed-short proxy; literature finds "
+        "higher FTD stocks later earn negative abnormal returns.",
+        "交割失败余额可作为卖空约束/知情做空代理；文献显示高 FTD 股票随后异常收益偏负。",
+        "Build SEC semi-monthly FTD panel, map CUSIP->ticker, normalize by float and dollar "
+        "volume, then test high-FTD and rising-FTD buckets.",
+        "建立 SEC 半月 FTD 面板，CUSIP 映射到 ticker，按流通股与成交额标准化，再测高 FTD 与上升 FTD 分组。",
+        "21/63d rank-IC, FDR across FTD variants, incremental IC vs size, momentum, short volume.",
+        "21/63日 rank-IC，FTD 变体间 FDR，相对规模、动量、短量的增量 IC。",
+        "SEC FTD data + Stratmann/Welborn 2016",
+        priority="P0", fable_verdict="BUILD",
+    ),
+    _frontier_row(
+        "Borrow-fee / loan-fee anomaly",
+        "借券费 / 融券费异常",
+        "US equities", "paid data", "付费数据",
+        "Loan fees are one of the strongest documented short-side predictors; free short "
+        "interest is a weak substitute.",
+        "借券费是文献中最强的做空侧预测变量之一；免费做空余额只是弱替代。",
+        "If a borrow-fee vendor is approved, archive daily fee/utilization PIT and test high-fee "
+        "underperformance plus long-only exclusion value.",
+        "若接入借券费供应商，按日归档费用/利用率时点数据，测试高费股票跑输及多头排除价值。",
+        "Must beat FINRA short volume, FTD, size, low-price and microcap controls after costs.",
+        "必须在成本后优于 FINRA 短量、FTD、规模、低价股和微盘控制项。",
+        "Engelberg et al. Management Science 2024",
+        priority="P0-data",
+    ),
+    _frontier_row(
+        "Option informed-flow lens",
+        "期权知情流镜头",
+        "US options", "partial plumbing", "部分管线已在",
+        "Buyer-to-open option put/call flow and IV spreads have evidence of informed trading; "
+        "public EOD put/call is much weaker.",
+        "买方开仓期权看跌/看涨流与隐波价差有知情交易证据；公开 EOD put/call 弱很多。",
+        "Extend options_flow / ivspread history: separate stock-vs-index hedging, buyer-open "
+        "proxies, scheduled-news windows, and O/S volume.",
+        "扩展 options_flow / ivspread 历史：区分股票与指数对冲、买方开仓代理、预定新闻窗口与期权/股票量。",
+        "Event-window and 1/5/21d forward tests; require improvement over GEX/200dma baselines.",
+        "事件窗口及1/5/21日前瞻测试；必须优于 GEX/200日均线基线。",
+        "Pan/Poteshman 2006; CBOE/POLYGON options feeds",
+        priority="P1",
+    ),
+    _frontier_row(
+        "EDGAR attention shock",
+        "EDGAR 关注度冲击",
+        "US filings", "free but heavy", "免费但重型",
+        "SEC log files expose filing-demand attention; spikes around stale vs fresh filings may "
+        "separate retail attention from informed acquisition.",
+        "SEC 日志显示投资者对公告的阅读需求；围绕新旧文件的流量冲击可区分散户关注与信息获取。",
+        "Prototype on 2020-2025 logs only: de-robot, aggregate human views by filing/ticker, "
+        "join to 8-K/10-Q/10-K events.",
+        "先用2020-2025日志试做：去机器人，按公告/ticker 聚合人类阅读量，并接入8-K/10-Q/10-K事件。",
+        "Filing-day and post-filing drift; Brier calibration if used as event probability.",
+        "公告日与公告后漂移；若作为事件概率则做 Brier 校准。",
+        "SEC EDGAR log files; Drake/Roulstone/Thornock literature",
+        priority="P1",
+    ),
+    _frontier_row(
+        "Overnight/intraday tug-of-war",
+        "隔夜/日内拉锯",
+        "US equities", "OHLC on disk", "OHLC 已在盘",
+        "Some anomalies accrue overnight while intraday returns mean-revert; this may improve "
+        "entry timing without creating a new signal.",
+        "部分异常收益在隔夜兑现而日内均值回归；它可能改善入场时点，而不是创造新信号。",
+        "Decompose existing momentum/reversal/insider/payout candidates into close-open and "
+        "open-close legs using adjusted OHLC.",
+        "用调整后 OHLC 将现有动量/反转/内部人/payout 候选拆成 close-open 与 open-close 两腿。",
+        "Net-of-open-spread viability, split-half, and no alpha claim unless tradable at open.",
+        "扣除开盘价差后验证、两半稳定；除非开盘可交易，否则不声称 alpha。",
+        "Lou/Polk/Skouras 2019",
+        priority="P1", fable_verdict="KILLED",
+    ),
+    _frontier_row(
+        "Treasury auction absorption",
+        "美债拍卖吸收力",
+        "US rates", "collector exists", "采集器已在",
+        "Auction demand metrics can identify weak/strong duration absorption, but the data are "
+        "mostly ex-post and must be framed as event context.",
+        "拍卖需求指标可识别久期吸收强弱，但数据多为事后，需作为事件背景处理。",
+        "Use treasury_auctions.parquet: bid-to-cover, indirect share, dealer takedown, issue size.",
+        "使用 treasury_auctions.parquet：bid-to-cover、间接投标、一级交易商承接、发行量。",
+        "Event study on TLT/IEF/curve moves; forbid scoring unless pre-auction predictors beat term premium.",
+        "对 TLT/IEF/曲线做事件研究；除非拍卖前预测项优于期限溢价，否则禁止计分。",
+        "TreasuryDirect auction query + 2025 auction-demand research",
+        priority="P1", fable_verdict="BUILD",
+    ),
+    _frontier_row(
+        "COT exhaustion matrix",
+        "COT 仓位耗尽矩阵",
+        "Cross-asset futures", "collector exists", "采集器已在",
+        "COT already helps capitulation context; a broader matrix may detect crowded futures "
+        "positions across rates, FX and commodities.",
+        "COT 已用于投降背景；更广的矩阵可能识别利率、外汇与商品期货拥挤仓位。",
+        "Compute 3y rolling spec-position percentiles, first differences, and cross-asset crowding "
+        "clusters from existing COT store.",
+        "从现有 COT 库计算3年滚动投机仓位分位、变化量与跨资产拥挤簇。",
+        "Must beat dumb price trend / VIX gates; likely confirmer or graveyard, not scored.",
+        "必须优于朴素价格趋势 / VIX 门；大概率是确认项或墓地，而非计分。",
+        "CFTC COT public reporting environment",
+        priority="P2", fable_verdict="KILLED",
+    ),
+    _frontier_row(
+        "Crypto funding + on-chain stress",
+        "加密资金费率 + 链上压力",
+        "Crypto", "partial plumbing", "部分管线已在",
+        "Funding, MVRV, realized cap and holder-profit metrics may add cycle/tail context to the "
+        "BTC Vector, but single-asset crypto samples are tiny.",
+        "资金费率、MVRV、实现市值与持有人盈利指标或可补充 BTC 向量的周期/尾部背景，但单资产样本极小。",
+        "Separate raw engine from human gates; test funding-rate extremes and Coin Metrics "
+        "valuation deltas as drawdown/entry confirmers.",
+        "分离纯引擎与人工门；把资金费率极值和 Coin Metrics 估值变化作为回撤/入场确认项测试。",
+        "Leave-one-cycle-out, brake-matched 200dma baseline, DSR with explicit trial ledger.",
+        "逐周期剔除、匹配200日均线刹车基线、带明确试验账本的 DSR。",
+        "Coin Metrics Community API; crypto funding literature",
+        priority="P2",
+    ),
+    _frontier_row(
+        "Supply-chain pressure impulse",
+        "供应链压力脉冲",
+        "Macro / sectors", "free data", "免费数据",
+        "GSCPI-style shocks may matter more for inflation-sensitive sectors than for broad SPY timing.",
+        "GSCPI 类冲击对通胀敏感行业可能比对广义 SPY 择时更有用。",
+        "Collect FRBNY GSCPI; test level/change/surprise vs breakevens, CPI/PPI revisions, "
+        "transports, semis, retailers and commodity sectors.",
+        "采集纽约联储 GSCPI；测试水平/变化/意外值相对盈亏平衡通胀、CPI/PPI修正、运输、半导体、零售与商品板块。",
+        "Sector-relative IC with macro controls; no broad-risk claim unless it beats NFCI/OFR.",
+        "行业相对 IC 加宏观控制；除非优于 NFCI/OFR，否则不声明广义风险信号。",
+        "NY Fed GSCPI",
+        priority="P2",
+    ),
+    _frontier_row(
+        "Lottery/MAX anti-chase flag",
+        "彩票/MAX 反追高标记",
+        "US equities", "price-only", "仅价格",
+        "Extreme one-day winners often underperform later, but replication literature warns the "
+        "edge can vanish outside microcaps.",
+        "极端单日赢家随后常跑输，但复验文献警告该边际在排除微盘后可能消失。",
+        "Compute prior-month MAX and idio-skew, then test as a subtract-only extension/fragility "
+        "overlay inside liquid universes.",
+        "计算上月 MAX 与特质偏度，在高流动性股票内作为减分式拉伸/脆弱叠加层测试。",
+        "NYSE breakpoints, value weights, cost and liquidity gates; expect graveyard unless incremental.",
+        "NYSE 断点、市值加权、成本与流动性门；除非有增量，否则预期进墓地。",
+        "Bali/Cakici/Whitelaw 2011; Hou/Xue/Zhang replication",
+        priority="P2", fable_verdict="KILLED",
+    ),
+]
 
 
 def _resolve_dsr_provenance(registry: list[dict]) -> None:
@@ -1231,4 +1473,135 @@ def build_scorecard() -> dict:
         "factor_rows": factor_rows,
         "factor_survivors": survivors,
         "factor_meta": factor_meta,
+        "frontier_rows": FRONTIER + page_frontier_rows(),
+        "frontier_phase0_summary": phase0_summary(),
+        "waves_adjudication": _waves_adjudication_block(),
+    }
+
+
+def _waves_adjudication_block() -> dict:
+    """Compact waves 2-4 adjudication summary — display-only metadata.
+    Moratorium in force until wave-1 + spike verdicts booked and queue < 3.
+    Sources: research/SIGNAL_LAB_FRONTIER_WAVE{2,3,4}_FABLE_ADJUDICATION_2026-07-06.md
+    """
+    return {
+        "date": "2026-07-06",
+        "waves": [
+            {
+                "wave": 2,
+                "screened": 200,
+                "advanced": 58,
+                "result_label": "2 spikes + 5 queued",
+                "result_label_zh": "2个尖峰候选 + 5个排队",
+                "detail": (
+                    "200 screened / 58 template advances collapsed to 7 actionable: "
+                    "2 spikes (KEV vendor-shock NULL #1656; NHTSA safety-recall in flight), "
+                    "5 queued for post-moratorium adjudication."
+                ),
+                "detail_zh": (
+                    "200个筛选 / 58个模板候选合并为7个可操作：2个尖峰候选（KEV供应商冲击 NULL #1656；"
+                    "NHTSA安全召回进行中），5个排队等待暂停期后裁决。"
+                ),
+                "doc": "research/SIGNAL_LAB_FRONTIER_WAVE2_FABLE_ADJUDICATION_2026-07-06.md",
+            },
+            {
+                "wave": 3,
+                "screened": 500,
+                "advanced": 48,
+                "result_label": "1 family queued (FFIEC bank stress)",
+                "result_label_zh": "1个家族排队（FFIEC银行压力）",
+                "detail": (
+                    "500 screened / 48 template advances collapsed to 4 feeds / "
+                    "1 family queued: FFIEC bank-stress call-report ratios."
+                ),
+                "detail_zh": (
+                    "500个筛选 / 48个模板候选合并为4个数据流 / 1个家族排队：FFIEC银行压力报告比率。"
+                ),
+                "doc": "research/SIGNAL_LAB_FRONTIER_WAVE3_FABLE_ADJUDICATION_2026-07-06.md",
+            },
+            {
+                "wave": 4,
+                "screened": 500,
+                "advanced": 8,
+                "result_label": "1 family queued + 1 park + 2 kills",
+                "result_label_zh": "1个家族排队 + 1个暂存 + 2个否决",
+                "detail": (
+                    "500 screened / 8 advanced / 1 consolidated family queued "
+                    "(multi-state gaming tape) + 1 park + 2 kills."
+                ),
+                "detail_zh": (
+                    "500个筛选 / 8个候选 / 1个合并家族排队（多州博彩数据）+ 1个暂存 + 2个否决。"
+                ),
+                "doc": "research/SIGNAL_LAB_FRONTIER_WAVE4_FABLE_ADJUDICATION_2026-07-06.md",
+            },
+        ],
+        "moratorium": True,
+        "moratorium_note": (
+            "Generation moratorium in force: no new wave authorized until wave-1 + "
+            "spike verdicts are booked and the queued family count drops below 3."
+        ),
+        "moratorium_note_zh": (
+            "生成暂停令生效：在第一波 + 尖峰候选裁决登记、排队家族数降至3以下之前，"
+            "不授权新一波筛选。"
+        ),
+        "day3_results": {
+            "date": "2026-07-07",
+            "families_tested": 13,
+            "pass_count": 2,
+            "accrue_count": 1,
+            "directional_fail_count": 1,
+            "park_count": 1,
+            "null_count": 8,
+            "data_blocked_count": 1,
+            "label": "Build-day (Day 3) results",
+            "label_zh": "构建日（第3天）结果",
+            "verdicts": [
+                {"family": "d2_rates_calendar_flows",      "result": "PASS",              "result_zh": "通过",
+                 "note": "V3 month-end extension day (TLT t=3.63, IEF t=5.02); V1+V2 NULL"},
+                {"family": "d2_comment_letter_release",    "result": "PASS (accrual caveat)", "result_zh": "通过（需积累）",
+                 "note": "substantive/h21/massive t=-3.26 q=0.0044; effect concentrated 2023-2025; accrual required"},
+                {"family": "w3_bank_callreport_stress",    "result": "ACCRUE",            "result_zh": "积累中",
+                 "note": "n=1 crisis episode; verdict clock ~2027; FFIEC Y-9C machinery live"},
+                {"family": "d2_cn_holder_sale_calendar",   "result": "DIRECTIONAL FAIL",  "result_zh": "方向性否决",
+                 "note": "anti-hypothesis: POSITIVE excess (C1 t=2.41, C5 t=4.11, largest tercile most positive)"},
+                {"family": "w5b_warn_paid_feed",           "result": "PARK",              "result_zh": "暂存",
+                 "note": "paid-feed only ($49/mo); collectors built; on hold pending feed decision"},
+                {"family": "w5_trade_size_capitulation",   "result": "NULL",              "result_zh": "无效",
+                 "note": "trade-size collapse at 52w lows; store 2021+ only; all 6 cells NULL"},
+                {"family": "d2_rates_calendar_flows_v1v2", "result": "NULL",              "result_zh": "无效",
+                 "note": "V1 auction-cycle + V2 QE-rebalance: all cells NULL"},
+                {"family": "w2104_cmdi_conditioning",      "result": "NULL",              "result_zh": "无效",
+                 "note": "CMDI AUC <0.60; LOCO crisis-dependent; context display only"},
+                {"family": "w2153_itc337",                 "result": "NULL",              "result_zh": "无效",
+                 "note": "ITC 337 institution/adverse events: E2 underpowered (n=1); E1 NULL"},
+                {"family": "w2051_housing_hf",             "result": "NULL",              "result_zh": "无效",
+                 "note": "housing HF signals; direction correct but <4 gates simultaneously"},
+                {"family": "d2_russell_deletion_overshoot","result": "NULL (n=3 descriptive)", "result_zh": "无效（n=3描述性）",
+                 "note": "n=3 recon years; 2/3 positive at T+21d; accrual-only"},
+                {"family": "d2_cn_export_share_nowcast",   "result": "NULL",              "result_zh": "无效",
+                 "note": "CN export share nowcast t=1.47 p=0.14 n=39; PIT-clean conditions"},
+                {"family": "w4_multistate_gaming_tape",    "result": "DATA-BLOCKED",      "result_zh": "数据受阻",
+                 "note": "collectors live (NY/NJ/PA/NV); network-blocked in build env; re-run with real data"},
+            ],
+            "data_products_live": [
+                "data/tsa — TSA daily passenger throughput (git-tracked, 2019->)",
+                "data/china_block_tape — A-share block-trade archiver (SLF-A10, 39 files)",
+                "data/options_tape_signed — options tape pilot 20 tickers (SLF-A11)",
+                "data/cn_holder_sales — 减持 calendar 38,988 windows (SLF-B3)",
+                "data/nyfed_cmdi — CMDI weekly/monthly (SLF-A4)",
+                "data/redfin_hf + data/zori — housing HF panels (SLF-A7)",
+                "data/gaming_tape — gaming nowcast panel synthetic (SLF-B1, real data pending)",
+                "data/cn_export_products — Comtrade 5 HS tapes (SLF-B4)",
+                "data/comment_letter_events — EDGAR CORRESP/UPLOAD 26,141 events (SLF-A3)",
+                "FFIEC Y-9C panel: NOT PRESENT (slf-b2 removed; regenerate via scripts/collect_ffiec_y9c.py --resume)",
+            ],
+            "queue_status": (
+                "Authorized queue is now EMPTY except accrual clocks and parked items — "
+                "moratorium condition met. Next docket generation requires operator ratification."
+            ),
+            "queue_status_zh": (
+                "授权队列已清空（积累时钟和暂存项除外）——暂停令条件已满足。"
+                "下一批次生成需要运营方批准。"
+            ),
+        },
     }

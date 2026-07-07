@@ -560,6 +560,173 @@ def test_pooled_trial_count_accumulates(tmp_path: Path) -> None:
 # ---------------------------------------------------------------------------
 # 12. No adhoc flag on runner (structural check)
 # ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# B1 wait_grid_v1 tests (new)
+# ---------------------------------------------------------------------------
+
+def test_wait_grid_v1_10_cells() -> None:
+    """_build_wait_grid_v1_specs produces exactly 10 cells per §6.1 frozen spec."""
+    from scripts.run_rule_replay import _build_wait_grid_v1_specs
+
+    cohort = cohort_filter(
+        ("eq", "verdict_type", "fire"),
+        ("eq", "verdict_grade", True),
+    )
+    specs = _build_wait_grid_v1_specs(cohort)
+    assert len(specs) == 10, f"Expected 10 cells, got {len(specs)}"
+
+    # All cells must be HOLD type
+    non_hold = [s for s in specs if s.exit.kind.name != "HOLD"]
+    assert len(non_hold) == 0, f"All wait_grid_v1 cells must be HOLD, got {non_hold}"
+
+    # Delay values must match the frozen grid {1, 2, 3, 5, 10}
+    delay_values = sorted({s.delay_n for s in specs})
+    assert delay_values == [1, 2, 3, 5, 10], f"delay_n values must be {{1,2,3,5,10}}, got {delay_values}"
+
+    # Hold values must match the frozen grid {21, 63}
+    hold_values = sorted({s.exit.hold_bars for s in specs})
+    assert hold_values == [21, 63], f"hold_bars values must be {{21, 63}}, got {hold_values}"
+
+    # Exactly 5 × 2 = 10 combinations
+    combos = {(s.delay_n, s.exit.hold_bars) for s in specs}
+    expected_combos = {(d, h) for d in [1, 2, 3, 5, 10] for h in [21, 63]}
+    assert combos == expected_combos, f"Combinations mismatch: {combos}"
+
+    # All cells use full weight
+    for s in specs:
+        assert s.weight == "full", f"Cell {s.spec_id} has weight={s.weight!r}, expected 'full'"
+
+    # All cells reference horizon 126
+    for s in specs:
+        assert s.horizons_ref == (126,), f"Cell {s.spec_id} horizons_ref={s.horizons_ref}, expected (126,)"
+
+
+def test_wait_grid_v1_delay1_is_production_fill() -> None:
+    """delay_n=1 in wait_grid_v1 equals the production fill used in EXIT-GRID-1 hold(21) and hold(63)."""
+    from scripts.run_rule_replay import _build_wait_grid_v1_specs, _build_exit_grid_v1_specs
+
+    cohort = cohort_filter(
+        ("eq", "verdict_type", "fire"),
+        ("eq", "verdict_grade", True),
+    )
+    wait_specs = _build_wait_grid_v1_specs(cohort)
+    exit_specs = _build_exit_grid_v1_specs(cohort)
+
+    # delay_n=1, hold(21) in wait_grid must match exit_grid hold_21 hash
+    wait_d1_h21 = next(s for s in wait_specs if s.delay_n == 1 and s.exit.hold_bars == 21)
+    exit_h21 = next(s for s in exit_specs if s.exit.hold_bars == 21 and s.exit.kind.name == "HOLD")
+    assert wait_d1_h21.content_hash() == exit_h21.content_hash(), (
+        "wait_grid_v1/delay1_hold21 must share the same content hash as exit_grid_v1/hold_21 "
+        "(same parameters — spec_id is excluded from hash). "
+        f"wait_hash={wait_d1_h21.content_hash()[:16]}, exit_hash={exit_h21.content_hash()[:16]}"
+    )
+
+    # delay_n=1, hold(63) in wait_grid must match exit_grid hold_63 hash
+    wait_d1_h63 = next(s for s in wait_specs if s.delay_n == 1 and s.exit.hold_bars == 63)
+    exit_h63 = next(s for s in exit_specs if s.exit.hold_bars == 63 and s.exit.kind.name == "HOLD")
+    assert wait_d1_h63.content_hash() == exit_h63.content_hash(), (
+        "wait_grid_v1/delay1_hold63 must share the same content hash as exit_grid_v1/hold_63. "
+        f"wait_hash={wait_d1_h63.content_hash()[:16]}, exit_hash={exit_h63.content_hash()[:16]}"
+    )
+
+
+def test_wait_grid_v1_hash_determinism() -> None:
+    """wait_grid_v1 specs produce the same hashes on repeated construction."""
+    from scripts.run_rule_replay import _build_wait_grid_v1_specs
+
+    cohort = cohort_filter(
+        ("eq", "verdict_type", "fire"),
+        ("eq", "verdict_grade", True),
+    )
+    specs_a = _build_wait_grid_v1_specs(cohort)
+    specs_b = _build_wait_grid_v1_specs(cohort)
+
+    hashes_a = sorted(s.content_hash() for s in specs_a)
+    hashes_b = sorted(s.content_hash() for s in specs_b)
+    assert hashes_a == hashes_b, "Hash set must be identical across repeated calls"
+
+    # Each unique (delay_n, hold_bars) combination must produce a unique hash
+    all_hashes = [s.content_hash() for s in specs_a]
+    assert len(set(all_hashes)) == 10, (
+        f"All 10 cells must have distinct hashes; got {len(set(all_hashes))} unique. "
+        f"Duplicates indicate parameter collision."
+    )
+
+
+def test_wait_grid_v1_in_grid_builders() -> None:
+    """wait_grid_v1 key must be registered in _GRID_BUILDERS."""
+    from scripts.run_rule_replay import _GRID_BUILDERS
+    assert "wait_grid_v1" in _GRID_BUILDERS, (
+        f"'wait_grid_v1' not in _GRID_BUILDERS. Found: {sorted(_GRID_BUILDERS.keys())}"
+    )
+
+
+def test_wait_grid_v1_run_lifecycle(tmp_path: Path) -> None:
+    """wait_grid_v1 grid passes governor verification and produces a 10-cell summary."""
+    from scripts.run_rule_replay import run_experiment, _build_wait_grid_v1_specs
+
+    registry_path = tmp_path / "registry.jsonl"
+    ledger_path = tmp_path / "ledger.jsonl"
+    results_dir = tmp_path / "results"
+    results_dir.mkdir()
+
+    # Synthetic fire tape
+    fires_df = _make_fires_df(n=8, start_date="2022-06-01")
+    boarded_path = tmp_path / "replay_boarded.parquet"
+    fires_df.to_parquet(boarded_path, index=False)
+
+    # Close data for each ticker
+    massive_dir = tmp_path / "massive_stock_day"
+    massive_dir.mkdir()
+    for i in range(8):
+        ticker = f"T{i:03d}"
+        c = _make_close(n=350, seed=i + 20)
+        pd.DataFrame({"close": c.values}, index=c.index).to_parquet(
+            massive_dir / f"{ticker}.parquet"
+        )
+
+    # Register the wait_grid_v1 experiment
+    cohort = _make_simple_cohort()
+    specs = _build_wait_grid_v1_specs(cohort)
+    assert len(specs) == 10
+
+    register_experiment(
+        exp_id="wait_grid_v1",
+        question="Test wait_grid lifecycle.",
+        spec_hashes=[s.content_hash() for s in specs],
+        declared_budget=len(specs),
+        verdict_criteria="descriptive-only",
+        registry_path=registry_path,
+        ledger_path=ledger_path,
+    )
+
+    summary = run_experiment(
+        "wait_grid_v1",
+        boarded_path=boarded_path,
+        massive_dir=massive_dir,
+        registry_path=registry_path,
+        results_dir=results_dir,
+    )
+
+    # Must produce exactly 10 cells
+    assert len(summary["cells"]) == 10, (
+        f"Expected 10 cells, got {len(summary['cells'])}: {list(summary['cells'].keys())}"
+    )
+    # Every cell must appear
+    for delay_n in [1, 2, 3, 5, 10]:
+        for hold_bars in [21, 63]:
+            key = f"wait_grid_v1/delay{delay_n}_hold{hold_bars}"
+            assert key in summary["cells"], f"Missing cell {key}"
+
+    # Cumulative pooled trial count must be 10 (only this experiment registered)
+    assert summary["cumulative_pooled_replay_trial_count"] == 10
+
+    # Lifecycle updated to reported
+    from engine.rule_experiments import load_experiment
+    entry = load_experiment("wait_grid_v1", registry_path)
+    assert entry["status"] == "reported"
+
+
 def test_no_adhoc_flag_exists() -> None:
     """run_rule_replay.py must not register --adhoc as an argparse argument (house-law RUL-P3)."""
     import scripts.run_rule_replay as rr_module
@@ -663,3 +830,164 @@ def test_trail_stop_held_to_reference_included_in_cell_stats() -> None:
     assert "held_to_reference_pct" in stats
     assert stats["held_to_reference_pct"] == pytest.approx(0.5, abs=0.01)  # 1/2 = 0.5
     assert stats["short_path_pct"] == pytest.approx(0.0)
+
+
+# ---------------------------------------------------------------------------
+# stop5_rate / dead_money_rate (BLOCKING fix: reviewer finding 1)
+# ---------------------------------------------------------------------------
+
+def test_cell_stats_stop5_and_dead_money() -> None:
+    """_cell_stats must return stop5_rate and dead_money_rate using L3_PREREG definitions.
+
+    Per L3_PREREG.md:
+      stop5_rate    : fraction of included fires where mae_to_exit <= -5%
+                      (intra-window drawdown reached ≥5% from entry at any point)
+      dead_money_rate: fraction where |exit_ret| < 2%
+                      (fire went nowhere — tape parked the name)
+
+    Synthetic fixture with 4 fires:
+      mae_to_exit = -0.10 → stop5 (drew down 10%)
+      mae_to_exit = -0.04 → NOT stop5 (peak drawdown only 4%)
+      mae_to_exit = -0.06 → stop5
+      mae_to_exit = 0.00  → NOT stop5
+
+      exit_ret = -0.09 → NOT dead_money (|ret|=9% >= 2%)
+      exit_ret =  0.01 → dead_money (|ret|=1% < 2%)
+      exit_ret = -0.01 → dead_money (|ret|=1% < 2%)
+      exit_ret =  0.05 → NOT dead_money (|ret|=5% >= 2%)
+
+    Expected:
+      stop5_rate    = 2/4 = 0.50  (fires 0 and 2 have mae <= -0.05)
+      dead_money_rate = 2/4 = 0.50  (fires 1 and 2 have |exit_ret| < 0.02)
+    """
+    from scripts.run_rule_replay import _cell_stats
+
+    perfire = pd.DataFrame({
+        "exit_ret":    [-0.09,  0.01, -0.01,  0.05],
+        "mae_to_exit": [-0.10, -0.04, -0.06,  0.00],
+        "censored":    [False, False, False, False],
+        "short_path":  [False, False, False, False],
+        "held_to_reference": [False, False, False, False],
+        "ticker":      ["A", "B", "C", "D"],
+        "fire_date":   pd.to_datetime(["2022-06-01", "2022-06-02", "2022-06-03", "2022-06-04"]),
+    })
+
+    stats = _cell_stats(perfire, pd.DataFrame())
+
+    assert "stop5_rate" in stats, "stop5_rate key must be present in _cell_stats output"
+    assert "dead_money_rate" in stats, "dead_money_rate key must be present in _cell_stats output"
+    assert stats["stop5_rate"] == pytest.approx(0.50, abs=0.001), (
+        f"stop5_rate: expected 0.50 (2 of 4 fires with mae_to_exit <= -5%), got {stats['stop5_rate']}. "
+        "stop5 is defined as mae_to_exit <= -0.05 per L3_PREREG."
+    )
+    assert stats["dead_money_rate"] == pytest.approx(0.50, abs=0.001), (
+        f"dead_money_rate: expected 0.50 (2 of 4 fires with |exit_ret| < 2%), got {stats['dead_money_rate']}. "
+        "dead_money is defined as abs(exit_ret) < 0.02 per L3_PREREG."
+    )
+
+
+def test_cell_stats_stop5_dead_money_zero_case() -> None:
+    """_cell_stats returns stop5_rate=0.0, dead_money_rate=0.0 when all returns are clear wins."""
+    from scripts.run_rule_replay import _cell_stats
+
+    perfire = pd.DataFrame({
+        "exit_ret":    [0.05, 0.10, 0.15],
+        "mae_to_exit": [-0.01, -0.02, -0.03],   # peak drawdown < 5%
+        "censored":    [False, False, False],
+        "short_path":  [False, False, False],
+        "held_to_reference": [False, False, False],
+        "ticker":      ["A", "B", "C"],
+        "fire_date":   pd.to_datetime(["2022-06-01", "2022-06-02", "2022-06-03"]),
+    })
+    stats = _cell_stats(perfire, pd.DataFrame())
+    assert stats["stop5_rate"] == pytest.approx(0.0, abs=0.001), (
+        "No fires drew down >= 5% — stop5_rate must be 0.0"
+    )
+    assert stats["dead_money_rate"] == pytest.approx(0.0, abs=0.001), (
+        "All exit_ret >= 5% — dead_money_rate must be 0.0"
+    )
+
+
+def test_cell_stats_empty_returns_none_for_stop5() -> None:
+    """_cell_stats returns None for stop5_rate and dead_money_rate on empty input."""
+    from scripts.run_rule_replay import _cell_stats
+
+    stats = _cell_stats(pd.DataFrame(), pd.DataFrame())
+    assert stats["stop5_rate"] is None
+    assert stats["dead_money_rate"] is None
+
+
+# ---------------------------------------------------------------------------
+# _spy_covariate_split (BLOCKING fix: reviewer finding 2)
+# ---------------------------------------------------------------------------
+
+def test_spy_covariate_split_produces_tercile_split() -> None:
+    """_spy_covariate_split returns per-tercile stop5/dead_money/wr when spy_tercile present.
+
+    Uses the L3_PREREG definitions:
+      stop5     : mae_to_exit <= -0.05
+      dead_money: |exit_ret| < 0.02
+
+    down-tercile fires: mae_to_exit = -0.10 (both stop5), exit_ret = -0.10 (both losers)
+    up-tercile fires:   mae_to_exit = -0.01 (neither stop5), exit_ret = +0.12 (both winners)
+    flat-tercile fires: one stop5 (mae=-0.07) / dead_money (exit=-0.01), one win (exit=+0.05)
+    """
+    from scripts.run_rule_replay import _spy_covariate_split
+
+    perfire = pd.DataFrame({
+        "exit_ret":    [-0.10, -0.10,  0.12,  0.12, -0.01,  0.05],
+        "mae_to_exit": [-0.10, -0.10, -0.01, -0.01, -0.07, -0.03],
+        "censored":    [False] * 6,
+        "short_path":  [False] * 6,
+        "held_to_reference": [False] * 6,
+        "spy_tercile": ["down", "down", "up", "up", "flat", "flat"],
+        "ticker":      ["A", "B", "C", "D", "E", "F"],
+        "fire_date":   pd.to_datetime([
+            "2022-06-01", "2022-06-02", "2022-06-03",
+            "2022-06-04", "2022-06-05", "2022-06-06",
+        ]),
+    })
+
+    result = _spy_covariate_split(perfire)
+
+    assert result is not None, "_spy_covariate_split must return a dict when spy_tercile present"
+    assert set(result.keys()) == {"down", "flat", "up"}, "Must produce exactly 3 tercile keys"
+
+    # down: both fires stop5 (mae_to_exit = -10% <= -5%)
+    assert result["down"]["n"] == 2
+    assert result["down"]["stop5"] == pytest.approx(1.0, abs=0.001), (
+        "All down-tercile fires have mae_to_exit=-10% — stop5 rate must be 1.0"
+    )
+    assert result["down"]["wr"] == pytest.approx(0.0, abs=0.001), (
+        "All down-tercile fires have negative exit_ret — wr must be 0.0"
+    )
+
+    # up: neither fire hits stop5 (mae_to_exit = -1% > -5%)
+    assert result["up"]["n"] == 2
+    assert result["up"]["stop5"] == pytest.approx(0.0, abs=0.001), (
+        "Up-tercile fires have mae_to_exit=-1% — no stop5"
+    )
+    assert result["up"]["wr"] == pytest.approx(1.0, abs=0.001)
+
+    # flat: fire E has mae=-7% (stop5) and exit=-1% (dead_money); fire F has mae=-3% (no stop5), exit=5% (win)
+    assert result["flat"]["n"] == 2
+    assert result["flat"]["stop5"] == pytest.approx(0.5, abs=0.001), (
+        "flat-tercile: 1 of 2 fires hit mae <= -5% — stop5 rate must be 0.5"
+    )
+    assert result["flat"]["dead_money"] == pytest.approx(0.5, abs=0.001), (
+        "flat-tercile: fire E has |exit_ret|=1% < 2% (dead_money); fire F has 5% (not dead_money)"
+    )
+    assert result["flat"]["wr"] == pytest.approx(0.5, abs=0.001)
+
+
+def test_spy_covariate_split_returns_none_when_column_absent() -> None:
+    """_spy_covariate_split returns None when spy_tercile not in perfire."""
+    from scripts.run_rule_replay import _spy_covariate_split
+
+    perfire = pd.DataFrame({
+        "exit_ret": [0.05, -0.05],
+        "censored": [False, False],
+        "short_path": [False, False],
+        "held_to_reference": [False, False],
+    })
+    assert _spy_covariate_split(perfire) is None

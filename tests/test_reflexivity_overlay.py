@@ -7,13 +7,18 @@ Invariants tested:
   - None-safety: names missing factor betas get membership-only similarity, never a crash
   - Missing-artifact degradation: builder degrades to empty overlay, never raises
   - Verdict thresholds: duplicate / partial / new boundaries
-  - Earnings leg: always None in v1 (R-D ruling)
+  - Earnings leg: wired in W-D (dict with has_data; annotation-only, no matrix/N_eff effect)
   - is_context_only: always True in artifact (R-F ruling)
   - schema: always "reflexivity_overlay.v1"
   - Basis flag printed for thin-beta names
   - n_eff_by_lane emitted per-lane (population-fix for invariant e)
   - _lane_tickers extracts correct per-lane set
   - empty overlay includes n_eff_by_lane with None values
+  W-D additions:
+  - same_thesis_groups: connected components at DUPLICATE_THRESH, size >= 3
+  - N_eff history: bounded array, dedup-by-as_of, degraded-run-preserves-history
+  - Earnings-week annotation from fixture parquet
+  - Banner renders thesis-group block only for groups >= 5
 """
 from __future__ import annotations
 
@@ -23,16 +28,23 @@ from pathlib import Path
 import numpy as np
 import pytest
 
+import io
+import tempfile
+
+import pandas as pd
+
 import engine.reflexivity as refmod
 from engine.reflexivity import (
     HIGH_TIER_FACTORS,
     R2_FLOOR,
     build_groups_index,
     compute,
+    earnings_week_annotation,
     factor_cosine,
     membership_jaccard,
     n_eff_participation_ratio,
     pairwise_similarity,
+    same_thesis_groups,
 )
 
 
@@ -323,13 +335,22 @@ class TestComputeInvariants:
         result = compute(["NVDA", "AMD", "JNJ"], sector, betas, mem, "2026-07-05")
         assert result["is_context_only"] is True
 
-    def test_earnings_leg_always_none_in_v1(self):
-        """R-D ruling: earnings leg not wired, must be None."""
+    def test_earnings_leg_wired_in_wd(self):
+        """W-D wave: earnings_leg is now a dict (not None). No earnings_store passed
+        → has_data=False for all, but the field is always a dict (never None).
+        Does NOT affect similarity matrix, N_eff, or verdicts (R-D annotation only)."""
         mem, sector, betas = self._basic_setup()
         result = compute(["NVDA", "AMD"], sector, betas, mem, "2026-07-05")
         for tkr, rec in result["by_ticker"].items():
-            assert rec.get("earnings_leg") is None, (
-                f"{tkr}: earnings_leg must be None in v1 but got {rec.get('earnings_leg')!r}"
+            el = rec.get("earnings_leg")
+            assert el is not None, (
+                f"{tkr}: earnings_leg must be a dict in W-D, got None"
+            )
+            assert isinstance(el, dict), f"{tkr}: earnings_leg must be dict"
+            assert "has_data" in el, f"{tkr}: earnings_leg missing has_data"
+            # Without earnings store, has_data=False
+            assert el["has_data"] is False, (
+                f"{tkr}: no earnings store passed → has_data must be False"
             )
 
     def test_duplicate_verdict_for_identical_candidates(self):
@@ -596,3 +617,615 @@ class TestBuilderDegradation:
             val = by_lane[lane_name]
             assert isinstance(val, float), f"{lane_name}: expected float, got {val!r}"
             assert val >= 1.0, f"{lane_name}: n_eff must be >= 1"
+
+
+# ── W-D: same_thesis_groups ───────────────────────────────────────────────────
+
+class TestSameThesisGroups:
+    """W-D five-candidates-one-thesis detector."""
+
+    def _all_similar_matrix(self, n: int) -> tuple[np.ndarray, list[str]]:
+        """N×N matrix where all off-diagonal values = DUPLICATE_THRESH + 0.05."""
+        from engine.reflexivity import DUPLICATE_THRESH
+        S = np.full((n, n), DUPLICATE_THRESH + 0.05)
+        np.fill_diagonal(S, 1.0)
+        tickers = [f"T{i}" for i in range(n)]
+        return S, tickers
+
+    def _orthogonal_matrix(self, n: int) -> tuple[np.ndarray, list[str]]:
+        """N×N identity matrix — all pairs below threshold."""
+        S = np.eye(n)
+        tickers = [f"T{i}" for i in range(n)]
+        return S, tickers
+
+    def test_all_similar_n5_forms_one_group(self):
+        """5 names all similar → one group of size 5 emitted."""
+        S, tickers = self._all_similar_matrix(5)
+        groups = same_thesis_groups(S, tickers, {}, min_size=3)
+        assert len(groups) == 1, f"Expected 1 group, got {len(groups)}"
+        assert groups[0]["size"] == 5
+        assert set(groups[0]["members"]) == set(tickers)
+
+    def test_all_similar_n3_emitted_at_min_size(self):
+        """3 names all similar → one group of size 3 (at min_size boundary)."""
+        S, tickers = self._all_similar_matrix(3)
+        groups = same_thesis_groups(S, tickers, {}, min_size=3)
+        assert len(groups) == 1
+        assert groups[0]["size"] == 3
+
+    def test_two_disjoint_components(self):
+        """Two separate clusters of 3 → two groups."""
+        # Tickers 0-2 are all similar; tickers 3-5 are all similar;
+        # cross-cluster similarity is 0.
+        from engine.reflexivity import DUPLICATE_THRESH
+        n = 6
+        S = np.eye(n)
+        thresh = DUPLICATE_THRESH + 0.05
+        for i in range(3):
+            for j in range(3):
+                S[i, j] = thresh
+        for i in range(3, 6):
+            for j in range(3, 6):
+                S[i, j] = thresh
+        np.fill_diagonal(S, 1.0)
+        tickers = [f"T{i}" for i in range(n)]
+        groups = same_thesis_groups(S, tickers, {}, min_size=3)
+        assert len(groups) == 2, f"Expected 2 groups, got {len(groups)}"
+        sizes = {g["size"] for g in groups}
+        assert sizes == {3}
+
+    def test_orthogonal_no_groups(self):
+        """All orthogonal → no components reach min_size."""
+        S, tickers = self._orthogonal_matrix(5)
+        groups = same_thesis_groups(S, tickers, {}, min_size=3)
+        assert groups == [], f"Expected no groups for orthogonal matrix, got {groups}"
+
+    def test_min_size_filter_excludes_small_components(self):
+        """A pair (size=2) must be excluded when min_size=3."""
+        from engine.reflexivity import DUPLICATE_THRESH
+        S = np.eye(4)
+        # T0 and T1 are similar; T2 and T3 are isolated
+        S[0, 1] = S[1, 0] = DUPLICATE_THRESH + 0.05
+        tickers = ["T0", "T1", "T2", "T3"]
+        groups = same_thesis_groups(S, tickers, {}, min_size=3)
+        assert groups == [], "Pair (size=2) must not appear at min_size=3"
+
+    def test_groups_sorted_by_size_desc(self):
+        """Groups sorted by size descending."""
+        from engine.reflexivity import DUPLICATE_THRESH
+        n = 7
+        S = np.eye(n)
+        thresh = DUPLICATE_THRESH + 0.05
+        # T0-T3 (size 4), T4-T6 (size 3)
+        for i in range(4):
+            for j in range(4):
+                S[i, j] = thresh
+        for i in range(4, 7):
+            for j in range(4, 7):
+                S[i, j] = thresh
+        np.fill_diagonal(S, 1.0)
+        tickers = [f"T{i}" for i in range(n)]
+        groups = same_thesis_groups(S, tickers, {}, min_size=3)
+        assert len(groups) == 2
+        assert groups[0]["size"] >= groups[1]["size"], "Groups must be sorted by size desc"
+
+    def test_label_derived_from_pair_basis(self):
+        """label is extracted from shared_groups in pair_basis."""
+        from engine.reflexivity import DUPLICATE_THRESH
+        S = np.full((3, 3), DUPLICATE_THRESH + 0.05)
+        np.fill_diagonal(S, 1.0)
+        tickers = ["A", "B", "C"]
+        pair_basis = {
+            "A__B": {"combined": 0.9, "membership_jaccard": 0.9,
+                     "factor_cosine": None, "shared_groups": ["sector:Technology"]},
+            "A__C": {"combined": 0.8, "membership_jaccard": 0.8,
+                     "factor_cosine": None, "shared_groups": ["sector:Technology"]},
+            "B__C": {"combined": 0.85, "membership_jaccard": 0.85,
+                     "factor_cosine": None, "shared_groups": ["sector:Technology"]},
+        }
+        groups = same_thesis_groups(S, tickers, pair_basis, min_size=3)
+        assert len(groups) == 1
+        assert groups[0]["label"] == "Technology", (
+            f"Expected 'Technology', got {groups[0]['label']!r}"
+        )
+
+    def test_transitive_chain_single_component(self):
+        """M1 — single-linkage transitive closure: A-B sim 0.7, B-C sim 0.7, A-C sim 0.1
+        → all three merged into ONE component of size 3 (chain semantics ratified).
+        A chained member (C) is not necessarily similar to every other member (A)."""
+        S = np.array([
+            [1.0, 0.7, 0.1],
+            [0.7, 1.0, 0.7],
+            [0.1, 0.7, 1.0],
+        ])
+        tickers = ["A", "B", "C"]
+        groups = same_thesis_groups(S, tickers, {}, threshold=0.65, min_size=3)
+        assert len(groups) == 1, (
+            f"Expected 1 transitive component (A→B→C), got {len(groups)}"
+        )
+        assert groups[0]["size"] == 3, (
+            f"Expected component size 3, got {groups[0]['size']}"
+        )
+        assert set(groups[0]["members"]) == {"A", "B", "C"}, (
+            f"Expected all three members, got {groups[0]['members']}"
+        )
+
+    def test_membership_only_fallback_label(self):
+        """M3 — when pair_basis is empty (membership-only fallback path),
+        the component label must be 'shared-membership', not 'shared-factor-profile'."""
+        from engine.reflexivity import DUPLICATE_THRESH
+        S = np.full((3, 3), DUPLICATE_THRESH + 0.05)
+        np.fill_diagonal(S, 1.0)
+        tickers = ["A", "B", "C"]
+        # Empty pair_basis → triggers the membership-only fallback path
+        groups = same_thesis_groups(S, tickers, {}, min_size=3)
+        assert len(groups) == 1
+        assert groups[0]["label"] == "shared-membership", (
+            f"Membership-only fallback label must be 'shared-membership', "
+            f"got {groups[0]['label']!r}"
+        )
+
+    def test_empty_tickers_returns_empty(self):
+        """Empty ticker list → empty groups."""
+        S = np.zeros((0, 0))
+        assert same_thesis_groups(S, [], {}) == []
+
+    def test_same_thesis_groups_in_compute_output(self):
+        """compute() emits same_thesis_groups key."""
+        mem = _make_membership({"ai": ["A", "B", "C"]})
+        sector = {"A": "IT", "B": "IT", "C": "IT"}
+        # All in same basket → Jaccard=1 → all duplicate → one group of 3
+        result = compute(["A", "B", "C"], sector, {}, mem, "2026-07-05")
+        assert "same_thesis_groups" in result
+        groups = result["same_thesis_groups"]
+        assert isinstance(groups, list)
+        # All three share the same basket → should form one group
+        assert len(groups) == 1
+        assert groups[0]["size"] == 3
+
+    def test_display_only_no_ordering_effect(self):
+        """same_thesis_groups must not change verdict or max_similarity for any ticker."""
+        mem = _make_membership({"ai": ["A", "B", "C", "D", "E"]})
+        sector = {t: "IT" for t in ["A", "B", "C", "D", "E"]}
+        result = compute(["A", "B", "C", "D", "E"], sector, {}, mem, "2026-07-05")
+        # All in same basket → Jaccard=1 → all "duplicate"
+        for tkr in ["A", "B", "C", "D", "E"]:
+            assert result["by_ticker"][tkr]["verdict"] == "duplicate", (
+                f"{tkr}: verdict changed by thesis-groups (should not)"
+            )
+            assert result["by_ticker"][tkr]["max_similarity"] == 1.0
+
+
+# ── W-D: N_eff history ────────────────────────────────────────────────────────
+
+class TestNeffHistory:
+    """Tests for data/reflexivity/n_eff_history.json build and maintenance."""
+
+    def test_history_written_on_normal_run(self, tmp_path):
+        """Normal run creates history file with one entry."""
+        from scripts.build_reflexivity_overlay import (
+            _load_history, _update_history, _write_n_eff_history,
+        )
+        artifact = {
+            "as_of": "2026-07-05",
+            "board_concentration": {"n": 5, "n_eff": 3.2},
+            "n_eff_by_lane": {"entry_open": 2.1, "setting_up": 1.5},
+            "same_thesis_groups": [{"members": ["A", "B", "C"], "size": 3,
+                                    "basis": "membership-jaccard", "label": "IT"}],
+            "by_ticker": {"A": {}, "B": {}, "C": {}, "D": {}, "E": {}},
+        }
+        hist_path = tmp_path / "n_eff_history.json"
+        _write_n_eff_history(artifact, hist_path)
+        assert hist_path.exists(), "History file must be created"
+        data = json.loads(hist_path.read_text())
+        assert "history" in data
+        assert len(data["history"]) == 1
+        entry = data["history"][0]
+        assert entry["as_of"] == "2026-07-05"
+        assert entry["same_thesis_group_count"] == 1
+        assert "n_eff_by_lane" in entry
+
+    def test_history_dedup_by_as_of(self, tmp_path):
+        """Re-running on the same as_of replaces the entry (last-write-wins)."""
+        from scripts.build_reflexivity_overlay import _write_n_eff_history
+        hist_path = tmp_path / "n_eff_history.json"
+
+        artifact_v1 = {
+            "as_of": "2026-07-05",
+            "board_concentration": {"n": 3, "n_eff": 2.0},
+            "n_eff_by_lane": {"entry_open": 2.0, "setting_up": None},
+            "same_thesis_groups": [],
+            "by_ticker": {"A": {}, "B": {}, "C": {}},
+        }
+        artifact_v2 = {
+            "as_of": "2026-07-05",
+            "board_concentration": {"n": 4, "n_eff": 2.5},
+            "n_eff_by_lane": {"entry_open": 2.5, "setting_up": None},
+            "same_thesis_groups": [],
+            "by_ticker": {"A": {}, "B": {}, "C": {}, "D": {}},
+        }
+        _write_n_eff_history(artifact_v1, hist_path)
+        _write_n_eff_history(artifact_v2, hist_path)
+
+        data = json.loads(hist_path.read_text())
+        assert len(data["history"]) == 1, "Same as_of must be deduped (last-write-wins)"
+        assert data["history"][0]["n_eff_by_lane"]["entry_open"] == 2.5, (
+            "Second write must replace first"
+        )
+
+    def test_history_bounded_to_252(self, tmp_path):
+        """History array never exceeds _HISTORY_LEN=252 entries."""
+        from scripts.build_reflexivity_overlay import _write_n_eff_history, _HISTORY_LEN
+        hist_path = tmp_path / "n_eff_history.json"
+
+        for i in range(260):
+            artifact = {
+                "as_of": f"2025-{(i // 30) + 1:02d}-{(i % 28) + 1:02d}",
+                "board_concentration": {"n": 3, "n_eff": 2.0},
+                "n_eff_by_lane": {"entry_open": 2.0, "setting_up": None},
+                "same_thesis_groups": [],
+                "by_ticker": {"A": {}, "B": {}, "C": {}},
+            }
+            _write_n_eff_history(artifact, hist_path)
+
+        data = json.loads(hist_path.read_text())
+        assert len(data["history"]) <= _HISTORY_LEN, (
+            f"History must be bounded to {_HISTORY_LEN}, got {len(data['history'])}"
+        )
+
+    def test_degraded_run_preserves_history(self, tmp_path):
+        """Degraded/empty overlay run must NOT reset history."""
+        from scripts.build_reflexivity_overlay import _write_n_eff_history
+        hist_path = tmp_path / "n_eff_history.json"
+
+        # Write a real entry first
+        good_artifact = {
+            "as_of": "2026-07-05",
+            "board_concentration": {"n": 3, "n_eff": 2.0},
+            "n_eff_by_lane": {"entry_open": 2.0, "setting_up": None},
+            "same_thesis_groups": [],
+            "by_ticker": {"A": {}, "B": {}, "C": {}},
+        }
+        _write_n_eff_history(good_artifact, hist_path)
+        data_before = json.loads(hist_path.read_text())
+        assert len(data_before["history"]) == 1
+
+        # Now simulate a degraded/empty run (n=0, no by_ticker)
+        empty_artifact = {
+            "as_of": "2026-07-06",
+            "board_concentration": {"n": 0, "n_eff": 0.0},
+            "n_eff_by_lane": {"entry_open": None, "setting_up": None},
+            "same_thesis_groups": [],
+            "by_ticker": {},
+        }
+        _write_n_eff_history(empty_artifact, hist_path)
+
+        data_after = json.loads(hist_path.read_text())
+        assert len(data_after["history"]) == 1, (
+            "Degraded run must preserve prior history, not reset it"
+        )
+        assert data_after["history"][0]["as_of"] == "2026-07-05", (
+            "Original entry must survive a degraded run"
+        )
+
+    def test_history_appends_across_days(self, tmp_path):
+        """History grows by one entry per unique as_of date."""
+        from scripts.build_reflexivity_overlay import _write_n_eff_history
+        hist_path = tmp_path / "n_eff_history.json"
+
+        for day in ["2026-07-01", "2026-07-02", "2026-07-03"]:
+            artifact = {
+                "as_of": day,
+                "board_concentration": {"n": 3, "n_eff": 2.0},
+                "n_eff_by_lane": {"entry_open": 2.0, "setting_up": None},
+                "same_thesis_groups": [],
+                "by_ticker": {"A": {}, "B": {}, "C": {}},
+            }
+            _write_n_eff_history(artifact, hist_path)
+
+        data = json.loads(hist_path.read_text())
+        assert len(data["history"]) == 3
+
+
+# ── W-D: earnings-week annotation ─────────────────────────────────────────────
+
+def _make_earnings_parquet(ticker_dates: dict[str, str], tmp_path: Path) -> Path:
+    """Create a minimal earnings.parquet fixture with next_date column."""
+    import io
+    rows = []
+    for ticker, next_date in ticker_dates.items():
+        rows.append({
+            "ticker_idx": ticker.upper(),
+            "next_date": next_date,
+            "next_time": None,
+            "eps_forecast": None,
+            "as_of": "2026-07-05",
+        })
+    df = pd.DataFrame(rows).set_index("ticker_idx")
+    df.index.name = None
+    p = tmp_path / "earnings.parquet"
+    df.to_parquet(p)
+    return p
+
+
+class TestEarningsWeekAnnotation:
+    """Tests for earnings_week_annotation (W-D, R-D)."""
+
+    def test_same_week_peers_detected(self, tmp_path):
+        """Tickers with next_date within 7 days of each other are peers."""
+        store = pd.DataFrame({
+            "next_date": {"AAPL": "2026-07-10", "MSFT": "2026-07-12", "JNJ": "2026-07-25"},
+            "as_of": {"AAPL": "2026-07-05", "MSFT": "2026-07-05", "JNJ": "2026-07-05"},
+        })
+        result = earnings_week_annotation(
+            ["AAPL", "MSFT", "JNJ"], store, "2026-07-05", window_days=7
+        )
+        # AAPL (7/10) and MSFT (7/12) are within 7 days of each other
+        assert "MSFT" in result["AAPL"]["same_week_peers"], (
+            "MSFT should be a same-week peer of AAPL (2-day difference)"
+        )
+        assert "AAPL" in result["MSFT"]["same_week_peers"], "Symmetry check"
+        # JNJ (7/25) is 15 days from AAPL → not in same week
+        assert "JNJ" not in result["AAPL"]["same_week_peers"], (
+            "JNJ (15 days apart) must not be a same-week peer"
+        )
+
+    def test_no_earnings_store_returns_empty_has_data_false(self):
+        """None store → all tickers get has_data=False, no crash."""
+        result = earnings_week_annotation(["AAPL", "MSFT"], None, "2026-07-05")
+        for tkr in ["AAPL", "MSFT"]:
+            assert result[tkr]["has_data"] is False
+            assert result[tkr]["same_week_peers"] == []
+
+    def test_past_dates_excluded(self):
+        """next_date before as_of → has_data=False (fail-open semantics)."""
+        store = pd.DataFrame({
+            "next_date": {"AAPL": "2026-06-01"},  # past date
+            "as_of": {"AAPL": "2026-07-05"},
+        })
+        result = earnings_week_annotation(["AAPL"], store, "2026-07-05")
+        assert result["AAPL"]["has_data"] is False, (
+            "Past next_date must be treated as no-data (fail-open)"
+        )
+
+    def test_ticker_not_in_store_has_data_false(self):
+        """Missing ticker in store → has_data=False."""
+        store = pd.DataFrame({
+            "next_date": {"AAPL": "2026-07-10"},
+            "as_of": {"AAPL": "2026-07-05"},
+        })
+        result = earnings_week_annotation(["NVDA"], store, "2026-07-05")
+        assert result["NVDA"]["has_data"] is False
+
+    def test_does_not_affect_similarity_or_neff(self):
+        """Earnings annotation must not change similarity matrix, N_eff, or verdicts."""
+        mem = _make_membership({"ai": ["A", "B"]})
+        sector = {"A": "IT", "B": "IT"}
+        betas = {
+            "A": _make_betas(1.0, 0.5, 0.0, 0.0, r2=0.6),
+            "B": _make_betas(1.0, 0.5, 0.0, 0.0, r2=0.6),
+        }
+        store = pd.DataFrame({
+            "next_date": {"A": "2026-07-10", "B": "2026-07-10"},
+            "as_of": {"A": "2026-07-05", "B": "2026-07-05"},
+        })
+        # With earnings
+        r1 = compute(["A", "B"], sector, betas, mem, "2026-07-05", earnings_store=store)
+        # Without earnings
+        r2 = compute(["A", "B"], sector, betas, mem, "2026-07-05", earnings_store=None)
+
+        # Similarity matrix-derived fields must be identical
+        assert r1["board_concentration"]["n_eff"] == r2["board_concentration"]["n_eff"], (
+            "Earnings annotation must not change N_eff"
+        )
+        assert r1["by_ticker"]["A"]["verdict"] == r2["by_ticker"]["A"]["verdict"], (
+            "Earnings annotation must not change verdicts"
+        )
+        assert r1["by_ticker"]["A"]["max_similarity"] == r2["by_ticker"]["A"]["max_similarity"], (
+            "Earnings annotation must not change max_similarity"
+        )
+
+    def test_earnings_coverage_frac_in_overlay(self):
+        """earnings_coverage_frac must be present and reflect actual coverage."""
+        mem = _make_membership({"ai": ["A", "B", "C"]})
+        sector = {"A": "IT", "B": "IT", "C": "IT"}
+        store = pd.DataFrame({
+            "next_date": {"A": "2026-07-10", "B": "2026-07-12"},
+            "as_of": {"A": "2026-07-05", "B": "2026-07-05"},
+        })
+        result = compute(["A", "B", "C"], sector, {}, mem, "2026-07-05", earnings_store=store)
+        cov = result.get("earnings_coverage_frac")
+        assert cov is not None, "earnings_coverage_frac must be present"
+        # A and B have data, C does not → coverage = 2/3
+        assert abs(cov - 2.0 / 3.0) < 0.01, f"Expected coverage ~0.667, got {cov}"
+
+    def test_earnings_leg_in_by_ticker(self):
+        """Each ticker in by_ticker has earnings_leg dict with expected keys."""
+        mem = _make_membership({"ai": ["A", "B"]})
+        sector = {"A": "IT", "B": "IT"}
+        store = pd.DataFrame({
+            "next_date": {"A": "2026-07-10", "B": "2026-07-10"},
+            "as_of": {"A": "2026-07-05", "B": "2026-07-05"},
+        })
+        result = compute(["A", "B"], sector, {}, mem, "2026-07-05", earnings_store=store)
+        for tkr in ["A", "B"]:
+            el = result["by_ticker"][tkr]["earnings_leg"]
+            assert isinstance(el, dict)
+            assert el["has_data"] is True
+            assert el["next_date"] == "2026-07-10"
+            # Each is in the other's same_week_peers
+            assert "B" in result["by_ticker"]["A"]["earnings_leg"]["same_week_peers"] or \
+                   "A" in result["by_ticker"]["B"]["earnings_leg"]["same_week_peers"], (
+                "A and B have same next_date → should be peers"
+            )
+
+    def test_same_earnings_week_in_nearest(self):
+        """same_earnings_week field in nearest peers reflects earnings annotation."""
+        mem = _make_membership({"ai": ["A", "B"]})
+        sector = {"A": "IT", "B": "IT"}
+        store = pd.DataFrame({
+            "next_date": {"A": "2026-07-10", "B": "2026-07-10"},
+            "as_of": {"A": "2026-07-05", "B": "2026-07-05"},
+        })
+        result = compute(["A", "B"], sector, {}, mem, "2026-07-05", earnings_store=store)
+        # A's nearest[0] is B; same_earnings_week should be True
+        nearest = result["by_ticker"]["A"]["nearest"]
+        assert len(nearest) > 0
+        b_peer = next((p for p in nearest if p["ticker"] == "B"), None)
+        assert b_peer is not None
+        assert b_peer["same_earnings_week"] is True, (
+            "B is in same earnings week as A → same_earnings_week must be True"
+        )
+
+
+# ── W-D: template banner rendering ───────────────────────────────────────────
+
+class TestBannerRendering:
+    """Test that the thesis-group banner renders correctly for groups >= 5."""
+
+    def _render_banner(self, overlay: dict | None) -> str:
+        """Render rx_board_banner() with the given overlay using Jinja2.
+
+        Renders a self-contained mini-template containing just the macro
+        definition + call, without importing the full page template (which
+        requires the `d` context variable for the full page body).
+        """
+        try:
+            from jinja2 import Environment
+        except ImportError:
+            pytest.skip("jinja2 not available")
+
+        # Read the macro source directly from the template file, then
+        # wrap it in a standalone mini-template with a stub `t()` function.
+        template_path = Path(__file__).resolve().parents[1] / "templates" / "us_stocks_v2.html.j2"
+        if not template_path.exists():
+            pytest.skip("us_stocks_v2.html.j2 not found")
+
+        full_src = template_path.read_text()
+
+        # Extract the row_card and conc_banner and rx_board_banner macros —
+        # rx_board_banner only needs `rx` and `t`, and does not call conc_banner.
+        # We splice out just the macros we need so the body never executes.
+        # Strategy: wrap macro definitions + a call in a clean env.
+        env = Environment(autoescape=False)
+
+        def t(en: str, zh: str) -> str:
+            return en
+
+        # Build a mini-template that defines the macros and calls rx_board_banner.
+        # We extract the macro blocks from the full source to avoid running
+        # the template body (which requires `d`).
+        import re
+        # Find all macro blocks
+        macro_pattern = re.compile(
+            r'\{%-?\s*macro\s+(\w+)\s*\(.*?\n.*?'  # macro start
+            r'\{%-?\s*endmacro\s*-?%\}',
+            re.DOTALL,
+        )
+        # Simpler: just find the rx_board_banner macro by line boundaries
+        lines = full_src.split("\n")
+        macro_lines: list[str] = []
+        in_macro = False
+        for line in lines:
+            if re.search(r'\{%-?\s*macro\s+(conc_banner|rx_board_banner)\s*\(', line):
+                in_macro = True
+            if in_macro:
+                macro_lines.append(line)
+                if re.search(r'\{%-?\s*endmacro\s*-?%\}', line):
+                    in_macro = False
+                    macro_lines.append("")  # separator
+
+        mini_src = "\n".join(macro_lines) + "\n{{ rx_board_banner() }}"
+        tmpl = env.from_string(mini_src)
+        return tmpl.render(rx=overlay, t=t)
+
+    def test_no_banner_when_max_group_lt5(self):
+        """Groups of size 3 or 4 must not trigger the thesis banner."""
+        overlay = {
+            "board_concentration": {"n": 4, "n_eff": 2.0},
+            "factor_caveat": "",
+            "same_thesis_groups": [
+                {"members": ["A", "B", "C", "D"], "size": 4,
+                 "basis": "membership-jaccard", "label": "IT"},
+            ],
+        }
+        html = self._render_banner(overlay)
+        assert "rx-thesis-banner" not in html, (
+            "Groups of size 4 must not trigger thesis banner (threshold is >= 5)"
+        )
+
+    def test_banner_fires_for_group_gte5(self):
+        """Group of size 5 triggers the thesis banner with EN and ZH text."""
+        overlay = {
+            "board_concentration": {"n": 5, "n_eff": 1.2},
+            "factor_caveat": "",
+            "same_thesis_groups": [
+                {"members": ["A", "B", "C", "D", "E"], "size": 5,
+                 "basis": "membership-jaccard", "label": "ai_infra"},
+            ],
+        }
+        html = self._render_banner(overlay)
+        assert "rx-thesis-banner" in html, "Group of size 5 must trigger thesis banner"
+        assert "5 candidates, one thesis: ai_infra" in html, (
+            "Banner must contain EN text with group size and label"
+        )
+        assert "5 候选，同一主题：ai_infra" in html, (
+            "Banner must contain ZH text with group size and label"
+        )
+
+    def test_banner_contains_member_list(self):
+        """Banner must list the group members."""
+        overlay = {
+            "board_concentration": {"n": 5, "n_eff": 1.2},
+            "factor_caveat": "",
+            "same_thesis_groups": [
+                {"members": ["NVDA", "AMD", "INTC", "QCOM", "TXN"], "size": 5,
+                 "basis": "membership-jaccard", "label": "semis"},
+            ],
+        }
+        html = self._render_banner(overlay)
+        for tkr in ["NVDA", "AMD", "INTC", "QCOM", "TXN"]:
+            assert tkr in html, f"Member {tkr} must appear in banner"
+
+    def test_no_title_attribute_in_banner(self):
+        """CI law: no translated text inside title= attributes."""
+        overlay = {
+            "board_concentration": {"n": 6, "n_eff": 1.1},
+            "factor_caveat": "some caveat",
+            "same_thesis_groups": [
+                {"members": ["A", "B", "C", "D", "E", "F"], "size": 6,
+                 "basis": "membership-jaccard", "label": "test_label"},
+            ],
+        }
+        html = self._render_banner(overlay)
+        # Check that no title= attribute contains Chinese characters
+        import re
+        title_matches = re.findall(r'title=["\'][^"\']*["\']', html)
+        for match in title_matches:
+            # No Chinese characters allowed in title= attributes
+            assert not any('一' <= ch <= '鿿' for ch in match), (
+                f"Found Chinese text in title= attribute: {match!r}"
+            )
+
+    def test_rx_none_renders_empty(self):
+        """When rx is None, banner renders empty (no error)."""
+        overlay = None
+        html = self._render_banner(overlay)
+        assert "rx-banner" not in html, "None rx must render empty banner"
+
+    def test_multiple_large_groups_all_rendered(self):
+        """Multiple groups of size >= 5 all get banners."""
+        overlay = {
+            "board_concentration": {"n": 10, "n_eff": 2.0},
+            "factor_caveat": "",
+            "same_thesis_groups": [
+                {"members": ["A", "B", "C", "D", "E"], "size": 5,
+                 "basis": "membership-jaccard", "label": "group1"},
+                {"members": ["F", "G", "H", "I", "J"], "size": 5,
+                 "basis": "factor-cosine", "label": "group2"},
+            ],
+        }
+        html = self._render_banner(overlay)
+        assert html.count("rx-thesis-banner") == 2, (
+            "Two groups of size 5 must each get a banner"
+        )

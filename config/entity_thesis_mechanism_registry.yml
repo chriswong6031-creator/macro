@@ -1,0 +1,31 @@
+# config/entity_thesis_mechanism_registry.yml
+# Curated seed data for the Entity/Thesis/Mechanism crosswalk.
+#
+# CONTRACT (ETM-R3 / ETM-R4):
+#   - Every curated_theses row MUST have source_refs + curated_by.
+#     Rows missing either field are SKIPPED by the builder and recorded as conflicts.
+#   - This registry is DISPLAY-ONLY: it never merges local systems, never gates,
+#     never ranks, never originates signals.  Source systems remain authoritative.
+#   - Tickers listed here generate entity: rows only if they appear in no other source.
+#   - ETM-R4: entity rows are never enumerated from the full funnel parquet — only
+#     tickers referenced by thesis rows are emitted.
+#
+# mechanism_aliases: empty in v1.  Template for future waves:
+#   mechanism_aliases:
+#     - ids: [mechanism:A9_WASHOUT_SAME_OUTFLOW_DENSE, mechanism:A15_WASHOUT_OPP_OUT_2NODE]
+#       evidence: "PR#NNNN + ruling ETM-R_N: confirmed shared mechanism family"
+#       curated_by: operator-handoff
+#       note: alias only — both IDs remain emitted; this is a display hint
+
+schema: neuralweb.entity_thesis_mechanism.curated.v1
+
+curated_theses:
+  - thesis_family: ai_infra
+    label: "AI infrastructure capex complex"
+    tickers: [NVDA, AVGO, VRT]
+    curated_by: operator-handoff
+    state: curated
+    source_refs:
+      - research/fable_exit/05_ENTITY_THESIS_MECHANISM_REGISTRY_HANDOFF.md
+
+mechanism_aliases: []

@@ -90,6 +90,7 @@ artifacts:
       - scripts/notify.py
       - scripts/refresh_regime_if_stale.py
       - engine/neuralweb/cortex.py
+      - engine/neuralweb/covariance_spine.py
     external_consumers:
       - mastermind:anchor
       - mastermind:vendored
@@ -163,6 +164,7 @@ artifacts:
       - engine/signal_archive.py
       - scripts/build_conditional_cells.py
       - scripts/build_hazard_panel.py
+      - scripts/build_index_hazard_panel.py
       - scripts/build_site.py
       - scripts/calibrate_regime_hmm.py
       - scripts/collinearity_phase0.py
@@ -279,6 +281,7 @@ artifacts:
       - scripts/sample_qledger_placebo.py
       - scripts/shadow_importance_v0.py
       - scripts/shadow_importance_v0_pit.py
+      - engine/neuralweb/evidence_clock.py
     external_consumers: []
     qual_ladder_ref: null
     notes: "QI-owned ledger. Producer: engine/qledger.py:326 append-only per-claim row. Backfill writers are additive only (never overwrite)."
@@ -712,6 +715,7 @@ artifacts:
       - engine/qledger.py
       - engine/track_record.py
       - scripts/china_max_phase0.py
+      - engine/neuralweb/evidence_clock.py
     external_consumers: []
     notes: "Producer: engine/species_registry.py:365 sync/write. Daily mirror: species_registry.sync() in daily.yml. Additive writes from backfill scripts do not overwrite existing entries."
 
@@ -739,6 +743,37 @@ artifacts:
       - scripts/build_cycle.py
     external_consumers: []
     notes: "Scored tier: model refit via scripts/fit_cycle_hazard.py runs only after OOS validation pass. weights=measured (allocation_bootstrap in payload)."
+
+  # --- 0 consumers (IX-1 substrate; the trial wave decides wiring/cadence) ---
+  hazard-panel-index-v0:
+    path: data/hazard/panel_index_v0.parquet
+    format: parquet
+    producer: scripts/build_index_hazard_panel.py
+    known_extra_writers: []
+    owner_program: cycle-intelligence
+    cadence: on-demand
+    storage: git
+    asof_field: null
+    freshness_sla_hours: 8760
+    schema: hazard.panel_index.v0
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      IX-1 SUBSTRATE (2026-07-06): index-level person-period hazard panel — SPY
+      (family us_market) + 7 bloc ETFs (family bloc), built with the member-panel
+      pipeline (imported functions) at the us_sector detector config (close_price
+      basis, 14% ZigZag, detector v2 — same epoch stamp price_c4414dcb), PLUS
+      FT-4-style constituent-structure covariates: sync_family from
+      data/leadlag/sync_gauge.json (us_sector for SPY, country for blocs) and
+      phase_breadth_late/early + pos_dispersion from the member-panel cross-section
+      at t (country cross-section excludes the blocs themselves). Substrate only —
+      NOT wired into nightly lanes; the future preregistered IX-1 turn-hazard trial
+      decides cadence and consumers. Never mutates the member panel or its epoch.
+      Census: research/cycle_masterplan/IX1_SUBSTRATE_CENSUS.md.
 
   # --- 4 consumers ---
   regime-spvector-latest:
@@ -786,6 +821,8 @@ artifacts:
       - engine/experiments_registry.py
       - engine/falsifier_tripwires.py
       - scripts/build_site.py
+      - engine/neuralweb/evidence_clock.py
+      - scripts/check_evidence_clock.py
     external_consumers: []
     notes: "Three writers — engine/species_registry.py (daily mirror of species into the seed), backfill_forward_logs.py, build_measurement.py. All additive/idempotent; no single-writer enforcement — this is the rot class the masterplan targets in N1."
 
@@ -1444,6 +1481,7 @@ artifacts:
       - scripts/audit_sizes.py
       - scripts/build_track_record.py
       - scripts/validate_signals.py
+      - scripts/build_stock_library.py
     external_consumers: []
     notes: >
       federated Stage-B (PR #1139): US next-bar fill via grading.fill_index; SPINE_HORIZONS
@@ -1577,43 +1615,6 @@ artifacts:
       (Spearman + Newey-West HAC t). 'proven' requires matured n AND significant HAC-t.
       Distinct from site-marketdata-subsector-rotation (the display output artifact).
 
-  # --- SRSS Phase 2: subsector sponsorship spine adapter (shadow, display-only) ---
-  subsector-sponsorship-spine:
-    path: data/spine/subsector_sponsorship.parquet
-    format: parquet
-    producer: engine/spine.py
-    known_extra_writers:
-      - "scripts/build_subsector_sponsorship.py — CLI runner; calls write_subsector_sponsorship()"
-    owner_program: entry-stack-expansion
-    cadence: daily-engine
-    storage: git
-    asof_field: as_of
-    freshness_sla_hours: 30
-    schema: spine.predictions.v1
-    tier: shadow
-    horizon_role: tactical_entry
-    weights: none
-    scored_path_surfaces: []
-    consumers:
-      - engine/neuralweb/confluence.py
-      - scripts/build_stock_library.py
-    external_consumers: []
-    notes: >
-      SRSS Phase 2 production wiring (research/entry_stack/sponsorship_phase0.py was the
-      research-only Phase 0 harness; classification/join logic now shared via
-      engine/subsector_sponsorship.py). adapt_subsector_sponsorship() joins today's live
-      per-stock gate fires (data/us_board_ledger/snapshots.jsonl, the same forward ledger
-      grade_us_board.py --nightly accrues) to the latest subsector-rotation-snapshots row
-      via the SAME nearest-prior-date leak-safe join Phase 0 validated. Deliberately kept
-      OUT of data/spine/predictions.parquet (spine-predictions above) — rows here are
-      NEVER graded (outcome_graded always False, score always 0.0, size_binding always
-      False) so they can never enter graded_rows()/measured_ic() or move any pooled
-      score. direction is inherited from the source fire only, never invented.
-      meta.display_only=True on every row (same convention confluence.py's edges use).
-      Coverage will accrue slowly: subsector-rotation-snapshots has ~1wk of history as of
-      this build (2026-06-28 start) so most fires still find no match — expected, not a
-      bug (see research/entry_stack/sponsorship_phase0.py's coverage report).
-
   # --- W2 sweep 19: Index Leadership Track Record ---
   index-leadership-snapshots:
     path: data/index_leadership/snapshots.jsonl
@@ -1726,6 +1727,7 @@ artifacts:
       - scripts/measure_incremental_ic.py
       - scripts/run_kernel_decisions.py
       - scripts/strategy_lab.py
+      - engine/neuralweb/evidence_clock.py
     external_consumers: []
     notes: >
       exempt: not a prediction-outcome ledger — tracks N-trials spent, not claims vs outcomes.
@@ -1996,6 +1998,7 @@ artifacts:
       - scripts/build_alt_data.py
     external_consumers:
       - admin:console
+      - mastermind:context
     notes: "Two writers: engine/qledger.py:979 (emit_track_record) and scripts/grade_qledger.py:576 (merges ladder_states). Both are additive/in-place-update, not clobber."
 
   # --- 5 consumers ---
@@ -2169,6 +2172,7 @@ artifacts:
       - engine/oracle/alerts.py
       - engine/oracle/tilt.py
       - scripts/oracle_nightly.py
+      - scripts/build_stock_library.py
     external_consumers: []
     notes: "Producer: engine/oracle/live.py:395 write_text. schema=oracle_state.v1 inline constant at live.py:78."
 
@@ -2381,7 +2385,7 @@ artifacts:
     storage: git
     asof_field: asof
     freshness_sla_hours: 30
-    schema: china_intel.briefing.v4
+    schema: china_intel.briefing.v5
     tier: display
     horizon_role: context
     weights: none
@@ -2390,7 +2394,50 @@ artifacts:
       - engine/master_brain.py
     external_consumers:
       - mastermind:vendored
-    notes: "Producer: engine/china_intel_bus.py write_text. schema=china_intel.briefing.v4 constant at china_intel_bus.py. v4 adds policy_phrase (communique_diff) + narrative_divergence (GDELT tone) blocks (additive)."
+    notes: "Producer: engine/china_intel_bus.py write_text. schema=china_intel.briefing.v6 constant at china_intel_bus.py. v6 adds command block (additive over v5 special_situations + v4 policy_phrase + narrative_divergence). Command block reads site/china_intel/command.json (W4 apparatus)."
+    qual_ladder_ref: china_intel.news_dir
+
+  site-china-special-sits:
+    path: site/chinaspecialdata/special.json
+    format: json
+    producer: engine/china_special_situations.py
+    known_extra_writers: []
+    owner_program: china-intel-hub
+    cadence: asia-close
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 30
+    schema: china_special_sits.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/china_intel_bus.py
+      - engine/china_intel_hub.py
+    external_consumers: []
+    notes: "Producer: engine/china_special_situations.py build(). Fuses unlocks/inquiry/preannounce/ST/buyback/pledge/block-trades into context-only JSON for the Special Situations desk page and hub card. schema=china_special_sits.v1."
+    qual_ladder_ref: china_intel.news_dir
+
+  site-china-intel-command:
+    path: site/china_intel/command.json
+    format: json
+    producer: engine/china_intel_hub.py
+    known_extra_writers: []
+    owner_program: china-intel-hub
+    cadence: asia-close
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: china_intel.command.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/china_intel_bus.py
+    external_consumers: []
+    notes: "Producer: engine/china_intel_hub.py build(). Per-ticker fusion of 5 China desks ranked by edge-remaining × opportunity (anti-echo-chamber, INTELLIGENCE_HUB_V2 rulings). Discovery lanes: LHB first-seat, margin velocity (EXPERIMENTAL), southbound delta, THS concepts. Snapshot ledger data/china_hub/signal_snapshots.jsonl appends daily under CN_LANE=asia. china-intel W4 added site-china-intel-command = 180->181"
     qual_ladder_ref: china_intel.news_dir
 
   # --- 3 consumers ---
@@ -2634,6 +2681,7 @@ artifacts:
       - engine/neuralweb/kernel.py
       - engine/neuralweb/decay.py
       - engine/neuralweb/lagging.py
+      - engine/neuralweb/covariance_spine.py
     external_consumers: []
     notes: >
       Read-side derived index: unions spine (data/spine/predictions.parquet),
@@ -3110,6 +3158,7 @@ artifacts:
     scored_path_surfaces: []
     consumers:
       - engine/neuralweb/cortex.py
+      - engine/neuralweb/evidence_clock.py
     external_consumers: []
     notes: >
       W7a: Neural Web constitutional governance ledger.  Append-only JSONL — one event
@@ -3142,6 +3191,7 @@ artifacts:
     scored_path_surfaces: []
     consumers:
       - engine/neuralweb/mastermind_context.py
+      - engine/neuralweb/daily_brief.py
     external_consumers:
       - mastermind:context
     notes: >
@@ -3231,6 +3281,7 @@ artifacts:
     consumers:
       - engine/experiments_registry.py
       - scripts/evaluate_cortex_hypotheses.py
+      - engine/neuralweb/evidence_clock.py
     external_consumers: []
     notes: >
       W7b PR2: Append-only machine-registration ledger for cortex-proposed
@@ -3777,6 +3828,17 @@ artifacts:
       any future UI surface MUST carry a proxy label for this ratio.
       net_debt_to_ebitda requires D&A (DepreciationDepletionAndAmortization) which
       accrues via the collectors/edgar_facts.py weekly drip — mostly None until drip runs.
+      Amendment-3 structural descriptors (additive; labels_v1 decision table UNCHANGED):
+        decline_herf / decline_geometry (family E, DISPLAY-CANDIDATE) — latest trailing-63-bar
+          loss-Herfindahl bound from engine.entry_primitives.decline_concentration_series, plus its
+          current-day cross-sectional tercile label flush/mixed/grind. A decline-SHAPE read, NOT an
+          escalation. CHIP-blocked until the true eq_band cache lands (RUL-28).
+        underwater_bars / underwater_state (family F, ADVERSE-CONTEXT, shadow-only) — latest
+          bars-since-trailing-252-peak bound from engine.entry_primitives.time_underwater_series,
+          plus its tercile label short/mid/long. Caution context / de-escalation-eligible only, never
+          a buy signal; not surfaced on the QA page. Both descriptors accrue on the shadow forward-
+          ledger data/shadow/bottom_sensors_geometry_book.jsonl (engine/neuralweb/bottom_sensors_shadow;
+          not weight-bearing — mirrors the unregistered engine/shadow_book pattern).
 
   bottom-sensors-json:
     path: site/neuralwebdata/bottom_sensors.json
@@ -3800,6 +3862,11 @@ artifacts:
     notes: >
       QA/debug JSON companion to bottom-sensors-parquet.
       is_display_only=true — display and debug surface only.
+      Also carries the Amendment-3 structural descriptors (decline_herf/decline_geometry family E;
+      underwater_bars/underwater_state family F — see bottom-sensors-parquet notes). decline_geometry
+      is surfaced on site/qa_bottom_sensors.html as a decline-SHAPE read (display-only, not a buy
+      signal); underwater_state is shadow-only (no user surface). Both accrue on the shadow forward-
+      ledger and are CHIP-blocked (RUL-28); mastermind_context consumes the JSON read-only.
 
   # ===========================================================================
   # LONG-HOLD THESIS LAYER — W1 artifacts (horizon_role: hold_thesis)
@@ -3837,6 +3904,34 @@ artifacts:
       window) instead of being dropped as no_price.
       Horizon_role=context: this is a raw price store consumed only by the label
       harness; it has no direct behavioral surface.
+
+  # --- Long-Hold LT-1c: expanded ticker sector map ---
+  ticker-sectors:
+    path: data/breadth/ticker_sectors.parquet
+    format: parquet
+    producer: scripts/build_sector_map.py
+    known_extra_writers: []
+    owner_program: long-hold
+    cadence: on-demand
+    storage: git
+    asof_field: null
+    freshness_sla_hours: 8760
+    schema: implicit
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/research/long_hold_label_panel.py
+    external_consumers: []
+    notes: >
+      LT-1c: GICS + SIC-derived ticker->sector map. Sources: data/breadth/constituents.parquet
+      (S&P 500, gics_sp500), data/midcap_breadth/constituents.parquet (S&P 400, gics_sp400),
+      data/smallcap_breadth/constituents.parquet (S&P 600, gics_sp600), plus SIC text from
+      data/profile/profiles.parquet and numeric SIC from data/edgar/cik_sic.json.
+      Current coverage: 1516 tickers total, 1508/2589 sp1500_pit_membership (58.2%).
+      GICS entries are authoritative; sic_mapped entries are derived from SEC SIC codes.
+      FIREWALL: horizon_role=context. No scored_path_surfaces. Display-only context artifact.
 
   # --- Long-Hold label panel (W1 PR-E) ---
   long-hold-labels:
@@ -4295,6 +4390,45 @@ artifacts:
       FIREWALL: horizon_role=hold_thesis. MUST NOT feed board ordering, alert
       triage, top-setups gates, or push floor (LH-R1). fdr_family=long_hold (LH-R5).
 
+  # --- Long-Hold PR-B1: per-fire S(f) sector benchmark (A1-to-spec) ---
+  per-fire-sector-benchmark:
+    path: data/research/per_fire_sector_benchmark.parquet
+    format: parquet
+    producer: scripts/research/build_per_fire_sector_benchmark.py
+    known_extra_writers: []
+    owner_program: long-hold
+    cadence: on-demand
+    storage: git
+    asof_field: fire_date
+    freshness_sla_hours: 8760
+    schema: per_fire_sector_benchmark.v1
+    tier: display
+    horizon_role: hold_thesis
+    weights: none
+    scored_path_surfaces: []
+    fdr_family: long_hold
+    consumers:
+      - scripts/research/build_per_fire_sector_benchmark.py
+    external_consumers: []
+    notes: >
+      PR-B1 (Long-Hold LT-1c retest-prep item 3). Per-fire A1-to-spec S(f) benchmark:
+      for each fire in gate_fires_baskets.parquet, S(f) = equal-weight mean 252d total
+      return across the constituent pool (every ticker in the fire tape with a fully
+      resolvable fill-anchored 252d forward price path at that fire's fire_date).
+      Fill convention: next-bar-after-fire_date (identical to long_hold_label_panel.py
+      _total_return convention). Era-stratified coverage % printed: post-2021-anchor /
+      2012-2021 (UPPER BOUND) / pre-2012 (UNREACHABLE — Polygon anchor 2021-07-06).
+      Fires with empty constituent pools receive sf_mean=null and explicit 'NO POOL'
+      coverage stamp — no silent fallback to winner-selected mean.
+      Delta vs old W1 §7 benchmark (cohort-year winner-selected mean) is computed and
+      reported in SF_BENCHMARK_BUILD_REPORT.md; expected delta < 0 (pool includes losers).
+      A2 §4 contact-freeze compliance: computes benchmarks ONLY — MUST NOT recompute
+      missed_hold verdicts, MUST NOT join features to 2024+ outcomes, MUST NOT re-run G1.
+      Schema: ticker, fire_date, sf_mean, sf_n_pool, fire_return_252d,
+      survivorship_biased (era-proxy), era, coverage_stamp.
+      FIREWALL: horizon_role=hold_thesis. MUST NOT feed entry-stack z-scores, board
+      ordering, alert triage, top-setups gates, or push floor. fdr_family=long_hold (LH-R5).
+
   # --- Long-Hold LT-3a: Capital Allocation Delta block ---
   capital-allocation-delta:
     path: "embedded: capital_allocation block inside site/stockdata/<TICKER>.json"
@@ -4350,6 +4484,37 @@ artifacts:
       Coverage stamps: repurch_coverage (full|partial|annual_fallback|missing),
       _horizon_role, _display_only, _version.
 
+  # --- Codex B5: event-windows display block ---
+  event-windows:
+    path: "embedded: event_windows block inside site/stockdata/<TICKER>.json"
+    format: json
+    producer: engine/event_landmine.py
+    known_extra_writers:
+      - "engine/stock_fundamentals.py — compose() called inside panels(); result keyed as 'event_windows'"
+    owner_program: codex-b5
+    cadence: daily-engine
+    storage: git
+    asof_field: null
+    freshness_sla_hours: 30
+    schema: event_windows.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - site/stockdata/<TICKER>.json
+    external_consumers: []
+    notes: >
+      Codex B5 — per-name event-windows display composition. Three legs:
+        earnings: next earnings date (calendar days away) from data/earnings/earnings.parquet.
+        fomc_within: next FOMC decision date (calendar days away) from the hardcoded
+          _FOMC_MEETINGS list in engine/catalyst_tone.py (through 2026-12).
+        debt: EDGAR balance-sheet snapshot (current_debt, long_term_debt, cash, net_debt,
+          period_end, filed) from data/edgar/statements_quarterly.parquet (PR #1782 columns).
+      FDA/PDUFA leg: SKIPPED — no credible free forward source.
+      DISPLAY-ONLY — horizon_role=context. MUST NOT feed board ordering, alert
+      triage, top-setups gates, or push floor. _display_only=True sentinel on all blocks.
+
   # --- Long-Hold LT-2c: expectation_state per-stock display block ---
   long-hold-expectation-state:
     path: "embedded: expectation_state inside site/stockdata/<TICKER>.json"
@@ -4387,6 +4552,332 @@ artifacts:
       DISPLAY-ONLY — G1-DEFERRED ruling 2026-07-06. FIREWALL: horizon_role=hold_thesis.
       MUST NOT feed board ordering, alert triage, top-setups gates, or push floor (LH-R1).
       fdr_family=long_hold (LH-R5).
+
+  # --- Long-Hold LT-4: thesis funnel shadow ---
+  long-hold-thesis-funnel-states:
+    path: data/research/thesis_funnel_states.parquet
+    format: parquet
+    producer: scripts/research/build_thesis_funnel_snapshot.py
+    known_extra_writers: []
+    owner_program: long-hold
+    cadence: on-demand
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 168
+    schema: thesis_funnel_states.v1
+    tier: display
+    horizon_role: hold_thesis
+    weights: none
+    scored_path_surfaces: []
+    fdr_family: long_hold
+    consumers:
+      - research/long_hold/LT4_FUNNEL_SHADOW_REPORT.md
+    external_consumers: []
+    notes: >
+      LT-4 (Long-Hold External Foundation). Per-ticker thesis funnel state snapshot.
+      Transparent AND-gate of independently registered flags (LH-R2: no composite,
+      no weights, no behavioral surface).
+
+      State enum (frozen v1, exactly 3 values):
+        not_eligible: s4_coverage fires OR any of s1/s2/s3 fires.
+        watch_for_thesis: survival gates all pass but not yet candidate-eligible.
+        thesis_candidate_shadow: survival pass + piotroski_f >= 6 + not dilutive.
+
+      Survival flags:
+        s1_dilution: shares_yoy_change >= +3% (threshold from capital_allocation.py
+          _DILUTIVE_SHARES_CHANGE_PCT, matched to missed_hold_study.py).
+        s2_moat_falsifier: any of the 4 moat sensors firing (engine/moat_falsifiers.py).
+        s3_solvency: Altman Z < 1.81 (distress floor; engine/stock_fundamentals._altman).
+        s4_coverage: fewer than 2 of {shares_yoy, moat sensors, altman_z} computable.
+
+      Candidate upgrade gate (in addition to survival pass):
+        piotroski_f >= 6 (engine/stock_fundamentals._piotroski, existing computation).
+        capital_allocation_delta != 'dilutive' ('unavailable' does NOT disqualify).
+
+      Ceiling = thesis_candidate_shadow. No 'active_thesis' state anywhere (W3-locked;
+      G1-DEFERRED ruling 2026-07-06).
+
+      Context (NOT gate inputs, printed for transparency):
+        expectation_state (engine/expectation_state — ED-7 descriptive pass RBC=0.041
+          is TINY; SUE wrong-sign at the trap ruler per EXPECT_DRIFT_RULER_P_RESULTS.md
+          — explicitly NOT a gate input).
+        capital_allocation_delta (engine/capital_allocation.py, LT-3a).
+        insider (positioning.insider, context only).
+
+      Columns: ticker, as_of, state, state_reason, s1_dilution_fired, s1_dilution_value,
+        s2_moat_falsifier_fired, s2_sensors_fired, s3_solvency_fired, s3_altman_z,
+        s3_altman_approx, s4_coverage_fired, s4_n_computable, piotroski_score,
+        piotroski_of, capital_allocation_delta, _display_only, _horizon_role, _version.
+
+      FIREWALL: horizon_role=hold_thesis. MUST NOT feed board ordering, alert triage,
+      top-setups gates, or push floor (LH-R1). fdr_family=long_hold (LH-R5).
+      No scored_path_surfaces. Display/research tier only.
+
+  long-hold-thesis-funnel-states-manifest:
+    path: data/research/thesis_funnel_states_manifest.json
+    format: json
+    producer: scripts/research/build_thesis_funnel_snapshot.py
+    known_extra_writers: []
+    owner_program: long-hold
+    cadence: on-demand
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 168
+    schema: thesis_funnel_states.v1
+    tier: display
+    horizon_role: hold_thesis
+    weights: none
+    scored_path_surfaces: []
+    fdr_family: long_hold
+    consumers:
+      - research/long_hold/LT4_FUNNEL_SHADOW_REPORT.md
+    external_consumers: []
+    notes: >
+      Companion manifest for thesis_funnel_states.parquet. Fields: schema,
+      as_of, n_tickers, state_counts (per-state population), elapsed_seconds.
+      FIREWALL: hold_thesis — no entry-stack consumers permitted.
+
+  long-hold-thesis-funnel-panel:
+    path: "embedded: thesis_funnel inside site/stockdata/<TICKER>.json"
+    format: json
+    producer: engine/thesis_funnel.py
+    known_extra_writers:
+      - "engine/stock_fundamentals.py — _compute_thesis_funnel_block() called inside panels(); result keyed as 'thesis_funnel'"
+    owner_program: long-hold
+    cadence: daily-engine
+    storage: git
+    asof_field: null
+    freshness_sla_hours: 30
+    schema: thesis_funnel.v1
+    tier: display
+    horizon_role: hold_thesis
+    weights: none
+    scored_path_surfaces: []
+    fdr_family: long_hold
+    consumers:
+      - site/stockdata/<TICKER>.json
+    external_consumers: []
+    notes: >
+      LT-4 (Long-Hold External Foundation). Per-stock thesis funnel state block
+      computed at build time. Transparent AND-gate per LH-R2; no composite,
+      no weights. State enum: not_eligible | watch_for_thesis |
+      thesis_candidate_shadow (ceiling). Survival flags: s1_dilution,
+      s2_moat_falsifier, s3_solvency, s4_coverage. Candidate gate: piotroski_f
+      >= 6 AND capital_allocation_delta != 'dilutive'. Context (non-gate):
+      expectation_state, capital_allocation_delta, insider.
+      Firewall annotations: _horizon_role='hold_thesis', _display_only=True,
+      _version='v1'. DISPLAY-ONLY — G1-DEFERRED ruling 2026-07-06.
+      FIREWALL: horizon_role=hold_thesis. MUST NOT feed board ordering, alert
+      triage, top-setups gates, or push floor (LH-R1). fdr_family=long_hold.
+
+  # --- Long-Hold LT-4: thesis funnel longitudinal history (PR-A2) ---
+  long-hold-thesis-funnel-history:
+    path: data/research/thesis_funnel_history.parquet
+    format: parquet
+    producer: scripts/research/build_thesis_funnel_snapshot.py
+    known_extra_writers:
+      - "scripts/research/build_thesis_funnel_history.py — append_history() called by snapshot main() under --write-history"
+    owner_program: long-hold
+    cadence: daily-engine
+    storage: git
+    asof_field: snapshot_date
+    freshness_sla_hours: 30
+    schema: thesis_funnel_history.v1
+    tier: display
+    horizon_role: hold_thesis
+    weights: none
+    scored_path_surfaces: []
+    fdr_family: long_hold
+    consumers:
+      - research/long_hold/LT4_FUNNEL_SHADOW_REPORT.md
+    external_consumers: []
+    notes: >
+      LT-4 (Long-Hold External Foundation) longitudinal history store (PR-A2).
+      Append-only per (ticker, snapshot_date): keep-FIRST semantics — same-date
+      re-runs are no-ops; no prior-date row is ever mutated. Gated on --write-history
+      flag; sole-advancer law: only the daily.yml engine job passes this flag.
+
+      Schema (thesis_funnel_history.v1):
+        ticker, snapshot_date (YYYY-MM-DD str), state, state_reason,
+        s1_dilution_fired, s2_moat_falsifier_fired, s3_solvency_fired, s3_altman_z,
+        s4_coverage_fired, s4_n_computable, piotroski_score, piotroski_of,
+        capital_allocation_delta, _display_only, _horizon_role, _version,
+        _survivorship_caveat.
+
+      Survivorship caveat: delisted names exit fundamentals_panel silently. Their
+      terminal state is not recorded; population is a varying survivor cohort.
+      Terminal transitions are invisible. Longitudinal consumers MUST treat this
+      as a survivor-biased panel, not a closed panel.
+
+      Drift alerting: when any state's share shifts >5pp vs the prior snapshot,
+      the script prints a drift block and logs a WARNING. Coverage-artifact
+      confounders (LT-1 period_end coverage, fundamentals_panel expansion) are
+      printed alongside to contextualize apparent drift.
+
+      FIREWALL (LH-R1 — STANDING): MUST NOT feed entry-stack z-scores, board
+      ordering, top-setups gates, alert triage, or push floor.
+      DISPLAY-ONLY — G1-DEFERRED ruling 2026-07-06.
+      fdr_family=long_hold (LH-R5). No scored_path_surfaces.
+
+  # --- Winner Autopsy Lab (long-hold top-down department) ---
+  # research/WINNER_AUTOPSY_MASTERPLAN_BY_FABLE.md — rulings WA-R1..R10. All display-only.
+  winner-episodes:
+    path: data/research/winner_episodes.parquet
+    format: parquet
+    producer: scripts/research/build_winner_autopsy.py
+    known_extra_writers: []
+    owner_program: long-hold
+    cadence: on-demand
+    storage: git
+    asof_field: t0
+    freshness_sla_hours: 8760
+    schema: winner_episodes.v1
+    tier: display
+    horizon_role: hold_thesis
+    weights: none
+    scored_path_surfaces: []
+    fdr_family: long_hold
+    consumers:
+      - research/WINNER_AUTOPSY_MASTERPLAN_BY_FABLE.md
+    external_consumers: []
+    notes: >
+      Mechanical relative-strength breakaway onset census (Detector D, masterplan §4)
+      over the post-2014 history × the price-resolvable universe. One row per
+      (ticker, t0) onset with matured forward-outcome labels (durable_winner /
+      clean_hold / blow_off / failed / unmatured). Built off-render on the Mac host
+      via --backfill (needs data/massive_stock_day/, gitignored). This is the
+      statistical substrate for winner autopsy — it selects on the ENTRY condition,
+      not the outcome, so it is immune to winner-selection bias. Survivorship stamps
+      per row; gap_leg_crossed flags forward windows spanning the massive-store gap
+      (2021-10-25 → 2025-01-02). Cross-episode inference is month-clustered + era-split
+      (WA-R4 / DT-R14 / DT-R16). FIREWALL (WA-R5): MUST NOT feed board ordering, alert
+      triage, top-setups, or push floor. fdr_family=long_hold. No scored_path_surfaces.
+
+  winner-episodes-manifest:
+    path: data/research/winner_episodes_manifest.json
+    format: json
+    producer: scripts/research/build_winner_autopsy.py
+    known_extra_writers: []
+    owner_program: long-hold
+    cadence: on-demand
+    storage: git
+    asof_field: generated_at
+    freshness_sla_hours: 8760
+    schema: winner_episodes_manifest.v1
+    tier: display
+    horizon_role: hold_thesis
+    weights: none
+    scored_path_surfaces: []
+    fdr_family: long_hold
+    consumers: []
+    external_consumers: []
+    notes: >
+      Coverage manifest for winner-episodes: price_source_coverage, gap-window
+      episode count, survivorship note, detector thresholds (frozen v1). Honesty
+      surface. DISPLAY-ONLY (WA-R5). fdr_family=long_hold. No scored_path_surfaces.
+
+  breakaway-watch-states:
+    path: data/research/breakaway_watch.parquet
+    format: parquet
+    producer: scripts/research/build_winner_autopsy.py
+    known_extra_writers: []
+    owner_program: long-hold
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: breakaway_watch.v1
+    tier: display
+    horizon_role: hold_thesis
+    weights: none
+    scored_path_surfaces: []
+    fdr_family: long_hold
+    consumers:
+      - research/WINNER_AUTOPSY_MASTERPLAN_BY_FABLE.md
+    external_consumers: []
+    notes: >
+      Current-day breakaway watch states — the SAME Detector D evaluated at the latest
+      bar (masterplan §2/§4), so the live watchlist is honest by construction. States:
+      breakaway / emerging / digestion / continuation / failed / none. No composite
+      score (WA-R1); rows carry named axis fields + hazards only. Ownership/positioning
+      appears as context_only (WA-R2). ATTENTION surface only. FIREWALL (WA-R5): MUST
+      NOT feed board ordering, alert triage, top-setups, or push floor.
+      fdr_family=long_hold. No scored_path_surfaces.
+
+  breakaway-watch-history:
+    path: data/research/breakaway_watch_history.parquet
+    format: parquet
+    producer: scripts/research/build_winner_autopsy.py
+    known_extra_writers: []
+    owner_program: long-hold
+    cadence: daily-engine
+    storage: git
+    asof_field: snapshot_date
+    freshness_sla_hours: 30
+    schema: breakaway_watch_history.v1
+    tier: display
+    horizon_role: hold_thesis
+    weights: none
+    scored_path_surfaces: []
+    fdr_family: long_hold
+    consumers: []
+    external_consumers: []
+    notes: >
+      Append-only longitudinal watch store. Keep-FIRST per (ticker, snapshot_date):
+      same-date re-runs are no-ops; no prior-date row mutated. Gated on --write-history
+      (sole-advancer law; --smoke+--write-history hard-exits). Only the daily.yml engine
+      job passes the flag. First longitudinal read clocked 2026-10-15. DISPLAY-ONLY
+      (WA-R5). fdr_family=long_hold. No scored_path_surfaces.
+
+  winner-autopsy-panel:
+    path: data/research/winner_autopsy_panel.json
+    format: json
+    producer: scripts/research/build_winner_autopsy.py
+    known_extra_writers: []
+    owner_program: long-hold
+    cadence: daily-engine
+    storage: git
+    asof_field: generated_at
+    freshness_sla_hours: 30
+    schema: winner_autopsy_panel.v1
+    tier: display
+    horizon_role: hold_thesis
+    weights: none
+    scored_path_surfaces: []
+    fdr_family: long_hold
+    consumers:
+      - admin/long_hold.py
+    external_consumers: []
+    notes: >
+      Admin-readable rollup (census summary + Codex case library reconcile + current
+      watch + long-hold clocks) surfaced on the admin Long-Hold Lobe page. Read-only
+      JSON; the admin app never reads parquet. DISPLAY-ONLY (WA-R5). admin/long_hold.py
+      is an operator-HQ reader, NOT an Article-2 entry surface — the firewall banlist
+      (alert_triage / board_ordering / top_setups / attention_queue / push_floor) does
+      not include it. fdr_family=long_hold. No scored_path_surfaces.
+
+  winner-autopsy-manifest:
+    path: data/research/winner_autopsy_manifest.json
+    format: json
+    producer: scripts/research/build_winner_autopsy.py
+    known_extra_writers: []
+    owner_program: long-hold
+    cadence: daily-engine
+    storage: git
+    asof_field: generated_at
+    freshness_sla_hours: 30
+    schema: winner_autopsy_manifest.v1
+    tier: display
+    horizon_role: hold_thesis
+    weights: none
+    scored_path_surfaces: []
+    fdr_family: long_hold
+    consumers: []
+    external_consumers: []
+    notes: >
+      Build manifest for the nightly winner-autopsy default run (watch coverage,
+      case count, panel freshness). Honesty surface. DISPLAY-ONLY (WA-R5).
+      fdr_family=long_hold. No scored_path_surfaces.
 
   # --- NW quant-synthesis B: research-queue EV-ranker ---
   research-queue:
@@ -4570,6 +5061,97 @@ artifacts:
       (end-of-collect, after all graders). Companion markdown table at docs/GRADING_CLOSURE.md.
       Fixes are per-program follow-ups; this rail makes standing status visible.
 
+  # --- NW Codex Three Lobes W-A (PR-B) governance artifact ---
+  claim-accountability:
+    path: data/governance/claim_accountability.json
+    format: json
+    producer: scripts/audit_claim_accountability.py
+    known_extra_writers: []
+    owner_program: neural-web
+    cadence: collect
+    storage: git
+    asof_field: generated_at
+    freshness_sla_hours: 30
+    schema: claim_accountability.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - docs/CLAIM_ACCOUNTABILITY.md
+    external_consumers: []
+    notes: >
+      NW Codex Three Lobes W-A (PR-B) — standing claim-accountability audit (RUL-C9).
+      Read-only over data/qledger/ (QI-owned, RUL-C3). Per desk and claim_family emits:
+      n_claims, falsifier_coverage, hit_gradeable_share (direction=0 claims are not
+      hit-gradeable — graded on excess only; does not contradict R2 audit CLOSED verdict),
+      maturity_mix (5d graded share; 21d/63d matured counts — 0 today, calendar-gated),
+      fill_convention_split (asof_legacy vs next_bar, #1180 discontinuity),
+      source_ontology_fill (source_tier/channels/source_id fill rates — near-zero;
+      per-source reliability unbuildable until >=500 graded labels).
+      Single writer: scripts/audit_claim_accountability.py run_as_collect_step
+      (end-of-collect, immediately after grading-closure audit).
+      Companion markdown at docs/CLAIM_ACCOUNTABILITY.md.
+
+  # --- NEXT3 W-OC: options entry coverage audit (PR-β) ---
+  options-entry-coverage:
+    path: data/options_entry/coverage.json
+    format: json
+    producer: scripts/audit_options_entry_coverage.py
+    known_extra_writers: []
+    owner_program: next3
+    cadence: collect
+    storage: git
+    asof_field: generated_at
+    freshness_sla_hours: 30
+    schema: options_entry_coverage.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      NEXT3 W-OC (PR-β) — options entry feature coverage audit (RUL-U5).
+      Read-only over state.parquet, gate.json, board ledger, and registry constants.
+      Emits per-feature non-null counts + shares, per-family stamp coverage (n_cond/n_base
+      from gate.json tests), weekly new-stamped-fire counts (derived from ledger as_of),
+      readiness forecast per family (projected date n_cond>=30; "unknown" until >=14 days
+      of post-W-C history exist), structural-null ledger (iv_rank_* ruling A9, pin_risk
+      by-design opex_days<=5 gate, gamma_regime constancy caveat), consistency rows
+      (BH test-count drift 28 vs 22 — print only, fix owned by W-OVC; stale as_of ages;
+      audit_options_accrual last-run status). Single writer.
+
+  # --- NW Rails post-Fable PR-1: DQ-2 operator-action grading harness ---
+  operator-grading:
+    path: data/governance/operator_grading.json
+    format: json
+    producer: scripts/grade_operator_actions.py
+    known_extra_writers: []
+    owner_program: nw-rails
+    cadence: on-demand
+    storage: git
+    asof_field: generated_at
+    freshness_sla_hours: 8760
+    schema: operator_grading.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      NW Rails post-Fable queue PR-1 (DQ-2) — operator-action grading harness.
+      Grades operator decisions (acted/dismissed/overrode/snoozed) against the qledger
+      claims/grades corpus. Three pre-declared contrasts: C1 overrode_accuracy,
+      C2 dismissed_then_worked, C3 acted_then_failed. Floor n>=25 graded actions per
+      contrast; artifact ships in accruing state until floor is reached (correct).
+      FDR family 'operator', declared budget 3, BH step-up q=0.10.
+      NEVER wired into daily.yml — ops-lane manual cadence only.
+      Single writer: scripts/grade_operator_actions.py. BH and bootstrap imported from
+      engine.btc_override_ledger (not re-implemented). Action ledger gitignored at
+      data/operator/ (RUL-P10 path a). Display-only until gauntleted.
+
   # --- NW Rails R1 (PR-1) ---
   rule-experiment-registry:
     path: data/rule_experiments/registry.jsonl
@@ -4589,6 +5171,7 @@ artifacts:
     consumers:
       - scripts/register_rule_experiment.py
       - scripts/run_rule_replay.py
+      - engine/neuralweb/evidence_clock.py
     external_consumers: []
     notes: >
       NW Rails R1 anti-fishing governor registry. Append-only JSONL; single writer is
@@ -4645,6 +5228,7 @@ artifacts:
     consumers:
       - scripts/build_site.py
       - templates/dashboard.html.j2
+      - engine/neuralweb/covariance_spine.py
     external_consumers: []
     notes: >
       L3 chartered lobe (NW Rails program §5). Promotes engine/dispersion.py output
@@ -4683,6 +5267,61 @@ artifacts:
       /api/actions. Grading harness is a post-Fable wave (template: btc_override_ledger.py
       Wilson/bootstrap; qledger claims as counterfactual source). Ledger accrues only in
       calendar time; n>=25 graded actions is the cortex A2 Wilson floor.
+
+  # --- NEXT3 W-EX: operator exposure log (denominator substrate) ---
+  operator-exposure-log:
+    path: data/operator/exposure_log.jsonl
+    format: jsonl
+    producer: scripts/build_operator_exposure_log.py
+    known_extra_writers: []
+    owner_program: next3
+    cadence: daily-engine
+    storage: gitignored-local
+    asof_field: as_of
+    freshness_sla_hours: 36
+    schema: operator_exposure.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - data/governance/operator_exposure_summary.json
+    external_consumers: []
+    notes: >
+      NEXT3 W-EX (§5.2 / RUL-U6) — denominator substrate for operator decision-quality.
+      Gitignored host-local; append-only with dedup on (surface, surface_id, as_of).
+      Records what the operator was shown from committed site artifacts: experiments.json
+      (experiment surface), us_standouts.json (board_buy/board_watch), wh_banner.json
+      (alert_wh), rr_banner.json (alert_rr when alert != null). Exposure date = artifact
+      as_of field, NEVER run date. No statistics, no contrasts, no trial registrations
+      (RUL-U6 fence). Action rows (operator-action-ledger) join on surface conventions;
+      unmatched actions are counted, never dropped (mirrors engine/operator_grading.py).
+      Single writer: scripts/build_operator_exposure_log.py run_as_collect_step, wired
+      end-of-collect next to audit_grading_closure. Come-back for exposure-conditioned
+      contrasts: 2026-09-15.
+
+  operator-exposure-summary:
+    path: data/governance/operator_exposure_summary.json
+    format: json
+    producer: scripts/build_operator_exposure_log.py
+    known_extra_writers: []
+    owner_program: next3
+    cadence: daily-engine
+    storage: git
+    asof_field: generated_at
+    freshness_sla_hours: 36
+    schema: operator_exposure_summary.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      NEXT3 W-EX (§5.2 / RUL-U6) — committed governance artifact. Counts-by-surface×day
+      bounded to 90 days; vintage-stamped (generated_at ISO). Single writer:
+      scripts/build_operator_exposure_log.py. Companion to gitignored operator-exposure-log.
+      No statistics; display-only until gauntleted (come-back 2026-09-15).
 
   # ============================================================
   # NW → MASTERMIND BRIDGE (W1)
@@ -4730,7 +5369,8 @@ artifacts:
     horizon_role: context
     weights: none
     scored_path_surfaces: []
-    consumers: []
+    consumers:
+      - engine/neuralweb/evidence_clock.py
     external_consumers:
       - mastermind:anchor
     notes: >
@@ -4768,6 +5408,71 @@ artifacts:
       vendor/macro_src/site/neuralwebdata/mastermind_context.json with zero new sync
       plumbing (site/ is in the sparse set). See NW_MASTERMIND_BRIDGE_PROGRAM.md §3.2.
 
+  # --- Mastermind Feedback Contract W2 (FB-R7/R8/R14) ---
+  # Reverse bridge: Mastermind → NW counts-only feedback reader.
+  # Source artifact (externally produced by Mastermind, pushed twice daily):
+  # site/mastermind/nw_feedback.json — registered with owner: mastermind.
+  # Macro-side summary: data/governance/mastermind_feedback_summary.json.
+  # Authority: context_only at birth; all five booleans false (FB-R10).
+  # No tickers, no fill/decision/position IDs, no notional (FB-R8).
+
+  site-mastermind-nw-feedback:
+    path: site/mastermind/nw_feedback.json
+    format: json
+    producer: <MASTERMIND_EXTERNAL>
+    owner_program: mastermind-feedback-contract
+    cadence: on-demand
+    storage: git
+    asof_field: generated_at
+    freshness_sla_hours: 30
+    schema: mastermind_nw_feedback.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/neuralweb/mastermind_feedback.py
+    external_consumers: []
+    notes: >
+      Externally produced by Mastermind (sole writer: bridge/nw_feedback.py).
+      Pushed twice daily via export_macro_snapshot.py. Counts-only: no tickers,
+      no fill IDs, no notional (FB-R8). Schema mastermind_nw_feedback.v1 (v2
+      additive: decision_flow/outcome_mix/context_audit blocks). The Macro-side
+      reader (engine/neuralweb/mastermind_feedback.py) accepts both v1 and v2;
+      unknown schema treated as absent with gap note. No Macro engine may write
+      under site/mastermind/ (FB-R2). See MASTERMIND_FEEDBACK_CONTRACT_PROGRAM.md.
+
+  mastermind-feedback-summary:
+    path: data/governance/mastermind_feedback_summary.json
+    format: json
+    producer: scripts/build_mastermind_feedback_summary.py
+    known_extra_writers:
+      - "engine/neuralweb/mastermind_feedback.py — build_and_write() writes the artifact"
+    owner_program: mastermind-feedback-contract
+    cadence: daily-engine
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 30
+    schema: neuralweb.mastermind_feedback_summary.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      Mastermind → NW reverse bridge summary (W2, FB-R7/R8/R14). Counts-only:
+      gate_failures, rejected_decisions, lock_conflicts, stale_freezes,
+      thesis counts, run counts, per_book breakdown. state: present|stale|absent;
+      stale/absent → totals null, never fabricated zeros. Staleness threshold:
+      4 calendar days (FB-R14). Leak-proof by whitelist construction — no tickers,
+      fill IDs, notional, or host paths ever reach this artifact (test-enforced).
+      Authority: is_context_only=true, all five booleans false (FB-R10).
+      v2 passthrough blocks (decision_flow/outcome_mix/context_audit) appear when
+      source schema is mastermind_nw_feedback.v2. Metric families registered per §3:
+      context_engagement/decision_flow/outcome_mix LIVE; fill_slippage/warning_outcome_delta
+      BLOCKED (printed with reasons, never faked). See MASTERMIND_FEEDBACK_CONTRACT_PROGRAM.md.
+
   # --- Research Factory W1 (RF-11) ---
   # Three durable orchestration ledgers at display tier, horizon-agnostic context.
   # Authority ceiling: A0-A2 display-only (no scored-path authority).
@@ -4789,7 +5494,8 @@ artifacts:
     horizon_role: context
     weights: none
     scored_path_surfaces: []
-    consumers: []
+    consumers:
+      - engine/neuralweb/evidence_clock.py
     notes: >
       Research Factory W1 (RF-11). Candidate identity ledger — append-only JSONL.
       Authority ceiling A0-A2 display-only; every row carries authority='display_only'.
@@ -4852,7 +5558,8 @@ artifacts:
       and must NOT be listed as a ledger writer.
       See research/RESEARCH_FACTORY_MASTERPLAN_BY_FABLE.md §5.4.
 
-  # =====================================================  # FACTOR INTELLIGENCE × NEURAL WEB INTEGRATION (RUL-NW1/NW10/NW11)
+  # ============================================================
+  # FACTOR INTELLIGENCE × NEURAL WEB INTEGRATION (RUL-NW1/NW10/NW11)
   # §D PR-1: state artifact + long-term factor pool + narrow advancer
   # ============================================================
 
@@ -4867,46 +5574,6 @@ artifacts:
     asof_field: as_of
     freshness_sla_hours: 30
     schema: neuralweb.factor_intelligence_state.v1
-    tier: display
-    horizon_role: context
-    weights: none
-    scored_path_surfaces: []
-    consumers:
-      - engine/neuralweb/world_state.py
-      - engine/neuralweb/cortex.py
-      - engine/neuralweb/ask_brain.py
-      - scripts/build_site.py
-      - admin/neural_web.py
-    notes: >
-      RUL-NW1 — factor_panel job is sole advancer. Context-only committed
-      digest of factor intelligence state (panel health, factor weather,
-      Pair G, hypotheses h1..h5, scorecard). is_context_only=true,
-      display_only=true. allowed_actions block is a mirror, never a switch
-      (RUL-NW9). No scored-path surfaces — display and admin rendering only.
-      Written by scripts/build_factor_intelligence_state.py after the
-      factor_contradictions step in the factor_panel job.
-      Consumers: scripts/build_site.py (factors.html NW status panel, RUL-NW7/NW8
-      §D PR-4) and admin/neural_web.py (factor_intelligence section, §D PR-4).
-
-  # --- NW Macro Context Rail R5 (PR-A) — 10 existing-producer registrations ---
-  # All entries: owner_program=macro-context-rail, tier=display, horizon_role=context,
-  # storage=git, schema=implicit, weights=none, scored_path_surfaces=[],
-  # consumers=[engine/neuralweb/world_state.py], external_consumers=[].
-  # asof_field verified against live artifact keys on 2026-07-06 (origin/main e0e9f71cc6).
-  # NOTE: consumers list will be extended to include scripts/build_macro_snapshot.py
-  # once PR-C lands (producer-existence law prevents registering it here).
-
-  forex-latest:
-    path: data/forex/latest.json
-    format: json
-    producer: scripts/build_forex.py
-    known_extra_writers: []
-    owner_program: macro-context-rail
-    cadence: daily-engine
-    storage: git
-    asof_field: asof
-    freshness_sla_hours: 30
-    schema: implicit
     tier: display
     horizon_role: context
     weights: none
@@ -5000,6 +5667,1554 @@ artifacts:
       stream names), factor_model=v1. Standalone artifact — JOINs to replay/board-ledger
       outcomes at study time. Display/analysis only (no rank/score surfaces).
 
+  factor-contradictions-ledger:
+    path: data/neuralweb/factor_contradictions.jsonl
+    format: jsonl
+    producer: engine/neuralweb/factor_contradictions.py
+    known_extra_writers: []
+    owner_program: factor-intelligence
+    cadence: nightly-factor-panel
+    storage: git
+    asof_field: date
+    freshness_sla_hours: 30
+    schema: neuralweb.factor_contradictions.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/neuralweb/cortex.py
+      - engine/neuralweb/ask_brain.py
+    notes: >
+      RUL-NW1 — un-gitignored by this ruling; committed via the factor_panel job's
+      narrow commit step. Pair G borrowed_strength contradiction ledger: append-only,
+      keyed (date, ticker). Severity hardcoded to 'note' until H2 GATE-PASSED.
+      display_only=true unconditionally. Single-writer: engine/neuralweb/factor_contradictions.py.
+      0-20 rows/day; dormant until panel has >= 60 distinct dates.
+
+  # --- PR-C: NW lobe-status health surface ---
+  neuralweb-health:
+    path: data/neuralweb/health.json
+    format: json
+    producer: scripts/build_neuralweb_health.py
+    known_extra_writers: []
+    owner_program: neural-web
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: neuralweb.health.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - admin/neural_web.py
+      - engine/neuralweb/daily_brief.py
+      - engine/neuralweb/evidence_clock.py
+    external_consumers: []
+    notes: >
+      PR-C canonical NW lobe-status surface. Machine-readable operating-truth
+      file for all Neural Web lobes. Built in two phases: engine job writes
+      cortex_source='previous_run' (last committed cortex memo status); cortex job
+      runs --refresh-cortex to rewrite cortex section with cortex_source='current_run'.
+      Display/ops only — no authority, no behavioral conditioning. Never 'missing'
+      for r2-storage lobes (status='not_locally_verifiable'). Schema enforced at
+      write time via neuralweb.health.v1.
+
+  site-neuralweb-health:
+    path: site/neuralwebdata/health.json
+    format: json
+    producer: scripts/build_neuralweb_health.py
+    known_extra_writers: []
+    owner_program: neural-web
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: neuralweb.health.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      CPI P1 substrate: stable entity id map for the cycle-pattern lake (~180 entities
+      across 9 families; basket/amalgam rows flagged pit_membership=False). Rebuilt by
+      scripts/build_cycle_pattern_lake.py. Infrastructure/display only — no authority.
+      (Notes were a copy-paste of the neuralweb-health artifact until 2026-07-06; fixed.)
+
+  # --- PR-D: NW daily brief surface ---
+
+  # ============================================================
+  # CYCLE-PATTERN INTELLIGENCE — CPI substrate v0 (2026-07-06)
+  # Registered here; calibration-lane wiring lands in a follow-on PR.
+  # Freshness SLAs are generous (1440h) on monthly/on-demand artifacts so
+  # the bus does not false-alarm before that wiring is in place.
+  # ============================================================
+
+  cycle-pattern-entities:
+    path: data/cycle_pattern/entities.parquet
+    format: parquet
+    producer: scripts/build_cycle_pattern_lake.py
+    known_extra_writers: []
+    owner_program: cycle-intelligence
+    cadence: on-demand
+    storage: git
+    asof_field: null
+    freshness_sla_hours: 1440  # generous: monthly rebuild; bus alarm suppressed until calibration-lane wiring lands
+    schema: cycle_pattern.entities.v0
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/build_index_hazard_panel.py
+    external_consumers: []
+    notes: >
+      CPI P1 substrate: stable entity id map for the cycle-pattern lake (~180 entities
+      across 9 families; basket/amalgam rows flagged pit_membership=False). Rebuilt by
+      scripts/build_cycle_pattern_lake.py. Infrastructure/display only — no authority.
+      (Notes were a copy-paste of the neuralweb-health artifact until 2026-07-06; fixed.)
+
+  # --- PR-D: NW daily brief surface ---
+  neuralweb-daily-brief:
+    path: data/neuralweb/daily_brief.json
+    format: json
+    producer: scripts/build_neuralweb_brief.py
+    known_extra_writers: []
+    owner_program: neural-web
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: neuralweb.daily_brief.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - admin/neural_web.py
+    external_consumers: []
+    notes: >
+      PR-D canonical NW daily brief surface — deterministic "what did Neural Web do today?"
+      Built in two phases: engine job writes phase='engine'; cortex job --finalize
+      rewrites with phase='final' and upserts compact history row. Display/ops only —
+      no authority, no trading language. Schema: neuralweb.daily_brief.v1.
+
+  site-neuralweb-daily-brief:
+    path: site/neuralwebdata/daily_brief.json
+    format: json
+    producer: scripts/build_neuralweb_brief.py
+    known_extra_writers: []
+    owner_program: neural-web
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: neuralweb.daily_brief.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - templates/committee.html.j2
+    external_consumers: []
+    notes: >
+      PR-D site copy of data/neuralweb/daily_brief.json for client-side consumption
+      in committee.html. Exact mirror written atomically alongside the data copy by
+      scripts/build_neuralweb_brief.py. Display/ops only — no authority.
+
+  neuralweb-daily-brief-history:
+    path: data/neuralweb/daily_brief_history.jsonl
+    format: jsonl
+    producer: scripts/build_neuralweb_brief.py
+    known_extra_writers: []
+    owner_program: neural-web
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: neuralweb.daily_brief.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/neuralweb/daily_brief.py
+    external_consumers: []
+    notes: >
+      PR-D compact history of daily brief snapshots. One row per as_of date;
+      upserted (same as_of → replace row) by scripts/build_neuralweb_brief --finalize.
+      Chronologically sorted. Used for delta detection in next run. Display/ops only.
+
+  # --- W1 NW Core-Cognition: Mechanism Pathway Compiler v1 ---
+  mechanism-pathways:
+    path: data/neuralweb/mechanism_pathways.json
+    format: json
+    producer: scripts/build_mechanism_pathways.py
+    known_extra_writers: []
+    owner_program: neural-web
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: neuralweb.mechanism_pathways.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/neuralweb/daily_brief.py
+      - admin/neural_web.py
+      - engine/neuralweb/ask_brain.py
+      - engine/neuralweb/cortex.py
+    external_consumers: []
+    notes: >
+      MPC v1 (RUL-CC-1..13): deterministic display-only compiler reading emitted
+      artifacts only (market_drivers, transmission, factor_intelligence_state).
+      Trigger precedence: market_drivers clear → risk_radar scare → factor rotation
+      → no_attributable_driver null. Stale trigger → no_pathway(reason=trigger_stale).
+      Coverage score float; coherence categorical (supported/partial/conflicted).
+      confidence_ceiling=context_only always. Forbidden: ranking, sizing,
+      alert_escalation, board_ordering, mastermind_arming (RUL-CC-1).
+      W3 wired: daily_brief why_the_tape_moved + stale enrichment; ask_brain +
+      cortex read_mechanism_pathways tool; committee.html.j2 client-side block;
+      admin Section I QA panel.
+
+  site-mechanism-pathways:
+    path: site/neuralwebdata/mechanism_pathways.json
+    format: json
+    producer: scripts/build_mechanism_pathways.py
+    known_extra_writers: []
+    owner_program: neural-web
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: neuralweb.mechanism_pathways.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - templates/committee.html.j2
+    external_consumers: []
+    notes: >
+      Site mirror of data/neuralweb/mechanism_pathways.json for client-side
+      consumption. Exact copy written atomically alongside the data artifact by
+      scripts/build_mechanism_pathways.py. Display/context only — no authority.
+
+  mechanism-pathways-history:
+    path: data/neuralweb/mechanism_pathways_history.jsonl
+    format: jsonl
+    producer: scripts/build_mechanism_pathways.py
+    known_extra_writers: []
+    owner_program: neural-web
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: neuralweb.mechanism_pathways.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/build_mechanism_pathways.py
+    external_consumers: []
+    notes: >
+      Append-only daily digest of mechanism pathway snapshots. One compact row per
+      as_of (keep-first: same-day reruns skip if as_of already present). Fields:
+      as_of, schema, pathways_count, primary_family, no_pathway_reason. Written
+      by scripts/build_mechanism_pathways.py alongside the main artifact.
+      Display/ops only — no authority.
+
+  entity-thesis-mechanism-registry:
+    path: data/neuralweb/entity_thesis_mechanism_registry.json
+    format: json
+    producer: scripts/build_entity_thesis_mechanism_registry.py
+    known_extra_writers: []
+    owner_program: neural-web
+    cadence: daily-engine
+    storage: git
+    asof_field: generated_utc
+    freshness_sla_hours: 30
+    schema: neuralweb.entity_thesis_mechanism.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      Entity/Thesis/Mechanism crosswalk (ETM-R1..R8, research/fable_exit/05 handoff).
+      Deterministic, display-only conceptual lineage graph over existing local ID systems
+      (species, research-factory candidates, governance events, reflexivity thesis groups,
+      trial ledger). Crosswalk only — local systems remain authoritative; no scores, no
+      ranking, no gating; suggestions (possible_duplicates) are token-overlap context only.
+
+  cycle-pattern-state-monthly:
+    path: data/cycle_pattern/state_monthly.parquet
+    format: parquet
+    producer: scripts/build_cycle_pattern_lake.py
+    known_extra_writers: []
+    owner_program: cycle-intelligence
+    cadence: on-demand
+    storage: git
+    asof_field: date
+    freshness_sla_hours: 1440  # generous: monthly rebuild; bus alarm suppressed until calibration-lane wiring lands
+    schema: cycle_pattern.state_monthly.v0
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      CPI substrate v0 — 12,519-row month-block panel of cycle state across all entities.
+      Key columns: entity_id, native_id, date, phase, pos, osc_slope, signal, timing_state,
+      above200d, rs_63d, proj_next/central/lo/hi, stance, divergence, overdue, quad,
+      liquidity, hazard_epoch. PIT-clean: all feature columns are forward-available at date.
+      Rebuilt on-demand after forward-log backfills complete.
+
+  cycle-pattern-outcomes:
+    path: data/cycle_pattern/outcomes.parquet
+    format: parquet
+    producer: scripts/build_cycle_pattern_outcomes.py
+    known_extra_writers: []
+    owner_program: cycle-intelligence
+    cadence: on-demand
+    storage: git
+    asof_field: date
+    freshness_sla_hours: 1440  # generous: monthly rebuild; bus alarm suppressed until calibration-lane wiring lands
+    schema: cycle_pattern.outcomes.v0
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      CPI substrate v0 — label-side outcomes parquet keyed (entity_id, date).
+      Strict PIT discipline: outcome columns (forward returns, phase transitions) are
+      separated from state_monthly features; never mixed at query time.
+      Producer script is built in the calibration-outcomes parallel lane; file will
+      exist before calibration-lane consumers are wired.
+
+  cycle-pattern-truths:
+    path: data/cycle_pattern/truths.jsonl
+    format: jsonl
+    producer: scripts/seed_cycle_truths.py
+    known_extra_writers: []
+    owner_program: cycle-intelligence
+    cadence: on-demand
+    storage: git
+    asof_field: last_reviewed
+    freshness_sla_hours: 1440  # generous: seeded once; re-seeded on major cycle-theory updates
+    schema: cycle_pattern.truths.v0
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/neuralweb/daily_brief.py
+      - engine/neuralweb/evidence_clock.py
+    external_consumers: []
+    notes: >
+      PR-D compact history of daily brief snapshots. One row per as_of date;
+      upserted (same as_of → replace row) by scripts/build_neuralweb_brief --finalize.
+      Chronologically sorted. Used for delta detection in next run. Display/ops only.
+      - scripts/build_measurement.py
+    external_consumers: []
+    notes: >
+      CPI substrate v0 — 15-seed truth ledger (truths.jsonl) for cycle-pattern
+      claims. Fields: truth_id, statement, target, scope, effect_class, status,
+      n_summary, ci_summary, pit_class, era_stability, evidence_refs, falsifiers,
+      monitoring, allowed_consumers, forbidden_consumers, owner_program, created,
+      last_reviewed, next_review_due, version, notes. Display tier only — feeds
+      pages/NW as qualitative context; not a scored surface. No arithmetic on
+      truth rows before Article-3 validation passes.
+
+  signal-archive-context-daily:
+    path: data/signal_archive/context_daily.parquet
+    format: parquet
+    producer: scripts/archive_context_snapshots.py
+    known_extra_writers: []
+    owner_program: cycle-intelligence
+    cadence: daily-engine
+    storage: git
+    asof_field: date
+    freshness_sla_hours: 48
+    schema: signal_archive.context_daily.v0
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      Append-only daily context snapshot keyed by date (keep-FIRST idempotent).
+      Captures regime quad, liquidity label, cycle_tag, transition_state,
+      regime_confidence, market_verdict, vol_regime_verdict, and related macro
+      state at each calendar date. Sources: data/regime/latest.json,
+      data/market_state/latest.json, fear-greed parquet. Feeds CPI calibration
+      context alignment; all sources absent-safe.
+
+  cycle-pattern-state-daily-live:
+    path: data/cycle_pattern/state_daily_live.parquet
+    format: parquet
+    producer: scripts/build_cycle_pattern_live.py
+    known_extra_writers: []
+    owner_program: cycle-intelligence
+    cadence: daily-engine
+    storage: git
+    asof_field: date
+    freshness_sla_hours: 30
+    schema: cycle_pattern.state_daily_live.v0
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      CPI live adapter — nightly union of the three forward logs
+      (sector_cycles, country_cycles, china_sector_cycles) mapped to the
+      entity registry (entity_id, family added). Full deterministic rebuild
+      each run; forward logs are the append-only source of truth.
+      Columns: entity_id, native_id, family, date, kind, name, engine,
+      source_artifact, phase, pos, osc_slope, signal, timing_state,
+      above200d, rs_63d, proj_next/central/lo/hi, pos_v2, phase_v2,
+      stance, divergence, overdue, basis, hazard_1m/3m/6m_p+src,
+      unmapped_id. Unmapped ids kept (entity_id=None, unmapped_id=True)
+      with WARNING; never silently dropped. Built after all three cycle
+      builders so today's stamps are present before the view rebuilds.
+
+  # --- CPI P6 wave 1: NW cycle-pattern adapter (UI-HZ-1 / lobe substrate) ---
+  cycle-pattern-state:
+    path: data/neuralweb/cycle_pattern_state.json
+    format: json
+    producer: scripts/build_cycle_pattern_state.py
+    known_extra_writers: []
+    owner_program: cycle-intelligence
+    cadence: daily-engine
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 30
+    schema: neuralweb_cycle_pattern_state.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - cortex-read
+    external_consumers: []
+    notes: >
+      CPI P6 wave 1 (UI-HZ-1). Promotion, not invention (RUL-P5 pattern):
+      compacts state_daily_live (latest row per entity: phase_v2 +
+      hazard_{1m,3m,6m}_p with per-horizon MODEL|PRIOR source), the W4.2
+      hazard gate ledger verdicts (gate_status per up/down x 1m/3m/6m cell,
+      read from data/hazard/model_<epoch>.json via engine.hazard_score —
+      never hardcoded), and the truth-registry summary (active_truths counts
+      + latest ids) into one committed JSON the Neural Web cites as a
+      governed display artifact. Consumed by the world_state cycle_pattern
+      lobe (counts-only), the mastermind_context cycle_pattern summarizer,
+      and the read_cycle_pattern_state cortex/ask tool. DISPLAY-ONLY ceiling
+      (CPI consumer matrix): may de-escalate a calibrated key as context;
+      may never originate, score, or escalate; forbidden consumers
+      (board_rank, oracle_escalation, sector_central_direction_score,
+      position_sizing) untouched. PRIOR cells are family-stratified KM base
+      rates — every surfaced probability must carry its cell verdict badge
+      (no naked probabilities). Fail-open (missing inputs -> valid JSON with
+      degraded_notes + empty lists); deterministic ordering (family,
+      native_id).
+
+  fed-net-liquidity:
+    path: data/macro/fed_net_liquidity.parquet
+    format: parquet
+    producer: scripts/build_netliq_daily.py
+    known_extra_writers: []
+    owner_program: cycle-intelligence
+    cadence: daily-engine
+    storage: git
+    asof_field: date
+    freshness_sla_hours: 96  # WALCL is weekly (H.4.1 Wednesdays) and the DTS/RRP tail pauses over long weekends; 96h avoids false alarms without hiding a dead collector (the stale-guard already freezes the tail)
+    schema: macro.fed_net_liquidity.v0
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      CPI DATA INFRASTRUCTURE — daily net Fed liquidity panel derived via
+      engine.canon (the ONE formula, audit #28): netliq_bn = WALCL_bn − RRP_bn −
+      TGA_bn, all BILLIONS (WALCL/TGA stored in millions → /1000; RRPONTSYD
+      already billions; a missing drain contributes 0 via fillna, never
+      annihilating the balance-sheet trend). Columns: date (union of component
+      real-observation dates), walcl_bn, rrp_bn, tga_bn, netliq_bn, netliq_d13w
+      (65-row change), netliq_d26w (130-row change), netliq_pctile_expanding
+      (PIT-pure expanding percentile of the level — appending future rows never
+      changes past values). Stale-guard: frame TRUNCATED at min(component last
+      real obs) + 10 business days so a dead component collector cannot
+      silently ffill a drain flat; per-component last-obs dates recorded in the
+      data/macro/fed_net_liquidity_meta.json sidecar (deterministic, no
+      timestamps). Deterministic idempotent full rebuild each engine run;
+      components refreshed upstream by the collect job (collectors/fred.py,
+      collectors/treasury.py — TGA parquet is git-tracked and nightly-collected;
+      the CPI prereg §13 "TGA absent" claim meant absent-from-the-registry, not
+      absent-from-disk). consumers=[] BY DESIGN: FT-3 (netliq covariate on the
+      pooled hazard) is NOT registered — additive-feature FT trials are
+      SUSPENDED by truth cycle_truth_ft2_credit_hazard_null_v1
+      (data/cycle_pattern/truths.jsonl); FT-3 may only be registered under that
+      truth's reopening conditions.
+
+  # --- PR-A3: Operator-tape outcome resolution ---
+  oracle-operator-tape-outcomes:
+    path: data/oracle/operator_tape_outcomes.jsonl
+    format: jsonl
+    producer: scripts/oracle_nightly.py
+    known_extra_writers: []
+    owner_program: oracle
+    cadence: daily-engine
+    storage: git
+    asof_field: resolved_at
+    freshness_sla_hours: 30
+    schema: operator_tape_outcomes.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/oracle_nightly.py
+      - engine/oracle/tape_outcomes.py
+    external_consumers: []
+    notes: >
+      PR-A3 append-only ledger. For each operator_tape.jsonl row: records
+      system_state_at_stamp (Oracle state at pit_stamp from forward_ledger
+      reconstruction; 'unresolvable_pre_capture' when impossible), realized_outcome
+      (deterministic 21d forward return, matured-only), and override_flag
+      (operator direction vs system state, null if unresolvable). Never mutates
+      the source tape. Display tier + infrastructure lineage. Outcomes are
+      purely deterministic price arithmetic; no LLM-originated numbers.
+
+  oracle-operator-scorecard:
+    path: data/oracle/operator_scorecard.json
+    format: json
+    producer: scripts/oracle_nightly.py
+    known_extra_writers: []
+    owner_program: oracle
+    cadence: daily-engine
+    storage: git
+    asof_field: produced_at
+    freshness_sla_hours: 30
+    schema: operator_scorecard.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/oracle_nightly.py
+    external_consumers: []
+    notes: >
+      PR-A3 display-only scorecard. Operator hit-rate vs system hit-rate by
+      direction/conviction, with n printed on every row. Small-n expected and
+      printed (no confidence claims). Wilson 95% CI from engine/grading_stats.py
+      printed for information only. Overwritten nightly (not a ledger). Feeds
+      no score, gate, or ranking surface. No intervals claimed as thresholds.
+
+  # ============================================================
+  # BD-AVOID-1 Phase-1 Forward Ledger (L1 Short-Side Lobe)
+  # ============================================================
+
+  bd-avoid1-ledger:
+    path: data/research/bd_avoid1_ledger.parquet
+    format: parquet
+    producer: scripts/research/bd_avoid1_stamper.py
+    known_extra_writers: []
+    owner_program: short-side
+    cadence: on-demand
+    storage: git
+    asof_field: event_date
+    freshness_sla_hours: 48
+    schema: bd_avoid1_ledger.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/audit_grading_closure.py
+    external_consumers: []
+    notes: >
+      BD-AVOID-1 Phase-1 forward ledger for the L1 Short-Side lobe.
+      Pre-registered 2026-07-06 (research/short_side/BD_AVOID1_PHASE1_PREREG.md).
+      Contains BD-2 and BD-3 forward OOS events (derived_from_surface=bd_phase0;
+      compensating gate >=8pp; fdr_family='short_side'; n>=300/side floor before
+      verdict). Mac-side single-writer ops lane only — never on CI runners
+      (requires massive_stock_day + replay_boarded, both Mac-local/R2).
+      Append-only; event rows + 3 seeded PIT random-bar controls per event
+      (is_control=True). Long-side grades (clean8_21) feed the future verdict;
+      short-side grades (short21) are quarantined descriptive (RUL-3).
+      No board chips, no site surface until verdict floor is reached.
+      Come-back dates: BD-2 >= 2026-10-01, BD-3 >= 2027-01-01.
+      Invoked by ops/launchd/com.macro.bd_avoid1_stamper.plist (weekday 17:00 ET).
+
+
+  # --- W-D reflexivity wave: N_eff rolling history ---
+  reflexivity-n-eff-history:
+    path: data/reflexivity/n_eff_history.json
+    format: json
+    producer: scripts/build_reflexivity_overlay.py
+    known_extra_writers: []
+    owner_program: signal-commons
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: reflexivity_n_eff_history.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      Rolling N_eff history for the reflexivity overlay (W-D wave, Signal Commons
+      program). Single-writer: scripts/build_reflexivity_overlay.py (RUL-P10 path b).
+      Follows dispersion/regime.json pattern verbatim: bounded history array
+      (_HISTORY_LEN=252), dedup-by-as_of, tail-trim. A degraded/empty overlay run
+      preserves prior history (explicit guard in builder). Entries: {as_of,
+      n_eff_by_lane, same_thesis_group_count}. Accrual substrate for Codex BOOK-1
+      "N_eff by regime" study — verdict window ~2027. Display/context only;
+      no behavioral consumer (R-F / Signal Commons R7).
+
+  # --- DT-NW-1: register live dt_contra chip state as NW display artifact ---
+  dt-contra-state:
+    path: data/neuralweb/dt_contra_state.json
+    format: json
+    producer: scripts/build_dt_contra_state.py
+    known_extra_writers: []
+    owner_program: dannytrades
+    cadence: daily-engine
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 30
+    schema: dt_contra_state.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - cortex-read
+    external_consumers: []
+    notes: >
+      DT-NW-1 (adjudication §4.2). Promotion, not invention (RUL-P5): exposes the
+      already-computed per-ticker dt_contra field (state ∈ {fade,bounce,neutral},
+      band, score_pct, whale, whale_chg) aggregated from site/stockdata/*.json into
+      a governed NW artifact. Schema: {asof, universe_n, n_with_chip,
+      counts_by_state, counts_by_band, states:[{ticker, state, band, score_pct,
+      whale, whale_chg}], caveat}. Caveat string is sourced verbatim from
+      engine/dannytrades_chip.py (_CAVEAT) — single source of truth (DT-R11a).
+      DISPLAY-ONLY ceiling (DT-R11a): cortex may cite to de-escalate a calibrated
+      key; may never originate, score, or escalate. Momentum-dilution law (DT-R11b):
+      must never be blended into any momentum ranker. Degrades gracefully (empty
+      states list + note) when site/stockdata dir is absent (CI runners). Deterministic
+      ordering (sort by ticker) for stable diffs. DT-W1 replication verdict will
+      rewrite the chip caveat string (single source) if warranted.
+
+  # stock-personality program
+  stock-personality-panel:
+    path: "data/stock_personality/panel/YYYY-MM/panel.parquet"
+    format: parquet
+    producer: scripts/build_stock_library.py
+    known_extra_writers: []
+    owner_program: stock-personality
+    cadence: daily-engine
+    storage: gitignored-local
+    asof_field: date
+    freshness_sla_hours: 30
+    schema: stock_personality.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/publish_r2.py
+    external_consumers: []
+    notes: "Gitignored-local; published to R2 by publish_r2. Forward ledger is git-tracked separately."
+
+  site-stock-personality:
+    path: "site/factordata/stock_personality.json"
+    format: json
+    producer: scripts/build_stock_library.py
+    known_extra_writers: []
+    owner_program: stock-personality
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: stock_personality.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/oracle_nightly.py
+      - engine/neuralweb/world_state.py
+      - engine/neuralweb/query.py
+    external_consumers: []
+    notes: "Slim site aggregate: schema, as_of, n_tickers, coverage, label_distributions, per_ticker slim dict. R-SP19: oracle_nightly reads via engine/oracle/personality_context.py to append personality_context to complexes. R-SP20: world_state reads for stock_personality_summary sub-block; query.py reads for adapt_personality_context spine adapter."
+
+  stock-personality-block:
+    path: "embedded: personality block inside site/stockdata/<TICKER>.json"
+    format: json
+    producer: scripts/build_stock_library.py
+    known_extra_writers: []
+    owner_program: stock-personality
+    cadence: daily-engine
+    storage: r2
+    asof_field: null
+    freshness_sla_hours: 30
+    schema: stock_personality.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: "Per-ticker personality object embedded in the stockdata JSON blob, published to R2 with the rest of stockdata."
+
+  dna-class-ref:
+    path: "site/factordata/dna_class.json"
+    format: json
+    producer: scripts/build_factor_panel.py
+    known_extra_writers: []
+    owner_program: stock-personality
+    cadence: nightly-factor-panel
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: dna_class_ref.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/build_stock_library.py
+    external_consumers: []
+    notes: "T-1 by design: factor_panel job and engine job are parallel siblings."
+
+  stock-personality-forward-ledger:
+    path: "data/stock_personality/forward_ledger.parquet"
+    format: parquet
+    producer: scripts/build_stock_library.py
+    known_extra_writers: []
+    owner_program: stock-personality
+    cadence: daily-engine
+    storage: git
+    asof_field: date
+    freshness_sla_hours: 30
+    schema: stock_personality.v1
+    tier: shadow
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: "Git-tracked append-only ledger. Nightly engine job is sole advancer; intraday lanes discard data/ writes per house law."
+
+  # --- R-ORTH PR-3: covariance spine (RUL-ORTH-1..11) ---
+  covariance-spine:
+    path: data/neuralweb/covariance_spine.json
+    format: json
+    producer: scripts/build_covariance_spine.py
+    known_extra_writers: []
+    owner_program: nw-rails
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 48
+    schema: neuralweb.covariance_spine.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/neuralweb/confluence.py  # R-ORTH PR-4: reads lobes block to embed independence summary in confluence_graph.json (display-only)
+    external_consumers: []
+    notes: >
+      R-ORTH PR-3 (RUL-ORTH-1..11) — covariance spine rail (not a lobe).
+      Measures structural concentration and independence across four blocks:
+      rates PCA (yield_curve shape), factor-return correlation PCA, dispersion
+      regime pass-through, and NW engine firing independence (lobes block).
+      Display-only hard law: authority="context"; never scores, sizes, gates,
+      ranks, or originates a trade. Fail-open: each block guarded independently;
+      missing inputs noted, builder always exits 0. Lobes block: effective_independent_lobes
+      via participation-ratio of measurable-engine correlation matrix (>=30 active
+      weeks floor; RUL-ORTH-8 null via 200 deterministic circular-shift draws).
+      same_bet_warning fires when largest cluster has >=3 engines with mean
+      intra-cluster |corr|>0.60. Site mirror site/neuralwebdata/covariance_spine.json
+      is owned by the separate site-covariance-spine artifact (same producer,
+      atomic temp+rename). R-ORTH PR-4: confluence.py reads this artifact's lobes
+      block to embed an independence summary in confluence_graph.json (display-only,
+      no gate or rank authority).
+
+  site-covariance-spine:
+    path: site/neuralwebdata/covariance_spine.json
+    format: json
+    producer: scripts/build_covariance_spine.py
+    known_extra_writers: []
+    owner_program: nw-rails
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 48
+    schema: neuralweb.covariance_spine.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      R-ORTH PR-3 site copy of data/neuralweb/covariance_spine.json for frontend
+      consumption. Exact mirror written atomically alongside the data copy by
+      scripts/build_covariance_spine.py. Display-only; no authority.
+
+  covariance-spine-history:
+    path: data/neuralweb/covariance_spine_history.parquet
+    format: parquet
+    producer: scripts/build_covariance_spine.py
+    known_extra_writers: []
+    owner_program: nw-rails
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 48
+    schema: neuralweb.covariance_spine_history.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      R-ORTH PR-3 history ledger — one row per as_of with headline scalars:
+      effective_independent_lobes, n_lobes_measurable, rates_dominant_pc_share,
+      factors_effective_bets, dispersion_state, same_bet_warning (bool).
+      Idempotent: existing row with same as_of is replaced. Written atomically
+      by scripts/build_covariance_spine.py alongside the main artifact.
+
+  # --- CPI P-D5-1 phase 4a: regime-vintage PIT spine ---
+  regime-v2-pit:
+    path: data/regime/regime_v2_pit.parquet
+    format: parquet
+    producer: scripts/build_regime_v2_pit.py
+    known_extra_writers: []
+    owner_program: cycle-intelligence
+    cadence: on-demand
+    storage: git
+    asof_field: null
+    freshness_sla_hours: 8760
+    schema: regime.v2_pit.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      CPI P-D5-1 (regime_v2_pit) phase 4a — the regime-vintage point-in-time spine.
+      Full-history re-run of the live quad classification (same engine.regime/axes/
+      transition code via the engine.inputs.build_features overrides seam) with the
+      five revision-leaky macro legs (payrolls, indpro, wei, gdpnow, sticky_cpi) read
+      as-of each date from data/fred_vintage/vintages.parquet (initial releases stamped
+      at realtime_start); all market-priced legs untouched. Schema = the 29
+      regime_history columns + pit_class {pit_vintage, revised_latest, mixed} +
+      fallback_notes (legs that read latest-revised pre vintage coverage) +
+      vintage_store_asof. Divergence sidecar: data/regime/regime_v2_pit_divergence.json
+      (+ research/REGIME_V2_PIT_DIVERGENCE_AUDIT.md). ADDITIVE — never writes
+      regime_history.parquet or latest.json; zero consumers this wave. on-demand
+      cadence: nightly wiring + W4.4 cell re-keying come with the preregistered
+      follow-up wave, NOT here.
+
+  # ============================================================
+  # ACTIVE BUILD MAP (active-build-map program)
+  # ============================================================
+
+  active-builds:
+    path: data/governance/active_builds.json
+    format: json
+    producer: scripts/build_active_build_map.py
+    known_extra_writers: []
+    owner_program: active-build-map
+    cadence: daily-engine
+    storage: git
+    asof_field: generated_at
+    freshness_sla_hours: 36
+    schema: active_builds.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      Advisory air-traffic-control artifact for multi-agent sessions.
+      Records open PRs (with file lists and protected-path flags), pairwise
+      file collision pairs, and recent merges (14-day window). Fail-open:
+      gh unavailable or errored → exit 0, file untouched.
+      ADVISORY ONLY — gates nothing in CI or the pipeline. Single writer:
+      scripts/build_active_build_map.py (active_build_map nightly job).
+  # --- Ruling Graph v1 (RUL-CL-1/11/12) ---
+  # Display/context-only case-law registry. on-demand: regenerated at PR-time by
+  # scripts/build_ruling_graph.py, not by the nightly engine. daily-engine would be
+  # incorrect (no nightly run), so on-demand (the nearest legal cadence value) is used.
+  # This artifact never gates, ranks, scores, or blocks builds (RUL-CL-12).
+  site-neuralweb-ruling-graph:
+    path: site/neuralwebdata/ruling_graph.json
+    format: json
+    producer: scripts/build_ruling_graph.py
+    known_extra_writers: []
+    owner_program: neural-web
+    cadence: on-demand
+    storage: git
+    asof_field: null
+    freshness_sla_hours: 8760
+    schema: neuralweb.ruling_graph.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      Advisory air-traffic-control artifact for multi-agent sessions.
+      Records open PRs (with file lists and protected-path flags), pairwise
+      file collision pairs, and recent merges (14-day window). Fail-open:
+      gh unavailable or errored → exit 0, file untouched.
+      ADVISORY ONLY — gates nothing in CI or the pipeline. Single writer:
+      scripts/build_active_build_map.py (active_build_map nightly job).
+      Display/context-only case-law registry (RUL-CL-12: authority_ceiling A1_EXPLAIN;
+      all authority booleans false; never gates, ranks, scores, or blocks a build).
+      Public rows only (public_research privacy_class; RUL-CL-9). Source of truth is
+      config/ruling_graph.yml; this JSON is a deterministic build product
+      (scripts/build_ruling_graph.py). CI: scripts/check_ruling_conflicts.py + ruling-graph
+      job in .github/workflows/ci.yml. Cadence note: on-demand (PR-time regeneration)
+      is the closest legal cadence value for this git artifact — it is not nightly.
+      Come-back waves W2-W4: cortex read-only tools, admin panel tab, Research Factory
+      packet hook (registered in research/RULING_GRAPH_ADJUDICATION_BY_FABLE.md §Come-back).
+
+  # --- Global Evidence Clock (EC-R1..R8, 2026-07-06) ---
+  evidence-clock:
+    path: data/neuralweb/evidence_clock.json
+    format: json
+    producer: scripts/build_evidence_clock.py
+    known_extra_writers: []
+    owner_program: neural-web
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: neuralweb.evidence_clock.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/check_evidence_clock.py
+    external_consumers: []
+    notes: >
+      Global Evidence Clock v1 (EC-R1..R8) — read-only display-only aggregator.
+      Reads every review-clock source in the repo and writes ONE artifact answering
+      "what is due / stale / underpowered / blocked today". No LLM in the loop.
+      Never promotes, retires, or mutates any source system. No site/ copy (authed
+      admin console + daily brief counts only). Reviews ledger is operator-written
+      (evidence-clock-reviews); builder reads it but never writes it. Ratified
+      2026-07-06 by research/evidence_clock/ADJUDICATION_BY_FABLE.md.
+
+  evidence-clock-reviews:
+    path: data/neuralweb/evidence_clock_reviews.jsonl
+    format: jsonl
+    producer: "<HAND_MAINTAINED>"
+    known_extra_writers: []
+    owner_program: neural-web
+    cadence: on-demand
+    storage: git
+    asof_field: reviewed_on
+    freshness_sla_hours: 9999
+    schema: neuralweb.evidence_clock_reviews.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/build_evidence_clock.py
+      - engine/neuralweb/evidence_clock.py
+    external_consumers: []
+    notes: >
+      Operator-maintained attention-snooze ledger for the evidence clock. Append-only.
+      Each row: {clock_id, reviewed_on, note, outcome}. A review within snooze_days
+      (7d) sets acknowledged=true on the matching clock row and excludes it from
+      top_due/morning_line counts. Real state changes must flow through the source
+      system — this ledger is attention routing only. freshness_sla_hours=9999 because
+      the file is optional (builder handles absence gracefully).
+
+  # ============================================================
+  # MOMOEDGE OPTIONS SENSOR CONTRACT — Package A (2026-07-07)
+  # research/OPTIONS_SENSOR_CONTRACT.md
+  # ============================================================
+
+  # --- options-structure.gex_state: per-symbol dealer gamma structure state ---
+  options-structure-gex-state:
+    path: options_structure/gex_state/<ROOT>.json
+    format: json
+    producer: scripts/build_gex_board.py
+    known_extra_writers: []
+    owner_program: momoedge
+    cadence: daily-engine
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 30
+    schema: options_structure.gex_state/v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/options_structure.py
+    external_consumers:
+      - terminal:gex-tab
+    notes: >
+      Per-symbol dealer gamma structure state (Package C, MomoEdge parity).
+      Emitted by scripts/build_gex_board.py via engine/gex_state.compute_gex_state()
+      after each name's board payload is computed — ZERO new network calls, derived only.
+      6-state gamma_regime (PIN|DRIFT|RANGE|TRANSITION|TREND|CASCADE), stability_pct,
+      flip, walls, magnet, max_pain, pin_probability, gravity, oi_delta_clusters.
+      DISPLAY-ONLY until GEX→forward-vol gate (~Sept 2026). Single-name regime is a
+      near-constant product attribute (structurally_constant), NOT a time-varying signal.
+      regime_passport preserved in all consumers. authority_tier=display; reliability
+      flags assumption-signed on all GEX/gamma fields.
+      Thin-chain / no_options names emit nothing (compute_gex_state returns None).
+
+  # --- options-flow.chain_heat: contract-day accumulation campaigns ---
+  options-flow-chain-heat:
+    path: live_flow/chain_heat_current.json
+    format: json
+    producer: engine/options_structure.py
+    known_extra_writers: []
+    owner_program: momoedge
+    cadence: collect
+    storage: r2
+    asof_field: asof
+    freshness_sla_hours: 1
+    schema: options_flow.chain_heat/v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/options_structure.py
+    external_consumers:
+      - terminal:flow-tab
+    notes: >
+      Contract-day accumulation campaigns (Package A / Package B chain-heat aggregator).
+      Groups live_flow.feed/v1 events by (root+strike+expiry+right); emits campaigns
+      meeting min_premium_mn=3.0M and min_alerts=2 gates. lean=accumulation|distribution|
+      contested derived from ask_share (tick-rule, NOT NBBO). direction_reliability=soft
+      always; premium_magnitude reliable. 120s cadence matching live poller.
+      aggregate_chain_heat() in engine/options_structure.py is the canonical producer.
+
+  # --- options-structure.matrix: strike×expiration matrix (PRISM) ---
+  options-structure-matrix:
+    path: options_structure/matrix/<ROOT>.json
+    format: json
+    producer: scripts/build_options_matrix.py
+    known_extra_writers: []
+    owner_program: momoedge
+    cadence: daily-engine
+    storage: r2
+    asof_field: asof
+    freshness_sla_hours: 30
+    schema: options_structure.matrix/v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/options_structure.py
+    external_consumers:
+      - terminal:prism-tab
+    notes: >
+      Strike × expiration matrix for PRISM tab. Engine: engine/options_matrix.py
+      (Package E). Schema defined in engine/options_structure.py (Package A).
+      Lenses: GEX (assumption-signed), OI (reliable), VOL (reliable), delta_oi (reliable).
+      UNUSUAL deferred (needs 30d per-strike baseline). VEX deferred (greeks-path stability).
+      heat_seeker note field CI-enforced as "descriptive — not a recommendation".
+      GEX sign: calls +, puts − (dealer-short assumption). delta_oi = OI[t-1]−OI[t-2] (both lagged).
+      NOT wired into nightly schedule — scheduling follows when PRISM tab is ready.
+
+  # --- options-structure.structural: structural detector state (shadow) ---
+  options-structure-structural:
+    path: options_structure/structural/<ROOT>.json
+    format: json
+    producer: engine/options_structure.py
+    known_extra_writers: []
+    owner_program: momoedge
+    cadence: daily-engine
+    storage: r2
+    asof_field: asof
+    freshness_sla_hours: 30
+    schema: options_structure.structural/v1
+    tier: shadow
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/options_structure.py
+    external_consumers: []
+    notes: >
+      Structural detector state: squeeze_state + cascade_state (NONE|BUILDING|ACTIVE),
+      flow proximity to gamma flip and walls, plain-language explanation.
+      authority_tier=shadow always — context-only until gauntlet. Feeds Neural Web as
+      a gated context sensor. LLMs may only narrate; escalation requires a pre-registered
+      forward ledger gate and explicit adjudication. Package D builder is future scope.
+
+  # --- prophet.trade_plan: Prophet base trade plan envelope ---
+  prophet-trade-plan:
+    path: prophet/trade_plan/<ID>.json
+    format: json
+    producer: scripts/build_prophet.py
+    known_extra_writers: []
+    owner_program: momoedge
+    cadence: daily-engine
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 9999
+    schema: prophet.trade_plan/v1
+    tier: display
+    horizon_role: tactical_entry
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/options_structure.py
+      - engine/prophet_management.py
+    external_consumers:
+      - terminal:oracle-tab
+    notes: >
+      Prophet base trade plan envelope (Package A schema; W1 builder scripts/build_prophet.py).
+      us_standouts buy-lane is the origination source; Neural Web ORIGINATES candidates
+      via the standouts pipeline; Prophet MANAGES; LLMs NARRATE (never originate).
+      source_engines must be non-empty (CI-validated by validate_trade_plan()).
+      Static plan carries trigger/entry/invalidation/targets/horizon/tranche/option_contract;
+      live management state lives in prophet.management_state/v1. authority_tier=display.
+      Duplicate-suppression by stable ID <TICKER>-<DIRECTION>-<signal_date>.
+      NOT wired into daily.yml in this PR; scheduling follows operator review.
+
+  # --- prophet.management_state: Prophet live management confidence state ---
+  prophet-management-state:
+    path: prophet/state/<ID>.json
+    format: json
+    producer: scripts/build_prophet.py
+    known_extra_writers: []
+    owner_program: momoedge
+    cadence: daily-engine
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 30
+    schema: prophet.management_state/v1
+    tier: display
+    horizon_role: tactical_entry
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/options_structure.py
+    external_consumers:
+      - terminal:oracle-tab
+    notes: >
+      Prophet live management confidence state (Package A schema; W1 builder scripts/build_prophet.py).
+      Computed by engine/prophet_management.py (compute_management_state) inside build_prophet.py.
+      Trade-management score ONLY — NOT a pick-rank score (NW originates picks).
+      7-phase lifecycle: pre_trigger→triggered_pre_t1→at_t1→between_t1_t2→at_t2→
+      overtime→invalidated. confidence_ceiling=92 (uncertainty is honest; certainty forbidden).
+      Components: validity/progress/pace/retention/overlay. authority_tier=display until
+      forward ledger gate passes. authority field hardcoded to "trade-management-only-NOT-pick-rank".
+
+  # --- prophet-index: Prophet active plans index (all plans + states inline) ---
+  prophet-index:
+    path: site/prophet/index.json
+    format: json
+    producer: scripts/build_prophet.py
+    known_extra_writers: []
+    owner_program: momoedge
+    cadence: daily-engine
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 30
+    schema: prophet.index/v1
+    tier: display
+    horizon_role: tactical_entry
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers:
+      - terminal:oracle-tab
+    notes: >
+      Prophet active plans index — all active plans + management state summaries inline.
+      Also mirrored to R2 key prophet/index.json when --publish flag is passed.
+      authority_tier=display. NOT wired into daily.yml in this PR.
+
+  # --- prophet-ledger: Prophet forward outcome ledger ---
+  prophet-ledger:
+    path: data/prophet/ledger.jsonl
+    format: jsonl
+    producer: scripts/build_prophet.py
+    known_extra_writers: []
+    owner_program: momoedge
+    cadence: daily-engine
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 9999
+    schema: prophet.ledger/v1
+    tier: display
+    horizon_role: tactical_entry
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      Prophet forward outcome ledger. Schema pre-registered in research/PROPHET_LEDGER_SCHEMA.md.
+      NIGHTLY IS THE SOLE FUTURE ADVANCER. Initialized (empty) by W1 build_prophet.py run.
+      Rows appended only by nightly pipeline as plan outcomes occur.
+      Row fields: schema, id, asset, direction, signal_date, close_date, outcome
+      (T1_HIT|T2_HIT|INVALIDATED|EXPIRED|CLOSED_EARLY), stock_result_pct,
+      option_result_pct, days_held, plan_adherence, asof.
+
+  # --- nasdaq-internals (TI-R2/R3/R5, program: nasdaq-internals) ---
+  nasdaq-internals:
+    path: site/marketdata/nasdaq_internals.json
+    format: json
+    producer: scripts/build_nasdaq_internals.py
+    known_extra_writers: []
+    owner_program: nasdaq-internals
+    cadence: daily-engine
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 30
+    schema: nasdaq_internals.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers:
+      - mastermind:context
+    notes: >
+      Nasdaq-100 archetype-group rotation-state artifact (TI-R1..R7).
+      Seven tech-archetype groups (ai_compute_supply, ai_capex_spenders, edge_device,
+      software_enterprise, cyber, digital_services_media, megacap_quality) drawn from
+      data/baskets_nasdaq/membership.json archetype_groups partition. DISPLAY-ONLY —
+      no forecast, no onset/episode/routing fields. States are descriptive RRG-style
+      (leading/improving/weakening/lagging) with 2-day hysteresis. Equal-weight member
+      composites vs QQQ benchmark. Union-semantics overlap across groups is intentional
+      (documented in membership.json notes). Producer: scripts/build_nasdaq_internals.py
+      calling engine/nasdaq_internals.build(). asof is full ISO timestamp (UTC).
+
+  # --- watchlist sentinel (B6) ---
+  watchlist-alerts-jsonl:
+    path: data/alerts/watchlist_alerts.jsonl
+    format: jsonl
+    producer: scripts/run_watchlist_sentinel.py
+    known_extra_writers: []
+    owner_program: codex-docket-b6
+    cadence: daily-engine
+    storage: git
+    asof_field: ts
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/alert_triage.py
+      - engine/watchlist_alerts.py
+    notes: >
+      B6 Watchlist buy-zone sentinel alert JSONL.  Append-only; one JSON record
+      per buy-zone-enter event.  Read by engine/alert_triage.py via
+      engine/watchlist_alerts.load_events().  No scoring surface; display-only.
+
+  watchlist-sentinel-states:
+    path: data/alerts/watchlist_sentinel_states.json
+    format: json
+    producer: scripts/run_watchlist_sentinel.py
+    known_extra_writers: []
+    owner_program: codex-docket-b6
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/run_watchlist_sentinel.py
+    notes: >
+      B6: per-ticker state snapshot from the previous nightly run.  Enables
+      enter-detection (diff today vs yesterday).  Same-day idempotent — the
+      script skips writing when as_of already matches today.
+
+  watchlist-sentinel-cooldown:
+    path: data/alerts/watchlist_sentinel_cooldown.json
+    format: json
+    producer: scripts/run_watchlist_sentinel.py
+    known_extra_writers: []
+    owner_program: codex-docket-b6
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/run_watchlist_sentinel.py
+    notes: >
+      B6: per-ticker cooldown map (5-session re-alert suppressor).  Advanced
+      nightly by run_watchlist_sentinel.py.  Same-day idempotent.
+
+  # ============================================================
+  # MACRO RELEASE INTELLIGENCE (MRI) — PR-C artifacts
+  # ============================================================
+
+  # --- infrastructure: Cleveland Fed daily nowcast store ---
+  cleveland-nowcast-store:
+    path: data/cleveland_nowcast/nowcast.parquet
+    format: parquet
+    producer: collectors/cleveland_nowcast.py
+    known_extra_writers: []
+    owner_program: macro-release-intel
+    cadence: collect
+    storage: git
+    asof_field: null
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/build_release_forecast.py
+    notes: >
+      MRI PR-A: Cleveland Fed daily CPI and PCE inflation nowcast store
+      (MoM %). Keyed (target_period, series, obs_date) with keep-first
+      semantics — an already-recorded observation is never overwritten,
+      giving a true first-seen vintage record. The four series collected
+      are cpi_mom, core_cpi_mom, pce_mom, core_pce_mom. The asof_field is
+      null at the artifact level because each row carries first_seen_asof
+      per-row; PIT comparisons filter on obs_date <= decision_date per
+      MRI-R6. The collector is fail-open: any fetch or parse error logs a
+      warning and leaves the store unchanged.
+
+  # --- infrastructure: Kalshi bracket-market snapshot store ---
+  kalshi-releases-store:
+    path: data/prediction_markets/kalshi_releases.parquet
+    format: parquet
+    producer: collectors/kalshi_releases.py
+    known_extra_writers: []
+    owner_program: macro-release-intel
+    cadence: collect
+    storage: git
+    asof_field: null
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/build_release_forecast.py
+    notes: >
+      MRI PR-K: Kalshi macro-release bracket-market snapshot store.
+      Keyless (no API key required). Keyed (asof_date, release_type, period,
+      strike, is_summary) with keep-first semantics — a row already in the
+      store is never overwritten or re-dated (MRI-R6 PIT law). Three release
+      types collected: cpi (KXCPI series, headline MoM % SA), nfp (KXPAYROLLS
+      series, MoM change in thousands), claims (KXJOBLESSCLAIMS series, weekly
+      level). Each event's bracket ladder is stored as individual rows plus one
+      summary row (is_summary=True) holding implied_median and
+      p_above_lowest_strike (S(k_min)) derived from the exceedance-binary CDF.
+      implied_mean is intentionally absent: on an open-ended bracket ladder the
+      mean requires a tail assumption that cannot be stated honestly, and
+      append-only PIT rows cannot be corrected after the fact.
+      monotonicity_corrected (bool) records whether the survival ladder required
+      isotonic clamping before median/tail computation. The market_implied leg
+      of benchmark_set.market_implied in release_forecast.v1 reads from this
+      store; the join uses implied_median only. The asof_field is null at the
+      artifact level because each row carries asof_date per-row; PIT comparisons
+      filter on asof_date <= decision_date. The collector is fail-open: any
+      fetch or parse error logs a warning and leaves the store unchanged.
+      Same-day re-runs are safe (first-seen dedup is idempotent).
+      Tickers LIVE VERIFIED 2026-07-07: KXCPI (CPI MoM % SA), KXPAYROLLS
+      (NFP k jobs), KXJOBLESSCLAIMS (initial claims level).
+
+  # --- display: release forecast latest snapshot ---
+  release-forecast-latest:
+    path: data/release_forecast/latest.json
+    format: json
+    producer: scripts/build_release_forecast.py
+    known_extra_writers: []
+    owner_program: macro-release-intel
+    cadence: daily-engine
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 30
+    schema: release_forecast.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers:
+      - mastermind:context
+    notes: >
+      MRI PR-C: nightly pre-print projection for CPI (headline and core)
+      and NFP, schema release_forecast.v1. Contains the upcoming-releases
+      block with quantile projections, Cleveland nowcast benchmark
+      enrichment, policy_backdrop join (fed_stance, gap_bp,
+      implied_cuts_12m, next_fomc, guidance_direction — all read from
+      persisted regime artifacts, no LLM calls), and the most-recent
+      scored row per release type. display_only=True; all authority
+      booleans False (MRI-R7). The asof field is a full ISO UTC timestamp.
+      Mastermind receives this artifact as a compact manifest row
+      (annotate-only). CPI feeds the inflation axis of the quad; NFP feeds
+      the growth axis. Forward accrual began 2026-07-07; no backtest rows
+      ever enter this artifact.
+
+  # --- shadow: append-only forward ledger ---
+  release-forecast-ledger:
+    path: data/release_forecast/forward_ledger.jsonl
+    format: jsonl
+    producer: scripts/build_release_forecast.py
+    known_extra_writers: []
+    owner_program: macro-release-intel
+    cadence: daily-engine
+    storage: git
+    asof_field: asof_night
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: shadow
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/build_release_forecast.py
+    notes: >
+      MRI PR-C: append-only forward ledger for release projections and
+      scored actuals. Row types: projection (nightly frozen snapshot) and
+      scored (actual vs frozen T-1 projection, emitted on release day after
+      ALFRED initial print is available). Keyed (release, period, row_type,
+      asof_night) for idempotency — re-running the same night appends zero
+      duplicate rows. The nightly lane is the sole advancer (MRI-R8); no
+      intraday or backtest lane writes here. Scored rows carry our MAE,
+      benchmark MAEs, interval coverage hit, and skew-direction hit.
+
+  # --- display: scoreboard recomputed from scored rows only ---
+  release-forecast-scoreboard:
+    path: data/release_forecast/scoreboard.json
+    format: json
+    producer: scripts/build_release_forecast.py
+    known_extra_writers: []
+    owner_program: macro-release-intel
+    cadence: daily-engine
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    notes: >
+      MRI PR-C: scoreboard recomputed each night from scored ledger rows
+      only. Reports per release type: n, MAE ours vs each benchmark
+      (naive_prior, trailing_3m, ar_model, cleveland_nowcast), p10-p90
+      interval coverage rate, skew direction hit-rate with Wilson 95% CI.
+      With n=0 prints zeros and nulls honestly alongside a
+      forward_accrual_began date. No backtest numbers ever enter this
+      scoreboard (MRI-R8). The gateway to a graduated badge is defined in
+      the masterplan section 7 (n >= 12, MAE < naive, skew Wilson LB > 0.5).
+
+  # --- display: site copy of release forecast ---
+  site-release-forecast:
+    path: site/macrodata/release_forecast.json
+    format: json
+    producer: scripts/build_release_forecast.py
+    known_extra_writers: []
+    owner_program: macro-release-intel
+    cadence: daily-engine
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 30
+    schema: release_forecast.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers:
+      - site
+    notes: >
+      MRI PR-C: public-site display copy of data/release_forecast/latest.json,
+      written at the same time and carrying the same payload. Used by the
+      Release Radar UI section on macro.html (PR-D). display_only=True;
+      authority booleans all False. No additional logic beyond mirroring the
+      data artifact.
+
+
+  # ============================================================
+  # R5 MACRO CONTEXT RAIL — 14 artifacts (nw-macro-rail PR #1635)
+  # ============================================================
+
+  forex-latest:
+    path: data/forex/latest.json
+    format: json
+    producer: scripts/build_forex.py
+    known_extra_writers: []
+    owner_program: macro-context-rail
+    cadence: daily-engine
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/neuralweb/world_state.py
+      - engine/neuralweb/cortex.py
+      - engine/neuralweb/ask_brain.py
+      - scripts/build_site.py
+      - admin/neural_web.py
+    notes: >
+      RUL-NW1 — factor_panel job is sole advancer. Context-only committed
+      digest of factor intelligence state (panel health, factor weather,
+      Pair G, hypotheses h1..h5, scorecard). is_context_only=true,
+      display_only=true. allowed_actions block is a mirror, never a switch
+      (RUL-NW9). No scored-path surfaces — display and admin rendering only.
+      Written by scripts/build_factor_intelligence_state.py after the
+      factor_contradictions step in the factor_panel job.
+      Consumers: scripts/build_site.py (factors.html NW status panel, RUL-NW7/NW8
+      §D PR-4) and admin/neural_web.py (factor_intelligence section, §D PR-4).
+
   transmission-latest:
     path: data/transmission/latest.json
     format: json
@@ -5026,30 +7241,6 @@ artifacts:
       stream names), factor_model=v1. Standalone artifact — JOINs to replay/board-ledger
       outcomes at study time. Display/analysis only (no rank/score surfaces).
 
-  factor-contradictions-ledger:
-    path: data/neuralweb/factor_contradictions.jsonl
-    format: jsonl
-    producer: engine/neuralweb/factor_contradictions.py
-    known_extra_writers: []
-    owner_program: factor-intelligence
-    cadence: nightly-factor-panel
-    storage: git
-    asof_field: date
-    freshness_sla_hours: 30
-    schema: neuralweb.factor_contradictions.v1
-    tier: display
-    horizon_role: context
-    weights: none
-    scored_path_surfaces: []
-    consumers:
-      - engine/neuralweb/cortex.py
-      - engine/neuralweb/ask_brain.py
-    notes: >
-      RUL-NW1 — un-gitignored by this ruling; committed via the factor_panel job's
-      narrow commit step. Pair G borrowed_strength contradiction ledger: append-only,
-      keyed (date, ticker). Severity hardcoded to 'note' until H2 GATE-PASSED.
-      display_only=true unconditionally. Single-writer: engine/neuralweb/factor_contradictions.py.
-      0-20 rows/day; dormant until panel has >= 60 distinct dates.
   bond-health:
     path: data/bonds/bond_health.json
     format: json

@@ -1,0 +1,3470 @@
+{
+  "as_of": "2026-07-07",
+  "authority": {
+    "allowed_actions": [
+      "display",
+      "explain",
+      "dedup_context"
+    ],
+    "can_gate": false,
+    "can_rank": false,
+    "can_size": false,
+    "forbidden_actions": [
+      "score",
+      "size",
+      "originate",
+      "gate",
+      "rank",
+      "promote"
+    ],
+    "role": "display_only"
+  },
+  "claim_context": {
+    "by_family": {
+      "altdata": {
+        "falsifier_coverage": 1.0,
+        "fill_convention_split": {
+          "asof_legacy_count": 94,
+          "next_bar_count": 18,
+          "note": "#1180 discontinuity — asof_legacy = pre-#1180 grades (fill_convention field absent in grade); next_bar = post-#1180 (fill_convention='next_bar')"
+        },
+        "hit_gradeable_note": "direction=0 claims are not hit-gradeable (graded on excess only); this does not contradict the R2 audit CLOSED verdict",
+        "hit_gradeable_share": 1.0,
+        "maturity_mix": {
+          "graded_5d_count": 112,
+          "graded_5d_share": 0.842105,
+          "matured_21d_count": 0,
+          "matured_63d_count": 0,
+          "note": "21d/63d matured counts are 0 today — calendar-gated, not build-gated; earliest useful read ~2026-10-01"
+        },
+        "n_claims": 133,
+        "n_hit_gradeable": 133,
+        "n_with_falsifier": 133,
+        "source_ontology_fill": {
+          "channels_fill_rate": 1.0,
+          "n_channels": 133,
+          "n_source_id": 133,
+          "n_source_tier": 0,
+          "note": "near-zero fill across most desks; per-source reliability curve unbuildable from current data (QI masterplan: >=500 graded labels gate)",
+          "source_id_fill_rate": 1.0,
+          "source_tier_fill_rate": 0.0
+        }
+      },
+      "china_news": {
+        "falsifier_coverage": 0.0,
+        "fill_convention_split": {
+          "asof_legacy_count": 504,
+          "next_bar_count": 256,
+          "note": "#1180 discontinuity — asof_legacy = pre-#1180 grades (fill_convention field absent in grade); next_bar = post-#1180 (fill_convention='next_bar')"
+        },
+        "hit_gradeable_note": "direction=0 claims are not hit-gradeable (graded on excess only); this does not contradict the R2 audit CLOSED verdict",
+        "hit_gradeable_share": 0.0,
+        "maturity_mix": {
+          "graded_5d_count": 760,
+          "graded_5d_share": 0.935961,
+          "matured_21d_count": 0,
+          "matured_63d_count": 0,
+          "note": "21d/63d matured counts are 0 today — calendar-gated, not build-gated; earliest useful read ~2026-10-01"
+        },
+        "n_claims": 812,
+        "n_hit_gradeable": 0,
+        "n_with_falsifier": 0,
+        "source_ontology_fill": {
+          "channels_fill_rate": 0.0,
+          "n_channels": 0,
+          "n_source_id": 0,
+          "n_source_tier": 812,
+          "note": "near-zero fill across most desks; per-source reliability curve unbuildable from current data (QI masterplan: >=500 graded labels gate)",
+          "source_id_fill_rate": 0.0,
+          "source_tier_fill_rate": 1.0
+        }
+      },
+      "cn_importance_v0": {
+        "falsifier_coverage": 0.0,
+        "fill_convention_split": {
+          "asof_legacy_count": 446,
+          "next_bar_count": 202,
+          "note": "#1180 discontinuity — asof_legacy = pre-#1180 grades (fill_convention field absent in grade); next_bar = post-#1180 (fill_convention='next_bar')"
+        },
+        "hit_gradeable_note": "direction=0 claims are not hit-gradeable (graded on excess only); this does not contradict the R2 audit CLOSED verdict",
+        "hit_gradeable_share": 0.0,
+        "maturity_mix": {
+          "graded_5d_count": 648,
+          "graded_5d_share": 0.784504,
+          "matured_21d_count": 0,
+          "matured_63d_count": 0,
+          "note": "21d/63d matured counts are 0 today — calendar-gated, not build-gated; earliest useful read ~2026-10-01"
+        },
+        "n_claims": 826,
+        "n_hit_gradeable": 0,
+        "n_with_falsifier": 0,
+        "source_ontology_fill": {
+          "channels_fill_rate": 0.0,
+          "n_channels": 0,
+          "n_source_id": 0,
+          "n_source_tier": 0,
+          "note": "near-zero fill across most desks; per-source reliability curve unbuildable from current data (QI masterplan: >=500 graded labels gate)",
+          "source_id_fill_rate": 0.0,
+          "source_tier_fill_rate": 0.0
+        }
+      },
+      "cn_importance_v0_pit": {
+        "falsifier_coverage": 0.0,
+        "fill_convention_split": {
+          "asof_legacy_count": 446,
+          "next_bar_count": 202,
+          "note": "#1180 discontinuity — asof_legacy = pre-#1180 grades (fill_convention field absent in grade); next_bar = post-#1180 (fill_convention='next_bar')"
+        },
+        "hit_gradeable_note": "direction=0 claims are not hit-gradeable (graded on excess only); this does not contradict the R2 audit CLOSED verdict",
+        "hit_gradeable_share": 0.0,
+        "maturity_mix": {
+          "graded_5d_count": 648,
+          "graded_5d_share": 0.784504,
+          "matured_21d_count": 0,
+          "matured_63d_count": 0,
+          "note": "21d/63d matured counts are 0 today — calendar-gated, not build-gated; earliest useful read ~2026-10-01"
+        },
+        "n_claims": 826,
+        "n_hit_gradeable": 0,
+        "n_with_falsifier": 0,
+        "source_ontology_fill": {
+          "channels_fill_rate": 0.0,
+          "n_channels": 0,
+          "n_source_id": 0,
+          "n_source_tier": 0,
+          "note": "near-zero fill across most desks; per-source reliability curve unbuildable from current data (QI masterplan: >=500 graded labels gate)",
+          "source_id_fill_rate": 0.0,
+          "source_tier_fill_rate": 0.0
+        }
+      },
+      "cn_special_sits": {
+        "falsifier_coverage": 0.0,
+        "fill_convention_split": {
+          "asof_legacy_count": 0,
+          "next_bar_count": 0,
+          "note": "#1180 discontinuity — asof_legacy = pre-#1180 grades (fill_convention field absent in grade); next_bar = post-#1180 (fill_convention='next_bar')"
+        },
+        "hit_gradeable_note": "direction=0 claims are not hit-gradeable (graded on excess only); this does not contradict the R2 audit CLOSED verdict",
+        "hit_gradeable_share": 0.0,
+        "maturity_mix": {
+          "graded_5d_count": 0,
+          "graded_5d_share": 0.0,
+          "matured_21d_count": 0,
+          "matured_63d_count": 0,
+          "note": "21d/63d matured counts are 0 today — calendar-gated, not build-gated; earliest useful read ~2026-10-01"
+        },
+        "n_claims": 14,
+        "n_hit_gradeable": 0,
+        "n_with_falsifier": 0,
+        "source_ontology_fill": {
+          "channels_fill_rate": 0.0,
+          "n_channels": 0,
+          "n_source_id": 0,
+          "n_source_tier": 0,
+          "note": "near-zero fill across most desks; per-source reliability curve unbuildable from current data (QI masterplan: >=500 graded labels gate)",
+          "source_id_fill_rate": 0.0,
+          "source_tier_fill_rate": 0.0
+        }
+      },
+      "placebo": {
+        "falsifier_coverage": 0.0,
+        "fill_convention_split": {
+          "asof_legacy_count": 280,
+          "next_bar_count": 30,
+          "note": "#1180 discontinuity — asof_legacy = pre-#1180 grades (fill_convention field absent in grade); next_bar = post-#1180 (fill_convention='next_bar')"
+        },
+        "hit_gradeable_note": "direction=0 claims are not hit-gradeable (graded on excess only); this does not contradict the R2 audit CLOSED verdict",
+        "hit_gradeable_share": 0.0,
+        "maturity_mix": {
+          "graded_5d_count": 310,
+          "graded_5d_share": 0.906433,
+          "matured_21d_count": 0,
+          "matured_63d_count": 0,
+          "note": "21d/63d matured counts are 0 today — calendar-gated, not build-gated; earliest useful read ~2026-10-01"
+        },
+        "n_claims": 342,
+        "n_hit_gradeable": 0,
+        "n_with_falsifier": 0,
+        "source_ontology_fill": {
+          "channels_fill_rate": 0.0,
+          "n_channels": 0,
+          "n_source_id": 0,
+          "n_source_tier": 0,
+          "note": "near-zero fill across most desks; per-source reliability curve unbuildable from current data (QI masterplan: >=500 graded labels gate)",
+          "source_id_fill_rate": 0.0,
+          "source_tier_fill_rate": 0.0
+        }
+      },
+      "policy": {
+        "falsifier_coverage": 1.0,
+        "fill_convention_split": {
+          "asof_legacy_count": 7,
+          "next_bar_count": 0,
+          "note": "#1180 discontinuity — asof_legacy = pre-#1180 grades (fill_convention field absent in grade); next_bar = post-#1180 (fill_convention='next_bar')"
+        },
+        "hit_gradeable_note": "direction=0 claims are not hit-gradeable (graded on excess only); this does not contradict the R2 audit CLOSED verdict",
+        "hit_gradeable_share": 0.692308,
+        "maturity_mix": {
+          "graded_5d_count": 7,
+          "graded_5d_share": 0.538462,
+          "matured_21d_count": 0,
+          "matured_63d_count": 0,
+          "note": "21d/63d matured counts are 0 today — calendar-gated, not build-gated; earliest useful read ~2026-10-01"
+        },
+        "n_claims": 13,
+        "n_hit_gradeable": 9,
+        "n_with_falsifier": 13,
+        "source_ontology_fill": {
+          "channels_fill_rate": 0.0,
+          "n_channels": 0,
+          "n_source_id": 13,
+          "n_source_tier": 0,
+          "note": "near-zero fill across most desks; per-source reliability curve unbuildable from current data (QI masterplan: >=500 graded labels gate)",
+          "source_id_fill_rate": 1.0,
+          "source_tier_fill_rate": 0.0
+        }
+      },
+      "radar": {
+        "falsifier_coverage": 0.0,
+        "fill_convention_split": {
+          "asof_legacy_count": 987,
+          "next_bar_count": 992,
+          "note": "#1180 discontinuity — asof_legacy = pre-#1180 grades (fill_convention field absent in grade); next_bar = post-#1180 (fill_convention='next_bar')"
+        },
+        "hit_gradeable_note": "direction=0 claims are not hit-gradeable (graded on excess only); this does not contradict the R2 audit CLOSED verdict",
+        "hit_gradeable_share": 1.0,
+        "maturity_mix": {
+          "graded_5d_count": 1979,
+          "graded_5d_share": 0.795098,
+          "matured_21d_count": 0,
+          "matured_63d_count": 0,
+          "note": "21d/63d matured counts are 0 today — calendar-gated, not build-gated; earliest useful read ~2026-10-01"
+        },
+        "n_claims": 2489,
+        "n_hit_gradeable": 2489,
+        "n_with_falsifier": 0,
+        "source_ontology_fill": {
+          "channels_fill_rate": 0.0,
+          "n_channels": 0,
+          "n_source_id": 0,
+          "n_source_tier": 0,
+          "note": "near-zero fill across most desks; per-source reliability curve unbuildable from current data (QI masterplan: >=500 graded labels gate)",
+          "source_id_fill_rate": 0.0,
+          "source_tier_fill_rate": 0.0
+        }
+      },
+      "us_importance_v0": {
+        "falsifier_coverage": 0.0,
+        "fill_convention_split": {
+          "asof_legacy_count": 8,
+          "next_bar_count": 576,
+          "note": "#1180 discontinuity — asof_legacy = pre-#1180 grades (fill_convention field absent in grade); next_bar = post-#1180 (fill_convention='next_bar')"
+        },
+        "hit_gradeable_note": "direction=0 claims are not hit-gradeable (graded on excess only); this does not contradict the R2 audit CLOSED verdict",
+        "hit_gradeable_share": 0.0,
+        "maturity_mix": {
+          "graded_5d_count": 584,
+          "graded_5d_share": 0.278095,
+          "matured_21d_count": 0,
+          "matured_63d_count": 0,
+          "note": "21d/63d matured counts are 0 today — calendar-gated, not build-gated; earliest useful read ~2026-10-01"
+        },
+        "n_claims": 2100,
+        "n_hit_gradeable": 0,
+        "n_with_falsifier": 0,
+        "source_ontology_fill": {
+          "channels_fill_rate": 0.0,
+          "n_channels": 0,
+          "n_source_id": 0,
+          "n_source_tier": 0,
+          "note": "near-zero fill across most desks; per-source reliability curve unbuildable from current data (QI masterplan: >=500 graded labels gate)",
+          "source_id_fill_rate": 0.0,
+          "source_tier_fill_rate": 0.0
+        }
+      },
+      "us_importance_v0_pit": {
+        "falsifier_coverage": 0.0,
+        "fill_convention_split": {
+          "asof_legacy_count": 8,
+          "next_bar_count": 576,
+          "note": "#1180 discontinuity — asof_legacy = pre-#1180 grades (fill_convention field absent in grade); next_bar = post-#1180 (fill_convention='next_bar')"
+        },
+        "hit_gradeable_note": "direction=0 claims are not hit-gradeable (graded on excess only); this does not contradict the R2 audit CLOSED verdict",
+        "hit_gradeable_share": 0.0,
+        "maturity_mix": {
+          "graded_5d_count": 584,
+          "graded_5d_share": 0.278095,
+          "matured_21d_count": 0,
+          "matured_63d_count": 0,
+          "note": "21d/63d matured counts are 0 today — calendar-gated, not build-gated; earliest useful read ~2026-10-01"
+        },
+        "n_claims": 2100,
+        "n_hit_gradeable": 0,
+        "n_with_falsifier": 0,
+        "source_ontology_fill": {
+          "channels_fill_rate": 0.0,
+          "n_channels": 0,
+          "n_source_id": 0,
+          "n_source_tier": 0,
+          "note": "near-zero fill across most desks; per-source reliability curve unbuildable from current data (QI masterplan: >=500 graded labels gate)",
+          "source_id_fill_rate": 0.0,
+          "source_tier_fill_rate": 0.0
+        }
+      }
+    },
+    "global": {
+      "falsifier_coverage": 0.015122,
+      "falsifier_coverage_note": "~146/9069 = 1.6% global as of 2026-07-06; falsifier-starvation is a structural property of importance-signal and china_news desks, not a grader failure",
+      "n_claims": 9655,
+      "n_grades": 5632,
+      "n_with_falsifier": 146
+    }
+  },
+  "conflicts": [],
+  "counts": {
+    "edges_by_kind": {
+      "governed_by": 10,
+      "member_of_thesis": 12,
+      "mirrored_experiment": 18,
+      "rf_candidate_of_mechanism": 7
+    },
+    "rows_by_type": {
+      "entity": 12,
+      "mechanism": 8,
+      "species_link": 21,
+      "thesis": 3
+    }
+  },
+  "edges": [
+    {
+      "dst": "thesis:ai_infrastructure_capex_complex",
+      "kind": "member_of_thesis",
+      "source": {
+        "detail": "curated_theses[].tickers",
+        "path": "config/entity_thesis_mechanism_registry.yml"
+      },
+      "src": "entity:US:AVGO"
+    },
+    {
+      "dst": "thesis:industrials",
+      "kind": "member_of_thesis",
+      "source": {
+        "detail": "same_thesis_groups.members",
+        "path": "site/factordata/reflexivity_overlay.json"
+      },
+      "src": "entity:US:BEN"
+    },
+    {
+      "dst": "thesis:health_care",
+      "kind": "member_of_thesis",
+      "source": {
+        "detail": "same_thesis_groups.members",
+        "path": "site/factordata/reflexivity_overlay.json"
+      },
+      "src": "entity:US:BIO"
+    },
+    {
+      "dst": "thesis:industrials",
+      "kind": "member_of_thesis",
+      "source": {
+        "detail": "same_thesis_groups.members",
+        "path": "site/factordata/reflexivity_overlay.json"
+      },
+      "src": "entity:US:DBX"
+    },
+    {
+      "dst": "thesis:industrials",
+      "kind": "member_of_thesis",
+      "source": {
+        "detail": "same_thesis_groups.members",
+        "path": "site/factordata/reflexivity_overlay.json"
+      },
+      "src": "entity:US:GEV"
+    },
+    {
+      "dst": "thesis:industrials",
+      "kind": "member_of_thesis",
+      "source": {
+        "detail": "same_thesis_groups.members",
+        "path": "site/factordata/reflexivity_overlay.json"
+      },
+      "src": "entity:US:MATX"
+    },
+    {
+      "dst": "thesis:ai_infrastructure_capex_complex",
+      "kind": "member_of_thesis",
+      "source": {
+        "detail": "curated_theses[].tickers",
+        "path": "config/entity_thesis_mechanism_registry.yml"
+      },
+      "src": "entity:US:NVDA"
+    },
+    {
+      "dst": "thesis:health_care",
+      "kind": "member_of_thesis",
+      "source": {
+        "detail": "same_thesis_groups.members",
+        "path": "site/factordata/reflexivity_overlay.json"
+      },
+      "src": "entity:US:OMCL"
+    },
+    {
+      "dst": "thesis:industrials",
+      "kind": "member_of_thesis",
+      "source": {
+        "detail": "same_thesis_groups.members",
+        "path": "site/factordata/reflexivity_overlay.json"
+      },
+      "src": "entity:US:P"
+    },
+    {
+      "dst": "thesis:health_care",
+      "kind": "member_of_thesis",
+      "source": {
+        "detail": "same_thesis_groups.members",
+        "path": "site/factordata/reflexivity_overlay.json"
+      },
+      "src": "entity:US:PAHC"
+    },
+    {
+      "dst": "thesis:industrials",
+      "kind": "member_of_thesis",
+      "source": {
+        "detail": "same_thesis_groups.members",
+        "path": "site/factordata/reflexivity_overlay.json"
+      },
+      "src": "entity:US:STT"
+    },
+    {
+      "dst": "thesis:ai_infrastructure_capex_complex",
+      "kind": "member_of_thesis",
+      "source": {
+        "detail": "curated_theses[].tickers",
+        "path": "config/entity_thesis_mechanism_registry.yml"
+      },
+      "src": "entity:US:VRT"
+    },
+    {
+      "dst": "gov:1f5c6c494e6c27c6",
+      "kind": "governed_by",
+      "source": {
+        "detail": "event_id == '1f5c6c494e6c27c6' target contains candidate/spec_ref",
+        "path": "data/neuralweb/governance.jsonl"
+      },
+      "src": "mechanism:A15_WASHOUT_OPP_OUT_2NODE"
+    },
+    {
+      "dst": "gov:70d51743e7991a96",
+      "kind": "governed_by",
+      "source": {
+        "detail": "event_id == '70d51743e7991a96' target contains candidate/spec_ref",
+        "path": "data/neuralweb/governance.jsonl"
+      },
+      "src": "mechanism:A15_WASHOUT_OPP_OUT_2NODE"
+    },
+    {
+      "dst": "gov:d70060cfc9dc5389",
+      "kind": "governed_by",
+      "source": {
+        "detail": "event_id == 'd70060cfc9dc5389' target contains candidate/spec_ref",
+        "path": "data/neuralweb/governance.jsonl"
+      },
+      "src": "mechanism:A16_WASHOUT_ANY_OUT_3NODE_10D"
+    },
+    {
+      "dst": "gov:e09b8fcb6d6d610c",
+      "kind": "governed_by",
+      "source": {
+        "detail": "event_id == 'e09b8fcb6d6d610c' target contains candidate/spec_ref",
+        "path": "data/neuralweb/governance.jsonl"
+      },
+      "src": "mechanism:A16_WASHOUT_ANY_OUT_3NODE_10D"
+    },
+    {
+      "dst": "gov:4e48ad0b49bb2dc6",
+      "kind": "governed_by",
+      "source": {
+        "detail": "event_id == '4e48ad0b49bb2dc6' target contains candidate/spec_ref",
+        "path": "data/neuralweb/governance.jsonl"
+      },
+      "src": "mechanism:A9_WASHOUT_SAME_OUTFLOW_DENSE"
+    },
+    {
+      "dst": "gov:5af94384ac8a69e8",
+      "kind": "governed_by",
+      "source": {
+        "detail": "event_id == '5af94384ac8a69e8' target contains candidate/spec_ref",
+        "path": "data/neuralweb/governance.jsonl"
+      },
+      "src": "mechanism:A9_WASHOUT_SAME_OUTFLOW_DENSE"
+    },
+    {
+      "dst": "gov:65ea2936636f8008",
+      "kind": "governed_by",
+      "source": {
+        "detail": "event_id == '65ea2936636f8008' target contains candidate/spec_ref",
+        "path": "data/neuralweb/governance.jsonl"
+      },
+      "src": "mechanism:C6_WASHOUT_DEEP_1W_STRESS"
+    },
+    {
+      "dst": "gov:a02c8bfc43e71e65",
+      "kind": "governed_by",
+      "source": {
+        "detail": "event_id == 'a02c8bfc43e71e65' target contains candidate/spec_ref",
+        "path": "data/neuralweb/governance.jsonl"
+      },
+      "src": "mechanism:C6_WASHOUT_DEEP_1W_STRESS"
+    },
+    {
+      "dst": "mechanism:A15_WASHOUT_OPP_OUT_2NODE",
+      "kind": "rf_candidate_of_mechanism",
+      "source": {
+        "detail": "candidate_id == 'rf-20260706-adopt-a15_washout_opp_out_2node' with spec_ref == 'A15_WASHOUT_OPP_OUT_2NODE'",
+        "path": "data/research_factory/candidates.jsonl"
+      },
+      "src": "rf:rf-20260706-adopt-a15_washout_opp_out_2node"
+    },
+    {
+      "dst": "mechanism:A16_WASHOUT_ANY_OUT_3NODE_10D",
+      "kind": "rf_candidate_of_mechanism",
+      "source": {
+        "detail": "candidate_id == 'rf-20260706-adopt-a16_washout_any_out_3node_10d' with spec_ref == 'A16_WASHOUT_ANY_OUT_3NODE_10D'",
+        "path": "data/research_factory/candidates.jsonl"
+      },
+      "src": "rf:rf-20260706-adopt-a16_washout_any_out_3node_10d"
+    },
+    {
+      "dst": "mechanism:A17_WASHOUT_SAME_OUT_NEG_VEL",
+      "kind": "rf_candidate_of_mechanism",
+      "source": {
+        "detail": "candidate_id == 'rf-20260706-adopt-a17_washout_same_out_neg_vel' with spec_ref == 'A17_WASHOUT_SAME_OUT_NEG_VEL'",
+        "path": "data/research_factory/candidates.jsonl"
+      },
+      "src": "rf:rf-20260706-adopt-a17_washout_same_out_neg_vel"
+    },
+    {
+      "dst": "mechanism:A24_SAME_IN_LOW_VOL_ROUTE",
+      "kind": "rf_candidate_of_mechanism",
+      "source": {
+        "detail": "candidate_id == 'rf-20260706-adopt-a24_same_in_low_vol_route' with spec_ref == 'A24_SAME_IN_LOW_VOL_ROUTE'",
+        "path": "data/research_factory/candidates.jsonl"
+      },
+      "src": "rf:rf-20260706-adopt-a24_same_in_low_vol_route"
+    },
+    {
+      "dst": "mechanism:A46_SAME_IN_CHOP_FILTER",
+      "kind": "rf_candidate_of_mechanism",
+      "source": {
+        "detail": "candidate_id == 'rf-20260706-adopt-a46_same_in_chop_filter' with spec_ref == 'A46_SAME_IN_CHOP_FILTER'",
+        "path": "data/research_factory/candidates.jsonl"
+      },
+      "src": "rf:rf-20260706-adopt-a46_same_in_chop_filter"
+    },
+    {
+      "dst": "mechanism:A9_WASHOUT_SAME_OUTFLOW_DENSE",
+      "kind": "rf_candidate_of_mechanism",
+      "source": {
+        "detail": "candidate_id == 'rf-20260706-adopt-a9_washout_same_outflow_dense' with spec_ref == 'A9_WASHOUT_SAME_OUTFLOW_DENSE'",
+        "path": "data/research_factory/candidates.jsonl"
+      },
+      "src": "rf:rf-20260706-adopt-a9_washout_same_outflow_dense"
+    },
+    {
+      "dst": "mechanism:C6_WASHOUT_DEEP_1W_STRESS",
+      "kind": "rf_candidate_of_mechanism",
+      "source": {
+        "detail": "candidate_id == 'rf-20260706-adopt-c6_washout_deep_1w_stress' with spec_ref == 'C6_WASHOUT_DEEP_1W_STRESS'",
+        "path": "data/research_factory/candidates.jsonl"
+      },
+      "src": "rf:rf-20260706-adopt-c6_washout_deep_1w_stress"
+    },
+    {
+      "dst": "gov:9909c6d487efaa03",
+      "kind": "governed_by",
+      "source": {
+        "detail": "event_id == '9909c6d487efaa03' target contains candidate/spec_ref",
+        "path": "data/neuralweb/governance.jsonl"
+      },
+      "src": "rf:rf-20260706-adopt-new_term_premium_02"
+    },
+    {
+      "dst": "gov:dce83354cc72630e",
+      "kind": "governed_by",
+      "source": {
+        "detail": "event_id == 'dce83354cc72630e' target contains candidate/spec_ref",
+        "path": "data/neuralweb/governance.jsonl"
+      },
+      "src": "rf:rf-20260706-adopt-new_term_premium_02"
+    },
+    {
+      "dst": "species-CN-REVERSAL",
+      "kind": "mirrored_experiment",
+      "source": {
+        "detail": "id == 'species-CN-REVERSAL'",
+        "path": "data/experiments/registry_seed.json"
+      },
+      "src": "species:CN-REVERSAL@1.0"
+    },
+    {
+      "dst": "species-CN-WASHOUT",
+      "kind": "mirrored_experiment",
+      "source": {
+        "detail": "id == 'species-CN-WASHOUT'",
+        "path": "data/experiments/registry_seed.json"
+      },
+      "src": "species:CN-WASHOUT@1.0"
+    },
+    {
+      "dst": "species-DISLOC",
+      "kind": "mirrored_experiment",
+      "source": {
+        "detail": "id == 'species-DISLOC'",
+        "path": "data/experiments/registry_seed.json"
+      },
+      "src": "species:DISLOC@1.0"
+    },
+    {
+      "dst": "species-S10",
+      "kind": "mirrored_experiment",
+      "source": {
+        "detail": "id == 'species-S10'",
+        "path": "data/experiments/registry_seed.json"
+      },
+      "src": "species:S10@1.0"
+    },
+    {
+      "dst": "species-S11",
+      "kind": "mirrored_experiment",
+      "source": {
+        "detail": "id == 'species-S11'",
+        "path": "data/experiments/registry_seed.json"
+      },
+      "src": "species:S11@1.0"
+    },
+    {
+      "dst": "species-S12",
+      "kind": "mirrored_experiment",
+      "source": {
+        "detail": "id == 'species-S12'",
+        "path": "data/experiments/registry_seed.json"
+      },
+      "src": "species:S12@1.0"
+    },
+    {
+      "dst": "species-S13",
+      "kind": "mirrored_experiment",
+      "source": {
+        "detail": "id == 'species-S13'",
+        "path": "data/experiments/registry_seed.json"
+      },
+      "src": "species:S13@1.0"
+    },
+    {
+      "dst": "species-S14",
+      "kind": "mirrored_experiment",
+      "source": {
+        "detail": "id == 'species-S14'",
+        "path": "data/experiments/registry_seed.json"
+      },
+      "src": "species:S14@1"
+    },
+    {
+      "dst": "species-S1",
+      "kind": "mirrored_experiment",
+      "source": {
+        "detail": "id == 'species-S1'",
+        "path": "data/experiments/registry_seed.json"
+      },
+      "src": "species:S1@1.0"
+    },
+    {
+      "dst": "species-S2",
+      "kind": "mirrored_experiment",
+      "source": {
+        "detail": "id == 'species-S2'",
+        "path": "data/experiments/registry_seed.json"
+      },
+      "src": "species:S2@1.0"
+    },
+    {
+      "dst": "species-S3",
+      "kind": "mirrored_experiment",
+      "source": {
+        "detail": "id == 'species-S3'",
+        "path": "data/experiments/registry_seed.json"
+      },
+      "src": "species:S3@1.0"
+    },
+    {
+      "dst": "species-S4",
+      "kind": "mirrored_experiment",
+      "source": {
+        "detail": "id == 'species-S4'",
+        "path": "data/experiments/registry_seed.json"
+      },
+      "src": "species:S4@1.0"
+    },
+    {
+      "dst": "species-S5",
+      "kind": "mirrored_experiment",
+      "source": {
+        "detail": "id == 'species-S5'",
+        "path": "data/experiments/registry_seed.json"
+      },
+      "src": "species:S5@1.0"
+    },
+    {
+      "dst": "species-S6",
+      "kind": "mirrored_experiment",
+      "source": {
+        "detail": "id == 'species-S6'",
+        "path": "data/experiments/registry_seed.json"
+      },
+      "src": "species:S6@1.0"
+    },
+    {
+      "dst": "species-S7",
+      "kind": "mirrored_experiment",
+      "source": {
+        "detail": "id == 'species-S7'",
+        "path": "data/experiments/registry_seed.json"
+      },
+      "src": "species:S7@1.0"
+    },
+    {
+      "dst": "species-S8",
+      "kind": "mirrored_experiment",
+      "source": {
+        "detail": "id == 'species-S8'",
+        "path": "data/experiments/registry_seed.json"
+      },
+      "src": "species:S8@1.0"
+    },
+    {
+      "dst": "species-S9",
+      "kind": "mirrored_experiment",
+      "source": {
+        "detail": "id == 'species-S9'",
+        "path": "data/experiments/registry_seed.json"
+      },
+      "src": "species:S9@1.0"
+    },
+    {
+      "dst": "species-T1-T4",
+      "kind": "mirrored_experiment",
+      "source": {
+        "detail": "id == 'species-T1-T4'",
+        "path": "data/experiments/registry_seed.json"
+      },
+      "src": "species:T1-T4@1.0"
+    }
+  ],
+  "generated_utc": "2026-07-07T15:22:48.944034+00:00",
+  "is_context_only": true,
+  "notes": "Crosswalk only; local systems remain authoritative. No invented links; unknowns stay null.",
+  "possible_duplicates": [
+    {
+      "a": "mechanism:A15_WASHOUT_OPP_OUT_2NODE",
+      "b": "mechanism:A16_WASHOUT_ANY_OUT_3NODE_10D",
+      "basis": "token_overlap_suggestion_only",
+      "note": "suggestion only — not a merge",
+      "shared_tokens": [
+        "during",
+        "out",
+        "outflow",
+        "washout"
+      ],
+      "suggestion_only": true
+    },
+    {
+      "a": "mechanism:A15_WASHOUT_OPP_OUT_2NODE",
+      "b": "mechanism:A17_WASHOUT_SAME_OUT_NEG_VEL",
+      "basis": "token_overlap_suggestion_only",
+      "note": "suggestion only — not a merge",
+      "shared_tokens": [
+        "complex",
+        "during",
+        "out",
+        "outflow",
+        "washout"
+      ],
+      "suggestion_only": true
+    },
+    {
+      "a": "mechanism:A15_WASHOUT_OPP_OUT_2NODE",
+      "b": "mechanism:A9_WASHOUT_SAME_OUTFLOW_DENSE",
+      "basis": "token_overlap_suggestion_only",
+      "note": "suggestion only — not a merge",
+      "shared_tokens": [
+        "complex",
+        "during",
+        "outflow",
+        "washout"
+      ],
+      "suggestion_only": true
+    },
+    {
+      "a": "mechanism:A16_WASHOUT_ANY_OUT_3NODE_10D",
+      "b": "mechanism:A17_WASHOUT_SAME_OUT_NEG_VEL",
+      "basis": "token_overlap_suggestion_only",
+      "note": "suggestion only — not a merge",
+      "shared_tokens": [
+        "during",
+        "out",
+        "outflow",
+        "washout"
+      ],
+      "suggestion_only": true
+    },
+    {
+      "a": "mechanism:A16_WASHOUT_ANY_OUT_3NODE_10D",
+      "b": "mechanism:A9_WASHOUT_SAME_OUTFLOW_DENSE",
+      "basis": "token_overlap_suggestion_only",
+      "note": "suggestion only — not a merge",
+      "shared_tokens": [
+        "during",
+        "outflow",
+        "washout"
+      ],
+      "suggestion_only": true
+    },
+    {
+      "a": "mechanism:A17_WASHOUT_SAME_OUT_NEG_VEL",
+      "b": "mechanism:A24_SAME_IN_LOW_VOL_ROUTE",
+      "basis": "token_overlap_suggestion_only",
+      "note": "suggestion only — not a merge",
+      "shared_tokens": [
+        "complex",
+        "same"
+      ],
+      "suggestion_only": true
+    },
+    {
+      "a": "mechanism:A17_WASHOUT_SAME_OUT_NEG_VEL",
+      "b": "mechanism:A9_WASHOUT_SAME_OUTFLOW_DENSE",
+      "basis": "token_overlap_suggestion_only",
+      "note": "suggestion only — not a merge",
+      "shared_tokens": [
+        "complex",
+        "during",
+        "outflow",
+        "same",
+        "washout"
+      ],
+      "suggestion_only": true
+    },
+    {
+      "a": "mechanism:A17_WASHOUT_SAME_OUT_NEG_VEL",
+      "b": "mechanism:C6_WASHOUT_DEEP_1W_STRESS",
+      "basis": "token_overlap_suggestion_only",
+      "note": "suggestion only — not a merge",
+      "shared_tokens": [
+        "velocity",
+        "washout",
+        "weekly"
+      ],
+      "suggestion_only": true
+    },
+    {
+      "a": "mechanism:A17_WASHOUT_SAME_OUT_NEG_VEL",
+      "b": "rf:rf-20260706-adopt-new_term_premium_02",
+      "basis": "token_overlap_suggestion_only",
+      "note": "suggestion only — not a merge",
+      "shared_tokens": [
+        "outflow",
+        "same"
+      ],
+      "suggestion_only": true
+    },
+    {
+      "a": "mechanism:A24_SAME_IN_LOW_VOL_ROUTE",
+      "b": "mechanism:A46_SAME_IN_CHOP_FILTER",
+      "basis": "token_overlap_suggestion_only",
+      "note": "suggestion only — not a merge",
+      "shared_tokens": [
+        "inflow",
+        "same"
+      ],
+      "suggestion_only": true
+    },
+    {
+      "a": "mechanism:A24_SAME_IN_LOW_VOL_ROUTE",
+      "b": "mechanism:A9_WASHOUT_SAME_OUTFLOW_DENSE",
+      "basis": "token_overlap_suggestion_only",
+      "note": "suggestion only — not a merge",
+      "shared_tokens": [
+        "complex",
+        "same"
+      ],
+      "suggestion_only": true
+    },
+    {
+      "a": "mechanism:A9_WASHOUT_SAME_OUTFLOW_DENSE",
+      "b": "rf:rf-20260706-adopt-new_term_premium_02",
+      "basis": "token_overlap_suggestion_only",
+      "note": "suggestion only — not a merge",
+      "shared_tokens": [
+        "outflow",
+        "same"
+      ],
+      "suggestion_only": true
+    },
+    {
+      "a": "species:CN-REVERSAL@1.0",
+      "b": "species:S13@1.0",
+      "basis": "token_overlap_suggestion_only",
+      "note": "suggestion only — not a merge",
+      "shared_tokens": [
+        "reversal",
+        "sector",
+        "sleeve",
+        "within"
+      ],
+      "suggestion_only": true
+    },
+    {
+      "a": "species:CN-WASHOUT@1.0",
+      "b": "species:F3_ANTICHASE@1.0",
+      "basis": "token_overlap_suggestion_only",
+      "note": "suggestion only — not a merge",
+      "shared_tokens": [
+        "ext",
+        "gate"
+      ],
+      "suggestion_only": true
+    },
+    {
+      "a": "species:S1@1.0",
+      "b": "species:S5@1.0",
+      "basis": "token_overlap_suggestion_only",
+      "note": "suggestion only — not a merge",
+      "shared_tokens": [
+        "cohort",
+        "coiled"
+      ],
+      "suggestion_only": true
+    }
+  ],
+  "rows": {
+    "entity:US:AVGO": {
+      "authority": "display_only",
+      "funnel_as_of": "2026-07-07",
+      "funnel_state": "not_eligible",
+      "market": "US",
+      "registry_id": "entity:US:AVGO",
+      "registry_type": "entity",
+      "source_paths": [],
+      "thesis_ids": [
+        "thesis:ai_infrastructure_capex_complex"
+      ],
+      "ticker": "AVGO"
+    },
+    "entity:US:BEN": {
+      "authority": "display_only",
+      "funnel_as_of": "2026-07-07",
+      "funnel_state": "thesis_candidate_shadow",
+      "market": "US",
+      "registry_id": "entity:US:BEN",
+      "registry_type": "entity",
+      "source_paths": [],
+      "thesis_ids": [
+        "thesis:industrials"
+      ],
+      "ticker": "BEN"
+    },
+    "entity:US:BIO": {
+      "authority": "display_only",
+      "funnel_as_of": "2026-07-07",
+      "funnel_state": "not_eligible",
+      "market": "US",
+      "registry_id": "entity:US:BIO",
+      "registry_type": "entity",
+      "source_paths": [],
+      "thesis_ids": [
+        "thesis:health_care"
+      ],
+      "ticker": "BIO"
+    },
+    "entity:US:DBX": {
+      "authority": "display_only",
+      "funnel_as_of": "2026-07-07",
+      "funnel_state": "not_eligible",
+      "market": "US",
+      "registry_id": "entity:US:DBX",
+      "registry_type": "entity",
+      "source_paths": [],
+      "thesis_ids": [
+        "thesis:industrials"
+      ],
+      "ticker": "DBX"
+    },
+    "entity:US:GEV": {
+      "authority": "display_only",
+      "funnel_as_of": "2026-07-07",
+      "funnel_state": "thesis_candidate_shadow",
+      "market": "US",
+      "registry_id": "entity:US:GEV",
+      "registry_type": "entity",
+      "source_paths": [],
+      "thesis_ids": [
+        "thesis:industrials"
+      ],
+      "ticker": "GEV"
+    },
+    "entity:US:MATX": {
+      "authority": "display_only",
+      "funnel_as_of": "2026-07-07",
+      "funnel_state": "not_eligible",
+      "market": "US",
+      "registry_id": "entity:US:MATX",
+      "registry_type": "entity",
+      "source_paths": [],
+      "thesis_ids": [
+        "thesis:industrials"
+      ],
+      "ticker": "MATX"
+    },
+    "entity:US:NVDA": {
+      "authority": "display_only",
+      "funnel_as_of": "2026-07-07",
+      "funnel_state": "not_eligible",
+      "market": "US",
+      "registry_id": "entity:US:NVDA",
+      "registry_type": "entity",
+      "source_paths": [],
+      "thesis_ids": [
+        "thesis:ai_infrastructure_capex_complex"
+      ],
+      "ticker": "NVDA"
+    },
+    "entity:US:OMCL": {
+      "authority": "display_only",
+      "funnel_as_of": "2026-07-07",
+      "funnel_state": "thesis_candidate_shadow",
+      "market": "US",
+      "registry_id": "entity:US:OMCL",
+      "registry_type": "entity",
+      "source_paths": [],
+      "thesis_ids": [
+        "thesis:health_care"
+      ],
+      "ticker": "OMCL"
+    },
+    "entity:US:P": {
+      "authority": "display_only",
+      "funnel_as_of": "2026-07-07",
+      "funnel_state": "not_eligible",
+      "market": "US",
+      "registry_id": "entity:US:P",
+      "registry_type": "entity",
+      "source_paths": [],
+      "thesis_ids": [
+        "thesis:industrials"
+      ],
+      "ticker": "P"
+    },
+    "entity:US:PAHC": {
+      "authority": "display_only",
+      "funnel_as_of": "2026-07-07",
+      "funnel_state": "not_eligible",
+      "market": "US",
+      "registry_id": "entity:US:PAHC",
+      "registry_type": "entity",
+      "source_paths": [],
+      "thesis_ids": [
+        "thesis:health_care"
+      ],
+      "ticker": "PAHC"
+    },
+    "entity:US:STT": {
+      "authority": "display_only",
+      "funnel_as_of": "2026-07-07",
+      "funnel_state": "thesis_candidate_shadow",
+      "market": "US",
+      "registry_id": "entity:US:STT",
+      "registry_type": "entity",
+      "source_paths": [],
+      "thesis_ids": [
+        "thesis:industrials"
+      ],
+      "ticker": "STT"
+    },
+    "entity:US:VRT": {
+      "authority": "display_only",
+      "funnel_as_of": "2026-07-07",
+      "funnel_state": "not_eligible",
+      "market": "US",
+      "registry_id": "entity:US:VRT",
+      "registry_type": "entity",
+      "source_paths": [],
+      "thesis_ids": [
+        "thesis:ai_infrastructure_capex_complex"
+      ],
+      "ticker": "VRT"
+    },
+    "mechanism:A15_WASHOUT_OPP_OUT_2NODE": {
+      "authority": "display_only",
+      "candidate_ids": [
+        "rf-20260706-adopt-a15_washout_opp_out_2node"
+      ],
+      "current_rf_state": {
+        "rf-20260706-adopt-a15_washout_opp_out_2node": "paper"
+      },
+      "domain": [
+        "oracle"
+      ],
+      "governance_refs": [
+        {
+          "article": null,
+          "event_id": "1f5c6c494e6c27c6",
+          "event_type": "research_factory_challenge",
+          "target": "research_factory/challenges/rf-20260706-adopt-a15_washout_opp_out_2node",
+          "ts": "2026-07-06T09:49:39+00:00"
+        },
+        {
+          "article": null,
+          "event_id": "70d51743e7991a96",
+          "event_type": "research_factory_gate",
+          "target": "research_factory/rf-20260706-adopt-a15_washout_opp_out_2node",
+          "ts": "2026-07-06T09:50:46+00:00"
+        }
+      ],
+      "hypothesis": "Washout during two-node opposite-complex outflow",
+      "registry_id": "mechanism:A15_WASHOUT_OPP_OUT_2NODE",
+      "registry_type": "mechanism",
+      "source_paths": [
+        "data/research_factory/candidates.jsonl"
+      ],
+      "source_prs": [],
+      "spec_ref": "A15_WASHOUT_OPP_OUT_2NODE",
+      "state_history": {
+        "rf-20260706-adopt-a15_washout_opp_out_2node": [
+          {
+            "as_of": "2026-07-06T09:34:43.268596+00:00",
+            "candidate_id": "rf-20260706-adopt-a15_washout_opp_out_2node",
+            "from": "proposed",
+            "to": "registered"
+          },
+          {
+            "as_of": "2026-07-06T09:35:33+00:00",
+            "candidate_id": "rf-20260706-adopt-a15_washout_opp_out_2node",
+            "from": "registered",
+            "to": "screened"
+          },
+          {
+            "as_of": "2026-07-06T09:49:39+00:00",
+            "candidate_id": "rf-20260706-adopt-a15_washout_opp_out_2node",
+            "from": "screened",
+            "to": "challenged"
+          },
+          {
+            "as_of": "2026-07-06T09:49:39+00:00",
+            "candidate_id": "rf-20260706-adopt-a15_washout_opp_out_2node",
+            "from": "challenged",
+            "to": "human_review"
+          },
+          {
+            "as_of": "2026-07-06T09:50:46.371983+00:00",
+            "candidate_id": "rf-20260706-adopt-a15_washout_opp_out_2node",
+            "from": "human_review",
+            "to": "paper"
+          }
+        ]
+      },
+      "trial_accounting": {
+        "rf-20260706-adopt-a15_washout_opp_out_2node": {
+          "declared_at": null,
+          "family": null,
+          "mode": "read_only"
+        }
+      }
+    },
+    "mechanism:A16_WASHOUT_ANY_OUT_3NODE_10D": {
+      "authority": "display_only",
+      "candidate_ids": [
+        "rf-20260706-adopt-a16_washout_any_out_3node_10d"
+      ],
+      "current_rf_state": {
+        "rf-20260706-adopt-a16_washout_any_out_3node_10d": "rejected"
+      },
+      "domain": [
+        "oracle"
+      ],
+      "governance_refs": [
+        {
+          "article": null,
+          "event_id": "d70060cfc9dc5389",
+          "event_type": "research_factory_challenge",
+          "target": "research_factory/challenges/rf-20260706-adopt-a16_washout_any_out_3node_10d",
+          "ts": "2026-07-06T09:49:39+00:00"
+        },
+        {
+          "article": null,
+          "event_id": "e09b8fcb6d6d610c",
+          "event_type": "research_factory_gate",
+          "target": "research_factory/rf-20260706-adopt-a16_washout_any_out_3node_10d",
+          "ts": "2026-07-06T09:50:46+00:00"
+        }
+      ],
+      "hypothesis": "Washout during fresh broad outflow cluster",
+      "registry_id": "mechanism:A16_WASHOUT_ANY_OUT_3NODE_10D",
+      "registry_type": "mechanism",
+      "source_paths": [
+        "data/research_factory/candidates.jsonl"
+      ],
+      "source_prs": [],
+      "spec_ref": "A16_WASHOUT_ANY_OUT_3NODE_10D",
+      "state_history": {
+        "rf-20260706-adopt-a16_washout_any_out_3node_10d": [
+          {
+            "as_of": "2026-07-06T09:34:43.271393+00:00",
+            "candidate_id": "rf-20260706-adopt-a16_washout_any_out_3node_10d",
+            "from": "proposed",
+            "to": "registered"
+          },
+          {
+            "as_of": "2026-07-06T09:35:33+00:00",
+            "candidate_id": "rf-20260706-adopt-a16_washout_any_out_3node_10d",
+            "from": "registered",
+            "to": "screened"
+          },
+          {
+            "as_of": "2026-07-06T09:49:39+00:00",
+            "candidate_id": "rf-20260706-adopt-a16_washout_any_out_3node_10d",
+            "from": "screened",
+            "to": "challenged"
+          },
+          {
+            "as_of": "2026-07-06T09:49:39+00:00",
+            "candidate_id": "rf-20260706-adopt-a16_washout_any_out_3node_10d",
+            "from": "challenged",
+            "to": "human_review"
+          },
+          {
+            "as_of": "2026-07-06T09:50:46.485337+00:00",
+            "candidate_id": "rf-20260706-adopt-a16_washout_any_out_3node_10d",
+            "from": "human_review",
+            "to": "rejected"
+          }
+        ]
+      },
+      "trial_accounting": {
+        "rf-20260706-adopt-a16_washout_any_out_3node_10d": {
+          "declared_at": null,
+          "family": null,
+          "mode": "oracle_screen"
+        }
+      }
+    },
+    "mechanism:A17_WASHOUT_SAME_OUT_NEG_VEL": {
+      "authority": "display_only",
+      "candidate_ids": [
+        "rf-20260706-adopt-a17_washout_same_out_neg_vel"
+      ],
+      "current_rf_state": {
+        "rf-20260706-adopt-a17_washout_same_out_neg_vel": "screened"
+      },
+      "domain": [
+        "oracle"
+      ],
+      "governance_refs": [],
+      "hypothesis": "Washout during same-complex outflow with negative weekly velocity",
+      "registry_id": "mechanism:A17_WASHOUT_SAME_OUT_NEG_VEL",
+      "registry_type": "mechanism",
+      "source_paths": [
+        "data/research_factory/candidates.jsonl"
+      ],
+      "source_prs": [],
+      "spec_ref": "A17_WASHOUT_SAME_OUT_NEG_VEL",
+      "state_history": {
+        "rf-20260706-adopt-a17_washout_same_out_neg_vel": [
+          {
+            "as_of": "2026-07-06T09:34:43.273908+00:00",
+            "candidate_id": "rf-20260706-adopt-a17_washout_same_out_neg_vel",
+            "from": "proposed",
+            "to": "registered"
+          },
+          {
+            "as_of": "2026-07-06T09:35:33+00:00",
+            "candidate_id": "rf-20260706-adopt-a17_washout_same_out_neg_vel",
+            "from": "registered",
+            "to": "screened"
+          }
+        ]
+      },
+      "trial_accounting": {
+        "rf-20260706-adopt-a17_washout_same_out_neg_vel": {
+          "declared_at": null,
+          "family": null,
+          "mode": "oracle_screen"
+        }
+      }
+    },
+    "mechanism:A24_SAME_IN_LOW_VOL_ROUTE": {
+      "authority": "display_only",
+      "candidate_ids": [
+        "rf-20260706-adopt-a24_same_in_low_vol_route"
+      ],
+      "current_rf_state": {
+        "rf-20260706-adopt-a24_same_in_low_vol_route": "screened"
+      },
+      "domain": [
+        "oracle"
+      ],
+      "governance_refs": [],
+      "hypothesis": "Same-complex inflow in non-panic volatility",
+      "registry_id": "mechanism:A24_SAME_IN_LOW_VOL_ROUTE",
+      "registry_type": "mechanism",
+      "source_paths": [
+        "data/research_factory/candidates.jsonl"
+      ],
+      "source_prs": [],
+      "spec_ref": "A24_SAME_IN_LOW_VOL_ROUTE",
+      "state_history": {
+        "rf-20260706-adopt-a24_same_in_low_vol_route": [
+          {
+            "as_of": "2026-07-06T09:34:43.284775+00:00",
+            "candidate_id": "rf-20260706-adopt-a24_same_in_low_vol_route",
+            "from": "proposed",
+            "to": "registered"
+          },
+          {
+            "as_of": "2026-07-06T09:35:33+00:00",
+            "candidate_id": "rf-20260706-adopt-a24_same_in_low_vol_route",
+            "from": "registered",
+            "to": "screened"
+          }
+        ]
+      },
+      "trial_accounting": {
+        "rf-20260706-adopt-a24_same_in_low_vol_route": {
+          "declared_at": null,
+          "family": null,
+          "mode": "oracle_screen"
+        }
+      }
+    },
+    "mechanism:A46_SAME_IN_CHOP_FILTER": {
+      "authority": "display_only",
+      "candidate_ids": [
+        "rf-20260706-adopt-a46_same_in_chop_filter"
+      ],
+      "current_rf_state": {
+        "rf-20260706-adopt-a46_same_in_chop_filter": "screened"
+      },
+      "domain": [
+        "oracle"
+      ],
+      "governance_refs": [],
+      "hypothesis": "Same inflow with persistence below crowding levels",
+      "registry_id": "mechanism:A46_SAME_IN_CHOP_FILTER",
+      "registry_type": "mechanism",
+      "source_paths": [
+        "data/research_factory/candidates.jsonl"
+      ],
+      "source_prs": [],
+      "spec_ref": "A46_SAME_IN_CHOP_FILTER",
+      "state_history": {
+        "rf-20260706-adopt-a46_same_in_chop_filter": [
+          {
+            "as_of": "2026-07-06T09:34:43.287337+00:00",
+            "candidate_id": "rf-20260706-adopt-a46_same_in_chop_filter",
+            "from": "proposed",
+            "to": "registered"
+          },
+          {
+            "as_of": "2026-07-06T09:35:33+00:00",
+            "candidate_id": "rf-20260706-adopt-a46_same_in_chop_filter",
+            "from": "registered",
+            "to": "screened"
+          }
+        ]
+      },
+      "trial_accounting": {
+        "rf-20260706-adopt-a46_same_in_chop_filter": {
+          "declared_at": null,
+          "family": null,
+          "mode": "oracle_screen"
+        }
+      }
+    },
+    "mechanism:A9_WASHOUT_SAME_OUTFLOW_DENSE": {
+      "authority": "display_only",
+      "candidate_ids": [
+        "rf-20260706-adopt-a9_washout_same_outflow_dense"
+      ],
+      "current_rf_state": {
+        "rf-20260706-adopt-a9_washout_same_outflow_dense": "rejected"
+      },
+      "domain": [
+        "oracle"
+      ],
+      "governance_refs": [
+        {
+          "article": null,
+          "event_id": "4e48ad0b49bb2dc6",
+          "event_type": "research_factory_challenge",
+          "target": "research_factory/challenges/rf-20260706-adopt-a9_washout_same_outflow_dense",
+          "ts": "2026-07-06T09:49:39+00:00"
+        },
+        {
+          "article": null,
+          "event_id": "5af94384ac8a69e8",
+          "event_type": "research_factory_gate",
+          "target": "research_factory/rf-20260706-adopt-a9_washout_same_outflow_dense",
+          "ts": "2026-07-06T09:50:46+00:00"
+        }
+      ],
+      "hypothesis": "Washout during same-complex outflow cascade",
+      "registry_id": "mechanism:A9_WASHOUT_SAME_OUTFLOW_DENSE",
+      "registry_type": "mechanism",
+      "source_paths": [
+        "data/research_factory/candidates.jsonl"
+      ],
+      "source_prs": [],
+      "spec_ref": "A9_WASHOUT_SAME_OUTFLOW_DENSE",
+      "state_history": {
+        "rf-20260706-adopt-a9_washout_same_outflow_dense": [
+          {
+            "as_of": "2026-07-06T09:34:43.260362+00:00",
+            "candidate_id": "rf-20260706-adopt-a9_washout_same_outflow_dense",
+            "from": "proposed",
+            "to": "registered"
+          },
+          {
+            "as_of": "2026-07-06T09:35:33+00:00",
+            "candidate_id": "rf-20260706-adopt-a9_washout_same_outflow_dense",
+            "from": "registered",
+            "to": "screened"
+          },
+          {
+            "as_of": "2026-07-06T09:49:39+00:00",
+            "candidate_id": "rf-20260706-adopt-a9_washout_same_outflow_dense",
+            "from": "screened",
+            "to": "challenged"
+          },
+          {
+            "as_of": "2026-07-06T09:49:39+00:00",
+            "candidate_id": "rf-20260706-adopt-a9_washout_same_outflow_dense",
+            "from": "challenged",
+            "to": "human_review"
+          },
+          {
+            "as_of": "2026-07-06T09:50:46.433317+00:00",
+            "candidate_id": "rf-20260706-adopt-a9_washout_same_outflow_dense",
+            "from": "human_review",
+            "to": "rejected"
+          }
+        ]
+      },
+      "trial_accounting": {
+        "rf-20260706-adopt-a9_washout_same_outflow_dense": {
+          "declared_at": null,
+          "family": null,
+          "mode": "oracle_screen"
+        }
+      }
+    },
+    "mechanism:C6_WASHOUT_DEEP_1W_STRESS": {
+      "authority": "display_only",
+      "candidate_ids": [
+        "rf-20260706-adopt-c6_washout_deep_1w_stress"
+      ],
+      "current_rf_state": {
+        "rf-20260706-adopt-c6_washout_deep_1w_stress": "rejected"
+      },
+      "domain": [
+        "oracle"
+      ],
+      "governance_refs": [
+        {
+          "article": null,
+          "event_id": "a02c8bfc43e71e65",
+          "event_type": "research_factory_challenge",
+          "target": "research_factory/challenges/rf-20260706-adopt-c6_washout_deep_1w_stress",
+          "ts": "2026-07-06T09:49:39+00:00"
+        },
+        {
+          "article": null,
+          "event_id": "65ea2936636f8008",
+          "event_type": "research_factory_gate",
+          "target": "research_factory/rf-20260706-adopt-c6_washout_deep_1w_stress",
+          "ts": "2026-07-06T09:50:46+00:00"
+        }
+      ],
+      "hypothesis": "Washout with deep weekly velocity stress",
+      "registry_id": "mechanism:C6_WASHOUT_DEEP_1W_STRESS",
+      "registry_type": "mechanism",
+      "source_paths": [
+        "data/research_factory/candidates.jsonl"
+      ],
+      "source_prs": [],
+      "spec_ref": "C6_WASHOUT_DEEP_1W_STRESS",
+      "state_history": {
+        "rf-20260706-adopt-c6_washout_deep_1w_stress": [
+          {
+            "as_of": "2026-07-06T09:34:43.282066+00:00",
+            "candidate_id": "rf-20260706-adopt-c6_washout_deep_1w_stress",
+            "from": "proposed",
+            "to": "registered"
+          },
+          {
+            "as_of": "2026-07-06T09:35:33+00:00",
+            "candidate_id": "rf-20260706-adopt-c6_washout_deep_1w_stress",
+            "from": "registered",
+            "to": "screened"
+          },
+          {
+            "as_of": "2026-07-06T09:49:39+00:00",
+            "candidate_id": "rf-20260706-adopt-c6_washout_deep_1w_stress",
+            "from": "screened",
+            "to": "challenged"
+          },
+          {
+            "as_of": "2026-07-06T09:49:39+00:00",
+            "candidate_id": "rf-20260706-adopt-c6_washout_deep_1w_stress",
+            "from": "challenged",
+            "to": "human_review"
+          },
+          {
+            "as_of": "2026-07-06T09:50:46.543463+00:00",
+            "candidate_id": "rf-20260706-adopt-c6_washout_deep_1w_stress",
+            "from": "human_review",
+            "to": "rejected"
+          }
+        ]
+      },
+      "trial_accounting": {
+        "rf-20260706-adopt-c6_washout_deep_1w_stress": {
+          "declared_at": null,
+          "family": null,
+          "mode": "oracle_screen"
+        }
+      }
+    },
+    "rf:rf-20260706-adopt-new_term_premium_02": {
+      "authority": "display_only",
+      "candidate_id": "rf-20260706-adopt-new_term_premium_02",
+      "current_rf_state": "rejected",
+      "domain": "oracle",
+      "governance_refs": [
+        {
+          "article": null,
+          "event_id": "dce83354cc72630e",
+          "event_type": "research_factory_challenge",
+          "target": "research_factory/challenges/rf-20260706-adopt-new_term_premium_02",
+          "ts": "2026-07-06T09:49:39+00:00"
+        },
+        {
+          "article": null,
+          "event_id": "9909c6d487efaa03",
+          "event_type": "research_factory_gate",
+          "target": "research_factory/rf-20260706-adopt-new_term_premium_02",
+          "ts": "2026-07-06T09:50:46+00:00"
+        }
+      ],
+      "hypothesis": "Rate stress same outflow survivor",
+      "mechanism_prose": "Executes when TLT is negative and same-complex outflow occurs but the candidate keeps positive RS, buying sectors that resist both local selling and rate pressure.",
+      "note": "spec_ref 'NEW:TERM_PREMIUM_02' contains non-ID chars (ETM-R6); candidate-scoped",
+      "registry_id": "rf:rf-20260706-adopt-new_term_premium_02",
+      "registry_type": "mechanism",
+      "source_paths": [
+        "data/research_factory/candidates.jsonl"
+      ],
+      "source_prs": [],
+      "spec_ref": "NEW:TERM_PREMIUM_02",
+      "state_history": [
+        {
+          "as_of": "2026-07-06T09:34:43.289783+00:00",
+          "candidate_id": "rf-20260706-adopt-new_term_premium_02",
+          "from": "proposed",
+          "to": "registered"
+        },
+        {
+          "as_of": "2026-07-06T09:35:33+00:00",
+          "candidate_id": "rf-20260706-adopt-new_term_premium_02",
+          "from": "registered",
+          "to": "screened"
+        },
+        {
+          "as_of": "2026-07-06T09:49:39+00:00",
+          "candidate_id": "rf-20260706-adopt-new_term_premium_02",
+          "from": "screened",
+          "to": "challenged"
+        },
+        {
+          "as_of": "2026-07-06T09:49:39+00:00",
+          "candidate_id": "rf-20260706-adopt-new_term_premium_02",
+          "from": "challenged",
+          "to": "human_review"
+        },
+        {
+          "as_of": "2026-07-06T09:50:46.600370+00:00",
+          "candidate_id": "rf-20260706-adopt-new_term_premium_02",
+          "from": "human_review",
+          "to": "rejected"
+        }
+      ],
+      "trial_accounting": {
+        "declared_at": null,
+        "family": null,
+        "mode": "oracle_screen"
+      }
+    },
+    "species:CN-REVERSAL@1.0": {
+      "authority": "display_only",
+      "deployment_status": "graded_bonus",
+      "evidence_stack": [
+        {
+          "condition": "Monthly rebalance: deepest-quintile within-sector by 3M return",
+          "tag": "trigger"
+        },
+        {
+          "condition": "Hygiene-only screens: ST, ADV, staleness (NOT quality or timing gates)",
+          "tag": "context"
+        }
+      ],
+      "experiment_ref": "species-CN-REVERSAL",
+      "governance_refs": [],
+      "horizon_class": "rotational",
+      "market_scope": [
+        "CN"
+      ],
+      "mechanism": "Monthly, deepest-quintile within-sector reversal on A-shares: buy the most-punished names in each CN Shenwan sector, equal-weight, hygiene-only screens, no timing or confirmation gate. The CN reversal edge (+0.56%/mo validated) is invariant to gating — every timing or confirmation gate flipped it negative (cn_reversal_sleeve.assert_no_gate() enforces this). The mechanism is overreaction recovery within peer cohorts; the edge dies when you gate it.",
+      "name": "CN Within-Sector Reversal Sleeve",
+      "registry_id": "species:CN-REVERSAL@1.0",
+      "registry_type": "species_link",
+      "rejection_rules": [
+        {
+          "prevents": "killing the validated edge by adding gates",
+          "rule": "assert_no_gate() invariant: any timing or confirmation gate is prohibited"
+        },
+        {
+          "prevents": "untradeable names",
+          "rule": "ST screen only"
+        },
+        {
+          "prevents": "deriving a falsified quality gate",
+          "rule": "No quality floor — CN quality floors on reversal HURT"
+        }
+      ],
+      "source_paths": [
+        "data/species/registry.json"
+      ],
+      "source_prs": [],
+      "species_id": "CN-REVERSAL",
+      "trial_count": 0,
+      "validation_status": "validated",
+      "version": "1.0"
+    },
+    "species:CN-WASHOUT@1.0": {
+      "authority": "display_only",
+      "deployment_status": "gate_weight",
+      "evidence_stack": [
+        {
+          "condition": "Multi-TF washout state on the CN name",
+          "tag": "arming"
+        },
+        {
+          "condition": "T1-T4 CN cascade cross",
+          "tag": "trigger"
+        },
+        {
+          "condition": "2W-StochRSI-washout rank boost for rank-ordering within-sector",
+          "tag": "context"
+        },
+        {
+          "condition": "EXT_PENALTY demote if extension-since-cross too high",
+          "tag": "rejection"
+        },
+        {
+          "condition": "ST flag exclusion (hygiene)",
+          "tag": "rejection"
+        }
+      ],
+      "experiment_ref": "species-CN-WASHOUT",
+      "governance_refs": [],
+      "horizon_class": "positional",
+      "market_scope": [
+        "CN"
+      ],
+      "mechanism": "China A-share and HK constituent entry gate: washout state (multi-TF) is the arming condition; EXT_PENALTY (extension-since-cross) demotes names that have already moved. Gate parity with US board: alignment→+entry_ok→T1-T4 confluence cascade with CN-specific 2W-StochRSI-washout rank boost and blend-order. CN reversal mechanics diverge from US on purpose: A-share momentum is dead; China edge is WHEN (washout timing), not WHICH-name.",
+      "name": "CN Washout / EXT_PENALTY (China entry gate)",
+      "registry_id": "species:CN-WASHOUT@1.0",
+      "registry_type": "species_link",
+      "rejection_rules": [
+        {
+          "prevents": "chasing a name that has already gapped",
+          "rule": "extension_demote / EXT_PENALTY"
+        },
+        {
+          "prevents": "regulatory / liquidity trap",
+          "rule": "ST screen (special treatment, untradeable)"
+        },
+        {
+          "prevents": "illiquid names",
+          "rule": "ADV screen"
+        },
+        {
+          "prevents": "stale-data entries",
+          "rule": "Staleness screen"
+        },
+        {
+          "prevents": "gating A-share reversal by subsector state — it HURT vs flat",
+          "rule": "CN subsector-state gating is CLOSED (§1.6 #754)"
+        }
+      ],
+      "source_paths": [
+        "data/species/registry.json"
+      ],
+      "source_prs": [],
+      "species_id": "CN-WASHOUT",
+      "trial_count": 0,
+      "validation_status": "validated",
+      "version": "1.0"
+    },
+    "species:DISLOC@1.0": {
+      "authority": "display_only",
+      "deployment_status": "chip",
+      "evidence_stack": [
+        {
+          "condition": "Dislocation episode: elevated credit spread + equity vol spike",
+          "tag": "arming"
+        },
+        {
+          "condition": "Policy backstop signal present (Fed-put: ZIRP / QE / pivot rhetoric)",
+          "tag": "arming"
+        },
+        {
+          "condition": "Median-drawdown improvement in put-present episodes (the robust clause)",
+          "tag": "trigger"
+        },
+        {
+          "condition": "Hit-rate arms (70.3% vs 40.0%): CONTEXT only — n=37 vs n=10 episodes is too thin",
+          "tag": "context"
+        }
+      ],
+      "experiment_ref": "species-DISLOC",
+      "governance_refs": [],
+      "horizon_class": "positional",
+      "market_scope": [
+        "US"
+      ],
+      "mechanism": "Dislocation episodes (elevated credit spread + equity vol + policy-backstop signal present) improve the forward stop-out rate of entry signals. The ONLY robust clause is median-drawdown improvement in put-present episodes. Hit-rate claims (70.3% put-present vs 40.0% put-absent) rest on n=37 vs n=10 episodes — too thin for a promotion gate. Functions as a conditioner on S1 and S5 fires; not a standalone entry signal. Display context.",
+      "name": "Dislocation Fed-Put Switch",
+      "registry_id": "species:DISLOC@1.0",
+      "registry_type": "species_link",
+      "rejection_rules": [
+        {
+          "prevents": "over-trading thin episode counts",
+          "rule": "Standalone use as an entry signal is prohibited — conditioner only"
+        },
+        {
+          "prevents": "false precision on n=37 episodes",
+          "rule": "Hit-rate metric is context-only, not a gate"
+        }
+      ],
+      "source_paths": [
+        "data/species/registry.json"
+      ],
+      "source_prs": [],
+      "species_id": "DISLOC",
+      "trial_count": 2,
+      "validation_status": "validated",
+      "version": "1.0"
+    },
+    "species:EI-F1D-RW@1.0": {
+      "authority": "display_only",
+      "deployment_status": "ledger_fields",
+      "evidence_stack": [
+        {
+          "condition": "washout_true: drawdown >= 15% from 126-day prior max within the 91-bar argmin window (engine.coiled washout_ctx path)",
+          "tag": "arming"
+        },
+        {
+          "condition": "dd_pct > 0.25: continuous depth of drawdown at capitulation point exceeds 25% (primary depth threshold — C6/C1 configs)",
+          "tag": "trigger"
+        },
+        {
+          "condition": "ext_z <= 2.0: anti-chase pass (extension z-score at most 2 own-history SDs above 200DMA — C6/C5 configs)",
+          "tag": "trigger"
+        },
+        {
+          "condition": "rs_sector_quartile in [1, 2]: RS-favorable — stock in top half of sector peers (C6/C5 configs)",
+          "tag": "trigger"
+        },
+        {
+          "condition": "+0.10 blend_sorted bonus re-percentiled within signal_date: shadow rank is the additive-lanes law realization — zero fires removed",
+          "tag": "context"
+        }
+      ],
+      "experiment_ref": null,
+      "governance_refs": [],
+      "horizon_class": "positional",
+      "market_scope": [
+        "US"
+      ],
+      "mechanism": "Deep washout stocks (drawdown > 25% from prior 126-day high, within the 91-bar washout context window) combined with anti-chase pass (ext_z <= 2.0) and RS-favorable (sector quartile Q1 or Q2) receive a +0.10 bonus on the blend_sorted rank scale. The bonus is re-percentiled within-day to produce a shadow rank. Production ordering is UNTOUCHED — the shadow fields are additive ledger columns only. Primary config C6 (deep_trio = dd>25% AND ac-pass AND rs-favorable). Six ship-qualifying configs accrued: C1 (dd>25% solo), C3 (below-200DMA × washout), C5 (washout × ac × rs), C6 (dd>25% × ac × rs), C7 (dd>40% × ac × rs), C8 (below-200DMA × dd>25%). The depth gradient recovered the washout-as-rank-input line that the flat-binary reprobe killed: the flat binary pooled shallow (<25%) and deep (>25%) categories and the harmful shallow bulk cancelled the favorable deep tail.",
+      "name": "Washout Depth × Interaction Rank-Weight Shadow",
+      "registry_id": "species:EI-F1D-RW@1.0",
+      "registry_type": "species_link",
+      "rejection_rules": [
+        {
+          "prevents": "shipping a half-concentrated edge that lives only in the recent era",
+          "rule": "C2 (d40plus_solo) is DEAD — sign-unstable across temporal halves; not tracked in shadow bonus"
+        },
+        {
+          "prevents": "conflating the shallow-bulk harm with the deep-tail edge",
+          "rule": "C4 (washout_ac_pass) is DEAD — unfavorable at both horizons; not tracked"
+        },
+        {
+          "prevents": "regressing to the pooled washout signal that the reprobe killed",
+          "rule": "Flat binary washout flag (no depth cut) is NOT a favorable rank input (reprobe T09 D_f = +3.34pp): falsification boundary"
+        },
+        {
+          "prevents": "live board enforcement before forward-ledger flip criterion fires",
+          "rule": "Production blend_sorted ordering is UNTOUCHED — shadow fields are additive JSON columns only; no template ordering change"
+        }
+      ],
+      "source_paths": [
+        "data/species/registry.json"
+      ],
+      "source_prs": [],
+      "species_id": "EI-F1D-RW",
+      "trial_count": 8,
+      "validation_status": "accruing",
+      "version": "1.0"
+    },
+    "species:F3_ANTICHASE@1.0": {
+      "authority": "display_only",
+      "deployment_status": "chip",
+      "evidence_stack": [
+        {
+          "condition": "ext_z > 2.0 at signal time",
+          "tag": "gate"
+        },
+        {
+          "condition": "ext_z computed from engine/extension.py PARABOLIC_Z = 2.0",
+          "tag": "arming"
+        },
+        {
+          "condition": "production-trigger fires only (P1.3 population)",
+          "tag": "context"
+        }
+      ],
+      "experiment_ref": null,
+      "governance_refs": [],
+      "horizon_class": "positional",
+      "market_scope": [
+        "US"
+      ],
+      "mechanism": "Names with ext_z > 2.0 are in the PARABOLIC tail: priced more than 2 own-history σ above their 200-day average. P1.3 established this cohort has higher stop-out (+0.43pp at 21d, +5.0pp at 63d) and dead-money (+3.6pp at 21d) incidence vs the unblocked population on production-trigger fires. The mechanism is forced-buyer exhaustion: a parabolic extension means every short-term buyer has already bought; when momentum stalls, there is no marginal buyer to absorb the first seller. The gate does not predict when the reversal happens — only that it stops the board from confirming a chase entry.",
+      "name": "Anti-Chase Hard Gate (F3 ext_z)",
+      "registry_id": "species:F3_ANTICHASE@1.0",
+      "registry_type": "species_link",
+      "rejection_rules": [
+        {
+          "prevents": "non-extended names pass through uninhibited",
+          "rule": "ext_z <= 2.0: not blocked"
+        },
+        {
+          "prevents": "sign flip across halves in RW prevented rank-weight path",
+          "rule": "RW mode did not ship (sign-unstable T27-T30): no rank-weight variant authorized"
+        }
+      ],
+      "source_paths": [
+        "data/species/registry.json"
+      ],
+      "source_prs": [],
+      "species_id": "F3_ANTICHASE",
+      "trial_count": 3,
+      "validation_status": "accruing",
+      "version": "1.0"
+    },
+    "species:S10@1.0": {
+      "authority": "display_only",
+      "deployment_status": "unshipped",
+      "evidence_stack": [
+        {
+          "condition": "Margin-direction-change: first quarterly improvement after ≥2 quarters of deterioration",
+          "tag": "trigger"
+        },
+        {
+          "condition": "Name in washout state (multi-TF)",
+          "tag": "arming"
+        },
+        {
+          "condition": "Price reclaim: price recovering from the washout low",
+          "tag": "trigger"
+        },
+        {
+          "condition": "Quarterly EDGAR extraction complete (data gate)",
+          "tag": "context"
+        }
+      ],
+      "experiment_ref": "species-S10",
+      "governance_refs": [],
+      "horizon_class": "positional",
+      "market_scope": [
+        "US"
+      ],
+      "mechanism": "When gross/operating margin DIRECTION changes (first improvement after multiple quarters of deterioration) while the name is in washout and price begins to reclaim key levels, the margin turn signals fundamental mean-reversion. Archetype-scoped: consumer/industrial/retail first; financials excluded — EDGAR ratio unreliability. Keys on margin DIRECTION change, not level. Gated on quarterly EDGAR extraction (one-time paced re-crawl, ~1,334 names).",
+      "name": "Margin-Inflection Reclaim",
+      "registry_id": "species:S10@1.0",
+      "registry_type": "species_link",
+      "rejection_rules": [
+        {
+          "prevents": "spurious signals in financial archetypes",
+          "rule": "Financials excluded — EDGAR ratio unreliability for banks/insurers"
+        },
+        {
+          "prevents": "buying cheap-but-declining margins",
+          "rule": "Margin LEVEL is not the signal — only DIRECTION change (first improvement)"
+        },
+        {
+          "prevents": "look-ahead bias in quarterly fundamentals",
+          "rule": "EDGAR re-crawl must complete before phase-0 runs"
+        }
+      ],
+      "source_paths": [
+        "data/species/registry.json"
+      ],
+      "source_prs": [],
+      "species_id": "S10",
+      "trial_count": 2,
+      "validation_status": "phase0",
+      "version": "1.0"
+    },
+    "species:S11@1.0": {
+      "authority": "display_only",
+      "deployment_status": "unshipped",
+      "evidence_stack": [
+        {
+          "condition": "Realized share-count decline: actual share count lower than prior quarter (from EDGAR)",
+          "tag": "trigger"
+        },
+        {
+          "condition": "Name in washout state (multi-TF)",
+          "tag": "arming"
+        },
+        {
+          "condition": "Debt-funded buyback flag: if net-debt rising concurrent with buyback, demote to context only",
+          "tag": "context"
+        }
+      ],
+      "experiment_ref": "species-S11",
+      "governance_refs": [],
+      "horizon_class": "positional",
+      "market_scope": [
+        "US"
+      ],
+      "mechanism": "Companies that are actually shrinking their share count during a washout provide a buyback floor — realized buyback activity (not announcements) signals management confidence at a price they consider cheap. Keys on realized share-count DECLINE (from EDGAR quarterly); never on buyback announcements. CN precedent: buybacks kept a capped confirmer role. Debt-funded buybacks are the named failure mode. Gated on same EDGAR extraction as S10.",
+      "name": "Buyback-Floor Washout",
+      "registry_id": "species:S11@1.0",
+      "registry_type": "species_link",
+      "rejection_rules": [
+        {
+          "prevents": "counting buyback promises as buyback evidence",
+          "rule": "Announcements are NOT the signal — only realized share-count decline"
+        },
+        {
+          "prevents": "the named failure mode: leveraging up to buy back shares in distress",
+          "rule": "Debt-funded buyback: net-debt rising concurrent with buyback → demote to context"
+        },
+        {
+          "prevents": "look-ahead bias",
+          "rule": "EDGAR re-crawl must complete before phase-0 runs"
+        }
+      ],
+      "source_paths": [
+        "data/species/registry.json"
+      ],
+      "source_prs": [],
+      "species_id": "S11",
+      "trial_count": 2,
+      "validation_status": "falsified",
+      "version": "1.0"
+    },
+    "species:S12@1.0": {
+      "authority": "display_only",
+      "deployment_status": "unshipped",
+      "evidence_stack": [
+        {
+          "condition": "rate_pressure = 'relief' (§3.4 definition: DFII10 63d change ≤ −25bp, 2-day hysteresis)",
+          "tag": "arming"
+        },
+        {
+          "condition": "rate-sensitive archetype: high duration (per factor_betas.json rate beta)",
+          "tag": "arming"
+        },
+        {
+          "condition": "Name in washout state (multi-TF)",
+          "tag": "arming"
+        },
+        {
+          "condition": "Growth-axis separation: rate relief, NOT rate panic (growth axis must not be in sharp decline)",
+          "tag": "context"
+        },
+        {
+          "condition": "Hard clause: ≥8 distinct rate-relief episodes with ≥1 outside 2020-21",
+          "tag": "context"
+        }
+      ],
+      "experiment_ref": "species-S12",
+      "governance_refs": [],
+      "horizon_class": "positional",
+      "market_scope": [
+        "US"
+      ],
+      "mechanism": "Rate-sensitive-archetype names (high duration, rate-beta positive) in washout stratified by the §3.4 rate_pressure state = 'relief'. When real rates stop rising and begin declining, duration-sensitive names that have been washed out benefit from PE re-expansion. Adjacent-falsified now includes the net-liquidity gate (episode-scale effective n — inherited here). Hard phase-0 clause: ≥8 distinct rate-relief episodes with ≥1 outside 2020-21, or the wave does not run. The 'rates falling because growth is dying' confound is separated via the growth axis (the species claims rate relief, not rate panic).",
+      "name": "Rate-Relief Duration Rebound",
+      "registry_id": "species:S12@1.0",
+      "registry_type": "species_link",
+      "rejection_rules": [
+        {
+          "prevents": "reading an ZIRP-era artifact as a general mechanism",
+          "rule": "Episode floor: ≥8 distinct rate-relief episodes required with ≥1 outside 2020-21; if not met, wave does not run"
+        },
+        {
+          "prevents": "2020-COVID confound",
+          "rule": "Rate-panic confound: if growth axis is in sharp decline concurrent with rate relief, exclude (rates falling = growth dying, not relief)"
+        },
+        {
+          "prevents": "re-deriving a graveyard gate at episode scale",
+          "rule": "Net-liquidity gate is CLOSED (§1.6 NOVEL_IDEAS §3) — episode-scale n is the hard constraint here too"
+        }
+      ],
+      "source_paths": [
+        "data/species/registry.json"
+      ],
+      "source_prs": [],
+      "species_id": "S12",
+      "trial_count": 3,
+      "validation_status": "phase0",
+      "version": "1.0"
+    },
+    "species:S13@1.0": {
+      "authority": "display_only",
+      "deployment_status": "unshipped",
+      "evidence_stack": [
+        {
+          "condition": "Monthly rebalance: deepest-quintile within-sector by 3M return (test also 1M per US evidence)",
+          "tag": "trigger"
+        },
+        {
+          "condition": "Hygiene-only screens: ST, ADV, staleness — NO timing or confirmation gate",
+          "tag": "context"
+        },
+        {
+          "condition": "assert_no_gate invariant: any timing gate is prohibited (§1.5 law)",
+          "tag": "context"
+        },
+        {
+          "condition": "PIT restriction + recovered delisted names (no pure survivorship)",
+          "tag": "context"
+        }
+      ],
+      "experiment_ref": "species-S13",
+      "governance_refs": [],
+      "horizon_class": "rotational",
+      "market_scope": [
+        "US"
+      ],
+      "mechanism": "Within-sector overreaction — the CN sleeve's construction ported honestly: monthly, deepest-quintile within-sector reversal fuel (test both 3M per CN and 1M per the US evidence), equal-weight, hygiene-only screens, assert_no_gate-style invariant (the §1.5 law: gates killed the CN edge; the phase-0 tests whether that holds for US too rather than assuming it either way). In-repo seed: sector-neutral 1M reversal IC −0.046 (t −9.5) full-history on the deep panel — with pre-registered kill criteria: modern-era decay (2002–26 IC −0.011, t −2.4) and the 2024–26 mega-cap sign flip. Runs NOW on the existing deep panel with PIT restriction + recovered delisted names. Do NOT wait for W0.6 — the flat files serve the forward ledger, not this backtest. As a product-unit species graded on safety-net axes PLUS sleeve-level excess-vs-SPY.",
+      "name": "US Within-Sector Reversal Sleeve",
+      "registry_id": "species:S13@1.0",
+      "registry_type": "species_link",
+      "rejection_rules": [
+        {
+          "prevents": "killing the edge the way the CN sleeve proved",
+          "rule": "assert_no_gate invariant enforced: timing/confirmation gates prohibited"
+        },
+        {
+          "prevents": "ignoring the decay signal",
+          "rule": "Pre-registered kill criteria: modern-era decay (IC −0.011) and 2024–26 mega-cap sign flip"
+        },
+        {
+          "prevents": "unnecessary delay",
+          "rule": "Do NOT wait for W0.6 massive flat files — this backtest uses the existing deep panel"
+        }
+      ],
+      "source_paths": [
+        "data/species/registry.json"
+      ],
+      "source_prs": [],
+      "species_id": "S13",
+      "trial_count": 3,
+      "validation_status": "phase0",
+      "version": "1.0"
+    },
+    "species:S14@1": {
+      "authority": "display_only",
+      "deployment_status": "unshipped",
+      "evidence_stack": [
+        {
+          "condition": "Breakout-then-close-below: price prints a new 52-week high intraday or at open, then closes below the prior high on the same or next 1-3 sessions",
+          "tag": "trigger"
+        },
+        {
+          "condition": "Volume confirmation: failed breakout accompanied by above-average volume (trapped-buyer supply is larger on high volume)",
+          "tag": "arming"
+        },
+        {
+          "condition": "Not a short-sell signal: S14 is a VETO on new long entries and a context for de-escalation; no short position or rank change is implied",
+          "tag": "context"
+        }
+      ],
+      "experiment_ref": "species-S14",
+      "governance_refs": [],
+      "horizon_class": "rotational",
+      "market_scope": [
+        "US"
+      ],
+      "mechanism": "A new-high breakout that closes back below the breakout level traps late buyers who chased the print; their supply overhang suppresses subsequent rally attempts. The failed-breakout pattern identifies names whose breakout has reversed intrabar or within 1-3 sessions, leaving the majority of late entrants underwater. This is a top/entry-veto-shaped context for de-escalation or new-position avoidance — NOT a short-selling signal. The supply overhang typically resolves as: (a) time washout (late buyers capitulate) or (b) re-test of the breakout level on improved breadth. Mechanism link: the Wave-5 retest_hold study confirmed that a retest of the prior high WITHOUT breakout failure predicts continuation; the complement (WITH failure) predicts elevated drawdown risk.",
+      "name": "Failed breakout (trapped-buyer supply)",
+      "registry_id": "species:S14@1",
+      "registry_type": "species_link",
+      "rejection_rules": [
+        {
+          "prevents": "misuse as a direction signal",
+          "rule": "No short-sell signals permitted: S14 is entry-veto shaped; any use as a short or underweight signal is a scope violation"
+        },
+        {
+          "prevents": "false veto in strong uptrend",
+          "rule": "Index-breakout context: broad-market new highs suppress the per-name failed-breakout mechanism — do not fire in strong bull-tape regimes without regime gating"
+        },
+        {
+          "prevents": "stale pattern application",
+          "rule": "Stale-breakout exclusion: if the 52-week high was set >60 trading days prior, the trapped-buyer supply has likely been absorbed; the pattern is invalid for new signals"
+        }
+      ],
+      "source_paths": [
+        "data/species/registry.json"
+      ],
+      "source_prs": [],
+      "species_id": "S14",
+      "trial_count": 0,
+      "validation_status": "phase0",
+      "version": "1"
+    },
+    "species:S15@1.0": {
+      "authority": "display_only",
+      "deployment_status": "unshipped",
+      "evidence_stack": [
+        {
+          "condition": "Close undercuts the N-bar rolling low (N in {21, 63})",
+          "tag": "arming"
+        },
+        {
+          "condition": "Price reclaims the broken level within K bars (K in {2, 3, 5})",
+          "tag": "trigger"
+        },
+        {
+          "condition": "Depth of undercut >= 2% of rolling low (ATR-mult frozen 1.0)",
+          "tag": "arming"
+        },
+        {
+          "condition": "COILED intersection form: TRUE COILED at fire = washout_ctx AND cohort_frac >= 0.40",
+          "tag": "context"
+        },
+        {
+          "condition": "Gate-fire proximity form: U&R event within +/-5 bars of gate_fires_{panel}",
+          "tag": "context"
+        }
+      ],
+      "experiment_ref": null,
+      "governance_refs": [],
+      "horizon_class": "rotational",
+      "market_scope": [
+        "US"
+      ],
+      "mechanism": "A support level is undercut (close below the N-bar rolling low) and then reclaimed within K bars. The mechanical event is a failed breakdown: the market rejected the lower level, forcing trapped short-sellers and fearful longs to reverse. Adjacent-falsified now includes the trap-context veto inverse (sign-stable but IN-SAMPLE-ONLY per S6 card, cited exactly) and the shallow-dip preference (0/8 promote; shallow side LOSES per §1.6 WAVE6 §3). Depth arm is panel-determined (ATR mult frozen at 1.0). Three forms: standalone / TRUE COILED intersection (washout AND cohort_frac>=0.40 per assess()) / gate-fire proximity. Phase-0 headline: standalone (+2.44pp stop5) and COILED-intersection (+4.67pp) forms are SIGNIFICANTLY WORSE than the incumbent gate baseline (CI entirely above 0); only the gatefire-proximity form shows stop5 improvement (−2.3pp), but proximity confounding is the primary alternative explanation.",
+      "name": "Spring Reclaim (U&R — Undercut-and-Rally)",
+      "registry_id": "species:S15@1.0",
+      "registry_type": "species_link",
+      "rejection_rules": [
+        {
+          "prevents": "overstating evidence from in-sample sign",
+          "rule": "Trap-context veto inverse: sign-stable IN-SAMPLE ONLY (per S6 card) — cannot claim OOS merit without phase-0 pass"
+        },
+        {
+          "prevents": "gating on dip depth",
+          "rule": "Shallow-dip preference (0/8 promote; shallow side LOSES) is CLOSED"
+        },
+        {
+          "prevents": "look-ahead bias",
+          "rule": "Same-bar fill banned (T+1 fill required)"
+        }
+      ],
+      "source_paths": [
+        "data/species/registry.json"
+      ],
+      "source_prs": [],
+      "species_id": "S15",
+      "trial_count": 3,
+      "validation_status": "phase0",
+      "version": "1.0"
+    },
+    "species:S1@1.0": {
+      "authority": "display_only",
+      "deployment_status": "graded_bonus",
+      "evidence_stack": [
+        {
+          "condition": "cohort_fraction >= 0.40 (monotone — edge increases with cohort depth)",
+          "tag": "arming"
+        },
+        {
+          "condition": "COILED state: multi-TF washout on the individual name",
+          "tag": "arming"
+        },
+        {
+          "condition": "STAR bullish divergence co-condition (stop relief with cohort, not standalone)",
+          "tag": "trigger"
+        },
+        {
+          "condition": "C2 union trigger: COILED OR STAR within the arming window",
+          "tag": "trigger"
+        },
+        {
+          "condition": "sector cohort coverage >= 70% (§3.3 coverage law)",
+          "tag": "context"
+        }
+      ],
+      "experiment_ref": "species-S1",
+      "governance_refs": [],
+      "horizon_class": "positional",
+      "market_scope": [
+        "US",
+        "CN"
+      ],
+      "mechanism": "Sustained sector-cohort liquidation exhausts the marginal seller. When ≥40% of a sector's constituents are in multi-timeframe washout, the remaining sellers are structural longs rather than momentum players — the cohort's next buyer is rotation capital entering a sector that has already priced the damage. STAR (multi-TF bullish divergence) provides stop relief only WITH cohort context; C2 (union trigger) widens recall from 12.4 to 14.2 and shortens lead from 6d to 3d.",
+      "name": "Cohort Capitulation Reversal (COILED / STAR / C2)",
+      "registry_id": "species:S1@1.0",
+      "registry_type": "species_link",
+      "rejection_rules": [
+        {
+          "prevents": "buying into an extended name after the move has run",
+          "rule": "extension_demote: EXT_PENALTY blocks chase entries (JNJ/AMAT archetype)"
+        },
+        {
+          "prevents": "chasing a stale signal",
+          "rule": "freshness_expired: aged cross excluded"
+        },
+        {
+          "prevents": "untradeable names",
+          "rule": "hygiene_screen: ST/ADV/staleness screens — hygiene, not a forecast"
+        },
+        {
+          "prevents": "stop-relief benefit leaking to isolated divergences",
+          "rule": "STAR standalone (no cohort context) is NOT an arming condition for S1"
+        }
+      ],
+      "source_paths": [
+        "data/species/registry.json"
+      ],
+      "source_prs": [],
+      "species_id": "S1",
+      "trial_count": 0,
+      "validation_status": "validated",
+      "version": "1.0"
+    },
+    "species:S2@1.0": {
+      "authority": "display_only",
+      "deployment_status": "chip",
+      "evidence_stack": [
+        {
+          "condition": "G6a donor-unwind state active: a recognized leader cohort in consecutive-week breakdown",
+          "tag": "arming"
+        },
+        {
+          "condition": "Target name in washout (multi-TF) in the receiving cohort",
+          "tag": "arming"
+        },
+        {
+          "condition": "Cracking-donor × cohort-washout cell: S2 × S1 joint fires",
+          "tag": "trigger"
+        },
+        {
+          "condition": "donor unwind state from subsector_confluence donor-unwind axis",
+          "tag": "context"
+        }
+      ],
+      "experiment_ref": "species-S2",
+      "governance_refs": [],
+      "horizon_class": "rotational",
+      "market_scope": [
+        "US"
+      ],
+      "mechanism": "Rotations are funded — capital leaving a cracking leader cohort (G6a: 6+ consecutive weeks of leadership, now breaking down) is the marginal buyer of washed-out laggards. The donor's exhaustion is the entry timing signal, not the laggard's own chart. US-only: explicitly NOT ported to HK (G6a inverts there).",
+      "name": "Donor-Funded Bottom (G6a leader-cracking / donor-unwind)",
+      "registry_id": "species:S2@1.0",
+      "registry_type": "species_link",
+      "rejection_rules": [
+        {
+          "prevents": "porting a falsified HK mechanism",
+          "rule": "HK market excluded — G6a inverts in HK"
+        },
+        {
+          "prevents": "buying the laggard after it has already moved",
+          "rule": "extension_demote on target name — no chase entries"
+        },
+        {
+          "prevents": "spurious rotation claims",
+          "rule": "No cross-sector donor inference — donor must be in the subsector rotation stack"
+        }
+      ],
+      "source_paths": [
+        "data/species/registry.json"
+      ],
+      "source_prs": [],
+      "species_id": "S2",
+      "trial_count": 1,
+      "validation_status": "validated",
+      "version": "1.0"
+    },
+    "species:S3@1.0": {
+      "authority": "display_only",
+      "deployment_status": "unshipped",
+      "evidence_stack": [
+        {
+          "condition": "radar deescalation.eligible signal active",
+          "tag": "arming"
+        },
+        {
+          "condition": "radar trajectory: receding (not peaking)",
+          "tag": "arming"
+        },
+        {
+          "condition": "dislocation Fed-put switch as conditioner (DISLOC species)",
+          "tag": "context"
+        },
+        {
+          "condition": "VIX-percentile-stratified within-bucket spread (co-primary gate per §4)",
+          "tag": "context"
+        },
+        {
+          "condition": "ATR-scaled barriers co-primary with fixed −5/+15 (elevated-vol correction)",
+          "tag": "context"
+        }
+      ],
+      "experiment_ref": "species-S3",
+      "governance_refs": [],
+      "horizon_class": "rotational",
+      "market_scope": [
+        "US"
+      ],
+      "mechanism": "The highest-asymmetry entries cluster where a risk-off episode is ENDING — sellers exhausted at the index level with the policy backstop intact. This does not predict the shock; it detects the exhaustion of the reaction to it. The measurable form of front-running the recovery leg. Evidence stack: radar deescalation.eligible + trajectory receding + dislocation Fed-put switch as conditioner on S1/S5 fires. Validated pieces: put-present dislocations 63d hit 70.3% (n=37 episodes) vs 40.0% (n=10) put-absent — CONTEXT; the median-drawdown improvement is the only robust clause and is S3's load-bearing prior.",
+      "name": "De-escalation Window",
+      "registry_id": "species:S3@1.0",
+      "registry_type": "species_link",
+      "rejection_rules": [
+        {
+          "prevents": "treating backfilled history as live-PIT data",
+          "rule": "Retro-derivation stamp required: derivation='retro-recomputed' with not-PIT caveats"
+        },
+        {
+          "prevents": "reading spurious retro spreads",
+          "rule": "Opus reconstruction check: retro states must match live payload on overlap window before stratification is read"
+        },
+        {
+          "prevents": "uncontrolled vol confounder",
+          "rule": "VIX-percentile stratification required — pooled spread is unreadable across elevated-vol cells (W6 F8 lesson)"
+        }
+      ],
+      "source_paths": [
+        "data/species/registry.json"
+      ],
+      "source_prs": [],
+      "species_id": "S3",
+      "trial_count": 3,
+      "validation_status": "phase0",
+      "version": "1.0"
+    },
+    "species:S4@1.0": {
+      "authority": "display_only",
+      "deployment_status": "unshipped",
+      "evidence_stack": [
+        {
+          "condition": "Sector-confirmation event: subsector_confluence confirms a side flip on the lagging name's sector",
+          "tag": "trigger"
+        },
+        {
+          "condition": "Name survived ¬launched∧¬broken to the event bar (hygiene exclusion only, not selection content)",
+          "tag": "arming"
+        },
+        {
+          "condition": "P2-style survival-matched control: all names surviving ¬launched∧¬broken at that bar, regardless of sector event — mandatory comparator",
+          "tag": "context"
+        },
+        {
+          "condition": "Self-healing measure: 77.6% of basing windows self-heal via fresh re-fire — S4 scores only on non-self-healing remainder",
+          "tag": "context"
+        }
+      ],
+      "experiment_ref": "species-S4",
+      "governance_refs": [],
+      "horizon_class": "rotational",
+      "market_scope": [
+        "US"
+      ],
+      "mechanism": "Sector confirmation arrives on a slow clock AFTER constituent entry freshness expired. The sector-confirmation event is the SOLE hypothesized new information — an external fact the aged name's own chart cannot supply. Design honesty (the WAVE5 collision, addressed head-on): 'low-extension-since-cross ∧ not-broken' is the falsified BASED predicate (co-extensive with survival-to-j; zero selection content). It is retained ONLY as a launch-hygiene exclusion (keep JNJ/AMAT out), NOT as selection content. S4 lives or dies on the event's marginal value over survival-selection + self-healing.",
+      "name": "Two-Clock Re-Arm (FRONTRUN Cluster D / BASING successor)",
+      "registry_id": "species:S4@1.0",
+      "registry_type": "species_link",
+      "rejection_rules": [
+        {
+          "prevents": "re-deriving a zero-content predicate as a gate",
+          "rule": "BASED predicate as selection content is CLOSED (§1.6 WAVE5)"
+        },
+        {
+          "prevents": "chase entries at the confirmation bar",
+          "rule": "extension_demote still applies (JNJ/AMAT hygiene)"
+        },
+        {
+          "prevents": "keeping a species that has no marginal signal",
+          "rule": "If event adds nothing over survival + self-healing, S4 is CLOSED and re-declared a UI/labeling problem"
+        }
+      ],
+      "source_paths": [
+        "data/species/registry.json"
+      ],
+      "source_prs": [],
+      "species_id": "S4",
+      "trial_count": 4,
+      "validation_status": "phase0",
+      "version": "1.0"
+    },
+    "species:S5@1.0": {
+      "authority": "display_only",
+      "deployment_status": "unshipped",
+      "evidence_stack": [
+        {
+          "condition": "peer_washout_pct: share of cohort members in multi-TF washout (H6-validated leg)",
+          "tag": "arming"
+        },
+        {
+          "condition": "peer_reclaim_pct rising: fresh cross / 10dMA reclaim in cohort (second-derivative leg)",
+          "tag": "trigger"
+        },
+        {
+          "condition": "cohort vol-compression: CONDITIONAL on per-leg ablation showing clean-liftoff spread without stop-out tax vs H2's graveyard result",
+          "tag": "trigger"
+        },
+        {
+          "condition": "coverage_pct >= 70% (§3.3 coverage law)",
+          "tag": "context"
+        },
+        {
+          "condition": "Forming cohort state stamped; forming vs confirmed split graded separately",
+          "tag": "context"
+        }
+      ],
+      "experiment_ref": "species-S5",
+      "governance_refs": [],
+      "horizon_class": "rotational",
+      "market_scope": [
+        "US"
+      ],
+      "mechanism": "Breadth thrusts are preceded by member-level turn evidence spreading through a washed-out cohort. The 'forming' state (peer_washout_pct high + peer_reclaim_pct rising) leads the confirmed subsector_confluence flip. Three arming legs, each with its own ablation against the validated COILED baseline (in_washout_ctx ∧ sector cohort ≥ 0.40): (1) peer_washout_pct high — H6-validated safe leg; (2) peer_reclaim_pct rising — the second-derivative leg (must be a turn event, not time-passing); (3) cohort vol-compression — NEAREST FALSIFIED NEIGHBOR IS H2 ITSELF (calm base, wrong sign); enters only if ablation shows clean-liftoff spread without stop-out tax. Pre-registered frontrun falsifiability: forming must lead confirmed by ≥3 trading days median.",
+      "name": "Coiled-Cohort Thrust Frontrun",
+      "registry_id": "species:S5@1.0",
+      "registry_type": "species_link",
+      "rejection_rules": [
+        {
+          "prevents": "re-deriving the falsified calm-base idea at cohort level",
+          "rule": "cohort vol-compression leg is DROPPED if ablation shows stop-out tax — H2 closest neighbor"
+        },
+        {
+          "prevents": "creating a survival-to-j proxy",
+          "rule": "peer_reclaim_pct must be a turn EVENT, not a time-passing predicate (BASED collapse lesson)"
+        },
+        {
+          "prevents": "pretending we can see a cohort we can't",
+          "rule": "coverage_null: below 70% cohort coverage emits null, not a partial percentage"
+        }
+      ],
+      "source_paths": [
+        "data/species/registry.json"
+      ],
+      "source_prs": [],
+      "species_id": "S5",
+      "trial_count": 5,
+      "validation_status": "phase0",
+      "version": "1.0"
+    },
+    "species:S6@1.0": {
+      "authority": "display_only",
+      "deployment_status": "unshipped",
+      "evidence_stack": [
+        {
+          "condition": "failed2: ≥2 trigger stop-outs in the prior 180d on the same name",
+          "tag": "arming"
+        },
+        {
+          "condition": "COILED arming (S1) — the interaction marginal is the primary claim",
+          "tag": "arming"
+        },
+        {
+          "condition": "Primary claim: (failed2 × COILED) vs COILED alone",
+          "tag": "trigger"
+        },
+        {
+          "condition": "Secondary: standalone failed2 inversion (in-sample only; near-adverse standalone cell)",
+          "tag": "context"
+        }
+      ],
+      "experiment_ref": "species-S6",
+      "governance_refs": [],
+      "horizon_class": "rotational",
+      "market_scope": [
+        "US"
+      ],
+      "mechanism": "A name whose own trigger stopped out 2+ times in 180d may be late-stage washout — serial failure as seller-persistence marker. Evidence status, stated EXACTLY: the failed2 inversion is sign-stable but IN-SAMPLE ONLY — wave-1 stocks panel +1.8pp (base3d) / +3.2pp (m2d_s3d), below the +5pp bar; the wave-2 'replication' recomputed the identical 12,797-fire stocks panel and never touched the OOS basket panel; within STAR the increment is a wash (40.66 vs 41.58). Nobody has built OR validated the species. Phase-0 therefore: run on the OOS basket panel (wave-2 machinery already produces its fire parquets). The pre-registered PRIMARY claim is the INTERACTION MARGINAL — (failed2 × COILED) vs COILED alone — since the nearest measured cell is adverse. The standalone inversion is a secondary sanity read. Expectations set low; a clean kill is a fine outcome.",
+      "name": "Failed-Fire Fuel (honest restatement)",
+      "registry_id": "species:S6@1.0",
+      "registry_type": "species_link",
+      "rejection_rules": [
+        {
+          "prevents": "claiming validation on the panel where the sign appeared",
+          "rule": "OOS basket panel required — in-sample stocks panel is not the validation surface"
+        },
+        {
+          "prevents": "endpoint shopping after seeing results",
+          "rule": "interaction-marginal is primary; standalone is secondary sanity — cannot flip the verdict order"
+        }
+      ],
+      "source_paths": [
+        "data/species/registry.json"
+      ],
+      "source_prs": [],
+      "species_id": "S6",
+      "trial_count": 2,
+      "validation_status": "phase0",
+      "version": "1.0"
+    },
+    "species:S7@1.0": {
+      "authority": "display_only",
+      "deployment_status": "unshipped",
+      "evidence_stack": [
+        {
+          "condition": "RS slope vs cohort: the slope (not level) of the within-cohort RS rank series is turning up",
+          "tag": "trigger"
+        },
+        {
+          "condition": "Name in washout state (COILED arming)",
+          "tag": "arming"
+        },
+        {
+          "condition": "Requires W0.4 within-cohort RS-rank SERIES (not snapshot) — gated",
+          "tag": "context"
+        }
+      ],
+      "experiment_ref": "species-S7",
+      "governance_refs": [],
+      "horizon_class": "positional",
+      "market_scope": [
+        "US"
+      ],
+      "mechanism": "Institutions accumulate before price confirms; RS slope vs cohort turns up while price still bases. Mechanism: systematic buyer accumulation creates a relative-strength divergence observable in sector-relative momentum before the price chart shows a bottom. Adjacent evidence, honestly (three entries): (a) WAVE1's rs_low — RS-vs-SPY at fresh 126d lows was mildly positive but ticker-unstable, and H6∧rs_low was DILUTIVE (36.8 vs 39.3 H6-only) — weak evidence IN THE OPPOSITE DIRECTION; (b) residual momentum — US mom_res fails modern-era DSR; (c) BOTTOM_CONFIDENCE R4 restated honestly as semi-supportive. Registration is TWO-SIDED: the in-house prior weakly favors LOW/deteriorating RS within washout — both signs are admissible outcomes.",
+      "name": "Relative-Strength-Before-Price",
+      "registry_id": "species:S7@1.0",
+      "registry_type": "species_link",
+      "rejection_rules": [
+        {
+          "prevents": "confusing level with slope, or market-relative with cohort-relative",
+          "rule": "rs_low (RS level vs market) is NOT the same as RS slope vs cohort — different in sign from the graveyard"
+        },
+        {
+          "prevents": "re-deriving a dead cross-sectional momentum signal",
+          "rule": "cross-sectional momentum ranking is NOT this species (residual momentum graveyard)"
+        }
+      ],
+      "source_paths": [
+        "data/species/registry.json"
+      ],
+      "source_prs": [],
+      "species_id": "S7",
+      "trial_count": 3,
+      "validation_status": "phase0",
+      "version": "1.0"
+    },
+    "species:S8@1.0": {
+      "authority": "display_only",
+      "deployment_status": "unshipped",
+      "evidence_stack": [
+        {
+          "condition": "Revision-impulse second derivative: rate-of-change of EPS revision momentum turns from negative to less-negative",
+          "tag": "trigger"
+        },
+        {
+          "condition": "Name in washout state (multi-TF)",
+          "tag": "arming"
+        },
+        {
+          "condition": "Post-cut price reaction: price not making new lows after the last downgrade",
+          "tag": "trigger"
+        },
+        {
+          "condition": "Revisions PIT archive depth ≥2 quarters (data gate)",
+          "tag": "context"
+        }
+      ],
+      "experiment_ref": "species-S8",
+      "governance_refs": [],
+      "horizon_class": "positional",
+      "market_scope": [
+        "US"
+      ],
+      "mechanism": "When analyst EPS revision momentum decelerates (second derivative turns) while the name is in washout and prices start recovering, the revision exhaustion signals that the institutional downgrade cycle is ending. Per-name revision-impulse second derivative × washout state × post-cut price reaction as fire stratifier. Gated on revisions PIT archive depth: revisions archive starts 2026-06-16; a proper backtest needs accrual (~2 quarters) or a reconstructed vintage proxy. W0.6 adds estimate dispersion + revenue revisions so the archive fattens.",
+      "name": "Revision-Deceleration Bottom",
+      "registry_id": "species:S8@1.0",
+      "registry_type": "species_link",
+      "rejection_rules": [
+        {
+          "prevents": "look-ahead bias in revision timing",
+          "rule": "Archive depth gate: do not run before ≥2 quarters of PIT archive (or reconstructed vintage proxy)"
+        },
+        {
+          "prevents": "spurious signals in financial archetypes",
+          "rule": "Financials excluded from revision-quality gates (EDGAR ratio unreliability)"
+        }
+      ],
+      "source_paths": [
+        "data/species/registry.json"
+      ],
+      "source_prs": [],
+      "species_id": "S8",
+      "trial_count": 2,
+      "validation_status": "phase0",
+      "version": "1.0"
+    },
+    "species:S9@1.0": {
+      "authority": "display_only",
+      "deployment_status": "unshipped",
+      "evidence_stack": [
+        {
+          "condition": "Negative EPS surprise (below consensus)",
+          "tag": "arming"
+        },
+        {
+          "condition": "Non-negative 2-day price reaction to the negative surprise",
+          "tag": "trigger"
+        },
+        {
+          "condition": "Washout state on the name (multi-TF)",
+          "tag": "arming"
+        },
+        {
+          "condition": "Must beat unconditional negative-SUE baseline (pre-registered comparator)",
+          "tag": "context"
+        }
+      ],
+      "experiment_ref": "species-S9",
+      "governance_refs": [],
+      "horizon_class": "rotational",
+      "market_scope": [
+        "US"
+      ],
+      "mechanism": "When expectations are washed out, bad news stops making new sellers — the REACTION, not the news, is the signal. Narrowed to earnings events first (cleanest timestamps; surprise history exists): negative-surprise × non-negative 2-day reaction × washout state → forward constitution axes. Adjacent evidence: pead_sue_pit — the repo's only measured earnings-event object — found drift mildly positive-in-SUE (weak, FDR-fail); S9's claim is confined to the washout × muted-reaction cell and must beat the unconditional negative-SUE baseline. Wider news-tone version gated on W0.6 coverage widening + the tone feed's own validation.",
+      "name": "Bad-News Immunity",
+      "registry_id": "species:S9@1.0",
+      "registry_type": "species_link",
+      "rejection_rules": [
+        {
+          "prevents": "premature extension to unstamped news sources",
+          "rule": "Wider news-tone version gated on W0.6 coverage + tone feed validation"
+        },
+        {
+          "prevents": "over-generalizing from a narrow cell",
+          "rule": "S9 claim confined to washout × muted-reaction cell — cannot claim broader bad-news immunity"
+        }
+      ],
+      "source_paths": [
+        "data/species/registry.json"
+      ],
+      "source_prs": [],
+      "species_id": "S9",
+      "trial_count": 2,
+      "validation_status": "phase0",
+      "version": "1.0"
+    },
+    "species:T1-T4@1.0": {
+      "authority": "display_only",
+      "deployment_status": "gate_weight",
+      "evidence_stack": [
+        {
+          "condition": "T1: daily MACD × StochRSI cross",
+          "tag": "trigger"
+        },
+        {
+          "condition": "T2: 2-day timeframe cross (stronger)",
+          "tag": "trigger"
+        },
+        {
+          "condition": "T3: 3-day timeframe cross (strongest daily-family)",
+          "tag": "trigger"
+        },
+        {
+          "condition": "T4: weekly cross (positional confirmation)",
+          "tag": "trigger"
+        },
+        {
+          "condition": "Washout depth (knife-temper context via bottom_confidence)",
+          "tag": "context"
+        }
+      ],
+      "experiment_ref": "species-T1-T4",
+      "governance_refs": [],
+      "horizon_class": "positional",
+      "market_scope": [
+        "US",
+        "CN"
+      ],
+      "mechanism": "Multi-timeframe MACD+StochRSI confluence cascade: T1=daily cross, T2=2D cross, T3=3D cross, T4=weekly cross. Each tier is a sequentially stronger confirmation of trend initiation. The cascade is the incumbent buy gate; per-name majorities and held-out stop-out rates are validated. Tier-specific stop-out rates are held-out and used as rejection calibration reference.",
+      "name": "Confluence Cascade (T1–T4 incumbent gate)",
+      "registry_id": "species:T1-T4@1.0",
+      "registry_type": "species_link",
+      "rejection_rules": [
+        {
+          "prevents": "false-cross at exhaustion",
+          "rule": "not_topped_veto: buying into a topped oscillator blocked"
+        },
+        {
+          "prevents": "chasing aged signal",
+          "rule": "freshness_expired: stale cross excluded"
+        },
+        {
+          "prevents": "weak-confluence entries",
+          "rule": "tier_cutoff: T4-excluded names below the confluence threshold are blocked"
+        },
+        {
+          "prevents": "re-deriving a falsified gating idea",
+          "rule": "C-LOCKOUT serial gate is CLOSED (§1.6): stops not gates cap knife damage"
+        }
+      ],
+      "source_paths": [
+        "data/species/registry.json"
+      ],
+      "source_prs": [],
+      "species_id": "T1-T4",
+      "trial_count": 0,
+      "validation_status": "validated",
+      "version": "1.0"
+    },
+    "thesis:ai_infrastructure_capex_complex": {
+      "authority": "display_only",
+      "curated_by": "operator-handoff",
+      "label": "AI infrastructure capex complex",
+      "registry_id": "thesis:ai_infrastructure_capex_complex",
+      "registry_type": "thesis",
+      "source_paths": [
+        "config/entity_thesis_mechanism_registry.yml"
+      ],
+      "source_refs": [
+        "research/fable_exit/05_ENTITY_THESIS_MECHANISM_REGISTRY_HANDOFF.md"
+      ],
+      "state": "curated",
+      "thesis_family": "ai_infra",
+      "tickers": [
+        "AVGO",
+        "NVDA",
+        "VRT"
+      ]
+    },
+    "thesis:health_care": {
+      "authority": "display_only",
+      "basis": "membership-jaccard",
+      "label": "Health Care",
+      "members": [
+        "BIO",
+        "OMCL",
+        "PAHC"
+      ],
+      "registry_id": "thesis:health_care",
+      "registry_type": "thesis",
+      "size": 3,
+      "source": "reflexivity_overlay.same_thesis_groups",
+      "source_paths": [
+        "site/factordata/reflexivity_overlay.json"
+      ]
+    },
+    "thesis:industrials": {
+      "authority": "display_only",
+      "basis": "membership-jaccard",
+      "label": "Industrials",
+      "members": [
+        "BEN",
+        "DBX",
+        "GEV",
+        "MATX",
+        "P",
+        "STT"
+      ],
+      "registry_id": "thesis:industrials",
+      "registry_type": "thesis",
+      "size": 6,
+      "source": "reflexivity_overlay.same_thesis_groups",
+      "source_paths": [
+        "site/factordata/reflexivity_overlay.json"
+      ]
+    }
+  },
+  "schema": "neuralweb.entity_thesis_mechanism.v1",
+  "sources": {
+    "config/entity_thesis_mechanism_registry.yml": {
+      "n": 1,
+      "present": true
+    },
+    "data/experiments/registry_seed.json": {
+      "n": 148,
+      "present": true
+    },
+    "data/governance/claim_accountability.json": {
+      "n": 1,
+      "present": true
+    },
+    "data/neuralweb/governance.jsonl": {
+      "n": 27,
+      "present": true
+    },
+    "data/research/thesis_funnel_states.parquet": {
+      "n": 1503,
+      "present": true
+    },
+    "data/research_factory/candidates.jsonl": {
+      "n": 8,
+      "present": true
+    },
+    "data/research_factory/transitions.jsonl": {
+      "n": 64,
+      "present": true
+    },
+    "data/species/registry.json": {
+      "n": 21,
+      "present": true
+    },
+    "data/trial_ledger.jsonl": {
+      "n": 985,
+      "present": true
+    },
+    "site/factordata/reflexivity_overlay.json": {
+      "n": 2,
+      "present": true
+    }
+  },
+  "trial_families": {
+    "active_commodity_lev_phase0": {
+      "first_ts": "2026-07-02T03:11:22.365555+00:00",
+      "last_ts": "2026-07-02T03:11:22.365555+00:00",
+      "n_config_hashes": 1,
+      "n_trials": 1
+    },
+    "alpha_grammar_confluence_v1": {
+      "first_ts": "2026-07-05T13:53:25.918184+00:00",
+      "last_ts": "2026-07-05T13:53:25.947929+00:00",
+      "n_config_hashes": 565,
+      "n_trials": 565
+    },
+    "anticipation_phase0": {
+      "first_ts": "2026-07-02T03:11:22.371100+00:00",
+      "last_ts": "2026-07-02T03:11:22.371100+00:00",
+      "n_config_hashes": 1,
+      "n_trials": 1
+    },
+    "baskets_abs_escape": {
+      "first_ts": "2026-07-03T11:25:25.788497+00:00",
+      "last_ts": "2026-07-03T11:25:25.788937+00:00",
+      "n_config_hashes": 4,
+      "n_trials": 4
+    },
+    "baskets_breadth_divergence": {
+      "first_ts": "2026-07-02T05:07:21.521627+00:00",
+      "last_ts": "2026-07-02T05:07:21.521835+00:00",
+      "n_config_hashes": 2,
+      "n_trials": 2
+    },
+    "baskets_conviction_demotion": {
+      "first_ts": "2026-07-03T11:25:27.076462+00:00",
+      "last_ts": "2026-07-03T11:25:27.076707+00:00",
+      "n_config_hashes": 2,
+      "n_trials": 2
+    },
+    "baskets_rank_dd_mod": {
+      "first_ts": "2026-07-03T11:25:28.573683+00:00",
+      "last_ts": "2026-07-03T11:25:28.573986+00:00",
+      "n_config_hashes": 4,
+      "n_trials": 4
+    },
+    "btc_onchain_dd_phase0": {
+      "first_ts": "2026-07-02T03:11:22.375046+00:00",
+      "last_ts": "2026-07-02T03:11:22.375046+00:00",
+      "n_config_hashes": 1,
+      "n_trials": 1
+    },
+    "btc_vector_optimal_phase0": {
+      "first_ts": "2026-07-02T03:11:22.378074+00:00",
+      "last_ts": "2026-07-02T03:11:22.378074+00:00",
+      "n_config_hashes": 1,
+      "n_trials": 1
+    },
+    "business_cycle_recession_signal": {
+      "first_ts": "2026-07-02T09:42:02.899245+00:00",
+      "last_ts": "2026-07-02T12:25:07.933833+00:00",
+      "n_config_hashes": 2,
+      "n_trials": 2
+    },
+    "c1b_commodity_flip_protective_phase0": {
+      "first_ts": "2026-07-03T17:48:13.270840+00:00",
+      "last_ts": "2026-07-03T17:48:13.270840+00:00",
+      "n_config_hashes": 1,
+      "n_trials": 1
+    },
+    "capitulation_overlay_phase0": {
+      "first_ts": "2026-07-02T03:11:22.382820+00:00",
+      "last_ts": "2026-07-02T03:11:22.382820+00:00",
+      "n_config_hashes": 1,
+      "n_trials": 1
+    },
+    "china_validation": {
+      "first_ts": "2026-06-21T15:50:22.228773+00:00",
+      "last_ts": "2026-06-22T02:36:20.835163+00:00",
+      "n_config_hashes": 3,
+      "n_trials": 3
+    },
+    "coiled_ca_phase0": {
+      "first_ts": "2026-07-03T19:37:01.751882+00:00",
+      "last_ts": "2026-07-03T19:37:01.751882+00:00",
+      "n_config_hashes": 1,
+      "n_trials": 1
+    },
+    "commodity_carry_phase0": {
+      "first_ts": "2026-07-02T03:11:22.388275+00:00",
+      "last_ts": "2026-07-02T03:11:22.388275+00:00",
+      "n_config_hashes": 1,
+      "n_trials": 1
+    },
+    "commodity_tsmom_phase0": {
+      "first_ts": "2026-07-02T03:11:22.392591+00:00",
+      "last_ts": "2026-07-02T03:11:22.392591+00:00",
+      "n_config_hashes": 1,
+      "n_trials": 1
+    },
+    "commodity_xsec_carry_phase0": {
+      "first_ts": "2026-07-02T03:11:22.399439+00:00",
+      "last_ts": "2026-07-02T03:11:22.399439+00:00",
+      "n_config_hashes": 1,
+      "n_trials": 1
+    },
+    "commodity_xsec_mom_phase0": {
+      "first_ts": "2026-07-02T03:11:22.404119+00:00",
+      "last_ts": "2026-07-02T03:11:22.404119+00:00",
+      "n_config_hashes": 1,
+      "n_trials": 1
+    },
+    "cortex": {
+      "first_ts": "2026-07-07T10:10:43.348874+00:00",
+      "last_ts": "2026-07-07T10:10:43.356346+00:00",
+      "n_config_hashes": 3,
+      "n_trials": 3
+    },
+    "credit_duration_verify_phase0": {
+      "first_ts": "2026-07-02T03:11:22.406569+00:00",
+      "last_ts": "2026-07-02T03:11:22.406569+00:00",
+      "n_config_hashes": 1,
+      "n_trials": 1
+    },
+    "cross_asset_confirmation_phase0": {
+      "first_ts": "2026-07-02T03:11:22.410109+00:00",
+      "last_ts": "2026-07-02T03:11:22.410109+00:00",
+      "n_config_hashes": 1,
+      "n_trials": 1
+    },
+    "cross_asset_phase0": {
+      "first_ts": "2026-07-02T03:11:22.412054+00:00",
+      "last_ts": "2026-07-02T03:11:22.412054+00:00",
+      "n_config_hashes": 1,
+      "n_trials": 1
+    },
+    "crypto_voltarget_phase0": {
+      "first_ts": "2026-07-02T03:11:22.417256+00:00",
+      "last_ts": "2026-07-02T03:11:22.417256+00:00",
+      "n_config_hashes": 1,
+      "n_trials": 1
+    },
+    "cycle_pattern_analog": {
+      "first_ts": "2026-07-07T02:00:02.000000+00:00",
+      "last_ts": "2026-07-07T02:00:02.000000+00:00",
+      "n_config_hashes": 1,
+      "n_trials": 1
+    },
+    "cycle_pattern_ft": {
+      "first_ts": "2026-07-07T02:00:00.000000+00:00",
+      "last_ts": "2026-07-07T09:49:57.783590+00:00",
+      "n_config_hashes": 3,
+      "n_trials": 3
+    },
+    "dt_replication": {
+      "first_ts": "2026-07-06T23:19:18.948997+00:00",
+      "last_ts": "2026-07-06T23:35:47.338072+00:00",
+      "n_config_hashes": 8,
+      "n_trials": 8
+    },
+    "dt_replication_64y": {
+      "first_ts": "2026-07-07T00:02:10.775403+00:00",
+      "last_ts": "2026-07-07T00:02:10.775810+00:00",
+      "n_config_hashes": 4,
+      "n_trials": 4
+    },
+    "esx_appendix": {
+      "first_ts": "2026-07-05T07:36:12.541199+00:00",
+      "last_ts": "2026-07-05T07:36:12.541199+00:00",
+      "n_config_hashes": 1,
+      "n_trials": 1
+    },
+    "esx_decline_geometry": {
+      "first_ts": "2026-07-06T07:15:43.583616+00:00",
+      "last_ts": "2026-07-06T07:48:08.608396+00:00",
+      "n_config_hashes": 5,
+      "n_trials": 5
+    },
+    "esx_ev_blackout": {
+      "first_ts": "2026-07-05T07:36:12.540436+00:00",
+      "last_ts": "2026-07-05T11:40:59.754264+00:00",
+      "n_config_hashes": 10,
+      "n_trials": 10
+    },
+    "esx_fund_repair": {
+      "first_ts": "2026-07-06T05:50:29.615126+00:00",
+      "last_ts": "2026-07-06T07:15:43.583118+00:00",
+      "n_config_hashes": 1,
+      "n_trials": 2
+    },
+    "esx_htf_turn": {
+      "first_ts": "2026-07-06T07:15:43.583423+00:00",
+      "last_ts": "2026-07-06T07:44:15.597040+00:00",
+      "n_config_hashes": 13,
+      "n_trials": 13
+    },
+    "esx_htf_turn_dose": {
+      "first_ts": "2026-07-06T07:15:43.583474+00:00",
+      "last_ts": "2026-07-06T07:44:15.597137+00:00",
+      "n_config_hashes": 3,
+      "n_trials": 3
+    },
+    "esx_insider_sponsor": {
+      "first_ts": "2026-07-06T05:50:29.615053+00:00",
+      "last_ts": "2026-07-06T07:15:43.583041+00:00",
+      "n_config_hashes": 11,
+      "n_trials": 12
+    },
+    "esx_lq_bands": {
+      "first_ts": "2026-07-05T07:36:12.540945+00:00",
+      "last_ts": "2026-07-05T07:36:12.540945+00:00",
+      "n_config_hashes": 1,
+      "n_trials": 1
+    },
+    "esx_macro_release": {
+      "first_ts": "2026-07-06T05:50:29.615185+00:00",
+      "last_ts": "2026-07-06T08:15:24.484276+00:00",
+      "n_config_hashes": 9,
+      "n_trials": 10
+    },
+    "esx_null_competitors": {
+      "first_ts": "2026-07-05T07:36:12.539690+00:00",
+      "last_ts": "2026-07-05T10:16:03.535518+00:00",
+      "n_config_hashes": 7,
+      "n_trials": 7
+    },
+    "esx_pos_reset": {
+      "first_ts": "2026-07-06T05:50:29.615238+00:00",
+      "last_ts": "2026-07-06T08:15:24.484805+00:00",
+      "n_config_hashes": 5,
+      "n_trials": 6
+    },
+    "esx_ql_overlay": {
+      "first_ts": "2026-07-05T07:36:12.541035+00:00",
+      "last_ts": "2026-07-05T12:48:18.382978+00:00",
+      "n_config_hashes": 11,
+      "n_trials": 11
+    },
+    "esx_sponsorship": {
+      "first_ts": "2026-07-06T05:50:29.614910+00:00",
+      "last_ts": "2026-07-06T07:15:43.582901+00:00",
+      "n_config_hashes": 1,
+      "n_trials": 2
+    },
+    "esx_sq_phase0": {
+      "first_ts": "2026-07-05T07:36:12.540811+00:00",
+      "last_ts": "2026-07-05T07:36:12.540811+00:00",
+      "n_config_hashes": 1,
+      "n_trials": 1
+    },
+    "esx_sub_x_turn": {
+      "first_ts": "2026-07-06T07:15:43.583570+00:00",
+      "last_ts": "2026-07-06T07:44:15.597603+00:00",
+      "n_config_hashes": 3,
+      "n_trials": 3
+    },
+    "esx_support_dose": {
+      "first_ts": "2026-07-06T05:50:29.615288+00:00",
+      "last_ts": "2026-07-06T07:15:43.583370+00:00",
+      "n_config_hashes": 1,
+      "n_trials": 2
+    },
+    "esx_ts_adx": {
+      "first_ts": "2026-07-05T07:36:12.541099+00:00",
+      "last_ts": "2026-07-05T11:40:03.786967+00:00",
+      "n_config_hashes": 5,
+      "n_trials": 5
+    },
+    "esx_underwater": {
+      "first_ts": "2026-07-06T07:15:43.583660+00:00",
+      "last_ts": "2026-07-06T07:48:08.608621+00:00",
+      "n_config_hashes": 5,
+      "n_trials": 5
+    },
+    "esx_ur_phase0": {
+      "first_ts": "2026-07-05T07:36:12.540593+00:00",
+      "last_ts": "2026-07-05T07:36:12.540593+00:00",
+      "n_config_hashes": 1,
+      "n_trials": 1
+    },
+    "esx_vol_transition": {
+      "first_ts": "2026-07-06T07:15:43.583707+00:00",
+      "last_ts": "2026-07-06T07:48:08.608828+00:00",
+      "n_config_hashes": 5,
+      "n_trials": 5
+    },
+    "esx_washout_x_turn": {
+      "first_ts": "2026-07-06T07:15:43.583523+00:00",
+      "last_ts": "2026-07-06T07:44:15.597510+00:00",
+      "n_config_hashes": 9,
+      "n_trials": 9
+    },
+    "eth_vector_phase0": {
+      "first_ts": "2026-07-02T03:11:22.421971+00:00",
+      "last_ts": "2026-07-02T03:11:22.421971+00:00",
+      "n_config_hashes": 1,
+      "n_trials": 1
+    },
+    "hk_canada_h3": {
+      "first_ts": "2026-07-06T11:06:56.819986+00:00",
+      "last_ts": "2026-07-06T11:09:22.144203+00:00",
+      "n_config_hashes": 11,
+      "n_trials": 11
+    },
+    "hk_southbound_phase0": {
+      "first_ts": "2026-07-02T03:11:22.424651+00:00",
+      "last_ts": "2026-07-02T03:11:22.424651+00:00",
+      "n_config_hashes": 1,
+      "n_trials": 1
+    },
+    "hyoas_z_timer_phase0": {
+      "first_ts": "2026-07-02T03:11:22.430561+00:00",
+      "last_ts": "2026-07-02T03:11:22.430561+00:00",
+      "n_config_hashes": 1,
+      "n_trials": 1
+    },
+    "incremental_ic:fip_continuity": {
+      "first_ts": "2026-06-21T10:36:08.669990+00:00",
+      "last_ts": "2026-06-21T10:36:19.812217+00:00",
+      "n_config_hashes": 4,
+      "n_trials": 4
+    },
+    "incremental_ic:mom_12_1": {
+      "first_ts": "2026-06-21T10:36:05.703638+00:00",
+      "last_ts": "2026-06-21T10:36:16.771144+00:00",
+      "n_config_hashes": 4,
+      "n_trials": 4
+    },
+    "incremental_ic:near_52w_high": {
+      "first_ts": "2026-06-21T10:36:07.148583+00:00",
+      "last_ts": "2026-06-21T10:36:18.222812+00:00",
+      "n_config_hashes": 4,
+      "n_trials": 4
+    },
+    "index_direction_phase0": {
+      "first_ts": "2026-07-02T03:11:22.434931+00:00",
+      "last_ts": "2026-07-02T03:11:22.434931+00:00",
+      "n_config_hashes": 1,
+      "n_trials": 1
+    },
+    "insider_phase0": {
+      "first_ts": "2026-07-02T03:11:22.438689+00:00",
+      "last_ts": "2026-07-02T03:11:22.438689+00:00",
+      "n_config_hashes": 1,
+      "n_trials": 1
+    },
+    "insider_phase1": {
+      "first_ts": "2026-07-02T03:11:22.441991+00:00",
+      "last_ts": "2026-07-02T03:11:22.441991+00:00",
+      "n_config_hashes": 1,
+      "n_trials": 1
+    },
+    "intl_bridge": {
+      "first_ts": "2026-07-02T11:28:17.899299+00:00",
+      "last_ts": "2026-07-02T11:28:17.901682+00:00",
+      "n_config_hashes": 18,
+      "n_trials": 18
+    },
+    "intl_macro_sleeve_phase0": {
+      "first_ts": "2026-07-02T03:11:22.446411+00:00",
+      "last_ts": "2026-07-02T03:11:22.446411+00:00",
+      "n_config_hashes": 1,
+      "n_trials": 1
+    },
+    "intl_tr_trend_phase0": {
+      "first_ts": "2026-07-02T03:11:22.452851+00:00",
+      "last_ts": "2026-07-02T03:11:22.452851+00:00",
+      "n_config_hashes": 1,
+      "n_trials": 1
+    },
+    "intl_trend_overlay_phase0": {
+      "first_ts": "2026-07-02T03:11:22.457442+00:00",
+      "last_ts": "2026-07-02T03:11:22.457442+00:00",
+      "n_config_hashes": 1,
+      "n_trials": 1
+    },
+    "long_hold.expect_drift": {
+      "first_ts": "2026-07-06T09:13:16.295692+00:00",
+      "last_ts": "2026-07-06T09:13:16.295692+00:00",
+      "n_config_hashes": 1,
+      "n_trials": 1
+    },
+    "long_hold.insider_sponsor_lh": {
+      "first_ts": "2026-07-06T08:45:01.714401+00:00",
+      "last_ts": "2026-07-06T08:45:01.714401+00:00",
+      "n_config_hashes": 1,
+      "n_trials": 1
+    },
+    "macro_tx": {
+      "first_ts": "2026-07-06T13:36:06.231817+00:00",
+      "last_ts": "2026-07-06T13:36:06.231817+00:00",
+      "n_config_hashes": 1,
+      "n_trials": 1
+    },
+    "mastermind_moderate_phase0": {
+      "first_ts": "2026-07-02T03:11:22.460136+00:00",
+      "last_ts": "2026-07-02T03:11:22.460136+00:00",
+      "n_config_hashes": 1,
+      "n_trials": 1
+    },
+    "naaim_overlay_phase0": {
+      "first_ts": "2026-07-02T03:11:22.464768+00:00",
+      "last_ts": "2026-07-02T03:11:22.464768+00:00",
+      "n_config_hashes": 1,
+      "n_trials": 1
+    },
+    "okx_retail_phase0": {
+      "first_ts": "2026-07-02T03:11:22.467316+00:00",
+      "last_ts": "2026-07-02T03:11:22.467316+00:00",
+      "n_config_hashes": 1,
+      "n_trials": 1
+    },
+    "provisional_cn_blend": {
+      "first_ts": "2026-07-02T05:23:29.806852+00:00",
+      "last_ts": "2026-07-02T05:23:29.806852+00:00",
+      "n_config_hashes": 1,
+      "n_trials": 1
+    },
+    "provisional_fresh_ticks_cn": {
+      "first_ts": "2026-07-02T05:26:40.866009+00:00",
+      "last_ts": "2026-07-02T05:26:40.867039+00:00",
+      "n_config_hashes": 5,
+      "n_trials": 5
+    },
+    "provisional_fresh_ticks_us": {
+      "first_ts": "2026-07-02T05:17:32.844669+00:00",
+      "last_ts": "2026-07-02T05:17:32.851321+00:00",
+      "n_config_hashes": 5,
+      "n_trials": 5
+    },
+    "quad_nfci_phase0": {
+      "first_ts": "2026-07-02T03:11:22.469418+00:00",
+      "last_ts": "2026-07-02T03:11:22.469418+00:00",
+      "n_config_hashes": 1,
+      "n_trials": 1
+    },
+    "regime": {
+      "first_ts": "2026-07-02T05:09:29.503207+00:00",
+      "last_ts": "2026-07-02T05:09:29.505012+00:00",
+      "n_config_hashes": 23,
+      "n_trials": 23
+    },
+    "replay": {
+      "first_ts": "2026-07-06T13:17:24.268455+00:00",
+      "last_ts": "2026-07-06T22:05:26.697315+00:00",
+      "n_config_hashes": 5,
+      "n_trials": 5
+    },
+    "residual_alpha_phase0": {
+      "first_ts": "2026-07-02T03:11:22.473861+00:00",
+      "last_ts": "2026-07-02T03:11:22.473861+00:00",
+      "n_config_hashes": 1,
+      "n_trials": 1
+    },
+    "rf.cycle_pattern.ft_v0": {
+      "first_ts": "2026-07-06T12:13:06.277761+00:00",
+      "last_ts": "2026-07-06T12:13:06.277761+00:00",
+      "n_config_hashes": 1,
+      "n_trials": 1
+    },
+    "rf.cycle_pattern.ft_v1": {
+      "first_ts": "2026-07-06T22:04:11.636892+00:00",
+      "last_ts": "2026-07-06T22:04:11.636892+00:00",
+      "n_config_hashes": 1,
+      "n_trials": 1
+    },
+    "rf.cycle_pattern.ix_v0": {
+      "first_ts": "2026-07-07T01:04:24.686219+00:00",
+      "last_ts": "2026-07-07T01:04:24.686219+00:00",
+      "n_config_hashes": 1,
+      "n_trials": 1
+    },
+    "rf.cycle_pattern.lattice_v0": {
+      "first_ts": "2026-07-06T22:19:21.915911+00:00",
+      "last_ts": "2026-07-06T22:19:21.915911+00:00",
+      "n_config_hashes": 1,
+      "n_trials": 1
+    },
+    "rf.cycle_pattern.lattice_v1": {
+      "first_ts": "2026-07-06T23:58:26.147126+00:00",
+      "last_ts": "2026-07-06T23:58:26.147126+00:00",
+      "n_config_hashes": 1,
+      "n_trials": 1
+    },
+    "rf.cycle_pattern.tr_v0": {
+      "first_ts": "2026-07-07T00:27:45.479117+00:00",
+      "last_ts": "2026-07-07T00:27:45.479117+00:00",
+      "n_config_hashes": 1,
+      "n_trials": 1
+    },
+    "s11_buyback_floor": {
+      "first_ts": "2026-07-07T01:21:46.625099+00:00",
+      "last_ts": "2026-07-07T01:21:46.625099+00:00",
+      "n_config_hashes": 1,
+      "n_trials": 1
+    },
+    "s13_reversal_sleeve": {
+      "first_ts": "2026-07-04T01:55:21.252544+00:00",
+      "last_ts": "2026-07-04T01:55:21.252960+00:00",
+      "n_config_hashes": 2,
+      "n_trials": 2
+    },
+    "s6_failed_fire_fuel": {
+      "first_ts": "2026-07-04T07:20:46.969905+00:00",
+      "last_ts": "2026-07-04T07:20:46.970560+00:00",
+      "n_config_hashes": 2,
+      "n_trials": 2
+    },
+    "sector_pulse_heat": {
+      "first_ts": "2026-07-04T00:50:42.437602+00:00",
+      "last_ts": "2026-07-04T00:50:42.438310+00:00",
+      "n_config_hashes": 13,
+      "n_trials": 13
+    },
+    "short_side": {
+      "first_ts": "2026-07-06T04:43:31.576023+00:00",
+      "last_ts": "2026-07-06T15:14:57.191136+00:00",
+      "n_config_hashes": 16,
+      "n_trials": 24
+    },
+    "signal_factory": {
+      "first_ts": "2026-06-21T15:04:20.143955+00:00",
+      "last_ts": "2026-06-21T15:04:20.144408+00:00",
+      "n_config_hashes": 5,
+      "n_trials": 5
+    },
+    "slf001_ftd_pressure": {
+      "first_ts": "2026-07-06T11:31:17.617202+00:00",
+      "last_ts": "2026-07-06T11:31:17.618584+00:00",
+      "n_config_hashes": 6,
+      "n_trials": 6
+    },
+    "slf006_auction_absorption": {
+      "first_ts": "2026-07-06T11:06:06.639823+00:00",
+      "last_ts": "2026-07-06T11:06:06.640443+00:00",
+      "n_config_hashes": 12,
+      "n_trials": 12
+    },
+    "slf048_wiki_attention": {
+      "first_ts": "2026-07-06T11:09:50.476128+00:00",
+      "last_ts": "2026-07-06T11:09:50.477983+00:00",
+      "n_config_hashes": 24,
+      "n_trials": 24
+    },
+    "slf051_cn_margin_impulse": {
+      "first_ts": "2026-07-06T11:07:33.841369+00:00",
+      "last_ts": "2026-07-06T11:07:33.842204+00:00",
+      "n_config_hashes": 8,
+      "n_trials": 8
+    },
+    "slf055_dealer_stress": {
+      "first_ts": "2026-07-06T11:37:27.010922+00:00",
+      "last_ts": "2026-07-06T11:37:27.012383+00:00",
+      "n_config_hashes": 15,
+      "n_trials": 15
+    },
+    "slf056_funding_tail": {
+      "first_ts": "2026-07-06T11:06:52.260284+00:00",
+      "last_ts": "2026-07-06T11:06:52.261461+00:00",
+      "n_config_hashes": 14,
+      "n_trials": 14
+    },
+    "stock_conviction_phase0": {
+      "first_ts": "2026-07-02T03:11:22.480160+00:00",
+      "last_ts": "2026-07-02T03:11:22.480160+00:00",
+      "n_config_hashes": 1,
+      "n_trials": 1
+    },
+    "sue_insider_deep_phase0": {
+      "first_ts": "2026-07-02T03:11:22.485023+00:00",
+      "last_ts": "2026-07-02T03:11:22.485023+00:00",
+      "n_config_hashes": 1,
+      "n_trials": 1
+    },
+    "thematic_rotation_phase0": {
+      "first_ts": "2026-07-02T03:11:22.489181+00:00",
+      "last_ts": "2026-07-02T03:11:22.489181+00:00",
+      "n_config_hashes": 1,
+      "n_trials": 1
+    },
+    "top_picks_phase0": {
+      "first_ts": "2026-07-02T03:11:22.494111+00:00",
+      "last_ts": "2026-07-02T03:11:22.494111+00:00",
+      "n_config_hashes": 1,
+      "n_trials": 1
+    },
+    "turn_of_month_phase0": {
+      "first_ts": "2026-07-02T03:11:22.500560+00:00",
+      "last_ts": "2026-07-02T03:11:22.500560+00:00",
+      "n_config_hashes": 1,
+      "n_trials": 1
+    },
+    "value_growth_phase0": {
+      "first_ts": "2026-07-02T03:11:22.501832+00:00",
+      "last_ts": "2026-07-02T03:11:22.501832+00:00",
+      "n_config_hashes": 1,
+      "n_trials": 1
+    },
+    "vector": {
+      "first_ts": "2026-07-02T03:30:48.967730+00:00",
+      "last_ts": "2026-07-02T03:43:12.815329+00:00",
+      "n_config_hashes": 5,
+      "n_trials": 5
+    },
+    "w2031_kev_vendor_shock": {
+      "first_ts": "2026-07-06T11:32:57.883667+00:00",
+      "last_ts": "2026-07-06T11:32:57.887802+00:00",
+      "n_config_hashes": 7,
+      "n_trials": 7
+    },
+    "w2096_nhtsa_defect": {
+      "first_ts": "2026-07-06T13:05:04.618068+00:00",
+      "last_ts": "2026-07-06T13:05:04.621959+00:00",
+      "n_config_hashes": 6,
+      "n_trials": 6
+    }
+  }
+}

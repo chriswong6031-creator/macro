@@ -31,6 +31,10 @@ from lib.pages import write_page
 from scripts.build_vector import _html, _plot_y, _dx, _plot_idx, _runs, PLOT, C
 
 COST_BPS = 3.0
+# SCENARIO ASSUMPTION — not a tax ruling. Symbolic short-term cap-gains rate
+# for the after-tax sensitivity section.  Change to run alternative scenarios;
+# default 0.35 preserved so existing outputs are unchanged.  (RUL-F3.10)
+ST_TAX_SCENARIO = 0.35
 
 LEG_COLORS = {"drawdown": C["red"], "recession": C["amber"], "nfci": C["indigo"],
               "hy_widening": "#D98C00", "liquidity": C["r3"]}
@@ -171,7 +175,7 @@ def build() -> str:
     if sc.get("bootstrap"):
         ci = sc["bootstrap"]["sharpe_ci"]
         sc["boot_sharpe_lo"], sc["boot_sharpe_hi"] = ci[0], ci[2]
-    at = ea.after_tax(spy, alloc, bills, st_rate=0.35, cost_bps=COST_BPS)
+    at = ea.after_tax(spy, alloc, bills, st_rate=ST_TAX_SCENARIO, cost_bps=COST_BPS)
 
     bt = backtest_core(spy, alloc, cost_bps=COST_BPS, cash_yield=bills)
     eq = (1 + bt["net"]).cumprod(); hodl = (1 + bt["hold"]).cumprod()

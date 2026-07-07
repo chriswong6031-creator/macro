@@ -1,0 +1,65 @@
+{
+  "study_id": "macro_tx_phase0_v1",
+  "run_date": "2026-07-06",
+  "prereg": "research/macro_tx/L6_PHASE0_PREREG.md",
+  "family": "macro_tx",
+  "declared_budget": 12,
+  "cumulative_macro_tx_trial_count": 12,
+  "fires_total": 165710,
+  "spy_source": "data/yahoo/_GSPC.parquet (S&P 500, range 1927-12-30 to 2026-06-12)",
+  "usd_source": "data/fred/DTWEXBGS.parquet (broad_dollar, FRED)",
+  "derived_from_surface": null,
+  "contamination_surface": "macro_tx_phase0_v1",
+  "axes": {
+    "A1_rates_shock": {
+      "deferred": false,
+      "defer_reason": "",
+      "verdict_h21": "P0-PASS",
+      "coverage_note": "1962-01-02 to 2026-07-01",
+      "episode_count_total": 128,
+      "h21_stratified_delta": -0.034,
+      "h21_ci_lo": -0.0514,
+      "h21_ci_hi": -0.0171
+    },
+    "A2_usd_shock": {
+      "deferred": false,
+      "defer_reason": "",
+      "verdict_h21": "P0-FAIL (BH_fail, sign_unstable, CI_includes_0_in_a_half)",
+      "coverage_note": "2006-01-02 to 2026-06-26",
+      "episode_count_total": 44,
+      "h21_stratified_delta": -0.004,
+      "h21_ci_lo": -0.0284,
+      "h21_ci_hi": 0.0197
+    },
+    "A3_credit_shock": {
+      "deferred": false,
+      "defer_reason": "",
+      "verdict_h21": "P0-FAIL (BH_fail, CI_includes_0_in_a_half)",
+      "coverage_note": "1996-12-31 to 2026-07-02",
+      "episode_count_total": 35,
+      "h21_stratified_delta": 0.002,
+      "h21_ci_lo": -0.024,
+      "h21_ci_hi": 0.0281
+    },
+    "A4_fin_conditions": {
+      "deferred": false,
+      "defer_reason": "",
+      "verdict_h21": "P0-FAIL (BH_fail, sign_unstable, CI_includes_0_in_a_half)",
+      "coverage_note": "1971-01-08 to 2026-06-26 (weekly, ffill to BD)",
+      "episode_count_total": 28,
+      "h21_stratified_delta": -0.0063,
+      "h21_ci_lo": -0.0223,
+      "h21_ci_hi": 0.0093
+    }
+  },
+  "vintage_stamp": {
+    "price_plane_id": "spine_index_track_record",
+    "adjustment_mode": "outcome_excess_graded",
+    "universe_as_of": "2026-07-06",
+    "frame": "track_record_historical",
+    "survivorship_biased": true,
+    "coverage_frac": 1.0,
+    "dead_name_coverage_pct": 38.32,
+    "era_law_cohort": "track_record_all_eras"
+  }
+}

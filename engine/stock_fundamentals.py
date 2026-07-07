@@ -1686,6 +1686,7 @@ def _positioning(t, f, short, insider, short_flow=None) -> dict | None:
         block["short_flow"] = {
             "short_ratio_pct": _r((short_flow.get("short_ratio") or 0) * 100, 1),
             "trend_pp": _r(short_flow.get("trend_pp"), 2),
+            "ratio_z": _r(short_flow.get("ratio_z"), 2),
             "n_days": short_flow.get("n_days"),
             "asof": short_flow.get("asof"),
         }
@@ -1760,13 +1761,74 @@ def _compute_moat_block(
         return None
 
 
+def _load_basket_crowding_z_map() -> "dict[str, float]":
+    """Return {ticker: max_crowding_z} using pre-computed basket data — loaded once.
+
+    Reads site/allocationdata/allocation.json (the nightly basket allocation payload,
+    which already contains basket-level crowding_z computed by engine.theme_crowding)
+    and data/baskets/membership.json (ticker→basket mapping).
+
+    For a ticker belonging to multiple baskets, takes the MAX crowding_z (most
+    conservative / cautious de-escalation reading).
+
+    Fails soft to {} when either file is absent or unreadable — the trap block
+    will simply show crowding leg as unavailable.
+
+    DISPLAY-ONLY; never feeds scores or entry-stack surfaces (LH-R10 / LH-R1).
+    """
+    try:
+        alloc_path = config.ROOT / "site" / "allocationdata" / "allocation.json"
+        if not alloc_path.exists():
+            return {}
+        alloc = json.loads(alloc_path.read_text(encoding="utf-8"))
+        # Build basket_id -> crowding_z from the ranks table
+        basket_cz: dict[str, float] = {}
+        for row in alloc.get("ranks") or []:
+            bid = row.get("id")
+            cz = (row.get("crowding") or {}).get("crowding_z")
+            if bid and cz is not None:
+                try:
+                    basket_cz[bid] = float(cz)
+                except (TypeError, ValueError):
+                    pass
+        if not basket_cz:
+            return {}
+        # Load ticker -> basket membership
+        mem_path = config.data_dir() / "baskets" / "membership.json"
+        if not mem_path.exists():
+            return {}
+        mem = json.loads(mem_path.read_text(encoding="utf-8"))
+        ticker_cz: dict[str, float] = {}
+        for slug, basket in (mem.get("baskets") or {}).items():
+            cz = basket_cz.get(slug)
+            if cz is None:
+                continue
+            for member in (basket.get("members") or []):
+                tick = member.get("ticker")
+                if not tick or member.get("removed"):
+                    continue
+                # max across all baskets the ticker belongs to
+                if tick not in ticker_cz or cz > ticker_cz[tick]:
+                    ticker_cz[tick] = cz
+        return ticker_cz
+    except Exception as exc:  # noqa: BLE001
+        log.debug("stock_fundamentals: basket crowding_z map skipped (%s)", exc)
+        return {}
+
+
 def _compute_trap_block(
     ticker: str,
     analyst_rev: dict,
     insider: dict,
+    crowding_z: "float | None" = None,
 ) -> "dict | None":
     """Assemble great_company_trap inputs from existing loaded structures; non-fatal.
-    crowding_z is basket-level (not per-ticker in this context) — passed as None.
+
+    crowding_z is the basket-level crowding z-score for this ticker (max across
+    any basket the ticker belongs to), sourced from _load_basket_crowding_z_map()
+    called once per panels() run.  Pass None when unavailable (leg shows as
+    unavailable in the display, never suppresses the block).
+
     Returns None when all inputs are unavailable (panel hidden from JSON)."""
     try:
         from engine.moat_falsifiers import great_company_trap  # noqa: PLC0415
@@ -1783,10 +1845,10 @@ def _compute_trap_block(
                 except (TypeError, ValueError):
                     pass
         # Only emit the block when at least one input is available
-        if revision_dir is None and insider_net_usd is None:
+        if revision_dir is None and insider_net_usd is None and crowding_z is None:
             return None
         return great_company_trap(
-            crowding_z=None,
+            crowding_z=crowding_z,
             insider_net_usd=insider_net_usd,
             revision_direction=revision_dir,
         )
@@ -1824,6 +1886,56 @@ def _compute_capital_allocation_block(
         return result
     except Exception as exc:  # noqa: BLE001
         log.debug("stock_fundamentals: capital_allocation skipped for %s (%s)", ticker, exc)
+        return None
+
+
+def _compute_thesis_funnel_block(
+    ticker: str,
+    my: "dict | None",
+    moat_falsifiers_result: "dict | None",
+    capital_allocation_block: "dict | None",
+    expectation_state: "dict | None",
+    insider_context: "dict | None",
+) -> "dict | None":
+    """Call compute_thesis_funnel for one ticker; non-fatal.
+
+    Extracts the required inputs from pre-computed blocks (no re-loading of
+    parquets) and delegates to engine.thesis_funnel.compute_thesis_funnel_safe.
+    Returns None on any exception (fail-open: panels() must never crash on this
+    block; display-only per LH-R1/LH-R2).
+
+    DISPLAY-ONLY; horizon_role=hold_thesis; MUST NOT feed entry-stack surfaces.
+    """
+    try:
+        from engine.thesis_funnel import compute_thesis_funnel_safe  # noqa: PLC0415
+
+        altman_block = (my or {}).get("altman") or {}
+        altman_z = _num(altman_block.get("z"))
+        altman_approx = bool(altman_block.get("approx", False))
+
+        pio_block = (my or {}).get("piotroski") or {}
+        piotroski_score = pio_block.get("score")
+        piotroski_of = pio_block.get("of")
+
+        ca = capital_allocation_block or {}
+        shares_yoy = _num(ca.get("shares_yoy_change_pct"))
+        cap_delta = ca.get("capital_allocation_delta")  # str | None
+
+        result = compute_thesis_funnel_safe(
+            ticker,
+            altman_z=altman_z,
+            altman_approx=altman_approx,
+            moat_falsifiers_result=moat_falsifiers_result,
+            shares_yoy_change_pct=shares_yoy,
+            capital_allocation_delta=cap_delta,
+            piotroski_score=piotroski_score,
+            piotroski_of=piotroski_of,
+            expectation_state=expectation_state,
+            insider_context=insider_context,
+        )
+        return result
+    except Exception as exc:  # noqa: BLE001
+        log.debug("stock_fundamentals: thesis_funnel skipped for %s (%s)", ticker, exc)
         return None
 
 
@@ -1873,6 +1985,15 @@ def panels() -> dict[str, dict]:
     except Exception as _es_exc:  # noqa: BLE001
         log.warning("stock_fundamentals: expectation_states skipped (%s)", _es_exc)
 
+    # W2 PR-K + B1: basket-level crowding_z per ticker — loaded ONCE for the whole run.
+    # Sourced from site/allocationdata/allocation.json (pre-computed by the allocation
+    # nightly job; basket_crowding() in engine.theme_crowding runs there) joined with
+    # data/baskets/membership.json.  Takes MAX crowding_z across all baskets a ticker
+    # belongs to (most conservative down-size context).  DISPLAY-ONLY; never feeds
+    # entry-stack surfaces (LH-R10 / LH-R1).  Fails soft to {} when unavailable.
+    _basket_crowding_z: dict[str, float] = _load_basket_crowding_z_map()
+    log.info("stock_fundamentals: basket crowding_z map: %d tickers", len(_basket_crowding_z))
+
     # W2 PR-K: moat falsifier sensors + great-company-trap overlay (display-only;
     # horizon_role=hold_thesis; MUST NOT feed entry-stack scored surfaces — LH-R1).
     from engine.moat_falsifiers import (  # noqa: PLC0415
@@ -1905,6 +2026,12 @@ def panels() -> dict[str, dict]:
     except Exception as _ca_exc:  # noqa: BLE001
         log.warning("stock_fundamentals: capital_allocation inputs skipped (%s)", _ca_exc)
 
+    # Codex B5 — event-windows compose (DISPLAY-ONLY; horizon_role=display_context).
+    # Reuses _quarterly_df already loaded above for capital_allocation — no second read.
+    # Reuses `earnings` dict already loaded above.
+    # MUST NOT feed board ordering, alert triage, top-setups gates, or push floor.
+    from engine.event_landmine import compose as _ew_compose  # noqa: PLC0415
+
     M = _context_frame(fund, table, statements)
     nm_top_thr = _num(M["net_margin"].quantile(2 / 3)) if "net_margin" in M else None
 
@@ -1934,6 +2061,12 @@ def panels() -> dict[str, dict]:
         # already used for _multiyear.  None-safe throughout; Financials-sector names
         # have current/quick suppressed; empty dict excluded by `if v` filter below.
         lev = _leverage_ratios(rows or [], sector=(fac or {}).get("sector"))
+        # LT-4: pre-compute moat_falsifiers and capital_allocation blocks so
+        # thesis_funnel can reuse them without a second parquet read.
+        _t_moat = _compute_moat_block(str(t), _statements_df, _moat_base_rates)
+        _t_ca = _compute_capital_allocation_block(
+            str(t), _quarterly_df, _fundamentals_panel_df, _statements_df, mcap,
+        )
         blocks = {
             "profile": _profile(t, f, fac, M, arche, profiles.get(str(t))),
             "valuation": _valuation(t, f, fac, M, deep.get(t)),
@@ -1961,27 +2094,53 @@ def panels() -> dict[str, dict]:
             # stretch, inventory build, capital intensity rising.  Each sensor carries
             # a matched-control universe base rate so display layer can show context.
             # MUST NOT feed board ordering, alert triage, top-setups gates, or push floor.
-            "moat_falsifiers": _compute_moat_block(
-                str(t), _statements_df, _moat_base_rates,
-            ),
-            # W2 PR-K — great-company-trap de-escalation overlay (LH-R10).
+            "moat_falsifiers": _t_moat,
+            # W2 PR-K + B1 — great-company-trap de-escalation overlay (LH-R10).
             # Assembled ONLY from existing signals; may ONLY lower conviction context.
+            # crowding_z: basket-level crowding from _basket_crowding_z (loaded once).
             "great_company_trap": _compute_trap_block(
                 str(t), analyst_rev, insider,
+                crowding_z=_basket_crowding_z.get(str(t)),
             ),
             # LT-3a — capital allocation delta block (DISPLAY-ONLY; horizon_role=hold_thesis).
             # Buyback execution (TTM repurchases from statements_quarterly.parquet),
             # share-count trend (fundamentals_panel.parquet), SBC (statements.parquet,
             # sparse until LT-1 backfill lands).
             # MUST NOT feed board ordering, alert triage, top-setups gates, or push floor.
-            "capital_allocation": _compute_capital_allocation_block(
-                str(t), _quarterly_df, _fundamentals_panel_df, _statements_df, mcap,
-            ),
+            "capital_allocation": _t_ca,
             # LT-2c — expectation_state display block (DISPLAY-ONLY; horizon_role=hold_thesis).
             # Fields: last_event_date, sue_latest, sue_streak, pead_drift_20d,
             # bad_news_absorption, good_news_hold.  Per EXPECT_DRIFT_FAMILY_PREREG.md §2.
             # MUST NOT feed board ordering, alert triage, top-setups gates, or push floor.
             "expectation_state": _expect_states.get(str(t)) or None,
+            # LT-4 — thesis funnel shadow (DISPLAY-ONLY; horizon_role=hold_thesis).
+            # Transparent AND-gate of independently registered flags per LH-R2.
+            # States: not_eligible | watch_for_thesis | thesis_candidate_shadow.
+            # Ceiling is thesis_candidate_shadow — no 'active_thesis' (W3-locked).
+            # Inputs: s1_dilution, s2_moat_falsifier, s3_solvency, s4_coverage,
+            #   plus piotroski_f and capital_allocation_delta for candidate upgrade.
+            # Context (not gate inputs): expectation_state, capital_allocation_delta, insider.
+            # Reuses _t_moat and _t_ca pre-computed above — no second parquet read.
+            # MUST NOT feed board ordering, alert triage, top-setups gates, or push floor.
+            "thesis_funnel": _compute_thesis_funnel_block(
+                str(t),
+                my=my,
+                moat_falsifiers_result=_t_moat,
+                capital_allocation_block=_t_ca,
+                expectation_state=_expect_states.get(str(t)) or None,
+                insider_context=(insider.get(t) or None),
+            ),
+            # Codex B5 — event-windows display block (DISPLAY-ONLY; horizon_role=display_context).
+            # Composes upcoming earnings date, next FOMC meeting, and debt-maturity context
+            # from pre-loaded inputs (no new I/O per ticker).
+            # Legs: earnings (date/tdays), fomc_within (date/tdays), debt (balance-sheet).
+            # FDA/PDUFA: SKIPPED — no free forward source; see engine/event_landmine.py TODO.
+            # MUST NOT feed board ordering, alert triage, top-setups gates, or push floor.
+            "event_windows": _ew_compose(
+                str(t),
+                earnings_row=earnings.get(str(t)),
+                quarterly_df=_quarterly_df,
+            ),
         }
         out[str(t)] = _clean({k: v for k, v in blocks.items() if v})
     log.info("stock_fundamentals: %d names with panels (factors %d, deep %d, short %s)",

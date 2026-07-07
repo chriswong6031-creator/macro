@@ -1,0 +1,102 @@
+{
+  "schema": "neuralweb.mechanism_pathways.v1",
+  "as_of": "2026-07-07",
+  "display_only": true,
+  "not_a_signal": true,
+  "authority": {
+    "tier": "display",
+    "horizon_role": "context",
+    "weights": "none",
+    "scored_path_surfaces": [],
+    "may_rank": false,
+    "may_gate": false,
+    "may_size": false,
+    "may_escalate": false,
+    "display_only": true,
+    "not_a_signal": true,
+    "forbidden_uses": [
+      "ranking",
+      "sizing",
+      "alert_escalation",
+      "claim_validation",
+      "board_ordering",
+      "mastermind_arming"
+    ]
+  },
+  "pathways": [
+    {
+      "family": "ai_semis",
+      "driver": "ai_semis",
+      "pathway_role": "primary",
+      "as_of": "2026-07-07",
+      "direction_en": "Bubble / blow-off unwind",
+      "direction_zh": "泡沫/见顶回吐",
+      "confidence_ceiling": "context_only",
+      "coverage_score": null,
+      "coherence": "partial",
+      "stale_legs": [],
+      "nodes": [
+        {
+          "node_id": "driver_ai_semis",
+          "as_of": "2026-07-07",
+          "domain": "market_drivers",
+          "source_artifact": "data/regime/latest.json#market_drivers",
+          "entity": "ai_semis",
+          "observation": {
+            "en": "Bubble / blow-off unwind",
+            "zh": "泡沫/见顶回吐"
+          },
+          "direction": "",
+          "value": 59.9,
+          "z_or_percentile": null,
+          "source_tier": "display",
+          "lag_class": "same_day",
+          "pathway_role": "trigger",
+          "evidence_refs": [
+            "market_drivers.primary"
+          ]
+        }
+      ],
+      "edges": [],
+      "coverage_basis": "scare_trigger",
+      "source_trigger": "risk_radar",
+      "scare": "bubble"
+    },
+    {
+      "family": "crypto",
+      "driver": "crypto_liquidity",
+      "pathway_role": "alternate",
+      "as_of": "2026-07-07",
+      "direction_en": "crypto liquidity surging — BTC/ETH lead up",
+      "direction_zh": "",
+      "confidence_ceiling": "context_only",
+      "coverage_score": null,
+      "coherence": "partial",
+      "stale_legs": [],
+      "nodes": [
+        {
+          "node_id": "driver_crypto_liquidity",
+          "as_of": "2026-07-07",
+          "domain": "market_drivers",
+          "source_artifact": "data/regime/latest.json#market_drivers",
+          "entity": "crypto_liquidity",
+          "observation": {
+            "en": "crypto liquidity surging — BTC/ETH lead up",
+            "zh": ""
+          },
+          "direction": "",
+          "value": 1.11,
+          "z_or_percentile": null,
+          "source_tier": "display",
+          "lag_class": "same_day",
+          "pathway_role": "trigger",
+          "evidence_refs": [
+            "market_drivers.primary"
+          ]
+        }
+      ],
+      "edges": [],
+      "coverage_basis": "scare_trigger"
+    }
+  ]
+}

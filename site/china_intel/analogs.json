@@ -1,0 +1,261 @@
+{
+  "schema": "china_intel.analogs.v1",
+  "is_context_only": true,
+  "generated_utc": "2026-07-07T20:55:26Z",
+  "as_of": "2026-07-07",
+  "coverage": {
+    "start": "2006-03-30",
+    "end": "2026-07-07",
+    "n_candidate_days": 5289
+  },
+  "query": {
+    "date": "2026-07-07",
+    "quad": "Q3",
+    "quad_name": "Stagflation",
+    "liquidity": "neutral",
+    "cycle": "mid",
+    "growth_z": -0.1552,
+    "inflation_z": 0.5392
+  },
+  "analogs": [
+    {
+      "date": "2025-09-01",
+      "distance": 0.3696,
+      "quad": "Q3",
+      "quad_name": "Stagflation",
+      "liquidity": "neutral",
+      "cycle": "mid",
+      "fwd_shcomp": {
+        "h20": 0.006367,
+        "h60": 0.005136,
+        "h120": 0.059975
+      },
+      "fwd_csi300": {
+        "h20": 0.032368,
+        "h60": 0.014491,
+        "h120": 0.045699
+      }
+    },
+    {
+      "date": "2025-01-31",
+      "distance": 0.4589,
+      "quad": "Q3",
+      "quad_name": "Stagflation",
+      "liquidity": "neutral",
+      "cycle": "mid",
+      "fwd_shcomp": {
+        "h20": 0.034235,
+        "h60": 0.02647,
+        "h120": 0.112967
+      },
+      "fwd_csi300": {
+        "h20": 0.027156,
+        "h60": 0.004108,
+        "h120": 0.107345
+      }
+    },
+    {
+      "date": "2025-12-10",
+      "distance": 0.4812,
+      "quad": "Q3",
+      "quad_name": "Stagflation",
+      "liquidity": "neutral",
+      "cycle": "mid",
+      "fwd_shcomp": {
+        "h20": 0.072674,
+        "h60": 0.044582,
+        "h120": 0.056015
+      },
+      "fwd_csi300": {
+        "h20": 0.051154,
+        "h60": 0.020916,
+        "h120": 0.078014
+      }
+    },
+    {
+      "date": "2023-01-30",
+      "distance": 0.5736,
+      "quad": "Q3",
+      "quad_name": "Stagflation",
+      "liquidity": "neutral",
+      "cycle": "mid",
+      "fwd_shcomp": {
+        "h20": 0.007326,
+        "h60": 0.002586,
+        "h120": -0.010076
+      },
+      "fwd_csi300": {
+        "h20": -0.021386,
+        "h60": -0.051306,
+        "h120": -0.044998
+      }
+    },
+    {
+      "date": "2016-12-28",
+      "distance": 0.7468,
+      "quad": "Q3",
+      "quad_name": "Stagflation",
+      "liquidity": "neutral",
+      "cycle": "mid",
+      "fwd_shcomp": {
+        "h20": 0.014135,
+        "h60": 0.04002,
+        "h120": 0.030639
+      },
+      "fwd_csi300": {
+        "h20": 0.019807,
+        "h60": 0.045318,
+        "h120": 0.109784
+      }
+    },
+    {
+      "date": "2016-03-01",
+      "distance": 0.7586,
+      "quad": "Q3",
+      "quad_name": "Stagflation",
+      "liquidity": "neutral",
+      "cycle": "mid",
+      "fwd_shcomp": {
+        "h20": 0.05162,
+        "h60": -0.010099,
+        "h120": 0.080869
+      },
+      "fwd_csi300": {
+        "h20": 0.053014,
+        "h60": 0.003601,
+        "h120": 0.108373
+      }
+    },
+    {
+      "date": "2019-04-25",
+      "distance": 0.8999,
+      "quad": "Q3",
+      "quad_name": "Stagflation",
+      "liquidity": "neutral",
+      "cycle": "mid",
+      "fwd_shcomp": {
+        "h20": -0.062744,
+        "h60": -0.048252,
+        "h120": -0.043784
+      },
+      "fwd_csi300": {
+        "h20": -0.065794,
+        "h60": 0.006936,
+        "h120": 0.023944
+      }
+    },
+    {
+      "date": "2015-12-31",
+      "distance": 1.0061,
+      "quad": "Q2",
+      "quad_name": "Reflation",
+      "liquidity": "neutral",
+      "cycle": "mid",
+      "fwd_shcomp": {
+        "h20": -0.203673,
+        "h60": -0.076642,
+        "h120": -0.116941
+      },
+      "fwd_csi300": {
+        "h20": -0.182935,
+        "h60": -0.0683,
+        "h120": -0.097016
+      }
+    },
+    {
+      "date": "2018-08-07",
+      "distance": 1.0128,
+      "quad": "Q2",
+      "quad_name": "Reflation",
+      "liquidity": "neutral",
+      "cycle": "mid",
+      "fwd_shcomp": {
+        "h20": -0.014585,
+        "h60": -0.040319,
+        "h120": -0.033413
+      },
+      "fwd_csi300": {
+        "h20": -0.007132,
+        "h60": -0.032504,
+        "h120": -0.004385
+      }
+    },
+    {
+      "date": "2021-08-09",
+      "distance": 1.026,
+      "quad": "Q2",
+      "quad_name": "Reflation",
+      "liquidity": "neutral",
+      "cycle": "mid",
+      "fwd_shcomp": {
+        "h20": 0.040708,
+        "h60": 0.00081,
+        "h120": -0.019157
+      },
+      "fwd_csi300": {
+        "h20": -0.007866,
+        "h60": -0.026398,
+        "h120": -0.089549
+      }
+    },
+    {
+      "date": "2020-09-09",
+      "distance": 1.0362,
+      "quad": "Q2",
+      "quad_name": "Reflation",
+      "liquidity": "neutral",
+      "cycle": "mid",
+      "fwd_shcomp": {
+        "h20": 0.030906,
+        "h60": 0.034147,
+        "h120": 0.055652
+      },
+      "fwd_csi300": {
+        "h20": 0.042945,
+        "h60": 0.063543,
+        "h120": 0.093869
+      }
+    },
+    {
+      "date": "2018-05-29",
+      "distance": 1.0503,
+      "quad": "Q2",
+      "quad_name": "Reflation",
+      "liquidity": "neutral",
+      "cycle": "mid",
+      "fwd_shcomp": {
+        "h20": -0.087403,
+        "h60": -0.110002,
+        "h120": -0.164743
+      },
+      "fwd_csi300": {
+        "h20": -0.07839,
+        "h60": -0.096841,
+        "h120": -0.157465
+      }
+    }
+  ],
+  "fan": {
+    "h20": {
+      "p25": -0.026625,
+      "median": 0.010731,
+      "p75": 0.035853,
+      "n": 12
+    },
+    "h60": {
+      "p25": -0.042302,
+      "median": 0.001698,
+      "p75": 0.028389,
+      "n": 12
+    },
+    "h120": {
+      "p25": -0.036006,
+      "median": 0.010281,
+      "p75": 0.057005,
+      "n": 12
+    }
+  },
+  "method_note": "Feature vector: z-scored growth_score and inflation_score (population z over all valid candidate rows) plus one-hot categorical distance for quad, liquidity, and cycle (each mismatched category contributes 1.0 to the Euclidean distance). Weighting is fixed and undifferentiated across the five dimensions. Neighbors selected by greedy Euclidean nearest-neighbor with time-exclusion >=120 calendar days and intra-result diversity >=60 calendar days. Forward paths use PIT-anchored first close strictly after the analog date; off-history windows return null.",
+  "disclaimer_en": "DISPLAY ONLY. Historical analogs are descriptive summaries of past regime similarity. They are not signals, forecasts, or recommendations. Past market paths under similar regimes do not predict future returns.",
+  "disclaimer_zh": "仅供展示。历史相似情景是对过去制度相似性的描述性总结，不构成任何信号、预测或投资建议。过去在类似制度下的市场走势不代表未来收益。"
+}

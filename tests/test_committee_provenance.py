@@ -332,7 +332,8 @@ class TestCommitteePageRenderSmoke:
             generated_utc="2026-07-04T12:00:00Z",
             supabase_cfg_json="null",
         )
-        assert "Committee View" in html
+        assert "The Neural Web" in html
+        assert "Signal Committee" in html
 
     def test_contains_disclaimer(self):
         env, _ = _jinja_env()
@@ -518,8 +519,8 @@ class TestCommitteePageRenderSmoke:
 
     def test_ask_error_message_bilingual(self):
         html = self._render()
-        assert "Something went wrong" in html
-        assert "出现错误" in html  # 出现错误
+        assert "Live brain unreachable" in html
+        assert "实时大脑不可达" in html
 
     def test_ask_disclaimer_present(self):
         """Ask box must carry its own inline disclaimer."""

@@ -107,7 +107,19 @@ fred:
     CAPUTLG3344S, CAPUTLG334S, CAPUTLG331S,
     MNFCTRIRSA, AMTMUO, AMTMVS,
     PCU334413334413, PCU331110331110,
-    IPG2211S, CAPUTLG2211S, WPU0543]
+    IPG2211S, CAPUTLG2211S, WPU0543,
+    # MRI-PR-A: release-intel legs promoted to PIT vintage (monthly, bounded ~1 row/period).
+    # UNRATE + RSAFS: promoted from macro_surprise.py ad-hoc fetches to collected PIT.
+    # JTSJOL: JOLTS job openings — labor-context leg for the NFP bridge.
+    # ADPMNUSNERSA: ADP monthly SA total-private payrolls; ALFRED vintages available;
+    #   note 2022 methodology redesign (Moody's Analytics collaboration) which re-revised
+    #   the full history — backtest era-splits at 2022 boundary per MRI-R9.
+    UNRATE, RSAFS, JTSJOL, ADPMNUSNERSA,
+    # MRI-PR-H: NFP decomposition + AHE/hours targets. All monthly, ~1 initial-release row/period.
+    # USPRIV/USGOVT: 1939→, ALFRED vintages expected. CES0500000003/AWHAETP: 2006-03→, ALFRED
+    # vintages expected. Note: if ALFRED has no vintage history for a series on the keyed
+    # collect run, the series returns empty and the model falls back gracefully (absent leg).
+    USPRIV, USGOVT, CES0500000003, AWHAETP]
   series:
     rates:
       DGS2: us2y
@@ -311,12 +323,16 @@ fred:
       CAPUTLG211S: cap_u_oilgas   # cap-U oil & gas extraction (NAICS 211)
       IPG3344S: ip_semi           # industrial production, semis (NAICS 3344)
       CAPG3344S: capacity_semi    # industrial capacity LEVEL, semis (production>capacity = squeeze)
-      ISRATIO: inv_sales_total    # total business inventories/sales (the headline)
+      # ISRATIO/NEWORDER also live in the cycle groups above — a duplicate FRED id MUST
+      # reuse the same column alias: _all_series() dict-merges groups (last wins) and the
+      # store upsert's outlier guard reads the existing parquet by the merged alias, so a
+      # conflicting alias KeyErrors and kills the WHOLE fred adapter (8-run outage, 2026-07).
+      ISRATIO: inventory_sales    # total business inventories/sales (the headline)
       MNFCTRIRSA: inv_sales_mfg   # manufacturing inventories/sales
       AMTMUO: unfilled_orders     # mfrs' unfilled orders, total mfg — the backlog headline
       AMTMVS: shipments_total     # value of shipments, total mfg (backlog denominator)
       DGORDER: new_orders_durable # new orders, durable goods (headline)
-      NEWORDER: new_orders_capex  # new orders, nondefense cap goods ex-aircraft (capex proxy)
+      NEWORDER: cap_goods_orders  # new orders, nondefense cap goods ex-aircraft (capex proxy)
       PCU334413334413: ppi_semi   # PPI semiconductor & related device mfg (the memory pricing proxy)
       PCU331110331110: ppi_steel  # PPI iron & steel mills
       DTCISA156MSFRBPHI: deliv_time_philly  # Philly Fed current delivery time, % increases
@@ -334,6 +350,23 @@ fred:
       WPU0543: ppi_electric_power     # PPI: electric power
       PCU221122221122: ppi_electric_power_alt  # PPI: electric power alt id (engine fallback)
       APU000072610: price_electricity # avg retail electricity price (US city avg, per kWh)
+    # --- Release Intelligence data spine (MRI-PR-A) ----------------------------
+    # Legs for the CPI nowcast and NFP labor bridge (engine/release_forecast.py, PR-B).
+    # All keyless-CSV reachable; added to vintage_series above so nightly fetches
+    # initial-release ALFRED vintages (PIT-correct inputs per MRI-R6).
+    release_intel:
+      GASREGW: gasoline_regular_weekly  # weekly retail gasoline (US avg, $/gal) — CPI energy leg
+      JTSJOL: jolts_openings            # JOLTS job openings (monthly, thousands SA) — labor context
+      ADPMNUSNERSA: adp_payrolls        # ADP national employment, monthly SA total-private (PERSONS,
+                                        # ~132M level — divide by 1000 for conventional thousands);
+                                        # 2022 methodology redesign re-revised full history; era-split at 2022
+      UNRATE: unemployment_rate         # unemployment rate (monthly, %) — promoted from macro_surprise ad-hoc
+      RSAFS: retail_sales               # advance retail & food services sales (monthly, $M SA) — promoted from macro_surprise ad-hoc
+      # MRI-PR-H: NFP decomposition + AHE/hours targets (2006-03→)
+      USPRIV: nfp_private               # private payrolls (thousands SA, 1939→) — decomposition private leg
+      USGOVT: nfp_government            # government payrolls (thousands SA, 1939→) — decomposition government leg
+      CES0500000003: avg_hourly_earnings  # avg hourly earnings total private ($/hr SA, 2006-03→) — AHE target
+      AWHAETP: avg_weekly_hours         # avg weekly hours total private (hrs/wk SA, 2006-03→) — hours target
   retries: 3
   backoff_base_s: 5
   batch_size: 80
@@ -905,6 +938,37 @@ gold_reserves:
 # the Funding leg embeds a free offshore-dollar / x-ccy-basis proxy and the EM leg
 # is genuinely additive vs the US-centric NFCI. See research/DATA_SIGNAL_EXPANSION_2026.md
 # =============================================================================
+cleveland_nowcast:                 # Cleveland Fed daily inflation nowcast (MRI-PR-A)
+  # Two JSON files backing the interactive chart on the inflation-nowcasting page.
+  # Each file contains one chart object per target month (157 at last count); each
+  # chart has daily category labels (MM/DD) and four nowcast series: CPI, Core CPI,
+  # PCE, Core PCE MoM percent. The "Actual *" series in the same file are the post-
+  # release actuals (filled in after the official release lands). Storage:
+  #   data/cleveland_nowcast/nowcast.parquet — first-seen vintage record keyed
+  #   (target_period, series, obs_date), keep=first; committed by the nightly
+  #   collect lane (bounded growth: ~4-16 rows/business day once backfilled).
+  # Collector: collectors/cleveland_nowcast.py. Fail-open — any fetch/parse error
+  # is logged and skipped; never raises into the collect lane.
+  month_url: "https://www.clevelandfed.org/-/media/files/webcharts/inflationnowcasting/nowcast_month.json?sc_lang=en"
+  retries: 3
+  timeout: 60
+
+kalshi_releases:                   # Kalshi macro-release bracket markets (MRI PR-K; keyless, no auth)
+  # Keyless v2 trade API: api.elections.kalshi.com/trade-api/v2/markets
+  # Series collected (LIVE VERIFIED 2026-07-07 via direct API probe):
+  #   KXCPI       → US CPI headline MoM % SA bracket markets
+  #                 "Will CPI rise more than X%?" — P(YES) = P(CPI MoM > X pct)
+  #   KXPAYROLLS  → US non-farm payrolls MoM change, thousands
+  #                 "Will above X jobs be added?" — P(YES) = P(NFP MoM > X k jobs)
+  #   KXJOBLESSCLAIMS → US initial jobless claims, weekly level
+  #                 "How many claims will there be the week ending [date]?"
+  # Bracket structure: each event has 9-14 exceedance binaries at 0.1pp (CPI)
+  # or 10-25k (NFP) step intervals. Storage: first-seen append-only parquet.
+  # Collector: collectors/kalshi_releases.py. Fail-open — any fetch/parse
+  # error is logged and skipped; never raises into the collect lane.
+  retries: 3
+  timeout: 30
+
 ofr_fsi:                           # distinct from the OFR funding-rates collector (collectors/ofr.py, group "ofr")
   fsi_url: https://www.financialresearch.gov/financial-stress-index/data/fsi.csv
   retries: 4
@@ -2417,7 +2481,9 @@ notify:
   telegram:
     enabled: true                 # needs TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID secrets
   discord:
-    enabled: false                # needs DISCORD_WEBHOOK_URL secret
+    enabled: true                 # DISCORD_WEBHOOK_URL, or falls back to DISCORD_WEBHOOK_WATCHLIST
+                                   # (the one webhook that IS configured) so ops/heartbeat alerts
+                                   # actually deliver. send_discord no-ops when neither is present.
   # ping the telegram/discord channel when a tracked EXPERIMENT's results become ready
   # (a forward track-record's verdict advances, or a come-back date arrives) so you don't
   # have to watch the admin Experiments tab. Fires once per experiment, on transition only.
@@ -2460,7 +2526,41 @@ live_flow:
   name_floor: 250000        # $ gross premium notability floor for single names
   retention_hours: 24       # trailing event window in feed_current.json
   top_names: 100            # single-name roots appended after ETF anchors
+  near_dte_cap_days: 90     # current-day fallback: cap per-expiration pulls to <=90 DTE (near-dated flow, where notable premium lives)
   # etf_anchors: []         # defaults to 22 anchors (see live_flow_poller._resolve_universe)
+
+# Committed-data-freeze tripwire — folded into the dead-man's-switch heartbeat
+# (scripts/healthcheck.py check_committed_data_freshness).  Each witness is a
+# cheap, always-liquid parquet file.  FAIL when > fail_after_sessions business
+# days stale; WARN when > warn_after_sessions.  The heartbeat runs 14:30 UTC
+# weekdays off a fresh checkout of main — so it reads COMMITTED data only.
+healthcheck:
+  # max_age_hours / breaker_trip / broad_outage stay at the scripts/healthcheck.py
+  # code defaults (96h etc.) — this section is added purely for the data_freshness
+  # tripwire below, not to retune the existing liveness thresholds.
+  data_freshness:
+    warn_after_sessions: 1
+    fail_after_sessions: 2
+    witnesses:              # cheap, always-liquid representatives per market
+      - {label: "china_stocks 000001.SZ", path: "data/china_stocks/000001.SZ.parquet"}
+      - {label: "china_stocks 600519.SS", path: "data/china_stocks/600519.SS.parquet"}
+      - {label: "china_breadth",          path: "data/china_breadth/breadth.parquet"}
+      - {label: "hk_stocks 0700.HK",      path: "data/hk_stocks/0700.HK.parquet"}
+      - {label: "us_stocks AAPL",         path: "data/stocks/AAPL.parquet"}
+    # China Golden Week + Spring Festival 2026–27 (starter set; extend as needed).
+    # US/HK single-day holidays fall within the 2-session tolerance so are optional.
+    holidays:
+      - "2026-10-01"
+      - "2026-10-02"
+      - "2026-10-05"
+      - "2026-10-06"
+      - "2026-10-07"
+      - "2026-10-08"
+      - "2027-02-15"
+      - "2027-02-16"
+      - "2027-02-17"
+      - "2027-02-18"
+      - "2027-02-19"
 
 r2_data_plane:
   public_base: "https://pub-f7ffb4441c5f4ad983ca56ec7c651c61.r2.dev"
@@ -2605,6 +2705,10 @@ prediction_markets:
     fed_next:  {match: "Fed Decision", pick: nearest_end, label_en: "Next Fed decision", label_zh: "下次美联储决议"}
     fed_cuts:  {match: "rate cuts in", pick: max_volume,  label_en: "Fed cuts this year", label_zh: "今年降息次数"}
     recession: {match: "recession",    pick: max_volume,  label_en: "US recession",       label_zh: "美国衰退"}
+    # MRI-R16 — market-implied CPI/NFP benchmarks (display context only, never fused into model math).
+    # Title substrings match Polymarket events; snapshots accrue nightly → history backtestable.
+    cpi_print: {match: "CPI",           pick: nearest_end, label_en: "CPI outcome market",  label_zh: "CPI市场预期"}
+    nfp_print: {match: "nonfarm",       pick: nearest_end, label_en: "NFP outcome market",  label_zh: "非农市场预期"}
 
 # =============================================================================
 # BIS global credit cycle (collectors/bis.py + engine/credit_cycle.py) — the
@@ -5498,3 +5602,17 @@ oracle:
   # survival is registered in the forward ledger.  Two-sided regression test in
   # tests/test_oracle_tilt.py verifies the gate is effective (not dead code).
   tilt_enabled: false
+
+# --------------------------------------------------------------------------- #
+# Cycle Pattern Intelligence — CPI substrate (engine/cycle_pattern/, W0).
+# Entity registry + unified monthly PIT state lake. Paths are repo-relative.
+# --------------------------------------------------------------------------- #
+cycle_pattern_intelligence:
+  version: "v0"
+  entities_path: "data/cycle_pattern/entities.parquet"
+  state_monthly_path: "data/cycle_pattern/state_monthly.parquet"
+  state_monthly_meta_path: "data/cycle_pattern/state_monthly_meta.json"
+  outcomes_path: "data/cycle_pattern/outcomes.parquet"  # label-side outcome spine (engine/cycle_pattern/outcomes.py)
+  state_daily_live_path: "data/cycle_pattern/state_daily_live.parquet"  # nightly union of forward logs (scripts/build_cycle_pattern_live.py)
+  hazard_epoch: "price_c4414dcb"                 # feature source epoch joined into state
+  embargo_holdout_start: "2024-01-01"            # rows dated after this are permanently embargoed (holdout)

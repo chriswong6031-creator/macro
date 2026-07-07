@@ -823,6 +823,534 @@ def load_graded_log(engine: str, *, include_backfill: bool = True) -> pd.DataFra
 
 
 # ══════════════════════════════════════════════════════════════════════════════════════
+# CALIBRATION HELPERS  (PR-B4 / convergence rail RUL-T3-5)
+# ══════════════════════════════════════════════════════════════════════════════════════
+
+def reliability_curve(
+    probs: np.ndarray,
+    outcomes: np.ndarray,
+    n_bins: int = 10,
+) -> list[dict]:
+    """Calibration reliability curve: binned forecast probabilities vs observed rates.
+
+    Bins forecast probabilities into equal-width buckets and computes the mean
+    predicted probability, observed outcome rate, count, and Wilson CI per bin.
+    Bins with no observations are omitted.
+
+    Parameters
+    ----------
+    probs    : 1-D array of predicted probabilities in [0, 1].
+    outcomes : 1-D binary array of realized outcomes (0 or 1), aligned to probs.
+    n_bins   : number of equal-width bins across [0, 1] (default 10).
+
+    Returns
+    -------
+    List of dicts, one per non-empty bin, each with keys:
+        - 'bin_lo'      : float — left edge of the bin.
+        - 'bin_hi'      : float — right edge of the bin.
+        - 'mean_prob'   : float — mean predicted probability within the bin.
+        - 'obs_rate'    : float — fraction of positive outcomes within the bin.
+        - 'n'           : int   — count of observations in the bin.
+        - 'ci_lo'       : float | None — Wilson CI lower bound on obs_rate.
+        - 'ci_hi'       : float | None — Wilson CI upper bound on obs_rate.
+
+    Statistical contract: a perfectly calibrated forecaster produces a curve
+    where mean_prob ≈ obs_rate in every bin (the diagonal). The Wilson CI is
+    on obs_rate as a binomial proportion over the n observations in the bin.
+
+    OVERLAP WARNING: forecasts generated from OVERLAPPING long-horizon rows (e.g.
+    daily stamps with a 63d forward window) share information across adjacent bins
+    — the Wilson CI within each bin will understate true uncertainty. For reliable
+    uncertainty bounds on overlapping series, bootstrap the full calibration curve
+    using block_bootstrap_scalar_ci() on a per-bin series, or use brier_decomposition()
+    with moving-block inference.
+
+    Usage example::
+
+        probs = np.array([0.1, 0.2, 0.8, 0.9])
+        outcomes = np.array([0, 0, 1, 1])
+        curve = reliability_curve(probs, outcomes, n_bins=5)
+        # Two non-empty bins: low prob → low rate; high prob → high rate.
+    """
+    probs = np.asarray(probs, dtype=float)
+    outcomes = np.asarray(outcomes, dtype=float)
+    if len(probs) != len(outcomes):
+        raise ValueError(
+            f"reliability_curve: probs and outcomes must have the same length "
+            f"(got {len(probs)} vs {len(outcomes)})."
+        )
+    if n_bins < 1:
+        raise ValueError(f"reliability_curve: n_bins must be ≥ 1 (got {n_bins}).")
+
+    edges = np.linspace(0.0, 1.0, n_bins + 1)
+    result: list[dict] = []
+    for i in range(n_bins):
+        lo = edges[i]
+        hi = edges[i + 1]
+        # Include right endpoint in the last bin so prob=1.0 is captured.
+        if i < n_bins - 1:
+            mask = (probs >= lo) & (probs < hi)
+        else:
+            mask = (probs >= lo) & (probs <= hi)
+        n = int(mask.sum())
+        if n == 0:
+            continue
+        mean_p = float(np.mean(probs[mask]))
+        obs_r = float(np.mean(outcomes[mask]))
+        k = int(np.sum(outcomes[mask]))
+        ci = wilson_ci(k, n)
+        result.append({
+            "bin_lo": round(lo, 6),
+            "bin_hi": round(hi, 6),
+            "mean_prob": round(mean_p, 6),
+            "obs_rate": round(obs_r, 6),
+            "n": n,
+            "ci_lo": ci[0] if ci else None,
+            "ci_hi": ci[1] if ci else None,
+        })
+    return result
+
+
+def brier_decomposition(
+    probs: np.ndarray,
+    outcomes: np.ndarray,
+    n_bins: int = 10,
+) -> dict:
+    """Murphy decomposition of the Brier score into reliability, resolution, uncertainty.
+
+    The Brier score is decomposed as:
+
+        BS = reliability - resolution + uncertainty
+
+    where:
+        - uncertainty   = o̅(1 - o̅)       — irreducible noise in the outcome base rate.
+        - reliability   = Σ_k n_k/N · (ō_k - o̅_k)²  — penalty for miscalibration.
+        - resolution    = Σ_k n_k/N · (o̅_k - o̅)²    — reward for decisive forecasts.
+        - refinement    = reliability - resolution    — net skill (negative = skilled).
+        - brier_score   = reliability - resolution + uncertainty.
+
+    Here ō_k is the mean forecast in bin k, o̅_k is the observed rate in bin k,
+    o̅ is the overall mean outcome (base rate), and n_k is the count in bin k.
+
+    Parameters
+    ----------
+    probs    : 1-D array of predicted probabilities in [0, 1].
+    outcomes : 1-D binary array of realized outcomes (0 or 1), aligned to probs.
+    n_bins   : number of equal-width bins for the decomposition (default 10).
+
+    Returns
+    -------
+    dict with keys:
+        - 'brier_score'  : float — mean squared error (lower is better).
+        - 'reliability'  : float — calibration penalty (lower is better; 0 = perfect).
+        - 'resolution'   : float — forecast sharpness reward (higher is better).
+        - 'uncertainty'  : float — irreducible base-rate uncertainty o̅(1 - o̅).
+        - 'refinement'   : float — reliability - resolution; negative = net skill.
+        - 'base_rate'    : float — overall mean of outcomes.
+        - 'n'            : int   — total number of observations.
+        - 'n_bins_used'  : int   — number of non-empty bins (may be < n_bins).
+
+    Statistical contract: BS = reliability - resolution + uncertainty is exact for
+    equal-width bins in the limit of large n. For small n the decomposition is still
+    unbiased (in expectation) but individual terms have wide sampling distributions.
+
+    OVERLAP WARNING: on overlapping long-horizon rows, the Brier score is biased
+    toward zero (correlated errors inflate the apparent sample size). Wrap this
+    function's `brier_score` output in block_bootstrap_scalar_ci() to obtain
+    overlap-corrected uncertainty bounds.
+
+    Usage example::
+
+        probs    = np.array([0.9, 0.8, 0.1, 0.2])
+        outcomes = np.array([1,   1,   0,   0  ])
+        d = brier_decomposition(probs, outcomes)
+        # d['reliability'] ≈ 0.0  (perfectly calibrated)
+        # d['resolution']  > 0.0  (decisive forecasts)
+        # d['brier_score'] ≈ uncertainty - resolution (skilled)
+    """
+    probs = np.asarray(probs, dtype=float)
+    outcomes = np.asarray(outcomes, dtype=float)
+    if len(probs) != len(outcomes):
+        raise ValueError(
+            f"brier_decomposition: probs and outcomes must have the same length "
+            f"(got {len(probs)} vs {len(outcomes)})."
+        )
+    n = len(probs)
+    if n == 0:
+        return {
+            "brier_score": None, "reliability": None, "resolution": None,
+            "uncertainty": None, "refinement": None, "base_rate": None,
+            "n": 0, "n_bins_used": 0,
+        }
+
+    brier_score = float(np.mean((probs - outcomes) ** 2))
+    base_rate = float(np.mean(outcomes))
+    uncertainty = base_rate * (1.0 - base_rate)
+
+    edges = np.linspace(0.0, 1.0, n_bins + 1)
+    reliability = 0.0
+    resolution = 0.0
+    n_bins_used = 0
+
+    for i in range(n_bins):
+        lo = edges[i]
+        hi = edges[i + 1]
+        if i < n_bins - 1:
+            mask = (probs >= lo) & (probs < hi)
+        else:
+            mask = (probs >= lo) & (probs <= hi)
+        n_k = int(mask.sum())
+        if n_k == 0:
+            continue
+        n_bins_used += 1
+        mean_p_k = float(np.mean(probs[mask]))
+        obs_r_k = float(np.mean(outcomes[mask]))
+        w = n_k / n
+        reliability += w * (mean_p_k - obs_r_k) ** 2
+        resolution += w * (obs_r_k - base_rate) ** 2
+
+    refinement = reliability - resolution
+    return {
+        "brier_score": round(brier_score, 6),
+        "reliability": round(reliability, 6),
+        "resolution": round(resolution, 6),
+        "uncertainty": round(uncertainty, 6),
+        "refinement": round(refinement, 6),
+        "base_rate": round(base_rate, 6),
+        "n": n,
+        "n_bins_used": n_bins_used,
+    }
+
+
+def era_split_stability(
+    dates: np.ndarray,
+    values: np.ndarray,
+    split_date=None,
+    n_splits: int = 2,
+    *,
+    min_n: float = MIN_N_DEFAULT,
+) -> dict:
+    """Two-era (or k-era) stability of a signal or rate series.
+
+    Splits the (dates, values) series into n_splits equal-length chronological eras
+    and computes per-era mean/rate with Wilson CIs, plus a stability verdict.
+
+    Parameters
+    ----------
+    dates      : 1-D array of date labels (str or Timestamp), aligned to values.
+                 Will be sorted chronologically before splitting.
+    values     : 1-D numeric array aligned to dates. Treated as proportions (rates)
+                 for Wilson CI computation: values should be in {0, 1} for a rate
+                 series, or arbitrary floats for a continuous series (Wilson CI is
+                 skipped for non-binary values; only mean and std are returned).
+    split_date : optional explicit split date. If provided and n_splits == 2, this
+                 date is used as the era boundary instead of the median date. Has no
+                 effect when n_splits > 2.
+    n_splits   : number of eras to divide into (default 2 = before/after). Must be ≥ 2.
+    min_n      : minimum observations per era required for a non-insufficient verdict
+                 (default MIN_N_DEFAULT=40).
+
+    Returns
+    -------
+    dict with keys:
+        - 'n_splits'    : int — number of eras.
+        - 'eras'        : list of dicts, one per era, each with:
+              - 'era'       : int — era index (0-based).
+              - 'date_lo'   : str — earliest date in the era.
+              - 'date_hi'   : str — latest date in the era.
+              - 'n'         : int — count.
+              - 'mean'      : float — per-era mean.
+              - 'std'       : float — per-era std.
+              - 'ci_lo'     : float | None — Wilson CI lower (binary series only).
+              - 'ci_hi'     : float | None — Wilson CI upper (binary series only).
+              - 'is_binary' : bool — whether values in this era are all 0/1.
+        - 'verdict'     : str — one of:
+              'consistent'       — all era means have the same sign and no era CI
+                                   is insufficient-n; eras within 2σ of each other.
+              'sign_flip'        — at least one era pair has means of opposite sign.
+              'insufficient_n'   — at least one era has n < min_n.
+              'inconclusive'     — n sufficient but spread exceeds 2σ boundary.
+
+    Statistical contract: this is a descriptive split; it is NOT a statistical test
+    for structural breaks. A "consistent" verdict does not imply stationarity —
+    it means the means do not flip sign and are reasonably close given sampling error.
+    Use block_bootstrap_ci() or block_bootstrap_scalar_ci() for inference on the
+    GAP between eras. No p-hacking knobs are exposed beyond the declared parameters.
+
+    OVERLAP WARNING: on overlapping long-horizon rows each era will have fewer
+    independent observations than n suggests. The Wilson CIs within each era will
+    understate uncertainty. Point to block_bootstrap primitives for confirmed-edge
+    work; this function is for exploratory display-tier stability checks.
+
+    Usage example::
+
+        import numpy as np
+        rng = np.random.default_rng(0)
+        dates = np.array(["2020-01", "2020-02", "2021-01", "2021-02"])
+        values = np.array([1, 1, 0, 0])   # sign-flip across eras
+        result = era_split_stability(dates, values)
+        # → verdict = 'sign_flip'
+    """
+    if n_splits < 2:
+        raise ValueError(f"era_split_stability: n_splits must be ≥ 2 (got {n_splits}).")
+
+    dates = np.asarray(dates)
+    values = np.asarray(values, dtype=float)
+    if len(dates) != len(values):
+        raise ValueError(
+            f"era_split_stability: dates and values must have the same length "
+            f"(got {len(dates)} vs {len(values)})."
+        )
+    if len(dates) == 0:
+        return {"n_splits": n_splits, "eras": [], "verdict": "insufficient_n"}
+
+    # Sort chronologically.
+    order = np.argsort(dates)
+    dates_s = dates[order]
+    values_s = values[order]
+
+    # Determine split boundaries.
+    n = len(dates_s)
+    if n_splits == 2 and split_date is not None:
+        # Explicit split date: find the boundary index.
+        split_str = str(split_date)
+        boundary = int(np.searchsorted(dates_s.astype(str), split_str, side="left"))
+        boundaries = [0, max(1, boundary), n]
+    else:
+        # Equal-length chronological eras.
+        boundaries = [int(round(i * n / n_splits)) for i in range(n_splits + 1)]
+        boundaries[0] = 0
+        boundaries[-1] = n
+
+    era_records: list[dict] = []
+    for era_idx in range(n_splits):
+        lo_i = boundaries[era_idx]
+        hi_i = boundaries[era_idx + 1]
+        era_vals = values_s[lo_i:hi_i]
+        era_dates = dates_s[lo_i:hi_i]
+        n_era = len(era_vals)
+        if n_era == 0:
+            era_records.append({
+                "era": era_idx, "date_lo": None, "date_hi": None,
+                "n": 0, "mean": None, "std": None,
+                "ci_lo": None, "ci_hi": None, "is_binary": False,
+            })
+            continue
+        era_mean = float(np.mean(era_vals))
+        era_std = float(np.std(era_vals, ddof=min(1, n_era - 1)))
+        # Binary check: all values are 0 or 1 (within float tolerance).
+        is_binary = bool(np.all((era_vals == 0.0) | (era_vals == 1.0)))
+        ci_lo: float | None = None
+        ci_hi: float | None = None
+        if is_binary:
+            k_era = int(np.sum(era_vals))
+            ci = wilson_ci(k_era, n_era)
+            if ci:
+                ci_lo, ci_hi = ci
+        era_records.append({
+            "era": era_idx,
+            "date_lo": str(era_dates[0]),
+            "date_hi": str(era_dates[-1]),
+            "n": n_era,
+            "mean": round(era_mean, 6),
+            "std": round(era_std, 6),
+            "ci_lo": ci_lo,
+            "ci_hi": ci_hi,
+            "is_binary": is_binary,
+        })
+
+    # Compute verdict.
+    era_means = [r["mean"] for r in era_records if r["mean"] is not None]
+    era_ns = [r["n"] for r in era_records]
+
+    if any(n_e < min_n for n_e in era_ns):
+        verdict = "insufficient_n"
+    elif len(era_means) < 2:
+        verdict = "insufficient_n"
+    else:
+        # Sign-flip: any pair of eras with means of opposite sign.
+        signs = [1 if m > 0 else (-1 if m < 0 else 0) for m in era_means]
+        has_sign_flip = any(s1 != s2 and s1 != 0 and s2 != 0
+                           for i, s1 in enumerate(signs)
+                           for s2 in signs[i + 1:])
+        if has_sign_flip:
+            verdict = "sign_flip"
+        else:
+            # Consistent: means within 2 pooled std-errors of each other.
+            pooled_std = float(np.mean([r["std"] for r in era_records if r["std"] is not None]))
+            pooled_se = pooled_std / math.sqrt(max(1, min(era_ns)))
+            spread = float(np.max(era_means) - np.min(era_means))
+            if pooled_se == 0.0:
+                # Zero within-era variance: consistent only when era means are equal.
+                # Do NOT force 'consistent' just because pooled_se == 0 — era means may
+                # still differ wildly (e.g. 0.2 vs 0.9 with constant within-era values).
+                if spread <= 1e-12:
+                    verdict = "consistent"
+                else:
+                    verdict = "inconclusive"
+            elif spread <= 2.0 * pooled_se:
+                verdict = "consistent"
+            else:
+                verdict = "inconclusive"
+
+    return {"n_splits": n_splits, "eras": era_records, "verdict": verdict}
+
+
+def eb_shrink(
+    k: np.ndarray | list,
+    n: np.ndarray | list,
+    prior_alpha: float | None = None,
+    prior_beta: float | None = None,
+) -> dict:
+    """Empirical-Bayes beta-binomial shrinkage for an array of binomial cells.
+
+    Shrinks observed rates k_i/n_i toward a Beta(α, β) prior. When prior_alpha
+    and prior_beta are None, α and β are estimated from the provided cells by
+    the method-of-moments estimator on the observed rates and variances.
+
+    Parameters
+    ----------
+    k           : 1-D integer array of success counts (one per cell).
+    n           : 1-D integer array of trial counts (one per cell), aligned to k.
+    prior_alpha : optional fixed Beta prior shape α > 0. If None, estimated from data.
+    prior_beta  : optional fixed Beta prior shape β > 0. If None, estimated from data.
+                  Both prior_alpha and prior_beta must be set together; providing only
+                  one raises ValueError.
+
+    Returns
+    -------
+    dict with keys:
+        - 'shrunk_rates'    : list[float] — posterior mean for each cell,
+                              = (k_i + α) / (n_i + α + β).
+        - 'prior_alpha'     : float — α used (fitted or supplied).
+        - 'prior_beta'      : float — β used (fitted or supplied).
+        - 'prior_mean'      : float — α / (α + β), the prior center.
+        - 'is_fitted'       : bool — True if priors were estimated from the data.
+        - 'n_cells'         : int — number of cells.
+        - 'fit_warning'     : str | None — populated when fitting was unreliable (e.g.
+                              fewer than 3 cells, or variance estimate is near zero).
+
+    IN-SAMPLE FITTING WARNING: when prior_alpha and prior_beta are None (the default),
+    the prior is estimated by method-of-moments on THE SAME CELLS being shrunk. This
+    is in-sample and will under-shrink relative to a held-out prior. Callers MUST label
+    any display surface derived from fitted priors as "in-sample EB" or similar — it is
+    NOT the same as a pre-registered prior. For pre-registered inference, pass explicit
+    prior_alpha and prior_beta that were fixed before outcome contact.
+
+    Statistical contract: the posterior mean for cell i is:
+        shrunk_i = (k_i + α) / (n_i + α + β)
+    which is a weighted average between the raw rate k_i/n_i (weight ∝ n_i) and the
+    prior mean α/(α+β) (weight ∝ α+β). Small-n cells are pulled strongly toward the
+    prior; large-n cells are barely moved (the shrinkage is adaptive by design).
+
+    Usage example::
+
+        # Small-n cells should shrink toward the prior; large-n cells barely move.
+        k = np.array([1, 50])
+        n = np.array([2, 100])
+        result = eb_shrink(k, n, prior_alpha=5.0, prior_beta=5.0)
+        # prior_mean = 5/(5+5) = 0.5
+        # shrunk_rates[0] = (1+5)/(2+10) ≈ 0.50   (small n → pulled to prior)
+        # shrunk_rates[1] = (50+5)/(100+10) ≈ 0.50  (large n → near raw rate 50%)
+    """
+    if (prior_alpha is None) != (prior_beta is None):
+        raise ValueError(
+            "eb_shrink: prior_alpha and prior_beta must both be set or both be None. "
+            "Providing only one is ambiguous."
+        )
+
+    k_arr = np.asarray(k, dtype=float)
+    n_arr = np.asarray(n, dtype=float)
+    if k_arr.shape != n_arr.shape:
+        raise ValueError(
+            f"eb_shrink: k and n must have the same shape "
+            f"(got {k_arr.shape} vs {n_arr.shape})."
+        )
+    n_cells = len(k_arr.ravel())
+    k_flat = k_arr.ravel()
+    n_flat = n_arr.ravel()
+
+    # Guard: a rate primitive must never emit a value > 1.  Catch k > n early.
+    if np.any(k_flat > n_flat):
+        bad = np.where(k_flat > n_flat)[0].tolist()
+        raise ValueError(
+            f"eb_shrink: k must be ≤ n elementwise (rate primitive cannot emit > 1). "
+            f"Offending cell index(es): {bad} — "
+            f"k={k_flat[bad].tolist()}, n={n_flat[bad].tolist()}."
+        )
+
+    fit_warning: str | None = None
+    is_fitted = False
+    alpha: float
+    beta: float
+
+    if prior_alpha is not None and prior_beta is not None:
+        alpha = float(prior_alpha)
+        beta = float(prior_beta)
+    else:
+        # Method-of-moments estimation from the observed rates.
+        is_fitted = True
+        if n_cells < 3:
+            fit_warning = (
+                f"eb_shrink: fewer than 3 cells ({n_cells}) — method-of-moments prior "
+                "is unreliable. Falling back to Beta(1, 1) (uniform prior). "
+                "Pass explicit prior_alpha/prior_beta for more control."
+            )
+            log.warning(fit_warning)
+            alpha, beta = 1.0, 1.0
+        else:
+            # Compute observed rates only for cells with n > 0.
+            valid = n_flat > 0
+            if valid.sum() < 2:
+                fit_warning = (
+                    "eb_shrink: fewer than 2 cells have n > 0 — falling back to "
+                    "Beta(1, 1). Pass explicit prior_alpha/prior_beta."
+                )
+                log.warning(fit_warning)
+                alpha, beta = 1.0, 1.0
+            else:
+                rates = k_flat[valid] / n_flat[valid]
+                mu = float(np.mean(rates))
+                var = float(np.var(rates, ddof=1))
+                # Method-of-moments: mu = α/(α+β), var = α·β/((α+β)²·(α+β+1))
+                # Solving: α+β+1 = mu(1-mu)/var  → α+β = mu(1-mu)/var - 1
+                # Guard: if var=0 or var≥mu(1-mu), the estimator is undefined.
+                if var <= 0 or var >= mu * (1.0 - mu):
+                    fit_warning = (
+                        f"eb_shrink: variance estimate ({var:.6f}) is zero or exceeds "
+                        f"mu*(1-mu)={mu*(1-mu):.6f} — method-of-moments is undefined. "
+                        "Falling back to Beta(1, 1). Pass explicit prior_alpha/prior_beta."
+                    )
+                    log.warning(fit_warning)
+                    alpha, beta = 1.0, 1.0
+                else:
+                    concentration = mu * (1.0 - mu) / var - 1.0
+                    alpha = float(max(0.01, mu * concentration))
+                    beta = float(max(0.01, (1.0 - mu) * concentration))
+
+    prior_mean = alpha / (alpha + beta)
+
+    shrunk: list[float] = []
+    for k_i, n_i in zip(k_flat, n_flat):
+        if n_i <= 0:
+            # No data: return prior mean.
+            shrunk.append(round(prior_mean, 6))
+        else:
+            posterior_mean = (k_i + alpha) / (n_i + alpha + beta)
+            shrunk.append(round(float(posterior_mean), 6))
+
+    return {
+        "shrunk_rates": shrunk,
+        "prior_alpha": round(alpha, 6),
+        "prior_beta": round(beta, 6),
+        "prior_mean": round(prior_mean, 6),
+        "is_fitted": is_fitted,
+        "n_cells": n_cells,
+        "fit_warning": fit_warning,
+    }
+
+
+# ══════════════════════════════════════════════════════════════════════════════════════
 # FUTURE CONVERGENCE NOTE
 # ══════════════════════════════════════════════════════════════════════════════════════
 #

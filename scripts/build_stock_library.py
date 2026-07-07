@@ -787,6 +787,255 @@ def _spotlight_for(sector: str | None, memberships: list[dict] | None,
                        sector_etf=etf, sector_row=sector_row, oracle_t=oracle_t)
 
 
+def _personality_inputs(
+    ticker: str,
+    rec: dict,
+    ohlcv_df: "pd.DataFrame | None",
+    as_of: str,
+    dna_class_entry: "dict | None",
+    bsk_mem_entry: "list[dict] | None",
+    etf_wt: "float | None",
+    oracle_active: "bool | None",
+    days_to_earnings: "float | None" = None,
+) -> dict:
+    """Map a build_stock_library rec to engine.stock_personality.assess() kwargs.
+
+    Pure function (no I/O) — all inputs are pre-computed by the caller.
+    This is the W2b sourcing contract (see assess() docstring §W2b caller sourcing contract).
+
+    Sourcing decisions
+    ------------------
+    vol_squeeze_state  ← rec["vol_squeeze"]["state"]
+    ret_21d            ← close.pct_change(21) as a fraction (NOT percent) from ohlcv_df or
+                         rec["tech"]["price"] path fallback → None when neither available
+    months_underwater  ← engine.entry_primitives.time_underwater_series(close) tail / 21.0
+                         Requires ohlcv_df close column ≥300 bars; else None.
+    hv_pctile          ← rec["tech"]["hv_pctile"] (0-100 scale, from stock_technicals)
+    rel_volume         ← rec["tech"]["rel_volume"]
+    obv_slope_up       ← rec["tech"]["obv_slope_up"]
+    off_52w_high_pct   ← rec["tech"]["off_52w_high_pct"] — SIGNED NEGATIVE pct below high
+    gex.gamma_regime   ← rec["gex"]["gamma_regime"] (renamed from "regime" in older payloads)
+    gex.dist_to_flip   ← rec["gex"]["dist_to_flip_pct"]
+    short_pct_float    ← rec["positioning"]["short"]["pct_float"] (PERCENT 0-100)
+    days_to_cover      ← rec["positioning"]["short"]["days_to_cover"]
+    insider_*          ← rec["positioning"]["insider"] fields
+    market_cap         ← rec["profile"]["mktcap_bn"] * 1e9 (factors.json field, bn → USD)
+    attention_z        ← None (wiki attention z not yet wired per R-SP6; forward-ledger only)
+    bo_regime          ← rec["beneficial_ownership"]["regime"]
+    basket_membership  ← list of slug strings from bsk_mem_entry
+    etf_weight_max     ← etf_wt (pre-loaded max weight_pct across all ETFs)
+    oracle_episode     ← oracle_active (pre-mapped from oracle_state.json)
+    events             ← {"days_to_earnings": days_to_earnings} when days_to_earnings is not
+                         None; otherwise None.  Caller passes _edays(ticker) from the
+                         earnings-calendar closure (engine.stock_fundamentals._load_earnings).
+    archetype          ← rec["profile"]["archetype"]
+    dna_class          ← dna_class_entry (T-1 by design)
+    """
+    _tech = rec.get("tech") or {}
+    _pos = rec.get("positioning") or {}
+    _pos_short = _pos.get("short") or {} if isinstance(_pos, dict) else {}
+    _pos_insider = _pos.get("insider") or {} if isinstance(_pos, dict) else {}
+    _profile = rec.get("profile") or {}
+    _gex = rec.get("gex") or {}
+    _sm = rec.get("smart_money") or {}
+    _bo = rec.get("beneficial_ownership") or {}
+
+    # ---- ret_21d: FRACTION from OHLCV close; fallback to None ----
+    ret_21d: "float | None" = None
+    if ohlcv_df is not None and "close" in ohlcv_df.columns and len(ohlcv_df) >= 22:
+        try:
+            _c = ohlcv_df["close"].dropna()
+            if len(_c) >= 22:
+                ret_21d = float(_c.iloc[-1] / _c.iloc[-22] - 1.0)
+        except Exception:  # noqa: BLE001
+            pass
+
+    # ---- months_underwater: bars/21 from entry_primitives.time_underwater_series ----
+    months_underwater: "float | None" = None
+    if ohlcv_df is not None and "close" in ohlcv_df.columns and len(ohlcv_df) >= 300:
+        try:
+            from engine.entry_primitives import time_underwater_series  # noqa: PLC0415
+            _c_all = ohlcv_df["close"].dropna()
+            _tu = time_underwater_series(_c_all)
+            if _tu is not None and len(_tu) > 0:
+                _last = _tu.iloc[-1]
+                if _last is not None and not (isinstance(_last, float) and __import__("math").isnan(_last)):
+                    months_underwater = float(_last) / 21.0
+        except Exception:  # noqa: BLE001
+            pass
+
+    # ---- Positioning map per assess() contract ----
+    _positioning = {
+        "short_pct_float": _pos_short.get("pct_float"),
+        "days_to_cover": _pos_short.get("days_to_cover"),
+        "insider_net_usd_mn": _pos_insider.get("net_mn"),
+        "insider_cluster": _pos_insider.get("cluster"),
+        "insider_n_buyers": _pos_insider.get("n_buyers"),
+    }
+
+    # ---- smart_money map (ownership_hhi, n_holders from 13F) ----
+    _sm_holders = _sm.get("holders") or []
+    _smart_money = {
+        "ownership_hhi": _sm.get("ownership_hhi"),
+        "n_holders": len(_sm_holders) if _sm_holders else None,
+    }
+
+    # ---- GEX map ----
+    _gex_map: "dict | None" = None
+    if _gex:
+        _gex_regime = _gex.get("gamma_regime") or _gex.get("regime")
+        _gex_dist = _gex.get("dist_to_flip_pct")
+        _gex_map = {"gamma_regime": _gex_regime, "dist_to_flip_pct": _gex_dist}
+
+    # ---- tech map per assess() contract ----
+    _tech_map = {
+        "hv_pctile": _tech.get("hv_pctile"),
+        "rel_volume": _tech.get("rel_volume"),
+        "obv_slope_up": _tech.get("obv_slope_up"),
+        "off_52w_high_pct": _tech.get("off_52w_high_pct"),
+        "ret_21d": ret_21d,
+        "months_underwater": months_underwater,
+        "vol_squeeze_state": (rec.get("vol_squeeze") or {}).get("state"),
+        "ladder_state": (rec.get("ladder") or {}).get("state"),
+    }
+
+    # ---- basket_membership: list of slug strings ----
+    _bsk = [m["slug"] for m in (bsk_mem_entry or []) if m.get("slug")]
+
+    # ---- events: days_to_earnings from caller-provided parameter ----
+    # Caller passes _edays(ticker) from the earnings-calendar closure.
+    # rec["tech"] never carries days_to_earnings; rec["profile"]["earnings"]["days_to_next"]
+    # is also never populated — both were dead sourcing paths (W2b fix finding 2).
+    _events: "dict | None" = None
+    if days_to_earnings is not None:
+        try:
+            _events = {"days_to_earnings": int(days_to_earnings)}
+        except (TypeError, ValueError):
+            pass
+
+    # ---- market_cap ----
+    _mktcap: "float | None" = None
+    _mktcap_bn = _profile.get("mktcap_bn")
+    if _mktcap_bn is not None:
+        try:
+            _mktcap = float(_mktcap_bn) * 1e9
+        except (TypeError, ValueError):
+            pass
+
+    # ---- archetype ----
+    _arch = _profile.get("archetype")
+
+    # ---- bo_regime ----
+    _bo_regime = _bo.get("regime") if _bo else None
+
+    # ---- dna_class dict for assess() ----
+    _dna: "dict | None" = None
+    if dna_class_entry and dna_class_entry.get("dna_class"):
+        _dna = {
+            "key": dna_class_entry["dna_class"],
+            "style_regime": dna_class_entry.get("style_regime"),
+            "as_of": dna_class_entry.get("as_of", "T-1"),
+        }
+
+    return {
+        "as_of": as_of,
+        "path_features": None,  # filled by caller after path_personality.features()
+        "archetype": _arch,
+        "dna_class": _dna,
+        "positioning": _positioning,
+        "smart_money": _smart_money,
+        "basket_membership": _bsk if _bsk else None,
+        "etf_weight_max": etf_wt,
+        "attention_z": None,      # wiki attention not yet wired; forward-ledger only
+        "bo_regime": _bo_regime,
+        "gex": _gex_map,
+        "events": _events,
+        "tech": _tech_map,
+        "oracle_episode_active": oracle_active,
+        "market_cap": _mktcap,
+    }
+
+
+def _stamp_personality_forward_ledger(
+    sp_by_ticker: "dict[str, dict]",
+    build_date: "str | None",
+    cfg,
+) -> None:
+    """Append per-fire personality stamps to data/stock_personality/forward_ledger.parquet.
+
+    Reads data/signal_archive/track_record.parquet for today's buy/rebuy fires.
+    For each fire with a personality object, appends one row.
+    Deduped on (ticker, date, type); single-writer (nightly engine job is sole advancer).
+    Fail-open: any error is logged at warning and the ledger is left unchanged.
+
+    Nightly engine job is the SOLE ADVANCER of this ledger.
+    Intraday lanes DISCARD data/ writes per house law.
+    """
+    if not sp_by_ticker or not build_date:
+        return
+    try:
+        _tr_path = cfg.data_dir() / "signal_archive" / "track_record.parquet"
+        if not _tr_path.exists():
+            return
+        _tr = pd.read_parquet(_tr_path, columns=["ticker", "date", "type"])
+        _today_fires = _tr[
+            (_tr["date"].astype(str) == str(build_date)) &
+            (_tr["type"].isin(["buy", "rebuy"]))
+        ]
+        if _today_fires.empty:
+            return
+        _rows = []
+        for _, _fire in _today_fires.iterrows():
+            _ftk = str(_fire["ticker"])
+            _sp = sp_by_ticker.get(_ftk)
+            if _sp is None:
+                continue
+            _base = _sp.get("base") or {}
+            _cm = _sp.get("current_mode") or {}
+            _chart = (_base.get("chart_personality") or {}).get("labels")
+            _own = (_base.get("ownership_habitat") or {}).get("labels")
+            _micro = (_base.get("microstructure") or {}).get("labels")
+            _rows.append({
+                "ticker": _ftk,
+                "date": str(_fire["date"]),
+                "type": str(_fire["type"]),
+                "archetype": (_base.get("archetype") or {}).get("key"),
+                "dna_class": (_base.get("dna_class") or {}).get("key"),
+                "chart": json.dumps(_chart) if _chart is not None else None,
+                "ownership": json.dumps(_own) if _own is not None else None,
+                "micro": json.dumps(_micro) if _micro is not None else None,
+                "modes": json.dumps(_cm.get("modes")) if _cm.get("modes") is not None else None,
+                "lineage": "stock_personality.v1",
+            })
+        if not _rows:
+            return
+        _new_df = pd.DataFrame(_rows)
+        _fl_path = cfg.data_dir() / "stock_personality" / "forward_ledger.parquet"
+        _fl_path.parent.mkdir(parents=True, exist_ok=True)
+        _appended = len(_new_df)  # tracks post-dedup rows actually written (default: all)
+        if _fl_path.exists():
+            try:
+                _exist = pd.read_parquet(_fl_path)
+                # Dedup on (ticker, date, type)
+                _exist_keys = set(zip(_exist["ticker"], _exist["date"], _exist["type"]))
+                _new_df = _new_df[
+                    ~_new_df.apply(
+                        lambda r: (r["ticker"], r["date"], r["type"]) in _exist_keys, axis=1
+                    )
+                ]
+                _appended = len(_new_df)  # post-dedup: rows actually being appended
+                if not _new_df.empty:
+                    _new_df = pd.concat([_exist, _new_df], ignore_index=True)
+                else:
+                    _new_df = _exist
+            except Exception:  # noqa: BLE001 — corrupt existing → overwrite
+                pass
+        _new_df.to_parquet(_fl_path, compression="snappy", index=False)
+        log.info("personality forward ledger: +%d new rows (total=%d)", _appended, len(_new_df))
+    except Exception as _fl_e:  # noqa: BLE001 — additive, never fatal
+        log.warning("personality forward ledger stamp failed (%s)", _fl_e)
+
+
 def main() -> int:
     site = config.ROOT / config.load()["storage"]["site_dir"]
     outdir = site / "stockdata"
@@ -971,6 +1220,97 @@ def main() -> int:
     fragility_map = compute_fragility()
     basket_tw = _basket_tailwind_map()          # Conviction "upside / theme tailwind" axis
     bsk_mem = _basket_membership_map()          # all active basket memberships (display-only)
+    # ---- stock_personality.v1 pre-loop loads -----------------------------------
+    # All hoisted outside the loop; never re-read per ticker.
+    _sp_dna_class: "dict[str, dict]" = {}      # ticker -> {key, style_regime, as_of} from dna_class.json (T-1)
+    _sp_dna_as_of: "str | None" = None
+    try:
+        _dna_p = site / "factordata" / "dna_class.json"
+        if _dna_p.exists():
+            _dna_doc = json.loads(_dna_p.read_text())
+            _sp_dna_class = _dna_doc.get("per_ticker") or {}
+            _sp_dna_as_of = _dna_doc.get("as_of")
+            log.info("dna_class.json loaded: %d tickers (as_of=%s)", len(_sp_dna_class), _sp_dna_as_of)
+    except Exception as _sp_dna_e:  # noqa: BLE001 — additive, never fatal
+        log.debug("dna_class.json load skipped (%s)", _sp_dna_e)
+    # ETF weight max per ticker from newest data/etf_holdings/<ETF>/*.parquet snapshots.
+    _sp_etf_wt: "dict[str, float]" = {}         # ticker -> max weight_pct across all ETFs
+    try:
+        _etf_dir = config.data_dir() / "etf_holdings"
+        if _etf_dir.exists():
+            _etf_frames: list["pd.DataFrame"] = []
+            for _etf_sub in _etf_dir.iterdir():
+                if not _etf_sub.is_dir():
+                    continue
+                _snaps = sorted(_etf_sub.glob("*.parquet"))
+                if not _snaps:
+                    continue
+                try:
+                    _df = pd.read_parquet(_snaps[-1])
+                    if "ticker" in _df.columns and "weight_pct" in _df.columns:
+                        _etf_frames.append(_df[["ticker", "weight_pct"]])
+                except Exception:  # noqa: BLE001
+                    pass
+            if _etf_frames:
+                _etf_all = pd.concat(_etf_frames, ignore_index=True)
+                _sp_etf_wt = _etf_all.groupby("ticker")["weight_pct"].max().to_dict()
+                log.info("ETF weight max: %d tickers from etf_holdings snapshots", len(_sp_etf_wt))
+    except Exception as _sp_etf_e:  # noqa: BLE001 — additive, never fatal
+        log.debug("ETF weight max load skipped (%s)", _sp_etf_e)
+    # Oracle episode-active map: sector -> bool (is any complex for this sector in active episode)
+    # Reads site/basketdata/oracle_state.json once. Sector mapping mirrors engine.spotlight.GICS_TO_ETF
+    # (ETF-based proxy). A complex is "active" when state not in {quiet, None}.
+    # Cheaply importable: direct JSON read (no engine module).
+    # Semantics: dict contains only sectors that ARE in GICS_TO_ETF; .get(sector) returns
+    # None (unknown) for sectors outside the mapped key set — not False (mapped-and-quiet).
+    _sp_oracle_active: "dict[str, bool]" = {}   # GICS sector string -> bool; absent = unknown
+    try:
+        _oracle_st_p = site / "basketdata" / "oracle_state.json"
+        if _oracle_st_p.exists():
+            _oracle_doc = json.loads(_oracle_st_p.read_text())
+            # Map ETF -> bool (any complex with that ETF code has active episode)
+            from engine.spotlight import GICS_TO_ETF as _GICS_TO_ETF  # noqa: PLC0415
+            # oracle complex ids approximate sector ETFs; use a hard mapping table for
+            # the closed complex set (frozen in oracle state):
+            _ORACLE_COMPLEX_TO_ETF: dict[str, str] = {
+                "ai_compute": "XLK", "software": "XLK", "long_duration_growth": "XLK",
+                "healthcare_defensive": "XLV",
+                "consumer_staples_defensive": "XLP",
+                "energy_commodities": "XLE",
+                "financials_rates": "XLF",
+                "short_duration_value": "XLF",
+            }
+            _etf_active: set[str] = set()
+            for _cx in (_oracle_doc.get("complexes") or []):
+                _cstate = _cx.get("state")
+                _cx_id = _cx.get("id", "")
+                if _cstate and _cstate not in ("quiet",):
+                    _cxetf = _ORACLE_COMPLEX_TO_ETF.get(_cx_id)
+                    if _cxetf:
+                        _etf_active.add(_cxetf)
+                    else:
+                        log.debug("oracle complex '%s' not in _ORACLE_COMPLEX_TO_ETF — update map if this is a new complex", _cx_id)
+            # Invert GICS_TO_ETF: sector -> bool (only mapped sectors; absent = sector unknown)
+            for _gs, _ge in _GICS_TO_ETF.items():
+                _sp_oracle_active[_gs] = _ge in _etf_active
+    except Exception as _sp_orc_e:  # noqa: BLE001 — additive, never fatal
+        log.debug("oracle episode active map skipped (%s)", _sp_orc_e)
+    # Species registry for setup_compatibility — loaded once.
+    _sp_species_entries: "list[dict]" = []
+    try:
+        _sp_reg_p = config.data_dir() / "species" / "registry.json"
+        if _sp_reg_p.exists():
+            _sp_reg_doc = json.loads(_sp_reg_p.read_text())
+            _sp_species_entries = _sp_reg_doc.get("species") or []
+            log.info("species registry: %d entries loaded for setup_compatibility", len(_sp_species_entries))
+    except Exception as _sp_reg_e:  # noqa: BLE001 — additive, never fatal
+        log.debug("species registry load skipped (%s)", _sp_reg_e)
+    # Personality pass timing accumulator (sum of per-ticker personality try-block elapsed)
+    _sp_elapsed_acc: float = 0.0
+    _sp_n_tickers = 0
+    # Container for personality objects (ticker -> personality dict) for post-loop passes
+    _sp_by_ticker: "dict[str, dict]" = {}
+    # -------------------------------------------------------------------
     spotlight_ctx = _spotlight_context()        # theme intel + sector stage for the spotlight tilt
     # Sector Pulse — per-ticker theme-heat context for the stockdata JSON and standout cards.
     # Computed ONCE here: build_pulse + ticker_themes, then looked up per name.
@@ -1011,23 +1351,6 @@ def main() -> int:
         log.info("sector_pulse: %d tickers mapped to themes", len(_sector_pulse_map))
     except Exception as _spe:  # noqa: BLE001 — additive; pulse failure must not break the build
         log.warning("sector_pulse precompute skipped (%s)", _spe)
-    # Neural Web sponsorship — SRSS Phase 4 per-ticker chip (DISPLAY-ONLY, never scored).
-    # A LIGHT read+join off the already-written shadow parquet
-    # (data/spine/subsector_sponsorship.parquet, written nightly by
-    # engine.spine.write_subsector_sponsorship) — no recomputation of the join/
-    # classification rules here. Computed ONCE, looked up per name below; absent
-    # for any ticker with no live match (never a fabricated read).
-    _sponsorship_map: "dict[str, dict]" = {}
-    try:
-        from engine import subsector_sponsorship as _ssp
-        for _spo_row in _ssp.load_display_rows():
-            en, zh = _ssp.plain_language(
-                _spo_row["name"], _spo_row.get("name_zh"),
-                _spo_row["sponsorship_state"], _spo_row.get("rs_mom"))
-            _sponsorship_map[_spo_row["ticker"]] = {**_spo_row, "plain_en": en, "plain_zh": zh}
-        log.info("sponsorship: %d tickers with a live SRSS match", len(_sponsorship_map))
-    except Exception as _spoe:  # noqa: BLE001 — additive; must not break the stockdata build
-        log.warning("sponsorship precompute skipped (%s)", _spoe)
     # per-stock Macro-sensitivity context (rate-beta tier + duration + live-regime
     # head/tailwind + inflation label) — reads factor_betas.json (written by build_site
     # just before this) + data/transmission/latest.json (the Rate & Inflation Transmission
@@ -1672,6 +1995,43 @@ def main() -> int:
                     rec["dt_contra"] = dtc
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.warning("dt-contra for %s failed (%s)", ticker, e)
+        # ---- stock_personality.v1 pass (display-only; fail-open; never fatal) ----
+        # Runs after dt_contra so all prior blocks (tech, vol_squeeze, gex, positioning,
+        # smart_money, basket_membership) are already on rec. OHLCV frame reuses _ohlcv
+        # (loaded above for the tech/squeeze pass). path_personality.features() computes
+        # only trailing windows (cheap snapshot API — no full-history series).
+        _sp_tick_t0 = time.time()
+        try:
+            import engine.path_personality as _ppath  # noqa: PLC0415
+            import engine.stock_personality as _spers  # noqa: PLC0415
+            # Build OHLCV frame for path_personality: prefer _ohlcv (full OHLCV);
+            # fallback to a close-only DataFrame from the universe's close series.
+            _sp_ohlcv = _ohlcv
+            if _sp_ohlcv is None:
+                _sp_ohlcv = pd.DataFrame({"close": close})
+            # Compute path features (cheap snapshot — only trailing windows)
+            _pfeats = _ppath.features(_sp_ohlcv)
+            # Build inputs map from rec
+            _sp_asof = str(rec.get("asof") or alpha_asof or "")
+            _sp_inputs = _personality_inputs(
+                ticker, rec, _sp_ohlcv, _sp_asof,
+                dna_class_entry=_sp_dna_class.get(ticker),
+                bsk_mem_entry=bsk_mem.get(ticker),
+                etf_wt=_sp_etf_wt.get(ticker),
+                oracle_active=_sp_oracle_active.get(sector),
+                days_to_earnings=_edays(ticker),
+            )
+            _sp_inputs["path_features"] = _pfeats
+            _personality = _spers.assess(ticker, **_sp_inputs)
+            _personality["setup_compatibility"] = _spers.setup_compatibility(
+                _personality, _sp_species_entries
+            )
+            rec["personality"] = _personality
+            _sp_by_ticker[ticker] = _personality
+            _sp_n_tickers += 1
+            _sp_elapsed_acc += time.time() - _sp_tick_t0
+        except Exception as _sp_e:  # noqa: BLE001 — display chip; NEVER fatal
+            log.debug("personality pass for %s skipped (%s)", ticker, _sp_e)
         _tech = rec.get("tech") or {}
         disp_map[ticker] = {
             "price": _tech.get("price"), "off_high": _tech.get("off_52w_high_pct"),
@@ -1699,13 +2059,63 @@ def main() -> int:
                 rec["sector_pulse"] = _sp_row
         except Exception as _spe2:  # noqa: BLE001 — additive; must not break the stockdata build
             pass
-        # Neural Web sponsorship chip — absent when this ticker has no live SRSS match.
+        # ---- confluence block (frozen Terminal contract, 2026-07-06) ---------------
+        # Top-level block in each stockdata JSON consumed by the charting-app Terminal.
+        # Shape: {tier, weight, sub, ticks, bars_to_cross, provisional, not_topped,
+        #         htf_s1, htf_s2, asof} (null-safe; all keys always present).
+        # Source: signal_gate verdict already computed above. Keep cheap — no new loads.
         try:
-            _spo_row = _sponsorship_map.get(ticker) or _sponsorship_map.get(ticker.upper())
-            if _spo_row:
-                rec["sponsorship"] = _spo_row
-        except Exception:  # noqa: BLE001 — additive; must not break the stockdata build
-            pass
+            _sv = sig_verdict.get(ticker) or {}
+            rec["confluence"] = {
+                "tier": _sv.get("tier_cascade"),
+                "weight": _sv.get("weight"),
+                "sub": _sv.get("tier_sub"),
+                "ticks": _sv.get("ticks"),
+                "bars_to_cross": _sv.get("bars_to_cross"),
+                "provisional": bool(_sv.get("provisional")),
+                "not_topped": bool(_sv.get("not_topped", True)),
+                "htf_s1": bool(_sv.get("htf_s1", False)),
+                "htf_s2": bool(_sv.get("htf_s2", False)),
+                "asof": _sv.get("asof"),
+            }
+        except Exception:  # noqa: BLE001 — additive; never fatal
+            rec["confluence"] = {"tier": None, "weight": None, "sub": None, "ticks": None,
+                                 "bars_to_cross": None, "provisional": False,
+                                 "not_topped": True, "htf_s1": False, "htf_s2": False,
+                                 "asof": None}
+        # ---- sniper pre-compute (frozen Terminal contract, 2026-07-06) -----------
+        # Compute w2_washout/w2_stoch_d + days_since_63d_low here (close is in scope).
+        # coiled is deferred to after coiled_by is built (after the main loop) and injected
+        # in the final to_write loop. Store partial sniper block now; complete later.
+        try:
+            from engine import setup_tier as _st  # lazy import; module cached after first use
+            _ws = _st.w_setup(close)
+            _w2_washout = False
+            _w2_stoch_d: float | None = None
+            if _ws:
+                _w2d = (_ws.get("w2") or {})
+                _stoch_val = _w2d.get("stoch")
+                if _stoch_val is not None:
+                    _w2_washout = bool(_stoch_val <= _st.W2_STOCH_WASHOUT)
+                    _w2_stoch_d = float(_stoch_val)
+            # days_since_63d_low: trading sessions since close hit its 63-session low
+            _ds63: int | None = None
+            _c63 = close.dropna()
+            if len(_c63) >= 63:
+                _w63 = _c63.iloc[-63:]
+                _low63_pos = int(_w63.argmin())
+                _ds63 = int(len(_w63) - 1 - _low63_pos)
+            _asof_snap = str(close.index[-1].date()) if len(close) else None
+            rec["sniper"] = {
+                "w2_washout": _w2_washout,
+                "w2_stoch_d": _w2_stoch_d,
+                "days_since_63d_low": _ds63,
+                "coiled": None,          # filled after coiled_by is computed below
+                "asof": _asof_snap,
+            }
+        except Exception:  # noqa: BLE001 — additive; never fatal
+            rec["sniper"] = {"w2_washout": False, "w2_stoch_d": None,
+                             "days_since_63d_low": None, "coiled": None, "asof": None}
         safe = ticker.replace("=", "_").replace("^", "_")
         to_write.append((safe, rec))            # deferred: write after percentile scoring
         idx = {"t": ticker, "n": name, "s": sector, "st": rec["ladder"]["state"]}
@@ -1799,6 +2209,139 @@ def main() -> int:
         except Exception as _w3e:  # noqa: BLE001 — W3 evidence is additive, never fatal
             log.warning("W3 evidence collection for %s failed (%s)", ticker, _w3e)
         built += 1
+    # ---- stock_personality.v1 benchmark gate ----------------------------------------
+    log.info("personality pass: %.1fs over %d tickers", _sp_elapsed_acc, _sp_n_tickers)
+    # ---- stock_personality.v1 panel append ------------------------------------------
+    # Append today's per-ticker label rows to data/stock_personality/panel/YYYY-MM/panel.parquet
+    # (gitignored-local; R2-published via publish_r2). Fail-open: any write error is logged.
+    if _sp_by_ticker:
+        try:
+            # PIT stamp: use alpha_asof (the trading-date source) so the (ticker, date) join
+            # is correct.  The 02:00-UTC cron makes utcnow().date() = trading date + 1.
+            if alpha_asof is None:
+                log.warning("personality panel: alpha_asof is None — falling back to wall-clock date (PIT may be off by 1 day)")
+                _today_str = str(pd.Timestamp.utcnow().date())
+            else:
+                _today_str = str(alpha_asof)[:10]
+            _panel_month = _today_str[:7]   # "YYYY-MM"
+            _panel_root = config.data_dir() / "stock_personality" / "panel" / _panel_month
+            _panel_root.mkdir(parents=True, exist_ok=True)
+            _panel_path = _panel_root / "panel.parquet"
+            _panel_rows = []
+            for _sp_tk, _sp_p in _sp_by_ticker.items():
+                _base = _sp_p.get("base") or {}
+                _cm = _sp_p.get("current_mode") or {}
+                _chart_labels = (_base.get("chart_personality") or {}).get("labels")
+                _own_labels = (_base.get("ownership_habitat") or {}).get("labels")
+                _micro_labels = (_base.get("microstructure") or {}).get("labels")
+                _modes = _cm.get("modes")
+                _cov = (_sp_p.get("evidence") or {}).get("coverage") or {}
+                _panel_rows.append({
+                    "ticker": _sp_tk,
+                    "date": _today_str,
+                    "archetype_key": ((_base.get("archetype") or {}).get("key")),
+                    "dna_class_key": ((_base.get("dna_class") or {}).get("key")),
+                    "chart_labels": json.dumps(_chart_labels) if _chart_labels is not None else None,
+                    "ownership_labels": json.dumps(_own_labels) if _own_labels is not None else None,
+                    "micro_labels": json.dumps(_micro_labels) if _micro_labels is not None else None,
+                    "modes": json.dumps(_modes) if _modes is not None else None,
+                    "cov_archetype": _cov.get("archetype"),
+                    "cov_dna": _cov.get("dna_class"),
+                    "cov_ownership": _cov.get("ownership"),
+                    "cov_micro": _cov.get("micro"),
+                    "cov_chart": _cov.get("chart"),
+                })
+            _new_df = pd.DataFrame(_panel_rows)
+            if _panel_path.exists():
+                try:
+                    _exist_df = pd.read_parquet(_panel_path)
+                    # Drop same (ticker, date) rows before appending (dedup idempotent)
+                    _exist_df = _exist_df[
+                        ~(_exist_df["ticker"].isin(_new_df["ticker"]) &
+                          (_exist_df["date"] == _today_str))
+                    ]
+                    _new_df = pd.concat([_exist_df, _new_df], ignore_index=True)
+                except Exception:  # noqa: BLE001 — corrupt existing → overwrite
+                    pass
+            _new_df.to_parquet(_panel_path, compression="snappy", index=False)
+            log.info("personality panel: wrote %d rows to %s", len(_new_df), _panel_path)
+        except Exception as _sp_panel_e:  # noqa: BLE001 — additive, never fatal
+            log.warning("personality panel write failed (%s)", _sp_panel_e)
+    # ---- stock_personality.v1 site aggregate ----------------------------------------
+    # Write site/factordata/stock_personality.json (slim, git-committed).
+    try:
+        if _sp_by_ticker:
+            # PIT stamp: use alpha_asof (trading date) to match the panel row date.
+            if alpha_asof is None:
+                log.warning("stock_personality.json: alpha_asof is None — falling back to wall-clock date")
+                _sp_today = str(pd.Timestamp.utcnow().date())
+            else:
+                _sp_today = str(alpha_asof)[:10]
+            # Coverage fractions across universe
+            _all_cov: dict[str, list[float]] = {}
+            _all_arch: dict[str, int] = {}
+            _all_dna: dict[str, int] = {}
+            _all_chart: dict[str, int] = {}
+            _all_own: dict[str, int] = {}
+            _all_micro: dict[str, int] = {}
+            _all_mode: dict[str, int] = {}
+            _per_ticker: dict[str, dict] = {}
+            for _sp_tk, _sp_p in _sp_by_ticker.items():
+                _base = _sp_p.get("base") or {}
+                _cm = _sp_p.get("current_mode") or {}
+                _cov = (_sp_p.get("evidence") or {}).get("coverage") or {}
+                for _axis, _val in _cov.items():
+                    if _val is not None:
+                        _all_cov.setdefault(_axis, []).append(float(_val))
+                _ak = (_base.get("archetype") or {}).get("key")
+                _dk = (_base.get("dna_class") or {}).get("key")
+                _cl = (_base.get("chart_personality") or {}).get("labels") or []
+                _ol = (_base.get("ownership_habitat") or {}).get("labels") or []
+                _ml = (_base.get("microstructure") or {}).get("labels") or []
+                _md = _cm.get("modes") or []
+                if _ak:
+                    _all_arch[_ak] = _all_arch.get(_ak, 0) + 1
+                if _dk:
+                    _all_dna[_dk] = _all_dna.get(_dk, 0) + 1
+                for _lbl in _cl:
+                    _all_chart[_lbl] = _all_chart.get(_lbl, 0) + 1
+                for _lbl in _ol:
+                    _all_own[_lbl] = _all_own.get(_lbl, 0) + 1
+                for _lbl in _ml:
+                    _all_micro[_lbl] = _all_micro.get(_lbl, 0) + 1
+                for _m in _md:
+                    _all_mode[_m] = _all_mode.get(_m, 0) + 1
+                _per_ticker[_sp_tk] = {
+                    "arch": _ak, "dna": _dk,
+                    "chart": _cl, "own": _ol,
+                    "micro": _ml, "modes": _md,
+                }
+            _sp_agg = {
+                "schema": "stock_personality.v1",
+                "as_of": _sp_today,
+                "n_tickers": len(_sp_by_ticker),
+                "coverage": {ax: round(sum(vals)/len(vals), 3)
+                             for ax, vals in _all_cov.items() if vals},
+                "label_distributions": {
+                    "archetype": _all_arch,
+                    "dna_class": _all_dna,
+                    "chart_personality": _all_chart,
+                    "ownership_habitat": _all_own,
+                    "microstructure": _all_micro,
+                    "current_mode": _all_mode,
+                },
+                "per_ticker": _per_ticker,
+            }
+            _sp_agg_path = site / "factordata" / "stock_personality.json"
+            _sp_agg_path.write_text(json.dumps(_sp_agg, default=str))
+            log.info("stock_personality.json: %d tickers written", len(_per_ticker))
+    except Exception as _sp_agg_e:  # noqa: BLE001 — additive, never fatal
+        log.warning("stock_personality site aggregate write failed (%s)", _sp_agg_e)
+    # ---- stock_personality.v1 forward-ledger stamp ---------------------------------
+    # Append one row per new buy/rebuy fire TODAY that has a personality object.
+    # Single-writer: only the nightly engine job advances this ledger.
+    _stamp_personality_forward_ledger(_sp_by_ticker, alpha_asof, config)
+    # ---------------------------------------------------------------------------
     # ---- W0.2 Stage C: US signal_gate NEAR-MISS capture (masterplan §5.2 move 2) ----
     # signal_gate.gate() annotates verdicts that failed EXACTLY ONE Appendix-A
     # condition (freshness_expired / not_topped_veto — the two signal_gate-emitted
@@ -1957,6 +2500,17 @@ def main() -> int:
     except Exception as _e:  # noqa: BLE001 — additive; board degrades gracefully without bonus
         log.warning("coiled bonus skipped (%s)", _e)
         coiled_by = {}
+    # Inject coiled into sniper blocks now that coiled_by is available.
+    # sniper["coiled"] was left as None during the main loop because coiled_by
+    # is a cross-sectional compute (needs the full cohort to set fractions).
+    for _safe, _rec in to_write:
+        try:
+            _t = _rec.get("ticker", _safe.replace("_", "="))
+            _sniper = _rec.get("sniper")
+            if _sniper is not None:
+                _sniper["coiled"] = bool((coiled_by.get(_t) or {}).get("coiled")) or None
+        except Exception:  # noqa: BLE001 — additive; never fatal
+            pass
     # G6a donor-sector context chip: compute once cross-sectionally after the loop.
     # Uses the same sector map as the COILED bonus (_coil_sector).  DISPLAY-ONLY —
     # never a gate, never changes ranking.  Additive + graceful: failure -> None.
@@ -2686,6 +3240,18 @@ def main() -> int:
                     r["confluence_plus"] = {"k": _c_votes, "groups": _c_groups}
             except Exception as _cpe:  # noqa: BLE001 — display-only; never fatal
                 pass
+            # B2+B3 Buy Decision Packet dossier — compact per-row join (display-only).
+            # Built LAST in the loop so all chips (conviction, signal, hold, earnings_soon,
+            # near_miss_reason) are already attached.  Fail-open: error → dossier absent.
+            # ext_grade sourced from ext_map (available in this scope) — NOT on the row.
+            try:
+                from engine import stock_dossier as _sd
+                _ds_ext_grade = (ext_map.get(t) or {}).get("grade")
+                _ds = _sd.build_dossier(r, ext_grade=_ds_ext_grade)
+                if _ds:
+                    r["dossier"] = _ds
+            except Exception as _dse:  # noqa: BLE001 — display-only; never fatal
+                pass
         # W6-US fix 8 (cont): log FRESH-BUY rows with shallow depth for US-2 ledger study.
         # Shallow = cand_depth_pct < 5.0% (less than 5% pullback from the pre-cycle high).
         # The live ETN case: off_high=-2.2%, cand_depth_pct likely ~2-3%.
@@ -3142,6 +3708,34 @@ def main() -> int:
                                 len(_gex_chip_rows), _gex_chip_rows[:5])
         except Exception as _e3:  # noqa: BLE001
             log.debug("W6-US invariant (c) GEX check skipped: %s", _e3)
+
+        # B4 Conviction Delta — load prev artifact BEFORE overwriting, diff dossier keys,
+        # embed compact delta block into wide.  Fail-open: any error leaves delta absent.
+        # Idempotence: if prev_as_of == cur_as_of (same-day re-render or preview), carry
+        # the existing delta forward unchanged rather than diffing the file against itself.
+        try:
+            from engine.conviction_delta import diff_standouts, load_prev_standouts
+            _delta_path = site / "factordata" / "us_standouts.json"
+            _prev_doc   = load_prev_standouts(_delta_path)
+            _prev_as_of = (_prev_doc or {}).get("as_of")
+            _cur_as_of  = wide.get("as_of")
+            if _prev_as_of and _cur_as_of and _prev_as_of == _cur_as_of:
+                # Same-day re-render: carry forward the existing delta block unchanged.
+                _existing_delta = (_prev_doc or {}).get("delta")
+                if _existing_delta:
+                    wide["delta"] = _existing_delta
+                    log.info("conviction_delta: same-day re-render (as_of=%s) — delta carried forward "
+                             "(%d entries)", _cur_as_of, len(_existing_delta.get("entries", [])))
+                else:
+                    log.debug("conviction_delta: same-day re-render but prev has no delta — computing fresh")
+                    wide["delta"] = diff_standouts(_prev_doc, wide)
+            else:
+                _delta = diff_standouts(_prev_doc, wide)
+                wide["delta"] = _delta
+                log.info("conviction_delta: %d entries (prev_as_of=%s → cur_as_of=%s)",
+                         len(_delta.get("entries", [])), _prev_as_of, _cur_as_of)
+        except Exception as _dlt_e:  # noqa: BLE001 — display-only; never fatal
+            log.debug("conviction_delta: skipped (%s)", _dlt_e)
 
         (site / "factordata" / "us_standouts.json").write_text(
             json.dumps(_json_safe(wide), separators=(",", ":"), default=str, allow_nan=False))

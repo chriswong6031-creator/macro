@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import argparse
 import logging
+import os
 import sys
 import time
 from concurrent.futures import ThreadPoolExecutor
@@ -58,6 +59,8 @@ _CONCURRENT_HOSTS: dict[str, str] = {
     "jodi": "jodi", "french": "french", "frbsf_sentiment": "frbsf",
     "bis": "bis", "uncertainty_indices": "uncertainty",
     "federal_register": "federalregister",  # federalregister.gov — distinct host, runs in parallel
+    "cleveland_nowcast": "clevelandfed",    # clevelandfed.org — distinct host, runs in parallel (MRI-PR-A)
+    "kalshi_releases": "kalshi",           # api.elections.kalshi.com — keyless, distinct host (MRI PR-K)
 }
 
 
@@ -113,6 +116,7 @@ def all_adapters() -> dict:
         ("jodi", "collectors.jodi", "JodiAdapter"),                    # JODI monthly closing oil stocks by country (Strategic Reserves page)
         ("worldbank", "collectors.worldbank", "WorldBankAdapter"),     # World Bank reserve assets -> gold value/share (Strategic Reserves page)
         ("ofr_fsi", "collectors.ofr_fsi", "OfrFsiAdapter"),            # OFR Financial Stress Index (functional + regional decomposition)
+        ("cleveland_nowcast", "collectors.cleveland_nowcast", "ClevelandNowcastAdapter"),  # Cleveland Fed daily CPI/PCE nowcast (MRI-PR-A; fail-open, keyless)
         ("rate_futures", "collectors.rate_futures", "RateFuturesAdapter"),  # ZQ/SR3 implied Fed-policy path (display-only, research/DATA_SIGNAL_EXPANSION_2026.md #2)
         ("uncertainty_indices", "collectors.uncertainty_indices", "UncertaintyIndicesAdapter"),  # EPU + GPR (threat/act) daily text-uncertainty (display-only, narrative-quant-framework P0)
         # FINRA short interest (Phase 3) is ticker-indexed, fetched from build_factors (like EDGAR), not here.
@@ -130,6 +134,7 @@ def all_adapters() -> dict:
         ("openfigi", "collectors.openfigi", "OpenFigiAdapter"),    # keyless CUSIP->ticker master -> unhides foreign/ADR 13F lines (engine/smart_money.full_cusip_map)
         ("ofr", "collectors.ofr", "OfrAdapter"),                   # OFR short-term funding monitor (repo/SOFR plumbing)
         ("prediction_markets", "collectors.prediction_markets", "PredictionMarketsAdapter"),  # Polymarket macro-event odds
+        ("kalshi_releases", "collectors.kalshi_releases", "KalshiReleasesAdapter"),  # Kalshi CPI/NFP/claims bracket markets → implied distribution snapshots (MRI PR-K; keyless)
         ("usaspending", "collectors.usaspending", "UsaspendingAdapter"),  # federal contract obligations + ASSISTANCE grants/loans per curated ticker -> Divergence Radar + gov_grant convergence channel
         # Beyond-Quiver alt-data/divergence sources (keyless except grants_gov; all degrade gracefully)
         ("edgar_8k", "collectors.edgar_8k", "Edgar8KAdapter"),     # SEC 8-K material-event velocity (theme_event radar leg) + per-ticker material_8k convergence channel
@@ -172,6 +177,7 @@ def all_adapters() -> dict:
         ("china_news", "collectors.china_news", "ChinaNewsAdapter"),           # CCTV 新闻联播 official policy-tone series (keyless; display-only news/sentiment panel)
         ("china_news_wire", "collectors.china_news_wire", "ChinaNewsWireAdapter"),  # multi-source flash-wire daily tone -> media-sentiment index (engine/china_news_intel.py)
         ("china_official_corpora", "collectors.china_official_corpora", "ChinaOfficialCorporaAdapter"),  # official policy corpora (State Council/PBOC/NDRC/CSRC/People's Daily) -> date-keyed parquet + qbus; feeds the Communiqué Diff (engine/communique_diff.py, W4 B1)
+        ("china_filings", "collectors.china_filings", "ChinaFilingsAdapter"),  # CNInfo A-share filing metadata (SSE+SZSE): investigation/inquiry/earnings/restructuring events → data/china_filings/filings.parquet (W3.2)
         # Hong Kong / Hang Seng dashboard — see research/HK_DATA_AUDIT.md
         # (macro reused from china_macro; flows reused from china_connect/china_flows)
         ("hk_prices", "collectors.hk_prices", "HkPriceAdapter"),
@@ -257,6 +263,13 @@ def all_adapters() -> dict:
         # (the queue_buildout leg). Keyless; emp.lbl.gov is Cloudflare-gated so a
         # committed seed JSON keeps the engine live when network fetches fail.
         ("lbnl_queue", "collectors.lbnl_queue", "LbnlQueueAdapter"),
+        # ---- Day-3 SLF consolidation adapters (2026-07-07) ----
+        # w4_multistate_gaming_tape (SLF-B1): NY/NJ/PA/NV state gaming revenue collectors
+        # -> data/gaming_tape/; DATA-BLOCKED without network; adapters degrade gracefully.
+        ("gaming_ny", "collectors.gaming_ny", "NYGamingAdapter"),
+        ("gaming_nj", "collectors.gaming_nj", "NJGamingAdapter"),
+        ("gaming_pgcb", "collectors.gaming_pgcb", "PGCBGamingAdapter"),
+        ("gaming_nv", "collectors.gaming_nv", "NVGamingAdapter"),
     ]
     for key, mod, cls in specs:
         try:
@@ -747,6 +760,39 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — a watcher crash must not abort the run
         log.error("[cctv_watcher] step crashed (non-fatal): %s", e)
 
+    # PR-A2 — breadth-divergence forward-log grader (end-of-collect, seconds-scale).
+    # Grades matured rows (stamp_date + 21 business days <= today) of
+    # data/breadth_divergence/forward_log.parquet in-place; idempotent re-runs.
+    # Runs BEFORE the closure audit so the audit sees freshly graded state.
+    # NIGHTLY-ONLY gate: forward ledgers must only be advanced in the nightly lane
+    # (house law: "nightly is the sole advancer of forward ledgers; intraday lanes
+    # discard data/ writes"). The daily.yml collect step sets COLLECT_LANE=nightly;
+    # asia-close.yml, weekly.yml, and intl_etf.yml leave it unset so this block is
+    # a no-op in those lanes.
+    if os.environ.get("COLLECT_LANE") == "nightly":
+        try:
+            from scripts.grade_breadth_divergence import run_as_collect_step as _bd_grader
+            _bd_grader()
+        except Exception as e:  # noqa: BLE001 — a grader crash must not abort the run
+            log.error("[grade_breadth_divergence] step crashed (non-fatal): %s", e)
+    else:
+        log.debug("[grade_breadth_divergence] skipped — not the nightly lane (COLLECT_LANE=%r)",
+                  os.environ.get("COLLECT_LANE"))
+
+    # PR-A2 — foresight policy-calendar date-accuracy grader (end-of-collect, seconds-scale).
+    # After next_comment_close_date passes, checks the federal_register store to confirm
+    # whether the predicted comment-close event occurred.  Idempotent re-runs.
+    # NIGHTLY-ONLY gate: same rationale as grade_breadth_divergence above.
+    if os.environ.get("COLLECT_LANE") == "nightly":
+        try:
+            from scripts.grade_policy_calendar import run_as_collect_step as _pol_grader
+            _pol_grader()
+        except Exception as e:  # noqa: BLE001 — a grader crash must not abort the run
+            log.error("[grade_policy_calendar] step crashed (non-fatal): %s", e)
+    else:
+        log.debug("[grade_policy_calendar] skipped — not the nightly lane (COLLECT_LANE=%r)",
+                  os.environ.get("COLLECT_LANE"))
+
     # NW Rails PR-6 — grading-closure standing audit (RUL-P10 path b).
     # Walks all declared forward ledgers, classifies each as CLOSED / GRADER-STARVED
     # / LOG-ONLY, and writes data/governance/grading_closure.json + docs/GRADING_CLOSURE.md.
@@ -757,6 +803,112 @@ def main() -> int:
         _grading_closure_audit()
     except Exception as e:  # noqa: BLE001 — a governance audit must not abort the run
         log.error("[grading_closure] audit step crashed (non-fatal): %s", e)
+
+    # NW Codex Three Lobes W-A (PR-B) — claim-accountability standing audit (RUL-C9).
+    # Reads claims.jsonl + grades.jsonl + track_record.json; writes
+    # data/governance/claim_accountability.json + docs/CLAIM_ACCOUNTABILITY.md.
+    # Read-only over qledger (RUL-C3). Runs after grading-closure so both
+    # governance artifacts are updated together. Seconds only; never fatal.
+    try:
+        from scripts.audit_claim_accountability import run_as_collect_step as _claim_accountability_audit
+        _claim_accountability_audit()
+    except Exception as e:  # noqa: BLE001 — a governance audit must not abort the run
+        log.error("[claim_accountability] audit step crashed (non-fatal): %s", e)
+
+    # NEXT3 W-OC — options accrual freshness tripwire (previously unwired).
+    # Checks polygon_gex/chains/ freshness + Massive S3 creds + flow summary accrual.
+    # Writes data/quality/options_accrual_audit.json.  Runs BEFORE the coverage audit
+    # so coverage.json can surface the accrual audit's last-run status.  Non-fatal.
+    try:
+        from scripts.audit_options_accrual import run_as_collect_step as _opts_accrual_audit
+        _opts_accrual_audit()
+    except Exception as e:  # noqa: BLE001 — an accrual audit must not abort the run
+        log.error("[audit_options_accrual] step crashed (non-fatal): %s", e)
+
+    # NEXT3 W-OC (PR-β) — options entry feature coverage audit.
+    # Reads state.parquet + gate.json + board ledger; emits
+    # data/options_entry/coverage.json (feature non-null coverage, family stamp
+    # coverage, readiness forecast, structural-null ledger, consistency rows).
+    # RUL-U5: read-only over all inputs; single-writer on coverage.json.  Non-fatal.
+    try:
+        from scripts.audit_options_entry_coverage import run_as_collect_step as _opts_coverage_audit
+        _opts_coverage_audit()
+    except Exception as e:  # noqa: BLE001 — a coverage audit must not abort the run
+        log.error("[options_entry_coverage] step crashed (non-fatal): %s", e)
+
+    # NEXT3 W-EX — operator exposure log (RUL-U6; measurement-substrate-only).
+    # Reads previously committed site artifacts (experiments.json, us_standouts.json,
+    # wh_banner.json, rr_banner.json); writes data/operator/exposure_log.jsonl
+    # (gitignored host-local, append+dedup) and data/governance/operator_exposure_summary.json
+    # (committed, 90-day bounded). No statistics, no contrasts, no trials. Seconds only;
+    # never fatal.
+    try:
+        from scripts.build_operator_exposure_log import run_as_collect_step as _op_exposure
+        _op_exposure()
+    except Exception as e:  # noqa: BLE001 — a governance audit must not abort the run
+        log.error("[operator_exposure] build step crashed (non-fatal): %s", e)
+
+    # SEC Fails-to-Deliver (SLF-001) — incremental daily append.
+    # Fetches semi-monthly FTD files whose availability_date has passed since the
+    # last panel date (uniform 30-day PIT lag enforced in the collector).
+    # Store: data/sec_ftd/panel.parquet. Additive, never fatal.
+    try:
+        from collectors.sec_ftd import incremental as _sec_ftd_incremental
+        _ftd_result = _sec_ftd_incremental()
+        log.info("sec_ftd incremental: fetched=%d skipped=%d errors=%d",
+                 _ftd_result.get("fetched", 0), _ftd_result.get("skipped", 0),
+                 _ftd_result.get("errors", 0))
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("sec_ftd incremental step failed: %s", e)
+
+    # NY Fed Primary Dealer Statistics (SLF-055) — Thursday weekly refresh.
+    # Published Thursdays ~16:15 ET for prior Wednesday; gated to Thursdays to
+    # avoid redundant fetches on other days. Store: data/nyfed_pd/pd_weekly.parquet.
+    # Additive, never fatal.
+    if datetime.now(timezone.utc).isoweekday() == 4:  # Thursday
+        try:
+            from collectors.nyfed_primary_dealer import run as _run_pd
+            _run_pd(config.data_dir() / "nyfed_pd")
+            log.info("nyfed_pd: Thursday refresh complete")
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.warning("nyfed_pd step failed: %s", e)
+
+    # ---- Day-3 SLF consolidation standalone collectors (2026-07-07) ----
+
+    # w2104_cmdi_conditioning (SLF-A4): NY Fed CMDI weekly -> data/nyfed_cmdi/
+    # Idempotent; fetches the interactive-data Excel; parses Market/IG/HY sub-indices.
+    # Recommended: weekly (Friday after NY Fed update). Standalone function, not Adapter.
+    try:
+        from scripts.collect_nyfed_cmdi import collect_nyfed_cmdi as _collect_cmdi
+        _collect_cmdi()
+        log.info("nyfed_cmdi: refresh complete")
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("nyfed_cmdi step failed: %s", e)
+
+    # w2051_housing_hf (SLF-A7): Redfin high-frequency national + metro housing data
+    # -> data/redfin_hf/; ZORI (Zillow observed rent index) -> data/zori/
+    # Standalone scripts; idempotent; degrade gracefully if upstream unavailable.
+    try:
+        from scripts.collect_redfin_hf import run as _collect_redfin_hf
+        _collect_redfin_hf()
+        log.info("redfin_hf: refresh complete")
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("redfin_hf step failed: %s", e)
+    try:
+        from scripts.collect_zori import run as _collect_zori
+        _collect_zori()
+        log.info("zori: refresh complete")
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("zori step failed: %s", e)
+
+    # d2_cn_holder_sale_calendar (SLF-B3): Eastmoney 减持 plan execution windows
+    # -> data/cn_holder_sales/; china-altdata section; ~10-15 min full backfill, ~1 min incremental.
+    try:
+        from collectors.cn_holder_sale_calendar import collect as _cn_holder_collect
+        _cn_holder_collect()
+        log.info("cn_holder_sale_calendar: refresh complete")
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("cn_holder_sale_calendar step failed: %s", e)
 
     return 0 if ok > 0 else 1
 

@@ -1,0 +1,395 @@
+{
+  "vintage_stamp": {
+    "schema": "bd_econ1_summary.v1",
+    "generated_utc": "2026-07-06T14:31:54.145451+00:00",
+    "derived_from_surface": "bd_phase0",
+    "events_tape": "data/research/breakdown_events.parquet",
+    "fires_tape": "data/replay/replay_boarded.parquet",
+    "contamination_stamp": "Feasibility peek disclosed in BD_ECON1_PREREG.md \u00a7Amendments: coarse floors-feasibility join run before commit confirmed floors met and revealed coarse pooled magnitudes; no gate/threshold was changed.",
+    "survivorship_note": "Fires tape: ERA-LAW cohort (verdict_type='fire', verdict_grade=True). Events tape: BD-2/BD-3 episodes from bd_phase0 tape (is_control=False). Both tapes are survivorship-biased by construction (massive plane universe)."
+  },
+  "trial_ledger": {
+    "family": "short_side",
+    "declared_budget": 6,
+    "literal_n": 6,
+    "max_basis_divergence_note": "declared_budget is a per-family max() floor per RUL-U3a; literal_n counts all verdict cells logged cross-study. These numbers diverge when multiple BD-family studies log cells. The declared_budget protects THIS study's BH set; cross-study multiplicity within short_side is tolerated only because all studies are descriptive/research-only (no DSR)."
+  },
+  "n_input": {
+    "bd2_episodes": 19891,
+    "bd3_episodes": 5553,
+    "era_law_fires": 49939
+  },
+  "overlap_flagged_both_definitions": 1772,
+  "flagging_window_bars": 21,
+  "per_definition": {
+    "BD-2": {
+      "status": "RUN",
+      "n_flagged_fires": 25275,
+      "n_contributing_episodes": 7228,
+      "n_unflagged_fires": 24664,
+      "C1_result": {
+        "contrast": "C1",
+        "n_flagged": 25275,
+        "n_unflagged": 24664,
+        "endpoint_a_stop_rate": {
+          "n_arm_a": 25275,
+          "n_arm_b": 24664,
+          "mean_a": 0.39197,
+          "mean_b": 0.37293,
+          "delta": 0.01904,
+          "ci95_lo": -0.05571,
+          "ci95_hi": 0.10407,
+          "boot_n_draws": 2000,
+          "ci_excludes_zero": false,
+          "note": "two-way month\u00d7ticker cluster bootstrap, sequential resampling"
+        },
+        "endpoint_a_jackknife": {
+          "n_tickers_a": 981,
+          "max_jackknife_influence_frac": 0.0423,
+          "n_tickers_influence_gt_10pct": 0,
+          "note": "per-ticker jackknife of arm_a; influence = |loo_delta - full_delta| / |full_delta|"
+        },
+        "endpoint_b_fwd_ret21": {
+          "n_arm_a": 25275,
+          "n_arm_b": 24664,
+          "mean_a": 0.02094,
+          "mean_b": 0.01754,
+          "delta": 0.00339,
+          "ci95_lo": -0.0187,
+          "ci95_hi": 0.02503,
+          "boot_n_draws": 2000,
+          "ci_excludes_zero": false,
+          "note": "two-way month\u00d7ticker cluster bootstrap, sequential resampling"
+        },
+        "endpoint_b_jackknife": {
+          "n_tickers_a": 981,
+          "max_jackknife_influence_frac": 0.059,
+          "n_tickers_influence_gt_10pct": 0,
+          "note": "per-ticker jackknife of arm_a; influence = |loo_delta - full_delta| / |full_delta|"
+        },
+        "censoring": {
+          "n_flagged_stop_nan": 0,
+          "n_unflagged_stop_nan": 0,
+          "n_flagged_ret21_nan": 0,
+          "n_unflagged_ret21_nan": 0,
+          "note": "NaN rows excluded from statistics; counted here per prereg"
+        }
+      },
+      "c3_result": {
+        "contrast": "C3",
+        "n_flagged": 25275,
+        "n_unflagged": 1966,
+        "endpoint_a_stop_rate": {
+          "n_arm_a": 25275,
+          "n_arm_b": 1966,
+          "mean_a": 0.39197,
+          "mean_b": 0.37487,
+          "delta": 0.0171,
+          "ci95_lo": -0.07809,
+          "ci95_hi": 0.11661,
+          "boot_n_draws": 2000,
+          "ci_excludes_zero": false,
+          "note": "two-way month\u00d7ticker cluster bootstrap, sequential resampling"
+        },
+        "endpoint_a_jackknife": {
+          "n_tickers_a": 981,
+          "max_jackknife_influence_frac": 0.0471,
+          "n_tickers_influence_gt_10pct": 0,
+          "note": "per-ticker jackknife of arm_a; influence = |loo_delta - full_delta| / |full_delta|"
+        },
+        "endpoint_b_fwd_ret21": {
+          "n_arm_a": 25275,
+          "n_arm_b": 1966,
+          "mean_a": 0.02094,
+          "mean_b": 0.02166,
+          "delta": -0.00072,
+          "ci95_lo": -0.02848,
+          "ci95_hi": 0.0278,
+          "boot_n_draws": 2000,
+          "ci_excludes_zero": false,
+          "note": "two-way month\u00d7ticker cluster bootstrap, sequential resampling"
+        },
+        "endpoint_b_jackknife": {
+          "n_tickers_a": 981,
+          "max_jackknife_influence_frac": 0.2765,
+          "n_tickers_influence_gt_10pct": 86,
+          "note": "per-ticker jackknife of arm_a; influence = |loo_delta - full_delta| / |full_delta|"
+        },
+        "censoring": {
+          "n_flagged_stop_nan": 0,
+          "n_unflagged_stop_nan": 0,
+          "n_flagged_ret21_nan": 0,
+          "n_unflagged_ret21_nan": 0,
+          "note": "NaN rows excluded from statistics; counted here per prereg"
+        },
+        "n_recent_stop_cohort": 1966
+      },
+      "descriptive_splits": {
+        "flagged_year_split": {
+          "n_by_year": {
+            "2022": 3027,
+            "2023": 7325,
+            "2024": 6050,
+            "2025": 8873
+          },
+          "stop_rate_pct_by_year": {
+            "2022": 37.79,
+            "2023": 35.18,
+            "2024": 43.4,
+            "2025": 40.12
+          }
+        },
+        "flagged_tier_split": {
+          "n_by_tier": {
+            "T2": 12760,
+            "T1": 11262,
+            "T3": 1253
+          },
+          "stop_rate_pct_by_tier": {
+            "T1": 39.41,
+            "T2": 38.22,
+            "T3": 47.25
+          }
+        },
+        "unflagged_year_split": {
+          "n_by_year": {
+            "2022": 3507,
+            "2023": 6929,
+            "2024": 7079,
+            "2025": 7149
+          },
+          "stop_rate_pct_by_year": {
+            "2022": 25.06,
+            "2023": 36.56,
+            "2024": 38.68,
+            "2025": 42.64
+          }
+        },
+        "note": "DESCRIPTIVE multiplicity declared in prereg \u00a73; not verdict cells"
+      },
+      "economics_block": {
+        "definition": "BD-2",
+        "n_flagged_stopped": 9907,
+        "n_flagged_clean": 8178,
+        "avoided_drawdown_fwd_mdd_21": {
+          "n": 9907,
+          "mean": -0.11019,
+          "median": -0.0912,
+          "p90": -0.05661,
+          "p10": -0.1903
+        },
+        "missed_upside_fwd_ret_21": {
+          "n": 8178,
+          "mean": 0.1117,
+          "median": 0.10087,
+          "p90": 0.21363,
+          "p10": 0.02747
+        },
+        "missed_upside_fwd_mfe_21": {
+          "n": 8178,
+          "mean": 0.15322,
+          "median": 0.13081,
+          "p90": 0.24569,
+          "p10": 0.08793
+        },
+        "rn6_symmetric_cost_note": "Avoided drawdown (\u00a74a) and missed upside (\u00a74b) printed with equal prominence per RUL-N6 symmetric-cost law.",
+        "skip_policy_net_read": {
+          "description": "Re-presentation of budgeted endpoint-(b) CI: mean fwd_ret_21(unflagged) minus mean fwd_ret_21(flagged). Positive = unflagged fires had higher forward return; negative = flagged fires did better. No new test computed.",
+          "ep_b_delta_flagged_minus_unflagged": 0.00339,
+          "ep_b_ci95_lo": -0.0187,
+          "ep_b_ci95_hi": 0.02503,
+          "n_flagged": 25275,
+          "n_unflagged": 24664
+        },
+        "reentry_quality_descriptive": {
+          "state_8_21_distribution": {
+            "STOPPED": 9232,
+            "CLEAN_LIFTOFF": 6191,
+            "DEAD_MONEY": 4202,
+            "CUSHIONED": 2795
+          },
+          "note": "State of next unflagged fire on same ticker (descriptive; no inference performed)"
+        }
+      }
+    },
+    "BD-3": {
+      "status": "RUN",
+      "n_flagged_fires": 3457,
+      "n_contributing_episodes": 1152,
+      "n_unflagged_fires": 46482,
+      "C2_result": {
+        "contrast": "C2",
+        "n_flagged": 3457,
+        "n_unflagged": 46482,
+        "endpoint_a_stop_rate": {
+          "n_arm_a": 3457,
+          "n_arm_b": 46482,
+          "mean_a": 0.42089,
+          "mean_b": 0.37972,
+          "delta": 0.04117,
+          "ci95_lo": -0.05702,
+          "ci95_hi": 0.1449,
+          "boot_n_draws": 2000,
+          "ci_excludes_zero": false,
+          "note": "two-way month\u00d7ticker cluster bootstrap, sequential resampling"
+        },
+        "endpoint_a_jackknife": {
+          "n_tickers_a": 671,
+          "max_jackknife_influence_frac": 0.0554,
+          "n_tickers_influence_gt_10pct": 0,
+          "note": "per-ticker jackknife of arm_a; influence = |loo_delta - full_delta| / |full_delta|"
+        },
+        "endpoint_b_fwd_ret21": {
+          "n_arm_a": 3457,
+          "n_arm_b": 46482,
+          "mean_a": 0.01273,
+          "mean_b": 0.01975,
+          "delta": -0.00702,
+          "ci95_lo": -0.03293,
+          "ci95_hi": 0.01491,
+          "boot_n_draws": 2000,
+          "ci_excludes_zero": false,
+          "note": "two-way month\u00d7ticker cluster bootstrap, sequential resampling"
+        },
+        "endpoint_b_jackknife": {
+          "n_tickers_a": 671,
+          "max_jackknife_influence_frac": 0.1703,
+          "n_tickers_influence_gt_10pct": 2,
+          "note": "per-ticker jackknife of arm_a; influence = |loo_delta - full_delta| / |full_delta|"
+        },
+        "censoring": {
+          "n_flagged_stop_nan": 0,
+          "n_unflagged_stop_nan": 0,
+          "n_flagged_ret21_nan": 0,
+          "n_unflagged_ret21_nan": 0,
+          "note": "NaN rows excluded from statistics; counted here per prereg"
+        }
+      },
+      "c3_result": null,
+      "descriptive_splits": {
+        "flagged_year_split": {
+          "n_by_year": {
+            "2022": 337,
+            "2023": 1114,
+            "2024": 1272,
+            "2025": 734
+          },
+          "stop_rate_pct_by_year": {
+            "2022": 48.07,
+            "2023": 33.84,
+            "2024": 40.33,
+            "2025": 54.9
+          }
+        },
+        "flagged_tier_split": {
+          "n_by_tier": {
+            "T2": 1702,
+            "T1": 1321,
+            "T3": 434
+          },
+          "stop_rate_pct_by_tier": {
+            "T1": 42.92,
+            "T2": 39.84,
+            "T3": 48.39
+          }
+        },
+        "unflagged_year_split": {
+          "n_by_year": {
+            "2022": 6197,
+            "2023": 13140,
+            "2024": 11857,
+            "2025": 15288
+          },
+          "stop_rate_pct_by_year": {
+            "2022": 30.03,
+            "2023": 36.02,
+            "2024": 40.91,
+            "2025": 40.59
+          }
+        },
+        "note": "DESCRIPTIVE multiplicity declared in prereg \u00a73; not verdict cells"
+      },
+      "economics_block": {
+        "definition": "BD-3",
+        "n_flagged_stopped": 1455,
+        "n_flagged_clean": 1023,
+        "avoided_drawdown_fwd_mdd_21": {
+          "n": 1455,
+          "mean": -0.10917,
+          "median": -0.08625,
+          "p90": -0.05563,
+          "p10": -0.18722
+        },
+        "missed_upside_fwd_ret_21": {
+          "n": 1023,
+          "mean": 0.10003,
+          "median": 0.09328,
+          "p90": 0.2035,
+          "p10": 0.01297
+        },
+        "missed_upside_fwd_mfe_21": {
+          "n": 1023,
+          "mean": 0.14906,
+          "median": 0.12509,
+          "p90": 0.24664,
+          "p10": 0.08686
+        },
+        "rn6_symmetric_cost_note": "Avoided drawdown (\u00a74a) and missed upside (\u00a74b) printed with equal prominence per RUL-N6 symmetric-cost law.",
+        "skip_policy_net_read": {
+          "description": "Re-presentation of budgeted endpoint-(b) CI: mean fwd_ret_21(unflagged) minus mean fwd_ret_21(flagged). Positive = unflagged fires had higher forward return; negative = flagged fires did better. No new test computed.",
+          "ep_b_delta_flagged_minus_unflagged": -0.00702,
+          "ep_b_ci95_lo": -0.03293,
+          "ep_b_ci95_hi": 0.01491,
+          "n_flagged": 3457,
+          "n_unflagged": 46482
+        },
+        "reentry_quality_descriptive": {
+          "state_8_21_distribution": {
+            "STOPPED": 1396,
+            "CLEAN_LIFTOFF": 861,
+            "CUSHIONED": 400,
+            "DEAD_MONEY": 581
+          },
+          "note": "State of next unflagged fire on same ticker (descriptive; no inference performed)"
+        }
+      }
+    }
+  },
+  "bh_correction_6cells": {
+    "q": 0.1,
+    "n_cells": 6,
+    "cells": {
+      "BD-3_C2_ep_a": {
+        "p_approx": 0.4241,
+        "bh_threshold": 0.0167,
+        "bh_reject": false
+      },
+      "BD-3_C2_ep_b": {
+        "p_approx": 0.5651,
+        "bh_threshold": 0.0333,
+        "bh_reject": false
+      },
+      "BD-2_C1_ep_a": {
+        "p_approx": 0.6404,
+        "bh_threshold": 0.05,
+        "bh_reject": false
+      },
+      "BD-2_C3_ep_a": {
+        "p_approx": 0.7306,
+        "bh_threshold": 0.0667,
+        "bh_reject": false
+      },
+      "BD-2_C1_ep_b": {
+        "p_approx": 0.7612,
+        "bh_threshold": 0.0833,
+        "bh_reject": false
+      },
+      "BD-2_C3_ep_b": {
+        "p_approx": 0.96,
+        "bh_threshold": 0.1,
+        "bh_reject": false
+      }
+    },
+    "note": "Approximate BH correction; p estimated from CI half-width assuming normal approximation. CI-excludes-zero is the primary verdict; this BH table is supplemental."
+  }
+}

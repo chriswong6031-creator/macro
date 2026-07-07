@@ -669,6 +669,14 @@ def main(alpha: dict | None = None) -> dict | None:
                       ("collectors.china_zt_pool", {}),       # 涨停板 limit-up momentum / sector breadth
                       ("collectors.china_buyback", {}),       # 回购 corporate buybacks
                       ("collectors.china_pledge", {}),        # 股权质押 forced-sell tail risk
+                      ("collectors.china_unlocks", {}),       # 限售股 restricted-share unlock queue
+                      ("collectors.china_preannounce", {}),   # 业绩预告 earnings pre-announcements
+                      # china_inquiry has been FULLY RETIRED (W4 review fix): inquiry letters are
+                      # now sourced exclusively from collectors/china_filings.py →
+                      # data/china_filings/filings.parquet (category=='inquiry_letter').
+                      # The engine's read-fallback to the frozen data/china_inquiry/inquiry.parquet
+                      # stays in place to surface honest asof staleness if filings degrades.
+                      ("collectors.china_st", {}),            # ST board snapshot + history + goodwill
                       # PREMIUM Tushare feeds — GATED on TUSHARE_TOKEN (each refresh() self-no-ops
                       # without the token, so CI / keyless builds are unaffected). See
                       # research/TUSHARE_INTEGRATION.md.

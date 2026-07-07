@@ -19,14 +19,6 @@ build_graph(root) constructs the confluence graph over the signal bus:
     contradicts — from detect_contradictions() output
     confirms    — co-firing lift from spine_index (same symbol+as_of+direction+horizon
                   across different engines; MIN_N=10; below floor → edge with n + lift=null)
-    sponsorship — stock-event <-> subsector edges from the SRSS Phase 2 shadow-tier
-                  artifact (data/spine/subsector_sponsorship.parquet, produced by
-                  engine.spine.adapt_subsector_sponsorship): sponsorship_support
-                  (TAILWIND/EARLY_REPAIR/CONFIRMED_LEADERSHIP), sponsorship_contradicts
-                  (HEADWIND), sponsorship_rollover_warning (ROLLOVER). NEUTRAL emits no
-                  edge (nothing to display). direction is inherited from the source stock
-                  event only (Article-1); sponsorship_score rides the edge for DISPLAY
-                  ONLY — see _build_sponsorship_edges, never summed into any aggregate.
 
 HARD LAW — encoded in every docstring and in the artifact output:
     Confluence NEVER gates, NEVER ranks, NEVER raises a priority.  Every edge carries
@@ -135,22 +127,92 @@ def _read_json(p: Path) -> dict | list | None:
         return None
 
 
-def _parse_meta(raw: Any) -> dict:
-    """spine rows serialise ``meta`` as a JSON string (engine.spine.SpinePrediction.as_row);
-    parse it back to a dict. Fail-open: unparsable/absent -> {}."""
-    if isinstance(raw, dict):
-        return raw
-    if isinstance(raw, str) and raw:
-        try:
-            d = json.loads(raw)
-            return d if isinstance(d, dict) else {}
-        except Exception:  # noqa: BLE001
-            return {}
-    return {}
-
-
 def _node(nid: str, ntype: str, label: str, meta: dict | None = None) -> dict:
     return {"id": nid, "type": ntype, "label": label, "meta": meta or {}}
+
+
+# ---------------------------------------------------------------------------
+# R-ORTH PR-4: independence block reader
+# ---------------------------------------------------------------------------
+
+def _read_independence_block(repo: Path, gaps: list[str]) -> dict:
+    """Read the lobes block from data/neuralweb/covariance_spine.json fail-open.
+
+    Returns a top-level "independence" dict for embedding in confluence_graph.json.
+    If the file is absent or the lobes block is null, returns a null-valued dict
+    and appends a gap note; never raises.
+
+    Fields:
+      effective_independent_lobes  — participation-ratio estimate (float | null)
+      n_lobes_measurable           — engines with >= 30 active weeks (int | null)
+      n_lobes_total                — total engines in spine_index (int | null)
+      pctile_vs_null               — lobes pctile vs. 200 circular-shift draws (float | null)
+      same_bet_warning             — warning object or null
+      dominant_overlap_cluster     — largest cluster engine list or null
+      descriptive_not_gauntleted   — always True (F-ORTH-1 house law)
+      display_only                 — always True
+      source                       — "data/neuralweb/covariance_spine.json"
+    """
+    _null = {
+        "effective_independent_lobes": None,
+        "n_lobes_measurable": None,
+        "n_lobes_total": None,
+        "pctile_vs_null": None,
+        "same_bet_warning": None,
+        "dominant_overlap_cluster": None,
+        "descriptive_not_gauntleted": True,
+        "display_only": True,
+        "source": "data/neuralweb/covariance_spine.json",
+    }
+
+    spine_path = repo / "data" / "neuralweb" / "covariance_spine.json"
+    if not spine_path.exists():
+        gaps.append(
+            "independence: data/neuralweb/covariance_spine.json absent — "
+            "independence block null; run scripts/build_covariance_spine.py"
+        )
+        return _null
+
+    raw = _read_json(spine_path)
+    if raw is None:
+        gaps.append("independence: covariance_spine.json unreadable — independence block null")
+        return _null
+
+    lobes = (raw.get("blocks") or {}).get("lobes")
+    if lobes is None:
+        gaps.append(
+            "independence: covariance_spine.json has no lobes block — "
+            "spine_index.parquet may be absent or too sparse"
+        )
+        return _null
+
+    # Extract pctile from nested null_reference
+    null_ref = lobes.get("null_reference") or {}
+    pctile = null_ref.get("pctile_vs_null")
+
+    # dominant_overlap_cluster: largest cluster by engine list length
+    clusters = lobes.get("clusters") or []
+    dominant: list | None = None
+    if clusters:
+        largest = max(clusters, key=lambda c: len(c.get("engines") or []))
+        dominant = largest.get("engines") or None
+
+    sbw = lobes.get("same_bet_warning")
+    # Only propagate the warning object when active; pass null otherwise
+    same_bet = sbw if (sbw and sbw.get("active")) else None
+
+    return {
+        "effective_independent_lobes": lobes.get("effective_independent_lobes"),
+        "n_lobes_measurable": lobes.get("n_lobes_measurable"),
+        "n_lobes_total": lobes.get("n_lobes_total"),
+        "pctile_vs_null": pctile,
+        "same_bet_warning": same_bet,
+        "dominant_overlap_cluster": dominant,
+        "descriptive_not_gauntleted": True,
+        "display_only": True,
+        "source": "data/neuralweb/covariance_spine.json",
+    }
+
 
 
 def _edge(
@@ -848,120 +910,6 @@ def _build_confirms_edges(
 
 
 # ---------------------------------------------------------------------------
-# SRSS Phase 2 — subsector sponsorship nodes + edges (display-only)
-# ---------------------------------------------------------------------------
-# State -> edge_type mapping. NEUTRAL/unknown states emit no edge (nothing
-# meaningful to display). Every edge display_only=True via _edge().
-_SPONSORSHIP_EDGE_TYPE = {
-    "TAILWIND": "sponsorship_support",
-    "EARLY_REPAIR": "sponsorship_support",
-    "CONFIRMED_LEADERSHIP": "sponsorship_support",
-    "HEADWIND": "sponsorship_contradicts",
-    "ROLLOVER": "sponsorship_rollover_warning",
-}
-
-
-def _build_sponsorship_nodes(sponsorship_df: Any, gaps: list[str]) -> list[dict]:
-    """entity:{ticker} + subsector:{key} nodes sourced only from the
-    sponsorship shadow artifact — no other node builder depends on these."""
-    nodes: list[dict] = []
-    if sponsorship_df is None or len(sponsorship_df) == 0:
-        return nodes
-    try:
-        seen_entities: set[str] = set()
-        seen_subsectors: set[str] = set()
-        for _, r in sponsorship_df.iterrows():
-            sym = r.get("symbol")
-            if sym and sym not in seen_entities:
-                seen_entities.add(sym)
-                nodes.append(_node(nid=f"entity:{sym}", ntype="entity", label=str(sym)))
-            meta = _parse_meta(r.get("meta"))
-            key = meta.get("rotation_key")
-            if key and key not in seen_subsectors:
-                seen_subsectors.add(key)
-                nodes.append(_node(
-                    nid=f"subsector:{key}", ntype="subsector", label=str(key),
-                    meta={"subtype": "rotation_subsector"},
-                ))
-    except Exception as exc:  # noqa: BLE001
-        log.warning("confluence: sponsorship nodes failed — %s", exc)
-        gaps.append(f"sponsorship nodes: {exc}")
-    return nodes
-
-
-def _build_sponsorship_edges(sponsorship_df: Any, gaps: list[str]) -> list[dict]:
-    """Stock-event <-> subsector edges from the SRSS Phase 2 shadow artifact.
-
-    Reads data/spine/subsector_sponsorship.parquet (produced by
-    engine.spine.adapt_subsector_sponsorship — NOT the shared
-    data/spine/predictions.parquet, kept separate on purpose). Every row's
-    ``meta`` dict carries ``sponsorship_state``/``sponsorship_score``/
-    ``rotation_key``/``confidence_tier`` (see that adapter's docstring).
-
-    HARD LAW (same as every other edge in this module): display_only=True,
-    no scoring/weighting. ``sponsorship_score`` rides the edge purely for
-    display — it is never summed into ``lift`` or any other aggregate here.
-    direction is copied through from the row's own (source-inherited)
-    ``direction`` field, never invented.
-    """
-    edges: list[dict] = []
-    if sponsorship_df is None:
-        gaps.append("sponsorship edges: subsector_sponsorship.parquet absent")
-        return edges
-    if len(sponsorship_df) == 0:
-        gaps.append("sponsorship edges: subsector_sponsorship.parquet has 0 rows")
-        return edges
-
-    try:
-        n_emitted = 0
-        n_neutral_skipped = 0
-        for _, r in sponsorship_df.iterrows():
-            meta = _parse_meta(r.get("meta"))
-            if not meta:
-                continue
-            state = meta.get("sponsorship_state")
-            edge_type = _SPONSORSHIP_EDGE_TYPE.get(state)
-            if edge_type is None:
-                n_neutral_skipped += 1
-                continue  # NEUTRAL or unrecognised state — no edge
-            sym = r.get("symbol")
-            key = meta.get("rotation_key")
-            if not sym or not key:
-                continue
-            edge = _edge(
-                src=f"entity:{sym}",
-                dst=f"subsector:{key}",
-                edge_type=edge_type,
-                note=(
-                    f"sponsorship_state={state} confidence_tier={meta.get('confidence_tier')} "
-                    f"direction={r.get('direction')} (display-only; sponsorship_score not "
-                    f"aggregated)"
-                ),
-            )
-            # sponsorship_score rides the edge for display ONLY (never fed
-            # into lift/any weighted sum — see docstring above).
-            edge["sponsorship_score"] = meta.get("sponsorship_score")
-            edge["confidence_tier"] = meta.get("confidence_tier")
-            edge["direction"] = r.get("direction")
-            edges.append(edge)
-            n_emitted += 1
-        if n_neutral_skipped:
-            log.debug(
-                "confluence: sponsorship edges: %d NEUTRAL/unrecognised rows skipped",
-                n_neutral_skipped,
-            )
-        if n_emitted == 0:
-            gaps.append(
-                f"sponsorship edges: 0 non-NEUTRAL rows of {len(sponsorship_df)} "
-                "(honest null — all matches classified NEUTRAL)"
-            )
-    except Exception as exc:  # noqa: BLE001
-        log.warning("confluence: sponsorship edges failed — %s", exc)
-        gaps.append(f"sponsorship edges: {exc}")
-    return edges
-
-
-# ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
 
@@ -1155,19 +1103,6 @@ def build_graph(
     else:
         gaps.append("config/synapse.yml: absent — feeds edges empty")
 
-    # ── Load subsector sponsorship shadow artifact (SRSS Phase 2) ────────────
-    sponsorship_df = None
-    sponsorship_path = data_dir / "spine" / "subsector_sponsorship.parquet"
-    if sponsorship_path.exists():
-        try:
-            import pandas as pd  # noqa: PLC0415
-            sponsorship_df = pd.read_parquet(sponsorship_path)
-        except Exception as exc:  # noqa: BLE001
-            log.warning("confluence: subsector_sponsorship read failed — %s", exc)
-            gaps.append(f"subsector_sponsorship.parquet: {exc}")
-    else:
-        gaps.append("subsector_sponsorship.parquet: absent")
-
     # ── Build nodes ───────────────────────────────────────────────────────────
     nodes: list[dict] = []
     nodes.extend(_build_engine_nodes(spine_df, gaps))
@@ -1175,7 +1110,6 @@ def build_graph(
     nodes.extend(_build_regime_nodes())
     nodes.extend(_build_thesis_nodes(data_dir / "radar" / "theses.jsonl", gaps))
     nodes.extend(_build_episode_nodes(oracle_state, gaps))
-    nodes.extend(_build_sponsorship_nodes(sponsorship_df, gaps))
     nodes.extend(_build_macro_nodes(world_state, gaps))
 
     # ── Detect contradictions ─────────────────────────────────────────────────
@@ -1192,7 +1126,6 @@ def build_graph(
     edges.extend(_build_contradicts_edges(contra_records, gaps))
     edges.extend(_build_confirms_edges(spine_df, gaps))
     edges.extend(_build_options_edges(repo, gaps))   # Options→NW W-B (RO-6)
-    edges.extend(_build_sponsorship_edges(sponsorship_df, gaps))
     edges.extend(_build_macro_edges(world_state, _node_ids, gaps))  # PR-D macro edges
 
     # ── Contradiction summary ─────────────────────────────────────────────────
@@ -1211,6 +1144,9 @@ def build_graph(
     except Exception:  # noqa: BLE001
         pass
 
+    # ── R-ORTH PR-4: independence block (additive, fail-open) ─────────────────
+    independence = _read_independence_block(repo, gaps)
+
     # ── Assemble payload ──────────────────────────────────────────────────────
     payload: dict[str, Any] = {
         "schema": _SCHEMA,
@@ -1228,6 +1164,7 @@ def build_graph(
             "top_pair_ids": top_pair_ids,
         },
         "contradiction_records": contra_records,
+        "independence": independence,
         "gaps": gaps,
         "produced_by": "engine/neuralweb/confluence.py",
         "produced_at": now.strftime("%Y-%m-%dT%H:%M:%SZ"),

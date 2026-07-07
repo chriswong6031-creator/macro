@@ -924,6 +924,8 @@ def main() -> int:
             ("china divergence radar", "scripts.build_china_radar", "build"),
             # central-intelligence synthesis MUST run after the surfaces, before the hub/bus
             ("china central analysis", "scripts.build_china_synthesis", "build"),
+            # historical regime analog finder — display-only context (W2.3)
+            ("china analogs", "scripts.build_china_analogs", "build"),
         ):
             try:
                 import importlib
@@ -931,8 +933,18 @@ def main() -> int:
             except Exception as e:  # noqa: BLE001 — additive, never fatal
                 log.error("%s build failed (%s); skipping", _name, e, exc_info=True)
         try:
+            from scripts.build_china_special_situations import build as _build_css
+            _build_css()    # special-sits desk → site/chinaspecialdata/special.json + page
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.error("china special situations build failed (%s); skipping", e)
+        try:
+            from scripts.build_china_intel_hub import build as _build_china_intel_hub
+            _build_china_intel_hub()  # command apparatus → site/china_intel/command.json
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.error("china intel hub command apparatus build failed (%s); skipping", e)
+        try:
             from scripts.build_china_intel import build as _build_china_intel
-            _build_china_intel()      # fan-in 4 surfaces + analysis + hub for the China Mastermind
+            _build_china_intel()      # fan-in 5 surfaces + analysis + hub for the China Mastermind (v5 schema)
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.error("china intel hub/bus build failed (%s); skipping", e)
     except Exception as e:  # noqa: BLE001

@@ -202,6 +202,34 @@
   .ql-chip-graded-neg { background:color-mix(in srgb,var(--down) 14%,transparent);
     color:var(--down); border-color:color-mix(in srgb,var(--down) 35%,transparent); }
   .desk-chips { display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-top:5px; }
+  /* China Lens module (W0.2) */
+  .cl-badge{ font-size:9px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;
+    padding:2px 7px;border-radius:5px;
+    background:color-mix(in srgb,#f59e0b 18%,transparent);color:#f59e0b;margin-left:7px; }
+  .cl-wrap{ margin-top:0; }
+  .cl-headline{ font-size:13.5px;font-weight:600;color:var(--text);margin-bottom:10px;line-height:1.4; }
+  .cl-chips{ display:flex;flex-wrap:wrap;gap:7px;margin-bottom:12px; }
+  .cl-chip{ font-size:11.5px;font-weight:600;padding:5px 11px;border-radius:9px;cursor:default;
+    background:color-mix(in srgb,var(--panel) 78%,transparent);
+    border:1px solid color-mix(in srgb,var(--line) 75%,transparent); }
+  .cl-chip-stale{ border-color:color-mix(in srgb,var(--warn) 45%,var(--line));
+    color:var(--warn); }
+  .cl-rows{ display:flex;flex-direction:column;gap:9px;margin-bottom:12px; }
+  .cl-row{ display:flex;align-items:center;gap:10px;padding:9px 0;
+    border-top:1px solid color-mix(in srgb,var(--line) 50%,transparent); }
+  .cl-row:first-child{ border-top:0; }
+  .cl-sector{ font-size:13px;font-weight:700;min-width:120px; }
+  @media(max-width:560px){ .cl-sector{ min-width:80px;font-size:12px; } }
+  .cl-fresh{ display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:10px;margin-bottom:10px; }
+  .cl-fresh-label{ font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em; }
+  .cl-dot{ font-size:9.5px;font-weight:700;padding:2px 7px;border-radius:5px;cursor:default;
+    text-transform:uppercase;letter-spacing:.03em; }
+  .cl-dot-ok{ background:color-mix(in srgb,var(--ok) 16%,transparent);color:var(--ok); }
+  .cl-dot-stale{ background:color-mix(in srgb,var(--down) 16%,transparent);color:var(--down); }
+  .cl-footer{ margin-top:10px;padding-top:8px;
+    border-top:1px solid color-mix(in srgb,var(--line) 50%,transparent); }
+  .cl-link{ font-size:12px;font-weight:600;color:var(--info);text-decoration:none; }
+  .cl-link:hover{ text-decoration:underline; }
 </style>
 </head>
 <body class="page-hub">
@@ -243,7 +271,7 @@
         <a href="macro.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">Regime · growth · inflation · nowcast</span><span class="l-zh">周期 · 增长 · 通胀 · 即时预测</span></span></a>
         <a href="us_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Standouts · sectors · flows</span><span class="l-zh">精选 · 板块 · 资金</span></span></a>
         <div class="nav-dd nav-sub">
-          <a class="nav-sub-trig" href="sector_central.html">🧠 <span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span> <span class="caret-r">▸</span></a>
+          <a class="nav-sub-trig" href="sector_central.html">🧠 <span class="nav-sub-text"><span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">Cycle map · heat · gated reads</span><span class="l-zh">周期图谱 · 热度 · 门控研判</span></span></span><span class="caret-r">▸</span></a>
           <div class="nav-dd-menu" role="menu">
             <a href="sector_central.html">🧠 <span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">Cycle map · market heat · one gated read per sector & theme · graded</span><span class="l-zh">周期图谱 · 市场热度 · 每行业与主题门控研判 · 自评分</span></span></a>
             <a href="baskets.html">🧺 <span class="l-en">Thematic Baskets & Rotation</span><span class="l-zh">主题篮子与轮动</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&P · which theme to hold & when to rotate</span><span class="l-zh">等权主题篮子 vs 标普 · 持有哪个主题及何时轮动</span></span></a>
@@ -266,7 +294,7 @@
         <a href="china.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">A-share regime · sectors · flows</span><span class="l-zh">A股周期 · 板块 · 资金</span></span></a>
         <a href="china_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Standouts · alpha · setups</span><span class="l-zh">精选 · 阿尔法 · 布局</span></span></a>
         <div class="nav-dd nav-sub">
-          <a class="nav-sub-trig" href="sector_central_china.html">🧠 <span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span> <span class="caret-r">▸</span></a>
+          <a class="nav-sub-trig" href="sector_central_china.html">🧠 <span class="nav-sub-text"><span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">Cycle map · heat · gated reads</span><span class="l-zh">周期图谱 · 热度 · 门控研判</span></span></span><span class="caret-r">▸</span></a>
           <div class="nav-dd-menu" role="menu">
             <a href="sector_central_china.html">🧠 <span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">Live desk · cycle map · one gated read per sector & theme · graded</span><span class="l-zh">实时看板 · 周期图谱 · 每行业与主题门控研判 · 自评分</span></span></a>
             <a href="baskets_china.html">🧺 <span class="l-en">Thematic Baskets & Rotation</span><span class="l-zh">主题篮子与轮动</span><span class="d"><span class="l-en">Equal-weight theme baskets vs CSI 300 · which theme to hold & when to rotate</span><span class="l-zh">等权主题篮子 vs 沪深300 · 持有哪个主题及何时轮动</span></span></a>
@@ -278,7 +306,7 @@
         <a href="china_strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
         <a href="china_news.html">📰 <span class="l-en">China News Feed</span><span class="l-zh">中国新闻流</span><span class="d"><span class="l-en">Policy tone · official sources · market tags</span><span class="l-zh">政策基调 · 官方来源 · 市场标签</span></span></a>
         <div class="nav-dd nav-sub">
-          <a class="nav-sub-trig" href="china_intel.html">🔬 <span class="l-en">Research</span><span class="l-zh">研究</span> <span class="caret-r">▸</span></a>
+          <a class="nav-sub-trig" href="china_intel.html">🔬 <span class="nav-sub-text"><span class="l-en">Research</span><span class="l-zh">研究</span><span class="d"><span class="l-en">Intel hub · flows · policy</span><span class="l-zh">情报中心 · 资金流 · 政策</span></span></span><span class="caret-r">▸</span></a>
           <div class="nav-dd-menu" role="menu">
             <a href="china_intel.html">🧠 <span class="l-en">Intelligence Hub</span><span class="l-zh">情报中心</span><span class="d"><span class="l-en">All China intel + Mastermind feed</span><span class="l-zh">全部中国情报 + Mastermind信号</span></span></a>
             <a href="baskets_china_ths.html">🧺 <span class="l-en">同花顺 Theme Baskets</span><span class="l-zh">同花顺主题篮子</span><span class="d"><span class="l-en">Tonghuashun concept boards · members & performance</span><span class="l-zh">同花顺概念板块 · 成分与表现</span></span></a>
@@ -286,6 +314,7 @@
             <a href="china_altdata.html">🛰️ <span class="l-en">Alternative Data</span><span class="l-zh">另类数据</span><span class="d"><span class="l-en">Smart-money convergence · signal lab</span><span class="l-zh">主力共振 · 信号实验室</span></span></a>
             <a href="china_policy_watch.html">🏛️ <span class="l-en">PBoC & Policy Watch</span><span class="l-zh">央行与政策观察</span><span class="d"><span class="l-en">Rate corridor · liquidity · sector policy</span><span class="l-zh">利率走廊 · 流动性 · 行业政策</span></span></a>
             <a href="china_radar.html">📡 <span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span><span class="d"><span class="l-en">Policy/flow signal vs sector price</span><span class="l-zh">政策/资金信号 vs 板块价格</span></span></a>
+            <a href="china_special_situations.html">⚡ <span class="l-en">Special Situations</span><span class="l-zh">特殊事件</span><span class="d"><span class="l-en">Unlocks · inquiry letters · preannouncements · pledge stress</span><span class="l-zh">解禁 · 问询函 · 业绩预告 · 质押风险</span></span></a>
             <a href="narrative_radar.html">🧭 <span class="l-en">Narrative Basket Radar</span><span class="l-zh">主题篮子雷达</span><span class="d"><span class="l-en">Which THS theme is running · global driver · member entries</span><span class="l-zh">哪个同花顺主题正在运行 · 全球驱动 · 成员入场</span></span></a>
           </div>
         </div>
@@ -324,7 +353,7 @@
       <a class="nav-link" href="javascript:void(0)">💠 <span class="l-en">Other Assets</span><span class="l-zh">其他资产</span> <span class="caret">▾</span></a>
       <div class="nav-dd-menu" role="menu">
         <div class="nav-dd nav-sub">
-          <a class="nav-sub-trig" href="vector.html">₿ <span class="l-en">Bitcoin Vector</span><span class="l-zh">比特币向量</span> <span class="caret-r">▸</span></a>
+          <a class="nav-sub-trig" href="vector.html">₿ <span class="nav-sub-text"><span class="l-en">Bitcoin Vector</span><span class="l-zh">比特币向量</span><span class="d"><span class="l-en">Market state · risk · cycle</span><span class="l-zh">市场状态 · 风险 · 周期</span></span></span><span class="caret-r">▸</span></a>
           <div class="nav-dd-menu" role="menu">
             <a href="vector.html">📊 <span class="l-en">Overview</span><span class="l-zh">总览</span><span class="d"><span class="l-en">Market state · risk · momentum</span><span class="l-zh">市场状态 · 风险 · 动量</span></span></a>
             <a href="vector_allocation.html">◎ <span class="l-en">Allocation Strategy</span><span class="l-zh">仓位策略</span><span class="d"><span class="l-en">BTC · ETH · alts · cash</span><span class="l-zh">BTC · ETH · 山寨 · 现金</span></span></a>
@@ -332,7 +361,7 @@
           </div>
         </div>
         <div class="nav-dd nav-sub">
-          <a class="nav-sub-trig" href="commodities.html">🛢 <span class="l-en">Commodities</span><span class="l-zh">大宗商品</span> <span class="caret-r">▸</span></a>
+          <a class="nav-sub-trig" href="commodities.html">🛢 <span class="nav-sub-text"><span class="l-en">Commodities</span><span class="l-zh">大宗商品</span><span class="d"><span class="l-en">Gold · oil · silver · copper</span><span class="l-zh">黄金 · 原油 · 白银 · 铜</span></span></span><span class="caret-r">▸</span></a>
           <div class="nav-dd-menu" role="menu">
             <a href="commodities.html">📊 <span class="l-en">Commodity Dashboard</span><span class="l-zh">商品仪表盘</span><span class="d"><span class="l-en">Gold · silver · copper · oil · complex</span><span class="l-zh">金 · 银 · 铜 · 油 · 综合</span></span></a>
             <a href="commodity_strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Per-commodity tactical strategies</span><span class="l-zh">分品种战术策略</span></span></a>
@@ -451,7 +480,7 @@
           
           <div class="nav-mega-col">
             <div class="nav-mega-h"><span class="l-en">Policy & Quant Lab</span><span class="l-zh">政策与量化</span></div>
-            <a class="nav-mega-item" href="committee.html"><span class="nm-ic">🧬</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Committee View</span><span class="l-zh">委员会视图</span></span><span class="d"><span class="l-en">Every signal traced to its graded source · kernel · ladder · staleness</span><span class="l-zh">每条信号溯源 · 核心估计 · 阶梯状态 · 时效性</span></span></span></a>
+            <a class="nav-mega-item" href="committee.html"><span class="nm-ic">🧠</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Neural Web</span><span class="l-zh">智脑</span></span><span class="d"><span class="l-en">The living brain — synapse map, signal committee, cortex memo</span><span class="l-zh">活体大脑 — 突触地图 · 信号委员会 · 皮层备忘录</span></span></span></a>
             <a class="nav-mega-item" href="policy_watch.html"><span class="nm-ic">🏦</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Fed & Policy Watch</span><span class="l-zh">美联储与政策观察</span></span><span class="d"><span class="l-en">Fed + Administration intent & capital rotation</span><span class="l-zh">美联储+政府意图与资本轮动</span></span></span></a>
             <a class="nav-mega-item" href="whitehouse.html"><span class="nm-ic">🏛️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">White House Watch</span><span class="l-zh">白宫快讯</span></span><span class="d"><span class="l-en">Policy alerts · sector head/tailwinds · exposed names</span><span class="l-zh">政策快讯 · 行业顺逆风 · 受影响标的</span></span></span></a>
             <a class="nav-mega-item" href="signal_lab.html"><span class="nm-ic">🔬</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Signal Lab</span><span class="l-zh">信号实验室</span></span><span class="d"><span class="l-en">Consolidated validation scorecard</span><span class="l-zh">验证记分卡汇总</span></span></span></a>
@@ -478,7 +507,7 @@
 
 <div class="hub-wrap">
   <header class="hh">
-    <span class="eyebrow"><span class="live"></span><span class="l-en">Central command · five desks fused</span><span class="l-zh">中枢指挥 · 五台融合</span> · <time datetime="2026-07-06T09:59:19.780268+00:00">2026-07-06</time></span>
+    <span class="eyebrow"><span class="live"></span><span class="l-en">Central command · five desks fused</span><span class="l-zh">中枢指挥 · 五台融合</span> · <time datetime="2026-07-07T21:04:01.348027+00:00">2026-07-07</time></span>
     <h1><span class="l-en">Intelligence Hub</span><span class="l-zh">情报中心</span></h1>
     <p><span class="l-en">Ranked by EDGE REMAINING — genuine signal × how much of the move is still ahead × a leading desk firing before the crowd — not by how many desks agree (agreement is a lagging, consensus condition). The hero is what is EMERGING: a leading desk positioning into a quiet tape with room to run. The crowd-favourite that has already run is demoted on purpose. Context only, never a trade trigger.</span><span class="l-zh">按「剩余空间」排序 —— 真实信号 × 行情尚未走完的幅度 × 领先信号台抢在人群之前发动 —— 而非看多少台一致（一致性是滞后的共识状态）。主推「萌芽」机会：领先信号台在安静的盘面中悄悄建仓、仍有上行空间。已经跑完的人群宠儿被刻意下调。仅供参考，绝非交易触发。</span></p>
   </header>
@@ -487,17 +516,17 @@
   <div class="cmdbar">
     <span class="mc hot"><b>Goldilocks</b> <span>Q1</span></span>
     <span class="mc"><span class="l-en">Cycle</span><span class="l-zh">周期</span> <b>mid</b></span>
-    <span class="mc"><span class="l-en">Liquidity</span><span class="l-zh">流动性</span> <b>neutral</b></span>
+    <span class="mc"><span class="l-en">Liquidity</span><span class="l-zh">流动性</span> <b>expanding</b></span>
     <span class="mc"><span class="l-en">Fed</span><span class="l-zh">美联储</span> <b>Hawkish</b></span>
-    <span class="mc hot"><span class="l-en">Emerging</span><span class="l-zh">萌芽</span> <b>3</b></span>
-    <span class="mc hot" style="border-color:color-mix(in srgb,var(--info) 50%,var(--line));color:var(--info)"><span class="l-en">Discovery</span><span class="l-zh">发掘</span> <b>149</b></span>
-    <span class="mc"><span class="l-en">Catalysts</span><span class="l-zh">催化</span> <b>2984</b></span>
-    <span class="mc"><span class="l-en">Actionable</span><span class="l-zh">可操作</span> <b>2</b></span>
-    <span class="mc"><span class="l-en">Universe</span><span class="l-zh">覆盖</span> <b>4873</b></span>
+    <span class="mc hot"><span class="l-en">Emerging</span><span class="l-zh">萌芽</span> <b>2</b></span>
+    <span class="mc hot" style="border-color:color-mix(in srgb,var(--info) 50%,var(--line));color:var(--info)"><span class="l-en">Discovery</span><span class="l-zh">发掘</span> <b>147</b></span>
+    <span class="mc"><span class="l-en">Catalysts</span><span class="l-zh">催化</span> <b>2916</b></span>
+    <span class="mc"><span class="l-en">Actionable</span><span class="l-zh">可操作</span> <b>3</b></span>
+    <span class="mc"><span class="l-en">Universe</span><span class="l-zh">覆盖</span> <b>4878</b></span>
   </div>
   <div class="posture">
 <svg class="ic-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
-  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v3m0 12v3m9-9h-3M6 12H3m13.5-6.5-2 2m-7 7-2 2m11 0-2-2m-7-7-2-2"/><circle cx="12" cy="12" r="3.2"/></svg> Goldilocks — growth improving while inflation cools. Posture: CAREFUL — reduce size, tighten stops, let cash build.</div>
+  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v3m0 12v3m9-9h-3M6 12H3m13.5-6.5-2 2m-7 7-2 2m11 0-2-2m-7-7-2-2"/><circle cx="12" cy="12" r="3.2"/></svg> Goldilocks — growth improving while inflation cools. Posture: NEUTRAL — no edge either way; core holdings only, no new conviction bets.</div>
 
   
   <div class="desks">
@@ -509,21 +538,21 @@
 <svg class="ic-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
   stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h13v14H6a2 2 0 0 1-2-2zM17 9h3v8a2 2 0 0 1-2 2M7.5 8.5h6M7.5 12h6M7.5 15.5h4"/></svg> News<span class="dot on"></span></div>
       <small>News flow · the tape</small>
-      <div class="desk-chips"><span class="ql-chip ql-chip-accruing"><span class="l-en">ACCRUING · 8/25 dates</span><span class="l-zh">累积中 · 8/25 日期</span></span></div>
+      <div class="desk-chips"><span class="ql-chip ql-chip-accruing"><span class="l-en">ACCRUING · 11/25 dates</span><span class="l-zh">累积中 · 11/25 日期</span></span></div>
     </a>
     <a class="desk" href="alt_data.html">
       <div class="dh">
 <svg class="ic-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
   stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21h18M5 21V9m5 12V5m5 16v-8m5 8V3"/></svg> Alt-Data<span class="dot on"></span></div>
       <small>Smart-money signal</small>
-      <div class="desk-chips"><span class="ql-chip ql-chip-accruing"><span class="l-en">ACCRUING · 5/25 dates</span><span class="l-zh">累积中 · 5/25 日期</span></span></div>
+      <div class="desk-chips"><span class="ql-chip ql-chip-accruing"><span class="l-en">ACCRUING · 8/25 dates</span><span class="l-zh">累积中 · 8/25 日期</span></span></div>
     </a>
     <a class="desk" href="radar.html">
       <div class="dh">
 <svg class="ic-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
   stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><path d="M12 12 19 7"/></svg> Divergence Radar<span class="dot on"></span></div>
       <small>Activity vs price</small>
-      <div class="desk-chips"><span class="ql-chip ql-chip-accruing"><span class="l-en">ACCRUING · 7/25 dates</span><span class="l-zh">累积中 · 7/25 日期</span></span></div>
+      <div class="desk-chips"><span class="ql-chip ql-chip-accruing"><span class="l-en">ACCRUING · 11/25 dates</span><span class="l-zh">累积中 · 11/25 日期</span></span></div>
     </a>
     <a class="desk" href="us_stocks.html">
       <div class="dh">
@@ -550,6 +579,147 @@
 
   
   
+  
+  
+  <div id="china-lens" class="band"><h2 style="--accent:#f59e0b">
+<svg class="ic-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2.1 5L8.5 15.5l2.1-5z"/></svg>
+    <span class="l-en">China Lens</span><span class="l-zh">中国观察</span>
+    <span class="cl-badge"><span class="l-en">Context only</span><span class="l-zh">上下文</span></span></h2>
+    <span class="ln"></span>
+    
+    <span class="cnt" data-tip-en="briefing.json is built in the asia lane (~08:30 UTC); hub builds at 02:00 UTC — typical lag ~18h" data-tip-zh="简报在亚洲收盘后生成（约北京时间16:30），与情报中枢更新时差约18小时">
+      <span class="l-en">as of</span><span class="l-zh">截至</span> 2026-07-07
+      <span class="l-en">(today)</span><span class="l-zh">（今日）</span>
+      
+    </span>
+    
+  </div>
+  <div class="glass acc cl-wrap" style="--accent:#f59e0b;padding:14px 16px">
+    
+    <div class="cl-headline">Upcoming: Customs trade (exports/imports), CPI (consumer prices)</div>
+
+    
+    <div class="cl-chips">
+      
+      
+      
+      
+      <span class="cl-chip"
+        data-tip-en="RORO state: neutral"
+        data-tip-zh="风险偏好状态：neutral">
+        <span class="l-en">CN Sentiment: Neutral</span>
+        <span class="l-zh">CN情绪：中性</span>
+      </span>
+      
+      
+      <span class="cl-chip "
+        data-tip-en="PBoC stance"
+        data-tip-zh="央行立场">
+        <span class="l-en">PBoC: On hold / neutral</span>
+        <span class="l-zh">央行：按兵不动 / 中性</span>
+      </span>
+      
+      
+      <span class="cl-chip"
+        data-tip-en="China news sentiment band"
+        data-tip-zh="中国新闻情绪区间">
+        <span class="l-en">News: cautious / risk-tilted lean</span>
+        <span class="l-zh">新闻：偏谨慎 / 防风险</span>
+      </span>
+      
+      
+      <span class="cl-chip"
+        data-tip-en="4 flagged tickers — see china_intel.html for detail"
+        data-tip-zh="4 只关注标的 — 详情见中国情报页">
+        4 <span class="l-en">flagged tickers</span><span class="l-zh">关注标的</span>
+      </span>
+      
+    </div>
+
+    
+    
+    <div class="cl-rows">
+      
+      <div class="cl-row">
+        <div class="cl-sector">
+          <span class="l-en">Semiconductors</span><span class="l-zh">半导体</span>
+        </div>
+        <span class="stage consensus"><span class="l-en">consensus</span><span class="l-zh">共识</span></span>
+        <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
+<span class="ebar"><i style="width:41%"></i></span>
+<span class="ev">41%</span></div>
+      </div>
+      
+      <div class="cl-row">
+        <div class="cl-sector">
+          <span class="l-en">Real estate</span><span class="l-zh">房地产</span>
+        </div>
+        <span class="stage emerging"><span class="l-en">emerging</span><span class="l-zh">萌芽</span></span>
+        <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
+<span class="ebar"><i style="width:84%"></i></span>
+<span class="ev">84%</span></div>
+      </div>
+      
+    </div>
+    
+
+    
+    
+    <div class="cl-fresh">
+      <span class="cl-fresh-label"><span class="l-en">surfaces:</span><span class="l-zh">数据面：</span></span>
+      
+      <span class="cl-dot cl-dot-ok"
+        data-tip-en="news: 2026-07-07"
+        data-tip-zh="news：2026-07-07">news</span>
+      
+      <span class="cl-dot cl-dot-ok"
+        data-tip-en="policy: 2026-07-07"
+        data-tip-zh="policy：2026-07-07">policy</span>
+      
+      <span class="cl-dot cl-dot-ok"
+        data-tip-en="altdata: 2026-07-07"
+        data-tip-zh="altdata：2026-07-07">altdata</span>
+      
+      <span class="cl-dot cl-dot-ok"
+        data-tip-en="radar: 2026-07-07"
+        data-tip-zh="radar：2026-07-07">radar</span>
+      
+      <span class="cl-dot cl-dot-ok"
+        data-tip-en="analysis: 2026-07-07"
+        data-tip-zh="analysis：2026-07-07">analysis</span>
+      
+      <span class="cl-dot cl-dot-stale"
+        data-tip-en="policy_phrase: 2026-07-02 (stale >3d)"
+        data-tip-zh="policy_phrase：2026-07-02（数据偏旧，超过3天）">policy_phrase</span>
+      
+      <span class="cl-dot cl-dot-ok"
+        data-tip-en="narrative_divergence: None"
+        data-tip-zh="narrative_divergence：None">narrative_divergence</span>
+      
+      <span class="cl-dot cl-dot-ok"
+        data-tip-en="special_situations: 2026-07-06"
+        data-tip-zh="special_situations：2026-07-06">special_situations</span>
+      
+      <span class="cl-dot cl-dot-ok"
+        data-tip-en="command: 2026-07-07"
+        data-tip-zh="command：2026-07-07">command</span>
+      
+    </div>
+    
+
+    
+    <div class="cl-footer">
+      <a href="china_intel.html" class="cl-link">
+        <span class="l-en">Full China report →</span><span class="l-zh">查看中国完整报告 →</span>
+      </a>
+    </div>
+  </div>
+  
+  
+
+  
+  
   <div class="band"><h2 style="--accent:var(--info)">
 <svg class="ic-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
   stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m13 3-9 11h7l-1 7 9-11h-7z"/></svg> <span class="l-en">Emerging edge — before the crowd</span><span class="l-zh">萌芽优势 —— 抢在人群之前</span></h2><span class="ln"></span>
@@ -558,56 +728,17 @@
   <div class="ecards">
     
     <div class="glass acc ecard" style="--accent:var(--up)">
-      <div class="et"><span class="tk">OLLI</span><span class="stage early"><span class="l-en">early</span><span class="l-zh">早期</span></span><span class="egate buy" data-tip-en="Validated confluence buy · tier T2" data-tip-zh="已验证共振买入 · 层级 T2">⚡ <span class="l-en">entry</span><span class="l-zh">入场</span> T2</span>
-        <span class="oppn">29</span></div>
-      <div class="nm" style="font-size:10.5px;color:var(--muted)">OLLI</div>
-      <div class="erd">A leading desk leads, the tape is still catching up — early, ~83% edge remaining.</div>
+      <div class="et"><span class="tk">GOOGL</span><span class="nb-px" data-sym="GOOGL" data-mkt="us">$366.46</span><span class="stage early"><span class="l-en">early</span><span class="l-zh">早期</span></span>
+        <span class="oppn">18</span></div>
+      <div class="nm" style="font-size:10.5px;color:var(--muted)">GOOGL</div>
+      <div class="erd">A leading desk leads, the tape is still catching up — early, ~61% edge remaining.</div>
       <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
-<span class="ebar"><i style="width:83%"></i></span>
-<span class="ev">83%</span></div>
-      
-      <div class="drv"><b>basket laggard (room)</b> · <b>radar forming</b></div>
-      
-    </div>
-    <div class="glass acc ecard" style="--accent:var(--up)">
-      <div class="et"><span class="tk">FIS</span><span class="nb-px" data-sym="FIS" data-mkt="us">$41.80</span><span class="stage early"><span class="l-en">early</span><span class="l-zh">早期</span></span><span class="egate buy" data-tip-en="Validated confluence buy · tier T2" data-tip-zh="已验证共振买入 · 层级 T2">⚡ <span class="l-en">entry</span><span class="l-zh">入场</span> T2</span>
-        <span class="oppn">3</span></div>
-      <div class="nm" style="font-size:10.5px;color:var(--muted)">FIS</div>
-      <div class="erd">A leading desk leads, the tape is still catching up — early, ~90% edge remaining.</div>
-      <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
-<span class="ebar"><i style="width:90%"></i></span>
-<span class="ev">90%</span></div>
-      <div class="tchips"><span class="tchip bad">-47% <span class="l-en">off high</span><span class="l-zh">距高点</span></span><span class="tchip bad">-21pp <span class="l-en">RS 60d</span><span class="l-zh">相对强度</span></span>
+<span class="ebar"><i style="width:61%"></i></span>
+<span class="ev">61%</span></div>
+      <div class="tchips"><span class="tchip ">-9% <span class="l-en">off high</span><span class="l-zh">距高点</span></span><span class="tchip good">+4pp <span class="l-en">RS 60d</span><span class="l-zh">相对强度</span></span>
 </div>
-      <div class="drv"><b>-47% off high</b> · <b>RS -21% vs SPY</b></div>
+      <div class="drv"><b>RS +4% vs SPY</b> · <b>quiet tape (room)</b> · <span style="color:var(--warn)">⚠ radar mature</span></div>
       
-    </div>
-    <div class="glass acc ecard" style="--accent:var(--up)">
-      <div class="et"><span class="tk">WU</span><span class="stage early"><span class="l-en">early</span><span class="l-zh">早期</span></span><span class="egate buy" data-tip-en="Validated confluence buy · tier T2" data-tip-zh="已验证共振买入 · 层级 T2">⚡ <span class="l-en">entry</span><span class="l-zh">入场</span> T2</span>
-        <span class="oppn">3</span></div>
-      <div class="nm" style="font-size:10.5px;color:var(--muted)">WU</div>
-      <div class="erd">A leading desk leads, the tape is still catching up — early, ~83% edge remaining.</div>
-      <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
-<span class="ebar"><i style="width:83%"></i></span>
-<span class="ev">83%</span></div>
-      
-      <div class="drv"><b>basket laggard (room)</b> · <b>radar forming</b></div>
-      
-    </div>
-    <div class="glass acc ecard" style="--accent:var(--up)">
-      <div class="et"><span class="tk">PYPL</span><span class="nb-px" data-sym="PYPL" data-mkt="us">$45.47</span><span class="stage early"><span class="l-en">early</span><span class="l-zh">早期</span></span><span class="egate buy" data-tip-en="Validated confluence buy · tier T1" data-tip-zh="已验证共振买入 · 层级 T1">⚡ <span class="l-en">entry</span><span class="l-zh">入场</span> T1</span>
-        <span class="oppn">2</span></div>
-      <div class="nm" style="font-size:10.5px;color:var(--muted)">PYPL</div>
-      <div class="erd">A leading desk leads, the tape is still catching up — early, ~85% edge remaining.</div>
-      <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
-<span class="ebar"><i style="width:85%"></i></span>
-<span class="ev">85%</span></div>
-      <div class="tchips"><span class="tchip bad">-41% <span class="l-en">off high</span><span class="l-zh">距高点</span></span><span class="tchip bad">-11pp <span class="l-en">RS 60d</span><span class="l-zh">相对强度</span></span><span class="tchip good"><span class="l-en">basing</span><span class="l-zh">筑底</span></span>
-</div>
-      <div class="drv"><b>-41% off high</b> · <b>RS -11% vs SPY</b></div>
-      <div class="drv">
-<svg class="ic-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
-  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 9.5h17M8 3.5v3m8-3v3"/></svg> Strategic Reviews · 15<span class="l-en">d ago</span><span class="l-zh">天前</span></div>
     </div>
   </div>
   
@@ -621,7 +752,7 @@
   <div class="ecards">
     
     <div class="glass acc ecard dcard" style="--accent:var(--info)">
-      <div class="et"><span class="tk">AXON</span><span class="nb-px" data-sym="AXON" data-mkt="us">$597.04</span>
+      <div class="et"><span class="tk">AXON</span><span class="nb-px" data-sym="AXON" data-mkt="us">$622.35</span>
         <span class="src">federal velocity</span>
         
         <span class="dscore">61</span></div>
@@ -631,10 +762,10 @@
         <span style="color:var(--muted)">· <span class="l-en">surfaced into the command list</span><span class="l-zh">已上榜可见</span></span></div>
     </div>
     <div class="glass acc ecard dcard" style="--accent:var(--info)">
-      <div class="et"><span class="tk">MRK</span><span class="nb-px" data-sym="MRK" data-mkt="us">$129.56</span>
+      <div class="et"><span class="tk">MRK</span><span class="nb-px" data-sym="MRK" data-mkt="us">$126.78</span>
         <span class="src">radar quiet</span>
         
-        <span class="dscore">55</span></div>
+        <span class="dscore">53</span></div>
       <div class="erd">clinical phase3 start + fda label expansion; options call-leaning; uncrowded</div>
       <div class="dchan">
 <svg class="ic-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
@@ -643,19 +774,7 @@
         <span style="color:var(--muted)">· <span class="l-en">surfaced into the command list</span><span class="l-zh">已上榜可见</span></span></div>
     </div>
     <div class="glass acc ecard dcard" style="--accent:var(--info)">
-      <div class="et"><span class="tk">GSK</span><span class="nb-px" data-sym="GSK" data-mkt="us">$53.66</span>
-        <span class="src">radar quiet</span>
-        
-        <span class="dscore">51</span></div>
-      <div class="erd">clinical phase3 start + fda approval + fda label expansion; uncrowded</div>
-      <div class="dchan">
-<svg class="ic-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
-  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h4l2.5-7 4 14 2.5-7H21"/></svg> clinical_phase3_start · fda_approval · fda_label_expansion</div>
-      <div class="drv" style="margin-top:6px"><span class="stage building"><span class="l-en">building</span><span class="l-zh">酝酿</span></span>
-        <span style="color:var(--muted)">· <span class="l-en">surfaced into the command list</span><span class="l-zh">已上榜可见</span></span></div>
-    </div>
-    <div class="glass acc ecard dcard" style="--accent:var(--info)">
-      <div class="et"><span class="tk">BWXT</span><span class="nb-px" data-sym="BWXT" data-mkt="us">$191.06</span>
+      <div class="et"><span class="tk">BWXT</span><span class="nb-px" data-sym="BWXT" data-mkt="us">$196.89</span>
         <span class="src">federal velocity</span>
         
         <span class="dscore">50</span></div>
@@ -665,7 +784,7 @@
         <span style="color:var(--muted)">· <span class="l-en">surfaced into the command list</span><span class="l-zh">已上榜可见</span></span></div>
     </div>
     <div class="glass acc ecard dcard" style="--accent:var(--info)">
-      <div class="et"><span class="tk">BA</span><span class="nb-px" data-sym="BA" data-mkt="us">$226.49</span>
+      <div class="et"><span class="tk">BA</span><span class="nb-px" data-sym="BA" data-mkt="us">$234.54</span>
         <span class="src">radar quiet</span>
         
         <span class="dscore">46</span></div>
@@ -681,87 +800,97 @@
         <span class="src">insider cluster</span>
         
         <span class="dscore">45</span></div>
-      <div class="erd">19 insiders bought open-market (officer-led) · 97d-lagged filing</div>
+      <div class="erd">19 insiders bought open-market (officer-led) · 98d-lagged filing</div>
       
       <div class="drv" style="margin-top:6px"><span class="stage faltering"><span class="l-en">faltering</span><span class="l-zh">faltering</span></span>
         <span style="color:var(--muted)">· <span class="l-en">surfaced into the command list</span><span class="l-zh">已上榜可见</span></span></div>
     </div>
     <div class="glass acc ecard dcard" style="--accent:var(--info)">
-      <div class="et"><span class="tk">SGP</span><span class="nb-px" data-sym="SGP" data-mkt="us">$19.15</span>
+      <div class="et"><span class="tk">SGP</span><span class="nb-px" data-sym="SGP" data-mkt="us">$19.09</span>
         <span class="src">insider cluster</span>
         <span class="off"><span class="l-en">off-desk</span><span class="l-zh">非台内</span></span>
         <span class="dscore">45</span></div>
-      <div class="erd">15 insiders bought open-market · 97d-lagged filing</div>
+      <div class="erd">15 insiders bought open-market · 98d-lagged filing</div>
       
       <div class="drv" style="margin-top:6px"><span class="stage discovery"><span class="l-en">discovery</span><span class="l-zh">发掘</span></span>
         <span style="color:var(--muted)">· <span class="l-en">not yet on any desk</span><span class="l-zh">尚未进入任何信号台</span></span></div>
     </div>
     <div class="glass acc ecard dcard" style="--accent:var(--info)">
-      <div class="et"><span class="tk">HTGC</span><span class="nb-px" data-sym="HTGC" data-mkt="us">$15.96</span>
+      <div class="et"><span class="tk">HTGC</span><span class="nb-px" data-sym="HTGC" data-mkt="us">$16.05</span>
         <span class="src">insider cluster</span>
         <span class="off"><span class="l-en">off-desk</span><span class="l-zh">非台内</span></span>
         <span class="dscore">45</span></div>
-      <div class="erd">11 insiders bought open-market (officer-led) · 97d-lagged filing</div>
+      <div class="erd">11 insiders bought open-market (officer-led) · 98d-lagged filing</div>
       
       <div class="drv" style="margin-top:6px"><span class="stage discovery"><span class="l-en">discovery</span><span class="l-zh">发掘</span></span>
         <span style="color:var(--muted)">· <span class="l-en">not yet on any desk</span><span class="l-zh">尚未进入任何信号台</span></span></div>
     </div>
     <div class="glass acc ecard dcard" style="--accent:var(--info)">
-      <div class="et"><span class="tk">BLCO</span><span class="nb-px" data-sym="BLCO" data-mkt="us">$17.16</span>
+      <div class="et"><span class="tk">BLCO</span><span class="nb-px" data-sym="BLCO" data-mkt="us">$17.11</span>
         <span class="src">insider cluster</span>
         <span class="off"><span class="l-en">off-desk</span><span class="l-zh">非台内</span></span>
         <span class="dscore">45</span></div>
-      <div class="erd">9 insiders bought open-market (officer-led) · 97d-lagged filing</div>
+      <div class="erd">9 insiders bought open-market (officer-led) · 98d-lagged filing</div>
       
       <div class="drv" style="margin-top:6px"><span class="stage discovery"><span class="l-en">discovery</span><span class="l-zh">发掘</span></span>
         <span style="color:var(--muted)">· <span class="l-en">not yet on any desk</span><span class="l-zh">尚未进入任何信号台</span></span></div>
     </div>
     <div class="glass acc ecard dcard" style="--accent:var(--info)">
-      <div class="et"><span class="tk">KRRO</span><span class="nb-px" data-sym="KRRO" data-mkt="us">$14.00</span>
+      <div class="et"><span class="tk">KRRO</span><span class="nb-px" data-sym="KRRO" data-mkt="us">$14.06</span>
         <span class="src">insider cluster</span>
         <span class="off"><span class="l-en">off-desk</span><span class="l-zh">非台内</span></span>
         <span class="dscore">45</span></div>
-      <div class="erd">9 insiders bought open-market · 97d-lagged filing</div>
+      <div class="erd">9 insiders bought open-market · 98d-lagged filing</div>
       
       <div class="drv" style="margin-top:6px"><span class="stage discovery"><span class="l-en">discovery</span><span class="l-zh">发掘</span></span>
         <span style="color:var(--muted)">· <span class="l-en">not yet on any desk</span><span class="l-zh">尚未进入任何信号台</span></span></div>
     </div>
     <div class="glass acc ecard dcard" style="--accent:var(--info)">
-      <div class="et"><span class="tk">BRUN</span><span class="nb-px" data-sym="BRUN" data-mkt="us">$31.76</span>
+      <div class="et"><span class="tk">BRUN</span><span class="nb-px" data-sym="BRUN" data-mkt="us">$32.31</span>
         <span class="src">activist ownership</span>
         <span class="off"><span class="l-en">off-desk</span><span class="l-zh">非台内</span></span>
         <span class="dscore">41</span></div>
-      <div class="erd">13G→13D flip — escalation to active filed 21d ago · measuring — not yet event-study-validated · ≤5-biz-day filing lag</div>
+      <div class="erd">13G→13D flip — escalation to active filed 22d ago · measuring — not yet event-study-validated · ≤5-biz-day filing lag</div>
       
       <div class="drv" style="margin-top:6px"><span class="stage discovery"><span class="l-en">discovery</span><span class="l-zh">发掘</span></span>
         <span style="color:var(--muted)">· <span class="l-en">not yet on any desk</span><span class="l-zh">尚未进入任何信号台</span></span></div>
     </div>
     <div class="glass acc ecard dcard" style="--accent:var(--info)">
-      <div class="et"><span class="tk">BZFD</span><span class="nb-px" data-sym="BZFD" data-mkt="us">$1.50</span>
+      <div class="et"><span class="tk">WILC</span>
         <span class="src">activist ownership</span>
-        
+        <span class="off"><span class="l-en">off-desk</span><span class="l-zh">非台内</span></span>
         <span class="dscore">40</span></div>
-      <div class="erd">13G→13D flip — escalation to active filed 24d ago · measuring — not yet event-study-validated · ≤5-biz-day filing lag</div>
+      <div class="erd">13G→13D flip — escalation to active (MEITAV INVESTMENT HOUSE LTD) filed 1d ago · measuring — not yet event-study-validated · ≤5-biz-day filing lag</div>
       
-      <div class="drv" style="margin-top:6px"><span class="stage building"><span class="l-en">building</span><span class="l-zh">酝酿</span></span>
-        <span style="color:var(--muted)">· <span class="l-en">surfaced into the command list</span><span class="l-zh">已上榜可见</span></span></div>
+      <div class="drv" style="margin-top:6px"><span class="stage discovery"><span class="l-en">discovery</span><span class="l-zh">发掘</span></span>
+        <span style="color:var(--muted)">· <span class="l-en">not yet on any desk</span><span class="l-zh">尚未进入任何信号台</span></span></div>
     </div>
     <div class="glass acc ecard dcard" style="--accent:var(--info)">
-      <div class="et"><span class="tk">RKLB</span><span class="nb-px" data-sym="RKLB" data-mkt="us">$100.46</span>
+      <div class="et"><span class="tk">RKLB</span><span class="nb-px" data-sym="RKLB" data-mkt="us">$93.09</span>
         <span class="src">federal velocity</span>
         
         <span class="dscore">40</span></div>
       <div class="erd">new / sparse federal obligated-$ flow</div>
       
-      <div class="drv" style="margin-top:6px"><span class="stage exhausted"><span class="l-en">exhausted</span><span class="l-zh">透支</span></span>
+      <div class="drv" style="margin-top:6px"><span class="stage distribution"><span class="l-en">distribution</span><span class="l-zh">派发</span></span>
         <span style="color:var(--muted)">· <span class="l-en">surfaced into the command list</span><span class="l-zh">已上榜可见</span></span></div>
     </div>
     <div class="glass acc ecard dcard" style="--accent:var(--info)">
-      <div class="et"><span class="tk">CSHR</span><span class="nb-px" data-sym="CSHR" data-mkt="us">$3.96</span>
+      <div class="et"><span class="tk">BZFD</span><span class="nb-px" data-sym="BZFD" data-mkt="us">$1.47</span>
+        <span class="src">activist ownership</span>
+        
+        <span class="dscore">40</span></div>
+      <div class="erd">13G→13D flip — escalation to active filed 25d ago · measuring — not yet event-study-validated · ≤5-biz-day filing lag</div>
+      
+      <div class="drv" style="margin-top:6px"><span class="stage building"><span class="l-en">building</span><span class="l-zh">酝酿</span></span>
+        <span style="color:var(--muted)">· <span class="l-en">surfaced into the command list</span><span class="l-zh">已上榜可见</span></span></div>
+    </div>
+    <div class="glass acc ecard dcard" style="--accent:var(--info)">
+      <div class="et"><span class="tk">CSHR</span><span class="nb-px" data-sym="CSHR" data-mkt="us">$4.06</span>
         <span class="src">activist ownership</span>
         <span class="off"><span class="l-en">off-desk</span><span class="l-zh">非台内</span></span>
-        <span class="dscore">40</span></div>
-      <div class="erd">13G→13D flip — escalation to active (Newton Russell Paul) filed 5d ago · measuring — not yet event-study-validated · ≤5-biz-day filing lag</div>
+        <span class="dscore">39</span></div>
+      <div class="erd">13G→13D flip — escalation to active (Newton Russell Paul) filed 6d ago · measuring — not yet event-study-validated · ≤5-biz-day filing lag</div>
       
       <div class="drv" style="margin-top:6px"><span class="stage discovery"><span class="l-en">discovery</span><span class="l-zh">发掘</span></span>
         <span style="color:var(--muted)">· <span class="l-en">not yet on any desk</span><span class="l-zh">尚未进入任何信号台</span></span></div>
@@ -777,21 +906,21 @@
   stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 2.5 20h19zM12 10v4m0 3v.5"/></svg> <span class="l-en">Exhausted — already run, fade-risk</span><span class="l-zh">透支 —— 已跑完，派发风险</span> <span class="cnt">12</span></h3>
       <div class="arow">
         <span class="tk">HON</span>
-        <span class="rd"><span class="stage distribution"><span class="l-en">distribution</span><span class="l-zh">派发</span></span> <b style="color:var(--down)">47%</b> <span class="l-en">edge left</span><span class="l-zh">剩余</span> · Desks lean bearish and price is rolling over — distribution; de-risk / avoid, not a long.</span></div><div class="arow">
-        <span class="tk">LNG</span>
-        <span class="rd"><span class="stage distribution"><span class="l-en">distribution</span><span class="l-zh">派发</span></span> <b style="color:var(--down)">58%</b> <span class="l-en">edge left</span><span class="l-zh">剩余</span> · Desks lean bearish and price is rolling over — distribution; de-risk / avoid, not a long.</span></div><div class="arow">
-        <span class="tk">ALHC</span>
-        <span class="rd"><span class="stage distribution"><span class="l-en">distribution</span><span class="l-zh">派发</span></span> <b style="color:var(--down)">36%</b> <span class="l-en">edge left</span><span class="l-zh">剩余</span> · Desks lean bearish and price is rolling over — distribution; de-risk / avoid, not a long.</span></div><div class="arow">
-        <span class="tk">DASH</span>
-        <span class="rd"><span class="stage distribution"><span class="l-en">distribution</span><span class="l-zh">派发</span></span> <b style="color:var(--down)">48%</b> <span class="l-en">edge left</span><span class="l-zh">剩余</span> · Desks lean bearish and price is rolling over — distribution; de-risk / avoid, not a long.</span></div><div class="arow">
-        <span class="tk">AEIS</span>
-        <span class="rd"><span class="stage faltering"><span class="l-en">faltering</span><span class="l-zh">faltering</span></span> <b style="color:var(--down)">38%</b> <span class="l-en">edge left</span><span class="l-zh">剩余</span> · No strong cross-desk signal.</span></div><div class="arow">
-        <span class="tk">ETN</span>
         <span class="rd"><span class="stage distribution"><span class="l-en">distribution</span><span class="l-zh">派发</span></span> <b style="color:var(--down)">46%</b> <span class="l-en">edge left</span><span class="l-zh">剩余</span> · Desks lean bearish and price is rolling over — distribution; de-risk / avoid, not a long.</span></div><div class="arow">
-        <span class="tk">TXN</span>
-        <span class="rd"><span class="stage exhausted"><span class="l-en">exhausted</span><span class="l-zh">透支</span></span> <b style="color:var(--down)">25%</b> <span class="l-en">edge left</span><span class="l-zh">剩余</span> · Loud-bullish tape while smart money fades / radar diverges negative — crowded / distribution risk, only ~25% edge left; a late entry to fade.</span></div><div class="arow">
         <span class="tk">PPTA</span>
-        <span class="rd"><span class="stage distribution"><span class="l-en">distribution</span><span class="l-zh">派发</span></span> <b style="color:var(--down)">34%</b> <span class="l-en">edge left</span><span class="l-zh">剩余</span> · Desks lean bearish and price is rolling over — distribution; de-risk / avoid, not a long.</span></div>
+        <span class="rd"><span class="stage distribution"><span class="l-en">distribution</span><span class="l-zh">派发</span></span> <b style="color:var(--down)">34%</b> <span class="l-en">edge left</span><span class="l-zh">剩余</span> · Desks lean bearish and price is rolling over — distribution; de-risk / avoid, not a long.</span></div><div class="arow">
+        <span class="tk">CRML</span>
+        <span class="rd"><span class="stage distribution"><span class="l-en">distribution</span><span class="l-zh">派发</span></span> <b style="color:var(--down)">34%</b> <span class="l-en">edge left</span><span class="l-zh">剩余</span> · Desks lean bearish and price is rolling over — distribution; de-risk / avoid, not a long.</span></div><div class="arow">
+        <span class="tk">DASH</span>
+        <span class="rd"><span class="stage distribution"><span class="l-en">distribution</span><span class="l-zh">派发</span></span> <b style="color:var(--down)">50%</b> <span class="l-en">edge left</span><span class="l-zh">剩余</span> · Desks lean bearish and price is rolling over — distribution; de-risk / avoid, not a long.</span></div><div class="arow">
+        <span class="tk">PINS</span>
+        <span class="rd"><span class="stage distribution"><span class="l-en">distribution</span><span class="l-zh">派发</span></span> <b style="color:var(--down)">37%</b> <span class="l-en">edge left</span><span class="l-zh">剩余</span> · Desks lean bearish and price is rolling over — distribution; de-risk / avoid, not a long.</span></div><div class="arow">
+        <span class="tk">USAR</span>
+        <span class="rd"><span class="stage distribution"><span class="l-en">distribution</span><span class="l-zh">派发</span></span> <b style="color:var(--down)">39%</b> <span class="l-en">edge left</span><span class="l-zh">剩余</span> · Desks lean bearish and price is rolling over — distribution; de-risk / avoid, not a long.</span></div><div class="arow">
+        <span class="tk">SGML</span>
+        <span class="rd"><span class="stage distribution"><span class="l-en">distribution</span><span class="l-zh">派发</span></span> <b style="color:var(--down)">34%</b> <span class="l-en">edge left</span><span class="l-zh">剩余</span> · Desks lean bearish and price is rolling over — distribution; de-risk / avoid, not a long.</span></div><div class="arow">
+        <span class="tk">KNOP</span>
+        <span class="rd"><span class="stage distribution"><span class="l-en">distribution</span><span class="l-zh">派发</span></span> <b style="color:var(--down)">40%</b> <span class="l-en">edge left</span><span class="l-zh">剩余</span> · Desks lean bearish and price is rolling over — distribution; de-risk / avoid, not a long.</span></div>
       
     </div>
     <div class="glass acc alert" style="--accent:#a78bfa">
@@ -799,22 +928,22 @@
 <svg class="ic-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
   stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 9.5h17M8 3.5v3m8-3v3"/></svg> <span class="l-en">Live catalysts — dated events</span><span class="l-zh">在途催化 —— 有确定日期的事件</span> <span class="cnt">12</span></h3>
       <div class="arow">
-        <span class="tk">FCX</span>
-        <span class="rd"><span class="ct" style="font-size:9px;padding:1px 6px;border-radius:5px;background:color-mix(in srgb,#8b5cf6 18%,transparent);color:#a78bfa">Capital Returns</span> <span style="color:var(--muted)">2<span class="l-en">d ago</span><span class="l-zh">天前</span></span><br>Freeport-McMoRan Declares $0.15 Dividend After Strong Q1 2026 Results</span></div><div class="arow">
-        <span class="tk">DLTR</span>
-        <span class="rd"><span class="ct" style="font-size:9px;padding:1px 6px;border-radius:5px;background:color-mix(in srgb,#8b5cf6 18%,transparent);color:#a78bfa">Capital Returns</span> <span style="color:var(--muted)">4<span class="l-en">d ago</span><span class="l-zh">天前</span></span><br>Dollar Tree, Inc. Announces $2.5 Billion Share Repurchase Authorization</span></div><div class="arow">
-        <span class="tk">EOSE</span>
-        <span class="rd"><span class="ct" style="font-size:9px;padding:1px 6px;border-radius:5px;background:color-mix(in srgb,#8b5cf6 18%,transparent);color:#a78bfa">Rights Offerings</span> <span style="color:var(--muted)">4<span class="l-en">d ago</span><span class="l-zh">天前</span></span><br>Eos Energy Enterprises, Inc., a Delaware corporation, filed an 8-K on July 2, 2026, announcing the commencement of a...</span></div><div class="arow">
-        <span class="tk">IPX</span>
-        <span class="rd"><span class="ct" style="font-size:9px;padding:1px 6px;border-radius:5px;background:color-mix(in srgb,#8b5cf6 18%,transparent);color:#a78bfa">Acquisitions</span> <span style="color:var(--muted)">4<span class="l-en">d ago</span><span class="l-zh">天前</span></span><br>IperionX Ltd filed a Form 6-K announcing the completion of its acquisition of Camden critical mineral, heavy rare...</span></div><div class="arow">
-        <span class="tk">AA</span>
-        <span class="rd"><span class="ct" style="font-size:9px;padding:1px 6px;border-radius:5px;background:color-mix(in srgb,#8b5cf6 18%,transparent);color:#a78bfa">Acquisitions</span> <span style="color:var(--muted)">4<span class="l-en">d ago</span><span class="l-zh">天前</span></span><br>Alcoa Corp filed an 8-K disclosing its entry into an Umbrella Implementation Deed to acquire South32 Limited's...</span></div><div class="arow">
-        <span class="tk">AACG</span>
-        <span class="rd"><span class="ct" style="font-size:9px;padding:1px 6px;border-radius:5px;background:color-mix(in srgb,#8b5cf6 18%,transparent);color:#a78bfa">Divestitures</span> <span style="color:var(--muted)">4<span class="l-en">d ago</span><span class="l-zh">天前</span></span><br>ATA Creativity Global filed a Form 6-K reporting completion of the sale of its direct and indirect subsidiaries (ATA...</span></div><div class="arow">
-        <span class="tk">ALP</span>
-        <span class="rd"><span class="ct" style="font-size:9px;padding:1px 6px;border-radius:5px;background:color-mix(in srgb,#8b5cf6 18%,transparent);color:#a78bfa">Issuer Tenders</span> <span style="color:var(--muted)">4<span class="l-en">d ago</span><span class="l-zh">天前</span></span><br>Alpha Compute Corp filed a 6-K reporting the exercise of Put Options by two investors from its September 2025...</span></div><div class="arow">
-        <span class="tk">APGE</span>
-        <span class="rd"><span class="ct" style="font-size:9px;padding:1px 6px;border-radius:5px;background:color-mix(in srgb,#8b5cf6 18%,transparent);color:#a78bfa">Acquisitions</span> <span style="color:var(--muted)">4<span class="l-en">d ago</span><span class="l-zh">天前</span></span><br>Apogee Therapeutics filed a preliminary proxy statement (PREM14A) in connection with its proposed acquisition by...</span></div>
+        <span class="tk">MSFT</span>
+        <span class="rd"><span class="ct" style="font-size:9px;padding:1px 6px;border-radius:5px;background:color-mix(in srgb,#8b5cf6 18%,transparent);color:#a78bfa">Divestitures</span> <span style="color:var(--muted)">0<span class="l-en">d ago</span><span class="l-zh">天前</span></span><br>Microsoft Cuts 3,200 Jobs in Xbox Division and Divests Multiple Developers</span></div><div class="arow">
+        <span class="tk">ABR-PF</span>
+        <span class="rd"><span class="ct" style="font-size:9px;padding:1px 6px;border-radius:5px;background:color-mix(in srgb,#8b5cf6 18%,transparent);color:#a78bfa">Capital Returns</span> <span style="color:var(--muted)">1<span class="l-en">d ago</span><span class="l-zh">天前</span></span><br>Arbor Realty Trust Inc. filed an 8-K to report the issuance and sale of $375M aggregate principal amount of 6.25%...</span></div><div class="arow">
+        <span class="tk">AHT-PI</span>
+        <span class="rd"><span class="ct" style="font-size:9px;padding:1px 6px;border-radius:5px;background:color-mix(in srgb,#8b5cf6 18%,transparent);color:#a78bfa">Divestitures</span> <span style="color:var(--muted)">1<span class="l-en">d ago</span><span class="l-zh">天前</span></span><br>Ashford Hospitality Trust (AHT) filed an 8-K reporting the completion of its sale of the Hyatt Regency Savannah to C...</span></div><div class="arow">
+        <span class="tk">AZ</span>
+        <span class="rd"><span class="ct" style="font-size:9px;padding:1px 6px;border-radius:5px;background:color-mix(in srgb,#8b5cf6 18%,transparent);color:#a78bfa">Capital Returns</span> <span style="color:var(--muted)">1<span class="l-en">d ago</span><span class="l-zh">天前</span></span><br>A2Z Cust2Mate Solutions Corp. (NASDAQ: AZ) filed Form 6-K on July 6, 2026, announcing an extension of its share...</span></div><div class="arow">
+        <span class="tk">BBAAY</span>
+        <span class="rd"><span class="ct" style="font-size:9px;padding:1px 6px;border-radius:5px;background:color-mix(in srgb,#8b5cf6 18%,transparent);color:#a78bfa">Capital Returns</span> <span style="color:var(--muted)">1<span class="l-en">d ago</span><span class="l-zh">天前</span></span><br>Alibaba Group Holding Ltd filed a Form 6-K to furnish Next Day Disclosure Returns required by Hong Kong Listing...</span></div><div class="arow">
+        <span class="tk">BBVXF</span>
+        <span class="rd"><span class="ct" style="font-size:9px;padding:1px 6px;border-radius:5px;background:color-mix(in srgb,#8b5cf6 18%,transparent);color:#a78bfa">Capital Returns</span> <span style="color:var(--muted)">1<span class="l-en">d ago</span><span class="l-zh">天前</span></span><br>BBVA filed a 6-K reporting progress on the third tranche of its share buyback program. Between 1-3 July 2026, it...</span></div><div class="arow">
+        <span class="tk">BEKE</span>
+        <span class="rd"><span class="ct" style="font-size:9px;padding:1px 6px;border-radius:5px;background:color-mix(in srgb,#8b5cf6 18%,transparent);color:#a78bfa">Capital Returns</span> <span style="color:var(--muted)">1<span class="l-en">d ago</span><span class="l-zh">天前</span></span><br>KE Holdings Inc. filed a Form 6-K containing Next Day Disclosure Returns detailing an ongoing share repurchase...</span></div><div class="arow">
+        <span class="tk">BGDE</span>
+        <span class="rd"><span class="ct" style="font-size:9px;padding:1px 6px;border-radius:5px;background:color-mix(in srgb,#8b5cf6 18%,transparent);color:#a78bfa">Capital Returns</span> <span style="color:var(--muted)">1<span class="l-en">d ago</span><span class="l-zh">天前</span></span><br>Big Digital Energy, Inc. (BGDE) filed an 8-K on June 30, 2026, reporting the issuance and sale of 16,700 shares of...</span></div>
       
     </div>
   </div>
@@ -826,51 +955,26 @@
     <span class="cnt"><span class="l-en">edge remaining × signal × leading gap</span><span class="l-zh">剩余空间 × 信号 × 领先差</span></span></div>
   <div class="cmd">
     
-    <div class="glass acc row" style="--accent:var(--info)">
-      <div class="id"><span class="tk">AMZN</span><span class="nb-px" data-sym="AMZN" data-mkt="us">$242.67</span><span class="nm">AMZN</span><span class="mtx" title="news · alt · radar · board · policy">
-<span class="cell off"></span>
-<span class="cell up"></span>
-<span class="cell up"></span>
-<span class="cell off"></span>
-<span class="cell off"></span></span></div>
-      <div class="opp"><b>39</b><small><span class="l-en">opp</span><span class="l-zh">机会</span></small></div>
-      <div class="conv">
-        <div class="convbar "><i style="width:34.0%"></i></div>
-        <div class="convn"><span class="l-en">conv</span><span class="l-zh">信念</span> 34 · 2<span class="l-en">d</span><span class="l-zh">台</span></div>
-      </div>
-      <div>
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span class="stage emerging"><span class="l-en">emerging</span><span class="l-zh">萌芽</span></span><span class="egate no" data-tip-en="Not a confluence buy (flat/sell)" data-tip-zh="非共振买入（观望/卖出）"><span class="l-en">no entry</span><span class="l-zh">无入场</span></span>
-          <span style="font-size:9.5px;color:var(--info);font-weight:700"><span class="l-en">leads crowd by</span><span class="l-zh">领先</span> +2</span></div>
-        <div class="rd2">A leading desk is firing ahead of 2 still-quiet lagging desks, with ~84% of the move still ahead — pre-consensus, where the edge is.</div>
-        <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
-<span class="ebar"><i style="width:84%"></i></span>
-<span class="ev">84%</span></div>
-        <div class="tchips"><span class="tchip ">-12% <span class="l-en">off high</span><span class="l-zh">距高点</span></span><span class="tchip good">+1pp <span class="l-en">RS 60d</span><span class="l-zh">相对强度</span></span>
-</div>
-        <div class="flags"></div>
-        
-      </div>
-    </div>
     <div class="glass acc row" style="--accent:var(--up)">
-      <div class="id"><span class="tk">ROST</span><span class="nb-px" data-sym="ROST" data-mkt="us">$213.43</span><span class="nm">ROST</span><span class="mtx" title="news · alt · radar · board · policy">
+      <div class="id"><span class="tk">ROST</span><span class="nb-px" data-sym="ROST" data-mkt="us">$211.36</span><span class="nm">ROST</span><span class="mtx" title="news · alt · radar · board · policy">
 <span class="cell off"></span>
 <span class="cell off"></span>
 <span class="cell up"></span>
 <span class="cell off"></span>
 <span class="cell off"></span></span></div>
-      <div class="opp"><b>36</b><small><span class="l-en">opp</span><span class="l-zh">机会</span></small></div>
+      <div class="opp"><b>62</b><small><span class="l-en">opp</span><span class="l-zh">机会</span></small></div>
       <div class="conv">
-        <div class="convbar "><i style="width:23.1%"></i></div>
-        <div class="convn"><span class="l-en">conv</span><span class="l-zh">信念</span> 23 · 1<span class="l-en">d</span><span class="l-zh">台</span></div>
+        <div class="convbar "><i style="width:38.1%"></i></div>
+        <div class="convn"><span class="l-en">conv</span><span class="l-zh">信念</span> 38 · 1<span class="l-en">d</span><span class="l-zh">台</span></div>
       </div>
       <div>
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span class="stage early"><span class="l-en">early</span><span class="l-zh">早期</span></span><span class="egate no" data-tip-en="Not a confluence buy (flat/sell)" data-tip-zh="非共振买入（观望/卖出）"><span class="l-en">no entry</span><span class="l-zh">无入场</span></span>
           <span style="font-size:9.5px;color:var(--info);font-weight:700"><span class="l-en">leads crowd by</span><span class="l-zh">领先</span> +1</span></div>
-        <div class="rd2">A leading desk leads, the tape is still catching up — early, ~86% edge remaining.</div>
+        <div class="rd2">A leading desk leads, the tape is still catching up — early, ~88% edge remaining.</div>
         <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
-<span class="ebar"><i style="width:86%"></i></span>
-<span class="ev">86%</span></div>
-        <div class="tchips"><span class="tchip ">-11% <span class="l-en">off high</span><span class="l-zh">距高点</span></span><span class="tchip bad">-14pp <span class="l-en">RS 60d</span><span class="l-zh">相对强度</span></span>
+<span class="ebar"><i style="width:88%"></i></span>
+<span class="ev">88%</span></div>
+        <div class="tchips"><span class="tchip ">-12% <span class="l-en">off high</span><span class="l-zh">距高点</span></span><span class="tchip bad">-17pp <span class="l-en">RS 60d</span><span class="l-zh">相对强度</span></span>
 </div>
         <div class="flags"></div>
         
@@ -883,10 +987,10 @@
 <span class="cell up"></span>
 <span class="cell off"></span>
 <span class="cell off"></span></span></div>
-      <div class="opp"><b>33</b><small><span class="l-en">opp</span><span class="l-zh">机会</span></small></div>
+      <div class="opp"><b>50</b><small><span class="l-en">opp</span><span class="l-zh">机会</span></small></div>
       <div class="conv">
-        <div class="convbar "><i style="width:21.3%"></i></div>
-        <div class="convn"><span class="l-en">conv</span><span class="l-zh">信念</span> 21 · 1<span class="l-en">d</span><span class="l-zh">台</span></div>
+        <div class="convbar "><i style="width:31.9%"></i></div>
+        <div class="convn"><span class="l-en">conv</span><span class="l-zh">信念</span> 32 · 1<span class="l-en">d</span><span class="l-zh">台</span></div>
       </div>
       <div>
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span class="stage early"><span class="l-en">early</span><span class="l-zh">早期</span></span><span class="egate no" data-tip-en="Not a confluence buy (flat/sell)" data-tip-zh="非共振买入（观望/卖出）"><span class="l-en">no entry</span><span class="l-zh">无入场</span></span>
@@ -901,44 +1005,19 @@
       </div>
     </div>
     <div class="glass acc row" style="--accent:var(--up)">
-      <div class="id"><span class="tk">ARM</span><span class="nb-px" data-sym="ARM" data-mkt="us">$315.28</span><span class="nm">ARM</span><span class="mtx" title="news · alt · radar · board · policy">
-<span class="cell off"></span>
-<span class="cell off"></span>
-<span class="cell up"></span>
-<span class="cell off"></span>
-<span class="cell off"></span></span></div>
-      <div class="opp"><b>31</b><small><span class="l-en">opp</span><span class="l-zh">机会</span></small></div>
-      <div class="conv">
-        <div class="convbar "><i style="width:25.0%"></i></div>
-        <div class="convn"><span class="l-en">conv</span><span class="l-zh">信念</span> 25 · 1<span class="l-en">d</span><span class="l-zh">台</span></div>
-      </div>
-      <div>
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span class="stage early"><span class="l-en">early</span><span class="l-zh">早期</span></span><span class="egate no" data-tip-en="Not a confluence buy (flat/sell)" data-tip-zh="非共振买入（观望/卖出）"><span class="l-en">no entry</span><span class="l-zh">无入场</span></span>
-          <span style="font-size:9.5px;color:var(--info);font-weight:700"><span class="l-en">leads crowd by</span><span class="l-zh">领先</span> +1</span></div>
-        <div class="rd2">A leading desk leads, the tape is still catching up — early, ~67% edge remaining.</div>
-        <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
-<span class="ebar"><i style="width:67%"></i></span>
-<span class="ev">67%</span></div>
-        <div class="tchips"><span class="tchip bad">-28% <span class="l-en">off high</span><span class="l-zh">距高点</span></span><span class="tchip good">+106pp <span class="l-en">RS 60d</span><span class="l-zh">相对强度</span></span>
-</div>
-        <div class="flags"></div>
-        
-      </div>
-    </div>
-    <div class="glass acc row" style="--accent:var(--up)">
       <div class="id"><span class="tk">OLLI</span><span class="nm">OLLI</span><span class="mtx" title="news · alt · radar · board · policy">
 <span class="cell off"></span>
 <span class="cell off"></span>
 <span class="cell up"></span>
 <span class="cell off"></span>
 <span class="cell off"></span></span></div>
-      <div class="opp"><b>29</b><small><span class="l-en">opp</span><span class="l-zh">机会</span></small></div>
+      <div class="opp"><b>44</b><small><span class="l-en">opp</span><span class="l-zh">机会</span></small></div>
       <div class="conv">
-        <div class="convbar "><i style="width:18.8%"></i></div>
-        <div class="convn"><span class="l-en">conv</span><span class="l-zh">信念</span> 19 · 1<span class="l-en">d</span><span class="l-zh">台</span></div>
+        <div class="convbar "><i style="width:28.8%"></i></div>
+        <div class="convn"><span class="l-en">conv</span><span class="l-zh">信念</span> 29 · 1<span class="l-en">d</span><span class="l-zh">台</span></div>
       </div>
       <div>
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span class="stage early"><span class="l-en">early</span><span class="l-zh">早期</span></span><span class="egate buy" data-tip-en="Validated confluence buy · tier T2" data-tip-zh="已验证共振买入 · 层级 T2">⚡ <span class="l-en">entry</span><span class="l-zh">入场</span> T2</span>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span class="stage early"><span class="l-en">early</span><span class="l-zh">早期</span></span><span class="egate no" data-tip-en="Not a confluence buy (flat/sell)" data-tip-zh="非共振买入（观望/卖出）"><span class="l-en">no entry</span><span class="l-zh">无入场</span></span>
           <span style="font-size:9.5px;color:var(--info);font-weight:700"><span class="l-en">leads crowd by</span><span class="l-zh">领先</span> +1</span></div>
         <div class="rd2">A leading desk leads, the tape is still catching up — early, ~83% edge remaining.</div>
         <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
@@ -950,7 +1029,178 @@
       </div>
     </div>
     <div class="glass acc row" style="--accent:var(--up)">
-      <div class="id"><span class="tk">SGP</span><span class="nb-px" data-sym="SGP" data-mkt="us">$19.15</span><span class="nm">SGP</span><span class="mtx" title="news · alt · radar · board · policy">
+      <div class="id"><span class="tk">HAS</span><span class="nb-px" data-sym="HAS" data-mkt="us">$77.98</span><span class="nm">HAS</span><span class="mtx" title="news · alt · radar · board · policy">
+<span class="cell off"></span>
+<span class="cell off"></span>
+<span class="cell up"></span>
+<span class="cell off"></span>
+<span class="cell off"></span></span></div>
+      <div class="opp"><b>31</b><small><span class="l-en">opp</span><span class="l-zh">机会</span></small></div>
+      <div class="conv">
+        <div class="convbar "><i style="width:20.0%"></i></div>
+        <div class="convn"><span class="l-en">conv</span><span class="l-zh">信念</span> 20 · 1<span class="l-en">d</span><span class="l-zh">台</span></div>
+      </div>
+      <div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span class="stage early"><span class="l-en">early</span><span class="l-zh">早期</span></span><span class="egate no" data-tip-en="Not a confluence buy (flat/sell)" data-tip-zh="非共振买入（观望/卖出）"><span class="l-en">no entry</span><span class="l-zh">无入场</span></span>
+          <span style="font-size:9.5px;color:var(--info);font-weight:700"><span class="l-en">leads crowd by</span><span class="l-zh">领先</span> +1</span></div>
+        <div class="rd2">A leading desk leads, the tape is still catching up — early, ~85% edge remaining.</div>
+        <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
+<span class="ebar"><i style="width:85%"></i></span>
+<span class="ev">85%</span></div>
+        
+        <div class="flags"></div>
+        
+      </div>
+    </div>
+    <div class="glass acc row" style="--accent:var(--up)">
+      <div class="id"><span class="tk">F</span><span class="nb-px" data-sym="F" data-mkt="us">$13.83</span><span class="nm">F</span><span class="mtx" title="news · alt · radar · board · policy">
+<span class="cell off"></span>
+<span class="cell nz"></span>
+<span class="cell up"></span>
+<span class="cell off"></span>
+<span class="cell off"></span></span></div>
+      <div class="opp"><b>31</b><small><span class="l-en">opp</span><span class="l-zh">机会</span></small></div>
+      <div class="conv">
+        <div class="convbar "><i style="width:27.0%"></i></div>
+        <div class="convn"><span class="l-en">conv</span><span class="l-zh">信念</span> 27 · 1<span class="l-en">d</span><span class="l-zh">台</span></div>
+      </div>
+      <div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span class="stage early"><span class="l-en">early</span><span class="l-zh">早期</span></span><span class="egate no" data-tip-en="Not a confluence buy (flat/sell)" data-tip-zh="非共振买入（观望/卖出）"><span class="l-en">no entry</span><span class="l-zh">无入场</span></span>
+          <span style="font-size:9.5px;color:var(--info);font-weight:700"><span class="l-en">leads crowd by</span><span class="l-zh">领先</span> +1</span></div>
+        <div class="rd2">A leading desk leads, the tape is still catching up — early, ~75% edge remaining.</div>
+        <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
+<span class="ebar"><i style="width:75%"></i></span>
+<span class="ev">75%</span></div>
+        <div class="tchips"><span class="tchip bad">-21% <span class="l-en">off high</span><span class="l-zh">距高点</span></span><span class="tchip good">+4pp <span class="l-en">RS 60d</span><span class="l-zh">相对强度</span></span>
+</div>
+        <div class="flags"><span class="fl pol">catalyst</span></div>
+        
+      </div>
+    </div>
+    <div class="glass acc row" style="--accent:var(--info)">
+      <div class="id"><span class="tk">AMZN</span><span class="nb-px" data-sym="AMZN" data-mkt="us">$244.16</span><span class="nm">AMZN</span><span class="mtx" title="news · alt · radar · board · policy">
+<span class="cell off"></span>
+<span class="cell up"></span>
+<span class="cell up"></span>
+<span class="cell off"></span>
+<span class="cell off"></span></span></div>
+      <div class="opp"><b>31</b><small><span class="l-en">opp</span><span class="l-zh">机会</span></small></div>
+      <div class="conv">
+        <div class="convbar "><i style="width:28.4%"></i></div>
+        <div class="convn"><span class="l-en">conv</span><span class="l-zh">信念</span> 28 · 2<span class="l-en">d</span><span class="l-zh">台</span></div>
+      </div>
+      <div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span class="stage emerging"><span class="l-en">emerging</span><span class="l-zh">萌芽</span></span><span class="egate no" data-tip-en="Not a confluence buy (flat/sell)" data-tip-zh="非共振买入（观望/卖出）"><span class="l-en">no entry</span><span class="l-zh">无入场</span></span>
+          <span style="font-size:9.5px;color:var(--info);font-weight:700"><span class="l-en">leads crowd by</span><span class="l-zh">领先</span> +2</span></div>
+        <div class="rd2">A leading desk is firing ahead of 2 still-quiet lagging desks, with ~80% of the move still ahead — pre-consensus, where the edge is.</div>
+        <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
+<span class="ebar"><i style="width:80%"></i></span>
+<span class="ev">80%</span></div>
+        <div class="tchips"><span class="tchip ">-11% <span class="l-en">off high</span><span class="l-zh">距高点</span></span><span class="tchip bad">-1pp <span class="l-en">RS 60d</span><span class="l-zh">相对强度</span></span>
+</div>
+        <div class="flags"></div>
+        
+      </div>
+    </div>
+    <div class="glass acc row" style="--accent:var(--up)">
+      <div class="id"><span class="tk">WYNN</span><span class="nb-px" data-sym="WYNN" data-mkt="us">$95.89</span><span class="nm">WYNN</span><span class="mtx" title="news · alt · radar · board · policy">
+<span class="cell off"></span>
+<span class="cell off"></span>
+<span class="cell up"></span>
+<span class="cell off"></span>
+<span class="cell off"></span></span></div>
+      <div class="opp"><b>29</b><small><span class="l-en">opp</span><span class="l-zh">机会</span></small></div>
+      <div class="conv">
+        <div class="convbar "><i style="width:18.8%"></i></div>
+        <div class="convn"><span class="l-en">conv</span><span class="l-zh">信念</span> 19 · 1<span class="l-en">d</span><span class="l-zh">台</span></div>
+      </div>
+      <div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span class="stage early"><span class="l-en">early</span><span class="l-zh">早期</span></span><span class="egate no" data-tip-en="Not a confluence buy (flat/sell)" data-tip-zh="非共振买入（观望/卖出）"><span class="l-en">no entry</span><span class="l-zh">无入场</span></span>
+          <span style="font-size:9.5px;color:var(--info);font-weight:700"><span class="l-en">leads crowd by</span><span class="l-zh">领先</span> +1</span></div>
+        <div class="rd2">A leading desk leads, the tape is still catching up — early, ~84% edge remaining.</div>
+        <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
+<span class="ebar"><i style="width:84%"></i></span>
+<span class="ev">84%</span></div>
+        
+        <div class="flags"></div>
+        
+      </div>
+    </div>
+    <div class="glass acc row" style="--accent:var(--up)">
+      <div class="id"><span class="tk">APTV</span><span class="nb-px" data-sym="APTV" data-mkt="us">$59.73</span><span class="nm">APTV</span><span class="mtx" title="news · alt · radar · board · policy">
+<span class="cell off"></span>
+<span class="cell nz"></span>
+<span class="cell up"></span>
+<span class="cell off"></span>
+<span class="cell off"></span></span></div>
+      <div class="opp"><b>29</b><small><span class="l-en">opp</span><span class="l-zh">机会</span></small></div>
+      <div class="conv">
+        <div class="convbar "><i style="width:27.7%"></i></div>
+        <div class="convn"><span class="l-en">conv</span><span class="l-zh">信念</span> 28 · 1<span class="l-en">d</span><span class="l-zh">台</span></div>
+      </div>
+      <div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span class="stage early"><span class="l-en">early</span><span class="l-zh">早期</span></span><span class="egate no" data-tip-en="Not a confluence buy (flat/sell)" data-tip-zh="非共振买入（观望/卖出）"><span class="l-en">no entry</span><span class="l-zh">无入场</span></span>
+          <span style="font-size:9.5px;color:var(--info);font-weight:700"><span class="l-en">leads crowd by</span><span class="l-zh">领先</span> +1</span></div>
+        <div class="rd2">A leading desk leads, the tape is still catching up — early, ~67% edge remaining.</div>
+        <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
+<span class="ebar"><i style="width:67%"></i></span>
+<span class="ev">67%</span></div>
+        
+        <div class="flags"><span class="fl pol">catalyst</span></div>
+        
+      </div>
+    </div>
+    <div class="glass acc row" style="--accent:var(--up)">
+      <div class="id"><span class="tk">TJX</span><span class="nb-px" data-sym="TJX" data-mkt="us">$151.31</span><span class="nm">TJX</span><span class="mtx" title="news · alt · radar · board · policy">
+<span class="cell off"></span>
+<span class="cell off"></span>
+<span class="cell up"></span>
+<span class="cell off"></span>
+<span class="cell off"></span></span></div>
+      <div class="opp"><b>28</b><small><span class="l-en">opp</span><span class="l-zh">机会</span></small></div>
+      <div class="conv">
+        <div class="convbar "><i style="width:19.4%"></i></div>
+        <div class="convn"><span class="l-en">conv</span><span class="l-zh">信念</span> 19 · 1<span class="l-en">d</span><span class="l-zh">台</span></div>
+      </div>
+      <div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span class="stage early"><span class="l-en">early</span><span class="l-zh">早期</span></span><span class="egate no" data-tip-en="Not a confluence buy (flat/sell)" data-tip-zh="非共振买入（观望/卖出）"><span class="l-en">no entry</span><span class="l-zh">无入场</span></span>
+          <span style="font-size:9.5px;color:var(--info);font-weight:700"><span class="l-en">leads crowd by</span><span class="l-zh">领先</span> +1</span></div>
+        <div class="rd2">A leading desk leads, the tape is still catching up — early, ~79% edge remaining.</div>
+        <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
+<span class="ebar"><i style="width:79%"></i></span>
+<span class="ev">79%</span></div>
+        <div class="tchips"><span class="tchip ">-10% <span class="l-en">off high</span><span class="l-zh">距高点</span></span><span class="tchip bad">-17pp <span class="l-en">RS 60d</span><span class="l-zh">相对强度</span></span>
+</div>
+        <div class="flags"></div>
+        
+      </div>
+    </div>
+    <div class="glass acc row" style="--accent:var(--info)">
+      <div class="id"><span class="tk">GM</span><span class="nb-px" data-sym="GM" data-mkt="us">$77.85</span><span class="nm">GM</span><span class="mtx" title="news · alt · radar · board · policy">
+<span class="cell off"></span>
+<span class="cell off"></span>
+<span class="cell up"></span>
+<span class="cell off"></span>
+<span class="cell off"></span></span></div>
+      <div class="opp"><b>28</b><small><span class="l-en">opp</span><span class="l-zh">机会</span></small></div>
+      <div class="conv">
+        <div class="convbar "><i style="width:21.0%"></i></div>
+        <div class="convn"><span class="l-en">conv</span><span class="l-zh">信念</span> 21 · 1<span class="l-en">d</span><span class="l-zh">台</span></div>
+      </div>
+      <div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span class="stage emerging"><span class="l-en">emerging</span><span class="l-zh">萌芽</span></span><span class="egate no" data-tip-en="Not a confluence buy (flat/sell)" data-tip-zh="非共振买入（观望/卖出）"><span class="l-en">no entry</span><span class="l-zh">无入场</span></span>
+          <span style="font-size:9.5px;color:var(--info);font-weight:700"><span class="l-en">leads crowd by</span><span class="l-zh">领先</span> +1</span></div>
+        <div class="rd2">A leading desk is firing ahead of 1 still-quiet lagging desk, with ~86% of the move still ahead — pre-consensus, where the edge is.</div>
+        <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
+<span class="ebar"><i style="width:86%"></i></span>
+<span class="ev">86%</span></div>
+        
+        <div class="flags"></div>
+        
+      </div>
+    </div>
+    <div class="glass acc row" style="--accent:var(--up)">
+      <div class="id"><span class="tk">SGP</span><span class="nb-px" data-sym="SGP" data-mkt="us">$19.09</span><span class="nm">SGP</span><span class="mtx" title="news · alt · radar · board · policy">
 <span class="cell off"></span>
 <span class="cell off"></span>
 <span class="cell off"></span>
@@ -964,18 +1214,18 @@
       <div>
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span class="stage discovery"><span class="l-en">discovery</span><span class="l-zh">发掘</span></span><span class="egate no" data-tip-en="Not a confluence buy (flat/sell)" data-tip-zh="非共振买入（观望/卖出）"><span class="l-en">no entry</span><span class="l-zh">无入场</span></span>
           <span style="font-size:9.5px;color:var(--info);font-weight:700"><span class="l-en">leads crowd by</span><span class="l-zh">领先</span> +1</span></div>
-        <div class="rd2">15 insiders bought open-market · 97d-lagged filing</div>
+        <div class="rd2">15 insiders bought open-market · 98d-lagged filing</div>
         <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
 <span class="ebar"><i style="width:73%"></i></span>
 <span class="ev">73%</span></div>
-        <div class="tchips"><span class="tchip bad">-35% <span class="l-en">off high</span><span class="l-zh">距高点</span></span><span class="tchip bad">-22pp <span class="l-en">RS 60d</span><span class="l-zh">相对强度</span></span>
+        <div class="tchips"><span class="tchip bad">-36% <span class="l-en">off high</span><span class="l-zh">距高点</span></span><span class="tchip bad">-25pp <span class="l-en">RS 60d</span><span class="l-zh">相对强度</span></span><span class="tchip bad"><span class="l-en">rolling over</span><span class="l-zh">见顶回落</span></span>
 </div>
         <div class="flags"><span class="fl edge">discovery</span></div>
         
       </div>
     </div>
     <div class="glass acc row" style="--accent:var(--up)">
-      <div class="id"><span class="tk">HTGC</span><span class="nb-px" data-sym="HTGC" data-mkt="us">$15.96</span><span class="nm">HTGC</span><span class="mtx" title="news · alt · radar · board · policy">
+      <div class="id"><span class="tk">HTGC</span><span class="nb-px" data-sym="HTGC" data-mkt="us">$16.05</span><span class="nm">HTGC</span><span class="mtx" title="news · alt · radar · board · policy">
 <span class="cell off"></span>
 <span class="cell off"></span>
 <span class="cell off"></span>
@@ -989,18 +1239,18 @@
       <div>
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span class="stage discovery"><span class="l-en">discovery</span><span class="l-zh">发掘</span></span><span class="egate no" data-tip-en="Not a confluence buy (flat/sell)" data-tip-zh="非共振买入（观望/卖出）"><span class="l-en">no entry</span><span class="l-zh">无入场</span></span>
           <span style="font-size:9.5px;color:var(--info);font-weight:700"><span class="l-en">leads crowd by</span><span class="l-zh">领先</span> +1</span></div>
-        <div class="rd2">11 insiders bought open-market (officer-led) · 97d-lagged filing</div>
+        <div class="rd2">11 insiders bought open-market (officer-led) · 98d-lagged filing</div>
         <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
 <span class="ebar"><i style="width:73%"></i></span>
 <span class="ev">73%</span></div>
-        <div class="tchips"><span class="tchip ">-11% <span class="l-en">off high</span><span class="l-zh">距高点</span></span><span class="tchip bad">-4pp <span class="l-en">RS 60d</span><span class="l-zh">相对强度</span></span>
+        <div class="tchips"><span class="tchip ">-10% <span class="l-en">off high</span><span class="l-zh">距高点</span></span><span class="tchip bad">-1pp <span class="l-en">RS 60d</span><span class="l-zh">相对强度</span></span>
 </div>
         <div class="flags"><span class="fl edge">discovery</span></div>
         
       </div>
     </div>
     <div class="glass acc row" style="--accent:var(--up)">
-      <div class="id"><span class="tk">BLCO</span><span class="nb-px" data-sym="BLCO" data-mkt="us">$17.16</span><span class="nm">BLCO</span><span class="mtx" title="news · alt · radar · board · policy">
+      <div class="id"><span class="tk">BLCO</span><span class="nb-px" data-sym="BLCO" data-mkt="us">$17.11</span><span class="nm">BLCO</span><span class="mtx" title="news · alt · radar · board · policy">
 <span class="cell off"></span>
 <span class="cell off"></span>
 <span class="cell off"></span>
@@ -1014,18 +1264,18 @@
       <div>
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span class="stage discovery"><span class="l-en">discovery</span><span class="l-zh">发掘</span></span><span class="egate no" data-tip-en="Not a confluence buy (flat/sell)" data-tip-zh="非共振买入（观望/卖出）"><span class="l-en">no entry</span><span class="l-zh">无入场</span></span>
           <span style="font-size:9.5px;color:var(--info);font-weight:700"><span class="l-en">leads crowd by</span><span class="l-zh">领先</span> +1</span></div>
-        <div class="rd2">9 insiders bought open-market (officer-led) · 97d-lagged filing</div>
+        <div class="rd2">9 insiders bought open-market (officer-led) · 98d-lagged filing</div>
         <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
 <span class="ebar"><i style="width:73%"></i></span>
 <span class="ev">73%</span></div>
-        <div class="tchips"><span class="tchip ">-8% <span class="l-en">off high</span><span class="l-zh">距高点</span></span><span class="tchip bad">-5pp <span class="l-en">RS 60d</span><span class="l-zh">相对强度</span></span>
+        <div class="tchips"><span class="tchip ">-8% <span class="l-en">off high</span><span class="l-zh">距高点</span></span><span class="tchip bad">-8pp <span class="l-en">RS 60d</span><span class="l-zh">相对强度</span></span>
 </div>
         <div class="flags"><span class="fl edge">discovery</span></div>
         
       </div>
     </div>
     <div class="glass acc row" style="--accent:var(--up)">
-      <div class="id"><span class="tk">KRRO</span><span class="nb-px" data-sym="KRRO" data-mkt="us">$14.00</span><span class="nm">KRRO</span><span class="mtx" title="news · alt · radar · board · policy">
+      <div class="id"><span class="tk">KRRO</span><span class="nb-px" data-sym="KRRO" data-mkt="us">$14.06</span><span class="nm">KRRO</span><span class="mtx" title="news · alt · radar · board · policy">
 <span class="cell off"></span>
 <span class="cell off"></span>
 <span class="cell off"></span>
@@ -1039,11 +1289,11 @@
       <div>
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span class="stage discovery"><span class="l-en">discovery</span><span class="l-zh">发掘</span></span><span class="egate no" data-tip-en="Not a confluence buy (flat/sell)" data-tip-zh="非共振买入（观望/卖出）"><span class="l-en">no entry</span><span class="l-zh">无入场</span></span>
           <span style="font-size:9.5px;color:var(--info);font-weight:700"><span class="l-en">leads crowd by</span><span class="l-zh">领先</span> +1</span></div>
-        <div class="rd2">9 insiders bought open-market · 97d-lagged filing</div>
+        <div class="rd2">9 insiders bought open-market · 98d-lagged filing</div>
         <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
 <span class="ebar"><i style="width:73%"></i></span>
 <span class="ev">73%</span></div>
-        <div class="tchips"><span class="tchip bad">-73% <span class="l-en">off high</span><span class="l-zh">距高点</span></span><span class="tchip bad">-12pp <span class="l-en">RS 60d</span><span class="l-zh">相对强度</span></span><span class="tchip good"><span class="l-en">basing</span><span class="l-zh">筑底</span></span>
+        <div class="tchips"><span class="tchip bad">-73% <span class="l-en">off high</span><span class="l-zh">距高点</span></span><span class="tchip bad">-7pp <span class="l-en">RS 60d</span><span class="l-zh">相对强度</span></span><span class="tchip good"><span class="l-en">basing</span><span class="l-zh">筑底</span></span>
 </div>
         <div class="flags"><span class="fl edge">discovery</span><span class="fl pol">catalyst</span></div>
         
@@ -1064,18 +1314,18 @@
       <div>
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span class="stage discovery"><span class="l-en">discovery</span><span class="l-zh">发掘</span></span><span class="egate no" data-tip-en="Not a confluence buy (flat/sell)" data-tip-zh="非共振买入（观望/卖出）"><span class="l-en">no entry</span><span class="l-zh">无入场</span></span>
           <span style="font-size:9.5px;color:var(--info);font-weight:700"><span class="l-en">leads crowd by</span><span class="l-zh">领先</span> +1</span></div>
-        <div class="rd2">9 insiders bought open-market (officer-led) · 97d-lagged filing</div>
+        <div class="rd2">9 insiders bought open-market (officer-led) · 98d-lagged filing</div>
         <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
 <span class="ebar"><i style="width:73%"></i></span>
 <span class="ev">73%</span></div>
-        <div class="tchips"><span class="tchip bad">-37% <span class="l-en">off high</span><span class="l-zh">距高点</span></span><span class="tchip bad">-13pp <span class="l-en">RS 60d</span><span class="l-zh">相对强度</span></span>
+        <div class="tchips"><span class="tchip bad">-37% <span class="l-en">off high</span><span class="l-zh">距高点</span></span><span class="tchip bad">-11pp <span class="l-en">RS 60d</span><span class="l-zh">相对强度</span></span>
 </div>
         <div class="flags"><span class="fl edge">discovery</span></div>
         
       </div>
     </div>
     <div class="glass acc row" style="--accent:var(--up)">
-      <div class="id"><span class="tk">SPG</span><span class="nb-px" data-sym="SPG" data-mkt="us">$226.06</span><span class="nm">SPG</span><span class="mtx" title="news · alt · radar · board · policy">
+      <div class="id"><span class="tk">SPG</span><span class="nb-px" data-sym="SPG" data-mkt="us">$225.00</span><span class="nm">SPG</span><span class="mtx" title="news · alt · radar · board · policy">
 <span class="cell off"></span>
 <span class="cell off"></span>
 <span class="cell off"></span>
@@ -1089,18 +1339,18 @@
       <div>
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span class="stage discovery"><span class="l-en">discovery</span><span class="l-zh">发掘</span></span><span class="egate no" data-tip-en="Not a confluence buy (flat/sell)" data-tip-zh="非共振买入（观望/卖出）"><span class="l-en">no entry</span><span class="l-zh">无入场</span></span>
           <span style="font-size:9.5px;color:var(--info);font-weight:700"><span class="l-en">leads crowd by</span><span class="l-zh">领先</span> +1</span></div>
-        <div class="rd2">9 insiders bought open-market · 97d-lagged filing</div>
+        <div class="rd2">9 insiders bought open-market · 98d-lagged filing</div>
         <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
 <span class="ebar"><i style="width:73%"></i></span>
 <span class="ev">73%</span></div>
-        <div class="tchips"><span class="tchip ">-1% <span class="l-en">off high</span><span class="l-zh">距高点</span></span><span class="tchip good">+7pp <span class="l-en">RS 60d</span><span class="l-zh">相对强度</span></span>
+        <div class="tchips"><span class="tchip ">-1% <span class="l-en">off high</span><span class="l-zh">距高点</span></span><span class="tchip good">+6pp <span class="l-en">RS 60d</span><span class="l-zh">相对强度</span></span>
 </div>
         <div class="flags"><span class="fl edge">discovery</span></div>
         
       </div>
     </div>
     <div class="glass acc row" style="--accent:var(--up)">
-      <div class="id"><span class="tk">NAVN</span><span class="nb-px" data-sym="NAVN" data-mkt="us">$25.67</span><span class="nm">NAVN</span><span class="mtx" title="news · alt · radar · board · policy">
+      <div class="id"><span class="tk">NAVN</span><span class="nb-px" data-sym="NAVN" data-mkt="us">$26.30</span><span class="nm">NAVN</span><span class="mtx" title="news · alt · radar · board · policy">
 <span class="cell off"></span>
 <span class="cell off"></span>
 <span class="cell off"></span>
@@ -1114,18 +1364,18 @@
       <div>
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span class="stage discovery"><span class="l-en">discovery</span><span class="l-zh">发掘</span></span><span class="egate no" data-tip-en="Not a confluence buy (flat/sell)" data-tip-zh="非共振买入（观望/卖出）"><span class="l-en">no entry</span><span class="l-zh">无入场</span></span>
           <span style="font-size:9.5px;color:var(--info);font-weight:700"><span class="l-en">leads crowd by</span><span class="l-zh">领先</span> +1</span></div>
-        <div class="rd2">8 insiders bought open-market · 97d-lagged filing</div>
+        <div class="rd2">8 insiders bought open-market · 98d-lagged filing</div>
         <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
 <span class="ebar"><i style="width:73%"></i></span>
 <span class="ev">73%</span></div>
-        <div class="tchips"><span class="tchip ">0% <span class="l-en">off high</span><span class="l-zh">距高点</span></span><span class="tchip good">+93pp <span class="l-en">RS 60d</span><span class="l-zh">相对强度</span></span>
+        <div class="tchips"><span class="tchip ">0% <span class="l-en">off high</span><span class="l-zh">距高点</span></span><span class="tchip good">+92pp <span class="l-en">RS 60d</span><span class="l-zh">相对强度</span></span>
 </div>
         <div class="flags"><span class="fl edge">discovery</span><span class="fl pol">catalyst</span></div>
         
       </div>
     </div>
     <div class="glass acc row" style="--accent:var(--up)">
-      <div class="id"><span class="tk">CABA</span><span class="nb-px" data-sym="CABA" data-mkt="us">$3.19</span><span class="nm">CABA</span><span class="mtx" title="news · alt · radar · board · policy">
+      <div class="id"><span class="tk">CABA</span><span class="nb-px" data-sym="CABA" data-mkt="us">$3.01</span><span class="nm">CABA</span><span class="mtx" title="news · alt · radar · board · policy">
 <span class="cell off"></span>
 <span class="cell off"></span>
 <span class="cell off"></span>
@@ -1139,11 +1389,11 @@
       <div>
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span class="stage discovery"><span class="l-en">discovery</span><span class="l-zh">发掘</span></span><span class="egate no" data-tip-en="Not a confluence buy (flat/sell)" data-tip-zh="非共振买入（观望/卖出）"><span class="l-en">no entry</span><span class="l-zh">无入场</span></span>
           <span style="font-size:9.5px;color:var(--info);font-weight:700"><span class="l-en">leads crowd by</span><span class="l-zh">领先</span> +1</span></div>
-        <div class="rd2">7 insiders bought open-market (officer-led) · 97d-lagged filing</div>
+        <div class="rd2">7 insiders bought open-market (officer-led) · 98d-lagged filing</div>
         <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
 <span class="ebar"><i style="width:73%"></i></span>
 <span class="ev">73%</span></div>
-        <div class="tchips"><span class="tchip bad">-23% <span class="l-en">off high</span><span class="l-zh">距高点</span></span><span class="tchip bad">-9pp <span class="l-en">RS 60d</span><span class="l-zh">相对强度</span></span><span class="tchip bad"><span class="l-en">rolling over</span><span class="l-zh">见顶回落</span></span>
+        <div class="tchips"><span class="tchip bad">-27% <span class="l-en">off high</span><span class="l-zh">距高点</span></span><span class="tchip bad">-14pp <span class="l-en">RS 60d</span><span class="l-zh">相对强度</span></span><span class="tchip bad"><span class="l-en">rolling over</span><span class="l-zh">见顶回落</span></span>
 </div>
         <div class="flags"><span class="fl edge">discovery</span></div>
         
@@ -1164,7 +1414,7 @@
       <div>
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span class="stage discovery"><span class="l-en">discovery</span><span class="l-zh">发掘</span></span>
           <span style="font-size:9.5px;color:var(--info);font-weight:700"><span class="l-en">leads crowd by</span><span class="l-zh">领先</span> +1</span></div>
-        <div class="rd2">7 insiders bought open-market (officer-led) · 97d-lagged filing</div>
+        <div class="rd2">7 insiders bought open-market (officer-led) · 98d-lagged filing</div>
         <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
 <span class="ebar"><i style="width:73%"></i></span>
 <span class="ev">73%</span></div>
@@ -1174,7 +1424,7 @@
       </div>
     </div>
     <div class="glass acc row" style="--accent:var(--up)">
-      <div class="id"><span class="tk">FFIN</span><span class="nb-px" data-sym="FFIN" data-mkt="us">$34.88</span><span class="nm">FFIN</span><span class="mtx" title="news · alt · radar · board · policy">
+      <div class="id"><span class="tk">FFIN</span><span class="nb-px" data-sym="FFIN" data-mkt="us">$34.75</span><span class="nm">FFIN</span><span class="mtx" title="news · alt · radar · board · policy">
 <span class="cell off"></span>
 <span class="cell off"></span>
 <span class="cell off"></span>
@@ -1188,18 +1438,18 @@
       <div>
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span class="stage discovery"><span class="l-en">discovery</span><span class="l-zh">发掘</span></span><span class="egate no" data-tip-en="Not a confluence buy (flat/sell)" data-tip-zh="非共振买入（观望/卖出）"><span class="l-en">no entry</span><span class="l-zh">无入场</span></span>
           <span style="font-size:9.5px;color:var(--info);font-weight:700"><span class="l-en">leads crowd by</span><span class="l-zh">领先</span> +1</span></div>
-        <div class="rd2">7 insiders bought open-market (officer-led) · 97d-lagged filing</div>
+        <div class="rd2">7 insiders bought open-market (officer-led) · 98d-lagged filing</div>
         <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
 <span class="ebar"><i style="width:73%"></i></span>
 <span class="ev">73%</span></div>
-        <div class="tchips"><span class="tchip ">-6% <span class="l-en">off high</span><span class="l-zh">距高点</span></span><span class="tchip good">+2pp <span class="l-en">RS 60d</span><span class="l-zh">相对强度</span></span>
+        <div class="tchips"><span class="tchip ">-6% <span class="l-en">off high</span><span class="l-zh">距高点</span></span><span class="tchip good">+1pp <span class="l-en">RS 60d</span><span class="l-zh">相对强度</span></span>
 </div>
         <div class="flags"><span class="fl edge">discovery</span></div>
         
       </div>
     </div>
     <div class="glass acc row" style="--accent:var(--up)">
-      <div class="id"><span class="tk">FMBM</span><span class="nb-px" data-sym="FMBM" data-mkt="us">$37.10</span><span class="nm">FMBM</span><span class="mtx" title="news · alt · radar · board · policy">
+      <div class="id"><span class="tk">FMBM</span><span class="nb-px" data-sym="FMBM" data-mkt="us">$38.44</span><span class="nm">FMBM</span><span class="mtx" title="news · alt · radar · board · policy">
 <span class="cell off"></span>
 <span class="cell off"></span>
 <span class="cell off"></span>
@@ -1213,18 +1463,18 @@
       <div>
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span class="stage discovery"><span class="l-en">discovery</span><span class="l-zh">发掘</span></span><span class="egate no" data-tip-en="Not a confluence buy (flat/sell)" data-tip-zh="非共振买入（观望/卖出）"><span class="l-en">no entry</span><span class="l-zh">无入场</span></span>
           <span style="font-size:9.5px;color:var(--info);font-weight:700"><span class="l-en">leads crowd by</span><span class="l-zh">领先</span> +1</span></div>
-        <div class="rd2">7 insiders bought open-market (officer-led) · 97d-lagged filing</div>
+        <div class="rd2">7 insiders bought open-market (officer-led) · 98d-lagged filing</div>
         <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
 <span class="ebar"><i style="width:73%"></i></span>
 <span class="ev">73%</span></div>
-        <div class="tchips"><span class="tchip ">0% <span class="l-en">off high</span><span class="l-zh">距高点</span></span><span class="tchip good">+9pp <span class="l-en">RS 60d</span><span class="l-zh">相对强度</span></span>
+        <div class="tchips"><span class="tchip ">0% <span class="l-en">off high</span><span class="l-zh">距高点</span></span><span class="tchip good">+16pp <span class="l-en">RS 60d</span><span class="l-zh">相对强度</span></span>
 </div>
         <div class="flags"><span class="fl edge">discovery</span></div>
         
       </div>
     </div>
     <div class="glass acc row" style="--accent:var(--up)">
-      <div class="id"><span class="tk">NCDL</span><span class="nb-px" data-sym="NCDL" data-mkt="us">$12.68</span><span class="nm">NCDL</span><span class="mtx" title="news · alt · radar · board · policy">
+      <div class="id"><span class="tk">NCDL</span><span class="nb-px" data-sym="NCDL" data-mkt="us">$12.61</span><span class="nm">NCDL</span><span class="mtx" title="news · alt · radar · board · policy">
 <span class="cell off"></span>
 <span class="cell off"></span>
 <span class="cell off"></span>
@@ -1238,7 +1488,7 @@
       <div>
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span class="stage discovery"><span class="l-en">discovery</span><span class="l-zh">发掘</span></span><span class="egate buy" data-tip-en="Validated confluence buy · tier T2" data-tip-zh="已验证共振买入 · 层级 T2">⚡ <span class="l-en">entry</span><span class="l-zh">入场</span> T2</span>
           <span style="font-size:9.5px;color:var(--info);font-weight:700"><span class="l-en">leads crowd by</span><span class="l-zh">领先</span> +1</span></div>
-        <div class="rd2">7 insiders bought open-market (officer-led) · 97d-lagged filing</div>
+        <div class="rd2">7 insiders bought open-market (officer-led) · 98d-lagged filing</div>
         <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
 <span class="ebar"><i style="width:73%"></i></span>
 <span class="ev">73%</span></div>
@@ -1248,115 +1498,66 @@
         
       </div>
     </div>
-    <div class="glass acc row" style="--accent:var(--up)">
-      <div class="id"><span class="tk">NXPI</span><span class="nb-px" data-sym="NXPI" data-mkt="us">$273.36</span><span class="nm">NXPI</span><span class="mtx" title="news · alt · radar · board · policy">
-<span class="cell off"></span>
-<span class="cell off"></span>
-<span class="cell up"></span>
-<span class="cell off"></span>
-<span class="cell off"></span></span></div>
-      <div class="opp"><b>26</b><small><span class="l-en">opp</span><span class="l-zh">机会</span></small></div>
-      <div class="conv">
-        <div class="convbar "><i style="width:16.9%"></i></div>
-        <div class="convn"><span class="l-en">conv</span><span class="l-zh">信念</span> 17 · 1<span class="l-en">d</span><span class="l-zh">台</span></div>
-      </div>
-      <div>
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span class="stage early"><span class="l-en">early</span><span class="l-zh">早期</span></span><span class="egate no" data-tip-en="Not a confluence buy (flat/sell)" data-tip-zh="非共振买入（观望/卖出）"><span class="l-en">no entry</span><span class="l-zh">无入场</span></span>
-          <span style="font-size:9.5px;color:var(--info);font-weight:700"><span class="l-en">leads crowd by</span><span class="l-zh">领先</span> +1</span></div>
-        <div class="rd2">A leading desk leads, the tape is still catching up — early, ~82% edge remaining.</div>
-        <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
-<span class="ebar"><i style="width:82%"></i></span>
-<span class="ev">82%</span></div>
-        
-        <div class="flags"></div>
-        
-      </div>
-    </div>
-    <div class="glass acc row" style="--accent:var(--up)">
-      <div class="id"><span class="tk">BURL</span><span class="nm">BURL</span><span class="mtx" title="news · alt · radar · board · policy">
-<span class="cell off"></span>
-<span class="cell off"></span>
-<span class="cell up"></span>
-<span class="cell off"></span>
-<span class="cell off"></span></span></div>
-      <div class="opp"><b>25</b><small><span class="l-en">opp</span><span class="l-zh">机会</span></small></div>
-      <div class="conv">
-        <div class="convbar "><i style="width:16.9%"></i></div>
-        <div class="convn"><span class="l-en">conv</span><span class="l-zh">信念</span> 17 · 1<span class="l-en">d</span><span class="l-zh">台</span></div>
-      </div>
-      <div>
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span class="stage early"><span class="l-en">early</span><span class="l-zh">早期</span></span><span class="egate no" data-tip-en="Not a confluence buy (flat/sell)" data-tip-zh="非共振买入（观望/卖出）"><span class="l-en">no entry</span><span class="l-zh">无入场</span></span>
-          <span style="font-size:9.5px;color:var(--info);font-weight:700"><span class="l-en">leads crowd by</span><span class="l-zh">领先</span> +1</span></div>
-        <div class="rd2">A leading desk leads, the tape is still catching up — early, ~81% edge remaining.</div>
-        <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
-<span class="ebar"><i style="width:81%"></i></span>
-<span class="ev">81%</span></div>
-        
-        <div class="flags"></div>
-        
-      </div>
-    </div>
     <div class="glass acc row" style="--accent:var(--down)">
-      <div class="id"><span class="tk">HON</span><span class="nb-px" data-sym="HON" data-mkt="us">$229.86</span><span class="nm">HON</span><span class="mtx" title="news · alt · radar · board · policy">
+      <div class="id"><span class="tk">HON</span><span class="nb-px" data-sym="HON" data-mkt="us">$231.18</span><span class="nm">HON</span><span class="mtx" title="news · alt · radar · board · policy">
 <span class="cell off"></span>
 <span class="cell nz"></span>
 <span class="cell dn"></span>
 <span class="cell off"></span>
 <span class="cell off"></span></span></div>
-      <div class="opp"><b>24</b><small><span class="l-en">opp</span><span class="l-zh">机会</span></small></div>
+      <div class="opp"><b>26</b><small><span class="l-en">opp</span><span class="l-zh">机会</span></small></div>
       <div class="conv">
-        <div class="convbar dn"><i style="width:37.5%"></i></div>
-        <div class="convn"><span class="l-en">conv</span><span class="l-zh">信念</span> 38 · 1<span class="l-en">d</span><span class="l-zh">台</span></div>
+        <div class="convbar dn"><i style="width:41.3%"></i></div>
+        <div class="convn"><span class="l-en">conv</span><span class="l-zh">信念</span> 41 · 1<span class="l-en">d</span><span class="l-zh">台</span></div>
       </div>
       <div>
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span class="stage distribution"><span class="l-en">distribution</span><span class="l-zh">派发</span></span><span class="egate no" data-tip-en="Not a confluence buy (flat/sell)" data-tip-zh="非共振买入（观望/卖出）"><span class="l-en">no entry</span><span class="l-zh">无入场</span></span>
           </div>
         <div class="rd2">Desks lean bearish and price is rolling over — distribution; de-risk / avoid, not a long.</div>
         <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
-<span class="ebar"><i style="width:47%"></i></span>
-<span class="ev">47%</span></div>
-        <div class="tchips"><span class="tchip ">-7% <span class="l-en">off high</span><span class="l-zh">距高点</span></span><span class="tchip bad">-10pp <span class="l-en">RS 60d</span><span class="l-zh">相对强度</span></span>
+<span class="ebar"><i style="width:46%"></i></span>
+<span class="ev">46%</span></div>
+        <div class="tchips"><span class="tchip ">-6% <span class="l-en">off high</span><span class="l-zh">距高点</span></span><span class="tchip bad">-11pp <span class="l-en">RS 60d</span><span class="l-zh">相对强度</span></span>
 </div>
         <div class="flags"><span class="fl pol">catalyst</span></div>
         
       </div>
     </div>
-    <div class="glass acc row" style="--accent:var(--info)">
-      <div class="id"><span class="tk">AXP</span><span class="nb-px" data-sym="AXP" data-mkt="us">$351.96</span><span class="nm">AXP</span><span class="mtx" title="news · alt · radar · board · policy">
+    <div class="glass acc row" style="--accent:var(--up)">
+      <div class="id"><span class="tk">LVS</span><span class="nb-px" data-sym="LVS" data-mkt="us">$46.58</span><span class="nm">LVS</span><span class="mtx" title="news · alt · radar · board · policy">
 <span class="cell off"></span>
 <span class="cell nz"></span>
-<span class="cell off"></span>
+<span class="cell up"></span>
 <span class="cell off"></span>
 <span class="cell off"></span></span></div>
-      <div class="opp"><b>21</b><small><span class="l-en">opp</span><span class="l-zh">机会</span></small></div>
+      <div class="opp"><b>25</b><small><span class="l-en">opp</span><span class="l-zh">机会</span></small></div>
       <div class="conv">
-        <div class="convbar "><i style="width:2.1%"></i></div>
-        <div class="convn"><span class="l-en">conv</span><span class="l-zh">信念</span> 2 · 0<span class="l-en">d</span><span class="l-zh">台</span></div>
+        <div class="convbar "><i style="width:24.7%"></i></div>
+        <div class="convn"><span class="l-en">conv</span><span class="l-zh">信念</span> 25 · 1<span class="l-en">d</span><span class="l-zh">台</span></div>
       </div>
       <div>
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span class="stage building"><span class="l-en">building</span><span class="l-zh">酝酿</span></span><span class="egate no" data-tip-en="Not a confluence buy (flat/sell)" data-tip-zh="非共振买入（观望/卖出）"><span class="l-en">no entry</span><span class="l-zh">无入场</span></span>
-          </div>
-        <div class="rd2">No strong cross-desk signal.</div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span class="stage early"><span class="l-en">early</span><span class="l-zh">早期</span></span><span class="egate no" data-tip-en="Not a confluence buy (flat/sell)" data-tip-zh="非共振买入（观望/卖出）"><span class="l-en">no entry</span><span class="l-zh">无入场</span></span>
+          <span style="font-size:9.5px;color:var(--info);font-weight:700"><span class="l-en">leads crowd by</span><span class="l-zh">领先</span> +1</span></div>
+        <div class="rd2">A leading desk leads, the tape is still catching up — early, ~65% edge remaining.</div>
         <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
-<span class="ebar"><i style="width:74%"></i></span>
-<span class="ev">74%</span></div>
-        <div class="tchips"><span class="tchip ">-8% <span class="l-en">off high</span><span class="l-zh">距高点</span></span><span class="tchip good">+2pp <span class="l-en">RS 60d</span><span class="l-zh">相对强度</span></span>
-</div>
-        <div class="flags"></div>
+<span class="ebar"><i style="width:65%"></i></span>
+<span class="ev">65%</span></div>
+        
+        <div class="flags"><span class="fl pol">catalyst</span></div>
         
       </div>
     </div>
     <div class="glass acc row" style="--accent:var(--up)">
-      <div class="id"><span class="tk">HPQ</span><span class="nb-px" data-sym="HPQ" data-mkt="us">$21.93</span><span class="nm">HPQ</span><span class="mtx" title="news · alt · radar · board · policy">
+      <div class="id"><span class="tk">LEN</span><span class="nb-px" data-sym="LEN" data-mkt="us">$87.65</span><span class="nm">LEN</span><span class="mtx" title="news · alt · radar · board · policy">
 <span class="cell off"></span>
-<span class="cell off"></span>
+<span class="cell nz"></span>
 <span class="cell up"></span>
 <span class="cell off"></span>
 <span class="cell off"></span></span></div>
-      <div class="opp"><b>20</b><small><span class="l-en">opp</span><span class="l-zh">机会</span></small></div>
+      <div class="opp"><b>22</b><small><span class="l-en">opp</span><span class="l-zh">机会</span></small></div>
       <div class="conv">
-        <div class="convbar "><i style="width:13.8%"></i></div>
-        <div class="convn"><span class="l-en">conv</span><span class="l-zh">信念</span> 14 · 1<span class="l-en">d</span><span class="l-zh">台</span></div>
+        <div class="convbar "><i style="width:18.0%"></i></div>
+        <div class="convn"><span class="l-en">conv</span><span class="l-zh">信念</span> 18 · 1<span class="l-en">d</span><span class="l-zh">台</span></div>
       </div>
       <div>
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span class="stage early"><span class="l-en">early</span><span class="l-zh">早期</span></span><span class="egate no" data-tip-en="Not a confluence buy (flat/sell)" data-tip-zh="非共振买入（观望/卖出）"><span class="l-en">no entry</span><span class="l-zh">无入场</span></span>
@@ -1371,199 +1572,125 @@
       </div>
     </div>
     <div class="glass acc row" style="--accent:var(--down)">
-      <div class="id"><span class="tk">LNG</span><span class="nb-px" data-sym="LNG" data-mkt="us">$245.97</span><span class="nm">LNG</span><span class="mtx" title="news · alt · radar · board · policy">
+      <div class="id"><span class="tk">PPTA</span><span class="nb-px" data-sym="PPTA" data-mkt="us">$21.14</span><span class="nm">PPTA</span><span class="mtx" title="news · alt · radar · board · policy">
 <span class="cell off"></span>
 <span class="cell off"></span>
 <span class="cell dn"></span>
 <span class="cell off"></span>
 <span class="cell off"></span></span></div>
-      <div class="opp"><b>19</b><small><span class="l-en">opp</span><span class="l-zh">机会</span></small></div>
+      <div class="opp"><b>22</b><small><span class="l-en">opp</span><span class="l-zh">机会</span></small></div>
       <div class="conv">
-        <div class="convbar dn"><i style="width:24.7%"></i></div>
-        <div class="convn"><span class="l-en">conv</span><span class="l-zh">信念</span> 25 · 1<span class="l-en">d</span><span class="l-zh">台</span></div>
-      </div>
-      <div>
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span class="stage distribution"><span class="l-en">distribution</span><span class="l-zh">派发</span></span><span class="egate buy" data-tip-en="Validated confluence buy · tier T2" data-tip-zh="已验证共振买入 · 层级 T2">⚡ <span class="l-en">entry</span><span class="l-zh">入场</span> T2</span>
-          </div>
-        <div class="rd2">Desks lean bearish and price is rolling over — distribution; de-risk / avoid, not a long.</div>
-        <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
-<span class="ebar"><i style="width:58%"></i></span>
-<span class="ev">58%</span></div>
-        <div class="tchips"><span class="tchip bad">-17% <span class="l-en">off high</span><span class="l-zh">距高点</span></span><span class="tchip bad">-26pp <span class="l-en">RS 60d</span><span class="l-zh">相对强度</span></span><span class="tchip good"><span class="l-en">basing</span><span class="l-zh">筑底</span></span>
-</div>
-        <div class="flags"></div>
-        
-      </div>
-    </div>
-    <div class="glass acc row" style="--accent:var(--up)">
-      <div class="id"><span class="tk">WYNN</span><span class="nb-px" data-sym="WYNN" data-mkt="us">$95.91</span><span class="nm">WYNN</span><span class="mtx" title="news · alt · radar · board · policy">
-<span class="cell off"></span>
-<span class="cell off"></span>
-<span class="cell up"></span>
-<span class="cell off"></span>
-<span class="cell off"></span></span></div>
-      <div class="opp"><b>18</b><small><span class="l-en">opp</span><span class="l-zh">机会</span></small></div>
-      <div class="conv">
-        <div class="convbar "><i style="width:11.2%"></i></div>
-        <div class="convn"><span class="l-en">conv</span><span class="l-zh">信念</span> 11 · 1<span class="l-en">d</span><span class="l-zh">台</span></div>
-      </div>
-      <div>
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span class="stage early"><span class="l-en">early</span><span class="l-zh">早期</span></span><span class="egate no" data-tip-en="Not a confluence buy (flat/sell)" data-tip-zh="非共振买入（观望/卖出）"><span class="l-en">no entry</span><span class="l-zh">无入场</span></span>
-          <span style="font-size:9.5px;color:var(--info);font-weight:700"><span class="l-en">leads crowd by</span><span class="l-zh">领先</span> +1</span></div>
-        <div class="rd2">A leading desk leads, the tape is still catching up — early, ~87% edge remaining.</div>
-        <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
-<span class="ebar"><i style="width:87%"></i></span>
-<span class="ev">87%</span></div>
-        
-        <div class="flags"></div>
-        
-      </div>
-    </div>
-    <div class="glass acc row" style="--accent:var(--up)">
-      <div class="id"><span class="tk">TJX</span><span class="nb-px" data-sym="TJX" data-mkt="us">$154.26</span><span class="nm">TJX</span><span class="mtx" title="news · alt · radar · board · policy">
-<span class="cell off"></span>
-<span class="cell off"></span>
-<span class="cell up"></span>
-<span class="cell off"></span>
-<span class="cell off"></span></span></div>
-      <div class="opp"><b>18</b><small><span class="l-en">opp</span><span class="l-zh">机会</span></small></div>
-      <div class="conv">
-        <div class="convbar "><i style="width:12.5%"></i></div>
-        <div class="convn"><span class="l-en">conv</span><span class="l-zh">信念</span> 12 · 1<span class="l-en">d</span><span class="l-zh">台</span></div>
-      </div>
-      <div>
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span class="stage early"><span class="l-en">early</span><span class="l-zh">早期</span></span><span class="egate no" data-tip-en="Not a confluence buy (flat/sell)" data-tip-zh="非共振买入（观望/卖出）"><span class="l-en">no entry</span><span class="l-zh">无入场</span></span>
-          <span style="font-size:9.5px;color:var(--info);font-weight:700"><span class="l-en">leads crowd by</span><span class="l-zh">领先</span> +1</span></div>
-        <div class="rd2">A leading desk leads, the tape is still catching up — early, ~78% edge remaining.</div>
-        <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
-<span class="ebar"><i style="width:78%"></i></span>
-<span class="ev">78%</span></div>
-        <div class="tchips"><span class="tchip ">-8% <span class="l-en">off high</span><span class="l-zh">距高点</span></span><span class="tchip bad">-15pp <span class="l-en">RS 60d</span><span class="l-zh">相对强度</span></span>
-</div>
-        <div class="flags"></div>
-        
-      </div>
-    </div>
-    <div class="glass acc row" style="--accent:var(--down)">
-      <div class="id"><span class="tk">ALHC</span><span class="nb-px" data-sym="ALHC" data-mkt="us">$23.80</span><span class="nm">ALHC</span><span class="mtx" title="news · alt · radar · board · policy">
-<span class="cell off"></span>
-<span class="cell off"></span>
-<span class="cell dn"></span>
-<span class="cell off"></span>
-<span class="cell off"></span></span></div>
-      <div class="opp"><b>18</b><small><span class="l-en">opp</span><span class="l-zh">机会</span></small></div>
-      <div class="conv">
-        <div class="convbar dn"><i style="width:30.0%"></i></div>
-        <div class="convn"><span class="l-en">conv</span><span class="l-zh">信念</span> 30 · 1<span class="l-en">d</span><span class="l-zh">台</span></div>
+        <div class="convbar dn"><i style="width:39.4%"></i></div>
+        <div class="convn"><span class="l-en">conv</span><span class="l-zh">信念</span> 39 · 1<span class="l-en">d</span><span class="l-zh">台</span></div>
       </div>
       <div>
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span class="stage distribution"><span class="l-en">distribution</span><span class="l-zh">派发</span></span><span class="egate no" data-tip-en="Not a confluence buy (flat/sell)" data-tip-zh="非共振买入（观望/卖出）"><span class="l-en">no entry</span><span class="l-zh">无入场</span></span>
           </div>
         <div class="rd2">Desks lean bearish and price is rolling over — distribution; de-risk / avoid, not a long.</div>
         <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
-<span class="ebar"><i style="width:36%"></i></span>
-<span class="ev">36%</span></div>
-        <div class="tchips"><span class="tchip ">-1% <span class="l-en">off high</span><span class="l-zh">距高点</span></span><span class="tchip bad">-3pp <span class="l-en">RS 60d</span><span class="l-zh">相对强度</span></span>
+<span class="ebar"><i style="width:34%"></i></span>
+<span class="ev">34%</span></div>
+        <div class="tchips"><span class="tchip bad">-43% <span class="l-en">off high</span><span class="l-zh">距高点</span></span><span class="tchip bad">-40pp <span class="l-en">RS 60d</span><span class="l-zh">相对强度</span></span><span class="tchip bad"><span class="l-en">rolling over</span><span class="l-zh">见顶回落</span></span>
 </div>
-        <div class="flags"></div>
-        
-      </div>
-    </div>
-    <div class="glass acc row" style="--accent:var(--down)">
-      <div class="id"><span class="tk">DASH</span><span class="nb-px" data-sym="DASH" data-mkt="us">$192.01</span><span class="nm">DASH</span><span class="mtx" title="news · alt · radar · board · policy">
-<span class="cell off"></span>
-<span class="cell dn"></span>
-<span class="cell dn"></span>
-<span class="cell off"></span>
-<span class="cell off"></span></span></div>
-      <div class="opp"><b>15</b><small><span class="l-en">opp</span><span class="l-zh">机会</span></small></div>
-      <div class="conv">
-        <div class="convbar dn"><i style="width:25.9%"></i></div>
-        <div class="convn"><span class="l-en">conv</span><span class="l-zh">信念</span> 26 · 2<span class="l-en">d</span><span class="l-zh">台</span></div>
-      </div>
-      <div>
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span class="stage distribution"><span class="l-en">distribution</span><span class="l-zh">派发</span></span><span class="egate no" data-tip-en="Not a confluence buy (flat/sell)" data-tip-zh="非共振买入（观望/卖出）"><span class="l-en">no entry</span><span class="l-zh">无入场</span></span>
-          </div>
-        <div class="rd2">Desks lean bearish and price is rolling over — distribution; de-risk / avoid, not a long.</div>
-        <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
-<span class="ebar"><i style="width:48%"></i></span>
-<span class="ev">48%</span></div>
-        <div class="tchips"><span class="tchip bad">-32% <span class="l-en">off high</span><span class="l-zh">距高点</span></span><span class="tchip good">+10pp <span class="l-en">RS 60d</span><span class="l-zh">相对强度</span></span><span class="tchip good"><span class="l-en">basing</span><span class="l-zh">筑底</span></span>
-</div>
-        <div class="flags"><span class="fl fade">fading</span></div>
+        <div class="flags"><span class="fl ">faltering</span></div>
         
       </div>
     </div>
     <div class="glass acc row" style="--accent:var(--info)">
-      <div class="id"><span class="tk">AEIS</span><span class="nb-px" data-sym="AEIS" data-mkt="us">$311.27</span><span class="nm">AEIS</span><span class="mtx" title="news · alt · radar · board · policy">
+      <div class="id"><span class="tk">AXP</span><span class="nb-px" data-sym="AXP" data-mkt="us">$356.03</span><span class="nm">AXP</span><span class="mtx" title="news · alt · radar · board · policy">
 <span class="cell off"></span>
 <span class="cell nz"></span>
-<span class="cell nz"></span>
+<span class="cell off"></span>
 <span class="cell off"></span>
 <span class="cell off"></span></span></div>
-      <div class="opp"><b>15</b><small><span class="l-en">opp</span><span class="l-zh">机会</span></small></div>
+      <div class="opp"><b>20</b><small><span class="l-en">opp</span><span class="l-zh">机会</span></small></div>
       <div class="conv">
-        <div class="convbar "><i style="width:6.0%"></i></div>
-        <div class="convn"><span class="l-en">conv</span><span class="l-zh">信念</span> 6 · 0<span class="l-en">d</span><span class="l-zh">台</span></div>
+        <div class="convbar "><i style="width:2.1%"></i></div>
+        <div class="convn"><span class="l-en">conv</span><span class="l-zh">信念</span> 2 · 0<span class="l-en">d</span><span class="l-zh">台</span></div>
       </div>
       <div>
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span class="stage faltering"><span class="l-en">faltering</span><span class="l-zh">faltering</span></span><span class="egate no" data-tip-en="Not a confluence buy (flat/sell)" data-tip-zh="非共振买入（观望/卖出）"><span class="l-en">no entry</span><span class="l-zh">无入场</span></span>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span class="stage building"><span class="l-en">building</span><span class="l-zh">酝酿</span></span><span class="egate no" data-tip-en="Not a confluence buy (flat/sell)" data-tip-zh="非共振买入（观望/卖出）"><span class="l-en">no entry</span><span class="l-zh">无入场</span></span>
           </div>
         <div class="rd2">No strong cross-desk signal.</div>
         <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
-<span class="ebar"><i style="width:38%"></i></span>
-<span class="ev">38%</span></div>
-        <div class="tchips"><span class="tchip bad">-20% <span class="l-en">off high</span><span class="l-zh">距高点</span></span><span class="tchip bad">-21pp <span class="l-en">RS 60d</span><span class="l-zh">相对强度</span></span><span class="tchip bad"><span class="l-en">rolling over</span><span class="l-zh">见顶回落</span></span>
+<span class="ebar"><i style="width:73%"></i></span>
+<span class="ev">73%</span></div>
+        <div class="tchips"><span class="tchip ">-7% <span class="l-en">off high</span><span class="l-zh">距高点</span></span><span class="tchip good">+2pp <span class="l-en">RS 60d</span><span class="l-zh">相对强度</span></span>
 </div>
-        <div class="flags"><span class="fl ">faltering</span><span class="fl pol">catalyst</span></div>
+        <div class="flags"></div>
         
       </div>
     </div>
     <div class="glass acc row" style="--accent:var(--up)">
-      <div class="id"><span class="tk">NBIS</span><span class="nb-px" data-sym="NBIS" data-mkt="us">$215.62</span><span class="nm">NBIS</span><span class="mtx" title="news · alt · radar · board · policy">
+      <div class="id"><span class="tk">LOW</span><span class="nb-px" data-sym="LOW" data-mkt="us">$223.78</span><span class="nm">LOW</span><span class="mtx" title="news · alt · radar · board · policy">
 <span class="cell off"></span>
-<span class="cell nz"></span>
+<span class="cell off"></span>
 <span class="cell up"></span>
 <span class="cell off"></span>
 <span class="cell off"></span></span></div>
-      <div class="opp"><b>15</b><small><span class="l-en">opp</span><span class="l-zh">机会</span></small></div>
+      <div class="opp"><b>19</b><small><span class="l-en">opp</span><span class="l-zh">机会</span></small></div>
       <div class="conv">
-        <div class="convbar "><i style="width:35.0%"></i></div>
-        <div class="convn"><span class="l-en">conv</span><span class="l-zh">信念</span> 35 · 1<span class="l-en">d</span><span class="l-zh">台</span></div>
+        <div class="convbar "><i style="width:25.0%"></i></div>
+        <div class="convn"><span class="l-en">conv</span><span class="l-zh">信念</span> 25 · 1<span class="l-en">d</span><span class="l-zh">台</span></div>
       </div>
       <div>
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span class="stage consensus"><span class="l-en">consensus</span><span class="l-zh">共识</span></span><span class="egate no" data-tip-en="Not a confluence buy (flat/sell)" data-tip-zh="非共振买入（观望/卖出）"><span class="l-en">no entry</span><span class="l-zh">无入场</span></span>
           </div>
-        <div class="rd2">1 desks agree and price has confirmed — consensus, ~44% edge remaining; own it, don't chase it.</div>
+        <div class="rd2">1 desks agree and price has confirmed — consensus, ~56% edge remaining; own it, don't chase it.</div>
         <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
-<span class="ebar"><i style="width:44%"></i></span>
-<span class="ev">44%</span></div>
-        <div class="tchips"><span class="tchip bad">-25% <span class="l-en">off high</span><span class="l-zh">距高点</span></span><span class="tchip good">+71pp <span class="l-en">RS 60d</span><span class="l-zh">相对强度</span></span>
+<span class="ebar"><i style="width:56%"></i></span>
+<span class="ev">56%</span></div>
+        <div class="tchips"><span class="tchip bad">-22% <span class="l-en">off high</span><span class="l-zh">距高点</span></span><span class="tchip bad">-19pp <span class="l-en">RS 60d</span><span class="l-zh">相对强度</span></span><span class="tchip good"><span class="l-en">basing</span><span class="l-zh">筑底</span></span>
+</div>
+        <div class="flags"></div>
+        
+      </div>
+    </div>
+    <div class="glass acc row" style="--accent:var(--up)">
+      <div class="id"><span class="tk">DLTR</span><span class="nb-px" data-sym="DLTR" data-mkt="us">$121.46</span><span class="nm">DLTR</span><span class="mtx" title="news · alt · radar · board · policy">
+<span class="cell off"></span>
+<span class="cell off"></span>
+<span class="cell up"></span>
+<span class="cell off"></span>
+<span class="cell off"></span></span></div>
+      <div class="opp"><b>19</b><small><span class="l-en">opp</span><span class="l-zh">机会</span></small></div>
+      <div class="conv">
+        <div class="convbar "><i style="width:25.0%"></i></div>
+        <div class="convn"><span class="l-en">conv</span><span class="l-zh">信念</span> 25 · 1<span class="l-en">d</span><span class="l-zh">台</span></div>
+      </div>
+      <div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span class="stage consensus"><span class="l-en">consensus</span><span class="l-zh">共识</span></span><span class="egate no" data-tip-en="Not a confluence buy (flat/sell)" data-tip-zh="非共振买入（观望/卖出）"><span class="l-en">no entry</span><span class="l-zh">无入场</span></span>
+          </div>
+        <div class="rd2">1 desks agree and price has confirmed — consensus, ~56% edge remaining; own it, don't chase it.</div>
+        <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
+<span class="ebar"><i style="width:56%"></i></span>
+<span class="ev">56%</span></div>
+        <div class="tchips"><span class="tchip ">-14% <span class="l-en">off high</span><span class="l-zh">距高点</span></span><span class="tchip good">+4pp <span class="l-en">RS 60d</span><span class="l-zh">相对强度</span></span>
 </div>
         <div class="flags"><span class="fl pol">catalyst</span></div>
         
       </div>
     </div>
     <div class="glass acc row" style="--accent:var(--up)">
-      <div class="id"><span class="tk">UCTT</span><span class="nb-px" data-sym="UCTT" data-mkt="us">$106.48</span><span class="nm">UCTT</span><span class="mtx" title="news · alt · radar · board · policy">
+      <div class="id"><span class="tk">AAPL</span><span class="nb-px" data-sym="AAPL" data-mkt="us">$312.66</span><span class="nm">AAPL</span><span class="mtx" title="news · alt · radar · board · policy">
 <span class="cell off"></span>
-<span class="cell nz"></span>
+<span class="cell up"></span>
 <span class="cell up"></span>
 <span class="cell off"></span>
 <span class="cell off"></span></span></div>
-      <div class="opp"><b>15</b><small><span class="l-en">opp</span><span class="l-zh">机会</span></small></div>
+      <div class="opp"><b>19</b><small><span class="l-en">opp</span><span class="l-zh">机会</span></small></div>
       <div class="conv">
-        <div class="convbar "><i style="width:39.0%"></i></div>
-        <div class="convn"><span class="l-en">conv</span><span class="l-zh">信念</span> 39 · 1<span class="l-en">d</span><span class="l-zh">台</span></div>
+        <div class="convbar "><i style="width:39.6%"></i></div>
+        <div class="convn"><span class="l-en">conv</span><span class="l-zh">信念</span> 40 · 2<span class="l-en">d</span><span class="l-zh">台</span></div>
       </div>
       <div>
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span class="stage consensus"><span class="l-en">consensus</span><span class="l-zh">共识</span></span><span class="egate no" data-tip-en="Not a confluence buy (flat/sell)" data-tip-zh="非共振买入（观望/卖出）"><span class="l-en">no entry</span><span class="l-zh">无入场</span></span>
           </div>
-        <div class="rd2">1 desks agree and price has confirmed — consensus, ~34% edge remaining; own it, don't chase it.</div>
+        <div class="rd2">2 desks agree and price has confirmed — consensus, ~45% edge remaining; own it, don't chase it.</div>
         <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
-<span class="ebar"><i style="width:34%"></i></span>
-<span class="ev">34%</span></div>
-        <div class="tchips"><span class="tchip bad">-25% <span class="l-en">off high</span><span class="l-zh">距高点</span></span><span class="tchip good">+55pp <span class="l-en">RS 60d</span><span class="l-zh">相对强度</span></span><span class="tchip good"><span class="l-en">basing</span><span class="l-zh">筑底</span></span>
+<span class="ebar"><i style="width:45%"></i></span>
+<span class="ev">45%</span></div>
+        <div class="tchips"><span class="tchip ">-1% <span class="l-en">off high</span><span class="l-zh">距高点</span></span><span class="tchip good">+10pp <span class="l-en">RS 60d</span><span class="l-zh">相对强度</span></span>
 </div>
         <div class="flags"></div>
         
@@ -1583,19 +1710,19 @@
     
     <div class="glass acc sec">
       <div class="sh">5<span class="l-en">d</span><span class="l-zh">天</span> <span class="l-en">horizon</span><span class="l-zh">周期</span>
-        <span class="etf"><span class="l-en">IC</span><span class="l-zh">信息系数</span> -0.082</span>
+        <span class="etf"><span class="l-en">IC</span><span class="l-zh">信息系数</span> -0.093</span>
         <span class="pol" style="background:color-mix(in srgb,var(--muted) 22%,transparent);color:var(--muted)"><span class="l-en">measuring</span><span class="l-zh">测量中</span></span></div>
-      <small><span><span class="l-en">n</span><span class="l-zh">样本</span> <b>3676</b></span>
-        <span style="color:var(--up)"><span class="l-en">emerging</span><span class="l-zh">萌芽</span> <b>-1.0%</b></span>
-        <span style="color:var(--down)"><span class="l-en">exhausted</span><span class="l-zh">透支</span> <b>+1.8%</b></span></small>
+      <small><span><span class="l-en">n</span><span class="l-zh">样本</span> <b>5363</b></span>
+        <span style="color:var(--up)"><span class="l-en">emerging</span><span class="l-zh">萌芽</span> <b>-1.3%</b></span>
+        <span style="color:var(--down)"><span class="l-en">exhausted</span><span class="l-zh">透支</span> <b>+0.7%</b></span></small>
     </div>
     <div class="glass acc sec">
       <div class="sh">10<span class="l-en">d</span><span class="l-zh">天</span> <span class="l-en">horizon</span><span class="l-zh">周期</span>
-        <span class="etf"><span class="l-en">IC</span><span class="l-zh">信息系数</span> -0.181~</span>
+        <span class="etf"><span class="l-en">IC</span><span class="l-zh">信息系数</span> -0.170</span>
         <span class="pol" style="background:color-mix(in srgb,var(--muted) 22%,transparent);color:var(--muted)"><span class="l-en">measuring</span><span class="l-zh">测量中</span></span></div>
-      <small><span><span class="l-en">n</span><span class="l-zh">样本</span> <b>1073</b></span>
-        <span style="color:var(--up)"><span class="l-en">emerging</span><span class="l-zh">萌芽</span> <b>-6.0%</b></span>
-        <span style="color:var(--down)"><span class="l-en">exhausted</span><span class="l-zh">透支</span> <b>+2.6%</b></span></small>
+      <small><span><span class="l-en">n</span><span class="l-zh">样本</span> <b>3162</b></span>
+        <span style="color:var(--up)"><span class="l-en">emerging</span><span class="l-zh">萌芽</span> <b>-2.6%</b></span>
+        <span style="color:var(--down)"><span class="l-en">exhausted</span><span class="l-zh">透支</span> <b>+1.0%</b></span></small>
     </div>
   </div>
   
@@ -1610,43 +1737,35 @@
     <span class="cnt"><span class="l-en">where the desks cluster</span><span class="l-zh">各台聚集之处</span></span></div>
   <div class="heat">
     
-    <div class="glass acc sec" style="--accent:var(--down)">
-      <div class="sh"><span class="etf">XLE</span> Energy
-        </div>
-      <div class="meter"><i style="width:24.7%"></i></div>
-      <small><span><span class="l-en">mean</span><span class="l-zh">均</span> <b>24.7</b></span><span><span class="l-en">names</span><span class="l-zh">名</span> <b>1</b></span>
-        
-        </small>
-    </div>
     <div class="glass acc sec" style="--accent:var(--up)">
       <div class="sh"><span class="etf">XLY</span> Discretionary
         </div>
-      <div class="meter"><i style="width:14.1%"></i></div>
-      <small><span><span class="l-en">mean</span><span class="l-zh">均</span> <b>14.1</b></span><span><span class="l-en">names</span><span class="l-zh">名</span> <b>4</b></span>
+      <div class="meter"><i style="width:18.6%"></i></div>
+      <small><span><span class="l-en">mean</span><span class="l-zh">均</span> <b>18.6</b></span><span><span class="l-en">names</span><span class="l-zh">名</span> <b>3</b></span>
+        
+        </small>
+    </div>
+    <div class="glass acc sec" style="--accent:var(--down)">
+      <div class="sh"><span class="etf">XLE</span> Energy
+        </div>
+      <div class="meter"><i style="width:17.3%"></i></div>
+      <small><span><span class="l-en">mean</span><span class="l-zh">均</span> <b>17.3</b></span><span><span class="l-en">names</span><span class="l-zh">名</span> <b>1</b></span>
         
         </small>
     </div>
     <div class="glass acc sec" style="--accent:var(--up)">
-      <div class="sh"><span class="etf">XLF</span> Financials
-        </div>
-      <div class="meter"><i style="width:12.8%"></i></div>
-      <small><span><span class="l-en">mean</span><span class="l-zh">均</span> <b>12.8</b></span><span><span class="l-en">names</span><span class="l-zh">名</span> <b>3</b></span>
-        
-        </small>
-    </div>
-    <div class="glass acc sec" style="--accent:var(--info)">
       <div class="sh"><span class="etf">XLC</span> Communication
         </div>
-      <div class="meter"><i style="width:11.2%"></i></div>
-      <small><span><span class="l-en">mean</span><span class="l-zh">均</span> <b>11.2</b></span><span><span class="l-en">names</span><span class="l-zh">名</span> <b>3</b></span>
+      <div class="meter"><i style="width:16.6%"></i></div>
+      <small><span><span class="l-en">mean</span><span class="l-zh">均</span> <b>16.6</b></span><span><span class="l-en">names</span><span class="l-zh">名</span> <b>2</b></span>
         
         </small>
     </div>
     <div class="glass acc sec" style="--accent:var(--info)">
       <div class="sh"><span class="etf">XLK</span> Technology
         <span class="pol up"><span class="l-en">policy</span><span class="l-zh">政策</span> ↑</span></div>
-      <div class="meter"><i style="width:8.8%"></i></div>
-      <small><span><span class="l-en">mean</span><span class="l-zh">均</span> <b>8.8</b></span><span><span class="l-en">names</span><span class="l-zh">名</span> <b>10</b></span>
+      <div class="meter"><i style="width:12.1%"></i></div>
+      <small><span><span class="l-en">mean</span><span class="l-zh">均</span> <b>12.1</b></span><span><span class="l-en">names</span><span class="l-zh">名</span> <b>9</b></span>
         
         </small>
     </div>
@@ -1662,13 +1781,29 @@
       <div class="sh"><span class="etf">XLV</span> Health Care
         </div>
       <div class="meter"><i style="width:4.8%"></i></div>
-      <small><span><span class="l-en">mean</span><span class="l-zh">均</span> <b>4.8</b></span><span><span class="l-en">names</span><span class="l-zh">名</span> <b>1</b></span>
+      <small><span><span class="l-en">mean</span><span class="l-zh">均</span> <b>4.8</b></span><span><span class="l-en">names</span><span class="l-zh">名</span> <b>2</b></span>
+        
+        </small>
+    </div>
+    <div class="glass acc sec" style="--accent:var(--info)">
+      <div class="sh"><span class="etf">XLF</span> Financials
+        </div>
+      <div class="meter"><i style="width:4.0%"></i></div>
+      <small><span><span class="l-en">mean</span><span class="l-zh">均</span> <b>4.0</b></span><span><span class="l-en">names</span><span class="l-zh">名</span> <b>3</b></span>
         
         </small>
     </div>
     <div class="glass acc sec" style="--accent:var(--info)">
       <div class="sh"><span class="etf">XLI</span> Industrials
         <span class="pol up"><span class="l-en">policy</span><span class="l-zh">政策</span> ↑</span></div>
+      <div class="meter"><i style="width:2.4%"></i></div>
+      <small><span><span class="l-en">mean</span><span class="l-zh">均</span> <b>2.4</b></span><span><span class="l-en">names</span><span class="l-zh">名</span> <b>1</b></span>
+        
+        </small>
+    </div>
+    <div class="glass acc sec" style="--accent:var(--info)">
+      <div class="sh"><span class="etf">XLRE</span> Real Estate
+        </div>
       <div class="meter"><i style="width:2.4%"></i></div>
       <small><span><span class="l-en">mean</span><span class="l-zh">均</span> <b>2.4</b></span><span><span class="l-en">names</span><span class="l-zh">名</span> <b>1</b></span>
         
@@ -1720,14 +1855,14 @@
   </h2>
 
   
-  <div class="dg-lead ">
-    <b><span class="l-en">Measuring</span><span class="l-zh">测量中</span></b> —
-      <span class="l-en">matured observations accruing; no horizon has cleared the significance bar yet.</span>
-      <span class="l-zh">到期观测持续累积；尚无周期通过显著性检验。</span>
+  <div class="dg-lead dg-lead-alarm">
+    <b><span class="l-en">ALARM</span><span class="l-zh">警报</span></b> —
+      <span class="l-en">a matured horizon shows a significant NEGATIVE IC: this desk's ranking is anti-predictive there. See findings below.</span>
+      <span class="l-zh">某到期周期出现显著为负的信息系数：本台排序在该周期反向预测。详见下方结论。</span>
     
     <span class="dg-counts">
-      <span class="l-en">73,308 live snapshots · 2,001 departures tracked</span>
-      <span class="l-zh">73,308 条在册快照 · 已追踪 2,001 次离场</span></span>
+      <span class="l-en">78,539 live snapshots · 2,132 departures tracked</span>
+      <span class="l-zh">78,539 条在册快照 · 已追踪 2,132 次离场</span></span>
   </div>
 
   
@@ -1744,25 +1879,25 @@
     <th><span class="l-en">status</span><span class="l-zh">状态</span></th>
   </tr></thead><tbody>
     
-    <tr class="">
+    <tr class="dg-row-alarm">
       <td><b>5</b><span class="l-en">d</span><span class="l-zh">日</span></td>
-      <td class="num">1965</td>
-      <td class="num dg-neg">-0.130~</td>
-      <td class="num ">—</td>
-      <td class="num dg-pos">+0.9%</td>
-      <td class="num dg-neg">-1.7%</td>
-      <td class="num mut2">4.1%</td>
-      <td><span class="dg-badge dg-measuring"><span class="l-en">measuring</span><span class="l-zh">测量中</span></span></td>
+      <td class="num">3196</td>
+      <td class="num dg-neg">-0.152</td>
+      <td class="num dg-neg">-0.025~</td>
+      <td class="num dg-pos">+0.2%</td>
+      <td class="num dg-neg">-1.2%</td>
+      <td class="num mut2">6.0%</td>
+      <td><span class="dg-badge dg-alarm"><span class="l-en">⚠ ALARM</span><span class="l-zh">⚠ 警报</span></span></td>
     </tr>
     
     <tr class="">
       <td><b>10</b><span class="l-en">d</span><span class="l-zh">日</span></td>
-      <td class="num">0</td>
+      <td class="num">390</td>
+      <td class="num dg-neg">-0.273~</td>
       <td class="num ">—</td>
+      <td class="num dg-neg">-0.2%</td>
       <td class="num ">—</td>
-      <td class="num ">—</td>
-      <td class="num ">—</td>
-      <td class="num mut2">0.0%</td>
+      <td class="num mut2">1.2%</td>
       <td><span class="dg-badge dg-measuring"><span class="l-en">measuring</span><span class="l-zh">测量中</span></span></td>
     </tr>
     
@@ -1829,13 +1964,21 @@
       <small><span class="l-en">— derived from the stats each run, to improve this desk's engine</span><span class="l-zh">—— 每次运行从统计中导出，用于改进本台引擎</span></small></h3>
     <ul class="dg-findings">
       
+      <li class="dg-find dg-alarm">
+        <span class="dg-sev">⚠</span>
+        <span class="l-en">5d level IC is significantly NEGATIVE (-0.152, n=3196) — the desk's ranking is anti-predictive here; consider inverting or gating the score.</span><span class="l-zh">5d level IC is significantly NEGATIVE (-0.152, n=3196) — the desk's ranking is anti-predictive here; consider inverting or gating the score.</span></li>
+      
       <li class="dg-find dg-insight">
         <span class="dg-sev">●</span>
-        <span class="l-en">5d: departed names (-1.7% avg) underperform on-desk names (+0.9%) — DROPS ARE CORRECT; the desk sheds names before they lag.</span><span class="l-zh">5d: departed names (-1.7% avg) underperform on-desk names (+0.9%) — DROPS ARE CORRECT; the desk sheds names before they lag.</span></li>
+        <span class="l-en">5d: departed names (-1.2% avg) underperform on-desk names (+0.2%) — DROPS ARE CORRECT; the desk sheds names before they lag.</span><span class="l-zh">5d: departed names (-1.2% avg) underperform on-desk names (+0.2%) — DROPS ARE CORRECT; the desk sheds names before they lag.</span></li>
       
       <li class="dg-find dg-warn">
         <span class="dg-sev">▲</span>
-        <span class="l-en">5d: 'exhausted' (+2.2%) outperforms 'emerging' (-1.5%) — possible residual inversion in the lifecycle staging.</span><span class="l-zh">5d: 'exhausted' (+2.2%) outperforms 'emerging' (-1.5%) — possible residual inversion in the lifecycle staging.</span></li>
+        <span class="l-en">5d: 'exhausted' (+1.5%) outperforms 'emerging' (-2.2%) — possible residual inversion in the lifecycle staging.</span><span class="l-zh">5d: 'exhausted' (+1.5%) outperforms 'emerging' (-2.2%) — possible residual inversion in the lifecycle staging.</span></li>
+      
+      <li class="dg-find dg-warn">
+        <span class="dg-sev">▲</span>
+        <span class="l-en">10d: 'exhausted' (+3.0%) outperforms 'emerging' (-10.1%) — possible residual inversion in the lifecycle staging.</span><span class="l-zh">10d: 'exhausted' (+3.0%) outperforms 'emerging' (-10.1%) — possible residual inversion in the lifecycle staging.</span></li>
       
     </ul>
   </div>
@@ -1866,7 +2009,7 @@
 
 
   <footer class="hf">
-    <span class="l-en">Built</span><span class="l-zh">生成于</span> <time datetime="2026-07-06T09:59:19.780268+00:00">2026-07-06 09:59</time> UTC ·
+    <span class="l-en">Built</span><span class="l-zh">生成于</span> <time datetime="2026-07-07T21:04:01.348027+00:00">2026-07-07 21:04</time> UTC ·
     Context only. A central command that fuses five independent desks — news flow, alt-data smart-money, the divergence radar, the factor buy-board, and policy intent — into one reasoned read per name. Composite conviction rewards INDEPENDENT agreement across desks and is docked by an unanswered falsifier; the second/third-order flags name the setup. The bot sizes through its own risk framework; nothing here sizes alone.
   </footer>
 </div>

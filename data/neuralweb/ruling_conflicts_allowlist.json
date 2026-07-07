@@ -1,0 +1,42 @@
+[
+  {
+    "path": "site/neuralwebdata/ruling_graph.json",
+    "token": "held-book",
+    "reason": "ruling_graph.json contains the law TEXT about held-book as a governance artifact, not held-book data; the file itself is reviewed on every PR (RUL-CL-9 implementation notes)"
+  },
+  {
+    "path": "site/neuralwebdata/ruling_graph.json",
+    "token": "held_book",
+    "reason": "ruling_graph.json contains the law TEXT about held_book vocabulary; governance content, not data flow"
+  },
+  {
+    "path": "site/neuralwebdata/ruling_graph.json",
+    "token": "fill_price",
+    "reason": "ruling_graph.json contains law text about fill_price; governance artifact, not data flow"
+  },
+  {
+    "path": "site/neuralwebdata/ruling_graph.json",
+    "token": "avg_cost",
+    "reason": "ruling_graph.json governance artifact"
+  },
+  {
+    "path": "site/neuralwebdata/ruling_graph.json",
+    "token": "cost_basis",
+    "reason": "ruling_graph.json governance artifact"
+  },
+  {
+    "path": "site/neuralwebdata/ruling_graph.json",
+    "token": "position_size",
+    "reason": "ruling_graph.json governance artifact"
+  },
+  {
+    "path": "site/neuralwebdata/ruling_graph.json",
+    "token": "fills_ledger",
+    "reason": "ruling_graph.json governance artifact"
+  },
+  {
+    "path": "site/neuralwebdata/ruling_graph.json",
+    "token": "book_positions",
+    "reason": "ruling_graph.json governance artifact"
+  }
+]

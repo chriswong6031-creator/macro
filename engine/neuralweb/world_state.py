@@ -456,6 +456,192 @@ def _compose_options_weather(
     return out
 
 
+_CYCLE_PATTERN_NULL: dict = {
+    "as_of": None,
+    "model_epoch": None,
+    "gate_status": None,
+    "n_entities": None,
+    "n_with_hazard": None,
+    "families": None,
+    "truth_summary": None,
+    "note": (
+        "CPI cycle-pattern lobe (P6 wave 1): calibrated turn-hazard context. "
+        "Counts + gate verdicts only — per-entity rows live in the adapter "
+        "artifact (read_cycle_pattern_state). PRIOR cells are KM base rates. "
+        "Context/display only; may never originate, score, or escalate."
+    ),
+    "display_only": True,
+}
+
+
+def _compose_cycle_pattern(root: "Path | str | None" = None) -> dict:
+    """Compose the cycle_pattern sub-block (CPI P6 wave 1).
+
+    Follows the _compose_factor_weather / _compose_options_weather discipline:
+    all data loading internal, display_only=True always, try/except at the
+    wiring site returns the null-filled fallback.
+
+    Reads ONLY the committed adapter artifact
+    data/neuralweb/cycle_pattern_state.json (built by
+    scripts/build_cycle_pattern_state.py) — never the cycle-pattern lake
+    directly (CPI consumer-matrix rule: the NW lobe consumes the compact
+    summary, not raw lake parquets).
+
+    Counts-only in world_state (the bottom_sensors discipline): the per-entity
+    hazard rows stay in the adapter artifact, reachable via the
+    read_cycle_pattern_state cortex tool. gate_status carries the W4.2
+    per-cell PASS|PRIOR verdicts so every downstream display can badge its
+    numbers (no naked probabilities — UI-HZ-1).
+    """
+    repo = _repo_root(root)
+    path = repo / "data" / "neuralweb" / "cycle_pattern_state.json"
+
+    out = dict(_CYCLE_PATTERN_NULL)
+    if not path.exists():
+        return out
+    try:
+        state = json.loads(path.read_text(encoding="utf-8"))
+        if not isinstance(state, dict):
+            log.warning("cycle_pattern: adapter artifact is not a dict — null lobe")
+            return out
+        entities = state.get("entities") or []
+        families: dict[str, int] = {}
+        n_with_hazard = 0
+        for e in entities:
+            if not isinstance(e, dict):
+                continue
+            fam = e.get("family") or "unknown"
+            families[fam] = families.get(fam, 0) + 1
+            if e.get("hazard_1m_p") is not None or e.get("hazard_3m_p") is not None \
+                    or e.get("hazard_6m_p") is not None:
+                n_with_hazard += 1
+        out["as_of"] = _clean(state.get("asof"))
+        out["model_epoch"] = _clean(state.get("model_epoch"))
+        out["gate_status"] = state.get("gate_status") or None
+        out["n_entities"] = len(entities)
+        out["n_with_hazard"] = n_with_hazard
+        out["families"] = dict(sorted(families.items())) or None
+        out["truth_summary"] = state.get("truth_summary") or None
+        if state.get("degraded_notes"):
+            out["degraded_notes"] = state["degraded_notes"]
+    except Exception as exc:  # noqa: BLE001
+        log.warning("cycle_pattern: compose failed — %s", exc)
+    # display_only is ALWAYS True regardless of artifact content.
+    out["display_only"] = True
+    return out
+
+
+def _compose_stock_personality_summary(
+    root: "Path | str | None" = None,
+) -> dict:
+    """Compose the stock_personality_summary sub-block for world_state (R-SP20).
+
+    Follows the _compose_factor_weather fail-open discipline exactly:
+    - All data loading is internal to this function.
+    - Never crashes; never blocks cortex.
+    - display_only=True always.
+    - Absent or stale aggregate ⇒ {"available": False}.
+
+    Reads site/factordata/stock_personality.json (the slim site aggregate
+    produced by scripts/build_stock_library.py).  The aggregate carries:
+      as_of, n_tickers, coverage, label_distributions, per_ticker.
+
+    Returns
+    -------
+    dict with keys:
+        available:            bool
+        as_of:                str | None
+        n_tickers:            int | None
+        coverage:             float | None
+        top_archetype_shares: [(key, share), ...] top 3
+        top_chart_shares:     [(key, share), ...] top 3
+        n_tinderbox:          int | None
+        n_event_override:     int | None
+        display_only:         True (always)
+    """
+    repo = _repo_root(root)
+    path = repo / "site" / "factordata" / "stock_personality.json"
+
+    _null = {
+        "available": False,
+        "display_only": True,
+    }
+
+    if not path.exists():
+        log.info("stock_personality_summary: aggregate absent (%s) — null block", path)
+        return dict(_null)
+
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+        if not isinstance(raw, dict):
+            log.warning("stock_personality_summary: aggregate not a dict — null block")
+            return dict(_null)
+
+        # Staleness gate — same threshold as engine/oracle/contract.py (MAX_TRADING_DAYS=2).
+        # Uses the pandas.bdate_range idiom from contract.py:206-208: count business days
+        # between as_of and now; if >2 trading days stale, honor the docstring promise
+        # ("absent or stale aggregate ⇒ {available: False}") and return the null block.
+        _agg_as_of = raw.get("as_of")
+        try:
+            import pandas as _pd  # noqa: PLC0415 — lazy import, mirrors world_state pattern
+            _asof_dt = datetime.fromisoformat(str(_agg_as_of)).replace(tzinfo=timezone.utc)
+            _now = datetime.now(timezone.utc)
+            _bdays = max(0, len(_pd.bdate_range(_asof_dt.date(), _now.date())) - 1)
+            if _bdays > 2:
+                log.warning(
+                    "stock_personality_summary: aggregate as_of=%r is %d trading days stale "
+                    "(>2) — returning {available: false, note: stale}",
+                    _agg_as_of, _bdays,
+                )
+                return {"available": False, "note": "stale", "as_of": _agg_as_of, "display_only": True}
+        except Exception:  # noqa: BLE001
+            # Unparseable as_of → treat as stale
+            log.warning(
+                "stock_personality_summary: cannot parse as_of=%r — returning stale null block",
+                _agg_as_of,
+            )
+            return {"available": False, "note": "stale", "as_of": _agg_as_of, "display_only": True}
+
+        label_dist = raw.get("label_distributions") or {}
+
+        def _top3(axis_key: str) -> list:
+            dist = label_dist.get(axis_key) or {}
+            if not isinstance(dist, dict):
+                return []
+            total = sum(dist.values()) or 1
+            top = sorted(dist.items(), key=lambda kv: kv[1], reverse=True)[:3]
+            return [(_clean(k), _clean(round(v / total, 4))) for k, v in top]
+
+        # Tinderbox + event_override counts from per_ticker
+        per_ticker = raw.get("per_ticker") or {}
+        n_tinderbox = 0
+        n_event_override = 0
+        for _rec in per_ticker.values():
+            if not isinstance(_rec, dict):
+                continue
+            own = _rec.get("own") or []
+            if "short_interest_tinderbox" in own:
+                n_tinderbox += 1
+            modes = _rec.get("modes") or []
+            if "event_override" in modes:
+                n_event_override += 1
+
+        return {
+            "available": True,
+            "as_of": _clean(raw.get("as_of")),
+            "n_tickers": _clean(raw.get("n_tickers")),
+            "coverage": _clean(raw.get("coverage")),
+            "top_archetype_shares": _top3("archetype"),
+            "top_chart_shares": _top3("chart_personality"),
+            "n_tinderbox": _clean(n_tinderbox),
+            "n_event_override": _clean(n_event_override),
+            "display_only": True,
+        }
+    except Exception as exc:  # noqa: BLE001
+        log.warning("stock_personality_summary: compose failed — %s", exc)
+        return dict(_null)
+
+
 def _compose_factor_weather(
     root: "Path | str | None" = None,
     prefer_artifact: bool = True,
@@ -1401,6 +1587,21 @@ def build_world_state(
             "share_pin_risk": None, "opex_days": None,
             "note": "lobe failed — null fallback", "display_only": True,
         }
+    # ── 6c. cycle_pattern lobe (CPI P6 wave 1) — one wiring line, loading inside ──
+    try:
+        cycle_pattern_block: dict = _compose_cycle_pattern(root=repo)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("world_state: cycle_pattern lobe failed — %s", exc)
+        gaps.append(f"cycle_pattern: {exc}")
+        cycle_pattern_block = dict(_CYCLE_PATTERN_NULL)
+
+    # ── 6d. stock_personality_summary (R-SP20) — one wiring line, loading inside ──
+    try:
+        stock_personality_summary_block: dict = _compose_stock_personality_summary(root=repo)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("world_state: stock_personality_summary lobe failed — %s", exc)
+        gaps.append(f"stock_personality_summary: {exc}")
+        stock_personality_summary_block = {"available": False, "display_only": True}
 
     # ── 6c. R5 macro-context lobes (PR-B §5.3) ───────────────────────────────
     # Each lobe is try/except-wrapped at the wiring site; failures produce a
@@ -1575,6 +1776,8 @@ def build_world_state(
         "commodity_context": commodity_context_block,
         "intelligence": intelligence_block,
         "macro_deltas": macro_deltas_block,
+        "cycle_pattern": cycle_pattern_block,  # CPI P6 wave-1 wiring line (display-only)
+        "stock_personality_summary": stock_personality_summary_block,  # R-SP20 wiring line
         "qi": None,
         "qi_note": (
             "pending joint QI border ruling (masterplan W1) — "

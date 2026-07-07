@@ -85,6 +85,28 @@
   table.sl-table thead th.sorted.asc::after { content:" ↑"; }
   .ovl-note { font-size:11.5px; color:var(--muted); margin:-2px 0 9px; max-width:80ch;
     border-left:2px solid color-mix(in srgb,var(--link) 45%,var(--line)); padding-left:9px; }
+  .frontier-note { font-size:12px; color:var(--muted); max-width:86ch; margin:0 0 10px; }
+  .frontier-table td { padding-top:8px; padding-bottom:8px; }
+  .frontier-table .sig { font-size:12.5px; }
+  .frontier-table .road { max-width:30ch; color:var(--muted); }
+  .frontier-table .gate { max-width:28ch; }
+  .frontier-table .src { margin-top:3px; }
+  .frontier-pri { font-size:10px; padding:1px 6px; border-radius:7px; border:1px solid var(--line);
+    color:var(--muted); margin-left:5px; }
+  .fable-chip { font-size:10px; padding:1px 7px; border-radius:7px; font-weight:600;
+    letter-spacing:0.02em; display:inline-block; }
+  .fable-chip.kill { background:color-mix(in srgb,#e55 25%,transparent); color:#c33; border:1px solid #c33; }
+  .fable-chip.build { background:color-mix(in srgb,#4a4 25%,transparent); color:#2a8; border:1px solid #2a8; }
+  .fable-chip.probe { background:color-mix(in srgb,#68a 25%,transparent); color:#468; border:1px solid #468; }
+  .fable-chip.pilot { background:color-mix(in srgb,#88a 25%,transparent); color:#558; border:1px solid #558; }
+  .fable-chip.route { background:color-mix(in srgb,#fa0 25%,transparent); color:#960; border:1px solid #a70; }
+  .fable-chip.accrue { background:color-mix(in srgb,#aaf 25%,transparent); color:#44c; border:1px solid #44c; }
+  .fable-chip.queued { background:color-mix(in srgb,#aaa 25%,transparent); color:#666; border:1px solid #999; }
+  .fable-chip.pending { background:color-mix(in srgb,#999 15%,transparent); color:var(--muted); border:1px solid var(--line); }
+  .fable-chip.tested-null { background:color-mix(in srgb,#f80 15%,transparent); color:#a50; border:1px solid #c70; }
+  .fable-chip.tested-pass { background:color-mix(in srgb,#2d8 25%,transparent); color:#196; border:1px solid #1a7; }
+  .fable-chip.tested-partial { background:color-mix(in srgb,#fb0 20%,transparent); color:#860; border:1px solid #a80; }
+  .fable-chip.tested-accrue { background:color-mix(in srgb,#aaf 20%,transparent); color:#33a; border:1px solid #55c; }
 </style>
 </head>
 <body>
@@ -138,6 +160,94 @@
     {% endif %}
   </div>
 </div>
+
+{% if frontier_rows %}
+<div class="panel">
+  <div class="tierhead">
+    <span class="dot d-pending" style="align-self:center"></span>
+    <h2>{{ t('Research frontier — hypotheses, not verdicts','研究前沿 — 假设，不是结论') }}</h2>
+    <span class="bl">{{ t(
+      'Candidates worth testing next. None of these affect a score until a pre-registered Phase-0 run earns a normal Signal Lab row.',
+      '下一批值得测试的候选。除非预注册 Phase-0 运行让它获得正常 Signal Lab 条目，否则不会影响任何分数。') }}</span>
+  </div>
+  <p class="frontier-note">{{ t(
+    'The search is data-first: borrow pressure, FTDs, option-informed flow, EDGAR attention, auction absorption, positioning exhaustion, and time-of-day market microstructure.',
+    '这轮搜索以数据为先：借券压力、交割失败、期权知情流、EDGAR 关注、拍卖吸收、仓位耗尽与日内/隔夜微结构。') }}</p>
+  {%- if frontier_phase0_summary %}
+  <p class="frontier-note">{{ t(
+    'Expanded docket (60 candidates) adjudicated 2026-07-06: 9 authorized for testing (' ~ frontier_phase0_summary.build_count ~ ' build / ' ~ frontier_phase0_summary.probe_count ~ ' probe / ' ~ frontier_phase0_summary.pilot_count ~ ' pilot), 11 killed. See ',
+    '扩展清单（60个候选）于2026-07-06完成裁决：9个授权测试（' ~ frontier_phase0_summary.build_count ~ ' 构建 / ' ~ frontier_phase0_summary.probe_count ~ ' 探针 / ' ~ frontier_phase0_summary.pilot_count ~ ' 试点），11个已否决。详见 ') }}<a href="/research/SIGNAL_LAB_FRONTIER_FABLE_ADJUDICATION_2026-07-06.md" style="font-size:inherit">research/SIGNAL_LAB_FRONTIER_FABLE_ADJUDICATION_2026-07-06.md</a>.</p>
+  {%- endif %}
+  {%- if waves_adjudication and waves_adjudication.waves %}
+  <div class="frontier-note" style="border-left:3px solid var(--line);padding-left:10px;margin-top:10px">
+    <strong>{{ t('Waves 2–4 adjudicated 2026-07-06','第2–4波 2026-07-06裁决') }}:</strong>
+    {%- for w in waves_adjudication.waves %}
+    <span style="display:inline-block;margin:2px 8px 2px 0">
+      <a href="/{{ w.doc }}" style="color:inherit;text-decoration:underline dotted">{{ t('W'~w.wave, 'W'~w.wave) }}</a>
+      {{ t(w.screened~' screened / '~w.advanced~' advanced → '~w.result_label,
+           w.screened~'筛选 / '~w.advanced~'候选 → '~w.result_label_zh) }};
+    </span>
+    {%- endfor %}
+    {%- if waves_adjudication.moratorium %}
+    <span style="color:var(--muted)">{{ t('generation moratorium in force until wave-1 + spike verdicts booked and queue &lt; 3','生成暂停令生效——第一波+尖峰候选裁决登记且排队数降至3以下前不启动新波次') }}.</span>
+    {%- endif %}
+    {%- if waves_adjudication.day3_results %}
+    {%- set d3 = waves_adjudication.day3_results %}
+    <div style="margin-top:10px;border-left:3px solid var(--accent,#4a9);padding-left:10px">
+      <strong>{{ t(d3.label, d3.label_zh) }}</strong>
+      {{ t(d3.families_tested~' families tested → '~d3.pass_count~' PASS, '~d3.accrue_count~' ACCRUE, '~d3.directional_fail_count~' DIRECTIONAL FAIL, '~d3.park_count~' PARK, '~d3.null_count~' NULL, gaming DATA-BLOCKED.',
+           d3.families_tested~'个家族测试 → '~d3.pass_count~' 通过, '~d3.accrue_count~' 积累中, '~d3.directional_fail_count~' 方向性否决, '~d3.park_count~' 暂存, '~d3.null_count~' 无效, 博彩数据受阻。') }}
+      <span style="color:var(--muted)">{{ t(d3.queue_status, d3.queue_status_zh) }}</span>
+    </div>
+    {%- endif %}
+  </div>
+  {%- endif %}
+  <div class="scroll"><table class="frontier-table">
+    <thead><tr>
+      <th>{{ t('Candidate','候选') }}</th>
+      <th>{{ t('Thesis','论点') }}</th>
+      <th>{{ t('Build path','接入路径') }}</th>
+      <th>{{ t('First gate','第一道门') }}</th>
+      <th>{{ t('Fable ruling','Fable 裁决') }}</th>
+    </tr></thead>
+    <tbody>
+    {%- for r in frontier_rows %}
+      <tr>
+        <td>
+          <div class="sig">{{ t(r.name, r.name_zh) }}<span class="frontier-pri">{{ r.priority }}</span></div>
+          <div class="mkt">{{ r.market }} · {{ t(r.readiness, r.readiness_zh) }}</div>
+          <div class="src">{{ r.source }}</div>
+        </td>
+        <td class="road">{{ t(r.thesis, r.thesis_zh) }}</td>
+        <td class="road">{{ t(r.build, r.build_zh) }}</td>
+        <td class="gate">{{ t(r.gate, r.gate_zh) }}</td>
+        <td>
+          {%- set verdict = r.get('fable_verdict', 'PENDING') if r is mapping else 'PENDING' %}
+          {%- set chip_map = {
+            'KILLED': ('kill', '已否决', 'KILLED'),
+            'ROUTED': ('route', '转入现有程序', 'ROUTED'),
+            'ACCRUE': ('accrue', '前瞻累积', 'ACCRUE'),
+            'QUEUED': ('queued', '排队', 'QUEUED'),
+            'BUILD': ('build', '已授权测试', 'BUILD'),
+            'PROBE': ('probe', '数据探针', 'PROBE'),
+            'PILOT': ('pilot', '试点', 'PILOT'),
+            'PENDING': ('pending', '待审', 'PENDING'),
+            'TESTED-NULL': ('tested-null', '已测试—空', 'TESTED-NULL'),
+            'TESTED-NULL(G3)': ('tested-null', '已测试—空(G3)', 'TESTED-NULL'),
+            'TESTED-PASS': ('tested-pass', '已测试—通过', 'TESTED-PASS'),
+            'TESTED-PARTIAL': ('tested-partial', '已测试—部分', 'TESTED-PARTIAL'),
+            'TESTED-ACCRUE': ('tested-accrue', '已测试—累积', 'TESTED-ACCRUE'),
+            'ACCRUE-CONFIRMED': ('accrue', '累积已确认', 'ACCRUE-CONFIRMED'),
+          } %}
+          {%- set cdata = chip_map.get(verdict, ('pending', '待审', verdict)) %}
+          <span class="fable-chip {{ cdata[0] }}">{{ t(cdata[2], cdata[1]) }}</span>
+        </td>
+      </tr>
+    {%- endfor %}
+    </tbody>
+  </table></div>
+</div>
+{% endif %}
 
 <div class="panel ctl">
   <input id="slq" type="search" autocomplete="off"

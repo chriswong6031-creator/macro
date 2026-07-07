@@ -12,6 +12,72 @@ const getCookie = (name) => { const m = document.cookie.match(new RegExp("(?:^|;
 
 let SESSION = { auth_enabled: false, authenticated: true, deployed: false, integrations: {} };
 
+/* ---- lobe popup (system map hover) -------------------------------------- */
+let NW_LOBE_BY_ID = {};
+let _lobeTip = null;
+function getLobeTip() {
+  if (!_lobeTip) {
+    _lobeTip = document.createElement("div");
+    _lobeTip.className = "lobe-tip";
+    _lobeTip.setAttribute("role", "tooltip");
+    _lobeTip.setAttribute("aria-hidden", "true");
+    document.body.appendChild(_lobeTip);
+  }
+  return _lobeTip;
+}
+function showLobeTip(el) {
+  const id = el.dataset.lobe;
+  const l = NW_LOBE_BY_ID[id];
+  if (!l) return;
+  const tip = getLobeTip();
+  const age = l.age_hours, sla = l.freshness_sla_hours;
+  const ageTxt = age == null ? "—" : fmtAge(age);
+  const slaTxt = sla ? ` / ${fmtAge(sla)}` : "";
+  const stt = l.status === "fresh" ? "fresh" : l.status === "stale" ? "stale" : (l.status === "missing" || l.status === "degraded") ? "missing" : "stale";
+  tip.innerHTML =
+    `<div class="lobe-tip-header">` +
+      `<span class="status-dot" data-status="${esc(stt)}" style="width:8px;height:8px"></span>` +
+      `<span class="lobe-tip-name">${esc(l.label)}</span>` +
+      `<span class="group-chip" data-group="${esc(l.group)}">${esc(l.group_label || l.group)}</span>` +
+    `</div>` +
+    `<div class="lobe-tip-desc">${esc(l.short_desc || "No description registered.")}</div>` +
+    `<div class="lobe-tip-metrics">` +
+      `<span>${ageTxt}${slaTxt}</span>` +
+      `<span class="metric-sep">·</span>` +
+      `<span>${l.n_consumers} consumer${l.n_consumers === 1 ? "" : "s"}</span>` +
+      `<span class="metric-sep">·</span>` +
+      `<span>${esc(l.tier || "—")}</span>` +
+    `</div>`;
+  positionLobeTip(tip, el);
+  tip.classList.add("show");
+}
+function hideLobeTip() {
+  if (_lobeTip) _lobeTip.classList.remove("show");
+}
+function positionLobeTip(tip, el) {
+  /* Position next to the node, clamped to viewport. position:fixed. */
+  const r = el.getBoundingClientRect();
+  const tw = 248, th = 110; /* conservative max tip size */
+  const vw = window.innerWidth, vh = window.innerHeight;
+  const PAD = 8;
+  /* prefer right of node; fall left if no room */
+  let left = r.right + PAD;
+  if (left + tw > vw - PAD) left = r.left - tw - PAD;
+  left = Math.max(PAD, Math.min(left, vw - tw - PAD));
+  /* prefer top-aligned with node center; shift up if clips bottom */
+  let top = r.top + r.height / 2 - 40;
+  if (top + th > vh - PAD) top = vh - th - PAD;
+  top = Math.max(PAD, top);
+  tip.style.left = left + "px";
+  tip.style.top  = top  + "px";
+}
+function wireLobeTipNode(el) {
+  el.addEventListener("mouseenter", () => showLobeTip(el));
+  el.addEventListener("mouseleave", hideLobeTip);
+  el.addEventListener("focus",      () => showLobeTip(el));
+  el.addEventListener("blur",       hideLobeTip);
+}
+
 async function api(path, opts) {
   const r = await fetch(path, opts);
   if (r.status === 401) { showLogin(); throw new Error("auth required"); }
@@ -50,31 +116,83 @@ async function logout() {
   showLogin();
 }
 
-const TABS = [
-  ["overview", "Overview"], ["experiments", "Experiments"], ["vector", "BTC Override"], ["analytics", "Analytics"], ["users", "Users"],
-  ["system", "System"], ["health", "Health"], ["features", "Features"],
-  ["brief", "AI Brief"], ["deploy", "Build & Deploy"], ["cost", "AI Cost"], ["content", "Content"],
-  ["neural_web", "Neural Web"],
+/* ---- sidebar nav + router ----------------------------------------------- */
+const NAV_ICO = (inner) => `<svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${inner}</svg>`;
+const ICONS = {
+  overview:    NAV_ICO('<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>'),
+  neural_web:  NAV_ICO('<circle cx="12" cy="12" r="2.4"/><circle cx="5" cy="6" r="1.7"/><circle cx="19" cy="6" r="1.7"/><circle cx="5" cy="18" r="1.7"/><circle cx="19" cy="18" r="1.7"/><path d="M10 11 6.4 7.2M14 11l3.6-3.8M10 13l-3.6 3.8M14 13l3.6 3.8"/>'),
+  alerts:      NAV_ICO('<path d="M12 3a6 6 0 0 0-6 6c0 4-1.5 5.5-2 6.5h16c-.5-1-2-2.5-2-6.5a6 6 0 0 0-6-6Z"/><path d="M10 19a2 2 0 0 0 4 0"/>'),
+  analytics:   NAV_ICO('<path d="M4 20V11M9.5 20V5M15 20v-8M20.5 20V8"/><path d="M2.5 20h19"/>'),
+  users:       NAV_ICO('<circle cx="9" cy="8" r="3"/><path d="M3.5 20a5.5 5.5 0 0 1 11 0"/><path d="M16 5.3a3 3 0 0 1 0 5.4M21 20a5.5 5.5 0 0 0-4-5.3"/>'),
+  experiments: NAV_ICO('<path d="M9 3h6M10 3v5.5L5.4 17.6A2 2 0 0 0 7.2 20.5h9.6a2 2 0 0 0 1.8-2.9L14 8.5V3"/><path d="M8 14h8"/>'),
+  system:      NAV_ICO('<rect x="3" y="4" width="18" height="7" rx="1.5"/><rect x="3" y="13" width="18" height="7" rx="1.5"/><path d="M7 7.5h.01M7 16.5h.01"/>'),
+  health:      NAV_ICO('<path d="M3 12h3.5l2 5 3.5-11 2.5 7 1.5-3H21"/>'),
+  deploy:      NAV_ICO('<path d="M12 2.5s4.5 2.8 4.5 8.5c0 2.8-1.8 4.5-1.8 4.5H9.3S7.5 13.8 7.5 11C7.5 5.3 12 2.5 12 2.5Z"/><circle cx="12" cy="9.5" r="1.5"/><path d="M8.5 17l-2 4M15.5 17l2 4"/>'),
+  cost:        NAV_ICO('<circle cx="12" cy="12" r="9"/><path d="M12 6.5v11M14.6 9a2.6 2 0 0 0-2.6-1.5c-1.6 0-2.7.9-2.7 2.1 0 2.6 5.4 1.3 5.4 4 0 1.3-1.2 2.2-2.7 2.2A2.7 2 0 0 1 9.2 16"/>'),
+  content:     NAV_ICO('<path d="M6 3h8l5 5v13H6z"/><path d="M14 3v5h5M9 13h6M9 17h6"/>'),
+  features:    NAV_ICO('<circle cx="8" cy="8" r="3"/><circle cx="16" cy="16" r="3"/><path d="M11 8h9M4 16h9"/>'),
+  brief:       NAV_ICO('<path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6z"/><path d="M18.5 14.5l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z"/>'),
+  vector:      NAV_ICO('<circle cx="12" cy="12" r="9"/><path d="M9.5 7.5h4.2a2.2 2 0 0 1 0 4H9.5m0 0h4.6a2.2 2 0 0 1 0 4.4H9.5m0-8.4V5.5m0 13v-2m2.4-11v2m0 7.4v2"/>'),
+  long_hold:   NAV_ICO('<polyline points="3 18 8 10 13 14 18 6"/><line x1="3" y1="21" x2="21" y2="21"/>'),
+};
+const NAV_GROUPS = [
+  { label: "", items: [["overview", "Overview"]] },
+  { label: "Neural Web", items: [["neural_web", "Observatory"], ["alerts", "Alerts"], ["long_hold", "Long-Hold Lobe"]] },
+  { label: "Growth", items: [["analytics", "Analytics"], ["users", "Users"], ["experiments", "Experiments"]] },
+  { label: "System", items: [["system", "System"], ["health", "Health"], ["deploy", "Build & Deploy"], ["cost", "AI Cost"], ["content", "Content"]] },
+  { label: "Config", items: [["features", "Features"], ["brief", "AI Brief"], ["vector", "BTC Override"]] },
 ];
+const TAB_LABELS = Object.fromEntries(NAV_GROUPS.flatMap(g => g.items));
 let CURRENT = "overview";
 let SUMMARY = null;
 let RT_TIMER = null;
 
-function renderTabs() {
-  const nav = $("#tabs"); nav.innerHTML = "";
-  TABS.forEach(([id, label]) => {
-    const b = h(`<button data-tab="${id}">${label}</button>`);
-    if (id === CURRENT) b.classList.add("active");
-    b.onclick = () => go(id);
-    nav.appendChild(b);
+function renderSidebar() {
+  const nav = $("#sidenav"); if (!nav) return; nav.innerHTML = "";
+  NAV_GROUPS.forEach(g => {
+    const grp = h(`<div class="nav-group"></div>`);
+    if (g.label) grp.appendChild(h(`<div class="eyebrow">${esc(g.label)}</div>`));
+    g.items.forEach(([id, label]) => {
+      const it = h(`<div class="nav-item" data-tab="${id}">${ICONS[id] || ""}<span>${esc(label)}</span></div>`);
+      if (id === CURRENT) it.classList.add("active");
+      it.onclick = () => go(id);
+      grp.appendChild(it);
+    });
+    nav.appendChild(grp);
   });
 }
+function setActiveNav(id) {
+  const nav = $("#sidenav"); if (!nav) return;
+  nav.querySelectorAll(".nav-item").forEach(el => el.classList.toggle("active", el.dataset.tab === id));
+}
+function setTopbarTitle(t) { const el = $("#topbar-title"); if (el) el.textContent = t; }
+
 function go(id) {
+  if (currentLobeId()) history.replaceState(null, "", location.pathname + location.search);
   CURRENT = id;
   if (RT_TIMER) { clearInterval(RT_TIMER); RT_TIMER = null; }
-  renderTabs();
+  hideLobeTip();
+  setActiveNav(id);
+  setTopbarTitle(TAB_LABELS[id] || id);
   RENDER[id]();
 }
+
+/* hash router — lobe detail "pages" live at #/lobe/<id> */
+function currentLobeId() {
+  const m = location.hash.match(/^#\/lobe\/(.+)$/);
+  return m ? decodeURIComponent(m[1]) : null;
+}
+function gotoLobe(id) { location.hash = "#/lobe/" + encodeURIComponent(id); }
+function backToObservatory() {
+  if (currentLobeId()) history.replaceState(null, "", location.pathname + location.search);
+  go("neural_web");
+}
+function route() {
+  const id = currentLobeId();
+  if (id) { renderLobeDetail(id); return; }
+  go(CURRENT || "overview");
+}
+window.addEventListener("hashchange", route);
 
 /* ---- header + banner ---------------------------------------------------- */
 function renderHeader() {
@@ -200,7 +318,7 @@ RENDER.experiments = async () => {
         ${e.surfaced ? `<div class="note mono muted">↳ ${esc(e.surfaced)}</div>` : ""}</div>`).join("")}</div>`;
   }
   html += `<div class="section">All experiments <span class="cnt">${exps.length}</span></div>
-    <table><thead><tr><th>Experiment</th><th>Type</th><th>Status</th><th>How often</th><th class="r">Come back</th><th>Next step</th><th>Your action</th></tr></thead><tbody>
+    <table class="exp-table"><thead><tr><th>Experiment</th><th>Type</th><th>Status</th><th>How often</th><th class="r">Come back</th><th>Next step</th><th>Your action</th></tr></thead><tbody>
     ${exps.map(e => `<tr${e.ready ? ' class="hl"' : ""}>
       <td><b>${esc(e.name)}</b><div class="sub">${esc(e.what || "")}</div><div class="note mono muted">${esc(e.source || "")}</div></td>
       <td class="sub">${esc(e.kind || "")}</td>
@@ -208,10 +326,11 @@ RENDER.experiments = async () => {
       <td class="sub">${esc(e.cadence || "")}</td>
       <td class="r">${EXP_DUE(e)}</td>
       <td class="sub" style="max-width:340px">${esc(e.next_step || "")}${e.state ? `<div class="note mono muted">${esc(e.state)}</div>` : ""}</td>
-      <td style="white-space:nowrap">
+      <td class="exp-actions">
         <button class="btn exp-act-btn" data-exp-id="${esc(e.id || "")}" data-action="acted">Acted</button>
         <button class="btn exp-act-btn" data-exp-id="${esc(e.id || "")}" data-action="dismissed">Dismiss</button>
         <button class="btn exp-act-btn" data-exp-id="${esc(e.id || "")}" data-action="snoozed">Snooze</button>
+        <button class="btn exp-act-btn" data-exp-id="${esc(e.id || "")}" data-action="overrode">Override</button>
       </td></tr>`).join("")}
     </tbody></table>
     ${d.note ? `<div class="sub" style="margin-top:10px">${esc(d.note)}</div>` : ""}`;
@@ -917,30 +1036,617 @@ function nwSectionFactorIntelligence(fi) {
   return html;
 }
 
+/* ---- Observatory helpers ------------------------------------------------ */
+const NW_STATUS_WORD = { ok: "Operational", warn: "Attention", degraded: "Degraded", unknown: "Unknown" };
+const NW_STATUS_DOT = { ok: "fresh", warn: "stale", degraded: "degraded", unknown: "unknown" };
+const EDGE_CLS = { feeds: "s-mut", confirms: "s-ok", contradicts: "s-bad", leads: "s-warn", stable: "s-mut" };
+
+function nwEmpty(title, sub) {
+  return `<div class="empty"><div class="empty-icon">◍</div><div class="empty-text">${esc(title)}</div>${sub ? `<div class="empty-sub">${esc(sub)}</div>` : ""}</div>`;
+}
+/* SVG freshness donut — frac = age/SLA (0..1+); colour ok<.75<warn<1<=bad */
+function nwRing(frac, size = 34) {
+  const r = (size - 6) / 2, c = 2 * Math.PI * r, cc = size / 2;
+  const f = frac == null ? 0 : Math.max(0, Math.min(1, frac));
+  const cls = frac == null ? "ok" : frac >= 1 ? "bad" : frac >= 0.75 ? "warn" : "ok";
+  const dash = `${(f * c).toFixed(1)} ${c.toFixed(1)}`;
+  return `<span class="ring"><svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+    <circle class="ring-track" cx="${cc}" cy="${cc}" r="${r}"/>
+    <circle class="ring-fill ${cls}" cx="${cc}" cy="${cc}" r="${r}" stroke-dasharray="${dash}"/></svg></span>`;
+}
+function nwIndependenceCard(indep) {
+  /* R-ORTH PR-4: independence summary card for the observatory hero area. */
+  if (!indep) return "";
+  const eil = indep.effective_independent_lobes;
+  const measurable = indep.n_lobes_measurable;
+  const total = indep.n_lobes_total;
+  const pctile = indep.pctile_vs_null;
+  const available = indep.available;
+  // same >=2 measurable floor as the committee chip: a 1-engine PR is trivially 1.0
+  const eilStr = (eil != null && measurable != null && measurable >= 2) ? Number(eil).toFixed(1) : "—";
+  const coverageStr = (measurable != null && total != null)
+    ? `${measurable} / ${total} engines measurable${measurable < 2 ? " — accruing" : ""}`
+    : (available ? "accruing" : "spine not yet written");
+  const pctileStr = (pctile != null) ? ` · ${(pctile * 100).toFixed(0)}th pctile vs null` : "";
+  const sameBetHtml = (indep.same_bet_warning)
+    ? `<div class="note" style="color:var(--warn);margin-top:4px">Same-bet warning: ${esc(indep.same_bet_warning.text || indep.same_bet_warning.message || "active")}</div>` : "";
+  const caveat = `<span class="sub" style="font-style:italic">Descriptive only — not gauntleted (F-ORTH-1)</span>`;
+  return `<div class="card" style="margin-bottom:10px;padding:10px 14px">
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <div>
+        <div class="eyebrow">Independent witnesses (R-ORTH)</div>
+        <div style="font-size:22px;font-weight:700;letter-spacing:-.02em">${esc(eilStr)}</div>
+        <div class="sub">${esc(coverageStr)}${esc(pctileStr)}</div>
+      </div>
+      <div style="flex:1;min-width:200px;font-size:12px;line-height:1.5;color:var(--fg2)">
+        Estimates how many of the ${total != null ? total : "?"} active engines fire on unrelated information.
+        Based on participation-ratio of the engine co-firing correlation matrix (≥30 active-weeks floor).
+        ${caveat}
+      </div>
+    </div>
+    ${sameBetHtml}
+  </div>`;
+}
+
+function nwHero(d) {
+  const st = d.overall_status || "unknown";
+  const sc = d.summary_counts || {};
+  const chip = (label, n, cls) => `<span class="pill"><span class="led ${cls}"></span>${n != null ? n : "—"} ${label}</span>`;
+  const note = d.source === "synapse_registry"
+    ? "Lobe map sourced live from the signal registry (config/synapse.yml). Freshness and cortex activity fill in after the nightly pipeline writes health.json."
+    : `Live health as of ${esc(d.as_of || "—")}. Every lobe below is a cross-engine artifact on the Neural Web bus.`;
+  return `<div class="nw-hero">
+    <div class="nw-hero-row">
+      <span class="status-dot" data-status="${esc(NW_STATUS_DOT[st] || "unknown")}" style="width:14px;height:14px"></span>
+      <span class="nw-hero-status-word">${esc(NW_STATUS_WORD[st] || st)}</span>
+      <span class="sub" style="margin-left:2px">${sc.total != null ? sc.total : "—"} lobes across ${(d.groups || []).length} systems · ${(d.graph && d.graph.n_edges) != null ? d.graph.n_edges : "—"} bus links</span>
+    </div>
+    <div class="nw-hero-chips">
+      ${chip("fresh", sc.fresh, "ok")}
+      ${chip("stale", sc.stale, "warn")}
+      ${chip("missing", sc.missing, "bad")}
+      ${sc.not_locally_verifiable ? chip("R2-only", sc.not_locally_verifiable, "") : ""}
+    </div>
+    <div class="nw-hero-note">${note}</div>
+  </div>
+  ${nwIndependenceCard(d.independence)}`;
+}
+/* Signature system map — core → group anchors (on a ring) → lobe nodes */
+const NW_STATUS_MAP = (s) => s === "fresh" ? "fresh" : s === "stale" ? "stale"
+  : (s === "missing" || s === "degraded") ? "missing" : "unknown";
+
+/* Shorten a lobe label for the map: the group is already labelled, so drop the
+   redundant group-ish prefix ("Kernel Estimates" → "Estimates" inside KERNEL). */
+function nwMapLabel(label) {
+  return String(label || "")
+    .replace(/^Site Neuralweb /i, "Site ")
+    .replace(/^Neuralweb /i, "")
+    .replace(/^Reflex Firings /i, "")
+    .replace(/^Ops Push /i, "")
+    .replace(/^Rule Experiment /i, "Experiment ")
+    .replace(/^Cortex Attention /i, "Attention ")
+    .replace(/^Bottom Sensors /i, "Sensors ")
+    .replace(/^Options Entry /i, "Options ")
+    .replace(/^Site Qledger /i, "Site QLedger ")
+    .trim();
+}
+
+/* Radial dendrogram: core → group hubs → named lobe leaves, with curved
+   hue-coloured synapse links. Deterministic layout (angle from index). */
+function nwSystemMap(d) {
+  const groups = (d.groups || []).filter(g => g.lobes && g.lobes.length);
+  if (!groups.length) return "";
+  const W = 1160, H = 820, cx = W / 2, cy = H / 2;
+  const coreR = 30, hubR = 150, leafR = 248, rimR = 374;
+  const P = (r, a) => [cx + r * Math.cos(a), cy + r * Math.sin(a)];
+  /* d3-style radial link: control points held at the mid radius so branches fan cleanly */
+  const link = (r0, a0, r1, a1) => {
+    const [x0, y0] = P(r0, a0), [x1, y1] = P(r1, a1);
+    const rm = (r0 + r1) / 2;
+    const [b0x, b0y] = P(rm, a0), [b1x, b1y] = P(rm, a1);
+    return `M${x0.toFixed(1)},${y0.toFixed(1)}C${b0x.toFixed(1)},${b0y.toFixed(1)} ${b1x.toFixed(1)},${b1y.toFixed(1)} ${x1.toFixed(1)},${y1.toFixed(1)}`;
+  };
+  const trunc = (s, n) => s.length > n ? s.slice(0, n - 1).trimEnd() + "…" : s;
+
+  const L = groups.reduce((s, g) => s + g.lobes.length, 0);
+  const GAP = 0.10;                                  // angular gap between groups (rad)
+  const slice = (2 * Math.PI - GAP * groups.length) / L;
+  let a = -Math.PI / 2 + GAP / 2;                     // first leaf starts at top
+
+  let trunks = "", hubs = "", arms = "", glabels = "";
+  groups.forEach(g => {
+    const hue = `var(--grp-${g.key})`;
+    const n = g.lobes.length, aStart = a, gc = aStart + n * slice / 2;
+    const [hx, hy] = P(hubR, gc);
+    trunks += `<path class="map-link trunk" style="stroke:${hue}" d="${link(coreR + 2, gc, hubR, gc)}"/>`;
+    hubs += `<circle class="map-hub" cx="${hx.toFixed(1)}" cy="${hy.toFixed(1)}" r="6" style="fill:${hue}"/>`;
+    const [gx, gy] = P(rimR, gc);
+    glabels += `<text class="map-group-label" x="${gx.toFixed(1)}" y="${gy.toFixed(1)}" text-anchor="middle" dy="0.32em" style="fill:${hue}">${esc(g.label.toUpperCase())} · ${n}</text>`;
+    g.lobes.forEach((l, i) => {
+      const al = aStart + (i + 0.5) * slice;
+      const [lx, ly] = P(leafR, al);
+      const [tx, ty] = P(leafR + 10, al);
+      let deg = ((al * 180 / Math.PI) % 360 + 360) % 360;
+      const left = deg > 90 && deg < 270;
+      const rot = left ? deg + 180 : deg;
+      arms += `<g class="map-arm">`
+        + `<path class="map-link" style="stroke:${hue}" d="${link(hubR, gc, leafR, al)}"/>`
+        + `<circle class="map-node" data-lobe="${esc(l.id)}" data-status="${NW_STATUS_MAP(l.status)}" cx="${lx.toFixed(1)}" cy="${ly.toFixed(1)}" style="fill:${hue}"/>`
+        + `<text class="map-leaf-label" x="${tx.toFixed(1)}" y="${ty.toFixed(1)}" dy="0.31em" text-anchor="${left ? "end" : "start"}" transform="rotate(${rot.toFixed(1)},${tx.toFixed(1)},${ty.toFixed(1)})">${esc(trunc(nwMapLabel(l.label), 18))}</text>`
+        + `</g>`;
+    });
+    a = aStart + n * slice + GAP;
+  });
+
+  return `<div class="systemmap"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Neural Web system map — core, ${groups.length} groups, ${L} lobes">
+    <defs>
+      <radialGradient id="nw-core-grad" cx="0.42" cy="0.4" r="0.6">
+        <stop offset="0" stop-color="#a9c0ff"/><stop offset="0.5" stop-color="#5b7cff"/><stop offset="1" stop-color="#38c8d4"/>
+      </radialGradient>
+    </defs>
+    <g class="map-links">${trunks}</g>
+    <g class="map-arms">${arms}</g>
+    <g class="map-hubs">${hubs}</g>
+    <g class="map-glabels">${glabels}</g>
+    <circle class="map-core" cx="${cx}" cy="${cy}" r="${coreR}"/>
+    <text class="map-core-label" x="${cx}" y="${cy}" text-anchor="middle" dy="0.32em">NEURAL<tspan x="${cx}" dy="1.05em">WEB</tspan></text>
+  </svg></div>`;
+}
+/* Honest badge for the plain-English description layer.
+   'stale' = the registry note changed since the prose was written; 'auto' = no
+   hand-written prose yet (auto-summary from the registry). 'curated' = no badge. */
+function descBadge(status) {
+  if (status === "stale") return `<span class="desc-badge outdated" title="The signal-registry note for this lobe changed since its plain-English description was written — it may be out of date.">outdated</span>`;
+  if (status === "auto") return `<span class="desc-badge auto" title="Auto-generated summary from the signal registry — a hand-written description hasn't been added yet.">auto</span>`;
+  return "";
+}
+
+function nwLobeCard(l) {
+  const age = l.age_hours, sla = l.freshness_sla_hours;
+  const frac = (age != null && sla) ? age / sla : null;
+  const ageTxt = age == null ? "—" : fmtAge(age);
+  return `<a class="lobe-card" href="#/lobe/${encodeURIComponent(l.id)}" data-lobe="${esc(l.id)}">
+    <div class="lobe-card-top">
+      <span class="lobe-led" data-status="${esc(l.status)}"></span>
+      <span class="lobe-name">${esc(l.label)}</span>
+      ${descBadge(l.desc_status)}
+      <span class="group-chip" data-group="${esc(l.group)}">${esc(l.group)}</span>
+    </div>
+    <div class="short-desc">${esc(l.short_desc || "No description registered.")}</div>
+    <div class="lobe-metrics">
+      ${nwRing(frac, 26)}
+      <span>${ageTxt}${sla ? ` / ${fmtAge(sla)}` : ""}</span>
+      <span class="metric-sep">·</span>
+      <span>${l.n_consumers} consumer${l.n_consumers === 1 ? "" : "s"}</span>
+      <span class="metric-sep">·</span>
+      <span>${esc(l.tier || "—")}</span>
+    </div>
+  </a>`;
+}
+
 RENDER.neural_web = async () => {
   const v = $("#view");
-  v.innerHTML = `<div class="sub" style="margin-bottom:12px">Behind-the-scenes monitor for the signal-generation system (nicknamed the "Neural Web"). Each section shows whether a part is working and up to date. Monitoring only — nothing here changes what the site does.</div>
-    <div class="sub" style="margin-bottom:8px;color:var(--muted)">Loading…</div>`;
+  v.innerHTML = `<div class="skeleton skeleton-title"></div><div class="skeleton skeleton-card"></div>
+    <div class="lobe-grid">${'<div class="skeleton skeleton-card"></div>'.repeat(8)}</div>`;
+  const d = await api("/api/neural_web/lobes");
+  if (!d.ok) { v.innerHTML = nwEmpty("Could not load the lobe map", d.error || "panel error"); return; }
+  let html = nwHero(d) + nwSystemMap(d);
+  (d.groups || []).forEach(g => {
+    if (!g.lobes || !g.lobes.length) return;
+    html += `<div class="section">${esc(g.label)} <span class="cnt">${g.lobes.length}</span></div>
+      <div class="lobe-grid">${g.lobes.map(nwLobeCard).join("")}</div>`;
+  });
+  html += `<details class="nw-section" style="margin-top:6px">
+      <summary class="section" style="cursor:pointer;user-select:none;list-style:none">▸ Operator HQ — full diagnostic detail</summary>
+      <div id="nw-legacy"><div class="spin">loading…</div></div>
+    </details>`;
+  /* Build id→lobe lookup for popup */
+  NW_LOBE_BY_ID = {};
+  (d.groups || []).forEach(g => (g.lobes || []).forEach(l => { NW_LOBE_BY_ID[l.id] = l; }));
+
+  v.innerHTML = html;
+  v.querySelectorAll(".map-node[data-lobe]").forEach(el => {
+    el.addEventListener("click", () => gotoLobe(el.dataset.lobe));
+    wireLobeTipNode(el);
+  });
+  loadLegacyOps();
+};
+/* Section G — Evidence Clock (EC-R5) */
+function nwSectionEvidenceClock(ec) {
+  if (!ec) return nwMissing("evidence_clock section missing");
+  if (!ec.available) return nwMissing(ec.note || "data/neuralweb/evidence_clock.json not yet written (PR1 not yet merged)");
+
+  const sum = ec.summary || {};
+  const by = sum.by_state || {};
+  const ml = sum.morning_line || "";
+  const asOf = ec.as_of || "";
+
+  // State chip colours
+  const STATE_CLS = {
+    overdue: "s-bad", due: "s-warn", human_review: "s-warn",
+    missing: "s-bad", stale: "s-warn", blocked: "s-warn",
+    not_ready: "s-warn", promotion_eligible: "s-ok", accruing: "s-muted",
+  };
+
+  // Count chips — only non-zero states
+  const allStates = ["overdue","due","human_review","missing","stale","blocked","not_ready","promotion_eligible","accruing"];
+  let chips = allStates
+    .filter(s => (by[s] || 0) > 0)
+    .map(s => `<span class="statpill ${STATE_CLS[s] || 's-muted'}">${esc(String(by[s] ?? 0))} ${esc(s.replace(/_/g," "))}</span>`)
+    .join(" ");
+
+  let html = `<div class="card">
+    <div class="kv"><span>As of</span><b>${esc(asOf)}</b></div>
+    <div style="margin:8px 0 4px">${chips || '<span class="muted">no items</span>'}</div>
+    <div class="sub" style="margin-top:6px">${esc(ml)}</div>
+  </div>`;
+
+  // Queue table
+  const queue = ec.queue || [];
+  if (queue.length > 0) {
+    html += `<div class="section" style="margin-top:14px">Action queue <span class="cnt">${queue.length}</span></div>
+      <table><thead><tr>
+        <th>Clock ID</th><th>State</th><th>Due</th><th>Owner</th><th>Blocking reason</th><th>Regen cmd</th>
+      </tr></thead><tbody>
+      ${queue.map(r => {
+        const stateCls = STATE_CLS[r.state] || "s-muted";
+        const cmd = r.regenerate_cmd ? `<code style="font-size:11px">${esc(r.regenerate_cmd)}</code>` : `<span class="muted">—</span>`;
+        return `<tr>
+          <td><b>${esc(r.clock_id || "")}</b>${r.acknowledged ? ' <span class="statpill s-muted">ack</span>' : ''}</td>
+          <td><span class="statpill ${stateCls}">${esc(r.state || "")}</span></td>
+          <td class="sub">${esc(r.due_at || "—")}</td>
+          <td class="sub">${esc(r.owner_program || "—")}</td>
+          <td class="sub" style="max-width:220px">${esc(r.blocking_reason || "")}</td>
+          <td>${cmd}</td>
+        </tr>`;
+      }).join("")}
+      </tbody></table>`;
+  }
+
+  if (ec.n_accruing > 0) {
+    html += `<div class="sub muted" style="margin-top:8px">${ec.n_accruing} accruing / promotion-eligible items not shown.</div>`;
+  }
+
+  return html;
+}
+
+async function loadLegacyOps() {
+  const box = $("#nw-legacy"); if (!box) return;
   const d = await api("/api/neural_web");
+  if (!d || !d.ok) { box.innerHTML = nwEmpty("Diagnostic panel unavailable", (d && d.error) || ""); return; }
+  box.innerHTML = `
+    ${nwCollapse("engine_health", "A — System health", nwSectionEngineHealth(d.engine_health), false)}
+    ${nwCollapse("reflex_log", "B — Automatic reactions", nwSectionReflexLog(d.reflex_log), false)}
+    ${nwCollapse("bus_graph", "C — How signals agree &amp; disagree", nwSectionBusGraph(d.bus_graph), false)}
+    ${nwCollapse("governance", "D — Permissions &amp; change log", nwSectionGovernance(d.governance), false)}
+    ${nwCollapse("factor_intelligence", "E — Factor intelligence (what a stock's move is made of)", nwSectionFactorIntelligence(d.factor_intelligence), false)}
+    ${nwCollapse("evidence_clock", "G — Evidence Clock (come-backs &amp; overdue actions)", nwSectionEvidenceClock(d.evidence_clock), false)}`;
+}
+
+/* ---- Lobe detail "page" (#/lobe/<id>) ----------------------------------- */
+function nwCrumbs(current) {
+  return `<div class="crumbs"><a href="#" data-back>← Neural Web</a><span class="crumbs-sep">/</span><span class="crumbs-current">${esc(current)}</span></div>`;
+}
+async function renderLobeDetail(id) {
+  CURRENT = "neural_web"; setActiveNav("neural_web");
+  hideLobeTip();  // clear any map-node hover popup left over from the click that navigated here
+  if (RT_TIMER) { clearInterval(RT_TIMER); RT_TIMER = null; }
+  setTopbarTitle("Neural Web");
+  const v = $("#view");
+  v.innerHTML = nwCrumbs(id) + `<div class="skeleton skeleton-title"></div>
+    <div class="metric-tiles-row">${'<div class="skeleton skeleton-card" style="width:120px;height:70px"></div>'.repeat(4)}</div>
+    <div class="skeleton skeleton-card" style="height:120px"></div>`;
+  const d = await api("/api/neural_web/lobe?id=" + encodeURIComponent(id));
+  const wireBack = () => { const b = v.querySelector("[data-back]"); if (b) b.onclick = (e) => { e.preventDefault(); backToObservatory(); }; };
+  if (!d || !d.ok) {
+    v.innerHTML = nwCrumbs(id) + nwEmpty("Unknown lobe", `No lobe with id “${id}”.`);
+    wireBack(); return;
+  }
+  setTopbarTitle(d.label);
+  const met = d.metrics || {}, tr = d.transmission || {};
+  const frac = (met.age_hours != null && met.freshness_sla_hours) ? met.age_hours / met.freshness_sla_hours : null;
+
+  const tiles = [
+    `<div class="metric-tile"><div class="eyebrow">Freshness</div>
+       <div class="tile-value" style="display:flex;align-items:center;gap:8px">${nwRing(frac, 30)}<span>${met.age_hours == null ? "—" : fmtAge(met.age_hours)}</span></div>
+       <div class="tile-sub">${met.freshness_sla_hours ? "SLA " + fmtAge(met.freshness_sla_hours) + (met.sla_met === false ? " · breached" : met.sla_met ? " · on time" : "") : "no SLA"}</div></div>`,
+    `<div class="metric-tile"><div class="eyebrow">Rows</div><div class="tile-value">${met.row_count == null ? "—" : fmtNum(met.row_count)}</div><div class="tile-sub">records</div></div>`,
+    `<div class="metric-tile"><div class="eyebrow">Size</div><div class="tile-value">${met.byte_size == null ? "—" : fmtBytes(met.byte_size)}</div><div class="tile-sub">on disk</div></div>`,
+    `<div class="metric-tile"><div class="eyebrow">Consumers</div><div class="tile-value">${(tr.consumers || []).length + (tr.external_consumers || []).length}</div><div class="tile-sub">downstream readers</div></div>`,
+    `<div class="metric-tile"><div class="eyebrow">As of</div><div class="tile-value" style="font-size:14px">${esc(met.as_of || met.produced_at || "—")}</div><div class="tile-sub">${esc(d.cadence || "")}</div></div>`,
+  ].join("");
+
+  const consumers = (tr.consumers || []).map(c => `<div class="flow-node" data-kind="${esc(c.kind || "module")}">${esc(c.name)}</div>`).join("") || `<div class="sub">no registered consumers</div>`;
+  const external = (tr.external_consumers || []).length
+    ? `<div class="external-consumers"><div class="flow-col-label">External consumers</div>${tr.external_consumers.map(e => `<span class="external-tag">${esc(e)}</span>`).join("")}</div>` : "";
+  const edges = (tr.edges || []);
+  const edgeList = edges.length
+    ? `<div class="edge-list"><div class="flow-col-label">Confluence edges · ${edges.length}</div>
+       <table><thead><tr><th>From</th><th>Type</th><th>To</th><th>Note</th></tr></thead><tbody>
+       ${edges.slice(0, 40).map(e => `<tr><td class="mono sub" style="max-width:180px;word-break:break-all">${esc(e.src)}</td>
+         <td>${nwPill(e.edge_type, EDGE_CLS[e.edge_type] || "s-mut")}${e.n != null ? ` <span class="sub">×${e.n}</span>` : ""}</td>
+         <td class="mono sub" style="max-width:180px;word-break:break-all">${esc(e.dst)}</td>
+         <td class="sub">${esc(e.note || "")}</td></tr>`).join("")}</tbody></table></div>` : "";
+
+  const recent = (d.recent_actions || []);
+  const timeline = recent.length
+    ? `<div class="timeline">${recent.map(a => `<div class="timeline-item">
+        <div class="timeline-ts">${esc(a.ts || "")}</div>
+        <div class="timeline-header"><span class="timeline-kind">${esc(a.kind || "event")}</span></div>
+        <div class="timeline-summary">${esc(a.summary || "")}</div>
+        ${a.source ? `<div class="timeline-source">${esc(a.source)}</div>` : ""}</div>`).join("")}</div>`
+    : nwEmpty("No recent activity", "No firings, governance events, or brief entries are currently attributable to this lobe.");
+
+  v.innerHTML = `
+    ${nwCrumbs(d.label)}
+    ${d.missing ? `<div class="missing-banner"><span>⚠</span><div>This artifact isn't present on this clone — freshness metrics fill in after the nightly pipeline writes it. Its purpose and data flow (below) come from the signal registry and are always available.</div></div>` : ""}
+    <div style="margin-bottom:18px">
+      <div class="nw-hero-row" style="margin-bottom:10px">
+        <span class="status-dot" data-status="${esc(d.status)}" style="width:14px;height:14px"></span>
+        <span style="font-size:24px;font-weight:700;letter-spacing:-.02em">${esc(d.label)}</span>
+        <span class="group-chip" data-group="${esc(d.group)}">${esc(d.group_label || d.group)}</span>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <span class="badge">${esc(d.tier || "—")}</span>
+        <span class="badge">${esc(d.cadence || "—")}</span>
+        <span class="badge">${esc(d.horizon_role || "—")}</span>
+        <span class="badge">${esc(d.storage || "—")}</span>
+      </div>
+    </div>
+    <div class="metric-tiles-row">${tiles}</div>
+    <div class="card"><h3 style="display:flex;align-items:center;gap:8px">What it does ${descBadge(d.desc_status)}</h3>
+      ${d.desc_status === "stale" ? `<div class="note" style="color:var(--warn);margin-bottom:8px">⚠ The signal-registry note for this lobe changed since this plain-English summary was written — it may be out of date. (Refresh it and re-stamp with the description audit tool.)</div>` : ""}
+      ${d.desc_status === "auto" ? `<div class="note muted" style="margin-bottom:8px">Auto-generated from the signal registry — a hand-written summary hasn't been added yet.</div>` : ""}
+      <div style="line-height:1.55">${esc(d.description || "No description registered for this lobe.")}</div>
+      ${d.description_technical && d.description_technical !== d.description ? `<details style="margin-top:12px"><summary class="note muted" style="cursor:pointer;user-select:none">Technical note (from the signal registry)</summary><div class="note mono muted" style="margin-top:6px;line-height:1.5">${esc(d.description_technical)}</div></details>` : ""}
+      ${d.independence_note ? `<details style="margin-top:12px"><summary class="note muted" style="cursor:pointer;user-select:none">Independence note (R-ORTH covariance spine)</summary><div class="note muted" style="margin-top:6px;line-height:1.5">${esc(d.independence_note)}${d.co_fire_cluster ? ` Co-fire cluster engines: ${esc(d.co_fire_cluster.join(", "))}.` : ""}</div></details>` : ""}
+      <div class="note muted" style="margin-top:10px">Producer <code>${esc(d.producer || "?")}</code> · artifact <code>${esc(d.path || "?")}</code> · source ${esc(d.purpose_source || "config/synapse.yml")}</div>
+    </div>
+    <div class="section">Data transmission</div>
+    <div class="transmission">
+      <div class="flow-layout">
+        <div class="flow-col">
+          <div class="flow-col-label">Producer</div>
+          <div class="flow-node" data-kind="module">${esc(d.producer || "—")}</div>
+        </div>
+        <div class="flow-col" style="align-items:center;justify-content:center">
+          <div class="flow-hub">${esc(d.label)}</div>
+        </div>
+        <div class="flow-col">
+          <div class="flow-col-label">Consumers · ${(tr.consumers || []).length}</div>
+          ${consumers}
+        </div>
+      </div>
+      ${external}
+      ${edgeList}
+    </div>
+    <div class="section">Recent activity <span class="cnt">${recent.length}</span></div>
+    ${timeline}`;
+  wireBack();
+}
+
+/* ---- ALERTS (operator capture) ------------------------------------------ */
+const SEV_CLS = { critical: "s-bad", major: "s-warn", minor: "" };
+RENDER.alerts = async () => {
+  const v = $("#view");
+  v.innerHTML = `<div class="sub" style="margin-bottom:12px">Recent alerts from the live site feed. Log your action against any alert — Acted, Dismissed, Overrode, or Snoozed — to build the operator capture ledger (L4 instrumentation). All writes go through /api/actions behind auth.</div>
+    <div class="sub muted" style="margin-bottom:8px">Loading…</div>`;
+  const d = await api("/api/alerts");
   if (!d.ok) {
-    v.innerHTML = card("Neural Web", `<div class="sub" style="color:var(--bad)">${esc(d.error || "panel error")}</div>`);
+    v.innerHTML = card("Alerts", `<div class="sub" style="color:var(--bad)">${esc(d.note || d.error || "error")}</div>`);
     return;
   }
+  const alerts = d.alerts || [];
+  const genLine = d.generated_utc ? `<div class="sub muted" style="margin-bottom:8px">Feed generated: ${esc(d.generated_utc)} UTC${d.note ? " — " + esc(d.note) : ""}</div>` : (d.note ? `<div class="sub muted" style="margin-bottom:8px">${esc(d.note)}</div>` : "");
+  if (!alerts.length) {
+    v.innerHTML = `${genLine}<div class="section">Alerts <span class="cnt">0</span></div><div class="sub muted">No alerts in the feed.</div>`;
+    return;
+  }
+  v.innerHTML = `${genLine}<div class="section">Alerts <span class="cnt">${alerts.length}</span></div>
+    <table><thead><tr><th>Alert</th><th>Severity</th><th>Priority</th><th>Emitted</th><th>Your action</th></tr></thead><tbody>
+    ${alerts.map(a => `<tr>
+      <td><b>${esc(a.title || a.surface || a.alert_id)}</b><div class="note mono muted">${esc(a.surface || "")}</div></td>
+      <td><span class="statpill ${SEV_CLS[a.severity] || ""}">${esc(a.severity || "—")}</span></td>
+      <td class="r mono">${a.priority != null ? a.priority : "—"}</td>
+      <td class="sub mono">${esc((a.emit_ts || "").slice(0, 10))}</td>
+      <td style="white-space:nowrap">
+        <button class="btn alert-act-btn" data-alert-id="${esc(a.alert_id || "")}" data-emit-ts="${esc(a.emit_ts || "")}" data-action="acted">Acted</button>
+        <button class="btn alert-act-btn" data-alert-id="${esc(a.alert_id || "")}" data-emit-ts="${esc(a.emit_ts || "")}" data-action="dismissed">Dismiss</button>
+        <button class="btn alert-act-btn" data-alert-id="${esc(a.alert_id || "")}" data-emit-ts="${esc(a.emit_ts || "")}" data-action="overrode">Override</button>
+        <button class="btn alert-act-btn" data-alert-id="${esc(a.alert_id || "")}" data-emit-ts="${esc(a.emit_ts || "")}" data-action="snoozed">Snooze</button>
+      </td></tr>`).join("")}
+    </tbody></table>`;
+  // Wire action buttons — POST {surface: alert_id, action, direction_note, alert_emit_ts}
+  v.querySelectorAll(".alert-act-btn").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      const alertId = btn.dataset.alertId;
+      const emitTs = btn.dataset.emitTs;
+      const action = btn.dataset.action;
+      const note = window.prompt(`Direction note (optional, ≤280 chars) for "${action}" on ${alertId}:`);
+      if (note === null) return; // user cancelled
+      const r = await post("/api/actions", {
+        surface: alertId,
+        action,
+        direction_note: note,
+        alert_emit_ts: emitTs || undefined,
+      });
+      if (r.ok) toast(`Logged: ${action} — ${alertId}`);
+      else toast(r.error || "action log failed", true);
+    });
+  });
+};
+
+/* ---- LONG-HOLD LOBE ----------------------------------------------------- */
+RENDER.long_hold = async () => {
+  const v = $("#view");
+  v.innerHTML = `<div class="sub muted" style="margin-bottom:8px">Loading…</div>`;
+  const d = await api("/api/long_hold");
+  if (!d.ok) {
+    v.innerHTML = card("Long-Hold Lobe", `<div class="sub" style="color:var(--bad)">${esc(d.reason || "not available")}</div>`);
+    return;
+  }
+
+  const ageStr = d.age_hours != null ? ` · ${fmtAge(d.age_hours)} old` : "";
+  const genStr = d.generated_at ? `generated ${esc(d.generated_at.slice(0, 16).replace("T", " "))} UTC${ageStr}` : "no winner autopsy artifact yet";
+  const wa = d.winner_autopsy || {};
+  const tf = d.thesis_funnel || {};
+  const lb = d.labels || {};
+
+  // ---- Winner Autopsy section ----
+  let waHtml = "";
+  if (!wa.available) {
+    waHtml = `<div class="sub muted">${esc(wa.reason || "winner autopsy data not yet available")}</div>`;
+  } else {
+    const census = wa.census || {};
+    const cases = wa.cases || {};
+    const watch = wa.watch || {};
+
+    // Census cards
+    const olc = census.outcome_label_counts || {};
+    const olcRows = Object.entries(olc).map(([k, n]) =>
+      `<div class="kv"><span>${esc(k.replace(/_/g, " "))}</span><b>${fmtNum(n)}</b></div>`
+    ).join("") || "<span class='muted'>—</span>";
+    const byEra = (census.by_era || []).map(e =>
+      `<tr><td>${esc(e.era || "—")}</td><td class="r">${fmtNum(e.n_episodes)}</td>` +
+      `<td class="r">${e.durable_winner_rate != null ? (100 * e.durable_winner_rate).toFixed(1) + "%" : "—"}</td>` +
+      `<td class="r">${e.blow_off_rate != null ? (100 * e.blow_off_rate).toFixed(1) + "%" : "—"}</td></tr>`
+    ).join("");
+    const censusNotes = (census.notes || []).map(n => `<div class="note">${esc(n)}</div>`).join("");
+
+    const censusCard = card("Census", `
+      <div class="kv"><span>Episodes</span><b>${fmtNum(census.n_episodes)}</b></div>
+      <div class="kv"><span>Universe tickers</span><b>${fmtNum(census.universe_n_tickers)}</b></div>
+      <div class="kv"><span>Date range</span><b>${esc((census.date_range || []).join(" → "))}</b></div>
+      ${olcRows}
+      ${byEra ? `<table style="margin-top:8px"><thead><tr><th>Era</th><th class="r">Episodes</th><th class="r">Durable winner %</th><th class="r">Blow-off %</th></tr></thead><tbody>${byEra}</tbody></table>` : ""}
+      ${censusNotes}`);
+
+    // Cases table
+    const caseRows = (cases.items || []).map(it =>
+      `<tr>
+        <td><b>${esc(it.ticker || "—")}</b></td>
+        <td>${esc(it.episode_year != null ? String(it.episode_year) : "—")}</td>
+        <td>${esc(it.mechanism || "—")}</td>
+        <td><span class="statpill ${it.reconcile === "matched" ? "s-ok" : it.reconcile ? "s-warn" : ""}">${esc(it.reconcile || "—")}</span></td>
+        <td class="sub" style="max-width:320px">${esc(it.thesis_one_liner || "—")}</td>
+        <td>${it.file ? `<a href="${esc(it.file)}" target="_blank" rel="noopener">case</a>` : "—"}</td>
+      </tr>`
+    ).join("") || `<tr><td colspan="6" class="muted sub">no cases yet</td></tr>`;
+    const casesBlock = `
+      <div class="section">Cases <span class="cnt">${fmtNum(cases.n_cases)}</span></div>
+      <table><thead><tr><th>Ticker</th><th>Year</th><th>Mechanism</th><th>Reconcile</th><th>Thesis</th><th>File</th></tr></thead>
+      <tbody>${caseRows}</tbody></table>`;
+
+    // Breakaway Watch
+    let watchHtml = "";
+    if (!watch.available) {
+      watchHtml = `<div class="sub muted">Watch list not yet populated (prices needed — runs on Mac host nightly). State counts: ${JSON.stringify(watch.state_counts || {})}</div>`;
+    } else {
+      const sc = watch.state_counts || {};
+      const chips = Object.entries(sc).map(([k, n]) =>
+        `<span class="statpill ${n > 0 ? "s-ok" : ""}" style="margin-right:4px">${esc(k.replace(/_/g, " "))} ${fmtNum(n)}</span>`
+      ).join("");
+      const topRows = (watch.top || []).map(row =>
+        `<tr>
+          <td><b>${esc(row.ticker || "—")}</b></td>
+          <td>${esc(row.sector || "—")}</td>
+          <td>${esc(row.benchmark || "—")}</td>
+          <td><span class="statpill">${esc(row.state || "—")}</span></td>
+          <td class="r mono">${row.excess_21d_pp != null ? row.excess_21d_pp.toFixed(1) + "pp" : "—"}</td>
+          <td>${row.new_high_63d ? "yes" : "no"}</td>
+          <td class="r mono">${row.dollar_vol_z21 != null ? row.dollar_vol_z21.toFixed(2) : "—"}</td>
+          <td class="sub" style="max-width:260px">${esc((row.hazards || []).join(", "))}</td>
+        </tr>`
+      ).join("") || `<tr><td colspan="8" class="muted sub">no watch entries</td></tr>`;
+      watchHtml = `
+        <div style="margin:6px 0">${chips || "<span class='muted sub'>no state counts</span>"}</div>
+        <table><thead><tr><th>Ticker</th><th>Sector</th><th>Benchmark</th><th>State</th><th class="r">Excess 21d</th><th>New high 63d</th><th class="r">Vol-z 21</th><th>Hazards</th></tr></thead>
+        <tbody>${topRows}</tbody></table>
+        <div class="note muted" style="margin-top:4px">as of ${esc(watch.as_of || "—")} · sorted by excess_21d_pp desc · display-only — not a trading signal</div>`;
+    }
+
+    // Clocks
+    const clockRows = (wa.clocks || []).map(c =>
+      `<div class="kv"><span class="mono">${esc(c.id || "—")}</span><b>${esc(c.come_back_on || "—")} <span class="statpill">${esc(c.status || "")}</span></b>
+        ${c.note ? `<div class="note">${esc(c.note)}</div>` : ""}</div>`
+    ).join("") || "<span class='muted sub'>no clocks</span>";
+
+    waHtml = `
+      <div class="grid">${censusCard}</div>
+      ${casesBlock}
+      <div class="section">Breakaway Watch</div>
+      <div class="card">${watchHtml}</div>
+      <div class="section">Clocks</div>
+      <div class="card">${clockRows}</div>`;
+  }
+
+  // ---- Thesis Funnel section ----
+  let tfHtml = "";
+  if (!tf.available) {
+    tfHtml = `<div class="sub muted">${esc(tf.reason || "thesis funnel manifest not available")}</div>`;
+  } else {
+    const sc = tf.state_counts || {};
+    const scRows = Object.entries(sc).map(([k, n]) =>
+      `<div class="kv"><span>${esc(k.replace(/_/g, " "))}</span><b>${fmtNum(n)}</b></div>`
+    ).join("") || "<span class='muted'>—</span>";
+    tfHtml = `
+      <div class="kv"><span>Population (tickers)</span><b>${fmtNum(tf.population)}</b></div>
+      <div class="kv"><span>As of</span><b>${esc(tf.as_of || "—")}</b></div>
+      ${scRows}
+      ${tf.notes ? `<div class="note" style="margin-top:6px">${esc(tf.notes)}</div>` : ""}`;
+  }
+
+  // ---- Labels section ----
+  let lbHtml = "";
+  if (!lb.available) {
+    lbHtml = `<div class="sub muted">${esc(lb.reason || "labels manifest not available")}</div>`;
+  } else {
+    const dist = lb.distribution || {};
+    const lbRows = Object.entries(dist).sort((a, b) => b[1] - a[1]).map(([k, n]) =>
+      `<tr><td>${esc(k.replace(/_/g, " "))}</td><td class="r mono">${fmtNum(n)}</td></tr>`
+    ).join("") || `<tr><td colspan="2" class="muted sub">no distribution data</td></tr>`;
+    lbHtml = `
+      <div class="kv"><span>Generated</span><b>${esc((lb.generated_at || "—").slice(0, 16).replace("T", " "))}</b></div>
+      <table><thead><tr><th>Label</th><th class="r">Count</th></tr></thead><tbody>${lbRows}</tbody></table>`;
+  }
+
   v.innerHTML = `
-    <div class="sub" style="margin-bottom:12px">Read-only. If a section's data hasn't been generated yet, it says so instead of showing an error.</div>
-    ${nwCollapse("engine_health", "A — System health", nwSectionEngineHealth(d.engine_health), true)}
-    ${nwCollapse("reflex_log", "B — Automatic reactions", nwSectionReflexLog(d.reflex_log), true)}
-    ${nwCollapse("bus_graph", "C — How signals agree &amp; disagree", nwSectionBusGraph(d.bus_graph), false)}
-    ${nwCollapse("governance", "D — Permissions &amp; change log", nwSectionGovernance(d.governance), true)}
-    ${nwCollapse("factor_intelligence", "E — Factor intelligence (what a stock's move is made of)", nwSectionFactorIntelligence(d.factor_intelligence), false)}
-  `;
+    <div class="sub muted" style="margin-bottom:8px">${esc(genStr)}</div>
+    <div class="section">Winner Autopsy</div>
+    <div class="card">${waHtml}</div>
+    <div class="section">Thesis Funnel</div>
+    <div class="card">${tfHtml}</div>
+    <div class="section">Label Distribution</div>
+    <div class="card">${lbHtml}</div>`;
 };
 
 /* ---- boot --------------------------------------------------------------- */
+/* Wrap any table in the content area so wide tables scroll horizontally
+   (the shell column clips overflow, so a bare <table> would be cut off). */
+function wrapViewTables() {
+  const view = $("#view"); if (!view) return;
+  view.querySelectorAll("table").forEach(tbl => {
+    const p = tbl.parentElement;
+    if (!p || p.classList.contains("table-wrap")) return;
+    const w = document.createElement("div");
+    w.className = "table-wrap";
+    p.insertBefore(w, tbl);
+    w.appendChild(tbl);
+  });
+}
+let _tableObserver = null;
+function startTableObserver() {
+  if (_tableObserver) return;
+  const view = $("#view"); if (!view) return;
+  _tableObserver = new MutationObserver(() => wrapViewTables());
+  _tableObserver.observe(view, { childList: true, subtree: true });
+}
+
 async function boot() {
-  renderTabs();
+  renderSidebar();
+  startTableObserver();
   await refresh();
-  go("overview");
+  route();
 }
 (async function init() {
   SESSION = await fetch("/api/session").then(r => r.json()).catch(() => ({ auth_enabled: false, authenticated: true }));

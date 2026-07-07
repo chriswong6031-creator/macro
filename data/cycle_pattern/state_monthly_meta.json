@@ -1,0 +1,169 @@
+{
+  "_note": "Rows with date > 2024-01-01 fall inside the permanently embargoed holdout and MUST NOT be used for any trial/model selection.",
+  "columns": {
+    "above200d": {
+      "pit_class": "engine_stamped",
+      "source": "cycle backfill (engine stamp)"
+    },
+    "age_bucket": {
+      "pit_class": "pit_pure",
+      "source": "hazard price_c4414dcb price feature"
+    },
+    "age_m": {
+      "pit_class": "pit_pure",
+      "source": "hazard price_c4414dcb price feature"
+    },
+    "amp_proxy": {
+      "pit_class": "pit_pure",
+      "source": "hazard price_c4414dcb price feature"
+    },
+    "basis": {
+      "pit_class": "engine_stamped",
+      "source": "cycle backfill (engine stamp)"
+    },
+    "china_schema_v0": {
+      "pit_class": "pit_pure",
+      "source": "schema-gap flag"
+    },
+    "date": {
+      "pit_class": "pit_pure",
+      "source": "registry+backfill key"
+    },
+    "direction": {
+      "pit_class": "pit_pure",
+      "source": "hazard price_c4414dcb price feature"
+    },
+    "divergence": {
+      "pit_class": "engine_stamped",
+      "source": "cycle backfill (engine stamp)"
+    },
+    "engine": {
+      "pit_class": "engine_stamped",
+      "source": "cycle-engine identity"
+    },
+    "entity_id": {
+      "pit_class": "pit_pure",
+      "source": "registry+backfill key"
+    },
+    "hazard_epoch": {
+      "pit_class": "pit_pure",
+      "source": "hazard price_c4414dcb join marker"
+    },
+    "liquidity": {
+      "pit_class": "revision_optimistic",
+      "source": "hazard liquidity (P-D5-1)"
+    },
+    "log_age_ratio": {
+      "pit_class": "pit_pure",
+      "source": "hazard price_c4414dcb price feature"
+    },
+    "mmacd_hist": {
+      "pit_class": "pit_pure",
+      "source": "monthly RSI-MACD (confluence_tiers._rsi_macd, pinned ESX-RUL-31)"
+    },
+    "mmacd_sign": {
+      "pit_class": "pit_pure",
+      "source": "monthly RSI-MACD (confluence_tiers._rsi_macd, pinned ESX-RUL-31)"
+    },
+    "mmacd_slope": {
+      "pit_class": "pit_pure",
+      "source": "monthly RSI-MACD (confluence_tiers._rsi_macd, pinned ESX-RUL-31)"
+    },
+    "mom_score": {
+      "pit_class": "pit_pure",
+      "source": "hazard price_c4414dcb price feature"
+    },
+    "mstoch_d": {
+      "pit_class": "pit_pure",
+      "source": "monthly StochRSI K/D (confluence_tiers._stoch_rsi_kd, pinned ESX-RUL-31)"
+    },
+    "mstoch_k": {
+      "pit_class": "pit_pure",
+      "source": "monthly StochRSI K/D (confluence_tiers._stoch_rsi_kd, pinned ESX-RUL-31)"
+    },
+    "native_id": {
+      "pit_class": "pit_pure",
+      "source": "registry+backfill key"
+    },
+    "osc_missing": {
+      "pit_class": "pit_pure",
+      "source": "True: <40 completed monthly bars or no daily tape (no-yahoo engines)"
+    },
+    "osc_slope": {
+      "pit_class": "engine_stamped",
+      "source": "cycle backfill (engine stamp)"
+    },
+    "overdue": {
+      "pit_class": "engine_stamped",
+      "source": "cycle backfill (engine stamp)"
+    },
+    "phase": {
+      "pit_class": "engine_stamped",
+      "source": "cycle backfill (engine stamp)"
+    },
+    "phase_v2": {
+      "pit_class": "engine_stamped",
+      "source": "cycle backfill (engine stamp)"
+    },
+    "pos": {
+      "pit_class": "engine_stamped",
+      "source": "cycle backfill (engine stamp)"
+    },
+    "pos_v2": {
+      "pit_class": "engine_stamped",
+      "source": "cycle backfill (engine stamp)"
+    },
+    "proj_central": {
+      "pit_class": "engine_stamped",
+      "source": "cycle backfill (engine stamp)"
+    },
+    "proj_hi": {
+      "pit_class": "engine_stamped",
+      "source": "cycle backfill (engine stamp)"
+    },
+    "proj_lo": {
+      "pit_class": "engine_stamped",
+      "source": "cycle backfill (engine stamp)"
+    },
+    "proj_next": {
+      "pit_class": "engine_stamped",
+      "source": "cycle backfill (engine stamp)"
+    },
+    "quad": {
+      "pit_class": "revision_optimistic",
+      "source": "hazard quad (P-D5-1)"
+    },
+    "rs_63d": {
+      "pit_class": "pit_pure",
+      "source": "backfill relative strength (pp scale)"
+    },
+    "rs_63d_hz": {
+      "pit_class": "pit_pure",
+      "source": "hazard price_c4414dcb rs_63d (fractional)"
+    },
+    "signal": {
+      "pit_class": "engine_stamped",
+      "source": "cycle backfill (engine stamp)"
+    },
+    "source_artifact": {
+      "pit_class": "pit_pure",
+      "source": "provenance path"
+    },
+    "stance": {
+      "pit_class": "engine_stamped",
+      "source": "cycle backfill (engine stamp)"
+    },
+    "timing_state": {
+      "pit_class": "engine_stamped",
+      "source": "cycle backfill (engine stamp)"
+    },
+    "trend_pass": {
+      "pit_class": "pit_pure",
+      "source": "hazard price_c4414dcb price feature"
+    },
+    "vol_pctile": {
+      "pit_class": "pit_pure",
+      "source": "hazard price_c4414dcb price feature"
+    }
+  }
+}

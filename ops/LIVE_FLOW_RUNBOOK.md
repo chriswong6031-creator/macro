@@ -32,9 +32,37 @@ Two plists manage the options-flow stack:
 | `com.mastermind.optionshub.plist` | Nightly hub builder | Weekdays 16:45 ET | `/tmp/optionshub.stdout.log` `/tmp/optionshub.stderr.log` |
 
 Both plists use `ops/launchd/run_with_env.sh` to source `.env` before launching
-Python.  Secrets (`R2_*`, `THETADATA_STORE`) must be in the `.env` file at
-`/Users/chriswong/Documents/Cluade/Macro Dashboard/.env`.  **Never inline secrets
-in the plist EnvironmentVariables block.**
+Python.  Secrets (`R2_*`, `THETADATA_STORE`) must be in the `.env` file inside
+the job's working directory.  **Never inline secrets in the plist
+EnvironmentVariables block.**
+
+### Deploy-worktree doctrine (live-flow poller)
+
+The `com.mastermind.liveflow` job MUST run from a **dedicated deploy worktree**
+`/Users/chriswong/liveflow-ops-wt` (pinned to `origin/main`) — **never** from the
+main checkout `/Users/chriswong/Documents/Cluade/Macro Dashboard`.  The main
+checkout's git HEAD is controlled by many concurrent agent sessions and is
+frequently parked at a detached HEAD that does **not** contain
+`scripts/live_flow_poller.py`; a launchd run rooted there dies with
+`ModuleNotFoundError` at the next 06:25 PT fire.  The launchd `ProgramArguments`,
+`WorkingDirectory`, and `PYTHONPATH` therefore all point at the deploy worktree.
+
+Create / refresh the deploy worktree:
+
+```bash
+cd '/Users/chriswong/Documents/Cluade/Macro Dashboard'
+git fetch origin main
+git worktree add -B ops/liveflow-deploy /Users/chriswong/liveflow-ops-wt origin/main
+cp '/Users/chriswong/Documents/Cluade/Macro Dashboard/.env' /Users/chriswong/liveflow-ops-wt/.env
+# .env must define R2_ENDPOINT R2_ACCESS_KEY_ID R2_SECRET_ACCESS_KEY R2_BUCKET
+# THETADATA_STORE  (baselines.json is committed under data/live_flow_baselines/).
+```
+
+The same pattern applies to the ThetaData EOD backfill agent
+(`com.macro.thetadata-backfill`): its keepalive script must live **outside**
+`~/Documents/` (kept at `/Users/chriswong/theta-ops-wt/scripts/launchd/`),
+because macOS TCC denies launchd `exec` on scripts under `~/Documents/`
+("Operation not permitted" / exit 126).
 
 ### Live-flow poller — install
 

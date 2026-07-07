@@ -17,6 +17,8 @@ on:
       - "scripts/check_title_i18n.py"
       # conflict-marker guard: a merge must never ship literal <<<<<<< / ======= / >>>>>>> lines.
       - "scripts/check_conflict_markers.py"
+      # template↔site sync guard: plain-copy page assets must byte-match their templates.
+      - "scripts/check_template_site_sync.py"
       - "templates/**"
       - ".github/workflows/ci.yml"
       # Signal→chart §7 contract: any change to the schema, validator, engine, or build script
@@ -39,6 +41,7 @@ on:
       - "tests/test_grading.py"
       - "tests/test_trial_ledger.py"
       - "tests/test_trial_registration_lint.py"
+      - "tests/test_no_literal_ntrials.py"
       # W4 outcome spine: the shared signal-id→outcome contract + partial-pooling + badge passport.
       - "engine/spine.py"
       - "engine/pooling.py"
@@ -85,6 +88,10 @@ on:
       - "tests/test_anticipation.py"
       - "tests/test_canon.py"
       - "tests/test_whitehouse_w5.py"
+      # CPI net-liquidity artifact (data infrastructure): builder + contract tests
+      # must re-run together so a canon-formula or stale-guard regression fails RED.
+      - "scripts/build_netliq_daily.py"
+      - "tests/test_build_netliq_daily.py"
       # collector-registry tripwire (#1052 post-mortem): scripts/collect.py shipped as a
       # 0-byte file and merged green because nothing here covered the collection entrypoint.
       # lib/** is included because the registry import chain runs through lib.config/lib.store.
@@ -98,6 +105,10 @@ on:
       # test pins producer (AST) + template consumer, so the builder must trigger CI.
       - "scripts/build_stock_library.py"
       - "tests/test_sector_pulse_wiring.py"
+      # China Lens / Intel Hub W0.2: builder + test must re-run together so a
+      # headline crash or schema drift fails RED before merging.
+      - "scripts/build_intel_hub.py"
+      - "tests/test_china_lens_hub.py"
       # W5a DAG conformance: any change to a workflow, the dag.yml, the checker, or
       # the test file must re-prove the conformance check still holds.
       - ".github/workflows/**"
@@ -133,6 +144,15 @@ on:
       - "tests/test_macro_snapshot.py"
       - "tests/test_macro_context_authority.py"
       - "tests/test_law_dates.py"
+      # Wave B2 ETM registry: builder, integrity gate, config, and both test files must
+      # re-run together so a schema drift or authority violation fails RED before merging.
+      # engine/neuralweb/** above already covers engine/neuralweb/entity_thesis_mechanism_registry.py.
+      - "scripts/build_entity_thesis_mechanism_registry.py"
+      - "scripts/check_entity_thesis_registry.py"
+      - "config/entity_thesis_mechanism_registry.yml"
+      - "tests/test_entity_thesis_registry.py"
+      - "tests/test_check_entity_thesis_registry.py"
+      - "data/neuralweb/entity_thesis_mechanism_registry.json"
       # NW Rails PR-7 R4 contract governance: schema drift check + test suite.
       - "scripts/check_contract_drift.py"
       - "scripts/export_signal_contracts.py"
@@ -144,6 +164,40 @@ on:
       - "data/research_factory/**"
       - "tests/test_research_factory*.py"
       - "config/synapse.yml"
+      # CPI P2 authority guard: no money-path module may read cycle-pattern lake.
+      - "scripts/check_cycle_pattern_authority.py"
+      - "config/cycle_pattern/**"
+      - "tests/test_check_cycle_pattern_authority.py"
+      # House-law registry meta-guard: any change to the registry, the meta-guard
+      # script, the generated docs, or the test suite must re-prove the registry
+      # is complete and consistent.
+      - "config/house_law_checks.yml"
+      - "scripts/check_house_law_registry.py"
+      - "docs/HOUSE_LAW_CI_GUARD_SUITE.md"
+      - "docs/**"
+      - "tests/test_house_law_registry.py"
+      # validated-claims guard: wire as PR gate so unearned 'validated' claims
+      # are caught before merge (not just in the nightly calibration run).
+      - "scripts/check_validated_claims.py"
+      - "data/regime/validated_claims_allowlist.json"
+      # Mastermind Feedback Contract PR-A (FB-R12/R13): privacy-boundary guard.
+      # Any change to the guard script, its tests, committed governance/feedback
+      # artifacts, .gitignore, or operator_grading must re-prove the rail holds.
+      - "scripts/check_private_boundary.py"
+      - "tests/test_check_private_boundary.py"
+      - "data/governance/*.json"
+      - "site/mastermind/*.json"
+      - ".gitignore"
+      - "engine/operator_grading.py"
+      - "research/MASTERMIND_FEEDBACK_CONTRACT_PROGRAM.md"
+      # Ruling Graph v1: canonical case-law store, conflict checker, tests, generated docs.
+      - "config/ruling_graph.yml"
+      - "scripts/build_ruling_graph.py"
+      - "scripts/check_ruling_conflicts.py"
+      - "tests/test_ruling_graph.py"
+      - "docs/NEURAL_WEB_CASE_LAW.md"
+      - "site/neuralwebdata/ruling_graph.json"
+      - "data/neuralweb/ruling_conflicts_allowlist.json"
   workflow_dispatch:
 
 permissions:
@@ -287,7 +341,7 @@ jobs:
       - name: reliability-contract guard (no gated field rendered directionally, audit #46)
         run: python3 scripts/check_reliability_contract.py
       - name: grading rebuild + trial ledger tests
-        run: python -m pytest tests/test_grading.py tests/test_trial_ledger.py tests/test_trial_registration_lint.py -q
+        run: python -m pytest tests/test_grading.py tests/test_trial_ledger.py tests/test_trial_registration_lint.py tests/test_no_literal_ntrials.py -q
 
   outcome-spine:
     # W4 (audit #13/#19/#23/#41/#42): the outcome spine + partial-pooling closed loop. The
@@ -386,7 +440,8 @@ jobs:
           tests/test_canon.py tests/test_whitehouse_w5.py
           tests/test_board_ledger.py tests/test_grade_us_board.py
           tests/test_options_stamp.py tests/test_sector_pulse_wiring.py
-          tests/test_news_page_render.py -q
+          tests/test_news_page_render.py tests/test_china_lens_hub.py
+          tests/test_build_netliq_daily.py -q
 
   collector-registry:
     # 2026-07-03 (#1052 post-mortem): PR #1052's squash-merge shipped scripts/collect.py as
@@ -486,7 +541,11 @@ jobs:
       - name: install minimal deps
         run: pip install pytest pandas numpy pyarrow pyyaml
       - name: neural-web registry + envelope + bus-doc freshness tests
-        run: python -m pytest tests/test_synapse_registry.py tests/test_neuralweb_envelope.py tests/test_signal_bus_doc.py tests/test_admin_neural_web.py -q
+        run: python -m pytest tests/test_synapse_registry.py tests/test_neuralweb_envelope.py tests/test_signal_bus_doc.py tests/test_admin_neural_web.py tests/test_entity_thesis_registry.py tests/test_check_entity_thesis_registry.py -q
+      - name: "HARD | entity/thesis/mechanism registry integrity (ETM-C1..C7)"
+        run: |
+          python3 -m scripts.check_entity_thesis_registry --selftest
+          python3 -m scripts.check_entity_thesis_registry
 
   neural-web-core:
     # NW Macro Context Rail R5 (PR-A): wires the five orphan NW test files that were
@@ -554,6 +613,83 @@ jobs:
       - name: research-factory state + schema tests
         run: python -m pytest tests/test_research_factory_state.py tests/test_research_factory_schema.py -q
 
+  cycle-pattern-authority:
+    # CPI P2: authority guard — no Article-2 money-path module (alert_triage /
+    # board_ordering / top_setups) may read data/cycle_pattern/ or import the
+    # cycle-pattern lake.  The CPI substrate is display-only (context tier);
+    # lake outputs must never reach the scored / board-rank / alert pipeline.
+    # Mirrors research-factory-authority (line 509).
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pyyaml
+      - name: authority guard (hard fail on money-path forbidden reads)
+        run: python scripts/check_cycle_pattern_authority.py
+      - name: authority guard selftest (gate fires on planted violation)
+        run: python scripts/check_cycle_pattern_authority.py --selftest
+      - name: cycle-pattern authority test suite
+        run: python -m pytest tests/test_check_cycle_pattern_authority.py -q
+
+  private-boundary:
+    # Mastermind Feedback Contract PR-A (FB-R12/R13): privacy-boundary guard.
+    # Verifies that data/private/ and data/operator/ are gitignored, and that
+    # committed feedback artifacts carry only counts — no tickers, fill/position/
+    # decision IDs, host paths, dollar amounts, or secret env-var patterns.
+    # Mirrors cycle-pattern-authority structure.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest
+      - name: privacy-boundary guard selftest (gate fires on planted violations)
+        run: python3 scripts/check_private_boundary.py --selftest
+      - name: privacy-boundary guard (hard fail on committed private fields or missing rail)
+        run: python3 scripts/check_private_boundary.py
+      - name: privacy-boundary test suite
+        run: python3 -m pytest tests/test_check_private_boundary.py -q
+
+  ruling-graph:
+    # Ruling Graph v1 (RUL-CL-1/6/7/8/11/12): canonical case-law registry guard.
+    # Checks that:
+    #   - committed site JSON + case-law doc match YAML regeneration (--check)
+    #   - conflict checker finds no hard violations in changed files
+    #   - conflict checker selftest fires on planted violations
+    #   - all test_ruling_graph.py assertions pass
+    # The graph is display-only (RUL-CL-12: authority_ceiling A1_EXPLAIN).
+    # Mirrors cycle-pattern-authority pattern.
+    # fetch-depth 0 + explicit base fetch: the checker needs `git merge-base HEAD
+    # origin/main` for its diff-scoped H1/H2/W1 scans. On a shallow checkout there
+    # is no base ref, the checker degrades to skip-diff-checks, and the job goes
+    # green while guarding nothing — the #1195 shallow-cut incident class (see the
+    # board-contradictions job above).
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pyyaml
+      - name: build check (committed outputs match YAML regeneration byte-for-byte)
+        run: python scripts/build_ruling_graph.py --check
+      - name: conflict checker (hard fail on new FDR family or privacy boundary violations)
+        run: |
+          git fetch origin ${{ github.base_ref || 'main' }}
+          RULING_DIFF_BASE="origin/${{ github.base_ref || 'main' }}" python scripts/check_ruling_conflicts.py
+      - name: conflict checker selftest (gate fires on planted violations)
+        run: python scripts/check_ruling_conflicts.py --selftest
+      - name: ruling graph test suite
+        run: python -m pytest tests/test_ruling_graph.py -q
+
   contract-drift:
     # NW Rails PR-7 (R4 contract governance): checks that each artifact in
     # site/factordata/contracts/artifact_manifest.json has not drifted from the
@@ -579,3 +715,90 @@ jobs:
         run: python scripts/check_contract_drift.py --warn-only
       - name: contract drift unit tests
         run: python -m pytest tests/test_contract_drift.py -q
+
+  house-law-registry:
+    # Meta-guard: verifies config/house_law_checks.yml is complete and honest.
+    # Three checks in sequence:
+    #   1. selftest: synthetic assertions prove the meta-guard catches violations.
+    #   2. live check: every scripts/check_*.py is registered, every registered
+    #      script exists, all ci_wiring points to real jobs that mention the script.
+    #   3. docs-drift: regenerate docs and fail if the committed file is stale.
+    #   4. pytest: idempotency + integration tests.
+    # Also runs check_claim_passport.py (exit 0 confirmed 2026-07-06; hard gate).
+    # Triggers on: config/house_law_checks.yml, the meta-guard script,
+    # docs/HOUSE_LAW_CI_GUARD_SUITE.md, and tests/test_house_law_registry.py.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pyyaml
+      - name: meta-guard selftest (synthetic assertions — gate fires on violations)
+        run: python3 scripts/check_house_law_registry.py --selftest
+      - name: meta-guard live check (census + wiring + selftest truth + ratchets)
+        run: python3 scripts/check_house_law_registry.py
+      - name: docs-drift check (committed docs must match regen output byte-for-byte)
+        run: |
+          python3 scripts/check_house_law_registry.py --emit-docs
+          git diff --exit-code docs/HOUSE_LAW_CI_GUARD_SUITE.md
+      - name: claim-passport lint (no unregistered qual field reaching scored consumer)
+        run: python3 scripts/check_claim_passport.py
+      - name: house-law registry tests (idempotency + integration)
+        run: python -m pytest tests/test_house_law_registry.py -q
+
+  evidence-clock:
+    # Global Evidence Clock (EC-R1..R8): the committed display-only artifact
+    # data/neuralweb/evidence_clock.json must parse, keep authority=display_only,
+    # stay inside the 9-state vocabulary, carry forbidden_actions on every row,
+    # keep clock_ids unique, and match its own summary counts. The clock is
+    # read-only attention routing — this gate proves the artifact cannot
+    # smuggle scores, promotions, or source mutations.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pyyaml
+      - name: evidence-clock checker selftest (gate fires on synthetic violations)
+        run: python3 scripts/check_evidence_clock.py --selftest
+      - name: evidence-clock artifact integrity (hard gate)
+        run: python3 scripts/check_evidence_clock.py
+      - name: evidence-clock unit tests
+        run: python -m pytest tests/test_evidence_clock.py -q
+
+  validated-claims:
+    # BC-2 PR gate: the word "validated" in user-facing surfaces must trace to a
+    # backed claim. This is the PR-time companion to the nightly calibration run
+    # (cycle-calibration.yml/calibrate). A sibling builder is fixing the current
+    # findings — wire it regardless; final verification happens after both land.
+    # Law source: CLAUDE.md ("The word 'validated' in user-facing text is CI-enforced").
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: validated-claims selftest (gate fires on synthetic unearned claim)
+        run: python3 scripts/check_validated_claims.py --selftest
+      - name: no unearned 'validated' claims in user-facing surfaces
+        run: python3 scripts/check_validated_claims.py
+
+  template-site-sync:
+    # ui.template_site_sync PR gate: every plain-copy page asset (templates/<name>
+    # that also ships as site/<name>) must byte-match at every commit — a one-sided
+    # reword creates the divergence window the render lanes then propagate at an
+    # unpredictable later time. 2026-07-07 incident: engine-render commit 2ae709f9f0
+    # resurrected pre-#1793 "validated" wording in site/sector_cycles.js because the
+    # push step's `git pull --rebase -X theirs` favored the run's checkout-time copy
+    # over the reword that merged mid-render. The render lanes now re-sync post-rebase
+    # (--fix); this job keeps PRs from arming the window in the first place.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: install minimal deps (theme.js bake reads config.yml)
+        run: pip install pyyaml
+      - name: template-site-sync selftest (gate fires on synthetic divergence)
+        run: python3 scripts/check_template_site_sync.py --selftest
+      - name: site copies of template assets must byte-match templates/
+        run: python3 scripts/check_template_site_sync.py

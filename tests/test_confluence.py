@@ -1141,3 +1141,188 @@ class TestMacroEdges:
         assert macro_contra == [], (
             f"Expected no macro contradicts edges when ca_diverge=False; got {macro_contra}"
         )
+# R-ORTH PR-4: independence block tests (RUL-ORTH-5/11)
+# ===========================================================================
+
+class TestIndependenceBlock:
+    """Tests for the independence block in build_graph (confluence.py).
+
+    Tests:
+      31. independence_block_present      — independence key in output when covariance_spine.json present
+      32. independence_block_absent_null  — null values + gap note when covariance_spine.json absent
+      33. independence_block_no_crash     — graph always returned regardless of spine state
+      34. independence_block_no_effect_on_nodes_edges — existing nodes/edges unchanged by spine presence
+      35. independence_block_fields       — required fields all present with correct types/values
+      36. independence_block_same_bet_active — same_bet_warning propagated when active
+    """
+
+    def _make_fixture_spine(self, tmp: Path, n_measurable: int = 3) -> None:
+        """Write a minimal covariance_spine.json fixture."""
+        clusters = []
+        if n_measurable >= 2:
+            clusters = [{"engines": ["eng_a", "eng_b"], "mean_corr": 0.72}]
+        spine = {
+            "schema": "neuralweb.covariance_spine.v1",
+            "as_of": "2026-07-04",
+            "display_only": True,
+            "authority": "context",
+            "descriptive_not_gauntleted": True,
+            "blocks": {
+                "lobes": {
+                    "effective_independent_lobes": round(n_measurable * 0.7, 4),
+                    "n_lobes_measurable": n_measurable,
+                    "n_lobes_total": 17,
+                    "null_reference": {
+                        "null_median": 1.0,
+                        "null_p90": 1.0,
+                        "pctile_vs_null": 0.55,
+                        "n_null_draws": 200,
+                    },
+                    "same_bet_warning": {"active": False},
+                    "highest_overlap_pairs": [],
+                    "clusters": clusters,
+                    "coverage": {"measurable": [], "unmeasurable": []},
+                }
+            },
+            "coverage": {},
+            "missing_inputs": [],
+            "committee_annotations": [],
+            "allowed_actions": ["display"],
+            "forbidden_actions": ["score"],
+        }
+        dest = tmp / "data" / "neuralweb" / "covariance_spine.json"
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        dest.write_text(json.dumps(spine), encoding="utf-8")
+
+    def test_independence_block_present(self, tmp_path):
+        """independence key present in graph output when spine file exists."""
+        _make_synapse(tmp_path)
+        self._make_fixture_spine(tmp_path)
+        graph = build_graph(root=tmp_path, now=_NOW)
+        assert "independence" in graph, "Expected 'independence' key in confluence graph output"
+        indep = graph["independence"]
+        assert isinstance(indep, dict)
+        assert indep.get("descriptive_not_gauntleted") is True
+        assert indep.get("display_only") is True
+        assert indep.get("source") == "data/neuralweb/covariance_spine.json"
+
+    def test_independence_block_absent_null(self, tmp_path):
+        """Null values + gap note when covariance_spine.json is absent."""
+        _make_synapse(tmp_path)
+        # Do NOT write covariance_spine.json
+        graph = build_graph(root=tmp_path, now=_NOW)
+        assert "independence" in graph
+        indep = graph["independence"]
+        assert indep["effective_independent_lobes"] is None
+        assert indep["n_lobes_measurable"] is None
+        assert indep["n_lobes_total"] is None
+        assert indep["pctile_vs_null"] is None
+        # Gap note appended
+        independence_gaps = [g for g in graph["gaps"] if "independence" in g.lower()]
+        assert len(independence_gaps) >= 1, (
+            f"Expected independence gap note; got gaps={graph['gaps']}"
+        )
+
+    def test_independence_block_no_crash(self, tmp_path):
+        """build_graph always returns a dict regardless of spine state."""
+        _make_synapse(tmp_path)
+        # Case 1: spine absent
+        g1 = build_graph(root=tmp_path, now=_NOW)
+        assert isinstance(g1, dict)
+        # Case 2: spine present but malformed JSON
+        bad = tmp_path / "data" / "neuralweb" / "covariance_spine.json"
+        bad.parent.mkdir(parents=True, exist_ok=True)
+        bad.write_text("NOT_VALID_JSON{{{", encoding="utf-8")
+        g2 = build_graph(root=tmp_path, now=_NOW)
+        assert isinstance(g2, dict)
+        # Case 3: spine present but no lobes block
+        nolobe = {"schema": "neuralweb.covariance_spine.v1", "blocks": {}, "missing_inputs": []}
+        bad.write_text(json.dumps(nolobe), encoding="utf-8")
+        g3 = build_graph(root=tmp_path, now=_NOW)
+        assert isinstance(g3, dict)
+        assert g3["independence"]["effective_independent_lobes"] is None
+
+    def test_independence_block_no_effect_on_nodes_edges(self, tmp_path):
+        """Nodes and edges are identical whether or not covariance_spine.json exists."""
+        engines = ["us_board", "radar"]
+        rows = []
+        for i, eng in enumerate(engines):
+            rows.append({
+                "signal_id": f"sig_{i}", "engine": eng, "family": eng,
+                "ledger": "spine", "as_of": "2026-07-01", "symbol": f"SYM{i}",
+                "scope_type": "entity", "universe": "us", "horizon": 21,
+                "direction": 1, "size_binding": False, "fill_basis": "close",
+                "score": 0.5, "outcome_excess": 0.01, "outcome_graded": True,
+                "graded_at": "2026-07-02", "terminal_state_clean15_126": None,
+                "terminal_state_clean8_21": None, "fwd_mfe_5": None,
+                "fwd_mfe_10": None, "fwd_mfe_21": None, "fwd_mfe_63": None,
+                "fwd_mfe_126": None, "rate_pressure": None,
+                "quad_hard_label": "Q1", "fused_risk_label": None,
+                "vol_regime": None, "risk_radar_state": None,
+                "vector_asof": None, "species_id": None, "archetype": None,
+            })
+        _make_spine(tmp_path, rows)
+        _make_synapse(tmp_path)
+
+        g_without = build_graph(root=tmp_path, now=_NOW)
+        self._make_fixture_spine(tmp_path)
+        g_with = build_graph(root=tmp_path, now=_NOW)
+
+        assert len(g_without["nodes"]) == len(g_with["nodes"]), (
+            "Node count changed after adding covariance_spine.json"
+        )
+        assert len(g_without["edges"]) == len(g_with["edges"]), (
+            "Edge count changed after adding covariance_spine.json"
+        )
+
+    def test_independence_block_fields(self, tmp_path):
+        """Required fields present with expected types and values."""
+        _make_synapse(tmp_path)
+        self._make_fixture_spine(tmp_path, n_measurable=3)
+        graph = build_graph(root=tmp_path, now=_NOW)
+        indep = graph["independence"]
+        assert isinstance(indep["effective_independent_lobes"], float)
+        assert isinstance(indep["n_lobes_measurable"], int)
+        assert isinstance(indep["n_lobes_total"], int)
+        assert isinstance(indep["pctile_vs_null"], float)
+        assert 0.0 <= indep["pctile_vs_null"] <= 1.0
+        assert indep["n_lobes_total"] == 17
+
+    def test_independence_block_same_bet_active(self, tmp_path):
+        """same_bet_warning propagated when active=True in spine."""
+        _make_synapse(tmp_path)
+        spine_with_warning: dict = {
+            "schema": "neuralweb.covariance_spine.v1",
+            "as_of": "2026-07-04",
+            "display_only": True,
+            "authority": "context",
+            "descriptive_not_gauntleted": True,
+            "blocks": {
+                "lobes": {
+                    "effective_independent_lobes": 1.5,
+                    "n_lobes_measurable": 4,
+                    "n_lobes_total": 17,
+                    "null_reference": {"pctile_vs_null": 0.4, "n_null_draws": 200},
+                    "same_bet_warning": {
+                        "active": True,
+                        "text": "Cluster of 3 engines with mean |corr|=0.71.",
+                        "cluster": ["eng_a", "eng_b", "eng_c"],
+                    },
+                    "highest_overlap_pairs": [],
+                    "clusters": [],
+                    "coverage": {},
+                }
+            },
+            "coverage": {},
+            "missing_inputs": [],
+            "committee_annotations": [],
+            "allowed_actions": ["display"],
+            "forbidden_actions": ["score"],
+        }
+        dest = tmp_path / "data" / "neuralweb" / "covariance_spine.json"
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        dest.write_text(json.dumps(spine_with_warning), encoding="utf-8")
+        graph = build_graph(root=tmp_path, now=_NOW)
+        indep = graph["independence"]
+        assert indep["same_bet_warning"] is not None, "Expected same_bet_warning to be non-null when active=True"
+        assert indep["same_bet_warning"].get("active") is True

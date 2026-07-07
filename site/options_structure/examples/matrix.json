@@ -1,0 +1,43 @@
+{
+  "schema": "options_structure.matrix/v1",
+  "asof": "2026-07-07T20:05:00-04:00",
+  "root": "NVDA",
+  "spot": 844.8,
+  "expiries": ["2026-07-07", "2026-07-18"],
+  "strikes": [840.0, 850.0, 860.0],
+  "cells": [
+    {
+      "strike": 850.0,
+      "expiry": "2026-07-18",
+      "gex": 34100000,
+      "call_oi": 12000,
+      "put_oi": 800,
+      "call_vol": 4200,
+      "put_vol": 300,
+      "delta_oi": {"call": 1200, "put": 0},
+      "unusual": {"ratio": 3.4, "samples": 22, "side": "unusual"}
+    }
+  ],
+  "levels": {
+    "call_wall": 900.0,
+    "put_support": 800.0,
+    "hvl": 850.0,
+    "gamma_flip": 840.0,
+    "max_pain": 845.0
+  },
+  "heat_seeker": {
+    "strike": 850.0,
+    "expiry": "2026-07-18",
+    "lens": "GEX",
+    "standout_ratio": 1.7,
+    "confidence": 0.23,
+    "note": "descriptive — not a recommendation"
+  },
+  "authority_tier": "display",
+  "reliability": {
+    "gex": "assumption-signed — display-only until GEX→vol gate",
+    "delta_oi": "reliable — signing-free OI change",
+    "vol": "reliable magnitude",
+    "note": "Sign is an assumption, not a fact. Magnitude is the reliable read."
+  }
+}

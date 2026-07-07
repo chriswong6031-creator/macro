@@ -25,8 +25,10 @@ from http.cookies import SimpleCookie
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
-from . import (actions, ai_cost, auth, brief, config_store, content, experiments,
-               flags, ga4, github_api, github_config, gitops, health, neural_web,
+from . import (actions, ai_cost, alerts as _alerts_mod, auth, brief, config_store,
+               content, experiments,
+               flags, ga4, github_api, github_config, gitops, health, long_hold,
+               neural_web,
                services, settings, system, umami, uptime_board, users, vector_override)
 from .paths import STATIC
 
@@ -256,8 +258,14 @@ class Handler(BaseHTTPRequestHandler):
                 # OWNER-ONLY (W3/D2): behind the same auth as every other panel;
                 # numbers only, no action affordances (D3).
                 return self._json(vector_override.panel())
+            if path == "/api/long_hold":
+                return self._json(long_hold.panel())
             if path == "/api/neural_web":
                 return self._json(neural_web.panel())
+            if path == "/api/neural_web/lobes":
+                return self._json(neural_web.lobes_panel())
+            if path == "/api/neural_web/lobe":
+                return self._json(neural_web.lobe_detail((q.get("id") or [""])[0]))
             if path == "/api/health":
                 return self._json(health.summary())
             if path == "/api/cost":
@@ -301,6 +309,10 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json(system.snapshot())
             if path == "/api/services":
                 return self._json(services.status())
+            if path == "/api/alerts":
+                # Operator capture feed (RUL-8: authed only, no public write endpoint).
+                limit = int((q.get("limit") or ["60"])[0])
+                return self._json(_alerts_mod.panel(limit=limit))
 
             return self._json({"error": f"unknown route {path}"}, 404)
         except Exception as e:  # noqa: BLE001

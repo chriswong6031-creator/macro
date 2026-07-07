@@ -1,0 +1,21 @@
+{
+  "regime_context": "AI Compute & Optics tops momentum ranks with high durability (0.76) and decent breadth (0.59), and satisfies the absolute-trend gate. However, gate_helps is false in this market — historically the trend gate did not reduce drawdown — so trend-following here is experimental. Cross-sectional rank-IC is ~0; ranks are a focus lens, not alpha. Eligible themes are narrowing (9 of 22) with no one-narrative dominance.",
+  "theses": [
+    {
+      "subject": "AI Compute & Optics",
+      "lean": "overweight",
+      "conviction": "low",
+      "horizon_d": 20,
+      "thesis": "The theme leads eligible trends with strong momentum, high durability (0.76) and positive breadth (0.59), suggesting that any existing uptrend may persist. The overweight is a conditional participation — the rank itself has no return-forecast edge, and the historical ineffectiveness of the trend gate in this market warns against assuming a structural edge.",
+      "evidence": [
+        "Rank 1 with score 2.847 (eligible true, durability_bar 0.76, hurst_tag trend)",
+        "Breadth 0.588 showing moderate participation",
+        "Not crowded (crowding_z -0.11, crowded false)"
+      ],
+      "dissent": "Gate_helps=false means trend-following discipline has not added value in China A-shares history; a sudden macro shock (geopolitics/unscheduled news share 0.5) or policy shift could halt the theme abruptly.",
+      "falsifier_text": "Durability_bar falls below 0.65, breadth drops below 0.4, or the theme becomes ineligible (score < 0)"
+    }
+  ],
+  "emerging_watch": "Semiconductors (rank 2, durability 0.91, breadth 0.91) as a leadership candidate if AI Compute weakens. Kill criterion: AI Compute & Optics keeps durability >0.7 and breadth >0.5 without being overtaken in score within 10 days.",
+  "confidence": "low"
+}

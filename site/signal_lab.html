@@ -78,6 +78,28 @@
   table.sl-table thead th.sorted.asc::after { content:" ↑"; }
   .ovl-note { font-size:11.5px; color:var(--muted); margin:-2px 0 9px; max-width:80ch;
     border-left:2px solid color-mix(in srgb,var(--link) 45%,var(--line)); padding-left:9px; }
+  .frontier-note { font-size:12px; color:var(--muted); max-width:86ch; margin:0 0 10px; }
+  .frontier-table td { padding-top:8px; padding-bottom:8px; }
+  .frontier-table .sig { font-size:12.5px; }
+  .frontier-table .road { max-width:30ch; color:var(--muted); }
+  .frontier-table .gate { max-width:28ch; }
+  .frontier-table .src { margin-top:3px; }
+  .frontier-pri { font-size:10px; padding:1px 6px; border-radius:7px; border:1px solid var(--line);
+    color:var(--muted); margin-left:5px; }
+  .fable-chip { font-size:10px; padding:1px 7px; border-radius:7px; font-weight:600;
+    letter-spacing:0.02em; display:inline-block; }
+  .fable-chip.kill { background:color-mix(in srgb,#e55 25%,transparent); color:#c33; border:1px solid #c33; }
+  .fable-chip.build { background:color-mix(in srgb,#4a4 25%,transparent); color:#2a8; border:1px solid #2a8; }
+  .fable-chip.probe { background:color-mix(in srgb,#68a 25%,transparent); color:#468; border:1px solid #468; }
+  .fable-chip.pilot { background:color-mix(in srgb,#88a 25%,transparent); color:#558; border:1px solid #558; }
+  .fable-chip.route { background:color-mix(in srgb,#fa0 25%,transparent); color:#960; border:1px solid #a70; }
+  .fable-chip.accrue { background:color-mix(in srgb,#aaf 25%,transparent); color:#44c; border:1px solid #44c; }
+  .fable-chip.queued { background:color-mix(in srgb,#aaa 25%,transparent); color:#666; border:1px solid #999; }
+  .fable-chip.pending { background:color-mix(in srgb,#999 15%,transparent); color:var(--muted); border:1px solid var(--line); }
+  .fable-chip.tested-null { background:color-mix(in srgb,#f80 15%,transparent); color:#a50; border:1px solid #c70; }
+  .fable-chip.tested-pass { background:color-mix(in srgb,#2d8 25%,transparent); color:#196; border:1px solid #1a7; }
+  .fable-chip.tested-partial { background:color-mix(in srgb,#fb0 20%,transparent); color:#860; border:1px solid #a80; }
+  .fable-chip.tested-accrue { background:color-mix(in srgb,#aaf 20%,transparent); color:#33a; border:1px solid #55c; }
 </style>
 </head>
 <body>
@@ -119,7 +141,7 @@
         <a href="macro.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">Regime · growth · inflation · nowcast</span><span class="l-zh">周期 · 增长 · 通胀 · 即时预测</span></span></a>
         <a href="us_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Standouts · sectors · flows</span><span class="l-zh">精选 · 板块 · 资金</span></span></a>
         <div class="nav-dd nav-sub">
-          <a class="nav-sub-trig" href="sector_central.html">🧠 <span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span> <span class="caret-r">▸</span></a>
+          <a class="nav-sub-trig" href="sector_central.html">🧠 <span class="nav-sub-text"><span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">Cycle map · heat · gated reads</span><span class="l-zh">周期图谱 · 热度 · 门控研判</span></span></span><span class="caret-r">▸</span></a>
           <div class="nav-dd-menu" role="menu">
             <a href="sector_central.html">🧠 <span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">Cycle map · market heat · one gated read per sector & theme · graded</span><span class="l-zh">周期图谱 · 市场热度 · 每行业与主题门控研判 · 自评分</span></span></a>
             <a href="baskets.html">🧺 <span class="l-en">Thematic Baskets & Rotation</span><span class="l-zh">主题篮子与轮动</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&P · which theme to hold & when to rotate</span><span class="l-zh">等权主题篮子 vs 标普 · 持有哪个主题及何时轮动</span></span></a>
@@ -142,7 +164,7 @@
         <a href="china.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">A-share regime · sectors · flows</span><span class="l-zh">A股周期 · 板块 · 资金</span></span></a>
         <a href="china_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Standouts · alpha · setups</span><span class="l-zh">精选 · 阿尔法 · 布局</span></span></a>
         <div class="nav-dd nav-sub">
-          <a class="nav-sub-trig" href="sector_central_china.html">🧠 <span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span> <span class="caret-r">▸</span></a>
+          <a class="nav-sub-trig" href="sector_central_china.html">🧠 <span class="nav-sub-text"><span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">Cycle map · heat · gated reads</span><span class="l-zh">周期图谱 · 热度 · 门控研判</span></span></span><span class="caret-r">▸</span></a>
           <div class="nav-dd-menu" role="menu">
             <a href="sector_central_china.html">🧠 <span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">Live desk · cycle map · one gated read per sector & theme · graded</span><span class="l-zh">实时看板 · 周期图谱 · 每行业与主题门控研判 · 自评分</span></span></a>
             <a href="baskets_china.html">🧺 <span class="l-en">Thematic Baskets & Rotation</span><span class="l-zh">主题篮子与轮动</span><span class="d"><span class="l-en">Equal-weight theme baskets vs CSI 300 · which theme to hold & when to rotate</span><span class="l-zh">等权主题篮子 vs 沪深300 · 持有哪个主题及何时轮动</span></span></a>
@@ -154,7 +176,7 @@
         <a href="china_strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
         <a href="china_news.html">📰 <span class="l-en">China News Feed</span><span class="l-zh">中国新闻流</span><span class="d"><span class="l-en">Policy tone · official sources · market tags</span><span class="l-zh">政策基调 · 官方来源 · 市场标签</span></span></a>
         <div class="nav-dd nav-sub">
-          <a class="nav-sub-trig" href="china_intel.html">🔬 <span class="l-en">Research</span><span class="l-zh">研究</span> <span class="caret-r">▸</span></a>
+          <a class="nav-sub-trig" href="china_intel.html">🔬 <span class="nav-sub-text"><span class="l-en">Research</span><span class="l-zh">研究</span><span class="d"><span class="l-en">Intel hub · flows · policy</span><span class="l-zh">情报中心 · 资金流 · 政策</span></span></span><span class="caret-r">▸</span></a>
           <div class="nav-dd-menu" role="menu">
             <a href="china_intel.html">🧠 <span class="l-en">Intelligence Hub</span><span class="l-zh">情报中心</span><span class="d"><span class="l-en">All China intel + Mastermind feed</span><span class="l-zh">全部中国情报 + Mastermind信号</span></span></a>
             <a href="baskets_china_ths.html">🧺 <span class="l-en">同花顺 Theme Baskets</span><span class="l-zh">同花顺主题篮子</span><span class="d"><span class="l-en">Tonghuashun concept boards · members & performance</span><span class="l-zh">同花顺概念板块 · 成分与表现</span></span></a>
@@ -162,6 +184,7 @@
             <a href="china_altdata.html">🛰️ <span class="l-en">Alternative Data</span><span class="l-zh">另类数据</span><span class="d"><span class="l-en">Smart-money convergence · signal lab</span><span class="l-zh">主力共振 · 信号实验室</span></span></a>
             <a href="china_policy_watch.html">🏛️ <span class="l-en">PBoC & Policy Watch</span><span class="l-zh">央行与政策观察</span><span class="d"><span class="l-en">Rate corridor · liquidity · sector policy</span><span class="l-zh">利率走廊 · 流动性 · 行业政策</span></span></a>
             <a href="china_radar.html">📡 <span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span><span class="d"><span class="l-en">Policy/flow signal vs sector price</span><span class="l-zh">政策/资金信号 vs 板块价格</span></span></a>
+            <a href="china_special_situations.html">⚡ <span class="l-en">Special Situations</span><span class="l-zh">特殊事件</span><span class="d"><span class="l-en">Unlocks · inquiry letters · preannouncements · pledge stress</span><span class="l-zh">解禁 · 问询函 · 业绩预告 · 质押风险</span></span></a>
             <a href="narrative_radar.html">🧭 <span class="l-en">Narrative Basket Radar</span><span class="l-zh">主题篮子雷达</span><span class="d"><span class="l-en">Which THS theme is running · global driver · member entries</span><span class="l-zh">哪个同花顺主题正在运行 · 全球驱动 · 成员入场</span></span></a>
           </div>
         </div>
@@ -200,7 +223,7 @@
       <a class="nav-link" href="javascript:void(0)">💠 <span class="l-en">Other Assets</span><span class="l-zh">其他资产</span> <span class="caret">▾</span></a>
       <div class="nav-dd-menu" role="menu">
         <div class="nav-dd nav-sub">
-          <a class="nav-sub-trig" href="vector.html">₿ <span class="l-en">Bitcoin Vector</span><span class="l-zh">比特币向量</span> <span class="caret-r">▸</span></a>
+          <a class="nav-sub-trig" href="vector.html">₿ <span class="nav-sub-text"><span class="l-en">Bitcoin Vector</span><span class="l-zh">比特币向量</span><span class="d"><span class="l-en">Market state · risk · cycle</span><span class="l-zh">市场状态 · 风险 · 周期</span></span></span><span class="caret-r">▸</span></a>
           <div class="nav-dd-menu" role="menu">
             <a href="vector.html">📊 <span class="l-en">Overview</span><span class="l-zh">总览</span><span class="d"><span class="l-en">Market state · risk · momentum</span><span class="l-zh">市场状态 · 风险 · 动量</span></span></a>
             <a href="vector_allocation.html">◎ <span class="l-en">Allocation Strategy</span><span class="l-zh">仓位策略</span><span class="d"><span class="l-en">BTC · ETH · alts · cash</span><span class="l-zh">BTC · ETH · 山寨 · 现金</span></span></a>
@@ -208,7 +231,7 @@
           </div>
         </div>
         <div class="nav-dd nav-sub">
-          <a class="nav-sub-trig" href="commodities.html">🛢 <span class="l-en">Commodities</span><span class="l-zh">大宗商品</span> <span class="caret-r">▸</span></a>
+          <a class="nav-sub-trig" href="commodities.html">🛢 <span class="nav-sub-text"><span class="l-en">Commodities</span><span class="l-zh">大宗商品</span><span class="d"><span class="l-en">Gold · oil · silver · copper</span><span class="l-zh">黄金 · 原油 · 白银 · 铜</span></span></span><span class="caret-r">▸</span></a>
           <div class="nav-dd-menu" role="menu">
             <a href="commodities.html">📊 <span class="l-en">Commodity Dashboard</span><span class="l-zh">商品仪表盘</span><span class="d"><span class="l-en">Gold · silver · copper · oil · complex</span><span class="l-zh">金 · 银 · 铜 · 油 · 综合</span></span></a>
             <a href="commodity_strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Per-commodity tactical strategies</span><span class="l-zh">分品种战术策略</span></span></a>
@@ -327,7 +350,7 @@
           
           <div class="nav-mega-col">
             <div class="nav-mega-h"><span class="l-en">Policy & Quant Lab</span><span class="l-zh">政策与量化</span></div>
-            <a class="nav-mega-item" href="committee.html"><span class="nm-ic">🧬</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Committee View</span><span class="l-zh">委员会视图</span></span><span class="d"><span class="l-en">Every signal traced to its graded source · kernel · ladder · staleness</span><span class="l-zh">每条信号溯源 · 核心估计 · 阶梯状态 · 时效性</span></span></span></a>
+            <a class="nav-mega-item" href="committee.html"><span class="nm-ic">🧠</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Neural Web</span><span class="l-zh">智脑</span></span><span class="d"><span class="l-en">The living brain — synapse map, signal committee, cortex memo</span><span class="l-zh">活体大脑 — 突触地图 · 信号委员会 · 皮层备忘录</span></span></span></a>
             <a class="nav-mega-item" href="policy_watch.html"><span class="nm-ic">🏦</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Fed & Policy Watch</span><span class="l-zh">美联储与政策观察</span></span><span class="d"><span class="l-en">Fed + Administration intent & capital rotation</span><span class="l-zh">美联储+政府意图与资本轮动</span></span></span></a>
             <a class="nav-mega-item" href="whitehouse.html"><span class="nm-ic">🏛️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">White House Watch</span><span class="l-zh">白宫快讯</span></span><span class="d"><span class="l-en">Policy alerts · sector head/tailwinds · exposed names</span><span class="l-zh">政策快讯 · 行业顺逆风 · 受影响标的</span></span></span></a>
             <a class="nav-mega-item" href="signal_lab.html"><span class="nm-ic">🔬</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Signal Lab</span><span class="l-zh">信号实验室</span></span><span class="d"><span class="l-en">Consolidated validation scorecard</span><span class="l-zh">验证记分卡汇总</span></span></span></a>
@@ -369,7 +392,7 @@
   <p class="lead" style="margin:10px 0 0"><span class="l-en">What separates a dashboard from a model is honest validation. Every signal here goes through the same battery before it earns a place: rank-IC, a Newey-West (HAC) t-stat that respects overlapping windows, a Benjamini-Hochberg FDR q that controls for trying many ideas, and a Deflated Sharpe that haircuts for the same data-snooping. The point of this page is the graveyard: the signals we measured and refused to ship.</span><span class="l-zh">把仪表盘和模型区分开的，是诚实的验证。这里每个信号在获得位置前都经过同一套检验：秩相关 IC、尊重重叠窗口的 Newey-West (HAC) t 值、控制多重尝试的 Benjamini-Hochberg FDR q，以及为同样的数据窥探打折的去偏夏普 (DSR)。本页的重点是“信号墓地”：那些我们测量后拒绝上线的信号。</span></p>
   <div class="chips">
     <span class="chip"><span class="dot d-scored"></span><b>6</b> <span class="l-en">scored</span><span class="l-zh">已计分</span></span>
-    <span class="chip"><span class="dot d-confirmer"></span><b>20</b> <span class="l-en">confirmer</span><span class="l-zh">确认项</span></span>
+    <span class="chip"><span class="dot d-confirmer"></span><b>23</b> <span class="l-en">confirmer</span><span class="l-zh">确认项</span></span>
     <span class="chip"><span class="dot d-display"></span><b>27</b> <span class="l-en">display-only</span><span class="l-zh">仅展示</span></span>
     <span class="chip"><span class="dot d-killed"></span><b>9</b> <span class="l-en">killed (NO-GO)</span><span class="l-zh">已否决</span></span>
     <span class="chip"><span class="dot d-pending"></span><b>0</b> <span class="l-en">pending</span><span class="l-zh">待接入</span></span>
@@ -379,6 +402,362 @@
     
   </div>
 </div>
+
+
+<div class="panel">
+  <div class="tierhead">
+    <span class="dot d-pending" style="align-self:center"></span>
+    <h2><span class="l-en">Research frontier — hypotheses, not verdicts</span><span class="l-zh">研究前沿 — 假设，不是结论</span></h2>
+    <span class="bl"><span class="l-en">Candidates worth testing next. None of these affect a score until a pre-registered Phase-0 run earns a normal Signal Lab row.</span><span class="l-zh">下一批值得测试的候选。除非预注册 Phase-0 运行让它获得正常 Signal Lab 条目，否则不会影响任何分数。</span></span>
+  </div>
+  <p class="frontier-note"><span class="l-en">The search is data-first: borrow pressure, FTDs, option-informed flow, EDGAR attention, auction absorption, positioning exhaustion, and time-of-day market microstructure.</span><span class="l-zh">这轮搜索以数据为先：借券压力、交割失败、期权知情流、EDGAR 关注、拍卖吸收、仓位耗尽与日内/隔夜微结构。</span></p>
+  <p class="frontier-note"><span class="l-en">Expanded docket (60 candidates) adjudicated 2026-07-06: 9 authorized for testing (0 build / 0 probe / 1 pilot), 11 killed. See </span><span class="l-zh">扩展清单（60个候选）于2026-07-06完成裁决：9个授权测试（0 构建 / 0 探针 / 1 试点），11个已否决。详见 </span><a href="/research/SIGNAL_LAB_FRONTIER_FABLE_ADJUDICATION_2026-07-06.md" style="font-size:inherit">research/SIGNAL_LAB_FRONTIER_FABLE_ADJUDICATION_2026-07-06.md</a>.</p>
+  <div class="frontier-note" style="border-left:3px solid var(--line);padding-left:10px;margin-top:10px">
+    <strong><span class="l-en">Waves 2–4 adjudicated 2026-07-06</span><span class="l-zh">第2–4波 2026-07-06裁决</span>:</strong>
+    <span style="display:inline-block;margin:2px 8px 2px 0">
+      <a href="/research/SIGNAL_LAB_FRONTIER_WAVE2_FABLE_ADJUDICATION_2026-07-06.md" style="color:inherit;text-decoration:underline dotted"><span class="l-en">W2</span><span class="l-zh">W2</span></a>
+      <span class="l-en">200 screened / 58 advanced → 2 spikes + 5 queued</span><span class="l-zh">200筛选 / 58候选 → 2个尖峰候选 + 5个排队</span>;
+    </span>
+    <span style="display:inline-block;margin:2px 8px 2px 0">
+      <a href="/research/SIGNAL_LAB_FRONTIER_WAVE3_FABLE_ADJUDICATION_2026-07-06.md" style="color:inherit;text-decoration:underline dotted"><span class="l-en">W3</span><span class="l-zh">W3</span></a>
+      <span class="l-en">500 screened / 48 advanced → 1 family queued (FFIEC bank stress)</span><span class="l-zh">500筛选 / 48候选 → 1个家族排队（FFIEC银行压力）</span>;
+    </span>
+    <span style="display:inline-block;margin:2px 8px 2px 0">
+      <a href="/research/SIGNAL_LAB_FRONTIER_WAVE4_FABLE_ADJUDICATION_2026-07-06.md" style="color:inherit;text-decoration:underline dotted"><span class="l-en">W4</span><span class="l-zh">W4</span></a>
+      <span class="l-en">500 screened / 8 advanced → 1 family queued + 1 park + 2 kills</span><span class="l-zh">500筛选 / 8候选 → 1个家族排队 + 1个暂存 + 2个否决</span>;
+    </span>
+    <span style="color:var(--muted)"><span class="l-en">generation moratorium in force until wave-1 + spike verdicts booked and queue &lt; 3</span><span class="l-zh">生成暂停令生效——第一波+尖峰候选裁决登记且排队数降至3以下前不启动新波次</span>.</span>
+    <div style="margin-top:10px;border-left:3px solid var(--accent,#4a9);padding-left:10px">
+      <strong><span class="l-en">Build-day (Day 3) results</span><span class="l-zh">构建日（第3天）结果</span></strong>
+      <span class="l-en">13 families tested → 2 PASS, 1 ACCRUE, 1 DIRECTIONAL FAIL, 1 PARK, 8 NULL, gaming DATA-BLOCKED.</span><span class="l-zh">13个家族测试 → 2 通过, 1 积累中, 1 方向性否决, 1 暂存, 8 无效, 博彩数据受阻。</span>
+      <span style="color:var(--muted)"><span class="l-en">Authorized queue is now EMPTY except accrual clocks and parked items — moratorium condition met. Next docket generation requires operator ratification.</span><span class="l-zh">授权队列已清空（积累时钟和暂存项除外）——暂停令条件已满足。下一批次生成需要运营方批准。</span></span>
+    </div>
+  </div>
+  <div class="scroll"><table class="frontier-table">
+    <thead><tr>
+      <th><span class="l-en">Candidate</span><span class="l-zh">候选</span></th>
+      <th><span class="l-en">Thesis</span><span class="l-zh">论点</span></th>
+      <th><span class="l-en">Build path</span><span class="l-zh">接入路径</span></th>
+      <th><span class="l-en">First gate</span><span class="l-zh">第一道门</span></th>
+      <th><span class="l-en">Fable ruling</span><span class="l-zh">Fable 裁决</span></th>
+    </tr></thead>
+    <tbody>
+      <tr>
+        <td>
+          <div class="sig"><span class="l-en">SEC fails-to-deliver pressure</span><span class="l-zh">SEC 交割失败压力</span><span class="frontier-pri">P0</span></div>
+          <div class="mkt">US equities · <span class="l-en">free data / new collector</span><span class="l-zh">免费数据 / 新采集</span></div>
+          <div class="src">SEC FTD data + Stratmann/Welborn 2016</div>
+        </td>
+        <td class="road"><span class="l-en">FTD balances are a short-sale constraint/informed-short proxy; literature finds higher FTD stocks later earn negative abnormal returns.</span><span class="l-zh">交割失败余额可作为卖空约束/知情做空代理；文献显示高 FTD 股票随后异常收益偏负。</span></td>
+        <td class="road"><span class="l-en">Build SEC semi-monthly FTD panel, map CUSIP->ticker, normalize by float and dollar volume, then test high-FTD and rising-FTD buckets.</span><span class="l-zh">建立 SEC 半月 FTD 面板，CUSIP 映射到 ticker，按流通股与成交额标准化，再测高 FTD 与上升 FTD 分组。</span></td>
+        <td class="gate"><span class="l-en">21/63d rank-IC, FDR across FTD variants, incremental IC vs size, momentum, short volume.</span><span class="l-zh">21/63日 rank-IC，FTD 变体间 FDR，相对规模、动量、短量的增量 IC。</span></td>
+        <td>
+          <span class="fable-chip build"><span class="l-en">BUILD</span><span class="l-zh">已授权测试</span></span>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <div class="sig"><span class="l-en">Borrow-fee / loan-fee anomaly</span><span class="l-zh">借券费 / 融券费异常</span><span class="frontier-pri">P0-data</span></div>
+          <div class="mkt">US equities · <span class="l-en">paid data</span><span class="l-zh">付费数据</span></div>
+          <div class="src">Engelberg et al. Management Science 2024</div>
+        </td>
+        <td class="road"><span class="l-en">Loan fees are one of the strongest documented short-side predictors; free short interest is a weak substitute.</span><span class="l-zh">借券费是文献中最强的做空侧预测变量之一；免费做空余额只是弱替代。</span></td>
+        <td class="road"><span class="l-en">If a borrow-fee vendor is approved, archive daily fee/utilization PIT and test high-fee underperformance plus long-only exclusion value.</span><span class="l-zh">若接入借券费供应商，按日归档费用/利用率时点数据，测试高费股票跑输及多头排除价值。</span></td>
+        <td class="gate"><span class="l-en">Must beat FINRA short volume, FTD, size, low-price and microcap controls after costs.</span><span class="l-zh">必须在成本后优于 FINRA 短量、FTD、规模、低价股和微盘控制项。</span></td>
+        <td>
+          <span class="fable-chip pending"><span class="l-en">PENDING</span><span class="l-zh">待审</span></span>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <div class="sig"><span class="l-en">Option informed-flow lens</span><span class="l-zh">期权知情流镜头</span><span class="frontier-pri">P1</span></div>
+          <div class="mkt">US options · <span class="l-en">partial plumbing</span><span class="l-zh">部分管线已在</span></div>
+          <div class="src">Pan/Poteshman 2006; CBOE/POLYGON options feeds</div>
+        </td>
+        <td class="road"><span class="l-en">Buyer-to-open option put/call flow and IV spreads have evidence of informed trading; public EOD put/call is much weaker.</span><span class="l-zh">买方开仓期权看跌/看涨流与隐波价差有知情交易证据；公开 EOD put/call 弱很多。</span></td>
+        <td class="road"><span class="l-en">Extend options_flow / ivspread history: separate stock-vs-index hedging, buyer-open proxies, scheduled-news windows, and O/S volume.</span><span class="l-zh">扩展 options_flow / ivspread 历史：区分股票与指数对冲、买方开仓代理、预定新闻窗口与期权/股票量。</span></td>
+        <td class="gate"><span class="l-en">Event-window and 1/5/21d forward tests; require improvement over GEX/200dma baselines.</span><span class="l-zh">事件窗口及1/5/21日前瞻测试；必须优于 GEX/200日均线基线。</span></td>
+        <td>
+          <span class="fable-chip pending"><span class="l-en">PENDING</span><span class="l-zh">待审</span></span>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <div class="sig"><span class="l-en">EDGAR attention shock</span><span class="l-zh">EDGAR 关注度冲击</span><span class="frontier-pri">P1</span></div>
+          <div class="mkt">US filings · <span class="l-en">free but heavy</span><span class="l-zh">免费但重型</span></div>
+          <div class="src">SEC EDGAR log files; Drake/Roulstone/Thornock literature</div>
+        </td>
+        <td class="road"><span class="l-en">SEC log files expose filing-demand attention; spikes around stale vs fresh filings may separate retail attention from informed acquisition.</span><span class="l-zh">SEC 日志显示投资者对公告的阅读需求；围绕新旧文件的流量冲击可区分散户关注与信息获取。</span></td>
+        <td class="road"><span class="l-en">Prototype on 2020-2025 logs only: de-robot, aggregate human views by filing/ticker, join to 8-K/10-Q/10-K events.</span><span class="l-zh">先用2020-2025日志试做：去机器人，按公告/ticker 聚合人类阅读量，并接入8-K/10-Q/10-K事件。</span></td>
+        <td class="gate"><span class="l-en">Filing-day and post-filing drift; Brier calibration if used as event probability.</span><span class="l-zh">公告日与公告后漂移；若作为事件概率则做 Brier 校准。</span></td>
+        <td>
+          <span class="fable-chip pending"><span class="l-en">PENDING</span><span class="l-zh">待审</span></span>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <div class="sig"><span class="l-en">Overnight/intraday tug-of-war</span><span class="l-zh">隔夜/日内拉锯</span><span class="frontier-pri">P1</span></div>
+          <div class="mkt">US equities · <span class="l-en">OHLC on disk</span><span class="l-zh">OHLC 已在盘</span></div>
+          <div class="src">Lou/Polk/Skouras 2019</div>
+        </td>
+        <td class="road"><span class="l-en">Some anomalies accrue overnight while intraday returns mean-revert; this may improve entry timing without creating a new signal.</span><span class="l-zh">部分异常收益在隔夜兑现而日内均值回归；它可能改善入场时点，而不是创造新信号。</span></td>
+        <td class="road"><span class="l-en">Decompose existing momentum/reversal/insider/payout candidates into close-open and open-close legs using adjusted OHLC.</span><span class="l-zh">用调整后 OHLC 将现有动量/反转/内部人/payout 候选拆成 close-open 与 open-close 两腿。</span></td>
+        <td class="gate"><span class="l-en">Net-of-open-spread viability, split-half, and no alpha claim unless tradable at open.</span><span class="l-zh">扣除开盘价差后验证、两半稳定；除非开盘可交易，否则不声称 alpha。</span></td>
+        <td>
+          <span class="fable-chip kill"><span class="l-en">KILLED</span><span class="l-zh">已否决</span></span>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <div class="sig"><span class="l-en">Treasury auction absorption</span><span class="l-zh">美债拍卖吸收力</span><span class="frontier-pri">P1</span></div>
+          <div class="mkt">US rates · <span class="l-en">collector exists</span><span class="l-zh">采集器已在</span></div>
+          <div class="src">TreasuryDirect auction query + 2025 auction-demand research</div>
+        </td>
+        <td class="road"><span class="l-en">Auction demand metrics can identify weak/strong duration absorption, but the data are mostly ex-post and must be framed as event context.</span><span class="l-zh">拍卖需求指标可识别久期吸收强弱，但数据多为事后，需作为事件背景处理。</span></td>
+        <td class="road"><span class="l-en">Use treasury_auctions.parquet: bid-to-cover, indirect share, dealer takedown, issue size.</span><span class="l-zh">使用 treasury_auctions.parquet：bid-to-cover、间接投标、一级交易商承接、发行量。</span></td>
+        <td class="gate"><span class="l-en">Event study on TLT/IEF/curve moves; forbid scoring unless pre-auction predictors beat term premium.</span><span class="l-zh">对 TLT/IEF/曲线做事件研究；除非拍卖前预测项优于期限溢价，否则禁止计分。</span></td>
+        <td>
+          <span class="fable-chip build"><span class="l-en">BUILD</span><span class="l-zh">已授权测试</span></span>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <div class="sig"><span class="l-en">COT exhaustion matrix</span><span class="l-zh">COT 仓位耗尽矩阵</span><span class="frontier-pri">P2</span></div>
+          <div class="mkt">Cross-asset futures · <span class="l-en">collector exists</span><span class="l-zh">采集器已在</span></div>
+          <div class="src">CFTC COT public reporting environment</div>
+        </td>
+        <td class="road"><span class="l-en">COT already helps capitulation context; a broader matrix may detect crowded futures positions across rates, FX and commodities.</span><span class="l-zh">COT 已用于投降背景；更广的矩阵可能识别利率、外汇与商品期货拥挤仓位。</span></td>
+        <td class="road"><span class="l-en">Compute 3y rolling spec-position percentiles, first differences, and cross-asset crowding clusters from existing COT store.</span><span class="l-zh">从现有 COT 库计算3年滚动投机仓位分位、变化量与跨资产拥挤簇。</span></td>
+        <td class="gate"><span class="l-en">Must beat dumb price trend / VIX gates; likely confirmer or graveyard, not scored.</span><span class="l-zh">必须优于朴素价格趋势 / VIX 门；大概率是确认项或墓地，而非计分。</span></td>
+        <td>
+          <span class="fable-chip kill"><span class="l-en">KILLED</span><span class="l-zh">已否决</span></span>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <div class="sig"><span class="l-en">Crypto funding + on-chain stress</span><span class="l-zh">加密资金费率 + 链上压力</span><span class="frontier-pri">P2</span></div>
+          <div class="mkt">Crypto · <span class="l-en">partial plumbing</span><span class="l-zh">部分管线已在</span></div>
+          <div class="src">Coin Metrics Community API; crypto funding literature</div>
+        </td>
+        <td class="road"><span class="l-en">Funding, MVRV, realized cap and holder-profit metrics may add cycle/tail context to the BTC Vector, but single-asset crypto samples are tiny.</span><span class="l-zh">资金费率、MVRV、实现市值与持有人盈利指标或可补充 BTC 向量的周期/尾部背景，但单资产样本极小。</span></td>
+        <td class="road"><span class="l-en">Separate raw engine from human gates; test funding-rate extremes and Coin Metrics valuation deltas as drawdown/entry confirmers.</span><span class="l-zh">分离纯引擎与人工门；把资金费率极值和 Coin Metrics 估值变化作为回撤/入场确认项测试。</span></td>
+        <td class="gate"><span class="l-en">Leave-one-cycle-out, brake-matched 200dma baseline, DSR with explicit trial ledger.</span><span class="l-zh">逐周期剔除、匹配200日均线刹车基线、带明确试验账本的 DSR。</span></td>
+        <td>
+          <span class="fable-chip pending"><span class="l-en">PENDING</span><span class="l-zh">待审</span></span>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <div class="sig"><span class="l-en">Supply-chain pressure impulse</span><span class="l-zh">供应链压力脉冲</span><span class="frontier-pri">P2</span></div>
+          <div class="mkt">Macro / sectors · <span class="l-en">free data</span><span class="l-zh">免费数据</span></div>
+          <div class="src">NY Fed GSCPI</div>
+        </td>
+        <td class="road"><span class="l-en">GSCPI-style shocks may matter more for inflation-sensitive sectors than for broad SPY timing.</span><span class="l-zh">GSCPI 类冲击对通胀敏感行业可能比对广义 SPY 择时更有用。</span></td>
+        <td class="road"><span class="l-en">Collect FRBNY GSCPI; test level/change/surprise vs breakevens, CPI/PPI revisions, transports, semis, retailers and commodity sectors.</span><span class="l-zh">采集纽约联储 GSCPI；测试水平/变化/意外值相对盈亏平衡通胀、CPI/PPI修正、运输、半导体、零售与商品板块。</span></td>
+        <td class="gate"><span class="l-en">Sector-relative IC with macro controls; no broad-risk claim unless it beats NFCI/OFR.</span><span class="l-zh">行业相对 IC 加宏观控制；除非优于 NFCI/OFR，否则不声明广义风险信号。</span></td>
+        <td>
+          <span class="fable-chip pending"><span class="l-en">PENDING</span><span class="l-zh">待审</span></span>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <div class="sig"><span class="l-en">Lottery/MAX anti-chase flag</span><span class="l-zh">彩票/MAX 反追高标记</span><span class="frontier-pri">P2</span></div>
+          <div class="mkt">US equities · <span class="l-en">price-only</span><span class="l-zh">仅价格</span></div>
+          <div class="src">Bali/Cakici/Whitelaw 2011; Hou/Xue/Zhang replication</div>
+        </td>
+        <td class="road"><span class="l-en">Extreme one-day winners often underperform later, but replication literature warns the edge can vanish outside microcaps.</span><span class="l-zh">极端单日赢家随后常跑输，但复验文献警告该边际在排除微盘后可能消失。</span></td>
+        <td class="road"><span class="l-en">Compute prior-month MAX and idio-skew, then test as a subtract-only extension/fragility overlay inside liquid universes.</span><span class="l-zh">计算上月 MAX 与特质偏度，在高流动性股票内作为减分式拉伸/脆弱叠加层测试。</span></td>
+        <td class="gate"><span class="l-en">NYSE breakpoints, value weights, cost and liquidity gates; expect graveyard unless incremental.</span><span class="l-zh">NYSE 断点、市值加权、成本与流动性门；除非有增量，否则预期进墓地。</span></td>
+        <td>
+          <span class="fable-chip kill"><span class="l-en">KILLED</span><span class="l-zh">已否决</span></span>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <div class="sig"><span class="l-en">FINRA short-volume stress</span><span class="l-zh">FINRA卖空量压力</span><span class="frontier-pri">Fable</span></div>
+          <div class="mkt">US equities · <span class="l-en">Phase-0 存活候选</span><span class="l-zh">Phase-0 存活候选</span></div>
+          <div class="src">FINRA short-sale volume data</div>
+        </td>
+        <td class="road"><span class="l-en">Short-volume ratio shock crossed with price strength/weakness and borrow proxies.</span><span class="l-zh">卖空量比率冲击与价格强弱及借券成本代理交叉验证。</span></td>
+        <td class="road"><span class="l-en">Existing FINRA short-volume collector.</span><span class="l-zh">现有FINRA卖空量采集器。</span></td>
+        <td class="gate"><span class="l-en">Cross-sectional IC and event buckets; never score unless it beats FTD/borrow proxies.</span><span class="l-zh">截面IC与事件分桶；得分须超越FTD/借券代理基线。</span></td>
+        <td>
+          <span class="fable-chip kill"><span class="l-en">KILLED</span><span class="l-zh">已否决</span></span>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <div class="sig"><span class="l-en">Opportunistic insider cluster</span><span class="l-zh">机会性内部人集中买入</span><span class="frontier-pri">Fable</span></div>
+          <div class="mkt">US equities · <span class="l-en">Phase-0 存活候选</span><span class="l-zh">Phase-0 存活候选</span></div>
+          <div class="src">Cohen/Malloy/Pomorski insiders</div>
+        </td>
+        <td class="road"><span class="l-en">Non-routine insider buys, cluster buys, role-weighted net USD/market cap.</span><span class="l-zh">非常规内部人买入、集中买入事件及角色加权净美元/市值。</span></td>
+        <td class="road"><span class="l-en">Existing SEC Form 4 insider store.</span><span class="l-zh">现有SEC Form 4内部人数据库。</span></td>
+        <td class="gate"><span class="l-en">Incremental IC over current insider factor; routine-trader filter required.</span><span class="l-zh">超越现有内部人因子的增量IC；须通过常规交易者过滤。</span></td>
+        <td>
+          <span class="fable-chip kill"><span class="l-en">KILLED</span><span class="l-zh">已否决</span></span>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <div class="sig"><span class="l-en">Insider sponsorship after solvency repair</span><span class="l-zh">偿债修复后内部人增持</span><span class="frontier-pri">Fable</span></div>
+          <div class="mkt">US equities · <span class="l-en">Phase-0 存活候选</span><span class="l-zh">Phase-0 存活候选</span></div>
+          <div class="src">Insider and repair literature</div>
+        </td>
+        <td class="road"><span class="l-en">Insider buying after balance-sheet and cash-flow repair, not generic dip-buying.</span><span class="l-zh">资产负债表与现金流修复后（非普通低位买入）的内部人买入。</span></td>
+        <td class="road"><span class="l-en">SEC insiders plus fundamentals panel.</span><span class="l-zh">SEC内部人数据与基本面面板。</span></td>
+        <td class="gate"><span class="l-en">Cross-sectional IC and bottom-rebound event buckets.</span><span class="l-zh">截面IC与底部反弹事件分桶。</span></td>
+        <td>
+          <span class="fable-chip route"><span class="l-en">ROUTED</span><span class="l-zh">转入现有程序</span></span>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <div class="sig"><span class="l-en">Net issuance / dilution shock</span><span class="l-zh">净增发/稀释冲击</span><span class="frontier-pri">Fable</span></div>
+          <div class="mkt">US equities · <span class="l-en">Phase-0 存活候选</span><span class="l-zh">Phase-0 存活候选</span></div>
+          <div class="src">Net issuance / asset-growth anomaly literature</div>
+        </td>
+        <td class="road"><span class="l-en">Share-count growth, ATM/convertible/securities issuance, dilution acceleration.</span><span class="l-zh">股本增长、ATM/可转债/证券增发及稀释加速。</span></td>
+        <td class="road"><span class="l-en">Existing EDGAR dilution collector.</span><span class="l-zh">现有EDGAR稀释采集器。</span></td>
+        <td class="gate"><span class="l-en">Monthly IC and exclusion value for long-only board.</span><span class="l-zh">月度IC与长仅多头剔除价值；不得得分，除非超越FTD/借券代理。</span></td>
+        <td>
+          <span class="fable-chip kill"><span class="l-en">KILLED</span><span class="l-zh">已否决</span></span>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <div class="sig"><span class="l-en">EDGAR lazy-prices text-change signal</span><span class="l-zh">EDGAR懒价格文本变化信号</span><span class="frontier-pri">Fable</span></div>
+          <div class="mkt">US filings · <span class="l-en">Phase-0 存活候选</span><span class="l-zh">Phase-0 存活候选</span></div>
+          <div class="src">Cohen/Malloy/Nguyen lazy prices</div>
+        </td>
+        <td class="road"><span class="l-en">Year-over-year 10-K/10-Q textual change and neglected section deltas.</span><span class="l-zh">10-K/10-Q年度文本变化及被忽视章节增量差异。</span></td>
+        <td class="road"><span class="l-en">SEC filings plus LM/cleaned 10-X summaries; new text pipeline.</span><span class="l-zh">SEC备案文本与LM/清洗后10-X摘要；需新文本处理流水线。</span></td>
+        <td class="gate"><span class="l-en">Post-filing 21/63/126d IC; require incremental edge over tone and attention.</span><span class="l-zh">备案后21/63/126日IC；须超越语调与关注度基线的增量优势。</span></td>
+        <td>
+          <span class="fable-chip pilot"><span class="l-en">PILOT</span><span class="l-zh">试点</span></span>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <div class="sig"><span class="l-en">8-K item taxonomy surprise</span><span class="l-zh">8-K条款类别异常</span><span class="frontier-pri">Fable</span></div>
+          <div class="mkt">US filings · <span class="l-en">Phase-0 存活候选</span><span class="l-zh">Phase-0 存活候选</span></div>
+          <div class="src">SEC EDGAR APIs</div>
+        </td>
+        <td class="road"><span class="l-en">Item-level 8-K surprise clusters, filing-time abnormal volume, stale vs fresh attention.</span><span class="l-zh">8-K条款级异常集群、备案时交易量异常及陈旧vs新鲜关注度。</span></td>
+        <td class="road"><span class="l-en">Existing EDGAR 8-K / earnings 8-K collectors.</span><span class="l-zh">现有EDGAR 8-K/财报8-K采集器。</span></td>
+        <td class="gate"><span class="l-en">Event-window abnormal returns and post-event drift by item family.</span><span class="l-zh">事件窗口异常收益与事件后漂移（按条款族分类）。</span></td>
+        <td>
+          <span class="fable-chip kill"><span class="l-en">KILLED</span><span class="l-zh">已否决</span></span>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <div class="sig"><span class="l-en">Guidance revision language</span><span class="l-zh">业绩指引修订语言</span><span class="frontier-pri">Fable</span></div>
+          <div class="mkt">US equities · <span class="l-en">Phase-0 存活候选</span><span class="l-zh">Phase-0 存活候选</span></div>
+          <div class="src">SEC guidance filings</div>
+        </td>
+        <td class="road"><span class="l-en">Guidance raise/cut, uncertainty language, management narrowing/widening.</span><span class="l-zh">指引上调/下调、不确定性语言及管理层收窄/扩宽幅度。</span></td>
+        <td class="road"><span class="l-en">Existing EDGAR guidance collector.</span><span class="l-zh">现有EDGAR指引采集器。</span></td>
+        <td class="gate"><span class="l-en">Forward IC and event drift; must beat analyst revision breadth.</span><span class="l-zh">前向IC与事件漂移；须超越分析师修订广度基线。</span></td>
+        <td>
+          <span class="fable-chip kill"><span class="l-en">KILLED</span><span class="l-zh">已否决</span></span>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <div class="sig"><span class="l-en">Gross-margin inflection</span><span class="l-zh">毛利率拐点</span><span class="frontier-pri">Fable</span></div>
+          <div class="mkt">US equities · <span class="l-en">Phase-0 存活候选</span><span class="l-zh">Phase-0 存活候选</span></div>
+          <div class="src">Profitability anomaly literature</div>
+        </td>
+        <td class="road"><span class="l-en">Gross margin acceleration and recovery from trough, sector-relative.</span><span class="l-zh">毛利率加速及从低谷回升（相对行业）。</span></td>
+        <td class="road"><span class="l-en">Existing fundamentals panel.</span><span class="l-zh">现有基本面面板。</span></td>
+        <td class="gate"><span class="l-en">Quarterly PIT IC; reject if subsumed by profitability/revisions.</span><span class="l-zh">季度PIT IC；若被盈利能力/修订因子所涵盖则否决。</span></td>
+        <td>
+          <span class="fable-chip queued"><span class="l-en">QUEUED</span><span class="l-zh">排队</span></span>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <div class="sig"><span class="l-en">Inventory build versus sales slowdown</span><span class="l-zh">库存积压对比销售放缓</span><span class="frontier-pri">Fable</span></div>
+          <div class="mkt">US equities · <span class="l-en">Phase-0 存活候选</span><span class="l-zh">Phase-0 存活候选</span></div>
+          <div class="src">Inventory/accrual anomaly literature</div>
+        </td>
+        <td class="road"><span class="l-en">Inventory growth minus sales growth, adjusted by industry seasonality.</span><span class="l-zh">库存增长减去销售增长（按行业季节性调整）。</span></td>
+        <td class="road"><span class="l-en">Existing fundamentals panel.</span><span class="l-zh">现有基本面面板。</span></td>
+        <td class="gate"><span class="l-en">Quarterly IC; must show negative forward edge outside retailers/energy quirks.</span><span class="l-zh">季度IC；须在零售/能源以外呈现负向前瞻优势。</span></td>
+        <td>
+          <span class="fable-chip kill"><span class="l-en">KILLED</span><span class="l-zh">已否决</span></span>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <div class="sig"><span class="l-en">China margin-financing impulse</span><span class="l-zh">中国融资余额冲量</span><span class="frontier-pri">Fable</span></div>
+          <div class="mkt">China A · <span class="l-en">Phase-0 存活候选</span><span class="l-zh">Phase-0 存活候选</span></div>
+          <div class="src">China margin trading literature</div>
+        </td>
+        <td class="road"><span class="l-en">Margin balance acceleration, sector concentration, margin/turnover ratio.</span><span class="l-zh">融资余额加速、行业集中度及融资/成交额比率。</span></td>
+        <td class="road"><span class="l-en">Existing China margin collectors.</span><span class="l-zh">现有中国融资数据采集器。</span></td>
+        <td class="gate"><span class="l-en">Forward IC and crash-risk test; separate informed leverage from sentiment leverage.</span><span class="l-zh">前向IC与崩盘风险检验；区分理性杠杆与情绪杠杆。</span></td>
+        <td>
+          <span class="fable-chip tested-null"><span class="l-en">TESTED-NULL</span><span class="l-zh">已测试—空</span></span>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <div class="sig"><span class="l-en">A-H premium dislocation convergence</span><span class="l-zh">A-H溢价错位收敛</span><span class="frontier-pri">Fable</span></div>
+          <div class="mkt">China / HK · <span class="l-en">Phase-0 存活候选</span><span class="l-zh">Phase-0 存活候选</span></div>
+          <div class="src">Stock Connect / A-H premium literature</div>
+        </td>
+        <td class="road"><span class="l-en">Pair-level A-H premium z-score, flow gating, currency stress.</span><span class="l-zh">配对A-H溢价Z值、资金流门控及汇率压力。</span></td>
+        <td class="road"><span class="l-en">Existing HK A-H panel.</span><span class="l-zh">现有HK A-H面板。</span></td>
+        <td class="gate"><span class="l-en">Pair convergence IC; forbid broad-market claim unless portfolio construction works.</span><span class="l-zh">配对收敛IC；除非组合构建可行，否则禁止宽市场主张。</span></td>
+        <td>
+          <span class="fable-chip tested-accrue"><span class="l-en">TESTED-ACCRUE</span><span class="l-zh">已测试—累积</span></span>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <div class="sig"><span class="l-en">Primary-dealer Treasury inventory/fails stress</span><span class="l-zh">一级交易商国债库存/失交压力</span><span class="frontier-pri">Fable</span></div>
+          <div class="mkt">US rates · <span class="l-en">Phase-0 存活候选</span><span class="l-zh">Phase-0 存活候选</span></div>
+          <div class="src">NY Fed Primary Dealer Statistics</div>
+        </td>
+        <td class="road"><span class="l-en">Dealer Treasury positions, financing, fails-to-deliver/receive, inventory absorption.</span><span class="l-zh">交易商国债持仓、融资、失交/待收以及库存消化。</span></td>
+        <td class="road"><span class="l-en">NY Fed Primary Dealer Statistics; OFR mirror possible.</span><span class="l-zh">纽约联储一级交易商统计；OFR镜像可用。</span></td>
+        <td class="gate"><span class="l-en">Rates/curve event study and SPY/TLT drawdown context; likely confirmer.</span><span class="l-zh">利率/曲线事件研究与SPY/TLT回撤背景；可能作为辅助确认因子。</span></td>
+        <td>
+          <span class="fable-chip tested-partial"><span class="l-en">TESTED-PARTIAL</span><span class="l-zh">已测试—部分</span></span>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <div class="sig"><span class="l-en">Repo/SOFR tail stress</span><span class="l-zh">回购/SOFR尾部压力</span><span class="frontier-pri">Fable</span></div>
+          <div class="mkt">US funding · <span class="l-en">Phase-0 存活候选</span><span class="l-zh">Phase-0 存活候选</span></div>
+          <div class="src">OFR short-term funding monitor</div>
+        </td>
+        <td class="road"><span class="l-en">SOFR p99, repo specialness proxies, funding-tail z-score.</span><span class="l-zh">SOFR第99百分位、回购专项溢价代理及资金尾部Z值。</span></td>
+        <td class="road"><span class="l-en">Existing OFR short-term funding monitor collector.</span><span class="l-zh">现有OFR短期资金监控采集器。</span></td>
+        <td class="gate"><span class="l-en">Forward drawdown AUC and event study; likely display/confirmer.</span><span class="l-zh">前向回撤AUC与事件研究；可能作为展示/辅助确认因子。</span></td>
+        <td>
+          <span class="fable-chip tested-pass"><span class="l-en">TESTED-PASS</span><span class="l-zh">已测试—通过</span></span>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <div class="sig"><span class="l-en">EIA petroleum inventory surprise</span><span class="l-zh">EIA石油库存意外</span><span class="frontier-pri">Fable</span></div>
+          <div class="mkt">Energy / commodities · <span class="l-en">Phase-0 存活候选</span><span class="l-zh">Phase-0 存活候选</span></div>
+          <div class="src">EIA weekly petroleum status</div>
+        </td>
+        <td class="road"><span class="l-en">Crude/gasoline/distillate seasonal-model error (inventory surprise not buildable free — API consensus is paywalled), refinery runs, days-of-supply.</span><span class="l-zh">原油/汽油/馏分油季节性模型误差、炼油运行量及供应天数。</span></td>
+        <td class="road"><span class="l-en">Existing EIA collector and weekly petroleum report data.</span><span class="l-zh">现有EIA采集器及每周石油报告数据。</span></td>
+        <td class="gate"><span class="l-en">CL/XLE/OIH event study using seasonal-model error only (no true consensus surprise); prior ruling: EIA inventory display-only; 38y carry phase-0 wrong-signed.</span><span class="l-zh">仅使用季节性模型误差（无真实一致预期）的CL/XLE/OIH事件研究。</span></td>
+        <td>
+          <span class="fable-chip kill"><span class="l-en">KILLED</span><span class="l-zh">已否决</span></span>
+        </td>
+      </tr>
+    </tbody>
+  </table></div>
+</div>
+
 
 <div class="panel ctl">
   <input id="slq" type="search" autocomplete="off"
@@ -721,7 +1100,7 @@
 <div class="panel tier-panel ">
   <div class="tierhead">
     <span class="dot d-confirmer" style="align-self:center"></span>
-    <h2><span class="l-en">Confirmer / context — validated, but not a standalone sizer</span><span class="l-zh">确认/背景 — 已验证，但非独立定量信号</span> · 20</h2>
+    <h2><span class="l-en">Confirmer / context — validated, but not a standalone sizer</span><span class="l-zh">确认/背景 — 已验证，但非独立定量信号</span> · 23</h2>
     <span class="bl"><span class="l-en">A measured forward edge used as context or a tiebreaker — never sized on its own.</span><span class="l-zh">有可测的前瞻性边际，用作背景或加分项 — 但不单独定仓。</span></span>
   </div>
   
@@ -923,6 +1302,29 @@
           <span class="muted sm"><span class="l-en">Conditioning forward SPY odds on the regime quad × NFCI direction reproduces the measured split: Q1/Q2 with NFCI looseni…</span><span class="l-zh">按宏观四象限×NFCI方向条件化前瞻标普胜率，复现既测分化：Q1/Q2 且 NFCI 宽松命中 74.8%/63日 +3.18%，紧缩则 38.3%/−5.69…</span></span>
           <span class="help">?<span class="tip"><span class="l-en">Conditioning forward SPY odds on the regime quad × NFCI direction reproduces the measured split: Q1/Q2 with NFCI loosening 74.8% hit / +3.18% fwd-63d vs tightening 38.3% / −5.69% (HAC t on the loosening leg +7.0). A flat-when-tight overlay shows DSR 0.9991 and cuts MaxDD −55%→−49% — BUT NFCI tight-and-tightening fires on ~5% of days and ZERO times post-2012, so the effective-N is ~2 pre-2012 crises. Already half-wired as the dial's NFCI rule; shipped as a scenario-odds CONFIRMER, not a high-confidence standalone.  [quad-nfci-phase0.md]</span><span class="l-zh">按宏观四象限×NFCI方向条件化前瞻标普胜率，复现既测分化：Q1/Q2 且 NFCI 宽松命中 74.8%/63日 +3.18%，紧缩则 38.3%/−5.69%（宽松腿 HAC t +7.0）。但 NFCI 紧且收紧仅约5%交易日触发，2012年后从未触发 → 有效样本仅约2次危机。已部分接入仪表盘 NFCI 规则；作为情景胜率确认项上线，而非高置信独立信号。  [quad-nfci-phase0.md]</span></span></span>
           <div class="src">quad-nfci-phase0.md</div>
+        </td>
+      </tr>
+    
+      <tr class="sl-row" data-tier="confirmer" data-mkt="US macro"
+          data-text="repo/sofr tail stress (p99 dispersion) 回购/sofr尾部压力（p99分散度） us macro p99-dispersion composite of sofr/repo spreads predicts s&p ≥5% drawdown onset with auc 0.61 at 21d horizon — above the 0.50 coin-flip baseline and above a vix-matching baseline. loo-stable across sub-periods (leave-one-out subsample consistency). study produces a drawdown predictor, not a cross-sectional return predictor: ic/t_hac/q_fdr are not defined for this study design and are left none. no score impact; recommended for risk-radar de-escalation panel candidacy pending program review.">
+        <td>
+          <div class="sig"><span class="l-en">Repo/SOFR tail stress (p99 dispersion)</span><span class="l-zh">回购/SOFR尾部压力（p99分散度）</span>
+            </div>
+          <div class="mkt">US macro · 21d drawdown onset · none — risk-radar de-escalation panel candidacy pending program review</div>
+          <div class="extra">AUC (21d drawdown ≥5%) 0.61 · LOO-stable yes · vs VIX baseline beats · n trials in ledger 14 · score impact none — display-only</div>
+        </td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r"><span class="muted">—</span></td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r"><span class="muted">—</span></td>
+        <td class="r">—</td>
+        <td><span class="pill v-confirmer"><span class="l-en">CONFIRMER</span><span class="l-zh">确认项</span></span></td>
+        <td style="max-width:34ch">
+          <span class="muted sm"><span class="l-en">p99-dispersion composite of SOFR/repo spreads predicts S&P ≥5% drawdown onset with AUC 0.61 at 21d horizon — above the 0…</span><span class="l-zh">SOFR/回购利差 p99 分散度综合指标在 21 日期限内预测标普≥5% 回撤，AUC=0.61，高于掷硬币基线（0.50）和 VIX 匹配基线，且剔除子区间…</span></span>
+          <span class="help">?<span class="tip"><span class="l-en">p99-dispersion composite of SOFR/repo spreads predicts S&P ≥5% drawdown onset with AUC 0.61 at 21d horizon — above the 0.50 coin-flip baseline and above a VIX-matching baseline. LOO-stable across sub-periods (leave-one-out subsample consistency). Study produces a drawdown predictor, not a cross-sectional return predictor: ic/t_hac/q_fdr are not defined for this study design and are left None. No score impact; recommended for risk-radar de-escalation panel candidacy pending program review.  [reports/slf056-funding-tail-phase0.md]</span><span class="l-zh">SOFR/回购利差 p99 分散度综合指标在 21 日期限内预测标普≥5% 回撤，AUC=0.61，高于掷硬币基线（0.50）和 VIX 匹配基线，且剔除子区间后保持稳健（LOO一致）。本研究为回撤预测设计，非横截面收益研究，故 ic/t_hac/q_fdr 均留 None。无评分影响；待项目审议后纳入风险雷达降级面板候选。  [reports/slf056-funding-tail-phase0.md]</span></span></span>
+          <div class="src">reports/slf056-funding-tail-phase0.md</div>
         </td>
       </tr>
     
@@ -1199,6 +1601,52 @@
           <span class="muted sm"><span class="l-en">CONFIRMED — the honest INTL-43 resurrection. The broad-USD REER value factor (cheap = bullish USD, faithful to config fo…</span><span class="l-zh">已确认——诚实的 INTL-43 复活。宽美元 REER 价值因子（便宜=看多美元，忠于 config forex.dollar_desk.valuation）…</span></span>
           <span class="help">?<span class="tip"><span class="l-en">CONFIRMED — the honest INTL-43 resurrection. The broad-USD REER value factor (cheap = bullish USD, faithful to config forex.dollar_desk.valuation) CONFIRMED in BOTH halves vs forward broad-USD returns at all three declared horizons (h=21 +0.031/+0.030, h=63 +0.062/+0.056, h=126 +0.120/+0.099). Graded on its OWN single-trial budget (trial_family c4_reer_value_n1) — the pre-registered N=1 door, budget-separated from the forex 60-trial family (DSR 0.0056 there) AND the intl_bridge N=17 family (DSR 0.40 there): de-risk long-flat DSR 0.9436 >= 0.90, split-half PASS, orthogonality vs the 5 US MRS legs PASS (residual −0.130), crisis-count 4, crisis-independent ES +0.0025. weight_cap 0.1333. NO consumer wiring this wave: verdict recorded + surfaced by intl_feed at cap, but no scorer consumes the feed — the MRS-composite orthogonality gate must clear first (W2-C2 showed the bar is high and this is a returns-predicting factor, not a US-DD leg).  [reports/forex-calibration.md (DOLLAR INDEX value); reports/forex-reer-n1-phase0.md (W3-C4a N=1); data/intl_bridge/ledger.json (c4_reer_value); scripts/c4_reer_value.py + scripts/intl_phase0.py (grade, N=1 budget)]</span><span class="l-zh">已确认——诚实的 INTL-43 复活。宽美元 REER 价值因子（便宜=看多美元，忠于 config forex.dollar_desk.valuation）在两半、三个预声明期限均确认对未来宽美元回报（h=21 +0.031/+0.030，h=63 +0.062/+0.056，h=126 +0.120/+0.099）。以独立单试验预算（trial_family c4_reer_value_n1）评分——预注册的 N=1 门，与外汇60试验家族（该处 DSR 0.0056）及 intl_bridge N=17 家族（该处 DSR 0.40）分开：降险多-空仓 DSR 0.9436 >= 0.90，两半通过，对5条美国 MRS 腿正交通过（残差 −0.130），危机计数4，去危机期望损失 +0.0025。权重上限 0.1333。本波不接入消费者：结论已记录并由 intl_feed 以上限呈现，但无计分器消费该源——须先通过 MRS 组合正交门。  [reports/forex-calibration.md (DOLLAR INDEX value); reports/forex-reer-n1-phase0.md (W3-C4a N=1); data/intl_bridge/ledger.json (c4_reer_value); scripts/c4_reer_value.py + scripts/intl_phase0.py (grade, N=1 budget)]</span></span></span>
           <div class="src">reports/forex-calibration.md (DOLLAR INDEX value); reports/forex-reer-n1-phase0.md (W3-C4a N=1); data/intl_bridge/ledger.json (c4_reer_value); scripts/c4_reer_value.py + scripts/intl_phase0.py (grade, N=1 budget)</div>
+        </td>
+      </tr>
+    
+      <tr class="sl-row" data-tier="confirmer" data-mkt="Rates"
+          data-text="month-end bond-index extension day  (tlt / ief last-day lift) 月末债券指数展期日（tlt / ief 尾日上涨） rates bond index managers buy longer-duration bonds on the last trading day of each month to match their benchmark's new duration. tlt last-day mean return +0.183%/day (t_hac=3.63, bh q=0.0009, n=287 months 2002-2026); ief t=5.02, q~0. known documented effect confirmed live. g2 split-half same-sign: both halves positive (h1=+0.258%, h2=+0.108%). g3 last-day > avg-other-days baseline: confirmed. timing overlay candidacy: tlt/ief entry-timing conditioner on last trading day of month. v1 (auction-cycle) and v2 (quarter-end pension rebalance) both null — only v3 survives.">
+        <td>
+          <div class="sig"><span class="l-en">Month-end bond-index extension day  (TLT / IEF last-day lift)</span><span class="l-zh">月末债券指数展期日（TLT / IEF 尾日上涨）</span>
+            <span class="yes" title="survives FDR">✓FDR</span></div>
+          <div class="mkt">Rates · 1d (last trading day of month) · none — timing overlay candidacy pending program review</div>
+          <div class="extra">TLT last-day mean +0.183%/day, t_HAC=3.63, BH q=0.0009 · IEF last-day mean +0.110%/day, t_HAC=5.02, BH q~0 · V1 auction-cycle verdict NULL · V2 QE-rebalance verdict NULL</div>
+        </td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r">+3.63</td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r"><span class="muted">—</span></td>
+        <td class="r">287</td>
+        <td><span class="pill v-confirmer"><span class="l-en">CONFIRMER</span><span class="l-zh">确认项</span></span></td>
+        <td style="max-width:34ch">
+          <span class="muted sm"><span class="l-en">Bond index managers buy longer-duration bonds on the last trading day of each month to match their benchmark's new durat…</span><span class="l-zh">债券指数经理在每月最后一个交易日买入久期更长的债券以匹配基准新久期。TLT 月末日平均收益 +0.183%/天（t_HAC=3.63，BH q=0.0009，n…</span></span>
+          <span class="help">?<span class="tip"><span class="l-en">Bond index managers buy longer-duration bonds on the last trading day of each month to match their benchmark's new duration. TLT last-day mean return +0.183%/day (t_HAC=3.63, BH q=0.0009, n=287 months 2002-2026); IEF t=5.02, q~0. Known documented effect confirmed live. G2 split-half same-sign: both halves positive (H1=+0.258%, H2=+0.108%). G3 last-day > avg-other-days baseline: confirmed. Timing overlay candidacy: TLT/IEF entry-timing conditioner on last trading day of month. V1 (auction-cycle) and V2 (quarter-end pension rebalance) both NULL — only V3 survives.  [reports/d2-rates-calendar-flows-phase0.md; TLT/IEF Yahoo daily 2002-2026]</span><span class="l-zh">债券指数经理在每月最后一个交易日买入久期更长的债券以匹配基准新久期。TLT 月末日平均收益 +0.183%/天（t_HAC=3.63，BH q=0.0009，n=287个月，2002-2026）；IEF t=5.02，q≈0。已知文献效应，已在样本外确认。V1（拍卖周期）和V2（季末养老金再平衡）均为NULL——仅V3通过。  [reports/d2-rates-calendar-flows-phase0.md; TLT/IEF Yahoo daily 2002-2026]</span></span></span>
+          <div class="src">reports/d2-rates-calendar-flows-phase0.md; TLT/IEF Yahoo daily 2002-2026</div>
+        </td>
+      </tr>
+    
+      <tr class="sl-row" data-tier="confirmer" data-mkt="US S&P (broad)"
+          data-text="sec comment-letter release drift  (substantive-review, 21d) sec意见函披露漂移（实质性审查，21日） us s&p (broad) when the sec releases the full upload/corresp correspondence for a substantive review (≥3 sec letters) on edgar, stocks drift lower over the next 21 trading days (massive store, post-2021): mean beta-adj ar -3.34%, t=-3.26, bh q=0.0044, n=1084. mandatory caveat: effect concentrated 2023-2025 — first split-half not significant (first-half t=-1.396, p=0.163); second half highly significant (t=-5.008, p~0). accrual required before any promotion. light-review cells and yahoo-store cells are null. 7 of 8 pre-registered cells fail; single passing cell rides on post-2021 massive store only (survivorship bias present in both stores).">
+        <td>
+          <div class="sig"><span class="l-en">SEC comment-letter release drift  (substantive-review, 21d)</span><span class="l-zh">SEC意见函披露漂移（实质性审查，21日）</span>
+            <span class="yes" title="survives FDR">✓FDR</span></div>
+          <div class="mkt">US S&P (broad) · 21d · none</div>
+          <div class="extra">passing cell substantive/h21/massive: t=-3.26, q=0.0044, n=1084 · temporal caveat first-half t=-1.396 (p=0.163) not significant; concentrated 2023-2025 · survivorship both stores: only tickers alive at collection date · 7 of 8 cells NULL; promotion requires further accrual</div>
+        </td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r">-3.26</td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r "><span class="muted">—</span></td>
+        <td class="r"><span class="muted">—</span></td>
+        <td class="r">1084</td>
+        <td><span class="pill v-confirmer"><span class="l-en">CONFIRMER</span><span class="l-zh">确认项</span></span></td>
+        <td style="max-width:34ch">
+          <span class="muted sm"><span class="l-en">When the SEC releases the full UPLOAD/CORRESP correspondence for a substantive review (≥3 SEC letters) on EDGAR, stocks …</span><span class="l-zh">当SEC在EDGAR上发布实质性审查（≥3封SEC来函）的完整往来信件时，股票在随后21个交易日内下跌（massive数据集，2021年后）：beta调整异常收…</span></span>
+          <span class="help">?<span class="tip"><span class="l-en">When the SEC releases the full UPLOAD/CORRESP correspondence for a substantive review (≥3 SEC letters) on EDGAR, stocks drift lower over the next 21 trading days (massive store, post-2021): mean beta-adj AR -3.34%, t=-3.26, BH q=0.0044, n=1084. MANDATORY CAVEAT: effect concentrated 2023-2025 — first split-half not significant (first-half t=-1.396, p=0.163); second half highly significant (t=-5.008, p~0). Accrual required before any promotion. Light-review cells and yahoo-store cells are NULL. 7 of 8 pre-registered cells fail; single passing cell rides on post-2021 massive store only (survivorship bias present in both stores).  [reports/d2-comment-letter-release-phase0.md; EDGAR 2005-2026, massive+yahoo stores]</span><span class="l-zh">当SEC在EDGAR上发布实质性审查（≥3封SEC来函）的完整往来信件时，股票在随后21个交易日内下跌（massive数据集，2021年后）：beta调整异常收益均值-3.34%，t=-3.26，BH q=0.0044，n=1084。强制警示：效应集中于2023-2025年——前半样本不显著（t=-1.396，p=0.163）；后半样本高度显著（t=-5.008，p~0）。需积累更多数据方可晋升。  [reports/d2-comment-letter-release-phase0.md; EDGAR 2005-2026, massive+yahoo stores]</span></span></span>
+          <div class="src">reports/d2-comment-letter-release-phase0.md; EDGAR 2005-2026, massive+yahoo stores</div>
         </td>
       </tr>
     
@@ -2109,8 +2557,8 @@
   <p class="muted sm" style="margin:0"><span class="l-en">Validation toolkit: engine/validation.py (deflated Sharpe, purged k-fold + embargo, block bootstrap, Newey-West HAC, Benjamini-Hochberg FDR, Brier/Platt calibration, cost-aware backtest). Verdicts are quoted from the named reports in reports/. The factor cross-section reads live from data/edgar/ic_scorecard.json.</span><span class="l-zh">验证工具：engine/validation.py（去偏夏普、净化 k 折+隔离、分块自助、Newey-West HAC、Benjamini-Hochberg FDR、Brier/Platt 校准、含成本回测）。结论引自 reports/ 中具名报告；因子横截面实时读取 data/edgar/ic_scorecard.json。</span></p>
   <p class="src" style="margin:8px 0 0">
     <span class="l-en">data span</span><span class="l-zh">数据区间</span> 2011-03-31..2025-12-31 ·
-    <span class="l-en">dashboard updated</span><span class="l-zh">仪表盘更新</span> 2026-07-06 09:06 UTC ·
-    <span class="l-en">rendered</span><span class="l-zh">生成</span> 2026-07-06 09:06 UTC</p>
+    <span class="l-en">dashboard updated</span><span class="l-zh">仪表盘更新</span> 2026-07-07 19:35 UTC ·
+    <span class="l-en">rendered</span><span class="l-zh">生成</span> 2026-07-07 19:35 UTC</p>
 </div>
 
 <script src="theme.js"></script>

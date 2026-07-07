@@ -103,33 +103,6 @@
   .tm-watermark { font-size:11px; color:var(--muted); margin-top:8px; margin-bottom:4px; }
   .tm-loading { color:var(--muted); font-size:13px; padding:40px 0; text-align:center; }
 
-  /* ── Neural Web sponsorship (SRSS Phase 4, shadow tier) ── */
-  .nws-section { margin:36px 2px 0; }
-  .nws-section h2 { font-size:17px; font-weight:800; letter-spacing:-.01em; margin:0 0 4px;
-    display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
-  .nws-shadow-badge { font-size:9.5px; font-weight:700; text-transform:uppercase; letter-spacing:.04em;
-    padding:2px 8px; border-radius:999px; background:color-mix(in srgb, var(--muted) 16%, transparent);
-    color:var(--muted); }
-  .nws-sub { color:var(--muted); font-size:12px; margin:0 0 12px; max-width:82ch; line-height:1.5; }
-  .nws-rails { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
-  @media (max-width:820px) { .nws-rails { grid-template-columns:1fr; } }
-  .nws-rail { border:1px solid var(--line); border-radius:12px; background:var(--panel); padding:10px 11px; }
-  .nws-rail-hd { font-size:10.5px; font-weight:800; text-transform:uppercase; letter-spacing:.05em;
-    color:var(--muted); margin-bottom:8px; }
-  .nws-item { padding:7px 0; border-top:1px solid var(--line); }
-  .nws-item:first-of-type { border-top:none; padding-top:0; }
-  .nws-item-top { display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-bottom:2px; }
-  .nws-tk { font-weight:700; font-size:12.5px; color:var(--text); }
-  .nws-sublink { font-size:11.5px; color:var(--link); }
-  .nws-conf { margin-left:auto; font-size:9px; font-weight:700; text-transform:uppercase;
-    padding:1px 6px; border-radius:6px; background:var(--panel2); color:var(--muted); }
-  .nws-conf.ct-high { color:var(--up); }
-  .nws-conf.ct-medium { color:var(--warn); }
-  .nws-item-txt { font-size:11.5px; color:var(--muted); line-height:1.45; cursor:help; }
-  .nws-empty { color:var(--muted); font-size:12px; font-style:italic; }
-  .nws-empty-all { padding:10px 0; }
-  .nws-foot { color:var(--muted); font-size:10.5px; margin-top:10px; line-height:1.5; font-style:italic; }
-
   /* Strength gauge (shown in the hover tooltip) */
   .sr-tip-score { margin-top:8px; padding-top:8px; border-top:1px solid var(--line); }
   .sr-tip-score-hd { display:flex; align-items:baseline; gap:5px; font-size:10.5px; color:var(--muted);
@@ -185,100 +158,6 @@
   <div class="sr-foot">
     {{ t('Built', '生成于') }} {{ generated_utc }}
   </div>
-</div>
-
-<!-- ── Neural Web sponsorship (SRSS Phase 4, shadow tier) ──────────────────────── -->
-<div class="wrap">
-  <section class="nws-section" aria-label="Neural Web sponsorship">
-    <h2>🕸️ {{ t('Neural Web sponsorship', 'Neural Web 板块支持度') }}
-      <span class="nws-shadow-badge">{{ t('shadow · accruing evidence, not validated', '影子层 · 证据积累中，尚未验证') }}</span>
-    </h2>
-    <p class="nws-sub">{{ t(
-      "Cross-references today's stock-level buy/watch fires against this page's own subsector-rotation state: is the group around a name repairing, fighting headwinds, or rolling over? Display-only context — never a standalone signal, never a decision input.",
-      '将今日个股买入/关注信号与本页子行业轮动状态交叉核对：个股所在板块是在修复、逆风、还是转向下行？仅作背景展示——绝非独立信号，也不参与任何决策。'
-    ) }}</p>
-
-    {% set rails = (sponsorship.rails if sponsorship else {}) or {} %}
-    {% set has_any = (rails.repair or rails.headwind or rails.rollover) %}
-    {% if has_any %}
-    <div class="nws-rails">
-      <div class="nws-rail">
-        <div class="nws-rail-hd">{{ t('Bottoms with group repair', '底部 · 板块修复') }}</div>
-        {% if rails.repair %}
-          {% for row in rails.repair %}
-          <div class="nws-item">
-            <div class="nws-item-top">
-              <a class="nws-tk" href="stock.html#{{ row.ticker|urlencode }}">{{ row.ticker }}</a>
-              <a class="nws-sublink" href="rotation/{{ row.rotation_key|urlencode }}.html">{{ t(row.name, row.name_zh) }}</a>
-              <span class="nws-conf ct-{{ row.confidence_tier }}">{{ row.confidence_tier }}</span>
-            </div>
-            <div class="nws-item-txt"
-                 data-tip-en="{{ row.plain_en }} · {{ row.n_members }} members · as of {{ row.rotation_asof }} · {{ epi_en }}"
-                 data-tip-zh="{{ row.plain_zh }} · {{ row.n_members }} 只成分股 · 截至 {{ row.rotation_asof }} · {{ epi_zh }}">
-              {{ t(row.plain_en, row.plain_zh) }}
-            </div>
-          </div>
-          {% endfor %}
-        {% else %}
-          <div class="nws-empty">{{ t('No matches yet', '暂无匹配') }}</div>
-        {% endif %}
-      </div>
-
-      <div class="nws-rail">
-        <div class="nws-rail-hd">{{ t('Bottoms fighting headwinds', '底部 · 板块逆风') }}</div>
-        {% if rails.headwind %}
-          {% for row in rails.headwind %}
-          <div class="nws-item">
-            <div class="nws-item-top">
-              <a class="nws-tk" href="stock.html#{{ row.ticker|urlencode }}">{{ row.ticker }}</a>
-              <a class="nws-sublink" href="rotation/{{ row.rotation_key|urlencode }}.html">{{ t(row.name, row.name_zh) }}</a>
-              <span class="nws-conf ct-{{ row.confidence_tier }}">{{ row.confidence_tier }}</span>
-            </div>
-            <div class="nws-item-txt"
-                 data-tip-en="{{ row.plain_en }} · {{ row.n_members }} members · as of {{ row.rotation_asof }} · {{ epi_en }}"
-                 data-tip-zh="{{ row.plain_zh }} · {{ row.n_members }} 只成分股 · 截至 {{ row.rotation_asof }} · {{ epi_zh }}">
-              {{ t(row.plain_en, row.plain_zh) }}
-            </div>
-          </div>
-          {% endfor %}
-        {% else %}
-          <div class="nws-empty">{{ t('No matches yet', '暂无匹配') }}</div>
-        {% endif %}
-      </div>
-
-      <div class="nws-rail">
-        <div class="nws-rail-hd">{{ t('Tops in group rollover', '顶部 · 板块转向下行') }}</div>
-        {% if rails.rollover %}
-          {% for row in rails.rollover %}
-          <div class="nws-item">
-            <div class="nws-item-top">
-              <a class="nws-tk" href="stock.html#{{ row.ticker|urlencode }}">{{ row.ticker }}</a>
-              <a class="nws-sublink" href="rotation/{{ row.rotation_key|urlencode }}.html">{{ t(row.name, row.name_zh) }}</a>
-              <span class="nws-conf ct-{{ row.confidence_tier }}">{{ row.confidence_tier }}</span>
-            </div>
-            <div class="nws-item-txt"
-                 data-tip-en="{{ row.plain_en }} · {{ row.n_members }} members · as of {{ row.rotation_asof }} · {{ epi_en }}"
-                 data-tip-zh="{{ row.plain_zh }} · {{ row.n_members }} 只成分股 · 截至 {{ row.rotation_asof }} · {{ epi_zh }}">
-              {{ t(row.plain_en, row.plain_zh) }}
-            </div>
-          </div>
-          {% endfor %}
-        {% else %}
-          <div class="nws-empty">{{ t('No matches yet', '暂无匹配') }}</div>
-        {% endif %}
-      </div>
-    </div>
-    {% else %}
-      <div class="nws-empty nws-empty-all">{{ t(
-        "No sponsorship matches in today's ledger yet — the rotation ledger is only days old and this is accruing shadow evidence.",
-        '今日台账暂无板块支持度匹配 — 轮动台账历史尚短，证据仍在积累中。'
-      ) }}</div>
-    {% endif %}
-    <p class="nws-foot">{{ t(
-      "Shadow-tier context only, not yet validated: coverage is thin while the rotation ledger accrues history — see the sponsorship pre-registration for the full epistemic status.",
-      '仅为影子层背景，尚未验证：轮动台账历史尚短，覆盖度仍然有限——完整认识论状态见板块支持度预注册文档。'
-    ) }}</p>
-  </section>
 </div>
 
 <!-- ── Oracle Time Machine ──────────────────────────────────────────────────── -->

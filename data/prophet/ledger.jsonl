@@ -1,0 +1,6 @@
+# prophet ledger row schema — see research/PROPHET_LEDGER_SCHEMA.md
+# Fields: schema, id, asset, direction, signal_date, close_date,
+#         outcome (T1_HIT|T2_HIT|INVALIDATED|EXPIRED|CLOSED_EARLY),
+#         stock_result_pct, option_result_pct (null when no rec),
+#         days_held, plan_adherence, asof
+# Nightly is the SOLE advancer of this ledger.

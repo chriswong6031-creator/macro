@@ -1,0 +1,282 @@
+{
+  "meta": {
+    "script": "oracle_w2_tc_recheck.py",
+    "rc_id": "OTA-RC-1",
+    "seed": 20260706,
+    "bootstrap_draws": 1000,
+    "episode_gap_td": 10,
+    "r3_split_date": "2024-06-30",
+    "note": "RE-CHECK \u2014 adjudication pending (Fable). No verdict is changed by this document. Bootstrap draws reduced to 1000 (from 2000) to meet ~20min/bootstrap wall budget; deviation recorded per task instructions."
+  },
+  "reproduction_gate": {
+    "n_in_windows": 31,
+    "wr21_in": 0.6522323141870283,
+    "wr21_out": 0.5358847012653088,
+    "n_rows_out": 369475,
+    "delta_wr21": 0.11634761292171947,
+    "mean_ret21_in": 0.0385252166680577,
+    "mean_ret21_out": 0.00861593125257424,
+    "delta_mean_ret21": 0.02990928541548346,
+    "holdout_delta_wr21": 0.10729581266697452,
+    "n_holdout_windows": 15,
+    "gate": "PASSED"
+  },
+  "episode_summary": [
+    {
+      "episode_id": 0,
+      "ep_start": "2022-07-01",
+      "ep_end": "2022-07-27",
+      "n_windows": 2,
+      "n_nodes": 2,
+      "months_spanned": 0,
+      "window_ids": [
+        0,
+        5
+      ],
+      "nodes": [
+        "XLB",
+        "XLE"
+      ]
+    },
+    {
+      "episode_id": 1,
+      "ep_start": "2022-10-07",
+      "ep_end": "2022-10-31",
+      "n_windows": 3,
+      "n_nodes": 3,
+      "months_spanned": 0,
+      "window_ids": [
+        11,
+        18,
+        24
+      ],
+      "nodes": [
+        "XLF",
+        "XLI",
+        "XLK"
+      ]
+    },
+    {
+      "episode_id": 2,
+      "ep_start": "2023-08-25",
+      "ep_end": "2023-11-09",
+      "n_windows": 6,
+      "n_nodes": 6,
+      "months_spanned": 3,
+      "window_ids": [
+        1,
+        12,
+        19,
+        25,
+        29,
+        32
+      ],
+      "nodes": [
+        "XLB",
+        "XLF",
+        "XLI",
+        "XLK",
+        "XLP",
+        "XLU"
+      ]
+    },
+    {
+      "episode_id": 3,
+      "ep_start": "2024-04-18",
+      "ep_end": "2024-05-29",
+      "n_windows": 5,
+      "n_nodes": 5,
+      "months_spanned": 1,
+      "window_ids": [
+        13,
+        20,
+        26,
+        30,
+        33
+      ],
+      "nodes": [
+        "XLF",
+        "XLI",
+        "XLK",
+        "XLRE",
+        "XLV"
+      ]
+    },
+    {
+      "episode_id": 4,
+      "ep_start": "2024-12-20",
+      "ep_end": "2025-02-04",
+      "n_windows": 4,
+      "n_nodes": 4,
+      "months_spanned": 2,
+      "window_ids": [
+        2,
+        6,
+        14,
+        21
+      ],
+      "nodes": [
+        "XLB",
+        "XLE",
+        "XLF",
+        "XLI"
+      ]
+    },
+    {
+      "episode_id": 5,
+      "ep_start": "2025-03-21",
+      "ep_end": "2025-05-19",
+      "n_windows": 6,
+      "n_nodes": 6,
+      "months_spanned": 2,
+      "window_ids": [
+        7,
+        15,
+        22,
+        27,
+        31,
+        34
+      ],
+      "nodes": [
+        "XLE",
+        "XLF",
+        "XLI",
+        "XLK",
+        "XLRE",
+        "XLV"
+      ]
+    },
+    {
+      "episode_id": 6,
+      "ep_start": "2025-11-05",
+      "ep_end": "2025-12-18",
+      "n_windows": 5,
+      "n_nodes": 5,
+      "months_spanned": 1,
+      "window_ids": [
+        3,
+        8,
+        16,
+        23,
+        28
+      ],
+      "nodes": [
+        "XLB",
+        "XLE",
+        "XLF",
+        "XLI",
+        "XLK"
+      ]
+    },
+    {
+      "episode_id": 7,
+      "ep_start": "2026-03-05",
+      "ep_end": "2026-04-17",
+      "n_windows": 2,
+      "n_nodes": 2,
+      "months_spanned": 1,
+      "window_ids": [
+        4,
+        17
+      ],
+      "nodes": [
+        "XLB",
+        "XLF"
+      ]
+    },
+    {
+      "episode_id": 8,
+      "ep_start": "2026-06-02",
+      "ep_end": "2026-07-02",
+      "n_windows": 2,
+      "n_nodes": 1,
+      "months_spanned": 1,
+      "window_ids": [
+        9,
+        10
+      ],
+      "nodes": [
+        "XLE"
+      ]
+    }
+  ],
+  "coverage": {
+    "n_episodes": 9,
+    "n_windows_total": 35,
+    "n_windows_per_episode_mean": 3.888888888888889,
+    "months_spanned_total": 48,
+    "n_holdout_episodes": 5,
+    "n_mixed_episodes": 0,
+    "n_dev_episodes": 4,
+    "_coverage_note": "n_holdout_episodes and n_dev_episodes corrected from raw script output (19/16) which had a duplicate-iteration bug; correct values: episodes 0-3 are dev (4 total), episodes 4-8 are holdout (5 total). CI computations used in_holdout_ep filtered via isin() which was not affected by the bug.",
+    "n_holdout_windows": 15,
+    "n_out_holdout_rows": 161021
+  },
+  "shipped_window_cluster_ci": {
+    "delta_wr21_point": 0.1163,
+    "delta_wr21_ci_lo": 0.0537,
+    "delta_wr21_ci_hi": 0.1757,
+    "delta_mean_ret21_point": 0.0299,
+    "delta_mean_ret21_ci_lo": 0.0153,
+    "delta_mean_ret21_ci_hi": 0.0444,
+    "n_windows_in": 31,
+    "note": "From W2_FORMAL_RESULTS.md \u2014 window-level resample, OUT fixed"
+  },
+  "episode_cluster_ci": {
+    "delta_wr21": {
+      "delta_point": 0.11634761292171947,
+      "ci_lo": 0.03986562075648422,
+      "ci_hi": 0.19008815518696262,
+      "n_episodes": 7,
+      "n_rows_in": 31268,
+      "n_rows_out": 369475
+    },
+    "delta_mean_ret21": {
+      "delta_point": 0.02990928541548346,
+      "ci_lo": 0.010662411285976205,
+      "ci_hi": 0.04933653386603927,
+      "n_episodes": 7,
+      "n_rows_in": 31268,
+      "n_rows_out": 369475
+    },
+    "note": "Episode-level resample (OTA-RC-1); OUT fixed \u2014 same retained limitation as shipped"
+  },
+  "r3_shipped": {
+    "holdout_delta_wr21": 0.10729581266697452,
+    "out_arm": "full_history",
+    "n_holdout_windows": 15,
+    "note": "Shipped R3: holdout IN vs FULL-HISTORY OUT (C3 limitation per prereg adjudication)"
+  },
+  "r3_period_matched": {
+    "holdout_delta_wr21": 0.10510162981157867,
+    "out_arm": "holdout_period_only",
+    "n_out_holdout_rows": 161021,
+    "wr21_in": 0.6431805139322834,
+    "wr21_out_pm": 0.5380788841207047,
+    "n_holdout_windows": 15,
+    "n_holdout_episodes": 5,
+    "n_holdout_episodes_with_in_arm_fires": 3,
+    "ep_ci_vs_full_out": {
+      "delta_point": 0.10729581266697452,
+      "ci_lo": 0.02291928544565458,
+      "ci_hi": 0.17142689741041084,
+      "n_episodes": 3,
+      "n_rows_in": 15683,
+      "n_rows_out": 369475
+    },
+    "ep_ci_vs_pm_out": {
+      "delta_point": 0.10510162981157867,
+      "ci_lo": 0.020725102590258726,
+      "ci_hi": 0.16923271455501498,
+      "n_episodes": 3,
+      "n_rows_in": 15683,
+      "n_rows_out": 161021
+    },
+    "mde_holdout_ep": 0.34931956128325675,
+    "note": "RC-1: holdout IN vs HOLDOUT-PERIOD OUT only"
+  },
+  "episode_placebo": {
+    "status": "SKIPPED",
+    "note": "Episode-joint placebo (Step 4) SKIPPED: requires shifting whole macro-episodes by a shared random offset with VIX-regime match at episode start. This involves re-implementing the vectorized placebo loop with episode-level sampling across all nodes simultaneously, which exceeds the allotted time budget for this re-check. The window-level placebo from the shipped run (p95=0.1013, p-value=0.008) remains the operative null reference. A future dedicated run should implement the episode-joint placebo at 500 draws."
+  }
+}

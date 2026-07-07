@@ -128,6 +128,19 @@ _ALLOWED_ACTIONS_ALLOWLIST_PREFIXES = [
     "scripts/build_site.py",
     "engine/neuralweb/cortex.py",
     "engine/neuralweb/ask_brain.py",
+    # R-ORTH rail state builder: emits allowed_actions/forbidden_actions as a
+    # descriptive mirror only (RUL-ORTH-11; same RUL-NW9 category as the factor
+    # state builder). It never reads the field to switch behavior.
+    "engine/neuralweb/covariance_spine.py",
+    # Evidence Clock (EC-R4): display-only aggregator emits allowed_actions/
+    # forbidden_actions as descriptive packet fields; the checker verifies every
+    # row carries promote/mutate_source_state in forbidden_actions. Neither
+    # reads the field to switch behavior (same RUL-NW9 category as above).
+    "engine/neuralweb/evidence_clock.py",
+    "scripts/check_evidence_clock.py",
+    # ETM registry (#1794): emits allowed_actions as a descriptive authority
+    # mirror on registry rows (ETM-C2 display_only law); never a behavior wire.
+    "engine/neuralweb/entity_thesis_mechanism_registry.py",
     "docs/research/",
 ]
 

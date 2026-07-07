@@ -6,8 +6,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Committee View — every signal traced to a graded source</title>
-<meta name="description" content="Per-ticker provenance: every signal line traced back to its engine family, qual-ladder state, kernel estimate, and staleness.">
+<title>The Neural Web — the living brain behind the dashboard</title>
+<meta name="description" content="The Neural Web: synapse map of 551 edges across 300+ nodes, per-ticker signal committee, cortex overnight deliberation, and kernel family estimates.">
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
 <script>
@@ -24,6 +24,20 @@ h2 { font-size:13px; margin:0 0 9px; color:var(--muted); text-transform:uppercas
 h3 { font-size:15px; margin:0 0 8px; }
 .panel { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:16px 18px; margin-bottom:16px; }
 .panel-head { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:12px; }
+
+/* ── Hero panel ── */
+.nw-hero { background:linear-gradient(135deg, color-mix(in srgb,var(--link) 12%,var(--panel)) 0%, var(--panel) 60%); border:1px solid color-mix(in srgb,var(--link) 30%,var(--line)); border-radius:14px; padding:28px 24px 22px; margin-bottom:16px; }
+.nw-hero-headline { font-size:clamp(28px,5vw,42px); font-weight:900; letter-spacing:-.02em; margin:0 0 6px; background:linear-gradient(120deg, var(--link) 0%, color-mix(in srgb,var(--link) 60%,var(--up)) 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; line-height:1.1; }
+.nw-hero-tagline { font-size:16px; color:var(--muted); margin:0 0 14px; font-style:italic; }
+.nw-hero-desc { font-size:14px; line-height:1.7; max-width:760px; margin-bottom:18px; color:var(--text); }
+.nw-stat-chips { display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+.nw-chip { display:inline-flex; align-items:center; gap:7px; padding:7px 14px; border-radius:30px; background:color-mix(in srgb,var(--link) 10%,var(--panel2)); border:1px solid color-mix(in srgb,var(--link) 25%,var(--line)); font-size:13px; font-weight:600; backdrop-filter:blur(4px); }
+.nw-chip-val { font-size:18px; font-weight:800; color:var(--link); }
+.nw-chip-label { font-size:11px; color:var(--muted); font-weight:400; margin-top:1px; }
+.nw-chip-ok { border-color:color-mix(in srgb,var(--up) 35%,var(--line)); }
+.nw-chip-ok .nw-chip-val { color:var(--up); }
+.nw-chip-offline { border-color:color-mix(in srgb,var(--warn) 35%,var(--line)); }
+.nw-chip-offline .nw-chip-val { color:var(--warn); }
 
 /* ── Auth gate ── */
 #cm_gate { text-align:center; padding:48px 24px; }
@@ -42,6 +56,11 @@ h3 { font-size:15px; margin:0 0 8px; }
 #cm_sugg div:hover, #cm_sugg div.sel { background:var(--panel2); }
 #cm_sugg b { min-width:62px; flex:none; }
 #cm_sugg small { color:var(--muted); flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.cm-index-count { font-size:12px; color:var(--muted); margin-top:6px; }
+.cm-index-warn { background:color-mix(in srgb,var(--warn) 12%,var(--panel2)); border:1px solid color-mix(in srgb,var(--warn) 35%,transparent); border-radius:8px; padding:8px 12px; margin-top:8px; font-size:13px; color:var(--warn); display:none; }
+.cm-quick-tries { display:flex; flex-wrap:wrap; gap:7px; margin-top:14px; }
+.cm-quick-chip { padding:5px 12px; border-radius:20px; border:1px solid var(--line); background:var(--panel2); font-size:13px; font-weight:700; cursor:pointer; color:var(--link); transition:background .15s; }
+.cm-quick-chip:hover { background:color-mix(in srgb,var(--link) 12%,var(--panel2)); }
 
 /* ── Committee (provenance) view ── */
 .cm-ticker-header { display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; margin-bottom:14px; }
@@ -83,19 +102,43 @@ h3 { font-size:15px; margin:0 0 8px; }
 #disc_bar { display:none; }
 body { padding-bottom:56px; }
 
-/* ── Living confluence graph canvas ── */
-#graph_canvas { width:100%; height:480px; border-radius:10px; background:var(--panel2); cursor:grab; touch-action:none; display:block; }
+/* ── Synapse map canvas ── */
+.graph-wrap { position:relative; border-radius:12px; overflow:hidden; background:radial-gradient(ellipse at 50% 40%, color-mix(in srgb,var(--panel2) 70%,#050810) 0%, #050810 100%); }
+[data-theme=light] .graph-wrap { background:radial-gradient(ellipse at 50% 40%, color-mix(in srgb,var(--panel2) 80%,#0a0f1e) 0%, #0a0f1e 100%); }
+#graph_canvas { width:100%; height:640px; display:block; cursor:grab; touch-action:none; }
+@media(max-width:719px){ #graph_canvas { height:420px; } }
 #graph_canvas:active { cursor:grabbing; }
+.graph-controls { position:absolute; top:10px; right:10px; display:flex; gap:5px; z-index:10; }
+.gc-btn { width:32px; height:32px; border-radius:8px; border:1px solid color-mix(in srgb,var(--line) 60%,transparent); background:color-mix(in srgb,var(--panel) 70%,transparent); color:var(--text); font-size:14px; cursor:pointer; display:flex; align-items:center; justify-content:center; backdrop-filter:blur(6px); transition:background .15s; }
+.gc-btn:hover { background:color-mix(in srgb,var(--link) 20%,var(--panel)); }
+.graph-tooltip { position:absolute; pointer-events:none; background:color-mix(in srgb,var(--panel) 95%,transparent); border:1px solid var(--line); border-radius:10px; padding:9px 13px; font-size:12px; max-width:260px; z-index:20; display:none; backdrop-filter:blur(8px); box-shadow:0 4px 20px rgba(0,0,0,.3); line-height:1.55; }
+.graph-tooltip.visible { display:block; }
+.graph-tooltip strong { color:var(--link); font-size:13px; }
+.graph-info-card { position:absolute; top:50px; right:10px; width:220px; background:color-mix(in srgb,var(--panel) 95%,transparent); border:1px solid var(--line); border-radius:11px; padding:12px 14px; font-size:12px; z-index:15; display:none; backdrop-filter:blur(8px); box-shadow:0 4px 20px rgba(0,0,0,.25); max-height:calc(100% - 70px); overflow-y:auto; }
+@media(max-width:719px){ .graph-info-card { position:static; width:100%; margin-top:8px; max-height:240px; } }
+.graph-info-card.visible { display:block; }
+.graph-info-title { font-size:14px; font-weight:700; color:var(--link); margin-bottom:4px; }
+.graph-info-type { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin-bottom:8px; }
+.graph-info-section { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); margin:8px 0 4px; }
+.graph-nbr-chip { display:inline-block; padding:2px 8px; border-radius:12px; background:var(--panel2); border:1px solid var(--line); font-size:11px; cursor:pointer; margin:2px; color:var(--text); }
+.graph-nbr-chip:hover { border-color:var(--link); color:var(--link); }
 .graph-legend { display:flex; flex-wrap:wrap; gap:10px; margin-top:10px; font-size:12px; align-items:center; }
-.gl-dot { width:12px; height:12px; border-radius:50%; flex:none; }
+.gl-dot { width:11px; height:11px; border-radius:50%; flex:none; display:inline-block; }
+.gl-line { width:28px; height:3px; display:inline-block; vertical-align:middle; flex:none; }
 
 /* ── Cortex memo panel ── */
 .probation-banner { background:color-mix(in srgb,var(--warn) 14%,var(--panel2)); border:1px solid color-mix(in srgb,var(--warn) 40%,transparent); border-radius:9px; padding:10px 14px; margin-bottom:12px; font-size:13px; }
 .probation-banner strong { color:var(--warn); }
 .is-context-badge { display:inline-block; background:color-mix(in srgb,var(--info,#5b9dff) 14%,var(--panel2)); color:var(--info,#5b9dff); font-size:10px; font-weight:700; padding:2px 8px; border-radius:6px; letter-spacing:.05em; vertical-align:middle; margin-left:8px; }
-.memo-summary { line-height:1.65; font-size:14px; }
+.memo-summary-card { background:color-mix(in srgb,var(--link) 8%,var(--panel2)); border-left:3px solid var(--link); border-radius:0 9px 9px 0; padding:12px 16px; margin:10px 0 14px; font-size:14px; line-height:1.7; }
 .fired-list { margin:8px 0; padding-left:18px; }
 .fired-list li { margin:3px 0; font-size:13px; color:var(--muted); }
+.tc-chip { display:inline-block; background:var(--panel2); padding:2px 8px; border-radius:6px; font-size:12px; margin:2px; }
+.memo-failed-banner { background:color-mix(in srgb,var(--warn) 14%,var(--panel2)); border:1px solid color-mix(in srgb,var(--warn) 40%,transparent); border-radius:9px; padding:12px 16px; margin-bottom:12px; font-size:13px; color:var(--text); }
+.memo-failed-banner strong { color:var(--warn); }
+.memo-partial-banner { background:color-mix(in srgb,var(--warn) 8%,var(--panel2)); border:1px solid color-mix(in srgb,var(--warn) 25%,transparent); border-radius:9px; padding:10px 14px; margin-bottom:12px; font-size:13px; }
+details.memo-raw summary { cursor:pointer; font-size:12px; color:var(--muted); padding:6px 0; user-select:none; }
+details.memo-raw pre { font-size:11px; overflow-x:auto; color:var(--muted); white-space:pre-wrap; }
 
 /* ── Ask the brain ── */
 .ask-box { display:flex; flex-direction:column; gap:12px; }
@@ -126,6 +169,8 @@ body { padding-bottom:56px; }
 .ask-disclaimer { font-size:11px; color:var(--muted); border-top:1px solid var(--line); margin-top:12px; padding-top:8px; }
 .ask-error { display:none; background:color-mix(in srgb,var(--down) 12%,var(--panel2)); border:1px solid color-mix(in srgb,var(--down) 35%,transparent); border-radius:9px; padding:10px 14px; font-size:13px; color:var(--down); }
 .ask-error.active { display:block; }
+.ask-signin-msg { background:color-mix(in srgb,var(--link) 10%,var(--panel2)); border:1px solid color-mix(in srgb,var(--link) 30%,transparent); border-radius:9px; padding:10px 14px; font-size:13px; display:none; }
+.ask-signin-msg.active { display:block; }
 
 /* ── Kernel family cards ── */
 .kf-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:10px; }
@@ -140,7 +185,6 @@ body { padding-bottom:56px; }
 .kf-armed-yes { background:color-mix(in srgb,var(--up) 16%,var(--panel2)); color:var(--up); }
 .kf-armed-no  { background:var(--panel); color:var(--muted); }
 .kf-stale { font-size:10.5px; color:var(--muted); margin-top:5px; }
-/* W2 half-life chip */
 .kf-hl { font-size:11px; color:var(--muted); margin-top:5px; }
 .kf-hl-val { color:var(--link); font-weight:600; cursor:help; }
 .kf-hl .kf-null { font-style:italic; cursor:help; }
@@ -157,14 +201,18 @@ body { padding-bottom:56px; }
 .cm-empty { color:var(--muted); font-style:italic; padding:20px 0; text-align:center; }
 .cm-loading { display:none; color:var(--muted); font-size:13px; padding:10px 0; }
 
-/* ── W1 Role badges (Spine v2) ── */
-/* One badge per provenance row; precedence: veto > alpha > sizing > timing > context */
+/* ── W1 Role badges ── */
 .role-badge { display:inline-block; padding:2px 7px; border-radius:5px; font-size:10.5px; font-weight:700; letter-spacing:.04em; cursor:default; }
 .role-veto    { background:color-mix(in srgb,var(--down)  18%,var(--panel2)); color:var(--down); }
 .role-alpha   { background:color-mix(in srgb,var(--up)    18%,var(--panel2)); color:var(--up); }
 .role-sizing  { background:color-mix(in srgb,var(--link)  18%,var(--panel2)); color:var(--link); }
 .role-timing  { background:color-mix(in srgb,var(--warn)  18%,var(--panel2)); color:var(--warn); }
 .role-context { background:var(--panel); color:var(--muted); }
+
+/* ── Reduced motion ── */
+@media (prefers-reduced-motion: reduce) {
+  .section-lazy { transition:none; }
+}
 </style>
 </head>
 <body>
@@ -179,19 +227,136 @@ body { padding-bottom:56px; }
 
 <!-- Auth gate (shown until session confirmed) -->
 <div id="cm_gate" class="panel">
-  <h2>{{ t('Committee View — Sign In Required', '委员会视图 — 需要登录') }}</h2>
-  <p>{{ t('Every signal line traced to its graded source, kernel estimate, and staleness. A premium research surface — sign in to access.',
-     '每条信号线都追溯至其评分来源、核心估计和时效性。高级研究功能，登录后访问。') }}</p>
+  <h2>{{ t('The Neural Web — Sign In Required', '智脑 — 需要登录') }}</h2>
+  <p>{{ t('The living brain behind this dashboard — synapse map, signal committee, cortex memo. Sign in to access.',
+     '仪表盘背后的活体大脑 — 突触地图、信号委员会、皮层备忘录。登录后访问。') }}</p>
   <button class="btn-primary" id="cm_signin_btn">{{ t('Sign in / Create account', '登录 / 创建账户') }}</button>
 </div>
 
 <!-- Main content (hidden until auth) -->
 <div id="cm_content">
 
-  <!-- 1. COMMITTEE VIEW: per-ticker provenance panel -->
+  <!-- 1. HERO -->
+  <div class="nw-hero section-lazy" id="cm_hero_section">
+    <div class="nw-hero-headline">
+      <span class="l-en">The Neural Web</span>
+      <span class="l-zh">智脑</span>
+    </div>
+    <div class="nw-hero-tagline">
+      <span class="l-en">The living brain behind this dashboard</span>
+      <span class="l-zh">仪表盘背后的活体大脑</span>
+    </div>
+    <div class="nw-hero-desc">
+      {{ t('This page is the visual front-end of the Neural Web — the machine that connects every engine on the site. It integrates the <strong>signal spine</strong> (every fired signal, append-only), <strong>synapses</strong> (co-firing links between engines), the <strong>kernel</strong> (graded accuracy estimates, display-only until the Oct 2026 batch), and the <strong>cortex</strong> (an overnight AI deliberation that reviews contradictions and writes this page\'s memo). Nothing here is investment advice.',
+      '本页面是智脑的可视化前端——连接站点上每个引擎的机器。它整合了<strong>信号脊梁</strong>（每个触发信号，只追加），<strong>突触</strong>（引擎间的共触发链接），<strong>核心</strong>（评分准确率估计，展示用——待2026年10月批次运行），以及<strong>皮层</strong>（夜间AI审议，审查矛盾并撰写本页备忘录）。此处任何内容均非投资建议。') }}
+    </div>
+    <div class="nw-stat-chips" id="nw_stat_chips">
+      <div class="nw-chip" id="chip_neurons">
+        <div><div class="nw-chip-val" id="chip_neurons_val">—</div><div class="nw-chip-label"><span class="l-en">Neurons</span><span class="l-zh">神经元</span></div></div>
+      </div>
+      <div class="nw-chip" id="chip_synapses">
+        <div><div class="nw-chip-val" id="chip_synapses_val">—</div><div class="nw-chip-label"><span class="l-en">Synapses</span><span class="l-zh">突触</span></div></div>
+      </div>
+      <div class="nw-chip" id="chip_engines">
+        <div><div class="nw-chip-val" id="chip_engines_val">—</div><div class="nw-chip-label"><span class="l-en">Engines</span><span class="l-zh">引擎</span></div></div>
+      </div>
+      <div class="nw-chip" id="chip_cortex">
+        <div><div class="nw-chip-val" id="chip_cortex_val">—</div><div class="nw-chip-label"><span class="l-en">Cortex</span><span class="l-zh">皮层</span></div></div>
+      </div>
+      <div class="nw-chip" id="chip_asof">
+        <div><div class="nw-chip-val" id="chip_asof_val" style="font-size:13px">—</div><div class="nw-chip-label"><span class="l-en">Last refresh</span><span class="l-zh">最近刷新</span></div></div>
+      </div>
+      <div class="nw-chip" id="chip_indep">
+        <div>
+          <div class="nw-chip-val" id="chip_indep_val">—</div>
+          <div class="nw-chip-label"><span class="l-en">Independent witnesses</span><span class="l-zh">独立证人</span></div>
+          <div class="nw-chip-sub" id="chip_indep_sub" style="font-size:10px;color:var(--muted);margin-top:1px">—</div>
+        </div>
+      </div>
+    </div>
+    <div id="chip_indep_plain" class="plain-eng" style="display:none;margin-top:8px">
+      <strong>{{ t('In plain English:', '用白话说：') }}</strong>
+      <span id="chip_indep_plain_text"></span>
+      <span id="chip_indep_same_bet" style="display:none"></span>
+    </div>
+  </div>
+
+  <!-- 2. SYNAPSE MAP -->
+  <div class="panel section-lazy" id="cm_graph_section">
+    <div class="panel-head">
+      <h1>{{ t('Synapse Map — watch the machine think', '突触地图 — 看机器思考') }}</h1>
+      <span class="is-context-badge">{{ t('CONTEXT ONLY', '仅供参考') }}</span>
+    </div>
+    <div class="plain-eng">
+      <strong>{{ t('In plain English:', '用白话说：') }}</strong>
+      {{ t('This is a curated map of the brain — engines grouped into four lobes (US Equity, China &amp; Intl, Signals &amp; Options, Macro &amp; Meta), each linked to the sectors, regimes, and theses they reason about. Bright <span style="color:var(--up)">green</span> and <span style="color:var(--down)">red</span> pulses are the only <em>graded</em> signals (co-firing confirms / contradictions). Thin structural links are for legibility (display-only). Toggle "all nodes" to bring back every other node — the full radar thesis fan and the raw data-plumbing underlay. Zoom and pan to explore; click any node for its connections.',
+      '这是大脑的精选地图——引擎分为四个叶区（美股、中国及国际、信号与期权、宏观与元），分别连接至其推理的板块、周期和论点。亮<span style="color:var(--up)">绿色</span>和<span style="color:var(--down)">红色</span>脉冲是唯一<em>评分</em>信号（共触发确认/矛盾）。细结构连线仅供展示。切换"全部节点"可显示所有其他节点——完整的雷达论点扇形和原始数据管道底层。缩放平移以探索；点击任意节点查看其连接。') }}
+    </div>
+    <div class="cm-loading" id="graph_loading">{{ t('Loading synapse map…', '加载突触地图中…') }}</div>
+    <div class="graph-wrap" id="graph_wrap">
+      <canvas id="graph_canvas" aria-label="{{ t('Synapse map — Neural Web confluence graph', '突触地图 — 智脑汇聚图') | striptags }}"></canvas>
+      <div class="graph-controls">
+        <button class="gc-btn" id="gc_plus" aria-label="Zoom in">+</button>
+        <button class="gc-btn" id="gc_minus" aria-label="Zoom out">−</button>
+        <button class="gc-btn" id="gc_fit" aria-label="Fit all" style="font-size:11px;width:auto;padding:0 8px"><span class="l-en">fit</span><span class="l-zh">适配</span></button>
+        <button class="gc-btn" id="gc_wire" style="font-size:11px;width:auto;padding:0 8px" data-tip-en="Show every other node — full thesis fan + data plumbing" data-tip-zh="显示所有其他节点——完整论点扇形 + 数据管道"><span class="l-en">all nodes</span><span class="l-zh">全部节点</span></button>
+        <button class="gc-btn" id="gc_fs" aria-label="Fullscreen" style="font-size:16px">⛶</button>
+      </div>
+      <div class="graph-tooltip" id="graph_tooltip"></div>
+      <div class="graph-info-card" id="graph_info_card"></div>
+    </div>
+    <div id="graph_subset_note" style="font-size:0.82em;color:var(--muted);margin:0.5em 0 0.1em"></div>
+    <div class="graph-legend" id="graph_legend">
+      <span class="gl-dot" style="background:#e2e8f0"></span> <span class="l-en">Core</span><span class="l-zh">核心</span> &nbsp;
+      <span class="gl-dot" style="background:#4da3ff"></span> <span class="l-en">US Equity</span><span class="l-zh">美股</span> &nbsp;
+      <span class="gl-dot" style="background:#f0883e"></span> <span class="l-en">China &amp; Intl</span><span class="l-zh">中国及国际</span> &nbsp;
+      <span class="gl-dot" style="background:#a78bfa"></span> <span class="l-en">Signals &amp; Options</span><span class="l-zh">信号与期权</span> &nbsp;
+      <span class="gl-dot" style="background:#2dd4bf"></span> <span class="l-en">Macro &amp; Meta</span><span class="l-zh">宏观与元</span> &nbsp;
+      <span class="gl-dot" style="background:#f472b6"></span> <span class="l-en">Regime</span><span class="l-zh">周期</span> &nbsp;
+      <span class="gl-dot" style="background:#f5b301"></span> <span class="l-en">Sector</span><span class="l-zh">板块</span> &nbsp;
+      <span class="gl-dot" style="background:#7dd3fc"></span> <span class="l-en">Thesis</span><span class="l-zh">论点</span> &nbsp;&nbsp;
+      <span class="gl-line" style="background:rgba(34,197,94,.75);height:2.5px;border-radius:1px"></span> <span class="l-en">Confirms (graded)</span><span class="l-zh">确认（评分）</span> &nbsp;
+      <span class="gl-line" style="background:rgba(239,68,68,.75);height:2.5px;border-radius:1px;border-top:2px dashed rgba(239,68,68,.9)"></span> <span class="l-en">Contradicts (graded)</span><span class="l-zh">矛盾（评分）</span> &nbsp;
+      <span class="gl-line" style="background:rgba(100,130,180,.45);height:1px;border-radius:1px"></span> <span class="l-en">Structure (display-only)</span><span class="l-zh">结构（展示用）</span> &nbsp;
+      <span class="gl-dot" style="background:rgba(91,157,255,.5);width:7px;height:7px"></span> <span class="l-en">Moving light = signal transmission, refreshed nightly</span><span class="l-zh">移动光点 = 信号传输（每晚刷新）</span>
+    </div>
+  </div>
+
+  <!-- 3. NEURAL WEB DAILY BRIEF -->
+  <div class="panel section-lazy" id="cm_brief_section">
+    <div class="panel-head">
+      <h1>{{ t('Neural Web Daily Brief', '智脑每日简报') }}</h1>
+      <span class="is-context-badge">{{ t('CONTEXT ONLY', '仅供参考') }}</span>
+    </div>
+    <div class="cm-loading" id="brief_loading">{{ t('Loading brief…', '加载简报中…') }}</div>
+    <div id="cm_brief_content" style="display:none">
+      <div id="brief_status_row" style="margin-bottom:8px"></div>
+      <div id="brief_brain_row" style="margin-bottom:8px;font-size:13px;color:var(--muted)"></div>
+      <div id="brief_changed_list"></div>
+      <div id="brief_stale_list"></div>
+      <div id="brief_pathway_block" style="display:none;margin:10px 0 6px 0;padding:8px 10px;border-left:3px solid var(--accent,#4da3ff);background:var(--card-bg,rgba(255,255,255,.04))">
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;margin-bottom:4px">{{ t('Why the tape moved', '行情变动原因') }}</div>
+        <div id="brief_pathway_primary" style="font-size:13px;margin-bottom:3px"></div>
+        <div id="brief_pathway_coverage" style="font-size:12px;color:var(--muted)"></div>
+        <div id="brief_pathway_legs" style="font-size:12px;color:var(--muted)"></div>
+        <div id="brief_pathway_alts" style="font-size:12px;color:var(--muted)"></div>
+        <div id="brief_pathway_null" style="font-size:13px;color:var(--muted)"></div>
+      </div>
+      <div id="brief_attn_list"></div>
+      <details id="brief_expander" style="margin-top:8px">
+        <summary style="cursor:pointer;font-size:12px;color:var(--muted)">{{ t('Show all items…', '显示全部…') }}</summary>
+        <div id="brief_expander_content" style="margin-top:6px"></div>
+      </details>
+    </div>
+    <div id="brief_error" style="display:none;color:var(--muted);font-size:13px">
+      {{ t('Daily brief not yet available.', '每日简报暂不可用。') }}
+    </div>
+  </div>
+
+  <!-- 4. SIGNAL COMMITTEE -->
   <div class="panel section-lazy" id="cm_ticker_section">
     <div class="panel-head">
-      <h1>{{ t('Committee View', '委员会视图') }}</h1>
+      <h1>{{ t('Signal Committee — per-ticker provenance', '信号委员会 — 个股信号溯源') }}</h1>
       <div class="cm-search-wrap">
         <input id="cm_q" type="text" autocomplete="off" placeholder="{{ t('Search ticker — US stocks', '搜索代码 — 美股') | striptags }}">
         <div id="cm_sugg"></div>
@@ -199,18 +364,34 @@ body { padding-bottom:56px; }
     </div>
     <div class="plain-eng">
       <strong>{{ t('In plain English:', '用白话说：') }}</strong>
-      {{ t('Each row below is one signal that influenced the view for this ticker. The <em>ladder state</em> tells you how mature the signal is (DISPLAY = shown but not yet graded at scale; SHADOW = actively accumulating a track record). The <em>kernel IC</em> is the estimated information coefficient — how often the signal predicts direction correctly — but it is a display-only estimate until the quarterly batch runs (Oct 2026). Staleness shows how many days since the last observation.',
-      '下方每行代表一个影响该代码判断的信号。<em>阶梯状态</em>表示信号的成熟度（DISPLAY=展示但尚未大规模评分；SHADOW=正在积累评分记录）。<em>核心IC</em>是估计信息系数——信号预测方向的准确率——但仅供展示，待季度批次运行后（2026年10月）才生效。时效性显示上次观测以来的天数。') }}
+      {{ t('For any US ticker, this shows the "committee" of signals that currently have a view on it, each traced to its engine, maturity ladder state, graded-accuracy estimate, and staleness. Each row below is one signal that influenced the view for this ticker. The <em>ladder state</em> tells you how mature the signal is (DISPLAY = shown but not yet graded at scale; SHADOW = actively accumulating a track record). The <em>kernel IC</em> is the estimated information coefficient — a display-only estimate until the quarterly batch runs (Oct 2026). Staleness shows how many days since the last observation.',
+      '对于任何美股代码，这里显示当前对其有判断的信号"委员会"，每条信号都追溯至其引擎、成熟度阶梯状态、评分准确率估计和时效性。下方每行代表一个影响该代码判断的信号。<em>阶梯状态</em>表示信号的成熟度（DISPLAY=展示但尚未大规模评分；SHADOW=正在积累评分记录）。<em>核心IC</em>是估计信息系数——仅供展示，待季度批次运行后（2026年10月）才生效。时效性显示上次观测以来的天数。') }}
     </div>
+    <div id="cm_index_warn" class="cm-index-warn">
+      <span class="l-en"><strong>Search index unreachable</strong> — a hard refresh (Cmd⇧R / Ctrl⇧R) may clear a stale cache.</span>
+      <span class="l-zh"><strong>搜索索引不可达</strong> — 强制刷新（Cmd⇧R / Ctrl⇧R）可能清除旧缓存。</span>
+    </div>
+    <div id="cm_index_count" class="cm-index-count" style="display:none"></div>
     <div id="cm_ticker_view">
-      <p class="cm-empty">{{ t('Search for a ticker above to see its committee.', '在上方搜索代码以查看其委员会记录。') }}</p>
+      <p class="cm-empty" id="cm_empty_state">
+        <span class="l-en">Search for a ticker above — or try one of these:</span>
+        <span class="l-zh">在上方搜索代码，或试试这些：</span>
+      </p>
+      <div class="cm-quick-tries" id="cm_quick_tries">
+        <span class="cm-quick-chip" data-t="AAPL">AAPL</span>
+        <span class="cm-quick-chip" data-t="NVDA">NVDA</span>
+        <span class="cm-quick-chip" data-t="MSFT">MSFT</span>
+        <span class="cm-quick-chip" data-t="TSLA">TSLA</span>
+        <span class="cm-quick-chip" data-t="AMZN">AMZN</span>
+        <span class="cm-quick-chip" data-t="GOOGL">GOOGL</span>
+      </div>
     </div>
   </div>
 
-  <!-- 2. LIVING CONFLUENCE GRAPH -->
-  <div class="panel section-lazy" id="cm_graph_section">
+  <!-- 5. CORTEX MEMO -->
+  <div class="panel section-lazy" id="cm_memo_section">
     <div class="panel-head">
-      <h1>{{ t('Living Confluence Graph', '实时汇聚图') }}</h1>
+      <h1>{{ t('Cortex Memo — the overnight deliberation', '皮层备忘录 — 隔夜审议') }}</h1>
       <span class="is-context-badge">{{ t('CONTEXT ONLY', '仅供参考') }}</span>
     </div>
     <div class="plain-eng">
@@ -237,6 +418,8 @@ body { padding-bottom:56px; }
     <div class="panel-head">
       <h1>{{ t('Cortex Committee Memo', '皮层委员会备忘录') }}</h1>
       <span class="is-context-badge">{{ t('CONTEXT ONLY', '仅供参考') }}</span>
+      {{ t('Every night an AI "cortex" reads the web\'s own ledgers — what fired, what contradicts what, which families are decaying — and writes this memo. It can only flag and de-escalate; it never originates signals or scores. Everything here is context, not a trade signal.',
+      '每晚AI"皮层"读取网络自身的账本——触发了什么、什么相互矛盾、哪些系列在衰减——并撰写此备忘录。它只能标记和降级；它从不发起信号或评分。此处所有内容均为参考，非交易信号。') }}
     </div>
     <div class="cm-loading" id="memo_loading">{{ t('Loading memo…', '加载备忘录中…') }}</div>
     <div id="cm_memo_content">
@@ -244,7 +427,7 @@ body { padding-bottom:56px; }
     </div>
   </div>
 
-  <!-- 4. ASK THE BRAIN -->
+  <!-- 6. ASK THE BRAIN -->
   <div class="panel section-lazy" id="cm_ask_section">
     <div class="panel-head">
       <h1>{{ t('Ask the Brain', '问问大脑') }}</h1>
@@ -253,7 +436,7 @@ body { padding-bottom:56px; }
     <div class="plain-eng">
       <strong>{{ t('In plain English:', '用白话说：') }}</strong>
       {{ t('Ask the Neural Web brain an explanatory question about the signals, regime, or track record shown on this page. The brain reads its own ledgers — spine index, confluence graph, kernel estimates, world state — and replies with cited, graded sources. It never advises on what to buy or sell.',
-      '向神经网络大脑提出关于本页面所示信号、周期或历史记录的解释性问题。大脑会读取自己的账本——脊梁指数、汇聚图、核心估计、市场状态——并以引用的、经过评分的来源回复。它从不建议买卖任何标的。') }}
+      '向智脑提出关于本页面所示信号、周期或历史记录的解释性问题。大脑会读取自己的账本——脊梁指数、汇聚图、核心估计、市场状态——并以引用的、经过评分的来源回复。它从不建议买卖任何标的。') }}
     </div>
     <div class="ask-box" id="ask_box">
       <div class="ask-row">
@@ -266,24 +449,22 @@ body { padding-bottom:56px; }
       <div class="ask-row" style="align-items:center;gap:14px">
         <span class="ask-charcount" id="ask_charcount">0 / 500</span>
         <span class="ask-examples">
-          <span class="l-en">e.g. &ldquo;Why did the radar fire for semis?&rdquo; &nbsp;·&nbsp; &ldquo;What contradicts the current regime read?&rdquo; &nbsp;·&nbsp; &ldquo;What is us_board&rsquo;s track record in Goldilocks?&rdquo;</span>
-          <span class="l-zh">例如：「雷达为何对半导体触发信号？」· 「当前周期判断有哪些矛盾信号？」· 「us_board 在 Goldilocks 周期的历史记录如何？」</span>
+          <span class="l-en">e.g. &ldquo;Why did the radar fire for semis?&rdquo; &nbsp;·&nbsp; &ldquo;What contradicts the current regime read?&rdquo;</span>
+          <span class="l-zh">例如：「雷达为何对半导体触发信号？」· 「当前周期判断有哪些矛盾信号？」</span>
         </span>
+      </div>
+      <div class="ask-signin-msg" id="ask_signin_msg">
+        <span class="l-en">Sign in (top right) to ask the brain — the rest of the page is open without an account.</span>
+        <span class="l-zh">登录（右上角）后即可提问 — 页面其他内容无需账户即可浏览。</span>
       </div>
       <div class="ask-state-loading" id="ask_loading">
         <span class="l-en">The brain is reading its ledgers… (20–30 s)</span>
         <span class="l-zh">大脑正在读取账本……（约 20–30 秒）</span>
       </div>
-      <div class="ask-error" id="ask_error">
-        <span class="l-en">Something went wrong. Please try again in a moment — or the live brain may not be armed; the memo-quote fallback gives a partial answer without it.</span>
-        <span class="l-zh">出现错误，请稍后重试——或实时大脑可能未就绪；无实时大脑时备忘录模式可给出部分回答。</span>
-      </div>
+      <div class="ask-error" id="ask_error"></div>
       <div class="ask-answer" id="ask_answer">
         <div id="ask_mode_badge"></div>
-        <div id="ask_degraded_notice" class="ask-degraded" style="display:none">
-          <span class="l-en"><strong>Memo-quote mode:</strong> the live brain is not armed on this deployment. This answer comes from a matched excerpt of the committed cortex memo — it is context, not a live reasoning session.</span>
-          <span class="l-zh"><strong>备忘录模式：</strong>本次部署中实时大脑未就绪。此回答来自提交的皮层备忘录中的匹配摘录——仅供参考，非实时推理。</span>
-        </div>
+        <div id="ask_degraded_notice" class="ask-degraded" style="display:none"></div>
         <div class="ask-answer-text" id="ask_answer_text"></div>
         <div id="ask_citations_wrap" style="display:none">
           <div class="ask-citations-head">
@@ -292,22 +473,22 @@ body { padding-bottom:56px; }
           <ul class="ask-citations" id="ask_citations_list"></ul>
         </div>
         <div class="ask-disclaimer">
-          <span class="l-en">Research &amp; education only — not investment advice. No signal here is a recommendation to buy or sell any security.</span>
-          <span class="l-zh">仅供研究与教育用途，非投资建议。此处任何信号均不构成买卖任何证券的建议。</span>
+          <span class="l-en">Research &amp; education only — not investment advice.</span>
+          <span class="l-zh">仅供研究与教育用途，非投资建议。</span>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- 5. KERNEL FAMILY CARDS -->
+  <!-- 7. KERNEL FAMILY ESTIMATES -->
   <div class="panel section-lazy" id="cm_kernel_section">
     <div class="panel-head">
       <h1>{{ t('Kernel Family Estimates', '核心族估计') }}</h1>
     </div>
     <div class="plain-eng">
       <strong>{{ t('In plain English:', '用白话说：') }}</strong>
-      {{ t('Each card shows one signal family\'s estimated information coefficient (IC) across horizons, with the Wilson confidence interval lower bound. All values are display-only estimates — the first FDR decision batch runs October 2026.',
-      '每张卡片显示一个信号族在不同周期内的估计信息系数（IC），以及Wilson置信区间下界。所有数值仅供展示——首次FDR决策批次于2026年10月运行。') }}
+      {{ t('The kernel is the web\'s memory of its own accuracy — graded, display-only. Each card shows one signal family\'s estimated information coefficient (IC) across horizons, with the Wilson confidence interval lower bound. All values are display-only estimates — the first FDR decision batch runs October 2026.',
+      '核心是网络对自身准确率的记忆——已评分，仅供展示。每张卡片显示一个信号族在不同周期内的估计信息系数（IC），以及Wilson置信区间下界。所有数值仅供展示——首次FDR决策批次于2026年10月运行。') }}
     </div>
     <div class="cm-loading" id="kf_loading">{{ t('Loading kernel data…', '加载核心数据中…') }}</div>
     <div class="kf-grid" id="cm_kf_grid">
@@ -319,14 +500,34 @@ body { padding-bottom:56px; }
 
 <script src="supabase.js"></script>
 <script src="auth.js"></script>
+<!-- Shared nav chrome: settings-gear (theme + language live inside it), account system, mega-menu. -->
+<script src="theme.js"></script>
 <script>
 (function () {
   'use strict';
 
+  // ── Shared memo cache (for ask-the-brain offline fallback) ─────────────────
+  var _memoCache = null;
+  // Cortex health state for hero chip
+  var _cortexOk = null; // true=ok, false=failed, null=unknown
+
+  function updateCortexChip(ok) {
+    _cortexOk = ok;
+    var chip = document.getElementById('chip_cortex');
+    var val  = document.getElementById('chip_cortex_val');
+    if (!chip || !val) return;
+    if (ok) {
+      chip.classList.add('nw-chip-ok');
+      chip.classList.remove('nw-chip-offline');
+      val.innerHTML = '<span class="l-en">OK</span><span class="l-zh">正常</span>';
+    } else {
+      chip.classList.add('nw-chip-offline');
+      chip.classList.remove('nw-chip-ok');
+      val.innerHTML = '<span class="l-en">OFFLINE</span><span class="l-zh">离线</span>';
+    }
+  }
+
   // ── Auth gate ──────────────────────────────────────────────────────────────
-  // Operator ruling 2026-07-05: the page is OPEN for now (no login wall).
-  // Flip REQUIRE_AUTH to true to restore the gate — the ask box keeps its own
-  // server-side auth (/api/ask returns 401 without a Supabase session) either way.
   var REQUIRE_AUTH = false;
   var authBooted = false;
 
@@ -346,41 +547,33 @@ body { padding-bottom:56px; }
   }
 
   document.getElementById('cm_signin_btn').onclick = function () {
-    if (window.MDXAuth && window.MDXAuth.openAuthModal) {
-      window.MDXAuth.openAuthModal();
-    }
+    if (window.MDXAuth && window.MDXAuth.open) window.MDXAuth.open('signin');
   };
 
-  // Boot: check Supabase session via MDXAuth (theme.js wires this).
-  // Use a polling approach — theme.js loads asynchronously.
   function waitForAuth(attempts) {
     attempts = attempts || 0;
-    if (window.MDXAuth) {
-      window.MDXAuth.onAuthStateChange(function (session) {
-        if (session) { showContent(); } else if (REQUIRE_AUTH) { showGate(); }
+    if (window.MDXAuth && typeof window.MDXAuth.onChange === 'function') {
+      // theme.js MDXAuth: onChange emits {user,event}; hasSession() for the initial state.
+      window.MDXAuth.onChange(function (st) {
+        if (st && st.user) { showContent(); } else if (REQUIRE_AUTH) { showGate(); }
       });
-      // Also check immediately
-      window.MDXAuth.getSession(function (session) {
-        if (session) { showContent(); }
-      });
+      if (typeof window.MDXAuth.hasSession === 'function' && window.MDXAuth.hasSession()) { showContent(); }
     } else if (attempts < 40) {
       setTimeout(function () { waitForAuth(attempts + 1); }, 150);
     }
   }
-  if (REQUIRE_AUTH) {
-    waitForAuth();
-  } else {
-    showContent();          // open access — no gate
-    waitForAuth();          // still wire the session for the ask box
-  }
+  if (REQUIRE_AUTH) { waitForAuth(); } else { showContent(); waitForAuth(); }
 
-  // ── Page init (runs once after auth confirmed) ─────────────────────────────
+  // ── Page init ─────────────────────────────────────────────────────────────
   function initPage() {
     setupSearch();
     setupLazyReveal();
     loadGraph();
+    loadDailyBrief();
+    loadMechanismPathways();
     loadMemo();
     loadKernelFamilies();
+    setupQuickTries();
   }
 
   // ── IntersectionObserver for lazy section reveal ───────────────────────────
@@ -392,10 +585,20 @@ body { padding-bottom:56px; }
     }
     var io = new IntersectionObserver(function (entries) {
       entries.forEach(function (e) {
-        if (e.isIntersecting) { e.target.classList.add('visible'); }
+        if (e.isIntersecting) e.target.classList.add('visible');
       });
     }, { threshold: 0.04 });
     sections.forEach(function (s) { io.observe(s); });
+  }
+
+  // ── Quick-try ticker chips ─────────────────────────────────────────────────
+  function setupQuickTries() {
+    document.querySelectorAll('.cm-quick-chip').forEach(function (chip) {
+      chip.addEventListener('click', function () {
+        var t = chip.dataset.t;
+        if (t) loadTicker(t);
+      });
+    });
   }
 
   // ── Ticker search ──────────────────────────────────────────────────────────
@@ -407,13 +610,25 @@ body { padding-bottom:56px; }
     var sugg = document.getElementById('cm_sugg');
     if (!q) return;
 
-    // Load stock index lazily
     function ensureIndex(cb) {
       if (_idx) { cb(_idx); return; }
       fetch('stockdata/index.json')
-        .then(function (r) { return r.json(); })
-        .then(function (d) { _idx = d; cb(d); })
-        .catch(function () { cb([]); });
+        .then(function (r) { if (!r.ok) throw new Error('bad'); return r.json(); })
+        .then(function (d) {
+          _idx = d;
+          var countEl = document.getElementById('cm_index_count');
+          if (countEl) {
+            var n = Array.isArray(d) ? d.length : 0;
+            countEl.innerHTML = '<span class="l-en">' + n + ' US tickers indexed</span><span class="l-zh">' + n + ' 个美股代码已建立索引</span>';
+            countEl.style.display = '';
+          }
+          cb(d);
+        })
+        .catch(function () {
+          var w = document.getElementById('cm_index_warn');
+          if (w) w.style.display = '';
+          cb([]);
+        });
     }
 
     q.addEventListener('input', function () {
@@ -423,10 +638,9 @@ body { padding-bottom:56px; }
       _searchTimer = setTimeout(function () {
         ensureIndex(function (idx) {
           var hits = idx.filter(function (r) {
-            return r.t.indexOf(val) === 0 ||
-              (r.n && r.n.toUpperCase().indexOf(val) >= 0);
+            return r.t.indexOf(val) === 0 || (r.n && r.n.toUpperCase().indexOf(val) >= 0);
           }).slice(0, 12);
-          renderSugg(hits, val);
+          renderSugg(hits);
         });
       }, 120);
     });
@@ -435,9 +649,9 @@ body { padding-bottom:56px; }
       var items = sugg.querySelectorAll('div');
       var sel = sugg.querySelector('div.sel');
       var idx = sel ? Array.prototype.indexOf.call(items, sel) : -1;
-      if (e.key === 'ArrowDown') { e.preventDefault(); var ni = Math.min(idx + 1, items.length - 1); items.forEach(function (x) { x.classList.remove('sel'); }); if (items[ni]) items[ni].classList.add('sel'); }
-      else if (e.key === 'ArrowUp') { e.preventDefault(); var pi = Math.max(idx - 1, 0); items.forEach(function (x) { x.classList.remove('sel'); }); if (items[pi]) items[pi].classList.add('sel'); }
-      else if (e.key === 'Enter') { if (sel) { loadTicker(sel.dataset.t); sugg.style.display = 'none'; q.value = sel.dataset.t; } }
+      if (e.key === 'ArrowDown') { e.preventDefault(); var ni = Math.min(idx+1, items.length-1); items.forEach(function(x){x.classList.remove('sel');}); if(items[ni])items[ni].classList.add('sel'); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); var pi = Math.max(idx-1,0); items.forEach(function(x){x.classList.remove('sel');}); if(items[pi])items[pi].classList.add('sel'); }
+      else if (e.key === 'Enter') { if(sel){loadTicker(sel.dataset.t);sugg.style.display='none';q.value=sel.dataset.t;} }
       else if (e.key === 'Escape') { sugg.style.display = 'none'; }
     });
 
@@ -445,7 +659,7 @@ body { padding-bottom:56px; }
       if (!q.contains(e.target) && !sugg.contains(e.target)) sugg.style.display = 'none';
     });
 
-    function renderSugg(hits, val) {
+    function renderSugg(hits) {
       if (!hits.length) { sugg.style.display = 'none'; return; }
       sugg.innerHTML = '';
       hits.forEach(function (r) {
@@ -460,14 +674,18 @@ body { padding-bottom:56px; }
   }
 
   function esc(s) {
-    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
   }
 
   // ── Load + render ticker committee ────────────────────────────────────────
   function loadTicker(ticker) {
-    // Pre-fill the ask-the-brain ticker context when a ticker is selected
     if (window._prefillAskTicker) window._prefillAskTicker(ticker);
-    var safe = ticker.replace(/=/g, '_').replace(/\^/g, '_');
+    // Hide quick-try chips once a ticker loads
+    var qt = document.getElementById('cm_quick_tries');
+    var es = document.getElementById('cm_empty_state');
+    if (qt) qt.style.display = 'none';
+    if (es) es.style.display = 'none';
+    var safe = ticker.replace(/=/g,'_').replace(/\^/g,'_');
     var view = document.getElementById('cm_ticker_view');
     view.innerHTML = '<div class="cm-loading" style="display:block">Loading ' + esc(ticker) + '…</div>';
     fetch('stockdata/' + safe + '.json')
@@ -499,15 +717,17 @@ body { padding-bottom:56px; }
     } else {
       html += '<div style="overflow-x:auto"><table class="prov-table">'
         + '<thead><tr>'
-        + '<th>Source</th><th>Family</th><th>Ladder</th><th data-tip-en="Shrunken information coefficient — correlation scale, typically &lt;1%" data-tip-zh="压缩信息系数——相关系数尺度，通常&lt;1%">Kernel IC</th><th data-tip-en="Wilson hit-rate CI lower bound — probability scale, not the same unit as Kernel IC" data-tip-zh="Wilson命中率置信区间下界——概率尺度，与IC单位不同">Wilson LB<br><small style=\'font-weight:normal;font-size:10px\'>(hit-rate)</small></th><th>Armed</th><th>Staleness</th><th>Direction</th><th data-tip-en="Role: veto=short/avoid, alpha=sized long conviction, sizing=real money, timing=level-vs-timing (W2+), context=graded-but-unsized. Falsifier tooltip available when source carries one." data-tip-zh="角色：否决=做空/回避，阿尔法=有仓位的多头判断，仓位=实际资金，择时=时机判断(W2+)，背景=已评分但无仓位">Role</th><th>Graded</th><th>Details</th>'
+        + '<th>Source</th><th>Family</th><th>Ladder</th>'
+        + '<th data-tip-en="Shrunken information coefficient — correlation scale, typically &lt;1%" data-tip-zh="压缩信息系数——相关系数尺度，通常&lt;1%">Kernel IC</th>'
+        + '<th data-tip-en="Wilson hit-rate CI lower bound — probability scale, not the same unit as Kernel IC" data-tip-zh="Wilson命中率置信区间下界——概率尺度，与IC单位不同">Wilson LB<br><small style=\'font-weight:normal;font-size:10px\'>(hit-rate)</small></th>'
+        + '<th>Armed</th><th>Staleness</th><th>Direction</th>'
+        + '<th data-tip-en="Role: veto=short/avoid, alpha=sized long conviction, sizing=real money, timing=level-vs-timing (W2+), context=graded-but-unsized." data-tip-zh="角色：否决=做空/回避，阿尔法=有仓位的多头判断，仓位=实际资金，择时=时机判断(W2+)，背景=已评分但无仓位">Role</th>'
+        + '<th>Graded</th><th>Details</th>'
         + '</tr></thead><tbody>';
-      provRows.forEach(function (row, i) {
-        html += renderProvRow(row, i);
-      });
+      provRows.forEach(function (row, i) { html += renderProvRow(row, i); });
       html += '</tbody></table></div>';
     }
 
-    // Display-only notice
     html += '<p style="font-size:11px;color:var(--muted);margin-top:10px">'
       + '<em>All kernel IC values are display-only estimates. First FDR decision batch: October 2026. '
       + 'US tickers only (v1). is_display_only = true on all rows.</em></p>';
@@ -529,10 +749,10 @@ body { padding-bottom:56px; }
     var ladderClass = 'tier-' + ladderState;
 
     var icVal = kern.shrunken_ic;
-    var icStr = (icVal != null) ? ('<span class="kernel-ic">' + (icVal * 100).toFixed(3) + '%</span>') : '<span class="kernel-null">—</span>';
+    var icStr = (icVal != null) ? ('<span class="kernel-ic">' + (icVal*100).toFixed(3) + '%</span>') : '<span class="kernel-null">—</span>';
 
     var wlbVal = kern.wilson_ci_low;
-    var wlbStr = (wlbVal != null) ? ('<span class="kernel-ic">' + (wlbVal * 100).toFixed(1) + '%</span>') : '<span class="kernel-null">—</span>';
+    var wlbStr = (wlbVal != null) ? ('<span class="kernel-ic">' + (wlbVal*100).toFixed(1) + '%</span>') : '<span class="kernel-null">—</span>';
 
     var armedVal = kern.armed;
     var armedStr = (armedVal === true) ? '<span class="armed-yes">Yes</span>' : (armedVal === false ? '<span class="armed-no">No</span>' : '<span class="kernel-null">—</span>');
@@ -550,92 +770,280 @@ body { padding-bottom:56px; }
                : (dir === 0) ? '<span class="dir-neu">0</span>'
                : '<span class="kernel-null">—</span>';
 
-    // W1 Role badge — precedence: veto > alpha > sizing > timing > context
     var roleKey = row.role || 'context';
     var roleEn  = row.role_en || roleKey;
     var roleZh  = row.role_zh || roleEn;
-    var roleEsc = esc(roleEn);
     var roleBadge = '<span class="role-badge role-' + esc(roleKey) + '">'
-      + '<span class="l-en">' + roleEsc + '</span>'
+      + '<span class="l-en">' + esc(roleEn) + '</span>'
       + '<span class="l-zh">' + esc(roleZh) + '</span>'
       + '</span>';
-    // Falsifier tooltip — data-tip-en / data-tip-zh, NO title= (CI guard: check_title_i18n.py)
-    // Reuse EN text in ZH when no ZH source (conservative default per open-question ruling).
-    // Attribute-escape the text (& < > " ') to prevent XSS in data-tip attrs.
     if (row.falsifier) {
       var ftEsc = String(row.falsifier)
-        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+        .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
       roleBadge = '<span class="role-badge role-' + esc(roleKey) + '" data-tip-en="' + ftEsc + '" data-tip-zh="' + ftEsc + '">'
-        + '<span class="l-en">' + roleEsc + '</span>'
+        + '<span class="l-en">' + esc(roleEn) + '</span>'
         + '<span class="l-zh">' + esc(roleZh) + '</span>'
         + '</span>';
     }
 
     var gradedStr = row.outcome_graded ? '<span class="stale-warn">Yes</span>' : '<span class="kernel-null">No</span>';
 
-    // Detail block
     var detailPairs = [];
     if (row.as_of) detailPairs.push(['as_of', row.as_of]);
     if (row.spine_ref) detailPairs.push(['signal_id', row.spine_ref]);
     if (row.graded_at) detailPairs.push(['graded_at', row.graded_at]);
-    if (row.graded_5d_excess != null) detailPairs.push(['5d excess', (row.graded_5d_excess * 100).toFixed(2) + '%']);
+    if (row.graded_5d_excess != null) detailPairs.push(['5d excess', (row.graded_5d_excess*100).toFixed(2)+'%']);
     if (row.convergence_score != null) detailPairs.push(['convergence', String(row.convergence_score)]);
-    if (row.channels) detailPairs.push(['channels', (row.channels || []).join(', ')]);
+    if (row.channels) detailPairs.push(['channels', (row.channels||[]).join(', ')]);
     if (row.edge_score != null) detailPairs.push(['edge_score', String(row.edge_score)]);
     if (row.state) detailPairs.push(['state', row.state]);
     if (row.board_score != null) detailPairs.push(['board_score', String(row.board_score)]);
-    if (row.basket_label) detailPairs.push(['basket', row.basket_id + ' · ' + row.basket_label + ' (' + (row.basket_score || '—') + ')']);
+    if (row.basket_label) detailPairs.push(['basket', row.basket_id+' · '+row.basket_label+' ('+( row.basket_score||'—')+')']);
     if (row.confluence != null) detailPairs.push(['confluence', String(row.confluence)]);
-    if (row.episode_direction) detailPairs.push(['oracle_episode', row.basket_id + ' ' + row.episode_direction + ' onset=' + (row.onset || '—')]);
+    if (row.episode_direction) detailPairs.push(['oracle_episode', row.basket_id+' '+row.episode_direction+' onset='+(row.onset||'—')]);
     if (ql.note) detailPairs.push(['note', ql.note]);
     detailPairs.push(['is_display_only', 'true']);
 
-    var detailHtml = detailPairs.map(function (p) {
-      return '<span style="margin-right:12px"><strong>' + esc(p[0]) + ':</strong> ' + esc(p[1]) + '</span>';
-    }).join('');
+    var detailHtml = detailPairs.map(function(p){ return '<span style="margin-right:12px"><strong>'+esc(p[0])+':</strong> '+esc(p[1])+'</span>'; }).join('');
 
     return '<tr>'
-      + '<td><strong>' + esc(row.claim_source || '') + '</strong></td>'
-      + '<td>' + esc(row.family || '') + '</td>'
-      + '<td><span class="tier-badge ' + ladderClass + '">' + ladderState + '</span>'
-        + (ql.grandfathered ? ' <span style="font-size:10px;color:var(--muted)">(legacy)</span>' : '')
-        + '</td>'
-      + '<td>' + icStr + '</td>'
-      + '<td>' + wlbStr + '</td>'
-      + '<td>' + armedStr + '</td>'
-      + '<td>' + staleStr + '</td>'
-      + '<td>' + dirStr + '</td>'
-      + '<td>' + roleBadge + '</td>'
-      + '<td>' + gradedStr + '</td>'
-      + '<td><span class="source-expand">▼ source</span>'
-        + '<div class="source-detail">' + detailHtml + '</div></td>'
+      + '<td><strong>'+esc(row.claim_source||'')+'</strong></td>'
+      + '<td>'+esc(row.family||'')+'</td>'
+      + '<td><span class="tier-badge '+ladderClass+'">'+ladderState+'</span>'+(ql.grandfathered?' <span style="font-size:10px;color:var(--muted)">(legacy)</span>':'')+'</td>'
+      + '<td>'+icStr+'</td>'
+      + '<td>'+wlbStr+'</td>'
+      + '<td>'+armedStr+'</td>'
+      + '<td>'+staleStr+'</td>'
+      + '<td>'+dirStr+'</td>'
+      + '<td>'+roleBadge+'</td>'
+      + '<td>'+gradedStr+'</td>'
+      + '<td><span class="source-expand">▼ source</span><div class="source-detail">'+detailHtml+'</div></td>'
       + '</tr>';
   }
 
-  // ── Living confluence graph ────────────────────────────────────────────────
+  // ── Deterministic PRNG (mulberry32) ────────────────────────────────────────
+  function mulberry32(seed) {
+    return function() {
+      seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+      var t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+
+  // ── Living synapse map (curated neural-web engine) ────────────────────────
   var _graphData = null;
+  var _graphPositions = null;
+  var _graphNodes = null;
+  var _graphEdges = null;
+  var _graphView = { scale: 1, tx: 0, ty: 0 };
+  var _selectedNode = null;
+  var _graphRaf = null;
+  var _graphPhase = 0;
+  var _graphPulses = [];
+  var _graphDust = [];
+  var _graphSpawnTimer = 0;
+  var _graphReducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var _graphDpr = Math.min(window.devicePixelRatio || 1, 2);
+  var _graphHovered = null;
+  var _tooltipThrottle = false;
+  var _graphShowWiring = false;
+  var _graphDefaultNodes = [];
+  var _graphDefaultEdges = [];
+  var _graphWiringNodes = [];
+  var _graphWiringEdges = [];
+
+  // ── Curated display maps ──────────────────────────────────────────────────
+  var ENGINE_NAMES_EN = {
+    'altdata': 'Alt-Data', 'altdata_conv': 'Alt-Data Convergence',
+    'ca_board': 'Canada Board', 'china_news': 'China News',
+    'cn_board': 'China Board', 'cn_importance_v0': 'China Importance',
+    'cn_importance_v0_pit': 'China Importance (PIT)',
+    'desk:ai_desk': 'AI Desk', 'hk_board': 'Hong Kong Board',
+    'options_entry': 'Options Entry', 'placebo': 'Placebo (control)',
+    'policy': 'Policy', 'radar': 'Divergence Radar',
+    'reflex.cortex_attention': 'Cortex Attention',
+    'track_record': 'Track Record', 'us_board': 'US Board',
+    'us_importance_v0': 'US Importance', 'us_importance_v0_pit': 'US Importance (PIT)'
+  };
+  var ENGINE_NAMES_ZH = {
+    'altdata': '另类数据', 'altdata_conv': '另类数据汇合',
+    'ca_board': '加拿大板', 'china_news': '中国新闻',
+    'cn_board': '中国板', 'cn_importance_v0': '中国重要度',
+    'cn_importance_v0_pit': '中国重要度(PIT)',
+    'desk:ai_desk': 'AI 台', 'hk_board': '香港板',
+    'options_entry': '期权入场', 'placebo': '安慰剂(对照)',
+    'policy': '政策', 'radar': '背离雷达',
+    'reflex.cortex_attention': '皮层注意',
+    'track_record': '历史战绩', 'us_board': '美股板',
+    'us_importance_v0': '美股重要度', 'us_importance_v0_pit': '美股重要度(PIT)'
+  };
+
+  // Sector / complex / regime / thesis Chinese labels. The confluence graph ships
+  // labelZh:null for every node, so zh labels are resolved here (mirrors
+  // ENGINE_NAMES_ZH). Keyed by node id (sectors/complex/regime) or sector-key (thesis).
+  var SECTOR_NAMES_ZH = {
+    'complex:ai_compute': 'AI算力', 'complex:software': '软件与云',
+    'complex:healthcare_defensive': '医疗防御', 'complex:consumer_staples_defensive': '必需消费防御',
+    'complex:energy_commodities': '能源与大宗', 'complex:financials_rates': '金融与利率',
+    'complex:long_duration_growth': '长久期成长与地产', 'complex:short_duration_value': '短久期价值与工业',
+    'sector:xlk': '科技', 'sector:xlc': '通讯服务', 'sector:xly': '非必需消费',
+    'sector:xlp': '必需消费', 'sector:xlv': '医疗保健', 'sector:xlf': '金融',
+    'sector:xli': '工业', 'sector:xlb': '原材料', 'sector:xle': '能源',
+    'sector:xlre': '房地产', 'sector:xlu': '公用事业'
+  };
+  var REGIME_NAMES_ZH = {
+    'regime:__all__': '所有周期',
+    'regime:Q1': '理想增长 (Q1)', 'regime:Q2': '再通胀 (Q2)',
+    'regime:Q3': '滞胀 (Q3)', 'regime:Q4': '增长恐慌/通缩 (Q4)'
+  };
+  var THESIS_SK_ZH = {
+    'ai_agents': 'AI智能体', 'ai_software': 'AI软件', 'crypto_rails': '加密轨道',
+    'defense': '国防', 'defensives': '防御股', 'housing': '住房', 'mag7': '七巨头',
+    'non_ai_software': '非AI软件', 'nuclear_power': '核电',
+    'payments_fintech': '支付与金融科技', 'power_grid': '电网',
+    'reshoring': '制造回流', 'retail': '零售', 'travel': '旅游',
+    'us_sector_discretionary': '非必需消费(美)', 'us_sector_utilities': '公用事业(美)'
+  };
+
+  // Map engine bare id (without engine: prefix) to lobe
+  var ENGINE_LOBE = {
+    'us_board': 'us', 'us_importance_v0': 'us', 'us_importance_v0_pit': 'us',
+    'radar': 'us', 'track_record': 'us',
+    'cn_board': 'intl', 'cn_importance_v0': 'intl', 'cn_importance_v0_pit': 'intl',
+    'china_news': 'intl', 'hk_board': 'intl', 'ca_board': 'intl',
+    'altdata': 'signals', 'altdata_conv': 'signals', 'options_entry': 'signals',
+    'policy': 'meta', 'reflex.cortex_attention': 'meta',
+    'placebo': 'meta', 'desk:ai_desk': 'meta'
+  };
+
+  var LOBE_COLORS = {
+    us: '#4da3ff', intl: '#f0883e', signals: '#a78bfa', meta: '#2dd4bf',
+    core: '#e2e8f0',
+    regime: '#f472b6', sector: '#f5b301', complex: '#f5b301',
+    thesis: '#7dd3fc', signal: '#94a3b8',
+    'wiring-module': '#8b7cf6', 'wiring-artifact': '#38bdf8'
+  };
+
+  var COMPLEX_MEMBERS = {
+    'complex:ai_compute': ['sector:xlk'],
+    'complex:software': ['sector:xlk', 'sector:xlc'],
+    'complex:healthcare_defensive': ['sector:xlv'],
+    'complex:consumer_staples_defensive': ['sector:xlp'],
+    'complex:energy_commodities': ['sector:xle', 'sector:xlb'],
+    'complex:financials_rates': ['sector:xlf'],
+    'complex:long_duration_growth': ['sector:xlre', 'sector:xlu'],
+    'complex:short_duration_value': ['sector:xli', 'sector:xly']
+  };
+  // Reverse: gics → complex
+  var GICS_TO_COMPLEX = {};
+  Object.keys(COMPLEX_MEMBERS).forEach(function(cx){
+    COMPLEX_MEMBERS[cx].forEach(function(gics){ if (!GICS_TO_COMPLEX[gics]) GICS_TO_COMPLEX[gics] = cx; });
+  });
+
+  // Lobe anchor angles (degrees from center) and radii (normalized)
+  // FIX 5: increased r from 0.26 → 0.34 to push lobes apart and fill the frame
+  var LOBE_ANCHORS = {
+    us:      { angle: 200, r: 0.34 },
+    intl:    { angle: 320, r: 0.34 },
+    signals: { angle: 90,  r: 0.34 },
+    meta:    { angle: 20,  r: 0.34 }
+  };
+
+  // Title-case a slug, then repair common acronyms the naive \b\w pass mangles
+  // ("ai_agents" → "Ai Agents" → "AI Agents"). Used by every fallback label path.
+  function titleCaseFix(s) {
+    s = String(s).replace(/\b\w/g, function(c){ return c.toUpperCase(); });
+    return s
+      .replace(/\bAi\b/g, 'AI').replace(/\bUs\b/g, 'US').replace(/\bIv\b/g, 'IV')
+      .replace(/\bDoi\b/g, 'DOI').replace(/\bGex\b/g, 'GEX').replace(/\bIpo\b/g, 'IPO')
+      .replace(/\bEtf\b/g, 'ETF').replace(/\bHk\b/g, 'HK').replace(/\bCn\b/g, 'CN')
+      .replace(/\bPit\b/g, 'PIT').replace(/\bFx\b/g, 'FX');
+  }
+
+  function engineLabelEn(id) {
+    var bare = id.replace(/^engine:/, '');
+    if (ENGINE_NAMES_EN[bare]) return ENGINE_NAMES_EN[bare];
+    if (ENGINE_NAMES_EN[id])   return ENGINE_NAMES_EN[id];
+    // Fallback: strip common prefixes, titleCase
+    var s = bare.replace(/^(desk:|reflex\.)/, '').replace(/[_:]/g,' ');
+    s = s.replace(/\bv0\b/g,'').replace(/\bpit\b/i,'(PIT)').trim();
+    return titleCaseFix(s);
+  }
+  function engineLabelZh(id) {
+    var bare = id.replace(/^engine:/, '');
+    return ENGINE_NAMES_ZH[bare] || ENGINE_NAMES_ZH[id] || engineLabelEn(id);
+  }
+
+  function nodeDisplayColor(n) {
+    if (n.type === 'core') return LOBE_COLORS.core;
+    if (n.type === 'hub')  return LOBE_COLORS.sector; // sectors_hub → sector amber
+    if (n.type === 'engine') return LOBE_COLORS[n._lobe] || '#4da3ff';
+    if (n.type === 'regime') return LOBE_COLORS.regime;
+    if (n.type === 'sector' || n.type === 'complex') return LOBE_COLORS.sector;
+    if (n.type === 'thesis') return LOBE_COLORS.thesis;
+    if (n.type === 'signal') return LOBE_COLORS.signal;
+    if (n.type === 'wiring-module') return LOBE_COLORS['wiring-module'];
+    if (n.type === 'wiring-artifact') return LOBE_COLORS['wiring-artifact'];
+    return '#94a3b8';
+  }
+
+  function nodeRadius(n) {
+    if (n.type === 'core')   return 18; // FIX 6: r~18
+    if (n.type === 'hub')    return 11; // FIX 2: hub nodes r~11
+    if (n.type === 'engine') {
+      var rows = (n.meta && n.meta.n_spine_rows) ? n.meta.n_spine_rows : 1;
+      return Math.min(18, 7 + 2.0 * Math.log10(rows + 1));
+    }
+    if (n.type === 'regime')           return 9;
+    if (n.type === 'complex')          return 8;
+    if (n.type === 'sector')           return 6;
+    if (n.type === 'thesis')           return 5;
+    if (n.type === 'signal')           return 4.5; // FIX 3: r~4.5
+    if (n.type === 'wiring-module')    return 3.5;
+    if (n.type === 'wiring-artifact')  return 3;
+    return 4;
+  }
+
+  var TYPE_LABEL_EN = { core:'CORE', hub:'HUB', engine:'ENGINE', regime:'REGIME', complex:'COMPLEX', sector:'SECTOR', thesis:'THESIS', signal:'SIGNAL', 'wiring-module':'MODULE', 'wiring-artifact':'ARTIFACT' };
+  var TYPE_LABEL_ZH = { core:'核心', hub:'枢纽', engine:'引擎', regime:'周期', complex:'复合板块', sector:'板块', thesis:'论点', signal:'信号', 'wiring-module':'模块', 'wiring-artifact':'工件' };
 
   function loadGraph() {
     document.getElementById('graph_loading').style.display = 'block';
     fetch('neuralwebdata/confluence_graph.json')
-      .then(function (r) { return r.json(); })
+      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
       .then(function (d) {
         _graphData = d;
         document.getElementById('graph_loading').style.display = 'none';
-        renderGraph(d);
+        initGraph(d);
       })
-      .catch(function (e) {
-        document.getElementById('graph_loading').textContent = 'Graph unavailable.';
+      .catch(function () {
+        document.getElementById('graph_loading').textContent = 'Synapse map unavailable.';
       });
   }
 
-  function renderGraph(data) {
-    var canvas = document.getElementById('graph_canvas');
-    var ctx = canvas.getContext('2d');
-    var nodes = data.nodes || [];
-    var edges = data.edges || [];
-    var asof = data.asof || '';
+  // ── Curated endpoint names for materialized synapse nodes ────────────────
+  var ENDPOINT_NAMES = {
+    'data/regime/latest.json':                            ['Regime State',            '周期状态'],
+    'data/market_state/latest.json':                      ['Market State',             '市场状态'],
+    'data/regime/latest.json:regime_vector':              ['Regime Vector',            '周期向量'],
+    'data/regime/latest.json:risk_radar':                 ['Risk Radar',               '风险雷达'],
+    'data/regime/latest.json:vol_regime':                 ['Vol Regime',               '波动周期'],
+    'data/regime/latest.json:cross_asset_confirm (bonds/FX)': ['Cross-Asset Confirm', '跨资产确认'],
+    'site/basketdata/oracle_state.json':                  ['Oracle State',             'Oracle状态'],
+    'data/sector_central/calls.parquet':                  ['Sector Central',           '板块中枢'],
+    'site/intelligence/briefing.json':                    ['Briefing',                 '简报'],
+    'site/intelligence/by_ticker.json (demand/tape)':     ['Ticker Intel',             '个股情报'],
+    'us_board.buy_lane':                                  ['US Board · Buy',           '美股板·买入'],
+    'us_board.watch_lane':                                ['US Board · Watch',         '美股板·观察'],
+    'us_board.extended_names':                            ['US Board · Extended',      '美股板·延伸'],
+    'options.skew_decel':                                 ['Skew Decel',               '偏斜减速'],
+    'options.skew_rising':                                ['Skew Rising',              '偏斜上升'],
+    'options.skew_rising_or_call_wall_pin':               ['Skew / Call-Wall Pin',     '偏斜/看涨墙'],
+    'options.ivspread_positive_call_doi':                 ['IV Spread · Call DOI',     'IV价差·看涨DOI']
+  };
+  var _GENERIC_SEGS = /^(latest|state|current|index|calls|data|summary|snapshot)$/i;
 
     // Filter to meaningful nodes (engines, sectors, regimes; skip most thesis/episode)
     var TYPE_PRIORITY = { engine: 0, regime: 1, sector: 2, thesis: 3, episode: 4 };
@@ -675,82 +1083,1315 @@ body { padding-bottom:56px; }
       } else {
         subsetEl.textContent = 'Showing ' + N_shown + ' of ' + M_total + ' nodes (engines, sectors, regimes, macro, and the theses/episodes participating in confirms/contradicts/headwind/tailwind edges); structural feeds edges hidden.';
       }
+  // Cleaned (delimiters→spaces), UNTRUNCATED segment for an artifact/module id.
+  // Shared by the EN labeler (which titleCases + truncates) and the ZH labeler
+  // (which translates then caps) so zh never sees a mid-word "…" fragment.
+  function _artifactSeg(id) {
+    var raw = id.replace(/^(module:|artifact:)/, '');
+    // subkey suffix wins (e.g. "…/latest.json:regime_vector")
+    var colonIdx = raw.indexOf(':');
+    if (colonIdx !== -1) {
+      var subkey = raw.slice(colonIdx + 1).replace(/[_\-./<>]/g, ' ').trim();
+      if (subkey.length >= 3) return subkey.replace(/\bslew\b/gi, 'Skew');
+    }
+    var noExt = raw.replace(/\.(json|parquet|py|csv)$/, '');
+    var parts = noExt.split('/');
+    var seg = parts[parts.length - 1] || '';
+    if (_GENERIC_SEGS.test(seg) || seg.length < 3) seg = parts[parts.length - 2] || seg;
+    return seg.replace(/[_\-./<>]/g, ' ').trim().replace(/\bslew\b/gi, 'Skew');
+  }
+
+  function friendlyArtifactLabel(id) {
+    var raw = id.replace(/^(module:|artifact:)/, '');
+    if (ENDPOINT_NAMES[raw]) return ENDPOINT_NAMES[raw][0];
+    if (ENDPOINT_NAMES[id])  return ENDPOINT_NAMES[id][0];
+    var seg = _artifactSeg(id);
+    if (seg.length > 20) seg = seg.slice(0, 18) + '…';
+    return titleCaseFix(seg);
+  }
+
+  // Token dictionary for translating auto-derived wiring/artifact labels to zh.
+  // These labels come from module/artifact IDs (file paths, data-artifact names),
+  // so we translate word-by-word and join without spaces (Chinese has none);
+  // unknown one-off tokens stay as-is, acronyms/brands map to themselves, and
+  // stray file-extension tokens map to '' so they drop out.
+  var ARTIFACT_WORD_ZH = {
+    'build':'构建','site':'站点','ledger':'账本','regime':'周期','china':'中国',
+    'state':'状态','states':'状态','radar':'雷达','sector':'板块','subsector':'子板块',
+    'oracle':'Oracle','options':'期权','hold':'持有','long':'长期','cycle':'周期','cycles':'周期',
+    'altdata':'另类数据','signal':'信号','signals':'信号','desk':'台','log':'日志','intel':'情报',
+    'intelligence':'智能','history':'历史','track':'追踪','audit':'审计','panel':'面板','board':'板',
+    'pattern':'形态','reversion':'反转','reversal':'反转','brain':'大脑','phase0':'阶段0',
+    'operator':'操作员','index':'指数','neuralweb':'智脑','spine':'脊梁',
+    'thesis':'论点','theses':'论点','forward':'前瞻','fwd':'前瞻','foresight':'前瞻',
+    'validate':'验证','validation':'验证','cortex':'皮层','context':'上下文','record':'记录',
+    'qledger':'Q账本','qbus':'Q总线','basket':'篮子','baskets':'篮子','basketdata':'篮子数据',
+    'central':'中枢','news':'新闻','entry':'入场','ticker':'代码','intl':'国际',
+    'funnel':'漏斗','risk':'风险','vol':'波动','registry':'登记表','event':'事件',
+    'priors':'先验','prior':'先验','factor':'因子','research':'研究','hub':'枢纽','daily':'每日',
+    'flow':'流','gate':'闸门','kernel':'核心','insider':'内部人','stock':'股票',
+    'snapshot':'快照','snapshots':'快照','live':'实时','covariance':'协方差','factory':'工厂',
+    'name':'名称','theme':'主题','brief':'简报','briefing':'简报','grade':'评分','grades':'评分',
+    'grader':'评分器','grading':'评分','score':'评分','scorer':'评分器','scorecard':'记分卡',
+    'tape':'盘口','expect':'预期','expectation':'预期','anticipation':'预期','drift':'漂移',
+    'manifest':'清单','mastermind':'操盘大脑','sensors':'传感器','allocation':'配置',
+    'narrative':'叙事','reflex':'反射','reflexivity':'反身性','firings':'触发','fire':'触发',
+    'hazard':'危险','master':'主','library':'库','outcomes':'结果','results':'结果','result':'结果',
+    'exposure':'敞口','attention':'注意','importance':'重要度','special':'特殊','breadth':'广度',
+    'qual':'质化','overlay':'叠加','push':'推送','rule':'规则','shadow':'影子','health':'健康',
+    'healthcheck':'健康检查','backfill':'回填','rotation':'轮动','ruler':'标尺','experiments':'实验',
+    'experiment':'实验','queue':'队列','polygon':'Polygon','demand':'需求','sleeve':'分段',
+    'trial':'试验','claim':'声明','claims':'声明','accountability':'问责','closure':'闭合',
+    'confluence':'汇聚','situations':'情形','situation':'情形','seed':'种子','leadership':'领导力',
+    'study':'研究','filter':'过滤','ops':'运维','sanity':'合理性','impulse':'脉冲','calibrate':'校准',
+    'backtest':'回测','alerts':'警报','alert':'警报','run':'运行','pulse':'脉冲','accrual':'累积',
+    'calls':'调用','latest':'最新','promotion':'晋升','half':'半','policy':'政策','intent':'意图',
+    'coverage':'覆盖','fetch':'获取','dead':'死','prices':'价格','price':'价格','truths':'真值',
+    'whitehouse':'白宫','feed':'数据流','feeds':'馈送','monitor':'监控','earliness':'提前度',
+    'ivspread':'IV价差','contradictions':'矛盾','contra':'反向','read':'读取','benchmark':'基准',
+    'missing':'缺失','ontology':'本体','falsifiers':'证伪','falsifier':'证伪','clocks':'时钟',
+    'moat':'护城河','decisions':'决策','decision':'决策','summaries':'摘要','summary':'摘要',
+    'contracts':'合约','contract':'合约','skew':'偏斜','report':'报告','lab':'实验室',
+    'standouts':'突出','turn':'转折','thematic':'主题','dispersion':'离散','lagging':'滞后',
+    'review':'审查','reviews':'审查','canada':'加拿大','labels':'标签','label':'标签','group':'组',
+    'capital':'资本','plus':'加','world':'世界','governance':'治理','country':'国家',
+    'avoid1':'回避1','commodity':'商品','species':'物种','spvector':'SP向量','changes':'变更',
+    'freeze':'冻结','override':'覆盖','discovery':'发现','market':'市场','vector':'向量',
+    'archive':'归档','ca':'加拿大','hk':'香港','cn':'中国','by':'按','world':'世界',
+    'bottom':'底部','per':'每','graph':'图','memo':'备忘录','membership':'成员',
+    'archetypes':'原型','probation':'察看','sp1500':'标普1500','sp':'标普','delta':'差值',
+    // acronyms / brands / region+version codes kept as-is
+    'us':'美国','ai':'AI','iv':'IV','fx':'FX','etf':'ETF','ipo':'IPO','ttl':'TTL','ic':'IC',
+    'hmm':'HMM','btc':'BTC','gex':'GEX','pit':'PIT','bd':'BD','dt':'DT','lh':'LH','p':'P',
+    'c4':'C4','v0':'v0','v1':'v1','v2':'v2',
+    // long-tail meaningful words (each appears once or twice across artifact ids)
+    'value':'价值','page':'页','standout':'突出','bridge':'桥接','coherence':'一致性',
+    'financial':'金融','catalyst':'催化剂','sentiment':'情绪','families':'系列','family':'系列',
+    'addons':'附加','conditional':'条件','cells':'单元','froth':'泡沫','fragility':'脆性',
+    'cross':'交叉','asset':'资产','confirm':'确认','confirmers':'确认者','coordinates':'坐标',
+    'archetype':'原型','notify':'通知','common':'通用','ask':'问询','strategies':'策略',
+    'strategy':'策略','machine':'机器','map':'图谱','current':'当前','emergence':'涌现',
+    'hypothesis':'假设','hypotheses':'假设','inbox':'收件箱','markets':'市场','golden':'黄金',
+    'metabolism':'代谢','collinearity':'共线性','check':'检查','registration':'注册',
+    'keystone':'基石','position':'仓位','replay':'回放','reconstitution':'重构','dashboard':'仪表盘',
+    'timing':'择时','calibration':'校准','sectors':'板块','conviction':'信念','survivorship':'幸存',
+    'nonsurvivor':'非幸存','duel':'对决','sizes':'规模','action':'动作','actions':'动作',
+    'dedup':'去重','store':'存储','measurement':'测量','measure':'测量','book':'账簿','emit':'发出',
+    'export':'导出','studies':'研究','expansion':'扩张','evaluate':'评估','tilt':'倾斜',
+    'congress':'国会','filters':'过滤','fundamentals':'基本面','activity':'活动','playbook':'操作手册',
+    'macro':'宏观','entities':'实体','recovery':'复苏','plane':'面','analysis':'分析','bus':'总线',
+    'predictions':'预测','triage':'分诊','base':'基础','effect':'效应','scan':'扫描','decay':'衰减',
+    'midsmall':'中小','compounder':'复利者','features':'特征','feature':'特征','universe':'范围',
+    'communique':'公报','diff':'差异','candidates':'候选','cascade':'级联','server':'服务器',
+    'migrate':'迁移','timeline':'时间线','basis':'基差','quality':'质量','poller':'轮询器',
+    'direction':'方向','publish':'发布','screen':'筛选','holdings':'持仓','killtest':'击杀测试',
+    'quad':'象限','register':'登记','test':'测试','wiring':'布线','stamps':'标记','stamp':'标记',
+    'stamper':'标记器','fit':'拟合','authority':'权威','refresh':'刷新','stale':'过期','query':'查询',
+    'items':'项目','missed':'错过','shock':'冲击','monthly':'月度','model':'模型','models':'模型',
+    'lake':'数据湖','selfheal':'自愈','ingest':'摄取','committee':'委员会','enriched':'丰富',
+    'chain':'链','paper':'论文','member':'成员','life':'寿命','lives':'衰期','lockup':'锁定',
+    'kill':'击杀','requeue':'重排队','retro':'回溯','spotlight':'聚光','incremental':'增量',
+    'factors':'因子','great':'优质','company':'公司','trap':'陷阱','reflexes':'反射',
+    'tripwires':'绊线','earnings':'财报','transitions':'转换','transition':'转换','command':'指挥',
+    'watchlist':'自选','nightly':'每夜','sentinel':'哨兵','detail':'明细','promises':'承诺',
+    'stats':'统计','logs':'日志','open':'开放','passport':'通行证','estimates':'估计','estimate':'估计',
+    'timemachine':'时光机','sits':'特殊事件','conflict':'冲突','wall':'墙','pin':'钉','relief':'缓解',
+    'washout':'冲刷','front':'前端','emergent':'涌现','sleeves':'分段','recrawl':'重爬','official':'官方',
+    'binder':'装订','catalysts':'催化剂','sample':'样本','one':'一','tune':'调优','retire':'退役',
+    'gov':'政府','eff':'有效','congress':'国会','lockups':'锁定','anticipation':'预期',
+    // acronyms / proper nouns kept uppercase (so they don't render as lowercase mush)
+    'nfci':'NFCI','ohlcv':'OHLCV','reer':'REER','cnh':'CNH','mtf':'MTF','ui':'UI','doi':'DOI',
+    'gexr':'GEX','gamma':'Gamma','vanna':'Vanna','charm':'Charm','quiver':'Quiver','openfda':'OpenFDA',
+    'clinicaltrials':'临床试验','r2':'R2','nw':'智脑','placebo':'安慰剂','ipo':'IPO',
+    // stray file-extension / noise tokens → drop
+    'json':'','parquet':'','csv':'','py':'','md':'','js':'','j2':'','html':'','jsonl':'','yml':'','sql':''
+  };
+  function zhTokens(engLabel) {
+    // Word-by-word zh translation of an English friendly label. Translated (CJK)
+    // tokens pack with no space; unknown one-off tokens stay as-is, and a space is
+    // kept between two consecutive English tokens so rare untranslated runs stay
+    // readable ("Great Company Trap") instead of mushing ("greatcompanytrap").
+    if (!engLabel) return engLabel;
+    var res = '';
+    String(engLabel).split(/\s+/).forEach(function(w){
+      var zh = ARTIFACT_WORD_ZH[w.toLowerCase().replace(/…+$/, '')];
+      var piece = zh != null ? zh : w;
+      if (piece === '') return; // dropped token (file-ext / noise)
+      if (res && /[A-Za-z0-9]$/.test(res) && /^[A-Za-z0-9]/.test(piece)) res += ' ';
+      res += piece;
+    });
+    return res || engLabel;
+  }
+
+  function friendlyArtifactLabelZh(id) {
+    var raw = id.replace(/^(module:|artifact:)/, '');
+    if (ENDPOINT_NAMES[raw]) return ENDPOINT_NAMES[raw][1];
+    if (ENDPOINT_NAMES[id])  return ENDPOINT_NAMES[id][1];
+    var zh = zhTokens(_artifactSeg(id));   // translate the UNTRUNCATED segment
+    if (zh.length > 12) zh = zh.slice(0, 11) + '…';
+    return zh;
+  }
+
+  // Designated lead engine per lobe (fallback: first engine in lobe)
+  var LOBE_LEAD = { us: 'engine:us_board', intl: 'engine:cn_board', signals: 'engine:altdata', meta: 'engine:policy' };
+
+  // Endpoint-to-cluster routing (FIX 3)
+  function endpointCluster(id, allRegimesId, defNodeSet) {
+    var raw = id.replace(/^(module:|artifact:)/, '');
+    if (/regime|risk_radar|vol_regime|cross_asset|market_state/i.test(raw)) return allRegimesId;
+    if (/us_board/i.test(raw)) return 'engine:us_board';
+    if (/options|skew|ivspread/i.test(raw)) return 'engine:options_entry';
+    if (/oracle/i.test(raw)) return 'engine:radar';
+    if (/briefing|by_ticker|intelligence/i.test(raw)) return 'engine:policy';
+    if (/sector_central/i.test(raw)) return 'sectors_hub';
+    return 'core';
+  }
+
+  // Build both the DEFAULT layer and WIRING layer from raw graph data
+  function buildCuratedGraph(data) {
+    var rawNodes = data.nodes || [];
+    var rawEdges = data.edges || [];
+
+    // Index raw nodes by id
+    var rawById = {};
+    rawNodes.forEach(function(n){ rawById[n.id] = n; });
+
+    // ── DEFAULT LAYER ─────────────────────────────────────────────────────
+    var defNodes = [];   // {id, type, label, labelZh, meta, _lobe, _anchor}
+    var defEdges = [];   // {src, dst, edge_type}
+    var defNodeSet = {}; // id → node
+
+    function addDN(n) {
+      if (!defNodeSet[n.id]) { defNodeSet[n.id] = n; defNodes.push(n); }
+    }
+    function addDE(src, dst, et) {
+      defEdges.push({ src: src, dst: dst, edge_type: et });
     }
 
-    // Set canvas dimensions
-    var W = canvas.offsetWidth || 700;
-    var H = canvas.offsetHeight || 480;
-    canvas.width = W;
-    canvas.height = H;
+    // 1. Core
+    addDN({ id: 'core', type: 'core', label: 'Neural Web', labelZh: '智脑', meta: {}, _lobe: 'core', _anchor: { x: 0.5, y: 0.5 } });
 
-    // Simple radial layout by type
-    var N = displayNodes.length;
-    var cx = W / 2, cy = H / 2;
-    var positions = {};
-    var engineNodes = displayNodes.filter(function (n) { return n.type === 'engine'; });
-    var otherNodes  = displayNodes.filter(function (n) { return n.type !== 'engine'; });
+    // 2. Synthetic hub nodes (FIX 2)
+    var sectorsHubId = 'sectors_hub';
+    addDN({ id: sectorsHubId, type: 'hub', label: 'Sectors', labelZh: '板块中心', meta: {}, _lobe: 'sector' });
 
-    // Engines in inner ring
-    engineNodes.forEach(function (n, i) {
-      var angle = (2 * Math.PI * i / Math.max(engineNodes.length, 1)) - Math.PI / 2;
-      var r = Math.min(W, H) * 0.18;
-      positions[n.id] = { x: cx + r * Math.cos(angle), y: cy + r * Math.sin(angle), node: n };
-    });
-    // Others in outer ring
-    otherNodes.forEach(function (n, i) {
-      var angle = (2 * Math.PI * i / Math.max(otherNodes.length, 1)) - Math.PI / 2;
-      var r = Math.min(W, H) * 0.36;
-      positions[n.id] = { x: cx + r * Math.cos(angle), y: cy + r * Math.sin(angle), node: n };
+    // 3. Engines
+    var engNodes = rawNodes.filter(function(n){ return n.type === 'engine'; });
+    // Track which lobe leads exist
+    var lobeLeadExists = {};
+    engNodes.forEach(function(n){
+      var bare = n.id.replace(/^engine:/, '');
+      var lobe = ENGINE_LOBE[bare] || ENGINE_LOBE[n.id] || 'meta';
+      var isLead = (LOBE_LEAD[lobe] === n.id);
+      if (isLead) lobeLeadExists[lobe] = true;
+      addDN({
+        id: n.id, type: 'engine',
+        label: engineLabelEn(n.id), labelZh: engineLabelZh(n.id),
+        meta: n.meta || {}, _lobe: lobe, _rawLabel: n.label, _isLobeLead: isLead
+      });
     });
 
-    // Simple force-like relaxation (3 iterations, lightweight)
-    var nodeIds = Object.keys(positions);
-    for (var iter = 0; iter < 3; iter++) {
-      nodeIds.forEach(function (a) {
-        nodeIds.forEach(function (b) {
-          if (a === b) return;
-          var pa = positions[a], pb = positions[b];
-          var dx = pa.x - pb.x, dy = pa.y - pb.y;
-          var dist = Math.sqrt(dx * dx + dy * dy) || 1;
-          if (dist < 55) {
-            var push = (55 - dist) / dist * 0.25;
-            pa.x += dx * push; pa.y += dy * push;
-            pb.x -= dx * push; pb.y -= dy * push;
-          }
+    // STRUCTURE edges (FIX 2 hierarchy):
+    // core → each lobe lead (4 spokes); core → sectors_hub; core → All Regimes (added below)
+    // Each non-lead engine → its lobe lead (or core if no lead in lobe)
+    engNodes.forEach(function(n){
+      var bare = n.id.replace(/^engine:/, '');
+      var lobe = ENGINE_LOBE[bare] || ENGINE_LOBE[n.id] || 'meta';
+      var leadId = LOBE_LEAD[lobe];
+      if (n._isLobeLead || n.id === leadId) {
+        addDE(n.id, 'core', 'structure'); // lead → core
+      } else if (leadId && defNodeSet[leadId]) {
+        addDE(n.id, leadId, 'structure'); // non-lead → lead
+      } else {
+        addDE(n.id, 'core', 'structure'); // fallback
+      }
+    });
+    // If a lobe lead doesn't exist, fall back: pick highest n_spine_rows in that lobe
+    Object.keys(LOBE_LEAD).forEach(function(lobe){
+      if (!lobeLeadExists[lobe]) {
+        var lobeEngs = defNodes.filter(function(n){ return n.type === 'engine' && n._lobe === lobe; });
+        if (lobeEngs.length) {
+          var best = lobeEngs.reduce(function(a, b){
+            var ra = (a.meta && a.meta.n_spine_rows) || 0;
+            var rb = (b.meta && b.meta.n_spine_rows) || 0;
+            return rb > ra ? b : a;
+          });
+          best._isLobeLead = true;
+          // Reroute: best → core, others → best
+          defEdges = defEdges.filter(function(e){ return !(e.src === best.id && e.dst === 'core' && e.edge_type === 'structure'); });
+          addDE(best.id, 'core', 'structure');
+          lobeEngs.forEach(function(n){
+            if (n.id !== best.id) {
+              defEdges = defEdges.filter(function(e){ return !(e.src === n.id && e.dst === 'core' && e.edge_type === 'structure'); });
+              addDE(n.id, best.id, 'structure');
+            }
+          });
+        }
+      }
+    });
+
+    // 4. Regimes
+    var regNodes = rawNodes.filter(function(n){ return n.type === 'regime'; });
+    var allRegimesId = null;
+    regNodes.forEach(function(n){
+      var label = (n.label || n.id.replace(/^regime:/, '').replace(/__all__/, 'All Regimes')).replace(/_/g,' ');
+      var labelZh = REGIME_NAMES_ZH[n.id] || (n.label || n.id.replace(/^regime:/, '').replace(/__all__/, '所有周期')).replace(/_/g,' ');
+      if (/all/i.test(label)) { label = 'All Regimes'; labelZh = '所有周期'; allRegimesId = n.id; }
+      addDN({ id: n.id, type: 'regime', label: label, labelZh: labelZh, meta: n.meta || {} });
+    });
+    // If no "all" regime exists, create synthetic
+    if (!allRegimesId) {
+      allRegimesId = 'regime:__all__';
+      addDN({ id: allRegimesId, type: 'regime', label: 'All Regimes', labelZh: '所有周期', meta: {} });
+    }
+    addDE(allRegimesId, 'core', 'structure'); // All Regimes → core (hub spoke)
+    addDE(sectorsHubId, 'core', 'structure'); // Sectors hub → core (hub spoke)
+    regNodes.forEach(function(n){
+      if (n.id !== allRegimesId) addDE(n.id, allRegimesId, 'structure');
+    });
+
+    // 5. Sectors: complexes → sectors_hub; GICS → complex or sectors_hub (FIX 2)
+    var sectorNodes = rawNodes.filter(function(n){ return n.type === 'sector'; });
+    var complexNodes = sectorNodes.filter(function(n){ return n.id.indexOf('complex:') === 0; });
+    var gicsNodes    = sectorNodes.filter(function(n){ return n.id.indexOf('sector:') === 0; });
+    complexNodes.forEach(function(n){
+      var label = titleCaseFix(n.label || n.id.replace(/^complex:/, '').replace(/_/g,' '));
+      addDN({ id: n.id, type: 'complex', label: label, labelZh: n.labelZh || SECTOR_NAMES_ZH[n.id] || label, meta: n.meta || {} });
+      addDE(n.id, sectorsHubId, 'structure'); // complex → sectors_hub (not core)
+    });
+    gicsNodes.forEach(function(n){
+      var label = (n.label || n.id.replace(/^sector:/, '').toUpperCase());
+      addDN({ id: n.id, type: 'sector', label: label, labelZh: n.labelZh || SECTOR_NAMES_ZH[n.id] || label, meta: n.meta || {} });
+      var cx = GICS_TO_COMPLEX[n.id];
+      if (cx && defNodeSet[cx]) addDE(n.id, cx, 'structure');
+      else addDE(n.id, sectorsHubId, 'structure'); // unmapped → sectors_hub
+    });
+
+    // 6. Radar theses: dedupe by sectorkey, FILTER junk.
+    // Junk tokens are anchored (^…$) so real keys like "funk"/"brotherhood" survive.
+    var _JUNK_SK = /^(unknown|unk|na|n_?a|none|misc|other|tbd|placeholder)$|^us[_-]?sector/i;
+    var thesisNodes = rawNodes.filter(function(n){ return n.type === 'thesis'; });
+    var thesisBySectorKey = {};
+    thesisNodes.forEach(function(n){
+      // id format: thesis:<date>-radar-<sectorkey>. Tolerate date-shape drift by
+      // also splitting on "-radar-"; skip if no sectorkey can be extracted so a
+      // raw id ("thesis:2026-…-radar-") is never emitted as a label.
+      var m = n.id.match(/thesis:\d{4}-\d{2}-\d{2}-radar-(.+)$/);
+      var sk = m ? m[1] : (n.id.split('-radar-')[1] || '');
+      if (!sk || _JUNK_SK.test(sk)) return;
+      var existing = thesisBySectorKey[sk];
+      if (!existing || (n.id > existing.id)) thesisBySectorKey[sk] = n;
+    });
+    var thesisKeys = Object.keys(thesisBySectorKey).sort(function(a, b){
+      return thesisBySectorKey[b].id.localeCompare(thesisBySectorKey[a].id);
+    });
+    var thesisCap = 16;
+    var thesisOverflow = thesisKeys.length > thesisCap ? thesisKeys.slice(thesisCap) : [];
+    thesisKeys.slice(0, thesisCap).forEach(function(sk){
+      var n = thesisBySectorKey[sk];
+      var label = titleCaseFix(sk.replace(/_/g, ' '));
+      // small fixups (anchored so unrelated keys aren't rewritten)
+      label = label.replace(/^Mag7$/, 'Mag 7')
+                   .replace(/^Payments Fintech$/, 'Payments & Fintech')
+                   .replace(/^Non AI /, 'Non-AI ');
+      addDN({ id: n.id, type: 'thesis', label: label, labelZh: THESIS_SK_ZH[sk] || label, meta: n.meta || {}, _sectorKey: sk });
+      // Link to radar engine if present
+      var radarId = 'engine:radar';
+      if (defNodeSet[radarId]) addDE(n.id, radarId, 'structure');
+      else addDE(n.id, 'core', 'structure');
+    });
+
+    // 7. Confirms / contradicts edges + materialize missing endpoints (FIX 3)
+    var synapseEdges = rawEdges.filter(function(e){ return e.edge_type === 'confirms' || e.edge_type === 'contradicts'; });
+    synapseEdges.forEach(function(e){
+      [e.src, e.dst].forEach(function(id){
+        if (!defNodeSet[id]) {
+          // Materialize a signal endpoint with curated label
+          var label = friendlyArtifactLabel(id);
+          var labelZh = friendlyArtifactLabelZh(id);
+          var sn = { id: id, type: 'signal', label: label, labelZh: labelZh, meta: {}, _synapseEndpoint: true };
+          addDN(sn);
+          // FIX 3: Route endpoint to owning cluster, not always core
+          var clusterTarget = endpointCluster(id, allRegimesId, defNodeSet);
+          if (!defNodeSet[clusterTarget]) clusterTarget = 'core';
+          addDE(id, clusterTarget, 'structure');
+        }
+      });
+      if (e.src !== e.dst) defEdges.push({ src: e.src, dst: e.dst, edge_type: e.edge_type }); // skip degenerate self-synapse
+    });
+
+    // INVARIANT: every node has degree ≥ 1
+    var degreeOf = {};
+    defEdges.forEach(function(e){
+      degreeOf[e.src] = (degreeOf[e.src] || 0) + 1;
+      degreeOf[e.dst] = (degreeOf[e.dst] || 0) + 1;
+    });
+    defNodes.forEach(function(n){
+      if (!degreeOf[n.id] && n.id !== 'core') {
+        addDE(n.id, 'core', 'structure');
+      }
+    });
+
+    // ── WIRING LAYER ──────────────────────────────────────────────────────
+    var wirNodes = [];
+    var wirEdges = [];
+    var wirNodeSet = {};
+    function addWN(n) { if (!wirNodeSet[n.id] && !defNodeSet[n.id]) { wirNodeSet[n.id] = n; wirNodes.push(n); } }
+    var feedsEdges = rawEdges.filter(function(e){ return e.edge_type === 'feeds'; });
+    feedsEdges.forEach(function(e){
+      [e.src, e.dst].forEach(function(id){
+        if (!defNodeSet[id] && !wirNodeSet[id]) {
+          var isModule = id.indexOf('module:') === 0;
+          addWN({
+            id: id,
+            type: isModule ? 'wiring-module' : 'wiring-artifact',
+            label: friendlyArtifactLabel(id), labelZh: friendlyArtifactLabelZh(id),
+            meta: {}
+          });
+        }
+      });
+      wirEdges.push({ src: e.src, dst: e.dst, edge_type: 'wiring' });
+    });
+
+    // "All nodes" also restores every raw semantic node the curated default
+    // leaves out — the full undeduped radar thesis fan (many per sector across
+    // dates), episodes, and any other node type — so the toggle brings back the
+    // complete dense web, but with the human-readable names.
+    rawNodes.forEach(function(n){
+      if (defNodeSet[n.id] || wirNodeSet[n.id]) return;
+      var parent = 'core';
+      var label, labelZh, wtype;
+      if (n.type === 'thesis') {
+        var tm = n.id.match(/thesis:\d{4}-\d{2}-\d{2}-radar-(.+)$/);
+        var tsk = tm ? tm[1] : (n.id.split('-radar-')[1] || '');
+        if (!tsk || _JUNK_SK.test(tsk)) return;
+        label = titleCaseFix(tsk.replace(/_/g, ' '))
+                  .replace(/^Mag7$/, 'Mag 7').replace(/^Payments Fintech$/, 'Payments & Fintech').replace(/^Non AI /, 'Non-AI ');
+        labelZh = THESIS_SK_ZH[tsk] || zhTokens(label);
+        wtype = 'thesis';
+        parent = defNodeSet['engine:radar'] ? 'engine:radar' : 'core';
+      } else {
+        label = titleCaseFix(String(n.label || n.id.split(':').pop().split('/').pop()).replace(/[_\-]/g, ' '));
+        labelZh = zhTokens(label);
+        wtype = 'wiring-artifact';
+      }
+      addWN({ id: n.id, type: wtype, label: label, labelZh: labelZh, meta: n.meta || {} });
+      wirEdges.push({ src: n.id, dst: parent, edge_type: 'wiring' });
+    });
+
+    return {
+      defaultNodes: defNodes, defaultEdges: defEdges,
+      wiringNodes: wirNodes, wiringEdges: wirEdges,
+      synapseCount: synapseEdges.length,
+      thesisOverflow: thesisOverflow,
+      engineCount: engNodes.length
+    };
+  }
+
+  function buildSpatialGrid(positions, cellSize) {
+    var grid = {};
+    Object.keys(positions).forEach(function(id){
+      var p = positions[id];
+      var cx = Math.floor(p.x / cellSize);
+      var cy = Math.floor(p.y / cellSize);
+      var key = cx + ',' + cy;
+      if (!grid[key]) grid[key] = [];
+      grid[key].push(id);
+    });
+    return { grid: grid, cellSize: cellSize };
+  }
+
+  function hitTestGrid(gobj, x, y, positions, radii) {
+    var cs = gobj.cellSize;
+    var cx = Math.floor(x / cs), cy = Math.floor(y / cs);
+    var best = null, bestDist = Infinity;
+    for (var dx = -1; dx <= 1; dx++) {
+      for (var dy = -1; dy <= 1; dy++) {
+        var key = (cx+dx) + ',' + (cy+dy);
+        var cell = gobj.grid[key];
+        if (!cell) continue;
+        cell.forEach(function(id){
+          var p = positions[id];
+          var d = Math.sqrt((p.x-x)*(p.x-x)+(p.y-y)*(p.y-y));
+          var r = (radii[id] || 5) + 4;
+          if (d < r && d < bestDist) { bestDist = d; best = id; }
         });
-        // Keep in bounds
-        var p = positions[a];
-        p.x = Math.max(36, Math.min(W - 36, p.x));
-        p.y = Math.max(26, Math.min(H - 26, p.y));
+      }
+    }
+    return best;
+  }
+
+  function computeBezier(pa, pb, edgeIdx) {
+    var mx = (pa.x + pb.x) / 2;
+    var my = (pa.y + pb.y) / 2;
+    var dx = pb.x - pa.x, dy = pb.y - pa.y;
+    var len = Math.sqrt(dx*dx + dy*dy) || 1;
+    var perpX = -dy / len, perpY = dx / len;
+    var sign = (edgeIdx % 2 === 0) ? 1 : -1;
+    var offset = len * (0.08 + (edgeIdx % 7) * 0.009) * sign;
+    return { cx: mx + perpX*offset, cy: my + perpY*offset };
+  }
+
+  // ── Force-directed layout ─────────────────────────────────────────────────
+  function runForceLayout(nodes, edges, W, H, wiringMode) {
+    var prng = mulberry32(42);
+    var positions = {};
+    var radii = {};
+
+    // FIX 5: sector hub placed at same direction as sector cluster
+    var SECTORS_HUB_ANCHOR = { x: 0.78 * W, y: 0.74 * H };
+    var ALL_REGIMES_ANCHOR  = { x: 0.5  * W, y: 0.10 * H };
+
+    // Compute anchor positions for each node
+    function nodeAnchor(n) {
+      if (n.type === 'core') return { x: 0.5 * W, y: 0.5 * H };
+      if (n.type === 'hub')  return SECTORS_HUB_ANCHOR;
+      if (n.type === 'engine') {
+        var la = LOBE_ANCHORS[n._lobe] || LOBE_ANCHORS.meta;
+        var ang = la.angle * Math.PI / 180;
+        return { x: (0.5 + la.r * Math.cos(ang)) * W, y: (0.5 + la.r * Math.sin(ang)) * H };
+      }
+      if (n.type === 'regime') return ALL_REGIMES_ANCHOR;
+      if (n.type === 'complex') return { x: 0.82 * W, y: 0.78 * H };
+      if (n.type === 'sector') {
+        var cx2 = GICS_TO_COMPLEX[n.id];
+        if (cx2) return { x: 0.86 * W, y: 0.82 * H };
+        return { x: 0.82 * W, y: 0.78 * H };
+      }
+      if (n.type === 'thesis') {
+        // Near radar anchor (us lobe)
+        var ra = LOBE_ANCHORS.us;
+        var ang2 = ra.angle * Math.PI / 180;
+        return { x: (0.5 + ra.r * 1.55 * Math.cos(ang2)) * W, y: (0.5 + ra.r * 1.55 * Math.sin(ang2)) * H };
+      }
+      if (n.type === 'signal') {
+        // FIX 3: signal nodes anchored near their cluster (handled by structure edge spring)
+        return { x: 0.5 * W, y: 0.35 * H };
+      }
+      // wiring nodes: spread around
+      return { x: (0.1 + prng() * 0.8) * W, y: (0.1 + prng() * 0.8) * H };
+    }
+
+    // Seed positions = anchor + jitter
+    nodes.forEach(function(n){
+      var a = nodeAnchor(n);
+      var jitter = n.type === 'engine' ? 50 : n.type === 'wiring-module' || n.type === 'wiring-artifact' ? 80 : 35;
+      positions[n.id] = {
+        x: a.x + (prng() - 0.5) * jitter,
+        y: a.y + (prng() - 0.5) * jitter,
+        ax: a.x, ay: a.y
+      };
+      radii[n.id] = nodeRadius(n);
+    });
+
+    // Engine lobe: spread lobemates around lobe angle ±25°
+    var lobeEngines = {};
+    nodes.filter(function(n){ return n.type === 'engine'; }).forEach(function(n){
+      var l = n._lobe || 'meta';
+      if (!lobeEngines[l]) lobeEngines[l] = [];
+      lobeEngines[l].push(n);
+    });
+    Object.keys(lobeEngines).forEach(function(lobe){
+      var ns = lobeEngines[lobe];
+      var la = LOBE_ANCHORS[lobe] || LOBE_ANCHORS.meta;
+      ns.forEach(function(n, i){
+        var spread = (ns.length > 1) ? (i / (ns.length - 1) - 0.5) * 65 : 0; // FIX 5: wider spread
+        var baseAng = la.angle * Math.PI / 180;
+        var perpAng = baseAng + Math.PI / 2;
+        var p = positions[n.id];
+        p.ax += Math.cos(perpAng) * spread;
+        p.ay += Math.sin(perpAng) * spread;
+        p.x = p.ax + (prng() - 0.5) * 10;
+        p.y = p.ay + (prng() - 0.5) * 10;
+      });
+    });
+
+    // Similarly spread regime/complex/thesis nodes
+    var regimes = nodes.filter(function(n){ return n.type === 'regime'; });
+    regimes.forEach(function(n, i){
+      var spread = regimes.length > 1 ? (i / (regimes.length - 1) - 0.5) * (W * 0.65) : 0;
+      positions[n.id].x = 0.5 * W + spread + (prng() - 0.5) * 10;
+      positions[n.id].ax = positions[n.id].x;
+    });
+    var complexes = nodes.filter(function(n){ return n.type === 'complex'; });
+    complexes.forEach(function(n, i){
+      var a2 = (i / Math.max(complexes.length, 1)) * 2 * Math.PI;
+      positions[n.id].x = 0.82 * W + Math.cos(a2) * 65;
+      positions[n.id].y = 0.78 * H + Math.sin(a2) * 50;
+      positions[n.id].ax = positions[n.id].x;
+      positions[n.id].ay = positions[n.id].y;
+    });
+    var theses = nodes.filter(function(n){ return n.type === 'thesis'; });
+    var radarPos = null;
+    nodes.forEach(function(n){ if (n.id === 'engine:radar' && positions[n.id]) radarPos = positions[n.id]; });
+    theses.forEach(function(n, i){
+      var ang3 = (i / Math.max(theses.length, 1)) * 2 * Math.PI;
+      var rx = radarPos ? radarPos.x : 0.35 * W;
+      var ry = radarPos ? radarPos.y : 0.74 * H;
+      positions[n.id] = { x: rx + Math.cos(ang3) * 75, y: ry + Math.sin(ang3) * 55, ax: rx, ay: ry };
+    });
+
+    // Build adjacency for spring
+    var adj = {};
+    nodes.forEach(function(n){ adj[n.id] = []; });
+    edges.forEach(function(e){
+      if (adj[e.src]) adj[e.src].push(e);
+      if (adj[e.dst]) adj[e.dst].push(e);
+    });
+
+    // Iterations scale DOWN as node count grows so the synchronous O(n²) sim can
+    // never freeze the tab, even if the graph accrues far more nodes over time
+    // (default view is ~72 today; signal endpoints grow with graded synapses).
+    var iters = wiringMode ? 90
+      : nodes.length > 400 ? 60
+      : nodes.length > 200 ? 110
+      : 280;
+    var margin = 32;
+
+    for (var it = 0; it < iters; it++) {
+      var cool = 1 - it / iters;
+      var forces = {};
+      nodes.forEach(function(n){ forces[n.id] = { x: 0, y: 0 }; });
+
+      // FIX 5: Repulsion between all pairs — increased repulsion constant
+      for (var a = 0; a < nodes.length; a++) {
+        for (var b = a + 1; b < nodes.length; b++) {
+          var na = nodes[a], nb = nodes[b];
+          var pa = positions[na.id], pb3 = positions[nb.id];
+          var dx2 = pa.x - pb3.x, dy2 = pa.y - pb3.y;
+          var dist2 = Math.sqrt(dx2*dx2 + dy2*dy2) || 0.1;
+          var minSep = radii[na.id] + radii[nb.id] + 22; // FIX 5: wider min sep
+          var rep = (minSep * minSep) / (dist2 * dist2) * 1.2; // FIX 5: stronger repulsion
+          if (rep > 20) rep = 20; // FIX 5: higher cap
+          forces[na.id].x += (dx2 / dist2) * rep;
+          forces[na.id].y += (dy2 / dist2) * rep;
+          forces[nb.id].x -= (dx2 / dist2) * rep;
+          forces[nb.id].y -= (dy2 / dist2) * rep;
+        }
+      }
+
+      // Spring attraction along edges
+      edges.forEach(function(e){
+        var pa2 = positions[e.src], pb4 = positions[e.dst];
+        if (!pa2 || !pb4) return;
+        var dx3 = pb4.x - pa2.x, dy3 = pb4.y - pa2.y;
+        var dist3 = Math.sqrt(dx3*dx3 + dy3*dy3) || 0.1;
+        var ra2 = radii[e.src] || 5, rb2 = radii[e.dst] || 5;
+        var isStruct = (e.edge_type === 'structure');
+        var restLen = isStruct ? (ra2 + rb2 + 35) : (ra2 + rb2 + 22); // FIX 5: longer rest lengths
+        var stiffness = isStruct ? 0.035 : 0.10;
+        var delta = (dist3 - restLen) * stiffness;
+        var fx = (dx3 / dist3) * delta, fy = (dy3 / dist3) * delta;
+        forces[e.src].x += fx; forces[e.src].y += fy;
+        forces[e.dst].x -= fx; forces[e.dst].y -= fy;
+      });
+
+      // FIX 5: Cluster anchor pull — stronger to keep lobes distinct
+      nodes.forEach(function(n){
+        var p2 = positions[n.id];
+        if (p2.ax == null) return;
+        // FIX 5: stronger anchor for engines and hubs
+        var anchorStr = (n.type === 'engine') ? 0.05 : (n.type === 'hub') ? 0.06 : (n.type === 'regime') ? 0.025 : 0.015;
+        forces[n.id].x += (p2.ax - p2.x) * anchorStr;
+        forces[n.id].y += (p2.ay - p2.y) * anchorStr;
+      });
+
+      // Very mild gravity to center (weakened to let nodes spread)
+      nodes.forEach(function(n){
+        var p3 = positions[n.id];
+        forces[n.id].x += (0.5 * W - p3.x) * 0.002; // FIX 5: weaker gravity
+        forces[n.id].y += (0.5 * H - p3.y) * 0.002;
+      });
+
+      // Apply forces
+      nodes.forEach(function(n){
+        if (n.type === 'core') return; // pin core
+        var p4 = positions[n.id];
+        var f = forces[n.id];
+        var speed = cool * 4.0; // FIX 5: higher max speed
+        p4.x += Math.max(-speed, Math.min(speed, f.x));
+        p4.y += Math.max(-speed, Math.min(speed, f.y));
+        p4.x = Math.max(margin, Math.min(W - margin, p4.x));
+        p4.y = Math.max(margin, Math.min(H - margin, p4.y));
       });
     }
 
-    // Parse CSS variables for colors
-    var style = getComputedStyle(document.documentElement);
-    var COL_UP     = style.getPropertyValue('--up').trim()   || '#22c55e';
-    var COL_DOWN   = style.getPropertyValue('--down').trim() || '#ef4444';
-    var COL_LINK   = style.getPropertyValue('--link').trim() || '#5b9dff';
-    var COL_MUTED  = style.getPropertyValue('--muted').trim()|| '#8b93a1';
-    var COL_TEXT   = style.getPropertyValue('--text').trim() || '#e7ecf6';
-    var COL_BG     = style.getPropertyValue('--panel2').trim()|| '#1a1e27';
+    return { positions: positions, radii: radii };
+  }
 
-    function alphaColor(hex, alpha) {
-      // minimal hex→rgba
+  function initGraph(data) {
+    var curatedResult = buildCuratedGraph(data);
+    _graphDefaultNodes = curatedResult.defaultNodes;
+    _graphDefaultEdges = curatedResult.defaultEdges;
+    _graphWiringNodes  = curatedResult.wiringNodes;
+    _graphWiringEdges  = curatedResult.wiringEdges;
+
+    var synapseCount   = curatedResult.synapseCount;
+    var thesisOverflow = curatedResult.thesisOverflow || [];
+    var engCount2      = curatedResult.engineCount;
+
+    // Update hero chips
+    var chipN = document.getElementById('chip_neurons_val');
+    var chipS = document.getElementById('chip_synapses_val');
+    var chipE = document.getElementById('chip_engines_val');
+    var chipA = document.getElementById('chip_asof_val');
+    if (chipN) chipN.textContent = _graphDefaultNodes.length;
+    if (chipS) chipS.textContent = synapseCount;
+    if (chipE) chipE.textContent = engCount2;
+    if (chipA && data.asof) chipA.textContent = data.asof.slice(0,10);
+
+    // R-ORTH PR-4: independence chip (chip_indep)
+    (function() {
+      var indep = data.independence || null;
+      var chipIV = document.getElementById('chip_indep_val');
+      var chipIS = document.getElementById('chip_indep_sub');
+      var plainDiv = document.getElementById('chip_indep_plain');
+      var plainText = document.getElementById('chip_indep_plain_text');
+      var sameBetEl = document.getElementById('chip_indep_same_bet');
+      if (!chipIV) return;
+      var measurable = indep && indep.n_lobes_measurable != null ? indep.n_lobes_measurable : null;
+      var total = indep && indep.n_lobes_total != null ? indep.n_lobes_total : null;
+      var eil = indep && indep.effective_independent_lobes != null ? indep.effective_independent_lobes : null;
+      if (eil !== null && measurable !== null && measurable >= 2) {
+        chipIV.textContent = eil.toFixed(1);
+        if (chipIS) chipIS.innerHTML = '<span class="l-en">' + measurable + '/' + (total || '?') + ' measurable</span>'
+          + '<span class="l-zh">' + measurable + '/' + (total || '?') + ' 可测</span>';
+        if (plainDiv) plainDiv.style.display = '';
+        if (plainText) {
+          plainText.innerHTML = '<span class="l-en">The "effective independent witnesses" number estimates how many of the ' + (total || '?') + ' active engines fire on unrelated information — '
+            + eil.toFixed(1) + ' out of ' + measurable + ' measurable engines. Closer to ' + measurable + ' = more diverse. Based on a participation-ratio of the engine co-firing correlation matrix. '
+            + '<em>Descriptive only — not gauntleted.</em></span>'
+            + '<span class="l-zh">"有效独立证人"数字估算' + (total || '?') + '个活跃引擎中有多少引擎基于不相关信息触发——'
+            + measurable + '个可测引擎中有' + eil.toFixed(1) + '个独立。数值越接近' + measurable + '代表多样性越强。基于引擎共触发相关矩阵的参与比率。'
+            + '<em>仅描述性——未过关卡。</em></span>';
+        }
+      } else {
+        chipIV.textContent = '—';
+        var covPrefix = (measurable !== null ? (measurable + '/' + (total || '?') + ' ') : '');
+        if (chipIS) chipIS.innerHTML = '<span class="l-en">' + covPrefix + 'measurable — accruing</span>'
+          + '<span class="l-zh">' + covPrefix + '可测——累积中</span>';
+        if (plainDiv) plainDiv.style.display = '';
+        if (plainText) {
+          plainText.innerHTML = '<span class="l-en">Independence data is accruing — fewer than 2 engines have enough history to measure co-firing correlation yet. '
+            + '<em>Descriptive only — not gauntleted.</em></span>'
+            + '<span class="l-zh">独立性数据累积中——目前可测量共触发相关性的引擎不足2个。'
+            + '<em>仅描述性——未过关卡。</em></span>';
+        }
+      }
+      if (sameBetEl && indep && indep.same_bet_warning) {
+        var sbw = indep.same_bet_warning;
+        var escIndep = function (s) {
+          return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        };
+        sameBetEl.style.display = '';
+        sameBetEl.innerHTML = ' <strong><span class="l-en">Same-bet warning:</span><span class="l-zh">相同押注警告：</span></strong> '
+          + escIndep(sbw.text || sbw.message || '');
+      }
+    })();
+
+    // Active node/edge sets (switch by wiring toggle)
+    var allNodes, allEdges;
+    function activateLayer() {
+      if (_graphShowWiring) {
+        allNodes = _graphDefaultNodes.concat(_graphWiringNodes);
+        allEdges = _graphDefaultEdges.concat(_graphWiringEdges);
+      } else {
+        allNodes = _graphDefaultNodes;
+        allEdges = _graphDefaultEdges;
+      }
+      _graphNodes = allNodes;
+      _graphEdges = allEdges;
+    }
+    activateLayer();
+
+    // Subset note
+    function updateSubsetNote() {
+      var subEl = document.getElementById('graph_subset_note');
+      if (!subEl) return;
+      var en = 'Showing ' + _graphDefaultNodes.length + ' nodes ('
+        + engCount2 + ' engines, '
+        + _graphDefaultNodes.filter(function(n){ return n.type==='regime'; }).length + ' regimes, '
+        + (_graphDefaultNodes.filter(function(n){ return n.type==='sector'||n.type==='complex'; }).length) + ' sectors, '
+        + _graphDefaultNodes.filter(function(n){ return n.type==='thesis'; }).length + ' radar theses) &mdash; '
+        + synapseCount + ' graded synapses.'
+        + (thesisOverflow.length ? ' (' + thesisOverflow.length + ' thesis keys capped for clarity.)' : '')
+        + (_graphShowWiring ? ' <strong>+' + _graphWiringNodes.length + ' more nodes shown (full thesis fan + data plumbing).</strong>' : ' Toggle &#8220;all nodes&#8221; to add every other node.');
+      var zh = '显示' + _graphDefaultNodes.length + '个节点（'
+        + engCount2 + '个引擎，'
+        + _graphDefaultNodes.filter(function(n){ return n.type==='regime'; }).length + '个周期，'
+        + (_graphDefaultNodes.filter(function(n){ return n.type==='sector'||n.type==='complex'; }).length) + '个板块，'
+        + _graphDefaultNodes.filter(function(n){ return n.type==='thesis'; }).length + '个雷达论点）&mdash;'
+        + synapseCount + '个评分突触。'
+        + (thesisOverflow.length ? '（' + thesisOverflow.length + '个论点主题已上限压缩。）' : '')
+        + (_graphShowWiring ? '<strong>已额外显示 ' + _graphWiringNodes.length + ' 个节点（完整论点扇形 + 数据管道）。</strong>' : '切换"全部节点"以添加所有其他节点。');
+      subEl.innerHTML = '<span class="l-en">' + en + '</span><span class="l-zh">' + zh + '</span>';
+    }
+    updateSubsetNote();
+
+    var canvas = document.getElementById('graph_canvas');
+    var W = canvas.offsetWidth || 800;
+    var H = canvas.getBoundingClientRect().height || 640;
+    if (H < 100) H = 640;
+
+    // Force-directed layout
+    var layoutResult = runForceLayout(allNodes, allEdges.filter(function(e){ return e.edge_type !== 'wiring'; }), W, H, false);
+    var positions = layoutResult.positions;
+    var radii = layoutResult.radii;
+    _graphPositions = positions;
+
+    // Precompute bezier for all edges
+    allEdges.forEach(function(e, i){
+      var pa2 = positions[e.src], pb5 = positions[e.dst];
+      if (!pa2 || !pb5) return;
+      var bz = computeBezier(pa2, pb5, i);
+      e._cx = bz.cx; e._cy = bz.cy;
+    });
+
+    // Seed dust
+    if (!_graphReducedMotion) {
+      _graphDust = [];
+      var dprng = mulberry32(99);
+      for (var di2 = 0; di2 < 40; di2++) {
+        _graphDust.push({
+          x: dprng()*W, y: dprng()*H,
+          vx: (dprng()-0.5)*0.25, vy: (dprng()-0.5)*0.25,
+          alpha: 0.015 + dprng()*0.02
+        });
+      }
+    }
+
+    var _spatialGrid = buildSpatialGrid(positions, 40);
+
+    var confirmEdges = allEdges.filter(function(e){ return e.edge_type==='confirms' && e._cx!=null; });
+    var contradictEdges = allEdges.filter(function(e){ return e.edge_type==='contradicts' && e._cx!=null; });
+
+    // Pre-seed travelers on graded edges
+    if (!_graphReducedMotion) {
+      _graphPulses = [];
+      var seedPrng = mulberry32(77);
+      confirmEdges.concat(contradictEdges).forEach(function(e){
+        _graphPulses.push({ edge: e, t: seedPrng(), type: e.edge_type, persistent: true });
+      });
+    }
+
+    // Wiring toggle
+    // Cheap, cached placement for the wiring (plumbing) layer. The default web
+    // NEVER moves; wiring nodes are seeded near their placed neighbours and given
+    // a short wiring-only relaxation (default nodes held fixed). O(w²·iters) with
+    // a distance cutoff — a few ms — instead of the full O(n²) force sim, which
+    // froze the tab for ~6 s on 500+ nodes.
+    var _wiringLaidOut = false;
+    function placeWiringNodes() {
+      var wprng = mulberry32(4242);
+      var wadj = {};
+      _graphWiringNodes.forEach(function(n){ wadj[n.id] = []; });
+      _graphWiringEdges.forEach(function(e){
+        if (wadj[e.src]) wadj[e.src].push(e.dst);
+        if (wadj[e.dst]) wadj[e.dst].push(e.src);
+      });
+      // Seed: centroid of already-placed neighbours (default web), else phyllotaxis ring.
+      _graphWiringNodes.forEach(function(n, i){
+        if (positions[n.id]) return;
+        var sx = 0, sy = 0, k = 0;
+        (wadj[n.id] || []).forEach(function(nb){ var p = positions[nb]; if (p) { sx += p.x; sy += p.y; k++; } });
+        if (k) {
+          positions[n.id] = { x: sx/k + (wprng()-0.5)*44, y: sy/k + (wprng()-0.5)*44 };
+        } else {
+          var ang = i * 2.39996;
+          var rr = Math.min(W, H) * 0.55 * Math.sqrt(i / Math.max(_graphWiringNodes.length, 1));
+          positions[n.id] = { x: W*0.5 + Math.cos(ang)*rr, y: H*0.5 + Math.sin(ang)*rr };
+        }
+        if (!radii[n.id]) radii[n.id] = nodeRadius(n);
+      });
+      // Wiring-only relaxation; default nodes are read but never moved.
+      var wn = _graphWiringNodes;
+      for (var it = 0; it < 16; it++) {
+        for (var a = 0; a < wn.length; a++) {
+          var pa = positions[wn[a].id];
+          var fx = 0, fy = 0;
+          for (var b = 0; b < wn.length; b++) {
+            if (a === b) continue;
+            var pb = positions[wn[b].id];
+            var dx = pa.x - pb.x, dy = pa.y - pb.y;
+            var d2 = dx*dx + dy*dy || 1;
+            if (d2 < 6400) { var f = 620 / d2; fx += dx*f; fy += dy*f; }
+          }
+          var nbrs = wadj[wn[a].id] || [];
+          for (var c = 0; c < nbrs.length; c++) {
+            var pn = positions[nbrs[c]];
+            if (pn) { fx += (pn.x - pa.x)*0.02; fy += (pn.y - pa.y)*0.02; }
+          }
+          pa.x += Math.max(-12, Math.min(12, fx));
+          pa.y += Math.max(-12, Math.min(12, fy));
+        }
+      }
+    }
+
+    var _wireBtn = document.getElementById('gc_wire');
+    if (_wireBtn) {
+      _wireBtn.addEventListener('click', function(){
+        _graphShowWiring = !_graphShowWiring;
+        _wireBtn.style.color = _graphShowWiring ? 'var(--up)' : '';
+        _wireBtn.style.borderColor = _graphShowWiring ? 'var(--up)' : '';
+        activateLayer();
+        if (_graphShowWiring && !_wiringLaidOut) {
+          placeWiringNodes();   // cheap; cached so repeat toggles are instant
+          _wiringLaidOut = true;
+        }
+        // Recompute beziers for the active edges + rebuild grid from active nodes only
+        var activePos = {};
+        allNodes.forEach(function(n){ if (positions[n.id]) activePos[n.id] = positions[n.id]; });
+        allEdges.forEach(function(e, i){
+          var pp1 = positions[e.src], pp2 = positions[e.dst];
+          if (!pp1 || !pp2) return;
+          var bz2 = computeBezier(pp1, pp2, i);
+          e._cx = bz2.cx; e._cy = bz2.cy;
+        });
+        _spatialGrid = buildSpatialGrid(activePos, 40);
+        // Reseed graded pulses (references may have new bezier control points)
+        if (!_graphReducedMotion) {
+          var ce2 = allEdges.filter(function(e){ return e.edge_type==='confirms' && e._cx!=null; });
+          var de2 = allEdges.filter(function(e){ return e.edge_type==='contradicts' && e._cx!=null; });
+          var sp2 = mulberry32(77);
+          _graphPulses = ce2.concat(de2).map(function(e){ return { edge: e, t: sp2(), type: e.edge_type, persistent: true }; });
+        }
+        updateSubsetNote();
+        zoomToFit(canvas.clientWidth || W, canvas.clientHeight || H);
+        if (_graphReducedMotion) drawFrame(performance.now());
+      });
+    }
+
+    // True when the synapse map's wrapper is the active fullscreen element.
+    function isGraphFullscreen() {
+      var wrapEl = document.getElementById('graph_wrap');
+      var fsEl = document.fullscreenElement || document.webkitFullscreenElement;
+      return !!(fsEl && wrapEl && (fsEl === wrapEl || fsEl.contains(wrapEl)));
+    }
+
+    // Setup canvas (DPR-aware)
+    function resizeCanvas() {
+      var wrapEl = document.getElementById('graph_wrap');
+      var fs = isGraphFullscreen();
+      var cw, ch;
+      if (fs) {
+        // Fullscreen: size the canvas explicitly to the fullscreen viewport.
+        // A CSS `height:100vh` class is unreliable here — `vh` resolves against
+        // the document viewport, not the fullscreened element — so the canvas
+        // could stay 640px and render as a strip across the top of the screen.
+        cw = (wrapEl && wrapEl.clientWidth)  || window.innerWidth;
+        ch = (wrapEl && wrapEl.clientHeight) || window.innerHeight;
+        canvas.style.width  = cw + 'px';
+        canvas.style.height = ch + 'px';
+      } else {
+        // Normal: drop any fullscreen inline sizing so the stylesheet size
+        // (width:100%, height:640px) applies again, then measure it.
+        canvas.style.width  = '';
+        canvas.style.height = '';
+        // offsetWidth can be 0 pre-layout or while a parent is display:none;
+        // ResizeObserver refits once real dimensions arrive.
+        cw = (wrapEl && wrapEl.offsetWidth) || canvas.offsetWidth || 800;
+        ch = canvas.offsetHeight || 640;
+        if (ch < 100) ch = 640;
+      }
+      canvas.width  = cw * _graphDpr;
+      canvas.height = ch * _graphDpr;
+      // Zoom to fit; fullscreen allows a larger scale so a big display zooms IN.
+      zoomToFit(cw, ch, fs ? 4.5 : 2);
+    }
+
+    function zoomToFit(cw, ch, maxScale) {
+      // Fullscreen fills a whole monitor, so allow a larger fit scale: on a big
+      // display the graph zooms IN to fill the screen (past the wiring-label
+      // min-zoom of 1.4, so titles render) instead of floating small in the middle.
+      if (maxScale == null) maxScale = isGraphFullscreen() ? 4.5 : 2;
+      // Fit only the ACTIVE layer (default web, or default+wiring when toggled on);
+      // stale wiring positions must not blow up the bounding box when wiring is off.
+      var minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+      var any = false;
+      allNodes.forEach(function(n){
+        var p = positions[n.id];
+        if (!p) return;
+        any = true;
+        if (p.x < minX) minX = p.x; if (p.x > maxX) maxX = p.x;
+        if (p.y < minY) minY = p.y; if (p.y > maxY) maxY = p.y;
+      });
+      if (!any) return;
+      var pad = 44; // FIX 5: 44px margin to fill both width and height
+      var scaleX = (cw - 2*pad) / (maxX - minX || 1);
+      var scaleY = (ch - 2*pad) / (maxY - minY || 1);
+      var s = Math.min(scaleX, scaleY, maxScale);
+      var midX = (minX+maxX)/2, midY = (minY+maxY)/2;
+      _graphView.scale = s;
+      _graphView.tx = cw/2 - midX*s;
+      _graphView.ty = ch/2 - midY*s;
+    }
+
+    resizeCanvas();
+
+    // ResizeObserver
+    if (window.ResizeObserver) {
+      var ro = new ResizeObserver(function(){
+        resizeCanvas();
+        if (!_graphRaf) drawFrame(performance.now()); // repaint when loop is paused/static
+      });
+      ro.observe(document.getElementById('graph_wrap') || canvas);
+    }
+
+    // Fullscreen
+    document.getElementById('gc_fs').addEventListener('click', function(){
+      var wrap = document.getElementById('graph_wrap');
+      if (wrap && wrap.requestFullscreen) wrap.requestFullscreen();
+      else if (wrap && wrap.webkitRequestFullscreen) wrap.webkitRequestFullscreen();
+    });
+    function onFullscreenChange(){
+      // Resize now (snappy) and again after the browser settles the transition,
+      // so the canvas grows/shrinks to match the fullscreen viewport and re-fits.
+      resizeCanvas();
+      setTimeout(resizeCanvas, 100);
+    }
+    document.addEventListener('fullscreenchange', onFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', onFullscreenChange);
+
+    // Controls
+    document.getElementById('gc_plus').addEventListener('click', function(){
+      zoomAt(canvas.clientWidth/2, canvas.clientHeight/2, 1.4);
+    });
+    document.getElementById('gc_minus').addEventListener('click', function(){
+      zoomAt(canvas.clientWidth/2, canvas.clientHeight/2, 1/1.4);
+    });
+    document.getElementById('gc_fit').addEventListener('click', function(){
+      zoomToFit(canvas.clientWidth, canvas.clientHeight);
+    });
+
+    function zoomAt(cx, cy, factor) {
+      var newScale = Math.max(0.35, Math.min(9, _graphView.scale * factor));
+      var ratio = newScale / _graphView.scale;
+      _graphView.tx = cx - (cx - _graphView.tx) * ratio;
+      _graphView.ty = cy - (cy - _graphView.ty) * ratio;
+      _graphView.scale = newScale;
+    }
+
+    // Pointer events for pan/zoom/pinch
+    var pointers = {};
+    var lastPinchDist = null;
+    var dragging = false, lastPX = 0, lastPY = 0;
+
+    canvas.addEventListener('wheel', function(e){
+      e.preventDefault();
+      var rect = canvas.getBoundingClientRect();
+      var cx = e.clientX - rect.left, cy = e.clientY - rect.top;
+      var factor = e.deltaY < 0 ? 1.12 : 1/1.12;
+      zoomAt(cx, cy, factor);
+    }, { passive: false });
+
+    canvas.addEventListener('pointerdown', function(e){
+      pointers[e.pointerId] = { x: e.clientX, y: e.clientY };
+      var pc = Object.keys(pointers).length;
+      if (pc === 1) { dragging = true; lastPX = e.clientX; lastPY = e.clientY; lastPinchDist = null; }
+    });
+    canvas.addEventListener('pointermove', function(e){
+      pointers[e.pointerId] = { x: e.clientX, y: e.clientY };
+      var pkeys = Object.keys(pointers);
+      if (pkeys.length === 2) {
+        // Pinch zoom
+        var p1 = pointers[pkeys[0]], p2 = pointers[pkeys[1]];
+        var dist = Math.sqrt((p1.x-p2.x)*(p1.x-p2.x)+(p1.y-p2.y)*(p1.y-p2.y));
+        if (lastPinchDist !== null) {
+          var rect2 = canvas.getBoundingClientRect();
+          var mcx = ((p1.x+p2.x)/2) - rect2.left;
+          var mcy = ((p1.y+p2.y)/2) - rect2.top;
+          zoomAt(mcx, mcy, dist/lastPinchDist);
+        }
+        lastPinchDist = dist;
+        dragging = false;
+      } else if (pkeys.length === 1 && dragging) {
+        _graphView.tx += e.clientX - lastPX;
+        _graphView.ty += e.clientY - lastPY;
+        lastPX = e.clientX; lastPY = e.clientY;
+        // Tooltip: throttled hit test during drag
+        if (!_tooltipThrottle) {
+          _tooltipThrottle = true;
+          requestAnimationFrame(function(){
+            _tooltipThrottle = false;
+            updateHover(e);
+          });
+        }
+      }
+    });
+    canvas.addEventListener('pointerup', function(e){
+      delete pointers[e.pointerId];
+      if (Object.keys(pointers).length === 0) { dragging = false; lastPinchDist = null; }
+    });
+    canvas.addEventListener('pointercancel', function(e){ delete pointers[e.pointerId]; dragging = false; lastPinchDist = null; });
+    canvas.addEventListener('pointermove', function(e){
+      if (dragging) return;
+      if (!_tooltipThrottle) {
+        _tooltipThrottle = true;
+        requestAnimationFrame(function(){
+          _tooltipThrottle = false;
+          updateHover(e);
+        });
+      }
+    });
+
+    canvas.addEventListener('dblclick', function(e){
+      var rect = canvas.getBoundingClientRect();
+      zoomAt(e.clientX - rect.left, e.clientY - rect.top, 1.8);
+    });
+
+    // Click to select
+    canvas.addEventListener('click', function(e){
+      if (dragging) return;
+      var rect = canvas.getBoundingClientRect();
+      var wx = (e.clientX - rect.left - _graphView.tx) / _graphView.scale;
+      var wy = (e.clientY - rect.top  - _graphView.ty) / _graphView.scale;
+      var hit = hitTestGrid(_spatialGrid, wx, wy, positions, radii);
+      if (hit) {
+        selectNode(hit);
+      } else {
+        _selectedNode = null;
+        var ic = document.getElementById('graph_info_card');
+        if (ic) { ic.classList.remove('visible'); }
+      }
+    });
+
+    document.addEventListener('keydown', function(e){
+      if (e.key === 'Escape') {
+        _selectedNode = null;
+        var ic = document.getElementById('graph_info_card');
+        if (ic) ic.classList.remove('visible');
+      }
+    });
+
+    function updateHover(e) {
+      var rect = canvas.getBoundingClientRect();
+      var wx = (e.clientX - rect.left - _graphView.tx) / _graphView.scale;
+      var wy = (e.clientY - rect.top  - _graphView.ty) / _graphView.scale;
+      var hit = hitTestGrid(_spatialGrid, wx, wy, positions, radii);
+      _graphHovered = hit;
+      canvas.style.cursor = hit ? 'pointer' : 'grab';
+
+      var isZhH = document.documentElement.getAttribute('data-lang') === 'zh';
+      var tooltip = document.getElementById('graph_tooltip');
+      if (hit) {
+        var n = allNodes.filter(function(x){ return x.id===hit; })[0];
+        if (n) {
+          var degIn  = allEdges.filter(function(e2){ return e2.dst===hit; }).length;
+          var degOut = allEdges.filter(function(e2){ return e2.src===hit; }).length;
+          var rows = (n.meta && n.meta.n_spine_rows) ? n.meta.n_spine_rows : null;
+          var displayLabel = isZhH ? (n.labelZh || n.label || n.id) : (n.label || n.id);
+          var typeLabelH = isZhH ? (TYPE_LABEL_ZH[n.type] || n.type) : (TYPE_LABEL_EN[n.type] || n.type);
+          tooltip.innerHTML = '<strong>' + esc(displayLabel) + '</strong><br>'
+            + '<span style="font-size:10px;color:var(--muted)">'+esc(n.id)+'</span><br>'
+            + '<span style="font-size:11px">'+esc(typeLabelH)+(rows?' · spine rows: '+rows:'')+'</span><br>'
+            + '<span style="font-size:11px;color:var(--muted)">in: '+degIn+' · out: '+degOut+'</span>';
+          var cx = e.clientX - rect.left + 14;
+          var cy = e.clientY - rect.top  - 10;
+          if (cx + 270 > rect.width) cx = e.clientX - rect.left - 280;
+          tooltip.style.left = cx + 'px';
+          tooltip.style.top  = cy + 'px';
+          tooltip.classList.add('visible');
+        }
+      } else {
+        tooltip.classList.remove('visible');
+      }
+    }
+
+    function selectNode(id) {
+      _selectedNode = id;
+      var n = allNodes.filter(function(x){ return x.id===id; })[0];
+      if (!n) return;
+
+      var ic = document.getElementById('graph_info_card');
+      if (!ic) return;
+      ic.classList.add('visible');
+
+      var rows = (n.meta && n.meta.n_spine_rows) ? n.meta.n_spine_rows : null;
+      var conns = { confirms: [], contradicts: [], structure: [], wiring: [] };
+      allEdges.forEach(function(e){
+        if (e.src === id || e.dst === id) {
+          var otherId = e.src === id ? e.dst : e.src;
+          var otherN = allNodes.filter(function(x){ return x.id===otherId; })[0];
+          var label = otherN ? (otherN.label||otherN.id) : otherId;
+          if (label.length > 22) label = label.slice(0,20)+'…';
+          var et = e.edge_type || 'structure';
+          conns[et] = conns[et] || [];
+          conns[et].push({ id: otherId, label: label });
+        }
+      });
+
+      var isZhS = document.documentElement.getAttribute('data-lang')==='zh';
+      var displayLabel = isZhS ? (n.labelZh || n.label || n.id) : (n.label || n.id);
+      var typeLabel = isZhS ? (TYPE_LABEL_ZH[n.type] || n.type) : (TYPE_LABEL_EN[n.type] || n.type);
+      var lobeStr = (n._lobe && n._lobe !== 'core') ? (' · ' + n._lobe) : '';
+
+      var html = '<div class="graph-info-title">'+esc(displayLabel)+'</div>'
+        + '<div class="graph-info-type">'+esc(typeLabel)+esc(lobeStr)+(rows?' · '+rows+' spine rows':'')+'</div>'
+        + '<div style="font-size:10px;color:var(--muted);word-break:break-all;margin-bottom:6px">'+esc(n.id)+'</div>';
+
+      if (conns.confirms.length) {
+        html += '<div class="graph-info-section" style="color:var(--up)">'+(isZhS?'确认（评分）':'Confirms (graded)')+'</div>';
+        conns.confirms.slice(0,8).forEach(function(nb){
+          html += '<span class="graph-nbr-chip" data-id="'+esc(nb.id)+'">'+esc(nb.label)+'</span>';
+        });
+        if (conns.confirms.length > 8) html += '<span class="graph-nbr-chip" style="color:var(--muted)">+' + (conns.confirms.length-8) + '</span>';
+      }
+      if (conns.contradicts.length) {
+        html += '<div class="graph-info-section" style="color:var(--down)">'+(isZhS?'矛盾（评分）':'Contradicts (graded)')+'</div>';
+        conns.contradicts.slice(0,8).forEach(function(nb){
+          html += '<span class="graph-nbr-chip" data-id="'+esc(nb.id)+'">'+esc(nb.label)+'</span>';
+        });
+      }
+      if (conns.structure.length) {
+        html += '<div class="graph-info-section">'+(isZhS?'结构连接 ('+conns.structure.length+')':'Structure ('+conns.structure.length+')')+'</div>';
+        conns.structure.slice(0,8).forEach(function(nb){
+          html += '<span class="graph-nbr-chip" data-id="'+esc(nb.id)+'">'+esc(nb.label)+'</span>';
+        });
+        if (conns.structure.length > 8) html += '<span class="graph-nbr-chip" style="color:var(--muted)">+' + (conns.structure.length-8) + '</span>';
+      }
+      if (conns.wiring && conns.wiring.length) {
+        html += '<div class="graph-info-section">'+(isZhS?'其他 ('+conns.wiring.length+')':'Other ('+conns.wiring.length+')')+'</div>';
+        conns.wiring.slice(0,5).forEach(function(nb){
+          html += '<span class="graph-nbr-chip" data-id="'+esc(nb.id)+'">'+esc(nb.label)+'</span>';
+        });
+        if (conns.wiring.length > 5) html += '<span class="graph-nbr-chip" style="color:var(--muted)">+' + (conns.wiring.length-5) + '</span>';
+      }
+
+      ic.innerHTML = html;
+      ic.querySelectorAll('.graph-nbr-chip[data-id]').forEach(function(chip){
+        chip.addEventListener('click', function(){
+          var nid = chip.dataset.id;
+          if (positions[nid]) { animatePanTo(nid); selectNode(nid); }
+        });
+      });
+    }
+
+    function animatePanTo(id) {
+      var p = positions[id];
+      if (!p) return;
+      var cw2 = canvas.clientWidth, ch2 = canvas.clientHeight;
+      var targetTx = cw2/2 - p.x * _graphView.scale;
+      var targetTy = ch2/2 - p.y * _graphView.scale;
+      var startTx = _graphView.tx, startTy = _graphView.ty;
+      var start = performance.now();
+      var dur = 400;
+      function step(now) {
+        var prog = Math.min((now - start) / dur, 1);
+        var ease = 1 - Math.pow(1-prog, 3);
+        _graphView.tx = startTx + (targetTx - startTx)*ease;
+        _graphView.ty = startTy + (targetTy - startTy)*ease;
+        if (prog < 1) requestAnimationFrame(step);
+      }
+      requestAnimationFrame(step);
+    }
+
+    // Build neighbor set for dimming
+    function getNeighborSet(id) {
+      var s = {};
+      s[id] = true;
+      allEdges.forEach(function(e){
+        if (e.src===id) s[e.dst]=true;
+        if (e.dst===id) s[e.src]=true;
+      });
+      return s;
+    }
+
+    // CSS var reader
+    var _cssCache = {};
+    function cssVar(name) {
+      if (_cssCache[name]) return _cssCache[name];
+      var v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+      if (v) _cssCache[name] = v;
+      return v || (name==='--up'?'#22c55e':name==='--down'?'#ef4444':name==='--link'?'#5b9dff':'#8b93a1');
+    }
+
+    function hexAlpha(hex, alpha) {
       var r = parseInt(hex.slice(1,3)||'88',16)||136;
       var g = parseInt(hex.slice(3,5)||'88',16)||136;
       var b = parseInt(hex.slice(5,7)||'88',16)||136;
       return 'rgba('+r+','+g+','+b+','+alpha+')';
     }
 
-    var now = Date.now();
-    var asofTs = asof ? new Date(asof).getTime() : now;
-    var PULSE_WINDOW_MS = 24 * 3600 * 1000;
+    function parseHex(hex) {
+      return { r: parseInt(hex.slice(1,3),16)||0, g: parseInt(hex.slice(3,5),16)||0, b: parseInt(hex.slice(5,7),16)||0 };
+    }
 
-    function drawFrame(phase) {
-      ctx.clearRect(0, 0, W, H);
+    var lastFrameTime = 0;
 
-      // Draw edges
-      edges.forEach(function (e) {
+    function drawFrame(ts) {
+      var dt = ts - lastFrameTime; lastFrameTime = ts;
+      if (dt > 200) dt = 16;
+
+      // Update pulses
+      if (!_graphReducedMotion) {
+        _graphPulses.forEach(function(pulse){
+          var speed = pulse.speed || 0.00035;
+          pulse.t += dt * speed;
+          if (pulse.persistent && pulse.t > 1) pulse.t -= 1;
+        });
+        _graphPulses = _graphPulses.filter(function(p){ return p.t <= 1 || p.persistent; });
+      }
+
+      var cvs = document.getElementById('graph_canvas');
+      var ctx = cvs.getContext('2d');
+      var cw = cvs.width, ch = cvs.height;
+      ctx.clearRect(0, 0, cw, ch);
+      ctx.save();
+      ctx.scale(_graphDpr, _graphDpr);
+
+      var canW = cw / _graphDpr, canH = ch / _graphDpr;
+
+      ctx.save();
+      ctx.translate(_graphView.tx, _graphView.ty);
+      ctx.scale(_graphView.scale, _graphView.scale);
+
+      var scale = _graphView.scale;
+      var COL_UP3   = cssVar('--up');
+      var COL_DOWN3 = cssVar('--down');
+      var COL_LINK3 = cssVar('--link');
+      var isZhD = document.documentElement.getAttribute('data-lang') === 'zh';
+
+      // Ambient dust
+      if (!_graphReducedMotion && _graphDust.length) {
+        _graphDust.forEach(function(d){
+          d.x += d.vx; d.y += d.vy;
+          if (d.x < 0) d.x = W; if (d.x > W) d.x = 0;
+          if (d.y < 0) d.y = H; if (d.y > H) d.y = 0;
+          ctx.beginPath();
+          ctx.arc(d.x, d.y, 0.9/scale, 0, 2*Math.PI);
+          ctx.fillStyle = hexAlpha(COL_LINK3, d.alpha);
+          ctx.fill();
+        });
+      }
+
+      var neighborSet = _selectedNode ? getNeighborSet(_selectedNode) : null;
+
+      // ── LAYER 1: Wiring edges (dimmest, underlay) ──────────────────────
+      if (_graphShowWiring) {
+        allEdges.forEach(function(e){
+          if (e.edge_type !== 'wiring') return;
+          var pa = positions[e.src], pb = positions[e.dst];
+          if (!pa || !pb || e._cx == null) return;
+          var alpha = 0.10;
+          if (neighborSet) {
+            if (!neighborSet[e.src] && !neighborSet[e.dst]) alpha = 0.025;
+            else alpha = 0.22;
+          }
+          ctx.globalAlpha = alpha;
+          ctx.strokeStyle = '#6b7a90';
+          ctx.lineWidth = 0.5 / scale;
+          ctx.setLineDash([]);
+          ctx.beginPath();
+          ctx.moveTo(pa.x, pa.y);
+          ctx.quadraticCurveTo(e._cx, e._cy, pb.x, pb.y);
+          ctx.stroke();
+        });
+        ctx.globalAlpha = 1;
+      }
+
+      // ── LAYER 2: Structure edges ────────────────────────────────────────
+      allEdges.forEach(function(e){
+        if (e.edge_type !== 'structure') return;
         var pa = positions[e.src], pb = positions[e.dst];
         if (!pa || !pb) return;
         var isPulse = (now - asofTs) < PULSE_WINDOW_MS;
@@ -776,13 +2417,24 @@ body { padding-bottom:56px; }
         }
         ctx.strokeStyle = col;
         ctx.setLineDash(isContra ? [5, 4] : (isHeadwind ? [3, 4] : (isTailwind ? [6, 3] : [])));
+        if (!pa || !pb || e._cx == null) return;
+        // Color by child node's type (src is typically the "child")
+        var childNode = allNodes.filter(function(n){ return n.id === e.src; })[0];
+        var col = childNode ? nodeDisplayColor(childNode) : '#5b7090';
+        var baseAlpha = 0.32;
+        if (neighborSet) {
+          if (!neighborSet[e.src] && !neighborSet[e.dst]) baseAlpha = 0.06;
+          else if (_selectedNode === e.src || _selectedNode === e.dst) baseAlpha = 0.7;
+        }
+        ctx.globalAlpha = baseAlpha;
+        ctx.strokeStyle = hexAlpha(col, 1);
+        ctx.lineWidth = 1.1 / scale;
+        ctx.setLineDash([]);
         ctx.beginPath();
         ctx.moveTo(pa.x, pa.y);
-        ctx.lineTo(pb.x, pb.y);
+        ctx.quadraticCurveTo(e._cx, e._cy, pb.x, pb.y);
         ctx.stroke();
-        ctx.setLineDash([]);
       });
-
       ctx.globalAlpha = 1;
 
       // Draw nodes
@@ -792,56 +2444,524 @@ body { padding-bottom:56px; }
         var r = n.type === 'engine' ? 12 : n.type === 'regime' ? 9 : n.type === 'macro' ? 8 : 7;
         var COL_MACRO = '#a78bfa'; // violet-400, muted
         var fillCol = n.type === 'engine' ? COL_LINK : n.type === 'regime' ? alphaColor(COL_LINK, 0.55) : n.type === 'macro' ? alphaColor(COL_MACRO, 0.65) : alphaColor(COL_MUTED, 0.45);
+      // ── LAYER 3: Graded edges (confirms / contradicts) ─────────────────
+      allEdges.forEach(function(e){
+        var isConf = e.edge_type === 'confirms';
+        var isContra = e.edge_type === 'contradicts';
+        if (!isConf && !isContra) return;
+        var pa = positions[e.src], pb = positions[e.dst];
+        if (!pa || !pb || e._cx == null) return;
+
+        var alpha = 0.80, lw = 2.4; // FIX 6: slightly brighter base
+        if (neighborSet) {
+          if (!neighborSet[e.src] && !neighborSet[e.dst]) { alpha = 0.09; lw = 1; }
+          else if (_selectedNode === e.src || _selectedNode === e.dst) { alpha = 0.98; lw = 3.0; }
+        }
+
+        ctx.globalAlpha = alpha;
+        ctx.lineWidth = lw / scale;
+
+        var col = isConf ? COL_UP3 : COL_DOWN3;
+        if (isContra) ctx.setLineDash([7/scale, 5/scale]);
+        else ctx.setLineDash([]);
+
+        // FIX 6: stronger glow so green/red pulses pop against structure links
+        if (alpha > 0.5) {
+          ctx.shadowBlur = 10 / scale; // FIX 6: increased from 6 → 10
+          ctx.shadowColor = hexAlpha(col, 0.65); // FIX 6: increased from 0.45 → 0.65
+        }
+
+        try {
+          var grd = ctx.createLinearGradient(pa.x, pa.y, pb.x, pb.y);
+          var rgb = parseHex(col.length===7?col:'#22c55e');
+          grd.addColorStop(0, 'rgba('+rgb.r+','+rgb.g+','+rgb.b+',0.3)');
+          grd.addColorStop(1, 'rgba('+rgb.r+','+rgb.g+','+rgb.b+',1)');
+          ctx.strokeStyle = grd;
+        } catch(ex) { ctx.strokeStyle = col; }
+
         ctx.beginPath();
-        ctx.arc(p.x, p.y, r, 0, 2 * Math.PI);
-        ctx.fillStyle = fillCol;
+        ctx.moveTo(pa.x, pa.y);
+        ctx.quadraticCurveTo(e._cx, e._cy, pb.x, pb.y);
+        ctx.stroke();
+        ctx.shadowBlur = 0; ctx.shadowColor = 'transparent';
+        ctx.setLineDash([]);
+      });
+      ctx.globalAlpha = 1;
+
+      // ── LOBE HULLS (zoomed out) ─────────────────────────────────────────
+      if (scale < 1.3 && scale >= 0.28) {
+        var LOBE_EN = { us:'US EQUITY', intl:'CHINA & INTL', signals:'SIGNALS & OPTIONS', meta:'MACRO & META' };
+        var LOBE_ZH = { us:'美股', intl:'中国及国际', signals:'信号与期权', meta:'宏观与元' };
+        Object.keys(LOBE_ANCHORS).forEach(function(lobe){
+          var la2 = LOBE_ANCHORS[lobe];
+          var ang4 = la2.angle * Math.PI / 180;
+          var cx = (0.5 + la2.r * Math.cos(ang4)) * W;
+          var cy2 = (0.5 + la2.r * Math.sin(ang4)) * H;
+          var col2 = LOBE_COLORS[lobe] || '#4da3ff';
+          // FIX 6: Soft radial hull with raised alpha + 1px tinted ring
+          try {
+            var hullGrd = ctx.createRadialGradient(cx, cy2, 0, cx, cy2, 100);
+            hullGrd.addColorStop(0, hexAlpha(col2, 0.10)); // FIX 6: raised from 0.07
+            hullGrd.addColorStop(0.7, hexAlpha(col2, 0.05));
+            hullGrd.addColorStop(1, hexAlpha(col2, 0.0));
+            ctx.fillStyle = hullGrd;
+            ctx.beginPath();
+            ctx.ellipse(cx, cy2, 100, 78, 0, 0, 2*Math.PI);
+            ctx.fill();
+            // Tinted ring
+            ctx.strokeStyle = hexAlpha(col2, 0.18);
+            ctx.lineWidth = 1.0 / scale;
+            ctx.setLineDash([]);
+            ctx.stroke();
+          } catch(ex){}
+          // Label chip
+          if (scale >= 0.35) {
+            var lobeNm = isZhD ? LOBE_ZH[lobe] : LOBE_EN[lobe];
+            var fs3 = Math.max(7.5, 8/scale);
+            ctx.font = '700 ' + fs3 + 'px -apple-system,sans-serif';
+            ctx.fillStyle = hexAlpha(col2, 0.55);
+            ctx.textAlign = 'center';
+            ctx.fillText(lobeNm, cx, cy2 - 78 / scale);
+          }
+        });
+        // Sector ring label
+        if (scale >= 0.35) {
+          var fs4 = Math.max(7.5, 8/scale);
+          ctx.font = '600 ' + fs4 + 'px -apple-system,sans-serif';
+          ctx.fillStyle = hexAlpha(LOBE_COLORS.sector, 0.5);
+          ctx.textAlign = 'center';
+          ctx.fillText(isZhD ? '板块' : 'SECTORS', 0.78*W, 0.56*H);
+        }
+        // Regime arc label
+        if (scale >= 0.35) {
+          ctx.font = '600 ' + Math.max(7.5, 8/scale) + 'px -apple-system,sans-serif';
+          ctx.fillStyle = hexAlpha(LOBE_COLORS.regime, 0.5);
+          ctx.textAlign = 'center';
+          ctx.fillText(isZhD ? '周期' : 'REGIMES', 0.5*W, 0.07*H);
+        }
+      }
+
+      // ── NODES ──────────────────────────────────────────────────────────
+
+      // Label collision state — built per frame
+      var placedBoxes = [];
+      var labelPriorityOrder = [];
+      var forceShowLabels = {};  // nodeId → true (hovered/selected/neighbor)
+      if (neighborSet) {
+        Object.keys(neighborSet).forEach(function(id){ forceShowLabels[id] = true; });
+      }
+      if (_graphHovered) forceShowLabels[_graphHovered] = true;
+      if (_selectedNode) forceShowLabels[_selectedNode] = true;
+
+      // Sort by draw priority for label placement
+      var priorityMap = { core: 0, hub: 0, engine: 1, regime: 2, complex: 3, thesis: 4, sector: 5, signal: 6, 'wiring-module': 7, 'wiring-artifact': 8 };
+
+      // Draw nodes (all), collect label candidates
+      var labelCandidates = [];
+      allNodes.forEach(function(n, i){
+        var p = positions[n.id];
+        if (!p) return;
+        var r = radii[n.id] || 4;
+        var isCore = n.type === 'core';
+        var breathing = !_graphReducedMotion && (n.type === 'engine' || isCore || n.type === 'hub');
+        var displayR = breathing ? r * (1 + 0.05 * Math.sin(_graphPhase * (isCore ? 0.5 : n.type === 'hub' ? 0.6 : 0.8) + i * 0.7)) : r;
+
+        var alpha = 1;
+        if (neighborSet && !neighborSet[n.id]) alpha = 0.12;
+        var isHovered = _graphHovered === n.id;
+        var isSelected = _selectedNode === n.id;
+
+        ctx.globalAlpha = alpha;
+
+        var col = nodeDisplayColor(n);
+
+        // FIX 6: Core — layered radial glow (outer soft halo + bright inner core) + breathing
+        if (isCore && !_graphReducedMotion) {
+          var haloPulse = 0.5 + 0.5 * Math.sin(_graphPhase * 0.5);
+          // Outer soft halo
+          try {
+            var haloGrd = ctx.createRadialGradient(p.x, p.y, displayR, p.x, p.y, displayR * 3.5);
+            haloGrd.addColorStop(0, hexAlpha(col, 0.18 * haloPulse * alpha));
+            haloGrd.addColorStop(0.5, hexAlpha(col, 0.08 * haloPulse * alpha));
+            haloGrd.addColorStop(1, hexAlpha(col, 0.0));
+            ctx.fillStyle = haloGrd;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, displayR * 3.5, 0, 2*Math.PI);
+            ctx.fill();
+          } catch(ex){}
+          // Bright inner corona
+          try {
+            var coronaGrd = ctx.createRadialGradient(p.x, p.y, displayR * 0.6, p.x, p.y, displayR * 1.8);
+            coronaGrd.addColorStop(0, hexAlpha(col, 0.45 * alpha));
+            coronaGrd.addColorStop(1, hexAlpha(col, 0.0));
+            ctx.fillStyle = coronaGrd;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, displayR * 1.8, 0, 2*Math.PI);
+            ctx.fill();
+          } catch(ex){}
+        }
+
+        // FIX 6: Hub nodes — subtle glow
+        if (n.type === 'hub' && scale > 0.25) {
+          try {
+            var hubGrd = ctx.createRadialGradient(p.x, p.y, displayR * 0.5, p.x, p.y, displayR * 2.2);
+            hubGrd.addColorStop(0, hexAlpha(col, 0.25 * alpha));
+            hubGrd.addColorStop(1, hexAlpha(col, 0.0));
+            ctx.fillStyle = hubGrd;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, displayR * 2.2, 0, 2*Math.PI);
+            ctx.fill();
+          } catch(ex){}
+        }
+
+        // Glow for prominent nodes
+        if ((n.type === 'engine' || isCore || n.type === 'hub') && scale > 0.25) {
+          ctx.shadowBlur = (isCore ? 24 : n.type === 'hub' ? 14 : 12) / scale; // FIX 6: stronger core glow
+          ctx.shadowColor = hexAlpha(col, (isCore ? 0.9 : 0.65) * alpha);
+        }
+
+        // Radial gradient soma
+        try {
+          var grd2 = ctx.createRadialGradient(p.x - displayR*0.32, p.y - displayR*0.32, 0, p.x, p.y, displayR);
+          grd2.addColorStop(0, hexAlpha(col, 0.96));
+          grd2.addColorStop(1, hexAlpha(col, 0.38));
+          ctx.fillStyle = grd2;
+        } catch(ex) { ctx.fillStyle = hexAlpha(col, 0.72); }
+
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, displayR, 0, 2*Math.PI);
         ctx.fill();
-        ctx.strokeStyle = COL_BG;
-        ctx.lineWidth = 1.5;
+        ctx.shadowBlur = 0; ctx.shadowColor = 'transparent';
+
+        // Rim
+        var rimAlpha = isHovered ? 1 : isSelected ? 0.95 : 0.4;
+        ctx.strokeStyle = isSelected ? COL_LINK3 : hexAlpha(col, rimAlpha);
+        ctx.lineWidth = (isHovered || isSelected ? 2.2 : 1.0) / scale;
+        ctx.globalAlpha = Math.min(alpha * 1.2, 1);
         ctx.stroke();
 
-        // Label
-        var label = (n.label || n.id || '').split(':').pop().replace(/_/g, ' ');
-        if (label.length > 16) label = label.slice(0, 14) + '…';
-        ctx.font = (n.type === 'engine' ? '700 ' : '') + '10px -apple-system,sans-serif';
-        ctx.fillStyle = COL_TEXT;
+        ctx.globalAlpha = 1;
+
+        // Queue label candidate
+        labelCandidates.push({ n: n, p: p, displayR: displayR, alpha: alpha, isHovered: isHovered, isSelected: isSelected, priority: priorityMap[n.type] != null ? priorityMap[n.type] : 9 });
+      });
+
+      // ── LABEL COLLISION PASS ──────────────────────────────────────────
+      labelCandidates.sort(function(a, b){ return a.priority - b.priority; });
+      var isZhLabel = document.documentElement.getAttribute('data-lang') === 'zh';
+
+      labelCandidates.forEach(function(lc2){
+        var n = lc2.n, p = lc2.p;
+        var force = forceShowLabels[n.id];
+
+        // Min-zoom gate per priority
+        var minZoom = 0;
+        if (n.type === 'core' || n.type === 'hub' || n.type === 'engine') minZoom = 0;
+        else if (n.type === 'regime' || n.type === 'complex') minZoom = 0.48;
+        else if (n.type === 'thesis' || n.type === 'sector') minZoom = 0.82;
+        else if (n.type === 'signal') minZoom = 1.0;
+        else minZoom = 1.4; // wiring
+
+        if (!force && scale < minZoom) return;
+
+        var isBold = (n.type === 'core' || n.type === 'hub' || n.type === 'engine' || lc2.isSelected);
+        var fontSizePx = Math.max(10, Math.min(13, 11 / scale));
+        var fontSizeCanvas = fontSizePx / scale;
+        ctx.font = (isBold ? '700 ' : '') + fontSizeCanvas + 'px -apple-system,sans-serif';
+
+        var rawLabel = isZhLabel ? (n.labelZh || n.label || n.id) : (n.label || n.id);
+        var label = rawLabel.replace(/_/g, ' ');
+        if (label.length > 18) label = label.slice(0, 16) + '…';
+
+        var tw = ctx.measureText(label).width;
+        var lx = p.x - tw / 2;
+        var ly = p.y + lc2.displayR + (fontSizeCanvas * 0.3) + 2 / scale;
+        var box = { x1: lx - 2/scale, y1: ly - fontSizeCanvas, x2: lx + tw + 2/scale, y2: ly + 2/scale };
+
+        // Overlap test (skip if not forced)
+        if (!force) {
+          for (var bi = 0; bi < placedBoxes.length; bi++) {
+            var pb6 = placedBoxes[bi];
+            if (box.x1 < pb6.x2 && box.x2 > pb6.x1 && box.y1 < pb6.y2 && box.y2 > pb6.y1) return; // overlap → skip
+          }
+        }
+        placedBoxes.push(box);
+
+        ctx.fillStyle = lc2.isSelected ? COL_LINK3 : (lc2.alpha < 0.5 ? hexAlpha('#8b99b5', 0.5) : '#e6edf7');
+        ctx.globalAlpha = Math.max(lc2.alpha, 0.25);
         ctx.textAlign = 'center';
-        ctx.globalAlpha = 0.88;
-        ctx.fillText(label, p.x, p.y + r + 11);
+        ctx.fillText(label, p.x, ly);
         ctx.globalAlpha = 1;
       });
+
+      // ── PULSE TRAVELERS ───────────────────────────────────────────────
+      if (!_graphReducedMotion) {
+        _graphPulses.forEach(function(pulse){
+          var e = pulse.edge;
+          var pa2 = positions[e.src], pb2 = positions[e.dst];
+          if (!pa2 || !pb2 || e._cx == null) return;
+          var t2 = pulse.t;
+
+          function bezierAt(t3) {
+            var mt = 1 - t3;
+            return {
+              x: mt*mt*pa2.x + 2*mt*t3*e._cx + t3*t3*pb2.x,
+              y: mt*mt*pa2.y + 2*mt*t3*e._cy + t3*t3*pb2.y
+            };
+          }
+
+          var pos2 = bezierAt(t2);
+          var isConf2 = pulse.type === 'confirms';
+          var pAlpha = 0.88;
+          var pR = 3.0 / scale;
+          var pCol = isConf2 ? COL_UP3 : COL_DOWN3;
+
+          if (neighborSet && !neighborSet[e.src] && !neighborSet[e.dst]) pAlpha *= 0.1;
+
+          // Fading ghost tail
+          for (var ghost = 3; ghost >= 0; ghost--) {
+            var ghostT = Math.max(0, t2 - ghost * 0.035);
+            var ghostPos = bezierAt(ghostT);
+            ctx.globalAlpha = pAlpha * (1 - ghost * 0.22) * 0.55;
+            ctx.beginPath();
+            ctx.arc(ghostPos.x, ghostPos.y, pR * (1 - ghost * 0.18), 0, 2*Math.PI);
+            ctx.fillStyle = pCol;
+            ctx.fill();
+          }
+
+          // Main dot with glow
+          ctx.globalAlpha = pAlpha;
+          ctx.shadowBlur = 9 / scale;
+          ctx.shadowColor = hexAlpha(pCol, 0.75);
+          ctx.beginPath();
+          ctx.arc(pos2.x, pos2.y, pR, 0, 2*Math.PI);
+          ctx.fillStyle = pCol;
+          ctx.fill();
+          ctx.shadowBlur = 0; ctx.shadowColor = 'transparent';
+          ctx.globalAlpha = 1;
+        });
+      }
+
+      ctx.restore(); // pop transform
+      ctx.restore(); // pop DPR scale
+
+      _graphPhase += 0.016;
     }
 
-    // Animate
-    var phase = 0;
-    var raf = null;
-    function animate() {
-      phase += 0.04;
-      drawFrame(phase);
-      raf = requestAnimationFrame(animate);
-    }
-
-    // Only animate while visible
-    var io = window.IntersectionObserver ? new IntersectionObserver(function (entries) {
-      entries.forEach(function (e) {
-        if (e.isIntersecting) { if (!raf) animate(); }
-        else { if (raf) { cancelAnimationFrame(raf); raf = null; } }
+    // rAF loop with visibility pause
+    var _graphPaused = false;
+    var _io2 = window.IntersectionObserver ? new IntersectionObserver(function(entries){
+      entries.forEach(function(entry){
+        _graphPaused = !entry.isIntersecting;
+        if (!_graphPaused && !_graphRaf) startAnim();
       });
     }) : null;
-    if (io) { io.observe(canvas); } else { animate(); }
+    if (_io2) _io2.observe(canvas);
 
-    // Pan + zoom (simple)
-    var dragging = false, lastMX = 0, lastMY = 0;
-    var offsetX = 0, offsetY = 0;
-    canvas.addEventListener('mousedown', function (e) { dragging = true; lastMX = e.clientX; lastMY = e.clientY; });
-    canvas.addEventListener('mouseup',   function () { dragging = false; });
-    canvas.addEventListener('mouseleave',function () { dragging = false; });
-    canvas.addEventListener('mousemove', function (e) {
-      if (!dragging) return;
-      var dx = e.clientX - lastMX, dy = e.clientY - lastMY;
-      lastMX = e.clientX; lastMY = e.clientY;
-      nodeIds.forEach(function (id) { positions[id].x += dx; positions[id].y += dy; });
+    document.addEventListener('visibilitychange', function(){
+      _graphPaused = document.hidden;
+      if (!_graphPaused && !_graphRaf) startAnim();
     });
+
+    function startAnim() {
+      if (_graphRaf) return;
+      function loop(ts) {
+        if (_graphPaused) { _graphRaf = null; return; }
+        if (_graphReducedMotion) {
+          drawFrame(ts);
+          _graphRaf = null; // static: only redraw on interaction
+        } else {
+          drawFrame(ts);
+          _graphRaf = requestAnimationFrame(loop);
+        }
+      }
+      _graphRaf = requestAnimationFrame(loop);
+    }
+
+    if (!_graphReducedMotion) {
+      // Paint one frame synchronously: rAF is throttled to zero in hidden or
+      // prerendered tabs, and the canvas must not sit blank until first tick.
+      drawFrame(performance.now());
+      startAnim();
+    } else {
+      // Static render
+      drawFrame(performance.now());
+      // Redraw on interaction
+      canvas.addEventListener('click', function(){ drawFrame(performance.now()); });
+      canvas.addEventListener('wheel', function(){ drawFrame(performance.now()); });
+    }
+  }
+
+  // ── PR-D: Neural Web Daily Brief ──────────────────────────────────────────
+  function loadDailyBrief() {
+    var loadEl = document.getElementById('brief_loading');
+    var contentEl = document.getElementById('cm_brief_content');
+    var errEl = document.getElementById('brief_error');
+    fetch('neuralwebdata/daily_brief.json')
+      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(function (d) {
+        if (loadEl) loadEl.style.display = 'none';
+        if (!contentEl) return;
+        contentEl.style.display = '';
+        var escB = function (s) {
+          return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        };
+        var statusColor = {'ok':'var(--up)','warn':'var(--warn,#e6a817)','degraded':'var(--down)'};
+        var st = d.status || 'unknown';
+        var stColor = statusColor[st] || 'var(--muted)';
+        // Status row
+        var statusEl = document.getElementById('brief_status_row');
+        if (statusEl) {
+          statusEl.innerHTML = '<span style="font-weight:600;color:' + stColor + '">' + escB(st.toUpperCase()) + '</span>'
+            + ' <span style="font-size:11px;color:var(--muted)">' + escB(d.phase || '') + ' &bull; ' + escB((d.as_of || '').slice(0, 16).replace('T',' ')) + ' UTC</span>';
+        }
+        // Brain-run row
+        var brainEl = document.getElementById('brief_brain_row');
+        if (brainEl) {
+          var br = d.did_the_brain_run || {};
+          brainEl.innerHTML = '<span class="l-en">Brain: </span><span class="l-zh">大脑：</span>' + escB(br.summary || 'unknown');
+        }
+        // Helper: render up to N items from a list, return {shown, rest}
+        function renderItems(list, n, renderFn) {
+          var shown = (list || []).slice(0, n);
+          var rest = (list || []).slice(n);
+          return { html: shown.map(renderFn).join(''), rest: rest, restFn: renderFn };
+        }
+        // what_changed
+        var changedEl = document.getElementById('brief_changed_list');
+        if (changedEl && (d.what_changed || []).length) {
+          var r1 = renderItems(d.what_changed, 3, function (c) {
+            return '<div style="font-size:13px;margin-bottom:3px">'
+              + '<span style="color:var(--muted);margin-right:4px">[' + escB(c.kind || '') + ']</span>'
+              + escB(c.summary || '') + '</div>';
+          });
+          changedEl.innerHTML = '<div style="font-size:11px;color:var(--muted);text-transform:uppercase;margin-bottom:3px"><span class="l-en">Changes</span><span class="l-zh">变化</span></div>' + r1.html;
+        }
+        // what_is_stale
+        var staleEl = document.getElementById('brief_stale_list');
+        if (staleEl && (d.what_is_stale || []).length) {
+          var r2 = renderItems(d.what_is_stale, 3, function (s) {
+            return '<div style="font-size:13px;margin-bottom:3px;color:var(--down)">'
+              + escB(s.id || '') + ': ' + escB(s.age_hours != null ? s.age_hours + 'h old' : 'age unknown') + '</div>';
+          });
+          staleEl.innerHTML = '<div style="font-size:11px;color:var(--muted);text-transform:uppercase;margin-bottom:3px"><span class="l-en">Stale</span><span class="l-zh">过期</span></div>' + r2.html;
+        }
+        // operator_attention (top 3)
+        var attnEl = document.getElementById('brief_attn_list');
+        var r3 = null;
+        if (attnEl && (d.operator_attention || []).length) {
+          r3 = renderItems(d.operator_attention, 3, function (a) {
+            var pColor = a.priority === 1 ? 'var(--down)' : a.priority === 2 ? 'var(--warn,#e6a817)' : 'var(--muted)';
+            return '<div style="font-size:13px;margin-bottom:3px">'
+              + '<span style="color:' + pColor + ';font-weight:600;margin-right:4px">P' + (a.priority || '?') + '</span>'
+              + escB(a.summary || '') + '</div>';
+          });
+          attnEl.innerHTML = '<div style="font-size:11px;color:var(--muted);text-transform:uppercase;margin-bottom:3px"><span class="l-en">Operator Attention</span><span class="l-zh">操作人员注意</span></div>' + r3.html;
+        }
+        // Expander: collect overflow items from all three lists
+        var allExtra = [];
+        if (r1 && r1.rest.length) allExtra = allExtra.concat(r1.rest.map(r1.restFn));
+        if (r2 && r2.rest.length) allExtra = allExtra.concat(r2.rest.map(r2.restFn));
+        if (r3 && r3.rest.length) allExtra = allExtra.concat(r3.rest.map(r3.restFn));
+        var exContent = document.getElementById('brief_expander_content');
+        var exEl = document.getElementById('brief_expander');
+        if (allExtra.length && exContent && exEl) {
+          exContent.innerHTML = allExtra.join('');
+          exEl.style.display = '';
+        } else if (exEl) {
+          exEl.style.display = 'none';
+        }
+      })
+      .catch(function () {
+        if (loadEl) loadEl.style.display = 'none';
+        if (errEl) errEl.style.display = '';
+      });
+  }
+
+  // ── MPC: Why the tape moved (W3) ─────────────────────────────────────────
+  function loadMechanismPathways() {
+    var blockEl = document.getElementById('brief_pathway_block');
+    if (!blockEl) return;
+    var escB = function (s) {
+      return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    };
+    fetch('neuralwebdata/mechanism_pathways.json')
+      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(function (d) {
+        var pathways = d.pathways || [];
+        var noPathway = d.no_pathway || null;
+
+        if (!pathways.length) {
+          // No pathway emitted — honest display (RUL-CC-4)
+          var reason = noPathway ? (noPathway.reason || 'unknown') : 'unknown';
+          var nullEl = document.getElementById('brief_pathway_null');
+          if (nullEl) {
+            nullEl.innerHTML = '<span class="l-en">no pathway emitted: </span>'
+              + '<span class="l-zh">未发出路径: </span>'
+              + '<span style="color:var(--muted)">' + escB(reason) + '</span>';
+          }
+          blockEl.style.display = '';
+          return;
+        }
+
+        var pw = pathways[0];
+        var family = pw.family || '';
+        var direction = pw.direction_en || '';
+        var cov = pw.coverage_score != null ? pw.coverage_score : (pw.coverage_basis || 'n/a');
+        var coherence = pw.coherence || '';
+        var staleCount = (pw.stale_legs || []).length;
+
+        // Evidence leg names from nodes (asset-class/ETF/driver level, RUL-CC-10)
+        var legNames = [];
+        var nodes = pw.nodes || [];
+        for (var i = 0; i < nodes.length && legNames.length < 3; i++) {
+          if (nodes[i].pathway_role === 'required_leg' && nodes[i].entity) {
+            legNames.push(nodes[i].entity);
+          }
+        }
+
+        // Alternates — family names only
+        var altFams = [];
+        for (var j = 1; j < pathways.length && altFams.length < 2; j++) {
+          if (pathways[j].family) altFams.push(pathways[j].family);
+        }
+
+        // Coherence badge color
+        var cohColor = coherence === 'supported' ? 'var(--up)' : coherence === 'conflicted' ? 'var(--down)' : 'var(--warn,#e6a817)';
+
+        var primaryEl = document.getElementById('brief_pathway_primary');
+        if (primaryEl) {
+          primaryEl.innerHTML = '<span style="font-weight:600">' + escB(family) + '</span>'
+            + (direction ? ' &mdash; <span style="color:var(--muted)">' + escB(direction) + '</span>' : '')
+            + ' <span style="padding:1px 5px;border-radius:3px;font-size:11px;background:' + cohColor + ';color:#fff">'
+            + escB(coherence) + '</span>';
+        }
+
+        var covEl = document.getElementById('brief_pathway_coverage');
+        if (covEl) {
+          covEl.innerHTML = '<span class="l-en">Coverage: </span><span class="l-zh">覆盖率: </span>'
+            + escB(String(cov))
+            + (staleCount ? ' &bull; <span style="color:var(--down)">' + staleCount + '<span class="l-en"> stale leg(s)</span><span class="l-zh"> 个过期腿</span></span>' : '');
+        }
+
+        var legsEl = document.getElementById('brief_pathway_legs');
+        if (legsEl && legNames.length) {
+          legsEl.innerHTML = '<span class="l-en">Evidence: </span><span class="l-zh">证据: </span>'
+            + escB(legNames.join(' · '));
+        }
+
+        var altsEl = document.getElementById('brief_pathway_alts');
+        if (altsEl && altFams.length) {
+          altsEl.innerHTML = '<span class="l-en">Alternates: </span><span class="l-zh">备选: </span>'
+            + escB(altFams.join(', '));
+        }
+
+        blockEl.style.display = '';
+      })
+      .catch(function () {
+        // Artifact absent until first nightly — hide block silently (no console error)
+        if (blockEl) blockEl.style.display = 'none';
+      });
   }
 
   // ── Cortex memo ───────────────────────────────────────────────────────────
@@ -850,76 +2970,132 @@ body { padding-bottom:56px; }
     fetch('neuralweb/cortex_memo.json')
       .then(function (r) { return r.json(); })
       .then(function (d) {
+        _memoCache = d;
         document.getElementById('memo_loading').style.display = 'none';
         renderMemo(d);
       })
       .catch(function () {
+        updateCortexChip(false);
         document.getElementById('cm_memo_content').innerHTML =
-          '<p class="cm-empty">Memo unavailable.</p>';
+          '<p class="cm-empty"><span class="l-en">Memo unavailable.</span><span class="l-zh">备忘录不可用。</span></p>';
       });
+  }
+
+  function isMemoFailed(memo) {
+    // Detection contract (DICT run_status shape: {status:'ok'|'degraded'|'warn',...}):
+    // 1. rs.status === 'degraded' → failed (hard fail, amber banner)
+    // 2. rs.status === 'warn'     → NOT failed (healthy, but context-stale notice)
+    // 3. rs.status === 'ok'       → healthy
+    // 4. Legacy: summary contains "budget exhausted after 0" → failed
+    // 5. No rs AND empty census AND empty what_fired → failed
+    var rs = (memo.run_status && typeof memo.run_status === 'object') ? memo.run_status : null;
+    if (rs) {
+      if (rs.status === 'degraded') return { failed: true, partial: false, warn: false };
+      if (rs.status === 'warn') return { failed: false, partial: false, warn: true };
+      // ok or unrecognised → healthy
+      return { failed: false, partial: false, warn: false };
+    }
+    var summary = memo.summary || '';
+    if (/budget exhausted after 0/i.test(summary)) return { failed: true, partial: false, warn: false };
+    var hasCensus = memo.tool_call_census && Object.keys(memo.tool_call_census).length > 0;
+    var hasFired  = memo.what_fired && memo.what_fired.length > 0;
+    if (!hasCensus && !hasFired && !summary) return { failed: true, partial: false, warn: false };
+    return { failed: false, partial: false, warn: false };
   }
 
   function renderMemo(memo) {
     var el = document.getElementById('cm_memo_content');
     var prob = memo.probation || {};
+    var failState = isMemoFailed(memo);
     var html = '';
+
+    if (failState.failed && !failState.partial) {
+      // Hard fail — amber banner
+      updateCortexChip(false);
+      html += '<div class="memo-failed-banner">'
+        + '<strong><span class="l-en">The cortex went offline last night</span><span class="l-zh">皮层昨晚离线</span></strong> — '
+        + '<span class="l-en">its reasoning engine failed before deliberation started. This placeholder will be replaced after the next successful overnight run.</span>'
+        + '<span class="l-zh">推理引擎在审议开始前失败。下次成功的隔夜运行后将替换此占位符。</span>'
+        + '</div>';
+      if (memo.as_of) html += '<p style="font-size:12px;color:var(--muted);margin:4px 0">as_of: ' + esc(memo.as_of) + '</p>';
+      if (prob.tier) html += '<p style="font-size:12px;color:var(--muted);margin:4px 0"><span class="l-en">Probation tier:</span><span class="l-zh">试用层级：</span> ' + esc(prob.tier) + '</p>';
+      html += '<details class="memo-raw"><summary><span class="l-en">Raw memo (for operators)</span><span class="l-zh">原始备忘录（供运营人员查看）</span></summary>'
+        + '<pre>' + esc(JSON.stringify(memo, null, 2)) + '</pre></details>';
+      el.innerHTML = html;
+      return;
+    }
+
+    // ok / warn / legacy-healthy → chip green
+    updateCortexChip(true);
+
+    if (failState.warn) {
+      // rs.status === 'warn': context may be stale — amber notice, not a failure
+      var rs = memo.run_status || {};
+      html += '<div style="margin-bottom:10px;padding:6px 10px;border-radius:6px;font-size:12px;'
+        + 'border:1px solid var(--warn,#e6a817);color:var(--warn,#e6a817)">'
+        + '<span class="l-en"><strong>Context notice:</strong> '
+        + esc(rs.degradation_reason || 'Cortex context may be stale.')
+        + (rs.context_stale ? ' Context as-of: ' + esc(rs.context_as_of || '') + '.' : '')
+        + '</span>'
+        + '<span class="l-zh"><strong>上下文提示：</strong>'
+        + esc(rs.degradation_reason || '皮层上下文可能已过期。')
+        + (rs.context_stale ? ' 上下文时间：' + esc(rs.context_as_of || '') + '。' : '')
+        + '</span>'
+        + '</div>';
+    }
+
+    if (failState.partial) {
+      // Partial run (budget_exhausted with some data)
+      html += '<div class="memo-partial-banner">'
+        + '<span class="l-en">The deliberation ran out of its nightly thinking budget; partial review below.</span>'
+        + '<span class="l-zh">审议超出了夜间思考预算；以下为部分审议结果。</span>'
+        + '</div>';
+    }
 
     // Probation banner
     html += '<div class="probation-banner">'
-      + '<strong>Probation tier: ' + esc(prob.tier || 'unknown') + '</strong> &nbsp;'
-      + (prob.granted ? '' : ' — not yet granted. ')
-      + esc(prob.reason || '') + ' '
-      + (prob.lift_lb ? 'Lift lower bound: ' + prob.lift_lb : '')
+      + '<strong><span class="l-en">Probation tier:</span><span class="l-zh">试用层级：</span> ' + esc(prob.tier || 'unknown') + '</strong>&nbsp;'
+      + (prob.granted ? '' : '<span class="l-en"> — not yet granted.</span><span class="l-zh"> — 尚未授予。</span> ')
+      + (prob.reason ? esc(prob.reason) + ' ' : '')
+      + (prob.lift_lb ? '<span class="l-en">Lift lower bound: </span><span class="l-zh">提升下界：</span>' + esc(prob.lift_lb) : '')
       + '</div>';
 
-    // is_context_only
     if (memo.is_context_only) {
       html += '<span class="is-context-badge">IS_CONTEXT_ONLY</span> ';
     }
 
-    // Summary
-    html += '<div class="memo-summary">'
-      + '<strong>Summary:</strong> ' + esc(memo.summary || '') + '</div>';
+    // Summary in highlighted card
+    if (memo.summary) {
+      html += '<div class="memo-summary-card">'
+        + '<strong><span class="l-en">Summary</span><span class="l-zh">摘要</span>:</strong> ' + esc(memo.summary) + '</div>';
+    }
 
-    // As-of
     if (memo.as_of) {
       html += '<p style="font-size:12px;color:var(--muted);margin:6px 0">as_of: ' + esc(memo.as_of) + '</p>';
     }
 
-    // What fired
+    // What fired — as list
     var fired = memo.what_fired || [];
     if (fired.length) {
-      html += '<h3 style="margin-top:14px">What fired</h3><ul class="fired-list">';
+      html += '<h3 style="margin-top:14px"><span class="l-en">What fired</span><span class="l-zh">触发信号</span></h3><ul class="fired-list">';
       fired.forEach(function (f) { html += '<li>' + esc(f) + '</li>'; });
       html += '</ul>';
     }
 
-    // Contradictions
     if (memo.contradictions_review) {
-      html += '<h3 style="margin-top:12px">Contradictions review</h3>'
+      html += '<h3 style="margin-top:12px"><span class="l-en">Contradictions review</span><span class="l-zh">矛盾审查</span></h3>'
         + '<p style="font-size:13px;color:var(--muted)">' + esc(memo.contradictions_review) + '</p>';
     }
 
-    // Tool census
+    // Tool census as chips
     var tc = memo.tool_call_census || {};
-    var rs = memo.run_status || null;
     if (Object.keys(tc).length) {
-      html += '<h3 style="margin-top:12px">Tool call census</h3>'
-        + '<div style="display:flex;flex-wrap:wrap;gap:8px;font-size:12px">';
+      html += '<h3 style="margin-top:12px"><span class="l-en">Tool call census</span><span class="l-zh">工具调用统计</span></h3>'
+        + '<div style="display:flex;flex-wrap:wrap;gap:6px;font-size:12px">';
       Object.keys(tc).forEach(function (k) {
-        html += '<span style="background:var(--panel2);padding:2px 8px;border-radius:6px">'
-          + esc(k) + ': ' + esc(tc[k]) + '</span>';
+        html += '<span class="tc-chip">' + esc(k) + ': ' + esc(tc[k]) + '</span>';
       });
       html += '</div>';
-    } else {
-      // No tool calls — show honest degraded notice
-      var rsStatus = rs ? rs.status : 'degraded';
-      var noticeColor = rsStatus === 'degraded' ? 'var(--down)' : rsStatus === 'warn' ? 'var(--warn)' : 'var(--muted)';
-      html += '<div style="margin-top:10px;padding:6px 10px;border-radius:6px;font-size:12px;'
-        + 'border:1px solid ' + noticeColor + ';color:' + noticeColor + '">'
-        + '<span class="l-en">Cortex ran in degraded mode — no tool calls recorded.</span>'
-        + '<span class="l-zh">Cortex 以降级模式运行——未记录工具调用。</span>'
-        + '</div>';
     }
 
     el.innerHTML = html;
@@ -927,162 +3103,194 @@ body { padding-bottom:56px; }
 
   // ── Ask the brain ─────────────────────────────────────────────────────────
   (function () {
-    var qEl     = document.getElementById('ask_q');
-    var tickerEl= document.getElementById('ask_ticker');
-    var btnEl   = document.getElementById('ask_btn');
-    var charEl  = document.getElementById('ask_charcount');
-    var loadEl  = document.getElementById('ask_loading');
-    var errEl   = document.getElementById('ask_error');
-    var ansEl   = document.getElementById('ask_answer');
-    var modeEl  = document.getElementById('ask_mode_badge');
-    var degradEl= document.getElementById('ask_degraded_notice');
-    var textEl  = document.getElementById('ask_answer_text');
-    var citWrap = document.getElementById('ask_citations_wrap');
-    var citList = document.getElementById('ask_citations_list');
+    var qEl      = document.getElementById('ask_q');
+    var tickerEl = document.getElementById('ask_ticker');
+    var btnEl    = document.getElementById('ask_btn');
+    var charEl   = document.getElementById('ask_charcount');
+    var loadEl   = document.getElementById('ask_loading');
+    var errEl    = document.getElementById('ask_error');
+    var signinEl = document.getElementById('ask_signin_msg');
+    var ansEl    = document.getElementById('ask_answer');
+    var modeEl   = document.getElementById('ask_mode_badge');
+    var degradEl = document.getElementById('ask_degraded_notice');
+    var textEl   = document.getElementById('ask_answer_text');
+    var citWrap  = document.getElementById('ask_citations_wrap');
+    var citList  = document.getElementById('ask_citations_list');
 
     if (!qEl) return;
 
-    // Char counter
     qEl.addEventListener('input', function () {
       var n = qEl.value.length;
       charEl.textContent = n + ' / 500';
       charEl.style.color = n > 450 ? 'var(--down)' : n > 380 ? 'var(--warn)' : '';
     });
 
-    // If a ticker is selected in the committee view, pre-fill the ask ticker field
-    // (called from loadTicker() below via prefillAskTicker()).
-    window._prefillAskTicker = function (t) {
-      if (tickerEl) tickerEl.value = t;
-    };
+    window._prefillAskTicker = function (t) { if (tickerEl) tickerEl.value = t; };
 
     function setLoading(on) {
       btnEl.disabled = on;
       loadEl.classList.toggle('active', on);
-      if (on) {
-        errEl.classList.remove('active');
-        ansEl.classList.remove('active');
-      }
+      if (on) { errEl.classList.remove('active'); ansEl.classList.remove('active'); signinEl.classList.remove('active'); }
     }
 
-    function showError() {
+    function needSignIn() {
       setLoading(false);
+      signinEl.classList.add('active');
+      if (window.MDXAuth && window.MDXAuth.open) window.MDXAuth.open('signin');
+    }
+
+    // Offline memo-quote fallback
+    function memoQuoteFallback(question) {
+      function ensureMemo(cb) {
+        if (_memoCache) { cb(_memoCache); return; }
+        fetch('neuralweb/cortex_memo.json')
+          .then(function(r){ return r.json(); })
+          .then(function(d){ _memoCache=d; cb(d); })
+          .catch(function(){ cb(null); });
+      }
+      ensureMemo(function(memo) {
+        setLoading(false);
+        if (!memo) {
+          showErrorMsg('<span class="l-en">Live brain unreachable and memo unavailable from this deployment. Try the main site (mastermind-x.com).</span><span class="l-zh">实时大脑不可达，且本部署无法获取备忘录。请访问主站（mastermind-x.com）。</span>');
+          return;
+        }
+        var failState = isMemoFailed(memo);
+        if (failState.failed && !failState.partial) {
+          showOfflineAnswer(
+            '<span class="l-en">The brain is offline tonight — the cortex run failed before it could deliberate. Try the main site (mastermind-x.com) for a live session.</span>'
+            +'<span class="l-zh">今晚大脑离线——皮层运行在审议开始前失败。请访问主站（mastermind-x.com）进行实时会话。</span>',
+            [], memo);
+          return;
+        }
+        // Keyword score sections
+        var words = question.toLowerCase().split(/\W+/).filter(function(w){ return w.length>3; });
+        var sections = [
+          { key: 'summary', text: memo.summary||'' },
+          { key: 'contradictions_review', text: memo.contradictions_review||'' },
+          { key: 'what_fired', text: (memo.what_fired||[]).join(' ') }
+        ];
+        sections.sort(function(a,b){
+          var sa=0,sb=0;
+          words.forEach(function(w){ if(a.text.toLowerCase().indexOf(w)>=0)sa++; if(b.text.toLowerCase().indexOf(w)>=0)sb++; });
+          return sb-sa;
+        });
+        var answer = (memo.summary||'(no summary)') + '\n\n' + (sections[0].text||'');
+        var cits = [];
+        (memo.what_fired||[]).slice(0,6).forEach(function(f){ cits.push(f); });
+        (memo.deserves_operator||[]).slice(0,3).forEach(function(f){ cits.push(f); });
+        showOfflineAnswer(answer, cits, memo);
+      });
+    }
+
+    function showOfflineAnswer(answer, cits, memo) {
+      modeEl.innerHTML = '<span class="ask-mode-badge ask-mode-memo"><span class="l-en">MEMO-QUOTE (offline)</span><span class="l-zh">备忘录模式（离线）</span></span>';
+      degradEl.innerHTML = '<span class="l-en"><strong>Live brain unreachable</strong> from this deployment — quoting the last committed cortex memo.</span>'
+        + '<span class="l-zh"><strong>本部署无法访问实时大脑</strong>——引用最近提交的皮层备忘录。</span>';
+      degradEl.style.display = '';
+      textEl.textContent = typeof answer === 'string' ? answer : '';
+      if (typeof answer !== 'string') textEl.innerHTML = answer;
+      if (cits.length) {
+        citList.innerHTML = '';
+        cits.forEach(function(c){ var li=document.createElement('li'); li.textContent=c; citList.appendChild(li); });
+        citWrap.style.display = '';
+      } else { citWrap.style.display='none'; }
+      ansEl.classList.add('active');
+    }
+
+    function showErrorMsg(html) {
+      errEl.innerHTML = html;
       errEl.classList.add('active');
     }
 
     function showAnswer(data) {
       setLoading(false);
-
-      // Mode badge
       var isLive = data.mode === 'live';
       modeEl.innerHTML = isLive
         ? '<span class="ask-mode-badge ask-mode-live"><span class="l-en">LIVE brain</span><span class="l-zh">实时大脑</span></span>'
-        : '<span class="ask-mode-badge ask-mode-memo">'
-          + '<span class="l-en">MEMO-QUOTE — the committed cortex memo (no live reasoning)</span>'
-          + '<span class="l-zh">备忘录模式——已提交的皮层备忘录（无实时推理）</span>'
-          + '</span>';
-
-      // Degraded notice
+        : '<span class="ask-mode-badge ask-mode-memo"><span class="l-en">MEMO-QUOTE</span><span class="l-zh">备忘录模式</span></span>';
       degradEl.style.display = data.degraded ? '' : 'none';
-
-      // Answer text (esc plain text)
+      if (data.degraded) {
+        degradEl.innerHTML = '<span class="l-en"><strong>Memo-quote mode:</strong> the live brain is not armed on this deployment.</span>'
+          + '<span class="l-zh"><strong>备忘录模式：</strong>本次部署中实时大脑未就绪。</span>';
+      }
       textEl.textContent = data.answer || '';
-
-      // Citations
       var cits = data.citations || [];
       if (cits.length) {
         citList.innerHTML = '';
-        cits.forEach(function (c) {
-          var li = document.createElement('li');
-          li.textContent = typeof c === 'string' ? c : (c.label || c.id || JSON.stringify(c));
+        cits.forEach(function(c){
+          var li=document.createElement('li');
+          li.textContent = typeof c==='string' ? c : (c.label||c.id||JSON.stringify(c));
           citList.appendChild(li);
         });
         citWrap.style.display = '';
-      } else {
-        citWrap.style.display = 'none';
-      }
-
+      } else { citWrap.style.display = 'none'; }
       ansEl.classList.add('active');
+    }
+
+    function doAsk(session) {
+      setLoading(true);
+      var q = qEl.value.trim();
+      var body = { question: q };
+      var ticker = tickerEl ? tickerEl.value.trim().toUpperCase() : '';
+      if (ticker) body.context_ticker = ticker;
+
+      fetch('/api/ask', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (session ? session.access_token : '') },
+        body: JSON.stringify(body)
+      })
+      .then(function(r) {
+        if (r.status === 401) { needSignIn(); return null; }
+        if (r.status === 404 || r.status === 405) { memoQuoteFallback(q); return null; }
+        if (!r.ok) throw new Error('http ' + r.status);
+        return r.json();
+      })
+      .then(function(data) {
+        if (data) showAnswer(data);
+      })
+      .catch(function(err) {
+        setLoading(false);
+        // Network/other error → try memo fallback
+        memoQuoteFallback(q);
+      });
     }
 
     btnEl.addEventListener('click', function () {
       var q = qEl.value.trim();
-      if (!q) { qEl.focus(); return; }
-      if (q.length > 500) { return; }
-
-      // Fetch the Supabase Bearer token
-      function needSignIn() {
-        if (errEl) {
-          errEl.innerHTML = '<span class="l-en">Sign in (top right) to ask the brain \u2014 the rest of the page is open without an account.</span>' +
-                            '<span class="l-zh">\u767b\u5f55\uff08\u53f3\u4e0a\u89d2\uff09\u540e\u5373\u53ef\u63d0\u95ee \u2014 \u9875\u9762\u5176\u4ed6\u5185\u5bb9\u65e0\u9700\u8d26\u6237\u5373\u53ef\u6d4f\u89c8\u3002</span>';
-          errEl.style.display = '';
-        }
-        if (window.MDXAuth && window.MDXAuth.openAuthModal) { window.MDXAuth.openAuthModal(); }
-      }
-      if (!window.MDXAuth || !window.MDXAuth.getSession) {
-        needSignIn(); return;
-      }
-      window.MDXAuth.getSession(function (session) {
-        if (!session || !session.access_token) { needSignIn(); return; }
-        setLoading(true);
-
-        var body = { question: q };
-        var ticker = tickerEl ? tickerEl.value.trim().toUpperCase() : '';
-        if (ticker) body.context_ticker = ticker;
-
-        fetch('/api/ask', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + session.access_token
-          },
-          body: JSON.stringify(body)
+      if (!q || q.length > 500) { qEl.focus(); return; }
+      if (typeof window.getSupabaseClient !== 'function') { doAsk(null); return; }
+      window.getSupabaseClient()
+        .then(function (sb) { return sb.auth.getSession(); })
+        .then(function (res) {
+          var session = res && res.data && res.data.session;
+          doAsk(session && session.access_token ? session : null);
         })
-        .then(function (r) {
-          if (!r.ok) throw new Error('http ' + r.status);
-          return r.json();
-        })
-        .then(function (data) {
-          showAnswer(data);
-        })
-        .catch(function () {
-          showError();
-        });
-      });
+        .catch(function () { doAsk(null); });
     });
 
-    // Also submit on Ctrl/Cmd+Enter inside the textarea
-    qEl.addEventListener('keydown', function (e) {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-        e.preventDefault();
-        btnEl.click();
-      }
+    qEl.addEventListener('keydown', function(e) {
+      if ((e.ctrlKey||e.metaKey) && e.key==='Enter') { e.preventDefault(); btnEl.click(); }
     });
   })();
 
   // ── Kernel families ───────────────────────────────────────────────────────
-  // W2: load kernel_families.json + half_life.json in parallel; merge for display.
   function loadKernelFamilies() {
     document.getElementById('kf_loading').style.display = 'block';
-    var p1 = fetch('neuralwebdata/kernel_families.json').then(function (r) { return r.json(); });
-    // half_life.json is a W2 artifact; fail-open if absent (old builds without W2)
-    var p2 = fetch('neuralwebdata/half_life.json')
-      .then(function (r) { return r.json(); })
-      .catch(function () { return null; });
+    var p1 = fetch('neuralwebdata/kernel_families.json').then(function(r){ return r.json(); });
+    var p2 = fetch('neuralwebdata/half_life.json').then(function(r){ return r.json(); }).catch(function(){ return null; });
     Promise.all([p1, p2])
-      .then(function (results) {
+      .then(function(results) {
         document.getElementById('kf_loading').style.display = 'none';
         var kf = results[0];
         var hl = results[1];
         var hlFamilies = (hl && hl.families) ? hl.families : {};
         renderKernelFamilies(kf.families || kf, hlFamilies);
       })
-      .catch(function () {
+      .catch(function() {
         document.getElementById('kf_loading').textContent = 'Kernel data unavailable.';
       });
   }
 
-  // Format a half-life entry for display.
-  // Returns an EN string and a ZH string.
   function _formatHalfLife(hlEntry) {
     if (!hlEntry) {
       return {
@@ -1091,118 +3299,98 @@ body { padding-bottom:56px; }
       };
     }
     var hl = hlEntry.half_life;
-    var ciLo = hlEntry.ci_low;
-    var ciHi = hlEntry.ci_high;
+    var ciLo = hlEntry.ci_low, ciHi = hlEntry.ci_high;
     var reason = hlEntry.reason_null || '';
     var unit = hlEntry.outcome_unit || '';
     var kind = hlEntry.decay_kind;
     var nEff = hlEntry.n_eff;
 
-    // Build caveat for magnitude-type families
-    var magCaveat = (unit === 'magnitude')
-      ? ' ⚠ favorable-excursion magnitude, not signed edge'
-      : '';
-    var magCaveatZh = (unit === 'magnitude')
-      ? ' ⚠ 有利偏移幅度，非有符号预测优势'
-      : '';
+    var magCaveat   = (unit==='magnitude') ? ' ⚠ favorable-excursion magnitude, not signed edge' : '';
+    var magCaveatZh = (unit==='magnitude') ? ' ⚠ 有利偏移幅度，非有符号预测优势' : '';
 
     if (hl == null) {
-      // Null cases
       var tipEn, tipZh, labelEn, labelZh;
-      if (reason === 'edge_non_decaying') {
-        labelEn = 'unmeasured'; labelZh = '未测量';
-        tipEn = 'Edge does not decay over holding horizons (monotone-increase gate failed). Half-life is not defined on a rising curve.' + magCaveat;
-        tipZh = '边际在持有期内不衰减（单调递增门控未通过）。上升曲线无法定义半衰期。' + magCaveatZh;
-      } else if (reason && reason.indexOf('no graded outcomes') !== -1) {
-        labelEn = 'unmeasured'; labelZh = '未测量';
-        tipEn = 'No graded outcomes yet for this family — half-life cannot be estimated.' + magCaveat;
-        tipZh = '该系列尚无已评分结果，无法估算半衰期。' + magCaveatZh;
-      } else if (reason && reason.indexOf('admissible horizon') !== -1) {
-        labelEn = 'unmeasured'; labelZh = '未测量';
-        tipEn = 'Insufficient graded horizons for fitting (need ≥3). ' + esc(reason) + magCaveat;
-        tipZh = '可用的已评分时间跨度不足（需≥3个）。' + esc(reason) + magCaveatZh;
-      } else if (reason && reason.indexOf('n_eff') !== -1) {
-        labelEn = 'unmeasured'; labelZh = '未测量';
-        tipEn = 'Insufficient event count (n=' + nEff + ' < floor=200). ' + magCaveat;
-        tipZh = '事件数量不足（n=' + nEff + ' < 门槛=200）。' + magCaveatZh;
-      } else if (reason === 'unstable_ci') {
-        labelEn = 'unmeasured'; labelZh = '未测量';
-        tipEn = 'Bootstrap CI is unstable (point estimate outside CI, degenerate width, or too few unique event blocks — e.g. all events share one as-of date). CI fitted on raw-mean proxy. Per prereg: unstable fit = unmeasured.' + magCaveat;
-        tipZh = '自举置信区间不稳定（点估计超出CI范围、宽度退化，或唯一事件块过少——例如所有事件共享同一日期）。CI基于原始均值代理拟合。按预注册规则：不稳定拟合=未测量。' + magCaveatZh;
+      if (reason==='edge_non_decaying') {
+        labelEn='unmeasured'; labelZh='未测量';
+        tipEn='Edge does not decay over holding horizons (monotone-increase gate failed). Half-life is not defined on a rising curve.'+magCaveat;
+        tipZh='边际在持有期内不衰减（单调递增门控未通过）。上升曲线无法定义半衰期。'+magCaveatZh;
+      } else if (reason && reason.indexOf('no graded outcomes')!==-1) {
+        labelEn='unmeasured'; labelZh='未测量';
+        tipEn='No graded outcomes yet for this family — half-life cannot be estimated.'+magCaveat;
+        tipZh='该系列尚无已评分结果，无法估算半衰期。'+magCaveatZh;
+      } else if (reason && reason.indexOf('admissible horizon')!==-1) {
+        labelEn='unmeasured'; labelZh='未测量';
+        tipEn='Insufficient graded horizons for fitting (need ≥3). '+esc(reason)+magCaveat;
+        tipZh='可用的已评分时间跨度不足（需≥3个）。'+esc(reason)+magCaveatZh;
+      } else if (reason && reason.indexOf('n_eff')!==-1) {
+        labelEn='unmeasured'; labelZh='未测量';
+        tipEn='Insufficient event count (n='+nEff+' < floor=200). '+magCaveat;
+        tipZh='事件数量不足（n='+nEff+' < 门槛=200）。'+magCaveatZh;
+      } else if (reason==='unstable_ci') {
+        labelEn='unmeasured'; labelZh='未测量';
+        tipEn='Bootstrap CI is unstable. Per prereg: unstable fit = unmeasured.'+magCaveat;
+        tipZh='自举置信区间不稳定。按预注册规则：不稳定拟合=未测量。'+magCaveatZh;
       } else {
-        labelEn = 'unmeasured'; labelZh = '未测量';
-        tipEn = 'Not measured: ' + esc(reason || 'unknown') + '.' + magCaveat;
-        tipZh = '未测量：' + esc(reason || '未知') + '。' + magCaveatZh;
+        labelEn='unmeasured'; labelZh='未测量';
+        tipEn='Not measured: '+esc(reason||'unknown')+'.'+magCaveat;
+        tipZh='未测量：'+esc(reason||'未知')+'。'+magCaveatZh;
       }
       return {
-        en: '<span class="kf-null" data-tip-en="' + tipEn.replace(/"/g, '&quot;') + '" data-tip-zh="' + tipZh.replace(/"/g, '&quot;') + '">H½ ' + labelEn + '</span>',
-        zh: '<span class="kf-null">H½ ' + labelZh + '</span>'
+        en: '<span class="kf-null" data-tip-en="'+tipEn.replace(/"/g,'&quot;')+'" data-tip-zh="'+tipZh.replace(/"/g,'&quot;')+'">H½ '+labelEn+'</span>',
+        zh: '<span class="kf-null">H½ '+labelZh+'</span>'
       };
     }
 
-    // Measured — format "≈Xd (horizon)" with optional CI
-    var kindSuffix = kind ? ' (' + kind + ')' : '';
-    var ciStr = (ciLo != null && ciHi != null) ? ' [' + Math.round(ciLo) + '–' + Math.round(ciHi) + 'd]' : '';
-    var labelEn = '≈' + Math.round(hl) + 'd' + ciStr + kindSuffix;
-    var labelZh = '≈' + Math.round(hl) + '天' + ciStr + kindSuffix;
-    var ciBasisNote = (hlEntry.ci_basis === 'raw_mean_proxy' && ciStr)
-      ? ' CI fitted on raw-mean proxy (shrunken-IC not recomputable per resample).'
-      : '';
-    var ciBasisNoteZh = (hlEntry.ci_basis === 'raw_mean_proxy' && ciStr)
-      ? ' 置信区间基于原始均值代理拟合（每次重采样无法重算压缩IC）。'
-      : '';
-    var tipEn = 'Holding-horizon half-life: ~' + Math.round(hl) + 'd for shrunken IC to halve.' + (ciStr ? ' 90% CI' + ciStr + '.' : '') + ciBasisNote + magCaveat;
-    var tipZh = '持有期半衰期：压缩IC减半约需' + Math.round(hl) + '天。' + (ciStr ? '90%置信区间' + ciStr + '。' : '') + ciBasisNoteZh + magCaveatZh;
+    var kindSuffix = kind ? ' ('+kind+')' : '';
+    var ciStr = (ciLo!=null&&ciHi!=null) ? ' ['+Math.round(ciLo)+'–'+Math.round(ciHi)+'d]' : '';
+    var labelEn2 = '≈'+Math.round(hl)+'d'+ciStr+kindSuffix;
+    var labelZh2 = '≈'+Math.round(hl)+'天'+ciStr+kindSuffix;
+    var ciBasisNote = (hlEntry.ci_basis==='raw_mean_proxy'&&ciStr) ? ' CI fitted on raw-mean proxy.' : '';
+    var ciBasisNoteZh = (hlEntry.ci_basis==='raw_mean_proxy'&&ciStr) ? ' 置信区间基于原始均值代理拟合。' : '';
+    var tipEn2 = 'Holding-horizon half-life: ~'+Math.round(hl)+'d for shrunken IC to halve.'+(ciStr?' 90% CI'+ciStr+'.':'')+ciBasisNote+magCaveat;
+    var tipZh2 = '持有期半衰期：压缩IC减半约需'+Math.round(hl)+'天。'+(ciStr?'90%置信区间'+ciStr+'。':'')+ciBasisNoteZh+magCaveatZh;
     return {
-      en: '<span class="kf-hl-val" data-tip-en="' + tipEn.replace(/"/g, '&quot;') + '" data-tip-zh="' + tipZh.replace(/"/g, '&quot;') + '">H½ ' + labelEn + '</span>',
-      zh: '<span class="kf-hl-val">H½ ' + labelZh + '</span>'
+      en: '<span class="kf-hl-val" data-tip-en="'+tipEn2.replace(/"/g,'&quot;')+'" data-tip-zh="'+tipZh2.replace(/"/g,'&quot;')+'">H½ '+labelEn2+'</span>',
+      zh: '<span class="kf-hl-val">H½ '+labelZh2+'</span>'
     };
   }
 
   function renderKernelFamilies(families, hlFamilies) {
     var grid = document.getElementById('cm_kf_grid');
     var FAMILY_LABELS = {
-      'altdata': 'Altdata', 'radar': 'Divergence Radar', 'us_board': 'US Board',
-      'track_record': 'Track Record', 'policy': 'Policy', 'desk:ai_desk': 'AI Desk'
+      'altdata':'Altdata','radar':'Divergence Radar','us_board':'US Board',
+      'track_record':'Track Record','policy':'Policy','desk:ai_desk':'AI Desk'
     };
     var html = '';
-    Object.keys(families).forEach(function (key) {
+    Object.keys(families).forEach(function(key) {
       var f = families[key];
       var hc = f.horizon_curve || {};
-      var horizons = Object.keys(hc).sort(function (a, b) { return +a - +b; });
+      var horizons = Object.keys(hc).sort(function(a,b){ return +a-+b; });
       var firstH = horizons[0];
-      var ic = firstH != null ? hc[firstH] : null;
-      var recency = (f.recency_trend || {})['all'] || {};
+      var ic = firstH!=null ? hc[firstH] : null;
+      var recency = (f.recency_trend||{})['all'] || {};
       var wlb = recency.wilson_ci_low;
       var nEff = recency.n_eff;
-      var stale = (f.staleness || {});
+      var stale = (f.staleness||{});
       var armed = f.armed;
       var label = FAMILY_LABELS[key] || key;
 
       var icStr, icClass;
-      if (ic == null) { icStr = '—'; icClass = 'kf-null'; }
-      else if (ic > 0) { icStr = '+' + (ic * 100).toFixed(3) + '%'; icClass = 'kf-pos'; }
-      else { icStr = (ic * 100).toFixed(3) + '%'; icClass = 'kf-neg'; }
+      if (ic==null) { icStr='—'; icClass='kf-null'; }
+      else if (ic>0) { icStr='+' + (ic*100).toFixed(3)+'%'; icClass='kf-pos'; }
+      else { icStr=(ic*100).toFixed(3)+'%'; icClass='kf-neg'; }
 
-      // W2 half-life chip — bilingual; data-tip-en/zh per CI guard (no title=)
       var hlEntry = hlFamilies[key] || null;
       var hlFormatted = _formatHalfLife(hlEntry);
 
       html += '<div class="kf-card">'
-        + '<div class="kf-name"><span>' + esc(label) + '</span>'
-        + '<span class="kf-armed-badge ' + (armed ? 'kf-armed-yes' : 'kf-armed-no') + '">'
-        + (armed ? 'ARMED' : 'DISPLAY') + '</span></div>'
-        + '<div class="kf-ic ' + icClass + '">' + icStr + '</div>'
-        + '<div class="kf-sub">'
-        + (wlb != null ? 'Wilson LB (hit-rate): ' + (wlb * 100).toFixed(1) + '%' : '') + ' '
-        + (nEff != null ? '· n=' + nEff : '') + '</div>'
-        + '<div class="kf-sub">Horizons: ' + horizons.join(', ') + 'd</div>'
-        + (stale.days_since_last_fire != null
-            ? '<div class="kf-stale">Last fired: ' + esc(stale.date_last || '') + ' (' + stale.days_since_last_fire + 'd ago)</div>'
-            : '')
-        // W2 half-life chip — bilingual display, NOT staleness (staleness=unmeasured by design)
-        + '<div class="kf-hl"><span class="l-en">' + hlFormatted.en + '</span>'
-        + '<span class="l-zh">' + hlFormatted.zh + '</span></div>'
+        + '<div class="kf-name"><span>'+esc(label)+'</span>'
+        + '<span class="kf-armed-badge '+(armed?'kf-armed-yes':'kf-armed-no')+'">'+(armed?'ARMED':'DISPLAY')+'</span></div>'
+        + '<div class="kf-ic '+icClass+'">'+icStr+'</div>'
+        + '<div class="kf-sub">'+(wlb!=null?'Wilson LB (hit-rate): '+(wlb*100).toFixed(1)+'%':'')+' '+(nEff!=null?'· n='+nEff:'')+'</div>'
+        + '<div class="kf-sub">Horizons: '+horizons.join(', ')+'d</div>'
+        + (stale.days_since_last_fire!=null?'<div class="kf-stale">Last fired: '+esc(stale.date_last||'')+' ('+stale.days_since_last_fire+'d ago)</div>':'')
+        + '<div class="kf-hl"><span class="l-en">'+hlFormatted.en+'</span><span class="l-zh">'+hlFormatted.zh+'</span></div>'
         + '</div>';
     });
     grid.innerHTML = html || '<p class="cm-empty">No kernel data.</p>';

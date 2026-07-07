@@ -60,10 +60,15 @@
   <div class="callout">{{ t('How to read: each card pairs a free macro/policy/flow signal with the sector it transmits to. POSITIVE = support improving while price still lags (potential catch-up); NEGATIVE = support fading while price still leads (potential vulnerability). Same-direction pairs stay silent. Every divergence is a dated, falsifiable hypothesis the ledger scores.', '解读：每张卡片将一个免费宏观/政策/资金信号与其传导的板块配对。正向＝支撑改善但价格仍滞后（潜在补涨）；负向＝支撑转弱但价格仍领先（潜在脆弱）。同向配对保持静默。每个背离都是有日期、可证伪的假设，由台账评分。') }}</div>
 
   <!-- ===== active divergences ===== -->
-  <h2 class="sec">📡 {{ t('Active divergences', '活跃背离') }} <span style="font-size:12px;color:var(--muted)">{{ radar.n_active }}/{{ radar.n_pairs }}</span></h2>
-  {% if radar.divergences %}
+  {# venue_active and venue_inline computed here so both sections can use them #}
+  {% set venue_active = radar.divergences | selectattr("family", "equalto", "venue") | list %}
+  {% set venue_inline = radar.in_line | selectattr("family", "equalto", "venue") | list %}
+  {% set sector_active = radar.divergences | rejectattr("family", "equalto", "venue") | list %}
+  {% set sector_inline = radar.in_line | rejectattr("family", "equalto", "venue") | list %}
+  <h2 class="sec">📡 {{ t('Active divergences', '活跃背离') }} <span style="font-size:12px;color:var(--muted)">{{ sector_active|length }}/{{ (sector_active|length) + (sector_inline|length) }}</span></h2>
+  {% if sector_active %}
   <div class="dcards">
-    {% for d in radar.divergences %}
+    {% for d in sector_active %}
     <div class="dcard {{ d.sign }}">
       <div class="hd">
         <span class="sgn {{ d.sign }}">{{ t('Positive' if d.sign=='positive' else 'Negative', '正向' if d.sign=='positive' else '负向') }}</span>
@@ -71,7 +76,7 @@
         {% if d.conviction100 is not none %}<span class="cvx">{{ d.conviction100 }}</span>{% endif %}
       </div>
       <div class="det">{{ bl(d.signal_detail_en, d.signal_detail_zh) }}</div>
-      <div class="rs">{{ t('Sector vs CSI 300 (63d)', '板块 vs 沪深300（63日）') }}: <b class="{{ 'r-pos' if d.price_rs>0 else 'r-neg' }}">{{ '%+.1f'|format(d.price_rs) }}%</b> <span class="mut">(z {{ '%+.2f'|format(d.price_rs_z) }})</span>
+      <div class="rs">{{ t('Sector vs CSI 300 (63d)', '板块 vs 沪深300（63日）') }}: <b class="{{ 'r-pos' if d.price_rs is not none and d.price_rs>0 else 'r-neg' }}">{{ '%+.1f'|format(d.price_rs) if d.price_rs is not none else '—' }}</b> <span class="mut">(z {{ '%+.2f'|format(d.price_rs_z) if d.price_rs_z is not none else '—' }})</span>
       {% if d.reliability %}· <span class="mut">{{ t('track record', '历史') }}: {% if d.reliability.n_resolved and d.reliability.n_resolved >= 3 %}{{ (d.reliability.hit_rate*100)|round|int }}% ({{ d.reliability.n_resolved }}){% else %}{{ t('unproven', '未验证') }}{% endif %}</span>{% endif %}</div>
       <div class="strength"><i style="width:{{ (d.strength*100)|round|int }}%"></i></div>
       {% if d.candidates %}<div class="cand">🎯 {{ t('Candidates', '候选') }}: {% for c in d.candidates %}<b>{{ c.name }}</b> ({{ c.ticker }}){% if not loop.last %} · {% endif %}{% endfor %}</div>{% endif %}
@@ -122,6 +127,47 @@
   <div class="callout">{{ t('The ledger starts logging today’s divergences and scores each one ~3 months later — accountability accrues forward.', '台账从今日起记录背离，并在约3个月后逐一评分——问责随时间累积。') }}</div>
   {% endif %}
 
+  <!-- ===== venue divergence section ===== -->
+  {# venue_active and venue_inline already set above in the active divergences section #}
+  <h2 class="sec">🌐 {{ t('Venue Divergence', '跨市场背离') }} <span style="font-size:12px;color:var(--muted)">{{ venue_active|length }}/{{ (venue_active|length) + (venue_inline|length) }} {{ t('active', '活跃') }}</span></h2>
+  <div class="callout" style="font-size:13px;">{{ t(
+    'Cross-venue pairs: A/H premium z, offshore ETF gap (KWEB/MCHI/CQQQ vs CSI 300), southbound flow vs HSCEI. '
+    'Each fires only when its z exceeds the engine threshold vs its own trailing history. '
+    'FX caveat: offshore-ETF gap embeds USDCNY moves — not stripped. Context only.',
+    '跨市场配对：A/H溢价z值、离岸ETF差价（KWEB/MCHI/CQQQ vs 沪深300）、南向资金 vs 恒生国企。'
+    '仅当z值超过引擎阈值时触发。注：离岸ETF差价含汇率影响，未剥离。仅供参考。'
+  ) }}</div>
+  {% if venue_active %}
+  <div class="dcards">
+    {% for d in venue_active %}
+    <div class="dcard {{ d.sign }}">
+      <div class="hd">
+        <span class="sgn {{ d.sign }}">{{ t('Positive' if d.sign=='positive' else 'Negative', '正向' if d.sign=='positive' else '负向') }}</span>
+        <span class="pair">{{ bl(d.signal_en, d.signal_zh) }}</span>
+        {% if d.conviction100 is not none %}<span class="cvx">{{ d.conviction100 }}</span>{% endif %}
+      </div>
+      <div class="det">{{ bl(d.signal_detail_en or '', d.signal_detail_zh or '') }}</div>
+      <div class="rs">
+        {{ t('z', 'z值') }}: <b>{{ '%+.2f'|format(d.price_rs_z) if d.price_rs_z is not none else '—' }}</b>
+        {% if d.data_asof %}<span class="mut"> · {{ t('data as-of', '数据截至') }} {{ d.data_asof }}</span>{% endif %}
+        {% if d.reliability %} · <span class="mut">{{ t('track record', '历史') }}: {{ t('unproven', '未验证') }} ({{ d.reliability.n_resolved }})</span>{% endif %}
+      </div>
+      <div class="strength"><i style="width:{{ (d.strength*100)|round|int }}%"></i></div>
+      {% if d.hypothesis_en %}<div class="hyp">{{ bl(d.hypothesis_en, d.hypothesis_zh) }}</div>{% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="callout" style="font-size:13px;">{{ t(
+    'No active venue divergences — A/H premium, offshore ETF gap, and southbound flow are all within normal z range.',
+    '当前无活跃跨市场背离——A/H溢价、离岸ETF差价及南向资金均在正常z值范围内。'
+  ) }}</div>
+  {% endif %}
+  {% if venue_inline %}
+  <div class="inline-list" style="margin-top:6px;">
+    {% for d in venue_inline %}<span class="ichip">{{ bl(d.signal_en, d.signal_zh) }}</span>{% endfor %}
+  </div>
+  {% endif %}
   <p class="disc">{{ bl(radar.disclaimer_en, radar.disclaimer_zh) }}</p>
 {% endif %}
 </div>

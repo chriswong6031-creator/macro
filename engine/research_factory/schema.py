@@ -49,6 +49,14 @@ CANDIDATE_TYPES = frozenset({
     "alpha_family",
     "species",
     "external_idea",
+    # CPI (cycle_pattern) domain — single additive value. Cycle-pattern
+    # candidates are domain-homed lattice/feature-trial rules, not species
+    # (which carry species-registry semantics in challenge.py dedup and
+    # review_queue ordering) nor external human ideas; mapping onto either
+    # existing generic type would misrepresent the taxonomy the same way
+    # 'oracle_compound' and 'alpha_family' are domain-specific.  See
+    # engine/research_factory/adapter_cycle_pattern.py.
+    "cycle_pattern_rule",
 })
 
 # §5.1: source enum
@@ -60,6 +68,7 @@ SOURCES = frozenset({
     "external_report",
     "research_queue",
     "domain_registry",   # A2 amendment (W7): RF-2 pointer adoption of existing domain-homed compounds
+    "cycle_pattern_scan",  # CPI (P2): the cycle_pattern lattice/FT scan that emits pattern_candidates.jsonl
 })
 
 # §5.1: claim_shape — RESERVED for metabolism enum (RF-3).
@@ -91,6 +100,7 @@ DOMAINS = frozenset({
     "options",
     "china",
     "us_stocks",
+    "cycle_pattern",   # CPI (masterplan §6): Cycle-owned candidate lifecycle homed in the factory
 })
 
 # §5.3: reviewer recommendation advisory enum
@@ -315,8 +325,9 @@ def validate_candidate(row: dict) -> list[str]:
 # Validator: transition.v1 (§5.2)
 # ---------------------------------------------------------------------------
 
-# Actor enum
-ACTORS = frozenset({"script", "codex", "sonnet", "fable", "operator"})
+# Actor enum — mirrors state.py ALL_ACTORS (RF-5/RF-5b RUL-SUCC-7).
+# "opus" is a model adjudicator; packet_ref enforcement lives in state.py.
+ACTORS = frozenset({"script", "codex", "sonnet", "fable", "operator", "opus"})
 # Human actors — require actor_ref (RF-5)
 HUMAN_ACTORS = frozenset({"fable", "operator"})
 

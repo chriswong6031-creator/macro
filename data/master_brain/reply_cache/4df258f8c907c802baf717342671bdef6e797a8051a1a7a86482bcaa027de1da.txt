@@ -1,0 +1,36 @@
+{
+  "regime_context": "US thematic momentum breadth is broad (78% eligible), with Memory, HBM & Storage as the clear leader (rank 1, score 5.17, durability 0.75, breadth 1.0). No single narrative dominates; the leader’s margin over challenger AI Semiconductors is wide. Gate_helps is true, so the absolute-trend discipline has historically cut drawdowns for this market. Macro backdrop is geopolitics-heavy with high unscheduled-surprise share, which could inject volatility.",
+  "theses": [
+    {
+      "subject": "Memory, HBM & Storage",
+      "lean": "overweight",
+      "conviction": "low",
+      "horizon_d": 20,
+      "thesis": "The absolute-trend gate validates staying with the dominant theme for drawdown control. The theme shows high durability (0.75) and perfect breadth (1.0), suggesting broad participation and cohesive trend health. The leader’s margin is large, reducing immediate rotation risk. This is a risk-managed tilt, not a return forecast—cross-sectional momentum has no verified alpha.",
+      "evidence": [
+        "Rank 1, eligible (absolute-trend gate passed), gate_helps true",
+        "Durability bar 0.75 (high persistence)",
+        "Breadth 1.0 (full participation)",
+        "Rotation margin 3.577 over challenger, one_narrative false"
+      ],
+      "dissent": "Hurst 'mixed' signals the trend may be choppy; a memory-cycle sentiment shift (e.g., supply overshoot fears) could reverse the theme sharply despite current breadth.",
+      "falsifier_text": "Memory theme becomes ineligible (absolute-trend gate breaks) OR durability bar falls below 0.5."
+    },
+    {
+      "subject": "Managed Care & Insurers",
+      "lean": "avoid",
+      "conviction": "low",
+      "horizon_d": 20,
+      "thesis": "The theme has a strong absolute trend (durability 0.8) and decent breadth, but the crowding z-score of 1.75 flags elevated positioning risk. In line with guardrails, crowding is a size-down caution, not a fade signal. An 'avoid' lean means we would not initiate a new overweight; existing positions would be capped rather than exited. The trend remains eligible, so this is not a bearish call.",
+      "evidence": [
+        "Rank 5, eligible (absolute-trend gate passed)",
+        "Durability bar 0.8 (high persistence)",
+        "Crowding z 1.75 (crowded: true), breadth 0.778"
+      ],
+      "dissent": "Crowding alone has no basket-level drawdown predictive power; the trend could continue to grind higher despite stretched positioning, and the absolute-trend gate would still manage risk.",
+      "falsifier_text": "Crowding z-score drops below 1.0 and durability remains above 0.7, which would remove the crowding caution."
+    }
+  ],
+  "emerging_watch": null,
+  "confidence": "low"
+}

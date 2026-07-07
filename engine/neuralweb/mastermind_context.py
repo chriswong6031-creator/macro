@@ -89,6 +89,30 @@ _KERNEL_STANDING_LAW = (
     "Never use kernel signals for sizing or entry gating until fdr_cleared=True."
 )
 
+# Claim reliability standing law (RUL-C2, RUL-C10 — display context only)
+_CLAIM_RELIABILITY_STANDING_LAW = (
+    "qledger reliability is 5d-only and ACCRUING. "
+    "No family is promotion-ready. "
+    "Per-source reliability does not exist yet (source_tier/channel ontology fill is near-zero). "
+    "Nothing here may rank, gate, or condition any signal or allocation (display context only). "
+    "Horizon 5d is the sole graded horizon; 21d/63d grades have not yet matured. "
+    "Desks without a hit_rate are salience-only (direction=0 claims, not hit-gradeable — "
+    "graded on excess only)."
+)
+
+# Top-N families per desk to include in claim_reliability lobe (keep payload small)
+_CLAIM_RELIABILITY_TOP_FAMILIES_N = 5
+
+# Cycle-pattern standing law (CPI P6 wave 1 — display context only)
+_CYCLE_PATTERN_STANDING_LAW = (
+    "cycle-pattern turn-hazard is DISPLAY/CONTEXT ONLY (CPI consumer matrix). "
+    "Only cells with gate_status PASS carry validated model probabilities "
+    "(W4.2 vs family-stratified KM); PRIOR cells are KM base rates. "
+    "Nothing here may originate, score, escalate, rank, gate, or size — "
+    "board_rank / oracle_escalation / sector_central_direction_score / "
+    "position_sizing are forbidden consumers."
+)
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Helpers
@@ -478,6 +502,148 @@ def _summarize_macro_weather(repo: Path) -> tuple[dict, str | None]:
     except Exception as exc:  # noqa: BLE001
         log.warning("mastermind_context: macro_weather summarizer failed — %s", exc)
         return {}, f"macro_weather: {exc}"
+def _summarize_claim_reliability(repo: Path) -> tuple[dict, str | None]:
+    """Distill site/qledger/track_record.json into the claim_reliability lobe.
+
+    Per RUL-C2: key is 'claim_reliability', never 'reliability'.
+    Per RUL-C3: read-only over qledger; no semantic changes.
+    Per RUL-C10: LLM may cite these stats, never adjust them.
+
+    Fail-open: data/governance/claim_accountability.json is written by the
+    sibling PR-B (W-A) and may not yet exist — its absence is noted via
+    gap_notes, not a lobe failure.
+    """
+    tr = _read_json(repo / "site" / "qledger" / "track_record.json")
+    if not tr:
+        return {}, "site/qledger/track_record.json absent or unreadable"
+
+    by_desk_raw = tr.get("by_desk")
+    by_desk_raw = by_desk_raw if isinstance(by_desk_raw, dict) else {}
+
+    # Build per-desk summary — horizon_d=5 only (all graded claims are 5d)
+    desks_out: dict = {}
+    for desk, horizon_map in by_desk_raw.items():
+        h5 = horizon_map.get("5") if isinstance(horizon_map, dict) else None
+        if not isinstance(h5, dict):
+            continue
+        entry: dict = {"horizon_d": 5}
+        hit_rate = h5.get("hit_rate")
+        if hit_rate is not None:
+            entry["hit_rate"] = hit_rate
+        wilson_ci_low = h5.get("wilson_ci_low")
+        if wilson_ci_low is not None:
+            entry["wilson_ci_low"] = wilson_ci_low
+        n_obs = h5.get("n_obs")
+        if n_obs is not None:
+            entry["n"] = n_obs
+        state = h5.get("state")
+        if state is not None:
+            entry["state"] = state
+        desks_out[desk] = entry
+
+    # Top-N families by n_obs (bounded payload)
+    by_family_raw = tr.get("by_family")
+    by_family_raw = by_family_raw if isinstance(by_family_raw, dict) else {}
+    families_with_n: list[tuple[str, int, dict]] = []
+    for fam, horizon_map in by_family_raw.items():
+        h5 = horizon_map.get("5") if isinstance(horizon_map, dict) else None
+        if not isinstance(h5, dict):
+            continue
+        n_obs = h5.get("n_obs") or 0
+        families_with_n.append((fam, n_obs, h5))
+    families_with_n.sort(key=lambda x: x[1], reverse=True)
+
+    families_out: dict = {}
+    for fam, _n, h5 in families_with_n[:_CLAIM_RELIABILITY_TOP_FAMILIES_N]:
+        entry: dict = {"horizon_d": 5}
+        hit_rate = h5.get("hit_rate")
+        if hit_rate is not None:
+            entry["hit_rate"] = hit_rate
+        wilson_ci_low = h5.get("wilson_ci_low")
+        if wilson_ci_low is not None:
+            entry["wilson_ci_low"] = wilson_ci_low
+        n_obs = h5.get("n_obs")
+        if n_obs is not None:
+            entry["n"] = n_obs
+        state = h5.get("state")
+        if state is not None:
+            entry["state"] = state
+        families_out[fam] = entry
+
+    lobe: dict = {
+        "desks": desks_out,
+        "top_families": families_out,
+        "as_of": tr.get("generated_at") or tr.get("as_of"),
+        "standing_law": _CLAIM_RELIABILITY_STANDING_LAW,
+    }
+
+    # Fail-open: claim_accountability.json built by sibling PR-B (W-A)
+    # Absence is noted inside the lobe (accountability_gap key) — this is the
+    # bridge's gap_notes pattern for missing sibling artifacts.  The lobe itself
+    # succeeds (returns None gap) because track_record.json was read OK.
+    ca = _read_json(repo / "data" / "governance" / "claim_accountability.json")
+    if ca is None:
+        lobe["accountability_gap"] = (
+            "data/governance/claim_accountability.json absent — "
+            "sibling PR-B (W-A audit) has not yet merged; "
+            "falsifier_coverage and gradeability metrics not yet available"
+        )
+    else:
+        # Include summary-level accountability stats (coverage only, no semantic change)
+        summary = ca.get("summary") or {}
+        if summary:
+            lobe["accountability_summary"] = _sparse({
+                "falsifier_coverage": summary.get("falsifier_coverage"),
+                "hit_gradeable_share": summary.get("hit_gradeable_share"),
+                "as_of": summary.get("as_of"),
+            })
+
+    return lobe, None
+
+
+def _summarize_cycle_pattern(repo: Path) -> tuple[dict, str | None]:
+    """CPI P6 wave 1: compact cycle-pattern turn-hazard context.
+
+    Reads ONLY the committed adapter artifact
+    data/neuralweb/cycle_pattern_state.json (scripts/build_cycle_pattern_state.py)
+    — never the cycle-pattern lake directly (CPI consumer-matrix rule).
+
+    Counts-only in the lobe (the bottom_sensors discipline): gate verdicts,
+    entity/family counts, and the truth-registry summary. Per-entity hazard
+    rows stay in the artifact (read_cycle_pattern_state cortex tool).
+    Every probability downstream must carry its gate verdict — PRIOR cells
+    are KM base rates, not validated model output (UI-HZ-1: no naked
+    probabilities). Display/context only: may never originate, score, or
+    escalate.
+    """
+    state = _read_json(repo / "data" / "neuralweb" / "cycle_pattern_state.json")
+    if not state:
+        return {}, "data/neuralweb/cycle_pattern_state.json absent or unreadable"
+
+    entities = state.get("entities") or []
+    families: dict[str, int] = {}
+    n_with_hazard = 0
+    for e in entities:
+        if not isinstance(e, dict):
+            continue
+        fam = e.get("family") or "unknown"
+        families[fam] = families.get(fam, 0) + 1
+        if any(e.get(k) is not None for k in ("hazard_1m_p", "hazard_3m_p", "hazard_6m_p")):
+            n_with_hazard += 1
+
+    lobe: dict = {
+        "as_of": state.get("asof"),
+        "model_epoch": state.get("model_epoch"),
+        "gate_status": state.get("gate_status") or {},
+        "n_entities": len(entities),
+        "n_with_hazard": n_with_hazard,
+        "families": dict(sorted(families.items())),
+        "truth_summary": state.get("truth_summary") or {},
+        "standing_law": _CYCLE_PATTERN_STANDING_LAW,
+    }
+    if state.get("degraded_notes"):
+        lobe["degraded_notes"] = state["degraded_notes"]
+    return lobe, None
 
 
 # Registry: ordered list of (lobe_name, summarizer_fn)
@@ -490,6 +656,8 @@ LOBE_SUMMARIZERS: dict[str, Any] = {
     "options_entry": _summarize_options_entry,
     "cortex": _summarize_cortex,
     "macro_weather": _summarize_macro_weather,
+    "claim_reliability": _summarize_claim_reliability,
+    "cycle_pattern": _summarize_cycle_pattern,
 }
 
 # Map summarizer lobe names to their primary artifact IDs for manifest patching
@@ -501,6 +669,8 @@ _LOBE_TO_ARTIFACT_IDS: dict[str, list[str]] = {
     "options_entry": ["options-entry-gate"],
     "cortex": ["cortex-memo"],
     "macro_weather": ["macro-snapshots-latest"],
+    "claim_reliability": ["site-qledger-track-record"],
+    "cycle_pattern": ["cycle-pattern-state"],
 }
 
 
@@ -777,6 +947,10 @@ def _build_freshness(lobes: dict, lobe_manifest: list[dict]) -> dict:
             lobes.get("macro_weather", {}).get("asof"),
             False,
         ),
+        "claim_reliability": (
+            lobes.get("claim_reliability", {}).get("as_of"),
+            False,
+        ),
     }
     for lobe_name, (asof, _stale_override) in asof_sources.items():
         stale = _is_stale(asof)
@@ -863,6 +1037,7 @@ def build_context(
         "data/options_entry/state.parquet",
         "data/neuralweb/cortex/memo.json",
         "data/neuralweb/cortex/probation.json",
+        "data/neuralweb/cycle_pattern_state.json",
         "site/factordata/us_standouts.json",
         "site/altdata/mastermind.json",
         "site/basketdata/radar_ticker.json",

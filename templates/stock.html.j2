@@ -241,13 +241,6 @@
   .gchip .gk { color:var(--muted); display:block; font-size:10px; text-transform:uppercase; letter-spacing:.05em; }
   .gchip .gv { font-weight:700; font-size:14px; }
   .gchip.dashed { border-style:dashed; opacity:.7; }
-  /* ---- Neural Web sponsorship chip (SRSS Phase 4, shadow tier) ---- */
-  .spo-chip { display:inline-flex; align-items:center; gap:5px; padding:5px 11px; border-radius:9px;
-              background:var(--panel2); border:1px dashed var(--line); font-size:12px; line-height:1.35;
-              max-width:100%; cursor:help; }
-  .spo-chip.spo-tailwind, .spo-chip.spo-early_repair { border-color:color-mix(in srgb,var(--up) 40%,var(--line)); }
-  .spo-chip.spo-headwind, .spo-chip.spo-rollover { border-color:color-mix(in srgb,var(--down) 40%,var(--line)); }
-  .spo-chip.spo-confirmed_leadership { border-color:color-mix(in srgb,var(--link) 40%,var(--line)); }
   /* ---- unified Conviction Profile hero ---- */
   .conv { margin:8px 0 4px; padding:11px 13px; border-radius:11px; background:var(--panel2);
           border:1px solid var(--line); }
@@ -533,6 +526,33 @@
   #panel_smartmoney .sm-spark { width:66px; height:18px; flex:none; }
   #panel_smartmoney .sm-spark polyline { fill:none; stroke:var(--link); stroke-width:1.5; }
 {% include "_stock_decision.css.j2" %}
+  /* B1: Great-company-trap de-escalation panel (display-only, hold_thesis, LH-R10) */
+  .trap-head { padding:5px 11px; border-radius:8px; font-size:12.5px; font-weight:600;
+               margin-bottom:9px; }
+  .trap-head-warn { background:color-mix(in srgb,var(--warn) 15%,transparent);
+                    color:var(--warn); }
+  .trap-head-ok   { background:color-mix(in srgb,var(--up) 10%,transparent);
+                    color:var(--up); }
+  .trap-leg { display:grid; grid-template-columns:20px 1fr auto; gap:6px; align-items:center;
+              padding:4px 0; font-size:12.5px; border-bottom:1px solid var(--line); }
+  .trap-leg:last-of-type { border-bottom:none; }
+  .trap-icon { font-size:13px; text-align:center; }
+  .trap-na   .trap-icon { color:var(--muted); }
+  .trap-fired .trap-icon { color:var(--warn); }
+  .trap-ok   .trap-icon { color:var(--up); }
+  .trap-label { color:var(--text); }
+  .trap-status { font-size:11px; color:var(--muted); text-align:right; }
+  .trap-fired .trap-status { color:var(--warn); font-weight:600; }
+  .trap-foot { color:var(--muted); font-size:11px; margin:8px 0 0; font-style:italic; }
+  /* Codex B5: event-windows panel (display-only) */
+  .evwin-row { display:grid; grid-template-columns:140px 1fr auto; gap:6px; align-items:baseline;
+               padding:5px 0; border-bottom:1px solid color-mix(in srgb,var(--muted) 18%,transparent);
+               font-size:13px; }
+  .evwin-row:last-of-type { border-bottom:none; }
+  .evwin-label { color:var(--muted); font-size:12px; }
+  .evwin-val { color:var(--text); }
+  .evwin-note { font-size:11.5px; text-align:right; }
+  .evwin-foot { color:var(--muted); font-size:11px; margin:8px 0 0; font-style:italic; }
   /* W6-C HOLD tracker panel (display-only — basing state / invalidation line) */
   .hold-panel { margin:6px 0; padding:8px 12px; border-radius:8px; background:var(--panel2);
                border-left:3px solid var(--muted); font-size:13px; color:var(--text); }
@@ -632,12 +652,6 @@
       <p id="r_profile_desc" style="margin:0 0 8px"></p>
       <div id="r_profile_chips" class="chips"></div>
       <p id="r_profile_src" class="srcline"></p>
-      <!-- Neural Web sponsorship chip (SRSS Phase 4, shadow tier) — subsector rotation
-           context for THIS name, only shown when today's ledger has a live match.
-           Display-only, never scored; see subsector_rotation.html for the full desk. -->
-      <div id="r_sponsorship_wrap" style="display:none;margin-top:8px">
-        <div id="r_sponsorship" class="chips"></div>
-      </div>
     </div>
 
     <div class="panel" id="panel_demand" style="display:none">
@@ -673,6 +687,22 @@
       <div id="r_aq"></div>
     </div>
 
+    <!-- B1: great-company-trap de-escalation panel (display-only; hold_thesis; LH-R10) -->
+    <div class="panel" id="panel_trap" style="display:none">
+      <h2>⚠ {{ t('Great-company-trap check', '优质公司陷阱检查') }}
+        {{ help('Three independent de-escalation legs applied to high-quality names: (1) Basket-level crowding — is the theme this stock belongs to showing elevated institutional co-movement / extension? (2) Net insider selling — are insiders selling net > $500k? (3) Analyst consensus downgrading — is the net-buy count declining? Any firing leg is a caution flag only (never a sell or a score input). DISPLAY-ONLY context — does not affect any score, rank, or entry decision (LH-R10).',
+          '针对高质量标的的三个独立降级腿：(1) 篮子层面拥挤——该股所属主题是否出现机构共振或超延伸？(2) 内部人净卖出——内部人净卖出是否超过50万美元？(3) 分析师共识下调——净买入计数是否在下降？任何触发腿仅为谨慎提示（从不作为卖出信号或评分输入）。仅供展示——不影响任何评分、排名或入场决策（LH-R10）。') }}</h2>
+      <div id="r_trap"></div>
+    </div>
+
+    <!-- Codex B5: event-windows display panel (display-only; horizon_role=display_context) -->
+    <div class="panel" id="panel_evwin" style="display:none">
+      <h2>🗓 {{ t('Event windows', '事件窗口') }}
+        {{ help('Upcoming event-calendar context for this name: next earnings date (calendar days away), next FOMC meeting (calendar days away), and the most recent EDGAR balance-sheet debt snapshot (current debt due within ~12 months, long-term debt, cash, net debt). DISPLAY-ONLY context — descriptive facts only, does not affect any score, rank, or entry decision. Debt figures in USD as reported; lagged to the most recent SEC filing date shown.',
+          '当前标的即将到来的事件日历背景：下次财报日期（距今日历天数）、下次FOMC会议（距今日历天数），以及最新EDGAR资产负债表债务快照（约12个月内到期的流动债务、长期债务、现金、净债务）。仅供展示——纯描述性事实，不影响任何评分、排名或入场决策。债务数据为美元报告值，滞后至所示最新SEC申报日期。') }}</h2>
+      <div id="r_evwin"></div>
+    </div>
+
     <div class="panel" id="panel_earn" style="display:none">
       <h2>📅 {{ t('Earnings', '财报') }}
         {{ help('Next reported earnings date and the recent beat/miss history (SEC + Nasdaq, keyless), plus the SUE earnings-momentum z. SUE (standardized unexpected earnings) measures how far the latest quarter beat its year-ago seasonal expectation, standardized by the company\'s own history — the post-earnings-announcement-drift (PEAD) effect. It was the strongest factor and lone false-discovery-rate survivor on the shallow 2023-2025 window, but a deep 2011-2026 re-test (survivorship-biased, an optimistic bound) collapses its CROSS-SECTIONAL edge to ~zero (see the factors page) — so it is shown as earnings-momentum / PEAD context, not a validated standalone alpha; the z is RELATIVE to the S&P 1500 (0 = average, +2 = top of the pack). Context, not a standalone buy signal.',
@@ -680,6 +710,8 @@
       <div id="r_earn"></div>
       <!-- LT-2c expectation state (display-only, hold_thesis) rendered when present -->
       <div id="r_expect_state" style="display:none"></div>
+      <!-- LT-4 thesis funnel shadow (display-only, hold_thesis) rendered when present -->
+      <div id="r_thesis_funnel" style="display:none"></div>
     </div>
 
     <div class="panel" id="panel_fac" style="display:none">
@@ -740,6 +772,14 @@
       <div id="r_smartmoney"></div>
     </div>
     </details>
+    <!-- ===== W4 stock-personality panel — display-only trading character context ===== -->
+    {# FAIL-OPEN: entire section absent when personality missing/null (R-SP13 display-only tier). #}
+    {# Jinja missing-key law: NEVER use `if d.personality is not none` — use .get() on the JS side. #}
+    {# This panel is populated by stockview.js reading d.personality from the per-stock JSON. #}
+    <div class="panel" id="panel_personality" style="display:none">
+      <h2>🧬 {{ t('How this stock trades', '这只股票的交易个性') }}</h2>
+      <div id="r_personality"></div>
+    </div>
     <!-- Trust-the-state: standalone, always-open panel at the page bottom (per revamp) -->
     <div class="panel" id="panel_cal">
       <h2>{{ t('How much to trust the state — measured 2000→2026', '这个状态有多可信 — 实测 2000→2026') }}{{ help(
@@ -810,6 +850,7 @@
           archhelp:'Archetype from factor ranks', conf:'confidence',
           fwdpe:'Forward P/E', peyf:'P/E (Yahoo)', pmargin:'Profit margin', roe:'ROE', dyield:'Dividend yld',
           short:'Short interest', shortpct:'Short % of float', dtc:'Days to cover', sichg:'SI change (2wk)',
+          shortflow:'Daily short flow', sfratio:'Short ratio', sftrend:'Trend (recent−base)', sfz:'Ratio z-score',
           insider:'Insider net flow', insiderpct:'Net buying (% cap)', buyers:'distinct insiders (B/S)', buys:'buys / sells', fwdnote_lite:'Forward P/E: trailing only — no free forward estimate at S&P-1500 scale.',
           mediansrc:'sector median', scorelab:'Factor score', compos:'composite percentile vs S&P 1500',
           suehelp:'Standardized unexpected earnings — how far the latest quarter beat its year-ago seasonal expectation, standardized by the company’s own history (post-earnings-announcement drift). Cross-sectional winsorized z vs the S&P 1500. Standout on the shallow 2023-2025 window, but its cross-sectional edge does NOT persist on deep 2011-2026 history (see the factors page) — earnings-momentum / PEAD context, not a standalone signal.',
@@ -824,6 +865,7 @@
           archhelp:'基于因子排名的画像', conf:'确信度',
           fwdpe:'前瞻市盈率', peyf:'市盈率（雅虎）', pmargin:'利润率', roe:'净资产收益率', dyield:'股息率',
           short:'做空持仓', shortpct:'做空占流通股', dtc:'回补天数', sichg:'做空变化（两周）',
+          shortflow:'每日做空流向', sfratio:'做空比率', sftrend:'趋势（近期−基线）', sfz:'比率z值',
           insider:'内部人净流向', insiderpct:'净买入（占市值%）', buyers:'不同内部人（买/卖）', buys:'买入 / 卖出', fwdnote_lite:'前瞻市盈率：仅历史值——标普1500规模下无免费前瞻预期。',
           mediansrc:'行业中位', scorelab:'因子评分', compos:'相对标普1500综合百分位',
           suehelp:'标准化超预期盈利（SUE）——最新季度相对去年同期季节性预期超出多少，并以公司自身历史标准化（盈利公布后漂移效应）。相对标普1500的横截面缩尾z值。在浅窗口（2023-2025）曾突出，但其横截面优势在 2011-2026 深度历史中不再成立（见因子页）——仅作盈利动量／PEAD 背景，并非独立信号。',
@@ -964,7 +1006,7 @@
              low_beta:['Low beta','低贝塔'], accruals:['Low accruals','低应计'], short_interest:['Low short int.','低做空'] };
 
   function hideFundamentals() {
-    ['panel_profile','panel_demand','panel_val','panel_fin','panel_aq','panel_earn','panel_fac','panel_alpha','panel_gex','panel_pos','panel_analyst']
+    ['panel_profile','panel_demand','panel_val','panel_fin','panel_aq','panel_trap','panel_earn','panel_fac','panel_alpha','panel_gex','panel_pos','panel_analyst']
       .forEach(function (id) { show(id, false); });
     show('r_archetype', false); show('r_glance', false);
   }
@@ -1197,39 +1239,6 @@
     return '<div class="fc-grid">' + revBox + epsBox + '</div>';
   }
 
-  // Neural Web sponsorship chip (SRSS Phase 4, shadow tier) — cross-references THIS
-  // ticker against today's subsector-rotation state. d.sponsorship is absent/null
-  // whenever the ticker has no live match (no chip shown; never a fabricated read).
-  // Display-only, never scored: see engine.subsector_sponsorship / engine.spine
-  // (adapt_subsector_sponsorship) for the join this reads from.
-  var SPO_STATE_WORD = {
-    TAILWIND:            ['Group tailwind', '板块顺风'],
-    EARLY_REPAIR:        ['Group repair', '板块修复'],
-    CONFIRMED_LEADERSHIP:['Confirmed group leadership', '确认板块领先'],
-    HEADWIND:            ['Group headwind', '板块逆风'],
-    ROLLOVER:            ['Group rolling over', '板块转向下行'],
-    NEUTRAL:             ['Group neutral', '板块中性']
-  };
-  function fmtSigned(n, nd) {
-    return n == null ? '—' : (n > 0 ? '+' : '') + n.toFixed(nd == null ? 2 : nd);
-  }
-  function renderSponsorship(sp) {
-    var wrap = el('r_sponsorship_wrap'), box = el('r_sponsorship');
-    if (!wrap || !box) return;
-    if (!sp || !sp.sponsorship_state) { wrap.style.display = 'none'; box.innerHTML = ''; return; }
-    var plainText = lz(sp.plain_en, sp.plain_zh) || lz.apply(null, SPO_STATE_WORD[sp.sponsorship_state] || SPO_STATE_WORD.NEUTRAL);
-    var tipEn = (sp.plain_en || '') + ' · rs mom ' + fmtSigned(sp.rs_mom) + ' · accel ' + fmtSigned(sp.accel) +
-      ' · score ' + fmtSigned(sp.sponsorship_score) + ' · ' + (sp.n_members != null ? sp.n_members : '—') +
-      ' members · as of ' + (sp.rotation_asof || '—') + ' · supporting evidence only, not validated';
-    var tipZh = (sp.plain_zh || '') + ' · 相对强度动量 ' + fmtSigned(sp.rs_mom) + ' · 加速度 ' + fmtSigned(sp.accel) +
-      ' · 评分 ' + fmtSigned(sp.sponsorship_score) + ' · 成分股 ' + (sp.n_members != null ? sp.n_members : '—') +
-      ' · 截至 ' + (sp.rotation_asof || '—') + ' · 仅作辅助参考，尚未验证';
-    var cls = 'spo-' + String(sp.sponsorship_state).toLowerCase();
-    box.innerHTML = '<span class="spo-chip ' + cls + '" data-tip-en="' + esc(tipEn) + '" data-tip-zh="' + esc(tipZh) + '">' +
-      '🕸️ ' + esc(plainText) + '</span>';
-    wrap.style.display = '';
-  }
-
   function renderFundamentals(d) {
     var prof = d.profile, val = d.valuation, fin = d.financials, fac = d.factors, pos = d.positioning, an = d.analyst;
     var isEquity = !!(prof || val || fin || fac);
@@ -1276,12 +1285,8 @@
       if (prof.sic_description) pc.push('<span class="chip">' + esc(prof.sic_description) + '</span>');
       if (prof.exchange) pc.push('<span class="chip">' + esc(prof.exchange) + '</span>');
       el('r_profile_chips').innerHTML = pc.join('');
-    } else {
-      el('r_profile_desc').textContent = '';
-      el('r_profile_chips').innerHTML = '';
-    }
-    renderSponsorship(d.sponsorship);
-    show('panel_profile', !!(prof || d.sponsorship));
+      show('panel_profile', true);
+    } else show('panel_profile', false);
 
     if (val) {
       el('r_valbars').innerHTML = VROWS.map(function (r) { return valbar(lz(r.en, r.zh), val[r.k], r.kind); }).join('');
@@ -1415,7 +1420,7 @@
 
     renderGex(d);
 
-    if (pos && (pos.short || pos.insider)) {
+    if (pos && (pos.short || pos.short_flow || pos.insider)) {
       var html = '';
       if (pos.short) {
         var s = pos.short;
@@ -1423,6 +1428,20 @@
           kvRow(LF('shortpct'), s.pct_float == null ? LF('na') : s.pct_float.toFixed(2) + '%', s.pct_float != null && s.pct_float >= 10) +
           kvRow(LF('dtc'), s.days_to_cover == null ? LF('na') : s.days_to_cover.toFixed(1), s.days_to_cover != null && s.days_to_cover >= 5) +
           kvRow(LF('sichg'), s.si_change_pct == null ? LF('na') : signPct(s.si_change_pct), false) + '</div>';
+      }
+      if (pos.short_flow) {
+        var sf = pos.short_flow;
+        // ratio_z: color at ±1.5σ to match darkpool desk threshold
+        var sfzStr = sf.ratio_z == null ? LF('na')
+          : '<span class="' + (sf.ratio_z >= 1.5 ? 'neg' : sf.ratio_z <= -1.5 ? 'pos' : 'muted') + '">'
+            + (sf.ratio_z > 0 ? '+' : '') + sf.ratio_z.toFixed(2) + 'σ</span>';
+        var sfTrendStr = sf.trend_pp == null ? LF('na') : signPct(sf.trend_pp) + 'pp';
+        html += '<div class="posbox"><h3>' + LF('shortflow') + '</h3>' +
+          kvRow(LF('sfratio'), sf.short_ratio_pct == null ? LF('na') : sf.short_ratio_pct.toFixed(1) + '%', false) +
+          kvRow(LF('sftrend'), sfTrendStr, false) +
+          (sf.ratio_z != null ? kvRow(LF('sfz'), sfzStr, false) : '') +
+          (sf.asof ? '<p class="srcline">' + esc(sf.asof) + ' · ' + (sf.n_days || '?') + lz('d', '个交易日') + '</p>' : '') +
+          '</div>';
       }
       if (pos.insider) {
         var ins = pos.insider, net = ins.net_usd_mn, irows = '';
@@ -1465,6 +1484,10 @@
     // Renders last earnings date, SUE beat streak, post-event drift, and absorption flags
     // in plain language.  No 'validated' language.  Tooltips via data-tip-en/zh only.
     renderExpectationState(d.expectation_state);
+
+    // LT-4: thesis funnel shadow — AND-gate survival + candidate chip (display-only, hold_thesis).
+    // Neutral process labels only.  No predictive claims.  Tooltips list gate inputs + values.
+    renderThesisFunnel(d.thesis_funnel);
   }
 
   function renderExpectationState(es) {
@@ -1540,6 +1563,247 @@
       '<div class="es-chips">' + chips.join('') + '</div></div>';
     box.style.display = '';
   }
+
+  // LT-4: thesis funnel shadow chip (display-only, hold_thesis, LH-R2).
+  // Neutral process labels only — no predictive claims, no 'validated' language.
+  // Tooltip lists each AND-gate input and its value for full transparency.
+  function renderThesisFunnel(tf) {
+    var box = el('r_thesis_funnel');
+    if (!box) return;
+    if (!tf || !tf.state || tf.state === 'unavailable') { box.style.display = 'none'; return; }
+
+    var state = tf.state;
+    var flags = tf.flags || {};
+    var gate = tf.gate_inputs || {};
+    var ctx = tf.context || {};
+
+    // ---- State chip ----
+    var stateLabel, stateLabelZh, stateCls;
+    if (state === 'thesis_candidate_shadow') {
+      stateLabel = 'Survival gate: passed — watching';
+      stateLabelZh = '存活门筛：通过—观察中';
+      stateCls = 'es-pos';
+    } else if (state === 'watch_for_thesis') {
+      stateLabel = 'Survival gate: passed — not yet candidate';
+      stateLabelZh = '存活门筛：通过—尚未满足候选条件';
+      stateCls = 'es-neu';
+    } else {
+      // not_eligible — determine the primary reason
+      var reason = tf.state_reason || '';
+      if (reason.indexOf('s1_dilution') >= 0) {
+        stateLabel = 'Not eligible: dilution flag';
+        stateLabelZh = '不符合资格：稀释标志';
+      } else if (reason.indexOf('s2_moat') >= 0) {
+        stateLabel = 'Not eligible: moat falsifier';
+        stateLabelZh = '不符合资格：护城河假证信号';
+      } else if (reason.indexOf('s3_solvency') >= 0) {
+        stateLabel = 'Not eligible: solvency concern';
+        stateLabelZh = '不符合资格：偿债能力问题';
+      } else {
+        stateLabel = 'Not eligible: insufficient data';
+        stateLabelZh = '不符合资格：数据不足';
+      }
+      stateCls = 'es-neg';
+    }
+
+    // ---- Build tooltip listing all gate inputs ----
+    var tipParts = [], tipPartsZh = [];
+
+    // s1 dilution
+    var s1 = flags.s1_dilution || {};
+    if (s1.computable) {
+      var s1v = s1.value != null ? s1.value.toFixed(1) + '%' : '?';
+      tipParts.push('Dilution: shares YoY ' + s1v + ' (threshold ≥+3%)' + (s1.fired ? ' ✔ FIRED' : ' ✘ pass'));
+      tipPartsZh.push('稀释：股本同比 ' + s1v + '（閘值≥+3%）' + (s1.fired ? ' ✔触发' : ' ✘通过'));
+    } else {
+      tipParts.push('Dilution: data unavailable');
+      tipPartsZh.push('稀释：数据不可用');
+    }
+
+    // s2 moat falsifiers
+    var s2 = flags.s2_moat_falsifier || {};
+    if (s2.computable) {
+      var s2fired = (s2.sensors_fired || []).join(', ') || 'none';
+      tipParts.push('Moat falsifiers: ' + (s2.fired ? 'FIRED (' + s2fired + ')' : 'pass (none fired)'));
+      tipPartsZh.push('护城河假证：' + (s2.fired ? '触发(' + s2fired + ')' : '通过（无触发）'));
+    } else {
+      tipParts.push('Moat falsifiers: data unavailable');
+      tipPartsZh.push('护城河假证：数据不可用');
+    }
+
+    // s3 solvency (Altman Z)
+    var s3 = flags.s3_solvency || {};
+    if (s3.computable) {
+      var s3v = s3.value != null ? s3.value.toFixed(2) : '?';
+      var s3app = s3.approx ? ' (approx)' : '';
+      tipParts.push('Solvency: Altman Z=' + s3v + s3app + ' (threshold <1.81)' + (s3.fired ? ' ✔ FIRED' : ' ✘ pass'));
+      tipPartsZh.push('偿债能力：Altman Z=' + s3v + s3app + '（阈值<1.81）' + (s3.fired ? ' ✔触发' : ' ✘通过'));
+    } else {
+      tipParts.push('Solvency: data unavailable');
+      tipPartsZh.push('偿债能力：数据不可用');
+    }
+
+    // Coverage
+    var s4 = flags.s4_coverage || {};
+    tipParts.push('Coverage: ' + (s4.n_computable != null ? s4.n_computable : '?') + '/3 inputs computable (floor: 2)');
+    tipPartsZh.push('覆盖率：' + (s4.n_computable != null ? s4.n_computable : '?') + '/3可计算（门限：2）');
+
+    // Piotroski (for candidate gate)
+    var pio = gate.piotroski || {};
+    if (pio.score != null && pio.of != null) {
+      tipParts.push('Piotroski F: ' + pio.score + '/' + pio.of + ' (candidate floor: ≥6)');
+      tipPartsZh.push('Piotroski F: ' + pio.score + '/' + pio.of + '（候选需≥ 6）');
+    }
+
+    // Capital allocation (for candidate gate)
+    var capDelta = ctx.capital_allocation_delta;
+    if (capDelta) {
+      tipParts.push('Capital allocation: ' + capDelta + ' (dilutive disqualifies from shadow)');
+      tipPartsZh.push('资本分配：' + capDelta + '（dilutive取消候选资格）');
+    }
+
+    tipParts.push('Display only — no behavioral authority');
+    tipPartsZh.push('仅供展示—无行为权限');
+
+    var tipEn = tipParts.join(' | ');
+    var tipZh = tipPartsZh.join(' | ');
+
+    var chip = '<span class="es-chip ' + stateCls + '"' +
+      ' data-tip-en="' + tipEn.replace(/"/g, '&quot;') + '"' +
+      ' data-tip-zh="' + tipZh.replace(/"/g, '&quot;') + '">' +
+      lz(stateLabel, stateLabelZh) + '</span>';
+
+    box.innerHTML = '<div class="es-block">' +
+      '<div class="es-block-h">' + lz('Long-hold admission gate (display only)', '长期持有入门门筛（仅供展示）') + '</div>' +
+      '<div class="es-chips">' + chip + '</div></div>';
+    box.style.display = '';
+  }
+  // B1: Great-company-trap de-escalation panel (display-only, hold_thesis, LH-R10).
+  // Renders three independent legs: crowding / insider_net / revision_direction.
+  // Neutral downgrade-only wording; NEVER implies a sell or a score change.
+  function renderGreatCompanyTrap(d) {
+    var box = el('r_trap'), gct = d && d.great_company_trap;
+    var panel = el('panel_trap');
+    if (!box || !panel) return;
+    if (!gct || gct._display_only === undefined) { show('panel_trap', false); return; }
+    var legs = gct.legs || {};
+    var isZh = lang() === 'zh';
+    function legHtml(legKey, labelEn, labelZh) {
+      var leg = legs[legKey] || {};
+      var avail = leg.available !== false;
+      var fired = !!leg.fired;
+      var val = leg.value;
+      var valStr = '';
+      if (legKey === 'crowding' && val != null)
+        valStr = ' (z = ' + (typeof val === 'number' ? val.toFixed(2) : val) + ')';
+      else if (legKey === 'insider_net' && val != null)
+        valStr = ' ($' + (val / 1e6).toFixed(1) + 'M)';
+      else if (legKey === 'revision_direction' && val != null)
+        valStr = ' (' + esc(val) + ')';
+      var icon, cls;
+      if (!avail) { icon = '–'; cls = 'trap-na'; }
+      else if (fired) { icon = '⚠'; cls = 'trap-fired'; }
+      else { icon = '✓'; cls = 'trap-ok'; }
+      return '<div class="trap-leg ' + cls + '">' +
+        '<span class="trap-icon">' + icon + '</span>' +
+        '<span class="trap-label">' + esc(isZh ? labelZh : labelEn) + valStr + '</span>' +
+        '<span class="trap-status">' + (
+          !avail ? (isZh ? '暂无数据' : 'unavailable') :
+          fired  ? (isZh ? '触发' : 'active') :
+                   (isZh ? '未触发' : 'inactive')
+        ) + '</span></div>';
+    }
+    var anyFired = !!(gct.trap_signals_present);
+    var headCls = anyFired ? 'trap-head trap-head-warn' : 'trap-head trap-head-ok';
+    var headLabel = anyFired
+      ? (isZh ? '⚠ 检测到降级信号' : '⚠ De-escalation caution active')
+      : (isZh ? '✓ 未检测到降级信号' : '✓ No de-escalation legs active');
+    var html = '<div class="' + headCls + '">' + esc(headLabel) + '</div>' +
+      legHtml('crowding',          'Basket crowding elevated', '篮子拥挤') +
+      legHtml('insider_net',       'Net insider selling',      '内部人净卖出') +
+      legHtml('revision_direction','Analyst consensus downgrading', '分析师共识下调') +
+      '<p class="trap-foot">' + (isZh
+        ? '仅供展示 · 不影响任何评分或入场决策 (LH-R10 · display-only)'
+        : 'Display-only context — no effect on any score or entry decision (LH-R10)') + '</p>';
+    box.innerHTML = html;
+    show('panel_trap', true);
+  }
+
+  // Codex B5: Event-windows panel (display-only, descriptive facts, horizon_role=display_context).
+  // Renders three legs: upcoming earnings date, next FOMC date, EDGAR debt snapshot.
+  // Fail-soft: individual legs are hidden when absent; panel hidden when no legs present.
+  function renderEventWindows(d) {
+    var box = el('r_evwin'), panel = el('panel_evwin');
+    if (!box || !panel) return;
+    var ew = d && d.event_windows;
+    if (!ew || ew._display_only === undefined) { show('panel_evwin', false); return; }
+    var isZh = lang() === 'zh';
+    function fmtUSD(v) {
+      if (v == null) return null;
+      var abs = Math.abs(v), neg = v < 0;
+      var s;
+      if (abs >= 1e12) s = (neg ? '-$' : '$') + (abs / 1e12).toFixed(2) + 'T';
+      else if (abs >= 1e9) s = (neg ? '-$' : '$') + (abs / 1e9).toFixed(2) + 'B';
+      else if (abs >= 1e6) s = (neg ? '-$' : '$') + (abs / 1e6).toFixed(1) + 'M';
+      else s = (neg ? '-$' : '$') + abs.toLocaleString();
+      return s;
+    }
+    var rows = [];
+
+    // Leg 1: earnings
+    var earn = ew.earnings;
+    if (earn && earn.date) {
+      var td = earn.tdays, ts = earn.time ? ' · ' + earn.time : '';
+      var dstr = td === 0 ? (isZh ? '今天' : 'today')
+               : td === 1 ? (isZh ? '明天' : 'tomorrow')
+               : (isZh ? td + '天后' : 'in ' + td + 'd');
+      rows.push('<div class="evwin-row"><span class="evwin-label">' +
+        esc(isZh ? '下次财报' : 'Next earnings') + '</span><span class="evwin-val">' +
+        esc(earn.date) + ts + '</span><span class="evwin-note muted">' +
+        esc(dstr) + '</span></div>');
+    }
+
+    // Leg 2: FOMC
+    var fomc = ew.fomc_within;
+    if (fomc && fomc.date) {
+      var fd = fomc.tdays;
+      var fdstr = fd === 0 ? (isZh ? '今天' : 'today')
+                : fd === 1 ? (isZh ? '明天' : 'tomorrow')
+                : (isZh ? fd + '天后' : 'in ' + fd + 'd');
+      rows.push('<div class="evwin-row"><span class="evwin-label">' +
+        esc(isZh ? 'FOMC会议' : 'Next FOMC') + '</span><span class="evwin-val">' +
+        esc(fomc.date) + '</span><span class="evwin-note muted">' +
+        esc(fdstr) + '</span></div>');
+    }
+
+    // Leg 3: debt snapshot
+    var debt = ew.debt;
+    if (debt) {
+      var dfields = [];
+      if (debt.current_debt != null) dfields.push((isZh ? '流动债务: ' : 'Current debt: ') + esc(fmtUSD(debt.current_debt)));
+      if (debt.long_term_debt != null) dfields.push((isZh ? '长期债务: ' : 'LT debt: ') + esc(fmtUSD(debt.long_term_debt)));
+      if (debt.cash != null) dfields.push((isZh ? '现金: ' : 'Cash: ') + esc(fmtUSD(debt.cash)));
+      if (debt.net_debt != null) {
+        var ndSign = debt.net_debt < 0 ? 'pos' : debt.net_debt > 0 ? 'neg' : '';
+        dfields.push((isZh ? '净债务: ' : 'Net debt: ') + '<b class="' + ndSign + '">' + esc(fmtUSD(debt.net_debt)) + '</b>');
+      }
+      if (dfields.length) {
+        var filedNote = debt.filed ? (isZh ? ' · 申报日: ' : ' · filed ') + esc(debt.filed) : '';
+        rows.push('<div class="evwin-row evwin-debt"><span class="evwin-label">' +
+          esc(isZh ? 'EDGAR债务快照' : 'EDGAR debt snapshot') + '</span>' +
+          '<span class="evwin-val">' + dfields.join(' · ') + '</span>' +
+          '<span class="evwin-note muted">' + esc(isZh ? '期末: ' : 'period end: ') + esc(debt.period_end || '') + esc(filedNote) + '</span></div>');
+      }
+    }
+
+    if (!rows.length) { show('panel_evwin', false); return; }
+    box.innerHTML = rows.join('') +
+      '<p class="evwin-foot muted">' + esc(isZh
+        ? '仅供展示 · 纯描述性事实 · 不影响任何评分或入场决策 (Codex B5 · display-only)'
+        : 'Display-only context — descriptive facts only, no effect on any score or entry decision (Codex B5)') + '</p>';
+    show('panel_evwin', true);
+  }
+
   // internal state -> friendly "LABEL · ACTION" (mirrors engine/cycles.STATE_DISPLAY)
   var DISP = {{ state_display_json | safe }};
   // alert-feed conviction notes keyed by event type — the slimmed events embedded
@@ -1902,11 +2166,219 @@
         '<span class="muted">' + (tr.value_change_pct != null ? (tr.value_change_pct > 0 ? '+' : '') + Math.round(tr.value_change_pct) + '% $ · ' : '') +
         tr.holders_first + '→' + tr.holders_last + ' ' + lz('holders', '持有人') + ' / ' + tr.n_quarters + 'Q</span></div>';
     }
-    el('r_smartmoney').innerHTML = head + vipline + trendLine + '<table>' + th + rows + '</table>' +
+    // Realized price move since the filing became public — DESCRIPTIVE, not a signal.
+    var sinceFilingLine = '';
+    if (s.since_filing && s.since_filing.available_on) {
+      var sf = s.since_filing;
+      var sfRet = sf.ret_pct != null ? (sf.ret_pct >= 0 ? '+' : '') + sf.ret_pct.toFixed(1) + '%' : '—';
+      var sfEx = sf.ex_spy_pct != null ? (sf.ex_spy_pct >= 0 ? '+' : '') + sf.ex_spy_pct.toFixed(1) + '%' : '—';
+      var sfCol = sf.ret_pct == null ? 'muted' : sf.ret_pct >= 0 ? 'pos' : 'neg';
+      var sfExCol = sf.ex_spy_pct == null ? 'muted' : sf.ex_spy_pct >= 0 ? 'pos' : 'neg';
+      sinceFilingLine = '<p class="srcline sm-asof" style="margin:-2px 0 10px">' +
+        lz('Stock since filing public', '申报公开后股价走势') + ' (' + esc(sf.available_on) + ', ' + (sf.days || '?') + lz('d', '个交易日') + '): ' +
+        '<b class="' + sfCol + '">' + sfRet + '</b>' +
+        ' · ' + lz('vs SPY', '相对标普') + ': <b class="' + sfExCol + '">' + sfEx + '</b></p>';
+    }
+    el('r_smartmoney').innerHTML = head + vipline + trendLine + sinceFilingLine + '<table>' + th + rows + '</table>' +
       '<p class="srcline">' + lz(
         '13F filed quarterly, ~45-day lag — long-only US stakes ≥ $100M only (no shorts/options/non-US). Context on who holds it, not a real-time signal.',
         '13F 季度申报、约45天滞后 —— 仅美股多头持仓（≥1亿美元，不含空头／期权／非美）。仅作「谁持有」背景，非实时信号。') + '</p>';
     show('panel_smartmoney', true);
+  }
+
+  // ---- W4 stock-personality panel ----
+  // R-SP13 authority: display-only context tier — never ranks, sizes or gates.
+  // Fail-open: panel hidden entirely when personality absent.
+  var _CHART_LABELS = {
+    event_gapper:             ['Event-gapper','事件跳空股'],
+    failed_breakout_trap:     ['Breakout-fade prone','突破易回落'],
+    mean_reversion_rubber_band:['Mean-reversion rubber band','均值回归弹性'],
+    smooth_compounder_grind:  ['Smooth compounder grind','平稳复利慢牛'],
+    stair_step_leader:        ['Stair-step leader','阶梯式领涨'],
+    volatile_momentum_vehicle:['Volatile momentum vehicle','高波动动量载体'],
+    basing_accumulator:       ['Basing accumulator','筑底积累'],
+    defensive_range_stock:    ['Defensive range stock','防御性区间股'],
+    mixed_chart:              ['Mixed chart','混合图形']
+  };
+  var _OWN_LABELS = {
+    short_interest_tinderbox: ['Short-squeeze kindling','高空头引燃体'],
+    retail_attention:         ['Retail attention','散户关注'],
+    insider_founder_controlled:['Insider-controlled','内部人主导'],
+    passive_index_magnet:     ['Passive-index magnet','被动指数磁石'],
+    etf_basketed_conduit:     ['ETF-basket conduit','ETF篮子传导'],
+    long_only_sponsor:        ['Long-only sponsor','长线机构持有'],
+    mixed_ownership:          ['Mixed ownership','混合持有结构']
+  };
+  var _MICRO_LABELS = {
+    tight_spread_absorber:    ['Tight-spread absorber','紧价差吸收体'],
+    wide_spread_impact:       ['Wide-spread / impact cost','宽价差/冲击成本'],
+    gap_discontinuity_risk:   ['Gap-discontinuity risk','跳空间断风险'],
+    slow_mean_reversion_liquidity:['Slow mean-reversion liquidity','慢速均值回归流动性'],
+    mixed_microstructure:     ['Mixed microstructure','混合微观结构']
+  };
+  var _MODE_LABELS = {
+    event_override:           ['Pre-earnings window','财报窗口期'],
+    forced_liquidation:       ['Forced liquidation','被动清仓'],
+    squeeze:                  ['Short-squeeze dynamics','逼空动态'],
+    options_pin:              ['Options pin / gamma dampen','期权钉住/Gamma抑制'],
+    negative_gamma_trend:     ['Neg-gamma trend amplifier','负Gamma趋势放大'],
+    sector_rotation_feeder:   ['Sector rotation feeder','板块轮动传导'],
+    post_news_attention:      ['Post-news attention spike','新闻后关注度飙升'],
+    stale_dead_money:         ['Stale / dead money','滞涨/死钱'],
+    accumulation:             ['Quiet accumulation','静默积累'],
+    distribution:             ['Distribution zone','筹码派发'],
+    normal:                   ['Normal','正常']
+  };
+
+  function _plabel(map, key, fallback_prefix) {
+    var entry = map[key];
+    if (entry) return lz(entry[0], entry[1]);
+    return (fallback_prefix || '') + esc(key || '—');
+  }
+
+  function _pchip(label, tipEn, tipZh, extraCls) {
+    return '<span class="chip' + (extraCls ? ' ' + extraCls : '') + '"' +
+      ' data-tip-en="' + esc(tipEn || '') + '"' +
+      ' data-tip-zh="' + esc(tipZh || tipEn || '') + '">' +
+      label + '</span>';
+  }
+
+  function renderPersonality(d) {
+    var box = el('r_personality');
+    var panel = document.getElementById('panel_personality');
+    if (!box || !panel) return;
+    var p = d && d.personality;
+    if (!p) { show('panel_personality', false); return; }
+
+    var base = p.base || {};
+    var arch = base.archetype || {};
+    var dna = base.dna_class || {};
+    var chart = base.chart_personality || {};
+    var own = base.ownership_habitat || {};
+    var micro = base.microstructure || {};
+    var mode = p.current_mode || {};
+    var compat = p.setup_compatibility || {};
+    var ev = p.evidence || {};
+    var asof = p.as_of || '';
+    var cov = ev.coverage || {};
+    var missing = ev.missing || [];
+    var asofAxis = ev.as_of_by_axis || {};
+
+    var rows = [];
+
+    // --- Archetype row (reuse d.profile.archetype label when available) ---
+    var archKey = arch.key;
+    var archLabel = null;
+    if (d.profile && d.profile.archetype && d.profile.archetype.label) {
+      archLabel = lz(d.profile.archetype.label, d.profile.archetype.label_zh || d.profile.archetype.label);
+    }
+    if (archKey) {
+      var archTip = lang() === 'zh'
+        ? '业务原型（来自基本面分析）。仅供参考。'
+        : 'Business archetype from fundamentals analysis. Context only.';
+      var archChip = _pchip('<span class="l-en">' + esc(archLabel || archKey) + '</span><span class="l-zh">' + esc((d.profile && d.profile.archetype && d.profile.archetype.label_zh) || archLabel || archKey) + '</span>', archTip, archTip);
+      rows.push('<div class="sp-row"><span class="sp-axis"><span class="l-en">Archetype</span><span class="l-zh">业务原型</span></span><span class="sp-chips">' + archChip + '</span></div>');
+    }
+
+    // --- DNA class row ---
+    var dnaKey = dna.key;
+    if (dnaKey) {
+      var dnaStyle = dna.style_regime ? (' · ' + esc(dna.style_regime)) : '';
+      var dnaAsof = asofAxis.dna_class || dna.as_of || '';
+      var dnaTipEn = 'Factor-DNA class (T-1 lag — as of ' + esc(dnaAsof) + '). Style regime: ' + esc(dna.style_regime || '—') + '. Context only.';
+      var dnaTipZh = '因子DNA类型（T-1滞后，截至 ' + esc(dnaAsof) + '）。风格周期：' + esc(dna.style_regime || '—') + '。仅供参考。';
+      var dnaChip = _pchip(esc(dnaKey) + '<span class="sp-small">' + dnaStyle + '</span>', dnaTipEn, dnaTipZh);
+      rows.push('<div class="sp-row"><span class="sp-axis"><span class="l-en">Factor DNA</span><span class="l-zh">因子DNA</span></span><span class="sp-chips">' + dnaChip + '</span>' +
+        '<span class="sp-asof muted">' + esc(dnaAsof) + '</span></div>');
+    } else {
+      rows.push('<div class="sp-row"><span class="sp-axis"><span class="l-en">Factor DNA</span><span class="l-zh">因子DNA</span></span><span class="sp-chips"><span class="muted">—</span></span>' +
+        '<span class="sp-asof muted"><span class="l-en">pending</span><span class="l-zh">待定</span></span></div>');
+    }
+
+    // --- Chart personality ---
+    var chartLabels = chart.labels || [];
+    if (chartLabels.length) {
+      var chartChips = chartLabels.map(function (k) {
+        return _pchip('<span class="l-en">' + esc(_plabel(_CHART_LABELS, k, '')) + '</span><span class="l-zh">' + esc((_CHART_LABELS[k] || ['',k])[1]) + '</span>',
+          'Chart personality: ' + k + '. Measured from price history — context only.',
+          '图形个性：' + k + '。基于历史价格测算，仅供参考。', 'sp-chart-chip');
+      }).join('');
+      rows.push('<div class="sp-row"><span class="sp-axis"><span class="l-en">Chart pattern</span><span class="l-zh">图形特征</span></span><span class="sp-chips">' + chartChips + '</span></div>');
+    }
+
+    // --- Ownership habitat ---
+    var ownLabels = own.labels || [];
+    var ownProxy = own.proxy_basis || [];
+    if (ownLabels.length) {
+      var ownChips = ownLabels.map(function (k, i) {
+        var basis = ownProxy[i] ? (' · source: ' + ownProxy[i]) : '';
+        var basisZh = ownProxy[i] ? (' · 来源：' + ownProxy[i]) : '';
+        return _pchip('<span class="l-en">' + esc(_plabel(_OWN_LABELS, k, '')) + '</span><span class="l-zh">' + esc((_OWN_LABELS[k] || ['',k])[1]) + '</span>',
+          'Ownership habitat: ' + k + basis + '. Proxy-based context only.',
+          '持有人结构：' + k + basisZh + '。代理指标，仅供参考。');
+      }).join('');
+      rows.push('<div class="sp-row"><span class="sp-axis"><span class="l-en">Ownership</span><span class="l-zh">持有结构</span></span><span class="sp-chips">' + ownChips + '</span></div>');
+    }
+
+    // --- Microstructure ---
+    var microLabels = micro.labels || [];
+    if (microLabels.length) {
+      var microChips = microLabels.map(function (k) {
+        return _pchip('<span class="l-en">' + esc(_plabel(_MICRO_LABELS, k, '')) + '</span><span class="l-zh">' + esc((_MICRO_LABELS[k] || ['',k])[1]) + '</span>',
+          'Microstructure: ' + k + '. Context only.',
+          '微观结构：' + k + '。仅供参考。');
+      }).join('');
+      rows.push('<div class="sp-row"><span class="sp-axis"><span class="l-en">Microstructure</span><span class="l-zh">微观结构</span></span><span class="sp-chips">' + microChips + '</span></div>');
+    }
+
+    // --- Current mode (fast layer — visually distinct) ---
+    var modes = mode.modes || [];
+    var modeEvidence = mode.evidence || {};
+    var modeExpiry = mode.expires_after_days;
+    var nonNormalModes = modes.filter(function (m) { return m !== 'normal'; });
+    if (nonNormalModes.length) {
+      var modeChips = nonNormalModes.map(function (m) {
+        var evKeys = Object.keys(modeEvidence);
+        var evSnippetEn = evKeys.length ? evKeys.slice(0,2).map(function(k){return k+': '+modeEvidence[k];}).join('; ') : '';
+        var evSnippetZh = evSnippetEn;
+        var expStr = modeExpiry ? ' · expires ~' + modeExpiry + 'd' : '';
+        var expZh = modeExpiry ? ' · 约' + modeExpiry + '天到期' : '';
+        return _pchip('<span class="l-en">' + esc(_plabel(_MODE_LABELS, m, '')) + '</span><span class="l-zh">' + esc((_MODE_LABELS[m] || ['',m])[1]) + '</span>',
+          'Current mode: ' + m + (evSnippetEn ? ' · ' + evSnippetEn : '') + expStr + '. Context only — fast-layer state.',
+          '当前模式：' + m + (evSnippetZh ? ' · ' + evSnippetZh : '') + expZh + '。仅供参考，快速层状态。', 'sp-mode-chip');
+      }).join('');
+      rows.push('<div class="sp-row sp-mode-row"><span class="sp-axis sp-mode-axis"><span class="l-en">Current mode</span><span class="l-zh">当前模式</span></span><span class="sp-chips">' + modeChips + '</span></div>');
+    }
+
+    // --- Setup compatibility ---
+    var favored = compat.favored_species || [];
+    var caution = compat.caution_species || [];
+    if (favored.length || caution.length) {
+      var compatHtml = '';
+      if (favored.length) compatHtml += '<span class="l-en">Favored setups: ' + esc(favored.join(' · ')) + '</span><span class="l-zh">适配形态：' + esc(favored.join(' · ')) + '</span>';
+      if (caution.length) compatHtml += (favored.length ? ' &nbsp;·&nbsp; ' : '') + '<span class="l-en">Caution: ' + esc(caution.join(' · ')) + '</span><span class="l-zh">谨慎：' + esc(caution.join(' · ')) + '</span>';
+      rows.push('<div class="sp-compat muted">' + compatHtml + '</div>');
+    }
+
+    // --- Honesty footer ---
+    var covParts = [];
+    if (cov.chart != null) covParts.push((lang()==='zh'?'图形 ':'chart ') + Math.round(cov.chart*100) + '%');
+    if (cov.ownership != null) covParts.push((lang()==='zh'?'持有 ':'ownership ') + Math.round(cov.ownership*100) + '%');
+    if (cov.micro != null) covParts.push((lang()==='zh'?'微观 ':'micro ') + Math.round(cov.micro*100) + '%');
+    var covStr = covParts.length ? covParts.join(' · ') : '';
+    var dnaAsofFoot = asofAxis.dna_class || dna.as_of || '';
+    var footerEn = (dnaAsofFoot ? 'DNA class T-1 as of ' + esc(dnaAsofFoot) + ' · ' : '') +
+      (covStr ? 'coverage: ' + covStr + ' · ' : '') +
+      (missing.length ? missing.length + ' axis(es) missing · ' : '') +
+      'Context only — never ranks, sizes or gates';
+    var footerZh = (dnaAsofFoot ? 'DNA类型T-1截至 ' + esc(dnaAsofFoot) + ' · ' : '') +
+      (covStr ? '覆盖率：' + covStr + ' · ' : '') +
+      (missing.length ? missing.length + '个轴缺失 · ' : '') +
+      '仅供参考——不参与排名、仓位或闸门';
+    rows.push('<p class="sp-footer muted"><span class="l-en">' + footerEn + '</span><span class="l-zh">' + footerZh + '</span></p>');
+
+    box.innerHTML = rows.join('');
+    show('panel_personality', true);
   }
 
   // Live header price chip: set the canonical symbol + a baked last price, reveal
@@ -2054,11 +2526,14 @@
     document.getElementById('r_cal').innerHTML = cs;
 
     renderFundamentals(d);
+    renderGreatCompanyTrap(d);   // B1: de-escalation overlay (display-only, LH-R10)
+    renderEventWindows(d);       // Codex B5: event-windows display block (display-only)
     renderDemandContext(d);
     renderFundFlow(d);
     // (relative-strength → evidence.rel_strength; fragility → falsifiers — both in SV.mount.
     //  The standalone alpha/fragility panels are retired to avoid restating the same read.)
     renderSmartMoney(d);
+    renderPersonality(d);
 
     tvLoad(d);
     hideEmptyGroups();
@@ -2157,6 +2632,18 @@
 #panel_anticipation .hc .rv2{font-size:10.5px;color:var(--muted);margin-top:1px;}
 #panel_anticipation .dir-up{color:var(--up);} #panel_anticipation .dir-down{color:var(--down);} #panel_anticipation .dir-flip{color:var(--muted);}
 @media (max-width:560px){ #panel_anticipation #ant_cards{ grid-template-columns:1fr !important; } }
+/* W4 personality panel */
+.sp-row { display:flex; align-items:flex-start; flex-wrap:wrap; gap:4px 8px; margin-bottom:5px; font-size:13px; }
+.sp-axis { min-width:110px; font-size:11.5px; color:var(--muted); font-weight:600; padding-top:2px; }
+.sp-chips { display:flex; flex-wrap:wrap; gap:4px; flex:1; }
+.sp-asof { font-size:11px; color:var(--muted); align-self:center; margin-left:4px; }
+.sp-small { font-size:10px; color:var(--muted); margin-left:3px; }
+.sp-mode-row { border-top:1px solid var(--line); margin-top:6px; padding-top:7px; }
+.sp-mode-axis { color:var(--text); font-weight:700; }
+.sp-mode-chip.chip { border-color:color-mix(in srgb,var(--info) 50%,var(--line)); background:color-mix(in srgb,var(--info) 8%,var(--panel2)); color:var(--info); }
+.sp-chart-chip.chip { border-color:color-mix(in srgb,var(--muted) 60%,var(--line)); }
+.sp-compat { font-size:12px; margin:5px 0 3px; }
+.sp-footer { font-size:11.5px; margin:8px 0 0; line-height:1.5; }
 </style>
 <script>
 /* Anticipation panel — additive; fetches anticipationdata/<ticker>.json (watchlist/

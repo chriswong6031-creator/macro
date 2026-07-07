@@ -1,0 +1,262 @@
+{
+  "schema": "neuralweb.adjudication_queue.v1",
+  "updated_at": "2026-07-06",
+  "law": "packets are the audit trail for tier>=1 decisions; check via scripts/check_adjudication_packet.py",
+  "packets": [
+    {
+      "schema": "neuralweb.adjudication_packet.v1",
+      "packet_id": "adj-2026-07-06-macro-context-rail",
+      "tier": 1,
+      "created_at": "2026-07-06T00:00:00Z",
+      "created_by": "operator",
+      "request": {
+        "title": "Macro context rail (#1635) scope ruling",
+        "requested_decision": "scoped_build",
+        "decision_class": "cross_program_ownership",
+        "source_doc": null,
+        "source_pr": 1635,
+        "notes": "PR #1635 ships a macro context rail that writes world_state keys consumed by both the Neural Web cortex (owner: neural-web) and the sector rotation engine (owner: oracle-rotation). The question is whether this artifact is owned by neural-web or is a shared-context rail with dual stewardship. Cross-program ownership requires a t1 packet so the ownership boundary is on-record before further consumers are added. Ruling precedent: RUL-SUCC-3 (owner declared at registration; subsequent consumers do not change ownership without a packet)."
+      },
+      "scope": {
+        "owner_program": "neural-web",
+        "proposed_classification": "rail",
+        "touched_artifacts": [
+          "mastermind-context"
+        ],
+        "touched_paths": [
+          "data/neuralweb/mastermind_context.json",
+          "engine/neuralweb/world_state.py"
+        ]
+      },
+      "case_law": {
+        "ruling_hits": [
+          "RUL-C1",
+          "RUL-C2",
+          "RUL-SUCC-3",
+          "RUL-SUCC-9"
+        ],
+        "duplicate_risk": "low",
+        "deferred_or_killed_hits": []
+      },
+      "authority": {
+        "current_ceiling": "opus",
+        "requested_ceiling": "opus",
+        "article2_surfaces_touched": [],
+        "nondelegable": false
+      },
+      "privacy": {
+        "privacy_class": "public_research",
+        "public_paths_touched": [],
+        "private_fields": []
+      },
+      "statistics": {
+        "fdr_family": null,
+        "trial_budget_change": false,
+        "evidence_floor_met": false,
+        "outcome_data_seen": false,
+        "preregistration_ref": null
+      },
+      "clocks": {
+        "come_back_on": null,
+        "due_status": "not_clocked"
+      },
+      "build_collision": {
+        "open_prs_touching_paths": [],
+        "owner_conflicts": []
+      },
+      "review": {
+        "required_lenses": [
+          "opus"
+        ],
+        "opus_findings": [],
+        "panel": []
+      },
+      "allowed_outcomes": [
+        "scoped_build",
+        "defer",
+        "reject"
+      ],
+      "blocked_outcomes": [],
+      "escalation": {
+        "opened_on": "2026-07-06",
+        "stale_after_days": 14,
+        "escalated": false
+      },
+      "decision": {
+        "outcome": null,
+        "decided_by": null,
+        "actor_ref": null,
+        "rationale": null,
+        "decided_on": null
+      }
+    },
+    {
+      "schema": "neuralweb.adjudication_packet.v1",
+      "packet_id": "adj-2026-07-06-entry-stack-decline-geometry-followup",
+      "tier": 1,
+      "created_at": "2026-07-06T00:00:00Z",
+      "created_by": "operator",
+      "request": {
+        "title": "Entry-stack decline geometry follow-up (#1777/#1778)",
+        "requested_decision": "defer",
+        "decision_class": "comeback_clock_move_gt_90d",
+        "source_doc": "research/ENTRY_STACK_AMENDMENT3_MASTERPLAN_BY_FABLE.md",
+        "source_pr": 1777,
+        "notes": "PRs #1777 and #1778 shipped the decline_geometry display descriptor and the underwater shadow ledger (A3 §F.3, entry-stack program). The family survivor (E: cross-panel decline geometry flush) is on accrual. The come-back clock is proposed at 2026-10-06 (>90 days from 2026-07-06), which crosses the comeback_clock_move_gt_90d threshold requiring a t1 packet. The 90-day floor is intentional: the eq_band gate is a pre-condition (RUL-27) and is not yet armed; accruing before the gate is live would mix pre/post-gate periods in the eval window."
+      },
+      "scope": {
+        "owner_program": "entry-stack",
+        "proposed_classification": "study",
+        "touched_artifacts": [],
+        "touched_paths": [
+          "engine/entry_stack.py",
+          "site/templates/entry_stack.html.j2"
+        ]
+      },
+      "case_law": {
+        "ruling_hits": [
+          "RUL-27",
+          "RUL-SUCC-6",
+          "RUL-SUCC-7"
+        ],
+        "duplicate_risk": "low",
+        "deferred_or_killed_hits": []
+      },
+      "authority": {
+        "current_ceiling": "opus",
+        "requested_ceiling": "opus",
+        "article2_surfaces_touched": [],
+        "nondelegable": false
+      },
+      "privacy": {
+        "privacy_class": "public_research",
+        "public_paths_touched": [],
+        "private_fields": []
+      },
+      "statistics": {
+        "fdr_family": "esx_decline_geometry",
+        "trial_budget_change": false,
+        "evidence_floor_met": false,
+        "outcome_data_seen": false,
+        "preregistration_ref": "research/ENTRY_STACK_AMENDMENT3_MASTERPLAN_BY_FABLE.md §F.3"
+      },
+      "clocks": {
+        "come_back_on": "2026-10-06",
+        "due_status": "accruing"
+      },
+      "build_collision": {
+        "open_prs_touching_paths": [],
+        "owner_conflicts": []
+      },
+      "review": {
+        "required_lenses": [
+          "opus"
+        ],
+        "opus_findings": [],
+        "panel": []
+      },
+      "allowed_outcomes": [
+        "defer",
+        "reject"
+      ],
+      "blocked_outcomes": [],
+      "escalation": {
+        "opened_on": "2026-07-06",
+        "stale_after_days": 14,
+        "escalated": false
+      },
+      "decision": {
+        "outcome": null,
+        "decided_by": null,
+        "actor_ref": null,
+        "rationale": null,
+        "decided_on": null
+      }
+    },
+    {
+      "schema": "neuralweb.adjudication_packet.v1",
+      "packet_id": "adj-2026-07-06-new-lobe-charter-template",
+      "tier": 2,
+      "created_at": "2026-07-06T00:00:00Z",
+      "created_by": "script",
+      "request": {
+        "title": "TEMPLATE — new lobe charter request",
+        "requested_decision": "charter",
+        "decision_class": "new_lobe_charter",
+        "source_doc": null,
+        "source_pr": null,
+        "notes": "STANDING TEMPLATE. This packet is NOT a real charter request; it exists so that every future lobe charter request has a typed, machine-checkable ancestor in the queue. Its decision is permanently null/undecided. Purpose: the Codex first-10 ruleset (item 10) requires that the two-lobe cap not be breached accidentally. A constitutional (t2) packet must exist before any new lobe can be chartered. Operators are expected to COPY this template, fill in the lobe-specific fields (scope.owner_program, request.source_doc, request.source_pr, case_law.ruling_hits, review.panel), and submit the copy for adjudication. This template packet must never be decided — it is the standing template making the two-lobe cap non-accidental."
+      },
+      "scope": {
+        "owner_program": null,
+        "proposed_classification": "lobe",
+        "touched_artifacts": [],
+        "touched_paths": []
+      },
+      "case_law": {
+        "ruling_hits": [
+          "RUL-NW-1",
+          "RUL-SUCC-1",
+          "RUL-SUCC-2",
+          "RUL-SUCC-10",
+          "RUL-SUCC-11",
+          "RUL-SUCC-12"
+        ],
+        "duplicate_risk": "low",
+        "deferred_or_killed_hits": []
+      },
+      "authority": {
+        "current_ceiling": "operator",
+        "requested_ceiling": "operator",
+        "article2_surfaces_touched": [],
+        "nondelegable": true
+      },
+      "privacy": {
+        "privacy_class": "public_research",
+        "public_paths_touched": [],
+        "private_fields": []
+      },
+      "statistics": {
+        "fdr_family": null,
+        "trial_budget_change": false,
+        "evidence_floor_met": false,
+        "outcome_data_seen": false,
+        "preregistration_ref": null
+      },
+      "clocks": {
+        "come_back_on": null,
+        "due_status": "not_clocked"
+      },
+      "build_collision": {
+        "open_prs_touching_paths": [],
+        "owner_conflicts": []
+      },
+      "review": {
+        "required_lenses": [
+          "opus"
+        ],
+        "opus_findings": [],
+        "panel": []
+      },
+      "allowed_outcomes": [
+        "defer",
+        "send_to_review"
+      ],
+      "blocked_outcomes": [
+        "charter"
+      ],
+      "escalation": {
+        "opened_on": "2026-07-06",
+        "stale_after_days": 14,
+        "escalated": false
+      },
+      "decision": {
+        "outcome": null,
+        "decided_by": null,
+        "actor_ref": null,
+        "rationale": "STANDING TEMPLATE — this packet must remain undecided. Copy and fill in specifics for each real charter request.",
+        "decided_on": null
+      }
+    }
+  ]
+}

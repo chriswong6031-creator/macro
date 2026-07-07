@@ -156,6 +156,62 @@
   .band.cautious,.band.tightening { color:#d23f3f; background:color-mix(in srgb,#d23f3f 13%,transparent); }
   .band.steady,.band.building,.band.neutral,.band.unknown { color:var(--muted); background:var(--panel2); }
   .disc { font-size:11.5px; color:var(--muted); margin-top:14px; line-height:1.55; }
+  /* ── command list ── */
+  /* uses .tbl-scroll from theme.js (avoids double-wrap) */
+  table.cmd-tbl { border-collapse:collapse; width:100%; min-width:680px; font-size:12.5px; }
+  table.cmd-tbl th { text-align:left; padding:6px 9px; background:var(--panel2); color:var(--muted); font-weight:600; border-bottom:2px solid var(--line); white-space:nowrap; }
+  table.cmd-tbl td { padding:7px 9px; border-bottom:1px solid var(--line); vertical-align:middle; }
+  table.cmd-tbl tr:last-child td { border-bottom:none; }
+  .cmd-ticker { font-family:ui-monospace,Menlo,monospace; font-size:11px; color:var(--link); font-weight:700; white-space:nowrap; }
+  .cmd-name { font-size:12px; font-weight:600; max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .cmd-desk-dots { display:flex; gap:3px; align-items:center; }
+  .cmd-dot { width:9px; height:9px; border-radius:50%; flex-shrink:0; }
+  .cmd-dot.up { background:var(--up); }
+  .cmd-dot.down { background:var(--down); }
+  .cmd-dot.neutral { background:var(--muted); opacity:.35; }
+  .cmd-dot.absent { background:transparent; border:1px solid var(--line); }
+  .stage-chip { font-size:9.5px; font-weight:700; padding:2px 7px; border-radius:6px; text-transform:uppercase; letter-spacing:.04em; white-space:nowrap; }
+  .stage-emerging { color:#1f9a55; background:color-mix(in srgb,#1f9a55 14%,transparent); border:1px solid #1f9a5540; }
+  .stage-early { color:#5b8def; background:color-mix(in srgb,#5b8def 14%,transparent); border:1px solid #5b8def40; }
+  .stage-consensus { color:var(--muted); background:var(--panel2); border:1px solid var(--line); }
+  .stage-exhausted { color:#d23f3f; background:color-mix(in srgb,#d23f3f 12%,transparent); border:1px solid #d23f3f40; }
+  .stage-faltering { color:#e0973a; background:color-mix(in srgb,#e0973a 12%,transparent); border:1px solid #e0973a40; }
+  .stage-distribution { color:#e0973a; background:color-mix(in srgb,#e0973a 12%,transparent); border:1px solid #e0973a40; }
+  .stage-quiet { color:var(--muted); background:var(--panel2); border:1px solid var(--line); opacity:.6; }
+  .stage-discovery { color:#8b5cf6; background:color-mix(in srgb,#8b5cf6 13%,transparent); border:1px solid #8b5cf640; }
+  .edge-bar { display:inline-block; width:48px; height:5px; background:var(--panel2); border-radius:3px; overflow:hidden; vertical-align:middle; margin-right:4px; }
+  .edge-bar > i { display:block; height:100%; background:var(--link); border-radius:3px; }
+  .opp-score { font-weight:800; font-variant-numeric:tabular-nums; font-size:13px; }
+  .rs-chip { font-size:10px; font-weight:700; padding:1px 6px; border-radius:5px; white-space:nowrap; }
+  .rs-pos { color:var(--up); background:color-mix(in srgb,var(--up) 12%,transparent); }
+  .rs-neg { color:var(--down); background:color-mix(in srgb,var(--down) 12%,transparent); }
+  .rs-neu { color:var(--muted); background:var(--panel2); }
+  .cmd-read { font-size:11px; color:var(--muted); max-width:240px; line-height:1.4; }
+  .cmd-fals { font-size:10px; color:#e0973a; margin-top:2px; }
+  .cmd-expander { font-size:11.5px; color:var(--link); cursor:pointer; margin-top:8px; display:inline-block; }
+  /* ── discovery queue ── */
+  .disc-queue { display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:10px; margin:12px 0; }
+  .disc-card { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:12px 14px; }
+  .disc-card.off-desk { border-left:3px solid #8b5cf6; }
+  .disc-card .disc-ticker { font-family:ui-monospace,Menlo,monospace; font-size:11px; color:var(--link); font-weight:700; }
+  .disc-card .disc-name { font-size:12.5px; font-weight:700; margin:3px 0; }
+  .disc-card .disc-reason { font-size:11px; color:var(--muted); margin-top:3px; line-height:1.4; }
+  .disc-card .disc-meta { display:flex; gap:5px; flex-wrap:wrap; margin-top:6px; align-items:center; }
+  .lane-chip { font-size:9px; font-weight:700; padding:1px 6px; border-radius:5px; text-transform:uppercase; letter-spacing:.04em; background:var(--panel2); color:var(--muted); border:1px solid var(--line); }
+  .exp-chip { font-size:9px; font-weight:700; padding:1px 6px; border-radius:5px; color:#e0973a; background:color-mix(in srgb,#e0973a 13%,transparent); border:1px solid #e0973a44; }
+  .offdesk-chip { font-size:9px; font-weight:700; padding:1px 6px; border-radius:5px; color:#8b5cf6; background:color-mix(in srgb,#8b5cf6 13%,transparent); border:1px solid #8b5cf640; }
+  .disc-score-bar { height:3px; border-radius:2px; background:var(--link); margin-top:5px; }
+  /* ── cycle-context regime chips (W5) ── muted/neutral only, no up/down coloring ── */
+  .regime-chips { display:flex; flex-wrap:wrap; gap:4px; margin-top:4px; }
+  .rg-chip { font-size:9px; font-weight:600; padding:1px 6px; border-radius:5px; background:color-mix(in srgb,var(--muted) 10%,transparent); color:var(--muted); border:1px solid color-mix(in srgb,var(--muted) 22%,transparent); letter-spacing:.03em; }
+  /* ── analogs card ── */
+  .analogs-card { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:15px 17px; margin:14px 0; }
+  .analogs-query { display:flex; flex-wrap:wrap; gap:7px; margin:8px 0 12px; }
+  .aq-chip { font-size:11px; padding:3px 9px; border-radius:999px; background:var(--panel2); border:1px solid var(--line); color:var(--text); }
+  .fan-table { border-collapse:collapse; font-size:12px; margin:8px 0; }
+  .fan-table th { padding:4px 8px; color:var(--muted); font-weight:600; border-bottom:1px solid var(--line); }
+  .fan-table td { padding:5px 8px; border-bottom:1px solid var(--line); font-variant-numeric:tabular-nums; }
+  .fan-table tr:last-child td { border-bottom:none; }
   /* ── surface cards (spoke links) ── */
   .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(232px,1fr)); gap:14px; margin:14px 0; }
   a.scard { display:block; background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:15px 17px; color:var(--text); transition:border-color .15s, transform .15s; text-decoration:none; }
@@ -219,7 +275,7 @@
         <a href="macro.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">Regime · growth · inflation · nowcast</span><span class="l-zh">周期 · 增长 · 通胀 · 即时预测</span></span></a>
         <a href="us_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Standouts · sectors · flows</span><span class="l-zh">精选 · 板块 · 资金</span></span></a>
         <div class="nav-dd nav-sub">
-          <a class="nav-sub-trig" href="sector_central.html">🧠 <span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span> <span class="caret-r">▸</span></a>
+          <a class="nav-sub-trig" href="sector_central.html">🧠 <span class="nav-sub-text"><span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">Cycle map · heat · gated reads</span><span class="l-zh">周期图谱 · 热度 · 门控研判</span></span></span><span class="caret-r">▸</span></a>
           <div class="nav-dd-menu" role="menu">
             <a href="sector_central.html">🧠 <span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">Cycle map · market heat · one gated read per sector & theme · graded</span><span class="l-zh">周期图谱 · 市场热度 · 每行业与主题门控研判 · 自评分</span></span></a>
             <a href="baskets.html">🧺 <span class="l-en">Thematic Baskets & Rotation</span><span class="l-zh">主题篮子与轮动</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&P · which theme to hold & when to rotate</span><span class="l-zh">等权主题篮子 vs 标普 · 持有哪个主题及何时轮动</span></span></a>
@@ -242,7 +298,7 @@
         <a href="china.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">A-share regime · sectors · flows</span><span class="l-zh">A股周期 · 板块 · 资金</span></span></a>
         <a href="china_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Standouts · alpha · setups</span><span class="l-zh">精选 · 阿尔法 · 布局</span></span></a>
         <div class="nav-dd nav-sub">
-          <a class="nav-sub-trig" href="sector_central_china.html">🧠 <span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span> <span class="caret-r">▸</span></a>
+          <a class="nav-sub-trig" href="sector_central_china.html">🧠 <span class="nav-sub-text"><span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">Cycle map · heat · gated reads</span><span class="l-zh">周期图谱 · 热度 · 门控研判</span></span></span><span class="caret-r">▸</span></a>
           <div class="nav-dd-menu" role="menu">
             <a href="sector_central_china.html">🧠 <span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">Live desk · cycle map · one gated read per sector & theme · graded</span><span class="l-zh">实时看板 · 周期图谱 · 每行业与主题门控研判 · 自评分</span></span></a>
             <a href="baskets_china.html">🧺 <span class="l-en">Thematic Baskets & Rotation</span><span class="l-zh">主题篮子与轮动</span><span class="d"><span class="l-en">Equal-weight theme baskets vs CSI 300 · which theme to hold & when to rotate</span><span class="l-zh">等权主题篮子 vs 沪深300 · 持有哪个主题及何时轮动</span></span></a>
@@ -254,7 +310,7 @@
         <a href="china_strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
         <a href="china_news.html">📰 <span class="l-en">China News Feed</span><span class="l-zh">中国新闻流</span><span class="d"><span class="l-en">Policy tone · official sources · market tags</span><span class="l-zh">政策基调 · 官方来源 · 市场标签</span></span></a>
         <div class="nav-dd nav-sub">
-          <a class="nav-sub-trig" href="china_intel.html">🔬 <span class="l-en">Research</span><span class="l-zh">研究</span> <span class="caret-r">▸</span></a>
+          <a class="nav-sub-trig" href="china_intel.html">🔬 <span class="nav-sub-text"><span class="l-en">Research</span><span class="l-zh">研究</span><span class="d"><span class="l-en">Intel hub · flows · policy</span><span class="l-zh">情报中心 · 资金流 · 政策</span></span></span><span class="caret-r">▸</span></a>
           <div class="nav-dd-menu" role="menu">
             <a href="china_intel.html">🧠 <span class="l-en">Intelligence Hub</span><span class="l-zh">情报中心</span><span class="d"><span class="l-en">All China intel + Mastermind feed</span><span class="l-zh">全部中国情报 + Mastermind信号</span></span></a>
             <a href="baskets_china_ths.html">🧺 <span class="l-en">同花顺 Theme Baskets</span><span class="l-zh">同花顺主题篮子</span><span class="d"><span class="l-en">Tonghuashun concept boards · members & performance</span><span class="l-zh">同花顺概念板块 · 成分与表现</span></span></a>
@@ -262,6 +318,7 @@
             <a href="china_altdata.html">🛰️ <span class="l-en">Alternative Data</span><span class="l-zh">另类数据</span><span class="d"><span class="l-en">Smart-money convergence · signal lab</span><span class="l-zh">主力共振 · 信号实验室</span></span></a>
             <a href="china_policy_watch.html">🏛️ <span class="l-en">PBoC & Policy Watch</span><span class="l-zh">央行与政策观察</span><span class="d"><span class="l-en">Rate corridor · liquidity · sector policy</span><span class="l-zh">利率走廊 · 流动性 · 行业政策</span></span></a>
             <a href="china_radar.html">📡 <span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span><span class="d"><span class="l-en">Policy/flow signal vs sector price</span><span class="l-zh">政策/资金信号 vs 板块价格</span></span></a>
+            <a href="china_special_situations.html">⚡ <span class="l-en">Special Situations</span><span class="l-zh">特殊事件</span><span class="d"><span class="l-en">Unlocks · inquiry letters · preannouncements · pledge stress</span><span class="l-zh">解禁 · 问询函 · 业绩预告 · 质押风险</span></span></a>
             <a href="narrative_radar.html">🧭 <span class="l-en">Narrative Basket Radar</span><span class="l-zh">主题篮子雷达</span><span class="d"><span class="l-en">Which THS theme is running · global driver · member entries</span><span class="l-zh">哪个同花顺主题正在运行 · 全球驱动 · 成员入场</span></span></a>
           </div>
         </div>
@@ -300,7 +357,7 @@
       <a class="nav-link" href="javascript:void(0)">💠 <span class="l-en">Other Assets</span><span class="l-zh">其他资产</span> <span class="caret">▾</span></a>
       <div class="nav-dd-menu" role="menu">
         <div class="nav-dd nav-sub">
-          <a class="nav-sub-trig" href="vector.html">₿ <span class="l-en">Bitcoin Vector</span><span class="l-zh">比特币向量</span> <span class="caret-r">▸</span></a>
+          <a class="nav-sub-trig" href="vector.html">₿ <span class="nav-sub-text"><span class="l-en">Bitcoin Vector</span><span class="l-zh">比特币向量</span><span class="d"><span class="l-en">Market state · risk · cycle</span><span class="l-zh">市场状态 · 风险 · 周期</span></span></span><span class="caret-r">▸</span></a>
           <div class="nav-dd-menu" role="menu">
             <a href="vector.html">📊 <span class="l-en">Overview</span><span class="l-zh">总览</span><span class="d"><span class="l-en">Market state · risk · momentum</span><span class="l-zh">市场状态 · 风险 · 动量</span></span></a>
             <a href="vector_allocation.html">◎ <span class="l-en">Allocation Strategy</span><span class="l-zh">仓位策略</span><span class="d"><span class="l-en">BTC · ETH · alts · cash</span><span class="l-zh">BTC · ETH · 山寨 · 现金</span></span></a>
@@ -308,7 +365,7 @@
           </div>
         </div>
         <div class="nav-dd nav-sub">
-          <a class="nav-sub-trig" href="commodities.html">🛢 <span class="l-en">Commodities</span><span class="l-zh">大宗商品</span> <span class="caret-r">▸</span></a>
+          <a class="nav-sub-trig" href="commodities.html">🛢 <span class="nav-sub-text"><span class="l-en">Commodities</span><span class="l-zh">大宗商品</span><span class="d"><span class="l-en">Gold · oil · silver · copper</span><span class="l-zh">黄金 · 原油 · 白银 · 铜</span></span></span><span class="caret-r">▸</span></a>
           <div class="nav-dd-menu" role="menu">
             <a href="commodities.html">📊 <span class="l-en">Commodity Dashboard</span><span class="l-zh">商品仪表盘</span><span class="d"><span class="l-en">Gold · silver · copper · oil · complex</span><span class="l-zh">金 · 银 · 铜 · 油 · 综合</span></span></a>
             <a href="commodity_strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Per-commodity tactical strategies</span><span class="l-zh">分品种战术策略</span></span></a>
@@ -427,7 +484,7 @@
           
           <div class="nav-mega-col">
             <div class="nav-mega-h"><span class="l-en">Policy & Quant Lab</span><span class="l-zh">政策与量化</span></div>
-            <a class="nav-mega-item" href="committee.html"><span class="nm-ic">🧬</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Committee View</span><span class="l-zh">委员会视图</span></span><span class="d"><span class="l-en">Every signal traced to its graded source · kernel · ladder · staleness</span><span class="l-zh">每条信号溯源 · 核心估计 · 阶梯状态 · 时效性</span></span></span></a>
+            <a class="nav-mega-item" href="committee.html"><span class="nm-ic">🧠</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Neural Web</span><span class="l-zh">智脑</span></span><span class="d"><span class="l-en">The living brain — synapse map, signal committee, cortex memo</span><span class="l-zh">活体大脑 — 突触地图 · 信号委员会 · 皮层备忘录</span></span></span></a>
             <a class="nav-mega-item" href="policy_watch.html"><span class="nm-ic">🏦</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Fed & Policy Watch</span><span class="l-zh">美联储与政策观察</span></span><span class="d"><span class="l-en">Fed + Administration intent & capital rotation</span><span class="l-zh">美联储+政府意图与资本轮动</span></span></span></a>
             <a class="nav-mega-item" href="whitehouse.html"><span class="nm-ic">🏛️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">White House Watch</span><span class="l-zh">白宫快讯</span></span><span class="d"><span class="l-en">Policy alerts · sector head/tailwinds · exposed names</span><span class="l-zh">政策快讯 · 行业顺逆风 · 受影响标的</span></span></span></a>
             <a class="nav-mega-item" href="signal_lab.html"><span class="nm-ic">🔬</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Signal Lab</span><span class="l-zh">信号实验室</span></span><span class="d"><span class="l-en">Consolidated validation scorecard</span><span class="l-zh">验证记分卡汇总</span></span></span></a>
@@ -468,10 +525,12 @@
 
 
 
+
+
 <section class="ci-hero">
   <p class="eyebrow">🧠 <span class="l-en">China Intelligence</span><span class="l-zh">中国情报中心</span></p>
   <h1><span class="l-en">China Intelligence Hub</span><span class="l-zh">中国情报中心</span></h1>
-  <p class="lens"><span class="l-en">Central synthesis of five China surfaces — what matters most, cross-surface conviction, flagged tickers · context only · as of</span><span class="l-zh">五个中国面板的中央综合——最重要的事、跨面板共振、标记个股 · 仅供参考 · 截至</span> 2026-07-06</p>
+  <p class="lens"><span class="l-en">Central synthesis of five China surfaces — what matters most, cross-surface conviction, flagged tickers · context only · as of</span><span class="l-zh">五个中国面板的中央综合——最重要的事、跨面板共振、标记个股 · 仅供参考 · 截至</span> 2026-07-07</p>
 </section>
 
 <div class="ci-wrap">
@@ -480,12 +539,12 @@
   <div class="cmdbar">
       <span class="mc ">
         <b><span class="l-en">Neutral</span><span class="l-zh">中性</span></b>
-        <span>RORO +0.12</span>
+        <span>RORO -0.06</span>
       </span>
-      <span class="mc"><span><span class="l-en">Fear/Euphoria</span><span class="l-zh">恐惧/亢奋</span></span> <b><span class="l-en">Greed</span><span class="l-zh">贪婪</span></b></span>
+      <span class="mc"><span><span class="l-en">Fear/Euphoria</span><span class="l-zh">恐惧/亢奋</span></span> <b><span class="l-en">Neutral</span><span class="l-zh">中性</span></b></span>
       <span class="mc"><span><span class="l-en">PBoC</span><span class="l-zh">央行</span></span> <b><span class="l-en">On hold / neutral</span><span class="l-zh">按兵不动 / 中性</span></b></span>
       <span class="mc"><span><span class="l-en">Media</span><span class="l-zh">媒体</span></span> <b><span class="l-en">cautious / risk-tilted lean</span><span class="l-zh">偏谨慎 / 防风险</span></b></span>
-      <span class="mc warn"><span><span class="l-en">Freshest data</span><span class="l-zh">最新数据</span></span> <b>4<span class="l-en">d old</span><span class="l-zh">天</span></b></span>
+      <span class="mc warn"><span><span class="l-en">Freshest data</span><span class="l-zh">最新数据</span></span> <b>5<span class="l-en">d old</span><span class="l-zh">天</span></b></span>
     <span class="mode-badge"><span class="l-en">Context only</span><span class="l-zh">仅供参考</span></span>
   </div>
 
@@ -494,21 +553,25 @@
   <div class="desks">
       <a class="desk" href="china_news.html">
         <div class="dh">📰 <span class="l-en">News</span><span class="l-zh">新闻</span><span class="dot on"></span></div>
-        <small><span class="l-en">China news tape</span><span class="l-zh">中国财经新闻</span></small><div class="desk-asof">2026-07-06</div>
+        <small><span class="l-en">China news tape</span><span class="l-zh">中国财经新闻</span></small><div class="desk-asof">2026-07-07</div>
           <div class="desk-chips"></div>
       </a>
       <a class="desk" href="china_policy_watch.html">
         <div class="dh">🏛️ <span class="l-en">Policy</span><span class="l-zh">政策</span><span class="dot on"></span></div>
-        <small><span class="l-en">PBoC & policy watch</span><span class="l-zh">央行与政策观察</span></small><div class="desk-asof">2026-07-03</div>
+        <small><span class="l-en">PBoC & policy watch</span><span class="l-zh">央行与政策观察</span></small><div class="desk-asof">2026-07-07</div>
           <div class="desk-chips"><span class="ql-chip ql-chip-accruing"><span class="l-en">ACCRUING</span><span class="l-zh">累积中</span></span></div>
       </a>
       <a class="desk" href="china_altdata.html">
         <div class="dh">🛰️ <span class="l-en">Alt-Data</span><span class="l-zh">另类数据</span><span class="dot on"></span></div>
-        <small><span class="l-en">Smart-money convergence</span><span class="l-zh">聪明钱共振</span></small><div class="desk-asof">2026-07-06</div>
+        <small><span class="l-en">Smart-money convergence</span><span class="l-zh">聪明钱共振</span></small><div class="desk-asof">2026-07-07</div>
       </a>
       <a class="desk" href="china_radar.html">
         <div class="dh">📡 <span class="l-en">Radar</span><span class="l-zh">雷达</span><span class="dot on"></span></div>
-        <small><span class="l-en">Divergence signals</span><span class="l-zh">背离信号</span></small><div class="desk-asof">2026-07-06</div>
+        <small><span class="l-en">Divergence signals</span><span class="l-zh">背离信号</span></small><div class="desk-asof">2026-07-07</div>
+      </a>
+      <a class="desk" href="china_special_situations.html">
+        <div class="dh">⚠️ <span class="l-en">Special Sits</span><span class="l-zh">特殊情景</span><span class="dot on"></span></div>
+        <small><span class="l-en">Unlocks · inquiry · ST watch</span><span class="l-zh">解禁·问询·ST观察</span></small><div class="desk-asof">2026-07-06</div>
       </a>
       <a class="desk" href="china_stocks.html">
         <div class="dh">📊 <span class="l-en">Stocks Board</span><span class="l-zh">个股板</span></div>
@@ -525,8 +588,8 @@
   <div class="regime">
     <span><span class="rk"><span class="l-en">Risk appetite</span><span class="l-zh">风险偏好</span></span>
       <span class="neu"><span class="l-en">Neutral</span><span class="l-zh">中性</span></span></span>
-    <span><span class="rk"><span class="l-en">Fear↔Euphoria</span><span class="l-zh">恐惧↔亢奋</span></span> <span class="l-en">Greed</span><span class="l-zh">贪婪</span></span>
-    <span><span class="rk">RORO</span> +0.12</span>
+    <span><span class="rk"><span class="l-en">Fear↔Euphoria</span><span class="l-zh">恐惧↔亢奋</span></span> <span class="l-en">Neutral</span><span class="l-zh">中性</span></span>
+    <span><span class="rk">RORO</span> -0.06</span>
     <span class="mut" style="font-size:11px"><span class="l-en">soft overlay — context, not a score leg</span><span class="l-zh">软性叠加——背景，非评分腿</span></span>
   </div>
   
@@ -558,25 +621,18 @@
     <b>🎯 <span class="l-en">What matters most today</span><span class="l-zh">今日要点</span></b>
     <ol>
       
-      <li><span class="kind"><span class="l-en">news</span><span class="l-zh">新闻</span></span><span class="l-en">Media sentiment cautious / risk-tilted lean</span><span class="l-zh">媒体情绪 偏谨慎 / 防风险</span> — <span class="mut"><span class="l-en">z -1.81 over 23d.</span><span class="l-zh">23日 z -1.81。</span></span></li>
-      
-      <li><span class="kind"><span class="l-en">radar</span><span class="l-zh">雷达</span></span><span class="l-en">Semiconductors divergence (negative)</span><span class="l-zh">半导体 背离（负向）</span> — <span class="mut"><span class="l-en">radar Sector net-flow → Semiconductors · 55 China headlines · 5 alt-data members distributing · consensus (leading the crowd)</span><span class="l-zh">雷达 板块净流入 → 半导体 · 该主题 55 条头条 · 5 只成员派发 · 共识（领先于人群）</span></span></li>
-      
-      <li><span class="kind"><span class="l-en">radar</span><span class="l-zh">雷达</span></span><span class="l-en">Defense divergence (positive)</span><span class="l-zh">国防军工 背离（正向）</span> — <span class="mut"><span class="l-en">radar Sector net-flow → Defense · 2 China headlines · 3 alt-data members accumulating · emerging (leading the crowd)</span><span class="l-zh">雷达 板块净流入 → 国防军工 · 该主题 2 条头条 · 3 只成员吸筹 · 萌芽（领先于人群）</span></span></li>
-      
       <li><span class="kind"><span class="l-en">scheduled</span><span class="l-zh">日程</span></span><span class="l-en">Customs trade (exports/imports) (Jul 7)</span><span class="l-zh">海关进出口数据（7月7日）</span> — <span class="mut"><span class="l-en">Scheduled high-impact China release ahead.</span><span class="l-zh">即将发布的高影响中国数据。</span></span></li>
       
-      <li><span class="kind"><span class="l-en">radar</span><span class="l-zh">雷达</span></span><span class="l-en">Coal divergence (positive)</span><span class="l-zh">煤炭 背离（正向）</span> — <span class="mut"><span class="l-en">radar Sector net-flow → Coal · 2 China headlines · 2 alt-data members accumulating · emerging (leading the crowd)</span><span class="l-zh">雷达 板块净流入 → 煤炭 · 该主题 2 条头条 · 2 只成员吸筹 · 萌芽（领先于人群）</span></span></li>
+      <li><span class="kind"><span class="l-en">news</span><span class="l-zh">新闻</span></span><span class="l-en">Media sentiment cautious / risk-tilted lean</span><span class="l-zh">媒体情绪 偏谨慎 / 防风险</span> — <span class="mut"><span class="l-en">z -1.23 over 25d.</span><span class="l-zh">25日 z -1.23。</span></span></li>
+      
+      <li><span class="kind"><span class="l-en">chain</span><span class="l-zh">链条</span></span><span class="l-en">PBoC easing → liquidity → brokers/property → breadth (forming)</span><span class="l-zh">央行宽松 → 流动性 → 券商/地产 → 市场宽度（形成中）</span> — <span class="mut"><span class="l-en">2/5 legs of the easing-reflation path align.</span><span class="l-zh">宽松再通胀路径 2/5 段一致。</span></span></li>
+      
+      <li><span class="kind"><span class="l-en">scheduled</span><span class="l-zh">日程</span></span><span class="l-en">CPI (consumer prices) (Jul 9)</span><span class="l-zh">CPI（居民消费价格）（7月9日）</span> — <span class="mut"><span class="l-en">Scheduled high-impact China release ahead.</span><span class="l-zh">即将发布的高影响中国数据。</span></span></li>
+      
+      <li><span class="kind"><span class="l-en">scheduled</span><span class="l-zh">日程</span></span><span class="l-en">PPI (producer prices) (Jul 9)</span><span class="l-zh">PPI（工业生产者价格）（7月9日）</span> — <span class="mut"><span class="l-en">Scheduled high-impact China release ahead.</span><span class="l-zh">即将发布的高影响中国数据。</span></span></li>
       
     </ol>
     
-    
-    <div class="changed">
-      
-      
-      
-      <span class="ch"><span class="l-en">New accumulation</span><span class="l-zh">新增吸筹</span>: 8</span>
-    </div>
     
   </div>
   
@@ -591,74 +647,38 @@
     
       
       <tr>
-        <td><b><span class="l-en">Defense</span><span class="l-zh">国防军工</span></b> <span class="sgn-pos">▲</span></td>
-        <td><span class="cc">49.1</span></td>
-        <td><span class="bandpill b-high"><span class="l-en">Emerging</span><span class="l-zh">萌芽</span></span> <span class="sgn-pos">↑2</span></td>
-        <td><span class="cc">58.8</span> <span class="bandpill b-elevated"><span class="l-en">Elevated</span><span class="l-zh">偏强</span></span></td>
-        <td><div class="strength" style="width:64px" title="relative room vs crowd — not a % upside forecast"><i style="width:74%"></i></div></td>
-        <td><span class="surf">radar</span><span class="surf">altdata</span>
-          <br><span style="font-size:9.5px;color:var(--muted);font-style:italic"><span class="l-en">news: magnitude-only — sign unproven (validation accruing)</span><span class="l-zh">新闻：仅幅度——方向未验证（台账积累中）</span></span></td>
-        <td><span class="l-en">radar Sector net-flow → Defense · 2 China headlines · 3 alt-data members accumulating · emerging (leading the crowd)</span><span class="l-zh">雷达 板块净流入 → 国防军工 · 该主题 2 条头条 · 3 只成员吸筹 · 萌芽（领先于人群）</span><br><span class="mut" style="font-size:11px">中国船舶 (600150.SS) · 中航西飞 (000768.SZ) · 中航沈飞 (600760.SS)</span></td>
-      </tr>
-    
-      
-      <tr>
         <td><b><span class="l-en">Semiconductors</span><span class="l-zh">半导体</span></b> <span class="sgn-neg">▼</span></td>
-        <td><span class="cc">47.5</span></td>
-        <td><span class="bandpill b-none"><span class="l-en">Consensus</span><span class="l-zh">共识</span></span> <span class="sgn-pos">↑2</span></td>
-        <td><span class="cc">73.6</span> <span class="bandpill b-elevated"><span class="l-en">Elevated</span><span class="l-zh">偏强</span></span></td>
-        <td><div class="strength" style="width:64px" title="relative room vs crowd — not a % upside forecast"><i style="width:36%"></i></div></td>
-        <td><span class="surf">radar</span><span class="surf">altdata</span>
-          <br><span style="font-size:9.5px;color:var(--muted);font-style:italic"><span class="l-en">news: magnitude-only — sign unproven (validation accruing)</span><span class="l-zh">新闻：仅幅度——方向未验证（台账积累中）</span></span></td>
-        <td><span class="l-en">radar Sector net-flow → Semiconductors · 55 China headlines · 5 alt-data members distributing · consensus (leading the crowd)</span><span class="l-zh">雷达 板块净流入 → 半导体 · 该主题 55 条头条 · 5 只成员派发 · 共识（领先于人群）</span><br><span class="mut" style="font-size:11px">卓胜微 (300782.SZ) · 华虹宏力 (688347.SS) · 拓荆科技 (688072.SS)</span></td>
-      </tr>
-    
-      
-      <tr>
-        <td><b><span class="l-en">Semiconductors</span><span class="l-zh">半导体</span></b> <span class="sgn-neg">▼</span></td>
-        <td><span class="cc">45.1</span></td>
-        <td><span class="bandpill b-none"><span class="l-en">Consensus</span><span class="l-zh">共识</span></span> <span class="sgn-pos">↑2</span></td>
-        <td><span class="cc">72.0</span> <span class="bandpill b-elevated"><span class="l-en">Elevated</span><span class="l-zh">偏强</span></span></td>
-        <td><div class="strength" style="width:64px" title="relative room vs crowd — not a % upside forecast"><i style="width:36%"></i></div></td>
-        <td><span class="surf">radar</span><span class="surf">altdata</span>
-          <br><span style="font-size:9.5px;color:var(--muted);font-style:italic"><span class="l-en">news: magnitude-only — sign unproven (validation accruing)</span><span class="l-zh">新闻：仅幅度——方向未验证（台账积累中）</span></span></td>
-        <td><span class="l-en">radar Southbound flow → Semiconductors · 55 China headlines · 5 alt-data members distributing · consensus (leading the crowd)</span><span class="l-zh">雷达 南向资金 → 半导体 · 该主题 55 条头条 · 5 只成员派发 · 共识（领先于人群）</span><br><span class="mut" style="font-size:11px">卓胜微 (300782.SZ) · 华虹宏力 (688347.SS) · 拓荆科技 (688072.SS)</span></td>
-      </tr>
-    
-      
-      <tr>
-        <td><b><span class="l-en">Coal</span><span class="l-zh">煤炭</span></b> <span class="sgn-pos">▲</span></td>
-        <td><span class="cc">35.6</span></td>
-        <td><span class="bandpill b-high"><span class="l-en">Emerging</span><span class="l-zh">萌芽</span></span> <span class="sgn-pos">↑2</span></td>
-        <td><span class="cc">48.7</span> <span class="bandpill b-moderate"><span class="l-en">Moderate</span><span class="l-zh">中性</span></span></td>
-        <td><div class="strength" style="width:64px" title="relative room vs crowd — not a % upside forecast"><i style="width:74%"></i></div></td>
-        <td><span class="surf">radar</span><span class="surf">altdata</span>
-          <br><span style="font-size:9.5px;color:var(--muted);font-style:italic"><span class="l-en">news: magnitude-only — sign unproven (validation accruing)</span><span class="l-zh">新闻：仅幅度——方向未验证（台账积累中）</span></span></td>
-        <td><span class="l-en">radar Sector net-flow → Coal · 2 China headlines · 2 alt-data members accumulating · emerging (leading the crowd)</span><span class="l-zh">雷达 板块净流入 → 煤炭 · 该主题 2 条头条 · 2 只成员吸筹 · 萌芽（领先于人群）</span><br><span class="mut" style="font-size:11px">陕西煤业 (601225.SS) · 山西焦煤 (000983.SZ)</span></td>
-      </tr>
-    
-      
-      <tr>
-        <td><b><span class="l-en">New-energy vehicle</span><span class="l-zh">新能源车</span></b> <span class="sgn-pos">▲</span></td>
-        <td><span class="cc">18.8</span></td>
-        <td><span class="bandpill b-elevated"><span class="l-en">Early</span><span class="l-zh">早期</span></span> <span class="sgn-pos">↑2</span></td>
-        <td><span class="cc">41.9</span> <span class="bandpill b-moderate"><span class="l-en">Moderate</span><span class="l-zh">中性</span></span></td>
-        <td><div class="strength" style="width:64px" title="relative room vs crowd — not a % upside forecast"><i style="width:63%"></i></div></td>
-        <td><span class="surf">radar</span><span class="surf">altdata</span>
-          <br><span style="font-size:9.5px;color:var(--muted);font-style:italic"><span class="l-en">news: magnitude-only — sign unproven (validation accruing)</span><span class="l-zh">新闻：仅幅度——方向未验证（台账积累中）</span></span></td>
-        <td><span class="l-en">radar Sector net-flow → New-energy vehicle · 11 China headlines · 9 alt-data members accumulating · early (leading the crowd)</span><span class="l-zh">雷达 板块净流入 → 新能源车 · 该主题 11 条头条 · 9 只成员吸筹 · 早期（领先于人群）</span><br><span class="mut" style="font-size:11px">格林美 (002340.SZ) · 国轩高科 (002074.SZ) · 比亚迪 (002594.SZ)</span></td>
+        <td><span class="cc">30.9</span></td>
+        <td><span class="bandpill b-none"><span class="l-en">Consensus</span><span class="l-zh">共识</span></span> <span class="sgn-pos">↑1</span></td>
+        <td><span class="cc">28.1</span> <span class="bandpill b-low"><span class="l-en">Low</span><span class="l-zh">偏弱</span></span></td>
+        <td><div class="strength" style="width:64px"><i style="width:41%"></i></div></td>
+        <td><span class="surf">radar</span>
+          <br><span style="font-size:9.5px;color:var(--muted);font-style:italic"><span class="l-en">news: magnitude-only — sign unproven (accruing)</span><span class="l-zh">新闻：仅幅度——方向未验证（台账积累中）</span></span></td>
+        <td><span class="l-en">radar Southbound flow → Semiconductors · 49 China headlines · 2 alt-data members distributing · consensus (leading the crowd)</span><span class="l-zh">雷达 南向资金 → 半导体 · 该主题 49 条头条 · 2 只成员派发 · 共识（领先于人群）</span><br><span class="mut" style="font-size:11px">卓胜微 (300782.SZ) · 圣邦股份 (300661.SZ)</span></td>
       </tr>
     
       
       <tr>
         <td><b><span class="l-en">Real estate</span><span class="l-zh">房地产</span></b> <span class="sgn-pos">▲</span></td>
-        <td><span class="cc">14.2</span></td>
+        <td><span class="cc">13.7</span></td>
         <td><span class="bandpill b-high"><span class="l-en">Emerging</span><span class="l-zh">萌芽</span></span> <span class="sgn-pos">↑1</span></td>
-        <td><span class="cc">21.7</span> <span class="bandpill b-low"><span class="l-en">Low</span><span class="l-zh">偏弱</span></span></td>
+        <td><span class="cc">21.1</span> <span class="bandpill b-low"><span class="l-en">Low</span><span class="l-zh">偏弱</span></span></td>
         <td><div class="strength" style="width:64px"><i style="width:84%"></i></div></td>
         <td><span class="surf">radar</span><span class="surf">policy</span>
           </td>
         <td><span class="l-en">radar PBoC easing → Real estate · policy tailwind · emerging (leading the crowd)</span><span class="l-zh">雷达 央行宽松 → 房地产 · 政策顺风 · 萌芽（领先于人群）</span></td>
+      </tr>
+    
+      
+      <tr>
+        <td><b><span class="l-en">Coal</span><span class="l-zh">煤炭</span></b> <span class="sgn-pos">▲</span></td>
+        <td><span class="cc">11.2</span></td>
+        <td><span class="bandpill b-high"><span class="l-en">Emerging</span><span class="l-zh">萌芽</span></span> <span class="sgn-pos">↑1</span></td>
+        <td><span class="cc">16.7</span> <span class="bandpill b-low"><span class="l-en">Low</span><span class="l-zh">偏弱</span></span></td>
+        <td><div class="strength" style="width:64px"><i style="width:74%"></i></div></td>
+        <td><span class="surf">radar</span>
+          <br><span style="font-size:9.5px;color:var(--muted);font-style:italic"><span class="l-en">news: magnitude-only — sign unproven (accruing)</span><span class="l-zh">新闻：仅幅度——方向未验证（台账积累中）</span></span></td>
+        <td><span class="l-en">radar Sector net-flow → Coal · 2 China headlines · 2 alt-data members accumulating · emerging (leading the crowd)</span><span class="l-zh">雷达 板块净流入 → 煤炭 · 该主题 2 条头条 · 2 只成员吸筹 · 萌芽（领先于人群）</span><br><span class="mut" style="font-size:11px">陕西煤业 (601225.SS) · 淮北矿业 (600985.SS)</span></td>
       </tr>
     
     </tbody>
@@ -682,28 +702,13 @@
   <div class="flags">
     
     <span class="tk long">
-      <span class="nm">中国船舶</span>
-      <span class="cd">600150.SS · altdata+radar+news</span>
+      <span class="nm">陕西煤业</span>
+      <span class="cd">601225.SS · altdata+radar+news</span>
     </span>
     
     <span class="tk long">
-      <span class="nm">格林美</span>
-      <span class="cd">002340.SZ · altdata+radar+news</span>
-    </span>
-    
-    <span class="tk long">
-      <span class="nm">中航西飞</span>
-      <span class="cd">000768.SZ · altdata+radar+news</span>
-    </span>
-    
-    <span class="tk long">
-      <span class="nm">国轩高科</span>
-      <span class="cd">002074.SZ · altdata+radar+news</span>
-    </span>
-    
-    <span class="tk long">
-      <span class="nm">比亚迪</span>
-      <span class="cd">002594.SZ · altdata+radar+news</span>
+      <span class="nm">淮北矿业</span>
+      <span class="cd">600985.SS · altdata+radar+news</span>
     </span>
     
     <span class="tk short">
@@ -711,29 +716,9 @@
       <span class="cd">300782.SZ · altdata+radar+news</span>
     </span>
     
-    <span class="tk long">
-      <span class="nm">陕西煤业</span>
-      <span class="cd">601225.SS · altdata+radar+news</span>
-    </span>
-    
-    <span class="tk long">
-      <span class="nm">山西焦煤</span>
-      <span class="cd">000983.SZ · altdata+radar+news</span>
-    </span>
-    
-    <span class="tk long">
-      <span class="nm">中航沈飞</span>
-      <span class="cd">600760.SS · altdata+radar+news</span>
-    </span>
-    
     <span class="tk short">
-      <span class="nm">华虹宏力</span>
-      <span class="cd">688347.SS · altdata+radar+news</span>
-    </span>
-    
-    <span class="tk short">
-      <span class="nm">拓荆科技</span>
-      <span class="cd">688072.SS · altdata+radar+news</span>
+      <span class="nm">圣邦股份</span>
+      <span class="cd">300661.SZ · altdata+radar+news</span>
     </span>
     
   </div>
@@ -764,52 +749,47 @@
   
   
 
-  <!-- F. DIGEST -->
-  <details><summary style="cursor:pointer;font-size:12px;color:var(--muted);margin:8px 0"><span class="l-en">Machine digest (what the Mastermind reads)</span><span class="l-zh">机器摘要（Mastermind 读取的内容）</span></summary><div class="digest">WHAT MATTERS MOST:
-  • Media sentiment cautious / risk-tilted lean — z -1.81 over 23d.
-  • Semiconductors divergence (negative) — radar Sector net-flow → Semiconductors · 55 China headlines · 5 alt-data members distributing · consensus (leading the crowd)
-  • Defense divergence (positive) — radar Sector net-flow → Defense · 2 China headlines · 3 alt-data members accumulating · emerging (leading the crowd)
-CHANGED TODAY: new accumulation: 000166.SZ, 002793.SZ, 002979.SZ
-STACKED READS:
-  • Defense (positive) cc=58.8 [radar+altdata]
-  • Semiconductors (negative) cc=73.6 [radar+altdata]
-  • Semiconductors (negative) cc=72.0 [radar+altdata]
-News: media sentiment cautious (z -1.81), 647 events/7d
-  baskets: AI Compute & Optics(70), Semiconductors(55), Brokers(48), Robotics(29)
-PBoC: stance neutral; LPR1Y 3.0 / 5Y 3.5; RRR 9.0 — Easing in progress — stance not yet flipped
-Alt-data accumulation: 000563.SZ(000563.SZ), 000166.SZ(000166.SZ), 603789.SS(603789.SS), 603303.SS(603303.SS)
-Radar divergences: Sector net-flow→Semiconductors negative; Southbound flow→Semiconductors negative; Sector net-flow→Defense positive; Sector net-flow→Coal positive; Sector net-flow→New-energy vehicle positive (ledger: unproven)</div></details>
-
-  <!-- G. SURFACE CARDS -->
-  <h2 class="sec">🗂️ <span class="l-en">Surfaces</span><span class="l-zh">情报面板</span></h2>
+  
+  <h2 class="sec">🗂️ <span class="l-en">Intelligence Surfaces</span><span class="l-zh">情报面板</span></h2>
   <div class="cards">
     <a class="scard" href="china_news.html">
       <div class="ic">📰</div><div class="nm"><span class="l-en">China News</span><span class="l-zh">中国财经新闻</span></div>
       <div class="v"><span class="band cautious"><span class="l-en">cautious / risk-tilted lean</span><span class="l-zh">偏谨慎 / 防风险</span></span></div>
-      <div class="s">647 <span class="l-en">events/7d</span><span class="l-zh">事件/7天</span> · 6 <span class="l-en">themes</span><span class="l-zh">主题</span></div>
-      <div class="age">2026-07-06</div>
+      <div class="s">564 <span class="l-en">events/7d</span><span class="l-zh">事件/7天</span> · 6 <span class="l-en">themes</span><span class="l-zh">主题</span></div>
+      <div class="age">2026-07-07</div>
       <div class="go"><span class="l-en">Open news tape →</span><span class="l-zh">打开新闻脉搏 →</span></div>
     </a>
     <a class="scard" href="china_policy_watch.html">
       <div class="ic">🏛️</div><div class="nm"><span class="l-en">PBoC & Policy</span><span class="l-zh">央行与政策</span></div>
       <div class="v"><span class="band neutral"><span class="l-en">On hold / neutral</span><span class="l-zh">按兵不动 / 中性</span></span></div>
       <div class="s">LPR 3.0/3.5 · RRR 9.0 · <span class="l-en">easing impulse</span><span class="l-zh">宽松动能</span></div>
-      <div class="age">2026-07-03</div>
+      <div class="age">2026-07-07</div>
       <div class="go"><span class="l-en">Open policy watch →</span><span class="l-zh">打开政策观察 →</span></div>
     </a>
     <a class="scard" href="china_altdata.html">
       <div class="ic">🛰️</div><div class="nm"><span class="l-en">Alternative Data</span><span class="l-zh">另类数据</span></div>
       <div class="v">10</div>
-      <div class="s"><span class="l-en">convergence watchlist</span><span class="l-zh">共振自选</span> · 3417 <span class="l-en">full-coverage</span><span class="l-zh">三源齐全</span></div>
-      <div class="age">2026-07-06</div>
+      <div class="s"><span class="l-en">convergence watchlist</span><span class="l-zh">共振自选</span> · 4080 <span class="l-en">full-coverage</span><span class="l-zh">三源齐全</span></div>
+      <div class="age">2026-07-07</div>
       <div class="go"><span class="l-en">Open alt-data desk →</span><span class="l-zh">打开另类数据台 →</span></div>
     </a>
     <a class="scard" href="china_radar.html">
       <div class="ic">📡</div><div class="nm"><span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span></div>
-      <div class="v">6</div>
+      <div class="v">4</div>
       <div class="s"><span class="l-en">active divergences</span><span class="l-zh">活跃背离</span> · <span class="l-en">ledger</span><span class="l-zh">台账</span> <span class="l-en">Unproven</span><span class="l-zh">未验证</span></div>
-      <div class="age">2026-07-06</div>
+      <div class="age">2026-07-07</div>
       <div class="go"><span class="l-en">Open radar →</span><span class="l-zh">打开雷达 →</span></div>
+    </a>
+    <a class="scard" href="china_special_situations.html">
+      <div class="ic">⚠️</div><div class="nm"><span class="l-en">Special Situations</span><span class="l-zh">特殊情景</span></div>
+      
+        <div class="v">150</div>
+        <div class="s"><span class="l-en">forward unlocks</span><span class="l-zh">待解禁</span> · 25 <span class="l-en">letters</span><span class="l-zh">问询函</span> · 100 <span class="l-en">ST names</span><span class="l-zh">ST名称</span>
+        </div>
+        <div class="age">2026-07-06</div>
+          <div style="font-size:10px;color:#e0973a;margin-top:3px">⚠ <span class="l-en">large unlock flagged</span><span class="l-zh">大宗解禁预警</span></div>
+      
+      <div class="go"><span class="l-en">Open special sits →</span><span class="l-zh">打开特殊情景 →</span></div>
     </a>
   </div>
 
@@ -829,19 +809,808 @@ Radar divergences: Sector net-flow→Semiconductors negative; Southbound flow→
 
   
   <details><summary style="cursor:pointer;font-size:12px;color:var(--muted);margin:8px 0"><span class="l-en">Machine digest (what the Mastermind reads)</span><span class="l-zh">机器摘要（Mastermind 读取的内容）</span></summary><div class="digest">WHAT MATTERS MOST:
-  • Media sentiment cautious / risk-tilted lean — z -1.81 over 23d.
-  • Semiconductors divergence (negative) — radar Sector net-flow → Semiconductors · 59 China headlines · 9 alt-data members distributing · consensus (leading the crowd)
-  • Defense divergence (positive) — radar Sector net-flow → Defense · 6 China headlines · 8 alt-data members accumulating · early (leading the crowd)
-CHANGED TODAY: new accumulation: 002898.SZ, 600906.SS, 603789.SS
+  • Customs trade (exports/imports) (Jul 7) — Scheduled high-impact China release ahead.
+  • Media sentiment cautious / risk-tilted lean — z -1.23 over 25d.
+  • PBoC easing → liquidity → brokers/property → breadth (forming) — 2/5 legs of the easing-reflation path align.
 STACKED READS:
-  • Semiconductors (negative) cc=73.4 [radar+altdata]
-  • Semiconductors (negative) cc=71.7 [radar+altdata]
-  • Defense (positive) cc=61.0 [radar+altdata]
-News: media sentiment cautious (z -1.81), 624 events/7d
-  baskets: AI Compute & Optics(74), Semiconductors(59), Brokers(44), Robotics(29)
+  • Semiconductors (negative) cc=28.1 [radar]
+  • Real estate (positive) cc=21.1 [radar+policy]
+  • Coal (positive) cc=16.7 [radar]
+News: media sentiment cautious (z -1.23), 564 events/7d
+  baskets: AI Compute & Optics(62), Brokers(52), Semiconductors(49), Banks(27)
 PBoC: stance neutral; LPR1Y 3.0 / 5Y 3.5; RRR 9.0 — Easing in progress — stance not yet flipped
-Alt-data accumulation: 000563.SZ(000563.SZ), 600203.SS(600203.SS), 688219.SS(688219.SS), 301262.SZ(301262.SZ)
-Radar divergences: Sector net-flow→Semiconductors negative; Southbound flow→Semiconductors negative; Sector net-flow→Defense positive; Sector net-flow→Coal positive; Sector net-flow→New-energy vehicle positive (ledger: unproven)</div></details>
+Alt-data accumulation: 001229.SZ(001229.SZ), 000970.SZ(000970.SZ), 600203.SS(600203.SS), 300553.SZ(300553.SZ)
+Radar divergences: Offshore ETF gap (KWEB/MCHI/CQQQ)→CSI 300 (onshore) positive; Southbound flow→Semiconductors negative; PBoC easing→Real estate positive; Sector net-flow→Coal positive (ledger: unproven)
+COMMAND TOP-2: 002741.SZ (early edge=54%) · 688181.SS (consensus edge=38%) (universe=195, context-only)</div></details>
+
+  
+  
+  <h2 class="sec">⚡ <span class="l-en">China Command List</span><span class="l-zh">中国指挥清单</span></h2>
+  <p style="font-size:12px;color:var(--muted);margin:0 0 10px">
+    <span class="l-en">Ranked by opportunity = signal × edge-remaining × leading-gap — NOT by desk agreement. Emerging = altdata/radar leading while news/board are still quiet.</span><span class="l-zh">按机会评分排序 = 信号 × 剩余边际 × 领先差值 — 非按共识排序。萌芽 = 另类数据/雷达领先，新闻/买入板尚静。</span>
+    <span class="mode-badge"><span class="l-en">context only</span><span class="l-zh">仅供参考</span></span>
+    &nbsp;<span class="l-en">Universe</span><span class="l-zh">覆盖</span>: 195 &nbsp;·&nbsp;
+    <span class="l-en">Emerging</span><span class="l-zh">萌芽</span>: 0 &nbsp;·&nbsp;
+    <span class="l-en">Early</span><span class="l-zh">早期</span>: 35 &nbsp;·&nbsp; <span style="color:#e0973a"><span class="l-en">No-price</span><span class="l-zh">无价格</span>: 21</span>
+  </p>
+  <div class="tbl-scroll">
+    <table class="cmd-tbl">
+      <thead>
+        <tr>
+          <th><span class="l-en">Ticker</span><span class="l-zh">代码</span></th>
+          <th><span class="l-en">Name</span><span class="l-zh">名称</span></th>
+          <th data-tip-en="news · altdata · radar · board · special" data-tip-zh="新闻 · 另类数据 · 雷达 · 买入板 · 特殊情景"><span class="l-en">Desks</span><span class="l-zh">台</span></th>
+          <th><span class="l-en">Stage</span><span class="l-zh">阶段</span></th>
+          <th><span class="l-en">Edge</span><span class="l-zh">剩余边际</span></th>
+          <th><span class="l-en">Opp</span><span class="l-zh">机会</span></th>
+          <th><span class="l-en">RS/Off-High</span><span class="l-zh">RS/偏离高点</span></th>
+          <th><span class="l-en">Read · Falsifier</span><span class="l-zh">读数 · 证伪</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="cmd-ticker">002741.SZ</span></td>
+          <td><span class="cmd-name" data-tip-en="光华科技" data-tip-zh="光华科技">光华科技</span></td>
+          <td>
+            <div class="cmd-desk-dots"><span class="cmd-dot absent" data-tip-en="N:absent" data-tip-zh="N:缺失"></span><span class="cmd-dot up" data-tip-en="A:bullish" data-tip-zh="A:看涨"></span><span class="cmd-dot absent" data-tip-en="R:absent" data-tip-zh="R:缺失"></span><span class="cmd-dot absent" data-tip-en="B:absent" data-tip-zh="B:缺失"></span><span class="cmd-dot absent" data-tip-en="S:absent" data-tip-zh="S:缺失"></span>
+            </div>
+          </td>
+          <td><span class="stage-early stage-chip"><span class="l-en">Early</span><span class="l-zh">早期</span></span></td>
+          <td>
+            <span class="edge-bar"><i style="width:53.800000000000004%"></i></span>
+            <span style="font-size:11px;font-variant-numeric:tabular-nums">54%</span>
+          </td>
+          <td><span class="opp-score">42</span></td>
+          <td>
+                <span class="rs-chip rs-pos">
+                  RS +18%
+                </span>
+                &nbsp;<span class="rs-chip rs-neu">-20%H</span>
+          </td>
+          <td>
+            <div class="cmd-read">A leading desk is ahead of the crowd — early, ~54% edge remaining.</div>
+          </td>
+        </tr>
+        <tr>
+          <td><span class="cmd-ticker">688181.SS</span></td>
+          <td><span class="cmd-name" data-tip-en="688181.SS" data-tip-zh="688181.SS">688181.SS</span></td>
+          <td>
+            <div class="cmd-desk-dots"><span class="cmd-dot absent" data-tip-en="N:absent" data-tip-zh="N:缺失"></span><span class="cmd-dot up" data-tip-en="A:bullish" data-tip-zh="A:看涨"></span><span class="cmd-dot absent" data-tip-en="R:absent" data-tip-zh="R:缺失"></span><span class="cmd-dot absent" data-tip-en="B:absent" data-tip-zh="B:缺失"></span><span class="cmd-dot absent" data-tip-en="S:absent" data-tip-zh="S:缺失"></span>
+            </div>
+          </td>
+          <td><span class="stage-consensus stage-chip"><span class="l-en">Consensus</span><span class="l-zh">共识</span></span></td>
+          <td>
+            <span class="edge-bar"><i style="width:38.0%"></i></span>
+            <span style="font-size:11px;font-variant-numeric:tabular-nums">38%</span>
+          </td>
+          <td><span class="opp-score">31</span></td>
+          <td>
+                <span class="rs-chip rs-pos">
+                  RS +37%
+                </span>
+                &nbsp;<span class="rs-chip rs-neu">-16%H</span>
+          </td>
+          <td>
+            <div class="cmd-read">Multiple desks agree with price confirmed — consensus, ~38% edge remaining.</div>
+          </td>
+        </tr>
+        <tr>
+          <td><span class="cmd-ticker">300782.SZ</span></td>
+          <td><span class="cmd-name" data-tip-en="300782.SZ" data-tip-zh="300782.SZ">300782.SZ</span></td>
+          <td>
+            <div class="cmd-desk-dots"><span class="cmd-dot absent" data-tip-en="N:absent" data-tip-zh="N:缺失"></span><span class="cmd-dot absent" data-tip-en="A:absent" data-tip-zh="A:缺失"></span><span class="cmd-dot down" data-tip-en="R:bearish" data-tip-zh="R:看跌"></span><span class="cmd-dot absent" data-tip-en="B:absent" data-tip-zh="B:缺失"></span><span class="cmd-dot absent" data-tip-en="S:absent" data-tip-zh="S:缺失"></span>
+            </div>
+          </td>
+          <td><span class="stage-distribution stage-chip"><span class="l-en">Distribution</span><span class="l-zh">派发</span></span></td>
+          <td>
+            <span class="edge-bar"><i style="width:93.10000000000001%"></i></span>
+            <span style="font-size:11px;font-variant-numeric:tabular-nums">93%</span>
+          </td>
+          <td><span class="opp-score">31</span></td>
+          <td>
+                <span class="rs-chip rs-neg">
+                  RS -4%
+                </span>
+                &nbsp;<span class="rs-chip rs-neu">-35%H</span>
+          </td>
+          <td>
+            <div class="cmd-read">Desks lean bearish and price is rolling over — distribution phase.</div><div class="cmd-fals">⚠ radar signal unproven (0 resolved outcomes)</div>
+          </td>
+        </tr>
+        <tr>
+          <td><span class="cmd-ticker">688008.SS</span></td>
+          <td><span class="cmd-name" data-tip-en="688008.SS" data-tip-zh="688008.SS">688008.SS</span></td>
+          <td>
+            <div class="cmd-desk-dots"><span class="cmd-dot absent" data-tip-en="N:absent" data-tip-zh="N:缺失"></span><span class="cmd-dot absent" data-tip-en="A:absent" data-tip-zh="A:缺失"></span><span class="cmd-dot down" data-tip-en="R:bearish" data-tip-zh="R:看跌"></span><span class="cmd-dot absent" data-tip-en="B:absent" data-tip-zh="B:缺失"></span><span class="cmd-dot absent" data-tip-en="S:absent" data-tip-zh="S:缺失"></span>
+            </div>
+          </td>
+          <td><span class="stage-distribution stage-chip"><span class="l-en">Distribution</span><span class="l-zh">派发</span></span></td>
+          <td>
+            <span class="edge-bar"><i style="width:74.9%"></i></span>
+            <span style="font-size:11px;font-variant-numeric:tabular-nums">75%</span>
+          </td>
+          <td><span class="opp-score">25</span></td>
+          <td>
+                <span class="rs-chip rs-pos">
+                  RS +11%
+                </span>
+                &nbsp;<span class="rs-chip rs-neu">-20%H</span>
+          </td>
+          <td>
+            <div class="cmd-read">Desks lean bearish and price is rolling over — distribution phase.</div><div class="cmd-fals">⚠ radar signal unproven (0 resolved outcomes)</div>
+          </td>
+        </tr>
+        <tr>
+          <td><span class="cmd-ticker">300145.SZ</span></td>
+          <td><span class="cmd-name" data-tip-en="300145.SZ" data-tip-zh="300145.SZ">300145.SZ</span></td>
+          <td>
+            <div class="cmd-desk-dots"><span class="cmd-dot absent" data-tip-en="N:absent" data-tip-zh="N:缺失"></span><span class="cmd-dot up" data-tip-en="A:bullish" data-tip-zh="A:看涨"></span><span class="cmd-dot absent" data-tip-en="R:absent" data-tip-zh="R:缺失"></span><span class="cmd-dot absent" data-tip-en="B:absent" data-tip-zh="B:缺失"></span><span class="cmd-dot absent" data-tip-en="S:absent" data-tip-zh="S:缺失"></span>
+            </div>
+          </td>
+          <td><span class="stage-exhausted stage-chip"><span class="l-en">Exhausted</span><span class="l-zh">见顶</span></span></td>
+          <td>
+            <span class="edge-bar"><i style="width:28.599999999999998%"></i></span>
+            <span style="font-size:11px;font-variant-numeric:tabular-nums">29%</span>
+          </td>
+          <td><span class="opp-score">22</span></td>
+          <td>
+                <span class="rs-chip rs-pos">
+                  RS +28%
+                </span>
+                &nbsp;<span class="rs-chip rs-neu">-4%H</span>
+          </td>
+          <td>
+            <div class="cmd-read">Already priced-in across desks — late, only ~29% edge remaining.</div>
+          </td>
+        </tr>
+        <tr>
+          <td><span class="cmd-ticker">300661.SZ</span></td>
+          <td><span class="cmd-name" data-tip-en="300661.SZ" data-tip-zh="300661.SZ">300661.SZ</span></td>
+          <td>
+            <div class="cmd-desk-dots"><span class="cmd-dot absent" data-tip-en="N:absent" data-tip-zh="N:缺失"></span><span class="cmd-dot absent" data-tip-en="A:absent" data-tip-zh="A:缺失"></span><span class="cmd-dot down" data-tip-en="R:bearish" data-tip-zh="R:看跌"></span><span class="cmd-dot absent" data-tip-en="B:absent" data-tip-zh="B:缺失"></span><span class="cmd-dot absent" data-tip-en="S:absent" data-tip-zh="S:缺失"></span>
+            </div>
+          </td>
+          <td><span class="stage-distribution stage-chip"><span class="l-en">Distribution</span><span class="l-zh">派发</span></span></td>
+          <td>
+            <span class="edge-bar"><i style="width:44.6%"></i></span>
+            <span style="font-size:11px;font-variant-numeric:tabular-nums">45%</span>
+          </td>
+          <td><span class="opp-score">15</span></td>
+          <td>
+                <span class="rs-chip rs-pos">
+                  RS +23%
+                </span>
+                &nbsp;<span class="rs-chip rs-neu">-10%H</span>
+          </td>
+          <td>
+            <div class="cmd-read">Desks lean bearish and price is rolling over — distribution phase.</div><div class="cmd-fals">⚠ radar signal unproven (0 resolved outcomes)</div>
+          </td>
+        </tr>
+        <tr>
+          <td><span class="cmd-ticker">600985.SS</span></td>
+          <td><span class="cmd-name" data-tip-en="600985.SS" data-tip-zh="600985.SS">600985.SS</span></td>
+          <td>
+            <div class="cmd-desk-dots"><span class="cmd-dot absent" data-tip-en="N:absent" data-tip-zh="N:缺失"></span><span class="cmd-dot absent" data-tip-en="A:absent" data-tip-zh="A:缺失"></span><span class="cmd-dot up" data-tip-en="R:bullish" data-tip-zh="R:看涨"></span><span class="cmd-dot absent" data-tip-en="B:absent" data-tip-zh="B:缺失"></span><span class="cmd-dot absent" data-tip-en="S:absent" data-tip-zh="S:缺失"></span>
+            </div>
+          </td>
+          <td><span class="stage-faltering stage-chip"><span class="l-en">Faltering</span><span class="l-zh">走弱</span></span></td>
+          <td>
+            <span class="edge-bar"><i style="width:63.1%"></i></span>
+            <span style="font-size:11px;font-variant-numeric:tabular-nums">63%</span>
+          </td>
+          <td><span class="opp-score">5</span></td>
+          <td>
+                <span class="rs-chip rs-neg">
+                  RS -16%
+                </span>
+                &nbsp;<span class="rs-chip rs-neu">-15%H</span>
+          </td>
+          <td>
+            <div class="cmd-read">Price rolling over while desks remain constructive — wait for stabilization.</div><div class="cmd-fals">⚠ price is rolling over (20d drawdown + RS falling); radar signal unproven (0 reso</div>
+          </td>
+        </tr>
+        <tr>
+          <td><span class="cmd-ticker">601088.SS</span></td>
+          <td><span class="cmd-name" data-tip-en="601088.SS" data-tip-zh="601088.SS">601088.SS</span></td>
+          <td>
+            <div class="cmd-desk-dots"><span class="cmd-dot absent" data-tip-en="N:absent" data-tip-zh="N:缺失"></span><span class="cmd-dot absent" data-tip-en="A:absent" data-tip-zh="A:缺失"></span><span class="cmd-dot up" data-tip-en="R:bullish" data-tip-zh="R:看涨"></span><span class="cmd-dot absent" data-tip-en="B:absent" data-tip-zh="B:缺失"></span><span class="cmd-dot absent" data-tip-en="S:absent" data-tip-zh="S:缺失"></span>
+            </div>
+          </td>
+          <td><span class="stage-faltering stage-chip"><span class="l-en">Faltering</span><span class="l-zh">走弱</span></span></td>
+          <td>
+            <span class="edge-bar"><i style="width:63.1%"></i></span>
+            <span style="font-size:11px;font-variant-numeric:tabular-nums">63%</span>
+          </td>
+          <td><span class="opp-score">5</span></td>
+          <td>
+                <span class="rs-chip rs-neg">
+                  RS -20%
+                </span>
+                &nbsp;<span class="rs-chip rs-neu">-18%H</span>
+          </td>
+          <td>
+            <div class="cmd-read">Price rolling over while desks remain constructive — wait for stabilization.</div><div class="cmd-fals">⚠ price is rolling over (20d drawdown + RS falling); radar signal unproven (0 reso</div>
+          </td>
+        </tr>
+        <tr>
+          <td><span class="cmd-ticker">601225.SS</span></td>
+          <td><span class="cmd-name" data-tip-en="601225.SS" data-tip-zh="601225.SS">601225.SS</span></td>
+          <td>
+            <div class="cmd-desk-dots"><span class="cmd-dot absent" data-tip-en="N:absent" data-tip-zh="N:缺失"></span><span class="cmd-dot absent" data-tip-en="A:absent" data-tip-zh="A:缺失"></span><span class="cmd-dot up" data-tip-en="R:bullish" data-tip-zh="R:看涨"></span><span class="cmd-dot absent" data-tip-en="B:absent" data-tip-zh="B:缺失"></span><span class="cmd-dot absent" data-tip-en="S:absent" data-tip-zh="S:缺失"></span>
+            </div>
+          </td>
+          <td><span class="stage-faltering stage-chip"><span class="l-en">Faltering</span><span class="l-zh">走弱</span></span></td>
+          <td>
+            <span class="edge-bar"><i style="width:63.1%"></i></span>
+            <span style="font-size:11px;font-variant-numeric:tabular-nums">63%</span>
+          </td>
+          <td><span class="opp-score">5</span></td>
+          <td>
+                <span class="rs-chip rs-neg">
+                  RS -16%
+                </span>
+                &nbsp;<span class="rs-chip rs-neu">-16%H</span>
+          </td>
+          <td>
+            <div class="cmd-read">Price rolling over while desks remain constructive — wait for stabilization.</div><div class="cmd-fals">⚠ price is rolling over (20d drawdown + RS falling); radar signal unproven (0 reso</div>
+          </td>
+        </tr>
+        <tr>
+          <td><span class="cmd-ticker">000970.SZ</span></td>
+          <td><span class="cmd-name" data-tip-en="000970.SZ" data-tip-zh="000970.SZ">000970.SZ</span></td>
+          <td>
+            <div class="cmd-desk-dots"><span class="cmd-dot absent" data-tip-en="N:absent" data-tip-zh="N:缺失"></span><span class="cmd-dot up" data-tip-en="A:bullish" data-tip-zh="A:看涨"></span><span class="cmd-dot absent" data-tip-en="R:absent" data-tip-zh="R:缺失"></span><span class="cmd-dot absent" data-tip-en="B:absent" data-tip-zh="B:缺失"></span><span class="cmd-dot absent" data-tip-en="S:absent" data-tip-zh="S:缺失"></span>
+            </div>
+          </td>
+          <td><span class="stage-consensus stage-chip"><span class="l-en">Consensus</span><span class="l-zh">共识</span></span></td>
+          <td>
+            <span class="edge-bar"><i style="width:40.0%"></i></span>
+            <span style="font-size:11px;font-variant-numeric:tabular-nums">40%</span>
+          </td>
+          <td><span class="opp-score">37</span></td>
+          <td>
+              <span class="rs-chip rs-neg" data-tip-en="no price plane / veto blind" data-tip-zh="无价格数据">no price plane / 无价格数据</span>
+          </td>
+          <td>
+            <div class="cmd-read">Multiple desks agree with price confirmed — consensus, ~40% edge remaining.</div>
+          </td>
+        </tr>
+        <tr>
+          <td><span class="cmd-ticker">600203.SS</span></td>
+          <td><span class="cmd-name" data-tip-en="600203.SS" data-tip-zh="600203.SS">600203.SS</span></td>
+          <td>
+            <div class="cmd-desk-dots"><span class="cmd-dot absent" data-tip-en="N:absent" data-tip-zh="N:缺失"></span><span class="cmd-dot up" data-tip-en="A:bullish" data-tip-zh="A:看涨"></span><span class="cmd-dot absent" data-tip-en="R:absent" data-tip-zh="R:缺失"></span><span class="cmd-dot absent" data-tip-en="B:absent" data-tip-zh="B:缺失"></span><span class="cmd-dot absent" data-tip-en="S:absent" data-tip-zh="S:缺失"></span>
+            </div>
+          </td>
+          <td><span class="stage-consensus stage-chip"><span class="l-en">Consensus</span><span class="l-zh">共识</span></span></td>
+          <td>
+            <span class="edge-bar"><i style="width:40.0%"></i></span>
+            <span style="font-size:11px;font-variant-numeric:tabular-nums">40%</span>
+          </td>
+          <td><span class="opp-score">36</span></td>
+          <td>
+              <span class="rs-chip rs-neg" data-tip-en="no price plane / veto blind" data-tip-zh="无价格数据">no price plane / 无价格数据</span>
+          </td>
+          <td>
+            <div class="cmd-read">Multiple desks agree with price confirmed — consensus, ~40% edge remaining.</div>
+          </td>
+        </tr>
+        <tr>
+          <td><span class="cmd-ticker">688479.SS</span></td>
+          <td><span class="cmd-name" data-tip-en="688479.SS" data-tip-zh="688479.SS">688479.SS</span></td>
+          <td>
+            <div class="cmd-desk-dots"><span class="cmd-dot absent" data-tip-en="N:absent" data-tip-zh="N:缺失"></span><span class="cmd-dot up" data-tip-en="A:bullish" data-tip-zh="A:看涨"></span><span class="cmd-dot absent" data-tip-en="R:absent" data-tip-zh="R:缺失"></span><span class="cmd-dot absent" data-tip-en="B:absent" data-tip-zh="B:缺失"></span><span class="cmd-dot absent" data-tip-en="S:absent" data-tip-zh="S:缺失"></span>
+            </div>
+          </td>
+          <td><span class="stage-consensus stage-chip"><span class="l-en">Consensus</span><span class="l-zh">共识</span></span></td>
+          <td>
+            <span class="edge-bar"><i style="width:40.0%"></i></span>
+            <span style="font-size:11px;font-variant-numeric:tabular-nums">40%</span>
+          </td>
+          <td><span class="opp-score">36</span></td>
+          <td>
+              <span class="rs-chip rs-neg" data-tip-en="no price plane / veto blind" data-tip-zh="无价格数据">no price plane / 无价格数据</span>
+          </td>
+          <td>
+            <div class="cmd-read">Multiple desks agree with price confirmed — consensus, ~40% edge remaining.</div>
+          </td>
+        </tr>
+        <tr>
+          <td><span class="cmd-ticker">300998.SZ</span></td>
+          <td><span class="cmd-name" data-tip-en="300998.SZ" data-tip-zh="300998.SZ">300998.SZ</span></td>
+          <td>
+            <div class="cmd-desk-dots"><span class="cmd-dot absent" data-tip-en="N:absent" data-tip-zh="N:缺失"></span><span class="cmd-dot up" data-tip-en="A:bullish" data-tip-zh="A:看涨"></span><span class="cmd-dot absent" data-tip-en="R:absent" data-tip-zh="R:缺失"></span><span class="cmd-dot absent" data-tip-en="B:absent" data-tip-zh="B:缺失"></span><span class="cmd-dot absent" data-tip-en="S:absent" data-tip-zh="S:缺失"></span>
+            </div>
+          </td>
+          <td><span class="stage-consensus stage-chip"><span class="l-en">Consensus</span><span class="l-zh">共识</span></span></td>
+          <td>
+            <span class="edge-bar"><i style="width:40.0%"></i></span>
+            <span style="font-size:11px;font-variant-numeric:tabular-nums">40%</span>
+          </td>
+          <td><span class="opp-score">34</span></td>
+          <td>
+              <span class="rs-chip rs-neg" data-tip-en="no price plane / veto blind" data-tip-zh="无价格数据">no price plane / 无价格数据</span>
+          </td>
+          <td>
+            <div class="cmd-read">Multiple desks agree with price confirmed — consensus, ~40% edge remaining.</div>
+          </td>
+        </tr>
+        <tr>
+          <td><span class="cmd-ticker">601199.SS</span></td>
+          <td><span class="cmd-name" data-tip-en="601199.SS" data-tip-zh="601199.SS">601199.SS</span></td>
+          <td>
+            <div class="cmd-desk-dots"><span class="cmd-dot absent" data-tip-en="N:absent" data-tip-zh="N:缺失"></span><span class="cmd-dot up" data-tip-en="A:bullish" data-tip-zh="A:看涨"></span><span class="cmd-dot absent" data-tip-en="R:absent" data-tip-zh="R:缺失"></span><span class="cmd-dot absent" data-tip-en="B:absent" data-tip-zh="B:缺失"></span><span class="cmd-dot absent" data-tip-en="S:absent" data-tip-zh="S:缺失"></span>
+            </div>
+          </td>
+          <td><span class="stage-consensus stage-chip"><span class="l-en">Consensus</span><span class="l-zh">共识</span></span></td>
+          <td>
+            <span class="edge-bar"><i style="width:40.0%"></i></span>
+            <span style="font-size:11px;font-variant-numeric:tabular-nums">40%</span>
+          </td>
+          <td><span class="opp-score">34</span></td>
+          <td>
+              <span class="rs-chip rs-neg" data-tip-en="no price plane / veto blind" data-tip-zh="无价格数据">no price plane / 无价格数据</span>
+          </td>
+          <td>
+            <div class="cmd-read">Multiple desks agree with price confirmed — consensus, ~40% edge remaining.</div>
+          </td>
+        </tr>
+        <tr>
+          <td><span class="cmd-ticker">301013.SZ</span></td>
+          <td><span class="cmd-name" data-tip-en="301013.SZ" data-tip-zh="301013.SZ">301013.SZ</span></td>
+          <td>
+            <div class="cmd-desk-dots"><span class="cmd-dot absent" data-tip-en="N:absent" data-tip-zh="N:缺失"></span><span class="cmd-dot up" data-tip-en="A:bullish" data-tip-zh="A:看涨"></span><span class="cmd-dot absent" data-tip-en="R:absent" data-tip-zh="R:缺失"></span><span class="cmd-dot absent" data-tip-en="B:absent" data-tip-zh="B:缺失"></span><span class="cmd-dot absent" data-tip-en="S:absent" data-tip-zh="S:缺失"></span>
+            </div>
+          </td>
+          <td><span class="stage-consensus stage-chip"><span class="l-en">Consensus</span><span class="l-zh">共识</span></span></td>
+          <td>
+            <span class="edge-bar"><i style="width:40.0%"></i></span>
+            <span style="font-size:11px;font-variant-numeric:tabular-nums">40%</span>
+          </td>
+          <td><span class="opp-score">33</span></td>
+          <td>
+              <span class="rs-chip rs-neg" data-tip-en="no price plane / veto blind" data-tip-zh="无价格数据">no price plane / 无价格数据</span>
+          </td>
+          <td>
+            <div class="cmd-read">Multiple desks agree with price confirmed — consensus, ~40% edge remaining.</div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <details>
+    <summary class="cmd-expander"><span class="l-en">Show all</span><span class="l-zh">展开全部</span> 30 <span class="l-en">names</span><span class="l-zh">只</span> ▸</summary>
+    <div class="cmd-wrap" style="margin-top:8px">
+      <table class="cmd-tbl">
+        <thead>
+          <tr>
+            <th><span class="l-en">Ticker</span><span class="l-zh">代码</span></th><th><span class="l-en">Name</span><span class="l-zh">名称</span></th>
+            <th><span class="l-en">Desks</span><span class="l-zh">台</span></th><th><span class="l-en">Stage</span><span class="l-zh">阶段</span></th>
+            <th><span class="l-en">Edge</span><span class="l-zh">剩余边际</span></th><th><span class="l-en">Opp</span><span class="l-zh">机会</span></th>
+            <th><span class="l-en">RS/Off-High</span><span class="l-zh">RS/偏离高点</span></th><th><span class="l-en">Read</span><span class="l-zh">读数</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="cmd-ticker">603285.SS</span></td>
+            <td><span class="cmd-name">603285.SS</span></td>
+            <td>
+              <div class="cmd-desk-dots"><span class="cmd-dot absent"></span><span class="cmd-dot up"></span><span class="cmd-dot absent"></span><span class="cmd-dot absent"></span><span class="cmd-dot absent"></span>
+              </div>
+            </td>
+            <td><span class="stage-consensus stage-chip"><span class="l-en">Consensus</span><span class="l-zh">共识</span></span></td>
+            <td><span class="edge-bar"><i style="width:40.0%"></i></span> 40%</td>
+            <td><span class="opp-score">33</span></td>
+            <td><span class="rs-chip rs-neg" data-tip-en="no price plane / veto blind" data-tip-zh="无价格数据">no price plane / 无价格数据</span>
+            </td>
+            <td><div class="cmd-read">Multiple desks agree with price confirmed — consensus, ~40% edge remaining.</div></td>
+          </tr>
+          <tr>
+            <td><span class="cmd-ticker">688693.SS</span></td>
+            <td><span class="cmd-name">688693.SS</span></td>
+            <td>
+              <div class="cmd-desk-dots"><span class="cmd-dot absent"></span><span class="cmd-dot up"></span><span class="cmd-dot absent"></span><span class="cmd-dot absent"></span><span class="cmd-dot absent"></span>
+              </div>
+            </td>
+            <td><span class="stage-consensus stage-chip"><span class="l-en">Consensus</span><span class="l-zh">共识</span></span></td>
+            <td><span class="edge-bar"><i style="width:40.0%"></i></span> 40%</td>
+            <td><span class="opp-score">32</span></td>
+            <td><span class="rs-chip rs-neg" data-tip-en="no price plane / veto blind" data-tip-zh="无价格数据">no price plane / 无价格数据</span>
+            </td>
+            <td><div class="cmd-read">Multiple desks agree with price confirmed — consensus, ~40% edge remaining.</div></td>
+          </tr>
+          <tr>
+            <td><span class="cmd-ticker">301108.SZ</span></td>
+            <td><span class="cmd-name">301108.SZ</span></td>
+            <td>
+              <div class="cmd-desk-dots"><span class="cmd-dot absent"></span><span class="cmd-dot up"></span><span class="cmd-dot absent"></span><span class="cmd-dot absent"></span><span class="cmd-dot absent"></span>
+              </div>
+            </td>
+            <td><span class="stage-consensus stage-chip"><span class="l-en">Consensus</span><span class="l-zh">共识</span></span></td>
+            <td><span class="edge-bar"><i style="width:40.0%"></i></span> 40%</td>
+            <td><span class="opp-score">32</span></td>
+            <td><span class="rs-chip rs-neg" data-tip-en="no price plane / veto blind" data-tip-zh="无价格数据">no price plane / 无价格数据</span>
+            </td>
+            <td><div class="cmd-read">Multiple desks agree with price confirmed — consensus, ~40% edge remaining.</div></td>
+          </tr>
+          <tr>
+            <td><span class="cmd-ticker">688600.SS</span></td>
+            <td><span class="cmd-name">688600.SS</span></td>
+            <td>
+              <div class="cmd-desk-dots"><span class="cmd-dot absent"></span><span class="cmd-dot up"></span><span class="cmd-dot absent"></span><span class="cmd-dot absent"></span><span class="cmd-dot absent"></span>
+              </div>
+            </td>
+            <td><span class="stage-consensus stage-chip"><span class="l-en">Consensus</span><span class="l-zh">共识</span></span></td>
+            <td><span class="edge-bar"><i style="width:40.0%"></i></span> 40%</td>
+            <td><span class="opp-score">32</span></td>
+            <td><span class="rs-chip rs-neg" data-tip-en="no price plane / veto blind" data-tip-zh="无价格数据">no price plane / 无价格数据</span>
+            </td>
+            <td><div class="cmd-read">Multiple desks agree with price confirmed — consensus, ~40% edge remaining.</div></td>
+          </tr>
+          <tr>
+            <td><span class="cmd-ticker">301161.SZ</span></td>
+            <td><span class="cmd-name">301161.SZ</span></td>
+            <td>
+              <div class="cmd-desk-dots"><span class="cmd-dot absent"></span><span class="cmd-dot up"></span><span class="cmd-dot absent"></span><span class="cmd-dot absent"></span><span class="cmd-dot absent"></span>
+              </div>
+            </td>
+            <td><span class="stage-consensus stage-chip"><span class="l-en">Consensus</span><span class="l-zh">共识</span></span></td>
+            <td><span class="edge-bar"><i style="width:40.0%"></i></span> 40%</td>
+            <td><span class="opp-score">31</span></td>
+            <td><span class="rs-chip rs-neg" data-tip-en="no price plane / veto blind" data-tip-zh="无价格数据">no price plane / 无价格数据</span>
+            </td>
+            <td><div class="cmd-read">Multiple desks agree with price confirmed — consensus, ~40% edge remaining.</div></td>
+          </tr>
+          <tr>
+            <td><span class="cmd-ticker">300745.SZ</span></td>
+            <td><span class="cmd-name">300745.SZ</span></td>
+            <td>
+              <div class="cmd-desk-dots"><span class="cmd-dot absent"></span><span class="cmd-dot up"></span><span class="cmd-dot absent"></span><span class="cmd-dot absent"></span><span class="cmd-dot absent"></span>
+              </div>
+            </td>
+            <td><span class="stage-consensus stage-chip"><span class="l-en">Consensus</span><span class="l-zh">共识</span></span></td>
+            <td><span class="edge-bar"><i style="width:40.0%"></i></span> 40%</td>
+            <td><span class="opp-score">31</span></td>
+            <td><span class="rs-chip rs-neg" data-tip-en="no price plane / veto blind" data-tip-zh="无价格数据">no price plane / 无价格数据</span>
+            </td>
+            <td><div class="cmd-read">Multiple desks agree with price confirmed — consensus, ~40% edge remaining.</div></td>
+          </tr>
+          <tr>
+            <td><span class="cmd-ticker">688237.SS</span></td>
+            <td><span class="cmd-name">688237.SS</span></td>
+            <td>
+              <div class="cmd-desk-dots"><span class="cmd-dot absent"></span><span class="cmd-dot up"></span><span class="cmd-dot absent"></span><span class="cmd-dot absent"></span><span class="cmd-dot absent"></span>
+              </div>
+            </td>
+            <td><span class="stage-early stage-chip"><span class="l-en">Early</span><span class="l-zh">早期</span></span></td>
+            <td><span class="edge-bar"><i style="width:75.0%"></i></span> 75%</td>
+            <td><span class="opp-score">0</span></td>
+            <td><span class="rs-chip rs-neg" data-tip-en="no price plane / veto blind" data-tip-zh="无价格数据">no price plane / 无价格数据</span>
+            </td>
+            <td><div class="cmd-read">A leading desk is ahead of the crowd — early, ~75% edge remaining.</div></td>
+          </tr>
+          <tr>
+            <td><span class="cmd-ticker">300228.SZ</span></td>
+            <td><span class="cmd-name">300228.SZ</span></td>
+            <td>
+              <div class="cmd-desk-dots"><span class="cmd-dot absent"></span><span class="cmd-dot up"></span><span class="cmd-dot absent"></span><span class="cmd-dot absent"></span><span class="cmd-dot absent"></span>
+              </div>
+            </td>
+            <td><span class="stage-early stage-chip"><span class="l-en">Early</span><span class="l-zh">早期</span></span></td>
+            <td><span class="edge-bar"><i style="width:75.0%"></i></span> 75%</td>
+            <td><span class="opp-score">0</span></td>
+            <td><span class="rs-chip rs-neg" data-tip-en="no price plane / veto blind" data-tip-zh="无价格数据">no price plane / 无价格数据</span>
+            </td>
+            <td><div class="cmd-read">A leading desk is ahead of the crowd — early, ~75% edge remaining.</div></td>
+          </tr>
+          <tr>
+            <td><span class="cmd-ticker">002172.SZ</span></td>
+            <td><span class="cmd-name">002172.SZ</span></td>
+            <td>
+              <div class="cmd-desk-dots"><span class="cmd-dot absent"></span><span class="cmd-dot down"></span><span class="cmd-dot absent"></span><span class="cmd-dot absent"></span><span class="cmd-dot absent"></span>
+              </div>
+            </td>
+            <td><span class="stage-distribution stage-chip"><span class="l-en">Distribution</span><span class="l-zh">派发</span></span></td>
+            <td><span class="edge-bar"><i style="width:75.0%"></i></span> 75%</td>
+            <td><span class="opp-score">0</span></td>
+            <td><span class="rs-chip rs-neg" data-tip-en="no price plane / veto blind" data-tip-zh="无价格数据">no price plane / 无价格数据</span>
+            </td>
+            <td><div class="cmd-read">Desks lean bearish and price is rolling over — distribution phase.</div></td>
+          </tr>
+          <tr>
+            <td><span class="cmd-ticker">300746.SZ</span></td>
+            <td><span class="cmd-name">300746.SZ</span></td>
+            <td>
+              <div class="cmd-desk-dots"><span class="cmd-dot absent"></span><span class="cmd-dot down"></span><span class="cmd-dot absent"></span><span class="cmd-dot absent"></span><span class="cmd-dot absent"></span>
+              </div>
+            </td>
+            <td><span class="stage-distribution stage-chip"><span class="l-en">Distribution</span><span class="l-zh">派发</span></span></td>
+            <td><span class="edge-bar"><i style="width:75.0%"></i></span> 75%</td>
+            <td><span class="opp-score">0</span></td>
+            <td><span class="rs-chip rs-neg" data-tip-en="no price plane / veto blind" data-tip-zh="无价格数据">no price plane / 无价格数据</span>
+            </td>
+            <td><div class="cmd-read">Desks lean bearish and price is rolling over — distribution phase.</div></td>
+          </tr>
+          <tr>
+            <td><span class="cmd-ticker">300562.SZ</span></td>
+            <td><span class="cmd-name">300562.SZ</span></td>
+            <td>
+              <div class="cmd-desk-dots"><span class="cmd-dot absent"></span><span class="cmd-dot down"></span><span class="cmd-dot absent"></span><span class="cmd-dot absent"></span><span class="cmd-dot absent"></span>
+              </div>
+            </td>
+            <td><span class="stage-distribution stage-chip"><span class="l-en">Distribution</span><span class="l-zh">派发</span></span></td>
+            <td><span class="edge-bar"><i style="width:75.0%"></i></span> 75%</td>
+            <td><span class="opp-score">0</span></td>
+            <td><span class="rs-chip rs-neg" data-tip-en="no price plane / veto blind" data-tip-zh="无价格数据">no price plane / 无价格数据</span>
+            </td>
+            <td><div class="cmd-read">Desks lean bearish and price is rolling over — distribution phase.</div></td>
+          </tr>
+          <tr>
+            <td><span class="cmd-ticker">300333.SZ</span></td>
+            <td><span class="cmd-name">300333.SZ</span></td>
+            <td>
+              <div class="cmd-desk-dots"><span class="cmd-dot absent"></span><span class="cmd-dot down"></span><span class="cmd-dot absent"></span><span class="cmd-dot absent"></span><span class="cmd-dot absent"></span>
+              </div>
+            </td>
+            <td><span class="stage-distribution stage-chip"><span class="l-en">Distribution</span><span class="l-zh">派发</span></span></td>
+            <td><span class="edge-bar"><i style="width:75.0%"></i></span> 75%</td>
+            <td><span class="opp-score">0</span></td>
+            <td><span class="rs-chip rs-neg" data-tip-en="no price plane / veto blind" data-tip-zh="无价格数据">no price plane / 无价格数据</span>
+            </td>
+            <td><div class="cmd-read">Desks lean bearish and price is rolling over — distribution phase.</div></td>
+          </tr>
+          <tr>
+            <td><span class="cmd-ticker">300553.SZ</span></td>
+            <td><span class="cmd-name">300553.SZ</span></td>
+            <td>
+              <div class="cmd-desk-dots"><span class="cmd-dot absent"></span><span class="cmd-dot up"></span><span class="cmd-dot absent"></span><span class="cmd-dot absent"></span><span class="cmd-dot absent"></span>
+              </div>
+            </td>
+            <td><span class="stage-early stage-chip"><span class="l-en">Early</span><span class="l-zh">早期</span></span></td>
+            <td><span class="edge-bar"><i style="width:75.0%"></i></span> 75%</td>
+            <td><span class="opp-score">0</span></td>
+            <td><span class="rs-chip rs-neg" data-tip-en="no price plane / veto blind" data-tip-zh="无价格数据">no price plane / 无价格数据</span>
+            </td>
+            <td><div class="cmd-read">A leading desk is ahead of the crowd — early, ~75% edge remaining.</div></td>
+          </tr>
+          <tr>
+            <td><span class="cmd-ticker">300225.SZ</span></td>
+            <td><span class="cmd-name">300225.SZ</span></td>
+            <td>
+              <div class="cmd-desk-dots"><span class="cmd-dot absent"></span><span class="cmd-dot down"></span><span class="cmd-dot absent"></span><span class="cmd-dot absent"></span><span class="cmd-dot absent"></span>
+              </div>
+            </td>
+            <td><span class="stage-distribution stage-chip"><span class="l-en">Distribution</span><span class="l-zh">派发</span></span></td>
+            <td><span class="edge-bar"><i style="width:75.0%"></i></span> 75%</td>
+            <td><span class="opp-score">0</span></td>
+            <td><span class="rs-chip rs-neg" data-tip-en="no price plane / veto blind" data-tip-zh="无价格数据">no price plane / 无价格数据</span>
+            </td>
+            <td><div class="cmd-read">Desks lean bearish and price is rolling over — distribution phase.</div></td>
+          </tr>
+          <tr>
+            <td><span class="cmd-ticker">300091.SZ</span></td>
+            <td><span class="cmd-name">300091.SZ</span></td>
+            <td>
+              <div class="cmd-desk-dots"><span class="cmd-dot absent"></span><span class="cmd-dot up"></span><span class="cmd-dot absent"></span><span class="cmd-dot absent"></span><span class="cmd-dot absent"></span>
+              </div>
+            </td>
+            <td><span class="stage-early stage-chip"><span class="l-en">Early</span><span class="l-zh">早期</span></span></td>
+            <td><span class="edge-bar"><i style="width:75.0%"></i></span> 75%</td>
+            <td><span class="opp-score">0</span></td>
+            <td><span class="rs-chip rs-neg" data-tip-en="no price plane / veto blind" data-tip-zh="无价格数据">no price plane / 无价格数据</span>
+            </td>
+            <td><div class="cmd-read">A leading desk is ahead of the crowd — early, ~75% edge remaining.</div></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </details>
+
+  
+  <h2 class="sec">🔭 <span class="l-en">Discovery Queue</span><span class="l-zh">发现队列</span></h2>
+  <p style="font-size:12px;color:var(--muted);margin:0 0 10px">
+    <span class="l-en">Off-desk leading signals — names not yet on any desk. Margin Velocity lane is experimental (Phase-0 accruing, contributes zero to ranking).</span><span class="l-zh">离板块领先信号——尚未出现在任何台的个股。融资速度栏为实验性（阶段0积累，不计入排名）。</span>
+  </p>
+  <div class="disc-queue">
+    <div class="disc-card off-desk">
+      <div class="disc-ticker">0290.HK</div>
+      <div class="disc-name">国富量子</div>
+      <div class="disc-reason">Southbound holdings +142.4% over 20d</div>
+      <div class="disc-meta">
+        <span class="lane-chip"><span class="l-en">Southbound Delta</span><span class="l-zh">南向持仓变化</span></span><span class="offdesk-chip"><span class="l-en">Off-desk</span><span class="l-zh">离板块</span></span><span class="lane-chip" style="color:var(--link)">HK</span>
+      </div>
+      <div class="disc-score-bar" style="width:80.0%"></div>
+    </div>
+    <div class="disc-card off-desk">
+      <div class="disc-ticker">0148.HK</div>
+      <div class="disc-name">建滔集团</div>
+      <div class="disc-reason">Southbound holdings +77.7% over 20d</div>
+      <div class="disc-meta">
+        <span class="lane-chip"><span class="l-en">Southbound Delta</span><span class="l-zh">南向持仓变化</span></span><span class="offdesk-chip"><span class="l-en">Off-desk</span><span class="l-zh">离板块</span></span><span class="lane-chip" style="color:var(--link)">HK</span>
+      </div>
+      <div class="disc-score-bar" style="width:80.0%"></div>
+    </div>
+    <div class="disc-card off-desk">
+      <div class="disc-ticker">3393.HK</div>
+      <div class="disc-name">威胜控股</div>
+      <div class="disc-reason">Southbound holdings +60.2% over 20d</div>
+      <div class="disc-meta">
+        <span class="lane-chip"><span class="l-en">Southbound Delta</span><span class="l-zh">南向持仓变化</span></span><span class="offdesk-chip"><span class="l-en">Off-desk</span><span class="l-zh">离板块</span></span><span class="lane-chip" style="color:var(--link)">HK</span>
+      </div>
+      <div class="disc-score-bar" style="width:80.0%"></div>
+    </div>
+    <div class="disc-card off-desk">
+      <div class="disc-ticker">1888.HK</div>
+      <div class="disc-name">建滔积层板</div>
+      <div class="disc-reason">Southbound holdings +50.0% over 20d</div>
+      <div class="disc-meta">
+        <span class="lane-chip"><span class="l-en">Southbound Delta</span><span class="l-zh">南向持仓变化</span></span><span class="offdesk-chip"><span class="l-en">Off-desk</span><span class="l-zh">离板块</span></span><span class="lane-chip" style="color:var(--link)">HK</span>
+      </div>
+      <div class="disc-score-bar" style="width:80.0%"></div>
+    </div>
+    <div class="disc-card off-desk">
+      <div class="disc-ticker">0659.HK</div>
+      <div class="disc-name">周大福创建</div>
+      <div class="disc-reason">Southbound holdings +40.2% over 20d</div>
+      <div class="disc-meta">
+        <span class="lane-chip"><span class="l-en">Southbound Delta</span><span class="l-zh">南向持仓变化</span></span><span class="offdesk-chip"><span class="l-en">Off-desk</span><span class="l-zh">离板块</span></span><span class="lane-chip" style="color:var(--link)">HK</span>
+      </div>
+      <div class="disc-score-bar" style="width:80.0%"></div>
+    </div>
+    <div class="disc-card off-desk">
+      <div class="disc-ticker">2218.HK</div>
+      <div class="disc-name">安德利果汁</div>
+      <div class="disc-reason">Southbound holdings +33.4% over 20d</div>
+      <div class="disc-meta">
+        <span class="lane-chip"><span class="l-en">Southbound Delta</span><span class="l-zh">南向持仓变化</span></span><span class="offdesk-chip"><span class="l-en">Off-desk</span><span class="l-zh">离板块</span></span><span class="lane-chip" style="color:var(--link)">HK</span>
+      </div>
+      <div class="disc-score-bar" style="width:80.0%"></div>
+    </div>
+    <div class="disc-card off-desk">
+      <div class="disc-ticker">3323.HK</div>
+      <div class="disc-name">中国建材</div>
+      <div class="disc-reason">Southbound holdings +14.1% over 20d</div>
+      <div class="disc-meta">
+        <span class="lane-chip"><span class="l-en">Southbound Delta</span><span class="l-zh">南向持仓变化</span></span><span class="offdesk-chip"><span class="l-en">Off-desk</span><span class="l-zh">离板块</span></span><span class="lane-chip" style="color:var(--link)">HK</span>
+      </div>
+      <div class="disc-score-bar" style="width:80.0%"></div>
+    </div>
+    <div class="disc-card off-desk">
+      <div class="disc-ticker">3330.HK</div>
+      <div class="disc-name">灵宝黄金</div>
+      <div class="disc-reason">Southbound holdings +13.7% over 20d</div>
+      <div class="disc-meta">
+        <span class="lane-chip"><span class="l-en">Southbound Delta</span><span class="l-zh">南向持仓变化</span></span><span class="offdesk-chip"><span class="l-en">Off-desk</span><span class="l-zh">离板块</span></span><span class="lane-chip" style="color:var(--link)">HK</span>
+      </div>
+      <div class="disc-score-bar" style="width:80.0%"></div>
+    </div>
+    <div class="disc-card off-desk">
+      <div class="disc-ticker">0688.HK</div>
+      <div class="disc-name">中国海外发展</div>
+      <div class="disc-reason">Southbound holdings +13.6% over 20d</div>
+      <div class="disc-meta">
+        <span class="lane-chip"><span class="l-en">Southbound Delta</span><span class="l-zh">南向持仓变化</span></span><span class="offdesk-chip"><span class="l-en">Off-desk</span><span class="l-zh">离板块</span></span><span class="lane-chip" style="color:var(--link)">HK</span>
+      </div>
+      <div class="disc-score-bar" style="width:80.0%"></div>
+    </div>
+    <div class="disc-card off-desk">
+      <div class="disc-ticker">000301.SZ</div>
+      <div class="disc-name">东方盛虹</div>
+      <div class="disc-reason">First LHB + institutional seat</div>
+      <div class="disc-meta">
+        <span class="lane-chip"><span class="l-en">LHB First Seat</span><span class="l-zh">龙虎榜首现</span></span><span class="offdesk-chip"><span class="l-en">Off-desk</span><span class="l-zh">离板块</span></span>
+      </div>
+      <div class="disc-score-bar" style="width:75.0%"></div>
+    </div>
+    <div class="disc-card off-desk">
+      <div class="disc-ticker">300502.SZ</div>
+      <div class="disc-name">300502.SZ</div>
+      <div class="disc-reason">Margin financing delta z=29.0 (20d increase vs peers)</div>
+      <div class="disc-meta">
+        <span class="lane-chip"><span class="l-en">Margin Velocity</span><span class="l-zh">融资速度</span></span><span class="exp-chip"><span class="l-en">Experimental</span><span class="l-zh">实验性</span></span><span class="offdesk-chip"><span class="l-en">Off-desk</span><span class="l-zh">离板块</span></span>
+      </div>
+      <div class="disc-score-bar" style="width:80.0%"></div>
+      <div style="font-size:10px;color:#e0973a;margin-top:4px"><span class="l-en">⚠ Phase-0 accruing — not yet in ranking</span><span class="l-zh">⚠ 阶段0积累中——暂不计入排名</span></div>
+    </div>
+    <div class="disc-card off-desk">
+      <div class="disc-ticker">688525.SS</div>
+      <div class="disc-name">688525.SS</div>
+      <div class="disc-reason">Margin financing delta z=11.6 (20d increase vs peers)</div>
+      <div class="disc-meta">
+        <span class="lane-chip"><span class="l-en">Margin Velocity</span><span class="l-zh">融资速度</span></span><span class="exp-chip"><span class="l-en">Experimental</span><span class="l-zh">实验性</span></span><span class="offdesk-chip"><span class="l-en">Off-desk</span><span class="l-zh">离板块</span></span>
+      </div>
+      <div class="disc-score-bar" style="width:80.0%"></div>
+      <div style="font-size:10px;color:#e0973a;margin-top:4px"><span class="l-en">⚠ Phase-0 accruing — not yet in ranking</span><span class="l-zh">⚠ 阶段0积累中——暂不计入排名</span></div>
+    </div>
+    <div class="disc-card off-desk">
+      <div class="disc-ticker">000725.SZ</div>
+      <div class="disc-name">000725.SZ</div>
+      <div class="disc-reason">Margin financing delta z=11.4 (20d increase vs peers)</div>
+      <div class="disc-meta">
+        <span class="lane-chip"><span class="l-en">Margin Velocity</span><span class="l-zh">融资速度</span></span><span class="exp-chip"><span class="l-en">Experimental</span><span class="l-zh">实验性</span></span><span class="offdesk-chip"><span class="l-en">Off-desk</span><span class="l-zh">离板块</span></span>
+      </div>
+      <div class="disc-score-bar" style="width:80.0%"></div>
+      <div style="font-size:10px;color:#e0973a;margin-top:4px"><span class="l-en">⚠ Phase-0 accruing — not yet in ranking</span><span class="l-zh">⚠ 阶段0积累中——暂不计入排名</span></div>
+    </div>
+  </div>
+
+  
+  <h2 class="sec">🕰️ <span class="l-en">Cycle Context & Historical Analogs</span><span class="l-zh">周期背景与历史类比</span></h2>
+  <div class="analogs-card">
+    <div style="font-size:11px;color:var(--muted);margin-bottom:8px">
+      <span class="l-en">Historical analog periods sharing the current macro fingerprint. Descriptive fan only — not a forecast.</span><span class="l-zh">与当前宏观指纹相近的历史类比区间。仅为描述性分布——非预测。</span>
+    </div>
+    <div class="analogs-query"><span class="aq-chip"><span class="l-en">Quad</span><span class="l-zh">象限</span>: Stagflation</span><span class="aq-chip"><span class="l-en">Liquidity</span><span class="l-zh">流动性</span>: neutral</span><span class="aq-chip"><span class="l-en">Cycle</span><span class="l-zh">周期</span>: mid</span>
+    </div>
+    <table class="fan-table">
+      <thead><tr><th><span class="l-en">Horizon</span><span class="l-zh">期限</span></th><th>P25</th><th><span class="l-en">Median</span><span class="l-zh">中位</span></th><th>P75</th><th>N</th></tr></thead>
+      <tbody>
+      <tr>
+        <td>20d</td>
+        <td>-2.7%</td>
+        <td><b>+1.1%</b></td>
+        <td>+3.6%</td>
+        <td>12</td>
+      </tr>
+      <tr>
+        <td>60d</td>
+        <td>-4.2%</td>
+        <td><b>+0.2%</b></td>
+        <td>+2.8%</td>
+        <td>12</td>
+      </tr>
+      <tr>
+        <td>120d</td>
+        <td>-3.6%</td>
+        <td><b>+1.0%</b></td>
+        <td>+5.7%</td>
+        <td>12</td>
+      </tr>
+      </tbody>
+    </table>
+    <details style="margin-top:8px">
+      <summary style="cursor:pointer;font-size:11.5px;color:var(--link)"><span class="l-en">Analog periods</span><span class="l-zh">类比区间</span> (12) ▸</summary>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:7px">
+        <span style="font-size:11px;padding:2px 8px;border-radius:7px;background:var(--panel2);border:1px solid var(--line)">
+          2025-09-01 · Q3 · +0.6%
+        </span>
+        <span style="font-size:11px;padding:2px 8px;border-radius:7px;background:var(--panel2);border:1px solid var(--line)">
+          2025-01-31 · Q3 · +3.4%
+        </span>
+        <span style="font-size:11px;padding:2px 8px;border-radius:7px;background:var(--panel2);border:1px solid var(--line)">
+          2025-12-10 · Q3 · +7.3%
+        </span>
+        <span style="font-size:11px;padding:2px 8px;border-radius:7px;background:var(--panel2);border:1px solid var(--line)">
+          2023-01-30 · Q3 · +0.7%
+        </span>
+        <span style="font-size:11px;padding:2px 8px;border-radius:7px;background:var(--panel2);border:1px solid var(--line)">
+          2016-12-28 · Q3 · +1.4%
+        </span>
+        <span style="font-size:11px;padding:2px 8px;border-radius:7px;background:var(--panel2);border:1px solid var(--line)">
+          2016-03-01 · Q3 · +5.2%
+        </span>
+        <span style="font-size:11px;padding:2px 8px;border-radius:7px;background:var(--panel2);border:1px solid var(--line)">
+          2019-04-25 · Q3 · -6.3%
+        </span>
+        <span style="font-size:11px;padding:2px 8px;border-radius:7px;background:var(--panel2);border:1px solid var(--line)">
+          2015-12-31 · Q2 · -20.4%
+        </span>
+        <span style="font-size:11px;padding:2px 8px;border-radius:7px;background:var(--panel2);border:1px solid var(--line)">
+          2018-08-07 · Q2 · -1.5%
+        </span>
+        <span style="font-size:11px;padding:2px 8px;border-radius:7px;background:var(--panel2);border:1px solid var(--line)">
+          2021-08-09 · Q2 · +4.1%
+        </span>
+        <span style="font-size:11px;padding:2px 8px;border-radius:7px;background:var(--panel2);border:1px solid var(--line)">
+          2020-09-09 · Q2 · +3.1%
+        </span>
+        <span style="font-size:11px;padding:2px 8px;border-radius:7px;background:var(--panel2);border:1px solid var(--line)">
+          2018-05-29 · Q2 · -8.7%
+        </span>
+      </div>
+    </details>
+    <p style="font-size:10.5px;color:var(--muted);margin-top:10px;line-height:1.5"><span class="l-en">DISPLAY ONLY. Historical analogs are descriptive summaries of past regime similarity. They are not signals, forecasts, or recommendations. Past market paths under similar regimes do not predict future returns.</span><span class="l-zh">仅供展示。历史相似情景是对过去制度相似性的描述性总结，不构成任何信号、预测或投资建议。过去在类似制度下的市场走势不代表未来收益。</span></p>
+  </div>
 
   
   <h2 class="sec">🗺️ <span class="l-en">China Suite Directory</span><span class="l-zh">中国页面目录</span></h2>
@@ -854,6 +1623,7 @@ Radar divergences: Sector net-flow→Semiconductors negative; Southbound flow→
         <a class="slink" href="china_policy_watch.html"><div><div class="sl-name">🏛️ <span class="l-en">Policy Watch</span><span class="l-zh">政策观察</span></div><div class="sl-desc"><span class="l-en">PBoC rate corridor · phrase shifts · predictions</span><span class="l-zh">央行利率走廊 · 表述变化 · 政策预测</span></div></div></a>
         <a class="slink" href="china_altdata.html"><div><div class="sl-name">🛰️ <span class="l-en">Alternative Data</span><span class="l-zh">另类数据</span></div><div class="sl-desc"><span class="l-en">Smart-money convergence · margin velocity · positioning</span><span class="l-zh">聪明钱共振 · 融资速度 · 资金定位</span></div></div></a>
         <a class="slink" href="china_radar.html"><div><div class="sl-name">📡 <span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span></div><div class="sl-desc"><span class="l-en">Cross-signal divergence tracking · dated ledger</span><span class="l-zh">跨信号背离追踪 · 台账记录</span></div></div></a>
+        <a class="slink" href="china_special_situations.html"><div><div class="sl-name">⚠️ <span class="l-en">Special Situations</span><span class="l-zh">特殊情景</span></div><div class="sl-desc"><span class="l-en">Unlocks · inquiry letters · pre-announcements · ST watch · pledge · buybacks</span><span class="l-zh">解禁 · 问询函 · 业绩预告 · ST观察 · 质押 · 回购</span></div></div></a>
       </div>
     </div>
 
@@ -898,8 +1668,8 @@ Radar divergences: Sector net-flow→Semiconductors negative; Southbound flow→
 
   
   <div class="xmit">
-    🔌 <b><span class="l-en">Transmission to Mastermind</span><span class="l-zh">通往 Mastermind 的传导</span></b> — <span class="l-en">these surfaces + the cross-surface synthesis are bundled, schema-versioned and machine-readable at</span><span class="l-zh">这些面板＋跨面板综合被打包为带版本的机读契约：</span> <code>site/china_intel/briefing.json</code> (<code>china_intel.briefing.v4</code>) <span class="l-en">and</span><span class="l-zh">与</span> <code>digest.json</code>. <span class="l-en">The future China Mastermind reads them as context — never a size or a trade.</span><span class="l-zh">未来的中国 Mastermind 将其作为背景读取——绝非仓位或交易。</span>
-    <br><span class="s" style="color:var(--muted)"><span class="l-en">Surfaces present</span><span class="l-zh">已就绪面板</span>: news · policy · altdata · radar · analysis · policy_phrase</span>
+    🔌 <b><span class="l-en">Transmission to Mastermind</span><span class="l-zh">通往 Mastermind 的传导</span></b> — <span class="l-en">these surfaces + the cross-surface synthesis are bundled, schema-versioned and machine-readable at</span><span class="l-zh">这些面板＋跨面板综合被打包为带版本的机读契约：</span> <code>site/china_intel/briefing.json</code> (<code>china_intel.briefing.v6</code>) <span class="l-en">and</span><span class="l-zh">与</span> <code>digest.json</code>. <span class="l-en">The future China Mastermind reads them as context — never a size or a trade.</span><span class="l-zh">未来的中国 Mastermind 将其作为背景读取——绝非仓位或交易。</span>
+    <br><span class="s" style="color:var(--muted)"><span class="l-en">Surfaces present</span><span class="l-zh">已就绪面板</span>: news · policy · altdata · radar · analysis · policy_phrase · special_situations · command</span>
   </div>
 
   <p class="disc"><span class="l-en">Context only — not a signal, score or trade. A fan-in of five display/context-only China intelligence surfaces (news, central-bank & policy, alternative data, divergence radar, central analysis), bundled for the China Mastermind to read as background. Nothing here is an input to any score, signal, regime or allocation.</span><span class="l-zh">仅作背景，非信号、评分或交易。这是五个仅供展示／背景的中国情报面板（新闻、央行与政策、另类数据、背离雷达、中央分析）的汇总，供中国 Mastermind 作为背景读取。其中没有任何内容会进入任何评分、信号、区制或配置。</span></p>

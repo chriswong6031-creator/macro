@@ -198,3 +198,147 @@ def test_clear_dead():
     mark_dead("oauth", "CLAUDE_CODE_OAUTH_TOKEN")
     clear_dead()
     assert not is_dead("oauth", "CLAUDE_CODE_OAUTH_TOKEN")
+
+
+# ---------------------------------------------------------------------------
+# _sanitize_token — token sanitization helper
+# ---------------------------------------------------------------------------
+
+def test_sanitize_token_clean_token_unchanged():
+    """A valid printable-ASCII token is returned unchanged without warnings."""
+    from engine.llm_auth import _sanitize_token
+    tok = "claude-oauth-abcXYZ0123456789"
+    result = _sanitize_token(tok, "CLAUDE_CODE_OAUTH_TOKEN")
+    assert result == tok
+
+
+def test_sanitize_token_embedded_newline_removed(caplog):
+    """Token with embedded newline has whitespace stripped and a warning logged."""
+    import logging
+    from engine.llm_auth import _sanitize_token
+    # Simulate a secret pasted with a line-wrap
+    tok_raw = "claude-oauth-abc\nXYZ0123456789"
+    with caplog.at_level(logging.WARNING, logger="engine.llm_auth"):
+        result = _sanitize_token(tok_raw, "CLAUDE_CODE_OAUTH_TOKEN")
+    assert result == "claude-oauth-abcXYZ0123456789"
+    assert "CLAUDE_CODE_OAUTH_TOKEN" in caplog.text
+    assert "whitespace" in caplog.text.lower()
+
+
+def test_sanitize_token_embedded_spaces_removed(caplog):
+    """Token with embedded spaces has whitespace collapsed and a warning logged."""
+    import logging
+    from engine.llm_auth import _sanitize_token
+    tok_raw = "claude oauth abcXYZ"
+    with caplog.at_level(logging.WARNING, logger="engine.llm_auth"):
+        result = _sanitize_token(tok_raw, "ANTHROPIC_API_KEY")
+    assert result == "claudeoauthabcXYZ"
+    assert "ANTHROPIC_API_KEY" in caplog.text
+
+
+def test_sanitize_token_non_ascii_returns_none(caplog):
+    """Token with non-ASCII characters returns None and logs a loud warning."""
+    import logging
+    from engine.llm_auth import _sanitize_token
+    tok_raw = "claude-oauth-éàü"
+    with caplog.at_level(logging.WARNING, logger="engine.llm_auth"):
+        result = _sanitize_token(tok_raw, "CLAUDE_CODE_OAUTH_TOKEN")
+    assert result is None
+    assert "CLAUDE_CODE_OAUTH_TOKEN" in caplog.text
+    assert "non-printable" in caplog.text.lower() or "non-ascii" in caplog.text.lower()
+
+
+def test_sanitize_token_non_printable_returns_none(caplog):
+    """Token with non-printable ASCII (e.g. NUL) returns None and logs a warning."""
+    import logging
+    from engine.llm_auth import _sanitize_token
+    tok_raw = "claude-oauth-abc\x00def"
+    with caplog.at_level(logging.WARNING, logger="engine.llm_auth"):
+        result = _sanitize_token(tok_raw, "CLAUDE_CODE_OAUTH_TOKEN")
+    assert result is None
+    assert "CLAUDE_CODE_OAUTH_TOKEN" in caplog.text
+
+
+def test_sanitize_token_empty_after_strip_returns_none(caplog):
+    """Token that is only whitespace returns None after sanitization."""
+    import logging
+    from engine.llm_auth import _sanitize_token
+    with caplog.at_level(logging.WARNING, logger="engine.llm_auth"):
+        result = _sanitize_token("   \n\t  ", "CLAUDE_CODE_OAUTH_TOKEN")
+    assert result is None
+
+
+# ---------------------------------------------------------------------------
+# build_providers — sanitization integrated in waterfall
+# ---------------------------------------------------------------------------
+
+def test_build_providers_skips_oauth_with_non_ascii_token(caplog, monkeypatch):
+    """build_providers skips the oauth provider when its token contains non-ASCII."""
+    import logging
+    from unittest.mock import patch
+
+    cfg = {
+        "provider_order": ["oauth"],
+        "oauth_token_env": "CLAUDE_CODE_OAUTH_TOKEN",
+        "opus_model": "claude-opus-4-8",
+    }
+
+    # Provide a non-ASCII token via the config secret mechanism
+    with patch("lib.config.secret", return_value="bad-token-éà"):
+        with caplog.at_level(logging.WARNING, logger="engine.llm_auth"):
+            from engine import llm_auth
+            result = llm_auth.build_providers(cfg)
+
+    assert result == [], f"Expected empty provider list, got {result}"
+    assert "CLAUDE_CODE_OAUTH_TOKEN" in caplog.text
+
+
+def test_build_providers_sanitizes_newline_in_token_and_builds_provider(monkeypatch):
+    """build_providers strips a newline from a token and still builds the provider."""
+    import anthropic
+    from unittest.mock import patch, MagicMock
+
+    cfg = {
+        "provider_order": ["oauth"],
+        "oauth_token_env": "CLAUDE_CODE_OAUTH_TOKEN",
+        "opus_model": "claude-opus-4-8",
+    }
+
+    good_token = "claude-oauth-validtoken123"
+    token_with_newline = "claude-oauth-valid\ntoken123"
+
+    mock_client = MagicMock(spec=anthropic.Anthropic)
+
+    with patch("lib.config.secret", return_value=token_with_newline):
+        with patch("anthropic.Anthropic", return_value=mock_client) as mock_cls:
+            from engine import llm_auth
+            result = llm_auth.build_providers(cfg)
+
+    assert len(result) == 1, f"Expected 1 provider, got {result}"
+    provider = result[0]
+    # The credential stored must be the sanitized (newline-free) version
+    assert provider["cred"] == good_token
+    assert provider["name"] == "oauth"
+
+
+def test_build_providers_clean_token_unchanged(monkeypatch):
+    """A clean token passes through build_providers without modification."""
+    import anthropic
+    from unittest.mock import patch, MagicMock
+
+    cfg = {
+        "provider_order": ["anthropic"],
+        "api_key_env": "ANTHROPIC_API_KEY",
+        "opus_model": "claude-opus-4-8",
+    }
+
+    clean_token = "sk-ant-valid-abcdefghij0123456789"
+    mock_client = MagicMock(spec=anthropic.Anthropic)
+
+    with patch("lib.config.secret", return_value=clean_token):
+        with patch("anthropic.Anthropic", return_value=mock_client):
+            from engine import llm_auth
+            result = llm_auth.build_providers(cfg)
+
+    assert len(result) == 1
+    assert result[0]["cred"] == clean_token

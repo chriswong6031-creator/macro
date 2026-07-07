@@ -670,7 +670,7 @@ html[data-theme="light"] .cyc-chip.on { color: #fff; }
   padding-bottom: 5px;
 }
 
-/* ── W4.3 Turn-odds hazard line (MEASURED cards, focus panel) ─────────────── */
+/* ── W4.3 / UI-HZ-1 turn-hazard rows (MEASURED cards, focus panel) ────────── */
 .cyc-hazard { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 6px;
   font-size: 11px; line-height: 1.5; color: var(--text); background: var(--panel2);
   border: 1px solid var(--line); border-radius: 9px; padding: 7px 10px; margin-bottom: 10px; }
@@ -682,3 +682,33 @@ html[data-theme="light"] .cyc-chip.on { color: #fff; }
   border: 1px solid color-mix(in srgb, var(--muted) 30%, transparent);
   border-radius: 999px; padding: 0 5px; vertical-align: middle; margin-left: 2px; }
 .hz-sep { color: var(--line); }
+/* UI-HZ-1 evidence badges: every probability carries its W4.2 gate verdict.
+   PASS = calibrated model cell (calibration-gated vs KM); PRIOR = KM base rate, muted. */
+.hz-badge { display: inline-block; font-size: 8.5px; font-weight: 700; letter-spacing: .05em;
+  border-radius: 999px; padding: 0 5px; vertical-align: middle; margin-left: 2px; cursor: help; }
+.hz-pass { color: var(--up);
+  background: color-mix(in srgb, var(--up) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--up) 40%, transparent); }
+.hz-prior { color: var(--muted);
+  background: color-mix(in srgb, var(--muted) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--muted) 28%, transparent); }
+.hz-cell.hz-muted { color: var(--muted); opacity: .8; }
+
+/* ── honest-headline: hazard-first card headline (cycle-honest-headline-w0) ── */
+/* Hazard headline block on measured cards */
+.cc-hz-headline { display: flex; align-items: baseline; flex-wrap: wrap; gap: 5px;
+  font-size: 13px; font-weight: 700; color: var(--text); letter-spacing: -.01em; }
+.cc-hz-headline .cc-arrow { font-size: 11px; }
+/* Reference line (overdue / half-cycle ref) */
+.cc-proj-ref { font-size: 10.5px; color: var(--muted); margin-top: 3px; line-height: 1.35; font-variant-numeric: tabular-nums; }
+.cc-proj-ref.cc-proj-refuted { opacity: .55; font-style: italic; }
+/* Provisional turn line */
+.cc-provisional { font-size: 10.5px; color: var(--warn); margin-top: 3px; line-height: 1.35; }
+/* Fired-falsifier demotion wrapper on the projection reference */
+.cc-proj-demoted { opacity: .5; }
+.cc-proj-demoted .cc-proj-ref { color: var(--down); }
+/* Hazard headline also used in the focus panel */
+.cyc-hz-headline-row { margin-bottom: 10px; padding: 7px 10px;
+  background: var(--panel2); border: 1px solid var(--line); border-radius: 9px; }
+.cyc-hz-headline-row .cc-hz-headline { font-size: 14px; }
+.cyc-hz-headline-row .cc-proj-ref { font-size: 11px; }

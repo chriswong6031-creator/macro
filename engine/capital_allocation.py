@@ -34,8 +34,19 @@ share_count_reduction_confirmed:
   bool — shares_yoy_change <= -0.5%
 
 debt_funded_buyback_flag:
-  bool — repurch_ttm > 0 AND debt_lt latest > debt_lt prior FY
+  bool | None — repurch_ttm > 0 AND debt_lt latest > debt_lt prior FY
   (True if the company is buying back shares while long-term debt is rising)
+  Period-alignment rule (v1): the flag is None (unavailable) unless ALL of:
+    (a) repurch_coverage is NOT 'missing' — the TTM window has buyback data, so
+        a TTM window is defined; AND
+    (b) the latest annual FY period_end used for the debt delta overlaps the TTM
+        window by at least 2 fiscal quarters (>= 6 months).
+        Formally: fy_period_end >= ttm_start + 6 months, where
+        ttm_start = as_of_date - 12 months.
+        This ensures the FY whose debt we are comparing actually covers at least
+        half of the period for which buybacks are measured — mixing a stale FY
+        debt reading against a current TTM buyback sum would assert "debt-funded"
+        from misaligned windows.
 
 Point-in-time gating (quarterly data)
 --------------------------------------
@@ -124,6 +135,11 @@ _DILUTIVE_SHARES_CHANGE_PCT = 3.0     # shares_yoy_change >= this
 _TTM_QUARTERS = 4
 _TTM_MONTHS = 12   # 12-month lookback for period_end cutoff
 
+# ── debt flag alignment constants ─────────────────────────────────────────────
+# Minimum overlap between annual FY window and TTM window for the debt delta to
+# be considered period-aligned (2 fiscal quarters = 6 months).
+_DEBT_FLAG_MIN_OVERLAP_MONTHS = 6
+
 
 # ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -144,6 +160,31 @@ def _pct_change(new_val: float | None, old_val: float | None) -> float | None:
     if abs(old_val) < 1e-3:  # avoid division by near-zero share counts
         return None
     return float((new_val - old_val) / abs(old_val) * 100.0)
+
+
+def _fy_overlaps_ttm_window(
+    fy_period_end: pd.Timestamp | None,
+    ttm_start: pd.Timestamp,
+    min_overlap_months: int = _DEBT_FLAG_MIN_OVERLAP_MONTHS,
+) -> bool:
+    """Return True when the annual FY window overlaps the TTM window by >= min_overlap_months.
+
+    The annual FY window is approximated as [fy_period_end - 12m, fy_period_end].
+    The TTM window is [ttm_start, ttm_start + 12m].
+
+    Overlap >= min_overlap_months (default 6, i.e. 2 fiscal quarters) is required
+    so the FY debt reading is temporally anchored to the same period as the TTM
+    buyback sum.  If fy_period_end is None the check cannot be performed → False.
+    """
+    if fy_period_end is None:
+        return False
+    # The earliest fy_period_end that gives >= min_overlap_months of overlap with
+    # [ttm_start, ttm_start + 12m] is ttm_start + min_overlap_months, because the
+    # FY window is [fy_period_end - 12m, fy_period_end] and the intersection with
+    # [ttm_start, ...] spans at least min_overlap_months only when
+    # fy_period_end >= ttm_start + min_overlap_months.
+    min_fy_end = ttm_start + pd.DateOffset(months=min_overlap_months)
+    return bool(fy_period_end >= min_fy_end)
 
 
 # ── TTM repurchase computation ────────────────────────────────────────────────
@@ -401,6 +442,9 @@ def compute_capital_allocation(
     """
     ticker = str(ticker).upper().strip()
     asof_ts = _resolve_asof(as_of_date)
+    # TTM start is the same formula used inside _compute_repurch_ttm; computed here
+    # so the debt-flag alignment check can reference the same window boundary.
+    ttm_start = asof_ts - pd.DateOffset(months=_TTM_MONTHS)
 
     # ── 1. TTM repurchases from quarterly data ────────────────────────────────
     repurch_ttm, repurch_coverage = _compute_repurch_ttm(ticker, quarterly_df, asof_ts)
@@ -425,11 +469,18 @@ def compute_capital_allocation(
     debt_lt_latest: float | None = None
     debt_lt_prior: float | None = None
     dividends_latest: float | None = None
+    latest_fy_period_end: pd.Timestamp | None = None
 
     if latest_annual:
         shares_latest = _num(latest_annual.get("shares"))
         debt_lt_latest = _num(latest_annual.get("debt_lt"))
         dividends_latest = _num(latest_annual.get("dividends"))
+        # Extract period_end for the debt-flag alignment check
+        _pe = latest_annual.get("period_end")
+        if _pe is not None:
+            latest_fy_period_end = pd.to_datetime(_pe, errors="coerce")
+            if pd.isna(latest_fy_period_end):
+                latest_fy_period_end = None
     if prior_annual:
         shares_prior = _num(prior_annual.get("shares"))
         debt_lt_prior = _num(prior_annual.get("debt_lt"))
@@ -474,13 +525,21 @@ def compute_capital_allocation(
     elif repurch_ttm is not None and mcap and mcap > 0:
         net_buyback_after_sbc = float((repurch_ttm - sbc_ttm) / mcap)
 
-    # debt_funded_buyback_flag
+    # debt_funded_buyback_flag — period-alignment guard (v1)
+    # Condition (a): repurch_coverage must not be 'missing' (the TTM window must
+    #   have buyback data so its time span is defined).
+    # Condition (b): the latest annual FY period_end must overlap the TTM window
+    #   by >= 2 fiscal quarters (6 months) so debt and buyback measures are
+    #   temporally anchored to the same period.
+    # If either condition fails, the flag is None (rendered as unavailable).
     debt_funded_buyback_flag: bool | None = None
-    if repurch_ttm is not None and repurch_ttm > 0:
+    _repurch_present = (repurch_ttm is not None and repurch_ttm > 0)
+    _coverage_ok = (repurch_coverage != "missing")
+    _fy_aligned = _fy_overlaps_ttm_window(latest_fy_period_end, ttm_start)
+    if _repurch_present and _coverage_ok and _fy_aligned:
         if debt_lt_latest is not None and debt_lt_prior is not None:
             debt_funded_buyback_flag = bool(debt_lt_latest > debt_lt_prior)
-        else:
-            debt_funded_buyback_flag = None  # cannot determine without both data points
+        # else: None — cannot determine without both debt data points
 
     # ── 5. Assemble result ────────────────────────────────────────────────────
     result: dict[str, Any] = {

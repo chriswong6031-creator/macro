@@ -18,6 +18,13 @@ ExitPolicy (frozen enum v1):
     trail_stop(pct)         — high-watermark trailing stop
     barrier(stop, target)   — close-only bracket
 
+ScaledPolicy (RUL-F3.5 amendment, PR-F3.3, 2026-07-06):
+    scaled(legs=[(fraction, leg_policy), ...])
+        — composite: each leg exits its fraction per its own policy from the v1 vocabulary.
+          profit_take(pct) is additionally allowed exclusively as a scaled leg.
+          fire return = Σ fraction × leg_return; fractions must sum to 1.0.
+          Never-triggered legs are INCLUDED at reference return (EXIT-GRID-1 bug-class fix).
+
 Per-fire path outputs (§3.2):
     exit_bar_offset, exit_ret, mae_to_exit, mfe_to_exit, holding_days,
     censored, foregone_mfe, avoided_mae
@@ -66,6 +73,10 @@ class ExitKind(Enum):
     EMA_TRAIL = auto()
     TRAIL_STOP = auto()
     BARRIER = auto()
+    # RUL-F3.5 amendment (2026-07-06, PR-F3.3): composite scaled leg
+    SCALED = auto()
+    # profit_take is ONLY valid as a leg inside a ScaledPolicy — not a standalone policy
+    PROFIT_TAKE = auto()
 
 
 @dataclass(frozen=True)
@@ -123,6 +134,20 @@ class ExitPolicy:
             )
         return cls(kind=ExitKind.BARRIER, stop_pct=float(stop_pct), target_pct=float(target_pct))
 
+    @classmethod
+    def profit_take(cls, pct: float) -> "ExitPolicy":
+        """Profit-take leg: exit at first CLOSE >= +pct% from entry (close basis, conservative).
+
+        VALID ONLY INSIDE ScaledPolicy legs — cannot be used as a standalone exit policy.
+        If the target is never touched, the leg holds to the reference horizon (same
+        held-to-reference semantics as trail_stop/barrier — included at reference return).
+
+        Only pct=15 is frozen in the v1 vocabulary per RUL-F3.5.
+        """
+        if pct <= 0:
+            raise ValueError(f"profit_take: pct must be positive, got {pct!r}")
+        return cls(kind=ExitKind.PROFIT_TAKE, target_pct=float(pct))
+
     def to_dict(self) -> dict[str, Any]:
         """Stable, canonical serialization for hashing."""
         if self.kind == ExitKind.HOLD:
@@ -133,6 +158,9 @@ class ExitPolicy:
             return {"kind": "trail_stop", "pct": self.trail_pct}
         if self.kind == ExitKind.BARRIER:
             return {"kind": "barrier", "stop_pct": self.stop_pct, "target_pct": self.target_pct}
+        if self.kind == ExitKind.PROFIT_TAKE:
+            return {"kind": "profit_take", "pct": self.target_pct}
+        # SCALED kind handled by ScaledPolicy.to_dict() — should not reach here
         raise ValueError(f"Unknown ExitKind: {self.kind}")  # pragma: no cover
 
     def slug(self) -> str:
@@ -149,7 +177,121 @@ class ExitPolicy:
             sp = str(d['stop_pct']).replace('-', 'n').replace('.', 'p')
             tp = str(d['target_pct']).replace('.', 'p')
             return f"barrier_s{sp}_t{tp}"
+        if k == "profit_take":
+            return f"profit_take_{int(d['pct'])}pct"
         return k  # pragma: no cover
+
+
+# ---------------------------------------------------------------------------
+# ScaledPolicy — RUL-F3.5 composite exit (PR-F3.3 amendment, 2026-07-06)
+# ---------------------------------------------------------------------------
+
+# Frozen set of leg kinds allowed inside a ScaledPolicy (drawn from v1 vocabulary only).
+# profit_take is additionally allowed exclusively as a scaled leg.
+_SCALED_ALLOWED_KINDS: frozenset[ExitKind] = frozenset({
+    ExitKind.HOLD,
+    ExitKind.EMA_TRAIL,
+    ExitKind.TRAIL_STOP,
+    ExitKind.BARRIER,
+    ExitKind.PROFIT_TAKE,
+})
+
+
+@dataclass(frozen=True)
+class ScaledPolicy:
+    """Composite scaled exit policy (RUL-F3.5 amendment, PR-F3.3).
+
+    Represents a partition of the position into legs, each exiting its fraction
+    per its own policy.  The fire's policy return = Σ fraction × leg_return.
+
+    Construction
+    ------------
+    legs : tuple of (fraction, ExitPolicy) pairs
+        Every fraction must be > 0 and sum to 1.0 (within 1e-9 tolerance).
+        Every leg_policy must be drawn from the frozen v1 vocabulary OR be a
+        profit_take leg (the only v1-extension allowed, exclusively inside scaled).
+        SCALED kind (nested ScaledPolicy) and bare PROFIT_TAKE standalone policies
+        are rejected at construction.
+
+    Aggregation rule (EXIT-GRID-1 bug-class prevention)
+    ---------------------------------------------------
+    Per-leg results that NEVER TRIGGERED (held_to_reference=True) are included at
+    the reference-horizon return, NOT dropped.  Dropping them is the aggregation bug
+    documented in EXIT-GRID-1 that sign-flipped wide-stop cells.  Each leg's exit_ret
+    is fully computed; the weighted sum is formed from all legs including held-to-ref.
+
+    Only legs whose forward window is genuinely truncated (short_path=True / censored)
+    are excluded; all others — including never-triggered trail/barrier/profit_take legs —
+    are included at their actual exit return (= reference return when held to horizon).
+    """
+    legs: tuple  # tuple of (float, ExitPolicy) pairs; frozen dataclass needs tuple
+
+    def __post_init__(self) -> None:
+        if len(self.legs) < 2:
+            raise ValueError(
+                f"ScaledPolicy requires at least 2 legs, got {len(self.legs)}."
+            )
+        fractions = []
+        for i, (frac, leg) in enumerate(self.legs):
+            if not isinstance(frac, (int, float)) or frac <= 0:
+                raise ValueError(
+                    f"ScaledPolicy leg {i}: fraction must be > 0, got {frac!r}"
+                )
+            if not isinstance(leg, ExitPolicy):
+                raise ValueError(
+                    f"ScaledPolicy leg {i}: leg policy must be an ExitPolicy instance, got {type(leg)!r}"
+                )
+            if leg.kind not in _SCALED_ALLOWED_KINDS:
+                raise ValueError(
+                    f"ScaledPolicy leg {i}: kind {leg.kind.name} is not in the frozen v1 vocabulary. "
+                    f"Allowed inside scaled: {sorted(k.name for k in _SCALED_ALLOWED_KINDS)}"
+                )
+            fractions.append(float(frac))
+        total = sum(fractions)
+        if abs(total - 1.0) > 1e-9:
+            raise ValueError(
+                f"ScaledPolicy fractions must sum to 1.0, got {total!r} "
+                f"(error {abs(total - 1.0):.2e})"
+            )
+
+    @classmethod
+    def scaled(cls, legs: list[tuple[float, ExitPolicy]]) -> "ScaledPolicy":
+        """Construct a ScaledPolicy.
+
+        Parameters
+        ----------
+        legs : [(fraction, leg_policy), ...]
+            fractions must be > 0 and sum to 1.0; each leg_policy must be from
+            the frozen v1 vocabulary or a profit_take leg.
+        """
+        return cls(legs=tuple((float(f), p) for f, p in legs))
+
+    def to_dict(self) -> dict[str, Any]:
+        """Stable canonical serialization for hashing."""
+        return {
+            "kind": "scaled",
+            "legs": [
+                {"fraction": f, "policy": p.to_dict()}
+                for f, p in self.legs
+            ],
+        }
+
+    def slug(self) -> str:
+        """Human-readable slug for spec_id construction."""
+        parts = []
+        for f, p in self.legs:
+            pct_str = str(int(round(f * 100)))
+            parts.append(f"{pct_str}pct_{p.slug()}")
+        return "scaled_" + "_".join(parts)
+
+    def content_hash(self) -> str:
+        """sha256 of canonical JSON (sorted keys). Stable across runs."""
+        canonical = json.dumps(self.to_dict(), sort_keys=True, separators=(",", ":"))
+        return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
+# Union type alias for callers
+AnyExitPolicy = "ExitPolicy | ScaledPolicy"
 
 
 # ---------------------------------------------------------------------------
@@ -221,7 +363,7 @@ class RuleSpec:
     spec_id: str
     cohort: CohortFilter
     delay_n: int = 1
-    exit: ExitPolicy = field(default_factory=lambda: ExitPolicy.hold(21))
+    exit: "ExitPolicy | ScaledPolicy" = field(default_factory=lambda: ExitPolicy.hold(21))
     weight: str = "full"
     horizons_ref: tuple[int, ...] = (126,)
 
@@ -239,9 +381,19 @@ class RuleSpec:
                     f"RuleSpec.horizons_ref contains {h!r}, which is not in "
                     f"the frozen v1 set {sorted(VALID_HOLD_HORIZONS)}."
                 )
+        # Reject bare PROFIT_TAKE as a standalone exit policy
+        if isinstance(self.exit, ExitPolicy) and self.exit.kind == ExitKind.PROFIT_TAKE:
+            raise ValueError(
+                "profit_take is only valid as a leg inside a ScaledPolicy, "
+                "not as a standalone exit policy."
+            )
 
     def _canonical_dict(self) -> dict[str, Any]:
-        """Stable canonical dict for hashing (spec_id excluded)."""
+        """Stable canonical dict for hashing (spec_id excluded).
+
+        Works for both ExitPolicy and ScaledPolicy — both expose .to_dict().
+        For ScaledPolicy the exit dict includes all legs deterministically.
+        """
         return {
             "cohort": self.cohort.to_list(),
             "delay_n": self.delay_n,
@@ -251,7 +403,11 @@ class RuleSpec:
         }
 
     def content_hash(self) -> str:
-        """sha256 of canonical JSON (sorted keys). Stable across runs."""
+        """sha256 of canonical JSON (sorted keys). Stable across runs.
+
+        For ScaledPolicy exits the full legs spec is included deterministically
+        (all fractions and per-leg policy dicts, sort_keys=True).
+        """
         canonical = json.dumps(self._canonical_dict(), sort_keys=True, separators=(",", ":"))
         return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
@@ -465,6 +621,31 @@ def _compute_per_fire(
                 # Include in aggregates at the reference-horizon return.
                 result["held_to_reference"] = True
 
+    elif exit_policy.kind == ExitKind.PROFIT_TAKE:
+        # Exit at first CLOSE >= +pct% from entry (conservative close basis).
+        # If never touched over the full window, held_to_reference = True (included at
+        # reference return, NOT dropped — same semantics as trail_stop/barrier).
+        tgt_pct = exit_policy.target_pct or 0.0
+        tgt_mult = 1.0 + tgt_pct / 100.0
+        exit_offset = None
+        for i, p in enumerate(prices):
+            if p / entry_price >= tgt_mult:
+                exit_offset = i
+                break
+        if exit_offset is None:
+            exit_offset = len(fwd_slice) - 1
+            if len(fwd_slice) < max_H:
+                result["censored"] = True
+                result["short_path"] = True
+            else:
+                result["held_to_reference"] = True
+
+    elif exit_policy.kind == ExitKind.SCALED:
+        raise ValueError(
+            "ExitKind.SCALED should never reach _compute_per_fire directly — "
+            "use _compute_per_fire_scaled for ScaledPolicy instances."
+        )  # pragma: no cover
+
     else:
         raise ValueError(f"Unknown ExitKind: {exit_policy.kind}")  # pragma: no cover
 
@@ -498,6 +679,133 @@ def _compute_per_fire(
             result[f"avoided_mae_{H}"] = None
         else:
             result[f"avoided_mae_{H}"] = max(0.0, abs(fwd_mdd) - abs(mae_to_exit))
+
+    return result
+
+
+# ---------------------------------------------------------------------------
+# Scaled per-fire computation (RUL-F3.5, PR-F3.3)
+# ---------------------------------------------------------------------------
+def _compute_per_fire_scaled(
+    close: pd.Series,
+    fill_idx: int,
+    scaled_policy: "ScaledPolicy",
+    horizons_ref: tuple[int, ...],
+) -> dict[str, Any]:
+    """Compute exit metrics for a single fire under a ScaledPolicy.
+
+    Semantics
+    ---------
+    Each leg runs independently over the SAME price path.  The fire's policy return =
+    Σ fraction × leg_return.  Foregone MFE and avoided MAE are fraction-weighted sums
+    of per-leg values.
+
+    EXIT-GRID-1 BUG-CLASS PREVENTION
+    ---------------------------------
+    Legs that NEVER TRIGGERED (held_to_reference=True for trail_stop/barrier/profit_take)
+    are INCLUDED at the reference-horizon return, NOT dropped.  Dropping them is the
+    aggregation error documented in EXIT-GRID-1 that sign-flipped wide-stop cells.
+
+    A leg is excluded only when its path is genuinely censored (short_path / censored=True,
+    i.e., the forward window is truncated before the reference horizon, meaning the fire
+    is near the end of the data).  If ANY leg is censored, the whole fire is censored
+    (conservative — cannot compute a valid weighted average with a missing leg).
+
+    Additional output columns
+    ------------------------
+    n_exit_events   : total number of distinct exit bars across legs (churn metric)
+    holding_days_weighted : Σ fraction × leg_holding_days (capital-freed proxy)
+    """
+    # Run each leg independently
+    leg_results: list[dict[str, Any]] = []
+    for _frac, leg_policy in scaled_policy.legs:
+        lr = _compute_per_fire(close, fill_idx, leg_policy, horizons_ref)
+        leg_results.append(lr)
+
+    # Check for any genuinely censored leg (short path or censored)
+    any_censored = any(lr.get("censored", False) or lr.get("short_path", False) for lr in leg_results)
+
+    result: dict[str, Any] = {
+        "exit_bar_offset": None,   # not meaningful for scaled — use None
+        "exit_ret": None,
+        "mae_to_exit": None,
+        "mfe_to_exit": None,
+        "holding_days": None,
+        "censored": any_censored,
+        "short_path": any_censored,
+        "held_to_reference": False,
+        "n_exit_events": None,
+        "holding_days_weighted": None,
+    }
+    # Also carry forward reference metrics from leg 0 (needed for held_to_reference flagging)
+    for H in horizons_ref:
+        result[f"fwd_mfe_{H}"] = leg_results[0].get(f"fwd_mfe_{H}")
+        result[f"fwd_mdd_{H}"] = leg_results[0].get(f"fwd_mdd_{H}")
+        result[f"foregone_mfe_{H}"] = None
+        result[f"avoided_mae_{H}"] = None
+
+    if any_censored:
+        return result
+
+    # Fraction-weighted aggregation
+    fractions = [f for f, _ in scaled_policy.legs]
+
+    # Weighted exit return (Σ fraction × leg_exit_ret)
+    weighted_ret = 0.0
+    for frac, lr in zip(fractions, leg_results):
+        leg_ret = lr.get("exit_ret")
+        if leg_ret is None:
+            # Should not happen if not censored, but guard defensively
+            result["censored"] = True
+            return result
+        weighted_ret += frac * float(leg_ret)
+    result["exit_ret"] = weighted_ret
+
+    # Win rate basis: weighted return > 0
+    # (same semantics as individual policies; actual WR is computed in _cell_stats)
+
+    # Weighted MAE / MFE to exit (fraction-weighted sums)
+    w_mae = sum(frac * float(lr.get("mae_to_exit") or 0.0) for frac, lr in zip(fractions, leg_results))
+    w_mfe = sum(frac * float(lr.get("mfe_to_exit") or 0.0) for frac, lr in zip(fractions, leg_results))
+    result["mae_to_exit"] = w_mae
+    result["mfe_to_exit"] = w_mfe
+
+    # Weighted holding days (capital-freed proxy)
+    holding_days_vals = [lr.get("holding_days") for lr in leg_results]
+    if all(v is not None for v in holding_days_vals):
+        result["holding_days"] = sum(f * float(v) for f, v in zip(fractions, holding_days_vals))
+        result["holding_days_weighted"] = result["holding_days"]
+    else:
+        result["holding_days"] = None
+        result["holding_days_weighted"] = None
+
+    # Weighted regret metrics (Σ fraction × leg_foregone_mfe / avoided_mae)
+    for H in horizons_ref:
+        fwd_mfe_h = leg_results[0].get(f"fwd_mfe_{H}")
+        fwd_mdd_h = leg_results[0].get(f"fwd_mdd_{H}")
+        result[f"fwd_mfe_{H}"] = fwd_mfe_h
+        result[f"fwd_mdd_{H}"] = fwd_mdd_h
+
+        all_foregone = [lr.get(f"foregone_mfe_{H}") for lr in leg_results]
+        all_avoided = [lr.get(f"avoided_mae_{H}") for lr in leg_results]
+        if all(v is not None for v in all_foregone):
+            result[f"foregone_mfe_{H}"] = sum(f * v for f, v in zip(fractions, all_foregone))
+        else:
+            result[f"foregone_mfe_{H}"] = None
+        if all(v is not None for v in all_avoided):
+            result[f"avoided_mae_{H}"] = sum(f * v for f, v in zip(fractions, all_avoided))
+        else:
+            result[f"avoided_mae_{H}"] = None
+
+    # n_exit_events: count distinct non-None exit bar offsets across legs
+    exit_offsets = [lr.get("exit_bar_offset") for lr in leg_results]
+    # Count how many legs had a distinct triggered exit (not held_to_reference)
+    n_events = sum(1 for lr in leg_results if not lr.get("held_to_reference", False))
+    result["n_exit_events"] = n_events
+
+    # held_to_reference: True if ALL legs held to reference (all fractions never triggered)
+    all_held = all(lr.get("held_to_reference", False) for lr in leg_results)
+    result["held_to_reference"] = all_held
 
     return result
 
@@ -657,7 +965,12 @@ def replay_spec(
                 continue
 
             try:
-                metrics = _compute_per_fire(close, actual_fill, spec.exit, spec.horizons_ref)
+                if isinstance(spec.exit, ScaledPolicy):
+                    metrics = _compute_per_fire_scaled(
+                        close, actual_fill, spec.exit, spec.horizons_ref
+                    )
+                else:
+                    metrics = _compute_per_fire(close, actual_fill, spec.exit, spec.horizons_ref)
             except Exception as exc:
                 log.warning("replay_spec: error on %s %s: %s", ticker, signal_date, exc)
                 metrics = {

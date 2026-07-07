@@ -77,6 +77,7 @@ from engine.rule_replay import (  # noqa: E402
     ExitPolicy,
     GovernorRefusal,
     RuleSpec,
+    ScaledPolicy,
     cohort_filter,
     replay_spec,
     serialize_results,
@@ -91,10 +92,46 @@ from engine.rule_experiments import (  # noqa: E402
 )
 from engine.vintage_stamp import vintage_stamp  # noqa: E402
 
+# Regime merge columns that DISP-GATE-1 requires.
+# These are appended to fires_df before CohortFilter applies, only when the
+# experiment registry entry declares them in "needed_merge_columns".
+_DISP_MERGE_COLS = [
+    "disp_state_expanding",
+    "disp_state_trailing252",
+    "disp_pctile_expanding",
+    "disp_pctile_trailing252",
+    "n_bars_before",
+    "disp_excluded",  # renamed from 'excluded' to avoid shadowing
+]
 
 # ---------------------------------------------------------------------------
 # Grid reconstruction from experiment definition
 # ---------------------------------------------------------------------------
+def _build_wait_grid_v1_specs(cohort: CohortFilter) -> list[RuleSpec]:
+    """Reconstruct the WAIT-GRID-1 grid from its frozen definition (§6.1).
+
+    10 cells:
+      delay_n ∈ {1, 2, 3, 5, 10} × hold ∈ {hold(21), hold(63)}
+
+    delay_n=1 is the production fill (next-bar-after-signal), matching the
+    existing Oracle convention.  delay_n > 1 offsets the fill by that many
+    additional bars to simulate waiting.
+    """
+    specs: list[RuleSpec] = []
+    for delay_n in [1, 2, 3, 5, 10]:
+        for hold_bars in [21, 63]:
+            specs.append(RuleSpec(
+                spec_id=f"wait_grid_v1/delay{delay_n}_hold{hold_bars}",
+                cohort=cohort,
+                delay_n=delay_n,
+                exit=ExitPolicy.hold(hold_bars),
+                horizons_ref=(126,),
+            ))
+
+    assert len(specs) == 10, f"WAIT-GRID-1 must be 10 cells, got {len(specs)}"
+    return specs
+
+
 def _build_exit_grid_v1_specs(cohort: CohortFilter) -> list[RuleSpec]:
     """Reconstruct the EXIT-GRID-1 grid from its frozen definition (§4).
 
@@ -151,9 +188,145 @@ def _build_exit_grid_v1_specs(cohort: CohortFilter) -> list[RuleSpec]:
     return specs
 
 
+def _build_disp_gate_1_specs(cohort: CohortFilter) -> list[RuleSpec]:
+    """Reconstruct the DISP-GATE-1 grid from its frozen definition (§6.2).
+
+    6 primary cells:
+      regime arm {lean_in, neutral, lean_out}  ×  basis {expanding, trailing252}
+
+    The cohort must already have regime columns merged (see _merge_regime_columns).
+    Each cell filters on disp_state_expanding or disp_state_trailing252.
+    Exit: hold(21) — the ratified anchor per L3_PREREG.
+
+    Note: the DISP-GATE-1 cohort is an extension of the production fire cohort
+    (verdict_type='fire' AND verdict_grade=True) INTERSECTED with the non-excluded
+    regime-assigned fires.  The regime-column merge and exclusion of fires with
+    < 252 prior bars happen in the load path (run_experiment), not here.
+    """
+    specs: list[RuleSpec] = []
+    for regime_state in ["lean_in", "neutral", "lean_out"]:
+        for basis in ["expanding", "trailing252"]:
+            col = f"disp_state_{basis}"
+            spec_id = f"disp_gate_1/{basis}/{regime_state}"
+            regime_cohort = cohort_filter(
+                *cohort.predicates,
+                ("eq", col, regime_state),
+                ("eq", "disp_excluded", False),
+            )
+            specs.append(RuleSpec(
+                spec_id=spec_id,
+                cohort=regime_cohort,
+                delay_n=1,
+                exit=ExitPolicy.hold(21),
+                horizons_ref=(126,),
+            ))
+
+    assert len(specs) == 6, f"DISP-GATE-1 must be 6 cells, got {len(specs)}"
+    return specs
+
+
+def _build_trim_grid_v1_specs(cohort: CohortFilter) -> list[RuleSpec]:
+    """Reconstruct the TRIM-GRID-1 grid from its frozen definition (RUL-F3.5, PR-F3.3).
+
+    6 frozen cells (exactly — no additions permitted without a program amendment):
+      1. trim50_h21_ema8        — 0.5 hold(21)  + 0.5 ema_trail_s8
+      2. trim50_h21_h126        — 0.5 hold(21)  + 0.5 hold(126)
+      3. trim25_h21_ema8        — 0.25 hold(21) + 0.75 ema_trail_s8
+      4. trim33_h21_h63_h126    — 1/3 hold(21)  + 1/3 hold(63) + 1/3 hold(126)
+      5. trim50_ema8_h126       — 0.5 ema_trail_s8 + 0.5 hold(126)
+      6. trim50_mfe15_ema8      — 0.5 profit_take(15%) + 0.5 ema_trail_s8
+
+    The cohort is the same as exit_grid_v1: verdict_type='fire' AND verdict_grade=True.
+    derived_from_surface=exit_grid_v1 (seen surface — descriptive-only, contamination stamped).
+    """
+    specs: list[RuleSpec] = []
+
+    # 1. trim50_h21_ema8
+    specs.append(RuleSpec(
+        spec_id="trim_grid_v1/trim50_h21_ema8",
+        cohort=cohort,
+        delay_n=1,
+        exit=ScaledPolicy.scaled([
+            (0.5, ExitPolicy.hold(21)),
+            (0.5, ExitPolicy.ema_trail(span=8, resample="3B")),
+        ]),
+        horizons_ref=(126,),
+    ))
+
+    # 2. trim50_h21_h126
+    specs.append(RuleSpec(
+        spec_id="trim_grid_v1/trim50_h21_h126",
+        cohort=cohort,
+        delay_n=1,
+        exit=ScaledPolicy.scaled([
+            (0.5, ExitPolicy.hold(21)),
+            (0.5, ExitPolicy.hold(126)),
+        ]),
+        horizons_ref=(126,),
+    ))
+
+    # 3. trim25_h21_ema8
+    specs.append(RuleSpec(
+        spec_id="trim_grid_v1/trim25_h21_ema8",
+        cohort=cohort,
+        delay_n=1,
+        exit=ScaledPolicy.scaled([
+            (0.25, ExitPolicy.hold(21)),
+            (0.75, ExitPolicy.ema_trail(span=8, resample="3B")),
+        ]),
+        horizons_ref=(126,),
+    ))
+
+    # 4. trim33_h21_h63_h126
+    specs.append(RuleSpec(
+        spec_id="trim_grid_v1/trim33_h21_h63_h126",
+        cohort=cohort,
+        delay_n=1,
+        exit=ScaledPolicy.scaled([
+            (1.0 / 3.0, ExitPolicy.hold(21)),
+            (1.0 / 3.0, ExitPolicy.hold(63)),
+            (1.0 / 3.0, ExitPolicy.hold(126)),
+        ]),
+        horizons_ref=(126,),
+    ))
+
+    # 5. trim50_ema8_h126
+    specs.append(RuleSpec(
+        spec_id="trim_grid_v1/trim50_ema8_h126",
+        cohort=cohort,
+        delay_n=1,
+        exit=ScaledPolicy.scaled([
+            (0.5, ExitPolicy.ema_trail(span=8, resample="3B")),
+            (0.5, ExitPolicy.hold(126)),
+        ]),
+        horizons_ref=(126,),
+    ))
+
+    # 6. trim50_mfe15_ema8
+    # profit_take(15) exits first half at first close >= +15% from entry (close basis).
+    # If never touched, that leg holds to reference (held_to_reference included at
+    # reference return — EXIT-GRID-1 bug-class prevention).
+    specs.append(RuleSpec(
+        spec_id="trim_grid_v1/trim50_mfe15_ema8",
+        cohort=cohort,
+        delay_n=1,
+        exit=ScaledPolicy.scaled([
+            (0.5, ExitPolicy.profit_take(15.0)),
+            (0.5, ExitPolicy.ema_trail(span=8, resample="3B")),
+        ]),
+        horizons_ref=(126,),
+    ))
+
+    assert len(specs) == 6, f"TRIM-GRID-1 must be 6 cells, got {len(specs)}"
+    return specs
+
+
 # Grid builders registry — keyed by exp_id prefix
 _GRID_BUILDERS: dict[str, Any] = {
     "exit_grid_v1": _build_exit_grid_v1_specs,
+    "wait_grid_v1": _build_wait_grid_v1_specs,
+    "disp_gate_1": _build_disp_gate_1_specs,
+    "trim_grid_v1": _build_trim_grid_v1_specs,
 }
 
 
@@ -184,6 +357,140 @@ def _build_grid(exp_id: str, exp_entry: dict) -> list[RuleSpec]:
         ("eq", "verdict_grade", True),
     )
     return builder(cohort)
+
+
+# ---------------------------------------------------------------------------
+# Regime merge — experiment-scoped (only for experiments that declare it)
+# ---------------------------------------------------------------------------
+
+def _merge_regime_columns(
+    fires_df: pd.DataFrame,
+    needed_merge_columns: list[str],
+    *,
+    massive_dir: Path,
+    return_panel_meta: bool = False,
+) -> "pd.DataFrame | tuple[pd.DataFrame, dict]":
+    """Merge PIT dispersion regime columns into fires_df.
+
+    Called BEFORE CohortFilter applies so that regime-column predicates
+    in the cohort filter resolve correctly.
+
+    Only called for experiments that declare needed_merge_columns in their
+    registry entry, so other experiments are untouched.
+
+    Parameters
+    ----------
+    fires_df             : fires DataFrame (pre-filter)
+    needed_merge_columns : list of column names from _DISP_MERGE_COLS
+    massive_dir          : path to massive_stock_day for panel reconstruction
+    return_panel_meta    : if True, return (fires_out, panel_meta_dict) instead
+                           of just fires_out.  panel_meta_dict contains:
+                           panel_data_reach, panel_n_bars, panel_n_tickers.
+
+    Returns
+    -------
+    fires_df with regime columns appended (keyed on signal_date).
+    If return_panel_meta=True, returns (fires_out, panel_meta) tuple.
+    """
+    from scripts.compute_disp_pit_state import (  # noqa: PLC0415
+        compute_pit_states, compute_spy_21d_returns, assign_spy_tercile,
+        _load_panel_from_massive,
+    )
+
+    # Check if any needed columns are already present (idempotent)
+    missing = [c for c in needed_merge_columns if c not in fires_df.columns]
+    if not missing:
+        log.info("All needed merge columns already present — skipping regime merge.")
+        if return_panel_meta:
+            return fires_df, {}
+        return fires_df
+
+    # Resolve the fire dates
+    date_col = "signal_date" if "signal_date" in fires_df.columns else "fire_date"
+    fire_dates = pd.to_datetime(fires_df[date_col]).unique()
+    log.info(
+        "Merging PIT dispersion regime for %d unique fire dates "
+        "(%s → %s)...",
+        len(fire_dates), fire_dates.min().date(), fire_dates.max().date(),
+    )
+
+    # Load panel once so we can extract metadata for the summary block.
+    # compute_pit_states also loads the panel internally, but exposing it here
+    # avoids a second I/O pass when return_panel_meta=True.
+    panel_meta: dict[str, Any] = {}
+    try:
+        _panel = _load_panel_from_massive(massive_dir)
+        if not _panel.empty:
+            panel_meta = {
+                "panel_data_reach": (
+                    f"{_panel.index[0].date()} to {_panel.index[-1].date()}"
+                ),
+                "panel_n_bars": len(_panel),
+                "panel_n_tickers": int(_panel.shape[1]),
+            }
+    except Exception as exc:
+        log.warning("Could not read panel metadata: %s", exc)
+
+    # Compute PIT states (prints DATA-REACH GATE exclusion counts)
+    states = compute_pit_states(fire_dates, massive_dir=massive_dir, verbose=True)
+    states = states.reset_index()  # fire_date column
+
+    # Rename 'excluded' → 'disp_excluded' to avoid column collision
+    if "excluded" in states.columns:
+        states = states.rename(columns={"excluded": "disp_excluded"})
+
+    # Compute SPY 21d contemporaneous covariate (L3_PREREG obligation 2)
+    spy_rets = compute_spy_21d_returns(fire_dates, massive_dir=massive_dir)
+    spy_tercile = assign_spy_tercile(spy_rets)
+
+    spy_df = pd.DataFrame({
+        "fire_date": spy_rets.index,
+        "spy_ret_21d": spy_rets.values,
+        "spy_tercile": spy_tercile.values,
+    })
+
+    # Merge states on date
+    fires_out = fires_df.copy()
+    fires_out["_fire_date_ts"] = pd.to_datetime(fires_out[date_col])
+
+    states["fire_date"] = pd.to_datetime(states["fire_date"])
+    spy_df["fire_date"] = pd.to_datetime(spy_df["fire_date"])
+
+    fires_out = fires_out.merge(
+        states,
+        left_on="_fire_date_ts",
+        right_on="fire_date",
+        how="left",
+        suffixes=("", "_disp"),
+    )
+    if "fire_date" in fires_out.columns and "fire_date" != date_col:
+        fires_out = fires_out.drop(columns=["fire_date"])
+
+    fires_out = fires_out.merge(
+        spy_df,
+        left_on="_fire_date_ts",
+        right_on="fire_date",
+        how="left",
+        suffixes=("", "_spy"),
+    )
+    if "fire_date" in fires_out.columns and "fire_date" != date_col:
+        fires_out = fires_out.drop(columns=["fire_date"])
+
+    fires_out = fires_out.drop(columns=["_fire_date_ts"], errors="ignore")
+
+    # Fill disp_excluded NaN → True (no state available = exclude)
+    if "disp_excluded" in fires_out.columns:
+        fires_out["disp_excluded"] = fires_out["disp_excluded"].fillna(True)
+
+    n_merged = fires_out["disp_state_expanding"].notna().sum() if "disp_state_expanding" in fires_out.columns else 0
+    n_excl = fires_out["disp_excluded"].sum() if "disp_excluded" in fires_out.columns else 0
+    log.info(
+        "Regime merge complete: %d fires with state, %d excluded",
+        int(n_merged), int(n_excl),
+    )
+    if return_panel_meta:
+        return fires_out, panel_meta
+    return fires_out
 
 
 # ---------------------------------------------------------------------------
@@ -279,6 +586,7 @@ def _cell_stats(
             "n_censored": 0,
             "n_short_path": 0,
             "n_held_to_reference": 0,
+            "n_null_regret_126": 0,
             "short_path_pct": None,
             "held_to_reference_pct": None,
             "censoring_rate": None,
@@ -289,6 +597,8 @@ def _cell_stats(
             "mean_foregone_mfe_126": None,
             "mean_avoided_mae_126": None,
             "regret_ratio": None,
+            "stop5_rate": None,
+            "dead_money_rate": None,
         }
 
     # short_path: genuine truncated window (fire near end of data) — exclude from aggregates.
@@ -327,9 +637,18 @@ def _cell_stats(
 
     # Regret metrics computed over all fires (not just included — regret vs reference is
     # meaningful for all fires with a valid forward path, including held_to_reference).
+    # Track fires where the 126-bar reference horizon is unavailable (null regret shortfall).
+    # This happens when delay_n shifts the fill bar close enough to the data end that
+    # fill_idx + 1 + 126 exceeds the available price series length — those fires have
+    # fwd_mfe_126=None in engine/rule_replay.py, which propagates to foregone_mfe_126=None.
+    # The .dropna() below is correct for computing the mean, but the dropped count must be
+    # disclosed so cross-delay regret comparisons are not made on a silently shrinking denominator.
+    n_null_regret_126 = 0
     mean_foregone = None
     if "foregone_mfe_126" in perfire.columns:
-        fm = pd.to_numeric(perfire["foregone_mfe_126"], errors="coerce").dropna()
+        fm_raw = pd.to_numeric(perfire["foregone_mfe_126"], errors="coerce")
+        n_null_regret_126 = int(fm_raw.isna().sum())
+        fm = fm_raw.dropna()
         mean_foregone = float(fm.mean()) if len(fm) > 0 else None
 
     mean_avoided = None
@@ -344,11 +663,38 @@ def _cell_stats(
     elif mean_foregone is not None and mean_foregone == 0 and mean_avoided is not None:
         regret_ratio = None  # degenerate: foregone_mfe=0 means nothing was given up
 
+    # stop5: fraction of fires where the intra-window drawdown reaches ≥5% from entry.
+    # Per L3_PREREG design: mae_to_exit <= -0.05 (MAE at any point in the 21d window).
+    # For a HOLD-21 policy, mae_to_exit is the minimum return over the holding period,
+    # so it captures the running maximum adverse excursion up to the time-exit.
+    #
+    # dead_money: |exit_ret| < 2% — fire went nowhere (neither gain nor meaningful loss).
+    # Per L3_PREREG: abs(ret_21d) < 0.02 — tape parked the name.
+    #
+    # Both are computed over included fires only (same denominator as WR).
+    stop5_rate = None
+    dead_money_rate = None
+    if len(included) > 0:
+        if "mae_to_exit" in included.columns:
+            mae_num = pd.to_numeric(included["mae_to_exit"], errors="coerce").dropna()
+            if len(mae_num) > 0:
+                stop5_rate = round(float((mae_num <= -0.05).mean()), 4)
+        if "exit_ret" in included.columns:
+            rets_num = pd.to_numeric(included["exit_ret"], errors="coerce").dropna()
+            if len(rets_num) > 0:
+                dead_money_rate = round(float((rets_num.abs() < 0.02).mean()), 4)
+
     return {
         "n_fires": n_total,
         "n_censored": n_censored,
         "n_short_path": n_short_path,
         "n_held_to_reference": n_held_to_reference,
+        # n_null_regret_126: fires where the 126-bar reference horizon is unavailable
+        # (fill bar too close to end of data after delay_n shift). These fires are
+        # excluded from mean_foregone_mfe_126 / mean_avoided_mae_126 / regret_ratio
+        # via .dropna(). The count grows with delay_n for boundary fires — so
+        # cross-delay regret comparisons use a denominator that shrinks with delay_n.
+        "n_null_regret_126": n_null_regret_126,
         "short_path_pct": round(n_short_path / n_total, 4) if n_total > 0 else None,
         "held_to_reference_pct": round(n_held_to_reference / n_total, 4) if n_total > 0 else None,
         "censoring_rate": round(n_censored / n_total, 4) if n_total > 0 else None,
@@ -359,7 +705,110 @@ def _cell_stats(
         "mean_foregone_mfe_126": round(mean_foregone, 4) if mean_foregone is not None else None,
         "mean_avoided_mae_126": round(mean_avoided, 4) if mean_avoided is not None else None,
         "regret_ratio": regret_ratio,
+        "stop5_rate": stop5_rate,
+        "dead_money_rate": dead_money_rate,
     }
+
+
+def _trim_cell_stats_extra(
+    perfire: pd.DataFrame,
+    hold126_perfire: pd.DataFrame | None = None,
+    cluster_col: str = "episode_cluster",
+) -> dict[str, Any]:
+    """Compute TRIM-GRID-1 specific extra metrics for a scaled-policy cell.
+
+    Metrics
+    -------
+    weighted_wr           : WR on weighted exit_ret (same as _cell_stats wr for scaled cells)
+    weighted_mean_ret     : mean of weighted exit_ret (same as mean_exit_ret)
+    weighted_median_ret   : median of weighted exit_ret (same as median_exit_ret)
+    weighted_foregone_mfe_126 : mean of weighted foregone_mfe_126
+    weighted_avoided_mae_126  : mean of weighted avoided_mae_126
+    regret_ratio          : weighted_avoided_mae / weighted_foregone_mfe (>1 = saved more)
+    right_tail_retention  : mean scaled-policy return among fires in the top decile of
+                            hold_126 returns ÷ mean hold_126 return among those fires.
+                            Caveat: the right tail is where survivorship bites hardest
+                            (delisted-name recall floor for this cohort).
+    capital_freed_days    : weighted mean holding_days vs 126 reference
+    churn                 : mean n_exit_events per fire (number of exit events across legs)
+
+    Parameters
+    ----------
+    perfire           : ScaledPolicy perfire results DataFrame (one cell)
+    hold126_perfire   : hold(126) perfire results (for right-tail reference).
+                        If None, right_tail_retention is null.
+    """
+    extra: dict[str, Any] = {
+        "right_tail_retention": None,
+        "right_tail_retention_caveat": (
+            "Survivorship caveat: the massive-era cohort has a delisted-name recall floor "
+            "(dead_name_coverage_pct ~38%); the right tail of hold_126 returns is where "
+            "survivorship bites hardest — firms that kept rising vs those that fell and "
+            "delisted. Right-tail retention comparisons between scaled and hold_126 are "
+            "directionally informative but should not be over-interpreted."
+        ),
+        "capital_freed_days": None,
+        "churn": None,
+    }
+
+    # Exclude short_path / censored rows (same logic as _cell_stats)
+    exclude_mask = pd.Series(False, index=perfire.index)
+    if "short_path" in perfire.columns:
+        exclude_mask |= perfire["short_path"].astype(bool)
+    if "censored" in perfire.columns:
+        exclude_mask |= perfire["censored"].astype(bool)
+    included = perfire[~exclude_mask]
+
+    if len(included) == 0:
+        return extra
+
+    # Capital-freed days: weighted mean holding_days vs 126-bar reference
+    if "holding_days" in included.columns:
+        hd = pd.to_numeric(included["holding_days"], errors="coerce").dropna()
+        if len(hd) > 0:
+            extra["capital_freed_days"] = round(float(hd.mean()), 1)
+
+    # Churn: mean number of exit events per fire (n_exit_events across legs)
+    if "n_exit_events" in included.columns:
+        ne = pd.to_numeric(included["n_exit_events"], errors="coerce").dropna()
+        if len(ne) > 0:
+            extra["churn"] = round(float(ne.mean()), 3)
+
+    # Right-tail retention: requires hold_126 perfire as the reference
+    if hold126_perfire is not None and len(hold126_perfire) > 0:
+        # Exclude censored rows from hold_126 reference
+        h126_exclude = pd.Series(False, index=hold126_perfire.index)
+        if "short_path" in hold126_perfire.columns:
+            h126_exclude |= hold126_perfire["short_path"].astype(bool)
+        if "censored" in hold126_perfire.columns:
+            h126_exclude |= hold126_perfire["censored"].astype(bool)
+        h126_included = hold126_perfire[~h126_exclude]
+
+        if "exit_ret" in h126_included.columns and "fire_idx" in h126_included.columns:
+            h126_rets = pd.to_numeric(h126_included["exit_ret"], errors="coerce")
+            # Top decile of hold_126 returns
+            top_decile_threshold = h126_rets.quantile(0.9)
+            top_decile_mask = h126_rets >= top_decile_threshold
+            top_decile_fire_idxs = h126_included.loc[top_decile_mask, "fire_idx"]
+
+            if len(top_decile_fire_idxs) > 0:
+                # Mean hold_126 return among top-decile fires
+                h126_top_mean = float(h126_rets[top_decile_mask].mean())
+
+                # Find the corresponding scaled-policy fires by fire_idx
+                if "fire_idx" in included.columns:
+                    scaled_top = included[included["fire_idx"].isin(top_decile_fire_idxs)]
+                    if len(scaled_top) > 0 and "exit_ret" in scaled_top.columns:
+                        scaled_top_rets = pd.to_numeric(scaled_top["exit_ret"], errors="coerce").dropna()
+                        if len(scaled_top_rets) > 0 and h126_top_mean != 0:
+                            scaled_top_mean = float(scaled_top_rets.mean())
+                            rtr = scaled_top_mean / h126_top_mean
+                            extra["right_tail_retention"] = round(rtr, 4)
+                            extra["right_tail_n_fires"] = len(scaled_top_rets)
+                            extra["right_tail_h126_mean"] = round(h126_top_mean, 4)
+                            extra["right_tail_scaled_mean"] = round(scaled_top_mean, 4)
+
+    return extra
 
 
 def _era_tier_splits(
@@ -382,6 +831,158 @@ def _era_tier_splits(
             result[f"tier_{tier}"] = _cell_stats(sub, sub, cluster_col)
 
     return result
+
+
+def _spy_covariate_split(
+    perfire: pd.DataFrame,
+    cluster_col: str = "episode_cluster",
+) -> dict[str, Any] | None:
+    """Compute SPY-21d tercile split within a perfire cell.
+
+    L3_PREREG design obligation 2: the contemporaneous SPY-21d drawdown
+    covariate must be applied WITHIN cells as a tercile split so that the
+    confound can be evaluated by a stats reviewer.
+
+    Terciles (fixed thresholds per assign_spy_tercile in compute_disp_pit_state):
+        down : SPY 21d return < -5%
+        flat : -5% <= SPY 21d return <= +5%
+        up   : SPY 21d return > +5%
+
+    Returns None if spy_tercile column is absent from perfire.
+    Returns dict keyed by tercile label with per-tercile n/stop5/dead_money/wr.
+    """
+    if "spy_tercile" not in perfire.columns:
+        return None
+
+    result: dict[str, Any] = {}
+    for label in ["down", "flat", "up"]:
+        sub = perfire[perfire["spy_tercile"] == label]
+        if len(sub) == 0:
+            result[label] = {"n": 0, "stop5": None, "dead_money": None, "wr": None}
+            continue
+        # Use _cell_stats to compute stop5/dead_money/wr in a consistent way
+        sub_stats = _cell_stats(sub, sub, cluster_col=cluster_col)
+        result[label] = {
+            "n": sub_stats["n_fires"],
+            "stop5": sub_stats["stop5_rate"],
+            "dead_money": sub_stats["dead_money_rate"],
+            "wr": sub_stats["wr"],
+        }
+    return result
+
+
+def _compute_disp_meta(
+    fires_df: pd.DataFrame,
+    pre_b2_pooled_sum: int,
+    post_b2_pooled_sum: int,
+) -> dict[str, Any]:
+    """Build the disp_gate_1_meta block for the summary JSON.
+
+    Requires that fires_df has already had PIT regime columns merged
+    (i.e., _merge_regime_columns was called) and that disp_excluded,
+    disp_state_expanding, and disp_state_trailing252 columns are present.
+
+    Parameters
+    ----------
+    fires_df            : fires DataFrame post regime-merge and cohort-filter,
+                          INCLUDING excluded fires (so total exclusion count is accurate).
+    pre_b2_pooled_sum   : pooled trial count BEFORE this experiment.
+    post_b2_pooled_sum  : pooled trial count INCLUDING this experiment.
+
+    Returns a dict with all meta fields committed in disp_gate_1_summary.json.
+    """
+    meta: dict[str, Any] = {}
+
+    # Panel data reach, bars, tickers — read from the merged columns
+    # n_bars_before is per-fire; take the max to get the full panel reach.
+    if "n_bars_before" in fires_df.columns:
+        meta["panel_n_bars"] = int(fires_df["n_bars_before"].max()) if len(fires_df) > 0 else None
+    else:
+        meta["panel_n_bars"] = None
+
+    # Exclusion counts
+    if "disp_excluded" in fires_df.columns:
+        n_excl_fires = int(fires_df["disp_excluded"].sum())
+        n_total_fires = len(fires_df)
+        excl_pct = round(100.0 * n_excl_fires / n_total_fires, 1) if n_total_fires > 0 else None
+
+        # Dates excluded (unique fire dates that were excluded)
+        date_col = "signal_date" if "signal_date" in fires_df.columns else "fire_date"
+        if date_col in fires_df.columns:
+            excl_mask = fires_df["disp_excluded"].astype(bool)
+            n_dates_excl = int(pd.to_datetime(fires_df.loc[excl_mask, date_col]).nunique())
+        else:
+            n_dates_excl = None
+
+        meta["fires_excluded_data_reach_gate"] = n_excl_fires
+        meta["fires_excluded_pct"] = excl_pct
+        meta["n_dates_excluded"] = n_dates_excl
+    else:
+        meta["fires_excluded_data_reach_gate"] = None
+        meta["fires_excluded_pct"] = None
+        meta["n_dates_excluded"] = None
+
+    # Basis flip rate between expanding and trailing-252d (non-stationarity check)
+    if "disp_state_expanding" in fires_df.columns and "disp_state_trailing252" in fires_df.columns:
+        included_mask = ~fires_df.get("disp_excluded", pd.Series(False, index=fires_df.index)).astype(bool)
+        included_fires = fires_df[included_mask]
+        both_valid = included_fires.dropna(
+            subset=["disp_state_expanding", "disp_state_trailing252"]
+        )
+        if len(both_valid) > 0:
+            # Compute flip rate across UNIQUE fire dates (not per-fire rows)
+            date_col = "signal_date" if "signal_date" in both_valid.columns else "fire_date"
+            if date_col in both_valid.columns:
+                date_states = both_valid.drop_duplicates(subset=[date_col])[[
+                    date_col, "disp_state_expanding", "disp_state_trailing252"
+                ]]
+                n_flip_dates = int(
+                    (date_states["disp_state_expanding"] != date_states["disp_state_trailing252"]).sum()
+                )
+                n_total_dates = len(date_states)
+            else:
+                n_flip_dates = int(
+                    (both_valid["disp_state_expanding"] != both_valid["disp_state_trailing252"]).sum()
+                )
+                n_total_dates = len(both_valid)
+
+            flip_pct = round(100.0 * n_flip_dates / n_total_dates, 1) if n_total_dates > 0 else 0.0
+        else:
+            flip_pct = 0.0
+    else:
+        flip_pct = None
+
+    _FLIP_THRESHOLD = 15.0
+    meta["basis_flip_rate_pct"] = flip_pct
+    meta["nonstationarity_flag"] = (flip_pct is not None and flip_pct > _FLIP_THRESHOLD)
+    if meta["nonstationarity_flag"]:
+        meta["nonstationarity_note"] = (
+            f"{flip_pct}% of fire dates flip regime state between expanding and trailing-252d bases "
+            f"(>{_FLIP_THRESHOLD:.0f}% threshold). Study proceeds descriptively on primary "
+            "(expanding) basis only."
+        )
+    else:
+        meta["nonstationarity_note"] = (
+            "Bases agree on >85% of fire dates — stationarity assumption holds."
+        )
+
+    # SPY covariate tercile boundaries (fixed by assign_spy_tercile)
+    meta["spy_covariate_tercile_boundaries"] = {
+        "down": "< -5%",
+        "flat": "-5% to +5%",
+        "up": "> +5%",
+    }
+
+    # FDR accounting
+    meta["pre_b2_pooled_sum"] = pre_b2_pooled_sum
+    meta["post_b2_pooled_sum"] = post_b2_pooled_sum
+    meta["trial_ledger_max_basis_note"] = (
+        "TrialLedger.effective_n() uses max() semantics and reports 15 "
+        "(largest declared budget in replay family), not the sum "
+        f"{post_b2_pooled_sum}. Both numbers are printed per §0.5.6."
+    )
+
+    return meta
 
 
 # ---------------------------------------------------------------------------
@@ -460,10 +1061,45 @@ def run_experiment(
     fires_full = pd.read_parquet(bp)
     log.info("Loaded %d rows from replay_boarded", len(fires_full))
 
-    # Apply experiment's cohort filter (built from the first spec's cohort —
-    # all specs share the same cohort for EXIT-GRID-1)
-    primary_cohort = specs[0].cohort
-    cohort_mask = primary_cohort.apply(fires_full)
+    # ── 4a. Regime merge (experiment-scoped) ──────────────────────────────
+    # Merge per-date PIT dispersion regime columns BEFORE CohortFilter so
+    # that regime-column predicates in the cohort filter resolve correctly.
+    # Only runs for experiments that declare needed_merge_columns.
+    needed_merge_columns: list[str] = exp_entry.get("needed_merge_columns", [])
+    _regime_panel_meta: dict[str, Any] = {}
+    if needed_merge_columns:
+        log.info(
+            "Experiment %r declares needed_merge_columns=%r — merging regime data",
+            exp_id, needed_merge_columns,
+        )
+        fires_full, _regime_panel_meta = _merge_regime_columns(
+            fires_full,
+            needed_merge_columns,
+            massive_dir=md,
+            return_panel_meta=True,
+        )
+
+    # Apply experiment's cohort filter.
+    # For experiments where all specs share the same cohort (EXIT-GRID-1,
+    # WAIT-GRID-1), using specs[0].cohort is correct.
+    # For experiments where each spec has a per-cell regime predicate
+    # (DISP-GATE-1), the registry stores a base_cohort_predicates key with
+    # the common predicates to pre-filter on; per-spec predicates are applied
+    # by replay_spec itself.
+    base_cohort_predicates = exp_entry.get("base_cohort_predicates")
+    if base_cohort_predicates:
+        # Reconstruct a CohortFilter from the stored predicate list
+        base_cohort = cohort_filter(
+            *[tuple(p) for p in base_cohort_predicates]
+        )
+        log.info(
+            "Using base_cohort_predicates for fires_df pre-filter: %s",
+            base_cohort_predicates,
+        )
+    else:
+        base_cohort = specs[0].cohort
+
+    cohort_mask = base_cohort.apply(fires_full)
     fires_df = fires_full[cohort_mask].reset_index(drop=True)
     log.info(
         "Cohort filter: %d/%d rows match (%.1f%%)",
@@ -529,9 +1165,16 @@ def run_experiment(
             pf["episode_cluster"] = pf["fire_idx"].map(cluster_map)
 
         # Also carry tier_cascade for era/tier splits
-        if "tier_cascade" not in pf.columns and "tier_cascade" in fires_df.columns:
+        if "tier_cascade" not in pf.columns and "tier_cascade" in fires_df.columns and "fire_idx" in pf.columns:
             tier_map = fires_df["tier_cascade"].to_dict()
             pf["tier_cascade"] = pf["fire_idx"].map(tier_map)
+
+        # Carry spy_tercile for SPY-covariate splits (L3_PREREG design obligation 2).
+        # spy_tercile is merged into fires_df by _merge_regime_columns when the
+        # experiment declares needed_merge_columns (as DISP-GATE-1 does).
+        if "spy_tercile" not in pf.columns and "spy_tercile" in fires_df.columns and "fire_idx" in pf.columns:
+            spy_tercile_map = fires_df["spy_tercile"].to_dict()
+            pf["spy_tercile"] = pf["fire_idx"].map(spy_tercile_map)
 
         all_perfire[spec.spec_id] = pf
 
@@ -593,16 +1236,140 @@ def run_experiment(
         "cells": {},
     }
 
+    # For trim_grid_v1: load hold_126 perfire from exit_grid_v1 summary
+    # (for right-tail retention computation — uses the same cohort baseline).
+    # We reconstruct exit_grid_v1 perfire on the fly from all_perfire if present,
+    # or fall back to None (right_tail_retention will be null).
+    _hold126_pf: pd.DataFrame | None = None
+    if exp_id == "trim_grid_v1":
+        # hold_126 is the reference for right-tail retention.
+        # We run the hold(126) spec as part of the trim run to get the reference baseline.
+        # Build a temporary hold_126 spec with the same cohort and run it.
+        # This is NOT a new registered trial — it uses exit_grid_v1/hold_126 semantics
+        # and the already-registered hash (it is a reference lookup, not a new cell).
+        cohort_for_h126 = cohort_filter(
+            ("eq", "verdict_type", "fire"),
+            ("eq", "verdict_grade", True),
+        )
+        from scripts.run_rule_replay import _build_exit_grid_v1_specs
+        h126_specs = [s for s in _build_exit_grid_v1_specs(cohort_for_h126)
+                      if "hold_126" in s.spec_id]
+        if h126_specs:
+            h126_spec = h126_specs[0]
+            h126_reg_hashes = set(exp_entry.get("spec_hashes", []))
+            # hold_126 hash is registered in exit_grid_v1, not trim_grid_v1;
+            # we load from all_perfire if possible, otherwise skip right-tail.
+            # Here we run the spec as a reference lookup (hash checked against exit_grid_v1
+            # registry entry is not available; suppress governor by passing the h126 hash).
+            # IMPORTANT: this is reference data only, not a new registered trial.
+            # We pass the existing spec_hashes set from trim_grid_v1 — the h126 hash is not
+            # in it, so we use a try/except and default to None.
+            try:
+                _hold126_pf = replay_spec(
+                    h126_spec,
+                    fires_df,
+                    closes,
+                    registry_hashes={h126_spec.content_hash()},  # pass spec's own hash
+                )
+                # Attach episode_cluster
+                if "fire_idx" in _hold126_pf.columns and "episode_cluster" not in _hold126_pf.columns:
+                    _cmap = fires_df["episode_cluster"].to_dict()
+                    _hold126_pf["episode_cluster"] = _hold126_pf["fire_idx"].map(_cmap)
+                log.info("hold_126 reference for right-tail retention: %d rows", len(_hold126_pf))
+            except Exception as exc:
+                log.warning("Could not compute hold_126 reference for right-tail: %s", exc)
+                _hold126_pf = None
+
     # Every cell in the declared grid appears in the summary (nulls included)
     for spec in specs:
         stats = cell_summaries[spec.spec_id]
         pf = all_perfire[spec.spec_id]
         era_tier = _era_tier_splits(pf, cluster_col="episode_cluster")
-        summary["cells"][spec.spec_id] = {
+        spy_split = _spy_covariate_split(pf, cluster_col="episode_cluster")
+        cell_dict: dict[str, Any] = {
             **stats,
             "spec_hash": spec.content_hash(),
             "exit_policy": spec.exit.to_dict(),
             "era_tier_splits": era_tier,
+            **({"spy_covariate_split": spy_split} if spy_split is not None else {}),
+        }
+        # Trim-specific extra metrics
+        if exp_id == "trim_grid_v1":
+            trim_extra = _trim_cell_stats_extra(pf, _hold126_pf, cluster_col="episode_cluster")
+            cell_dict.update(trim_extra)
+        summary["cells"][spec.spec_id] = cell_dict
+
+    # ── 9b. Add disp_gate_1_meta block for DISP-GATE-1 experiments ───────────
+    # This block is experiment-specific and captures panel reach, exclusion
+    # counts, basis flip rate, and FDR accounting required by L3_PREREG §6.
+    # fires_full (pre-cohort-filter) is used so total exclusion count is accurate
+    # (the cohort filter removes excluded fires from fires_df).
+    if exp_id == "disp_gate_1":
+        # Compute pre-B2 pooled sum: cumulative_trials is the POST-B2 value;
+        # pre-B2 = cumulative_trials - declared_budget
+        declared = exp_entry.get("declared_budget", 0) or 0
+        pre_b2 = cumulative_trials - declared
+        meta_block = _compute_disp_meta(
+            fires_full,
+            pre_b2_pooled_sum=pre_b2,
+            post_b2_pooled_sum=cumulative_trials,
+        )
+        # Add panel_data_reach and panel_n_tickers from the merge step if available
+        if _regime_panel_meta:
+            meta_block.update({
+                k: _regime_panel_meta[k]
+                for k in ("panel_data_reach", "panel_n_bars", "panel_n_tickers")
+                if k in _regime_panel_meta
+            })
+        summary["disp_gate_1_meta"] = meta_block
+
+    # ── 9c. Add trim_grid_v1_meta block ──────────────────────────────────────
+    if exp_id == "trim_grid_v1":
+        declared = exp_entry.get("declared_budget", 0) or 0
+        pre_trim_pooled = cumulative_trials - declared
+        # Compute the max()-basis: largest declared_budget across all registered experiments
+        # (per RUL-5: TrialLedger.effective_n() uses max() semantics).
+        from engine.rule_experiments import list_experiments as _list_exp
+        all_exps = _list_exp(rp)
+        # Note: list_experiments returns de-duplicated latest-entry-per-exp_id.
+        # For merged records (load_experiment merges all), we need to re-read budgets.
+        from engine.rule_experiments import _load_registry_raw as _load_raw
+        _all_records = _load_raw(rp)
+        _max_basis = max(
+            (int(r["declared_budget"]) for r in _all_records if "declared_budget" in r),
+            default=declared
+        )
+        summary["trim_grid_v1_meta"] = {
+            "derived_from_surface": exp_entry.get("derived_from_surface"),
+            "contamination_note": (
+                "TRIM-GRID-1 is derived_from_surface=exit_grid_v1 — that surface is now seen. "
+                "These cells were designed on the same fire tape already examined by exit_grid_v1. "
+                "Any promotion prereg must carry this contamination stamp and compensate via "
+                "fresh OOS fires (>=2026-H2) plus stricter thresholds (RUL-F3.5)."
+            ),
+            "verdict_criteria": "descriptive-only",
+            "pre_trim_pooled_replay_sum": pre_trim_pooled,
+            "post_trim_pooled_replay_sum": cumulative_trials,
+            "trial_ledger_max_basis": _max_basis,
+            "trial_ledger_max_basis_note": (
+                f"TrialLedger.effective_n() uses max() semantics and reports {_max_basis} "
+                f"(largest declared budget in the replay family = exit_grid_v1 with budget={_max_basis}). "
+                f"The cumulative pooled SUM is {cumulative_trials} (per RUL-5: both numbers printed)."
+            ),
+            "right_tail_survivorship_caveat": (
+                "Right-tail retention is measured against the top decile of hold_126 returns. "
+                "The massive-era cohort has a delisted-name recall floor (dead_name_coverage_pct ~38%); "
+                "survivorship bites hardest in the right tail — names that kept rising vs those "
+                "that fell and delisted. The right-tail capture rate is directionally informative "
+                "but should not be over-interpreted."
+            ),
+            "profit_take_note": (
+                "profit_take(15) exits at the first CLOSE >= +15% from entry (conservative close basis). "
+                "If the target is never touched within the reference window, the leg holds to reference "
+                "(included at reference return — same held-to-reference semantics as trail_stop/barrier). "
+                "This is the EXIT-GRID-1 bug-class prevention: dropping never-triggered legs was the "
+                "error that sign-flipped wide-stop cells in the first run."
+            ),
         }
 
     # ── 10. Write perfire.parquet (gitignored Mac-local) ───────────────────

@@ -76,6 +76,16 @@ jobs:
           echo "$VENV/bin" >> "$GITHUB_PATH"
           "$VENV/bin/python" -m pip install --quiet --upgrade pip
       - run: pip install -r requirements.txt
+      - name: restore attention store from R2 (wiki chip reads it at render)
+        # data/attention/*.parquet are git-ignored (R2 data plane; deep history 2015-07→,
+        # kept current by daily.yml's collect job). Non-fatal: absent store = the
+        # attention chip is silently absent this render (build_attention_data -> None).
+        env:
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: python -m scripts.fetch_r2 --dirs attention || echo "::warning::attention restore failed (non-fatal — attention chip absent/stale this render)"
       # Restore the gitignored breadth close caches (the stock-search libraries +
       # build_site's per-name analyze read constituent closes) and the intraday cache
       # (chart data). Restore-only — the nightly `collect` job produces/saves them; we
@@ -271,6 +281,7 @@ jobs:
               brun sectorcyc     "sector cycle intelligence (build_sector_cycles)" scripts.build_sector_cycles
               brun countrycyc    "country cycle intelligence (build_country_cycles)" scripts.build_country_cycles
               brun cycle         "cycle intelligence shell (build_cycle)"        scripts.build_cycle
+              brun measurement   "cycle measurement hub (build_measurement)"    scripts.build_measurement
               brun markets       "global market cycles shell (build_markets)"    scripts.build_markets
               brun policy_intent "policy intent desk (policy_intent_desk)"      engine.policy_intent_desk
               brun policy_watch  "fed & policy watch (build_policy_watch)"      scripts.build_policy_watch
@@ -278,7 +289,7 @@ jobs:
             }
             cl_markets & cl_china & cl_hk & cl_gex & cl_baskets & cl_misc &
             wait
-            local ORDER="china hk commodities spr forex bonds crossasset transmission discovery macro_context gex_board vol_regime options_flow options_skew options_ivspread baskets news methodology seasonality reports sectorcyc countrycyc cycle markets policy_intent policy_watch index_changes"
+            local ORDER="china hk commodities spr forex bonds crossasset transmission discovery macro_context gex_board vol_regime options_flow options_skew options_ivspread baskets news methodology seasonality reports sectorcyc countrycyc cycle measurement markets policy_intent policy_watch index_changes"
             echo "### ⏱ parallel band — per-builder wall-time" >> "$GITHUB_STEP_SUMMARY"
             for slug in $ORDER; do
               [ -f "$ART/$slug.log" ] || continue
@@ -388,8 +399,18 @@ jobs:
           # EVERY render push before. `-X theirs` keeps the commits being REPLAYED (our
           # fresh render) on conflict.
           for i in 1 2 3 4 5; do
-            if git pull --rebase --autostash -X theirs origin main && git push; then
-              echo "pushed rendered site on attempt $i"; exit 0
+            if git pull --rebase --autostash -X theirs origin main; then
+              # post-rebase template↔site re-sync (ui.template_site_sync): -X theirs can
+              # resurrect this run's checkout-time template copies over a reword that merged
+              # mid-render (2026-07-07: engine-render commit 2ae709f9f0 reverted #1793's
+              # site-side de-escalation in sector_cycles.js this way). templates/ is now
+              # fresh post-rebase main — re-copy and fold any delta into a follow-up commit.
+              python -m scripts.check_template_site_sync --fix || true
+              if ! git diff --quiet -- site/; then
+                git add site/ && git commit -m "render-sync: re-copy template assets post-rebase (site==templates guard)" \
+                  || echo "::warning::render-sync commit failed (non-fatal — pages publish gate backstops divergence)"
+              fi
+              if git push; then echo "pushed rendered site on attempt $i"; exit 0; fi
             fi
             git rebase --abort 2>/dev/null || true
             echo "render push attempt $i failed (rebase/race); re-syncing"; sleep $((i * 7))

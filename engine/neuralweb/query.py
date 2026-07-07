@@ -118,6 +118,7 @@ __all__ = [
     "adapt_reflexes",
     "adapt_cortex_attention",
     "adapt_options_entry",
+    "adapt_personality_context",
     "build_index",
     "write_index",
     "load_index",
@@ -226,6 +227,7 @@ LEDGER_ENUM: tuple[str, ...] = (
     "cortex_attention",     # Neural Web W7b PR2: graded cortex attention claims
     "options_entry",        # Options→NW W-B (RO-5): ungraded-honest options state context
     "macro_context",        # R5 PR-C: macro snapshot context rows (scope_type='macro')
+    "personality_context",  # Stock Personality R-SP20: slim label join by ticker (display/context)
 )
 
 # ---------------------------------------------------------------------------
@@ -1040,6 +1042,7 @@ def build_index(
         ("cortex_attention", lambda: adapt_cortex_attention(root)),  # W7b PR2 — graded cortex attention
         ("options_entry",  lambda: adapt_options_entry(root)),       # Options→NW W-B — ungraded-honest context
         ("macro_context",  lambda: adapt_macro_context(root)),        # R5 PR-C — macro snapshot context rows
+        ("personality_context", lambda: adapt_personality_context(root)),  # R-SP20 — slim label join
     ]
 
     for name, fn in adapters:
@@ -2181,3 +2184,115 @@ def adapt_cortex_attention(
 
     df_out = pd.DataFrame(rows)
     return _ensure_columns(df_out), gaps
+
+
+# ---------------------------------------------------------------------------
+# adapt_personality_context — Stock Personality R-SP20
+# ---------------------------------------------------------------------------
+
+def adapt_personality_context(
+    root: Path | str | None = None,
+) -> tuple[pd.DataFrame, list[str]]:
+    """Adapt site/factordata/stock_personality.json → ledger='personality_context'.
+
+    DISPLAY/CONTEXT ONLY (R-SP19/R-SP20)
+    -------------------------------------
+    Joins slim personality labels (chart labels, modes, archetype) onto spine
+    rows by ticker from the site aggregate.  Every row folds as
+    ``outcome_graded=False``, ``direction=0``: these are CONTEXT records, not
+    directional claims, and carry no size_binding (R-SP19 descriptive tier).
+
+    Cortex may cite these labels in de-escalation memos (R-SP20); labels may
+    never originate, score, rank, or escalate (R-SP19 NEVER guarantees).
+
+    Field mapping from per_ticker:
+      arch      → archetype (spine "archetype" column)
+      chart[0]  → symbol suffix slot; emitted in signal_id only
+      modes[0]  → emitted in family field for cortex query surface
+
+    Fail-open: missing/unreadable aggregate → gap note + zero rows.
+    """
+    gaps: list[str] = []
+
+    if root is not None:
+        data_root = Path(root)
+    else:
+        data_root = Path(__file__).resolve().parent.parent.parent
+
+    path = data_root / "site" / "factordata" / "stock_personality.json"
+    if not path.exists():
+        gaps.append("personality_context: stock_personality.json absent — zero rows")
+        return _empty_df(), gaps
+
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+    except Exception as e:  # noqa: BLE001
+        gaps.append(f"personality_context: stock_personality.json unreadable ({e}) — zero rows")
+        return _empty_df(), gaps
+
+    if not isinstance(raw, dict):
+        gaps.append("personality_context: aggregate not a dict — zero rows")
+        return _empty_df(), gaps
+
+    per_ticker: dict = raw.get("per_ticker") or {}
+    if not per_ticker:
+        gaps.append("personality_context: per_ticker empty — zero rows")
+        return _empty_df(), gaps
+
+    as_of_global = _str_date(raw.get("as_of"))
+
+    rows: list[dict] = []
+    skipped = 0
+
+    for ticker, rec in per_ticker.items():
+        if not isinstance(rec, dict):
+            skipped += 1
+            continue
+        asof = as_of_global
+        if not asof:
+            skipped += 1
+            continue
+
+        # Slim label extraction (chart first, then modes, then archetype)
+        arch = _safe_str(rec.get("arch"))
+        charts: list[str] = [c for c in (rec.get("chart") or []) if isinstance(c, str)]
+        modes: list[str] = [m for m in (rec.get("modes") or []) if isinstance(m, str)]
+
+        primary_chart = charts[0] if charts else None
+        primary_mode = modes[0] if modes else None
+
+        family_label = (
+            f"personality.{primary_mode}" if primary_mode
+            else "personality.normal"
+        )
+
+        sig = f"personality_context:{asof}:{ticker}"
+
+        row: dict[str, Any] = {c: None for c in COLUMNS}
+        row["signal_id"]      = sig
+        row["engine"]         = "stock_personality"
+        row["family"]         = family_label
+        row["ledger"]         = "personality_context"
+        row["as_of"]          = asof
+        row["symbol"]         = ticker
+        row["scope_type"]     = "entity"
+        row["universe"]       = "personality_context"
+        row["horizon"]        = None
+        row["direction"]      = 0           # CONTEXT record: never directional
+        row["size_binding"]   = False
+        row["fill_basis"]     = "personality_site_aggregate"
+        row["score"]          = None
+        row["outcome_excess"] = None
+        row["outcome_graded"] = False       # UNGRADED-HONEST by design
+        row["graded_at"]      = None
+        row["is_context"]     = True
+        row["archetype"]      = arch        # slim label for cortex surface
+        rows.append(row)
+
+    if skipped:
+        gaps.append(f"personality_context: {skipped} rows skipped (no asof/rec)")
+    gaps.append(f"personality_context: {len(rows)} context rows emitted (ungraded-honest)")
+
+    if not rows:
+        return _empty_df(), gaps
+    return _ensure_columns(pd.DataFrame(rows)), gaps

@@ -1,0 +1,166 @@
+{
+  "schema": "neuralweb.evidence_clock.v1",
+  "as_of": "2026-07-06",
+  "generated_utc": "2026-07-06T10:00:00Z",
+  "authority": "display_only",
+  "summary": {
+    "n_rows": 6,
+    "by_state": {
+      "overdue": 1,
+      "due": 1,
+      "human_review": 1,
+      "missing": 0,
+      "stale": 1,
+      "blocked": 0,
+      "not_ready": 0,
+      "promotion_eligible": 0,
+      "accruing": 2
+    },
+    "n_acknowledged": 0,
+    "top_due": {
+      "clock_id": "oracle-rotation-W28-h1",
+      "due_at": "2026-07-06",
+      "owner_program": "oracle-turn-asymmetry"
+    },
+    "morning_line": "1 overdue, 1 due, 1 human_review, 1 stale, 2 accruing. Top due: oracle-rotation-W28-h1."
+  },
+  "rows": [
+    {
+      "clock_id": "neural-web-kernel-W29-batch",
+      "source_system": "neuralweb",
+      "subject_id": "kernel_batch_2026q3",
+      "subject_type": "kernel_run",
+      "owner_program": "neural-web-program",
+      "clock_type": "scheduled_batch",
+      "due_at": "2026-07-04",
+      "as_of": "2026-07-06",
+      "state": "overdue",
+      "date_state": "2026-07-06",
+      "readiness": {
+        "blocking_reason": "kernel_estimates.parquet not refreshed since 2026-07-01"
+      },
+      "allowed_actions": ["rerun", "acknowledge"],
+      "forbidden_actions": ["promote"],
+      "evidence_refs": [],
+      "regenerate_cmd": "python -m scripts.build_kernel",
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "oracle-rotation-W28-h1",
+      "source_system": "oracle",
+      "subject_id": "oracle_h1_rotation",
+      "subject_type": "hypothesis",
+      "owner_program": "oracle-turn-asymmetry",
+      "clock_type": "come_back",
+      "due_at": "2026-07-06",
+      "as_of": "2026-07-06",
+      "state": "due",
+      "date_state": "2026-07-06",
+      "readiness": {
+        "blocking_reason": null
+      },
+      "allowed_actions": ["review", "acknowledge"],
+      "forbidden_actions": [],
+      "evidence_refs": ["data/neuralweb/cortex/memo.json"],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "nontech-bottom-LT3a-accrual",
+      "source_system": "entry_stack",
+      "subject_id": "lt3a_longhold",
+      "subject_type": "accrual_window",
+      "owner_program": "nontech-bottom-program",
+      "clock_type": "accrual",
+      "due_at": "2027-06-01",
+      "as_of": "2026-07-06",
+      "state": "human_review",
+      "date_state": "2026-07-06",
+      "readiness": {
+        "blocking_reason": "operator must confirm long-hold thesis scope before advancing"
+      },
+      "allowed_actions": ["human_approve", "human_reject"],
+      "forbidden_actions": ["auto_advance"],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": {"memo": "LT-3a thesis review pending Q3 data"}
+    },
+    {
+      "clock_id": "factor-panel-h3-floor",
+      "source_system": "factor_intelligence",
+      "subject_id": "h3_floor_check",
+      "subject_type": "hypothesis",
+      "owner_program": "factor-intelligence-program",
+      "clock_type": "floor_check",
+      "due_at": null,
+      "as_of": "2026-07-01",
+      "state": "stale",
+      "date_state": "2026-07-06",
+      "readiness": {
+        "blocking_reason": "factor_intelligence_state.json as_of is 2026-07-01, SLA=30h exceeded"
+      },
+      "allowed_actions": ["rerun"],
+      "forbidden_actions": [],
+      "evidence_refs": ["data/neuralweb/factor_intelligence_state.json"],
+      "regenerate_cmd": "python -m scripts.build_factor_intelligence_state",
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "entry-stack-pm0-price-memory",
+      "source_system": "entry_stack",
+      "subject_id": "pm0_price_memory_prereg",
+      "subject_type": "experiment",
+      "owner_program": "entry-intelligence-program",
+      "clock_type": "accrual",
+      "due_at": "2026-10-01",
+      "as_of": "2026-07-06",
+      "state": "accruing",
+      "date_state": "2026-07-06",
+      "readiness": {
+        "blocking_reason": null
+      },
+      "allowed_actions": [],
+      "forbidden_actions": ["early_verdict"],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    },
+    {
+      "clock_id": "china-cycles-cctv-backfill",
+      "source_system": "china_intel",
+      "subject_id": "cctv_gap_backfill",
+      "subject_type": "data_task",
+      "owner_program": "china-intel-cycles-program",
+      "clock_type": "accrual",
+      "due_at": "2026-09-01",
+      "as_of": "2026-07-06",
+      "state": "accruing",
+      "date_state": "2026-07-06",
+      "readiness": {
+        "blocking_reason": null
+      },
+      "allowed_actions": [],
+      "forbidden_actions": [],
+      "evidence_refs": [],
+      "regenerate_cmd": null,
+      "acknowledged": false,
+      "review": null,
+      "packet": null
+    }
+  ],
+  "gaps": [],
+  "caveats": [
+    "display_only: this artifact is context only; no signals or scoring authority",
+    "authority: display_only per constitution"
+  ]
+}

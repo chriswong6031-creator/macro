@@ -1,0 +1,163 @@
+respondent_pattern,ticker,valid_from,valid_to,tier,notes
+APPLE,AAPL,,,A,Apple Inc - frequent ITC respondent
+SAMSUNG ELECTRONICS,005930.KQ,,,B,Samsung - Korean listed only use KQ note
+SAMSUNG,005930.KQ,,,B,Samsung Electronics
+LG ELECTRONICS,066570.KQ,,,B,LG Electronics Korean listed
+HTC CORPORATION,,,,X,HTC - delisted/private Taiwan
+MOTOROLA,MSI,,,A,Motorola Solutions (post-split); pre-2011 Motorola Inc maps to MSI post 2011
+MOTOROLA MOBILITY,,2012-01-01,,X,Acquired by Google 2012 - not separately listed
+GOOGLE,GOOGL,,,A,Google LLC respondent
+ALPHABET,GOOGL,,,A,Alphabet Inc
+NOKIA,NOK,,,A,Nokia Corporation ADR
+BLACKBERRY,BB,,,A,BlackBerry Limited
+QUALCOMM,QCOM,,,A,QUALCOMM Inc
+INTEL,INTC,,,A,Intel Corporation
+MICROSOFT,MSFT,,,A,Microsoft Corporation
+DELL,DELL,2018-12-28,,A,Dell Technologies post-IPO
+DELL TECHNOLOGIES,DELL,2018-12-28,,A,Dell Technologies
+HEWLETT PACKARD,HPQ,,,A,HP Inc (after split)
+HP INC,HPQ,,,A,HP Inc
+HEWLETT PACKARD ENTERPRISE,HPE,2015-11-02,,A,HPE post-split
+LENOVO,0992.HK,,,B,Lenovo Group Hong Kong listed
+LENOVO GROUP,0992.HK,,,B,Lenovo Group HK
+HUAWEI,,,,X,Private Chinese company - not listed
+ZTE,,,,X,ZTE listed in China/HK but not US
+OPPO,,,,X,OPPO - private
+XIAOMI,,,,X,Xiaomi - HK listed not US
+SONY,SONY,,,A,Sony Group Corporation ADR
+SONY CORPORATION,SONY,,,A,Sony ADR
+NINTENDO,NTDOY,,,A,Nintendo ADR
+PANASONIC,,,,X,Panasonic not US listed
+SHARP,,,,X,Sharp - not US listed
+TOSHIBA,,,,X,Toshiba - not US listed
+ERICSSON,ERIC,,,A,Telefonaktiebolaget LM Ericsson ADR
+CANON,CAJ,,,A,Canon Inc ADR
+NIKON,,,,X,Nikon not US ADR
+FUJIFILM,,,,X,Fujifilm not US listed
+SEIKO EPSON,,,,X,Epson not US listed
+EPSON,,,,X,Epson not US listed
+RICOH,,,,X,Ricoh not US listed
+BROTHER,,,,X,Brother Industries not US listed
+KONICA MINOLTA,,,,X,Not US listed
+XEROX,XRX,,,A,Xerox Holdings Corporation
+AMAZON,AMZN,,,A,Amazon.com Inc
+NETFLIX,NFLX,,,A,Netflix Inc
+META PLATFORMS,META,,,A,Meta Platforms Inc
+FACEBOOK,META,,,A,Meta Platforms Inc
+TAIWAN SEMICONDUCTOR,TSM,,,A,TSMC ADR
+TSMC,TSM,,,A,TSMC ADR
+MEDIATEK,,,,X,MediaTek - Taiwan listed only
+BROADCOM,AVGO,,,A,Broadcom Inc
+MARVELL TECHNOLOGY,MRVL,,,A,Marvell Technology Group
+TEXAS INSTRUMENTS,TXN,,,A,Texas Instruments
+NVIDIA,NVDA,,,A,NVIDIA Corporation
+AMD,AMD,,,A,Advanced Micro Devices
+ADVANCED MICRO DEVICES,AMD,,,A,Advanced Micro Devices
+REALTEK,,,,X,Realtek - Taiwan listed only
+MICRON TECHNOLOGY,MU,,,A,Micron Technology
+WESTERN DIGITAL,WDC,,,A,Western Digital Corporation
+SEAGATE TECHNOLOGY,STX,,,A,Seagate Technology Holdings
+NETGEAR,NTGR,,,A,NETGEAR Inc
+CISCO SYSTEMS,CSCO,,,A,Cisco Systems Inc
+JUNIPER NETWORKS,JNPR,,,A,Juniper Networks Inc
+ORACLE,ORCL,,,A,Oracle Corporation
+IBM,IBM,,,A,International Business Machines
+SAP,SAP,,,A,SAP SE ADR
+SIEMENS,,,,X,Siemens AG - German listed not US ADR
+BOSCH,,,,X,Robert Bosch - private
+PHILIPS,PHG,,,A,Philips N.V. ADR
+KONINKLIJKE PHILIPS,PHG,,,A,Philips ADR
+INTERDIGITAL,IDCC,,,A,InterDigital Inc - frequent NPE complainant (not respondent)
+VIA TECHNOLOGIES,,,,X,VIA - Taiwan listed only
+BANDAI NAMCO,,,,X,Bandai Namco - Japanese listed
+CAPCOM,,,,X,Capcom not US listed
+SEGA,,,,X,Sega not US listed
+SQUARE ENIX,,,,X,Square Enix not US listed
+ACTIVISION,ATVI,,2023-10-13,A,Activision Blizzard - acquired by MSFT 2023
+ACTIVISION BLIZZARD,ATVI,,2023-10-13,A,Activision Blizzard
+ELECTRONIC ARTS,EA,,,A,Electronic Arts
+TAKE-TWO INTERACTIVE,TTWO,,,A,Take-Two Interactive Software
+FORD MOTOR,F,,,A,Ford Motor Company
+FORD,F,,,A,Ford Motor Company
+GENERAL MOTORS,GM,,,A,General Motors Company
+GM,GM,,,A,General Motors
+TESLA,TSLA,,,A,Tesla Inc
+TOYOTA,TM,,,A,Toyota Motor Corporation ADR
+TOYOTA MOTOR,TM,,,A,Toyota Motor ADR
+HONDA,HMC,,,A,Honda Motor Co ADR
+HONDA MOTOR,HMC,,,A,Honda Motor ADR
+HYUNDAI,,,,X,Hyundai Motor - Korean listed not US
+KIA,,,,X,Kia Corporation - Korean listed
+NISSAN,,,,X,Nissan Motor - Japanese listed
+VOLKSWAGEN,,,,X,VW - German listed
+BMW,,,,X,BMW - German listed
+MERCEDES-BENZ,,,,X,Mercedes - German listed
+DAIMLER,,,,X,Daimler - German listed pre-split
+STELLANTIS,STLA,,,A,Stellantis N.V.
+CHRYSLER,STLA,,,A,Maps to Stellantis (formerly FCA)
+FIAT CHRYSLER,STLA,,2021-01-16,A,FCA merged into Stellantis 2021
+CATERPILLAR,CAT,,,A,Caterpillar Inc
+DEERE,DE,,,A,Deere and Company
+JOHN DEERE,DE,,,A,Deere and Company
+KOMATSU,,,,X,Komatsu - Japanese listed
+DOOSAN,,,,X,Doosan - Korean listed
+HITACHI,,,,X,Hitachi - Japanese listed
+MITSUBISHI,,,,X,Mitsubishi Heavy - Japanese listed
+ABBOTT LABORATORIES,ABT,,,A,Abbott Laboratories
+BAXTER INTERNATIONAL,BAX,,,A,Baxter International
+BECTON DICKINSON,BDX,,,A,Becton Dickinson and Company
+BOSTON SCIENTIFIC,BSX,,,A,Boston Scientific Corporation
+EDWARDS LIFESCIENCES,EW,,,A,Edwards Lifesciences
+MEDTRONIC,MDT,,,A,Medtronic plc
+STRYKER,SYK,,,A,Stryker Corporation
+ZIMMER BIOMET,ZBH,,,A,Zimmer Biomet Holdings
+JOHNSON AND JOHNSON,JNJ,,,A,Johnson and Johnson
+JOHNSON & JOHNSON,JNJ,,,A,Johnson and Johnson
+PFIZER,PFE,,,A,Pfizer Inc
+ELI LILLY,LLY,,,A,Eli Lilly and Company
+NOVO NORDISK,NVO,,,A,Novo Nordisk ADR
+ROCHE,,,,X,Roche - Swiss listed not US
+NOVARTIS,NVS,,,A,Novartis AG ADR
+ASTRAZENECA,AZN,,,A,AstraZeneca PLC ADR
+SANOFI,SNY,,,A,Sanofi ADR
+BAYER,,,,X,Bayer - German listed
+BASF,,,,X,BASF - German listed
+3M,MMM,,,A,3M Company
+HONEYWELL,HON,,,A,Honeywell International
+GENERAL ELECTRIC,GE,,,A,GE Aerospace (post-spinoffs)
+EMERSON ELECTRIC,EMR,,,A,Emerson Electric
+ROCKWELL AUTOMATION,ROK,,,A,Rockwell Automation
+ILLINOIS TOOL WORKS,ITW,,,A,Illinois Tool Works
+DANAHER,DHR,,,A,Danaher Corporation
+CORNING,GLW,,,A,Corning Inc
+DUPONT,DD,,,A,DuPont de Nemours
+DOW,DOW,,,A,Dow Inc
+LUMENTUM,LITE,,,A,Lumentum Holdings
+II-VI INCORPORATED,IIVI,,2023-01-14,A,II-VI before merger with Coherent
+COHERENT,COHR,2023-01-14,,A,Coherent Corp post-merger
+LUMILEDS,,,,X,Lumileds - private
+CREE,WOLF,,,A,Wolfspeed (formerly Cree)
+WOLFSPEED,WOLF,,,A,Wolfspeed Inc
+ON SEMICONDUCTOR,ON,,,A,onsemi (formerly On Semiconductor)
+ONSEMI,ON,,,A,onsemi
+SKYWORKS SOLUTIONS,SWKS,,,A,Skyworks Solutions
+QORVO,QRVO,,,A,Qorvo Inc
+CIRRUS LOGIC,CRUS,,,A,Cirrus Logic Inc
+SYNAPTICS,SYNA,,,A,Synaptics Inc
+DIODES INCORPORATED,DIOD,,,A,Diodes Incorporated
+SEMTECH,SMTC,,,A,Semtech Corporation
+LATTICE SEMICONDUCTOR,LSCC,,,A,Lattice Semiconductor
+MICROSEMI,,,,X,Microsemi - acquired by Microchip 2018
+MICROCHIP TECHNOLOGY,MCHP,,,A,Microchip Technology
+ATMEL,,,,X,Atmel - acquired by Microchip 2016
+XILINX,,,,X,Xilinx - acquired by AMD 2022
+ALTERA,,,,X,Altera - acquired by Intel 2015
+NETLIST,NLST,,,A,Netlist Inc
+DIEBOLD NIXDORF,DBD,,,A,Diebold Nixdorf
+NCR,VYX,,,A,NCR Voyix (post-split)
+ZEBRA TECHNOLOGIES,ZBRA,,,A,Zebra Technologies
+HONEYWELL SCANNING,,,,X,Division of Honeywell
+INTERMEC,,,,X,Acquired by Honeywell 2013
+DATALOGIC,,,,X,Datalogic - Italian listed
+HAND HELD PRODUCTS,,,,X,Acquired by Honeywell
+SYMBOL TECHNOLOGIES,,,,X,Acquired by Motorola Solutions

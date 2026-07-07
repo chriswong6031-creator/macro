@@ -148,6 +148,11 @@ def _conviction(divs: list, news_feed: dict, news_sent: dict, conv_map: dict, po
     out = []
     for d in divs or []:
         try:
+            # Skip venue-family rows — they have no sector ETF and their outcome metric
+            # has not matured; injecting them into _conviction would mislabel the gap as
+            # a sector RS reading. Re-enable once n_resolved >= 3 venue rows exist.
+            if d.get("family") == "venue":
+                continue
             etf = d.get("sector_etf")
             sign = d.get("sign")
             strength = float(d.get("strength") or 0.0)

@@ -300,7 +300,7 @@
         "hostile": [
           "distressed — hygiene screens handle these before cascade"
         ],
-        "note": "Tier-A cascade: no archetype restriction; archetype enters as S1/S2 context"
+        "note": "Tier-A cascade: no archetype restriction; archetype enters as S1/S2 context. HTF super-tiers: S1 badge (2W+3D confluence, display-only, rank-neutral, 2026-07-06) and S2 shadow (3D+1W+2W-pending, never displayed, parked ≥2026-10) are defined in engine/confluence_tiers.py and propagated via signal_gate htf_s1/htf_s2 keys. See TIERED_CASCADE.md §9."
       },
       "regime_scope": {
         "hypothesized_supportive": [
@@ -1436,7 +1436,7 @@
       "species_id": "S11",
       "version": "1.0",
       "name": "Buyback-Floor Washout",
-      "validation_status": "phase0",
+      "validation_status": "falsified",
       "deployment_status": "unshipped",
       "mechanism": "Companies that are actually shrinking their share count during a washout provide a buyback floor — realized buyback activity (not announcements) signals management confidence at a price they consider cheap. Keys on realized share-count DECLINE (from EDGAR quarterly); never on buyback announcements. CN precedent: buybacks kept a capped confirmer role. Debt-funded buybacks are the named failure mode. Gated on same EDGAR extraction as S10.",
       "horizon_class": "positional",
@@ -1523,9 +1523,9 @@
         "flip_criteria": "§1.3 template at positional horizons. Debt-funded buyback detection required. Gated on EDGAR re-crawl."
       },
       "gating": {
-        "come_back_on": "2026-07-03",
-        "cadence": "quarterly",
-        "maturation": "W5+ phase-0. Same EDGAR re-crawl gate as S10. Completion date populates come_back_on. GATE CLEARED: backfill completed 2026-07-03 — same store as S10 (data/edgar/statements_quarterly.parquet)."
+        "come_back_on": null,
+        "cadence": "none",
+        "maturation": "FALSIFIED 2026-07-06 (W5 phase-0). 9,392 matured washout-at-filing fires; clean buyback arm A vs washout-without-buyback control C at clean15_126: stop-out spread +0.25pp (any-decline) / −1.28pp (material), sign-unstable across time halves, per-name majority 43.6%/36.7% (minority), BH q=0.677 — below every registered gate (n≥300/side was the only gate met). Debt-funded arm B confirmed adverse (material: 70.82% stop-out vs 64.45% control), validating the rejection rule's premise but not the species. Terminal. See research/species/W5_S11_REPORT.md + §1.6 graveyard."
       },
       "trial_count": 2
     },
@@ -1930,7 +1930,7 @@
       "species_id": "F3_ANTICHASE",
       "version": "1.0",
       "name": "Anti-Chase Hard Gate (F3 ext_z)",
-      "validation_status": "phase0_passed",
+      "validation_status": "accruing",
       "deployment_status": "chip",
       "mechanism": "Names with ext_z > 2.0 are in the PARABOLIC tail: priced more than 2 own-history σ above their 200-day average. P1.3 established this cohort has higher stop-out (+0.43pp at 21d, +5.0pp at 63d) and dead-money (+3.6pp at 21d) incidence vs the unblocked population on production-trigger fires. The mechanism is forced-buyer exhaustion: a parabolic extension means every short-term buyer has already bought; when momentum stalls, there is no marginal buyer to absorb the first seller. The gate does not predict when the reversal happens — only that it stops the board from confirming a chase entry.",
       "horizon_class": "positional",
@@ -2025,14 +2025,22 @@
       },
       "deployment_status_path": "chip -> ledger_fields -> gate_weight (shadow) -> gate_weight (enforcing)",
       "prereg_doc": "research/entry_intel/P2_1A_ANTICHASE_GATE_PREREG.md",
-      "registered": "2026-07-05"
+      "registered": "2026-07-05",
+      "_lifecycle_log": [
+        {
+          "from": "phase0_passed",
+          "to": "accruing",
+          "reviewer": "Fable",
+          "reason": "R-SP16 schema legalization (STOCK_PERSONALITY_MASTERPLAN_BY_FABLE.md): 'phase0_passed' is not a legal validation_status; phase-0 complete with live chip deployment maps to 'accruing'. Semantic content unchanged."
+        }
+      ]
     },
     {
       "species_id": "EI-F1D-RW",
       "version": "1.0",
       "name": "Washout Depth × Interaction Rank-Weight Shadow",
-      "validation_status": "shadow",
-      "deployment_status": "shadow_ledger",
+      "validation_status": "accruing",
+      "deployment_status": "ledger_fields",
       "mechanism": "Deep washout stocks (drawdown > 25% from prior 126-day high, within the 91-bar washout context window) combined with anti-chase pass (ext_z <= 2.0) and RS-favorable (sector quartile Q1 or Q2) receive a +0.10 bonus on the blend_sorted rank scale. The bonus is re-percentiled within-day to produce a shadow rank. Production ordering is UNTOUCHED — the shadow fields are additive ledger columns only. Primary config C6 (deep_trio = dd>25% AND ac-pass AND rs-favorable). Six ship-qualifying configs accrued: C1 (dd>25% solo), C3 (below-200DMA × washout), C5 (washout × ac × rs), C6 (dd>25% × ac × rs), C7 (dd>40% × ac × rs), C8 (below-200DMA × dd>25%). The depth gradient recovered the washout-as-rank-input line that the flat-binary reprobe killed: the flat binary pooled shallow (<25%) and deep (>25%) categories and the harmful shallow bulk cancelled the favorable deep tail.",
       "horizon_class": "positional",
       "primary_config": "C6",
@@ -2189,7 +2197,8 @@
           "logged_at": "ISO UTC timestamp"
         },
         "dedup": "keep-first per (asof, ticker)",
-        "provenance": "in-sample grid; forward ledger + cross-market passports are true OOS"
+        "provenance": "in-sample grid; forward ledger + cross-market passports are true OOS",
+        "flip_criteria": "Ship/kill adjudicated at monthly species review once the shadow ledger holds >= 25 forward episode clusters AND >= 2 calendar quarters of accrual: ship the rank-weight only if the C6 shadow rank shows the P2.5-direction safety improvement (63d stop-out and 21d dead-money deltas both favorable) out-of-sample; kill on sign reversal, mirroring the flat-binary F1 precedent. Fable-adjudicated; no automatic flip."
       },
       "gating": {
         "come_back_on": "monthly species review",
@@ -2200,7 +2209,96 @@
       "study_doc": "research/entry_intel/p1_runs/P2_5_STUDY/RESULTS.md",
       "registered": "2026-07-06",
       "whole_study_verdict": "PARTIAL_SHIP (6/8 configs ship-qualifying; C2 sign-unstable; C4 unfavorable)",
-      "deferred_items": "A3: washout_active/above_200 source asymmetry vs dd_pct (massive_stock_day) — low impact (20/20 boolean agreement spot-check), parity fix deferred; A4: rank-neutrality two-build proof artifact deferred (structural verification in REVIEW_F1D_SHADOW.md; first-nightly scheduled check covers production sanity)."
+      "deferred_items": "A3: washout_active/above_200 source asymmetry vs dd_pct (massive_stock_day) — low impact (20/20 boolean agreement spot-check), parity fix deferred; A4: rank-neutrality two-build proof artifact deferred (structural verification in REVIEW_F1D_SHADOW.md; first-nightly scheduled check covers production sanity).",
+      "market_scope": [
+        "US"
+      ],
+      "trial_count": 8,
+      "archetype_scope": {
+        "applies": [
+          "all US archetypes — the deep-washout depth gradient is archetype-agnostic at registration; the shadow forward ledger stratifies by archetype for the monthly review"
+        ],
+        "hostile": [
+          "none identified at registration (P2.5 provenance is in-sample-selected; hostility calls deferred to forward accrual)"
+        ]
+      },
+      "regime_scope": {
+        "hypothesized_supportive": "risk-off washout troughs (deep washouts require capitulation supply)",
+        "hypothesized_hostile": "melt-up / narrow-breadth advance (deep washouts scarce; shallow bulk dominates)",
+        "learnable_projection": "none pre-registered at birth — EI masterplan P2.5 marks the config grid in-sample-selected (shadow rung only); the forward ledger + CN/HK/CA passports are the true OOS. Projection may be pre-registered at first monthly review, <=2 axes / <=6 cells per SETUP_SPECIES §5.4."
+      },
+      "_lifecycle_log": [
+        {
+          "from": "shadow",
+          "to": "accruing",
+          "reviewer": "Fable",
+          "reason": "R-SP16 schema legalization (STOCK_PERSONALITY_MASTERPLAN_BY_FABLE.md): 'shadow'/'shadow_ledger' are not legal enums; live shadow forward ledger (since 2026-07-05) maps to validation_status=accruing + deployment_status=ledger_fields (additive ledger columns only — production ordering untouched). Backfilled archetype_scope/regime_scope/market_scope/trial_count (8 = P2.5 config grid C1-C8). Semantic content and custom fields (primary_config, tracked_variants) unchanged."
+        }
+      ]
+    },
+    {
+      "species_id": "S16",
+      "version": "1.0",
+      "name": "Squeeze Release",
+      "horizon_class": "rotational",
+      "validation_status": "accruing",
+      "deployment_status": "unshipped",
+      "mechanism": "Multi-week volatility compression ends with a direction-and-volume-confirmed release bar (FIRED_UP state from engine/vol_squeeze.assess_series). The release bar — not the quiet base — is the event. Requires dual BBWP+HVP percentile gate, min_duration>=5 bars compression, directional break of the squeeze box within release_window bars, and vol_confirm=1.3x average volume confirmation. Fidelity-pinned to engine/vol_squeeze.DEFAULTS (pctile_thresh=25, min_duration=5, release_window=3, vol_confirm=1.3).",
+      "adjacent_falsified": "H2 aged-quiet-base/calm-VCP arming (SETUP_SPECIES section 1.6; calm-base anticipatory arming showed worst stop-outs 46-48%). Mechanical difference: S16 acts ONLY on the confirmed release bar with direction + 1.3x volume confirmation — confirmation vs anticipation. An arming variant is BANNED from this family per masterplan section 9. Context kill: trend/location guards (falsified as exposure artifacts); volume-confirmation confirmers (H4, dead).",
+      "evidence_stack": {
+        "phase0_study": "research/entry_stack/W2_SSQ_REPORT.md",
+        "harness": "scripts/research/run_w2_ssq.py",
+        "engine": "engine/vol_squeeze.assess_series (FIRED_UP state onsets)",
+        "panels": "deep (H/L available) + baskets (H/L available); delisted NOT APPLICABLE (needs H/L)",
+        "grader": "engine/grading (RUL-9)",
+        "design": "R1 date-FE stratified difference; episode-block bootstrap; BH q<=0.10 family esx_sq_phase0; RUL-13 primary horizons 21d; RUL-14 co-primaries zone_held_21/stop_vol_21"
+      },
+      "rejection_rules": [
+        "FIRED_DOWN onsets are BANNED from the long study (direction fixture in tests)",
+        "Any arming variant (entering during COILED/COMPRESSED state) is BANNED from this family",
+        "Event = first bar of FIRED_UP state (dedup consecutive FIRED_UP bars)",
+        "Needs H/L: delisted close-only panel NOT APPLICABLE"
+      ],
+      "archetype_scope": {
+        "primary": "US",
+        "excluded": [
+          "HK",
+          "CA"
+        ],
+        "cn_note": "CN secondary only if species pre-registers its own CN test (not in phase0)"
+      },
+      "regime_scope": {
+        "learnable_projection": "vol_regime x horizon (engine x horizon cells)",
+        "note": "Squeeze release is directionally agnostic until release bar — regime provides context"
+      },
+      "market_scope": "US primary; deep panel (224 names 64y) + baskets panel (2519 names 2014+)",
+      "fixtures": "tests/test_run_w2_ssq.py (event-onset dedup fixture; direction fixture: FIRED_DOWN never enters long study; injected-effect marginality test)",
+      "ledger_binding": {
+        "ledger": "data/trial_ledger.jsonl",
+        "since": "2026-07-05",
+        "flip_criteria": {
+          "stop5": "stop-out within 5 bars of T+1 fill",
+          "fwd_mdd_21": "max adverse excursion 21d (RUL-13 primary)",
+          "rotational_liftoff": "clean8_21 (1.08/21d) rotational liftoff",
+          "zone_held_21": "vol-scaled zone held at 21d (RUL-14 co-primary)",
+          "dead_money": "dead-money outcome",
+          "cushion_rot": "cushion incidence rotational"
+        }
+      },
+      "gating": {
+        "come_back_on": "monthly review after phase0 report adjudication",
+        "cadence": "monthly",
+        "maturation": "phase0 → accruing after adjudication sign-off"
+      },
+      "trial_count": 12,
+      "_lifecycle_log": [
+        {
+          "from": "phase0",
+          "to": "accruing",
+          "reviewer": "Opus (review) + Fable (sign-off) 2026-07-07",
+          "reason": "DT-R14 F2-corrected recomputation (2026-07-07): all three bases NON-INFERIOR — primary date-FE CI_hi=+0.0022, month-block bootstrap (demeaned, F2-corrected) CI_hi=-0.0047, within-month demeaning OLS CI_hi=-0.0050; all < +0.01 threshold. Opus review 2026-07-07: merge CLEAN-WITH-FIXES (applied); N/A-STRUCTURAL gatefire exemption RATIFIED by Fable for S16 (co-fire definitionally ~100% for the gate-adjacent form; independence-bearing forms standalone 41.9% / COILED 48.0% both pass); phase0->accruing sign-off CONDITIONAL-APPROVED."
+        }
+      ]
     }
   ]
 }

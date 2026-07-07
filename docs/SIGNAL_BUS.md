@@ -10,48 +10,66 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | owner_program | count |
 |---|---|
+| active-build-map | 1 |
 | btc-vector | 5 |
 | china-alpha | 7 |
-| cycle-intelligence | 4 |
+| china-intel-hub | 2 |
+| codex-b5 | 1 |
+| codex-docket-b6 | 3 |
+| cycle-intelligence | 14 |
+| dannytrades | 1 |
 | engine-fix | 16 |
-| entry-stack-expansion | 3 |
+| entry-stack-expansion | 2 |
 | factor-intelligence | 5 |
 | hk-canada | 2 |
 | institutional-sector-intelligence | 2 |
 | intl-fix | 1 |
-| long-hold | 16 |
+| long-hold | 28 |
 | macro-context-rail | 14 |
-| neural-web | 28 |
+| macro-release-intel | 6 |
+| mastermind-feedback-contract | 2 |
+| momoedge | 8 |
+| nasdaq-internals | 1 |
+| neural-web | 41 |
+| next3 | 3 |
 | nw-mastermind-bridge | 2 |
-| nw-rails | 3 |
+| nw-rails | 7 |
 | options-alpha | 7 |
 | options-nw-entry-intelligence | 3 |
-| oracle | 23 |
+| oracle | 25 |
 | qualitative-intelligence | 23 |
 | research-factory | 3 |
 | sector-pulse | 3 |
 | setup-species | 6 |
-| signal-commons | 7 |
+| short-side | 1 |
+| signal-commons | 8 |
+| stock-personality | 5 |
 | us-stocks-prebreakout | 2 |
 
 ### Artifacts by tier
 
 | tier | count |
 |---|---|
-| display | 102 |
-| infrastructure | 41 |
+| display | 145 |
+| infrastructure | 71 |
 | scored | 4 |
-| shadow | 38 |
+| shadow | 40 |
 
 ### Artifacts by storage
 
 | storage | count |
 |---|---|
-| git | 179 |
-| gitignored-local | 4 |
-| r2 | 2 |
+| git | 248 |
+| gitignored-local | 6 |
+| r2 | 6 |
 
 ## Artifacts by owner_program
+
+### active-build-map
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| active-builds | `data/governance/active_builds.json` | json | daily-engine | infrastructure | 0 | 0 |
 
 ### btc-vector
 
@@ -75,6 +93,27 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | china-radar-ledger | `data/china_radar/ledger.parquet` | parquet | asia-close | shadow | 1 | 0 |
 | cn-reversal-sleeve-ledger | `data/cn_reversal_sleeve_track/sleeve.parquet` | parquet | asia-close | shadow | 1 | 0 |
 
+### china-intel-hub
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| site-china-special-sits | `site/chinaspecialdata/special.json` | json | asia-close | display | 2 | 0 |
+| site-china-intel-command | `site/china_intel/command.json` | json | asia-close | display | 1 | 0 |
+
+### codex-b5
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| event-windows | `embedded: event_windows block inside site/stockdata/<TICKER>.json` | json | daily-engine | display | 1 | 0 |
+
+### codex-docket-b6
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| watchlist-alerts-jsonl | `data/alerts/watchlist_alerts.jsonl` | jsonl | daily-engine | infrastructure | 2 | 0 |
+| watchlist-sentinel-cooldown | `data/alerts/watchlist_sentinel_cooldown.json` | json | daily-engine | infrastructure | 1 | 0 |
+| watchlist-sentinel-states | `data/alerts/watchlist_sentinel_states.json` | json | daily-engine | infrastructure | 1 | 0 |
+
 ### cycle-intelligence
 
 | id | path | format | cadence | tier | consumers | external consumers |
@@ -83,18 +122,34 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | country-cycles-forward-log | `data/country_cycles/forward_log.parquet` | parquet | daily-engine | shadow | 5 | 0 |
 | sector-cycles-forward-log | `data/sector_cycles/forward_log.parquet` | parquet | daily-engine | shadow | 5 | 0 |
 | hazard-model | `data/hazard/model_price_c4414dcb.json` | json | on-demand | scored | 4 | 0 |
+| cycle-pattern-truths | `data/cycle_pattern/truths.jsonl` | jsonl | on-demand | display | 2 | 0 |
+| cycle-pattern-entities | `data/cycle_pattern/entities.parquet` | parquet | on-demand | infrastructure | 1 | 0 |
+| cycle-pattern-state | `data/neuralweb/cycle_pattern_state.json` | json | daily-engine | display | 1 | 0 |
+| cycle-pattern-outcomes | `data/cycle_pattern/outcomes.parquet` | parquet | on-demand | infrastructure | 0 | 0 |
+| cycle-pattern-state-daily-live | `data/cycle_pattern/state_daily_live.parquet` | parquet | daily-engine | infrastructure | 0 | 0 |
+| cycle-pattern-state-monthly | `data/cycle_pattern/state_monthly.parquet` | parquet | on-demand | infrastructure | 0 | 0 |
+| fed-net-liquidity | `data/macro/fed_net_liquidity.parquet` | parquet | daily-engine | infrastructure | 0 | 0 |
+| hazard-panel-index-v0 | `data/hazard/panel_index_v0.parquet` | parquet | on-demand | infrastructure | 0 | 0 |
+| regime-v2-pit | `data/regime/regime_v2_pit.parquet` | parquet | on-demand | infrastructure | 0 | 0 |
+| signal-archive-context-daily | `data/signal_archive/context_daily.parquet` | parquet | daily-engine | infrastructure | 0 | 0 |
+
+### dannytrades
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| dt-contra-state | `data/neuralweb/dt_contra_state.json` | json | daily-engine | display | 1 | 0 |
 
 ### engine-fix
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
-| regime-latest | `data/regime/latest.json` | json | daily-engine | infrastructure | 30 | 3 |
+| regime-latest | `data/regime/latest.json` | json | daily-engine | infrastructure | 31 | 3 |
+| regime-history | `data/regime/regime_history.parquet` | parquet | daily-engine | infrastructure | 18 | 0 |
 | breadth-breadth | `data/breadth/breadth.parquet` | parquet | collect | infrastructure | 17 | 0 |
-| regime-history | `data/regime/regime_history.parquet` | parquet | daily-engine | infrastructure | 17 | 0 |
 | breadth-sp1500-pit | `data/breadth/sp1500_pit_membership.parquet` | parquet | on-demand | infrastructure | 11 | 0 |
 | market-state-latest | `data/market_state/latest.json` | json | daily-engine | display | 7 | 0 |
+| trial-ledger | `data/trial_ledger.jsonl` | jsonl | on-demand | infrastructure | 6 | 0 |
 | risk-radar-forward-log | `data/risk_radar/forward_log.jsonl` | jsonl | daily-engine | display | 5 | 0 |
-| trial-ledger | `data/trial_ledger.jsonl` | jsonl | on-demand | infrastructure | 5 | 0 |
 | regime-vector | `data/regime/regime_vector.parquet` | parquet | daily-engine | infrastructure | 4 | 0 |
 | site-regime-timeline | `site/regime_timeline.json` | json | daily-engine | display | 2 | 2 |
 | market-state-forward-log | `data/market_state/forward_log.jsonl` | jsonl | daily-engine | display | 3 | 0 |
@@ -110,7 +165,6 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
 | bottom-sensors-json | `site/neuralwebdata/bottom_sensors.json` | json | daily-engine | display | 1 | 1 |
-| subsector-sponsorship-spine | `data/spine/subsector_sponsorship.parquet` | parquet | daily-engine | shadow | 2 | 0 |
 | bottom-sensors-parquet | `data/neuralweb/bottom_sensors.parquet` | parquet | daily-engine | display | 1 | 0 |
 
 ### factor-intelligence
@@ -147,6 +201,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
+| breakaway-watch-states | `data/research/breakaway_watch.parquet` | parquet | daily-engine | display | 1 | 0 |
 | capital-allocation-delta | `embedded: capital_allocation block inside site/stockdata/<TICKER>.json` | json | daily-engine | display | 1 | 0 |
 | expect-drift-ruler-p-results | `data/research/expect_drift_ruler_p_results.parquet` | parquet | on-demand | display | 1 | 0 |
 | great-company-trap | `embedded: great_company_trap fields inside site/stockdata/<TICKER>.json` | json | daily-engine | display | 1 | 0 |
@@ -162,7 +217,18 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | long-hold-killtest-results | `data/research/missed_hold_study_results.parquet` | parquet | on-demand | display | 1 | 0 |
 | long-hold-labels | `data/research/long_hold_labels.parquet` | parquet | on-demand | display | 1 | 0 |
 | long-hold-labels-manifest | `data/research/long_hold_labels_manifest.json` | json | on-demand | display | 1 | 0 |
+| long-hold-thesis-funnel-history | `data/research/thesis_funnel_history.parquet` | parquet | daily-engine | display | 1 | 0 |
+| long-hold-thesis-funnel-panel | `embedded: thesis_funnel inside site/stockdata/<TICKER>.json` | json | daily-engine | display | 1 | 0 |
+| long-hold-thesis-funnel-states | `data/research/thesis_funnel_states.parquet` | parquet | on-demand | display | 1 | 0 |
+| long-hold-thesis-funnel-states-manifest | `data/research/thesis_funnel_states_manifest.json` | json | on-demand | display | 1 | 0 |
 | moat-falsifier-sensors | `embedded: per-ticker moat sensor fields inside site/stockdata/<TICKER>.json` | json | daily-engine | display | 1 | 0 |
+| per-fire-sector-benchmark | `data/research/per_fire_sector_benchmark.parquet` | parquet | on-demand | display | 1 | 0 |
+| ticker-sectors | `data/breadth/ticker_sectors.parquet` | parquet | on-demand | display | 1 | 0 |
+| winner-autopsy-panel | `data/research/winner_autopsy_panel.json` | json | daily-engine | display | 1 | 0 |
+| winner-episodes | `data/research/winner_episodes.parquet` | parquet | on-demand | display | 1 | 0 |
+| breakaway-watch-history | `data/research/breakaway_watch_history.parquet` | parquet | daily-engine | display | 0 | 0 |
+| winner-autopsy-manifest | `data/research/winner_autopsy_manifest.json` | json | daily-engine | display | 0 | 0 |
+| winner-episodes-manifest | `data/research/winner_episodes_manifest.json` | json | on-demand | display | 0 | 0 |
 
 ### macro-context-rail
 
@@ -183,53 +249,115 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | site-intelligence-briefing | `site/intelligence/briefing.json` | json | daily-engine | display | 1 | 0 |
 | macro-context-latest | `data/macro_context/latest.json` | json | daily-engine | display | 0 | 0 |
 
+### macro-release-intel
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| cleveland-nowcast-store | `data/cleveland_nowcast/nowcast.parquet` | parquet | collect | infrastructure | 1 | 0 |
+| kalshi-releases-store | `data/prediction_markets/kalshi_releases.parquet` | parquet | collect | infrastructure | 1 | 0 |
+| release-forecast-latest | `data/release_forecast/latest.json` | json | daily-engine | display | 0 | 1 |
+| release-forecast-ledger | `data/release_forecast/forward_ledger.jsonl` | jsonl | daily-engine | shadow | 1 | 0 |
+| site-release-forecast | `site/macrodata/release_forecast.json` | json | daily-engine | display | 0 | 1 |
+| release-forecast-scoreboard | `data/release_forecast/scoreboard.json` | json | daily-engine | display | 0 | 0 |
+
+### mastermind-feedback-contract
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| site-mastermind-nw-feedback | `site/mastermind/nw_feedback.json` | json | on-demand | display | 1 | 0 |
+| mastermind-feedback-summary | `data/governance/mastermind_feedback_summary.json` | json | daily-engine | display | 0 | 0 |
+
+### momoedge
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| prophet-trade-plan | `prophet/trade_plan/<ID>.json` | json | daily-engine | display | 2 | 1 |
+| options-flow-chain-heat | `live_flow/chain_heat_current.json` | json | collect | display | 1 | 1 |
+| options-structure-gex-state | `options_structure/gex_state/<ROOT>.json` | json | daily-engine | display | 1 | 1 |
+| options-structure-matrix | `options_structure/matrix/<ROOT>.json` | json | daily-engine | display | 1 | 1 |
+| prophet-management-state | `prophet/state/<ID>.json` | json | daily-engine | display | 1 | 1 |
+| options-structure-structural | `options_structure/structural/<ROOT>.json` | json | daily-engine | shadow | 1 | 0 |
+| prophet-index | `site/prophet/index.json` | json | daily-engine | display | 0 | 1 |
+| prophet-ledger | `data/prophet/ledger.jsonl` | jsonl | daily-engine | display | 0 | 0 |
+
+### nasdaq-internals
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| nasdaq-internals | `site/marketdata/nasdaq_internals.json` | json | daily-engine | display | 0 | 1 |
+
 ### neural-web
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
 | world-state | `data/neuralweb/world_state.json` | json | daily-engine | infrastructure | 9 | 1 |
+| mechanism-pathways | `data/neuralweb/mechanism_pathways.json` | json | daily-engine | display | 4 | 0 |
+| spine-index | `data/neuralweb/spine_index.parquet` | parquet | daily-engine | infrastructure | 4 | 0 |
 | confluence-graph | `data/neuralweb/confluence_graph.json` | json | daily-engine | display | 2 | 1 |
+| cortex-memo | `data/neuralweb/cortex/memo.json` | json | nightly-cortex | shadow | 2 | 1 |
 | cortex-probation | `data/neuralweb/cortex/probation.json` | json | nightly-cortex | infrastructure | 2 | 1 |
 | feeds-plane | `site/feeds/` | json | daily-engine | infrastructure | 1 | 2 |
 | kernel-families | `data/neuralweb/kernel_families.json` | json | daily-engine | infrastructure | 2 | 1 |
+| machine-registry | `data/neuralweb/machine_registry.jsonl` | jsonl | nightly-cortex | infrastructure | 3 | 0 |
+| neuralweb-health | `data/neuralweb/health.json` | json | daily-engine | infrastructure | 3 | 0 |
+| rule-experiment-registry | `data/rule_experiments/registry.jsonl` | jsonl | on-demand | infrastructure | 3 | 0 |
 | site-artifact-manifest | `site/factordata/contracts/artifact_manifest.json` | json | daily-engine | infrastructure | 1 | 2 |
 | site-golden-signals | `site/factordata/contracts/golden_signals.json` | json | daily-engine | infrastructure | 1 | 2 |
-| spine-index | `data/neuralweb/spine_index.parquet` | parquet | daily-engine | infrastructure | 3 | 0 |
-| cortex-memo | `data/neuralweb/cortex/memo.json` | json | nightly-cortex | shadow | 1 | 1 |
+| evidence-clock-reviews | `data/neuralweb/evidence_clock_reviews.jsonl` | jsonl | on-demand | display | 2 | 0 |
+| governance-ledger | `data/neuralweb/governance.jsonl` | jsonl | daily-engine | infrastructure | 2 | 0 |
 | kernel-decisions | `data/neuralweb/kernel_decisions.json` | json | on-demand | infrastructure | 1 | 1 |
-| machine-registry | `data/neuralweb/machine_registry.jsonl` | jsonl | nightly-cortex | infrastructure | 2 | 0 |
 | reflex-firings-pattern | `data/reflexes/<NAME>/firings.jsonl` | jsonl | on-demand | shadow | 2 | 0 |
-| rule-experiment-registry | `data/rule_experiments/registry.jsonl` | jsonl | on-demand | infrastructure | 2 | 0 |
+| claim-accountability | `data/governance/claim_accountability.json` | json | collect | infrastructure | 1 | 0 |
 | cortex-attention-firings | `data/reflexes/cortex_attention/firings.jsonl` | jsonl | nightly-cortex | shadow | 1 | 0 |
 | cortex-attention-grades | `data/reflexes/cortex_attention/grades.jsonl` | jsonl | nightly-cortex | shadow | 1 | 0 |
-| governance-ledger | `data/neuralweb/governance.jsonl` | jsonl | daily-engine | infrastructure | 1 | 0 |
+| evidence-clock | `data/neuralweb/evidence_clock.json` | json | daily-engine | display | 1 | 0 |
 | kernel-estimates | `data/neuralweb/kernel_estimates.parquet` | parquet | daily-engine | infrastructure | 1 | 0 |
+| mechanism-pathways-history | `data/neuralweb/mechanism_pathways_history.jsonl` | jsonl | daily-engine | display | 1 | 0 |
+| neuralweb-daily-brief | `data/neuralweb/daily_brief.json` | json | daily-engine | display | 1 | 0 |
+| neuralweb-daily-brief-history | `data/neuralweb/daily_brief_history.jsonl` | jsonl | daily-engine | display | 1 | 0 |
 | ops-push-basket-freeze | `data/alert_triage/push_sent_basket_freeze.jsonl` | jsonl | on-demand | infrastructure | 1 | 0 |
 | ops-push-healthcheck | `data/alert_triage/push_sent_healthcheck.jsonl` | jsonl | on-demand | infrastructure | 1 | 0 |
 | ops-push-signal-sanity | `data/alert_triage/push_sent_signal_sanity.jsonl` | jsonl | on-demand | infrastructure | 1 | 0 |
 | reflex-firings-commodity-shock | `data/reflexes/commodity_shock/firings.jsonl` | jsonl | on-demand | shadow | 1 | 0 |
 | reflex-firings-regime-selfheal | `data/reflexes/regime_stale_selfheal/firings.jsonl` | jsonl | on-demand | infrastructure | 1 | 0 |
 | reflex-push-dedup-store | `data/alert_triage/push_sent.jsonl` | jsonl | on-demand | infrastructure | 1 | 0 |
+| site-mechanism-pathways | `site/neuralwebdata/mechanism_pathways.json` | json | daily-engine | display | 1 | 0 |
+| site-neuralweb-daily-brief | `site/neuralwebdata/daily_brief.json` | json | daily-engine | display | 1 | 0 |
+| entity-thesis-mechanism-registry | `data/neuralweb/entity_thesis_mechanism_registry.json` | json | daily-engine | infrastructure | 0 | 0 |
 | hypothesis-inbox | `data/neuralweb/cortex/hypothesis_inbox.jsonl` | jsonl | nightly-cortex | infrastructure | 0 | 0 |
 | lagging-signals | `data/neuralweb/lagging_signals.json` | json | daily-engine | infrastructure | 0 | 0 |
 | research-queue | `data/neuralweb/research_queue.json` | json | on-demand | infrastructure | 0 | 0 |
 | risk-radar-review-log | `data/risk_radar/review_log.jsonl` | jsonl | weekly | display | 0 | 0 |
 | rule-experiment-summaries | `data/rule_experiments/results/<EXP_ID>_summary.json` | json | on-demand | display | 0 | 0 |
+| site-neuralweb-health | `site/neuralwebdata/health.json` | json | daily-engine | infrastructure | 0 | 0 |
+| site-neuralweb-ruling-graph | `site/neuralwebdata/ruling_graph.json` | json | on-demand | display | 0 | 0 |
+
+### next3
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| operator-exposure-log | `data/operator/exposure_log.jsonl` | jsonl | daily-engine | infrastructure | 1 | 0 |
+| operator-exposure-summary | `data/governance/operator_exposure_summary.json` | json | daily-engine | infrastructure | 0 | 0 |
+| options-entry-coverage | `data/options_entry/coverage.json` | json | collect | infrastructure | 0 | 0 |
 
 ### nw-mastermind-bridge
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
-| neuralweb-mastermind-context | `data/neuralweb/mastermind_context.json` | json | daily-engine | display | 0 | 1 |
+| neuralweb-mastermind-context | `data/neuralweb/mastermind_context.json` | json | daily-engine | display | 1 | 1 |
 | site-neuralweb-mastermind-context | `site/neuralwebdata/mastermind_context.json` | json | daily-engine | display | 0 | 1 |
 
 ### nw-rails
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
-| dispersion-regime | `data/dispersion/regime.json` | json | daily-engine | display | 2 | 0 |
+| dispersion-regime | `data/dispersion/regime.json` | json | daily-engine | display | 3 | 0 |
+| covariance-spine | `data/neuralweb/covariance_spine.json` | json | daily-engine | infrastructure | 1 | 0 |
 | grading-closure | `data/governance/grading_closure.json` | json | collect | infrastructure | 1 | 0 |
+| covariance-spine-history | `data/neuralweb/covariance_spine_history.parquet` | parquet | daily-engine | infrastructure | 0 | 0 |
 | operator-action-ledger | `data/operator/action_ledger.jsonl` | jsonl | on-demand | infrastructure | 0 | 0 |
+| operator-grading | `data/governance/operator_grading.json` | json | on-demand | infrastructure | 0 | 0 |
+| site-covariance-spine | `site/neuralwebdata/covariance_spine.json` | json | daily-engine | infrastructure | 0 | 0 |
 
 ### options-alpha
 
@@ -259,15 +387,17 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | site-radar-json | `site/basketdata/radar.json` | json | daily-engine | display | 7 | 0 |
 | site-basketdata-radar-enriched | `site/basketdata/radar_enriched.json` | json | daily-engine | display | 6 | 0 |
 | site-radar-ticker | `site/basketdata/radar_ticker.json` | json | daily-engine | display | 5 | 1 |
-| site-basket-oracle-state | `site/basketdata/oracle_state.json` | json | daily-engine | display | 4 | 0 |
+| site-basket-oracle-state | `site/basketdata/oracle_state.json` | json | daily-engine | display | 5 | 0 |
 | site-basket-flow | `site/basketdata/flow.json` | json | daily-engine | display | 2 | 1 |
 | index-leadership-snapshots | `data/index_leadership/snapshots.jsonl` | jsonl | daily-engine | shadow | 2 | 0 |
+| oracle-operator-tape-outcomes | `data/oracle/operator_tape_outcomes.jsonl` | jsonl | daily-engine | infrastructure | 2 | 0 |
 | oracle-qual-filter-accrual | `data/oracle/qual_filter_accrual.json` | json | daily-engine | display | 2 | 0 |
 | oracle-qual-filter-stamps | `data/oracle/qual_filter_stamps.jsonl` | jsonl | daily-engine | shadow | 2 | 0 |
 | oracle-reversion-forward-ledger | `data/oracle/reversion_forward/<compound_id>.jsonl` | jsonl | daily-engine | shadow | 2 | 0 |
 | radar-track-record | `data/radar/track_record.json` | json | daily-engine | display | 2 | 0 |
 | site-marketdata-subsector-rotation | `site/marketdata/subsector_rotation.json` | json | daily-engine | display | 2 | 0 |
 | subsector-rotation-snapshots | `data/subsector_rotation/snapshots.jsonl` | jsonl | daily-engine | shadow | 2 | 0 |
+| oracle-operator-scorecard | `data/oracle/operator_scorecard.json` | json | daily-engine | display | 1 | 0 |
 | oracle-qual-filter-registry | `data/oracle/qual_filters/registry.jsonl` | jsonl | on-demand | infrastructure | 1 | 0 |
 | oracle-reversion-authority | `data/oracle/reversion_authority.json` | json | daily-engine | infrastructure | 1 | 0 |
 | oracle-reversion-kill-requeue | `data/oracle/reversion_kill_requeue.jsonl` | jsonl | on-demand | infrastructure | 1 | 0 |
@@ -284,11 +414,11 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
 | altdata-by-ticker | `data/altdata/by_ticker.json` | json | daily-engine | display | 15 | 0 |
-| qledger-claims | `data/qledger/claims.jsonl` | jsonl | daily-engine | shadow | 13 | 0 |
+| qledger-claims | `data/qledger/claims.jsonl` | jsonl | daily-engine | shadow | 14 | 0 |
 | qbus-items | `data/qbus/items.parquet` | parquet | daily-engine | infrastructure | 10 | 0 |
 | site-altdata-mastermind | `site/altdata/mastermind.json` | json | daily-engine | display | 8 | 2 |
 | site-altdata-by-ticker | `site/altdata/by_ticker.json` | json | daily-engine | display | 8 | 0 |
-| site-qledger-track-record | `site/qledger/track_record.json` | json | daily-engine | display | 5 | 1 |
+| site-qledger-track-record | `site/qledger/track_record.json` | json | daily-engine | display | 5 | 2 |
 | spine-predictions | `data/spine/predictions.parquet` | parquet | daily-engine | shadow | 6 | 0 |
 | ai-desk-theses | `data/ai_desk/theses.jsonl` | jsonl | daily-engine | shadow | 5 | 0 |
 | altdata-theses | `data/altdata/theses.jsonl` | jsonl | daily-engine | shadow | 4 | 0 |
@@ -311,7 +441,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
-| research-factory-candidates | `data/research_factory/candidates.jsonl` | jsonl | on-demand | display | 0 | 0 |
+| research-factory-candidates | `data/research_factory/candidates.jsonl` | jsonl | on-demand | display | 1 | 0 |
 | research-factory-paper-monitor | `data/research_factory/paper_monitor.jsonl` | jsonl | on-demand | display | 0 | 0 |
 | research-factory-transitions | `data/research_factory/transitions.jsonl` | jsonl | on-demand | display | 0 | 0 |
 
@@ -329,10 +459,16 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 |---|---|---|---|---|---|---|
 | us-board-ledger-retro-grades | `data/us_board_ledger/retro_grades.parquet` | parquet | daily-engine | infrastructure | 9 | 0 |
 | signal-archive-mtf | `data/signal_archive/mtf_signals_latest.json` | json | daily-engine | display | 6 | 0 |
+| experiments-registry-seed | `data/experiments/registry_seed.json` | json | daily-engine | infrastructure | 5 | 0 |
+| signal-archive-track-record | `data/signal_archive/track_record.parquet` | parquet | daily-engine | shadow | 5 | 0 |
 | site-signals-per-ticker | `site/signals/<SYM>.json` | json | daily-engine | display | 3 | 2 |
-| signal-archive-track-record | `data/signal_archive/track_record.parquet` | parquet | daily-engine | shadow | 4 | 0 |
-| species-registry | `data/species/registry.json` | json | on-demand | infrastructure | 4 | 0 |
-| experiments-registry-seed | `data/experiments/registry_seed.json` | json | daily-engine | infrastructure | 3 | 0 |
+| species-registry | `data/species/registry.json` | json | on-demand | infrastructure | 5 | 0 |
+
+### short-side
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| bd-avoid1-ledger | `data/research/bd_avoid1_ledger.parquet` | parquet | on-demand | infrastructure | 1 | 0 |
 
 ### signal-commons
 
@@ -345,6 +481,17 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | event-priors-sp-index-changes | `data/special_situations/event_priors/sp_index_changes.json` | json | weekly | display | 2 | 0 |
 | kernel-half-lives | `data/neuralweb/half_life.json` | json | daily-engine | infrastructure | 1 | 0 |
 | event-priors-gov-contract | `data/special_situations/event_priors/gov_contract.json` | json | weekly | display | 0 | 0 |
+| reflexivity-n-eff-history | `data/reflexivity/n_eff_history.json` | json | daily-engine | infrastructure | 0 | 0 |
+
+### stock-personality
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| site-stock-personality | `site/factordata/stock_personality.json` | json | daily-engine | display | 3 | 0 |
+| dna-class-ref | `site/factordata/dna_class.json` | json | nightly-factor-panel | infrastructure | 1 | 0 |
+| stock-personality-panel | `data/stock_personality/panel/YYYY-MM/panel.parquet` | parquet | daily-engine | infrastructure | 1 | 0 |
+| stock-personality-block | `embedded: personality block inside site/stockdata/<TICKER>.json` | json | daily-engine | display | 0 | 0 |
+| stock-personality-forward-ledger | `data/stock_personality/forward_ledger.parquet` | parquet | daily-engine | shadow | 0 | 0 |
 
 ### us-stocks-prebreakout
 
@@ -365,19 +512,19 @@ flowchart LR
     C_engine_briefing_py["engine/briefing.py"]
     C_engine_china_intel_analysis_py["engine/china_intel_analysis.py"]
     C_engine_china_intel_bus_py["engine/china_intel_bus.py"]
-    OVF_regime_latest["...+29 more"]
+    OVF_regime_latest["...+30 more"]
+    A_regime_history["regime-history"]
+    C_engine_alerts_py["engine/alerts.py"]
+    C_engine_board_ledger_py["engine/board_ledger.py"]
+    C_engine_neuralweb_lagging_py["engine/neuralweb/lagging.py"]
+    C_engine_regime_hmm_py["engine/regime_hmm.py"]
+    OVF_regime_history["...+14 more"]
     P_collectors_breadth_py(("collectors/breadth.py"))
     A_breadth_breadth["breadth-breadth"]
     C_engine_anticipation_py["engine/anticipation.py"]
     C_engine_basket_score_py["engine/basket_score.py"]
-    C_engine_neuralweb_lagging_py["engine/neuralweb/lagging.py"]
     C_engine_neuralweb_world_state_py["engine/neuralweb/world_state.py"]
     OVF_breadth_breadth["...+13 more"]
-    A_regime_history["regime-history"]
-    C_engine_alerts_py["engine/alerts.py"]
-    C_engine_board_ledger_py["engine/board_ledger.py"]
-    C_engine_regime_hmm_py["engine/regime_hmm.py"]
-    OVF_regime_history["...+13 more"]
     P_scripts_seed_us_sector_baskets_py(("scripts/seed_us_sector_baskets.py"))
     A_baskets_membership["baskets-membership"]
     C_engine_demand_ledger_py["engine/demand_ledger.py"]
@@ -404,7 +551,7 @@ flowchart LR
     C_engine_missing_tape_py["engine/missing_tape.py"]
     C_engine_neuralweb_query_py["engine/neuralweb/query.py"]
     C_engine_qledger_ui_py["engine/qledger_ui.py"]
-    OVF_qledger_claims["...+9 more"]
+    OVF_qledger_claims["...+10 more"]
     P_scripts_midsmall_pit_py(("scripts/midsmall_pit.py"))
     A_breadth_sp1500_pit["breadth-sp1500-pit"]
     C_engine_grading_py["engine/grading.py"]
@@ -458,18 +605,18 @@ flowchart LR
     A_regime_latest --> C_engine_china_intel_analysis_py
     A_regime_latest --> C_engine_china_intel_bus_py
     A_regime_latest --> OVF_regime_latest
-    P_collectors_breadth_py --> A_breadth_breadth
-    A_breadth_breadth --> C_engine_anticipation_py
-    A_breadth_breadth --> C_engine_basket_score_py
-    A_breadth_breadth --> C_engine_neuralweb_lagging_py
-    A_breadth_breadth --> C_engine_neuralweb_world_state_py
-    A_breadth_breadth --> OVF_breadth_breadth
     P_engine_run_py --> A_regime_history
     A_regime_history --> C_engine_alerts_py
     A_regime_history --> C_engine_board_ledger_py
     A_regime_history --> C_engine_neuralweb_lagging_py
     A_regime_history --> C_engine_regime_hmm_py
     A_regime_history --> OVF_regime_history
+    P_collectors_breadth_py --> A_breadth_breadth
+    A_breadth_breadth --> C_engine_anticipation_py
+    A_breadth_breadth --> C_engine_basket_score_py
+    A_breadth_breadth --> C_engine_neuralweb_lagging_py
+    A_breadth_breadth --> C_engine_neuralweb_world_state_py
+    A_breadth_breadth --> OVF_breadth_breadth
     P_scripts_seed_us_sector_baskets_py --> A_baskets_membership
     A_baskets_membership --> C_engine_demand_ledger_py
     A_baskets_membership --> C_engine_financial_news_py
@@ -611,6 +758,13 @@ Artifacts below have `known_extra_writers` — additional code paths that write 
 - **extra writers:**
   - scripts/build_confluence_graph.py — thin CLI wrapper; calls build_and_write() defined in the producer; no independent write logic
 
+### event-windows
+
+- **path:** `embedded: event_windows block inside site/stockdata/<TICKER>.json`
+- **declared producer:** `engine/event_landmine.py`
+- **extra writers:**
+  - engine/stock_fundamentals.py — compose() called inside panels(); result keyed as 'event_windows'
+
 ### experiments-registry-seed
 
 - **path:** `data/experiments/registry_seed.json`
@@ -706,12 +860,33 @@ Artifacts below have `known_extra_writers` — additional code paths that write 
 - **extra writers:**
   - engine/stock_fundamentals.py — expectation_states() called inside panels(); result keyed as 'expectation_state'
 
+### long-hold-thesis-funnel-history
+
+- **path:** `data/research/thesis_funnel_history.parquet`
+- **declared producer:** `scripts/research/build_thesis_funnel_snapshot.py`
+- **extra writers:**
+  - scripts/research/build_thesis_funnel_history.py — append_history() called by snapshot main() under --write-history
+
+### long-hold-thesis-funnel-panel
+
+- **path:** `embedded: thesis_funnel inside site/stockdata/<TICKER>.json`
+- **declared producer:** `engine/thesis_funnel.py`
+- **extra writers:**
+  - engine/stock_fundamentals.py — _compute_thesis_funnel_block() called inside panels(); result keyed as 'thesis_funnel'
+
 ### market-state-latest
 
 - **path:** `data/market_state/latest.json`
 - **declared producer:** `engine/market_state.py`
 - **extra writers:**
   - scripts/build_site.py — calls market_state.persist() at line 1700; build_site is the runner, market_state.py is the author
+
+### mastermind-feedback-summary
+
+- **path:** `data/governance/mastermind_feedback_summary.json`
+- **declared producer:** `scripts/build_mastermind_feedback_summary.py`
+- **extra writers:**
+  - engine/neuralweb/mastermind_feedback.py — build_and_write() writes the artifact
 
 ### moat-falsifier-sensors
 
@@ -846,13 +1021,6 @@ Artifacts below have `known_extra_writers` — additional code paths that write 
 - **declared producer:** `engine/subsector_track_record.py`
 - **extra writers:**
   - scripts/build_subsector_rotation.py — CLI runner; calls compute() then appends snapshot
-
-### subsector-sponsorship-spine
-
-- **path:** `data/spine/subsector_sponsorship.parquet`
-- **declared producer:** `engine/spine.py`
-- **extra writers:**
-  - scripts/build_subsector_sponsorship.py — CLI runner; calls write_subsector_sponsorship()
 
 ### trial-ledger
 

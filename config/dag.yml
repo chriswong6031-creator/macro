@@ -18,6 +18,15 @@ lanes:
   - workflow: .github/workflows/daily.yml
     job: collect
     steps:
+      - id: fetch_r2_attention
+        module: scripts.fetch_r2
+        args: [--dirs, attention]
+        note: >
+          SLF-048 attention store restore (#1677) — data/attention/*.parquet are
+          gitignored (R2 data plane, deep history 2015-07→). Runs BEFORE the
+          collectors so wiki_pageviews' ~120d upsert extends deep history instead
+          of rebuilding a shallow window. continue-on-error; the publish-back step
+          at the end of this lane is gated on this step's outcome.
       - id: collect_us
         module: scripts.collect
         args: [--exclude-group, asia]
@@ -48,11 +57,28 @@ lanes:
         note: >
           T2a ETF-history backfill (#1441) — 20 ETF anchors, full history 2017→.
           Hard-stop at 20 min; runs last of the three tape-flow steps. Non-fatal.
+      - id: publish_r2_attention
+        module: scripts.publish_r2
+        args: [--dirs, attention]
+        note: >
+          SLF-048 attention publish-back (#1677) — the day's upserted increments
+          ride back to R2 so tomorrow's restore + the render-side restores read a
+          CURRENT deep store. Gated on fetch_r2_attention's outcome (a shallow
+          rebuild after a failed restore must never clobber 11y of history; the
+          append-only guard + bytes floor in publish_r2 are the second fence).
+          Runs AFTER "commit data" so the data commit is never delayed. Non-fatal.
 
   # ── daily.yml / engine ──────────────────────────────────────────────────
   - workflow: .github/workflows/daily.yml
     job: engine
     steps:
+      - id: fetch_r2_attention
+        module: scripts.fetch_r2
+        args: [--dirs, attention]
+        note: >
+          SLF-048 attention store restore (#1677) — build_site.build_attention_data
+          reads data/attention/*.parquet (gitignored, R2-hosted). Non-fatal: absent
+          store = attention chip silently absent this render.
       # serial spine (pre-band)
       - id: build_signal_quality
         module: scripts.build_signal_quality
@@ -90,6 +116,9 @@ lanes:
       - id: build_dispersion_regime
         module: scripts.build_dispersion_regime
         note: NW Rails W2 PR-4 — L3 dispersion regime lens (display-only, seconds)
+      - id: build_dt_contra_state
+        module: scripts.build_dt_contra_state
+        note: DT-NW-1 — aggregate per-ticker dt_contra chip state into NW display artifact (display-only, seconds)
       - id: build_congress
         module: scripts.build_congress
       - id: build_foresight
@@ -97,6 +126,9 @@ lanes:
       - id: backfill_regime_stamps
         module: scripts.backfill_regime_stamps
         note: "nw-macro-rail R5 PR-C — regime stamp backfill on qledger rows (non-fatal); near-term yield ≈ 2 rows from regime_vector.parquet coverage"
+      - id: build_prophet
+        module: scripts.build_prophet
+        note: Prophet nightly — plan refresh + ledger advancement + R2 mirror (non-fatal; display-only)
       # parallel band
       - id: band
         cluster:
@@ -126,6 +158,7 @@ lanes:
             - scripts.build_cohort_metrics
             - scripts.build_news
             - scripts.build_methodology
+            - scripts.build_nasdaq_internals
           cl_special:
             - scripts.build_special_situations
           cl_misc:
@@ -134,12 +167,18 @@ lanes:
             - scripts.build_cycle
             - scripts.build_sector_cycles
             - scripts.build_country_cycles
+            - scripts.build_measurement
+            - scripts.append_sync_gauge
             - engine.policy_intent_desk
             - scripts.build_policy_watch
             - scripts.build_index_changes
+            - scripts.build_cycle_pattern_live
+            - scripts.build_cycle_pattern_state
       # serial post-band
       - id: build_sector_central
         module: scripts.build_sector_central
+      - id: mirror_flow_idx
+        module: scripts.mirror_flow_idx
       - id: build_vector
         module: scripts.build_vector
       - id: master_brain_scorer
@@ -187,6 +226,9 @@ lanes:
       - id: build_kernel_estimates
         module: scripts.build_kernel_estimates
         note: "neural-web W3 — reliability kernel estimates (engine × regime × horizon cells; display-first)"
+      - id: build_covariance_spine
+        module: scripts.build_covariance_spine
+        note: "R-ORTH PR-3 — covariance spine MVP (RUL-ORTH-1..11); lobe independence accounting + cross-block concentration; display-only, resilient"
       - id: build_kernel_diagnostics
         module: scripts.build_kernel_diagnostics
         note: "neural-web W3 PR3 — decay curves (kernel_families.json) + lagging-signal detector (lagging_signals.json); display-first, resilient"
@@ -219,6 +261,12 @@ lanes:
         module: scripts.build_mastermind
       - id: build_ai_desk_page
         module: scripts.build_ai_desk_page
+      - id: watchlist_sentinel
+        module: scripts.run_watchlist_sentinel
+        note: >
+          B6 Watchlist buy-zone sentinel — operator Supabase watchlist x buy-zone
+          enter-detection -> alert JSONL + Discord dispatch.  Fail-soft (missing
+          creds/table/network -> one log line, exit 0).  Same-day idempotent.
       - id: notify
         module: scripts.notify
       - id: push_alerts
@@ -226,6 +274,48 @@ lanes:
         # W6a: config-gated OFF (alert_push.enabled=false); pure no-op until operator enables
       - id: archive_signals
         module: scripts.archive_signals
+      - id: archive_context_snapshots
+        module: scripts.archive_context_snapshots
+        note: >
+          non-fatal; append-only context PIT history (keep-FIRST per date) into
+          data/signal_archive/context_daily.parquet — fixes P-D5-3 class of
+          'no PIT context history' problems going forward.
+          inputs: [data/regime/latest.json, data/market_state/latest.json,
+                   data/sentiment_crypto/fear_greed.parquet]
+          outputs: [data/signal_archive/context_daily.parquet]
+      - id: build_netliq_daily
+        module: scripts.build_netliq_daily
+        note: >
+          non-fatal; CPI net-liquidity DATA INFRASTRUCTURE — deterministic full
+          rebuild of the daily net-liquidity panel via engine.canon (the ONE
+          audit-#28 formula: WALCL_bn − RRP_bn − TGA_bn, billions). Derived
+          cols: netliq_d13w/d26w (65/130-row changes) + netliq_pctile_expanding
+          (PIT-pure expanding percentile). Stale-guard truncates the frame at
+          min(component last real obs)+10bd; per-component last-obs dates land
+          in the meta sidecar. Registers NO trial (FT-3 suspended by
+          cycle_truth_ft2_credit_hazard_null_v1).
+          inputs: [data/fred/WALCL.parquet, data/fred/RRPONTSYD.parquet,
+                   data/treasury/tga.parquet]
+          outputs: [data/macro/fed_net_liquidity.parquet,
+                    data/macro/fed_net_liquidity_meta.json]
+      - id: build_release_forecast
+        module: scripts.build_release_forecast
+        note: >
+          non-fatal; MRI PR-C nightly producer (macro-release-intel program).
+          Emits the release_forecast.v1 artifact: CPI (headline + core) and NFP
+          projections, Cleveland nowcast benchmark enrichment, policy_backdrop
+          join (fed_stance/gap_bp/implied_cuts_12m/next_fomc/guidance_direction
+          from persisted regime artifacts — no LLM calls). Runs AFTER collect
+          (release-day capture needs same-night ALFRED vintage refresh).
+          display_only=True; all authority booleans False (MRI-R7).
+          Ledger is append-only (MRI-R8); idempotent per asof_night.
+          inputs: [data/fred_vintage/vintages.parquet,
+                   data/cleveland_nowcast/nowcast.parquet,
+                   data/regime/latest.json]
+          outputs: [data/release_forecast/latest.json,
+                    data/release_forecast/forward_ledger.jsonl,
+                    data/release_forecast/scoreboard.json,
+                    site/macrodata/release_forecast.json]
       - id: signal_sanity
         module: scripts.signal_sanity
       - id: build_whitehouse_page_only
@@ -239,18 +329,67 @@ lanes:
         module: scripts.oracle_nightly
       - id: build_world_state
         module: scripts.build_world_state
+      - id: fetch_oracle_panels
+        module: scripts.fetch_oracle_panels
+        note: non-fatal; PR-C1 RUL-7 — downloads oracle panel_s.parquet + panel_m.parquet from R2 so build_bottom_sensors can populate sponsorship_state; degrades gracefully when R2 creds absent
       - id: build_bottom_sensors
         module: scripts.build_bottom_sensors
         note: non-fatal; display-only bottom-sensor envelope (Amendment 1 Lane B0) — wired 2026-07-06 after build_world_state; benchmark 2.29s
+      - id: build_thesis_funnel_history
+        module: scripts.research.build_thesis_funnel_snapshot
+        note: >
+          non-fatal; LT-4 thesis funnel longitudinal history append (PR-A2).
+          Invoked as build_thesis_funnel_snapshot --write-history; gated on that
+          flag per sole-advancer law. Appends keep-FIRST rows (ticker, snapshot_date)
+          to data/research/thesis_funnel_history.parquet. Runs after build_bottom_sensors.
+          Display-only; no scored_path_surfaces; FIREWALL LH-R1.
+      - id: build_winner_autopsy
+        module: scripts.research.build_winner_autopsy
+        note: >
+          non-fatal; Winner Autopsy Lab nightly (WA-R1..R10). Default mode computes
+          current breakaway watch states + winner_autopsy_panel.json; --write-history
+          appends keep-FIRST rows (ticker, snapshot_date) to
+          data/research/breakaway_watch.parquet history (sole-advancer law: only this
+          engine step passes --write-history). The historical episode census
+          (winner_episodes.parquet) is built off-render via --backfill on the Mac host
+          (needs data/massive_stock_day/). Display-only; no scored_path_surfaces;
+          FIREWALL WA-R5. Degrades to a coverage-honest no-op when name prices absent.
+      - id: build_entity_thesis_mechanism_registry
+        module: scripts.build_entity_thesis_mechanism_registry
+        note: non-fatal; Wave B2 ETM crosswalk — display-only entity/thesis/mechanism registry (ETM-R1..R8); output data/neuralweb/entity_thesis_mechanism_registry.json
+      - id: build_mechanism_pathways
+        module: scripts.build_mechanism_pathways
+        note: non-fatal; MPC v1 (RUL-CC-1..13) — deterministic display-only pathway compiler; reads market_drivers/transmission/factor_intelligence emitted artifacts; outputs data/neuralweb/mechanism_pathways.json + history + site mirror
       - id: build_nw_mastermind_context
         module: scripts.build_nw_mastermind_context
         note: non-fatal; NW→Mastermind context bridge (macro #1567) — declares the live daily.yml engine step that was added without a dag.yml entry (merge-race drift)
+      - id: build_mastermind_feedback_summary
+        module: scripts.build_mastermind_feedback_summary
+        note: non-fatal; Mastermind→NW reverse bridge reader — counts-only feedback summary (FB-R7/R8/R14); runs after build_nw_mastermind_context
+      - id: build_neuralweb_health
+        module: scripts.build_neuralweb_health
+        note: non-fatal; PR-C NW lobe-status surface — two-phase (engine job = previous_run cortex; cortex job --refresh-cortex = current_run); after all NW lobe producers
+      - id: build_neuralweb_brief
+        module: scripts.build_neuralweb_brief
+        note: non-fatal; PR-D NW daily brief surface — engine phase writes phase='engine' after health; cortex job --finalize writes phase='final' + upserts history row
       - id: research_factory_monitor
         module: scripts.research_factory_monitor
         note: non-fatal; Research Factory W6 — paper monitor, regime-aware decay, nightly forward-ledger wiring (RF-8/RF-9/RF-10); data/research_factory/ writes covered by 'git add data/' in commit step
+      - id: build_evidence_clock
+        module: scripts.build_evidence_clock
+        note: non-fatal; Global Evidence Clock v1 (EC-R1..R8) — read-only review-queue aggregator; writes data/neuralweb/evidence_clock.json; always exits 0
       - id: build_options_flow_attention
         module: scripts.build_options_flow_attention
         note: non-fatal reflex; neural-web W-D — direction-free options-flow attention trigger (nightly EOD fold)
+      - id: check_template_site_sync_fix
+        module: scripts.check_template_site_sync
+        args: [--fix]
+        note: >
+          non-fatal (|| true); ui.template_site_sync self-heal inside the "commit engine
+          outputs" push retry loop (post-rebase, pre-push) — re-copies plain-copy page
+          assets from post-rebase templates/ so `git pull --rebase -X theirs` can never
+          resurrect this run's checkout-time template copies over a reword merged
+          mid-nightly (2026-07-07 incident: 2ae709f9f0 vs #1793).
       - id: build_feeds
         module: scripts.build_feeds
         note: non-fatal; per-ticker JSON feeds
@@ -417,6 +556,52 @@ lanes:
           outputs: [data/neuralweb/machine_registry.jsonl (status update),
                     data/neuralweb/cortex/evaluator_run.json,
                     data/neuralweb/governance.jsonl]
+      - id: build_neuralweb_health_cortex
+        module: scripts.build_neuralweb_health
+        note: >
+          PR-C NW lobe-status surface — cortex-job phase (--refresh-cortex flag).
+          Second phase of the two-phase health build: re-reads cortex grader outputs
+          (data/reflexes/cortex_attention/grades.jsonl, probation.json) written by
+          grade_cortex_attention and grade_factor_attention, then patches
+          overall_status/summary_counts in the health.json already written by the
+          engine-job phase. Runs with `if: always()` so health.json reflects the
+          latest cortex state even when cortex_deliberation is skipped or fails.
+          Non-fatal (always exits 0 in the workflow step).
+          inputs: [data/neuralweb/health.json,
+                   data/reflexes/cortex_attention/grades.jsonl,
+                   data/reflexes/factor_attention/grades.jsonl,
+                   data/neuralweb/cortex/last_run_state.json]
+          outputs: [data/neuralweb/health.json,
+                    site/neuralweb/health.json]
+      - id: build_neuralweb_brief_cortex
+        module: scripts.build_neuralweb_brief
+        note: >
+          PR-D NW daily brief surface — cortex-job phase (--finalize flag).
+          Rebuilds with phase='final' using post-refresh-cortex health.json,
+          rewrites both data/ and site/ copies, and upserts one compact history row
+          keyed by as_of into data/neuralweb/daily_brief_history.jsonl.
+          Runs with `if: always()`. Non-fatal (always exits 0).
+          inputs: [data/neuralweb/health.json, data/neuralweb/world_state.json,
+                   site/neuralwebdata/confluence_graph.json,
+                   data/neuralweb/mastermind_context.json,
+                   data/neuralweb/cortex/memo.json,
+                   data/neuralweb/daily_brief_history.jsonl]
+          outputs: [data/neuralweb/daily_brief.json,
+                    site/neuralwebdata/daily_brief.json,
+                    data/neuralweb/daily_brief_history.jsonl]
+
+  # ── daily.yml / active_build_map ─────────────────────────────────────────
+  - workflow: .github/workflows/daily.yml
+    job: active_build_map
+    steps:
+      - id: build_active_build_map
+        module: scripts.build_active_build_map
+        note: >
+          Advisory air-traffic-control artifact for multi-agent sessions.
+          Reads GitHub PR state via gh CLI (open PRs, file collisions, recent merges);
+          writes docs/ACTIVE_BUILD_MAP.md and data/governance/active_builds.json.
+          Fail-open: gh unavailable or any gh error exits 0 and leaves existing output files untouched.
+          ADVISORY ONLY — gates nothing in CI or the pipeline.
 
   # ── asia-close.yml / asia ───────────────────────────────────────────────
   - workflow: .github/workflows/asia-close.yml
@@ -469,6 +654,12 @@ lanes:
   - workflow: .github/workflows/engine-render.yml
     job: engine-render
     steps:
+      - id: fetch_r2_attention
+        module: scripts.fetch_r2
+        args: [--dirs, attention]
+        note: >
+          SLF-048 attention store restore (#1677) — pre-render, non-fatal
+          (absent store = attention chip silently absent this render).
       # regime recompute (serial, pre-render)
       - id: build_signal_quality
         module: scripts.build_signal_quality
@@ -567,12 +758,27 @@ lanes:
           non-fatal data-base shim. Library builds (build_china_library, build_hk_library,
           build_canada_library, build_intl_library) run in a background loop via shell
           variable expansion; parser cannot extract them. Intentionally omitted.
+      - id: check_template_site_sync_fix
+        module: scripts.check_template_site_sync
+        args: [--fix]
+        note: >
+          non-fatal (|| true); ui.template_site_sync self-heal inside the commit step's
+          push retry loop (post-rebase, pre-push) — re-copies plain-copy page assets from
+          post-rebase templates/ so `git pull --rebase -X theirs` can never resurrect this
+          run's checkout-time template copies over a reword merged mid-render
+          (2026-07-07 incident: 2ae709f9f0 vs #1793).
 
   # ── render.yml / render ─────────────────────────────────────────────────
   # NOTE: scope=all path.
   - workflow: .github/workflows/render.yml
     job: render
     steps:
+      - id: fetch_r2_attention
+        module: scripts.fetch_r2
+        args: [--dirs, attention]
+        note: >
+          SLF-048 attention store restore (#1677) — pre-render, non-fatal
+          (absent store = attention chip silently absent this render).
       # spine (serial)
       - id: build_spvector
         module: scripts.build_spvector
@@ -617,6 +823,7 @@ lanes:
             - scripts.build_sector_cycles
             - scripts.build_country_cycles
             - scripts.build_cycle
+            - scripts.build_measurement
             - scripts.build_markets
             - engine.policy_intent_desk
             - scripts.build_policy_watch
@@ -657,6 +864,15 @@ lanes:
         note: >
           non-fatal data-base shim. Library builds run in background loops via shell
           variable expansion; parser cannot extract them. Intentionally omitted.
+      - id: check_template_site_sync_fix
+        module: scripts.check_template_site_sync
+        args: [--fix]
+        note: >
+          non-fatal (|| true); ui.template_site_sync self-heal inside the commit step's
+          push retry loop (post-rebase, pre-push) — re-copies plain-copy page assets from
+          post-rebase templates/ so `git pull --rebase -X theirs` can never resurrect this
+          run's checkout-time template copies over a reword merged mid-render
+          (2026-07-07 incident: 2ae709f9f0 vs #1793).
 
   # ── intraday.yml / bars ─────────────────────────────────────────────────
   - workflow: .github/workflows/intraday.yml
@@ -681,6 +897,12 @@ lanes:
   - workflow: .github/workflows/weekly.yml
     job: weekly-report
     steps:
+      - id: fetch_r2_attention
+        module: scripts.fetch_r2
+        args: [--dirs, attention]
+        note: >
+          SLF-048 attention store restore (#1677) — pre-render, non-fatal
+          (absent store = attention chip silently absent this render).
       - id: collect_weekly
         module: scripts.collect
         args: [--only, cot,sentiment_naaim,sentiment_aaii,fundamentals,stock_fundamentals]
@@ -1001,9 +1223,16 @@ modules:
       - data/breadth/_closes_cache.parquet
       - site/altdata/by_ticker.json
       - data/baskets/membership.json
+      - site/factordata/dna_class.json
+      - site/basketdata/oracle_state.json
+      - data/etf_holdings/
+      - data/species/registry.json
     writes:
       - site/factordata/us_standouts.json
       - site/factordata/signal_gate.json
+      - site/factordata/stock_personality.json
+      - data/stock_personality/panel/YYYY-MM/panel.parquet
+      - data/stock_personality/forward_ledger.parquet
     impure: true
     needs_secrets: false
     event_driven: false
@@ -1366,3 +1595,17 @@ modules:
     needs_secrets: false
     event_driven: false
     note: Already listed above; repeated for completeness in the IO table
+
+  - module: scripts.build_factor_panel
+    reads:
+      - data/factordata/panel/
+    writes:
+      - data/factordata/panel/
+      - site/factordata/dna_class.json
+    impure: false
+    needs_secrets: false
+    event_driven: false
+    note: >
+      Incremental nightly factor panel build (bounded 10-day window).
+      data/factordata/panel/ is gitignored (R2 data plane). Also produces
+      site/factordata/dna_class.json (DNA class reference; stock-personality program).

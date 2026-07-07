@@ -203,8 +203,12 @@ def test_read_tool_schemas_no_write_tools():
     assert "explain_options_context" in names
     assert "query_options_confluence" in names
     assert "list_options_contradictions" in names
-    # 7 original + 4 options + 3 factor = 14 total read tools
-    assert len(names) == 14
+    # Cycle-pattern tool (CPI P6 wave 1) must also be present
+    assert "read_cycle_pattern_state" in names
+    # W3 MPC consumer tool must also be present
+    assert "read_mechanism_pathways" in names
+    # 7 original + 4 options + 3 factor + 1 cycle-pattern + 1 mechanism-pathways = 16 total read tools
+    assert len(names) == 16
 
 
 def test_dispatch_refuses_write_tools():
@@ -1395,7 +1399,7 @@ def test_classify_question_factor_jargon_only_does_not_seed_explain_factor_conte
 # --- 15d. Schema count ---
 
 def test_read_tool_schemas_count_and_options_tools_present():
-    """_read_tool_schemas() returns exactly 14 tools (7 core + 4 options + 3 factor)."""
+    """_read_tool_schemas() returns exactly 16 tools (7 core + 4 options + 3 factor + 1 cycle-pattern + 1 mechanism-pathways)."""
     schemas = ab._read_tool_schemas()
     names = {s["name"] for s in schemas}
     # All four options tools present
@@ -1406,9 +1410,13 @@ def test_read_tool_schemas_count_and_options_tools_present():
         "list_options_contradictions",
     ):
         assert tool in names, f"{tool} missing from _read_tool_schemas()"
-    # Total count
-    assert len(schemas) == 14, (
-        f"Expected 14 read tools, got {len(schemas)}: {sorted(names)}"
+    # Cycle-pattern read tool (CPI P6 wave 1) present
+    assert "read_cycle_pattern_state" in names
+    # W3 MPC consumer tool present
+    assert "read_mechanism_pathways" in names
+    # Total count: 7 core + 4 options + 3 factor + 1 cycle-pattern + 1 mechanism-pathways = 16
+    assert len(schemas) == 16, (
+        f"Expected 16 read tools, got {len(schemas)}: {sorted(names)}"
     )
     # Write tools absent
     for write_tool in ("flag_attention", "write_memo", "stake_hypothesis"):
@@ -1481,6 +1489,33 @@ def test_factor_branch_checked_before_options_branch():
         f"Expected factor branch to win for mixed question, got budget={budget}, seeds={seeds}"
     )
     assert "read_factor_state" in seeds
+
+
+# --- 15h. Advice filter on options path ---
+
+def test_advice_filter_covers_options_path():
+    """Advice-pattern filter is applied to options-path answers too (RO-7).
+
+    Mirrors test_advice_filter_covers_factor_path: the filter is path-agnostic,
+    so options-shaped answers with directional advice must be replaced by the
+    refusal text, including Chinese directional verbs (kill-list #6 / RUL-NW4).
+    """
+    # English directional verb
+    answer_en = "Given the dealer positioning into opex, you should buy the straddle."
+    filtered, was_filtered = ab._post_filter_advice(answer_en, [])
+    assert was_filtered, "English buy-advice must be filtered on options path"
+    assert "cannot provide investment advice" in filtered
+
+    # Chinese directional verbs
+    answer_zh = "根据期权流数据，建议买入跨式组合。"
+    filtered_zh, was_filtered_zh = ab._post_filter_advice(answer_zh, [])
+    assert was_filtered_zh, "Chinese 买入 must be filtered (kill-list #6)"
+    assert "cannot provide investment advice" in filtered_zh
+
+    answer_zh2 = "GEX 显示挤压风险，应平仓。"
+    filtered_zh2, was_filtered_zh2 = ab._post_filter_advice(answer_zh2, [])
+    assert was_filtered_zh2, "Chinese 平仓 must be filtered (kill-list #6)"
+    assert "cannot provide investment advice" in filtered_zh2
 
 
 if __name__ == "__main__":

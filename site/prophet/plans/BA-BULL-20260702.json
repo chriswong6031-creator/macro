@@ -1,0 +1,43 @@
+{
+  "schema": "prophet.trade_plan/v1",
+  "id": "BA-BULL-20260702",
+  "asof": "2026-07-07",
+  "asset": "BA",
+  "direction": "BULL",
+  "thesis": "BA [TURN SIGNALED] \u2014 conviction 46/100 (neutral). Drivers: entry; tailwind. Cautions: accounting warn. Entry grade: solid. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; no validated signal; display-tier artifact.",
+  "source_engines": [
+    "us_standouts_buy_lane",
+    "neural_web"
+  ],
+  "trigger": 228.5,
+  "entry": 226.5,
+  "invalidation": 183.53,
+  "targets": [
+    290.955,
+    355.41
+  ],
+  "horizon_days": 45,
+  "min_hold_days": 10,
+  "tranche": 1,
+  "option_contract": {
+    "right": "C",
+    "strike": 220.0,
+    "expiry": "2026-09-18",
+    "entry_premium": 18.35,
+    "freshness": "EOD mark",
+    "delta_approx": 0.6232,
+    "note": "delta-targeted (0.60)"
+  },
+  "management_ref": "prophet/state/BA-BULL-20260702.json",
+  "authority_tier": "display",
+  "reliability": {
+    "plan": "display \u2014 us_standouts buy-lane originated; display-only until forward ledger gate passes",
+    "option_premium": "EOD mark \u2014 delayed; not NBBO-live; display-only"
+  },
+  "signal_date": "2026-07-02",
+  "_signal_date": "2026-07-02",
+  "_conviction_score": 46,
+  "_act_level": 3,
+  "_r_unit": 42.97,
+  "_gate_go": false
+}

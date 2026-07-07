@@ -106,6 +106,47 @@ jobs:
           python3 -m scripts.check_validated_claims --selftest
           python3 -m scripts.check_validated_claims
 
+      # ── LOG: CPI lake rebuild (monthly; P2) ────────────────────────────────
+      # Re-runs the full cycle-pattern lake build (entity registry + state_monthly
+      # parquet) from the committed backfill artifacts.  Semantics: LOG-AND-SKIP
+      # (fail-open — a lake failure must never block the calibration lane; the
+      # last-good parquet stays in place).  Guarded: no-op if the script is absent.
+      # Estimated runtime: <2 min on 2-core (committed backfill only).  Added: P2.
+      - name: "LOG | build_cycle_pattern_lake (monthly lake rebuild)"
+        run: |
+          if [ ! -f scripts/build_cycle_pattern_lake.py ]; then
+            echo "scripts/build_cycle_pattern_lake.py not present — skipping"
+            exit 0
+          fi
+          python3 -m scripts.build_cycle_pattern_lake || true
+
+      # ── LOG: CPI outcomes rebuild (monthly; P2) ─────────────────────────────
+      # Re-runs the cycle-pattern outcomes builder from the committed lake.
+      # Semantics: LOG-AND-SKIP (fail-open).  Guarded: no-op if the script is absent.
+      # Estimated runtime: <1 min.  Added: P2.
+      - name: "LOG | build_cycle_pattern_outcomes (outcomes rebuild)"
+        run: |
+          if [ ! -f scripts/build_cycle_pattern_outcomes.py ]; then
+            echo "scripts/build_cycle_pattern_outcomes.py not present — skipping"
+            exit 0
+          fi
+          python3 -m scripts.build_cycle_pattern_outcomes || true
+
+      # ── HARD: cycle-pattern authority guard (P2) ────────────────────────────
+      # No Article-2 money-path module (alert_triage / board_ordering / top_setups)
+      # may read data/cycle_pattern/ — the CPI substrate is display-only (context
+      # tier).  Mirrors check_research_factory_authority in the research-factory-
+      # authority ci.yml job.  Semantics: ABORT-LANE (hard failure).  Added: P2.
+      # Guarded: no-op if the script is absent (safe to merge before P2 lands).
+      - name: "HARD | check_cycle_pattern_authority (CPI: no money-path reads of cycle-pattern lake)"
+        run: |
+          if [ ! -f scripts/check_cycle_pattern_authority.py ]; then
+            echo "scripts/check_cycle_pattern_authority.py not present — skipping"
+            exit 0
+          fi
+          python3 -m scripts.check_cycle_pattern_authority --selftest
+          python3 -m scripts.check_cycle_pattern_authority
+
       # ── HARD: risk-calibration binding tests (W4.6) ────────────────────────
       # vol-residualization math, embargo IMMUTABILITY, binding fallback byte-identity,
       # null-cell discipline, grep-gate EN+zh firing. Semantics: ABORT-LANE. Added: W4.6.
@@ -219,6 +260,10 @@ jobs:
             exit 0
           fi
           python -m scripts.grade_promises --verbose || true
+          # NOTE: this lane has permissions: contents: read — it does NOT commit
+          # the refreshed scorecard JSONs.  site/measurement.html is rebuilt nightly
+          # by daily.yml (cl_misc cluster, scripts.build_measurement step), so the
+          # page lags a regrade by at most one night.
 
       # ── Slot: D4 price-basis audit (planned, W2.2) ─────────────────────────
       # When merged: python -m scripts.audit_price_basis --report
@@ -291,6 +336,7 @@ jobs:
             echo "| test_cycle_forward_log       | see above |"
             echo "| test_grading_stats           | see above |"
             echo "| check_validated_claims (BC-2) | see above |"
+            echo "| check_cycle_pattern_authority (CPI P2) | see above |"
             echo "| test_ladder_risk_calibration | see above |"
             echo ""
             echo "Action: fix the failing script/test and re-dispatch this"

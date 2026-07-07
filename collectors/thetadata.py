@@ -210,6 +210,55 @@ def reachable(connect_timeout: int | None = None) -> bool:
         return False
 
 
+def list_expirations(symbol: str) -> list[str] | None:
+    """Return a sorted list of ISO date strings ("YYYY-MM-DD") for all expirations.
+
+    Endpoint: GET /v3/option/list/expirations?symbol=<UPPER>&format=csv
+    Returns the FULL history (2012→ far future).  Callers MUST filter to unexpired.
+
+    Returns None on any error (log warning, INERT contract).
+    """
+    try:
+        r = _session().get(
+            f"{_base_url()}/v3/option/list/expirations",
+            params={"symbol": symbol.upper(), "format": "csv"},
+            timeout=_TIMEOUTS,
+        )
+    except Exception as e:  # noqa: BLE001
+        log.warning("thetadata: list_expirations(%s) request error — %s", symbol, e)
+        return None
+
+    if r.status_code != 200:
+        try:
+            body = r.text[:200]
+        except Exception:  # noqa: BLE001
+            body = "(unreadable)"
+        log.warning("thetadata: list_expirations(%s) HTTP %d — %s", symbol, r.status_code, body)
+        return None
+
+    expirations: list[str] = []
+    try:
+        for line in r.text.splitlines():
+            line = line.strip()
+            if not line or line.startswith("symbol,"):
+                continue
+            # CSV: "SPY","2026-07-10"  or  SPY,2026-07-10
+            parts = [v.strip().strip('"') for v in line.split(",")]
+            if len(parts) >= 2 and parts[1]:
+                # Normalize to YYYY-MM-DD regardless of format
+                raw = parts[1].strip()
+                if len(raw) == 8 and raw.isdigit():
+                    # YYYYMMDD → YYYY-MM-DD
+                    raw = f"{raw[:4]}-{raw[4:6]}-{raw[6:8]}"
+                if len(raw) == 10:
+                    expirations.append(raw)
+    except Exception as e:  # noqa: BLE001
+        log.warning("thetadata: list_expirations(%s) parse error — %s", symbol, e)
+        return None
+
+    return sorted(expirations)
+
+
 # --------------------------------------------------------------------------- #
 # Low-level HTTP helpers — CSV streaming
 # --------------------------------------------------------------------------- #
@@ -304,7 +353,7 @@ def _stream_lines(session: requests.Session, path: str,
         except Exception:  # noqa: BLE001
             body = "(unreadable)"
         log.warning("thetadata: HTTP %d for %s %s — %s", r.status_code, path, params, body)
-        raise _StreamTruncated(f"HTTP {r.status_code}")
+        raise _StreamTruncated(f"HTTP {r.status_code}: {body}")
 
     try:
         for line in r.iter_lines():
@@ -1110,7 +1159,8 @@ def bulk_trade_quote(root: str, right: str,
                      start_date: date | str | int,
                      end_date: date | str | int,
                      start_time: str | int | None = None,
-                     end_time: str | int | None = None) -> pd.DataFrame | None:
+                     end_time: str | int | None = None,
+                     near_dte_cap_days: int | None = None) -> pd.DataFrame | None:
     """Full-chain trade+NBBO for ONE right (call or put) on a date range.
 
     Endpoint: GET /v3/option/history/trade_quote with expiration=* and strike=*.
@@ -1133,6 +1183,13 @@ def bulk_trade_quote(root: str, right: str,
       end_time   : same formats.  If provided, only trades at or before this
                    time are returned.
     Behavior is identical to the no-params call when both are None (additive).
+
+    near_dte_cap_days:
+      Only used on the current-day fallback path (when the wildcard expiration
+      request is rejected with "specifying an expiration" for today's date).
+      If set, limits per-expiration pulls to expirations where
+      exp_date <= target_date + timedelta(days=near_dte_cap_days).
+      None means no cap (all unexpired expirations are fetched).
 
     Returns None on terminal error; empty DataFrame if no trades exist.
     """
@@ -1165,8 +1222,11 @@ def bulk_trade_quote(root: str, right: str,
     # Indices:    0       1           2      3     4                5
     #             6       7-10        11     12    13       14
     #             15      16          17     18    19       20      21    22
-    try:
-        for raw_line in _stream_lines(session, "/v3/option/history/trade_quote", params):
+
+    def _parse_rows(stream_iter) -> list[dict]:
+        """Parse a _stream_lines iterator into row dicts. Raises _StreamTruncated on error."""
+        rows: list[dict] = []
+        for raw_line in stream_iter:
             if isinstance(raw_line, bytes):
                 line = raw_line.decode("utf-8", errors="replace")
             else:
@@ -1179,7 +1239,7 @@ def bulk_trade_quote(root: str, right: str,
             parts = [v.strip().strip('"') for v in line.split(",")]
             if len(parts) < 23:
                 continue
-            rows_all.append({
+            rows.append({
                 "date":            parts[4][:10] if parts[4] else None,
                 "trade_timestamp": parts[4],
                 "quote_timestamp": parts[5],
@@ -1193,23 +1253,128 @@ def bulk_trade_quote(root: str, right: str,
                 "bid":             parts[17],
                 "ask":             parts[21],
             })
+        return rows
+
+    def _build_df(rows: list[dict]) -> pd.DataFrame:
+        """Coerce row dicts to the canonical bulk_trade_quote output DataFrame."""
+        if not rows:
+            return pd.DataFrame()
+        df = pd.DataFrame(rows)
+        df["date"]     = pd.to_datetime(df["date"], errors="coerce")
+        df["price"]    = pd.to_numeric(df["price"],    errors="coerce")
+        df["size"]     = pd.to_numeric(df["size"],     errors="coerce")
+        df["bid"]      = pd.to_numeric(df["bid"],      errors="coerce")
+        df["ask"]      = pd.to_numeric(df["ask"],      errors="coerce")
+        df["strike"]   = pd.to_numeric(df["strike"],   errors="coerce")
+        df["sequence"] = pd.to_numeric(df["sequence"], errors="coerce")
+        df["right"]    = df["right"].str.upper().str[:1]   # "CALL"→"C", "PUT"→"P"
+        df["root"]     = root.upper()
+        return df.reset_index(drop=True)
+
+    try:
+        rows_all = _parse_rows(
+            _stream_lines(session, "/v3/option/history/trade_quote", params)
+        )
     except _StreamTruncated as e:
+        err_str = str(e).lower()
+        if "specifying an expiration" in err_str:
+            # Current-day wildcard rejected — fall back to per-expiration loop.
+            return _bulk_trade_quote_per_exp(
+                root=root, right=right_norm,
+                start_date=start_date, end_date=end_date,
+                st_str=st_str, et_str=et_str,
+                near_dte_cap_days=near_dte_cap_days,
+                parse_rows=_parse_rows,
+                build_df=_build_df,
+            )
         log.warning(
             "thetadata: bulk_trade_quote(%s, %s, %s→%s) truncated — returning None: %s",
             root, right, start_date, end_date, e)
         return None
 
-    if not rows_all:
-        return pd.DataFrame()
+    return _build_df(rows_all)
 
-    df = pd.DataFrame(rows_all)
-    df["date"]     = pd.to_datetime(df["date"], errors="coerce")
-    df["price"]    = pd.to_numeric(df["price"],    errors="coerce")
-    df["size"]     = pd.to_numeric(df["size"],     errors="coerce")
-    df["bid"]      = pd.to_numeric(df["bid"],      errors="coerce")
-    df["ask"]      = pd.to_numeric(df["ask"],      errors="coerce")
-    df["strike"]   = pd.to_numeric(df["strike"],   errors="coerce")
-    df["sequence"] = pd.to_numeric(df["sequence"], errors="coerce")
-    df["right"]    = df["right"].str.upper().str[:1]   # "CALL"→"C", "PUT"→"P"
-    df["root"]     = root.upper()
-    return df.reset_index(drop=True)
+
+def _bulk_trade_quote_per_exp(
+    root: str, right: str,
+    start_date, end_date,
+    st_str: str | None, et_str: str | None,
+    near_dte_cap_days: int | None,
+    parse_rows,
+    build_df,
+) -> pd.DataFrame | None:
+    """Per-expiration fallback for current-day bulk_trade_quote.
+
+    Used when the wildcard expiration request is rejected by ThetaData v3 for
+    the current calendar day ("Cannot fetch current-day data without specifying
+    an expiration").  Fetches each unexpired expiration individually.
+
+    SEQUENTIAL (no ThreadPoolExecutor) — the poller owns concurrency, capped at
+    2 by a HARD LAW.
+    """
+    target_date = _parse_date_int(start_date)  # always single-day for this path
+    cap_date = (target_date + timedelta(days=near_dte_cap_days)
+                if near_dte_cap_days is not None else None)
+
+    exps = list_expirations(root)
+    if exps is None:
+        log.warning(
+            "thetadata: bulk_trade_quote per-exp fallback — list_expirations(%s) failed,"
+            " returning None", root)
+        return None
+
+    # Filter: keep only unexpired expirations within the DTE cap
+    filtered: list[str] = []
+    for exp_iso in exps:
+        try:
+            exp_date = date.fromisoformat(exp_iso)
+        except ValueError:
+            continue
+        if exp_date < target_date:
+            continue
+        if cap_date is not None and exp_date > cap_date:
+            continue
+        filtered.append(exp_iso)
+
+    session = _session()
+    all_rows: list[dict] = []
+    failed_count = 0
+
+    for exp_iso in filtered:
+        exp_int = _date_int(exp_iso)
+        per_params: dict = {
+            "symbol": root.upper(),
+            "expiration": exp_int,
+            "strike": "*",
+            "right": right,
+            "start_date": _date_int(start_date),
+            "end_date": _date_int(end_date),
+        }
+        if st_str is not None:
+            per_params["start_time"] = st_str
+        if et_str is not None:
+            per_params["end_time"] = et_str
+
+        try:
+            rows = parse_rows(
+                _stream_lines(session, "/v3/option/history/trade_quote", per_params)
+            )
+            all_rows.extend(rows)
+        except _StreamTruncated as e:
+            log.warning(
+                "thetadata: bulk_trade_quote per-exp fallback — exp %s failed, skipping: %s",
+                exp_iso, e)
+            failed_count += 1
+
+    dte_label = f"<={near_dte_cap_days}" if near_dte_cap_days is not None else "all"
+    log.info(
+        "thetadata: bulk_trade_quote current-day fallback %s %s — %d expirations (%s DTE),"
+        " %d rows", root, right, len(filtered), dte_label, len(all_rows))
+
+    if failed_count == len(filtered) and not all_rows:
+        log.warning(
+            "thetadata: bulk_trade_quote per-exp fallback — ALL %d expirations failed"
+            " for %s %s, returning None", len(filtered), root, right)
+        return None
+
+    return build_df(all_rows)

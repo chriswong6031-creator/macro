@@ -42,6 +42,8 @@ ALLOWLIST = ROOT / "data" / "regime" / "validated_claims_allowlist.json"
 SCAN_GLOBS = [
     ("templates", ("*.j2", "*.js")),
     ("site", ("*.js", "*.html")),
+    # Prophet plan JSONs are rendered user-facing (terminal oracle-tab); scan them too.
+    ("site/prophet/plans", ("*.json",)),
 ]
 
 TOKEN = re.compile(r"validated|已验证", re.IGNORECASE)

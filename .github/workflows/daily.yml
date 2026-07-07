@@ -99,6 +99,23 @@ jobs:
           path: data/quality/baselines
           key: quality-baselines-${{ github.run_id }}
           restore-keys: quality-baselines-
+      - name: restore attention store from R2 (deep history is git-ignored)
+        # data/attention/*.parquet (SLF-048 Wikipedia pageviews, 2015-07→) moved to the
+        # R2 data plane 2026-07-06 — a fresh checkout holds NONE of them. Restore FIRST
+        # so the wiki_pageviews collector's ~120d fetch upserts ON TOP of deep history
+        # (lib.store.upsert keeps disk-only rows) instead of rebuilding a shallow window.
+        # continue-on-error: on restore failure the collector still produces a usable
+        # ~120d store (the display chip needs ~95d) — but the publish-back step after
+        # "commit data" is GATED on this step's outcome, so a shallow rebuild can never
+        # clobber the deep store on R2 (publish_r2's bytes floor is the second fence).
+        id: attention_restore
+        continue-on-error: true
+        env:
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: python -m scripts.fetch_r2 --dirs attention
       - name: run collectors (graceful degradation — never fails the build on one source)
         env:
           FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
@@ -113,6 +130,9 @@ jobs:
           SAM_API_KEY: ${{ secrets.SAM_API_KEY }}           # SAM.gov pre-award solicitations (collectors/sam_gov.py); free key (entity reg); absent -> 'blocked', non-fatal
           GITHUB_TOKEN: ${{ github.token }}                 # GitHub star velocity (collectors/github_repos.py); the auto-injected workflow token reads public-repo metadata at 1000/hr — no new secret needed
           TUSHARE_TOKEN: ${{ secrets.TUSHARE_TOKEN }}       # gated CN moneyflow/chips/margin plane (collectors/tushare_*.py); silently no-ops absent — was frozen 2026-06-21→ (CHINA_ENGINE_REASSESSMENT)
+          COLLECT_LANE: nightly  # lane sentinel: forward-ledger graders (grade_breadth_divergence,
+                                 # grade_policy_calendar) check COLLECT_LANE==nightly before writing;
+                                 # asia-close/weekly/intl_etf leave it unset → no-op in those lanes.
         run: |
           if [ -n "$FRED_API_KEY" ]; then echo "::notice::FRED_API_KEY present — using official API"; else echo "::warning::FRED_API_KEY ABSENT — check repo Settings > Secrets and variables > Actions > Repository secrets"; fi
           # --exclude-group asia: China/HK collectors run in their own asia-close shard
@@ -163,6 +183,14 @@ jobs:
         run: |
           python scripts/fetch_finviz_themes.py \
             || echo "::warning::Finviz themes fetch failed (non-fatal) — keeping committed snapshot"
+      - name: collect ZORI national rent index (MRI shelter leg; non-fatal)
+        # Fetches Zillow's public ZORI CSV (keyless) and writes data/zori/national.parquet.
+        # data/zori/national.parquet is git-tracked (un-ignored by .gitignore negation);
+        # metro-level parquet files under data/zori/ remain untracked (size).
+        # collect_zori.py raises RuntimeError on HTTP failure — shell-level guard mandatory.
+        run: |
+          python scripts/collect_zori.py \
+            || echo "::warning::ZORI collection failed (non-fatal) — shelter leg will use cached parquet"
       - name: commit data
         run: |
           git config user.name "dashboard-bot"
@@ -171,7 +199,10 @@ jobs:
           # writes the TRACKED site/qledger/track_record.json (un-ignored by #1139).
           # Left unstaged it blocks `git pull --rebase` ("unstaged changes") and the
           # whole data push silently dies after 5 attempts — 07-03/07-04 collections
-          # were lost exactly this way (the sentinel staging-gap pattern).
+          # were lost exactly this way (the sentinel staging-gap pattern). The
+          # --autostash on the rebase below is the durable guard: it survives ANY
+          # stray tracked write collect leaves outside data/+site/qledger/ (e.g.
+          # reports/*.md graders), not just the qledger paths we happen to stage here.
           git add data/ site/qledger/
           if git diff --cached --quiet; then echo "no data changes to commit"; exit 0; fi
           git commit -m "data: daily collection $(date -u +%F)"
@@ -179,13 +210,29 @@ jobs:
           # pipeline (the data is collected; the next run re-syncs). Retry rebase+push,
           # preferring our freshly-collected data on any conflict.
           for i in 1 2 3 4 5; do
-            if git pull --rebase -X theirs origin main && git push; then
+            if git pull --rebase --autostash -X theirs origin main && git push; then
               echo "pushed data on attempt $i"; exit 0
             fi
             git rebase --abort 2>/dev/null || true
             echo "data push attempt $i lost a race; re-syncing"; sleep $((i * 7))
           done
           echo "::warning::could not push collected data after 5 attempts (non-fatal)"
+      - name: publish attention store back to R2 (gated on the restore)
+        # The day's upserted increments ride back to R2 so tomorrow's restore (and the
+        # engine job's render-side restore) reads a CURRENT deep store — a frozen R2
+        # copy would slowly starve the chip's trailing-5d window. Gated on the restore
+        # step's outcome: if the restore failed, the local tree is a shallow ~120d
+        # rebuild whose file count matches the deep store, and publishing it would
+        # clobber 11y of history. Gaps self-heal: the collector's ~120d fetch window
+        # re-covers any missed days on the next successful cycle. Runs AFTER "commit
+        # data" so the commit is never delayed by the upload. Non-fatal.
+        if: steps.attention_restore.outcome == 'success'
+        env:
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: python -m scripts.publish_r2 --dirs attention || echo "::warning::attention R2 publish failed (non-fatal — R2 store goes stale, chip self-heals within the 120d fetch window)"
 
   engine:
     needs: collect
@@ -204,6 +251,17 @@ jobs:
           echo "$VENV/bin" >> "$GITHUB_PATH"
           "$VENV/bin/python" -m pip install --quiet --upgrade pip
       - run: pip install -r requirements.txt
+      - name: restore attention store from R2 (wiki chip reads it at render)
+        # build_site.build_attention_data reads data/attention/*.parquet — git-ignored
+        # since 2026-07-06, R2-hosted, kept current by the collect job's publish-back.
+        # Non-fatal: an absent store means the attention chip is silently absent for
+        # one render (build_attention_data degrades to None); nothing else reads it.
+        env:
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: python -m scripts.fetch_r2 --dirs attention || echo "::warning::attention restore failed (non-fatal — attention chip absent/stale this render)"
       - name: restore breadth close cache (stock search library needs constituent closes)
         uses: actions/cache@v4
         with:
@@ -391,6 +449,10 @@ jobs:
           # from the breadth close caches (same panel as build_stock_library). Display-only;
           # gross_mult_live clamped 1.0. Seconds; never fatal.
           run_py "L3 dispersion regime lens (build_dispersion_regime)" scripts.build_dispersion_regime
+          # DT-NW-1: aggregate per-ticker dt_contra chip state into data/neuralweb/dt_contra_state.json.
+          # AFTER build_site (which calls build_stock_library to write site/stockdata/*.json).
+          # Display-only NW artifact; degrades gracefully if stockdata absent. Seconds; never fatal.
+          run_py "DT-NW-1 dt_contra state aggregator (build_dt_contra_state)" scripts.build_dt_contra_state
           # Congressional / politician disclosed-trades desk — AFTER build_alt_data (refreshes
           # data/quiver/congress.parquet) + build_site (refreshes per-name stockdata + regime +
           # allocation that the watchlist scores against). Reads only committed data; returns 0 on error.
@@ -411,6 +473,30 @@ jobs:
           python -m scripts.backfill_regime_stamps > /tmp/backfill_regime_stamps.log 2>&1; rc=$?
           cat /tmp/backfill_regime_stamps.log
           [ "$rc" -ne 0 ] && echo "::warning title=backfill_regime_stamps::rc=$rc (non-fatal)"
+      - name: Prophet nightly (plan refresh + ledger advancement + R2 mirror)
+        # AFTER build_site: reads site/factordata/us_standouts.json (just written).
+        # Originates new prophet.trade_plan/v1 envelopes, runs the management engine
+        # for every active plan, advances the forward outcome ledger (nightly is the
+        # SOLE advancer — idempotent per plan ID), and optionally mirrors
+        # site/prophet/index.json to R2 key "prophet/index.json".
+        # Artifacts committed by "commit engine outputs" below (site/ + data/ covers
+        # site/prophet/** and data/prophet/ledger.jsonl — no extra git add needed).
+        # continue-on-error: true — a prophet failure must never abort the nightly deploy.
+        # R2 creds: passed when present; build_prophet skips upload gracefully when absent.
+        # Wall-time: seconds (no heavy compute; reads committed parquets + standouts JSON).
+        continue-on-error: true
+        env:
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: |
+          set +e
+          echo "::group::build_prophet (plan refresh + ledger advancement)"
+          python -m scripts.build_prophet --publish > /tmp/prophet.log 2>&1; rc=$?
+          cat /tmp/prophet.log
+          echo "::endgroup::"
+          [ "$rc" -ne 0 ] && echo "::warning title=build_prophet::rc=$rc (non-fatal — prophet artifacts degrade gracefully)"
           exit 0
       - name: regional + desk builders (parallelised — independent clusters, barrier before the hub)
         # The ~22 builders between build_site and the landing hub split into mutually
@@ -490,6 +576,7 @@ jobs:
             brun cohort_metrics "W0.4 cohort metrics — peer washout/reclaim/MACD-turn + Rubber-Band Score (build_cohort_metrics)" scripts.build_cohort_metrics
             brun news        "news suite (build_news)"                 scripts.build_news
             brun methodology "methodology page (build_methodology)"    scripts.build_methodology
+            brun nasdaq_internals "nasdaq-100 archetype-group internals (build_nasdaq_internals)" scripts.build_nasdaq_internals
           }
           cl_special() { brun special "special situations desk (build_special_situations)" scripts.build_special_situations; }
           cl_misc() {
@@ -498,16 +585,29 @@ jobs:
             brun cycle         "cycle intelligence page (build_cycle)"        scripts.build_cycle
             brun sectorcyc     "sector cycle intelligence (build_sector_cycles)" scripts.build_sector_cycles
             brun countrycyc    "country cycle intelligence (build_country_cycles)" scripts.build_country_cycles
+            brun measurement   "cycle measurement hub (build_measurement)"    scripts.build_measurement
+            brun sync_gauge    "sync gauge appender (append_sync_gauge)"      scripts.append_sync_gauge
             brun policy_intent "policy intent desk (policy_intent_desk)"      engine.policy_intent_desk
             brun policy_watch  "fed & policy watch (build_policy_watch)"      scripts.build_policy_watch
             brun index_changes "S&P index changes (build_index_changes)"     scripts.build_index_changes
+            # CPI P2: live-view rebuild runs LAST in cl_misc so today's forward-log stamps
+            # from build_sector_cycles and build_country_cycles (both above) are present.
+            # Placement inside cl_misc (not post-band) is intentional: the dependency is
+            # only on these two intra-cluster steps; the band barrier would be correct but
+            # wastes the ~28-min special-situations wait. cl_misc is fully sequential so
+            # the ordering guarantee holds without any additional wait.
+            brun cycle_pattern_live "CPI live-view adapter (build_cycle_pattern_live)" scripts.build_cycle_pattern_live
+            # CPI P6: the NW adapter artifact compacts the live view + hazard gate
+            # ledger + truth registry, so it runs AFTER cycle_pattern_live (sequential
+            # within cl_misc — same ordering guarantee as the live-view step above).
+            brun cycle_pattern_state "CPI NW adapter (build_cycle_pattern_state)" scripts.build_cycle_pattern_state
           }
           # launch every cluster concurrently, then barrier before the hub (build_vector, below)
           cl_markets & cl_gex & cl_baskets & cl_special & cl_misc &
           wait
           # --- replay each builder's output GROUPED + in a stable order (post-barrier, so
           #     nothing interleaves), surface failures as annotations, summarise wall-times ---
-          ORDER="commodities spr forex bonds crossasset transmission discovery gex_board vol_regime darkpool options_flow flow_desk options_skew options_ivspread baskets subsector_conf subsector_conf_ndx subsector_conf_rut cohort_metrics news methodology seasonality reports policy_intent policy_watch special index_changes"
+          ORDER="commodities spr forex bonds crossasset transmission discovery gex_board vol_regime darkpool options_flow flow_desk options_skew options_ivspread baskets subsector_conf subsector_conf_ndx subsector_conf_rut cohort_metrics news methodology nasdaq_internals seasonality reports measurement sync_gauge policy_intent policy_watch special index_changes cycle_pattern_live cycle_pattern_state"
           echo "### ⏱ parallel band — per-builder wall-time" >> "$GITHUB_STEP_SUMMARY"
           for slug in $ORDER; do
             [ -f "$ART/$slug.log" ] || continue
@@ -532,6 +632,19 @@ jobs:
         # which could run inside cl_china only because both its deps lived in that one cluster).
         # Additive (the builder returns 0 on any failure), so it can never break the deploy.
         run: python -m scripts.build_sector_central
+      - name: flow_idx R2 mirror (heatmap flow layer freshness)
+        # Mirror site/flow/index.json → R2 key live_flow/flow_idx.json so the live
+        # options-flow heatmap layer can read a fresh manifest without a full site deploy.
+        # Runs AFTER the parallel band (cl_gex → build_options_flow produced the file).
+        # Graceful: skips silently when R2 creds are absent. Never fails the build.
+        continue-on-error: true
+        env:
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: |
+          python -m scripts.mirror_flow_idx || echo "::warning::flow_idx R2 mirror failed (non-fatal)"
       - name: build bitcoin vector + landing hub
         # installs the landing hub at index.html (rendered from stored engine
         # state, so ordering vs build_site no longer matters — build_site writes
@@ -753,6 +866,18 @@ jobs:
           cat /tmp/kernel_estimates.log
           [ "$rc" -ne 0 ] && echo "::warning title=build_kernel_estimates::rc=$rc (non-fatal)"
           exit 0
+      - name: build covariance spine (R-ORTH PR-3)
+        # R-ORTH PR-3: covariance spine MVP (RUL-ORTH-1..11). Measures structural
+        # concentration across rates PCA, factor correlations, dispersion regime,
+        # and NW engine firing independence. Display-only; four independently-guarded
+        # blocks; always exits 0. Writes data/neuralweb/covariance_spine.json +
+        # site/neuralwebdata/covariance_spine.json + history parquet.
+        run: |
+          set +e
+          python -m scripts.build_covariance_spine > /tmp/covariance_spine.log 2>&1; rc=$?
+          cat /tmp/covariance_spine.log
+          [ "$rc" -ne 0 ] && echo "::warning title=build_covariance_spine::rc=$rc (non-fatal)"
+          exit 0
       - name: build kernel diagnostics (neural-web W3)
         # W3 PR3: decay curves (kernel_families.json) + lagging-signal detector
         # (lagging_signals.json). Both are display-only diagnostics; zero behavior-changing
@@ -903,6 +1028,22 @@ jobs:
             fi
           done
           exit 0
+      - name: watchlist buy-zone sentinel (B6 — fail-soft; skips when creds absent)
+        # B6: reads operator Supabase watchlist (two-table schema: watchlists + watchlist_symbols),
+        # diffs vs yesterday's per-ticker state, emits buy-zone-enter alerts to
+        # data/alerts/watchlist_alerts.jsonl + Discord.
+        # Fail-soft: missing SUPABASE_SERVICE_KEY or SUPABASE_OPERATOR_USER_ID -> exit 0.
+        # SUPABASE_OPERATOR_USER_ID is REQUIRED (multiple accounts exist; absent -> skip silently).
+        # Same-day idempotent: second run carries forward existing state files.
+        # OPS: add SUPABASE_SERVICE_KEY + SUPABASE_OPERATOR_USER_ID repo secrets to enable.
+        # Optional: add DISCORD_WEBHOOK_WATCHLIST for a dedicated channel;
+        #   falls back to DISCORD_WEBHOOK_URL when absent.
+        env:
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          SUPABASE_OPERATOR_USER_ID: ${{ secrets.SUPABASE_OPERATOR_USER_ID }}
+          DISCORD_WEBHOOK_WATCHLIST: ${{ secrets.DISCORD_WEBHOOK_WATCHLIST }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: python -m scripts.run_watchlist_sentinel || echo "::warning::watchlist sentinel failed (non-fatal)"
       - name: notify (telegram/discord; skips when secrets absent)
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
@@ -937,6 +1078,36 @@ jobs:
         # backwards = lookahead). Lossless via a snapshot_json column. Display/research-
         # only, never read back into a score; the script always exits 0.
         run: python -m scripts.archive_signals || true
+      - name: archive context snapshots (context PIT history — non-fatal)
+        # Appends flattened context-regime state (quad, liquidity, cycle_tag,
+        # transition_state, regime_confidence, market_state verdict/score,
+        # vol_regime verdict, fear-greed composite) to
+        # data/signal_archive/context_daily.parquet (keep-FIRST per date).
+        # Fixes P-D5-3 'no PIT context history' class going forward.
+        # Every source is absent-safe; always exits 0.
+        run: python -m scripts.archive_context_snapshots || true
+      - name: CPI net-liquidity artifact (data infrastructure — non-fatal)
+        # Deterministic full rebuild of data/macro/fed_net_liquidity.parquet (+ the
+        # fed_net_liquidity_meta.json sidecar) from the three component parquets the
+        # collect job refreshed tonight (data/fred/WALCL + RRPONTSYD, data/treasury/tga)
+        # via engine.canon.load_net_liquidity_components — the ONE netliq formula
+        # (audit #28): WALCL_bn − RRP_bn − TGA_bn, billions. Stale-guard truncates the
+        # frame at min(component last real obs)+10bd so a dead component collector can
+        # never silently ffill a drain flat for weeks. Context-tier ONLY — registers
+        # no trial (FT-3 suspended by cycle_truth_ft2_credit_hazard_null_v1; see the
+        # fed-net-liquidity notes in config/synapse.yml). Output covered by
+        # 'git add data/' in 'commit engine outputs' below.
+        run: python -m scripts.build_netliq_daily || echo "::warning::build_netliq_daily failed (non-fatal — last committed artifact stands)"
+      - name: MRI release forecast producer (display-only, non-fatal)
+        # MRI PR-C: nightly projection for CPI (headline + core) and NFP.
+        # Emits data/release_forecast/latest.json (schema release_forecast.v1),
+        # site/macrodata/release_forecast.json (display copy),
+        # data/release_forecast/forward_ledger.jsonl (append-only),
+        # data/release_forecast/scoreboard.json (forward accrual only).
+        # Runs AFTER collect (needs fresh ALFRED vintages for release-day capture).
+        # display_only=True; all authority booleans False (MRI-R7). Fail-open.
+        # Outputs covered by 'git add data/' and 'git add site/' below.
+        run: python -m scripts.build_release_forecast || echo "::warning::build_release_forecast failed (non-fatal — last committed artifact stands)"
       - name: signal sanity (correctness tripwire — warn mode)
         if: always()   # validate whatever DID build, even if an earlier optional builder failed
         # The CORRECTNESS dead-man's switch over the per-ticker boards BOTH books select from
@@ -990,6 +1161,21 @@ jobs:
         # engine-render.yml (express lane) also runs this step — its regime/market_state
         # recompute would otherwise drift ahead of the committed world_state copies.
         run: python -m scripts.build_world_state || echo "::warning::build_world_state failed (non-fatal) — keeping last committed world_state"
+      - name: fetch oracle panels from R2 (PR-C1 sponsorship shim)
+        if: always()
+        # PR-C1 (RUL-7): oracle panel_s.parquet + panel_m.parquet are built off-render
+        # on the Mac (scripts/oracle_nightly.py + publish_oracle_panels.py) and published
+        # to R2 under the oracle/ prefix.  Download them here so build_bottom_sensors can
+        # populate sponsorship_state for the ~1,489+ sector-mapped tickers.
+        # Absent-object-safe: if R2 objects are missing the connector degrades to
+        # 'unavailable' — this step NEVER crashes the build (always exits 0).
+        # No-op when R2 creds are absent (non-prod builds, forks).
+        env:
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: python -m scripts.fetch_oracle_panels || echo "::warning::fetch_oracle_panels failed (non-fatal — sponsorship_state will be unavailable)"
       - name: build bottom-sensor envelope (NW Rails B0)
         if: always()
         # Display-only (no ranking/gating/money-path) — assembles the bottom-sensor
@@ -1001,6 +1187,58 @@ jobs:
         # Benchmark: 2.29s on the full US universe (~1722 names, 2026-07-06).
         # Fail-soft: missing optional inputs degrade gracefully; never blocks the commit.
         run: python -m scripts.build_bottom_sensors || echo "::warning::build_bottom_sensors failed (non-fatal - keeping last committed bottom sensors)"
+      - name: LT-4 thesis funnel history append (PR-A2 — nightly longitudinal store)
+        if: always()
+        # LT-4 thesis funnel longitudinal history — append-only per (ticker, snapshot_date).
+        # Runs build_thesis_funnel_snapshot with --write-history (sole-advancer law: this flag
+        # is ONLY passed from this step). Reads data/edgar/{statements,fundamentals_panel,
+        # statements_quarterly}.parquet (committed by collect job). Writes
+        # data/research/thesis_funnel_history.parquet (keep-FIRST per ticker+date; same-date
+        # re-runs are idempotent no-ops). Also writes the snapshot parquet + manifest as a
+        # side-effect. Display-only; no scored_path_surfaces; FIREWALL LH-R1.
+        # Output covered by 'git add data/' in 'commit engine outputs' below.
+        # Benchmark: ~15s (per LT4_FUNNEL_SHADOW_REPORT.md); well under 30s threshold.
+        run: python -m scripts.research.build_thesis_funnel_snapshot --write-history || echo "::warning::build_thesis_funnel_history failed (non-fatal — keeping last committed history)"
+      - name: Winner Autopsy nightly watch + panel (long-hold top-down department)
+        if: always()
+        # Winner Autopsy Lab (WA-R1..R10). Default mode computes current breakaway watch
+        # states + winner_autopsy_panel.json (admin Long-Hold Lobe surface). --write-history
+        # appends keep-FIRST rows (ticker, snapshot_date) to the watch history parquet
+        # (sole-advancer law: this flag is ONLY passed here; --smoke+--write-history hard-exits).
+        # Reads data/yahoo/ ETFs + data/massive_stock_day/ names when present; degrades to a
+        # coverage-honest no-op (exit 0) when name prices are absent on the runner. The full
+        # historical episode census (winner_episodes.parquet) is built off-render via --backfill
+        # on the Mac host. Writes data/research/{breakaway_watch.parquet,breakaway_watch_history
+        # .parquet,winner_autopsy_panel.json,winner_autopsy_manifest.json}. Display-only; no
+        # scored_path_surfaces; FIREWALL WA-R5. Output covered by 'git add data/' below.
+        run: python -m scripts.research.build_winner_autopsy --write-history || echo "::warning::build_winner_autopsy failed (non-fatal — keeping last committed winner-autopsy artifacts)"
+      - name: entity/thesis/mechanism registry (neural-web — display-only crosswalk)
+        if: always()
+        # Wave B2 ETM crosswalk: builds data/neuralweb/entity_thesis_mechanism_registry.json
+        # from existing local artifacts (species, candidates, governance, reflexivity, config).
+        # Display-only; no authority to gate, rank, size, or originate signals (ETM-R1..R8).
+        # Output covered by 'git add data/ site/' in 'commit engine outputs' below.
+        run: |
+          set +e
+          python -m scripts.build_entity_thesis_mechanism_registry > /tmp/etm_registry.log 2>&1; rc=$?
+          cat /tmp/etm_registry.log
+          [ "$rc" -ne 0 ] && echo "::warning title=build_entity_thesis_mechanism_registry::rc=$rc (non-fatal)"
+          exit 0
+      - name: build mechanism pathways (NW core-cognition W1 — MPC v1)
+        if: always()
+        # MPC v1 (RUL-CC-1..13): deterministic display-only pathway compiler.
+        # Reads emitted artifacts only: data/regime/latest.json (market_drivers),
+        # data/transmission/latest.json (chains), data/neuralweb/factor_intelligence_state.json.
+        # Writes: data/neuralweb/mechanism_pathways.json, mechanism_pathways_history.jsonl,
+        # site/neuralwebdata/mechanism_pathways.json.
+        # All outputs covered by 'git add data/ site/' in 'commit engine outputs' below.
+        # Fail-soft: stale trigger or insufficient coverage → no_pathway artifact (never raises).
+        run: |
+          set +e
+          python -m scripts.build_mechanism_pathways > /tmp/mechanism_pathways.log 2>&1; rc=$?
+          cat /tmp/mechanism_pathways.log
+          [ "$rc" -ne 0 ] && echo "::warning title=build_mechanism_pathways::rc=$rc (non-fatal)"
+          exit 0
       - name: build mastermind context (NW bridge)
         if: always()
         # NW → Mastermind bridge W1: compile data/neuralweb/mastermind_context.json and
@@ -1009,6 +1247,27 @@ jobs:
         # Resilient: fail-open; kept last committed context on error; never blocks the commit.
         # Both outputs covered by 'git add data/ site/' in 'commit engine outputs' below.
         run: python -m scripts.build_nw_mastermind_context || echo "::warning::build_nw_mastermind_context failed (non-fatal) — keeping last committed mastermind_context"
+      - name: build mastermind feedback summary (reverse bridge)
+        if: always()
+        # Mastermind → NW reverse bridge W2 (FB-R7/R8/R14): reads site/mastermind/nw_feedback.json
+        # (pushed by Mastermind twice daily) and writes data/governance/mastermind_feedback_summary.json.
+        # Fail-open: absent/stale source writes state:"absent"/"stale" artifact (never fabricated zeros).
+        # Output covered by 'git add data/' in 'commit engine outputs' below.
+        run: python -m scripts.build_mastermind_feedback_summary || echo "::warning::build_mastermind_feedback_summary failed (non-fatal) — keeping last committed summary"
+      - name: build neuralweb health (PR-C — NW lobe-status surface)
+        if: always()
+        # PR-C two-phase health: engine job builds lobe records with cortex_source='previous_run'
+        # (last committed cortex memo). Cortex job runs --refresh-cortex after cortex deliberation.
+        # Fail-open: per-lobe exceptions produce status='unknown'; missing synapse.yml exits 0.
+        # Both outputs covered by 'git add data/ site/' in 'commit engine outputs' below.
+        run: python -m scripts.build_neuralweb_health || echo "::warning::build_neuralweb_health failed (non-fatal) — keeping last committed health.json"
+      - name: build neuralweb daily brief (PR-D — NW daily brief surface, engine phase)
+        if: always()
+        # PR-D two-phase brief: engine job writes phase='engine' after health.json is ready.
+        # Cortex job runs --finalize after --refresh-cortex to write phase='final' + history row.
+        # Fail-open: any missing input → brief with explicit gap notes, exit 0.
+        # Both outputs covered by 'git add data/ site/' in 'commit engine outputs' below.
+        run: python -m scripts.build_neuralweb_brief || echo "::warning::build_neuralweb_brief failed (non-fatal) — keeping last committed daily_brief.json"
       - name: research_factory_monitor (W6 — paper monitor + nightly ledger)
         if: always()
         # Research Factory W6 (RF-8/RF-9/RF-10): paper monitor over all 'paper',
@@ -1023,6 +1282,14 @@ jobs:
         # 'git add data/' in 'commit engine outputs' below.
         # Non-fatal: a failed monitor never kills the nightly build.
         run: python -m scripts.research_factory_monitor --write || echo "::warning::research_factory_monitor failed (non-fatal)"
+      - name: build_evidence_clock (Global Evidence Clock v1)
+        if: always()
+        # Global Evidence Clock (EC-R1..R8): read-only display-only aggregator.
+        # Reads every review-clock source (experiments, qledger, research_factory,
+        # trial_ledger, governance, rule_experiments, cycle_pattern, species, freshness)
+        # and writes data/neuralweb/evidence_clock.json.
+        # No LLM, no mutations, always exits 0. Covered by 'git add data/' below.
+        run: python -m scripts.build_evidence_clock || echo "::warning::evidence clock build failed"
       - name: options_flow_attention reflex trigger (W-D — nightly EOD fold)
         if: always()
         # Neural Web W-D (RO-8): direction-free reflex that fires when an on-board
@@ -1080,8 +1347,18 @@ jobs:
           # best-effort push (see commit-data). The deploy below uses the uploaded
           # artifact, so it never depends on this commit landing.
           for i in 1 2 3 4 5; do
-            if git pull --rebase -X theirs origin main && git push; then
-              echo "pushed engine outputs on attempt $i"; exit 0
+            if git pull --rebase --autostash -X theirs origin main; then
+              # post-rebase template↔site re-sync (ui.template_site_sync): -X theirs can
+              # resurrect this run's checkout-time template copies over a reword that merged
+              # mid-nightly (2026-07-07: engine-render commit 2ae709f9f0 reverted #1793's
+              # site-side de-escalation in sector_cycles.js this way). templates/ is now
+              # fresh post-rebase main — re-copy and fold any delta into a follow-up commit.
+              python -m scripts.check_template_site_sync --fix || true
+              if ! git diff --quiet -- site/; then
+                git add site/ && git commit -m "render-sync: re-copy template assets post-rebase (site==templates guard)" \
+                  || echo "::warning::render-sync commit failed (non-fatal — pages publish gate backstops divergence)"
+              fi
+              if git push; then echo "pushed engine outputs on attempt $i"; exit 0; fi
             fi
             git rebase --abort 2>/dev/null || true
             echo "engine push attempt $i lost a race; re-syncing"; sleep $((i * 7))
@@ -1104,7 +1381,7 @@ jobs:
         # US-evening shard owns the US/intl/canada/subsector stores; CN/HK go via asia-close.yml.
         # Content-hash skip -> only deltas upload. Still committed to git for now (Pages fallback);
         # the git de-bloat + Pages slim-down is the follow-up increment once the client reads R2.
-        run: python -m scripts.publish_r2 --dirs ohlc,intlohlc,canadaohlc,subsectorohlc,subsectorohlc_russell,subsectorohlc_nasdaq,stockdata,intlstockdata,canadastockdata,intraday,feeds,massive_stock_day || echo "::warning::R2 publish failed (non-fatal)"
+        run: python -m scripts.publish_r2 --dirs ohlc,intlohlc,canadaohlc,subsectorohlc,subsectorohlc_russell,subsectorohlc_nasdaq,stockdata,intlstockdata,canadastockdata,intraday,feeds,massive_stock_day,stock_personality || echo "::warning::R2 publish failed (non-fatal)"
       - name: verify R2 data plane freshness (loud tripwire — the publish above is non-fatal)
         # The publish step swallows every failure (incl. the exit-0 no-op when the R2_*
         # secrets are absent/expired), so the live site would serve stale per-ticker data
@@ -1186,7 +1463,7 @@ jobs:
           git commit -m "factor-series: month-end walk $(date -u +%F)"
           # best-effort push (different file from engine's outputs → rebases clean)
           for i in 1 2 3 4 5; do
-            if git pull --rebase -X theirs origin main && git push; then
+            if git pull --rebase --autostash -X theirs origin main && git push; then
               echo "pushed factor series on attempt $i"; exit 0
             fi
             git rebase --abort 2>/dev/null || true
@@ -1270,11 +1547,12 @@ jobs:
           git add data/factordata/fire_coordinates.jsonl
           git add data/neuralweb/factor_contradictions.jsonl
           git add data/reflexes/factor_attention/firings.jsonl
+          git add site/factordata/dna_class.json
           if git diff --cached --quiet; then echo "no factor intelligence changes"; exit 0; fi
           git commit -m "factor-intelligence: nightly state artifact + pool $(date -u +%F)"
           # best-effort push (own files -> rebases clean against engine/factor_series)
           for i in 1 2 3 4 5; do
-            if git pull --rebase -X theirs origin main && git push; then
+            if git pull --rebase --autostash -X theirs origin main && git push; then
               echo "pushed factor intelligence outputs on attempt $i"; exit 0
             fi
             git rebase --abort 2>/dev/null || true
@@ -1348,7 +1626,7 @@ jobs:
           git commit -m "stock-briefs: AI research briefs + accountable leans $(date -u +%F)"
           # best-effort push (own files → rebases clean against engine/factor_series)
           for i in 1 2 3 4 5; do
-            if git pull --rebase -X theirs origin main && git push; then
+            if git pull --rebase --autostash -X theirs origin main && git push; then
               echo "pushed stock briefs on attempt $i"; exit 0
             fi
             git rebase --abort 2>/dev/null || true
@@ -1444,6 +1722,25 @@ jobs:
           cat /tmp/cortex_eval.log
           [ "$rc" -ne 0 ] && echo "::warning title=cortex_eval::rc=$rc (non-fatal)"
           exit 0
+      - name: refresh neuralweb health — cortex section (PR-C)
+        if: always()
+        run: |
+          set +e
+          python -m scripts.build_neuralweb_health --refresh-cortex > /tmp/nw_health_refresh.log 2>&1; rc=$?
+          cat /tmp/nw_health_refresh.log
+          [ "$rc" -ne 0 ] && echo "::warning title=nw_health_refresh::rc=$rc (non-fatal — keeping previous health.json)"
+          exit 0
+      - name: build neuralweb daily brief — finalize (PR-D, cortex phase)
+        if: always()
+        # PR-D cortex phase: rebuild brief with phase='final' using post-refresh-cortex
+        # health.json, rewrite both copies, and upsert compact history row keyed by as_of.
+        # Fail-open: any missing input → brief with explicit gap notes, exit 0.
+        run: |
+          set +e
+          python -m scripts.build_neuralweb_brief --finalize > /tmp/nw_brief_finalize.log 2>&1; rc=$?
+          cat /tmp/nw_brief_finalize.log
+          [ "$rc" -ne 0 ] && echo "::warning title=nw_brief_finalize::rc=$rc (non-fatal — keeping previous daily_brief.json)"
+          exit 0
       - name: commit cortex outputs
         run: |
           git config user.name "dashboard-bot"
@@ -1460,17 +1757,64 @@ jobs:
           # and the DSR haircut undercounts.
           git add data/trial_ledger.jsonl 2>/dev/null || true
           git add site/neuralweb/ 2>/dev/null || true
+          # PR-C: NW health refresh (cortex_source=current_run) — two-phase health surface
+          git add data/neuralweb/health.json 2>/dev/null || true
+          git add site/neuralwebdata/health.json 2>/dev/null || true
+          # PR-D: NW daily brief finalize (phase=final + history row) — two-phase brief surface
+          git add data/neuralweb/daily_brief.json 2>/dev/null || true
+          git add site/neuralwebdata/daily_brief.json 2>/dev/null || true
+          git add data/neuralweb/daily_brief_history.jsonl 2>/dev/null || true
           if git diff --cached --quiet; then echo "no cortex output changes"; exit 0; fi
           git commit -m "cortex: attention grades + A2 earn-in + hypothesis metabolism $(date -u +%F)"
           # Retry-rebase push loop (stock_briefs pattern)
           for i in 1 2 3 4 5; do
-            if git pull --rebase -X theirs origin main && git push; then
+            if git pull --rebase --autostash -X theirs origin main && git push; then
               echo "pushed cortex outputs on attempt $i"; exit 0
             fi
             git rebase --abort 2>/dev/null || true
             echo "cortex push attempt $i lost a race; re-syncing"; sleep $((i * 7))
           done
           echo "::warning::could not push cortex after 5 attempts (non-fatal — downstream reads last committed)"
+
+  # Light advisory job: generates docs/ACTIVE_BUILD_MAP.md and
+  # data/governance/active_builds.json — a map of open PRs, file collisions,
+  # and recent merges for multi-agent session air-traffic control.
+  # ADVISORY ONLY: fail-open, no merge gating, exit 0 even if gh errors.
+  active_build_map:
+    needs: collect
+    if: always()
+    runs-on: [self-hosted, macstudio]
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - run: git pull origin main
+      - name: python 3.12 (Homebrew venv — self-hosted runner)
+        run: |
+          VENV="$HOME/.cache/mm-venv-${RUNNER_NAME:-default}"
+          [ -x "$VENV/bin/python" ] || /opt/homebrew/bin/python3.12 -m venv "$VENV"
+          echo "$VENV/bin" >> "$GITHUB_PATH"
+      - name: generate active build map
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python -m scripts.build_active_build_map || echo "::warning::active_build_map generation failed (non-fatal — fail-open)"
+      - name: commit active build map outputs
+        run: |
+          git config user.name "dashboard-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add docs/ACTIVE_BUILD_MAP.md data/governance/active_builds.json
+          if git diff --cached --quiet; then echo "no active build map changes"; exit 0; fi
+          git commit -m "docs: active build map $(date -u +%F)"
+          for i in 1 2 3 4 5; do
+            if git pull --rebase --autostash -X theirs origin main && git push; then
+              echo "pushed active build map on attempt $i"; exit 0
+            fi
+            git rebase --abort 2>/dev/null || true
+            echo "active-build-map push attempt $i lost a race; re-syncing"; sleep $((i * 7))
+          done
+          echo "::warning::could not push active build map after 5 attempts (non-fatal)"
 
   publish:
     # GitHub Pages can't serve a /site folder from a branch — deploy the

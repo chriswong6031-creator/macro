@@ -1,0 +1,648 @@
+{
+  "generated_at": "2026-07-06T23:28:39.318266+00:00",
+  "data_source": "Local FRED Treasury constant-maturity parquet files under data/fred",
+  "source_files": [
+    "DGS3MO.parquet",
+    "DGS6MO.parquet",
+    "DGS1.parquet",
+    "DGS2.parquet",
+    "DGS3.parquet",
+    "DGS5.parquet",
+    "DGS7.parquet",
+    "DGS10.parquet",
+    "DGS30.parquet"
+  ],
+  "method": {
+    "input": "Daily yield changes in percentage points, complete rows only",
+    "demeaning": "numpy covariance demeaning inside np.cov",
+    "orientation": "PC1 sum positive; PC2 rising with maturity; PC3 belly positive",
+    "rolling_window_days": 504,
+    "long_window_days": 1260,
+    "oos_horizon_days": 21,
+    "notes": "OOS health is max absolute off-diagonal correlation of next-21d projected first-three PC returns.",
+    "sample_truncation": "Joint sample starts at DGS3MO inception (~1981-09-01) due to inner-join dropna; earlier DGS10/DGS30 history is discarded.",
+    "latest_2y_note": "latest_2y covers the current rolling window; no separate snapshot is created for today.",
+    "null_calibration": "oos_null_median/p90 are computed from contiguous 21-row slices inside each training window (stride=2, cap=200, deterministic enumeration, \u2265200 draws per window per RUL-ORTH-8). oos_pctile_vs_null is the fraction of null draws <= the observed value. Per RUL-ORTH-8, raw OOS thresholds are illegal; metrics must be read against these null columns."
+  },
+  "sample": {
+    "yield_start": "1981-09-01",
+    "yield_end": "2026-07-01",
+    "yield_rows": 11207,
+    "change_rows": 11206
+  },
+  "full_sample": {
+    "n_obs": 11206,
+    "start": "1981-09-02",
+    "end": "2026-07-01",
+    "variance_explained": {
+      "pc1": 0.770939,
+      "pc2": 0.141786,
+      "pc3": 0.03855,
+      "pc4": 0.021678,
+      "pc5": 0.009753,
+      "pc6": 0.006917,
+      "pc7": 0.004895,
+      "pc8": 0.003193,
+      "pc9": 0.002287
+    },
+    "first3_var": 0.951276,
+    "effective_dimension_pr": 1.6218,
+    "eigenvalue_gaps": {
+      "pc1_to_pc2": 5.4373,
+      "pc2_to_pc3": 3.678,
+      "pc3_to_pc4": 1.7783,
+      "pc4_to_pc5": 2.2227,
+      "pc5_to_pc6": 1.41
+    },
+    "loadings": {
+      "pc1_level": {
+        "us3m": 0.2543,
+        "us6m": 0.2991,
+        "us1y": 0.3275,
+        "us2y": 0.3603,
+        "us3y": 0.37,
+        "us5y": 0.3741,
+        "us7y": 0.3656,
+        "us10y": 0.3418,
+        "us30y": 0.2854
+      },
+      "pc2_slope": {
+        "us3m": -0.6536,
+        "us6m": -0.4672,
+        "us1y": -0.258,
+        "us2y": -0.006,
+        "us3y": 0.0995,
+        "us5y": 0.209,
+        "us7y": 0.2762,
+        "us10y": 0.2858,
+        "us30y": 0.2764
+      },
+      "pc3_curvature": {
+        "us3m": -0.5009,
+        "us6m": 0.0653,
+        "us1y": 0.3125,
+        "us2y": 0.4364,
+        "us3y": 0.3081,
+        "us5y": 0.0653,
+        "us7y": -0.1369,
+        "us10y": -0.2733,
+        "us30y": -0.514
+      }
+    }
+  },
+  "latest_5y": {
+    "n_obs": 1260,
+    "start": "2021-06-16",
+    "end": "2026-07-01",
+    "variance_explained": {
+      "pc1": 0.822827,
+      "pc2": 0.096953,
+      "pc3": 0.042673,
+      "pc4": 0.016827,
+      "pc5": 0.007836,
+      "pc6": 0.006543,
+      "pc7": 0.003669,
+      "pc8": 0.001649,
+      "pc9": 0.001024
+    },
+    "first3_var": 0.962453,
+    "effective_dimension_pr": 1.4521,
+    "eigenvalue_gaps": {
+      "pc1_to_pc2": 8.4869,
+      "pc2_to_pc3": 2.272,
+      "pc3_to_pc4": 2.5361,
+      "pc4_to_pc5": 2.1472,
+      "pc5_to_pc6": 1.1977
+    },
+    "loadings": {
+      "pc1_level": {
+        "us3m": 0.0845,
+        "us6m": 0.1531,
+        "us1y": 0.2801,
+        "us2y": 0.402,
+        "us3y": 0.4218,
+        "us5y": 0.4218,
+        "us7y": 0.4059,
+        "us10y": 0.3638,
+        "us30y": 0.2764
+      },
+      "pc2_slope": {
+        "us3m": -0.2709,
+        "us6m": -0.3529,
+        "us1y": -0.4558,
+        "us2y": -0.3304,
+        "us3y": -0.1525,
+        "us5y": 0.0768,
+        "us7y": 0.236,
+        "us10y": 0.3535,
+        "us30y": 0.5248
+      },
+      "pc3_curvature": {
+        "us3m": -0.7295,
+        "us6m": -0.4018,
+        "us1y": -0.0315,
+        "us2y": 0.2804,
+        "us3y": 0.2579,
+        "us5y": 0.1272,
+        "us7y": 0.0066,
+        "us10y": -0.1299,
+        "us30y": -0.3567
+      }
+    }
+  },
+  "latest_2y": {
+    "n_obs": 504,
+    "start": "2024-06-25",
+    "end": "2026-07-01",
+    "variance_explained": {
+      "pc1": 0.84021,
+      "pc2": 0.095845,
+      "pc3": 0.026488,
+      "pc4": 0.013563,
+      "pc5": 0.008911,
+      "pc6": 0.006115,
+      "pc7": 0.005311,
+      "pc8": 0.002126,
+      "pc9": 0.001433
+    },
+    "first3_var": 0.962543,
+    "effective_dimension_pr": 1.3963,
+    "eigenvalue_gaps": {
+      "pc1_to_pc2": 8.7664,
+      "pc2_to_pc3": 3.6184,
+      "pc3_to_pc4": 1.953,
+      "pc4_to_pc5": 1.5221,
+      "pc5_to_pc6": 1.4573
+    },
+    "loadings": {
+      "pc1_level": {
+        "us3m": 0.0545,
+        "us6m": 0.1285,
+        "us1y": 0.2676,
+        "us2y": 0.3994,
+        "us3y": 0.4102,
+        "us5y": 0.423,
+        "us7y": 0.4149,
+        "us10y": 0.3727,
+        "us30y": 0.302
+      },
+      "pc2_slope": {
+        "us3m": -0.1959,
+        "us6m": -0.2845,
+        "us1y": -0.4285,
+        "us2y": -0.372,
+        "us3y": -0.2193,
+        "us5y": 0.0209,
+        "us7y": 0.2047,
+        "us10y": 0.3433,
+        "us30y": 0.5919
+      },
+      "pc3_curvature": {
+        "us3m": -0.5871,
+        "us6m": -0.5237,
+        "us1y": -0.2678,
+        "us2y": 0.234,
+        "us3y": 0.3151,
+        "us5y": 0.153,
+        "us7y": 0.0523,
+        "us10y": -0.0886,
+        "us30y": -0.3481
+      }
+    }
+  },
+  "rolling_2y_summary": {
+    "window_days": 504,
+    "step_days": 21,
+    "oos_horizon_days": 21,
+    "count": 509,
+    "n_degenerate_windows": 0,
+    "pc1_var": {
+      "min": 0.650931,
+      "median": 0.826784,
+      "max": 0.898499,
+      "latest": 0.84529
+    },
+    "first3_var": {
+      "min": 0.92189,
+      "median": 0.959317,
+      "max": 0.97392,
+      "latest": 0.963462
+    },
+    "effective_dimension_pr": {
+      "min": 1.2337,
+      "median": 1.4381,
+      "max": 2.0195,
+      "latest": 1.381
+    },
+    "pc1_to_pc2_gap": {
+      "min": 2.4497,
+      "median": 8.8826,
+      "max": 17.8676,
+      "latest": 9.1003
+    },
+    "pc3_to_pc4_gap": {
+      "min": 1.1254,
+      "median": 2.0571,
+      "max": 4.3094,
+      "latest": 1.929
+    },
+    "pc1_loading_turnover_vs_prev": {
+      "min": 1e-06,
+      "median": 5e-05,
+      "max": 0.015315,
+      "latest": 6e-06
+    },
+    "next_21d_oos_max_abs_pc_corr": {
+      "min": 0.0768,
+      "median": 0.5425,
+      "max": 0.9806,
+      "latest": 0.4859
+    },
+    "oos_null_median": {
+      "min": 0.321,
+      "median": 0.47065,
+      "max": 0.80795,
+      "latest": 0.4933
+    },
+    "oos_null_p90": {
+      "min": 0.50726,
+      "median": 0.67797,
+      "max": 0.95911,
+      "latest": 0.66056
+    },
+    "oos_pctile_vs_null": {
+      "min": 0.0,
+      "median": 0.655,
+      "max": 1.0,
+      "latest": 0.485
+    }
+  },
+  "snapshots_2y": {
+    "2019-12-31": {
+      "n_obs": 504,
+      "start": "2017-12-22",
+      "end": "2019-12-31",
+      "variance_explained": {
+        "pc1": 0.818499,
+        "pc2": 0.078152,
+        "pc3": 0.046147,
+        "pc4": 0.022426,
+        "pc5": 0.0143,
+        "pc6": 0.010216,
+        "pc7": 0.005019,
+        "pc8": 0.002933,
+        "pc9": 0.002308
+      },
+      "first3_var": 0.942797,
+      "effective_dimension_pr": 1.4727,
+      "eigenvalue_gaps": {
+        "pc1_to_pc2": 10.4732,
+        "pc2_to_pc3": 1.6935,
+        "pc3_to_pc4": 2.0578,
+        "pc4_to_pc5": 1.5682,
+        "pc5_to_pc6": 1.3997
+      },
+      "loadings": {
+        "pc1_level": {
+          "us3m": 0.0583,
+          "us6m": 0.1055,
+          "us1y": 0.1991,
+          "us2y": 0.3699,
+          "us3y": 0.3997,
+          "us5y": 0.4226,
+          "us7y": 0.4298,
+          "us10y": 0.4043,
+          "us30y": 0.35
+        },
+        "pc2_slope": {
+          "us3m": -0.5027,
+          "us6m": -0.4668,
+          "us1y": -0.4148,
+          "us2y": -0.2828,
+          "us3y": -0.1349,
+          "us5y": 0.0177,
+          "us7y": 0.1494,
+          "us10y": 0.2544,
+          "us30y": 0.4146
+        },
+        "pc3_curvature": {
+          "us3m": -0.5958,
+          "us6m": -0.2695,
+          "us1y": 0.0175,
+          "us2y": 0.4144,
+          "us3y": 0.2981,
+          "us5y": 0.1267,
+          "us7y": -0.035,
+          "us10y": -0.1778,
+          "us30y": -0.5125
+        }
+      }
+    },
+    "2020-03-16": {
+      "n_obs": 504,
+      "start": "2018-03-09",
+      "end": "2020-03-16",
+      "variance_explained": {
+        "pc1": 0.809042,
+        "pc2": 0.094491,
+        "pc3": 0.050948,
+        "pc4": 0.016808,
+        "pc5": 0.010611,
+        "pc6": 0.009458,
+        "pc7": 0.004279,
+        "pc8": 0.002478,
+        "pc9": 0.001886
+      },
+      "first3_var": 0.954481,
+      "effective_dimension_pr": 1.5002,
+      "eigenvalue_gaps": {
+        "pc1_to_pc2": 8.5621,
+        "pc2_to_pc3": 1.8547,
+        "pc3_to_pc4": 3.0312,
+        "pc4_to_pc5": 1.5841,
+        "pc5_to_pc6": 1.1219
+      },
+      "loadings": {
+        "pc1_level": {
+          "us3m": 0.1156,
+          "us6m": 0.1616,
+          "us1y": 0.2224,
+          "us2y": 0.3578,
+          "us3y": 0.3831,
+          "us5y": 0.4025,
+          "us7y": 0.4104,
+          "us10y": 0.4021,
+          "us30y": 0.3798
+        },
+        "pc2_slope": {
+          "us3m": -0.6128,
+          "us6m": -0.5243,
+          "us1y": -0.3918,
+          "us2y": -0.1298,
+          "us3y": -0.0394,
+          "us5y": 0.0771,
+          "us7y": 0.1678,
+          "us10y": 0.2103,
+          "us30y": 0.3154
+        },
+        "pc3_curvature": {
+          "us3m": -0.3483,
+          "us6m": -0.2289,
+          "us1y": 0.0967,
+          "us2y": 0.4306,
+          "us3y": 0.3427,
+          "us5y": 0.2049,
+          "us7y": 0.0326,
+          "us10y": -0.1853,
+          "us30y": -0.6608
+        }
+      }
+    },
+    "2020-04-30": {
+      "n_obs": 504,
+      "start": "2018-04-25",
+      "end": "2020-04-30",
+      "variance_explained": {
+        "pc1": 0.796888,
+        "pc2": 0.106774,
+        "pc3": 0.054428,
+        "pc4": 0.015114,
+        "pc5": 0.009781,
+        "pc6": 0.008608,
+        "pc7": 0.003996,
+        "pc8": 0.002631,
+        "pc9": 0.00178
+      },
+      "first3_var": 0.958091,
+      "effective_dimension_pr": 1.5389,
+      "eigenvalue_gaps": {
+        "pc1_to_pc2": 7.4633,
+        "pc2_to_pc3": 1.9617,
+        "pc3_to_pc4": 3.6012,
+        "pc4_to_pc5": 1.5453,
+        "pc5_to_pc6": 1.1363
+      },
+      "loadings": {
+        "pc1_level": {
+          "us3m": 0.0888,
+          "us6m": 0.1333,
+          "us1y": 0.1996,
+          "us2y": 0.3424,
+          "us3y": 0.3734,
+          "us5y": 0.4027,
+          "us7y": 0.4223,
+          "us10y": 0.4185,
+          "us30y": 0.4027
+        },
+        "pc2_slope": {
+          "us3m": -0.5863,
+          "us6m": -0.5407,
+          "us1y": -0.4207,
+          "us2y": -0.1554,
+          "us3y": -0.075,
+          "us5y": 0.0441,
+          "us7y": 0.1562,
+          "us10y": 0.2043,
+          "us30y": 0.2984
+        },
+        "pc3_curvature": {
+          "us3m": -0.3523,
+          "us6m": -0.239,
+          "us1y": 0.0684,
+          "us2y": 0.4153,
+          "us3y": 0.3653,
+          "us5y": 0.2324,
+          "us7y": 0.038,
+          "us10y": -0.1878,
+          "us30y": -0.6462
+        }
+      }
+    },
+    "2021-12-31": {
+      "n_obs": 504,
+      "start": "2019-12-30",
+      "end": "2021-12-31",
+      "variance_explained": {
+        "pc1": 0.769971,
+        "pc2": 0.114201,
+        "pc3": 0.069012,
+        "pc4": 0.016486,
+        "pc5": 0.009898,
+        "pc6": 0.00714,
+        "pc7": 0.006804,
+        "pc8": 0.004118,
+        "pc9": 0.00237
+      },
+      "first3_var": 0.953184,
+      "effective_dimension_pr": 1.6363,
+      "eigenvalue_gaps": {
+        "pc1_to_pc2": 6.7423,
+        "pc2_to_pc3": 1.6548,
+        "pc3_to_pc4": 4.1862,
+        "pc4_to_pc5": 1.6656,
+        "pc5_to_pc6": 1.3861
+      },
+      "loadings": {
+        "pc1_level": {
+          "us3m": 0.0729,
+          "us6m": 0.0922,
+          "us1y": 0.1156,
+          "us2y": 0.2236,
+          "us3y": 0.2932,
+          "us5y": 0.3889,
+          "us7y": 0.4478,
+          "us10y": 0.4797,
+          "us30y": 0.505
+        },
+        "pc2_slope": {
+          "us3m": -0.5025,
+          "us6m": -0.4823,
+          "us1y": -0.4215,
+          "us2y": -0.3139,
+          "us3y": -0.2436,
+          "us5y": -0.0932,
+          "us7y": 0.082,
+          "us10y": 0.1863,
+          "us30y": 0.3595
+        },
+        "pc3_curvature": {
+          "us3m": -0.3865,
+          "us6m": -0.3475,
+          "us1y": -0.1337,
+          "us2y": 0.3014,
+          "us3y": 0.357,
+          "us5y": 0.3702,
+          "us7y": 0.1919,
+          "us10y": -0.0931,
+          "us30y": -0.5578
+        }
+      }
+    },
+    "2022-06-30": {
+      "n_obs": 504,
+      "start": "2020-06-26",
+      "end": "2022-06-30",
+      "variance_explained": {
+        "pc1": 0.781085,
+        "pc2": 0.119101,
+        "pc3": 0.052335,
+        "pc4": 0.018074,
+        "pc5": 0.011891,
+        "pc6": 0.008256,
+        "pc7": 0.004814,
+        "pc8": 0.002873,
+        "pc9": 0.00157
+      },
+      "first3_var": 0.952521,
+      "effective_dimension_pr": 1.5934,
+      "eigenvalue_gaps": {
+        "pc1_to_pc2": 6.5582,
+        "pc2_to_pc3": 2.2757,
+        "pc3_to_pc4": 2.8956,
+        "pc4_to_pc5": 1.5199,
+        "pc5_to_pc6": 1.4403
+      },
+      "loadings": {
+        "pc1_level": {
+          "us3m": 0.1213,
+          "us6m": 0.1492,
+          "us1y": 0.2477,
+          "us2y": 0.3374,
+          "us3y": 0.3818,
+          "us5y": 0.4221,
+          "us7y": 0.4292,
+          "us10y": 0.4082,
+          "us30y": 0.3362
+        },
+        "pc2_slope": {
+          "us3m": -0.2399,
+          "us6m": -0.3092,
+          "us1y": -0.4232,
+          "us2y": -0.3899,
+          "us3y": -0.251,
+          "us5y": 0.0051,
+          "us7y": 0.19,
+          "us10y": 0.3425,
+          "us30y": 0.547
+        },
+        "pc3_curvature": {
+          "us3m": -0.5555,
+          "us6m": -0.548,
+          "us1y": -0.1772,
+          "us2y": 0.2544,
+          "us3y": 0.2971,
+          "us5y": 0.2492,
+          "us7y": 0.0997,
+          "us10y": -0.0834,
+          "us30y": -0.3574
+        }
+      }
+    },
+    "2023-10-31": {
+      "n_obs": 504,
+      "start": "2021-10-26",
+      "end": "2023-10-31",
+      "variance_explained": {
+        "pc1": 0.809215,
+        "pc2": 0.100383,
+        "pc3": 0.051914,
+        "pc4": 0.018642,
+        "pc5": 0.009002,
+        "pc6": 0.006066,
+        "pc7": 0.002684,
+        "pc8": 0.001375,
+        "pc9": 0.00072
+      },
+      "first3_var": 0.961512,
+      "effective_dimension_pr": 1.4968,
+      "eigenvalue_gaps": {
+        "pc1_to_pc2": 8.0613,
+        "pc2_to_pc3": 1.9336,
+        "pc3_to_pc4": 2.7848,
+        "pc4_to_pc5": 2.0709,
+        "pc5_to_pc6": 1.484
+      },
+      "loadings": {
+        "pc1_level": {
+          "us3m": 0.1073,
+          "us6m": 0.1764,
+          "us1y": 0.2992,
+          "us2y": 0.4093,
+          "us3y": 0.4273,
+          "us5y": 0.4171,
+          "us7y": 0.3958,
+          "us10y": 0.3518,
+          "us30y": 0.2515
+        },
+        "pc2_slope": {
+          "us3m": -0.3364,
+          "us6m": -0.4003,
+          "us1y": -0.4699,
+          "us2y": -0.2728,
+          "us3y": -0.0887,
+          "us5y": 0.1265,
+          "us7y": 0.2611,
+          "us10y": 0.3529,
+          "us30y": 0.4635
+        },
+        "pc3_curvature": {
+          "us3m": -0.7471,
+          "us6m": -0.3184,
+          "us1y": 0.0989,
+          "us2y": 0.3085,
+          "us3y": 0.2437,
+          "us5y": 0.0938,
+          "us7y": -0.0311,
+          "us10y": -0.1591,
+          "us30y": -0.3757
+        }
+      }
+    }
+  },
+  "interpretation_notes": [
+    "Use high PC1 share as a market-mode/concentration warning, not a directional forecast.",
+    "Use low PC3-to-PC4 separation or high OOS PC correlation as a PCA-trust warning.",
+    "Use effective dimension as an independent-bets estimate for governance and confluence de-duplication.",
+    "CRITICAL (RUL-ORTH-8): the observed OOS statistic MUST be read against oos_null_median and oos_null_p90 \u2014 at n=21 the null floor is ~0.4-0.5; raw thresholds are illegal per RUL-ORTH-8 (research/pca_factor_orthogonality/R_ORTH_MASTERPLAN_BY_FABLE.md). oos_pctile_vs_null is the calibrated metric to report."
+  ]
+}

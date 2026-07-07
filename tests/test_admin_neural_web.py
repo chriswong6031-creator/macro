@@ -896,6 +896,809 @@ def test_cortex_memo_legacy_empty_census_degraded(tmp_repo):
     assert rs.get("degraded") is True
 
 
+# ---------------------------------------------------------------------------
+# ROLE A: lobes_panel() tests
+# ---------------------------------------------------------------------------
+
+def test_lobes_panel_smoke():
+    """lobes_panel() returns ok=True, non-empty lobes, required top-level keys."""
+    from admin import neural_web
+    d = neural_web.lobes_panel()
+    assert d.get("ok") is True
+    assert "lobes" in d
+    assert isinstance(d["lobes"], list)
+    assert len(d["lobes"]) > 0, "Must return at least some lobes"
+    for key in ("source", "as_of", "overall_status", "summary_counts", "graph", "groups"):
+        assert key in d, f"Missing key: {key}"
+
+
+def test_lobes_panel_every_lobe_has_required_keys():
+    """Every lobe in lobes_panel() has the required fields per spec."""
+    from admin import neural_web
+    d = neural_web.lobes_panel()
+    required = {
+        "id", "label", "group", "status", "tier", "cadence",
+        "horizon_role", "storage", "producer", "path",
+        "age_hours", "freshness_sla_hours", "sla_met",
+        "row_count", "byte_size", "n_consumers", "n_recent_actions", "short_desc",
+    }
+    for lobe in d["lobes"]:
+        missing = required - set(lobe.keys())
+        assert not missing, f"Lobe {lobe.get('id')} missing keys: {missing}"
+
+
+def test_lobes_panel_groups_cover_all_lobes():
+    """groups[] in lobes_panel() covers exactly all lobes (no lobes dropped)."""
+    from admin import neural_web
+    d = neural_web.lobes_panel()
+    lobes_in_groups = set()
+    for grp in d["groups"]:
+        assert "key" in grp and "label" in grp and "hue" in grp and "lobes" in grp
+        for ls in grp["lobes"]:
+            lobes_in_groups.add(ls["id"])
+    flat_ids = {ls["id"] for ls in d["lobes"]}
+    assert lobes_in_groups == flat_ids, (
+        f"Groups cover {lobes_in_groups} but flat lobes has {flat_ids}"
+    )
+
+
+def test_lobes_panel_group_order():
+    """groups[] are in the correct order: core,kernel,cortex,factor,reflexes,bridge,sensors,ops."""
+    from admin import neural_web
+    d = neural_web.lobes_panel()
+    expected_order = ["core", "kernel", "cortex", "factor", "reflexes", "bridge", "sensors", "ops"]
+    actual_order = [g["key"] for g in d["groups"]]
+    assert actual_order == expected_order, f"Group order wrong: {actual_order}"
+
+
+def test_lobes_panel_summary_counts_consistent():
+    """summary_counts in lobes_panel() is consistent with actual lobe statuses."""
+    from admin import neural_web
+    d = neural_web.lobes_panel()
+    sc = d["summary_counts"]
+    assert sc["total"] == len(d["lobes"])
+    counted = sc["fresh"] + sc["stale"] + sc["missing"] + sc["degraded"] + sc["unknown"] + sc["not_locally_verifiable"]
+    assert counted == sc["total"], f"Status counts don't add up: {sc}"
+
+
+def test_lobes_panel_world_state_is_core():
+    """world-state lobe is in the 'core' group."""
+    from admin import neural_web
+    d = neural_web.lobes_panel()
+    core_ids = {ls["id"] for grp in d["groups"] if grp["key"] == "core" for ls in grp["lobes"]}
+    assert "world-state" in core_ids, "world-state must be in core group"
+
+
+# ---------------------------------------------------------------------------
+# ROLE A: lobe_detail() tests
+# ---------------------------------------------------------------------------
+
+def test_lobe_detail_world_state_ok():
+    """lobe_detail('world-state') returns ok=True with required keys."""
+    from admin import neural_web
+    d = neural_web.lobe_detail("world-state")
+    assert d.get("ok") is True
+    for key in ("id", "label", "group", "group_label", "hue", "status", "tier",
+                "cadence", "horizon_role", "storage", "producer", "path", "format",
+                "description", "purpose_source", "metrics", "transmission",
+                "recent_actions", "health_detail", "missing"):
+        assert key in d, f"lobe_detail missing key: {key}"
+
+
+def test_lobe_detail_world_state_description():
+    """lobe_detail('world-state') returns a non-empty description."""
+    from admin import neural_web
+    d = neural_web.lobe_detail("world-state")
+    assert d["description"], "description must be non-empty for world-state"
+    assert d["purpose_source"] == "config/synapse.yml"
+
+
+def test_lobe_detail_world_state_transmission_consumers():
+    """lobe_detail('world-state') transmission.consumers is non-empty."""
+    from admin import neural_web
+    d = neural_web.lobe_detail("world-state")
+    tx = d["transmission"]
+    assert "producer" in tx
+    assert "consumers" in tx
+    assert isinstance(tx["consumers"], list)
+    assert len(tx["consumers"]) > 0, "world-state must have at least one consumer"
+
+
+def test_lobe_detail_world_state_metrics():
+    """lobe_detail('world-state') metrics has required fields."""
+    from admin import neural_web
+    d = neural_web.lobe_detail("world-state")
+    m = d["metrics"]
+    for key in ("age_hours", "freshness_sla_hours", "sla_met", "as_of",
+                "produced_at", "row_count", "byte_size", "exists_locally", "gaps"):
+        assert key in m, f"metrics missing key: {key}"
+    assert isinstance(m["gaps"], list)
+
+
+def test_lobe_detail_unknown_id():
+    """lobe_detail on unknown id returns ok=False with error and known_ids."""
+    from admin import neural_web
+    d = neural_web.lobe_detail("__nope__")
+    assert d.get("ok") is False
+    assert "error" in d
+    assert "known_ids" in d
+    assert isinstance(d["known_ids"], list)
+    assert len(d["known_ids"]) > 0
+
+
+def test_lobe_detail_empty_id():
+    """lobe_detail('') returns ok=False (same as unknown id)."""
+    from admin import neural_web
+    d = neural_web.lobe_detail("")
+    assert d.get("ok") is False
+
+
+def test_lobe_detail_fixture(tmp_repo):
+    """lobe_detail with fixture synapse.yml + patched root returns expected shape."""
+    from admin import neural_web
+
+    # Build a richer synapse.yml with neural-web owner and consumers
+    synapse_yaml = """
+meta:
+  schema_version: 1
+artifacts:
+  world-state:
+    path: data/neuralweb/world_state.json
+    format: json
+    producer: engine/neuralweb/world_state.py
+    known_extra_writers: []
+    owner_program: neural-web
+    cadence: daily-engine
+    storage: git
+    freshness_sla_hours: 30
+    tier: infrastructure
+    horizon_role: context
+    consumers:
+      - engine/neuralweb/cortex.py
+      - engine/neuralweb/kernel.py
+    external_consumers:
+      - mastermind:context
+    notes: "The world state artifact is the central hub of the Neural Web."
+"""
+    (tmp_repo / "config" / "synapse.yml").write_text(synapse_yaml)
+    # Create the artifact file
+    (tmp_repo / "data" / "neuralweb" / "world_state.json").write_text(
+        json.dumps({"as_of": "2026-07-06"})
+    )
+
+    old_root = neural_web._ROOT
+    neural_web._ROOT = tmp_repo
+    neural_web._DATA_NW = tmp_repo / "data" / "neuralweb"
+    neural_web._CONFIG = tmp_repo / "config"
+    neural_web._DATA_REFLEXES = tmp_repo / "data" / "reflexes"
+    neural_web._SYNAPSE_YML = neural_web._CONFIG / "synapse.yml"
+    neural_web._CONFLUENCE_GRAPH = neural_web._DATA_NW / "confluence_graph.json"
+    neural_web._GOVERNANCE_JSONL = neural_web._DATA_NW / "governance.jsonl"
+    neural_web._CORTEX_MEMO = neural_web._DATA_NW / "cortex" / "memo.json"
+    neural_web._NW_HEALTH_JSON = neural_web._DATA_NW / "health.json"
+    neural_web._NW_DAILY_BRIEF_JSON = neural_web._DATA_NW / "daily_brief.json"
+
+    try:
+        d = neural_web.lobe_detail("world-state")
+        assert d["ok"] is True
+        assert d["id"] == "world-state"
+        assert d["group"] == "core"
+        # description is now plain-English prose; the raw synapse note is preserved
+        # verbatim under description_technical (never-stale guard).
+        assert "Neural Web" in d["description_technical"]
+        assert isinstance(d["description"], str) and d["description"]
+        assert d["desc_status"] in ("curated", "stale", "auto")
+        tx = d["transmission"]
+        assert tx["producer"] == "engine/neuralweb/world_state.py"
+        assert len(tx["consumers"]) == 2
+        assert tx["external_consumers"] == ["mastermind:context"]
+        assert d["metrics"]["exists_locally"] is True
+    finally:
+        neural_web._ROOT = old_root
+        neural_web._DATA_NW = old_root / "data" / "neuralweb"
+        neural_web._CONFIG = old_root / "config"
+        neural_web._DATA_REFLEXES = old_root / "data" / "reflexes"
+        neural_web._SYNAPSE_YML = neural_web._CONFIG / "synapse.yml"
+        neural_web._CONFLUENCE_GRAPH = neural_web._DATA_NW / "confluence_graph.json"
+        neural_web._GOVERNANCE_JSONL = neural_web._DATA_NW / "governance.jsonl"
+        neural_web._CORTEX_MEMO = neural_web._DATA_NW / "cortex" / "memo.json"
+        neural_web._NW_HEALTH_JSON = neural_web._DATA_NW / "health.json"
+        neural_web._NW_DAILY_BRIEF_JSON = neural_web._DATA_NW / "daily_brief.json"
+
+
+def test_lobe_detail_fixture_missing_artifact(tmp_repo):
+    """lobe_detail returns missing=True when artifact file absent (git storage)."""
+    from admin import neural_web
+
+    synapse_yaml = """
+meta:
+  schema_version: 1
+artifacts:
+  world-state:
+    path: data/neuralweb/world_state.json
+    format: json
+    producer: engine/neuralweb/world_state.py
+    known_extra_writers: []
+    owner_program: neural-web
+    cadence: daily-engine
+    storage: git
+    freshness_sla_hours: 30
+    tier: infrastructure
+    horizon_role: context
+    consumers: []
+    external_consumers: []
+    notes: "The world state artifact."
+"""
+    (tmp_repo / "config" / "synapse.yml").write_text(synapse_yaml)
+    # Do NOT create the artifact file
+
+    old_root = neural_web._ROOT
+    neural_web._ROOT = tmp_repo
+    neural_web._DATA_NW = tmp_repo / "data" / "neuralweb"
+    neural_web._CONFIG = tmp_repo / "config"
+    neural_web._DATA_REFLEXES = tmp_repo / "data" / "reflexes"
+    neural_web._SYNAPSE_YML = neural_web._CONFIG / "synapse.yml"
+    neural_web._CONFLUENCE_GRAPH = neural_web._DATA_NW / "confluence_graph.json"
+    neural_web._GOVERNANCE_JSONL = neural_web._DATA_NW / "governance.jsonl"
+    neural_web._CORTEX_MEMO = neural_web._DATA_NW / "cortex" / "memo.json"
+    neural_web._NW_HEALTH_JSON = neural_web._DATA_NW / "health.json"
+    neural_web._NW_DAILY_BRIEF_JSON = neural_web._DATA_NW / "daily_brief.json"
+
+    try:
+        d = neural_web.lobe_detail("world-state")
+        assert d["ok"] is True
+        assert d["missing"] is True
+        assert d["metrics"]["exists_locally"] is False
+        assert d["status"] == "missing"
+    finally:
+        neural_web._ROOT = old_root
+        neural_web._DATA_NW = old_root / "data" / "neuralweb"
+        neural_web._CONFIG = old_root / "config"
+        neural_web._DATA_REFLEXES = old_root / "data" / "reflexes"
+        neural_web._SYNAPSE_YML = neural_web._CONFIG / "synapse.yml"
+        neural_web._CONFLUENCE_GRAPH = neural_web._DATA_NW / "confluence_graph.json"
+        neural_web._GOVERNANCE_JSONL = neural_web._DATA_NW / "governance.jsonl"
+        neural_web._CORTEX_MEMO = neural_web._DATA_NW / "cortex" / "memo.json"
+        neural_web._NW_HEALTH_JSON = neural_web._DATA_NW / "health.json"
+        neural_web._NW_DAILY_BRIEF_JSON = neural_web._DATA_NW / "daily_brief.json"
+
+
+def test_lobes_panel_fixture(tmp_repo):
+    """lobes_panel() with fixture synapse.yml returns expected structure."""
+    from admin import neural_web
+
+    synapse_yaml = """
+meta:
+  schema_version: 1
+artifacts:
+  world-state:
+    path: data/neuralweb/world_state.json
+    format: json
+    producer: engine/neuralweb/world_state.py
+    known_extra_writers: []
+    owner_program: neural-web
+    cadence: daily-engine
+    storage: git
+    freshness_sla_hours: 30
+    tier: infrastructure
+    horizon_role: context
+    consumers:
+      - engine/neuralweb/cortex.py
+    external_consumers:
+      - mastermind:context
+    notes: "The world state artifact is the central hub."
+  kernel-estimates:
+    path: data/neuralweb/kernel_estimates.parquet
+    format: parquet
+    producer: engine/neuralweb/kernel.py
+    known_extra_writers: []
+    owner_program: neural-web
+    cadence: weekly
+    storage: git
+    freshness_sla_hours: 200
+    tier: shadow
+    horizon_role: context
+    consumers: []
+    external_consumers: []
+    notes: "Kernel estimates for signal weights."
+"""
+    (tmp_repo / "config" / "synapse.yml").write_text(synapse_yaml)
+    (tmp_repo / "data" / "neuralweb" / "world_state.json").write_text("{}")
+    (tmp_repo / "data" / "neuralweb" / "kernel_estimates.parquet").write_bytes(b"fake")
+
+    old_root = neural_web._ROOT
+    neural_web._ROOT = tmp_repo
+    neural_web._DATA_NW = tmp_repo / "data" / "neuralweb"
+    neural_web._CONFIG = tmp_repo / "config"
+    neural_web._DATA_REFLEXES = tmp_repo / "data" / "reflexes"
+    neural_web._SYNAPSE_YML = neural_web._CONFIG / "synapse.yml"
+    neural_web._CONFLUENCE_GRAPH = neural_web._DATA_NW / "confluence_graph.json"
+    neural_web._GOVERNANCE_JSONL = neural_web._DATA_NW / "governance.jsonl"
+    neural_web._CORTEX_MEMO = neural_web._DATA_NW / "cortex" / "memo.json"
+    neural_web._NW_HEALTH_JSON = neural_web._DATA_NW / "health.json"
+    neural_web._NW_DAILY_BRIEF_JSON = neural_web._DATA_NW / "daily_brief.json"
+
+    try:
+        d = neural_web.lobes_panel()
+        assert d["ok"] is True
+        assert d["summary_counts"]["total"] == 2
+        flat_ids = {ls["id"] for ls in d["lobes"]}
+        assert "world-state" in flat_ids
+        assert "kernel-estimates" in flat_ids
+        # Groups cover all lobes
+        grp_ids = {ls["id"] for g in d["groups"] for ls in g["lobes"]}
+        assert grp_ids == flat_ids
+        # world-state is core, kernel-estimates is kernel
+        ws = next(ls for ls in d["lobes"] if ls["id"] == "world-state")
+        ke = next(ls for ls in d["lobes"] if ls["id"] == "kernel-estimates")
+        assert ws["group"] == "core"
+        assert ke["group"] == "kernel"
+    finally:
+        neural_web._ROOT = old_root
+        neural_web._DATA_NW = old_root / "data" / "neuralweb"
+        neural_web._CONFIG = old_root / "config"
+        neural_web._DATA_REFLEXES = old_root / "data" / "reflexes"
+        neural_web._SYNAPSE_YML = neural_web._CONFIG / "synapse.yml"
+        neural_web._CONFLUENCE_GRAPH = neural_web._DATA_NW / "confluence_graph.json"
+        neural_web._GOVERNANCE_JSONL = neural_web._DATA_NW / "governance.jsonl"
+        neural_web._CORTEX_MEMO = neural_web._DATA_NW / "cortex" / "memo.json"
+        neural_web._NW_HEALTH_JSON = neural_web._DATA_NW / "health.json"
+        neural_web._NW_DAILY_BRIEF_JSON = neural_web._DATA_NW / "daily_brief.json"
+
+
+# ---------------------------------------------------------------------------
+# R-ORTH PR-4: independence reader tests (admin/neural_web.py)
+# ---------------------------------------------------------------------------
+
+def _make_spine_fixture_for_admin(nw_dir: Path, active: bool = False) -> None:
+    """Write a minimal covariance_spine.json into nw_dir for admin tests."""
+    spine = {
+        "schema": "neuralweb.covariance_spine.v1",
+        "as_of": "2026-07-04",
+        "display_only": True,
+        "authority": "context",
+        "descriptive_not_gauntleted": True,
+        "blocks": {
+            "lobes": {
+                "effective_independent_lobes": 2.1,
+                "n_lobes_measurable": 3,
+                "n_lobes_total": 17,
+                "null_reference": {"pctile_vs_null": 0.6, "n_null_draws": 200},
+                "same_bet_warning": {"active": active, "text": "test warning" if active else ""},
+                "highest_overlap_pairs": [
+                    {"a": "us_board", "b": "oracle_rotation", "corr": 0.72, "n_shared_weeks": 40}
+                ],
+                "clusters": [{"engines": ["us_board", "oracle_rotation"], "mean_corr": 0.72}],
+                "coverage": {},
+            }
+        },
+        "coverage": {},
+        "missing_inputs": [],
+        "committee_annotations": [],
+        "allowed_actions": ["display"],
+        "forbidden_actions": ["score"],
+    }
+    (nw_dir / "covariance_spine.json").write_text(json.dumps(spine), encoding="utf-8")
+
+
+def test_lobes_panel_independence_failopen_absent(tmp_repo):
+    """lobes_panel() returns independence key with null values when spine is absent."""
+    from admin import neural_web
+
+    old_path = neural_web._COVARIANCE_SPINE
+    neural_web._COVARIANCE_SPINE = tmp_repo / "data" / "neuralweb" / "covariance_spine.json"
+    try:
+        # Ensure file does not exist
+        spine_path = tmp_repo / "data" / "neuralweb" / "covariance_spine.json"
+        if spine_path.exists():
+            spine_path.unlink()
+        result = neural_web._read_independence_summary()
+        assert result["effective_independent_lobes"] is None
+        assert result["n_lobes_measurable"] is None
+        assert result["descriptive_not_gauntleted"] is True
+        assert result["display_only"] is True
+        assert result["available"] is False
+    finally:
+        neural_web._COVARIANCE_SPINE = old_path
+
+
+def test_lobes_panel_independence_present(tmp_repo):
+    """lobes_panel() includes non-null independence summary when spine is present."""
+    from admin import neural_web
+
+    nw_dir = tmp_repo / "data" / "neuralweb"
+    _make_spine_fixture_for_admin(nw_dir)
+    old_path = neural_web._COVARIANCE_SPINE
+    neural_web._COVARIANCE_SPINE = nw_dir / "covariance_spine.json"
+    try:
+        result = neural_web._read_independence_summary()
+        assert result["effective_independent_lobes"] == 2.1
+        assert result["n_lobes_measurable"] == 3
+        assert result["n_lobes_total"] == 17
+        assert result["pctile_vs_null"] == 0.6
+        assert result["available"] is True
+        assert result["descriptive_not_gauntleted"] is True
+        assert result["display_only"] is True
+        # same_bet_warning is null when active=False
+        assert result["same_bet_warning"] is None
+    finally:
+        neural_web._COVARIANCE_SPINE = old_path
+
+
+def test_lobes_panel_independence_same_bet_active(tmp_repo):
+    """same_bet_warning propagated when active=True."""
+    from admin import neural_web
+
+    nw_dir = tmp_repo / "data" / "neuralweb"
+    _make_spine_fixture_for_admin(nw_dir, active=True)
+    old_path = neural_web._COVARIANCE_SPINE
+    neural_web._COVARIANCE_SPINE = nw_dir / "covariance_spine.json"
+    try:
+        result = neural_web._read_independence_summary()
+        assert result["same_bet_warning"] is not None
+        assert result["same_bet_warning"]["active"] is True
+    finally:
+        neural_web._COVARIANCE_SPINE = old_path
+
+
+def test_lobes_panel_returns_independence_key(tmp_repo):
+    """lobes_panel() result dict includes 'independence' key."""
+    from admin import neural_web
+
+    nw_dir = tmp_repo / "data" / "neuralweb"
+    _make_spine_fixture_for_admin(nw_dir)
+    old_spine = neural_web._COVARIANCE_SPINE
+    old_synapse = neural_web._SYNAPSE_YML
+    old_health = neural_web._NW_HEALTH_JSON
+    old_confluence = neural_web._CONFLUENCE_GRAPH
+    neural_web._COVARIANCE_SPINE = nw_dir / "covariance_spine.json"
+    neural_web._SYNAPSE_YML = tmp_repo / "config" / "synapse.yml"
+    neural_web._NW_HEALTH_JSON = nw_dir / "health.json"
+    neural_web._CONFLUENCE_GRAPH = nw_dir / "confluence_graph.json"
+    try:
+        result = neural_web.lobes_panel()
+        assert "independence" in result, "lobes_panel() must return 'independence' key"
+        assert result["independence"]["descriptive_not_gauntleted"] is True
+    finally:
+        neural_web._COVARIANCE_SPINE = old_spine
+        neural_web._SYNAPSE_YML = old_synapse
+        neural_web._NW_HEALTH_JSON = old_health
+        neural_web._CONFLUENCE_GRAPH = old_confluence
+
+
+# ---------------------------------------------------------------------------
+# Section G: Evidence Clock (EC-R5) — admin panel tests
+# ---------------------------------------------------------------------------
+
+_EC_FIXTURE = Path(__file__).resolve().parent / "fixtures" / "evidence_clock_sample.json"
+
+
+def _write_ec_artifact(root: Path, fixture: Path | None = None) -> None:
+    dest = root / "data" / "neuralweb" / "evidence_clock.json"
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    if fixture is None:
+        fixture = _EC_FIXTURE
+    dest.write_bytes(fixture.read_bytes())
+
+
+def _patch_ec_path(neural_web, root: Path) -> object:
+    """Patch _NW_EVIDENCE_CLOCK_JSON to point at tmp root. Returns old value."""
+    old = neural_web._NW_EVIDENCE_CLOCK_JSON
+    neural_web._NW_EVIDENCE_CLOCK_JSON = root / "data" / "neuralweb" / "evidence_clock.json"
+    return old
+
+
+def _restore_ec_path(neural_web, old) -> None:
+    neural_web._NW_EVIDENCE_CLOCK_JSON = old
+
+
+def test_panel_has_evidence_clock_section():
+    """panel() includes evidence_clock key at top level."""
+    from admin import neural_web
+    d = neural_web.panel()
+    assert "evidence_clock" in d, "Missing evidence_clock section in panel()"
+    ec = d["evidence_clock"]
+    assert "available" in ec
+
+
+def test_evidence_clock_section_present_artifact(tmp_repo):
+    """With evidence_clock.json present, section returns available=True with required keys."""
+    from admin import neural_web
+
+    _write_ec_artifact(tmp_repo)
+    old = _patch_ec_path(neural_web, tmp_repo)
+    try:
+        ec = neural_web._section_evidence_clock()
+    finally:
+        _restore_ec_path(neural_web, old)
+
+    assert ec["available"] is True
+    assert "as_of" in ec
+    assert "generated_utc" in ec
+    assert "summary" in ec
+    assert "queue" in ec
+    assert "n_accruing" in ec
+    assert "caveats" in ec
+    assert isinstance(ec["queue"], list)
+    # queue should have rows with operator states (overdue, due, human_review, stale from fixture)
+    assert len(ec["queue"]) > 0
+
+
+def test_evidence_clock_queue_trims_fields(tmp_repo):
+    """Queue rows have only the trimmed operator fields, not full row fields."""
+    from admin import neural_web
+
+    _write_ec_artifact(tmp_repo)
+    old = _patch_ec_path(neural_web, tmp_repo)
+    try:
+        ec = neural_web._section_evidence_clock()
+    finally:
+        _restore_ec_path(neural_web, old)
+
+    for row in ec["queue"]:
+        required = {"clock_id", "source_system", "owner_program", "clock_type",
+                    "due_at", "state", "blocking_reason", "regenerate_cmd",
+                    "acknowledged", "packet"}
+        missing = required - set(row.keys())
+        assert not missing, f"Queue row missing fields: {missing}"
+        # Internal fields must not appear
+        assert "allowed_actions" not in row, "allowed_actions must not appear in trimmed row"
+        assert "forbidden_actions" not in row, "forbidden_actions must not appear in trimmed row"
+        assert "evidence_refs" not in row, "evidence_refs must not appear in trimmed row"
+
+
+def test_evidence_clock_queue_skips_accruing(tmp_repo):
+    """Accruing/promotion_eligible rows are not in queue; n_accruing counts them."""
+    from admin import neural_web
+
+    _write_ec_artifact(tmp_repo)
+    old = _patch_ec_path(neural_web, tmp_repo)
+    try:
+        ec = neural_web._section_evidence_clock()
+    finally:
+        _restore_ec_path(neural_web, old)
+
+    for row in ec["queue"]:
+        assert row["state"] not in ("accruing", "promotion_eligible"), (
+            f"Accruing/promotion_eligible row appeared in queue: {row['state']}"
+        )
+    # Fixture has 2 accruing rows
+    assert ec["n_accruing"] == 2
+
+
+def test_evidence_clock_section_absent_artifact(tmp_repo):
+    """Missing evidence_clock.json → available=False, no crash."""
+    from admin import neural_web
+
+    # Ensure file does NOT exist at the patched path
+    ec_path = tmp_repo / "data" / "neuralweb" / "evidence_clock.json"
+    if ec_path.exists():
+        ec_path.unlink()
+
+    old = _patch_ec_path(neural_web, tmp_repo)
+    try:
+        ec = neural_web._section_evidence_clock()
+    finally:
+        _restore_ec_path(neural_web, old)
+
+    assert ec["available"] is False
+    assert "note" in ec
+
+
+def test_evidence_clock_section_malformed_artifact(tmp_repo):
+    """Malformed evidence_clock.json (wrong schema) → available=False."""
+    from admin import neural_web
+
+    dest = tmp_repo / "data" / "neuralweb" / "evidence_clock.json"
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    dest.write_text('{"schema": "wrong.v99", "garbage": true}', encoding="utf-8")
+
+    old = _patch_ec_path(neural_web, tmp_repo)
+    try:
+        ec = neural_web._section_evidence_clock()
+    finally:
+        _restore_ec_path(neural_web, old)
+
+    assert ec["available"] is False
+
+
+def test_evidence_clock_panel_integrated(tmp_repo):
+    """panel() with evidence_clock.json present returns it available=True in the full result."""
+    from admin import neural_web
+
+    _write_ec_artifact(tmp_repo)
+    old_ec = _patch_ec_path(neural_web, tmp_repo)
+    # Also patch the other paths so we get a clean fixture panel
+    old_root = neural_web._ROOT
+    neural_web._ROOT = tmp_repo
+    neural_web._DATA_NW = tmp_repo / "data" / "neuralweb"
+    neural_web._CONFIG = tmp_repo / "config"
+    neural_web._DATA_REFLEXES = tmp_repo / "data" / "reflexes"
+    neural_web._SPINE_ENVELOPE = neural_web._DATA_NW / "spine_index.parquet.envelope.json"
+    neural_web._SPINE_PARQUET = neural_web._DATA_NW / "spine_index.parquet"
+    neural_web._KERNEL_ENVELOPE = neural_web._DATA_NW / "kernel_estimates.parquet.envelope.json"
+    neural_web._KERNEL_FAMILIES = neural_web._DATA_NW / "kernel_families.json"
+    neural_web._KERNEL_DECISIONS = neural_web._DATA_NW / "kernel_decisions.json"
+    neural_web._LAGGING_SIGNALS = neural_web._DATA_NW / "lagging_signals.json"
+    neural_web._READ_GATE = neural_web._DATA_NW / "read_gate_baseline.json"
+    neural_web._CONFLUENCE_GRAPH = neural_web._DATA_NW / "confluence_graph.json"
+    neural_web._GOVERNANCE_JSONL = neural_web._DATA_NW / "governance.jsonl"
+    neural_web._CORTEX_MEMO = neural_web._DATA_NW / "cortex" / "memo.json"
+    neural_web._SYNAPSE_YML = neural_web._CONFIG / "synapse.yml"
+    neural_web._REFLEXES_YML = neural_web._CONFIG / "reflexes.yml"
+    try:
+        result = neural_web.panel()
+    finally:
+        neural_web._ROOT = old_root
+        neural_web._DATA_NW = old_root / "data" / "neuralweb"
+        neural_web._CONFIG = old_root / "config"
+        neural_web._DATA_REFLEXES = old_root / "data" / "reflexes"
+        neural_web._SPINE_ENVELOPE = neural_web._DATA_NW / "spine_index.parquet.envelope.json"
+        neural_web._SPINE_PARQUET = neural_web._DATA_NW / "spine_index.parquet"
+        neural_web._KERNEL_ENVELOPE = neural_web._DATA_NW / "kernel_estimates.parquet.envelope.json"
+        neural_web._KERNEL_FAMILIES = neural_web._DATA_NW / "kernel_families.json"
+        neural_web._KERNEL_DECISIONS = neural_web._DATA_NW / "kernel_decisions.json"
+        neural_web._LAGGING_SIGNALS = neural_web._DATA_NW / "lagging_signals.json"
+        neural_web._READ_GATE = neural_web._DATA_NW / "read_gate_baseline.json"
+        neural_web._CONFLUENCE_GRAPH = neural_web._DATA_NW / "confluence_graph.json"
+        neural_web._GOVERNANCE_JSONL = neural_web._DATA_NW / "governance.jsonl"
+        neural_web._CORTEX_MEMO = neural_web._DATA_NW / "cortex" / "memo.json"
+        neural_web._SYNAPSE_YML = neural_web._CONFIG / "synapse.yml"
+        neural_web._REFLEXES_YML = neural_web._CONFIG / "reflexes.yml"
+        _restore_ec_path(neural_web, old_ec)
+
+    assert result["ok"] is True
+    assert "evidence_clock" in result
+    assert result["evidence_clock"]["available"] is True
+
+
+def test_no_engine_imports_after_ec_section():
+    """Re-verify engine import guard still passes after Section G addition."""
+    src = (Path(__file__).resolve().parent.parent / "admin" / "neural_web.py").read_text()
+    import_lines = [
+        line for line in src.splitlines()
+        if line.strip() and not line.strip().startswith("#")
+        and not line.strip().startswith('"""')
+        and not line.strip().startswith("'")
+    ]
+    code = "\n".join(import_lines)
+    for pattern, label in [
+        ("from engine", "engine module import"),
+        ("import engine", "engine module import"),
+        ("from scripts", "scripts module import"),
+        ("import scripts", "scripts module import"),
+        ("subprocess.run", "subprocess.run call"),
+        ("subprocess.Popen", "subprocess.Popen call"),
+        ("import subprocess", "subprocess import"),
+    ]:
+        assert pattern not in code, f"Forbidden {label!r} found in non-comment lines"
+
+
+# ---------------------------------------------------------------------------
+# Section G: type-drift / hostile-artifact tests (opus review R3)
+# ---------------------------------------------------------------------------
+
+def _write_ec_raw_admin(root: Path, payload: dict) -> Path:
+    """Write raw evidence_clock.json payload to tmp root data tree."""
+    dest = root / "data" / "neuralweb" / "evidence_clock.json"
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    dest.write_text(json.dumps(payload), encoding="utf-8")
+    return dest
+
+
+def test_ec_section_rows_as_dict_no_crash(tmp_repo):
+    """rows is a dict (type drift) → _section_evidence_clock() must not raise; queue=[]."""
+    from admin import neural_web
+
+    _write_ec_raw_admin(tmp_repo, {
+        "schema": "neuralweb.evidence_clock.v1",
+        "as_of": "2026-07-06",
+        "generated_utc": "2026-07-06T10:00:00Z",
+        "authority": "display_only",
+        "summary": {},
+        "rows": {"bad": "dict instead of list"},  # type-drifted
+        "caveats": [],
+    })
+    old = _patch_ec_path(neural_web, tmp_repo)
+    try:
+        ec = neural_web._section_evidence_clock()
+    finally:
+        _restore_ec_path(neural_web, old)
+
+    assert ec.get("available") is True or ec.get("error") == "parse_error", (
+        f"Expected available=True or parse_error, got: {ec}"
+    )
+    if ec.get("available"):
+        assert ec["queue"] == [], f"Expected empty queue when rows is a dict, got: {ec['queue']}"
+
+
+def test_ec_section_row_entry_as_string_no_crash(tmp_repo):
+    """A non-dict row entry (string) is silently skipped; no AttributeError."""
+    from admin import neural_web
+
+    _write_ec_raw_admin(tmp_repo, {
+        "schema": "neuralweb.evidence_clock.v1",
+        "as_of": "2026-07-06",
+        "generated_utc": "2026-07-06T10:00:00Z",
+        "authority": "display_only",
+        "summary": {},
+        "rows": [
+            "this is not a dict",  # non-dict entry — must be skipped
+            {
+                "clock_id": "test-clock-1",
+                "source_system": "oracle",
+                "owner_program": "oracle-rotation",
+                "clock_type": "result",
+                "due_at": "2026-07-10",
+                "state": "due",
+                "readiness": {"blocking_reason": None},
+                "regenerate_cmd": None,
+                "acknowledged": False,
+                "packet": None,
+            },
+        ],
+        "caveats": [],
+    })
+    old = _patch_ec_path(neural_web, tmp_repo)
+    try:
+        ec = neural_web._section_evidence_clock()
+    finally:
+        _restore_ec_path(neural_web, old)
+
+    # Must not raise; the string entry is skipped
+    assert ec.get("available") is True or ec.get("error") == "parse_error", (
+        f"Expected available=True or parse_error, got: {ec}"
+    )
+    if ec.get("available"):
+        # Only the valid dict row should be in queue
+        queue_ids = [r["clock_id"] for r in ec["queue"]]
+        assert "test-clock-1" in queue_ids, f"Valid row not in queue: {queue_ids}"
+
+
+def test_ec_section_readiness_as_list_no_crash(tmp_repo):
+    """readiness is a list (type drift) → blocking_reason=None; no AttributeError."""
+    from admin import neural_web
+
+    _write_ec_raw_admin(tmp_repo, {
+        "schema": "neuralweb.evidence_clock.v1",
+        "as_of": "2026-07-06",
+        "generated_utc": "2026-07-06T10:00:00Z",
+        "authority": "display_only",
+        "summary": {},
+        "rows": [
+            {
+                "clock_id": "test-clock-readiness-drift",
+                "source_system": "oracle",
+                "owner_program": "oracle-rotation",
+                "clock_type": "result",
+                "due_at": "2026-07-10",
+                "state": "blocked",
+                "readiness": ["list", "not", "a", "dict"],  # type-drifted
+                "regenerate_cmd": None,
+                "acknowledged": False,
+                "packet": None,
+            },
+        ],
+        "caveats": [],
+    })
+    old = _patch_ec_path(neural_web, tmp_repo)
+    try:
+        ec = neural_web._section_evidence_clock()
+    finally:
+        _restore_ec_path(neural_web, old)
+
+    assert ec.get("available") is True or ec.get("error") == "parse_error", (
+        f"Expected available=True or parse_error, got: {ec}"
+    )
+    if ec.get("available"):
+        queue = ec["queue"]
+        assert len(queue) == 1
+        # blocking_reason must be None (not a crash), since readiness was not a dict
+        assert queue[0]["blocking_reason"] is None, (
+            f"blocking_reason should be None when readiness is not a dict: {queue[0]}"
+        )
+
+
 if __name__ == "__main__":
     import pytest as _pytest
     _pytest.main([__file__, "-v"])

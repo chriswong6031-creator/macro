@@ -312,6 +312,26 @@
   {% endif %}
 </div>
 
+{% if mode == 'stocks' and actions and (actions.buy_now or actions.buy_soon or actions.get('on_the_run') or actions.take_profits or actions.hold or actions.avoid) %}
+<!-- ===== What to act on now (sector entry-timing board, ported to the stock page) ===== -->
+<div class="panel">
+  <h2>⚡ {{ t('What to act on now — sectors', '当前可操作 — 板块') }}
+    {{ help("The TSX sector groups bucketed by the cycle ladder’s entry-timing call — the same engine as the US action board. A structure / risk map, not an allocation rule: ON THE RUN = in favour but extended (do not chase; add on a pullback); the reduce side (take profits / avoid) is the risk read.", "TSX 板块按周期阶梯的入场时机分桶 — 与美国操作板同一引擎。这是结构／风险图，而非配置规则：顺势运行 = 看好但已延伸（勿追高；回调加仓）；减仓侧（止盈／回避）是风险判读。") }}
+  </h2>
+  <div class="ab">
+    {% set abmap = [('buy_now','✅ Buy now','立即买入'), ('buy_soon','⏳ Buy soon','即将买入'), ("on_the_run", "🏃 ON THE RUN — don't chase", '顺势运行 — 勿追高'), ('take_profits','💰 Take profits','止盈'), ('hold','✋ Hold','持有'), ('avoid','🚫 Avoid','回避')] %}
+    {% for key, en, zh in abmap %}
+    {% set items = actions.get(key, []) %}
+    <div class="abcol ab-{{ key }}">
+      <h3>{{ t(en, zh) }} <span class="muted">({{ items|length }})</span></h3>
+      {% for it in items %}<div class="it">{{ td(it.name) }} <span class="muted small">{{ it.ticker }}</span></div>{% endfor %}
+      {% if not items %}<div class="it muted">—</div>{% endif %}
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
 {% if mode != 'stocks' %}{# ===== macro-only sections (regime → action board) ===== #}
 <!-- ===== Canada regime — command-center hero ===== -->
 {% set ov = overlay or {} %}

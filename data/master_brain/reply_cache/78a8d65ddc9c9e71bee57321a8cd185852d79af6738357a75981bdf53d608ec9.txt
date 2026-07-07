@@ -1,0 +1,49 @@
+**DESK NOTE — Macro-Regime Analyser (China A-shares, as of 2026-07-07)**
+*Strictly fallible, falsifiable, NEVER sized. This is a regime-view, not edge extracted from the detector.*
+
+---
+
+### 1. Regime Signal Summary *(display-only, trust-graded)*
+- **Validated edge (gate_helps): FALSE**  
+  The absolute-trend gate, the only empirically validated drawdown-avoidance mechanism in the system, *did not hold* on this market historically. The detector itself carries an explicit “EXPERIMENTAL/display” warning here. Any thematic exposure derived from it must be treated with extreme caution.
+- **Headline theme**: AI Compute & Optics (cn_ai_compute), momentum score +2.85  
+  – Durability bar 0.76 (trend-health decent), not crowded, *not* a one-narrative regime.  
+  – Cash level = 0.0 within the headline theme (no internally flagged buffer).
+- **Leadership structure**:  
+  – Rotation breadth narrowing (9/22 eligible, 41%). Leadership is concentrated, not broad-based.  
+  – Absorption 0.36 — low — multiple narratives are competing, no single story is absorbing all flow.  
+  – One-narrative dominant: **FALSE**.
+- **Crowding flags**: The most extreme crowding signal sits on **Innovative Pharma & CXO** (z=1.0, crowded=true), but it is rank 6 with low score and not the leader. The leader is uncrowded. Per guardrails, DO NOT fade the leader on a crowding flag elsewhere; just note it.
+
+---
+
+### 2. Macro/Political Backdrop *(coincident context, not a trigger)*
+- Dominant narrative count over past 5 days: **Geopolitics (7)**, Monetary (3), Growth (1), Industrial policy (1).  
+- Unscheduled/surprise share: **0.50** (exceptionally high).  
+- Interpretation: The environment is dominated by geopolitical noise and surprise-driven monetary uncertainty. This backdrop typically suppresses risk appetite and argues for keeping size small, irrespective of any thematic momentum signals.
+
+---
+
+### 3. Regime Verdict: Does this support risk-on theme exposure AT ALL?
+**No. Not at this moment.** The conjunction of signals points toward caution and smaller size, not toward confident theme exposure:
+- The **only validated edge is absent** in this market. The entire thematic rotation framework is experimental here; there is no drawdown-control backstop.
+- The **macro backdrop** (high unscheduled share, geopolitics-heavy) amplifies unpredictability — a classic environment where theme-following strategies suffer.
+- The **internal structure** (low absorption, no one-narrative, narrowing breadth) indicates a fragmented, tentative tape without the conviction that typically underpins a durable risk-on rotation.
+- Even if a theme like AI Compute shows strong momentum, the absence of a gate-help and the untrustworthy macro backdrop mean the probability of sudden whip-saw is elevated.
+
+**Actionable interpretation:** Regime suggests *more cash / smaller position sizes* rather than leaning into any headline theme. The detector’s theme rankings are a focus lens, not a buy list — and right now the lens shows a market where leadership is thin and the macro buffer is absent.
+
+---
+
+### 4. Falsifiable Conditional Lean (check-by horizon: 2–4 weeks)
+**Lean:** The current regime does **not** support adding risk-on theme exposure; it favours reducing size and raising cash.  
+**What would falsify this call (and signal a shift to “supports risk-on theme exposure”):**  
+1. `one_narrative` flips to **true** AND `absorption` rises above ~0.6.  
+2. The unscheduled share of macro headlines drops below 0.30.  
+3. The rotation’s eligible fraction expands durably above 0.50 (breadth recovery).  
+If all three conditions materialise by 2026-07-28, the regime assessment would flip; until then, the cautious stance stands.
+
+**Forbidden:** Directional certainty, fade calls, next-theme prediction, sizing. This note is a conditional statement about regime conditions — falsifiable, not a forecast.
+
+---
+*No position size, weight, or trade. The detector is display-only on China A-shares. The only validated edge (drawdown avoidance) is absent. This note is accountable to the stated check-by date and conditions.*

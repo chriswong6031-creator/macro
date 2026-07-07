@@ -102,6 +102,10 @@ _READ_TOOLS = frozenset({
     "read_factor_state",
     "list_factor_contradictions",
     "explain_factor_context",
+    # CPI P6 wave 1: read-only cycle-pattern turn-hazard state tool
+    "read_cycle_pattern_state",
+    # W3 MPC consumer: read-only mechanism pathway artifact
+    "read_mechanism_pathways",
 })
 _WRITE_TOOLS = frozenset({
     "flag_attention",
@@ -482,7 +486,7 @@ def _detect_context_stale(root: Path, now_str: str) -> tuple[bool, str | None]:
 
 def _tool_write_memo(root: Path, params: dict, now_str: str, probation_status: dict) -> dict:
     """Write the committee memo to data/neuralweb/cortex/memo.json."""
-    memo = {
+    memo: dict = {
         "schema": _SCHEMA_MEMO,
         "as_of": now_str,
         "summary": params.get("summary", ""),
@@ -494,6 +498,11 @@ def _tool_write_memo(root: Path, params: dict, now_str: str, probation_status: d
         "tool_call_census": params.get("tool_call_census", {}),
         "is_context_only": True,
     }
+    # Include run_status when provided at write time (forced-write / fallback paths).
+    # The normal tool-loop path stamps run_status via a post-hoc rewrite; including
+    # it here as well means the key is always present even if that rewrite fails.
+    if "run_status" in params:
+        memo["run_status"] = params["run_status"]
 
     cortex_dir = _cortex_dir(root)
     cortex_dir.mkdir(parents=True, exist_ok=True)
@@ -739,6 +748,85 @@ def _tool_read_factor_state(root: Path, _params: dict) -> dict:
         }
 
 
+def _tool_read_cycle_pattern_state(root: Path, _params: dict) -> dict:
+    """Read data/neuralweb/cycle_pattern_state.json (CPI P6 wave 1).
+
+    The committed CPI→NW adapter artifact: W4.2 hazard gate verdicts per cell
+    (gate_status), latest per-entity cycle state + turn-hazard probabilities,
+    and the truth-registry summary. DISPLAY-ONLY ceiling (CPI consumer matrix):
+    the cortex may cite this as context / to de-escalate a calibrated key; it
+    may never originate, score, or escalate from it. PRIOR cells are KM base
+    rates, not validated model output. Fails open with structured gaps when
+    the file is absent.  is_context_only always true.
+    """
+    p = _data(root, "neuralweb", "cycle_pattern_state.json")
+    if not p.exists():
+        return {
+            "is_context_only": True,
+            "display_only": True,
+            "gaps": ["data/neuralweb/cycle_pattern_state.json: absent — "
+                     "build_cycle_pattern_state has not run yet"],
+            "note": "Cycle-pattern state not yet built. Run the nightly "
+                    "build_cycle_pattern_state job.",
+        }
+    try:
+        state = json.loads(p.read_text(encoding="utf-8"))
+        # Ensure mandate fields are always present regardless of artifact version
+        state.setdefault("is_context_only", True)
+        state.setdefault("display_only", True)
+        return state
+    except Exception as exc:  # noqa: BLE001
+        return {
+            "is_context_only": True,
+            "display_only": True,
+            "gaps": [f"data/neuralweb/cycle_pattern_state.json: unreadable — {exc}"],
+        }
+
+
+def _tool_read_mechanism_pathways(root: Path, _params: dict) -> dict:
+    """Read data/neuralweb/mechanism_pathways.json (MPC W1 artifact).
+
+    Returns the mechanism pathway artifact JSON: primary pathway (family,
+    direction, coverage_score or coverage_basis, coherence, evidence_legs,
+    stale_legs), alternates (family names only), and/or no_pathway record
+    with printed reason.
+
+    DISPLAY-ONLY ceiling (RUL-CC-1): may be cited as context only.
+    Forbidden: ranking, sizing, alert_escalation, claim_validation,
+    board_ordering, mastermind_arming. is_context_only always true.
+    Fails open with structured gaps when absent.
+    """
+    p = _data(root, "neuralweb", "mechanism_pathways.json")
+    if not p.exists():
+        return {
+            "is_context_only": True,
+            "display_only": True,
+            "not_a_signal": True,
+            "gaps": [
+                "data/neuralweb/mechanism_pathways.json: absent — "
+                "build_mechanism_pathways has not run yet"
+            ],
+            "note": (
+                "Mechanism pathway artifact not yet built. "
+                "Run the nightly build_mechanism_pathways job."
+            ),
+        }
+    try:
+        artifact = json.loads(p.read_text(encoding="utf-8"))
+        # Mandate fields always present regardless of artifact version
+        artifact.setdefault("is_context_only", True)
+        artifact.setdefault("display_only", True)
+        artifact.setdefault("not_a_signal", True)
+        return artifact
+    except Exception as exc:  # noqa: BLE001
+        return {
+            "is_context_only": True,
+            "display_only": True,
+            "not_a_signal": True,
+            "gaps": [f"data/neuralweb/mechanism_pathways.json: unreadable — {exc}"],
+        }
+
+
 def _tool_list_factor_contradictions(root: Path, params: dict) -> dict:
     """Read data/neuralweb/factor_contradictions.jsonl (RUL-NW3).
 
@@ -932,6 +1020,10 @@ def dispatch_tool(
         return _tool_list_factor_contradictions(root, tool_params)
     elif tool_name == "explain_factor_context":
         return _tool_explain_factor_context(root, tool_params)
+    elif tool_name == "read_cycle_pattern_state":
+        return _tool_read_cycle_pattern_state(root, tool_params)
+    elif tool_name == "read_mechanism_pathways":
+        return _tool_read_mechanism_pathways(root, tool_params)
     elif tool_name == "flag_attention":
         return _tool_flag_attention(root, tool_params, now_str)
     elif tool_name == "write_memo":
@@ -1102,6 +1194,47 @@ def _tool_schemas() -> list[dict]:
                 "required": ["ticker"],
             },
         },
+        # --- CPI P6 wave 1: cycle-pattern turn-hazard state ---
+        {
+            "name": "read_cycle_pattern_state",
+            "description": (
+                "Read data/neuralweb/cycle_pattern_state.json — the committed CPI "
+                "cycle-pattern digest: W4.2 hazard gate verdicts per cell "
+                "(gate_status, up/down × 1m/3m/6m, PASS|PRIOR), latest per-entity "
+                "cycle phase + calibrated turn-hazard probabilities "
+                "(hazard_{1m,3m,6m}_p with per-horizon MODEL|PRIOR source), and the "
+                "truth-registry summary. DISPLAY-ONLY ceiling (CPI consumer matrix): "
+                "may be cited as context or to de-escalate a calibrated key; may "
+                "NEVER originate, score, or escalate a signal, and must never feed "
+                "board_rank, oracle_escalation, sector_central_direction_score, or "
+                "position_sizing. PRIOR cells are family-stratified KM base rates, "
+                "not validated model output — always report the cell verdict next "
+                "to any probability. is_context_only: true. Fails open with "
+                "structured gaps when absent."
+            ),
+            "input_schema": {"type": "object", "properties": {}, "required": []},
+        },
+        # --- W3 MPC consumer: mechanism pathway artifact ---
+        {
+            "name": "read_mechanism_pathways",
+            "description": (
+                "Read data/neuralweb/mechanism_pathways.json — the committed MPC "
+                "artifact (neuralweb.mechanism_pathways.v1): primary pathway "
+                "(family, direction, coverage_score or coverage_basis, coherence "
+                "categorical supported/partial/conflicted, evidence leg names, "
+                "stale_legs), alternates (family names only, ≤2), and/or "
+                "no_pathway record with printed reason. "
+                "DISPLAY-ONLY ceiling (RUL-CC-1): may be cited as context only. "
+                "Forbidden: ranking, sizing, alert_escalation, claim_validation, "
+                "board_ordering, mastermind_arming. No ticker-level details "
+                "(RUL-CC-10) — driver/asset-class/ETF level only. "
+                "Language law (RUL-CC-5): "
+                "use 'consistent with / supported / unsupported / conflicted / missing'; "
+                "banned: caused/proved/validated. "
+                "is_context_only: true. Fails open with structured gaps when absent."
+            ),
+            "input_schema": {"type": "object", "properties": {}, "required": []},
+        },
         {
             "name": "flag_attention",
             "description": "SHADOW-TIER WRITE: Flag items for operator attention. Appends to data/reflexes/cortex_attention/firings.jsonl. is_context_only always true.",
@@ -1205,12 +1338,22 @@ WHAT YOU MAY NEVER DO:
 • Influence any ranking outside the three shadow write-tools available to you.
 
 YOUR TOOLS:
-READ (14): read_world_state, query_spine, read_kernel, read_graph, read_contradictions,
+READ (16): read_world_state, query_spine, read_kernel, read_graph, read_contradictions,
            read_governance, read_artifact,
            read_options_entry_state, explain_options_context, query_options_confluence,
            list_options_contradictions,
-           read_factor_state, list_factor_contradictions, explain_factor_context
+           read_factor_state, list_factor_contradictions, explain_factor_context,
+           read_cycle_pattern_state, read_mechanism_pathways
 WRITE (3, shadow-tier only): flag_attention, write_memo, stake_hypothesis
+
+CYCLE-PATTERN CEILING: read_cycle_pattern_state is display/context only. Cite turn-hazard
+probabilities ONLY with their cell verdict (PASS = validated vs KM; PRIOR = KM base rate).
+It may de-escalate a calibrated key; it may never originate, score, or escalate.
+
+MECHANISM-PATHWAY CEILING: read_mechanism_pathways is display/context only (RUL-CC-1).
+Use 'consistent with / supported / unsupported / conflicted / missing' language.
+NEVER use 'caused / proved / validated'. No ticker-level details (RUL-CC-10).
+Forbidden uses: ranking, sizing, alert_escalation, board_ordering, mastermind_arming.
 
 DELIBERATION PROTOCOL:
 1. Start by reading world_state to understand the current macro regime.
@@ -1311,9 +1454,7 @@ def _single_call_fallback(
     memo_params["tool_call_census"] = {"fallback_call": 1}
     probation_status["degraded_reason"] = degraded_reason
 
-    result = _tool_write_memo(root, memo_params, now_str, probation_status)
-
-    # Stamp run_status for the single-call fallback path.
+    # Build run_status BEFORE writing the memo so it can be included at write time.
     # This path is ALWAYS degraded: the tool loop was unavailable regardless of
     # whether a fallback LLM call succeeded.  degraded=True unconditionally.
     from engine import llm_auth as _llm_auth  # noqa: PLC0415
@@ -1347,7 +1488,14 @@ def _single_call_fallback(
         "context_stale": context_stale,
         "context_as_of": context_as_of,
     }
+    # Embed run_status at write time — belt-and-suspenders so it is present
+    # even if the post-hoc rewrite below fails.
+    memo_params["run_status"] = run_status
 
+    result = _tool_write_memo(root, memo_params, now_str, probation_status)
+
+    # Post-hoc: re-mirror site copy with run_status (site/ may not have existed
+    # at the time _tool_write_memo ran).
     if result and not result.get("error"):
         try:
             memo_path = _cortex_dir(root) / "memo.json"
@@ -1359,8 +1507,12 @@ def _single_call_fallback(
             if site_nw.parent.exists():
                 site_nw.mkdir(parents=True, exist_ok=True)
                 (site_nw / "cortex_memo.json").write_text(memo_serialized, encoding="utf-8")
-        except Exception:  # noqa: BLE001
-            pass
+        except Exception as _exc:  # noqa: BLE001
+            log.warning(
+                "cortex: failed to re-mirror run_status into site copy — "
+                "run_status embedded at write time remains valid (%s)",
+                _exc,
+            )
 
     return result
 
@@ -1543,24 +1695,9 @@ def _run_tool_loop(
         if tool_results:
             messages.append({"role": "user", "content": tool_results})
 
-    # If budget hit without a memo, force write one
-    if not memo_written:
-        log.warning("cortex: budget exhausted (%d/%d tool calls) — forcing write_memo",
-                    tool_call_count, max_tool_calls)
-        memo_params = {
-            "summary": (
-                f"Budget exhausted after {tool_call_count} tool-call batches "
-                f"({n_tool_calls_total} individual calls). Partial deliberation only."
-            ),
-            "what_fired": [],
-            "contradictions_review": "Incomplete — budget exhausted before contradictions review.",
-            "decaying_families": [],
-            "deserves_operator": [],
-            "tool_call_census": tool_call_census,
-        }
-        memo_result = _tool_write_memo(root, memo_params, now_str, probation_status)
-
-    # Build run_status block
+    # Build run_status block BEFORE the forced-write so it can be included
+    # directly in memo_params (rather than relying on a post-hoc read-modify-write
+    # that could be silently swallowed).
     has_model_response = bool(provider_attempts) and any(a["ok"] for a in provider_attempts)
     context_stale, context_as_of = _detect_context_stale(root, now_str)
 
@@ -1592,6 +1729,25 @@ def _run_tool_loop(
         "context_as_of": context_as_of,
     }
 
+    # If budget hit without a memo, force write one — include run_status at
+    # write time so it is present even if the post-hoc rewrite below fails.
+    if not memo_written:
+        log.warning("cortex: budget exhausted (%d/%d tool calls) — forcing write_memo",
+                    tool_call_count, max_tool_calls)
+        memo_params = {
+            "summary": (
+                f"Budget exhausted after {tool_call_count} tool-call batches "
+                f"({n_tool_calls_total} individual calls). Partial deliberation only."
+            ),
+            "what_fired": [],
+            "contradictions_review": "Incomplete — budget exhausted before contradictions review.",
+            "decaying_families": [],
+            "deserves_operator": [],
+            "tool_call_census": tool_call_census,
+            "run_status": run_status,
+        }
+        memo_result = _tool_write_memo(root, memo_params, now_str, probation_status)
+
     # Stamp stale-context note into deserves_operator when stale
     if context_stale and memo_result and not memo_result.get("error"):
         try:
@@ -1603,12 +1759,14 @@ def _run_tool_loop(
                 do_list.append(stale_note)
             memo["deserves_operator"] = do_list
             memo_path.write_text(json.dumps(memo, indent=2, default=str), encoding="utf-8")
-        except Exception:  # noqa: BLE001
-            pass
+        except Exception as _exc:  # noqa: BLE001
+            log.warning("cortex: failed to stamp stale-context note into memo (%s)", _exc)
 
-    # Stamp census + run_status into memo and re-mirror site copy so both are identical.
-    # _tool_write_memo was called with tool_call_census={} (unknown at write time);
-    # we update both copies here to avoid the data/site divergence.
+    # Post-hoc: stamp census + run_status into memo and re-mirror site copy.
+    # _tool_write_memo may have been called before run_status was built (normal
+    # tool-loop path); we update both copies here so data/ and site/ are identical.
+    # Belt-and-suspenders: run_status is ALSO embedded at write time for the
+    # forced-write path above, so it is present even if this block raises.
     if memo_result and not memo_result.get("error"):
         try:
             memo_path = _cortex_dir(root) / "memo.json"
@@ -1622,8 +1780,12 @@ def _run_tool_loop(
             if site_nw.parent.exists():
                 site_nw.mkdir(parents=True, exist_ok=True)
                 (site_nw / "cortex_memo.json").write_text(memo_serialized, encoding="utf-8")
-        except Exception:  # noqa: BLE001
-            pass
+        except Exception as _exc:  # noqa: BLE001
+            log.warning(
+                "cortex: failed to stamp run_status/census into memo — "
+                "run_status embedded at write time may be used as fallback (%s)",
+                _exc,
+            )
 
     return memo_result
 
@@ -1727,7 +1889,12 @@ def run(root: Path | None = None, force: bool = False) -> int:
     if not providers:
         log.warning("cortex: no Anthropic providers configured — single-call fallback")
         _single_call_fallback(root, cfg, [], now_str, probation_status, "no_provider")
-        _save_last_run_state(root, current_state)
+        # no-provider fallback always produces status='degraded'; skip the gate save
+        # so the next nightly sees changed-or-missing state and retries the LLM.
+        log.info(
+            "cortex: skipping last_run_state save (no-provider fallback = degraded by "
+            "construction) — gate stays open so next nightly retries"
+        )
         return 0
 
     # 4. Run tool loop (with single-call fallback on any error)
@@ -1738,8 +1905,45 @@ def run(root: Path | None = None, force: bool = False) -> int:
         log.warning("cortex: tool loop raised (%s) — falling back to single-call", exc)
         _single_call_fallback(root, cfg, providers, now_str, probation_status, f"loop_error:{exc}")
 
-    # 5. Save run state (so next run staleness gate works)
-    _save_last_run_state(root, current_state)
+    # 5. Save run state only when memo is healthy (ok or warn).
+    # If run_status.status=='degraded', skip the save so the gate stays open and the
+    # next nightly sees unchanged inputs as still-stale, retrying the LLM call.
+    # On any read/parse failure, save conservatively — never crash.
+    _memo_run_status = "ok"  # conservative default
+    try:
+        _memo_path = _cortex_dir(root) / "memo.json"
+        _memo_doc = json.loads(_memo_path.read_text(encoding="utf-8"))
+        _raw_run_status = _memo_doc.get("run_status")
+        if isinstance(_raw_run_status, dict):
+            _memo_run_status = _raw_run_status.get("status", "ok")
+        elif _raw_run_status is None:
+            # Belt-and-suspenders: run_status absent means the stamping failed.
+            # Treat as degraded when the memo content indicates a failed run so
+            # the gate stays open and tonight retries.
+            _summary = _memo_doc.get("summary", "")
+            _census = _memo_doc.get("tool_call_census", {})
+            _degraded_summary = (
+                "Budget exhausted after 0" in _summary
+                or "Partial deliberation" in _summary
+                or "[DEGRADED:" in _summary
+            )
+            _empty_census = not _census or list(_census.values()) == [0] * len(_census)
+            if _degraded_summary or _empty_census:
+                log.warning(
+                    "cortex: memo has no run_status and degraded summary/census — "
+                    "treating as degraded so gate stays open"
+                )
+                _memo_run_status = "degraded"
+    except Exception:  # noqa: BLE001
+        pass  # read/parse failure → keep conservative default, save below
+
+    if _memo_run_status == "degraded":
+        log.info(
+            "cortex: skipping last_run_state save (memo run_status=degraded) — "
+            "gate stays open so next nightly retries"
+        )
+    else:
+        _save_last_run_state(root, current_state)
 
     elapsed = time.monotonic() - t0
     log.info("cortex: run complete in %.1fs", elapsed)

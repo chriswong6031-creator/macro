@@ -2211,9 +2211,30 @@ def build_alerts_page(env: Environment, site: Path, generated: str) -> None:
     fdir.mkdir(parents=True, exist_ok=True)
     (fdir / "alerts_triage.json").write_text(
         json.dumps(payload, separators=(",", ":"), default=str))
+    # Machine-readable feed for the admin Alerts capture tab (RUL-8: auth-only
+    # consumption; no public write endpoint).  One record per deduplicated alert
+    # with stable content-hash IDs and just the fields the capture tab needs.
+    adir = site / "alertsdata"
+    adir.mkdir(parents=True, exist_ok=True)
+    feed_records = [
+        {
+            "alert_id": a["alert_id"],
+            "emit_ts": a["ts"],
+            "title": a.get("headline", ""),
+            "surface": f"{a['source']}:{a['type']}",
+            "severity": a["severity"],
+            "tier": a["tier"],
+            "priority": a["priority"],
+            "source": a["source"],
+        }
+        for a in payload.get("alerts", [])
+    ]
+    (adir / "feed.json").write_text(
+        json.dumps({"generated_utc": generated, "alerts": feed_records},
+                   separators=(",", ":"), default=str))
     s = payload["summary"]
     log.info("wrote alerts.html (%d alerts: %d critical / %d major / %d actionable, "
-             "%d validated)", s["total"], s["critical"], s["major"],
+             "%d with measured edge)", s["total"], s["critical"], s["major"],
              s["actionable"], s["backtested"])
 
 
@@ -2337,7 +2358,7 @@ def build_smartmoney_data(site: Path) -> dict | None:
     factordata/smartmoney.json (consumed by the per-stock "who holds this" panel +
     a future consensus board). Additive — any failure logs and skips. CONTEXT only,
     never wired into any score. See collectors/edgar_13f.py + engine/smart_money.py."""
-    from engine.smart_money import compute_smart_money
+    from engine.smart_money import compute_smart_money, enrich_since_filing
     try:
         sm = compute_smart_money()
     except Exception as e:  # noqa: BLE001 — additive, never fatal
@@ -2345,6 +2366,12 @@ def build_smartmoney_data(site: Path) -> dict | None:
         return None
     if not sm:
         return None
+    # Attach realized price-since-filing context (DESCRIPTIVE, not a score/signal).
+    # Best-effort: any failure is silently skipped per-ticker and never blocks the build.
+    try:
+        enrich_since_filing(sm.get("by_ticker") or {})
+    except Exception as e:  # noqa: BLE001 — enrichment is additive only
+        log.warning("since-filing enrichment failed (non-fatal): %s", e)
     fdir = site / "factordata"
     fdir.mkdir(parents=True, exist_ok=True)
     (fdir / "smartmoney.json").write_text(json.dumps(sm, separators=(",", ":"), default=str))
@@ -3060,6 +3087,31 @@ def main() -> int:
             us_standouts = json.loads(_us.read_text())
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.warning("us_standouts.json unreadable (%s)", e)
+    # W4 stock-personality slim attach: thread chart+mode chips into us_standouts buy cards
+    # (inside .nb-more expander only per guardrail 16; fail-open if JSON absent or malformed).
+    _sp_path = site / "factordata" / "stock_personality.json"
+    _sp_per_ticker: dict = {}
+    if _sp_path.exists():
+        try:
+            _sp_doc = json.loads(_sp_path.read_text())
+            _sp_per_ticker = _sp_doc.get("per_ticker") or {}
+        except Exception as _spe:  # noqa: BLE001 — additive, never fatal
+            log.warning("stock_personality.json unreadable for board attach (%s)", _spe)
+    if us_standouts and _sp_per_ticker:
+        try:
+            for _card in (us_standouts.get("buy") or []):
+                _tk = _card.get("ticker")
+                _sp_slim = _sp_per_ticker.get(_tk)
+                if _sp_slim:
+                    _chart = _sp_slim.get("chart") or []
+                    _modes = _sp_slim.get("modes") or []
+                    _mode1 = next((m for m in _modes if m != "normal"), None)
+                    _card["personality"] = {
+                        "chart": _chart[0] if _chart else None,
+                        "mode": _mode1,
+                    }
+        except Exception as _spe2:  # noqa: BLE001 — additive, never fatal
+            log.warning("stock_personality board attach failed (%s)", _spe2)
     # W2 surfaced-outcome strip (written by grade_us_board.py --nightly).
     # Absent on first run or before grade_us_board runs. Additive, never fatal.
     us_board_outcomes = None
@@ -3441,6 +3493,18 @@ def main() -> int:
         (_msdir / "macro_signals.json").write_text(
             json.dumps(_msdata, indent=2, default=str))
         log.info("wrote macrodata/macro_signals.json")
+        # PR-D: Release Radar — copy the MRI producer's latest.json into macrodata/
+        # so the client-side fetch in dashboard.html.j2 can reach it.  Fail-open:
+        # absent until scripts/build_release_forecast.py (PR-C) has run; the UI
+        # degrades to its "accruing" placeholder when the JSON is missing.  The
+        # producer also writes the site copy itself later in the engine lane; this
+        # copy just guarantees build_site renders never strand a stale/missing file.
+        _rf_src = config.data_dir() / "release_forecast" / "latest.json"
+        if _rf_src.exists():
+            (_msdir / "release_forecast.json").write_bytes(_rf_src.read_bytes())
+            log.info("macrodata: copied release_forecast.json")
+        else:
+            log.debug("macrodata: release_forecast.json not yet produced (PR-C pending)")
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("macro_signals.json failed: %s", e)
     # landing-hub card stat (presence-gated by the .html existing)
@@ -3497,12 +3561,9 @@ def main() -> int:
     # snapshot as the themes treemap; a separate lens from our curated baskets.
     try:
         from scripts.build_subsector_rotation import build as build_subsector_rotation
-        from engine.subsector_sponsorship import EPISTEMIC_CAVEAT_EN, EPISTEMIC_CAVEAT_ZH
-        sr_payload = build_subsector_rotation(site, generated_utc=generated)
+        build_subsector_rotation(site, generated_utc=generated)
         out_sr = site / "subsector_rotation.html"
-        write_page(out_sr, env.get_template("subsector_rotation.html.j2").render(
-            sponsorship=(sr_payload or {}).get("sponsorship") or {},
-            epi_en=EPISTEMIC_CAVEAT_EN, epi_zh=EPISTEMIC_CAVEAT_ZH))
+        write_page(out_sr, env.get_template("subsector_rotation.html.j2").render())
         log.info("wrote %s (%.0f KB)", out_sr, out_sr.stat().st_size / 1024)
         # per-subsector detail pages (site/rotation/<key>.html) — additive, data-driven.
         try:
@@ -3703,6 +3764,11 @@ def main() -> int:
         if _hl_src.exists():
             (nwd / "half_life.json").write_bytes(_hl_src.read_bytes())
             log.info("neuralwebdata: copied half_life.json")
+        # PR-D: copy NW daily brief for committee.html client-side fetch
+        _db_src = config.data_dir() / "neuralweb" / "daily_brief.json"
+        if _db_src.exists():
+            (nwd / "daily_brief.json").write_bytes(_db_src.read_bytes())
+            log.info("neuralwebdata: copied daily_brief.json")
         # Supabase config (same as watchlist / theme.js)
         committee_html = env.get_template("committee.html.j2").render(
             generated_utc=generated,

@@ -1301,6 +1301,53 @@ def _step_turn_desk(
         return False, [], "", []
 
 
+def _step_operator_tape_outcomes(data_dir: Path, dry_run: bool) -> bool:
+    """PR-A3 Step 18: Operator-tape outcome resolution — append-only nightly join.
+
+    For each tape row not yet resolved:
+      - system_state_at_stamp: what Oracle showed for those nodes at pit_stamp
+        (from forward_ledger.jsonl episodes; 'unresolvable_pre_capture' if absent)
+      - realized_outcome: deterministic 21d forward return (matured only)
+      - override_flag: operator direction vs system state (null if unresolvable)
+
+    Appends new/updated rows to data/oracle/operator_tape_outcomes.jsonl.
+    Writes display-only scorecard to data/oracle/operator_scorecard.json.
+
+    Loud-error pattern: ::error:: annotation + returns False; does not block
+    earlier steps. NEVER mutates operator_tape.jsonl.
+    """
+    log.info("=== Step 18: Operator-tape outcome resolution (PR-A3) ===")
+    try:
+        from engine.oracle.tape_outcomes import (
+            resolve_tape_outcomes,
+            build_operator_scorecard,
+            write_operator_scorecard,
+        )
+
+        summary = resolve_tape_outcomes(data_dir, dry_run=dry_run)
+        log.info(
+            "tape_outcomes: n_tape=%d new=%d skipped=%d resolved=%d pending=%d",
+            summary.get("n_tape", 0),
+            summary.get("n_new", 0),
+            summary.get("n_skipped", 0),
+            summary.get("n_resolved", 0),
+            summary.get("n_pending", 0),
+        )
+
+        # Scorecard — always rebuild from outcomes ledger (display-only overwrite)
+        scorecard = build_operator_scorecard(data_dir)
+        write_operator_scorecard(scorecard, data_dir, dry_run=dry_run)
+        log.info(
+            "tape_outcomes: scorecard n_resolved=%d n_pending=%d",
+            scorecard.get("n_resolved", 0),
+            scorecard.get("n_pending", 0),
+        )
+        return True
+    except Exception as e:  # noqa: BLE001
+        _annotation(f"oracle_nightly: tape_outcomes FAILED: {e}")
+        return False
+
+
 def _step_qual_filter_stamps(
     armed: list[dict],
     panel_asof: str,
@@ -1591,6 +1638,20 @@ def main() -> int:
     if not args.skip_panel:
         if not _step_panel(data_dir, args.dry_run):
             failures.append("panel")
+        else:
+            # --- Step 1b: Publish oracle panels to R2 (PR-C1 RUL-7) ---
+            # Named single-writer: only the Mac-side oracle ops lane runs this.
+            # No-op when R2 creds absent; never blocks subsequent steps on failure.
+            log.info("=== Step 1b: Publish oracle panels to R2 (PR-C1) ===")
+            try:
+                from scripts.publish_oracle_panels import publish as _publish_panels
+                rc = _publish_panels(data_dir=data_dir, dry_run=args.dry_run)
+                if rc != 0:
+                    _annotation("oracle_nightly: publish_oracle_panels returned non-zero (non-fatal)")
+                else:
+                    log.info("publish_oracle_panels: done")
+            except Exception as _e:  # noqa: BLE001
+                _annotation(f"oracle_nightly: publish_oracle_panels FAILED: {_e} (non-fatal)")
     else:
         log.info("=== Step 1: Panel SKIPPED (--skip-panel) ===")
 
@@ -1690,6 +1751,12 @@ def main() -> int:
         td_armed, td_panel_asof, data_dir, td_all_dates, args.dry_run
     ):
         failures.append("qual_filter_stamps")
+
+    # --- Step 18: Operator-tape outcome resolution (PR-A3) — additive at END ---
+    # Appends to data/oracle/operator_tape_outcomes.jsonl + display-only scorecard.
+    # Never mutates operator_tape.jsonl. Loud-error pattern.
+    if not _step_operator_tape_outcomes(data_dir, args.dry_run):
+        failures.append("tape_outcomes")
 
     elapsed = time.time() - t_total
     log.info(

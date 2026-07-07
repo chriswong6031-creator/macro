@@ -126,11 +126,14 @@ def test_panels_smoke():
     assert "NaN" not in s and "Infinity" not in s
     sample = next(iter(p.values()))
     # blocks present are from the known set; archetype key is valid when present
-    # W2 PR-J adds thesis_clock; W2 PR-K adds moat_falsifiers + great_company_trap
+    # W2 PR-J adds thesis_clock; W2 PR-K adds moat_falsifiers + great_company_trap;
+    # LT-3a adds capital_allocation; LT-2c adds expectation_state;
+    # LT-4 adds thesis_funnel (AND-gate survival funnel shadow; hold_thesis; display-only)
     assert set(sample).issubset({"profile", "valuation", "financials",
                                  "factors", "positioning", "analyst", "earnings",
                                  "accounting_quality", "leverage_ratios",
-                                 "thesis_clock", "moat_falsifiers", "great_company_trap"})
+                                 "thesis_clock", "moat_falsifiers", "great_company_trap",
+                                 "capital_allocation", "expectation_state", "thesis_funnel"})
     for rec in list(p.values())[:200]:
         arch = (rec.get("profile") or {}).get("archetype")
         if arch:

@@ -1,0 +1,31 @@
+make_string,ticker,tier,valid_from,valid_to,notes
+CHEVROLET,GM,A,,,"General Motors domestic brand"
+BUICK,GM,A,,,"General Motors domestic brand"
+GMC,GM,A,,,"General Motors domestic brand"
+CADILLAC,GM,A,,,"General Motors domestic brand"
+SATURN,GM,A,,,
+OLDSMOBILE,GM,A,,,
+HUMMER,GM,A,,,
+PONTIAC,GM,A,,,
+FORD,F,A,,,"Ford Motor Co."
+LINCOLN,F,A,,,"Ford Motor Co."
+MERCURY,F,A,,,
+TESLA,TSLA,A,,,"Tesla Inc."
+RIVIAN,RIVN,A,2021-11-10,,"IPO 2021-11-10"
+LUCID,LCID,A,2021-07-26,,"SPAC listing 2021-07-26"
+HARLEY-DAVIDSON,HOG,A,,,"Motorcycles"
+HARLEY DAVIDSON,HOG,A,,,
+KENWORTH,PCAR,A,,,"PACCAR brand"
+PETERBILT,PCAR,A,,,"PACCAR brand"
+DAF,PCAR,A,,,
+TOYOTA,TM,B,,,"ADR"
+LEXUS,TM,B,,,
+HONDA,HMC,B,,,"ADR"
+ACURA,HMC,B,,,
+CHRYSLER,STLA,B,,,"Stellantis"
+DODGE,STLA,B,,,"Stellantis"
+JEEP,STLA,B,,,"Stellantis"
+RAM,STLA,B,,,"Stellantis - RAM trucks (was Dodge Ram)"
+FIAT,STLA,B,,,
+ALFA ROMEO,STLA,B,,,
+MASERATI,STLA,B,,,

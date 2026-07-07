@@ -1,5 +1,6 @@
-"""CN/CA action-board lane split — ports the #1513 US (urgency, tag) routing to
-scripts/build_china._china_action_board and scripts/build_canada._action_board.
+"""CN/CA/HK action-board lane split — ports the #1513 US (urgency, tag) routing to
+scripts/build_china._china_action_board, scripts/build_canada._action_board and
+scripts/build_hk._action_board (the "what to act on now" board on each stock page).
 
 Pins (mirrors tests/test_basket_integration.py::test_action_board_caution_tag_routing):
   * caution + "DON'T CHASE"             → on_the_run   (extended uptrend — never take_profits)
@@ -22,6 +23,7 @@ sys.path.insert(0, str(ROOT))
 
 from scripts.build_canada import _action_board as canada_board  # noqa: E402
 from scripts.build_china import _china_action_board as china_board  # noqa: E402
+from scripts.build_hk import _action_board as hk_board  # noqa: E402
 
 # Byte-exact tags as emitted by engine/cycles.py entry_timing
 TAG_DONT_CHASE = "DON'T CHASE"                     # ASCII apostrophe
@@ -36,8 +38,8 @@ def _sector(ticker: str, urgency: str, tag: str = "") -> dict:
 
 
 # --- routing (both builders share the ported logic) ---------------------------
-@pytest.mark.parametrize("board_fn", [china_board, canada_board],
-                         ids=["china", "canada"])
+@pytest.mark.parametrize("board_fn", [china_board, canada_board, hk_board],
+                         ids=["china", "canada", "hk"])
 def test_caution_tag_routing(board_fn):
     sectors = [
         _sector("AAA", "caution", TAG_DONT_CHASE),      # → on_the_run
@@ -62,8 +64,8 @@ def test_caution_tag_routing(board_fn):
     assert len(all_tickers) == len(set(all_tickers)) == 7
 
 
-@pytest.mark.parametrize("board_fn", [china_board, canada_board],
-                         ids=["china", "canada"])
+@pytest.mark.parametrize("board_fn", [china_board, canada_board, hk_board],
+                         ids=["china", "canada", "hk"])
 def test_tag_near_miss_does_not_route_to_on_the_run(board_fn):
     """Curly-apostrophe / hyphen variants are NOT the engine tags — they must fall through
     to take_profits (the pre-split default), never silently into on_the_run/avoid."""
@@ -81,7 +83,7 @@ def test_tag_literals_match_engine_source_bytes():
     assert f'"{TAG_DONT_CHASE}"' in cycles_src
     assert f'"{TAG_UNCONFIRMED}"' in cycles_src
     assert f'"{TAG_TAKE_PROFITS}"' in cycles_src
-    for builder in ("scripts/build_china.py", "scripts/build_canada.py"):
+    for builder in ("scripts/build_china.py", "scripts/build_canada.py", "scripts/build_hk.py"):
         src = (ROOT / builder).read_text(encoding="utf-8")
         assert f'tag == "{TAG_DONT_CHASE}"' in src, f"{builder}: DON'T CHASE literal drifted"
         assert f'tag == "{TAG_UNCONFIRMED}"' in src, f"{builder}: em-dash literal drifted"

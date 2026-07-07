@@ -52,7 +52,7 @@ from typing import Any
 
 log = logging.getLogger(__name__)
 
-PAYLOAD_VERSION = "1.1.0"
+PAYLOAD_VERSION = "1.2.0"  # B1 member roll-up (personality_context per complex, R-SP19)
 
 # Staleness contract: payloads older than this are invalid.
 # Staleness is TRADING-DAY-AWARE (v1.0.1 fix): a fixed 48 calendar hours

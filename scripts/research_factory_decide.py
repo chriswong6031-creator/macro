@@ -11,10 +11,16 @@ Enforces, in order:
       data/research_factory/track/<candidate_id>.json (RF-9)
   (d) candidate status update via ledger helpers
 
+For actor=opus, additionally enforces (before any disk write, including dry-run):
+  (e) --packet-ref resolves to a packet_id in the adjudication queue (RF-5b/RUL-SUCC-7)
+  (f) that packet's decision.outcome == --decision AND decided_by in {opus, operator}
+  (g) check_adjudication_packet.py --queue <queue> exits rc=0 (full validator run)
+
 Refuses:
   - Double decisions (candidate already in terminal state or already paper)
   - Actor law violations (script actors into human-gate states)
   - Missing required per-decision args
+  - For opus: unresolved packet_ref, mismatched outcome, or validator failure
 
 Usage
 -----
@@ -77,6 +83,7 @@ DEFAULT_RF_DIR = ROOT / "data" / "research_factory"
 DEFAULT_EXPERIMENTS_SEED = ROOT / "data" / "experiments" / "registry_seed.json"
 DEFAULT_REQUEUE_PATH = ROOT / "data" / "research_factory" / "requeue.jsonl"
 DEFAULT_REGIME_PATH = ROOT / "data" / "regime" / "latest.json"
+DEFAULT_ADJUDICATION_QUEUE = ROOT / "data" / "neuralweb" / "adjudication_queue.json"
 
 # RF-9: per-domain expected_half_life_d default prior
 _DOMAIN_HALF_LIFE_DEFAULTS: dict[str, int] = {
@@ -128,6 +135,83 @@ def _load_json(path: Path) -> dict | None:
         return json.loads(path.read_text(encoding="utf-8"))
     except Exception:
         return None
+
+
+# ---------------------------------------------------------------------------
+# Opus RF gate: packet_ref resolution (M3 / RF-5b / RUL-SUCC-7)
+# ---------------------------------------------------------------------------
+
+_VALID_PACKET_DECIDERS = frozenset({"opus", "operator"})
+
+
+def _resolve_packet_ref(
+    packet_ref: str,
+    decision: str,
+    queue_path: Path,
+) -> tuple[bool, str]:
+    """Validate packet_ref against adjudication queue for an opus RF gate decision.
+
+    Returns (ok: bool, error_message: str).  ok=True means the packet was found,
+    its outcome matches decision, and decided_by is in {opus, operator}.
+
+    No disk writes.  Called before any state transition or governance write.
+    """
+    if not queue_path.exists():
+        return False, (
+            f"RF-5b/RUL-SUCC-7: adjudication queue not found at {queue_path}; "
+            f"cannot resolve packet_ref={packet_ref!r}"
+        )
+
+    try:
+        raw = json.loads(queue_path.read_text(encoding="utf-8"))
+    except Exception as exc:
+        return False, (
+            f"RF-5b/RUL-SUCC-7: failed to load adjudication queue {queue_path}: {exc}"
+        )
+
+    packets = raw.get("packets") or []
+    matching = [p for p in packets if isinstance(p, dict) and p.get("packet_id") == packet_ref]
+
+    if not matching:
+        ids_available = [p.get("packet_id") for p in packets if isinstance(p, dict)]
+        return False, (
+            f"RF-5b/RUL-SUCC-7: --packet-ref={packet_ref!r} not found in adjudication queue "
+            f"{queue_path}. Available packet_ids: {ids_available}"
+        )
+
+    packet = matching[0]
+    pkt_outcome = (packet.get("decision") or {}).get("outcome")
+    pkt_decided_by = (packet.get("decision") or {}).get("decided_by")
+
+    if pkt_outcome != decision:
+        return False, (
+            f"RF-5b/RUL-SUCC-7: packet {packet_ref!r} records outcome={pkt_outcome!r} "
+            f"but CLI --decision={decision!r}; the packet must record the decision it "
+            f"is authorizing"
+        )
+
+    if pkt_decided_by not in _VALID_PACKET_DECIDERS:
+        return False, (
+            f"RF-5b/RUL-SUCC-7: packet {packet_ref!r} has decided_by={pkt_decided_by!r}; "
+            f"must be one of {sorted(_VALID_PACKET_DECIDERS)} for a valid opus RF gate"
+        )
+
+    return True, ""
+
+
+def _run_packet_validator(queue_path: Path) -> tuple[int, str]:
+    """Run check_adjudication_packet.py --queue <queue_path> as a subprocess.
+
+    Returns (returncode, combined_output).
+    """
+    import subprocess
+    check_script = ROOT / "scripts" / "check_adjudication_packet.py"
+    result = subprocess.run(
+        [sys.executable, str(check_script), "--queue", str(queue_path)],
+        capture_output=True,
+        text=True,
+    )
+    return result.returncode, result.stdout + result.stderr
 
 
 def _load_candidates(rf_dir: Path) -> list[dict]:
@@ -497,12 +581,16 @@ def _append_governance_event(
     actor_ref: str,
     root: Path | None,
     dry_run: bool = False,
+    packet_ref: str | None = None,
 ) -> None:
     """Append governance event with event_type=research_factory_gate, article=null (RF-12).
 
     This is a HARD requirement (RF-12): a human-gate decision with no governance
     record is an audit gap.  The function raises RuntimeError if the event cannot
     be written so the caller can abort before committing the transition.
+
+    packet_ref (RF-5b/RUL-SUCC-7): when actor=opus, the adjudication packet id
+    is included in the evidence dict for machine-checkable audit trail.
     """
     if dry_run:
         print(f"  [DRY-RUN] Would append governance event research_factory_gate "
@@ -511,17 +599,20 @@ def _append_governance_event(
 
     try:
         from engine.neuralweb.governance import append_event
+        evidence: dict = {
+            "candidate_id": candidate_id,
+            "decision": decision,
+            "actor": actor,
+            "actor_ref": actor_ref,
+        }
+        if packet_ref:
+            evidence["packet_ref"] = packet_ref
         ok = append_event(
             event_type="research_factory_gate",
             target=f"research_factory/{candidate_id}",
             article=None,   # RF-12: always null
             authored_by=f"{actor}/{actor_ref}",
-            evidence={
-                "candidate_id": candidate_id,
-                "decision": decision,
-                "actor": actor,
-                "actor_ref": actor_ref,
-            },
+            evidence=evidence,
             note=f"RF-12 human gate: decision={decision} actor={actor} ref={actor_ref}",
             root=root,
         )
@@ -628,12 +719,25 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     ap.add_argument(
         "--actor", required=True,
-        choices=["fable", "operator"],
-        help="Human actor class (RF-5: only fable|operator may make human-gate decisions)",
+        choices=["fable", "operator", "opus"],
+        help=(
+            "Actor class making this decision. RF-5: fable|operator are human actors. "
+            "opus is a model adjudicator (RF-5b/RUL-SUCC-7): requires both --actor-ref "
+            "and --packet-ref for human-gate targets."
+        ),
     )
     ap.add_argument(
         "--actor-ref", required=True,
-        help="Session or PR reference (RF-5: required for human actors)",
+        help="Session or PR reference (RF-5: required for human actors and model adjudicators)",
+    )
+    ap.add_argument(
+        "--packet-ref", default=None,
+        help=(
+            "Adjudication packet id (RF-5b/RUL-SUCC-7): required when --actor=opus "
+            "for human-gate target decisions (e.g. 'adj-2026-07-06-example'). "
+            "Packets live in data/neuralweb/adjudication_queue.json. "
+            "If --actor!=opus and --packet-ref is provided, it is recorded but not enforced."
+        ),
     )
 
     # paper-specific
@@ -695,6 +799,25 @@ def _build_parser() -> argparse.ArgumentParser:
         "--requeue-path", type=Path, default=None,
         help="Override data/research_factory/requeue.jsonl path",
     )
+    ap.add_argument(
+        "--adjudication-queue", type=Path, default=None,
+        dest="adjudication_queue",
+        help=(
+            "Override adjudication queue path "
+            f"(default: data/neuralweb/adjudication_queue.json). "
+            "Used for --actor=opus packet_ref resolution (RF-5b/RUL-SUCC-7)."
+        ),
+    )
+
+    ap.add_argument(
+        "--governance-root", type=Path, default=None,
+        dest="governance_root",
+        help=(
+            "Override the repo root used for the governance ledger write "
+            "(root/data/neuralweb/governance.jsonl). Default: repo root. "
+            "For hermetic tests — production runs must not set this."
+        ),
+    )
 
     ap.add_argument(
         "--dry-run", action="store_true", default=False,
@@ -713,16 +836,70 @@ def main() -> int:  # noqa: C901 — complexity is inherent in a multi-path deci
     seed_path = args.experiments_seed or DEFAULT_EXPERIMENTS_SEED
     regime_path = args.regime_path or DEFAULT_REGIME_PATH
     requeue_path = args.requeue_path or DEFAULT_REQUEUE_PATH
+    governance_root = args.governance_root or ROOT
 
     candidate_id = args.candidate
     decision = args.decision
     actor = args.actor
     actor_ref = args.actor_ref
+    packet_ref = args.packet_ref
+
+    # RF-5b (RUL-SUCC-7): opus into human-gate targets requires --packet-ref.
+    # We enforce it here (in CLI validation) so the error is user-friendly;
+    # state.py also enforces it in the transition validator as a safety net.
+    from engine.research_factory.state import MODEL_ADJUDICATORS, _HUMAN_GATE_TARGETS
+    _DECISION_TO_STATE = {
+        "paper": "paper", "deferred": "deferred",
+        "rejected": "rejected", "scoped_build": "scoped_build",
+    }
+    _to_state_preview = _DECISION_TO_STATE.get(decision, decision)
+    if actor in MODEL_ADJUDICATORS and _to_state_preview in _HUMAN_GATE_TARGETS:
+        if not packet_ref:
+            print(
+                f"[ERROR] --actor=opus requires --packet-ref for decision={decision!r} "
+                f"(RF-5b/RUL-SUCC-7). Provide the adjudication packet id, e.g. "
+                f"'adj-2026-07-06-example'. Packets live in "
+                f"data/neuralweb/adjudication_queue.json.",
+                file=sys.stderr,
+            )
+            return 1
+    if packet_ref and actor not in MODEL_ADJUDICATORS:
+        # Accept but note it
+        print(
+            f"  [INFO] --packet-ref={packet_ref!r} provided with actor={actor!r} "
+            f"(non-model-adjudicator); recorded in transition row but not required."
+        )
+
+    # ── Opus RF gate: packet_ref resolution (M3 / RF-5b / RUL-SUCC-7) ──────
+    # Runs before any disk write, including under --dry-run.
+    # No skip flag and no environment escape hatch.
+    adjudication_queue_path = (
+        args.adjudication_queue if args.adjudication_queue else DEFAULT_ADJUDICATION_QUEUE
+    )
+    if actor in MODEL_ADJUDICATORS and packet_ref:
+        # (a) resolve packet_ref in queue
+        ok, err = _resolve_packet_ref(packet_ref, decision, adjudication_queue_path)
+        if not ok:
+            print(f"[ERROR] {err}", file=sys.stderr)
+            return 2
+
+        # (b) run the full validator on the queue
+        rc, validator_output = _run_packet_validator(adjudication_queue_path)
+        if rc != 0:
+            print(
+                f"[ERROR] RF-5b/RUL-SUCC-7: check_adjudication_packet.py exited rc={rc} "
+                f"for queue {adjudication_queue_path}; the queue must pass validation "
+                f"before an opus RF gate decision is accepted.\n{validator_output}",
+                file=sys.stderr,
+            )
+            return 2
 
     print(f"Research Factory decision recorder")
     print(f"  candidate:  {candidate_id}")
     print(f"  decision:   {decision}")
     print(f"  actor:      {actor} (ref: {actor_ref})")
+    if packet_ref:
+        print(f"  packet_ref: {packet_ref}")
     print(f"  dry_run:    {dry_run}")
     print()
 
@@ -773,7 +950,10 @@ def main() -> int:  # noqa: C901 — complexity is inherent in a multi-path deci
         return 1
 
     # --- Per-decision required args validation ---
+    # packet_ref is carried in the transition row for all decisions when provided.
     extra_fields: dict = {}
+    if packet_ref:
+        extra_fields["packet_ref"] = packet_ref
 
     # ---------------------------------------------------------------------------
     # Phase 1: build all in-memory structures (zero disk writes here).
@@ -910,7 +1090,16 @@ def main() -> int:  # noqa: C901 — complexity is inherent in a multi-path deci
         track_skeleton = None
 
     # ---------------------------------------------------------------------------
-    # Phase 1b: pre-flight seed integrity check (paper/deferred only).
+    # Phase 1b (packet_ref re-injection): all per-decision branches above may
+    # have reassigned extra_fields = {...}, clobbering any packet_ref that was
+    # set earlier.  Re-inject here — one canonical point that is immune to
+    # future branch edits (RF-5b/RUL-SUCC-7 requires packet_ref in the row).
+    # ---------------------------------------------------------------------------
+    if packet_ref:
+        extra_fields["packet_ref"] = packet_ref
+
+    # ---------------------------------------------------------------------------
+    # Phase 1c: pre-flight seed integrity check (paper/deferred only).
     # If registry_seed.json exists but is unparseable (e.g. partial concurrent
     # write), abort NOW — before any governance write or transition commit —
     # so we never clobber the shared file with a single-entry overwrite.
@@ -975,8 +1164,9 @@ def main() -> int:  # noqa: C901 — complexity is inherent in a multi-path deci
             decision=decision,
             actor=actor,
             actor_ref=actor_ref,
-            root=ROOT,
+            root=governance_root,
             dry_run=dry_run,
+            packet_ref=packet_ref,
         )
     except RuntimeError as exc:
         print(f"[ERROR] Governance event write failed: {exc}", file=sys.stderr)

@@ -1,18 +1,18 @@
 {
-  "generated_at": "2026-07-03T22:39:08.513826+00:00",
+  "generated_at": "2026-07-07T12:32:27.120985+00:00",
   "ok": true,
   "fail_reasons": [],
   "warnings": [
-    "CHAINS AT LIMIT: latest chain file is 2026-07-02 (exactly 1 trading day(s) behind last_td=2026-07-03) \u2014 OK today but will trip if tomorrow's accrual is missed"
+    "OPTIONS FLOW CREDS ABSENT: MASSIVE_S3_ACCESS_KEY_ID / MASSIVE_S3_SECRET_ACCESS_KEY / MASSIVE_S3_ENDPOINT not set \u2014 build_options_flow will no-op silently (F1 from masterplan \u00a71)"
   ],
   "detail": {
-    "today_utc": "2026-07-03",
-    "last_trading_day": "2026-07-03",
-    "chains_dir": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/agent-a20af6e25be466bc0/data/polygon_gex/chains",
-    "chains_latest_date": "2026-07-02",
-    "chains_count": 18,
-    "chains_age_trading_days": 1,
-    "options_flow_creds_present": true,
-    "options_flow_summary_count": 353
+    "today_utc": "2026-07-07",
+    "last_trading_day": "2026-07-07",
+    "chains_dir": "/Users/chriswong/actions-runner-2/_work/macro/macro/data/polygon_gex/chains",
+    "chains_latest_date": "2026-07-07",
+    "chains_count": 20,
+    "chains_age_trading_days": 0,
+    "options_flow_creds_present": false,
+    "options_flow_summary_count": 369
   }
 }

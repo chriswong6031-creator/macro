@@ -110,6 +110,177 @@ def _curve_matrix(f: pd.DataFrame) -> tuple[pd.DataFrame, list[float]]:
     return f[cols].dropna(how="all"), mats
 
 
+def _fit_pca_eigh(dy_arr: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    """Fit PCA via cov/eigh on a (T × p) diff array. Returns (eigenvalues, eigenvectors)
+    sorted descending by eigenvalue — the same approach as the main PCA path so the health
+    sub-block stays byte-compatible with it. Raises on degenerate input (caller catches)."""
+    cov = np.cov(dy_arr.T)
+    vals, vecs = np.linalg.eigh(cov)
+    order = np.argsort(vals)[::-1]
+    return vals[order], vecs[:, order]
+
+
+def _pca_health(dy: pd.DataFrame, vals_full: np.ndarray, vecs_full: np.ndarray) -> dict:
+    """Compute the pca_health sub-block. Called after the main PCA succeeds so vals_full
+    and vecs_full are already available. All sub-fields are wrapped in individual
+    try/except — if anything fails the field is None, never raised.
+
+    Fields:
+        eigenvalue_gaps       — {"pc1_to_pc2", "pc2_to_pc3", "pc3_to_pc4"}
+        effective_dimension_pr — participation-ratio effective dimension
+        pc1_loading_turnover_vs_2y — 1 - |cos(pc1_full, pc1_504)|, 6dp; None if <525 rows
+        oos_null              — null-calibrated OOS orthogonality health (RUL-ORTH-8)
+        vol_match_multipliers — {"pc2": sqrt(l1/l2), "pc3": sqrt(l1/l3)}, 2dp
+        curvature_stability_tag — from pc3_to_pc4 gap
+        window_set            — metadata
+    """
+    n_rows = len(dy)
+    n_full = len(vals_full)
+
+    out: dict = {}
+
+    # ---- eigenvalue_gaps -------------------------------------------------- #
+    gaps: dict[str, float | None] = {}
+    # denominator floor: a numerically-zero eigenvalue (rank-deficient curve) must
+    # yield gap=None, not a spuriously huge "well-separated" ratio
+    _gap_floor = 1e-9 * float(max(np.clip(vals_full, 0.0, None).sum(), 0.0)) if n_full else 0.0
+    for k, i, j in (("pc1_to_pc2", 0, 1), ("pc2_to_pc3", 1, 2), ("pc3_to_pc4", 2, 3)):
+        try:
+            if j < n_full and _gap_floor > 0 and vals_full[j] > _gap_floor:
+                gaps[k] = round(float(vals_full[i] / vals_full[j]), 4)
+            else:
+                gaps[k] = None
+        except Exception:  # noqa: BLE001
+            gaps[k] = None
+    out["eigenvalue_gaps"] = gaps
+
+    # ---- effective_dimension_pr ------------------------------------------- #
+    try:
+        vals_pos = np.clip(vals_full, 0.0, None)  # eigh noise can dip negative; PR must stay >= 1
+        s = float(vals_pos.sum())
+        s2 = float((vals_pos ** 2).sum())
+        out["effective_dimension_pr"] = round(s ** 2 / s2, 4) if s2 > 0 else None
+    except Exception:  # noqa: BLE001
+        out["effective_dimension_pr"] = None
+
+    # ---- pc1_loading_turnover_vs_2y --------------------------------------- #
+    try:
+        if n_rows >= 525:
+            dy_504 = dy.iloc[-504:].to_numpy(float)
+            _, vecs_504 = _fit_pca_eigh(dy_504)
+            pc1_full = vecs_full[:, 0]
+            pc1_504 = vecs_504[:, 0]
+            cos_sim = float(np.dot(pc1_full, pc1_504) /
+                            (np.linalg.norm(pc1_full) * np.linalg.norm(pc1_504)))
+            out["pc1_loading_turnover_vs_2y"] = round(1.0 - abs(cos_sim), 6)
+        else:
+            out["pc1_loading_turnover_vs_2y"] = None
+    except Exception:  # noqa: BLE001
+        out["pc1_loading_turnover_vs_2y"] = None
+
+    # ---- oos_null --------------------------------------------------------- #
+    try:
+        dy_arr = dy.to_numpy(float)
+        train_arr = dy_arr[:-21]
+        test_arr = dy_arr[-21:]
+        if len(train_arr) < 252:
+            out["oos_null"] = None
+        else:
+            # fit on train; project test onto frozen first-3 PCs
+            _, vecs_train = _fit_pca_eigh(train_arr)
+            pc3_train = vecs_train[:, :3]  # (p, 3)
+
+            def _max_off_diag_corr(rows: np.ndarray, pc_mat: np.ndarray) -> float | None:
+                proj = rows @ pc_mat  # (T, 3)
+                stds = proj.std(axis=0)
+                if np.any(stds < 1e-12):
+                    return None
+                corr = np.corrcoef(proj.T)  # (3, 3)
+                mask = ~np.eye(3, dtype=bool)
+                return float(np.abs(corr[mask]).max())
+
+            observed = _max_off_diag_corr(test_arr, pc3_train)
+
+            # deterministic null: contiguous 21-row slices in train, stride 2,
+            # cap 240 attempts — RUL-ORTH-8 binds every published orthogonality
+            # metric to a >=200-draw within-window null. Note: the null is
+            # in-window on the same frozen train PCs, so it is biased LOW vs a
+            # true out-of-sample reference — pctile_vs_null reads conservative
+            # (toward over-flagging); do not over-interpret high percentiles.
+            n_train = len(train_arr)
+            all_starts = list(range(0, n_train - 21 + 1, 2))
+            if len(all_starts) > 240:
+                # evenly space exactly 240 out of all_starts (deterministic)
+                step = (len(all_starts) - 1) / 239.0
+                indices = [int(round(step * k)) for k in range(240)]
+                all_starts = [all_starts[i] for i in indices]
+
+            null_draws: list[float] = []
+            for st in all_starts:
+                try:
+                    chunk = train_arr[st:st + 21]
+                    v = _max_off_diag_corr(chunk, pc3_train)
+                    if v is not None:
+                        null_draws.append(v)
+                except Exception:  # noqa: BLE001
+                    continue
+
+            if len(null_draws) < 200 or observed is None:
+                out["oos_null"] = None
+            else:
+                null_arr = np.asarray(null_draws, float)
+                pctile = float(np.mean(null_arr <= observed))
+                out["oos_null"] = {
+                    "observed": round(float(observed), 4),
+                    "null_median": round(float(np.median(null_arr)), 4),
+                    "null_p90": round(float(np.percentile(null_arr, 90)), 4),
+                    "pctile_vs_null": round(pctile, 4),
+                    "n_null_draws": int(len(null_draws)),
+                }
+    except Exception:  # noqa: BLE001
+        out["oos_null"] = None
+
+    # ---- vol_match_multipliers ------------------------------------------- #
+    try:
+        l1 = float(vals_full[0]) if n_full > 0 else None
+        mults: dict[str, float | None] = {}
+        for k, j in (("pc2", 1), ("pc3", 2)):
+            try:
+                lj = float(vals_full[j]) if j < n_full else None
+                if l1 is not None and lj is not None and lj > 0:
+                    mults[k] = round(float(np.sqrt(l1 / lj)), 2)
+                else:
+                    mults[k] = None
+            except Exception:  # noqa: BLE001
+                mults[k] = None
+        out["vol_match_multipliers"] = mults
+    except Exception:  # noqa: BLE001
+        out["vol_match_multipliers"] = {"pc2": None, "pc3": None}
+
+    # ---- curvature_stability_tag ----------------------------------------- #
+    try:
+        gap34 = gaps.get("pc3_to_pc4")
+        if gap34 is None:
+            out["curvature_stability_tag"] = None
+        elif gap34 >= 2.5:
+            out["curvature_stability_tag"] = "stable"
+        elif gap34 >= 1.5:
+            out["curvature_stability_tag"] = "caution"
+        else:
+            out["curvature_stability_tag"] = "unstable"
+    except Exception:  # noqa: BLE001
+        out["curvature_stability_tag"] = None
+
+    # ---- window_set ------------------------------------------------------- #
+    out["window_set"] = {
+        "full_window_d": int(n_rows),
+        "compare_window_d": 504,
+        "oos_horizon_d": 21,
+    }
+
+    return out
+
+
 def pca_decomposition(f: pd.DataFrame) -> dict | None:
     """Litterman-Scheinkman: PCA of daily yield CHANGES across the curve. The first
     three components are — empirically and here — level, slope and curvature, and they
@@ -152,9 +323,16 @@ def pca_decomposition(f: pd.DataFrame) -> dict | None:
             out_factors.append({"key": key, "label": _bil(en, zh),
                                  "var_explained": round(float(var[i]), 4),
                                  "loadings": {c: round(float(x), 3) for c, x in zip(mat.columns, v)}})
-        return {"factors": out_factors,
-                "first3_var": round(float(var[:3].sum()), 4) if len(var) >= 3 else None,
-                "window_d": int(len(dy)), "tenors": list(mat.columns)}
+        result = {"factors": out_factors,
+                  "first3_var": round(float(var[:3].sum()), 4) if len(var) >= 3 else None,
+                  "window_d": int(len(dy)), "tenors": list(mat.columns)}
+        # additive pca_health — never mutates the main PCA result; any exception → None
+        try:
+            result["pca_health"] = _pca_health(dy, vals, vecs)
+        except Exception as _he:  # noqa: BLE001
+            log.warning("pca_health failed: %s", _he)
+            result["pca_health"] = None
+        return result
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("yield-curve PCA failed: %s", e)
         return None

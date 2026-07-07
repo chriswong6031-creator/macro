@@ -91,45 +91,7 @@ def build(site: Path | None = None, *, generated_utc: str | None = None) -> dict
                      ", ".join(e["asset"] for e in fired[:5]))
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("rotation alerts failed: %s", e)
-
-    # Neural Web sponsorship — SRSS Phase 4 shadow rails (additive, degrade-safe).
-    # A LIGHT read+join off the already-written shadow parquet
-    # (data/spine/subsector_sponsorship.parquet, written nightly by
-    # engine.spine.write_subsector_sponsorship) — no recomputation of the
-    # join/classification rules here, per the render-budget law. Bucketed into
-    # the 3 rails subsector_rotation.html.j2 renders; never a decision input.
-    payload["sponsorship"] = build_sponsorship_rails(payload)
     return payload
-
-
-def build_sponsorship_rails(payload: dict, max_per_rail: int = 8) -> dict:
-    """Bucket SRSS Phase-2 display rows (``engine.subsector_sponsorship.load_display_rows``)
-    into the 3 rails the shadow panel shows. Display-only; never a decision input.
-    Degrade-never-raise — returns an empty-rails dict on any failure."""
-    empty = {"asof": None, "total_rows": 0,
-             "rails": {"repair": [], "headwind": [], "rollover": []}}
-    try:
-        from engine import subsector_sponsorship as ssp
-        zh_lookup = {s["key"]: {"name_zh": s.get("name_zh"), "theme_zh": s.get("theme_zh")}
-                     for s in (payload.get("subsectors") or []) if s.get("key")}
-        rows = ssp.load_display_rows(zh_lookup=zh_lookup)
-        rails: dict[str, list] = {"repair": [], "headwind": [], "rollover": []}
-        for row in rows:
-            state = row["sponsorship_state"]
-            en, zh = ssp.plain_language(row["name"], row.get("name_zh"), state, row.get("rs_mom"))
-            row = {**row, "plain_en": en, "plain_zh": zh}
-            if state in ("TAILWIND", "EARLY_REPAIR"):
-                rails["repair"].append(row)
-            elif state == "HEADWIND":
-                rails["headwind"].append(row)
-            elif state == "ROLLOVER":
-                rails["rollover"].append(row)
-        for k in rails:
-            rails[k] = rails[k][:max_per_rail]
-        return {"asof": payload.get("asof"), "total_rows": len(rows), "rails": rails}
-    except Exception as e:  # noqa: BLE001 — additive, never fatal
-        log.warning("sponsorship rails failed: %s", e)
-        return empty
 
 
 def main(argv: list[str] | None = None) -> int:

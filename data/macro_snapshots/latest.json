@@ -1,8 +1,8 @@
 {
   "schema": "macro_snapshot.v1",
-  "asof": "2026-07-06",
-  "oldest_component_asof": "2026-07-02",
-  "macro_context_id": "a3e333211af405c0",
+  "asof": "2026-07-07",
+  "oldest_component_asof": "2026-07-06",
+  "macro_context_id": "2cb7aded520102c9",
   "labels": {
     "us": {
       "us_quad": "Q1",
@@ -14,7 +14,7 @@
       "cross_asset_verdict": "mixed"
     },
     "market": {
-      "market_state_verdict": "RISK_OFF"
+      "market_state_verdict": "MIXED"
     },
     "transmission": {
       "yield_curve_regime": "bull_flattener",
@@ -50,16 +50,16 @@
     }
   },
   "sources": {
-    "data/regime/latest.json": "2026-07-02",
-    "data/market_state/latest.json": "2026-07-02",
-    "data/transmission/latest.json": "2026-07-02",
-    "data/forex/latest.json": "2026-07-05",
-    "data/bonds/bond_health.json": "2026-07-02",
-    "data/commodity/latest.json": "2026-07-03",
-    "data/china_regime/latest.json": "2026-07-03",
-    "data/hk_regime/latest.json": "2026-07-03",
-    "data/canada_regime/latest.json": "2026-07-03",
-    "data/dispersion/regime.json": "2026-07-06"
+    "data/regime/latest.json": "2026-07-06",
+    "data/market_state/latest.json": "2026-07-06",
+    "data/transmission/latest.json": "2026-07-06",
+    "data/forex/latest.json": "2026-07-07",
+    "data/bonds/bond_health.json": "2026-07-06",
+    "data/commodity/latest.json": "2026-07-07",
+    "data/china_regime/latest.json": "2026-07-07",
+    "data/hk_regime/latest.json": "2026-07-07",
+    "data/canada_regime/latest.json": "2026-07-06",
+    "data/dispersion/regime.json": "2026-07-07"
   },
   "gaps": [],
   "display_only": true
