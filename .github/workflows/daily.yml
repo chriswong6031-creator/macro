@@ -1144,6 +1144,14 @@ jobs:
         # 'git add data/' in 'commit engine outputs' below.
         # Non-fatal: a failed monitor never kills the nightly build.
         run: python -m scripts.research_factory_monitor --write || echo "::warning::research_factory_monitor failed (non-fatal)"
+      - name: build_evidence_clock (Global Evidence Clock v1)
+        if: always()
+        # Global Evidence Clock (EC-R1..R8): read-only display-only aggregator.
+        # Reads every review-clock source (experiments, qledger, research_factory,
+        # trial_ledger, governance, rule_experiments, cycle_pattern, species, freshness)
+        # and writes data/neuralweb/evidence_clock.json.
+        # No LLM, no mutations, always exits 0. Covered by 'git add data/' below.
+        run: python -m scripts.build_evidence_clock || echo "::warning::evidence clock build failed"
       - name: options_flow_attention reflex trigger (W-D — nightly EOD fold)
         if: always()
         # Neural Web W-D (RO-8): direction-free reflex that fires when an on-board
