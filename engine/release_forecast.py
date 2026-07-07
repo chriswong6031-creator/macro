@@ -1,4 +1,4 @@
-"""Macro Release Intelligence — pre-print projection models for CPI and NFP.
+"""Macro Release Intelligence — pre-print projection models for CPI, NFP, and Claims.
 
 LEAF · DISPLAY-ONLY. Imports nothing from the mechanical scoring core
 (conditions/regime/run/inputs/equity_alloc) and nothing in the scoring path
@@ -20,9 +20,16 @@ expanding-window walk-forward (min 60 obs before first prediction, refit each st
 display_only=True, authority=False on all outputs — never conditions scoring.
 
 numpy / pandas only. No sklearn, statsmodels, or scipy.stats (house law).
+
+Module split (PR-F): CPI feature builders live in engine/release_components_cpi.py;
+NFP+Claims builders live in engine/release_components_nfp.py. This file keeps the
+public API (project_release, run_walk_forward_full, helpers) and re-exports
+build_cpi_features / build_nfp_features for backward compat.
 """
 from __future__ import annotations
 
+import hashlib
+import json
 import logging
 import math
 from datetime import date, timedelta
@@ -248,106 +255,20 @@ def build_cpi_features(
 ) -> tuple[dict[str, float | None], dict]:
     """Build feature dict for CPI prediction at decision date asof.
 
+    Delegates to engine.release_components_cpi — kept here for backward compat.
     release_type: 'cpi_headline' or 'cpi_core'.
     ref_month: the CPI reference month M the target print covers (PREREG_V1.md §2.3
-        feature 7 anchors gasoline_mom on M, not on asof's calendar month — at the
-        decision date asof is already inside M+1). When None, derived as the month
-        after the last knowable own-series initial print.
+        feature 7 anchors gasoline_mom on M, not on asof's calendar month).
     Returns (features_dict, provenance_dict).
-    features_dict: {feature_name: value_or_None}
-    provenance_dict: {revision_optimistic_legs, unrevised_legs, absent_legs, ...}
     """
-    absent_legs: list[str] = []
-    prov: dict[str, Any] = {
-        "revision_optimistic_legs": [],
-        "unrevised_legs": [],
-        "absent_legs": [],
-        "display_only": True,
-        "authority": False,
-    }
-
-    # Select own-series based on release type
-    if release_type == "cpi_headline":
-        own_series = "CPIAUCSL"
-        lag_key = "cpi_hl_mom"
-    else:
-        own_series = "CPILFESL"
-        lag_key = "cpi_core_mom"
-
-    # Own lags (3 MoM)
-    own_lags = _last_n_mom_lags(vintages, own_series, asof, n=3)
-    features: dict[str, float | None] = {
-        f"{lag_key}_lag1": own_lags[0],
-        f"{lag_key}_lag2": own_lags[1],
-        f"{lag_key}_lag3": own_lags[2],
-    }
-
-    # Sticky CPI (2014-03+)
-    sticky_lags = _last_n_mom_lags(vintages, "STICKCPIM157SFRBATL", asof, n=1)
-    features["sticky_mom_lag1"] = sticky_lags[0]
-
-    # Median CPI (2014-02+)
-    median_lags = _last_n_mom_lags(vintages, "MEDCPIM158SFRBCLE", asof, n=1)
-    features["median_mom_lag1"] = median_lags[0]
-
-    # Flexible CPI (2014-03+)
-    flex_lags = _last_n_mom_lags(vintages, "FLEXCPIM157SFRBATL", asof, n=1)
-    features["flex_mom_lag1"] = flex_lags[0]
-
-    # PPI Final Demand (2014-03+, lag handled by realtime_start filter automatically)
-    ppi_lags = _last_n_mom_lags(vintages, "PPIFIS", asof, n=1)
-    features["ppi_mom_lag1"] = ppi_lags[0]
-
-    # Gasoline (headline only; fail-open if absent)
-    if release_type == "cpi_headline":
-        prov["unrevised_legs"].append("gasoline_mom")
-        gasregw_path = root / "data" / "fred" / "GASREGW.parquet"
-        if gasregw_path.exists():
-            try:
-                gasregw = pd.read_parquet(gasregw_path)
-                gasregw.index = pd.to_datetime(gasregw.index)
-                asof_ts = pd.Timestamp(asof)
-                # Anchor on the reference month M the target print covers — at the
-                # decision date asof already sits in the release month M+1, so
-                # month(asof) would average the wrong month's weeks.
-                if ref_month is None:
-                    own_prints = knowable_series(vintages, own_series, asof)
-                    if own_prints.empty:
-                        raise ValueError("no knowable prints to derive ref_month")
-                    ref_start = (
-                        pd.Timestamp(own_prints["period"].iloc[-1]).to_period("M") + 1
-                    ).to_timestamp()
-                else:
-                    ref_start = pd.Timestamp(ref_month).to_period("M").to_timestamp()
-                ref_end = ref_start + pd.offsets.MonthBegin(1)
-                prior_start = ref_start - pd.offsets.MonthBegin(1)
-                # average gasoline for reference month M (weeks falling in M) vs M-1;
-                # PIT: never read weekly observations dated on/after asof
-                gasregw_col = gasregw.columns[0]
-                cur_hi = min(ref_end, asof_ts)
-                cur_m_mask = (gasregw.index >= ref_start) & (gasregw.index < cur_hi)
-                prior_m_mask = (gasregw.index >= prior_start) & (gasregw.index < ref_start)
-                cur_avg = gasregw.loc[cur_m_mask, gasregw_col].mean() if cur_m_mask.any() else np.nan
-                prior_avg = gasregw.loc[prior_m_mask, gasregw_col].mean() if prior_m_mask.any() else np.nan
-                prov["gasoline_ref_month"] = str(ref_start.date())
-                if np.isfinite(cur_avg) and np.isfinite(prior_avg) and prior_avg != 0:
-                    features["gasoline_mom"] = float((cur_avg / prior_avg - 1) * 100)
-                else:
-                    features["gasoline_mom"] = None
-                    absent_legs.append("gasoline_mom")
-            except Exception as e:
-                log.debug("GASREGW read failed: %s", e)
-                features["gasoline_mom"] = None
-                absent_legs.append("gasoline_mom")
-        else:
-            features["gasoline_mom"] = None
-            absent_legs.append("gasoline_mom")
-            prov["gasoline_absent"] = True
-    else:
-        prov["gasoline_absent"] = True  # core excludes gasoline by definition
-
-    prov["absent_legs"] = absent_legs
-    return features, prov
+    from engine.release_components_cpi import build_cpi_features as _build_cpi
+    return _build_cpi(
+        asof, vintages, root,
+        release_type=release_type,
+        ref_month=ref_month,
+        knowable_series_fn=knowable_series,
+        last_n_mom_lags_fn=_last_n_mom_lags,
+    )
 
 
 def build_nfp_features(
@@ -358,136 +279,58 @@ def build_nfp_features(
 ) -> tuple[dict[str, float | None], dict]:
     """Build feature dict for NFP prediction at decision date asof for ref_month.
 
+    Delegates to engine.release_components_nfp — kept here for backward compat.
     Returns (features_dict, provenance_dict).
     """
-    absent_legs: list[str] = []
-    prov: dict[str, Any] = {
-        "revision_optimistic_legs": ["awhman_mom"],
-        "unrevised_legs": ["withheld_tax_yoy", "adp_change"],  # gasoline_mom_absent removed: gasoline is CPI-only
-        "absent_legs": [],
-        "display_only": True,
-        "authority": False,
-        "withheld_tax_start": "2023-02-14",
-    }
-
-    # PAYEMS own lags (3 MoM differences in thousands)
-    own_lags = _last_n_diff_lags(vintages, "PAYEMS", asof, n=3)
-    features: dict[str, float | None] = {
-        "nfp_change_lag1": own_lags[0],
-        "nfp_change_lag2": own_lags[1],
-        "nfp_change_lag3": own_lags[2],
-    }
-
-    # Claims: ICSA survey-week delta
-    prior_month = (
-        date(ref_month.year, ref_month.month, 1) - timedelta(days=1)
+    from engine.release_components_nfp import build_nfp_features as _build_nfp
+    return _build_nfp(
+        asof, ref_month, vintages, root,
+        knowable_series_fn=knowable_series,
+        survey_week_claims_fn=_survey_week_claims,
     )
-    prior_month = date(prior_month.year, prior_month.month, 1)
 
-    icsa_cur = _survey_week_claims(vintages, "ICSA", asof, ref_month)
-    icsa_prior = _survey_week_claims(vintages, "ICSA", asof, prior_month)
-    if icsa_cur is not None and icsa_prior is not None:
-        features["claims_survey_week_icsa"] = float(icsa_cur - icsa_prior)
-    else:
-        features["claims_survey_week_icsa"] = None
-        absent_legs.append("claims_survey_week_icsa")
 
-    # Claims: CCSA survey-week delta
-    ccsa_cur = _survey_week_claims(vintages, "CCSA", asof, ref_month)
-    ccsa_prior = _survey_week_claims(vintages, "CCSA", asof, prior_month)
-    if ccsa_cur is not None and ccsa_prior is not None:
-        features["claims_survey_week_ccsa"] = float(ccsa_cur - ccsa_prior)
-    else:
-        features["claims_survey_week_ccsa"] = None
-        absent_legs.append("claims_survey_week_ccsa")
+# ---------------------------------------------------------------------------
+# inputs_hash helper (v2 schema)
+# ---------------------------------------------------------------------------
 
-    # Withheld taxes YoY (unrevised; starts 2023-02-14)
-    prov["unrevised_legs"] = list(set(prov["unrevised_legs"]) | {"withheld_tax_yoy"})
-    tx_path = root / "data" / "treasury" / "withheld_taxes.parquet"
-    if tx_path.exists():
-        try:
-            tx = pd.read_parquet(tx_path)
-            tx.index = pd.to_datetime(tx.index)
-            tx_col = tx.columns[0]
-            # 30-day window ending at the survey reference week (12th)
-            ref_12 = pd.Timestamp(ref_month.year, ref_month.month, 12)
-            window_start = ref_12 - pd.Timedelta(days=29)
-            year_ago_12 = ref_12 - pd.Timedelta(days=365)
-            year_ago_start = year_ago_12 - pd.Timedelta(days=29)
+def compute_inputs_hash(features: dict[str, float | None]) -> str:
+    """Return sha256 hex of sorted (feature_name, value) pairs actually used.
 
-            cur_window = tx.loc[window_start:ref_12, tx_col]
-            prior_window = tx.loc[year_ago_start:year_ago_12, tx_col]
+    'Actually used' = all pairs where value is not None.
+    Canonical form: JSON array of [name, value] pairs, sorted by name,
+    with float values rounded to 10 decimal places to avoid float repr variance.
+    """
+    used = sorted(
+        (k, round(v, 10) if v is not None else None)
+        for k, v in features.items()
+        if v is not None
+    )
+    canonical = json.dumps(used, separators=(",", ":"), sort_keys=False)
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
-            cur_sum = cur_window.sum() if len(cur_window) > 0 else np.nan
-            prior_sum = prior_window.sum() if len(prior_window) > 0 else np.nan
 
-            if np.isfinite(cur_sum) and np.isfinite(prior_sum) and prior_sum != 0 and cur_sum > 0 and prior_sum > 0:
-                features["withheld_tax_yoy"] = float((cur_sum / prior_sum - 1) * 100)
-            else:
-                features["withheld_tax_yoy"] = None
-                absent_legs.append("withheld_tax_yoy")
-        except Exception as e:
-            log.debug("withheld_taxes read failed: %s", e)
-            features["withheld_tax_yoy"] = None
-            absent_legs.append("withheld_tax_yoy")
-    else:
-        features["withheld_tax_yoy"] = None
-        absent_legs.append("withheld_tax_yoy")
+def make_release_id(release: str, period: str, sequence: str = "first") -> str:
+    """Build release_id: '<RELEASE_UPPER>:<period>:<sequence>'.
 
-    # AWHMAN MoM (revision-optimistic; last knowable = month M-1)
-    awhman_path = root / "data" / "fred" / "AWHMAN.parquet"
-    if awhman_path.exists():
-        try:
-            awhman = pd.read_parquet(awhman_path)
-            awhman.index = pd.to_datetime(awhman.index)
-            awhman_col = awhman.columns[0]
-            # last knowable = M-1 (AWHMAN releases with NFP)
-            awhman_monthly = awhman[awhman_col].resample("MS").last()
-            asof_ts = pd.Timestamp(asof)
-            # Use data up to 2 months before asof to be safe (M-1 release is with NFP)
-            ref_m = pd.Timestamp(ref_month)
-            m_minus_1 = (ref_m.to_period("M") - 1).to_timestamp()
-            m_minus_2 = (ref_m.to_period("M") - 2).to_timestamp()
-            v1 = awhman_monthly.get(m_minus_1)
-            v2 = awhman_monthly.get(m_minus_2)
-            if v1 is not None and v2 is not None and not np.isnan(v1) and not np.isnan(v2):
-                features["awhman_mom"] = float(v1 - v2)
-            else:
-                features["awhman_mom"] = None
-                absent_legs.append("awhman_mom")
-        except Exception as e:
-            log.debug("AWHMAN read failed: %s", e)
-            features["awhman_mom"] = None
-            absent_legs.append("awhman_mom")
-    else:
-        features["awhman_mom"] = None
-        absent_legs.append("awhman_mom")
+    release: 'cpi_headline' | 'cpi_core' | 'nfp' | 'claims'
+    period: 'YYYY-MM' for monthly releases, 'YYYY-MM-DD' for weekly claims
+    sequence: always 'first' for v1
+    Examples: 'CPI:2026-06:first', 'NFP:2026-07:first', 'CLAIMS:2026-07-11:first'
+    """
+    label_map = {
+        "cpi_headline": "CPI",
+        "cpi_core": "CPI_CORE",
+        "nfp": "NFP",
+        "claims": "CLAIMS",
+    }
+    label = label_map.get(release, release.upper())
+    return f"{label}:{period}:{sequence}"
 
-    # ADP (fail-open if absent)
-    adp_path = root / "data" / "fred" / "ADPNFRPRIVSA.parquet"
-    prov["unrevised_legs"] = list(set(prov["unrevised_legs"]))
-    if adp_path.exists():
-        try:
-            adp = pd.read_parquet(adp_path)
-            adp.index = pd.to_datetime(adp.index)
-            adp_col = adp.columns[0]
-            ref_m = pd.Timestamp(ref_month)
-            adp_val = adp[adp_col].get(ref_m)
-            if adp_val is not None and not np.isnan(adp_val):
-                features["adp_change"] = float(adp_val)
-            else:
-                features["adp_change"] = None
-                absent_legs.append("adp_change")
-        except Exception as e:
-            log.debug("ADP read failed: %s", e)
-            features["adp_change"] = None
-            absent_legs.append("adp_change")
-    else:
-        features["adp_change"] = None
-        absent_legs.append("adp_change")
 
-    prov["absent_legs"] = absent_legs
-    return features, prov
+def make_prediction_id(release_id: str, asof_night: str) -> str:
+    """Build prediction_id: '<release_id>:<asof_night>:v1'."""
+    return f"{release_id}:{asof_night}:v1"
 
 
 # ---------------------------------------------------------------------------
@@ -651,13 +494,16 @@ def project_release(
     asof: date,
     root: str | Path,
     ref_month: date | None = None,
+    *,
+    period: str | None = None,
+    release_date: date | None = None,
 ) -> dict:
     """Generate a point-in-time projection for a macro release.
 
     Parameters
     ----------
     release : str
-        One of 'cpi_headline', 'cpi_core', 'nfp'.
+        One of 'cpi_headline', 'cpi_core', 'nfp', 'claims'.
     asof : date
         Decision date (the day before the target release is published).
     root : str | Path
@@ -666,23 +512,64 @@ def project_release(
         Reference month the upcoming print covers (CPI only — anchors the
         gasoline_mom leg per PREREG_V1.md §2.3). None derives it from the last
         knowable initial print. Ignored for NFP, which derives its own.
+    period : str | None
+        'YYYY-MM' (monthly) or 'YYYY-MM-DD' (weekly claims) for schema v2 IDs.
+        If None, derived internally where possible.
+    release_date : date | None
+        The scheduled release date; used to compute horizon_days for schema v2.
+        If None, horizon_days is omitted.
 
     Returns
     -------
-    dict matching the release_forecast.v1 projection block schema defined in PREREG_V1.md.
+    dict matching the release_forecast.v2 projection block schema.
     display_only=True, authority=False.
     """
     root = Path(root)
     vintages = load_vintages(root)
 
-    if release == "cpi_headline":
-        return _project_cpi(release, asof, vintages, root, ref_month=ref_month)
-    elif release == "cpi_core":
-        return _project_cpi(release, asof, vintages, root, ref_month=ref_month)
+    if release in ("cpi_headline", "cpi_core"):
+        result = _project_cpi(release, asof, vintages, root, ref_month=ref_month)
     elif release == "nfp":
-        return _project_nfp(asof, vintages, root)
+        result = _project_nfp(asof, vintages, root)
+    elif release == "claims":
+        from engine.release_components_nfp import project_claims
+        result = project_claims(
+            asof, vintages,
+            knowable_series_fn=knowable_series,
+            min_quantile_obs=MIN_QUANTILE_OBS,
+        )
     else:
-        raise ValueError(f"Unknown release type: {release!r}. Use 'cpi_headline', 'cpi_core', or 'nfp'.")
+        raise ValueError(
+            f"Unknown release type: {release!r}. "
+            "Use 'cpi_headline', 'cpi_core', 'nfp', or 'claims'."
+        )
+
+    # Attach schema v2 fields
+    result["schema"] = 2
+    _period = period
+    if _period is None:
+        # Best-effort derivation for ID construction
+        if release in ("cpi_headline", "cpi_core"):
+            own_series = "CPIAUCSL" if release == "cpi_headline" else "CPILFESL"
+            try:
+                ip = knowable_series(vintages, own_series, asof)
+                if not ip.empty:
+                    last_p = pd.Timestamp(ip["period"].iloc[-1])
+                    next_p = (last_p.to_period("M") + 1).to_timestamp()
+                    _period = f"{next_p.year}-{next_p.month:02d}"
+            except Exception:
+                pass
+        elif release == "nfp":
+            _period = f"{asof.year}-{asof.month:02d}"
+
+    if _period is not None:
+        result["release_id"] = make_release_id(release, _period)
+        result["prediction_id"] = make_prediction_id(result["release_id"], asof.isoformat())
+
+    if release_date is not None:
+        result["horizon_days"] = (release_date - asof).days
+
+    return result
 
 
 def _project_cpi(
@@ -839,6 +726,7 @@ def _project_cpi(
     return {
         "release": release,
         "asof": asof.isoformat(),
+        "inputs_hash": compute_inputs_hash(feats),
         "point": round(point, 4) if point is not None else None,
         "p10": quantiles["p10"],
         "p25": quantiles["p25"],
@@ -1052,6 +940,7 @@ def _project_nfp(asof: date, vintages: pd.DataFrame, root: Path) -> dict:
     return {
         "release": "nfp",
         "asof": asof.isoformat(),
+        "inputs_hash": compute_inputs_hash(feats),
         "point": round(point, 2) if point is not None else None,
         "p10": quantiles["p10"],
         "p25": quantiles["p25"],
