@@ -614,6 +614,89 @@ checks:
     notes: >
       Allowlist is config/dag.yml divergences section.
 
+  - law_id: nw.evidence_clock_display_only
+    summary: >
+      The Global Evidence Clock artifact (data/neuralweb/evidence_clock.json)
+      is display-only attention routing: authority must be display_only, every
+      row must carry promote/mutate_source_state in forbidden_actions, states
+      must stay inside the 9-state vocabulary, clock_ids must be unique, and
+      summary counts must match rows. The builder reads every clock source and
+      may never mutate one (EC-R1..R8).
+    source_ref:
+      - scripts/check_evidence_clock.py
+      - research/evidence_clock/ADJUDICATION_BY_FABLE.md
+    severity: hard
+    check_script: scripts/check_evidence_clock.py
+    ci_wiring:
+      - workflow: .github/workflows/ci.yml
+        job: evidence-clock
+        lane: pr_ci
+    selftest: true
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - Validates the committed artifact structurally; the builder's read-only
+        runtime invariance is enforced by unit tests and review, not this gate.
+    owner_program: neural-web
+    notes: null
+
+  - law_id: nw.ruling_graph_conflicts
+    summary: >
+      Ruling Graph guard (RUL-CL-6/7/8): a new fdr_family token in changed files
+      must be declared in the ruling graph's known_fdr_families (H1, hard); a
+      privacy-boundary token must never reach site/ or scripts that write to
+      site/ (H2 BRIDGE law, hard). Warn tier: re-proposal of a killed/deferred
+      idea without citing its ruling_id (W1) and expired come_back_on clocks (W2).
+    source_ref:
+      - scripts/check_ruling_conflicts.py
+      - research/RULING_GRAPH_ADJUDICATION_BY_FABLE.md
+      - config/ruling_graph.yml
+    severity: hard
+    check_script: scripts/check_ruling_conflicts.py
+    ci_wiring:
+      - workflow: .github/workflows/ci.yml
+        job: ruling-graph
+        lane: pr_ci
+    selftest: true
+    allowlist: config/ruling_graph.yml
+    ratchet: null
+    known_limits:
+      - Deterministic substring matching only; W1 re-proposal detection can
+        false-positive on benign mentions of a killed idea's match_term.
+    owner_program: neural-web
+    notes: >
+      Registered by the evidence-clock PR as census catch-up — the script
+      shipped in #1795 in a race with the #1793 meta-guard census.
+
+  - law_id: nw.entity_thesis_registry
+    summary: >
+      ETM integrity gate: data/neuralweb/entity_thesis_mechanism_registry.json
+      must keep schema/authority discipline (all rows display_only,
+      is_context_only true), namespace grammar per registry_type, no invented
+      links (every edge carries source.path + source.detail and resolvable
+      endpoints), suggestion-only duplicate flags, recomputable counts, and
+      referential integrity against species/candidates/trial-ledger sources
+      (ETM-C1..C7).
+    source_ref:
+      - scripts/check_entity_thesis_registry.py
+      - config/entity_thesis_mechanism_registry.yml
+    severity: hard
+    check_script: scripts/check_entity_thesis_registry.py
+    ci_wiring:
+      - workflow: .github/workflows/ci.yml
+        job: neural-web
+        lane: pr_ci
+    selftest: true
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - ETM-C7 referential integrity only checks source files present on disk;
+        absent sources are skipped, not failed.
+    owner_program: neural-web
+    notes: >
+      Registered by the evidence-clock PR as census catch-up — the script
+      shipped in #1794 in a race with the #1793 meta-guard census.
+
   # ── Operations guards ──────────────────────────────────────────────────────
 
   - law_id: ops.hazard_model_freshness
