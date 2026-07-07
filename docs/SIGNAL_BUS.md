@@ -25,7 +25,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | institutional-sector-intelligence | 2 |
 | intl-fix | 1 |
 | long-hold | 28 |
-| macro-release-intel | 5 |
+| macro-release-intel | 6 |
 | mastermind-feedback-contract | 2 |
 | momoedge | 8 |
 | nasdaq-internals | 1 |
@@ -50,7 +50,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | tier | count |
 |---|---|
 | display | 132 |
-| infrastructure | 69 |
+| infrastructure | 70 |
 | scored | 4 |
 | shadow | 40 |
 
@@ -58,7 +58,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 233 |
+| git | 234 |
 | gitignored-local | 6 |
 | r2 | 6 |
 
@@ -234,6 +234,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
 | cleveland-nowcast-store | `data/cleveland_nowcast/nowcast.parquet` | parquet | collect | infrastructure | 1 | 0 |
+| kalshi-releases-store | `data/prediction_markets/kalshi_releases.parquet` | parquet | collect | infrastructure | 1 | 0 |
 | release-forecast-latest | `data/release_forecast/latest.json` | json | daily-engine | display | 0 | 1 |
 | release-forecast-ledger | `data/release_forecast/forward_ledger.jsonl` | jsonl | daily-engine | shadow | 1 | 0 |
 | site-release-forecast | `site/macrodata/release_forecast.json` | json | daily-engine | display | 0 | 1 |
