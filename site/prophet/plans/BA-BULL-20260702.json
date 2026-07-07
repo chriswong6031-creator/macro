@@ -34,6 +34,7 @@
     "plan": "display \u2014 us_standouts buy-lane originated; display-only until forward ledger gate passes",
     "option_premium": "EOD mark \u2014 delayed; not NBBO-live; display-only"
   },
+  "signal_date": "2026-07-02",
   "_signal_date": "2026-07-02",
   "_conviction_score": 46,
   "_act_level": 3,

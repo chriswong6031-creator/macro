@@ -334,6 +334,10 @@ def main() -> None:
         })
 
     # ── 4. Write index.json ───────────────────────────────────────────────────
+    # Sort for determinism: conviction desc, then plan id asc (same-inputs-same-output).
+    active_entries.sort(
+        key=lambda e: (-(e.get("_conviction_score") or 0), e.get("id", "")),
+    )
     index: dict[str, Any] = {
         "schema": "prophet.index/v1",
         "asof": asof,

@@ -589,9 +589,7 @@ def _compute_objective(
         p2_val = _clamp(p2 or 0.0, 0.0, 1.0)
         base = 0.40 + 0.50 * p2_val
 
-        # Giveback penalty: fraction of T2 leg given back
-        giveback_frac = _clamp(1.0 - (p2 or 0.0), 0.0, 1.0) if p2 is not None else 0.0
-        # Giveback here is relative to T1 base
+        # Giveback penalty: fraction of T1 progress given back (relative to T1 base)
         t1_giveback = _clamp(1.0 - p1, 0.0, 1.0) if p1 < 1.0 else 0.0
         if t1_giveback > 0.4:
             penalty = (t1_giveback - 0.4) * 0.3

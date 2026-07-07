@@ -62,6 +62,7 @@ import json
 import logging
 import math
 import os
+import re
 from datetime import date, timedelta
 from pathlib import Path
 from typing import Any
@@ -255,6 +256,20 @@ def select_candidates(
 # Thesis template (deterministic, no LLM)
 # ---------------------------------------------------------------------------
 
+_VALIDATED_PAT = re.compile(r"\b(validated|已验证)\b", re.IGNORECASE)
+
+
+def _sanitize_thesis_text(text: str) -> str:
+    """Strip forbidden 'validated'/'已验证' tokens from thesis driver/caution strings.
+
+    The plan JSON is rendered user-facing (terminal oracle-tab). House law forbids
+    affirmative 'validated' claims outside the allowlist gate. Source conviction
+    drivers/cautions may carry these tokens (e.g. 'validated risk gate: trim').
+    Replace them with 'risk gate' to preserve the semantic content without the claim.
+    """
+    return _VALIDATED_PAT.sub("risk gate", text)
+
+
 def _build_thesis(ticker: str, b: dict) -> str:
     """
     OURS: Build a deterministic thesis string from candidate fields.
@@ -272,9 +287,11 @@ def _build_thesis(ticker: str, b: dict) -> str:
         f"{ticker} [{state}] — conviction {score}/100 ({band}).",
     ]
     if drivers:
-        parts.append(f"Drivers: {'; '.join(str(d) for d in drivers[:3])}.")
+        sanitized = [_sanitize_thesis_text(str(d)) for d in drivers[:3]]
+        parts.append(f"Drivers: {'; '.join(sanitized)}.")
     if cautions:
-        parts.append(f"Cautions: {'; '.join(str(c) for c in cautions[:2])}.")
+        sanitized = [_sanitize_thesis_text(str(c)) for c in cautions[:2]]
+        parts.append(f"Cautions: {'; '.join(sanitized)}.")
 
     entry_grade = es.get("entry_grade", "")
     if entry_grade:
@@ -607,6 +624,9 @@ def originate_plans(
                 if opt
                 else "null — symbol not in ThetaData store",
             },
+            # signal_date is the issuance anchor read by compute_management_state
+            # (plan.get('signal_date')).  The underscore alias is kept for display.
+            "signal_date": signal_date,
             # Extra metadata (display)
             "_signal_date": signal_date,
             "_conviction_score": conv.get("score"),

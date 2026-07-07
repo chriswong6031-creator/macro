@@ -881,3 +881,119 @@ class TestEdgeCases:
         geo = result["geometry"]
         for key in ("dist_to_stop_r", "dist_to_t1_r", "horizon_pct_used", "p1", "move_r"):
             assert key in geo, f"Missing geometry key: {key}"
+
+
+# ===========================================================================
+# 20. End-to-end: originate_plans dict shape -> compute_management_state
+#
+#  Guards against the signal_date key regression (review fix #1):
+#  originate_plans emitted '_signal_date' but NOT 'signal_date', so
+#  compute_management_state fell through to plan.get('asof') and produced
+#  days_elapsed=0 / tau=0 for EVERY plan, silently disabling the pace,
+#  overtime, and pre-trigger stall guards.
+#
+#  This test constructs a plan dict that matches the shape originate_plans
+#  produces (before the fix: only '_signal_date'), verifies the failure
+#  mode (days_elapsed=0), then verifies the fix ('signal_date' key present)
+#  produces the correct non-zero days_elapsed.
+# ===========================================================================
+
+class TestOriginatePlansDictShapeEndToEnd:
+    """Regression test: signal_date must survive the bridge->management path."""
+
+    def _make_originate_style_plan(self, signal_date: str, asof: str,
+                                    include_signal_date_key: bool = True) -> dict:
+        """Build a plan dict in the shape originate_plans produces.
+
+        When include_signal_date_key=False, mimics the pre-fix bridge that
+        only set '_signal_date' (private display field) but not 'signal_date'.
+        """
+        plan_id = f"TEST-BULL-{signal_date}"
+        d: dict[str, Any] = {
+            "schema": "prophet.trade_plan/v1",
+            "id": plan_id,
+            # 'asof' is the CLI run date, NOT the signal issuance date
+            "asof": asof + "T00:00:00Z",
+            "asset": "TEST",
+            "direction": "BULL",
+            "thesis": "TEST [TURN SIGNALED] — conviction 70/100.",
+            "source_engines": ["us_standouts_buy_lane", "neural_web"],
+            "trigger": 105.0,
+            "entry": 100.0,
+            "invalidation": 90.0,
+            "targets": [115.0, 130.0],
+            "horizon_days": 60,
+            "min_hold_days": 5,
+            "tranche": 1,
+            "option_contract": None,
+            "management_ref": f"prophet/state/{plan_id}.json",
+            "authority_tier": "display",
+            "confidence": 70.0,
+            # Display alias — always present
+            "_signal_date": signal_date,
+            "_conviction_score": 70,
+        }
+        if include_signal_date_key:
+            # The fixed bridge also sets this — the key compute_management_state reads
+            d["signal_date"] = signal_date
+        return d
+
+    def test_signal_date_regression_pre_fix_gives_zero_elapsed(self):
+        """Without 'signal_date' key, days_elapsed falls to 0 (old broken behaviour)."""
+        signal_date = "2026-06-01"
+        asof = "2026-07-01"  # 30 days after signal — should NOT be 0
+        plan = self._make_originate_style_plan(
+            signal_date=signal_date,
+            asof=asof,
+            include_signal_date_key=False,  # pre-fix shape
+        )
+        # Build 22 price rows from signal to asof (inclusive); filter to <= asof
+        prices = _make_prices(signal_date, [100.0] * 25)
+        prices = prices[prices.index.date <= date.fromisoformat(asof)]
+        result = compute_management_state(plan=plan, price_history=prices, asof=asof)
+        # Without 'signal_date', engine reads plan.get('asof') = asof → days_elapsed=0 → tau=0.
+        # At tau=0, smoothstep returns 0 → expected_t1=0 → pace_t1=1.0 → pace score=100.0 (0-100 scale).
+        # This inflates pace and disables the pre-trigger stall guard (requires tau>0.3).
+        assert result["components"]["pace"] == pytest.approx(100.0, abs=1.0), (
+            "Pre-fix: pace=100.0 when days_elapsed=0 (tau=0 gives no schedule pressure)"
+        )
+
+    def test_signal_date_key_produces_nonzero_elapsed(self):
+        """With 'signal_date' key (post-fix), days_elapsed > 0 and tau reflects real age."""
+        signal_date = "2026-06-01"
+        asof = "2026-07-01"   # ~22 business days after signal
+        plan = self._make_originate_style_plan(
+            signal_date=signal_date,
+            asof=asof,
+            include_signal_date_key=True,   # post-fix shape
+        )
+        prices = _make_prices(signal_date, [100.0] * 25)
+        prices = prices[prices.index.date <= date.fromisoformat(asof)]
+        result = compute_management_state(plan=plan, price_history=prices, asof=asof)
+        # tau = days_elapsed / horizon_days = ~22/60 ≈ 0.37
+        # At tau=0.37, pre-trigger pace < 100.0 (schedule pressure applied: pace≈22.5).
+        # Pre-fix (tau=0): pace=100.0 (no schedule pressure, no stall guard).
+        pace = result["components"]["pace"]
+        assert pace < 50.0, (
+            f"Post-fix: pace={pace:.1f} should be < 50.0 (tau≈0.37 penalty active); "
+            "days_elapsed=0 (pre-fix) gives pace=100.0"
+        )
+        # Verify the stall guard can fire: tau > 0.3 and p1 < 0.05 (flat price)
+        # The ceiling may be reduced — just assert it is a valid float <= 92
+        assert result["confidence_ceiling"] <= 92
+
+    def test_originate_style_plan_passes_management_validator(self):
+        """Full round-trip: originate-shaped plan -> management state -> validator passes."""
+        signal_date = "2026-06-15"
+        asof = "2026-07-01"
+        plan = self._make_originate_style_plan(
+            signal_date=signal_date,
+            asof=asof,
+            include_signal_date_key=True,
+        )
+        prices = _make_prices(signal_date, [100.0] * 14)
+        prices = prices[prices.index.date <= date.fromisoformat(asof)]
+        result = compute_management_state(plan=plan, price_history=prices, asof=asof)
+        from engine.options_structure import validate_management_state as _vms
+        errors = _vms(result)
+        assert errors == [], f"Validator errors on originate-shaped plan: {errors}"

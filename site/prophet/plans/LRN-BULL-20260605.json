@@ -26,6 +26,7 @@
     "plan": "display \u2014 us_standouts buy-lane originated; display-only until forward ledger gate passes",
     "option_premium": "null \u2014 symbol not in ThetaData store"
   },
+  "signal_date": "2026-06-05",
   "_signal_date": "2026-06-05",
   "_conviction_score": 62,
   "_act_level": 1,
