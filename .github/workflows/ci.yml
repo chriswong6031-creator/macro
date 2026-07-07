@@ -17,6 +17,8 @@ on:
       - "scripts/check_title_i18n.py"
       # conflict-marker guard: a merge must never ship literal <<<<<<< / ======= / >>>>>>> lines.
       - "scripts/check_conflict_markers.py"
+      # template↔site sync guard: plain-copy page assets must byte-match their templates.
+      - "scripts/check_template_site_sync.py"
       - "templates/**"
       - ".github/workflows/ci.yml"
       # Signal→chart §7 contract: any change to the schema, validator, engine, or build script
@@ -754,3 +756,22 @@ jobs:
         run: python3 scripts/check_validated_claims.py --selftest
       - name: no unearned 'validated' claims in user-facing surfaces
         run: python3 scripts/check_validated_claims.py
+
+  template-site-sync:
+    # ui.template_site_sync PR gate: every plain-copy page asset (templates/<name>
+    # that also ships as site/<name>) must byte-match at every commit — a one-sided
+    # reword creates the divergence window the render lanes then propagate at an
+    # unpredictable later time. 2026-07-07 incident: engine-render commit 2ae709f9f0
+    # resurrected pre-#1793 "validated" wording in site/sector_cycles.js because the
+    # push step's `git pull --rebase -X theirs` favored the run's checkout-time copy
+    # over the reword that merged mid-render. The render lanes now re-sync post-rebase
+    # (--fix); this job keeps PRs from arming the window in the first place.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: install minimal deps (theme.js bake reads config.yml)
+        run: pip install pyyaml
+      - name: template-site-sync selftest (gate fires on synthetic divergence)
+        run: python3 scripts/check_template_site_sync.py --selftest
+      - name: site copies of template assets must byte-match templates/
+        run: python3 scripts/check_template_site_sync.py
