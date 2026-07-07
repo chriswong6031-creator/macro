@@ -63,6 +63,23 @@ Rails: .gitignore data/private/ ; scripts/check_private_boundary.py in CI
 
 No raw event ever leaves the Mastermind repo. The strongest change vs the docket: **zero data movement of private raw material, ever** — metrics are computed where the data lives.
 
+### §2.1 Canonical `mastermind_nw_feedback.v2` shape (FROZEN 2026-07-06)
+
+Frozen after review round 1 caught the producer and consumer implementing *different imagined* v2 shapes (the recurring imagined-schema failure class). The exporter's real emitted shape is canonical; both sides' tests pin it:
+
+```json
+"decision_flow": {
+  "by_book": [{"book_id": "flagship", "packet_accepted": 1, "packet_rejected": 1}],
+  "rejection_error_classes": {"falsifiers": 1, "expected_failure_mode": 1}
+},
+"outcome_mix":  {"state": "ok|absent", "n_resolved": 3, "by_outcome": {"1": 2, "0": 1}},
+"context_audit": {"state": "ok|accruing", "n_present": 1, "n_stale": 1, "n_absent": 1,
+                   "n_runs_total": 3, "context_seen_rate": 0.333},
+"metric_families": {"live": ["..."], "blocked": [{"name": "...", "reason": "..."}]}
+```
+
+Rules: every label key (`rejection_error_classes`, `by_outcome`, `book_id`) is sanitized at the producer (`_sanitize_key`) AND re-validated at the reader (`^[a-z0-9_]{1,40}$`), capped (≤10 producer / ≤12 reader); `state` is always present in `outcome_mix`/`context_audit` (no shape-switching between populated and absent forms); `context_seen_rate` clamped [0,1] at the reader; absence forms carry zero-event counts honestly under an explicit non-`ok` state, never fabricated zeros under `ok` (FB-R14). Additive-only evolution from here; any v3 field lands in this section before code.
+
 ## §3 Preregistered metric families (frozen before outcomes are seen)
 
 | Family | Definition (counts-only) | Status at birth |
@@ -97,3 +114,4 @@ Promotion bar: none of these carry authority. They are audit/learning substrate 
 ## Status log
 
 - 2026-07-06 — Census (2 lanes) + adjudication; rulings FB-R1..R15 frozen; W1/W2/W-M dispatched.
+- 2026-07-06 — Review round 1 (opus, all three lanes): PR-A guard coverage broadened to glob-based full scans + e2e traversal test; PR-B FIX-FIRST (dag.yml gate red; v2 label-passthrough leak; imagined-schema mismatch vs exporter); W-M hardening (by_outcome sanitize+cap, key-axis redaction backstop, real sidecar seam test). §2.1 canonical v2 shape frozen in response. Every lane's review caught ≥1 real defect — scorecard holds.
