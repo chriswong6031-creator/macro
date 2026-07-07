@@ -5665,6 +5665,46 @@ artifacts:
       with WARNING; never silently dropped. Built after all three cycle
       builders so today's stamps are present before the view rebuilds.
 
+  fed-net-liquidity:
+    path: data/macro/fed_net_liquidity.parquet
+    format: parquet
+    producer: scripts/build_netliq_daily.py
+    known_extra_writers: []
+    owner_program: cycle-intelligence
+    cadence: daily-engine
+    storage: git
+    asof_field: date
+    freshness_sla_hours: 96  # WALCL is weekly (H.4.1 Wednesdays) and the DTS/RRP tail pauses over long weekends; 96h avoids false alarms without hiding a dead collector (the stale-guard already freezes the tail)
+    schema: macro.fed_net_liquidity.v0
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      CPI DATA INFRASTRUCTURE — daily net Fed liquidity panel derived via
+      engine.canon (the ONE formula, audit #28): netliq_bn = WALCL_bn − RRP_bn −
+      TGA_bn, all BILLIONS (WALCL/TGA stored in millions → /1000; RRPONTSYD
+      already billions; a missing drain contributes 0 via fillna, never
+      annihilating the balance-sheet trend). Columns: date (union of component
+      real-observation dates), walcl_bn, rrp_bn, tga_bn, netliq_bn, netliq_d13w
+      (65-row change), netliq_d26w (130-row change), netliq_pctile_expanding
+      (PIT-pure expanding percentile of the level — appending future rows never
+      changes past values). Stale-guard: frame TRUNCATED at min(component last
+      real obs) + 10 business days so a dead component collector cannot
+      silently ffill a drain flat; per-component last-obs dates recorded in the
+      data/macro/fed_net_liquidity_meta.json sidecar (deterministic, no
+      timestamps). Deterministic idempotent full rebuild each engine run;
+      components refreshed upstream by the collect job (collectors/fred.py,
+      collectors/treasury.py — TGA parquet is git-tracked and nightly-collected;
+      the CPI prereg §13 "TGA absent" claim meant absent-from-the-registry, not
+      absent-from-disk). consumers=[] BY DESIGN: FT-3 (netliq covariate on the
+      pooled hazard) is NOT registered — additive-feature FT trials are
+      SUSPENDED by truth cycle_truth_ft2_credit_hazard_null_v1
+      (data/cycle_pattern/truths.jsonl); FT-3 may only be registered under that
+      truth's reopening conditions.
+
   # --- PR-A3: Operator-tape outcome resolution ---
   oracle-operator-tape-outcomes:
     path: data/oracle/operator_tape_outcomes.jsonl
