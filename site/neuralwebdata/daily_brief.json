@@ -1,15 +1,15 @@
 {
   "schema": "neuralweb.daily_brief.v1",
-  "produced_at": "2026-07-07T08:57:13.523997+00:00",
+  "produced_at": "2026-07-07T10:10:51.035040+00:00",
   "as_of": "2026-07-02",
   "status": "degraded",
-  "phase": "engine",
+  "phase": "final",
   "did_the_brain_run": {
     "cortex_status": "degraded",
     "tool_call_batches": 0,
     "individual_tool_calls": 0,
     "context_stale": false,
-    "summary": "cortex degraded — zero_tool_calls"
+    "summary": "cortex degraded — model_unavailable"
   },
   "what_changed": [
     {
