@@ -1,4 +1,4 @@
-"""Tests for d2_comment_letter_release_phase0 — pure logic, no network.
+"""Tests for d2_comment_letter_release_phase0 -- pure logic, no network.
 
 Tests:
   1. build_reviews: gap rule (AM-2) correctly splits reviews at 180-day boundary
@@ -7,8 +7,9 @@ Tests:
   4. beta estimation: returns None when insufficient data
   5. fwd_ret: handles edge cases (insufficient forward data)
   6. run_split_half: within-cell median split (not global-median)
-  7. _get_ar_col: yahoo uses excess_ar, massive uses ar
+  7. _get_ar_col_gate: ALL stores use plain beta-adj ar (pre-registered metric)
   8. ledger path is throwaway (not canonical trial_ledger.jsonl)
+  9. apply_massive_sanity_filter: drops |AR|>100% outliers from massive leg
 """
 from __future__ import annotations
 
@@ -25,11 +26,13 @@ from scripts.d2_comment_letter_release_phase0 import (  # noqa: E402
     build_reviews,
     date_collapsed_nw,
     run_split_half,
-    _get_ar_col,
+    _get_ar_col_gate,
+    apply_massive_sanity_filter,
     LEDGER_PATH,
     REVIEW_GAP_DAYS,
     SUBSTANTIVE_MIN_UPLOADS,
     LIGHT_MAX_UPLOADS,
+    MASSIVE_AR_ABS_MAX,
 )
 
 
@@ -207,19 +210,24 @@ def test_prereg_constants():
     assert LIGHT_MAX_UPLOADS == 2, "Light max must be 2"
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# 7. _get_ar_col: yahoo uses excess_ar, massive uses ar (AM-4)
-# ─────────────────────────────────────────────────────────────────────────────
-def test_get_ar_col_yahoo_uses_excess():
-    """Yahoo store should use excess_ar (peer-baseline-adjusted)."""
-    assert _get_ar_col("yahoo", "h5") == "excess_ar_h5"
-    assert _get_ar_col("yahoo", "h21") == "excess_ar_h21"
+# ---------------------------------------------------------------------------
+# 7. _get_ar_col_gate: ALL stores use plain beta-adj ar (pre-registered metric)
+# ---------------------------------------------------------------------------
+def test_get_ar_col_gate_yahoo_uses_plain_ar():
+    """Yahoo store gate metric must be plain beta-adj ar (NOT excess_ar).
+
+    The pre-registered gate metric is beta-adjusted AR vs SPY for BOTH stores.
+    The excess_ar peer-baseline is exploratory/post-hoc only and must not
+    be used in gate computation.
+    """
+    assert _get_ar_col_gate("yahoo", "h5") == "ar_h5"
+    assert _get_ar_col_gate("yahoo", "h21") == "ar_h21"
 
 
-def test_get_ar_col_massive_uses_ar():
-    """Massive store should use raw beta-adjusted ar."""
-    assert _get_ar_col("massive", "h5") == "ar_h5"
-    assert _get_ar_col("massive", "h21") == "ar_h21"
+def test_get_ar_col_gate_massive_uses_plain_ar():
+    """Massive store gate metric must be plain beta-adj ar."""
+    assert _get_ar_col_gate("massive", "h5") == "ar_h5"
+    assert _get_ar_col_gate("massive", "h21") == "ar_h21"
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -276,9 +284,51 @@ def test_split_half_uses_within_cell_median():
     assert massive_second.get("n", 0) > 0, "Massive second half should have events (within-cell split)"
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# 9. LEDGER_PATH is a throwaway local path (not canonical trial_ledger.jsonl)
-# ─────────────────────────────────────────────────────────────────────────────
+# ---------------------------------------------------------------------------
+# 9. apply_massive_sanity_filter: drops |AR|>100% outliers
+# ---------------------------------------------------------------------------
+def test_sanity_filter_drops_massive_outliers():
+    """Massive events with |ar_h5| > 100% should be dropped; yahoo untouched."""
+    rows = [
+        {"store": "massive", "substance": "light", "t0": pd.Timestamp("2022-01-01"),
+         "ar_h5": 50.0,   "ar_h21": 0.01},  # ar_h5 = 5000% -- outlier
+        {"store": "massive", "substance": "light", "t0": pd.Timestamp("2022-01-05"),
+         "ar_h5": 0.02,   "ar_h21": 0.01},  # clean
+        {"store": "yahoo",   "substance": "light", "t0": pd.Timestamp("2010-01-01"),
+         "ar_h5": 0.01,   "ar_h21": 0.01},  # yahoo: never filtered
+    ]
+    df = pd.DataFrame(rows)
+    filtered, stats = apply_massive_sanity_filter(df)
+    assert stats["n_massive_dropped"] == 1, f"Expected 1 dropped, got {stats}"
+    assert stats["n_massive_kept"] == 1
+    # Yahoo row must survive
+    assert len(filtered[filtered["store"] == "yahoo"]) == 1
+    # The clean massive row must survive
+    assert len(filtered[filtered["store"] == "massive"]) == 1
+    # The outlier massive row must be gone
+    assert (filtered[filtered["store"] == "massive"]["ar_h5"] < 2.0).all()
+
+
+def test_sanity_filter_constant():
+    """MASSIVE_AR_ABS_MAX must be 1.0 (100% threshold)."""
+    assert MASSIVE_AR_ABS_MAX == 1.0, f"Expected 1.0, got {MASSIVE_AR_ABS_MAX}"
+
+
+def test_sanity_filter_does_not_touch_yahoo():
+    """Yahoo events with large |AR| should NOT be filtered (filter is massive-only)."""
+    rows = [
+        {"store": "yahoo", "substance": "substantive", "t0": pd.Timestamp("2010-01-01"),
+         "ar_h5": 2.5, "ar_h21": -1.5},  # large AR but yahoo -- should survive
+    ]
+    df = pd.DataFrame(rows)
+    filtered, stats = apply_massive_sanity_filter(df)
+    assert stats.get("n_massive_total", 0) == 0
+    assert len(filtered) == 1  # yahoo row untouched
+
+
+# ---------------------------------------------------------------------------
+# 10. LEDGER_PATH is a throwaway local path (not canonical trial_ledger.jsonl)
+# ---------------------------------------------------------------------------
 def test_ledger_path_is_not_canonical():
     """LEDGER_PATH must NOT point at the canonical data/trial_ledger.jsonl.
 
