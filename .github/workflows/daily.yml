@@ -1097,6 +1097,13 @@ jobs:
         # Resilient: fail-open; kept last committed context on error; never blocks the commit.
         # Both outputs covered by 'git add data/ site/' in 'commit engine outputs' below.
         run: python -m scripts.build_nw_mastermind_context || echo "::warning::build_nw_mastermind_context failed (non-fatal) — keeping last committed mastermind_context"
+      - name: build mastermind feedback summary (reverse bridge)
+        if: always()
+        # Mastermind → NW reverse bridge W2 (FB-R7/R8/R14): reads site/mastermind/nw_feedback.json
+        # (pushed by Mastermind twice daily) and writes data/governance/mastermind_feedback_summary.json.
+        # Fail-open: absent/stale source writes state:"absent"/"stale" artifact (never fabricated zeros).
+        # Output covered by 'git add data/' in 'commit engine outputs' below.
+        run: python -m scripts.build_mastermind_feedback_summary || echo "::warning::build_mastermind_feedback_summary failed (non-fatal) — keeping last committed summary"
       - name: build neuralweb health (PR-C — NW lobe-status surface)
         if: always()
         # PR-C two-phase health: engine job builds lobe records with cortex_source='previous_run'
