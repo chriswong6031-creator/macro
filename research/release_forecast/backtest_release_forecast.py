@@ -121,12 +121,27 @@ def _skew_hit_rate(
     return rate, ci, n
 
 
-def _compute_metrics(rows: list[dict], errors_accum: np.ndarray, min_q: int = MIN_QUANTILE_OBS) -> dict:
-    """Compute all metrics for a subset of walk-forward rows."""
+def _compute_metrics(
+    rows: list[dict],
+    errors_accum: np.ndarray,
+    min_q: int = MIN_QUANTILE_OBS,
+    trailing_key: str = "baseline_trailing3m",
+) -> dict:
+    """Compute all metrics for a subset of walk-forward rows.
+
+    trailing_key: the result-dict key to use for the trailing baseline.
+      'baseline_trailing3m' (default, all non-claims releases): mean of last 3 actuals.
+      'baseline_trailing4w' (claims only): mean of last 4 actuals — genuine 4-week mean.
+    S2 FIX: claims walk-forward now emits 'baseline_trailing4w'; pass trailing_key accordingly.
+    """
+    # S2 FIX: map trailing_key to output metric label so column names are exact.
+    trailing_mae_label = "mae_trailing4w" if trailing_key == "baseline_trailing4w" else "mae_trailing3m"
+    trailing_rmse_label = "rmse_trailing4w" if trailing_key == "baseline_trailing4w" else "rmse_trailing3m"
+
     if not rows:
         return {"n": 0, "mae_model": None, "rmse_model": None,
                 "mae_naive": None, "rmse_naive": None,
-                "mae_trailing3m": None, "rmse_trailing3m": None,
+                trailing_mae_label: None, trailing_rmse_label: None,
                 "mae_ar3": None, "rmse_ar3": None,
                 "coverage_p10_p90": None,
                 "skew_hit_rate": None, "skew_wilson_ci": None, "skew_n": 0}
@@ -134,12 +149,12 @@ def _compute_metrics(rows: list[dict], errors_accum: np.ndarray, min_q: int = MI
     actuals = [r["actual"] for r in rows]
     preds = [r["predicted"] for r in rows]
     naive_preds = [r["baseline_naive"] for r in rows]
-    t3m_preds = [r["baseline_trailing3m"] for r in rows]
+    trailing_preds = [r.get(trailing_key, r.get("baseline_trailing3m")) for r in rows]
     ar3_preds = [r["baseline_ar3"] for r in rows]
 
     model_errors = [a - p for a, p in zip(actuals, preds)]
     naive_errors = [a - n for a, n in zip(actuals, naive_preds)]
-    t3m_errors = [a - t for a, t in zip(actuals, t3m_preds)]
+    trailing_errors = [a - t for a, t in zip(actuals, trailing_preds) if t is not None]
     ar3_errors = [a - b for a, b in zip(actuals, ar3_preds)]
 
     # Quantile intervals from expanding residual history.
@@ -167,8 +182,8 @@ def _compute_metrics(rows: list[dict], errors_accum: np.ndarray, min_q: int = MI
         "rmse_model": round(_rmse(model_errors), 4) if _rmse(model_errors) is not None else None,
         "mae_naive": round(_mae(naive_errors), 4) if _mae(naive_errors) is not None else None,
         "rmse_naive": round(_rmse(naive_errors), 4) if _rmse(naive_errors) is not None else None,
-        "mae_trailing3m": round(_mae(t3m_errors), 4) if _mae(t3m_errors) is not None else None,
-        "rmse_trailing3m": round(_rmse(t3m_errors), 4) if _rmse(t3m_errors) is not None else None,
+        trailing_mae_label: round(_mae(trailing_errors), 4) if _mae(trailing_errors) is not None else None,
+        trailing_rmse_label: round(_rmse(trailing_errors), 4) if _rmse(trailing_errors) is not None else None,
         "mae_ar3": round(_mae(ar3_errors), 4) if _mae(ar3_errors) is not None else None,
         "rmse_ar3": round(_rmse(ar3_errors), 4) if _rmse(ar3_errors) is not None else None,
         "coverage_p10_p90": cov,
@@ -236,17 +251,22 @@ def run_backtest() -> dict:
         else:
             rows_nfp_eval = rows_all
 
+        # S2 FIX: claims uses genuine trailing_4w baseline; all others use trailing_3m.
+        # The walk-forward results for claims carry "baseline_trailing4w" (mean of last 4),
+        # while all other releases carry "baseline_trailing3m" (mean of last 3).
+        tkey = "baseline_trailing4w" if release == "claims" else "baseline_trailing3m"
+
         # Compute metrics per era
         # For full NFP: use 2010+ per prereg (rename "full" to "2010_plus" for NFP)
         if release == "nfp":
-            m_full_or_2010plus = _compute_metrics(rows_nfp_eval, errors_accum)
+            m_full_or_2010plus = _compute_metrics(rows_nfp_eval, errors_accum, trailing_key=tkey)
         else:
-            m_full_or_2010plus = _compute_metrics(rows_all, errors_accum)
-        m_pre2010 = _compute_metrics(rows_pre2010, errors_accum)
-        m_2010_2020 = _compute_metrics(rows_2010_2020, errors_accum)
-        m_covid = _compute_metrics(rows_covid, errors_accum)
-        m_2020_recovery = _compute_metrics(rows_2020_recovery, errors_accum)
-        m_2021 = _compute_metrics(rows_2021, errors_accum)
+            m_full_or_2010plus = _compute_metrics(rows_all, errors_accum, trailing_key=tkey)
+        m_pre2010 = _compute_metrics(rows_pre2010, errors_accum, trailing_key=tkey)
+        m_2010_2020 = _compute_metrics(rows_2010_2020, errors_accum, trailing_key=tkey)
+        m_covid = _compute_metrics(rows_covid, errors_accum, trailing_key=tkey)
+        m_2020_recovery = _compute_metrics(rows_2020_recovery, errors_accum, trailing_key=tkey)
+        m_2021 = _compute_metrics(rows_2021, errors_accum, trailing_key=tkey)
 
         # Supplementary: 2015+ rows for stable-feature-set coverage (disclosure fix 9)
         # Reference month >= 2015-01 means sticky/median/flex/PPI features are consistently present
@@ -254,7 +274,7 @@ def run_backtest() -> dict:
             r for r in rows_all
             if get_period(r) is not None and get_period(r) >= pd.Timestamp("2015-01-01")
         ]
-        m_2015_plus = _compute_metrics(rows_2015_plus, errors_accum)
+        m_2015_plus = _compute_metrics(rows_2015_plus, errors_accum, trailing_key=tkey)
 
         if release == "nfp":
             era_metrics = {
@@ -264,18 +284,19 @@ def run_backtest() -> dict:
                 "covid_months_2020_03_06": m_covid,
                 "2020_recovery": m_2020_recovery,
                 "2021_plus": m_2021,
-                "2010_2020_excl_covid": _compute_metrics(rows_2010_2020, errors_accum),
+                "2010_2020_excl_covid": _compute_metrics(rows_2010_2020, errors_accum, trailing_key=tkey),
                 "2015_plus_stable_features": m_2015_plus,
             }
         elif release == "claims":
-            # Claims: add 2010-2019 pre-COVID visibility slice per MRI-R9 task spec
+            # Claims: add 2010-2019 pre-COVID visibility slice per MRI-R9 task spec.
+            # S2 FIX: all claims metrics use trailing_4w (genuine 4-week mean).
             rows_2010_2019 = [
                 r for r in rows_all
                 if get_period(r) is not None
                 and get_period(r) >= pd.Timestamp("2010-01-01")
                 and get_period(r) < pd.Timestamp("2020-01-01")
             ]
-            m_2010_2019 = _compute_metrics(rows_2010_2019, errors_accum)
+            m_2010_2019 = _compute_metrics(rows_2010_2019, errors_accum, trailing_key=tkey)
             era_metrics = {
                 "full": m_full_or_2010plus,
                 "pre_2010": m_pre2010,
@@ -372,8 +393,13 @@ def render_era_table(era_metrics: dict, release: str) -> str:
         "2015_plus_stable_features": "2015+ (stable feature set, supplementary)",
     }
 
+    # S2 FIX: column header and key depend on release — trailing4w for claims, trailing3m otherwise.
+    is_claims_table = release == "claims"
+    trail_header = "MAE Trail4w" if is_claims_table else "MAE Trail3m"
+    trail_key = "mae_trailing4w" if is_claims_table else "mae_trailing3m"
+
     lines = []
-    lines.append("| Era | n | MAE Model | MAE Naive | MAE Trail3m | MAE AR3 | RMSE Model | RMSE Naive | Cov p10-p90 | Skew HR | Wilson 95% CI | Skew n |")
+    lines.append(f"| Era | n | MAE Model | MAE Naive | {trail_header} | MAE AR3 | RMSE Model | RMSE Naive | Cov p10-p90 | Skew HR | Wilson 95% CI | Skew n |")
     lines.append("|-----|---|-----------|-----------|-------------|---------|------------|------------|-------------|---------|---------------|--------|")
 
     for era in eras:
@@ -386,7 +412,7 @@ def render_era_table(era_metrics: dict, release: str) -> str:
             f"| {m.get('n', 0)} "
             f"| {_fmt_num(m.get('mae_model'))} "
             f"| {_fmt_num(m.get('mae_naive'))} "
-            f"| {_fmt_num(m.get('mae_trailing3m'))} "
+            f"| {_fmt_num(m.get(trail_key))} "
             f"| {_fmt_num(m.get('mae_ar3'))} "
             f"| {_fmt_num(m.get('rmse_model'))} "
             f"| {_fmt_num(m.get('rmse_naive'))} "
@@ -499,6 +525,14 @@ def main():
         results = wf["results"]
         step_rows = []
         for r in results:
+            # S2 FIX: for claims, capture baseline_trailing4w (genuine 4-week mean);
+            # for all other releases, capture baseline_trailing3m (3-print mean).
+            if release == "claims":
+                trailing_step = r.get("baseline_trailing4w")
+                trailing_step_key = "baseline_trailing4w"
+            else:
+                trailing_step = r.get("baseline_trailing3m")
+                trailing_step_key = "baseline_trailing3m"
             step_rows.append({
                 "result_pos": r.get("result_pos"),
                 "idx": r.get("idx"),
@@ -507,7 +541,7 @@ def main():
                 "predicted": r.get("predicted"),
                 "actual": r.get("actual"),
                 "baseline_naive": r.get("baseline_naive"),
-                "baseline_trailing3m": r.get("baseline_trailing3m"),
+                trailing_step_key: trailing_step,
                 "baseline_ar3": r.get("baseline_ar3"),
                 "n_train": r.get("n_train"),
                 "n_features_used": r.get("n_features_used"),

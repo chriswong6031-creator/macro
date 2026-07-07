@@ -333,7 +333,13 @@ def _run_projection(
     Returns None on any error (fail-open)."""
     try:
         from engine.release_forecast import project_release
-        ref_month = date.fromisoformat(period_str + "-01") if period_str else None
+        # B1 FIX: claims period_str is a full ISO date (e.g. "2026-07-04" = Saturday);
+        # appending "-01" gives an invalid ISO string → ValueError → silent None return.
+        # The claims engine (_project_claims) ignores ref_month entirely, so pass None.
+        if release_type == "claims":
+            ref_month = None
+        else:
+            ref_month = date.fromisoformat(period_str + "-01") if period_str else None
         return project_release(release_type, asof, root, ref_month=ref_month)
     except Exception as e:
         log.warning("project_release(%s, %s) failed: %s", release_type, asof, e)
@@ -373,7 +379,14 @@ def _build_upcoming_block(
         proj = _run_projection(rt, proj_asof, root, period_str=period_str)
 
         if proj is None:
-            # Emit a null projection placeholder
+            # N1 FIX: placeholder is release-aware — claims uses "trailing_4w" key.
+            bench_placeholder = (
+                {"naive_prior": None, "trailing_4w": None,
+                 "ar_model": None, "cleveland_nowcast": None, "market_implied": None}
+                if rt == "claims" else
+                {"naive_prior": None, "trailing_3m": None,
+                 "ar_model": None, "cleveland_nowcast": None, "market_implied": None}
+            )
             proj = {
                 "release": rt,
                 "asof": today.isoformat(),
@@ -381,10 +394,7 @@ def _build_upcoming_block(
                 "p75": None, "p90": None,
                 "confidence": None,
                 "input_completeness": 0.0,
-                "benchmark_set": {
-                    "naive_prior": None, "trailing_3m": None,
-                    "ar_model": None, "cleveland_nowcast": None, "market_implied": None,
-                },
+                "benchmark_set": bench_placeholder,
                 "surprise_skew": {"sigma": None, "tag": None},
                 "pit_provenance": {"reason": "projection_failed"},
                 "display_only": True, "authority": False,

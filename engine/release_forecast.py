@@ -528,12 +528,15 @@ def _walk_forward(
     feature_names: list[str],
     target_key: str,
     min_obs: int = MIN_TRAIN_OBS,
+    emit_trailing4w: bool = False,
 ) -> list[dict]:
     """Run expanding-window walk-forward ridge regression.
 
     records: list of dicts, each with feature_names keys + target_key, sorted by time.
     Returns list of result dicts with keys: idx, predicted, actual, baseline_naive,
     baseline_trailing3m, baseline_ar3, n_train, n_features_used, input_completeness.
+    When emit_trailing4w=True (claims only), also emits baseline_trailing4w (mean of last 4
+    training actuals) so the backtest uses a genuine 4-week trailing mean, not the 3-print mean.
     """
     results = []
     for i in range(len(records)):
@@ -586,6 +589,11 @@ def _walk_forward(
         y_series = y_all.copy()
         naive = float(y_series[-1]) if len(y_series) > 0 else np.nan
         trailing_3m = float(np.mean(y_series[-3:])) if len(y_series) >= 3 else (float(np.mean(y_series)) if len(y_series) > 0 else np.nan)
+        # S2 FIX: genuine trailing_4w for claims (mean of last 4 training actuals).
+        # Only computed when emit_trailing4w=True (claims walk-forward).
+        trailing_4w: float | None = None
+        if emit_trailing4w:
+            trailing_4w = float(np.mean(y_series[-4:])) if len(y_series) >= 4 else (float(np.mean(y_series)) if len(y_series) > 0 else None)
 
         # AR3 baseline: ridge on own lags only (first 3 features = own lags by construction)
         ar3_lags_names = set(feature_names[:3])
@@ -612,7 +620,7 @@ def _walk_forward(
         else:
             ridge_pred = naive
 
-        results.append({
+        row_result: dict = {
             "idx": i,
             "result_pos": len(results),  # ordinal position in results list (0-based)
             "predicted": ridge_pred,
@@ -623,7 +631,10 @@ def _walk_forward(
             "n_train": len(y_clean) if n_features_used > 0 else len(y_all),
             "n_features_used": n_features_used,
             "input_completeness": input_completeness,
-        })
+        }
+        if emit_trailing4w:
+            row_result["baseline_trailing4w"] = trailing_4w
+        results.append(row_result)
 
     return results
 
@@ -1448,7 +1459,9 @@ def _wf_claims_full(vintages: pd.DataFrame, root: Path) -> dict:
         rec["asof"] = step_asof
         records.append(rec)
 
-    wf_results = _walk_forward(records, feature_names, "target")
+    # S2 FIX: emit genuine trailing_4w (mean of last 4 training actuals) for backtest.
+    # The generic _walk_forward uses trailing_3m (3-print mean); claims needs 4-week mean.
+    wf_results = _walk_forward(records, feature_names, "target", emit_trailing4w=True)
 
     for r in wf_results:
         meta_rec = records[r["idx"]]

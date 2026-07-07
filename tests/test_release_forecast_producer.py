@@ -31,6 +31,7 @@ sys.path.insert(0, str(_REPO))
 from scripts.build_release_forecast import (
     _append_ledger_rows,
     _build_scoreboard,
+    _build_upcoming_block,
     _check_release_day_capture,
     _claims_period_for_release_date,
     _compute_actual_from_print,
@@ -39,6 +40,7 @@ from scripts.build_release_forecast import (
     _next_thursday,
     _read_cleveland_nowcast,
     _read_policy_backdrop,
+    _run_projection,
     _wilson,
 )
 
@@ -889,4 +891,129 @@ class TestClaimsScoreboard:
         # With proj_point=None and our_surprise=None, mae_ours should be None
         assert claims_stats["mae_ours"] is None, (
             "mae_ours must be None in benchmark_only mode (no model projection)"
+        )
+
+
+# ============================================================
+# B1 INTEGRATION — claims period crash fix
+# ============================================================
+
+class TestB1ClaimsProjectionIntegration:
+    """B1 fix: _run_projection must not crash when period_str is a full ISO date.
+
+    Pre-fix: _run_projection('claims', ..., period_str='2026-07-04') → ValueError
+    (date.fromisoformat('2026-07-04' + '-01') is invalid) → caught → returns None →
+    _build_upcoming_block emits a null-benchmark placeholder → claims lane is a no-op.
+
+    Post-fix: period_str is not passed to date.fromisoformat for claims; engine receives
+    ref_month=None (correct, ignored by _project_claims) and returns a real projection dict
+    with populated benchmark_set['naive_prior'] and benchmark_set['trailing_4w'].
+
+    These tests use the committed data/fred_vintage/vintages.parquet (integration tests).
+    They are marked xfail on the pre-fix code and pass on the fixed code.
+    """
+
+    _REPO = Path(__file__).resolve().parents[1]
+    _VINTAGE_PATH = _REPO / "data" / "fred_vintage" / "vintages.parquet"
+
+    @pytest.mark.skipif(
+        not (_REPO / "data" / "fred_vintage" / "vintages.parquet").exists(),
+        reason="vintages.parquet not present — integration test requires committed data",
+    )
+    def test_run_projection_claims_returns_dict_not_none(self):
+        """B1: _run_projection('claims', ...) must return a dict, not None.
+
+        Pre-fix: period_str='2026-07-05' → fromisoformat('2026-07-05-01') → ValueError
+        → caught → returns None. Post-fix: returns real projection dict.
+        """
+        asof = date(2026, 7, 7)
+        period_str = "2026-07-05"  # full ISO Saturday date — the exact format that crashed pre-fix
+        result = _run_projection("claims", asof, self._REPO, period_str=period_str)
+        assert result is not None, (
+            "B1 regression: _run_projection('claims') returned None. "
+            "period_str is a full ISO date ('2026-07-05'); pre-fix code appended '-01' "
+            "producing '2026-07-05-01' which is invalid for date.fromisoformat(). "
+            "Fix: skip fromisoformat for claims release_type."
+        )
+        assert isinstance(result, dict), f"Expected dict, got {type(result)}"
+
+    @pytest.mark.skipif(
+        not (_REPO / "data" / "fred_vintage" / "vintages.parquet").exists(),
+        reason="vintages.parquet not present — integration test requires committed data",
+    )
+    def test_run_projection_claims_benchmark_set_populated(self):
+        """B1: benchmark_set['naive_prior'] and ['trailing_4w'] must be non-None floats.
+
+        Pre-fix: returns None → placeholder used → both keys are None.
+        Post-fix: engine runs and populates real benchmarks from ICSA history.
+        """
+        asof = date(2026, 7, 7)
+        period_str = "2026-07-05"
+        result = _run_projection("claims", asof, self._REPO, period_str=period_str)
+        assert result is not None, "B1: _run_projection returned None (see test above)"
+        bs = result.get("benchmark_set", {})
+        naive = bs.get("naive_prior")
+        trailing = bs.get("trailing_4w")
+        assert naive is not None and isinstance(naive, (int, float)), (
+            f"B1: benchmark_set['naive_prior'] must be a populated float, got {naive!r}. "
+            "Pre-fix: returns None (placeholder). Post-fix: populated from ICSA last print."
+        )
+        assert trailing is not None and isinstance(trailing, (int, float)), (
+            f"B1: benchmark_set['trailing_4w'] must be a populated float, got {trailing!r}. "
+            "Pre-fix: returns None (placeholder). Post-fix: populated from ICSA trailing mean."
+        )
+        # Sanity: claims levels are in thousands (ICSA ~200k → ~200.0k)
+        assert 100.0 < naive < 1000.0, (
+            f"naive_prior={naive} is outside plausible ICSA range in thousands (100–1000k). "
+            "Check unit conversion (raw / 1000)."
+        )
+
+    @pytest.mark.skipif(
+        not (_REPO / "data" / "fred_vintage" / "vintages.parquet").exists(),
+        reason="vintages.parquet not present — integration test requires committed data",
+    )
+    def test_build_upcoming_block_claims_benchmark_only_populated_benchmarks(self):
+        """B1 end-to-end: _build_upcoming_block emits a claims row with populated benchmarks.
+
+        Pre-fix: _run_projection returns None → placeholder → benchmark_set all-null.
+        Post-fix: real projection flows through → benchmark_set has non-None values even
+        in benchmark_only mode (benchmarks are always populated; only the projection block
+        is suppressed in benchmark_only).
+        """
+        from datetime import date
+        today = date(2026, 7, 7)
+        # Minimal upcoming event for claims (period_str = full ISO Saturday date)
+        upcoming = [{
+            "release_type": "claims",
+            "release": "claims",
+            "release_date": "2026-07-10",
+            "period": "2026-07-05",
+            "regime_axis": "growth",
+        }]
+        policy_backdrop = {
+            "fed_stance": None, "gap_bp": None,
+            "implied_cuts_12m": None, "next_fomc": None, "guidance_direction": None,
+        }
+        block = _build_upcoming_block(today, self._REPO, upcoming, policy_backdrop)
+        assert len(block) == 1, f"Expected 1 claims card, got {len(block)}"
+        card = block[0]
+
+        # Projection block must be benchmark_only
+        proj = card.get("projection", {})
+        assert proj.get("mode") == "benchmark_only", (
+            f"Claims card projection.mode must be 'benchmark_only', got {proj.get('mode')!r}"
+        )
+
+        # benchmark_set must have populated naive_prior and trailing_4w
+        bs = card.get("benchmark_set", {})
+        naive = bs.get("naive_prior")
+        trailing = bs.get("trailing_4w")
+        assert naive is not None and isinstance(naive, (int, float)), (
+            f"B1 end-to-end: benchmark_set['naive_prior'] = {naive!r} (must be a float). "
+            "Pre-fix: _run_projection crashed → placeholder → all-null benchmarks. "
+            "Post-fix: real projection runs → benchmarks populated."
+        )
+        assert trailing is not None and isinstance(trailing, (int, float)), (
+            f"B1 end-to-end: benchmark_set['trailing_4w'] = {trailing!r} (must be a float). "
+            "Pre-fix: returns None (placeholder). Post-fix: populated from ICSA history."
         )
