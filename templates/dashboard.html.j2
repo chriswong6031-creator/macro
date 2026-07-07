@@ -3174,6 +3174,49 @@
           {% endif %}
           {# name-specific notes (expander per spec §4) — needs c #}
           {% if c and c.notes %}{% for nt in c.notes if nt.kind != 'rank' %}<div class="nb-note nb-note-{{ nt.kind }}"><span class="l-en">ℹ {{ nt.en }}</span><span class="l-zh">ℹ {{ nt.zh }}</span></div>{% endfor %}{% endif %}
+          {# B2+B3: Buy Decision Packet dossier (server-rendered, fail-soft on absence). #}
+          {# Absent on older artifacts or non-US boards — renders nothing if dossier missing. #}
+          {% set _dos = n.get('dossier') %}
+          {% if _dos %}
+          <div class="nb-dossier">
+            {# action chip — mirrors sv-act- verb chip; downgrade-only phrasing #}
+            {% set _dact = _dos.get('action') %}
+            {% if _dact %}
+            <span class="nb-doss-act sv-act-{{ _dact.get('tone','wait') }}"
+              style="display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;margin-bottom:3px">
+              <span class="l-en">{{ _dact.get('verb','') }}</span><span class="l-zh">{{ _dact.get('verb_zh','') }}</span>
+            </span>
+            {% endif %}
+            {# why-now — timing rationale line #}
+            {% if _dos.get('why_now') %}
+            <div class="nb-doss-why" style="font-size:11.5px;color:var(--muted);margin:2px 0">
+              <span class="l-en">{{ _dos.why_now }}</span>
+            </div>
+            {% endif %}
+            {# not-now reasons — deterministic reason codes mapped to bilingual strings #}
+            {% set _nbr = _dos.get('no_buy_reasons') %}
+            {% if _nbr %}
+            {% set _NBR_EN = {'freshness_expired':'Cross too old — wait for a fresh trigger','not_topped':'Topped / overbought — wait for it to reset','earnings_blackout':'Earnings within blackout window','risk_veto':'Stressed tape — size down or wait','extended':'Extended / parabolic — do not chase','capped_by_entry':'Entry capped — entry timing blocks a full buy'} %}
+            {% set _NBR_ZH = {'freshness_expired':'交叉信号过期——等待新触发','not_topped':'超买/见顶——等待重置','earnings_blackout':'处于财报窗口期','risk_veto':'盘面承压——减仓或等待','extended':'过度拉伸/抛物线——勿追高','capped_by_entry':'入场封顶——入场时机阻碍满仓'} %}
+            <div class="nb-doss-notnow" style="font-size:11px;color:var(--down);margin:2px 0">
+              <span class="l-en">Not now: {{ _nbr | map('extract', _NBR_EN) | select | join(' · ') or _nbr|join(' · ') }}</span>
+              <span class="l-zh">暂不操作：{{ _nbr | map('extract', _NBR_ZH) | select | join(' · ') or _nbr|join(' · ') }}</span>
+            </div>
+            {% endif %}
+            {# stale flags — short status codes #}
+            {% set _sf = _dos.get('stale_flags') %}
+            {% if _sf %}
+            <div class="nb-doss-flags" style="font-size:10px;color:var(--muted);margin:2px 0">
+              {% for _f in _sf %}<span class="nb-doss-flag" style="margin-right:4px">{{ _f }}</span>{% endfor %}
+            </div>
+            {% endif %}
+            {# trust-tier / authority_level badge #}
+            {% set _al = _dos.get('authority_level') %}
+            {% if _al and _al.get('tier') %}
+            <span class="nb-doss-trust {{ _al.get('css','') }}" style="font-size:10px;padding:1px 6px;border-radius:999px;border:1px solid var(--line);color:var(--muted);white-space:nowrap">{{ _al.get('tier','') }}</span>
+            {% endif %}
+          </div>{# end .nb-dossier #}
+          {% endif %}{# end if _dos #}
           </div>{# end .nb-more #}
         </div>{# end .nbcard div #}
         {% endif %}{# end if not heading #}
