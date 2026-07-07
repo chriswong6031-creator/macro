@@ -727,3 +727,24 @@ FDR family: `cycle_pattern_analog` (q=0.10, NEW family — registered in
 evaluation has run. Column descriptions and oscillator computation details are in
 `engine/cycle_pattern/lake.py`. Trial-budget declarations in `data/trial_ledger.jsonl`
 (entries ts 2026-07-07T02:00:00Z through T02:00:02Z). Gate criteria above are FROZEN on merge.
+
+### FT-OSC-1 results (2026-07-07 — criteria above UNCHANGED; §18 two-commit discipline observed)
+
+Runtime: 6.5s. Subsample: 5841/16429 embargoed rows (35.6%; cn_sector=0% by construction — see implementation_notes in artifact).
+
+
+| id | result | date |
+|---|---|---|
+| **FT-OSC-1-up-1m** | **FAIL** — ΔBrier -0.0034, CI₉₀ [-0.010993, 0.003223], boot_p=0.7653, years+=6/11, n_oos=3784 |
+| **FT-OSC-1-up-3m** | **FAIL** — ΔBrier -0.0009, CI₉₀ [-0.007787, 0.005891], boot_p=0.5743, years+=5/11, n_oos=3784 |
+| **FT-OSC-1-up-6m** | **FAIL** — ΔBrier +0.0037, CI₉₀ [-0.003746, 0.010398], boot_p=0.211, years+=7/11, n_oos=3784 |
+| **FT-OSC-1-down-1m** | **FAIL** — ΔBrier +0.0013, CI₉₀ [-0.009577, 0.012478], boot_p=0.4632, years+=4/8, n_oos=925 |
+| **FT-OSC-1-down-3m** | **FAIL** — ΔBrier +0.0020, CI₉₀ [-0.002632, 0.006158], boot_p=0.2235, years+=6/8, n_oos=925 |
+| **FT-OSC-1-down-6m** | **FAIL** — ΔBrier +0.0028, CI₉₀ [0.001378, 0.00445], boot_p=0.0012, years+=7/8, n_oos=925 |
+
+**Kill condition (FALS-OSC):** **KILL SWITCH FIRED**.
+  up/6m: CI₉₀=[-0.003746, 0.010398], ci_lo=-0.003746, kill=True.
+  down/6m: CI₉₀=[0.001378, 0.00445], ci_lo=0.001378, kill=False.
+Per §18: oscillator covariate family is a printed NULL to truths.jsonl; columns stay in the lake; model design reverts. truth_id=`cycle_truth_falsosc_osc_covariate_null_v1`.
+
+Full scorecard: `data/hazard/falsosc_trial_v1.json`. Era-split rows are post-2010 OOS (walk-forward first_test_year=2010). Verdict adjudication by program chair.
