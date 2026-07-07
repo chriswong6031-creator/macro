@@ -518,6 +518,117 @@ def _compose_cycle_pattern(root: "Path | str | None" = None) -> dict:
     return out
 
 
+def _compose_stock_personality_summary(
+    root: "Path | str | None" = None,
+) -> dict:
+    """Compose the stock_personality_summary sub-block for world_state (R-SP20).
+
+    Follows the _compose_factor_weather fail-open discipline exactly:
+    - All data loading is internal to this function.
+    - Never crashes; never blocks cortex.
+    - display_only=True always.
+    - Absent or stale aggregate ⇒ {"available": False}.
+
+    Reads site/factordata/stock_personality.json (the slim site aggregate
+    produced by scripts/build_stock_library.py).  The aggregate carries:
+      as_of, n_tickers, coverage, label_distributions, per_ticker.
+
+    Returns
+    -------
+    dict with keys:
+        available:            bool
+        as_of:                str | None
+        n_tickers:            int | None
+        coverage:             float | None
+        top_archetype_shares: [(key, share), ...] top 3
+        top_chart_shares:     [(key, share), ...] top 3
+        n_tinderbox:          int | None
+        n_event_override:     int | None
+        display_only:         True (always)
+    """
+    repo = _repo_root(root)
+    path = repo / "site" / "factordata" / "stock_personality.json"
+
+    _null = {
+        "available": False,
+        "display_only": True,
+    }
+
+    if not path.exists():
+        log.info("stock_personality_summary: aggregate absent (%s) — null block", path)
+        return dict(_null)
+
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+        if not isinstance(raw, dict):
+            log.warning("stock_personality_summary: aggregate not a dict — null block")
+            return dict(_null)
+
+        # Staleness gate — same threshold as engine/oracle/contract.py (MAX_TRADING_DAYS=2).
+        # Uses the pandas.bdate_range idiom from contract.py:206-208: count business days
+        # between as_of and now; if >2 trading days stale, honor the docstring promise
+        # ("absent or stale aggregate ⇒ {available: False}") and return the null block.
+        _agg_as_of = raw.get("as_of")
+        try:
+            import pandas as _pd  # noqa: PLC0415 — lazy import, mirrors world_state pattern
+            _asof_dt = datetime.fromisoformat(str(_agg_as_of)).replace(tzinfo=timezone.utc)
+            _now = datetime.now(timezone.utc)
+            _bdays = max(0, len(_pd.bdate_range(_asof_dt.date(), _now.date())) - 1)
+            if _bdays > 2:
+                log.warning(
+                    "stock_personality_summary: aggregate as_of=%r is %d trading days stale "
+                    "(>2) — returning {available: false, note: stale}",
+                    _agg_as_of, _bdays,
+                )
+                return {"available": False, "note": "stale", "as_of": _agg_as_of, "display_only": True}
+        except Exception:  # noqa: BLE001
+            # Unparseable as_of → treat as stale
+            log.warning(
+                "stock_personality_summary: cannot parse as_of=%r — returning stale null block",
+                _agg_as_of,
+            )
+            return {"available": False, "note": "stale", "as_of": _agg_as_of, "display_only": True}
+
+        label_dist = raw.get("label_distributions") or {}
+
+        def _top3(axis_key: str) -> list:
+            dist = label_dist.get(axis_key) or {}
+            if not isinstance(dist, dict):
+                return []
+            total = sum(dist.values()) or 1
+            top = sorted(dist.items(), key=lambda kv: kv[1], reverse=True)[:3]
+            return [(_clean(k), _clean(round(v / total, 4))) for k, v in top]
+
+        # Tinderbox + event_override counts from per_ticker
+        per_ticker = raw.get("per_ticker") or {}
+        n_tinderbox = 0
+        n_event_override = 0
+        for _rec in per_ticker.values():
+            if not isinstance(_rec, dict):
+                continue
+            own = _rec.get("own") or []
+            if "short_interest_tinderbox" in own:
+                n_tinderbox += 1
+            modes = _rec.get("modes") or []
+            if "event_override" in modes:
+                n_event_override += 1
+
+        return {
+            "available": True,
+            "as_of": _clean(raw.get("as_of")),
+            "n_tickers": _clean(raw.get("n_tickers")),
+            "coverage": _clean(raw.get("coverage")),
+            "top_archetype_shares": _top3("archetype"),
+            "top_chart_shares": _top3("chart_personality"),
+            "n_tinderbox": _clean(n_tinderbox),
+            "n_event_override": _clean(n_event_override),
+            "display_only": True,
+        }
+    except Exception as exc:  # noqa: BLE001
+        log.warning("stock_personality_summary: compose failed — %s", exc)
+        return dict(_null)
+
+
 def _compose_factor_weather(
     root: "Path | str | None" = None,
     prefer_artifact: bool = True,
@@ -995,6 +1106,14 @@ def build_world_state(
         gaps.append(f"cycle_pattern: {exc}")
         cycle_pattern_block = dict(_CYCLE_PATTERN_NULL)
 
+    # ── 6d. stock_personality_summary (R-SP20) — one wiring line, loading inside ──
+    try:
+        stock_personality_summary_block: dict = _compose_stock_personality_summary(root=repo)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("world_state: stock_personality_summary lobe failed — %s", exc)
+        gaps.append(f"stock_personality_summary: {exc}")
+        stock_personality_summary_block = {"available": False, "display_only": True}
+
     # ── 7. Contradictions summary (W4) ───────────────────────────────────────
     contradictions_block: dict | None = None
     try:
@@ -1040,6 +1159,7 @@ def build_world_state(
         "factor_weather": factor_weather_block,  # §5.4 wiring line (RULING-B)
         "options_weather": options_weather_block,  # Options→NW W-B wiring line (RO-1)
         "cycle_pattern": cycle_pattern_block,  # CPI P6 wave-1 wiring line (display-only)
+        "stock_personality_summary": stock_personality_summary_block,  # R-SP20 wiring line
         "qi": None,
         "qi_note": (
             "pending joint QI border ruling (masterplan W1) — "

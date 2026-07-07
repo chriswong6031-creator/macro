@@ -318,12 +318,16 @@ fred:
       CAPUTLG211S: cap_u_oilgas   # cap-U oil & gas extraction (NAICS 211)
       IPG3344S: ip_semi           # industrial production, semis (NAICS 3344)
       CAPG3344S: capacity_semi    # industrial capacity LEVEL, semis (production>capacity = squeeze)
-      ISRATIO: inv_sales_total    # total business inventories/sales (the headline)
+      # ISRATIO/NEWORDER also live in the cycle groups above — a duplicate FRED id MUST
+      # reuse the same column alias: _all_series() dict-merges groups (last wins) and the
+      # store upsert's outlier guard reads the existing parquet by the merged alias, so a
+      # conflicting alias KeyErrors and kills the WHOLE fred adapter (8-run outage, 2026-07).
+      ISRATIO: inventory_sales    # total business inventories/sales (the headline)
       MNFCTRIRSA: inv_sales_mfg   # manufacturing inventories/sales
       AMTMUO: unfilled_orders     # mfrs' unfilled orders, total mfg — the backlog headline
       AMTMVS: shipments_total     # value of shipments, total mfg (backlog denominator)
       DGORDER: new_orders_durable # new orders, durable goods (headline)
-      NEWORDER: new_orders_capex  # new orders, nondefense cap goods ex-aircraft (capex proxy)
+      NEWORDER: cap_goods_orders  # new orders, nondefense cap goods ex-aircraft (capex proxy)
       PCU334413334413: ppi_semi   # PPI semiconductor & related device mfg (the memory pricing proxy)
       PCU331110331110: ppi_steel  # PPI iron & steel mills
       DTCISA156MSFRBPHI: deliv_time_philly  # Philly Fed current delivery time, % increases

@@ -1,6 +1,6 @@
 # W2-153 USITC Section 337 Exclusion Risk — Phase-0 Event Study
 
-**Date:** 2026-07-06  
+**Date:** 2026-07-07  
 **Family:** `w2153_itc337`  
 **VERDICT: NULL — no pre-registered gate passed**
 
@@ -49,26 +49,37 @@
   determination notices with '337-TA' in title/docket.  
 **PIT fence:** E1 = FR publication date + 1 BD; E2 = FR publication date.  
 
-**Respondent map:** 108 US-listed patterns (Tier-A), 49 private/foreign-listed (Tier-X, excluded).  
+**Respondent map:** 108 US-listed patterns (Tier-A), 5 foreign-primary-listed (Tier-B, excluded), 49 private/unlisted (Tier-X, excluded) = 162 total patterns.  
 **Distinct US tickers in map:** 89
 
-**Mapping coverage statement:**
-Many ITC 337 respondents are foreign companies (Asian OEM manufacturers,
-Korean conglomerates, European industrials) or private US entities — these
-are marked Tier-X and excluded from the return study. Only US-listed
-companies with tradable tickers contribute to the event study. Coverage is
-biased toward large-cap technology respondents (Apple, Qualcomm, etc.) where
-ITC cases are most frequently filed against US-listed companies.
+**Parser provenance (Amendment A4):**
+All respondent names are extracted exclusively from the ITC-standard
+'(b) The respondent(s) are/is' section of each Federal Register notice.
+The preceding '(a) The complainant(s)' block is skipped. Lines containing
+'on behalf of' or statute/boilerplate text are dropped before matching.
+This prevents complainant names from the SUMMARY preamble clause
+('complaint filed on behalf of [COMPLAINANT]') from being tagged as
+respondents. No full-text fallback pattern is used.
 
 | Metric | E1 (institution) | E2 (adverse final) |
 |--------|-----------------|-------------------|
-| Total respondent-notice rows | 320 | 257 |
-| Rows with mapped US ticker | 99 | 60 |
-| Unique US tickers mapped | 36 | 31 |
+| Total respondent-section rows parsed | 298 | 11 |
+| Respondent-confirmed, mapped US ticker (Tier-A) | 83 | 1 |
+| Not matched (foreign/private/unknown) | 215 | 10 |
+| Unique US tickers mapped | 28 | 1 |
 
-**E1 mapped tickers:** AAPL, AMD, AMZN, AVGO, CAJ, CAT, CSCO, DD, DELL, ERIC, GLW, GM, GOOGL, HON, HPE, HPQ, IDCC, INTC, LLY, MDT, MRVL, MSFT, MSI, MU, NLST, NOK, NTDOY, NTGR, NVDA, QCOM, SONY, SWKS, SYK, TSLA, TSM, ZBRA  
-**E2 mapped tickers:** AAPL, ABT, AMD, AMZN, AVGO, CAJ, CSCO, DD, DE, DOW, ERIC, F, GOOGL, HPQ, IDCC, INTC, MMM, MSFT, MSI, NLST, NOK, NVDA, PFE, PHG, QCOM, SNY, SONY, TSM, TXN, WOLF, ZBH  
-**Tickers with price data:** AAPL, ABT, AMD, AMZN, AVGO, CAJ, CAT, CSCO, DD, DE, DELL, DOW, ERIC, F, GLW, GM, GOOGL, HON, HPE, HPQ, IDCC, INTC, LLY, MDT, MMM, MRVL, MSFT, MSI, MU, NOK, NTGR, NVDA, PFE, PHG, QCOM, SNY, SONY, SWKS, SYK, TSLA, TSM, TXN, WOLF, ZBH, ZBRA
+**Mapping coverage statement:**
+Most ITC 337 respondents are foreign manufacturers (Asian OEMs, Korean
+conglomerates, European industrials) or private US entities — Tier-X and
+Tier-B patterns are excluded from the return study. Only Tier-A (US-listed
+with tradable tickers) contribute to the event study. Coverage is biased
+toward large-cap technology respondents where ITC cases most frequently
+name US-listed companies. Tier-B patterns (5 in map) cover foreign-primary
+listings (e.g. Samsung KQ) with no US price data — treated as excluded.
+
+**E1 mapped tickers:** AAPL, AMD, AMZN, AVGO, CAT, CSCO, DELL, ERIC, GOOGL, HON, HPE, HPQ, INTC, MRVL, MSFT, MSI, MU, NOK, NTDOY, NTGR, NVDA, PHG, QCOM, SONY, SWKS, TSLA, TSM, ZBRA  
+**E2 mapped tickers:** NVDA  
+**Tickers with price data:** AAPL, AMD, AMZN, AVGO, CAT, CSCO, DELL, ERIC, GOOGL, HON, HPE, HPQ, INTC, MRVL, MSFT, MSI, MU, NOK, NTGR, NVDA, PHG, QCOM, SONY, SWKS, TSLA, TSM, ZBRA
 
 ---
 
@@ -79,56 +90,49 @@ ITC cases are most frequently filed against US-listed companies.
 **Hypothesis:** ITC institution notice → negative beta-adjusted AR over 5d, 21d.
 **PIT:** FR publication date + 1 business day.
 
-**E1_institution_5d** (powered (n_dates=57)):
-  - Events (respondent-ticker pairs in window): 96
-  - Calendar dates (post-collapse): 57
-  - Mean beta-adj AR: 0.7762%
-  - NW HAC: mean=0.00776, HAC-t=1.898, p=0.0577, n=57
+**E1_institution_5d** (powered (n_dates=49)):
+  - Events (respondent-ticker pairs in window): 82
+  - Calendar dates (post-collapse): 49
+  - Mean beta-adj AR: 0.6496%
+  - NW HAC: mean=0.00650, HAC-t=1.195, p=0.2323, n=49
 
-**E1_institution_21d** (powered (n_dates=56)):
-  - Events: 93
-  - Calendar dates: 56
-  - Mean beta-adj AR: -0.0243%
-  - NW HAC: mean=-0.00024, HAC-t=-0.018, p=0.9859, n=56
+**E1_institution_21d** (powered (n_dates=47)):
+  - Events: 78
+  - Calendar dates: 47
+  - Mean beta-adj AR: 0.0413%
+  - NW HAC: mean=0.00041, HAC-t=0.031, p=0.9754, n=47
 
 **Per-ticker breakdown (E1, in study window):**
 
 | Ticker | n events | Mean AR % |
 |--------|----------|-----------|
-| AAPL | 13 | 1.413 |
+| AAPL | 11 | 1.293 |
 | AMD | 1 | 3.423 |
-| AMZN | 1 | -3.611 |
+| AMZN | 6 | -5.57 |
 | AVGO | 2 | 10.801 |
-| CAJ | 4 | 4.068 |
 | CAT | 1 | 21.298 |
 | CSCO | 2 | 3.718 |
-| DD | 1 | -8.017 |
 | DELL | 4 | 0.281 |
-| ERIC | 5 | -1.105 |
-| GLW | 2 | 0.305 |
-| GM | 1 | 5.505 |
-| GOOGL | 6 | 1.432 |
-| HON | 3 | 2.576 |
+| ERIC | 4 | -5.716 |
+| GOOGL | 5 | 0.343 |
+| HON | 1 | -0.548 |
 | HPE | 1 | -12.912 |
 | HPQ | 3 | -2.08 |
-| IDCC | 3 | -2.534 |
-| INTC | 2 | -6.477 |
-| LLY | 1 | -3.975 |
-| MDT | 1 | -2.476 |
+| INTC | 1 | -5.302 |
 | MRVL | 1 | -7.394 |
 | MSFT | 1 | -0.407 |
-| MSI | 4 | 0.473 |
+| MSI | 4 | -2.744 |
 | MU | 2 | -19.507 |
-| NOK | 5 | 8.147 |
+| NOK | 1 | 13.547 |
 | NTGR | 1 | 6.656 |
-| NVDA | 2 | -34.635 |
-| QCOM | 4 | -1.729 |
-| SONY | 4 | -0.582 |
-| SWKS | 2 | -3.996 |
-| SYK | 1 | -0.681 |
-| TSLA | 5 | 0.594 |
+| NVDA | 1 | 7.64 |
+| PHG | 1 | -8.485 |
+| QCOM | 5 | -1.611 |
+| SONY | 7 | 1.528 |
+| SWKS | 1 | 4.253 |
+| TSLA | 9 | -2.26 |
 | TSM | 1 | 2.315 |
-| ZBRA | 3 | -1.088 |
+| ZBRA | 1 | 8.152 |
 
 **Honest prior on E1:** Institution notices are forward-looking; the market
 may price patent litigation risk gradually as complaints are filed (before
@@ -142,52 +146,23 @@ the medium-term settlement/order-risk repricing.
 over 5d, 21d. Final determinations are typically telegraphed by the ALJ's
 initial determination weeks earlier, so much of the news may be priced in.
 
-**E2_adverse_5d** (powered (n_dates=41)):
-  - Events: 59
-  - Calendar dates: 41
-  - Mean beta-adj AR: 0.5958%
-  - NW HAC: mean=0.00596, HAC-t=1.235, p=0.2169, n=41
+**E2_adverse_5d** (UNDERPOWERED (n_dates=1, need≥25)):
+  - Events: 1
+  - Calendar dates: 1
+  - Mean beta-adj AR: -2.7812%
+  - NW HAC: n/a (insufficient observations)
 
-**E2_adverse_21d** (powered (n_dates=41)):
-  - Events: 59
-  - Calendar dates: 41
-  - Mean beta-adj AR: -3.5239%
-  - NW HAC: mean=-0.03524, HAC-t=-1.649, p=0.0992, n=41
+**E2_adverse_21d** (UNDERPOWERED (n_dates=1, need≥25)):
+  - Events: 1
+  - Calendar dates: 1
+  - Mean beta-adj AR: -76.9102%
+  - NW HAC: n/a (insufficient observations)
 
 **Per-ticker breakdown (E2, in study window):**
 
 | Ticker | n events | Mean AR % |
 |--------|----------|-----------|
-| AAPL | 7 | 0.396 |
-| ABT | 1 | 0.917 |
-| AMD | 2 | 14.159 |
-| AMZN | 1 | -79.703 |
-| AVGO | 2 | 1.67 |
-| CAJ | 3 | 5.671 |
-| CSCO | 1 | 3.718 |
-| DD | 2 | -4.787 |
-| DE | 2 | 6.904 |
-| DOW | 1 | -2.915 |
-| ERIC | 1 | -12.139 |
-| F | 1 | -9.535 |
-| GOOGL | 3 | 3.239 |
-| HPQ | 1 | -5.075 |
-| IDCC | 2 | -1.367 |
-| INTC | 2 | -5.302 |
-| MMM | 1 | -1.072 |
-| MSFT | 3 | 1.79 |
-| MSI | 4 | -0.586 |
-| NOK | 3 | 13.547 |
-| NVDA | 2 | -76.91 |
-| PFE | 1 | 13.619 |
-| PHG | 2 | -8.485 |
-| QCOM | 3 | 3.582 |
-| SNY | 1 | -4.206 |
-| SONY | 3 | -0.23 |
-| TSM | 1 | -2.489 |
-| TXN | 1 | -0.78 |
-| WOLF | 1 | 2.893 |
-| ZBH | 1 | -10.336 |
+| NVDA | 1 | -76.91 |
 
 ---
 
@@ -199,24 +174,24 @@ initial determination weeks earlier, so much of the news may be priced in.
 
 | Cell | n_dates | mean_AR% | HAC-t | p | q (BH) | H0 rejected |
 |------|---------|---------|-------|---|--------|-------------|
-| E1_institution_5d | 57 | 0.7762 | 1.898 | 0.0577 | 0.1984 | NO |
-| E1_institution_21d | 56 | -0.0243 | -0.018 | 0.9859 | 0.9859 | NO |
-| E2_adverse_5d | 41 | 0.5958 | 1.235 | 0.2169 | 0.2892 | NO |
-| E2_adverse_21d | 41 | -3.5239 | -1.649 | 0.0992 | 0.1984 | NO |
+| E1_institution_5d | 49 | 0.6496 | 1.195 | 0.2323 | 0.4646 | NO |
+| E1_institution_21d | 47 | 0.0413 | 0.031 | 0.9754 | 0.9754 | NO |
+| E2_adverse_5d (UNDERPOWERED) | 1 | -2.7812 | n/a | n/a | n/a | n/a |
+| E2_adverse_21d (UNDERPOWERED) | 1 | -76.9102 | n/a | n/a | n/a | n/a |
 
 **G1 result: FAIL**
   - Passing cells: none
-  - E1_institution_5d: FAIL (mean_ar=0.7762%, t=1.898, neg_dir=False, |t|≥2=False, BH_reject=False)
-  - E1_institution_21d: FAIL (mean_ar=-0.0243%, t=-0.018, neg_dir=True, |t|≥2=False, BH_reject=False)
-  - E2_adverse_5d: FAIL (mean_ar=0.5958%, t=1.235, neg_dir=False, |t|≥2=False, BH_reject=False)
-  - E2_adverse_21d: FAIL (mean_ar=-3.5239%, t=-1.649, neg_dir=True, |t|≥2=False, BH_reject=False)
+  - E1_institution_5d: FAIL (mean_ar=0.6496%, t=1.195, neg_dir=False, |t|≥2=False, BH_reject=False)
+  - E1_institution_21d: FAIL (mean_ar=0.0413%, t=0.031, neg_dir=False, |t|≥2=False, BH_reject=False)
+  - E2_adverse_5d: UNDERPOWERED (n_dates=1)
+  - E2_adverse_21d: UNDERPOWERED (n_dates=1)
 
 ### G2 — Sector Diversity (≥2 GICS-2 sectors among contributing tickers)
 
 **G2 result: PASS**  
-  - Sectors represented: ['15', '20', '25', '35', '45', '50']  
-  - Number of distinct GICS-2 sectors: 6  
-  - Tickers with sector code: ['AAPL', 'AMD', 'AMZN', 'AVGO', 'CAJ', 'CAT', 'CSCO', 'DD', 'DELL', 'ERIC', 'GLW', 'GM', 'GOOGL', 'HON', 'HPE', 'HPQ', 'IDCC', 'INTC', 'LLY', 'MDT', 'MRVL', 'MSFT', 'MSI', 'MU', 'NOK', 'NTGR', 'NVDA', 'QCOM', 'SONY', 'SWKS', 'SYK', 'TSLA', 'TSM', 'ZBRA', 'ABT', 'DE', 'DOW', 'F', 'MMM', 'PFE', 'PHG', 'SNY', 'TXN', 'WOLF', 'ZBH']  
+  - Sectors represented: ['20', '25', '45', '50']  
+  - Number of distinct GICS-2 sectors: 4  
+  - Tickers with sector code: ['AAPL', 'AMD', 'AMZN', 'AVGO', 'CAT', 'CSCO', 'DELL', 'ERIC', 'GOOGL', 'HON', 'HPE', 'HPQ', 'INTC', 'MRVL', 'MSFT', 'MSI', 'MU', 'NOK', 'NTGR', 'NVDA', 'PHG', 'QCOM', 'SONY', 'SWKS', 'TSLA', 'TSM', 'ZBRA']  
   - Tickers missing sector code (excluded from count): []
 
 ### FINAL VERDICT: **NULL — no pre-registered gate passed**

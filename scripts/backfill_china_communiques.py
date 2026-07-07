@@ -2,8 +2,18 @@
 
 Three families:
   pboc_mpc    — PBoC Monetary Policy Committee quarterly readouts (2009→, ~69 docs)
-  politburo_econ — Politburo economic-analysis meeting readouts (2016→, ~35-40 docs)
-  cewc        — Central Economic Work Conference annual readouts (2016→, ~10 docs)
+  politburo_econ — Politburo economic-analysis meeting readouts (2016→, ~30-44 docs
+                   given window coverage; ~4/yr)
+  cewc        — Central Economic Work Conference annual readouts (2016→, ~10 docs;
+                 CCTV-dead years incl. the 2017 CCTV gap are filled from curated
+                 gov.cn mirrors [source=gov.cn]; the 2017 gap additionally keeps
+                 an explicit gap-marker row documenting CCTV absence)
+
+CCTV families are READOUT-only (not mention-level): an item must carry the
+canonical readout title (中共中央政治局召开会议 / 中央经济工作会议在北京举行)
+plus the convening phrase in the body; meeting_year derives from the BROADCAST
+date (sanity-bounded 2016-2027), never from transcript text; one readout is
+kept per meeting (earliest broadcast date, longest body).
 
 Output: data/china_official/communiques.parquet (keep-FIRST on doc_id)
 
@@ -196,6 +206,9 @@ def upsert_rows(existing_df: pd.DataFrame, new_rows: list[dict]) -> pd.DataFrame
     new_df = pd.DataFrame(new_rows, columns=SCHEMA_COLS)
     combined = pd.concat([existing_df, new_df], ignore_index=True)
     combined = combined.drop_duplicates(subset=["doc_id"], keep="first")
+    # meeting_quarter is null for politburo_econ/cewc — keep it nullable-int
+    # (concat of int64 + None would otherwise coerce to float64).
+    combined["meeting_quarter"] = combined["meeting_quarter"].astype("Int64")
     combined = combined.sort_values(["family", "meeting_year", "meeting_quarter"],
                                     na_position="last").reset_index(drop=True)
     return combined
@@ -547,17 +560,100 @@ def fetch_pboc_mpc(session: Any, known_ids: set[str],
 
 POLITBURO_SOURCE = "cctv_news"
 
-# Candidate date windows for Politburo econ meetings per year:
-# ~Apr 25-30, ~Jul 28-31, ~Oct 25-31, ~Dec 5-15
+# Candidate date windows for Politburo econ meetings per year. Ranges cover the
+# measured spread of actual meeting dates 2016-2026: Apr 17 (2020) – Apr 30
+# (2021/2024), Jul 24 (2017/2023) – Jul 31 (2018), the off-schedule Sep econ
+# meeting (2024-09-26), Oct 28-31, Dec 6-13. Each window MUST stay within one
+# month — _politburo_meeting_key identifies a meeting by (year, month).
 _POLITBURO_WINDOWS: list[tuple[int, int, int, int]] = [
-    (4, 25, 4, 30),
-    (7, 28, 7, 31),
+    (4, 15, 4, 30),
+    (7, 24, 7, 31),
+    (9, 24, 9, 30),
     (10, 25, 10, 31),
     (12, 5, 12, 15),
 ]
 
 CCTV_START_YEAR = 2016
 CCTV_BASE_URL = "https://tv.cctv.com/lm/xwlb/day/{ds}.shtml"
+
+# Local CCTV archive (scripts/backfill_cctv_archive.py output, Mac-local /
+# gitignored): monthly parquets named YYYY-MM.parquet with columns
+# date/order_idx/title/content/fetch_status. Days covered there are read
+# locally — zero network; uncovered days fall through to the network path.
+CCTV_ARCHIVE_DIR = REPO_ROOT / "data" / "china_news" / "cctv_archive"
+
+# Hard ceiling on one day's full-transcript fetch. Measured live 2026-07-06: an
+# akshare news_cctv call with no timeout hung for ~4.5h and the run was killed
+# with nothing persisted.
+CCTV_FETCH_TIMEOUT_S = 300
+
+
+def _call_with_timeout(fn, timeout_s: float, *args, **kwargs):
+    """Run fn(*args, **kwargs) in a daemon thread with a hard timeout.
+
+    Raises TimeoutError on expiry; re-raises fn's exception otherwise. A daemon
+    thread (not ThreadPoolExecutor) is required: a hung worker must not block
+    interpreter exit via concurrent.futures' atexit join.
+    """
+    import threading
+    result: list = []
+    error: list = []
+
+    def _target() -> None:
+        try:
+            result.append(fn(*args, **kwargs))
+        except Exception as exc:  # noqa: BLE001 — re-raised in caller thread
+            error.append(exc)
+
+    t = threading.Thread(target=_target, daemon=True)
+    t.start()
+    t.join(timeout_s)
+    if t.is_alive():
+        raise TimeoutError(f"timed out after {timeout_s}s")
+    if error:
+        raise error[0]
+    return result[0]
+
+# Sanity bounds for broadcast-derived meeting_year. akshare news_cctv coverage
+# starts 2016-02-03; the upper headroom guards against window/clock bugs ever
+# producing future years (transcript TEXT years measured live spanned 1954→2030).
+CCTV_YEAR_MIN = 2016
+CCTV_YEAR_MAX = 2027
+
+
+def broadcast_meeting_year(broadcast: date) -> int | None:
+    """Meeting year for CCTV items = the broadcast date's year, sanity-bounded.
+
+    Transcript text is full of spurious year mentions (historical references like
+    1954年, forward targets like 2030年), so the broadcast date is the only
+    trustworthy anchor: readouts air the evening the meeting concludes.
+    Returns None when the broadcast year falls outside [CCTV_YEAR_MIN, CCTV_YEAR_MAX].
+    """
+    if CCTV_YEAR_MIN <= broadcast.year <= CCTV_YEAR_MAX:
+        return broadcast.year
+    return None
+
+
+def plausible_meeting_date(text: str, broadcast: date,
+                           max_back_days: int = 14, max_fwd_days: int = 1) -> str:
+    """Extract a meeting date from transcript text, accepting it only when it is
+    plausibly THIS meeting's date: within [broadcast - max_back_days,
+    broadcast + max_fwd_days].
+
+    Readout bodies usually date the meeting without a year (e.g. 4月30日召开会议)
+    which _DATE_RE cannot match; full-form 年月日 dates that DO appear are mostly
+    historical references or future effective dates. Out-of-window extractions
+    fall back to the broadcast date itself.
+    """
+    iso = extract_meeting_date(text)
+    if iso is not None:
+        try:
+            d = date.fromisoformat(iso)
+        except ValueError:
+            d = None
+        if d is not None and -max_fwd_days <= (broadcast - d).days <= max_back_days:
+            return iso
+    return broadcast.isoformat()
 
 
 def _cctv_date_range(start: date, end: date):
@@ -569,16 +665,45 @@ def _cctv_date_range(start: date, end: date):
         d += timedelta(days=1)
 
 
+# --- Readout-vs-reference discrimination ----------------------------------
+# A transcript item that merely MENTIONS 政治局 / 中央经济工作会议 (commentary,
+# 精神传达, follow-up coverage, historical retrospectives) is NOT the meeting
+# readout. Mention-level filters measured live 2026-07-06 yielded 57
+# politburo_econ / 130 cewc items spanning 1954→2030. Readouts are identified
+# by the canonical headline plus the convening phrase in the body.
+
+# Full-Politburo readout headline. Note this does NOT match Standing-Committee
+# readouts (中共中央政治局常务委员会召开会议) — 召开会议 must follow 政治局 directly.
+_POLITBURO_READOUT_TITLE = "中共中央政治局召开会议"
+# Body convening phrase: allows a dateline between 政治局 and 召开会议
+# (e.g. 中共中央政治局4月30日召开会议) but rejects 常务委员会 via (?!常).
+_POLITBURO_CONVENE_RE = re.compile(r"中共中央政治局(?!常)[^。；\n]{0,15}召开会议")
+
+_CEWC_READOUT_TITLE_RE = re.compile(r"中央经济工作会议在(?:北京|京)(?:举行|召开|闭幕)")
+_CEWC_CONVENE_RE = re.compile(r"中央经济工作会议[^。；\n]{0,30}在(?:北京|京)(?:举行|召开|闭幕)")
+
+
 def _is_politburo_econ(title: str, content: str) -> bool:
-    """Filter: item must mention 政治局 AND (经济形势 OR 经济工作).
+    """READOUT filter: the item must BE the full-Politburo econ-meeting readout.
+
+    Three gates:
+      1. Title carries the canonical readout headline 中共中央政治局召开会议
+         (excludes Standing-Committee readouts and mere references);
+      2. Body contains the convening phrase 中共中央政治局[dateline]召开会议
+         (falls back to the title when content is empty — Phase-1 title-only calls);
+      3. The meeting is economic: 经济形势 or 经济工作 in title+body.
 
     Used for Phase-2 body-level filtering only.  For Phase-1 listing title
     pre-screening use _listing_may_be_politburo_econ() which is more permissive:
-    short form titles like '中共中央政治局召开会议' contain 政治局 but not the
-    economic keyword — the keyword often appears only in the body text.
+    short form titles like '中共中央政治局召开会议 习近平主持' lack the economic
+    keyword — it often appears only in the body text.
     """
+    if _POLITBURO_READOUT_TITLE not in title:
+        return False
+    if not _POLITBURO_CONVENE_RE.search(content or title):
+        return False
     text = title + content
-    return "政治局" in text and ("经济形势" in text or "经济工作" in text)
+    return "经济形势" in text or "经济工作" in text
 
 
 def _listing_may_be_politburo_econ(title: str) -> bool:
@@ -595,9 +720,27 @@ def _listing_may_be_politburo_econ(title: str) -> bool:
 
 
 def _is_cewc(title: str, content: str) -> bool:
-    """Filter: item must mention 中央经济工作会议."""
-    text = title + content
-    return "中央经济工作会议" in text
+    """READOUT filter: the item must BE the CEWC readout, not a reference.
+
+    Two gates: canonical headline 中央经济工作会议在(北京|京)(举行|召开|闭幕) in the
+    title, plus the convening phrase in the body (e.g.
+    中央经济工作会议12月11日至12日在北京举行; falls back to the title when
+    content is empty). Rejects 解读/评论/精神传达 items that merely mention the
+    conference.
+    """
+    if not _CEWC_READOUT_TITLE_RE.search(title):
+        return False
+    return bool(_CEWC_CONVENE_RE.search(content or title))
+
+
+def _listing_may_be_cewc(title: str) -> bool:
+    """Phase-1 listing pre-screen for CEWC: permissive mention-level check.
+
+    Listing-page titles can be truncated or reformatted, so requiring the full
+    canonical headline at Phase 1 could silently drop the real readout day.
+    The strict _is_cewc() gate is applied at Phase 2 on full bodies.
+    """
+    return "中央经济工作会议" in title
 
 
 def _extract_politburo_meeting_date(content: str) -> str | None:
@@ -616,13 +759,66 @@ def _cctv_fetch_day(ds: str) -> list[dict]:
     except ImportError as e:
         raise RuntimeError(f"akshare not available: {e}") from e
     try:
-        df = ak.news_cctv(date=ds)
+        df = _call_with_timeout(ak.news_cctv, CCTV_FETCH_TIMEOUT_S, date=ds)
         if df is None or df.empty:
             return []
         return df.to_dict("records")
+    except TimeoutError:
+        log.warning("CCTV fetch for %s timed out after %ds — treated as fetch failure",
+                    ds, CCTV_FETCH_TIMEOUT_S)
+        return []
     except Exception as exc:  # noqa: BLE001
         log.warning("CCTV fetch failed for %s: %s", ds, exc)
         return []
+
+
+def _archive_month_df(archive_dir_str: str, month: str) -> pd.DataFrame | None:
+    """Load one YYYY-MM.parquet from the local CCTV archive (None if absent).
+
+    Cached on (dir, month) so a 28-day probe window reads its month file once.
+    """
+    key = (archive_dir_str, month)
+    if key in _ARCHIVE_MONTH_CACHE:
+        return _ARCHIVE_MONTH_CACHE[key]
+    path = Path(archive_dir_str) / f"{month}.parquet"
+    df = None
+    if path.exists():
+        df = pd.read_parquet(path, columns=["date", "title", "content", "fetch_status"])
+    _ARCHIVE_MONTH_CACHE.clear()  # keep at most one month resident
+    _ARCHIVE_MONTH_CACHE[key] = df
+    return df
+
+
+_ARCHIVE_MONTH_CACHE: dict[tuple[str, str], pd.DataFrame | None] = {}
+
+
+def _archive_day_items(archive_dir: Path, dt: date, filter_fn) -> list[dict] | None:
+    """Return the day's transcript items from the local archive, or None when
+    the day must go to the network instead.
+
+    The archive may answer a day ONLY when it can prove presence or absence:
+      - an intact (fetch_status=ok) row passes the strict filter_fn → presence
+        proven, return the intact rows; or
+      - the day has intact rows and ZERO stub rows → absence provable, return
+        the intact rows (the scanner will find no match).
+    Anything else → None (network fallback): stub rows lose even their titles
+    (they carry the CCTV error text), so a stubbed day can silently hide the
+    readout — measured live 2026-07-07: the 2019/2022/2024 CEWC readouts were
+    all stub rows and a title-based stub check missed every one.
+    """
+    df = _archive_month_df(str(archive_dir), dt.strftime("%Y-%m"))
+    if df is None:
+        return None
+    day = df[df["date"] == dt.isoformat()]
+    if day.empty:
+        return None
+    ok = day[day["fetch_status"] == "ok"]
+    items = [{"title": t, "content": c} for t, c in zip(ok["title"], ok["content"])]
+    if any(filter_fn(str(it["title"]), str(it["content"])) for it in items):
+        return items
+    if len(ok) < len(day):
+        return None
+    return items if items else None
 
 
 def _cctv_listing_titles(session: Any, ds: str) -> list[tuple[str, str]]:
@@ -657,13 +853,21 @@ def _cctv_listing_titles(session: Any, ds: str) -> list[tuple[str, str]]:
         href = a.get("href", "")
         if title and href:
             results.append((title, href))
-    return results
+    # Keep only real article links (…/YYYY/MM/DD/VIDE….shtml). A throttle /
+    # soft-error page still renders nav <li><a> items; treating those as a
+    # valid listing silently skipped real meeting days (measured live: the
+    # 2018-07-31 politburo readout was missed by two consecutive runs). Zero
+    # real items → [] so the caller falls back to the full-day fetch.
+    return [(t, h) for t, h in results if "VIDE" in h]
 
 
 def _cctv_scan_dates(session: Any, known_ids: set[str],
                      date_iter, filter_fn, family: str,
                      limit: int | None, dry_run: bool,
-                     listing_prefetch_fn=None) -> list[dict]:
+                     listing_prefetch_fn=None,
+                     meeting_key_fn=None,
+                     archive_dir: Path | None = None,
+                     known_meeting_keys: set | None = None) -> list[dict]:
     """Generic CCTV date scanner. Uses two-phase fetch: titles-first, bodies-only-on-match.
 
     Phase 1: GET listing page → extract titles (1 request/day).  A day proceeds
@@ -680,6 +884,20 @@ def _cctv_scan_dates(session: Any, known_ids: set[str],
     titles like '中共中央政治局召开会议' contain 政治局 but not the economic keyword
     which appears only in the body.  A single filter applied to title-only would
     silently drop those meetings.
+
+    meeting_key_fn (row dict → hashable): when provided, collapses the collected
+    rows to ONE readout per meeting — a meeting airs across multiple items and
+    days, so we keep the item on the EARLIEST broadcast date, longest body as
+    tie-break within that date.
+
+    archive_dir: when set, days covered by the local CCTV archive are read from
+    the monthly parquets (zero network); only uncovered days go to the two-phase
+    network path (see _archive_day_items for the fallback conditions).
+
+    known_meeting_keys: meeting keys already present in the parquet from earlier
+    runs. Needed for resumability: a prior run keeps only ONE item per meeting,
+    so a re-scan would see the meeting's OTHER items (different doc_ids, not in
+    known_ids) as new and re-add the meeting under a different item.
     """
     prefetch = listing_prefetch_fn if listing_prefetch_fn is not None else (
         lambda title: filter_fn(title, "")
@@ -687,6 +905,7 @@ def _cctv_scan_dates(session: Any, known_ids: set[str],
 
     rows: list[dict] = []
     checked = 0
+    archive_days = 0
     fetch_failures: list[str] = []  # collected for end-of-run coverage report
 
     for dt in date_iter:
@@ -694,35 +913,56 @@ def _cctv_scan_dates(session: Any, known_ids: set[str],
             break
         ds = dt.strftime("%Y%m%d")
 
+        # A probe day maps to exactly one prospective meeting within a family
+        # scan — if that meeting is already in the parquet, skip the day
+        # entirely (resumability without redundant fetches).
+        if known_meeting_keys and meeting_key_fn is not None:
+            prospective = meeting_key_fn(
+                {"meeting_year": dt.year, "publish_date": dt.isoformat()}
+            )
+            if prospective in known_meeting_keys:
+                log.debug("CCTV %s %s: meeting already collected — day skipped", family, ds)
+                continue
+
         if dry_run:
             print(f"  [DRY-RUN {family}] probe {ds}")
             continue
 
-        # Phase 1: fast title scan
-        listing = _cctv_listing_titles(session, ds)
-        checked += 1
+        # Archive fast path: read the day locally when covered — zero network.
+        items = None
+        if archive_dir is not None:
+            items = _archive_day_items(archive_dir, dt, filter_fn)
+            if items is not None:
+                checked += 1
+                archive_days += 1
+                log.debug("CCTV %s %s: read %d items from local archive", family, ds, len(items))
 
-        if not listing:
-            # Listing fetch failed — fall through to full fetch as safety.
-            # This path covers both network hiccups and genuine missing days; we
-            # attempt the full fetch so real meetings are not silently dropped.
-            title_match = True
-            log.debug("CCTV %s %s: listing fetch failed/empty — attempting full fetch", family, ds)
-        else:
-            # Phase 1 pre-screen: use the permissive prefetch function, NOT the
-            # strict filter, so short-form titles don't cause silent drops.
-            title_match = any(prefetch(title) for title, _ in listing)
+        if items is None:
+            # Phase 1: fast title scan
+            listing = _cctv_listing_titles(session, ds)
+            checked += 1
 
-        if not title_match:
-            log.debug("CCTV %s %s: no title match, skip", family, ds)
-            continue
+            if not listing:
+                # Listing fetch failed — fall through to full fetch as safety.
+                # This path covers both network hiccups and genuine missing days; we
+                # attempt the full fetch so real meetings are not silently dropped.
+                title_match = True
+                log.debug("CCTV %s %s: listing fetch failed/empty — attempting full fetch", family, ds)
+            else:
+                # Phase 1 pre-screen: use the permissive prefetch function, NOT the
+                # strict filter, so short-form titles don't cause silent drops.
+                title_match = any(prefetch(title) for title, _ in listing)
 
-        # Phase 2: full body fetch (slow — akshare fetches every article)
-        log.info("CCTV %s %s: title match found, fetching full transcript", family, ds)
-        items = _cctv_fetch_day(ds)
-        if not items:
-            fetch_failures.append(ds)
-            log.warning("CCTV %s %s: full fetch returned no items (fetch failure or empty)", family, ds)
+            if not title_match:
+                log.debug("CCTV %s %s: no title match, skip", family, ds)
+                continue
+
+            # Phase 2: full body fetch (slow — akshare fetches every article)
+            log.info("CCTV %s %s: title match found, fetching full transcript", family, ds)
+            items = _cctv_fetch_day(ds)
+            if not items:
+                fetch_failures.append(ds)
+                log.warning("CCTV %s %s: full fetch returned no items (fetch failure or empty)", family, ds)
 
         for item in items:
             title = str(item.get("title", ""))
@@ -736,8 +976,17 @@ def _cctv_scan_dates(session: Any, known_ids: set[str],
                 continue
             body = f"{title}\n{content}".strip()
             body_sha256 = hashlib.sha256(body.encode("utf-8")).hexdigest()
-            meeting_date = extract_meeting_date(content + title) or dt.isoformat()
-            meeting_year = extract_meeting_year(content + title) or dt.year
+            # meeting_year/meeting_date anchor on the BROADCAST date, never on
+            # transcript text: text-derived years span 1954→2030 (historical
+            # references, forward targets).
+            meeting_year = broadcast_meeting_year(dt)
+            if meeting_year is None:
+                log.warning(
+                    "%s %s: broadcast year %d outside sanity bounds [%d, %d] — item skipped",
+                    family, ds, dt.year, CCTV_YEAR_MIN, CCTV_YEAR_MAX,
+                )
+                continue
+            meeting_date = plausible_meeting_date(content + title, dt)
             fetched_at = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
             row = {
@@ -758,7 +1007,32 @@ def _cctv_scan_dates(session: Any, known_ids: set[str],
             known_ids.add(doc_id)
             log.info("%s: %s | meeting_date=%s", family, title[:60], meeting_date)
 
-    log.info("%s: checked %d dates, found %d readouts", family, checked, len(rows))
+    # Per-meeting dedup: a meeting airs across multiple items/days (re-airs,
+    # split headlines). Keep ONE readout per meeting key — earliest broadcast
+    # date wins; among same-date items, the longest body wins.
+    if meeting_key_fn is not None and rows:
+        selected: dict[Any, dict] = {}
+        for r in rows:
+            k = meeting_key_fn(r)
+            cur = selected.get(k)
+            if cur is None or (r["publish_date"], -len(r["body"])) < (
+                cur["publish_date"], -len(cur["body"])
+            ):
+                selected[k] = r
+        n_dropped = len(rows) - len(selected)
+        if n_dropped:
+            log.info("%s: per-meeting dedup dropped %d duplicate item(s) → %d meetings kept",
+                     family, n_dropped, len(selected))
+        if known_meeting_keys:
+            n_before = len(selected)
+            selected = {k: v for k, v in selected.items() if k not in known_meeting_keys}
+            if len(selected) != n_before:
+                log.info("%s: %d meeting(s) already in parquet from earlier runs — skipped",
+                         family, n_before - len(selected))
+        rows = sorted(selected.values(), key=lambda r: r["publish_date"])
+
+    log.info("%s: checked %d dates (%d from local archive, %d via network), found %d readouts",
+             family, checked, archive_days, checked - archive_days, len(rows))
     if fetch_failures:
         log.warning(
             "%s: %d full-fetch failures (items returned empty after title pre-screen): %s",
@@ -767,8 +1041,24 @@ def _cctv_scan_dates(session: Any, known_ids: set[str],
     return rows
 
 
+def _politburo_meeting_key(row: dict) -> tuple[int, int]:
+    """One Politburo econ meeting per (year, window month).
+
+    Every probe window in _POLITBURO_WINDOWS is contained within a single month,
+    so (broadcast year, broadcast month) uniquely identifies the meeting.
+    """
+    return (int(row["meeting_year"]), int(row["publish_date"][5:7]))
+
+
+def _cewc_meeting_key(row: dict) -> int:
+    """One CEWC per calendar year (annual December conference)."""
+    return int(row["meeting_year"])
+
+
 def fetch_politburo_econ(session: Any, known_ids: set[str],
-                          limit: int | None = None, dry_run: bool = False) -> list[dict]:
+                          limit: int | None = None, dry_run: bool = False,
+                          archive_dir: Path | None = None,
+                          known_meeting_keys: set | None = None) -> list[dict]:
     """Scan CCTV candidate dates for Politburo econ-meeting readouts."""
     today = date.today()
     all_dates: list[date] = []
@@ -789,7 +1079,10 @@ def fetch_politburo_econ(session: Any, known_ids: set[str],
 
     return _cctv_scan_dates(session, known_ids, iter(all_dates),
                             _is_politburo_econ, "politburo_econ", limit, dry_run,
-                            listing_prefetch_fn=_listing_may_be_politburo_econ)
+                            listing_prefetch_fn=_listing_may_be_politburo_econ,
+                            meeting_key_fn=_politburo_meeting_key,
+                            archive_dir=archive_dir,
+                            known_meeting_keys=known_meeting_keys)
 
 
 # ---------------------------------------------------------------------------
@@ -806,9 +1099,81 @@ _CEWC_DAY_END = 23
 # Known gap: 2017 is absent from CCTV
 CEWC_KNOWN_GAPS = {2017}
 
+# Curated gov.cn mirrors for readouts the CCTV route CANNOT serve. Measured
+# 2026-07-07: for these years the Xinwen Lianbo listing still shows the readout
+# item, but the article page hangs/stubs (the local archive holds title-less
+# stub rows for exactly these items, and live akshare drops them). The
+# masterplan (W1.1) sanctions gov.cn/Xinhua mirrors for these families.
+# 2017 additionally has no CCTV listing at all — the explicit gap row stays
+# (it documents CCTV absence); the mirror supplies the text with source=gov.cn.
+CEWC_GOVCN_FALLBACKS: dict[int, str] = {
+    2017: "https://www.gov.cn/xinwen/2017-12/20/content_5248899.htm",
+    2018: "https://www.gov.cn/xinwen/2018-12/21/content_5350934.htm",
+    2019: "https://www.gov.cn/xinwen/2019-12/12/content_5460670.htm",
+    2022: "https://www.gov.cn/xinwen/2022-12/16/content_5732408.htm",
+}
+
+
+def _fetch_govcn_readout(session: Any, year: int, url: str) -> dict | None:
+    """Fetch one curated gov.cn CEWC readout page and build a parquet row.
+
+    The page must still pass the strict _is_cewc readout gate — curation names
+    the URL, it does not bypass the filter. Returns None (with a warning) on
+    fetch failure or when the page does not yield a readout body.
+    """
+    try:
+        content, ct = _get(session, url)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("gov.cn fallback %d fetch failed %s: %s", year, url, exc)
+        return None
+    html = _decode_html(content, ct)
+    from bs4 import BeautifulSoup
+    soup = BeautifulSoup(html, "html.parser")
+
+    title = ""
+    t = soup.find("title")
+    if t:
+        # Strip the site suffix (e.g. …_滚动新闻_中国政府网)
+        title = re.sub(r"[_|].*$", "", t.get_text(strip=True)).strip()
+    h1 = soup.find("h1")
+    if h1 and h1.get_text(strip=True):
+        title = h1.get_text(strip=True)
+
+    container = (soup.find("div", class_="pages_content")
+                 or soup.find("td", class_="b12c")
+                 or soup)
+    paras = [p.get_text(" ", strip=True) for p in container.find_all("p")
+             if p.get_text(strip=True)]
+    body = "\n".join(paras).strip()
+
+    if not _is_cewc(title, body) or len(body) < 500:
+        log.warning("gov.cn fallback %d: page did not yield a readout "
+                    "(title=%r, body_len=%d) — skipped", year, title[:40], len(body))
+        return None
+
+    m = re.search(r"/(\d{4})-(\d{2})/(\d{2})/", url)
+    page_date = date(int(m.group(1)), int(m.group(2)), int(m.group(3))) if m else None
+
+    return {
+        "doc_id": make_doc_id(url, title),
+        "family": "cewc",
+        "meeting_year": year,
+        "meeting_quarter": None,
+        "meeting_date": plausible_meeting_date(body, page_date) if page_date else None,
+        "publish_date": page_date.isoformat() if page_date else None,
+        "title": title,
+        "body": body,
+        "body_sha256": hashlib.sha256(body.encode("utf-8")).hexdigest(),
+        "url": url,
+        "source": "gov.cn",
+        "_fetched_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+    }
+
 
 def fetch_cewc(session: Any, known_ids: set[str],
-               limit: int | None = None, dry_run: bool = False) -> list[dict]:
+               limit: int | None = None, dry_run: bool = False,
+               archive_dir: Path | None = None,
+               known_meeting_keys: set | None = None) -> list[dict]:
     """Scan CCTV for CEWC readouts. Emits an explicit gap row for CEWC_KNOWN_GAPS."""
     today = date.today()
     all_dates: list[date] = []
@@ -821,7 +1186,11 @@ def fetch_cewc(session: Any, known_ids: set[str],
         all_dates.extend(_cctv_date_range(start_dt, end_dt))
 
     rows = _cctv_scan_dates(session, known_ids, iter(all_dates),
-                            _is_cewc, "cewc", limit, dry_run)
+                            _is_cewc, "cewc", limit, dry_run,
+                            listing_prefetch_fn=_listing_may_be_cewc,
+                            meeting_key_fn=_cewc_meeting_key,
+                            archive_dir=archive_dir,
+                            known_meeting_keys=known_meeting_keys)
 
     # Emit explicit gap row(s) for known gaps
     years_found = {r["meeting_year"] for r in rows if r.get("source") != "explicit_gap"}
@@ -852,6 +1221,28 @@ def fetch_cewc(session: Any, known_ids: set[str],
             known_ids.add(gap_doc_id)
             log.info("cewc: emitted explicit gap row for %d", gap_year)
 
+    # Curated gov.cn fallbacks for CCTV-dead years (after gap emission, so the
+    # 2017 CCTV gap marker is never suppressed by the mirror fill).
+    years_present = {r["meeting_year"] for r in rows if r.get("source") != "explicit_gap"}
+    if known_meeting_keys:
+        years_present |= {int(k) for k in known_meeting_keys}
+    for year, url in sorted(CEWC_GOVCN_FALLBACKS.items()):
+        if year in years_present:
+            continue
+        if limit is not None and len([r for r in rows if r.get("source") != "explicit_gap"]) >= limit:
+            break
+        if dry_run:
+            print(f"  [DRY-RUN cewc] gov.cn fallback {year}: {url}")
+            continue
+        row = _fetch_govcn_readout(session, year, url)
+        if row is None:
+            continue
+        if row["doc_id"] in known_ids:
+            continue
+        rows.append(row)
+        known_ids.add(row["doc_id"])
+        log.info("cewc: gov.cn fallback filled %d | %s", year, row["title"][:60])
+
     log.info("cewc: found %d readouts (+%d gap rows)",
              len([r for r in rows if r.get("source") != "explicit_gap"]),
              len([r for r in rows if r.get("source") == "explicit_gap"]))
@@ -871,12 +1262,17 @@ FAMILY_RUNNERS = {
 # Soft expected minimums (real docs only, no gap rows).
 # These are conservative lower bounds — used for coverage-honesty warnings only,
 # not hard failures — so a partial run (--limit / --family) is not penalised.
-# pboc_mpc: 69 docs per live site footer as of 2026-07; politburo_econ: ~30-44
-# depends on window coverage; cewc: 9 real + 1 gap (2016-2025 with 2017 gap).
+# pboc_mpc: 69 docs per live site footer as of 2026-07.
+# politburo_econ: reconciled against known meeting dates within _POLITBURO_WINDOWS,
+# 2016→2026-07 the windows contain ~34 meetings (regular Apr/Jul/Oct-ish/Dec
+# cadence with skips in Congress/plenum months, plus the 2024-09-26 special
+# meeting); floor 30 allows a few transient fetch misses.
+# cewc: 2016-2025 = 10 real (CCTV + gov.cn mirrors for CCTV-dead years incl.
+# the 2017 CCTV gap, which also keeps its explicit gap marker row); floor 9.
 _FAMILY_EXPECTED_MIN = {
     "pboc_mpc": 60,        # ~69 per site, allow for 10% fetch failures
-    "politburo_econ": 28,  # ~35-44 expected; 28 is a conservative floor
-    "cewc": 8,             # 2016-2025 = 10y minus 2017 gap = 9 real; floor 8
+    "politburo_econ": 30,
+    "cewc": 9,
 }
 
 
@@ -903,6 +1299,12 @@ def main(argv: list[str] | None = None) -> None:
         help=f"Output parquet path (default: {OUT_PATH})",
     )
     parser.add_argument(
+        "--archive", type=Path, default=CCTV_ARCHIVE_DIR,
+        help="Local CCTV archive dir (monthly YYYY-MM.parquet); days covered "
+             "there are read locally instead of over the network "
+             f"(default: {CCTV_ARCHIVE_DIR}; pass a non-existent path to disable)",
+    )
+    parser.add_argument(
         "--verbose", action="store_true",
     )
     args = parser.parse_args(argv)
@@ -920,25 +1322,51 @@ def main(argv: list[str] | None = None) -> None:
     known_ids: set[str] = set() if args.force else set(existing_df["doc_id"].tolist() if not existing_df.empty else [])
     log.info("Loaded %d existing rows (known_ids=%d)", len(existing_df), len(known_ids))
 
+    archive_dir: Path | None = args.archive if args.archive.is_dir() else None
+    if archive_dir is not None:
+        log.info("Local CCTV archive enabled: %s", archive_dir)
+    else:
+        log.info("Local CCTV archive not found at %s — CCTV days go via network", args.archive)
+
     families_to_run = [args.family] if args.family else list(FAMILY_RUNNERS.keys())
-    all_new_rows: list[dict] = []
 
     for family in families_to_run:
         log.info("=== Family: %s ===", family)
         runner = FAMILY_RUNNERS[family]
+        kwargs: dict[str, Any] = {"limit": args.limit, "dry_run": args.dry_run}
+        if family in ("politburo_econ", "cewc"):
+            kwargs["archive_dir"] = archive_dir
+            # Meeting keys already in the parquet: a re-run must not re-add a
+            # meeting through a different item of the same broadcast (see
+            # _cctv_scan_dates docstring).
+            key_fn = _politburo_meeting_key if family == "politburo_econ" else _cewc_meeting_key
+            if not existing_df.empty:
+                fam_rows = existing_df[
+                    (existing_df["family"] == family)
+                    & (existing_df["source"] != "explicit_gap")
+                ]
+                kwargs["known_meeting_keys"] = {
+                    key_fn(r) for r in fam_rows.to_dict("records")
+                }
         try:
-            new_rows = runner(session, known_ids, limit=args.limit, dry_run=args.dry_run)
+            new_rows = runner(session, known_ids, **kwargs)
         except Exception as exc:  # noqa: BLE001 — per-family isolation
             log.error("Family %s FAILED: %s", family, exc, exc_info=True)
             new_rows = []
-        all_new_rows.extend(new_rows)
         log.info("Family %s: +%d new rows", family, len(new_rows))
+        # Checkpoint after each family: a later hang/kill must not lose earlier
+        # families' work (measured live 2026-07-06: a 38-min run was killed
+        # before the single end-of-run write and persisted nothing).
+        if not args.dry_run and new_rows:
+            existing_df = upsert_rows(existing_df, new_rows)
+            save_parquet(existing_df, args.out)
+            log.info("Checkpoint: %d total rows written to %s", len(existing_df), args.out)
 
     if args.dry_run:
         log.info("DRY-RUN: no parquet written")
         return
 
-    final_df = upsert_rows(existing_df, all_new_rows)
+    final_df = upsert_rows(existing_df, [])
     save_parquet(final_df, args.out)
 
     # Size check

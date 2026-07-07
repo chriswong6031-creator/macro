@@ -17,25 +17,29 @@ will feed F5-01 premium/discount backtesting.
 
   stock_dzjy_mrmx(start_date, end_date)  — PER-TRADE DETAIL
     Columns: 交易日期, 证券代码, 证券简称, 成交价, 成交量, 成交额, 买方营业部, 卖方营业部
-    History: serves from ~2012-09 (confirmed 2012-09; 2012-08 fails; 2013-04 ok).
+    History: serves from ~2012-09 (confirmed 2012-09; 2012-08 raises TypeError).
+             Pre-2019 dates often raise TypeError — the API returns NoneType for
+             windows with no data rather than empty DataFrame. The collector's
+             broad except swallows these to None (0 rows written).
              Includes buyer/seller brokerage (营业部) — critical for institutional
              vs retail attribution when both sides are "机构专用" (institutional).
-    Coverage: 1-80 rows/3-day window; sparser for pre-2019 dates.
+    Coverage: 1-78 rows/3-day window (2024+); pre-2019 typically 0-6 rows.
 
 === STORE LAYOUT ===
 
   data/china_block_tape/
-    mrtj_YYYY.parquet   — yearly partitions for per-name aggregate (mrtj feed)
-    mrmx_YYYY.parquet   — yearly partitions for per-trade detail (mrmx feed)
-    sw_l1_map.parquet   — Shenwan L1 industry-level list (snapshot_date column).
-                        NOTE: this is a HARDCODED 31-industry list with NO
-                        per-stock → industry mapping (no ticker column). It
-                        cannot link block-trade names to SW-L1 industries.
-                        Akshare's constituent APIs (index_component_sw,
-                        stock_industry_clf_hist_sw) were unavailable at build
-                        time (schema mismatch / SSL errors). A future re-snapshot
-                        is needed once per-stock constituent data becomes
-                        accessible; SW classifications drift over time.
+    mrtj_YYYY.parquet         — yearly partitions for per-name aggregate (mrtj feed)
+    mrmx_YYYY.parquet         — yearly partitions for per-trade detail (mrmx feed)
+    sw_l1_constituents.parquet — per-stock SW-L1 membership via index_component_sw.
+                                Columns: sw_code, cn_name, en_name, ticker_code,
+                                member_name, inclusion_date, snapshot_date.
+                                Built from all SW codes where the Shenwan API
+                                returns constituent data (5 of 31 codes in 2026-07).
+                                The remaining 26 codes (8011xx/8017xx/8018xx/8019xx)
+                                are the SW 2021 taxonomy codes whose constituent
+                                endpoint returns HTML (not JSON) — documented live
+                                as at 2026-07-07. Snapshot drifts with reclassifications.
+    sw_l1_map.parquet         — 31-industry reference list (sw_code, names, valuation).
 
   Each yearly parquet is APPEND-ONLY by date: a re-run skips dates already stored.
   The PIT write-path: collect date D on day D+1 (or later); never overwrite an
@@ -342,28 +346,30 @@ def _date_chunks(start_yyyymmdd: str, end_yyyymmdd: str, chunk_days: int = CHUNK
 
 # ── SW L1 mapping snapshot ──────────────────────────────────────────────────────
 
-def refresh_sw_l1_map() -> int:
-    """Build / refresh the Shenwan L1 industry-level reference list.
+def refresh_sw_l1_map() -> dict[str, int]:
+    """Build / refresh the Shenwan L1 industry reference list and per-stock constituent map.
 
-    IMPORTANT LIMITATIONS:
-      - This writes an INDUSTRY-LEVEL list only, NOT a per-stock constituent map.
-      - There is NO ticker column: block-trade names cannot be mapped to SW-L1
-        industries using this file alone.
-      - The 31-industry list is derived from the hardcoded china_sectors.SW_L1 dict,
-        not from a live akshare constituent query. Akshare's per-stock constituent
-        APIs (index_component_sw, stock_industry_clf_hist_sw) were unavailable at
-        build time due to schema mismatch / SSL certificate errors on swsresearch.com.
-      - SW classifications DRIFT over time. This snapshot reflects the SW 2021
-        L1 industry taxonomy as of the snapshot_date. A fresh re-snapshot is needed
-        after any SW reclassification cycle (typically annual).
+    Writes two files:
 
-    Writes data/china_block_tape/sw_l1_map.parquet with columns:
-      sw_code (str, e.g. '801010'), sw_code_si (str, e.g. '801010.SI'),
-      cn_name (str), en_name (str), snapshot_date (str YYYY-MM-DD),
-      pe_ttm (float, optional), pb (float, optional), div_pct (float, optional).
+    1. sw_l1_map.parquet — 31-industry reference list (one row per industry).
+       Columns: sw_code, sw_code_si, cn_name, en_name, snapshot_date,
+                pe_ttm (float), pb (float), div_pct (float).
+       Valuation data from sw_index_first_info() if available.
 
-    Also enriches with live valuation data (PE/PB/div) from sw_index_first_info()
-    if available. Returns number of industries written.
+    2. sw_l1_constituents.parquet — per-stock SW-L1 membership.
+       Columns: sw_code, cn_name, en_name, ticker_code, member_name,
+                inclusion_date, snapshot_date.
+       Built via index_component_sw() for each SW code. As of 2026-07-07,
+       only 5 of 31 codes return constituent data from Shenwan's API:
+       801010/801030/801040/801050/801080. The remaining 26 codes
+       (8011xx/8017xx/8018xx/8019xx) return HTML instead of JSON — an
+       upstream API gap for the SW 2021 taxonomy, not a code error.
+
+    SNAPSHOT DRIFT CAVEAT: SW classifications are revised ~annually. Re-run this
+    function to refresh; tie block-trade industry attribution to inclusion_date
+    for PIT-correct cross-sections.
+
+    Returns dict with 'industries' (int) and 'constituents' (int) keys.
     """
     import akshare as ak
 
@@ -371,30 +377,31 @@ def refresh_sw_l1_map() -> int:
     from collectors.china_sectors import SW_L1
 
     snapshot_date = _dt.date.today().isoformat()
+    STORE.mkdir(parents=True, exist_ok=True)
 
-    rows = []
+    # ── 1. Industry reference list ──────────────────────────────────────────────
+    ref_rows = []
     for code, (cn, en) in SW_L1.items():
-        rows.append({
-            "sw_code": code,
+        ref_rows.append({
+            "sw_code":    code,
             "sw_code_si": f"{code}.SI",
-            "cn_name": cn,
-            "en_name": en,
+            "cn_name":    cn,
+            "en_name":    en,
             "snapshot_date": snapshot_date,
         })
 
-    df = pd.DataFrame(rows)
+    df_ref = pd.DataFrame(ref_rows)
 
     # Enrich with live valuation if available
     try:
         info = ak.sw_index_first_info()
-        # Map code.SI -> pe_ttm, pb, div
         info_cols = list(info.columns)
         code_c = _col(info_cols, "行业代码", "代码")
         pe_c   = _col(info_cols, "TTM", "ttm")
         pb_c   = _col(info_cols, "市净率")
         div_c  = _col(info_cols, "股息率")
         if code_c:
-            val_map = {}
+            val_map: dict[str, dict] = {}
             for _, r in info.iterrows():
                 c = str(r.get(code_c, "")).strip()
                 val_map[c] = {
@@ -402,20 +409,66 @@ def refresh_sw_l1_map() -> int:
                     "pb":      _safe_float(r.get(pb_c))  if pb_c  else None,
                     "div_pct": _safe_float(r.get(div_c)) if div_c else None,
                 }
-            df["pe_ttm"]  = df["sw_code_si"].map(lambda x: val_map.get(x, {}).get("pe_ttm"))
-            df["pb"]      = df["sw_code_si"].map(lambda x: val_map.get(x, {}).get("pb"))
-            df["div_pct"] = df["sw_code_si"].map(lambda x: val_map.get(x, {}).get("div_pct"))
+            df_ref["pe_ttm"]  = df_ref["sw_code_si"].map(lambda x: val_map.get(x, {}).get("pe_ttm"))
+            df_ref["pb"]      = df_ref["sw_code_si"].map(lambda x: val_map.get(x, {}).get("pb"))
+            df_ref["div_pct"] = df_ref["sw_code_si"].map(lambda x: val_map.get(x, {}).get("div_pct"))
     except Exception as e:
         log.warning("sw_l1_map: valuation enrich skipped (%s)", e)
-        df["pe_ttm"] = None
-        df["pb"]     = None
-        df["div_pct"] = None
+        df_ref["pe_ttm"] = None
+        df_ref["pb"]     = None
+        df_ref["div_pct"] = None
 
-    STORE.mkdir(parents=True, exist_ok=True)
-    out = STORE / "sw_l1_map.parquet"
-    df.to_parquet(out, index=False)
-    log.info("sw_l1_map: wrote %d industries to %s", len(df), out)
-    return len(df)
+    out_ref = STORE / "sw_l1_map.parquet"
+    df_ref.to_parquet(out_ref, index=False)
+    log.info("sw_l1_map: wrote %d industries to %s", len(df_ref), out_ref)
+
+    # ── 2. Per-stock constituent map ────────────────────────────────────────────
+    const_rows: list[dict] = []
+    api_errors: list[str] = []
+
+    for code, (cn, en) in SW_L1.items():
+        try:
+            df_c = ak.index_component_sw(symbol=code)
+            if df_c is None or df_c.empty:
+                log.debug("sw_constituents: %s returned empty", code)
+                continue
+            cols = list(df_c.columns)
+            ticker_c  = _col(cols, "证券代码", "代码")
+            name_c    = _col(cols, "证券名称", "名称")
+            incl_c    = _col(cols, "计入日期")
+            for _, r in df_c.iterrows():
+                raw_code = str(r.get(ticker_c, "") or "").strip().zfill(6) if ticker_c else ""
+                const_rows.append({
+                    "sw_code":       code,
+                    "cn_name":       cn,
+                    "en_name":       en,
+                    "ticker_code":   raw_code,
+                    "member_name":   str(r.get(name_c, "") or "").strip() if name_c else "",
+                    "inclusion_date": str(r.get(incl_c, "") or "").strip() if incl_c else "",
+                    "snapshot_date": snapshot_date,
+                })
+        except Exception as e:
+            # 26 of 31 codes return HTML (not JSON) — log at debug, not warning
+            api_errors.append(f"{code}: {type(e).__name__}")
+            log.debug("sw_constituents: %s failed (%s)", code, e)
+        time.sleep(THROTTLE_S)
+
+    if api_errors:
+        log.info("sw_constituents: %d codes returned no constituent data (upstream API gap "
+                 "for SW 2021 taxonomy codes): %s", len(api_errors), api_errors[:5])
+
+    df_const = pd.DataFrame(const_rows) if const_rows else pd.DataFrame(
+        columns=["sw_code", "cn_name", "en_name", "ticker_code",
+                 "member_name", "inclusion_date", "snapshot_date"]
+    )
+    out_const = STORE / "sw_l1_constituents.parquet"
+    df_const.to_parquet(out_const, index=False)
+    log.info("sw_l1_constituents: wrote %d stock-industry rows (%d codes with data, "
+             "%d codes returned no data from Shenwan API)",
+             len(df_const), df_const["sw_code"].nunique() if len(df_const) else 0,
+             len(api_errors))
+
+    return {"industries": len(df_ref), "constituents": len(df_const)}
 
 
 # ── Backfill ────────────────────────────────────────────────────────────────────
@@ -522,17 +575,33 @@ def backfill(
 # ── Nightly refresh (incremental) ───────────────────────────────────────────────
 
 def refresh() -> dict[str, int]:
-    """Nightly incremental refresh: collect the last 5 trading-day window for both feeds.
+    """Nightly incremental refresh: collect the last 10-day window for both feeds
+    and re-snapshot the SW-L1 constituent map (monthly, on the 1st of each month).
 
     Designed to be called from scripts/collect.py. Throttles at ≤ 2 req/s.
-    Returns {'mrtj_written': n, 'mrmx_written': n}.
+    Returns {'mrtj_written': n, 'mrmx_written': n, 'sw_refreshed': bool}.
     """
     STORE.mkdir(parents=True, exist_ok=True)
     today = _dt.date.today()
     # Look back 10 calendar days to catch delayed publications and recent holidays
     window_start = (today - _dt.timedelta(days=10)).strftime("%Y%m%d")
     window_end   = today.strftime("%Y%m%d")
-    return backfill(feed="both", start=window_start, end=window_end)
+    result = backfill(feed="both", start=window_start, end=window_end)
+
+    # Re-snapshot SW-L1 constituent map on the 1st of each month.
+    # SW reclassifications are announced periodically — monthly re-snapshot
+    # keeps the drift within one month.
+    sw_refreshed = False
+    if today.day == 1:
+        try:
+            sw_result = refresh_sw_l1_map()
+            log.info("nightly sw_l1 re-snapshot: %s", sw_result)
+            sw_refreshed = True
+        except Exception as e:
+            log.warning("nightly sw_l1 re-snapshot skipped: %s", e)
+
+    result["sw_refreshed"] = sw_refreshed
+    return result
 
 
 # ── CLI ─────────────────────────────────────────────────────────────────────────
@@ -576,8 +645,8 @@ def main(argv: list[str] | None = None) -> None:
         print(f"Done: {r}")
 
     elif args.cmd == "sw-map":
-        n = refresh_sw_l1_map()
-        print(f"SW L1 map: {n} industries written.")
+        r = refresh_sw_l1_map()
+        print(f"SW L1 map: {r['industries']} industries, {r['constituents']} constituent rows written.")
 
     elif args.cmd == "refresh":
         r = refresh()
@@ -620,6 +689,15 @@ def _probe_coverage() -> None:
         print(f"  sw_l1_map: {len(df_sw)} industries, snapshot_date={snap}")
     else:
         print("  sw_l1_map: not yet built")
+    sw_const = STORE / "sw_l1_constituents.parquet"
+    if sw_const.exists():
+        df_sc = pd.read_parquet(sw_const)
+        snap_c = df_sc["snapshot_date"].iloc[0] if len(df_sc) and "snapshot_date" in df_sc.columns else "?"
+        n_codes = df_sc["sw_code"].nunique() if len(df_sc) else 0
+        print(f"  sw_l1_constituents: {len(df_sc)} stock-industry rows, "
+              f"{n_codes} SW codes with data, snapshot_date={snap_c}")
+    else:
+        print("  sw_l1_constituents: not yet built")
     print()
 
 

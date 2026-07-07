@@ -4719,6 +4719,166 @@ artifacts:
       DISPLAY-ONLY — G1-DEFERRED ruling 2026-07-06.
       fdr_family=long_hold (LH-R5). No scored_path_surfaces.
 
+  # --- Winner Autopsy Lab (long-hold top-down department) ---
+  # research/WINNER_AUTOPSY_MASTERPLAN_BY_FABLE.md — rulings WA-R1..R10. All display-only.
+  winner-episodes:
+    path: data/research/winner_episodes.parquet
+    format: parquet
+    producer: scripts/research/build_winner_autopsy.py
+    known_extra_writers: []
+    owner_program: long-hold
+    cadence: on-demand
+    storage: git
+    asof_field: t0
+    freshness_sla_hours: 8760
+    schema: winner_episodes.v1
+    tier: display
+    horizon_role: hold_thesis
+    weights: none
+    scored_path_surfaces: []
+    fdr_family: long_hold
+    consumers:
+      - research/WINNER_AUTOPSY_MASTERPLAN_BY_FABLE.md
+    external_consumers: []
+    notes: >
+      Mechanical relative-strength breakaway onset census (Detector D, masterplan §4)
+      over the post-2014 history × the price-resolvable universe. One row per
+      (ticker, t0) onset with matured forward-outcome labels (durable_winner /
+      clean_hold / blow_off / failed / unmatured). Built off-render on the Mac host
+      via --backfill (needs data/massive_stock_day/, gitignored). This is the
+      statistical substrate for winner autopsy — it selects on the ENTRY condition,
+      not the outcome, so it is immune to winner-selection bias. Survivorship stamps
+      per row; gap_leg_crossed flags forward windows spanning the massive-store gap
+      (2021-10-25 → 2025-01-02). Cross-episode inference is month-clustered + era-split
+      (WA-R4 / DT-R14 / DT-R16). FIREWALL (WA-R5): MUST NOT feed board ordering, alert
+      triage, top-setups, or push floor. fdr_family=long_hold. No scored_path_surfaces.
+
+  winner-episodes-manifest:
+    path: data/research/winner_episodes_manifest.json
+    format: json
+    producer: scripts/research/build_winner_autopsy.py
+    known_extra_writers: []
+    owner_program: long-hold
+    cadence: on-demand
+    storage: git
+    asof_field: generated_at
+    freshness_sla_hours: 8760
+    schema: winner_episodes_manifest.v1
+    tier: display
+    horizon_role: hold_thesis
+    weights: none
+    scored_path_surfaces: []
+    fdr_family: long_hold
+    consumers: []
+    external_consumers: []
+    notes: >
+      Coverage manifest for winner-episodes: price_source_coverage, gap-window
+      episode count, survivorship note, detector thresholds (frozen v1). Honesty
+      surface. DISPLAY-ONLY (WA-R5). fdr_family=long_hold. No scored_path_surfaces.
+
+  breakaway-watch-states:
+    path: data/research/breakaway_watch.parquet
+    format: parquet
+    producer: scripts/research/build_winner_autopsy.py
+    known_extra_writers: []
+    owner_program: long-hold
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: breakaway_watch.v1
+    tier: display
+    horizon_role: hold_thesis
+    weights: none
+    scored_path_surfaces: []
+    fdr_family: long_hold
+    consumers:
+      - research/WINNER_AUTOPSY_MASTERPLAN_BY_FABLE.md
+    external_consumers: []
+    notes: >
+      Current-day breakaway watch states — the SAME Detector D evaluated at the latest
+      bar (masterplan §2/§4), so the live watchlist is honest by construction. States:
+      breakaway / emerging / digestion / continuation / failed / none. No composite
+      score (WA-R1); rows carry named axis fields + hazards only. Ownership/positioning
+      appears as context_only (WA-R2). ATTENTION surface only. FIREWALL (WA-R5): MUST
+      NOT feed board ordering, alert triage, top-setups, or push floor.
+      fdr_family=long_hold. No scored_path_surfaces.
+
+  breakaway-watch-history:
+    path: data/research/breakaway_watch_history.parquet
+    format: parquet
+    producer: scripts/research/build_winner_autopsy.py
+    known_extra_writers: []
+    owner_program: long-hold
+    cadence: daily-engine
+    storage: git
+    asof_field: snapshot_date
+    freshness_sla_hours: 30
+    schema: breakaway_watch_history.v1
+    tier: display
+    horizon_role: hold_thesis
+    weights: none
+    scored_path_surfaces: []
+    fdr_family: long_hold
+    consumers: []
+    external_consumers: []
+    notes: >
+      Append-only longitudinal watch store. Keep-FIRST per (ticker, snapshot_date):
+      same-date re-runs are no-ops; no prior-date row mutated. Gated on --write-history
+      (sole-advancer law; --smoke+--write-history hard-exits). Only the daily.yml engine
+      job passes the flag. First longitudinal read clocked 2026-10-15. DISPLAY-ONLY
+      (WA-R5). fdr_family=long_hold. No scored_path_surfaces.
+
+  winner-autopsy-panel:
+    path: data/research/winner_autopsy_panel.json
+    format: json
+    producer: scripts/research/build_winner_autopsy.py
+    known_extra_writers: []
+    owner_program: long-hold
+    cadence: daily-engine
+    storage: git
+    asof_field: generated_at
+    freshness_sla_hours: 30
+    schema: winner_autopsy_panel.v1
+    tier: display
+    horizon_role: hold_thesis
+    weights: none
+    scored_path_surfaces: []
+    fdr_family: long_hold
+    consumers:
+      - admin/long_hold.py
+    external_consumers: []
+    notes: >
+      Admin-readable rollup (census summary + Codex case library reconcile + current
+      watch + long-hold clocks) surfaced on the admin Long-Hold Lobe page. Read-only
+      JSON; the admin app never reads parquet. DISPLAY-ONLY (WA-R5). admin/long_hold.py
+      is an operator-HQ reader, NOT an Article-2 entry surface — the firewall banlist
+      (alert_triage / board_ordering / top_setups / attention_queue / push_floor) does
+      not include it. fdr_family=long_hold. No scored_path_surfaces.
+
+  winner-autopsy-manifest:
+    path: data/research/winner_autopsy_manifest.json
+    format: json
+    producer: scripts/research/build_winner_autopsy.py
+    known_extra_writers: []
+    owner_program: long-hold
+    cadence: daily-engine
+    storage: git
+    asof_field: generated_at
+    freshness_sla_hours: 30
+    schema: winner_autopsy_manifest.v1
+    tier: display
+    horizon_role: hold_thesis
+    weights: none
+    scored_path_surfaces: []
+    fdr_family: long_hold
+    consumers: []
+    external_consumers: []
+    notes: >
+      Build manifest for the nightly winner-autopsy default run (watch coverage,
+      case count, panel freshness). Honesty surface. DISPLAY-ONLY (WA-R5).
+      fdr_family=long_hold. No scored_path_surfaces.
+
   # --- NW quant-synthesis B: research-queue EV-ranker ---
   research-queue:
     path: data/neuralweb/research_queue.json
@@ -6200,9 +6360,12 @@ artifacts:
     horizon_role: context
     weights: none
     scored_path_surfaces: []
-    consumers: []
+    consumers:
+      - scripts/oracle_nightly.py
+      - engine/neuralweb/world_state.py
+      - engine/neuralweb/query.py
     external_consumers: []
-    notes: "Slim site aggregate: schema, as_of, n_tickers, coverage, label_distributions, per_ticker slim dict."
+    notes: "Slim site aggregate: schema, as_of, n_tickers, coverage, label_distributions, per_ticker slim dict. R-SP19: oracle_nightly reads via engine/oracle/personality_context.py to append personality_context to complexes. R-SP20: world_state reads for stock_personality_summary sub-block; query.py reads for adapt_personality_context spine adapter."
 
   stock-personality-block:
     path: "embedded: personality block inside site/stockdata/<TICKER>.json"

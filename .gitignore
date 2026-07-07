@@ -322,3 +322,15 @@ data/sec_ftd/*.parquet
 # Mirrors pattern: data/massive_stock_day/*.parquet above.
 # _backfill_state.json IS tracked (resumable state machine; tiny JSON anchor).
 data/options_tape_signed/*.parquet
+
+# D2 comment-letter release phase-0: EDGAR quarter indexes + computed event returns.
+# These are generated artifacts (reproducible from EDGAR fetch) — never staged.
+# The throwaway ledger is also worktree-local, not the canonical tracked ledger.
+data/comment_letter_events/
+data/trial_ledger_d2_local.jsonl
+
+# A10 block-tape archiver (feat/f501-cn-block-tape-archiver).
+# ~12MB, 38 parquets — R2 data-plane law: must NOT enter git.
+# Yearly mrtj_YYYY.parquet + mrmx_YYYY.parquet + sw_l1_map.parquet +
+# sw_l1_constituents.parquet are Mac-local/server-local only.
+data/china_block_tape/

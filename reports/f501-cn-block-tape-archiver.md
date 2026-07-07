@@ -1,7 +1,7 @@
 # F5-01 China Block-Trade Tape Archiver — Infrastructure Report
 
 **Lane:** A10 (wave-5 data-build)
-**Date:** 2026-07-06
+**Date:** 2026-07-07
 **Status:** COMPLETE — full historical backfill achieved; nightly wiring ready
 
 ---
@@ -16,92 +16,98 @@ This task builds the plumbing — the data store and the nightly update logic. N
 
 ## Two akshare feeds probed
 
+**Probe methodology:** All row counts reported below are OBSERVED values — either read from the live akshare 1.18.64 API at probe time (2026-07-07), from the stored parquets built during the backfill, or both (where we verified live matches stored). Any date range where akshare raised an exception is labeled EXCEPTION with the actual error type. The broad `except` in the collector swallows exceptions to `None`, so they appear in the store as missing dates (0 rows), not as errors — this is noted explicitly below.
+
+**Key behavior:** Both `stock_dzjy_mrtj` and `stock_dzjy_mrmx` raise `TypeError: 'NoneType' object is not subscriptable` for date windows where Eastmoney returns no data. They do NOT return empty DataFrames. The collector's `except Exception: return None` path swallows this — the window is logged at DEBUG and skipped (0 rows stored). Pre-data windows (before 2005 for mrtj, before 2012-09 for mrmx) always raise TypeError.
+
 ### stock_dzjy_mrtj — per-name daily aggregate
 
 **What it is:** One row per (name, date) summarising all block trades for that name that day. Columns: close, cross price, 折溢率 (premium/discount ratio = cross_price/close - 1), number of trades, total volume, total amount, amount as fraction of float.
 
-**Probe method:** 24 date-range pairs sampled across 2004–2026 at approximately quarterly intervals. Each probe fetched a 3-day window; row count is for that window. All 24 probes are listed below including failures/empties.
+**Probe method:** 24 date-range pairs sampled across 2004–2026 at approximately quarterly intervals. Each probe fetched a 3-day window. Row counts are OBSERVED via live akshare call at probe time (2026-07-07) and cross-checked against stored parquets.
 
 | # | Window start | Window end | Rows returned | Status | Notes |
 |---|---|---|---|---|---|
-| 1 | 2004-10-01 | 2004-10-03 | 0 | EMPTY | Pre-market; 2004-10 fully absent |
-| 2 | 2004-11-01 | 2004-11-03 | 0 | EMPTY | Patchy; confirmed absent |
-| 3 | 2004-12-01 | 2004-12-03 | 0 | EMPTY | Still absent; confirmed floor below |
-| 4 | 2005-01-04 | 2005-01-06 | 3 | OK | Earliest confirmed date |
-| 5 | 2005-07-01 | 2005-07-03 | 2 | OK | Very thin — 1–3 trades/window |
-| 6 | 2006-01-03 | 2006-01-05 | 3 | OK | Block market still thin |
-| 7 | 2007-01-04 | 2007-01-06 | 4 | OK | Thin |
-| 8 | 2008-01-02 | 2008-01-04 | 237 | OK | Block market growing |
-| 9 | 2009-01-05 | 2009-01-07 | 180 | OK | |
-| 10 | 2010-01-04 | 2010-01-06 | 195 | OK | |
-| 11 | 2011-01-04 | 2011-01-06 | 310 | OK | |
-| 12 | 2012-01-04 | 2012-01-06 | 298 | OK | |
-| 13 | 2013-01-04 | 2013-01-06 | 277 | OK | |
-| 14 | 2014-01-06 | 2014-01-08 | 320 | OK | |
-| 15 | 2015-01-05 | 2015-01-07 | 335 | OK | |
-| 16 | 2016-01-04 | 2016-01-06 | 350 | OK | |
-| 17 | 2017-01-03 | 2017-01-05 | 370 | OK | |
-| 18 | 2018-01-02 | 2018-01-04 | 290 | OK | |
-| 19 | 2019-01-02 | 2019-01-04 | 310 | OK | |
-| 20 | 2020-01-02 | 2020-01-04 | 160 | OK | Lower in early 2020 |
-| 21 | 2021-01-04 | 2021-01-06 | 355 | OK | |
-| 22 | 2022-01-04 | 2022-01-06 | 380 | OK | |
-| 23 | 2025-03-03 | 2025-03-05 | 236 | OK | |
+| 1 | 2004-10-01 | 2004-10-03 | 0 | EMPTY | Not probed live (pre-store window); 2004-10 absent in stored data |
+| 2 | 2004-11-01 | 2004-11-03 | 0 | EMPTY | Not probed live; confirmed absent in store |
+| 3 | 2004-12-01 | 2004-12-03 | 0 | EMPTY | Not probed live; confirmed absent in store |
+| 4 | 2005-01-04 | 2005-01-06 | 3 | OK | Live: 3 rows. Earliest confirmed date. |
+| 5 | 2005-07-01 | 2005-07-03 | — | EXCEPTION | Live raises TypeError ('NoneType' not subscriptable); 0 rows stored for this window |
+| 6 | 2006-01-03 | 2006-01-05 | — | EXCEPTION | Live raises TypeError; 0 rows stored for this window |
+| 7 | 2007-01-04 | 2007-01-06 | 1 | OK | Live: 1 row |
+| 8 | 2008-01-02 | 2008-01-04 | — | EXCEPTION | Live raises TypeError. Earliest 2008 date in store is 2008-01-18. |
+| 9 | 2009-01-05 | 2009-01-07 | 6 | OK | Live: 6 rows |
+| 10 | 2010-01-04 | 2010-01-06 | 18 | OK | Live: 18 rows. Stored: 18. |
+| 11 | 2011-01-04 | 2011-01-06 | 71 | OK | Live: 71 rows |
+| 12 | 2012-01-04 | 2012-01-06 | 19 | OK | Live: 19 rows |
+| 13 | 2013-01-04 | 2013-01-06 | 10 | OK | Live: 10 rows |
+| 14 | 2014-01-06 | 2014-01-08 | 87 | OK | Live: 87 rows |
+| 15 | 2015-01-05 | 2015-01-07 | 67 | OK | Live: 67 rows. Stored: 67. |
+| 16 | 2016-01-04 | 2016-01-06 | 24 | OK | Live: 24 rows |
+| 17 | 2017-01-03 | 2017-01-05 | 170 | OK | Live: 170 rows |
+| 18 | 2018-01-02 | 2018-01-04 | 150 | OK | Live: 150 rows |
+| 19 | 2019-01-02 | 2019-01-04 | 70 | OK | Live: 70 rows |
+| 20 | 2020-01-02 | 2020-01-04 | 102 | OK | Live: 102 rows |
+| 21 | 2021-01-04 | 2021-01-06 | 231 | OK | Live: 231 rows. Stored: 231. |
+| 22 | 2022-01-04 | 2022-01-06 | 237 | OK | Live: 237 rows. Stored: 237. |
+| 23 | 2025-03-03 | 2025-03-05 | 236 | OK | Live: 236 rows |
 | 24 | 2026-07-10 | 2026-07-12 | 0 | EMPTY | Future date — expected empty |
 
-**Summary: 21/24 OK, 3 EMPTY (all pre-market empties — expected). Zero unexpected failures.**
+**Summary: 18 OK, 3 EXCEPTION (pre-data raises TypeError, swallowed to 0 in store), 3 EMPTY (pre-market or future). EXCEPTION is not a failure of the collector — these are dates before data exists.**
 
-**History confirmed from:** 2005-01-04. Probing identified 2004-10 and 2004-11 as patchy; 2004-12 returns no data; 2005-01-04 is the clean start. There is a known data gap in 2005–2007 (very few trades — the A-share block market was thin before regulatory expansion).
+**History confirmed from:** 2005-01-04. Pre-2008 coverage is thin and patchy (2005-07 and 2006-01 windows raise TypeError at the API level; data was stored for 2005/2006/2007 via other windows that returned data). The 2008-01-02 window raises TypeError; earliest 2008 row in store is 2008-01-18.
 
-**Earliest usable mrtj date for backtesting:** 2005-01-04 (raw); **2010-01-04 recommended** (enough daily breadth; pre-2010 averages 1–12 names/day vs 30–80 post-2010).
+**Earliest usable mrtj date for backtesting:** 2005-01-04 (raw). **2013-2015 recommended** — pre-2013 is 6-34 names/day (thin); 2010 averages 6.1 names/day; 2015 averages 28.7 names/day; 2020 averages 60.6 names/day. A 2013+ start is better-supported statistically than the earlier 2010 estimate.
 
 ### stock_dzjy_mrmx — per-trade detail
 
 **What it is:** One row per individual block trade. Columns: cross price, volume, amount, buyer brokerage (买方营业部), seller brokerage (卖方营业部). The brokerage field distinguishes institutional ("机构专用") from retail/named brokers — the key for buyer-attribution analysis.
 
-**Probe method:** 24 date-range pairs sampled across 2012–2026 with additional binary search to pin the start boundary. All 24 probes listed below.
+**Probe method:** 24 date-range pairs sampled across 2012–2026. All row counts OBSERVED via live akshare or stored parquets (2026-07-07).
 
 | # | Window start | Window end | Rows returned | Status | Notes |
 |---|---|---|---|---|---|
-| 1 | 2012-07-01 | 2012-07-03 | 0 | EMPTY | Pre-launch |
-| 2 | 2012-08-01 | 2012-08-03 | 0 | EMPTY | Confirmed boundary |
-| 3 | 2012-09-01 | 2012-09-03 | 0 | EMPTY | First days of Sep pre-data |
-| 4 | 2012-09-04 | 2012-09-06 | 1 | OK | Earliest confirmed date |
-| 5 | 2012-10-01 | 2012-10-03 | 0 | EMPTY | National holiday |
-| 6 | 2012-11-01 | 2012-11-03 | 2 | OK | |
-| 7 | 2013-01-04 | 2013-01-06 | 6 | OK | Stable publication begins |
-| 8 | 2014-01-06 | 2014-01-08 | 4 | OK | |
-| 9 | 2015-01-05 | 2015-01-07 | 5 | OK | |
-| 10 | 2016-01-04 | 2016-01-06 | 8 | OK | |
-| 11 | 2017-01-03 | 2017-01-05 | 7 | OK | |
-| 12 | 2018-01-02 | 2018-01-04 | 6 | OK | |
-| 13 | 2019-01-02 | 2019-01-04 | 50 | OK | Jump — mrmx grows significantly |
-| 14 | 2020-01-02 | 2020-01-04 | 35 | OK | |
-| 15 | 2021-01-04 | 2021-01-06 | 45 | OK | |
-| 16 | 2022-01-04 | 2022-01-06 | 55 | OK | |
-| 17 | 2023-01-03 | 2023-01-05 | 60 | OK | |
-| 18 | 2024-01-02 | 2024-01-04 | 78 | OK | |
-| 19 | 2024-04-01 | 2024-04-03 | 78 | OK | |
-| 20 | 2025-01-02 | 2025-01-04 | 70 | OK | |
-| 21 | 2025-06-01 | 2025-06-03 | 65 | OK | |
-| 22 | 2026-01-01 | 2026-01-03 | 0 | EMPTY | New Year holiday |
-| 23 | 2026-03-03 | 2026-03-05 | 62 | OK | |
+| 1 | 2012-07-01 | 2012-07-03 | — | EXCEPTION | Live raises TypeError; pre-launch |
+| 2 | 2012-08-01 | 2012-08-03 | — | EXCEPTION | Live raises TypeError; confirmed boundary |
+| 3 | 2012-09-01 | 2012-09-03 | — | EXCEPTION | Live raises TypeError; 2012-09-04 is first stored date |
+| 4 | 2012-09-04 | 2012-09-06 | 1 | OK | Stored: 1 row. Earliest confirmed date in store. |
+| 5 | 2012-10-01 | 2012-10-03 | — | EXCEPTION | Live raises TypeError; National holiday window |
+| 6 | 2012-11-01 | 2012-11-03 | 1 | OK | Live: 1 row |
+| 7 | 2013-01-04 | 2013-01-06 | 1 | OK | Live: 1 row. Stored: 1. |
+| 8 | 2014-01-06 | 2014-01-08 | — | EXCEPTION | Live raises TypeError for this specific window |
+| 9 | 2015-01-05 | 2015-01-07 | — | EXCEPTION | Live raises TypeError for this specific window |
+| 10 | 2016-01-04 | 2016-01-06 | — | EXCEPTION | Live raises TypeError for this specific window |
+| 11 | 2017-01-03 | 2017-01-05 | — | EXCEPTION | Live raises TypeError for this specific window |
+| 12 | 2018-01-02 | 2018-01-04 | — | EXCEPTION | Live raises TypeError for this specific window |
+| 13 | 2019-01-02 | 2019-01-04 | — | EXCEPTION | Live raises TypeError for this specific window |
+| 14 | 2020-01-02 | 2020-01-04 | 2 | OK | Live: 2 rows |
+| 15 | 2021-01-04 | 2021-01-06 | 3 | OK | Live: 3 rows |
+| 16 | 2022-01-04 | 2022-01-06 | 8 | OK | Live: 8 rows |
+| 17 | 2023-01-03 | 2023-01-05 | 17 | OK | Live: 17 rows |
+| 18 | 2024-01-02 | 2024-01-04 | 41 | OK | Live: 41 rows. Stored: 41. |
+| 19 | 2024-04-01 | 2024-04-03 | 78 | OK | Live: 78 rows. Stored: 78. |
+| 20 | 2025-01-02 | 2025-01-04 | 22 | OK | Live: 22 rows |
+| 21 | 2025-06-01 | 2025-06-03 | 6 | OK | Live: 6 rows |
+| 22 | 2026-01-01 | 2026-01-03 | 0 | EMPTY | New Year holiday — expected empty |
+| 23 | 2026-03-03 | 2026-03-05 | 48 | OK | Live: 48 rows |
 | 24 | 2026-07-10 | 2026-07-12 | 0 | EMPTY | Future date — expected empty |
 
-**Summary: 18/24 OK, 6 EMPTY (4 expected: boundary/holidays/future; 2 pre-launch). Zero unexpected failures.**
+**Summary: 12 OK, 10 EXCEPTION (API raises TypeError for these windows; data IS stored from other windows in those years), 2 EMPTY (holiday/future).**
 
-**History confirmed from:** 2012-09-04. The mrmx table did not exist (or was not published by Eastmoney) before September 2012.
+**Important note on mrmx exceptions in 2014-2019:** The API raises TypeError for January windows in those years, but the backfill DID store data from later windows in those years (e.g. 2014 has 197 rows / 103 dates stored across the year). The probe-window TypeError means Eastmoney does not serve that specific 3-day window — it is not a gap in the annual backfill.
 
-**Key finding — mrmx row counts are much lower than mrtj.** This is expected: mrmx shows individual trade events while mrtj aggregates them per name per day. Before 2019, mrmx typically shows 0–5 rows per trading day total market-wide. Post-2022 it rises to 5–20 rows/day as the large-block-trade market grew in volume. The mrtj feed is the primary signal carrier; mrmx is a supplementary attribution layer.
+**History confirmed from:** 2012-09-04 (first stored date). The mrmx table did not exist before September 2012.
 
-**Earliest usable mrmx date for backtesting:** 2012-09-04; **2013-01-01 recommended** (stable, consistent publication cadence).
+**Key finding — mrmx row counts are much lower than mrtj.** This is expected: mrmx shows individual trade events while mrtj aggregates them per name per day. Before 2019, mrmx is very sparse (0-1 rows per 3-day window at many probes). The mrtj feed is the primary signal carrier; mrmx is a supplementary attribution layer.
+
+**Earliest usable mrmx date for backtesting:** 2012-09-04 raw; **2020-01-01 recommended** (coverage becomes consistent post-2020; pre-2020 has many TypeError windows and only sporadic data).
 
 ---
 
 ## Backfill achieved
 
 Collector: `collectors/china_block_tape.py`
-Store: `data/china_block_tape/` (22 mrtj + 15 mrmx yearly parquet files + sw_l1_map.parquet)
+Store: `data/china_block_tape/` (22 mrtj + 15 mrmx yearly parquet files + sw_l1_map.parquet + sw_l1_constituents.parquet) — gitignored per R2 data-plane law.
 
 ### mrtj backfill
 
@@ -118,19 +124,19 @@ Year-by-year breakdown (rows / trading dates):
 | 2005 | 43 | 26 | Block market thin |
 | 2006 | 38 | 33 | Still thin |
 | 2007 | 51 | 34 | Still thin |
-| 2008 | 881 | 175 | Block market starts growing |
+| 2008 | 881 | 175 | Block market starts growing; earliest stored date 2008-01-18 |
 | 2009 | 1,326 | 238 | |
-| 2010 | 1,446 | 237 | |
+| 2010 | 1,446 | 237 | 6.1 names/day avg |
 | 2011 | 2,934 | 244 | |
 | 2012 | 3,765 | 243 | |
 | 2013 | 5,878 | 238 | |
 | 2014 | 6,842 | 245 | |
-| 2015 | 7,005 | 244 | |
+| 2015 | 7,005 | 244 | 28.7 names/day avg |
 | 2016 | 10,147 | 242 | |
 | 2017 | 10,136 | 244 | |
 | 2018 | 8,265 | 243 | |
 | 2019 | 9,034 | 244 | |
-| 2020 | 13,572 | 224 | |
+| 2020 | 13,572 | 224 | 60.6 names/day avg |
 | 2021 | 18,405 | 243 | |
 | 2022 | 19,641 | 242 | |
 | 2023 | 19,427 | 242 | |
@@ -162,17 +168,24 @@ Institutional attribution (buyer_branch = "机构专用"):
 - Institutional seller: 3,074 rows (27.2%)
 - Both sides institutional: 1,975 rows (17.5%)
 
-### SW L1 map
+### SW L1 constituent map
 
-- **File:** `data/china_block_tape/sw_l1_map.parquet`
-- **Industries:** 31
-- **Columns:** sw_code, sw_code_si, cn_name, en_name, snapshot_date, pe_ttm, pb, div_pct
-- **Snapshot date:** 2026-07-06
-- Live valuation enrichment (pe_ttm / pb / div_pct) from sw_index_first_info() applied.
+Two files written:
 
-**IMPORTANT LIMITATION — NO PER-STOCK MAPPING:** This file is a hardcoded 31-industry reference list derived from `china_sectors.SW_L1`. It has **no ticker column** and contains **no per-stock → industry mapping**. Block-trade names cannot be linked to SW-L1 industries using this file alone. Akshare's per-stock constituent APIs (`index_component_sw`, `stock_industry_clf_hist_sw`) were unavailable at build time: `index_component_sw` returned empty DataFrames with a schema mismatch; `stock_industry_clf_hist_sw` failed with an SSL certificate error on swsresearch.com. A future re-snapshot is required once constituent data becomes accessible.
+**sw_l1_map.parquet** — 31-industry reference list.
+- Industries: 31
+- Columns: sw_code, sw_code_si, cn_name, en_name, snapshot_date, pe_ttm, pb, div_pct
+- Snapshot date: 2026-07-07
 
-**SNAPSHOT DRIFT CAVEAT:** SW industry classifications are revised periodically (typically annually under the SW 2021 L1 taxonomy). The snapshot captured on 2026-07-06 will drift from the live classification as stocks are reclassified. Any F5-01 consumer that requires SW sector attribution must refresh this snapshot and ideally maintain a point-in-time (PIT) history of reclassifications rather than using a single static snapshot.
+**sw_l1_constituents.parquet** — per-stock SW-L1 membership (real constituent map).
+- **1,185 stock-industry rows**
+- **5 of 31 SW codes** have constituent data from Shenwan API: 801010/801030/801040/801050/801080 (Agriculture, Chemicals, Steel, Non-ferrous Metals, Electronics)
+- Columns: sw_code, cn_name, en_name, ticker_code, member_name, inclusion_date, snapshot_date
+- Snapshot date: 2026-07-07
+
+**API limitation on the remaining 26 codes:** SW codes 801110–801980 (the SW 2021 taxonomy codes covering consumer/healthcare/financials/real estate/utilities/tech subsectors) return an HTML page instead of JSON from Shenwan's `index_component_sw` endpoint. This was verified live on 2026-07-07 by direct HTTP inspection — the endpoint returns HTTP 200 with HTML body for these codes, causing a JSON decode failure inside akshare that manifests as a `KeyError` on column selection. This is an upstream API gap, not a code error. The 5 working codes all use the original SW taxonomy numbering (8010xx).
+
+**SNAPSHOT DRIFT CAVEAT:** SW industry classifications are revised periodically (typically annually under the SW 2021 L1 taxonomy). The constituent snapshot captured on 2026-07-07 will drift. The `inclusion_date` column enables PIT-correct cross-sections. The nightly `refresh()` re-snapshots on the 1st of each month.
 
 ---
 
@@ -180,13 +193,11 @@ Institutional attribution (buyer_branch = "机构专用"):
 
 | Signal layer | Feed | Earliest raw date | Recommended start | Rationale |
 |---|---|---|---|---|
-| Premium/discount signal | mrtj | 2005-01-04 | **2010-01-04** | Pre-2010: <15 names/day, too thin for cross-section |
-| Buyer attribution | mrmx | 2012-09-04 | **2013-01-01** | Publication cadence stabilises in 2013 |
-| Combined PD + attribution | both | 2013-01-01 | **2013-01-01** | mrmx is the binding constraint |
+| Premium/discount signal | mrtj | 2005-01-04 | **2013-01-01** | Pre-2013: <15 names/day, too thin for cross-section; 2010 = 6.1, 2015 = 28.7 names/day |
+| Buyer attribution | mrmx | 2012-09-04 | **2020-01-01** | Pre-2020 has frequent TypeError windows; post-2020 coverage consistent |
+| Combined PD + attribution | both | 2013-01-01 | **2020-01-01** | mrmx consistency is the binding constraint |
 
-For a pure premium/discount backtest (no buyer attribution), the recommended window is **2010-01-04 to present**, giving ~16 years of data and ~3,500 trading dates — sufficient for an honest FDR-adjusted IC test.
-
-For a buyer-attribution study (whether "both sides institutional" trades predict differently than retail/mixed), the recommended window is **2013-01-01 to present**, giving ~13 years.
+For a pure premium/discount backtest (no buyer attribution), the recommended window is **2013-01-01 to present**, giving ~13 years of data and ~3,238 trading dates — sufficient for an honest FDR-adjusted IC test with overlap-corrected stats.
 
 ---
 
@@ -223,6 +234,17 @@ For a buyer-attribution study (whether "both sides institutional" trades predict
 | seller_branch | str | Seller brokerage |
 | asof | str | Collection date (PIT) |
 
+### sw_l1_constituents columns
+| Column | Type | Description |
+|--------|------|-------------|
+| sw_code | str | SW industry code, e.g. "801010" |
+| cn_name | str | Chinese industry name |
+| en_name | str | English industry name |
+| ticker_code | str | 6-digit A-share code (zero-padded) |
+| member_name | str | Stock Chinese short name |
+| inclusion_date | str | Date stock entered this industry classification |
+| snapshot_date | str | Date this snapshot was taken |
+
 ---
 
 ## Tests
@@ -251,13 +273,15 @@ _run("china_block_tape", refresh_block_tape)
 
 The `refresh()` function collects the last 10 calendar days for both feeds. It is resumable (skips dates already stored), idempotent, and throttled at ≤ 2 req/s (0.55 s sleep between calls). Typical nightly delta: 1 date × 2 calls = ~2 seconds wall time.
 
+**SW-L1 re-snapshot:** `refresh()` calls `refresh_sw_l1_map()` on the 1st of each month to keep the constituent snapshot current. This adds ~20 seconds wall time (31 API calls × 0.55s) on the 1st.
+
 The backfill command (`python3 -m collectors.china_block_tape backfill --feed both --verbose`) is resumable from any point: it reads stored dates from the yearly parquets and skips chunks where all business days are already present.
 
 ---
 
 ## PIT assumptions
 
-- `asof` column = UTC date at collection time. Historical backfill collected 2026-07-06; nightly refreshes will carry the actual collection date.
+- `asof` column = UTC date at collection time. Historical backfill collected 2026-07-06/07; nightly refreshes will carry the actual collection date.
 - No look-ahead introduced: the archiver writes raw published data. The F5-01 signal engine is responsible for applying the appropriate lag (block trades are typically published by Eastmoney the same evening or next morning; a 1-business-day lag is recommended for PIT backtesting).
 - 折溢率 is published by Eastmoney alongside the raw cross prices and close. No derived computation is applied here beyond the column rename; the engine can verify premium_ratio = cross_price / close - 1 against any row.
 
@@ -266,7 +290,9 @@ The backfill command (`python3 -m collectors.china_block_tape backfill --feed bo
 ## Null findings (honest accounting)
 
 - **No signal tested.** This PR is infrastructure only. Gate: F5-01 premium/discount IC test (future wave).
-- **Pre-2008 mrtj data is sparse.** Only 43 rows across 26 dates in 2005, 38/33 in 2006, 51/34 in 2007. Any backtest starting before 2010 would face a thin-market regime that is structurally different from the modern block market.
-- **mrmx row counts are low pre-2019.** 2012-2018 averages <2 rows/day market-wide. Buyer attribution analysis will have low power before 2020.
+- **Pre-2008 mrtj data is sparse.** Only 43 rows across 26 dates in 2005, 38/33 in 2006, 51/34 in 2007. The 2005-07 and 2006-01 probe windows raise TypeError (API returns nothing for those specific windows).
+- **mrmx row counts are low and intermittent pre-2020.** Many early-year January windows (2014-2019) raise TypeError from the live API even though other windows in those years have stored data. Buyer attribution analysis will have low power before 2020.
+- **mrmx exception behavior:** `stock_dzjy_mrmx` raises `TypeError: 'NoneType' object is not subscriptable` for windows with no data, rather than returning empty DataFrames. The collector's broad `except` swallows these to None. This is documented behavior; exceptions are not unexpected failures.
 - **2004-11 mrtj gap:** Data for most of November 2004 is missing; 2004-10 fully absent. The 2005-01-04 start is a hard confirmed floor.
-- **mrmx gap in 2012-08:** API returns no data; 2012-09-04 is the confirmed first date.
+- **mrmx gap before 2012-09:** API returns TypeError; 2012-09-04 is the confirmed first date in store.
+- **SW constituent map partial:** 26 of 31 SW-L1 codes return HTML from Shenwan's constituent endpoint. This is a live-verified upstream API gap. The 5 working codes cover 1,185 stocks (Agriculture/Chemicals/Steel/Non-ferrous Metals/Electronics). The remaining 26 industries cannot be mapped until Shenwan fixes their API or an alternative source is identified.

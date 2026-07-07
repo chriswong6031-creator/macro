@@ -1,6 +1,6 @@
 {
   "schema": "mastermind_snapshot.v1",
-  "generated_at": "2026-07-07T03:07:19Z",
+  "generated_at": "2026-07-07T12:25:00Z",
   "default_book": "flagship",
   "live_url": "http://localhost:8000",
   "books": [
@@ -11,10 +11,10 @@
       "kind": "gated",
       "manager": "engine",
       "benchmark": "SPY",
-      "as_of": "2026-07-06",
+      "as_of": "2026-07-07",
       "market_status": "closed",
-      "gross": 0.178,
-      "cash": 0.822,
+      "gross": 0.0984,
+      "cash": 0.9016,
       "regime": {
         "quad": "Q1",
         "quad_name": "Goldilocks",
@@ -22,8 +22,8 @@
       },
       "sleeves": {
         "leadership": 0.0,
-        "conviction": 0.178,
-        "cash": 0.822
+        "conviction": 0.0984,
+        "cash": 0.9016
       },
       "positions": [
         {
@@ -35,7 +35,7 @@
           "verdict": "hold",
           "rs_pctile": 96.8,
           "entry_price": 297.58,
-          "opened_at": "2026-07-07T02:48:36.944845+00:00",
+          "opened_at": "2026-07-07T12:02:24.371706+00:00",
           "held_days": 0,
           "thesis_full": {
             "summary": "IWM is the mechanical leadership sleeve holding — the 96.8th percentile sector ETF by 252-day relative-strength, trend-confirmed above its 200-day moving average. Size is equal-weight within the leadership budget (0%).",
@@ -59,64 +59,18 @@
           }
         },
         {
-          "ticker": "JNJ",
-          "theme_id": "theme:defensives",
-          "sleeve": "conviction",
-          "stage": 2,
-          "weight": 0.05,
-          "verdict": "add",
-          "thesis_id": "2026-07-06-JNJ-conv",
-          "time_stop_by": "2026-10-01",
-          "confluence": 0.6,
-          "entry_price": 263.04,
-          "research": {
-            "summary": "Kept from the current book — the one name that cleared the conviction gate 4/5 lenses (confluence +0.60, size=up). Defensive healthcare that anchors the risk_radar-respecting side of the book. Overnight tape gives no reason to touch it; holds its 5% anchor.",
-            "confirmed": true
-          },
-          "retained": false,
-          "size_stage": null,
-          "entry_levels": {
-            "ticker": "JNJ",
-            "price": 263.04
-          },
-          "opened_at": "2026-07-06T22:47:47.543739+00:00",
-          "held_days": 0,
-          "thesis_full": {
-            "summary": "JNJ clears the multi-sided conviction gate: 4/5 lenses are bullish (confluence +0.60), size_authority = up. No hard vetoes. Sized at 5.0% — the confluence-weighted allocation within the conviction sleeve budget.",
-            "why_now": "All 5 scored lenses were evaluated today; 4 sided bullish, 1 bearish, giving a positive +0.60 net confluence. Size authority is 'up' — no veto blocked sizing.",
-            "bull": [
-              "Valuation supportive: value_z=-0.72, trailing P/E cheaper than 66% of history, forward P/E 20.7x.",
-              "Trend: price confirmed (uptrend intact) (bull).",
-              "Options: gamma regime 'long', expected daily move 192.0% — dealer positioning supportive.",
-              "Options Flow: $7M net prem · 41 new (bull).",
-              "Macro risk score low (0.14)"
-            ],
-            "bear": [
-              "Rate Inflation lens bearish.",
-              "Fed Path lens bearish.",
-              "Cross-asset environment: 'concentrated' — concentration / fragility risk."
-            ],
-            "vetoes": [],
-            "divergences": [],
-            "what_would_prove_wrong": "FALSE if JNJ underperforms SPY by >=5% over 21 business days (engine-derived falsifier). Also exits if extension veto fires (parabolic/≥30% above 200dma), Altman enters distress, or conviction band drops to 'avoid'.",
-            "sizing_rationale": "Conviction sleeve: confluence-weighted sizing. JNJ receives 5.0% (confluence +0.60 (4/5 lenses bullish = +0.60 net), capped at 8% per name). The weight is subtract-only from the theoretical maximum — no veto means full confluence allocation, reduced if another name dominates the confluence score. Falsification horizon: 21 business days. Position time-stop: 2026-10-01.",
-            "confluence": 0.6,
-            "prob_correct": 0.7
-          }
-        },
-        {
           "ticker": "XLV",
           "theme_id": "name:XLV",
           "sleeve": "conviction",
           "stage": 2,
           "weight": 0.0,
           "verdict": "add",
-          "thesis_id": "2026-07-06-XLV-conv",
-          "time_stop_by": "2026-10-01",
+          "thesis_id": "2026-07-07-XLV-conv",
+          "time_stop_by": "2026-10-02",
           "confluence": 0.0,
           "entry_price": 163.74,
           "research": {
-            "summary": "Healthcare sleg of the defensive benchmark I must beat (XLU/XLV/XLF/XLP). Entry-favored in the cycle read. Added because 90% cash was losing to this basket; owning it directly competes with the benchmark rather than ceding to it while risk_radar reads risk_off 84/100.",
+            "summary": "Core defensive leadership. Healthcare is a member of the defensive basket I must beat and risk_radar names growth_defensives as the leading cohort (90%). In a growth scare with rising yields, low-beta non-cyclical earnings streams outperform. Overweighting the winning basket — not merely matching it — is how a defensive book beats max(SPY, defensives). JNJ (held separately) sits inside this same thesis.",
             "confirmed": true
           },
           "retained": false,
@@ -125,7 +79,7 @@
             "ticker": "XLV",
             "price": 163.74
           },
-          "opened_at": "2026-07-07T02:48:36.944845+00:00",
+          "opened_at": "2026-07-07T12:02:24.371706+00:00",
           "held_days": 0,
           "thesis_full": {
             "summary": "XLV clears the multi-sided conviction gate: 1/2 lenses are bullish (confluence +0.00), size_authority = blocked. No hard vetoes. Sized at 0% — the confluence-weighted allocation within the conviction sleeve budget.",
@@ -143,7 +97,91 @@
             ],
             "divergences": [],
             "what_would_prove_wrong": "FALSE if XLV underperforms SPY by >=5% over 21 business days (engine-derived falsifier). Also exits if extension veto fires (parabolic/≥30% above 200dma), Altman enters distress, or conviction band drops to 'avoid'.",
-            "sizing_rationale": "Conviction sleeve: confluence-weighted sizing. XLV receives 0% (confluence +0.00 (1/2 lenses bullish = +0.00 net), capped at 8% per name). The weight is subtract-only from the theoretical maximum — no veto means full confluence allocation, reduced if another name dominates the confluence score. Falsification horizon: 21 business days. Position time-stop: 2026-10-01.",
+            "sizing_rationale": "Conviction sleeve: confluence-weighted sizing. XLV receives 0% (confluence +0.00 (1/2 lenses bullish = +0.00 net), capped at 8% per name). The weight is subtract-only from the theoretical maximum — no veto means full confluence allocation, reduced if another name dominates the confluence score. Falsification horizon: 21 business days. Position time-stop: 2026-10-02.",
+            "confluence": 0.0,
+            "prob_correct": 0.55
+          }
+        },
+        {
+          "ticker": "USMV",
+          "theme_id": "name:USMV",
+          "sleeve": "conviction",
+          "stage": 2,
+          "weight": 0.0,
+          "verdict": "add",
+          "thesis_id": "2026-07-07-USMV-conv",
+          "time_stop_by": "2026-10-02",
+          "confluence": 0.0,
+          "entry_price": 97.89,
+          "research": {
+            "summary": "Min-volatility quality is the precise vehicle for a distribution/narrowing-top tape where the index is held (-0.23%) while leaders distribute (-1.1%+). USMV systematically underweights the high-beta mega-cap tech that is being sold overnight and overweights low-vol quality — it captures the rotation mechanically. Right tool for froth_fragility + vol_shock reads.",
+            "confirmed": true
+          },
+          "retained": false,
+          "size_stage": null,
+          "entry_levels": {
+            "ticker": "USMV",
+            "price": 97.89
+          },
+          "opened_at": "2026-07-07T12:02:24.371706+00:00",
+          "held_days": 0,
+          "thesis_full": {
+            "summary": "USMV clears the multi-sided conviction gate: 1/2 lenses are bullish (confluence +0.00), size_authority = hold. No hard vetoes. Sized at 0% — the confluence-weighted allocation within the conviction sleeve budget.",
+            "why_now": "All 2 scored lenses were evaluated today; 1 sided bullish, 1 bearish, giving a neutral +0.00 net confluence. Size authority is 'hold' — no veto blocked sizing.",
+            "bull": [
+              "Trend: price confirmed (uptrend intact) (bull).",
+              "Macro risk score low (0.14)"
+            ],
+            "bear": [
+              "Fed Path lens bearish.",
+              "Cross-asset environment: 'concentrated' — concentration / fragility risk."
+            ],
+            "vetoes": [],
+            "divergences": [],
+            "what_would_prove_wrong": "FALSE if USMV underperforms SPY by >=5% over 21 business days (engine-derived falsifier). Also exits if extension veto fires (parabolic/≥30% above 200dma), Altman enters distress, or conviction band drops to 'avoid'.",
+            "sizing_rationale": "Conviction sleeve: confluence-weighted sizing. USMV receives 0% (confluence +0.00 (1/2 lenses bullish = +0.00 net), capped at 8% per name). The weight is subtract-only from the theoretical maximum — no veto means full confluence allocation, reduced if another name dominates the confluence score. Falsification horizon: 21 business days. Position time-stop: 2026-10-02.",
+            "confluence": 0.0,
+            "prob_correct": 0.55
+          }
+        },
+        {
+          "ticker": "XLP",
+          "theme_id": "name:XLP",
+          "sleeve": "conviction",
+          "stage": 2,
+          "weight": 0.0,
+          "verdict": "add",
+          "thesis_id": "2026-07-07-XLP-conv",
+          "time_stop_by": "2026-10-02",
+          "confluence": 0.0,
+          "entry_price": 84.99,
+          "research": {
+            "summary": "Consumer staples — the most defensive sleeve of the basket I must beat, and directly in the growth_defensives cohort risk_radar flags as leading. In a confirmed defensive rotation with an elevated VIX, staples are where the outflow from growth lands. Deliberate overweight to stay ahead of the defensive benchmark, not tie it.",
+            "confirmed": true
+          },
+          "retained": false,
+          "size_stage": null,
+          "entry_levels": {
+            "ticker": "XLP",
+            "price": 84.99
+          },
+          "opened_at": "2026-07-07T12:02:24.371706+00:00",
+          "held_days": 0,
+          "thesis_full": {
+            "summary": "XLP clears the multi-sided conviction gate: 1/2 lenses are bullish (confluence +0.00), size_authority = hold. No hard vetoes. Sized at 0% — the confluence-weighted allocation within the conviction sleeve budget.",
+            "why_now": "All 2 scored lenses were evaluated today; 1 sided bullish, 1 bearish, giving a neutral +0.00 net confluence. Size authority is 'hold' — no veto blocked sizing.",
+            "bull": [
+              "Trend: price confirmed (uptrend intact) (bull).",
+              "Macro risk score low (0.14)"
+            ],
+            "bear": [
+              "Fed Path lens bearish.",
+              "Cross-asset environment: 'concentrated' — concentration / fragility risk."
+            ],
+            "vetoes": [],
+            "divergences": [],
+            "what_would_prove_wrong": "FALSE if XLP underperforms SPY by >=5% over 21 business days (engine-derived falsifier). Also exits if extension veto fires (parabolic/≥30% above 200dma), Altman enters distress, or conviction band drops to 'avoid'.",
+            "sizing_rationale": "Conviction sleeve: confluence-weighted sizing. XLP receives 0% (confluence +0.00 (1/2 lenses bullish = +0.00 net), capped at 8% per name). The weight is subtract-only from the theoretical maximum — no veto means full confluence allocation, reduced if another name dominates the confluence score. Falsification horizon: 21 business days. Position time-stop: 2026-10-02.",
             "confluence": 0.0,
             "prob_correct": 0.55
           }
@@ -155,12 +193,12 @@
           "stage": 2,
           "weight": 0.0,
           "verdict": "add",
-          "thesis_id": "2026-07-06-XLU-conv",
-          "time_stop_by": "2026-10-01",
+          "thesis_id": "2026-07-07-XLU-conv",
+          "time_stop_by": "2026-10-02",
           "confluence": 0.0,
           "entry_price": 45.76,
           "research": {
-            "summary": "Utilities leg of the defensive benchmark. Pure ballast against the froth_fragility narrowing-top / cross-asset-concentration flags. On a firming-but-fragile tape this is the honest place to hold dry-powder-adjacent risk rather than raw cash.",
+            "summary": "Utilities double as a defensive sleeve AND a fresh cycle Trough/Bottoming sector-rotation entry per the engine's cycles read. The rate move (+0.22%) is a mild headwind for utilities, so I size it below staples/healthcare — but its low beta and bond-proxy character fit the risk-off rotation. Ammo from the defensive candidate pool.",
             "confirmed": true
           },
           "retained": false,
@@ -169,7 +207,7 @@
             "ticker": "XLU",
             "price": 45.76
           },
-          "opened_at": "2026-07-07T02:48:36.944845+00:00",
+          "opened_at": "2026-07-07T12:02:24.371706+00:00",
           "held_days": 0,
           "thesis_full": {
             "summary": "XLU clears the multi-sided conviction gate: 1/2 lenses are bullish (confluence +0.00), size_authority = blocked. No hard vetoes. Sized at 0% — the confluence-weighted allocation within the conviction sleeve budget.",
@@ -187,287 +225,88 @@
             ],
             "divergences": [],
             "what_would_prove_wrong": "FALSE if XLU underperforms SPY by >=5% over 21 business days (engine-derived falsifier). Also exits if extension veto fires (parabolic/≥30% above 200dma), Altman enters distress, or conviction band drops to 'avoid'.",
-            "sizing_rationale": "Conviction sleeve: confluence-weighted sizing. XLU receives 0% (confluence +0.00 (1/2 lenses bullish = +0.00 net), capped at 8% per name). The weight is subtract-only from the theoretical maximum — no veto means full confluence allocation, reduced if another name dominates the confluence score. Falsification horizon: 21 business days. Position time-stop: 2026-10-01.",
+            "sizing_rationale": "Conviction sleeve: confluence-weighted sizing. XLU receives 0% (confluence +0.00 (1/2 lenses bullish = +0.00 net), capped at 8% per name). The weight is subtract-only from the theoretical maximum — no veto means full confluence allocation, reduced if another name dominates the confluence score. Falsification horizon: 21 business days. Position time-stop: 2026-10-02.",
             "confluence": 0.0,
             "prob_correct": 0.55
           }
         },
         {
-          "ticker": "XLP",
-          "theme_id": "name:XLP",
-          "sleeve": "conviction",
-          "stage": 2,
-          "weight": 0.0,
-          "verdict": "add",
-          "thesis_id": "2026-07-06-XLP-conv",
-          "time_stop_by": "2026-10-01",
-          "confluence": 0.0,
-          "entry_price": 84.99,
-          "research": {
-            "summary": "Staples leg of the defensive benchmark AND the strategist's explicit falsifier watch (XLP taking leadership + WEI-trend confirming = the growth-scare wins). Holding it both competes with the benchmark and gives me a live read on that falsifier.",
-            "confirmed": true
-          },
-          "retained": false,
-          "size_stage": null,
-          "entry_levels": {
-            "ticker": "XLP",
-            "price": 84.99
-          },
-          "opened_at": "2026-07-07T02:48:36.944845+00:00",
-          "held_days": 0,
-          "thesis_full": {
-            "summary": "XLP clears the multi-sided conviction gate: 1/2 lenses are bullish (confluence +0.00), size_authority = hold. No hard vetoes. Sized at 0% — the confluence-weighted allocation within the conviction sleeve budget.",
-            "why_now": "All 2 scored lenses were evaluated today; 1 sided bullish, 1 bearish, giving a neutral +0.00 net confluence. Size authority is 'hold' — no veto blocked sizing.",
-            "bull": [
-              "Trend: price confirmed (uptrend intact) (bull).",
-              "Macro risk score low (0.14)"
-            ],
-            "bear": [
-              "Fed Path lens bearish.",
-              "Cross-asset environment: 'concentrated' — concentration / fragility risk."
-            ],
-            "vetoes": [],
-            "divergences": [],
-            "what_would_prove_wrong": "FALSE if XLP underperforms SPY by >=5% over 21 business days (engine-derived falsifier). Also exits if extension veto fires (parabolic/≥30% above 200dma), Altman enters distress, or conviction band drops to 'avoid'.",
-            "sizing_rationale": "Conviction sleeve: confluence-weighted sizing. XLP receives 0% (confluence +0.00 (1/2 lenses bullish = +0.00 net), capped at 8% per name). The weight is subtract-only from the theoretical maximum — no veto means full confluence allocation, reduced if another name dominates the confluence score. Falsification horizon: 21 business days. Position time-stop: 2026-10-01.",
-            "confluence": 0.0,
-            "prob_correct": 0.55
-          }
-        },
-        {
-          "ticker": "XLF",
-          "theme_id": "name:XLF",
+          "ticker": "JNJ",
+          "theme_id": "theme:defensives",
           "sleeve": "conviction",
           "stage": 2,
           "weight": 0.05,
           "verdict": "add",
-          "thesis_id": "2026-07-06-XLF-conv",
-          "time_stop_by": "2026-10-01",
-          "confluence": 0.0,
-          "entry_price": 55.62,
+          "thesis_id": "2026-07-07-JNJ-conv",
+          "time_stop_by": "2026-10-02",
+          "confluence": 0.333,
+          "entry_price": 263.04,
           "research": {
-            "summary": "Double-duty: it's the financials leg of the defensive benchmark AND the cleanest confirmed leadership theme — the curve-led financials broadening (Financials-EW 0.85, regional banks breadth 1.0, HHI 0.055). The single highest-confidence overlap between 'defensive basket I must beat' and 'confirmed alpha broadening.'",
+            "summary": "Existing holding, defensive healthcare mega-cap — fits the XLV thesis at the single-name level. Cleared the engine's conviction candidate list. Non-cyclical earnings, low beta, dividend support; exactly what you want held into a growth scare. Kept at ~current weight.",
             "confirmed": true
           },
           "retained": false,
           "size_stage": null,
           "entry_levels": {
-            "ticker": "XLF",
-            "price": 55.62
+            "ticker": "JNJ",
+            "price": 263.04
           },
-          "opened_at": "2026-07-07T02:48:36.944845+00:00",
+          "opened_at": "2026-07-07T12:02:24.371706+00:00",
           "held_days": 0,
           "thesis_full": {
-            "summary": "XLF clears the multi-sided conviction gate: 2/4 lenses are bullish (confluence +0.00), size_authority = blocked. No hard vetoes. Sized at 5.0% — the confluence-weighted allocation within the conviction sleeve budget.",
-            "why_now": "All 4 scored lenses were evaluated today; 2 sided bullish, 2 bearish, giving a neutral +0.00 net confluence. Size authority is 'blocked' — no veto blocked sizing.",
+            "summary": "JNJ clears the multi-sided conviction gate: 4/6 lenses are bullish (confluence +0.33), size_authority = up. No hard vetoes. Sized at 5.0% — the confluence-weighted allocation within the conviction sleeve budget.",
+            "why_now": "All 6 scored lenses were evaluated today; 4 sided bullish, 2 bearish, giving a positive +0.33 net confluence. Size authority is 'up' — no veto blocked sizing.",
             "bull": [
+              "Valuation supportive: value_z=-0.72, trailing P/E cheaper than 66% of history, forward P/E 20.7x.",
               "Trend: price confirmed (uptrend intact) (bull).",
-              "Options: gamma regime 'long', expected daily move 106.0% — dealer positioning supportive.",
+              "Options: gamma regime 'long', expected daily move 191.0% — dealer positioning supportive.",
+              "Options Flow: $2M net prem · 28 new (bull).",
               "Macro risk score low (0.14)"
             ],
             "bear": [
-              "Asymmetry lens bearish.",
+              "Rate Inflation lens bearish.",
+              "Narrative: theme 'defensives' rank 27/46, score -0.34, 5d rel -2.3% (bear)",
               "Fed Path lens bearish.",
               "Cross-asset environment: 'concentrated' — concentration / fragility risk."
             ],
-            "vetoes": [
-              "XLF is cycle-blocked (conviction.band=avoid or size_pct=0)."
-            ],
+            "vetoes": [],
             "divergences": [],
-            "what_would_prove_wrong": "FALSE if XLF underperforms SPY by >=5% over 21 business days (engine-derived falsifier). Also exits if extension veto fires (parabolic/≥30% above 200dma), Altman enters distress, or conviction band drops to 'avoid'.",
-            "sizing_rationale": "Conviction sleeve: confluence-weighted sizing. XLF receives 5.0% (confluence +0.00 (2/4 lenses bullish = +0.00 net), capped at 8% per name). The weight is subtract-only from the theoretical maximum — no veto means full confluence allocation, reduced if another name dominates the confluence score. Falsification horizon: 21 business days. Position time-stop: 2026-10-01.",
-            "confluence": 0.0,
-            "prob_correct": 0.55
-          },
-          "pending": true,
-          "status": "pending_open",
-          "est_price": 56.14,
-          "fill_after": "2026-07-07"
-        },
-        {
-          "ticker": "AMAT",
-          "theme_id": "theme:ai_infra",
-          "sleeve": "conviction",
-          "stage": 2,
-          "weight": 0.0,
-          "verdict": "add",
-          "thesis_id": "2026-07-06-AMAT-conv",
-          "time_stop_by": "2026-10-01",
-          "confluence": -0.429,
-          "entry_price": 603.04,
-          "research": {
-            "summary": "The durable alpha-positive core of the confirmed themes — semicap/WFE, the only basket with genuinely positive alpha vs the factor model (+2.05, edge not beta). AI-capex bottleneck migrating down-chain into WFE. Sized at 4% — disciplined participation, not a conviction add, given breadth is thin (0.50).",
-            "confirmed": true
-          },
-          "retained": false,
-          "size_stage": null,
-          "entry_levels": {
-            "ticker": "AMAT",
-            "price": 603.04
-          },
-          "opened_at": "2026-07-07T02:48:36.944845+00:00",
-          "held_days": 0,
-          "thesis_full": {
-            "summary": "AMAT clears the multi-sided conviction gate: 2/7 lenses are bullish (confluence -0.43), size_authority = blocked. No hard vetoes. Sized at 0% — the confluence-weighted allocation within the conviction sleeve budget.",
-            "why_now": "All 7 scored lenses were evaluated today; 2 sided bullish, 5 bearish, giving a mixed -0.43 net confluence. Size authority is 'blocked' — no veto blocked sizing.",
-            "bull": [
-              "Sector Rs: Technology (XLK) RS rank 2, 89th pctile, above 200d trend (bull).",
-              "Options: gamma regime 'long', expected daily move 574.0% — dealer positioning supportive.",
-              "Macro risk score low (0.14)"
-            ],
-            "bear": [
-              "Downside risk: tail drawdown -33.1%",
-              "Extension risk: grade='None', +78.0% above 200-day MA. Entry discipline required.",
-              "Options Flow: $-31M net prem · 155 new · net new PUT positioning (defensive / hedging) (bear)",
-              "Narrative: theme 'ai_infra' rank 4/46, score +1.29, 5d rel -10.9% (bear)",
-              "Fed Path lens bearish.",
-              "Cross-asset environment: 'concentrated' — concentration / fragility risk."
-            ],
-            "vetoes": [
-              "AMAT is cycle-blocked (conviction.band=avoid or size_pct=0)."
-            ],
-            "divergences": [],
-            "what_would_prove_wrong": "FALSE if AMAT underperforms SPY by >=5% over 21 business days (engine-derived falsifier). Also exits if extension veto fires (parabolic/≥30% above 200dma), Altman enters distress, or conviction band drops to 'avoid'.",
-            "sizing_rationale": "Conviction sleeve: confluence-weighted sizing. AMAT receives 0% (confluence -0.43 (2/7 lenses bullish = -0.43 net), capped at 8% per name). The weight is subtract-only from the theoretical maximum — no veto means full confluence allocation, reduced if another name dominates the confluence score. Falsification horizon: 21 business days. Position time-stop: 2026-10-01.",
-            "confluence": -0.429,
-            "prob_correct": 0.5
+            "what_would_prove_wrong": "FALSE if JNJ underperforms SPY by >=5% over 21 business days (engine-derived falsifier). Also exits if extension veto fires (parabolic/≥30% above 200dma), Altman enters distress, or conviction band drops to 'avoid'.",
+            "sizing_rationale": "Conviction sleeve: confluence-weighted sizing. JNJ receives 5.0% (confluence +0.33 (4/6 lenses bullish = +0.33 net), capped at 8% per name). The weight is subtract-only from the theoretical maximum — no veto means full confluence allocation, reduced if another name dominates the confluence score. Falsification horizon: 21 business days. Position time-stop: 2026-10-02.",
+            "confluence": 0.333,
+            "prob_correct": 0.68
           }
         },
         {
-          "ticker": "USB",
-          "theme_id": "theme:regional_banks",
+          "ticker": "EXPD",
+          "theme_id": "theme:us_sector_industrials",
           "sleeve": "conviction",
           "stage": 2,
-          "weight": 0.03,
+          "weight": 0.0122,
           "verdict": "add",
-          "thesis_id": "2026-07-06-USB-conv",
+          "thesis_id": "2026-07-07-EXPD-conv",
           "time_stop_by": "2026-10-01",
-          "confluence": 0.2,
-          "entry_price": 61.73,
+          "confluence": 0.5,
+          "entry_price": 167.57,
           "research": {
-            "summary": "Regional banks — the cleanest confirmed signal (breadth 1.0, low concentration, positive alphas across the complex, curve-led not one-name). Pro-cyclical into a decaying growth pillar so sized modestly, but the firming overnight tape (RTY +0.48%) supports participation.",
+            "summary": "Existing holding that cleared the multi-sided conviction gate (3/4 lenses bullish, confluence +0.50, no vetoes). Freight-forwarding logistics; modest cyclicality but a confirmed name. Kept as a toehold — not sized up into the scare.",
             "confirmed": true
           },
           "retained": false,
           "size_stage": null,
           "entry_levels": {
-            "ticker": "USB",
-            "price": 61.73
+            "ticker": "EXPD",
+            "price": 167.57
           },
           "opened_at": "2026-07-07T02:48:36.944845+00:00",
           "held_days": 0,
           "thesis_full": {
-            "summary": "USB clears the multi-sided conviction gate: 3/5 lenses are bullish (confluence +0.20), size_authority = hold. No hard vetoes. Sized at 3.0% — the confluence-weighted allocation within the conviction sleeve budget.",
-            "why_now": "All 5 scored lenses were evaluated today; 3 sided bullish, 2 bearish, giving a neutral +0.20 net confluence. Size authority is 'hold' — no veto blocked sizing.",
+            "summary": "EXPD clears the multi-sided conviction gate: 3/4 lenses are bullish (confluence +0.50), size_authority = up. No hard vetoes. Sized at 1.2% — the confluence-weighted allocation within the conviction sleeve budget.",
+            "why_now": "All 4 scored lenses were evaluated today; 3 sided bullish, 1 bearish, giving a positive +0.50 net confluence. Size authority is 'up' — no veto blocked sizing.",
             "bull": [
               "Trend: price confirmed (uptrend intact) (bull).",
-              "Options: gamma regime 'long', expected daily move 180.0% — dealer positioning supportive.",
-              "Rate/inflation sensitivity: 'tailwind' tailwind (tier medium).",
-              "Options Flow: $-0M net prem · 8 new (bull).",
-              "Macro risk score low (0.14)"
-            ],
-            "bear": [
-              "Sector Rs: Financials (XLF) RS rank 8, 27th pctile, below 200d trend (bear)",
-              "Narrative: theme 'regional_banks' rank 21/46, score -0.12, 5d rel -1.1% (bear)",
-              "Fed Path lens bearish.",
-              "Cross-asset environment: 'concentrated' — concentration / fragility risk."
-            ],
-            "vetoes": [],
-            "divergences": [],
-            "what_would_prove_wrong": "FALSE if USB underperforms SPY by >=5% over 21 business days (engine-derived falsifier). Also exits if extension veto fires (parabolic/≥30% above 200dma), Altman enters distress, or conviction band drops to 'avoid'.",
-            "sizing_rationale": "Conviction sleeve: confluence-weighted sizing. USB receives 3.0% (confluence +0.20 (3/5 lenses bullish = +0.20 net), capped at 8% per name). The weight is subtract-only from the theoretical maximum — no veto means full confluence allocation, reduced if another name dominates the confluence score. Falsification horizon: 21 business days. Position time-stop: 2026-10-01.",
-            "confluence": 0.2,
-            "prob_correct": 0.63
-          },
-          "pending": true,
-          "status": "pending_open",
-          "est_price": 62.83,
-          "fill_after": "2026-07-07"
-        },
-        {
-          "ticker": "FITB",
-          "theme_id": "theme:regional_banks",
-          "sleeve": "conviction",
-          "stage": 2,
-          "weight": 0.025,
-          "verdict": "add",
-          "thesis_id": "2026-07-06-FITB-conv",
-          "time_stop_by": "2026-10-01",
-          "confluence": 0.333,
-          "entry_price": 57.16,
-          "research": {
-            "summary": "Second regional-bank name for breadth within the confirmed financials turn rather than concentrating in one bank. Same curve-led thesis as USB; kept small because the theme is pro-cyclical into a Q1 growth leg that is thin and rolling.",
-            "confirmed": true
-          },
-          "retained": false,
-          "size_stage": null,
-          "entry_levels": {
-            "ticker": "FITB",
-            "price": 57.16
-          },
-          "opened_at": "2026-07-07T02:48:36.944845+00:00",
-          "held_days": 0,
-          "thesis_full": {
-            "summary": "FITB clears the multi-sided conviction gate: 4/6 lenses are bullish (confluence +0.33), size_authority = blocked. No hard vetoes. Sized at 2.5% — the confluence-weighted allocation within the conviction sleeve budget.",
-            "why_now": "All 6 scored lenses were evaluated today; 4 sided bullish, 2 bearish, giving a positive +0.33 net confluence. Size authority is 'blocked' — no veto blocked sizing.",
-            "bull": [
-              "Valuation supportive: value_z=0.65, trailing P/E cheaper than 48% of history.",
-              "Growth trajectory positive: EPS CAGR 14.0%.",
-              "Return asymmetry: upside/downside ratio 1.91 (median MFE 1229.0%).",
-              "Trend: price confirmed (uptrend intact) (bull).",
-              "Options: gamma regime 'long', expected daily move 192.0% — dealer positioning supportive.",
-              "Rate/inflation sensitivity: 'tailwind' tailwind (tier medium).",
-              "Options Flow: $0M net prem (bull).",
-              "Macro risk score low (0.14)"
-            ],
-            "bear": [
-              "Sector Rs: Financials (XLF) RS rank 8, 27th pctile, below 200d trend (bear)",
-              "Narrative: theme 'regional_banks' rank 21/46, score -0.12, 5d rel -1.1% (bear)",
-              "Fed Path lens bearish.",
-              "Cross-asset environment: 'concentrated' — concentration / fragility risk."
-            ],
-            "vetoes": [
-              "FITB is cycle-blocked (conviction.band=avoid or size_pct=0)."
-            ],
-            "divergences": [],
-            "what_would_prove_wrong": "FALSE if FITB underperforms SPY by >=5% over 21 business days (engine-derived falsifier). Also exits if extension veto fires (parabolic/≥30% above 200dma), Altman enters distress, or conviction band drops to 'avoid'.",
-            "sizing_rationale": "Conviction sleeve: confluence-weighted sizing. FITB receives 2.5% (confluence +0.33 (4/6 lenses bullish = +0.33 net), capped at 8% per name). The weight is subtract-only from the theoretical maximum — no veto means full confluence allocation, reduced if another name dominates the confluence score. Falsification horizon: 21 business days. Position time-stop: 2026-10-01.",
-            "confluence": 0.333,
-            "prob_correct": 0.68
-          },
-          "pending": true,
-          "status": "pending_open",
-          "est_price": 57.89,
-          "fill_after": "2026-07-07"
-        },
-        {
-          "ticker": "RSP",
-          "theme_id": "name:RSP",
-          "sleeve": "conviction",
-          "stage": 2,
-          "weight": 0.0,
-          "verdict": "add",
-          "thesis_id": "2026-07-06-RSP-conv",
-          "time_stop_by": "2026-10-01",
-          "confluence": 0.0,
-          "entry_price": 214.91,
-          "research": {
-            "summary": "Equal-weight S&P — the cleanest single expression of the confirmed cyclical/value broadening (RSP/SPY breadth broadening, five lenses agree). Buys the broadening without single-name risk; the overnight tape's broad-based green (small-caps + mid-caps participating) is exactly what this leg needs.",
-            "confirmed": true
-          },
-          "retained": false,
-          "size_stage": null,
-          "entry_levels": {
-            "ticker": "RSP",
-            "price": 214.91
-          },
-          "opened_at": "2026-07-07T02:48:36.944845+00:00",
-          "held_days": 0,
-          "thesis_full": {
-            "summary": "RSP clears the multi-sided conviction gate: 1/2 lenses are bullish (confluence +0.00), size_authority = hold. No hard vetoes. Sized at 0% — the confluence-weighted allocation within the conviction sleeve budget.",
-            "why_now": "All 2 scored lenses were evaluated today; 1 sided bullish, 1 bearish, giving a neutral +0.00 net confluence. Size authority is 'hold' — no veto blocked sizing.",
-            "bull": [
-              "Trend: price confirmed (uptrend intact) (bull).",
+              "Sector Rs: Industrials (XLI) RS rank 6, 80th pctile, above 200d trend (bull).",
+              "Options: gamma regime 'long', expected daily move 190.0% — dealer positioning supportive.",
               "Macro risk score low (0.14)"
             ],
             "bear": [
@@ -476,10 +315,54 @@
             ],
             "vetoes": [],
             "divergences": [],
-            "what_would_prove_wrong": "FALSE if RSP underperforms SPY by >=5% over 21 business days (engine-derived falsifier). Also exits if extension veto fires (parabolic/≥30% above 200dma), Altman enters distress, or conviction band drops to 'avoid'.",
-            "sizing_rationale": "Conviction sleeve: confluence-weighted sizing. RSP receives 0% (confluence +0.00 (1/2 lenses bullish = +0.00 net), capped at 8% per name). The weight is subtract-only from the theoretical maximum — no veto means full confluence allocation, reduced if another name dominates the confluence score. Falsification horizon: 21 business days. Position time-stop: 2026-10-01.",
-            "confluence": 0.0,
-            "prob_correct": 0.55
+            "what_would_prove_wrong": "FALSE if EXPD underperforms SPY by >=5% over 21 business days (engine-derived falsifier). Also exits if extension veto fires (parabolic/≥30% above 200dma), Altman enters distress, or conviction band drops to 'avoid'.",
+            "sizing_rationale": "Conviction sleeve: confluence-weighted sizing. EXPD receives 1.2% (confluence +0.50 (3/4 lenses bullish = +0.50 net), capped at 8% per name). The weight is subtract-only from the theoretical maximum — no veto means full confluence allocation, reduced if another name dominates the confluence score. Falsification horizon: 21 business days. Position time-stop: 2026-10-01.",
+            "confluence": 0.5,
+            "prob_correct": 0.7
+          }
+        },
+        {
+          "ticker": "DD",
+          "theme_id": "theme:us_sector_materials",
+          "sleeve": "conviction",
+          "stage": 2,
+          "weight": 0.015,
+          "verdict": "add",
+          "thesis_id": "2026-07-07-DD-conv",
+          "time_stop_by": "2026-10-01",
+          "confluence": -0.333,
+          "entry_price": 139.91,
+          "research": {
+            "summary": "Legacy winner (+198% unrealized). Materials/chemicals is cyclically exposed in a growth scare, so I trim it to a toehold to let the winner run without carrying meaningful cyclical beta into a de-risk. Would exit fully if the scare deepens.",
+            "confirmed": true
+          },
+          "retained": false,
+          "size_stage": null,
+          "entry_levels": {
+            "ticker": "DD",
+            "price": 139.91
+          },
+          "opened_at": "2026-07-07T06:45:30.915475+00:00",
+          "held_days": 0,
+          "thesis_full": {
+            "summary": "DD clears the multi-sided conviction gate: 1/3 lenses are bullish (confluence -0.33), size_authority = down. No hard vetoes. Sized at 1.5% — the confluence-weighted allocation within the conviction sleeve budget.",
+            "why_now": "All 3 scored lenses were evaluated today; 1 sided bullish, 2 bearish, giving a mixed -0.33 net confluence. Size authority is 'down' — no veto blocked sizing.",
+            "bull": [
+              "Options: gamma regime 'long', expected daily move 229.0% — dealer positioning supportive.",
+              "Macro risk score low (0.14)"
+            ],
+            "bear": [
+              "Rate Inflation lens bearish.",
+              "Narrative: theme 'us_sector_materials' rank 29/46, score -0.35, 5d rel -2.1% (bear)",
+              "Fed Path lens bearish.",
+              "Cross-asset environment: 'concentrated' — concentration / fragility risk."
+            ],
+            "vetoes": [],
+            "divergences": [],
+            "what_would_prove_wrong": "FALSE if DD underperforms SPY by >=5% over 21 business days (engine-derived falsifier). Also exits if extension veto fires (parabolic/≥30% above 200dma), Altman enters distress, or conviction band drops to 'avoid'.",
+            "sizing_rationale": "Conviction sleeve: confluence-weighted sizing. DD receives 1.5% (confluence -0.33 (1/3 lenses bullish = -0.33 net), capped at 8% per name). The weight is subtract-only from the theoretical maximum — no veto means full confluence allocation, reduced if another name dominates the confluence score. Falsification horizon: 21 business days. Position time-stop: 2026-10-01.",
+            "confluence": -0.333,
+            "prob_correct": 0.5
           }
         },
         {
@@ -489,12 +372,12 @@
           "stage": 2,
           "weight": 0.013,
           "verdict": "add",
-          "thesis_id": "2026-07-06-ACIW-conv",
+          "thesis_id": "2026-07-07-ACIW-conv",
           "time_stop_by": "2026-10-01",
           "confluence": 0.333,
           "entry_price": 54.88,
           "research": {
-            "summary": "Kept — payments name that rides the same curve-led financials broadening (Payments basket 0.85 in the confirmed complex). Modest embedded gain, cleared the gate, coherent with the book's cyclical-leadership tilt.",
+            "summary": "Legacy fintech-software holding, +18% unrealized, 2/3 lenses bullish but size_authority was blocked. Growth-adjacent, so trimmed to a toehold in the de-risk. Held only because it is a confirmed name with no hard veto.",
             "confirmed": true
           },
           "retained": false,
@@ -529,35 +412,36 @@
           }
         },
         {
-          "ticker": "EXPD",
+          "ticker": "CHRW",
           "theme_id": "theme:us_sector_industrials",
           "sleeve": "conviction",
           "stage": 2,
-          "weight": 0.01,
+          "weight": 0.0041,
           "verdict": "add",
-          "thesis_id": "2026-07-06-EXPD-conv",
-          "time_stop_by": "2026-10-01",
-          "confluence": 0.5,
-          "entry_price": 167.57,
+          "thesis_id": "2026-07-07-CHRW-conv",
+          "time_stop_by": "2026-10-02",
+          "confluence": 0.6,
+          "entry_price": 189.85,
           "research": {
-            "summary": "Kept — freight/logistics, the transport read on cyclical broadening (Travel confirmed 0.92). Small position, cleared the gate; retained as a coherent cyclical tag rather than added to.",
+            "summary": "Tiny legacy transports/logistics position, modestly profitable. Kept at a token weight; would consolidate into EXPD or exit on any further deterioration in the freight/transport tape.",
             "confirmed": true
           },
           "retained": false,
           "size_stage": null,
           "entry_levels": {
-            "ticker": "EXPD",
-            "price": 167.57
+            "ticker": "CHRW",
+            "price": 189.85
           },
-          "opened_at": "2026-07-07T02:48:36.944845+00:00",
+          "opened_at": "2026-07-07T12:02:24.371706+00:00",
           "held_days": 0,
           "thesis_full": {
-            "summary": "EXPD clears the multi-sided conviction gate: 3/4 lenses are bullish (confluence +0.50), size_authority = up. No hard vetoes. Sized at 1.0% — the confluence-weighted allocation within the conviction sleeve budget.",
-            "why_now": "All 4 scored lenses were evaluated today; 3 sided bullish, 1 bearish, giving a positive +0.50 net confluence. Size authority is 'up' — no veto blocked sizing.",
+            "summary": "CHRW clears the multi-sided conviction gate: 4/5 lenses are bullish (confluence +0.60), size_authority = up. No hard vetoes. Sized at 0.4% — the confluence-weighted allocation within the conviction sleeve budget.",
+            "why_now": "All 5 scored lenses were evaluated today; 4 sided bullish, 1 bearish, giving a positive +0.60 net confluence. Size authority is 'up' — no veto blocked sizing.",
             "bull": [
+              "Return asymmetry: upside/downside ratio 6.38 (median MFE 2055.0%).",
               "Trend: price confirmed (uptrend intact) (bull).",
               "Sector Rs: Industrials (XLI) RS rank 6, 80th pctile, above 200d trend (bull).",
-              "Options: gamma regime 'long', expected daily move 189.0% — dealer positioning supportive.",
+              "Options: gamma regime 'long', expected daily move 239.0% — dealer positioning supportive.",
               "Macro risk score low (0.14)"
             ],
             "bear": [
@@ -566,63 +450,73 @@
             ],
             "vetoes": [],
             "divergences": [],
-            "what_would_prove_wrong": "FALSE if EXPD underperforms SPY by >=5% over 21 business days (engine-derived falsifier). Also exits if extension veto fires (parabolic/≥30% above 200dma), Altman enters distress, or conviction band drops to 'avoid'.",
-            "sizing_rationale": "Conviction sleeve: confluence-weighted sizing. EXPD receives 1.0% (confluence +0.50 (3/4 lenses bullish = +0.50 net), capped at 8% per name). The weight is subtract-only from the theoretical maximum — no veto means full confluence allocation, reduced if another name dominates the confluence score. Falsification horizon: 21 business days. Position time-stop: 2026-10-01.",
-            "confluence": 0.5,
+            "what_would_prove_wrong": "FALSE if CHRW underperforms SPY by >=5% over 21 business days (engine-derived falsifier). Also exits if extension veto fires (parabolic/≥30% above 200dma), Altman enters distress, or conviction band drops to 'avoid'.",
+            "sizing_rationale": "Conviction sleeve: confluence-weighted sizing. CHRW receives 0.4% (confluence +0.60 (4/5 lenses bullish = +0.60 net), capped at 8% per name). The weight is subtract-only from the theoretical maximum — no veto means full confluence allocation, reduced if another name dominates the confluence score. Falsification horizon: 21 business days. Position time-stop: 2026-10-02.",
+            "confluence": 0.6,
             "prob_correct": 0.7
+          }
+        },
+        {
+          "ticker": "AME",
+          "theme_id": "theme:reshoring",
+          "sleeve": "conviction",
+          "stage": 2,
+          "weight": 0.0041,
+          "verdict": "add",
+          "thesis_id": "2026-07-07-AME-conv",
+          "time_stop_by": "2026-10-02",
+          "confluence": 0.143,
+          "entry_price": 234.62,
+          "research": {
+            "summary": "Tiny legacy industrials position near flat. Token weight only; industrials are cyclical and not where I want risk in a growth scare, but the position is immaterial. Candidate for exit on next rebalance.",
+            "confirmed": true
+          },
+          "retained": false,
+          "size_stage": null,
+          "entry_levels": {
+            "ticker": "AME",
+            "price": 234.62
+          },
+          "opened_at": "2026-07-07T12:02:24.371706+00:00",
+          "held_days": 0,
+          "thesis_full": {
+            "summary": "AME clears the multi-sided conviction gate: 4/7 lenses are bullish (confluence +0.14), size_authority = hold. No hard vetoes. Sized at 0.4% — the confluence-weighted allocation within the conviction sleeve budget.",
+            "why_now": "All 7 scored lenses were evaluated today; 4 sided bullish, 3 bearish, giving a neutral +0.14 net confluence. Size authority is 'hold' — no veto blocked sizing.",
+            "bull": [
+              "Quality score strong (quality_z=0.47, accounting=clean).",
+              "Growth trajectory positive: revenue CAGR 10.3%, EPS CAGR 11.2%.",
+              "Return asymmetry: upside/downside ratio 2.98 (median MFE 686.0%).",
+              "Trend: price confirmed (uptrend intact) (bull).",
+              "Sector Rs: Industrials (XLI) RS rank 6, 80th pctile, above 200d trend (bull).",
+              "Options: gamma regime 'long', expected daily move 199.0% — dealer positioning supportive.",
+              "Macro risk score low (0.14)"
+            ],
+            "bear": [
+              "Valuation stretched: value_z=-0.72, P/E cheaper than only 34% of history.",
+              "Options Flow: $-0M net prem · net new PUT positioning (defensive / hedging) (bear)",
+              "Narrative: theme 'reshoring' rank 15/46, score -0.02, 5d rel -3.1% (bear)",
+              "Fed Path lens bearish.",
+              "Cross-asset environment: 'concentrated' — concentration / fragility risk."
+            ],
+            "vetoes": [],
+            "divergences": [],
+            "what_would_prove_wrong": "FALSE if AME underperforms SPY by >=5% over 21 business days (engine-derived falsifier). Also exits if extension veto fires (parabolic/≥30% above 200dma), Altman enters distress, or conviction band drops to 'avoid'.",
+            "sizing_rationale": "Conviction sleeve: confluence-weighted sizing. AME receives 0.4% (confluence +0.14 (4/7 lenses bullish = +0.14 net), capped at 8% per name). The weight is subtract-only from the theoretical maximum — no veto means full confluence allocation, reduced if another name dominates the confluence score. Falsification horizon: 21 business days. Position time-stop: 2026-10-02.",
+            "confluence": 0.143,
+            "prob_correct": 0.61
           }
         }
       ],
       "decisions": [
         {
-          "id": "2026-07-06-JNJ-conv",
-          "subject": "JNJ",
-          "lean": "add",
-          "conviction": "medium",
-          "prob_correct": 0.7,
-          "horizon_d": 21,
-          "thesis": "Multi-sided confluence +0.60 (bull 4/bear 1); all sides confirm and no hard veto — sized 5%.",
-          "state_asof": "2026-07-06",
-          "entry_levels": {
-            "ticker": "JNJ",
-            "price": 263.04
-          },
-          "evidence": [
-            "size_authority=up",
-            "confluence=+0.60"
-          ],
-          "dissent": "Held at 0 if any side vetoes (parabolic/distress/cycle-blocked).",
-          "sleeve": "conviction",
-          "stage": null,
-          "order_layer": 1,
-          "scorecard_dims": {},
-          "bottleneck": {},
-          "time_stop_by": "2026-10-01",
-          "schema": "brain_decision.v1",
-          "is_context_only": true,
-          "falsifier": {
-            "check": {
-              "kind": "rel_return",
-              "subject_ticker": "JNJ",
-              "vs": "SPY",
-              "op": "<",
-              "threshold": -0.05,
-              "horizon_d": 21
-            },
-            "text": "FALSE if JNJ underperforms SPY by >=5% over 21 business days"
-          },
-          "check_by": "2026-08-04",
-          "raw_prob_correct": 0.7
-        },
-        {
-          "id": "2026-07-06-XLV-conv",
+          "id": "2026-07-07-XLV-conv",
           "subject": "XLV",
           "lean": "add",
           "conviction": "medium",
           "prob_correct": 0.55,
           "horizon_d": 21,
-          "thesis": "Multi-sided confluence +0.00 (bull 1/bear 1); all sides confirm and no hard veto — sized 5%.",
-          "state_asof": "2026-07-06",
+          "thesis": "Multi-sided confluence +0.00 (bull 1/bear 1); all sides confirm and no hard veto — sized 8%.",
+          "state_asof": "2026-07-07",
           "entry_levels": {
             "ticker": "XLV",
             "price": 163.74
@@ -637,7 +531,7 @@
           "order_layer": 1,
           "scorecard_dims": {},
           "bottleneck": {},
-          "time_stop_by": "2026-10-01",
+          "time_stop_by": "2026-10-02",
           "schema": "brain_decision.v1",
           "is_context_only": true,
           "falsifier": {
@@ -651,21 +545,21 @@
             },
             "text": "FALSE if XLV underperforms SPY by >=5% over 21 business days"
           },
-          "check_by": "2026-08-04",
+          "check_by": "2026-08-05",
           "raw_prob_correct": 0.55
         },
         {
-          "id": "2026-07-06-XLU-conv",
-          "subject": "XLU",
+          "id": "2026-07-07-USMV-conv",
+          "subject": "USMV",
           "lean": "add",
           "conviction": "medium",
           "prob_correct": 0.55,
           "horizon_d": 21,
-          "thesis": "Multi-sided confluence +0.00 (bull 1/bear 1); all sides confirm and no hard veto — sized 4%.",
-          "state_asof": "2026-07-06",
+          "thesis": "Multi-sided confluence +0.00 (bull 1/bear 1); all sides confirm and no hard veto — sized 8%.",
+          "state_asof": "2026-07-07",
           "entry_levels": {
-            "ticker": "XLU",
-            "price": 45.76
+            "ticker": "USMV",
+            "price": 97.89
           },
           "evidence": [
             "size_authority=up",
@@ -677,32 +571,32 @@
           "order_layer": 1,
           "scorecard_dims": {},
           "bottleneck": {},
-          "time_stop_by": "2026-10-01",
+          "time_stop_by": "2026-10-02",
           "schema": "brain_decision.v1",
           "is_context_only": true,
           "falsifier": {
             "check": {
               "kind": "rel_return",
-              "subject_ticker": "XLU",
+              "subject_ticker": "USMV",
               "vs": "SPY",
               "op": "<",
               "threshold": -0.05,
               "horizon_d": 21
             },
-            "text": "FALSE if XLU underperforms SPY by >=5% over 21 business days"
+            "text": "FALSE if USMV underperforms SPY by >=5% over 21 business days"
           },
-          "check_by": "2026-08-04",
+          "check_by": "2026-08-05",
           "raw_prob_correct": 0.55
         },
         {
-          "id": "2026-07-06-XLP-conv",
+          "id": "2026-07-07-XLP-conv",
           "subject": "XLP",
           "lean": "add",
           "conviction": "medium",
           "prob_correct": 0.55,
           "horizon_d": 21,
-          "thesis": "Multi-sided confluence +0.00 (bull 1/bear 1); all sides confirm and no hard veto — sized 3%.",
-          "state_asof": "2026-07-06",
+          "thesis": "Multi-sided confluence +0.00 (bull 1/bear 1); all sides confirm and no hard veto — sized 8%.",
+          "state_asof": "2026-07-07",
           "entry_levels": {
             "ticker": "XLP",
             "price": 84.99
@@ -717,7 +611,7 @@
           "order_layer": 1,
           "scorecard_dims": {},
           "bottleneck": {},
-          "time_stop_by": "2026-10-01",
+          "time_stop_by": "2026-10-02",
           "schema": "brain_decision.v1",
           "is_context_only": true,
           "falsifier": {
@@ -731,21 +625,21 @@
             },
             "text": "FALSE if XLP underperforms SPY by >=5% over 21 business days"
           },
-          "check_by": "2026-08-04",
+          "check_by": "2026-08-05",
           "raw_prob_correct": 0.55
         },
         {
-          "id": "2026-07-06-XLF-conv",
-          "subject": "XLF",
+          "id": "2026-07-07-XLU-conv",
+          "subject": "XLU",
           "lean": "add",
           "conviction": "medium",
           "prob_correct": 0.55,
           "horizon_d": 21,
-          "thesis": "Multi-sided confluence +0.00 (bull 2/bear 2); all sides confirm and no hard veto — sized 5%.",
-          "state_asof": "2026-07-06",
+          "thesis": "Multi-sided confluence +0.00 (bull 1/bear 1); all sides confirm and no hard veto — sized 7%.",
+          "state_asof": "2026-07-07",
           "entry_levels": {
-            "ticker": "XLF",
-            "price": 55.62
+            "ticker": "XLU",
+            "price": 45.76
           },
           "evidence": [
             "size_authority=up",
@@ -757,115 +651,35 @@
           "order_layer": 1,
           "scorecard_dims": {},
           "bottleneck": {},
-          "time_stop_by": "2026-10-01",
+          "time_stop_by": "2026-10-02",
           "schema": "brain_decision.v1",
           "is_context_only": true,
           "falsifier": {
             "check": {
               "kind": "rel_return",
-              "subject_ticker": "XLF",
+              "subject_ticker": "XLU",
               "vs": "SPY",
               "op": "<",
               "threshold": -0.05,
               "horizon_d": 21
             },
-            "text": "FALSE if XLF underperforms SPY by >=5% over 21 business days"
+            "text": "FALSE if XLU underperforms SPY by >=5% over 21 business days"
           },
-          "check_by": "2026-08-04",
+          "check_by": "2026-08-05",
           "raw_prob_correct": 0.55
         },
         {
-          "id": "2026-07-06-AMAT-conv",
-          "subject": "AMAT",
-          "lean": "add",
-          "conviction": "medium",
-          "prob_correct": 0.5,
-          "horizon_d": 21,
-          "thesis": "Multi-sided confluence -0.43 (bull 2/bear 5); all sides confirm and no hard veto — sized 4%.",
-          "state_asof": "2026-07-06",
-          "entry_levels": {
-            "ticker": "AMAT",
-            "price": 603.04
-          },
-          "evidence": [
-            "size_authority=up",
-            "confluence=-0.43"
-          ],
-          "dissent": "Held at 0 if any side vetoes (parabolic/distress/cycle-blocked).",
-          "sleeve": "conviction",
-          "stage": null,
-          "order_layer": 1,
-          "scorecard_dims": {},
-          "bottleneck": {},
-          "time_stop_by": "2026-10-01",
-          "schema": "brain_decision.v1",
-          "is_context_only": true,
-          "falsifier": {
-            "check": {
-              "kind": "rel_return",
-              "subject_ticker": "AMAT",
-              "vs": "SPY",
-              "op": "<",
-              "threshold": -0.05,
-              "horizon_d": 21
-            },
-            "text": "FALSE if AMAT underperforms SPY by >=5% over 21 business days"
-          },
-          "check_by": "2026-08-04",
-          "raw_prob_correct": 0.38
-        },
-        {
-          "id": "2026-07-06-USB-conv",
-          "subject": "USB",
-          "lean": "add",
-          "conviction": "medium",
-          "prob_correct": 0.63,
-          "horizon_d": 21,
-          "thesis": "Multi-sided confluence +0.20 (bull 3/bear 2); all sides confirm and no hard veto — sized 3%.",
-          "state_asof": "2026-07-06",
-          "entry_levels": {
-            "ticker": "USB",
-            "price": 61.73
-          },
-          "evidence": [
-            "size_authority=up",
-            "confluence=+0.20"
-          ],
-          "dissent": "Held at 0 if any side vetoes (parabolic/distress/cycle-blocked).",
-          "sleeve": "conviction",
-          "stage": null,
-          "order_layer": 1,
-          "scorecard_dims": {},
-          "bottleneck": {},
-          "time_stop_by": "2026-10-01",
-          "schema": "brain_decision.v1",
-          "is_context_only": true,
-          "falsifier": {
-            "check": {
-              "kind": "rel_return",
-              "subject_ticker": "USB",
-              "vs": "SPY",
-              "op": "<",
-              "threshold": -0.05,
-              "horizon_d": 21
-            },
-            "text": "FALSE if USB underperforms SPY by >=5% over 21 business days"
-          },
-          "check_by": "2026-08-04",
-          "raw_prob_correct": 0.63
-        },
-        {
-          "id": "2026-07-06-FITB-conv",
-          "subject": "FITB",
+          "id": "2026-07-07-JNJ-conv",
+          "subject": "JNJ",
           "lean": "add",
           "conviction": "medium",
           "prob_correct": 0.68,
           "horizon_d": 21,
-          "thesis": "Multi-sided confluence +0.33 (bull 4/bear 2); all sides confirm and no hard veto — sized 2%.",
-          "state_asof": "2026-07-06",
+          "thesis": "Multi-sided confluence +0.33 (bull 4/bear 2); all sides confirm and no hard veto — sized 5%.",
+          "state_asof": "2026-07-07",
           "entry_levels": {
-            "ticker": "FITB",
-            "price": 57.16
+            "ticker": "JNJ",
+            "price": 263.04
           },
           "evidence": [
             "size_authority=up",
@@ -877,112 +691,32 @@
           "order_layer": 1,
           "scorecard_dims": {},
           "bottleneck": {},
-          "time_stop_by": "2026-10-01",
+          "time_stop_by": "2026-10-02",
           "schema": "brain_decision.v1",
           "is_context_only": true,
           "falsifier": {
             "check": {
               "kind": "rel_return",
-              "subject_ticker": "FITB",
+              "subject_ticker": "JNJ",
               "vs": "SPY",
               "op": "<",
               "threshold": -0.05,
               "horizon_d": 21
             },
-            "text": "FALSE if FITB underperforms SPY by >=5% over 21 business days"
+            "text": "FALSE if JNJ underperforms SPY by >=5% over 21 business days"
           },
-          "check_by": "2026-08-04",
+          "check_by": "2026-08-05",
           "raw_prob_correct": 0.68
         },
         {
-          "id": "2026-07-06-RSP-conv",
-          "subject": "RSP",
-          "lean": "add",
-          "conviction": "medium",
-          "prob_correct": 0.55,
-          "horizon_d": 21,
-          "thesis": "Multi-sided confluence +0.00 (bull 1/bear 1); all sides confirm and no hard veto — sized 4%.",
-          "state_asof": "2026-07-06",
-          "entry_levels": {
-            "ticker": "RSP",
-            "price": 214.91
-          },
-          "evidence": [
-            "size_authority=up",
-            "confluence=+0.00"
-          ],
-          "dissent": "Held at 0 if any side vetoes (parabolic/distress/cycle-blocked).",
-          "sleeve": "conviction",
-          "stage": null,
-          "order_layer": 1,
-          "scorecard_dims": {},
-          "bottleneck": {},
-          "time_stop_by": "2026-10-01",
-          "schema": "brain_decision.v1",
-          "is_context_only": true,
-          "falsifier": {
-            "check": {
-              "kind": "rel_return",
-              "subject_ticker": "RSP",
-              "vs": "SPY",
-              "op": "<",
-              "threshold": -0.05,
-              "horizon_d": 21
-            },
-            "text": "FALSE if RSP underperforms SPY by >=5% over 21 business days"
-          },
-          "check_by": "2026-08-04",
-          "raw_prob_correct": 0.55
-        },
-        {
-          "id": "2026-07-06-ACIW-conv",
-          "subject": "ACIW",
-          "lean": "add",
-          "conviction": "medium",
-          "prob_correct": 0.68,
-          "horizon_d": 21,
-          "thesis": "Multi-sided confluence +0.33 (bull 2/bear 1); all sides confirm and no hard veto — sized 1%.",
-          "state_asof": "2026-07-06",
-          "entry_levels": {
-            "ticker": "ACIW",
-            "price": 54.88
-          },
-          "evidence": [
-            "size_authority=up",
-            "confluence=+0.33"
-          ],
-          "dissent": "Held at 0 if any side vetoes (parabolic/distress/cycle-blocked).",
-          "sleeve": "conviction",
-          "stage": null,
-          "order_layer": 1,
-          "scorecard_dims": {},
-          "bottleneck": {},
-          "time_stop_by": "2026-10-01",
-          "schema": "brain_decision.v1",
-          "is_context_only": true,
-          "falsifier": {
-            "check": {
-              "kind": "rel_return",
-              "subject_ticker": "ACIW",
-              "vs": "SPY",
-              "op": "<",
-              "threshold": -0.05,
-              "horizon_d": 21
-            },
-            "text": "FALSE if ACIW underperforms SPY by >=5% over 21 business days"
-          },
-          "check_by": "2026-08-04",
-          "raw_prob_correct": 0.68
-        },
-        {
-          "id": "2026-07-06-EXPD-conv",
+          "id": "2026-07-07-EXPD-conv",
           "subject": "EXPD",
           "lean": "add",
           "conviction": "medium",
           "prob_correct": 0.7,
           "horizon_d": 21,
-          "thesis": "Multi-sided confluence +0.50 (bull 3/bear 1); all sides confirm and no hard veto — sized 1%.",
-          "state_asof": "2026-07-06",
+          "thesis": "Multi-sided confluence +0.50 (bull 3/bear 1); all sides confirm and no hard veto — sized 2%.",
+          "state_asof": "2026-07-07",
           "entry_levels": {
             "ticker": "EXPD",
             "price": 167.57
@@ -997,7 +731,7 @@
           "order_layer": 1,
           "scorecard_dims": {},
           "bottleneck": {},
-          "time_stop_by": "2026-10-01",
+          "time_stop_by": "2026-10-02",
           "schema": "brain_decision.v1",
           "is_context_only": true,
           "falsifier": {
@@ -1011,114 +745,248 @@
             },
             "text": "FALSE if EXPD underperforms SPY by >=5% over 21 business days"
           },
-          "check_by": "2026-08-04",
+          "check_by": "2026-08-05",
           "raw_prob_correct": 0.7
+        },
+        {
+          "id": "2026-07-07-DD-conv",
+          "subject": "DD",
+          "lean": "add",
+          "conviction": "medium",
+          "prob_correct": 0.5,
+          "horizon_d": 21,
+          "thesis": "Multi-sided confluence -0.33 (bull 1/bear 2); all sides confirm and no hard veto — sized 2%.",
+          "state_asof": "2026-07-07",
+          "entry_levels": {
+            "ticker": "DD",
+            "price": 139.91
+          },
+          "evidence": [
+            "size_authority=up",
+            "confluence=-0.33"
+          ],
+          "dissent": "Held at 0 if any side vetoes (parabolic/distress/cycle-blocked).",
+          "sleeve": "conviction",
+          "stage": null,
+          "order_layer": 1,
+          "scorecard_dims": {},
+          "bottleneck": {},
+          "time_stop_by": "2026-10-02",
+          "schema": "brain_decision.v1",
+          "is_context_only": true,
+          "falsifier": {
+            "check": {
+              "kind": "rel_return",
+              "subject_ticker": "DD",
+              "vs": "SPY",
+              "op": "<",
+              "threshold": -0.05,
+              "horizon_d": 21
+            },
+            "text": "FALSE if DD underperforms SPY by >=5% over 21 business days"
+          },
+          "check_by": "2026-08-05",
+          "raw_prob_correct": 0.42
+        },
+        {
+          "id": "2026-07-07-ACIW-conv",
+          "subject": "ACIW",
+          "lean": "add",
+          "conviction": "medium",
+          "prob_correct": 0.68,
+          "horizon_d": 21,
+          "thesis": "Multi-sided confluence +0.33 (bull 2/bear 1); all sides confirm and no hard veto — sized 1%.",
+          "state_asof": "2026-07-07",
+          "entry_levels": {
+            "ticker": "ACIW",
+            "price": 54.88
+          },
+          "evidence": [
+            "size_authority=up",
+            "confluence=+0.33"
+          ],
+          "dissent": "Held at 0 if any side vetoes (parabolic/distress/cycle-blocked).",
+          "sleeve": "conviction",
+          "stage": null,
+          "order_layer": 1,
+          "scorecard_dims": {},
+          "bottleneck": {},
+          "time_stop_by": "2026-10-02",
+          "schema": "brain_decision.v1",
+          "is_context_only": true,
+          "falsifier": {
+            "check": {
+              "kind": "rel_return",
+              "subject_ticker": "ACIW",
+              "vs": "SPY",
+              "op": "<",
+              "threshold": -0.05,
+              "horizon_d": 21
+            },
+            "text": "FALSE if ACIW underperforms SPY by >=5% over 21 business days"
+          },
+          "check_by": "2026-08-05",
+          "raw_prob_correct": 0.68
+        },
+        {
+          "id": "2026-07-07-CHRW-conv",
+          "subject": "CHRW",
+          "lean": "add",
+          "conviction": "medium",
+          "prob_correct": 0.7,
+          "horizon_d": 21,
+          "thesis": "Multi-sided confluence +0.60 (bull 4/bear 1); all sides confirm and no hard veto — sized 0%.",
+          "state_asof": "2026-07-07",
+          "entry_levels": {
+            "ticker": "CHRW",
+            "price": 189.85
+          },
+          "evidence": [
+            "size_authority=up",
+            "confluence=+0.60"
+          ],
+          "dissent": "Held at 0 if any side vetoes (parabolic/distress/cycle-blocked).",
+          "sleeve": "conviction",
+          "stage": null,
+          "order_layer": 1,
+          "scorecard_dims": {},
+          "bottleneck": {},
+          "time_stop_by": "2026-10-02",
+          "schema": "brain_decision.v1",
+          "is_context_only": true,
+          "falsifier": {
+            "check": {
+              "kind": "rel_return",
+              "subject_ticker": "CHRW",
+              "vs": "SPY",
+              "op": "<",
+              "threshold": -0.05,
+              "horizon_d": 21
+            },
+            "text": "FALSE if CHRW underperforms SPY by >=5% over 21 business days"
+          },
+          "check_by": "2026-08-05",
+          "raw_prob_correct": 0.7
+        },
+        {
+          "id": "2026-07-07-AME-conv",
+          "subject": "AME",
+          "lean": "add",
+          "conviction": "medium",
+          "prob_correct": 0.61,
+          "horizon_d": 21,
+          "thesis": "Multi-sided confluence +0.14 (bull 4/bear 3); all sides confirm and no hard veto — sized 0%.",
+          "state_asof": "2026-07-07",
+          "entry_levels": {
+            "ticker": "AME",
+            "price": 234.62
+          },
+          "evidence": [
+            "size_authority=up",
+            "confluence=+0.14"
+          ],
+          "dissent": "Held at 0 if any side vetoes (parabolic/distress/cycle-blocked).",
+          "sleeve": "conviction",
+          "stage": null,
+          "order_layer": 1,
+          "scorecard_dims": {},
+          "bottleneck": {},
+          "time_stop_by": "2026-10-02",
+          "schema": "brain_decision.v1",
+          "is_context_only": true,
+          "falsifier": {
+            "check": {
+              "kind": "rel_return",
+              "subject_ticker": "AME",
+              "vs": "SPY",
+              "op": "<",
+              "threshold": -0.05,
+              "horizon_d": 21
+            },
+            "text": "FALSE if AME underperforms SPY by >=5% over 21 business days"
+          },
+          "check_by": "2026-08-05",
+          "raw_prob_correct": 0.61
         }
       ],
       "pending_orders": [
         {
-          "id": "2026-07-06-AME-sell",
-          "ticker": "AME",
-          "side": "sell",
-          "shares": 21.021104,
-          "est_price": 238.68,
-          "est_value": 5017.32,
-          "weight": 0.0,
-          "placed_asof": "2026-07-06",
-          "fill_after": "2026-07-07",
-          "status": "pending"
-        },
-        {
-          "id": "2026-07-06-CHRW-sell",
-          "ticker": "CHRW",
-          "side": "sell",
-          "shares": 21.648544,
-          "est_price": 185.04,
-          "est_value": 4005.85,
-          "weight": 0.0,
-          "placed_asof": "2026-07-06",
-          "fill_after": "2026-07-07",
-          "status": "pending"
-        },
-        {
-          "id": "2026-07-06-DD-sell",
-          "ticker": "DD",
-          "side": "sell",
-          "shares": 104.270983,
-          "est_price": 47.3488,
-          "est_value": 4937.11,
-          "weight": 0.0,
-          "placed_asof": "2026-07-06",
-          "fill_after": "2026-07-07",
-          "status": "pending"
-        },
-        {
-          "id": "2026-07-06-CBRS-sell",
+          "id": "2026-07-07-CBRS-sell",
           "ticker": "CBRS",
           "side": "sell",
           "shares": 56.285815,
           "est_price": 191.0838,
           "est_value": 10755.31,
           "weight": 0.0,
-          "placed_asof": "2026-07-06",
-          "fill_after": "2026-07-07",
-          "status": "pending"
-        },
-        {
-          "id": "2026-07-06-XLF-buy",
-          "ticker": "XLF",
-          "side": "buy",
-          "shares": 856.0,
-          "est_price": 56.14,
-          "est_value": 48055.84,
-          "weight": 0.05,
-          "placed_asof": "2026-07-06",
-          "fill_after": "2026-07-07",
-          "status": "pending"
-        },
-        {
-          "id": "2026-07-06-USB-buy",
-          "ticker": "USB",
-          "side": "buy",
-          "shares": 459.0,
-          "est_price": 62.83,
-          "est_value": 28838.97,
-          "weight": 0.03,
-          "placed_asof": "2026-07-06",
-          "fill_after": "2026-07-07",
-          "status": "pending"
-        },
-        {
-          "id": "2026-07-06-FITB-buy",
-          "ticker": "FITB",
-          "side": "buy",
-          "shares": 415.0,
-          "est_price": 57.89,
-          "est_value": 24024.35,
-          "weight": 0.025,
-          "placed_asof": "2026-07-06",
+          "placed_asof": "2026-07-07",
           "fill_after": "2026-07-07",
           "status": "pending"
         }
       ],
       "research_held": [
         {
-          "ticker": "RTX",
+          "ticker": "ALHC",
           "reason": "research desk does not recommend at this price",
-          "paper_id": "2026-07-06-RTX",
+          "paper_id": "2026-07-07-ALHC",
           "mode": "engine",
           "engine_score": 67,
-          "research_score": 64,
-          "combined": 66,
+          "research_score": 62,
+          "combined": 64,
           "viability": "rich",
           "confirmed": false,
-          "summary": "RTX — research desk 64/100, 'rich'. At $199.25 the name looks richly valued / extended — wait for a better entry.",
-          "price_at_review": 199.25
+          "summary": "ALHC — research desk 62/100, 'rich'. At $23.80 the name looks richly valued / extended — wait for a better entry.",
+          "price_at_review": 23.8
+        },
+        {
+          "ticker": "INCY",
+          "reason": "committee: SENTINEL opposes with high conviction (0.60): INCY is a single-franchise biopharma (Jakafi/ruxolitinib is the overwhelming majority of profit) staring at loss of exclusivity by ~2028 — a melting-ice-cube dressed up as a 'special_situation.' The engine tags it altdata special_situation (event/M&A-binary), which is exactly the prediction-not-confirmation trade the doctrine says to avoid. Trend is the only truly validated bull lens; the narrative that supposedly justifies entry has essentially zero thrust (theme score +0.15, 5d rel +0.1%, rank 12/46). You'd be buying idiosyncratic binary risk with no confirmed narrative ignition behind it.",
+          "paper_id": "2026-07-07-INCY",
+          "mode": "engine",
+          "engine_score": 80,
+          "research_score": 98,
+          "combined": 89,
+          "viability": "compelling",
+          "confirmed": true,
+          "summary": "INCY — research desk 98/100, 'compelling'. At $116.86 the multi-sided read is favorable and the entry is reasonable.",
+          "price_at_review": 116.86,
+          "committee": {
+            "action": "drop",
+            "scale": 0.0,
+            "lean": "watch",
+            "rationale": "SENTINEL opposes with high conviction (0.60): INCY is a single-franchise biopharma (Jakafi/ruxolitinib is the overwhelming majority of profit) staring at loss of exclusivity by ~2028 — a melting-ice-cube dressed up as a 'special_situation.' The engine tags it altdata special_situation (event/M&A-binary), which is exactly the prediction-not-confirmation trade the doctrine says to avoid. Trend is the only truly validated bull lens; the narrative that supposedly justifies entry has essentially zero thrust (theme score +0.15, 5d rel +0.1%, rank 12/46). You'd be buying idiosyncratic binary risk with no confirmed narrative ignition behind it.",
+            "sentinel_stance": "OPPOSE"
+          }
+        },
+        {
+          "ticker": "OC",
+          "reason": "research desk does not recommend at this price",
+          "paper_id": "2026-07-07-OC",
+          "mode": "engine",
+          "engine_score": 67,
+          "research_score": 61,
+          "combined": 64,
+          "viability": "rich",
+          "confirmed": false,
+          "summary": "OC — research desk 61/100, 'rich'. At $151.06 the name looks richly valued / extended — wait for a better entry.",
+          "price_at_review": 151.06
+        },
+        {
+          "ticker": "SGOV",
+          "reason": "combined conviction 50 < 56",
+          "paper_id": "2026-07-04-SGOV",
+          "mode": "engine",
+          "engine_score": 50,
+          "research_score": 50,
+          "combined": 50,
+          "viability": "fair",
+          "confirmed": false,
+          "summary": "SGOV — research desk 50/100, 'fair'. At the current price the read is balanced — a measured, confluence-weighted entry only.",
+          "price_at_review": null
         },
         {
           "ticker": "TECH",
           "reason": "research desk does not recommend at this price",
-          "paper_id": "2026-07-06-TECH",
+          "paper_id": "2026-07-07-TECH",
           "mode": "engine",
           "engine_score": 67,
           "research_score": 68,
@@ -1139,11 +1007,27 @@
       },
       "rejected": [
         {
-          "ticker": "FLYW",
-          "reason": "Negative confluence (-1.00)",
+          "ticker": "MMC",
+          "reason": "Lagging sector/commodity — leadership gate (fighting the tape)",
           "vetoes": [],
           "bear": [
-            "Options Flow: $-0M net prem · 2 new · net new PUT positioning (defensive / hedging)"
+            "Sector Rs: Financials (XLF) RS rank 8, 27th pctile, below 200d trend",
+            "Fed Path lens bearish",
+            "Cross Asset lens bearish"
+          ],
+          "confluence": -1.0
+        },
+        {
+          "ticker": "NB",
+          "reason": "Vetoed: cycle_blocked",
+          "vetoes": [
+            "cycle_blocked"
+          ],
+          "bear": [
+            "Risk Drawdown lens bearish",
+            "Trend: downtrend — below 200dma (trend broken), below 50dma, MACD negative, -59% off 52w high",
+            "Narrative: theme 'critical_minerals' rank 8/46, score +0.47, 5d rel -3.5%",
+            "Fed Path lens bearish"
           ],
           "confluence": -1.0
         },
@@ -1157,9 +1041,35 @@
             "Risk Drawdown lens bearish",
             "Trend: downtrend — below 200dma (trend broken), below 50dma, MACD negative, -43% off 52w high, RSI 39, down -14% in recent sessions (falling knife)",
             "Options lens bearish",
-            "Narrative: theme 'critical_minerals' rank 7/46, score +0.75, 5d rel -2.3%"
+            "Narrative: theme 'critical_minerals' rank 8/46, score +0.47, 5d rel -3.5%"
           ],
           "confluence": -1.0
+        },
+        {
+          "ticker": "USAR",
+          "reason": "Vetoed: cycle_blocked",
+          "vetoes": [
+            "cycle_blocked"
+          ],
+          "bear": [
+            "Asymmetry lens bearish",
+            "Risk Drawdown lens bearish",
+            "Trend: downtrend — below 200dma (trend broken), below 50dma, MACD negative, -50% off 52w high, RSI 39, down -19% in recent sessions (falling knife)",
+            "Options lens bearish"
+          ],
+          "confluence": -0.714
+        },
+        {
+          "ticker": "UUUU",
+          "reason": "Downtrend — price rolling over (no falling knives)",
+          "vetoes": [],
+          "bear": [
+            "Risk Drawdown lens bearish",
+            "Trend: downtrend — below 200dma (trend broken), below 50dma, MACD negative, -50% off 52w high, RSI 36",
+            "Sector Rs: Energy (XLE) RS rank 18, 58th pctile, below 200d trend",
+            "Options lens bearish"
+          ],
+          "confluence": -0.714
         },
         {
           "ticker": "CRML",
@@ -1169,21 +1079,7 @@
             "Asymmetry lens bearish",
             "Risk Drawdown lens bearish",
             "Trend: downtrend — below 200dma (trend broken), below 50dma, -68% off 52w high",
-            "Narrative: theme 'critical_minerals' rank 7/46, score +0.75, 5d rel -2.3%"
-          ],
-          "confluence": -0.667
-        },
-        {
-          "ticker": "GLXY",
-          "reason": "Vetoed: cycle_blocked",
-          "vetoes": [
-            "cycle_blocked"
-          ],
-          "bear": [
-            "Trend: downtrend — below 200dma (trend broken), below 50dma, MACD negative, -43% off 52w high, RSI 36, down -26% in recent sessions (falling knife)",
-            "Sector Rs: Financials (XLF) RS rank 8, 27th pctile, below 200d trend",
-            "Options lens bearish",
-            "Narrative: theme 'crypto' rank 35/46, score -0.42, 5d rel -2.7%"
+            "Narrative: theme 'critical_minerals' rank 8/46, score +0.47, 5d rel -3.5%"
           ],
           "confluence": -0.667
         },
@@ -1200,6 +1096,20 @@
           "confluence": -0.667
         },
         {
+          "ticker": "LAC",
+          "reason": "Vetoed: cycle_blocked",
+          "vetoes": [
+            "cycle_blocked"
+          ],
+          "bear": [
+            "Risk Drawdown lens bearish",
+            "Trend: downtrend — below 200dma (trend broken), below 50dma, MACD negative, -63% off 52w high, RSI 32, down -15% in recent sessions (falling knife)",
+            "Options lens bearish",
+            "Narrative: theme 'critical_minerals' rank 8/46, score +0.47, 5d rel -3.5%"
+          ],
+          "confluence": -0.667
+        },
+        {
           "ticker": "PINS",
           "reason": "Downtrend — price rolling over (no falling knives)",
           "vetoes": [],
@@ -1210,18 +1120,6 @@
             "Sector Rs: Communication Services (XLC) RS rank 17, 4th pctile, below 200d trend"
           ],
           "confluence": -0.667
-        },
-        {
-          "ticker": "FOUR",
-          "reason": "Downtrend — price rolling over (no falling knives)",
-          "vetoes": [],
-          "bear": [
-            "Risk Drawdown lens bearish",
-            "Trend: downtrend — below 200dma (trend broken), -52% off 52w high",
-            "Sector Rs: Financials (XLF) RS rank 8, 27th pctile, below 200d trend",
-            "Narrative: theme 'payments_fintech' rank 25/46, score -0.18, 5d rel +7.1%"
-          ],
-          "confluence": -0.6
         },
         {
           "ticker": "KNSL",
@@ -1243,21 +1141,7 @@
             "Trend: downtrend — below 200dma (trend broken), -33% off 52w high",
             "Sector Rs: Consumer Discretionary (XLY) RS rank 10, 7th pctile, below 200d trend",
             "Rate Inflation lens bearish",
-            "Narrative: theme 'industrial_distribution' rank 34/46, score -0.37, 5d rel -4.1%"
-          ],
-          "confluence": -0.6
-        },
-        {
-          "ticker": "PSMT",
-          "reason": "Vetoed: cycle_blocked",
-          "vetoes": [
-            "cycle_blocked"
-          ],
-          "bear": [
-            "Valuation stretched (value_z=-0.35)",
-            "Extension: grade=None, +38.0% vs 200dma",
-            "Sector Rs: Consumer Staples (XLP) RS rank 13, 22th pctile, below 200d trend",
-            "Rate Inflation lens bearish"
+            "Narrative: theme 'industrial_distribution' rank 32/46, score -0.37, 5d rel -3.5%"
           ],
           "confluence": -0.6
         },
@@ -1270,20 +1154,36 @@
           "bear": [
             "Risk Drawdown lens bearish",
             "Trend: downtrend — below 200dma (trend broken), -42% off 52w high",
-            "Narrative: theme 'ai_agents' rank 39/46, score -0.73, 5d rel +11.9%",
+            "Narrative: theme 'ai_agents' rank 37/46, score -0.60, 5d rel +7.7%",
             "Fed Path lens bearish"
           ],
           "confluence": -0.6
         },
         {
-          "ticker": "AEIS",
-          "reason": "Downtrend — price rolling over (no falling knives)",
-          "vetoes": [],
+          "ticker": "MU",
+          "reason": "Vetoed: cycle_blocked",
+          "vetoes": [
+            "cycle_blocked"
+          ],
+          "bear": [
+            "Quality / accounting flag: warn",
+            "Risk Drawdown lens bearish",
+            "Extension: grade=None, +119.6% vs 200dma",
+            "Options lens bearish"
+          ],
+          "confluence": -0.556
+        },
+        {
+          "ticker": "ASO",
+          "reason": "Vetoed: cycle_blocked",
+          "vetoes": [
+            "cycle_blocked"
+          ],
           "bear": [
             "Risk Drawdown lens bearish",
-            "Trend: downtrend — below 50dma, MACD negative, -20% off 52w high, down -17% in recent sessions (falling knife)",
-            "Options lens bearish",
-            "Options Flow: $-0M net prem · 5 new · net new PUT positioning (defensive / hedging)"
+            "Trend: downtrend — below 200dma (trend broken), below 50dma, MACD negative, -22% off 52w high",
+            "Sector Rs: Consumer Discretionary (XLY) RS rank 10, 7th pctile, below 200d trend",
+            "Options Flow: $-0M net prem · 14 new · net new PUT positioning (defensive / hedging)"
           ],
           "confluence": -0.5
         },
@@ -1296,6 +1196,20 @@
             "Asymmetry lens bearish",
             "Trend: downtrend — below 200dma (trend broken), -35% off 52w high",
             "Sector Rs: Financials (XLF) RS rank 8, 27th pctile, below 200d trend"
+          ],
+          "confluence": -0.5
+        },
+        {
+          "ticker": "CAG",
+          "reason": "Vetoed: altman_distress",
+          "vetoes": [
+            "altman_distress"
+          ],
+          "bear": [
+            "Solvency: Altman zone=distress",
+            "Sector Rs: Consumer Staples (XLP) RS rank 13, 22th pctile, below 200d trend",
+            "Rate Inflation lens bearish",
+            "Narrative: theme 'us_sector_staples' rank 33/46, score -0.43, 5d rel -3.2%"
           ],
           "confluence": -0.5
         },
@@ -1320,22 +1234,20 @@
           "bear": [
             "Valuation stretched (value_z=-0.64)",
             "Rate Inflation lens bearish",
-            "Narrative: theme 'us_sector_materials' rank 29/46, score -0.27, 5d rel -1.5%",
+            "Narrative: theme 'us_sector_materials' rank 29/46, score -0.35, 5d rel -2.1%",
             "Fed Path lens bearish"
           ],
           "confluence": -0.5
         },
         {
-          "ticker": "KVUE",
-          "reason": "Vetoed: cycle_blocked",
-          "vetoes": [
-            "cycle_blocked"
-          ],
+          "ticker": "KBR",
+          "reason": "Downtrend — price rolling over (no falling knives)",
+          "vetoes": [],
           "bear": [
-            "Valuation stretched (value_z=-0.37)",
-            "Growth lens bearish",
-            "Sector Rs: Consumer Staples (XLP) RS rank 13, 22th pctile, below 200d trend",
-            "Rate Inflation lens bearish"
+            "Asymmetry lens bearish",
+            "Trend: downtrend — below 200dma (trend broken), -29% off 52w high",
+            "Altdata Flow: signal 32/100 · medium · WATCH",
+            "Fed Path lens bearish"
           ],
           "confluence": -0.5
         },
@@ -1350,47 +1262,6 @@
             "Options lens bearish"
           ],
           "confluence": -0.5
-        },
-        {
-          "ticker": "SJM",
-          "reason": "Vetoed: altman_distress, cycle_blocked",
-          "vetoes": [
-            "altman_distress",
-            "cycle_blocked"
-          ],
-          "bear": [
-            "Solvency: Altman zone=distress",
-            "Asymmetry lens bearish",
-            "Sector Rs: Consumer Staples (XLP) RS rank 13, 22th pctile, below 200d trend",
-            "Rate Inflation lens bearish"
-          ],
-          "confluence": -0.5
-        },
-        {
-          "ticker": "VECO",
-          "reason": "Vetoed: cycle_blocked",
-          "vetoes": [
-            "cycle_blocked"
-          ],
-          "bear": [
-            "Valuation stretched (value_z=-0.57)",
-            "Risk Drawdown lens bearish",
-            "Extension: grade=None, +47.0% vs 200dma",
-            "Trend: downtrend — below 50dma, MACD negative, -31% off 52w high, down -24% in recent sessions (falling knife)"
-          ],
-          "confluence": -0.5
-        },
-        {
-          "ticker": "WTW",
-          "reason": "Downtrend — price rolling over (no falling knives)",
-          "vetoes": [],
-          "bear": [
-            "Valuation stretched (value_z=-0.26)",
-            "Solvency: Altman zone=distress",
-            "Asymmetry lens bearish",
-            "Trend: downtrend — below 200dma (trend broken), -18% off 52w high"
-          ],
-          "confluence": -0.5
         }
       ],
       "rejected_count": 128,
@@ -1401,14 +1272,14 @@
       "performance": {
         "inception_date": "2026-06-19",
         "starting_nav": 1000000.0,
-        "current_nav": 961824.98,
+        "current_nav": 971639.33,
         "cash": 874300.95,
-        "invested": 87524.03,
-        "total_return_pct": -3.8175,
-        "vs_spy_pct": -5.2103,
+        "invested": 97338.38,
+        "total_return_pct": -2.8361,
+        "vs_spy_pct": -4.2289,
         "benchmark": "SPY",
-        "day_change_pct": -1.1048,
-        "max_drawdown_pct": -4.3707,
+        "day_change_pct": -0.0542,
+        "max_drawdown_pct": -3.3949,
         "realized_since": "2026-06-19",
         "series": [
           {
@@ -2616,15 +2487,15 @@
       "kind": "autonomous",
       "manager": "brain",
       "benchmark": "SPY",
-      "as_of": "2026-07-06",
+      "as_of": "2026-07-07",
       "market_status": {
         "open": false,
-        "asof_et": "2026-07-06T22:22:07.956428-04:00",
+        "asof_et": "2026-07-07T07:22:40.605904-04:00",
         "trading_day": true,
         "holiday": false,
         "next_open": "2026-07-07T09:30:00-04:00",
         "next_open_day": "2026-07-07",
-        "prev_trading_day": "2026-07-02"
+        "prev_trading_day": "2026-07-06"
       },
       "gross": 0.6067,
       "cash": 0.3933,
@@ -2640,8 +2511,8 @@
           "sleeve": "brain",
           "weight": 0.1611,
           "verdict": "hold",
-          "conviction": "medium",
-          "rationale": "Trimmed from 16.1% to 11% — the one decisive move this run. SMH is my largest position, down 5.3%, and sits squarely in the froth/late-cycle crosshairs: the cycle engine flags XLK as LATE-CYCLE do-not-add, froth reads 'euphoric, leaders distributing under a held index (narrowing top),' and tonight's KOSPI -4.87% crash is a live warning from the Korean chip complex (Samsung/SK Hynix). US NQ futures +0.83% say the AI-semi bid isn't broken, so I keep a core 11% position rather than exit — but I refuse to be maximally concentrated in the exact zone every froth/late-cycle signal is pointing at.",
+          "conviction": "low",
+          "rationale": "Cut decisively — from 16% to 6%. Semis are the exact epicenter of tonight's tape: NQ-100 fut is the weakest US future at -1.10% and KOSPI crashed another -4.91%, while the cycle engine flags XLK late-cycle/do-not-add and froth reads 'leaders distributing under a held index.' Every plane AND the live tape are punishing this zone. I keep only a residual 6% toehold rather than exit — VIX is a low 16 and this is a rotation, not a crash, so I refuse to whipsaw fully out of the structural AI-semi position — but I will not stay concentrated where the confirmed downside is.",
           "opened_at": "2026-06-21T14:26:56.050465+00:00",
           "held_days": 15,
           "cost_basis": 638.2775,
@@ -2650,8 +2521,8 @@
           "unrealized_pnl": -8951.04,
           "unrealized_pct": -5.32,
           "thesis_full": {
-            "summary": "Trimmed from 16.1% to 11% — the one decisive move this run. SMH is my largest position, down 5.3%, and sits squarely in the froth/late-cycle crosshairs: the cycle engine flags XLK as LATE-CYCLE do-not-add, froth reads 'euphoric, leaders distributing under a held index (narrowing top),' and tonight's KOSPI -4.87% crash is a live warning from the Korean chip complex (Samsung/SK Hynix). US NQ futures +0.83% say the AI-semi bid isn't broken, so I keep a core 11% position rather than exit — but I refuse to be maximally concentrated in the exact zone every froth/late-cycle signal is pointing at.",
-            "why_now": "Trimmed from 16.1% to 11% — the one decisive move this run. SMH is my largest position, down 5.3%, and sits squarely in the froth/late-cycle crosshairs: the cycle engine flags XLK as LATE-CYCLE do-not-add, froth reads 'euphoric, leaders distributing under a held index (narrowing top),' and tonight's KOSPI -4.87% crash is a live warning from the Korean chip complex (Samsung/SK Hynix). US NQ futures +0.83% say the AI-semi bid isn't broken, so I keep a core 11% position rather than exit — but I refuse to be maximally concentrated in the exact zone every froth/late-cycle signal is pointing at.",
+            "summary": "Cut decisively — from 16% to 6%. Semis are the exact epicenter of tonight's tape: NQ-100 fut is the weakest US future at -1.10% and KOSPI crashed another -4.91%, while the cycle engine flags XLK late-cycle/do-not-add and froth reads 'leaders distributing under a held index.' Every plane AND the live tape are punishing this zone. I keep only a residual 6% toehold rather than exit — VIX is a low 16 and this is a rotation, not a crash, so I refuse to whipsaw fully out of the structural AI-semi position — but I will not stay concentrated where the confirmed downside is.",
+            "why_now": "Cut decisively — from 16% to 6%. Semis are the exact epicenter of tonight's tape: NQ-100 fut is the weakest US future at -1.10% and KOSPI crashed another -4.91%, while the cycle engine flags XLK late-cycle/do-not-add and froth reads 'leaders distributing under a held index.' Every plane AND the live tape are punishing this zone. I keep only a residual 6% toehold rather than exit — VIX is a low 16 and this is a rotation, not a crash, so I refuse to whipsaw fully out of the structural AI-semi position — but I will not stay concentrated where the confirmed downside is.",
             "bull": [],
             "bear": []
           }
@@ -2662,7 +2533,7 @@
           "weight": 0.0926,
           "verdict": "hold",
           "conviction": "medium",
-          "rationale": "Hold. EMCOR is an electrical/mechanical construction contractor levered to data-center and electrification capex — an XLI industrial, and XLI is one of the cycle engine's ENTRY-favored sectors. Down 6.2% on my cost, but the thesis (infrastructure/AI-buildout services backlog) is intact and the overnight US tape is risk-on. This is a confirmation-stage industrial, not a froth name; I hold through the drawdown rather than sell into a green-futures open.",
+          "rationale": "EMCOR — electrical/mechanical construction contractor levered to data-center/electrification capex, an XLI industrial favored for entry. It carries some AI-buildout correlation so I keep it a notch below the purer industrials given the overnight semi weakness, but the backlog thesis is intact and industrials held tonight. Down ~6% on cost but this is confirmation-stage, not froth; hold ~8%.",
           "opened_at": "2026-06-21T14:26:56.050465+00:00",
           "held_days": 15,
           "cost_basis": 839.0062,
@@ -2671,8 +2542,8 @@
           "unrealized_pnl": -6013.59,
           "unrealized_pct": -6.16,
           "thesis_full": {
-            "summary": "Hold. EMCOR is an electrical/mechanical construction contractor levered to data-center and electrification capex — an XLI industrial, and XLI is one of the cycle engine's ENTRY-favored sectors. Down 6.2% on my cost, but the thesis (infrastructure/AI-buildout services backlog) is intact and the overnight US tape is risk-on. This is a confirmation-stage industrial, not a froth name; I hold through the drawdown rather than sell into a green-futures open.",
-            "why_now": "Hold. EMCOR is an electrical/mechanical construction contractor levered to data-center and electrification capex — an XLI industrial, and XLI is one of the cycle engine's ENTRY-favored sectors. Down 6.2% on my cost, but the thesis (infrastructure/AI-buildout services backlog) is intact and the overnight US tape is risk-on. This is a confirmation-stage industrial, not a froth name; I hold through the drawdown rather than sell into a green-futures open.",
+            "summary": "EMCOR — electrical/mechanical construction contractor levered to data-center/electrification capex, an XLI industrial favored for entry. It carries some AI-buildout correlation so I keep it a notch below the purer industrials given the overnight semi weakness, but the backlog thesis is intact and industrials held tonight. Down ~6% on cost but this is confirmation-stage, not froth; hold ~8%.",
+            "why_now": "EMCOR — electrical/mechanical construction contractor levered to data-center/electrification capex, an XLI industrial favored for entry. It carries some AI-buildout correlation so I keep it a notch below the purer industrials given the overnight semi weakness, but the backlog thesis is intact and industrials held tonight. Down ~6% on cost but this is confirmation-stage, not froth; hold ~8%.",
             "bull": [],
             "bear": []
           }
@@ -2682,8 +2553,8 @@
           "sleeve": "brain",
           "weight": 0.0851,
           "verdict": "hold",
-          "conviction": "medium",
-          "rationale": "Hold. United Rentals is the equipment-rental proxy on US non-residential and infrastructure construction — again XLI, cycle-favored for entry, and modestly green (+1.0%) on my cost. Late-cycle capex and reshoring/data-center buildout keep utilization firm. No signal argues to cut an industrial that the cycle plane favors; keep at ~8.5%.",
+          "conviction": "high",
+          "rationale": "United Rentals — equipment-rental proxy on US non-residential/infrastructure construction, XLI and cycle-favored for ENTRY. This is exactly the cohort that held on tonight's tape: Dow fut +0.21% and Russell +0.22% are GREEN while NQ bleeds -1.10%. Modestly green on cost, liquid, corroborated by the industrials confirmation. No signal argues to cut a cycle-favored industrial that is confirming while tech de-rates; hold at the top of my industrial weights ~8.5%.",
           "opened_at": "2026-06-21T14:26:56.050465+00:00",
           "held_days": 15,
           "cost_basis": 1089.166,
@@ -2692,8 +2563,8 @@
           "unrealized_pnl": 804.1,
           "unrealized_pct": 0.97,
           "thesis_full": {
-            "summary": "Hold. United Rentals is the equipment-rental proxy on US non-residential and infrastructure construction — again XLI, cycle-favored for entry, and modestly green (+1.0%) on my cost. Late-cycle capex and reshoring/data-center buildout keep utilization firm. No signal argues to cut an industrial that the cycle plane favors; keep at ~8.5%.",
-            "why_now": "Hold. United Rentals is the equipment-rental proxy on US non-residential and infrastructure construction — again XLI, cycle-favored for entry, and modestly green (+1.0%) on my cost. Late-cycle capex and reshoring/data-center buildout keep utilization firm. No signal argues to cut an industrial that the cycle plane favors; keep at ~8.5%.",
+            "summary": "United Rentals — equipment-rental proxy on US non-residential/infrastructure construction, XLI and cycle-favored for ENTRY. This is exactly the cohort that held on tonight's tape: Dow fut +0.21% and Russell +0.22% are GREEN while NQ bleeds -1.10%. Modestly green on cost, liquid, corroborated by the industrials confirmation. No signal argues to cut a cycle-favored industrial that is confirming while tech de-rates; hold at the top of my industrial weights ~8.5%.",
+            "why_now": "United Rentals — equipment-rental proxy on US non-residential/infrastructure construction, XLI and cycle-favored for ENTRY. This is exactly the cohort that held on tonight's tape: Dow fut +0.21% and Russell +0.22% are GREEN while NQ bleeds -1.10%. Modestly green on cost, liquid, corroborated by the industrials confirmation. No signal argues to cut a cycle-favored industrial that is confirming while tech de-rates; hold at the top of my industrial weights ~8.5%.",
             "bull": [],
             "bear": []
           }
@@ -2703,8 +2574,8 @@
           "sleeve": "brain",
           "weight": 0.0838,
           "verdict": "hold",
-          "conviction": "medium",
-          "rationale": "Hold. Amphenol — interconnect/sensor supplier riding the same AI-infrastructure and electrification demand, but more industrial-diversified than a pure semi, so it carries less of the late-cycle-XLK stigma. Green on cost (+0.6%), liquid, and corroborated by the XLI entry lean. Hold at ~8.4%.",
+          "conviction": "high",
+          "rationale": "Amphenol rides the AI-infra/electrification demand but is industrial-diversified (XLI), so it carries far less of the late-cycle-XLK stigma being punished on the tape tonight. Green on cost, liquid, corroborated by the XLI entry lean and the Russell/Dow strength. Hold ~8.5%.",
           "opened_at": "2026-06-21T14:26:56.050465+00:00",
           "held_days": 15,
           "cost_basis": 165.768,
@@ -2713,8 +2584,8 @@
           "unrealized_pnl": 517.15,
           "unrealized_pct": 0.63,
           "thesis_full": {
-            "summary": "Hold. Amphenol — interconnect/sensor supplier riding the same AI-infrastructure and electrification demand, but more industrial-diversified than a pure semi, so it carries less of the late-cycle-XLK stigma. Green on cost (+0.6%), liquid, and corroborated by the XLI entry lean. Hold at ~8.4%.",
-            "why_now": "Hold. Amphenol — interconnect/sensor supplier riding the same AI-infrastructure and electrification demand, but more industrial-diversified than a pure semi, so it carries less of the late-cycle-XLK stigma. Green on cost (+0.6%), liquid, and corroborated by the XLI entry lean. Hold at ~8.4%.",
+            "summary": "Amphenol rides the AI-infra/electrification demand but is industrial-diversified (XLI), so it carries far less of the late-cycle-XLK stigma being punished on the tape tonight. Green on cost, liquid, corroborated by the XLI entry lean and the Russell/Dow strength. Hold ~8.5%.",
+            "why_now": "Amphenol rides the AI-infra/electrification demand but is industrial-diversified (XLI), so it carries far less of the late-cycle-XLK stigma being punished on the tape tonight. Green on cost, liquid, corroborated by the XLI entry lean and the Russell/Dow strength. Hold ~8.5%.",
             "bull": [],
             "bear": []
           }
@@ -2724,8 +2595,8 @@
           "sleeve": "brain",
           "weight": 0.0799,
           "verdict": "hold",
-          "conviction": "medium",
-          "rationale": "Hold. Howmet — aerospace/engineered structures, a late-cycle industrial with structural aero-build tailwinds and pricing power; roughly flat on cost (+0.6%). Aerospace demand is one of the more durable industrial narratives and is insulated from the semis/KOSPI warning. Keep at ~8%.",
+          "conviction": "high",
+          "rationale": "Howmet — aerospace/engineered structures, a late-cycle industrial with durable structural aero-build demand and pricing power, roughly flat on cost. This is the holding most insulated from the semis/KOSPI warning and the growth-scare rotation, and it sits in the cyclical-value complex that printed green tonight. Hold ~8.5%.",
           "opened_at": "2026-06-21T14:26:56.050465+00:00",
           "held_days": 15,
           "cost_basis": 276.1437,
@@ -2734,8 +2605,8 @@
           "unrealized_pnl": 502.06,
           "unrealized_pct": 0.64,
           "thesis_full": {
-            "summary": "Hold. Howmet — aerospace/engineered structures, a late-cycle industrial with structural aero-build tailwinds and pricing power; roughly flat on cost (+0.6%). Aerospace demand is one of the more durable industrial narratives and is insulated from the semis/KOSPI warning. Keep at ~8%.",
-            "why_now": "Hold. Howmet — aerospace/engineered structures, a late-cycle industrial with structural aero-build tailwinds and pricing power; roughly flat on cost (+0.6%). Aerospace demand is one of the more durable industrial narratives and is insulated from the semis/KOSPI warning. Keep at ~8%.",
+            "summary": "Howmet — aerospace/engineered structures, a late-cycle industrial with durable structural aero-build demand and pricing power, roughly flat on cost. This is the holding most insulated from the semis/KOSPI warning and the growth-scare rotation, and it sits in the cyclical-value complex that printed green tonight. Hold ~8.5%.",
+            "why_now": "Howmet — aerospace/engineered structures, a late-cycle industrial with durable structural aero-build demand and pricing power, roughly flat on cost. This is the holding most insulated from the semis/KOSPI warning and the growth-scare rotation, and it sits in the cyclical-value complex that printed green tonight. Hold ~8.5%.",
             "bull": [],
             "bear": []
           }
@@ -2745,8 +2616,8 @@
           "sleeve": "brain",
           "weight": 0.0546,
           "verdict": "hold",
-          "conviction": "medium",
-          "rationale": "Hold, do not add. Arista is my best-working tech name (+2.3%) — datacenter networking, an AI-infra beneficiary. But it is tech/late-cycle-adjacent and shares the narrowing-top froth risk, so I hold the existing ~5.5% and decline to size up here despite risk-on futures. If the growth-scare signal resolves higher I'd revisit adding.",
+          "conviction": "low",
+          "rationale": "Arista — datacenter networking / AI-infra, my best-working tech name but tech/late-cycle-adjacent and sharing the narrowing-top froth risk the overnight NQ -1.10% is expressing. Keep the froth trim from the queued target at 4%; I revisit adding only if the growth scare resolves higher and the AI-semi bid stabilizes on the tape.",
           "opened_at": "2026-06-21T14:26:56.050465+00:00",
           "held_days": 15,
           "cost_basis": 169.424,
@@ -2755,8 +2626,8 @@
           "unrealized_pnl": 1201.05,
           "unrealized_pct": 2.28,
           "thesis_full": {
-            "summary": "Hold, do not add. Arista is my best-working tech name (+2.3%) — datacenter networking, an AI-infra beneficiary. But it is tech/late-cycle-adjacent and shares the narrowing-top froth risk, so I hold the existing ~5.5% and decline to size up here despite risk-on futures. If the growth-scare signal resolves higher I'd revisit adding.",
-            "why_now": "Hold, do not add. Arista is my best-working tech name (+2.3%) — datacenter networking, an AI-infra beneficiary. But it is tech/late-cycle-adjacent and shares the narrowing-top froth risk, so I hold the existing ~5.5% and decline to size up here despite risk-on futures. If the growth-scare signal resolves higher I'd revisit adding.",
+            "summary": "Arista — datacenter networking / AI-infra, my best-working tech name but tech/late-cycle-adjacent and sharing the narrowing-top froth risk the overnight NQ -1.10% is expressing. Keep the froth trim from the queued target at 4%; I revisit adding only if the growth scare resolves higher and the AI-semi bid stabilizes on the tape.",
+            "why_now": "Arista — datacenter networking / AI-infra, my best-working tech name but tech/late-cycle-adjacent and sharing the narrowing-top froth risk the overnight NQ -1.10% is expressing. Keep the froth trim from the queued target at 4%; I revisit adding only if the growth scare resolves higher and the AI-semi bid stabilizes on the tape.",
             "bull": [],
             "bear": []
           }
@@ -2767,7 +2638,7 @@
           "weight": 0.0496,
           "verdict": "hold",
           "conviction": "medium",
-          "rationale": "Add slightly (5.0% -> 6.0%). Mercury General is my defensive ballast — P&C insurance, up 7.7% and the only holding immune to the growth-scare/froth/semis complex. With risk_radar flagging defensive rotation (84/100) and the ROTATE_DEFENSIVE shadow posture, nudging the one working insurance/financial-defensive name up is the cheapest way to honor the tilt; XLF/XLV are cycle-favored for entry, corroborating the add beyond the label.",
+          "rationale": "Mercury General — P&C insurance, my defensive ballast and the only holding immune to the growth-scare/froth/semis complex the overnight tape is expressing. Up ~8% on cost. With risk_radar at 84/100 for defensive rotation and the ROTATE_DEFENSIVE shadow posture, nudging the one working insurance/financial-defensive name up is the cheapest way to honor the tilt; XLF/XLV are cycle-favored for entry, corroborating beyond the label. Add to ~6.5%.",
           "opened_at": "2026-06-21T14:26:56.050465+00:00",
           "held_days": 15,
           "cost_basis": 103.1491,
@@ -2776,8 +2647,8 @@
           "unrealized_pnl": 3518.88,
           "unrealized_pct": 7.73,
           "thesis_full": {
-            "summary": "Add slightly (5.0% -> 6.0%). Mercury General is my defensive ballast — P&C insurance, up 7.7% and the only holding immune to the growth-scare/froth/semis complex. With risk_radar flagging defensive rotation (84/100) and the ROTATE_DEFENSIVE shadow posture, nudging the one working insurance/financial-defensive name up is the cheapest way to honor the tilt; XLF/XLV are cycle-favored for entry, corroborating the add beyond the label.",
-            "why_now": "Add slightly (5.0% -> 6.0%). Mercury General is my defensive ballast — P&C insurance, up 7.7% and the only holding immune to the growth-scare/froth/semis complex. With risk_radar flagging defensive rotation (84/100) and the ROTATE_DEFENSIVE shadow posture, nudging the one working insurance/financial-defensive name up is the cheapest way to honor the tilt; XLF/XLV are cycle-favored for entry, corroborating the add beyond the label.",
+            "summary": "Mercury General — P&C insurance, my defensive ballast and the only holding immune to the growth-scare/froth/semis complex the overnight tape is expressing. Up ~8% on cost. With risk_radar at 84/100 for defensive rotation and the ROTATE_DEFENSIVE shadow posture, nudging the one working insurance/financial-defensive name up is the cheapest way to honor the tilt; XLF/XLV are cycle-favored for entry, corroborating beyond the label. Add to ~6.5%.",
+            "why_now": "Mercury General — P&C insurance, my defensive ballast and the only holding immune to the growth-scare/froth/semis complex the overnight tape is expressing. Up ~8% on cost. With risk_radar at 84/100 for defensive rotation and the ROTATE_DEFENSIVE shadow posture, nudging the one working insurance/financial-defensive name up is the cheapest way to honor the tilt; XLF/XLV are cycle-favored for entry, corroborating beyond the label. Add to ~6.5%.",
             "bull": [],
             "bear": []
           }
@@ -2786,9 +2657,9 @@
       "decisions": [
         {
           "subject": "Autonomous book",
-          "lean": "Overnight-review revision. The live US tape is risk-ON (ES +0.77%, NQ +0.83%, RTY +0.51%, VIX -3.59%, 10Y -0.13%, DXY flat) — NOT a selloff, so I am NOT cutting gross aggressively. The \"elevated\" risk flag is Asia-idiosyncratic: KOSPI -4.87%, Nikkei -1.04%, Shanghai -0.52%. But KOSPI's crash is a direct semis warning (Samsung/SK Hynix), and it stacks with three in-house signals — risk_radar growth-scare 84/100, froth 'euphoric, leaders distributing/narrowing-top', and the cycle engine flagging XLK LATE-CYCLE do-not-add. So the single disciplined move is to trim my largest, most froth/late-cycle-exposed name (SMH, 16.1% -> 11%), keep the cycle-favored industrials (XLI is an entry sector: EME/URI/HWM/APH), hold ANET but don't add, and nudge the working defensive (MCY) up. Gross falls 60.7% -> ~56%, cash rises to ~0.44 — aligning with the ROTATE_DEFENSIVE shadow posture's 0.43 offense budget. Charter P1 met: adds/holds are corroborated by the cycle plane (XLI/XLV favored for entry), not the low-confidence Goldilocks label alone.",
-          "thesis": "Trimmed SMH from 16.1% to 11% (~$50k reduced) — cutting the most froth/late-cycle/semis-concentrated exposure into a KOSPI -4.87% chip warning plus in-house froth + XLK-late-cycle + growth-scare signals. Proceeds go to cash (buffer ~44%, matching the 0.43 offense budget) plus a 1pt add to defensive MCY. No full exits — the US tape is risk-on, so this is a concentration trim, not a de-gross.",
-          "logged_at": "2026-07-07T02:22:07.952365+00:00"
+          "lean": "Overnight review for the open: the live tape is a clean growth→value rotation, not a crash — NQ-100 fut -1.10% and KOSPI -4.91% lead down while Dow fut +0.21% and Russell +0.22% hold GREEN, with VIX at an absolute-low 16. This confirms my queued de-risk and lets me push it one notch: cut the semi epicenter (SMH 16%→6%), keep the confirmed cyclical-value industrials that printed green (URI/HWM/APH/EME, all XLI/cycle-favored-entry), keep the froth trim on ANET, and hold the defensive ballast add (MCY). I park the freed capital in cash (~50% gross) rather than add exposure into a blind, elevated-risk open — I settle at the OPEN and can redeploy once it confirms. Multiple planes corroborate beyond the low-confidence Goldilocks label: risk_radar growth-scare 84/100, froth 'leaders distributing,' cycle engine favoring XLI/XLF/XLV entry and flagging XLK do-not-add.",
+          "thesis": "No full exits. SMH cut hard 16%→6% (semi epicenter — NQ weakest future, KOSPI -4.91%, XLK do-not-add, froth distributing). The ~10% of NAV freed is held in CASH, not redeployed, deliberately: risk_state is elevated and I settle at a blind open during a growth scare, so I'd rather redeploy after the open confirms than add gross now. Gross ~50%, honoring the ROTATE_DEFENSIVE tilt.",
+          "logged_at": "2026-07-07T11:22:40.555483+00:00"
         }
       ],
       "pending_orders": [],
@@ -2809,7 +2680,7 @@
         "total_return_pct": -1.1584,
         "vs_spy_pct": -1.7664,
         "benchmark": "SPY",
-        "day_change_pct": 1.2739,
+        "day_change_pct": 0.0,
         "max_drawdown_pct": -3.4066,
         "realized_since": "2026-06-21",
         "series": [
@@ -3370,15 +3241,15 @@
       "kind": "etf_brain",
       "manager": "brain",
       "benchmark": "SPY",
-      "as_of": "2026-07-06",
+      "as_of": "2026-07-07",
       "market_status": {
         "open": false,
-        "asof_et": "2026-07-06T22:24:22.770964-04:00",
+        "asof_et": "2026-07-07T07:25:29.111240-04:00",
         "trading_day": true,
         "holiday": false,
         "next_open": "2026-07-07T09:30:00-04:00",
         "next_open_day": "2026-07-07",
-        "prev_trading_day": "2026-07-02"
+        "prev_trading_day": "2026-07-06"
       },
       "gross": 0.7089,
       "cash": 0.2911,
@@ -3396,7 +3267,7 @@
           "weight": 0.2704,
           "verdict": "hold",
           "conviction": "medium",
-          "rationale": "Core US beta, above 50d and 200d, +7.9% vs 200d. The overnight US tape is firm (ES +0.77%, VIX -3.6%) so I keep full core exposure rather than cutting into a green open. Held flat — the concentration risk the board flags is addressed by shifting *within* equities toward equal-weight, not by dumping broad beta.",
+          "rationale": "Hold. Core US beta, above 50d/200d (+7.9% vs 200d), and the overnight tape is an orderly broad fade — ES only -0.23% with VIX still 16 and no dislocation, so I do not cut broad beta into an orderly tape. The concentration the board flags is addressed by shifting WITHIN equities toward equal-weight (RSP) and small-caps (IWM), not by dumping SPY.",
           "opened_at": "2026-06-23T01:19:49.774519+00:00",
           "held_days": 14,
           "cost_basis": 743.1258,
@@ -3405,8 +3276,8 @@
           "unrealized_pnl": 2883.61,
           "unrealized_pct": 1.1,
           "thesis_full": {
-            "summary": "Core US beta, above 50d and 200d, +7.9% vs 200d. The overnight US tape is firm (ES +0.77%, VIX -3.6%) so I keep full core exposure rather than cutting into a green open. Held flat — the concentration risk the board flags is addressed by shifting *within* equities toward equal-weight, not by dumping broad beta.",
-            "why_now": "Core US beta, above 50d and 200d, +7.9% vs 200d. The overnight US tape is firm (ES +0.77%, VIX -3.6%) so I keep full core exposure rather than cutting into a green open. Held flat — the concentration risk the board flags is addressed by shifting *within* equities toward equal-weight, not by dumping broad beta.",
+            "summary": "Hold. Core US beta, above 50d/200d (+7.9% vs 200d), and the overnight tape is an orderly broad fade — ES only -0.23% with VIX still 16 and no dislocation, so I do not cut broad beta into an orderly tape. The concentration the board flags is addressed by shifting WITHIN equities toward equal-weight (RSP) and small-caps (IWM), not by dumping SPY.",
+            "why_now": "Hold. Core US beta, above 50d/200d (+7.9% vs 200d), and the overnight tape is an orderly broad fade — ES only -0.23% with VIX still 16 and no dislocation, so I do not cut broad beta into an orderly tape. The concentration the board flags is addressed by shifting WITHIN equities toward equal-weight (RSP) and small-caps (IWM), not by dumping SPY.",
             "bull": [],
             "bear": []
           }
@@ -3418,7 +3289,7 @@
           "weight": 0.1197,
           "verdict": "hold",
           "conviction": "high",
-          "rationale": "Cash-equivalent buffer. With risk_state elevated and a *leading* concentration fragility lit, the board's rule is to keep dry powder and not spend into strength. SGOV plus settlement cash keeps ~42% defensive — the right posture for an advisory ROTATE_DEFENSIVE desk with a fragile, transitioning regime read.",
+          "rationale": "Raise the buffer ~3pts with the QQQ proceeds. Risk_state is elevated, a LEADING concentration fragility is lit, and the live tape confirms a tech-led fade that got marginally worse (NQ -1.10%). The board's rule is to de-gross BEFORE the coincident risk gauges catch up and not spend cash into weakness. SGOV plus settlement cash keeps ~45% defensive — the right posture for an advisory ROTATE_DEFENSIVE desk. I use T-bills rather than duration because the 10Y is rising (+0.22% to 4.485%) with a hawkish Fed, so TLT/IEF is not the hedge here.",
           "opened_at": "2026-06-23T01:19:49.774519+00:00",
           "held_days": 14,
           "cost_basis": 100.6186,
@@ -3427,8 +3298,8 @@
           "unrealized_pnl": -209.16,
           "unrealized_pct": -0.18,
           "thesis_full": {
-            "summary": "Cash-equivalent buffer. With risk_state elevated and a *leading* concentration fragility lit, the board's rule is to keep dry powder and not spend into strength. SGOV plus settlement cash keeps ~42% defensive — the right posture for an advisory ROTATE_DEFENSIVE desk with a fragile, transitioning regime read.",
-            "why_now": "Cash-equivalent buffer. With risk_state elevated and a *leading* concentration fragility lit, the board's rule is to keep dry powder and not spend into strength. SGOV plus settlement cash keeps ~42% defensive — the right posture for an advisory ROTATE_DEFENSIVE desk with a fragile, transitioning regime read.",
+            "summary": "Raise the buffer ~3pts with the QQQ proceeds. Risk_state is elevated, a LEADING concentration fragility is lit, and the live tape confirms a tech-led fade that got marginally worse (NQ -1.10%). The board's rule is to de-gross BEFORE the coincident risk gauges catch up and not spend cash into weakness. SGOV plus settlement cash keeps ~45% defensive — the right posture for an advisory ROTATE_DEFENSIVE desk. I use T-bills rather than duration because the 10Y is rising (+0.22% to 4.485%) with a hawkish Fed, so TLT/IEF is not the hedge here.",
+            "why_now": "Raise the buffer ~3pts with the QQQ proceeds. Risk_state is elevated, a LEADING concentration fragility is lit, and the live tape confirms a tech-led fade that got marginally worse (NQ -1.10%). The board's rule is to de-gross BEFORE the coincident risk gauges catch up and not spend cash into weakness. SGOV plus settlement cash keeps ~45% defensive — the right posture for an advisory ROTATE_DEFENSIVE desk. I use T-bills rather than duration because the 10Y is rising (+0.22% to 4.485%) with a hawkish Fed, so TLT/IEF is not the hedge here.",
             "bull": [],
             "bear": []
           }
@@ -3440,7 +3311,7 @@
           "weight": 0.0808,
           "verdict": "hold",
           "conviction": "low",
-          "rationale": "Trimmed from 8% to 6%. Tech is the named unwind vector (fragility dominant driver: AI/semis de-rating; QQQ 20d -6.9%). I keep a residual position because US futures are green and QQQ remains above 200d (+12.4%), but I reduce the concentration the board is warning on rather than add into strength.",
+          "rationale": "Trim to a true residual. Tech is the named unwind vector (fragility dominant driver: AI/semis de-rating) and the fresh overnight tape confirms it is the WORST leg of the complex — Nasdaq-100 futures -1.10% (worse than last run's -0.95%), with KOSPI -4.91% and Nikkei -2.12% flagging an Asia semis/exporter derate. I keep only a residual because QQQ is still above 200d (+12.4%) and the fade is orderly, but I will not hold full weight into a confirmed, marginally-worsening tech unwind. Proceeds go to the cash buffer.",
           "opened_at": "2026-06-23T01:19:49.774519+00:00",
           "held_days": 14,
           "cost_basis": 737.95,
@@ -3449,8 +3320,8 @@
           "unrealized_pnl": -1660.54,
           "unrealized_pct": -2.05,
           "thesis_full": {
-            "summary": "Trimmed from 8% to 6%. Tech is the named unwind vector (fragility dominant driver: AI/semis de-rating; QQQ 20d -6.9%). I keep a residual position because US futures are green and QQQ remains above 200d (+12.4%), but I reduce the concentration the board is warning on rather than add into strength.",
-            "why_now": "Trimmed from 8% to 6%. Tech is the named unwind vector (fragility dominant driver: AI/semis de-rating; QQQ 20d -6.9%). I keep a residual position because US futures are green and QQQ remains above 200d (+12.4%), but I reduce the concentration the board is warning on rather than add into strength.",
+            "summary": "Trim to a true residual. Tech is the named unwind vector (fragility dominant driver: AI/semis de-rating) and the fresh overnight tape confirms it is the WORST leg of the complex — Nasdaq-100 futures -1.10% (worse than last run's -0.95%), with KOSPI -4.91% and Nikkei -2.12% flagging an Asia semis/exporter derate. I keep only a residual because QQQ is still above 200d (+12.4%) and the fade is orderly, but I will not hold full weight into a confirmed, marginally-worsening tech unwind. Proceeds go to the cash buffer.",
+            "why_now": "Trim to a true residual. Tech is the named unwind vector (fragility dominant driver: AI/semis de-rating) and the fresh overnight tape confirms it is the WORST leg of the complex — Nasdaq-100 futures -1.10% (worse than last run's -0.95%), with KOSPI -4.91% and Nikkei -2.12% flagging an Asia semis/exporter derate. I keep only a residual because QQQ is still above 200d (+12.4%) and the fade is orderly, but I will not hold full weight into a confirmed, marginally-worsening tech unwind. Proceeds go to the cash buffer.",
             "bull": [],
             "bear": []
           }
@@ -3462,7 +3333,7 @@
           "weight": 0.0653,
           "verdict": "hold",
           "conviction": "medium",
-          "rationale": "Hold. Industrials carry the strongest near-term momentum among cyclicals (20d +6.99%), above 50d/200d (+12.1%), rank 6 RS. Cyclical breadth that is confirming, not tech-dependent — fits a mid-cycle Goldilocks read and the ROTATE_DEFENSIVE tilt away from crowded AI/semis.",
+          "rationale": "Hold. Industrials carry the strongest near-term momentum among cyclicals (20d +6.99%), above 50d/200d (+12.1%), rank-6 RS. Dow futures are GREEN overnight (+0.21%) while tech sells — confirming cyclical breadth that is not tech-dependent. Fits mid-cycle Goldilocks and the advisory ROTATE_DEFENSIVE tilt away from crowded AI/semis.",
           "opened_at": "2026-06-23T01:19:49.774519+00:00",
           "held_days": 14,
           "cost_basis": 182.5034,
@@ -3471,8 +3342,8 @@
           "unrealized_pnl": 1056.28,
           "unrealized_pct": 1.67,
           "thesis_full": {
-            "summary": "Hold. Industrials carry the strongest near-term momentum among cyclicals (20d +6.99%), above 50d/200d (+12.1%), rank 6 RS. Cyclical breadth that is confirming, not tech-dependent — fits a mid-cycle Goldilocks read and the ROTATE_DEFENSIVE tilt away from crowded AI/semis.",
-            "why_now": "Hold. Industrials carry the strongest near-term momentum among cyclicals (20d +6.99%), above 50d/200d (+12.1%), rank 6 RS. Cyclical breadth that is confirming, not tech-dependent — fits a mid-cycle Goldilocks read and the ROTATE_DEFENSIVE tilt away from crowded AI/semis.",
+            "summary": "Hold. Industrials carry the strongest near-term momentum among cyclicals (20d +6.99%), above 50d/200d (+12.1%), rank-6 RS. Dow futures are GREEN overnight (+0.21%) while tech sells — confirming cyclical breadth that is not tech-dependent. Fits mid-cycle Goldilocks and the advisory ROTATE_DEFENSIVE tilt away from crowded AI/semis.",
+            "why_now": "Hold. Industrials carry the strongest near-term momentum among cyclicals (20d +6.99%), above 50d/200d (+12.1%), rank-6 RS. Dow futures are GREEN overnight (+0.21%) while tech sells — confirming cyclical breadth that is not tech-dependent. Fits mid-cycle Goldilocks and the advisory ROTATE_DEFENSIVE tilt away from crowded AI/semis.",
             "bull": [],
             "bear": []
           }
@@ -3484,7 +3355,7 @@
           "weight": 0.0547,
           "verdict": "hold",
           "conviction": "medium",
-          "rationale": "Hold. Small-caps are the freshest leadership — rank 4 RS, best 20d momentum in the table (+4.74%), 96.8 pctile, +14.4% vs 200d, RTY green overnight (+0.51%). A broadening, non-tech source of beta that diversifies away from the concentrated advance the fragility gauge is flagging.",
+          "rationale": "Hold. Small-caps are the freshest non-tech leadership — rank-4 RS, best 20d momentum in the table (+4.74%), 96.8 pctile, +14.4% vs 200d. Critically, Russell 2000 futures are GREEN overnight (+0.22%) while NQ is -1.10%: small-caps are holding up as the concentrated tech advance fades — exactly the broadening the fragility gauge wants to see, and it strengthened versus last run.",
           "opened_at": "2026-06-23T01:19:49.774519+00:00",
           "held_days": 14,
           "cost_basis": 298.2754,
@@ -3493,8 +3364,8 @@
           "unrealized_pnl": 112.3,
           "unrealized_pct": 0.21,
           "thesis_full": {
-            "summary": "Hold. Small-caps are the freshest leadership — rank 4 RS, best 20d momentum in the table (+4.74%), 96.8 pctile, +14.4% vs 200d, RTY green overnight (+0.51%). A broadening, non-tech source of beta that diversifies away from the concentrated advance the fragility gauge is flagging.",
-            "why_now": "Hold. Small-caps are the freshest leadership — rank 4 RS, best 20d momentum in the table (+4.74%), 96.8 pctile, +14.4% vs 200d, RTY green overnight (+0.51%). A broadening, non-tech source of beta that diversifies away from the concentrated advance the fragility gauge is flagging.",
+            "summary": "Hold. Small-caps are the freshest non-tech leadership — rank-4 RS, best 20d momentum in the table (+4.74%), 96.8 pctile, +14.4% vs 200d. Critically, Russell 2000 futures are GREEN overnight (+0.22%) while NQ is -1.10%: small-caps are holding up as the concentrated tech advance fades — exactly the broadening the fragility gauge wants to see, and it strengthened versus last run.",
+            "why_now": "Hold. Small-caps are the freshest non-tech leadership — rank-4 RS, best 20d momentum in the table (+4.74%), 96.8 pctile, +14.4% vs 200d. Critically, Russell 2000 futures are GREEN overnight (+0.22%) while NQ is -1.10%: small-caps are holding up as the concentrated tech advance fades — exactly the broadening the fragility gauge wants to see, and it strengthened versus last run.",
             "bull": [],
             "bear": []
           }
@@ -3506,7 +3377,7 @@
           "weight": 0.0499,
           "verdict": "hold",
           "conviction": "medium",
-          "rationale": "Added ~3pts. Equal-weight S&P is the direct antidote to the board's lit leading fragility — cross-asset concentration in the top 0% of its 5y range, an AI/semis-led narrow tape. Rotating cap-weight risk into RSP keeps my equity gross roughly flat while lowering single-factor (mega-cap tech) exposure. Above 50d/200d, +9.5% vs 200d.",
+          "rationale": "Hold. Equal-weight S&P is the direct antidote to the board's lit leading fragility — cross-asset concentration in the top 0% of its 5y range with an AI/semis-led narrow tape the overnight tape keeps confirming (NQ -1.10%, KOSPI -4.91%). Holding cap-weight-lite via RSP keeps equity gross broad while cutting mega-cap/tech single-factor exposure. Above 50d/200d, +9.5% vs 200d.",
           "opened_at": "2026-07-02T15:00:04.450824+00:00",
           "held_days": 4,
           "cost_basis": 214.58,
@@ -3515,8 +3386,8 @@
           "unrealized_pnl": 95.76,
           "unrealized_pct": 0.2,
           "thesis_full": {
-            "summary": "Added ~3pts. Equal-weight S&P is the direct antidote to the board's lit leading fragility — cross-asset concentration in the top 0% of its 5y range, an AI/semis-led narrow tape. Rotating cap-weight risk into RSP keeps my equity gross roughly flat while lowering single-factor (mega-cap tech) exposure. Above 50d/200d, +9.5% vs 200d.",
-            "why_now": "Added ~3pts. Equal-weight S&P is the direct antidote to the board's lit leading fragility — cross-asset concentration in the top 0% of its 5y range, an AI/semis-led narrow tape. Rotating cap-weight risk into RSP keeps my equity gross roughly flat while lowering single-factor (mega-cap tech) exposure. Above 50d/200d, +9.5% vs 200d.",
+            "summary": "Hold. Equal-weight S&P is the direct antidote to the board's lit leading fragility — cross-asset concentration in the top 0% of its 5y range with an AI/semis-led narrow tape the overnight tape keeps confirming (NQ -1.10%, KOSPI -4.91%). Holding cap-weight-lite via RSP keeps equity gross broad while cutting mega-cap/tech single-factor exposure. Above 50d/200d, +9.5% vs 200d.",
+            "why_now": "Hold. Equal-weight S&P is the direct antidote to the board's lit leading fragility — cross-asset concentration in the top 0% of its 5y range with an AI/semis-led narrow tape the overnight tape keeps confirming (NQ -1.10%, KOSPI -4.91%). Holding cap-weight-lite via RSP keeps equity gross broad while cutting mega-cap/tech single-factor exposure. Above 50d/200d, +9.5% vs 200d.",
             "bull": [],
             "bear": []
           }
@@ -3528,7 +3399,7 @@
           "weight": 0.0486,
           "verdict": "hold",
           "conviction": "low",
-          "rationale": "Hold. Momentum factor, rank 3 RS, above 50d/200d (+18.8%). It has cooled (20d -2.86%) and carries some of the same crowding the fragility gauge flags, so I keep it at a modest weight rather than adding — a factor sleeve, not a conviction bet.",
+          "rationale": "Hold light. Momentum factor, rank-3 RS, above 50d/200d (+18.8%), but it carries the same AI/semis crowding the fragility gauge flags and the overnight tape is unwinding. A modest factor sleeve, not a conviction bet — kept light, not added, given the concentrated tech-led selloff.",
           "opened_at": "2026-06-23T01:19:49.774519+00:00",
           "held_days": 14,
           "cost_basis": 345.22,
@@ -3537,8 +3408,8 @@
           "unrealized_pnl": -3489.22,
           "unrealized_pct": -6.81,
           "thesis_full": {
-            "summary": "Hold. Momentum factor, rank 3 RS, above 50d/200d (+18.8%). It has cooled (20d -2.86%) and carries some of the same crowding the fragility gauge flags, so I keep it at a modest weight rather than adding — a factor sleeve, not a conviction bet.",
-            "why_now": "Hold. Momentum factor, rank 3 RS, above 50d/200d (+18.8%). It has cooled (20d -2.86%) and carries some of the same crowding the fragility gauge flags, so I keep it at a modest weight rather than adding — a factor sleeve, not a conviction bet.",
+            "summary": "Hold light. Momentum factor, rank-3 RS, above 50d/200d (+18.8%), but it carries the same AI/semis crowding the fragility gauge flags and the overnight tape is unwinding. A modest factor sleeve, not a conviction bet — kept light, not added, given the concentrated tech-led selloff.",
+            "why_now": "Hold light. Momentum factor, rank-3 RS, above 50d/200d (+18.8%), but it carries the same AI/semis crowding the fragility gauge flags and the overnight tape is unwinding. A modest factor sleeve, not a conviction bet — kept light, not added, given the concentrated tech-led selloff.",
             "bull": [],
             "bear": []
           }
@@ -3549,8 +3420,8 @@
           "group": "sectors",
           "weight": 0.0195,
           "verdict": "hold",
-          "conviction": null,
-          "rationale": null,
+          "conviction": "low",
+          "rationale": "Hold minimal. Semis are the epicenter of the derate — KOSPI -4.91% overnight is the loudest tell — and SMH is already the deepest drawdown in the book (-9.7%). I keep only a token residual and do NOT add: rank-1 RS is descriptive (rank-IC~0), and the leading fragility gauge says do not buy what is already most extended and unwinding.",
           "opened_at": "2026-06-23T01:19:49.774519+00:00",
           "held_days": 14,
           "cost_basis": 668.91,
@@ -3558,15 +3429,20 @@
           "market_value": 19172.99,
           "unrealized_pnl": -2049.92,
           "unrealized_pct": -9.66,
-          "thesis_full": null
+          "thesis_full": {
+            "summary": "Hold minimal. Semis are the epicenter of the derate — KOSPI -4.91% overnight is the loudest tell — and SMH is already the deepest drawdown in the book (-9.7%). I keep only a token residual and do NOT add: rank-1 RS is descriptive (rank-IC~0), and the leading fragility gauge says do not buy what is already most extended and unwinding.",
+            "why_now": "Hold minimal. Semis are the epicenter of the derate — KOSPI -4.91% overnight is the loudest tell — and SMH is already the deepest drawdown in the book (-9.7%). I keep only a token residual and do NOT add: rank-1 RS is descriptive (rank-IC~0), and the leading fragility gauge says do not buy what is already most extended and unwinding.",
+            "bull": [],
+            "bear": []
+          }
         }
       ],
       "decisions": [
         {
           "subject": "ETF book",
-          "lean": "Overnight US tape is risk-on into the open (ES +0.77%, NQ +0.83%, RTY +0.51%, VIX -3.6%, 10Y easing) — the 'elevated' risk read is being driven by Asia/Europe (KOSPI -4.87%, Nikkei -1.0%), not US futures. So I do not de-risk aggressively. But the board's LEADING fragility is lit: cross-asset concentration in the top 0% of its 5y range with an AI/semis unwind as the dominant driver, and desk posture is ROTATE_DEFENSIVE (advisory). I resolve the tension by holding equity gross roughly flat (~58%) while rotating composition OFF the concentration vector: exit the extended SMH micro-position (+39% vs 200d, the named unwind), trim cap-weight QQQ, and add equal-weight RSP which directly counters the narrow/concentrated advance. Keep the confirming cyclical/small-cap breadth (IWM, XLI — best 20d momentum in the table) and a ~42% cash+SGOV buffer. Disciplined rotation, not churn: don't chase a green tape into a concentrated market, don't panic-sell a firming US open.",
-          "thesis": "Exited SMH (~2%): it is the single most-extended name in the universe (+39% vs 200d, 20d -6.2%) and sits squarely on the board's named fragility vector (AI/semis unwind). Trimmed QQQ 8%->6% to reduce mega-cap tech concentration. Funded a RSP add 5%->8% (equal-weight, anti-concentration). Net equity gross ~flat; cash buffer ~42%.",
-          "logged_at": "2026-07-07T02:24:22.760542+00:00"
+          "lean": "Overnight-review HOLD-the-structure with one disciplined de-gross. The live tape confirms the thesis this book is already built on: the concentrated AI/semis advance is de-rating (NQ -1.10%, the worst US leg; KOSPI -4.91%, Nikkei -2.12%) while non-tech leadership HOLDS UP and strengthens (Dow fut +0.21%, Russell 2000 +0.22%, both green; ES only -0.23%, VIX still 16 — orderly, not a rout). Leading cross-asset-concentration fragility remains lit and risk_state is elevated. Action: cut the QQQ residual (still sitting at ~8%) to a true ~4.5% since NQ is the worst leg and worsening, and route proceeds to the SGOV buffer (~15%), lifting the defensive sleeve to ~45%. Everything else held — SPY core beta intact into an orderly tape, and the broadening expressions (IWM, XLI, RSP) are doing exactly what I own them for. Rotate with discipline, not churn: one trade, tech-into-cash, justified by the fresh tape.",
+          "thesis": "Trimmed QQQ from ~8% to ~4.5% (a true residual) — Nasdaq-100 futures are the worst leg of the overnight complex at -1.10% and worsening vs the prior run, confirming the AI/semis unwind. Proceeds moved to SGOV to lift the defensive buffer while the leading concentration fragility stays lit. No other changes: the broadening names (IWM, XLI, RSP) are validated by green Dow/Russell futures, so holding them is discipline, not inertia.",
+          "logged_at": "2026-07-07T11:25:29.058052+00:00"
         }
       ],
       "pending_orders": [],
@@ -3587,7 +3463,7 @@
         "total_return_pct": -1.7592,
         "vs_spy_pct": -2.6848,
         "benchmark": "SPY",
-        "day_change_pct": 0.5572,
+        "day_change_pct": 0.0,
         "max_drawdown_pct": -2.6396,
         "realized_since": "2026-06-22",
         "series": [
@@ -4148,20 +4024,20 @@
       "kind": "china_brain",
       "manager": "brain",
       "benchmark": "FXI",
-      "as_of": "2026-07-06",
+      "as_of": "2026-07-07",
       "market_status": {
-        "open": true,
+        "open": false,
         "venue": "A-share (Shanghai/Shenzhen)",
-        "asof": "2026-07-07T09:35:00.514441+08:00",
-        "asof_cst": "2026-07-07T09:35:00.514441+08:00",
+        "asof": "2026-07-07T16:02:18.327873+08:00",
+        "asof_cst": "2026-07-07T16:02:18.327873+08:00",
         "trading_day": true,
         "holiday": false,
         "next_open": "2026-07-08T09:30:00+08:00",
         "next_open_day": "2026-07-08",
         "prev_trading_day": "2026-07-06"
       },
-      "gross": 0.566,
-      "cash": 0.434,
+      "gross": 0.5653,
+      "cash": 0.4347,
       "regime": {
         "quad": "Q3",
         "quad_name": "Stagflation",
@@ -4174,20 +4050,20 @@
           "name": "振德医疗",
           "sleeve": "brain",
           "venue": "A-share",
-          "weight": 0.1429,
+          "weight": 0.146,
           "verdict": "hold",
           "conviction": "high",
-          "rationale": "振德医疗 (603301.SS) remains the top holding and anchor of the healthcare tilt — a corroborated A-share alpha leader (residual alpha 2.69, entry intact) in the tech-decoupled part of the book insulated from the semis/optics complex the desk fades. On tonight's stabilized, tech-led overnight tape (Nasdaq +1.43%, Hang Seng +1.14%) there is no reason to reduce a confirmed defensive alpha leader with an intact entry; in a low-confidence Stagflation quad this is the ballast I want at top weight. Roughly flat for me — setup intact, hold with conviction rather than chase.",
+          "rationale": "振德医疗 (603301.SS) stays the anchor and top weight. It is a corroborated A-share alpha leader (unified intake score 0.762, residual α 2.69, entry intact, lean +1) in the medical-consumables corner of healthcare that is fully decoupled from the extended semis/optics complex the desk is fading. Green for me (+3.5%), setup intact, and precisely the tech-independent ballast I want in a low-confidence stagflation quad. Hold at full weight — no reason to reduce a confirmed defensive alpha leader with an intact entry.",
           "opened_at": "2026-06-23T01:36:10.615687+00:00",
-          "held_days": 13,
+          "held_days": 14,
           "cost_basis": 86.6706,
-          "current_price": 88.0,
-          "market_value": 142279.39,
-          "unrealized_pnl": 2149.4,
-          "unrealized_pct": 1.53,
+          "current_price": 89.72,
+          "market_value": 145060.31,
+          "unrealized_pnl": 4930.31,
+          "unrealized_pct": 3.52,
           "thesis_full": {
-            "summary": "振德医疗 (603301.SS) remains the top holding and anchor of the healthcare tilt — a corroborated A-share alpha leader (residual alpha 2.69, entry intact) in the tech-decoupled part of the book insulated from the semis/optics complex the desk fades. On tonight's stabilized, tech-led overnight tape (Nasdaq +1.43%, Hang Seng +1.14%) there is no reason to reduce a confirmed defensive alpha leader with an intact entry; in a low-confidence Stagflation quad this is the ballast I want at top weight. Roughly flat for me — setup intact, hold with conviction rather than chase.",
-            "why_now": "振德医疗 (603301.SS) remains the top holding and anchor of the healthcare tilt — a corroborated A-share alpha leader (residual alpha 2.69, entry intact) in the tech-decoupled part of the book insulated from the semis/optics complex the desk fades. On tonight's stabilized, tech-led overnight tape (Nasdaq +1.43%, Hang Seng +1.14%) there is no reason to reduce a confirmed defensive alpha leader with an intact entry; in a low-confidence Stagflation quad this is the ballast I want at top weight. Roughly flat for me — setup intact, hold with conviction rather than chase.",
+            "summary": "振德医疗 (603301.SS) stays the anchor and top weight. It is a corroborated A-share alpha leader (unified intake score 0.762, residual α 2.69, entry intact, lean +1) in the medical-consumables corner of healthcare that is fully decoupled from the extended semis/optics complex the desk is fading. Green for me (+3.5%), setup intact, and precisely the tech-independent ballast I want in a low-confidence stagflation quad. Hold at full weight — no reason to reduce a confirmed defensive alpha leader with an intact entry.",
+            "why_now": "振德医疗 (603301.SS) stays the anchor and top weight. It is a corroborated A-share alpha leader (unified intake score 0.762, residual α 2.69, entry intact, lean +1) in the medical-consumables corner of healthcare that is fully decoupled from the extended semis/optics complex the desk is fading. Green for me (+3.5%), setup intact, and precisely the tech-independent ballast I want in a low-confidence stagflation quad. Hold at full weight — no reason to reduce a confirmed defensive alpha leader with an intact entry.",
             "bull": [],
             "bear": []
           }
@@ -4197,20 +4073,20 @@
           "name": "药石科技",
           "sleeve": "brain",
           "venue": "A-share",
-          "weight": 0.1201,
+          "weight": 0.1173,
           "verdict": "hold",
           "conviction": "medium",
-          "rationale": "药石科技 (300725.SZ) is my CXO/Innovative-Pharma holding, on the buy board as UPTREND (hold, add on dips; entry full, alpha 0.46 intact) and modestly green (+2%). Innovative-Drugs momentum is turning up (+20% 20d) off a depressed 252d base — a healthy confirmation setup inside a healthcare complex decoupled from the global tech-led tape. The stabilized overnight backdrop supports holding the confirmed uptrend near full weight; I add only on dips, not into strength.",
+          "rationale": "药石科技 (300725.SZ) is my CXO/innovative-pharma exposure, on the buy board as UPTREND (hold, add on dips; full entry, α 0.46). Innovative-Drugs momentum has turned up sharply on a 20d basis (+20%) off a depressed 60d/252d base — a healthy confirmation setup inside a healthcare complex insulated from the global tech tape. Roughly flat for me; I hold near full weight and add only on dips, not into strength.",
           "opened_at": "2026-07-01T01:35:03.767703+00:00",
-          "held_days": 5,
+          "held_days": 6,
           "cost_basis": 36.7084,
-          "current_price": 37.45,
-          "market_value": 119577.85,
-          "unrealized_pnl": 2368.03,
-          "unrealized_pct": 2.02,
+          "current_price": 36.51,
+          "market_value": 116576.43,
+          "unrealized_pnl": -633.39,
+          "unrealized_pct": -0.54,
           "thesis_full": {
-            "summary": "药石科技 (300725.SZ) is my CXO/Innovative-Pharma holding, on the buy board as UPTREND (hold, add on dips; entry full, alpha 0.46 intact) and modestly green (+2%). Innovative-Drugs momentum is turning up (+20% 20d) off a depressed 252d base — a healthy confirmation setup inside a healthcare complex decoupled from the global tech-led tape. The stabilized overnight backdrop supports holding the confirmed uptrend near full weight; I add only on dips, not into strength.",
-            "why_now": "药石科技 (300725.SZ) is my CXO/Innovative-Pharma holding, on the buy board as UPTREND (hold, add on dips; entry full, alpha 0.46 intact) and modestly green (+2%). Innovative-Drugs momentum is turning up (+20% 20d) off a depressed 252d base — a healthy confirmation setup inside a healthcare complex decoupled from the global tech-led tape. The stabilized overnight backdrop supports holding the confirmed uptrend near full weight; I add only on dips, not into strength.",
+            "summary": "药石科技 (300725.SZ) is my CXO/innovative-pharma exposure, on the buy board as UPTREND (hold, add on dips; full entry, α 0.46). Innovative-Drugs momentum has turned up sharply on a 20d basis (+20%) off a depressed 60d/252d base — a healthy confirmation setup inside a healthcare complex insulated from the global tech tape. Roughly flat for me; I hold near full weight and add only on dips, not into strength.",
+            "why_now": "药石科技 (300725.SZ) is my CXO/innovative-pharma exposure, on the buy board as UPTREND (hold, add on dips; full entry, α 0.46). Innovative-Drugs momentum has turned up sharply on a 20d basis (+20%) off a depressed 60d/252d base — a healthy confirmation setup inside a healthcare complex insulated from the global tech tape. Roughly flat for me; I hold near full weight and add only on dips, not into strength.",
             "bull": [],
             "bear": []
           }
@@ -4220,20 +4096,20 @@
           "name": "京新药业",
           "sleeve": "brain",
           "venue": "A-share",
-          "weight": 0.1079,
+          "weight": 0.109,
           "verdict": "hold",
-          "conviction": "high",
-          "rationale": "京新药业 (002020.SZ) is my clearest winner (+14%) and ballast of the pharma tilt. Nothing in the desk read or tonight's tape argues to take the trend off — pharma is precisely where a stagflation regime rewards you, and the name is decoupled from any tech move. Confirmation over prediction: I let the winner run at a full-but-not-oversized weight and keep the time-stop discipline intact.",
+          "conviction": "medium",
+          "rationale": "京新药业 (002020.SZ) is the clearest winner in the book (+14.9%) and ballast of the generics/API pharma tilt. Stagflation is precisely where defensive pharma earns its keep, and the name is decoupled from any tech move. Confirmation over prediction: I let the winner run at a full-but-not-oversized weight and keep the time-stop discipline intact — nothing in the desk read or tape argues to take the trend off.",
           "opened_at": "2026-07-01T01:35:03.767703+00:00",
-          "held_days": 5,
+          "held_days": 6,
           "cost_basis": 13.0961,
-          "current_price": 14.93,
-          "market_value": 107406.42,
-          "unrealized_pnl": 13192.86,
-          "unrealized_pct": 14.0,
+          "current_price": 15.05,
+          "market_value": 108269.7,
+          "unrealized_pnl": 14056.14,
+          "unrealized_pct": 14.92,
           "thesis_full": {
-            "summary": "京新药业 (002020.SZ) is my clearest winner (+14%) and ballast of the pharma tilt. Nothing in the desk read or tonight's tape argues to take the trend off — pharma is precisely where a stagflation regime rewards you, and the name is decoupled from any tech move. Confirmation over prediction: I let the winner run at a full-but-not-oversized weight and keep the time-stop discipline intact.",
-            "why_now": "京新药业 (002020.SZ) is my clearest winner (+14%) and ballast of the pharma tilt. Nothing in the desk read or tonight's tape argues to take the trend off — pharma is precisely where a stagflation regime rewards you, and the name is decoupled from any tech move. Confirmation over prediction: I let the winner run at a full-but-not-oversized weight and keep the time-stop discipline intact.",
+            "summary": "京新药业 (002020.SZ) is the clearest winner in the book (+14.9%) and ballast of the generics/API pharma tilt. Stagflation is precisely where defensive pharma earns its keep, and the name is decoupled from any tech move. Confirmation over prediction: I let the winner run at a full-but-not-oversized weight and keep the time-stop discipline intact — nothing in the desk read or tape argues to take the trend off.",
+            "why_now": "京新药业 (002020.SZ) is the clearest winner in the book (+14.9%) and ballast of the generics/API pharma tilt. Stagflation is precisely where defensive pharma earns its keep, and the name is decoupled from any tech move. Confirmation over prediction: I let the winner run at a full-but-not-oversized weight and keep the time-stop discipline intact — nothing in the desk read or tape argues to take the trend off.",
             "bull": [],
             "bear": []
           }
@@ -4243,20 +4119,20 @@
           "name": "三七互娱",
           "sleeve": "brain",
           "venue": "A-share",
-          "weight": 0.0778,
+          "weight": 0.0801,
           "verdict": "hold",
           "conviction": "medium",
-          "rationale": "三七互娱 (002555.SZ) is my communication-services diversifier — mobile gaming is counter-cyclical, cash-generative and decoupled from the semis/optics selloff the desk fades. It is the top-conviction name on today's A-share buy board (BOTTOMING, 'now' urgency, conviction 63, alpha 0.82 entry intact) and down only modestly for me; the base thesis is intact. Held at a half-entry starter, add only on a confirmed base rather than averaging into an unconfirmed turn.",
+          "rationale": "三七互娱 (002555.SZ) is my communication-services diversifier and the top-conviction non-pharma name the desk flags — BOTTOMING with 'now' urgency, conviction 63, residual α 0.82, entry intact. Mobile gaming is counter-cyclical, cash-generative and fully decoupled from the semis/optics selloff the desk fades. Flat for me with the base thesis intact; I add from the half-entry starter toward ~10% on the confirmed turn, keeping one genuine sector away from the pharma concentration.",
           "opened_at": "2026-07-06T01:35:06.122811+00:00",
-          "held_days": 0,
+          "held_days": 1,
           "cost_basis": 19.41,
-          "current_price": 18.92,
-          "market_value": 77458.48,
-          "unrealized_pnl": -2006.06,
-          "unrealized_pct": -2.52,
+          "current_price": 19.43,
+          "market_value": 79546.42,
+          "unrealized_pnl": 81.88,
+          "unrealized_pct": 0.1,
           "thesis_full": {
-            "summary": "三七互娱 (002555.SZ) is my communication-services diversifier — mobile gaming is counter-cyclical, cash-generative and decoupled from the semis/optics selloff the desk fades. It is the top-conviction name on today's A-share buy board (BOTTOMING, 'now' urgency, conviction 63, alpha 0.82 entry intact) and down only modestly for me; the base thesis is intact. Held at a half-entry starter, add only on a confirmed base rather than averaging into an unconfirmed turn.",
-            "why_now": "三七互娱 (002555.SZ) is my communication-services diversifier — mobile gaming is counter-cyclical, cash-generative and decoupled from the semis/optics selloff the desk fades. It is the top-conviction name on today's A-share buy board (BOTTOMING, 'now' urgency, conviction 63, alpha 0.82 entry intact) and down only modestly for me; the base thesis is intact. Held at a half-entry starter, add only on a confirmed base rather than averaging into an unconfirmed turn.",
+            "summary": "三七互娱 (002555.SZ) is my communication-services diversifier and the top-conviction non-pharma name the desk flags — BOTTOMING with 'now' urgency, conviction 63, residual α 0.82, entry intact. Mobile gaming is counter-cyclical, cash-generative and fully decoupled from the semis/optics selloff the desk fades. Flat for me with the base thesis intact; I add from the half-entry starter toward ~10% on the confirmed turn, keeping one genuine sector away from the pharma concentration.",
+            "why_now": "三七互娱 (002555.SZ) is my communication-services diversifier and the top-conviction non-pharma name the desk flags — BOTTOMING with 'now' urgency, conviction 63, residual α 0.82, entry intact. Mobile gaming is counter-cyclical, cash-generative and fully decoupled from the semis/optics selloff the desk fades. Flat for me with the base thesis intact; I add from the half-entry starter toward ~10% on the confirmed turn, keeping one genuine sector away from the pharma concentration.",
             "bull": [],
             "bear": []
           }
@@ -4266,20 +4142,20 @@
           "name": "海正药业",
           "sleeve": "brain",
           "venue": "A-share",
-          "weight": 0.0623,
+          "weight": 0.0604,
           "verdict": "hold",
           "conviction": "medium",
-          "rationale": "海正药业 (600267.SS) deepens the confirmed, tech-decoupled healthcare edge — buy-board BOTTOMING with 'now' urgency, residual alpha ~0.79 with an intact half-entry, and green for me (+4%). Sized as a half-entry starter given it is still early in the base; on tonight's stabilized tape I hold and add only on further cycle confirmation.",
+          "rationale": "海正药业 (600267.SS) deepens the confirmed, tech-decoupled healthcare edge — buy-board BOTTOMING with 'now' urgency, residual α 0.79 with entry intact, and green for me (+0.8%). Still early in the base, so I add only modestly from the half-entry starter to ~8% and let further cycle confirmation earn any additional size.",
           "opened_at": "2026-07-06T01:35:06.122811+00:00",
-          "held_days": 0,
+          "held_days": 1,
           "cost_basis": 10.53,
-          "current_price": 10.95,
-          "market_value": 61977.0,
-          "unrealized_pnl": 2377.2,
-          "unrealized_pct": 3.99,
+          "current_price": 10.61,
+          "market_value": 60052.6,
+          "unrealized_pnl": 452.8,
+          "unrealized_pct": 0.76,
           "thesis_full": {
-            "summary": "海正药业 (600267.SS) deepens the confirmed, tech-decoupled healthcare edge — buy-board BOTTOMING with 'now' urgency, residual alpha ~0.79 with an intact half-entry, and green for me (+4%). Sized as a half-entry starter given it is still early in the base; on tonight's stabilized tape I hold and add only on further cycle confirmation.",
-            "why_now": "海正药业 (600267.SS) deepens the confirmed, tech-decoupled healthcare edge — buy-board BOTTOMING with 'now' urgency, residual alpha ~0.79 with an intact half-entry, and green for me (+4%). Sized as a half-entry starter given it is still early in the base; on tonight's stabilized tape I hold and add only on further cycle confirmation.",
+            "summary": "海正药业 (600267.SS) deepens the confirmed, tech-decoupled healthcare edge — buy-board BOTTOMING with 'now' urgency, residual α 0.79 with entry intact, and green for me (+0.8%). Still early in the base, so I add only modestly from the half-entry starter to ~8% and let further cycle confirmation earn any additional size.",
+            "why_now": "海正药业 (600267.SS) deepens the confirmed, tech-decoupled healthcare edge — buy-board BOTTOMING with 'now' urgency, residual α 0.79 with entry intact, and green for me (+0.8%). Still early in the base, so I add only modestly from the half-entry starter to ~8% and let further cycle confirmation earn any additional size.",
             "bull": [],
             "bear": []
           }
@@ -4289,20 +4165,20 @@
           "name": "一品红",
           "sleeve": "brain",
           "venue": "A-share",
-          "weight": 0.055,
+          "weight": 0.0525,
           "verdict": "hold",
-          "conviction": "medium",
-          "rationale": "一品红 (300723.SZ) is the new position, funded by exiting 海康威视. It is the single highest-conviction confirmed healthcare name on today's board — BOTTOMING with 'imminent' urgency, conviction 71 in the HIGH band, residual alpha 0.73 entry intact, and corroborated on the unified intake (score 0.71). Adding a half-entry starter (~5.5%) on a stabilized, mildly risk-on overnight tape is a measured lean-back-in that keeps the defensive healthcare tilt rather than adding tech beta. Priceable at CNY40.5; I size small and add only on further confirmation.",
+          "conviction": "high",
+          "rationale": "一品红 (300723.SS→300723.SZ) is the single highest-conviction confirmed name on today's board — BOTTOMING with 'imminent' urgency, conviction 71 in the HIGH band, residual α 0.73 with entry intact, and corroborated on the unified intake (score 0.71). It is down 4.7% for me, but BOTTOMING means the base isn't expected green yet and the entry gate is still open. I add from a half-entry toward a fuller position (~10%) as a measured, confirmed lean-back-in that deepens the defensive healthcare edge rather than adding tech beta. Priceable at CNY38.6.",
           "opened_at": "2026-07-07T01:35:00.490332+00:00",
           "held_days": 0,
           "cost_basis": 40.5,
-          "current_price": 40.5,
-          "market_value": 54715.5,
-          "unrealized_pnl": 0.0,
-          "unrealized_pct": 0.0,
+          "current_price": 38.6,
+          "market_value": 52148.6,
+          "unrealized_pnl": -2566.9,
+          "unrealized_pct": -4.69,
           "thesis_full": {
-            "summary": "一品红 (300723.SZ) is the new position, funded by exiting 海康威视. It is the single highest-conviction confirmed healthcare name on today's board — BOTTOMING with 'imminent' urgency, conviction 71 in the HIGH band, residual alpha 0.73 entry intact, and corroborated on the unified intake (score 0.71). Adding a half-entry starter (~5.5%) on a stabilized, mildly risk-on overnight tape is a measured lean-back-in that keeps the defensive healthcare tilt rather than adding tech beta. Priceable at CNY40.5; I size small and add only on further confirmation.",
-            "why_now": "一品红 (300723.SZ) is the new position, funded by exiting 海康威视. It is the single highest-conviction confirmed healthcare name on today's board — BOTTOMING with 'imminent' urgency, conviction 71 in the HIGH band, residual alpha 0.73 entry intact, and corroborated on the unified intake (score 0.71). Adding a half-entry starter (~5.5%) on a stabilized, mildly risk-on overnight tape is a measured lean-back-in that keeps the defensive healthcare tilt rather than adding tech beta. Priceable at CNY40.5; I size small and add only on further confirmation.",
+            "summary": "一品红 (300723.SS→300723.SZ) is the single highest-conviction confirmed name on today's board — BOTTOMING with 'imminent' urgency, conviction 71 in the HIGH band, residual α 0.73 with entry intact, and corroborated on the unified intake (score 0.71). It is down 4.7% for me, but BOTTOMING means the base isn't expected green yet and the entry gate is still open. I add from a half-entry toward a fuller position (~10%) as a measured, confirmed lean-back-in that deepens the defensive healthcare edge rather than adding tech beta. Priceable at CNY38.6.",
+            "why_now": "一品红 (300723.SS→300723.SZ) is the single highest-conviction confirmed name on today's board — BOTTOMING with 'imminent' urgency, conviction 71 in the HIGH band, residual α 0.73 with entry intact, and corroborated on the unified intake (score 0.71). It is down 4.7% for me, but BOTTOMING means the base isn't expected green yet and the entry gate is still open. I add from a half-entry toward a fuller position (~10%) as a measured, confirmed lean-back-in that deepens the defensive healthcare edge rather than adding tech beta. Priceable at CNY38.6.",
             "bull": [],
             "bear": []
           }
@@ -4311,9 +4187,9 @@
       "decisions": [
         {
           "subject": "China book",
-          "lean": "Overnight-review rebalance for 2026-07-06. The live overnight tape has STABILIZED, not sold off — Shanghai flat (-0.06%), Hang Seng +1.14% (China risk appetite improving), Nasdaq-100 futures +1.43% and S&P +0.49% (tech-led bid), VIX only +0.74%, 10Y yield -0.13%. That is a hold/lean-back-in tape, not a de-risk one, so I keep the confirmed defensive core intact rather than raise cash. The book stays a tech-decoupled, healthcare-anchored defensive posture appropriate to a low-confidence (0.19) Stagflation quad with elevated drawdown risk and the ROTATE_DEFENSIVE shadow posture (offense budget ~0.43): ~57% invested / ~43% cash. The one change is thesis-tightening: I EXIT 海康威视 (002415.SZ) — the lone holding with no rationale on file, red, sitting in the semis/optics/tech-hardware complex the desk flags as extended and distributing, with zero corroboration on today's boards — and redeploy a half-entry starter into 一品红 (300723.SZ), the highest-conviction confirmed healthcare buy-board name today. Holds: 振德医疗 (603301.SS), 药石科技 (300725.SZ), 京新药业 (002020.SZ), 三七互娱 (002555.SZ), 海正药业 (600267.SS).</summary>\n<sold_note>Exited 海康威视 (002415.SZ), previously ~6% — the only holding with no rationale on file, red (-1.08%), in the semis/optics/tech-hardware complex the desk explicitly fades as extended and distributing, and with zero corroboration on today's buy board or intake. Tonight's tech-led overnight pop (Nasdaq-100 fut +1.43%) is the counter-trend strength to sell into, not chase. Proceeds redeployed into a half-entry starter in 一品红 (300723.SZ), a confirmed high-conviction healthcare bottoming name, keeping gross invested ~57% and cash ~43%.</sold_note>\n</invoke>",
-          "thesis": "",
-          "logged_at": "2026-07-07T01:35:00.511904+00:00"
+          "lean": "China book stays a healthcare-tilted, tech-decoupled defensive posture and steps deployment from ~56% to ~66% invested, holding ~34% cash as a deliberate buffer against a fragile, low-confidence regime transition. Frame: Q3 Stagflation (confidence 0.185, pending Q2), liquidity neutral with an easing impulse, Fear/Euphoria in Greed but 'divergent, no consensus' (breadth/margin risk-off vs turnover/copper-gold risk-on). By doctrine I detect what has already turned rather than chase the desk's mean-reversion-into-laggards idea, since Defense/NEV/Coal show no price follow-through. The desk instead keeps corroborating my own names with 'now/imminent' urgency and intact entries, so I add conviction there. Anchor 振德医疗 (603301.SS, 15%, alpha leader intact); CXO uptrend 药石科技 (300725.SZ, 12%); winner-let-run 京新药业 (002020.SZ, 11%, +15%); highest-conviction bottoming add 一品红 (300723.SZ, 10%, conviction 71 HIGH); gaming diversifier 三七互娱 (002555.SZ, 10%, α 0.82); early-base starter 海正药业 (600267.SS, 8%). All six confirmed priceable in native CNY.",
+          "thesis": "No exits. Rebalance is additive within the existing thesis: added conviction to 一品红 (300723.SZ, ~5.3%→10%), 三七互娱 (002555.SZ, ~8%→10%) and 海正药业 (600267.SS, ~6%→8%), funded from cash; anchor/winner/uptrend names held near current weights. Passed on the desk's laggard mean-reversion ideas (Defense/NEV/Coal) and off-thesis buy-zone names (e.g. 鸣志电器) for lack of confirmed price follow-through / negative alpha.\"",
+          "logged_at": "2026-07-07T08:02:18.327225+00:00"
         }
       ],
       "pending_orders": [],
@@ -4328,13 +4204,13 @@
       "performance": {
         "inception_date": "2026-06-21",
         "starting_nav": 1000000.0,
-        "current_nav": 995370.21,
+        "current_nav": 993609.63,
         "cash": 431955.57,
-        "invested": 563414.64,
-        "total_return_pct": -0.463,
-        "vs_spy_pct": 1.9335,
+        "invested": 561654.06,
+        "total_return_pct": -0.639,
+        "vs_spy_pct": 1.7574,
         "benchmark": "FXI",
-        "day_change_pct": 0.1883,
+        "day_change_pct": -0.1769,
         "max_drawdown_pct": -2.5244,
         "realized_since": "2026-06-21",
         "series": [
@@ -4895,20 +4771,20 @@
       "kind": "hk_brain",
       "manager": "brain",
       "benchmark": "FXI",
-      "as_of": "2026-07-06",
+      "as_of": "2026-07-07",
       "market_status": {
         "open": false,
         "venue": "A-share (Shanghai/Shenzhen)",
-        "asof": "2026-07-06T17:20:11.364383+08:00",
-        "asof_cst": "2026-07-06T17:20:11.364383+08:00",
+        "asof": "2026-07-07T17:02:37.368996+08:00",
+        "asof_cst": "2026-07-07T17:02:37.368996+08:00",
         "trading_day": true,
         "holiday": false,
-        "next_open": "2026-07-07T09:30:00+08:00",
-        "next_open_day": "2026-07-07",
-        "prev_trading_day": "2026-07-03"
+        "next_open": "2026-07-08T09:30:00+08:00",
+        "next_open_day": "2026-07-08",
+        "prev_trading_day": "2026-07-06"
       },
-      "gross": 0.4186,
-      "cash": 0.5814,
+      "gross": 0.4155,
+      "cash": 0.5845,
       "regime": {
         "quad": "Q3",
         "quad_name": "Stagflation",
@@ -4921,111 +4797,148 @@
           "name": "China Life",
           "sleeve": "brain",
           "venue": "HK",
-          "weight": 0.1437,
+          "weight": 0.1386,
           "verdict": "hold",
-          "conviction": null,
-          "rationale": null,
+          "conviction": "medium",
+          "rationale": "China Life (2628.HK) is the largest financials position and sits in the HK Financials/Insurers RS-leader group the desk brief highlights. As a rate-sensitive insurer it is a direct beneficiary of the building PBoC easing-reflation impulse (transmission chain 2/5 aligned), and it carries a defensive dividend. Modestly in the green; I hold it as the core of the defense sleeve.",
           "opened_at": "2026-06-22T16:02:17.968634+00:00",
-          "held_days": 13,
+          "held_days": 14,
           "cost_basis": 27.9125,
-          "current_price": 29.52,
-          "market_value": 140629.72,
-          "unrealized_pnl": 7658.16,
-          "unrealized_pct": 5.76,
-          "thesis_full": null
+          "current_price": 28.3,
+          "market_value": 134817.78,
+          "unrealized_pnl": 1846.22,
+          "unrealized_pct": 1.39,
+          "thesis_full": {
+            "summary": "China Life (2628.HK) is the largest financials position and sits in the HK Financials/Insurers RS-leader group the desk brief highlights. As a rate-sensitive insurer it is a direct beneficiary of the building PBoC easing-reflation impulse (transmission chain 2/5 aligned), and it carries a defensive dividend. Modestly in the green; I hold it as the core of the defense sleeve.",
+            "why_now": "China Life (2628.HK) is the largest financials position and sits in the HK Financials/Insurers RS-leader group the desk brief highlights. As a rate-sensitive insurer it is a direct beneficiary of the building PBoC easing-reflation impulse (transmission chain 2/5 aligned), and it carries a defensive dividend. Modestly in the green; I hold it as the core of the defense sleeve.",
+            "bull": [],
+            "bear": []
+          }
         },
         {
           "ticker": "0700.HK",
           "name": "Tencent",
           "sleeve": "brain",
           "venue": "HK",
-          "weight": 0.1241,
+          "weight": 0.1274,
           "verdict": "hold",
-          "conviction": null,
-          "rationale": null,
+          "conviction": "high",
+          "rationale": "Tencent (0700.HK) is my quality tech/offense anchor and a top FXI constituent. It is up ~5.7% for the book, sits on durable gaming/advertising/fintech cash flows, and is the cleanest way to hold the China AI/tech-policy narrative the desk flags as the risk to the mean-reversion thesis. In a defensive book benchmarked to FXI, keeping Tencent as the largest single position limits tech tracking error while remaining a franchise I would hold through a drawdown.",
           "opened_at": "2026-06-22T16:02:17.968634+00:00",
-          "held_days": 13,
+          "held_days": 14,
           "cost_basis": 436.493,
-          "current_price": 452.0,
-          "market_value": 121445.43,
-          "unrealized_pnl": 4166.49,
-          "unrealized_pct": 3.55,
-          "thesis_full": null
+          "current_price": 461.2,
+          "market_value": 123917.33,
+          "unrealized_pnl": 6638.39,
+          "unrealized_pct": 5.66,
+          "thesis_full": {
+            "summary": "Tencent (0700.HK) is my quality tech/offense anchor and a top FXI constituent. It is up ~5.7% for the book, sits on durable gaming/advertising/fintech cash flows, and is the cleanest way to hold the China AI/tech-policy narrative the desk flags as the risk to the mean-reversion thesis. In a defensive book benchmarked to FXI, keeping Tencent as the largest single position limits tech tracking error while remaining a franchise I would hold through a drawdown.",
+            "why_now": "Tencent (0700.HK) is my quality tech/offense anchor and a top FXI constituent. It is up ~5.7% for the book, sits on durable gaming/advertising/fintech cash flows, and is the cleanest way to hold the China AI/tech-policy narrative the desk flags as the risk to the mean-reversion thesis. In a defensive book benchmarked to FXI, keeping Tencent as the largest single position limits tech tracking error while remaining a franchise I would hold through a drawdown.",
+            "bull": [],
+            "bear": []
+          }
         },
         {
           "ticker": "1093.HK",
           "name": "CSPC Pharmaceutical",
           "sleeve": "brain",
           "venue": "HK",
-          "weight": 0.0575,
+          "weight": 0.0553,
           "verdict": "hold",
-          "conviction": null,
-          "rationale": null,
+          "conviction": "medium",
+          "rationale": "CSPC Pharmaceutical (1093.HK) is my best-performing holding (+12.9%) and rides the innovative-drugs theme, which shows strong near-term momentum (+20% 20d in the A-share innovative-drugs basket). Healthcare/pharma is a defensive-growth pocket that is relatively insulated from the HK risk-off/peg dynamics. I hold the position at roughly its current size, letting a winner run without adding into strength.",
           "opened_at": "2026-07-01T01:35:06.770648+00:00",
-          "held_days": 5,
+          "held_days": 6,
           "cost_basis": 6.97,
-          "current_price": 8.23,
-          "market_value": 56243.82,
-          "unrealized_pnl": 8610.84,
-          "unrealized_pct": 18.08,
-          "thesis_full": null
+          "current_price": 7.87,
+          "market_value": 53783.58,
+          "unrealized_pnl": 6150.6,
+          "unrealized_pct": 12.91,
+          "thesis_full": {
+            "summary": "CSPC Pharmaceutical (1093.HK) is my best-performing holding (+12.9%) and rides the innovative-drugs theme, which shows strong near-term momentum (+20% 20d in the A-share innovative-drugs basket). Healthcare/pharma is a defensive-growth pocket that is relatively insulated from the HK risk-off/peg dynamics. I hold the position at roughly its current size, letting a winner run without adding into strength.",
+            "why_now": "CSPC Pharmaceutical (1093.HK) is my best-performing holding (+12.9%) and rides the innovative-drugs theme, which shows strong near-term momentum (+20% 20d in the A-share innovative-drugs basket). Healthcare/pharma is a defensive-growth pocket that is relatively insulated from the HK risk-off/peg dynamics. I hold the position at roughly its current size, letting a winner run without adding into strength.",
+            "bull": [],
+            "bear": []
+          }
         },
         {
           "ticker": "1398.HK",
           "name": "ICBC",
           "sleeve": "brain",
           "venue": "HK",
-          "weight": 0.0344,
+          "weight": 0.035,
           "verdict": "hold",
-          "conviction": null,
-          "rationale": null,
+          "conviction": "medium",
+          "rationale": "ICBC (1398.HK) is part of the H-share bank dividend-defense sleeve. It is underwater (-5%) but the HK-specific relative-strength read favors HK financials/banks, and the mega-cap SOE banks offer high, defensive dividend yield that suits ROTATE_DEFENSIVE and a low-conviction tape. I size it up modestly from a token weight to make it a meaningful defensive contributor rather than a stub.",
           "opened_at": "2026-06-22T16:02:17.968634+00:00",
-          "held_days": 13,
+          "held_days": 14,
           "cost_basis": 6.85,
-          "current_price": 6.43,
-          "market_value": 33692.07,
-          "unrealized_pnl": -2200.73,
-          "unrealized_pct": -6.13,
-          "thesis_full": null
+          "current_price": 6.49,
+          "market_value": 34006.46,
+          "unrealized_pnl": -1886.34,
+          "unrealized_pct": -5.26,
+          "thesis_full": {
+            "summary": "ICBC (1398.HK) is part of the H-share bank dividend-defense sleeve. It is underwater (-5%) but the HK-specific relative-strength read favors HK financials/banks, and the mega-cap SOE banks offer high, defensive dividend yield that suits ROTATE_DEFENSIVE and a low-conviction tape. I size it up modestly from a token weight to make it a meaningful defensive contributor rather than a stub.",
+            "why_now": "ICBC (1398.HK) is part of the H-share bank dividend-defense sleeve. It is underwater (-5%) but the HK-specific relative-strength read favors HK financials/banks, and the mega-cap SOE banks offer high, defensive dividend yield that suits ROTATE_DEFENSIVE and a low-conviction tape. I size it up modestly from a token weight to make it a meaningful defensive contributor rather than a stub.",
+            "bull": [],
+            "bear": []
+          }
         },
         {
           "ticker": "3988.HK",
           "name": "Bank of China",
           "sleeve": "brain",
           "venue": "HK",
-          "weight": 0.0295,
+          "weight": 0.0297,
           "verdict": "hold",
-          "conviction": null,
-          "rationale": null,
+          "conviction": "low",
+          "rationale": "Bank of China (3988.HK) rounds out the H-share bank dividend sleeve alongside ICBC. It is my worst holding (-7.8%), but I keep it for the same reasons: HK financials lead RS in the desk read, and SOE-bank dividend yield is defensive ballast. Conviction is low given the loss and the weak A-share bank RS, so I hold it at a smaller weight than ICBC and will cut if HK financial RS rolls over.",
           "opened_at": "2026-06-22T16:02:17.968634+00:00",
-          "held_days": 13,
+          "held_days": 14,
           "cost_basis": 5.23,
           "current_price": 4.82,
           "market_value": 28893.95,
           "unrealized_pnl": -2457.78,
           "unrealized_pct": -7.84,
-          "thesis_full": null
+          "thesis_full": {
+            "summary": "Bank of China (3988.HK) rounds out the H-share bank dividend sleeve alongside ICBC. It is my worst holding (-7.8%), but I keep it for the same reasons: HK financials lead RS in the desk read, and SOE-bank dividend yield is defensive ballast. Conviction is low given the loss and the weak A-share bank RS, so I hold it at a smaller weight than ICBC and will cut if HK financial RS rolls over.",
+            "why_now": "Bank of China (3988.HK) rounds out the H-share bank dividend sleeve alongside ICBC. It is my worst holding (-7.8%), but I keep it for the same reasons: HK financials lead RS in the desk read, and SOE-bank dividend yield is defensive ballast. Conviction is low given the loss and the weak A-share bank RS, so I hold it at a smaller weight than ICBC and will cut if HK financial RS rolls over.",
+            "bull": [],
+            "bear": []
+          }
         },
         {
           "ticker": "0006.HK",
           "name": "Power Assets",
           "sleeve": "brain",
           "venue": "HK",
-          "weight": 0.0294,
+          "weight": 0.0295,
           "verdict": "hold",
-          "conviction": null,
-          "rationale": null,
+          "conviction": "low",
+          "rationale": "Power Assets (0006.HK) is the one HK name still on the desk buy board (label 'nearing a low', defensive utility exposure screen). It is a low-beta, high-dividend utility that fits the defensive posture and provides diversification away from financials and tech. Small weight, held as regime-appropriate ballast rather than a conviction idea.",
           "opened_at": "2026-07-03T01:35:00.962739+00:00",
-          "held_days": 3,
+          "held_days": 4,
           "cost_basis": 56.55,
-          "current_price": 56.55,
-          "market_value": 28783.95,
-          "unrealized_pnl": 0.0,
-          "unrealized_pct": 0.0,
-          "thesis_full": null
+          "current_price": 56.3,
+          "market_value": 28656.7,
+          "unrealized_pnl": -127.25,
+          "unrealized_pct": -0.44,
+          "thesis_full": {
+            "summary": "Power Assets (0006.HK) is the one HK name still on the desk buy board (label 'nearing a low', defensive utility exposure screen). It is a low-beta, high-dividend utility that fits the defensive posture and provides diversification away from financials and tech. Small weight, held as regime-appropriate ballast rather than a conviction idea.",
+            "why_now": "Power Assets (0006.HK) is the one HK name still on the desk buy board (label 'nearing a low', defensive utility exposure screen). It is a low-beta, high-dividend utility that fits the defensive posture and provides diversification away from financials and tech. Small weight, held as regime-appropriate ballast rather than a conviction idea.",
+            "bull": [],
+            "bear": []
+          }
         }
       ],
-      "decisions": [],
+      "decisions": [
+        {
+          "subject": "China book",
+          "lean": "HK book benchmarked to FXI, repositioned from a 58%-cash posture (an unconfirmed short-vs-benchmark bet) to ~34% cash with a defensive tilt. The China read is genuinely low-confidence: Q3 stagflation but pending-Q2 recovery, easing impulse building, Fear/Euphoria in Greed (72, divergent). HK is growth-scare/risk-off with a weak peg, yet the desk flags HK Financials/Banks leading relative strength and property recovering. Desk buy boards are thin (only Power Assets on the HK board; intake empty), so I keep a meaningful cash buffer rather than chasing unconfirmed names. Structure: Tencent (0700.HK) + a modest Alibaba (9988.HK) as the tech/offense anchor and to cap my single biggest FXI tracking gap; China Life (2628.HK) + ICBC (1398.HK) + Bank of China (3988.HK) as the financials/dividend-defense sleeve that the HK RS read supports; China Mobile (0941.HK) as a new defensive telecom FXI anchor; CSPC Pharmaceutical (1093.HK) riding the innovative-drugs momentum; Power Assets (0006.HK) as utility defense and the one name the HK buy board still flags. Offense ~22%, defense ~40%, ~34% cash — consistent with the shadow ROTATE_DEFENSIVE posture and low conviction.",
+          "thesis": "No outright exits. Reduced cash from ~58% to ~34% by adding two new defensive/tracking anchors — China Mobile (0941.HK) and a modest Alibaba (9988.HK) — and modestly sizing up the existing financials and Tencent. Kept both H-share banks (ICBC, Bank of China) despite being underwater because the HK-specific RS read favors HK financials and they pay defensive dividends.",
+          "logged_at": "2026-07-07T09:02:37.367173+00:00"
+        }
+      ],
       "pending_orders": [],
       "research_held": [],
       "track_record": null,
@@ -5038,13 +4951,13 @@
       "performance": {
         "inception_date": "2026-06-21",
         "starting_nav": 1000000.0,
-        "current_nav": 978576.03,
+        "current_nav": 972962.89,
         "cash": 568887.09,
-        "invested": 409688.94,
-        "total_return_pct": -2.1424,
-        "vs_spy_pct": 0.1999,
+        "invested": 404075.8,
+        "total_return_pct": -2.7037,
+        "vs_spy_pct": -0.2713,
         "benchmark": "FXI",
-        "day_change_pct": 1.2452,
+        "day_change_pct": -0.5736,
         "max_drawdown_pct": -5.9056,
         "realized_since": "2026-06-21",
         "series": [

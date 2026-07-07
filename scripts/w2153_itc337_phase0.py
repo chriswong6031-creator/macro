@@ -70,6 +70,18 @@ AMENDMENT A2: SECTOR MAPPING
   absent for a ticker, it is excluded from the G2 sector check but included
   in return statistics.
 
+AMENDMENT A4: RESPONDENT PARSER COMPLAINANT-CONTAMINATION FIX (pre-registered
+  before re-run; prompted by reviewer finding — see _extract_respondents_from_text
+  docstring for full rationale).
+  The prior parser fell through to a full-text corp_pat sweep, which captured
+  the SUMMARY-section "on behalf of [COMPLAINANT]" clause. 28/99 E1 mapped events
+  (28%) and 2/60 E2 events were complainants, not respondents. The full-text
+  sweep also captured boilerplate fragments as entity names (e.g. AMZN "on the
+  Amazon website" E2 event). Fix: target the ITC-standard "(b) The respondent(s)
+  are/is" section header; skip the "(a) The complainant(s)" block; drop "on
+  behalf of" and statute/boilerplate lines; remove the corp_pat fallback.
+  After this fix the event tables are regenerated from cached text files.
+
 AMENDMENT A3: E2 ADVERSE CLASSIFIER TIGHTENING (pre-registered before re-run;
   prompted by reviewer finding that original filter admitted FAVORABLE outcomes)
   The original E2 title-keyword filter admitted:
@@ -424,96 +436,150 @@ def _fetch_doc_text(doc_number: str, pub_date: str) -> str | None:
 # TEXT PARSING — respondent extraction
 # ---------------------------------------------------------------------------
 
-_RESPONDENT_HEADER_PAT = re.compile(
-    r"(?:Respondent[s]?\s*[:;]|Named\s+as\s+[Rr]espondent[s]?|"
-    r"The\s+following\s+firms?\s+(?:is|are)\s+(?:named|listed)\s+as\s+[Rr]espondent[s]?)",
+# ITC Section 337 institution notices have a consistent structure:
+#   (a) The complainant(s) are/is: <complainant list>
+#   (b) The respondent(s) are/is the following entities alleged to be in violation...
+#   (c) The Office of Unfair Import Investigations ...
+#
+# AMENDMENT A4 (pre-registered before re-run; prompted by reviewer finding):
+# The prior parser used a generic "Respondents:" header which never matched the
+# actual ITC boilerplate "(b) The respondents are...".  It therefore fell through
+# to the corp_pat full-text sweep, which captured the SUMMARY preamble clause
+# "on behalf of [COMPLAINANT]" — tagging complainants as respondents (28/99 E1
+# mapped events, 2/60 E2).  Additionally the full-text fallback matched
+# boilerplate fragments such as "on the Amazon website are among the DI Products"
+# as respondent names (AMZN E2).
+#
+# Fix: (1) target the specific ITC "(b) The respondent" header; (2) explicitly
+# skip the "(a) The complainant" block; (3) drop any line containing "on behalf
+# of" (complainant-preamble leakage); (4) drop statute/boilerplate lines
+# (containing "Tariff Act", "U.S.C.", "section 337", "19 CFR", "CFR 210");
+# (5) remove the full-text corp_pat fallback entirely — it is too promiscuous.
+
+# Primary pattern: matches "(b) The respondent(s) are/is ..."
+_RESPONDENT_B_PAT = re.compile(
+    r"^\s*\(b\)\s+The\s+respondent[s]?\s+(?:are|is)\b",
+    re.IGNORECASE
+)
+# Also handles rare "Respondents:" label style (no "(b)" wrapper)
+_RESPONDENT_LABEL_PAT = re.compile(
+    r"^\s*Respondent[s]?\s*:\s*",
+    re.IGNORECASE
+)
+# Complainant block opener — skip everything from (a) until (b) or blank gap
+_COMPLAINANT_A_PAT = re.compile(
+    r"^\s*\(a\)\s+The\s+complainant[s]?\s+(?:are|is)\b",
+    re.IGNORECASE
+)
+# Respondent section ends when we hit (c) or known section headers
+_RESPONDENT_END_PAT = re.compile(
+    r"^\s*\(c\)\s+The\s+Office|"
+    r"FOR\s+FURTHER\s+INFORMATION|"
+    r"SUPPLEMENTARY\s+INFORMATION|"
+    r"DATES\s*:|ACTION\s*:|SUMMARY\s*:|AGENCY\s*:",
+    re.IGNORECASE
+)
+# Lines to drop inside respondent section: boilerplate / statute / complainant preamble
+_RESPONDENT_SKIP_PAT = re.compile(
+    r"on\s+behalf\s+of|"                          # complainant preamble
+    r"Tariff\s+Act|U\.S\.C\.|19\s+CFR|CFR\s+210|" # statute references
+    r"section\s+337\b|19\s+U\.S\.C\.\s*1337|"     # statute
+    r"alleged\s+to\s+be\s+in\s+violation|"         # boilerplate phrase
+    r"violation\s+of\s+section|"                   # boilerplate phrase
+    r"parties?\s+upon\s+which|"                    # boilerplate phrase
+    r"complaint\s+is\s+to\s+be\s+served|"          # boilerplate phrase
+    r"notice\s+of\s+investigation\s+shall\s+be\s+served",  # boilerplate
     re.IGNORECASE
 )
 
-_SECTION_END_PAT = re.compile(
-    r"(?:Complainant[s]?\s*[:;]|Commission\s+Investigative|"
-    r"Notice\s+of\s+Investigation|Pursuant\s+to|FOR\s+FURTHER\s+INFORMATION|"
-    r"SUPPLEMENTARY\s+INFORMATION|DATES\s*:|ACTION\s*:|SUMMARY\s*:)",
-    re.IGNORECASE
-)
 
 def _extract_respondents_from_text(text: str) -> list[str]:
-    """Parse respondent company names from a Federal Register notice text.
+    """Parse respondent company names from a Federal Register ITC Section 337 notice.
 
-    Strategy:
-    1. Find the 'Respondents:' section header.
-    2. Extract lines until the next section header or 200-char gap with no names.
-    3. Each bullet line / named entity is a potential respondent.
+    Strategy (Amendment A4 — see header comment above):
+    1. Scan for the ITC-standard '(b) The respondent(s) are/is' section header.
+       Skip over the preceding '(a) The complainant(s)' block entirely.
+    2. Collect entity lines until '(c) The Office' or the next major section header.
+    3. Drop lines containing complainant-preamble or statute/boilerplate patterns.
+    4. No full-text fallback corp_pat — too promiscuous and captured SUMMARY names.
+
     Returns a list of raw company name strings (before mapping).
+    Complainant names (which appear in '(a)' block and 'on behalf of' preamble)
+    are never returned.
     """
     if not text:
         return []
 
     lines = text.splitlines()
-    in_respondents = False
+    state = "scanning"   # states: scanning | in_complainant | in_respondent
     respondent_lines: list[str] = []
     consecutive_blank = 0
 
-    for i, line in enumerate(lines):
+    for line in lines:
         stripped = line.strip()
 
-        if not in_respondents:
-            if _RESPONDENT_HEADER_PAT.search(stripped):
-                in_respondents = True
-                # Sometimes the names are on the same line after the colon
-                # E.g. "Respondents: Acme Corp, FooBar Ltd"
-                after = _RESPONDENT_HEADER_PAT.split(stripped, maxsplit=1)
-                remainder = after[-1].strip(" :;") if len(after) > 1 else ""
-                if remainder and len(remainder) > 3:
-                    respondent_lines.append(remainder)
+        if state == "scanning":
+            # Detect the complainant block opener — skip it
+            if _COMPLAINANT_A_PAT.search(stripped):
+                state = "in_complainant"
+                continue
+            # Detect the respondent block opener
+            if _RESPONDENT_B_PAT.search(stripped) or _RESPONDENT_LABEL_PAT.search(stripped):
+                state = "in_respondent"
+                # The header line itself (e.g. "(b) The respondents are...") is boilerplate
+                continue
             continue
 
-        # We're in the respondents section
-        if _SECTION_END_PAT.search(stripped):
-            break   # Hit next section header
-
-        if not stripped:
-            consecutive_blank += 1
-            if consecutive_blank > 3:
+        elif state == "in_complainant":
+            # Skip everything until we see the respondent block opener
+            if _RESPONDENT_B_PAT.search(stripped) or _RESPONDENT_LABEL_PAT.search(stripped):
+                state = "in_respondent"
+                continue
+            # Safety: if we somehow hit (c) without seeing (b), bail
+            if _RESPONDENT_END_PAT.search(stripped):
                 break
             continue
-        else:
-            consecutive_blank = 0
 
-        # Skip lines that are clearly not company names
-        if len(stripped) < 4:
-            continue
-        if stripped.startswith(("AGENCY:", "ACTION:", "SUMMARY:", "DATES:")):
-            break
+        else:  # state == "in_respondent"
+            # End of respondent section
+            if _RESPONDENT_END_PAT.search(stripped):
+                break
 
-        respondent_lines.append(stripped)
+            if not stripped:
+                consecutive_blank += 1
+                if consecutive_blank > 3:
+                    break
+                continue
+            else:
+                consecutive_blank = 0
 
-    # Also try to extract from "337-TA-XXX" context and surrounding text
-    # by looking for all-caps entity names with "Inc", "Corp", "Ltd", "LLC"
-    corp_pat = re.compile(
-        r"([A-Z][A-Za-z0-9\s,\.\-\'&/]+?(?:Inc\.?|Corp\.?|Ltd\.?|LLC\.?|"
-        r"L\.L\.C\.?|Co\.?|Limited|Corporation|Company|Technologies|Systems|"
-        r"Electronics|Semiconductor|Networks|Industries|Group|Holdings))",
-        re.MULTILINE
-    )
+            # Skip very short lines, known section starts, and boilerplate
+            if len(stripped) < 4:
+                continue
+            if stripped.startswith(("AGENCY:", "ACTION:", "SUMMARY:", "DATES:")):
+                break
+            if _RESPONDENT_SKIP_PAT.search(stripped):
+                continue
 
-    # If we found explicit respondent section, use those; otherwise try corp_pat
-    if respondent_lines:
-        names = []
-        for rl in respondent_lines:
-            # Split by commas and semicolons for multi-name lines
-            parts = re.split(r'[;,]', rl)
-            for p in parts:
-                p = p.strip().strip(".-•–—*·")
-                # Remove trailing country/state parentheticals like "(Japan)" or "(Delaware)"
-                p = re.sub(r'\s*\([^)]*\)\s*$', '', p).strip()
-                if len(p) > 4:
-                    names.append(p)
-        return names
-    else:
-        # Fallback: extract all company-name-pattern matches from full text
-        matches = corp_pat.findall(text)
-        return list(dict.fromkeys(m.strip() for m in matches if len(m.strip()) > 4))[:30]
+            respondent_lines.append(stripped)
+
+    if not respondent_lines:
+        return []
+
+    names = []
+    for rl in respondent_lines:
+        # Split by semicolons (some lines list multiple entities)
+        parts = re.split(r';', rl)
+        for p in parts:
+            p = p.strip().strip(".-•–—*·()")
+            # Remove trailing address fragments: ", City, State" or "(Country)"
+            p = re.sub(r'\s*\([^)]*\)\s*$', '', p).strip()
+            # Drop pure address lines: lines that start with a number (street address)
+            if re.match(r'^\d', p):
+                continue
+            if len(p) > 4:
+                names.append(p)
+    return names
 
 
 def _extract_inv_number(text: str, title: str, docket_ids: str) -> str | None:
@@ -1060,24 +1126,39 @@ def apply_gates(results: dict) -> dict:
 
 def compute_coverage(rmap: dict, ev_e1: pd.DataFrame, ev_e2: pd.DataFrame,
                      all_tickers: list[str]) -> dict:
-    """Summarize ticker map coverage and event counts."""
+    """Summarize ticker map coverage, tier accounting, and provenance."""
     mapped_tickers_a = {p: info for p, info in rmap.items()
                         if info["tier"] == "A" and info["ticker"]}
+    mapped_tickers_b = {p: info for p, info in rmap.items()
+                        if info["tier"] == "B"}
     mapped_tickers_x = {p: info for p, info in rmap.items()
                         if info["tier"] == "X"}
 
     e1_mapped = ev_e1[ev_e1["ticker"] != ""] if not ev_e1.empty else pd.DataFrame()
     e2_mapped = ev_e2[ev_e2["ticker"] != ""] if not ev_e2.empty else pd.DataFrame()
 
+    # Provenance: all ticker matches come from Tier-A patterns (Tier-B/X are
+    # excluded by match_respondent). Report respondent-confirmed vs unmatched.
+    e1_respondent_confirmed = len(e1_mapped)  # all are respondents (Amendment A4)
+    e2_respondent_confirmed = len(e2_mapped)
+    e1_unmatched = len(ev_e1) - e1_respondent_confirmed if not ev_e1.empty else 0
+    e2_unmatched = len(ev_e2) - e2_respondent_confirmed if not ev_e2.empty else 0
+
     return {
         "n_patterns_tier_a": len(mapped_tickers_a),
+        "n_patterns_tier_b": len(mapped_tickers_b),
         "n_patterns_tier_x": len(mapped_tickers_x),
+        "n_patterns_total":  len(rmap),
         "distinct_us_tickers_in_map": len({info["ticker"] for info in mapped_tickers_a.values()}),
         "e1_total_respondent_rows": len(ev_e1),
-        "e1_mapped_ticker_rows":   len(e1_mapped),
-        "e1_unique_tickers":       sorted(e1_mapped["ticker"].unique().tolist()) if not e1_mapped.empty else [],
+        "e1_respondent_confirmed":  e1_respondent_confirmed,
+        "e1_unmatched_rows":        e1_unmatched,
+        "e1_mapped_ticker_rows":    e1_respondent_confirmed,
+        "e1_unique_tickers":        sorted(e1_mapped["ticker"].unique().tolist()) if not e1_mapped.empty else [],
         "e2_total_respondent_rows": len(ev_e2),
-        "e2_mapped_ticker_rows":    len(e2_mapped),
+        "e2_respondent_confirmed":  e2_respondent_confirmed,
+        "e2_unmatched_rows":        e2_unmatched,
+        "e2_mapped_ticker_rows":    e2_respondent_confirmed,
         "e2_unique_tickers":        sorted(e2_mapped["ticker"].unique().tolist()) if not e2_mapped.empty else [],
         "tickers_with_prices":      sorted(t for t in all_tickers if
                                            (PRICE_DAY_DIR / f"{t}.parquet").exists() or
@@ -1170,22 +1251,35 @@ def write_report(results: dict, gates: dict, coverage: dict,
         "**PIT fence:** E1 = FR publication date + 1 BD; E2 = FR publication date.  ",
         "",
         f"**Respondent map:** {coverage['n_patterns_tier_a']} US-listed patterns (Tier-A), "
-        f"{coverage['n_patterns_tier_x']} private/foreign-listed (Tier-X, excluded).  ",
+        f"{coverage['n_patterns_tier_b']} foreign-primary-listed (Tier-B, excluded), "
+        f"{coverage['n_patterns_tier_x']} private/unlisted (Tier-X, excluded) "
+        f"= {coverage['n_patterns_total']} total patterns.  ",
         f"**Distinct US tickers in map:** {coverage['distinct_us_tickers_in_map']}",
         "",
-        "**Mapping coverage statement:**",
-        "Many ITC 337 respondents are foreign companies (Asian OEM manufacturers,",
-        "Korean conglomerates, European industrials) or private US entities — these",
-        "are marked Tier-X and excluded from the return study. Only US-listed",
-        "companies with tradable tickers contribute to the event study. Coverage is",
-        "biased toward large-cap technology respondents (Apple, Qualcomm, etc.) where",
-        "ITC cases are most frequently filed against US-listed companies.",
+        "**Parser provenance (Amendment A4):**",
+        "All respondent names are extracted exclusively from the ITC-standard",
+        "'(b) The respondent(s) are/is' section of each Federal Register notice.",
+        "The preceding '(a) The complainant(s)' block is skipped. Lines containing",
+        "'on behalf of' or statute/boilerplate text are dropped before matching.",
+        "This prevents complainant names from the SUMMARY preamble clause",
+        "('complaint filed on behalf of [COMPLAINANT]') from being tagged as",
+        "respondents. No full-text fallback pattern is used.",
         "",
         "| Metric | E1 (institution) | E2 (adverse final) |",
         "|--------|-----------------|-------------------|",
-        f"| Total respondent-notice rows | {coverage['e1_total_respondent_rows']} | {coverage['e2_total_respondent_rows']} |",
-        f"| Rows with mapped US ticker | {coverage['e1_mapped_ticker_rows']} | {coverage['e2_mapped_ticker_rows']} |",
+        f"| Total respondent-section rows parsed | {coverage['e1_total_respondent_rows']} | {coverage['e2_total_respondent_rows']} |",
+        f"| Respondent-confirmed, mapped US ticker (Tier-A) | {coverage['e1_respondent_confirmed']} | {coverage['e2_respondent_confirmed']} |",
+        f"| Not matched (foreign/private/unknown) | {coverage['e1_unmatched_rows']} | {coverage['e2_unmatched_rows']} |",
         f"| Unique US tickers mapped | {len(coverage['e1_unique_tickers'])} | {len(coverage['e2_unique_tickers'])} |",
+        "",
+        "**Mapping coverage statement:**",
+        "Most ITC 337 respondents are foreign manufacturers (Asian OEMs, Korean",
+        "conglomerates, European industrials) or private US entities — Tier-X and",
+        "Tier-B patterns are excluded from the return study. Only Tier-A (US-listed",
+        "with tradable tickers) contribute to the event study. Coverage is biased",
+        "toward large-cap technology respondents where ITC cases most frequently",
+        "name US-listed companies. Tier-B patterns (5 in map) cover foreign-primary",
+        "listings (e.g. Samsung KQ) with no US price data — treated as excluded.",
         "",
         f"**E1 mapped tickers:** {', '.join(coverage['e1_unique_tickers']) or 'none'}  ",
         f"**E2 mapped tickers:** {', '.join(coverage['e2_unique_tickers']) or 'none'}  ",

@@ -2,48 +2,72 @@
 
 # Active Build Map
 
-Generated: 2026-07-07T07:07:39.542770+00:00  |  Open PRs: 18  |  Merged (window): 500  |  base: `17245c495cb7463ae40d5744036066c667829107`
+Generated: 2026-07-07T13:06:18.739383+00:00  |  Open PRs: 14  |  Merged (window): 500  |  base: `86714265a55694758314938d01377a5c1772e081`
 
 ## Open PRs
 
 | PR | Title | Branch | Updated | Flags |
 |----|-------|--------|---------|-------|
-| #1820 | feat(options): Package E — strike×expiry matrix engine + one-shot publisher | `feat/momoedge-wave3-matrix` | 2026-07-07 | ⚠ protected:1 |
-| #1819 | feat(committee): translate the dense-web small nodes to Chinese | `claude/committee-wiring-i18n` | 2026-07-07 | — |
-| #1818 | fix(alerts): watchlist sentinel — adapt fetch to live two-table Supabase schema, require operator UUID | `codex-docket/sentinel-schema-fix` | 2026-07-07 | ⚠ protected:1 |
-| #1780 | chore(policy): scheduled intel refresh 2026-07-06 | `policy-intel-refresh-20260706` | 2026-07-07 | ⚠ CONFLICTING |
-| #1763 | data(options): W5-B signed-tape pilot + resumable backfill state machine (20 names x 60d) | `feat/w5b-options-tape-pilot` | 2026-07-07 | — |
-| #1760 | data(china): block-trade tape archiver + SW-L1 mapping — F5-01 accrual infra | `feat/f501-cn-block-tape-archiver` | 2026-07-07 | — |
-| #1758 | feat(housing): Redfin/ZORI HF product + conditioning phase-0 — NULL | `feat/w2051-housing-hf-product` | 2026-07-07 | — |
-| #1757 | test(index): d2 Russell deletion overshoot phase-0 — DESCRIPTIVE/ACCRUAL (n=3 valid, descriptive-honesty) | `feat/d2-russell-deletion-phase0` | 2026-07-07 | — |
-| #1756 | test(legal): ITC-337 exclusion-risk phase-0 — NULL | `feat/w2153-itc337-phase0` | 2026-07-07 | — |
-| #1753 | test(bottoms): w5 trade-size capitulation phase-0 — PARTIAL (frozen prereg) | `feat/w5-trade-size-capitulation-phase0` | 2026-07-07 | — |
-| #1752 | test(filings): d2 comment-letter release-lag phase-0 — NULL | `feat/d2-comment-letter-release-phase0` | 2026-07-07 | — |
-| #1746 | test(credit): CMDI conditioning phase-0 — FAIL (T1+T3) / T2 PASS after identical-dates fix | `feat/w2104-cmdi-conditioning-phase0` | 2026-07-07 | — |
-| #1745 | test(labor): WARN intensity phase-0 — DATA-BLOCKED (consolidated feed) | `feat/w2044-warn-intensity-phase0` | 2026-07-06 | — |
-| #1744 | test(rates): d2 rates-calendar flows phase-0 — SCORED V3 month-end extension (auction cycle + quarter-end + extension day) | `feat/d2-rates-calendar-flows-phase0` | 2026-07-06 | — |
-| #1743 | data(consumer): TSA daily throughput collector + display product (2019->) | `feat/w2061-tsa-throughput-product` | 2026-07-06 | — |
+| #1860 | fix(banks): survivorship correction + deseasonalization + PIT fixes — w3 bank-stress | `feat/w3-bank-callreport-stress` | 2026-07-07 | ⚠ CONFLICTING |
+| #1859 | fix(collect): align duplicate FRED series aliases — unbreak 8-run fred adapter outage | `fix/fred-duplicate-series-alias` | 2026-07-07 | — |
+| #1857 | research(stock-personality): W3 compat study harness + trial pre-registration | `feat/stock-personality-w3` | 2026-07-07 | ⚠ CONFLICTING / ⚠ protected:1 |
+| #1855 | research(oracle): OTA-RC-1 — W2 member-transmission under macro-episode clustering + period-matched R3 (adjudication pending) | `rc/ota-rc1-w2-episode` | 2026-07-07 | — |
+| #1850 | research(dispersion): HC-RC-1 — R-1 construction divergence under real co-firing block inference (adjudication pending) | `rc/hc-rc1-r1-blockfix` | 2026-07-07 | — |
+| #1848 | data(china): block-trade tape archiver + SW-L1 mapping — F5-01 accrual infra | `feat/f501-cn-block-tape-archiver` | 2026-07-07 | ⚠ CONFLICTING |
+| #1847 | test(legal): ITC-337 exclusion-risk phase-0 — NULL (parser contamination fix) | `feat/w2153-itc337-phase0` | 2026-07-07 | ⚠ CONFLICTING |
+| #1845 | data(options): W5-B signed-tape pilot + resumable backfill state machine (20 names x 60d) | `feat/w5b-options-tape-pilot` | 2026-07-07 | — |
+| #1844 | data(consumer): TSA daily throughput collector + display product (2019->) | `feat/w2061-tsa-throughput-product` | 2026-07-07 | — |
+| #1840 | feat(tech-lab): StockInvest technical-indicator machine — lab façade + 43-signal engine suite + catalog/score/confluence | `claude/tender-lamarr-ab4a36` | 2026-07-07 | ⚠ protected:3 |
+| #1780 | chore(policy): scheduled intel refresh 2026-07-06 | `policy-intel-refresh-20260706` | 2026-07-07 | — |
 | #1639 | research(ontology): W4.7 — pos_v2 acceptance study [HOLD: peak gate IQR 48.8 > 25] | `wave/w4-7-axis-flip` | 2026-07-06 | — |
-| #1635 | feat(nw-macro-rail): R5 — macro context intake & memory rail (world_state lobes, snapshot registry, spine stamps, weather page) | `feat/nw-macro-context` | 2026-07-06 | ⚠ CONFLICTING / ⚠ protected:15 |
-| #1565 | entry-stack(W2-SSQ): squeeze-release species phase0 study | `esx/ssq` | 2026-07-07 | ⚠ CONFLICTING / ⚠ protected:1 |
+| #1635 | feat(nw-macro-rail): R5 — macro context intake & memory rail (world_state lobes, snapshot registry, spine stamps, weather page) | `feat/nw-macro-context` | 2026-07-06 | ⚠ protected:15 |
+| #1565 | entry-stack(W2-SSQ): squeeze-release species phase0 study | `esx/ssq` | 2026-07-07 | ⚠ protected:1 |
 
 > ⚠ CONFLICTING means mergeStateStatus=DIRTY — pull_request CI is suppressed on conflicting PRs (known repo failure mode).
+> ℹ 7 of 14 PRs: mergeability not yet computed by GitHub (UNKNOWN).
 
 ## File Collisions
 
 | PR A | PR B | Shared files | Files |
 |------|------|-------------|-------|
-| #1820 | #1635 | 1 ⚠ | `config/synapse.yml` |
-| #1819 | #1635 | 1 | `templates/committee.html.j2` |
-| #1818 | #1635 | 1 ⚠ | `.github/workflows/daily.yml` |
-| #1763 | #1758 | 1 | `.gitignore` |
-| #1763 | #1752 | 1 | `.gitignore` |
-| #1758 | #1752 | 1 | `.gitignore` |
+| #1840 | #1635 | 4 ⚠ | `.github/workflows/daily.yml`, `config/synapse.yml`, `engine/neuralweb/query.py`, `templates/_navlinks.html.j2` |
+| #1857 | #1565 | 1 ⚠ | `data/experiments/registry_seed.json` |
+| #1848 | #1845 | 1 | `.gitignore` |
 
 ## Recently Merged (last 14 days) (showing most recent 500; window truncated)
 
 | PR | Title | Merged |
 |----|-------|--------|
+| #1858 | feat(china-intel): politburo_econ + cewc communiqué backfill (W1.1) — readout filters, archive fast-path, gov.cn mirrors | 2026-07-07 |
+| #1856 | feat(banks): FR Y-9C ingestion + w3 bank-stress phase-0 — ACCRUE | 2026-07-07 |
+| #1854 | feat(stock-personality): W5 Oracle personality_context + NW world_state sub-block + spine adapter + come-back clocks | 2026-07-07 |
+| #1853 | feat(stock-personality): W4 operator surfaces — stock page panel + board expander chips + theme-detail slice (EN/ZH, display-only) | 2026-07-07 |
+| #1852 | docs(signal-engine): TIERED_CASCADE §10 — G-T2X in the HTF review section | 2026-07-07 |
+| #1851 | feat(gaming): W4 multi-state gaming tape — collectors + nowcast phase-0 (DATA-BLOCKED) | 2026-07-07 |
+| #1849 | fix(mri): anchor gasoline_mom on the CPI reference month, not asof's month | 2026-07-07 |
+| #1841 | research: time-confound re-check queue Phase A — gate amendments (R1-A1, L3-A1) + citation guards | 2026-07-07 |
+| #1839 | research(cycle): CN-HAR-2 prereg — cn_sector analog calibration + forward confirmation | 2026-07-07 |
+| #1838 | research(cycle): HAR-1 analog-retrieval evaluation — promoted_null (Wave 1) | 2026-07-07 |
+| #1837 | research(cycle): FT-OSC-2 prereg — down-only oscillator re-test on post-2026-07 accrual | 2026-07-07 |
+| #1836 | feat(cycle): phase-clock engine + PHASE-CLOCK-1 evaluation (Wave 1, promoted_null) | 2026-07-07 |
+| #1835 | research(cycle-w1): FALS-OSC kill-switch trial — oscillator covariate family NULL | 2026-07-07 |
+| #1834 | fix(heartbeat): wire a working alert channel (dead-man's switch was ringing into a void) | 2026-07-07 |
+| #1833 | feat(stock): flow-to-price on the per-stock page — 13F since-filing + short-flow z-score | 2026-07-07 |
+| #1832 | feat(mri): Package D — Release Radar UI on the macro page | 2026-07-07 |
+| #1831 | feat(mri): Package C — nightly release-forecast producer + forward ledger + NW registration | 2026-07-07 |
+| #1830 | feat(heartbeat): committed-data-freeze tripwire (catch silent stale-data freezes) | 2026-07-07 |
+| #1829 | feat(cycle): honest headline — hazard-first P(turn≤6m), overdue past-tense ref, fired-falsifier demotion | 2026-07-07 |
+| #1828 | research(mri): Package E — release playbook: descriptive surprise→market transmission study | 2026-07-07 |
+| #1827 | chore(experiments): stock-top-hazard arm — conditional come-back clock 2026-10-07 | 2026-07-07 |
+| #1826 | feat(prophet): W1 — management engine + origination bridge + display artifacts (display-only) | 2026-07-07 |
+| #1825 | feat(mri): Package B — release_forecast engine (CPI/NFP pre-print models) + PIT backtest | 2026-07-07 |
+| #1824 | feat(cpi-lake): monthly oscillator PIT columns + Wave 0 preregistration | 2026-07-07 |
+| #1823 | fix(pipeline): --autostash rebase-pushes so collected data can't be stranded (China/US data freeze) | 2026-07-07 |
+| #1822 | feat(mri): Package A — Macro Release Intelligence masterplan + data spine | 2026-07-07 |
+| #1821 | fix(measurement): replace hardcoded stamp count with derived grand total | 2026-07-07 |
+| #1820 | feat(options): Package E — strike×expiry matrix engine + one-shot publisher | 2026-07-07 |
+| #1819 | feat(committee): translate the dense-web small nodes to Chinese | 2026-07-07 |
+| #1818 | fix(alerts): watchlist sentinel — adapt fetch to live two-table Supabase schema, require operator UUID | 2026-07-07 |
 | #1817 | fix(neural-web): heal registry-count drift 226->232 (momoedge Package A) | 2026-07-07 |
 | #1816 | feat(gex): Package C — gex_structure_state emitter (6-state regime, display-only) | 2026-07-07 |
 | #1815 | feat(options): Package A — options sensor contract (schemas + chain-heat aggregator) | 2026-07-07 |
@@ -96,16 +120,27 @@ Generated: 2026-07-07T07:07:39.542770+00:00  |  Open PRs: 18  |  Merged (window)
 | #1766 | feat(signal-engine): S1 HTF badge + S2 shadow, G-HTF1 + G-T2X first run, Codex adjudication | 2026-07-07 |
 | #1765 | feat(cpi): TGA/net-liquidity data-infrastructure wave — fed_net_liquidity artifact + nightly lane + Signal Bus registration | 2026-07-07 |
 | #1764 | fix(nav): flyout submenu triggers get descriptions + full-height rows | 2026-07-07 |
+| #1763 | data(options): W5-B signed-tape pilot + resumable backfill state machine (20 names x 60d) | 2026-07-07 |
 | #1762 | fix(admin): left-align content, scrollable tables, tidy Experiments columns | 2026-07-07 |
 | #1761 | research(entry-intel): PM0 price-memory bundled phase-0 PREREG (Signal Commons R2 / DT-R7 dispatch) | 2026-07-07 |
+| #1760 | data(china): block-trade tape archiver + SW-L1 mapping — F5-01 accrual infra | 2026-07-07 |
 | #1759 | feat(stock-personality): W2b — wire stock_personality.v1 into nightly pipeline | 2026-07-07 |
+| #1758 | feat(housing): Redfin/ZORI HF product + conditioning phase-0 — NULL | 2026-07-07 |
+| #1757 | test(index): d2 Russell deletion overshoot phase-0 — DESCRIPTIVE/ACCRUAL (n=3 valid, descriptive-honesty) | 2026-07-07 |
+| #1756 | test(legal): ITC-337 exclusion-risk phase-0 — NULL | 2026-07-07 |
 | #1755 | research: DT-R14 time-confound exposure audit (read-only, ranked memo) | 2026-07-07 |
 | #1754 | CPI lattice batch 2 (§15): within-family baselines — 27/135; CPI-020 re-test FAILS → retired | 2026-07-07 |
+| #1753 | test(bottoms): w5 trade-size capitulation phase-0 — PARTIAL (frozen prereg) | 2026-07-07 |
+| #1752 | fix(filings): d2 comment-letter release-phase0 reviewer fixes — PASS | 2026-07-07 |
 | #1751 | research(dannytrades): DT-W2 64y month-block re-run — DT-R13 settlement | 2026-07-07 |
 | #1750 | research(oracle): adjudicate Codex rotation Time Machine intake — REJECT-REDUNDANT + 2 entry_onset caveats | 2026-07-07 |
 | #1749 | fix(baskets): basket_tape Danny fields relabeled descriptive per DT-W1a | 2026-07-07 |
 | #1748 | feat(neuralweb): R-ORTH covariance spine MVP — lobe independence accounting (R-ORTH PR-3) | 2026-07-07 |
 | #1747 | docs(entry-stack): A3 phase0 results + adjudication — decline-geometry ships, HTF-turn split, washout×turn killed | 2026-07-06 |
+| #1746 | test(credit): CMDI conditioning phase-0 — FAIL (T1+T3) / T2 PASS after identical-dates fix | 2026-07-07 |
+| #1745 | test(labor): WARN intensity phase-0 — DATA-BLOCKED (consolidated feed) | 2026-07-07 |
+| #1744 | test(rates): d2 rates-calendar flows phase-0 — SCORED V3 month-end extension (auction cycle + quarter-end + extension day) | 2026-07-07 |
+| #1743 | data(consumer): TSA daily throughput collector + display product (2019->) | 2026-07-07 |
 | #1741 | feat(dispersion): eigen-concentration fields + DISP-EIGEN-1 prereg (R-ORTH PR-5) | 2026-07-06 |
 | #1740 | feat(yield-curve): additive pca_health sub-block (R-ORTH PR-2) | 2026-07-06 |
 | #1739 | research(r-orth): adjudicated masterplan + prereg + null-calibrated PCA diagnostics | 2026-07-06 |
@@ -503,47 +538,6 @@ Generated: 2026-07-07T07:07:39.542770+00:00  |  Open PRs: 18  |  Merged (window)
 | #1335 | fix(deploy-api-secrets): direct SSH via VPS_DEPLOY_KEY secret (runners are fs-isolated) | 2026-07-05 |
 | #1334 | fix(deploy-api-secrets): two-stage token handoff (runner sandbox) | 2026-07-05 |
 | #1333 | fix(deploy-api-secrets): runner-readable deploy-key path | 2026-07-05 |
-| #1332 | infra(neural-web): OAuth secret deploy workflow for ask-the-brain live mode | 2026-07-05 |
-| #1331 | Compress China and Canada Risk Radar | 2026-07-05 |
-| #1330 | neural-web(W8b): the committee view + living graph — every line traced to a graded source | 2026-07-05 |
-| #1329 | fix(news): degrade schema-violating W3 side-artifacts instead of aborting the build | 2026-07-05 |
-| #1328 | Fix US stock card help copy | 2026-07-05 |
-| #1327 | feat(darkpool): Dark Pool Desk v1 — P1.5 EOD off-exchange & ATS venue desk | 2026-07-05 |
-| #1326 | Compress macro Risk Radar | 2026-07-05 |
-| #1325 | Fix basket holdings mobile layout | 2026-07-05 |
-| #1324 | feat(sentiment): Fear/Greed composite v1 — display-only dial (P1.2) | 2026-07-05 |
-| #1323 | feat(oracle): brainstorm round-3 steer — positive live-regions block | 2026-07-05 |
-| #1322 | ops(theta/p0.4+p0.1): multi-session signing extension + launchd keepalive + runbook | 2026-07-05 |
-| #1321 | neural-web(W8b): ask-the-brain — an interrogable, cited, never-advising brain (key-optional) | 2026-07-05 |
-| #1320 | prereg(exit-crowding): DRAFT Phase-0 pre-registration — unsigned exhaustion legs (P1.3/R3) | 2026-07-05 |
-| #1319 | feat(oracle/tm): daily Tier-M replay + year-chunked RRG time machine + sector-ETF tier | 2026-07-05 |
-| #1318 | docs(options-alpha): P0.5 era-partition registration amendment (DRAFT) | 2026-07-05 |
-| #1317 | docs(flow): live-flow production roadmap + brainstorm §13 amendment | 2026-07-05 |
-| #1316 | feat(oracle): brainstorm round-2 log + participation-state dead-shape prior | 2026-07-05 |
-| #1315 | ops(terminal): version-control the zero-downtime VPS build script | 2026-07-05 |
-| #1314 | news W3: rebuild news.html as intelligence boards | 2026-07-05 |
-| #1313 | news W4: PIT event ledger + forward-return calibration | 2026-07-05 |
-| #1312 | ei(P0.1): production replay harness + graded verdict ledger | 2026-07-05 |
-| #1311 | test(news): relabel mislabeled precision-gate fixture to None | 2026-07-05 |
-| #1310 | fix(macro-surprise): stub-match ratio on alias coverage — catch date-suffixed stubs | 2026-07-05 |
-| #1309 | news W2: deterministic event identity + numeric extraction + qbus read-back | 2026-07-05 |
-| #1308 | neural-web(W6b): the push spine goes live for ops alerts — floors, dedup, no new infrastructure | 2026-07-05 |
-| #1307 | neural-web(W8a): the operator HQ — one tab over the whole nervous system | 2026-07-05 |
-| #1306 | news W1: macro surprise engine + release-stub suppression | 2026-07-05 |
-| #1305 | news W0: land Phase-0 reject families + reject-reason log | 2026-07-05 |
-| #1304 | ei(P0.3): liquidity/capacity hygiene fields (display-only) | 2026-07-05 |
-| #1303 | feat(oracle): brainstorm round-2 — coverage floor + batch-1 tier-1 log | 2026-07-05 |
-| #1302 | ei(masterplan): Entry Intelligence program — replay-first entry engine + Neural Web fusion | 2026-07-05 |
-| #1301 | feat(options): phase-B gate re-run harness — ThetaData store adapter + S-DOI/S-CWIV/S-XZZ era-split runners | 2026-07-05 |
-| #1300 | feat(options): thetadata store R2 publish + accrual health registration | 2026-07-05 |
-| #1299 | neural-web(W7b): the hypothesis metabolism — propose, be graded, earn; never mine | 2026-07-05 |
-| #1298 | fix(options): thetadata windowed pulls + read timeout + bounded concurrency (stall fix) | 2026-07-05 |
-| #1297 | feat(oracle): brainstorm pack generator (cheap-LLM prompt w/ live dedup) | 2026-07-05 |
-| #1296 | neural-web(W7b): the cortex — Opus-class deliberation on shadow probation | 2026-07-05 |
-| #1295 | feat(oracle/p9): hypothesis inbox — autonomous collection layer (step 14) | 2026-07-05 |
-| #1294 | Remove duplicate Risk Radar from US stocks page | 2026-07-05 |
-| #1293 | Improve China subsector mobile tables | 2026-07-05 |
-| #1292 | docs(options): signing-gate adjudication — tape ratified (scoped), bar verdict unchanged | 2026-07-05 |
 
 ---
 

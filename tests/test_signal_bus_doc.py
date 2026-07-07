@@ -73,7 +73,7 @@ def test_all_artifact_ids_present():
     with _SYNAPSE_YML.open(encoding="utf-8") as fh:
         registry = yaml.safe_load(fh)
     artifact_ids = list(registry.get("artifacts", {}).keys())
-    assert len(artifact_ids) == 239, (
+    assert len(artifact_ids) == 245, (
         f"Expected 239 artifacts in synapse.yml, found {len(artifact_ids)}. "
         "Update the test if the registry count changed intentionally."
         " (B6 watchlist sentinel added watchlist-alerts-jsonl, watchlist-sentinel-states,"
@@ -155,7 +155,10 @@ def test_all_artifact_ids_present():
         " options-structure-structural, prophet-trade-plan, prophet-management-state = 226->232;"
         " MRI PR-C added cleveland-nowcast-store, release-forecast-latest,"
         " release-forecast-ledger, release-forecast-scoreboard, site-release-forecast = 232->237;"
-        " momoedge Package E strike-expiry matrix landed in a racing merge = 237->239)"
+        " momoedge Package E strike-expiry matrix landed in a racing merge = 237->239;"
+        " Winner Autopsy Lab (long-hold top-down department) added winner-episodes,"
+        " winner-episodes-manifest, breakaway-watch-states, breakaway-watch-history,"
+        " winner-autopsy-panel, winner-autopsy-manifest = 239->245)"
     )
     content = generate(_SYNAPSE_YML)
     missing = [aid for aid in artifact_ids if aid not in content]

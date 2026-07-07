@@ -2515,11 +2515,11 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
       </div>
       
       <div class="pm-status-chip pm-chip-promoted_null">
-        promoted_null: 12
+        promoted_null: 15
       </div>
       
       <div class="pm-status-chip pm-chip-structural" style="font-weight:400;background:none;border:none;padding-left:0">
-        <span class="l-en">23 active total</span><span class="l-zh">共 23 条有效</span>
+        <span class="l-en">26 active total</span><span class="l-zh">共 26 条有效</span>
       </div>
     </div>
 
@@ -2734,6 +2734,32 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
         </tr>
         
         <tr>
+          <td class="pm-truth-id">CPI-016</td>
+          <td class="pm-stmt">PHASE-CLOCK-1 (§18): The 6-state phase-clock classifier (capitulation/basing/early_expansion/late_expansion/rolling_over/early_contraction, FROZEN thresholds 20/80) does NOT provide a consistent ΔBrier improvement over the age-only family KM prior at h=6m on the 2024+ embargoed OOS window: only 1 of 3 families showed positive dBrier on post-2010 OOS (falsifier phase_clock_no_lift fires at <2/3 threshold). Phase-clock states remain available as descriptive display; all cards ship the KM prior (no phase-conditioned default).</td>
+          <td>
+            
+            <span class="pm-status-null">NULL</span>
+            
+          </td>
+          <td class="pm-meta">null</td>
+          <td class="pm-meta">pit_pure</td>
+          <td class="pm-meta">2026-10-01</td>
+        </tr>
+        
+        <tr>
+          <td class="pm-truth-id">CPI-017</td>
+          <td class="pm-stmt">HAR-1 (§18): Historical-analog kNN retrieval over normalized completed half-cycles (k=6, era-cap=2) evaluated against the BACKTEST cohort OOS window (end_date>=2024-01-01). Overall verdict: promoted_null. Per-family: us_sector: promoted_null, gap_vs_km=0.877415, CI90=[-0.693663, 2.881158], gap_vs_shuffle=1.848006, coverage=0.5, n_turns=26; country: promoted_null, gap_vs_km=1.548107, CI90=[0.875633, 2.165431], gap_vs_shuffle=0.138679, coverage=0.3924, n_turns=79; cn_sector: FAIL, gap_vs_km=1.905695, CI90=[1.377511, 2.530548], gap_vs_shuffle=1.15374, coverage=0.4453, n_turns=137. Analog-shuffle null (within-era permutation of retrieved analogs, 200 draws) is the primary gate: if HAR does not beat its own shuffle, verdict=promoted_null (retrieval theater). TRAJECTORY-SHAPE INERTNESS: at query time (age_m=0.5) n_pts=1, so HAR retrieves on fingerprint+family only — not trajectory shape. Any KM/shuffle gap reflects fingerprint+family matching, not shape similarity. Macro fingerprint revision_optimistic (P-D5-1, quad/liquidity not PIT-vintaged).</td>
+          <td>
+            
+            <span class="pm-status-null">NULL</span>
+            
+          </td>
+          <td class="pm-meta">null</td>
+          <td class="pm-meta">revision_optimistic</td>
+          <td class="pm-meta">2027-01-07</td>
+        </tr>
+        
+        <tr>
           <td class="pm-truth-id">cycle_truth_cn_downturn_broken_trend_tail_null_v1</td>
           <td class="pm-stmt">The CN Downturn × broken-trend deep vol-adjusted 63d tail claim (batch-1 lead, ex-CPI-020) does NOT survive the §15 within-family re-test: gap vs CN's own Downturn baseline −0.0350 (CI95 [−0.0688, −0.0021], boot p=0.04, n=145 months, era-stable) — directionally persistent at ~60% smaller magnitude than the cross-family estimate (−0.0597; §14 baseline confound), and killed by BH-FDR q=0.10 across the declared 135-cell family. The risk-relevant survivor is the SAME cell on turn_event_3m: broken-trend CN downturns show a turn DEFICIT (−0.086, BH-pass) — longer downturns, unproven deeper tails.</td>
           <td>
@@ -2744,6 +2770,19 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
           <td class="pm-meta">null</td>
           <td class="pm-meta">pit_pure</td>
           <td class="pm-meta">2027-01-06</td>
+        </tr>
+        
+        <tr>
+          <td class="pm-truth-id">cycle_truth_falsosc_osc_covariate_null_v1</td>
+          <td class="pm-stmt">The monthly oscillator covariate family (MACD hist/sign/slope + StochRSI K&D computed on monthly-resampled close) adds NO out-of-sample Brier skill beyond the shipped W4.2 feature set at the 6-month horizon for EITHER direction that satisfies the §18 kill-switch gate. Kill-switch FALS-OSC fired: up/6m CI₉₀ includes 0 (ΔBrier +0.0037, CI₉₀ [−0.0037, +0.0104], boot_p=0.211). NOTE: down/6m separately shows PASS under §18 criteria (ΔBrier +0.00276, CI₉₀ [+0.00138, +0.00445], boot_p=0.0012, bh_pass=True) — a genuine incremental signal in the down regime — but the kill fires on EITHER direction failing. Columns remain in state_monthly lake; model design reverts.</td>
+          <td>
+            
+            <span class="pm-status-null">NULL</span>
+            
+          </td>
+          <td class="pm-meta">null</td>
+          <td class="pm-meta">pit_pure</td>
+          <td class="pm-meta">2027-01-07</td>
         </tr>
         
         <tr>
@@ -3045,6 +3084,52 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
       
       <div class="nl-card">
         <div class="nl-card-hd">
+          <span class="nl-card-id">CPI-016</span>
+          <span class="nl-ruled-badge"><span class="l-en">RULED OUT</span><span class="l-zh">已排除</span></span>
+        </div>
+        <div class="nl-stmt">PHASE-CLOCK-1 (§18): The 6-state phase-clock classifier (capitulation/basing/early_expansion/late_expansion/rolling_over/early_contraction, FROZEN thresholds 20/80) does NOT provide a consistent ΔBrier improvement over the age-only family KM prior at h=6m on the 2024+ embargoed OOS window: only 1 of 3 families showed positive dBrier on post-2010 OOS (falsifier phase_clock_no_lift fires at <2/3 threshold). Phase-clock states remain available as descriptive display; all cards ship the KM prior (no phase-conditioned default).</div>
+        
+        <div class="nl-ci">month-block bootstrap 90% CI, 800 draws seed 7; BH-FDR q=0.1 within cycle_pattern_ft; falsifier_fires=True</div>
+        
+        <div class="nl-refs-label"><span class="l-en">Evidence</span><span class="l-zh">证据</span></div>
+        <ul class="nl-refs-list">
+          
+          <li>data/cycle_pattern/phase_clock_scorecard.json</li>
+          
+        </ul>
+        
+        <div class="nl-due">
+          <span class="l-en">Review due:</span><span class="l-zh">复查日期：</span> 2026-10-01
+        </div>
+        
+      </div>
+      
+      <div class="nl-card">
+        <div class="nl-card-hd">
+          <span class="nl-card-id">CPI-017</span>
+          <span class="nl-ruled-badge"><span class="l-en">RULED OUT</span><span class="l-zh">已排除</span></span>
+        </div>
+        <div class="nl-stmt">HAR-1 (§18): Historical-analog kNN retrieval over normalized completed half-cycles (k=6, era-cap=2) evaluated against the BACKTEST cohort OOS window (end_date>=2024-01-01). Overall verdict: promoted_null. Per-family: us_sector: promoted_null, gap_vs_km=0.877415, CI90=[-0.693663, 2.881158], gap_vs_shuffle=1.848006, coverage=0.5, n_turns=26; country: promoted_null, gap_vs_km=1.548107, CI90=[0.875633, 2.165431], gap_vs_shuffle=0.138679, coverage=0.3924, n_turns=79; cn_sector: FAIL, gap_vs_km=1.905695, CI90=[1.377511, 2.530548], gap_vs_shuffle=1.15374, coverage=0.4453, n_turns=137. Analog-shuffle null (within-era permutation of retrieved analogs, 200 draws) is the primary gate: if HAR does not beat its own shuffle, verdict=promoted_null (retrieval theater). TRAJECTORY-SHAPE INERTNESS: at query time (age_m=0.5) n_pts=1, so HAR retrieves on fingerprint+family only — not trajectory shape. Any KM/shuffle gap reflects fingerprint+family matching, not shape similarity. Macro fingerprint revision_optimistic (P-D5-1, quad/liquidity not PIT-vintaged).</div>
+        
+        <div class="nl-ci">us_sector: gap_vs_km=0.877415, CI90=[-0.693663, 2.881158]; country: gap_vs_km=1.548107, CI90=[0.875633, 2.165431]; cn_sector: gap_vs_km=1.905695, CI90=[1.377511, 2.530548]</div>
+        
+        <div class="nl-refs-label"><span class="l-en">Evidence</span><span class="l-zh">证据</span></div>
+        <ul class="nl-refs-list">
+          
+          <li>data/cycle_pattern/har_scorecard.json</li>
+          
+          <li>research/cycle_masterplan/PREREGISTRATION.md</li>
+          
+        </ul>
+        
+        <div class="nl-due">
+          <span class="l-en">Review due:</span><span class="l-zh">复查日期：</span> 2027-01-07
+        </div>
+        
+      </div>
+      
+      <div class="nl-card">
+        <div class="nl-card-hd">
           <span class="nl-card-id">cycle_truth_cn_downturn_broken_trend_tail_null_v1</span>
           <span class="nl-ruled-badge"><span class="l-en">RULED OUT</span><span class="l-zh">已排除</span></span>
         </div>
@@ -3065,6 +3150,30 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
         
         <div class="nl-due">
           <span class="l-en">Review due:</span><span class="l-zh">复查日期：</span> 2027-01-06
+        </div>
+        
+      </div>
+      
+      <div class="nl-card">
+        <div class="nl-card-hd">
+          <span class="nl-card-id">cycle_truth_falsosc_osc_covariate_null_v1</span>
+          <span class="nl-ruled-badge"><span class="l-en">RULED OUT</span><span class="l-zh">已排除</span></span>
+        </div>
+        <div class="nl-stmt">The monthly oscillator covariate family (MACD hist/sign/slope + StochRSI K&D computed on monthly-resampled close) adds NO out-of-sample Brier skill beyond the shipped W4.2 feature set at the 6-month horizon for EITHER direction that satisfies the §18 kill-switch gate. Kill-switch FALS-OSC fired: up/6m CI₉₀ includes 0 (ΔBrier +0.0037, CI₉₀ [−0.0037, +0.0104], boot_p=0.211). NOTE: down/6m separately shows PASS under §18 criteria (ΔBrier +0.00276, CI₉₀ [+0.00138, +0.00445], boot_p=0.0012, bh_pass=True) — a genuine incremental signal in the down regime — but the kill fires on EITHER direction failing. Columns remain in state_monthly lake; model design reverts.</div>
+        
+        <div class="nl-ci">up/6m: ΔBrier=0.003672, CI₉₀=[-0.003746, 0.010398], boot_p=0.211; down/6m: ΔBrier=0.002755, CI₉₀=[0.001378, 0.00445], boot_p=0.0012</div>
+        
+        <div class="nl-refs-label"><span class="l-en">Evidence</span><span class="l-zh">证据</span></div>
+        <ul class="nl-refs-list">
+          
+          <li>data/hazard/falsosc_trial_v1.json</li>
+          
+          <li>research/cycle_masterplan/PREREGISTRATION.md</li>
+          
+        </ul>
+        
+        <div class="nl-due">
+          <span class="l-en">Review due:</span><span class="l-zh">复查日期：</span> 2027-01-07
         </div>
         
       </div>
@@ -3267,20 +3376,20 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
             </div>
           </td>
           
-          <td class="ac-num">265</td>
+          <td class="ac-num">318</td>
           <td class="ac-num">53</td>
-          <td class="ac-num">5</td>
+          <td class="ac-num">6</td>
           <td style="font-family:monospace;font-size:.78rem;color:var(--muted,#8899aa)">
-            2026-06-26<br>2026-07-03
+            2026-06-26<br>2026-07-07
           </td>
           <td class="ac-num">
             
-            1.8d
+            2.2d
             
           </td>
           <td>
             
-            <span class="ac-proj ac-proj-future">2026-09-04</span>
+            <span class="ac-proj ac-proj-future">2026-09-19</span>
             
           </td>
           
@@ -3319,20 +3428,20 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
             </div>
           </td>
           
-          <td class="ac-num">265</td>
+          <td class="ac-num">318</td>
           <td class="ac-num">53</td>
-          <td class="ac-num">5</td>
+          <td class="ac-num">6</td>
           <td style="font-family:monospace;font-size:.78rem;color:var(--muted,#8899aa)">
-            2026-06-26<br>2026-07-03
+            2026-06-26<br>2026-07-07
           </td>
           <td class="ac-num">
             
-            1.8d
+            2.2d
             
           </td>
           <td>
             
-            <span class="ac-proj ac-proj-future">2026-09-04</span>
+            <span class="ac-proj ac-proj-future">2026-09-19</span>
             
           </td>
           
@@ -3584,13 +3693,13 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
           </div>
         </li>
         
-        <li class="pl-gap-item pl-gap-allnull">
+        <li class="pl-gap-item ">
           <div class="pl-gap-hd">
             <span class="l-en">China Sector Cycles</span><span class="l-zh">中国板块周期</span>
             <span class="pl-gap-tag">machine</span>
           </div>
           <div class="pl-gap-note">
-            <span class="l-en">hazard_1m_p is 100% null — all historical rows pre-date W4.3 stamp fix</span><span class="l-zh">hazard_1m_p 全为空值 — 所有历史行早于 W4.3 修复时间点</span>
+            <span class="l-en">hazard_1m_p non-null in 16.4% of rows — pre-W4.3 rows are null</span><span class="l-zh">hazard_1m_p 在 16.4% 行中非空 — W4.3 前的行为空值</span>
           </div>
           <div class="pl-gap-meta">
             <span class="l-en">Produced: engine/cycle_hazard/ stamp loop (W4.3)<br>Consumed: forward_log.parquet column (hazard_1m_p/3m/6m) — not yet rendered in any page template</span>
@@ -4633,8 +4742,8 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
       <div class="eg-subhd">
         <h3><span class="l-en">Trial Budgets by Family</span><span class="l-zh">按族分类的试验预算</span></h3>
         <span class="eg-subhd-meta">
-          <span class="l-en">979 rows · 101 families</span>
-          <span class="l-zh">979 行 · 101 个族</span>
+          <span class="l-en">985 rows · 103 families</span>
+          <span class="l-zh">985 行 · 103 个族</span>
         </span>
       </div>
       <div class="eg-table-wrap">
@@ -4757,6 +4866,12 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
           </tr>
           
           <tr>
+            <td class="eg-mono">cortex</td>
+            <td class="eg-num">3</td>
+            <td class="eg-mono eg-ts">2026-07-07T10:10:43</td>
+          </tr>
+          
+          <tr>
             <td class="eg-mono">credit_duration_verify_phase0</td>
             <td class="eg-num">1</td>
             <td class="eg-mono eg-ts">2026-07-02T03:11:22</td>
@@ -4788,8 +4903,8 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
           
           <tr>
             <td class="eg-mono">cycle_pattern_ft</td>
-            <td class="eg-num">2</td>
-            <td class="eg-mono eg-ts">2026-07-07T02:00:01</td>
+            <td class="eg-num">3</td>
+            <td class="eg-mono eg-ts">2026-07-07T09:49:57</td>
           </tr>
           
           <tr>
@@ -5231,6 +5346,12 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
           </tr>
           
           <tr>
+            <td class="eg-mono">unknown</td>
+            <td class="eg-num">2</td>
+            <td class="eg-mono eg-ts">2026-07-07T13:10:00</td>
+          </tr>
+          
+          <tr>
             <td class="eg-mono">value_growth_phase0</td>
             <td class="eg-num">1</td>
             <td class="eg-mono eg-ts">2026-07-02T03:11:22</td>
@@ -5258,8 +5379,8 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
       </table>
       </div>
       <div class="eg-footnote">
-        <span class="l-en">Source: <code>data/trial_ledger.jsonl</code> (979 rows total).</span>
-        <span class="l-zh">来源：<code>data/trial_ledger.jsonl</code>（共 979 行）。</span>
+        <span class="l-en">Source: <code>data/trial_ledger.jsonl</code> (985 rows total).</span>
+        <span class="l-zh">来源：<code>data/trial_ledger.jsonl</code>（共 985 行）。</span>
       </div>
     </div>
     
@@ -5554,7 +5675,7 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
       </dl>
       <dl class="mh-prov-cell">
         <dt><span class="l-en">Generated at (UTC)</span><span class="l-zh">生成时间（UTC）</span></dt>
-        <dd>2026-07-07T09:48:00.284813Z</dd>
+        <dd>2026-07-07T12:32:30.059422Z</dd>
       </dl>
       
       <dl class="mh-prov-cell">

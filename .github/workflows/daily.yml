@@ -1119,6 +1119,19 @@ jobs:
         # Output covered by 'git add data/' in 'commit engine outputs' below.
         # Benchmark: ~15s (per LT4_FUNNEL_SHADOW_REPORT.md); well under 30s threshold.
         run: python -m scripts.research.build_thesis_funnel_snapshot --write-history || echo "::warning::build_thesis_funnel_history failed (non-fatal — keeping last committed history)"
+      - name: Winner Autopsy nightly watch + panel (long-hold top-down department)
+        if: always()
+        # Winner Autopsy Lab (WA-R1..R10). Default mode computes current breakaway watch
+        # states + winner_autopsy_panel.json (admin Long-Hold Lobe surface). --write-history
+        # appends keep-FIRST rows (ticker, snapshot_date) to the watch history parquet
+        # (sole-advancer law: this flag is ONLY passed here; --smoke+--write-history hard-exits).
+        # Reads data/yahoo/ ETFs + data/massive_stock_day/ names when present; degrades to a
+        # coverage-honest no-op (exit 0) when name prices are absent on the runner. The full
+        # historical episode census (winner_episodes.parquet) is built off-render via --backfill
+        # on the Mac host. Writes data/research/{breakaway_watch.parquet,breakaway_watch_history
+        # .parquet,winner_autopsy_panel.json,winner_autopsy_manifest.json}. Display-only; no
+        # scored_path_surfaces; FIREWALL WA-R5. Output covered by 'git add data/' below.
+        run: python -m scripts.research.build_winner_autopsy --write-history || echo "::warning::build_winner_autopsy failed (non-fatal — keeping last committed winner-autopsy artifacts)"
       - name: entity/thesis/mechanism registry (neural-web — display-only crosswalk)
         if: always()
         # Wave B2 ETM crosswalk: builds data/neuralweb/entity_thesis_mechanism_registry.json
