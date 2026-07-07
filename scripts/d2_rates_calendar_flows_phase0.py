@@ -73,6 +73,7 @@ from __future__ import annotations
 import sys
 import math
 import json
+import tempfile
 from pathlib import Path
 
 import numpy as np
@@ -507,7 +508,12 @@ def main() -> None:
     # Register trials BEFORE computing
     # ------------------------------------------------------------------ #
     print("\n=== TRIAL LEDGER REGISTRATION ===")
-    led = TrialLedger(family=FAMILY)
+    # Phase-0 runs must NOT write to the shared forward ledger (data/trial_ledger.jsonl).
+    # Intraday lanes discard data/ writes; nightly is the sole advancer of forward ledgers
+    # (house law). Use a per-run temp file so a phase-0 re-run cannot dirty the committed
+    # ledger. The hash content is identical — only the write target differs.
+    _tmp_ledger = Path(tempfile.gettempdir()) / f"_phase0_ledger_{FAMILY}.jsonl"
+    led = TrialLedger(path=_tmp_ledger, family=FAMILY)
     register_trials(led)
     n_trials = led.effective_n(FAMILY)
     out.append(f"**Trial budget:** {n_trials} configs registered pre-computation "
@@ -654,6 +660,24 @@ def main() -> None:
         bh_rej = str(bh_r.get("reject", "N/A"))
         out.append(f"{k:<30} {n_c:>5} {m:>8} {t:>7} {p:>7} {sign:>8} {bh_q:>7} {bh_rej:>7}")
     out.append("```\n")
+
+    # Compute auction window overlap diagnostic for caveat
+    _auction_dates = auctions["auction_date"].sort_values().reset_index(drop=True)
+    _gaps = _auction_dates.diff().dropna().dt.days
+    _pct_within6 = float((_gaps <= 6).mean() * 100)
+    _pct_within3 = float((_gaps <= 3).mean() * 100)
+
+    out.append(
+        f"> **V1 window-overlap caveat (pre-registered lane-focus concern):** "
+        f"10y and 30y auctions cluster weekly. Among consecutive auction pairs, "
+        f"{_pct_within6:.1f}% sit within 6 calendar days of a neighbor and "
+        f"{_pct_within3:.1f}% within 3 days. The t-3..t+3 pre/post windows therefore "
+        f"overlap for a material fraction of events, creating serial double-counting "
+        f"and concession-conditioning contamination. This phase-0 deduplicated on "
+        f"`event_date` (drops exact same-day duplicates only) but does NOT space "
+        f"overlapping windows. **The V1 null is reported without window de-overlapping; "
+        f"the verdict is unaffected (V1 is a null; SCORED rests solely on V3).**\n"
+    )
 
     out.append("**Split-half (G2) — V1 pooled conditional:**")
     out.append(f"```\n"

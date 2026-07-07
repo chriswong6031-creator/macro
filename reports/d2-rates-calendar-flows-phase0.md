@@ -38,6 +38,8 @@ v1_30y_conditional                77    -0.05  -0.355  0.7226    False  0.9973  
 v1_pooled_unconditional          268   -0.047  -0.416  0.6773    False     N/A     N/A
 ```
 
+> **V1 window-overlap caveat (pre-registered lane-focus concern):** 10y and 30y auctions cluster weekly. Among consecutive auction pairs, 24.3% sit within 6 calendar days of a neighbor and 24.3% within 3 days. The t-3..t+3 pre/post windows therefore overlap for a material fraction of events, creating serial double-counting and concession-conditioning contamination. This phase-0 deduplicated on `event_date` (drops exact same-day duplicates only) but does NOT space overlapping windows. **The V1 null is reported without window de-overlapping; the verdict is unaffected (V1 is a null; SCORED rests solely on V3).**
+
 **Split-half (G2) — V1 pooled conditional:**
 ```
 H1: mean=0.0939% (n=69)
