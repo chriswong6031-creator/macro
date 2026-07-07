@@ -385,3 +385,147 @@ class TestSelftest:
             f"Normal run exited {result.returncode}.\nstdout:\n{result.stdout}\n"
             f"stderr:\n{result.stderr}"
         )
+
+
+# ---------------------------------------------------------------------------
+# 11. F2 — broader _FORBIDDEN_KEYS and id/uid-suffix pattern
+# ---------------------------------------------------------------------------
+class TestF2BroaderKeys:
+    """F2: positions, fills, cost_basis, avg_price, entry_price, position_uids
+    must all trigger forbidden_key.  count-keys must stay clean."""
+
+    @pytest.mark.parametrize("key", [
+        "positions", "fills", "cost_basis", "avg_price", "entry_price", "position_uids",
+    ])
+    def test_f2_new_direct_keys_fire(self, key: str) -> None:
+        text = _j({"schema": "test.v1", key: "somevalue", "run_count": 1})
+        violations = _scan_artifact(
+            "data/governance/operator_grading.json", text, check_keys=True
+        )
+        key_violations = [v for v in violations if v["violation_type"] == "forbidden_key"]
+        assert len(key_violations) >= 1, (
+            f"Expected forbidden_key for key={key!r}; got none. violations={violations}"
+        )
+
+    @pytest.mark.parametrize("key", [
+        "order_id", "order_ids", "order_uid", "order_uids",
+        "fill_ids", "fill_uid", "fill_uids",
+        "position_id", "position_ids",
+        "decision_ids", "decision_uid",
+        "rejection_id", "rejection_ids", "rejection_uid",
+    ])
+    def test_f2_id_uid_suffix_variants_fire(self, key: str) -> None:
+        text = _j({"schema": "test.v1", key: "val-abc", "run_count": 1})
+        violations = _scan_artifact(
+            "data/governance/operator_grading.json", text, check_keys=True
+        )
+        key_violations = [v for v in violations if v["violation_type"] == "forbidden_key"]
+        assert len(key_violations) >= 1, (
+            f"Expected forbidden_key for id/uid-suffix key={key!r}; "
+            f"got none. violations={violations}"
+        )
+
+    @pytest.mark.parametrize("key", [
+        "n_tickers", "ticker_count", "shares_traded_total",
+        "venue_count", "account_count", "fill_convention_split",
+    ])
+    def test_f2_count_keys_stay_clean(self, key: str) -> None:
+        """Count-like keys must NOT trigger forbidden_key."""
+        text = _j({"schema": "test.v1", key: 42, "run_count": 1})
+        violations = _scan_artifact(
+            "data/governance/operator_grading.json", text, check_keys=True
+        )
+        key_violations = [v for v in violations if v["violation_type"] == "forbidden_key"]
+        assert len(key_violations) == 0, (
+            f"Count-key {key!r} should not fire forbidden_key; "
+            f"got violations: {key_violations}"
+        )
+
+
+# ---------------------------------------------------------------------------
+# 12. F1b — end-to-end disk-traversal test via real scan(root)
+# ---------------------------------------------------------------------------
+class TestF1DiskTraversalE2E:
+    """Proves scan(root) traverses the filesystem and applies the full suite
+    of checks to every governance/*.json file, not just the old hard-coded 5.
+    Also proves the snapshot exemption end-to-end on disk."""
+
+    def test_e2e_evil_governance_file_all_four_violation_types(
+        self, tmp_path: "Path"
+    ) -> None:
+        """Write a real-shaped violation file under data/governance/__evil__.json
+        containing all four violation classes and assert all four are reported."""
+        import json as _json
+        from scripts.check_private_boundary import scan as _scan
+
+        # Build a minimal repo tree under tmp_path
+        (tmp_path / "data" / "governance").mkdir(parents=True)
+        (tmp_path / "site" / "mastermind").mkdir(parents=True)
+
+        evil = {
+            "schema": "evil.v1",
+            "ticker": "EVIL",                                 # forbidden_key
+            "path": "/Users/attacker/data/ledger.jsonl",      # host_path_in_value
+            "note": "budget $12,345 stolen",                  # dollar_amount_in_value
+            "creds": "MASTERMIND_TOKEN=leaked",               # secret_env_pattern
+        }
+        evil_path = tmp_path / "data" / "governance" / "__evil__.json"
+        evil_path.write_text(_json.dumps(evil), encoding="utf-8")
+
+        violations = _scan(tmp_path, skip_ignore_rail=True)
+
+        vtypes = {v["violation_type"] for v in violations}
+        assert "forbidden_key" in vtypes, (
+            f"forbidden_key not caught. violations={violations}"
+        )
+        assert "host_path_in_value" in vtypes, (
+            f"host_path_in_value not caught. violations={violations}"
+        )
+        assert "dollar_amount_in_value" in vtypes, (
+            f"dollar_amount_in_value not caught. violations={violations}"
+        )
+        assert "secret_env_pattern" in vtypes, (
+            f"secret_env_pattern not caught. violations={violations}"
+        )
+        # scan must signal failure (violations non-empty)
+        assert len(violations) > 0
+
+    def test_e2e_snapshot_exemption_yields_only_host_path(
+        self, tmp_path: "Path"
+    ) -> None:
+        """Same content at site/mastermind/mastermind_snapshot.json yields
+        ONLY host_path violations (key/dollar/secret are exempt)."""
+        import json as _json
+        from scripts.check_private_boundary import scan as _scan
+
+        (tmp_path / "data" / "governance").mkdir(parents=True)
+        (tmp_path / "site" / "mastermind").mkdir(parents=True)
+
+        # All four violation classes in the snapshot
+        snap = {
+            "schema": "mastermind_snapshot.v1",
+            "ticker": "EVIL",                                  # would be forbidden_key but EXEMPT
+            "path": "/Users/attacker/data/ledger.jsonl",       # host_path_in_value -- NOT exempt
+            "note": "budget $12,345 stolen",                   # would be dollar_amount but EXEMPT
+            "creds": "MASTERMIND_TOKEN=leaked",                # would be secret_env but EXEMPT
+        }
+        snap_path = tmp_path / "site" / "mastermind" / "mastermind_snapshot.json"
+        snap_path.write_text(_json.dumps(snap), encoding="utf-8")
+
+        violations = _scan(tmp_path, skip_ignore_rail=True)
+
+        vtypes = {v["violation_type"] for v in violations}
+        # Only host_path should fire
+        assert "host_path_in_value" in vtypes, (
+            f"host_path_in_value should be caught in snapshot; violations={violations}"
+        )
+        # These must NOT fire on the snapshot
+        assert "forbidden_key" not in vtypes, (
+            f"forbidden_key must be exempt in snapshot; violations={violations}"
+        )
+        assert "dollar_amount_in_value" not in vtypes, (
+            f"dollar_amount_in_value must be exempt in snapshot; violations={violations}"
+        )
+        assert "secret_env_pattern" not in vtypes, (
+            f"secret_env_pattern must be exempt in snapshot; violations={violations}"
+        )

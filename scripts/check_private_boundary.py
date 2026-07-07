@@ -11,19 +11,14 @@ Rules cited: FB-R12 (data/private/ rail), FB-R13 (CI guard).
 
 Scanned artifacts (b)
 ---------------------
-Feedback-counts-only artifacts (full key scan):
-  site/mastermind/nw_feedback.json  (and any nw_feedback*.json)
-  data/governance/mastermind_feedback_summary.json
-  data/governance/operator_grading.json
-  data/governance/operator_exposure_summary.json
-  data/governance/grading_closure.json
+ALL committed ``data/governance/*.json``, ``data/governance/*.jsonl``, and
+``site/mastermind/*.json`` receive the full suite of checks (forbidden keys,
+host paths, dollar amounts, secret env-var patterns).  New artifacts are
+covered automatically -- no per-file registration required.
 
-``site/mastermind/mastermind_snapshot.json`` is EXEMPT from the private-key scan
-(FB-R1: the paper book publishes tickers/weights by design) but is NOT exempt
-from host-path and secret-pattern scans.
-
-All committed ``data/governance/*.json`` and ``site/mastermind/*.json`` are also
-scanned for host-path patterns (``/Users/`` or ``/home/``) in string values.
+``site/mastermind/mastermind_snapshot.json`` is EXEMPT from the private-key,
+dollar-amount, and secret-env scans (FB-R1: the paper book publishes
+tickers/weights by design) but is NOT exempt from host-path scans.
 
 Exit codes
 ----------
@@ -43,7 +38,6 @@ import json
 import re
 import subprocess
 import sys
-import tempfile
 from pathlib import Path
 from typing import Any
 
@@ -65,7 +59,24 @@ _FORBIDDEN_KEYS: frozenset[str] = frozenset([
     "account",
     "broker",
     "venue",
+    # F2 additions -- portfolio identity fields
+    "positions",
+    "fills",
+    "cost_basis",
+    "avg_price",
+    "entry_price",
+    "position_uids",
 ])
+
+# Token-boundary pattern for id/uid variants of private entity roots.
+# Catches: fill_id, fill_ids, fill_uid, fill_uids, order_id, order_ids,
+#          position_id, position_ids, decision_ids, rejection_uids, etc.
+# Does NOT match count-keys such as n_tickers, ticker_count,
+# shares_traded_total, venue_count, account_count, or fill_convention_split.
+_RE_FORBIDDEN_KEY_PATTERN = re.compile(
+    r"^(?:fill|position|decision|rejection|order)_(?:uid|id)s?$",
+    re.IGNORECASE,
+)
 
 # Regex patterns for forbidden string values
 # Host paths: absolute /Users/ or /home/ in string values
@@ -76,31 +87,31 @@ _RE_DOLLAR_AMOUNT = re.compile(r"\$[\d,]{3,}")
 _RE_SECRET_ENV = re.compile(r"\bMASTERMIND_[A-Z_]+\b")
 
 # ---------------------------------------------------------------------------
-# Artifacts subject to the private key scan (FB-R13 §b)
+# Scan scope (FB-R13 b)
 # ---------------------------------------------------------------------------
-# These paths are relative to the repo root.  Globs are expanded at scan time.
-_KEY_SCAN_GLOBS: tuple[str, ...] = (
-    "site/mastermind/nw_feedback*.json",
-    "data/governance/mastermind_feedback_summary.json",
-    "data/governance/operator_grading.json",
-    "data/governance/operator_exposure_summary.json",
-    "data/governance/grading_closure.json",
+# ALL committed JSON/JSONL artifacts under these globs receive the full scan
+# (forbidden keys, host paths, dollar amounts, secret env-var patterns).
+# New artifacts (e.g. nw_feedback_daily.json) are covered by default -- no
+# per-file registration needed.  (F1 fix: the old hard-coded 5-filename
+# _KEY_SCAN_GLOBS list that gated which files received key/dollar/secret
+# checks has been removed; every file under these globs is fully scanned
+# unless listed in _KEY_SCAN_EXEMPT.)
+_SCAN_GLOBS: tuple[str, ...] = (
+    "data/governance/*.json",
+    "data/governance/*.jsonl",
+    "site/mastermind/*.json",
 )
 
-# Artifacts exempt from the private-key scan but NOT from host-path/secret scans.
+# Artifacts exempt from the private-key/dollar/secret scan but NOT from
+# host-path scans.  mastermind_snapshot.json publishes tickers/weights by
+# design (FB-R1).
 _KEY_SCAN_EXEMPT: frozenset[str] = frozenset([
     "site/mastermind/mastermind_snapshot.json",
 ])
 
-# Broader host-path scan: all committed *.json in these dirs
-_HOST_PATH_SCAN_GLOBS: tuple[str, ...] = (
-    "data/governance/*.json",
-    "site/mastermind/*.json",
-)
-
 
 # ---------------------------------------------------------------------------
-# JSON walker — recursively yield (key_path_str, key, value) for every node
+# JSON walker -- recursively yield (key_path_str, key, value) for every node
 # ---------------------------------------------------------------------------
 def _walk_json(obj: Any, path: str = "") -> list[tuple[str, str | None, Any]]:
     """Recursively yield (json_path, key_or_None, value) tuples.
@@ -141,6 +152,8 @@ def _scan_artifact(
     rel_path             : Repo-relative path (used in violation messages).
     source_text          : Raw JSON text.
     check_keys           : Whether to scan for forbidden field names (FB-R8).
+                           Includes both _FORBIDDEN_KEYS membership and the
+                           _RE_FORBIDDEN_KEY_PATTERN id/uid suffix regex.
     check_host_path      : Whether to scan for host paths in string values.
     check_secret_env     : Whether to scan for MASTERMIND_<NAME> patterns.
     check_dollar_amount  : Whether to scan for dollar-amount patterns.
@@ -167,7 +180,7 @@ def _scan_artifact(
         # (1) Forbidden key names in counts-only artifacts (scan b)
         if check_keys and key is not None:
             key_lower = key.lower()
-            if key_lower in _FORBIDDEN_KEYS:
+            if key_lower in _FORBIDDEN_KEYS or _RE_FORBIDDEN_KEY_PATTERN.match(key_lower):
                 violations.append({
                     "artifact": rel_path,
                     "json_path": json_path,
@@ -285,18 +298,18 @@ def scan(
     """
     violations: list[dict] = []
 
-    # ── Ignore rail ───────────────────────────────────────────────────────────
+    # -- Ignore rail ----------------------------------------------------------
     if not skip_ignore_rail and extra_artifacts is None:
         violations.extend(_check_ignore_rail(root))
 
-    # ── Artifact scans ───────────────────────────────────────────────────────
+    # -- Artifact scans -------------------------------------------------------
     if extra_artifacts is not None:
-        # Selftest path: only scan the provided synthetic fixtures.
+        # Selftest / synthetic-fixture path: scan only the provided artifacts.
         for rel_path, text in extra_artifacts.items():
             is_exempt = rel_path in _KEY_SCAN_EXEMPT
             # Exempt artifacts (mastermind_snapshot.json) skip the counts-only
             # scan (keys + dollar amounts + secret env) but remain subject to
-            # the broader host-path scan (scan c).
+            # the host-path scan.
             violations.extend(
                 _scan_artifact(
                     rel_path,
@@ -309,30 +322,19 @@ def scan(
             )
         return violations
 
-    # Normal path: collect artifacts from disk.
-    # (a) Key-scan artifacts (counts-only feedback artifacts)
-    key_scan_paths: set[str] = set()
-    for glob in _KEY_SCAN_GLOBS:
+    # Normal path: collect all artifacts from disk via _SCAN_GLOBS.
+    # Every file under these globs receives the full scan; only
+    # _KEY_SCAN_EXEMPT entries are reduced to host-path-only.
+    all_paths: set[str] = set()
+    for glob in _SCAN_GLOBS:
         for p in sorted(root.glob(glob)):
             if p.is_file():
-                key_scan_paths.add(str(p.relative_to(root)))
-
-    # (b) Host-path scan artifacts (superset — scan c, broader)
-    host_scan_paths: set[str] = set()
-    for glob in _HOST_PATH_SCAN_GLOBS:
-        for p in sorted(root.glob(glob)):
-            if p.is_file():
-                host_scan_paths.add(str(p.relative_to(root)))
-
-    all_paths = key_scan_paths | host_scan_paths
+                all_paths.add(str(p.relative_to(root)))
 
     for rel_path in sorted(all_paths):
         rel_path_norm = rel_path.replace("\\", "/")
         is_exempt = rel_path_norm in _KEY_SCAN_EXEMPT
-        is_key_scan = rel_path_norm in key_scan_paths and not is_exempt
 
-        # Exempt artifacts (mastermind_snapshot.json) are subject to host-path
-        # scan only (scan c).  Non-exempt feedback artifacts run the full scan.
         try:
             text = (root / rel_path).read_text(encoding="utf-8")
         except OSError:
@@ -342,9 +344,9 @@ def scan(
             _scan_artifact(
                 rel_path_norm,
                 text,
-                check_keys=is_key_scan,
-                check_dollar_amount=is_key_scan,
-                check_secret_env=is_key_scan,
+                check_keys=not is_exempt,
+                check_dollar_amount=not is_exempt,
+                check_secret_env=not is_exempt,
                 check_host_path=True,
             )
         )
@@ -359,7 +361,7 @@ def _run_selftest(root: Path) -> int:
     """Prove the guard fires on planted violations and is silent on clean code."""
     all_passed = True
 
-    # ── Test 1: ticker key in a feedback artifact → forbidden_key violation ──
+    # -- Test 1: ticker key in a feedback artifact -> forbidden_key violation --
     fixture_ticker = json.dumps({
         "schema": "mastermind_nw_feedback.v1",
         "generated_at": "2026-07-06T12:00:00+00:00",
@@ -375,9 +377,9 @@ def _run_selftest(root: Path) -> int:
     status = "PASS" if found_ticker else "FAIL"
     if not found_ticker:
         all_passed = False
-    print(f"  selftest [{status}] ticker key in feedback artifact → forbidden_key")
+    print(f"  selftest [{status}] ticker key in feedback artifact -> forbidden_key")
 
-    # ── Test 2: fill_id key → forbidden_key violation ────────────────────────
+    # -- Test 2: fill_id key -> forbidden_key violation -----------------------
     fixture_fill_id = json.dumps({
         "schema": "operator_grading.v1",
         "fill_id": "abc123",
@@ -392,9 +394,9 @@ def _run_selftest(root: Path) -> int:
     status = "PASS" if found_fill_id else "FAIL"
     if not found_fill_id:
         all_passed = False
-    print(f"  selftest [{status}] fill_id key in governance artifact → forbidden_key")
+    print(f"  selftest [{status}] fill_id key in governance artifact -> forbidden_key")
 
-    # ── Test 3: /Users/ path in string value → host_path_in_value ────────────
+    # -- Test 3: /Users/ path in string value -> host_path_in_value -----------
     fixture_host = json.dumps({
         "schema": "operator_grading.v1",
         "ledger_path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/data/operator/action_ledger.jsonl",
@@ -409,9 +411,9 @@ def _run_selftest(root: Path) -> int:
     status = "PASS" if found_host else "FAIL"
     if not found_host:
         all_passed = False
-    print(f"  selftest [{status}] /Users/ path in string value → host_path_in_value")
+    print(f"  selftest [{status}] /Users/ path in string value -> host_path_in_value")
 
-    # ── Test 4: $12,345 dollar amount → dollar_amount_in_value ───────────────
+    # -- Test 4: $12,345 dollar amount -> dollar_amount_in_value --------------
     fixture_dollar = json.dumps({
         "schema": "operator_exposure_summary.v1",
         "note": "Total NAV: $12,345 unrealized",
@@ -426,9 +428,9 @@ def _run_selftest(root: Path) -> int:
     status = "PASS" if found_dollar else "FAIL"
     if not found_dollar:
         all_passed = False
-    print(f"  selftest [{status}] dollar-amount string → dollar_amount_in_value")
+    print(f"  selftest [{status}] dollar-amount string -> dollar_amount_in_value")
 
-    # ── Test 5: MASTERMIND_TOKEN in string value → secret_env_pattern ────────
+    # -- Test 5: MASTERMIND_TOKEN in string value -> secret_env_pattern -------
     fixture_secret = json.dumps({
         "schema": "grading_closure.v1",
         "debug_token": "MASTERMIND_TOKEN=abc123xyz",
@@ -443,9 +445,9 @@ def _run_selftest(root: Path) -> int:
     status = "PASS" if found_secret else "FAIL"
     if not found_secret:
         all_passed = False
-    print(f"  selftest [{status}] MASTERMIND_<NAME> in string → secret_env_pattern")
+    print(f"  selftest [{status}] MASTERMIND_<NAME> in string -> secret_env_pattern")
 
-    # ── Test 6: clean counts-only fixture → no violations ─────────────────────
+    # -- Test 6: clean counts-only fixture -> no violations -------------------
     fixture_clean = json.dumps({
         "schema": "mastermind_nw_feedback.v1",
         "generated_at": "2026-07-06T12:00:00+00:00",
@@ -467,10 +469,10 @@ def _run_selftest(root: Path) -> int:
         all_passed = False
         for d in v6:
             print(f"    unexpected violation: {d}")
-    print(f"  selftest [{status}] counts-only clean fixture → no violations")
+    print(f"  selftest [{status}] counts-only clean fixture -> no violations")
 
-    # ── Test 7: mastermind_snapshot.json exempt from key scan ─────────────────
-    # Snapshot may contain tickers by design (FB-R1) — exempt from key scan.
+    # -- Test 7: mastermind_snapshot.json exempt from key scan ----------------
+    # Snapshot may contain tickers by design (FB-R1) -- exempt from key scan.
     # It must NOT be exempt from host-path scan.
     fixture_snap_tickers = json.dumps({
         "schema": "mastermind_snapshot.v1",
@@ -503,14 +505,68 @@ def _run_selftest(root: Path) -> int:
     status = "PASS" if snap_host_caught else "FAIL"
     if not snap_host_caught:
         all_passed = False
-    print(f"  selftest [{status}] mastermind_snapshot.json host-path NOT exempt → caught")
+    print(f"  selftest [{status}] mastermind_snapshot.json host-path NOT exempt -> caught")
+
+    # -- Test 8: F2 id/uid-suffix pattern catches order_id, position_ids -----
+    fixture_order_id = json.dumps({
+        "schema": "operator_grading.v1",
+        "order_id": "ord-xyz789",
+        "position_ids": ["pos-1", "pos-2"],
+        "run_count": 3,
+    })
+    v8 = scan(
+        root,
+        extra_artifacts={"data/governance/operator_grading.json": fixture_order_id},
+        skip_ignore_rail=True,
+    )
+    found_order_id = any(
+        d["violation_type"] == "forbidden_key" and "order_id" in d["json_path"]
+        for d in v8
+    )
+    found_position_ids = any(
+        d["violation_type"] == "forbidden_key" and "position_ids" in d["json_path"]
+        for d in v8
+    )
+    ok8 = found_order_id and found_position_ids
+    status = "PASS" if ok8 else "FAIL"
+    if not ok8:
+        all_passed = False
+    print(
+        f"  selftest [{status}] F2 id/uid-suffix keys (order_id, position_ids) "
+        f"-> forbidden_key"
+    )
+
+    # -- Test 9: F1 glob coverage -- unregistered governance file gets full scan
+    # A file path NOT in the old _KEY_SCAN_GLOBS list must still receive the
+    # key/dollar/secret scan.
+    fixture_future_artifact = json.dumps({
+        "schema": "nw_feedback_daily.v1",
+        "ticker": "TSLA",
+        "note": "future artifact that was not pre-registered",
+        "run_count": 7,
+    })
+    v9 = scan(
+        root,
+        extra_artifacts={
+            "data/governance/nw_feedback_daily.json": fixture_future_artifact
+        },
+        skip_ignore_rail=True,
+    )
+    found_glob_key = any(d["violation_type"] == "forbidden_key" for d in v9)
+    status = "PASS" if found_glob_key else "FAIL"
+    if not found_glob_key:
+        all_passed = False
+    print(
+        f"  selftest [{status}] F1 glob coverage -- unregistered "
+        f"data/governance/*.json gets full key scan"
+    )
 
     print()
     if all_passed:
-        print("selftest PASSED — all synthetic cases handled correctly")
+        print("selftest PASSED -- all synthetic cases handled correctly")
         return 0
     else:
-        print("selftest FAILED — one or more cases not caught")
+        print("selftest FAILED -- one or more cases not caught")
         return 1
 
 
@@ -542,7 +598,7 @@ def main() -> int:
 
     if not violations:
         print(
-            "check_private_boundary: OK — "
+            "check_private_boundary: OK -- "
             "ignore rails present; no private fields in committed artifacts."
         )
         return 0
@@ -550,14 +606,14 @@ def main() -> int:
     for v in violations:
         jp = f":{v['json_path']}" if v.get("json_path") else ""
         print(
-            f"  [VIOLATION] {v['artifact']}{jp} — "
+            f"  [VIOLATION] {v['artifact']}{jp} -- "
             f"[{v['violation_type']}] {v['detail']}",
             file=sys.stderr,
         )
 
     print(
         f"\n::error::check_private_boundary: {len(violations)} privacy-boundary "
-        f"violation(s) found. Committed feedback artifacts must be counts-only — "
+        f"violation(s) found. Committed feedback artifacts must be counts-only -- "
         f"no tickers, fill/position/decision IDs, host paths, dollar amounts, or "
         f"secret env-var patterns (FB-R8/FB-R13).",
         file=sys.stderr,
