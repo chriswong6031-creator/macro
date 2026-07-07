@@ -307,6 +307,9 @@ lanes:
       - id: build_nw_mastermind_context
         module: scripts.build_nw_mastermind_context
         note: non-fatal; NW→Mastermind context bridge (macro #1567) — declares the live daily.yml engine step that was added without a dag.yml entry (merge-race drift)
+      - id: build_mastermind_feedback_summary
+        module: scripts.build_mastermind_feedback_summary
+        note: non-fatal; Mastermind→NW reverse bridge reader — counts-only feedback summary (FB-R7/R8/R14); runs after build_nw_mastermind_context
       - id: build_neuralweb_health
         module: scripts.build_neuralweb_health
         note: non-fatal; PR-C NW lobe-status surface — two-phase (engine job = previous_run cortex; cortex job --refresh-cortex = current_run); after all NW lobe producers
