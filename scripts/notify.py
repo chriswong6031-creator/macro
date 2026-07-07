@@ -174,7 +174,10 @@ def send_telegram(msg: str) -> bool:
 
 
 def send_discord(msg: str) -> bool:
-    url = config.secret("DISCORD_WEBHOOK_URL")
+    # Fall back to the Watchlist webhook (the one channel that IS provisioned) so ops /
+    # heartbeat alerts have a working transport even when no dedicated DISCORD_WEBHOOK_URL
+    # secret is set. A workflow opts in by passing DISCORD_WEBHOOK_WATCHLIST in its env.
+    url = config.secret("DISCORD_WEBHOOK_URL") or config.secret("DISCORD_WEBHOOK_WATCHLIST")
     if not (config.load()["notify"]["discord"]["enabled"] and url):
         log.info("discord: skipped (disabled or secrets absent)")
         return False
