@@ -945,6 +945,20 @@ jobs:
             fi
           done
           exit 0
+      - name: watchlist buy-zone sentinel (B6 — fail-soft; skips when creds absent)
+        # B6: reads operator Supabase watchlist, diffs vs yesterday's per-ticker state,
+        # emits buy-zone-enter alerts to data/alerts/watchlist_alerts.jsonl + Discord.
+        # Fail-soft: missing SUPABASE_SERVICE_KEY/SUPABASE_OPERATOR_USER_ID -> exit 0.
+        # Same-day idempotent: second run carries forward existing state files.
+        # OPS: add SUPABASE_SERVICE_KEY + SUPABASE_OPERATOR_USER_ID repo secrets to enable.
+        # Optional: add DISCORD_WEBHOOK_WATCHLIST for a dedicated channel;
+        #   falls back to DISCORD_WEBHOOK_URL when absent.
+        env:
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          SUPABASE_OPERATOR_USER_ID: ${{ secrets.SUPABASE_OPERATOR_USER_ID }}
+          DISCORD_WEBHOOK_WATCHLIST: ${{ secrets.DISCORD_WEBHOOK_WATCHLIST }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: python -m scripts.run_watchlist_sentinel || echo "::warning::watchlist sentinel failed (non-fatal)"
       - name: notify (telegram/discord; skips when secrets absent)
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}

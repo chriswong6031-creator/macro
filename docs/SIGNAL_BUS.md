@@ -15,6 +15,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | china-alpha | 7 |
 | china-intel-hub | 2 |
 | codex-b5 | 1 |
+| codex-docket-b6 | 3 |
 | cycle-intelligence | 14 |
 | dannytrades | 1 |
 | engine-fix | 16 |
@@ -47,7 +48,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | tier | count |
 |---|---|
 | display | 116 |
-| infrastructure | 65 |
+| infrastructure | 68 |
 | scored | 4 |
 | shadow | 38 |
 
@@ -55,7 +56,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 214 |
+| git | 217 |
 | gitignored-local | 6 |
 | r2 | 3 |
 
@@ -101,6 +102,14 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
 | event-windows | `embedded: event_windows block inside site/stockdata/<TICKER>.json` | json | daily-engine | display | 1 | 0 |
+
+### codex-docket-b6
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| watchlist-alerts-jsonl | `data/alerts/watchlist_alerts.jsonl` | jsonl | daily-engine | infrastructure | 2 | 0 |
+| watchlist-sentinel-cooldown | `data/alerts/watchlist_sentinel_cooldown.json` | json | daily-engine | infrastructure | 1 | 0 |
+| watchlist-sentinel-states | `data/alerts/watchlist_sentinel_states.json` | json | daily-engine | infrastructure | 1 | 0 |
 
 ### cycle-intelligence
 

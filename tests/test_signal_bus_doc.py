@@ -73,10 +73,12 @@ def test_all_artifact_ids_present():
     with _SYNAPSE_YML.open(encoding="utf-8") as fh:
         registry = yaml.safe_load(fh)
     artifact_ids = list(registry.get("artifacts", {}).keys())
-    assert len(artifact_ids) == 223, (
-        f"Expected 223 artifacts in synapse.yml, found {len(artifact_ids)}. "
+    assert len(artifact_ids) == 226, (
+        f"Expected 226 artifacts in synapse.yml, found {len(artifact_ids)}. "
         "Update the test if the registry count changed intentionally."
-        " (W7b added machine-registry, cortex-attention-grades, cortex-probation = 104->107;"
+        " (B6 watchlist sentinel added watchlist-alerts-jsonl, watchlist-sentinel-states,"
+        " watchlist-sentinel-cooldown = 223->226;"
+        " W7b added machine-registry, cortex-attention-grades, cortex-probation = 104->107;"
         " W6b added ops-push-basket-freeze, ops-push-signal-sanity, ops-push-healthcheck = 107->110;"
         " signal bus registry now carries 112 artifacts;"
         " W3 event-intelligence added 6 event-priors artifacts = 112->118;"
@@ -145,7 +147,9 @@ def test_all_artifact_ids_present():
         " evidence-clock PR-1 added evidence-clock, evidence-clock-reviews = 216->218;"
         " codex-docket event-landmine added event-windows = 218->219;"
         " NW core-cognition W1 added mechanism-pathways, mechanism-pathways-history, site-mechanism-pathways = 219->222;"
-        " nasdaq-internals program added nasdaq-internals = 222->223)"
+        " nasdaq-internals program added nasdaq-internals = 222->223;"
+        " B6 watchlist sentinel added watchlist-alerts-jsonl, watchlist-sentinel-states,"
+        " watchlist-sentinel-cooldown = 223->226)"
     )
     content = generate(_SYNAPSE_YML)
     missing = [aid for aid in artifact_ids if aid not in content]
