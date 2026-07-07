@@ -947,6 +947,9 @@
   .nb-earn-soon{flex:none;font-size:8px;font-weight:700;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap;cursor:help;background:color-mix(in srgb,var(--warn) 10%,transparent);color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 28%,transparent)}
   /* W1.5 board-level suppressed-today note */
   .nb-eb-note{font-size:11px;padding:5px 11px;margin:4px 0;border-radius:6px;color:var(--warn);border:1px dashed color-mix(in srgb,var(--warn) 35%,var(--line));background:color-mix(in srgb,var(--warn) 5%,transparent);cursor:help}
+  /* W4 stock-personality slim chips (expander only, guardrail 16) */
+  .nb-sp-chart{flex:none;font-size:8px;font-weight:600;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap;cursor:help;background:color-mix(in srgb,var(--muted) 8%,transparent);color:var(--muted);border:1px solid color-mix(in srgb,var(--muted) 22%,transparent)}
+  .nb-sp-mode{flex:none;font-size:8px;font-weight:600;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap;cursor:help;background:color-mix(in srgb,var(--info) 8%,transparent);color:var(--info,var(--link));border:1px solid color-mix(in srgb,var(--info,var(--link)) 30%,transparent)}
   /* B4 Conviction Delta — "What changed today" collapsed strip */
   .nb-delta-strip{margin:5px 0 3px;border-radius:7px;border:1px solid var(--line);background:var(--panel2);font-size:11px}
   .nb-delta-hdr{cursor:pointer;padding:5px 11px;display:flex;align-items:center;gap:8px;user-select:none;list-style:none;color:var(--muted);font-weight:600}
@@ -3608,6 +3611,78 @@
             {% endif %}
           </div>{# end .nb-dossier #}
           {% endif %}{# end if _dos #}
+          {# W4 stock-personality slim chips — expander only (guardrail 16; no at-rest surface).
+             Fail-open: n.get('personality') returns None when data absent. #}
+          {# Display-name maps — ≤3 words EN per spec; no translated text in data- attributes #}
+          {% set _SP_CHART_EN = {
+            'event_gapper': 'Event-gapper',
+            'failed_breakout_trap': 'Breakout-fade prone',
+            'mean_reversion_rubber_band': 'Mean-reversion band',
+            'smooth_compounder_grind': 'Smooth grind',
+            'stair_step_leader': 'Stair-step leader',
+            'volatile_momentum_vehicle': 'Volatile momentum',
+            'basing_accumulator': 'Basing',
+            'defensive_range_stock': 'Defensive range',
+            'mixed_chart': 'Mixed chart'
+          } %}
+          {% set _SP_CHART_ZH = {
+            'event_gapper': '事件跳空',
+            'failed_breakout_trap': '突破易回落',
+            'mean_reversion_rubber_band': '均值回归',
+            'smooth_compounder_grind': '平稳复利',
+            'stair_step_leader': '阶梯领涨',
+            'volatile_momentum_vehicle': '高波动动量',
+            'basing_accumulator': '筑底',
+            'defensive_range_stock': '防御区间',
+            'mixed_chart': '混合图形'
+          } %}
+          {% set _SP_MODE_EN = {
+            'event_override': 'Pre-earnings',
+            'forced_liquidation': 'Forced liq',
+            'squeeze': 'Squeeze',
+            'options_pin': 'Options pin',
+            'negative_gamma_trend': 'Neg-gamma',
+            'sector_rotation_feeder': 'Rotation feeder',
+            'post_news_attention': 'News spike',
+            'stale_dead_money': 'Dead money',
+            'accumulation': 'Accumulation',
+            'distribution': 'Distribution',
+            'normal': 'Normal'
+          } %}
+          {% set _SP_MODE_ZH = {
+            'event_override': '财报窗口',
+            'forced_liquidation': '被动清仓',
+            'squeeze': '逼空',
+            'options_pin': '期权钉住',
+            'negative_gamma_trend': '负Gamma',
+            'sector_rotation_feeder': '轮动传导',
+            'post_news_attention': '新闻后关注',
+            'stale_dead_money': '死钱',
+            'accumulation': '静默积累',
+            'distribution': '筹码派发',
+            'normal': '正常'
+          } %}
+          {% set _npers = n.get('personality') %}
+          {% if _npers %}
+            {% set _pc_chart = _npers.get('chart') %}
+            {% set _pc_mode = _npers.get('mode') %}
+            {% if _pc_chart or _pc_mode %}
+            <div class="nb-sp-chips" style="display:flex;flex-wrap:wrap;gap:3px;margin-top:3px">
+              {% if _pc_chart %}
+              <span class="nb-sp-chart"
+                data-tip-en="Chart personality: {{ _SP_CHART_EN.get(_pc_chart, _pc_chart) }} — context only, no ranking power (R-SP13)"
+                data-tip-zh="图形个性：{{ _SP_CHART_ZH.get(_pc_chart, _pc_chart) }} — 仅供参考，不参与排名（R-SP13）"
+              ><span class="l-en">{{ _SP_CHART_EN.get(_pc_chart, _pc_chart) }}</span><span class="l-zh">{{ _SP_CHART_ZH.get(_pc_chart, _pc_chart) }}</span></span>
+              {% endif %}
+              {% if _pc_mode %}
+              <span class="nb-sp-mode"
+                data-tip-en="Current mode: {{ _SP_MODE_EN.get(_pc_mode, _pc_mode) }} — fast-layer state, context only"
+                data-tip-zh="当前模式：{{ _SP_MODE_ZH.get(_pc_mode, _pc_mode) }} — 快速层，仅供参考"
+              ><span class="l-en">{{ _SP_MODE_EN.get(_pc_mode, _pc_mode) }}</span><span class="l-zh">{{ _SP_MODE_ZH.get(_pc_mode, _pc_mode) }}</span></span>
+              {% endif %}
+            </div>
+            {% endif %}
+          {% endif %}
           </div>{# end .nb-more #}
         </div>{# end .nbcard div #}
         {% endif %}{# end if not heading #}
