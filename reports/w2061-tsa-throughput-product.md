@@ -35,16 +35,16 @@ The 2019 baseline is the natural pre-COVID reference point for travel demand; th
 
 ### Coverage summary
 
-| Year | Days | yoy_pct coverage | vs2019_pct coverage |
+| Year | Days | yoy_pct coverage | vs2019_pct coverage (**) |
 |---|---|---|---|
 | 2019 | 365 | 0% (no prior year) | 0% (is the baseline) |
-| 2020 | 366 | 100% | 100% |
-| 2021 | 365 | 100% | 100% |
-| 2022 | 365 | 100% | 100% |
-| 2023 | 365 | 100% | 100% |
-| 2024 | 366 | 100% | 100% |
-| 2025 | 365 | 100% | 100% |
-| 2026 | 186 (through Jul 5) | 100% | 100% |
+| 2020 | 366 | ~100% | 97% |
+| 2021 | 365 | ~100% | 96% |
+| 2022 | 365 | ~100% | 96% |
+| 2023 | 365 | ~100% | 96% |
+| 2024 | 366 | ~100% | 97% |
+| 2025 | 365 | ~100% | 97% |
+| 2026 | 186 (through Jul 5) | ~100% | 96% |
 
 ### Sample (most recent 5 days)
 
@@ -90,30 +90,35 @@ date         passengers     avg7d      yoy_pct   vs2019_pct
 
 ## Tests
 
-18 unit tests in `tests/test_tsa_throughput.py`. All pure logic, no network calls.
+21 unit tests in `tests/test_tsa_throughput.py`. All pure logic, no network calls.
 
-- Parser: row count, column types, value accuracy, header skip, blank-cell drop (amendment A1), deduplication, empty-HTML error, sort order
+- Parser: row count, column types, value accuracy, header skip, blank-cell drop (amendment A1), deduplication, empty-HTML error, sort order, decoy-second-table isolation
 - Display fields: avg7d correctness, min_periods behavior, YoY null for first year, YoY=0 for flat series, vs2019 null without 2019 data, vs2019≈0 for flat series, column presence
-- Holiday exclusion (Amendment A3): holiday target date returns NaN, holiday 2019 candidate excluded (non-holiday match used instead), self-contained holiday set includes Independence Day
+- Holiday exclusion (Amendment A3): holiday target date returns NaN, holiday 2019 candidate excluded (non-holiday match used instead), self-contained holiday set includes Independence Day, non-holiday weekday correctly identified
 
-Result: **18/18 pass**.
+Result: **21/21 pass**.
 
 ---
 
 ## Nightly wiring (for consolidation)
 
-This collector is standalone. To wire into the nightly pipeline, add to `scripts/collect.py`:
+**Non-standard adapter — do not wire through the standard runner.**
+
+`TsaThroughputAdapter.fetch()` calls `store.upsert()` internally and returns the already-stored frames. The standard runner (`collectors/base.py fetch_with_breaker`) expects `fetch()` to return raw frames and then handles validate/quarantine/circuit-breaker/store itself. Wiring this adapter through the standard registry path would double-store and bypass the runner's validation and quarantine logic.
+
+Wire via a dedicated nightly step instead:
 
 ```python
-# Import (with other collector imports)
+# In scripts/collect.py (or a dedicated tsa_collect.py step) — NOT in the adapter registry list
 from collectors.tsa_throughput import TsaThroughputAdapter
 
-# Add to adapter registry list
-TsaThroughputAdapter(),
+# Incremental (fetches only the current-year page; < 1 second)
+TsaThroughputAdapter().fetch()
+
+# Full backfill (run once or when the store is missing; fetches all year pages)
+TsaThroughputAdapter().fetch(full_history=True)
 ```
 
-The adapter is self-gating: incremental runs (no `--full-history` flag) fetch only the current-year TSA page (one HTTP request, < 1 second). Full history fetches 8 year pages in sequence.
-
-No config keys, credentials, or rate-limit headers required. The TSA site has no documented rate limits; one request per year-page per nightly run is well within any reasonable threshold.
+The adapter uses `self.http_get` (retries + exponential backoff + config-sponsored User-Agent). No additional config keys, credentials, or rate-limit headers required. The TSA site has no documented rate limits; one request per year-page per nightly run is well within any reasonable threshold.
 
 **Destination for display:** conditions desk (`conditions.html` or equivalent macro context panel). Suggested display: sparkline of `avg7d` with latest `yoy_pct` and `vs2019_pct` as badge labels.

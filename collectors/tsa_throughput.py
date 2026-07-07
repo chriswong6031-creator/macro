@@ -36,10 +36,18 @@ Pre-registered amendment A3 (holiday exclusion): _vs2019_pct excludes US
   dates is the correct honest representation for conditions desk display.
 
 Nightly wiring (for consolidation):
-  Add to scripts/collect.py import block:
+  IMPORTANT — self-storing adapter (non-standard pattern):
+  TsaThroughputAdapter.fetch() calls store.upsert() internally and returns
+  the already-stored frames.  This deviates from the standard Adapter contract
+  where fetch() returns raw frames and the runner (fetch_with_breaker) stores
+  them.  Do NOT wire this adapter through the standard runner path — doing so
+  would double-store and bypass the runner's validate/quarantine/circuit-breaker
+  logic.  Instead, call fetch() directly from a dedicated nightly step:
+
       from collectors.tsa_throughput import TsaThroughputAdapter
-  Add to the adapter registry list:
-      TsaThroughputAdapter(),
+      TsaThroughputAdapter().fetch()           # incremental (current year only)
+      TsaThroughputAdapter().fetch(full_history=True)  # backfill all years
+
   The adapter self-gates on last stored date; incremental runs fetch only
   the current-year page (< 1 second). Full-history flag fetches all year pages.
   No config keys required; no credentials; no rate-limit headers observed.
@@ -52,7 +60,6 @@ from datetime import date, datetime
 from html.parser import HTMLParser
 
 import pandas as pd
-import requests
 
 from collectors.base import Adapter
 from lib import store
@@ -61,12 +68,6 @@ log = logging.getLogger(__name__)
 
 BASE_URL = "https://www.tsa.gov/travel/passenger-volumes"
 HISTORY_START_YEAR = 2019
-HEADERS = {
-    "User-Agent": (
-        "Mozilla/5.0 (compatible; MacroDashboard/1.0; "
-        "+https://mastermind-x.com)"
-    )
-}
 GROUP = "tsa"
 SERIES = "throughput"
 
@@ -169,17 +170,28 @@ def _is_us_federal_holiday(d: "pd.Timestamp | date") -> bool:
 # ---------------------------------------------------------------------------
 
 class _TableParser(HTMLParser):
-    """Extract the first <table> from TSA passenger-volumes pages."""
+    """Extract the FIRST <table> from TSA passenger-volumes pages.
+
+    Only rows from the first table are captured.  Once the first </table>
+    close tag is seen, _done is set and all subsequent tags are ignored.
+    This prevents rows from footer/navigation/disclaimer tables on the real
+    tsa.gov page from contaminating the data table.  The data table is the
+    first (and historically only) table on the passenger-volumes pages; its
+    header row contains 'Date' and 'Numbers'.
+    """
 
     def __init__(self) -> None:
         super().__init__()
         self._in_table = False
+        self._done = False  # set True after first </table>
         self._in_cell = False
         self._rows: list[list[str]] = []
         self._cur: list[str] = []
 
     def handle_starttag(self, tag: str, attrs: list) -> None:
-        if tag == "table":
+        if self._done:
+            return
+        if tag == "table" and not self._in_table:
             self._in_table = True
         if self._in_table and tag in ("td", "th"):
             self._in_cell = True
@@ -187,13 +199,16 @@ class _TableParser(HTMLParser):
             self._cur = []
 
     def handle_endtag(self, tag: str) -> None:
+        if self._done:
+            return
         if tag in ("td", "th"):
             self._in_cell = False
         if tag == "tr" and self._in_table and self._cur:
             self._rows.append(self._cur[:])
             self._cur = []
-        if tag == "table":
+        if tag == "table" and self._in_table:
             self._in_table = False
+            self._done = True  # stop processing after first table closes
 
     def handle_data(self, data: str) -> None:
         if self._in_cell:
@@ -387,8 +402,8 @@ class TsaThroughputAdapter(Adapter):
         for year in years:
             url = BASE_URL if year == current_year else f"{BASE_URL}/{year}"
             try:
-                r = requests.get(url, headers=HEADERS, timeout=30)
-                r.raise_for_status()
+                # Use self.http_get for retries/backoff and config-sponsored UA
+                r = self.http_get(url, timeout=30)
                 df = parse_tsa_html(r.text)
                 log.info("tsa_throughput: fetched year=%d rows=%d", year, len(df))
                 frames.append(df)
