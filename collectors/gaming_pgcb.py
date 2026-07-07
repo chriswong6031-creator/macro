@@ -11,8 +11,10 @@ As monthly Excel reports, typically released 10-15 business days after month-end
 PGCB fiscal year: July 1 – June 30 (so FY2019 = Jul 2018 – Jun 2019).
 The monthly Excel reports use this fiscal convention in their file names.
 
-PIT contract: release_date = fetch date; period_end = last calendar day of
-the reported month.
+PIT contract: release_date = first-of-month + 25 days (the deterministic
+publish lag, not the fetch date). For the most-recent period where this date
+is still in the future, release_date falls back to the fetch date. period_end
+= last calendar day of the reported month.
 
 Schema: period_end, release_date, segment (slots|tables|igaming|sports),
 operator, operator_raw, gross_revenue_usd.
@@ -277,10 +279,16 @@ class PGCBGamingAdapter:
                 continue
             if period_end > today:
                 continue
+            # PIT: PGCB releases ~25 days after month-end (same as NJ DGE).
+            # release_date = first day of the month + 25 days.
+            # Fall back to fetch date only if computed release is in the future.
+            month_start = date(period_end.year, period_end.month, 1)
+            computed_release = month_start + timedelta(days=25)
+            release_date = computed_release if computed_release <= today else today
             try:
                 r = session.get(url, timeout=30)
                 r.raise_for_status()
-                df = _parse_pgcb_excel(r.content, period_end, segment, release_date=today)
+                df = _parse_pgcb_excel(r.content, period_end, segment, release_date=release_date)
                 frames.append(df)
                 fetched += 1
                 log.info("gaming_pgcb: %s %s (%d rows)", segment, period_end, len(df))

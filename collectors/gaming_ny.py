@@ -292,9 +292,15 @@ class NYGamingAdapter:
                 continue
             if period_end > today:
                 continue
+            # PIT: NY releases every Tuesday covering the prior Mon-Sun week.
+            # release_date = the Tuesday immediately after period_end (Sunday + 2 days).
+            # For the most-recent period still awaiting its real release, fall back
+            # to fetch date only if the computed Tuesday is in the future.
+            computed_release = period_end + timedelta(days=2)  # Sunday -> Tuesday
+            release_date = computed_release if computed_release <= today else today
             try:
                 raw = _fetch_one(url, session)
-                df = _parse_workbook(raw, period_end, release_date=today)
+                df = _parse_workbook(raw, period_end, release_date=release_date)
                 frames.append(df)
                 fetched += 1
                 log.info("gaming_ny: fetched %s (%d operators)", period_end, len(df))

@@ -315,6 +315,66 @@ class TestNowcastConstruction:
         # With 36 months of data, we should have at least some YoY rows
         assert len(dkng_nc) >= 1 or nc.empty  # empty is acceptable (dedup edge case)
 
+    def test_max_release_date_propagated(self):
+        """max_release_date is present and non-null after 12+ months (PIT column exists)."""
+        from scripts.w4_gaming_tape_phase0 import _build_nowcast
+        panels = self._mini_state_panels()
+        weights = self._mini_weights()
+        nc = _build_nowcast(panels, weights)
+        if nc.empty:
+            return
+        assert "max_release_date" in nc.columns, (
+            "nowcast output must carry max_release_date for PIT auditing"
+        )
+        # At least some quarters should have a non-null release date
+        # (the first 12 months will be NaN due to YoY dropping them)
+        nc_valid = nc.dropna(subset=["nowcast_yoy_growth"])
+        if len(nc_valid) > 0:
+            assert nc_valid["max_release_date"].notna().any(), (
+                "max_release_date should be non-null for quarters with valid YoY growth"
+            )
+
+    def test_release_date_not_collapsed_to_single_date(self):
+        """release_date column must have multiple distinct values — not all stamped today."""
+        panels = self._mini_state_panels()
+        nj = panels["nj"]
+        assert "release_date" in nj.columns, "release_date column missing from mini panel"
+        unique_release_dates = nj["release_date"].nunique()
+        assert unique_release_dates > 1, (
+            f"All rows share the same release_date — PIT collapse detected "
+            f"(got {unique_release_dates} unique dates, expected >1 for multi-month panel)"
+        )
+
+    def test_ny_release_date_is_two_days_after_period_end(self):
+        """Verify NY synthetic panel: release_date == period_end + 2 days (Tuesday rule)."""
+        from scripts.w4_gaming_tape_phase0 import _build_synthetic_panel
+        panels = _build_synthetic_panel()
+        ny = panels["ny"]
+        assert "release_date" in ny.columns
+        ny_sample = ny.head(50).copy()
+        ny_sample["period_end_dt"] = pd.to_datetime(ny_sample["period_end"])
+        ny_sample["release_date_dt"] = pd.to_datetime(ny_sample["release_date"])
+        ny_sample["lag_days"] = (ny_sample["release_date_dt"] - ny_sample["period_end_dt"]).dt.days
+        # All lags should be exactly 2 (Sunday + 2 = Tuesday)
+        assert (ny_sample["lag_days"] == 2).all(), (
+            f"NY release_date should be period_end + 2d (got lags: {ny_sample['lag_days'].unique()})"
+        )
+
+    def test_nj_release_date_is_25_days_after_month_start(self):
+        """Verify NJ synthetic panel: release_date == month_start + 25 days."""
+        from scripts.w4_gaming_tape_phase0 import _build_synthetic_panel
+        panels = _build_synthetic_panel()
+        nj = panels["nj"]
+        assert "release_date" in nj.columns
+        nj_sports = nj[nj["market"] == "sports"].copy().head(30)
+        nj_sports["period_end_dt"] = pd.to_datetime(nj_sports["period_end"])
+        nj_sports["release_date_dt"] = pd.to_datetime(nj_sports["release_date"])
+        nj_sports["month_start"] = nj_sports["period_end_dt"].dt.to_period("M").dt.to_timestamp()
+        nj_sports["expected_rd"] = nj_sports["month_start"] + timedelta(days=25)
+        assert (nj_sports["release_date_dt"] == nj_sports["expected_rd"]).all(), (
+            "NJ release_date should be month_start + 25 days"
+        )
+
 
 # ---------------------------------------------------------------------------
 # check_validated_claims guard (CI integration)

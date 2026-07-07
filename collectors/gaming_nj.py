@@ -13,7 +13,10 @@ Data is published in two formats depending on vintage:
   coverage) per the HOUSE RULE "land partial + honest report" principle.
 
 PIT contract: NJ DGE releases each month's data approximately 20-25 days after
-month-end.  release_date = actual fetch date; period = the month in the filename.
+month-end. release_date = first-of-month + 25 days (the deterministic publish lag,
+not the fetch date). For the most-recent period where this date is still in the
+future, release_date falls back to the fetch date. period_end = last calendar
+day of the reported month.
 
 Schema: period_end (last calendar day of the month), release_date, market
 (igaming|sports), operator, operator_raw, gross_revenue_usd, handle_usd.
@@ -286,10 +289,17 @@ class NJGamingAdapter:
                     continue
                 if period_end > today:
                     continue
+                # PIT: NJ DGE releases ~25 days after month-end.
+                # release_date = first day of the month + 25 days.
+                # Fall back to fetch date only if computed release is in the future
+                # (i.e. the most-recent period not yet officially published).
+                month_start = date(period_end.year, period_end.month, 1)
+                computed_release = month_start + timedelta(days=25)
+                release_date = computed_release if computed_release <= today else today
                 try:
                     r = session.get(file_url, timeout=30)
                     r.raise_for_status()
-                    df = _parse_nj_excel(r.content, period_end, mkt, release_date=today)
+                    df = _parse_nj_excel(r.content, period_end, mkt, release_date=release_date)
                     frames.append(df)
                     fetched += 1
                     log.info("gaming_nj: %s %s (%d operators)", mkt, period_end, len(df))

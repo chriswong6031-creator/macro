@@ -304,36 +304,57 @@ def _build_nowcast(state_panels: dict[str, pd.DataFrame],
 
     Steps:
     1. Convert weekly (NY) and monthly (NJ/PGCB) to monthly by summing.
+       release_date (the actual publish date, not fetch date) is carried
+       through as the max per (month, operator, state) group.
     2. Compute YoY growth rate for deseasonalization (GAP-5 / SEASONALITY law).
     3. Exposure-weight by operator weights CSV.
     4. Aggregate to quarters (calendar quarters matching operator reporting).
-    5. Apply PIT lag: only use state data available >= 5 days before quarter-end.
+       Output includes max_release_date (latest state print that feeds the
+       quarter) so callers can apply a PIT cut vs. operator earnings dates.
+
+    PIT NOTE: the full PIT filter "only use prints with release_date <
+    earnings_date - 5d" requires an operator quarterly earnings-date table
+    which is not yet available (GAP-3). max_release_date is stored in the
+    output for future implementation; no earnings-date filtering is applied
+    here — this is an honest gap, not a hidden defect.
 
     Returns DataFrame with columns:
-      operator, quarter_end, nowcast_yoy_growth, state_coverage,
-      n_state_months, synthetic (bool).
+      operator, quarter_end, quarter, nowcast_yoy_growth,
+      n_state_months, n_states, max_release_date.
     """
-    # ---- NY: weekly -> monthly sum per operator ----
+    # ---- NY: weekly -> monthly sum + max release_date per operator ----
     monthly_parts = []
 
     if "ny" in state_panels:
         ny = state_panels["ny"].copy()
         ny["period_end"] = pd.to_datetime(ny["period_end"])
         ny["month"] = ny["period_end"].dt.to_period("M")
+        if "release_date" in ny.columns:
+            ny["release_date"] = pd.to_datetime(ny["release_date"])
+        else:
+            ny["release_date"] = pd.NaT
         # map to canonical operator names that appear in weights
         op_map = {
             "DKNG": "DKNG", "FLUT_FD": "FLUT", "BETMGM": "MGM",
             "CZRS": "CZR", "PENN": "PENN",
         }
         ny["op_canonical"] = ny["operator"].map(op_map)
-        ny_monthly = (
-            ny[ny["op_canonical"].notna()]
-            .groupby(["month", "op_canonical"])[["revenue_usd"]]
+        ny_filt = ny[ny["op_canonical"].notna()]
+        ny_rev = (
+            ny_filt.groupby(["month", "op_canonical"])["revenue_usd"]
             .sum()
             .reset_index()
-            .rename(columns={"op_canonical": "operator", "revenue_usd": "state_rev",
-                              "month": "period_month"})
         )
+        ny_rel = (
+            ny_filt.groupby(["month", "op_canonical"])["release_date"]
+            .max()
+            .reset_index()
+        )
+        ny_monthly = ny_rev.merge(ny_rel, on=["month", "op_canonical"])
+        ny_monthly = ny_monthly.rename(columns={
+            "op_canonical": "operator", "revenue_usd": "state_rev",
+            "month": "period_month",
+        })
         ny_monthly["state"] = "NY"
         ny_monthly["synthetic"] = ny.get("synthetic", pd.Series([False])).all() if "synthetic" in ny.columns else False
         monthly_parts.append(ny_monthly)
@@ -342,20 +363,32 @@ def _build_nowcast(state_panels: dict[str, pd.DataFrame],
         nj = state_panels["nj"].copy()
         nj["period_end"] = pd.to_datetime(nj["period_end"])
         nj["month"] = nj["period_end"].dt.to_period("M")
+        if "release_date" in nj.columns:
+            nj["release_date"] = pd.to_datetime(nj["release_date"])
+        else:
+            nj["release_date"] = pd.NaT
         op_map_nj = {
             "DKNG": "DKNG", "FLUT_FD": "FLUT", "BETMGM": "MGM",
             "CZRS": "CZR", "PENN": "PENN",
         }
         rev_col = "gross_revenue_usd" if "gross_revenue_usd" in nj.columns else "revenue_usd"
         nj["op_canonical"] = nj["operator"].map(op_map_nj)
-        nj_monthly = (
-            nj[nj["op_canonical"].notna()]
-            .groupby(["month", "op_canonical"])[[rev_col]]
+        nj_filt = nj[nj["op_canonical"].notna()]
+        nj_rev = (
+            nj_filt.groupby(["month", "op_canonical"])[[rev_col]]
             .sum()
             .reset_index()
-            .rename(columns={"op_canonical": "operator", rev_col: "state_rev",
-                              "month": "period_month"})
         )
+        nj_rel = (
+            nj_filt.groupby(["month", "op_canonical"])["release_date"]
+            .max()
+            .reset_index()
+        )
+        nj_monthly = nj_rev.merge(nj_rel, on=["month", "op_canonical"])
+        nj_monthly = nj_monthly.rename(columns={
+            "op_canonical": "operator", rev_col: "state_rev",
+            "month": "period_month",
+        })
         nj_monthly["state"] = "NJ"
         nj_monthly["synthetic"] = nj.get("synthetic", pd.Series([False])).all() if "synthetic" in nj.columns else False
         monthly_parts.append(nj_monthly)
@@ -364,20 +397,32 @@ def _build_nowcast(state_panels: dict[str, pd.DataFrame],
         pgcb = state_panels["pgcb"].copy()
         pgcb["period_end"] = pd.to_datetime(pgcb["period_end"])
         pgcb["month"] = pgcb["period_end"].dt.to_period("M")
+        if "release_date" in pgcb.columns:
+            pgcb["release_date"] = pd.to_datetime(pgcb["release_date"])
+        else:
+            pgcb["release_date"] = pd.NaT
         op_map_pgcb = {
             "DKNG": "DKNG", "FLUT_FD": "FLUT", "BETMGM": "MGM",
             "CZRS": "CZR", "PENN": "PENN",
         }
         rev_col = "gross_revenue_usd"
         pgcb["op_canonical"] = pgcb["operator"].map(op_map_pgcb)
-        pgcb_monthly = (
-            pgcb[pgcb["op_canonical"].notna()]
-            .groupby(["month", "op_canonical"])[[rev_col]]
+        pgcb_filt = pgcb[pgcb["op_canonical"].notna()]
+        pgcb_rev = (
+            pgcb_filt.groupby(["month", "op_canonical"])[[rev_col]]
             .sum()
             .reset_index()
-            .rename(columns={"op_canonical": "operator", rev_col: "state_rev",
-                              "month": "period_month"})
         )
+        pgcb_rel = (
+            pgcb_filt.groupby(["month", "op_canonical"])["release_date"]
+            .max()
+            .reset_index()
+        )
+        pgcb_monthly = pgcb_rev.merge(pgcb_rel, on=["month", "op_canonical"])
+        pgcb_monthly = pgcb_monthly.rename(columns={
+            "op_canonical": "operator", rev_col: "state_rev",
+            "month": "period_month",
+        })
         pgcb_monthly["state"] = "PGCB"
         pgcb_monthly["synthetic"] = pgcb.get("synthetic", pd.Series([False])).all() if "synthetic" in pgcb.columns else False
         monthly_parts.append(pgcb_monthly)
@@ -388,10 +433,16 @@ def _build_nowcast(state_panels: dict[str, pd.DataFrame],
     monthly = pd.concat(monthly_parts, ignore_index=True)
     monthly["period_month"] = monthly["period_month"].astype("period[M]")
 
-    # ---- YoY deseasonalization ----
+    # ---- YoY deseasonalization (carry release_date as max per group) ----
+    # release_date is the actual publish date from the collector (not fetch date).
+    # We carry the MAX release_date per (month, operator, state) group so that
+    # the quarterly output stores the latest print that feeds each quarter.
+    agg_dict: dict[str, object] = {"state_rev": "sum"}
+    if "release_date" in monthly.columns:
+        agg_dict["release_date"] = "max"
     monthly_agg = (
-        monthly.groupby(["period_month", "operator", "state"])["state_rev"]
-        .sum()
+        monthly.groupby(["period_month", "operator", "state"])
+        .agg(agg_dict)
         .reset_index()
     )
     monthly_agg = monthly_agg.sort_values(["operator", "state", "period_month"])
@@ -403,8 +454,6 @@ def _build_nowcast(state_panels: dict[str, pd.DataFrame],
     # ---- Exposure weighting ----
     # For each (operator, state): multiply state_rev_yoy by the weight
     wt = weights[weights["operator"].isin(["DKNG", "MGM", "CZR", "PENN", "BYD", "RRR"])].copy()
-    # map state to NJ/NY/PA
-    state_map = {"NY": "NY", "NJ": "NJ", "PA": "PGCB"}
     monthly_agg["state_key"] = monthly_agg["state"].map({"NY": "NY", "NJ": "NJ", "PGCB": "PA"})
 
     nowcast_rows = []
@@ -412,10 +461,10 @@ def _build_nowcast(state_panels: dict[str, pd.DataFrame],
         op_wt = wt[wt["operator"] == op][["state", "segment", "rev_share_approx"]].copy()
         if op_wt.empty:
             continue
-        # Aggregate state weights: take the max segment weight per state (sports/igaming/slots)
+        # Aggregate state weights: take the max segment weight per state
         state_weights = op_wt.groupby("state")["rev_share_approx"].max()
 
-        op_monthly = monthly_agg[monthly_agg["operator"].isin([op, "DKNG" if op == "DKNG" else op])].copy()
+        op_monthly = monthly_agg[monthly_agg["operator"] == op].copy()
         # Keep only states where this operator has a weight
         valid_states = set(state_weights.index)
         op_monthly = op_monthly[op_monthly["state_key"].isin(valid_states)]
@@ -423,14 +472,14 @@ def _build_nowcast(state_panels: dict[str, pd.DataFrame],
         if op_monthly.empty:
             continue
 
-        # Quarterly aggregation
+        # Quarterly aggregation; also capture max release_date per quarter
         op_monthly["quarter"] = op_monthly["period_month"].dt.to_timestamp().dt.to_period("Q")
         for qtr, grp in op_monthly.groupby("quarter"):
             yoy_vals = grp["state_rev_yoy"].dropna()
             n_months = len(grp)
             if len(yoy_vals) < 1:
                 continue
-            # Simple average across states (weight by rev_share)
+            # Simple average across states (weighted by rev_share)
             merged = grp.merge(
                 state_weights.reset_index().rename(columns={"state": "state_key", "rev_share_approx": "wt"}),
                 on="state_key", how="left"
@@ -439,9 +488,20 @@ def _build_nowcast(state_panels: dict[str, pd.DataFrame],
             wt_sum = merged["wt"].sum()
             if wt_sum == 0:
                 continue
-            nowcast_yoy = float((merged["state_rev_yoy"] * merged["wt"]).sum() / wt_sum) if not merged["state_rev_yoy"].isna().all() else float("nan")
+            nowcast_yoy = (
+                float((merged["state_rev_yoy"] * merged["wt"]).sum() / wt_sum)
+                if not merged["state_rev_yoy"].isna().all()
+                else float("nan")
+            )
             n_states = grp["state"].nunique()
-            is_synthetic = True  # will be updated from actual data
+            # max_release_date: latest state print that feeds this quarter's nowcast.
+            # Use this to implement PIT filtering vs. operator earnings dates
+            # once an earnings-date table is available (GAP-3).
+            max_rd = None
+            if "release_date" in grp.columns:
+                rd_vals = grp["release_date"].dropna()
+                if len(rd_vals) > 0:
+                    max_rd = pd.to_datetime(rd_vals).max()
             nowcast_rows.append({
                 "operator": op,
                 "quarter_end": qtr.end_time.date(),
@@ -449,6 +509,7 @@ def _build_nowcast(state_panels: dict[str, pd.DataFrame],
                 "nowcast_yoy_growth": nowcast_yoy,
                 "n_state_months": n_months,
                 "n_states": n_states,
+                "max_release_date": max_rd,
             })
 
     if not nowcast_rows:
@@ -611,12 +672,26 @@ def _h2_post_release_drift(release_dates: pd.DataFrame,
             if op_nc.empty:
                 continue
             op_nc = op_nc.sort_values("quarter_end")
-            # Find the quarter containing this release
+            # PIT: only use the nowcast for a quarter whose state prints were
+            # ALL released strictly before the event date.  We use
+            # max_release_date (the latest state print feeding the quarter)
+            # as the PIT guard.  If max_release_date is missing (e.g. legacy
+            # data without release dates), fall back to quarter_end as a
+            # conservative proxy (the full quarter data is assumed available
+            # only after quarter close).
             op_nc["quarter_end_ts"] = pd.to_datetime(op_nc["quarter_end"])
-            applicable = op_nc[op_nc["quarter_end_ts"] >= rd]
+            if "max_release_date" in op_nc.columns:
+                op_nc["_pit_ts"] = pd.to_datetime(op_nc["max_release_date"])
+                # Use quarters where every contributing state print was already
+                # released before this event date (strict <).
+                applicable = op_nc[op_nc["_pit_ts"] < rd]
+            else:
+                # Fallback: use quarters that closed before this release date.
+                applicable = op_nc[op_nc["quarter_end_ts"] < rd]
             if applicable.empty:
                 continue
-            nc_row = applicable.iloc[0]
+            # Direction = the most-recently-closed quarter's nowcast direction
+            nc_row = applicable.sort_values("quarter_end").iloc[-1]
             direction = 1 if nc_row["nowcast_yoy_growth"] > 0 else -1
 
             # Compute returns
@@ -797,11 +872,16 @@ def _write_report(
     # PIT assumptions
     lines.append("## PIT assumptions per series")
     lines.append("")
-    lines.append("- **NY weekly:** Release = Tuesday after Sunday period-end. Lag = 2 days. "
-                 "Only use prints available >= 5 days before operator earnings date.")
-    lines.append("- **NJ monthly:** Release ~25 days after month-end. Quarterly nowcast uses "
-                 "complete months only where release_date < earnings_date - 5d.")
-    lines.append("- **PGCB monthly:** Release ~25 days after month-end. Same lag rule.")
+    lines.append("- **NY weekly:** release_date = period_end (Sunday) + 2 days (Tuesday). "
+                 "Collector stores the deterministic publish date, not the fetch date.")
+    lines.append("- **NJ monthly:** release_date = first-of-month + 25 days (~20-25d after month-end). "
+                 "Collector stores the deterministic publish date, not the fetch date.")
+    lines.append("- **PGCB monthly:** release_date = first-of-month + 25 days. Same convention.")
+    lines.append("- **PIT filter vs. operator earnings:** max_release_date (latest state print per "
+                 "quarter) is stored in the nowcast output. The full filter "
+                 "'release_date < earnings_date - 5d' requires an operator earnings-date table "
+                 "not yet available (GAP-3). The H2 event-study uses max_release_date < event_date "
+                 "as a PIT guard. H1 (annual comparison) is subject to this gap.")
     lines.append("- **Fundamentals (edgar):** Annual, period_end = fiscal year end. "
                  "PIT: as_of date in the parquet. Annual comparison only (GAP-3).")
     lines.append("")
@@ -812,21 +892,28 @@ def _write_report(
     lines.append("> **Pre-registered direction:** one-sided positive (higher state revenue "
                  "YoY → higher operator reported revenue YoY). Gate: BH q ≤ 0.10.")
     lines.append("")
+    if is_synthetic:
+        lines.append("**SYNTHETIC DATA — numeric statistics below are NOT findings.**")
+        lines.append("They are harness-verification outputs only. Real-data verdict pending.")
+        lines.append("")
     lines.append("| Operator | N (years) | Spearman r | t-stat | p (one-sided) | BH q | Reject? |")
     lines.append("|----------|-----------|-----------|--------|---------------|------|---------|")
     for op in OPERATORS:
         res = h1_results.get(op, {})
         bh = bh_results.get(f"H1_{op}", {})
         n = res.get("n", 0)
-        r = res.get("spearman_r", "—")
-        t = res.get("t_stat", "—")
-        p = res.get("p_onesided", "—")
-        q = bh.get("q", "—")
-        rej = "YES" if bh.get("reject") else "NO"
         note = res.get("note", "")
-        if note:
+        if is_synthetic:
+            # Suppress numeric cells for synthetic runs
+            lines.append(f"| {op} | {n} | SYNTH | SYNTH | SYNTH | SYNTH | SYNTH |")
+        elif note:
             lines.append(f"| {op} | {n} | — | — | — | — | — | {note} |")
         else:
+            r = res.get("spearman_r", "—")
+            t = res.get("t_stat", "—")
+            p = res.get("p_onesided", "—")
+            q = bh.get("q", "—")
+            rej = "YES" if bh.get("reject") else "NO"
             lines.append(f"| {op} | {n} | {r} | {t} | {p} | {q} | {rej} |")
     lines.append("")
 
@@ -838,6 +925,15 @@ def _write_report(
     lines.append("")
     if h2_result.get("n_events", 0) == 0:
         lines.append(f"**Result:** No events computed — {h2_result.get('note', 'insufficient data')}.")
+    elif is_synthetic:
+        # SYNTHETIC DATA: numeric drift/t/p are spurious (real prices × fabricated
+        # event dates). Suppress to prevent a reader lifting them as results.
+        n_ev = h2_result.get("n_events", 0)
+        lines.append(f"- N events: {n_ev} (across {h2_result.get('n_operators', '—')} operators)")
+        lines.append("- **[+2,+10] drift:** SYNTHETIC-UNINFORMATIVE (real prices × fabricated "
+                     "release dates; numeric values suppressed to prevent misreading)")
+        lines.append("- **Same-day return (H3 control):** SYNTHETIC-UNINFORMATIVE (same reason)")
+        lines.append("- **BH reject:** SYNTHETIC-UNINFORMATIVE — not a result.")
     else:
         n_ev = h2_result.get("n_events", 0)
         drift = h2_result.get("drift_mean_bps", "—")
@@ -858,6 +954,12 @@ def _write_report(
     lines.append("")
     if not bh_results:
         lines.append("No p-values computed (data-blocked).")
+    elif is_synthetic:
+        # Suppress numeric BH table for synthetic data — not interpretable.
+        lines.append("**Any cell rejects? SYNTHETIC-UNINFORMATIVE** — the BH gate is run on "
+                     "synthetic data to verify the harness mechanism, not to report results. "
+                     "Numeric p/q/reject values are suppressed; they are artifacts of random "
+                     "prices × fabricated event dates and MUST NOT be interpreted as findings.")
     else:
         any_reject = any(v.get("reject") for v in bh_results.values())
         lines.append(f"**Any cell rejects?** {'YES' if any_reject else 'NO'}")

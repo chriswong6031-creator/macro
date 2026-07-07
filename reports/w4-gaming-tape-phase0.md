@@ -44,43 +44,41 @@
 
 ## PIT assumptions per series
 
-- **NY weekly:** Release = Tuesday after Sunday period-end. Lag = 2 days. Only use prints available >= 5 days before operator earnings date.
-- **NJ monthly:** Release ~25 days after month-end. Quarterly nowcast uses complete months only where release_date < earnings_date - 5d.
-- **PGCB monthly:** Release ~25 days after month-end. Same lag rule.
+- **NY weekly:** release_date = period_end (Sunday) + 2 days (Tuesday). Collector stores the deterministic publish date, not the fetch date.
+- **NJ monthly:** release_date = first-of-month + 25 days (~20-25d after month-end). Collector stores the deterministic publish date, not the fetch date.
+- **PGCB monthly:** release_date = first-of-month + 25 days. Same convention.
+- **PIT filter vs. operator earnings:** max_release_date (latest state print per quarter) is stored in the nowcast output. The full filter 'release_date < earnings_date - 5d' requires an operator earnings-date table not yet available (GAP-3). The H2 event-study uses max_release_date < event_date as a PIT guard. H1 (annual comparison) is subject to this gap.
 - **Fundamentals (edgar):** Annual, period_end = fiscal year end. PIT: as_of date in the parquet. Annual comparison only (GAP-3).
 
 ## H1: Nowcast-lead correlation (gated cells 1-5)
 
 > **Pre-registered direction:** one-sided positive (higher state revenue YoY → higher operator reported revenue YoY). Gate: BH q ≤ 0.10.
 
+**SYNTHETIC DATA — numeric statistics below are NOT findings.**
+They are harness-verification outputs only. Real-data verdict pending.
+
 | Operator | N (years) | Spearman r | t-stat | p (one-sided) | BH q | Reject? |
 |----------|-----------|-----------|--------|---------------|------|---------|
-| DKNG | 0 | — | — | — | — | — | insufficient data |
-| MGM | 5 | 0.2 | 0.354 | 0.3735 | 0.498 | NO |
-| CZR | 5 | -0.1 | -0.174 | 0.5636 | 0.5636 | NO |
-| PENN | 5 | 0.3 | 0.545 | 0.3119 | 0.498 | NO |
-| BYD | 0 | — | — | — | — | — | insufficient data |
-| RRR | 0 | — | — | — | — | — | insufficient data |
+| DKNG | 0 | SYNTH | SYNTH | SYNTH | SYNTH | SYNTH |
+| MGM | 5 | SYNTH | SYNTH | SYNTH | SYNTH | SYNTH |
+| CZR | 5 | SYNTH | SYNTH | SYNTH | SYNTH | SYNTH |
+| PENN | 5 | SYNTH | SYNTH | SYNTH | SYNTH | SYNTH |
+| BYD | 0 | SYNTH | SYNTH | SYNTH | SYNTH | SYNTH |
+| RRR | 0 | SYNTH | SYNTH | SYNTH | SYNTH | SYNTH |
 
 ## H2: Post-release drift event study (gated cell 6)
 
 > **Pre-registered null:** drift = 0 in [+2, +10] trading days post state-release.
 > Family earns candidacy only if post-release drift OR nowcast-lead survives.
 
-- N events: 604 (across 4 operators)
-- **[+2,+10] drift:** -268.98 bps (HAC t = -6.838, p = 0.0, BH reject = YES)
-- **Same-day return (H3 control):** 23.04 bps (HAC t = 0.791, p = 0.4289)
+- N events: 494 (across 4 operators)
+- **[+2,+10] drift:** SYNTHETIC-UNINFORMATIVE (real prices × fabricated release dates; numeric values suppressed to prevent misreading)
+- **Same-day return (H3 control):** SYNTHETIC-UNINFORMATIVE (same reason)
+- **BH reject:** SYNTHETIC-UNINFORMATIVE — not a result.
 
 ## BH FDR gate (q ≤ 0.10 across 6 gated cells)
 
-**Any cell rejects?** YES
-
-| Cell | p | BH q | Reject (q ≤ 0.10) |
-|------|---|------|-------------------|
-| H1_CZR | 0.5636 | 0.5636 | NO |
-| H1_MGM | 0.3735 | 0.498 | NO |
-| H1_PENN | 0.3119 | 0.498 | NO |
-| H2_DRIFT | 0.0 | 0.0 | YES |
+**Any cell rejects? SYNTHETIC-UNINFORMATIVE** — the BH gate is run on synthetic data to verify the harness mechanism, not to report results. Numeric p/q/reject values are suppressed; they are artifacts of random prices × fabricated event dates and MUST NOT be interpreted as findings.
 
 ## Split-half robustness
 
