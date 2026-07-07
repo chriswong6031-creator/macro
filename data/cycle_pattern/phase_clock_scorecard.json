@@ -1,0 +1,382 @@
+{
+  "schema": "phase_clock_eval.v1",
+  "registered_ref": "PREREGISTRATION.md \u00a718 PHASE-CLOCK-1",
+  "run_at": "2026-07-07T09:55:46.262809+00:00",
+  "embargo": "date>=2024-01-01",
+  "panel_epoch": "price_c4414dcb",
+  "n_train_rows": 4885,
+  "n_oos_rows": 1040,
+  "trial_family": "cycle_pattern_ft",
+  "n_cells": 18,
+  "candidate_count_printed": 18,
+  "config": {
+    "horizon_h": 6,
+    "boot_draws": 800,
+    "boot_seed": 7,
+    "fdr_q": 0.1,
+    "n_turns_min_pool": 8,
+    "falsifier_min_families": 2,
+    "family_count": 3
+  },
+  "phase_states": [
+    "capitulation",
+    "basing",
+    "early_expansion",
+    "late_expansion",
+    "rolling_over",
+    "early_contraction"
+  ],
+  "per_family_direction": {
+    "cn_sector": {
+      "up": {
+        "1": {
+          "n_oos": 0,
+          "verdict": "NO_DATA",
+          "bh_pass": false
+        },
+        "3": {
+          "n_oos": 0,
+          "verdict": "NO_DATA",
+          "bh_pass": false
+        },
+        "6": {
+          "n_oos": 0,
+          "verdict": "NO_DATA",
+          "bh_pass": false
+        }
+      },
+      "down": {
+        "1": {
+          "n_oos": 0,
+          "verdict": "NO_DATA",
+          "bh_pass": false
+        },
+        "3": {
+          "n_oos": 0,
+          "verdict": "NO_DATA",
+          "bh_pass": false
+        },
+        "6": {
+          "n_oos": 0,
+          "verdict": "NO_DATA",
+          "bh_pass": false
+        }
+      }
+    },
+    "country": {
+      "up": {
+        "1": {
+          "n_oos": 604,
+          "brier_km": 0.215049,
+          "brier_pc": 0.21533,
+          "delta_brier": -0.00028,
+          "ci90_lo": -0.003971,
+          "ci90_hi": 0.00299,
+          "ci_excludes_zero": false,
+          "boot_p": 0.4969,
+          "bh_pass": false
+        },
+        "3": {
+          "n_oos": 604,
+          "brier_km": 0.265222,
+          "brier_pc": 0.282356,
+          "delta_brier": -0.017134,
+          "ci90_lo": -0.035202,
+          "ci90_hi": -0.001304,
+          "ci_excludes_zero": false,
+          "boot_p": 0.9613,
+          "bh_pass": false
+        },
+        "6": {
+          "n_oos": 604,
+          "brier_km": 0.290121,
+          "brier_pc": 0.330325,
+          "delta_brier": -0.040204,
+          "ci90_lo": -0.052183,
+          "ci90_hi": -0.029761,
+          "ci_excludes_zero": false,
+          "boot_p": 1.0,
+          "bh_pass": false
+        }
+      },
+      "down": {
+        "1": {
+          "n_oos": 116,
+          "brier_km": 0.239006,
+          "brier_pc": 0.27463,
+          "delta_brier": -0.035624,
+          "ci90_lo": -0.07156,
+          "ci90_hi": 0.009517,
+          "ci_excludes_zero": false,
+          "boot_p": 0.9139,
+          "bh_pass": false
+        },
+        "3": {
+          "n_oos": 116,
+          "brier_km": 0.158146,
+          "brier_pc": 0.162361,
+          "delta_brier": -0.004215,
+          "ci90_lo": -0.012266,
+          "ci90_hi": 0.005376,
+          "ci_excludes_zero": false,
+          "boot_p": 0.7591,
+          "bh_pass": false
+        },
+        "6": {
+          "n_oos": 116,
+          "brier_km": 0.110206,
+          "brier_pc": 0.109133,
+          "delta_brier": 0.001073,
+          "ci90_lo": -0.001403,
+          "ci90_hi": 0.004817,
+          "ci_excludes_zero": false,
+          "boot_p": 0.2971,
+          "bh_pass": false
+        }
+      }
+    },
+    "us_sector": {
+      "up": {
+        "1": {
+          "n_oos": 281,
+          "brier_km": 0.179355,
+          "brier_pc": 0.209632,
+          "delta_brier": -0.030277,
+          "ci90_lo": -0.058192,
+          "ci90_hi": -0.003106,
+          "ci_excludes_zero": false,
+          "boot_p": 0.9638,
+          "bh_pass": false
+        },
+        "3": {
+          "n_oos": 281,
+          "brier_km": 0.222175,
+          "brier_pc": 0.235592,
+          "delta_brier": -0.013417,
+          "ci90_lo": -0.022378,
+          "ci90_hi": -0.004323,
+          "ci_excludes_zero": false,
+          "boot_p": 0.9875,
+          "bh_pass": false
+        },
+        "6": {
+          "n_oos": 281,
+          "brier_km": 0.251347,
+          "brier_pc": 0.272983,
+          "delta_brier": -0.021635,
+          "ci90_lo": -0.032531,
+          "ci90_hi": -0.009392,
+          "ci_excludes_zero": false,
+          "boot_p": 0.9988,
+          "bh_pass": false
+        }
+      },
+      "down": {
+        "1": {
+          "n_oos": 39,
+          "brier_km": 0.169956,
+          "brier_pc": 0.314593,
+          "delta_brier": -0.144637,
+          "ci90_lo": -0.215279,
+          "ci90_hi": -0.044954,
+          "ci_excludes_zero": false,
+          "boot_p": 0.9913,
+          "bh_pass": false
+        },
+        "3": {
+          "n_oos": 39,
+          "brier_km": 0.074533,
+          "brier_pc": 0.084967,
+          "delta_brier": -0.010434,
+          "ci90_lo": -0.019687,
+          "ci90_hi": -0.003151,
+          "ci_excludes_zero": false,
+          "boot_p": 0.9925,
+          "bh_pass": false
+        },
+        "6": {
+          "n_oos": 39,
+          "brier_km": 0.025629,
+          "brier_pc": 0.030384,
+          "delta_brier": -0.004756,
+          "ci90_lo": -0.008814,
+          "ci90_hi": -0.002048,
+          "ci_excludes_zero": false,
+          "boot_p": 1.0,
+          "bh_pass": false
+        }
+      }
+    }
+  },
+  "era_split": {
+    "cn_sector": {
+      "up": {
+        "pre_2010": {
+          "n_oos": 0,
+          "note": "no_data"
+        },
+        "post_2010": {
+          "n_oos": 0,
+          "note": "no_data"
+        }
+      },
+      "down": {
+        "pre_2010": {
+          "n_oos": 0,
+          "note": "no_data"
+        },
+        "post_2010": {
+          "n_oos": 0,
+          "note": "no_data"
+        }
+      }
+    },
+    "country": {
+      "up": {
+        "pre_2010": {
+          "n_oos": 0,
+          "note": "OOS_window_2024plus_is_entirely_post2010"
+        },
+        "post_2010": {
+          "n_oos": 604,
+          "brier_km": 0.290121,
+          "brier_pc": 0.330325,
+          "delta_brier": -0.040204,
+          "ci90_lo": -0.052183,
+          "ci90_hi": -0.029761,
+          "ci_excludes_zero": false,
+          "boot_p": 1.0
+        }
+      },
+      "down": {
+        "pre_2010": {
+          "n_oos": 0,
+          "note": "OOS_window_2024plus_is_entirely_post2010"
+        },
+        "post_2010": {
+          "n_oos": 116,
+          "brier_km": 0.110206,
+          "brier_pc": 0.109133,
+          "delta_brier": 0.001073,
+          "ci90_lo": -0.001403,
+          "ci90_hi": 0.004817,
+          "ci_excludes_zero": false,
+          "boot_p": 0.2971
+        }
+      }
+    },
+    "us_sector": {
+      "up": {
+        "pre_2010": {
+          "n_oos": 0,
+          "note": "OOS_window_2024plus_is_entirely_post2010"
+        },
+        "post_2010": {
+          "n_oos": 281,
+          "brier_km": 0.251347,
+          "brier_pc": 0.272983,
+          "delta_brier": -0.021635,
+          "ci90_lo": -0.032531,
+          "ci90_hi": -0.009392,
+          "ci_excludes_zero": false,
+          "boot_p": 0.9988
+        }
+      },
+      "down": {
+        "pre_2010": {
+          "n_oos": 0,
+          "note": "OOS_window_2024plus_is_entirely_post2010"
+        },
+        "post_2010": {
+          "n_oos": 39,
+          "brier_km": 0.025629,
+          "brier_pc": 0.030384,
+          "delta_brier": -0.004756,
+          "ci90_lo": -0.008814,
+          "ci90_hi": -0.002048,
+          "ci_excludes_zero": false,
+          "boot_p": 1.0
+        }
+      }
+    }
+  },
+  "lift_summary": {
+    "n_lift_families": 1,
+    "min_required": 2,
+    "detail": {
+      "us_sector": {
+        "up_lift": false,
+        "down_lift": false,
+        "family_passes": false,
+        "up_n_oos": 281,
+        "down_n_oos": 39
+      },
+      "country": {
+        "up_lift": false,
+        "down_lift": true,
+        "family_passes": true,
+        "up_n_oos": 604,
+        "down_n_oos": 116
+      },
+      "cn_sector": {
+        "up_lift": false,
+        "down_lift": false,
+        "family_passes": false,
+        "up_n_oos": 0,
+        "down_n_oos": 0
+      }
+    }
+  },
+  "bh_fdr": {
+    "family": "cycle_pattern_ft",
+    "q": 0.1,
+    "n_cells_total": 18,
+    "n_bh_pass": 0,
+    "pvalues": {
+      "cn_sector/up/1m": 1.0,
+      "cn_sector/up/3m": 1.0,
+      "cn_sector/up/6m": 1.0,
+      "cn_sector/down/1m": 1.0,
+      "cn_sector/down/3m": 1.0,
+      "cn_sector/down/6m": 1.0,
+      "country/up/1m": 0.4969,
+      "country/up/3m": 0.9613,
+      "country/up/6m": 1.0,
+      "country/down/1m": 0.9139,
+      "country/down/3m": 0.7591,
+      "country/down/6m": 0.2971,
+      "us_sector/up/1m": 0.9638,
+      "us_sector/up/3m": 0.9875,
+      "us_sector/up/6m": 0.9988,
+      "us_sector/down/1m": 0.9913,
+      "us_sector/down/3m": 0.9925,
+      "us_sector/down/6m": 1.0
+    },
+    "rejects": {
+      "cn_sector/up/1m": false,
+      "cn_sector/up/3m": false,
+      "cn_sector/up/6m": false,
+      "cn_sector/down/1m": false,
+      "cn_sector/down/3m": false,
+      "cn_sector/down/6m": false,
+      "country/up/1m": false,
+      "country/up/3m": false,
+      "country/up/6m": false,
+      "country/down/1m": false,
+      "country/down/3m": false,
+      "country/down/6m": false,
+      "us_sector/up/1m": false,
+      "us_sector/up/3m": false,
+      "us_sector/up/6m": false,
+      "us_sector/down/1m": false,
+      "us_sector/down/3m": false,
+      "us_sector/down/6m": false
+    }
+  },
+  "falsifier": {
+    "name": "phase_clock_no_lift",
+    "fires": true,
+    "description": "Phase-conditioned 6m Brier NOT strictly below age-only KM Brier for >=2 of 3 families on post-2010 embargoed OOS."
+  },
+  "verdict": "promoted_null"
+}
