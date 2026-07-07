@@ -6,8 +6,10 @@ imports this module. Every public function returns plain data and NEVER raises
 into the build — all IO failures degrade gracefully (missing legs → leg dropped,
 recorded in provenance).
 
-SPECIFICATION: research/release_forecast/PREREG_V1.md (frozen 2026-07-07).
-Anti-mining: one spec per release type, frozen before any results were observed.
+SPECIFICATION: research/release_forecast/PREREG_V1.md (frozen 2026-07-07) for V1.
+                research/release_forecast/PREREG_V2.md (frozen 2026-07-07) for V2 additions
+                (shelter leg, component contributions, confidence_v2).
+Anti-mining: two spec attempts per CPI target, both frozen before any results were observed.
 
 PIT LAW: a feature value is usable at decision date D only if its ALFRED
 realtime_start <= D. The `knowable_series` function enforces this filter. Non-
@@ -145,6 +147,31 @@ def _ridge_predict(X_train: np.ndarray, y_train: np.ndarray, X_pred: np.ndarray)
     return float(np.dot(x_aug_pred.ravel(), beta.ravel()))
 
 
+def _ridge_predict_with_components(
+    X_train: np.ndarray,
+    y_train: np.ndarray,
+    X_pred: np.ndarray,
+) -> tuple[float, np.ndarray, np.ndarray]:
+    """Fit ridge, predict, and return (point, beta_features, z_features).
+
+    beta_features: coefficients excluding bias (shape: n_features).
+    z_features: z-scored prediction features (shape: n_features).
+    These are needed for computing component contributions: contrib_pp[i] = beta[i] * z[i].
+    """
+    mean, std = _zscore_params(X_train)
+    Xz_train = _zscore_apply(X_train, mean, std)
+    ones_tr = np.ones((Xz_train.shape[0], 1))
+    X_aug_tr = np.hstack([Xz_train, ones_tr])
+    beta = _ridge_fit(X_aug_tr, y_train)
+    xz_pred = _zscore_apply(X_pred.reshape(1, -1), mean, std)
+    x_aug_pred = np.hstack([xz_pred, np.ones((1, 1))])
+    point = float(np.dot(x_aug_pred.ravel(), beta.ravel()))
+    # beta[:-1] are feature coefficients; beta[-1] is bias
+    beta_features = beta[:-1]
+    z_features = xz_pred.ravel()
+    return point, beta_features, z_features
+
+
 # ---------------------------------------------------------------------------
 # Wilson CI (reuse pattern from engine/foresight_grader.py)
 # ---------------------------------------------------------------------------
@@ -256,6 +283,7 @@ def build_cpi_features(
     """Build feature dict for CPI prediction at decision date asof.
 
     Delegates to engine.release_components_cpi — kept here for backward compat.
+    V2: adds shelter_nowcast leg (PREREG_V2.md §2, §3).
     release_type: 'cpi_headline' or 'cpi_core'.
     ref_month: the CPI reference month M the target print covers (PREREG_V1.md §2.3
         feature 7 anchors gasoline_mom on M, not on asof's calendar month).
@@ -588,17 +616,18 @@ def _project_cpi(
     lag_key = "cpi_hl_mom" if release == "cpi_headline" else "cpi_core_mom"
 
     # Feature names (ordered; own 3 lags first per walk-forward contract)
+    # V2: shelter_nowcast appended last (PREREG_V2.md §3)
     if release == "cpi_headline":
         feature_names = [
             f"{lag_key}_lag1", f"{lag_key}_lag2", f"{lag_key}_lag3",
             "sticky_mom_lag1", "median_mom_lag1", "flex_mom_lag1",
-            "ppi_mom_lag1", "gasoline_mom",
+            "ppi_mom_lag1", "gasoline_mom", "shelter_nowcast",
         ]
     else:
         feature_names = [
             f"{lag_key}_lag1", f"{lag_key}_lag2", f"{lag_key}_lag3",
             "sticky_mom_lag1", "median_mom_lag1", "flex_mom_lag1",
-            "ppi_mom_lag1",
+            "ppi_mom_lag1", "shelter_nowcast",
         ]
 
     # Build expanding training dataset
@@ -673,17 +702,43 @@ def _project_cpi(
         x_pred = np.empty(0)
         n_features_used = 0
 
+    # Fit ridge and compute components (V2)
+    components = None
+    confidence_v2 = None
+    confidence_components_v2 = None
+    beta_features_out: np.ndarray | None = None
+    z_features_out: np.ndarray | None = None
+
     if n_features_used > 0 and len(y_clean) >= MIN_TRAIN_OBS:
-        point = _ridge_predict(X_clean, y_clean, x_pred)
+        try:
+            point, beta_features_out, z_features_out = _ridge_predict_with_components(
+                X_clean, y_clean, x_pred
+            )
+        except Exception:
+            point = _ridge_predict(X_clean, y_clean, x_pred)
     else:
         point = None
+
+    # Component contributions (V2 — PREREG_V2.md §4)
+    if point is not None and beta_features_out is not None and z_features_out is not None:
+        try:
+            from engine.release_components_cpi import compute_components, compute_confidence_v2
+            components = compute_components(
+                feature_names, beta_features_out, z_features_out,
+                pred_avail_mask, release
+            )
+            confidence_v2, confidence_components_v2 = compute_confidence_v2(
+                components, input_completeness
+            )
+        except Exception as e:
+            log.debug("Component computation failed: %s", e)
 
     # Residual errors: e = actual - predicted
     errors = np.array([r["actual"] - r["predicted"] for r in wf_results])
 
     quantiles = _compute_quantiles(errors, point if point is not None else 0.0)
 
-    # Confidence score
+    # Confidence score (V1 — unchanged)
     confidence, interval_rank = None, None
     if point is not None and len(errors) >= MIN_QUANTILE_OBS:
         cur_width = (point + np.quantile(errors, 0.90)) - (point + np.quantile(errors, 0.10))
@@ -738,6 +793,10 @@ def _project_cpi(
             "interval_rank": interval_rank,
             "input_completeness": round(input_completeness, 4),
         },
+        # V2 additions (PREREG_V2.md §4, §5)
+        "components": components,
+        "confidence_v2": confidence_v2,
+        "confidence_components_v2": confidence_components_v2,
         "input_completeness": round(input_completeness, 4),
         "benchmark_set": {
             "naive_prior": round(naive, 4) if naive is not None else None,
@@ -984,6 +1043,10 @@ def _empty_projection(release: str, asof: date, reason: str) -> dict:
         "p90": None,
         "confidence": None,
         "confidence_components": {"interval_rank": None, "input_completeness": 0.0},
+        # V2 additions — null in empty projections
+        "components": None,
+        "confidence_v2": None,
+        "confidence_components_v2": None,
         "input_completeness": 0.0,
         "benchmark_set": {
             "naive_prior": None,
@@ -1039,17 +1102,18 @@ def _wf_cpi_full(release: str, vintages: pd.DataFrame, root: Path) -> dict:
     own_series = "CPIAUCSL" if release == "cpi_headline" else "CPILFESL"
     lag_key = "cpi_hl_mom" if release == "cpi_headline" else "cpi_core_mom"
 
+    # V2: shelter_nowcast appended last (PREREG_V2.md §3)
     if release == "cpi_headline":
         feature_names = [
             f"{lag_key}_lag1", f"{lag_key}_lag2", f"{lag_key}_lag3",
             "sticky_mom_lag1", "median_mom_lag1", "flex_mom_lag1",
-            "ppi_mom_lag1", "gasoline_mom",
+            "ppi_mom_lag1", "gasoline_mom", "shelter_nowcast",
         ]
     else:
         feature_names = [
             f"{lag_key}_lag1", f"{lag_key}_lag2", f"{lag_key}_lag3",
             "sticky_mom_lag1", "median_mom_lag1", "flex_mom_lag1",
-            "ppi_mom_lag1",
+            "ppi_mom_lag1", "shelter_nowcast",
         ]
 
     # Use ALL vintages knowable at the last available date for building the full sequence
@@ -1078,11 +1142,13 @@ def _wf_cpi_full(release: str, vintages: pd.DataFrame, root: Path) -> dict:
 
     wf_results = _walk_forward(records, feature_names, "target")
 
-    # Annotate with period metadata
+    # Annotate with period metadata + shelter presence (M4 fix: direct feature-row check)
     for r in wf_results:
         meta_rec = records[r["idx"]]
         r["period"] = meta_rec.get("period")
         r["release_date"] = meta_rec.get("release_date")
+        # shelter_nowcast_present: True when shelter_nowcast was non-null in the feature row
+        r["shelter_nowcast_present"] = meta_rec.get("shelter_nowcast") is not None
 
     return {
         "results": wf_results,
