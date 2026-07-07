@@ -41,6 +41,7 @@ THREE CHECKS
       scripts/build_site.py
       engine/neuralweb/cortex.py
       engine/neuralweb/ask_brain.py
+      engine/neuralweb/entity_thesis_mechanism_registry.py  (ETM state builder — emits AUTHORITY_BLOCK; PR #1794)
       docs/research/                                 (research docs; prefix match)
       scripts/check_factor_boundaries.py             (this file — for selftest)
 
@@ -132,6 +133,11 @@ _ALLOWED_ACTIONS_ALLOWLIST_PREFIXES = [
     # descriptive mirror only (RUL-ORTH-11; same RUL-NW9 category as the factor
     # state builder). It never reads the field to switch behavior.
     "engine/neuralweb/covariance_spine.py",
+    # ETM state builder (PR #1794): defines AUTHORITY_BLOCK constant which
+    # declares allowed_actions as a display-only descriptor — this is the
+    # *producer* of the field (emitting it into the artifact schema), never
+    # a behavior wire. Same RUL-NW9 category as the factor state builder.
+    "engine/neuralweb/entity_thesis_mechanism_registry.py",
     "docs/research/",
 ]
 

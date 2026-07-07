@@ -683,6 +683,71 @@ checks:
     notes: >
       Run manually before each live-quotes worker deploy.
 
+  # ── Entity / Thesis / Mechanism Registry guards (PR #1794 / #1795) ──────────
+
+  - law_id: nw.entity_thesis_registry
+    summary: >
+      The Entity/Thesis/Mechanism (ETM) artifact
+      (data/neuralweb/entity_thesis_mechanism_registry.json) must pass all
+      integrity checks ETM-C1..C7: schema, authority block, namespace grammar,
+      no invented links, suggestion-only law, counts not drifted, and
+      referential integrity against species/candidates/governance. Display-only
+      crosswalk (ETM-R1: authority=display_only, is_context_only=true).
+      Landed in PR #1794 (Entity/Thesis/Mechanism Registry).
+    source_ref:
+      - scripts/check_entity_thesis_registry.py
+      - engine/neuralweb/entity_thesis_mechanism_registry.py
+      - "PR #1794"
+    severity: hard
+    check_script: scripts/check_entity_thesis_registry.py
+    ci_wiring:
+      - workflow: .github/workflows/ci.yml
+        job: neural-web
+        lane: pr_ci
+    selftest: true
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - ETM-C7 referential integrity checks are silently skipped when the
+        referenced source files (species/registry.json, candidates.jsonl,
+        governance.jsonl) are absent from disk (pre-first-build grace).
+      - If the artifact file is absent the check exits 0 (pre-first-build grace).
+    owner_program: nw-codex-three-lobes
+    notes: null
+
+  - law_id: nw.ruling_conflicts
+    summary: >
+      The Ruling Graph (config/ruling_graph.yml) must not be violated by
+      changed files: H1 = new fdr_family token not registered in
+      meta.known_fdr_families (hard); H2 = privacy-boundary token found in
+      site/ or site-writing scripts (hard); W1-W3 = re-proposal detection and
+      expired-clock warnings (non-fatal). Diff-scoped against origin/main.
+      Landed in PR #1795 (Ruling Graph conflict guard).
+    source_ref:
+      - scripts/check_ruling_conflicts.py
+      - config/ruling_graph.yml
+      - "PR #1795"
+    severity: hard
+    check_script: scripts/check_ruling_conflicts.py
+    ci_wiring:
+      - workflow: .github/workflows/ci.yml
+        job: ruling-graph
+        lane: pr_ci
+    selftest: true
+    allowlist: data/neuralweb/ruling_conflicts_allowlist.json
+    ratchet: null
+    known_limits:
+      - H1/H2/W1 are diff-scoped (git merge-base); if git is unavailable the
+        checker degrades to skip those checks and only runs W2/W3.
+      - H1 literal-scan misses dynamically constructed fdr_family strings.
+      - Generated artifacts (docs/NEURAL_WEB_CASE_LAW.md,
+        site/neuralwebdata/ruling_graph.json) are excluded from H1 scanning.
+    owner_program: neural-web
+    notes: >
+      H2 allowlist (data/neuralweb/ruling_conflicts_allowlist.json) silences
+      but still prints allowlisted entries. The allowlist file is optional;
+      if absent the guard treats it as empty.
+
   # ── Meta-guard ─────────────────────────────────────────────────────────────
 
   - law_id: meta.house_law_registry
