@@ -529,3 +529,22 @@ the 135, not additional). Candidate count printed BEFORE any evaluation (anti-mi
   to the measurement research surface either way. No page-authority change this wave.
 - CPI-019's monitoring metric `batch2_within_family_retest` is satisfied either way (notes
   appended; version bump only if its statement changes).
+
+### Lattice batch-2 results (2026-07-06 — criteria above UNCHANGED; §15 two-commit discipline observed)
+
+**27 of 135 cells clear the frozen within-family gate** (sanity gate: KG-2 reproduced). **The named
+LT2-020 re-test FAILS**: within-family gap −0.0350, CI₉₅ [−0.0688, −0.0021], boot p=0.04, era-stable
+— standalone-significant but does NOT survive BH-FDR q=0.10 across the declared 135 (~60% of the
+batch-1 magnitude was the §14 family-composition confound; xfam diagnostic on the same cell −0.073).
+Per frozen outcome handling: `cycle_truth_cn_downturn_broken_trend_tail_candidate_v1` →
+**retired**; scoped null `cycle_truth_cn_downturn_broken_trend_tail_null_v1` appended. Survivors:
+15 turn_event_3m (incl. the CN broken-trend Downturn turn-DEFICIT pair −0.086/+0.160, BH-pass — the
+risk story survives as duration, not depth), 10 phase_persist_3m (Recovery fragile in all 3
+families; Peak persists), 2 rdd_63d (Peak = shallower vol-adjusted tails within country +0.049 / CN
++0.071 — KG-2/CPI-002 in stricter form). All 27 → factory candidates (`screened`, trial_family
+`lattice_v1`, truth_guard 0 flags); truth `cycle_truth_lattice2_within_family_structure_v1`
+(display/structural). §14 candidates resolved mechanically: **33 → numeric_rejected**
+(transitions.jsonl, kill evidence = batch2.json), 15 keep screened. CPI-019 monitoring satisfied
+(structure is NOT a family-composition artifact — falsifier answered). Adjudication:
+`CPI_LATTICE2_VERDICT.md`. Artifacts: `data/cycle_pattern/lattice/batch2.json`,
+`batch2_cells.parquet`; budget `rf.cycle_pattern.lattice_v1` n=135 declared pre-p-value.
