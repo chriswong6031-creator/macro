@@ -341,3 +341,49 @@ same absent-time-control weakness.
 - Optional (cheap, settles DT-R13): month-block re-run of the original
   64-year harness (`scripts/dannytrades_whale.py` + `/tmp/dtcache`-style
   panel). Un-clocked; runs only if someone wants the whale line back.
+
+---
+
+## 8. Amendment DT-W2 — 64-year settlement and family closure (2026-07-06, same day)
+
+DT-W2 (PR #1751) settled DT-R13 by re-running the whale reads on the original
+64-year, 112-name survivor panel with the DT-W1a time-controlled machinery
+(prereg frozen at dispatch, recorded verbatim in the results doc). Verdicts of
+record: **H2 (leaving-bounce), H3 (hot-fade), H4 (level monotonicity) FAILED**;
+**H1 (whale-surge fade) survived pooled** (−0.0141, CI [−0.0252,−0.0031],
+p=0.004, BH-survives, 775 months, all five controls clean, survives combined
+8-test multiplicity).
+
+The mandatory adversarial review then produced the decisive diagnostic: **H1 is
+a pre-2010 phenomenon.** Era-split (disclosed in the results addendum):
+significant 1962–1994 and 1995–2010, **null 2011–2026** (−0.0048, CI spans
+zero, p=0.33; robust to within-era re-demeaning and median-year split), fragile
+at the lower threshold edge (+8 fails), on a survivor panel that flatters the
+fade direction — and the honest-panel test (DT-W1a H1) already failed.
+
+**Rulings:**
+
+- **DT-R15 (restoration DENIED; whale family CLOSED).** Pooled significance
+  carried by dead eras does not restore a live directional surface. The DT-R13
+  restoration path is closed. Re-opening requires the effect to clear the
+  CI-excludes-zero rule WITHIN the modern era on a survivorship-honest panel —
+  no clock is set; nothing accrues toward this automatically.
+- **Consequence (b) applied (frozen at DT-W2 dispatch).** H4 failed on both
+  panels → ALL directional tilt claims retired: `engine/dannytrades_chip.py` is
+  now a descriptive positioning readout (extension percentile + accumulation
+  level; state permanently "neutral"; enum kept for `dt_contra_state.json`
+  schema stability). The DT-NW-1 synapse artifact inherits the caveat via its
+  single-source import.
+- **DT-R16 (era-split disclosure law).** Any multi-decade pooled verdict in
+  this family — and any future restoration attempt — must print an era-split
+  table alongside the pooled statistic; "SURVIVES (pooled)" may not appear
+  without the modern-era row. (This generalizes: a pooled pass on a 60-year
+  panel is a *regime-coverage* claim, and the claim must show its coverage.)
+
+**Program state after §8:** the DannyTrades family is fully settled — engine
+retained for research, chip descriptive-only, NW artifact live as descriptive
+context, all directional claims retired with printed evidence, S-SQ/void-box
+routing unaffected (vol-compression work proceeds under the ESX program on its
+own evidence). The 2026-07-06 arc (ship → replicate → bounce → repair → settle
+→ retire) is the reference example of [[ticker-cluster-bootstrap-time-confound]]
+and the DT-R14 law working end-to-end.
