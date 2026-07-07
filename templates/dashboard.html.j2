@@ -3199,8 +3199,9 @@
             {% set _NBR_EN = {'freshness_expired':'Cross too old — wait for a fresh trigger','not_topped':'Topped / overbought — wait for it to reset','earnings_blackout':'Earnings within blackout window','risk_veto':'Stressed tape — size down or wait','extended':'Extended / parabolic — do not chase','capped_by_entry':'Entry capped — entry timing blocks a full buy'} %}
             {% set _NBR_ZH = {'freshness_expired':'交叉信号过期——等待新触发','not_topped':'超买/见顶——等待重置','earnings_blackout':'处于财报窗口期','risk_veto':'盘面承压——减仓或等待','extended':'过度拉伸/抛物线——勿追高','capped_by_entry':'入场封顶——入场时机阻碍满仓'} %}
             <div class="nb-doss-notnow" style="font-size:11px;color:var(--down);margin:2px 0">
-              <span class="l-en">Not now: {{ _nbr | map('extract', _NBR_EN) | select | join(' · ') or _nbr|join(' · ') }}</span>
-              <span class="l-zh">暂不操作：{{ _nbr | map('extract', _NBR_ZH) | select | join(' · ') or _nbr|join(' · ') }}</span>
+              {#- no 'extract' filter in this environment; use explicit for-loop dict lookup -#}
+              <span class="l-en">Not now: {% for _c in _nbr %}{{ _NBR_EN.get(_c, _c) }}{% if not loop.last %} · {% endif %}{% endfor %}</span>
+              <span class="l-zh">暂不操作：{% for _c in _nbr %}{{ _NBR_ZH.get(_c, _c) }}{% if not loop.last %} · {% endif %}{% endfor %}</span>
             </div>
             {% endif %}
             {# stale flags — short status codes #}

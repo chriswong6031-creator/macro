@@ -96,20 +96,30 @@ def build_dossier(row: dict, *, ext_grade: str | None = None) -> dict | None:
         # in rec["view"]["decision"]["action"].  For the board row we re-derive it
         # from conviction (which IS on the row) via the same logic keys rather
         # than re-importing stock_view (which would require a full rec).
-        # Simpler: just expose the action from conviction's size + band fields.
+        # Simpler: just expose the action from conviction's size + band fields,
+        # passing hold_state + ext_grade so TRIM ONLY can fire on the board dossier.
         _view_action = _g(row, "view", "decision", "action")
         if _view_action:
             action = _view_action
         else:
-            # Fallback: derive from existing verdict / cycle_blocked flag
-            action = _derive_action(conv)
+            # Fallback: derive from existing verdict / cycle_blocked flag.
+            # hold chip is attached to board rows (build_stock_library L3076-3078).
+            _hold_state = _g(row, "hold", "state")
+            action = _derive_action(conv, ext_grade=ext_grade, hold_state=_hold_state)
 
         # ── why_now — timing text from the entry ladder ─────────────────────
-        # Source: conviction.size.capped_by_entry for the capped note;
-        # view.decision.timing.text for the timing rationale.
-        why_now = _g(row, "view", "decision", "timing", "text")
+        # Primary source: view.decision.timing.text (present when rec["view"] is attached,
+        # i.e. on per-stock page recs).  On board rows (wide["buy"/"watch"/"laggards"])
+        # rec["view"] is absent; fall back to ladder.entry.text which carries the same
+        # underlying timing rationale text from the ladder engine.
+        why_now = (_g(row, "view", "decision", "timing", "text")
+                   or _g(row, "ladder", "entry", "text"))
 
         # ── why_not — top 1-2 falsifiers ───────────────────────────────────
+        # Primary source: view.falsifiers (present on per-stock recs via build_view).
+        # On board rows view is absent; falsifiers are not independently available on the
+        # row, so why_not remains empty.  no_buy_reasons (below) covers the deterministic
+        # "not now" codes which serve an overlapping display role for the board dossier.
         falsifiers = _g(row, "view", "falsifiers") or []
         why_not = [f["en"] for f in falsifiers[:2] if f.get("en")]
 
@@ -170,11 +180,23 @@ def build_dossier(row: dict, *, ext_grade: str | None = None) -> dict | None:
         return None
 
 
-def _derive_action(conv: dict) -> dict | None:
+def _derive_action(conv: dict, *, ext_grade: str | None = None,
+                   hold_state: str | None = None) -> dict | None:
     """Minimal fallback action derivation from conviction (no view required).
 
     Mirrors the simplified logic of stock_view._action() using only the conviction
     fields available on a board row.  Used when rec["view"] is absent (e.g. tests).
+
+    Parameters
+    ----------
+    conv : dict
+        Conviction chip attached to the board row.
+    ext_grade : str | None
+        Extension grade from ext_map ("parabolic" | "stretched" | None).
+        Used to surface TRIM ONLY when extension is active and hold is intact.
+    hold_state : str | None
+        Hold state from the hold chip on the board row ("intact" | "launched" | "broken").
+        TRIM fires on "intact" or "launched" (structure preserved) + extension.
     """
     size   = conv.get("size") or {}
     pct    = size.get("pct")
@@ -193,6 +215,12 @@ def _derive_action(conv: dict) -> dict | None:
         return _a("WATCH", "观察", "screen")
     if band in ("low", "na") or blocked:
         return _a("WAIT", "等待", "wait")
+    # TRIM ONLY: extended (parabolic or stretched) + intact/launched hold structure.
+    # Mirrors stock_view._action() demotion logic: never escalates (only reached when
+    # the checks above have NOT fired a lower verb).  Display-only de-escalation.
+    if (ext_grade in ("parabolic", "stretched")
+            and hold_state in ("intact", "launched")):
+        return _a("TRIM ONLY", "减仓", "trim")
     return _a("BUY", "买入", "go")
 
 

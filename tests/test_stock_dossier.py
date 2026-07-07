@@ -165,6 +165,53 @@ class TestBuildDossierSchema:
         for code in (result or {}).get("no_buy_reasons", []):
             assert code in sd.NO_BUY_CODES, f"Unknown no_buy code: {code!r}"
 
+    def test_trim_action_fires_via_board_row_dossier(self):
+        """Board row with ext_grade=stretched + intact hold → dossier action.tone='trim'.
+
+        Verifies finding #3 fix: _derive_action now receives ext_grade + hold_state
+        and emits TRIM ONLY on the board dossier path (not just via rec['view']).
+        """
+        # Board row: positive size (would be BUY without extension) + intact hold
+        row = _make_row(hold={"state": "intact"})
+        result = sd.build_dossier(row, ext_grade="stretched")
+        assert result is not None
+        act = result.get("action") or {}
+        assert act.get("tone") == "trim", (
+            f"Expected tone='trim' for stretched+intact board row, got {act!r}"
+        )
+        assert "TRIM" in (act.get("verb") or "").upper()
+        assert act.get("verb_zh"), "TRIM action must have a verb_zh"
+
+    def test_trim_does_not_fire_without_extension(self):
+        """Board row with no extension → BUY action (no trim)."""
+        row = _make_row(hold={"state": "intact"})
+        result = sd.build_dossier(row, ext_grade=None)
+        assert result is not None
+        act = result.get("action") or {}
+        assert act.get("tone") == "go", (
+            f"Expected tone='go' for no-extension intact row, got {act!r}"
+        )
+
+    def test_trim_does_not_fire_broken_hold(self):
+        """Board row with ext_grade=parabolic but broken hold → not trim."""
+        row = _make_row(hold={"state": "broken"})
+        result = sd.build_dossier(row, ext_grade="parabolic")
+        assert result is not None
+        act = result.get("action") or {}
+        assert act.get("tone") != "trim", (
+            f"Expected non-trim for broken hold, got {act!r}"
+        )
+
+    def test_why_now_falls_back_to_ladder_entry_text(self):
+        """why_now is populated from ladder.entry.text when view is absent (board rows)."""
+        row = _make_row(ladder={"entry": {"text": "Hold the position — uptrend intact"},
+                                "state": "RALLY ON"})
+        result = sd.build_dossier(row)
+        assert result is not None
+        assert result.get("why_now") == "Hold the position — uptrend intact", (
+            f"why_now should fall back to ladder.entry.text, got {result.get('why_now')!r}"
+        )
+
 
 # ---------------------------------------------------------------------------
 # 2. TRIM ONLY verb — stock_view._action() demotion tests
