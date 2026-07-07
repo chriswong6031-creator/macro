@@ -213,8 +213,8 @@
       "chg_20d_pct": 4.68
     },
     "usdcny": {
-      "level": 6.784,
-      "chg_20d_pct": 0.27
+      "level": 6.7925,
+      "chg_20d_pct": 0.4
     }
   },
   "property": {
@@ -225,9 +225,9 @@
     "climate_index": 91.45,
     "climate_trend": "falling",
     "construction_demand_z": -1.1,
-    "cgb_10y": 1.738,
-    "cgb_10y2y_slope": 0.489,
-    "cgb_10y_chg_6m": -0.121,
+    "cgb_10y": 1.741,
+    "cgb_10y2y_slope": 0.492,
+    "cgb_10y_chg_6m": -0.118,
     "property_etf_drawdown": -36.0,
     "note": "display/context only \u2014 A-shares mean-revert, not a scored signal"
   },
@@ -299,8 +299,8 @@
         "label": "Yuan (CNH) shock",
         "label_zh": "\u4eba\u6c11\u5e01(CNH)\u51b2\u51fb",
         "family": "fx",
-        "projection": 0.71,
-        "strength": 0.71,
+        "projection": 0.58,
+        "strength": 0.58,
         "direction": "yuan weakening \u2014 CNH up, capital-outflow stress, equities pressured"
       },
       {
@@ -335,8 +335,8 @@
         "label": "Southbound / mainland appetite",
         "label_zh": "\u5357\u5411/\u5185\u8d44\u504f\u597d",
         "family": "flows",
-        "projection": 0.17,
-        "strength": 0.17,
+        "projection": 0.18,
+        "strength": 0.18,
         "direction": "mainland risk-on \u2014 southbound buying HK, AH premium narrowing"
       },
       {
@@ -344,8 +344,8 @@
         "label": "PBoC / rates repricing",
         "label_zh": "\u592e\u884c/\u5229\u7387\u91cd\u5b9a\u4ef7",
         "family": "rates",
-        "projection": 0.01,
-        "strength": 0.01,
+        "projection": 0.09,
+        "strength": 0.09,
         "direction": "rates repricing tighter \u2014 SHIBOR & CGB yields up, liquidity drained"
       }
     ],
@@ -353,16 +353,16 @@
   },
   "conditions": {
     "roro": {
-      "roro": -0.09,
-      "roro_raw": -0.091,
+      "roro": -0.077,
+      "roro_raw": -0.077,
       "roro_state": "neutral",
       "china_roro_copper_gold": 1.604,
       "china_roro_breadth": -1.026,
-      "china_roro_southbound": -0.405,
+      "china_roro_southbound": -0.352,
       "china_roro_m1_m2": 0.017,
       "china_roro_turnover": 1.245,
       "china_roro_qvix": -1.031,
-      "china_roro_usdcnh": -0.633,
+      "china_roro_usdcnh": -0.575,
       "china_roro_margin": -0.498,
       "china_roro_ah_premium": null,
       "legs": [
@@ -384,7 +384,7 @@
           "key": "southbound",
           "name_en": "Southbound smart-money",
           "name_zh": "\u5357\u5411\u8d44\u91d1",
-          "value": -0.405,
+          "value": -0.352,
           "lean": "risk-off"
         },
         {
@@ -412,7 +412,7 @@
           "key": "usdcnh",
           "name_en": "Offshore yuan (20d)",
           "name_zh": "\u79bb\u5cb8\u4eba\u6c11\u5e01\uff0820\u65e5\uff09",
-          "value": -0.633,
+          "value": -0.575,
           "lean": "risk-off"
         },
         {
@@ -497,7 +497,7 @@
       "note_zh": "\u5df2\u752820\u5e74A\u80a1\u524d\u77bb\u6570\u636e\u6821\u51c6\uff1a\u65e0\u524d\u77bb\u56de\u64a4\u4f18\u52bf\uff08A\u80a1\u5747\u503c\u56de\u5f52 \u2014\u2014 \u9ad8\u8bfb\u6570\u504f\u5e73/\u9006\u5411\uff09\uff1b\u533a\u95f4\u4e3a\u5386\u53f2\u5206\u4f4d\u951a\u5b9a\u3002\u63cf\u8ff0\u6027\u80cc\u666f\uff0c\u4ece\u4e0d\u8ba1\u5165\u8bc4\u5206\u3002"
     },
     "drawdown_risk": {
-      "score": 46.6,
+      "score": 46.5,
       "band": "low",
       "uncalibrated": false,
       "calibrated": true,
@@ -2086,7 +2086,7 @@
           -0.063,
           0.06,
           0.337,
-          -0.09
+          -0.077
         ]
       },
       "recession": {
@@ -5246,7 +5246,7 @@
           51.9,
           48.0,
           43.2,
-          46.6
+          46.5
         ]
       },
       "fear_euphoria": {
@@ -6826,7 +6826,7 @@
           51.8,
           65.3,
           89.1,
-          49.0
+          50.5
         ]
       }
     },
@@ -6834,10 +6834,10 @@
     "note": "display-only conditioning lens \u2014 RORO + uncalibrated recession/drawdown gauges; never feeds china_axes / china_regime / china_playbook"
   },
   "fear_euphoria": {
-    "fe_score": 49,
+    "fe_score": 50,
     "band": "Neutral",
     "band_zh": "\u4e2d\u6027",
-    "roro": -0.09,
+    "roro": -0.077,
     "roro_state": "neutral",
     "legs": [
       {
@@ -6860,8 +6860,8 @@
         "key": "southbound",
         "name_en": "Southbound smart-money",
         "name_zh": "\u5357\u5411\u8d44\u91d1",
-        "value": -0.405,
-        "pct": 32,
+        "value": -0.352,
+        "pct": 36,
         "lean": "risk-off"
       },
       {
@@ -6892,8 +6892,8 @@
         "key": "usdcnh",
         "name_en": "Offshore yuan (20d)",
         "name_zh": "\u79bb\u5cb8\u4eba\u6c11\u5e01\uff0820\u65e5\uff09",
-        "value": -0.633,
-        "pct": 19,
+        "value": -0.575,
+        "pct": 20,
         "lean": "risk-off"
       },
       {
