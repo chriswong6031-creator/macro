@@ -245,6 +245,20 @@ already exist nearly verbatim.
   `stock_personality_summary` sub-block; a spine adapter
   (`adapt_personality_context`) joins labels onto spine rows by ticker. Cortex may
   cite personality context in memos (de-escalation only).
+- **R-SP21 — v1.1 chart-threshold re-anchor (2026-07-07).** The first production
+  print (1,722 tickers, as_of 2026-07-06) showed two degenerate chart labels:
+  `failed_breakout_trap` fired on 82% of the universe and
+  `mean_reversion_rubber_band` on 38% — because the v1 anchors sat below the
+  universe's natural base rates (deep-corpus calibration, n=219:
+  `failed_breakout_rate_63` p10=0.71 / p50=0.81 / p90=0.92; `trend_persist_60`
+  p10=−0.19 / p25=−0.085). Both labels also fired on a single feature, violating
+  R-SP4's ≥2-features-per-label law. Amendment (frequency-only calibration — no
+  outcome data read; the §4 study was unregistered at amendment time):
+  `failed_breakout_trap` = rate ≥ 0.92 AND `breakout_ft_rate_63` ≤ 0.45;
+  `mean_reversion_rubber_band` = `trend_persist_60` ≤ −0.19 AND
+  `trend_persist_126` ≤ 0. Projected v1.1 rates on the calibration sample: 6%
+  and 10% respectively. All other thresholds unchanged; next re-anchor requires
+  a new ruling.
 
 ---
 
@@ -495,3 +509,4 @@ Paper guardrails 1–10 RATIFIED. Amendments and additions:
 |---|---|
 | 2026-07-06 | Census wf_6022c28c (10 lanes) complete; paper adjudicated; R-SP1–R-SP20 issued; waves W0–W5 chartered. |
 | 2026-07-06 | Red-team panel wf_029126e5 (house-law / architecture / stats, Opus ×3): 7 blocking + 9 amendment findings adjudicated. Major corrections: factor_panel job has no OHLC (architecture moved into the engine job's stock-library pass under a measured budget gate); registry has TWO invalid entries (R-SP16 broadened); dna_class retro exclusion re-justified (partition depth, not R3); archetype retro coverage collapse surfaced (~37% attachable); species retro arm dropped (species_id 100% null); primary endpoint reduced to binary P(STOPPED); disguise test recast as regression-with-controls; forward clocks made reachable; synapse cadence/storage enums corrected to legal values; gate_fires corpus marked regenerate-at-study-time. |
+| 2026-07-07 | W1–W5 all shipped (#1730 path lib, #1737 cascades, #1759 nightly wiring, #1853 UI, #1854 Oracle/NW). First production print (1,722 tickers): archetype coverage 0.86, chart 0.76, dna_class 0.0 (pre-P1-C, clock 07-13). R-SP21 issued: v1.1 re-anchor of the two degenerate chart labels (82%→~6%, 38%→~10%) + second-feature conditions per R-SP4. Forward ledger produced no rows on 07-06 (zero buy/rebuy fires that day — consistent, unverified until the next fire day). |

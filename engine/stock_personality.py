@@ -36,10 +36,21 @@ CHART_EVENT_GAP_CONTRIB_THRESHOLD = 0.35   # event_gap_contrib_252 >= this
 CHART_GAP_SHARE_THRESHOLD = 0.45           # gap_share_252 >= this (alternate trigger)
 
 # failed_breakout_trap: breakouts reliably fail
-CHART_FAILED_BREAKOUT_THRESHOLD = 0.60    # failed_breakout_rate_63 >= this
+# R-SP21 (v1.1 re-anchor, 2026-07-07): the first production print showed the v1
+# anchor 0.60 sat BELOW the universe p10 (deep-corpus calibration, n=219:
+# failed_breakout_rate_63 p10=0.71 / p50=0.81 / p90=0.92) — the label fired on
+# 82% of the 1,722-ticker universe and discriminated nothing. Re-anchored at
+# ~p90 AND a second independent feature (below-median follow-through) per the
+# masterplan's >=2-features-per-label law. Frequency-only calibration; no
+# outcome data was read (study unregistered at amendment time).
+CHART_FAILED_BREAKOUT_THRESHOLD = 0.92    # failed_breakout_rate_63 >= this (~p90)
+CHART_FAILED_BREAKOUT_FT_MAX = 0.45       # AND breakout_ft_rate_63 <= this (below-median)
 
 # mean_reversion_rubber_band: returns persistently reverse
-CHART_MEAN_REVERSION_THRESHOLD = -0.08    # trend_persist_60 <= this
+# R-SP21 (v1.1 re-anchor): v1 anchor -0.08 sat at ~p25 (38% of universe fired);
+# re-anchored at ~p10 with a second horizon-consistency feature.
+CHART_MEAN_REVERSION_THRESHOLD = -0.19    # trend_persist_60 <= this (~p10)
+CHART_MEAN_REVERSION_TP126_MAX = 0.0      # AND trend_persist_126 <= this
 
 # smooth_compounder_grind: slow, steady grind
 CHART_SMOOTH_TREND_PERSIST_THRESHOLD = 0.05    # trend_persist_126 >= this
@@ -357,14 +368,16 @@ def _classify_chart(
        (gap_share is not None and gap_share >= CHART_GAP_SHARE_THRESHOLD):
         _add("event_gapper")
 
-    # 2. failed_breakout_trap
+    # 2. failed_breakout_trap (R-SP21: two independent features)
     if len(labels) < CHART_MAX_LABELS:
-        if failed_breakout_rate is not None and failed_breakout_rate >= CHART_FAILED_BREAKOUT_THRESHOLD:
+        if (failed_breakout_rate is not None and failed_breakout_rate >= CHART_FAILED_BREAKOUT_THRESHOLD
+                and breakout_ft_rate is not None and breakout_ft_rate <= CHART_FAILED_BREAKOUT_FT_MAX):
             _add("failed_breakout_trap")
 
-    # 3. mean_reversion_rubber_band
+    # 3. mean_reversion_rubber_band (R-SP21: two independent features)
     if len(labels) < CHART_MAX_LABELS:
-        if trend_persist_60 is not None and trend_persist_60 <= CHART_MEAN_REVERSION_THRESHOLD:
+        if (trend_persist_60 is not None and trend_persist_60 <= CHART_MEAN_REVERSION_THRESHOLD
+                and trend_persist_126 is not None and trend_persist_126 <= CHART_MEAN_REVERSION_TP126_MAX):
             _add("mean_reversion_rubber_band")
 
     # 4. smooth_compounder_grind
