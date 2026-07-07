@@ -1477,6 +1477,7 @@ artifacts:
       - scripts/audit_sizes.py
       - scripts/build_track_record.py
       - scripts/validate_signals.py
+      - scripts/build_stock_library.py
     external_consumers: []
     notes: >
       federated Stage-B (PR #1139): US next-bar fill via grading.fill_index; SPINE_HORIZONS
@@ -2166,6 +2167,7 @@ artifacts:
       - engine/oracle/alerts.py
       - engine/oracle/tilt.py
       - scripts/oracle_nightly.py
+      - scripts/build_stock_library.py
     external_consumers: []
     notes: "Producer: engine/oracle/live.py:395 write_text. schema=oracle_state.v1 inline constant at live.py:78."
 
@@ -5890,6 +5892,104 @@ artifacts:
       states list + note) when site/stockdata dir is absent (CI runners). Deterministic
       ordering (sort by ticker) for stable diffs. DT-W1 replication verdict will
       rewrite the chip caveat string (single source) if warranted.
+
+  # stock-personality program
+  stock-personality-panel:
+    path: "data/stock_personality/panel/YYYY-MM/panel.parquet"
+    format: parquet
+    producer: scripts/build_stock_library.py
+    known_extra_writers: []
+    owner_program: stock-personality
+    cadence: daily-engine
+    storage: gitignored-local
+    asof_field: date
+    freshness_sla_hours: 30
+    schema: stock_personality.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/publish_r2.py
+    external_consumers: []
+    notes: "Gitignored-local; published to R2 by publish_r2. Forward ledger is git-tracked separately."
+
+  site-stock-personality:
+    path: "site/factordata/stock_personality.json"
+    format: json
+    producer: scripts/build_stock_library.py
+    known_extra_writers: []
+    owner_program: stock-personality
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: stock_personality.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: "Slim site aggregate: schema, as_of, n_tickers, coverage, label_distributions, per_ticker slim dict."
+
+  stock-personality-block:
+    path: "embedded: personality block inside site/stockdata/<TICKER>.json"
+    format: json
+    producer: scripts/build_stock_library.py
+    known_extra_writers: []
+    owner_program: stock-personality
+    cadence: daily-engine
+    storage: r2
+    asof_field: null
+    freshness_sla_hours: 30
+    schema: stock_personality.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: "Per-ticker personality object embedded in the stockdata JSON blob, published to R2 with the rest of stockdata."
+
+  dna-class-ref:
+    path: "site/factordata/dna_class.json"
+    format: json
+    producer: scripts/build_factor_panel.py
+    known_extra_writers: []
+    owner_program: stock-personality
+    cadence: nightly-factor-panel
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: dna_class_ref.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/build_stock_library.py
+    external_consumers: []
+    notes: "T-1 by design: factor_panel job and engine job are parallel siblings."
+
+  stock-personality-forward-ledger:
+    path: "data/stock_personality/forward_ledger.parquet"
+    format: parquet
+    producer: scripts/build_stock_library.py
+    known_extra_writers: []
+    owner_program: stock-personality
+    cadence: daily-engine
+    storage: git
+    asof_field: date
+    freshness_sla_hours: 30
+    schema: stock_personality.v1
+    tier: shadow
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: "Git-tracked append-only ledger. Nightly engine job is sole advancer; intraday lanes discard data/ writes per house law."
 
   # --- R-ORTH PR-3: covariance spine (RUL-ORTH-1..11) ---
   covariance-spine:

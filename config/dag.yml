@@ -1117,9 +1117,16 @@ modules:
       - data/breadth/_closes_cache.parquet
       - site/altdata/by_ticker.json
       - data/baskets/membership.json
+      - site/factordata/dna_class.json
+      - site/basketdata/oracle_state.json
+      - data/etf_holdings/
+      - data/species/registry.json
     writes:
       - site/factordata/us_standouts.json
       - site/factordata/signal_gate.json
+      - site/factordata/stock_personality.json
+      - data/stock_personality/panel/YYYY-MM/panel.parquet
+      - data/stock_personality/forward_ledger.parquet
     impure: true
     needs_secrets: false
     event_driven: false
@@ -1482,3 +1489,17 @@ modules:
     needs_secrets: false
     event_driven: false
     note: Already listed above; repeated for completeness in the IO table
+
+  - module: scripts.build_factor_panel
+    reads:
+      - data/factordata/panel/
+    writes:
+      - data/factordata/panel/
+      - site/factordata/dna_class.json
+    impure: false
+    needs_secrets: false
+    event_driven: false
+    note: >
+      Incremental nightly factor panel build (bounded 10-day window).
+      data/factordata/panel/ is gitignored (R2 data plane). Also produces
+      site/factordata/dna_class.json (DNA class reference; stock-personality program).
