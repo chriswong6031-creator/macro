@@ -3709,6 +3709,34 @@ def main() -> int:
         except Exception as _e3:  # noqa: BLE001
             log.debug("W6-US invariant (c) GEX check skipped: %s", _e3)
 
+        # B4 Conviction Delta — load prev artifact BEFORE overwriting, diff dossier keys,
+        # embed compact delta block into wide.  Fail-open: any error leaves delta absent.
+        # Idempotence: if prev_as_of == cur_as_of (same-day re-render or preview), carry
+        # the existing delta forward unchanged rather than diffing the file against itself.
+        try:
+            from engine.conviction_delta import diff_standouts, load_prev_standouts
+            _delta_path = site / "factordata" / "us_standouts.json"
+            _prev_doc   = load_prev_standouts(_delta_path)
+            _prev_as_of = (_prev_doc or {}).get("as_of")
+            _cur_as_of  = wide.get("as_of")
+            if _prev_as_of and _cur_as_of and _prev_as_of == _cur_as_of:
+                # Same-day re-render: carry forward the existing delta block unchanged.
+                _existing_delta = (_prev_doc or {}).get("delta")
+                if _existing_delta:
+                    wide["delta"] = _existing_delta
+                    log.info("conviction_delta: same-day re-render (as_of=%s) — delta carried forward "
+                             "(%d entries)", _cur_as_of, len(_existing_delta.get("entries", [])))
+                else:
+                    log.debug("conviction_delta: same-day re-render but prev has no delta — computing fresh")
+                    wide["delta"] = diff_standouts(_prev_doc, wide)
+            else:
+                _delta = diff_standouts(_prev_doc, wide)
+                wide["delta"] = _delta
+                log.info("conviction_delta: %d entries (prev_as_of=%s → cur_as_of=%s)",
+                         len(_delta.get("entries", [])), _prev_as_of, _cur_as_of)
+        except Exception as _dlt_e:  # noqa: BLE001 — display-only; never fatal
+            log.debug("conviction_delta: skipped (%s)", _dlt_e)
+
         (site / "factordata" / "us_standouts.json").write_text(
             json.dumps(_json_safe(wide), separators=(",", ":"), default=str, allow_nan=False))
         log.info("wrote us_standouts.json (%d buy · rank_by=%s · %d eligible / %d universe)",
