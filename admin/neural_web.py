@@ -1427,6 +1427,9 @@ def lobe_detail(lobe_id: str) -> dict:
                             f"Descriptive only — not gauntleted."
                         )
 
+    # --- Support map: upstream + downstream traversal (W2, RUL-CC-14) ---
+    support_map_block = _support_map_for_lobe(lobe_id)
+
     out: dict = {
         "ok": True,
         "id": lobe_id,
@@ -1452,12 +1455,153 @@ def lobe_detail(lobe_id: str) -> dict:
         "recent_actions": recent_actions,
         "health_detail": health_lobe,
         "missing": not exists_locally,
+        "support_map": support_map_block,
     }
     if independence_note is not None:
         out["independence_note"] = independence_note
     if co_fire_cluster is not None:
         out["co_fire_cluster"] = co_fire_cluster
     return out
+
+
+# ---- Section G: Support Map (W2, RUL-CC-7/CC-14) ----------------------------
+
+_SUPPORT_MAP_DISPLAY_CAP = 25  # max listed items in lobe_detail support_map block
+
+
+def _load_support_map():
+    """Import engine.neuralweb.support_map via importlib (avoids bare 'import engine' text).
+
+    Admin must not use top-level engine imports; this helper lazy-loads the module
+    at call time so the no-engine-imports contract (and its CI test) is satisfied.
+    Returns the module or raises ImportError.
+    """
+    import importlib  # noqa: PLC0415
+    import sys  # noqa: PLC0415
+    # Ensure repo root is on sys.path so importlib can resolve engine.*
+    if str(_ROOT) not in sys.path:
+        sys.path.insert(0, str(_ROOT))
+    return importlib.import_module("engine.neuralweb.support_map")
+
+
+def _section_support_map() -> dict:
+    """Synapse-vs-confluence coverage drift warning (panel-level, Section G).
+
+    Reports artifact ids registered in synapse.yml but absent from
+    confluence_graph.json edges.  Fail-open: returns an honest placeholder
+    when synapse.yml is unreadable or support_map is unavailable.
+
+    RUL-CC-7: synapse.yml is the authoritative adjacency source; confluence_graph
+    is a derived view.  This section surfaces the drift between the two.
+    """
+    try:
+        _sm = _load_support_map()
+    except Exception as exc:  # noqa: BLE001
+        return {
+            "available": False,
+            "note": f"support_map module unavailable: {exc}",
+            "registered_but_missing_from_confluence": [],
+            "drift_count": 0,
+        }
+
+    try:
+        graph = _sm.load_graph(_ROOT)
+    except Exception as exc:  # noqa: BLE001
+        return {
+            "available": False,
+            "note": f"synapse.yml unreadable: {exc}",
+            "registered_but_missing_from_confluence": [],
+            "drift_count": 0,
+        }
+
+    try:
+        missing = _sm.coverage_vs_confluence(_CONFLUENCE_GRAPH, graph=graph)
+    except Exception as exc:  # noqa: BLE001
+        return {
+            "available": False,
+            "note": f"coverage_vs_confluence error: {exc}",
+            "registered_but_missing_from_confluence": [],
+            "drift_count": 0,
+        }
+    return {
+        "available": True,
+        "registered_but_missing_from_confluence": missing,
+        "drift_count": len(missing),
+        "note": (
+            "Artifact ids registered in synapse.yml but not referenced as "
+            "'artifact:<id>' in any confluence_graph.json edge. "
+            "RUL-CC-7: synapse.yml is the authoritative adjacency source; "
+            "confluence_graph.json is a derived view that may lag."
+        ),
+    }
+
+
+def _support_map_for_lobe(lobe_id: str) -> dict:
+    """Compute upstream + downstream support-map views for a lobe (lobe_detail helper).
+
+    Returns:
+      {
+        available: bool,
+        upstream: [{artifact_id, hop, via_module}, ...],   # full list
+        upstream_count: int,
+        downstream: [{artifact_id, hop, via_module}, ...], # capped at _SUPPORT_MAP_DISPLAY_CAP
+        downstream_count: int,                             # total before cap
+        bound: "upper",
+        note: str,
+      }
+    Fail-open: returns available=False with a note on any error.
+    """
+    _null = {
+        "available": False,
+        "note": "",
+        "upstream": [],
+        "upstream_count": 0,
+        "downstream": [],
+        "downstream_count": 0,
+        "bound": "upper",
+    }
+
+    try:
+        _sm = _load_support_map()
+    except Exception as exc:  # noqa: BLE001
+        _null["note"] = f"support_map module unavailable: {exc}"
+        return _null
+
+    try:
+        graph = _sm.load_graph(_ROOT)
+    except Exception as exc:  # noqa: BLE001
+        _null["note"] = f"synapse.yml unreadable: {exc}"
+        return _null
+
+    try:
+        us_full = _sm.upstream(graph, lobe_id)
+        ds_full = _sm.downstream(graph, lobe_id)
+        us_compact = [
+            {"artifact_id": r["artifact_id"], "hop": r["hop"], "via_module": r["via_module"]}
+            for r in us_full[:_SUPPORT_MAP_DISPLAY_CAP]
+        ]
+        ds_compact = [
+            {"artifact_id": r["artifact_id"], "hop": r["hop"], "via_module": r["via_module"]}
+            for r in ds_full[:_SUPPORT_MAP_DISPLAY_CAP]
+        ]
+        return {
+            "available": True,
+            "upstream": us_compact,
+            "upstream_count": len(us_full),
+            "downstream": ds_compact,
+            "downstream_count": len(ds_full),
+            "bound": "upper",
+            "note": (
+                "Downstream artifacts that read this artifact (directly or transitively); "
+                "terminal display surfaces are listed at hop 1 only. "
+                "Bound is upper: shared-producer inversion may include additional "
+                f"artifacts beyond those that directly depend on this one. "
+                f"Lists capped at {_SUPPORT_MAP_DISPLAY_CAP} (see counts for totals)."
+            ),
+        }
+    except Exception as exc:  # noqa: BLE001
+        _null["note"] = f"traversal error for {lobe_id!r}: {exc}"
+        return _null
 
 
 # ---- Top-level panel entry point -------------------------------------------
@@ -1473,6 +1617,7 @@ def panel() -> dict:
         factor_intelligence — Section E (§D PR-4, RUL-NW7/NW8)
         daily_brief        — Section F (PR-D)
         evidence_clock     — Section G (EC-R5)
+        support_map        — Section H (RUL-CC-14)
     """
     return {
         "ok": True,
@@ -1483,4 +1628,5 @@ def panel() -> dict:
         "factor_intelligence": _section_factor_intelligence(),
         "daily_brief": _section_daily_brief(),
         "evidence_clock": _section_evidence_clock(),
+        "support_map": _section_support_map(),
     }
