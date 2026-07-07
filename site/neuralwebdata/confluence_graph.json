@@ -119,6 +119,14 @@
       }
     },
     {
+      "id": "engine:reflex.options_flow_attention",
+      "type": "engine",
+      "label": "reflex.options_flow_attention",
+      "meta": {
+        "n_spine_rows": 1
+      }
+    },
+    {
       "id": "engine:track_record",
       "type": "engine",
       "label": "track_record",
@@ -1330,6 +1338,69 @@
         "direction": null,
         "onset_date": null
       }
+    },
+    {
+      "id": "thesis:2026-07-06-radar-retail",
+      "type": "thesis",
+      "label": "2026-07-06-radar-retail",
+      "meta": {
+        "direction": null,
+        "onset_date": null
+      }
+    },
+    {
+      "id": "thesis:2026-07-06-radar-us_sector_discretionary",
+      "type": "thesis",
+      "label": "2026-07-06-radar-us_sector_discretionary",
+      "meta": {
+        "direction": null,
+        "onset_date": null
+      }
+    },
+    {
+      "id": "thesis:2026-07-06-radar-housing",
+      "type": "thesis",
+      "label": "2026-07-06-radar-housing",
+      "meta": {
+        "direction": null,
+        "onset_date": null
+      }
+    },
+    {
+      "id": "thesis:2026-07-06-radar-mag7",
+      "type": "thesis",
+      "label": "2026-07-06-radar-mag7",
+      "meta": {
+        "direction": null,
+        "onset_date": null
+      }
+    },
+    {
+      "id": "thesis:2026-07-06-radar-crypto_rails",
+      "type": "thesis",
+      "label": "2026-07-06-radar-crypto_rails",
+      "meta": {
+        "direction": null,
+        "onset_date": null
+      }
+    },
+    {
+      "id": "thesis:2026-07-06-radar-payments_fintech",
+      "type": "thesis",
+      "label": "2026-07-06-radar-payments_fintech",
+      "meta": {
+        "direction": null,
+        "onset_date": null
+      }
+    },
+    {
+      "id": "thesis:2026-07-06-radar-defensives",
+      "type": "thesis",
+      "label": "2026-07-06-radar-defensives",
+      "meta": {
+        "direction": null,
+        "onset_date": null
+      }
     }
   ],
   "edges": [
@@ -1925,6 +1996,16 @@
     },
     {
       "src": "artifact:regime-history",
+      "dst": "module:scripts/build_index_hazard_panel.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/regime/regime_history.parquet consumed by scripts/build_index_hazard_panel.py"
+    },
+    {
+      "src": "artifact:regime-history",
       "dst": "module:scripts/build_site.py",
       "edge_type": "feeds",
       "n": null,
@@ -2482,6 +2563,16 @@
       "display_only": true,
       "regime": null,
       "note": "structural: data/qledger/claims.jsonl consumed by scripts/shadow_importance_v0_pit.py"
+    },
+    {
+      "src": "artifact:qledger-claims",
+      "dst": "module:engine/neuralweb/evidence_clock.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/qledger/claims.jsonl consumed by engine/neuralweb/evidence_clock.py"
     },
     {
       "src": "module:scripts/midsmall_pit.py",
@@ -3624,6 +3715,16 @@
       "note": "structural: data/species/registry.json consumed by scripts/china_max_phase0.py"
     },
     {
+      "src": "artifact:species-registry",
+      "dst": "module:engine/neuralweb/evidence_clock.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/species/registry.json consumed by engine/neuralweb/evidence_clock.py"
+    },
+    {
       "src": "module:scripts/fit_cycle_hazard.py",
       "dst": "artifact:hazard-model",
       "edge_type": "feeds",
@@ -3672,6 +3773,16 @@
       "display_only": true,
       "regime": null,
       "note": "structural: data/hazard/model_price_c4414dcb.json consumed by scripts/build_cycle.py"
+    },
+    {
+      "src": "module:scripts/build_index_hazard_panel.py",
+      "dst": "artifact:hazard-panel-index-v0",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_index_hazard_panel.py writes data/hazard/panel_index_v0.parquet"
     },
     {
       "src": "module:scripts/build_spvector.py",
@@ -3762,6 +3873,26 @@
       "display_only": true,
       "regime": null,
       "note": "structural: data/experiments/registry_seed.json consumed by scripts/build_site.py"
+    },
+    {
+      "src": "artifact:experiments-registry-seed",
+      "dst": "module:engine/neuralweb/evidence_clock.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/experiments/registry_seed.json consumed by engine/neuralweb/evidence_clock.py"
+    },
+    {
+      "src": "artifact:experiments-registry-seed",
+      "dst": "module:scripts/check_evidence_clock.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/experiments/registry_seed.json consumed by scripts/check_evidence_clock.py"
     },
     {
       "src": "module:engine/run.py",
@@ -4624,6 +4755,16 @@
       "note": "structural: data/signal_archive/track_record.parquet consumed by scripts/validate_signals.py"
     },
     {
+      "src": "artifact:signal-archive-track-record",
+      "dst": "module:scripts/build_stock_library.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/signal_archive/track_record.parquet consumed by scripts/build_stock_library.py"
+    },
+    {
       "src": "module:scripts/build_foresight.py",
       "dst": "artifact:foresight-log",
       "edge_type": "feeds",
@@ -4952,6 +5093,16 @@
       "display_only": true,
       "regime": null,
       "note": "structural: data/trial_ledger.jsonl consumed by scripts/strategy_lab.py"
+    },
+    {
+      "src": "artifact:trial-ledger",
+      "dst": "module:engine/neuralweb/evidence_clock.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/trial_ledger.jsonl consumed by engine/neuralweb/evidence_clock.py"
     },
     {
       "src": "module:scripts/build_stock_library.py",
@@ -5954,6 +6105,16 @@
       "note": "structural: site/basketdata/oracle_state.json consumed by scripts/oracle_nightly.py"
     },
     {
+      "src": "artifact:site-basket-oracle-state",
+      "dst": "module:scripts/build_stock_library.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: site/basketdata/oracle_state.json consumed by scripts/build_stock_library.py"
+    },
+    {
       "src": "module:scripts/oracle_reversion_forward_ledger.py",
       "dst": "artifact:oracle-reversion-forward-ledger",
       "edge_type": "feeds",
@@ -6874,6 +7035,16 @@
       "note": "structural: data/neuralweb/governance.jsonl consumed by engine/neuralweb/cortex.py"
     },
     {
+      "src": "artifact:governance-ledger",
+      "dst": "module:engine/neuralweb/evidence_clock.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/neuralweb/governance.jsonl consumed by engine/neuralweb/evidence_clock.py"
+    },
+    {
       "src": "module:engine/neuralweb/cortex.py",
       "dst": "artifact:cortex-memo",
       "edge_type": "feeds",
@@ -6962,6 +7133,16 @@
       "display_only": true,
       "regime": null,
       "note": "structural: data/neuralweb/machine_registry.jsonl consumed by scripts/evaluate_cortex_hypotheses.py"
+    },
+    {
+      "src": "artifact:machine-registry",
+      "dst": "module:engine/neuralweb/evidence_clock.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/neuralweb/machine_registry.jsonl consumed by engine/neuralweb/evidence_clock.py"
     },
     {
       "src": "module:scripts/grade_cortex_attention.py",
@@ -7744,6 +7925,26 @@
       "note": "structural: embedded: capital_allocation block inside site/stockdata/<TICKER>.json consumed by site/stockdata/<TICKER>.json"
     },
     {
+      "src": "module:engine/event_landmine.py",
+      "dst": "artifact:event-windows",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: engine/event_landmine.py writes embedded: event_windows block inside site/stockdata/<TICKER>.json"
+    },
+    {
+      "src": "artifact:event-windows",
+      "dst": "module:site/stockdata/<TICKER>.json",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: embedded: event_windows block inside site/stockdata/<TICKER>.json consumed by site/stockdata/<TICKER>.json"
+    },
+    {
       "src": "module:engine/expectation_state.py",
       "dst": "artifact:long-hold-expectation-state",
       "edge_type": "feeds",
@@ -8064,6 +8265,16 @@
       "note": "structural: data/rule_experiments/registry.jsonl consumed by scripts/run_rule_replay.py"
     },
     {
+      "src": "artifact:rule-experiment-registry",
+      "dst": "module:engine/neuralweb/evidence_clock.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/rule_experiments/registry.jsonl consumed by engine/neuralweb/evidence_clock.py"
+    },
+    {
       "src": "module:scripts/run_rule_replay.py",
       "dst": "artifact:rule-experiment-summaries",
       "edge_type": "feeds",
@@ -8184,6 +8395,16 @@
       "note": "structural: scripts/build_nw_mastermind_context.py writes data/neuralweb/mastermind_context.json"
     },
     {
+      "src": "artifact:neuralweb-mastermind-context",
+      "dst": "module:engine/neuralweb/evidence_clock.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/neuralweb/mastermind_context.json consumed by engine/neuralweb/evidence_clock.py"
+    },
+    {
       "src": "module:scripts/build_nw_mastermind_context.py",
       "dst": "artifact:site-neuralweb-mastermind-context",
       "edge_type": "feeds",
@@ -8194,6 +8415,36 @@
       "note": "structural: scripts/build_nw_mastermind_context.py writes site/neuralwebdata/mastermind_context.json"
     },
     {
+      "src": "module:<MASTERMIND_EXTERNAL>",
+      "dst": "artifact:site-mastermind-nw-feedback",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: <MASTERMIND_EXTERNAL> writes site/mastermind/nw_feedback.json"
+    },
+    {
+      "src": "artifact:site-mastermind-nw-feedback",
+      "dst": "module:engine/neuralweb/mastermind_feedback.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: site/mastermind/nw_feedback.json consumed by engine/neuralweb/mastermind_feedback.py"
+    },
+    {
+      "src": "module:scripts/build_mastermind_feedback_summary.py",
+      "dst": "artifact:mastermind-feedback-summary",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_mastermind_feedback_summary.py writes data/governance/mastermind_feedback_summary.json"
+    },
+    {
       "src": "module:<RESEARCH_FACTORY_INGEST>",
       "dst": "artifact:research-factory-candidates",
       "edge_type": "feeds",
@@ -8202,6 +8453,16 @@
       "display_only": true,
       "regime": null,
       "note": "structural: <RESEARCH_FACTORY_INGEST> writes data/research_factory/candidates.jsonl"
+    },
+    {
+      "src": "artifact:research-factory-candidates",
+      "dst": "module:engine/neuralweb/evidence_clock.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/research_factory/candidates.jsonl consumed by engine/neuralweb/evidence_clock.py"
     },
     {
       "src": "module:<RESEARCH_FACTORY_INGEST>",
@@ -8394,6 +8655,16 @@
       "note": "structural: data/neuralweb/health.json consumed by engine/neuralweb/daily_brief.py"
     },
     {
+      "src": "artifact:neuralweb-health",
+      "dst": "module:engine/neuralweb/evidence_clock.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/neuralweb/health.json consumed by engine/neuralweb/evidence_clock.py"
+    },
+    {
       "src": "module:scripts/build_neuralweb_health.py",
       "dst": "artifact:site-neuralweb-health",
       "edge_type": "feeds",
@@ -8412,6 +8683,16 @@
       "display_only": true,
       "regime": null,
       "note": "structural: scripts/build_cycle_pattern_lake.py writes data/cycle_pattern/entities.parquet"
+    },
+    {
+      "src": "artifact:cycle-pattern-entities",
+      "dst": "module:scripts/build_index_hazard_panel.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/cycle_pattern/entities.parquet consumed by scripts/build_index_hazard_panel.py"
     },
     {
       "src": "module:scripts/build_neuralweb_brief.py",
@@ -8474,6 +8755,106 @@
       "note": "structural: data/neuralweb/daily_brief_history.jsonl consumed by engine/neuralweb/daily_brief.py"
     },
     {
+      "src": "module:scripts/build_mechanism_pathways.py",
+      "dst": "artifact:mechanism-pathways",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_mechanism_pathways.py writes data/neuralweb/mechanism_pathways.json"
+    },
+    {
+      "src": "artifact:mechanism-pathways",
+      "dst": "module:engine/neuralweb/daily_brief.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/neuralweb/mechanism_pathways.json consumed by engine/neuralweb/daily_brief.py"
+    },
+    {
+      "src": "artifact:mechanism-pathways",
+      "dst": "module:admin/neural_web.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/neuralweb/mechanism_pathways.json consumed by admin/neural_web.py"
+    },
+    {
+      "src": "artifact:mechanism-pathways",
+      "dst": "module:engine/neuralweb/ask_brain.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/neuralweb/mechanism_pathways.json consumed by engine/neuralweb/ask_brain.py"
+    },
+    {
+      "src": "artifact:mechanism-pathways",
+      "dst": "module:engine/neuralweb/cortex.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/neuralweb/mechanism_pathways.json consumed by engine/neuralweb/cortex.py"
+    },
+    {
+      "src": "module:scripts/build_mechanism_pathways.py",
+      "dst": "artifact:site-mechanism-pathways",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_mechanism_pathways.py writes site/neuralwebdata/mechanism_pathways.json"
+    },
+    {
+      "src": "artifact:site-mechanism-pathways",
+      "dst": "module:templates/committee.html.j2",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: site/neuralwebdata/mechanism_pathways.json consumed by templates/committee.html.j2"
+    },
+    {
+      "src": "module:scripts/build_mechanism_pathways.py",
+      "dst": "artifact:mechanism-pathways-history",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_mechanism_pathways.py writes data/neuralweb/mechanism_pathways_history.jsonl"
+    },
+    {
+      "src": "artifact:mechanism-pathways-history",
+      "dst": "module:scripts/build_mechanism_pathways.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/neuralweb/mechanism_pathways_history.jsonl consumed by scripts/build_mechanism_pathways.py"
+    },
+    {
+      "src": "module:scripts/build_entity_thesis_mechanism_registry.py",
+      "dst": "artifact:entity-thesis-mechanism-registry",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_entity_thesis_mechanism_registry.py writes data/neuralweb/entity_thesis_mechanism_registry.json"
+    },
+    {
       "src": "module:scripts/build_cycle_pattern_lake.py",
       "dst": "artifact:cycle-pattern-state-monthly",
       "edge_type": "feeds",
@@ -8514,6 +8895,16 @@
       "note": "structural: data/cycle_pattern/truths.jsonl consumed by engine/neuralweb/daily_brief.py"
     },
     {
+      "src": "artifact:cycle-pattern-truths",
+      "dst": "module:engine/neuralweb/evidence_clock.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/cycle_pattern/truths.jsonl consumed by engine/neuralweb/evidence_clock.py"
+    },
+    {
       "src": "module:scripts/archive_context_snapshots.py",
       "dst": "artifact:signal-archive-context-daily",
       "edge_type": "feeds",
@@ -8532,6 +8923,36 @@
       "display_only": true,
       "regime": null,
       "note": "structural: scripts/build_cycle_pattern_live.py writes data/cycle_pattern/state_daily_live.parquet"
+    },
+    {
+      "src": "module:scripts/build_cycle_pattern_state.py",
+      "dst": "artifact:cycle-pattern-state",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_cycle_pattern_state.py writes data/neuralweb/cycle_pattern_state.json"
+    },
+    {
+      "src": "artifact:cycle-pattern-state",
+      "dst": "module:cortex-read",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/neuralweb/cycle_pattern_state.json consumed by cortex-read"
+    },
+    {
+      "src": "module:scripts/build_netliq_daily.py",
+      "dst": "artifact:fed-net-liquidity",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_netliq_daily.py writes data/macro/fed_net_liquidity.parquet"
     },
     {
       "src": "module:scripts/oracle_nightly.py",
@@ -8634,6 +9055,76 @@
       "note": "structural: data/neuralweb/dt_contra_state.json consumed by cortex-read"
     },
     {
+      "src": "module:scripts/build_stock_library.py",
+      "dst": "artifact:stock-personality-panel",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_stock_library.py writes data/stock_personality/panel/YYYY-MM/panel.parquet"
+    },
+    {
+      "src": "artifact:stock-personality-panel",
+      "dst": "module:scripts/publish_r2.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/stock_personality/panel/YYYY-MM/panel.parquet consumed by scripts/publish_r2.py"
+    },
+    {
+      "src": "module:scripts/build_stock_library.py",
+      "dst": "artifact:site-stock-personality",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_stock_library.py writes site/factordata/stock_personality.json"
+    },
+    {
+      "src": "module:scripts/build_stock_library.py",
+      "dst": "artifact:stock-personality-block",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_stock_library.py writes embedded: personality block inside site/stockdata/<TICKER>.json"
+    },
+    {
+      "src": "module:scripts/build_factor_panel.py",
+      "dst": "artifact:dna-class-ref",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_factor_panel.py writes site/factordata/dna_class.json"
+    },
+    {
+      "src": "artifact:dna-class-ref",
+      "dst": "module:scripts/build_stock_library.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: site/factordata/dna_class.json consumed by scripts/build_stock_library.py"
+    },
+    {
+      "src": "module:scripts/build_stock_library.py",
+      "dst": "artifact:stock-personality-forward-ledger",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_stock_library.py writes data/stock_personality/forward_ledger.parquet"
+    },
+    {
       "src": "module:scripts/build_covariance_spine.py",
       "dst": "artifact:covariance-spine",
       "edge_type": "feeds",
@@ -8672,6 +9163,286 @@
       "display_only": true,
       "regime": null,
       "note": "structural: scripts/build_covariance_spine.py writes data/neuralweb/covariance_spine_history.parquet"
+    },
+    {
+      "src": "module:scripts/build_regime_v2_pit.py",
+      "dst": "artifact:regime-v2-pit",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_regime_v2_pit.py writes data/regime/regime_v2_pit.parquet"
+    },
+    {
+      "src": "module:scripts/build_active_build_map.py",
+      "dst": "artifact:active-builds",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_active_build_map.py writes data/governance/active_builds.json"
+    },
+    {
+      "src": "module:scripts/build_ruling_graph.py",
+      "dst": "artifact:site-neuralweb-ruling-graph",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_ruling_graph.py writes site/neuralwebdata/ruling_graph.json"
+    },
+    {
+      "src": "module:scripts/build_evidence_clock.py",
+      "dst": "artifact:evidence-clock",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_evidence_clock.py writes data/neuralweb/evidence_clock.json"
+    },
+    {
+      "src": "artifact:evidence-clock",
+      "dst": "module:scripts/check_evidence_clock.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/neuralweb/evidence_clock.json consumed by scripts/check_evidence_clock.py"
+    },
+    {
+      "src": "module:<HAND_MAINTAINED>",
+      "dst": "artifact:evidence-clock-reviews",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: <HAND_MAINTAINED> writes data/neuralweb/evidence_clock_reviews.jsonl"
+    },
+    {
+      "src": "artifact:evidence-clock-reviews",
+      "dst": "module:scripts/build_evidence_clock.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/neuralweb/evidence_clock_reviews.jsonl consumed by scripts/build_evidence_clock.py"
+    },
+    {
+      "src": "artifact:evidence-clock-reviews",
+      "dst": "module:engine/neuralweb/evidence_clock.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/neuralweb/evidence_clock_reviews.jsonl consumed by engine/neuralweb/evidence_clock.py"
+    },
+    {
+      "src": "module:scripts/build_gex_board.py",
+      "dst": "artifact:options-structure-gex-state",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_gex_board.py writes options_structure/gex_state/<ROOT>.json"
+    },
+    {
+      "src": "artifact:options-structure-gex-state",
+      "dst": "module:engine/options_structure.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: options_structure/gex_state/<ROOT>.json consumed by engine/options_structure.py"
+    },
+    {
+      "src": "module:engine/options_structure.py",
+      "dst": "artifact:options-flow-chain-heat",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: engine/options_structure.py writes live_flow/chain_heat_current.json"
+    },
+    {
+      "src": "artifact:options-flow-chain-heat",
+      "dst": "module:engine/options_structure.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: live_flow/chain_heat_current.json consumed by engine/options_structure.py"
+    },
+    {
+      "src": "module:engine/options_structure.py",
+      "dst": "artifact:options-structure-matrix",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: engine/options_structure.py writes options_structure/matrix/<ROOT>.json"
+    },
+    {
+      "src": "artifact:options-structure-matrix",
+      "dst": "module:engine/options_structure.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: options_structure/matrix/<ROOT>.json consumed by engine/options_structure.py"
+    },
+    {
+      "src": "module:engine/options_structure.py",
+      "dst": "artifact:options-structure-structural",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: engine/options_structure.py writes options_structure/structural/<ROOT>.json"
+    },
+    {
+      "src": "artifact:options-structure-structural",
+      "dst": "module:engine/options_structure.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: options_structure/structural/<ROOT>.json consumed by engine/options_structure.py"
+    },
+    {
+      "src": "module:engine/neuralweb/world_state.py",
+      "dst": "artifact:prophet-trade-plan",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: engine/neuralweb/world_state.py writes prophet/trade_plan/<ID>.json"
+    },
+    {
+      "src": "artifact:prophet-trade-plan",
+      "dst": "module:engine/options_structure.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: prophet/trade_plan/<ID>.json consumed by engine/options_structure.py"
+    },
+    {
+      "src": "module:engine/options_structure.py",
+      "dst": "artifact:prophet-management-state",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: engine/options_structure.py writes prophet/state/<ID>.json"
+    },
+    {
+      "src": "artifact:prophet-management-state",
+      "dst": "module:engine/options_structure.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: prophet/state/<ID>.json consumed by engine/options_structure.py"
+    },
+    {
+      "src": "module:scripts/build_nasdaq_internals.py",
+      "dst": "artifact:nasdaq-internals",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_nasdaq_internals.py writes site/marketdata/nasdaq_internals.json"
+    },
+    {
+      "src": "module:scripts/run_watchlist_sentinel.py",
+      "dst": "artifact:watchlist-alerts-jsonl",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/run_watchlist_sentinel.py writes data/alerts/watchlist_alerts.jsonl"
+    },
+    {
+      "src": "artifact:watchlist-alerts-jsonl",
+      "dst": "module:engine/alert_triage.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/alerts/watchlist_alerts.jsonl consumed by engine/alert_triage.py"
+    },
+    {
+      "src": "artifact:watchlist-alerts-jsonl",
+      "dst": "module:engine/watchlist_alerts.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/alerts/watchlist_alerts.jsonl consumed by engine/watchlist_alerts.py"
+    },
+    {
+      "src": "module:scripts/run_watchlist_sentinel.py",
+      "dst": "artifact:watchlist-sentinel-states",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/run_watchlist_sentinel.py writes data/alerts/watchlist_sentinel_states.json"
+    },
+    {
+      "src": "artifact:watchlist-sentinel-states",
+      "dst": "module:scripts/run_watchlist_sentinel.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/alerts/watchlist_sentinel_states.json consumed by scripts/run_watchlist_sentinel.py"
+    },
+    {
+      "src": "module:scripts/run_watchlist_sentinel.py",
+      "dst": "artifact:watchlist-sentinel-cooldown",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/run_watchlist_sentinel.py writes data/alerts/watchlist_sentinel_cooldown.json"
+    },
+    {
+      "src": "artifact:watchlist-sentinel-cooldown",
+      "dst": "module:scripts/run_watchlist_sentinel.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/alerts/watchlist_sentinel_cooldown.json consumed by scripts/run_watchlist_sentinel.py"
     },
     {
       "src": "data/regime/latest.json",
@@ -8814,11 +9585,11 @@
       "src": "options.ivspread_positive_call_doi",
       "dst": "us_board.watch_lane",
       "edge_type": "confirms",
-      "n": 1,
+      "n": 0,
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "watch-lane names with CW ivspread>0 and net ΔOI>0 (as_of 2026-06-24); e.g. ROST. Display-only; S-IVSPREAD-F gate building_history; W-E1: CWIV Era3 5d IC survives on sector history."
+      "note": "watch-lane names with CW ivspread>0 and net ΔOI>0 (as_of 2026-06-24); e.g. none. Display-only; S-IVSPREAD-F gate building_history; W-E1: CWIV Era3 5d IC survives on sector history."
     },
     {
       "src": "options.skew_rising_or_call_wall_pin",
@@ -8913,7 +9684,7 @@
   "independence": {
     "effective_independent_lobes": 1.0,
     "n_lobes_measurable": 1,
-    "n_lobes_total": 17,
+    "n_lobes_total": 18,
     "pctile_vs_null": 1.0,
     "same_bet_warning": null,
     "dominant_overlap_cluster": null,
@@ -8927,7 +9698,7 @@
   ],
   "schema_version": 1,
   "produced_by": "engine/neuralweb/confluence.py",
-  "produced_at": "2026-07-07T00:17:59Z",
-  "inputs_hash": "sha256:b63185718a6413acec2fab71dec8ce78110463081833a489a029f7bd23ab38f3",
+  "produced_at": "2026-07-07T08:54:04Z",
+  "inputs_hash": "sha256:906dae8a5bdf834f2c38df737d65ad9c7a2eab5451ca80b0e950bea6da632200",
   "tier": "display"
 }
