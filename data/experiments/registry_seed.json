@@ -2790,18 +2790,18 @@
       "kind": "manual_accrual",
       "priority": "medium",
       "cadence": "monthly",
-      "what": "Operator adds Codex winner-case pulls to research/winners/cases/ (>=1 failed_breakaway per 4 winners). At >=8 cases across sectors/eras, run cross-case fingerprint report v1 (opus-reviewed, WA-R7 restrictions). Candidate pairlet identified, NOT registered until a WA-R8 ruling.",
+      "what": "11 cases now in research/winners/cases/ (ALNY/APP/ASTS/CVNA/MRNA/NVDA/PLTR/SMCI/SMMT/VKTX/VRT). First cross-case fingerprint report SHIPPED (research/winners/FINGERPRINT_REPORT_W2.md, opus-synthesized + red-teamed, descriptive-only). Candidate features F1-F6 nominated, NOT registered. Next gate: W3 pre-registered pairlet needs an explicit Fable/operator ruling (WA-R8).",
       "source": "research/winners/CODEX_WINNER_CASE_PROMPT.md (operator loop)",
       "storage": "research/winners/cases/",
       "hook": "come_back",
       "started": "2026-07-07",
-      "come_back_on": "2026-09-15",
-      "come_back_note": "review once >=8 annotated cases exist",
+      "come_back_on": "2026-10-15",
+      "come_back_note": "W3 ruling decision on whether to register a pre-registered winner-vs-census pairlet (<=5 features, one ruler, month-clustered, era-split)",
       "maturation": ">=8 cases incl. >=2 failed_breakaway",
       "status": "accruing",
       "state": "armed",
-      "next_step": "fingerprint report v1 + candidate pairlet",
-      "phase_hint": "W2"
+      "next_step": "Fable/operator ruling on W3 registration; add more failed_breakaway cases to balance the winners-only set",
+      "phase_hint": "W3"
     },
     {
       "id": "winner-autopsy-options-era-depth",
