@@ -15,7 +15,7 @@ no fill IDs, no notional, no host paths. All five authority booleans are FALSE.
 STALENESS CONTRACT (FB-R14)
 ----------------------------
 generated_at older than SOURCE_STALENESS_DAYS (4 calendar days) → state: "stale".
-File missing or unparseable → state: "absent".
+File missing, unparseable JSON, or unparseable generated_at → state: "absent".
 Neither state may produce fabricated zero counts; totals are omitted or null
 with gap_notes explaining the degraded state.
 
@@ -35,12 +35,14 @@ METRIC FAMILIES (§3 frozen)
 ----------------------------
 See _METRIC_FAMILIES_STATUS for the preregistered families and their
 live/blocked/registered status. Blocked families are printed with reasons,
-never faked.
+never faked. The metric_families block in the output is the hardcoded registry
+below — it is NOT a passthrough of any metric_families key in the source.
 """
 from __future__ import annotations
 
 import json
 import logging
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -68,6 +70,12 @@ _SOURCE_PATH = Path("site") / "mastermind" / "nw_feedback.json"
 # Output path relative to repo root
 _OUTPUT_PATH = Path("data") / "governance" / "mastermind_feedback_summary.json"
 
+# Label sanitization: keys must match this pattern (lowercase enforced first)
+_LABEL_RE = re.compile(r'^[a-z0-9_]{1,40}$')
+
+# Maximum label-dict entries to copy (drop extras by descending count then lexicographic)
+_MAX_LABEL_ENTRIES = 12
+
 # Preregistered metric families (FB-R9, §3)
 _METRIC_FAMILIES_STATUS: list[dict] = [
     {
@@ -84,7 +92,7 @@ _METRIC_FAMILIES_STATUS: list[dict] = [
         "status": "live",
         "definition": (
             "Per book, per window: packet_accepted, packet_rejected counts "
-            "(from run_events); rejection top-error class counts (sanitized labels only)"
+            "(from run_events); rejection error class counts (sanitized labels only)"
         ),
         "notes": "Live in W-M.",
     },
@@ -92,8 +100,8 @@ _METRIC_FAMILIES_STATUS: list[dict] = [
         "family": "outcome_mix",
         "status": "live",
         "definition": (
-            "Per window: resolved-outcome counts by band from outcome_ledger.jsonl "
-            "(outcome field), n_resolved, n_open"
+            "Per window: resolved-outcome counts by outcome label from outcome_ledger.jsonl "
+            "(outcome field), n_resolved"
         ),
         "notes": "Live in W-M.",
     },
@@ -145,19 +153,32 @@ def _repo_root(root: Path | str | None = None) -> Path:
 
 
 def _parse_date(ts: str) -> datetime | None:
-    """Parse ISO-8601 datetime string, returning None on failure."""
+    """Parse ISO-8601 datetime string, returning None on failure.
+
+    Handles both "2026-07-06T22:25:00Z" and "2026-07-06T22:25:00+00:00" forms.
+    Naive datetimes are attached to UTC; aware datetimes are converted to UTC.
+    Does NOT truncate the fractional-seconds or sub-second portion.
+    """
     if not isinstance(ts, str) or not ts:
         return None
     try:
-        # Handle both "2026-07-06T22:25:00Z" and "2026-07-06" forms
+        # Replace trailing Z with +00:00 for fromisoformat compatibility
         s = ts.replace("Z", "+00:00")
-        return datetime.fromisoformat(s[:19]).replace(tzinfo=timezone.utc)
+        dt = datetime.fromisoformat(s)
+        if dt.tzinfo is None:
+            return dt.replace(tzinfo=timezone.utc)
+        # Convert aware datetime to UTC
+        return dt.astimezone(timezone.utc)
     except Exception:  # noqa: BLE001
         return None
 
 
 def _is_stale(generated_at: str) -> bool:
-    """Return True if generated_at is older than SOURCE_STALENESS_DAYS calendar days."""
+    """Return True if generated_at is older than SOURCE_STALENESS_DAYS calendar days.
+
+    Staleness is measured in wall-clock seconds elapsed since generated_at.
+    Returns True (treat as absent) if the timestamp cannot be parsed.
+    """
     dt = _parse_date(generated_at)
     if dt is None:
         return True
@@ -173,6 +194,66 @@ def _int_or_none(v: object) -> int | None:
     if isinstance(v, float) and v == int(v):
         return int(v)
     return None
+
+
+def _sanitize_label_dict(
+    raw: dict,
+    block_name: str,
+    gap_notes: list[str],
+) -> dict:
+    """Sanitize a label→count dict with strict rules.
+
+    Rules:
+    - Key is lowercased; must then match ^[a-z0-9_]{1,40}$; otherwise dropped.
+    - Value must pass _int_or_none; otherwise dropped.
+    - At most _MAX_LABEL_ENTRIES entries kept: sort by descending count, then
+      lexicographic key, truncate.
+    - A single gap note is emitted (once) if any entry is dropped.
+
+    Returns a cleaned dict (may be empty).
+    """
+    cleaned: dict[str, int] = {}
+    dropped = 0
+    for raw_key, raw_val in raw.items():
+        key = raw_key.lower() if isinstance(raw_key, str) else ""
+        if not _LABEL_RE.match(key):
+            dropped += 1
+            continue
+        v = _int_or_none(raw_val)
+        if v is None:
+            dropped += 1
+            continue
+        cleaned[key] = v
+
+    if dropped:
+        gap_notes.append(
+            f"{block_name}: dropped {dropped} label(s) that failed strict sanitization "
+            f"(key must match ^[a-z0-9_]{{1,40}}$; value must be an integer)"
+        )
+
+    if len(cleaned) > _MAX_LABEL_ENTRIES:
+        # Sort by descending count, then lexicographic key, keep top _MAX_LABEL_ENTRIES
+        sorted_items = sorted(cleaned.items(), key=lambda kv: (-kv[1], kv[0]))
+        gap_notes.append(
+            f"{block_name}: capped at {_MAX_LABEL_ENTRIES} entries "
+            f"(dropped {len(cleaned) - _MAX_LABEL_ENTRIES} by ascending count)"
+        )
+        cleaned = dict(sorted_items[:_MAX_LABEL_ENTRIES])
+
+    return cleaned
+
+
+def _sanitize_book_id(raw_id: object) -> str:
+    """Sanitize a book_id value.
+
+    Must match ^[a-z0-9_]{1,40}$ after lowercasing; falls back to 'unknown'.
+    """
+    if not isinstance(raw_id, str) or not raw_id:
+        return "unknown"
+    key = raw_id.lower()
+    if _LABEL_RE.match(key):
+        return key
+    return "unknown"
 
 
 # ---------------------------------------------------------------------------
@@ -200,18 +281,10 @@ def _extract_book(raw_book: dict) -> dict:
     """Whitelist-extract count fields from a raw book entry.
 
     Only copies known count keys. book_id is taken from the source but
-    validated to be a plain string containing no private-looking characters.
-    Falls back to 'unknown' if book_id is not a simple string.
+    validated to match ^[a-z0-9_]{1,40}$ after lowercasing.
+    Falls back to 'unknown' if book_id is not a valid string.
     """
-    # book_id: must be a simple alphanumeric/underscore string
-    raw_id = raw_book.get("book_id", "")
-    if isinstance(raw_id, str) and raw_id and all(
-        c.isalnum() or c in ("_", "-") for c in raw_id
-    ):
-        book_id = raw_id
-    else:
-        book_id = "unknown"
-
+    book_id = _sanitize_book_id(raw_book.get("book_id", ""))
     out: dict = {"book_id": book_id}
 
     # gate_failures: in v1 it's a nested object; we whitelist only .total
@@ -239,81 +312,132 @@ def _extract_book(raw_book: dict) -> dict:
 # v2 passthrough blocks (counts-only whitelist extraction)
 # ---------------------------------------------------------------------------
 
-def _extract_decision_flow(raw: dict) -> dict | None:
-    """Whitelist-extract decision_flow counts from v2 source block."""
+def _extract_decision_flow(raw: dict, gap_notes: list[str]) -> dict | None:
+    """Whitelist-extract decision_flow counts from v2 source block.
+
+    Canonical v2 shape:
+        {
+          "by_book": [{"book_id": "flagship", "packet_accepted": 1, "packet_rejected": 1}],
+          "rejection_error_classes": {"falsifiers": 1, "expected_failure_mode": 1}
+        }
+
+    book_id values are sanitized via _sanitize_book_id.
+    rejection_error_classes keys are sanitized via _sanitize_label_dict
+    (^[a-z0-9_]{1,40}$, cap 12, drop+note on failure).
+    """
     df = raw.get("decision_flow")
     if not isinstance(df, dict):
         return None
     out: dict = {}
-    # Per-book counts
-    for key in ("packet_accepted", "packet_rejected"):
-        v = df.get(key)
-        if isinstance(v, (int, float)) and not isinstance(v, bool):
-            out[key] = _int_or_none(v)
-    # Top-error-class counts (sanitized labels only → keys are strings, values are ints)
-    top_errors = df.get("top_error_classes")
-    if isinstance(top_errors, dict):
-        cleaned: dict = {}
-        for label, count in top_errors.items():
-            # Only accept simple string labels with no private-looking content
-            if (
-                isinstance(label, str)
-                and label
-                and not any(c in label for c in ("/", "\\", "$", "@"))
-                and isinstance(count, (int, float))
-                and not isinstance(count, bool)
-            ):
-                cleaned[label] = _int_or_none(count)
+
+    # by_book list (v2 canonical — per-book packet accepted/rejected)
+    by_book_raw = df.get("by_book")
+    if isinstance(by_book_raw, list):
+        by_book_out = []
+        for entry in by_book_raw:
+            if not isinstance(entry, dict):
+                continue
+            book_id = _sanitize_book_id(entry.get("book_id", ""))
+            book_entry: dict = {"book_id": book_id}
+            for key in ("packet_accepted", "packet_rejected"):
+                v = _int_or_none(entry.get(key))
+                if v is not None:
+                    book_entry[key] = v
+            by_book_out.append(book_entry)
+        if by_book_out:
+            out["by_book"] = by_book_out
+
+    # rejection_error_classes (v2 canonical — replaces old top_error_classes)
+    error_classes_raw = df.get("rejection_error_classes")
+    if isinstance(error_classes_raw, dict):
+        cleaned = _sanitize_label_dict(
+            error_classes_raw,
+            "decision_flow.rejection_error_classes",
+            gap_notes,
+        )
         if cleaned:
-            out["top_error_classes"] = cleaned
+            out["rejection_error_classes"] = cleaned
+
     return out if out else None
 
 
-def _extract_outcome_mix(raw: dict) -> dict | None:
-    """Whitelist-extract outcome_mix counts from v2 source block."""
+def _extract_outcome_mix(raw: dict, gap_notes: list[str]) -> dict | None:
+    """Whitelist-extract outcome_mix counts from v2 source block.
+
+    Canonical v2 shape:
+        {"n_resolved": 3, "by_outcome": {"1": 2, "0": 1}}
+
+    by_outcome keys are sanitized via _sanitize_label_dict
+    (^[a-z0-9_]{1,40}$, cap 12). Note: digit-only keys ("1", "0") are
+    valid under this charset and pass through.
+    """
     om = raw.get("outcome_mix")
     if not isinstance(om, dict):
         return None
     out: dict = {}
-    for key in ("n_resolved", "n_open"):
-        v = om.get(key)
-        if isinstance(v, (int, float)) and not isinstance(v, bool):
-            out[key] = _int_or_none(v)
-    # Outcome bands: keys = band labels, values = counts
-    bands = om.get("by_band")
-    if isinstance(bands, dict):
-        cleaned: dict = {}
-        for band, count in bands.items():
-            if (
-                isinstance(band, str)
-                and band
-                and not any(c in band for c in ("/", "\\", "$", "@"))
-                and isinstance(count, (int, float))
-                and not isinstance(count, bool)
-            ):
-                cleaned[band] = _int_or_none(count)
+    n_resolved = _int_or_none(om.get("n_resolved"))
+    if n_resolved is not None:
+        out["n_resolved"] = n_resolved
+
+    # by_outcome (v2 canonical — replaces old by_band)
+    by_outcome_raw = om.get("by_outcome")
+    if isinstance(by_outcome_raw, dict):
+        cleaned = _sanitize_label_dict(
+            by_outcome_raw,
+            "outcome_mix.by_outcome",
+            gap_notes,
+        )
         if cleaned:
-            out["by_band"] = cleaned
+            out["by_outcome"] = cleaned
+
     return out if out else None
 
 
-def _extract_context_audit(raw: dict) -> dict | None:
-    """Whitelist-extract context_audit counts from v2 source block."""
+def _extract_context_audit(raw: dict, gap_notes: list[str]) -> dict | None:
+    """Whitelist-extract context_audit counts from v2 source block.
+
+    Canonical v2 shape (normal):
+        {"n_present": 1, "n_stale": 1, "n_absent": 1, "n_runs_total": 3,
+         "context_seen_rate": 0.333}
+
+    Accruing variant — when the source sidecar has not yet accrued, the
+    exporter emits {"state": "accruing", "n_runs_total": 0}. This is
+    passed through intact (state string whitelisted to exactly "accruing").
+
+    context_seen_rate is clamped to [0, 1]; out-of-range → field dropped
+    with a gap note.
+    """
     ca = raw.get("context_audit")
     if not isinstance(ca, dict):
         return None
+
+    # Accruing variant
+    if ca.get("state") == "accruing":
+        accruing_out: dict = {"state": "accruing"}
+        n_runs = _int_or_none(ca.get("n_runs_total"))
+        if n_runs is not None:
+            accruing_out["n_runs_total"] = n_runs
+        return accruing_out
+
     out: dict = {}
-    for key in ("n_present", "n_stale", "n_absent", "n_total", "context_seen_rate"):
-        v = ca.get(key)
+    for key in ("n_present", "n_stale", "n_absent", "n_runs_total"):
+        v = _int_or_none(ca.get(key))
         if v is not None:
-            if key == "context_seen_rate":
-                # Float 0-1 is acceptable
-                if isinstance(v, (int, float)) and not isinstance(v, bool):
-                    out[key] = float(v)
+            out[key] = v
+
+    # context_seen_rate: float [0,1]; clamp out-of-range → drop + gap note
+    rate_raw = ca.get("context_seen_rate")
+    if rate_raw is not None:
+        if isinstance(rate_raw, (int, float)) and not isinstance(rate_raw, bool):
+            rate = float(rate_raw)
+            if 0.0 <= rate <= 1.0:
+                out["context_seen_rate"] = rate
             else:
-                n = _int_or_none(v)
-                if n is not None:
-                    out[key] = n
+                gap_notes.append(
+                    f"context_audit.context_seen_rate={rate!r} out of [0,1] range; "
+                    "field dropped"
+                )
+
     return out if out else None
 
 
@@ -366,7 +490,35 @@ def read_feedback(root: Path | str | None = None) -> dict:
 
     # Staleness check
     generated_at = raw.get("generated_at", "")
-    if _is_stale(generated_at):
+    if not isinstance(generated_at, str) or not generated_at:
+        gap_notes.append(
+            "site/mastermind/nw_feedback.json has absent or non-string generated_at; "
+            "treating as absent"
+        )
+        return {
+            "state": "absent",
+            "raw": None,
+            "gap_notes": gap_notes,
+            "source_schema": source_schema,
+        }
+
+    # Try to parse generated_at; unparseable → absent (distinct gap note from stale)
+    dt = _parse_date(generated_at)
+    if dt is None:
+        gap_notes.append(
+            f"site/mastermind/nw_feedback.json has unparseable generated_at={generated_at!r}; "
+            "treating as absent (cannot verify freshness)"
+        )
+        return {
+            "state": "absent",
+            "raw": None,
+            "gap_notes": gap_notes,
+            "source_schema": source_schema,
+        }
+
+    now = datetime.now(timezone.utc)
+    age_days = (now - dt).total_seconds() / 86400
+    if age_days > SOURCE_STALENESS_DAYS:
         gap_notes.append(
             f"site/mastermind/nw_feedback.json is stale — generated_at={generated_at!r} "
             f"is older than {SOURCE_STALENESS_DAYS} calendar days"
@@ -400,6 +552,9 @@ def build_summary(root: Path | str | None = None) -> dict:
     When state == "present" it also contains:
         asof, window_days, totals, per_book
         (and optionally: decision_flow, outcome_mix, context_audit if v2 blocks present)
+
+    metric_families is the hardcoded registry (_METRIC_FAMILIES_STATUS) — it is
+    NOT a passthrough of any metric_families key found in the source artifact.
     """
     repo = _repo_root(root)
     now = datetime.now(timezone.utc)
@@ -514,15 +669,15 @@ def build_summary(root: Path | str | None = None) -> dict:
 
     # ── v2 passthrough blocks (counts-only) ───────────────────────────────────
     if source_schema == "mastermind_nw_feedback.v2":
-        df = _extract_decision_flow(raw)
+        df = _extract_decision_flow(raw, gap_notes)
         if df is not None:
             payload["decision_flow"] = df
 
-        om = _extract_outcome_mix(raw)
+        om = _extract_outcome_mix(raw, gap_notes)
         if om is not None:
             payload["outcome_mix"] = om
 
-        ca = _extract_context_audit(raw)
+        ca = _extract_context_audit(raw, gap_notes)
         if ca is not None:
             payload["context_audit"] = ca
 
