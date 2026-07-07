@@ -25,8 +25,8 @@ COMPUTATION DEFINITIONS (all documented per TI-R3):
     Measures pace-of-RS-change. Requires >=41 bars for each constituent plus QQQ.
 
   breadth_above_50dma:
-    Fraction of group members (with >=51 bars of price data) whose latest close is
-    above their 50-day simple moving average. Range [0, 1]; null if no member has
+    Percentage of group members (with >=51 bars of price data) whose latest close is
+    above their 50-day simple moving average. Range [0, 100]; null if no member has
     enough history.
 
   dispersion_20d:
@@ -54,8 +54,8 @@ COMPUTATION DEFINITIONS (all documented per TI-R3):
     Equal-weight composite of ALL distinct tickers across all 7 groups (union), vs
     QQQ. spread_20d / spread_60d are the corresponding RS values in pp.
     pctile_1y: percentile rank of today's spread_20d vs its trailing-252-bar daily
-    distribution computed from the composite level series (null if <252 bars of
-    composite history are computable).
+    distribution computed from the composite level series, expressed as 0–100
+    (null if <252 bars of composite history are computable).
 
   gap_accel_z (divergences):
     For a pair (A, B): (accel_A - accel_B) z-scored against the trailing 252-bar
@@ -316,9 +316,10 @@ def _apply_hysteresis(
 # ---------------------------------------------------------------------------
 
 def _breadth_above_50dma(tickers: list[str]) -> float | None:
-    """Fraction of group members whose latest close >= 50d SMA.
+    """Percentage of group members whose latest close >= 50d SMA.
 
     Only members with >=51 bars contribute. Returns null if no member qualifies.
+    Range [0, 100].
     """
     unique = list(dict.fromkeys(tickers))
     above, total = 0, 0
@@ -332,7 +333,7 @@ def _breadth_above_50dma(tickers: list[str]) -> float | None:
         total += 1
     if total == 0:
         return None
-    return round(above / total, 4)
+    return round(100.0 * above / total, 2)
 
 
 def _dispersion_20d(tickers: list[str]) -> float | None:
@@ -363,8 +364,9 @@ def _pctile_1y(current_val: float, level_series: pd.Series,
                bench_level: pd.Series, window: int = 20) -> float | None:
     """Percentile rank of today's RS spread vs its trailing 252-bar daily distribution.
 
-    Requires level_series and bench_level to share enough history. Returns null if
-    insufficient history (<= 252 + window bars on the shared index).
+    Returns a value in [0, 100]. Requires level_series and bench_level to share enough
+    history. Returns null if insufficient history (<= 252 + window bars on the shared
+    index).
     """
     shared = level_series.index.intersection(bench_level.index)
     if len(shared) < _PCTILE_MIN_BARS + 252:
@@ -392,7 +394,7 @@ def _pctile_1y(current_val: float, level_series: pd.Series,
         return None
     arr = np.array(spreads)
     pct = float(np.mean(arr <= current_val))
-    return round(pct, 4)
+    return round(100.0 * pct, 2)
 
 
 # ---------------------------------------------------------------------------

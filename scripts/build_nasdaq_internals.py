@@ -33,11 +33,24 @@ _OUT_PATH_REL = "site/marketdata/nasdaq_internals.json"
 
 
 def build_and_write(root: Path | None = None) -> dict:
-    """Build the artifact and write to disk. Returns the artifact dict.
+    """Build the artifact and write to disk. Returns the artifact dict (written or prior).
 
-    Writes are atomic: the prior artifact is preserved on any failure that
-    prevents a valid payload from being produced (engine.nasdaq_internals.build
-    returns a valid dict even on null path; only write is skipped on exception).
+    Prior-artifact preservation rule (total-outage guard):
+      - A freshly built payload is DEGRADED when every group has rs_20d == null
+        (indicates a total price-data outage, not a per-group gap).
+      - If the fresh payload is DEGRADED AND a prior artifact exists at the output
+        path that (a) passes schema validation and (b) is itself NOT degraded
+        (at least one group has rs_20d != null), then the prior file is left
+        untouched and this function returns the prior artifact.  The prior file's
+        unchanged asof timestamp correctly triggers the synapse freshness SLA,
+        providing honest staleness signaling without data loss.
+      - The all-null (degraded) payload is written only when no valid non-degraded
+        prior exists.
+      - A ``::error::``-prefixed log line is emitted whenever the preservation rule
+        fires so CI/monitoring surfaces the outage.
+
+    On any exception from build(): re-raises after logging (should not occur since
+    build() catches internally).
     """
     t0 = time.perf_counter()
     repo_root = root or config.data_dir().parent
@@ -51,8 +64,21 @@ def build_and_write(root: Path | None = None) -> dict:
         log.error("nasdaq_internals.build() raised unexpectedly: %s", e)
         raise
 
-    # Validate required schema keys before write (null-honest gate)
+    # Validate required schema keys (null-honest gate — raises on schema fault)
     _validate_payload(artifact)
+
+    # Prior-payload preservation: do not overwrite a good prior with a total-outage null
+    if _is_degraded(artifact):
+        prior_artifact = _load_prior_artifact(out_path)
+        if prior_artifact is not None and not _is_degraded(prior_artifact):
+            log.error(
+                "::error:: nasdaq_internals: fresh payload is DEGRADED (total price outage); "
+                "prior artifact at %s is valid and non-degraded — leaving prior file unchanged. "
+                "null_reasons=%s",
+                out_path,
+                artifact.get("null_reasons", []),
+            )
+            return prior_artifact
 
     out_path.write_text(json.dumps(artifact, indent=2, ensure_ascii=False))
     elapsed = time.perf_counter() - t0
@@ -85,6 +111,39 @@ def _validate_payload(artifact: dict) -> None:
         raise ValueError(
             f"nasdaq_internals schema mismatch: {artifact.get('schema')!r} != 'nasdaq_internals.v1'"
         )
+
+
+def _is_degraded(artifact: dict) -> bool:
+    """Return True if every group in the artifact has rs_20d == null.
+
+    This is the total-outage sentinel: a partial outage (some groups null, some non-null)
+    is NOT considered degraded and WILL overwrite the prior artifact normally.
+    """
+    groups = artifact.get("groups", [])
+    if not groups:
+        return True
+    return all(g.get("rs_20d") is None for g in groups)
+
+
+def _load_prior_artifact(out_path: Path) -> dict | None:
+    """Load and validate the prior artifact from disk.
+
+    Returns the parsed dict if the file exists, parses successfully, and passes
+    schema validation.  Returns None on any read/parse/schema failure.
+    """
+    if not out_path.exists():
+        return None
+    try:
+        data = json.loads(out_path.read_text())
+    except Exception as e:  # noqa: BLE001
+        log.warning("nasdaq_internals: could not parse prior artifact (%s)", e)
+        return None
+    try:
+        _validate_payload(data)
+    except ValueError as e:
+        log.warning("nasdaq_internals: prior artifact failed schema validation (%s)", e)
+        return None
+    return data
 
 
 def main() -> None:

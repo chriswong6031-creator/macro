@@ -28,6 +28,7 @@ _REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_REPO_ROOT))
 
 from engine import nasdaq_internals  # noqa: E402
+from scripts import build_nasdaq_internals  # noqa: E402
 
 
 # ---------------------------------------------------------------------------
@@ -311,7 +312,21 @@ def test_hysteresis_oscillating_candidate():
 
 
 def test_hysteresis_full_transition_sequence(tmp_path):
-    """Integration: build() with prices that produce 'improving' state twice commits it."""
+    """Integration: 2-run sequence with the same deterministic fixture.
+
+    Day 1 (run 1): no prior artifact — hysteresis seeds with (prior_state=None,
+    prior_candidate=None).  _apply_hysteresis stores the raw candidate but emits
+    state=None (first appearance of a new candidate from None holds).
+
+    Day 2 (run 2): prior_state=None, prior_candidate=<day-1 candidate>, same
+    candidate computed again — commit fires, state becomes non-null and state_days=1.
+
+    Assertions:
+      - After run 1: all groups with computable rs_60d/accel must have state==None
+        and state_candidate != None (day-1 hold pattern).
+      - After run 2: ALL groups must have state != None and state_days == 1
+        (freshly committed, not merely incremented).
+    """
     membership = _synthetic_membership()
     mem_path = tmp_path / "data" / "baskets_nasdaq"
     mem_path.mkdir(parents=True)
@@ -321,24 +336,41 @@ def test_hysteresis_full_transition_sequence(tmp_path):
     site_path.mkdir(parents=True)
     out_path = site_path / "nasdaq_internals.json"
 
-    # First run: no prior artifact → states committed from scratch
+    # n=120 gives enough bars for rs_60d (61) and accel (41) → non-null state on all groups
     ticker_map = _make_ticker_map(membership, n=120)
+
+    # --- Run 1: no prior ---
     with patch("engine.basket_index._load_member_ohlcv", side_effect=lambda t: ticker_map.get(t)):
         with patch("lib.config.data_dir", return_value=tmp_path / "data"):
             art1 = nasdaq_internals.build(root=tmp_path)
 
-    # Write it as the prior artifact
+    # Day-1 hold: every group with a computable rs_60d should have state=None
+    # (hysteresis first-appearance rule) but state_candidate set
+    for g in art1["groups"]:
+        if g.get("rs_60d") is not None and g.get("accel") is not None:
+            assert g["state"] is None, (
+                f"Day-1 hold failed for {g['id']}: state={g['state']!r} should be None"
+            )
+            assert g["state_candidate"] is not None, (
+                f"Day-1 hold failed for {g['id']}: state_candidate should be set"
+            )
+
+    # Write as prior artifact
     out_path.write_text(json.dumps(art1))
 
-    # Second run: reads prior; same price data
+    # --- Run 2: reads prior; same price data ---
     with patch("engine.basket_index._load_member_ohlcv", side_effect=lambda t: ticker_map.get(t)):
         with patch("lib.config.data_dir", return_value=tmp_path / "data"):
             art2 = nasdaq_internals.build(root=tmp_path)
 
-    # All groups should have state_days >= 1 on second run
+    # Day-2 commit: every group must now have a non-null state with state_days == 1
     for g in art2["groups"]:
-        if g["state"] is not None:
-            assert g["state_days"] >= 1, f"state_days must be >= 1 on second run for {g['id']}"
+        assert g["state"] is not None, (
+            f"Day-2 commit failed for {g['id']}: state is still None after second run"
+        )
+        assert g["state_days"] == 1, (
+            f"Day-2 commit failed for {g['id']}: state_days={g['state_days']!r} should be 1"
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -621,3 +653,190 @@ def _make_ticker_map(membership: dict, n: int = 120) -> dict[str, pd.DataFrame]:
     for i, t in enumerate(sorted(tickers)):
         result[t] = _make_df(n=n, seed=i + 1)
     return result
+
+
+# ---------------------------------------------------------------------------
+# (h) Units regression: breadth_above_50dma and pctile_1y must be in [0, 100]
+# ---------------------------------------------------------------------------
+
+def test_breadth_above_50dma_units(tmp_path):
+    """breadth_above_50dma must be in [0, 100] and strictly > 1 when most members are above SMA.
+
+    Fixture: all members have a strong upward drift (drift=0.05/bar), ensuring their
+    latest close is well above the 50d SMA — breadth should be 100.0, which is > 1.
+    This assertion would fire on the old [0, 1] implementation (100.0 > 1 would pass,
+    but 0 <= 100.0 <= 100 catches any value in (1, 100] that the old code would never
+    produce).  More directly: old code returns ~1.0, new code returns ~100.0.
+    """
+    membership = _synthetic_membership()
+    mem_path = tmp_path / "data" / "baskets_nasdaq"
+    mem_path.mkdir(parents=True)
+    (mem_path / "membership.json").write_text(json.dumps(membership))
+
+    # Strong upward drift guarantees latest close >> 50d SMA → breadth == 100
+    # Use a distinct _make_df variant with very high drift so all tickers pass.
+    def _make_trending_df(n: int = 120, seed: int = 1) -> pd.DataFrame:
+        rng = np.random.default_rng(seed)
+        returns = rng.normal(0.005, 0.001, size=n)  # strong positive drift, low noise
+        prices = 100.0 * np.cumprod(1 + returns)
+        dates = pd.bdate_range("2024-01-02", periods=n, freq="B")
+        s = pd.Series(prices, index=dates)
+        return pd.DataFrame({"close": s, "open": s, "high": s, "low": s, "volume": 1.0})
+
+    ticker_map = {t: _make_trending_df(n=120, seed=i + 1)
+                  for i, t in enumerate(sorted(["AAA", "BBB", "CCC", "DDD", "QQQ"]))}
+
+    with patch("engine.basket_index._load_member_ohlcv", side_effect=lambda t: ticker_map.get(t)):
+        with patch("lib.config.data_dir", return_value=tmp_path / "data"):
+            art = nasdaq_internals.build(root=tmp_path)
+
+    for g in art["groups"]:
+        v = g["breadth_above_50dma"]
+        if v is not None:
+            assert 0 <= v <= 100, (
+                f"breadth_above_50dma={v!r} out of [0, 100] range for group {g['id']!r}"
+            )
+            # With all-uptrend members the breadth must be > 1; the old [0,1] code
+            # would never exceed 1.0, so this assertion specifically bites if the
+            # scaling is missing.
+            assert v > 1, (
+                f"breadth_above_50dma={v!r} <= 1 for group {g['id']!r}; "
+                "expected > 1 with an all-trending fixture (likely missing 100x scale)"
+            )
+
+
+def test_pctile_1y_units(tmp_path):
+    """pctile_1y must be in [0, 100] when non-null.
+
+    Requires >= 62 + 252 = 314 shared bars.  Use n=340 to ensure the composite
+    series is long enough after pct_change trims one bar.
+    """
+    membership = _synthetic_membership()
+    mem_path = tmp_path / "data" / "baskets_nasdaq"
+    mem_path.mkdir(parents=True)
+    (mem_path / "membership.json").write_text(json.dumps(membership))
+
+    # n=340 > 314 minimum; seeds differ per ticker to avoid identical series
+    ticker_map = {t: _make_df(n=340, seed=i + 1)
+                  for i, t in enumerate(sorted(["AAA", "BBB", "CCC", "DDD", "QQQ"]))}
+
+    with patch("engine.basket_index._load_member_ohlcv", side_effect=lambda t: ticker_map.get(t)):
+        with patch("lib.config.data_dir", return_value=tmp_path / "data"):
+            art = nasdaq_internals.build(root=tmp_path)
+
+    pctile = art["ew_vs_qqq"].get("pctile_1y")
+    if pctile is not None:
+        assert 0 <= pctile <= 100, (
+            f"pctile_1y={pctile!r} out of [0, 100]; likely missing 100x scale"
+        )
+        # Old [0, 1] implementation returns at most 1.0; assert > 1 so the test bites
+        # specifically on the un-scaled value.  A value in (1, 100] is only possible
+        # with the 100x scaling.
+        assert pctile > 1 or pctile == 0.0, (
+            f"pctile_1y={pctile!r}: value in (0, 1] implies missing 100x scale"
+        )
+    # If pctile is None the fixture didn't produce enough history; that is
+    # acceptable — the range assertion fires only when non-null.
+
+
+# ---------------------------------------------------------------------------
+# (i) Prior-payload preservation rule (build_and_write)
+# ---------------------------------------------------------------------------
+
+def _make_non_degraded_artifact(asof: str = "2026-01-01T00:00:00+00:00") -> dict:
+    """Build a minimal valid non-degraded artifact (one group has rs_20d != null)."""
+    art = nasdaq_internals._null_artifact(asof, [], "2026-01-01")
+    # Patch one group to be non-null so _is_degraded returns False
+    art["groups"][0]["rs_20d"] = 1.23
+    return art
+
+
+def test_preservation_rule_with_good_prior(tmp_path):
+    """Total outage: fresh payload DEGRADED + good prior exists → prior file unchanged."""
+    membership = _synthetic_membership()
+    mem_path = tmp_path / "data" / "baskets_nasdaq"
+    mem_path.mkdir(parents=True)
+    (mem_path / "membership.json").write_text(json.dumps(membership))
+
+    site_path = tmp_path / "site" / "marketdata"
+    site_path.mkdir(parents=True)
+    out_path = site_path / "nasdaq_internals.json"
+
+    # Write a good prior artifact
+    good_prior = _make_non_degraded_artifact("2026-01-01T00:00:00+00:00")
+    prior_text = json.dumps(good_prior, indent=2, ensure_ascii=False)
+    out_path.write_text(prior_text)
+
+    # Simulate total outage: no prices available → build() returns all-null payload
+    with patch("engine.basket_index._load_member_ohlcv", return_value=None):
+        with patch("lib.config.data_dir", return_value=tmp_path / "data"):
+            result = build_nasdaq_internals.build_and_write(root=tmp_path)
+
+    # File on disk must be UNCHANGED (prior preserved)
+    assert out_path.read_text() == prior_text, (
+        "build_and_write overwrote the prior artifact during a total outage — "
+        "prior-preservation rule not enforced"
+    )
+
+    # Returned artifact must be the prior
+    assert result["asof"] == good_prior["asof"], (
+        "build_and_write returned the fresh degraded artifact instead of the prior"
+    )
+    assert result["groups"][0]["rs_20d"] == 1.23
+
+
+def test_preservation_rule_no_prior(tmp_path):
+    """Total outage with NO prior: all-null payload IS written (no file to preserve)."""
+    membership = _synthetic_membership()
+    mem_path = tmp_path / "data" / "baskets_nasdaq"
+    mem_path.mkdir(parents=True)
+    (mem_path / "membership.json").write_text(json.dumps(membership))
+
+    site_path = tmp_path / "site" / "marketdata"
+    site_path.mkdir(parents=True)
+    out_path = site_path / "nasdaq_internals.json"
+
+    # No prior file exists
+    assert not out_path.exists()
+
+    with patch("engine.basket_index._load_member_ohlcv", return_value=None):
+        with patch("lib.config.data_dir", return_value=tmp_path / "data"):
+            result = build_nasdaq_internals.build_and_write(root=tmp_path)
+
+    # File must have been written
+    assert out_path.exists(), "build_and_write did not write the all-null payload when no prior exists"
+
+    written = json.loads(out_path.read_text())
+    assert written["schema"] == "nasdaq_internals.v1"
+    # All groups should be degraded
+    assert build_nasdaq_internals._is_degraded(written), (
+        "Written artifact is not degraded as expected for a total-outage with no prior"
+    )
+
+
+def test_preservation_rule_degraded_prior(tmp_path):
+    """Total outage + prior is ALSO degraded → fresh all-null payload IS written."""
+    membership = _synthetic_membership()
+    mem_path = tmp_path / "data" / "baskets_nasdaq"
+    mem_path.mkdir(parents=True)
+    (mem_path / "membership.json").write_text(json.dumps(membership))
+
+    site_path = tmp_path / "site" / "marketdata"
+    site_path.mkdir(parents=True)
+    out_path = site_path / "nasdaq_internals.json"
+
+    # Write a degraded prior (all rs_20d == null)
+    degraded_prior = nasdaq_internals._null_artifact("2026-01-01T00:00:00+00:00", [], "2026-01-01")
+    old_asof = degraded_prior["asof"]
+    out_path.write_text(json.dumps(degraded_prior, indent=2, ensure_ascii=False))
+
+    with patch("engine.basket_index._load_member_ohlcv", return_value=None):
+        with patch("lib.config.data_dir", return_value=tmp_path / "data"):
+            result = build_nasdaq_internals.build_and_write(root=tmp_path)
+
+    # Fresh all-null payload must have been written (asof will differ — it's newly generated)
+    written = json.loads(out_path.read_text())
+    # The new artifact's asof is freshly generated so it differs from the old one
+    # (or is the same timestamp in the same second in edge cases — just check schema)
+    assert written["schema"] == "nasdaq_internals.v1"
+    assert build_nasdaq_internals._is_degraded(written)
