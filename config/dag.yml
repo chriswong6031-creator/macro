@@ -331,6 +331,15 @@ lanes:
       - id: build_options_flow_attention
         module: scripts.build_options_flow_attention
         note: non-fatal reflex; neural-web W-D — direction-free options-flow attention trigger (nightly EOD fold)
+      - id: check_template_site_sync_fix
+        module: scripts.check_template_site_sync
+        args: [--fix]
+        note: >
+          non-fatal (|| true); ui.template_site_sync self-heal inside the "commit engine
+          outputs" push retry loop (post-rebase, pre-push) — re-copies plain-copy page
+          assets from post-rebase templates/ so `git pull --rebase -X theirs` can never
+          resurrect this run's checkout-time template copies over a reword merged
+          mid-nightly (2026-07-07 incident: 2ae709f9f0 vs #1793).
       - id: build_feeds
         module: scripts.build_feeds
         note: non-fatal; per-ticker JSON feeds
@@ -697,6 +706,15 @@ lanes:
           non-fatal data-base shim. Library builds (build_china_library, build_hk_library,
           build_canada_library, build_intl_library) run in a background loop via shell
           variable expansion; parser cannot extract them. Intentionally omitted.
+      - id: check_template_site_sync_fix
+        module: scripts.check_template_site_sync
+        args: [--fix]
+        note: >
+          non-fatal (|| true); ui.template_site_sync self-heal inside the commit step's
+          push retry loop (post-rebase, pre-push) — re-copies plain-copy page assets from
+          post-rebase templates/ so `git pull --rebase -X theirs` can never resurrect this
+          run's checkout-time template copies over a reword merged mid-render
+          (2026-07-07 incident: 2ae709f9f0 vs #1793).
 
   # ── render.yml / render ─────────────────────────────────────────────────
   # NOTE: scope=all path.
@@ -793,6 +811,15 @@ lanes:
         note: >
           non-fatal data-base shim. Library builds run in background loops via shell
           variable expansion; parser cannot extract them. Intentionally omitted.
+      - id: check_template_site_sync_fix
+        module: scripts.check_template_site_sync
+        args: [--fix]
+        note: >
+          non-fatal (|| true); ui.template_site_sync self-heal inside the commit step's
+          push retry loop (post-rebase, pre-push) — re-copies plain-copy page assets from
+          post-rebase templates/ so `git pull --rebase -X theirs` can never resurrect this
+          run's checkout-time template copies over a reword merged mid-render
+          (2026-07-07 incident: 2ae709f9f0 vs #1793).
 
   # ── intraday.yml / bars ─────────────────────────────────────────────────
   - workflow: .github/workflows/intraday.yml
