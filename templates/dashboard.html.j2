@@ -2097,6 +2097,329 @@
   {% include "_regime_read_panel.html.j2" %}
 
 
+  {# ==================== RELEASE RADAR (MRI PR-D) ====================
+     Client-side fetch of macrodata/release_forecast.v1 JSON (produced nightly
+     by PR-C scripts/build_release_forecast.py).  Fail-open: if the file is
+     absent or null the container renders an honest "accruing" placeholder.
+     MRI-R5: never says "consensus" — benchmark_set labels only.
+     MRI-R7: display-only tier; CI-enforced word ban applies.
+     Render pattern: fetch('macrodata/release_forecast.json', {cache:'no-cache'})
+     — identical to sector_central.html.j2:670. #}
+  {% if mode != 'stocks' %}
+  <style id="rr-css">
+  #release-radar{padding:16px 20px 18px}
+  #release-radar h2{margin:0 0 4px;font-size:15px;font-weight:700}
+  #release-radar .rr-subline{font-size:11.5px;color:var(--muted);margin-bottom:14px}
+  #release-radar .rr-grid{display:flex;flex-wrap:wrap;gap:14px}
+  .rr-card{flex:1 1 320px;min-width:280px;max-width:520px;background:var(--panel2);
+    border:1px solid var(--line);border-radius:10px;padding:12px 15px;position:relative}
+  .rr-card-head{display:flex;align-items:baseline;gap:8px;margin-bottom:8px}
+  .rr-card-name{font-size:14px;font-weight:700}
+  .rr-card-period{font-size:11.5px;color:var(--muted)}
+  .rr-countdown{font-size:11px;font-variant-numeric:tabular-nums;padding:1px 7px;
+    border-radius:4px;background:var(--panel);border:1px solid var(--line)}
+  .rr-proj-row{margin:8px 0 4px}
+  .rr-proj-label{font-size:10.5px;font-weight:700;text-transform:uppercase;
+    letter-spacing:.08em;color:var(--muted);margin-bottom:3px}
+  .rr-point{font-size:18px;font-weight:700;font-variant-numeric:tabular-nums}
+  .rr-interval-bar{position:relative;height:8px;border-radius:4px;
+    background:var(--panel);border:1px solid var(--line);margin:4px 0 2px;overflow:visible}
+  .rr-interval-fill{position:absolute;top:0;bottom:0;border-radius:3px;
+    background:color-mix(in srgb,var(--up) 35%,transparent)}
+  .rr-interval-tick{position:absolute;top:-3px;bottom:-3px;width:2px;
+    background:var(--text);border-radius:1px}
+  .rr-interval-labels{display:flex;justify-content:space-between;
+    font-size:9.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+  .rr-meta-row{display:flex;flex-wrap:wrap;gap:5px 12px;
+    font-size:11px;color:var(--muted);margin:5px 0}
+  .rr-bench{margin:8px 0 6px;padding:8px 10px;background:var(--panel);
+    border:1px solid var(--line);border-radius:7px}
+  .rr-bench-label{font-size:10px;font-weight:700;text-transform:uppercase;
+    letter-spacing:.1em;color:var(--muted);margin-bottom:5px}
+  .rr-bench-row{display:flex;justify-content:space-between;
+    font-size:11.5px;font-variant-numeric:tabular-nums;padding:2px 0}
+  .rr-bench-name{color:var(--muted)}
+  .rr-bench-val{font-weight:600}
+  .rr-skew{display:inline-flex;align-items:center;gap:5px;padding:2px 9px;
+    border-radius:12px;font-size:11.5px;font-weight:600;margin:4px 0}
+  .rr-skew-hot{background:color-mix(in srgb,var(--down) 18%,transparent);
+    color:var(--down);border:1px solid color-mix(in srgb,var(--down) 35%,transparent)}
+  .rr-skew-cool{background:color-mix(in srgb,var(--up) 18%,transparent);
+    color:var(--up);border:1px solid color-mix(in srgb,var(--up) 35%,transparent)}
+  .rr-skew-inline{background:color-mix(in srgb,var(--warn) 18%,transparent);
+    color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 35%,transparent)}
+  .rr-policy{margin:8px 0 4px;font-size:11px;display:flex;flex-wrap:wrap;gap:4px 10px}
+  .rr-policy-item{color:var(--muted)}
+  .rr-policy-item b{color:var(--text);font-weight:600}
+  .rr-scoreboard{margin-top:10px;padding-top:9px;border-top:1px solid var(--line)}
+  .rr-scoreboard-title{font-size:10.5px;font-weight:700;text-transform:uppercase;
+    letter-spacing:.08em;color:var(--muted);margin-bottom:5px}
+  .rr-track-table{width:100%;border-collapse:collapse;font-size:11px}
+  .rr-track-table th{font-size:9.5px;font-weight:700;text-transform:uppercase;
+    letter-spacing:.07em;color:var(--muted);text-align:left;padding:2px 5px 4px;
+    border-bottom:1px solid var(--line)}
+  .rr-track-table td{padding:2px 5px;font-variant-numeric:tabular-nums;
+    border-bottom:1px solid color-mix(in srgb,var(--line) 40%,transparent)}
+  .rr-empty{font-size:11.5px;color:var(--muted);font-style:italic;padding:6px 0}
+  .rr-placeholder{color:var(--muted);font-size:12px;font-style:italic;padding:8px 0}
+  .rr-asof{font-size:10px;color:var(--muted);margin-top:10px}
+  .rr-footer{font-size:10px;color:var(--muted);margin-top:12px;
+    padding-top:8px;border-top:1px solid var(--line);line-height:1.5}
+  </style>
+  <div class="panel span12" id="release-radar">
+    <h2>{{ t('Release Radar', '数据发布雷达') }}
+      {{ help('Pre-print model projections for upcoming US macro releases (CPI, NFP). Comparison set is our own benchmark set (naive prior, trailing trend, Cleveland nowcast) — not street estimates. Display-only context; not investment advice; scored forward in public.',
+              '即将公布美国宏观数据（CPI、NFP）的预测模型。对比基准为我方自有基准集（朴素先验、趋势追踪、克利夫兰预报），非街道估算。仅展示，非投资建议，正向评分公开记录。') }}
+    </h2>
+    <div class="rr-subline">
+      <span class="l-en">Forward model · display-only · benchmarks 基准 · scored in public</span>
+      <span class="l-zh">前瞻模型 · 仅展示 · 基准对比 · 公开评分</span>
+    </div>
+    <div id="rr-content">
+      <div class="rr-placeholder">
+        <span class="l-en">Loading release projections…</span>
+        <span class="l-zh">加载发布预测中…</span>
+      </div>
+    </div>
+  </div>
+  <script>
+  (function(){
+    'use strict';
+    var RR_EL = document.getElementById('rr-content');
+
+    /* ---- helpers ---- */
+    function esc(s){ return s == null ? '' : String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+    function fmtNum(v, digits){ return (v == null || isNaN(v)) ? '—' : Number(v).toFixed(digits != null ? digits : 2); }
+    function fmtPct(v){ return (v == null || isNaN(v)) ? '—' : (Number(v)*100).toFixed(0) + '%'; }
+
+    /* release name bilingual map */
+    var RN_EN = {cpi:'CPI', nfp:'NFP Payrolls', claims:'Initial Claims', pce:'PCE', ppi:'PPI'};
+    var RN_ZH = {cpi:'消费者物价指数', nfp:'非农就业', claims:'初请失业金', pce:'PCE通胀', ppi:'生产者物价'};
+    function relName(rel){
+      var k = (rel||'').toLowerCase();
+      return '<span class="l-en">'+esc(RN_EN[k]||rel)+'</span>'
+            +'<span class="l-zh">'+esc(RN_ZH[k]||rel)+'</span>';
+    }
+
+    /* skew chip */
+    function skewChip(sk){
+      if (!sk || sk.sigma == null) return '';
+      var tag = (sk.tag||'').toLowerCase();
+      var cls = tag==='hotter'?'rr-skew-hot':tag==='cooler'?'rr-skew-cool':'rr-skew-inline';
+      var tagEN = tag==='hotter'?'Hotter':tag==='cooler'?'Cooler':'Inline';
+      var tagZH = tag==='hotter'?'热':tag==='cooler'?'冷':'中性';
+      var sig = fmtNum(sk.sigma,1);
+      return '<span class="rr-skew '+esc(cls)+'">'
+        +'<span class="l-en">'+esc(tagEN)+' '+sig+'σ</span>'
+        +'<span class="l-zh">'+esc(tagZH)+' '+sig+'σ</span>'
+        +'</span>';
+    }
+
+    /* interval cone bar (inline SVG — p10 to p90, tick at point) */
+    function intervalBar(proj){
+      if (!proj) return '';
+      var p10 = proj.p10, p90 = proj.p90, pt = proj.point;
+      if (p10 == null || p90 == null || pt == null) return '';
+      var span = p90 - p10;
+      if (span <= 0) return '';
+      var fillL = 0, fillW = 100, tickX = 50;
+      /* render as CSS bar: p25–p75 = filled; p10/p90 = range labels; tick = point */
+      var p25 = proj.p25, p75 = proj.p75;
+      if (p25 != null && p75 != null) {
+        fillL = Math.max(0, Math.min(100, (p25-p10)/span*100));
+        fillW = Math.max(0, Math.min(100, (p75-p25)/span*100));
+      }
+      tickX = Math.max(0, Math.min(100, (pt-p10)/span*100));
+      return '<div class="rr-interval-bar">'
+        +'<div class="rr-interval-fill" style="left:'+fillL.toFixed(1)+'%;width:'+fillW.toFixed(1)+'%"></div>'
+        +'<div class="rr-interval-tick" style="left:'+tickX.toFixed(1)+'%"></div>'
+        +'</div>'
+        +'<div class="rr-interval-labels">'
+        +'<span>p10 '+fmtNum(p10,2)+'</span>'
+        +'<span>p90 '+fmtNum(p90,2)+'</span>'
+        +'</div>';
+    }
+
+    /* benchmark strip */
+    function benchStrip(bs, rel){
+      if (!bs) return '';
+      var items = [];
+      if (bs.naive_prior != null)
+        items.push(['<span class="l-en">Naive prior</span><span class="l-zh">朴素先验</span>', fmtNum(bs.naive_prior,2)]);
+      if (bs.trailing_3m != null)
+        items.push(['<span class="l-en">Trailing 3m</span><span class="l-zh">近3月均值</span>', fmtNum(bs.trailing_3m,2)]);
+      if (bs.ar_model != null)
+        items.push(['AR model', fmtNum(bs.ar_model,2)]);
+      /* Cleveland nowcast: CPI family only */
+      if ((rel||'').toLowerCase()==='cpi' && bs.cleveland_nowcast != null)
+        items.push(['Cleveland nowcast', fmtNum(bs.cleveland_nowcast,2)]);
+      if (!items.length) return '';
+      var rows = items.map(function(r){
+        return '<div class="rr-bench-row"><span class="rr-bench-name">'+r[0]+'</span><span class="rr-bench-val">'+esc(r[1])+'</span></div>';
+      }).join('');
+      return '<div class="rr-bench">'
+        +'<div class="rr-bench-label"><span class="l-en">Benchmarks 基准</span><span class="l-zh">基准对比（非共识）</span></div>'
+        +rows
+        +'</div>';
+    }
+
+    /* policy backdrop strip */
+    function policyStrip(pb){
+      if (!pb) return '';
+      var items = [];
+      if (pb.fed_stance) {
+        var stEN = {hawkish:'Hawkish',neutral:'Neutral',dovish:'Dovish'};
+        var stZH = {hawkish:'鹰派',neutral:'中性',dovish:'鸽派'};
+        var sk = (pb.fed_stance||'').toLowerCase();
+        items.push('<span class="rr-policy-item">'
+          +'<span class="l-en">Fed: <b>'+esc(stEN[sk]||pb.fed_stance)+'</b></span>'
+          +'<span class="l-zh">美联储：<b>'+esc(stZH[sk]||pb.fed_stance)+'</b></span>'
+          +'</span>');
+      }
+      if (pb.gap_bp != null)
+        items.push('<span class="rr-policy-item">'
+          +'<span class="l-en">Market vs dots: <b>'+fmtNum(pb.gap_bp,0)+' bp</b></span>'
+          +'<span class="l-zh">市场vs点阵：<b>'+fmtNum(pb.gap_bp,0)+' bp</b></span>'
+          +'</span>');
+      if (pb.implied_cuts_12m != null)
+        items.push('<span class="rr-policy-item">'
+          +'<span class="l-en">Implied cuts (12m): <b>'+fmtNum(pb.implied_cuts_12m,1)+'</b></span>'
+          +'<span class="l-zh">隐含降息（12月）：<b>'+fmtNum(pb.implied_cuts_12m,1)+'</b></span>'
+          +'</span>');
+      if (pb.next_fomc)
+        items.push('<span class="rr-policy-item">'
+          +'<span class="l-en">Next FOMC: <b>'+esc(pb.next_fomc)+'</b></span>'
+          +'<span class="l-zh">下次FOMC：<b>'+esc(pb.next_fomc)+'</b></span>'
+          +'</span>');
+      if (pb.guidance_direction)
+        items.push('<span class="rr-policy-item">'
+          +'<span class="l-en">Guidance: <b>'+esc(pb.guidance_direction)+'</b></span>'
+          +'<span class="l-zh">指引方向：<b>'+esc(pb.guidance_direction)+'</b></span>'
+          +'</span>');
+      if (!items.length) return '';
+      return '<div class="rr-policy">'+items.join('')+'</div>';
+    }
+
+    /* scoreboard sub-block */
+    function scoreboardBlock(lastScored){
+      if (!lastScored || !Array.isArray(lastScored) || !lastScored.length) {
+        return '<div class="rr-scoreboard">'
+          +'<div class="rr-scoreboard-title"><span class="l-en">Track record</span><span class="l-zh">历史评分</span></div>'
+          +'<div class="rr-empty">'
+          +'<span class="l-en">Forward accrual began 2026-07 — no scored prints yet.</span>'
+          +'<span class="l-zh">自2026年7月起正向评分积累中，暂无已评分数据。</span>'
+          +'</div>'
+          +'</div>';
+      }
+      /* group by release type for compact summary */
+      var byRel = {};
+      lastScored.forEach(function(row){
+        var k = (row.release||'other').toLowerCase();
+        if (!byRel[k]) byRel[k] = {n:0, mae_ours:0, mae_naive:0, skew_hits:0};
+        byRel[k].n += 1;
+        if (row.our_mae != null) byRel[k].mae_ours += Number(row.our_mae);
+        if (row.naive_mae != null) byRel[k].mae_naive += Number(row.naive_mae);
+        if (row.skew_hit) byRel[k].skew_hits += 1;
+      });
+      var thead = '<tr>'
+        +'<th><span class="l-en">Release</span><span class="l-zh">数据</span></th>'
+        +'<th><span class="l-en">n</span><span class="l-zh">n</span></th>'
+        +'<th><span class="l-en">MAE ours</span><span class="l-zh">本方MAE</span></th>'
+        +'<th><span class="l-en">MAE naive</span><span class="l-zh">朴素MAE</span></th>'
+        +'<th><span class="l-en">Skew hit%</span><span class="l-zh">偏态命中%</span></th>'
+        +'</tr>';
+      var rows = Object.keys(byRel).map(function(k){
+        var g = byRel[k];
+        var maeO = g.n ? (g.mae_ours/g.n).toFixed(3) : '—';
+        var maeN = g.n ? (g.mae_naive/g.n).toFixed(3) : '—';
+        var skhit = g.n ? (g.skew_hits/g.n*100).toFixed(0)+'%' : '—';
+        return '<tr><td>'+relName(k)+'</td><td>'+g.n+'</td>'
+          +'<td>'+esc(maeO)+'</td><td>'+esc(maeN)+'</td><td>'+esc(skhit)+'</td></tr>';
+      }).join('');
+      return '<div class="rr-scoreboard">'
+        +'<div class="rr-scoreboard-title"><span class="l-en">Track record</span><span class="l-zh">历史评分</span></div>'
+        +'<table class="rr-track-table"><thead>'+thead+'</thead><tbody>'+rows+'</tbody></table>'
+        +'</div>';
+    }
+
+    /* render one upcoming card */
+    function renderCard(item){
+      var rel = item.release || '';
+      var proj = item.projection || {};
+      var conf = item.confidence != null ? fmtPct(item.confidence) : '—';
+      var incomp = item.input_completeness != null ? fmtPct(item.input_completeness) : '—';
+      var daysTo = item.days_to != null ? item.days_to : '—';
+      var daysLabel = '<span class="l-en">in '+esc(daysTo)+' days</span>'
+                    +'<span class="l-zh">'+esc(daysTo)+'天后</span>';
+      var ptEn = proj.point != null ? fmtNum(proj.point,2) : '—';
+      return '<div class="rr-card">'
+        /* header */
+        +'<div class="rr-card-head">'
+        +'<span class="rr-card-name">'+relName(rel)+'</span>'
+        +'<span class="rr-card-period">'+esc(item.period||'')+'</span>'
+        +'<span class="rr-countdown">'+daysLabel+'</span>'
+        +'</div>'
+        /* release date */
+        +(item.release_date?'<div class="rr-meta-row"><span class="l-en">Release date: <b>'+esc(item.release_date)+'</b></span><span class="l-zh">发布日期：<b>'+esc(item.release_date)+'</b></span></div>':'')
+        /* projection point */
+        +'<div class="rr-proj-row">'
+        +'<div class="rr-proj-label"><span class="l-en">Our projection</span><span class="l-zh">本方预测</span></div>'
+        +'<span class="rr-point">'+esc(ptEn)+'</span>'
+        +'</div>'
+        /* interval bar */
+        +intervalBar(proj)
+        /* confidence + completeness */
+        +'<div class="rr-meta-row">'
+        +'<span><span class="l-en">Confidence: <b>'+esc(conf)+'</b></span><span class="l-zh">置信度：<b>'+esc(conf)+'</b></span></span>'
+        +'<span><span class="l-en">Input completeness: <b>'+esc(incomp)+'</b></span><span class="l-zh">输入完整度：<b>'+esc(incomp)+'</b></span></span>'
+        +'</div>'
+        /* benchmark strip */
+        +benchStrip(item.benchmark_set, rel)
+        /* skew chip */
+        +(item.surprise_skew?'<div>'+skewChip(item.surprise_skew)+'</div>':'')
+        /* policy backdrop */
+        +policyStrip(item.policy_backdrop)
+        +'</div>';  /* end .rr-card */
+    }
+
+    /* main render */
+    function renderRadar(d){
+      if (!d || typeof d !== 'object') {
+        RR_EL.innerHTML = '<div class="rr-placeholder">'
+          +'<span class="l-en">Release Radar data not yet available — nightly producer accruing.</span>'
+          +'<span class="l-zh">数据发布雷达暂无数据，夜间生产任务积累中。</span>'
+          +'</div>';
+        return;
+      }
+      var upcoming = Array.isArray(d.upcoming) ? d.upcoming : [];
+      var lastScored = Array.isArray(d.last_scored) ? d.last_scored : [];
+      var asof = d.asof || '';
+      var cards = upcoming.length ? upcoming.map(renderCard).join('') :
+        '<div class="rr-placeholder">'
+        +'<span class="l-en">No upcoming releases in the current window.</span>'
+        +'<span class="l-zh">当前窗口内无即将发布的数据。</span>'
+        +'</div>';
+      var asofLine = asof ? '<div class="rr-asof"><span class="l-en">as of '+esc(asof)+'</span><span class="l-zh">截至 '+esc(asof)+'</span></div>' : '';
+      var footer = '<div class="rr-footer">'
+        +'<span class="l-en">Model projections · display-only · not investment advice · scored forward in public</span>'
+        +'<span class="l-zh">模型预测 · 仅展示 · 非投资建议 · 正向评分公开记录</span>'
+        +'</div>';
+      RR_EL.innerHTML = '<div class="rr-grid">'+cards+'</div>'
+        + scoreboardBlock(lastScored)
+        + asofLine
+        + footer;
+    }
+
+    /* fetch — pattern mirrors sector_central.html.j2:670 */
+    fetch('macrodata/release_forecast.json', { cache: 'no-cache' })
+      .then(function(r){ return r.ok ? r.json() : null; })
+      .catch(function(){ return null; })
+      .then(renderRadar);
+  })();
+  </script>
+  {% endif %}
+
+
   {# Week ahead — surfaces the full macro_catalysts calendar (only catalysts[0] was shown
      before, as a one-liner in the news board) plus what Polymarket is pricing for the Fed.
      Context-only: scheduled dates say WHEN volatility is likely, never which way. #}
