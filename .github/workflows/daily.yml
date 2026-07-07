@@ -549,13 +549,17 @@ jobs:
             # wastes the ~28-min special-situations wait. cl_misc is fully sequential so
             # the ordering guarantee holds without any additional wait.
             brun cycle_pattern_live "CPI live-view adapter (build_cycle_pattern_live)" scripts.build_cycle_pattern_live
+            # CPI P6: the NW adapter artifact compacts the live view + hazard gate
+            # ledger + truth registry, so it runs AFTER cycle_pattern_live (sequential
+            # within cl_misc — same ordering guarantee as the live-view step above).
+            brun cycle_pattern_state "CPI NW adapter (build_cycle_pattern_state)" scripts.build_cycle_pattern_state
           }
           # launch every cluster concurrently, then barrier before the hub (build_vector, below)
           cl_markets & cl_gex & cl_baskets & cl_special & cl_misc &
           wait
           # --- replay each builder's output GROUPED + in a stable order (post-barrier, so
           #     nothing interleaves), surface failures as annotations, summarise wall-times ---
-          ORDER="commodities spr forex bonds crossasset transmission discovery gex_board vol_regime darkpool options_flow flow_desk options_skew options_ivspread baskets subsector_conf subsector_conf_ndx subsector_conf_rut cohort_metrics news methodology seasonality reports measurement sync_gauge policy_intent policy_watch special index_changes cycle_pattern_live"
+          ORDER="commodities spr forex bonds crossasset transmission discovery gex_board vol_regime darkpool options_flow flow_desk options_skew options_ivspread baskets subsector_conf subsector_conf_ndx subsector_conf_rut cohort_metrics news methodology seasonality reports measurement sync_gauge policy_intent policy_watch special index_changes cycle_pattern_live cycle_pattern_state"
           echo "### ⏱ parallel band — per-builder wall-time" >> "$GITHUB_STEP_SUMMARY"
           for slug in $ORDER; do
             [ -f "$ART/$slug.log" ] || continue
