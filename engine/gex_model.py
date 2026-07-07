@@ -747,6 +747,9 @@ def build_model(chain: pd.DataFrame, spot: float, cfg: dict | None = None,
         "call_wall": walls["call_wall"], "put_wall": walls["put_wall"],
         "largest_oi": walls["largest_oi"],
         "rr_25d": risk_reversal_25d(chain, spot, cf),   # display level; confirmer uses the CHANGE
+        # Propagate regime_passport verbatim from gex_engine.compute_gex so that
+        # gex_state.compute_gex_state can copy it without rebuilding (avoids basis mismatch).
+        "regime_passport": base.get("regime_passport"),
     }
     # volume put/call (a flow tilt the OI ratio misses)
     if "volume" in chain.columns:
