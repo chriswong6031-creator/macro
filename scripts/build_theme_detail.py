@@ -33,6 +33,30 @@ REGIONS = {
 }
 
 
+def _personality_slim(rec: dict) -> dict | None:
+    """Extract slim personality slice {chart, mode} from a stockdata rec.
+
+    Returns None (fail-open) when personality block is absent or malformed.
+    chart: first chart_personality label (str or None).
+    mode: first non-'normal' current_mode label (str or None).
+    This is display-only context per R-SP13: context chip in holdings table only.
+    """
+    try:
+        p = rec.get("personality")
+        if not p:
+            return None
+        base = p.get("base") or {}
+        chart_labels = (base.get("chart_personality") or {}).get("labels") or []
+        modes = (p.get("current_mode") or {}).get("modes") or []
+        chart = chart_labels[0] if chart_labels else None
+        mode = next((m for m in modes if m != "normal"), None)
+        if chart is None and mode is None:
+            return None
+        return {"chart": chart, "mode": mode}
+    except Exception:  # noqa: BLE001 — additive, never fatal
+        return None
+
+
 def _conviction(ticker: str, stockdata_dir: str, cache: dict) -> dict | None:
     if ticker in cache:
         return cache[ticker]
@@ -77,7 +101,10 @@ def _conviction(ticker: str, stockdata_dir: str, cache: dict) -> dict | None:
                        "trust": (c.get("trust_tier") or {}).get("tier"),
                        # the same theme/sector spotlight tilt the standout board ranks by,
                        # so the theme page and the board can never disagree on a name.
-                       "spotlight": sp.get("dir") if sp else None}
+                       "spotlight": sp.get("dir") if sp else None,
+                       # W4 stock-personality slim slice (display-only, context chip only).
+                       # Fail-open: None when personality block absent (e.g. ex-US markets).
+                       "personality": _personality_slim(rec)}
             elif signal:
                 # a rated name whose conviction profile is thin/absent: still carry the
                 # tier so it renders a badge and surfaces to the top (score None -> "thin").

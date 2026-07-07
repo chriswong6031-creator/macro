@@ -3087,6 +3087,31 @@ def main() -> int:
             us_standouts = json.loads(_us.read_text())
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.warning("us_standouts.json unreadable (%s)", e)
+    # W4 stock-personality slim attach: thread chart+mode chips into us_standouts buy cards
+    # (inside .nb-more expander only per guardrail 16; fail-open if JSON absent or malformed).
+    _sp_path = site / "factordata" / "stock_personality.json"
+    _sp_per_ticker: dict = {}
+    if _sp_path.exists():
+        try:
+            _sp_doc = json.loads(_sp_path.read_text())
+            _sp_per_ticker = _sp_doc.get("per_ticker") or {}
+        except Exception as _spe:  # noqa: BLE001 — additive, never fatal
+            log.warning("stock_personality.json unreadable for board attach (%s)", _spe)
+    if us_standouts and _sp_per_ticker:
+        try:
+            for _card in (us_standouts.get("buy") or []):
+                _tk = _card.get("ticker")
+                _sp_slim = _sp_per_ticker.get(_tk)
+                if _sp_slim:
+                    _chart = _sp_slim.get("chart") or []
+                    _modes = _sp_slim.get("modes") or []
+                    _mode1 = next((m for m in _modes if m != "normal"), None)
+                    _card["personality"] = {
+                        "chart": _chart[0] if _chart else None,
+                        "mode": _mode1,
+                    }
+        except Exception as _spe2:  # noqa: BLE001 — additive, never fatal
+            log.warning("stock_personality board attach failed (%s)", _spe2)
     # W2 surfaced-outcome strip (written by grade_us_board.py --nightly).
     # Absent on first run or before grade_us_board runs. Additive, never fatal.
     us_board_outcomes = None
