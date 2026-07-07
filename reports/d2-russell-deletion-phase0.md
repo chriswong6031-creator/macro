@@ -15,9 +15,11 @@ The moat: institutions can't systematically exploit this in the names that get
 deleted because the same illiquidity that creates the overshoot limits their
 entry size.
 
-**Why n=4 makes this purely descriptive:** With only 4 annual observations
-(recons 2023-2026), no statistical test has power to distinguish skill from
-noise. We are banking the first four data points. Come back when n≥10 (~2032).
+**n=3 valid return observations (2023/2024/2025); 2026 cohort sizes only.**
+With only 3 years of actual forward-return data, no statistical test has power
+to distinguish skill from noise. 2026 is included for cohort-size tracking only
+(MSD ends before T+21cd can be measured, per Amendment A-4). Come back when
+n≥10 (~2032). The commit message's "effective n=3" is correct.
 
 ## Pre-Registration Summary
 
@@ -27,9 +29,11 @@ BEFORE any data was read:
 
 - **Amendment A-1:** MSD price data starts 2021-07-06; May 2021 prices
   unavailable. Recon year 2022 (which requires May 2021 as t-1 baseline)
-  is excluded. Analysis covers n=4 recons: 2023, 2024, 2025, 2026.
-  The '4/5 years positive' gate is restated as '3/4 years positive'.
-  The exclude-2022 gate is vacuously satisfied (2022 never in data).
+  is excluded. Analysis covers n=4 recon years: 2023, 2024, 2025, 2026.
+  However, 2026 contributes cohort sizes only (see A-4); effective n=3 for
+  return statistics. The '4/5 years positive' gate is restated as '3/3 years
+  positive' (matching n_obs=3 return observations). The exclude-2022 gate
+  is vacuously satisfied (2022 never in data).
 
 - **Amendment A-2:** Price floor of $1.00 at T=0 (recon effective date).
   Excludes near-bankrupt/penny-stock names from both cohorts. Standard
@@ -63,8 +67,15 @@ conservative (90d lag vs typical 45d); ensures no look-ahead.
 
 ## STEP 2: End-of-May Market Cap Rank Calibration
 
-Band calibration target: ~300 deletions/year (FTSE Russell published average).
-Calibration result (band_cutoff producing closest to 300 deletions):
+**TAUTOLOGY CAVEAT (first-class): The band_cutoff is PINNED to produce ~300
+proxy deletions/year — not validated against external anchor counts. The target
+of ~300 is the midpoint of FTSE Russell's published 200-400 range, but actual
+per-year deletion counts have NOT been verified against FTSE press-release
+totals. Consequently n_deletions_proxy≈300 is forced by construction; it
+cannot detect a garbage proxy. This is a structural limitation of the
+rank-proxy approach at phase-0 with no paid data.**
+
+Band_cutoff PINNED to produce closest-to-300 deletions (NOT independently validated):
 
   2023: band_cutoff=2900, n_deletions_proxy=311
   2024: band_cutoff=2850, n_deletions_proxy=317
@@ -108,8 +119,8 @@ in May t-1, NOT deleted in May t.
 
 ## STEP 4: Statistical Tests
 
-**Primary (correct for n=4):** Sign test + pooled bootstrap.
-**Secondary (reported for completeness, near-powerless at n=4):** date-clustered t.
+**Primary (correct for n=3 return obs):** Sign test + pooled bootstrap.
+**Secondary (reported for completeness, near-powerless at n=3):** date-clustered t.
 
 ### T+21 calendar days
 - Observations: 3 recon years with valid spread
@@ -134,10 +145,10 @@ in May t-1, NOT deleted in May t.
 | Gate | Criterion | T+21d | T+63d |
 |------|-----------|-------|-------|
 | |t|≥2 date-clustered (SECONDARY) | 0.59<2 FAIL | 0.34<2 FAIL |
-| Spread positive ≥3/4 years (restated from 4/5, Amend A-1) | ≥3/3 | 2/3 FAIL | 1/3 FAIL |
+| Spread positive ≥3/3 return-obs (restated from 4/5 Amend A-1; n_obs=3, 2026=sizes only) | ≥3/3 | 2/3 FAIL | 1/3 FAIL |
 | Exclude-2022 robustness | vacuous | PASS (A-1) | PASS (A-1) |
 
-**OVERALL VERDICT:** DESCRIPTIVE/ACCRUAL — n=4 prohibits any GO/NO-GO claim.
+**OVERALL VERDICT:** DESCRIPTIVE/ACCRUAL — n=3 return observations prohibits any GO/NO-GO claim.
 
 **Direction:** T+21d spread mean POSITIVE (4.03%), T+63d spread mean POSITIVE (2.48%).
 
@@ -154,9 +165,10 @@ in May t-1, NOT deleted in May t.
 
 ## Critical Caveats
 
-1. **n=4:** Statistical inference is decorative at this sample size. The sign
-   test and bootstrap CI are honest but have almost no power to distinguish
-   the true effect from a coin flip. Filed for the record only.
+1. **n=3 return observations (2023/2024/2025); 2026 = cohort size only:**
+   Statistical inference is decorative at this sample size. The sign test
+   and bootstrap CI are honest but have almost no power to distinguish the
+   true effect from a coin flip. Filed for the record only.
 
 2. **Deletion proxy quality:** The rank-based deletion proxy is a noisy
    approximation. True FTSE Russell deletions use market cap from a specific
@@ -176,6 +188,19 @@ in May t-1, NOT deleted in May t.
 5. **PIT shares conservatism:** The +90d lag for shares availability may
    use stale annual data when a more recent quarterly filing is available.
    This is conservative (safe direction for PIT compliance).
+
+6. **Cohort-size instability — FIRST CLASS:** Post-filter deletion cohort
+   sizes are: 2023 n=8, 2024 n=34, 2025 n=71, 2026 n=137 — an ~8x swing
+   from 2023 to 2025. The 2023 T+21d spread of -9.48% rests on only 8 names.
+   At n=8 a single name moving ±10% shifts the cohort return ~±1.25pp; the
+   equal-weight mean is NOT a stable point estimate and must not be read as one.
+   The dramatic cohort-size growth (driven by the activity+liquidity+price
+   filters, not by the deletion count) means the post-filter selection — not
+   the deletion signal itself — is doing most of the cohort definition work.
+   Cross-year comparability is undermined: the 2023 "cohort" (8 names) and
+   the 2025 "cohort" (71 names) are phenotypically different groups. Within-year
+   dispersion (IQR of individual returns) was not reported at phase-0 and should
+   be added at phase-1 to make the 2023 fragility visible alongside the mean.
 
 ## Nightly Wiring (for consolidation)
 

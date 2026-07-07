@@ -348,16 +348,15 @@ def build_may_rank_snapshot(
 # STEP 2: Calibrate deletion band
 # ---------------------------------------------------------------------------
 def calibrate_band(snap_prev: pd.DataFrame, snap_curr: pd.DataFrame) -> dict:
-    """Calibrate the band_cutoff: how far down does a Russell-member need to fall
-    to be counted as a deletion proxy?
+    """PIN the band_cutoff to produce ~300 proxy deletions/year.
 
-    FTSE Russell publishes that approximately 200-400 names are deleted/added each year.
-    We calibrate band_cutoff to produce ~300 deletions (midpoint of published range).
-    Published Russell recon deletion counts (from FTSE press releases, cited as
-    external reference — exact counts unavailable without paid data, so we calibrate
-    to the published average):
-      Typical annual deletions: ~250-400 names from the Russell 2000
-    Target: ~300 deletions as midpoint.
+    TAUTOLOGY NOTE: This is a PIN, not a calibration against external truth.
+    The target of ~300 is the midpoint of FTSE Russell's published 200-400 range,
+    but actual per-year deletion counts have NOT been verified against FTSE press-release
+    totals (free totals are available in recon announcements but have not been pulled here).
+    Consequently, n_deletions_proxy≈300 is FORCED BY CONSTRUCTION and cannot detect
+    a garbage proxy. The report labels this section accordingly as PINNED/NOT validated.
+    Typical annual deletions: ~250-400 names from the Russell 2000. Target: ~300 as midpoint.
     """
     if snap_prev.empty or snap_curr.empty:
         return {"band_cutoff": BAND_BUFFER_DEFAULT, "n_deletions": 0, "calibrated": False}
@@ -717,20 +716,26 @@ def write_report(
         f"deleted because the same illiquidity that creates the overshoot limits their",
         f"entry size.",
         f"",
-        f"**Why n=4 makes this purely descriptive:** With only 4 annual observations",
-        f"(recons 2023-2026), no statistical test has power to distinguish skill from",
-        f"noise. We are banking the first four data points. Come back when n≥10 (~2032).",
+        f"**n=3 valid return observations (2023/2024/2025); 2026 cohort sizes only.**",
+        f"With only 3 years of actual forward-return data, no statistical test has power",
+        f"to distinguish skill from noise. 2026 is included for cohort-size tracking only",
+        f"(MSD ends before T+21cd can be measured, per Amendment A-4). Come back when",
+        f"n≥10 (~2032). The commit message's 'effective n=3' is correct — the report",
+        f"body frames the study as n=3 return observations throughout.",
         f"",
         f"## Pre-Registration Summary",
         f"",
         f"All parameters frozen before computation per the house epistemics rule.",
-        f"Two amendments filed at analysis time (noted in script header):",
+        f"Four amendments filed at analysis time (noted in script header), all",
+        f"pre-registered BEFORE any data was read:",
         f"",
         f"- **Amendment A-1:** MSD price data starts 2021-07-06; May 2021 prices",
         f"  unavailable. Recon year 2022 (which requires May 2021 as t-1 baseline)",
-        f"  is excluded. Analysis covers n=4 recons: 2023, 2024, 2025, 2026.",
-        f"  The '4/5 years positive' gate is restated as '3/4 years positive'.",
-        f"  The exclude-2022 gate is vacuously satisfied (2022 never in data).",
+        f"  is excluded. Analysis covers n=4 recon years: 2023, 2024, 2025, 2026.",
+        f"  However, 2026 contributes cohort sizes only (see A-4); effective n=3 for",
+        f"  return statistics. The '4/5 years positive' gate is restated as '3/3 years",
+        f"  positive' (matching n_obs=3 return observations). The exclude-2022 gate",
+        f"  is vacuously satisfied (2022 never in data).",
         f"",
         f"## STEP 1: Shares Outstanding — SEC EDGAR XBRL Coverage",
         f"",
@@ -749,8 +754,15 @@ def write_report(
         f"",
         f"## STEP 2: End-of-May Market Cap Rank Calibration",
         f"",
-        f"Band calibration target: ~300 deletions/year (FTSE Russell published average).",
-        f"Calibration result (band_cutoff producing closest to 300 deletions):",
+        f"**TAUTOLOGY CAVEAT (first-class): The band_cutoff is PINNED to produce ~300",
+        f"deletions/year — not validated against external anchor counts. The target of",
+        f"~300 is the midpoint of FTSE Russell's published 200-400 range but the",
+        f"actual per-year deletion count has NOT been verified against FTSE press-release",
+        f"totals. Consequently n_deletions_proxy≈300 is forced by construction; it",
+        f"cannot detect a garbage proxy. This is a structural limitation of the",
+        f"rank-proxy approach at phase-0 with no paid data.**",
+        f"",
+        f"Band_cutoff PINNED to produce closest-to-300 deletions (NOT independently validated):",
         f"",
     ]
     lines += cal_lines
@@ -800,8 +812,8 @@ def write_report(
         f"",
         f"## STEP 4: Statistical Tests",
         f"",
-        f"**Primary (correct for n=4):** Sign test + pooled bootstrap.",
-        f"**Secondary (reported for completeness, near-powerless at n=4):** date-clustered t.",
+        f"**Primary (correct for n=3 return obs):** Sign test + pooled bootstrap.",
+        f"**Secondary (reported for completeness, near-powerless at n=3):** date-clustered t.",
         f"",
         f"### T+21 calendar days",
         f"- Observations: {n_obs_21} recon years with valid spread",
@@ -836,10 +848,10 @@ def write_report(
         f"| Gate | Criterion | T+21d | T+63d |",
         f"|------|-----------|-------|-------|",
         f"| |t|≥2 date-clustered (SECONDARY) | {abs(t_21):.2f}{'≥2 PASS' if gate_t_21 else '<2 FAIL'} | {abs(t_63):.2f}{'≥2 PASS' if gate_t_63 else '<2 FAIL'} |",
-        f"| Spread positive ≥3/4 years (restated from 4/5, Amend A-1) | ≥3/{n_obs_21} | {n_pos_21}/{n_obs_21} {'PASS' if gate_pos_21 else 'FAIL'} | {n_pos_63}/{n_obs_63} {'PASS' if gate_pos_63 else 'FAIL'} |",
+        f"| Spread positive ≥3/3 return-obs (restated from 4/5 Amend A-1; n_obs=3, 2026=sizes only) | ≥3/{n_obs_21} | {n_pos_21}/{n_obs_21} {'PASS' if gate_pos_21 else 'FAIL'} | {n_pos_63}/{n_obs_63} {'PASS' if gate_pos_63 else 'FAIL'} |",
         f"| Exclude-2022 robustness | vacuous | PASS (A-1) | PASS (A-1) |",
         f"",
-        f"**OVERALL VERDICT:** DESCRIPTIVE/ACCRUAL — n=4 prohibits any GO/NO-GO claim.",
+        f"**OVERALL VERDICT:** DESCRIPTIVE/ACCRUAL — n=3 return observations prohibits any GO/NO-GO claim.",
         f"",
         f"**Direction:** " + (
             f"T+21d spread mean {'POSITIVE' if mean_21 > 0 else 'NEGATIVE'} ({mean_21*100:.2f}%), "
@@ -852,9 +864,10 @@ def write_report(
         f"",
         f"## Critical Caveats",
         f"",
-        f"1. **n=4:** Statistical inference is decorative at this sample size. The sign",
-        f"   test and bootstrap CI are honest but have almost no power to distinguish",
-        f"   the true effect from a coin flip. Filed for the record only.",
+        f"1. **n=3 return observations (2023/2024/2025); 2026 = cohort size only:**",
+        f"   Statistical inference is decorative at this sample size. The sign test",
+        f"   and bootstrap CI are honest but have almost no power to distinguish the",
+        f"   true effect from a coin flip. Filed for the record only.",
         f"",
         f"2. **Deletion proxy quality:** The rank-based deletion proxy is a noisy",
         f"   approximation. True FTSE Russell deletions use market cap from a specific",
@@ -874,6 +887,20 @@ def write_report(
         f"5. **PIT shares conservatism:** The +90d lag for shares availability may",
         f"   use stale annual data when a more recent quarterly filing is available.",
         f"   This is conservative (safe direction for PIT compliance).",
+        f"",
+        f"6. **Cohort-size instability — FIRST CLASS:** Post-filter deletion cohort",
+        f"   sizes are: 2023 n=8, 2024 n=34, 2025 n=71, 2026 n=137 — an ~8x swing",
+        f"   from 2023 to 2025. The 2023 T+21d spread of -9.48% rests on only 8 names.",
+        f"   At n=8 a single name moving ±10% shifts the cohort return ~±1.25pp; the",
+        f"   equal-weight mean is NOT a stable point estimate and must not be read as",
+        f"   one. The dramatic cohort-size growth (driven by the filters, not by the",
+        f"   deletion count) means the post-filter selection — not the deletion signal",
+        f"   itself — is doing most of the cohort definition work. Cross-year",
+        f"   comparability is undermined: the 2023 'cohort' and the 2025 'cohort'",
+        f"   are phenotypically different groups. The equal-weight mean spread across",
+        f"   years is therefore heavily influenced by year-specific sample composition.",
+        f"   Within-year dispersion (IQR of individual returns) was not reported at",
+        f"   phase-0 and should be added at phase-1 to make the 2023 fragility visible.",
         f"",
         f"## Nightly Wiring (for consolidation)",
         f"",
