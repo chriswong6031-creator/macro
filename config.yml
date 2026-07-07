@@ -2497,6 +2497,39 @@ live_flow:
   near_dte_cap_days: 90     # current-day fallback: cap per-expiration pulls to <=90 DTE (near-dated flow, where notable premium lives)
   # etf_anchors: []         # defaults to 22 anchors (see live_flow_poller._resolve_universe)
 
+# Committed-data-freeze tripwire — folded into the dead-man's-switch heartbeat
+# (scripts/healthcheck.py check_committed_data_freshness).  Each witness is a
+# cheap, always-liquid parquet file.  FAIL when > fail_after_sessions business
+# days stale; WARN when > warn_after_sessions.  The heartbeat runs 14:30 UTC
+# weekdays off a fresh checkout of main — so it reads COMMITTED data only.
+healthcheck:
+  # max_age_hours / breaker_trip / broad_outage stay at the scripts/healthcheck.py
+  # code defaults (96h etc.) — this section is added purely for the data_freshness
+  # tripwire below, not to retune the existing liveness thresholds.
+  data_freshness:
+    warn_after_sessions: 1
+    fail_after_sessions: 2
+    witnesses:              # cheap, always-liquid representatives per market
+      - {label: "china_stocks 000001.SZ", path: "data/china_stocks/000001.SZ.parquet"}
+      - {label: "china_stocks 600519.SS", path: "data/china_stocks/600519.SS.parquet"}
+      - {label: "china_breadth",          path: "data/china_breadth/breadth.parquet"}
+      - {label: "hk_stocks 0700.HK",      path: "data/hk_stocks/0700.HK.parquet"}
+      - {label: "us_stocks AAPL",         path: "data/stocks/AAPL.parquet"}
+    # China Golden Week + Spring Festival 2026–27 (starter set; extend as needed).
+    # US/HK single-day holidays fall within the 2-session tolerance so are optional.
+    holidays:
+      - "2026-10-01"
+      - "2026-10-02"
+      - "2026-10-05"
+      - "2026-10-06"
+      - "2026-10-07"
+      - "2026-10-08"
+      - "2027-02-15"
+      - "2027-02-16"
+      - "2027-02-17"
+      - "2027-02-18"
+      - "2027-02-19"
+
 r2_data_plane:
   public_base: "https://pub-f7ffb4441c5f4ad983ca56ec7c651c61.r2.dev"
   anchors: [stockdata, chinastockdata, feeds]  # freshest of <dir>/_manifest.json (put on EVERY successful publish) / <dir>/index.json; feeds = the bot-consumable contract plane (scripts/build_feeds.py, daily lane)
