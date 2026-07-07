@@ -6,7 +6,8 @@ parses Market CMDI, IG CMDI, HY CMDI sub-indices, and saves:
   - data/nyfed_cmdi/cmdi_monthly.parquet  (month-end last-reading resample)
 
 Idempotent: skips download if the cached file is from today (or force=True
-overrides). Safe to run weekly — NY Fed publishes monthly but may re-release.
+overrides). Safe to run weekly — CMDI is a weekly series (end-of-week Fridays,
+updated continuously) so weekly polling picks up each new reading within days.
 
 Nightly wiring (for consolidation into scripts/collect.py):
   from scripts.collect_nyfed_cmdi import collect_nyfed_cmdi

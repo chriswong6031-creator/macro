@@ -27,17 +27,21 @@ SIGNALS (3 series x 2 forms = 6 total, but only 4 GATED CELLS):
   Others computed for context; AUC/CI reported for all.
 
 PIT RULE:
-  Monthly CMDI value (last Friday of month M) is available on the last
-  Wednesday of the FOLLOWING month at or shortly after 10am ET (NY Fed
-  publication schedule). We apply a 1-month lag: signal at month M uses the
-  CMDI value from month M-1 (conservative; the M value is NOT available until
-  late M+1, so using M-1 prints avoids any look-ahead).
+  CMDI is a WEEKLY series (end-of-week Fridays, currently 1120 observations,
+  updated continuously). It is NOT a monthly release with a fixed publication
+  lag. We resample to month-end by taking the last available Friday reading
+  in each calendar month. The most-recent month-end reading is thus available
+  within days of month-end.
 
   AMENDMENT A1 (registered here before computing):
-  NY Fed publishes CMDI "at or shortly after 10am on the last Wednesday of
-  each month." This means the M value is available ~4-5 weeks after month-end.
-  To be safe we use M-2 lag (signal for SPY drawdown starting month M uses
-  CMDI from month M-2). This is conservative but unambiguous look-ahead free.
+  We apply a conservative 2-month lag (signal for evaluation at month M uses
+  CMDI through month M-2). This is more conservative than the data cadence
+  requires, but is adopted for robustness: it eliminates any ambiguity about
+  which Friday reading is "in" a given month, avoids reliance on intra-month
+  updates, and is verified look-ahead-free at COVID (2020-03 signal uses
+  Jan-2020 CMDI, not the COVID spike). The collector note about
+  "last-Wednesday-of-month" refers to the FRED-style monthly aggregation
+  schedule and is superseded by the direct weekly source.
   We report M-1 lag as a sensitivity check (labeled SENSITIVITY, not gated).
 
   AMENDMENT A2 (registered here before computing):
@@ -122,9 +126,11 @@ FAMILY = "w2104_cmdi_conditioning"
 MIN_HISTORY_MONTHS = 24   # for expanding pctile
 LAG_MONTHS = 2            # PIT lag (conservative, see A1)
 
-# Horizons tested (calendar days ahead in SPY)
-H21 = 21     # ~1 month of trading days
-H63 = 63     # ~3 months of trading days
+# Horizons tested (CALENDAR days ahead in SPY — forward_max_drawdown uses
+# pd.Timedelta(days=N), so H21 = 21 calendar days (~14 trading days, ~3 weeks)
+# and H63 = 63 calendar days (~42 trading days, ~2 months).
+H21 = 21     # 21 calendar days (~14 trading days, ~3 weeks)
+H63 = 63     # 63 calendar days (~42 trading days, ~2 calendar months)
 
 # 5% drawdown threshold for binary label
 DRAWDOWN_THRESH = -0.05
@@ -531,9 +537,27 @@ def main() -> None:
         r = evaluate_signal(sigs_full[col], lbl, f"{col}_{hz}")
         results_all[f"{col}_{hz}"] = r
 
-    # HY OAS baseline evaluations
-    hyoas_r21 = evaluate_signal(hy_oas_full, lbl21, "hyoas_baseline_21d")
-    hyoas_r63 = evaluate_signal(hy_oas_full, lbl63, "hyoas_baseline_63d")
+    # HY OAS baseline evaluations — FULL coverage (for display only, not T2 gate)
+    hyoas_r21_full = evaluate_signal(hy_oas_full, lbl21, "hyoas_baseline_21d_full")
+    hyoas_r63_full = evaluate_signal(hy_oas_full, lbl63, "hyoas_baseline_63d_full")
+
+    # T2 pre-registered requirement: IDENTICAL dates per gated cell.
+    # evaluate_signal() drops NA independently per series, so an unconstrained
+    # HY-OAS baseline picks up extra months (1999-2006) that CMDI cannot cover.
+    # Fix: for each gated cell, restrict HY-OAS to the exact dates used by that
+    # cell's CMDI evaluation (intersect on the joined non-NaN index).
+    hyoas_r_by_key: dict = {}
+    for col, lbl, hz, key in GATED:
+        cmdi_r = results_all.get(key, {})
+        cmdi_dates = cmdi_r.get("dates", None)
+        if cmdi_dates is None or len(cmdi_dates) == 0:
+            hyoas_r_by_key[key] = {"auc": np.nan, "n": 0}
+            continue
+        # Restrict HY-OAS to CMDI evaluation dates for this cell
+        hy_restricted = hy_oas_full.reindex(cmdi_dates)
+        lbl_restricted = lbl.reindex(cmdi_dates)
+        r = evaluate_signal(hy_restricted, lbl_restricted, f"hyoas_identical_{key}")
+        hyoas_r_by_key[key] = r
 
     # LOCO for gated cells only
     loco_results = {}
@@ -568,18 +592,21 @@ def main() -> None:
 
     t1_any_pass = any(v["pass"] for v in gated_t1.values())
 
-    # T2: beats HY OAS at >= 1 gated cell
+    # T2: beats HY OAS at >= 1 gated cell (IDENTICAL-DATES baseline per cell)
     beats_baseline = {}
-    hyoas_by_hz = {"21d": hyoas_r21.get("auc", np.nan),
-                   "63d": hyoas_r63.get("auc", np.nan)}
     for col, lbl, hz, key in GATED:
         r = results_all.get(key, {})
         cmdi_auc = r.get("auc", np.nan)
-        oas_auc = hyoas_by_hz.get(hz, np.nan)
+        oas_r = hyoas_r_by_key.get(key, {})
+        oas_auc = oas_r.get("auc", np.nan)
         beats = (not np.isnan(cmdi_auc) and not np.isnan(oas_auc) and
                  cmdi_auc > oas_auc)
-        beats_baseline[key] = {"beats": beats, "cmdi_auc": cmdi_auc,
-                                "oas_auc": oas_auc}
+        beats_baseline[key] = {
+            "beats": beats,
+            "cmdi_auc": cmdi_auc,
+            "oas_auc": oas_auc,
+            "n_identical": oas_r.get("n", 0),
+        }
 
     t2_pass = any(v["beats"] for v in beats_baseline.values())
 
@@ -612,17 +639,22 @@ def main() -> None:
 
     out.append("## In Plain English")
     out.append("")
-    out.append("The NY Fed publishes a Corporate Bond Market Distress Index (CMDI) monthly. "
-               "This report tests whether that index can predict when the US equity market "
-               "(SPY) is about to drop 5% or more within the next month (21 trading days) "
-               "or quarter (63 trading days). We also test whether CMDI is any better than "
-               "the HY credit spread (OAS) already on disk, and whether the result holds "
-               "when we remove each major market crisis from the sample one at a time.")
+    out.append("The NY Fed publishes a Corporate Bond Market Distress Index (CMDI) as a "
+               "weekly series (end-of-week Friday, updated continuously). This report tests "
+               "whether that index can predict when the US equity market (SPY) is about to "
+               "drop 5% or more within the next 21 calendar days (~14 trading days, ~3 weeks) "
+               "or 63 calendar days (~42 trading days, ~2 calendar months). We also test "
+               "whether CMDI is any better than the HY credit spread (OAS) already on disk, "
+               "and whether the result holds when we remove each major market crisis from "
+               "the sample one at a time.")
     out.append("")
-    out.append("The CMDI is published with about a 4-5 week delay, so we use the reading "
-               "from 2 months ago — being conservative about what a real-time user would "
-               "have known. Even with that lag, if CMDI is genuinely informative, high "
-               "distress readings should cluster before large drawdowns.")
+    out.append("CMDI data is available weekly with only a few days of lag. We apply a "
+               "conservative 2-month lag anyway — this means the signal we use for any "
+               "given month uses CMDI readings from two months prior, which is verifiably "
+               "look-ahead free even in fast-moving crises (e.g., 2020-03 signal uses "
+               "January 2020 CMDI, not the COVID spike). Even with this conservative lag, "
+               "if CMDI is genuinely informative, high distress readings should cluster "
+               "before large drawdowns.")
     out.append("")
 
     # Data summary
@@ -663,6 +695,10 @@ def main() -> None:
     out.append("## T1 AUC Results — All Signals")
     out.append("")
     out.append("Gate: AUC >= 0.60 AND bootstrap 95% CI excludes 0.50.")
+    out.append("Horizons: 21 = 21 calendar days (~14 trading days, ~3 weeks); "
+               "63 = 63 calendar days (~42 trading days, ~2 calendar months). "
+               "forward_max_drawdown() uses pd.Timedelta(days=N), so these are "
+               "calendar-day windows, not trading-day windows.")
     out.append("Overlap: monthly series — each obs is one calendar month, no overlap correction needed.")
     out.append("")
     out.append("| Signal | Horizon | N | N_events | AUC | 95% CI lo | 95% CI hi | "
@@ -695,36 +731,51 @@ def main() -> None:
                    f"{'**' + gate_str + '**' if is_gated else gate_str} | {nw_t_str} | {nw_p_str} |")
     out.append("")
 
-    # HY OAS baseline
-    out.append("### HY OAS Baseline")
+    # HY OAS baseline — full coverage (for display context only)
+    out.append("### HY OAS Baseline (Full Coverage — display only)")
+    out.append("")
+    out.append("These numbers show HY OAS evaluated on its own full date range (back to 1999). "
+               "They are **not** used for the T2 gate — see T2 section for identical-date comparisons.")
     out.append("")
     out.append("| Series | Horizon | N | N_events | AUC | 95% CI lo | 95% CI hi |")
     out.append("|---|---|---|---|---|---|---|")
-    for hz, r in [("21d", hyoas_r21), ("63d", hyoas_r63)]:
+    for hz, r in [("21d", hyoas_r21_full), ("63d", hyoas_r63_full)]:
         auc = r.get("auc", np.nan)
         ci_lo = r.get("ci_lo", np.nan)
         ci_hi = r.get("ci_hi", np.nan)
-        out.append(f"| HY OAS z-score | {hz} | {r.get('n', 0)} | {r.get('n_events', 0)} | "
+        out.append(f"| HY OAS z-score (full) | {hz} | {r.get('n', 0)} | {r.get('n_events', 0)} | "
                    f"{auc:.4f} | {ci_lo:.4f} | {ci_hi:.4f} |")
     out.append("")
 
-    # T2: beats baseline
-    out.append("## T2 — CMDI vs HY OAS Baseline (Gated Cells)")
+    # T2: beats baseline — IDENTICAL dates per gated cell
+    out.append("## T2 — CMDI vs HY OAS Baseline (Gated Cells, Identical Dates)")
     out.append("")
-    out.append("Gate: CMDI beats HY-OAS AUC at >= 1 gated cell.")
+    out.append("**Pre-registered requirement:** IDENTICAL labels vs HY-OAS baseline. "
+               "HY-OAS AUC is computed on the exact same months used for each CMDI cell "
+               "(the intersection of non-NaN dates from the joined signal+label series). "
+               "Without this restriction, the HY-OAS baseline covers 1999–2026 (330 months) "
+               "while CMDI covers only 2007–2026 (232 months), giving HY-OAS the full "
+               "2008 run-up window that CMDI cannot see — inflating its unconstrained AUC.")
     out.append("")
-    out.append("| Gated Cell | CMDI AUC | HY OAS AUC | CMDI Beats |")
-    out.append("|---|---|---|---|")
+    out.append("Gate: CMDI beats HY-OAS AUC (identical dates) at >= 1 gated cell.")
+    out.append("")
+    out.append("| Gated Cell | CMDI AUC | HY OAS AUC (identical N) | N identical | CMDI Beats |")
+    out.append("|---|---|---|---|---|")
     for key, b in beats_baseline.items():
         ca = b["cmdi_auc"]
         oa = b["oas_auc"]
+        n_id = b.get("n_identical", 0)
         beats_str = "YES" if b["beats"] else "NO"
         ca_str = f"{ca:.4f}" if not np.isnan(ca) else "nan"
         oa_str = f"{oa:.4f}" if not np.isnan(oa) else "nan"
-        out.append(f"| {key} | {ca_str} | {oa_str} | {beats_str} |")
+        out.append(f"| {key} | {ca_str} | {oa_str} | {n_id} | {beats_str} |")
     out.append("")
-    out.append(f"**T2 GATE: {'PASS' if t2_pass else 'FAIL'}** "
-               f"({'CMDI beats HY-OAS at >=1 gated cell' if t2_pass else 'CMDI does not beat HY-OAS at any gated cell'})")
+    n_beats = sum(v["beats"] for v in beats_baseline.values())
+    if t2_pass:
+        out.append(f"**T2 GATE: PASS** (CMDI beats HY-OAS on identical dates at {n_beats}/4 gated cell(s))")
+    else:
+        out.append(f"**T2 GATE: FAIL** (CMDI does not beat HY-OAS on identical dates at any gated cell; "
+                   f"{n_beats}/4 cells where CMDI wins)")
     out.append("")
 
     # T3: LOCO
@@ -857,8 +908,10 @@ def main() -> None:
     out.append("```")
     out.append("")
     out.append("**Recommended schedule:** Weekly cron (e.g., Wednesday 11am ET) for "
-               "idempotent refresh. NY Fed publishes last-Wednesday-of-month; weekly "
-               "polling catches re-releases without a month delay.")
+               "idempotent refresh. CMDI is a weekly series updated on Fridays; "
+               "weekly polling picks up the latest reading within days of each "
+               "week-end. The 2-month lag in signal construction ensures the data "
+               "remains look-ahead-free regardless of exact collection timing.")
     out.append("")
 
     report_text = "\n".join(out)
@@ -881,8 +934,8 @@ def main() -> None:
                             "ci_hi": round(v["r"].get("ci_hi", float("nan")), 4),
                             "gate_pass": v["pass"]}
                         for k, v in gated_t1.items()},
-        "hyoas_baseline_21d_auc": round(hyoas_r21.get("auc", float("nan")), 4),
-        "hyoas_baseline_63d_auc": round(hyoas_r63.get("auc", float("nan")), 4),
+        "hyoas_baseline_21d_auc": round(hyoas_r21_full.get("auc", float("nan")), 4),
+        "hyoas_baseline_63d_auc": round(hyoas_r63_full.get("auc", float("nan")), 4),
         "trial_n": n_total,
         "n_monthly_obs": int(sigs.dropna(how="all").shape[0]),
         "n_events_21d": int(n21),

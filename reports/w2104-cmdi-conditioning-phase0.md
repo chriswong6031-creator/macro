@@ -8,9 +8,9 @@
 
 ## In Plain English
 
-The NY Fed publishes a Corporate Bond Market Distress Index (CMDI) monthly. This report tests whether that index can predict when the US equity market (SPY) is about to drop 5% or more within the next month (21 trading days) or quarter (63 trading days). We also test whether CMDI is any better than the HY credit spread (OAS) already on disk, and whether the result holds when we remove each major market crisis from the sample one at a time.
+The NY Fed publishes a Corporate Bond Market Distress Index (CMDI) as a weekly series (end-of-week Friday, updated continuously). This report tests whether that index can predict when the US equity market (SPY) is about to drop 5% or more within the next 21 calendar days (~14 trading days, ~3 weeks) or 63 calendar days (~42 trading days, ~2 calendar months). We also test whether CMDI is any better than the HY credit spread (OAS) already on disk, and whether the result holds when we remove each major market crisis from the sample one at a time.
 
-The CMDI is published with about a 4-5 week delay, so we use the reading from 2 months ago — being conservative about what a real-time user would have known. Even with that lag, if CMDI is genuinely informative, high distress readings should cluster before large drawdowns.
+CMDI data is available weekly with only a few days of lag. We apply a conservative 2-month lag anyway — this means the signal we use for any given month uses CMDI readings from two months prior, which is verifiably look-ahead free even in fast-moving crises (e.g., 2020-03 signal uses January 2020 CMDI, not the COVID spike). Even with this conservative lag, if CMDI is genuinely informative, high distress readings should cluster before large drawdowns.
 
 ## Data Coverage
 
@@ -43,6 +43,7 @@ Trial ledger: family=`w2104_cmdi_conditioning`, 12 configs logged at generation,
 ## T1 AUC Results — All Signals
 
 Gate: AUC >= 0.60 AND bootstrap 95% CI excludes 0.50.
+Horizons: 21 = 21 calendar days (~14 trading days, ~3 weeks); 63 = 63 calendar days (~42 trading days, ~2 calendar months). forward_max_drawdown() uses pd.Timedelta(days=N), so these are calendar-day windows, not trading-day windows.
 Overlap: monthly series — each obs is one calendar month, no overlap correction needed.
 
 | Signal | Horizon | N | N_events | AUC | 95% CI lo | 95% CI hi | CI>0.5 | Gate | NW_t | NW_p |
@@ -60,25 +61,29 @@ Overlap: monthly series — each obs is one calendar month, no overlap correctio
 | hy_level_pctile | 63d | 232 | 68 | 0.5518 | 0.4696 | 0.6335 | N | **FAIL** | -2.355 | 0.0185 |
 | hy_3m_chg_pctile | 63d | 227 | 67 | 0.5694 | 0.4890 | 0.6445 | N | (context) | -3.597 | 0.0003 |
 
-### HY OAS Baseline
+### HY OAS Baseline (Full Coverage — display only)
+
+These numbers show HY OAS evaluated on its own full date range (back to 1999). They are **not** used for the T2 gate — see T2 section for identical-date comparisons.
 
 | Series | Horizon | N | N_events | AUC | 95% CI lo | 95% CI hi |
 |---|---|---|---|---|---|---|
-| HY OAS z-score | 21d | 330 | 49 | 0.6731 | 0.5777 | 0.7613 |
-| HY OAS z-score | 63d | 330 | 97 | 0.6251 | 0.5586 | 0.6927 |
+| HY OAS z-score (full) | 21d | 330 | 49 | 0.6731 | 0.5777 | 0.7613 |
+| HY OAS z-score (full) | 63d | 330 | 97 | 0.6251 | 0.5586 | 0.6927 |
 
-## T2 — CMDI vs HY OAS Baseline (Gated Cells)
+## T2 — CMDI vs HY OAS Baseline (Gated Cells, Identical Dates)
 
-Gate: CMDI beats HY-OAS AUC at >= 1 gated cell.
+**Pre-registered requirement:** IDENTICAL labels vs HY-OAS baseline. HY-OAS AUC is computed on the exact same months used for each CMDI cell (the intersection of non-NaN dates from the joined signal+label series). Without this restriction, the HY-OAS baseline covers 1999–2026 (330 months) while CMDI covers only 2007–2026 (232 months), giving HY-OAS the full 2008 run-up window that CMDI cannot see — inflating its unconstrained AUC.
 
-| Gated Cell | CMDI AUC | HY OAS AUC | CMDI Beats |
-|---|---|---|---|
-| market_level_pctile_21d | 0.5897 | 0.6731 | NO |
-| market_level_pctile_63d | 0.5677 | 0.6251 | NO |
-| hy_level_pctile_21d | 0.5797 | 0.6731 | NO |
-| hy_level_pctile_63d | 0.5518 | 0.6251 | NO |
+Gate: CMDI beats HY-OAS AUC (identical dates) at >= 1 gated cell.
 
-**T2 GATE: FAIL** (CMDI does not beat HY-OAS at any gated cell)
+| Gated Cell | CMDI AUC | HY OAS AUC (identical N) | N identical | CMDI Beats |
+|---|---|---|---|---|
+| market_level_pctile_21d | 0.5897 | 0.5893 | 232 | YES |
+| market_level_pctile_63d | 0.5677 | 0.5399 | 232 | YES |
+| hy_level_pctile_21d | 0.5797 | 0.5893 | 232 | NO |
+| hy_level_pctile_63d | 0.5518 | 0.5399 | 232 | YES |
+
+**T2 GATE: PASS** (CMDI beats HY-OAS on identical dates at 3/4 gated cell(s))
 
 ## T3 — Leave-One-Crisis-Out Stability (Gated Cells)
 
@@ -135,12 +140,12 @@ Gate: each removal produces AUC > 0.50 (same direction). At least one gated cell
 | Gate | Result | Details |
 |---|---|---|
 | T1: AUC>=0.60, CI>0.50 at any gated cell | **FAIL** | Gated cells passing: 0/4 |
-| T2: CMDI beats HY-OAS at >=1 gated cell | **FAIL** | Cells where CMDI wins: 0/4 |
+| T2: CMDI beats HY-OAS at >=1 gated cell | **PASS** | Cells where CMDI wins: 3/4 |
 | T3: LOCO stable (>=1 gated cell) | **FAIL** | Stable cells: 0/4 |
 
 ## VERDICT: FAIL — CONTEXT VERDICT (null accepted)
 
-Failed gates: T1, T2, T3. CMDI remains a context signal — high readings are informative for narrative/display but do not meet the de-escalation candidacy bar. Re-test if methodology or lag assumption changes.
+Failed gates: T1, T3. CMDI remains a context signal — high readings are informative for narrative/display but do not meet the de-escalation candidacy bar. Re-test if methodology or lag assumption changes.
 
 ## Honest-N
 
@@ -174,4 +179,4 @@ sigs = build_signals(monthly, lag=2)  # 2-month PIT lag
 #          market_3m_chg_pctile, ig_3m_chg_pctile, hy_3m_chg_pctile
 ```
 
-**Recommended schedule:** Weekly cron (e.g., Wednesday 11am ET) for idempotent refresh. NY Fed publishes last-Wednesday-of-month; weekly polling catches re-releases without a month delay.
+**Recommended schedule:** Weekly cron (e.g., Wednesday 11am ET) for idempotent refresh. CMDI is a weekly series updated on Fridays; weekly polling picks up the latest reading within days of each week-end. The 2-month lag in signal construction ensures the data remains look-ahead-free regardless of exact collection timing.
