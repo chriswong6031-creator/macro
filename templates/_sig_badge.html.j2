@@ -8,6 +8,7 @@
     bucket and a measured 23.8% US / 15.1% CN of T3 fresh fires repaint when it completes
     (calibration/provisional_replay.json). Bilingual; one source of truth so all grids
     render identically. Renders nothing when not eligible. -#}
+{%- if sig -%}{%- if sig.htf_s1 %}<span class="sig-gate sig-htf-s1" data-tip-en="S1 · 2-week + 3-day confluence — higher-timeframe sponsorship (display-only)" data-tip-zh="S1 · 2周+3日共振 — 高周期确认（仅展示）"><span class="l-en">S1</span><span class="l-zh">S1</span></span>{% endif %}{%- endif -%}
 {%- if sig and sig.eligible -%}
 {%- set _tc = sig.tier_cascade -%}
 {%- set _pending = (sig.sub == 'pending') -%}
