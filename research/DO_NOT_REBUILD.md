@@ -64,6 +64,8 @@ curated, not generated. Do not build an extractor.
 | CPI-020 | RETIRED — re-test FAIL | CPI lattice batch 2 (#1754) |
 | CPI IX-1 index-transfer down cells | KILLED by sign-stability leg (0/4 PASS) | CPI IX-1 §17 (#1779) |
 | Buyback-floor washout (S11) | FALSIFIED | S11 phase-0 (#1782) |
+| Fused 100-point "sponsorship breakaway" score (Codex Moderna docket §5.2) | STRUCK — positioning-fusion illegal + Signal Commons R3; replaced by per-axis AND-gate | WA-R1, `WINNER_AUTOPSY_MASTERPLAN_BY_FABLE.md` |
+| 13F/ownership as a POSITIVE breakaway signal (Codex Moderna docket §4.1 ownership_pressure) | STRUCK — restates NEXTL-U13 (opposite sign to 3 filed verdicts); survives as context/crowding-hazard only | WA-R2, `WINNER_AUTOPSY_MASTERPLAN_BY_FABLE.md` |
 
 ## 3. Wrong-ruler / estimator laws (methodology — using these invalidates the study)
 
@@ -87,6 +89,8 @@ curated, not generated. Do not build an extractor.
 | W-F (options) | PARKED until preconditions (1)+(2) | Options→NW masterplan |
 | CODEOWNERS / branch protection | DEFERRED to RF codegen lane scope | ABM-R3; `RF_CODEGEN_LANE_FOR_FABLE.md` |
 | Per-ticker multi-label business-model exposure tags (tech) | DEFERRED — group-level taxonomy only; revive needs revenue-geography ingestion + own adjudication | TI-R2, `TECH_INTERNALS_CODEX_ADJUDICATION_BY_FABLE.md` |
+| Public "Breakaway Desk" site page (Codex Moderna docket §7.1) | DEFERRED — W0 ships admin-panel surface only; public copy needs its own wave | `WINNER_AUTOPSY_MASTERPLAN_BY_FABLE.md` §8 |
+| Winner-autopsy short-interest / squeeze-fuel legs (Codex Moderna docket §4.3) | DEFERRED with L10 — no PIT short-interest history (single FINRA settlement date) | WA-R (docket adjudication), aligns NEXTL-U19 |
 
 ## 5. Incorporated by reference
 

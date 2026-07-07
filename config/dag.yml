@@ -329,6 +329,17 @@ lanes:
           flag per sole-advancer law. Appends keep-FIRST rows (ticker, snapshot_date)
           to data/research/thesis_funnel_history.parquet. Runs after build_bottom_sensors.
           Display-only; no scored_path_surfaces; FIREWALL LH-R1.
+      - id: build_winner_autopsy
+        module: scripts.research.build_winner_autopsy
+        note: >
+          non-fatal; Winner Autopsy Lab nightly (WA-R1..R10). Default mode computes
+          current breakaway watch states + winner_autopsy_panel.json; --write-history
+          appends keep-FIRST rows (ticker, snapshot_date) to
+          data/research/breakaway_watch.parquet history (sole-advancer law: only this
+          engine step passes --write-history). The historical episode census
+          (winner_episodes.parquet) is built off-render via --backfill on the Mac host
+          (needs data/massive_stock_day/). Display-only; no scored_path_surfaces;
+          FIREWALL WA-R5. Degrades to a coverage-honest no-op when name prices absent.
       - id: build_entity_thesis_mechanism_registry
         module: scripts.build_entity_thesis_mechanism_registry
         note: non-fatal; Wave B2 ETM crosswalk — display-only entity/thesis/mechanism registry (ETM-R1..R8); output data/neuralweb/entity_thesis_mechanism_registry.json
