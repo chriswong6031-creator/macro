@@ -621,3 +621,96 @@ class TestNFP2010EvalFloor:
         assert _era(pd.Timestamp("2020-07-01")) == "2020_recovery", "2020-07 must be 2020_recovery"
         assert _era(pd.Timestamp("2020-12-01")) == "2020_recovery", "2020-12 must be 2020_recovery"
         assert _era(pd.Timestamp("2021-01-01")) == "2021_plus", "2021-01 must be 2021_plus"
+
+
+# ---------------------------------------------------------------------------
+# 12. Gasoline reference-month anchoring (PREREG_V1.md §2.3 feature 7)
+# ---------------------------------------------------------------------------
+
+class TestGasolineRefMonthAnchoring:
+    """gasoline_mom must average GASREGW over the reference month M vs M-1 —
+    NOT over asof's calendar month (at the decision date asof is inside M+1,
+    which silently shifted the leg one month forward and missed ref-month
+    energy moves entirely)."""
+
+    @staticmethod
+    def _write_gasregw(root: Path) -> None:
+        # Weekly Monday observations: May flat 3.00; June collapsing to 2.00; one July week.
+        idx = pd.to_datetime([
+            "2026-05-04", "2026-05-11", "2026-05-18", "2026-05-25",
+            "2026-06-01", "2026-06-08", "2026-06-15", "2026-06-22", "2026-06-29",
+            "2026-07-06",
+        ])
+        vals = [3.00, 3.00, 3.00, 3.00, 2.80, 2.60, 2.40, 2.20, 2.00, 2.10]
+        df = pd.DataFrame({"GASREGW": vals}, index=idx)
+        path = root / "data" / "fred"
+        path.mkdir(parents=True, exist_ok=True)
+        df.to_parquet(path / "GASREGW.parquet")
+
+    def test_explicit_ref_month_uses_ref_vs_prior(self, tmp_path):
+        """asof in July, ref_month=June → June avg (2.40) vs May avg (3.00) = -20%."""
+        from engine.release_forecast import build_cpi_features
+        self._write_gasregw(tmp_path)
+        vintages = _make_vintages(
+            "CPIAUCSL",
+            [pd.Timestamp("2026-03-01"), pd.Timestamp("2026-04-01"), pd.Timestamp("2026-05-01")],
+            [320.0, 321.0, 321.5],
+            [40, 40, 40],
+        )
+        feats, prov = build_cpi_features(
+            date(2026, 7, 7), vintages, tmp_path,
+            release_type="cpi_headline", ref_month=date(2026, 6, 1),
+        )
+        assert feats["gasoline_mom"] == pytest.approx(-20.0, abs=1e-9), (
+            f"gasoline_mom must be June-vs-May (-20%), got {feats['gasoline_mom']} "
+            "(-12.5% would mean the leg is still anchored on asof's month)"
+        )
+        assert prov.get("gasoline_ref_month") == "2026-06-01"
+
+    def test_derived_ref_month_matches_explicit(self, tmp_path):
+        """ref_month=None derives last-knowable-print month + 1 (May print → June)."""
+        from engine.release_forecast import build_cpi_features
+        self._write_gasregw(tmp_path)
+        vintages = _make_vintages(
+            "CPIAUCSL",
+            [pd.Timestamp("2026-03-01"), pd.Timestamp("2026-04-01"), pd.Timestamp("2026-05-01")],
+            [320.0, 321.0, 321.5],
+            [40, 40, 40],
+        )
+        feats, prov = build_cpi_features(
+            date(2026, 7, 7), vintages, tmp_path, release_type="cpi_headline",
+        )
+        assert feats["gasoline_mom"] == pytest.approx(-20.0, abs=1e-9)
+        assert prov.get("gasoline_ref_month") == "2026-06-01"
+
+    def test_ref_month_in_progress_is_pit_truncated(self, tmp_path):
+        """ref_month=July with asof mid-July → July weeks < asof (2.10) vs June avg (2.40)."""
+        from engine.release_forecast import build_cpi_features
+        self._write_gasregw(tmp_path)
+        vintages = _make_vintages(
+            "CPIAUCSL",
+            [pd.Timestamp("2026-04-01"), pd.Timestamp("2026-05-01"), pd.Timestamp("2026-06-01")],
+            [321.0, 321.5, 320.8],
+            [40, 40, 40],
+        )
+        feats, _ = build_cpi_features(
+            date(2026, 7, 10), vintages, tmp_path,
+            release_type="cpi_headline", ref_month=date(2026, 7, 1),
+        )
+        assert feats["gasoline_mom"] == pytest.approx((2.10 / 2.40 - 1) * 100, abs=1e-9)
+
+    def test_core_still_excludes_gasoline(self, tmp_path):
+        from engine.release_forecast import build_cpi_features
+        self._write_gasregw(tmp_path)
+        vintages = _make_vintages(
+            "CPILFESL",
+            [pd.Timestamp("2026-04-01"), pd.Timestamp("2026-05-01")],
+            [310.0, 310.5],
+            [40, 40],
+        )
+        feats, prov = build_cpi_features(
+            date(2026, 7, 7), vintages, tmp_path,
+            release_type="cpi_core", ref_month=date(2026, 6, 1),
+        )
+        assert "gasoline_mom" not in feats
+        assert prov.get("gasoline_absent") is True
