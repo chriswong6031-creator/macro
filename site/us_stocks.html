@@ -1068,6 +1068,22 @@
   .nb-earn-soon{flex:none;font-size:8px;font-weight:700;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap;cursor:help;background:color-mix(in srgb,var(--warn) 10%,transparent);color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 28%,transparent)}
   /* W1.5 board-level suppressed-today note */
   .nb-eb-note{font-size:11px;padding:5px 11px;margin:4px 0;border-radius:6px;color:var(--warn);border:1px dashed color-mix(in srgb,var(--warn) 35%,var(--line));background:color-mix(in srgb,var(--warn) 5%,transparent);cursor:help}
+  /* B4 Conviction Delta — "What changed today" collapsed strip */
+  .nb-delta-strip{margin:5px 0 3px;border-radius:7px;border:1px solid var(--line);background:var(--panel2);font-size:11px}
+  .nb-delta-hdr{cursor:pointer;padding:5px 11px;display:flex;align-items:center;gap:8px;user-select:none;list-style:none;color:var(--muted);font-weight:600}
+  .nb-delta-hdr::-webkit-details-marker{display:none}
+  .nb-delta-hdr::before{content:"▶";font-size:9px;transition:transform .15s;flex:none}
+  details[open].nb-delta-strip .nb-delta-hdr::before{transform:rotate(90deg)}
+  .nb-delta-asof{margin-left:auto;font-size:10px;font-weight:400;color:var(--muted);opacity:.7}
+  .nb-delta-body{padding:4px 11px 8px;display:flex;flex-direction:column;gap:3px}
+  .nb-delta-row{display:flex;flex-wrap:wrap;align-items:baseline;gap:5px;padding:2px 0;border-top:1px solid var(--line)}
+  .nb-delta-row:first-child{border-top:none}
+  .nb-delta-tk{font-weight:700;font-size:11.5px;min-width:48px;flex:none}
+  .nb-delta-verb{font-size:11px;padding:1px 6px;border-radius:4px;background:color-mix(in srgb,var(--muted) 12%,transparent);color:var(--fg);white-space:nowrap}
+  .nb-delta-enter{background:color-mix(in srgb,var(--up) 14%,transparent);color:var(--up)}
+  .nb-delta-leave{background:color-mix(in srgb,var(--down) 12%,transparent);color:var(--down)}
+  .nb-delta-cleared{font-size:10.5px;color:var(--up);opacity:.85}
+  .nb-delta-added{font-size:10.5px;color:var(--warn);opacity:.85}
   /* W5b liquidity chip (display-only; no rank/gate power) */
   .nb-liq{flex:none;font-size:8px;font-weight:700;letter-spacing:.02em;padding:1px 5px;border-radius:6px;white-space:nowrap;cursor:help}
   .nb-liq.liq-deep{color:var(--up);background:color-mix(in srgb,var(--up) 9%,transparent);border:1px solid color-mix(in srgb,var(--up) 28%,transparent)}
@@ -1934,6 +1950,8 @@
       
       
       
+      
+      
       <div class="nbgrid" data-showmore-rows="3">
       
       
@@ -2138,6 +2156,40 @@
           
           
           
+          <div class="nb-dossier">
+            
+            
+            
+            <span class="nb-doss-act sv-act-go"
+              style="display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;margin-bottom:3px">
+              <span class="l-en">BUY</span><span class="l-zh">买入</span>
+            </span>
+            
+            
+            
+            
+            
+            
+            
+            
+            <div class="nb-doss-notnow" style="font-size:11px;color:var(--down);margin:2px 0"><span class="l-en">Not now: Entry capped — entry timing blocks a full buy</span>
+              <span class="l-zh">暂不操作：入场封顶——入场时机阻碍满仓</span>
+            </div>
+            
+            
+            
+            
+            <div class="nb-doss-flags" style="font-size:10px;color:var(--muted);margin:2px 0">
+              <span class="nb-doss-flag" style="margin-right:4px">capped_by_entry</span>
+            </div>
+            
+            
+            
+            
+            <span class="nb-doss-trust tt-context" style="font-size:10px;padding:1px 6px;border-radius:999px;border:1px solid var(--line);color:var(--muted);white-space:nowrap">event-edge</span>
+            
+          </div>
+          
           </div>
         </div>
         
@@ -2332,6 +2384,40 @@
           
           
           
+          
+          <div class="nb-dossier">
+            
+            
+            
+            <span class="nb-doss-act sv-act-go"
+              style="display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;margin-bottom:3px">
+              <span class="l-en">BUY</span><span class="l-zh">买入</span>
+            </span>
+            
+            
+            
+            
+            
+            
+            
+            
+            <div class="nb-doss-notnow" style="font-size:11px;color:var(--down);margin:2px 0"><span class="l-en">Not now: Entry capped — entry timing blocks a full buy</span>
+              <span class="l-zh">暂不操作：入场封顶——入场时机阻碍满仓</span>
+            </div>
+            
+            
+            
+            
+            <div class="nb-doss-flags" style="font-size:10px;color:var(--muted);margin:2px 0">
+              <span class="nb-doss-flag" style="margin-right:4px">capped_by_entry</span><span class="nb-doss-flag" style="margin-right:4px">bars-since-cross:3</span>
+            </div>
+            
+            
+            
+            
+            <span class="nb-doss-trust tt-context" style="font-size:10px;padding:1px 6px;border-radius:999px;border:1px solid var(--line);color:var(--muted);white-space:nowrap">event-edge</span>
+            
+          </div>
           
           </div>
         </div>
@@ -2536,6 +2622,40 @@
           
           
           
+          <div class="nb-dossier">
+            
+            
+            
+            <span class="nb-doss-act sv-act-go"
+              style="display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;margin-bottom:3px">
+              <span class="l-en">BUY</span><span class="l-zh">买入</span>
+            </span>
+            
+            
+            
+            
+            
+            
+            
+            
+            <div class="nb-doss-notnow" style="font-size:11px;color:var(--down);margin:2px 0"><span class="l-en">Not now: Entry capped — entry timing blocks a full buy</span>
+              <span class="l-zh">暂不操作：入场封顶——入场时机阻碍满仓</span>
+            </div>
+            
+            
+            
+            
+            <div class="nb-doss-flags" style="font-size:10px;color:var(--muted);margin:2px 0">
+              <span class="nb-doss-flag" style="margin-right:4px">capped_by_entry</span><span class="nb-doss-flag" style="margin-right:4px">bars-since-cross:7</span>
+            </div>
+            
+            
+            
+            
+            <span class="nb-doss-trust tt-context" style="font-size:10px;padding:1px 6px;border-radius:999px;border:1px solid var(--line);color:var(--muted);white-space:nowrap">event-edge</span>
+            
+          </div>
+          
           </div>
         </div>
         
@@ -2720,6 +2840,34 @@
           
           
           
+          
+          <div class="nb-dossier">
+            
+            
+            
+            <span class="nb-doss-act sv-act-go"
+              style="display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;margin-bottom:3px">
+              <span class="l-en">BUY</span><span class="l-zh">买入</span>
+            </span>
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            <div class="nb-doss-flags" style="font-size:10px;color:var(--muted);margin:2px 0">
+              <span class="nb-doss-flag" style="margin-right:4px">bars-since-cross:5</span>
+            </div>
+            
+            
+            
+            
+            <span class="nb-doss-trust tt-context" style="font-size:10px;padding:1px 6px;border-radius:999px;border:1px solid var(--line);color:var(--muted);white-space:nowrap">event-edge</span>
+            
+          </div>
           
           </div>
         </div>
@@ -2911,6 +3059,40 @@
           
           
           
+          <div class="nb-dossier">
+            
+            
+            
+            <span class="nb-doss-act sv-act-go"
+              style="display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;margin-bottom:3px">
+              <span class="l-en">BUY</span><span class="l-zh">买入</span>
+            </span>
+            
+            
+            
+            
+            
+            
+            
+            
+            <div class="nb-doss-notnow" style="font-size:11px;color:var(--down);margin:2px 0"><span class="l-en">Not now: Entry capped — entry timing blocks a full buy</span>
+              <span class="l-zh">暂不操作：入场封顶——入场时机阻碍满仓</span>
+            </div>
+            
+            
+            
+            
+            <div class="nb-doss-flags" style="font-size:10px;color:var(--muted);margin:2px 0">
+              <span class="nb-doss-flag" style="margin-right:4px">capped_by_entry</span><span class="nb-doss-flag" style="margin-right:4px">bars-since-cross:42</span>
+            </div>
+            
+            
+            
+            
+            <span class="nb-doss-trust tt-context" style="font-size:10px;padding:1px 6px;border-radius:999px;border:1px solid var(--line);color:var(--muted);white-space:nowrap">event-edge</span>
+            
+          </div>
+          
           </div>
         </div>
         
@@ -3094,6 +3276,40 @@
           
           
           
+          
+          <div class="nb-dossier">
+            
+            
+            
+            <span class="nb-doss-act sv-act-go"
+              style="display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;margin-bottom:3px">
+              <span class="l-en">BUY</span><span class="l-zh">买入</span>
+            </span>
+            
+            
+            
+            
+            
+            
+            
+            
+            <div class="nb-doss-notnow" style="font-size:11px;color:var(--down);margin:2px 0"><span class="l-en">Not now: Entry capped — entry timing blocks a full buy</span>
+              <span class="l-zh">暂不操作：入场封顶——入场时机阻碍满仓</span>
+            </div>
+            
+            
+            
+            
+            <div class="nb-doss-flags" style="font-size:10px;color:var(--muted);margin:2px 0">
+              <span class="nb-doss-flag" style="margin-right:4px">capped_by_entry</span><span class="nb-doss-flag" style="margin-right:4px">bars-since-cross:2</span>
+            </div>
+            
+            
+            
+            
+            <span class="nb-doss-trust tt-context" style="font-size:10px;padding:1px 6px;border-radius:999px;border:1px solid var(--line);color:var(--muted);white-space:nowrap">event-edge</span>
+            
+          </div>
           
           </div>
         </div>
@@ -3289,6 +3505,40 @@
           
           
           
+          
+          <div class="nb-dossier">
+            
+            
+            
+            <span class="nb-doss-act sv-act-go"
+              style="display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;margin-bottom:3px">
+              <span class="l-en">BUY</span><span class="l-zh">买入</span>
+            </span>
+            
+            
+            
+            
+            
+            
+            
+            
+            <div class="nb-doss-notnow" style="font-size:11px;color:var(--down);margin:2px 0"><span class="l-en">Not now: Entry capped — entry timing blocks a full buy</span>
+              <span class="l-zh">暂不操作：入场封顶——入场时机阻碍满仓</span>
+            </div>
+            
+            
+            
+            
+            <div class="nb-doss-flags" style="font-size:10px;color:var(--muted);margin:2px 0">
+              <span class="nb-doss-flag" style="margin-right:4px">capped_by_entry</span><span class="nb-doss-flag" style="margin-right:4px">bars-since-cross:21</span>
+            </div>
+            
+            
+            
+            
+            <span class="nb-doss-trust tt-context" style="font-size:10px;padding:1px 6px;border-radius:999px;border:1px solid var(--line);color:var(--muted);white-space:nowrap">event-edge</span>
+            
+          </div>
           
           </div>
         </div>
@@ -3506,6 +3756,34 @@
           
           
           
+          <div class="nb-dossier">
+            
+            
+            
+            <span class="nb-doss-act sv-act-go"
+              style="display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;margin-bottom:3px">
+              <span class="l-en">BUY</span><span class="l-zh">买入</span>
+            </span>
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            <div class="nb-doss-flags" style="font-size:10px;color:var(--muted);margin:2px 0">
+              <span class="nb-doss-flag" style="margin-right:4px">bars-since-cross:4</span>
+            </div>
+            
+            
+            
+            
+            <span class="nb-doss-trust tt-context" style="font-size:10px;padding:1px 6px;border-radius:999px;border:1px solid var(--line);color:var(--muted);white-space:nowrap">event-edge</span>
+            
+          </div>
+          
           </div>
         </div>
         
@@ -3693,6 +3971,40 @@
           
           
           
+          
+          <div class="nb-dossier">
+            
+            
+            
+            <span class="nb-doss-act sv-act-go"
+              style="display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;margin-bottom:3px">
+              <span class="l-en">BUY</span><span class="l-zh">买入</span>
+            </span>
+            
+            
+            
+            
+            
+            
+            
+            
+            <div class="nb-doss-notnow" style="font-size:11px;color:var(--down);margin:2px 0"><span class="l-en">Not now: Entry capped — entry timing blocks a full buy</span>
+              <span class="l-zh">暂不操作：入场封顶——入场时机阻碍满仓</span>
+            </div>
+            
+            
+            
+            
+            <div class="nb-doss-flags" style="font-size:10px;color:var(--muted);margin:2px 0">
+              <span class="nb-doss-flag" style="margin-right:4px">capped_by_entry</span><span class="nb-doss-flag" style="margin-right:4px">bars-since-cross:30</span>
+            </div>
+            
+            
+            
+            
+            <span class="nb-doss-trust tt-context" style="font-size:10px;padding:1px 6px;border-radius:999px;border:1px solid var(--line);color:var(--muted);white-space:nowrap">event-edge</span>
+            
+          </div>
           
           </div>
         </div>
@@ -3882,6 +4194,34 @@
           
           
           
+          <div class="nb-dossier">
+            
+            
+            
+            <span class="nb-doss-act sv-act-go"
+              style="display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;margin-bottom:3px">
+              <span class="l-en">BUY</span><span class="l-zh">买入</span>
+            </span>
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            <div class="nb-doss-flags" style="font-size:10px;color:var(--muted);margin:2px 0">
+              <span class="nb-doss-flag" style="margin-right:4px">bars-since-cross:5</span>
+            </div>
+            
+            
+            
+            
+            <span class="nb-doss-trust tt-context" style="font-size:10px;padding:1px 6px;border-radius:999px;border:1px solid var(--line);color:var(--muted);white-space:nowrap">event-edge</span>
+            
+          </div>
+          
           </div>
         </div>
         
@@ -4069,6 +4409,40 @@
           
           
           
+          
+          <div class="nb-dossier">
+            
+            
+            
+            <span class="nb-doss-act sv-act-go"
+              style="display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;margin-bottom:3px">
+              <span class="l-en">BUY</span><span class="l-zh">买入</span>
+            </span>
+            
+            
+            
+            
+            
+            
+            
+            
+            <div class="nb-doss-notnow" style="font-size:11px;color:var(--down);margin:2px 0"><span class="l-en">Not now: Entry capped — entry timing blocks a full buy</span>
+              <span class="l-zh">暂不操作：入场封顶——入场时机阻碍满仓</span>
+            </div>
+            
+            
+            
+            
+            <div class="nb-doss-flags" style="font-size:10px;color:var(--muted);margin:2px 0">
+              <span class="nb-doss-flag" style="margin-right:4px">capped_by_entry</span>
+            </div>
+            
+            
+            
+            
+            <span class="nb-doss-trust tt-context" style="font-size:10px;padding:1px 6px;border-radius:999px;border:1px solid var(--line);color:var(--muted);white-space:nowrap">event-edge</span>
+            
+          </div>
           
           </div>
         </div>
@@ -4258,6 +4632,40 @@
           
           
           
+          <div class="nb-dossier">
+            
+            
+            
+            <span class="nb-doss-act sv-act-go"
+              style="display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;margin-bottom:3px">
+              <span class="l-en">BUY</span><span class="l-zh">买入</span>
+            </span>
+            
+            
+            
+            
+            
+            
+            
+            
+            <div class="nb-doss-notnow" style="font-size:11px;color:var(--down);margin:2px 0"><span class="l-en">Not now: Entry capped — entry timing blocks a full buy</span>
+              <span class="l-zh">暂不操作：入场封顶——入场时机阻碍满仓</span>
+            </div>
+            
+            
+            
+            
+            <div class="nb-doss-flags" style="font-size:10px;color:var(--muted);margin:2px 0">
+              <span class="nb-doss-flag" style="margin-right:4px">capped_by_entry</span><span class="nb-doss-flag" style="margin-right:4px">bars-since-cross:26</span>
+            </div>
+            
+            
+            
+            
+            <span class="nb-doss-trust tt-context" style="font-size:10px;padding:1px 6px;border-radius:999px;border:1px solid var(--line);color:var(--muted);white-space:nowrap">event-edge</span>
+            
+          </div>
+          
           </div>
         </div>
         
@@ -4446,6 +4854,40 @@
           
           
           
+          
+          <div class="nb-dossier">
+            
+            
+            
+            <span class="nb-doss-act sv-act-go"
+              style="display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;margin-bottom:3px">
+              <span class="l-en">BUY</span><span class="l-zh">买入</span>
+            </span>
+            
+            
+            
+            
+            
+            
+            
+            
+            <div class="nb-doss-notnow" style="font-size:11px;color:var(--down);margin:2px 0"><span class="l-en">Not now: Entry capped — entry timing blocks a full buy</span>
+              <span class="l-zh">暂不操作：入场封顶——入场时机阻碍满仓</span>
+            </div>
+            
+            
+            
+            
+            <div class="nb-doss-flags" style="font-size:10px;color:var(--muted);margin:2px 0">
+              <span class="nb-doss-flag" style="margin-right:4px">capped_by_entry</span>
+            </div>
+            
+            
+            
+            
+            <span class="nb-doss-trust tt-context" style="font-size:10px;padding:1px 6px;border-radius:999px;border:1px solid var(--line);color:var(--muted);white-space:nowrap">event-edge</span>
+            
+          </div>
           
           </div>
         </div>
@@ -4646,6 +5088,40 @@
           
           
           
+          <div class="nb-dossier">
+            
+            
+            
+            <span class="nb-doss-act sv-act-go"
+              style="display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;margin-bottom:3px">
+              <span class="l-en">BUY</span><span class="l-zh">买入</span>
+            </span>
+            
+            
+            
+            
+            
+            
+            
+            
+            <div class="nb-doss-notnow" style="font-size:11px;color:var(--down);margin:2px 0"><span class="l-en">Not now: Entry capped — entry timing blocks a full buy</span>
+              <span class="l-zh">暂不操作：入场封顶——入场时机阻碍满仓</span>
+            </div>
+            
+            
+            
+            
+            <div class="nb-doss-flags" style="font-size:10px;color:var(--muted);margin:2px 0">
+              <span class="nb-doss-flag" style="margin-right:4px">capped_by_entry</span><span class="nb-doss-flag" style="margin-right:4px">bars-since-cross:7</span>
+            </div>
+            
+            
+            
+            
+            <span class="nb-doss-trust tt-context" style="font-size:10px;padding:1px 6px;border-radius:999px;border:1px solid var(--line);color:var(--muted);white-space:nowrap">event-edge</span>
+            
+          </div>
+          
           </div>
         </div>
         
@@ -4833,6 +5309,40 @@
           
           
           
+          
+          <div class="nb-dossier">
+            
+            
+            
+            <span class="nb-doss-act sv-act-go"
+              style="display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;margin-bottom:3px">
+              <span class="l-en">BUY</span><span class="l-zh">买入</span>
+            </span>
+            
+            
+            
+            
+            
+            
+            
+            
+            <div class="nb-doss-notnow" style="font-size:11px;color:var(--down);margin:2px 0"><span class="l-en">Not now: Entry capped — entry timing blocks a full buy</span>
+              <span class="l-zh">暂不操作：入场封顶——入场时机阻碍满仓</span>
+            </div>
+            
+            
+            
+            
+            <div class="nb-doss-flags" style="font-size:10px;color:var(--muted);margin:2px 0">
+              <span class="nb-doss-flag" style="margin-right:4px">capped_by_entry</span><span class="nb-doss-flag" style="margin-right:4px">bars-since-cross:19</span>
+            </div>
+            
+            
+            
+            
+            <span class="nb-doss-trust tt-context" style="font-size:10px;padding:1px 6px;border-radius:999px;border:1px solid var(--line);color:var(--muted);white-space:nowrap">event-edge</span>
+            
+          </div>
           
           </div>
         </div>
@@ -5046,6 +5556,34 @@
           
           
           
+          <div class="nb-dossier">
+            
+            
+            
+            <span class="nb-doss-act sv-act-go"
+              style="display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;margin-bottom:3px">
+              <span class="l-en">BUY</span><span class="l-zh">买入</span>
+            </span>
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            <div class="nb-doss-flags" style="font-size:10px;color:var(--muted);margin:2px 0">
+              <span class="nb-doss-flag" style="margin-right:4px">bars-since-cross:6</span>
+            </div>
+            
+            
+            
+            
+            <span class="nb-doss-trust tt-context" style="font-size:10px;padding:1px 6px;border-radius:999px;border:1px solid var(--line);color:var(--muted);white-space:nowrap">event-edge</span>
+            
+          </div>
+          
           </div>
         </div>
         
@@ -5245,6 +5783,34 @@
           
           
           
+          <div class="nb-dossier">
+            
+            
+            
+            <span class="nb-doss-act sv-act-go"
+              style="display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;margin-bottom:3px">
+              <span class="l-en">BUY</span><span class="l-zh">买入</span>
+            </span>
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            <div class="nb-doss-flags" style="font-size:10px;color:var(--muted);margin:2px 0">
+              <span class="nb-doss-flag" style="margin-right:4px">bars-since-cross:2</span>
+            </div>
+            
+            
+            
+            
+            <span class="nb-doss-trust tt-context" style="font-size:10px;padding:1px 6px;border-radius:999px;border:1px solid var(--line);color:var(--muted);white-space:nowrap">event-edge</span>
+            
+          </div>
+          
           </div>
         </div>
         
@@ -5440,6 +6006,40 @@
           
           
           
+          
+          <div class="nb-dossier">
+            
+            
+            
+            <span class="nb-doss-act sv-act-go"
+              style="display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;margin-bottom:3px">
+              <span class="l-en">BUY</span><span class="l-zh">买入</span>
+            </span>
+            
+            
+            
+            
+            
+            
+            
+            
+            <div class="nb-doss-notnow" style="font-size:11px;color:var(--down);margin:2px 0"><span class="l-en">Not now: Entry capped — entry timing blocks a full buy</span>
+              <span class="l-zh">暂不操作：入场封顶——入场时机阻碍满仓</span>
+            </div>
+            
+            
+            
+            
+            <div class="nb-doss-flags" style="font-size:10px;color:var(--muted);margin:2px 0">
+              <span class="nb-doss-flag" style="margin-right:4px">capped_by_entry</span>
+            </div>
+            
+            
+            
+            
+            <span class="nb-doss-trust tt-context" style="font-size:10px;padding:1px 6px;border-radius:999px;border:1px solid var(--line);color:var(--muted);white-space:nowrap">event-edge</span>
+            
+          </div>
           
           </div>
         </div>
@@ -5648,6 +6248,40 @@
           
           
           
+          
+          <div class="nb-dossier">
+            
+            
+            
+            <span class="nb-doss-act sv-act-go"
+              style="display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;margin-bottom:3px">
+              <span class="l-en">BUY</span><span class="l-zh">买入</span>
+            </span>
+            
+            
+            
+            
+            
+            
+            
+            
+            <div class="nb-doss-notnow" style="font-size:11px;color:var(--down);margin:2px 0"><span class="l-en">Not now: Entry capped — entry timing blocks a full buy</span>
+              <span class="l-zh">暂不操作：入场封顶——入场时机阻碍满仓</span>
+            </div>
+            
+            
+            
+            
+            <div class="nb-doss-flags" style="font-size:10px;color:var(--muted);margin:2px 0">
+              <span class="nb-doss-flag" style="margin-right:4px">capped_by_entry</span><span class="nb-doss-flag" style="margin-right:4px">bars-since-cross:3</span>
+            </div>
+            
+            
+            
+            
+            <span class="nb-doss-trust tt-context" style="font-size:10px;padding:1px 6px;border-radius:999px;border:1px solid var(--line);color:var(--muted);white-space:nowrap">event-edge</span>
+            
+          </div>
           
           </div>
         </div>
