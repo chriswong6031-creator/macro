@@ -270,6 +270,39 @@ def project_claims(
     else:
         quantiles = {"p10": None, "p25": None, "p50": None, "p75": None, "p90": None}
 
+    # trailing_4w: mean of last 4 ICSA initial prints (raw level / 1000 for thousands)
+    icsa_levels_k = icsa_sorted["value"].values / 1000.0
+    if len(icsa_levels_k) >= 4:
+        trailing_4w: float | None = round(float(np.mean(icsa_levels_k[-4:])), 2)
+    elif len(icsa_levels_k) >= 1:
+        trailing_4w = round(float(np.mean(icsa_levels_k)), 2)
+    else:
+        trailing_4w = None
+
+    # ar_model: AR3 Ridge on ICSA levels in thousands
+    ar3_pred: float | None = None
+    if len(icsa_levels_k) >= 4:
+        y_ar = icsa_levels_k
+        X_ar3 = np.full((len(y_ar), 3), np.nan)
+        for i in range(3, len(y_ar)):
+            for lag in range(1, 4):
+                X_ar3[i, lag - 1] = y_ar[i - lag]
+        row_ok = ~np.any(np.isnan(X_ar3), axis=1)
+        if row_ok.sum() >= 4:
+            X_clean_ar = X_ar3[row_ok]
+            y_clean_ar = y_ar[row_ok]
+            x_pred_ar = np.array([y_ar[-i] for i in range(1, 4)], dtype=float)
+            try:
+                # Ridge AR3: (X'X + lI)^{-1} X'y
+                lam = 1.0
+                A = X_clean_ar.T @ X_clean_ar + lam * np.eye(3)
+                b = X_clean_ar.T @ y_clean_ar
+                coef = np.linalg.solve(A, b)
+                pred_raw = float(x_pred_ar @ coef)
+                ar3_pred = round(pred_raw, 2) if np.isfinite(pred_raw) else None
+            except Exception:
+                ar3_pred = None
+
     return {
         "release": "claims",
         "asof": asof.isoformat(),
@@ -283,9 +316,9 @@ def project_claims(
         "p90": quantiles["p90"],
         "n_residuals": len(residuals_arr),
         "benchmark_set": {
-            "naive_prior": round(icsa_last, 1),
-            "trailing_3m": None,
-            "ar_model": None,
+            "naive_prior": round(icsa_last / 1000.0, 2),  # convert raw persons to thousands
+            "trailing_4w": trailing_4w,                    # already in thousands
+            "ar_model": ar3_pred,                          # already in thousands
             "cleveland_nowcast": None,
             "market_implied": None,
         },
@@ -319,7 +352,7 @@ def _empty_claims_projection(asof: date, reason: str) -> dict:
         "p10": None, "p25": None, "p50": None, "p75": None, "p90": None,
         "n_residuals": 0,
         "benchmark_set": {
-            "naive_prior": None, "trailing_3m": None,
+            "naive_prior": None, "trailing_4w": None,
             "ar_model": None, "cleveland_nowcast": None, "market_implied": None,
         },
         "inputs_used": {},

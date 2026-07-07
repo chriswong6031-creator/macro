@@ -2853,6 +2853,8 @@
     function esc(s){ return s == null ? '' : String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
     function fmtNum(v, digits){ return (v == null || isNaN(v)) ? '—' : Number(v).toFixed(digits != null ? digits : 2); }
     function fmtPct(v){ return (v == null || isNaN(v)) ? '—' : (Number(v)*100).toFixed(0) + '%'; }
+    /* claims level formatting: e.g. 215.3 -> "215k" (values in thousands) */
+    function fmtK(v){ return (v == null || isNaN(v)) ? '—' : Number(v).toFixed(0) + 'k'; }
 
     /* release name bilingual map */
     var RN_EN = {cpi:'CPI', nfp:'NFP Payrolls', claims:'Initial Claims', pce:'PCE', ppi:'PPI'};
@@ -2905,15 +2907,19 @@
     /* benchmark strip */
     function benchStrip(bs, rel){
       if (!bs) return '';
+      var isClaims = (rel||'').toLowerCase() === 'claims';
       var items = [];
       if (bs.naive_prior != null)
-        items.push(['<span class="l-en">Naive prior</span><span class="l-zh">朴素先验</span>', fmtNum(bs.naive_prior,2)]);
-      if (bs.trailing_3m != null)
+        items.push(['<span class="l-en">Naive prior</span><span class="l-zh">朴素先验</span>', isClaims ? fmtK(bs.naive_prior) : fmtNum(bs.naive_prior,2)]);
+      /* claims uses trailing_4w; all others use trailing_3m */
+      if (isClaims && bs.trailing_4w != null)
+        items.push(['<span class="l-en">Trailing 4w</span><span class="l-zh">近4周均值</span>', fmtK(bs.trailing_4w)]);
+      if (!isClaims && bs.trailing_3m != null)
         items.push(['<span class="l-en">Trailing 3m</span><span class="l-zh">近3月均值</span>', fmtNum(bs.trailing_3m,2)]);
       if (bs.ar_model != null)
-        items.push(['AR model', fmtNum(bs.ar_model,2)]);
-      /* Cleveland nowcast: CPI family only */
-      if ((rel||'').toLowerCase()==='cpi' && bs.cleveland_nowcast != null)
+        items.push(['AR model', isClaims ? fmtK(bs.ar_model) : fmtNum(bs.ar_model,2)]);
+      /* Cleveland nowcast: CPI family only; not shown for claims */
+      if (!isClaims && (rel||'').toLowerCase()==='cpi' && bs.cleveland_nowcast != null)
         items.push(['Cleveland nowcast', fmtNum(bs.cleveland_nowcast,2)]);
       if (!items.length) return '';
       var rows = items.map(function(r){
@@ -3008,12 +3014,28 @@
     function renderCard(item){
       var rel = item.release || '';
       var proj = item.projection || {};
-      var conf = item.confidence != null ? fmtPct(item.confidence) : '—';
-      var incomp = item.input_completeness != null ? fmtPct(item.input_completeness) : '—';
+      var isClaims = rel.toLowerCase() === 'claims';
+      var isBenchmarkOnly = proj.mode === 'benchmark_only';
+      var conf = (!isBenchmarkOnly && item.confidence != null) ? fmtPct(item.confidence) : '—';
+      var incomp = (!isBenchmarkOnly && item.input_completeness != null) ? fmtPct(item.input_completeness) : '—';
       var daysTo = item.days_to != null ? item.days_to : '—';
       var daysLabel = '<span class="l-en">in '+esc(daysTo)+' days</span>'
                     +'<span class="l-zh">'+esc(daysTo)+'天后</span>';
-      var ptEn = proj.point != null ? fmtNum(proj.point,2) : '—';
+      /* claims point values are in thousands; format with fmtK */
+      var ptEn = isBenchmarkOnly
+               ? '—'
+               : (proj.point != null ? (isClaims ? fmtK(proj.point) : fmtNum(proj.point,2)) : '—');
+      /* benchmark_only: show note from proj.reason instead of point */
+      var projSection = isBenchmarkOnly
+        ? ('<div class="rr-proj-row rr-proj-bmo">'
+           +'<div class="rr-proj-label"><span class="l-en">Projection</span><span class="l-zh">预测</span></div>'
+           +'<span class="rr-bmo-note"><span class="l-en">Benchmark-only (§6 kill rule)</span><span class="l-zh">仅基准对比（§6规则）</span></span>'
+           +'</div>')
+        : ('<div class="rr-proj-row">'
+           +'<div class="rr-proj-label"><span class="l-en">Our projection</span><span class="l-zh">本方预测</span></div>'
+           +'<span class="rr-point">'+esc(ptEn)+'</span>'
+           +'</div>'
+           +intervalBar(proj));
       return '<div class="rr-card">'
         /* header */
         +'<div class="rr-card-head">'
@@ -3023,22 +3045,17 @@
         +'</div>'
         /* release date */
         +(item.release_date?'<div class="rr-meta-row"><span class="l-en">Release date: <b>'+esc(item.release_date)+'</b></span><span class="l-zh">发布日期：<b>'+esc(item.release_date)+'</b></span></div>':'')
-        /* projection point */
-        +'<div class="rr-proj-row">'
-        +'<div class="rr-proj-label"><span class="l-en">Our projection</span><span class="l-zh">本方预测</span></div>'
-        +'<span class="rr-point">'+esc(ptEn)+'</span>'
-        +'</div>'
-        /* interval bar */
-        +intervalBar(proj)
-        /* confidence + completeness */
-        +'<div class="rr-meta-row">'
+        /* projection block (or benchmark-only note) */
+        +projSection
+        /* confidence + completeness: suppressed in benchmark_only mode */
+        +(!isBenchmarkOnly?('<div class="rr-meta-row">'
         +'<span><span class="l-en">Confidence: <b>'+esc(conf)+'</b></span><span class="l-zh">置信度：<b>'+esc(conf)+'</b></span></span>'
         +'<span><span class="l-en">Input completeness: <b>'+esc(incomp)+'</b></span><span class="l-zh">输入完整度：<b>'+esc(incomp)+'</b></span></span>'
-        +'</div>'
+        +'</div>'):'')
         /* benchmark strip */
         +benchStrip(item.benchmark_set, rel)
-        /* skew chip */
-        +(item.surprise_skew?'<div>'+skewChip(item.surprise_skew)+'</div>':'')
+        /* skew chip: suppressed in benchmark_only mode */
+        +(!isBenchmarkOnly&&item.surprise_skew?'<div>'+skewChip(item.surprise_skew)+'</div>':'')
         /* policy backdrop */
         +policyStrip(item.policy_backdrop)
         +'</div>';  /* end .rr-card */

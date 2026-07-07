@@ -31,12 +31,15 @@ sys.path.insert(0, str(_REPO))
 from scripts.build_release_forecast import (
     _append_ledger_rows,
     _build_scoreboard,
+    _build_upcoming_block,
     _check_release_day_capture,
+    _CLAIMS_MODE,
     _compute_actual_from_print,
     _ledger_key,
     _load_ledger,
     _read_cleveland_nowcast,
     _read_policy_backdrop,
+    _run_projection,
     _wilson,
 )
 
@@ -641,3 +644,249 @@ class TestDryRun:
         # No duplicates: each (release, period, row_type, asof_night) appears once
         keys = [_ledger_key(r) for r in rows]
         assert len(keys) == len(set(keys)), "Duplicate ledger keys detected"
+
+
+# ============================================================
+# 8. CLAIMS — scoreboard label, block_note, benchmark_only mode
+# ============================================================
+
+def _claims_scored_row(period: str = "2026-07-03", asof_night: str = "2026-07-10") -> dict:
+    """Build a synthetic scored row for claims (weekly period, benchmark_only mode).
+
+    In benchmark_only mode projection_point is null, so our_surprise, interval_hit,
+    and skew_hit are also null. Benchmarks carry real values so trailing/naive
+    surprise_vs_* is computable.
+    """
+    return {
+        "row_type": "scored",
+        "asof_night": asof_night,
+        "release": "claims",
+        "period": period,
+        "release_date": asof_night,
+        "actual": 215.0,            # ICSA in thousands
+        "raw_initial_print": 215000.0,
+        "frozen_asof_night": "2026-07-09",
+        "frozen_projection_point": None,     # benchmark_only
+        "frozen_projection_p10": None,
+        "frozen_projection_p90": None,
+        "our_surprise": None,                # null in benchmark_only
+        "surprise_vs_naive": 215.0 - 220.0, # vs naive_prior
+        "surprise_vs_trailing": 215.0 - 218.0,
+        "surprise_vs_ar": 215.0 - 217.0,
+        "surprise_vs_cleveland": None,
+        "interval_hit": None,               # null in benchmark_only
+        "skew_hit": None,                   # null in benchmark_only
+        "projection_mode": "benchmark_only",
+        "benchmark_trailing_key": "benchmark_trailing_4w",
+    }
+
+
+class TestClaimsScoreboard:
+    """Verify claims-specific scoreboard behavior: block_note, label, and benchmark_only mode."""
+
+    def test_claims_scoreboard_block_note_present(self):
+        """Claims scoreboard entry must include a block_note (MRI-R9 caveat)."""
+        row = _claims_scored_row()
+        sb = _build_scoreboard([row], accrual_start="2026-07-07")
+        claims_stats = sb["by_release"].get("claims")
+        assert claims_stats is not None, "claims entry missing from scoreboard"
+        assert "block_note" in claims_stats, "block_note missing from claims scoreboard entry"
+        assert "MRI-R9" in claims_stats["block_note"]
+
+    def test_claims_scoreboard_trailing_label_is_4w(self):
+        """Claims scoreboard uses mae_trailing_4w label, not mae_trailing_3m."""
+        row = _claims_scored_row()
+        sb = _build_scoreboard([row], accrual_start="2026-07-07")
+        claims_stats = sb["by_release"]["claims"]
+        assert "mae_trailing_4w" in claims_stats, "mae_trailing_4w key missing"
+        assert "mae_trailing_3m" not in claims_stats, "mae_trailing_3m must not appear for claims"
+
+    def test_claims_scoreboard_n_counts(self):
+        """Two scored claims rows produce n=2 in scoreboard."""
+        row1 = _claims_scored_row(period="2026-07-03", asof_night="2026-07-10")
+        row2 = _claims_scored_row(period="2026-07-10", asof_night="2026-07-17")
+        sb = _build_scoreboard([row1, row2], accrual_start="2026-07-07")
+        claims_stats = sb["by_release"]["claims"]
+        assert claims_stats["n"] == 2
+
+    def test_claims_benchmark_only_mae_ours_null(self):
+        """In benchmark_only mode all scored rows have null proj_point -> mae_ours is None."""
+        row = _claims_scored_row()
+        # Confirm frozen_projection_point is None in our fixture
+        assert row["frozen_projection_point"] is None
+        sb = _build_scoreboard([row], accrual_start="2026-07-07")
+        claims_stats = sb["by_release"]["claims"]
+        # mae_ours = None because no projection_point was frozen (benchmark_only)
+        assert claims_stats["mae_ours"] is None, (
+            f"Expected mae_ours=None in benchmark_only mode, got {claims_stats['mae_ours']}"
+        )
+
+    def test_claims_naive_mae_computable_from_surprise(self):
+        """Even in benchmark_only mode, mae_naive_prior accumulates from surprise_vs_naive."""
+        row = _claims_scored_row()
+        # surprise_vs_naive = 215 - 220 = -5; abs = 5
+        sb = _build_scoreboard([row], accrual_start="2026-07-07")
+        claims_stats = sb["by_release"]["claims"]
+        assert claims_stats["mae_naive_prior"] == pytest.approx(5.0, abs=1e-3)
+
+    def test_non_claims_has_no_block_note(self):
+        """CPI scoreboard entry must NOT have a block_note (that's claims-only)."""
+        scored = _scored_row(release="cpi_headline")
+        scored["actual"] = 0.30
+        scored["frozen_projection_point"] = 0.28
+        scored["interval_hit"] = True
+        scored["skew_hit"] = True
+        sb = _build_scoreboard([scored], accrual_start="2026-07-07")
+        cpi_stats = sb["by_release"].get("cpi_headline", {})
+        assert "block_note" not in cpi_stats, "block_note must not appear for non-claims releases"
+
+    def test_non_claims_has_trailing_3m_not_4w(self):
+        """CPI scoreboard entry must use mae_trailing_3m, not mae_trailing_4w."""
+        scored = _scored_row(release="cpi_headline")
+        scored["actual"] = 0.30
+        scored["frozen_projection_point"] = 0.28
+        scored["interval_hit"] = True
+        scored["skew_hit"] = True
+        scored["surprise_vs_trailing"] = 0.05
+        sb = _build_scoreboard([scored], accrual_start="2026-07-07")
+        cpi_stats = sb["by_release"]["cpi_headline"]
+        assert "mae_trailing_3m" in cpi_stats, "mae_trailing_3m must appear for CPI"
+        assert "mae_trailing_4w" not in cpi_stats, "mae_trailing_4w must not appear for CPI"
+
+
+# ============================================================
+# 9. CLAIMS LEDGER — weekly period dedup semantics
+# ============================================================
+
+class TestClaimsLedger:
+    """Verify ledger dedup works for weekly (YYYY-MM-DD) claim periods."""
+
+    def test_claims_weekly_period_dedup(self, tmp_root: Path):
+        """Two identical claims projection rows (same period, same asof_night) don't duplicate."""
+        ledger_path = tmp_root / "data" / "release_forecast" / "forward_ledger.jsonl"
+        row = {
+            "row_type": "projection",
+            "asof_night": "2026-07-06",
+            "release": "claims",
+            "period": "2026-07-10",        # Thursday date (weekly period)
+            "release_date": "2026-07-10",
+            "days_to": 4,
+            "projection_point": None,       # benchmark_only
+            "benchmark_naive_prior": 220.0,
+            "benchmark_trailing_4w": 218.5,
+        }
+        _append_ledger_rows(ledger_path, [row])
+        _append_ledger_rows(ledger_path, [row])  # second run same night
+        rows = _load_ledger(ledger_path)
+        assert len(rows) == 1, f"Expected 1 row, got {len(rows)}: dedup failed for claims period"
+
+    def test_claims_different_weekly_periods_not_deduped(self, tmp_root: Path):
+        """Two different claim weekly periods are separate ledger rows (not deduped)."""
+        ledger_path = tmp_root / "data" / "release_forecast" / "forward_ledger.jsonl"
+        row1 = {
+            "row_type": "projection",
+            "asof_night": "2026-07-06",
+            "release": "claims",
+            "period": "2026-07-10",
+            "release_date": "2026-07-10",
+        }
+        row2 = {
+            "row_type": "projection",
+            "asof_night": "2026-07-06",
+            "release": "claims",
+            "period": "2026-07-17",        # different week
+            "release_date": "2026-07-17",
+        }
+        _append_ledger_rows(ledger_path, [row1, row2])
+        rows = _load_ledger(ledger_path)
+        assert len(rows) == 2, f"Expected 2 rows for different weekly periods, got {len(rows)}"
+
+
+# ============================================================
+# 10. CLAIMS PROJECTION — integration tests (require vintages.parquet)
+# ============================================================
+
+_VINTAGES_PATH = Path(__file__).resolve().parents[1] / "data" / "fred_vintage" / "vintages.parquet"
+_REPO_ROOT = Path(__file__).resolve().parents[1]
+_CLAIMS_INT_MARK = pytest.mark.skipif(
+    not _VINTAGES_PATH.exists(),
+    reason="data/fred_vintage/vintages.parquet not present; skipping claims integration tests",
+)
+
+
+class TestB1ClaimsProjectionIntegration:
+    """Integration: _run_projection for 'claims' returns a valid dict, not None.
+
+    These tests require the committed vintages.parquet (ICSA + IC4WSA series).
+    Skipped automatically if the file is absent.
+    """
+
+    @_CLAIMS_INT_MARK
+    def test_run_projection_claims_returns_dict_not_none(self, tmp_root: Path):
+        """_run_projection('claims', ...) must return a dict, not None (B1 crash fix)."""
+        asof = date(2026, 7, 7)
+        # Use a recent Thursday-date period (the period string for claims is a Thursday date)
+        result = _run_projection("claims", asof, _REPO_ROOT, period_str="2026-07-03")
+        assert result is not None, (
+            "_run_projection('claims') returned None — likely a crash in project_claims"
+        )
+        assert isinstance(result, dict), f"Expected dict, got {type(result)}"
+
+    @_CLAIMS_INT_MARK
+    def test_run_projection_claims_benchmark_set_populated(self, tmp_root: Path):
+        """benchmark_set for claims must have naive_prior and trailing_4w as real floats."""
+        asof = date(2026, 7, 7)
+        result = _run_projection("claims", asof, _REPO_ROOT, period_str="2026-07-03")
+        assert result is not None
+        bs = result.get("benchmark_set", {})
+        assert "naive_prior" in bs, "naive_prior missing from claims benchmark_set"
+        assert "trailing_4w" in bs, "trailing_4w missing from claims benchmark_set (must not be trailing_3m)"
+        assert "trailing_3m" not in bs, "trailing_3m must not appear in claims benchmark_set"
+        # Both should be floats (real ICSA values in thousands)
+        assert isinstance(bs["naive_prior"], float), f"naive_prior is {type(bs['naive_prior'])}, expected float"
+        assert isinstance(bs["trailing_4w"], float), f"trailing_4w is {type(bs['trailing_4w'])}, expected float"
+        # Sanity: ICSA in thousands is typically 200–300k range (i.e., 200.0–300.0 as float)
+        assert 100.0 <= bs["naive_prior"] <= 1000.0, f"naive_prior out of plausible range: {bs['naive_prior']}"
+        assert 100.0 <= bs["trailing_4w"] <= 1000.0, f"trailing_4w out of plausible range: {bs['trailing_4w']}"
+
+    @_CLAIMS_INT_MARK
+    def test_build_upcoming_block_claims_benchmark_only_mode(self, tmp_root: Path):
+        """_build_upcoming_block with a claims release emits benchmark_only projection block."""
+        # Synthetic upcoming releases list with one claims event
+        upcoming_releases = [
+            {
+                "release_type": "claims",
+                "release": "claims",
+                "period": "2026-07-10",
+                "release_date": "2026-07-10",
+                "regime_axis": "growth",
+            }
+        ]
+        policy_backdrop = {
+            "fed_stance": None, "gap_bp": None,
+            "implied_cuts_12m": None, "next_fomc": None, "guidance_direction": None,
+        }
+        today = date(2026, 7, 7)
+        root = _REPO_ROOT
+        block = _build_upcoming_block(today, root, upcoming_releases, policy_backdrop)
+
+        assert len(block) == 1, f"Expected 1 upcoming card, got {len(block)}"
+        card = block[0]
+
+        # Projection block must carry benchmark_only mode (§6 kill rule is active)
+        assert _CLAIMS_MODE == "benchmark_only", "_CLAIMS_MODE must be benchmark_only"
+        proj = card.get("projection", {})
+        assert proj.get("mode") == "benchmark_only", (
+            f"claims projection.mode must be 'benchmark_only', got {proj.get('mode')!r}"
+        )
+        assert "reason" in proj, "benchmark_only projection must include reason"
+
+        # Benchmark set must be populated (even in benchmark_only mode, benchmarks are graded)
+        bs = card.get("benchmark_set", {})
+        assert bs.get("naive_prior") is not None, "naive_prior must be a real value, not null"
+        assert bs.get("trailing_4w") is not None, "trailing_4w must be a real value, not null"
+        assert "trailing_3m" not in bs, "trailing_3m must not appear in claims benchmark_set"
+
+        # Point/quantiles/confidence must all be null
+        assert card.get("confidence") is None, "confidence must be null in benchmark_only mode"
+        assert card.get("input_completeness") is None, "input_completeness must be null in benchmark_only mode"
