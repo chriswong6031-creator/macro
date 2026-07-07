@@ -24,7 +24,7 @@ concurrency:
 jobs:
   asia:
     runs-on: [self-hosted, macstudio]
-    timeout-minutes: 90
+    timeout-minutes: 120   # was 90 — the build step was getting CANCELLED at ~90m on congested runners (same failure daily.yml hit at 70m). 120m gives headroom to always reach the commit+push. The collect+data commit run first, so a timeout no longer strands fresh data — but a cancelled render still means asia engine outputs don't land, so keep the cap generous.
     steps:
       # Default ref (the branch that triggered this) — NOT a hard `ref: main`. On the
       # feat/time-shards branch this pulls the collect.py that HAS --group; on main
@@ -70,14 +70,17 @@ jobs:
         run: |
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
-          # site/qledger: scripts.collect runs the qledger grader in every lane;
-          # its tracked site/qledger/track_record.json must be staged or the
-          # rebase+push dies on "unstaged changes" (same gap as daily.yml).
+          # Stage collected data + the qledger grader's tracked
+          # site/qledger/track_record.json. The --autostash on the rebase below is the
+          # real guard, though: scripts.collect also dirties OTHER tracked files (e.g.
+          # reports/*.md graders) that no `git add` here covers — left unstaged they
+          # abort `git pull --rebase` ("unstaged changes") and the push silently dies
+          # after 5 retries, discarding the whole collection (froze 2026-07-02..07).
           git add data/ site/qledger/
           if git diff --cached --quiet; then echo "no asia data changes"; else
             git commit -m "data: asia collection $(date -u +%F)"
             for i in 1 2 3 4 5; do
-              if git pull --rebase -X theirs origin main && git push; then echo "pushed asia data (attempt $i)"; break; fi
+              if git pull --rebase --autostash -X theirs origin main && git push; then echo "pushed asia data (attempt $i)"; break; fi
               git rebase --abort 2>/dev/null || true; echo "asia data push attempt $i lost a race"; sleep $((i * 7))
             done
           fi
@@ -148,7 +151,7 @@ jobs:
           if git diff --cached --quiet; then echo "no engine output changes"; exit 0; fi
           git commit -m "engine: asia dashboards $(date -u +%F)"
           for i in 1 2 3 4 5; do
-            if git pull --rebase -X theirs origin main && git push; then echo "pushed asia engine outputs (attempt $i)"; exit 0; fi
+            if git pull --rebase --autostash -X theirs origin main && git push; then echo "pushed asia engine outputs (attempt $i)"; exit 0; fi
             git rebase --abort 2>/dev/null || true; echo "asia engine push attempt $i lost a race"; sleep $((i * 7))
           done
           echo "::warning::could not push asia engine outputs after 5 attempts (non-fatal)"
