@@ -1,5 +1,16 @@
 # P1.3 Trio Ablation — RESULTS (v2, ROUND 2 — defect-corrected re-run)
 
+> **SUPERSEDED IN PART (2026-07-07, RC-RUL-1 — research/TIME_CONFOUND_RECHECK_ADJUDICATION.md).**
+> The EI-RC-1 re-check (`P1_3_TC_RECHECK/RESULTS.md`, PR #1866) re-ran this study's
+> inference under within-month demeaning + month-block bootstrap (events frozen,
+> reproduction exact). T24 and T21 — the entire F3 "SHIPS-AS-HARD-GATE" evidence —
+> collapse to zero (T24: −5.00pp → +0.04pp, CI [−3.66, +3.27]); T09 (F1-RW) likewise
+> (+0.01pp). **The F3 hard-gate designation is WITHDRAWN; anti-chase remains
+> shadow-only (P2.1a), and the flip now additionally requires a DT-R14-compliant
+> read of the forward ledger.** T02 (F1 dead-money) is REAFFIRMED time-controlled
+> (−9.66pp, CI [−11.61, −8.05], BH q=0.000). The episode-permutation machinery below
+> is retained as historical record; it is not a compliant primary ruler (DT-R14).
+
 **WHOLE-STUDY VERDICT: PARTIAL SURVIVORS — the trio is NOT closed.**
 
 | Factor | Verdict | Ships as | Gate rejected (§6.2)? |

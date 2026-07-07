@@ -4,6 +4,15 @@
 > The word 'validated' does not appear in this document (Oracle Constitution §II).
 > Pre-registration: research/oracle_asymmetry/W2_FORMAL_PREREG.md.
 > Base spec: research/oracle_asymmetry/W2_SPEC.md (frozen).
+
+> **RE-CHECK NOTE (2026-07-07, RC-RUL-2 — research/TIME_CONFOUND_RECHECK_ADJUDICATION.md).**
+> OTA-RC-1 (PR #1855, `W2_TC_RECHECK.md`) re-computed the delta CIs with the 35 armed
+> windows merged into 9 macro-episodes and the R3 baseline period-matched. **The
+> CONFIRMED verdict stands:** ΔWR21 90% CI [0.0399, 0.1901], Δmean_ret21 [0.0107,
+> 0.0493], period-matched R3 [0.0207, 0.1692] — all lower bounds above zero, margins
+> narrowed vs the window-cluster CIs. Caveats: 7 in-arm episodes is a thin resampling
+> base; the episode-joint placebo remains unbuilt (optional accrual item); the §5
+> forward ledger stays the decisive arbiter.
 > Seed: 20260706 (registered). Bootstrap draws: 2,000. Placebo draws: 500.
 > Registered corrections applied: (a) symmetric placebo OUT-arm;
 > (b) cluster-bootstrap CI on delta; (c) MDE alpha=0.05;

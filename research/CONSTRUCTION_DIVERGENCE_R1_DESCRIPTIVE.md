@@ -5,6 +5,16 @@
 **Status:** DESCRIPTIVE/ACCRUAL — not verdict-eligible  
 **Registration:** research/HEALTHCARE_MEMBER_DISPERSION_ROTATION_NOTE.md §12 (LOCKED)
 
+> **RE-CHECK NOTE (2026-07-07, RC-RUL-4 — research/TIME_CONFOUND_RECHECK_ADJUDICATION.md).**
+> HC-RC-1 (PR #1850, `CONSTRUCTION_DIVERGENCE_R1_TC_RECHECK.md`) repaired this study's
+> inference defects (CD-1/2/3: mis-ordered effective-t input, decorative block collapse,
+> time-blind ablations) with real ±7d cross-sector co-firing blocks (419) and
+> block-cluster bootstrap. **The "null held" lock is reaffirmed on the repaired
+> machinery** (DD21 null; DD63 pooled marginal p=0.072 with CI including zero;
+> DD63 stratified null in both stress strata). `scripts/study_construction_divergence_tc.py`
+> is the mandatory apparatus for any future R-1 verdict batch; the DD63 tail asymmetry
+> (divergent p10 shallower, non-overlapping cohort CIs) is a descriptive watch item.
+
 ---
 
 ## Methodology

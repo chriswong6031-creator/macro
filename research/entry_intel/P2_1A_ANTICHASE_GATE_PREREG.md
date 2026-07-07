@@ -2,6 +2,14 @@
 
 **STATUS: APPROVED — Fable 2026-07-05 (red-team P2_REDTEAM.md blocking fixes applied; Fable rulings R-P2.1 flip-floor=100 clusters+2 quarters, R-P2.2 single concordance authority = P2.1b §3.3)**
 
+> **AMENDED FLIP TERMS (2026-07-07, RC-RUL-1 — research/TIME_CONFOUND_RECHECK_ADJUDICATION.md).**
+> The upstream P1.3 warrant (T24/T21) did not survive DT-R14 time-controlled re-inference
+> (EI-RC-1, PR #1866): the in-sample hard-gate evidence is withdrawn. This prereg's shadow
+> accrual continues unchanged, but the R-P2.1 floors (100 blocked episode-clusters +
+> 2 quarters) are now necessary-not-sufficient: **any flip decision must additionally
+> include a within-period-demeaned, calendar-block-resampled read of the accumulated
+> shadow-ledger data.** The forward ledger must earn the flip on its own.
+
 **Study:** P2.1a — F3 Anti-Chase (ext_z) Hard-Gate, Shadow-First Promotion
 **Program:** Entry Intelligence (EI) — Phase 2
 **Masterplan:** `research/ENTRY_INTELLIGENCE_MASTERPLAN_BY_FABLE.md §6/P2.1`
