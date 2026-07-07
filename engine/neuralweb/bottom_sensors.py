@@ -25,6 +25,18 @@ Field sources (source_artifacts column in output):
   earnings_next_date/days_to        → data/earnings/earnings.parquet
   dist_21d_low_pct                  → computed here (rolling 21d; close series from data/stocks/*.parquet)
   dist_126d_high_pct                → computed here (rolling 126d; close series from data/stocks/*.parquet)
+  decline_herf / decline_geometry   → computed here (Amendment 3 family E, DISPLAY-CANDIDATE):
+                                       decline_herf = latest trailing-63-bar loss-Herfindahl bound from
+                                       engine.entry_primitives.decline_concentration_series (leak-tested);
+                                       decline_geometry = current-day cross-sectional tercile label
+                                       (flush / mixed / grind).  A decline-SHAPE read, display-only, NOT
+                                       an escalation.  CHIP-blocked until the true eq_band lands (RUL-28).
+  underwater_bars / underwater_state → computed here (Amendment 3 family F, ADVERSE-CONTEXT, shadow-only):
+                                       underwater_bars = latest bars-since-trailing-252-peak bound from
+                                       engine.entry_primitives.time_underwater_series; underwater_state =
+                                       cross-sectional tercile label (short / mid / long).  Caution context
+                                       (long underwater = historically higher stop-out); de-escalation-
+                                       eligible only, never a buy signal.  Not surfaced on the QA page.
   sponsorship_state                 → computed here (Amendment §C3); reads data/oracle/panel_s.parquet
                                        and data/oracle/panel_m.parquet; stock→sector/subsector map
                                        from engine/neuralweb/sector_map.py (existing repo stores only)
@@ -62,6 +74,10 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
+from engine.entry_primitives import (
+    decline_concentration_series,
+    time_underwater_series,
+)
 from engine.neuralweb.sector_map import SectorMapping, build_sector_map
 from engine.stock_fundamentals import _leverage_ratios, _load_statements
 
@@ -71,6 +87,19 @@ log = logging.getLogger(__name__)
 LABELS_VERSION = "labels_v1"
 IS_DISPLAY_ONLY = True
 REGION = "US"
+
+# ── Amendment 3 structural descriptors (family E display + family F shadow) ───
+# Bound from the leak-tested engine.entry_primitives series; display/shadow only,
+# CHIP-blocked until the true eq_band lands (RUL-28).  Terciles are assigned on
+# the CURRENT-day cross-section in assemble() using the research cut semantics
+# (scripts/research/_a3_common.assign_trailing_tercile): pct 33.33/66.67,
+# val<=q33 → low, val<=q67 → mid, else → high.
+_DECLINE_WINDOW = 63
+_DECLINE_MIN_DOWN_DAYS = 8
+_UNDERWATER_WINDOW = 252
+_XSEC_TERCILE_MIN_NAMES = 30    # min computable cross-section before terciles assigned
+_TERCILE_Q_LO = 33.33
+_TERCILE_Q_HI = 66.67
 
 # ── Path helpers ─────────────────────────────────────────────────────────────
 def _repo_root() -> Path:
@@ -415,6 +444,90 @@ def _dist_126d_high_pct(close: pd.Series) -> float | None:
     return round((last_close / roll_max - 1.0) * 100.0, 2)
 
 
+# ── Amendment-3 structural descriptors (bound, render-budget-safe) ────────────
+
+def _decline_herf(close: pd.Series | None) -> float | None:
+    """Latest trailing-63-bar loss-Herfindahl for one name (family E raw value).
+
+    Binds engine.entry_primitives.decline_concentration_series on the last
+    (window+1) closes.  Because that rolling apply is POSITIONAL, the trailing
+    63-return window at the last bar depends only on the last 64 closes, so
+    ``fn(close.tail(64)).iloc[-1]`` equals ``fn(close).iloc[-1]`` exactly — this
+    is a bind of the leak-tested primitive, not a reimplemented variant, and it
+    is O(1) windows instead of the full history (render-budget bind; proven by
+    tests/test_bottom_sensors_a3.py).  Returns None on short/NaN.
+    """
+    if close is None:
+        return None
+    tail = close.tail(_DECLINE_WINDOW + 1)
+    if len(tail) < _DECLINE_WINDOW + 1:
+        return None
+    try:
+        val = decline_concentration_series(
+            tail, window=_DECLINE_WINDOW, min_down_days=_DECLINE_MIN_DOWN_DAYS
+        ).iloc[-1]
+    except Exception:  # noqa: BLE001
+        return None
+    if val is None or (isinstance(val, float) and np.isnan(val)):
+        return None
+    return round(float(val), 6)
+
+
+def _underwater_bars(close: pd.Series | None) -> int | None:
+    """Latest bars-since-trailing-252-peak for one name (family F raw value).
+
+    Binds engine.entry_primitives.time_underwater_series on the last window
+    closes; positional rolling makes ``fn(close.tail(252)).iloc[-1]`` identical
+    to the full-series latest value.  Returns None on short/NaN.
+    """
+    if close is None:
+        return None
+    tail = close.tail(_UNDERWATER_WINDOW)
+    if len(tail) < _UNDERWATER_WINDOW:
+        return None
+    try:
+        val = time_underwater_series(tail, window=_UNDERWATER_WINDOW).iloc[-1]
+    except Exception:  # noqa: BLE001
+        return None
+    if val is None or (isinstance(val, float) and np.isnan(val)):
+        return None
+    return int(val)
+
+
+def _assign_terciles(
+    values: pd.Series,
+    labels: tuple[str, str, str],
+    *,
+    min_names: int = _XSEC_TERCILE_MIN_NAMES,
+) -> pd.Series:
+    """Current-day cross-sectional tercile labels for a per-name numeric Series.
+
+    ``values`` is symbol-indexed (NaN where uncomputable); ``labels`` =
+    (low, mid, high) for terciles (val<=q33, val<=q67, val>q67).  Mirrors the
+    research cut semantics (scripts/research/_a3_common.assign_trailing_tercile):
+    percentiles 33.33 / 66.67, ``val<=q33 → low``, ``val<=q67 → mid``, else high.
+
+    Returns a symbol-indexed object Series of labels; None where the value is NaN
+    or where the cross-section has fewer than ``min_names`` computable values
+    (terciles are not meaningful on a thin cross-section — degrade to None).
+    """
+    out = pd.Series([None] * len(values), index=values.index, dtype=object)
+    computable = values.dropna()
+    if len(computable) < min_names:
+        return out
+    q33 = float(np.percentile(computable.values, _TERCILE_Q_LO))
+    q67 = float(np.percentile(computable.values, _TERCILE_Q_HI))
+    low, mid, high = labels
+    for sym, v in computable.items():
+        if v <= q33:
+            out.at[sym] = low
+        elif v <= q67:
+            out.at[sym] = mid
+        else:
+            out.at[sym] = high
+    return out
+
+
 # ── Earnings freshness ─────────────────────────────────────────────────────────
 
 def _trading_days_to(today: datetime.date, target: datetime.date) -> int:
@@ -684,6 +797,12 @@ def _build_row(
     dist_126 = _dist_126d_high_pct(close)
     row["dist_21d_low_pct"] = dist_21
     row["dist_126d_high_pct"] = dist_126
+    # ── Amendment-3 raw structural descriptors (bound from the already-loaded
+    #    close — no new I/O).  The flush/mixed/grind and short/mid/long tercile
+    #    LABELS are assigned cross-sectionally in assemble() once every row's raw
+    #    value is known.  Display-only (E) / shadow-only (F); CHIP-blocked (RUL-28).
+    row["decline_herf"] = _decline_herf(close)
+    row["underwater_bars"] = _underwater_bars(close)
     if close is not None:
         row["source_artifacts"] += ";data/stocks/<TICKER>.parquet"
 
@@ -861,6 +980,24 @@ def assemble(
 
     df = pd.DataFrame(rows)
     df = df.set_index("symbol")
+
+    # ── Cross-sectional decline-geometry + underwater terciles (Amendment 3) ──
+    # decline_geometry (family E, DISPLAY-CANDIDATE): high trailing-63-bar loss-
+    #   Herfindahl = FLUSH (few large down-days = forced supply that empties);
+    #   low = GRIND (loss spread evenly = distribution that persists).  A decline-
+    #   SHAPE read, display-only, NOT an escalation.
+    # underwater_state (family F, ADVERSE-CONTEXT, shadow-only): LONG = longest under
+    #   the trailing-252 peak (historically higher stop-out; caution context).
+    # Both descriptors are display/shadow-only (is_display_only) and CHIP-blocked
+    # (RUL-28) until the true eq_band cache lands.
+    if "decline_herf" in df.columns:
+        df["decline_geometry"] = _assign_terciles(
+            df["decline_herf"], ("grind", "mixed", "flush")
+        )
+    if "underwater_bars" in df.columns:
+        df["underwater_state"] = _assign_terciles(
+            df["underwater_bars"].astype("float"), ("short", "mid", "long")
+        )
 
     # stamp as_of from signal_gate
     meta_as_of = sg_asof or today.isoformat()

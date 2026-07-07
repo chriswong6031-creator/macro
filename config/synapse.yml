@@ -3821,6 +3821,17 @@ artifacts:
       any future UI surface MUST carry a proxy label for this ratio.
       net_debt_to_ebitda requires D&A (DepreciationDepletionAndAmortization) which
       accrues via the collectors/edgar_facts.py weekly drip — mostly None until drip runs.
+      Amendment-3 structural descriptors (additive; labels_v1 decision table UNCHANGED):
+        decline_herf / decline_geometry (family E, DISPLAY-CANDIDATE) — latest trailing-63-bar
+          loss-Herfindahl bound from engine.entry_primitives.decline_concentration_series, plus its
+          current-day cross-sectional tercile label flush/mixed/grind. A decline-SHAPE read, NOT an
+          escalation. CHIP-blocked until the true eq_band cache lands (RUL-28).
+        underwater_bars / underwater_state (family F, ADVERSE-CONTEXT, shadow-only) — latest
+          bars-since-trailing-252-peak bound from engine.entry_primitives.time_underwater_series,
+          plus its tercile label short/mid/long. Caution context / de-escalation-eligible only, never
+          a buy signal; not surfaced on the QA page. Both descriptors accrue on the shadow forward-
+          ledger data/shadow/bottom_sensors_geometry_book.jsonl (engine/neuralweb/bottom_sensors_shadow;
+          not weight-bearing — mirrors the unregistered engine/shadow_book pattern).
 
   bottom-sensors-json:
     path: site/neuralwebdata/bottom_sensors.json
@@ -3844,6 +3855,11 @@ artifacts:
     notes: >
       QA/debug JSON companion to bottom-sensors-parquet.
       is_display_only=true — display and debug surface only.
+      Also carries the Amendment-3 structural descriptors (decline_herf/decline_geometry family E;
+      underwater_bars/underwater_state family F — see bottom-sensors-parquet notes). decline_geometry
+      is surfaced on site/qa_bottom_sensors.html as a decline-SHAPE read (display-only, not a buy
+      signal); underwater_state is shadow-only (no user surface). Both accrue on the shadow forward-
+      ledger and are CHIP-blocked (RUL-28); mastermind_context consumes the JSON read-only.
 
   # ===========================================================================
   # LONG-HOLD THESIS LAYER — W1 artifacts (horizon_role: hold_thesis)
