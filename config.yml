@@ -2460,6 +2460,7 @@ live_flow:
   name_floor: 250000        # $ gross premium notability floor for single names
   retention_hours: 24       # trailing event window in feed_current.json
   top_names: 100            # single-name roots appended after ETF anchors
+  near_dte_cap_days: 90     # current-day fallback: cap per-expiration pulls to <=90 DTE (near-dated flow, where notable premium lives)
   # etf_anchors: []         # defaults to 22 anchors (see live_flow_poller._resolve_universe)
 
 r2_data_plane:
