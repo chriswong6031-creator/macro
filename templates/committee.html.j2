@@ -1730,9 +1730,20 @@ details.memo-raw pre { font-size:11px; overflow-x:auto; color:var(--muted); whit
       });
     }
 
+    // True when the synapse map's wrapper is the active fullscreen element.
+    function isGraphFullscreen() {
+      var wrapEl = document.getElementById('graph_wrap');
+      var fsEl = document.fullscreenElement || document.webkitFullscreenElement;
+      return !!(fsEl && wrapEl && (fsEl === wrapEl || fsEl.contains(wrapEl)));
+    }
+
     // Setup canvas (DPR-aware)
     function resizeCanvas() {
       var wrapEl = document.getElementById('graph_wrap');
+      // In fullscreen the wrapper fills the monitor, but the canvas keeps its
+      // fixed 640px CSS height unless we grow it to 100vh — without this,
+      // fullscreen shows a small strip floating in a black field.
+      canvas.classList.toggle('fullscreen-canvas', isGraphFullscreen());
       // offsetWidth can be 0 pre-layout or while a parent is display:none;
       // ResizeObserver refits once real dimensions arrive.
       var cw = (wrapEl && wrapEl.offsetWidth) || canvas.offsetWidth || 800;
@@ -1746,7 +1757,11 @@ details.memo-raw pre { font-size:11px; overflow-x:auto; color:var(--muted); whit
       zoomToFit(cw, ch);
     }
 
-    function zoomToFit(cw, ch) {
+    function zoomToFit(cw, ch, maxScale) {
+      // Fullscreen fills a whole monitor, so allow a larger fit scale: on a big
+      // display the graph zooms IN to fill the screen (past the wiring-label
+      // min-zoom of 1.4, so titles render) instead of floating small in the middle.
+      if (maxScale == null) maxScale = isGraphFullscreen() ? 4.5 : 2;
       // Fit only the ACTIVE layer (default web, or default+wiring when toggled on);
       // stale wiring positions must not blow up the bounding box when wiring is off.
       var minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
@@ -1762,7 +1777,7 @@ details.memo-raw pre { font-size:11px; overflow-x:auto; color:var(--muted); whit
       var pad = 44; // FIX 5: 44px margin to fill both width and height
       var scaleX = (cw - 2*pad) / (maxX - minX || 1);
       var scaleY = (ch - 2*pad) / (maxY - minY || 1);
-      var s = Math.min(scaleX, scaleY, 2);
+      var s = Math.min(scaleX, scaleY, maxScale);
       var midX = (minX+maxX)/2, midY = (minY+maxY)/2;
       _graphView.scale = s;
       _graphView.tx = cw/2 - midX*s;
@@ -1786,9 +1801,14 @@ details.memo-raw pre { font-size:11px; overflow-x:auto; color:var(--muted); whit
       if (wrap && wrap.requestFullscreen) wrap.requestFullscreen();
       else if (wrap && wrap.webkitRequestFullscreen) wrap.webkitRequestFullscreen();
     });
-    document.addEventListener('fullscreenchange', function(){
+    function onFullscreenChange(){
+      // Resize now (snappy) and again after the browser settles the transition,
+      // so the canvas grows/shrinks to match the fullscreen viewport and re-fits.
+      resizeCanvas();
       setTimeout(resizeCanvas, 100);
-    });
+    }
+    document.addEventListener('fullscreenchange', onFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', onFullscreenChange);
 
     // Controls
     document.getElementById('gc_plus').addEventListener('click', function(){
