@@ -2668,7 +2668,9 @@
       "status": "registered",
       "state": "W3 ship: harness + trial-ledger registration + experiments-registry entry LANDED. Full --run deferred to host-side post-merge (needs build_stock_personality.py PIT labels to run). Registration file written to data/research/personality_compat_registration.json on first --register run.",
       "next_step": "Post-merge host lane: (1) run scripts/build_stock_personality.py --panel deep to generate data/research/personality_pit_labels.parquet; (2) run python scripts/personality_compat_phase0.py --register to lock corpus sizes + trial budget; (3) run python scripts/personality_compat_phase0.py --run to grade + test; (4) review STOCK_PERSONALITY_SETUP_COMPAT_PHASE0.md; (5) schedule come-back 2026-12-15 for promotion review.",
-      "phase_hint": "W3 pre-registration",
+      "phase_hint": "W3 pre-registration"
+    },
+    {
       "id": "stock-personality-dna-class-presence",
       "name": "Stock Personality — dna_class presence verification",
       "kind": "infrastructure_check",
