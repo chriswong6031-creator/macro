@@ -1,34 +1,36 @@
 {
   "schema": "stock_desk.v1",
   "as_of": "2026-07-06",
-  "generated_at": "2026-07-07T10:10:26.562043+00:00",
+  "generated_at": "2026-07-07T15:27:51.515775+00:00",
   "degraded": null,
   "notes": [
     {
-      "id": "2026-07-06-AEE-1",
-      "ticker": "AEE",
+      "id": "2026-07-06-AEP-1",
+      "ticker": "AEP",
       "name": null,
-      "lean": "neutral",
+      "lean": "constructive",
       "conviction": "low",
-      "horizon_d": 20,
-      "thesis": "No clear edge: selection composite near zero and quality axis flags accounting concerns, while the narrative basket is fading\u2014siding with the engine's neutral verdict.",
+      "horizon_d": 21,
+      "thesis": "Residual momentum (alpha z=0.88) and insider/revision context support a base-building phase, but the narrative basket caution (Utilities fading) caps conviction.",
       "evidence": [
-        "Verdict: Neutral \u2014 no clear edge",
-        "Selection z: -0.04 (49th pctl)",
-        "Quality z: -1.04 with accounting watch",
-        "Caution: Utilities (Equal-Weight) basket fading",
-        "Entry axis modest (z 0.16) but not enough to tilt"
+        "Verdict: Constructive \u2014 building a base",
+        "Selection alpha z=0.88 (momentum)",
+        "Caution: Utilities (Equal-Weight) basket fading \u2014 trim/size down"
       ],
-      "dissent": "Insider buying and a fresh SUE (z 0.66) could spur a sentiment-driven bounce if the macro backdrop stabilizes.",
+      "dissent": "Rotation away from defensive utilities could overwhelm stock\u2011specific momentum and drag AEP lower.",
       "falsifier": {
-        "text": "AEE\u2019s 20-day relative return vs the S&P 500 turns positive and the stock ends a week above its 50-day moving average.",
+        "text": "If AEP closes below $132 (the base low) on above\u2011average volume for two consecutive days.",
         "check": {
-          "kind": "soft",
-          "reason": "neutral lean \u2014 not scored"
+          "kind": "rel_return",
+          "subject_ticker": "AEP",
+          "vs": "SPY",
+          "op": "<",
+          "threshold": -0.05,
+          "horizon_d": 21
         }
       },
-      "check_by": "2026-08-03",
-      "engine_verdict": "Neutral \u2014 no clear edge"
+      "check_by": "2026-08-04",
+      "engine_verdict": "Constructive \u2014 building a base"
     },
     {
       "id": "2026-07-06-AM-2",
@@ -36,23 +38,22 @@
       "name": null,
       "lean": "neutral",
       "conviction": "low",
-      "horizon_d": 20,
-      "thesis": "All selection legs are negative or neutral, and the technical board shows a 'Turn Signaled' with caution urgency\u2014no credible edge to deviate from the neutral verdict.",
+      "horizon_d": 10,
+      "thesis": "No actionable edge: selection z-scores are uniformly negative (SUE -0.32, revisions -0.17, momentum -0.47) and the engine sees no clear tilt.",
       "evidence": [
         "Verdict: Neutral \u2014 no clear edge",
-        "Selection z: -0.28 (SUE -0.32, momentum -0.47)",
-        "Board state: Turn Signaled, urgency caution",
-        "Tailwind z: -0.21 (no tailwind)"
+        "Selection z=-0.28 (SUE, revisions, alpha all negative)",
+        "Entry only mild (z=0.05)"
       ],
-      "dissent": "Insider buying (event-edge context) could mark a near-term bottom if accumulation is genuine.",
+      "dissent": "The TURN SIGNALED state and a -5.5% pullback could attract mean-reversion flows, creating a short-term bounce.",
       "falsifier": {
-        "text": "AM closes above its 50-day simple moving average on above-average volume within the next 10 trading days.",
+        "text": "If AM closes above $23.50 for two consecutive days on above\u2011average volume.",
         "check": {
           "kind": "soft",
           "reason": "neutral lean \u2014 not scored"
         }
       },
-      "check_by": "2026-08-03",
+      "check_by": "2026-07-20",
       "engine_verdict": "Neutral \u2014 no clear edge"
     },
     {
@@ -61,52 +62,48 @@
       "name": null,
       "lean": "neutral",
       "conviction": "low",
-      "horizon_d": 20,
-      "thesis": "Despite high quality and a fresh SUE spike, momentum is deeply negative (-0.86) and the stock is 32% off highs with a 'caution' urgency\u2014mixed signals warrant the neutral verdict.",
+      "horizon_d": 10,
+      "thesis": "Strong SUE (z=1.32) and high quality (z=2.41) are offset by deeply negative momentum (alpha z=-0.86); the net selection axis is near zero, so no reliable edge.",
       "evidence": [
         "Verdict: Neutral \u2014 no clear edge",
-        "Selection: SUE z 1.32, but alpha z -0.86",
-        "Quality z: 2.41 (82nd pctl)",
-        "Board: -32.2% off high, urgency caution"
+        "Selection z=0.06 (SUE strong but alpha negative)",
+        "Quality z=2.41, clean accounting"
       ],
-      "dissent": "The extreme quality score and strong SUE could drive a sharp mean-reversion rally if momentum reverses.",
+      "dissent": "The -32% decline from highs and the high quality score could spark a sharp reversal rally on any positive catalyst.",
       "falsifier": {
-        "text": "ARLO forms a higher low above $12 and its 14-day RSI crosses above 50, signaling a momentum shift.",
+        "text": "If ARLO closes above $15.50 for a full week and the momentum alpha z\u2011score turns positive in the next screen.",
         "check": {
           "kind": "soft",
           "reason": "neutral lean \u2014 not scored"
         }
       },
-      "check_by": "2026-08-03",
+      "check_by": "2026-07-20",
       "engine_verdict": "Neutral \u2014 no clear edge"
     },
     {
       "id": "2026-07-06-BA-4",
       "ticker": "BA",
       "name": null,
-      "lean": "cautious",
+      "lean": "neutral",
       "conviction": "low",
-      "horizon_d": 20,
-      "thesis": "Accounting 'warn,' negative selection legs (SUE -0.30, momentum -0.52), and a 'Turn Signaled' board with caution urgency argue for a defensive posture despite decent entry timing.",
+      "horizon_d": 10,
+      "thesis": "Attractive entry (z=0.91) and tailwind (z=0.31) are neutralised by deteriorating fundamentals \u2014 negative SUE, revisions, and an accounting warn.",
       "evidence": [
-        "Verdict: Neutral \u2014 no clear edge, but risk flags tilt cautious",
-        "Selection z: -0.35 (SUE -0.30, revisions -0.28, momentum -0.52)",
-        "Quality flag: accounting warn",
-        "Board: Turn Signaled, urgency caution"
+        "Verdict: Neutral \u2014 no clear edge",
+        "Entry z=0.91 (fresh buy signal)",
+        "Tailwind z=0.31",
+        "Selection z=-0.35 (SUE, rev, alpha all negative)",
+        "Accounting warn flag"
       ],
-      "dissent": "Entry z 0.67 (60th pctl) and a positive tailwind may cushion a turn if the macro regime improves.",
+      "dissent": "The FRESH BUY board state and constructive tailwind could, if fundamentals stabilise, lead to a short\u2011term outperformance.",
       "falsifier": {
-        "text": "BA sustains a close above its 50-day simple moving average for five consecutive sessions and the accounting flag remains static.",
+        "text": "If BA closes above $250 for two consecutive days and the accounting warning is removed in the next EDGAR screen.",
         "check": {
-          "kind": "rel_return",
-          "subject_ticker": "BA",
-          "vs": "SPY",
-          "op": ">",
-          "threshold": 0.05,
-          "horizon_d": 20
+          "kind": "soft",
+          "reason": "neutral lean \u2014 not scored"
         }
       },
-      "check_by": "2026-08-03",
+      "check_by": "2026-07-20",
       "engine_verdict": "Neutral \u2014 no clear edge"
     },
     {
@@ -115,27 +112,27 @@
       "name": null,
       "lean": "constructive",
       "conviction": "low",
-      "horizon_d": 20,
-      "thesis": "The engine labels it 'Constructive \u2014 building a base,' supported by positive revisions (z 0.62) and a tailwind (z 0.40); even with a sub-par SUE, the base-building structure warrants a modest relative lean.",
+      "horizon_d": 21,
+      "thesis": "Revisions momentum (z=0.62) and a positive tailwind (z=0.4) support the base\u2011building verdict, though the low band and negative SUE keep conviction muted.",
       "evidence": [
         "Verdict: Constructive \u2014 building a base",
-        "Selection: revisions z 0.62, alpha z 0.21",
-        "Tailwind z: 0.40 (56th pctl)",
-        "No cautions, accounting clean"
+        "Selection revision z=0.62, alpha z=0.21",
+        "Tailwind z=0.40",
+        "Band: low"
       ],
-      "dissent": "If the base pattern fails and price breaks below the recent support zone, the constructive setup is invalidated.",
+      "dissent": "Negative SUE and a weak entry setup could stall the base and cause CLH to lag the S&P 500.",
       "falsifier": {
-        "text": "CLH closes below the prior swing low (roughly $285) on a weekly chart, indicating the base has failed.",
+        "text": "If CLH closes below $280 for two consecutive days on volume.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "CLH",
           "vs": "SPY",
           "op": "<",
           "threshold": -0.05,
-          "horizon_d": 20
+          "horizon_d": 21
         }
       },
-      "check_by": "2026-08-03",
+      "check_by": "2026-08-04",
       "engine_verdict": "Constructive \u2014 building a base"
     },
     {
@@ -144,27 +141,26 @@
       "name": null,
       "lean": "cautious",
       "conviction": "low",
-      "horizon_d": 20,
-      "thesis": "The deterministic verdict is 'Lagging \u2014 relative weakness,' confirmed by extremely negative revisions (z -1.35) and momentum (z -1.78), overpowering any entry or tailwind support.",
+      "horizon_d": 21,
+      "thesis": "The verdict flags relative weakness, driven by severely negative selection (revisions z=-1.35, momentum z=-1.78); a vol\u2011squeeze entry signal is unlikely to overcome the drag.",
       "evidence": [
         "Verdict: Lagging \u2014 relative weakness",
-        "Selection: revisions -1.35, momentum -1.78",
-        "Off high -36.9%, board Turn Signaled with caution",
-        "Entry positive but not enough to offset deterioration"
+        "Selection z=-1.38 (revisions -1.35, alpha -1.78)",
+        "Vol\u2011squeeze entry present"
       ],
-      "dissent": "A sudden positive earnings revision or a high-volume reversal off selling climax could snap the downtrend.",
+      "dissent": "The extreme -37% drawdown and vol\u2011squeeze could ignite a vigorous counter\u2011trend rally, defying the negative momentum.",
       "falsifier": {
-        "text": "The consensus earnings revision z-score turns positive and CNMD reclaims its 50-day moving average on a weekly close.",
+        "text": "If CNMD closes above $40 for a full week and the alpha z\u2011score turns positive in the next screen.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "CNMD",
           "vs": "SPY",
           "op": ">",
           "threshold": 0.05,
-          "horizon_d": 20
+          "horizon_d": 21
         }
       },
-      "check_by": "2026-08-03",
+      "check_by": "2026-08-04",
       "engine_verdict": "Lagging \u2014 relative weakness"
     }
   ],
