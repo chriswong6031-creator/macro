@@ -4491,7 +4491,7 @@ artifacts:
     freshness_sla_hours: 30
     schema: event_windows.v1
     tier: display
-    horizon_role: display_context
+    horizon_role: context
     weights: none
     scored_path_surfaces: []
     consumers:
@@ -4505,7 +4505,7 @@ artifacts:
         debt: EDGAR balance-sheet snapshot (current_debt, long_term_debt, cash, net_debt,
           period_end, filed) from data/edgar/statements_quarterly.parquet (PR #1782 columns).
       FDA/PDUFA leg: SKIPPED — no credible free forward source.
-      DISPLAY-ONLY — horizon_role=display_context. MUST NOT feed board ordering, alert
+      DISPLAY-ONLY — horizon_role=context. MUST NOT feed board ordering, alert
       triage, top-setups gates, or push floor. _display_only=True sentinel on all blocks.
 
   # --- Long-Hold LT-2c: expectation_state per-stock display block ---

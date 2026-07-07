@@ -1718,11 +1718,11 @@
       if (v == null) return null;
       var abs = Math.abs(v), neg = v < 0;
       var s;
-      if (abs >= 1e12) s = (neg ? '-' : '') + (abs / 1e12).toFixed(2) + 'T';
-      else if (abs >= 1e9) s = (neg ? '-' : '') + (abs / 1e9).toFixed(2) + 'B';
-      else if (abs >= 1e6) s = (neg ? '-' : '') + (abs / 1e6).toFixed(1) + 'M';
+      if (abs >= 1e12) s = (neg ? '-$' : '$') + (abs / 1e12).toFixed(2) + 'T';
+      else if (abs >= 1e9) s = (neg ? '-$' : '$') + (abs / 1e9).toFixed(2) + 'B';
+      else if (abs >= 1e6) s = (neg ? '-$' : '$') + (abs / 1e6).toFixed(1) + 'M';
       else s = (neg ? '-$' : '$') + abs.toLocaleString();
-      return (abs >= 1e6 ? (neg ? '-$' : '$') : '') + s;
+      return s;
     }
     var rows = [];
 
