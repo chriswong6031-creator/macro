@@ -329,3 +329,42 @@ split, AHE + hours as v2 targets, birth-death prior table from published
 BLS CES tables, JOLTS leg, revisions-risk field). **PR-I** market-implied
 benchmark + surprise_distribution + sensitivity chip. **PR-K** UI v2
 (component breakdown, known/residual bar, market-implied row, sensitivity).
+
+### 9.1 Second-wave reconciliation (2026-07-07, Fable main loop)
+
+The same external doc was independently adjudicated twice on 2026-07-07 (this
+file §9 via #1877, and a parallel Fable lane whose branch predated #1877 —
+closed PR #1879). The verdicts CONVERGED on every major call: no parallel
+system, benchmark honesty, committee/ensemble deferral to ledger maturity,
+component attribution + market-implied benchmark as adopted deltas. This
+section reconciles the second lane's remainder into canonical numbering.
+
+- **MRI-R19 (attribution law).** Component contributions (PR-G) are the
+  linear model's own exact decomposition (coef × z-value, in pp), published
+  as-is with the residual share printed. They may never be manually adjusted,
+  re-weighted for narrative, or hidden when unflattering.
+- **MRI-R20 (quirk law).** Release-quirk flags are deterministic calendar
+  facts with citations (CPI annual weight-update/seasonal-revision print; CPI
+  health-insurance reset window; NFP CES benchmark + population-control
+  print; claims holiday weeks; 4-vs-5-week survey gaps). They annotate
+  uncertainty on the card; they never shift the point, intervals, or skew.
+  Strike/weather flags require a free feed (come-back C-7). Build wave:
+  PR-G/PR-K.
+- **§6 application — claims (evidence attached).** The second lane ran the
+  weekly-claims walk-forward offline from committed ICSA vintages
+  (research/release_forecast/CLAIMS_BACKTEST.md). Its ridge spec (attempt 1)
+  FAILED naive_prior (MAE 40.8k vs 28.7k full window; 24.0 vs 14.8 2021+).
+  The #1877 frozen IC4WSA spec (attempt 2) was evaluated under the same
+  protocol: MAE 43.9k vs naive 27.9k (full window); 17.7k vs 14.8k (2021+) —
+  FAILED on both arms. Per §6, claims mode = benchmark_only, enforced in the
+  producer. Benchmarks (naive_prior, trailing_4w, ar_model) are graded on the
+  forward ledger either way — 52 prints/yr of ledger velocity is the point,
+  not the model point. There is no attempt 3 without a program-level adjudication.
+- **Market-implied sources.** MRI-R16 stands; #1876 adds a Kalshi
+  release-ladder collector (KXCPI / KXPAYROLLS / KXJOBLESSCLAIMS, first-seen
+  snapshots, implied_median only — implied_mean REJECTED as
+  tail-assumption-dishonest on an open-ended ladder). PR-I joins whichever
+  source has a matching market; context only, never fused (MRI-R16).
+- **Naming.** The second lane's "Package F/F1..F4" labels are retired in
+  favor of this file's PR-F..PR-K wave names; its Kalshi collector is PR-I
+  groundwork.

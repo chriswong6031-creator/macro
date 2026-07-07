@@ -1153,7 +1153,7 @@ def run_walk_forward_full(
       feature_names: list[str]
       metadata: dict
 
-    release: 'cpi_headline' | 'cpi_core' | 'nfp'
+    release: 'cpi_headline' | 'cpi_core' | 'nfp' | 'claims'
     """
     root = Path(root)
     vintages = load_vintages(root)
@@ -1166,8 +1166,115 @@ def run_walk_forward_full(
         return _wf_ahe_full(vintages)
     elif release == "awh":
         return _wf_awh_full(vintages)
+    elif release == "claims":
+        return _wf_claims_ic4wsa_full(vintages, root)
     else:
         raise ValueError(f"Unknown release: {release!r}")
+
+
+def _wf_claims_ic4wsa_full(vintages: pd.DataFrame, root: Path) -> dict:
+    """Full walk-forward for claims using the canonical IC4WSA spec.
+
+    Spec (attempt 2 per CLAIMS_BACKTEST.md): for each ICSA initial print (the actual),
+    the point prediction is the most recent IC4WSA value knowable one day before that
+    ICSA print was published (PIT law). This is the frozen trivial spec shipped in
+    engine/release_components_nfp.project_claims.
+
+    Result rows include:
+      predicted: IC4WSA value (thousands) used as point — raw IC4WSA / 1 (already k)
+      actual:    ICSA initial print (thousands) — raw ICSA / 1000
+      baseline_naive:     last ICSA initial print knowable before that week
+      baseline_trailing4w: mean of last 4 ICSA initial prints
+      baseline_ar3:        AR3 Ridge on ICSA levels in thousands
+    """
+    # All ICSA initial prints (level in thousands of persons)
+    all_icsa = knowable_series(vintages, "ICSA", date(2099, 1, 1))
+    all_icsa = all_icsa.sort_values(["period", "realtime_start"]).reset_index(drop=True)
+    # Keep only first (initial) print per period to preserve PIT structure.
+    # The "initial print" is the first entry for each period in chronological
+    # realtime_start order — that is what knowable_series returns.
+    all_icsa_initial = all_icsa.drop_duplicates(subset=["period"], keep="first")
+    all_icsa_initial = all_icsa_initial.sort_values("realtime_start").reset_index(drop=True)
+
+    # All IC4WSA prints (4-week moving average, raw level in thousands)
+    all_ic4wsa = knowable_series(vintages, "IC4WSA", date(2099, 1, 1))
+    all_ic4wsa = all_ic4wsa.sort_values(["period", "realtime_start"]).reset_index(drop=True)
+
+    results = []
+    for step_idx, icsa_row in all_icsa_initial.iterrows():
+        icsa_rt = icsa_row["realtime_start"]
+        icsa_period = icsa_row["period"]
+        icsa_actual_k = float(icsa_row["value"]) / 1000.0
+
+        # Decision day = one day before the ICSA print was published
+        step_asof = (pd.Timestamp(icsa_rt) - pd.Timedelta(days=1)).date()
+
+        # IC4WSA knowable at step_asof: same or prior period, published before icsa_rt
+        ic4_avail = all_ic4wsa[
+            (all_ic4wsa["period"] <= icsa_period) &
+            (all_ic4wsa["realtime_start"] < icsa_rt)
+        ]
+        if ic4_avail.empty:
+            continue  # no IC4WSA prediction available yet — skip this ICSA print
+        ic4_pred_k = float(ic4_avail.iloc[-1]["value"]) / 1000.0  # convert to thousands
+
+        # Naive: last ICSA knowable before this print (strictly prior realtime_start)
+        icsa_prior = all_icsa_initial[all_icsa_initial["realtime_start"] < icsa_rt]
+        naive_k: float | None = (
+            float(icsa_prior["value"].iloc[-1]) / 1000.0 if not icsa_prior.empty else None
+        )
+
+        # Trailing 4w: mean of last 4 ICSA initial prints strictly before this print
+        trailing_4w_k: float | None = None
+        if not icsa_prior.empty:
+            last4 = icsa_prior["value"].values[-4:]
+            trailing_4w_k = float(np.mean(last4)) / 1000.0
+
+        # AR3 Ridge on ICSA levels: fit on all prior ICSA initial prints (thousands)
+        ar3_k: float | None = None
+        if not icsa_prior.empty and len(icsa_prior) >= 4:
+            y_ar = icsa_prior["value"].values / 1000.0
+            X_ar3 = np.full((len(y_ar), 3), np.nan)
+            for i in range(3, len(y_ar)):
+                for lag in range(1, 4):
+                    X_ar3[i, lag - 1] = y_ar[i - lag]
+            row_ok = ~np.any(np.isnan(X_ar3), axis=1)
+            if row_ok.sum() >= 4:
+                X_clean_ar = X_ar3[row_ok]
+                y_clean_ar = y_ar[row_ok]
+                x_pred_ar = np.array([y_ar[-i] for i in range(1, 4)], dtype=float)
+                try:
+                    lam = 1.0
+                    A = X_clean_ar.T @ X_clean_ar + lam * np.eye(3)
+                    b_vec = X_clean_ar.T @ y_clean_ar
+                    coef = np.linalg.solve(A, b_vec)
+                    pred_raw = float(x_pred_ar @ coef)
+                    ar3_k = pred_raw if np.isfinite(pred_raw) else None
+                except Exception:
+                    ar3_k = None
+
+        results.append({
+            "result_pos": len(results),
+            "idx": int(step_idx),
+            "period": icsa_period,
+            "release_date": icsa_rt,
+            "asof": step_asof,
+            "predicted": ic4_pred_k,
+            "actual": icsa_actual_k,
+            "baseline_naive": naive_k,
+            "baseline_trailing4w": trailing_4w_k,
+            "baseline_ar3": ar3_k,
+        })
+
+    return {
+        "results": results,
+        "feature_names": ["ic4wsa_as_point"],
+        "metadata": {
+            "release": "claims",
+            "spec": "ic4wsa_point",
+            "n_records": len(all_icsa_initial),
+        },
+    }
 
 
 def _wf_cpi_full(release: str, vintages: pd.DataFrame, root: Path) -> dict:
