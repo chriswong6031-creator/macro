@@ -1544,10 +1544,16 @@ def run() -> None:
     else:
         log.warning("qledger reliability unavailable — site/qledger/track_record.json missing")
 
-    # 7. Provenance
+    # 7. Grand total of PIT month-end stamps across all three engines (used in prose)
+    n_stamps_grand_total = sum(
+        eng.get("n_stamps_total", 0) for eng in engines if not eng.get("missing")
+    )
+    log.info("Grand total PIT stamps across all engines: %d", n_stamps_grand_total)
+
+    # 8. Provenance
     provenance = build_provenance(engines)
 
-    # 8. Assemble payload
+    # 9. Assemble payload
     payload = {
         "schema": "measurement.v2",
         "generated_at": datetime.utcnow().isoformat() + "Z",
@@ -1588,12 +1594,12 @@ def run() -> None:
         },
     }
 
-    # 9. Emit JS
+    # 10. Emit JS
     js_text = emit_js(payload)
     OUT_JS.write_text(js_text, encoding="utf-8")
     log.info("Wrote %s (%d bytes)", OUT_JS.relative_to(ROOT), len(js_text))
 
-    # 10. Render HTML via Jinja2
+    # 11. Render HTML via Jinja2
     env = Environment(loader=FileSystemLoader(str(TEMPLATES)), autoescape=False)
     try:                                       # _site_nav and _navlinks reference t()/td()/tr() i18n globals
         from engine import i18n
@@ -1612,6 +1618,7 @@ def run() -> None:
         provenance=provenance,
         build_date=date.today().isoformat(),
         generated_at=payload["generated_at"],
+        n_stamps_grand_total=n_stamps_grand_total,
         # Hub v2 additions
         truth_ledger=truth_ledger,
         accrual_clocks=accrual_clocks,
