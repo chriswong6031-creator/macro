@@ -701,13 +701,10 @@ def _disguise_regression_impl(
         if w.sum() == 0:
             continue
 
-        # Weighted OLS: (X'WX)^-1 X'Wy
-        W = np.diag(w)
-        bX = X_arr
-        by = y_arr
+        # Weighted OLS: (X'WX)^-1 X'Wy  (W diagonal via broadcasting — no diag matrix)
         try:
-            XtWX = bX.T @ (w[:, None] * bX)
-            XtWy = bX.T @ (w * by)
+            XtWX = X_arr.T @ (w[:, None] * X_arr)
+            XtWy = X_arr.T @ (w * y_arr)
             bbeta = np.linalg.lstsq(XtWX, XtWy, rcond=None)[0]
             boot_coefs.append(float(bbeta[label_idx]))
         except Exception:
