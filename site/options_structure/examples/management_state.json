@@ -1,0 +1,31 @@
+{
+  "schema": "oracle.management_state/v1",
+  "id": "nvda-bull-20260707-001",
+  "asof": "2026-07-07T20:05:00-04:00",
+  "phase": "triggered_pre_t1",
+  "management_confidence": 72.2,
+  "raw_confidence": 73.1,
+  "delta_vs_base": 6.2,
+  "recommended_action": "hold",
+  "components": {
+    "validity": 81,
+    "progress": 40,
+    "pace": 66,
+    "retention": 50,
+    "overlay": 55
+  },
+  "geometry": {
+    "dist_to_stop_r": 1.6,
+    "dist_to_t1_r": 0.8,
+    "horizon_pct_used": 41
+  },
+  "change_reason": "Trigger Confirmed",
+  "confidence_ceiling": 92,
+  "authority": "trade-management-only-NOT-pick-rank",
+  "authority_tier": "display",
+  "reliability": {
+    "management_confidence": "display — no forward ledger has passed yet",
+    "recommended_action": "display — narrate, not authoritative order",
+    "ceiling": "hard cap at 92 — uncertainty is honest"
+  }
+}

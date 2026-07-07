@@ -1,0 +1,28 @@
+{
+  "schema": "oracle.trade_plan/v1",
+  "id": "nvda-bull-20260707-001",
+  "asof": "2026-07-07T20:05:00-04:00",
+  "asset": "NVDA",
+  "direction": "BULL",
+  "thesis": "AI capex spending cycle driving sustained revenue outperformance through Q4 2026. Neural Web confluence: momentum + earnings revision + GEX tailwind.",
+  "source_engines": ["neural_web"],
+  "trigger": 910.0,
+  "entry": 905.0,
+  "invalidation": 870.0,
+  "targets": [950.0, 980.0, 1050.0],
+  "horizon_days": 90,
+  "min_hold_days": 14,
+  "tranche": 1,
+  "option_contract": {
+    "type": "CALL",
+    "strike": 910.0,
+    "expiry": "2026-09-19",
+    "entry_premium": 5.1
+  },
+  "management_ref": "oracle/state/nvda-bull-20260707-001.json",
+  "authority_tier": "display",
+  "reliability": {
+    "plan": "display — NW-originated; Oracle manages; LLM narrates only",
+    "option_premium": "display — EOD/delayed, not NBBO-live"
+  }
+}
