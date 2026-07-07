@@ -946,9 +946,11 @@ jobs:
           done
           exit 0
       - name: watchlist buy-zone sentinel (B6 — fail-soft; skips when creds absent)
-        # B6: reads operator Supabase watchlist, diffs vs yesterday's per-ticker state,
-        # emits buy-zone-enter alerts to data/alerts/watchlist_alerts.jsonl + Discord.
-        # Fail-soft: missing SUPABASE_SERVICE_KEY/SUPABASE_OPERATOR_USER_ID -> exit 0.
+        # B6: reads operator Supabase watchlist (two-table schema: watchlists + watchlist_symbols),
+        # diffs vs yesterday's per-ticker state, emits buy-zone-enter alerts to
+        # data/alerts/watchlist_alerts.jsonl + Discord.
+        # Fail-soft: missing SUPABASE_SERVICE_KEY or SUPABASE_OPERATOR_USER_ID -> exit 0.
+        # SUPABASE_OPERATOR_USER_ID is REQUIRED (multiple accounts exist; absent -> skip silently).
         # Same-day idempotent: second run carries forward existing state files.
         # OPS: add SUPABASE_SERVICE_KEY + SUPABASE_OPERATOR_USER_ID repo secrets to enable.
         # Optional: add DISCORD_WEBHOOK_WATCHLIST for a dedicated channel;
