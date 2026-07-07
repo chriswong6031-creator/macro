@@ -560,7 +560,7 @@ class ProphetTradePlan:
     horizon_days: int | None = None
     min_hold_days: int | None = None
     tranche: int = 1                    # 1 or 2
-    option_contract: dict | None = None  # type, strike, expiry, entry_premium
+    option_contract: dict | None = None  # right (C/P), strike, expiry, entry_premium
     management_ref: str = ""            # "prophet/state/<id>.json"
     authority_tier: str = AUTHORITY_DISPLAY
     reliability: dict = field(default_factory=lambda: {

@@ -6623,10 +6623,10 @@ artifacts:
   prophet-trade-plan:
     path: prophet/trade_plan/<ID>.json
     format: json
-    producer: engine/neuralweb/world_state.py
+    producer: scripts/build_prophet.py
     known_extra_writers: []
     owner_program: momoedge
-    cadence: on-demand
+    cadence: daily-engine
     storage: git
     asof_field: asof
     freshness_sla_hours: 9999
@@ -6637,20 +6637,24 @@ artifacts:
     scored_path_surfaces: []
     consumers:
       - engine/options_structure.py
+      - engine/prophet_management.py
     external_consumers:
       - terminal:oracle-tab
     notes: >
-      Oracle base trade plan envelope (Package A schema; Package 6 builder).
-      Neural Web ORIGINATES candidates; Oracle MANAGES; LLMs NARRATE.
+      Prophet base trade plan envelope (Package A schema; W1 builder scripts/build_prophet.py).
+      us_standouts buy-lane is the origination source; Neural Web ORIGINATES candidates
+      via the standouts pipeline; Prophet MANAGES; LLMs NARRATE (never originate).
       source_engines must be non-empty (CI-validated by validate_trade_plan()).
       Static plan carries trigger/entry/invalidation/targets/horizon/tranche/option_contract;
       live management state lives in prophet.management_state/v1. authority_tier=display.
+      Duplicate-suppression by stable ID <TICKER>-<DIRECTION>-<signal_date>.
+      NOT wired into daily.yml in this PR; scheduling follows operator review.
 
   # --- prophet.management_state: Prophet live management confidence state ---
   prophet-management-state:
     path: prophet/state/<ID>.json
     format: json
-    producer: engine/options_structure.py
+    producer: scripts/build_prophet.py
     known_extra_writers: []
     owner_program: momoedge
     cadence: daily-engine
@@ -6667,12 +6671,63 @@ artifacts:
     external_consumers:
       - terminal:oracle-tab
     notes: >
-      Oracle live management confidence state (Package A schema; Package 6 builder).
+      Prophet live management confidence state (Package A schema; W1 builder scripts/build_prophet.py).
+      Computed by engine/prophet_management.py (compute_management_state) inside build_prophet.py.
       Trade-management score ONLY — NOT a pick-rank score (NW originates picks).
       7-phase lifecycle: pre_trigger→triggered_pre_t1→at_t1→between_t1_t2→at_t2→
       overtime→invalidated. confidence_ceiling=92 (uncertainty is honest; certainty forbidden).
       Components: validity/progress/pace/retention/overlay. authority_tier=display until
       forward ledger gate passes. authority field hardcoded to "trade-management-only-NOT-pick-rank".
+
+  # --- prophet-index: Prophet active plans index (all plans + states inline) ---
+  prophet-index:
+    path: site/prophet/index.json
+    format: json
+    producer: scripts/build_prophet.py
+    known_extra_writers: []
+    owner_program: momoedge
+    cadence: daily-engine
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 30
+    schema: prophet.index/v1
+    tier: display
+    horizon_role: tactical_entry
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers:
+      - terminal:oracle-tab
+    notes: >
+      Prophet active plans index — all active plans + management state summaries inline.
+      Also mirrored to R2 key prophet/index.json when --publish flag is passed.
+      authority_tier=display. NOT wired into daily.yml in this PR.
+
+  # --- prophet-ledger: Prophet forward outcome ledger ---
+  prophet-ledger:
+    path: data/prophet/ledger.jsonl
+    format: jsonl
+    producer: scripts/build_prophet.py
+    known_extra_writers: []
+    owner_program: momoedge
+    cadence: daily-engine
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 9999
+    schema: prophet.ledger/v1
+    tier: display
+    horizon_role: tactical_entry
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      Prophet forward outcome ledger. Schema pre-registered in research/PROPHET_LEDGER_SCHEMA.md.
+      NIGHTLY IS THE SOLE FUTURE ADVANCER. Initialized (empty) by W1 build_prophet.py run.
+      Rows appended only by nightly pipeline as plan outcomes occur.
+      Row fields: schema, id, asset, direction, signal_date, close_date, outcome
+      (T1_HIT|T2_HIT|INVALIDATED|EXPIRED|CLOSED_EARLY), stock_result_pct,
+      option_result_pct, days_held, plan_adherence, asof.
 
   # --- nasdaq-internals (TI-R2/R3/R5, program: nasdaq-internals) ---
   nasdaq-internals:

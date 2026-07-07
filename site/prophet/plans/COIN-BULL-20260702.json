@@ -1,0 +1,35 @@
+{
+  "schema": "prophet.trade_plan/v1",
+  "id": "COIN-BULL-20260702",
+  "asof": "2026-07-07",
+  "asset": "COIN",
+  "direction": "BULL",
+  "thesis": "COIN [HOLD] \u2014 conviction 67/100 (neutral). Drivers: entry. Cautions: accounting watch; Narrative basket (Crypto & Digital Assets) is deteriorating \u2014 risk gate: trim / size down.. Entry grade: solid. Trust tier: Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions \u2014 a confluence read, not a standalone alpha. DISPLAY-ONLY: machine-generated from factor scores; no forward return guarantee; no signal; display-tier artifact.",
+  "source_engines": [
+    "us_standouts_buy_lane",
+    "neural_web"
+  ],
+  "trigger": 168.9,
+  "entry": 165.5,
+  "invalidation": 154.0805,
+  "targets": [
+    182.6293,
+    199.7585
+  ],
+  "horizon_days": 45,
+  "min_hold_days": 10,
+  "tranche": 1,
+  "option_contract": null,
+  "management_ref": "prophet/state/COIN-BULL-20260702.json",
+  "authority_tier": "display",
+  "reliability": {
+    "plan": "display \u2014 us_standouts buy-lane originated; display-only until forward ledger gate passes",
+    "option_premium": "null \u2014 symbol not in ThetaData store"
+  },
+  "signal_date": "2026-07-02",
+  "_signal_date": "2026-07-02",
+  "_conviction_score": 67,
+  "_act_level": 1,
+  "_r_unit": 11.4195,
+  "_gate_go": false
+}
