@@ -793,7 +793,15 @@ def bulk_open_interest(root: str, exp: int | str | date, start_date: date | str 
 
 
 def _normalize_oi_df(df: pd.DataFrame) -> pd.DataFrame:
-    """Normalize raw v3 OI CSV DataFrame."""
+    """Normalize raw v3 OI CSV DataFrame.
+
+    API DEDUP (2026-07-07): wildcard-expiration OI pulls exhibit the same v3 API
+    duplication as EOD (see _normalize_eod_df docstring) — each contract record can
+    appear twice byte-for-byte in the response.  Observed in-store before this fix:
+    SPY oi 9,692 full-row dups, QQQ 6,448, IWM 5,190 (repaired on disk via
+    scripts/repair_thetadata_dedup --apply).  The 2026-07-05 fix covered only the
+    EOD path; this applies the same full-row drop_duplicates here.
+    """
     if df.empty:
         return df
 
@@ -824,7 +832,22 @@ def _normalize_oi_df(df: pd.DataFrame) -> pd.DataFrame:
 
     keep = ["root", "expiration", "strike", "right", "date", "open_interest"]
     available = [c for c in keep if c in df.columns]
-    return df[available].reset_index(drop=True)
+    df = df[available].reset_index(drop=True)
+
+    # API dedup: drop full-row duplicates introduced by the ThetaData v3 API
+    # (see docstring).  Applied after column selection so the comparison covers
+    # exactly the columns that will be written to parquet.
+    n_before = len(df)
+    df = df.drop_duplicates()
+    n_dropped = n_before - len(df)
+    if n_dropped > 0:
+        log.info(
+            "thetadata: _normalize_oi_df dropped %d full-row API duplicates "
+            "(%d → %d rows)",
+            n_dropped, n_before, len(df),
+        )
+
+    return df.reset_index(drop=True)
 
 
 def bulk_greeks(root: str, exp: int | str | date, start_date: date | str | int,
@@ -900,6 +923,16 @@ def bulk_greeks(root: str, exp: int | str | date, start_date: date | str | int,
                         root, exp_param, start_date, end_date)
             return None
 
+    return _normalize_greeks_df(df, order=order)
+
+
+def _normalize_greeks_df(df: pd.DataFrame, *, order: int = 1) -> pd.DataFrame:
+    """Normalize a raw v3 greeks/eod CSV DataFrame (column slice per order=).
+
+    API DEDUP (2026-07-07): same v3 API full-row duplication as EOD and OI
+    (see _normalize_eod_df docstring); the same drop_duplicates is applied here
+    after column selection.
+    """
     if df.empty:
         return df
 
@@ -943,7 +976,22 @@ def bulk_greeks(root: str, exp: int | str | date, start_date: date | str | int,
                "underlying_price"]
     keep = id_cols + [c for c in greek_cols if c not in id_cols and c in df.columns]
     available = [c for c in keep if c in df.columns]
-    return df[available].reset_index(drop=True)
+    df = df[available].reset_index(drop=True)
+
+    # API dedup: drop full-row duplicates introduced by the ThetaData v3 API
+    # (see docstring).  Applied after column selection so the comparison covers
+    # exactly the columns that will be written to parquet.
+    n_before = len(df)
+    df = df.drop_duplicates()
+    n_dropped = n_before - len(df)
+    if n_dropped > 0:
+        log.info(
+            "thetadata: _normalize_greeks_df dropped %d full-row API duplicates "
+            "(%d → %d rows)",
+            n_dropped, n_before, len(df),
+        )
+
+    return df.reset_index(drop=True)
 
 
 def bulk_trade_quote_day(root: str, target_date: date | str | int) -> pd.DataFrame | None:

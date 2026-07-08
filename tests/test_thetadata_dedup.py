@@ -182,6 +182,105 @@ class TestBulkEodApiDedup:
         assert len(df) == 2  # 4 raw → 2 unique
 
 
+# ── 2b. Collector: OI + greeks normalize dedup (2026-07-07 fix) ─────────────
+
+def _make_raw_oi_csv_with_dups(n_rows: int = 2) -> bytes:
+    """Raw v3 OI CSV: n_rows distinct rows, each duplicated once (API bug sim)."""
+    header = "symbol,expiration,strike,right,timestamp,open_interest"
+    unique_rows = [
+        f"SPY,2026-01-17,{580.0 + i * 2.5:.3f},{'CALL' if i % 2 == 0 else 'PUT'},"
+        f"2026-01-02T06:30:16.218,{1000 + i}"
+        for i in range(n_rows)
+    ]
+    lines = [header] + [r for row in unique_rows for r in [row, row]]
+    return "\n".join(lines).encode()
+
+
+def _make_raw_greeks_csv_with_dups(n_rows: int = 2) -> bytes:
+    """Raw v3 greeks/eod CSV: n_rows distinct rows, each duplicated once."""
+    header = ("symbol,expiration,strike,right,timestamp,delta,implied_vol,"
+              "underlying_price,bid,ask")
+    unique_rows = [
+        f"SPY,2026-01-17,{580.0 + i * 2.5:.3f},{'CALL' if i % 2 == 0 else 'PUT'},"
+        f"2026-01-02 16:00:00,0.5,0.2,585.0,1.4,1.6"
+        for i in range(n_rows)
+    ]
+    lines = [header] + [r for row in unique_rows for r in [row, row]]
+    return "\n".join(lines).encode()
+
+
+class TestNormalizeOiDfDedup:
+    """_normalize_oi_df removes full-row duplicates (same API bug as EOD)."""
+
+    def test_drops_full_row_dups(self):
+        from collectors.thetadata import _normalize_oi_df
+
+        raw = pd.read_csv(io.BytesIO(_make_raw_oi_csv_with_dups(n_rows=2)), low_memory=False)
+        assert len(raw) == 4
+        result = _normalize_oi_df(raw)
+        assert not result.duplicated().any(), "deduped OI df should have no full-row dups"
+        assert len(result) == 2
+
+    def test_logs_dup_count(self, caplog):
+        from collectors.thetadata import _normalize_oi_df
+
+        raw = pd.read_csv(io.BytesIO(_make_raw_oi_csv_with_dups(n_rows=3)), low_memory=False)
+        with caplog.at_level(logging.INFO, logger="collectors.thetadata"):
+            result = _normalize_oi_df(raw)
+        assert len(result) == 3
+        assert any("duplicates" in r.message.lower() for r in caplog.records)
+
+    def test_bulk_open_interest_deduped_on_dup_api_response(self, monkeypatch):
+        """bulk_open_interest with exp=0 (wildcard) → dup API response → clean output."""
+        monkeypatch.setattr("collectors.thetadata.reachable", lambda: True)
+        from collectors import thetadata as td
+
+        dup_csv = _make_raw_oi_csv_with_dups(n_rows=2)
+
+        def _mock_concurrent_windows(path, base_params, start, end, *, root, **kw):
+            return pd.read_csv(io.BytesIO(dup_csv), low_memory=False)
+
+        monkeypatch.setattr(td, "_concurrent_windows", _mock_concurrent_windows)
+        df = td.bulk_open_interest("SPY", 0, date(2026, 1, 1), date(2026, 1, 31))
+
+        assert df is not None
+        assert not df.empty
+        assert not df.duplicated().any(), "bulk_open_interest output must be dedup-clean"
+        assert len(df) == 2
+
+
+class TestNormalizeGreeksDfDedup:
+    """_normalize_greeks_df removes full-row duplicates (same API bug as EOD)."""
+
+    def test_drops_full_row_dups(self):
+        from collectors.thetadata import _normalize_greeks_df
+
+        raw = pd.read_csv(io.BytesIO(_make_raw_greeks_csv_with_dups(n_rows=2)),
+                          low_memory=False)
+        assert len(raw) == 4
+        result = _normalize_greeks_df(raw, order=1)
+        assert not result.duplicated().any(), "deduped greeks df should have no full-row dups"
+        assert len(result) == 2
+
+    def test_bulk_greeks_deduped_on_dup_api_response(self, monkeypatch):
+        """bulk_greeks with exp=0 (wildcard) → dup API response → clean output."""
+        monkeypatch.setattr("collectors.thetadata.reachable", lambda: True)
+        from collectors import thetadata as td
+
+        dup_csv = _make_raw_greeks_csv_with_dups(n_rows=2)
+
+        def _mock_concurrent_windows(path, base_params, start, end, *, root, **kw):
+            return pd.read_csv(io.BytesIO(dup_csv), low_memory=False)
+
+        monkeypatch.setattr(td, "_concurrent_windows", _mock_concurrent_windows)
+        df = td.bulk_greeks("SPY", 0, date(2026, 1, 1), date(2026, 1, 31), order=1)
+
+        assert df is not None
+        assert not df.empty
+        assert not df.duplicated().any(), "bulk_greeks output must be dedup-clean"
+        assert len(df) == 2
+
+
 # ── 3. Writer idempotency ────────────────────────────────────────────────────
 
 class TestWriterIdempotency:
