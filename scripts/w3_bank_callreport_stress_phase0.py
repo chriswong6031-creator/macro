@@ -62,6 +62,18 @@ PIT assumptions (verified):
       The prior value of 45 days was insufficiently conservative for large-bank
       late filers; changed here to match the enforced worst case.
 
+  AMENDMENT (2026-07-08, PIT-lag uniformity): the merged ACCRUE run
+  (#1856/#1860) enforced the 60d lag only on failed-bank rows at panel load;
+  surviving banks' signal_date flowed unchanged from the store panel, which
+  scripts/collect_ffiec_y9c.py wrote at report_date + 45d. Survivor signals
+  could therefore pre-date FDIC bulk availability by up to 15 days (mild
+  look-ahead, contradicting the 'no look-ahead' claim above). Fixed:
+  _load_panel() now recomputes signal_date = report_date + 60d for ALL rows,
+  and the collector's PIT_LAG_DAYS was raised to 60. All IC tables were
+  regenerated under the uniform lag; the amendment is disclosed in report §1
+  and noted in the trial ledger (kind=amendment row — no new config, the
+  correction applies uniformly to all variants, so effective_n is unchanged).
+
 Survivorship-bias correction (FRC/SIVB-era rule):
   The point-in-time filer panel includes ALL BHCs that were in-universe
   (>=$2B assets, regional banking sector) at the signal date — including
@@ -340,11 +352,13 @@ def _load_panel() -> pd.DataFrame:
         print(f"  Added {len(failed_rows)} failed-bank rows "
               f"({[t for t in FAILED_BANKS]} — survivorship bias corrected)")
 
-    # PIT: failed-bank signal dates are enforced at PIT_LAG_DAYS regardless
-    # of source — the store panel carries the collector's 45d convention.
-    fmask = df["is_failed_bank"].fillna(False).astype(bool)
-    df.loc[fmask, "signal_date"] = (df.loc[fmask, "report_date"]
-                                    + pd.Timedelta(days=PIT_LAG_DAYS))
+    # PIT: signal dates are enforced at PIT_LAG_DAYS for ALL rows regardless
+    # of source — store copies written before 2026-07-08 carry the collector's
+    # legacy 45d convention. (Amendment 2026-07-08: the merged ACCRUE run
+    # enforced 60d only on failed-bank rows; survivors flowed through at the
+    # store's 45d, which can pre-date FDIC bulk availability by up to 15 days.
+    # See module docstring 'PIT assumptions' amendment note.)
+    df["signal_date"] = df["report_date"] + pd.Timedelta(days=PIT_LAG_DAYS)
 
     df = df.sort_values(["ticker", "report_date"]).reset_index(drop=True)
     return df
@@ -698,17 +712,26 @@ def run_study() -> str:
 
     # Log trial grid BEFORE computing (house rule §5)
     led = TrialLedger(family=FAMILY)
+    # Config encoding MUST match the canonical rows committed to
+    # data/trial_ledger.jsonl (ts 2026-07-07T14:04) — log_grid dedups by
+    # content hash, so a drifted encoding re-registers the same six trials
+    # under new hashes (observed 2026-07-08: 6 -> 12) and silently
+    # over-deflates the DSR.
     trial_grid = [
-        {"variant": "V1", "signal": "cre_roll_proxy", "horizon": h, "window": "2018-2026"}
+        {"variant": "V1", "desc": "CRE_stress_proxy", "horizon_d": h,
+         "metrics": ["NCRENRER_yoy_delta", "CRE_equity_yoy_delta",
+                     "CRE_loans_yoy_delta"]}
         for h in HORIZONS
     ] + [
-        {"variant": "V2", "signal": "deposit_mix_streak", "horizon": h, "window": "2018-2026"}
+        {"variant": "V2", "desc": "deposit_mix_deterioration", "horizon_d": h,
+         "metrics": ["DEPUNINS_yoy_deseas", "LNNDEPC_yoy_deseas"]}
         for h in HORIZONS
     ] + [
-        {"variant": "V3", "signal": "canonical_ratio_level", "horizon": h, "window": "2018-2026"}
+        {"variant": "V3", "desc": "canonical_ratio_level_composite", "horizon_d": h,
+         "metrics": ["CRE_equity", "CRE_loans", "DEPUNINS_level", "LNNDEPC_level"]}
         for h in HORIZONS
     ]
-    led.log_grid(trial_grid, info_cutoff="2026-Q1")
+    led.log_grid(trial_grid, info_cutoff="2026-03-31")
     n_trials = led.effective_n(FAMILY)
     print(f"  Trial ledger: {n_trials} distinct configs registered for family '{FAMILY}'")
 
@@ -962,6 +985,18 @@ def run_study() -> str:
         f"  the prior build was insufficiently conservative for large-bank late filers.",
         f"  Enforced worst case: 60 days. No look-ahead possible with this lag.",
         f"",
+        f"**PIT amendment (2026-07-08):** the prior merged ACCRUE run (#1856/#1860)",
+        f"  enforced the 60d lag only on failed-bank rows; surviving banks' signal",
+        f"  dates flowed from the store panel at the collector's legacy",
+        f"  report_date + 45d, so survivor signals could pre-date FDIC bulk",
+        f"  availability by up to 15 days (mild look-ahead). Amended: signal_date =",
+        f"  report_date + {PIT_LAG_DAYS}d is now recomputed for ALL rows at panel load,",
+        f"  and the collector writes {PIT_LAG_DAYS}d. All IC tables in this report are",
+        f"  regenerated under the uniform lag. The trial grid is unchanged — the",
+        f"  correction applies uniformly to all variants (no new configs, no change",
+        f"  to the multiple-testing count). Prior-run tables (mixed 45/60 lag) are",
+        f"  superseded; the verdict under both lag treatments is reported in §5.",
+        f"",
         f"**Survivorship-bias correction (FRC/SIVB-era rule):**",
         f"  Failed banks included in point-in-time panel:",
         f"  | Ticker | BHC | Failed | FDIC quarters | Price source |",
@@ -1175,6 +1210,10 @@ def run_study() -> str:
         f"## 5. Overall verdict: {verdict}",
         f"",
         f"**{verdict_note}**",
+        f"",
+        f"PIT-lag amendment cross-check (see §1): the prior merged run (mixed 45/60d",
+        f"lag) landed ACCRUE; this regenerated run (uniform {PIT_LAG_DAYS}d lag) lands",
+        f"{verdict}.",
         f"",
         f"Sign finding: V1 63d mean IC = {v1_63_mean_ic:.4f} ({v1_63_sign_str} IC = {v1_63_direction}).",
         f"V3 63d mean IC = {v3_63_mean_ic:.4f}. DSR gate: V1 p={dsr_results.get('V1_63d', {}).get('dsr_p', float('nan')):.4f},",

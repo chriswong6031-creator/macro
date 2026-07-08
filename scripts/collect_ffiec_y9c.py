@@ -14,7 +14,12 @@ Data source: FDIC BankFind Suite (public, keyless, JSON API)
 PIT lag: FDIC bulk release is approximately 45–60 days after quarter-end
   (call report filing deadline = 30–45 days after quarter-end; bulk
   data publication adds ~1 additional week). We enforce this by
-  restricting signal date to report_date + PIT_LAG_DAYS = 45.
+  restricting signal date to report_date + PIT_LAG_DAYS = 60 — the
+  observed worst case (Q1-2023 bulk data appeared 2023-05-30, 60 days
+  after quarter-end, per the FDIC SDI release calendar). Amended
+  2026-07-08 from 45d, which was insufficiently conservative for
+  large-bank late filers and contradicted the 60d lag enforced by
+  scripts/w3_bank_callreport_stress_phase0.py.
 
 Pre-registered gaps (before computing, per house rules):
   GAP-1: FDIC carries BANK-LEVEL (subsidiary) data, not BHC-level.
@@ -105,7 +110,7 @@ log = logging.getLogger(__name__)
 # Constants (verified against FDIC API live)
 # ---------------------------------------------------------------------------
 FDIC_BASE = "https://banks.data.fdic.gov/api"
-PIT_LAG_DAYS = 45          # signal date = report_date + 45d
+PIT_LAG_DAYS = 60          # signal date = report_date + 60d (worst-case FDIC bulk lag; 45d pre-2026-07-08)
 RATE_LIMIT_SEC = 0.4       # stay well inside FDIC rate limits
 MAX_RETRIES = 3
 TIMEOUT = 30
