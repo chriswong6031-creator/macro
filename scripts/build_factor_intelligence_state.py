@@ -48,8 +48,59 @@ log = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 _SCHEMA = "neuralweb.factor_intelligence_state.v1"
-_CONTRIB_PREFIX = "contrib_20d_"
+# R-CI2a fix: real panel columns are contrib_<stream>_20d (e.g. contrib_mkt_20d,
+# contrib_sector_20d) — NOT contrib_20d_<stream>.  Use a regex to match the correct
+# shape and extract the stream name between 'contrib_' and '_20d'.
+_CONTRIB_PATTERN = re.compile(r"^contrib_([a-z_]+)_20d$")
 _TOP_CONTRIB_N = 3
+
+# Personality JSON path (same-night snapshot basis per R-CI3)
+def _personality_path(repo: Path) -> Path:
+    return repo / "site" / "factordata" / "stock_personality.json"
+
+
+# R-CI3 freshness gate: ≤5 trading days between snapshot as_of and board_as_of
+# determines snapshot_not_pit vs absent.  PIT-parquet join (pit_labels basis)
+# is deferred — wire when a PIT join is implemented in a future wave.
+_PERSONALITY_STALE_TDAYS = 5
+
+
+def _tday_gap(date_a: str, date_b: str) -> int | None:
+    """Return the number of trading days between two ISO date strings (|a - b|).
+
+    Returns None on any parse failure (caller treats gap as unknown → safe path).
+    Uses pandas bdate_range which mirrors the US NYSE business-day calendar
+    (no holiday adjustment, consistent with the rest of the pipeline).
+    """
+    try:
+        import pandas as _pd  # noqa: PLC0415
+        d1 = _pd.Timestamp(date_a)
+        d2 = _pd.Timestamp(date_b)
+        if d1 > d2:
+            d1, d2 = d2, d1
+        # bdate_range includes both endpoints; subtract 1 so same-day = 0
+        return max(0, len(_pd.bdate_range(d1, d2)) - 1)
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def _load_personality_index(repo: Path) -> tuple[dict[str, dict], str | None]:
+    """Load per_ticker personality dict + snapshot as_of from stock_personality.json.
+
+    Returns (per_ticker_dict, snapshot_as_of).  Fail-open → ({}, None).
+    """
+    try:
+        p = _personality_path(repo)
+        if not p.exists():
+            return {}, None
+        raw = json.loads(p.read_text(encoding="utf-8"))
+        pt = raw.get("per_ticker")
+        as_of = raw.get("as_of")
+        if isinstance(pt, dict):
+            return pt, (str(as_of) if as_of else None)
+        return {}, None
+    except Exception:  # noqa: BLE001
+        return {}, None
 
 
 # ---------------------------------------------------------------------------
@@ -548,7 +599,15 @@ def _build_history_digest(
 def _build_fire_coordinates(
     repo: Path, panel_df: "Any | None", as_of_date: str, gaps: list[str],
 ) -> list[dict[str, Any]]:
-    """Build fire_coordinates rows — PIT: exact panel row at standouts as_of date."""
+    """Build fire_coordinates rows — PIT: carry-forward panel row for each ticker
+    at or before standouts as_of date (schema v2, additive personality+regime coords).
+
+    R-CI2a fix: contrib columns are contrib_<stream>_20d not contrib_20d_<stream>.
+    R-CI2b fix: use carry-forward (date <= board_as_of) not exact-date match, so
+      rows are found even when the panel's latest date lags behind the board as_of.
+    R-CI3: personality coordinates are from the same-night snapshot (snapshot_fresh
+      basis); regime coordinates from _regime_stamp_for_asof.
+    """
     standouts_p = _standouts_path(repo)
     if not standouts_p.exists():
         return []
@@ -562,6 +621,28 @@ def _build_fire_coordinates(
             if buy_lane:
                 gaps.append(f"fire_coordinates: panel absent — {len(buy_lane)} buy-lane tickers skipped")
             return []
+
+        # R-CI3: load personality snapshot once for this run
+        personality_index, personality_as_of = _load_personality_index(repo)
+
+        # R-CI3: load regime stamp for board_as_of once
+        regime_stamp: dict[str, Any] = {}
+        try:
+            from engine.qledger import _regime_stamp_for_asof  # noqa: PLC0415
+            regime_stamp = _regime_stamp_for_asof(board_as_of)
+        except Exception:  # noqa: BLE001
+            pass
+
+        # Pre-compute: identify contrib_*_20d columns ONCE (R-CI2a fix)
+        # Real column pattern: contrib_<stream>_20d (e.g. contrib_mkt_20d)
+        contrib_cols = [c for c in panel_df.columns if _CONTRIB_PATTERN.match(c)]
+
+        # Pre-build a PIT panel view: only dates <= board_as_of
+        panel_pit = panel_df[panel_df["date"] <= board_as_of]
+
+        # Heartbeat diagnostic: log non-null rates per run (R-CI12)
+        _fire_coord_diagnostics(panel_pit, contrib_cols)
+
         coords, agg_gaps = [], []
         null_tier_skipped = 0
         for entry in buy_lane:
@@ -576,15 +657,18 @@ def _build_fire_coordinates(
                 null_tier_skipped += 1
                 continue
             try:
-                ticker_rows = panel_df[(panel_df["ticker"] == ticker) & (panel_df["date"] == board_as_of)]
-                if hasattr(ticker_rows, "empty") and ticker_rows.empty:
+                # R-CI2b fix: carry-forward — find latest panel row for this ticker at
+                # or before board_as_of (not exact-date match which fails when panel lags).
+                ticker_pit = panel_pit[panel_pit["ticker"] == ticker]
+                if hasattr(ticker_pit, "empty") and ticker_pit.empty:
                     agg_gaps.append(ticker)
                     continue
-                row = ticker_rows.iloc[0]
-                # Top-3 Block-A contrib streams by |contrib_20d_*|
+                panel_date = str(ticker_pit["date"].max())
+                row = ticker_pit[ticker_pit["date"] == panel_date].iloc[0]
+
+                # R-CI2a fix: extract stream name between 'contrib_' and '_20d'
                 top_contrib: list[str] = []
                 try:
-                    contrib_cols = [c for c in panel_df.columns if c.startswith(_CONTRIB_PREFIX)]
                     if contrib_cols:
                         cv: dict[str, float] = {}
                         for c in contrib_cols:
@@ -593,14 +677,48 @@ def _build_fire_coordinates(
                                 try:
                                     fv = float(v)
                                     if not (math.isnan(fv) or math.isinf(fv)):
-                                        cv[c[len(_CONTRIB_PREFIX):]] = abs(fv)
+                                        m = _CONTRIB_PATTERN.match(c)
+                                        if m:
+                                            cv[m.group(1)] = abs(fv)
                                 except (TypeError, ValueError):
                                     pass
                         top_contrib = sorted(cv, key=lambda k: cv[k], reverse=True)[:_TOP_CONTRIB_N]
                 except Exception:  # noqa: BLE001
                     pass
+
+                # R-CI3: personality coordinates — frozen vocabulary:
+                #   'pit_labels'       — joined from a PIT-parquet (deferred; not yet wired)
+                #                        TODO: wire when a PIT join is implemented.
+                #   'snapshot_not_pit' — joined from the same-night snapshot; snapshot as_of
+                #                        is within ≤5 trading days of board_as_of.  Honest:
+                #                        the aggregate is a snapshot, not PIT parquet.
+                #   'absent'           — ticker not in snapshot OR snapshot is too stale
+                #                        (> _PERSONALITY_STALE_TDAYS trading days old).
+                pdata = personality_index.get(ticker, {})
+                if pdata:
+                    # Freshness gate: compare snapshot as_of to board_as_of
+                    tgap = (
+                        _tday_gap(personality_as_of, board_as_of)
+                        if personality_as_of else None
+                    )
+                    if tgap is None or tgap <= _PERSONALITY_STALE_TDAYS:
+                        personality_basis = "snapshot_not_pit"
+                        arch = pdata.get("arch")
+                        chart_primary = pdata.get("chart") or []
+                        micro_primary = pdata.get("micro") or []
+                        modes = pdata.get("modes") or []
+                    else:
+                        # Snapshot too stale — null personality fields, basis=absent
+                        personality_basis = "absent"
+                        arch = chart_primary = micro_primary = modes = None
+                else:
+                    personality_basis = "absent"
+                    arch = chart_primary = micro_primary = modes = None
+
                 coords.append({
+                    # v1 fields (preserved)
                     "as_of": board_as_of, "ticker": ticker, "tier": tier,
+                    "panel_date": panel_date,
                     "dna_class": _json_safe(_get_row_col(row, "dna_class")),
                     "style_regime": _json_safe(_get_row_col(row, "style_regime")),
                     "alibi_share_20d": _json_safe(_get_row_col(row, "alibi_share_20d")),
@@ -608,6 +726,20 @@ def _build_fire_coordinates(
                     "twin_rel_20d": _json_safe(_get_row_col(row, "twin_rel_20d")),
                     "alpha_z_house": _json_safe(_get_row_col(row, "alpha_z_house")),
                     "top_contrib_streams": top_contrib, "factor_model": "v1",
+                    # v2 additive: personality coordinates (R-CI3)
+                    "archetype": arch,
+                    "chart_primary": chart_primary,
+                    "micro_primary": micro_primary,
+                    "modes": modes,
+                    "personality_basis": personality_basis,
+                    # v2 additive: regime coordinates (R-CI3)
+                    "quad_hard_label": regime_stamp.get("quad_hard_label"),
+                    "vol_regime": regime_stamp.get("vol_regime"),
+                    "risk_radar_state": regime_stamp.get("risk_radar_state"),
+                    "rate_pressure": regime_stamp.get("rate_pressure"),
+                    "fused_risk_label": regime_stamp.get("fused_risk_label"),
+                    "vector_asof": regime_stamp.get("vector_asof"),
+                    "fire_coord_schema": "fire_coordinates.v2",
                 })
             except Exception as exc:  # noqa: BLE001
                 agg_gaps.append(ticker)
@@ -626,6 +758,33 @@ def _build_fire_coordinates(
     except Exception as exc:  # noqa: BLE001
         gaps.append(f"fire_coordinates build failed: {exc}")
         return []
+
+
+def _fire_coord_diagnostics(panel_pit: "Any", contrib_cols: list[str]) -> None:
+    """R-CI12 heartbeat diagnostic: log non-null rates for key columns per run.
+
+    Printed to the INFO log so operators can confirm enrichment is working.
+    Fail-open: any exception is swallowed.
+    """
+    try:
+        if panel_pit is None or (hasattr(panel_pit, "empty") and panel_pit.empty):
+            log.info("fire_coordinates diagnostics: panel_pit empty, skipping")
+            return
+        n_rows = len(panel_pit)
+        if n_rows == 0:
+            return
+        for col in ("dna_class", "style_regime"):
+            if col in panel_pit.columns:
+                nonnull = int(panel_pit[col].notna().sum())
+                pct = round(100 * nonnull / n_rows, 1)
+                log.info("fire_coordinates diagnostics: %s non-null %d/%d (%.1f%%)", col, nonnull, n_rows, pct)
+            else:
+                log.info("fire_coordinates diagnostics: %s column ABSENT from panel_pit", col)
+        n_contrib = len(contrib_cols)
+        log.info("fire_coordinates diagnostics: contrib_*_20d cols found: %d %s",
+                 n_contrib, contrib_cols[:4])
+    except Exception:  # noqa: BLE001
+        pass
 
 
 # ---------------------------------------------------------------------------

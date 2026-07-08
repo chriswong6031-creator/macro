@@ -511,3 +511,178 @@ def test_cli_refresh_cortex_preserves_lobes(tmp_path):
     assert second["cortex"]["cortex_source"] == "current_run"
     # Lobes unchanged
     assert second["lobes"] == first["lobes"]
+
+
+# ---------------------------------------------------------------------------
+# W1 test: context_accrual heartbeat (R-CI12)
+# ---------------------------------------------------------------------------
+
+def _write_jsonl(path: Path, rows: list[dict]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", encoding="utf-8") as fh:
+        for r in rows:
+            fh.write(json.dumps(r) + "\n")
+
+
+def test_w1_context_accrual_heartbeat_in_build_output(tmp_path: Path) -> None:
+    """W1 R-CI12: build() includes 'context_accrual' block with the three sub-blocks.
+
+    Tests fail-open: all sub-blocks present even when files are absent.
+    Also tests that fire_coordinates rows are read correctly when the file exists.
+    """
+    from engine.neuralweb.health import build, write, _context_accrual_heartbeat
+
+    # Write minimal synapse.yml so build() doesn't skip to skeleton
+    _make_synapse_yaml(tmp_path, {})  # empty artifacts — that's fine for this test
+
+    # Write a cortex memo so build() is happy
+    (tmp_path / "data" / "neuralweb" / "cortex").mkdir(parents=True, exist_ok=True)
+    (tmp_path / "data" / "neuralweb" / "cortex" / "memo.json").write_text(
+        json.dumps({"as_of": "2026-07-06", "run_status": {"status": "ok"}}),
+        encoding="utf-8"
+    )
+
+    payload = build(root=tmp_path, cortex_source="previous_run")
+
+    # context_accrual block must be present
+    assert "context_accrual" in payload, "R-CI12: context_accrual block missing from build() output"
+    ca = payload["context_accrual"]
+
+    # Sub-blocks present (fail-open: files absent on CI → exists=False, not an error)
+    assert "personality_forward_ledger" in ca
+    assert "fire_coordinates" in ca
+    assert "panel_partitions" in ca
+    assert "stamper_gap" in ca
+
+    # personality_forward_ledger: exists=False (no file in tmp_path)
+    fl = ca["personality_forward_ledger"]
+    assert fl["exists"] is False
+    assert fl["rows"] is None
+
+    # panel_partitions: n=0 (no panel in tmp_path)
+    pp = ca["panel_partitions"]
+    assert pp["n"] == 0
+    assert pp["latest"] is None
+
+
+def test_w1_context_accrual_heartbeat_with_fire_coords(tmp_path: Path) -> None:
+    """W1 R-CI12: when fire_coordinates.jsonl exists, the heartbeat reports
+    rows, last_asof, and dna_nonnull_pct correctly.
+    """
+    from engine.neuralweb.health import _context_accrual_heartbeat
+
+    # Write synthetic fire_coordinates.jsonl
+    fc_rows = [
+        {"as_of": "2026-07-04", "ticker": "AAPL", "dna_class": "quality_growth",
+         "fire_coord_schema": "fire_coordinates.v2"},
+        {"as_of": "2026-07-05", "ticker": "MSFT", "dna_class": None,
+         "fire_coord_schema": "fire_coordinates.v2"},
+        {"as_of": "2026-07-06", "ticker": "GOOGL", "dna_class": "momentum_leader",
+         "fire_coord_schema": "fire_coordinates.v2"},
+    ]
+    _write_jsonl(tmp_path / "data" / "factordata" / "fire_coordinates.jsonl", fc_rows)
+
+    result = _context_accrual_heartbeat(tmp_path)
+
+    fc = result["fire_coordinates"]
+    assert fc["exists"] is True
+    assert fc["rows"] == 3
+    assert fc["last_asof"] == "2026-07-06"
+    # 2 of 3 rows have non-null dna_class
+    assert fc["dna_nonnull_pct"] == pytest.approx(66.7, abs=0.1)
+
+
+def test_w1_context_accrual_heartbeat_stamper_gap(tmp_path: Path) -> None:
+    """W1 R-CI12: stamper_gap=True when track_record has buy fires on dates
+    AT OR AFTER the ledger wire_floor that are NOT present in the forward_ledger.
+
+    Wire-floor rule: the ledger's earliest date is the wire_floor.  Fires BEFORE
+    the wire_floor are historical pre-wire fires and must NOT flag (tested in the
+    regression test below).  Only post-wire fires trigger stamper_gap.
+    """
+    import pyarrow as pa
+    import pyarrow.parquet as pq
+    from engine.neuralweb.health import _context_accrual_heartbeat
+
+    # Forward_ledger established (wired) on 2026-07-01.
+    # wire_floor = "2026-07-01" (min of ledger dates).
+    fl_path = tmp_path / "data" / "stock_personality" / "forward_ledger.parquet"
+    fl_path.parent.mkdir(parents=True, exist_ok=True)
+    fl_df = pa.table({
+        "as_of": pa.array(["2026-07-01"], type=pa.string()),
+    })
+    pq.write_table(fl_df, str(fl_path))
+
+    # track_record has a buy fire on 2026-07-02 (AFTER wire_floor=2026-07-01).
+    # The ledger only covers 2026-07-01 → gap on 2026-07-02.
+    tr_path = tmp_path / "data" / "signal_archive" / "track_record.parquet"
+    tr_path.parent.mkdir(parents=True, exist_ok=True)
+    tr_df = pa.table({
+        "date": pa.array(["2026-07-02", "2026-07-02"], type=pa.string()),
+        "type": pa.array(["buy", "rebuy"], type=pa.string()),
+    })
+    pq.write_table(tr_df, str(tr_path))
+
+    result = _context_accrual_heartbeat(tmp_path)
+
+    # 2026-07-02 is post-wire and NOT in forward_ledger → stamper_gap=True
+    assert result["stamper_gap"] is True, (
+        f"expected stamper_gap=True for post-wire miss, got {result['stamper_gap']}. Full: {result}"
+    )
+    assert "stamper_gap_dates_sample" in result
+    assert "2026-07-02" in result["stamper_gap_dates_sample"]
+
+    # Add 2026-07-02 to the ledger → stamper_gap should resolve to False
+    fl_df2 = pa.table({
+        "as_of": pa.array(["2026-07-01", "2026-07-02"], type=pa.string()),
+    })
+    pq.write_table(fl_df2, str(fl_path))
+
+    result2 = _context_accrual_heartbeat(tmp_path)
+    assert result2["stamper_gap"] is False, (
+        f"expected stamper_gap=False after ledger covers the gap date, got {result2['stamper_gap']}"
+    )
+
+
+def test_w1_stamper_gap_pre_wire_fires_do_not_flag(tmp_path: Path) -> None:
+    """W1 R-CI12 false-positive regression: buy fires BEFORE the ledger wire_floor
+    must NOT set stamper_gap=True.
+
+    Scenario: ledger wire_floor = 2026-07-05 (ledger's earliest entry).
+    track_record has historical buy fires on 2026-06-01 (pre-wire).
+    These fires pre-date the ledger; the stamper could not have run then.
+    Expected: stamper_gap=False (no false alarm).
+    """
+    import pyarrow as pa
+    import pyarrow.parquet as pq
+    from engine.neuralweb.health import _context_accrual_heartbeat
+
+    # Ledger wired on 2026-07-05 — wire_floor = "2026-07-05"
+    fl_path = tmp_path / "data" / "stock_personality" / "forward_ledger.parquet"
+    fl_path.parent.mkdir(parents=True, exist_ok=True)
+    fl_df = pa.table({
+        "as_of": pa.array(["2026-07-05", "2026-07-06"], type=pa.string()),
+    })
+    pq.write_table(fl_df, str(fl_path))
+
+    # track_record has buy fires ONLY on 2026-06-01 (well before wire_floor)
+    tr_path = tmp_path / "data" / "signal_archive" / "track_record.parquet"
+    tr_path.parent.mkdir(parents=True, exist_ok=True)
+    tr_df = pa.table({
+        "date": pa.array(["2026-06-01", "2026-06-15"], type=pa.string()),
+        "type": pa.array(["buy", "buy"], type=pa.string()),
+    })
+    pq.write_table(tr_df, str(tr_path))
+
+    result = _context_accrual_heartbeat(tmp_path)
+
+    # Pre-wire fires must NOT flag — this is the false-positive regression
+    assert result["stamper_gap"] is False, (
+        f"FALSE POSITIVE: historical pre-wire fires flagged stamper_gap=True. "
+        f"wire_floor should exclude 2026-06-01 fires. Full result: {result}"
+    )
+    # fires_seen_since_wire should be 0 (no fires after wire_floor)
+    assert result.get("fires_seen_since_wire") == 0, (
+        f"expected fires_seen_since_wire=0 (all fires pre-wire), got "
+        f"{result.get('fires_seen_since_wire')}"
+    )
