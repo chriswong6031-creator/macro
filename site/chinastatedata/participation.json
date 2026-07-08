@@ -1,0 +1,43 @@
+{
+  "date": "2026-07-06",
+  "authority": {
+    "tier": "context_only"
+  },
+  "turnover_z20": -0.3310765947096677,
+  "turnover_z60": 0.30267259130666857,
+  "margin_balance": 29926.13875973,
+  "margin_chg_5d": -0.3684654436160839,
+  "margin_to_mcap": 2.849129,
+  "southbound_net": 20527.8,
+  "southbound_z": 2.0399380495797246,
+  "etf_share_chg": null,
+  "zt_breadth": null,
+  "failed_seal_ratio": null,
+  "qvix": 20.29,
+  "qvix_z": 0.7434231026290716,
+  "broker_rs": -0.04650424079203564,
+  "regime": "unclear",
+  "who_controls": "offshore",
+  "risk": "normal",
+  "evidence": [
+    "turnover_z20=-0.33",
+    "southbound_net z=2.04 (hot inflow)",
+    "fin_pct_float=2.85%",
+    "qvix_z=0.74 (inverted-semantics: high=stress)"
+  ],
+  "contradictions": [
+    {
+      "a": "southbound_z=2.04 (inflow)",
+      "b": "broker_rs=-0.0465 (negative)",
+      "detail": "HK/offshore buying but domestic broker sector underperforming CSI300 — cross-market split"
+    }
+  ],
+  "data_gaps": [
+    "zt_breadth:null on 2026-07-06",
+    "etf_share_chg:null on 2026-07-06",
+    "northbound:DEAD post-2024-08-16 SLF-050",
+    "snapshot_staleness:published row 2026-07-06 is 1d behind tape tail 2026-07-07; tail row missing core legs (turnover_z20, margin_chg_5d) — union-index freshness lag"
+  ],
+  "backfill": true,
+  "snapshot_note": "core legs null on 2026-07-07; publishing last fully-populated row (2026-07-06)"
+}
