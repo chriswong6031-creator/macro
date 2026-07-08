@@ -256,6 +256,15 @@ def build_all(
     # -----------------------------------------------------------------------
     sig_firing: dict[str, list[dict[str, Any]]] = {s["signal_id"]: [] for s in all_sigs}
 
+    # Which signals belong in the "who's firing now" screen. Raw-score / direction-0
+    # state signals (insider_power_state 0-100, valuation_pctile 0-1, return_1d, …)
+    # are non-zero for ~the whole universe, so a firing list over them would list
+    # every ticker — not a meaningful screen. They are excluded here but remain in
+    # each stock's per-signal profile (sig_entries) and as rank keys.
+    firing_eligible: dict[str, bool] = {
+        s["signal_id"]: tc.is_screener_firing(s) for s in all_sigs
+    }
+
     # -----------------------------------------------------------------------
     # Per-ticker screener output
     # -----------------------------------------------------------------------
@@ -339,7 +348,7 @@ def build_all(
                 "age_days": age_days,
             })
 
-            if state == 1:
+            if state == 1 and firing_eligible[sid]:
                 sig_firing[sid].append({
                     "ticker": ticker,
                     "name": name_map.get(ticker, ticker),

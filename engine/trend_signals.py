@@ -444,6 +444,7 @@ SIGNALS: dict[str, dict[str, Any]] = {
         "kind": "state",
         "family": "performance",
         "direction": 0,
+        "screener_firing": False,   # raw 1-day return, non-zero for ~all names → not a "firing" screen (stays a rank key / profile field)
         "default_params": {},
         "display": {
             "en": "1-Day Return (cross-sectional rank → top/bottom gainers)",

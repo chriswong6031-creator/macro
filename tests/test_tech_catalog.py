@@ -212,6 +212,44 @@ def test_compute_fundamental_family_degrades():
 
 
 # ---------------------------------------------------------------------------
+# is_screener_firing: raw-score / direction-0 states excluded from firing screen
+# ---------------------------------------------------------------------------
+
+def test_is_screener_firing_excludes_raw_score_states():
+    """Continuous raw-score / direction-0 states are NOT screener-firing.
+
+    They are non-zero for ~the whole universe, so a "who's firing now" list over
+    them would list every ticker.  valuation_pctile is the key case: its
+    direction is +1 (would pass kind/direction inference) but it is a 0–1 raw
+    score, so it needs the explicit screener_firing=False flag.
+    """
+    from engine.tech_catalog import TECH_SIGNALS, get_signal, is_screener_firing
+    for sid in ("valuation_pctile", "insider_power_state", "return_1d"):
+        if sid in TECH_SIGNALS:
+            assert is_screener_firing(get_signal(sid)) is False, f"{sid} should be excluded"
+
+
+def test_is_screener_firing_includes_events_and_directional_states():
+    """Events and directional (dir!=0) thresholded states ARE screener-firing."""
+    from engine.tech_catalog import TECH_SIGNALS, get_signal, is_screener_firing
+    for sid in ("insider_buy", "undervalued_state", "trend_rising_short", "golden_star_st_7_35"):
+        if sid in TECH_SIGNALS:
+            assert is_screener_firing(get_signal(sid)) is True, f"{sid} should be firing-eligible"
+
+
+def test_is_screener_firing_inference_and_override():
+    """Absent flag → inferred from kind/direction; explicit flag wins."""
+    from engine.tech_catalog import is_screener_firing
+    # inference: event fires, direction-0 state does not, directional state does
+    assert is_screener_firing({"kind": "event", "direction": 0}) is True
+    assert is_screener_firing({"kind": "state", "direction": 0}) is False
+    assert is_screener_firing({"kind": "state", "direction": -1}) is True
+    # explicit flag overrides inference in both directions
+    assert is_screener_firing({"kind": "state", "direction": +1, "screener_firing": False}) is False
+    assert is_screener_firing({"kind": "state", "direction": 0, "screener_firing": True}) is True
+
+
+# ---------------------------------------------------------------------------
 # tech_stars specific: all six pre-registered star pairs present
 # ---------------------------------------------------------------------------
 

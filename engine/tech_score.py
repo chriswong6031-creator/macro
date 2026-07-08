@@ -84,9 +84,9 @@ class ContributorRecord:
     signal_id: str
     family: str
     direction: int          # +1 bullish / -1 bearish (from catalog descriptor)
-    raw_value: float        # value of signal on the latest bar (0 or 1 for events; float for states)
+    raw_value: float        # TRUE value of signal on the latest bar (0/1 for events; float for states) — for display/audit
     family_weight: float    # weight assigned to this signal's family
-    contribution: float     # direction * raw_value * family_weight (before global normalisation)
+    contribution: float     # direction * clip(raw_value, -1, 1) * family_weight (before global normalisation)
 
 
 @dataclass
@@ -199,7 +199,16 @@ def score(
             continue
 
         n_active += 1
-        contribution = direction * raw * fw
+        # Clip each signal's EFFECTIVE raw magnitude to [-1, 1] (sign-preserving)
+        # before weighting, so no single wide-range signal can dominate the
+        # composite. The normalisation denominator (max_magnitude below) already
+        # assumes a per-signal max of 1.0; clipping aligns the numerator with it.
+        # A 0-100 state (e.g. insider_power_state) once contributed ~6.6 vs ~±0.1
+        # for every other signal, pinning dozens of names to a false +10.
+        # Event signals (0/1) and 0-1 states (e.g. valuation_pctile) are already
+        # ≤ 1 and therefore unchanged. raw_value keeps the TRUE value for display.
+        eff_raw = max(-1.0, min(1.0, raw))
+        contribution = direction * eff_raw * fw
 
         contributors.append(ContributorRecord(
             signal_id=sid,
@@ -217,7 +226,8 @@ def score(
     raw_sum = sum(c.contribution for c in contributors)
 
     # Theoretical max magnitude: sum of |direction| * max_raw * weight for each signal.
-    # For event signals max_raw = 1.0; for state/continuous we cap at 1.0 too.
+    # Every signal's effective raw is clipped to [-1, 1] above, so max_raw = 1.0
+    # for events AND states/continuous alike — the numerator can never exceed this.
     # Per-family normalisation: within a family, sum of weights = 1 signal * fw.
     # Upper bound = sum of fw values across all evaluated contributors (one per signal).
     # We use the actual evaluated set to avoid penalising when catalog partially loads.

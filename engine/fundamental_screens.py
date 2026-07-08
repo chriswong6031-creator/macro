@@ -451,6 +451,7 @@ SIGNALS: dict[str, dict[str, Any]] = {
         "kind": "state",
         "family": "fundamental_valuation",
         "direction": +1,                # higher cheapness percentile = bullish context
+        "screener_firing": False,       # 0–1 raw score, non-zero for ~all names → not a "firing" screen (stays a rank key / profile field)
         "default_params": {},
         "display": {
             "en": "Valuation cheapness percentile (0–1, higher = cheaper vs peers)",

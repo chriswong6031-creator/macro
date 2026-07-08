@@ -616,6 +616,7 @@ SIGNALS: dict[str, dict[str, Any]] = {
         "kind": "state",
         "family": "insider",
         "direction": 0,   # 0-100 DISPLAY score only — direction carried by insider_buy/insider_sell; +1 would dominate the -10..+10 composite
+        "screener_firing": False,   # 0–100 raw score, non-zero for ~all names → not a "firing" screen (stays a rank key / profile field)
         "default_params": {
             "n_trades": N_TRADES,
             "lookback_days": LOOKBACK_DAYS,

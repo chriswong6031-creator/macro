@@ -44,6 +44,11 @@ log = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 _REQUIRED_KEYS: frozenset[str] = frozenset({"fn", "kind", "family", "direction", "default_params", "display", "glyph"})
 
+# Optional descriptor keys (not enforced):
+#   screener_firing : bool
+#       Whether this signal belongs in the screener's "who's firing now" lists
+#       (see is_screener_firing() below). Absent → inferred from kind/direction.
+
 # ---------------------------------------------------------------------------
 # Import source-module SIGNALS dicts
 # ---------------------------------------------------------------------------
@@ -291,6 +296,49 @@ def get_signal(signal_id: str) -> dict[str, Any]:
 def signal_families() -> list[str]:
     """Return the sorted list of unique signal family names in the catalog."""
     return sorted({desc["family"] for desc in TECH_SIGNALS.values()})
+
+
+def is_screener_firing(descriptor: dict[str, Any]) -> bool:
+    """Whether a signal belongs in the screener's "who's firing now" lists.
+
+    A firing screen answers "which tickers is this signal flagging *right now*".
+    That only makes sense for DISCRETE fire signals whose latest-bar value is a
+    genuine 0/1 flag firing for a subset of the universe:
+
+      - events            — MA crosses, pivots, formations, stars, runners
+      - directional states — trend up/down, RSI zones, undervalued/overvalued,
+                             insider_buy / insider_sell (0/1 per bar, direction ≠ 0)
+
+    RAW-SCORE / continuous state signals are non-zero for ~the entire universe,
+    so a firing list over them lists every ticker — not a meaningful screen:
+
+      - insider_power_state (0–100), valuation_pctile (0–1), return_1d (raw return)
+
+    These are excluded from the firing screen here; they remain available in the
+    per-stock profile and as rank keys.
+
+    Control:
+        A descriptor may set ``screener_firing: bool`` to override the default.
+        This is required for ``valuation_pctile`` (a 0–1 raw score whose
+        direction is +1, so the kind/direction inference alone would wrongly
+        include it). When the flag is absent, events and direction≠0 states are
+        firing-eligible; direction-0 states are not.
+
+    Parameters
+    ----------
+    descriptor : dict
+        A signal descriptor (from TECH_SIGNALS / list_signals() / get_signal()).
+
+    Returns
+    -------
+    bool
+    """
+    flag = descriptor.get("screener_firing")
+    if flag is not None:
+        return bool(flag)
+    kind = descriptor.get("kind", "event")
+    direction = int(descriptor.get("direction", 0) or 0)
+    return kind == "event" or direction != 0
 
 
 def compute(signal_id: str, df: pd.DataFrame, **overrides: Any) -> pd.Series:

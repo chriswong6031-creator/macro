@@ -134,6 +134,67 @@ def test_score_subset_of_signals():
 
 
 # ---------------------------------------------------------------------------
+# score() — bounded-contribution invariant (FIX 1: clip effective raw to [-1,1])
+# ---------------------------------------------------------------------------
+
+def _register_synthetic(monkeypatch, sid, *, direction, raw, family):
+    """Inject a synthetic constant-valued state signal into the catalog."""
+    from engine import tech_catalog as tc
+
+    def _fn(df, _raw=raw, **kw):
+        return pd.Series(float(_raw), index=df.index, name=sid)
+
+    monkeypatch.setitem(tc.TECH_SIGNALS, sid, {
+        "fn": _fn, "kind": "state", "family": family, "direction": direction,
+        "default_params": {}, "display": {"en": sid, "zh": sid}, "glyph": "line",
+    })
+
+
+def test_score_clips_wide_range_signal(monkeypatch):
+    """A wide-range state signal (dir!=0) cannot dominate the composite.
+
+    Regression: a 0–100 state (insider_power_state) with direction +1 once
+    contributed ~6.6 vs ~±0.1 for every other signal, pinning dozens of names
+    to a false +10 "Strong Buy".  With the clip, a +1 wide signal (raw 50) and
+    a -1 ordinary signal (raw 1) have equal effective magnitude and cancel to
+    ~Hold instead of the wide one swamping the composite.
+    """
+    from engine.tech_score import score
+    _register_synthetic(monkeypatch, "synth_wide_bull", direction=+1, raw=50.0, family="synth_a")
+    _register_synthetic(monkeypatch, "synth_narrow_bear", direction=-1, raw=1.0, family="synth_b")
+
+    result = score(_make_ohlcv(300), signal_ids=["synth_wide_bull", "synth_narrow_bear"])
+
+    # Pre-fix this pins to +10 / "Strong Buy"; post-fix the two cancel.
+    assert result.band == "Hold", f"wide signal dominated: score={result.score} band={result.band}"
+    assert abs(result.score) < 1.0, f"expected ~0, got {result.score}"
+
+    wide = next(c for c in result.contributors if c.signal_id == "synth_wide_bull")
+    # Effective contribution is clipped to at most the family weight (|eff_raw| <= 1).
+    assert abs(wide.contribution) <= abs(wide.family_weight) + 1e-9
+    # raw_value still records the TRUE underlying value for display/audit.
+    assert wide.raw_value == 50.0
+
+
+def test_score_clip_noop_for_bounded_signals(monkeypatch):
+    """Clip is a no-op for signals already in [-1, 1] (events 0/1, valuation_pctile 0–1).
+
+    A single bullish signal at raw 0.5 → half of full-scale → exactly +5.0,
+    identical with or without the clip.
+    """
+    from engine.tech_score import score
+    _register_synthetic(monkeypatch, "synth_half_bull", direction=+1, raw=0.5, family="synth_c")
+
+    result = score(_make_ohlcv(300), signal_ids=["synth_half_bull"])
+    assert abs(result.score - 5.0) < 1e-9, f"expected +5.0, got {result.score}"
+
+    contrib = result.contributors[0]
+    assert contrib.raw_value == 0.5
+    # 0.5 is within [-1,1] so eff_raw == raw: contribution == direction*raw*weight.
+    assert abs(contrib.contribution - (0.5 * contrib.family_weight)) < 1e-9
+
+
+# ---------------------------------------------------------------------------
 # Band threshold tests
 # ---------------------------------------------------------------------------
 
