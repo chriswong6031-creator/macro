@@ -1,9 +1,9 @@
 {
   "schema": "neuralweb.daily_brief.v1",
-  "produced_at": "2026-07-08T07:27:30.376416+00:00",
+  "produced_at": "2026-07-08T07:31:53.145507+00:00",
   "as_of": "2026-07-02",
   "status": "degraded",
-  "phase": "engine",
+  "phase": "final",
   "did_the_brain_run": {
     "cortex_status": "degraded",
     "tool_call_batches": 0,
@@ -352,7 +352,7 @@
   },
   "evidence_clock": {
     "available": true,
-    "as_of": "2026-07-07",
+    "as_of": "2026-07-08",
     "counts": {
       "overdue": 6,
       "due": 10,
@@ -362,14 +362,14 @@
       "blocked": 2,
       "not_ready": 0,
       "promotion_eligible": 0,
-      "accruing": 181,
+      "accruing": 200,
       "n_acknowledged": 0
     },
     "top_due": {
       "clock_id": "qledger:placebo",
       "due_at": "2026-06-22"
     },
-    "morning_line": "6 overdue, 10 due, 1 missing, 1 stale, 2 blocked, 181 accruing. Top due: qledger:placebo."
+    "morning_line": "6 overdue, 10 due, 1 missing, 1 stale, 2 blocked, 200 accruing. Top due: qledger:placebo."
   },
   "caveats": [
     "deterministic: all text is template-filled from structured artifact values; no LLM or NLP",

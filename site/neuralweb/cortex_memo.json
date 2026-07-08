@@ -1,6 +1,6 @@
 {
   "schema": "neuralweb.cortex_memo.v1",
-  "as_of": "2026-07-07T15:28:09+00:00",
+  "as_of": "2026-07-08T07:31:46+00:00",
   "summary": "Budget exhausted after 0 tool-call batches (0 individual calls). Partial deliberation only.",
   "what_fired": [],
   "contradictions_review": "Incomplete \u2014 budget exhausted before contradictions review.",
@@ -36,7 +36,7 @@
         "attempted": true,
         "ok": false,
         "error_type": "transient",
-        "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011Ccnw6p8V5VQUdajgidR5R'}"
+        "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CcpCaiyDNkiTdx8qQQ5JY'}"
       },
       {
         "provider": "oauth",
@@ -44,13 +44,13 @@
         "attempted": true,
         "ok": false,
         "error_type": "transient",
-        "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011Ccnw72QfqYyVhX2ebeokk'}"
+        "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011CcpCat4QKEH3pjwpWvk8d'}"
       }
     ],
     "tool_call_batches": 0,
     "individual_tool_calls": 0,
     "expected_min_tool_calls": 1,
     "context_stale": false,
-    "context_as_of": "2026-07-07T15:22:25Z"
+    "context_as_of": "2026-07-08T07:26:56Z"
   }
 }
