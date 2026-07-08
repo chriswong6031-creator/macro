@@ -461,12 +461,44 @@ def _make_transitions_jsonl(root: Path) -> None:
     p.write_text("", encoding="utf-8")
 
 
+def _make_crossasset(root: Path) -> dict:
+    """Write data/crossasset/latest.json with R6 flows block so the lobe gap is suppressed."""
+    d = {
+        "date": "2026-07-05",
+        "regime": "mixed / no clear trend",
+        "breadth": 0.1,
+        "favored": ["equity_us"],
+        "correlation": "converging",
+        "asof": "2026-07-05",
+        "flows": {
+            "schema": "crossasset_flows.v1",
+            "display_only": True,
+            "correlation": {"verdict": "converging", "absorption_pctile": 0.55, "n_markets": 6},
+            "breadth": 0.1,
+            "trend_top": [{"asset": "equity_us", "trend": "up", "z": 0.5}],
+            "intermarket": [{"pair": "copper_gold", "ratio": 0.22, "trend": "mid"}],
+            "carry": None,
+            "leadlag": {"verdict": "contemporaneous", "links": []},
+            "global_liquidity": None,
+            "funding_stress": None,
+            "note": "display-only regime read",
+        },
+    }
+    p = root / "data" / "crossasset" / "latest.json"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(json.dumps(d))
+    return d
+
+
 def _full_tree(root: Path) -> tuple[dict, dict, dict, dict, dict]:
     """Build all synthetic source files; return the raw dicts for assertions.
 
     Extended for PR-B: writes the six new R5 macro source files plus an empty
     transitions.jsonl so test_full_composition_shape's non_contra_gaps == []
     assertion stays green.
+
+    Extended for R6: writes data/crossasset/latest.json with a flows block so
+    the cross_asset_flows lobe gap is suppressed.
     """
     _seed_synapse(root)
     ms = _make_market_state(root)
@@ -486,6 +518,8 @@ def _full_tree(root: Path) -> tuple[dict, dict, dict, dict, dict]:
     _make_briefing(root)
     _make_factor_series(root)
     _make_transitions_jsonl(root)
+    # R6 cross-asset source
+    _make_crossasset(root)
     return ms, reg, oracle, rs, at
 
 
@@ -505,13 +539,15 @@ def test_full_composition_shape(tmp_path):
                  # R5 macro lobes (PR-B)
                  "rates_transmission", "fx_dollar", "rates_credit",
                  "global_regimes", "commodity_context", "intelligence",
-                 "macro_deltas"):
+                 "macro_deltas",
+                 # R6 cross-asset lobe
+                 "cross_asset_flows"):
         assert key in payload, f"missing top-level key: {key!r}"
 
-    # All R5 lobes carry display_only=True
+    # All R5+R6 lobes carry display_only=True
     for lobe_key in ("rates_transmission", "fx_dollar", "rates_credit",
                      "global_regimes", "commodity_context", "intelligence",
-                     "macro_deltas"):
+                     "macro_deltas", "cross_asset_flows"):
         assert payload[lobe_key].get("display_only") is True, (
             f"{lobe_key!r} missing display_only=True"
         )

@@ -7503,6 +7503,33 @@ artifacts:
       before re-deriving. Growing append-only ledger across days. Display/context
       tier only.
 
+  crossasset-latest:
+    path: data/crossasset/latest.json
+    format: json
+    producer: scripts/build_crossasset.py
+    known_extra_writers: []
+    owner_program: macro-context-rail
+    cadence: daily-engine
+    storage: git
+    asof_field: date
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/neuralweb/world_state.py
+      - scripts/build_vector.py
+    external_consumers: []
+    notes: >
+      R6 NW Cross-Asset Depth — cross-asset flows snapshot (TSMOM regime, correlation
+      concentration, intermarket ratios, carry, lead/lag, global liquidity, funding
+      stress). Five legacy keys (date, regime, breadth, favored, correlation) are
+      byte-stable for build_vector hub card (RUL-CA-2). New flows sub-block added by
+      R6. display_only=true unconditionally (RUL-CA-1).
+      Producer: scripts/build_crossasset.py (outdir/"latest.json").write_text(...).
+
   macro-context-latest:
     path: data/macro_context/latest.json
     format: json

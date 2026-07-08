@@ -322,10 +322,14 @@ def _classify_question(question: str, context_ticker: str | None) -> tuple[int, 
     # FX / rates / credit / commodity terms — macro lobes in world_state (PR-D).
     # Scoped to terms the regime branch does NOT already catch (macro/quad/regime
     # are deliberately left to the regime branch below).
+    # R6 extension: cross-asset / correlation / intermarket terms added (terms
+    # not already caught: cross-asset, correlation, absorption, breadth, intermarket,
+    # carry, lead-lag — copper/gold/oil are already covered above).
     # NOTE: tested against q (already lowercased); re.IGNORECASE applied for safety.
     if re.search(
         r"\b(dollar|usd|fx|forex|yield\s+curve|real\s+rates?|bonds?|credit|"
-        r"treasur\w+|commodit\w+|gold|copper|oil|transmission|headwinds?|tailwinds?)\b",
+        r"treasur\w+|commodit\w+|gold|copper|oil|transmission|headwinds?|tailwinds?|"
+        r"cross[- ]?asset|correlation|absorption|breadth|intermarket|carry|lead[- ]?lag)\b",
         q,
         re.IGNORECASE,
     ):

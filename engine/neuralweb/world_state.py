@@ -1445,6 +1445,116 @@ def _compose_macro_deltas(root: "Path | str | None" = None) -> dict:
         return null_out
 
 
+def _compose_cross_asset_flows(root: "Path | str | None" = None) -> dict:
+    """Compose cross_asset_flows lobe from data/crossasset/latest.json (R6).
+
+    Follows the _compose_factor_weather fail-open discipline exactly:
+    - all data loading is internal to this function
+    - _clean() applied to every value
+    - display_only=True ALWAYS (RUL-CA-1)
+    - try/except at the wiring site catches any compose failure
+
+    Fields per masterplan §3.2:
+        asof, source, regime, breadth,
+        correlation: {verdict, absorption_pctile, n_markets},
+        intermarket[:4], carry_summary, leadlag: {verdict, n_links},
+        global_liquidity_dir, funding_state, display_only, stale
+    """
+    repo = _repo_root(root)
+    path = repo / "data" / "crossasset" / "latest.json"
+
+    null_out: dict = {
+        "asof": None,
+        "source": "data/crossasset/latest.json",
+        "regime": None,
+        "breadth": None,
+        "correlation": None,
+        "intermarket": None,
+        "carry_summary": None,
+        "leadlag": None,
+        "global_liquidity_dir": None,
+        "funding_state": None,
+        "display_only": True,
+        "stale": True,
+    }
+
+    raw = _read_json(path)
+    if raw is None:
+        return null_out
+
+    try:
+        flows = raw.get("flows") or {}
+
+        # correlation sub-block
+        corr_raw = flows.get("correlation") or {}
+        corr_block: dict | None = None
+        if isinstance(corr_raw, dict) and corr_raw.get("verdict"):
+            corr_block = {
+                "verdict": _clean(corr_raw.get("verdict")),
+                "absorption_pctile": _clean(corr_raw.get("absorption_pctile")),
+                "n_markets": _clean(corr_raw.get("n_markets")),
+            }
+
+        # intermarket: top 4 entries
+        intermarket_raw = flows.get("intermarket") or []
+        intermarket_out: list[dict] = []
+        for item in (intermarket_raw[:4] if isinstance(intermarket_raw, list) else []):
+            if not isinstance(item, dict):
+                continue
+            intermarket_out.append({
+                "pair": _clean(item.get("pair")),
+                "ratio": _clean(item.get("ratio")),
+                "trend": _clean(item.get("trend")),
+            })
+
+        # carry_summary: compact note from carry rows
+        carry_raw = flows.get("carry") or {}
+        carry_summary: str | None = None
+        if isinstance(carry_raw, dict):
+            carry_rows = carry_raw.get("rows") or []
+            if carry_rows:
+                carry_summary = "; ".join(
+                    f"{r.get('key','?')}={r.get('state','?')}"
+                    for r in carry_rows[:3]
+                    if isinstance(r, dict)
+                )
+
+        # leadlag sub-block
+        ll_raw = flows.get("leadlag") or {}
+        ll_links = ll_raw.get("links") or []
+        leadlag_block: dict = {
+            "verdict": _clean(ll_raw.get("verdict")),
+            "n_links": len(ll_links) if isinstance(ll_links, list) else 0,
+        }
+
+        # global_liquidity direction
+        liq_raw = flows.get("global_liquidity") or {}
+        global_liq_dir: str | None = _clean(liq_raw.get("state")) if isinstance(liq_raw, dict) else None
+
+        # funding state
+        fund_raw = flows.get("funding_stress") or {}
+        funding_state_val: str | None = _clean(fund_raw.get("state")) if isinstance(fund_raw, dict) else None
+
+        asof = _to_iso(raw.get("asof") or raw.get("date"))
+
+        return _display_only({
+            "asof": asof,
+            "source": "data/crossasset/latest.json",
+            "regime": _clean(raw.get("regime")),
+            "breadth": _clean(raw.get("breadth")),
+            "correlation": corr_block,
+            "intermarket": intermarket_out if intermarket_out else None,
+            "carry_summary": carry_summary,
+            "leadlag": leadlag_block,
+            "global_liquidity_dir": global_liq_dir,
+            "funding_state": funding_state_val,
+            "stale": asof is None,
+        })
+    except Exception as exc:  # noqa: BLE001
+        log.warning("cross_asset_flows: compose failed — %s", exc)
+        return null_out
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Public API
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1724,6 +1834,24 @@ def build_world_state(
     if not _transitions_path.exists():
         gaps.append("data/macro_snapshots/transitions.jsonl: absent (PR-C)")
 
+    # cross_asset_flows (R6 NW Cross-Asset Depth — display-only, fail-open)
+    _ca_path = data_dir / "crossasset" / "latest.json"
+    try:
+        cross_asset_flows_block: dict = _compose_cross_asset_flows(root=repo)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("world_state: cross_asset_flows lobe failed — %s", exc)
+        gaps.append(f"cross_asset_flows: {exc}")
+        cross_asset_flows_block = {
+            "asof": None, "source": "data/crossasset/latest.json",
+            "regime": None, "breadth": None, "correlation": None,
+            "intermarket": None, "carry_summary": None,
+            "leadlag": None, "global_liquidity_dir": None,
+            "funding_state": None, "display_only": True, "stale": True,
+        }
+    sources[str(_ca_path.relative_to(repo))] = (cross_asset_flows_block or {}).get("asof")
+    if not _ca_path.exists():
+        gaps.append("data/crossasset/latest.json: missing or unreadable")
+
     # ── 7. Contradictions summary (W4) ───────────────────────────────────────
     contradictions_block: dict | None = None
     try:
@@ -1776,6 +1904,7 @@ def build_world_state(
         "commodity_context": commodity_context_block,
         "intelligence": intelligence_block,
         "macro_deltas": macro_deltas_block,
+        "cross_asset_flows": cross_asset_flows_block,  # R6 NW Cross-Asset Depth (display-only)
         "cycle_pattern": cycle_pattern_block,  # CPI P6 wave-1 wiring line (display-only)
         "stock_personality_summary": stock_personality_summary_block,  # R-SP20 wiring line
         "qi": None,

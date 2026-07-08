@@ -273,10 +273,52 @@ def _is_whitelisted_macro_ticker(s: str) -> bool:
     return False
 
 
+# ─── fixture: crossasset/latest.json with flows block ────────────────────────
+
+def _write_crossasset_fixture(root: Path) -> None:
+    """Write a minimal data/crossasset/latest.json fixture with a flows block."""
+    _write_json(root / "data" / "crossasset" / "latest.json", {
+        "date": "2026-07-05",
+        "regime": "mixed / no clear trend",
+        "breadth": 0.1,
+        "favored": ["equity_us"],
+        "correlation": "converging",
+        "asof": "2026-07-05",
+        "flows": {
+            "schema": "crossasset_flows.v1",
+            "display_only": True,
+            "correlation": {
+                "verdict": "converging",
+                "absorption_pctile": 0.55,
+                "n_markets": 6,
+            },
+            "breadth": 0.1,
+            "trend_top": [
+                {"asset": "equity_us", "trend": "up", "z": 0.5},
+                {"asset": "gold", "trend": "up", "z": 0.3},
+            ],
+            "intermarket": [
+                {"pair": "copper_gold", "ratio": 0.22, "trend": "mid"},
+                {"pair": "stocks_gold", "ratio": 2.1, "trend": "elevated"},
+            ],
+            "carry": {
+                "rows": [{"key": "rates_term", "state": "positive carry", "value": 0.5}],
+                "note": "Context only.",
+            },
+            "leadlag": {"verdict": "contemporaneous", "links": []},
+            "global_liquidity": {"asof": "2026-07-05", "state": "expanding",
+                                 "accel": "steady", "total_usd_tn": 22.5},
+            "funding_stress": {"asof": "2026-07-05", "state": "calm",
+                               "score": 25, "spread_bp": 2.1},
+            "note": "display-only regime read",
+        },
+    })
+
+
 # ─── Test 1: display_only on every new lobe ──────────────────────────────────
 
 class TestDisplayOnly:
-    """Every R5 world_state lobe must carry display_only=True."""
+    """Every R5+R6 world_state lobe must carry display_only=True."""
 
     _NEW_LOBES = (
         "rates_transmission",
@@ -286,11 +328,13 @@ class TestDisplayOnly:
         "commodity_context",
         "intelligence",
         "macro_deltas",
+        "cross_asset_flows",
     )
 
     def test_display_only_all_lobes(self, tmp_path):
         from engine.neuralweb.world_state import build_world_state
         _build_minimal_tree(tmp_path)
+        _write_crossasset_fixture(tmp_path)
         payload = build_world_state(root=tmp_path, now=_NOW)
         for lobe_key in self._NEW_LOBES:
             assert lobe_key in payload, f"lobe {lobe_key!r} missing from payload"
@@ -303,6 +347,15 @@ class TestDisplayOnly:
         _build_minimal_tree(tmp_path)
         payload = build_world_state(root=tmp_path, now=_NOW)
         assert payload["factor_weather"].get("display_only") is True
+
+    def test_cross_asset_flows_display_only_is_true(self, tmp_path):
+        """cross_asset_flows carries display_only=True (RUL-CA-1)."""
+        from engine.neuralweb.world_state import build_world_state
+        _build_minimal_tree(tmp_path)
+        _write_crossasset_fixture(tmp_path)
+        payload = build_world_state(root=tmp_path, now=_NOW)
+        lobe = payload.get("cross_asset_flows") or {}
+        assert lobe.get("display_only") is True, "cross_asset_flows.display_only must be True"
 
 
 # ─── Test 2 + 3: assert_no_authority ─────────────────────────────────────────
@@ -367,11 +420,13 @@ class TestNoArticle2Keys:
         "commodity_context",
         "intelligence",
         "macro_deltas",
+        "cross_asset_flows",
     )
 
     def test_no_article2_keys(self, tmp_path):
         from engine.neuralweb.world_state import build_world_state
         _build_minimal_tree(tmp_path)
+        _write_crossasset_fixture(tmp_path)
         payload = build_world_state(root=tmp_path, now=_NOW)
         for lobe_key in self._NEW_LOBES:
             lobe = payload.get(lobe_key) or {}
@@ -605,3 +660,112 @@ class TestLaw:
         nested = {"lobes": {"market": {"can_force_exit": True}}}
         violations = assert_no_authority(nested)
         assert any("can_force_exit" in v for v in violations)
+
+
+# ─── Tests 11–15: R6 cross_asset_flows authority wall ────────────────────────
+
+class TestCrossAssetFlowsAuthority:
+    """R6 authority wall: cross_asset_flows lobe — RUL-CA-1 enforcement."""
+
+    def test_cross_asset_flows_assert_no_authority(self, tmp_path):
+        """assert_no_authority returns [] for cross_asset_flows."""
+        from engine.neuralweb.world_state import build_world_state
+        from engine.neuralweb._law import assert_no_authority
+        _build_minimal_tree(tmp_path)
+        _write_crossasset_fixture(tmp_path)
+        payload = build_world_state(root=tmp_path, now=_NOW)
+        lobe = payload.get("cross_asset_flows") or {}
+        violations = assert_no_authority(lobe)
+        assert violations == [], f"cross_asset_flows authority violations: {violations}"
+
+    def test_cross_asset_flows_no_article2_keys(self, tmp_path):
+        """No Article-2 surface keys present in cross_asset_flows."""
+        from engine.neuralweb.world_state import build_world_state
+        _build_minimal_tree(tmp_path)
+        _write_crossasset_fixture(tmp_path)
+        payload = build_world_state(root=tmp_path, now=_NOW)
+        lobe = payload.get("cross_asset_flows") or {}
+        found = _ARTICLE_2_KEYS & set(_collect_strings(list(lobe.keys())))
+        assert not found, f"cross_asset_flows contains Article-2 key(s): {found}"
+
+    def test_cross_asset_flows_absent_source_per_lobe_gap(self, tmp_path):
+        """data/crossasset/latest.json absent → per-lobe gap, other lobes unaffected."""
+        from engine.neuralweb.world_state import build_world_state
+        _build_minimal_tree(tmp_path)
+        # Do NOT write crossasset fixture — file is absent
+        payload = build_world_state(root=tmp_path, now=_NOW)
+        # cross_asset_flows lobe must have display_only=True even when source absent
+        lobe = payload.get("cross_asset_flows") or {}
+        assert lobe.get("display_only") is True, (
+            "cross_asset_flows.display_only must be True even when source absent"
+        )
+        # other lobes must still be present and unaffected
+        for other in ("rates_transmission", "fx_dollar", "rates_credit",
+                      "global_regimes", "commodity_context"):
+            assert payload.get(other) is not None, (
+                f"{other} should be present even when crossasset source absent"
+            )
+        # gap should mention crossasset
+        assert any("crossasset" in g for g in payload["gaps"]), (
+            "expected a gap entry mentioning 'crossasset' when source absent"
+        )
+
+    def test_macro_weather_with_cross_asset_block_size(self, tmp_path):
+        """macro_weather serialized < 200 KB with the new cross_asset sub-block."""
+        from engine.neuralweb.mastermind_context import _summarize_macro_weather
+        _build_minimal_tree_with_snapshot(tmp_path)
+        # Also write crossasset fixture + wire into world_state.json
+        _write_crossasset_fixture(tmp_path)
+        # Patch world_state.json to include cross_asset_flows
+        ws_path = tmp_path / "data" / "neuralweb" / "world_state.json"
+        import json as _json
+        ws = _json.loads(ws_path.read_text())
+        ws["cross_asset_flows"] = {
+            "regime": "mixed / no clear trend",
+            "correlation": {"verdict": "converging", "absorption_pctile": 0.55, "n_markets": 6},
+            "intermarket": [{"pair": "copper_gold", "ratio": 0.22, "trend": "mid"}],
+            "breadth": 0.1,
+            "leadlag": {"verdict": "contemporaneous", "n_links": 0},
+            "display_only": True,
+        }
+        ws_path.write_text(_json.dumps(ws))
+        lobe, gap = _summarize_macro_weather(tmp_path)
+        if gap:
+            pytest.skip(f"macro_weather returned gap: {gap}")
+        serialized = _json.dumps(lobe)
+        assert len(serialized.encode("utf-8")) < 200 * 1024, (
+            f"macro_weather exceeds 200 KB: {len(serialized.encode('utf-8'))} bytes"
+        )
+        # cross_asset sub-block must be present
+        assert "cross_asset" in lobe, "macro_weather must include 'cross_asset' sub-block"
+
+    def test_macro_weather_cross_asset_no_new_names(self, tmp_path):
+        """cross_asset sub-block in macro_weather has no non-whitelisted tickers."""
+        from engine.neuralweb.mastermind_context import _summarize_macro_weather
+        _build_minimal_tree_with_snapshot(tmp_path)
+        _write_crossasset_fixture(tmp_path)
+        import json as _json
+        ws_path = tmp_path / "data" / "neuralweb" / "world_state.json"
+        ws = _json.loads(ws_path.read_text())
+        ws["cross_asset_flows"] = {
+            "regime": "mixed / no clear trend",
+            "correlation": {"verdict": "converging", "absorption_pctile": 0.55, "n_markets": 6},
+            "intermarket": [{"pair": "copper_gold", "ratio": 0.22, "trend": "mid"}],
+            "breadth": 0.1,
+            "leadlag": {"verdict": "contemporaneous", "n_links": 0},
+            "display_only": True,
+        }
+        ws_path.write_text(_json.dumps(ws))
+        lobe, gap = _summarize_macro_weather(tmp_path)
+        if gap:
+            pytest.skip(f"macro_weather returned gap: {gap}")
+        single_name_re = re.compile(r"^[A-Z]{1,5}$")
+        ca_block = lobe.get("cross_asset") or {}
+        ca_strings = _collect_strings(ca_block)
+        suspect = [
+            s for s in ca_strings
+            if single_name_re.match(s) and not _is_whitelisted_macro_ticker(s)
+        ]
+        assert suspect == [], (
+            f"cross_asset sub-block contains non-whitelisted ticker(s): {suspect}"
+        )
