@@ -667,10 +667,13 @@ def test_w1_backfill_regime_stamps_basis_recomputed_history(prices, tmp_path, mo
         f"R-CI3: expected recomputed_history, got {rows['a1'].get('regime_stamp_basis')}"
     )
 
-    # b2: already had regime_stamp_basis='pit_live' → must not be changed
-    assert rows["b2"].get("regime_stamp_basis") == "pit_live", (
-        f"R-CI3 keep-FIRST: existing pit_live basis was overwritten to "
-        f"{rows['b2'].get('regime_stamp_basis')}"
+    # b2: had regime_stamp_basis='pit_live' pre-set but vector_asof=None
+    # → the lying label is normalised to 'recomputed_history' (values are
+    #   demonstrably recomputed; keep-FIRST only applies to rows that had
+    #   a non-None vector_asof, i.e. were genuinely PIT-stamped)
+    assert rows["b2"].get("regime_stamp_basis") == "recomputed_history", (
+        f"R-CI3 basis normalisation: pit_live with vector_asof=None must become "
+        f"recomputed_history, got {rows['b2'].get('regime_stamp_basis')}"
     )
 
     # c3: predates coverage → vector_asof stays None

@@ -573,42 +573,125 @@ def _context_accrual_heartbeat(root: Path) -> dict:
     except Exception as exc:  # noqa: BLE001
         result["panel_partitions"] = {"latest": None, "n": None, "error": str(exc)}
 
-    # --- stamper_gap: track_record buy/rebuy fires on dates with no forward-ledger append ---
+    # --- stamper_gap: buy/rebuy fires post-wire with no forward-ledger append ---
+    # False-positive guard (R-CI12): restrict to fires at/after the ledger wire date
+    # AND to tickers in the personality universe.  Historical fires pre-wire are
+    # irrelevant — the stamper could not have run before the ledger existed.
+    # When ledger is empty → gap check is meaningless → stamper_gap=null with note.
     try:
-        stamper_gap = False
+        stamper_gap: bool | None = False
         gap_dates: list[str] = []
+        fires_seen_since_wire: int | None = None
         tr_path = root / "data" / "signal_archive" / "track_record.parquet"
+
+        _gap_checked = False  # tracks whether we reached the actual comparison
+
         if tr_path.exists() and fl_path.exists():
             try:
                 import pyarrow.parquet as pq  # noqa: PLC0415
                 import pandas as _pd  # noqa: PLC0415
-                # buy/rebuy fire dates from track_record
-                tr_pf = pq.ParquetFile(str(tr_path))
-                tr_schema = list(tr_pf.schema_arrow.names)
-                tr_cols = [c for c in tr_schema if c in ("date", "type", "first_seen_asof")]
-                if "date" in tr_cols and "type" in tr_cols:
-                    tr_tbl = tr_pf.read(columns=["date", "type"])
-                    tr_df = tr_tbl.to_pandas()
-                    buy_dates = set(
-                        str(d) for d in tr_df.loc[tr_df["type"].isin(["buy", "rebuy"]), "date"].dropna().unique()
-                    )
-                    # forward_ledger dates
-                    fl_pf = pq.ParquetFile(str(fl_path))
-                    fl_schema_names = list(fl_pf.schema_arrow.names)
-                    fl_date_cols = [c for c in fl_schema_names if c in ("as_of", "date", "fire_date", "asof")]
-                    if fl_date_cols:
-                        fl_tbl = fl_pf.read(columns=fl_date_cols[:1])
-                        fl_dates = set(str(v) for v in fl_tbl.column(0).to_pylist() if v is not None)
-                        gap_dates = sorted(buy_dates - fl_dates)[-5:]  # show last 5
-                        if gap_dates:
-                            stamper_gap = True
+
+                # --- wire_floor: earliest date in the ledger ---
+                fl_pf = pq.ParquetFile(str(fl_path))
+                fl_schema_names = list(fl_pf.schema_arrow.names)
+                fl_date_cols = [c for c in fl_schema_names if c in ("as_of", "date", "fire_date", "asof")]
+                fl_ticker_cols = [c for c in fl_schema_names if c in ("ticker", "symbol")]
+
+                if fl_date_cols:
+                    fl_read_cols = fl_date_cols[:1] + fl_ticker_cols[:1]
+                    fl_tbl = fl_pf.read(columns=fl_read_cols)
+                    fl_dates = [str(v) for v in fl_tbl.column(0).to_pylist() if v is not None]
+
+                    if not fl_dates:
+                        # Empty ledger — gap check not yet meaningful; honest null heartbeat
+                        stamper_gap = None
+                        fires_seen_since_wire = None
+                        result["stamper_gap_note"] = "awaiting first ledger append"
+                        _gap_checked = True
+                    else:
+                        wire_floor = min(fl_dates)
+                        fl_dates_set = set(fl_dates)
+
+                        # Build (date, ticker) set from ledger if ticker column present
+                        fl_pairs: set[tuple[str, str]] | None = None
+                        if fl_ticker_cols:
+                            fl_ticker_vals = [
+                                str(v) for v in fl_tbl.column(1).to_pylist() if v is not None
+                            ]
+                            fl_pairs = set(zip(fl_dates, fl_ticker_vals))
+
+                        # --- personality universe: tickers we track ---
+                        personality_universe: set[str] | None = None
+                        sp_path = root / "site" / "factordata" / "stock_personality.json"
+                        if sp_path.exists():
+                            try:
+                                sp_raw = json.loads(sp_path.read_text(encoding="utf-8"))
+                                pt = sp_raw.get("per_ticker")
+                                if isinstance(pt, dict):
+                                    personality_universe = set(pt.keys())
+                            except Exception:  # noqa: BLE001
+                                pass
+
+                        # --- track_record: buy/rebuy fires ---
+                        tr_pf = pq.ParquetFile(str(tr_path))
+                        tr_schema = list(tr_pf.schema_arrow.names)
+                        tr_date_col = "date" if "date" in tr_schema else None
+                        tr_ticker_col = next(
+                            (c for c in tr_schema if c in ("ticker", "symbol")), None
+                        )
+
+                        if tr_date_col and "type" in tr_schema:
+                            tr_read_cols = [c for c in [tr_date_col, "type", tr_ticker_col] if c]
+                            tr_tbl = tr_pf.read(columns=tr_read_cols)
+                            tr_df = tr_tbl.to_pandas()
+
+                            buy_mask = tr_df["type"].isin(["buy", "rebuy"])
+                            # Wire-floor filter: only fires at/after the ledger wire date
+                            date_strs = tr_df[tr_date_col].astype(str)
+                            post_wire_mask = date_strs >= wire_floor
+                            candidate_df = tr_df[buy_mask & post_wire_mask]
+
+                            # Personality-universe filter: only tickers we track
+                            if personality_universe is not None and tr_ticker_col:
+                                candidate_df = candidate_df[
+                                    candidate_df[tr_ticker_col].astype(str).isin(
+                                        personality_universe
+                                    )
+                                ]
+
+                            fires_seen_since_wire = len(candidate_df)
+
+                            # Gap detection
+                            if fl_pairs is not None and tr_ticker_col:
+                                # (date, ticker) level gap detection
+                                fire_pairs = set(
+                                    zip(
+                                        candidate_df[tr_date_col].astype(str),
+                                        candidate_df[tr_ticker_col].astype(str),
+                                    )
+                                )
+                                missing_pairs = fire_pairs - fl_pairs
+                                gap_dates = sorted({d for d, _ in missing_pairs})[-5:]
+                            else:
+                                # Date-level gap detection (ledger has no ticker column)
+                                buy_post_wire_dates = set(
+                                    candidate_df[tr_date_col].dropna().astype(str).unique()
+                                )
+                                gap_dates = sorted(buy_post_wire_dates - fl_dates_set)[-5:]
+
+                            stamper_gap = bool(gap_dates)
+                            _gap_checked = True
+
             except Exception:  # noqa: BLE001
                 pass
+
         result["stamper_gap"] = stamper_gap
+        result["fires_seen_since_wire"] = fires_seen_since_wire
         if gap_dates:
             result["stamper_gap_dates_sample"] = gap_dates
     except Exception as exc:  # noqa: BLE001
         result["stamper_gap"] = None
+        result["fires_seen_since_wire"] = None
         result["stamper_gap_error"] = str(exc)
 
     return result

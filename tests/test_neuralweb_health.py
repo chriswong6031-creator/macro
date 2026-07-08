@@ -594,43 +594,95 @@ def test_w1_context_accrual_heartbeat_with_fire_coords(tmp_path: Path) -> None:
 
 def test_w1_context_accrual_heartbeat_stamper_gap(tmp_path: Path) -> None:
     """W1 R-CI12: stamper_gap=True when track_record has buy fires on dates
-    where the personality forward_ledger has NO rows for that date.
+    AT OR AFTER the ledger wire_floor that are NOT present in the forward_ledger.
+
+    Wire-floor rule: the ledger's earliest date is the wire_floor.  Fires BEFORE
+    the wire_floor are historical pre-wire fires and must NOT flag (tested in the
+    regression test below).  Only post-wire fires trigger stamper_gap.
     """
     import pyarrow as pa
     import pyarrow.parquet as pq
     from engine.neuralweb.health import _context_accrual_heartbeat
 
-    # Write a synthetic track_record.parquet with buy fires on 2026-07-01
+    # Forward_ledger established (wired) on 2026-07-01.
+    # wire_floor = "2026-07-01" (min of ledger dates).
+    fl_path = tmp_path / "data" / "stock_personality" / "forward_ledger.parquet"
+    fl_path.parent.mkdir(parents=True, exist_ok=True)
+    fl_df = pa.table({
+        "as_of": pa.array(["2026-07-01"], type=pa.string()),
+    })
+    pq.write_table(fl_df, str(fl_path))
+
+    # track_record has a buy fire on 2026-07-02 (AFTER wire_floor=2026-07-01).
+    # The ledger only covers 2026-07-01 → gap on 2026-07-02.
     tr_path = tmp_path / "data" / "signal_archive" / "track_record.parquet"
     tr_path.parent.mkdir(parents=True, exist_ok=True)
     tr_df = pa.table({
-        "date": pa.array(["2026-07-01", "2026-07-01"], type=pa.string()),
+        "date": pa.array(["2026-07-02", "2026-07-02"], type=pa.string()),
         "type": pa.array(["buy", "rebuy"], type=pa.string()),
     })
     pq.write_table(tr_df, str(tr_path))
 
-    # Write a forward_ledger.parquet with a DIFFERENT date (2026-07-02)
-    fl_path = tmp_path / "data" / "stock_personality" / "forward_ledger.parquet"
-    fl_path.parent.mkdir(parents=True, exist_ok=True)
-    fl_df = pa.table({
-        "as_of": pa.array(["2026-07-02"], type=pa.string()),
-    })
-    pq.write_table(fl_df, str(fl_path))
-
     result = _context_accrual_heartbeat(tmp_path)
 
-    # 2026-07-01 is in buy fires but NOT in forward_ledger → stamper_gap=True
+    # 2026-07-02 is post-wire and NOT in forward_ledger → stamper_gap=True
     assert result["stamper_gap"] is True, (
-        f"expected stamper_gap=True, got {result['stamper_gap']}. Full: {result}"
+        f"expected stamper_gap=True for post-wire miss, got {result['stamper_gap']}. Full: {result}"
     )
     assert "stamper_gap_dates_sample" in result
-    assert "2026-07-01" in result["stamper_gap_dates_sample"]
+    assert "2026-07-02" in result["stamper_gap_dates_sample"]
 
-    # Now add 2026-07-01 to the ledger → stamper_gap should be False
+    # Add 2026-07-02 to the ledger → stamper_gap should resolve to False
     fl_df2 = pa.table({
         "as_of": pa.array(["2026-07-01", "2026-07-02"], type=pa.string()),
     })
     pq.write_table(fl_df2, str(fl_path))
 
     result2 = _context_accrual_heartbeat(tmp_path)
-    assert result2["stamper_gap"] is False
+    assert result2["stamper_gap"] is False, (
+        f"expected stamper_gap=False after ledger covers the gap date, got {result2['stamper_gap']}"
+    )
+
+
+def test_w1_stamper_gap_pre_wire_fires_do_not_flag(tmp_path: Path) -> None:
+    """W1 R-CI12 false-positive regression: buy fires BEFORE the ledger wire_floor
+    must NOT set stamper_gap=True.
+
+    Scenario: ledger wire_floor = 2026-07-05 (ledger's earliest entry).
+    track_record has historical buy fires on 2026-06-01 (pre-wire).
+    These fires pre-date the ledger; the stamper could not have run then.
+    Expected: stamper_gap=False (no false alarm).
+    """
+    import pyarrow as pa
+    import pyarrow.parquet as pq
+    from engine.neuralweb.health import _context_accrual_heartbeat
+
+    # Ledger wired on 2026-07-05 — wire_floor = "2026-07-05"
+    fl_path = tmp_path / "data" / "stock_personality" / "forward_ledger.parquet"
+    fl_path.parent.mkdir(parents=True, exist_ok=True)
+    fl_df = pa.table({
+        "as_of": pa.array(["2026-07-05", "2026-07-06"], type=pa.string()),
+    })
+    pq.write_table(fl_df, str(fl_path))
+
+    # track_record has buy fires ONLY on 2026-06-01 (well before wire_floor)
+    tr_path = tmp_path / "data" / "signal_archive" / "track_record.parquet"
+    tr_path.parent.mkdir(parents=True, exist_ok=True)
+    tr_df = pa.table({
+        "date": pa.array(["2026-06-01", "2026-06-15"], type=pa.string()),
+        "type": pa.array(["buy", "buy"], type=pa.string()),
+    })
+    pq.write_table(tr_df, str(tr_path))
+
+    result = _context_accrual_heartbeat(tmp_path)
+
+    # Pre-wire fires must NOT flag — this is the false-positive regression
+    assert result["stamper_gap"] is False, (
+        f"FALSE POSITIVE: historical pre-wire fires flagged stamper_gap=True. "
+        f"wire_floor should exclude 2026-06-01 fires. Full result: {result}"
+    )
+    # fires_seen_since_wire should be 0 (no fires after wire_floor)
+    assert result.get("fires_seen_since_wire") == 0, (
+        f"expected fires_seen_since_wire=0 (all fires pre-wire), got "
+        f"{result.get('fires_seen_since_wire')}"
+    )

@@ -554,7 +554,7 @@ def test_w1_contrib_prefix_fix_real_column_names(
 # W1 Test (g): personality enrichment — snapshot_fresh basis
 # ---------------------------------------------------------------------------
 
-def _make_personality_json(root: Path, tickers: list[str]) -> None:
+def _make_personality_json(root: Path, tickers: list[str], as_of: str = _AS_OF) -> None:
     """Write a minimal stock_personality.json for the given tickers."""
     per_ticker = {
         t: {
@@ -571,7 +571,7 @@ def _make_personality_json(root: Path, tickers: list[str]) -> None:
     p.parent.mkdir(parents=True, exist_ok=True)
     p.write_text(json.dumps({
         "schema": "stock_personality.v1",
-        "as_of": _AS_OF,
+        "as_of": as_of,
         "n_tickers": len(tickers),
         "per_ticker": per_ticker,
     }), encoding="utf-8")
@@ -599,10 +599,10 @@ def test_w1_personality_enrichment_snapshot_fresh(
         for r in (json.loads(l) for l in fire_path.read_text().splitlines() if l.strip())
     }
 
-    # AAPL: personality_basis='snapshot_fresh', archetype present
+    # AAPL: personality_basis='snapshot_not_pit' (same-night snapshot within ≤5 tdays)
     aapl = fire_rows["AAPL"]
-    assert aapl["personality_basis"] == "snapshot_fresh", (
-        f"expected snapshot_fresh for AAPL, got {aapl['personality_basis']}"
+    assert aapl["personality_basis"] == "snapshot_not_pit", (
+        f"expected snapshot_not_pit for AAPL, got {aapl['personality_basis']}"
     )
     assert aapl["archetype"] == "momentum_leader"
     assert "clean_uptrend" in aapl["chart_primary"]
@@ -696,4 +696,51 @@ def test_w1_carry_forward_date_matching(
     agg_gap_notes = [g for g in state["gaps"] if "had no panel row" in g]
     assert not agg_gap_notes, (
         f"Carry-forward fix failure: unexpected 'no panel row' gap: {agg_gap_notes}"
+    )
+
+
+# ---------------------------------------------------------------------------
+# W1 Test (i): stale-snapshot freshness gate — personality basis=absent
+# ---------------------------------------------------------------------------
+
+def test_w1_stale_snapshot_yields_absent_basis(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """W1 R-CI3 freshness gate: when stock_personality.json as_of is more than
+    _PERSONALITY_STALE_TDAYS (5) trading days before board_as_of, personality
+    fields must be null and personality_basis must be 'absent'.
+
+    board_as_of = 2026-07-03 (_AS_OF), snapshot as_of = 2026-06-19
+    (10 trading days earlier) → stale → absent.
+    """
+    import pandas as _pd
+    # snapshot as_of is 10 trading days before board_as_of
+    snapshot_as_of = str(_pd.bdate_range(end=_AS_OF, periods=11)[0].date())
+
+    _make_synthetic_panel(tmp_path, _AS_OF)
+    # AAPL is IN the snapshot but snapshot is stale
+    _make_personality_json(tmp_path, ["AAPL"], as_of=snapshot_as_of)
+    _make_standouts(tmp_path, _AS_OF, ["AAPL"])
+    _patch_world_state(monkeypatch)
+
+    state = build_factor_intelligence_state(root=tmp_path, as_of_date=_AS_OF)
+
+    fire_path = tmp_path / "data" / "factordata" / "fire_coordinates.jsonl"
+    assert fire_path.exists(), "fire_coordinates.jsonl not written"
+    fire_rows = {
+        r["ticker"]: r
+        for r in (json.loads(l) for l in fire_path.read_text().splitlines() if l.strip())
+    }
+
+    aapl = fire_rows["AAPL"]
+    assert aapl["personality_basis"] == "absent", (
+        f"stale snapshot (10 tdays) should yield personality_basis='absent', "
+        f"got '{aapl['personality_basis']}'"
+    )
+    # Personality fields must be null when basis=absent due to staleness
+    assert aapl["archetype"] is None, (
+        f"archetype must be None when basis=absent, got {aapl['archetype']}"
+    )
+    assert aapl["chart_primary"] is None, (
+        f"chart_primary must be None when basis=absent, got {aapl['chart_primary']}"
     )

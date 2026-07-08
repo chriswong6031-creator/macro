@@ -423,8 +423,8 @@ def backfill_regime_stamps(root: Path | str | None = None) -> dict:
 
     R-CI3 provenance law: every backfilled row receives
       regime_stamp_basis='recomputed_history'
-    This MUST NOT be overwritten to 'pit_live' by query.py (the
-    query.py:1094-1102 clobber guard checks _no_basis = basis is None, so
+    This MUST NOT be overwritten to 'pit_live' by engine/neuralweb/query.py (the
+    engine/neuralweb/query.py:1094-1102 clobber guard checks _no_basis = basis is None, so
     pre-existing 'recomputed_history' values survive unchanged).
     Claims whose asof predates regime_vector.parquet coverage stay
     vector_asof=None and are counted in n_precoverage.
@@ -452,10 +452,14 @@ def backfill_regime_stamps(root: Path | str | None = None) -> dict:
                 for k, v in stamp.items():
                     if c.get(k) is None:
                         c[k] = v
-                # R-CI3: mark as recomputed from history, never pit_live
-                # Only set if not already present (keep-FIRST rule).
-                if c.get("regime_stamp_basis") is None:
-                    c["regime_stamp_basis"] = "recomputed_history"
+                # R-CI3: mark as recomputed from history, never pit_live.
+                # keep-FIRST applies only to rows that already had vector_asof
+                # (genuinely PIT-stamped) — those rows are not reached here
+                # because the outer `if c.get("vector_asof") is None` gate
+                # excludes them.  Any basis label on a vector_asof=None row is
+                # a lying label: values are demonstrably being recomputed now.
+                # Always stamp 'recomputed_history'.
+                c["regime_stamp_basis"] = "recomputed_history"
                 n_backfilled += 1
             else:
                 # asof predates regime_vector.parquet coverage — stays null

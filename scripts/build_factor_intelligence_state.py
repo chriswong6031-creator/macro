@@ -54,24 +54,53 @@ _SCHEMA = "neuralweb.factor_intelligence_state.v1"
 _CONTRIB_PATTERN = re.compile(r"^contrib_([a-z_]+)_20d$")
 _TOP_CONTRIB_N = 3
 
-# Personality JSON path (same-night snapshot, snapshot_fresh basis per R-CI3)
+# Personality JSON path (same-night snapshot basis per R-CI3)
 def _personality_path(repo: Path) -> Path:
     return repo / "site" / "factordata" / "stock_personality.json"
 
 
-def _load_personality_index(repo: Path) -> dict[str, dict]:
-    """Load per_ticker personality dict from stock_personality.json. Fail-open → {}."""
+# R-CI3 freshness gate: ≤5 trading days between snapshot as_of and board_as_of
+# determines snapshot_not_pit vs absent.  PIT-parquet join (pit_labels basis)
+# is deferred — wire when a PIT join is implemented in a future wave.
+_PERSONALITY_STALE_TDAYS = 5
+
+
+def _tday_gap(date_a: str, date_b: str) -> int | None:
+    """Return the number of trading days between two ISO date strings (|a - b|).
+
+    Returns None on any parse failure (caller treats gap as unknown → safe path).
+    Uses pandas bdate_range which mirrors the US NYSE business-day calendar
+    (no holiday adjustment, consistent with the rest of the pipeline).
+    """
+    try:
+        import pandas as _pd  # noqa: PLC0415
+        d1 = _pd.Timestamp(date_a)
+        d2 = _pd.Timestamp(date_b)
+        if d1 > d2:
+            d1, d2 = d2, d1
+        # bdate_range includes both endpoints; subtract 1 so same-day = 0
+        return max(0, len(_pd.bdate_range(d1, d2)) - 1)
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def _load_personality_index(repo: Path) -> tuple[dict[str, dict], str | None]:
+    """Load per_ticker personality dict + snapshot as_of from stock_personality.json.
+
+    Returns (per_ticker_dict, snapshot_as_of).  Fail-open → ({}, None).
+    """
     try:
         p = _personality_path(repo)
         if not p.exists():
-            return {}
+            return {}, None
         raw = json.loads(p.read_text(encoding="utf-8"))
         pt = raw.get("per_ticker")
+        as_of = raw.get("as_of")
         if isinstance(pt, dict):
-            return pt
-        return {}
+            return pt, (str(as_of) if as_of else None)
+        return {}, None
     except Exception:  # noqa: BLE001
-        return {}
+        return {}, None
 
 
 # ---------------------------------------------------------------------------
@@ -594,7 +623,7 @@ def _build_fire_coordinates(
             return []
 
         # R-CI3: load personality snapshot once for this run
-        personality_index = _load_personality_index(repo)
+        personality_index, personality_as_of = _load_personality_index(repo)
 
         # R-CI3: load regime stamp for board_as_of once
         regime_stamp: dict[str, Any] = {}
@@ -657,18 +686,31 @@ def _build_fire_coordinates(
                 except Exception:  # noqa: BLE001
                     pass
 
-                # R-CI3: personality coordinates (snapshot_fresh basis — same-night snapshot)
-                # personality_basis vocabulary:
-                #   'snapshot_fresh' — joined from the same-night snapshot (PIT-equivalent
-                #                      for today's fires; snapshot produced the same nightly run)
-                #   'absent'         — ticker not present in snapshot
+                # R-CI3: personality coordinates — frozen vocabulary:
+                #   'pit_labels'       — joined from a PIT-parquet (deferred; not yet wired)
+                #                        TODO: wire when a PIT join is implemented.
+                #   'snapshot_not_pit' — joined from the same-night snapshot; snapshot as_of
+                #                        is within ≤5 trading days of board_as_of.  Honest:
+                #                        the aggregate is a snapshot, not PIT parquet.
+                #   'absent'           — ticker not in snapshot OR snapshot is too stale
+                #                        (> _PERSONALITY_STALE_TDAYS trading days old).
                 pdata = personality_index.get(ticker, {})
                 if pdata:
-                    personality_basis = "snapshot_fresh"
-                    arch = pdata.get("arch")
-                    chart_primary = pdata.get("chart") or []
-                    micro_primary = pdata.get("micro") or []
-                    modes = pdata.get("modes") or []
+                    # Freshness gate: compare snapshot as_of to board_as_of
+                    tgap = (
+                        _tday_gap(personality_as_of, board_as_of)
+                        if personality_as_of else None
+                    )
+                    if tgap is None or tgap <= _PERSONALITY_STALE_TDAYS:
+                        personality_basis = "snapshot_not_pit"
+                        arch = pdata.get("arch")
+                        chart_primary = pdata.get("chart") or []
+                        micro_primary = pdata.get("micro") or []
+                        modes = pdata.get("modes") or []
+                    else:
+                        # Snapshot too stale — null personality fields, basis=absent
+                        personality_basis = "absent"
+                        arch = chart_primary = micro_primary = modes = None
                 else:
                     personality_basis = "absent"
                     arch = chart_primary = micro_primary = modes = None
