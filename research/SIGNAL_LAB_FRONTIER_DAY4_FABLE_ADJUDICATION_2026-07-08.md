@@ -75,3 +75,107 @@ against them — carries the strictest test we know how to write, because the ea
 person to fool with that idea is ourselves. Separately, the layoff-notice data we
 thought cost $49/month turned out to be free through an open-source scraper, and its
 test honestly showed nothing.*
+
+---
+
+## D4-01 reassessment (2026-07-08, same-day; operator-directed first-principles review)
+
+Question put to the bench: was the FAIL a mechanism refutation or a measurement failure —
+and should the flagship be kept? Method: full re-read of the merged harness + report
+(#1932), an independent adversarial Opus methodology review instructed to attack BOTH the
+kill and the revival case, and spot verification against the canonical data plane.
+
+### Findings (all confirmed by the independent review)
+
+1. **Estimand contamination (load-bearing defect).** `build_matched_pairs` draws controls
+   from the FULL panel with no date restriction; a 2020-rally absorbed event can match a
+   2018-bear control. Pair diff = treatment + cross-regime forward-climate difference.
+   The 10.3× SE inflation under quarter clustering is largely noise the design itself
+   injected — quarter-mean(diff) ≈ that quarter's absorbed forward mean minus a
+   near-constant, i.e. a market-regime series.
+2. **Rank ≠ path.** `path_quintile` is computed within signal_date, then matched across
+   dates: "same quintile" can pair a +15% path with a −5% path. The report's "matched on
+   the [t,t+10] return path" overstates a within-date rank match binned at 5.
+3. **Undisclosed estimand switch; prose contradicts table.** The G1 table's +2.42pp/21d
+   is the MATCHED diff (t_iid=13.28) — matching did NOT absorb the point estimate. The
+   t_HAC=−1.29 is computed on the equal-weighted 68-quarter mean series, a different
+   estimand whose sign flip reveals the pooled positive is carried by event-heavy
+   quarters. Real and adverse — but not "the excess disappears."
+4. **Identification failure (why the construct kill is nonetheless correct).** E1
+   treatment = 减持 window OPEN — intention-to-treat with unknown compliance; absorption
+   was labeled purely by own-group-median path. With price-only data, "price holds
+   through supply" is observationally equivalent to momentum. The construct as specified
+   is UNIDENTIFIABLE — no better estimator rescues it. Identification requires observing
+   flow QUANTITY.
+5. **E2's registered data-gap is FALSE.** `data/china_block_tape` exists on the canonical
+   host (mrtj 2005→2026, 175,509 rows; `premium_ratio` RATIO units, 7.98% ≤ −0.15;
+   `amt_pct_mktcap` PIT-verified on the denominator, Δmktcap/Δclose slope +0.914). The
+   lane worktree lacked the symlink and silently substituted the 461-row snapshot — a
+   second instance of the worktree-symlink hazard, this time producing a false registered
+   gap rather than a silent fallback.
+
+### Ruling
+
+- **Construct kill UPHELD** (E1-window × price-only absorption: unidentifiable — right
+  verdict, wrong reason).
+- **Family verdict VACATED.** The mechanism was never tested: treatment never observed,
+  decisive estimator contaminated, the only flow-bearing leg skipped on a false gap.
+- **The "momentum-costume RESOLVED" reading is DOWNGRADED** to unresolved /
+  construction-specific kill. The anti-hypothesis line (KEV/NHTSA/WARN/CN supply) remains
+  open pending Species S13 and the re-entry below.
+- **Family status: REVIVE-AMENDED** — one staged re-entry lane, sketched below, frozen at
+  dispatch, dispatched on operator ratification (chip posted).
+
+### Registered re-entry design (D4-01b, staged)
+
+**Stage 0 — falsifier (decisive, cheap).** Does deep-discount block reversion exist AT
+ALL net of path? Events: mrtj tape 2013+, `premium_ratio` ≤ −0.15 (RATIO units; unit
+assertion + pass-rate print per the F5-01 law), covered universe after .SH↔.SS
+normalization. Contrast strictly WITHIN signal-date vs path/vol/size-matched same-date
+controls (continuous caliper, not rank bins) → daily long-short series → NW at
+horizon-matched lag; N-weighted and equal-weighted estimands printed separately (never
+conflated); regime split at the 2023-08-27 减持新规; pre-registered minimum-N floor per
+cell. If the base reversion is dead in both regimes, the known local-quant trade is
+crowded out and the absorption interaction has no room: **family closes for real,
+cheaply.**
+
+**Stage 1 — mechanism DiD (only if Stage 0 is alive).** Treatment intensity = realized
+supply: `amt_wan` / event-date free-float recomputed from the price store (do not trust
+the tape's precomputed ratio — latest-vintage share counts carry mild look-ahead).
+"Absorbed" = price holds/rises over [t,t+10]; the not-absorbed counterfactual is defined
+on PRINTED blocks that subsequently gave back the print — never absence-of-print (a
+block prints only because a buyer cleared it; conditioning on printing conditions on
+demand — the endogenous-observability trap). Decisive term = the INTERACTION:
+(absorbed − gave-back | heavy supply) minus (same path split | no supply), within-date.
+E1 windows ride only as a labeled, non-decisive intention-to-treat leg. Capacity screen
+(turnover-scaled, cap-weighted book) pre-declared per PO-4.
+
+### Second/third-order notes
+
+- 减持新规 (2023-08) changed window selection meaning (post-rule windows are positively
+  selected); pooled-regime estimates are not interpretable — the split is mandatory.
+- Deep-discount block reversion is a known A-share local-quant trade; Stage 0 doubles as
+  a crowding check. Post-2023 deep-and-heavy covered events ≈ 495 — thin; hence the
+  minimum-N floor and the interaction (not the level) as the decisive term.
+- If Stage 1 passes, the production signal is CN small-cap concentrated: PO-1
+  payoff-orthogonality vs existing china-alpha exposure is checked at promotion, not
+  phase-0.
+
+### Process-law extensions (recorded in memory)
+
+- The worktree-symlink hazard has a SECOND failure mode: a missing symlink read as
+  "store does not exist" → false registered data-gap. Store-existence claims must be
+  verified against the canonical host data plane, not the lane worktree.
+- New numbers-verification fingerprint: a sign-flipped clustered t on a positive pooled
+  mean = undisclosed estimand switch (pooled vs equal-weighted clusters). Reports must
+  print both estimands separately.
+
+*In plain English: the flagship's death certificate listed the wrong cause. The idea as
+originally written deserved to die — "price held up while sellers were around" is
+momentum in a costume, because we never actually measured the selling. But the test that
+killed it compared apples picked in a bull market with oranges picked in a bear market,
+and the one dataset that actually records the selling — 175,000 real block trades — was
+sitting on disk the whole time, invisible to the lane because of a missing shortcut. So
+the old version stays dead, and one carefully-designed retest is queued that first asks
+the cheapest question — does this trade even exist anymore? — before asking the
+expensive one.*

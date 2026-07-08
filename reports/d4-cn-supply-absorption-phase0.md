@@ -1,6 +1,36 @@
 # D4-01 — CN Supply Absorption Phase-0
 ## Family: `cn_supply_absorption` — POSITIVE direction
 
+> **ADJUDICATION AMENDMENT (2026-07-08, Fable reassessment + independent Opus methodology
+> review — supersedes the family-level conclusion below).** The **construct kill stands**:
+> E1 (window-open × price-only absorption) is unidentifiable — "price holds through
+> supply" without observed flow quantity is observationally equivalent to short-horizon
+> momentum, and the treatment is intention-to-treat with unknown compliance. The **family
+> verdict is VACATED** on three confirmed defects:
+> 1. **G1's estimand is contaminated**: controls were drawn from the full panel with no
+>    date restriction (`build_matched_pairs` docstring says so), so pair diffs embed
+>    cross-regime calendar climate; the 10.3× SE inflation is largely design-injected.
+>    And "path matching" was within-date path *rank* (5 bins) matched across dates — a
+>    +15% path can pair with a −5% path.
+> 2. **The prose below misdescribes its own table**: +2.42pp/21d IS the matched diff
+>    (t_iid=13.28) — the point estimate SURVIVED matching; only the clustered t died.
+>    t_HAC=−1.29 is an *equal-weighted 68-quarter* estimand, a different quantity from
+>    the pooled +2.42pp, switched without disclosure. The negative sign shows the pooled
+>    positive is carried by event-heavy quarters (real, adverse — but not "matching
+>    absorbs the signal").
+> 3. **E2's "data gap" is FALSE**: `data/china_block_tape` exists on the canonical host
+>    (mrtj 2005→2026, 175,509 rows) — the lane worktree lacked the symlink and a 461-row
+>    single-asof snapshot was silently substituted. The §2 unit assertion describes the
+>    snapshot's field; the real tape's `premium_ratio` is RATIO units (median −0.040,
+>    7.98% ≤ −0.15). `amt_pct_mktcap` PIT-verified on the denominator (Δmktcap/Δclose
+>    slope +0.914 — event-date, not crawl-date, mktcap).
+>
+> **Family status: REVIVE-AMENDED.** Staged re-entry (Stage-0 within-date path-controlled
+> block-reversion falsifier → Stage-1 flow-intensity DiD) registered in
+> `research/SIGNAL_LAB_FRONTIER_DAY4_FABLE_ADJUDICATION_2026-07-08.md` §"D4-01
+> reassessment". The "momentum-costume RESOLVED" reading of the anti-hypothesis line is
+> correspondingly downgraded to unresolved.
+
 **Verdict: G1 FAIL — path-matched neutralization succeeds in absorbing the raw signal.**
 The raw absorbed-vs-not split shows +2.42 pp at 21d (t_iid=13.28) and +10.85 pp at 63d, but after matching on the [t,t+10] return path, vol tercile, and size tercile the clustered HAC t-statistic collapses to 1.29 at 21d and 1.85 at 63d — well below the |t|>=2 + BH q<=0.10 decisive gate. G2 and G3 pass (descriptively same-sign), and G4 (non-gated) finds a 2.5 pp partial effect after drift-factor residualization (t=8.57, p=0.0000) — which informs why the raw signal looks positive before matching.
 
