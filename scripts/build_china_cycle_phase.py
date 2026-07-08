@@ -340,7 +340,7 @@ def main() -> int:
     _save_json(json_payload)
 
     log.info("Build complete. Tape rows=%d, Ledger rows=%d, Phase=%s",
-             len(read_tape) if read_tape is not None else 0,
+             len(tape) if tape is not None else 0,
              len(ledger),
              json_payload.get("phase"))
 

@@ -432,6 +432,106 @@ def _load_policy_json(root: Path) -> dict[str, Any]:
         return {}
 
 
+def _build_policy_easing_hist(
+    root: Path, idx: pd.DatetimeIndex
+) -> tuple[pd.Series, pd.Timestamp | None]:
+    """Build a per-date boolean 'easing-active' series from ACTUAL PBoC series deltas.
+
+    A date is easing-active if an RRR cut (negative rrr_change) OR an LPR-1Y cut
+    (negative diff of lpr_1y) occurred within the trailing 90 calendar days.
+
+    Direction is determined from SERIES DELTAS only — never from event titles or
+    communique text, which would re-introduce look-ahead contamination.
+
+    Returns (series, series_end) where:
+      series: pd.Series aligned to idx with values:
+        - True  : at least one RRR or LPR-1Y cut in the trailing 90d window
+        - False : window is defined (series started) but no cut occurred
+        - NaN   : date is before the first observation of BOTH series (degrade,
+                  data_gap — no fabrication)
+      series_end: the last date covered by the PBoC series data, or None if no
+        series available.  Dates AFTER series_end are the live tail and should
+        receive the live engine impulse rather than the reconstruction.
+
+    Both series are optional; if one is missing it is silently excluded.
+    The first observation of EITHER series defines the earliest date at which
+    this reconstruction is non-null.  Dates before that get NaN.
+    The LAST observation of the LATEST series defines series_end.
+    """
+    # ── Load RRR series ──────────────────────────────────────────────────────
+    rrr_cuts: pd.DatetimeIndex | None = None
+    rrr_start: pd.Timestamp | None = None
+    rrr_end: pd.Timestamp | None = None
+    rrr_path = root / "data" / "china_macro" / "rrr.parquet"
+    if rrr_path.exists():
+        try:
+            rrr_df = pd.read_parquet(rrr_path)
+            rrr_df.index = pd.to_datetime(rrr_df.index)
+            if "rrr_change" in rrr_df.columns:
+                s = rrr_df["rrr_change"].dropna()
+                if not s.empty:
+                    rrr_start = s.index.min()
+                    rrr_end   = s.index.max()
+                # Negative rrr_change = cut
+                rrr_cuts = s[s < 0].index
+        except Exception as e:
+            log.warning("_build_policy_easing_hist: could not read rrr (%s)", e)
+
+    # ── Load LPR-1Y series ───────────────────────────────────────────────────
+    lpr_cuts: pd.DatetimeIndex | None = None
+    lpr_start: pd.Timestamp | None = None
+    lpr_end: pd.Timestamp | None = None
+    lpr_path = root / "data" / "china_macro" / "lpr_rate.parquet"
+    if lpr_path.exists():
+        try:
+            lpr_df = pd.read_parquet(lpr_path)
+            lpr_df.index = pd.to_datetime(lpr_df.index)
+            if "lpr_1y" in lpr_df.columns:
+                s = lpr_df["lpr_1y"].dropna()
+                if not s.empty:
+                    lpr_start = s.index.min()
+                    lpr_end   = s.index.max()
+                # Negative diff = cut
+                diffs = s.diff().dropna()
+                lpr_cuts = diffs[diffs < 0].index
+        except Exception as e:
+            log.warning("_build_policy_easing_hist: could not read lpr_rate (%s)", e)
+
+    # Determine the earliest date at which the reconstruction is defined:
+    # the minimum first-observation across the available series.
+    starts = [s for s in (rrr_start, lpr_start) if s is not None]
+    if not starts:
+        # No PBoC series available at all — return all-NaN
+        return pd.Series(np.nan, index=idx, dtype=object), None
+    series_start = min(starts)
+
+    # The series_end is the LATEST last-observation across all available series.
+    # This is the boundary between reconstructed history and the live tail.
+    ends = [e for e in (rrr_end, lpr_end) if e is not None]
+    series_end: pd.Timestamp | None = max(ends) if ends else None
+
+    # Build the per-date boolean series
+    result = pd.Series(np.nan, index=idx, dtype=object)
+    window = pd.Timedelta(days=90)
+
+    for dt in idx:
+        if dt < series_start:
+            # Before the first observation of any series — data_gap
+            result[dt] = np.nan
+            continue
+        cutoff = dt - window
+        easing = False
+        if rrr_cuts is not None:
+            if any((cutoff <= c <= dt) for c in rrr_cuts):
+                easing = True
+        if not easing and lpr_cuts is not None:
+            if any((cutoff <= c <= dt) for c in lpr_cuts):
+                easing = True
+        result[dt] = easing
+
+    return result, series_end
+
+
 # ---------------------------------------------------------------------------
 # Feature frame assembly
 # ---------------------------------------------------------------------------
@@ -474,7 +574,22 @@ def build_feature_frame(
         (from participation_tape)
       quad, liquidity (from regime_history)
       sec_wash, sec_peak (from sector_cycles)
-      policy_impulse (from policy_json — single scalar broadcast to all rows)
+      policy_impulse (per-date historical reconstruction for historical rows;
+                      live engine impulse for the live tail — see POLICY NOTE)
+
+    POLICY NOTE — per-date reconstruction (replaces single-scalar broadcast):
+      Historical rows (dates up to the last reconstruction point): policy_impulse
+      is derived from ACTUAL RRR and LPR-1Y series deltas via a 90-calendar-day
+      trailing window.  A date is 'easing' when at least one RRR cut or LPR-1Y
+      cut occurred in the prior 90 days (direction from series deltas only).
+      Dates before the first PBoC series observation are set to NaN (data_gap,
+      no fabrication).
+
+      Live tail only (dates after the last historical reconstruction point, i.e.
+      rows that extend beyond the last RRR/LPR data point): the live engine
+      snapshot impulse from policy_transmission.json is used — this may include
+      'targeted_support' and 'market_rescue' labels that are only observable from
+      current communique text and not reconstructable from rate-series deltas.
     """
     if root is None:
         root = _ROOT
@@ -534,10 +649,10 @@ def build_feature_frame(
         data_gaps.append("sector_cycles_missing")
         sb = pd.DataFrame(columns=["sec_wash", "sec_peak"])
 
-    # ── policy (single scalar, current-state only, broadcast) ────────────────
+    # ── live engine policy impulse (for live tail only) ───────────────────────
     if policy_json is None:
         policy_json = _load_policy_json(root)
-    policy_impulse: str = policy_json.get("policy_impulse", "neutral") if policy_json else "neutral"
+    live_impulse: str = policy_json.get("policy_impulse", "neutral") if policy_json else "neutral"
 
     # ── merge all on date index ───────────────────────────────────────────────
     frames = [lt_frame, pt_frame, rh_frame, sb]
@@ -560,7 +675,41 @@ def build_feature_frame(
         if not frame.empty:
             merged = merged.join(frame, how="left")
 
-    merged["policy_impulse"] = policy_impulse
+    # ── per-date policy reconstruction ───────────────────────────────────────
+    # Build historical easing signal from actual RRR/LPR deltas (90d trailing).
+    # For dates before the PBoC series start, the value is NaN (data_gap,
+    # no fabrication).  For the live tail (beyond the last PBoC data point),
+    # fall back to the live engine snapshot impulse.
+    easing_hist, pboc_series_end = _build_policy_easing_hist(root, idx)
+
+    if pboc_series_end is None:
+        # No PBoC series at all — use live impulse for all rows, mark gap
+        data_gaps.append("pboc_series_missing_policy_hist_unavailable")
+        merged["policy_impulse"] = live_impulse
+    else:
+        # hist_end is the last date covered by actual PBoC series data.
+        # Dates strictly AFTER hist_end are the live tail and receive the
+        # live engine snapshot impulse.
+        hist_end = pboc_series_end
+
+        # Assign policy_impulse per row
+        policy_series = pd.Series(index=idx, dtype=object)
+        for dt in idx:
+            if dt > hist_end:
+                # Live tail: use engine snapshot (may include targeted_support)
+                policy_series[dt] = live_impulse
+            else:
+                val = easing_hist.get(dt, np.nan)
+                if val is np.nan or (isinstance(val, float) and np.isnan(float(val))):
+                    # Before first PBoC series observation — degrade, no fabrication
+                    policy_series[dt] = "degrade"  # reads as neutral in classifier
+                elif val:
+                    policy_series[dt] = "easing"
+                else:
+                    policy_series[dt] = "neutral"
+
+        merged["policy_impulse"] = policy_series
+
     merged = merged.sort_index()
 
     return merged, data_gaps
@@ -726,13 +875,13 @@ def _classify_row(row: pd.Series) -> _PhaseResult:
 
     # 2. POLICY_PUT — floor formed, policy acting, selling exhausted
     # Trigger: policy easing/support AND turnover quiet/recovering AND limit-down fading.
-    # "targeted_support" is included because: (a) it is the current live broadcast
-    # and structurally causes POLICY_PUT to be unreachable without it; (b) the
-    # boundary between "market_rescue" and "targeted_support" is definitional, and
-    # the phase's behavioural hallmarks (low turnover, fading limit-down, sector
-    # washout) are the stronger discriminators anyway.
-    # CAVEAT: policy_impulse is a current-state scalar broadcast to all backfill
-    # rows; see the "caveat" field in cycle_phase.json for disclosure.
+    # "targeted_support" is included to handle the live tail where the engine
+    # snapshot may classify targeted support that is not reconstructable from rate
+    # series deltas.  Historical rows use per-date reconstruction ('easing' or
+    # 'neutral' derived from actual RRR/LPR cuts); live-tail rows may receive
+    # 'targeted_support' or 'market_rescue' from the live engine snapshot.
+    # The phase's behavioural hallmarks (low turnover, fading limit-down, sector
+    # washout) are the stronger discriminators in either case.
     elif policy_ease_or_support and not ldn_stress and not lup_ignite:
         put_conds = [
             policy_ease_or_support,
@@ -1161,9 +1310,15 @@ def build_cycle_phase_json(
         "ledger_summary":ledger_summary,
         "caveat": (
             "regime_history is a current-best-estimate non-PIT series; "
-            "policy_impulse is a CURRENT-STATE scalar broadcast to all backfill rows "
-            "(not a per-date historical series) — POLICY_PUT backfill counts reflect "
-            "today's policy stance, not the historical stance at each date; "
+            "policy_impulse for HISTORICAL rows is per-date reconstructed from ACTUAL "
+            "RRR and LPR-1Y series deltas (PBoC data) using a 90-calendar-day trailing "
+            "window: a date is marked 'easing' when at least one RRR cut or LPR-1Y cut "
+            "occurred in the prior 90 days (direction from series deltas only, not from "
+            "event titles or communique text); dates before the first PBoC series "
+            "observation are set to null (data_gap, no fabrication); "
+            "the LIVE TAIL only (dates beyond the last PBoC data point) uses the live "
+            "engine snapshot impulse (may include 'targeted_support' or 'market_rescue' "
+            "labels not reconstructable from rate-series deltas); "
             "all outputs are context_only (CN-SYS-R1)"
         ),
     }

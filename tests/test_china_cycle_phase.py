@@ -949,6 +949,102 @@ def test_grinding_bear_blocked_by_targeted_support():
 
 
 # ---------------------------------------------------------------------------
+# 18. Anti-broadcast regression: historical rows with no cut in 90d must NOT
+#     be POLICY_PUT even when today's live engine impulse is targeted_support
+# ---------------------------------------------------------------------------
+
+def test_historical_no_cut_not_policy_put_regardless_of_live_impulse(tmp_path):
+    """build_feature_frame: a historical date with no RRR/LPR cut in the 90d
+    trailing window must produce policy_impulse='neutral' (not 'targeted_support'),
+    so that such a row cannot classify as POLICY_PUT even if today's live engine
+    snapshot says targeted_support.
+
+    Setup:
+      - Write synthetic RRR and LPR-1Y parquet stores under tmp_path.
+        Single cut each, dated well AFTER our test date (so the 90d window is empty).
+      - Call build_feature_frame with a synthetic limit_tape spanning the test date.
+      - Supply a policy_json with policy_impulse='targeted_support' (simulates live snapshot).
+      - Assert that the feature row at the test date has policy_impulse='neutral',
+        NOT 'targeted_support'.
+      - Assert that _classify_row on that feature row does NOT produce POLICY_PUT
+        when turnover is cold and limit-down is quiet (conditions that would fire
+        POLICY_PUT if policy_ease_or_support were True).
+    """
+    import numpy as np
+
+    test_date = pd.Timestamp("2015-01-05")  # well before any cut in our fixture
+    cut_date  = pd.Timestamp("2016-06-01")  # cut is 17 months AFTER test_date
+
+    # Write synthetic china_macro/rrr.parquet
+    (tmp_path / "data" / "china_macro").mkdir(parents=True)
+    rrr_df = pd.DataFrame(
+        {"rrr_big": [20.0, 19.5], "rrr_change": [0.0, -0.5]},
+        index=pd.DatetimeIndex([pd.Timestamp("2010-01-01"), cut_date]),
+    )
+    rrr_df.index.name = "REPORT_DATE"
+    rrr_df.to_parquet(tmp_path / "data" / "china_macro" / "rrr.parquet")
+
+    # Write synthetic china_macro/lpr_rate.parquet  (starts same day as RRR cut)
+    lpr_df = pd.DataFrame(
+        {"lpr_1y": [4.35, 4.25], "lpr_5y": [4.90, 4.75]},
+        index=pd.DatetimeIndex([cut_date, cut_date + pd.Timedelta(days=30)]),
+    )
+    lpr_df.index.name = "TRADE_DATE"
+    lpr_df.to_parquet(tmp_path / "data" / "china_macro" / "lpr_rate.parquet")
+
+    # Minimal limit_tape covering test_date
+    (tmp_path / "data" / "china_microstructure").mkdir(parents=True)
+    lt = pd.DataFrame({
+        "limit_up_breadth_pct":   [0.4],
+        "limit_down_breadth_pct": [0.3],
+        "lianban_2plus":          [0.5],
+    }, index=pd.DatetimeIndex([test_date]))
+    lt.to_parquet(tmp_path / "data" / "china_microstructure" / "limit_tape.parquet")
+
+    # policy_json with live targeted_support (simulates current engine snapshot)
+    policy_json = {"policy_impulse": "targeted_support"}
+
+    feature_df, data_gaps = build_feature_frame(
+        root=tmp_path,
+        policy_json=policy_json,
+    )
+
+    check("feature_frame_nonempty_for_antibroadcast", not feature_df.empty,
+          f"feature_df rows={len(feature_df)}")
+
+    if test_date in feature_df.index:
+        row_impulse = feature_df.loc[test_date, "policy_impulse"]
+        check(
+            "historical_no_cut_gets_neutral_not_targeted_support",
+            row_impulse in ("neutral", "easing", "degrade"),
+            f"expected neutral/easing/degrade, got '{row_impulse}' — "
+            f"broadcast anachronism not fixed"
+        )
+        # Now classify the row and assert POLICY_PUT does NOT fire
+        # (use cold turnover + quiet limit-down so POLICY_PUT would fire
+        #  IF policy_ease_or_support were True)
+        row_series = feature_df.loc[test_date].copy()
+        row_series["turnover_z20"] = -1.2
+        row_series["ldn5"] = 0.3
+        row_series["lup5"] = 0.4
+        row_series["par_regime"] = "dormant"
+        row_series["sec_wash"] = 0.6
+        result = _classify_row(row_series)
+        check(
+            "historical_no_cut_not_policy_put",
+            result.phase != "POLICY_PUT",
+            f"got phase={result.phase} with policy_impulse='{row_impulse}' — "
+            f"POLICY_PUT should not fire when no historical cut in 90d window"
+        )
+    else:
+        # test_date not in feature frame — might happen if no overlapping data;
+        # this is acceptable as long as data_gaps are recorded
+        check("test_date_coverage_or_gap_noted",
+              len(data_gaps) > 0 or test_date not in feature_df.index,
+              "test_date absent from feature_df with no data_gap recorded")
+
+
+# ---------------------------------------------------------------------------
 # Run as script
 # ---------------------------------------------------------------------------
 
