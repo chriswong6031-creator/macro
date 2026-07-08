@@ -7,133 +7,955 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{{ t('A-Share Market Mechanics', 'A股市场结构') }} — Mastermind</title>
 {% set seo_title = 'A-Share Market Mechanics — Participation · Limit · Phase · Policy | Mastermind' %}
 {% set seo_desc = 'China A-share market structure cockpit: turnover & margin participation trends, limit-up/down breadth, lianban mechanics, cycle phase memory, policy transmission tape, CGB curve & USDCNH. Context only — never a signal.' %}
 {% set seo_path = 'china_mechanics.html' %}
 {% include "_seo_head.html.j2" %}
-<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
 <style>
-  * { box-sizing: border-box; }
-  body { background: var(--bg); color: var(--text); font: 14px/1.5 -apple-system,
-         "Segoe UI", Roboto, Helvetica, sans-serif; margin: 0; padding: 18px; }
-  @media (min-width: 1100px) { body { padding: 26px max(40px, calc((100vw - 1500px) / 2)); } }
-  html[data-lang="zh"] body { font-family: "PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",-apple-system,sans-serif; }
-  a { text-decoration: none; color: var(--link); }
-  h1 { font-size: 22px; margin: 0 0 4px; }
-  h2 { font-size: 14px; margin: 0 0 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
-  h3 { font-size: 13px; margin: 0 0 8px; color: var(--muted); text-transform: uppercase; letter-spacing: .055em; }
-  .grid { display: grid; gap: 14px; grid-template-columns: repeat(12, 1fr); }
-  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 15px 17px; }
-  .span12 { grid-column: span 12; } .span8 { grid-column: span 8; }
-  .span6 { grid-column: span 6; } .span4 { grid-column: span 4; }
-  .span3 { grid-column: span 3; }
-  @media (max-width: 900px) { .span8, .span6, .span4, .span3 { grid-column: span 12; } }
+:root {
+  --bg: #0f1115; --panel: #181b21; --panel2: #1e222a; --text: #d7dce3;
+  --muted: #8b93a1; --line: #2a2f3a;
+  --up: #45b873; --down: #e06464; --orange: #e08b45;
+  --info: #5b9bf0; --link: #7aa7e0; --warn: #e0a030;
+  --ok: #3da564;
+  --glass-bg: rgba(24,27,33,0.82);
+  --glass-brd: rgba(215,220,227,0.11);
+  --glass-blur: saturate(180%) blur(22px);
+  --glass-shadow: 0 24px 64px -22px rgba(3,7,18,.74), 0 10px 26px -12px rgba(3,7,18,.55), inset 0 1px 0 rgba(255,255,255,0.07);
 
-  /* ---- help tooltip ---- */
-  .help { display: inline-flex; align-items: center; justify-content: center;
-          width: 15px; height: 15px; border-radius: 50%; border: 1px solid var(--muted);
-          color: var(--muted); font-size: 10px; font-weight: 600; cursor: help;
-          position: relative; vertical-align: middle; margin-left: 5px; flex: none; }
-  .help .tip { display: none; position: absolute; bottom: 150%; left: 50%;
-               transform: translateX(-50%); width: 300px;
-               background: var(--panel); border: 1px solid var(--line);
-               padding: 10px 12px; border-radius: 9px; z-index: 60; font-size: 12px;
-               line-height: 1.5; color: var(--text); text-align: left; font-weight: 400;
-               text-transform: none; letter-spacing: normal;
-               box-shadow: 0 8px 28px rgba(0,0,0,.28); pointer-events: none; white-space: normal; }
-  .help:hover .tip { display: block; }
-  .help.below .tip { bottom: auto; top: 150%; }
+  /* Phase colors */
+  --c-repair: #7aa7e0;
+  --c-policy-put: #5b9bf0;
+  --c-liquidity: #45b873;
+  --c-broadening: #3da564;
+  --c-theme-lead: #e08b45;
+  --c-euphoria: #e06464;
+  --c-distribution: #e07070;
+  --c-deleveraging: #c04040;
+  --c-capitulation: #8b93a1;
+  --c-grinding: #a07070;
+}
 
-  /* ---- chip row ---- */
-  .chip { display: inline-block; padding: 3px 10px; border-radius: 12px; font-weight: 600; font-size: 12px;
-          background: color-mix(in srgb, var(--c, var(--muted)) 16%, var(--panel));
-          color: color-mix(in srgb, var(--c, var(--muted)) 82%, var(--text)); }
-  .c-up { --c: var(--up); } .c-down { --c: var(--down); } .c-warn { --c: var(--warn); }
-  .c-info { --c: var(--info); } .c-muted { --c: var(--muted); }
-  .chip-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 4px; align-items: center; }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 
-  /* ---- section divider ---- */
-  .msec { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line); }
-  .msec.flush { margin-top: 0; padding-top: 0; border-top: none; }
+html{scroll-behavior:smooth}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
 
-  /* ---- hero stat row ---- */
-  .stat-row { display: flex; flex-wrap: wrap; gap: 16px 24px; margin: 10px 0 4px; }
-  .stat { display: flex; flex-direction: column; gap: 1px; min-width: 80px; }
-  .stat .v { font-size: 18px; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }
-  .stat .k { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
-  .stat .v.pos { color: var(--up); } .stat .v.neg { color: var(--down); }
-  .stat .v.warn { color: var(--warn); }
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:-apple-system,"Segoe UI",Roboto,sans-serif;
+  font-size:14px;
+  line-height:1.5;
+  min-height:100vh;
+  padding-top:20px;  /* top breathing room for the shared .site-nav (check_nav_gap) */
+}
 
-  /* ---- mini inline chart (canvas) ---- */
-  .mini-chart { display: block; width: 100%; height: 70px; border-radius: 6px; margin: 8px 0 4px; }
-  .mini-chart-sm { height: 52px; }
-  .chart-label { font-size: 10.5px; color: var(--muted); margin-bottom: 2px; }
+/* ── Radial brand ambience ── */
+body::before{
+  content:'';
+  position:fixed;
+  top:-30%;left:50%;
+  transform:translateX(-50%);
+  width:900px;height:600px;
+  background:radial-gradient(ellipse at 50% 30%,rgba(91,155,240,0.06) 0%,transparent 70%);
+  pointer-events:none;
+  z-index:0;
+}
 
-  /* ---- table ---- */
-  table.mt { border-collapse: collapse; width: 100%; font-size: 12px; margin: 8px 0; }
-  table.mt th, table.mt td { text-align: left; padding: 4px 8px; border-bottom: 1px solid var(--line); }
-  table.mt th { color: var(--muted); font-weight: 600; }
-  table.mt tr:last-child td { border-bottom: none; }
-  table.mt .r { text-align: right; }
-  .pos { color: var(--up); } .neg { color: var(--down); }
+.page-wrap{
+  position:relative;
+  z-index:1;
+  max-width:1440px;
+  margin:0 auto;
+  padding:0 24px 80px;
+}
 
-  /* ---- phase strip ---- */
-  .phase-strip { display: flex; gap: 2px; flex-wrap: wrap; margin: 8px 0 6px; align-items: flex-end; }
-  .ps-cell { height: 22px; min-width: 7px; border-radius: 3px; flex: 1; cursor: default;
-             position: relative; opacity: .82; }
-  .ps-cell:hover { opacity: 1; }
-  .ps-cell .ps-tip { display: none; position: absolute; bottom: 130%; left: 50%;
-                     transform: translateX(-50%); white-space: nowrap; font-size: 10px;
-                     background: var(--panel); border: 1px solid var(--line);
-                     padding: 3px 7px; border-radius: 6px; z-index: 50;
-                     pointer-events: none; color: var(--text); }
-  .ps-cell:hover .ps-tip { display: block; }
+/* ── MICRO LABEL ── */
+.micro{
+  font-size:10.5px;
+  font-weight:600;
+  text-transform:uppercase;
+  letter-spacing:.1em;
+  color:var(--muted);
+}
 
-  /* ── phase colour mapping (inline style on each cell) ── */
+/* ── GLASS CARD ── */
+.glass{
+  background:var(--glass-bg);
+  border:1px solid var(--glass-brd);
+  backdrop-filter:var(--glass-blur);
+  -webkit-backdrop-filter:var(--glass-blur);
+  border-radius:14px;
+  box-shadow:var(--glass-shadow);
+}
 
-  /* ---- policy event list ---- */
-  .ev-list { list-style: none; padding: 0; margin: 8px 0; display: flex; flex-direction: column; gap: 6px; }
-  .ev-item { border-left: 3px solid var(--line); padding: 6px 10px; border-radius: 0 8px 8px 0;
-             background: var(--panel2); font-size: 12px; line-height: 1.4; }
-  .ev-item.pboc { border-left-color: var(--info); }
-  .ev-item.politburo, .ev-item.cewc { border-left-color: var(--warn); }
-  .ev-item.csrc, .ev-item.ndrc, .ev-item.mof { border-left-color: var(--up); }
-  .ev-meta { font-size: 10.5px; color: var(--muted); margin-top: 2px; }
+/* ── SECTION HEADER ── */
+.section-hdr{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin-bottom:16px;
+}
+.section-hdr h2{
+  font-size:13px;
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:.12em;
+  color:var(--muted);
+}
+.section-dot{
+  width:6px;height:6px;
+  border-radius:50%;
+  background:var(--info);
+  flex-shrink:0;
+}
 
-  /* ---- CGB curve visual ---- */
-  .cgb-row { display: flex; flex-wrap: wrap; gap: 8px 16px; margin: 8px 0; font-size: 12.5px; }
-  .cgb-pt { display: flex; flex-direction: column; gap: 2px; }
-  .cgb-pt .ten { font-size: 16px; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }
-  .cgb-pt .lbl { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+/* ── CONTEXT BADGE ── */
+.context-badge{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:4px 10px;
+  border-radius:20px;
+  background:rgba(224,160,48,0.12);
+  border:1px solid rgba(224,160,48,0.25);
+  font-size:10.5px;
+  font-weight:600;
+  text-transform:uppercase;
+  letter-spacing:.1em;
+  color:var(--warn);
+}
 
-  /* ---- authority disclaimer ---- */
-  .authority-note { font-size: 11px; color: var(--muted); padding: 6px 10px; border-radius: 7px;
-                    background: color-mix(in srgb, var(--muted) 8%, var(--panel));
-                    border: 1px solid var(--line); margin: 6px 0; line-height: 1.5; }
+/* ══════════════════════════════════════════
+   HERO
+══════════════════════════════════════════ */
+.hero{
+  padding:40px 0 32px;
+  display:grid;
+  grid-template-columns:1fr 380px;
+  gap:32px;
+  align-items:start;
+}
 
-  /* ---- staleness chip ---- */
-  .stale-ok { color: var(--up); }
-  .stale-warn { color: var(--warn); }
-  .stale-bad { color: var(--down); }
+.hero-left{}
 
-  /* ---- expander (show more / less) ---- */
-  .expander { display: none; }
-  .expander-toggle { cursor: pointer; color: var(--link); font-size: 12px; font-weight: 600;
-                     background: none; border: none; padding: 4px 0; }
-  details summary { cursor: pointer; color: var(--link); font-size: 12px; font-weight: 600; list-style: none; }
-  details summary::-webkit-details-marker { display: none; }
-  details[open] summary span.sh { display: none; }
-  details:not([open]) summary span.hd { display: none; }
+.hero-breadcrumb{
+  font-size:11px;
+  color:var(--muted);
+  margin-bottom:12px;
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+.hero-breadcrumb a{color:var(--link);text-decoration:none}
+.hero-breadcrumb span{color:var(--line)}
 
-  /* breadcrumb */
-  .breadcrumb { font-size: 12px; color: var(--muted); margin-bottom: 14px; }
-  .breadcrumb a { color: var(--link); }
+.hero-title{
+  font-size:28px;
+  font-weight:700;
+  letter-spacing:-.02em;
+  color:var(--text);
+  margin-bottom:4px;
+  line-height:1.2;
+}
+.hero-subtitle{
+  font-size:13px;
+  color:var(--muted);
+  margin-bottom:20px;
+}
+.hero-subtitle em{color:var(--text);font-style:normal}
 
-  body.page-china-mechanics { padding-top: 26px; }
+.hero-reading{
+  max-width:560px;
+  font-size:14px;
+  line-height:1.7;
+  color:var(--muted);
+  margin-bottom:20px;
+}
+.hero-reading strong{color:var(--text)}
+
+.hero-meta{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  flex-wrap:wrap;
+}
+
+/* quick stat tiles */
+.stat-row{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-top:24px;
+}
+.stat-tile{
+  background:var(--panel2);
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:12px 16px;
+  min-width:120px;
+}
+.stat-tile .label{
+  font-size:10px;
+  font-weight:600;
+  text-transform:uppercase;
+  letter-spacing:.1em;
+  color:var(--muted);
+  margin-bottom:4px;
+}
+.stat-tile .value{
+  font-size:20px;
+  font-weight:700;
+  letter-spacing:-.02em;
+}
+.stat-tile .sub{
+  font-size:10.5px;
+  color:var(--muted);
+  margin-top:2px;
+}
+.up-color{color:var(--up)}
+.down-color{color:var(--down)}
+.info-color{color:var(--info)}
+.warn-color{color:var(--warn)}
+.muted-color{color:var(--muted)}
+
+/* ── Cycle Wheel Hero ── */
+.wheel-wrap{
+  background:var(--glass-bg);
+  border:1px solid var(--glass-brd);
+  backdrop-filter:var(--glass-blur);
+  -webkit-backdrop-filter:var(--glass-blur);
+  border-radius:16px;
+  box-shadow:var(--glass-shadow);
+  padding:28px 24px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:16px;
+  position:relative;
+  overflow:hidden;
+}
+.wheel-wrap::before{
+  content:'';
+  position:absolute;
+  top:50%;left:50%;
+  transform:translate(-50%,-52%);
+  width:340px;height:340px;
+  background:radial-gradient(ellipse,rgba(91,155,240,0.07) 0%,transparent 65%);
+  pointer-events:none;
+}
+.wheel-title{
+  font-size:10.5px;
+  font-weight:600;
+  text-transform:uppercase;
+  letter-spacing:.12em;
+  color:var(--muted);
+  text-align:center;
+}
+#cycleWheelSvg{
+  width:260px;height:260px;
+  flex-shrink:0;
+}
+.wheel-phase-label{
+  text-align:center;
+}
+.wheel-phase-name{
+  font-size:16px;
+  font-weight:700;
+  color:var(--c-policy-put);
+  letter-spacing:.02em;
+  margin-bottom:2px;
+}
+.wheel-phase-zh{
+  font-size:11px;
+  color:var(--muted);
+  margin-bottom:6px;
+}
+.wheel-phase-desc{
+  font-size:12px;
+  color:var(--muted);
+  line-height:1.5;
+  max-width:260px;
+  text-align:center;
+}
+.wheel-confidence{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-top:4px;
+}
+.conf-bar-wrap{
+  width:100px;
+  height:4px;
+  background:var(--line);
+  border-radius:2px;
+  overflow:hidden;
+}
+.conf-bar-fill{
+  height:100%;
+  background:var(--c-policy-put);
+  border-radius:2px;
+  width:75%;
+}
+.conf-label{
+  font-size:10.5px;
+  color:var(--muted);
+}
+
+/* ══════════════════════════════════════════
+   SECTIONS
+══════════════════════════════════════════ */
+.section{
+  margin-top:32px;
+}
+
+/* ── Panel grid helpers ── */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+
+.panel{
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:14px;
+  padding:20px;
+}
+.panel-sm{
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:12px;
+  padding:16px;
+}
+
+/* ── GAUGE ── */
+.gauge-wrap{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:6px;
+}
+.gauge-label{
+  font-size:10px;
+  font-weight:600;
+  text-transform:uppercase;
+  letter-spacing:.1em;
+  color:var(--muted);
+  text-align:center;
+}
+.gauge-value{
+  font-size:18px;
+  font-weight:700;
+  text-align:center;
+}
+.gauge-sub{font-size:10.5px;color:var(--muted);text-align:center}
+
+/* ── SPARKLINE ── */
+.sparkline-wrap{
+  position:relative;
+  height:48px;
+  margin-top:8px;
+}
+.sparkline-wrap canvas,
+.sparkline-wrap svg{
+  width:100%;
+  height:48px;
+  display:block;
+}
+
+/* ── STALE CHIP ── */
+.stale-chip{
+  display:inline-flex;
+  align-items:center;
+  gap:4px;
+  padding:2px 7px;
+  border-radius:10px;
+  font-size:10px;
+  font-weight:600;
+  text-transform:uppercase;
+  letter-spacing:.08em;
+  background:rgba(224,160,48,0.12);
+  border:1px solid rgba(224,160,48,0.22);
+  color:var(--warn);
+}
+
+.null-chip{
+  display:inline-flex;
+  align-items:center;
+  gap:4px;
+  padding:2px 7px;
+  border-radius:10px;
+  font-size:10px;
+  font-weight:600;
+  letter-spacing:.06em;
+  background:rgba(139,147,161,0.10);
+  border:1px solid rgba(139,147,161,0.18);
+  color:var(--muted);
+}
+
+/* ══════════════════════════════════════════
+   PARTICIPATION PANEL
+══════════════════════════════════════════ */
+.participation-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr 1fr 1fr;
+  gap:12px;
+  margin-bottom:20px;
+}
+.part-card{
+  background:var(--panel2);
+  border:1px solid var(--line);
+  border-radius:12px;
+  padding:14px 16px;
+}
+.part-card .label{
+  font-size:10px;
+  font-weight:600;
+  text-transform:uppercase;
+  letter-spacing:.1em;
+  color:var(--muted);
+  margin-bottom:6px;
+}
+.part-card .main-val{
+  font-size:22px;
+  font-weight:700;
+  letter-spacing:-.02em;
+  line-height:1;
+  margin-bottom:2px;
+}
+.part-card .secondary{
+  font-size:11px;
+  color:var(--muted);
+}
+.part-card .sub-val{
+  font-size:11px;
+  margin-top:4px;
+}
+
+.heat-gauge-row{
+  display:grid;
+  grid-template-columns:200px 1fr;
+  gap:20px;
+  align-items:center;
+  padding:16px;
+  background:var(--panel2);
+  border:1px solid var(--line);
+  border-radius:12px;
+  margin-bottom:16px;
+}
+.heat-arc-wrap{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+}
+.heat-label-row{
+  font-size:11px;
+  color:var(--muted);
+  line-height:1.6;
+}
+.heat-label-row strong{color:var(--text)}
+
+/* conic ring gauge */
+.ring-gauge{
+  position:relative;
+  width:100px;height:100px;
+  flex-shrink:0;
+}
+.ring-gauge svg{width:100%;height:100%}
+.ring-gauge .center-val{
+  position:absolute;
+  top:50%;left:50%;
+  transform:translate(-50%,-50%);
+  text-align:center;
+  line-height:1.1;
+}
+.ring-gauge .center-val .v{
+  font-size:18px;
+  font-weight:700;
+  color:var(--text);
+}
+.ring-gauge .center-val .u{
+  font-size:10px;
+  color:var(--muted);
+}
+
+/* ══════════════════════════════════════════
+   LIMIT MECHANICS
+══════════════════════════════════════════ */
+.limits-top{
+  display:grid;
+  grid-template-columns:repeat(6,1fr);
+  gap:10px;
+  margin-bottom:20px;
+}
+.limit-chip{
+  background:var(--panel2);
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:12px 12px;
+  text-align:center;
+}
+.limit-chip .label{
+  font-size:9.5px;
+  font-weight:600;
+  text-transform:uppercase;
+  letter-spacing:.08em;
+  color:var(--muted);
+  margin-bottom:6px;
+}
+.limit-chip .val{
+  font-size:26px;
+  font-weight:700;
+  line-height:1;
+}
+.limit-chip .zh{
+  font-size:10px;
+  color:var(--muted);
+  margin-top:2px;
+}
+
+.breadth-thermo{
+  background:var(--panel2);
+  border:1px solid var(--line);
+  border-radius:12px;
+  padding:16px;
+  margin-bottom:16px;
+}
+.thermo-title{
+  font-size:10.5px;
+  font-weight:600;
+  text-transform:uppercase;
+  letter-spacing:.1em;
+  color:var(--muted);
+  margin-bottom:10px;
+}
+.thermo-bar-row{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  font-size:11px;
+}
+.thermo-bar{
+  flex:1;
+  height:20px;
+  border-radius:4px;
+  overflow:hidden;
+  background:var(--line);
+  display:flex;
+}
+.thermo-seg-up{background:var(--up);height:100%}
+.thermo-seg-down{background:var(--down);height:100%}
+.thermo-seg-other{background:var(--line);flex:1;height:100%}
+
+/* events table */
+.limits-charts{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:20px;
+}
+/* grid children must be allowed to shrink below content width so inner
+   tables/canvases don't force horizontal page overflow on narrow viewports */
+.limits-charts > *{min-width:0}
+.events-table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.events-table{
+  width:100%;
+  border-collapse:collapse;
+  font-size:12px;
+}
+.events-table th{
+  font-size:10px;
+  font-weight:600;
+  text-transform:uppercase;
+  letter-spacing:.08em;
+  color:var(--muted);
+  padding:6px 10px;
+  text-align:left;
+  border-bottom:1px solid var(--line);
+}
+.events-table td{
+  padding:7px 10px;
+  border-bottom:1px solid rgba(42,47,58,.5);
+  color:var(--text);
+}
+.events-table tr:last-child td{border-bottom:none}
+.event-sealed-up{color:var(--up);font-weight:600}
+.event-sealed-down{color:var(--down);font-weight:600}
+.event-failed{color:var(--warn);font-weight:600}
+
+/* ══════════════════════════════════════════
+   CYCLE PHASE PANEL
+══════════════════════════════════════════ */
+.phase-strip-wrap{
+  margin-bottom:20px;
+  overflow:hidden;
+}
+.phase-strip-label-row{
+  display:flex;
+  justify-content:space-between;
+  font-size:10px;
+  color:var(--muted);
+  margin-bottom:4px;
+}
+#phaseStripCanvas{
+  width:100%;
+  height:28px;
+  border-radius:6px;
+  display:block;
+}
+.phase-legend{
+  display:flex;
+  gap:12px;
+  flex-wrap:wrap;
+  margin-top:10px;
+}
+.phase-legend-item{
+  display:flex;
+  align-items:center;
+  gap:5px;
+  font-size:10.5px;
+  color:var(--muted);
+}
+.phase-dot{
+  width:8px;height:8px;
+  border-radius:50%;
+  flex-shrink:0;
+}
+
+.falsifier-list{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  margin-bottom:16px;
+}
+.falsifier-item{
+  display:flex;
+  align-items:flex-start;
+  gap:10px;
+  padding:10px 14px;
+  background:var(--panel2);
+  border:1px solid var(--line);
+  border-left:3px solid var(--warn);
+  border-radius:0 10px 10px 0;
+  font-size:12px;
+}
+.falsifier-id{
+  font-size:10px;
+  font-weight:700;
+  font-family:monospace;
+  color:var(--warn);
+  white-space:nowrap;
+  margin-top:1px;
+}
+.falsifier-desc{color:var(--text)}
+.falsifier-horizon{
+  margin-left:auto;
+  font-size:10px;
+  color:var(--muted);
+  white-space:nowrap;
+}
+
+.ledger-row{
+  display:flex;
+  gap:20px;
+  flex-wrap:wrap;
+  margin-top:12px;
+}
+.ledger-item{
+  text-align:center;
+}
+.ledger-item .lv{
+  font-size:20px;
+  font-weight:700;
+  letter-spacing:-.02em;
+}
+.ledger-item .ll{
+  font-size:10px;
+  text-transform:uppercase;
+  letter-spacing:.08em;
+  color:var(--muted);
+}
+
+/* collapsible era table */
+details summary{
+  cursor:pointer;
+  font-size:11px;
+  font-weight:600;
+  text-transform:uppercase;
+  letter-spacing:.1em;
+  color:var(--muted);
+  padding:10px 0;
+  list-style:none;
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+details summary::-webkit-details-marker{display:none}
+details summary::before{
+  content:'▶';
+  font-size:9px;
+  transition:transform .2s;
+  display:inline-block;
+}
+details[open] summary::before{transform:rotate(90deg)}
+.era-table{
+  width:100%;
+  border-collapse:collapse;
+  font-size:11.5px;
+  margin-top:4px;
+}
+.era-table th{
+  font-size:9.5px;
+  font-weight:600;
+  text-transform:uppercase;
+  letter-spacing:.08em;
+  color:var(--muted);
+  padding:5px 10px;
+  text-align:left;
+  border-bottom:1px solid var(--line);
+}
+.era-table td{
+  padding:6px 10px;
+  border-bottom:1px solid rgba(42,47,58,.4);
+  color:var(--muted);
+  vertical-align:top;
+}
+.era-table td:first-child{color:var(--text);font-weight:500}
+.phase-pill{
+  display:inline-block;
+  padding:1px 6px;
+  border-radius:3px;
+  font-size:9.5px;
+  font-weight:600;
+  margin:1px 2px 1px 0;
+}
+
+/* ══════════════════════════════════════════
+   POLICY TAPE
+══════════════════════════════════════════ */
+.policy-top{
+  display:flex;
+  align-items:flex-start;
+  gap:20px;
+  margin-bottom:20px;
+  flex-wrap:wrap;
+}
+.impulse-badge{
+  padding:10px 20px;
+  border-radius:12px;
+  background:rgba(91,155,240,0.12);
+  border:1px solid rgba(91,155,240,0.25);
+  text-align:center;
+  flex-shrink:0;
+}
+.impulse-badge .label{
+  font-size:9.5px;
+  font-weight:600;
+  text-transform:uppercase;
+  letter-spacing:.1em;
+  color:var(--muted);
+  margin-bottom:4px;
+}
+.impulse-badge .val{
+  font-size:13px;
+  font-weight:700;
+  color:var(--info);
+  white-space:nowrap;
+}
+
+.staleness-chips{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  align-items:center;
+}
+
+.policy-events-list{
+  display:flex;
+  flex-direction:column;
+  gap:0;
+}
+.policy-event-item{
+  display:flex;
+  gap:14px;
+  padding:10px 0;
+  border-bottom:1px solid rgba(42,47,58,.5);
+  font-size:12px;
+}
+.policy-event-item:last-child{border-bottom:none}
+.event-ts{
+  flex-shrink:0;
+  width:80px;
+  color:var(--muted);
+  font-size:10.5px;
+  padding-top:1px;
+}
+.event-body{}
+.event-source-chip{
+  display:inline-flex;
+  align-items:center;
+  padding:1px 6px;
+  border-radius:4px;
+  font-size:9.5px;
+  font-weight:600;
+  text-transform:uppercase;
+  letter-spacing:.06em;
+  margin-right:6px;
+}
+.src-pboc{background:rgba(91,155,240,0.15);color:var(--info)}
+.src-politburo{background:rgba(224,160,48,0.12);color:var(--warn)}
+.src-cewc{background:rgba(224,139,69,0.12);color:var(--orange)}
+.event-title{color:var(--text);line-height:1.5}
+.event-sectors{
+  margin-top:3px;
+  display:flex;
+  gap:4px;
+  flex-wrap:wrap;
+}
+.sector-tag{
+  padding:1px 6px;
+  border-radius:3px;
+  font-size:9.5px;
+  font-weight:600;
+  background:var(--panel2);
+  border:1px solid var(--line);
+  color:var(--muted);
+}
+
+/* ══════════════════════════════════════════
+   CROSS MARKET
+══════════════════════════════════════════ */
+.cross-grid{
+  display:grid;
+  grid-template-columns:1fr 240px;
+  gap:20px;
+  align-items:start;
+}
+.cgb-wrap{
+  background:var(--panel2);
+  border:1px solid var(--line);
+  border-radius:12px;
+  padding:16px;
+}
+.cgb-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:12px;
+}
+.cgb-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}
+#cgbCurve{display:block;width:100%;height:180px}
+
+.usdcnh-card{
+  background:var(--panel2);
+  border:1px solid var(--line);
+  border-radius:12px;
+  padding:16px;
+}
+.usdcnh-label{
+  font-size:10px;
+  font-weight:600;
+  text-transform:uppercase;
+  letter-spacing:.1em;
+  color:var(--muted);
+  margin-bottom:6px;
+}
+.usdcnh-rate{
+  font-size:32px;
+  font-weight:700;
+  letter-spacing:-.03em;
+  line-height:1;
+  margin-bottom:4px;
+}
+.usdcnh-chg{
+  font-size:13px;
+  font-weight:600;
+}
+
+/* ══════════════════════════════════════════
+   GLOSSARY
+══════════════════════════════════════════ */
+.glossary-grid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:10px;
+}
+.gloss-item{
+  background:var(--panel2);
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:12px 14px;
+}
+.gloss-term{
+  font-size:12px;
+  font-weight:700;
+  color:var(--text);
+  margin-bottom:4px;
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+.gloss-zh{
+  font-size:11px;
+  color:var(--muted);
+  font-weight:400;
+}
+.gloss-def{
+  font-size:11.5px;
+  color:var(--muted);
+  line-height:1.5;
+}
+
+/* ── DIVIDER ── */
+.divider{
+  height:1px;
+  background:var(--line);
+  margin:32px 0;
+}
+
+/* ── FOCUS STATES ── */
+a:focus-visible,button:focus-visible,summary:focus-visible{
+  outline:2px solid var(--info);
+  outline-offset:2px;
+  border-radius:4px;
+}
+
+/* ── help tooltip (inline "?" badge with hover popover) ── */
+.help{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;
+  border-radius:50%;border:1px solid var(--muted);color:var(--muted);font-size:10px;font-weight:600;
+  cursor:help;position:relative;vertical-align:middle;margin-left:5px;flex:none;text-transform:none;letter-spacing:normal}
+.help .tip{display:none;position:absolute;bottom:150%;left:50%;transform:translateX(-50%);width:300px;
+  background:var(--panel);border:1px solid var(--line);padding:10px 12px;border-radius:9px;z-index:60;
+  font-size:12px;line-height:1.5;color:var(--text);text-align:left;font-weight:400;text-transform:none;
+  letter-spacing:normal;box-shadow:0 8px 28px rgba(0,0,0,.28);pointer-events:none;white-space:normal}
+.help:hover .tip,.help:focus-within .tip{display:block}
+
+/* ── RESPONSIVE ── */
+@media(max-width:900px){
+  .hero{grid-template-columns:1fr;grid-template-rows:auto auto}
+  .wheel-wrap{max-width:380px;margin:0 auto}
+  .participation-grid{grid-template-columns:1fr 1fr}
+  .limits-top{grid-template-columns:repeat(3,1fr)}
+  .limits-charts{grid-template-columns:1fr}
+  .glossary-grid{grid-template-columns:1fr 1fr}
+  .cross-grid{grid-template-columns:1fr}
+  .grid-2,.grid-3,.grid-4{grid-template-columns:1fr}
+}
+@media(max-width:480px){
+  .page-wrap{padding:0 12px 60px}
+  .hero{padding:24px 0 20px}
+  .hero-title{font-size:22px}
+  .stat-row{gap:8px}
+  .stat-tile{min-width:100px;padding:10px 12px}
+  .participation-grid{grid-template-columns:1fr}
+  .limits-top{grid-template-columns:repeat(2,1fr)}
+  .glossary-grid{grid-template-columns:1fr}
+  #cycleWheelSvg{width:220px;height:220px}
+}
 </style>
 </head>
 <body class="page-china-mechanics">
@@ -159,342 +981,459 @@
   </div>
 </nav>
 
-<div class="grid">
+<div class="page-wrap">
 
-{# ── HEADER ── #}
-<div class="panel span12" id="mech-header">
-  <div class="breadcrumb"><a href="china.html">{{ t('China Macro', '中国宏观') }}</a> › {{ t('A-Share Market Mechanics', 'A股市场结构') }}</div>
-  <h1>🔬 {{ t('A-Share Market Mechanics', 'A股市场结构') }}</h1>
-  <p style="color:var(--muted);font-size:13px;margin:4px 0 0;line-height:1.55">
-    {{ t('Participation regime · limit-up/down breadth · cycle phase memory · policy tape · cross-market. Context only — no signal, no origination (CN-SYS-R1).', '参与度制度 · 涨/跌停板广度 · 周期阶段记忆 · 政策磁带 · 跨市场。仅供背景参考 — 无信号，不产生状态（CN-SYS-R1）。') }}
-    {{ t('As of', '截至') }} {{ as_of or '—' }}.
-    {{ help('Context-only cockpit. All panels are descriptive; none score, rank, size or originate state (CN-SYS-R1, R13, R14). Data gaps are disclosed where they exist (CN-SYS-R4).', '仅供参考的驾驶舱。所有面板均为描述性；不评分、排名、定仓或产生状态（CN-SYS-R1、R13、R14）。数据缺口在存在处予以披露（CN-SYS-R4）。') }}
-  </p>
-  <div class="authority-note">
-    {{ t('DISPLAY ONLY — authority: context_only. Cannot rank, size, gate or originate signals. LLM surfaces are never fed into this page (CN-SYS-R14).', '仅供展示 — 权限：context_only。不能排名、定仓、设门控或产生信号。LLM输出从不进入本页（CN-SYS-R14）。') }}
-  </div>
-</div>
+<!-- ══ HERO ══════════════════════════════════════════ -->
+{% set lpl = participation.get('latest') or {} %}
+{% set la = limits.get('latest_agg') or {} %}
+{% set cp = phase.get('current') or {} %}
+{% set pp = policy %}
+{% set cm = cross_market %}
+{% set cgb = cm.get('cgb_curve') or {} %}
+{% set cnh = cm.get('usdcnh') or {} %}
+{% set mb_val = lpl.get('margin_balance') %}
+{% set sb_val = lpl.get('southbound_z') %}
+{% set qvix_val = lpl.get('qvix') %}
+{% set tz20_val = lpl.get('turnover_z20') %}
+{% set tz60_val = lpl.get('turnover_z60') %}
+{% set phase_name = cp.get('phase') or '—' %}
+{% set conf_val = cp.get('confidence') %}
+{% set phase_color = '#5b9bf0' %}
+{% for pc in phase_catalog %}{% if pc.key == phase_name %}{% set phase_color = pc.color %}{% endif %}{% endfor %}
 
-{# ══════════════════════════════════════════════════════════════════════════════
-   PANEL (a): PARTICIPATION
-══════════════════════════════════════════════════════════════════════════════ #}
-<div class="panel span12" id="mech-participation">
-  <h2>{{ t('Participation', '参与度') }}
-    {{ help('Turnover z-score (20d / 60d) measures whether trading volume is above or below its recent history. Margin balance (融资余额) tracks leveraged positioning. Southbound flow (南向资金) is the HK→A-share flow. These are context/confluence factors: SLF-051 ruled out margin impulse as a standalone signal; here they are legal at context tier (CN-SYS-R2).', '成交额Z分数（20日/60日）衡量成交量是否高于或低于近期历史。融资余额跟踪杠杆持仓。南向资金为港股→A股资金流向。这些为背景/合流因素：SLF-051 排除了融资冲量作为独立信号；在此它们在背景层合法（CN-SYS-R2）。') }}
-  </h2>
-  {% set lp = participation %}
-  {% set lpl = lp.get('latest') or {} %}
+<section class="hero">
+  <div class="hero-left">
+    <div class="hero-breadcrumb">
+      <a href="china.html">{{ t('China', '中国') }}</a>
+      <span>›</span>
+      <span>{{ t('A-Share Market Mechanics', 'A股市场结构') }}</span>
+    </div>
 
-  {# status chips #}
-  <div class="chip-row">
-    {% set regime = lpl.get('regime') or '—' %}
-    {% set who = lpl.get('who_controls') or '—' %}
-    {% set risk = lpl.get('risk') or '—' %}
-    <span class="chip {{ 'c-up' if regime in ('retail_ignition','margin_acceleration','broad_mania') else ('c-down' if regime in ('forced_deleveraging','distribution') else ('c-warn' if regime == 'unclear' else 'c-muted')) }}">{{ t(regime.replace('_',' ').title(), tr(regime.replace('_',' ').title())) }}</span>
-    <span class="chip c-info">{{ t('who controls: ' + who, '控盘方：' + tr(who.replace('_',' '))) }}</span>
-    <span class="chip {{ 'c-down' if risk in ('frothy','fire_sale') else ('c-warn' if risk == 'normal' else 'c-up') }}">{{ t('risk: ' + risk, '风险：' + tr(risk)) }}</span>
-    {% if lpl.get('as_of') or lp.get('as_of') %}<span style="font-size:11px;color:var(--muted)">{{ t('as of', '截至') }} {{ lpl.get('as_of') or lp.get('as_of') }}</span>{% endif %}
-  </div>
+    <h1 class="hero-title">{{ t('A-Share Market Mechanics', 'A股市场结构') }}</h1>
+    <div class="hero-subtitle">{{ t('China A-Share Market Structure', '中国A股市场机制') }} · <em>{{ t('as of', '截至') }} {{ as_of or '—' }}</em></div>
 
-  {# stat row #}
-  <div class="stat-row">
-    {% set tz20 = lpl.get('turnover_z20') %}
-    <div class="stat">
-      <span class="v {{ 'pos' if tz20 is not none and tz20 > 0.5 else ('neg' if tz20 is not none and tz20 < -0.5 else '') }}">{{ ('%.2f'|format(tz20)) if tz20 is not none else '—' }}</span>
-      <span class="k">{{ t('Turnover z20', '成交额z20') }}</span>
-    </div>
-    {% set tz60 = lpl.get('turnover_z60') %}
-    <div class="stat">
-      <span class="v {{ 'pos' if tz60 is not none and tz60 > 0.5 else ('neg' if tz60 is not none and tz60 < -0.5 else '') }}">{{ ('%.2f'|format(tz60)) if tz60 is not none else '—' }}</span>
-      <span class="k">{{ t('Turnover z60', '成交额z60') }}</span>
-    </div>
-    {% set mb = lpl.get('margin_balance') %}
-    <div class="stat">
-      <span class="v">{{ ('%.0f'|format(mb / 100)) if mb is not none else '—' }}</span>
-      <span class="k">{{ t('Margin (亿¥)', '融资余额（亿¥）') }}</span>
-    </div>
-    {% set mc = lpl.get('margin_chg_5d') %}
-    <div class="stat">
-      <span class="v {{ 'pos' if mc is not none and mc > 0 else ('neg' if mc is not none and mc < 0 else '') }}">{{ ('%+.2f%%'|format(mc)) if mc is not none else '—' }}</span>
-      <span class="k">{{ t('Margin 5d chg', '融资5日变化') }}</span>
-    </div>
-    {% set sz = lpl.get('southbound_z') %}
-    <div class="stat">
-      <span class="v {{ 'pos' if sz is not none and sz > 0.5 else ('neg' if sz is not none and sz < -0.5 else '') }}">{{ ('%.2f'|format(sz)) if sz is not none else '—' }}</span>
-      <span class="k">{{ t('Southbound z', '南向资金z') }}</span>
-    </div>
-    {% set qvix = lpl.get('qvix') %}
-    <div class="stat">
-      <span class="v {{ 'warn' if qvix is not none and qvix > 25 else '' }}">{{ ('%.1f'|format(qvix)) if qvix is not none else '—' }}</span>
-      <span class="k">{{ t('QVIX', 'QVIX 恐慌') }}</span>
-    </div>
-  </div>
+    <p class="hero-reading">
+      <span class="l-en">{{ state_reading.en }}</span>
+      <span class="l-zh">{{ state_reading.zh }}</span>
+    </p>
 
-  {# charts — rendered via inline JS reading embedded JSON #}
-  {% if lp.get('turnover_z20') %}
-  <div class="chart-label">{{ t('Turnover z-score (20d) — last 120 sessions', '成交额Z分数（20日）— 近120个交易日') }}</div>
-  <canvas class="mini-chart" id="chart-tz20" data-series="{{ lp.turnover_z20 | tojson }}" data-zero="1" data-color-pos="{{ 'var(--up)' }}" data-color-neg="{{ 'var(--down)' }}"></canvas>
-  {% endif %}
-
-  {% if lp.get('southbound_z') %}
-  <div class="chart-label">{{ t('Southbound flow z-score — last 120 sessions', '南向资金Z分数 — 近120个交易日') }}</div>
-  <canvas class="mini-chart mini-chart-sm" id="chart-sbz" data-series="{{ lp.southbound_z | tojson }}" data-zero="1" data-color-pos="{{ 'var(--info)' }}" data-color-neg="{{ 'var(--muted)' }}"></canvas>
-  {% endif %}
-
-  {% if lp.get('margin_balance') %}
-  <div class="chart-label">{{ t('Margin balance (融资余额) — last 120 sessions', '融资余额 — 近120个交易日') }}</div>
-  <canvas class="mini-chart mini-chart-sm" id="chart-mb" data-series="{{ lp.margin_balance | tojson }}" data-color-pos="{{ 'var(--warn)' }}"></canvas>
-  {% endif %}
-
-  {# contradictions #}
-  {% set contradictions = lpl.get('contradictions') or [] %}
-  {% if contradictions %}
-  <div class="msec">
-    <h3>{{ t('Contradictions', '矛盾点') }}</h3>
-    {% for c in contradictions %}
-    <div style="font-size:12px;line-height:1.5;padding:6px 10px;border-radius:8px;border:1px solid var(--line);background:var(--panel2);margin-bottom:5px">
-      <b>{{ c.a }}</b> {{ t('vs', '对比') }} <b>{{ c.b }}</b>
-      {% if c.detail %}<div style="color:var(--muted);margin-top:2px">{{ c.detail }}</div>{% endif %}
+    <div class="hero-meta">
+      <div class="context-badge">
+        <span style="font-size:12px">⚑</span>
+        {{ t('Context only · not a signal or recommendation', '仅供参考 · 非信号或建议') }}
+      </div>
+      <span class="stale-chip">{{ t('Built', '生成') }} {{ built }}</span>
     </div>
-    {% endfor %}
-  </div>
-  {% endif %}
 
-  {# data gaps #}
-  {% set pg_gaps = lpl.get('data_gaps') or [] %}
-  {% if pg_gaps %}
-  <details style="margin-top:10px">
-    <summary><span class="sh">{{ t('Show data gaps', '显示数据缺口') }}</span><span class="hd">{{ t('Hide data gaps', '收起数据缺口') }}</span></summary>
-    <ul style="font-size:11px;color:var(--muted);margin:6px 0 0;padding-left:16px;line-height:1.6">
-      {% for g in pg_gaps %}<li>{{ g }}</li>{% endfor %}
-    </ul>
-  </details>
-  {% endif %}
-</div>
-
-{# ══════════════════════════════════════════════════════════════════════════════
-   PANEL (b): LIMIT MECHANICS
-══════════════════════════════════════════════════════════════════════════════ #}
-<div class="panel span12" id="mech-limits">
-  <h2>{{ t('Limit Mechanics', '涨跌停板机制') }}
-    {{ help('CN-SYS-R3: Limit-up/down data is market-structure context only. BUY-direction use is forbidden (standing kill). Lianban (连板) = consecutive limit-up sessions. Failed-seal ratio = names that touched limit-up but closed below it. Board width rules: Main 10%; STAR/ChiNext 20% (from 2019/2020); BSE 30%; ST names 5% on Main boards.', 'CN-SYS-R3：涨/跌停板数据仅作市场结构背景，禁止用于买入方向（已裁定禁止）。连板 = 连续涨停。未封板比率 = 触及涨停但收盘低于涨停价的个股。板块宽度规则：主板10%；科创板/创业板20%（自2019/2020年起）；北交所30%；ST股主板5%。') }}
-  </h2>
-  {% set lm = limits %}
-  {% set la = lm.get('latest_agg') or {} %}
-
-  {# stat row #}
-  <div class="stat-row">
-    <div class="stat">
-      <span class="v pos">{{ la.get('limit_up_count', '—') }}</span>
-      <span class="k">{{ t('Limit-ups (涨停)', '涨停数') }}</span>
-    </div>
-    <div class="stat">
-      <span class="v neg">{{ la.get('limit_down_count', '—') }}</span>
-      <span class="k">{{ t('Limit-downs (跌停)', '跌停数') }}</span>
-    </div>
-    <div class="stat">
-      <span class="v">{{ la.get('sealed_up_close', '—') }}</span>
-      <span class="k">{{ t('Sealed at close', '收盘封板') }}</span>
-    </div>
-    <div class="stat">
-      <span class="v warn">{{ la.get('failed_up_seal_count', '—') }}</span>
-      <span class="k">{{ t('Failed seals', '开板数') }}</span>
-    </div>
-    <div class="stat">
-      <span class="v">{{ la.get('lianban_2plus', '—') }}</span>
-      <span class="k">{{ t('Lianban ≥2 (连板)', '连板≥2') }}</span>
-    </div>
-    <div class="stat">
-      <span class="v">{{ la.get('lianban_max', '—') }}</span>
-      <span class="k">{{ t('Max lianban (连板最高)', '最高连板数') }}</span>
+    <div class="stat-row">
+      <div class="stat-tile">
+        <div class="label">{{ t('QVIX', 'QVIX 波动率') }}</div>
+        <div class="value{{ ' warn-color' if qvix_val is not none and qvix_val > 25 else '' }}">{{ ('%.1f'|format(qvix_val)) if qvix_val is not none else '—' }}</div>
+        <div class="sub">{{ t('fear gauge', '恐慌指标') }}</div>
+      </div>
+      <div class="stat-tile">
+        <div class="label">{{ t('Southbound', '南向资金') }}</div>
+        <div class="value {{ 'up-color' if sb_val is not none and sb_val > 0.5 else ('down-color' if sb_val is not none and sb_val < -0.5 else '') }}">{{ ('%+.2f'|format(sb_val)) if sb_val is not none else '—' }}</div>
+        <div class="sub">{{ t('z-score HK→A', '港资南向z分数') }}</div>
+      </div>
+      <div class="stat-tile">
+        <div class="label">{{ t('Margin', '融资余额') }}</div>
+        <div class="value info-color">{{ ('%.2f'|format(mb_val / 10000)) if mb_val is not none else '—' }} {{ t('万亿', '万亿') }}</div>
+        <div class="sub">
+          {% set mc = lpl.get('margin_chg_5d') %}
+          {{ t('5d chg', '5日变化') }} {{ ('%+.2f%%'|format(mc)) if mc is not none else '—' }}
+        </div>
+      </div>
+      <div class="stat-tile">
+        <div class="label">{{ t('Limit-Up', '涨停') }}</div>
+        <div class="value up-color">{{ la.get('limit_up_count', '—') }}</div>
+        <div class="sub">{{ t('of', '共') }} {{ '{:,}'.format(la.get('universe_n')) if la.get('universe_n') is not none else '—' }} {{ t('universe', '股') }}</div>
+      </div>
+      <div class="stat-tile">
+        <div class="label">{{ t('Limit-Down', '跌停') }}</div>
+        <div class="value down-color">{{ la.get('limit_down_count', '—') }}</div>
+        <div class="sub">{{ t('Failed seals', '炸板') }}: {{ la.get('failed_up_seal_count', '—') }}</div>
+      </div>
     </div>
   </div>
 
-  {# breadth chart #}
-  {% if lm.get('lup_series') %}
-  <div class="chart-label">{{ t('Limit-up breadth (% universe, 120 sessions)', '涨停板广度（占比，120个交易日）') }}</div>
-  <canvas class="mini-chart" id="chart-lup" data-series="{{ lm.lup_series | tojson }}" data-color-pos="{{ 'var(--up)' }}"></canvas>
-  {% endif %}
-  {% if lm.get('ldn_series') %}
-  <div class="chart-label">{{ t('Limit-down breadth (% universe, 120 sessions)', '跌停板广度（占比，120个交易日）') }}</div>
-  <canvas class="mini-chart mini-chart-sm" id="chart-ldn" data-series="{{ lm.ldn_series | tojson }}" data-color-pos="{{ 'var(--down)' }}"></canvas>
-  {% endif %}
-  {% if lm.get('fsr_series') %}
-  <div class="chart-label">{{ t('Failed-seal ratio (open ÷ limit-up, 120 sessions)', '未封板比率（开板数÷涨停数，120个交易日）') }}</div>
-  <canvas class="mini-chart mini-chart-sm" id="chart-fsr" data-series="{{ lm.fsr_series | tojson }}" data-color-pos="{{ 'var(--warn)' }}"></canvas>
-  {% endif %}
-  {% if lm.get('lianban_series') %}
-  <div class="chart-label">{{ t('Consecutive limit-up names (≥2 lianban, 120 sessions)', '连板个数（≥2连板，120个交易日）') }}</div>
-  <canvas class="mini-chart mini-chart-sm" id="chart-lianban" data-series="{{ lm.lianban_series | tojson }}" data-color-pos="{{ 'var(--info)' }}"></canvas>
-  {% endif %}
-
-  {# today's notable events table #}
-  {% if lm.get('latest_events') %}
-  <div class="msec">
-    <h3>{{ t('Notable limit events — latest session', '今日涨跌停事件') }}
-      {% if lm.get('latest_date') %}<span style="font-size:10px;color:var(--muted);margin-left:8px">{{ lm.latest_date }}</span>{% endif %}
-    </h3>
-    <table class="mt">
-      <tr>
-        <th>{{ t('Ticker', '代码') }}</th>
-        <th>{{ t('Board', '板块') }}</th>
-        <th>{{ t('Event', '事件') }}</th>
-        <th class="r">{{ t('Lianban', '连板') }}</th>
-        <th class="r">{{ t('vs limit %', '距涨停%') }}</th>
-      </tr>
-      {% for ev in lm.latest_events[:15] %}
-      <tr>
-        <td><a href="china_lookup.html#{{ ev.ticker }}">{{ ev.ticker }}</a></td>
-        <td>{{ ev.board }}</td>
-        <td><span style="font-size:10.5px;padding:1px 6px;border-radius:6px;
-          background:color-mix(in srgb,{{ 'var(--up)' if 'up' in ev.event else 'var(--down)' }} 14%,var(--panel));
-          color:{{ 'var(--up)' if 'up' in ev.event else 'var(--down)' }}">{{ ev.event }}</span></td>
-        <td class="r">{{ ev.lianban_count if ev.lianban_count else '—' }}</td>
-        <td class="r {{ 'neg' if ev.close_off_limit_pct is not none and ev.close_off_limit_pct < -0.005 else '' }}">
-          {{ ('%.2f%%'|format(ev.close_off_limit_pct * 100)) if ev.close_off_limit_pct is not none else '—' }}</td>
-      </tr>
-      {% endfor %}
-    </table>
-    {% if lm.latest_events | length > 15 %}<p style="font-size:11px;color:var(--muted)">… {{ lm.latest_events | length - 15 }} {{ t('more', '条更多') }}</p>{% endif %}
-  </div>
-  {% endif %}
-
-  <p class="authority-note" style="margin-top:10px">{{ t('CN-SYS-R3: this panel is market-structure context only. Limit-up as a BUY trigger is a standing kill.', 'CN-SYS-R3：本面板仅作市场结构背景。以涨停作为买入触发器已被永久禁止。') }}</p>
-</div>
-
-{# ══════════════════════════════════════════════════════════════════════════════
-   PANEL (c): PHASE MEMORY
-══════════════════════════════════════════════════════════════════════════════ #}
-<div class="panel span12" id="mech-phase">
-  <h2>{{ t('Cycle Phase Memory', '周期阶段记忆') }}
-    {{ help('Current phase classification with confidence, falsifiers, and a 90-session strip of historical phase assignments. ERA table covers known historical market cycles 2005→. Falsifier ledger: pre-committed conditions that, if they fire within their horizon, would contradict the current phase call. Accruing since phase-tape build start; not a calibration study (CN-SYS-R5).', '当前阶段分类（含置信度）、证伪条件，以及90个交易日的历史阶段分配图条。ERA表格涵盖2005年至今已知历史市场周期。证伪台账：预先提交的条件，若在期限内触发，将与当前阶段判断相矛盾。自阶段磁带开始积累以来持续累积；非校准研究（CN-SYS-R5）。') }}
-  </h2>
-  {% set ph = phase %}
-  {% set cp = ph.get('current') or {} %}
-
-  {# current phase card #}
-  {% set phase_name = cp.get('phase') or '—' %}
-  {% set conf = cp.get('confidence') %}
-  <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:flex-start;margin:8px 0 12px">
-    <div style="padding:10px 18px;border-radius:10px;background:color-mix(in srgb,var(--info) 14%,var(--panel));border:1px solid color-mix(in srgb,var(--info) 30%,var(--line))">
-      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px">{{ t('Current Phase', '当前阶段') }}</div>
-      <div style="font-size:20px;font-weight:800;color:var(--text)">{{ phase_name }}</div>
-      {% if conf is not none %}<div style="font-size:12px;color:var(--muted);margin-top:2px">{{ t('confidence', '置信度') }} {{ ('%.0f'|format(conf * 100)) }}%</div>{% endif %}
-      {% if cp.get('asof') %}<div style="font-size:10.5px;color:var(--muted)">{{ t('as of', '截至') }} {{ cp.asof }}</div>{% endif %}
+  <!-- CYCLE WHEEL -->
+  <div class="wheel-wrap">
+    <div class="wheel-title">{{ t('Market Cycle Position', '市场周期位置') }}</div>
+    <svg id="cycleWheelSvg" viewBox="0 0 260 260" xmlns="http://www.w3.org/2000/svg">
+      <!-- drawn by JS below -->
+    </svg>
+    <div class="wheel-phase-label">
+      {% for pc in phase_catalog %}{% if pc.key == phase_name %}
+      <div class="wheel-phase-name" style="color:{{ pc.color }}">
+        <span class="l-en">{{ pc.name_en|upper }}</span><span class="l-zh">{{ pc.name_zh }}</span>
+      </div>
+      <div class="wheel-phase-desc">
+        <span class="l-en">{{ pc.meaning_en }}</span>
+        <span class="l-zh">{{ pc.meaning_zh }}</span>
+      </div>
+      {% endif %}{% endfor %}
     </div>
-    {% if cp.get('evidence') %}
-    <div style="flex:1;min-width:200px">
-      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px">{{ t('Evidence', '证据') }}</div>
-      {% for e in cp.evidence %}<div style="font-size:12px;margin-bottom:3px;color:var(--text)">· {{ e }}</div>{% endfor %}
+    <div class="wheel-confidence">
+      <span class="conf-label micro">{{ t('Confidence', '置信度') }}</span>
+      <div class="conf-bar-wrap"><div class="conf-bar-fill" id="confBarFill"></div></div>
+      <span class="conf-label" style="font-size:12px;font-weight:700" id="confPct">{{ ('%.0f'|format(conf_val * 100)) if conf_val is not none else '—' }}%</span>
+    </div>
+    {% set nm = phase.get('next_meta') or {} %}
+    {% if nm %}
+    <div style="font-size:10px;color:var(--muted);text-align:center;line-height:1.5">
+      <span class="l-en">Typical next in cycle: <em>{{ nm.get('name_en','') }}</em> — {{ nm.get('meaning_en','') }}</span>
+      <span class="l-zh">周期下一阶段：<em>{{ nm.get('name_zh','') }}</em> — {{ nm.get('meaning_zh','') }}</span>
     </div>
     {% endif %}
+    <div style="font-size:9.5px;color:var(--muted);text-align:center;margin-top:4px;padding:4px 8px;border-radius:6px;background:rgba(224,160,48,0.07);border:1px solid rgba(224,160,48,0.15)">
+      {{ t('Typical cycle ordering — not a forecast or signal', '典型周期顺序 — 非预测或信号') }}
+    </div>
+  </div>
+</section>
+
+<!-- ══ PARTICIPATION ══════════════════════════════════ -->
+<script type="application/json" id="mechData-turnoverZ20">{{ participation.turnover_z20 | tojson }}</script>
+<script type="application/json" id="mechData-marginBalance">{{ participation.margin_balance | tojson }}</script>
+<script type="application/json" id="mechData-southboundZ">{{ participation.southbound_z | tojson }}</script>
+<script type="application/json" id="mechData-qvix">{{ participation.qvix | tojson }}</script>
+<section class="section">
+  <div class="section-hdr">
+    <span class="section-dot" style="background:var(--info)"></span>
+    <h2>{{ t('Participation — Who\'s Trading &amp; How Hot', '参与度 — 谁在交易、热度几何') }}</h2>
+    {% if lpl.get('as_of') or participation.get('as_of') %}<span class="stale-chip" style="margin-left:auto">{{ t('as of', '截至') }} {{ lpl.get('as_of') or participation.get('as_of') }}</span>{% endif %}
   </div>
 
-  {# falsifiers #}
+  <div style="padding:10px 14px;background:rgba(91,155,240,0.04);border-left:3px solid rgba(91,155,240,0.3);border-radius:0 6px 6px 0;font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:16px">
+    <span class="l-en">Participation tells you whether real money is in the room and who's driving. Turnover z-scores compare today's volume to its recent history; margin balance (融资余额) is borrowed money used to buy stocks; southbound flow is Hong Kong money buying A-shares; QVIX is the market's fear gauge.</span>
+    <span class="l-zh">参与度告诉你是否有真实资金入场、由谁主导。成交额Z分数将当日成交量与近期历史对比；融资余额是借钱买股的杠杆资金；南向资金是港资买入A股；QVIX是市场恐慌指标。</span>
+  </div>
+
+  <div class="heat-gauge-row">
+    <div class="heat-arc-wrap">
+      <div class="gauge-label" style="margin-bottom:10px">{{ t('Market Heat', '市场热度') }}</div>
+      <div class="ring-gauge" style="width:110px;height:110px">
+        <svg viewBox="0 0 110 110" xmlns="http://www.w3.org/2000/svg" id="heatGaugeSvg"></svg>
+        <div class="center-val">
+          {% set regime0 = (lpl.get('regime') or 'unclear').replace('_',' ').title() %}
+          <div class="v" style="color:var(--muted);font-size:13px;line-height:1.15">
+            <span class="l-en">{{ regime0 }}</span>
+            <span class="l-zh">{{ tr(regime0) }}</span>
+          </div>
+          <div class="u">{{ t('regime', '制度') }}</div>
+        </div>
+      </div>
+    </div>
+    <div class="heat-label-row">
+      {% set regime = lpl.get('regime') or 'unclear' %}
+      {% set who = lpl.get('who_controls') or '—' %}
+      {% set risk = lpl.get('risk') or '—' %}
+      <p>
+        <span class="l-en"><strong>Participation regime: {{ regime.replace('_',' ').title() }}.</strong> Who controls: {{ who.replace('_',' ') }}. Risk: {{ risk.replace('_',' ') }}.</span>
+        <span class="l-zh"><strong>参与制度：{{ tr(regime.replace('_',' ').title()) }}。</strong>控盘方：{{ tr(who) }}。风险：{{ tr(risk) }}。</span>
+      </p>
+      {% set contradictions = lpl.get('contradictions') or [] %}
+      {% if contradictions %}
+      <p style="margin-top:8px;font-size:11.5px">
+        {% for c in contradictions %}
+        <span class="null-chip">{{ c.a }} vs {{ c.b }}{% if c.detail %} — {{ c.detail }}{% endif %}</span>
+        {% endfor %}
+      </p>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="participation-grid">
+    <!-- Turnover Z20 -->
+    <div class="part-card">
+      <div class="label">{{ t('Turnover z20', '换手率20日') }}</div>
+      <div class="main-val {{ 'up-color' if tz20_val is not none and tz20_val > 0.5 else ('down-color' if tz20_val is not none and tz20_val < -0.5 else '') }}">{{ ('%.2f'|format(tz20_val)) if tz20_val is not none else '—' }}</div>
+      <div class="secondary">{{ t('z60', 'z60') }} = {{ ('%.2f'|format(tz60_val)) if tz60_val is not none else '—' }}</div>
+      <div class="sparkline-wrap"><canvas id="sp_turnover" height="48"></canvas></div>
+    </div>
+    <!-- Margin Balance -->
+    <div class="part-card">
+      <div class="label">{{ t('Margin Balance', '融资余额') }}</div>
+      <div class="main-val info-color">{{ ('%.2f'|format(mb_val / 10000)) if mb_val is not none else '—' }} {{ t('万亿', '万亿') }}</div>
+      <div class="secondary">
+        {% set mc = lpl.get('margin_chg_5d') %}
+        {{ t('5d chg', '5日变化') }}: <span class="{{ 'up-color' if mc is not none and mc > 0 else ('down-color' if mc is not none and mc < 0 else '') }}">{{ ('%+.2f%%'|format(mc)) if mc is not none else '—' }}</span>
+      </div>
+      <div class="sparkline-wrap"><canvas id="sp_margin" height="48"></canvas></div>
+      <div class="sub-val">
+        {% set mtr = lpl.get('margin_to_mcap') %}
+        <span style="color:var(--muted)">{{ t('mcap ratio', '市值占比') }}: </span>{{ ('%.2f%%'|format(mtr)) if mtr is not none else '—' }}
+      </div>
+    </div>
+    <!-- Southbound -->
+    <div class="part-card">
+      <div class="label">{{ t('Southbound z', '南向资金z') }}</div>
+      <div class="main-val {{ 'up-color' if sb_val is not none and sb_val > 0.5 else ('down-color' if sb_val is not none and sb_val < -0.5 else '') }}">{{ ('%+.2f'|format(sb_val)) if sb_val is not none else '—' }}</div>
+      <div class="secondary">{{ t('HK→A flow z-score', '港资南向z分数') }}</div>
+      <div class="sparkline-wrap"><canvas id="sp_south" height="48"></canvas></div>
+      <div class="sub-val" style="color:var(--muted);font-size:10.5px">{{ t('Northbound retired 2024-08-16 (SLF-050)', '北向通道2024-08-16关闭（SLF-050）') }}</div>
+    </div>
+    <!-- QVIX -->
+    <div class="part-card">
+      <div class="label">{{ t('QVIX', 'QVIX 波动率指数') }}</div>
+      <div class="main-val{{ ' warn-color' if qvix_val is not none and qvix_val > 25 else '' }}">{{ ('%.1f'|format(qvix_val)) if qvix_val is not none else '—' }}</div>
+      <div class="secondary">{{ t('high = stress', '数值越高 = 压力越大') }}</div>
+      <div class="sparkline-wrap"><canvas id="sp_qvix" height="48"></canvas></div>
+      <div class="sub-val" style="color:var(--muted);font-size:10.5px">{{ t('Normal range 15–25', '正常区间 15–25') }}</div>
+    </div>
+  </div>
+
+  <!-- Contradiction note -->
+  {% set contradictions = lpl.get('contradictions') or [] %}
+  {% if contradictions %}
+  <div style="padding:12px 16px;background:rgba(224,160,48,0.07);border:1px solid rgba(224,160,48,0.18);border-radius:10px;font-size:12px;color:var(--muted);margin-top:4px">
+    <span style="color:var(--warn);font-weight:700">{{ t('Contradiction flagged:', '矛盾点：') }} </span>
+    {% for c in contradictions %}{{ c.a }} vs {{ c.b }}{% if c.detail %} — {{ c.detail }}{% endif %}{% if not loop.last %}; {% endif %}{% endfor %}
+  </div>
+  {% endif %}
+</section>
+
+<!-- ══ LIMIT MECHANICS ══════════════════════════════ -->
+<script type="application/json" id="mechData-lupSeries">{{ limits.lup_series | tojson }}</script>
+<script type="application/json" id="mechData-ldnSeries">{{ limits.ldn_series | tojson }}</script>
+<script type="application/json" id="mechData-latestEvents">{{ limits.latest_events | tojson }}</script>
+<section class="section">
+  <div class="section-hdr">
+    <span class="section-dot" style="background:var(--up)"></span>
+    <h2>{{ t('Limit Mechanics — Daily Price Limits', '涨跌停板机制') }} {{ help('CN-SYS-R3: Limit-up/down data is market-structure context only. BUY-direction use is forbidden (standing kill). Lianban (连板) = consecutive limit-up sessions.', 'CN-SYS-R3：涨/跌停板数据仅作市场结构背景，禁止用于买入方向（已裁定禁止）。') }}</h2>
+    {% if limits.get('latest_date') %}<span class="stale-chip" style="margin-left:auto">{{ limits.latest_date }}</span>{% endif %}
+  </div>
+
+  <div style="padding:10px 14px;background:rgba(91,155,240,0.04);border-left:3px solid rgba(91,155,240,0.3);border-radius:0 6px 6px 0;font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:16px">
+    <span class="l-en">China caps how far a stock can move in a day. 涨停 (limit-up) is the daily ceiling, 跌停 (limit-down) the floor. 连板 (lianban) counts consecutive limit-up days — the mark of speculative streaks. A 'failed seal' touched limit-up but couldn't hold it. When limit-ups outnumber limit-downs, net limit activity leaned to the upside that day.</span>
+    <span class="l-zh">中国对个股单日涨跌幅设有上限。涨停为当日上限，跌停为下限。连板统计连续涨停的天数——投机热潮的标志。开板指触及涨停却未能封住。当涨停多于跌停时，当日净涨停偏多。</span>
+  </div>
+
+  <div class="limits-top">
+    <div class="limit-chip">
+      <div class="label">{{ t('Limit-Up', '涨停') }}</div>
+      <div class="val up-color">{{ la.get('limit_up_count', '—') }}</div>
+      <div class="zh">{{ t('of', '共') }} {{ '{:,}'.format(la.get('universe_n')) if la.get('universe_n') is not none else '—' }} {{ t('stocks', '只股票') }}</div>
+    </div>
+    <div class="limit-chip">
+      <div class="label">{{ t('Limit-Down', '跌停') }}</div>
+      <div class="val down-color">{{ la.get('limit_down_count', '—') }}</div>
+      <div class="zh">{{ t('hit the daily floor', '触及跌停') }}</div>
+    </div>
+    <div class="limit-chip">
+      <div class="label">{{ t('Sealed Up', '封单') }}</div>
+      <div class="val up-color">{{ la.get('sealed_up_close', '—') }}</div>
+      <div class="zh">{{ t('closed on limit', '收盘封涨停') }}</div>
+    </div>
+    <div class="limit-chip">
+      <div class="label">{{ t('Failed Seals', '炸板') }}</div>
+      <div class="val warn-color">{{ la.get('failed_up_seal_count', '—') }}</div>
+      <div class="zh">{{ t('touched then fell', '触及后回落') }}</div>
+    </div>
+    <div class="limit-chip">
+      <div class="label">{{ t('Lianban 2+', '连板≥2') }}</div>
+      <div class="val muted-color">{{ la.get('lianban_2plus', '—') }}</div>
+      <div class="zh">{{ t('consecutive up days', '连续涨停天数') }}</div>
+    </div>
+    <div class="limit-chip">
+      <div class="label">{{ t('Max Streak', '最高连板') }}</div>
+      <div class="val info-color">{{ la.get('lianban_max', '—') }}</div>
+      <div class="zh">{{ t('max lianban count', '最高连板数') }}</div>
+    </div>
+  </div>
+
+  <!-- Breadth thermometer -->
+  <div class="breadth-thermo">
+    <div class="thermo-title">{{ t('Breadth Thermometer — % of universe', '涨跌比（占全市场比例）') }}</div>
+    {% set lup_pct = la.get('limit_up_breadth_pct') %}
+    {% set ldn_pct = la.get('limit_down_breadth_pct') %}
+    {# breadth_pct is ALREADY a percentage of the universe (count/n*100), so it is
+       displayed as-is. Values are inherently small (limits are rare vs the ~1585
+       universe); the bar is drawn at true scale — a near-empty bar honestly means
+       "few names hit limits today". #}
+    <div class="thermo-bar-row">
+      <span style="color:var(--up);font-weight:600;min-width:45px">{{ ('%.2f%%'|format(lup_pct)) if lup_pct is not none else '—' }}</span>
+      <div class="thermo-bar">
+        <div class="thermo-seg-up" style="width:{{ ('%.2f'|format([lup_pct, 100]|min)) if lup_pct is not none else '0' }}%"></div>
+        <div class="thermo-seg-down" style="width:{{ ('%.2f'|format([ldn_pct, 100]|min)) if ldn_pct is not none else '0' }}%"></div>
+        <div class="thermo-seg-other"></div>
+      </div>
+      <span style="color:var(--down);font-weight:600;min-width:45px">{{ ('%.2f%%'|format(ldn_pct)) if ldn_pct is not none else '—' }}</span>
+    </div>
+    <div style="font-size:10.5px;color:var(--muted);margin-top:8px">
+      {{ t('Green = limit-up breadth · Red = limit-down breadth, as a share of the ~1,585-name universe (limits are rare, so the bar sits low).', '绿色=涨停广度 · 红色=跌停广度，占约1,585只全市场股票的比例（涨跌停罕见，故占比很低）。') }}
+    </div>
+  </div>
+
+  <div class="limits-charts">
+    <!-- Limit Up/Down sparkline -->
+    <div class="panel-sm">
+      <div class="micro" style="margin-bottom:8px">{{ t('Limit-Up / Down History (90-day)', '涨跌停历史（近90日）') }}</div>
+      <canvas id="sp_limits" height="80" style="width:100%;display:block"></canvas>
+    </div>
+    <!-- Events table -->
+    <div class="panel-sm">
+      <div class="micro" style="margin-bottom:8px">{{ t('Notable Events — Latest Session', '今日涨跌停事件') }}</div>
+      <div class="events-table-scroll">
+      <table class="events-table">
+        <thead>
+          <tr>
+            <th>{{ t('Ticker', '代码') }}</th>
+            <th>{{ t('Board', '板块') }}</th>
+            <th>{{ t('Event', '事件') }}</th>
+            <th>{{ t('Close off %', '距限价%') }}</th>
+          </tr>
+        </thead>
+        <tbody id="eventsTableBody"></tbody>
+      </table>
+      </div>
+    </div>
+  </div>
+
+  <p class="authority-note" style="margin-top:14px;font-size:11px;color:var(--muted);padding:6px 10px;border-radius:7px;background:color-mix(in srgb,var(--muted) 8%,var(--panel));border:1px solid var(--line)">
+    {{ t('CN-SYS-R3: this panel is market-structure context only. Limit-up as a BUY trigger is a standing kill.', 'CN-SYS-R3：本面板仅作市场结构背景。以涨停作为买入触发器已被永久禁止。') }}
+  </p>
+</section>
+
+<!-- ══ CYCLE PHASE ══════════════════════════════════ -->
+<script type="application/json" id="mechData-phaseStrip">{{ phase.phase_strip | tojson }}</script>
+<script type="application/json" id="mechData-eraTable">{{ phase.era_table | tojson }}</script>
+<script type="application/json" id="mechData-phaseCatalog">{{ phase_catalog | tojson }}</script>
+<section class="section">
+  <div class="section-hdr">
+    <span class="section-dot" id="phaseSectionDot"></span>
+    <h2>{{ t('Cycle Phase Memory', '周期阶段记忆') }} {{ help('Current phase classification with confidence, falsifiers, and a 90-session strip. Falsifiers are pre-committed conditions that would prove the current phase call wrong. CN-SYS-R5.', '含置信度的当前阶段分类、证伪条件和90交易日图条。证伪条件是预先提交、一旦触发即证明判断有误的条件。CN-SYS-R5。') }}</h2>
+  </div>
+
+  <div style="padding:10px 14px;background:rgba(91,155,240,0.04);border-left:3px solid rgba(91,155,240,0.3);border-radius:0 6px 6px 0;font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:16px">
+    <span class="l-en">Markets move through repeating phases — quiet repair, a policy floor, ignition, mania, and eventual unwind. This names where we are now and lists the pre-committed conditions that would prove the call wrong.</span>
+    <span class="l-zh">市场沿着重复的阶段演进——平静修复、政策托底、点火、亢奋，直至去杠杆。本面板标明当前所处阶段，并列出预先设定、一旦触发即证明判断有误的条件。</span>
+  </div>
+
+  <div class="panel" style="margin-bottom:16px">
+    <div style="display:flex;gap:24px;flex-wrap:wrap;align-items:flex-start">
+      <div>
+        <div class="micro" style="margin-bottom:6px">{{ t('Current Phase', '当前阶段') }}</div>
+        {% for pc in phase_catalog %}{% if pc.key == phase_name %}
+        <div style="font-size:24px;font-weight:700;color:{{ pc.color }}">
+          <span class="l-en">{{ pc.name_en|upper }}</span><span class="l-zh">{{ pc.name_zh }}</span>
+        </div>
+        {% endif %}{% endfor %}
+        {% if cp.get('asof') %}<div style="font-size:11px;color:var(--muted)">{{ t('as of', '截至') }} {{ cp.asof }}</div>{% endif %}
+        {% if phase.get('days_in_phase') is not none %}
+        <div style="font-size:11px;color:var(--muted)">{{ t('Days in phase', '已持续天数') }}: {{ phase.days_in_phase }}</div>
+        {% endif %}
+      </div>
+      <div style="flex:1;min-width:200px">
+        <div class="micro" style="margin-bottom:6px">{{ t('Phase Description', '阶段描述') }}</div>
+        {% for pc in phase_catalog %}{% if pc.key == phase_name %}
+        <p style="font-size:13px;color:var(--muted);line-height:1.6">
+          <span class="l-en">{{ pc.meaning_en }}</span>
+          <span class="l-zh">{{ pc.meaning_zh }}</span>
+        </p>
+        {% endif %}{% endfor %}
+        {% if cp.get('evidence') %}
+        <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">
+          {% for e in cp.evidence %}
+          <span style="display:inline-block;padding:1px 7px;border-radius:4px;font-size:10px;background:var(--panel2);border:1px solid var(--line);color:var(--muted)">{{ e }}</span>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+      <div>
+        <div class="micro" style="margin-bottom:6px">{{ t('Confidence', '置信度') }}</div>
+        <div style="font-size:24px;font-weight:700" id="phaseConfPct">{{ ('%.0f'|format(conf_val * 100)) if conf_val is not none else '—' }}%</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Phase strip -->
+  <div class="panel-sm" style="margin-bottom:16px">
+    <div class="micro" style="margin-bottom:8px">{{ t('90-Session Phase Strip', '近90个交易日阶段图条') }}</div>
+    <canvas id="phaseStripCanvas" height="28" style="width:100%;display:block;border-radius:6px"></canvas>
+    <div class="phase-strip-label-row" style="margin-top:6px">
+      <span>{{ t('~90 sessions ago', '约90个交易日前') }}</span>
+      <span>{{ t('Today', '今日') }}</span>
+    </div>
+    <div class="phase-legend" style="margin-top:8px">
+      {% for pc in phase_catalog %}
+      <div class="phase-legend-item">
+        <div class="phase-dot" style="background:{{ pc.color }}"></div>
+        <span class="l-en">{{ pc.name_en }}{% if pc.key == phase_name %} (current){% endif %}</span>
+        <span class="l-zh">{{ pc.name_zh }}{% if pc.key == phase_name %}（当前）{% endif %}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Falsifiers -->
   {% set falsifiers = cp.get('falsifiers') or [] %}
   {% if falsifiers %}
-  <div class="msec">
-    <h3>{{ t('Armed falsifiers', '已激活证伪条件') }}
-      {{ help('Falsifiers are pre-committed machine-checkable conditions. If one fires within its horizon, the current phase call was wrong. The ledger grades them nightly (CN-SYS-R5). They are not a signal — they are the evidence standard.', '证伪条件是预先提交的机器可检查条件。若在期限内触发，则当前阶段判断有误。台账每夜进行评分（CN-SYS-R5）。它们不是信号，而是证据标准。') }}
-    </h3>
-    {% set n_falsifiers = falsifiers | length %}
-    <div style="font-size:12px;color:var(--muted);margin-bottom:8px">{{ n_falsifiers }} {{ t('falsifiers armed — auto-graded nightly', '个证伪条件已激活 — 每夜自动评分') }}</div>
+  <div class="micro" style="margin-bottom:10px">{{ t('Armed Falsifiers — What Would Prove This Wrong?', '已激活证伪条件 — 什么情况会证明判断有误？') }}</div>
+  <div class="falsifier-list">
     {% for f in falsifiers %}
-    <div style="display:flex;gap:8px;align-items:baseline;padding:5px 9px;border-radius:7px;background:var(--panel2);border:1px solid var(--line);margin-bottom:4px;font-size:12px">
-      <span style="font-family:monospace;color:var(--info);flex-shrink:0">{{ f.id }}</span>
-      <code style="flex:1;font-size:11px;color:var(--text);background:none">{{ f.expr }}</code>
-      <span style="color:var(--muted);white-space:nowrap">{{ f.horizon_d }}{{ t('d', '天') }}</span>
+    <div class="falsifier-item">
+      <div class="falsifier-id">{{ f.id }}</div>
+      <div class="falsifier-desc">
+        <code style="font-size:11px;color:var(--info)">{{ f.expr }}</code>
+      </div>
+      <div class="falsifier-horizon">{{ f.horizon_d }}{{ t('d', '天') }}</div>
     </div>
     {% endfor %}
   </div>
   {% endif %}
 
-  {# 90-session phase strip #}
-  {% set strip = ph.get('phase_strip') or [] %}
-  {% if strip %}
-  <div class="msec">
-    <h3>{{ t('90-session phase strip', '90个交易日阶段图条') }}</h3>
-    <div class="phase-strip" id="phase-strip-cells" data-strip="{{ strip | tojson }}"></div>
-    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;font-size:10.5px">
-      {% for ph_name, ph_color in [
-        ('POLICY_PUT','#5b9bf0'),('LIQUIDITY_IGNITION','#45b873'),('BROADENING','#3da564'),
-        ('THEME_LEADERSHIP','#e08b45'),('EUPHORIA','#e06464'),('DISTRIBUTION','#e07070'),
-        ('DELEVERAGING','#c04040'),('CAPITULATION','#8b93a1'),('GRINDING_BEAR','#a07070'),
-        ('REPAIR','#7aa7e0')
-      ] %}
-      <span style="display:flex;align-items:center;gap:3px;color:var(--muted)">
-        <span style="width:10px;height:10px;border-radius:2px;background:{{ ph_color }};display:inline-block"></span>
-        {{ ph_name.replace('_',' ') }}
-      </span>
-      {% endfor %}
-    </div>
-  </div>
-  {% endif %}
-
-  {# falsifier ledger stats #}
-  {% set ls = ph.get('ledger_summary') or {} %}
+  <!-- Ledger -->
+  {% set ls = phase.get('ledger_summary') or {} %}
   {% if ls %}
-  <div class="msec">
-    <h3>{{ t('Falsifier ledger', '证伪台账') }}</h3>
-    <div class="stat-row">
-      <div class="stat">
-        <span class="v pos">{{ ls.get('held', 0) }}</span>
-        <span class="k">{{ t('Held (phase correct)', '持守（阶段正确）') }}</span>
-      </div>
-      <div class="stat">
-        <span class="v neg">{{ ls.get('fired', 0) }}</span>
-        <span class="k">{{ t('Fired (phase contradicted)', '触发（阶段被证伪）') }}</span>
-      </div>
-      <div class="stat">
-        <span class="v">{{ ls.get('total_graded', 0) }}</span>
-        <span class="k">{{ t('Total graded', '总评分') }}</span>
-      </div>
+  <div class="panel-sm" style="margin-top:12px">
+    <div class="micro" style="margin-bottom:10px">{{ t('Falsifier Ledger Summary', '证伪台账摘要') }}</div>
+    <div class="ledger-row">
+      <div class="ledger-item"><div class="lv info-color">{{ ls.get('total_graded', 0) }}</div><div class="ll">{{ t('Total Graded', '总评分') }}</div></div>
+      <div class="ledger-item"><div class="lv up-color">{{ ls.get('held', 0) }}</div><div class="ll">{{ t('Held', '持守') }}</div></div>
+      <div class="ledger-item"><div class="lv down-color">{{ ls.get('fired', 0) }}</div><div class="ll">{{ t('Fired', '触发') }}</div></div>
     </div>
-    <p style="font-size:11px;color:var(--muted);margin:6px 0 0">{{ t('Accruing since tape launch. Not a calibrated study — come-back clock 2026-10-08 (90d minimum). CN-SYS-R5.', '自磁带启动后持续积累。非校准研究 — 复查时钟 2026-10-08（最少90天）。CN-SYS-R5。') }}</p>
-  </div>
-  {% endif %}
-
-  {# ERA analog table #}
-  {% set eras = ph.get('era_table') or [] %}
-  {% if eras %}
-  <div class="msec">
-    <h3>{{ t('Historical ERA table', '历史ERA对照表') }}
-      {{ help('Known A-share market cycle eras since 2005. Each ERA is annotated with the phases it passed through and a brief historical note. Descriptive only — analog matching is a display-only read from the analogs engine (site/china_intel/analogs.json). No forward projection.', '2005年以来已知的A股市场周期时代。每个ERA标注了其经历的阶段和简短历史注释。仅为描述性 — 历史类比为来自类比引擎的展示性读取（site/china_intel/analogs.json）。无前瞻预测。') }}
-    </h3>
-    <details>
-      <summary><span class="sh">{{ t('Show ERA table (', '展开ERA表（') }}{{ eras | length }}{{ t(' eras)', '个时代）') }}</span><span class="hd">{{ t('Collapse', '收起') }}</span></summary>
-      <table class="mt" style="margin-top:8px">
-        <tr>
-          <th>{{ t('ERA', '时代') }}</th>
-          <th>{{ t('Period', '时期') }}</th>
-          <th>{{ t('Phases', '阶段') }}</th>
-          <th>{{ t('Note', '注释') }}</th>
-        </tr>
-        {% for era in eras %}
-        <tr>
-          <td style="font-size:11px;white-space:nowrap">{{ era.era.replace('_',' ') }}</td>
-          <td style="font-size:11px;white-space:nowrap">{{ era.start[:7] }} → {{ era.end[:7] }}</td>
-          <td style="font-size:10.5px">{{ era.phases | join(' → ') }}</td>
-          <td style="font-size:11px;color:var(--muted)">{{ era.note }}</td>
-        </tr>
-        {% endfor %}
-      </table>
-    </details>
-    <p style="margin-top:8px;font-size:12px">
-      <a href="china_intel.html">{{ t('→ Full analog readout in Intelligence Hub', '→ 情报中心完整类比读取') }}</a>
+    <p style="font-size:10.5px;color:var(--muted);margin-top:10px;line-height:1.5">
+      {{ t('"Held" = condition not triggered — phase call consistent with evidence. "Fired" = condition met — phase was subsequently updated. CN-SYS-R5.', '"持守"=条件未触发——阶段判断与证据一致。"触发"=条件满足——阶段随后更新。CN-SYS-R5。') }}
     </p>
   </div>
   {% endif %}
-</div>
 
-{# ══════════════════════════════════════════════════════════════════════════════
-   PANEL (d): POLICY TAPE
-══════════════════════════════════════════════════════════════════════════════ #}
-<div class="panel span8" id="mech-policy">
-  <h2>{{ t('Policy Tape', '政策磁带') }}
-    {{ help('Policy impulse (政策冲量) is a deterministic read from the policy_transmission lobe. Channels are the transmission mechanisms active. Events are sourced from the append-only data/china_policy_transmission/events.jsonl ledger (PBoC, State Council, CSRC, NDRC, MoF, Politburo, CEWC). Staleness per source is disclosed (CN-SYS-R4).', '政策冲量为来自政策传导脉络的确定性读取。渠道为当前激活的传导机制。事件来源于只追加的data/china_policy_transmission/events.jsonl台账（央行、国务院、证监会、发改委、财政部、政治局、中央经济工作会议）。每来源数据时效已披露（CN-SYS-R4）。') }}
-  </h2>
-  {% set pp = policy %}
+  <!-- Era Table (collapsible) -->
+  {% set eras = phase.get('era_table') or [] %}
+  {% if eras %}
+  <details style="margin-top:16px">
+    <summary>{{ t('Historical ERA Table (A-Share Market Phases since 2005)', '历史ERA对照表（2005年以来A股市场阶段）') }}</summary>
+    <div style="overflow-x:auto">
+    <table class="era-table">
+      <thead>
+        <tr>
+          <th>{{ t('Era', '时代') }}</th>
+          <th>{{ t('Period', '时期') }}</th>
+          <th>{{ t('Phases Observed', '经历阶段') }}</th>
+          <th>{{ t('Notes', '注释') }}</th>
+        </tr>
+      </thead>
+      <tbody id="eraTableBody"></tbody>
+    </table>
+    </div>
+  </details>
+  {% endif %}
+</section>
+
+<!-- ══ POLICY TAPE ══════════════════════════════════ -->
+<script type="application/json" id="mechData-policyEvents">{{ policy.recent_events | tojson }}</script>
+<section class="section">
+  <div class="section-hdr">
+    <span class="section-dot" style="background:var(--orange)"></span>
+    <h2>{{ t('Policy Tape', '政策磁带') }}</h2>
+  </div>
+
+  <div style="padding:10px 14px;background:rgba(91,155,240,0.04);border-left:3px solid rgba(91,155,240,0.3);border-radius:0 6px 6px 0;font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:16px">
+    <span class="l-en">In China, policy often drives the market. This reads the current policy impulse — from broad easing to targeted support to tightening — and lists recent moves by the PBoC, State Council, CSRC and others, with how fresh each source is.</span>
+    <span class="l-zh">在中国，政策常常主导市场。本磁带解读当前政策冲量——从全面宽松、定向支持到收紧——并列出央行、国务院、证监会等近期动作及各来源的数据时效。</span>
+  </div>
+
   {% set impulse = pp.get('policy_impulse') or '—' %}
   {% set impulse_color = {
     'easing': 'var(--up)', 'targeted_support': 'var(--info)',
@@ -502,298 +1441,790 @@
     'tightening': 'var(--down)'
   }.get(impulse, 'var(--muted)') %}
 
-  <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-start;margin:8px 0 12px">
-    <div style="padding:8px 16px;border-radius:9px;background:color-mix(in srgb,{{ impulse_color }} 14%,var(--panel));border:1px solid color-mix(in srgb,{{ impulse_color }} 30%,var(--line))">
-      <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px">{{ t('Policy Impulse', '政策冲量') }}</div>
-      <div style="font-size:17px;font-weight:800;color:{{ impulse_color }}">{{ impulse.replace('_',' ').title() }}</div>
-    </div>
-    {% for ch in pp.get('transmission_channel') or [] %}
-    <span class="chip c-info" style="align-self:center">{{ ch.replace('_',' ') }}</span>
-    {% endfor %}
-    {% if pp.get('asof') %}<span style="font-size:11px;color:var(--muted);align-self:center">{{ t('as of', '截至') }} {{ pp.asof }}</span>{% endif %}
-  </div>
-
-  {# staleness per source #}
-  {% set staleness = pp.get('staleness') or {} %}
-  {% if staleness %}
-  <div style="margin-bottom:10px">
-    <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">{{ t('Source freshness', '来源数据时效') }}</div>
-    <div style="display:flex;flex-wrap:wrap;gap:6px">
-      {% for src, days in staleness.items() %}
-      <span style="font-size:11px;padding:2px 8px;border-radius:6px;
-        background:color-mix(in srgb,{{ 'var(--up)' if days <= 3 else ('var(--warn)' if days <= 14 else 'var(--down)') }} 12%,var(--panel));
-        color:{{ 'var(--up)' if days <= 3 else ('var(--warn)' if days <= 14 else 'var(--down)') }}">
-        {{ src }}: {{ days }}{{ t('d', '天') }}</span>
-      {% endfor %}
-    </div>
-  </div>
-  {% endif %}
-
-  {# recent events #}
-  {% set events = pp.get('recent_events') or [] %}
-  {% if events %}
-  <h3>{{ t('Recent events', '近期事件') }}</h3>
-  <ul class="ev-list">
-    {% for ev in events[:8] %}
-    <li class="ev-item {{ ev.source }}">
-      <div>{% if ev.url and ev.url.startswith('http') %}<a href="{{ ev.url }}" target="_blank" rel="noopener">{{ ev.title }}</a>{% else %}{{ ev.title }}{% endif %}</div>
-      <div class="ev-meta">{{ ev.source.upper() }} · {{ ev.kind }} · {{ ev.ts[:10] if ev.ts else '' }}
-        {% if ev.sectors %} · {{ ev.sectors | join(', ') }}{% endif %}
+  <div class="policy-top">
+    <div class="impulse-badge" style="background:rgba(91,155,240,0.12);border-color:rgba(91,155,240,0.25)">
+      <div class="label">{{ t('Current Impulse', '当前政策冲量') }}</div>
+      <div class="val" style="color:{{ impulse_color }}">
+        <span class="l-en">{{ impulse.replace('_',' ').title() }}</span>
+        <span class="l-zh">{{ td(impulse) if td is defined else impulse.replace('_',' ') }}</span>
       </div>
-    </li>
-    {% endfor %}
-  </ul>
-  {% else %}
-  <p style="color:var(--muted);font-size:12px">{{ t('No events in policy ledger yet.', '政策台账暂无事件。') }}</p>
-  {% endif %}
-</div>
-
-{# ══════════════════════════════════════════════════════════════════════════════
-   PANEL (e): CROSS-MARKET
-══════════════════════════════════════════════════════════════════════════════ #}
-<div class="panel span4" id="mech-cross-market">
-  <h2>{{ t('Cross-Market', '跨市场') }}
-    {{ help('CGB (China Government Bond) curve from the yield store. cn_slope_10_2 is the 10y minus 2y term premium. CN-US spread would require a matching US 10y series — disclosed as data gap when absent. USDCNH is the offshore renminbi rate. All staleness-stamped (CN-SYS-R4).', 'CGB（中国国债）收益率曲线来自收益率存储。cn_slope_10_2为10年减2年期限溢价。中美利差需要匹配的美国10年期数据 — 缺失时作为数据缺口披露。USDCNH为离岸人民币汇率。所有数据均有时效标记（CN-SYS-R4）。') }}
-  </h2>
-  {% set cm = cross_market %}
-  {% set yc = cm.get('yield_curve') or {} %}
-  {% set cgb = cm.get('cgb_curve') or {} %}
-  {% set cnh = cm.get('usdcnh') or {} %}
-
-  {# CGB curve visual #}
-  {% if cgb %}
-  <h3>{{ t('CGB Yield Curve', '中国国债收益率曲线') }}</h3>
-  <div class="cgb-row">
-    {% for tenor, key in [('3M','m3'),('1Y','y1'),('5Y','y5'),('10Y','y10'),('30Y','y30')] %}
-    {% set val = cgb.get(key) %}
-    <div class="cgb-pt">
-      <span class="ten">{{ ('%.2f'|format(val * 100)) if val is not none else '—' }}%</span>
-      <span class="lbl">{{ tenor }}</span>
     </div>
-    {% endfor %}
+    <div>
+      <div class="micro" style="margin-bottom:8px">{{ t('Transmission Channels', '传导渠道') }}</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        {% for ch in pp.get('transmission_channel') or [] %}
+        <span style="padding:4px 10px;border-radius:6px;background:rgba(91,155,240,0.12);border:1px solid rgba(91,155,240,0.22);font-size:11px;color:var(--info)">{{ ch.replace('_',' ').title() }}</span>
+        {% endfor %}
+      </div>
+      <div class="micro" style="margin-top:12px;margin-bottom:8px">{{ t('Data Freshness', '数据时效') }}</div>
+      <div class="staleness-chips">
+        {% set staleness = pp.get('staleness') or {} %}
+        {% for src, days in staleness.items() %}
+        <span class="stale-chip" style="{% if days <= 3 %}background:rgba(69,184,115,0.10);border-color:rgba(69,184,115,0.2);color:var(--up){% elif days > 30 %}background:rgba(224,100,100,0.10);border-color:rgba(224,100,100,0.22);color:var(--down){% endif %}">{{ src }}: {{ days }}{{ t('d', '天') }}</span>
+        {% endfor %}
+      </div>
+    </div>
   </div>
-  {% if cgb.get('slope_10y_3m') is not none %}
-  <div style="font-size:12px;color:var(--muted);margin:4px 0 8px">
-    {{ t('10y–3m slope', '10年-3月斜率') }}: <b style="color:{{ 'var(--up)' if cgb.slope_10y_3m > 0 else 'var(--down)' }}">{{ '%+.3f'|format(cgb.slope_10y_3m) }}</b>
+
+  <div class="panel-sm">
+    <div class="micro" style="margin-bottom:12px">{{ t('Recent Events', '近期事件') }}</div>
+    <div class="policy-events-list" id="policyEventsList"></div>
+  </div>
+</section>
+
+<!-- ══ CROSS MARKET ══════════════════════════════════ -->
+<section class="section">
+  <div class="section-hdr">
+    <span class="section-dot" style="background:var(--link)"></span>
+    <h2>{{ t('Cross-Market Context', '跨市场背景') }} {{ help('CGB (China Government Bond) curve from the yield store. USDCNH is the offshore renminbi rate. All staleness-stamped (CN-SYS-R4).', 'CGB（中国国债）收益率曲线。USDCNH为离岸人民币汇率。所有数据均有时效标记（CN-SYS-R4）。') }}</h2>
     {% if cgb.get('staleness_days') is not none %}
-    <span class="{{ 'stale-ok' if cgb.staleness_days <= 2 else ('stale-warn' if cgb.staleness_days <= 7 else 'stale-bad') }}"> · {{ cgb.staleness_days }}{{ t('d stale', '天前') }}</span>
+    <span class="stale-chip" style="margin-left:auto">{{ t('CGB', '国债') }} {{ cgb.staleness_days }}{{ t('d stale', '天前') }}</span>
     {% endif %}
   </div>
-  {% endif %}
-  {% endif %}
 
-  {# 10y / 2y / slope #}
-  {% if yc %}
-  <div class="stat-row" style="margin-top:8px">
-    {% set cn10 = yc.get('cn_10y') %}
-    {% set cn2 = yc.get('cn_2y') %}
-    {% set slope = yc.get('cn_slope_10_2') %}
-    {% set spread = yc.get('cn_us_10y_spread') %}
-    <div class="stat">
-      <span class="v">{{ ('%.3f'|format(cn10)) if cn10 is not none else '—' }}</span>
-      <span class="k">{{ t('CN 10y', '中国10年期') }}</span>
-    </div>
-    <div class="stat">
-      <span class="v">{{ ('%.3f'|format(cn2)) if cn2 is not none else '—' }}</span>
-      <span class="k">{{ t('CN 2y', '中国2年期') }}</span>
-    </div>
-    <div class="stat">
-      <span class="v {{ 'pos' if slope is not none and slope > 0 else ('neg' if slope is not none and slope < 0 else '') }}">{{ ('%.3f'|format(slope)) if slope is not none else '—' }}</span>
-      <span class="k">{{ t('10y–2y spread', '10年-2年利差') }}</span>
-    </div>
-    {% if spread is not none %}
-    <div class="stat">
-      <span class="v {{ 'pos' if spread > 0 else 'neg' }}">{{ '%+.3f'|format(spread) }}</span>
-      <span class="k">{{ t('CN–US 10y spread', '中美10年期利差') }}</span>
-    </div>
-    {% endif %}
+  <div style="padding:10px 14px;background:rgba(91,155,240,0.04);border-left:3px solid rgba(91,155,240,0.3);border-radius:0 6px 6px 0;font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:16px">
+    <span class="l-en">Bonds and the currency frame the backdrop for stocks. A steep government-bond curve (long yields above short) usually points to easing and reflation ahead; a rising offshore yuan (USDCNH) means capital is leaving.</span>
+    <span class="l-zh">债券与汇率构成股市的背景。国债收益率曲线陡峭（长端高于短端）通常预示宽松与再通胀；离岸人民币（USDCNH）走高意味着资本外流。</span>
   </div>
-  {% if yc.get('staleness_days') is not none %}
-  <div style="font-size:11px;color:var(--muted);margin-top:2px">
-    {{ t('Yield data', '收益率数据') }}:
-    <span class="{{ 'stale-ok' if yc.staleness_days <= 2 else ('stale-warn' if yc.staleness_days <= 7 else 'stale-bad') }}">{{ yc.staleness_days }}{{ t('d stale', '天前') }}</span>
-  </div>
-  {% endif %}
-  {% endif %}
 
-  {# USDCNH #}
-  {% if cnh %}
-  <div class="msec">
-    <h3>{{ t('USDCNH — Offshore Yuan', 'USDCNH — 离岸人民币') }}</h3>
-    <div class="stat-row">
-      {% set quote = cnh.get('quote') %}
-      {% set chg = cnh.get('chg_pct') %}
-      <div class="stat">
-        <span class="v">{{ ('%.4f'|format(quote)) if quote is not none else '—' }}</span>
-        <span class="k">{{ t('Rate', '汇率') }}</span>
+  <div class="cross-grid">
+    <div class="cgb-wrap">
+      <div class="cgb-header">
+        <span class="cgb-title">{{ t('China Govt Bond Yield Curve', '中国国债收益率曲线') }}</span>
+        {% if cp.get('asof') or as_of %}<span style="font-size:10.5px;color:var(--muted)">{{ t('as of', '截至') }} {{ as_of }}</span>{% endif %}
       </div>
-      {% if chg is not none %}
-      <div class="stat">
-        <span class="v {{ 'pos' if chg < 0 else ('neg' if chg > 0 else '') }}">{{ '%+.2f%%'|format(chg) }}</span>
-        <span class="k">{{ t('20d chg', '20日变化') }}</span>
+      <svg id="cgbCurve" viewBox="0 0 500 180" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:180px;display:block"></svg>
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-top:4px;padding:0 4px">
+        <span>3M<br><strong style="color:var(--info)">{{ ('%.4f%%'|format(cgb.get('m3', 0))) if cgb.get('m3') is not none else '—' }}</strong></span>
+        <span style="text-align:center">1Y<br><strong style="color:var(--info)">{{ ('%.4f%%'|format(cgb.get('y1', 0))) if cgb.get('y1') is not none else '—' }}</strong></span>
+        <span style="text-align:center">5Y<br><strong style="color:var(--info)">{{ ('%.4f%%'|format(cgb.get('y5', 0))) if cgb.get('y5') is not none else '—' }}</strong></span>
+        <span style="text-align:center">10Y<br><strong style="color:var(--info)">{{ ('%.4f%%'|format(cgb.get('y10', 0))) if cgb.get('y10') is not none else '—' }}</strong></span>
+        <span style="text-align:right">30Y<br><strong style="color:var(--info)">{{ ('%.4f%%'|format(cgb.get('y30', 0))) if cgb.get('y30') is not none else '—' }}</strong></span>
+      </div>
+      {% if cgb.get('slope_10y_3m') is not none %}
+      <div style="font-size:10.5px;color:var(--muted);margin-top:8px">
+        {{ t('Slope 10Y−3M', '斜率10年-3月') }}: <strong style="color:var(--text)">{{ ('%+.2f%%'|format(cgb.slope_10y_3m)) }}</strong>
+        {{ t('· Normal upward slope — no inversion signal.', '· 正常向上斜率——无倒挂信号。') }}
       </div>
       {% endif %}
     </div>
-    {% if cnh.get('as_of') %}<div style="font-size:10.5px;color:var(--muted)">{{ t('as of', '截至') }} {{ cnh.as_of }}</div>{% endif %}
-  </div>
-  {% endif %}
 
-  {# data gaps #}
-  {% set cm_gaps = cm.get('data_gaps') or [] %}
-  {% if cm_gaps %}
-  <details style="margin-top:10px">
-    <summary><span class="sh">{{ t('Show data gaps', '显示数据缺口') }}</span><span class="hd">{{ t('Hide', '收起') }}</span></summary>
-    <ul style="font-size:11px;color:var(--muted);margin:6px 0 0;padding-left:16px;line-height:1.6">
-      {% for g in cm_gaps %}<li>{{ g }}</li>{% endfor %}
-    </ul>
+    <div>
+      {% set cnh_quote = cnh.get('quote') %}
+      {% set cnh_chg = cnh.get('chg_pct') %}
+      <div class="usdcnh-card" style="margin-bottom:12px">
+        <div class="usdcnh-label">{{ t('USD/CNH — Offshore Yuan', 'USD/CNH 美元/离岸人民币') }}</div>
+        <div class="usdcnh-rate" style="color:var(--text)">{{ ('%.4f'|format(cnh_quote)) if cnh_quote is not none else '—' }}</div>
+        {% if cnh_chg is not none %}
+        <div class="usdcnh-chg {{ 'up-color' if cnh_chg < 0 else 'down-color' }}">{{ ('%+.2f%%'|format(cnh_chg)) }}
+          <span class="l-en">{{ '· CNH strengthening' if cnh_chg < 0 else '· CNH weakening' }}</span>
+          <span class="l-zh">{{ '· 人民币升值' if cnh_chg < 0 else '· 人民币贬值' }}</span>
+        </div>
+        {% endif %}
+        {% if cnh.get('as_of') %}<div style="font-size:10.5px;color:var(--muted);margin-top:6px">{{ t('as of', '截至') }} {{ cnh.as_of }}</div>{% endif %}
+      </div>
+      {% set yc = cm.get('yield_curve') or {} %}
+      {% if yc %}
+      <div class="panel-sm" style="font-size:11.5px;color:var(--muted);line-height:1.6">
+        <div class="micro" style="margin-bottom:6px">{{ t('Context Note', '背景注释') }}</div>
+        {% set cn10 = yc.get('cn_10y') %}
+        {% set cn_slope = yc.get('cn_slope_10_2') %}
+        <span class="l-en">CN 10Y {{ ('%.2f%%'|format(cn10)) if cn10 is not none else '—' }} · 10y−2y slope {{ ('%+.3f'|format(cn_slope)) if cn_slope is not none else '—' }}</span>
+        <span class="l-zh">中国10年期 {{ ('%.2f%%'|format(cn10)) if cn10 is not none else '—' }} · 10年-2年利差 {{ ('%+.3f'|format(cn_slope)) if cn_slope is not none else '—' }}</span>
+      </div>
+      {% endif %}
+      {% set cm_gaps = cm.get('data_gaps') or [] %}
+      {% if cm_gaps %}
+      <details style="margin-top:8px">
+        <summary style="font-size:11px;color:var(--muted)">{{ t('Data gaps', '数据缺口') }}</summary>
+        <ul style="font-size:11px;color:var(--muted);margin:4px 0 0;padding-left:14px">
+          {% for g in cm_gaps %}<li>{{ g }}</li>{% endfor %}
+        </ul>
+      </details>
+      {% endif %}
+    </div>
+  </div>
+</section>
+
+<!-- ══ GLOSSARY ══════════════════════════════════════ -->
+<section class="section">
+  <div class="section-hdr">
+    <span class="section-dot" style="background:var(--muted)"></span>
+    <h2>{{ t('Glossary', '术语表') }}</h2>
+  </div>
+
+  <div class="glossary-grid">
+    <div class="gloss-item">
+      <div class="gloss-term"><span class="l-en">涨停 Limit-Up</span><span class="l-zh">涨停 Limit-Up</span> <span class="gloss-zh">zhǎng tíng</span></div>
+      <div class="gloss-def">
+        <span class="l-en">A stock hits its maximum daily gain — +10% on the main board, +20% on STAR Market, +30% on ChiNext. The stock cannot trade above this price for the day. A hallmark of A-share market microstructure.</span>
+        <span class="l-zh">股票触及每日最大涨幅——主板+10%，科创板+20%，创业板+30%。当日不得以高于此价格交易。这是A股市场微观结构的标志性机制。</span>
+      </div>
+    </div>
+    <div class="gloss-item">
+      <div class="gloss-term"><span class="l-en">跌停 Limit-Down</span><span class="l-zh">跌停 Limit-Down</span> <span class="gloss-zh">diē tíng</span></div>
+      <div class="gloss-def">
+        <span class="l-en">The mirror: maximum daily loss floor. Unlike most markets, A-shares enforce hard daily bands. High limit-down counts signal broad selling pressure or panic.</span>
+        <span class="l-zh">对应的跌幅下限。与大多数市场不同，A股执行严格的每日涨跌幅限制。高跌停数量反映大范围抛压或恐慌情绪。</span>
+      </div>
+    </div>
+    <div class="gloss-item">
+      <div class="gloss-term"><span class="l-en">连板 Lianban</span><span class="l-zh">连板 Lianban</span> <span class="gloss-zh">lián bǎn</span></div>
+      <div class="gloss-def">
+        <span class="l-en">Consecutive limit-up days. A "3-board" stock (三板) hits limit-up three days in a row. Retail speculators prize high-lianban names as momentum vehicles.</span>
+        <span class="l-zh">连续涨停板。"三板"股票连续三日涨停。散户投机者视高连板个股为动量载体。</span>
+      </div>
+    </div>
+    <div class="gloss-item">
+      <div class="gloss-term"><span class="l-en">炸板 Failed Seal</span><span class="l-zh">炸板 Failed Seal</span> <span class="gloss-zh">zhà bǎn</span></div>
+      <div class="gloss-def">
+        <span class="l-en">A stock touches the limit-up price intraday but falls back below it by close — the "seal" broke. High failed seals relative to hits = weak speculative conviction.</span>
+        <span class="l-zh">股票盘中触及涨停价，但收盘前回落——"封板"失败。相对于涨停数的高炸板比例 = 投机意愿薄弱。</span>
+      </div>
+    </div>
+    <div class="gloss-item">
+      <div class="gloss-term"><span class="l-en">QVIX 波动率</span><span class="l-zh">QVIX 波动率</span></div>
+      <div class="gloss-def">
+        <span class="l-en">China's implied volatility index, analogous to VIX. Unlike US VIX where high = fear: in A-shares, high QVIX can co-exist with upside moves.</span>
+        <span class="l-zh">中国隐含波动率指数，类似美国VIX。与美国VIX不同（高=恐惧），A股中高QVIX可与上涨并存。</span>
+      </div>
+    </div>
+    <div class="gloss-item">
+      <div class="gloss-term"><span class="l-en">南向资金 Southbound</span><span class="l-zh">南向资金 Southbound</span></div>
+      <div class="gloss-def">
+        <span class="l-en">Hong Kong → A-share capital flows via Stock Connect. Southbound = HK/offshore investors buying mainland China stocks.</span>
+        <span class="l-zh">通过沪深港通从香港流入A股的资金。南向 = 港澳离岸投资者买入内地股票。</span>
+      </div>
+    </div>
+    <div class="gloss-item">
+      <div class="gloss-term"><span class="l-en">融资余额 Margin Balance</span><span class="l-zh">融资余额 Margin Balance</span></div>
+      <div class="gloss-def">
+        <span class="l-en">Total outstanding margin loan balance across the A-share market (in 亿¥). Rising margin = leverage build-up; falling margin = deleveraging.</span>
+        <span class="l-zh">A股市场融资余额总量（亿元）。余额上升=杠杆积累；余额下降=去杠杆。</span>
+      </div>
+    </div>
+    <div class="gloss-item">
+      <div class="gloss-term"><span class="l-en">CGB 国债 China Govt Bond</span><span class="l-zh">CGB 国债</span></div>
+      <div class="gloss-def">
+        <span class="l-en">Yield curve for PBoC-influenced government bonds. A steep upward slope (short rates low, long rates higher) typically indicates normal easing conditions.</span>
+        <span class="l-zh">人民银行影响下的国债收益率曲线。陡峭向上的斜率（短端低、长端高）通常表明正常的宽松环境。</span>
+      </div>
+    </div>
+    <div class="gloss-item">
+      <div class="gloss-term"><span class="l-en">USD/CNH 离岸人民币</span><span class="l-zh">USD/CNH 离岸人民币</span></div>
+      <div class="gloss-def">
+        <span class="l-en">Offshore yuan exchange rate (not the onshore CNY). Strengthening CNH (falling USDCNH) suggests improving offshore sentiment toward China.</span>
+        <span class="l-zh">离岸人民币汇率（非在岸CNY）。CNH升值（USDCNH下跌）意味着离岸对华情绪改善。</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cycle Phase Meanings — grafted from mech_v2 -->
+  {% if phase_catalog %}
+  <details style="margin-top:24px;border:1px solid rgba(139,147,161,0.18);border-radius:8px;overflow:hidden">
+    <summary style="padding:12px 16px;cursor:pointer;font-size:13px;font-weight:600;color:var(--text);background:rgba(255,255,255,0.02);list-style:none;display:flex;align-items:center;gap:8px">
+      <span style="font-size:16px">↻</span>
+      <span class="l-en">Cycle Phase Meanings</span>
+      <span class="l-zh">周期阶段释义</span>
+    </summary>
+    <div style="padding:16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px">
+      {% for pc in phase_catalog %}
+      <div style="padding:10px 12px;border-radius:6px;border-left:3px solid {{ pc.color }};background:rgba(255,255,255,0.02)">
+        <div style="font-weight:700;font-size:12px;color:{{ pc.color }};margin-bottom:4px">
+          <span class="l-en">{{ pc.name_en }}</span>
+          <span class="l-zh">{{ pc.name_zh }}</span>
+        </div>
+        <div style="font-size:11.5px;color:var(--muted);line-height:1.5">
+          <span class="l-en">{{ pc.meaning_en }}</span>
+          <span class="l-zh">{{ pc.meaning_zh }}</span>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
   </details>
   {% endif %}
+</section>
+
+<div style="text-align:center;padding:40px 0 20px;font-size:10.5px;color:var(--muted)">
+  {{ t('Mastermind Inc. · Context only — not investment advice', 'Mastermind Inc. · 仅供情境参考——非投资建议') }} · {{ t('Built', '构建于') }} {{ built }} · {{ t('as of', '截至') }} {{ as_of }}
 </div>
 
-{# ── FOOTER ── #}
-<div class="span12" style="font-size:11.5px;color:var(--muted);text-align:center;padding:8px 0 4px">
-  {{ t('Generated', '生成于') }} {{ built }} UTC · {{ t('Context only — CN-SYS-R1', '仅供背景参考 — CN-SYS-R1') }}
-</div>
+</div><!-- /page-wrap -->
 
-</div>{# /.grid #}
+<!-- JSON data blocks — unique per-page, feeds mechJSON() in JS below -->
+<!-- turnover/margin/southbound/qvix/limits/events/policy are placed inline within each section above -->
+<!-- these blocks are for data not yet covered by per-section embeds -->
+<script type="application/json" id="mechData-currentPhase">{{ {'key': phase_name, 'color': phase_color, 'conf': conf_val} | tojson }}</script>
+<script type="application/json" id="mechData-cgbCurve">{{ cross_market.get('cgb_curve') | tojson }}</script>
 
 <script>
-// ── Inline canvas chart renderer ──────────────────────────────────────────────
-// Reads data-series="[{d,v},...]" from each canvas, draws a minimal area chart.
-// Respects theme CSS variables. Zero-line if data-zero="1".
-(function(){
-  var CSS = getComputedStyle(document.documentElement);
-  function v(name){return CSS.getPropertyValue(name).trim();}
+// ═══════════════════════════════════════════════════
+// mechJSON helper — reads embedded JSON blocks safely
+// ═══════════════════════════════════════════════════
+function mechJSON(id){
+  var el = document.getElementById(id);
+  if(!el) return null;
+  try{ return JSON.parse(el.textContent); }
+  catch(e){ return null; }
+}
 
-  function drawMiniChart(canvas){
-    var raw;
-    try { raw = JSON.parse(canvas.getAttribute('data-series')||'[]'); } catch(e){return;}
-    if(!raw||!raw.length)return;
-    var vals = raw.map(function(p){return p.v;});
-    var dates = raw.map(function(p){return p.d;});
-    var hasZero = canvas.getAttribute('data-zero') === '1';
-    var colorPos = canvas.getAttribute('data-color-pos') || v('--info');
-    var colorNeg = canvas.getAttribute('data-color-neg') || '';
+// theme-aware color read — so canvas/SVG (which can't use CSS vars) recolor
+// correctly in light theme instead of hardcoding dark literals.
+function cssv(name, fallback){
+  try{ var v = getComputedStyle(document.documentElement).getPropertyValue(name).trim(); return v || fallback; }
+  catch(e){ return fallback; }
+}
+// current UI language, for canvas text that can't use the l-en/l-zh spans.
+function curLang(){ return (document.documentElement.getAttribute('data-lang') === 'zh') ? 'zh' : 'en'; }
 
-    var W = canvas.offsetWidth || 400;
-    var H = canvas.offsetHeight || 70;
-    canvas.width = W * (window.devicePixelRatio||1);
-    canvas.height = H * (window.devicePixelRatio||1);
-    var ctx = canvas.getContext('2d');
-    ctx.scale(window.devicePixelRatio||1, window.devicePixelRatio||1);
+// ═══════════════════════════════════════════════════
+// DATA (from JSON script blocks — no inline data)
+// ═══════════════════════════════════════════════════
+var TURNOVER_Z20 = mechJSON('mechData-turnoverZ20') || [];
 
-    var nonNull = vals.filter(function(x){return x!==null&&x!==undefined&&!isNaN(x);});
-    if(!nonNull.length) return;
-    var mn = Math.min.apply(null,nonNull), mx = Math.max.apply(null,nonNull);
-    if(mn===mx){mn-=0.1;mx+=0.1;}
-    if(hasZero){mn=Math.min(mn,-0.01);mx=Math.max(mx,0.01);}
+var MARGIN_BAL = mechJSON('mechData-marginBalance') || [];
 
-    var pad = {t:4,b:4,l:2,r:2};
-    var aw = W - pad.l - pad.r, ah = H - pad.t - pad.b;
-    var n = vals.length;
-    function px(i){return pad.l + (i/(n-1||1)) * aw;}
-    function py(val){return pad.t + ah - ((val-mn)/(mx-mn)) * ah;}
+var SOUTHBOUND_Z = mechJSON('mechData-southboundZ') || [];
 
-    // zero line
-    if(hasZero){
-      var zy = py(0);
-      ctx.strokeStyle = v('--line');
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(pad.l, zy);
-      ctx.lineTo(pad.l + aw, zy);
-      ctx.stroke();
-    }
+var QVIX = mechJSON('mechData-qvix') || [];
 
-    // segment drawing: positive above zero = colorPos, below = colorNeg or muted
-    var i = 0;
-    while(i < n){
-      if(vals[i]===null||vals[i]===undefined||isNaN(vals[i])){i++;continue;}
-      // collect contiguous segment
-      var seg = [];
-      while(i < n && vals[i]!==null && vals[i]!==undefined && !isNaN(vals[i])){
-        seg.push({x:px(i),y:py(vals[i]),v:vals[i]});
-        i++;
-      }
-      if(seg.length < 1) continue;
+var LUP_RAW = mechJSON('mechData-lupSeries') || [];
 
-      var positive = !hasZero || seg[0].v >= 0;
-      var fillColor = positive ? colorPos : (colorNeg || v('--muted'));
+var LDN_RAW = mechJSON('mechData-ldnSeries') || [];
 
-      // gradient fill
-      var grad = ctx.createLinearGradient(0,0,0,H);
-      grad.addColorStop(0, fillColor.replace(')',',0.28)').replace('var(','rgba(').replace(')',')'));
-      grad.addColorStop(1, fillColor.replace(')',',0.02)').replace('var(','rgba(').replace(')',')'));
+var EVENTS = mechJSON('mechData-latestEvents') || [];
 
-      ctx.beginPath();
-      ctx.moveTo(seg[0].x, hasZero ? py(0) : H - pad.b);
-      for(var j=0;j<seg.length;j++) ctx.lineTo(seg[j].x, seg[j].y);
-      ctx.lineTo(seg[seg.length-1].x, hasZero ? py(0) : H - pad.b);
-      ctx.closePath();
-      ctx.fillStyle = grad;
-      ctx.fill();
+var PHASE_STRIP = mechJSON('mechData-phaseStrip') || [];
+var ERA_TABLE = mechJSON('mechData-eraTable') || [];
+var POLICY_EVENTS = mechJSON('mechData-policyEvents') || [];
 
-      // line
-      ctx.beginPath();
-      ctx.moveTo(seg[0].x, seg[0].y);
-      for(var j=1;j<seg.length;j++) ctx.lineTo(seg[j].x, seg[j].y);
-      ctx.strokeStyle = fillColor.replace(/var\(([^)]+)\)/, function(_,name){return v(name);});
-      ctx.lineWidth = 1.5;
-      ctx.stroke();
-    }
+// bilingual phase-name lookup (key -> {en, zh}) from the catalog
+var PHASE_META = {};
+(mechJSON('mechData-phaseCatalog') || []).forEach(function(p){ PHASE_META[p.key] = {en:p.name_en, zh:p.name_zh}; });
+function phaseName(key){ var m = PHASE_META[key]; if(!m) return (key||'').replace(/_/g,' '); return curLang()==='zh' ? m.zh : m.en; }
 
-    // tooltip on hover
-    canvas._mechData = {raw:raw, vals:vals, dates:dates, mn:mn, mx:mx, pad:pad, aw:aw, ah:ah, n:n};
+// ═══════════════════════════════════════════════════
+// PHASE COLORS
+// ═══════════════════════════════════════════════════
+const PHASE_COLORS = {
+  REPAIR:'#7aa7e0',
+  POLICY_PUT:'#5b9bf0',
+  LIQUIDITY_IGNITION:'#45b873',
+  BROADENING:'#3da564',
+  THEME_LEADERSHIP:'#e08b45',
+  EUPHORIA:'#e06464',
+  DISTRIBUTION:'#e07070',
+  DELEVERAGING:'#c04040',
+  CAPITULATION:'#8b93a1',
+  GRINDING_BEAR:'#a07070',
+};
+
+// ═══════════════════════════════════════════════════
+// CYCLE WHEEL SVG
+// ═══════════════════════════════════════════════════
+function drawCycleWheel(){
+  const svg = document.getElementById('cycleWheelSvg');
+  const phases = [
+    {id:'REPAIR',label:'REPAIR',zh:'修复'},
+    {id:'POLICY_PUT',label:'POLICY PUT',zh:'政策底'},
+    {id:'LIQUIDITY_IGNITION',label:'LIQUIDITY IGNITION',zh:'流动性点火'},
+    {id:'BROADENING',label:'BROADENING',zh:'全面扩散'},
+    {id:'THEME_LEADERSHIP',label:'THEME LEADERSHIP',zh:'主题引领'},
+    {id:'EUPHORIA',label:'EUPHORIA',zh:'狂热'},
+    {id:'DISTRIBUTION',label:'DISTRIBUTION',zh:'派发'},
+    {id:'DELEVERAGING',label:'DELEVERAGING',zh:'去杠杆'},
+    {id:'CAPITULATION',label:'CAPITULATION',zh:'恐慌抛售'},
+    {id:'GRINDING_BEAR',label:'GRINDING BEAR',zh:'慢熊'},
+  ];
+  const cx=130, cy=130, r_outer=116, r_inner=72, n=phases.length;
+  const gap = 0.025; // radians gap between segments
+  var _cp = mechJSON('mechData-currentPhase') || {};
+  const current = _cp.key || 'REPAIR';
+  const currentColor = _cp.color || PHASE_COLORS[current] || '#7aa7e0';
+  const currentConf = _cp.conf || 0;
+
+  let html = `
+    <defs>
+      <filter id="glow"><feGaussianBlur stdDeviation="3" result="blur"/>
+        <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+      <radialGradient id="centerGrad" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="${currentColor}" stop-opacity="0.12"/>
+        <stop offset="100%" stop-color="${currentColor}" stop-opacity="0"/>
+      </radialGradient>
+    </defs>
+    <circle cx="${cx}" cy="${cy}" r="${r_inner-2}" fill="url(#centerGrad)" />
+    <circle cx="${cx}" cy="${cy}" r="${r_inner-2}" fill="none" stroke="rgba(91,155,240,0.15)" stroke-width="1"/>
+  `;
+
+  for(let i=0;i<n;i++){
+    const ph = phases[i];
+    const startAngle = (i/n) * 2*Math.PI - Math.PI/2 + gap/2;
+    const endAngle = ((i+1)/n) * 2*Math.PI - Math.PI/2 - gap/2;
+    const isCurrent = ph.id === current;
+    const color = PHASE_COLORS[ph.id];
+
+    // segment path
+    const x1o = cx + r_outer * Math.cos(startAngle);
+    const y1o = cy + r_outer * Math.sin(startAngle);
+    const x2o = cx + r_outer * Math.cos(endAngle);
+    const y2o = cy + r_outer * Math.sin(endAngle);
+    const x1i = cx + r_inner * Math.cos(endAngle);
+    const y1i = cy + r_inner * Math.sin(endAngle);
+    const x2i = cx + r_inner * Math.cos(startAngle);
+    const y2i = cy + r_inner * Math.sin(startAngle);
+
+    const d = `M ${x1o} ${y1o} A ${r_outer} ${r_outer} 0 0 1 ${x2o} ${y2o} L ${x1i} ${y1i} A ${r_inner} ${r_inner} 0 0 0 ${x2i} ${y2i} Z`;
+
+    const opacity = isCurrent ? 1 : 0.22;
+    const strokeW = isCurrent ? 2.5 : 0.5;
+    const strokeC = isCurrent ? color : cssv('--line', '#2a2f3a');
+    const filter = isCurrent ? 'url(#glow)' : '';
+
+    html += `<path d="${d}" fill="${color}" fill-opacity="${opacity}" stroke="${strokeC}" stroke-width="${strokeW}" ${filter ? `filter="${filter}"` : ''}/>`;
+
+    // Outer tick labels for all segments
+    const midAngle = (startAngle + endAngle) / 2;
+    const r_tick = r_outer + 14;
+    const tx = cx + r_tick * Math.cos(midAngle);
+    const ty = cy + r_tick * Math.sin(midAngle);
+    // Short 2-char number indicator (phase number 1-10)
+    const tickOpacity = isCurrent ? 1 : 0.35;
+    html += `<circle cx="${cx + (r_outer+5)*Math.cos(midAngle)}" cy="${cy + (r_outer+5)*Math.sin(midAngle)}" r="${isCurrent?4:2}" fill="${color}" fill-opacity="${tickOpacity}"/>`;
   }
 
-  function drawAllCharts(){
-    document.querySelectorAll('canvas.mini-chart').forEach(function(c){ drawMiniChart(c); });
+  // current phase extra outer accent arc
+  const cp_idx = phases.findIndex(p => p.id === current);
+  if(cp_idx >= 0){
+    const startA = (cp_idx/n)*2*Math.PI - Math.PI/2 + gap/2;
+    const endA = ((cp_idx+1)/n)*2*Math.PI - Math.PI/2 - gap/2;
+    const ox1 = cx + (r_outer+10)*Math.cos(startA), oy1 = cy + (r_outer+10)*Math.sin(startA);
+    const ox2 = cx + (r_outer+10)*Math.cos(endA), oy2 = cy + (r_outer+10)*Math.sin(endA);
+    const oa = `M ${ox1} ${oy1} A ${r_outer+10} ${r_outer+10} 0 0 1 ${ox2} ${oy2}`;
+    html += `<path d="${oa}" fill="none" stroke="${currentColor}" stroke-width="3" stroke-linecap="round" filter="url(#glow)" opacity="0.8"/>`;
   }
 
-  // ── Phase strip renderer ──────────────────────────────────────────────────
-  var PHASE_COLORS = {
-    'POLICY_PUT':'#5b9bf0','LIQUIDITY_IGNITION':'#45b873','BROADENING':'#3da564',
-    'THEME_LEADERSHIP':'#e08b45','EUPHORIA':'#e06464','DISTRIBUTION':'#e07070',
-    'DELEVERAGING':'#c04040','CAPITULATION':'#8b93a1','GRINDING_BEAR':'#a07070',
-    'REPAIR':'#7aa7e0'
-  };
-  function renderPhaseStrip(){
-    var el = document.getElementById('phase-strip-cells');
-    if(!el) return;
-    var strip;
-    try { strip = JSON.parse(el.getAttribute('data-strip')||'[]'); } catch(e){return;}
-    el.innerHTML = '';
-    strip.forEach(function(cell){
-      var div = document.createElement('div');
-      div.className = 'ps-cell';
-      var col = PHASE_COLORS[cell.phase] || '#8b93a1';
-      div.style.background = col;
-      var tip = document.createElement('div');
-      tip.className = 'ps-tip';
-      tip.textContent = cell.d + ' ' + cell.phase + (cell.confidence ? ' (' + Math.round(cell.confidence*100) + '%)' : '');
-      div.appendChild(tip);
-      el.appendChild(div);
-    });
-  }
+  // Clockwise arrow hint
+  html += `<path d="M ${cx+r_inner-5} ${cy-5} A ${r_inner-5} ${r_inner-5} 0 0 1 ${cx+5} ${cy-r_inner+5}" fill="none" stroke="rgba(139,147,161,0.25)" stroke-width="1" stroke-dasharray="3,3" marker-end="url(#arr)"/>`;
 
-  // theme observer: redraw when theme changes (colors change)
-  if(window.MutationObserver){
-    new MutationObserver(drawAllCharts).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
-  }
-
-  if(document.readyState==='loading'){
-    document.addEventListener('DOMContentLoaded',function(){drawAllCharts();renderPhaseStrip();});
+  // center text — phase name + confidence
+  const curPhase = phases.find(p => p.id === current) || {label: current, zh: current};
+  const labelParts = curPhase.label.split(' ');
+  if(labelParts.length > 1){
+    html += `<text x="${cx}" y="${cy-14}" text-anchor="middle" fill="${currentColor}" font-size="13" font-weight="800" font-family="-apple-system,sans-serif" letter-spacing="0.5">${labelParts[0]}</text>`;
+    html += `<text x="${cx}" y="${cy+4}" text-anchor="middle" fill="${currentColor}" font-size="13" font-weight="800" font-family="-apple-system,sans-serif" letter-spacing="0.5">${labelParts.slice(1).join(' ')}</text>`;
   } else {
-    drawAllCharts(); renderPhaseStrip();
+    html += `<text x="${cx}" y="${cy-4}" text-anchor="middle" fill="${currentColor}" font-size="12" font-weight="800" font-family="-apple-system,sans-serif" letter-spacing="0.5">${curPhase.label}</text>`;
   }
-})();
+  html += `<text x="${cx}" y="${cy+20}" text-anchor="middle" fill="#8b93a1" font-size="9" font-family="-apple-system,sans-serif">${curPhase.zh}</text>`;
+  html += `<text x="${cx}" y="${cy+33}" text-anchor="middle" fill="${currentColor}99" font-size="8.5" font-family="-apple-system,sans-serif">conf. ${Math.round(currentConf*100)}%</text>`;
+
+  svg.innerHTML = html;
+}
+
+// ═══════════════════════════════════════════════════
+// SPARKLINES (Canvas)
+// ═══════════════════════════════════════════════════
+function drawSparkline(canvasId, data, colorUp, colorDown, baseColor){
+  const canvas = document.getElementById(canvasId);
+  if(!canvas) return;
+  const dpr = window.devicePixelRatio || 1;
+  const w = canvas.offsetWidth || canvas.parentElement.offsetWidth || 200;
+  const h = 48;
+  canvas.width = w * dpr;
+  canvas.height = h * dpr;
+  canvas.style.width = w + 'px';
+  canvas.style.height = h + 'px';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+
+  // series arrive as [{d,v}, …]; reduce to the numeric value (keep null gaps)
+  data = data.map(p => (p && typeof p === 'object') ? p.v : p);
+  const valid = data.filter(v => v !== null && v !== undefined && !isNaN(v));
+  if(!valid.length) return;
+  const mn = Math.min(...valid);
+  const mx = Math.max(...valid);
+  const rng = mx - mn || 1;
+  const pad = 3;
+
+  const pts = [];
+  let xi = 0;
+  for(let i=0;i<data.length;i++){
+    if(data[i] === null || data[i] === undefined){xi++;continue;}
+    const x = pad + (i/(data.length-1)) * (w-pad*2);
+    const y = pad + (1 - (data[i]-mn)/rng) * (h-pad*2);
+    pts.push({x,y,v:data[i]});
+  }
+  if(pts.length < 2) return;
+
+  // fill gradient
+  const lastV = pts[pts.length-1].v;
+  const refColor = lastV >= 0 ? colorUp : colorDown;
+  const grad = ctx.createLinearGradient(0,0,0,h);
+  grad.addColorStop(0, refColor + '40');
+  grad.addColorStop(1, refColor + '00');
+
+  ctx.beginPath();
+  ctx.moveTo(pts[0].x, h);
+  ctx.lineTo(pts[0].x, pts[0].y);
+  for(let i=1;i<pts.length;i++) ctx.lineTo(pts[i].x, pts[i].y);
+  ctx.lineTo(pts[pts.length-1].x, h);
+  ctx.closePath();
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // line
+  ctx.beginPath();
+  ctx.moveTo(pts[0].x, pts[0].y);
+  for(let i=1;i<pts.length;i++) ctx.lineTo(pts[i].x, pts[i].y);
+  ctx.strokeStyle = refColor;
+  ctx.lineWidth = 1.5;
+  ctx.lineJoin = 'round';
+  ctx.lineCap = 'round';
+  ctx.stroke();
+
+  // zero line if applicable
+  if(mn < 0 && mx > 0){
+    const zy = pad + (1 - (0-mn)/rng)*(h-pad*2);
+    ctx.beginPath();
+    ctx.moveTo(0, zy);
+    ctx.lineTo(w, zy);
+    ctx.strokeStyle = cssv('--line', '#2a2f3a');
+    ctx.lineWidth = 0.5;
+    ctx.stroke();
+  }
+
+  // dot at end
+  const last = pts[pts.length-1];
+  ctx.beginPath();
+  ctx.arc(last.x, last.y, 2.5, 0, Math.PI*2);
+  ctx.fillStyle = refColor;
+  ctx.fill();
+}
+
+function drawLimitsChart(canvasId, lupData, ldnData){
+  const canvas = document.getElementById(canvasId);
+  if(!canvas) return;
+  const dpr = window.devicePixelRatio || 1;
+  const w = canvas.offsetWidth || canvas.parentElement.offsetWidth || 300;
+  const h = 80;
+  canvas.width = w * dpr;
+  canvas.height = h * dpr;
+  canvas.style.width = w + 'px';
+  canvas.style.height = h + 'px';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+
+  // series arrive as [{d,v}, …]; reduce to numeric values (keep null gaps)
+  lupData = lupData.map(p => (p && typeof p === 'object') ? p.v : p);
+  ldnData = ldnData.map(p => (p && typeof p === 'object') ? p.v : p);
+  const n = lupData.length;
+  const pad = 4;
+  const allV = [...lupData,...ldnData].filter(v=>v!==null && v!==undefined && !isNaN(v));
+  const mn = 0, mx = Math.max(...allV, 0.1);
+  const rng = mx - mn;
+
+  const plotPts = (data, color) => {
+    const pts = data.map((v,i) => ({
+      x: pad + (i/(n-1))*(w-pad*2),
+      y: v===null ? null : pad + (1 - (v-mn)/rng)*(h-pad*2)
+    }));
+    ctx.beginPath();
+    let started = false;
+    for(const p of pts){
+      if(p.y===null){started=false;continue;}
+      if(!started){ctx.moveTo(p.x,p.y);started=true;}
+      else ctx.lineTo(p.x,p.y);
+    }
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.5;
+    ctx.lineJoin = 'round';
+    ctx.stroke();
+  };
+
+  plotPts(lupData, 'rgba(69,184,115,0.9)');
+  plotPts(ldnData, 'rgba(224,100,100,0.9)');
+
+  // legend (language-aware — canvas text can't use l-en/l-zh spans)
+  var zh = curLang()==='zh';
+  ctx.fillStyle = 'rgba(69,184,115,0.9)';
+  ctx.fillRect(4,4,12,3);
+  ctx.fillStyle = cssv('--muted','#8b93a1');
+  ctx.font = '8px -apple-system,sans-serif';
+  ctx.fillText(zh ? '涨停 %' : 'Limit-Up %', 20, 9);
+  ctx.fillStyle = 'rgba(224,100,100,0.9)';
+  ctx.fillRect(4,14,12,3);
+  ctx.fillStyle = cssv('--muted','#8b93a1');
+  ctx.fillText(zh ? '跌停 %' : 'Limit-Down %', 20, 19);
+}
+
+// ═══════════════════════════════════════════════════
+// PHASE STRIP Canvas
+// ═══════════════════════════════════════════════════
+function drawPhaseStrip(){
+  const canvas = document.getElementById('phaseStripCanvas');
+  if(!canvas) return;
+  const dpr = window.devicePixelRatio || 1;
+  const w = canvas.offsetWidth || canvas.parentElement.offsetWidth || 600;
+  const h = 28;
+  canvas.width = w * dpr;
+  canvas.height = h * dpr;
+  canvas.style.width = w + 'px';
+  canvas.style.height = h + 'px';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+
+  const n = PHASE_STRIP.length;
+  for(let i=0;i<n;i++){
+    const ph = PHASE_STRIP[i];
+    const x = (i/n)*w;
+    const bw = (1/n)*w + 0.5;
+    const color = PHASE_COLORS[ph.phase] || '#8b93a1';
+    const conf = (ph.confidence !== undefined) ? ph.confidence : (ph.conf !== undefined ? ph.conf : 1);
+    const alpha = 0.3 + conf * 0.7;
+    ctx.fillStyle = color;
+    ctx.globalAlpha = alpha;
+    ctx.fillRect(x, 0, bw, h);
+  }
+  ctx.globalAlpha = 1;
+
+  // today marker
+  ctx.fillStyle = cssv('--text', '#d7dce3');
+  ctx.fillRect(w-3, 0, 3, h);
+}
+
+// ═══════════════════════════════════════════════════
+// CGB YIELD CURVE SVG
+// ═══════════════════════════════════════════════════
+function drawCGBCurve(){
+  const svg = document.getElementById('cgbCurve');
+  if(!svg) return;
+  const vw=500, vh=180, padL=44, padR=20, padT=20, padB=40;
+  const pw = vw-padL-padR, ph = vh-padT-padB;
+
+  // Load from JSON block — fallback to zeros if unavailable
+  var cgb = mechJSON('mechData-cgbCurve') || {};
+  const pts = [
+    {label:'3M', x:0,   y: cgb.m3  || null},
+    {label:'1Y', x:0.12,y: cgb.y1  || null},
+    {label:'5Y', x:0.44,y: cgb.y5  || null},
+    {label:'10Y',x:0.75,y: cgb.y10 || null},
+    {label:'30Y',x:1.0, y: cgb.y30 || null},
+  ].filter(p => p.y !== null);
+  if(!pts.length){ svg.innerHTML = ''; return; }
+
+  const ys = pts.map(p=>p.y);
+  const mn=Math.min(...ys)-0.05, mx=Math.max(...ys)+0.05;
+  const rng=mx-mn;
+
+  const toSvg = (px,py) => ({
+    x: padL + px*pw,
+    y: padT + ph - (py-mn)/rng*ph
+  });
+
+  const svgPts = pts.map(p => toSvg(p.x, p.y));
+
+  // smooth curve using cubic bezier
+  let path = `M ${svgPts[0].x} ${svgPts[0].y}`;
+  for(let i=1;i<svgPts.length;i++){
+    const prev = svgPts[i-1], curr = svgPts[i];
+    const cx1 = prev.x + (curr.x-prev.x)*0.5;
+    const cy1 = prev.y;
+    const cx2 = curr.x - (curr.x-prev.x)*0.5;
+    const cy2 = curr.y;
+    path += ` C ${cx1} ${cy1} ${cx2} ${cy2} ${curr.x} ${curr.y}`;
+  }
+
+  let html = `<defs>
+    <linearGradient id="cgbGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#5b9bf0" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#5b9bf0" stop-opacity="0.02"/>
+    </linearGradient>
+  </defs>`;
+
+  // grid lines
+  for(let y=mn;y<=mx+0.01;y+=0.2){
+    const sy = padT + ph - (y-mn)/rng*ph;
+    html += `<line x1="${padL}" y1="${sy}" x2="${padL+pw}" y2="${sy}" stroke="${cssv('--line','#2a2f3a')}" stroke-width="0.5"/>`;
+    html += `<text x="${padL-4}" y="${sy+3}" text-anchor="end" fill="#8b93a1" font-size="8" font-family="-apple-system,sans-serif">${y.toFixed(2)}%</text>`;
+  }
+
+  // fill area
+  const fillPath = path + ` L ${svgPts[svgPts.length-1].x} ${padT+ph} L ${padL} ${padT+ph} Z`;
+  html += `<path d="${fillPath}" fill="url(#cgbGrad)"/>`;
+
+  // curve line
+  html += `<path d="${path}" fill="none" stroke="#5b9bf0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>`;
+
+  // data points + x-axis labels + y-callouts
+  for(let i=0;i<svgPts.length;i++){
+    const p = svgPts[i];
+    html += `<circle cx="${p.x}" cy="${p.y}" r="4.5" fill="#5b9bf0" stroke="${cssv('--panel','#181b21')}" stroke-width="2"/>`;
+    // x label below
+    html += `<text x="${p.x}" y="${padT+ph+16}" text-anchor="middle" fill="#8b93a1" font-size="9.5" font-family="-apple-system,sans-serif">${pts[i].label}</text>`;
+    // value callout above dot
+    html += `<text x="${p.x}" y="${p.y-10}" text-anchor="middle" fill="#5b9bf0" font-size="9" font-weight="600" font-family="-apple-system,sans-serif">${pts[i].y.toFixed(4)}%</text>`;
+  }
+
+  svg.innerHTML = html;
+}
+
+// ═══════════════════════════════════════════════════
+// HEAT GAUGE
+// ═══════════════════════════════════════════════════
+function drawHeatGauge(){
+  const svg = document.getElementById('heatGaugeSvg');
+  if(!svg) return;
+  const cx=55, cy=55, r=45, stroke=10;
+  const pct=0.45; // mixed/unclear ~45%
+  const angle = pct*2*Math.PI;
+  const x1=cx+r*Math.cos(-Math.PI/2), y1=cy+r*Math.sin(-Math.PI/2);
+  const x2=cx+r*Math.cos(-Math.PI/2+angle), y2=cy+r*Math.sin(-Math.PI/2+angle);
+  const la=angle>Math.PI?1:0;
+
+  svg.innerHTML = `
+    <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${cssv('--line','#2a2f3a')}" stroke-width="${stroke}"/>
+    <path d="M ${x1} ${y1} A ${r} ${r} 0 ${la} 1 ${x2} ${y2}" fill="none" stroke="rgba(224,160,48,0.7)" stroke-width="${stroke}" stroke-linecap="round"/>
+  `;
+}
+
+// ═══════════════════════════════════════════════════
+// EVENTS TABLE
+// ═══════════════════════════════════════════════════
+function buildEventsTable(){
+  const tbody = document.getElementById('eventsTableBody');
+  if(!tbody) return;
+  // bilingual event labels — emit both l-en/l-zh spans so the CSS toggle handles language
+  function biEvent(cls, en, zh){ return `<span class="${cls}"><span class="l-en">${en}</span><span class="l-zh">${zh}</span></span>`; }
+  const eventLabels = {
+    sealed_up:      biEvent('event-sealed-up',  '↑ Sealed Up',   '↑ 封涨停'),
+    sealed_down:    biEvent('event-sealed-down','↓ Sealed Down', '↓ 封跌停'),
+    failed_up_seal: biEvent('event-failed',     '✕ Failed Seal', '✕ 涨停炸板'),
+    failed_down_seal:biEvent('event-failed',    '✕ Failed Down', '✕ 跌停开板'),
+    lianban_new:    biEvent('event-sealed-up',  '★ Lianban',     '★ 连板'),
+  };
+  const boardLabels = {main:['Main','主板'], star:['STAR','科创板'], chinext:['ChiNext','创业板'], bse:['BSE','北交所'], st:['ST','ST股']};
+  const L = curLang()==='zh' ? 1 : 0;
+  let html='';
+  for(const e of EVENTS){
+    const evLabel = eventLabels[e.event] || `<span class="l-en">${e.event}</span><span class="l-zh">${e.event}</span>`;
+    const bl = boardLabels[(e.board||'').toLowerCase()];
+    const boardStr = bl ? `<span class="l-en">${bl[0]}</span><span class="l-zh">${bl[1]}</span>` : (e.board||'');
+    const off = e.off !== undefined ? e.off : (e.close_off_limit_pct || 0);
+    const offStr = off===0 ? '0.00%' : (off*100).toFixed(3)+'%';
+    html += `<tr>
+      <td style="font-family:monospace;font-size:11px;color:var(--link)">${e.ticker}</td>
+      <td>${boardStr}</td>
+      <td>${evLabel}</td>
+      <td style="text-align:right;color:${off<0?'var(--down)':'var(--muted)'}">${offStr}</td>
+    </tr>`;
+  }
+  tbody.innerHTML = html;
+}
+
+// ═══════════════════════════════════════════════════
+// ERA TABLE
+// ═══════════════════════════════════════════════════
+function buildEraTable(){
+  const tbody = document.getElementById('eraTableBody');
+  if(!tbody) return;
+  let html='';
+  for(const e of ERA_TABLE){
+    const pills = e.phases.map(p => {
+      const c = PHASE_COLORS[p] || '#8b93a1';
+      const nm = PHASE_META[p];
+      const label = nm ? `<span class="l-en">${nm.en}</span><span class="l-zh">${nm.zh}</span>` : p.replace('_',' ');
+      return `<span class="phase-pill" style="background:${c}22;color:${c};border:1px solid ${c}44">${label}</span>`;
+    }).join('');
+    const eraLabel = (e.label || e.era || '').replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
+    html += `<tr>
+      <td>${eraLabel}</td>
+      <td style="white-space:nowrap">${e.start} – ${e.end}</td>
+      <td>${pills}</td>
+      <td>${e.note}</td>
+    </tr>`;
+  }
+  tbody.innerHTML = html;
+}
+
+// ═══════════════════════════════════════════════════
+// POLICY EVENTS
+// ═══════════════════════════════════════════════════
+function buildPolicyEvents(){
+  const el = document.getElementById('policyEventsList');
+  if(!el) return;
+  const srcClass = {pboc:'src-pboc',politburo:'src-politburo',cewc:'src-cewc'};
+  const kindLabels = {
+    omo_mlf:['OMO / MLF','公开市场操作'], rhetoric:['Rhetoric','政策表态'],
+    rate_cut:['Rate cut','降息'], rrr_cut:['RRR cut','降准'], rate_hold:['Rate hold','利率不变'],
+    regulation:['Regulation','监管'], fiscal:['Fiscal','财政'], meeting:['Meeting','会议'],
+  };
+  let html='';
+  for(const e of POLICY_EVENTS){
+    const sc = srcClass[e.source] || 'src-pboc';
+    const kl = kindLabels[e.kind];
+    const kindStr = kl ? `<span class="l-en">${kl[0]}</span><span class="l-zh">${kl[1]}</span>` : (e.kind||'').replace(/_/g,' ');
+    const sectors = e.sectors.map(s=>`<span class="sector-tag">${s.replace('_',' ')}</span>`).join('');
+    html += `<div class="policy-event-item">
+      <div class="event-ts">${e.ts}</div>
+      <div class="event-body">
+        <span class="event-source-chip ${sc}">${e.source.toUpperCase()}</span>
+        <span style="font-size:9.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">${kindStr}</span>
+        <div class="event-title" style="margin-top:3px">${e.title}</div>
+        ${sectors ? `<div class="event-sectors">${sectors}</div>` : ''}
+      </div>
+    </div>`;
+  }
+  el.innerHTML = html;
+}
+
+// ═══════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════
+function renderAll(){
+  drawCycleWheel();
+  drawHeatGauge();
+  buildEventsTable();
+  buildEraTable();
+  buildPolicyEvents();
+  drawCGBCurve();
+
+  // Sparklines (need offsetWidth so run after layout)
+  requestAnimationFrame(() => {
+    // resize all canvases to parent
+    ['sp_turnover','sp_margin','sp_south','sp_qvix','sp_limits','phaseStripCanvas'].forEach(id => {
+      const c = document.getElementById(id);
+      if(c && c.parentElement){
+        c.width = c.parentElement.clientWidth;
+      }
+    });
+
+    const UP=cssv('--up','#45b873'), DN=cssv('--down','#e06464'), INFO=cssv('--info','#5b9bf0'), WARN=cssv('--warn','#e0a030');
+    drawSparkline('sp_turnover', TURNOVER_Z20, UP, DN, INFO);
+    drawSparkline('sp_margin', MARGIN_BAL, UP, UP, INFO);
+    drawSparkline('sp_south', SOUTHBOUND_Z, UP, DN, INFO);
+    drawSparkline('sp_qvix', QVIX, DN, UP, WARN);
+    drawLimitsChart('sp_limits', LUP_RAW, LDN_RAW);
+    drawPhaseStrip();
+  });
+}
+
+function init(){
+  renderAll();
+  // re-render canvas/SVG on theme or language toggle (they read colors + lang at
+  // draw time and can't use CSS var / l-en·l-zh spans directly)
+  if(window.MutationObserver){
+    var pend = null;
+    new MutationObserver(function(){ if(pend) return; pend = setTimeout(function(){ pend=null; renderAll(); }, 60); })
+      .observe(document.documentElement, {attributes:true, attributeFilter:['data-theme','data-lang']});
+  }
+  // redraw width-sensitive charts on resize
+  var rz = null;
+  window.addEventListener('resize', function(){ clearTimeout(rz); rz = setTimeout(renderAll, 180); });
+}
+
+document.addEventListener('DOMContentLoaded', init);
 </script>
 <script src="theme.js"></script>
-<script src="chart_i18n.js"></script>
-<script src="charts.js"></script>
-<script src="tablesort.js"></script>
-<footer class="site-footer">
-  <span class="made">© 2026 MastermindX Inc</span>
-</footer>
 </body>
 </html>
