@@ -109,12 +109,14 @@ POST-FREEZE ADDENDUM (added AFTER the gated results were seen; zero gate weight)
 The freeze above set the HAC lag at 31 OBSERVATIONS on the stated premise that the
 matched per-date series is near-daily. The realized series is NOT near-daily (matched
 dates cover roughly one in three trading days pre-规), so lag-31-in-observation-space
-over-covers the true 31-trading-day forward-window overlap and widens the SE — i.e. it
-is conservative in the KILL direction. The frozen gate stands unchanged per prereg
-discipline. For the adjudication record only, a NON-GATED sensitivity recomputes both
-estimands per cell at an overlap-matched lag (median count of subsequent observations
-within 45 calendar days ≈ 31 CN trading days). Its trials are ledger-logged; the report
-labels the block as post-freeze and non-decisive.
+mis-scales the intended 31-trading-day forward-window overlap. The direction of the
+resulting SE error is NOT uniform across cells (Opus review: the corrected lag raises
+t only for pre-规 and lowers it for post-规 and pooled), so no directional claim is
+made — the sensitivity simply re-reads both estimands per cell at an overlap-matched
+lag (median count of subsequent observations within 45 calendar days ≈ 31 CN trading
+days) to establish robustness of the outcome to the lag choice. The frozen gate stands
+unchanged per prereg discipline. Trials are ledger-logged; the report labels the block
+as post-freeze and non-decisive.
 """
 from __future__ import annotations
 
@@ -436,7 +438,6 @@ def cell_estimands(daily: pd.DataFrame, label: str) -> dict:
         psi = nd * (md - mu_w) / nd.mean()
         nww = newey_west_tstat(pd.Series(psi + mu_w), lags=NW_LAG)
         out["nww"] = nww
-        # pooled-pair iid t, reference only (per-date means weighted by n as proxy)
         out["mean_ew"] = ew["mean"]
         out["mean_nww"] = nww["mean"]
     else:
@@ -638,11 +639,12 @@ def render_report(ctx: dict) -> str:
     W("and it does not (and cannot) change the frozen verdict.** Motivation: the freeze")
     W("set the HAC lag at 31 observations on the premise that the matched per-date series")
     W("is near-daily; the realized series is not (matched dates cover roughly one in")
-    W("three trading days pre-规), so lag-31-in-observation-space over-covers the true")
-    W("31-trading-day forward-window overlap and widens the SE — conservative in the KILL")
-    W("direction. The frozen gate stands per prereg discipline; the overlap-matched read")
-    W("below is for the adjudication record and any future re-registration. Trials")
-    W("ledger-logged.")
+    W("three trading days pre-规), so lag-31-in-observation-space mis-scales the intended")
+    W("31-trading-day forward-window overlap. The direction of the SE error is not")
+    W("uniform across cells (the corrected lag raises t for pre-规 and lowers it for")
+    W("post-规 and pooled), so no directional claim is made: the read below establishes")
+    W("robustness of the outcome to the lag choice, nothing more. The frozen gate stands")
+    W("per prereg discipline; trials ledger-logged.")
     W("")
     W("| Cell | overlap-matched lag | EW mean | t_NW | p | NW-w mean | t_NW | p |")
     W("|---|---|---|---|---|---|---|---|")

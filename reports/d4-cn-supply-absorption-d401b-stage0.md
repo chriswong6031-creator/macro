@@ -95,11 +95,12 @@ selection meaning; pooled-regime estimates are not interpretable).
 and it does not (and cannot) change the frozen verdict.** Motivation: the freeze
 set the HAC lag at 31 observations on the premise that the matched per-date series
 is near-daily; the realized series is not (matched dates cover roughly one in
-three trading days pre-规), so lag-31-in-observation-space over-covers the true
-31-trading-day forward-window overlap and widens the SE — conservative in the KILL
-direction. The frozen gate stands per prereg discipline; the overlap-matched read
-below is for the adjudication record and any future re-registration. Trials
-ledger-logged.
+three trading days pre-规), so lag-31-in-observation-space mis-scales the intended
+31-trading-day forward-window overlap. The direction of the SE error is not
+uniform across cells (the corrected lag raises t for pre-规 and lowers it for
+post-规 and pooled), so no directional claim is made: the read below establishes
+robustness of the outcome to the lag choice, nothing more. The frozen gate stands
+per prereg discipline; trials ledger-logged.
 
 | Cell | overlap-matched lag | EW mean | t_NW | p | NW-w mean | t_NW | p |
 |---|---|---|---|---|---|---|---|
