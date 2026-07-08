@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-08T06:12:41.742621+00:00",
+  "generated_at": "2026-07-08T11:23:20.609005+00:00",
   "grade_horizons": [
     5,
     21,
@@ -39,10 +39,10 @@
     },
     "china_news": {
       "5": {
-        "n_obs": 760,
-        "n_dates": 11,
+        "n_obs": 806,
+        "n_dates": 12,
         "hit_rate": null,
-        "excess_mean": 0.012799,
+        "excess_mean": 0.011168,
         "wilson_ci_low": null,
         "state": "ACCRUING"
       }
@@ -59,10 +59,10 @@
     },
     "cn_importance_v0": {
       "5": {
-        "n_obs": 648,
-        "n_dates": 12,
+        "n_obs": 700,
+        "n_dates": 13,
         "hit_rate": null,
-        "excess_mean": 0.017089,
+        "excess_mean": 0.012455,
         "wilson_ci_low": null,
         "state": "ACCRUING"
       }
@@ -79,10 +79,10 @@
     },
     "cn_importance_v0_pit": {
       "5": {
-        "n_obs": 648,
-        "n_dates": 12,
+        "n_obs": 700,
+        "n_dates": 13,
         "hit_rate": null,
-        "excess_mean": 0.017089,
+        "excess_mean": 0.012455,
         "wilson_ci_low": null,
         "state": "ACCRUING"
       }
@@ -121,10 +121,10 @@
     },
     "china_news": {
       "5": {
-        "n_obs": 760,
-        "n_dates": 11,
+        "n_obs": 806,
+        "n_dates": 12,
         "hit_rate": null,
-        "excess_mean": 0.012799,
+        "excess_mean": 0.011168,
         "wilson_ci_low": null,
         "state": "ACCRUING"
       }
@@ -141,10 +141,10 @@
     },
     "cn_importance_v0": {
       "5": {
-        "n_obs": 648,
-        "n_dates": 12,
+        "n_obs": 700,
+        "n_dates": 13,
         "hit_rate": null,
-        "excess_mean": 0.017089,
+        "excess_mean": 0.012455,
         "wilson_ci_low": null,
         "state": "ACCRUING"
       }
@@ -161,10 +161,10 @@
     },
     "cn_importance_v0_pit": {
       "5": {
-        "n_obs": 648,
-        "n_dates": 12,
+        "n_obs": 700,
+        "n_dates": 13,
         "hit_rate": null,
-        "excess_mean": 0.017089,
+        "excess_mean": 0.012455,
         "wilson_ci_low": null,
         "state": "ACCRUING"
       }
@@ -173,16 +173,16 @@
   "placebo_magnitude": {
     "5": {
       "covered_ticker": {
-        "n_grades": 190,
-        "mean_abs_excess": 0.059899
+        "n_grades": 220,
+        "mean_abs_excess": 0.066272
       },
       "fallback_no_ticker": {
         "n_grades": 120,
         "mean_abs_excess": 0.0
       },
       "overall": {
-        "n_grades": 310,
-        "mean_abs_excess": 0.036712
+        "n_grades": 340,
+        "mean_abs_excess": 0.042882
       }
     },
     "21": {
@@ -204,12 +204,12 @@
   },
   "counts": {
     "n_claims": 10915,
-    "n_grades": 6499,
+    "n_grades": 6679,
     "n_placebo": 342,
     "n_rejected": 0,
     "grades_by_fill_convention": {
       "asof_legacy": 2780,
-      "next_bar": 3719
+      "next_bar": 3899
     },
     "n_claims_unstamped_regime": 5773
   },
@@ -246,8 +246,8 @@
     "china_news": {
       "5": {
         "eligible": false,
-        "reason": "n_dates=11 < 25 required. State: ACCRUING. Need 14 more independent date clusters.",
-        "n_dates": 11,
+        "reason": "n_dates=12 < 25 required. State: ACCRUING. Need 13 more independent date clusters.",
+        "n_dates": 12,
         "wilson_ci_low": null,
         "current_state": "ACCRUING",
         "demote": false,
@@ -275,8 +275,8 @@
     "cn_importance_v0": {
       "5": {
         "eligible": false,
-        "reason": "n_dates=12 < 25 required. State: ACCRUING. Need 13 more independent date clusters.",
-        "n_dates": 12,
+        "reason": "n_dates=13 < 25 required. State: ACCRUING. Need 12 more independent date clusters.",
+        "n_dates": 13,
         "wilson_ci_low": null,
         "current_state": "ACCRUING",
         "demote": false,
@@ -304,8 +304,8 @@
     "cn_importance_v0_pit": {
       "5": {
         "eligible": false,
-        "reason": "n_dates=12 < 25 required. State: ACCRUING. Need 13 more independent date clusters.",
-        "n_dates": 12,
+        "reason": "n_dates=13 < 25 required. State: ACCRUING. Need 12 more independent date clusters.",
+        "n_dates": 13,
         "wilson_ci_low": null,
         "current_state": "ACCRUING",
         "demote": false,
@@ -476,7 +476,7 @@
       }
     }
   },
-  "ladder_states_at": "2026-07-08T06:12:44.144332+00:00",
+  "ladder_states_at": "2026-07-08T11:23:23.230725+00:00",
   "promotion_readiness": {
     "altdata": {
       "5": {
@@ -487,7 +487,7 @@
         "excess_mean": 0.003281,
         "ready": false,
         "approaching": false,
-        "projected_ready_date": "2026-08-01",
+        "projected_ready_date": "2026-08-02",
         "reason": "n_dates=9 < 25 required. State: ACCRUING. Need 16 more independent date clusters."
       },
       "21": {
@@ -550,15 +550,15 @@
     },
     "china_news": {
       "5": {
-        "n_dates": 11,
+        "n_dates": 12,
         "needed": 25,
         "wilson_ci_low": null,
         "hit_rate": null,
-        "excess_mean": 0.012799,
+        "excess_mean": 0.011168,
         "ready": false,
         "approaching": false,
-        "projected_ready_date": "2026-07-25",
-        "reason": "n_dates=11 < 25 required. State: ACCRUING. Need 14 more independent date clusters."
+        "projected_ready_date": "2026-07-24",
+        "reason": "n_dates=12 < 25 required. State: ACCRUING. Need 13 more independent date clusters."
       },
       "21": {
         "n_dates": 0,
@@ -620,15 +620,15 @@
     },
     "cn_importance_v0": {
       "5": {
-        "n_dates": 12,
+        "n_dates": 13,
         "needed": 25,
         "wilson_ci_low": null,
         "hit_rate": null,
-        "excess_mean": 0.017089,
+        "excess_mean": 0.012455,
         "ready": false,
         "approaching": false,
-        "projected_ready_date": "2026-07-23",
-        "reason": "n_dates=12 < 25 required. State: ACCRUING. Need 13 more independent date clusters."
+        "projected_ready_date": "2026-07-21",
+        "reason": "n_dates=13 < 25 required. State: ACCRUING. Need 12 more independent date clusters."
       },
       "21": {
         "n_dates": 0,
@@ -655,15 +655,15 @@
     },
     "cn_importance_v0_pit": {
       "5": {
-        "n_dates": 12,
+        "n_dates": 13,
         "needed": 25,
         "wilson_ci_low": null,
         "hit_rate": null,
-        "excess_mean": 0.017089,
+        "excess_mean": 0.012455,
         "ready": false,
         "approaching": false,
-        "projected_ready_date": "2026-07-23",
-        "reason": "n_dates=12 < 25 required. State: ACCRUING. Need 13 more independent date clusters."
+        "projected_ready_date": "2026-07-21",
+        "reason": "n_dates=13 < 25 required. State: ACCRUING. Need 12 more independent date clusters."
       },
       "21": {
         "n_dates": 0,
@@ -942,7 +942,7 @@
         "excess_mean": -0.000264,
         "ready": false,
         "approaching": false,
-        "projected_ready_date": "2026-07-25",
+        "projected_ready_date": "2026-07-26",
         "reason": "n_dates=11 < 25 required. State: ACCRUING. Need 14 more independent date clusters."
       },
       "21": {
@@ -1012,7 +1012,7 @@
         "excess_mean": -0.004008,
         "ready": false,
         "approaching": false,
-        "projected_ready_date": "2026-09-19",
+        "projected_ready_date": "2026-09-20",
         "reason": "n_dates=4 < 25 required. State: ACCRUING. Need 21 more independent date clusters."
       },
       "21": {
@@ -1047,7 +1047,7 @@
         "excess_mean": -0.004008,
         "ready": false,
         "approaching": false,
-        "projected_ready_date": "2026-09-19",
+        "projected_ready_date": "2026-09-20",
         "reason": "n_dates=4 < 25 required. State: ACCRUING. Need 21 more independent date clusters."
       },
       "21": {
@@ -1111,113 +1111,113 @@
     "_duel_context": {
       "altdata": {
         "challenger_excess_mean_5d": 0.003281,
-        "placebo_covered_abs_excess_5d": 0.059899,
+        "placebo_covered_abs_excess_5d": 0.066272,
         "n_dates_5d": 9,
         "wilson_ci_low_5d": 0.452608
       },
       "china_intel": {
         "challenger_excess_mean_5d": null,
-        "placebo_covered_abs_excess_5d": 0.059899,
+        "placebo_covered_abs_excess_5d": 0.066272,
         "n_dates_5d": 0,
         "wilson_ci_low_5d": null
       },
       "china_news": {
-        "challenger_excess_mean_5d": 0.012799,
-        "placebo_covered_abs_excess_5d": 0.059899,
-        "n_dates_5d": 11,
+        "challenger_excess_mean_5d": 0.011168,
+        "placebo_covered_abs_excess_5d": 0.066272,
+        "n_dates_5d": 12,
         "wilson_ci_low_5d": null
       },
       "china_policy": {
         "challenger_excess_mean_5d": null,
-        "placebo_covered_abs_excess_5d": 0.059899,
+        "placebo_covered_abs_excess_5d": 0.066272,
         "n_dates_5d": 0,
         "wilson_ci_low_5d": null
       },
       "cn_importance_v0": {
-        "challenger_excess_mean_5d": 0.017089,
-        "placebo_covered_abs_excess_5d": 0.059899,
-        "n_dates_5d": 12,
+        "challenger_excess_mean_5d": 0.012455,
+        "placebo_covered_abs_excess_5d": 0.066272,
+        "n_dates_5d": 13,
         "wilson_ci_low_5d": null
       },
       "cn_importance_v0_pit": {
-        "challenger_excess_mean_5d": 0.017089,
-        "placebo_covered_abs_excess_5d": 0.059899,
-        "n_dates_5d": 12,
+        "challenger_excess_mean_5d": 0.012455,
+        "placebo_covered_abs_excess_5d": 0.066272,
+        "n_dates_5d": 13,
         "wilson_ci_low_5d": null
       },
       "communique_diff": {
         "challenger_excess_mean_5d": null,
-        "placebo_covered_abs_excess_5d": 0.059899,
+        "placebo_covered_abs_excess_5d": 0.066272,
         "n_dates_5d": 0,
         "wilson_ci_low_5d": null
       },
       "epu_gpr": {
         "challenger_excess_mean_5d": null,
-        "placebo_covered_abs_excess_5d": 0.059899,
+        "placebo_covered_abs_excess_5d": 0.066272,
         "n_dates_5d": 0,
         "wilson_ci_low_5d": null
       },
       "extraction_8k": {
         "challenger_excess_mean_5d": null,
-        "placebo_covered_abs_excess_5d": 0.059899,
+        "placebo_covered_abs_excess_5d": 0.066272,
         "n_dates_5d": 0,
         "wilson_ci_low_5d": null
       },
       "missing_tape": {
         "challenger_excess_mean_5d": null,
-        "placebo_covered_abs_excess_5d": 0.059899,
+        "placebo_covered_abs_excess_5d": 0.066272,
         "n_dates_5d": 0,
         "wilson_ci_low_5d": null
       },
       "news_llm": {
         "challenger_excess_mean_5d": null,
-        "placebo_covered_abs_excess_5d": 0.059899,
+        "placebo_covered_abs_excess_5d": 0.066272,
         "n_dates_5d": 0,
         "wilson_ci_low_5d": null
       },
       "novelty_v0": {
         "challenger_excess_mean_5d": null,
-        "placebo_covered_abs_excess_5d": 0.059899,
+        "placebo_covered_abs_excess_5d": 0.066272,
         "n_dates_5d": 0,
         "wilson_ci_low_5d": null
       },
       "policy_watch": {
         "challenger_excess_mean_5d": null,
-        "placebo_covered_abs_excess_5d": 0.059899,
+        "placebo_covered_abs_excess_5d": 0.066272,
         "n_dates_5d": 0,
         "wilson_ci_low_5d": null
       },
       "radar": {
         "challenger_excess_mean_5d": -0.000264,
-        "placebo_covered_abs_excess_5d": 0.059899,
+        "placebo_covered_abs_excess_5d": 0.066272,
         "n_dates_5d": 11,
         "wilson_ci_low_5d": 0.484298
       },
       "sfed_sentiment": {
         "challenger_excess_mean_5d": null,
-        "placebo_covered_abs_excess_5d": 0.059899,
+        "placebo_covered_abs_excess_5d": 0.066272,
         "n_dates_5d": 0,
         "wilson_ci_low_5d": null
       },
       "us_importance_v0": {
         "challenger_excess_mean_5d": -0.004008,
-        "placebo_covered_abs_excess_5d": 0.059899,
+        "placebo_covered_abs_excess_5d": 0.066272,
         "n_dates_5d": 4,
         "wilson_ci_low_5d": null
       },
       "us_importance_v0_pit": {
         "challenger_excess_mean_5d": -0.004008,
-        "placebo_covered_abs_excess_5d": 0.059899,
+        "placebo_covered_abs_excess_5d": 0.066272,
         "n_dates_5d": 4,
         "wilson_ci_low_5d": null
       },
       "whitehouse": {
         "challenger_excess_mean_5d": null,
-        "placebo_covered_abs_excess_5d": 0.059899,
+        "placebo_covered_abs_excess_5d": 0.066272,
         "n_dates_5d": 0,
         "wilson_ci_low_5d": null
       }
     }
   },
-  "promotion_readiness_at": "2026-07-08T06:12:49.585706+00:00"
+  "promotion_readiness_at": "2026-07-08T11:23:29.015996+00:00"
 }
