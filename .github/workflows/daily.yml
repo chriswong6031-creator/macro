@@ -65,14 +65,15 @@ jobs:
           restore-keys: hk-breadth-closes-
       - name: restore china per-name OHLC store (signal-engine deep store; nightly backfill grows it)
         # Per-name daily OHLC (collectors/china_stock_prices.py → data/china_stocks/<T>.parquet).
-        # Regenerable from yfinance + incremental (store.upsert), so cached cross-run like the
-        # breadth caches rather than committed in full (only the ~12-name seed is committed); the
-        # collect job grows it nightly, the engine job restores it to lift CN names to US parity.
+        # data/china_stocks is git-TRACKED and written by asia-close (sole owner). daily.yml's
+        # collect job excludes the asia group (--exclude-group asia) so it never advances this
+        # store. Removing restore-keys prevents daily from overlaying a stale GHA cache on top
+        # of the fresh data asia-close committed — that overlay + `-X theirs` on the rebase-push
+        # was the root cause of the 5-day lag regression (CN-SYS W5a fix).
         uses: actions/cache@v4
         with:
           path: data/china_stocks
           key: china-stocks-ohlc-${{ github.run_id }}
-          restore-keys: china-stocks-ohlc-
       - name: restore hk per-name OHLC store (signal-engine deep store; nightly backfill grows it)
         uses: actions/cache@v4
         with:
@@ -287,11 +288,14 @@ jobs:
           key: hk-breadth-closes-engine-${{ github.run_id }}
           restore-keys: hk-breadth-closes-
       - name: restore china per-name OHLC store (build_china_library overlays it for US parity)
+        # restore-keys intentionally removed: data/china_stocks is git-tracked and owned by
+        # asia-close. Restoring a stale GHA cache here was causing the 5-day lag regression
+        # (the engine job's git add data/ + -X theirs rebase-push overwrote the fresh
+        # asia-close data with cache-restored stale parquets). CN-SYS W5a fix.
         uses: actions/cache@v4
         with:
           path: data/china_stocks
           key: china-stocks-ohlc-engine-${{ github.run_id }}
-          restore-keys: china-stocks-ohlc-
       - name: restore hk per-name OHLC store (build_hk_library overlays it for US parity)
         uses: actions/cache@v4
         with:
