@@ -345,3 +345,198 @@ def test_dashboard_template_no_title_cjk_in_personality():
     assert "title=" not in block or block.count("title=") == 0, (
         "title= attribute found in personality chip block — use data-tip-en/zh instead"
     )
+
+
+# ---------------------------------------------------------------------------
+# 4. Playbook map coverage (new W4 doctrine lines)
+#    Import the engine's closed-set key constants and assert that every key
+#    has a corresponding entry in the _PLAYBOOK JS map (EN + ZH) embedded in
+#    stock.html.j2.  We parse the JS source rather than executing it so the
+#    test is fast and dependency-free.
+# ---------------------------------------------------------------------------
+
+# Import canonical closed sets from the engine.
+from engine.stock_personality import (
+    CHART_PRECEDENCE,
+    MICROSTRUCTURE_PRECEDENCE,
+    OWNERSHIP_PRECEDENCE,
+    CURRENT_MODE_PRECEDENCE,
+)
+from engine.stock_fundamentals import ARCHETYPE_PRECEDENCE
+
+
+def _extract_playbook_js_keys(stock_html_src: str) -> set[str]:
+    """Extract all keys defined in the _PLAYBOOK JS map in stock.html.j2.
+
+    We parse the JS source by scanning for the lines of the form:
+        key_name:  ['...', '...'],
+    inside the _PLAYBOOK = { ... } block.  This is a structural match —
+    valid as long as the map follows the one-key-per-line convention.
+    """
+    import re
+    # Find the _PLAYBOOK block
+    start = stock_html_src.find("var _PLAYBOOK = {")
+    end = stock_html_src.find("};", start)
+    assert start != -1 and end != -1, "_PLAYBOOK map not found in stock.html.j2"
+    block = stock_html_src[start:end]
+    # Match JS identifier keys at the start of a line before ':'
+    keys = re.findall(r"^\s+([a-zA-Z_][a-zA-Z_0-9]*):\s*\[", block, re.MULTILINE)
+    return set(keys)
+
+
+def _extract_playbook_entries(stock_html_src: str) -> dict[str, tuple[str, str]]:
+    """Return {key: (en_line, zh_line)} for all entries in _PLAYBOOK.
+
+    Handles multi-line entries where the ZH string is on a continuation line.
+    The extraction strategy:
+      1. Collect the _PLAYBOOK block text.
+      2. For each key line, extract the EN string from the same line.
+      3. Scan forward (up to 3 lines) for the ZH string in the next single-quoted token.
+    """
+    import re
+    start = stock_html_src.find("var _PLAYBOOK = {")
+    end_marker = stock_html_src.find("};", start)
+    assert start != -1 and end_marker != -1, "_PLAYBOOK map not found in stock.html.j2"
+    block = stock_html_src[start:end_marker]
+    lines = block.splitlines()
+
+    # Pattern: key_name:  ['EN text',   (possibly ZH on same line or next)
+    key_line_re = re.compile(
+        r"^\s+([a-zA-Z_][a-zA-Z_0-9]*):\s*\['([^']*)'"
+    )
+    # Pattern to find a quoted ZH string anywhere in a line
+    zh_re = re.compile(r"'([^']+)'")
+
+    result = {}
+    for i, line in enumerate(lines):
+        m = key_line_re.match(line)
+        if not m:
+            continue
+        key = m.group(1)
+        en = m.group(2)
+
+        # Try to find ZH: first check remainder of the same line after the EN string,
+        # then look in the next 3 lines.
+        remainder = line[m.end():]
+        zh_match = zh_re.search(remainder)
+        if zh_match:
+            zh = zh_match.group(1)
+        else:
+            # Scan forward
+            zh = ""
+            for j in range(i + 1, min(i + 4, len(lines))):
+                zh_match = zh_re.search(lines[j])
+                if zh_match:
+                    zh = zh_match.group(1)
+                    break
+
+        result[key] = (en, zh)
+    return result
+
+
+@pytest.fixture(scope="module")
+def stock_html_src() -> str:
+    return (config.ROOT / "templates" / "stock.html.j2").read_text()
+
+
+@pytest.fixture(scope="module")
+def playbook_entries(stock_html_src) -> dict[str, tuple[str, str]]:
+    return _extract_playbook_entries(stock_html_src)
+
+
+@pytest.fixture(scope="module")
+def playbook_keys(playbook_entries) -> set[str]:
+    return set(playbook_entries.keys())
+
+
+def test_playbook_covers_all_archetype_keys(playbook_keys):
+    """Every archetype in ARCHETYPE_PRECEDENCE must have a playbook entry."""
+    missing = [k for k in ARCHETYPE_PRECEDENCE if k not in playbook_keys]
+    assert not missing, (
+        f"Archetypes missing from _PLAYBOOK: {missing}"
+    )
+
+
+def test_playbook_covers_all_chart_keys(playbook_keys):
+    """Every chart personality in CHART_PRECEDENCE must have a playbook entry."""
+    missing = [k for k in CHART_PRECEDENCE if k not in playbook_keys]
+    assert not missing, (
+        f"Chart labels missing from _PLAYBOOK: {missing}"
+    )
+
+
+def test_playbook_covers_all_ownership_keys(playbook_keys):
+    """Every ownership habitat in OWNERSHIP_PRECEDENCE must have a playbook entry."""
+    missing = [k for k in OWNERSHIP_PRECEDENCE if k not in playbook_keys]
+    assert not missing, (
+        f"Ownership labels missing from _PLAYBOOK: {missing}"
+    )
+
+
+def test_playbook_covers_all_micro_keys(playbook_keys):
+    """Every microstructure label in MICROSTRUCTURE_PRECEDENCE must have a playbook entry."""
+    missing = [k for k in MICROSTRUCTURE_PRECEDENCE if k not in playbook_keys]
+    assert not missing, (
+        f"Microstructure labels missing from _PLAYBOOK: {missing}"
+    )
+
+
+def test_playbook_covers_all_mode_keys(playbook_keys):
+    """Every current-mode key in CURRENT_MODE_PRECEDENCE must have a playbook entry."""
+    missing = [k for k in CURRENT_MODE_PRECEDENCE if k not in playbook_keys]
+    assert not missing, (
+        f"Mode keys missing from _PLAYBOOK: {missing}"
+    )
+
+
+def test_playbook_all_entries_have_en_and_zh(playbook_entries):
+    """Every _PLAYBOOK entry must have a non-empty EN and ZH string."""
+    bad = []
+    for key, (en, zh) in playbook_entries.items():
+        if not en.strip():
+            bad.append(f"{key}: empty EN")
+        if not zh.strip():
+            bad.append(f"{key}: empty ZH")
+    assert not bad, f"Playbook entries with empty EN or ZH: {bad}"
+
+
+def test_playbook_en_lines_max_14_words(playbook_entries):
+    """EN doctrine lines must be ≤14 words (per spec)."""
+    violations = []
+    for key, (en, _zh) in playbook_entries.items():
+        word_count = len(en.split())
+        if word_count > 14:
+            violations.append(f"{key}: {word_count} words — '{en}'")
+    assert not violations, f"EN lines exceed 14 words:\n" + "\n".join(violations)
+
+
+def test_playbook_no_validated_word_in_lines(playbook_entries):
+    """No playbook doctrine line may contain the word 'validated' or '已验证'."""
+    hits = []
+    for key, (en, zh) in playbook_entries.items():
+        if "validated" in en.lower() or "已验证" in zh:
+            hits.append(key)
+    assert not hits, f"Playbook lines contain forbidden word 'validated': {hits}"
+
+
+def test_stock_panel_contains_playbook_block_hook(stock_html_src):
+    """stock.html.j2 must contain the sp-pb-block CSS class (playbook sub-block hook)."""
+    assert "sp-pb-block" in stock_html_src, (
+        "Playbook sub-block CSS class 'sp-pb-block' missing from stock.html.j2"
+    )
+
+
+def test_stock_panel_contains_playbook_helper_functions(stock_html_src):
+    """_playbookLines() and _pbBlock() helpers must be defined in stock.html.j2."""
+    assert "_playbookLines" in stock_html_src, "_playbookLines() helper missing"
+    assert "_pbBlock" in stock_html_src, "_pbBlock() helper missing"
+
+
+def test_stock_panel_contains_doctrine_doc_link(stock_html_src):
+    """The playbook footer doc-link line must reference the playbook file."""
+    assert "STOCK_PERSONALITY_OPERATOR_PLAYBOOK_BY_FABLE.md" in stock_html_src, (
+        "Doctrine doc-link to playbook file missing from stock.html.j2"
+    )
+    assert "完整手册见研究文档" in stock_html_src, (
+        "ZH doctrine doc-link text missing from stock.html.j2"
+    )
