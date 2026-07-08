@@ -151,7 +151,20 @@ jobs:
           if git diff --cached --quiet; then echo "no engine output changes"; exit 0; fi
           git commit -m "engine: asia dashboards $(date -u +%F)"
           for i in 1 2 3 4 5; do
-            if git pull --rebase --autostash -X theirs origin main && git push; then echo "pushed asia engine outputs (attempt $i)"; exit 0; fi
+            if git pull --rebase --autostash -X theirs origin main; then
+              # ms-board coherence guard (ui.ms_board_coherence): this lane re-renders the
+              # CN/HK dashboards, so -X theirs racing another render can stitch a hybrid
+              # Market State board (see the 2026-07-07 macro.html incident, commit
+              # 5bf116a3b3). Restore any incoherent page WHOLESALE from post-rebase
+              # origin/main and fold it into a follow-up commit.
+              python3 scripts/check_ms_board_coherence.py --heal-from origin/main \
+                || echo "::warning::ms-board coherence heal incomplete (incoherent board may predate this run)"
+              if ! git diff --quiet -- site/; then
+                git add site/ && git commit -m "render-heal: restore coherent ms-board post-rebase (ui.ms_board_coherence)" \
+                  || echo "::warning::render-heal commit failed (non-fatal)"
+              fi
+              if git push; then echo "pushed asia engine outputs (attempt $i)"; exit 0; fi
+            fi
             git rebase --abort 2>/dev/null || true; echo "asia engine push attempt $i lost a race"; sleep $((i * 7))
           done
           echo "::warning::could not push asia engine outputs after 5 attempts (non-fatal)"

@@ -1,5 +1,5 @@
 schema: house_law_checks.v1
-updated: "2026-07-06"
+updated: "2026-07-08"
 
 # Canonical registry of every house law and its enforcement status.
 # Maintained by scripts/check_house_law_registry.py (meta-guard).
@@ -203,6 +203,64 @@ checks:
       loop (post-rebase, pre-push) — a self-heal, not a gate: the lane re-copies
       every pair from post-rebase templates/ and folds the delta into a
       follow-up "render-sync" commit.
+
+  - law_id: ui.ms_board_coherence
+    summary: >
+      Every rendered Market State board (site/macro.html + the CN/HK/CA
+      dashboards) must be single-snapshot coherent — verdict word, 0-100 score,
+      meter tick, thesis, override notes and flip line must all be derivable
+      from ONE engine/market_state.py snapshot ("Risk Radar forces Risk-off."
+      note => score <= 41 and verdict Risk-off; "Capped at Mixed" => score <= 59,
+      never Risk-on; verdict word <=> score band; thesis/flip shape <=> verdict).
+      2026-07-07 incident: render commit 5bf116a3b3 raced the 07:10
+      engine-render (7a1c30ced4); the push step's `git pull --rebase -X theirs`
+      resolved conflict regions toward the replayed stale render, stitching
+      upstream's score 56/"Mixed" beside the stale "Risk Radar forces Risk-off."
+      note — a hybrid ui.template_site_sync cannot catch (it guards plain-copy
+      assets, not rendered pages).
+    source_ref:
+      - scripts/check_ms_board_coherence.py
+      - engine/market_state.py
+      - "2026-07-07 incident (commit 5bf116a3b3 = hybrid of 7a1c30ced4 + d944f0d713)"
+    severity: hard
+    check_script: scripts/check_ms_board_coherence.py
+    ci_wiring:
+      - workflow: .github/workflows/ci.yml
+        job: ms-board-coherence
+        lane: pr_ci
+      - workflow: .github/workflows/pages.yml
+        job: publish
+        lane: publish
+      - workflow: .github/workflows/render.yml
+        job: render
+        lane: render
+      - workflow: .github/workflows/engine-render.yml
+        job: engine-render
+        lane: render
+      - workflow: .github/workflows/daily.yml
+        job: engine
+        lane: scheduled
+      - workflow: .github/workflows/asia-close.yml
+        job: asia
+        lane: scheduled
+    selftest: true
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - Parses the EN (l-en) spans only — EN/ZH share each <p> source line, so a
+        line-granular rebase stitch cannot split the pair.
+      - Factor-row tones are not checked against the verdict (a legitimately
+        mixed board carries mixed tones).
+      - Pages without an ms-verdict section are skipped (not every market ships
+        the board).
+    owner_program: engine-fix-masterplan
+    notes: >
+      Render lanes wire it twice: a pre-commit gate (restore-from-HEAD + fail
+      RED — the commit step is `if: always()`, so a plain red step would not
+      stop the push) and a post-rebase `--heal-from origin/main` inside the push
+      retry loop, which restores any incoherent page WHOLESALE from post-rebase
+      main — a coherent board at most one render old beats a stitched hybrid;
+      the next render re-lands freshness.
 
   # ── Git hygiene ────────────────────────────────────────────────────────────
 
