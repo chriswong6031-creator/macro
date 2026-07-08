@@ -1,0 +1,12 @@
+{
+  "as_of_trade_date": "",
+  "freshness": "dead",
+  "bellwethers": [],
+  "banner": {
+    "en": "CBBC data not yet collected \u2014 run collectors/hk_cbbc.py",
+    "zh": "\u725b\u718a\u8bc1\u6570\u636e\u5c1a\u672a\u91c7\u96c6 \u2014 \u8bf7\u8fd0\u884c collectors/hk_cbbc.py"
+  },
+  "cbbc_total_contracts": 0,
+  "dw_total_contracts": 0,
+  "display_only": true
+}

@@ -688,6 +688,76 @@
   </div>
   {% endif %}{# end adr_bridge panel #}
 
+  {# ===================== CBBC / WARRANT LEVERAGE MAP — display-only context organ =====================
+     Surfaces HK retail-leverage froth + issuer-hedging magnet zones. Per-bellwether bull/bear chip
+     + leverage_state label. CONTEXT, NOT A SIGNAL / 参考，非买卖信号.
+     Gracefully absent when cbbc_map is None or has no bellwethers with data. #}
+  {% if cbbc_map and cbbc_map.bellwethers %}
+  {% set _cm = cbbc_map %}
+  {% set _cm_fresh = _cm.freshness if _cm.freshness else 'unknown' %}
+  <div class="panel span12" id="cbbc-leverage-panel">
+    <div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:10px;">
+      <h2 style="margin:0;font-size:13px;">
+        <span class="l-en">CBBC Leverage Map</span>
+        <span class="l-zh">牛熊证杠杆图</span>
+      </h2>
+      {% if _cm.cbbc_total_contracts %}
+      <span style="font-size:11px;color:var(--muted);">
+        <span class="l-en">{{ _cm.cbbc_total_contracts }} contracts</span>
+        <span class="l-zh">{{ _cm.cbbc_total_contracts }} 合约</span>
+      </span>
+      {% endif %}
+      {% if _cm.as_of_trade_date %}
+      <span style="font-size:11px;color:var(--muted);">
+        <span class="l-en">as of {{ _cm.as_of_trade_date }}</span>
+        <span class="l-zh">截至 {{ _cm.as_of_trade_date }}</span>
+      </span>
+      {% endif %}
+      {% if _cm_fresh in ('stale','dead') %}
+      <span class="chip c-warn" style="font-size:11px;">
+        <span class="l-en">data {{ _cm_fresh }}</span>
+        <span class="l-zh">数据{{ '落后' if _cm_fresh == 'stale' else '缺失' }}</span>
+      </span>
+      {% endif %}
+      <span style="font-size:11px;color:var(--muted);margin-left:auto;">
+        <span class="l-en">context, not a signal</span>
+        <span class="l-zh">参考，非买卖信号</span>
+      </span>
+    </div>
+    {# Per-bellwether chips — only show entries with actual data #}
+    <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
+      {% for entry in _cm.bellwethers %}
+      {% set _bb = entry.bull_bear_ratio %}
+      {% set _state = entry.leverage_state if entry.leverage_state else 'no_data' %}
+      {% set _cls = 'c-up' if _state in ('bull_skew_froth','bull_skew') else ('c-down' if _state in ('bear_skew_froth','bear_skew') else 'c-muted') %}
+      {% if entry.total_outstanding and entry.total_outstanding > 0 %}
+      <span class="chip {{ _cls }}" style="font-size:12px;"
+            title="{{ entry.name_en }} {{ entry.ticker }} — bull:bear ratio={{ '%.2f'|format(_bb) if _bb is not none else '—' }}">
+        <span class="l-en">{{ entry.name_en }}</span>
+        <span class="l-zh">{{ entry.name_zh }}</span>
+        {{ entry.ticker }} ·
+        <span class="l-en">B/B</span><span class="l-zh">牛熊</span>
+        {% if _bb is not none %}{{ '%.2f'|format(_bb) }}{% else %}—{% endif %}
+        <span style="font-size:10px;opacity:.7;">{{ _state | replace('_', ' ') }}</span>
+      </span>
+      {% endif %}
+      {% endfor %}
+    </div>
+    {# Caveat footer #}
+    <div style="margin-top:8px;font-size:11px;color:var(--muted);">
+      <span class="l-en">Outstanding qty from HKEX daily issuer reports. Mandatory call price (magnet level) not yet sourced — W1 context only.</span>
+      <span class="l-zh">持仓量来自交易所每日申报。强制赎回价（磁吸位）暂未获取 — 仅为第一阶段参考。</span>
+    </div>
+    {# Banner for stale/error state #}
+    {% if _cm.banner %}
+    <div style="margin-top:8px;font-size:11.5px;color:var(--warn);opacity:.88;">
+      <span class="l-en">{{ _cm.banner.en }}</span>
+      <span class="l-zh">{{ _cm.banner.zh }}</span>
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}{# end cbbc-leverage panel #}
+
   {% if mode == 'stocks' %}
   <!-- ===================== HK STOCK DESK — command-center hero ===================== -->
   {% set RS = (hk_scoreboard.risk_state if hk_scoreboard else (gv.state if gv else 'unknown')) %}
