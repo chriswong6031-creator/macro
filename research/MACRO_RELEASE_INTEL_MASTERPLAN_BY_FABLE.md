@@ -435,3 +435,142 @@ v3 challenger (prereg → backtest → shadow wiring, adversarial review).
 review). **PR-O** UI card+modal + bug fixes. Come-back C-8: committee blend
 at ledger maturity. C-9: challenger promotion adjudication at n≥6 forward
 prints.
+
+## 11. Wave 10 — v3 build-out program (operator-directed, 2026-07-08, Fable main loop)
+
+Trigger: operator directive to execute the §10 charter as a full build AND to
+add a BLS relative-importance CPI **component bridge** (beyond §10's factor-model
+challenger). This section is the program-kickoff adjudication and FREEZES the
+per-track specs before any backtest runs (§6 anti-mining). External handoff
+`research/RELEASE_RADAR_CPI_NFP_INSTITUTIONAL_UPGRADE.md` (Codex) is adopted as a
+DESIGN SOURCE only: ~80% was already chartered in §9/§10; the net-new deltas
+(component bridge, input-snapshot receipts, source-coverage flags) are ruled
+below. All standing law is unchanged: display-only, benchmark-only (MRI-R5, the
+word "consensus"/共识 stays banned), one frozen spec per track, forward ledger is
+the sole judge (§7 gates unchanged), zero authority booleans, no LLM origination
+(MRI-R4). Nothing here graduates a surface; graduation is still §7.
+
+- **MRI-R25 (component-bridge challenger charter).** A BLS relative-importance
+  CPI component bridge enters as a SECOND CHALLENGER track (parallel to R21's
+  factor model), model class frozen here. Blocks and per-block MoM method
+  (frozen): (1) energy — gasoline from GASREGW reference-month average
+  (unrevised, already implemented) + electricity from APU000072610 MoM; (2)
+  shelter — OER + rent via the existing shelter_nowcast (ZORI + CUSR0000SAH1,
+  PREREG_V2 frozen); (3) food-at-home — directional from PPI food inputs
+  (WPU01/WPU012 if free) applied to CUSR0000SAF11 prior; (4) core-goods pipeline
+  — PPIFIS/PPIFES momentum (already the pipeline leg); (5) core-services
+  ex-shelter — CUSR0000SASLE persistence lags. ALL OTHER blocks (used vehicles,
+  new vehicles, airfares, lodging, medical services, health insurance, food-away)
+  are PRIOR-ONLY at confidence 0.0 — no free PIT proxy exists (Manheim/STR/scanner
+  are paid → house W6 SKIP); modelling them would be false precision. Bridge math:
+  contribution_pp[block] = mom_est[block] × relative_importance_weight[block];
+  headline_est = Σ contributions + residual; residual = printed, never hidden
+  (MRI-R19). Weights: BLS annual relative-importance flat file
+  (bls.gov/cpi/tables/relative-importance/2025.htm = Dec-2025 basis, in effect
+  Jan–Dec 2026), keyless collector with FREDGRAPH_UA WAF workaround, materialised
+  as a manually-versioned YAML (`data/release_forecast/component_weights/`),
+  PIT-refreshed once each January (weights are frozen for the calendar year).
+  Component sub-index series are NOT yet ALFRED-vintaged → declared
+  `revision_optimistic` per leg until added to vintage_series and depth-audited.
+  Discipline: backtest as a CHALLENGER vs champion ridge AND naive (same era
+  tables, same kill rule); if it cannot beat naive it is NOT shadowed (honest
+  null card). If it beats naive → SHADOW projection rows tagged `cpi_bridge`,
+  frozen nightly, scored identically; the champion (frozen v2 ridge) keeps the
+  card. Promotion to card requires a new adjudication citing forward evidence
+  (C-9-class). No weight/feature/block iteration post-results.
+
+- **MRI-R26 (provenance & source-coverage law).** Every projection freezes an
+  input-snapshot RECEIPT: the feature→value manifest known at the cutoff, each
+  leg's first-seen/vintage/stale status, and the existing `inputs_hash`
+  (sha256). Written to `data/release_forecast/input_snapshots/<prediction_id>.json`
+  and referenced (not inlined) on the ledger row. Four display-only coverage
+  flags attach to each upcoming item and freeze on the ledger row:
+  `weight_coverage` (share of the release's economic basis backed by a modelled
+  leg — for CPI, the RI weight covered by non-prior blocks), `fresh_proxy_coverage`
+  (share weighted by a leg that has fresh current reference-month data),
+  `non_vintaged_share` (share of legs lacking ALFRED first-seen), and
+  `model_maturity` (count of forward-SCORED prints for that target, read from the
+  ledger — 0 today). These NEVER gate, score, size, or alter a point/interval/skew
+  (authority test enforced); they drive an honest UI "fresh / partial / stale /
+  prior-heavy" chip and an abstention hint. The chart-of-record is the champion;
+  coverage flags are metadata about it.
+
+- **MRI-R27 (Codex audit scope rulings).** ADOPTED as net-new: the component
+  bridge (R25), input-snapshot receipts + coverage flags (R26). ADOPTED as a
+  latent-bug fix: the ADP series reconciliation — the collector writes
+  `ADPMNUSNERSA` but `engine/release_components_nfp.py` reads a nonexistent
+  `ADPNFRPRIVSA.parquet`, so `adp_change` is silently always-absent; the fix
+  points the engine at the collected series (or documents the alias) and emits a
+  coverage diagnostic — no model re-tuning, display-only, `adp` stays
+  revision_optimistic. RE-POINTED to the benchmark set (no consensus feed):
+  Codex's consensus/hot-cold "skill" and Brier/ECE track record stay DEFERRED
+  until a licensed feed AND §7 forward-n exist (MRI-R5). DEFERRED: model committee
+  / ensemble (C-8, MRI-R14 stands). REJECTED: `engine/release_lab` /
+  `data/release_lab` parallel structures (MRI-R11 stands — everything lands under
+  the existing `release_forecast` family); LLM origination (MRI-R4); any
+  entry/sizing/scoring/authority coupling (MRI-R2/R3/R7). Claims stays
+  benchmark-only (§9.1, no attempt 3).
+
+### 11.1 Frozen track specs (committed here before any backtest)
+
+Common protocol for every modelled track (unchanged from §3.2/PREREG_V2):
+ridge λ=1.0 (no tuning), z-scored features, complete-case per prediction row,
+expanding-window walk-forward, MIN_TRAIN_OBS=60, empirical residual quantiles
+(MIN_QUANTILE_OBS=24), COVID months (2020-03..2020-06) excluded from era stats,
+targets are ALFRED first prints (`pit_vintage`), non-vintaged legs declared per
+leg. Kill rule (frozen): model MAE ≥ naive_prior MAE in BOTH the full window AND
+the 2021+ slice → that track/target ships benchmark_only; max 2 spec attempts.
+No sklearn/statsmodels/scipy.stats — pure numpy.
+
+- **Track M (v3 factor challenger; MRI-R21).** Targets cpi_headline, cpi_core,
+  nfp. Feature panel per target (z-scored, complete-case): CPI family = {own MoM
+  lags 1–3, sticky/median/flex CPI momentum, PPIFIS & PPIFES momentum,
+  gasoline_mom (headline only), shelter_nowcast, DTWEXBGS dollar momentum};
+  NFP family = {own change lags 1–3, survey-week ICSA & CCSA, withheld_tax_yoy,
+  awhman_mom, adp_change (post-R27 fix), DTWEXBGS momentum}. EXPINF* breakevens
+  EXCLUDED (whole-history re-reviser, R21). Model: complete-case → PCA top-3
+  factors via pure-numpy SVD → ridge(λ=1.0) on [3 factors + naive anchor (own
+  lag-1)]. Output: point + p10/p25/p50/p75/p90 identical schema. Ledger tag
+  `v3_factor`. Not shadowed unless it beats naive.
+
+- **Track N (new targets; MRI-R23).** Frozen ridge specs, attempt #1 of 2 each:
+  - `pce_headline` (PCEPI MoM SA, vintage 2000→): own MoM lags 1–3 +
+    sticky/median/flex momentum + PPIFIS momentum + gasoline_mom.
+  - `pce_core` (PCEPILFE MoM SA, vintage 2000→): own lags 1–3 +
+    sticky/median/flex momentum + PPIFES momentum.
+  - `ppi_finaldemand` (PPIFIS MoM SA, vintage 2014→, THIN — shallow-history
+    caveat printed): own lags 1–3 + gasoline_mom + PPIFES momentum lag.
+  - `retail_sales` (RSAFS MoM SA): SCAFFOLD-ONLY honest `no_data` — RSAFS parquet
+    is not on disk and retail dates are not in event_calendar yet; machinery
+    ships benchmark_only/no_data (AHE pattern) and the attempt clock does not
+    start until the series + release calendar accrue. Release dates for
+    pce/ppi from event_calendar (PCE id=54, PPI id=46, already wired).
+
+- **Track CB (component bridge; MRI-R25).** As frozen in R25 above. Prereg file
+  `PREREG_CPI_BRIDGE_V1.md`; component map `cpi_component_map.yml`.
+
+- **Track PROV (MRI-R26) & Track O (UI; MRI-R24).** As frozen in R26 / §10 R24.
+
+### 11.2 Execution plan (collision-aware)
+
+The producer (`scripts/build_release_forecast.py`) and the engine dispatch
+(`engine/release_forecast.py:project_release`) are the hot shared files. Order:
+
+- **Round 1 — parallel science (new files only, no shared-file edits, mergeable
+  independently):** Track M science (prereg + `engine/release_forecast_v3.py` +
+  backtest + results), Track N science (prereg + standalone specs + backtests +
+  results), Track CB science (map + `collectors/bls_cpi_weights.py` +
+  `engine/release_cpi_bridge.py` + prereg + backtest + results), Track PROV
+  (`engine/release_provenance.py` + ADP fix + its producer wiring). Kill-rule
+  gate adjudicated (Fable) between rounds — a track that fails naive is wired
+  benchmark_only, never shadowed.
+- **Round 2 — serial integration (single actor, the hot files):** wire challenger
+  shadow rows + new targets (dispatch + `_TRACKED_RELEASES` + `_find_upcoming`) +
+  component-bridge display + coverage flags into the producer; contract +
+  authority + PIT tests.
+- **Round 3 — UI (PR-O):** simple card + detail modal (R24), live-path
+  integration render test vs a realistic full-artifact fixture, bug-fix pass.
+
+Every science/integration wave gets an Opus stats/red-team review before merge;
+Sonnet builds, Opus reviews, Fable adjudicates & merges. Forward gates (§7) and
+come-backs (C-8 committee, C-9 challenger promotion) are unchanged.
