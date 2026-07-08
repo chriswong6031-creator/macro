@@ -3142,6 +3142,25 @@
       "status": "accruing",
       "next_step": "Return 2026-10-01: check operator earnings-date table coverage, re-run w4-gaming-tape with PIT earnings filter, compare filtered vs unfiltered IC/t, report whether GAP-3 survives the filter.",
       "phase_hint": "frontier · gaming tape · GAP-3 · PIT earnings filter · wave-3"
+    },
+    {
+      "id": "w5b-tape-residual-prereg",
+      "name": "W5-B Options Tape Residual — auto-trigger formal pre-registration",
+      "kind": "signal_research",
+      "priority": "medium",
+      "cadence": "auto-trigger (100 underlyings x 250 trading days)",
+      "what": "Cross-sectional rank-IC test of buy-pressure residual (net_premium residualized on dealer-positioning proxy, log-dollar-volume, 5d own-return; 5d smoothed) vs 5d/21d forward equity returns. BH q<=0.10 gate across both horizons; overlap-corrected (NW-HAC lag=2 months); split-half stability check; pre-registered sign POSITIVE. Fully specified in research/OPTIONS_TAPE_RESIDUAL_PREREG_2026-07-08.md.",
+      "source": "research/OPTIONS_TAPE_RESIDUAL_PREREG_2026-07-08.md",
+      "storage": "data/options_tape_signed/",
+      "trial_family": "w5b_tape_residual",
+      "started": "2026-07-08",
+      "come_back_on": "2027-03-01",
+      "come_back_note": "2027-03-01 — check if data/options_tape_signed/ has reached >=100 underlyings x >=250 trading days. If trigger met, run cross-sectional IC test per research/OPTIONS_TAPE_RESIDUAL_PREREG_2026-07-08.md. Also verify next-80 name expansion schedule has been initiated (see §7 of prereg).",
+      "maturation": "Auto-trigger: >=100 underlyings x >=250 trading days in data/options_tape_signed/. Then: BH q<=0.10 across both 5d and 21d IC horizons (NW-HAC overlap-corrected); split-half sign agreement; sign pre-registered POSITIVE.",
+      "status": "accruing",
+      "state": "Pilot: 20 underlyings x ~120 trading days as of 2026-07-08. Auto-trigger requires 100 underlyings x 250 trading days. Name-expansion to next-80 scheduled per §7 of prereg.",
+      "next_step": "Initiate next-80-name backfill schedule (§7 of prereg). Return 2027-03-01 to check trigger condition. If met, run IC test; if not, re-estimate trigger date.",
+      "phase_hint": "options tape W5-B residual signal pre-registration"
     }
   ]
 }
