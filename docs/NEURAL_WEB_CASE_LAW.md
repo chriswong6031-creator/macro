@@ -1,6 +1,6 @@
 <!-- DO NOT EDIT BY HAND — regenerate with: python3 scripts/build_ruling_graph.py -->
 <!-- Source: config/ruling_graph.yml -->
-<!-- source_sha256: b562a99d6ea1cfc6311ae3871759dad04e0822fce50ab78ec520e25dad306c7e -->
+<!-- source_sha256: 06372e40559c422144c0e826078f19b75b1aa5fd6a240b343ebd8833132089aa -->
 
 # Neural Web Case Law
 
