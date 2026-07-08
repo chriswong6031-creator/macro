@@ -3577,19 +3577,40 @@ def main() -> int:
 
     # China Subsector Rotation — A-share twin (同花顺 concepts + curated themes), reads the
     # committed China basket JSONs. Additive, never fatal.
+    # W9-CN lane unification: primarily built in asia-close.yml; this is the nightly fallback.
+    # Idempotency guard: skip if the committed JSON already has today's asof (asia lane ran).
+    _src_json = site / "marketdata" / "subsector_rotation_china.json"
     try:
-        from scripts.build_subsector_rotation_china import build as build_sr_china
-        build_sr_china(site, generated_utc=generated)
-        out_src = site / "subsector_rotation_china.html"
-        write_page(out_src, env.get_template("subsector_rotation_china.html.j2").render())
-        log.info("wrote %s (%.0f KB)", out_src, out_src.stat().st_size / 1024)
+        _src_today = str(json.loads(_src_json.read_text()).get("asof", "")).startswith(generated[:10]) if _src_json.exists() else False
+    except Exception:  # noqa: BLE001
+        _src_today = False
+    if _src_today:
+        log.info("build_site: subsector_rotation_china already built by asia lane today (%s) — re-rendering HTML only", generated[:10])
         try:
-            from scripts.build_subsector_rotation_china_pages import build as build_src_pages
-            log.info("wrote %d China subsector detail pages", build_src_pages(site))
+            out_src = site / "subsector_rotation_china.html"
+            write_page(out_src, env.get_template("subsector_rotation_china.html.j2").render())
+            log.info("wrote %s (%.0f KB) from committed JSON", out_src, out_src.stat().st_size / 1024)
+            try:
+                from scripts.build_subsector_rotation_china_pages import build as build_src_pages
+                log.info("wrote %d China subsector detail pages (re-render from committed JSON)", build_src_pages(site))
+            except Exception as e:  # noqa: BLE001 — additive, never fatal
+                log.error("China subsector detail pages re-render failed: %s", e)
         except Exception as e:  # noqa: BLE001 — additive, never fatal
-            log.error("China subsector detail pages failed: %s", e)
-    except Exception as e:  # noqa: BLE001 — additive, never fatal
-        log.error("China subsector rotation failed: %s", e)
+            log.error("China subsector rotation HTML re-render failed: %s", e)
+    else:
+        try:
+            from scripts.build_subsector_rotation_china import build as build_sr_china
+            build_sr_china(site, generated_utc=generated)
+            out_src = site / "subsector_rotation_china.html"
+            write_page(out_src, env.get_template("subsector_rotation_china.html.j2").render())
+            log.info("wrote %s (%.0f KB)", out_src, out_src.stat().st_size / 1024)
+            try:
+                from scripts.build_subsector_rotation_china_pages import build as build_src_pages
+                log.info("wrote %d China subsector detail pages", build_src_pages(site))
+            except Exception as e:  # noqa: BLE001 — additive, never fatal
+                log.error("China subsector detail pages failed: %s", e)
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.error("China subsector rotation failed: %s", e)
 
     # Subsector Confluence — the ENTRY-NOW desk: each S&P-500 sub-industry (+ the curated
     # thematic baskets) as an equal-weight synthetic index, read through the T1-T4 confluence
