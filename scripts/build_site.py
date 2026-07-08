@@ -3790,6 +3790,13 @@ def main() -> int:
         if _db_src.exists():
             (nwd / "daily_brief.json").write_bytes(_db_src.read_bytes())
             log.info("neuralwebdata: copied daily_brief.json")
+        # liquidity_plumbing lobe (neuralweb.liquidity_plumbing.v1) for committee card.
+        # Render job is a fresh checkout, so copy from the committed data/ artifact
+        # here rather than relying on the engine job's site-mirror surviving cross-job.
+        _lp_src = config.data_dir() / "neuralweb" / "liquidity_plumbing.json"
+        if _lp_src.exists():
+            (nwd / "liquidity_plumbing.json").write_bytes(_lp_src.read_bytes())
+            log.info("neuralwebdata: copied liquidity_plumbing.json")
         # Supabase config (same as watchlist / theme.js)
         committee_html = env.get_template("committee.html.j2").render(
             generated_utc=generated,

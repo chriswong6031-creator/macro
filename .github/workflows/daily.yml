@@ -1115,6 +1115,15 @@ jobs:
         # fed-net-liquidity notes in config/synapse.yml). Output covered by
         # 'git add data/' in 'commit engine outputs' below.
         run: python -m scripts.build_netliq_daily || echo "::warning::build_netliq_daily failed (non-fatal — last committed artifact stands)"
+      - name: Neural Web liquidity-plumbing lobe (shadow-tier, non-fatal)
+        # Pure aggregation, no network calls. Runs AFTER build_netliq_daily so
+        # data/macro/fed_net_liquidity.parquet is fresh. Reads regime/latest.json,
+        # treasury/{net_issuance,tga}.parquet, treasury_auctions/auctions.parquet.
+        # Emits data/neuralweb/liquidity_plumbing.json (schema neuralweb.liquidity_plumbing.v1).
+        # Shadow-tier, display/de-escalation only authority — no score raise.
+        # Fail-open: missing source → gaps[] + null block, always exits 0.
+        # Output covered by 'git add data/' in 'commit engine outputs' below.
+        run: python -m scripts.build_liquidity_plumbing || echo "::warning::build_liquidity_plumbing failed (non-fatal — last committed artifact stands)"
       - name: MRI release forecast producer (display-only, non-fatal)
         # MRI PR-C: nightly projection for CPI (headline + core) and NFP.
         # Emits data/release_forecast/latest.json (schema release_forecast.v1),
