@@ -726,7 +726,8 @@ def _survivorship_block(boards: list[dict], names: pd.DataFrame) -> dict:
             f"prices resolved via live broad cache ({len(live_usable)} tickers) + "
             f"edgar dead-name store ({len(dead_usable)} tickers); "
             f"{len(recovered_by_dead)} board names recovered from dead store; "
-            f"n_skipped_no_price counts ONLY names absent from both sources"
+            f"n_skipped_no_price counts ONLY names absent from both sources "
+            f"(likely delisted / never cached — the residual survivor bias)"
         )
     else:
         note = (
