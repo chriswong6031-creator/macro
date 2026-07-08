@@ -44,6 +44,8 @@ _LEDGER_RELPATH = "data/release_forecast/forward_ledger.jsonl"
 _LATEST_RELPATH = "data/release_forecast/latest.json"
 _SCOREBOARD_RELPATH = "data/release_forecast/scoreboard.json"
 _SITE_RELPATH = "site/macrodata/release_forecast.json"
+# MRI-R26: provenance snapshots dir (one JSON per prediction_id)
+_INPUT_SNAPSHOTS_RELPATH = "data/release_forecast/input_snapshots"
 
 # Ledger key fields (idempotency guard)
 _LEDGER_KEY = ("release", "period", "row_type", "asof_night")
@@ -589,6 +591,105 @@ def _append_ledger_rows(ledger_path: Path, new_rows: list[dict]) -> None:
     log.info("ledger: appended %d new rows", len(to_write))
 
 
+def _attach_provenance(
+    upcoming_block: list[dict],
+    ledger_path: Path,
+    snapshots_dir: Path,
+    dry_run: bool = False,
+) -> None:
+    """MRI-R26: attach input_snapshot and coverage flags to each upcoming item in-place.
+
+    For each item:
+      1. Reconstruct a minimal projection dict from the item for snapshot/coverage.
+      2. Call engine.release_provenance.build_input_snapshot → write to snapshots_dir/<prediction_id>.json
+         (fail-open: IO error → no file, log only).
+      3. Set item["input_snapshot_ref"] to the relative path string.
+      4. Call engine.release_provenance.compute_coverage_flags → attach four flags as
+         item["coverage_flags"].
+
+    AUTHORITY CONTRACT (MRI-R26 / MRI-R2 / MRI-R3):
+      - Coverage flags are METADATA ONLY.
+      - They NEVER appear in / influence point/interval/skew/confidence.
+      - Nothing in this function reads coverage values back into any projection field.
+
+    Fail-open: any error → log, continue (no field attached or null).
+    """
+    try:
+        from engine.release_provenance import build_input_snapshot, compute_coverage_flags
+    except Exception as exc:
+        log.warning("release_provenance import failed — provenance enrichment skipped: %s", exc)
+        return
+
+    for item in upcoming_block:
+        rt = item.get("release_type", "")
+        pit = item.get("pit") or {}
+
+        # Pre-compute prediction_id in the same way as _build_projection_ledger_rows
+        # so the snapshot filename matches the ledger row.
+        _period_str = item.get("period") or ""
+        _pred_id_for_snap = ""
+        _asof_night_str = date.today().isoformat()
+        try:
+            from engine.release_forecast import make_release_id, make_prediction_id
+            if rt and _period_str:
+                _release_id = make_release_id(rt, _period_str)
+                _pred_id_for_snap = make_prediction_id(_release_id, _asof_night_str)
+        except Exception:
+            pass
+
+        # Build a minimal projection dict for the provenance module.
+        # The provenance module reads pit_provenance and optionally _features.
+        proj_for_prov: dict = {
+            "release": rt,
+            "asof": _asof_night_str,
+            "pit_provenance": pit,
+            "inputs_hash": pit.get("inputs_hash") or "",
+            "display_only": True,
+            "authority": False,
+            "prediction_id": _pred_id_for_snap,
+        }
+
+        # 1. Input snapshot
+        try:
+            snapshot = build_input_snapshot(proj_for_prov)
+            pred_id = snapshot.get("prediction_id") or ""
+            # Write to disk (fail-open)
+            ref_path: str | None = None
+            if pred_id and not dry_run:
+                try:
+                    snapshots_dir.mkdir(parents=True, exist_ok=True)
+                    # Sanitize prediction_id for use as filename
+                    safe_name = pred_id.replace(":", "_").replace("/", "_")
+                    snap_file = snapshots_dir / f"{safe_name}.json"
+                    with open(snap_file, "w", encoding="utf-8") as fh:
+                        json.dump(snapshot, fh, indent=2, default=str)
+                    # Store relative path (from repo root)
+                    try:
+                        ref_path = str(snap_file.relative_to(snapshots_dir.parent.parent.parent))
+                    except ValueError:
+                        ref_path = str(snap_file)
+                except Exception as exc_io:
+                    log.debug("provenance snapshot write failed for %s: %s", pred_id, exc_io)
+            item["input_snapshot_ref"] = ref_path
+        except Exception as exc:
+            log.debug("build_input_snapshot failed for %s: %s", rt, exc)
+            item["input_snapshot_ref"] = None
+
+        # 2. Coverage flags — DISPLAY-ONLY METADATA; must not feed back into projections
+        try:
+            flags = compute_coverage_flags(proj_for_prov, ledger_path)
+            # AUTHORITY WALL: copy only the four declared flags; never touch point/interval/skew
+            item["coverage_flags"] = {
+                "weight_coverage":      flags.get("weight_coverage"),
+                "fresh_proxy_coverage": flags.get("fresh_proxy_coverage"),
+                "non_vintaged_share":   flags.get("non_vintaged_share"),
+                "model_maturity":       flags.get("model_maturity"),
+            }
+        except Exception as exc:
+            log.debug("compute_coverage_flags failed for %s: %s", rt, exc)
+            item["coverage_flags"] = None
+
+
 def _build_projection_ledger_rows(
     today: date,
     upcoming_block: list[dict],
@@ -658,6 +759,13 @@ def _build_projection_ledger_rows(
             "expectation_read": item.get("expectation_read"),
             # freeze sigma_scale_pp for scoring: needed to re-derive bands at score time
             "sigma_scale_pp": (item.get("surprise_skew") or {}).get("sigma_scale_pp"),
+            # MRI-R26: provenance coverage flags (display-only metadata; never influence projections)
+            "coverage_weight_coverage":      (item.get("coverage_flags") or {}).get("weight_coverage"),
+            "coverage_fresh_proxy_coverage": (item.get("coverage_flags") or {}).get("fresh_proxy_coverage"),
+            "coverage_non_vintaged_share":   (item.get("coverage_flags") or {}).get("non_vintaged_share"),
+            "coverage_model_maturity":       (item.get("coverage_flags") or {}).get("model_maturity"),
+            # MRI-R26: reference to on-disk input snapshot (path string or None)
+            "input_snapshot_ref":            item.get("input_snapshot_ref"),
         }
         rows.append(row)
     return rows
@@ -1654,6 +1762,12 @@ def build(root: Path, dry_run: bool = False) -> dict:
     existing_ledger = _load_ledger(ledger_path)
     log.info("loaded %d existing ledger rows", len(existing_ledger))
 
+    # 3b. MRI-R26: attach provenance (input_snapshot + coverage_flags) to each upcoming item.
+    # Must run AFTER enrichments so prediction_id is present; BEFORE ledger rows so flags freeze.
+    snapshots_dir = root / _INPUT_SNAPSHOTS_RELPATH
+    _attach_provenance(upcoming_block, ledger_path, snapshots_dir, dry_run=dry_run)
+    log.info("provenance: coverage flags and snapshot refs attached to %d items", len(upcoming_block))
+
     # 5. Build today's projection ledger rows
     proj_ledger_rows = _build_projection_ledger_rows(today, upcoming_block, policy_backdrop)
 
@@ -1701,7 +1815,7 @@ def build(root: Path, dry_run: bool = False) -> dict:
             "can_size": False,
             "can_trade": False,
         },
-        "enrichments": ["surprise_distribution", "market_implied", "reaction_sensitivity", "quirk_flags", "expectation_read"],
+        "enrichments": ["surprise_distribution", "market_implied", "reaction_sensitivity", "quirk_flags", "expectation_read", "coverage_flags", "input_snapshot_ref"],
         "upcoming": upcoming_block,
         "last_scored": last_scored,
         "scoreboard_ref": "data/release_forecast/scoreboard.json",
