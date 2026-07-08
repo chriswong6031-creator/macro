@@ -103,6 +103,18 @@ Run:
 Writes reports/d4-cn-supply-absorption-d401b-stage0.md (frozen prereg printed BEFORE
 results). Display-tier study output; not a production signal; no signal keys are
 originated by this lane.
+
+POST-FREEZE ADDENDUM (added AFTER the gated results were seen; zero gate weight)
+================================================================================
+The freeze above set the HAC lag at 31 OBSERVATIONS on the stated premise that the
+matched per-date series is near-daily. The realized series is NOT near-daily (matched
+dates cover roughly one in three trading days pre-规), so lag-31-in-observation-space
+over-covers the true 31-trading-day forward-window overlap and widens the SE — i.e. it
+is conservative in the KILL direction. The frozen gate stands unchanged per prereg
+discipline. For the adjudication record only, a NON-GATED sensitivity recomputes both
+estimands per cell at an overlap-matched lag (median count of subsequent observations
+within 45 calendar days ≈ 31 CN trading days). Its trials are ledger-logged; the report
+labels the block as post-freeze and non-decisive.
 """
 from __future__ import annotations
 
@@ -444,6 +456,35 @@ def _pp(v):
     return "N/A" if v is None else f"{v*100:+.3f}pp"
 
 
+def overlap_matched_lag(dates: pd.Series) -> int:
+    """POST-FREEZE sensitivity helper: median count of SUBSEQUENT observations within
+    45 calendar days (≈ 31 CN trading days) of each observation — the correct
+    observation-space span of the forward-window overlap for this irregular series."""
+    arr = pd.DatetimeIndex(sorted(dates)).values
+    counts = [int(np.searchsorted(arr, arr[i] + np.timedelta64(45, "D"), side="right")) - i - 1
+              for i in range(len(arr))]
+    return max(1, int(np.median(counts)))
+
+
+def sensitivity_estimands(daily: pd.DataFrame, label: str) -> dict:
+    """POST-FREEZE, NON-GATED: both estimands at the overlap-matched lag."""
+    lag = overlap_matched_lag(daily["date"])
+    md = daily["m_d"].to_numpy(float)
+    nd = daily["n_d"].to_numpy(float)
+    out = {"label": label, "lag": lag}
+    if len(daily) >= 8:
+        out["ew"] = newey_west_tstat(pd.Series(md), lags=lag)
+        mu_w = float((nd * md).sum() / nd.sum())
+        psi = nd * (md - mu_w) / nd.mean()
+        out["nww"] = newey_west_tstat(pd.Series(psi + mu_w), lags=lag)
+    else:
+        out["ew"] = out["nww"] = {"mean": None, "t": None, "p": None, "n": len(daily)}
+    print(f"[sensitivity {label}] overlap-matched lag={lag}: "
+          f"EW mean={_pp(out['ew']['mean'])} t={out['ew']['t']} p={out['ew']['p']}; "
+          f"NW-w mean={_pp(out['nww']['mean'])} t={out['nww']['t']} p={out['nww']['p']}")
+    return out
+
+
 def evaluate_gate(cells: dict[str, dict]) -> dict:
     powered = {k: c for k, c in cells.items() if c["floor_met"] and c["ew"]["p"] is not None}
     bh = benjamini_hochberg({k: c["ew"]["p"] for k, c in powered.items()}, alpha=BH_ALPHA)
@@ -591,17 +632,55 @@ def render_report(ctx: dict) -> str:
         W("significance in at least one cell — the event-heavy-cluster signature. EW rules")
         W("by freeze; the disagreement is reported here, not adjudicated away.")
     W("")
+    W("### 3b. Post-freeze sensitivity — overlap-matched NW lag (NON-GATED, zero gate weight)")
+    W("")
+    W("**Transparency note: this block was added AFTER the gated results above were seen,")
+    W("and it does not (and cannot) change the frozen verdict.** Motivation: the freeze")
+    W("set the HAC lag at 31 observations on the premise that the matched per-date series")
+    W("is near-daily; the realized series is not (matched dates cover roughly one in")
+    W("three trading days pre-规), so lag-31-in-observation-space over-covers the true")
+    W("31-trading-day forward-window overlap and widens the SE — conservative in the KILL")
+    W("direction. The frozen gate stands per prereg discipline; the overlap-matched read")
+    W("below is for the adjudication record and any future re-registration. Trials")
+    W("ledger-logged.")
+    W("")
+    W("| Cell | overlap-matched lag | EW mean | t_NW | p | NW-w mean | t_NW | p |")
+    W("|---|---|---|---|---|---|---|---|")
+    for k, s in ctx["sens"].items():
+        W(f"| {k} | {s['lag']} | {_pp(s['ew']['mean'])} | {s['ew']['t']} | {s['ew']['p']} | "
+          f"{_pp(s['nww']['mean'])} | {s['nww']['t']} | {s['nww']['p']} |")
+    W("")
     W("## 4. Gate outcome")
     W("")
     outcome = ctx["gate"]["outcome"]
     if outcome == "FAMILY_CLOSES":
-        W("**No powered regime cell is ALIVE. Per the frozen rule, family")
-        W(f"`{FAMILY}` CLOSES.** The deep-discount block reversion premium, net of a")
-        W("continuous [t,t+10] path + vol + size match evaluated strictly within date, is")
-        W("statistically indistinguishable from zero (or negative) in both the pre- and")
-        W("post-减持新规 regimes. The known local-quant reversion trade shows no residual")
-        W("room in the covered universe, so the Stage-1 absorption interaction has no room")
-        W("either; Stage 1 is NOT run, per the staged design.")
+        cs = ctx["cells"]
+        (k1, c1), (k2, c2) = list(cs.items())[0], list(cs.items())[1]
+        W("**No powered regime cell is ALIVE at the frozen ruler. Per the pre-registered")
+        W(f"rule, family `{FAMILY}` CLOSES.**")
+        W("")
+        W("The honest shape of this null, stated plainly rather than rounded to zero:")
+        W(f"both regime cells are POSITIVE and nearly identical ({_pp(c1['ew']['mean'])} {k1},")
+        W(f"{_pp(c2['ew']['mean'])} {k2}, EW per 21 sessions), both carry BH q = "
+          f"{c1['bh_q']:.3f}/{c2['bh_q']:.3f}")
+        W(f"(<= {BH_ALPHA}), and both fail the conjunctive |t_NW| >= {T_THRESHOLD} leg by a "
+          f"modest margin")
+        W(f"(t = {c1['ew']['t']} / {c2['ew']['t']}). The pooled read — pre-declared "
+          f"NON-decisive because")
+        W("减持新规 changed window-selection meaning — clears the naive bar "
+          f"(t = {ctx['pooled']['ew']['t']}). This is")
+        W("a close-call null at a deliberately strict pre-registered ruler, not evidence of")
+        W("a zero or negative premium. Per house law the kill is construction-specific:")
+        W("what dies is THIS family's Stage-0 claim (a post-path-window 21d reversion")
+        W(f"premium clearing |t| >= {T_THRESHOLD} per regime under within-date "
+          f"continuous-caliper")
+        W("matching). Direction and magnitude are retained as confluence context only.")
+        W("")
+        W("Consequence per the staged design: Stage 1's budget was conditional on a")
+        W("Stage-0 ALIVE, so the flow-intensity DiD is NOT run and the family closes.")
+        W("Re-entry requires a fresh operator-ratified prereg (the post-规 cell roughly")
+        W("doubles by ~2028 on accrual alone; a longer-horizon or higher-power estimand")
+        W("would need its own registration) and a DO_NOT_REBUILD-aware adjudication.")
     elif outcome == "STAGE0_ALIVE":
         alive = [k for k, c in ctx["cells"].items() if c["alive"]]
         W(f"**Stage 0 is ALIVE** (cells: {', '.join(alive)}). Per the frozen rule, Stage 1")
@@ -689,6 +768,19 @@ def main() -> None:
     pooled = cell_estimands(daily, "pooled_NONDECISIVE")
     gate = evaluate_gate(cells)
 
+    # ---- POST-FREEZE sensitivity (NON-GATED; see docstring addendum) ----
+    sens_grid = [{**base_cfg, "regime": r, "estimand": "overlap_matched_lag_sensitivity",
+                  "post_freeze": True, "gated": False}
+                 for r in ("pre_gui", "post_gui", "pooled")]
+    n_sens = led.log_grid(sens_grid, family=FAMILY,
+                          note="D4-01b Stage 0 post-freeze overlap-lag sensitivity (non-gated)")
+    print(f"\n[trial_ledger] logged {n_sens} post-freeze sensitivity config rows")
+    sens = {
+        "pre_gui (2013..2023-08-26)": sensitivity_estimands(pre, "pre_gui"),
+        "post_gui (2023-08-27+)": sensitivity_estimands(post, "post_gui"),
+        "pooled (NON-decisive)": sensitivity_estimands(daily, "pooled"),
+    }
+
     ew_nww_disagree = any(
         c["ew"]["t"] is not None and c["nww"]["t"] is not None
         and ((c["ew"]["t"] >= T_THRESHOLD) != (c["nww"]["t"] >= T_THRESHOLD)
@@ -722,6 +814,7 @@ def main() -> None:
         "cells": cells,
         "pooled": pooled,
         "gate": gate,
+        "sens": sens,
         "ew_nww_disagree": ew_nww_disagree,
     }
     ctx["cov_rate"] = 100.0 * ctx["n_covered"] / max(ctx["n_episodes"], 1)

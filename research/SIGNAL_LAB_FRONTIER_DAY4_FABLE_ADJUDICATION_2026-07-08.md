@@ -179,3 +179,25 @@ sitting on disk the whole time, invisible to the lane because of a missing short
 the old version stays dead, and one carefully-designed retest is queued that first asks
 the cheapest question — does this trade even exist anymore? — before asking the
 expensive one.*
+
+### D4-01b Stage-0 outcome (2026-07-08, same day — executed as registered)
+
+The staged re-entry ran against the canonical host store (175,509 mrtj rows verified;
+unit assertion, F5-01 pass-rate 8.38% and variant-count divergence all printed and
+asserted). Stage 0 verdict: **dead in both regimes at the frozen ruler → FAMILY
+CLOSES.** Pre-规 EW +1.078pp/21d (t_NW 1.912), post-规 +1.136pp (t_NW 1.771) — both
+positive, both BH q = 0.077 ≤ 0.10, both below the conjunctive |t| ≥ 2 leg; the pooled
+read (pre-declared non-decisive) clears t = 2.558. A post-freeze NON-GATED
+overlap-matched-lag sensitivity (disclosed in the report) confirms the closure is not a
+HAC-lag artifact (t 1.931/1.592). Stage 1 was NOT run, per the staged budget. The
+close-call POSITIVE null is written honestly and retained as confluence context;
+registry row appended to `research/DO_NOT_REBUILD.md`. Full record:
+`reports/d4-cn-supply-absorption-d401b-stage0.md` (two-commit freeze receipt in the PR).
+
+*In plain English: the retest ran, and the cheap question came back "not really." Names
+that printed deeply-discounted block trades did drift about +1% ahead of look-alike
+stocks over the following month, in both the old and new regulatory regimes — but that
+edge is too small and too noisy to clear the bar we set for ourselves in advance, so by
+our own pre-committed rule the idea is closed rather than argued with. The near-miss is
+recorded honestly: this was a real maybe, killed by discipline, not a fantasy killed by
+data — and if the tape doubles in a couple of years someone may re-open it properly.*
