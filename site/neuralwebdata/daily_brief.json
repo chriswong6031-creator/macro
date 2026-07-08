@@ -1,9 +1,9 @@
 {
   "schema": "neuralweb.daily_brief.v1",
-  "produced_at": "2026-07-07T15:28:17.319935+00:00",
+  "produced_at": "2026-07-08T07:27:30.376416+00:00",
   "as_of": "2026-07-02",
   "status": "degraded",
-  "phase": "final",
+  "phase": "engine",
   "did_the_brain_run": {
     "cortex_status": "degraded",
     "tool_call_batches": 0,
@@ -13,72 +13,51 @@
   },
   "what_changed": [
     {
-      "kind": "lobe_status_changed",
-      "id": "site-qledger-track-record",
-      "summary": "lobe site-qledger-track-record status: stale → fresh",
-      "severity": "info",
-      "evidence_path": "data/neuralweb/health.json"
-    },
-    {
       "kind": "lobe_row_count_changed",
       "id": "spine-index",
-      "summary": "lobe spine-index row count changed: 288667 → 291907 (1%)",
+      "summary": "lobe spine-index row count changed: 291907 → 291944 (0%)",
       "severity": "info",
       "evidence_path": "data/neuralweb/health.json"
     },
     {
       "kind": "lobe_row_count_changed",
-      "id": "governance-ledger",
-      "summary": "lobe governance-ledger row count changed: 23 → 27 (17%)",
+      "id": "mechanism-pathways-history",
+      "summary": "lobe mechanism-pathways-history row count changed: 1 → 2 (100%)",
       "severity": "info",
       "evidence_path": "data/neuralweb/health.json"
     },
     {
       "kind": "lobe_status_changed",
-      "id": "machine-registry",
-      "summary": "lobe machine-registry status: missing → fresh",
+      "id": "evidence-clock",
+      "summary": "lobe evidence-clock status: fresh_partial → fresh",
       "severity": "info",
       "evidence_path": "data/neuralweb/health.json"
     },
     {
-      "kind": "lobe_status_changed",
-      "id": "neuralweb-health",
-      "summary": "lobe neuralweb-health status: missing → fresh",
-      "severity": "info",
-      "evidence_path": "data/neuralweb/health.json"
-    },
-    {
-      "kind": "lobe_status_changed",
-      "id": "site-neuralweb-health",
-      "summary": "lobe site-neuralweb-health status: missing → fresh",
-      "severity": "info",
-      "evidence_path": "data/neuralweb/health.json"
-    },
-    {
-      "kind": "lobe_status_changed",
-      "id": "neuralweb-daily-brief",
-      "summary": "lobe neuralweb-daily-brief status: missing → fresh",
-      "severity": "info",
-      "evidence_path": "data/neuralweb/health.json"
-    },
-    {
-      "kind": "lobe_status_changed",
-      "id": "site-neuralweb-daily-brief",
-      "summary": "lobe site-neuralweb-daily-brief status: missing → fresh",
-      "severity": "info",
-      "evidence_path": "data/neuralweb/health.json"
-    },
-    {
-      "kind": "lobe_status_changed",
-      "id": "neuralweb-daily-brief-history",
-      "summary": "lobe neuralweb-daily-brief-history status: missing → fresh",
+      "kind": "lobe_row_count_changed",
+      "id": "evidence-clock",
+      "summary": "lobe evidence-clock row count changed: 186 → 201 (8%)",
       "severity": "info",
       "evidence_path": "data/neuralweb/health.json"
     },
     {
       "kind": "lobe_new",
-      "id": "release-forecast-latest",
-      "summary": "lobe release-forecast-latest appeared in scope",
+      "id": "context-risk",
+      "summary": "lobe context-risk appeared in scope",
+      "severity": "info",
+      "evidence_path": "data/neuralweb/health.json"
+    },
+    {
+      "kind": "lobe_new",
+      "id": "site-context-risk",
+      "summary": "lobe site-context-risk appeared in scope",
+      "severity": "info",
+      "evidence_path": "data/neuralweb/health.json"
+    },
+    {
+      "kind": "lobe_new",
+      "id": "context-candidates",
+      "summary": "lobe context-candidates appeared in scope",
       "severity": "info",
       "evidence_path": "data/neuralweb/health.json"
     }
@@ -94,21 +73,7 @@
     {
       "id": "",
       "summary": "contradiction ",
-      "severity": "watch",
-      "delta_vs_prior": "persisting",
-      "evidence_path": "site/neuralwebdata/confluence_graph.json"
-    },
-    {
-      "id": "",
-      "summary": "contradiction ",
       "severity": "info",
-      "delta_vs_prior": "persisting",
-      "evidence_path": "site/neuralwebdata/confluence_graph.json"
-    },
-    {
-      "id": "",
-      "summary": "contradiction ",
-      "severity": "watch",
       "delta_vs_prior": "persisting",
       "evidence_path": "site/neuralwebdata/confluence_graph.json"
     }
@@ -225,21 +190,33 @@
       "age_hours": null,
       "freshness_sla_hours": 9999,
       "severity": "watch"
+    },
+    {
+      "id": "context-candidates",
+      "as_of": null,
+      "age_hours": null,
+      "freshness_sla_hours": 36,
+      "severity": "watch"
     }
   ],
   "why_the_tape_moved": {
     "available": true,
-    "as_of": "2026-07-07",
+    "as_of": "2026-07-08",
     "primary": {
-      "family": "ai_semis",
-      "direction": "Bubble / blow-off unwind",
-      "coverage": "scare_trigger",
-      "coherence": "partial",
-      "evidence_legs": [],
+      "family": "equity-leadership",
+      "direction": "AI/semis unwind — tech-led de-rating",
+      "coverage": 1.0,
+      "coherence": "supported",
+      "evidence_legs": [
+        "semis RS",
+        "growth vs value",
+        "cap-weight vs equal-weight"
+      ],
       "stale_legs_count": 0
     },
     "alternates": [
-      "crypto"
+      "crypto",
+      "rates"
     ]
   },
   "operator_attention": [
@@ -347,6 +324,12 @@
     },
     {
       "priority": 2,
+      "area": "context-candidates",
+      "summary": "lobe context-candidates is watch — age Noneh vs SLA 36h",
+      "action_type": "inspect"
+    },
+    {
+      "priority": 2,
       "area": "dag_conformance",
       "summary": "producer engine/altdata_emit.py not declared in daily.yml — update config/dag.yml",
       "action_type": "ops_fix"
@@ -355,12 +338,6 @@
       "priority": 3,
       "area": "confluence-graph",
       "summary": "lobe confluence-graph has gaps: stable edges (Tier-S): data/oracle/graph_s.json absent — gitignored/Mac-local on this run, stable edges (Tier-M): data/oracle/graph_m.json absent — gitignored/Mac-local on this run",
-      "action_type": "follow_up"
-    },
-    {
-      "priority": 3,
-      "area": "evidence-clock",
-      "summary": "lobe evidence-clock has gaps: cortex: data/neuralweb/machine_registry.jsonl not present (empty by design)",
       "action_type": "follow_up"
     },
     {

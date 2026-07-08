@@ -233,3 +233,6 @@
 {"date":"2026-07-07","ticker":"PFE","rank":null,"score":26,"lean":1,"broken":true}
 {"date":"2026-07-07","ticker":"QBTS","rank":null,"score":25,"lean":1,"broken":true}
 {"date":"2026-07-07","ticker":"CAMT","rank":null,"score":11,"lean":1,"broken":true}
+{"date":"2026-07-07","ticker":"NET","rank":28,"score":35,"lean":1,"entry_tier":"T1","broken":false}
+{"date":"2026-07-07","ticker":"F","rank":null,"score":47,"lean":1,"broken":true}
+{"date":"2026-07-07","ticker":"PWR","rank":null,"score":20,"lean":1,"broken":true}

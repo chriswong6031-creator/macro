@@ -1,5 +1,5 @@
 {
-  "as_of": "2026-07-07",
+  "as_of": "2026-07-08",
   "authority": {
     "allowed_actions": [
       "display",
@@ -25,14 +25,14 @@
         "falsifier_coverage": 1.0,
         "fill_convention_split": {
           "asof_legacy_count": 94,
-          "next_bar_count": 18,
+          "next_bar_count": 26,
           "note": "#1180 discontinuity — asof_legacy = pre-#1180 grades (fill_convention field absent in grade); next_bar = post-#1180 (fill_convention='next_bar')"
         },
         "hit_gradeable_note": "direction=0 claims are not hit-gradeable (graded on excess only); this does not contradict the R2 audit CLOSED verdict",
         "hit_gradeable_share": 1.0,
         "maturity_mix": {
-          "graded_5d_count": 112,
-          "graded_5d_share": 0.842105,
+          "graded_5d_count": 120,
+          "graded_5d_share": 0.902256,
           "matured_21d_count": 0,
           "matured_63d_count": 0,
           "note": "21d/63d matured counts are 0 today — calendar-gated, not build-gated; earliest useful read ~2026-10-01"
@@ -90,12 +90,12 @@
         "hit_gradeable_share": 0.0,
         "maturity_mix": {
           "graded_5d_count": 648,
-          "graded_5d_share": 0.784504,
+          "graded_5d_share": 0.780723,
           "matured_21d_count": 0,
           "matured_63d_count": 0,
           "note": "21d/63d matured counts are 0 today — calendar-gated, not build-gated; earliest useful read ~2026-10-01"
         },
-        "n_claims": 826,
+        "n_claims": 830,
         "n_hit_gradeable": 0,
         "n_with_falsifier": 0,
         "source_ontology_fill": {
@@ -119,12 +119,12 @@
         "hit_gradeable_share": 0.0,
         "maturity_mix": {
           "graded_5d_count": 648,
-          "graded_5d_share": 0.784504,
+          "graded_5d_share": 0.780723,
           "matured_21d_count": 0,
           "matured_63d_count": 0,
           "note": "21d/63d matured counts are 0 today — calendar-gated, not build-gated; earliest useful read ~2026-10-01"
         },
-        "n_claims": 826,
+        "n_claims": 830,
         "n_hit_gradeable": 0,
         "n_with_falsifier": 0,
         "source_ontology_fill": {
@@ -170,7 +170,7 @@
         "falsifier_coverage": 0.0,
         "fill_convention_split": {
           "asof_legacy_count": 280,
-          "next_bar_count": 30,
+          "next_bar_count": 37,
           "note": "#1180 discontinuity — asof_legacy = pre-#1180 grades (fill_convention field absent in grade); next_bar = post-#1180 (fill_convention='next_bar')"
         },
         "hit_gradeable_note": "direction=0 claims are not hit-gradeable (graded on excess only); this does not contradict the R2 audit CLOSED verdict",
@@ -178,7 +178,7 @@
         "maturity_mix": {
           "graded_5d_count": 310,
           "graded_5d_share": 0.906433,
-          "matured_21d_count": 0,
+          "matured_21d_count": 7,
           "matured_63d_count": 0,
           "note": "21d/63d matured counts are 0 today — calendar-gated, not build-gated; earliest useful read ~2026-10-01"
         },
@@ -257,19 +257,19 @@
         "falsifier_coverage": 0.0,
         "fill_convention_split": {
           "asof_legacy_count": 8,
-          "next_bar_count": 576,
+          "next_bar_count": 1002,
           "note": "#1180 discontinuity — asof_legacy = pre-#1180 grades (fill_convention field absent in grade); next_bar = post-#1180 (fill_convention='next_bar')"
         },
         "hit_gradeable_note": "direction=0 claims are not hit-gradeable (graded on excess only); this does not contradict the R2 audit CLOSED verdict",
         "hit_gradeable_share": 0.0,
         "maturity_mix": {
-          "graded_5d_count": 584,
-          "graded_5d_share": 0.278095,
+          "graded_5d_count": 1010,
+          "graded_5d_share": 0.370506,
           "matured_21d_count": 0,
           "matured_63d_count": 0,
           "note": "21d/63d matured counts are 0 today — calendar-gated, not build-gated; earliest useful read ~2026-10-01"
         },
-        "n_claims": 2100,
+        "n_claims": 2726,
         "n_hit_gradeable": 0,
         "n_with_falsifier": 0,
         "source_ontology_fill": {
@@ -286,19 +286,19 @@
         "falsifier_coverage": 0.0,
         "fill_convention_split": {
           "asof_legacy_count": 8,
-          "next_bar_count": 576,
+          "next_bar_count": 1002,
           "note": "#1180 discontinuity — asof_legacy = pre-#1180 grades (fill_convention field absent in grade); next_bar = post-#1180 (fill_convention='next_bar')"
         },
         "hit_gradeable_note": "direction=0 claims are not hit-gradeable (graded on excess only); this does not contradict the R2 audit CLOSED verdict",
         "hit_gradeable_share": 0.0,
         "maturity_mix": {
-          "graded_5d_count": 584,
-          "graded_5d_share": 0.278095,
+          "graded_5d_count": 1010,
+          "graded_5d_share": 0.370506,
           "matured_21d_count": 0,
           "matured_63d_count": 0,
           "note": "21d/63d matured counts are 0 today — calendar-gated, not build-gated; earliest useful read ~2026-10-01"
         },
-        "n_claims": 2100,
+        "n_claims": 2726,
         "n_hit_gradeable": 0,
         "n_with_falsifier": 0,
         "source_ontology_fill": {
@@ -313,10 +313,10 @@
       }
     },
     "global": {
-      "falsifier_coverage": 0.015122,
+      "falsifier_coverage": 0.013376,
       "falsifier_coverage_note": "~146/9069 = 1.6% global as of 2026-07-06; falsifier-starvation is a structural property of importance-signal and china_news desks, not a grader failure",
-      "n_claims": 9655,
-      "n_grades": 5632,
+      "n_claims": 10915,
+      "n_grades": 6499,
       "n_with_falsifier": 146
     }
   },
@@ -324,15 +324,15 @@
   "counts": {
     "edges_by_kind": {
       "governed_by": 10,
-      "member_of_thesis": 12,
-      "mirrored_experiment": 18,
+      "member_of_thesis": 8,
+      "mirrored_experiment": 19,
       "rf_candidate_of_mechanism": 7
     },
     "rows_by_type": {
-      "entity": 12,
+      "entity": 8,
       "mechanism": 8,
-      "species_link": 21,
-      "thesis": 3
+      "species_link": 22,
+      "thesis": 2
     }
   },
   "edges": [
@@ -346,7 +346,7 @@
       "src": "entity:US:AVGO"
     },
     {
-      "dst": "thesis:industrials",
+      "dst": "thesis:financials",
       "kind": "member_of_thesis",
       "source": {
         "detail": "same_thesis_groups.members",
@@ -355,40 +355,22 @@
       "src": "entity:US:BEN"
     },
     {
-      "dst": "thesis:health_care",
+      "dst": "thesis:financials",
       "kind": "member_of_thesis",
       "source": {
         "detail": "same_thesis_groups.members",
         "path": "site/factordata/reflexivity_overlay.json"
       },
-      "src": "entity:US:BIO"
+      "src": "entity:US:EWBC"
     },
     {
-      "dst": "thesis:industrials",
+      "dst": "thesis:financials",
       "kind": "member_of_thesis",
       "source": {
         "detail": "same_thesis_groups.members",
         "path": "site/factordata/reflexivity_overlay.json"
       },
-      "src": "entity:US:DBX"
-    },
-    {
-      "dst": "thesis:industrials",
-      "kind": "member_of_thesis",
-      "source": {
-        "detail": "same_thesis_groups.members",
-        "path": "site/factordata/reflexivity_overlay.json"
-      },
-      "src": "entity:US:GEV"
-    },
-    {
-      "dst": "thesis:industrials",
-      "kind": "member_of_thesis",
-      "source": {
-        "detail": "same_thesis_groups.members",
-        "path": "site/factordata/reflexivity_overlay.json"
-      },
-      "src": "entity:US:MATX"
+      "src": "entity:US:NATL"
     },
     {
       "dst": "thesis:ai_infrastructure_capex_complex",
@@ -400,34 +382,16 @@
       "src": "entity:US:NVDA"
     },
     {
-      "dst": "thesis:health_care",
+      "dst": "thesis:financials",
       "kind": "member_of_thesis",
       "source": {
         "detail": "same_thesis_groups.members",
         "path": "site/factordata/reflexivity_overlay.json"
       },
-      "src": "entity:US:OMCL"
+      "src": "entity:US:PJT"
     },
     {
-      "dst": "thesis:industrials",
-      "kind": "member_of_thesis",
-      "source": {
-        "detail": "same_thesis_groups.members",
-        "path": "site/factordata/reflexivity_overlay.json"
-      },
-      "src": "entity:US:P"
-    },
-    {
-      "dst": "thesis:health_care",
-      "kind": "member_of_thesis",
-      "source": {
-        "detail": "same_thesis_groups.members",
-        "path": "site/factordata/reflexivity_overlay.json"
-      },
-      "src": "entity:US:PAHC"
-    },
-    {
-      "dst": "thesis:industrials",
+      "dst": "thesis:financials",
       "kind": "member_of_thesis",
       "source": {
         "detail": "same_thesis_groups.members",
@@ -670,6 +634,15 @@
       "src": "species:S14@1"
     },
     {
+      "dst": "species-S16",
+      "kind": "mirrored_experiment",
+      "source": {
+        "detail": "id == 'species-S16'",
+        "path": "data/experiments/registry_seed.json"
+      },
+      "src": "species:S16@1.0"
+    },
+    {
       "dst": "species-S1",
       "kind": "mirrored_experiment",
       "source": {
@@ -760,7 +733,7 @@
       "src": "species:T1-T4@1.0"
     }
   ],
-  "generated_utc": "2026-07-07T15:22:48.944034+00:00",
+  "generated_utc": "2026-07-08T07:27:28.455435+00:00",
   "is_context_only": true,
   "notes": "Crosswalk only; local systems remain authoritative. No invented links; unknowns stay null.",
   "possible_duplicates": [
@@ -949,7 +922,7 @@
   "rows": {
     "entity:US:AVGO": {
       "authority": "display_only",
-      "funnel_as_of": "2026-07-07",
+      "funnel_as_of": "2026-07-08",
       "funnel_state": "not_eligible",
       "market": "US",
       "registry_id": "entity:US:AVGO",
@@ -962,72 +935,46 @@
     },
     "entity:US:BEN": {
       "authority": "display_only",
-      "funnel_as_of": "2026-07-07",
+      "funnel_as_of": "2026-07-08",
       "funnel_state": "thesis_candidate_shadow",
       "market": "US",
       "registry_id": "entity:US:BEN",
       "registry_type": "entity",
       "source_paths": [],
       "thesis_ids": [
-        "thesis:industrials"
+        "thesis:financials"
       ],
       "ticker": "BEN"
     },
-    "entity:US:BIO": {
+    "entity:US:EWBC": {
       "authority": "display_only",
-      "funnel_as_of": "2026-07-07",
+      "funnel_as_of": "2026-07-08",
       "funnel_state": "not_eligible",
       "market": "US",
-      "registry_id": "entity:US:BIO",
+      "registry_id": "entity:US:EWBC",
       "registry_type": "entity",
       "source_paths": [],
       "thesis_ids": [
-        "thesis:health_care"
+        "thesis:financials"
       ],
-      "ticker": "BIO"
+      "ticker": "EWBC"
     },
-    "entity:US:DBX": {
+    "entity:US:NATL": {
       "authority": "display_only",
-      "funnel_as_of": "2026-07-07",
+      "funnel_as_of": "2026-07-08",
       "funnel_state": "not_eligible",
       "market": "US",
-      "registry_id": "entity:US:DBX",
+      "registry_id": "entity:US:NATL",
       "registry_type": "entity",
       "source_paths": [],
       "thesis_ids": [
-        "thesis:industrials"
+        "thesis:financials"
       ],
-      "ticker": "DBX"
-    },
-    "entity:US:GEV": {
-      "authority": "display_only",
-      "funnel_as_of": "2026-07-07",
-      "funnel_state": "thesis_candidate_shadow",
-      "market": "US",
-      "registry_id": "entity:US:GEV",
-      "registry_type": "entity",
-      "source_paths": [],
-      "thesis_ids": [
-        "thesis:industrials"
-      ],
-      "ticker": "GEV"
-    },
-    "entity:US:MATX": {
-      "authority": "display_only",
-      "funnel_as_of": "2026-07-07",
-      "funnel_state": "not_eligible",
-      "market": "US",
-      "registry_id": "entity:US:MATX",
-      "registry_type": "entity",
-      "source_paths": [],
-      "thesis_ids": [
-        "thesis:industrials"
-      ],
-      "ticker": "MATX"
+      "ticker": "NATL"
     },
     "entity:US:NVDA": {
       "authority": "display_only",
-      "funnel_as_of": "2026-07-07",
+      "funnel_as_of": "2026-07-08",
       "funnel_state": "not_eligible",
       "market": "US",
       "registry_id": "entity:US:NVDA",
@@ -1038,61 +985,35 @@
       ],
       "ticker": "NVDA"
     },
-    "entity:US:OMCL": {
+    "entity:US:PJT": {
       "authority": "display_only",
-      "funnel_as_of": "2026-07-07",
-      "funnel_state": "thesis_candidate_shadow",
-      "market": "US",
-      "registry_id": "entity:US:OMCL",
-      "registry_type": "entity",
-      "source_paths": [],
-      "thesis_ids": [
-        "thesis:health_care"
-      ],
-      "ticker": "OMCL"
-    },
-    "entity:US:P": {
-      "authority": "display_only",
-      "funnel_as_of": "2026-07-07",
+      "funnel_as_of": "2026-07-08",
       "funnel_state": "not_eligible",
       "market": "US",
-      "registry_id": "entity:US:P",
+      "registry_id": "entity:US:PJT",
       "registry_type": "entity",
       "source_paths": [],
       "thesis_ids": [
-        "thesis:industrials"
+        "thesis:financials"
       ],
-      "ticker": "P"
-    },
-    "entity:US:PAHC": {
-      "authority": "display_only",
-      "funnel_as_of": "2026-07-07",
-      "funnel_state": "not_eligible",
-      "market": "US",
-      "registry_id": "entity:US:PAHC",
-      "registry_type": "entity",
-      "source_paths": [],
-      "thesis_ids": [
-        "thesis:health_care"
-      ],
-      "ticker": "PAHC"
+      "ticker": "PJT"
     },
     "entity:US:STT": {
       "authority": "display_only",
-      "funnel_as_of": "2026-07-07",
+      "funnel_as_of": "2026-07-08",
       "funnel_state": "thesis_candidate_shadow",
       "market": "US",
       "registry_id": "entity:US:STT",
       "registry_type": "entity",
       "source_paths": [],
       "thesis_ids": [
-        "thesis:industrials"
+        "thesis:financials"
       ],
       "ticker": "STT"
     },
     "entity:US:VRT": {
       "authority": "display_only",
-      "funnel_as_of": "2026-07-07",
+      "funnel_as_of": "2026-07-08",
       "funnel_state": "not_eligible",
       "market": "US",
       "registry_id": "entity:US:VRT",
@@ -2206,6 +2127,40 @@
       "validation_status": "phase0",
       "version": "1.0"
     },
+    "species:S16@1.0": {
+      "authority": "display_only",
+      "deployment_status": "unshipped",
+      "evidence_stack": {
+        "design": "R1 date-FE stratified difference; episode-block bootstrap; BH q<=0.10 family esx_sq_phase0; RUL-13 primary horizons 21d; RUL-14 co-primaries zone_held_21/stop_vol_21",
+        "engine": "engine/vol_squeeze.assess_series (FIRED_UP state onsets)",
+        "grader": "engine/grading (RUL-9)",
+        "harness": "scripts/research/run_w2_ssq.py",
+        "panels": "deep (H/L available) + baskets (H/L available); delisted NOT APPLICABLE (needs H/L)",
+        "phase0_study": "research/entry_stack/W2_SSQ_REPORT.md"
+      },
+      "experiment_ref": "species-S16",
+      "governance_refs": [],
+      "horizon_class": "rotational",
+      "market_scope": "US primary; deep panel (224 names 64y) + baskets panel (2519 names 2014+)",
+      "mechanism": "Multi-week volatility compression ends with a direction-and-volume-confirmed release bar (FIRED_UP state from engine/vol_squeeze.assess_series). The release bar — not the quiet base — is the event. Requires dual BBWP+HVP percentile gate, min_duration>=5 bars compression, directional break of the squeeze box within release_window bars, and vol_confirm=1.3x average volume confirmation. Fidelity-pinned to engine/vol_squeeze.DEFAULTS (pctile_thresh=25, min_duration=5, release_window=3, vol_confirm=1.3).",
+      "name": "Squeeze Release",
+      "registry_id": "species:S16@1.0",
+      "registry_type": "species_link",
+      "rejection_rules": [
+        "FIRED_DOWN onsets are BANNED from the long study (direction fixture in tests)",
+        "Any arming variant (entering during COILED/COMPRESSED state) is BANNED from this family",
+        "Event = first bar of FIRED_UP state (dedup consecutive FIRED_UP bars)",
+        "Needs H/L: delisted close-only panel NOT APPLICABLE"
+      ],
+      "source_paths": [
+        "data/species/registry.json"
+      ],
+      "source_prs": [],
+      "species_id": "S16",
+      "trial_count": 12,
+      "validation_status": "accruing",
+      "version": "1.0"
+    },
     "species:S1@1.0": {
       "authority": "display_only",
       "deployment_status": "graded_bonus",
@@ -2772,38 +2727,20 @@
         "VRT"
       ]
     },
-    "thesis:health_care": {
+    "thesis:financials": {
       "authority": "display_only",
       "basis": "membership-jaccard",
-      "label": "Health Care",
-      "members": [
-        "BIO",
-        "OMCL",
-        "PAHC"
-      ],
-      "registry_id": "thesis:health_care",
-      "registry_type": "thesis",
-      "size": 3,
-      "source": "reflexivity_overlay.same_thesis_groups",
-      "source_paths": [
-        "site/factordata/reflexivity_overlay.json"
-      ]
-    },
-    "thesis:industrials": {
-      "authority": "display_only",
-      "basis": "membership-jaccard",
-      "label": "Industrials",
+      "label": "Financials",
       "members": [
         "BEN",
-        "DBX",
-        "GEV",
-        "MATX",
-        "P",
+        "EWBC",
+        "NATL",
+        "PJT",
         "STT"
       ],
-      "registry_id": "thesis:industrials",
+      "registry_id": "thesis:financials",
       "registry_type": "thesis",
-      "size": 6,
+      "size": 5,
       "source": "reflexivity_overlay.same_thesis_groups",
       "source_paths": [
         "site/factordata/reflexivity_overlay.json"
@@ -2817,7 +2754,7 @@
       "present": true
     },
     "data/experiments/registry_seed.json": {
-      "n": 148,
+      "n": 167,
       "present": true
     },
     "data/governance/claim_accountability.json": {
@@ -2841,15 +2778,15 @@
       "present": true
     },
     "data/species/registry.json": {
-      "n": 21,
+      "n": 22,
       "present": true
     },
     "data/trial_ledger.jsonl": {
-      "n": 985,
+      "n": 1077,
       "present": true
     },
     "site/factordata/reflexivity_overlay.json": {
-      "n": 2,
+      "n": 1,
       "present": true
     }
   },
@@ -2962,6 +2899,12 @@
       "n_config_hashes": 1,
       "n_trials": 1
     },
+    "context_scan": {
+      "first_ts": "2026-07-08T06:02:12.224693+00:00",
+      "last_ts": "2026-07-08T06:02:12.224693+00:00",
+      "n_config_hashes": 1,
+      "n_trials": 1
+    },
     "cortex": {
       "first_ts": "2026-07-07T10:10:43.348874+00:00",
       "last_ts": "2026-07-07T10:10:43.356346+00:00",
@@ -3003,6 +2946,36 @@
       "last_ts": "2026-07-07T09:49:57.783590+00:00",
       "n_config_hashes": 3,
       "n_trials": 3
+    },
+    "d2_cn_export_share_nowcast": {
+      "first_ts": "2026-07-07T14:04:02.089404+00:00",
+      "last_ts": "2026-07-07T14:04:02.092965+00:00",
+      "n_config_hashes": 16,
+      "n_trials": 16
+    },
+    "d2_cn_holder_sale_calendar": {
+      "first_ts": "2026-07-07T14:04:02.095627+00:00",
+      "last_ts": "2026-07-07T14:04:02.098713+00:00",
+      "n_config_hashes": 12,
+      "n_trials": 12
+    },
+    "d2_comment_letter_release": {
+      "first_ts": "2026-07-07T14:04:02.051794+00:00",
+      "last_ts": "2026-07-07T14:04:02.056739+00:00",
+      "n_config_hashes": 8,
+      "n_trials": 8
+    },
+    "d2_rates_calendar_flows": {
+      "first_ts": "2026-07-07T14:04:02.043809+00:00",
+      "last_ts": "2026-07-07T14:04:02.045776+00:00",
+      "n_config_hashes": 11,
+      "n_trials": 11
+    },
+    "d2_russell_deletion_overshoot": {
+      "first_ts": "2026-07-07T14:04:02.068783+00:00",
+      "last_ts": "2026-07-07T14:04:02.068783+00:00",
+      "n_config_hashes": 1,
+      "n_trials": 1
     },
     "dt_replication": {
       "first_ts": "2026-07-06T23:19:18.948997+00:00",
@@ -3418,6 +3391,12 @@
       "n_config_hashes": 1,
       "n_trials": 1
     },
+    "stock_personality_compat": {
+      "first_ts": "2026-07-07T17:56:55.339938+00:00",
+      "last_ts": "2026-07-07T17:56:55.339938+00:00",
+      "n_config_hashes": 1,
+      "n_trials": 1
+    },
     "sue_insider_deep_phase0": {
       "first_ts": "2026-07-02T03:11:22.485023+00:00",
       "last_ts": "2026-07-02T03:11:22.485023+00:00",
@@ -3460,9 +3439,45 @@
       "n_config_hashes": 7,
       "n_trials": 7
     },
+    "w2051_housing_hf": {
+      "first_ts": "2026-07-07T14:04:02.065761+00:00",
+      "last_ts": "2026-07-07T14:04:02.066277+00:00",
+      "n_config_hashes": 8,
+      "n_trials": 8
+    },
     "w2096_nhtsa_defect": {
       "first_ts": "2026-07-06T13:05:04.618068+00:00",
       "last_ts": "2026-07-06T13:05:04.621959+00:00",
+      "n_config_hashes": 6,
+      "n_trials": 6
+    },
+    "w2104_cmdi_conditioning": {
+      "first_ts": "2026-07-07T14:04:02.059417+00:00",
+      "last_ts": "2026-07-07T14:04:02.060231+00:00",
+      "n_config_hashes": 12,
+      "n_trials": 12
+    },
+    "w2153_itc337": {
+      "first_ts": "2026-07-07T14:04:02.063088+00:00",
+      "last_ts": "2026-07-07T14:04:02.063331+00:00",
+      "n_config_hashes": 4,
+      "n_trials": 4
+    },
+    "w3_bank_callreport_stress": {
+      "first_ts": "2026-07-07T14:04:02.074936+00:00",
+      "last_ts": "2026-07-07T14:04:02.076295+00:00",
+      "n_config_hashes": 6,
+      "n_trials": 6
+    },
+    "w4_multistate_gaming_tape": {
+      "first_ts": "2026-07-07T14:04:02.071241+00:00",
+      "last_ts": "2026-07-07T14:04:02.071495+00:00",
+      "n_config_hashes": 6,
+      "n_trials": 6
+    },
+    "w5_trade_size_capitulation": {
+      "first_ts": "2026-07-07T14:04:02.035685+00:00",
+      "last_ts": "2026-07-07T14:04:02.040551+00:00",
       "n_config_hashes": 6,
       "n_trials": 6
     }

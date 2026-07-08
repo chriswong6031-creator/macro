@@ -6,7 +6,7 @@
 <script data-dbase src="data_base.js"></script>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Quant Lab — 2026-07-06</title>
+  <title>Quant Lab — 2026-07-07</title>
   <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
   <link rel="stylesheet" href="theme.css">
   <style>
@@ -316,7 +316,7 @@
   <div class="panel span12 lab-intro">
     <h1>🔬 <span class="l-en">Quant Lab — advanced analytics</span><span class="l-zh">量化实验室 — 进阶分析</span></h1>
     <p class="muted" style="margin:2px 0 0"><span class="l-en">The deeper, geekier reads behind the main dashboard — cross-asset concentration, risk budgeting, the factor scorecard, and the raw market-internals tables. Useful for sanity-checking the headline calls; not needed for day-to-day decisions.</span><span class="l-zh">主仪表盘背后更深、更技术的解读 — 跨资产集中度、风险预算、因子记分卡，以及原始的市场内部结构表。用于校验头条判断；日常决策并不需要。</span>
-      <span class="l-en">As of</span><span class="l-zh">截至</span> 2026-07-06.</p>
+      <span class="l-en">As of</span><span class="l-zh">截至</span> 2026-07-07.</p>
   </div>
 
   
@@ -327,26 +327,26 @@
       <span class="help">?<span class="tip"><span class="l-en">How much the six markets (US equity, crypto, China, HK, commodities, the dollar) are really moving as ONE risk/liquidity bet vs independent bets. The absorption ratio is the share of total variance explained by the single dominant factor: 1/6≈0.17 means independent, →1 means everything moves together (a fragile, crowded regime that has historically preceded drawdowns). Stacking correlated views feels like diversification but doubles one exposure.</span><span class="l-zh">六大市场（美股、加密货币、中国、香港、大宗商品、美元）在多大程度上其实是同一笔风险／流动性押注，而非独立押注。吸收比率是单一主导因子所解释的总方差占比：1/6≈0.17 表示独立，→1 表示一切同向（脆弱、拥挤的状态，历史上常先于回撤出现）。叠加相关的观点感觉像分散，实则在加倍同一笔敞口。</span></span></span>
     </h2>
     <p><span class="verdict v-bad">CONCENTRATED</span></p>
-    <p style="margin:8px 0">3 of 6 markets are one bet (US, Commodities, Dollar). Cross-asset correlation is in the top 0% of its 5y range: stacking these views is doubling one liquidity/risk exposure, not diversifying.</p>
+    <p style="margin:8px 0">3 of 6 markets are one bet (US, Commodities, Dollar). Cross-asset correlation is in the top 1% of its 5y range: stacking these views is doubling one liquidity/risk exposure, not diversifying.</p>
     <div style="max-width:520px">
       <div class="muted" style="font-size:12px"><span class="l-en">absorption ratio (PC1 variance share)</span><span class="l-zh">吸收比率（PC1 方差占比）</span> —
-        <b style="color:var(--text)">0.461</b>
-        · 100<span class="l-en">th pctile of 5y</span><span class="l-zh"> 百分位（5年）</span>
+        <b style="color:var(--text)">0.45</b>
+        · 99<span class="l-en">th pctile of 5y</span><span class="l-zh"> 百分位（5年）</span>
         · <span class="l-en">independent floor</span><span class="l-zh">独立基准</span> 0.167</div>
-      <div class="bar"><i style="width: 46.1%"></i></div>
+      <div class="bar"><i style="width: 45.0%"></i></div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:12px">
       <div>
         <h3><span class="l-en">Dominant cluster (PC1 loadings)</span><span class="l-zh">主导聚类（PC1 载荷）</span></h3>
         <p><span class="l-en">These markets are the one bet:</span><span class="l-zh">这些市场属于同一押注：</span> <b>US, Commodities, Dollar</b></p>
         <table>
-          <tr><td class="l">US</td><td>0.51</td></tr><tr><td class="l">Crypto</td><td>0.29</td></tr><tr><td class="l">China</td><td>0.33</td></tr><tr><td class="l">HK</td><td>0.35</td></tr><tr><td class="l">Commodities</td><td>0.47</td></tr><tr><td class="l">Dollar</td><td>0.44</td></tr>
+          <tr><td class="l">US</td><td>0.51</td></tr><tr><td class="l">Crypto</td><td>0.28</td></tr><tr><td class="l">China</td><td>0.33</td></tr><tr><td class="l">HK</td><td>0.34</td></tr><tr><td class="l">Commodities</td><td>0.48</td></tr><tr><td class="l">Dollar</td><td>0.45</td></tr>
         </table>
       </div>
       <div>
         <h3><span class="l-en">Most-correlated pairs</span><span class="l-zh">相关性最高的配对</span></h3>
         <table>
-          <tr><td class="l">US ↔ Dollar</td><td>0.58</td></tr><tr><td class="l">US ↔ Commodities</td><td>0.55</td></tr><tr><td class="l">China ↔ HK</td><td>0.53</td></tr><tr><td class="l">Commodities ↔ Dollar</td><td>0.53</td></tr>
+          <tr><td class="l">US ↔ Dollar</td><td>0.58</td></tr><tr><td class="l">US ↔ Commodities</td><td>0.54</td></tr><tr><td class="l">China ↔ HK</td><td>0.52</td></tr><tr><td class="l">Commodities ↔ Dollar</td><td>0.52</td></tr>
           
         </table>
       </div>
@@ -362,16 +362,16 @@
         <td><span class="heat" style="background: rgba(69,184,115,0.5)">1.00</span></td>
         
         
-        <td><span class="heat" style="background: rgba(69,184,115,0.23)">0.47</span></td>
+        <td><span class="heat" style="background: rgba(69,184,115,0.23)">0.45</span></td>
         
         
-        <td><span class="heat" style="background: rgba(69,184,115,0.17)">0.35</span></td>
+        <td><span class="heat" style="background: rgba(69,184,115,0.17)">0.34</span></td>
         
         
-        <td><span class="heat" style="background: rgba(69,184,115,0.18)">0.36</span></td>
+        <td><span class="heat" style="background: rgba(69,184,115,0.17)">0.33</span></td>
         
         
-        <td><span class="heat" style="background: rgba(69,184,115,0.28)">0.55</span></td>
+        <td><span class="heat" style="background: rgba(69,184,115,0.27)">0.54</span></td>
         
         
         <td><span class="heat" style="background: rgba(69,184,115,0.29)">0.58</span></td>
@@ -381,41 +381,41 @@
       <tr><td class="l">Crypto</td>
         
         
-        <td><span class="heat" style="background: rgba(69,184,115,0.23)">0.47</span></td>
+        <td><span class="heat" style="background: rgba(69,184,115,0.23)">0.45</span></td>
         
         
         <td><span class="heat" style="background: rgba(69,184,115,0.5)">1.00</span></td>
         
         
-        <td><span class="heat" style="background: rgba(224,100,100,0.04)">-0.08</span></td>
+        <td><span class="heat" style="background: rgba(224,100,100,0.05)">-0.10</span></td>
         
         
-        <td><span class="heat" style="background: rgba(69,184,115,0.01)">0.02</span></td>
+        <td><span class="heat" style="background: rgba(224,100,100,0.01)">-0.02</span></td>
         
         
-        <td><span class="heat" style="background: rgba(69,184,115,0.12)">0.23</span></td>
+        <td><span class="heat" style="background: rgba(69,184,115,0.11)">0.22</span></td>
         
         
-        <td><span class="heat" style="background: rgba(69,184,115,0.21)">0.42</span></td>
+        <td><span class="heat" style="background: rgba(69,184,115,0.2)">0.41</span></td>
         
       </tr>
       
       <tr><td class="l">China</td>
         
         
-        <td><span class="heat" style="background: rgba(69,184,115,0.17)">0.35</span></td>
+        <td><span class="heat" style="background: rgba(69,184,115,0.17)">0.34</span></td>
         
         
-        <td><span class="heat" style="background: rgba(224,100,100,0.04)">-0.08</span></td>
+        <td><span class="heat" style="background: rgba(224,100,100,0.05)">-0.10</span></td>
         
         
         <td><span class="heat" style="background: rgba(69,184,115,0.5)">1.00</span></td>
         
         
-        <td><span class="heat" style="background: rgba(69,184,115,0.27)">0.53</span></td>
+        <td><span class="heat" style="background: rgba(69,184,115,0.26)">0.52</span></td>
         
         
-        <td><span class="heat" style="background: rgba(69,184,115,0.2)">0.40</span></td>
+        <td><span class="heat" style="background: rgba(69,184,115,0.2)">0.39</span></td>
         
         
         <td><span class="heat" style="background: rgba(69,184,115,0.06)">0.12</span></td>
@@ -425,44 +425,44 @@
       <tr><td class="l">HK</td>
         
         
-        <td><span class="heat" style="background: rgba(69,184,115,0.18)">0.36</span></td>
+        <td><span class="heat" style="background: rgba(69,184,115,0.17)">0.33</span></td>
         
         
-        <td><span class="heat" style="background: rgba(69,184,115,0.01)">0.02</span></td>
+        <td><span class="heat" style="background: rgba(224,100,100,0.01)">-0.02</span></td>
         
         
-        <td><span class="heat" style="background: rgba(69,184,115,0.27)">0.53</span></td>
+        <td><span class="heat" style="background: rgba(69,184,115,0.26)">0.52</span></td>
         
         
         <td><span class="heat" style="background: rgba(69,184,115,0.5)">1.00</span></td>
         
         
-        <td><span class="heat" style="background: rgba(69,184,115,0.17)">0.33</span></td>
+        <td><span class="heat" style="background: rgba(69,184,115,0.16)">0.32</span></td>
         
         
-        <td><span class="heat" style="background: rgba(69,184,115,0.11)">0.22</span></td>
+        <td><span class="heat" style="background: rgba(69,184,115,0.1)">0.20</span></td>
         
       </tr>
       
       <tr><td class="l">Commodities</td>
         
         
-        <td><span class="heat" style="background: rgba(69,184,115,0.28)">0.55</span></td>
+        <td><span class="heat" style="background: rgba(69,184,115,0.27)">0.54</span></td>
         
         
-        <td><span class="heat" style="background: rgba(69,184,115,0.12)">0.23</span></td>
+        <td><span class="heat" style="background: rgba(69,184,115,0.11)">0.22</span></td>
         
         
-        <td><span class="heat" style="background: rgba(69,184,115,0.2)">0.40</span></td>
+        <td><span class="heat" style="background: rgba(69,184,115,0.2)">0.39</span></td>
         
         
-        <td><span class="heat" style="background: rgba(69,184,115,0.17)">0.33</span></td>
+        <td><span class="heat" style="background: rgba(69,184,115,0.16)">0.32</span></td>
         
         
         <td><span class="heat" style="background: rgba(69,184,115,0.5)">1.00</span></td>
         
         
-        <td><span class="heat" style="background: rgba(69,184,115,0.27)">0.53</span></td>
+        <td><span class="heat" style="background: rgba(69,184,115,0.26)">0.52</span></td>
         
       </tr>
       
@@ -472,16 +472,16 @@
         <td><span class="heat" style="background: rgba(69,184,115,0.29)">0.58</span></td>
         
         
-        <td><span class="heat" style="background: rgba(69,184,115,0.21)">0.42</span></td>
+        <td><span class="heat" style="background: rgba(69,184,115,0.2)">0.41</span></td>
         
         
         <td><span class="heat" style="background: rgba(69,184,115,0.06)">0.12</span></td>
         
         
-        <td><span class="heat" style="background: rgba(69,184,115,0.11)">0.22</span></td>
+        <td><span class="heat" style="background: rgba(69,184,115,0.1)">0.20</span></td>
         
         
-        <td><span class="heat" style="background: rgba(69,184,115,0.27)">0.53</span></td>
+        <td><span class="heat" style="background: rgba(69,184,115,0.26)">0.52</span></td>
         
         
         <td><span class="heat" style="background: rgba(69,184,115,0.5)">1.00</span></td>
@@ -501,7 +501,7 @@
     <h2>⚖️ <span class="l-en">Risk budgeting across the six markets</span><span class="l-zh">六大市场的风险预算</span>
       <span class="help">?<span class="tip"><span class="l-en">If you expressed all six market views as one book, how should they be weighted? Equal-weight (1/6 each), inverse-vol (more in the calm markets), and equal-risk-contribution (ERC — each market contributes the SAME share of portfolio risk). The 'risk' column is each market's share of total portfolio variance: equal-weight quietly concentrates risk in the most volatile market; ERC equalizes it. This is the honest 'size as uncorrelated bets' weighting — a reference, not a trade list.</span><span class="l-zh">若把全部六个市场观点合成一个组合，该如何配权？等权（各 1/6）、逆波动率（在平静市场配得更多），以及等风险贡献（ERC — 每个市场对组合风险贡献相同份额）。'风险'列是各市场对组合总方差的占比：等权会悄悄把风险集中在波动最大的市场；ERC 将其均衡。这是诚实的'按不相关押注定量'配权 — 仅作参考，非交易清单。</span></span></span>
     </h2>
-    <p style="margin:0 0 8px">Equal-weighting all 6 market views puts 36% of portfolio RISK in one market (vs 17% if truly balanced); ERC rebalances to ~equal risk (heaviest weight: Dollar 0.439). Diversification ratio 1.68.</p>
+    <p style="margin:0 0 8px">Equal-weighting all 6 market views puts 36% of portfolio RISK in one market (vs 17% if truly balanced); ERC rebalances to ~equal risk (heaviest weight: Dollar 0.438). Diversification ratio 1.67.</p>
     <table>
       <tr><th class="l"><span class="l-en">market</span><span class="l-zh">市场</span></th>
         <th>EW <span class="l-en">wt</span><span class="l-zh">权重</span></th><th><span class="l-en">IV</span><span class="l-zh">逆波</span></th><th>ERC</th><th><span class="l-en">EW risk</span><span class="l-zh">EW风险</span></th></tr>
@@ -531,14 +531,14 @@
         <td class="muted">17%</td>
         <td class="muted">13%</td>
         <td><b>13%</b></td>
-        <td class="muted">10%</td>
+        <td class="muted">11%</td>
       </tr>
       
       <tr><td class="l">Commodities</td>
         <td class="muted">17%</td>
         <td class="muted">8%</td>
         <td><b>7%</b></td>
-        <td class="neg">28%</td>
+        <td class="neg">27%</td>
       </tr>
       
       <tr><td class="l">Dollar</td>
@@ -550,7 +550,7 @@
       
     </table>
     <p class="muted" style="font-size:12px;margin-top:8px"><span class="l-en">Diversification ratio</span><span class="l-zh">分散化比率</span>:
-      EW <b>1.63</b> · ERC <b>1.68</b>
+      EW <b>1.62</b> · ERC <b>1.67</b>
       (<span class="l-en">higher = more genuine diversification</span><span class="l-zh">越高 = 越真实的分散化</span>).
       <span class="l-en">Equal-weight puts</span><span class="l-zh">等权将</span> <b>36%</b> <span class="l-en">of risk in one market; ERC caps each at</span><span class="l-zh">的风险放在一个市场；ERC 将每个限制在</span> ~17%.</p>
   </div>
@@ -707,12 +707,12 @@
       <span class="muted">(+0.20 <span class="l-en">of ±1 · agreement</span><span class="l-zh">／±1 · 一致度</span> 13%)</span></p>
     <div class="bar"><i style="width: 60.0%"></i></div>
     <p style="margin:10px 0 0"><b><span class="l-en">Inflation pressure:</span><span class="l-zh">通胀压力：</span> <span class="l-en">FALLING</span><span class="l-zh">下行</span></b>
-      <span class="muted">(-0.52 <span class="l-en">of ±1 · agreement</span><span class="l-zh">／±1 · 一致度</span> 42%)</span></p>
-    <div class="bar"><i style="width: 24.0%"></i></div>
+      <span class="muted">(-0.36 <span class="l-en">of ±1 · agreement</span><span class="l-zh">／±1 · 一致度</span> 24%)</span></p>
+    <div class="bar"><i style="width: 32.0%"></i></div>
     <h3><span class="l-en">What's voting for this regime</span><span class="l-zh">哪些指标在为此周期投票</span></h3>
     <div>
       <span class="chip chip-pos"><span class="l-en">growth · small caps</span><span class="l-zh">增长 · 小盘股</span></span><span class="chip chip-pos"><span class="l-en">growth · market breadth</span><span class="l-zh">增长 · 市场广度</span></span><span class="chip chip-pos"><span class="l-en">growth · payrolls</span><span class="l-zh">增长 · 非农就业</span></span><span class="chip chip-pos"><span class="l-en">growth · industrial production</span><span class="l-zh">增长 · 工业生产</span></span><span class="chip chip-pos"><span class="l-en">inflation · 10-yr inflation expectations</span><span class="l-zh">通胀 · 10年期通胀预期</span></span><span class="chip chip-pos"><span class="l-en">inflation · energy sector</span><span class="l-zh">通胀 · 能源板块</span></span><span class="chip chip-pos"><span class="l-en">inflation · oil</span><span class="l-zh">通胀 · 原油</span></span><span class="chip chip-pos"><span class="l-en">inflation · TIPS spread</span><span class="l-zh">通胀 · TIPS 利差</span></span>
-      <span class="chip chip-neg"><span class="l-en">growth · cyclical sectors</span><span class="l-zh">增长 · 周期性板块</span></span><span class="chip chip-neg"><span class="l-en">growth · wei_trend</span><span class="l-zh">增长 · wei_trend</span></span><span class="chip chip-neg"><span class="l-en">inflation · sticky_cpi_direction</span><span class="l-zh">通胀 · sticky_cpi_direction</span></span>
+      <span class="chip chip-neg"><span class="l-en">growth · cyclical sectors</span><span class="l-zh">增长 · 周期性板块</span></span><span class="chip chip-neg"><span class="l-en">growth · wei_trend</span><span class="l-zh">增长 · wei_trend</span></span><span class="chip chip-neg"><span class="l-en">inflation · inflation-winners basket</span><span class="l-zh">通胀 · 通胀受益篮子</span></span><span class="chip chip-neg"><span class="l-en">inflation · sticky_cpi_direction</span><span class="l-zh">通胀 · sticky_cpi_direction</span></span>
       
     </div>
     <h3><span class="l-en">Weakest link</span><span class="l-zh">最薄弱环节</span></h3>
@@ -732,27 +732,27 @@
       <tr><th class="l"><span class="l-en">gauge</span><span class="l-zh">指标</span></th><th><span class="l-en">past month</span><span class="l-zh">过去一月</span></th><th class="l"><span class="l-en">what it's saying</span><span class="l-zh">它在说什么</span></th></tr>
       
       <tr><td class="l"><span class="l-en">Shoppers: wants vs needs</span><span class="l-zh">购物者：想要 vs 必需</span> <span class="help">?<span class="tip"><span class="l-en"><span class="l-en">Consumer-discretionary stocks vs consumer-staples stocks. Rising = people are buying TVs and vacations, not just groceries — confidence. Falling = belt-tightening.</span><span class="l-zh">可选消费股 vs 必需消费股。上升 = 人们在买电视和度假，不只是买杂货 — 信心。下降 = 勒紧裤带。</span></span><span class="l-zh"><span class="l-en">Consumer-discretionary stocks vs consumer-staples stocks. Rising = people are buying TVs and vacations, not just groceries — confidence. Falling = belt-tightening.</span><span class="l-zh">可选消费股 vs 必需消费股。上升 = 人们在买电视和度假，不只是买杂货 — 信心。下降 = 勒紧裤带。</span></span></span></span></td>
-        <td class="pos">+0.52%</td>
-        <td class="l muted"><span class="l-en">consumers confident</span><span class="l-zh">消费者有信心</span></td></tr>
+        <td class="neg">-0.09%</td>
+        <td class="l muted"><span class="l-en">consumers cautious</span><span class="l-zh">消费者谨慎</span></td></tr>
       
       <tr><td class="l"><span class="l-en">Tech vs utilities</span><span class="l-zh">科技 vs 公用事业</span> <span class="help">?<span class="tip"><span class="l-en"><span class="l-en">The market&#39;s boldest sector vs its sleepiest. Rising = growth appetite; falling = safety-seeking.</span><span class="l-zh">市场最大胆的板块 vs 最沉闷的板块。上升 = 增长偏好；下降 = 寻求安全。</span></span><span class="l-zh"><span class="l-en">The market&#39;s boldest sector vs its sleepiest. Rising = growth appetite; falling = safety-seeking.</span><span class="l-zh">市场最大胆的板块 vs 最沉闷的板块。上升 = 增长偏好；下降 = 寻求安全。</span></span></span></span></td>
-        <td class="neg">-4.74%</td>
+        <td class="neg">-5.10%</td>
         <td class="l muted"><span class="l-en">safety-seeking</span><span class="l-zh">寻求安全</span></td></tr>
       
       <tr><td class="l"><span class="l-en">Junk bonds vs quality bonds</span><span class="l-zh">垃圾债 vs 优质债</span> <span class="help">?<span class="tip"><span class="l-en"><span class="l-en">Risky-company bonds vs blue-chip bonds. Rising = credit investors relaxed; falling = they&#39;re getting picky — often an early warning.</span><span class="l-zh">高风险公司债 vs 蓝筹债。上升 = 信用投资者放松；下降 = 他们开始挑剔 — 往往是早期预警。</span></span><span class="l-zh"><span class="l-en">Risky-company bonds vs blue-chip bonds. Rising = credit investors relaxed; falling = they&#39;re getting picky — often an early warning.</span><span class="l-zh">高风险公司债 vs 蓝筹债。上升 = 信用投资者放松；下降 = 他们开始挑剔 — 往往是早期预警。</span></span></span></span></td>
-        <td class="neg">-0.04%</td>
-        <td class="l muted"><span class="l-en">credit getting picky</span><span class="l-zh">信用趋于挑剔</span></td></tr>
+        <td class="pos">+0.78%</td>
+        <td class="l muted"><span class="l-en">credit relaxed</span><span class="l-zh">信用放松</span></td></tr>
       
       <tr><td class="l"><span class="l-en">Daring vs defensive stocks</span><span class="l-zh">进取股 vs 防御股</span> <span class="help">?<span class="tip"><span class="l-en"><span class="l-en">The most volatile S&amp;P stocks vs the calmest. The purest read on whether fund managers are playing offense or defense.</span><span class="l-zh">标普中波动最大的股票 vs 最平稳的股票。最纯粹地反映基金经理在打进攻还是防守。</span></span><span class="l-zh"><span class="l-en">The most volatile S&amp;P stocks vs the calmest. The purest read on whether fund managers are playing offense or defense.</span><span class="l-zh">标普中波动最大的股票 vs 最平稳的股票。最纯粹地反映基金经理在打进攻还是防守。</span></span></span></span></td>
-        <td class="neg">-2.05%</td>
+        <td class="neg">-3.73%</td>
         <td class="l muted"><span class="l-en">playing defense</span><span class="l-zh">打防守</span></td></tr>
       
       <tr><td class="l"><span class="l-en">Panic gauge (now vs later)</span><span class="l-zh">恐慌指标（现在 vs 之后）</span> <span class="help">?<span class="tip"><span class="l-en"><span class="l-en">Near-term fear vs 3-month fear. Rising toward 1.0 = stress building right now; comfortably below 0.9 = calm.</span><span class="l-zh">近期恐慌 vs 3个月恐慌。升向1.0 = 压力正在累积；稳稳低于0.9 = 平静。</span></span><span class="l-zh"><span class="l-en">Near-term fear vs 3-month fear. Rising toward 1.0 = stress building right now; comfortably below 0.9 = calm.</span><span class="l-zh">近期恐慌 vs 3个月恐慌。升向1.0 = 压力正在累积；稳稳低于0.9 = 平静。</span></span></span></span></td>
-        <td class="pos">-10.14%</td>
+        <td class="pos">-9.14%</td>
         <td class="l muted"><span class="l-en">calm</span><span class="l-zh">平静</span></td></tr>
       
       <tr><td class="l"><span class="l-en">Copper vs gold</span><span class="l-zh">铜 vs 黄金</span> <span class="help">?<span class="tip"><span class="l-en"><span class="l-en">The economist&#39;s metal vs the doomsday metal. Rising = bets on real economic activity; falling = safety-seeking. Historically leads bond yields.</span><span class="l-zh">经济学家的金属 vs 末日金属。上升 = 押注真实经济活动；下降 = 寻求安全。历史上领先债券收益率。</span></span><span class="l-zh"><span class="l-en">The economist&#39;s metal vs the doomsday metal. Rising = bets on real economic activity; falling = safety-seeking. Historically leads bond yields.</span><span class="l-zh">经济学家的金属 vs 末日金属。上升 = 押注真实经济活动；下降 = 寻求安全。历史上领先债券收益率。</span></span></span></span></td>
-        <td class="pos">+1.85%</td>
+        <td class="pos">+0.63%</td>
         <td class="l muted"><span class="l-en">growth optimism</span><span class="l-zh">增长乐观</span></td></tr>
       
     </table>
@@ -767,21 +767,21 @@
       <tr><th class="l"><span class="l-en">lens</span><span class="l-zh">维度</span></th><th><span class="l-en">past month</span><span class="l-zh">过去一月</span></th><th class="l"><span class="l-en">what it's saying</span><span class="l-zh">它在说什么</span></th></tr>
       
       <tr><td class="l"><span class="l-en">Small caps vs large</span><span class="l-zh">小盘对大盘</span> <span class="help">?<span class="tip"><span class="l-en"><span class="l-en">Russell 2000 vs S&amp;P 500 (IWM/SPY)</span><span class="l-zh">罗素2000 对 标普500 (IWM/SPY)</span></span><span class="l-zh"><span class="l-en">Russell 2000 vs S&amp;P 500 (IWM/SPY)</span><span class="l-zh">罗素2000 对 标普500 (IWM/SPY)</span></span></span></span></td>
-        <td class="pos">+3.50%</td>
+        <td class="pos">+2.42%</td>
         <td class="l muted"><span class="l-en">small caps leading — broadening, risk-on</span><span class="l-zh">小盘领先 — 扩散、风险偏好</span></td></tr>
       
       <tr><td class="l"><span class="l-en">Mid caps vs large</span><span class="l-zh">中盘对大盘</span> <span class="help">?<span class="tip"><span class="l-en"><span class="l-en">S&amp;P MidCap 400 vs S&amp;P 500 (IJH/SPY)</span><span class="l-zh">标普中盘400 对 标普500 (IJH/SPY)</span></span><span class="l-zh"><span class="l-en">S&amp;P MidCap 400 vs S&amp;P 500 (IJH/SPY)</span><span class="l-zh">标普中盘400 对 标普500 (IJH/SPY)</span></span></span></span></td>
-        <td class="pos">+1.45%</td>
-        <td class="l muted"><span class="l-en">mid caps leading — broadening</span><span class="l-zh">中盘领先 — 扩散</span></td></tr>
+        <td class="neg">-0.46%</td>
+        <td class="l muted"><span class="l-en">mega-cap-led — narrowing</span><span class="l-zh">超大盘主导 — 收窄</span></td></tr>
       
       <tr><td class="l"><span class="l-en">Growth vs value</span><span class="l-zh">成长对价值</span> <span class="help">?<span class="tip"><span class="l-en"><span class="l-en">Russell 1000 Growth vs Value (IWF/IWD). Style rotation: growth tends to lead in disinflation/slowdowns, value in reflation.</span><span class="l-zh">罗素1000 成长 对 价值 (IWF/IWD)。风格轮动：成长在去通胀/放缓中领先，价值在再通胀中领先。</span></span><span class="l-zh"><span class="l-en">Russell 1000 Growth vs Value (IWF/IWD). Style rotation: growth tends to lead in disinflation/slowdowns, value in reflation.</span><span class="l-zh">罗素1000 成长 对 价值 (IWF/IWD)。风格轮动：成长在去通胀/放缓中领先，价值在再通胀中领先。</span></span></span></span></td>
-        <td class="muted">-4.23%</td>
+        <td class="muted">-4.61%</td>
         <td class="l muted"><span class="l-en">value leadership</span><span class="l-zh">价值领先</span></td></tr>
       
     </table>
     
     <p class="muted" style="margin:10px 2px 0;font-size:13px"><span class="l-en">Small-cap participation</span><span class="l-zh">小盘参与度</span>:
-      <b>71%</b> <span class="l-en">of S&P 600 vs</span><span class="l-zh">的标普600 对</span>
+      <b>69%</b> <span class="l-en">of S&P 600 vs</span><span class="l-zh">的标普600 对</span>
       <b>68%</b> <span class="l-en">for the S&P 500</span><span class="l-zh">的标普500</span> — <span class="l-en">small- and large-cap participation roughly in line</span><span class="l-zh">小盘与大盘参与度大致一致</span>.</p>
     
   </div>
@@ -823,7 +823,7 @@
       <tr><td class="l"><a href="stock.html#AEE"><b>AEE</b></a> <span class="muted">XLU</span></td>
         <td class="neg"><b>-0.01pp</b></td>
         <td class="muted">−$2M</td>
-        <td class="l"><span class="pill st-TURN_SIGNALED"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span></td></tr>
+        <td class="l"><span class="pill st-RALLY_ON"><span class="l-en">UPTREND</span><span class="l-zh">上涨趋势</span></span></td></tr>
       
       <tr><td class="l"><a href="stock.html#DG"><b>DG</b></a> <span class="muted">XLP</span></td>
         <td class="neg"><b>-0.01pp</b></td>
@@ -871,50 +871,57 @@
       <tr><td class="l"><b>MARS</b></td>
           <td class="l"><a href="stock.html#SPCX"><b>SPCX</b></a> <span class="muted">Space Exploration Technologies Corp</span></td>
           <td class="l muted"><span class="l-en">Space</span><span class="l-zh">Space</span></td>
-          <td class="r muted">22.25%</td>
-          <td class="r pos"><b>+22.25pp</b></td>
+          <td class="r muted">22.07%</td>
+          <td class="r pos"><b>+22.07pp</b></td>
           <td class="l"><span class="muted">—</span></td></tr>
       
       <tr><td class="l"><b>CLOU</b></td>
           <td class="l"><a href="stock.html#DDOG"><b>DDOG</b></a> <span class="muted">Datadog Inc - Class A</span></td>
           <td class="l muted"><span class="l-en">Information Technology</span><span class="l-zh">Information Technology</span></td>
-          <td class="r muted">6.79%</td>
-          <td class="r pos"><b>+6.79pp</b></td>
+          <td class="r muted">6.71%</td>
+          <td class="r pos"><b>+6.71pp</b></td>
           <td class="l"><span class="muted">—</span></td></tr>
       
       <tr><td class="l"><b>MEME</b></td>
           <td class="l"><a href="stock.html#WDC"><b>WDC</b></a> <span class="muted">Western Digital Corp</span></td>
           <td class="l muted"><span class="l-en">Information Technology</span><span class="l-zh">Information Technology</span></td>
-          <td class="r muted">5.39%</td>
-          <td class="r pos"><b>+5.39pp</b></td>
+          <td class="r muted">5.36%</td>
+          <td class="r pos"><b>+5.36pp</b></td>
           <td class="l"><span class="pill st-TURN_SIGNALED"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span> ✅</td></tr>
       
       <tr><td class="l"><b>MEME</b></td>
           <td class="l"><a href="stock.html#COHR"><b>COHR</b></a> <span class="muted">Coherent Corp</span></td>
           <td class="l muted"><span class="l-en">Information Technology</span><span class="l-zh">Information Technology</span></td>
-          <td class="r muted">5.24%</td>
-          <td class="r pos"><b>+5.24pp</b></td>
+          <td class="r muted">5.30%</td>
+          <td class="r pos"><b>+5.30pp</b></td>
+          <td class="l"><span class="muted">—</span></td></tr>
+      
+      <tr><td class="l"><b>MEME</b></td>
+          <td class="l"><a href="stock.html#TTMI"><b>TTMI</b></a> <span class="muted">Ttm Technologies Inc</span></td>
+          <td class="l muted"><span class="l-en">Information Technology</span><span class="l-zh">Information Technology</span></td>
+          <td class="r muted">5.09%</td>
+          <td class="r pos"><b>+5.09pp</b></td>
           <td class="l"><span class="muted">—</span></td></tr>
       
       <tr><td class="l"><b>BUG</b></td>
           <td class="l"><a href="stock.html#CRWD"><b>CRWD</b></a> <span class="muted">Crowdstrike Holdings Inc - A</span></td>
           <td class="l muted"><span class="l-en">Information Technology</span><span class="l-zh">Information Technology</span></td>
-          <td class="r muted">7.12%</td>
-          <td class="r pos"><b>+4.95pp</b></td>
+          <td class="r muted">7.00%</td>
+          <td class="r pos"><b>+4.89pp</b></td>
           <td class="l"><span class="pill st-TOP_WATCH"><span class="l-en">NEARING A HIGH</span><span class="l-zh">接近高点</span></span></td></tr>
       
-      <tr><td class="l"><b>MEME</b></td>
-          <td class="l"><a href="stock.html#TTMI"><b>TTMI</b></a> <span class="muted">Ttm Technologies Inc</span></td>
+      <tr><td class="l"><b>BUG</b></td>
+          <td class="l"><a href="stock.html#CVLT"><b>CVLT</b></a> <span class="muted">Commvault Systems Inc</span></td>
           <td class="l muted"><span class="l-en">Information Technology</span><span class="l-zh">Information Technology</span></td>
-          <td class="r muted">4.88%</td>
-          <td class="r pos"><b>+4.88pp</b></td>
+          <td class="r muted">4.67%</td>
+          <td class="r pos"><b>+4.67pp</b></td>
           <td class="l"><span class="muted">—</span></td></tr>
       
       <tr><td class="l"><b>MEME</b></td>
           <td class="l"><a href="stock.html#CBRS"><b>CBRS</b></a> <span class="muted">Cerebras Systems Inc</span></td>
           <td class="l muted"><span class="l-en">Meme / Retail</span><span class="l-zh">Meme / Retail</span></td>
-          <td class="r muted">4.64%</td>
-          <td class="r pos"><b>+4.64pp</b></td>
+          <td class="r muted">4.61%</td>
+          <td class="r pos"><b>+4.61pp</b></td>
           <td class="l"><span class="muted">—</span></td></tr>
       
       <tr><td class="l"><b>MEME</b></td>
@@ -924,33 +931,26 @@
           <td class="r pos"><b>+4.55pp</b></td>
           <td class="l"><span class="pill st-COUNTERTREND_BOUNCE"><span class="l-en">UNCONFIRMED TURN</span><span class="l-zh">未确认转向</span></span></td></tr>
       
-      <tr><td class="l"><b>BUG</b></td>
-          <td class="l"><a href="stock.html#CVLT"><b>CVLT</b></a> <span class="muted">Commvault Systems Inc</span></td>
-          <td class="l muted"><span class="l-en">Information Technology</span><span class="l-zh">Information Technology</span></td>
-          <td class="r muted">4.53%</td>
-          <td class="r pos"><b>+4.53pp</b></td>
+      <tr><td class="l"><b>CLOU</b></td>
+          <td class="l"><a href="stock.html#NET"><b>NET</b></a> <span class="muted">Cloudflare Inc - Class A</span></td>
+          <td class="l muted"><span class="l-en">Cloud</span><span class="l-zh">Cloud</span></td>
+          <td class="r muted">4.54%</td>
+          <td class="r pos"><b>+4.54pp</b></td>
           <td class="l"><span class="muted">—</span></td></tr>
       
       <tr><td class="l"><b>BETZ</b></td>
           <td class="l"><a href="stock.html#LNW AU"><b>LNW AU</b></a> <span class="muted">Light & Wonder Inc</span></td>
           <td class="l muted"><span class="l-en">Sports Betting</span><span class="l-zh">Sports Betting</span></td>
-          <td class="r muted">4.50%</td>
-          <td class="r pos"><b>+4.50pp</b></td>
+          <td class="r muted">4.53%</td>
+          <td class="r pos"><b>+4.53pp</b></td>
           <td class="l"><span class="muted">—</span></td></tr>
       
-      <tr><td class="l"><b>CLOU</b></td>
-          <td class="l"><a href="stock.html#NET"><b>NET</b></a> <span class="muted">Cloudflare Inc - Class A</span></td>
-          <td class="l muted"><span class="l-en">Cloud</span><span class="l-zh">Cloud</span></td>
-          <td class="r muted">4.25%</td>
-          <td class="r pos"><b>+4.25pp</b></td>
-          <td class="l"><span class="muted">—</span></td></tr>
-      
-      <tr><td class="l"><b>ARKK</b></td>
-          <td class="l"><a href="stock.html#SPCX"><b>SPCX</b></a> <span class="muted">Space Exploration Techn-Cl A</span></td>
-          <td class="l muted"><span class="l-en">Active / Innovation</span><span class="l-zh">Active / Innovation</span></td>
-          <td class="r muted">4.07%</td>
-          <td class="r pos"><b>+4.07pp</b></td>
-          <td class="l"><span class="muted">—</span></td></tr>
+      <tr><td class="l"><b>CHAT</b></td>
+          <td class="l"><a href="stock.html#NVDA"><b>NVDA</b></a> <span class="muted">Nvidia Corp</span></td>
+          <td class="l muted"><span class="l-en">Information Technology</span><span class="l-zh">Information Technology</span></td>
+          <td class="r muted">7.17%</td>
+          <td class="r pos"><b>+4.12pp</b></td>
+          <td class="l"><span class="pill st-COUNTERTREND_BOUNCE"><span class="l-en">UNCONFIRMED TURN</span><span class="l-zh">未确认转向</span></span></td></tr>
       
     </table>
     

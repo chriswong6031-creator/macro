@@ -1,6 +1,6 @@
 {
   "schema": "winner_autopsy_panel.v1",
-  "generated_at": "2026-07-07T15:29:40Z",
+  "generated_at": "2026-07-08T07:27:28Z",
   "display_only": true,
   "horizon_role": "hold_thesis",
   "census": {
@@ -211,55 +211,15 @@
   },
   "watch": {
     "available": true,
-    "as_of": "2026-07-07",
+    "as_of": "2026-07-08",
     "state_counts": {
-      "breakaway": 39,
-      "emerging": 33,
-      "digestion": 37,
-      "continuation": 31,
-      "failed": 86
+      "breakaway": 34,
+      "emerging": 34,
+      "digestion": 35,
+      "continuation": 29,
+      "failed": 91
     },
     "top": [
-      {
-        "ticker": "MRNA",
-        "sector": "Health Care",
-        "benchmark": "XLV",
-        "state": "breakaway",
-        "excess_21d_pp": 62.42,
-        "excess_42d_pp": 63.0,
-        "new_high_63d": true,
-        "dollar_vol_z21": 1.63,
-        "days_in_state": 10,
-        "gex_state": null,
-        "hazards": [
-          "extended_after_vertical_move",
-          "chase_risk_elevated"
-        ],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "ALHC",
-        "sector": "Health Care",
-        "benchmark": "XLV",
-        "state": "emerging",
-        "excess_21d_pp": 62.1,
-        "excess_42d_pp": 15.61,
-        "new_high_63d": true,
-        "dollar_vol_z21": -0.14,
-        "days_in_state": 0,
-        "gex_state": null,
-        "hazards": [
-          "extended_after_vertical_move",
-          "chase_risk_elevated"
-        ],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
       {
         "ticker": "DISH",
         "sector": "",
@@ -280,72 +240,14 @@
         }
       },
       {
-        "ticker": "OSCR",
-        "sector": "",
-        "benchmark": "SPY",
-        "state": "continuation",
-        "excess_21d_pp": 53.5,
-        "excess_42d_pp": 64.67,
-        "new_high_63d": false,
-        "dollar_vol_z21": -0.23,
-        "days_in_state": 46,
-        "gex_state": null,
-        "hazards": [
-          "extended_after_vertical_move"
-        ],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "QLYS",
-        "sector": "Information Technology",
-        "benchmark": "XLK",
-        "state": "breakaway",
-        "excess_21d_pp": 48.14,
-        "excess_42d_pp": 57.83,
-        "new_high_63d": true,
-        "dollar_vol_z21": 1.05,
-        "days_in_state": 13,
-        "gex_state": null,
-        "hazards": [
-          "extended_after_vertical_move",
-          "chase_risk_elevated"
-        ],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "GPCR",
-        "sector": "",
-        "benchmark": "SPY",
+        "ticker": "ALHC",
+        "sector": "Health Care",
+        "benchmark": "XLV",
         "state": "emerging",
-        "excess_21d_pp": 46.14,
-        "excess_42d_pp": 22.57,
+        "excess_21d_pp": 50.98,
+        "excess_42d_pp": 18.25,
         "new_high_63d": false,
-        "dollar_vol_z21": -0.89,
-        "days_in_state": 0,
-        "gex_state": null,
-        "hazards": [
-          "extended_after_vertical_move"
-        ],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "CNTM",
-        "sector": "",
-        "benchmark": "SPY",
-        "state": "emerging",
-        "excess_21d_pp": 45.13,
-        "excess_42d_pp": 34.32,
-        "new_high_63d": false,
-        "dollar_vol_z21": -0.94,
+        "dollar_vol_z21": -0.38,
         "days_in_state": 0,
         "gex_state": null,
         "hazards": [
@@ -361,14 +263,73 @@
         "sector": "",
         "benchmark": "SPY",
         "state": "emerging",
-        "excess_21d_pp": 42.61,
-        "excess_42d_pp": 35.85,
+        "excess_21d_pp": 49.17,
+        "excess_42d_pp": 33.55,
         "new_high_63d": false,
-        "dollar_vol_z21": 0.01,
+        "dollar_vol_z21": -0.41,
         "days_in_state": 0,
         "gex_state": null,
         "hazards": [
           "extended_after_vertical_move"
+        ],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "QLYS",
+        "sector": "Information Technology",
+        "benchmark": "XLK",
+        "state": "breakaway",
+        "excess_21d_pp": 48.39,
+        "excess_42d_pp": 62.81,
+        "new_high_63d": false,
+        "dollar_vol_z21": 0.93,
+        "days_in_state": 14,
+        "gex_state": null,
+        "hazards": [
+          "extended_after_vertical_move"
+        ],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "GPCR",
+        "sector": "",
+        "benchmark": "SPY",
+        "state": "emerging",
+        "excess_21d_pp": 45.97,
+        "excess_42d_pp": 34.48,
+        "new_high_63d": true,
+        "dollar_vol_z21": -0.56,
+        "days_in_state": 0,
+        "gex_state": null,
+        "hazards": [
+          "extended_after_vertical_move",
+          "chase_risk_elevated"
+        ],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "VKTX",
+        "sector": "",
+        "benchmark": "SPY",
+        "state": "breakaway",
+        "excess_21d_pp": 42.46,
+        "excess_42d_pp": 31.25,
+        "new_high_63d": true,
+        "dollar_vol_z21": 1.48,
+        "days_in_state": 8,
+        "gex_state": null,
+        "hazards": [
+          "extended_after_vertical_move",
+          "chase_risk_elevated"
         ],
         "context": {
           "context_only": true,
@@ -414,53 +375,15 @@
         }
       },
       {
-        "ticker": "NEO",
-        "sector": "Health Care",
-        "benchmark": "XLV",
-        "state": "breakaway",
-        "excess_21d_pp": 39.26,
-        "excess_42d_pp": 56.54,
-        "new_high_63d": true,
-        "dollar_vol_z21": 0.08,
-        "days_in_state": 5,
-        "gex_state": null,
-        "hazards": [
-          "chase_risk_elevated"
-        ],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
         "ticker": "TENB",
         "sector": "",
         "benchmark": "SPY",
         "state": "breakaway",
-        "excess_21d_pp": 39.21,
-        "excess_42d_pp": 93.59,
-        "new_high_63d": true,
-        "dollar_vol_z21": 1.91,
-        "days_in_state": 31,
-        "gex_state": null,
-        "hazards": [
-          "chase_risk_elevated"
-        ],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "ICHR",
-        "sector": "Information Technology",
-        "benchmark": "XLK",
-        "state": "breakaway",
-        "excess_21d_pp": 38.39,
-        "excess_42d_pp": 23.94,
+        "excess_21d_pp": 39.67,
+        "excess_42d_pp": 89.94,
         "new_high_63d": false,
-        "dollar_vol_z21": -0.33,
-        "days_in_state": 57,
+        "dollar_vol_z21": 1.2,
+        "days_in_state": 32,
         "gex_state": null,
         "hazards": [],
         "context": {
@@ -503,15 +426,85 @@
         }
       },
       {
+        "ticker": "OSCR",
+        "sector": "",
+        "benchmark": "SPY",
+        "state": "continuation",
+        "excess_21d_pp": 32.85,
+        "excess_42d_pp": 70.16,
+        "new_high_63d": false,
+        "dollar_vol_z21": -0.42,
+        "days_in_state": 47,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "RBLX",
+        "sector": "",
+        "benchmark": "SPY",
+        "state": "emerging",
+        "excess_21d_pp": 31.8,
+        "excess_42d_pp": 25.46,
+        "new_high_63d": false,
+        "dollar_vol_z21": -0.77,
+        "days_in_state": 0,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "PAYO",
+        "sector": "Financials",
+        "benchmark": "XLF",
+        "state": "continuation",
+        "excess_21d_pp": 30.63,
+        "excess_42d_pp": 35.96,
+        "new_high_63d": false,
+        "dollar_vol_z21": -0.46,
+        "days_in_state": 9,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "KRRO",
+        "sector": "",
+        "benchmark": "SPY",
+        "state": "emerging",
+        "excess_21d_pp": 30.59,
+        "excess_42d_pp": 11.78,
+        "new_high_63d": true,
+        "dollar_vol_z21": -0.06,
+        "days_in_state": 0,
+        "gex_state": null,
+        "hazards": [
+          "chase_risk_elevated"
+        ],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
         "ticker": "W",
         "sector": "",
         "benchmark": "SPY",
         "state": "continuation",
-        "excess_21d_pp": 34.44,
-        "excess_42d_pp": 39.05,
+        "excess_21d_pp": 29.62,
+        "excess_42d_pp": 44.24,
         "new_high_63d": false,
-        "dollar_vol_z21": -1.11,
-        "days_in_state": 10,
+        "dollar_vol_z21": -1.46,
+        "days_in_state": 11,
         "gex_state": null,
         "hazards": [],
         "context": {
@@ -524,30 +517,11 @@
         "sector": "Information Technology",
         "benchmark": "XLK",
         "state": "breakaway",
-        "excess_21d_pp": 33.83,
-        "excess_42d_pp": 80.44,
-        "new_high_63d": true,
-        "dollar_vol_z21": 1.22,
-        "days_in_state": 35,
-        "gex_state": null,
-        "hazards": [
-          "chase_risk_elevated"
-        ],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "GH",
-        "sector": "",
-        "benchmark": "SPY",
-        "state": "breakaway",
-        "excess_21d_pp": 33.03,
-        "excess_42d_pp": 80.54,
+        "excess_21d_pp": 27.83,
+        "excess_42d_pp": 75.01,
         "new_high_63d": false,
-        "dollar_vol_z21": -0.22,
-        "days_in_state": 30,
+        "dollar_vol_z21": 0.93,
+        "days_in_state": 36,
         "gex_state": null,
         "hazards": [],
         "context": {
@@ -556,178 +530,15 @@
         }
       },
       {
-        "ticker": "VKTX",
-        "sector": "",
-        "benchmark": "SPY",
-        "state": "breakaway",
-        "excess_21d_pp": 32.12,
-        "excess_42d_pp": 17.25,
-        "new_high_63d": false,
-        "dollar_vol_z21": -0.3,
-        "days_in_state": 7,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "HOOD",
-        "sector": "Financials",
-        "benchmark": "XLF",
-        "state": "breakaway",
-        "excess_21d_pp": 31.14,
-        "excess_42d_pp": 44.72,
-        "new_high_63d": true,
-        "dollar_vol_z21": -0.27,
-        "days_in_state": 24,
-        "gex_state": null,
-        "hazards": [
-          "chase_risk_elevated"
-        ],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "RBLX",
-        "sector": "",
-        "benchmark": "SPY",
-        "state": "emerging",
-        "excess_21d_pp": 30.7,
-        "excess_42d_pp": 15.25,
-        "new_high_63d": false,
-        "dollar_vol_z21": -0.59,
-        "days_in_state": 0,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "AFRM",
-        "sector": "",
-        "benchmark": "SPY",
+        "ticker": "OKTA",
+        "sector": "Information Technology",
+        "benchmark": "XLK",
         "state": "continuation",
-        "excess_21d_pp": 29.58,
-        "excess_42d_pp": 23.24,
-        "new_high_63d": true,
-        "dollar_vol_z21": -0.14,
-        "days_in_state": 43,
-        "gex_state": null,
-        "hazards": [
-          "chase_risk_elevated"
-        ],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "PAYO",
-        "sector": "Financials",
-        "benchmark": "XLF",
-        "state": "continuation",
-        "excess_21d_pp": 29.33,
-        "excess_42d_pp": 33.47,
-        "new_high_63d": true,
-        "dollar_vol_z21": -0.55,
-        "days_in_state": 8,
-        "gex_state": null,
-        "hazards": [
-          "chase_risk_elevated"
-        ],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "TECH",
-        "sector": "Health Care",
-        "benchmark": "XLV",
-        "state": "breakaway",
-        "excess_21d_pp": 29.22,
-        "excess_42d_pp": 17.89,
+        "excess_21d_pp": 27.37,
+        "excess_42d_pp": 82.78,
         "new_high_63d": false,
-        "dollar_vol_z21": -0.05,
-        "days_in_state": 6,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "DCO",
-        "sector": "",
-        "benchmark": "SPY",
-        "state": "breakaway",
-        "excess_21d_pp": 28.9,
-        "excess_42d_pp": 33.44,
-        "new_high_63d": false,
-        "dollar_vol_z21": 0.24,
-        "days_in_state": 5,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "HIMS",
-        "sector": "Health Care",
-        "benchmark": "XLV",
-        "state": "breakaway",
-        "excess_21d_pp": 28.9,
-        "excess_42d_pp": 28.47,
-        "new_high_63d": true,
-        "dollar_vol_z21": -0.42,
-        "days_in_state": 12,
-        "gex_state": null,
-        "hazards": [
-          "chase_risk_elevated"
-        ],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "VSEC",
-        "sector": "Industrials",
-        "benchmark": "XLI",
-        "state": "breakaway",
-        "excess_21d_pp": 28.33,
-        "excess_42d_pp": 33.05,
-        "new_high_63d": true,
-        "dollar_vol_z21": -0.23,
-        "days_in_state": 3,
-        "gex_state": null,
-        "hazards": [
-          "chase_risk_elevated"
-        ],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "TEM",
-        "sector": "",
-        "benchmark": "SPY",
-        "state": "emerging",
-        "excess_21d_pp": 27.9,
-        "excess_42d_pp": 4.13,
-        "new_high_63d": false,
-        "dollar_vol_z21": -0.79,
-        "days_in_state": 0,
+        "dollar_vol_z21": 0.03,
+        "days_in_state": 25,
         "gex_state": null,
         "hazards": [],
         "context": {
@@ -753,17 +564,19 @@
         }
       },
       {
-        "ticker": "KRRO",
+        "ticker": "ARQT",
         "sector": "",
         "benchmark": "SPY",
-        "state": "emerging",
-        "excess_21d_pp": 27.03,
-        "excess_42d_pp": 3.27,
-        "new_high_63d": false,
-        "dollar_vol_z21": 1.05,
-        "days_in_state": 0,
+        "state": "continuation",
+        "excess_21d_pp": 27.04,
+        "excess_42d_pp": 14.84,
+        "new_high_63d": true,
+        "dollar_vol_z21": 0.64,
+        "days_in_state": 10,
         "gex_state": null,
-        "hazards": [],
+        "hazards": [
+          "chase_risk_elevated"
+        ],
         "context": {
           "context_only": true,
           "note": ""
@@ -774,15 +587,30 @@
         "sector": "Health Care",
         "benchmark": "XLV",
         "state": "breakaway",
-        "excess_21d_pp": 26.45,
-        "excess_42d_pp": 28.41,
-        "new_high_63d": true,
-        "dollar_vol_z21": -0.27,
-        "days_in_state": 11,
+        "excess_21d_pp": 26.8,
+        "excess_42d_pp": 24.33,
+        "new_high_63d": false,
+        "dollar_vol_z21": -0.37,
+        "days_in_state": 12,
         "gex_state": null,
-        "hazards": [
-          "chase_risk_elevated"
-        ],
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "ICHR",
+        "sector": "Information Technology",
+        "benchmark": "XLK",
+        "state": "breakaway",
+        "excess_21d_pp": 26.76,
+        "excess_42d_pp": 17.26,
+        "new_high_63d": false,
+        "dollar_vol_z21": -0.3,
+        "days_in_state": 58,
+        "gex_state": null,
+        "hazards": [],
         "context": {
           "context_only": true,
           "note": ""
@@ -793,47 +621,11 @@
         "sector": "Industrials",
         "benchmark": "XLI",
         "state": "breakaway",
-        "excess_21d_pp": 25.89,
-        "excess_42d_pp": 27.83,
+        "excess_21d_pp": 26.05,
+        "excess_42d_pp": 28.89,
         "new_high_63d": false,
-        "dollar_vol_z21": -0.33,
-        "days_in_state": 4,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "OKTA",
-        "sector": "Information Technology",
-        "benchmark": "XLK",
-        "state": "continuation",
-        "excess_21d_pp": 25.55,
-        "excess_42d_pp": 79.11,
-        "new_high_63d": true,
-        "dollar_vol_z21": -0.21,
-        "days_in_state": 24,
-        "gex_state": null,
-        "hazards": [
-          "chase_risk_elevated"
-        ],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "AMAT",
-        "sector": "Information Technology",
-        "benchmark": "XLK",
-        "state": "breakaway",
-        "excess_21d_pp": 24.72,
-        "excess_42d_pp": 38.37,
-        "new_high_63d": false,
-        "dollar_vol_z21": -0.8,
-        "days_in_state": 15,
+        "dollar_vol_z21": -0.32,
+        "days_in_state": 5,
         "gex_state": null,
         "hazards": [],
         "context": {
@@ -846,15 +638,49 @@
         "sector": "",
         "benchmark": "SPY",
         "state": "emerging",
-        "excess_21d_pp": 24.15,
-        "excess_42d_pp": 14.47,
+        "excess_21d_pp": 25.76,
+        "excess_42d_pp": 16.69,
         "new_high_63d": true,
-        "dollar_vol_z21": -0.33,
+        "dollar_vol_z21": -0.36,
         "days_in_state": 0,
         "gex_state": null,
         "hazards": [
           "chase_risk_elevated"
         ],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "PCVX",
+        "sector": "",
+        "benchmark": "SPY",
+        "state": "emerging",
+        "excess_21d_pp": 25.41,
+        "excess_42d_pp": 5.73,
+        "new_high_63d": false,
+        "dollar_vol_z21": -0.13,
+        "days_in_state": 0,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "TECH",
+        "sector": "Health Care",
+        "benchmark": "XLV",
+        "state": "breakaway",
+        "excess_21d_pp": 24.17,
+        "excess_42d_pp": 11.63,
+        "new_high_63d": false,
+        "dollar_vol_z21": -0.18,
+        "days_in_state": 7,
+        "gex_state": null,
+        "hazards": [],
         "context": {
           "context_only": true,
           "note": ""
@@ -865,10 +691,10 @@
         "sector": "",
         "benchmark": "SPY",
         "state": "emerging",
-        "excess_21d_pp": 24.12,
-        "excess_42d_pp": 15.82,
+        "excess_21d_pp": 23.93,
+        "excess_42d_pp": 19.18,
         "new_high_63d": true,
-        "dollar_vol_z21": -0.49,
+        "dollar_vol_z21": 0.2,
         "days_in_state": 0,
         "gex_state": null,
         "hazards": [
@@ -880,15 +706,15 @@
         }
       },
       {
-        "ticker": "CRDO",
+        "ticker": "GH",
         "sector": "",
         "benchmark": "SPY",
-        "state": "digestion",
-        "excess_21d_pp": 23.88,
-        "excess_42d_pp": 42.84,
+        "state": "breakaway",
+        "excess_21d_pp": 23.43,
+        "excess_42d_pp": 78.69,
         "new_high_63d": false,
-        "dollar_vol_z21": -0.47,
-        "days_in_state": 55,
+        "dollar_vol_z21": -0.17,
+        "days_in_state": 31,
         "gex_state": null,
         "hazards": [],
         "context": {
@@ -897,15 +723,15 @@
         }
       },
       {
-        "ticker": "AXON",
-        "sector": "Industrials",
-        "benchmark": "XLI",
+        "ticker": "NAVN",
+        "sector": "",
+        "benchmark": "SPY",
         "state": "breakaway",
-        "excess_21d_pp": 22.38,
-        "excess_42d_pp": 49.53,
+        "excess_21d_pp": 23.4,
+        "excess_42d_pp": 43.43,
         "new_high_63d": true,
-        "dollar_vol_z21": 0.69,
-        "days_in_state": 3,
+        "dollar_vol_z21": 0.86,
+        "days_in_state": 44,
         "gex_state": null,
         "hazards": [
           "chase_risk_elevated"
@@ -916,17 +742,70 @@
         }
       },
       {
-        "ticker": "ARQT",
+        "ticker": "AFRM",
         "sector": "",
         "benchmark": "SPY",
-        "state": "failed",
-        "excess_21d_pp": 22.24,
-        "excess_42d_pp": 6.35,
+        "state": "continuation",
+        "excess_21d_pp": 22.7,
+        "excess_42d_pp": 21.85,
         "new_high_63d": false,
-        "dollar_vol_z21": -0.45,
-        "days_in_state": 9,
+        "dollar_vol_z21": 0.04,
+        "days_in_state": 44,
         "gex_state": null,
         "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "CNTM",
+        "sector": "",
+        "benchmark": "SPY",
+        "state": "emerging",
+        "excess_21d_pp": 22.64,
+        "excess_42d_pp": 14.23,
+        "new_high_63d": false,
+        "dollar_vol_z21": 0.43,
+        "days_in_state": 0,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "FOUR",
+        "sector": "Financials",
+        "benchmark": "XLF",
+        "state": "emerging",
+        "excess_21d_pp": 22.44,
+        "excess_42d_pp": 16.23,
+        "new_high_63d": false,
+        "dollar_vol_z21": -1.23,
+        "days_in_state": 0,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "DASH",
+        "sector": "Consumer Discretionary",
+        "benchmark": "XLY",
+        "state": "emerging",
+        "excess_21d_pp": 21.96,
+        "excess_42d_pp": 18.38,
+        "new_high_63d": true,
+        "dollar_vol_z21": -0.04,
+        "days_in_state": 0,
+        "gex_state": null,
+        "hazards": [
+          "chase_risk_elevated"
+        ],
         "context": {
           "context_only": true,
           "note": ""
@@ -971,14 +850,14 @@
         }
       },
       {
-        "ticker": "PCVX",
-        "sector": "",
-        "benchmark": "SPY",
+        "ticker": "CMG",
+        "sector": "Consumer Discretionary",
+        "benchmark": "XLY",
         "state": "emerging",
-        "excess_21d_pp": 21.51,
-        "excess_42d_pp": -7.25,
+        "excess_21d_pp": 21.58,
+        "excess_42d_pp": 6.89,
         "new_high_63d": false,
-        "dollar_vol_z21": -0.3,
+        "dollar_vol_z21": -0.41,
         "days_in_state": 0,
         "gex_state": null,
         "hazards": [],
@@ -988,14 +867,14 @@
         }
       },
       {
-        "ticker": "TTWO",
-        "sector": "Communication Services",
-        "benchmark": "XLC",
+        "ticker": "AXON",
+        "sector": "Industrials",
+        "benchmark": "XLI",
         "state": "breakaway",
-        "excess_21d_pp": 21.16,
-        "excess_42d_pp": 19.83,
+        "excess_21d_pp": 21.01,
+        "excess_42d_pp": 62.49,
         "new_high_63d": true,
-        "dollar_vol_z21": -0.55,
+        "dollar_vol_z21": 1.91,
         "days_in_state": 4,
         "gex_state": null,
         "hazards": [
@@ -1007,15 +886,15 @@
         }
       },
       {
-        "ticker": "NU",
+        "ticker": "DCO",
         "sector": "",
         "benchmark": "SPY",
-        "state": "emerging",
-        "excess_21d_pp": 20.93,
-        "excess_42d_pp": -5.34,
+        "state": "breakaway",
+        "excess_21d_pp": 20.84,
+        "excess_42d_pp": 22.92,
         "new_high_63d": false,
-        "dollar_vol_z21": 0.51,
-        "days_in_state": 0,
+        "dollar_vol_z21": 0.25,
+        "days_in_state": 6,
         "gex_state": null,
         "hazards": [],
         "context": {
@@ -1024,15 +903,68 @@
         }
       },
       {
-        "ticker": "DASH",
+        "ticker": "THC",
+        "sector": "Health Care",
+        "benchmark": "XLV",
+        "state": "emerging",
+        "excess_21d_pp": 20.8,
+        "excess_42d_pp": -1.45,
+        "new_high_63d": true,
+        "dollar_vol_z21": -0.89,
+        "days_in_state": 0,
+        "gex_state": null,
+        "hazards": [
+          "chase_risk_elevated"
+        ],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "TTWO",
+        "sector": "Communication Services",
+        "benchmark": "XLC",
+        "state": "continuation",
+        "excess_21d_pp": 20.58,
+        "excess_42d_pp": 19.53,
+        "new_high_63d": false,
+        "dollar_vol_z21": -0.46,
+        "days_in_state": 5,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "DUOL",
         "sector": "Consumer Discretionary",
         "benchmark": "XLY",
-        "state": "emerging",
-        "excess_21d_pp": 20.62,
-        "excess_42d_pp": 8.96,
+        "state": "continuation",
+        "excess_21d_pp": 20.58,
+        "excess_42d_pp": 27.41,
         "new_high_63d": false,
-        "dollar_vol_z21": 0.49,
-        "days_in_state": 0,
+        "dollar_vol_z21": -0.76,
+        "days_in_state": 17,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "HIMS",
+        "sector": "Health Care",
+        "benchmark": "XLV",
+        "state": "breakaway",
+        "excess_21d_pp": 20.53,
+        "excess_42d_pp": 24.2,
+        "new_high_63d": false,
+        "dollar_vol_z21": -0.76,
+        "days_in_state": 13,
         "gex_state": null,
         "hazards": [],
         "context": {
@@ -1058,15 +990,15 @@
         }
       },
       {
-        "ticker": "UCTT",
-        "sector": "Information Technology",
-        "benchmark": "XLK",
+        "ticker": "HOOD",
+        "sector": "Financials",
+        "benchmark": "XLF",
         "state": "breakaway",
-        "excess_21d_pp": 20.36,
-        "excess_42d_pp": 31.06,
+        "excess_21d_pp": 20.04,
+        "excess_42d_pp": 37.92,
         "new_high_63d": false,
-        "dollar_vol_z21": -0.25,
-        "days_in_state": 59,
+        "dollar_vol_z21": -0.68,
+        "days_in_state": 25,
         "gex_state": null,
         "hazards": [],
         "context": {
@@ -1075,34 +1007,15 @@
         }
       },
       {
-        "ticker": "CRS",
-        "sector": "Industrials",
-        "benchmark": "XLI",
+        "ticker": "NEO",
+        "sector": "Health Care",
+        "benchmark": "XLV",
         "state": "breakaway",
-        "excess_21d_pp": 20.27,
-        "excess_42d_pp": 36.28,
-        "new_high_63d": true,
-        "dollar_vol_z21": -0.15,
-        "days_in_state": 17,
-        "gex_state": null,
-        "hazards": [
-          "chase_risk_elevated"
-        ],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "APH",
-        "sector": "Information Technology",
-        "benchmark": "XLK",
-        "state": "digestion",
-        "excess_21d_pp": 19.51,
-        "excess_42d_pp": 5.18,
+        "excess_21d_pp": 19.6,
+        "excess_42d_pp": 50.48,
         "new_high_63d": false,
-        "dollar_vol_z21": -0.57,
-        "days_in_state": 10,
+        "dollar_vol_z21": -0.13,
+        "days_in_state": 6,
         "gex_state": null,
         "hazards": [],
         "context": {
@@ -1111,32 +1024,15 @@
         }
       },
       {
-        "ticker": "DUOL",
-        "sector": "Consumer Discretionary",
-        "benchmark": "XLY",
+        "ticker": "PFGC",
+        "sector": "Consumer Staples",
+        "benchmark": "XLP",
         "state": "continuation",
-        "excess_21d_pp": 19.48,
-        "excess_42d_pp": 17.43,
-        "new_high_63d": false,
-        "dollar_vol_z21": 0.37,
-        "days_in_state": 16,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "ALAB",
-        "sector": "",
-        "benchmark": "SPY",
-        "state": "digestion",
-        "excess_21d_pp": 19.17,
-        "excess_42d_pp": 110.39,
-        "new_high_63d": false,
-        "dollar_vol_z21": -0.48,
-        "days_in_state": 51,
+        "excess_21d_pp": 18.81,
+        "excess_42d_pp": 31.62,
+        "new_high_63d": true,
+        "dollar_vol_z21": 0.16,
+        "days_in_state": 5,
         "gex_state": null,
         "hazards": [],
         "context": {
@@ -1149,96 +1045,28 @@
         "sector": "Consumer Discretionary",
         "benchmark": "XLY",
         "state": "digestion",
-        "excess_21d_pp": 19.0,
-        "excess_42d_pp": 19.55,
+        "excess_21d_pp": 18.22,
+        "excess_42d_pp": 16.51,
         "new_high_63d": false,
-        "dollar_vol_z21": -0.15,
+        "dollar_vol_z21": -0.26,
+        "days_in_state": 17,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "AMAT",
+        "sector": "Information Technology",
+        "benchmark": "XLK",
+        "state": "breakaway",
+        "excess_21d_pp": 17.66,
+        "excess_42d_pp": 26.96,
+        "new_high_63d": false,
+        "dollar_vol_z21": -0.3,
         "days_in_state": 16,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "NAVN",
-        "sector": "",
-        "benchmark": "SPY",
-        "state": "breakaway",
-        "excess_21d_pp": 18.82,
-        "excess_42d_pp": 38.77,
-        "new_high_63d": true,
-        "dollar_vol_z21": -0.39,
-        "days_in_state": 43,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "RDDT",
-        "sector": "",
-        "benchmark": "SPY",
-        "state": "breakaway",
-        "excess_21d_pp": 18.64,
-        "excess_42d_pp": 14.17,
-        "new_high_63d": true,
-        "dollar_vol_z21": 0.91,
-        "days_in_state": 2,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "LUV",
-        "sector": "Industrials",
-        "benchmark": "XLI",
-        "state": "continuation",
-        "excess_21d_pp": 17.99,
-        "excess_42d_pp": 24.54,
-        "new_high_63d": false,
-        "dollar_vol_z21": 0.02,
-        "days_in_state": 10,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "FTNT",
-        "sector": "Information Technology",
-        "benchmark": "XLK",
-        "state": "continuation",
-        "excess_21d_pp": 17.17,
-        "excess_42d_pp": 68.65,
-        "new_high_63d": true,
-        "dollar_vol_z21": -0.36,
-        "days_in_state": 37,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "KLIC",
-        "sector": "Information Technology",
-        "benchmark": "XLK",
-        "state": "breakaway",
-        "excess_21d_pp": 16.88,
-        "excess_42d_pp": 23.11,
-        "new_high_63d": false,
-        "dollar_vol_z21": -0.4,
-        "days_in_state": 40,
         "gex_state": null,
         "hazards": [],
         "context": {
@@ -1251,11 +1079,11 @@
         "sector": "",
         "benchmark": "SPY",
         "state": "breakaway",
-        "excess_21d_pp": 16.76,
-        "excess_42d_pp": 10.16,
-        "new_high_63d": false,
-        "dollar_vol_z21": 0.3,
-        "days_in_state": 1,
+        "excess_21d_pp": 16.63,
+        "excess_42d_pp": 13.08,
+        "new_high_63d": true,
+        "dollar_vol_z21": 2.06,
+        "days_in_state": 2,
         "gex_state": null,
         "hazards": [],
         "context": {
@@ -1264,65 +1092,14 @@
         }
       },
       {
-        "ticker": "MKSI",
-        "sector": "Information Technology",
-        "benchmark": "XLK",
-        "state": "breakaway",
-        "excess_21d_pp": 16.16,
-        "excess_42d_pp": 13.07,
-        "new_high_63d": false,
-        "dollar_vol_z21": -0.4,
-        "days_in_state": 10,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "KLAC",
-        "sector": "Information Technology",
-        "benchmark": "XLK",
-        "state": "breakaway",
-        "excess_21d_pp": 16.13,
-        "excess_42d_pp": 23.07,
-        "new_high_63d": false,
-        "dollar_vol_z21": -0.82,
-        "days_in_state": 15,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "CART",
-        "sector": "Consumer Staples",
-        "benchmark": "XLP",
-        "state": "continuation",
-        "excess_21d_pp": 15.36,
-        "excess_42d_pp": 8.71,
-        "new_high_63d": false,
-        "dollar_vol_z21": -0.39,
-        "days_in_state": 52,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "OC",
+        "ticker": "VSEC",
         "sector": "Industrials",
         "benchmark": "XLI",
         "state": "breakaway",
-        "excess_21d_pp": 15.29,
-        "excess_42d_pp": 17.05,
+        "excess_21d_pp": 16.4,
+        "excess_42d_pp": 18.81,
         "new_high_63d": false,
-        "dollar_vol_z21": -0.12,
+        "dollar_vol_z21": -0.09,
         "days_in_state": 4,
         "gex_state": null,
         "hazards": [],
@@ -1332,32 +1109,15 @@
         }
       },
       {
-        "ticker": "ONTO",
-        "sector": "Information Technology",
-        "benchmark": "XLK",
-        "state": "breakaway",
-        "excess_21d_pp": 14.87,
-        "excess_42d_pp": -11.84,
-        "new_high_63d": false,
-        "dollar_vol_z21": -0.96,
-        "days_in_state": 60,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "INTC",
-        "sector": "Information Technology",
-        "benchmark": "XLK",
+        "ticker": "LUV",
+        "sector": "Industrials",
+        "benchmark": "XLI",
         "state": "digestion",
-        "excess_21d_pp": 14.76,
-        "excess_42d_pp": 14.3,
+        "excess_21d_pp": 16.39,
+        "excess_42d_pp": 19.24,
         "new_high_63d": false,
-        "dollar_vol_z21": -1.19,
-        "days_in_state": 60,
+        "dollar_vol_z21": -0.61,
+        "days_in_state": 11,
         "gex_state": null,
         "hazards": [],
         "context": {
@@ -1366,83 +1126,15 @@
         }
       },
       {
-        "ticker": "PFGC",
-        "sector": "Consumer Staples",
-        "benchmark": "XLP",
-        "state": "breakaway",
-        "excess_21d_pp": 14.74,
-        "excess_42d_pp": 30.16,
-        "new_high_63d": true,
-        "dollar_vol_z21": -0.17,
-        "days_in_state": 4,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "IP",
-        "sector": "Materials",
-        "benchmark": "XLB",
-        "state": "continuation",
-        "excess_21d_pp": 14.45,
-        "excess_42d_pp": 22.87,
-        "new_high_63d": false,
-        "dollar_vol_z21": -0.83,
-        "days_in_state": 10,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "VIK",
-        "sector": "",
-        "benchmark": "SPY",
-        "state": "failed",
-        "excess_21d_pp": 13.57,
-        "excess_42d_pp": 22.6,
-        "new_high_63d": false,
-        "dollar_vol_z21": -0.18,
-        "days_in_state": 5,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "MTRN",
-        "sector": "Materials",
-        "benchmark": "XLB",
-        "state": "breakaway",
-        "excess_21d_pp": 13.51,
-        "excess_42d_pp": 35.69,
-        "new_high_63d": false,
-        "dollar_vol_z21": -0.28,
-        "days_in_state": 53,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "GE",
+        "ticker": "CRS",
         "sector": "Industrials",
         "benchmark": "XLI",
-        "state": "continuation",
-        "excess_21d_pp": 13.48,
-        "excess_42d_pp": 26.46,
-        "new_high_63d": true,
-        "dollar_vol_z21": -0.47,
-        "days_in_state": 7,
+        "state": "breakaway",
+        "excess_21d_pp": 16.05,
+        "excess_42d_pp": 26.88,
+        "new_high_63d": false,
+        "dollar_vol_z21": -0.35,
+        "days_in_state": 18,
         "gex_state": null,
         "hazards": [],
         "context": {
@@ -1455,11 +1147,11 @@
         "sector": "Information Technology",
         "benchmark": "XLK",
         "state": "continuation",
-        "excess_21d_pp": 13.02,
-        "excess_42d_pp": 56.68,
-        "new_high_63d": true,
-        "dollar_vol_z21": -0.34,
-        "days_in_state": 33,
+        "excess_21d_pp": 15.39,
+        "excess_42d_pp": 55.18,
+        "new_high_63d": false,
+        "dollar_vol_z21": -0.47,
+        "days_in_state": 34,
         "gex_state": null,
         "hazards": [],
         "context": {
@@ -1468,15 +1160,49 @@
         }
       },
       {
-        "ticker": "ZS",
+        "ticker": "APH",
+        "sector": "Information Technology",
+        "benchmark": "XLK",
+        "state": "failed",
+        "excess_21d_pp": 15.36,
+        "excess_42d_pp": 8.03,
+        "new_high_63d": false,
+        "dollar_vol_z21": -1.51,
+        "days_in_state": 11,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "OC",
+        "sector": "Industrials",
+        "benchmark": "XLI",
+        "state": "failed",
+        "excess_21d_pp": 14.38,
+        "excess_42d_pp": 9.94,
+        "new_high_63d": false,
+        "dollar_vol_z21": -0.14,
+        "days_in_state": 5,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "CRDO",
         "sector": "",
         "benchmark": "SPY",
-        "state": "failed",
-        "excess_21d_pp": 12.08,
-        "excess_42d_pp": 1.15,
+        "state": "digestion",
+        "excess_21d_pp": 14.27,
+        "excess_42d_pp": 23.98,
         "new_high_63d": false,
-        "dollar_vol_z21": -0.55,
-        "days_in_state": 32,
+        "dollar_vol_z21": -0.53,
+        "days_in_state": 56,
         "gex_state": null,
         "hazards": [],
         "context": {
@@ -1489,96 +1215,11 @@
         "sector": "Financials",
         "benchmark": "XLF",
         "state": "continuation",
-        "excess_21d_pp": 12.06,
-        "excess_42d_pp": -6.95,
+        "excess_21d_pp": 14.03,
+        "excess_42d_pp": -7.0,
         "new_high_63d": false,
-        "dollar_vol_z21": -1.05,
-        "days_in_state": 56,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "S",
-        "sector": "",
-        "benchmark": "SPY",
-        "state": "continuation",
-        "excess_21d_pp": 11.49,
-        "excess_42d_pp": 11.71,
-        "new_high_63d": false,
-        "dollar_vol_z21": 3.11,
-        "days_in_state": 38,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "HEI",
-        "sector": "",
-        "benchmark": "SPY",
-        "state": "continuation",
-        "excess_21d_pp": 11.18,
-        "excess_42d_pp": 30.91,
-        "new_high_63d": true,
-        "dollar_vol_z21": -0.63,
-        "days_in_state": 25,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "COHU",
-        "sector": "Information Technology",
-        "benchmark": "XLK",
-        "state": "digestion",
-        "excess_21d_pp": 10.94,
-        "excess_42d_pp": 12.44,
-        "new_high_63d": false,
-        "dollar_vol_z21": -0.87,
-        "days_in_state": 49,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "SIRI",
-        "sector": "Communication Services",
-        "benchmark": "XLC",
-        "state": "continuation",
-        "excess_21d_pp": 10.92,
-        "excess_42d_pp": 21.1,
-        "new_high_63d": true,
-        "dollar_vol_z21": -0.16,
-        "days_in_state": 52,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "RIVN",
-        "sector": "",
-        "benchmark": "SPY",
-        "state": "breakaway",
-        "excess_21d_pp": 10.37,
-        "excess_42d_pp": 34.17,
-        "new_high_63d": true,
-        "dollar_vol_z21": 1.18,
-        "days_in_state": 21,
+        "dollar_vol_z21": -0.98,
+        "days_in_state": 57,
         "gex_state": null,
         "hazards": [],
         "context": {
@@ -1591,11 +1232,11 @@
         "sector": "",
         "benchmark": "SPY",
         "state": "continuation",
-        "excess_21d_pp": 10.08,
-        "excess_42d_pp": 46.17,
-        "new_high_63d": true,
-        "dollar_vol_z21": 0.14,
-        "days_in_state": 25,
+        "excess_21d_pp": 14.02,
+        "excess_42d_pp": 49.05,
+        "new_high_63d": false,
+        "dollar_vol_z21": -0.56,
+        "days_in_state": 26,
         "gex_state": null,
         "hazards": [],
         "context": {
@@ -1604,15 +1245,15 @@
         }
       },
       {
-        "ticker": "ENTG",
+        "ticker": "FTNT",
         "sector": "Information Technology",
         "benchmark": "XLK",
-        "state": "failed",
-        "excess_21d_pp": 9.79,
-        "excess_42d_pp": -8.81,
+        "state": "continuation",
+        "excess_21d_pp": 13.14,
+        "excess_42d_pp": 68.28,
         "new_high_63d": false,
-        "dollar_vol_z21": -0.97,
-        "days_in_state": 10,
+        "dollar_vol_z21": -0.17,
+        "days_in_state": 38,
         "gex_state": null,
         "hazards": [],
         "context": {
@@ -1621,15 +1262,49 @@
         }
       },
       {
-        "ticker": "BIRK",
+        "ticker": "MKSI",
+        "sector": "Information Technology",
+        "benchmark": "XLK",
+        "state": "breakaway",
+        "excess_21d_pp": 12.99,
+        "excess_42d_pp": 13.44,
+        "new_high_63d": false,
+        "dollar_vol_z21": 0.3,
+        "days_in_state": 11,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "DDOG",
+        "sector": "Information Technology",
+        "benchmark": "XLK",
+        "state": "digestion",
+        "excess_21d_pp": 12.55,
+        "excess_42d_pp": 68.04,
+        "new_high_63d": false,
+        "dollar_vol_z21": 0.5,
+        "days_in_state": 40,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "VIK",
         "sector": "",
         "benchmark": "SPY",
         "state": "failed",
-        "excess_21d_pp": 9.49,
-        "excess_42d_pp": 20.39,
+        "excess_21d_pp": 12.12,
+        "excess_42d_pp": 19.09,
         "new_high_63d": false,
-        "dollar_vol_z21": -0.99,
-        "days_in_state": 14,
+        "dollar_vol_z21": -0.98,
+        "days_in_state": 6,
         "gex_state": null,
         "hazards": [],
         "context": {
@@ -1638,15 +1313,117 @@
         }
       },
       {
-        "ticker": "IRDM",
+        "ticker": "SIRI",
         "sector": "Communication Services",
         "benchmark": "XLC",
-        "state": "breakaway",
-        "excess_21d_pp": 9.15,
-        "excess_42d_pp": 37.33,
+        "state": "continuation",
+        "excess_21d_pp": 12.1,
+        "excess_42d_pp": 21.48,
         "new_high_63d": false,
-        "dollar_vol_z21": -0.5,
-        "days_in_state": 4,
+        "dollar_vol_z21": -0.38,
+        "days_in_state": 53,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "IP",
+        "sector": "Materials",
+        "benchmark": "XLB",
+        "state": "continuation",
+        "excess_21d_pp": 11.76,
+        "excess_42d_pp": 20.84,
+        "new_high_63d": false,
+        "dollar_vol_z21": -0.61,
+        "days_in_state": 11,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "CART",
+        "sector": "Consumer Staples",
+        "benchmark": "XLP",
+        "state": "continuation",
+        "excess_21d_pp": 11.76,
+        "excess_42d_pp": 8.97,
+        "new_high_63d": true,
+        "dollar_vol_z21": -0.01,
+        "days_in_state": 53,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "ZS",
+        "sector": "",
+        "benchmark": "SPY",
+        "state": "failed",
+        "excess_21d_pp": 11.51,
+        "excess_42d_pp": 2.45,
+        "new_high_63d": false,
+        "dollar_vol_z21": -0.27,
+        "days_in_state": 33,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "S",
+        "sector": "",
+        "benchmark": "SPY",
+        "state": "continuation",
+        "excess_21d_pp": 10.85,
+        "excess_42d_pp": 11.19,
+        "new_high_63d": false,
+        "dollar_vol_z21": 0.14,
+        "days_in_state": 39,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "RDDT",
+        "sector": "",
+        "benchmark": "SPY",
+        "state": "breakaway",
+        "excess_21d_pp": 9.43,
+        "excess_42d_pp": 12.9,
+        "new_high_63d": false,
+        "dollar_vol_z21": 0.09,
+        "days_in_state": 3,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "ONTO",
+        "sector": "Information Technology",
+        "benchmark": "XLK",
+        "state": "breakaway",
+        "excess_21d_pp": 9.01,
+        "excess_42d_pp": -16.4,
+        "new_high_63d": false,
+        "dollar_vol_z21": -0.34,
+        "days_in_state": 61,
         "gex_state": null,
         "hazards": [],
         "context": {
@@ -1672,15 +1449,15 @@
         }
       },
       {
-        "ticker": "VCYT",
-        "sector": "Health Care",
-        "benchmark": "XLV",
-        "state": "continuation",
-        "excess_21d_pp": 8.86,
-        "excess_42d_pp": 61.47,
+        "ticker": "KLAC",
+        "sector": "Information Technology",
+        "benchmark": "XLK",
+        "state": "breakaway",
+        "excess_21d_pp": 8.71,
+        "excess_42d_pp": 16.9,
         "new_high_63d": false,
-        "dollar_vol_z21": -0.6,
-        "days_in_state": 32,
+        "dollar_vol_z21": -0.18,
+        "days_in_state": 16,
         "gex_state": null,
         "hazards": [],
         "context": {
@@ -1693,11 +1470,11 @@
         "sector": "",
         "benchmark": "SPY",
         "state": "digestion",
-        "excess_21d_pp": 8.76,
-        "excess_42d_pp": 77.11,
+        "excess_21d_pp": 8.59,
+        "excess_42d_pp": 82.1,
         "new_high_63d": false,
-        "dollar_vol_z21": -0.64,
-        "days_in_state": 25,
+        "dollar_vol_z21": -0.22,
+        "days_in_state": 26,
         "gex_state": null,
         "hazards": [],
         "context": {
@@ -1706,15 +1483,15 @@
         }
       },
       {
-        "ticker": "DDOG",
+        "ticker": "IBM",
         "sector": "Information Technology",
         "benchmark": "XLK",
-        "state": "digestion",
-        "excess_21d_pp": 8.35,
-        "excess_42d_pp": 60.81,
+        "state": "failed",
+        "excess_21d_pp": 8.58,
+        "excess_42d_pp": 26.47,
         "new_high_63d": false,
-        "dollar_vol_z21": 0.08,
-        "days_in_state": 39,
+        "dollar_vol_z21": 0.44,
+        "days_in_state": 23,
         "gex_state": null,
         "hazards": [],
         "context": {
@@ -1723,15 +1500,49 @@
         }
       },
       {
-        "ticker": "LRCX",
-        "sector": "Information Technology",
-        "benchmark": "XLK",
+        "ticker": "HEI",
+        "sector": "",
+        "benchmark": "SPY",
+        "state": "continuation",
+        "excess_21d_pp": 8.55,
+        "excess_42d_pp": 25.79,
+        "new_high_63d": false,
+        "dollar_vol_z21": -1.04,
+        "days_in_state": 26,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "MTRN",
+        "sector": "Materials",
+        "benchmark": "XLB",
         "state": "breakaway",
-        "excess_21d_pp": 8.3,
-        "excess_42d_pp": 22.25,
+        "excess_21d_pp": 8.53,
+        "excess_42d_pp": 25.65,
         "new_high_63d": false,
-        "dollar_vol_z21": -0.43,
-        "days_in_state": 40,
+        "dollar_vol_z21": -0.02,
+        "days_in_state": 54,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "BZFD",
+        "sector": "",
+        "benchmark": "SPY",
+        "state": "emerging",
+        "excess_21d_pp": 8.32,
+        "excess_42d_pp": 83.68,
+        "new_high_63d": false,
+        "dollar_vol_z21": 3.61,
+        "days_in_state": 0,
         "gex_state": null,
         "hazards": [],
         "context": {
@@ -1757,15 +1568,15 @@
         }
       },
       {
-        "ticker": "AMD",
-        "sector": "Information Technology",
-        "benchmark": "XLK",
+        "ticker": "GE",
+        "sector": "Industrials",
+        "benchmark": "XLI",
         "state": "continuation",
-        "excess_21d_pp": 8.1,
-        "excess_42d_pp": 48.36,
+        "excess_21d_pp": 8.22,
+        "excess_42d_pp": 22.23,
         "new_high_63d": false,
-        "dollar_vol_z21": 0.08,
-        "days_in_state": 54,
+        "dollar_vol_z21": -0.44,
+        "days_in_state": 8,
         "gex_state": null,
         "hazards": [],
         "context": {
@@ -1778,62 +1589,11 @@
         "sector": "Information Technology",
         "benchmark": "XLK",
         "state": "failed",
-        "excess_21d_pp": 6.72,
-        "excess_42d_pp": 22.95,
+        "excess_21d_pp": 8.11,
+        "excess_42d_pp": 28.42,
         "new_high_63d": false,
-        "dollar_vol_z21": -0.67,
-        "days_in_state": 23,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "GTLB",
-        "sector": "",
-        "benchmark": "SPY",
-        "state": "continuation",
-        "excess_21d_pp": 6.34,
-        "excess_42d_pp": 28.96,
-        "new_high_63d": false,
-        "dollar_vol_z21": -1.1,
+        "dollar_vol_z21": -0.73,
         "days_in_state": 24,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "ASML",
-        "sector": "",
-        "benchmark": "SPY",
-        "state": "breakaway",
-        "excess_21d_pp": 5.85,
-        "excess_42d_pp": 27.03,
-        "new_high_63d": false,
-        "dollar_vol_z21": -1.11,
-        "days_in_state": 15,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "SMMT",
-        "sector": "",
-        "benchmark": "SPY",
-        "state": "failed",
-        "excess_21d_pp": 5.46,
-        "excess_42d_pp": -7.66,
-        "new_high_63d": false,
-        "dollar_vol_z21": 0.81,
-        "days_in_state": 54,
         "gex_state": null,
         "hazards": [],
         "context": {
@@ -1846,11 +1606,11 @@
         "sector": "Consumer Staples",
         "benchmark": "XLP",
         "state": "breakaway",
-        "excess_21d_pp": 4.89,
-        "excess_42d_pp": 28.47,
+        "excess_21d_pp": 8.09,
+        "excess_42d_pp": 29.96,
         "new_high_63d": false,
-        "dollar_vol_z21": 0.48,
-        "days_in_state": 1,
+        "dollar_vol_z21": -0.12,
+        "days_in_state": 2,
         "gex_state": null,
         "hazards": [],
         "context": {
@@ -1859,49 +1619,15 @@
         }
       },
       {
-        "ticker": "SG",
+        "ticker": "ALAB",
         "sector": "",
         "benchmark": "SPY",
-        "state": "failed",
-        "excess_21d_pp": 4.82,
-        "excess_42d_pp": 14.98,
-        "new_high_63d": false,
-        "dollar_vol_z21": -0.51,
-        "days_in_state": 33,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "MDA",
-        "sector": "",
-        "benchmark": "SPY",
-        "state": "emerging",
-        "excess_21d_pp": 4.76,
-        "excess_42d_pp": 31.73,
-        "new_high_63d": false,
-        "dollar_vol_z21": 1.28,
-        "days_in_state": 0,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "TXN",
-        "sector": "Information Technology",
-        "benchmark": "XLK",
         "state": "digestion",
-        "excess_21d_pp": 4.69,
-        "excess_42d_pp": -4.68,
+        "excess_21d_pp": 7.92,
+        "excess_42d_pp": 74.21,
         "new_high_63d": false,
-        "dollar_vol_z21": -0.67,
-        "days_in_state": 49,
+        "dollar_vol_z21": 0.07,
+        "days_in_state": 52,
         "gex_state": null,
         "hazards": [],
         "context": {
@@ -1914,62 +1640,28 @@
         "sector": "",
         "benchmark": "SPY",
         "state": "failed",
-        "excess_21d_pp": 4.52,
-        "excess_42d_pp": 6.57,
+        "excess_21d_pp": 7.05,
+        "excess_42d_pp": 8.03,
         "new_high_63d": false,
-        "dollar_vol_z21": -0.64,
+        "dollar_vol_z21": -0.72,
+        "days_in_state": 16,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "BIRK",
+        "sector": "",
+        "benchmark": "SPY",
+        "state": "failed",
+        "excess_21d_pp": 6.96,
+        "excess_42d_pp": 18.45,
+        "new_high_63d": false,
+        "dollar_vol_z21": -1.73,
         "days_in_state": 15,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "IBM",
-        "sector": "Information Technology",
-        "benchmark": "XLK",
-        "state": "failed",
-        "excess_21d_pp": 4.34,
-        "excess_42d_pp": 18.2,
-        "new_high_63d": false,
-        "dollar_vol_z21": -0.18,
-        "days_in_state": 22,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "DELL",
-        "sector": "Information Technology",
-        "benchmark": "XLK",
-        "state": "emerging",
-        "excess_21d_pp": 4.14,
-        "excess_42d_pp": 81.3,
-        "new_high_63d": false,
-        "dollar_vol_z21": -0.53,
-        "days_in_state": 0,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "GOOG",
-        "sector": "Communication Services",
-        "benchmark": "XLC",
-        "state": "failed",
-        "excess_21d_pp": 4.07,
-        "excess_42d_pp": 1.25,
-        "new_high_63d": false,
-        "dollar_vol_z21": -0.19,
-        "days_in_state": 44,
         "gex_state": null,
         "hazards": [],
         "context": {
@@ -1982,11 +1674,11 @@
         "sector": "Consumer Discretionary",
         "benchmark": "XLY",
         "state": "continuation",
-        "excess_21d_pp": 3.92,
-        "excess_42d_pp": 9.69,
+        "excess_21d_pp": 6.84,
+        "excess_42d_pp": 4.48,
         "new_high_63d": false,
-        "dollar_vol_z21": -0.3,
-        "days_in_state": 59,
+        "dollar_vol_z21": -0.37,
+        "days_in_state": 60,
         "gex_state": null,
         "hazards": [],
         "context": {
@@ -1995,15 +1687,49 @@
         }
       },
       {
-        "ticker": "WDC",
+        "ticker": "GTLB",
+        "sector": "",
+        "benchmark": "SPY",
+        "state": "continuation",
+        "excess_21d_pp": 6.66,
+        "excess_42d_pp": 27.89,
+        "new_high_63d": false,
+        "dollar_vol_z21": -0.59,
+        "days_in_state": 25,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "SG",
+        "sector": "",
+        "benchmark": "SPY",
+        "state": "failed",
+        "excess_21d_pp": 6.0,
+        "excess_42d_pp": 10.18,
+        "new_high_63d": false,
+        "dollar_vol_z21": -0.38,
+        "days_in_state": 34,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "DELL",
         "sector": "Information Technology",
         "benchmark": "XLK",
-        "state": "failed",
-        "excess_21d_pp": 3.56,
-        "excess_42d_pp": 17.29,
+        "state": "emerging",
+        "excess_21d_pp": 6.0,
+        "excess_42d_pp": 84.72,
         "new_high_63d": false,
-        "dollar_vol_z21": -0.71,
-        "days_in_state": 11,
+        "dollar_vol_z21": -0.51,
+        "days_in_state": 0,
         "gex_state": null,
         "hazards": [],
         "context": {
@@ -2012,15 +1738,49 @@
         }
       },
       {
-        "ticker": "GOOGL",
-        "sector": "Communication Services",
-        "benchmark": "XLC",
-        "state": "failed",
-        "excess_21d_pp": 3.55,
-        "excess_42d_pp": 0.75,
+        "ticker": "INTC",
+        "sector": "Information Technology",
+        "benchmark": "XLK",
+        "state": "digestion",
+        "excess_21d_pp": 5.89,
+        "excess_42d_pp": -6.11,
         "new_high_63d": false,
-        "dollar_vol_z21": -0.57,
-        "days_in_state": 44,
+        "dollar_vol_z21": -0.2,
+        "days_in_state": 61,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "AMD",
+        "sector": "Information Technology",
+        "benchmark": "XLK",
+        "state": "digestion",
+        "excess_21d_pp": 5.78,
+        "excess_42d_pp": 37.1,
+        "new_high_63d": false,
+        "dollar_vol_z21": -0.41,
+        "days_in_state": 55,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "KLIC",
+        "sector": "Information Technology",
+        "benchmark": "XLK",
+        "state": "breakaway",
+        "excess_21d_pp": 5.77,
+        "excess_42d_pp": 7.87,
+        "new_high_63d": false,
+        "dollar_vol_z21": -0.22,
+        "days_in_state": 41,
         "gex_state": null,
         "hazards": [],
         "context": {
@@ -2033,11 +1793,11 @@
         "sector": "Health Care",
         "benchmark": "XLV",
         "state": "breakaway",
-        "excess_21d_pp": 3.44,
-        "excess_42d_pp": 27.53,
-        "new_high_63d": true,
-        "dollar_vol_z21": 0.52,
-        "days_in_state": 36,
+        "excess_21d_pp": 5.5,
+        "excess_42d_pp": 24.71,
+        "new_high_63d": false,
+        "dollar_vol_z21": 1.27,
+        "days_in_state": 37,
         "gex_state": null,
         "hazards": [],
         "context": {
@@ -2046,15 +1806,83 @@
         }
       },
       {
-        "ticker": "GLW",
+        "ticker": "LRCX",
         "sector": "Information Technology",
         "benchmark": "XLK",
         "state": "breakaway",
-        "excess_21d_pp": 3.37,
-        "excess_42d_pp": 8.69,
+        "excess_21d_pp": 4.14,
+        "excess_42d_pp": 10.15,
         "new_high_63d": false,
-        "dollar_vol_z21": -0.64,
+        "dollar_vol_z21": -0.32,
+        "days_in_state": 41,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "UCTT",
+        "sector": "Information Technology",
+        "benchmark": "XLK",
+        "state": "breakaway",
+        "excess_21d_pp": 4.03,
+        "excess_42d_pp": 1.01,
+        "new_high_63d": false,
+        "dollar_vol_z21": 0.92,
         "days_in_state": 60,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "VCYT",
+        "sector": "Health Care",
+        "benchmark": "XLV",
+        "state": "digestion",
+        "excess_21d_pp": 3.85,
+        "excess_42d_pp": 57.16,
+        "new_high_63d": false,
+        "dollar_vol_z21": -0.32,
+        "days_in_state": 33,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "ENTG",
+        "sector": "Information Technology",
+        "benchmark": "XLK",
+        "state": "failed",
+        "excess_21d_pp": 3.7,
+        "excess_42d_pp": -17.7,
+        "new_high_63d": false,
+        "dollar_vol_z21": -0.2,
+        "days_in_state": 11,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "TXN",
+        "sector": "Information Technology",
+        "benchmark": "XLK",
+        "state": "digestion",
+        "excess_21d_pp": 3.18,
+        "excess_42d_pp": -3.8,
+        "new_high_63d": false,
+        "dollar_vol_z21": -0.43,
+        "days_in_state": 50,
         "gex_state": null,
         "hazards": [],
         "context": {
@@ -2084,62 +1912,11 @@
         "sector": "Financials",
         "benchmark": "XLF",
         "state": "continuation",
-        "excess_21d_pp": 2.32,
-        "excess_42d_pp": 0.92,
-        "new_high_63d": true,
-        "dollar_vol_z21": -0.97,
-        "days_in_state": 53,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "SNDK",
-        "sector": "Information Technology",
-        "benchmark": "XLK",
-        "state": "failed",
-        "excess_21d_pp": 1.59,
-        "excess_42d_pp": 25.62,
+        "excess_21d_pp": 1.64,
+        "excess_42d_pp": 0.21,
         "new_high_63d": false,
-        "dollar_vol_z21": -1.29,
-        "days_in_state": 10,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "BZFD",
-        "sector": "",
-        "benchmark": "SPY",
-        "state": "emerging",
-        "excess_21d_pp": 1.52,
-        "excess_42d_pp": 75.73,
-        "new_high_63d": false,
-        "dollar_vol_z21": -0.43,
-        "days_in_state": 0,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "RVTY",
-        "sector": "Health Care",
-        "benchmark": "XLV",
-        "state": "continuation",
-        "excess_21d_pp": 1.5,
-        "excess_42d_pp": 18.66,
-        "new_high_63d": false,
-        "dollar_vol_z21": -0.56,
-        "days_in_state": 24,
+        "dollar_vol_z21": -0.44,
+        "days_in_state": 54,
         "gex_state": null,
         "hazards": [],
         "context": {
@@ -2152,11 +1929,11 @@
         "sector": "Health Care",
         "benchmark": "XLV",
         "state": "continuation",
-        "excess_21d_pp": 1.47,
-        "excess_42d_pp": 12.57,
+        "excess_21d_pp": 1.43,
+        "excess_42d_pp": 16.12,
         "new_high_63d": false,
-        "dollar_vol_z21": -0.74,
-        "days_in_state": 38,
+        "dollar_vol_z21": -0.83,
+        "days_in_state": 39,
         "gex_state": null,
         "hazards": [],
         "context": {
@@ -2165,15 +1942,15 @@
         }
       },
       {
-        "ticker": "UNH",
-        "sector": "Health Care",
-        "benchmark": "XLV",
-        "state": "continuation",
-        "excess_21d_pp": 1.26,
-        "excess_42d_pp": 1.48,
+        "ticker": "MU",
+        "sector": "Information Technology",
+        "benchmark": "XLK",
+        "state": "failed",
+        "excess_21d_pp": 1.35,
+        "excess_42d_pp": 38.4,
         "new_high_63d": false,
-        "dollar_vol_z21": -0.25,
-        "days_in_state": 49,
+        "dollar_vol_z21": -0.7,
+        "days_in_state": 11,
         "gex_state": null,
         "hazards": [],
         "context": {
@@ -2186,10 +1963,44 @@
         "sector": "Health Care",
         "benchmark": "XLV",
         "state": "continuation",
-        "excess_21d_pp": 0.99,
-        "excess_42d_pp": 12.29,
+        "excess_21d_pp": 1.2,
+        "excess_42d_pp": 11.99,
+        "new_high_63d": true,
+        "dollar_vol_z21": -0.2,
+        "days_in_state": 26,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "GLW",
+        "sector": "Information Technology",
+        "benchmark": "XLK",
+        "state": "digestion",
+        "excess_21d_pp": 0.9,
+        "excess_42d_pp": 6.36,
         "new_high_63d": false,
-        "dollar_vol_z21": -0.78,
+        "dollar_vol_z21": -0.56,
+        "days_in_state": 61,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "RVTY",
+        "sector": "Health Care",
+        "benchmark": "XLV",
+        "state": "continuation",
+        "excess_21d_pp": 0.82,
+        "excess_42d_pp": 8.22,
+        "new_high_63d": false,
+        "dollar_vol_z21": -0.36,
         "days_in_state": 25,
         "gex_state": null,
         "hazards": [],
@@ -2199,15 +2010,15 @@
         }
       },
       {
-        "ticker": "FORM",
-        "sector": "Information Technology",
-        "benchmark": "XLK",
+        "ticker": "ASML",
+        "sector": "",
+        "benchmark": "SPY",
         "state": "breakaway",
-        "excess_21d_pp": 0.51,
-        "excess_42d_pp": -24.96,
+        "excess_21d_pp": 0.4,
+        "excess_42d_pp": 17.79,
         "new_high_63d": false,
-        "dollar_vol_z21": 0.25,
-        "days_in_state": 3,
+        "dollar_vol_z21": -1.4,
+        "days_in_state": 16,
         "gex_state": null,
         "hazards": [],
         "context": {
@@ -2216,15 +2027,66 @@
         }
       },
       {
-        "ticker": "EWT",
-        "sector": "",
-        "benchmark": "SPY",
-        "state": "continuation",
-        "excess_21d_pp": 0.48,
-        "excess_42d_pp": 14.01,
+        "ticker": "GOOGL",
+        "sector": "Communication Services",
+        "benchmark": "XLC",
+        "state": "failed",
+        "excess_21d_pp": 0.26,
+        "excess_42d_pp": -1.47,
         "new_high_63d": false,
-        "dollar_vol_z21": -0.41,
-        "days_in_state": 37,
+        "dollar_vol_z21": -0.66,
+        "days_in_state": 45,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "GOOG",
+        "sector": "Communication Services",
+        "benchmark": "XLC",
+        "state": "failed",
+        "excess_21d_pp": 0.12,
+        "excess_42d_pp": -1.33,
+        "new_high_63d": false,
+        "dollar_vol_z21": -0.59,
+        "days_in_state": 45,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "IRDM",
+        "sector": "Communication Services",
+        "benchmark": "XLC",
+        "state": "breakaway",
+        "excess_21d_pp": 0.02,
+        "excess_42d_pp": 34.63,
+        "new_high_63d": false,
+        "dollar_vol_z21": -0.09,
+        "days_in_state": 5,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "UNH",
+        "sector": "Health Care",
+        "benchmark": "XLV",
+        "state": "continuation",
+        "excess_21d_pp": 0.01,
+        "excess_42d_pp": 5.18,
+        "new_high_63d": true,
+        "dollar_vol_z21": -0.36,
+        "days_in_state": 50,
         "gex_state": null,
         "hazards": [],
         "context": {
@@ -2250,134 +2112,15 @@
         }
       },
       {
-        "ticker": "ATI",
-        "sector": "Industrials",
-        "benchmark": "XLI",
-        "state": "failed",
-        "excess_21d_pp": -0.14,
-        "excess_42d_pp": 16.28,
-        "new_high_63d": false,
-        "dollar_vol_z21": -0.69,
-        "days_in_state": 15,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "CAVA",
-        "sector": "Consumer Discretionary",
-        "benchmark": "XLY",
-        "state": "failed",
-        "excess_21d_pp": -0.48,
-        "excess_42d_pp": -19.62,
-        "new_high_63d": false,
-        "dollar_vol_z21": 0.22,
-        "days_in_state": 54,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "AMKR",
-        "sector": "Information Technology",
-        "benchmark": "XLK",
-        "state": "digestion",
-        "excess_21d_pp": -0.73,
-        "excess_42d_pp": -14.69,
-        "new_high_63d": false,
-        "dollar_vol_z21": -0.74,
-        "days_in_state": 58,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "MARA",
-        "sector": "Information Technology",
-        "benchmark": "XLK",
-        "state": "digestion",
-        "excess_21d_pp": -0.89,
-        "excess_42d_pp": -3.81,
-        "new_high_63d": false,
-        "dollar_vol_z21": -1.3,
-        "days_in_state": 54,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "TER",
-        "sector": "Information Technology",
-        "benchmark": "XLK",
-        "state": "breakaway",
-        "excess_21d_pp": -1.02,
-        "excess_42d_pp": -0.77,
-        "new_high_63d": false,
-        "dollar_vol_z21": -0.67,
-        "days_in_state": 60,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "STX",
-        "sector": "Information Technology",
-        "benchmark": "XLK",
-        "state": "digestion",
-        "excess_21d_pp": -1.29,
-        "excess_42d_pp": 4.37,
-        "new_high_63d": false,
-        "dollar_vol_z21": -0.79,
-        "days_in_state": 62,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "TWLO",
-        "sector": "Information Technology",
-        "benchmark": "XLK",
-        "state": "digestion",
-        "excess_21d_pp": -1.66,
-        "excess_42d_pp": -3.05,
-        "new_high_63d": false,
-        "dollar_vol_z21": -0.83,
-        "days_in_state": 43,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
         "ticker": "NOW",
         "sector": "Information Technology",
         "benchmark": "XLK",
         "state": "failed",
-        "excess_21d_pp": -2.12,
-        "excess_42d_pp": 4.07,
+        "excess_21d_pp": -0.1,
+        "excess_42d_pp": 12.16,
         "new_high_63d": false,
-        "dollar_vol_z21": -1.29,
-        "days_in_state": 24,
+        "dollar_vol_z21": -0.17,
+        "days_in_state": 25,
         "gex_state": null,
         "hazards": [],
         "context": {
@@ -2386,49 +2129,83 @@
         }
       },
       {
-        "ticker": "CAT",
-        "sector": "Industrials",
-        "benchmark": "XLI",
-        "state": "digestion",
-        "excess_21d_pp": -2.15,
-        "excess_42d_pp": 2.35,
-        "new_high_63d": false,
-        "dollar_vol_z21": -0.56,
-        "days_in_state": 40,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "TSLA",
-        "sector": "Consumer Discretionary",
-        "benchmark": "XLY",
-        "state": "failed",
-        "excess_21d_pp": -2.23,
-        "excess_42d_pp": 6.7,
-        "new_high_63d": false,
-        "dollar_vol_z21": 0.7,
-        "days_in_state": 37,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "MU",
+        "ticker": "NTAP",
         "sector": "Information Technology",
         "benchmark": "XLK",
         "state": "failed",
-        "excess_21d_pp": -2.44,
-        "excess_42d_pp": 57.55,
+        "excess_21d_pp": -0.19,
+        "excess_42d_pp": 37.06,
         "new_high_63d": false,
-        "dollar_vol_z21": -1.51,
-        "days_in_state": 10,
+        "dollar_vol_z21": 0.54,
+        "days_in_state": 25,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "WDC",
+        "sector": "Information Technology",
+        "benchmark": "XLK",
+        "state": "failed",
+        "excess_21d_pp": -0.39,
+        "excess_42d_pp": 6.22,
+        "new_high_63d": false,
+        "dollar_vol_z21": -0.76,
+        "days_in_state": 12,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "SNDK",
+        "sector": "Information Technology",
+        "benchmark": "XLK",
+        "state": "failed",
+        "excess_21d_pp": -0.94,
+        "excess_42d_pp": 6.85,
+        "new_high_63d": false,
+        "dollar_vol_z21": 0.0,
+        "days_in_state": 11,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "COHU",
+        "sector": "Information Technology",
+        "benchmark": "XLK",
+        "state": "digestion",
+        "excess_21d_pp": -1.65,
+        "excess_42d_pp": -2.98,
+        "new_high_63d": false,
+        "dollar_vol_z21": 1.4,
+        "days_in_state": 50,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "ATI",
+        "sector": "Industrials",
+        "benchmark": "XLI",
+        "state": "failed",
+        "excess_21d_pp": -2.59,
+        "excess_42d_pp": 12.18,
+        "new_high_63d": false,
+        "dollar_vol_z21": -0.38,
+        "days_in_state": 16,
         "gex_state": null,
         "hazards": [],
         "context": {
@@ -2454,15 +2231,117 @@
         }
       },
       {
+        "ticker": "EWT",
+        "sector": "",
+        "benchmark": "SPY",
+        "state": "digestion",
+        "excess_21d_pp": -2.68,
+        "excess_42d_pp": 6.51,
+        "new_high_63d": false,
+        "dollar_vol_z21": -0.75,
+        "days_in_state": 38,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "MDA",
+        "sector": "",
+        "benchmark": "SPY",
+        "state": "emerging",
+        "excess_21d_pp": -2.81,
+        "excess_42d_pp": 26.26,
+        "new_high_63d": false,
+        "dollar_vol_z21": -1.32,
+        "days_in_state": 0,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "CAVA",
+        "sector": "Consumer Discretionary",
+        "benchmark": "XLY",
+        "state": "failed",
+        "excess_21d_pp": -3.11,
+        "excess_42d_pp": -22.23,
+        "new_high_63d": false,
+        "dollar_vol_z21": -0.63,
+        "days_in_state": 55,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "TWLO",
+        "sector": "Information Technology",
+        "benchmark": "XLK",
+        "state": "digestion",
+        "excess_21d_pp": -3.29,
+        "excess_42d_pp": 0.2,
+        "new_high_63d": false,
+        "dollar_vol_z21": 0.09,
+        "days_in_state": 44,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "STX",
+        "sector": "Information Technology",
+        "benchmark": "XLK",
+        "state": "digestion",
+        "excess_21d_pp": -3.43,
+        "excess_42d_pp": -0.76,
+        "new_high_63d": false,
+        "dollar_vol_z21": -0.61,
+        "days_in_state": 63,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "CAT",
+        "sector": "Industrials",
+        "benchmark": "XLI",
+        "state": "digestion",
+        "excess_21d_pp": -3.82,
+        "excess_42d_pp": -1.85,
+        "new_high_63d": false,
+        "dollar_vol_z21": -0.11,
+        "days_in_state": 41,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
         "ticker": "MDB",
         "sector": "",
         "benchmark": "SPY",
         "state": "digestion",
-        "excess_21d_pp": -2.69,
-        "excess_42d_pp": 30.58,
+        "excess_21d_pp": -3.98,
+        "excess_42d_pp": 32.18,
         "new_high_63d": false,
-        "dollar_vol_z21": -0.55,
-        "days_in_state": 24,
+        "dollar_vol_z21": -0.17,
+        "days_in_state": 25,
         "gex_state": null,
         "hazards": [],
         "context": {
@@ -2471,83 +2350,15 @@
         }
       },
       {
-        "ticker": "URI",
-        "sector": "Industrials",
-        "benchmark": "XLI",
-        "state": "continuation",
-        "excess_21d_pp": -2.8,
-        "excess_42d_pp": 10.58,
-        "new_high_63d": false,
-        "dollar_vol_z21": -1.21,
-        "days_in_state": 49,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "NTAP",
-        "sector": "Information Technology",
-        "benchmark": "XLK",
-        "state": "failed",
-        "excess_21d_pp": -3.34,
-        "excess_42d_pp": 34.14,
-        "new_high_63d": false,
-        "dollar_vol_z21": 0.49,
-        "days_in_state": 24,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "PTON",
+        "ticker": "TSLA",
         "sector": "Consumer Discretionary",
         "benchmark": "XLY",
-        "state": "digestion",
-        "excess_21d_pp": -3.46,
-        "excess_42d_pp": 13.96,
-        "new_high_63d": false,
-        "dollar_vol_z21": 0.78,
-        "days_in_state": 39,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "MTZ",
-        "sector": "Industrials",
-        "benchmark": "XLI",
-        "state": "digestion",
-        "excess_21d_pp": -3.91,
-        "excess_42d_pp": -19.05,
-        "new_high_63d": false,
-        "dollar_vol_z21": -0.86,
-        "days_in_state": 53,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "TLN",
-        "sector": "Utilities",
-        "benchmark": "XLU",
         "state": "failed",
-        "excess_21d_pp": -4.77,
-        "excess_42d_pp": 0.53,
+        "excess_21d_pp": -4.03,
+        "excess_42d_pp": 4.05,
         "new_high_63d": false,
-        "dollar_vol_z21": -0.73,
-        "days_in_state": 40,
+        "dollar_vol_z21": -1.08,
+        "days_in_state": 38,
         "gex_state": null,
         "hazards": [],
         "context": {
@@ -2556,117 +2367,15 @@
         }
       },
       {
-        "ticker": "KALU",
-        "sector": "Materials",
-        "benchmark": "XLB",
+        "ticker": "AMKR",
+        "sector": "Information Technology",
+        "benchmark": "XLK",
         "state": "digestion",
-        "excess_21d_pp": -5.03,
-        "excess_42d_pp": 2.99,
+        "excess_21d_pp": -4.37,
+        "excess_42d_pp": -22.92,
         "new_high_63d": false,
-        "dollar_vol_z21": -0.49,
-        "days_in_state": 52,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "SMH",
-        "sector": "",
-        "benchmark": "SPY",
-        "state": "digestion",
-        "excess_21d_pp": -5.13,
-        "excess_42d_pp": 14.61,
-        "new_high_63d": false,
-        "dollar_vol_z21": -0.9,
-        "days_in_state": 40,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "IGV",
-        "sector": "",
-        "benchmark": "SPY",
-        "state": "failed",
-        "excess_21d_pp": -5.25,
-        "excess_42d_pp": 2.57,
-        "new_high_63d": false,
-        "dollar_vol_z21": 0.07,
-        "days_in_state": 23,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "NFLX",
-        "sector": "Communication Services",
-        "benchmark": "XLC",
-        "state": "failed",
-        "excess_21d_pp": -5.33,
-        "excess_42d_pp": -11.41,
-        "new_high_63d": false,
-        "dollar_vol_z21": -0.3,
-        "days_in_state": 54,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "SOXX",
-        "sector": "",
-        "benchmark": "SPY",
-        "state": "digestion",
-        "excess_21d_pp": -5.37,
-        "excess_42d_pp": 21.28,
-        "new_high_63d": false,
-        "dollar_vol_z21": -1.05,
-        "days_in_state": 49,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "ELV",
-        "sector": "Health Care",
-        "benchmark": "XLV",
-        "state": "continuation",
-        "excess_21d_pp": -5.51,
-        "excess_42d_pp": -1.71,
-        "new_high_63d": false,
-        "dollar_vol_z21": -0.14,
-        "days_in_state": 45,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "XLK",
-        "sector": "",
-        "benchmark": "SPY",
-        "state": "failed",
-        "excess_21d_pp": -6.2,
-        "excess_42d_pp": 8.65,
-        "new_high_63d": false,
-        "dollar_vol_z21": -1.16,
-        "days_in_state": 24,
+        "dollar_vol_z21": -0.84,
+        "days_in_state": 59,
         "gex_state": null,
         "hazards": [],
         "context": {
@@ -2679,11 +2388,147 @@
         "sector": "",
         "benchmark": "SPY",
         "state": "failed",
-        "excess_21d_pp": -6.3,
-        "excess_42d_pp": -21.79,
+        "excess_21d_pp": -4.54,
+        "excess_42d_pp": -23.18,
         "new_high_63d": false,
-        "dollar_vol_z21": -1.6,
-        "days_in_state": 57,
+        "dollar_vol_z21": -0.86,
+        "days_in_state": 58,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "IGV",
+        "sector": "",
+        "benchmark": "SPY",
+        "state": "failed",
+        "excess_21d_pp": -4.92,
+        "excess_42d_pp": 3.35,
+        "new_high_63d": false,
+        "dollar_vol_z21": -1.5,
+        "days_in_state": 24,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "NFLX",
+        "sector": "Communication Services",
+        "benchmark": "XLC",
+        "state": "failed",
+        "excess_21d_pp": -5.0,
+        "excess_42d_pp": -9.34,
+        "new_high_63d": false,
+        "dollar_vol_z21": -1.01,
+        "days_in_state": 55,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "ELV",
+        "sector": "Health Care",
+        "benchmark": "XLV",
+        "state": "continuation",
+        "excess_21d_pp": -5.89,
+        "excess_42d_pp": 0.78,
+        "new_high_63d": false,
+        "dollar_vol_z21": -0.83,
+        "days_in_state": 46,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "PTON",
+        "sector": "Consumer Discretionary",
+        "benchmark": "XLY",
+        "state": "digestion",
+        "excess_21d_pp": -5.98,
+        "excess_42d_pp": 13.37,
+        "new_high_63d": false,
+        "dollar_vol_z21": -0.23,
+        "days_in_state": 40,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "MARA",
+        "sector": "Information Technology",
+        "benchmark": "XLK",
+        "state": "digestion",
+        "excess_21d_pp": -6.05,
+        "excess_42d_pp": -9.09,
+        "new_high_63d": false,
+        "dollar_vol_z21": -1.4,
+        "days_in_state": 55,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "XLK",
+        "sector": "",
+        "benchmark": "SPY",
+        "state": "failed",
+        "excess_21d_pp": -6.15,
+        "excess_42d_pp": 4.87,
+        "new_high_63d": false,
+        "dollar_vol_z21": -0.53,
+        "days_in_state": 25,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "SMH",
+        "sector": "",
+        "benchmark": "SPY",
+        "state": "digestion",
+        "excess_21d_pp": -6.36,
+        "excess_42d_pp": 7.93,
+        "new_high_63d": false,
+        "dollar_vol_z21": 0.13,
+        "days_in_state": 41,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "URI",
+        "sector": "Industrials",
+        "benchmark": "XLI",
+        "state": "digestion",
+        "excess_21d_pp": -6.42,
+        "excess_42d_pp": 7.52,
+        "new_high_63d": false,
+        "dollar_vol_z21": -0.13,
+        "days_in_state": 50,
         "gex_state": null,
         "hazards": [],
         "context": {
@@ -2709,6 +2554,23 @@
         }
       },
       {
+        "ticker": "FDS",
+        "sector": "Financials",
+        "benchmark": "XLF",
+        "state": "failed",
+        "excess_21d_pp": -6.49,
+        "excess_42d_pp": 9.65,
+        "new_high_63d": false,
+        "dollar_vol_z21": -0.54,
+        "days_in_state": 24,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
         "ticker": "TPH",
         "sector": "",
         "benchmark": "SPY",
@@ -2726,15 +2588,15 @@
         }
       },
       {
-        "ticker": "COIN",
-        "sector": "Financials",
-        "benchmark": "XLF",
-        "state": "failed",
-        "excess_21d_pp": -7.28,
-        "excess_42d_pp": -25.65,
+        "ticker": "SOXX",
+        "sector": "",
+        "benchmark": "SPY",
+        "state": "digestion",
+        "excess_21d_pp": -7.44,
+        "excess_42d_pp": 11.03,
         "new_high_63d": false,
-        "dollar_vol_z21": -0.84,
-        "days_in_state": 37,
+        "dollar_vol_z21": -0.27,
+        "days_in_state": 50,
         "gex_state": null,
         "hazards": [],
         "context": {
@@ -2743,15 +2605,15 @@
         }
       },
       {
-        "ticker": "FLEX",
-        "sector": "Information Technology",
-        "benchmark": "XLK",
-        "state": "digestion",
-        "excess_21d_pp": -8.04,
-        "excess_42d_pp": 37.69,
+        "ticker": "TLN",
+        "sector": "Utilities",
+        "benchmark": "XLU",
+        "state": "failed",
+        "excess_21d_pp": -7.69,
+        "excess_42d_pp": -3.29,
         "new_high_63d": false,
-        "dollar_vol_z21": -0.33,
-        "days_in_state": 59,
+        "dollar_vol_z21": -1.15,
+        "days_in_state": 41,
         "gex_state": null,
         "hazards": [],
         "context": {
@@ -2764,10 +2626,95 @@
         "sector": "Health Care",
         "benchmark": "XLV",
         "state": "continuation",
-        "excess_21d_pp": -9.06,
-        "excess_42d_pp": -9.49,
-        "new_high_63d": true,
-        "dollar_vol_z21": 1.82,
+        "excess_21d_pp": -7.78,
+        "excess_42d_pp": -11.82,
+        "new_high_63d": false,
+        "dollar_vol_z21": 0.4,
+        "days_in_state": 54,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "RIVN",
+        "sector": "",
+        "benchmark": "SPY",
+        "state": "breakaway",
+        "excess_21d_pp": -8.01,
+        "excess_42d_pp": 9.64,
+        "new_high_63d": false,
+        "dollar_vol_z21": 2.8,
+        "days_in_state": 22,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "MTZ",
+        "sector": "Industrials",
+        "benchmark": "XLI",
+        "state": "failed",
+        "excess_21d_pp": -8.02,
+        "excess_42d_pp": -23.76,
+        "new_high_63d": false,
+        "dollar_vol_z21": -0.46,
+        "days_in_state": 54,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "COIN",
+        "sector": "Financials",
+        "benchmark": "XLF",
+        "state": "failed",
+        "excess_21d_pp": -8.15,
+        "excess_42d_pp": -25.96,
+        "new_high_63d": false,
+        "dollar_vol_z21": -1.51,
+        "days_in_state": 38,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "TER",
+        "sector": "Information Technology",
+        "benchmark": "XLK",
+        "state": "breakaway",
+        "excess_21d_pp": -8.54,
+        "excess_42d_pp": -12.06,
+        "new_high_63d": false,
+        "dollar_vol_z21": -0.12,
+        "days_in_state": 61,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "KALU",
+        "sector": "Materials",
+        "benchmark": "XLB",
+        "state": "digestion",
+        "excess_21d_pp": -8.73,
+        "excess_42d_pp": -2.85,
+        "new_high_63d": false,
+        "dollar_vol_z21": -0.22,
         "days_in_state": 53,
         "gex_state": null,
         "hazards": [],
@@ -2777,32 +2724,15 @@
         }
       },
       {
-        "ticker": "MTSI",
+        "ticker": "FORM",
         "sector": "Information Technology",
         "benchmark": "XLK",
-        "state": "digestion",
-        "excess_21d_pp": -9.72,
-        "excess_42d_pp": -0.97,
+        "state": "breakaway",
+        "excess_21d_pp": -9.11,
+        "excess_42d_pp": -35.04,
         "new_high_63d": false,
-        "dollar_vol_z21": -0.77,
-        "days_in_state": 40,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "GLXY",
-        "sector": "",
-        "benchmark": "SPY",
-        "state": "failed",
-        "excess_21d_pp": -10.71,
-        "excess_42d_pp": -17.56,
-        "new_high_63d": false,
-        "dollar_vol_z21": -1.23,
-        "days_in_state": 17,
+        "dollar_vol_z21": 0.03,
+        "days_in_state": 4,
         "gex_state": null,
         "hazards": [],
         "context": {
@@ -2815,11 +2745,28 @@
         "sector": "",
         "benchmark": "SPY",
         "state": "digestion",
-        "excess_21d_pp": -10.72,
-        "excess_42d_pp": 11.42,
+        "excess_21d_pp": -10.13,
+        "excess_42d_pp": 1.2,
         "new_high_63d": false,
-        "dollar_vol_z21": -0.81,
-        "days_in_state": 41,
+        "dollar_vol_z21": -0.17,
+        "days_in_state": 42,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "FLEX",
+        "sector": "Information Technology",
+        "benchmark": "XLK",
+        "state": "digestion",
+        "excess_21d_pp": -10.42,
+        "excess_42d_pp": 28.18,
+        "new_high_63d": false,
+        "dollar_vol_z21": -0.33,
+        "days_in_state": 60,
         "gex_state": null,
         "hazards": [],
         "context": {
@@ -2845,100 +2792,15 @@
         }
       },
       {
-        "ticker": "MRVL",
+        "ticker": "HPE",
         "sector": "Information Technology",
         "benchmark": "XLK",
         "state": "emerging",
-        "excess_21d_pp": -11.02,
-        "excess_42d_pp": 39.03,
+        "excess_21d_pp": -11.67,
+        "excess_42d_pp": 36.95,
         "new_high_63d": false,
-        "dollar_vol_z21": -0.76,
+        "dollar_vol_z21": -1.19,
         "days_in_state": 0,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "IRM",
-        "sector": "Real Estate",
-        "benchmark": "XLRE",
-        "state": "failed",
-        "excess_21d_pp": -11.11,
-        "excess_42d_pp": -9.09,
-        "new_high_63d": false,
-        "dollar_vol_z21": 0.12,
-        "days_in_state": 41,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "FDS",
-        "sector": "Financials",
-        "benchmark": "XLF",
-        "state": "failed",
-        "excess_21d_pp": -11.24,
-        "excess_42d_pp": 4.08,
-        "new_high_63d": false,
-        "dollar_vol_z21": 0.35,
-        "days_in_state": 23,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "PWR",
-        "sector": "Industrials",
-        "benchmark": "XLI",
-        "state": "failed",
-        "excess_21d_pp": -12.68,
-        "excess_42d_pp": -19.51,
-        "new_high_63d": false,
-        "dollar_vol_z21": -0.36,
-        "days_in_state": 44,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "EME",
-        "sector": "Industrials",
-        "benchmark": "XLI",
-        "state": "failed",
-        "excess_21d_pp": -13.1,
-        "excess_42d_pp": -22.04,
-        "new_high_63d": false,
-        "dollar_vol_z21": -0.04,
-        "days_in_state": 40,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "COHR",
-        "sector": "Information Technology",
-        "benchmark": "XLK",
-        "state": "failed",
-        "excess_21d_pp": -13.24,
-        "excess_42d_pp": -11.52,
-        "new_high_63d": false,
-        "dollar_vol_z21": -2.03,
-        "days_in_state": 22,
         "gex_state": null,
         "hazards": [],
         "context": {
@@ -2951,198 +2813,11 @@
         "sector": "Consumer Discretionary",
         "benchmark": "XLY",
         "state": "failed",
-        "excess_21d_pp": -13.26,
-        "excess_42d_pp": 21.53,
+        "excess_21d_pp": -11.91,
+        "excess_42d_pp": 18.03,
         "new_high_63d": false,
-        "dollar_vol_z21": -0.09,
-        "days_in_state": 26,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "BIDU",
-        "sector": "",
-        "benchmark": "SPY",
-        "state": "failed",
-        "excess_21d_pp": -13.65,
-        "excess_42d_pp": -14.9,
-        "new_high_63d": false,
-        "dollar_vol_z21": -0.94,
-        "days_in_state": 35,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "SOUN",
-        "sector": "",
-        "benchmark": "SPY",
-        "state": "failed",
-        "excess_21d_pp": -13.73,
-        "excess_42d_pp": -31.14,
-        "new_high_63d": false,
-        "dollar_vol_z21": 0.6,
-        "days_in_state": 43,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "MPWR",
-        "sector": "Information Technology",
-        "benchmark": "XLK",
-        "state": "digestion",
-        "excess_21d_pp": -13.88,
-        "excess_42d_pp": -27.59,
-        "new_high_63d": false,
-        "dollar_vol_z21": -0.72,
-        "days_in_state": 60,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "NUE",
-        "sector": "Materials",
-        "benchmark": "XLB",
-        "state": "digestion",
-        "excess_21d_pp": -13.96,
-        "excess_42d_pp": -3.22,
-        "new_high_63d": false,
-        "dollar_vol_z21": -0.61,
-        "days_in_state": 51,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "AESI",
-        "sector": "Energy",
-        "benchmark": "XLE",
-        "state": "failed",
-        "excess_21d_pp": -13.98,
-        "excess_42d_pp": -11.6,
-        "new_high_63d": false,
-        "dollar_vol_z21": -0.15,
-        "days_in_state": 49,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "FCX",
-        "sector": "Materials",
-        "benchmark": "XLB",
-        "state": "failed",
-        "excess_21d_pp": -14.7,
-        "excess_42d_pp": 7.15,
-        "new_high_63d": false,
-        "dollar_vol_z21": 0.06,
-        "days_in_state": 22,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "WULF",
-        "sector": "",
-        "benchmark": "SPY",
-        "state": "digestion",
-        "excess_21d_pp": -14.96,
-        "excess_42d_pp": -4.99,
-        "new_high_63d": false,
-        "dollar_vol_z21": 2.72,
-        "days_in_state": 60,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "A",
-        "sector": "Health Care",
-        "benchmark": "XLV",
-        "state": "failed",
-        "excess_21d_pp": -15.02,
-        "excess_42d_pp": 4.74,
-        "new_high_63d": false,
-        "dollar_vol_z21": -0.53,
-        "days_in_state": 21,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "BRUN",
-        "sector": "",
-        "benchmark": "SPY",
-        "state": "failed",
-        "excess_21d_pp": -15.06,
-        "excess_42d_pp": 67.78,
-        "new_high_63d": false,
-        "dollar_vol_z21": 0.05,
-        "days_in_state": 25,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "HPE",
-        "sector": "Information Technology",
-        "benchmark": "XLK",
-        "state": "emerging",
-        "excess_21d_pp": -15.19,
-        "excess_42d_pp": 37.46,
-        "new_high_63d": false,
-        "dollar_vol_z21": -1.31,
-        "days_in_state": 0,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "NBIS",
-        "sector": "",
-        "benchmark": "SPY",
-        "state": "failed",
-        "excess_21d_pp": -15.22,
-        "excess_42d_pp": 16.11,
-        "new_high_63d": false,
-        "dollar_vol_z21": -0.77,
-        "days_in_state": 11,
+        "dollar_vol_z21": -0.97,
+        "days_in_state": 27,
         "gex_state": null,
         "hazards": [],
         "context": {
@@ -3155,11 +2830,11 @@
         "sector": "",
         "benchmark": "SPY",
         "state": "failed",
-        "excess_21d_pp": -15.65,
-        "excess_42d_pp": -12.86,
+        "excess_21d_pp": -11.93,
+        "excess_42d_pp": -7.6,
         "new_high_63d": false,
-        "dollar_vol_z21": -1.36,
-        "days_in_state": 24,
+        "dollar_vol_z21": -0.34,
+        "days_in_state": 25,
         "gex_state": null,
         "hazards": [],
         "context": {
@@ -3168,15 +2843,15 @@
         }
       },
       {
-        "ticker": "QUBT",
+        "ticker": "GLXY",
         "sector": "",
         "benchmark": "SPY",
         "state": "failed",
-        "excess_21d_pp": -16.2,
-        "excess_42d_pp": -6.0,
+        "excess_21d_pp": -11.97,
+        "excess_42d_pp": -21.74,
         "new_high_63d": false,
-        "dollar_vol_z21": -1.6,
-        "days_in_state": 36,
+        "dollar_vol_z21": -0.29,
+        "days_in_state": 18,
         "gex_state": null,
         "hazards": [],
         "context": {
@@ -3185,15 +2860,66 @@
         }
       },
       {
-        "ticker": "CLSK",
+        "ticker": "PWR",
+        "sector": "Industrials",
+        "benchmark": "XLI",
+        "state": "failed",
+        "excess_21d_pp": -12.45,
+        "excess_42d_pp": -20.65,
+        "new_high_63d": false,
+        "dollar_vol_z21": -0.32,
+        "days_in_state": 45,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "IRM",
+        "sector": "Real Estate",
+        "benchmark": "XLRE",
+        "state": "failed",
+        "excess_21d_pp": -12.51,
+        "excess_42d_pp": -13.14,
+        "new_high_63d": false,
+        "dollar_vol_z21": 1.48,
+        "days_in_state": 42,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "EME",
+        "sector": "Industrials",
+        "benchmark": "XLI",
+        "state": "failed",
+        "excess_21d_pp": -12.9,
+        "excess_42d_pp": -23.45,
+        "new_high_63d": false,
+        "dollar_vol_z21": -0.27,
+        "days_in_state": 41,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "MTSI",
         "sector": "Information Technology",
         "benchmark": "XLK",
         "state": "failed",
-        "excess_21d_pp": -16.94,
-        "excess_42d_pp": -7.9,
+        "excess_21d_pp": -13.23,
+        "excess_42d_pp": -7.77,
         "new_high_63d": false,
-        "dollar_vol_z21": -1.2,
-        "days_in_state": 40,
+        "dollar_vol_z21": 0.37,
+        "days_in_state": 41,
         "gex_state": null,
         "hazards": [],
         "context": {
@@ -3202,15 +2928,15 @@
         }
       },
       {
-        "ticker": "CIFR",
-        "sector": "",
-        "benchmark": "SPY",
+        "ticker": "NUE",
+        "sector": "Materials",
+        "benchmark": "XLB",
         "state": "digestion",
-        "excess_21d_pp": -17.05,
-        "excess_42d_pp": 16.83,
+        "excess_21d_pp": -13.24,
+        "excess_42d_pp": -1.72,
         "new_high_63d": false,
-        "dollar_vol_z21": 0.02,
-        "days_in_state": 53,
+        "dollar_vol_z21": -0.52,
+        "days_in_state": 52,
         "gex_state": null,
         "hazards": [],
         "context": {
@@ -3219,15 +2945,32 @@
         }
       },
       {
-        "ticker": "RIOT",
-        "sector": "",
-        "benchmark": "SPY",
+        "ticker": "A",
+        "sector": "Health Care",
+        "benchmark": "XLV",
         "state": "failed",
-        "excess_21d_pp": -17.15,
-        "excess_42d_pp": 17.8,
+        "excess_21d_pp": -13.65,
+        "excess_42d_pp": -1.38,
         "new_high_63d": false,
-        "dollar_vol_z21": -0.2,
-        "days_in_state": 40,
+        "dollar_vol_z21": 0.28,
+        "days_in_state": 22,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "FCX",
+        "sector": "Materials",
+        "benchmark": "XLB",
+        "state": "failed",
+        "excess_21d_pp": -15.03,
+        "excess_42d_pp": 2.9,
+        "new_high_63d": false,
+        "dollar_vol_z21": 0.44,
+        "days_in_state": 23,
         "gex_state": null,
         "hazards": [],
         "context": {
@@ -3240,27 +2983,10 @@
         "sector": "Industrials",
         "benchmark": "XLI",
         "state": "failed",
-        "excess_21d_pp": -17.93,
-        "excess_42d_pp": -12.09,
+        "excess_21d_pp": -15.69,
+        "excess_42d_pp": -15.36,
         "new_high_63d": false,
-        "dollar_vol_z21": -0.59,
-        "days_in_state": 43,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "ENS",
-        "sector": "Industrials",
-        "benchmark": "XLI",
-        "state": "digestion",
-        "excess_21d_pp": -17.95,
-        "excess_42d_pp": -7.4,
-        "new_high_63d": false,
-        "dollar_vol_z21": -0.41,
+        "dollar_vol_z21": 0.8,
         "days_in_state": 44,
         "gex_state": null,
         "hazards": [],
@@ -3270,15 +2996,15 @@
         }
       },
       {
-        "ticker": "QBTS",
-        "sector": "",
-        "benchmark": "SPY",
+        "ticker": "MPWR",
+        "sector": "Information Technology",
+        "benchmark": "XLK",
         "state": "failed",
-        "excess_21d_pp": -17.98,
-        "excess_42d_pp": 3.21,
+        "excess_21d_pp": -15.73,
+        "excess_42d_pp": -27.91,
         "new_high_63d": false,
-        "dollar_vol_z21": -1.38,
-        "days_in_state": 29,
+        "dollar_vol_z21": -0.28,
+        "days_in_state": 61,
         "gex_state": null,
         "hazards": [],
         "context": {
@@ -3287,15 +3013,15 @@
         }
       },
       {
-        "ticker": "TAN",
+        "ticker": "BIDU",
         "sector": "",
         "benchmark": "SPY",
         "state": "failed",
-        "excess_21d_pp": -18.0,
-        "excess_42d_pp": -6.07,
+        "excess_21d_pp": -15.86,
+        "excess_42d_pp": -14.52,
         "new_high_63d": false,
-        "dollar_vol_z21": -1.66,
-        "days_in_state": 24,
+        "dollar_vol_z21": -0.59,
+        "days_in_state": 36,
         "gex_state": null,
         "hazards": [],
         "context": {
@@ -3304,15 +3030,15 @@
         }
       },
       {
-        "ticker": "SGML",
+        "ticker": "SOUN",
         "sector": "",
         "benchmark": "SPY",
         "state": "failed",
-        "excess_21d_pp": -18.27,
-        "excess_42d_pp": -49.83,
+        "excess_21d_pp": -16.12,
+        "excess_42d_pp": -30.66,
         "new_high_63d": false,
-        "dollar_vol_z21": -0.98,
-        "days_in_state": 57,
+        "dollar_vol_z21": 1.39,
+        "days_in_state": 44,
         "gex_state": null,
         "hazards": [],
         "context": {
@@ -3325,11 +3051,11 @@
         "sector": "Materials",
         "benchmark": "XLB",
         "state": "digestion",
-        "excess_21d_pp": -18.34,
-        "excess_42d_pp": -3.6,
+        "excess_21d_pp": -17.03,
+        "excess_42d_pp": -3.04,
         "new_high_63d": false,
-        "dollar_vol_z21": -0.64,
-        "days_in_state": 51,
+        "dollar_vol_z21": -0.34,
+        "days_in_state": 52,
         "gex_state": null,
         "hazards": [],
         "context": {
@@ -3338,14 +3064,14 @@
         }
       },
       {
-        "ticker": "RKLB",
-        "sector": "",
-        "benchmark": "SPY",
-        "state": "digestion",
-        "excess_21d_pp": -18.7,
-        "excess_42d_pp": 11.28,
+        "ticker": "AESI",
+        "sector": "Energy",
+        "benchmark": "XLE",
+        "state": "failed",
+        "excess_21d_pp": -17.07,
+        "excess_42d_pp": -19.17,
         "new_high_63d": false,
-        "dollar_vol_z21": -0.75,
+        "dollar_vol_z21": -0.11,
         "days_in_state": 50,
         "gex_state": null,
         "hazards": [],
@@ -3358,12 +3084,97 @@
         "ticker": "QCOM",
         "sector": "Information Technology",
         "benchmark": "XLK",
-        "state": "digestion",
-        "excess_21d_pp": -18.8,
-        "excess_42d_pp": -2.12,
+        "state": "failed",
+        "excess_21d_pp": -17.44,
+        "excess_42d_pp": -9.74,
+        "new_high_63d": false,
+        "dollar_vol_z21": -0.83,
+        "days_in_state": 42,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "BRUN",
+        "sector": "",
+        "benchmark": "SPY",
+        "state": "failed",
+        "excess_21d_pp": -17.85,
+        "excess_42d_pp": 50.11,
+        "new_high_63d": false,
+        "dollar_vol_z21": -0.86,
+        "days_in_state": 26,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "COHR",
+        "sector": "Information Technology",
+        "benchmark": "XLK",
+        "state": "failed",
+        "excess_21d_pp": -18.41,
+        "excess_42d_pp": -14.61,
         "new_high_63d": false,
         "dollar_vol_z21": -0.9,
+        "days_in_state": 23,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "CLSK",
+        "sector": "Information Technology",
+        "benchmark": "XLK",
+        "state": "failed",
+        "excess_21d_pp": -18.49,
+        "excess_42d_pp": -15.12,
+        "new_high_63d": false,
+        "dollar_vol_z21": -1.53,
         "days_in_state": 41,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "CIFR",
+        "sector": "",
+        "benchmark": "SPY",
+        "state": "digestion",
+        "excess_21d_pp": -18.9,
+        "excess_42d_pp": -10.68,
+        "new_high_63d": false,
+        "dollar_vol_z21": -0.5,
+        "days_in_state": 54,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "SGML",
+        "sector": "",
+        "benchmark": "SPY",
+        "state": "failed",
+        "excess_21d_pp": -18.91,
+        "excess_42d_pp": -50.93,
+        "new_high_63d": false,
+        "dollar_vol_z21": -0.84,
+        "days_in_state": 58,
         "gex_state": null,
         "hazards": [],
         "context": {
@@ -3376,198 +3187,11 @@
         "sector": "Materials",
         "benchmark": "XLB",
         "state": "failed",
-        "excess_21d_pp": -19.18,
-        "excess_42d_pp": -9.13,
+        "excess_21d_pp": -19.42,
+        "excess_42d_pp": -11.73,
         "new_high_63d": false,
-        "dollar_vol_z21": -0.43,
-        "days_in_state": 26,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "RUN",
-        "sector": "Industrials",
-        "benchmark": "XLI",
-        "state": "failed",
-        "excess_21d_pp": -19.54,
-        "excess_42d_pp": -6.4,
-        "new_high_63d": false,
-        "dollar_vol_z21": -0.27,
-        "days_in_state": 24,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "MSTR",
-        "sector": "",
-        "benchmark": "SPY",
-        "state": "failed",
-        "excess_21d_pp": -20.24,
-        "excess_42d_pp": -49.81,
-        "new_high_63d": false,
-        "dollar_vol_z21": -0.33,
-        "days_in_state": 50,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "OKLO",
-        "sector": "",
-        "benchmark": "SPY",
-        "state": "failed",
-        "excess_21d_pp": -20.37,
-        "excess_42d_pp": -29.07,
-        "new_high_63d": false,
-        "dollar_vol_z21": -0.83,
-        "days_in_state": 40,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "FSLR",
-        "sector": "Information Technology",
-        "benchmark": "XLK",
-        "state": "failed",
-        "excess_21d_pp": -20.43,
-        "excess_42d_pp": -3.03,
-        "new_high_63d": false,
-        "dollar_vol_z21": -0.87,
+        "dollar_vol_z21": -0.53,
         "days_in_state": 27,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "ST",
-        "sector": "Industrials",
-        "benchmark": "XLI",
-        "state": "digestion",
-        "excess_21d_pp": -20.75,
-        "excess_42d_pp": 3.91,
-        "new_high_63d": false,
-        "dollar_vol_z21": -1.36,
-        "days_in_state": 40,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "HUT",
-        "sector": "",
-        "benchmark": "SPY",
-        "state": "digestion",
-        "excess_21d_pp": -20.82,
-        "excess_42d_pp": 28.28,
-        "new_high_63d": false,
-        "dollar_vol_z21": -0.35,
-        "days_in_state": 57,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "CORZ",
-        "sector": "",
-        "benchmark": "SPY",
-        "state": "digestion",
-        "excess_21d_pp": -21.05,
-        "excess_42d_pp": 3.42,
-        "new_high_63d": false,
-        "dollar_vol_z21": -1.19,
-        "days_in_state": 51,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "ALB",
-        "sector": "Materials",
-        "benchmark": "XLB",
-        "state": "failed",
-        "excess_21d_pp": -21.37,
-        "excess_42d_pp": -32.28,
-        "new_high_63d": false,
-        "dollar_vol_z21": -1.49,
-        "days_in_state": 54,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "ARM",
-        "sector": "",
-        "benchmark": "SPY",
-        "state": "emerging",
-        "excess_21d_pp": -21.62,
-        "excess_42d_pp": 53.9,
-        "new_high_63d": false,
-        "dollar_vol_z21": -0.86,
-        "days_in_state": 0,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "JOBY",
-        "sector": "",
-        "benchmark": "SPY",
-        "state": "failed",
-        "excess_21d_pp": -21.82,
-        "excess_42d_pp": -3.96,
-        "new_high_63d": false,
-        "dollar_vol_z21": 1.01,
-        "days_in_state": 38,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "CRWV",
-        "sector": "",
-        "benchmark": "SPY",
-        "state": "failed",
-        "excess_21d_pp": -21.92,
-        "excess_42d_pp": -35.7,
-        "new_high_63d": false,
-        "dollar_vol_z21": -0.85,
-        "days_in_state": 57,
         "gex_state": null,
         "hazards": [],
         "context": {
@@ -3580,11 +3204,11 @@
         "sector": "Industrials",
         "benchmark": "XLI",
         "state": "failed",
-        "excess_21d_pp": -22.11,
-        "excess_42d_pp": -16.95,
+        "excess_21d_pp": -19.57,
+        "excess_42d_pp": -18.03,
         "new_high_63d": false,
-        "dollar_vol_z21": 1.33,
-        "days_in_state": 43,
+        "dollar_vol_z21": -0.13,
+        "days_in_state": 44,
         "gex_state": null,
         "hazards": [],
         "context": {
@@ -3593,15 +3217,151 @@
         }
       },
       {
-        "ticker": "ON",
+        "ticker": "ST",
+        "sector": "Industrials",
+        "benchmark": "XLI",
+        "state": "failed",
+        "excess_21d_pp": -19.65,
+        "excess_42d_pp": -2.07,
+        "new_high_63d": false,
+        "dollar_vol_z21": -1.08,
+        "days_in_state": 41,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "MRVL",
         "sector": "Information Technology",
         "benchmark": "XLK",
+        "state": "emerging",
+        "excess_21d_pp": -19.96,
+        "excess_42d_pp": 28.53,
+        "new_high_63d": false,
+        "dollar_vol_z21": -0.58,
+        "days_in_state": 0,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "FSLR",
+        "sector": "Information Technology",
+        "benchmark": "XLK",
+        "state": "failed",
+        "excess_21d_pp": -20.56,
+        "excess_42d_pp": -4.38,
+        "new_high_63d": false,
+        "dollar_vol_z21": -0.57,
+        "days_in_state": 28,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "TAN",
+        "sector": "",
+        "benchmark": "SPY",
+        "state": "failed",
+        "excess_21d_pp": -21.2,
+        "excess_42d_pp": -13.03,
+        "new_high_63d": false,
+        "dollar_vol_z21": -1.14,
+        "days_in_state": 25,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "QUBT",
+        "sector": "",
+        "benchmark": "SPY",
+        "state": "failed",
+        "excess_21d_pp": -21.36,
+        "excess_42d_pp": -12.41,
+        "new_high_63d": false,
+        "dollar_vol_z21": -0.73,
+        "days_in_state": 37,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "RUN",
+        "sector": "Industrials",
+        "benchmark": "XLI",
+        "state": "failed",
+        "excess_21d_pp": -21.46,
+        "excess_42d_pp": -15.14,
+        "new_high_63d": false,
+        "dollar_vol_z21": 0.14,
+        "days_in_state": 25,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "ENS",
+        "sector": "Industrials",
+        "benchmark": "XLI",
+        "state": "failed",
+        "excess_21d_pp": -21.47,
+        "excess_42d_pp": -16.78,
+        "new_high_63d": false,
+        "dollar_vol_z21": 0.01,
+        "days_in_state": 45,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "CRWV",
+        "sector": "",
+        "benchmark": "SPY",
+        "state": "failed",
+        "excess_21d_pp": -21.69,
+        "excess_42d_pp": -37.99,
+        "new_high_63d": false,
+        "dollar_vol_z21": -0.77,
+        "days_in_state": 58,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "WULF",
+        "sector": "",
+        "benchmark": "SPY",
         "state": "digestion",
-        "excess_21d_pp": -22.96,
-        "excess_42d_pp": -20.48,
+        "excess_21d_pp": -21.73,
+        "excess_42d_pp": -17.14,
         "new_high_63d": false,
-        "dollar_vol_z21": -1.01,
-        "days_in_state": 54,
+        "dollar_vol_z21": 0.7,
+        "days_in_state": 61,
         "gex_state": null,
         "hazards": [],
         "context": {
@@ -3610,15 +3370,15 @@
         }
       },
       {
-        "ticker": "NNE",
+        "ticker": "CORZ",
         "sector": "",
         "benchmark": "SPY",
-        "state": "failed",
-        "excess_21d_pp": -23.3,
-        "excess_42d_pp": -18.06,
+        "state": "digestion",
+        "excess_21d_pp": -21.84,
+        "excess_42d_pp": -6.24,
         "new_high_63d": false,
-        "dollar_vol_z21": -1.04,
-        "days_in_state": 23,
+        "dollar_vol_z21": -0.8,
+        "days_in_state": 52,
         "gex_state": null,
         "hazards": [],
         "context": {
@@ -3627,15 +3387,66 @@
         }
       },
       {
-        "ticker": "UUUU",
+        "ticker": "RIOT",
         "sector": "",
         "benchmark": "SPY",
         "state": "failed",
-        "excess_21d_pp": -23.36,
-        "excess_42d_pp": -40.94,
+        "excess_21d_pp": -21.95,
+        "excess_42d_pp": 0.72,
         "new_high_63d": false,
-        "dollar_vol_z21": -0.93,
-        "days_in_state": 40,
+        "dollar_vol_z21": -1.24,
+        "days_in_state": 41,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "ALB",
+        "sector": "Materials",
+        "benchmark": "XLB",
+        "state": "failed",
+        "excess_21d_pp": -22.07,
+        "excess_42d_pp": -33.57,
+        "new_high_63d": false,
+        "dollar_vol_z21": -0.88,
+        "days_in_state": 55,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "ARM",
+        "sector": "",
+        "benchmark": "SPY",
+        "state": "emerging",
+        "excess_21d_pp": -22.66,
+        "excess_42d_pp": 40.55,
+        "new_high_63d": false,
+        "dollar_vol_z21": -0.65,
+        "days_in_state": 0,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "QBTS",
+        "sector": "",
+        "benchmark": "SPY",
+        "state": "failed",
+        "excess_21d_pp": -22.82,
+        "excess_42d_pp": -5.54,
+        "new_high_63d": false,
+        "dollar_vol_z21": -1.09,
+        "days_in_state": 30,
         "gex_state": null,
         "hazards": [],
         "context": {
@@ -3648,11 +3459,113 @@
         "sector": "Materials",
         "benchmark": "XLB",
         "state": "failed",
-        "excess_21d_pp": -23.72,
-        "excess_42d_pp": -22.55,
+        "excess_21d_pp": -23.03,
+        "excess_42d_pp": -25.78,
         "new_high_63d": false,
-        "dollar_vol_z21": -0.9,
-        "days_in_state": 40,
+        "dollar_vol_z21": 0.45,
+        "days_in_state": 41,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "HUT",
+        "sector": "",
+        "benchmark": "SPY",
+        "state": "digestion",
+        "excess_21d_pp": -23.3,
+        "excess_42d_pp": 16.85,
+        "new_high_63d": false,
+        "dollar_vol_z21": -0.48,
+        "days_in_state": 58,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "MSTR",
+        "sector": "",
+        "benchmark": "SPY",
+        "state": "failed",
+        "excess_21d_pp": -23.76,
+        "excess_42d_pp": -51.22,
+        "new_high_63d": false,
+        "dollar_vol_z21": -1.37,
+        "days_in_state": 51,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "ON",
+        "sector": "Information Technology",
+        "benchmark": "XLK",
+        "state": "digestion",
+        "excess_21d_pp": -23.76,
+        "excess_42d_pp": -19.45,
+        "new_high_63d": false,
+        "dollar_vol_z21": -0.78,
+        "days_in_state": 55,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "NBIS",
+        "sector": "",
+        "benchmark": "SPY",
+        "state": "failed",
+        "excess_21d_pp": -23.85,
+        "excess_42d_pp": 7.65,
+        "new_high_63d": false,
+        "dollar_vol_z21": -0.68,
+        "days_in_state": 12,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "UUUU",
+        "sector": "",
+        "benchmark": "SPY",
+        "state": "failed",
+        "excess_21d_pp": -24.98,
+        "excess_42d_pp": -42.19,
+        "new_high_63d": false,
+        "dollar_vol_z21": -0.48,
+        "days_in_state": 41,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "OKLO",
+        "sector": "",
+        "benchmark": "SPY",
+        "state": "failed",
+        "excess_21d_pp": -25.76,
+        "excess_42d_pp": -33.26,
+        "new_high_63d": false,
+        "dollar_vol_z21": -0.28,
+        "days_in_state": 41,
         "gex_state": null,
         "hazards": [],
         "context": {
@@ -3665,11 +3578,11 @@
         "sector": "Industrials",
         "benchmark": "XLI",
         "state": "digestion",
-        "excess_21d_pp": -24.12,
-        "excess_42d_pp": -16.61,
+        "excess_21d_pp": -25.78,
+        "excess_42d_pp": -26.33,
         "new_high_63d": false,
-        "dollar_vol_z21": -0.46,
-        "days_in_state": 61,
+        "dollar_vol_z21": -0.1,
+        "days_in_state": 62,
         "gex_state": null,
         "hazards": [],
         "context": {
@@ -3678,15 +3591,32 @@
         }
       },
       {
-        "ticker": "VOYG",
+        "ticker": "JOBY",
         "sector": "",
         "benchmark": "SPY",
         "state": "failed",
-        "excess_21d_pp": -24.46,
-        "excess_42d_pp": 27.94,
+        "excess_21d_pp": -26.12,
+        "excess_42d_pp": -9.76,
         "new_high_63d": false,
-        "dollar_vol_z21": -1.18,
-        "days_in_state": 32,
+        "dollar_vol_z21": -0.32,
+        "days_in_state": 39,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "NNE",
+        "sector": "",
+        "benchmark": "SPY",
+        "state": "failed",
+        "excess_21d_pp": -26.86,
+        "excess_42d_pp": -20.41,
+        "new_high_63d": false,
+        "dollar_vol_z21": -0.65,
+        "days_in_state": 24,
         "gex_state": null,
         "hazards": [],
         "context": {
@@ -3699,62 +3629,11 @@
         "sector": "Information Technology",
         "benchmark": "XLK",
         "state": "failed",
-        "excess_21d_pp": -24.59,
-        "excess_42d_pp": -43.52,
+        "excess_21d_pp": -27.33,
+        "excess_42d_pp": -37.23,
         "new_high_63d": false,
-        "dollar_vol_z21": -0.35,
-        "days_in_state": 58,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "APLD",
-        "sector": "",
-        "benchmark": "SPY",
-        "state": "failed",
-        "excess_21d_pp": -24.94,
-        "excess_42d_pp": -10.61,
-        "new_high_63d": false,
-        "dollar_vol_z21": -1.09,
-        "days_in_state": 41,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "ASTS",
-        "sector": "",
-        "benchmark": "SPY",
-        "state": "failed",
-        "excess_21d_pp": -25.01,
-        "excess_42d_pp": 13.21,
-        "new_high_63d": false,
-        "dollar_vol_z21": -1.34,
-        "days_in_state": 28,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "RGTI",
-        "sector": "",
-        "benchmark": "SPY",
-        "state": "failed",
-        "excess_21d_pp": -25.33,
-        "excess_42d_pp": -3.16,
-        "new_high_63d": false,
-        "dollar_vol_z21": -1.58,
-        "days_in_state": 29,
+        "dollar_vol_z21": -0.22,
+        "days_in_state": 59,
         "gex_state": null,
         "hazards": [],
         "context": {
@@ -3767,11 +3646,11 @@
         "sector": "Utilities",
         "benchmark": "XLU",
         "state": "failed",
-        "excess_21d_pp": -26.24,
-        "excess_42d_pp": 1.14,
+        "excess_21d_pp": -27.4,
+        "excess_42d_pp": -3.04,
         "new_high_63d": false,
-        "dollar_vol_z21": -1.14,
-        "days_in_state": 35,
+        "dollar_vol_z21": -1.06,
+        "days_in_state": 36,
         "gex_state": null,
         "hazards": [],
         "context": {
@@ -3784,11 +3663,11 @@
         "sector": "",
         "benchmark": "SPY",
         "state": "failed",
-        "excess_21d_pp": -26.4,
-        "excess_42d_pp": -35.68,
+        "excess_21d_pp": -28.04,
+        "excess_42d_pp": -37.73,
         "new_high_63d": false,
-        "dollar_vol_z21": -1.0,
-        "days_in_state": 44,
+        "dollar_vol_z21": -0.16,
+        "days_in_state": 45,
         "gex_state": null,
         "hazards": [],
         "context": {
@@ -3797,15 +3676,15 @@
         }
       },
       {
-        "ticker": "ASPI",
+        "ticker": "APLD",
         "sector": "",
         "benchmark": "SPY",
         "state": "failed",
-        "excess_21d_pp": -26.62,
-        "excess_42d_pp": 2.54,
+        "excess_21d_pp": -29.46,
+        "excess_42d_pp": -26.3,
         "new_high_63d": false,
-        "dollar_vol_z21": -1.43,
-        "days_in_state": 23,
+        "dollar_vol_z21": -1.02,
+        "days_in_state": 42,
         "gex_state": null,
         "hazards": [],
         "context": {
@@ -3814,15 +3693,15 @@
         }
       },
       {
-        "ticker": "BKSY",
+        "ticker": "RKLB",
         "sector": "",
         "benchmark": "SPY",
         "state": "failed",
-        "excess_21d_pp": -27.4,
-        "excess_42d_pp": -29.87,
+        "excess_21d_pp": -29.48,
+        "excess_42d_pp": 2.6,
         "new_high_63d": false,
-        "dollar_vol_z21": -1.55,
-        "days_in_state": 63,
+        "dollar_vol_z21": -0.53,
+        "days_in_state": 51,
         "gex_state": null,
         "hazards": [],
         "context": {
@@ -3831,15 +3710,15 @@
         }
       },
       {
-        "ticker": "BTDR",
+        "ticker": "ASTS",
         "sector": "",
         "benchmark": "SPY",
         "state": "failed",
-        "excess_21d_pp": -27.57,
-        "excess_42d_pp": 12.55,
+        "excess_21d_pp": -29.85,
+        "excess_42d_pp": 12.88,
         "new_high_63d": false,
-        "dollar_vol_z21": -1.07,
-        "days_in_state": 40,
+        "dollar_vol_z21": -1.24,
+        "days_in_state": 29,
         "gex_state": null,
         "hazards": [],
         "context": {
@@ -3852,11 +3731,11 @@
         "sector": "",
         "benchmark": "SPY",
         "state": "failed",
-        "excess_21d_pp": -28.24,
-        "excess_42d_pp": 2.19,
+        "excess_21d_pp": -29.93,
+        "excess_42d_pp": -8.81,
         "new_high_63d": false,
-        "dollar_vol_z21": -1.34,
-        "days_in_state": 40,
+        "dollar_vol_z21": -0.89,
+        "days_in_state": 41,
         "gex_state": null,
         "hazards": [],
         "context": {
@@ -3865,14 +3744,14 @@
         }
       },
       {
-        "ticker": "NXT",
-        "sector": "Industrials",
-        "benchmark": "XLI",
+        "ticker": "ENPH",
+        "sector": "Information Technology",
+        "benchmark": "XLK",
         "state": "failed",
-        "excess_21d_pp": -28.34,
-        "excess_42d_pp": -10.15,
+        "excess_21d_pp": -30.01,
+        "excess_42d_pp": 11.17,
         "new_high_63d": false,
-        "dollar_vol_z21": -0.31,
+        "dollar_vol_z21": -0.96,
         "days_in_state": 34,
         "gex_state": null,
         "hazards": [],
@@ -3886,11 +3765,11 @@
         "sector": "",
         "benchmark": "SPY",
         "state": "failed",
-        "excess_21d_pp": -29.04,
-        "excess_42d_pp": -4.23,
+        "excess_21d_pp": -30.22,
+        "excess_42d_pp": -6.94,
         "new_high_63d": false,
-        "dollar_vol_z21": -1.05,
-        "days_in_state": 25,
+        "dollar_vol_z21": -0.49,
+        "days_in_state": 26,
         "gex_state": null,
         "hazards": [],
         "context": {
@@ -3899,49 +3778,49 @@
         }
       },
       {
-        "ticker": "ENPH",
-        "sector": "Information Technology",
-        "benchmark": "XLK",
+        "ticker": "RGTI",
+        "sector": "",
+        "benchmark": "SPY",
         "state": "failed",
-        "excess_21d_pp": -29.11,
-        "excess_42d_pp": 23.63,
+        "excess_21d_pp": -30.51,
+        "excess_42d_pp": -12.72,
         "new_high_63d": false,
-        "dollar_vol_z21": -0.8,
+        "dollar_vol_z21": -1.11,
+        "days_in_state": 30,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "NXT",
+        "sector": "Industrials",
+        "benchmark": "XLI",
+        "state": "failed",
+        "excess_21d_pp": -31.37,
+        "excess_42d_pp": -17.53,
+        "new_high_63d": false,
+        "dollar_vol_z21": -0.28,
+        "days_in_state": 35,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "VOYG",
+        "sector": "",
+        "benchmark": "SPY",
+        "state": "failed",
+        "excess_21d_pp": -32.16,
+        "excess_42d_pp": 17.49,
+        "new_high_63d": false,
+        "dollar_vol_z21": -1.06,
         "days_in_state": 33,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "FLY",
-        "sector": "",
-        "benchmark": "SPY",
-        "state": "failed",
-        "excess_21d_pp": -29.48,
-        "excess_42d_pp": -20.73,
-        "new_high_63d": false,
-        "dollar_vol_z21": -1.25,
-        "days_in_state": 62,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "USAR",
-        "sector": "",
-        "benchmark": "SPY",
-        "state": "failed",
-        "excess_21d_pp": -30.71,
-        "excess_42d_pp": -28.99,
-        "new_high_63d": false,
-        "dollar_vol_z21": -1.76,
-        "days_in_state": 44,
         "gex_state": null,
         "hazards": [],
         "context": {
@@ -3954,11 +3833,11 @@
         "sector": "Information Technology",
         "benchmark": "XLK",
         "state": "failed",
-        "excess_21d_pp": -31.25,
-        "excess_42d_pp": -33.54,
+        "excess_21d_pp": -32.95,
+        "excess_42d_pp": -31.78,
         "new_high_63d": false,
-        "dollar_vol_z21": -0.17,
-        "days_in_state": 23,
+        "dollar_vol_z21": 0.51,
+        "days_in_state": 24,
         "gex_state": null,
         "hazards": [],
         "context": {
@@ -3967,14 +3846,48 @@
         }
       },
       {
-        "ticker": "STRL",
-        "sector": "Industrials",
-        "benchmark": "XLI",
+        "ticker": "LUMN",
+        "sector": "Communication Services",
+        "benchmark": "XLC",
         "state": "failed",
-        "excess_21d_pp": -31.94,
-        "excess_42d_pp": 26.91,
+        "excess_21d_pp": -33.36,
+        "excess_42d_pp": -26.24,
         "new_high_63d": false,
-        "dollar_vol_z21": -0.51,
+        "dollar_vol_z21": -0.56,
+        "days_in_state": 41,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "USAR",
+        "sector": "",
+        "benchmark": "SPY",
+        "state": "failed",
+        "excess_21d_pp": -33.41,
+        "excess_42d_pp": -38.46,
+        "new_high_63d": false,
+        "dollar_vol_z21": -0.66,
+        "days_in_state": 45,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "BTDR",
+        "sector": "",
+        "benchmark": "SPY",
+        "state": "failed",
+        "excess_21d_pp": -33.43,
+        "excess_42d_pp": -0.14,
+        "new_high_63d": false,
+        "dollar_vol_z21": -1.63,
         "days_in_state": 41,
         "gex_state": null,
         "hazards": [],
@@ -3988,11 +3901,11 @@
         "sector": "",
         "benchmark": "SPY",
         "state": "failed",
-        "excess_21d_pp": -32.81,
-        "excess_42d_pp": -15.89,
+        "excess_21d_pp": -34.65,
+        "excess_42d_pp": -30.57,
         "new_high_63d": false,
-        "dollar_vol_z21": 0.21,
-        "days_in_state": 41,
+        "dollar_vol_z21": -0.97,
+        "days_in_state": 42,
         "gex_state": null,
         "hazards": [],
         "context": {
@@ -4001,15 +3914,15 @@
         }
       },
       {
-        "ticker": "LUMN",
-        "sector": "Communication Services",
-        "benchmark": "XLC",
+        "ticker": "ASPI",
+        "sector": "",
+        "benchmark": "SPY",
         "state": "failed",
-        "excess_21d_pp": -33.66,
-        "excess_42d_pp": -25.47,
+        "excess_21d_pp": -35.53,
+        "excess_42d_pp": -4.67,
         "new_high_63d": false,
-        "dollar_vol_z21": -0.46,
-        "days_in_state": 40,
+        "dollar_vol_z21": -1.14,
+        "days_in_state": 24,
         "gex_state": null,
         "hazards": [],
         "context": {
@@ -4022,10 +3935,27 @@
         "sector": "Industrials",
         "benchmark": "XLI",
         "state": "failed",
-        "excess_21d_pp": -35.41,
-        "excess_42d_pp": -59.88,
+        "excess_21d_pp": -35.59,
+        "excess_42d_pp": -62.89,
         "new_high_63d": false,
-        "dollar_vol_z21": -0.82,
+        "dollar_vol_z21": -0.69,
+        "days_in_state": 43,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "STRL",
+        "sector": "Industrials",
+        "benchmark": "XLI",
+        "state": "failed",
+        "excess_21d_pp": -35.92,
+        "excess_42d_pp": -22.11,
+        "new_high_63d": false,
+        "dollar_vol_z21": -0.37,
         "days_in_state": 42,
         "gex_state": null,
         "hazards": [],
@@ -4039,11 +3969,11 @@
         "sector": "Information Technology",
         "benchmark": "XLK",
         "state": "failed",
-        "excess_21d_pp": -36.32,
-        "excess_42d_pp": -15.89,
+        "excess_21d_pp": -36.9,
+        "excess_42d_pp": -13.86,
         "new_high_63d": false,
-        "dollar_vol_z21": -0.88,
-        "days_in_state": 40,
+        "dollar_vol_z21": -0.75,
+        "days_in_state": 41,
         "gex_state": null,
         "hazards": [],
         "context": {
@@ -4052,32 +3982,15 @@
         }
       },
       {
-        "ticker": "DXYZ",
+        "ticker": "FLY",
         "sector": "",
         "benchmark": "SPY",
         "state": "failed",
-        "excess_21d_pp": -36.79,
-        "excess_42d_pp": -38.45,
+        "excess_21d_pp": -36.93,
+        "excess_42d_pp": -21.9,
         "new_high_63d": false,
-        "dollar_vol_z21": -0.94,
-        "days_in_state": 42,
-        "gex_state": null,
-        "hazards": [],
-        "context": {
-          "context_only": true,
-          "note": ""
-        }
-      },
-      {
-        "ticker": "RDW",
-        "sector": "",
-        "benchmark": "SPY",
-        "state": "failed",
-        "excess_21d_pp": -38.85,
-        "excess_42d_pp": 26.85,
-        "new_high_63d": false,
-        "dollar_vol_z21": -1.06,
-        "days_in_state": 37,
+        "dollar_vol_z21": -1.34,
+        "days_in_state": 63,
         "gex_state": null,
         "hazards": [],
         "context": {
@@ -4090,11 +4003,11 @@
         "sector": "Materials",
         "benchmark": "XLB",
         "state": "failed",
-        "excess_21d_pp": -39.38,
-        "excess_42d_pp": -22.65,
+        "excess_21d_pp": -37.34,
+        "excess_42d_pp": -22.12,
         "new_high_63d": false,
-        "dollar_vol_z21": -0.22,
-        "days_in_state": 22,
+        "dollar_vol_z21": -0.79,
+        "days_in_state": 23,
         "gex_state": null,
         "hazards": [],
         "context": {
@@ -4103,15 +4016,32 @@
         }
       },
       {
-        "ticker": "LUNR",
+        "ticker": "DXYZ",
         "sector": "",
         "benchmark": "SPY",
         "state": "failed",
-        "excess_21d_pp": -44.03,
-        "excess_42d_pp": -30.12,
+        "excess_21d_pp": -42.61,
+        "excess_42d_pp": -39.32,
         "new_high_63d": false,
-        "dollar_vol_z21": -0.86,
-        "days_in_state": 63,
+        "dollar_vol_z21": -0.89,
+        "days_in_state": 43,
+        "gex_state": null,
+        "hazards": [],
+        "context": {
+          "context_only": true,
+          "note": ""
+        }
+      },
+      {
+        "ticker": "RDW",
+        "sector": "",
+        "benchmark": "SPY",
+        "state": "failed",
+        "excess_21d_pp": -51.37,
+        "excess_42d_pp": 14.18,
+        "new_high_63d": false,
+        "dollar_vol_z21": -1.17,
+        "days_in_state": 38,
         "gex_state": null,
         "hazards": [],
         "context": {
@@ -4130,7 +4060,7 @@
     },
     {
       "id": "winner-autopsy-case-library",
-      "come_back_on": "2026-09-15",
+      "come_back_on": "2026-10-15",
       "note": "Winner Autopsy: case library >=8 cases cross-sector/era review",
       "status": "accruing"
     },

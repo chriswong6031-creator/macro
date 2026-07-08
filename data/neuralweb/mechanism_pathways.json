@@ -1,6 +1,6 @@
 {
   "schema": "neuralweb.mechanism_pathways.v1",
-  "as_of": "2026-07-07",
+  "as_of": "2026-07-08",
   "display_only": true,
   "not_a_signal": true,
   "authority": {
@@ -25,48 +25,142 @@
   },
   "pathways": [
     {
-      "family": "ai_semis",
+      "family": "equity-leadership",
       "driver": "ai_semis",
       "pathway_role": "primary",
-      "as_of": "2026-07-07",
-      "direction_en": "Bubble / blow-off unwind",
-      "direction_zh": "泡沫/见顶回吐",
+      "as_of": "2026-07-08",
+      "direction_en": "AI/semis unwind — tech-led de-rating",
+      "direction_zh": "AI/半导体回吐 — 科技主导的回调",
       "confidence_ceiling": "context_only",
-      "coverage_score": null,
-      "coherence": "partial",
+      "coverage_score": 1.0,
+      "coherence": "supported",
       "stale_legs": [],
       "nodes": [
         {
           "node_id": "driver_ai_semis",
-          "as_of": "2026-07-07",
+          "as_of": "2026-07-08",
           "domain": "market_drivers",
           "source_artifact": "data/regime/latest.json#market_drivers",
           "entity": "ai_semis",
           "observation": {
-            "en": "Bubble / blow-off unwind",
-            "zh": "泡沫/见顶回吐"
+            "en": "AI/semis unwind — tech-led de-rating",
+            "zh": "AI/半导体回吐 — 科技主导的回调"
           },
-          "direction": "",
-          "value": 59.9,
-          "z_or_percentile": null,
+          "direction": -1,
+          "value": 2.81,
+          "z_or_percentile": 2.54,
           "source_tier": "display",
           "lag_class": "same_day",
           "pathway_role": "trigger",
           "evidence_refs": [
             "market_drivers.primary"
           ]
+        },
+        {
+          "node_id": "leg_ai_semis_0",
+          "as_of": "2026-07-08",
+          "domain": "market_drivers",
+          "source_artifact": "data/regime/latest.json#market_drivers",
+          "entity": "semis RS",
+          "observation": {
+            "en": "semis RS (-3.8σ)",
+            "zh": "半导体相对强度 (-3.8σ)"
+          },
+          "direction": "negative",
+          "value": -3.8,
+          "z_or_percentile": -3.8,
+          "source_tier": "display",
+          "lag_class": "same_day",
+          "pathway_role": "required_leg",
+          "evidence_refs": [
+            "market_drivers.evidence_legs[0]"
+          ]
+        },
+        {
+          "node_id": "leg_ai_semis_1",
+          "as_of": "2026-07-08",
+          "domain": "market_drivers",
+          "source_artifact": "data/regime/latest.json#market_drivers",
+          "entity": "growth vs value",
+          "observation": {
+            "en": "growth vs value (-2.3σ)",
+            "zh": "成长对价值 (-2.3σ)"
+          },
+          "direction": "negative",
+          "value": -2.3,
+          "z_or_percentile": -2.3,
+          "source_tier": "display",
+          "lag_class": "same_day",
+          "pathway_role": "required_leg",
+          "evidence_refs": [
+            "market_drivers.evidence_legs[1]"
+          ]
+        },
+        {
+          "node_id": "leg_ai_semis_2",
+          "as_of": "2026-07-08",
+          "domain": "market_drivers",
+          "source_artifact": "data/regime/latest.json#market_drivers",
+          "entity": "cap-weight vs equal-weight",
+          "observation": {
+            "en": "cap-weight vs equal-weight (-2.3σ)",
+            "zh": "市值加权对等权重 (-2.3σ)"
+          },
+          "direction": "negative",
+          "value": -2.3,
+          "z_or_percentile": -2.3,
+          "source_tier": "display",
+          "lag_class": "same_day",
+          "pathway_role": "required_leg",
+          "evidence_refs": [
+            "market_drivers.evidence_legs[2]"
+          ]
         }
       ],
-      "edges": [],
-      "coverage_basis": "scare_trigger",
-      "source_trigger": "risk_radar",
-      "scare": "bubble"
+      "edges": [
+        {
+          "src_node": "driver_ai_semis",
+          "dst_node": "leg_ai_semis_0",
+          "mechanism_type": "evidence_leg",
+          "expected_lag": "same_day",
+          "expected_sign": "negative",
+          "observed_sign": "negative",
+          "status": "measured",
+          "evidence_refs": [
+            "market_drivers.evidence_legs[0]"
+          ]
+        },
+        {
+          "src_node": "driver_ai_semis",
+          "dst_node": "leg_ai_semis_1",
+          "mechanism_type": "evidence_leg",
+          "expected_lag": "same_day",
+          "expected_sign": "negative",
+          "observed_sign": "negative",
+          "status": "measured",
+          "evidence_refs": [
+            "market_drivers.evidence_legs[1]"
+          ]
+        },
+        {
+          "src_node": "driver_ai_semis",
+          "dst_node": "leg_ai_semis_2",
+          "mechanism_type": "evidence_leg",
+          "expected_lag": "same_day",
+          "expected_sign": "negative",
+          "observed_sign": "negative",
+          "status": "measured",
+          "evidence_refs": [
+            "market_drivers.evidence_legs[2]"
+          ]
+        }
+      ]
     },
     {
       "family": "crypto",
       "driver": "crypto_liquidity",
       "pathway_role": "alternate",
-      "as_of": "2026-07-07",
+      "as_of": "2026-07-08",
       "direction_en": "crypto liquidity surging — BTC/ETH lead up",
       "direction_zh": "",
       "confidence_ceiling": "context_only",
@@ -76,7 +170,7 @@
       "nodes": [
         {
           "node_id": "driver_crypto_liquidity",
-          "as_of": "2026-07-07",
+          "as_of": "2026-07-08",
           "domain": "market_drivers",
           "source_artifact": "data/regime/latest.json#market_drivers",
           "entity": "crypto_liquidity",
@@ -96,6 +190,139 @@
         }
       ],
       "edges": [],
+      "coverage_basis": "scare_trigger"
+    },
+    {
+      "family": "rates",
+      "driver": "real_rate_shock",
+      "pathway_role": "alternate",
+      "as_of": "2026-07-08",
+      "direction_en": "real yields rising — restrictive, gold & duration hit",
+      "direction_zh": "",
+      "confidence_ceiling": "context_only",
+      "coverage_score": null,
+      "coherence": "partial",
+      "stale_legs": [],
+      "nodes": [
+        {
+          "node_id": "driver_real_rate_shock",
+          "as_of": "2026-07-08",
+          "domain": "market_drivers",
+          "source_artifact": "data/regime/latest.json#market_drivers",
+          "entity": "real_rate_shock",
+          "observation": {
+            "en": "real yields rising — restrictive, gold & duration hit",
+            "zh": ""
+          },
+          "direction": "",
+          "value": 0.71,
+          "z_or_percentile": null,
+          "source_tier": "display",
+          "lag_class": "same_day",
+          "pathway_role": "trigger",
+          "evidence_refs": [
+            "market_drivers.primary"
+          ]
+        },
+        {
+          "node_id": "transmission_real_rate_order1",
+          "as_of": "2026-07-08",
+          "domain": "transmission",
+          "source_artifact": "data/transmission/latest.json",
+          "entity": "transmission channel",
+          "observation": {
+            "en": "Rising real 10y yields lift the discount rate → long-duration equities, REITs and other long-duration assets de-rate first.",
+            "zh": "实际10年期收益率上行抬高贴现率→长久期股票、REITs等长久期资产首先承压。"
+          },
+          "direction": "",
+          "value": null,
+          "z_or_percentile": null,
+          "source_tier": "context_only",
+          "lag_class": "same_day",
+          "pathway_role": "transmission_order_1",
+          "evidence_refs": [
+            "transmission.chains.real_rate.order1"
+          ]
+        },
+        {
+          "node_id": "transmission_real_rate_order2",
+          "as_of": "2026-07-08",
+          "domain": "transmission",
+          "source_artifact": "data/transmission/latest.json",
+          "entity": "transmission channel",
+          "observation": {
+            "en": "Higher US real yields pull capital in → the dollar firms → gold, industrial commodities and EM are pressured.",
+            "zh": "美国实际收益率走高吸引资本流入→美元走强→黄金、工业商品与新兴市场受压。"
+          },
+          "direction": "",
+          "value": null,
+          "z_or_percentile": null,
+          "source_tier": "context_only",
+          "lag_class": "days_1_5",
+          "pathway_role": "transmission_order_2",
+          "evidence_refs": [
+            "transmission.chains.real_rate.order2"
+          ]
+        },
+        {
+          "node_id": "transmission_real_rate_order3",
+          "as_of": "2026-07-08",
+          "domain": "transmission",
+          "source_artifact": "data/transmission/latest.json",
+          "entity": "transmission channel",
+          "observation": {
+            "en": "A firm dollar + soft commodities → energy/materials relative headwind and EM-revenue exporters de-rate; financials are the relative beneficiary as curves steepen.",
+            "zh": "强美元＋商品走软→能源/材料相对承压、新兴市场营收型出口商估值下修；曲线变陡时金融为相对受益者。"
+          },
+          "direction": "",
+          "value": null,
+          "z_or_percentile": null,
+          "source_tier": "context_only",
+          "lag_class": "weeks_1_4",
+          "pathway_role": "transmission_order_3",
+          "evidence_refs": [
+            "transmission.chains.real_rate.order3"
+          ]
+        }
+      ],
+      "edges": [
+        {
+          "src_node": "driver_real_rate_shock",
+          "dst_node": "transmission_real_rate_order1",
+          "mechanism_type": "transmission_channel",
+          "expected_lag": "same_day",
+          "expected_sign": "",
+          "observed_sign": null,
+          "status": "measured",
+          "evidence_refs": [
+            "transmission.chains.real_rate.order1"
+          ]
+        },
+        {
+          "src_node": "transmission_real_rate_order1",
+          "dst_node": "transmission_real_rate_order2",
+          "mechanism_type": "transmission_channel",
+          "expected_lag": "days_1_5",
+          "expected_sign": "",
+          "observed_sign": null,
+          "status": "measured",
+          "evidence_refs": [
+            "transmission.chains.real_rate.order2"
+          ]
+        },
+        {
+          "src_node": "transmission_real_rate_order2",
+          "dst_node": "transmission_real_rate_order3",
+          "mechanism_type": "transmission_channel",
+          "expected_lag": "weeks_1_4",
+          "expected_sign": "",
+          "observed_sign": null,
+          "status": "measured",
+          "evidence_refs": [
+            "transmission.chains.real_rate.order3"
+          ]
+        }
+      ],
       "coverage_basis": "scare_trigger"
     }
   ]
