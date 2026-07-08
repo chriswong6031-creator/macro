@@ -852,6 +852,7 @@ def _build_china_market_state_block(root: Path) -> dict:
             top_contra = {
                 "a": c.get("a"),
                 "b": c.get("b"),
+                "detail": c.get("detail"),
             }
 
     gaps_list = raw.get("data_gaps") or []

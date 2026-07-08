@@ -92,9 +92,15 @@ _FACTOR_TRIGGER_TERMS = re.compile(
 
 # China/A-share scope trigger terms (CN-SYS W7) — deterministic keyword + ticker detection.
 # Checked BEFORE generic regime/macro branches so China questions route to the China lobe.
-# Ticker patterns: A-share format (6XXXXX — 6-digit numeric starting with 6, 0, or 3),
-#   HK H-shares (XXXXX.HK suffix), and common China market tickers/indices.
+# Ticker patterns: A-share tickers are only matched when they carry an exchange suffix
+#   (.SS/.SZ) that makes them unambiguously A-share codes.  Bare 6-digit integers are NOT
+#   matched because they collide with any 6-digit quantity or order number in generic text
+#   (e.g. "300000 shares of TSLA", "ORDER 000042").
+# HK H-shares (XXXX.HK suffix) are retained — the .HK suffix is unambiguous.
 # Keyword list is conservative: only unambiguous China market / A-share terms.
+# CJK list: only multi-character terms or terms with explicit A-share context retained;
+#   bare single-character / generic trading terms (板, 回调, 底部) removed to avoid
+#   false-positive routing on generic Chinese-language trading questions.
 _CHINA_TRIGGER_TERMS = re.compile(
     # ASCII keyword triggers with word-boundary anchors
     r"(?i)\b("
@@ -113,12 +119,14 @@ _CHINA_TRIGGER_TERMS = re.compile(
     r"yuan|renminbi|rmb|usdcnh|cnh|"
     r"lianban"
     r")\b"
-    # Chinese character terms — no \b (word boundaries don't work for CJK)
+    # Chinese character terms — no \b (word boundaries don't work for CJK).
+    # Only unambiguous A-share / China-market terms included.
+    # Removed: 板 (board — generic), 回调 (pullback — generic), 底部 (bottom — generic).
     r"|(?:a股|上证|深证|沪深|创业板|科创板|北交所|主板|北向|南向|"
     r"陆股通|港股通|沪港通|深港通|"
-    r"融资|融券|涨停|跌停|连板|板|回调|底部)"
-    # 6-digit A-share ticker patterns (600xxx, 000xxx, 300xxx, 688xxx, 83xxxx)
-    r"|\b(6[0-9]{5}|0[0-9]{5}|3[0-9]{5}|83[0-9]{4})\b"
+    r"融资|融券|涨停|跌停|连板)"
+    # A-share tickers with explicit exchange suffix (unambiguous; bare 6-digit integers excluded)
+    r"|\b[0-9]{6}\.(SS|SZ)\b"
     # HK-listed Chinese shares (e.g. 0700.HK, 9988.HK)
     r"|\b\d{4}\.HK\b",
     re.IGNORECASE,
@@ -174,6 +182,8 @@ _ASK_READ_TOOLS = frozenset({
     "read_cycle_pattern_state",
     # W3 MPC consumer: mechanism pathway artifact (display/context only, RUL-CC-1)
     "read_mechanism_pathways",
+    # CN-SYS W7: China/A-share decision packet (context_only, CN-SYS-R1/R13/R14)
+    "read_china_decision_packet",
 })
 
 # Customer-facing system prompt
@@ -339,10 +349,10 @@ def _classify_question(question: str, context_ticker: str | None) -> tuple[int, 
         return _BUDGET_FACTOR, seeds
     # China / A-share path (CN-SYS W7) — checked after factor but before options and generic
     # branches.  Keyword + ticker detection is deterministic (no LLM judgment in routing).
-    # The seed tool is read_world_state (reads china_market_state sub-block in world_state).
-    # No per-name China tools exist yet; the lobe packet covers market-phase context.
+    # Seeds: read_world_state (china_market_state sub-block) + read_china_decision_packet
+    # (assembles the Codex §11.2 packet from committed artifacts, context_only tier).
     if _CHINA_TRIGGER_TERMS.search(question):
-        return _BUDGET_CHINA, ["read_world_state"]
+        return _BUDGET_CHINA, ["read_world_state", "read_china_decision_packet"]
 
     # Options path (RO-7) — checked after factor, before generic contradictions/regime
     # so "options contradictions" and "skew" questions don't bleed into generic branches
@@ -536,6 +546,23 @@ def assemble_china_decision_packet(root: "Path | None" = None) -> dict:
             "tier": "context_only",
         },
     }
+
+
+# ---------------------------------------------------------------------------
+# CN-SYS W7 — read_china_decision_packet tool handler
+# ---------------------------------------------------------------------------
+
+def _tool_read_china_decision_packet(root: Path, _params: dict) -> dict:
+    """Tool handler: assemble and return the china_decision_packet.v1.
+
+    Wraps assemble_china_decision_packet() for the ask-brain read-only tool
+    dispatcher (CN-SYS W7, Codex §11.2).  Params are ignored — the packet
+    is deterministic from committed artifacts; no user-controlled inputs.
+
+    Authority: context_only, originates_signal=False, can_de_escalate=False
+    (CN-SYS-R1 / R13 / R14).
+    """
+    return assemble_china_decision_packet(root=root)
 
 
 # ---------------------------------------------------------------------------
@@ -771,6 +798,9 @@ def _dispatch_read_tool(tool_name: str, tool_params: dict, root: Path) -> dict:
         return _tool_read_cycle_pattern_state(root, tool_params)
     elif tool_name == "read_mechanism_pathways":
         return _tool_read_mechanism_pathways(root, tool_params)
+    elif tool_name == "read_china_decision_packet":
+        # CN-SYS W7: China/A-share decision packet (context_only, CN-SYS-R1/R13/R14)
+        return _tool_read_china_decision_packet(root, tool_params)
     # Unreachable given the whitelist guard above
     return {"error": f"dispatcher: unhandled tool {tool_name!r}"}
 

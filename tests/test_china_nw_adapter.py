@@ -229,15 +229,52 @@ class TestAskBrainChinaRouter:
         )
 
     def test_china_router_budget_and_seed(self):
-        """China question returns _BUDGET_CHINA budget and read_world_state seed."""
+        """China question returns _BUDGET_CHINA budget and both seed tools."""
         budget, seeds = _classify_question("What is the A-share phase?", None)
         assert budget == _BUDGET_CHINA
         assert "read_world_state" in seeds
+        # CN-SYS W7 fix: packet assembler must be seeded alongside world_state
+        assert "read_china_decision_packet" in seeds
 
-    def test_a_share_6digit_ticker(self):
-        """6-digit A-share ticker pattern triggers China router."""
-        # 600519 (Kweichow Moutai) — canonical A-share ticker
-        assert _CHINA_TRIGGER_TERMS.search("What is the setup for 600519?") is not None
+    def test_a_share_6digit_ticker_with_exchange_suffix(self):
+        """A-share ticker with .SS/.SZ suffix triggers China router."""
+        # 600519.SS (Kweichow Moutai on Shanghai) — unambiguous A-share format
+        assert _CHINA_TRIGGER_TERMS.search("What is the setup for 600519.SS?") is not None
+        assert _CHINA_TRIGGER_TERMS.search("Tell me about 000858.SZ") is not None
+
+    def test_bare_6digit_integer_does_not_trigger_china(self):
+        """Bare 6-digit integers NOT followed by .SS/.SZ must NOT trigger China router.
+
+        Regression for MAJOR finding: '300000 shares of TSLA', 'ORDER 000042',
+        'call me at 600123' were previously mis-routed to the China lobe.
+        """
+        false_positives = [
+            "I have 300000 shares of TSLA",
+            "ORDER 000042 shipped",
+            "call me at 600123",
+            "our revenue was 600000 last quarter",
+        ]
+        for q in false_positives:
+            assert _CHINA_TRIGGER_TERMS.search(q) is None, (
+                f"False-positive China trigger for: {q!r}"
+            )
+
+    def test_generic_cjk_trading_terms_do_not_trigger_china(self):
+        """Bare CJK trading terms 底部/回调/板 must NOT trigger China router.
+
+        These are common in generic Chinese-language trading talk and do not
+        specifically indicate A-shares or China market questions.
+        """
+        generic_terms = [
+            "这只股票已经到达底部了",   # "this stock has hit a bottom"
+            "现在是回调入场时机吗",       # "is this a good pullback entry?"
+            "上涨之后的板整理",           # generic "consolidation board"
+        ]
+        for q in generic_terms:
+            # These questions contain 底部, 回调, 板 but NOT any unambiguous A-share term
+            assert _CHINA_TRIGGER_TERMS.search(q) is None, (
+                f"False-positive China trigger for generic CJK term: {q!r}"
+            )
 
     def test_hk_ticker_trigger(self):
         """HK-listed ticker (XXXX.HK) triggers China router."""
@@ -325,10 +362,26 @@ class TestDailyBriefChinaBlock:
         assert "china_market_state" in payload
 
     def test_top_contradiction_extracted(self):
-        """top_contradiction pulled from participation.contradictions."""
+        """top_contradiction pulled from participation.contradictions — includes detail field."""
         root = _make_root_with_market_state()
         block = _build_china_market_state_block(root)
         top = block.get("top_contradiction")
         assert top is not None
         assert "a" in top
         assert "b" in top
+        # MINOR fix: daily_brief now includes 'detail' to match world_state lobe parity
+        assert "detail" in top
+        assert top["detail"] == "cross-market split"
+
+    def test_china_decision_packet_tool_in_read_whitelist(self):
+        """read_china_decision_packet is in the ask-brain read-tool whitelist."""
+        from engine.neuralweb.ask_brain import _ASK_READ_TOOLS
+        assert "read_china_decision_packet" in _ASK_READ_TOOLS
+
+    def test_china_decision_packet_dispatches(self):
+        """_dispatch_read_tool('read_china_decision_packet') returns the packet."""
+        from engine.neuralweb.ask_brain import _dispatch_read_tool
+        root = _make_root_with_market_state()
+        result = _dispatch_read_tool("read_china_decision_packet", {}, root)
+        assert result["schema"] == "china_decision_packet.v1"
+        assert result["available"] is True
