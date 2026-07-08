@@ -715,6 +715,13 @@ lanes:
         module: scripts.build_baskets_china_ths
         args: [--snapshot]
         note: non-fatal; ~2 min; W1 THS PIT membership snapshot side-car (CN-SYS-R11)
+      # ── CN-SYS Batch-2 lobe wiring (W3 + W6) ─────────────────────────────
+      - id: build_china_cycle_phase
+        module: scripts.build_china_cycle_phase
+        note: non-fatal; ~2 min; W3 cycle phase lobe + phase tape + falsifier ledger (CN-SYS-R11)
+      - id: build_china_market_state
+        module: scripts.build_china_market_state
+        note: non-fatal; ~2 min; W6 sovereign spine — china_market_state.v1 (CN-SYS-R11 R13)
       - id: inject_data_base
         module: scripts.inject_data_base
       - id: publish_r2_asia

@@ -164,6 +164,13 @@ jobs:
           run_py "china participation lobe (build_china_participation)"            scripts.build_china_participation    # ~2m W2
           run_py "china policy transmission lobe (build_china_policy_transmission)" scripts.build_china_policy_transmission  # ~2m W4
           run_py "china THS snapshot side-car (build_baskets_china_ths --snapshot)" scripts.build_baskets_china_ths --snapshot  # ~2m W1 PIT
+          # ── CN-SYS Batch-2 lobe wiring (W3 + W6) ────────────────────────────────────
+          # W3 (cycle_phase) lands from a parallel PR; wired here by module name.
+          # W6 (market_state spine) runs AFTER W3 so cycle_phase.json is fresh.
+          # Both non-fatal (~2 min each; CN-SYS-R11); spine degrades to phase=null
+          # when W3 artifact is missing (handled inside build_china_market_state).
+          run_py "china cycle phase lobe (build_china_cycle_phase)"               scripts.build_china_cycle_phase      # ~2m W3
+          run_py "china market state spine (build_china_market_state)"            scripts.build_china_market_state     # ~2m W6
           exit 0
       - name: rebuild China/HK stock-search libraries (resilient — guarantees the analyzers ship)
         run: |

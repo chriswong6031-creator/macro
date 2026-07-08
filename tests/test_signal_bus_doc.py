@@ -73,10 +73,11 @@ def test_all_artifact_ids_present():
     with _SYNAPSE_YML.open(encoding="utf-8") as fh:
         registry = yaml.safe_load(fh)
     artifact_ids = list(registry.get("artifacts", {}).keys())
-    assert len(artifact_ids) == 267, (
-        f"Expected 267 artifacts in synapse.yml, found {len(artifact_ids)}. "
+    assert len(artifact_ids) == 269, (
+        f"Expected 269 artifacts in synapse.yml, found {len(artifact_ids)}. "
         "Update the test if the registry count changed intentionally."
-        " (china-alpha registration gap fix added site-china-altdata-mastermind,"
+        " (CN-SYS W6 spine added site-china-cycle-phase, site-china-market-state = 267->269;"
+        " china-alpha registration gap fix added site-china-altdata-mastermind,"
         " site-china-altdata-by-ticker, site-china-altdata-feed = 264->267;"
         " nw-context-intelligence W4 added context-candidates = 263->264;"
         " nw-context-intelligence W3 added context-risk, site-context-risk = 261->263;"
