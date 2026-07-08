@@ -1,38 +1,17 @@
 {
   "schema": "active_builds.v1",
-  "generated_at": "2026-07-07T13:06:18.739383+00:00",
+  "generated_at": "2026-07-08T06:27:44.046507+00:00",
   "base": {
-    "sha": "86714265a55694758314938d01377a5c1772e081"
+    "sha": "1b8c1abc2d7b47c1de9618e7c5ccf82e35653ac8"
   },
   "merged_days": 14,
   "merged_truncated": true,
   "open_prs": [
     {
-      "number": 1860,
-      "title": "fix(banks): survivorship correction + deseasonalization + PIT fixes \u2014 w3 bank-stress",
-      "head_ref": "feat/w3-bank-callreport-stress",
-      "updated_at": "2026-07-07T13:06:02Z",
-      "is_draft": false,
-      "merge_state": "DIRTY",
-      "merge_state_raw": "DIRTY",
-      "files_count": 6,
-      "files_truncated": false,
-      "files_error": false,
-      "files": [
-        "data/ffiec_y9c/bhc_panel.parquet",
-        "data/ffiec_y9c/bhc_ticker_map.csv",
-        "reports/w3-bank-callreport-stress-phase0.md",
-        "scripts/collect_ffiec_y9c.py",
-        "scripts/w3_bank_callreport_stress_phase0.py",
-        "tests/test_w3_bank_callreport_stress.py"
-      ],
-      "protected_paths_touched": []
-    },
-    {
-      "number": 1859,
-      "title": "fix(collect): align duplicate FRED series aliases \u2014 unbreak 8-run fred adapter outage",
-      "head_ref": "fix/fred-duplicate-series-alias",
-      "updated_at": "2026-07-07T13:01:22Z",
+      "number": 1908,
+      "title": "fix(ruling-graph): regenerate derived outputs to clear stale source_sha256 drift",
+      "head_ref": "fix/ruling-graph-drift",
+      "updated_at": "2026-07-08T06:22:09Z",
       "is_draft": false,
       "merge_state": "UNSTABLE",
       "merge_state_raw": "UNSTABLE",
@@ -40,154 +19,64 @@
       "files_truncated": false,
       "files_error": false,
       "files": [
-        "config.yml",
-        "tests/test_fred_series_alias_conflicts.py"
-      ],
-      "protected_paths_touched": []
-    },
-    {
-      "number": 1857,
-      "title": "research(stock-personality): W3 compat study harness + trial pre-registration",
-      "head_ref": "feat/stock-personality-w3",
-      "updated_at": "2026-07-07T12:25:06Z",
-      "is_draft": false,
-      "merge_state": "DIRTY",
-      "merge_state_raw": "DIRTY",
-      "files_count": 4,
-      "files_truncated": false,
-      "files_error": false,
-      "files": [
-        "data/experiments/registry_seed.json",
-        "scripts/build_stock_personality.py",
-        "scripts/personality_compat_phase0.py",
-        "tests/test_personality_compat.py"
+        "docs/NEURAL_WEB_CASE_LAW.md",
+        "site/neuralwebdata/ruling_graph.json"
       ],
       "protected_paths_touched": [
-        "data/experiments/registry_seed.json"
+        "site/neuralwebdata/ruling_graph.json"
       ]
     },
     {
-      "number": 1855,
-      "title": "research(oracle): OTA-RC-1 \u2014 W2 member-transmission under macro-episode clustering + period-matched R3 (adjudication pending)",
-      "head_ref": "rc/ota-rc1-w2-episode",
-      "updated_at": "2026-07-07T12:11:03Z",
+      "number": 1907,
+      "title": "fix(options): extend ThetaData v3 API dedup to OI + greeks paths",
+      "head_ref": "fix/thetadata-oi-greeks-dedup",
+      "updated_at": "2026-07-08T06:25:28Z",
       "is_draft": false,
       "merge_state": "UNSTABLE",
       "merge_state_raw": "UNSTABLE",
-      "files_count": 3,
-      "files_truncated": false,
-      "files_error": false,
-      "files": [
-        "research/oracle_asymmetry/W2_TC_RECHECK.md",
-        "research/oracle_asymmetry/w2_tc_recheck.json",
-        "scripts/research/oracle_w2_tc_recheck.py"
-      ],
-      "protected_paths_touched": []
-    },
-    {
-      "number": 1850,
-      "title": "research(dispersion): HC-RC-1 \u2014 R-1 construction divergence under real co-firing block inference (adjudication pending)",
-      "head_ref": "rc/hc-rc1-r1-blockfix",
-      "updated_at": "2026-07-07T11:54:14Z",
-      "is_draft": false,
-      "merge_state": "UNSTABLE",
-      "merge_state_raw": "UNSTABLE",
-      "files_count": 3,
-      "files_truncated": false,
-      "files_error": false,
-      "files": [
-        "data/strategies/construction_divergence_tc.json",
-        "research/CONSTRUCTION_DIVERGENCE_R1_TC_RECHECK.md",
-        "scripts/study_construction_divergence_tc.py"
-      ],
-      "protected_paths_touched": []
-    },
-    {
-      "number": 1848,
-      "title": "data(china): block-trade tape archiver + SW-L1 mapping \u2014 F5-01 accrual infra",
-      "head_ref": "feat/f501-cn-block-tape-archiver",
-      "updated_at": "2026-07-07T11:46:11Z",
-      "is_draft": false,
-      "merge_state": "DIRTY",
-      "merge_state_raw": "DIRTY",
-      "files_count": 4,
-      "files_truncated": false,
-      "files_error": false,
-      "files": [
-        ".gitignore",
-        "collectors/china_block_tape.py",
-        "reports/f501-cn-block-tape-archiver.md",
-        "tests/test_china_block_tape.py"
-      ],
-      "protected_paths_touched": []
-    },
-    {
-      "number": 1847,
-      "title": "test(legal): ITC-337 exclusion-risk phase-0 \u2014 NULL (parser contamination fix)",
-      "head_ref": "feat/w2153-itc337-phase0",
-      "updated_at": "2026-07-07T11:35:45Z",
-      "is_draft": false,
-      "merge_state": "DIRTY",
-      "merge_state_raw": "DIRTY",
-      "files_count": 4,
-      "files_truncated": false,
-      "files_error": false,
-      "files": [
-        "reports/w2153-itc337-phase0.md",
-        "scripts/w2153_itc337_phase0.py",
-        "scripts/w2153_itc337_respondent_map.csv",
-        "tests/test_w2153_itc337_phase0.py"
-      ],
-      "protected_paths_touched": []
-    },
-    {
-      "number": 1845,
-      "title": "data(options): W5-B signed-tape pilot + resumable backfill state machine (20 names x 60d)",
-      "head_ref": "feat/w5b-options-tape-pilot",
-      "updated_at": "2026-07-07T11:27:40Z",
-      "is_draft": false,
-      "merge_state": "UNKNOWN",
-      "merge_state_raw": "UNKNOWN",
-      "files_count": 4,
-      "files_truncated": false,
-      "files_error": false,
-      "files": [
-        ".gitignore",
-        "reports/w5b-options-tape-pilot.md",
-        "scripts/options_tape_signed_pilot.py",
-        "tests/test_options_tape_signed.py"
-      ],
-      "protected_paths_touched": []
-    },
-    {
-      "number": 1844,
-      "title": "data(consumer): TSA daily throughput collector + display product (2019->)",
-      "head_ref": "feat/w2061-tsa-throughput-product",
-      "updated_at": "2026-07-07T11:23:53Z",
-      "is_draft": false,
-      "merge_state": "UNKNOWN",
-      "merge_state_raw": "UNKNOWN",
       "files_count": 5,
       "files_truncated": false,
       "files_error": false,
       "files": [
-        "collectors/tsa_throughput.py",
-        "data/tsa/throughput.parquet",
-        "reports/w2061-tsa-throughput-product.md",
-        "tests/fixtures/tsa_sample.html",
-        "tests/test_tsa_throughput.py"
+        "collectors/thetadata.py",
+        "docs/NEURAL_WEB_CASE_LAW.md",
+        "scripts/backfill_thetadata_eod.py",
+        "site/neuralwebdata/ruling_graph.json",
+        "tests/test_thetadata_dedup.py"
+      ],
+      "protected_paths_touched": [
+        "site/neuralwebdata/ruling_graph.json"
+      ]
+    },
+    {
+      "number": 1896,
+      "title": "CN interim track record + US standout popover",
+      "head_ref": "claude/cn-interim-track-nb-popover",
+      "updated_at": "2026-07-08T04:21:20Z",
+      "is_draft": true,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 5,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "engine/china_standout_track.py",
+        "scripts/build_china_library.py",
+        "templates/china.html.j2",
+        "templates/dashboard.html.j2",
+        "tests/test_china_standout_track.py"
       ],
       "protected_paths_touched": []
     },
     {
-      "number": 1840,
-      "title": "feat(tech-lab): StockInvest technical-indicator machine \u2014 lab fa\u00e7ade + 43-signal engine suite + catalog/score/confluence",
-      "head_ref": "claude/tender-lamarr-ab4a36",
-      "updated_at": "2026-07-07T12:54:37Z",
-      "is_draft": false,
-      "merge_state": "UNKNOWN",
-      "merge_state_raw": "UNKNOWN",
-      "files_count": 33,
+      "number": 1891,
+      "title": "fix(tech-lab): bound composite contributions + exclude score-valued states from screener firing",
+      "head_ref": "claude/tech-lab-robustness-fixes",
+      "updated_at": "2026-07-08T02:59:59Z",
+      "is_draft": true,
+      "merge_state": "DIRTY",
+      "merge_state_raw": "DIRTY",
+      "files_count": 35,
       "files_truncated": false,
       "files_error": false,
       "files": [
@@ -196,6 +85,7 @@
         "data/lab/.gitkeep",
         "engine/formations.py",
         "engine/fundamental_screens.py",
+        "engine/insider_power.py",
         "engine/lab.py",
         "engine/ma_crosses.py",
         "engine/neuralweb/query.py",
@@ -216,6 +106,116 @@
         "templates/tech_lab.html.j2",
         "tests/test_formations.py",
         "tests/test_fundamental_screens.py",
+        "tests/test_insider_power.py",
+        "tests/test_lab.py",
+        "tests/test_lab_backtest_cli.py",
+        "tests/test_ma_crosses.py",
+        "tests/test_pivots.py",
+        "tests/test_rsi_signals.py",
+        "tests/test_tech_catalog.py",
+        "tests/test_tech_score.py",
+        "tests/test_trend_signals.py"
+      ],
+      "protected_paths_touched": [
+        ".github/workflows/daily.yml",
+        "config/synapse.yml",
+        "engine/neuralweb/query.py"
+      ]
+    },
+    {
+      "number": 1889,
+      "title": "feat(mri): Package L \u2014 \u00a710 adjudication + over/under-expectation read",
+      "head_ref": "feat/mri-w9-expectation-read",
+      "updated_at": "2026-07-07T23:44:40Z",
+      "is_draft": false,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 5,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "engine/release_market_context.py",
+        "research/MACRO_RELEASE_INTEL_MASTERPLAN_BY_FABLE.md",
+        "scripts/build_release_forecast.py",
+        "tests/test_release_forecast_producer.py",
+        "tests/test_release_market_context.py"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 1888,
+      "title": "test(mri): claims synthetic vintages to raw ALFRED persons scale (~200k)",
+      "head_ref": "claude/nfp-claims-unit-fix",
+      "updated_at": "2026-07-07T23:17:32Z",
+      "is_draft": true,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 1,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "tests/test_release_forecast_v2.py"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 1875,
+      "title": "research(oracle): RC-RUL-5 item 5 \u2014 base-10 time-shift placebo sweep [DO NOT MERGE \u2014 adjudication pending]",
+      "head_ref": "claude/base10-tc-sweep",
+      "updated_at": "2026-07-07T15:46:45Z",
+      "is_draft": true,
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
+      "files_count": 4,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        "research/ORACLE_REVERSION_BASE10_TC_SWEEP.md",
+        "research/ORACLE_REVERSION_VALIDATED.md",
+        "research/oracle_reversion_base10_tc_sweep.json",
+        "scripts/research/oracle_reversion_base10_tc_sweep.py"
+      ],
+      "protected_paths_touched": []
+    },
+    {
+      "number": 1840,
+      "title": "feat(tech-lab): StockInvest technical-indicator machine \u2014 lab fa\u00e7ade + 43-signal engine suite + catalog/score/confluence",
+      "head_ref": "claude/tender-lamarr-ab4a36",
+      "updated_at": "2026-07-08T00:57:31Z",
+      "is_draft": false,
+      "merge_state": "DIRTY",
+      "merge_state_raw": "DIRTY",
+      "files_count": 35,
+      "files_truncated": false,
+      "files_error": false,
+      "files": [
+        ".github/workflows/daily.yml",
+        "config/synapse.yml",
+        "data/lab/.gitkeep",
+        "engine/formations.py",
+        "engine/fundamental_screens.py",
+        "engine/insider_power.py",
+        "engine/lab.py",
+        "engine/ma_crosses.py",
+        "engine/neuralweb/query.py",
+        "engine/pivots.py",
+        "engine/rsi_signals.py",
+        "engine/tech_catalog.py",
+        "engine/tech_score.py",
+        "engine/tech_stars.py",
+        "engine/trend_signals.py",
+        "research/STOCKINVEST_TECH_INDICATOR_SUITE_PROGRAM.md",
+        "scripts/build_tech_lab.py",
+        "scripts/build_tech_lab_data.py",
+        "scripts/lab_backtest.py",
+        "site/factordata/tech_lab.json",
+        "site/factordata/tech_screener.json",
+        "site/tech_lab.html",
+        "templates/_navlinks.html.j2",
+        "templates/tech_lab.html.j2",
+        "tests/test_formations.py",
+        "tests/test_fundamental_screens.py",
+        "tests/test_insider_power.py",
         "tests/test_lab.py",
         "tests/test_lab_backtest_cli.py",
         "tests/test_ma_crosses.py",
@@ -237,8 +237,8 @@
       "head_ref": "policy-intel-refresh-20260706",
       "updated_at": "2026-07-07T01:20:40Z",
       "is_draft": false,
-      "merge_state": "UNKNOWN",
-      "merge_state_raw": "UNKNOWN",
+      "merge_state": "DIRTY",
+      "merge_state_raw": "DIRTY",
       "files_count": 2,
       "files_truncated": false,
       "files_error": false,
@@ -254,8 +254,8 @@
       "head_ref": "wave/w4-7-axis-flip",
       "updated_at": "2026-07-06T10:32:38Z",
       "is_draft": false,
-      "merge_state": "UNKNOWN",
-      "merge_state_raw": "UNKNOWN",
+      "merge_state": "UNSTABLE",
+      "merge_state_raw": "UNSTABLE",
       "files_count": 3,
       "files_truncated": false,
       "files_error": false,
@@ -265,156 +265,283 @@
         "scripts/pos_v2_acceptance_phase0.py"
       ],
       "protected_paths_touched": []
-    },
-    {
-      "number": 1635,
-      "title": "feat(nw-macro-rail): R5 \u2014 macro context intake & memory rail (world_state lobes, snapshot registry, spine stamps, weather page)",
-      "head_ref": "feat/nw-macro-context",
-      "updated_at": "2026-07-06T10:15:37Z",
-      "is_draft": false,
-      "merge_state": "UNKNOWN",
-      "merge_state_raw": "UNKNOWN",
-      "files_count": 51,
-      "files_truncated": false,
-      "files_error": false,
-      "files": [
-        ".github/workflows/ci.yml",
-        ".github/workflows/daily.yml",
-        ".github/workflows/engine-render.yml",
-        ".github/workflows/render.yml",
-        "config/dag.yml",
-        "config/synapse.yml",
-        "data/commodity/latest.json",
-        "data/forex/latest.json",
-        "data/macro_context/latest.json",
-        "data/macro_snapshots/latest.json",
-        "data/macro_snapshots/ledger.parquet",
-        "data/macro_snapshots/transitions.jsonl",
-        "data/neuralweb/confluence_graph.json",
-        "data/neuralweb/mastermind_context.json",
-        "data/neuralweb/spine_index.parquet",
-        "data/neuralweb/spine_index.parquet.envelope.json",
-        "data/neuralweb/world_state.json",
-        "docs/SIGNAL_BUS.md",
-        "engine/neuralweb/_dates.py",
-        "engine/neuralweb/_law.py",
-        "engine/neuralweb/ask_brain.py",
-        "engine/neuralweb/confluence.py",
-        "engine/neuralweb/mastermind_context.py",
-        "engine/neuralweb/query.py",
-        "engine/neuralweb/world_state.py",
-        "engine/qledger.py",
-        "research/NEURAL_WEB_MACRO_CONTEXT_INTEGRATION_FOR_CLAUDE.md",
-        "research/NW_MACRO_CONTEXT_RAIL_MASTERPLAN_BY_FABLE.md",
-        "scripts/archive_signals.py",
-        "scripts/backfill_regime_stamps.py",
-        "scripts/build_commodities.py",
-        "scripts/build_forex.py",
-        "scripts/build_macro_context.py",
-        "scripts/build_macro_snapshot.py",
-        "scripts/healthcheck.py",
-        "site/macro_context.html",
-        "site/neuralwebdata/mastermind_context.json",
-        "templates/_navlinks.html.j2",
-        "templates/committee.html.j2",
-        "templates/macro_context.html.j2",
-        "templates/transmission.html.j2",
-        "tests/test_ask_brain.py",
-        "tests/test_confluence.py",
-        "tests/test_kernel.py",
-        "tests/test_law_dates.py",
-        "tests/test_macro_context_authority.py",
-        "tests/test_macro_snapshot.py",
-        "tests/test_qledger.py",
-        "tests/test_signal_bus_doc.py",
-        "tests/test_spine_query.py",
-        "tests/test_world_state.py"
-      ],
-      "protected_paths_touched": [
-        ".github/workflows/ci.yml",
-        ".github/workflows/daily.yml",
-        ".github/workflows/engine-render.yml",
-        ".github/workflows/render.yml",
-        "config/dag.yml",
-        "config/synapse.yml",
-        "docs/SIGNAL_BUS.md",
-        "engine/neuralweb/_dates.py",
-        "engine/neuralweb/_law.py",
-        "engine/neuralweb/ask_brain.py",
-        "engine/neuralweb/confluence.py",
-        "engine/neuralweb/mastermind_context.py",
-        "engine/neuralweb/query.py",
-        "engine/neuralweb/world_state.py",
-        "site/neuralwebdata/mastermind_context.json"
-      ]
-    },
-    {
-      "number": 1565,
-      "title": "entry-stack(W2-SSQ): squeeze-release species phase0 study",
-      "head_ref": "esx/ssq",
-      "updated_at": "2026-07-07T00:31:42Z",
-      "is_draft": false,
-      "merge_state": "UNKNOWN",
-      "merge_state_raw": "UNKNOWN",
-      "files_count": 7,
-      "files_truncated": false,
-      "files_error": false,
-      "files": [
-        "data/experiments/registry_seed.json",
-        "data/species/registry.json",
-        "research/entry_stack/W2_SSQ_REPORT.md",
-        "research/species/s_sq_phase0/REPORT.md",
-        "scripts/research/dt_r14_time_control.py",
-        "scripts/research/run_w2_ssq.py",
-        "tests/test_run_w2_ssq.py"
-      ],
-      "protected_paths_touched": [
-        "data/experiments/registry_seed.json"
-      ]
     }
   ],
   "collisions": [
     {
-      "pr_a": 1840,
-      "pr_b": 1635,
+      "pr_a": 1891,
+      "pr_b": 1840,
       "shared_files": [
         ".github/workflows/daily.yml",
         "config/synapse.yml",
+        "data/lab/.gitkeep",
+        "engine/formations.py",
+        "engine/fundamental_screens.py",
+        "engine/insider_power.py",
+        "engine/lab.py",
+        "engine/ma_crosses.py",
         "engine/neuralweb/query.py",
-        "templates/_navlinks.html.j2"
+        "engine/pivots.py",
+        "engine/rsi_signals.py",
+        "engine/tech_catalog.py",
+        "engine/tech_score.py",
+        "engine/tech_stars.py",
+        "engine/trend_signals.py",
+        "research/STOCKINVEST_TECH_INDICATOR_SUITE_PROGRAM.md",
+        "scripts/build_tech_lab.py",
+        "scripts/build_tech_lab_data.py",
+        "scripts/lab_backtest.py",
+        "site/factordata/tech_lab.json",
+        "site/factordata/tech_screener.json",
+        "site/tech_lab.html",
+        "templates/_navlinks.html.j2",
+        "templates/tech_lab.html.j2",
+        "tests/test_formations.py",
+        "tests/test_fundamental_screens.py",
+        "tests/test_insider_power.py",
+        "tests/test_lab.py",
+        "tests/test_lab_backtest_cli.py",
+        "tests/test_ma_crosses.py",
+        "tests/test_pivots.py",
+        "tests/test_rsi_signals.py",
+        "tests/test_tech_catalog.py",
+        "tests/test_tech_score.py",
+        "tests/test_trend_signals.py"
       ],
-      "shared_count": 4,
+      "shared_count": 35,
       "any_protected": true
     },
     {
-      "pr_a": 1857,
-      "pr_b": 1565,
+      "pr_a": 1908,
+      "pr_b": 1907,
       "shared_files": [
-        "data/experiments/registry_seed.json"
+        "docs/NEURAL_WEB_CASE_LAW.md",
+        "site/neuralwebdata/ruling_graph.json"
       ],
-      "shared_count": 1,
+      "shared_count": 2,
       "any_protected": true
-    },
-    {
-      "pr_a": 1848,
-      "pr_b": 1845,
-      "shared_files": [
-        ".gitignore"
-      ],
-      "shared_count": 1,
-      "any_protected": false
     }
   ],
   "recent_merged": [
+    {
+      "number": 1906,
+      "title": "fix(committee): remove two botched-paste JS fragments blanking the Neural Web page",
+      "merged_at": "2026-07-08T06:20:47Z"
+    },
+    {
+      "number": 1905,
+      "title": "fix(collect): wire TSA throughput adapter into nightly",
+      "merged_at": "2026-07-08T06:10:23Z"
+    },
+    {
+      "number": 1904,
+      "title": "feat(nw-context-intelligence): W4 \u2014 context scanner (template families, printed nulls, display-only candidates)",
+      "merged_at": "2026-07-08T06:26:00Z"
+    },
+    {
+      "number": 1903,
+      "title": "feat(nw-context-intelligence): W3 \u2014 personality risk lens (board/universe exposure profile, display-only)",
+      "merged_at": "2026-07-08T06:14:39Z"
+    },
+    {
+      "number": 1902,
+      "title": "feat(admin-experiments): register 10 frontier program come-back clocks",
+      "merged_at": "2026-07-08T05:59:04Z"
+    },
+    {
+      "number": 1901,
+      "title": "feat(nw-context-intelligence): W2 \u2014 context_snapshot PIT API + personality coordinates on spine rows",
+      "merged_at": "2026-07-08T05:48:03Z"
+    },
+    {
+      "number": 1900,
+      "title": "fix(nw-context-intelligence): W1 coordinate-layer repairs \u2014 fire_coordinates, qledger backfill provenance, accrual heartbeats",
+      "merged_at": "2026-07-08T05:46:18Z"
+    },
+    {
+      "number": 1899,
+      "title": "fix(matrix): exclude expired expiries + plain-ISO expiry serialization",
+      "merged_at": "2026-07-08T05:27:07Z"
+    },
+    {
+      "number": 1898,
+      "title": "docs(nw-context-intelligence): masterplan + context_scan fdr family + clocks (W0)",
+      "merged_at": "2026-07-08T05:15:09Z"
+    },
+    {
+      "number": 1897,
+      "title": "feat(insider): Insider Power engine + per-ticker export for Terminal \"Insider\" tab",
+      "merged_at": "2026-07-08T05:09:21Z"
+    },
+    {
+      "number": 1895,
+      "title": "fix(us-board): restore survivor-bias framing in dead-store survivorship note",
+      "merged_at": "2026-07-08T04:06:55Z"
+    },
+    {
+      "number": 1894,
+      "title": "fix(us-board): widen track record + fix Surfaced/Status sort + honest win/loss counts",
+      "merged_at": "2026-07-08T03:25:54Z"
+    },
+    {
+      "number": 1893,
+      "title": "feat(stock-personality): playbook doctrine lines in the stock-page panel (EN/ZH)",
+      "merged_at": "2026-07-08T03:11:18Z"
+    },
+    {
+      "number": 1892,
+      "title": "research(stock-personality): Operator Playbook + Field Guide \u2014 the understanding layer",
+      "merged_at": "2026-07-08T03:03:09Z"
+    },
+    {
+      "number": 1890,
+      "title": "feat(nw-r6): Cross-Asset Depth wave \u2014 display-only cross_asset_flows lobe",
+      "merged_at": "2026-07-08T00:28:48Z"
+    },
+    {
+      "number": 1887,
+      "title": "feat(mri): quirk flags (MRI-R20) \u2014 deterministic release-quirk chips",
+      "merged_at": "2026-07-07T18:31:39Z"
+    },
+    {
+      "number": 1886,
+      "title": "research(stock-personality): Phase-0 compat study executed \u2014 0/40 FDR survivors (pre-committed null)",
+      "merged_at": "2026-07-07T18:04:42Z"
+    },
+    {
+      "number": 1885,
+      "title": "feat(mri): Package K \u2014 Release Radar UI v2",
+      "merged_at": "2026-07-07T18:07:44Z"
+    },
+    {
+      "number": 1883,
+      "title": "feat(mri): Package I \u2014 surprise distribution + market-implied benchmark + reaction sensitivity",
+      "merged_at": "2026-07-07T18:07:13Z"
+    },
+    {
+      "number": 1881,
+      "title": "feat(mri): Package G \u2014 CPI shelter leg + component decomposition (attempt 2/2; honest null on core)",
+      "merged_at": "2026-07-07T17:14:04Z"
+    },
+    {
+      "number": 1880,
+      "title": "feat(mri): \u00a79.1 reconciliation \u2014 claims \u00a76 gate, benchmark-only enforcement, IC4WSA backtest",
+      "merged_at": "2026-07-07T17:24:42Z"
+    },
+    {
+      "number": 1878,
+      "title": "research: Portfolio Risk Desk masterplan \u2014 Codex held-position adjudication (PRD-R1..R12)",
+      "merged_at": "2026-07-07T15:55:48Z"
+    },
+    {
+      "number": 1877,
+      "title": "feat(mri): Package F \u2014 ledger schema v2 + module split + weekly claims target",
+      "merged_at": "2026-07-07T16:08:20Z"
+    },
+    {
+      "number": 1876,
+      "title": "feat(mri): PR-K \u2014 Kalshi release-market collector + first-seen snapshot store (C-2 groundwork)",
+      "merged_at": "2026-07-07T16:26:33Z"
+    },
+    {
+      "number": 1874,
+      "title": "research(long-hold): 10 Codex winner cases + first cross-case fingerprint report (Winner Autopsy W1\u2192W2)",
+      "merged_at": "2026-07-07T15:39:18Z"
+    },
+    {
+      "number": 1873,
+      "title": "feat(prophet): nightly wiring + ledger advancement + flow_idx mirror + pin-probability gross-gamma fix",
+      "merged_at": "2026-07-07T15:38:31Z"
+    },
+    {
+      "number": 1872,
+      "title": "fix(launchd): backfill keepalive python path + RTH gate + ETF daily re-pull",
+      "merged_at": "2026-07-07T15:05:35Z"
+    },
+    {
+      "number": 1871,
+      "title": "feat(signal-lab): Day-3 consolidation \u2014 ledger (11 families), stores, 2 confirmer rows, verdict amendment, queue-drained status",
+      "merged_at": "2026-07-07T14:36:41Z"
+    },
+    {
+      "number": 1870,
+      "title": "research: RC-RUL-5 \u2014 SEQ_TLT split verdict; time-preserving placebo law extended",
+      "merged_at": "2026-07-07T13:59:43Z"
+    },
+    {
+      "number": 1869,
+      "title": "research(oracle): OTA-RC-2 \u2014 SEQ_TLT_RELIEF_WASHOUT under episode-cluster CIs + time-shift placebo (adjudication pending)",
+      "merged_at": "2026-07-07T13:57:07Z"
+    },
+    {
+      "number": 1868,
+      "title": "research: DT-R14 re-check adjudication \u2014 RC-RUL-1..4",
+      "merged_at": "2026-07-07T13:51:40Z"
+    },
+    {
+      "number": 1867,
+      "title": "fix(experiments): un-stitch registry_seed entries mangled in #1857 merge resolution",
+      "merged_at": "2026-07-07T13:41:26Z"
+    },
+    {
+      "number": 1866,
+      "title": "research(entry-intel): EI-RC-1 \u2014 P1.3 trials under within-month demeaning + month-block bootstrap (adjudication pending)",
+      "merged_at": "2026-07-07T13:42:39Z"
+    },
+    {
+      "number": 1865,
+      "title": "feat(china): \u51cf\u6301 pre-disclosure panel + execution-window phase-0 \u2014 PASS",
+      "merged_at": "2026-07-07T13:39:59Z"
+    },
+    {
+      "number": 1864,
+      "title": "research(oracle): ORC-RC-1 \u2014 compound gauntlet time-shift placebo + P3 secondary month-block CI (adjudication pending)",
+      "merged_at": "2026-07-07T13:41:23Z"
+    },
+    {
+      "number": 1863,
+      "title": "fix(stock-personality): R-SP21 v1.1 re-anchor of degenerate chart thresholds",
+      "merged_at": "2026-07-07T13:21:07Z"
+    },
+    {
+      "number": 1862,
+      "title": "feat(long-hold): Winner Autopsy Lab W0 \u2014 breakaway episode census + winner case library + admin Long-Hold Lobe page (WA-R1..R10)",
+      "merged_at": "2026-07-07T13:22:32Z"
+    },
+    {
+      "number": 1861,
+      "title": "fix(cn-export-nowcast): PIT lag + criterion + CNY deseas + ledger + HAC units \u2014 NULL confirmed",
+      "merged_at": "2026-07-07T13:25:26Z"
+    },
+    {
+      "number": 1860,
+      "title": "fix(banks): survivorship correction + deseasonalization + PIT fixes \u2014 w3 bank-stress",
+      "merged_at": "2026-07-07T13:30:26Z"
+    },
+    {
+      "number": 1859,
+      "title": "fix(collect): align duplicate FRED series aliases \u2014 unbreak 8-run fred adapter outage",
+      "merged_at": "2026-07-07T13:06:12Z"
+    },
     {
       "number": 1858,
       "title": "feat(china-intel): politburo_econ + cewc communiqu\u00e9 backfill (W1.1) \u2014 readout filters, archive fast-path, gov.cn mirrors",
       "merged_at": "2026-07-07T12:42:58Z"
     },
     {
+      "number": 1857,
+      "title": "research(stock-personality): W3 compat study harness + trial pre-registration",
+      "merged_at": "2026-07-07T13:38:48Z"
+    },
+    {
       "number": 1856,
       "title": "feat(banks): FR Y-9C ingestion + w3 bank-stress phase-0 \u2014 ACCRUE",
       "merged_at": "2026-07-07T12:28:29Z"
+    },
+    {
+      "number": 1855,
+      "title": "research(oracle): OTA-RC-1 \u2014 W2 member-transmission under macro-episode clustering + period-matched R3 (adjudication pending)",
+      "merged_at": "2026-07-07T13:41:19Z"
     },
     {
       "number": 1854,
@@ -437,9 +564,34 @@
       "merged_at": "2026-07-07T12:28:49Z"
     },
     {
+      "number": 1850,
+      "title": "research(dispersion): HC-RC-1 \u2014 R-1 construction divergence under real co-firing block inference (adjudication pending)",
+      "merged_at": "2026-07-07T13:44:56Z"
+    },
+    {
       "number": 1849,
       "title": "fix(mri): anchor gasoline_mom on the CPI reference month, not asof's month",
       "merged_at": "2026-07-07T11:56:09Z"
+    },
+    {
+      "number": 1848,
+      "title": "data(china): block-trade tape archiver + SW-L1 mapping \u2014 F5-01 accrual infra",
+      "merged_at": "2026-07-07T13:34:23Z"
+    },
+    {
+      "number": 1847,
+      "title": "test(legal): ITC-337 exclusion-risk phase-0 \u2014 NULL (parser contamination fix)",
+      "merged_at": "2026-07-07T13:19:57Z"
+    },
+    {
+      "number": 1845,
+      "title": "data(options): W5-B signed-tape pilot + resumable backfill state machine (20 names x 60d)",
+      "merged_at": "2026-07-07T13:42:28Z"
+    },
+    {
+      "number": 1844,
+      "title": "data(consumer): TSA daily throughput collector + display product (2019->)",
+      "merged_at": "2026-07-07T13:51:55Z"
     },
     {
       "number": 1841,
@@ -1427,6 +1579,11 @@
       "merged_at": "2026-07-06T10:35:10Z"
     },
     {
+      "number": 1635,
+      "title": "feat(nw-macro-rail): R5 \u2014 macro context intake & memory rail (world_state lobes, snapshot registry, spine stamps, weather page)",
+      "merged_at": "2026-07-08T00:06:45Z"
+    },
+    {
       "number": 1634,
       "title": "test(ask-brain): advice filter coverage for options path (RO-7 symmetry)",
       "merged_at": "2026-07-06T10:13:39Z"
@@ -1765,6 +1922,11 @@
       "number": 1566,
       "title": "entry-stack(A2-W2a): esx_insider_sponsor phase0 \u2014 I1/I2/I3 + I1w within-washout (report only)",
       "merged_at": "2026-07-06T08:07:19Z"
+    },
+    {
+      "number": 1565,
+      "title": "entry-stack(W2-SSQ): squeeze-release species phase0 study",
+      "merged_at": "2026-07-07T13:29:32Z"
     },
     {
       "number": 1564,
@@ -2660,251 +2822,6 @@
       "number": 1383,
       "title": "ei(P0): Phase-0 evidence artifacts + masterplan status",
       "merged_at": "2026-07-05T08:47:04Z"
-    },
-    {
-      "number": 1382,
-      "title": "W0: PIT tape-rolling \u2014 append-only history for latest-only collectors",
-      "merged_at": "2026-07-05T09:19:53Z"
-    },
-    {
-      "number": 1381,
-      "title": "ei(P0.1): PIT-membership universe union \u2014 delisted ex-members restored to replay scope",
-      "merged_at": "2026-07-05T08:44:17Z"
-    },
-    {
-      "number": 1380,
-      "title": "fix(bonds): tighten page copy and mobile overflow",
-      "merged_at": "2026-07-05T08:44:18Z"
-    },
-    {
-      "number": 1379,
-      "title": "feat(live-flow): intraday options flow poller + notability event engine + R2 feed transport + /api/flow endpoints (P-A+P-B)",
-      "merged_at": "2026-07-05T10:37:31Z"
-    },
-    {
-      "number": 1378,
-      "title": "entry-stack(W1-8K): EDGAR 8-K Item 2.02 earnings-date collector",
-      "merged_at": "2026-07-05T10:58:38Z"
-    },
-    {
-      "number": 1377,
-      "title": "research: Signal Commons & Event Intelligence masterplan (W0-W6 rulings)",
-      "merged_at": "2026-07-05T08:39:13Z"
-    },
-    {
-      "number": 1376,
-      "title": "feat(factor-intel P1-B): twin basket computation",
-      "merged_at": "2026-07-05T10:29:04Z"
-    },
-    {
-      "number": 1375,
-      "title": "ota(w0.1): Asymmetry Re-Grade \u2014 harness, graded events CSV, Asymmetry Atlas",
-      "merged_at": "2026-07-05T08:33:06Z"
-    },
-    {
-      "number": 1374,
-      "title": "flow(P1.1b): reconstruct index dealer-gamma history + market_gamma vol-context upgrade",
-      "merged_at": "2026-07-05T12:02:39Z"
-    },
-    {
-      "number": 1373,
-      "title": "probe(T2a-P2.0): wildcard-bulk trade_quote throughput measurement + R6 memo",
-      "merged_at": "2026-07-05T08:18:28Z"
-    },
-    {
-      "number": 1372,
-      "title": "feat(oracle): compact pack explored-list as registry scales",
-      "merged_at": "2026-07-05T08:05:29Z"
-    },
-    {
-      "number": 1371,
-      "title": "feat(factor-intel P1-A): nightly factor panel builder \u2014 causal Block-A attribution + Block-B percentiles",
-      "merged_at": "2026-07-05T08:05:18Z"
-    },
-    {
-      "number": 1369,
-      "title": "log(oracle): explore batch 1 (episode-routing, 65 specs) \u2014 0 new buy edges",
-      "merged_at": "2026-07-05T08:02:40Z"
-    },
-    {
-      "number": 1368,
-      "title": "feat(synapse): register options_flow + iv_surface nerves (P4.1)",
-      "merged_at": "2026-07-05T08:05:49Z"
-    },
-    {
-      "number": 1367,
-      "title": "entry-stack(W0): RUL-7 threshold freeze sign-off",
-      "merged_at": "2026-07-05T07:56:36Z"
-    },
-    {
-      "number": 1366,
-      "title": "entry-stack(W0-C): entry_strata_phase0 harness + incumbent baselines",
-      "merged_at": "2026-07-05T07:50:02Z"
-    },
-    {
-      "number": 1365,
-      "title": "entry-stack(W0-A2): new primitives (U&R, liquidity, dormant events)",
-      "merged_at": "2026-07-05T07:36:26Z"
-    },
-    {
-      "number": 1364,
-      "title": "research(oracle): Turn Asymmetry assessment + masterplan (OTA program)",
-      "merged_at": "2026-07-05T07:14:20Z"
-    },
-    {
-      "number": 1363,
-      "title": "fix(options): thetadata eod dedup \u2014 writer idempotency + repair script + defensive read",
-      "merged_at": "2026-07-05T07:14:36Z"
-    },
-    {
-      "number": 1362,
-      "title": "entry-stack(W0-B): historical gate-fire dumper",
-      "merged_at": "2026-07-05T07:23:43Z"
-    },
-    {
-      "number": 1361,
-      "title": "entry-stack(W0-A3): vol_squeeze.assess_series with fidelity pin",
-      "merged_at": "2026-07-05T07:17:34Z"
-    },
-    {
-      "number": 1360,
-      "title": "entry-stack(W0-A1): series primitives part 1",
-      "merged_at": "2026-07-05T07:17:55Z"
-    },
-    {
-      "number": 1359,
-      "title": "fix(oracle): tier-S episode pairing \u2014 conform _pair_episodes to registered COMPLEX_ETF_MAP join (ruling XR-PAIR)",
-      "merged_at": "2026-07-05T07:10:17Z"
-    },
-    {
-      "number": 1358,
-      "title": "feat(options): T2a signed tape-flow feature engine \u2014 per-name daily aggregates from trade+NBBO",
-      "merged_at": "2026-07-05T07:08:58Z"
-    },
-    {
-      "number": 1357,
-      "title": "research(factor-intel): P0 \u2014 Factor Intelligence masterplan + locked pre-registration",
-      "merged_at": "2026-07-05T06:57:21Z"
-    },
-    {
-      "number": 1356,
-      "title": "research: Entry-Stack Expansion masterplan by Fable (census-verified, red-teamed)",
-      "merged_at": "2026-07-05T06:50:30Z"
-    },
-    {
-      "number": 1355,
-      "title": "ci: guard standalone site/*.js bundles with node --check (markets.html #1004\u2192#1353 class)",
-      "merged_at": "2026-07-05T06:49:43Z"
-    },
-    {
-      "number": 1354,
-      "title": "docs(options): licensing reversal \u2014 D5 closed, flow surfaces may ship public",
-      "merged_at": "2026-07-05T06:45:48Z"
-    },
-    {
-      "number": 1353,
-      "title": "fix(markets): repair SyntaxError killing all charts on markets.html",
-      "merged_at": "2026-07-05T06:27:38Z"
-    },
-    {
-      "number": 1352,
-      "title": "feat(terminal): route international stock links to the Terminal",
-      "merged_at": "2026-07-05T06:19:12Z"
-    },
-    {
-      "number": 1351,
-      "title": "perf(page-load): trim dead Plotly, defer Plotly on chart pages, guard live.js",
-      "merged_at": "2026-07-05T06:03:23Z"
-    },
-    {
-      "number": 1350,
-      "title": "ux(committee): open access \u2014 no login wall (ask box keeps server auth)",
-      "merged_at": "2026-07-05T05:58:07Z"
-    },
-    {
-      "number": 1349,
-      "title": "feat(oracle): brainstorm pack scale/coverage guards + file-drop ingest",
-      "merged_at": "2026-07-05T05:55:31Z"
-    },
-    {
-      "number": 1348,
-      "title": "feat(terminal): route CN/HK/Canada stock links to the Terminal + lazy-load search",
-      "merged_at": "2026-07-05T05:35:22Z"
-    },
-    {
-      "number": 1347,
-      "title": "fix(oracle): correct A17 verdict \u2014 modern-regime edge, not overfit",
-      "merged_at": "2026-07-05T05:31:31Z"
-    },
-    {
-      "number": 1346,
-      "title": "feat(oracle): brainstorm --explore mode \u2014 wide-net diversity generation",
-      "merged_at": "2026-07-05T05:07:46Z"
-    },
-    {
-      "number": 1345,
-      "title": "feat(oracle): compound OOS+placebo gauntlet \u2014 A15 passes, A17 overfit",
-      "merged_at": "2026-07-05T05:03:11Z"
-    },
-    {
-      "number": 1344,
-      "title": "feat(oracle): brainstorm round-4 log \u2014 beat A9; washout-stress cluster mapped",
-      "merged_at": "2026-07-05T04:47:43Z"
-    },
-    {
-      "number": 1343,
-      "title": "neural-web(W8b): the ask box \u2014 build-out complete, the program transitions to OPERATE",
-      "merged_at": "2026-07-05T04:41:51Z"
-    },
-    {
-      "number": 1342,
-      "title": "Rescue local research artifacts",
-      "merged_at": "2026-07-06T09:22:34Z"
-    },
-    {
-      "number": 1341,
-      "title": "fix(ci): handle functional selectors in nav-gap guard",
-      "merged_at": "2026-07-06T09:23:17Z"
-    },
-    {
-      "number": 1340,
-      "title": "Trim macro and country dashboard copy",
-      "merged_at": "2026-07-05T04:20:21Z"
-    },
-    {
-      "number": 1339,
-      "title": "research(exit-crowd): L4-only PRE-FDR INTERIM leg + runner (P4.4a)",
-      "merged_at": "2026-07-05T08:05:59Z"
-    },
-    {
-      "number": 1338,
-      "title": "feat(oracle): brainstorm round-3 log \u2014 first floor-passer (A9) + round-4 steer",
-      "merged_at": "2026-07-05T04:05:34Z"
-    },
-    {
-      "number": 1337,
-      "title": "Simplify dashboard copy and footers",
-      "merged_at": "2026-07-05T04:33:05Z"
-    },
-    {
-      "number": 1336,
-      "title": "fix(deploy-api-secrets): strip pasted newlines from the token",
-      "merged_at": "2026-07-05T03:58:55Z"
-    },
-    {
-      "number": 1335,
-      "title": "fix(deploy-api-secrets): direct SSH via VPS_DEPLOY_KEY secret (runners are fs-isolated)",
-      "merged_at": "2026-07-05T03:57:13Z"
-    },
-    {
-      "number": 1334,
-      "title": "fix(deploy-api-secrets): two-stage token handoff (runner sandbox)",
-      "merged_at": "2026-07-05T03:54:57Z"
-    },
-    {
-      "number": 1333,
-      "title": "fix(deploy-api-secrets): runner-readable deploy-key path",
-      "merged_at": "2026-07-05T03:53:00Z"
     }
   ]
 }
