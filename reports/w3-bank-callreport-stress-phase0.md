@@ -15,8 +15,8 @@ We tested whether banks showing balance-sheet stress
 — rising CRE delinquencies (YoY), worsening deposit mix, high uninsured-deposit share —
 delivered worse subsequent stock performance (vs the KRE beta benchmark).
 
-The primary finding: the V1 CRE-stress proxy has a POSITIVE IC
-at 63d (IC = 0.0061), meaning stressed banks slightly underperformed (as hypothesized).
+The primary finding: the V1 CRE-stress proxy has a NEGATIVE IC
+at 63d (IC = -0.0061), meaning stressed banks slightly OUTPERFORMED (contrarian/value-reversal pattern).
 
 IMPORTANT — design-substitution disclosure: this study uses FDIC call-report
 data as an authorized proxy for FR Y-9C (assessed and confirmed as too heavy
@@ -26,9 +26,9 @@ spannedness gate result should be interpreted in that context.
 
 Neither result supports the original hypothesis (stress -> underperformance)
 in the short-to-medium term horizon tested. The DSR does not clear for any
-variant (p: V1 0.1225,
-V2 0.4366,
-V3 0.8097 — none >= 0.90).
+variant (p: V1 0.0753,
+V2 0.3942,
+V3 0.7695 — none >= 0.90).
 
 Family ACCRUES per pre-registered expectation (n=1 crisis episode in sample).
 
@@ -48,6 +48,18 @@ Family ACCRUES per pre-registered expectation (n=1 crisis episode in sample).
   2023-05-30 (60 days after 2023-03-31 quarter-end). The 45-day assumption in
   the prior build was insufficiently conservative for large-bank late filers.
   Enforced worst case: 60 days. No look-ahead possible with this lag.
+
+**PIT amendment (2026-07-08):** the prior merged ACCRUE run (#1856/#1860)
+  enforced the 60d lag only on failed-bank rows; surviving banks' signal
+  dates flowed from the store panel at the collector's legacy
+  report_date + 45d, so survivor signals could pre-date FDIC bulk
+  availability by up to 15 days (mild look-ahead). Amended: signal_date =
+  report_date + 60d is now recomputed for ALL rows at panel load,
+  and the collector writes 60d. All IC tables in this report are
+  regenerated under the uniform lag. The trial grid is unchanged — the
+  correction applies uniformly to all variants (no new configs, no change
+  to the multiple-testing count). Prior-run tables (mixed 45/60 lag) are
+  superseded; the verdict under both lag treatments is reported in §5.
 
 **Survivorship-bias correction (FRC/SIVB-era rule):**
   Failed banks included in point-in-time panel:
@@ -152,12 +164,12 @@ Level composites (V3) are not affected. See module docstring for rationale.
 
 | Variant | Horizon | N dates | Mean IC | Std IC | ICIR | %Pos | t-stat | p-val | 95% CI | CI excl. 0? |
 |---------|---------|---------|---------|--------|------|------|--------|-------|--------|-------------|
-| V1 | 21d | 29 | 0.0220 | 0.2487 | 0.477 | 0.586 | 0.477 | 0.6332 | [-0.0756, 0.1137] | no |
-| V1 | 63d | 28 | 0.0061 | 0.2283 | 0.141 | 0.464 | 0.141 | 0.8882 | [-0.0798, 0.0855] | no |
-| V2 | 21d | 29 | 0.0485 | 0.2639 | 0.989 | 0.552 | 0.989 | 0.3226 | [-0.0316, 0.1230] | no |
-| V2 | 63d | 28 | 0.0478 | 0.2276 | 1.112 | 0.571 | 1.112 | 0.2662 | [-0.0266, 0.1281] | no |
-| V3 | 21d | 29 | 0.0423 | 0.2120 | 1.073 | 0.655 | 1.073 | 0.2831 | [-0.0316, 0.1237] | no |
-| V3 | 63d | 28 | 0.1204 | 0.2623 | 2.429 | 0.679 | 2.429 | 0.0152 | [0.0335, 0.2139] | YES |
+| V1 | 21d | 28 | -0.0270 | 0.2356 | -0.606 | 0.393 | -0.606 | 0.5448 | [-0.1119, 0.0620] | no |
+| V1 | 63d | 28 | -0.0061 | 0.2321 | -0.140 | 0.500 | -0.140 | 0.8888 | [-0.0660, 0.0523] | no |
+| V2 | 21d | 28 | 0.0563 | 0.2195 | 1.357 | 0.643 | 1.357 | 0.1746 | [-0.0012, 0.1160] | no |
+| V2 | 63d | 28 | 0.0418 | 0.2030 | 1.090 | 0.643 | 1.090 | 0.2759 | [-0.0157, 0.0999] | no |
+| V3 | 21d | 28 | 0.0443 | 0.1979 | 1.184 | 0.571 | 1.184 | 0.2363 | [-0.0047, 0.0943] | no |
+| V3 | 63d | 28 | 0.1057 | 0.2577 | 2.170 | 0.643 | 2.170 | 0.0300 | [0.0335, 0.1876] | YES |
 
 ### 3.2 Ex-2023 decomposition (mandatory crisis-concentration gate)
 
@@ -165,23 +177,23 @@ Crisis window dropped: signal dates 2022-11-29 to 2023-11-29 (PIT-shifted by 60d
 
 | Variant | Horizon | N dates | Mean IC | ICIR | %Pos | t-stat | p-val | CI excl. 0? |
 |---------|---------|---------|---------|------|------|--------|-------|-------------|
-| V1 | 21d | 25 | 0.0060 | 0.113 | 0.520 | 0.113 | 0.9097 | no |
-| V1 | 63d | 24 | 0.0086 | 0.171 | 0.500 | 0.171 | 0.8638 | no |
-| V2 | 21d | 25 | 0.0640 | 1.220 | 0.560 | 1.220 | 0.2224 | no |
-| V2 | 63d | 24 | 0.0536 | 1.112 | 0.583 | 1.112 | 0.2660 | no |
-| V3 | 21d | 25 | 0.0469 | 1.034 | 0.680 | 1.034 | 0.3012 | no |
-| V3 | 63d | 24 | 0.1336 | 2.411 | 0.708 | 2.411 | 0.0159 | YES |
+| V1 | 21d | 23 | -0.0157 | -0.317 | 0.435 | -0.317 | 0.7511 | no |
+| V1 | 63d | 23 | 0.0089 | 0.178 | 0.565 | 0.178 | 0.8584 | no |
+| V2 | 21d | 23 | 0.0766 | 1.788 | 0.652 | 1.788 | 0.0738 | YES |
+| V2 | 63d | 23 | 0.0576 | 1.433 | 0.652 | 1.433 | 0.1519 | YES |
+| V3 | 21d | 23 | 0.0574 | 1.324 | 0.565 | 1.324 | 0.1854 | YES |
+| V3 | 63d | 23 | 0.1171 | 2.086 | 0.696 | 2.086 | 0.0370 | YES |
 
 ### 3.3 Crisis-only (2023 window)
 
 | Variant | Horizon | N dates | Mean IC | ICIR | %Pos | t-stat | p-val |
 |---------|---------|---------|---------|------|------|--------|-------|
-| V1 | 21d | 4 | 0.1226 | 2.425 | 1.000 | 2.425 | 0.0153 |
-| V1 | 63d | 4 | -0.0090 | -0.203 | 0.250 | -0.203 | 0.8395 |
-| V2 | 21d | 4 | -0.0487 | -0.335 | 0.500 | -0.335 | 0.7377 |
-| V2 | 63d | 4 | 0.0129 | 0.135 | 0.500 | 0.135 | 0.8923 |
-| V3 | 21d | 4 | 0.0132 | 0.331 | 0.500 | 0.331 | 0.7409 |
-| V3 | 63d | 4 | 0.0414 | 0.390 | 0.500 | 0.390 | 0.6962 |
+| V1 | 21d | 5 | -0.0787 | -0.719 | 0.200 | -0.719 | 0.4723 |
+| V1 | 63d | 5 | -0.0751 | -0.798 | 0.200 | -0.798 | 0.4249 |
+| V2 | 21d | 5 | -0.0370 | -0.293 | 0.600 | -0.293 | 0.7697 |
+| V2 | 63d | 5 | -0.0309 | -0.270 | 0.600 | -0.270 | 0.7873 |
+| V3 | 21d | 5 | -0.0160 | -0.246 | 0.600 | -0.246 | 0.8057 |
+| V3 | 63d | 5 | 0.0534 | 0.558 | 0.400 | 0.558 | 0.5770 |
 
 ---
 
@@ -193,9 +205,9 @@ Threshold: DSR p >= 0.90 (per family constitution; 'the only door to GO').
 
 | Variant | DSR p | BH-adjusted p | DSR verdict |
 |---------|-------|---------------|-------------|
-| V1 | 0.1225 | 0.3675 | FAIL |
-| V2 | 0.4366 | 0.6549 | FAIL |
-| V3 | 0.8097 | 0.8097 | FAIL |
+| V1 | 0.0753 | 0.2259 | FAIL |
+| V2 | 0.3942 | 0.5913 | FAIL |
+| V3 | 0.7695 | 0.7695 | FAIL |
 
 ### 4.2 Spannedness gate: V1 vs V3 ex-2023
 
@@ -203,7 +215,7 @@ Criterion: |IC(V1 ex-2023)| > |IC(V3 ex-2023)| at 63d horizon.
 
 | Metric | V1 (primary) | V3 (control) | V1 > V3? |
 |--------|--------------|--------------|----------|
-| |mean IC| ex-2023 (63d) | 0.0086 | 0.1336 | FAIL |
+| |mean IC| ex-2023 (63d) | 0.0089 | 0.1171 | FAIL |
 
 **Interpretation:** V3 >= V1 ex-2023 — the canonical-level ratios contain at least as much signal as the proxy. The spannedness failure may reflect missing CRE maturity-bucket data (GAP-2): V1 is a delinquency+concentration proxy, not the exact maturity-roll signal that the adjudication identified as non-spanned.
 
@@ -211,8 +223,8 @@ Criterion: |IC(V1 ex-2023)| > |IC(V3 ex-2023)| at 63d horizon.
 
 | Metric | V1@21d ex-2023 | V3@21d ex-2023 |
 |--------|----------------|----------------|
-| Mean IC | 0.0060 | 0.0469 |
-| ICIR | 0.113 | 1.034 |
+| Mean IC | -0.0157 | 0.0574 |
+| ICIR | -0.317 | 1.324 |
 
 ### 4.4 V5 — AVOID-side drawdown lens (non-gated)
 
@@ -221,20 +233,24 @@ A positive IC here = stressed banks suffer larger drawdowns = AVOID signal.
 
 | Metric | Value |
 |--------|-------|
-| V5 IC (full, V1 -> max_dd_63d) | -0.0652 |
-| V5 IC (ex-2023) | -0.0123 |
+| V5 IC (full, V1 -> max_dd_63d) | -0.0519 |
+| V5 IC (ex-2023) | 0.0164 |
 | N observations | 626 |
 
 ---
 
 ## 5. Overall verdict: ACCRUE
 
-**DSR gate did not clear (p=0.122, threshold=0.90) and/or spannedness gate borderline. Pre-registered expectation: this IS the expected outcome for n=1 crisis. Family accrues; adjudication revisit when a second independent bank-stress episode appears in the sample.**
+**DSR gate did not clear (p=0.075, threshold=0.90) and/or spannedness gate borderline. Pre-registered expectation: this IS the expected outcome for n=1 crisis. Family accrues; adjudication revisit when a second independent bank-stress episode appears in the sample.**
 
-Sign finding: V1 63d mean IC = 0.0061 (POSITIVE IC = stressed banks slightly underperformed (as hypothesized)).
-V3 63d mean IC = 0.1204. DSR gate: V1 p=0.1225,
-V2 p=0.4366,
-V3 p=0.8097 — none >= 0.90 threshold.
+PIT-lag amendment cross-check (see §1): the prior merged run (mixed 45/60d
+lag) landed ACCRUE; this regenerated run (uniform 60d lag) lands
+ACCRUE.
+
+Sign finding: V1 63d mean IC = -0.0061 (NEGATIVE IC = stressed banks slightly OUTPERFORMED (contrarian/value-reversal pattern)).
+V3 63d mean IC = 0.1057. DSR gate: V1 p=0.0753,
+V2 p=0.3942,
+V3 p=0.7695 — none >= 0.90 threshold.
 Spannedness gate: V3 >= V1 ex-2023 (FAIL).
 
 Note on survivorship correction: the three failed banks (SIVB, SBNY, FRC)
@@ -249,7 +265,7 @@ Pre-registered expectation (from SIGNAL_LAB_FRONTIER_WAVE3_FABLE_ADJUDICATION_20
 > first adjudication lands ACCRUE-with-clock awaiting a second independent episode,
 > not GO. A spectacular in-sample Sharpe here is the archetypal single-event dummy.'
 
-The DSR gate result (p = 0.1225) is consistent with the pre-registered expectation.
+The DSR gate result (p = 0.0753) is consistent with the pre-registered expectation.
 
 **Come-back clock:** next adjudication when a second independent bank-stress
 episode enters the sample. Current sample (2018-Q1 to 2026-Q1) contains
