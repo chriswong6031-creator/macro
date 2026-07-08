@@ -102,6 +102,8 @@ def _adr_force(adr_bridge: dict | None) -> dict:
         gap = comp.get("bellwether_implied_open_pct")
         ctx = comp.get("gap_context", "")
         fresh = adr_bridge.get("freshness_verdict", "")
+        # Deliberate freshness policy: only "stale" and "dead" → neutral.
+        # "degraded" (e.g. one ADR missing) is treated as live — best available.
         if fresh in ("stale", "dead"):
             return _neutral(key, name_en, name_zh,
                             f"data {fresh}", f"数据{fresh}")
@@ -137,11 +139,21 @@ def _tech_force(market_drivers: dict | None) -> dict:
     try:
         if not market_drivers:
             return _neutral(key, name_en, name_zh, "no data", "无数据")
-        # Look for tech_internet_leadership in the drivers dict
-        drivers = market_drivers.get("drivers") or {}
-        tech = drivers.get("tech_internet_leadership") or {}
-        proj = tech.get("projection")
-        sign = tech.get("sign")
+        # hk_market_drivers.snapshot() returns a FLAT LIST under "scores":
+        #   [{"driver": "tech_internet_leadership", "projection": float, ...}, ...]
+        # There is no "drivers" dict key — that was a wrong guess. Iterate scores.
+        scores = market_drivers.get("scores") or []
+        proj = None
+        for entry in scores:
+            if entry.get("driver") == "tech_internet_leadership":
+                proj = entry.get("projection")
+                break
+        # Fallback: if primary driver is tech, use dir_sign * strength
+        if proj is None and market_drivers.get("primary") == "tech_internet_leadership":
+            strength = market_drivers.get("strength")
+            dir_sign = market_drivers.get("dir_sign", 1)
+            if strength is not None:
+                proj = float(dir_sign) * float(strength)
         if proj is None:
             return _neutral(key, name_en, name_zh, "no tech read", "无科技读数")
         proj = float(proj)
@@ -175,6 +187,8 @@ def _narrative_force(hk_narrative: dict | None) -> dict:
         if not hk_narrative:
             return _neutral(key, name_en, name_zh, "no data", "无数据")
         fresh = hk_narrative.get("freshness", "")
+        # Deliberate freshness policy: "stale"/"missing" → neutral; "degraded" → live.
+        # A degraded GDELT pull (some entities stale) still yields useful volume signals.
         if fresh in ("stale", "missing"):
             return _neutral(key, name_en, name_zh, f"data {fresh}", f"数据{fresh}")
         entities = hk_narrative.get("entities") or []
@@ -233,43 +247,40 @@ def _southbound_force(internals: dict | None) -> dict:
         if not sb:
             return _neutral(key, name_en, name_zh, "no southbound data", "无南向数据")
 
-        # Read the available southbound fields
-        net = sb.get("net_hkd")   # latest net HKD flow
-        accel = sb.get("accel_z") if sb.get("accel_z") is not None else None
-        # Also check trend description if present
-        trend = sb.get("trend", "")
-        appetite = sb.get("appetite", "")
+        # Read the available southbound fields.
+        # china_internals.southbound_flow() returns:
+        #   net        — latest net HKD flow (億 units: MNB data is 亿元)
+        #   net_z      — z-score of net vs 252d history  (was "accel_z" in old guess)
+        #   cum_20d    — rolling 20d cumulative net
+        #   pos_days_20 — count of positive-flow days in last 20
+        # Keys "accel_z", "net_hkd", "appetite", "trend" DO NOT EXIST in the producer.
+        net_z = sb.get("net_z")           # z-score: primary discriminator
+        net = sb.get("net")               # raw latest net flow (亿元)
 
-        # Derive state from what we have
-        if accel is not None:
-            accel = float(accel)
-            if accel >= _SB_CONFIRM:
+        # Derive state from net_z first (most informative), then fall back to net direction
+        if net_z is not None:
+            net_z = float(net_z)
+            if net_z >= _SB_CONFIRM:
                 return _state(key, name_en, name_zh, "confirm",
-                              f"SB accelerating (z={accel:+.1f})",
-                              f"南向加速流入（z={accel:+.1f}）")
-            if accel <= _SB_STRESS:
+                              f"SB net-flow strong (z={net_z:+.1f})",
+                              f"南向净流入强劲（z={net_z:+.1f}）")
+            if net_z <= _SB_STRESS:
                 return _state(key, name_en, name_zh, "stress",
-                              f"SB decelerating (z={accel:+.1f})",
-                              f"南向减速（z={accel:+.1f}）")
+                              f"SB net-flow weak (z={net_z:+.1f})",
+                              f"南向净流出（z={net_z:+.1f}）")
             return _state(key, name_en, name_zh, "watch",
-                          f"SB flow mixed (z={accel:+.1f})",
-                          f"南向流向中性（z={accel:+.1f}）")
+                          f"SB flow mixed (z={net_z:+.1f})",
+                          f"南向流向中性（z={net_z:+.1f}）")
 
-        # Fallback on net flow direction / appetite string
-        if appetite in ("strong_buy", "buying"):
-            return _state(key, name_en, name_zh, "confirm",
-                          "southbound buying", "南向积极买入")
-        if appetite in ("selling", "strong_sell"):
-            return _state(key, name_en, name_zh, "stress",
-                          "southbound selling", "南向净卖出")
+        # Fallback: plain net direction (億元 scale from store)
         if net is not None:
             net = float(net)
             if net > 0:
                 return _state(key, name_en, name_zh, "watch",
-                              f"net positive HKD {net/1e8:.1f}亿",
-                              f"净流入港元 {net/1e8:.1f}亿")
+                              f"SB net inflow {net:.1f}亿",
+                              f"南向净流入 {net:.1f}亿")
             return _state(key, name_en, name_zh, "neutral",
-                          f"net flow {net/1e8:.1f}亿", f"净流量 {net/1e8:.1f}亿")
+                          f"SB net outflow {net:.1f}亿", f"南向净流出 {net:.1f}亿")
         return _neutral(key, name_en, name_zh, "no flow metrics", "无流量指标")
     except Exception as e:  # noqa: BLE001
         log.debug("hk_command_panel: southbound force failed (%s)", e)
@@ -286,39 +297,50 @@ def _breadth_force(breadth: dict | None) -> dict:
         if not breadth:
             return _neutral(key, name_en, name_zh, "no data", "无数据")
 
-        # breadth dict from _breadth() or conditions
-        pct200 = breadth.get("pct_above_200d") or breadth.get("above_200d")
-        adv_dec = breadth.get("adv_dec_ratio")
-        pctile = breadth.get("above200_pctile")   # from conditions
+        # breadth dict from collectors.breadth.breadth_summary() (or conditions).
+        # breadth_summary() returns "pct_above_200" (NO trailing 'd') as a 0-100 percentage.
+        # Keys "pct_above_200d" and "above_200d" DO NOT EXIST in the producer.
+        # The adv/dec counts are "adv" and "dec" integers, NOT "adv_dec_ratio".
+        pct200 = breadth.get("pct_above_200")   # 0-100 percentage (e.g. 62.3)
+        adv = breadth.get("adv")                # advancing count (int)
+        dec = breadth.get("dec")                # declining count (int)
+        pctile = breadth.get("above200_pctile")   # from conditions override
 
         if pct200 is not None:
             pct200 = float(pct200)
-            if pct200 >= _BREADTH_CONFIRM:
+            # Thresholds _BREADTH_CONFIRM/WATCH/STRESS are fractions (0.55/0.45/0.30)
+            # but pct200 is on the 0-100 scale — convert to percentage for comparison.
+            # Equivalent thresholds on the 0-100 scale: 55 / 45 / 30.
+            if pct200 >= _BREADTH_CONFIRM * 100:
                 return _state(key, name_en, name_zh, "confirm",
-                              f"{pct200:.0%} above 200dma — broad participation",
-                              f"{pct200:.0%} 站上 200 日均线 — 广度充分")
-            if pct200 >= _BREADTH_WATCH:
+                              f"{pct200:.0f}% above 200dma — broad participation",
+                              f"{pct200:.0f}% 站上 200 日均线 — 广度充分")
+            if pct200 >= _BREADTH_WATCH * 100:
                 return _state(key, name_en, name_zh, "watch",
-                              f"{pct200:.0%} above 200dma — mixed",
-                              f"{pct200:.0%} 站上 200 日均线 — 分化")
-            if pct200 <= _BREADTH_STRESS:
+                              f"{pct200:.0f}% above 200dma — mixed",
+                              f"{pct200:.0f}% 站上 200 日均线 — 分化")
+            if pct200 <= _BREADTH_STRESS * 100:
                 return _state(key, name_en, name_zh, "stress",
-                              f"{pct200:.0%} above 200dma — thin tape",
-                              f"{pct200:.0%} 站上 200 日均线 — 窄幅下跌")
+                              f"{pct200:.0f}% above 200dma — thin tape",
+                              f"{pct200:.0f}% 站上 200 日均线 — 窄幅下跌")
             return _state(key, name_en, name_zh, "neutral",
-                          f"{pct200:.0%} above 200dma",
-                          f"{pct200:.0%} 站上 200 日均线")
+                          f"{pct200:.0f}% above 200dma",
+                          f"{pct200:.0f}% 站上 200 日均线")
 
-        if adv_dec is not None:
-            adv_dec = float(adv_dec)
-            if adv_dec > 1.5:
-                return _state(key, name_en, name_zh, "confirm",
-                              f"A/D {adv_dec:.1f} — advancing", f"涨跌比 {adv_dec:.1f} — 上涨为主")
-            if adv_dec < 0.7:
-                return _state(key, name_en, name_zh, "stress",
-                              f"A/D {adv_dec:.1f} — declining", f"涨跌比 {adv_dec:.1f} — 下跌为主")
-            return _state(key, name_en, name_zh, "neutral",
-                          f"A/D {adv_dec:.1f} — balanced", f"涨跌比 {adv_dec:.1f} — 平衡")
+        # Fallback: use raw adv/dec counts from breadth_summary() (not a ratio)
+        if adv is not None and dec is not None:
+            adv, dec = int(adv), int(dec)
+            total = adv + dec
+            if total > 0:
+                adv_frac = adv / total
+                if adv_frac > 0.6:
+                    return _state(key, name_en, name_zh, "confirm",
+                                  f"A {adv} / D {dec} — advancing", f"涨 {adv} / 跌 {dec} — 上涨为主")
+                if adv_frac < 0.4:
+                    return _state(key, name_en, name_zh, "stress",
+                                  f"A {adv} / D {dec} — declining", f"涨 {adv} / 跌 {dec} — 下跌为主")
+                return _state(key, name_en, name_zh, "neutral",
+                              f"A {adv} / D {dec} — balanced", f"涨 {adv} / 跌 {dec} — 平衡")
 
         return _neutral(key, name_en, name_zh, "no breadth metrics", "无广度指标")
     except Exception as e:  # noqa: BLE001

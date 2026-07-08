@@ -50,14 +50,32 @@ def _adr_bridge(gap_pct: float | None = 2.0, fresh: str = "ok") -> dict:
 
 
 def _market_drivers(tech_proj: float | None = 0.6) -> dict:
-    """Minimal market_drivers dict with tech_internet_leadership."""
+    """Minimal market_drivers dict — mirrors the REAL hk_market_drivers.snapshot() shape.
+
+    snapshot() returns a flat list under "scores" (one entry per driver) plus top-level
+    keys: primary, dir_sign, verdict, strength, confidence.  There is NO "drivers" dict key.
+    """
+    sign = 1 if (tech_proj or 0) >= 0 else -1
+    strength = abs(tech_proj) if tech_proj is not None else 0.0
+    scores: list[dict] = []
+    if tech_proj is not None:
+        scores.append({
+            "driver": "tech_internet_leadership",
+            "label": "Tech / internet leadership",
+            "label_zh": "科技/互联网领涨",
+            "family": "equity-leadership",
+            "projection": round(float(tech_proj), 2),
+            "strength": round(abs(float(tech_proj)), 2),
+            "direction": "HSTECH leading up" if sign > 0 else "HSTECH unwind",
+        })
     return {
-        "drivers": {
-            "tech_internet_leadership": {
-                "projection": tech_proj,
-                "sign": 1 if (tech_proj or 0) > 0 else -1,
-            }
-        }
+        "asof": "2026-07-08",
+        "verdict": "clear" if strength >= 0.6 else "quiet",
+        "primary": "tech_internet_leadership" if tech_proj is not None else None,
+        "dir_sign": sign,
+        "strength": round(strength, 2),
+        "confidence": "high" if strength >= 0.6 else "low",
+        "scores": scores,
     }
 
 
@@ -87,19 +105,49 @@ def _hk_narrative(states: list[str] | None = None) -> dict:
     }
 
 
-def _internals(accel_z: float | None = 1.2) -> dict:
-    """Minimal internals dict with southbound."""
+def _internals(net_z: float | None = 1.2) -> dict:
+    """Minimal internals dict — mirrors the REAL china_internals.southbound_flow() shape.
+
+    southbound_flow() returns: net (亿元), net_z (z-score vs 252d), cum_20d, pos_days_20.
+    Keys "accel_z", "net_hkd", "appetite", "trend" DO NOT EXIST in the producer.
+    """
+    net = 5000.0 if (net_z or 0) > 0 else -3000.0
     return {
         "southbound": {
-            "accel_z": accel_z,
-            "net_hkd": 1e9 if (accel_z or 0) > 0 else -1e9,
+            "net": net,
+            "net_z": net_z,
+            "cum_20d": net * 4.0 if net_z is not None else 0.0,
+            "pos_days_20": 14 if (net_z or 0) > 0 else 5,
         }
     }
 
 
-def _breadth(pct200: float = 0.60) -> dict:
-    """Minimal breadth dict."""
-    return {"pct_above_200d": pct200}
+def _breadth(pct200: float = 62.0) -> dict:
+    """Minimal breadth dict — mirrors the REAL collectors.breadth.breadth_summary() shape.
+
+    breadth_summary() returns "pct_above_200" (NO trailing 'd') as a 0-100 percentage.
+    Keys "pct_above_200d" and "above_200d" DO NOT EXIST in the producer.
+    The adv/dec counts are separate "adv" and "dec" int keys, not "adv_dec_ratio".
+    Default pct200=62.0 (0-100 scale) → confirm threshold (55%).
+    """
+    adv = int(pct200 * 3)   # synthetic — just needs to be consistent
+    dec = int((100 - pct200) * 3)
+    return {
+        "pct_above_200": pct200,           # 0-100 percentage (e.g. 62.0)
+        "pct_above_50": pct200 + 5.0,      # usually higher than 200d
+        "nh": max(1, int(pct200 / 10)),
+        "nl": max(1, int((100 - pct200) / 20)),
+        "net_nh": int(pct200 / 10) - int((100 - pct200) / 20),
+        "adv": adv,
+        "dec": dec,
+        "ad_trend": "up" if pct200 >= 50 else "down",
+        "state": "broad" if pct200 >= 60 else ("thin" if pct200 < 40 else "mixed"),
+        "tone": "pos" if pct200 >= 60 else ("neg" if pct200 < 40 else "muted"),
+        "full": False,
+        "asof": "2026-07-08",
+        "n_members": 300,
+        "pct50_chg20": 5.0 if pct200 >= 50 else -5.0,
+    }
 
 
 def _cbbc_map(leverage_states: list[str] | None = None, fresh: str = "ok") -> dict:
@@ -222,8 +270,8 @@ class TestVerdictTally:
             adr_bridge=_adr_bridge(gap_pct=2.0),
             market_drivers=_market_drivers(tech_proj=0.7),
             hk_narrative=_hk_narrative(["attention_spike", "attention_spike", "tone_positive_shift"]),
-            internals=_internals(accel_z=1.5),
-            breadth=_breadth(pct200=0.65),
+            internals=_internals(net_z=1.5),
+            breadth=_breadth(pct200=65.0),
             cbbc_map=_cbbc_map(["bear_skew_froth", "bear_skew", "bear_skew", "bear_skew"]),
             funding=_funding(agg_pctile=75),
             latest=_latest(risk_state="Risk-on"),
@@ -241,8 +289,8 @@ class TestVerdictTally:
             adr_bridge=_adr_bridge(gap_pct=-2.0),
             market_drivers=_market_drivers(tech_proj=-0.7),
             hk_narrative=_hk_narrative(["tone_negative_shift", "tone_negative_shift", "quiet"]),
-            internals=_internals(accel_z=-1.5),
-            breadth=_breadth(pct200=0.20),
+            internals=_internals(net_z=-1.5),
+            breadth=_breadth(pct200=20.0),
             cbbc_map=_cbbc_map(["bull_skew_froth", "bull_skew", "bull_skew", "bull_skew"]),
             funding=_funding(agg_pctile=10),
             latest=_latest(risk_state="Risk-off"),
@@ -256,7 +304,7 @@ class TestVerdictTally:
         kwargs = dict(
             adr_bridge=_adr_bridge(gap_pct=1.5),
             latest=_latest("Risk-on"),
-            breadth=_breadth(0.60),
+            breadth=_breadth(60.0),
         )
         r1 = CP.compute(**kwargs)
         r2 = CP.compute(**kwargs)
@@ -329,22 +377,22 @@ class TestForceStates:
         assert f["state"] == "stress"
 
     def test_southbound_confirm_on_high_accel(self) -> None:
-        r = CP.compute(internals=_internals(accel_z=1.5))
+        r = CP.compute(internals=_internals(net_z=1.5))
         f = self._get_force(r, "southbound")
         assert f["state"] == "confirm"
 
     def test_southbound_stress_on_decel(self) -> None:
-        r = CP.compute(internals=_internals(accel_z=-1.5))
+        r = CP.compute(internals=_internals(net_z=-1.5))
         f = self._get_force(r, "southbound")
         assert f["state"] == "stress"
 
     def test_breadth_confirm_on_wide_participation(self) -> None:
-        r = CP.compute(breadth=_breadth(pct200=0.70))
+        r = CP.compute(breadth=_breadth(pct200=70.0))
         f = self._get_force(r, "breadth")
         assert f["state"] == "confirm"
 
     def test_breadth_stress_on_thin_tape(self) -> None:
-        r = CP.compute(breadth=_breadth(pct200=0.20))
+        r = CP.compute(breadth=_breadth(pct200=20.0))
         f = self._get_force(r, "breadth")
         assert f["state"] == "stress"
 
@@ -697,6 +745,276 @@ class TestNeverRaises:
 
 
 # ---------------------------------------------------------------------------
+# (SHAPE REGRESSION) Real producer shapes → non-neutral state contract
+#
+# Each test feeds the EXACT producer return shape and asserts a specific
+# non-neutral state so that any future shape drift (renamed key, scale change)
+# is caught rather than silently producing "neutral".
+# ---------------------------------------------------------------------------
+
+class TestRealProducerShapes:
+    """Per-force contract tests using real producer-mirrored fixtures.
+
+    These tests are the primary guard against the "72 passed while dead" failure
+    mode: they feed production-shaped dicts and assert that the force reaches
+    a specific non-neutral state.  A shape drift (renamed key, scale change)
+    will turn these tests red.
+    """
+
+    def _get_force(self, result: dict, key: str) -> dict:
+        for f in result["force_stack"]:
+            if f["key"] == key:
+                return f
+        raise KeyError(f"Force '{key}' not in stack")
+
+    # --- Force 1: ADR ---
+
+    def test_adr_real_shape_composite_key(self) -> None:
+        """adr_bridge.composite.bellwether_implied_open_pct >= 1 → confirm."""
+        adr = {
+            "display_only": True,
+            "freshness_verdict": "ok",
+            "hk_session_date": "2026-07-08",
+            "adr_date": "2026-07-08",
+            "expected_hk_session": "2026-07-09",
+            "names": [],
+            "composite": {
+                "bellwether_implied_open_pct": 1.8,
+                "gap_context": "up",
+            },
+        }
+        r = CP.compute(adr_bridge=adr)
+        f = self._get_force(r, "adr_bridge")
+        assert f["state"] == "confirm", (
+            f"ADR force must be 'confirm' on gap=+1.8%, got '{f['state']}'"
+        )
+
+    def test_adr_real_shape_degraded_is_live(self) -> None:
+        """freshness_verdict='degraded' is treated as live (design intent: stale→neutral, degraded→live)."""
+        adr = {
+            "freshness_verdict": "degraded",
+            "composite": {"bellwether_implied_open_pct": 2.0, "gap_context": "up"},
+        }
+        r = CP.compute(adr_bridge=adr)
+        f = self._get_force(r, "adr_bridge")
+        # "degraded" is intentionally live — should produce confirm on +2% gap
+        assert f["state"] == "confirm", (
+            f"ADR force: 'degraded' freshness must be treated as live (confirm on +2%), got '{f['state']}'"
+        )
+
+    # --- Force 2: Tech (hk_market_drivers.snapshot()) ---
+
+    def test_tech_real_shape_flat_scores_list(self) -> None:
+        """snapshot() returns scores as a FLAT LIST, not a nested drivers dict.
+
+        This is the primary regression guard: scores=[{driver, projection, ...}].
+        proj=+0.62 must yield 'confirm' state (threshold = 0.4).
+        """
+        snap = {
+            "asof": "2026-07-08",
+            "verdict": "clear",
+            "primary": "tech_internet_leadership",
+            "dir_sign": 1,
+            "strength": 0.62,
+            "confidence": "high",
+            "scores": [
+                {
+                    "driver": "tech_internet_leadership",
+                    "label": "Tech / internet leadership",
+                    "label_zh": "科技/互联网领涨",
+                    "family": "equity-leadership",
+                    "projection": 0.62,
+                    "strength": 0.62,
+                    "direction": "HS-TECH leadership — narrow tech-led tape",
+                },
+                {
+                    "driver": "global_risk",
+                    "label": "Global risk-on / risk-off",
+                    "label_zh": "全球风险偏好",
+                    "family": "risk",
+                    "projection": 0.31,
+                    "strength": 0.31,
+                    "direction": "risk-on",
+                },
+            ],
+        }
+        r = CP.compute(market_drivers=snap)
+        f = self._get_force(r, "tech_impulse")
+        assert f["state"] == "confirm", (
+            f"Tech force (real shape, proj=+0.62) must be 'confirm'; got '{f['state']}'. "
+            "If 'neutral': the reader is probably using 'drivers' key (old wrong shape) "
+            "instead of iterating 'scores' list."
+        )
+
+    def test_tech_real_shape_negative_proj_stress(self) -> None:
+        """scores list with tech proj=-0.62 → stress."""
+        snap = {
+            "asof": "2026-07-08",
+            "verdict": "clear",
+            "primary": "tech_internet_leadership",
+            "dir_sign": -1,
+            "strength": 0.62,
+            "confidence": "high",
+            "scores": [
+                {
+                    "driver": "tech_internet_leadership",
+                    "label": "Tech / internet leadership",
+                    "label_zh": "科技/互联网领涨",
+                    "family": "equity-leadership",
+                    "projection": -0.62,
+                    "strength": 0.62,
+                    "direction": "HS-TECH unwind",
+                },
+            ],
+        }
+        r = CP.compute(market_drivers=snap)
+        f = self._get_force(r, "tech_impulse")
+        assert f["state"] == "stress", (
+            f"Tech force (real shape, proj=-0.62) must be 'stress'; got '{f['state']}'"
+        )
+
+    def test_tech_real_shape_no_tech_entry_neutral(self) -> None:
+        """scores list with NO tech_internet_leadership entry → neutral (not crash)."""
+        snap = {
+            "asof": "2026-07-08",
+            "verdict": "clear",
+            "primary": "global_risk",
+            "dir_sign": 1,
+            "strength": 0.85,
+            "confidence": "high",
+            "scores": [
+                {
+                    "driver": "global_risk",
+                    "label": "Global risk-on / risk-off",
+                    "label_zh": "全球风险偏好",
+                    "family": "risk",
+                    "projection": 0.85,
+                    "strength": 0.85,
+                    "direction": "risk-on",
+                },
+            ],
+        }
+        r = CP.compute(market_drivers=snap)
+        f = self._get_force(r, "tech_impulse")
+        assert f["state"] == "neutral", (
+            f"Tech force (no tech entry in scores) must be 'neutral'; got '{f['state']}'"
+        )
+
+    # --- Force 4: Southbound (china_internals.southbound_flow()) ---
+
+    def test_southbound_real_shape_net_z_confirm(self) -> None:
+        """southbound_flow() uses 'net' and 'net_z', not 'net_hkd'/'accel_z'.
+
+        net_z=+1.8 → confirm (threshold = 0.5).
+        """
+        sb_flow = {
+            "net": 5000.0,
+            "net_z": 1.8,
+            "cum_20d": 28000.0,
+            "pos_days_20": 14,
+        }
+        r = CP.compute(internals={"southbound": sb_flow})
+        f = self._get_force(r, "southbound")
+        assert f["state"] == "confirm", (
+            f"Southbound force (real shape, net_z=+1.8) must be 'confirm'; got '{f['state']}'. "
+            "If 'neutral': the reader is likely using 'accel_z' (wrong key) instead of 'net_z'."
+        )
+
+    def test_southbound_real_shape_net_z_stress(self) -> None:
+        """net_z=-1.8 → stress."""
+        sb_flow = {
+            "net": -4000.0,
+            "net_z": -1.8,
+            "cum_20d": -22000.0,
+            "pos_days_20": 4,
+        }
+        r = CP.compute(internals={"southbound": sb_flow})
+        f = self._get_force(r, "southbound")
+        assert f["state"] == "stress", (
+            f"Southbound force (real shape, net_z=-1.8) must be 'stress'; got '{f['state']}'"
+        )
+
+    def test_southbound_real_shape_fallback_net_only(self) -> None:
+        """When net_z is absent, falls back to net direction (watch on positive)."""
+        sb_flow = {
+            "net": 3000.0,
+            "cum_20d": 15000.0,
+            "pos_days_20": 12,
+        }
+        r = CP.compute(internals={"southbound": sb_flow})
+        f = self._get_force(r, "southbound")
+        # net_z absent → no z-based state; falls back to net direction → watch
+        assert f["state"] == "watch", (
+            f"Southbound force (net only, no net_z) must be 'watch'; got '{f['state']}'"
+        )
+
+    # --- Force 5: Breadth (collectors.breadth.breadth_summary()) ---
+
+    def test_breadth_real_shape_pct_above_200_key_confirm(self) -> None:
+        """breadth_summary() returns 'pct_above_200' (NO trailing 'd'), value 0-100.
+
+        pct_above_200=62.3 → confirm (threshold: 55% of 100-scale = 55.0).
+        """
+        br = {
+            "pct_above_200": 62.3,    # 0-100 scale
+            "pct_above_50": 70.0,
+            "nh": 15, "nl": 3, "net_nh": 12,
+            "adv": 200, "dec": 100,
+            "ad_trend": "up",
+            "state": "broad", "tone": "pos",
+            "full": False,
+            "asof": "2026-07-08",
+            "n_members": 300,
+            "pct50_chg20": 5.0,
+        }
+        r = CP.compute(breadth=br)
+        f = self._get_force(r, "breadth")
+        assert f["state"] == "confirm", (
+            f"Breadth force (real shape, pct_above_200=62.3) must be 'confirm'; got '{f['state']}'. "
+            "If 'neutral': reader is probably using 'pct_above_200d' (wrong key) "
+            "or treating 62.3 as a fraction (threshold mismatch — values are 0-100)."
+        )
+
+    def test_breadth_real_shape_pct_above_200_stress(self) -> None:
+        """pct_above_200=22.0 → stress (threshold: <= 30% of 100-scale = 30.0)."""
+        br = {
+            "pct_above_200": 22.0,
+            "pct_above_50": 28.0,
+            "nh": 2, "nl": 30, "net_nh": -28,
+            "adv": 60, "dec": 240,
+            "ad_trend": "down",
+            "state": "thin", "tone": "neg",
+            "full": False,
+            "asof": "2026-07-08",
+            "n_members": 300,
+            "pct50_chg20": -8.0,
+        }
+        r = CP.compute(breadth=br)
+        f = self._get_force(r, "breadth")
+        assert f["state"] == "stress", (
+            f"Breadth force (real shape, pct_above_200=22.0) must be 'stress'; got '{f['state']}'"
+        )
+
+    def test_breadth_real_shape_adv_dec_fallback(self) -> None:
+        """When pct_above_200 absent, adv/dec fallback activates (not adv_dec_ratio)."""
+        br = {
+            "pct_above_50": 65.0,
+            "nh": 10, "nl": 2, "net_nh": 8,
+            "adv": 220, "dec": 80,    # no pct_above_200
+            "ad_trend": "up",
+            "state": "broad", "tone": "pos",
+            "full": False, "asof": "2026-07-08",
+            "n_members": 300, "pct50_chg20": 4.0,
+        }
+        r = CP.compute(breadth=br)
+        f = self._get_force(r, "breadth")
+        # adv=220, dec=80 → adv_frac=0.73 > 0.6 → confirm
+        assert f["state"] == "confirm", (
+            f"Breadth force (adv/dec fallback, adv=220 dec=80) must be 'confirm'; got '{f['state']}'"
+        )
+
+
+# ---------------------------------------------------------------------------
 # (9) Freshness strip routing
 # ---------------------------------------------------------------------------
 
@@ -744,7 +1062,7 @@ def test_no_filesystem_writes(tmp_path: Path) -> None:
         market_drivers=_market_drivers(0.5),
         hk_narrative=_hk_narrative(["attention_spike", "quiet"]),
         internals=_internals(0.8),
-        breadth=_breadth(0.60),
+        breadth=_breadth(60.0),
         cbbc_map=_cbbc_map(["bear_skew", "bear_skew"]),
         funding=_funding(65),
         latest=_latest("Risk-on"),
