@@ -911,42 +911,13 @@ def main() -> int:
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.error("china sector pages build failed (%s); skipping", e)
 
-        # China Intelligence surfaces (News powerhouse → Policy Watch → Alt-Data →
-        # Divergence Radar) + the transmission bus that bundles them for the future
-        # China Mastermind. Each is additive + None-safe; standalone pages built here so
-        # the daily China build refreshes them. See research/CHINA_INTEL_POWERHOUSE.md.
-        for _name, _mod, _fn in (
-            # predictive validation FIRST — earns the signal weights altdata + analysis read
-            ("china validation", "engine.china_validation", "validate_all"),
-            ("china news powerhouse", "scripts.build_china_news", "build"),
-            ("china policy watch", "scripts.build_china_policy_watch", "build"),
-            ("china alt-data desk", "scripts.build_china_altdata", "build"),
-            ("china divergence radar", "scripts.build_china_radar", "build"),
-            # central-intelligence synthesis MUST run after the surfaces, before the hub/bus
-            ("china central analysis", "scripts.build_china_synthesis", "build"),
-            # historical regime analog finder — display-only context (W2.3)
-            ("china analogs", "scripts.build_china_analogs", "build"),
-        ):
-            try:
-                import importlib
-                getattr(importlib.import_module(_mod), _fn)()
-            except Exception as e:  # noqa: BLE001 — additive, never fatal
-                log.error("%s build failed (%s); skipping", _name, e, exc_info=True)
-        try:
-            from scripts.build_china_special_situations import build as _build_css
-            _build_css()    # special-sits desk → site/chinaspecialdata/special.json + page
-        except Exception as e:  # noqa: BLE001 — additive, never fatal
-            log.error("china special situations build failed (%s); skipping", e)
-        try:
-            from scripts.build_china_intel_hub import build as _build_china_intel_hub
-            _build_china_intel_hub()  # command apparatus → site/china_intel/command.json
-        except Exception as e:  # noqa: BLE001 — additive, never fatal
-            log.error("china intel hub command apparatus build failed (%s); skipping", e)
-        try:
-            from scripts.build_china_intel import build as _build_china_intel
-            _build_china_intel()      # fan-in 5 surfaces + analysis + hub for the China Mastermind (v5 schema)
-        except Exception as e:  # noqa: BLE001 — additive, never fatal
-            log.error("china intel hub/bus build failed (%s); skipping", e)
+        # CN-SYS W5a: the 10 China Intelligence sub-builders (validation → news →
+        # policy_watch → altdata → radar → synthesis → analogs → special_sits →
+        # intel_hub → intel_bus) were EXTRACTED from this inline importlib chain
+        # into discrete asia-close.yml run_py steps so per-step timing is visible
+        # and the intel surfaces land even when the main china render fails.
+        # DO NOT re-add them here — they run as separate steps after build_china.
+        # See research/CHINA_SYSTEM_MASTERPLAN_BY_FABLE.md §6 W5a Scope 2.
     except Exception as e:  # noqa: BLE001
         log.error("china page render failed (%s); skipping", e)
         return 0
