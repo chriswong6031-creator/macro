@@ -389,7 +389,7 @@ class HkHkexnewsAdapter(Adapter):
     """
 
     name = "hk_hkexnews"
-    group = "hk_hkexnews"   # asia prefix match → runs in the asia-close lane
+    group = "hk_hkexnews"   # CN_LANE=asia is set at the workflow-job level (asia-close.yml), not derived from this group string
     stale_after_days = _STALE_DAYS
 
     def fetch(self, full_history: bool = False) -> dict[str, pd.DataFrame]:

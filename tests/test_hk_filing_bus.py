@@ -194,6 +194,26 @@ class TestClassifyRow:
         assert result["dilution_flag"] is True, f"Expected dilution_flag=True for {cat}/{title!r}"
         assert result["buyback_flag"] is False, f"buyback_flag must be False: {title!r}"
 
+    # SHARE ISSUANCE token — the false-negative fixed by delegating to is_dilutive()
+    @pytest.mark.parametrize("cat,title", [
+        ("general_mandate", "SHARE ISSUANCE UNDER GENERAL MANDATE"),
+        ("general_mandate", "GENERAL MANDATE FOR SHARE ISSUANCE"),
+        ("placing",         "COMPLETION OF SHARE ISSUANCE UNDER GENERAL MANDATE"),
+    ])
+    def test_share_issuance_phrases_are_dilutive(self, cat, title):
+        """'SHARE ISSUANCE' strong token must produce dilution_flag=True.
+
+        Regression: the local _DILUTE_STRONG_RE omitted this token; delegating
+        to collectors.hk_placements.is_dilutive() via _hk_placements_is_dilutive
+        covers it correctly (hk_placements._STRONG_RE includes 'SHARE ISSUANCE').
+        """
+        from engine.hk_filing_bus import classify_row
+        result = classify_row(cat, title)
+        assert result["dilution_flag"] is True, \
+            f"Expected dilution_flag=True for {cat}/{title!r}"
+        assert result["buyback_flag"] is False, \
+            f"buyback_flag must be False for {cat}/{title!r}"
+
     # NON-dilutive mandate (convertible bond — over-captured by category)
     @pytest.mark.parametrize("title", [
         "ADJUSTMENT TO CONVERSION PRICE OF HK$8,624,000,000 ZERO COUPON GUARANTEED CONVERTIBLE BONDS",

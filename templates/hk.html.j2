@@ -770,11 +770,11 @@
   {% macro _cat_chip(cat, dilution, buyback) %}
     {% if buyback %}
       <span class="chip c-up" style="font-size:11px;">
-        <span class="l-en">Buyback / 回购</span><span class="l-zh">回购</span>
+        <span class="l-en">Buyback</span><span class="l-zh">回购</span>
       </span>
     {% elif dilution %}
       <span class="chip c-down" style="font-size:11px;">
-        <span class="l-en">Dilution / 摊薄</span><span class="l-zh">摊薄</span>
+        <span class="l-en">Dilution</span><span class="l-zh">摊薄</span>
       </span>
     {% elif cat == 'results' %}
       <span class="chip" style="--c:var(--info);font-size:11px;">

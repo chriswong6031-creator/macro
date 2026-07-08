@@ -59,6 +59,7 @@ from pathlib import Path
 
 import pandas as pd
 
+from collectors.hk_placements import is_dilutive as _hk_placements_is_dilutive
 from lib import config
 
 log = logging.getLogger(__name__)
@@ -142,37 +143,18 @@ def _is_buyback_title(title: str) -> bool:
 
 
 # ---- Dilutive-issuance title classifier ----
-# Reuses the same logic as hk_placements.is_dilutive, but applied here to
-# general_mandate rows (which over-capture convertible-bond adjustments etc.)
-_DILUTE_STRONG_RE = re.compile(
-    r"RIGHTS\s+ISSUE|RIGHTS\s+SHARES|OPEN\s+OFFER|"
-    r"ISSUE\s+OF\s+(NEW\s+)?SHARES|ISSUANCE\s+OF\s+[A-Z\-\s]*SHARES|"
-    r"PLACING\s+OF\s+(NEW\s+)?SHARES|TOP[-\s]?UP\s+PLACING",
-    re.I)
-_DILUTE_WEAK_RE = re.compile(r"\bPLACING\b|\bSUBSCRIPTION\b", re.I)
-_DILUTE_DEBT_RE = re.compile(
-    r"\bBONDS?\b|\bNOTES?\b|CONVERTIBLE\s+SECURITIES|PERPETUAL|"
-    r"CAPITAL\s+SECURITIES",
-    re.I)
-_DILUTE_MEETING_RE = re.compile(
-    r"SHAREHOLDERS'\s+MEETING|GENERAL\s+MEETING|\bAGM\b|\bEGM\b|\bSGM\b|"
-    r"\bPROXY\b|\bCIRCULAR\b|\bCANCELLATION\b|\bTERMINATION\b",
-    re.I)
-
+# Delegates to collectors.hk_placements.is_dilutive (the canonical implementation)
+# to avoid drift.  hk_placements owns the regex vocabulary; any new strong tokens
+# (e.g. "SHARE ISSUANCE") are automatically picked up here.
 
 def _is_dilutive_title(title: str) -> bool:
     """True when the title describes a common-equity dilution event.
 
     Applied on top of category filters (mandate / placement categories only).
-    Mirrors hk_placements.is_dilutive().
+    Delegates to collectors.hk_placements.is_dilutive() — do not duplicate
+    the regex logic here.
     """
-    t = str(title or "")
-    strong = bool(_DILUTE_STRONG_RE.search(t))
-    if _DILUTE_MEETING_RE.search(t) and not strong:
-        return False
-    if strong:
-        return True
-    return bool(_DILUTE_WEAK_RE.search(t)) and not _DILUTE_DEBT_RE.search(t)
+    return _hk_placements_is_dilutive(title)
 
 
 # ---- Category → canonical label mapping ----
