@@ -171,6 +171,7 @@ jobs:
           # when W3 artifact is missing (handled inside build_china_market_state).
           run_py "china cycle phase lobe (build_china_cycle_phase)"               scripts.build_china_cycle_phase      # ~2m W3
           run_py "china market state spine (build_china_market_state)"            scripts.build_china_market_state     # ~2m W6
+          run_py "china mechanics cockpit (build_china_mechanics)"              scripts.build_china_mechanics        # W8 cockpit — reads spine artifacts
           exit 0
       - name: rebuild China/HK stock-search libraries (resilient — guarantees the analyzers ship)
         run: |

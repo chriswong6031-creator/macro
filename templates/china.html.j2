@@ -659,6 +659,122 @@
   {# Forward base-effect path; the separate HMM probability read was retired from China too. #}
   {% include "_base_effect_strip.html.j2" %}
 
+  {# CN-SYS W8 — Market State Cockpit Strip
+     Source: site/chinastatedata/market_state.json (build_china_market_state.py W6 spine).
+     Authority: context_only (CN-SYS-R1).  No fused scores (CN-SYS-R13).
+     Degrade-don't-crash: entire strip hidden if cn_market_state_json absent.
+     Dual-mode: visible on macro page; in stocks mode the header already shows the
+     radar sleeve chip — we skip the full strip there to avoid bloat, but add one
+     compact chip row if cheap. #}
+  {% set _cms = cn_market_state_json %}
+  {% if _cms %}
+  <div class="panel span12" id="cn-state-strip">
+    {# ── phase chip + confidence ── #}
+    {% set _ph = (_cms.get('phase') or {}) %}
+    {% set _phase_name = _ph.get('phase') or '—' %}
+    {% set _conf = _ph.get('confidence') %}
+    {% set _parti = (_cms.get('participation') or {}) %}
+    {% set _who = _parti.get('who_controls') or '—' %}
+    {% set _risk = _parti.get('risk') or '—' %}
+    {% set _pol = (_cms.get('policy') or {}) %}
+    {% set _impulse = _pol.get('policy_impulse') or '—' %}
+    {% set _contradictions = (_cms.get('contradictions') or []) %}
+    {% set _falsifiers = (_cms.get('falsifiers') or []) %}
+    {% set _data_gaps = (_cms.get('data_gaps') or []) %}
+
+    <div style="display:flex;flex-wrap:wrap;align-items:flex-start;gap:14px 20px">
+      {# ── LEFT: phase card ── #}
+      <div style="flex:none">
+        <div style="font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">{{ t('A-Share Phase', 'A股阶段') }}
+          {{ help('Current A-share cycle phase from the china_cycle_phase lobe (W3). Confidence = fraction of active evidence legs aligned with this phase label. Context only — never a signal (CN-SYS-R1).', '当前A股周期阶段来自china_cycle_phase脉络（W3）。置信度 = 与该阶段标签对齐的活跃证据腿比例。仅供参考 — 非信号（CN-SYS-R1）。') }}
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <span style="font-size:17px;font-weight:800;padding:4px 14px;border-radius:10px;
+            background:color-mix(in srgb,var(--info) 14%,var(--panel));
+            border:1px solid color-mix(in srgb,var(--info) 28%,var(--line));color:var(--text)">{{ _phase_name.replace('_',' ') }}</span>
+          {% if _conf is not none %}<span class="chip c-muted" style="font-size:11px">{{ ('%.0f'|format(_conf * 100)) }}%</span>{% endif %}
+          {% if _ph.get('as_of') %}<span style="font-size:10.5px;color:var(--muted)">{{ t('as of', '截至') }} {{ _ph.as_of }}</span>{% endif %}
+        </div>
+        {% if _ph.get('evidence') %}
+        <div style="margin-top:5px;font-size:11px;color:var(--muted);line-height:1.4">
+          {% for e in _ph.evidence[:3] %}<div>· {{ e }}</div>{% endfor %}
+          {% if _ph.evidence | length > 3 %}<div>… {{ _ph.evidence | length - 3 }} {{ t('more', '条') }}</div>{% endif %}
+        </div>
+        {% endif %}
+      </div>
+
+      {# ── CENTER: context chips ── #}
+      <div style="flex:1;min-width:200px">
+        <div style="font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">{{ t('Context chips', '背景芯片') }}</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px">
+          {# who_controls chip #}
+          <span class="chip {{ 'c-info' if _who == 'offshore' else ('c-warn' if _who in ('retail','margin') else ('c-up' if _who == 'institutional' else 'c-muted')) }}">
+            {{ t('controls: ' + _who.replace('_',' '), '控盘：' + _who.replace('_',' ')) }}</span>
+          {# policy_impulse chip #}
+          <span class="chip {{ 'c-up' if _impulse in ('easing','market_rescue') else ('c-info' if _impulse == 'targeted_support' else ('c-down' if _impulse == 'tightening' else 'c-muted')) }}">
+            {{ t('policy: ' + _impulse.replace('_',' '), '政策：' + _impulse.replace('_',' ')) }}</span>
+          {# risk chip #}
+          <span class="chip {{ 'c-down' if _risk in ('frothy','fire_sale') else ('c-warn' if _risk == 'normal' else 'c-muted') }}">
+            {{ t('risk: ' + _risk, '风险：' + _risk) }}</span>
+        </div>
+        {# top contradiction line #}
+        {% if _contradictions %}
+        <div style="margin-top:7px;font-size:11.5px;line-height:1.45;padding:5px 9px;
+          border-radius:7px;background:color-mix(in srgb,var(--warn) 9%,var(--panel));
+          border:1px solid color-mix(in srgb,var(--warn) 22%,var(--line))">
+          ⚠ <span style="color:var(--warn);font-weight:600">{{ t('Contradiction', '矛盾') }}</span>:
+          <span style="color:var(--text)">{{ _contradictions[0].a }}</span> {{ t('vs', 'vs') }}
+          <span style="color:var(--text)">{{ _contradictions[0].b }}</span>
+          {% if _contradictions[0].get('detail') %} — <span style="color:var(--muted)">{{ _contradictions[0].detail }}</span>{% endif %}
+          {% if _contradictions | length > 1 %}<span style="color:var(--muted)"> ({{ _contradictions | length - 1 }} {{ t('more', '条') }})</span>{% endif %}
+        </div>
+        {% else %}
+        <div style="margin-top:7px;font-size:11px;color:var(--muted)">{{ t('no contradictions today', '今日无矛盾') }}</div>
+        {% endif %}
+      </div>
+
+      {# ── RIGHT: falsifiers + data gaps ── #}
+      <div style="flex:none;min-width:180px">
+        <div style="font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">{{ t('Falsifiers & gaps', '证伪 & 数据缺口') }}</div>
+        <div style="font-size:12px;margin-bottom:4px">
+          <b>{{ _falsifiers | length }}</b> {{ t('falsifiers armed — auto-graded nightly', '个证伪条件已激活 — 每夜自动评分') }}</div>
+        {% if _falsifiers %}
+        <details style="margin-bottom:6px">
+          <summary style="cursor:pointer;color:var(--link);font-size:11.5px;font-weight:600;list-style:none">
+            <span class="l-en">▸ Show falsifiers</span><span class="l-zh">▸ 展开证伪条件</span>
+          </summary>
+          {% for f in _falsifiers %}
+          <div style="font-size:10.5px;padding:2px 0;border-bottom:1px solid var(--line);display:flex;gap:6px">
+            <span style="font-family:monospace;color:var(--info)">{{ f.id }}</span>
+            <code style="flex:1;font-size:10px">{{ f.expr }}</code>
+            <span style="color:var(--muted)">{{ f.horizon_d }}{{ t('d','天') }}</span>
+          </div>
+          {% endfor %}
+        </details>
+        {% endif %}
+        {# data-gaps disclosure chip #}
+        {% if _data_gaps %}
+        <details>
+          <summary style="cursor:pointer;color:var(--warn);font-size:11px;font-weight:600;list-style:none">
+            <span class="l-en">⚠ {{ _data_gaps | length }} data gap(s)</span>
+            <span class="l-zh">⚠ {{ _data_gaps | length }} 个数据缺口</span>
+          </summary>
+          <ul style="font-size:10px;color:var(--muted);margin:4px 0 0;padding-left:14px;line-height:1.5">
+            {% for g in _data_gaps %}<li>{{ g }}</li>{% endfor %}
+          </ul>
+        </details>
+        {% else %}
+        <span style="font-size:11px;color:var(--muted)">{{ t('no data gaps', '无数据缺口') }}</span>
+        {% endif %}
+        {# link to cockpit page #}
+        <div style="margin-top:8px;font-size:11.5px">
+          <a href="china_mechanics.html" style="color:var(--link);font-weight:600">🔬 {{ t('Full mechanics cockpit →', '完整结构驾驶舱 →') }}</a>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
   {# AI Daily Brief — the single in-page doorway to the cross-asset LLM synthesis
      (aibrief.html). Replaces the old inline AI Master Brief panel. #}
   <a class="panel span12 aibrief-card" href="aibrief.html">
@@ -1358,6 +1474,16 @@
           {# freshness: show the signal's own bar date only when it trails the board date #}
           {% set _sig_asof = (n.signal or {}).get('asof') %}
           {% if _sig_asof and setups.as_of and _sig_asof < setups.as_of %}<span class="muted" style="font-size:9px" data-tip-en="This signal is from {{ _sig_asof }}, a bar or two behind today's board (the 3-day bucket was not complete yet). Prices are current." data-tip-zh="该信号基于 {{ _sig_asof }}，比看板日期早一两个交易日（3日周期桶尚未收盘）。价格为最新。"><span class="l-en">signal as of {{ _sig_asof }}</span><span class="l-zh">信号截至 {{ _sig_asof }}</span></span>{% endif %}
+          {# CN-SYS W8 — per-name microstructure chips (limit_state / chase_veto).
+             Source: site/chinastatedata/microstructure.json → cn_micro_by_ticker[n.ticker].
+             Context only — not a sort key (CN-SYS-R3, R7). Degrade silently if packet absent. #}
+          {% set _mpkt = cn_micro_by_ticker.get(n.ticker) if cn_micro_by_ticker else none %}
+          {% if _mpkt %}
+            {% set _ls = _mpkt.get('limit_state') %}
+            {% set _cv = (_mpkt.get('chase_veto') or {}) %}
+            {% if _ls and _ls != 'open' %}<span style="font-size:8px;font-weight:800;padding:1px 5px;border-radius:6px;white-space:nowrap;background:color-mix(in srgb,var(--warn) 14%,transparent);color:var(--warn);border:1px solid color-mix(in srgb,var(--warn) 35%,transparent)" data-tip-en="Microstructure: limit state={{ _ls }}. Context only — CN-SYS-R3." data-tip-zh="市场结构：涨跌停状态={{ _ls }}。仅供参考 — CN-SYS-R3。"><span class="l-en">{{ _ls }}</span><span class="l-zh">{{ _ls }}</span></span>{% endif %}
+            {% if _cv.get('flag') %}<span style="font-size:8px;font-weight:800;padding:1px 5px;border-radius:6px;white-space:nowrap;background:color-mix(in srgb,var(--down) 13%,transparent);color:var(--down);border:1px solid color-mix(in srgb,var(--down) 30%,transparent)" data-tip-en="Chase veto: {{ _cv.get('reason') or 'limit-up context (CN-SYS-R3)' }}" data-tip-zh="追涨否决：{{ _cv.get('reason') or '涨停背景（CN-SYS-R3）' }}"><span class="l-en">chase ⚑</span><span class="l-zh">追涨 ⚑</span></span>{% endif %}
+          {% endif %}
         </div>
         {% if c and c.cautions %}<div class="nb-cau"><button class="nb-cau-btn" type="button" aria-label="Caution notes ({{ c.cautions|length }})"><span class="l-en">⚠ Caution</span><span class="l-zh">⚠ 注意</span><span class="nb-cau-badge">{{ c.cautions|length }}</span></button><div class="nb-cau-pop" role="tooltip">{% for cau in c.cautions %}<span class="cau-row"><span class="l-en">{{ cau }}</span><span class="l-zh">{{ c.cautions_zh[loop.index0] if (c.cautions_zh and c.cautions_zh|length > loop.index0) else cau }}</span></span>{% endfor %}</div></div>{% endif %}
       </a>
