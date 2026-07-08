@@ -1,0 +1,11 @@
+{
+  "display_only": true,
+  "note": "Built at render time by scripts/build_hk.py via engine/hk_adr_bridge.run(). This stub is overwritten on every nightly build.",
+  "freshness_verdict": "dead",
+  "names": [],
+  "composite": {},
+  "banner": {
+    "en": "ADR bridge not yet built — run build_hk.py",
+    "zh": "ADR 桥尚未构建 — 请运行 build_hk.py"
+  }
+}

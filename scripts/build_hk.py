@@ -790,6 +790,25 @@ def main() -> int:
             log.error("hk calendar build failed (%s); skipping", e)
             vm["calendar"], vm["event_strip"], vm["imminent"] = [], [], None
 
+        # HK / ADR Overnight Bridge — display-tier context organ (W1 data-plane).
+        # Shows what US ADRs did after the HK close, implying the next HK open.
+        # DISPLAY-ONLY — no signal, no edge claim. Stamps the forward ledger.
+        try:
+            from engine import hk_adr_bridge as _adr
+            _adr_snap = _adr.run()
+            vm["adr_bridge"] = _adr_snap
+            # Persist to site/factordata/hk_adr_bridge.json for API consumption
+            _fd = site / "factordata"
+            _fd.mkdir(parents=True, exist_ok=True)
+            (_fd / "hk_adr_bridge.json").write_text(
+                json.dumps(_adr_snap, indent=2, default=str))
+            log.info("hk adr bridge: freshness=%s composite=%s",
+                     _adr_snap.get("freshness_verdict"),
+                     (_adr_snap.get("composite") or {}).get("bellwether_implied_open_pct"))
+        except Exception as e:  # noqa: BLE001 — additive panel, never fatal
+            log.error("hk adr bridge failed (%s); skipping", e)
+            vm["adr_bridge"] = None
+
         # HK residential-property panel (Centaline CCL) — display/regime context, None-safe
         try:
             vm["property"] = _hk_property_vm()
