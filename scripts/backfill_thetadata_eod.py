@@ -280,6 +280,17 @@ def _pull_root_year(root: str, year: int, start: date, end: date, *,
         return False
     t2 = time.perf_counter()
     if not oi.empty:
+        # Defensive dedup mirroring the eod block above: _normalize_oi_df drops API
+        # dups at parse time; this guarantees idempotency if the collector path changes.
+        n_before_oi = len(oi)
+        oi = oi.drop_duplicates()
+        n_dropped_oi = n_before_oi - len(oi)
+        if n_dropped_oi:
+            log.warning(
+                "pull_root_year: %s %d oi — defensive dedup dropped %d residual dups "
+                "(%d → %d rows); collector dedup may be incomplete",
+                root, year, n_dropped_oi, n_before_oi, len(oi),
+            )
         _write_parquet_atomic(oi, _parquet_path("oi", root, year))
         log.info("chunk_summary: %s %d oi rows=%d elapsed=%.1fs", root, year, len(oi), t2 - t1)
     else:
@@ -297,6 +308,16 @@ def _pull_root_year(root: str, year: int, start: date, end: date, *,
         return False
     t3 = time.perf_counter()
     if not greeks.empty:
+        # Defensive dedup mirroring the eod block above.
+        n_before_gr = len(greeks)
+        greeks = greeks.drop_duplicates()
+        n_dropped_gr = n_before_gr - len(greeks)
+        if n_dropped_gr:
+            log.warning(
+                "pull_root_year: %s %d greeks — defensive dedup dropped %d residual dups "
+                "(%d → %d rows); collector dedup may be incomplete",
+                root, year, n_dropped_gr, n_before_gr, len(greeks),
+            )
         _write_parquet_atomic(greeks, _parquet_path("greeks", root, year))
         log.info("chunk_summary: %s %d greeks rows=%d elapsed=%.1fs", root, year, len(greeks), t3 - t2)
     else:
