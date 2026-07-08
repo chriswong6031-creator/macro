@@ -867,6 +867,25 @@ def main() -> int:
             log.error("hk filing bus failed (%s); skipping", e)
             vm["filing_bus"] = None
 
+        # GDELT Narrative / Attention-Shock organ — context-tier, display-only (W1 data-plane).
+        # Surfaces news-volume z-scores + tone shifts for HK platform-tech bellwethers.
+        # WEAKEST evidence tier — labelled as such on-page. Stamps the forward ledger.
+        # try/except resets ONLY vm["hk_narrative"] — follows filing-bus pattern.
+        try:
+            from engine import hk_narrative as _hn
+            _hn_snap = _hn.run()
+            vm["hk_narrative"] = _hn_snap
+            _fd = site / "factordata"
+            _fd.mkdir(parents=True, exist_ok=True)
+            (_fd / "hk_narrative.json").write_text(
+                json.dumps(_hn_snap, indent=2, default=str))
+            log.info("hk narrative: freshness=%s entities=%d",
+                     _hn_snap.get("freshness"),
+                     len(_hn_snap.get("entities", [])))
+        except Exception as e:  # noqa: BLE001 — additive organ, never fatal
+            log.error("hk narrative organ failed (%s); skipping", e)
+            vm["hk_narrative"] = None
+
         # HK residential-property panel (Centaline CCL) — display/regime context, None-safe
         try:
             vm["property"] = _hk_property_vm()
