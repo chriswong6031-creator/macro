@@ -704,15 +704,28 @@ def _compose_context_risk(
         if rr.get("n_insufficient_cells", 0) > 0 and not rr.get("available", True):
             insufficient_note = rr.get("note")
 
+        # F6: covered_weight < 1.0 means only a partial board share had adequate cells
+        covered_weight = _clean(rr.get("covered_weight"))
+        covered_weight_note = None
+        if covered_weight is not None and isinstance(covered_weight, (int, float)) and covered_weight < 1.0:
+            covered_weight_note = (
+                f"Regime statistics cover {covered_weight:.0%} of board archetype weight "
+                "(remaining cells had insufficient n)."
+            )
+
         return {
             "available": True,
             "as_of": _clean(raw.get("as_of")),
             "board_top_overweights": _clean(board.get("top_overweights") or []),
             "weighted_p10_21d": _clean(rr.get("weighted_p10_21d")),
             "weighted_median_21d": _clean(rr.get("weighted_median_21d")),
+            # F2: fixed disclaimer must be present
+            "p10_interpretation": _clean(rr.get("p10_interpretation")),
             "n_board": _clean(board.get("n_members")),
             "regime_context": _clean(regime_ctx),
             "insufficient_note": _clean(insufficient_note),
+            "covered_weight": covered_weight,  # F6
+            "covered_weight_note": covered_weight_note,  # F6: non-None when < 1.0
             "survivorship_watermark": "223-name survivorship-biased deep corpus (display-only)",
             "display_only": True,
         }

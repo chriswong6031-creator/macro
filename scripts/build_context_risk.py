@@ -318,10 +318,19 @@ def _regime_conditional_read(
     quad: str | None,
     liq: str | None,
 ) -> dict:
-    """Weighted median 21d fwd and P10 tail for current quad × liquidity cell.
+    """Weighted median 21d fwd and P10 tail for the current quad (quad-only read).
+
+    Regime read uses ARCHETYPE_QUAD_MEDIAN and ARCHETYPE_QUAD_P10 (quad-only matrix).
+    The liquidity state is recorded as context but does NOT condition the weighted
+    statistics — per-archetype liquidity-conditioned medians (ARCHETYPE_LIQUIDITY_MEDIAN)
+    are available in constants but are not yet aggregated in this block.
 
     Only uses cells the field guide marks as adequate (n >= MIN_N_ADEQUATE).
     Inadequate cells print insufficient_n.
+
+    P10 disclaimer: weighted_p10_21d is a per-type share-weighted average of marginal
+    worst-decile returns; NOT a portfolio P10 — diversification and cross-type
+    correlation are not modeled.
 
     Returns:
         {
@@ -329,6 +338,8 @@ def _regime_conditional_read(
           "liq": str | None,
           "weighted_median_21d": float | None,
           "weighted_p10_21d": float | None,
+          "p10_interpretation": str,   # fixed disclaimer (F2)
+          "covered_weight": float | None,  # fraction of board weight over adequate cells (F6)
           "note": str,
           "per_archetype": {...},
         }
@@ -347,6 +358,13 @@ def _regime_conditional_read(
     w_med_sum = 0.0
     w_p10_sum = 0.0
     weight_sum = 0.0
+    p10_weight_sum = 0.0  # F1: separate denominator for P10 — only incremented when p10_val is not None
+    total_board_weight = sum(
+        cell.get("member_share", 0.0)
+        for cell in arch_shares.values()
+        if cell.get("member_share", 0.0) > 0
+    )
+    covered_weight = 0.0  # F6: fraction of board weight over adequate cells
     insufficient_cells: list[str] = []
 
     for arch, cell in arch_shares.items():
@@ -387,11 +405,32 @@ def _regime_conditional_read(
             weight_sum += share
         if p10_val is not None:
             w_p10_sum += p10_val * share
+            p10_weight_sum += share  # F1: track separately from median weight_sum
+        covered_weight += share  # F6: this cell is adequate
 
-    # Liquidity context (table 3 in field guide)
+    # Liquidity context (table 3 in field guide — quad-only; liquidity-conditioned
+    # per-archetype median available in ARCHETYPE_LIQUIDITY_MEDIAN but not computed
+    # here because the world_state context block carries only the quad × liquidity
+    # regime read; a dedicated liquidity-conditioned table is not yet wired)
     liq_note = None
     if liq and liq in ("expanding", "neutral", "contracting"):
-        liq_note = f"Current liquidity state: {liq} (see per-archetype liquidity tables for archetype-level read)"
+        liq_note = (
+            f"Current liquidity state: {liq}. "
+            "Regime read is quad-only (ARCHETYPE_QUAD_MEDIAN); "
+            "per-archetype liquidity-conditioned medians (ARCHETYPE_LIQUIDITY_MEDIAN) "
+            "are available in constants but not yet aggregated in this block."
+        )
+
+    # F6: covered_weight fraction
+    covered_weight_fraction = (
+        round(covered_weight / total_board_weight, 4) if total_board_weight > 0 else None
+    )
+
+    # F2: disclaimer note required on the regime_conditional block
+    _p10_disclaimer = (
+        "per-type share-weighted average of marginal worst-decile returns; "
+        "NOT a portfolio P10 — diversification and cross-type correlation are not modeled."
+    )
 
     result: dict = {
         "available": weight_sum > 0,
@@ -405,11 +444,17 @@ def _regime_conditional_read(
             f"{MIN_N_ADEQUATE} (field guide adequacy floor). "
             f"{len(insufficient_cells)} cells printed as insufficient_n."
         ),
+        "p10_interpretation": _p10_disclaimer,  # F2: fixed disclaimer
+        "covered_weight": covered_weight_fraction,  # F6
     }
 
     if weight_sum > 0:
         result["weighted_median_21d"] = round(w_med_sum / weight_sum, 4)
-        result["weighted_p10_21d"] = round(w_p10_sum / weight_sum, 4) if w_p10_sum != 0 else None
+        # F1: divide by p10_weight_sum (not weight_sum) so None P10 cells don't dilute
+        # F3: condition on p10_weight_sum > 0 (not != 0, mirroring the median guard)
+        result["weighted_p10_21d"] = (
+            round(w_p10_sum / p10_weight_sum, 4) if p10_weight_sum > 0 else None
+        )
     else:
         result["weighted_median_21d"] = None
         result["weighted_p10_21d"] = None
@@ -417,6 +462,12 @@ def _regime_conditional_read(
 
     if liq_note:
         result["liquidity_context"] = liq_note
+
+    if covered_weight_fraction is not None and covered_weight_fraction < 1.0:
+        result["covered_weight_note"] = (
+            f"Only {covered_weight_fraction:.0%} of board archetype weight falls on "
+            "cells with adequate n; weighted statistics cover a partial board."
+        )
 
     return result
 

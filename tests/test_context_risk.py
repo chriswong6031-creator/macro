@@ -1,16 +1,20 @@
 """tests/test_context_risk.py — Unit tests for scripts/build_context_risk.py (W3, R-CI7).
 
 Tests cover:
-1. constants_spot_check    — assert key values from field guide match constants module.
-2. composition_ratios      — fabricated board+personality yields correct archetype ratios.
-3. insufficient_n_path     — fabricated regime state outside adequate-n cells → insufficient_n.
-4. missing_inputs          — missing standouts/personality/regime → available:false artifact written.
-5. fail_open               — build_context_risk never raises on corrupt inputs.
-6. world_state_subblock    — _compose_context_risk returns available:False when artifact absent.
-7. world_state_fail_open   — _compose_context_risk never raises on corrupt artifact file.
-8. json_round_trip         — payload is JSON-serializable.
-9. forbidden_words         — "validated" does not appear in artifact.
-10. authority_block        — artifact carries correct authority stanza.
+1.  constants_spot_check      — assert key values from field guide match constants module.
+2.  composition_ratios        — fabricated board+personality yields correct archetype ratios.
+3.  insufficient_n_path       — fabricated regime state outside adequate-n cells → insufficient_n.
+4.  missing_inputs            — missing standouts/personality/regime → available:false artifact written.
+5.  fail_open                 — build_context_risk never raises on corrupt inputs.
+6.  world_state_subblock      — _compose_context_risk returns available:False when artifact absent.
+7.  world_state_fail_open     — _compose_context_risk never raises on corrupt artifact file.
+8.  json_round_trip           — payload is JSON-serializable.
+9.  forbidden_words           — "validated" does not appear in artifact.
+10. authority_block           — artifact carries correct authority stanza.
+11. p10_denominator_f1        — F1 regression: missing P10 must NOT dilute weighted_p10_21d.
+12. p10_disclaimer_f2         — F2: regime_conditional block carries p10_interpretation disclaimer.
+13. p10_guard_f3              — F3: zero p10_weight_sum → weighted_p10_21d is None (not zero).
+14. covered_weight_f6         — F6: covered_weight emitted; world_state passes note when < 1.0.
 """
 from __future__ import annotations
 
@@ -507,3 +511,215 @@ class TestAuthorityBlock:
 
         payload = build_context_risk(root=tmp_path)
         assert payload["display_only"] is True
+
+
+# ---------------------------------------------------------------------------
+# 11. F1 regression — missing P10 must NOT dilute weighted_p10_21d
+# ---------------------------------------------------------------------------
+
+class TestP10DenominatorF1:
+    """F1: weighted_p10_21d uses its own weight sum (p10_weight_sum), not the median
+    weight_sum.  When one archetype has a median but no P10, the buggy code divides
+    w_p10_sum by weight_sum (which includes the median-only archetype), diluting the
+    result.  The fixed code divides only by the sum of shares where p10_val is not None.
+
+    Regression setup:
+        Board = cyclical (50%) + rate_sensitive (50%), Q1, both n >> 887 (adequate).
+        cyclical    Q1 P10 = -0.073  (from field guide Table 2)
+        rate_sensitive Q1 P10 = -0.077
+
+        With cyclical P10 removed (patched to None):
+            Honest  weighted_p10_21d = -0.077 * 0.5 / 0.5 = -0.077
+            Buggy   weighted_p10_21d = -0.077 * 0.5 / 1.0 = -0.0385  (diluted)
+
+        The test asserts the exact honest value and confirms the buggy value differs.
+    """
+
+    def test_p10_not_diluted_when_one_archetype_has_no_p10(self, tmp_path, monkeypatch):
+        """F1 regression: cyclical P10 absent → weighted_p10_21d = rate_sensitive P10 only."""
+        per_ticker = {
+            "CYCL": {"arch": "cyclical",       "chart": [], "own": [], "modes": ["normal"]},
+            "RATE": {"arch": "rate_sensitive",  "chart": [], "own": [], "modes": ["normal"]},
+        }
+        _write_standouts(tmp_path, buy_tickers=["CYCL", "RATE"])
+        _write_personality(tmp_path, per_ticker=per_ticker)
+        _write_regime(tmp_path, quad="Q1", liq="expanding")
+
+        # Patch ARCHETYPE_QUAD_P10 in the build module to remove cyclical's P10
+        import scripts.build_context_risk as bcr
+        patched_p10 = {k: dict(v) for k, v in ARCHETYPE_QUAD_P10.items()}
+        # Remove Q1 entry for cyclical so p10_val is None
+        patched_p10["cyclical"] = {q: v for q, v in patched_p10["cyclical"].items() if q != "Q1"}
+        monkeypatch.setattr(bcr, "ARCHETYPE_QUAD_P10", patched_p10)
+
+        payload = bcr.build_context_risk(root=tmp_path)
+        rr = payload["board_buy_lane"]["regime_conditional"]
+
+        assert rr["available"] is True
+        # Honest: only rate_sensitive contributes; -0.077 * 0.5 / 0.5 = -0.077
+        expected_honest = pytest.approx(-0.077, abs=0.001)
+        # Buggy would be: -0.077 * 0.5 / 1.0 = -0.0385 (cyclical median still accumulated weight_sum)
+        buggy_value = -0.077 * 0.5 / 1.0  # = -0.0385
+        assert rr["weighted_p10_21d"] == expected_honest, (
+            f"F1 regression: got {rr['weighted_p10_21d']!r}, expected {expected_honest}. "
+            f"Buggy diluted value would be {buggy_value:.4f}."
+        )
+        # Confirm the honest value differs from what the bug would have produced
+        assert abs(rr["weighted_p10_21d"] - buggy_value) > 0.01, (
+            "Honest and buggy values should differ by more than 1bp; "
+            "this indicates the denominator is still wrong."
+        )
+
+    def test_p10_correct_when_all_archetypes_have_p10(self, tmp_path):
+        """Baseline: both archetypes have P10 → exact weighted average."""
+        per_ticker = {
+            "CYCL": {"arch": "cyclical",       "chart": [], "own": [], "modes": ["normal"]},
+            "RATE": {"arch": "rate_sensitive",  "chart": [], "own": [], "modes": ["normal"]},
+        }
+        _write_standouts(tmp_path, buy_tickers=["CYCL", "RATE"])
+        _write_personality(tmp_path, per_ticker=per_ticker)
+        _write_regime(tmp_path, quad="Q1", liq="expanding")
+
+        payload = build_context_risk(root=tmp_path)
+        rr = payload["board_buy_lane"]["regime_conditional"]
+
+        # cyclical Q1 P10 = -0.073; rate_sensitive Q1 P10 = -0.077; 50/50
+        expected = (-0.073 * 0.5 + -0.077 * 0.5) / 1.0  # = -0.075
+        assert rr["weighted_p10_21d"] == pytest.approx(expected, abs=0.001)
+
+
+# ---------------------------------------------------------------------------
+# 12. F2 regression — regime_conditional block must carry the P10 disclaimer
+# ---------------------------------------------------------------------------
+
+class TestP10DisclaimerF2:
+    """F2: regime_conditional block must carry a fixed p10_interpretation note.
+    World_state must also pass it through.
+    """
+
+    def test_regime_conditional_has_disclaimer(self, tmp_path):
+        """F2: p10_interpretation field present with correct text in regime_conditional."""
+        per_ticker = {
+            "CYCL": {"arch": "cyclical", "chart": [], "own": [], "modes": ["normal"]},
+        }
+        _write_standouts(tmp_path, buy_tickers=["CYCL"])
+        _write_personality(tmp_path, per_ticker=per_ticker)
+        _write_regime(tmp_path, quad="Q1", liq="expanding")
+
+        payload = build_context_risk(root=tmp_path)
+        rr = payload["board_buy_lane"]["regime_conditional"]
+        assert "p10_interpretation" in rr, "F2: p10_interpretation note missing from regime_conditional"
+        note = rr["p10_interpretation"]
+        assert "NOT a portfolio P10" in note, f"F2: disclaimer text wrong: {note!r}"
+        assert "diversification" in note, f"F2: disclaimer must mention diversification: {note!r}"
+
+    def test_world_state_passes_disclaimer_through(self, tmp_path):
+        """F2: _compose_context_risk passes p10_interpretation note through."""
+        from engine.neuralweb.world_state import _compose_context_risk
+
+        per_ticker = {
+            "RATE": {"arch": "rate_sensitive", "chart": [], "own": [], "modes": ["normal"]},
+        }
+        _write_standouts(tmp_path, buy_tickers=["RATE"])
+        _write_personality(tmp_path, per_ticker=per_ticker)
+        _write_regime(tmp_path, quad="Q1", liq="expanding")
+
+        artifact = build_context_risk(root=tmp_path)
+        _write_context_risk_artifact(tmp_path, artifact)
+
+        result = _compose_context_risk(root=tmp_path)
+        assert result["available"] is True
+        assert "p10_interpretation" in result, "F2: p10_interpretation not passed through by world_state"
+        assert "NOT a portfolio P10" in (result["p10_interpretation"] or "")
+
+
+# ---------------------------------------------------------------------------
+# 13. F3 regression — zero p10_weight_sum → weighted_p10_21d is None, not zero
+# ---------------------------------------------------------------------------
+
+class TestP10GuardF3:
+    """F3: condition on p10_weight_sum > 0 (mirrors median guard).  When ALL
+    archetypes have p10_val == None, weighted_p10_21d must be None, not 0.0.
+    """
+
+    def test_all_p10_absent_returns_none(self, tmp_path, monkeypatch):
+        """F3: when no archetype has a P10 entry for the quad, result is None."""
+        per_ticker = {
+            "CYCL": {"arch": "cyclical", "chart": [], "own": [], "modes": ["normal"]},
+        }
+        _write_standouts(tmp_path, buy_tickers=["CYCL"])
+        _write_personality(tmp_path, per_ticker=per_ticker)
+        _write_regime(tmp_path, quad="Q1", liq="expanding")
+
+        import scripts.build_context_risk as bcr
+        # Patch all P10 values to empty (no Q1 entry for any archetype)
+        monkeypatch.setattr(bcr, "ARCHETYPE_QUAD_P10", {})
+
+        payload = bcr.build_context_risk(root=tmp_path)
+        rr = payload["board_buy_lane"]["regime_conditional"]
+        # cyclical has an adequate median cell → available=True, but p10 absent
+        assert rr["available"] is True
+        assert rr["weighted_p10_21d"] is None, (
+            f"F3: expected None when p10_weight_sum==0, got {rr['weighted_p10_21d']!r}"
+        )
+
+
+# ---------------------------------------------------------------------------
+# 14. F6 regression — covered_weight emitted; world_state passes note when < 1.0
+# ---------------------------------------------------------------------------
+
+class TestCoveredWeightF6:
+    """F6: covered_weight (fraction of board archetype weight with adequate n)
+    is emitted in regime_conditional.  When < 1.0, world_state wraps a note.
+    """
+
+    def test_covered_weight_present_in_regime_conditional(self, tmp_path):
+        """F6: covered_weight key present in regime_conditional."""
+        per_ticker = {
+            "CYCL": {"arch": "cyclical", "chart": [], "own": [], "modes": ["normal"]},
+            "RATE": {"arch": "rate_sensitive", "chart": [], "own": [], "modes": ["normal"]},
+        }
+        _write_standouts(tmp_path, buy_tickers=["CYCL", "RATE"])
+        _write_personality(tmp_path, per_ticker=per_ticker)
+        _write_regime(tmp_path, quad="Q1", liq="expanding")
+
+        payload = build_context_risk(root=tmp_path)
+        rr = payload["board_buy_lane"]["regime_conditional"]
+        assert "covered_weight" in rr, "F6: covered_weight missing from regime_conditional"
+        # Both cyclical Q1 (n=16404) and rate_sensitive Q1 (n=19340) are adequate → 1.0
+        assert rr["covered_weight"] == pytest.approx(1.0, abs=0.01)
+
+    def test_covered_weight_partial_when_some_cells_inadequate(self, tmp_path, monkeypatch):
+        """F6: when one archetype cell has insufficient n, covered_weight < 1.0 and world_state note is set."""
+        from engine.neuralweb.world_state import _compose_context_risk
+
+        per_ticker = {
+            "CYCL": {"arch": "cyclical",    "chart": [], "own": [], "modes": ["normal"]},
+            "FAKE": {"arch": "broken_growth","chart": [], "own": [], "modes": ["normal"]},
+        }
+        _write_standouts(tmp_path, buy_tickers=["CYCL", "FAKE"])
+        _write_personality(tmp_path, per_ticker=per_ticker)
+        _write_regime(tmp_path, quad="Q1", liq="expanding")
+
+        import scripts.build_context_risk as bcr
+        # Patch broken_growth Q1 n to below MIN_N_ADEQUATE so it's insufficient
+        patched_median = {k: {q: dict(v) for q, v in qs.items()} for k, qs in ARCHETYPE_QUAD_MEDIAN.items()}
+        patched_median["broken_growth"]["Q1"] = {"med": 0.023, "n": 10}  # below 887
+        monkeypatch.setattr(bcr, "ARCHETYPE_QUAD_MEDIAN", patched_median)
+
+        payload = bcr.build_context_risk(root=tmp_path)
+        rr = payload["board_buy_lane"]["regime_conditional"]
+        assert "covered_weight" in rr
+        cw = rr["covered_weight"]
+        assert cw is not None and cw < 1.0, (
+            f"F6: expected covered_weight < 1.0 when broken_growth cell is insufficient, got {cw!r}"
+        )
+        # covered_weight_note should also be present
+        assert "covered_weight_note" in rr, "F6: covered_weight_note missing when < 1.0"
+
+        # Write artifact and check world_state passes note through
+        _write_context_risk_artifact(tmp_path, payload)
+        result = _compose_context_risk(root=tmp_path)
+        assert result.get("covered_weight_note") is not None, (
+            "F6: world_state must emit covered_weight_note when covered_weight < 1.0"
+        )

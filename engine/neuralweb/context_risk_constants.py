@@ -240,33 +240,8 @@ ARCHETYPE_LIQUIDITY_MEDIAN: dict[str, dict[str, dict]] = {
 }
 
 # ---------------------------------------------------------------------------
-# SPECIAL FLAGS — archetypes considered "tinderbox" or "high-vol" risk category
-# These are descriptive labels derived from field guide §1; not signals.
-# ---------------------------------------------------------------------------
-
-# High-energy tier (vol >= 0.30): names where board overweight is most impactful
-HIGH_VOL_ARCHETYPES: frozenset[str] = frozenset({
-    "speculative_unprofitable",  # vol 0.378
-    "high_beta_momentum",        # vol 0.392
-    "broken_growth",             # vol 0.309
-    "secular_growth",            # vol 0.302
-})
-
-# "Tinderbox" — defined in the field guide §5 and operator playbook as names with
-# short_interest_tinderbox ownership label. This module doesn't re-derive that;
-# the build script reads it from stock_personality.json per_ticker["own"].
-
-# Archetypes with worst-decile (P10) < -10% in current Q1+expanding cell:
-HIGH_TAIL_ARCHETYPES: frozenset[str] = frozenset({
-    "high_beta_momentum",        # Q1 P10 = -10.4%
-    "speculative_unprofitable",  # Q1 P10 = -9.9%
-})
-
-# ---------------------------------------------------------------------------
 # MINIMUM N THRESHOLD for "adequate cell" — matches the field guide §3 statement
-# "No small-n cells; minimum n=887 (dividend_defensive/Q3)" for the quad tables,
-# and field guide §1 notes for small-n archetype types.
+# "No small-n cells; minimum n=887 (dividend_defensive/Q3)" for the quad tables.
 # ---------------------------------------------------------------------------
 
 MIN_N_ADEQUATE = 887   # minimum n in quad matrix cells (dividend_defensive Q3)
-MIN_N_ARCHETYPE_ADEQUATE = 48  # minimum n_obs for archetype fingerprints (quality_compounder)
