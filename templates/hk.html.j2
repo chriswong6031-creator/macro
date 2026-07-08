@@ -758,6 +758,184 @@
   </div>
   {% endif %}{# end cbbc-leverage panel #}
 
+  {# ===================== CORPORATE CATALYSTS — HKEXnews filing bus (display-only) =====================
+     Surfaces per-name recent corporate events: buyback / results / mandate / shareholder change.
+     DISPLAY-ONLY context tape. Deterministic classification only — NOT a buy/sell signal.
+     / 公司催化 — 港交所公告分类记录（仅供参考，非买卖信号）。确定性分类。
+     Gracefully absent when filing_bus is None or tape is empty. #}
+  {% if filing_bus and (filing_bus.tape or filing_bus.bellwethers) %}
+  {% set _fb = filing_bus %}
+  {% set _fb_fresh = _fb.freshness if _fb.freshness else 'unknown' %}
+  {# Category chip colour helper #}
+  {% macro _cat_chip(cat, dilution, buyback) %}
+    {% if buyback %}
+      <span class="chip c-up" style="font-size:11px;">
+        <span class="l-en">Buyback</span><span class="l-zh">回购</span>
+      </span>
+    {% elif dilution %}
+      <span class="chip c-down" style="font-size:11px;">
+        <span class="l-en">Dilution</span><span class="l-zh">摊薄</span>
+      </span>
+    {% elif cat == 'results' %}
+      <span class="chip" style="--c:var(--info);font-size:11px;">
+        <span class="l-en">Results</span><span class="l-zh">业绩</span>
+      </span>
+    {% elif cat == 'mandate' %}
+      <span class="chip c-warn" style="font-size:11px;">
+        <span class="l-en">Mandate</span><span class="l-zh">一般授权</span>
+      </span>
+    {% elif cat == 'placement' %}
+      <span class="chip c-warn" style="font-size:11px;">
+        <span class="l-en">Placing</span><span class="l-zh">配股</span>
+      </span>
+    {% elif cat == 'shareholder' %}
+      <span class="chip" style="--c:var(--muted);font-size:11px;">
+        <span class="l-en">Shareholder</span><span class="l-zh">股东</span>
+      </span>
+    {% else %}
+      <span class="chip" style="--c:var(--muted);font-size:11px;">
+        <span class="l-en">{{ cat | title }}</span><span class="l-zh">{{ cat }}</span>
+      </span>
+    {% endif %}
+  {% endmacro %}
+
+  <div class="panel span12" id="filing-bus-panel">
+    <div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:12px;">
+      <h2 style="margin:0;font-size:13px;">
+        <span class="l-en">Corporate Catalysts</span>
+        <span class="l-zh">公司催化</span>
+      </h2>
+      {% if _fb.as_of %}
+      <span style="font-size:11px;color:var(--muted);">
+        <span class="l-en">as of {{ _fb.as_of }}</span>
+        <span class="l-zh">截至 {{ _fb.as_of }}</span>
+      </span>
+      {% endif %}
+      {% if _fb_fresh in ('stale','dead') %}
+      <span class="chip c-warn" style="font-size:11px;">
+        <span class="l-en">data {{ _fb_fresh }}</span>
+        <span class="l-zh">数据{{ '落后' if _fb_fresh == 'stale' else '缺失' }}</span>
+      </span>
+      {% endif %}
+      <span style="font-size:11px;color:var(--muted);margin-left:auto;">
+        <span class="l-en">deterministic / context, not a signal</span>
+        <span class="l-zh">确定性分类 / 参考，非买卖信号</span>
+      </span>
+    </div>
+
+    {# Banner for stale/error state #}
+    {% if _fb.banner %}
+    <div class="alert alert-warn" style="margin-bottom:10px;">
+      <div class="alert-head"><span class="alert-ico">⚠</span>
+        <b><span class="l-en">{{ _fb.banner.en }}</span><span class="l-zh">{{ _fb.banner.zh }}</span></b>
+      </div>
+    </div>
+    {% endif %}
+
+    {# Per-bellwether recent-catalyst summary #}
+    {% set _active_bw = [] %}
+    {% for bw in _fb.bellwethers if bw.counts %}
+      {% if _active_bw.append(bw) %}{% endif %}
+    {% endfor %}
+
+    {% if _active_bw %}
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;">
+      {% for bw in _active_bw %}
+      {% set _has_dil = bw.has_dilution %}
+      {% set _has_buy = bw.has_buyback %}
+      {% set _border = ('var(--down)' if _has_dil else ('var(--up)' if _has_buy else 'var(--line)')) %}
+      <div style="background:var(--panel2);border:1px solid {{ _border }};border-radius:9px;
+                  padding:8px 12px;min-width:160px;max-width:240px;">
+        <div style="font-size:12.5px;font-weight:700;color:var(--text);margin-bottom:4px;">
+          <span class="l-en">{{ bw.name_en }}</span>
+          <span class="l-zh">{{ bw.name_zh }}</span>
+          <span style="font-size:10.5px;color:var(--muted);margin-left:4px;">{{ bw.ticker }}</span>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:5px;">
+          {% if _has_buy %}
+          <span class="chip c-up" style="font-size:10.5px;">
+            <span class="l-en">Buyback</span><span class="l-zh">回购</span>
+            {% if bw.counts.buyback %}×{{ bw.counts.buyback }}{% endif %}
+          </span>
+          {% endif %}
+          {% if _has_dil %}
+          <span class="chip c-down" style="font-size:10.5px;">
+            <span class="l-en">Dilution</span><span class="l-zh">摊薄</span>
+            {% if bw.counts.placement %}×{{ bw.counts.placement }}{% endif %}{% if bw.counts.mandate %} +{{ bw.counts.mandate }}{% endif %}
+          </span>
+          {% endif %}
+          {% if bw.counts.results %}
+          <span class="chip" style="--c:var(--info);font-size:10.5px;">
+            <span class="l-en">Results</span><span class="l-zh">业绩</span>
+            ×{{ bw.counts.results }}
+          </span>
+          {% endif %}
+          {% if bw.counts.shareholder %}
+          <span class="chip" style="--c:var(--muted);font-size:10.5px;">
+            <span class="l-en">Holder</span><span class="l-zh">股东</span>
+            ×{{ bw.counts.shareholder }}
+          </span>
+          {% endif %}
+        </div>
+        {% if bw.most_recent %}
+        <div style="font-size:11px;color:var(--muted);line-height:1.35;">
+          {{ bw.most_recent | truncate(80, True, '…') }}
+          {% if bw.most_recent_date %}
+          <span style="font-size:10px;opacity:.7;">{{ bw.most_recent_date }}</span>
+          {% endif %}
+        </div>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {# Recent-event alert tape (last 30 events across all names) #}
+    {% set _tape_slice = (_fb.tape[:30]) if _fb.tape else [] %}
+    {% if _tape_slice %}
+    <div style="margin-top:4px;">
+      <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;
+                  letter-spacing:.04em;margin-bottom:6px;">
+        <span class="l-en">Recent filings (90d tape)</span>
+        <span class="l-zh">近期公告（90天记录）</span>
+      </div>
+      {% for ev in _tape_slice %}
+      {% set _ev_cls = 'alert-high' if ev.dilution_flag else ('alert-info' if ev.buyback_flag else ('alert-info' if ev.category == 'results' else 'alert-warn' if ev.category in ('mandate','placement') else '')) %}
+      <div class="alert {{ _ev_cls }}" style="padding:7px 11px;margin:5px 0;">
+        <div class="alert-head" style="flex-wrap:wrap;gap:6px;">
+          <span class="alert-ico">{{ '🔴' if ev.dilution_flag else ('🟢' if ev.buyback_flag else ('📊' if ev.category == 'results' else ('⚠' if ev.category in ('mandate','placement') else '📋'))) }}</span>
+          {{ _cat_chip(ev.category, ev.dilution_flag, ev.buyback_flag) }}
+          <b style="font-size:12.5px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+            {{ ev.ticker }}
+          </b>
+          <span style="font-size:11px;color:var(--muted);white-space:nowrap;">{{ ev.date }}</span>
+        </div>
+        <div class="alert-detail" style="margin-top:4px;font-size:11.5px;">
+          {{ ev.title_en | truncate(120, True, '…') }}
+        </div>
+      </div>
+      {% endfor %}
+      {% if _fb.tape | length > 30 %}
+      <div style="font-size:11px;color:var(--muted);margin-top:4px;">
+        <span class="l-en">… {{ (_fb.tape | length) - 30 }} more events in the 90d tape</span>
+        <span class="l-zh">… 90天记录中还有 {{ (_fb.tape | length) - 30 }} 条公告</span>
+      </div>
+      {% endif %}
+    </div>
+    {% else %}
+    <div style="font-size:12.5px;color:var(--muted);">
+      <span class="l-en">— no filings in 90-day window</span>
+      <span class="l-zh">— 90天内暂无公告记录</span>
+    </div>
+    {% endif %}
+
+    <div style="margin-top:10px;font-size:11px;color:var(--muted);">
+      <span class="l-en">Source: HKEXnews headline categories (keyless official feed). Deterministic keyword classification only; no LLM-originated score.</span>
+      <span class="l-zh">来源：港交所新闻标题分类系统（无需密钥的官方数据）。仅使用确定性关键词分类，无大模型评分。</span>
+    </div>
+  </div>
+  {% endif %}{# end filing-bus panel #}
+
   {% if mode == 'stocks' %}
   <!-- ===================== HK STOCK DESK — command-center hero ===================== -->
   {% set RS = (hk_scoreboard.risk_state if hk_scoreboard else (gv.state if gv else 'unknown')) %}
