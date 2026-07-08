@@ -1,7 +1,7 @@
 {
   "schema": "china_market_state.v1",
   "as_of": "2026-07-08",
-  "generated_utc": "2026-07-08T10:25:10Z",
+  "generated_utc": "2026-07-08T10:47:51Z",
   "authority": {
     "tier": "context_only",
     "why": [
@@ -16,7 +16,33 @@
       "originate"
     ]
   },
-  "phase": null,
+  "phase": {
+    "phase": "POLICY_PUT",
+    "confidence": 0.75,
+    "as_of": null,
+    "evidence": [
+      "turnover_z20_null",
+      "qvix_z_elevated (1.68)"
+    ],
+    "contradictions": [],
+    "falsifiers": [
+      {
+        "id": "POLI_PP_LUP_RECOVERING",
+        "expr": "lup5 > 1.0",
+        "horizon_d": 10
+      },
+      {
+        "id": "POLI_PP_TOZ_STABILISE",
+        "expr": "turnover_z20 > -1.0",
+        "horizon_d": 10
+      },
+      {
+        "id": "POLI_PP_LDN_FADING",
+        "expr": "ldn5 < 2.0",
+        "horizon_d": 5
+      }
+    ]
+  },
   "participation": {
     "as_of": "2026-07-06",
     "regime": "unclear",
@@ -409,12 +435,30 @@
     "policy: impulse=targeted_support channels=['fiscal_or_structural', 'liquidity']",
     "participation: regime=unclear who_controls=offshore risk=normal",
     "participation_evidence: turnover_z20=-0.33",
-    "participation_evidence: southbound_net z=2.04 (hot inflow)"
+    "participation_evidence: southbound_net z=2.04 (hot inflow)",
+    "phase: POLICY_PUT confidence=0.75",
+    "phase_evidence: turnover_z20_null",
+    "phase_evidence: qvix_z_elevated (1.68)"
   ],
   "contradictions": [],
-  "falsifiers": [],
+  "falsifiers": [
+    {
+      "id": "POLI_PP_LUP_RECOVERING",
+      "expr": "lup5 > 1.0",
+      "horizon_d": 10
+    },
+    {
+      "id": "POLI_PP_TOZ_STABILISE",
+      "expr": "turnover_z20 > -1.0",
+      "horizon_d": 10
+    },
+    {
+      "id": "POLI_PP_LDN_FADING",
+      "expr": "ldn5 < 2.0",
+      "horizon_d": 5
+    }
+  ],
   "data_gaps": [
-    "phase: cycle_phase.json absent (W3 parallel build)",
     "participation: zt_breadth:null on 2026-07-06",
     "participation: etf_share_chg:null on 2026-07-06",
     "participation: northbound:DEAD post-2024-08-16 SLF-050",
