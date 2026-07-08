@@ -264,6 +264,9 @@ def all_adapters() -> dict:
         # committed seed JSON keeps the engine live when network fetches fail.
         ("lbnl_queue", "collectors.lbnl_queue", "LbnlQueueAdapter"),
         # ---- Day-3 SLF consolidation adapters (2026-07-07) ----
+        # w2061_tsa_throughput (SLF-A5): TSA checkpoint passenger throughput 2019->
+        # -> data/tsa/throughput.parquet; incremental (current year); keyless.
+        ("tsa", "collectors.tsa_throughput", "TsaThroughputAdapter"),
         # w4_multistate_gaming_tape (SLF-B1): NY/NJ/PA/NV state gaming revenue collectors
         # -> data/gaming_tape/; DATA-BLOCKED without network; adapters degrade gracefully.
         ("gaming_ny", "collectors.gaming_ny", "NYGamingAdapter"),
