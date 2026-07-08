@@ -1,0 +1,1485 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script data-dbase src="data_base.js"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title><span class="l-en">A-Share Market Mechanics</span><span class="l-zh">A股市场结构</span> — Mastermind</title>
+
+
+
+<meta name="description" content="China A-share market structure cockpit: turnover & margin participation trends, limit-up/down breadth, lianban mechanics, cycle phase memory, policy transmission tape, CGB curve & USDCNH. Context only — never a signal.">
+<link rel="canonical" href="https://mastermind-x.com/china_mechanics.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Mastermind">
+<meta property="og:title" content="A-Share Market Mechanics — Participation · Limit · Phase · Policy | Mastermind">
+<meta property="og:description" content="China A-share market structure cockpit: turnover & margin participation trends, limit-up/down breadth, lianban mechanics, cycle phase memory, policy transmission tape, CGB curve & USDCNH. Context only — never a signal.">
+<meta property="og:url" content="https://mastermind-x.com/china_mechanics.html">
+<meta property="og:image" content="https://mastermind-x.com/apple-touch-icon.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="A-Share Market Mechanics — Participation · Limit · Phase · Policy | Mastermind">
+<meta name="twitter:description" content="China A-share market structure cockpit: turnover & margin participation trends, limit-up/down breadth, lianban mechanics, cycle phase memory, policy transmission tape, CGB curve & USDCNH. Context only — never a signal.">
+<meta name="twitter:image" content="https://mastermind-x.com/apple-touch-icon.png">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<link rel="stylesheet" href="theme.css">
+<style>
+  * { box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font: 14px/1.5 -apple-system,
+         "Segoe UI", Roboto, Helvetica, sans-serif; margin: 0; padding: 18px; }
+  @media (min-width: 1100px) { body { padding: 26px max(40px, calc((100vw - 1500px) / 2)); } }
+  html[data-lang="zh"] body { font-family: "PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",-apple-system,sans-serif; }
+  a { text-decoration: none; color: var(--link); }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  h2 { font-size: 14px; margin: 0 0 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+  h3 { font-size: 13px; margin: 0 0 8px; color: var(--muted); text-transform: uppercase; letter-spacing: .055em; }
+  .grid { display: grid; gap: 14px; grid-template-columns: repeat(12, 1fr); }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 15px 17px; }
+  .span12 { grid-column: span 12; } .span8 { grid-column: span 8; }
+  .span6 { grid-column: span 6; } .span4 { grid-column: span 4; }
+  .span3 { grid-column: span 3; }
+  @media (max-width: 900px) { .span8, .span6, .span4, .span3 { grid-column: span 12; } }
+
+  /* ---- help tooltip ---- */
+  .help { display: inline-flex; align-items: center; justify-content: center;
+          width: 15px; height: 15px; border-radius: 50%; border: 1px solid var(--muted);
+          color: var(--muted); font-size: 10px; font-weight: 600; cursor: help;
+          position: relative; vertical-align: middle; margin-left: 5px; flex: none; }
+  .help .tip { display: none; position: absolute; bottom: 150%; left: 50%;
+               transform: translateX(-50%); width: 300px;
+               background: var(--panel); border: 1px solid var(--line);
+               padding: 10px 12px; border-radius: 9px; z-index: 60; font-size: 12px;
+               line-height: 1.5; color: var(--text); text-align: left; font-weight: 400;
+               text-transform: none; letter-spacing: normal;
+               box-shadow: 0 8px 28px rgba(0,0,0,.28); pointer-events: none; white-space: normal; }
+  .help:hover .tip { display: block; }
+  .help.below .tip { bottom: auto; top: 150%; }
+
+  /* ---- chip row ---- */
+  .chip { display: inline-block; padding: 3px 10px; border-radius: 12px; font-weight: 600; font-size: 12px;
+          background: color-mix(in srgb, var(--c, var(--muted)) 16%, var(--panel));
+          color: color-mix(in srgb, var(--c, var(--muted)) 82%, var(--text)); }
+  .c-up { --c: var(--up); } .c-down { --c: var(--down); } .c-warn { --c: var(--warn); }
+  .c-info { --c: var(--info); } .c-muted { --c: var(--muted); }
+  .chip-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 4px; align-items: center; }
+
+  /* ---- section divider ---- */
+  .msec { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line); }
+  .msec.flush { margin-top: 0; padding-top: 0; border-top: none; }
+
+  /* ---- hero stat row ---- */
+  .stat-row { display: flex; flex-wrap: wrap; gap: 16px 24px; margin: 10px 0 4px; }
+  .stat { display: flex; flex-direction: column; gap: 1px; min-width: 80px; }
+  .stat .v { font-size: 18px; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }
+  .stat .k { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+  .stat .v.pos { color: var(--up); } .stat .v.neg { color: var(--down); }
+  .stat .v.warn { color: var(--warn); }
+
+  /* ---- mini inline chart (canvas) ---- */
+  .mini-chart { display: block; width: 100%; height: 70px; border-radius: 6px; margin: 8px 0 4px; }
+  .mini-chart-sm { height: 52px; }
+  .chart-label { font-size: 10.5px; color: var(--muted); margin-bottom: 2px; }
+
+  /* ---- table ---- */
+  table.mt { border-collapse: collapse; width: 100%; font-size: 12px; margin: 8px 0; }
+  table.mt th, table.mt td { text-align: left; padding: 4px 8px; border-bottom: 1px solid var(--line); }
+  table.mt th { color: var(--muted); font-weight: 600; }
+  table.mt tr:last-child td { border-bottom: none; }
+  table.mt .r { text-align: right; }
+  .pos { color: var(--up); } .neg { color: var(--down); }
+
+  /* ---- phase strip ---- */
+  .phase-strip { display: flex; gap: 2px; flex-wrap: wrap; margin: 8px 0 6px; align-items: flex-end; }
+  .ps-cell { height: 22px; min-width: 7px; border-radius: 3px; flex: 1; cursor: default;
+             position: relative; opacity: .82; }
+  .ps-cell:hover { opacity: 1; }
+  .ps-cell .ps-tip { display: none; position: absolute; bottom: 130%; left: 50%;
+                     transform: translateX(-50%); white-space: nowrap; font-size: 10px;
+                     background: var(--panel); border: 1px solid var(--line);
+                     padding: 3px 7px; border-radius: 6px; z-index: 50;
+                     pointer-events: none; color: var(--text); }
+  .ps-cell:hover .ps-tip { display: block; }
+
+  /* ── phase colour mapping (inline style on each cell) ── */
+
+  /* ---- policy event list ---- */
+  .ev-list { list-style: none; padding: 0; margin: 8px 0; display: flex; flex-direction: column; gap: 6px; }
+  .ev-item { border-left: 3px solid var(--line); padding: 6px 10px; border-radius: 0 8px 8px 0;
+             background: var(--panel2); font-size: 12px; line-height: 1.4; }
+  .ev-item.pboc { border-left-color: var(--info); }
+  .ev-item.politburo, .ev-item.cewc { border-left-color: var(--warn); }
+  .ev-item.csrc, .ev-item.ndrc, .ev-item.mof { border-left-color: var(--up); }
+  .ev-meta { font-size: 10.5px; color: var(--muted); margin-top: 2px; }
+
+  /* ---- CGB curve visual ---- */
+  .cgb-row { display: flex; flex-wrap: wrap; gap: 8px 16px; margin: 8px 0; font-size: 12.5px; }
+  .cgb-pt { display: flex; flex-direction: column; gap: 2px; }
+  .cgb-pt .ten { font-size: 16px; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }
+  .cgb-pt .lbl { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+
+  /* ---- authority disclaimer ---- */
+  .authority-note { font-size: 11px; color: var(--muted); padding: 6px 10px; border-radius: 7px;
+                    background: color-mix(in srgb, var(--muted) 8%, var(--panel));
+                    border: 1px solid var(--line); margin: 6px 0; line-height: 1.5; }
+
+  /* ---- staleness chip ---- */
+  .stale-ok { color: var(--up); }
+  .stale-warn { color: var(--warn); }
+  .stale-bad { color: var(--down); }
+
+  /* ---- expander (show more / less) ---- */
+  .expander { display: none; }
+  .expander-toggle { cursor: pointer; color: var(--link); font-size: 12px; font-weight: 600;
+                     background: none; border: none; padding: 4px 0; }
+  details summary { cursor: pointer; color: var(--link); font-size: 12px; font-weight: 600; list-style: none; }
+  details summary::-webkit-details-marker { display: none; }
+  details[open] summary span.sh { display: none; }
+  details:not([open]) summary span.hd { display: none; }
+
+  /* breadcrumb */
+  .breadcrumb { font-size: 12px; color: var(--muted); margin-bottom: 14px; }
+  .breadcrumb a { color: var(--link); }
+
+  body.page-china-mechanics { padding-top: 26px; }
+</style>
+</head>
+<body class="page-china-mechanics">
+
+<nav class="site-nav">
+  
+
+
+    <div class="nav-links">
+    
+    <a class="nav-brand" href="index.html" aria-label="MASTERMIND — Home">
+      <svg class="brand-glyph" width="29" height="29" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs>
+          <linearGradient id="mbTile" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#5b9dff"/><stop offset=".42" stop-color="#3b82f6"/>
+            <stop offset=".74" stop-color="#6366f1"/><stop offset="1" stop-color="#7c5cff"/></linearGradient>
+          <linearGradient id="mbSheen" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#ffffff" stop-opacity=".34"/><stop offset=".55" stop-color="#ffffff" stop-opacity="0"/></linearGradient>
+          <radialGradient id="mbGlow" cx=".5" cy=".4" r=".65">
+            <stop offset="0" stop-color="#ffffff" stop-opacity=".22"/><stop offset="1" stop-color="#ffffff" stop-opacity="0"/></radialGradient>
+          <linearGradient id="mbInk" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#dbe7ff"/></linearGradient>
+        </defs>
+        <rect x="3" y="3" width="34" height="34" rx="10.5" fill="url(#mbTile)"/>
+        <rect x="3" y="3" width="34" height="34" rx="10.5" fill="url(#mbGlow)"/>
+        <rect x="3" y="3" width="34" height="34" rx="10.5" fill="url(#mbSheen)"/>
+        <rect x="3.7" y="3.7" width="32.6" height="32.6" rx="9.9" fill="none" stroke="#ffffff" stroke-opacity=".28"/>
+        <g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="3.3">
+          <path d="M13 28 L13 14.5 L20 22 L27 12.5 L27 28" stroke="#15205a" stroke-opacity=".30" transform="translate(0,1.1)"/>
+          <path d="M13 28 L13 14.5 L20 22 L27 12.5 L27 28" stroke="url(#mbInk)"/>
+        </g>
+      </svg>
+      <span class="brand-word">MASTERMIND</span>
+    </a>
+    
+    <div class="nav-dd">
+      <a class="nav-link" href="macro.html">🇺🇸 <span class="l-en">United States</span><span class="l-zh">美国</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="macro.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">Regime · growth · inflation · nowcast</span><span class="l-zh">周期 · 增长 · 通胀 · 即时预测</span></span></a>
+        <a href="us_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Standouts · sectors · flows</span><span class="l-zh">精选 · 板块 · 资金</span></span></a>
+        <div class="nav-dd nav-sub">
+          <a class="nav-sub-trig" href="sector_central.html">🧠 <span class="nav-sub-text"><span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">Cycle map · heat · gated reads</span><span class="l-zh">周期图谱 · 热度 · 门控研判</span></span></span><span class="caret-r">▸</span></a>
+          <div class="nav-dd-menu" role="menu">
+            <a href="sector_central.html">🧠 <span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">Cycle map · market heat · one gated read per sector & theme · graded</span><span class="l-zh">周期图谱 · 市场热度 · 每行业与主题门控研判 · 自评分</span></span></a>
+            <a href="baskets.html">🧺 <span class="l-en">Thematic Baskets & Rotation</span><span class="l-zh">主题篮子与轮动</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&P · which theme to hold & when to rotate</span><span class="l-zh">等权主题篮子 vs 标普 · 持有哪个主题及何时轮动</span></span></a>
+            <a href="subsector_rotation.html">🌀 <span class="l-en">Subsector Rotation</span><span class="l-zh">子行业轮动</span><span class="d"><span class="l-en">268 subsectors · rotation map · velocity screen · catch emerging themes early</span><span class="l-zh">268 个子行业 · 轮动图 · 速度筛选 · 提前捕捉升温主题</span></span></a>
+            <a href="subsectors.html">💫 <span class="l-en">Subsector Confluence</span><span class="l-zh">子行业汇聚</span><span class="d"><span class="l-en">Entry-now S&P 500 subsectors · T1-T4 confluence · double-gated stock funnel · synthetic index charts</span><span class="l-zh">S&P 500 现可入场子行业 · T1-T4 汇聚 · 双重闸门选股 · 合成指数图</span></span></a>
+          </div>
+        </div>
+        <a href="strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
+        <a href="news.html">📰 <span class="l-en">News Feed</span><span class="l-zh">新闻流</span><span class="d"><span class="l-en">Macro headlines · catalysts · sentiment</span><span class="l-zh">宏观头条 · 日程 · 情绪</span></span></a>
+        <a href="alerts.html">🚨 <span class="l-en">Alert Center</span><span class="l-zh">警报中心</span><span class="d"><span class="l-en">Ranked & triaged alerts</span><span class="l-zh">分级分诊的警报</span></span></a>
+        <a href="gex.html">🧲 <span class="l-en">Options Desk</span><span class="l-zh">期权台</span><span class="d"><span class="l-en">GEX · walls · vol surface</span><span class="l-zh">GEX · 墙 · 波动率曲面</span></span></a>
+        <a href="flow_desk.html">🌊 <span class="l-en">Group Flow Heatmap</span><span class="l-zh">板块资金流热力图</span><span class="d"><span class="l-en">Market tide · sector premium z · top movers · ETF proxy</span><span class="l-zh">资金潮汐 · 板块权利金Z · 净额排行 · ETF代理</span></span></a>
+        <a href="options_screener.html">📊 <span class="l-en">Options Screener</span><span class="l-zh">期权筛选台</span><span class="d"><span class="l-en">IV · IV-rank · GEX tier · flow · max-pain · 350+ names</span><span class="l-zh">IV · IV分位 · GEX层级 · 期权流量 · 最大痛点 · 350+标的</span></span></a>
+        <a href="darkpool.html">🌑 <span class="l-en">Dark Pool Desk</span><span class="l-zh">场外暗池台</span><span class="d"><span class="l-en">Off-exchange volume · short ratio · ATS venues</span><span class="l-zh">场外成交量 · 融券比率 · ATS场所</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="china.html">🇨🇳 <span class="l-en">China</span><span class="l-zh">中国</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="china.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">A-share regime · sectors · flows</span><span class="l-zh">A股周期 · 板块 · 资金</span></span></a>
+        <a href="china_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Standouts · alpha · setups</span><span class="l-zh">精选 · 阿尔法 · 布局</span></span></a>
+        <a href="china_mechanics.html">🔬 <span class="l-en">Market Mechanics</span><span class="l-zh">市场结构</span><span class="d"><span class="l-en">Participation · limit breadth · phase memory · policy tape</span><span class="l-zh">参与度 · 涨跌停广度 · 阶段记忆 · 政策磁带</span></span></a>
+        <div class="nav-dd nav-sub">
+          <a class="nav-sub-trig" href="sector_central_china.html">🧠 <span class="nav-sub-text"><span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">Cycle map · heat · gated reads</span><span class="l-zh">周期图谱 · 热度 · 门控研判</span></span></span><span class="caret-r">▸</span></a>
+          <div class="nav-dd-menu" role="menu">
+            <a href="sector_central_china.html">🧠 <span class="l-en">Sector Central</span><span class="l-zh">行业中枢</span><span class="d"><span class="l-en">Live desk · cycle map · one gated read per sector & theme · graded</span><span class="l-zh">实时看板 · 周期图谱 · 每行业与主题门控研判 · 自评分</span></span></a>
+            <a href="baskets_china.html">🧺 <span class="l-en">Thematic Baskets & Rotation</span><span class="l-zh">主题篮子与轮动</span><span class="d"><span class="l-en">Equal-weight theme baskets vs CSI 300 · which theme to hold & when to rotate</span><span class="l-zh">等权主题篮子 vs 沪深300 · 持有哪个主题及何时轮动</span></span></a>
+            <a href="subsector_rotation_china.html">🌀 <span class="l-en">Subsector Rotation</span><span class="l-zh">子行业轮动</span><span class="d"><span class="l-en">233 同花顺 concepts + curated themes · rotation map · velocity screen · catch emerging themes early</span><span class="l-zh">233 同花顺概念 + 精选主题 · 轮动图 · 速度筛选 · 提前捕捉升温主题</span></span></a>
+            <a href="subsectors_china.html">💫 <span class="l-en">Subsector Confluence</span><span class="l-zh">子行业汇聚</span><span class="d"><span class="l-en">Entry-now 同花顺 concepts · T1-T4 confluence · double-gated A-share funnel · synthetic index charts</span><span class="l-zh">同花顺现可入场概念 · T1-T4 汇聚 · 双重闸门选股 · 合成指数图</span></span></a>
+            <a href="china_heatmap.html">🔥 <span class="l-en">Market Heatmap</span><span class="l-zh">市场热力图</span><span class="d"><span class="l-en">Every A-share · sector treemap · market-cap</span><span class="l-zh">全部A股 · 板块树图 · 按市值</span></span></a>
+          </div>
+        </div>
+        <a href="china_strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
+        <a href="china_news.html">📰 <span class="l-en">China News Feed</span><span class="l-zh">中国新闻流</span><span class="d"><span class="l-en">Policy tone · official sources · market tags</span><span class="l-zh">政策基调 · 官方来源 · 市场标签</span></span></a>
+        <div class="nav-dd nav-sub">
+          <a class="nav-sub-trig" href="china_intel.html">🔬 <span class="nav-sub-text"><span class="l-en">Research</span><span class="l-zh">研究</span><span class="d"><span class="l-en">Intel hub · flows · policy</span><span class="l-zh">情报中心 · 资金流 · 政策</span></span></span><span class="caret-r">▸</span></a>
+          <div class="nav-dd-menu" role="menu">
+            <a href="china_intel.html">🧠 <span class="l-en">Intelligence Hub</span><span class="l-zh">情报中心</span><span class="d"><span class="l-en">All China intel + Mastermind feed</span><span class="l-zh">全部中国情报 + Mastermind信号</span></span></a>
+            <a href="baskets_china_ths.html">🧺 <span class="l-en">同花顺 Theme Baskets</span><span class="l-zh">同花顺主题篮子</span><span class="d"><span class="l-en">Tonghuashun concept boards · members & performance</span><span class="l-zh">同花顺概念板块 · 成分与表现</span></span></a>
+            <a href="flow_velocity.html">🌊 <span class="l-en">Capital Flow Velocity</span><span class="l-zh">资金流速</span><span class="d"><span class="l-en">Big-money flow into names &amp; sectors · velocity · accel</span><span class="l-zh">主力资金流入个股与板块 · 流速 · 加速度</span></span></a>
+            <a href="china_altdata.html">🛰️ <span class="l-en">Alternative Data</span><span class="l-zh">另类数据</span><span class="d"><span class="l-en">Smart-money convergence · signal lab</span><span class="l-zh">主力共振 · 信号实验室</span></span></a>
+            <a href="china_policy_watch.html">🏛️ <span class="l-en">PBoC & Policy Watch</span><span class="l-zh">央行与政策观察</span><span class="d"><span class="l-en">Rate corridor · liquidity · sector policy</span><span class="l-zh">利率走廊 · 流动性 · 行业政策</span></span></a>
+            <a href="china_radar.html">📡 <span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span><span class="d"><span class="l-en">Policy/flow signal vs sector price</span><span class="l-zh">政策/资金信号 vs 板块价格</span></span></a>
+            <a href="china_special_situations.html">⚡ <span class="l-en">Special Situations</span><span class="l-zh">特殊事件</span><span class="d"><span class="l-en">Unlocks · inquiry letters · preannouncements · pledge stress</span><span class="l-zh">解禁 · 问询函 · 业绩预告 · 质押风险</span></span></a>
+            <a href="narrative_radar.html">🧭 <span class="l-en">Narrative Basket Radar</span><span class="l-zh">主题篮子雷达</span><span class="d"><span class="l-en">Which THS theme is running · global driver · member entries</span><span class="l-zh">哪个同花顺主题正在运行 · 全球驱动 · 成员入场</span></span></a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="hk.html">🇭🇰 <span class="l-en">Hong Kong</span><span class="l-zh">香港</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="hk.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">HSI · southbound · global risk</span><span class="l-zh">HSI · 南向 · 全球风险</span></span></a>
+        <a href="hk_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">HK-listed standouts · alpha</span><span class="l-zh">HK上市精选 · 阿尔法</span></span></a>
+        <a href="hk_heatmap.html">🔥 <span class="l-en">Market Heatmap</span><span class="l-zh">市场热力图</span><span class="d"><span class="l-en">HK universe · sector treemap · turnover-sized</span><span class="l-zh">港股全景 · 板块树图 · 按成交额</span></span></a>
+        <a href="flow_velocity.html">🌊 <span class="l-en">Capital Flow Velocity</span><span class="l-zh">资金流速</span><span class="d"><span class="l-en">Southbound + A-share big-money velocity</span><span class="l-zh">南向 + A股主力资金流速</span></span></a>
+        <a href="baskets_hk.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs HSI</span><span class="l-zh">等权主题篮子 vs 恒指</span></span></a>
+        <a href="allocation_hk.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="canada.html">🇨🇦 <span class="l-en">Canada</span><span class="l-zh">加拿大</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="canada.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">TSX · BoC · commodity overlay</span><span class="l-zh">TSX · 加央行 · 商品叠加</span></span></a>
+        <a href="canada_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">TSX standouts · sectors · alpha</span><span class="l-zh">TSX精选 · 板块 · 阿尔法</span></span></a>
+        <a href="canada_heatmap.html">🔥 <span class="l-en">Market Heatmap</span><span class="l-zh">市场热力图</span><span class="d"><span class="l-en">TSX universe · sector treemap · market-cap</span><span class="l-zh">TSX全景 · 板块树图 · 按市值</span></span></a>
+        <a href="baskets_canada.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&P/TSX</span><span class="l-zh">等权主题篮子 vs 标普/多伦多</span></span></a>
+        <a href="allocation_canada.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="intl.html">🌍 <span class="l-en">International</span><span class="l-zh">国际</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="intl.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">JP · KR · TW · UK · EU compared</span><span class="l-zh">日 · 韩 · 台 · 英 · 欧 对比</span></span></a>
+        <a href="intl_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Cross-market standouts · sectors</span><span class="l-zh">跨市场精选 · 板块</span></span></a>
+        <a href="baskets_intl.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Cross-country theme baskets · ex-US</span><span class="l-zh">跨国主题篮子 · 除美</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="javascript:void(0)">💠 <span class="l-en">Other Assets</span><span class="l-zh">其他资产</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <div class="nav-dd nav-sub">
+          <a class="nav-sub-trig" href="vector.html">₿ <span class="nav-sub-text"><span class="l-en">Bitcoin Vector</span><span class="l-zh">比特币向量</span><span class="d"><span class="l-en">Market state · risk · cycle</span><span class="l-zh">市场状态 · 风险 · 周期</span></span></span><span class="caret-r">▸</span></a>
+          <div class="nav-dd-menu" role="menu">
+            <a href="vector.html">📊 <span class="l-en">Overview</span><span class="l-zh">总览</span><span class="d"><span class="l-en">Market state · risk · momentum</span><span class="l-zh">市场状态 · 风险 · 动量</span></span></a>
+            <a href="vector_allocation.html">◎ <span class="l-en">Allocation Strategy</span><span class="l-zh">仓位策略</span><span class="d"><span class="l-en">BTC · ETH · alts · cash</span><span class="l-zh">BTC · ETH · 山寨 · 现金</span></span></a>
+            <a href="btc_strategy.html">🎛️ <span class="l-en">BTC Strategy</span><span class="l-zh">BTC策略</span><span class="d"><span class="l-en">Cycle vs risk-allocation · backtested</span><span class="l-zh">周期 vs 风险配置 · 已回测</span></span></a>
+          </div>
+        </div>
+        <div class="nav-dd nav-sub">
+          <a class="nav-sub-trig" href="commodities.html">🛢 <span class="nav-sub-text"><span class="l-en">Commodities</span><span class="l-zh">大宗商品</span><span class="d"><span class="l-en">Gold · oil · silver · copper</span><span class="l-zh">黄金 · 原油 · 白银 · 铜</span></span></span><span class="caret-r">▸</span></a>
+          <div class="nav-dd-menu" role="menu">
+            <a href="commodities.html">📊 <span class="l-en">Commodity Dashboard</span><span class="l-zh">商品仪表盘</span><span class="d"><span class="l-en">Gold · silver · copper · oil · complex</span><span class="l-zh">金 · 银 · 铜 · 油 · 综合</span></span></a>
+            <a href="commodity_strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Per-commodity tactical strategies</span><span class="l-zh">分品种战术策略</span></span></a>
+            <a href="spr.html">🛢️ <span class="l-en">Strategic Reserves</span><span class="l-zh">战略储备</span><span class="d"><span class="l-en">SPR levels by country vs oil prices</span><span class="l-zh">各国战略储备水平与油价</span></span></a>
+          </div>
+        </div>
+        <a href="forex.html">💱 <span class="l-en">Forex</span><span class="l-zh">外汇</span><span class="d"><span class="l-en">Dollar desk · G10 carry · pairs</span><span class="l-zh">美元桌 · G10套息 · 货币对</span></span></a>
+        <a href="bonds.html">🏛️ <span class="l-en">Bonds</span><span class="l-zh">债券</span><span class="d"><span class="l-en">Curve · credit · duration compass</span><span class="l-zh">曲线 · 信用 · 久期罗盘</span></span></a>
+      </div>
+    </div>
+    
+    <style>
+    /* The Research trigger sits mid-row, so a trigger-anchored wide panel would
+       clip off the left edge. Instead anchor the mega to the full-width .nav-links
+       row (its right edge = the nav rail right): make .nav-links the positioning
+       context and the Research .nav-dd static >700px, so right:0 right-aligns the
+       panel to the rail and it stays fully on-screen. The ::before bridges the
+       hover gap (the panel is a child of .nav-dd, so hovering it keeps it open). */
+    @media (min-width:701px){
+      /* nav-links is the positioning context for the rail-anchored mega; desktop
+         only, so it never overrides theme.js's position:absolute hamburger flyout
+         (≤700px), which shares this specificity. */
+      .site-nav .nav-links,.topbar .nav-links{position:relative}
+      .site-nav .nav-mega-dd,.topbar .nav-mega-dd{position:static}
+      /* the base .nav-dd::after bridge would become a full-width strip once the
+         trigger is static — disable it; the mega's own ::before bridges the gap. */
+      .site-nav .nav-mega-dd::after,.topbar .nav-mega-dd::after{content:none}
+      .site-nav .nav-dd-menu.nav-mega,.topbar .nav-dd-menu.nav-mega{
+        left:auto;right:0;min-width:0;width:min(1060px,calc(100vw - 40px));padding:16px}
+      .nav-dd-menu.nav-mega::before{content:"";position:absolute;left:0;right:0;top:-11px;height:13px}
+    }
+    .nav-mega-feat{display:grid;grid-template-columns:1fr 1fr;gap:10px;
+      padding-bottom:13px;margin-bottom:13px;
+      border-bottom:1px solid color-mix(in srgb,var(--text,#cbd5e1) 11%,transparent)}
+    .nav-mega.nav-mega .nm-feat{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;
+      white-space:normal;text-decoration:none;
+      background:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 10%,transparent);
+      border:1px solid color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 22%,transparent);
+      transition:transform .16s ease,background .16s,border-color .16s,box-shadow .18s}
+    .nav-mega.nav-mega .nm-feat:hover{transform:translateY(-2px);
+      background:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 17%,transparent);
+      border-color:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 44%,transparent);
+      box-shadow:0 12px 26px -14px color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 60%,transparent)}
+    .nav-mega .nm-feat .nm-ic{font-size:21px;flex:none;width:24px;text-align:center}
+    .nav-mega.nav-mega .nm-feat .nm-t{display:block;font-size:14px;font-weight:700;color:var(--text,#e7ecf6);line-height:1.2}
+    .nav-mega-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px 14px}
+    .nav-mega-col{display:flex;flex-direction:column;gap:1px;min-width:0}
+    .nav-mega-h{font-size:9.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;
+      color:var(--muted,#8b93a1);display:flex;align-items:center;gap:8px;padding:3px 10px 7px}
+    .nav-mega-h::after{content:"";flex:1;height:1px;background:color-mix(in srgb,var(--text,#cbd5e1) 10%,transparent)}
+    html[data-lang="zh"] .nav-mega-h{letter-spacing:.02em}
+    .nav-mega.nav-mega .nav-mega-item{display:flex;align-items:flex-start;gap:9px;padding:7px 10px;border-radius:10px;
+      white-space:normal;text-decoration:none;transition:background .15s ease}
+    .nav-mega.nav-mega .nav-mega-item:hover{background:color-mix(in srgb,var(--link,var(--blue,#5b9dff)) 14%,var(--panel2,var(--card,#1e222a)))}
+    .nav-mega .nm-ic{flex:none;font-size:15px;line-height:1.3;width:18px;text-align:center}
+    .nav-mega .nm-tx{min-width:0}
+    .nav-mega.nav-mega .nm-t{display:block;font-size:12.5px;font-weight:600;color:var(--text,#e7ecf6);line-height:1.25}
+    .nav-mega.nav-mega .nav-mega-item .d,.nav-mega.nav-mega .nm-feat .d{display:block;font-size:10.5px;font-weight:400;
+      color:var(--muted,#8b93a1);line-height:1.34;margin-top:2px;white-space:normal}
+    @media (max-width:1080px) and (min-width:701px){
+      .site-nav .nav-dd-menu.nav-mega,.topbar .nav-dd-menu.nav-mega{width:min(680px,calc(100vw - 24px))}
+      .nav-mega-grid{grid-template-columns:1fr 1fr}}
+    @media (max-width:700px){
+      .nav-mega-feat{grid-template-columns:1fr;gap:7px;padding-bottom:9px;margin-bottom:7px}
+      .nav-mega-grid{grid-template-columns:1fr;gap:0}
+      .nav-mega-h{padding-top:9px}
+      /* the hamburger accordion caps each open dropdown at max-height:600px
+         (theme.js, 0,5,0); the stacked mega (2 cards + 4 groups + 23 items) is
+         taller, so raise the cap for it (0,6,0 wins) — the parent flyout
+         (max-height:78vh; overflow-y:auto) scrolls any remaining overflow.
+         Same specificity trick overrides theme.js's generic accordion-panel
+         padding (0 0 6px 12px — left-heavy, meant for indented text-link
+         submenus) with symmetric sides + top breathing room, so the feature
+         cards read centered under the trigger instead of crooked. */
+      .has-nav-toggle .nav-links .nav-dd.open>.nav-dd-menu.nav-mega{max-height:4000px;padding:12px 10px 8px}}
+    </style>
+    <div class="nav-dd nav-mega-dd">
+      <a class="nav-link" href="intelligence_hub.html">🔬 <span class="l-en">Research</span><span class="l-zh">研究</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu nav-mega" role="menu">
+        
+        <div class="nav-mega-feat">
+          <a class="nm-feat" href="intelligence_hub.html"><span class="nm-ic">🛰️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Intelligence Hub</span><span class="l-zh">情报中心</span></span><span class="d"><span class="l-en">Central command · all desks fused · 2nd/3rd-order reads</span><span class="l-zh">中枢指挥 · 所有信号台融合 · 二三阶推理</span></span></span></a>
+          <a class="nm-feat" href="reports.html"><span class="nm-ic">📰</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Research Reports</span><span class="l-zh">研究报告</span></span><span class="d"><span class="l-en">In-depth written market & macro reports</span><span class="l-zh">深度市场与宏观研究报告</span></span></span></a>
+        </div>
+        <div class="nav-mega-grid">
+          
+          <div class="nav-mega-col">
+            <div class="nav-mega-h"><span class="l-en">Forward Edge</span><span class="l-zh">前瞻边际</span></div>
+            <a class="nav-mega-item" href="foresight.html"><span class="nm-ic">🔮</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Foresight Desk</span><span class="l-zh">前瞻台</span></span><span class="d"><span class="l-en">Catch themes early · bottleneck × demand × estimates</span><span class="l-zh">提前抓主题 · 瓶颈 × 需求 × 预期</span></span></span></a>
+            <a class="nav-mega-item" href="demand.html"><span class="nm-ic">📦</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Demand Desk</span><span class="l-zh">需求台</span></span><span class="d"><span class="l-en">Forward demand vs the priced consensus</span><span class="l-zh">前瞻需求 vs 已定价共识</span></span></span></a>
+            <a class="nav-mega-item" href="radar.html"><span class="nm-ic">📡</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span></span><span class="d"><span class="l-en">Real activity vs price · variant edge</span><span class="l-zh">真实活动 vs 价格 · 变量边际</span></span></span></a>
+            <a class="nav-mega-item" href="anticipation.html"><span class="nm-ic">🎯</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Anticipation</span><span class="l-zh">预判</span></span><span class="d"><span class="l-en">Multi-horizon outcome cones</span><span class="l-zh">多周期结果锥</span></span></span></a>
+            <a class="nav-mega-item" href="impulse.html"><span class="nm-ic">🚀</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Impulse Tracker</span><span class="l-zh">冲量追踪器</span></span><span class="d"><span class="l-en">Early-ignition momentum · velocity · accel</span><span class="l-zh">早期点火动量 · 速度 · 加速度</span></span></span></a>
+          </div>
+          
+          <div class="nav-mega-col">
+            <div class="nav-mega-h"><span class="l-en">Smart Money & Catalysts</span><span class="l-zh">聪明钱与催化</span></div>
+            <a class="nav-mega-item" href="smart_money.html"><span class="nm-ic">💼</span><span class="nm-tx"><span class="nm-t"><span class="l-en">13F Smart-Money</span><span class="l-zh">13F 聪明钱</span></span><span class="d"><span class="l-en">Super-investor trades graded — who rotated right</span><span class="l-zh">超级投资者交易评分 · 谁轮动正确</span></span></span></a>
+            <a class="nav-mega-item" href="etfs.html"><span class="nm-ic">🐳</span><span class="nm-tx"><span class="nm-t"><span class="l-en">ETF & Fund Flows</span><span class="l-zh">ETF与基金流</span></span><span class="d"><span class="l-en">Real per-name conviction in fund holdings</span><span class="l-zh">基金持仓中的真实个股押注</span></span></span></a>
+            <a class="nav-mega-item" href="congress_trades.html"><span class="nm-ic">🗳️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Congressional Trades</span><span class="l-zh">国会交易</span></span><span class="d"><span class="l-en">Politician disclosures · scored to copy</span><span class="l-zh">政界披露 · 评分跟单</span></span></span></a>
+            <a class="nav-mega-item" href="alt_data.html"><span class="nm-ic">📊</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Alternative Data</span><span class="l-zh">替代数据</span></span><span class="d"><span class="l-en">Signal convergence · influence graph · actionable</span><span class="l-zh">信号汇聚 · 影响力图谱 · 可操作</span></span></span></a>
+            <a class="nav-mega-item" href="special_situations.html"><span class="nm-ic">⚡</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Special Situations</span><span class="l-zh">特殊事件</span></span><span class="d"><span class="l-en">Activist · M&A · spin-offs · take-privates</span><span class="l-zh">维权 · 并购 · 分拆 · 私有化</span></span></span></a>
+            <a class="nav-mega-item" href="ipo.html"><span class="nm-ic">🆕</span><span class="nm-tx"><span class="nm-t"><span class="l-en">IPO Radar</span><span class="l-zh">新股雷达</span></span><span class="d"><span class="l-en">IPO window · aftermarket reality</span><span class="l-zh">新股窗口 · 二级市场现实</span></span></span></a>
+          </div>
+          
+          <div class="nav-mega-col">
+            <div class="nav-mega-h"><span class="l-en">Cycles & Cross-Asset</span><span class="l-zh">周期与跨资产</span></div>
+            <a class="nav-mega-item" href="cycle.html"><span class="nm-ic">🔄</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Cycle Intelligence</span><span class="l-zh">周期智慧</span></span><span class="d"><span class="l-en">Where every boom-bust cycle sits · history + projection</span><span class="l-zh">每个周期所处位置 · 历史与推演</span></span></span></a>
+            <a class="nav-mega-item" href="markets.html"><span class="nm-ic">🌐</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Global Market Cycles</span><span class="l-zh">全球市场周期</span></span><span class="d"><span class="l-en">Nine national equity markets on one clock</span><span class="l-zh">九大股市同框 · 各自周期位置</span></span></span></a>
+            <a class="nav-mega-item" href="sector_cycles.html"><span class="nm-ic">🧭</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Sector Cycles</span><span class="l-zh">板块周期</span></span><span class="d"><span class="l-en">Every US sector ETF on one cycle clock</span><span class="l-zh">美股各板块同框 · 阶段 · 拐点</span></span></span></a>
+            <a class="nav-mega-item" href="country_cycles.html"><span class="nm-ic">🗺️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Country Cycles</span><span class="l-zh">国家周期</span></span><span class="d"><span class="l-en">Every country &amp; region ETF on one cycle clock · turns · projection</span><span class="l-zh">各国及区域 ETF 同框 · 拐点 · 推演</span></span></span></a>
+            <a class="nav-mega-item" href="measurement.html"><span class="nm-ic">📐</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Cycle Measurement Hub</span><span class="l-zh">周期测量中心</span></span><span class="d"><span class="l-en">Turn P/R · cone coverage · Brier skill — scorecards, gate ledger, failures rendered straight</span><span class="l-zh">拐点精准/召回 · 锥形覆盖 · 布莱尔技能——记分卡、门槛台账、失败如实展示</span></span></span></a>
+            <a class="nav-mega-item" href="crossasset.html"><span class="nm-ic">⚖️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Cross-Asset</span><span class="l-zh">跨资产</span></span><span class="d"><span class="l-en">Correlations · trend · global liquidity</span><span class="l-zh">相关性 · 趋势 · 全球流动性</span></span></span></a>
+            <a class="nav-mega-item" href="transmission.html"><span class="nm-ic">🔀</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Rate & Inflation Transmission</span><span class="l-zh">利率与通胀传导</span></span><span class="d"><span class="l-en">How rates & inflation move every asset</span><span class="l-zh">利率与通胀如何驱动各类资产</span></span></span></a>
+            <a class="nav-mega-item" href="macro_context.html"><span class="nm-ic">🌦️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Macro Weather</span><span class="l-zh">宏观气象台</span></span><span class="d"><span class="l-en">Live macro label board — quad, FX, rates, credit, commodity</span><span class="l-zh">宏观标签全景 — 象限、汇率、利率、信用、大宗</span></span></span></a>
+          </div>
+          
+          <div class="nav-mega-col">
+            <div class="nav-mega-h"><span class="l-en">Policy & Quant Lab</span><span class="l-zh">政策与量化</span></div>
+            <a class="nav-mega-item" href="committee.html"><span class="nm-ic">🧠</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Neural Web</span><span class="l-zh">智脑</span></span><span class="d"><span class="l-en">The living brain — synapse map, signal committee, cortex memo</span><span class="l-zh">活体大脑 — 突触地图 · 信号委员会 · 皮层备忘录</span></span></span></a>
+            <a class="nav-mega-item" href="policy_watch.html"><span class="nm-ic">🏦</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Fed & Policy Watch</span><span class="l-zh">美联储与政策观察</span></span><span class="d"><span class="l-en">Fed + Administration intent & capital rotation</span><span class="l-zh">美联储+政府意图与资本轮动</span></span></span></a>
+            <a class="nav-mega-item" href="whitehouse.html"><span class="nm-ic">🏛️</span><span class="nm-tx"><span class="nm-t"><span class="l-en">White House Watch</span><span class="l-zh">白宫快讯</span></span><span class="d"><span class="l-en">Policy alerts · sector head/tailwinds · exposed names</span><span class="l-zh">政策快讯 · 行业顺逆风 · 受影响标的</span></span></span></a>
+            <a class="nav-mega-item" href="signal_lab.html"><span class="nm-ic">🔬</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Signal Lab</span><span class="l-zh">信号实验室</span></span><span class="d"><span class="l-en">Consolidated validation scorecard</span><span class="l-zh">验证记分卡汇总</span></span></span></a>
+            <a class="nav-mega-item" href="macro_signals.html"><span class="nm-ic">🧮</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Macro Signals</span><span class="l-zh">宏观信号</span></span><span class="d"><span class="l-en">Raw macro data · cycle · conditions · liquidity</span><span class="l-zh">宏观原始数据 · 周期 · 条件 · 流动性</span></span></span></a>
+            <a class="nav-mega-item" href="factors.html"><span class="nm-ic">📐</span><span class="nm-tx"><span class="nm-t"><span class="l-en">Factors & Seasonality</span><span class="l-zh">因子 & 季节性</span></span><span class="d"><span class="l-en">Value · quality · low-vol · monthly calendar</span><span class="l-zh">价值 · 质量 · 低波动 · 月历</span></span></span></a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <script src="live_config.js"></script>
+  <script src="live.js"></script>
+  <div class="nav-search">
+    <span class="mag">🔎</span>
+    <input type="text" autocomplete="off" aria-label="Search A-shares"
+      placeholder="Search any stock — US, China, HK, Canada &amp; more…" data-ph-zh="搜索任意股票 — 美股、A 股、港股、加股等…">
+    <div class="nav-sugg"></div>
+  </div>
+  <div class="nav-ctrls">
+    <a class="ai-brief-link" href="mastermind.html">🤖 <span class="l-en">Mastermind</span><span class="l-zh">操盘大脑</span></a>
+    <button class="theme-switch" aria-label="Toggle dark / light mode">
+      <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
+    </button>
+    <div class="lang-toggle" role="group" aria-label="Language">
+      <span class="pill"></span>
+      <span class="opt en-opt" data-l="en">EN</span>
+      <span class="opt zh-opt" data-l="zh">中文</span>
+    </div>
+  </div>
+</nav>
+
+<div class="grid">
+
+
+<div class="panel span12" id="mech-header">
+  <div class="breadcrumb"><a href="china.html"><span class="l-en">China Macro</span><span class="l-zh">中国宏观</span></a> › <span class="l-en">A-Share Market Mechanics</span><span class="l-zh">A股市场结构</span></div>
+  <h1>🔬 <span class="l-en">A-Share Market Mechanics</span><span class="l-zh">A股市场结构</span></h1>
+  <p style="color:var(--muted);font-size:13px;margin:4px 0 0;line-height:1.55">
+    <span class="l-en">Participation regime · limit-up/down breadth · cycle phase memory · policy tape · cross-market. Context only — no signal, no origination (CN-SYS-R1).</span><span class="l-zh">参与度制度 · 涨/跌停板广度 · 周期阶段记忆 · 政策磁带 · 跨市场。仅供背景参考 — 无信号，不产生状态（CN-SYS-R1）。</span>
+    <span class="l-en">As of</span><span class="l-zh">截至</span> 2026-07-08.
+    <span class="help">?<span class="tip"><span class="l-en">Context-only cockpit. All panels are descriptive; none score, rank, size or originate state (CN-SYS-R1, R13, R14). Data gaps are disclosed where they exist (CN-SYS-R4).</span><span class="l-zh">仅供参考的驾驶舱。所有面板均为描述性；不评分、排名、定仓或产生状态（CN-SYS-R1、R13、R14）。数据缺口在存在处予以披露（CN-SYS-R4）。</span></span></span>
+  </p>
+  <div class="authority-note">
+    <span class="l-en">DISPLAY ONLY — authority: context_only. Cannot rank, size, gate or originate signals. LLM surfaces are never fed into this page (CN-SYS-R14).</span><span class="l-zh">仅供展示 — 权限：context_only。不能排名、定仓、设门控或产生信号。LLM输出从不进入本页（CN-SYS-R14）。</span>
+  </div>
+</div>
+
+
+<div class="panel span12" id="mech-participation">
+  <h2><span class="l-en">Participation</span><span class="l-zh">参与度</span>
+    <span class="help">?<span class="tip"><span class="l-en">Turnover z-score (20d / 60d) measures whether trading volume is above or below its recent history. Margin balance (融资余额) tracks leveraged positioning. Southbound flow (南向资金) is the HK→A-share flow. These are context/confluence factors: SLF-051 ruled out margin impulse as a standalone signal; here they are legal at context tier (CN-SYS-R2).</span><span class="l-zh">成交额Z分数（20日/60日）衡量成交量是否高于或低于近期历史。融资余额跟踪杠杆持仓。南向资金为港股→A股资金流向。这些为背景/合流因素：SLF-051 排除了融资冲量作为独立信号；在此它们在背景层合法（CN-SYS-R2）。</span></span></span>
+  </h2>
+  
+  
+
+  
+  <div class="chip-row">
+    
+    
+    
+    <span class="chip c-warn"><span class="l-en">Unclear</span><span class="l-zh">unclear</span></span>
+    <span class="chip c-info"><span class="l-en">who controls: offshore</span><span class="l-zh">控盘方：offshore</span></span>
+    <span class="chip c-warn"><span class="l-en">risk: normal</span><span class="l-zh">风险：normal</span></span>
+    <span style="font-size:11px;color:var(--muted)"><span class="l-en">as of</span><span class="l-zh">截至</span> 2026-07-07</span>
+  </div>
+
+  
+  <div class="stat-row">
+    
+    <div class="stat">
+      <span class="v ">-0.33</span>
+      <span class="k"><span class="l-en">Turnover z20</span><span class="l-zh">成交额z20</span></span>
+    </div>
+    
+    <div class="stat">
+      <span class="v ">0.30</span>
+      <span class="k"><span class="l-en">Turnover z60</span><span class="l-zh">成交额z60</span></span>
+    </div>
+    
+    <div class="stat">
+      <span class="v">299</span>
+      <span class="k"><span class="l-en">Margin (亿¥)</span><span class="l-zh">融资余额（亿¥）</span></span>
+    </div>
+    
+    <div class="stat">
+      <span class="v neg">-0.37%</span>
+      <span class="k"><span class="l-en">Margin 5d chg</span><span class="l-zh">融资5日变化</span></span>
+    </div>
+    
+    <div class="stat">
+      <span class="v pos">2.04</span>
+      <span class="k"><span class="l-en">Southbound z</span><span class="l-zh">南向资金z</span></span>
+    </div>
+    
+    <div class="stat">
+      <span class="v ">20.3</span>
+      <span class="k"><span class="l-en">QVIX</span><span class="l-zh">QVIX 恐慌</span></span>
+    </div>
+  </div>
+
+  
+  
+  <div class="chart-label"><span class="l-en">Turnover z-score (20d) — last 120 sessions</span><span class="l-zh">成交额Z分数（20日）— 近120个交易日</span></div>
+  <canvas class="mini-chart" id="chart-tz20" data-series="[{"d": "2026-01-06", "v": 2.9152761268793186}, {"d": "2026-01-07", "v": 2.4202661086183075}, {"d": "2026-01-08", "v": 1.9082548118642442}, {"d": "2026-01-09", "v": 2.235409570528577}, {"d": "2026-01-12", "v": 2.548322781492596}, {"d": "2026-01-13", "v": 2.159090667311405}, {"d": "2026-01-14", "v": 2.148652137477395}, {"d": "2026-01-15", "v": 0.6188479361384023}, {"d": "2026-01-16", "v": 0.7069403449938844}, {"d": "2026-01-19", "v": 0.17670576463284995}, {"d": "2026-01-20", "v": 0.21537239680469294}, {"d": "2026-01-21", "v": -0.13069780034454143}, {"d": "2026-01-22", "v": -0.046361249935206135}, {"d": "2026-01-23", "v": 0.5665795161705126}, {"d": "2026-01-26", "v": 0.7810792615392568}, {"d": "2026-01-27", "v": 0.026316395453706922}, {"d": "2026-01-28", "v": 0.09060605993452431}, {"d": "2026-01-29", "v": 0.5896289317017575}, {"d": "2026-01-30", "v": -0.48889247678853487}, {"d": "2026-02-02", "v": -1.1878923857914712}, {"d": "2026-02-03", "v": -1.2207632811359628}, {"d": "2026-02-04", "v": -1.2778599059181937}, {"d": "2026-02-05", "v": -1.7972107476173673}, {"d": "2026-02-06", "v": -1.6275441039844791}, {"d": "2026-02-09", "v": -1.281099539550812}, {"d": "2026-02-10", "v": -1.4748116965070572}, {"d": "2026-02-11", "v": -1.787041504371036}, {"d": "2026-02-12", "v": -1.2298677615701803}, {"d": "2026-02-13", "v": -1.457268631940427}, {"d": "2026-02-24", "v": -0.8440095968999544}, {"d": "2026-02-25", "v": -0.17504367812608335}, {"d": "2026-02-26", "v": 0.016647261867042837}, {"d": "2026-02-27", "v": -0.08216550748983141}, {"d": "2026-03-02", "v": 1.2581519165154644}, {"d": "2026-03-03", "v": 1.5926735810311043}, {"d": "2026-03-04", "v": -0.29875501555774897}, {"d": "2026-03-05", "v": -0.16675421745953314}, {"d": "2026-03-06", "v": -0.6318392888974671}, {"d": "2026-03-09", "v": 0.8352490582174789}, {"d": "2026-03-10", "v": 0.046201757779374825}, {"d": "2026-03-11", "v": 0.41785567684982}, {"d": "2026-03-12", "v": 0.20318202904233215}, {"d": "2026-03-13", "v": 0.02473138758776622}, {"d": "2026-03-16", "v": -0.26647761161069694}, {"d": "2026-03-17", "v": -0.6460634103569619}, {"d": "2026-03-18", "v": -1.1718090247998108}, {"d": "2026-03-19", "v": -0.9985391288920017}, {"d": "2026-03-20", "v": -0.4302623123678936}, {"d": "2026-03-23", "v": -0.003599488526210478}, {"d": "2026-03-24", "v": -1.2552816999893075}, {"d": "2026-03-25", "v": -0.8367630349317003}, {"d": "2026-03-26", "v": -1.4781262025125792}, {"d": "2026-03-27", "v": -1.5691602672310543}, {"d": "2026-03-30", "v": -1.3123286440515287}, {"d": "2026-03-31", "v": -1.118268463257962}, {"d": "2026-04-01", "v": -0.9367603431737255}, {"d": "2026-04-02", "v": -1.4857811381044481}, {"d": "2026-04-03", "v": -1.9341818931625232}, {"d": "2026-04-07", "v": -1.8981052996897676}, {"d": "2026-04-08", "v": 1.2030802344423392}, {"d": "2026-04-09", "v": 0.14951968818975064}, {"d": "2026-04-10", "v": 0.9631059744929188}, {"d": "2026-04-13", "v": 0.3107193156499732}, {"d": "2026-04-14", "v": 1.286274485849389}, {"d": "2026-04-15", "v": 1.3241878017789603}, {"d": "2026-04-16", "v": 0.9381413753976513}, {"d": "2026-04-17", "v": 1.2103299033583093}, {"d": "2026-04-20", "v": 1.6240032907240574}, {"d": "2026-04-21", "v": 0.9916404632224423}, {"d": "2026-04-22", "v": 1.3729570279698748}, {"d": "2026-04-23", "v": 1.8783812467696477}, {"d": "2026-04-24", "v": 1.2335393598683528}, {"d": "2026-04-27", "v": 0.9762105530980575}, {"d": "2026-04-28", "v": 0.7331851342133264}, {"d": "2026-04-29", "v": 0.8224627401138336}, {"d": "2026-04-30", "v": 1.1532581719512989}, {"d": "2026-05-06", "v": 2.209303341114409}, {"d": "2026-05-07", "v": 1.8589775208341293}, {"d": "2026-05-08", "v": 1.6093720505756317}, {"d": "2026-05-11", "v": 2.4894973658005446}, {"d": "2026-05-12", "v": 1.5136233896061724}, {"d": "2026-05-13", "v": 1.3407675774035006}, {"d": "2026-05-14", "v": 1.5075528563921363}, {"d": "2026-05-15", "v": 1.3118249677460405}, {"d": "2026-05-18", "v": 0.08674017209149712}, {"d": "2026-05-19", "v": -0.009023877508036824}, {"d": "2026-05-20", "v": 0.11296521686702257}, {"d": "2026-05-21", "v": 1.494011540113883}, {"d": "2026-05-22", "v": -0.2566611728691871}, {"d": "2026-05-25", "v": 0.595313416517387}, {"d": "2026-05-26", "v": 0.6456460192811386}, {"d": "2026-05-27", "v": 0.5568326526996309}, {"d": "2026-05-28", "v": -0.4474347616390712}, {"d": "2026-05-29", "v": 0.7595325119109201}, {"d": "2026-06-01", "v": -1.2057602343264082}, {"d": "2026-06-02", "v": -1.62895186353684}, {"d": "2026-06-03", "v": -0.049664310864342524}, {"d": "2026-06-04", "v": -1.5611666975690992}, {"d": "2026-06-05", "v": -0.19271226018254128}, {"d": "2026-06-08", "v": -1.2837571179497207}, {"d": "2026-06-09", "v": -1.719962797695035}, {"d": "2026-06-10", "v": -1.589326894718554}, {"d": "2026-06-11", "v": -1.6523796955073013}, {"d": "2026-06-12", "v": 0.9324312275766443}, {"d": "2026-06-15", "v": 0.17414663463598595}, {"d": "2026-06-16", "v": 0.2805587480853608}, {"d": "2026-06-17", "v": 0.36192905852752827}, {"d": "2026-06-18", "v": 1.3376847334895743}, {"d": "2026-06-22", "v": 2.441723203004714}, {"d": "2026-06-23", "v": 1.3216831128597013}, {"d": "2026-06-24", "v": 0.7827435281186275}, {"d": "2026-06-25", "v": 1.63572291601282}, {"d": "2026-06-26", "v": 1.3425272435978075}, {"d": "2026-06-29", "v": 1.1747462218696727}, {"d": "2026-06-30", "v": 0.42204402758704895}, {"d": "2026-07-01", "v": 1.3724591684740464}, {"d": "2026-07-02", "v": 0.7346170659479098}, {"d": "2026-07-03", "v": -0.0640307574322528}, {"d": "2026-07-06", "v": -0.3310765947096677}, {"d": "2026-07-07", "v": null}]" data-zero="1" data-color-pos="var(--up)" data-color-neg="var(--down)"></canvas>
+  
+
+  
+  <div class="chart-label"><span class="l-en">Southbound flow z-score — last 120 sessions</span><span class="l-zh">南向资金Z分数 — 近120个交易日</span></div>
+  <canvas class="mini-chart mini-chart-sm" id="chart-sbz" data-series="[{"d": "2026-01-06", "v": -0.29139906811604643}, {"d": "2026-01-07", "v": 0.8304732643371111}, {"d": "2026-01-08", "v": -1.5935476211415078}, {"d": "2026-01-09", "v": 0.4087269502912726}, {"d": "2026-01-12", "v": 0.5638661065604157}, {"d": "2026-01-13", "v": -0.5234897057404967}, {"d": "2026-01-14", "v": -0.26598816537516723}, {"d": "2026-01-15", "v": -1.0791060418212268}, {"d": "2026-01-16", "v": -0.7403993214225137}, {"d": "2026-01-19", "v": -0.3303400965542224}, {"d": "2026-01-20", "v": -0.06648183126871633}, {"d": "2026-01-21", "v": 1.9250693754664159}, {"d": "2026-01-22", "v": 0.2301012688016774}, {"d": "2026-01-23", "v": -1.0772419771194641}, {"d": "2026-01-26", "v": -0.9094107229912374}, {"d": "2026-01-27", "v": -0.8587650625486365}, {"d": "2026-01-28", "v": -1.3572574726332407}, {"d": "2026-01-29", "v": 0.1687070394924271}, {"d": "2026-01-30", "v": -0.048980287429551295}, {"d": "2026-02-02", "v": -0.2837391475311662}, {"d": "2026-02-03", "v": -0.4485352487902864}, {"d": "2026-02-04", "v": 1.9580290608828934}, {"d": "2026-02-05", "v": 3.667667377501092}, {"d": "2026-02-06", "v": 1.8547413617212956}, {"d": "2026-02-09", "v": -0.9148693843011145}, {"d": "2026-02-10", "v": -0.5751530349839141}, {"d": "2026-02-11", "v": 0.18567387605746766}, {"d": "2026-02-12", "v": 0.17070311823356832}, {"d": "2026-02-13", "v": 2.648028159019759}, {"d": "2026-02-24", "v": -0.09033757658816009}, {"d": "2026-02-25", "v": -1.2085313511701865}, {"d": "2026-02-26", "v": -1.6917759370492345}, {"d": "2026-02-27", "v": 1.8240799234764167}, {"d": "2026-03-02", "v": 1.9403371610064226}, {"d": "2026-03-03", "v": 0.4112392021183649}, {"d": "2026-03-04", "v": -0.612296736092703}, {"d": "2026-03-05", "v": -4.049178586915137}, {"d": "2026-03-06", "v": -0.6688179434343059}, {"d": "2026-03-09", "v": 3.827937832599225}, {"d": "2026-03-10", "v": -2.2825612699048548}, {"d": "2026-03-11", "v": 0.0331068731237097}, {"d": "2026-03-12", "v": 0.8586607600732972}, {"d": "2026-03-13", "v": 1.5657995992116929}, {"d": "2026-03-16", "v": -0.5043815534568036}, {"d": "2026-03-17", "v": -1.5291911488660022}, {"d": "2026-03-18", "v": -0.2236373736848346}, {"d": "2026-03-19", "v": 2.213582841093228}, {"d": "2026-03-20", "v": -2.327650490892373}, {"d": "2026-03-23", "v": 2.325091312243647}, {"d": "2026-03-24", "v": -2.620912280319857}, {"d": "2026-03-25", "v": 1.544495326526514}, {"d": "2026-03-26", "v": -0.03791035413145184}, {"d": "2026-03-27", "v": -0.5458316209342623}, {"d": "2026-03-30", "v": -0.5024170914810594}, {"d": "2026-03-31", "v": -0.239926557228524}, {"d": "2026-04-01", "v": -1.3156528041560853}, {"d": "2026-04-02", "v": 1.2945059522797169}, {"d": "2026-04-03", "v": null}, {"d": "2026-04-07", "v": null}, {"d": "2026-04-08", "v": -1.962503362616144}, {"d": "2026-04-09", "v": 0.6969030812069095}, {"d": "2026-04-10", "v": -0.48088029560416645}, {"d": "2026-04-13", "v": -0.08134304394352425}, {"d": "2026-04-14", "v": -0.4026410580088282}, {"d": "2026-04-15", "v": 0.07689893086952918}, {"d": "2026-04-16", "v": 0.08583983283602133}, {"d": "2026-04-17", "v": 1.0691046223001344}, {"d": "2026-04-20", "v": -0.5620262810116701}, {"d": "2026-04-21", "v": 0.03461901600870079}, {"d": "2026-04-22", "v": 0.11649748490205668}, {"d": "2026-04-23", "v": 0.3952474396667594}, {"d": "2026-04-24", "v": -0.008047557922220994}, {"d": "2026-04-27", "v": -0.5867895758364788}, {"d": "2026-04-28", "v": 0.8632714189134603}, {"d": "2026-04-29", "v": -0.5628602623059351}, {"d": "2026-04-30", "v": 0.6721463074907826}, {"d": "2026-05-06", "v": -0.9208432269870803}, {"d": "2026-05-07", "v": -0.6237212183464715}, {"d": "2026-05-08", "v": 0.7334766514212134}, {"d": "2026-05-11", "v": -0.26472651627574184}, {"d": "2026-05-12", "v": -0.20646733682480894}, {"d": "2026-05-13", "v": -0.7705218721328843}, {"d": "2026-05-14", "v": -0.9732866367773719}, {"d": "2026-05-15", "v": 1.6041948778090933}, {"d": "2026-05-18", "v": -0.8073437649060542}, {"d": "2026-05-19", "v": -0.1002354908213495}, {"d": "2026-05-20", "v": 0.2282967994234972}, {"d": "2026-05-21", "v": -0.6609556148682908}, {"d": "2026-05-22", "v": -0.6736562171402732}, {"d": "2026-05-25", "v": null}, {"d": "2026-05-26", "v": -0.24887383311867525}, {"d": "2026-05-27", "v": -0.7320529545106726}, {"d": "2026-05-28", "v": 0.43303942786343064}, {"d": "2026-05-29", "v": -0.011434767154029767}, {"d": "2026-06-01", "v": 0.18604992473859486}, {"d": "2026-06-02", "v": 0.01564560540270981}, {"d": "2026-06-03", "v": 1.2817334066393897}, {"d": "2026-06-04", "v": -0.17520807624185472}, {"d": "2026-06-05", "v": -0.3353955844988603}, {"d": "2026-06-08", "v": 0.7038731412808564}, {"d": "2026-06-09", "v": -0.8870107558216013}, {"d": "2026-06-10", "v": 0.5369042786707521}, {"d": "2026-06-11", "v": -0.43863986449686915}, {"d": "2026-06-12", "v": -0.5309691512173128}, {"d": "2026-06-15", "v": 0.013117844939979171}, {"d": "2026-06-16", "v": 0.1572859098538761}, {"d": "2026-06-17", "v": -0.4395469280259277}, {"d": "2026-06-18", "v": -0.7722078862060929}, {"d": "2026-06-22", "v": -0.6711566641161201}, {"d": "2026-06-23", "v": 0.8405518963090551}, {"d": "2026-06-24", "v": 1.3172966627511555}, {"d": "2026-06-25", "v": -1.033970506601452}, {"d": "2026-06-26", "v": -0.4657064188907556}, {"d": "2026-06-29", "v": -1.3014749229219091}, {"d": "2026-06-30", "v": 0.5214493641810424}, {"d": "2026-07-01", "v": null}, {"d": "2026-07-02", "v": -0.36532362404971475}, {"d": "2026-07-03", "v": 0.354405604993581}, {"d": "2026-07-06", "v": 2.0399380495797246}, {"d": "2026-07-07", "v": -0.15981589826224915}]" data-zero="1" data-color-pos="var(--info)" data-color-neg="var(--muted)"></canvas>
+  
+
+  
+  <div class="chart-label"><span class="l-en">Margin balance (融资余额) — last 120 sessions</span><span class="l-zh">融资余额 — 近120个交易日</span></div>
+  <canvas class="mini-chart mini-chart-sm" id="chart-mb" data-series="[{"d": "2026-01-06", "v": 25799.00361067}, {"d": "2026-01-07", "v": 26047.42449051}, {"d": "2026-01-08", "v": 26206.09326544}, {"d": "2026-01-09", "v": 26276.00824714}, {"d": "2026-01-12", "v": 26740.61939204}, {"d": "2026-01-13", "v": 26829.92130544}, {"d": "2026-01-14", "v": 26982.30615985}, {"d": "2026-01-15", "v": 27187.50833103}, {"d": "2026-01-16", "v": 27315.37176581}, {"d": "2026-01-19", "v": 27231.7495401}, {"d": "2026-01-20", "v": 27093.58555155}, {"d": "2026-01-21", "v": 27210.22639579}, {"d": "2026-01-22", "v": 27249.12818076}, {"d": "2026-01-23", "v": 27234.75396481}, {"d": "2026-01-26", "v": 27254.40232286}, {"d": "2026-01-27", "v": 27233.90613761}, {"d": "2026-01-28", "v": 27426.42809417}, {"d": "2026-01-29", "v": 27393.62881542}, {"d": "2026-01-30", "v": 27152.87320116}, {"d": "2026-02-02", "v": 27090.87992761}, {"d": "2026-02-03", "v": 27065.63863675}, {"d": "2026-02-04", "v": 26928.71985909}, {"d": "2026-02-05", "v": 26808.59977033}, {"d": "2026-02-06", "v": 26636.6027146}, {"d": "2026-02-09", "v": 26644.00286203}, {"d": "2026-02-10", "v": 26604.74778111}, {"d": "2026-02-11", "v": 26444.34811899}, {"d": "2026-02-12", "v": 26456.0204314}, {"d": "2026-02-13", "v": 25881.25152783}, {"d": "2026-02-24", "v": 26227.56718268}, {"d": "2026-02-25", "v": 26466.26299252}, {"d": "2026-02-26", "v": 26670.4026907}, {"d": "2026-02-27", "v": 26691.9761243}, {"d": "2026-03-02", "v": 26740.06801808}, {"d": "2026-03-03", "v": 26513.11189878}, {"d": "2026-03-04", "v": 26426.87694292}, {"d": "2026-03-05", "v": 26518.05522583}, {"d": "2026-03-06", "v": 26455.61354599}, {"d": "2026-03-09", "v": 26456.39404954}, {"d": "2026-03-10", "v": 26553.40227346}, {"d": "2026-03-11", "v": 26612.40380011}, {"d": "2026-03-12", "v": 26646.57882919}, {"d": "2026-03-13", "v": 26517.11225368}, {"d": "2026-03-16", "v": 26613.79572955}, {"d": "2026-03-17", "v": 26520.36377115}, {"d": "2026-03-18", "v": 26545.75417251}, {"d": "2026-03-19", "v": 26501.27824936}, {"d": "2026-03-20", "v": 26322.93770603}, {"d": "2026-03-23", "v": 26200.30598152}, {"d": "2026-03-24", "v": 26135.98652609}, {"d": "2026-03-25", "v": 26174.75306555}, {"d": "2026-03-26", "v": 26165.49595963}, {"d": "2026-03-27", "v": 26088.44590752}, {"d": "2026-03-30", "v": 26169.13565994}, {"d": "2026-03-31", "v": 26086.56966117}, {"d": "2026-04-01", "v": 26097.7883107}, {"d": "2026-04-02", "v": 25986.72882158}, {"d": "2026-04-03", "v": 25808.01527908}, {"d": "2026-04-07", "v": 25849.63909375}, {"d": "2026-04-08", "v": 26015.33591144}, {"d": "2026-04-09", "v": 26087.10586364}, {"d": "2026-04-10", "v": 26144.03832155}, {"d": "2026-04-13", "v": 26307.35925306}, {"d": "2026-04-14", "v": 26476.27220657}, {"d": "2026-04-15", "v": 26576.70695938}, {"d": "2026-04-16", "v": 26687.30933522}, {"d": "2026-04-17", "v": 26710.2938941}, {"d": "2026-04-20", "v": 27002.59517709}, {"d": "2026-04-21", "v": 27066.69382509}, {"d": "2026-04-22", "v": 27206.90098241}, {"d": "2026-04-23", "v": 27242.72602086}, {"d": "2026-04-24", "v": 27127.86066717}, {"d": "2026-04-27", "v": 27285.30208429}, {"d": "2026-04-28", "v": 27284.36698193}, {"d": "2026-04-29", "v": 27323.02217011}, {"d": "2026-04-30", "v": 27152.08487233}, {"d": "2026-05-06", "v": 27567.12595521}, {"d": "2026-05-07", "v": 27864.36392025}, {"d": "2026-05-08", "v": 28025.01273707}, {"d": "2026-05-11", "v": 28338.57790591}, {"d": "2026-05-12", "v": 28507.44314103}, {"d": "2026-05-13", "v": 28739.45270713}, {"d": "2026-05-14", "v": 28827.55007011}, {"d": "2026-05-15", "v": 28764.60427504}, {"d": "2026-05-18", "v": 28923.79831046}, {"d": "2026-05-19", "v": 28979.38493443}, {"d": "2026-05-20", "v": 29049.39465937}, {"d": "2026-05-21", "v": 28962.10904143}, {"d": "2026-05-22", "v": 28991.51925961}, {"d": "2026-05-25", "v": 29252.0877945}, {"d": "2026-05-26", "v": 29326.29362443}, {"d": "2026-05-27", "v": 29366.6666971}, {"d": "2026-05-28", "v": 29424.02697453}, {"d": "2026-05-29", "v": 29124.18160134}, {"d": "2026-06-01", "v": 29043.02483979}, {"d": "2026-06-02", "v": 29055.95251708}, {"d": "2026-06-03", "v": 29143.75514366}, {"d": "2026-06-04", "v": 29206.86113684}, {"d": "2026-06-05", "v": 29066.88099505}, {"d": "2026-06-08", "v": 28828.95221196}, {"d": "2026-06-09", "v": 28872.75686085}, {"d": "2026-06-10", "v": 28791.14601496}, {"d": "2026-06-11", "v": 28736.26097853}, {"d": "2026-06-12", "v": 28734.82273963}, {"d": "2026-06-15", "v": 28979.38436116}, {"d": "2026-06-16", "v": 29248.61966559}, {"d": "2026-06-17", "v": 29528.86169592}, {"d": "2026-06-18", "v": 29655.11867332}, {"d": "2026-06-22", "v": 29950.31276856}, {"d": "2026-06-23", "v": 30009.71239804}, {"d": "2026-06-24", "v": 30151.4929313}, {"d": "2026-06-25", "v": 30329.91749139}, {"d": "2026-06-26", "v": 30119.61034065}, {"d": "2026-06-29", "v": 30036.81403983}, {"d": "2026-06-30", "v": 30203.96491899}, {"d": "2026-07-01", "v": 30304.74237454}, {"d": "2026-07-02", "v": 30228.96231933}, {"d": "2026-07-03", "v": 30033.36934139}, {"d": "2026-07-06", "v": 29926.13875973}]" data-color-pos="var(--warn)"></canvas>
+  
+
+  
+  
+  
+  <div class="msec">
+    <h3><span class="l-en">Contradictions</span><span class="l-zh">矛盾点</span></h3>
+    
+    <div style="font-size:12px;line-height:1.5;padding:6px 10px;border-radius:8px;border:1px solid var(--line);background:var(--panel2);margin-bottom:5px">
+      <b>southbound_z=2.04 (inflow)</b> <span class="l-en">vs</span><span class="l-zh">对比</span> <b>broker_rs=-0.0465 (negative)</b>
+      <div style="color:var(--muted);margin-top:2px">HK/offshore buying but domestic broker sector underperforming CSI300 — cross-market split</div>
+    </div>
+    
+  </div>
+  
+
+  
+  
+  
+  <details style="margin-top:10px">
+    <summary><span class="sh"><span class="l-en">Show data gaps</span><span class="l-zh">显示数据缺口</span></span><span class="hd"><span class="l-en">Hide data gaps</span><span class="l-zh">收起数据缺口</span></span></summary>
+    <ul style="font-size:11px;color:var(--muted);margin:6px 0 0;padding-left:16px;line-height:1.6">
+      <li>zt_breadth:null on 2026-07-06</li><li>etf_share_chg:null on 2026-07-06</li><li>northbound:DEAD post-2024-08-16 SLF-050</li><li>snapshot_staleness:published row 2026-07-06 is 1d behind tape tail 2026-07-07; tail row missing core legs (turnover_z20, margin_chg_5d) — union-index freshness lag</li>
+    </ul>
+  </details>
+  
+</div>
+
+
+<div class="panel span12" id="mech-limits">
+  <h2><span class="l-en">Limit Mechanics</span><span class="l-zh">涨跌停板机制</span>
+    <span class="help">?<span class="tip"><span class="l-en">CN-SYS-R3: Limit-up/down data is market-structure context only. BUY-direction use is forbidden (standing kill). Lianban (连板) = consecutive limit-up sessions. Failed-seal ratio = names that touched limit-up but closed below it. Board width rules: Main 10%; STAR/ChiNext 20% (from 2019/2020); BSE 30%; ST names 5% on Main boards.</span><span class="l-zh">CN-SYS-R3：涨/跌停板数据仅作市场结构背景，禁止用于买入方向（已裁定禁止）。连板 = 连续涨停。未封板比率 = 触及涨停但收盘低于涨停价的个股。板块宽度规则：主板10%；科创板/创业板20%（自2019/2020年起）；北交所30%；ST股主板5%。</span></span></span>
+  </h2>
+  
+  
+
+  
+  <div class="stat-row">
+    <div class="stat">
+      <span class="v pos">9.0</span>
+      <span class="k"><span class="l-en">Limit-ups (涨停)</span><span class="l-zh">涨停数</span></span>
+    </div>
+    <div class="stat">
+      <span class="v neg">5.0</span>
+      <span class="k"><span class="l-en">Limit-downs (跌停)</span><span class="l-zh">跌停数</span></span>
+    </div>
+    <div class="stat">
+      <span class="v">5.0</span>
+      <span class="k"><span class="l-en">Sealed at close</span><span class="l-zh">收盘封板</span></span>
+    </div>
+    <div class="stat">
+      <span class="v warn">4.0</span>
+      <span class="k"><span class="l-en">Failed seals</span><span class="l-zh">开板数</span></span>
+    </div>
+    <div class="stat">
+      <span class="v">0.0</span>
+      <span class="k"><span class="l-en">Lianban ≥2 (连板)</span><span class="l-zh">连板≥2</span></span>
+    </div>
+    <div class="stat">
+      <span class="v">1.0</span>
+      <span class="k"><span class="l-en">Max lianban (连板最高)</span><span class="l-zh">最高连板数</span></span>
+    </div>
+  </div>
+
+  
+  
+  <div class="chart-label"><span class="l-en">Limit-up breadth (% universe, 120 sessions)</span><span class="l-zh">涨停板广度（占比，120个交易日）</span></div>
+  <canvas class="mini-chart" id="chart-lup" data-series="[{"d": "2026-01-06", "v": 1.5934}, {"d": "2026-01-07", "v": 1.5296}, {"d": "2026-01-08", "v": 1.0835}, {"d": "2026-01-09", "v": 1.9758}, {"d": "2026-01-12", "v": 2.7406}, {"d": "2026-01-13", "v": 1.211}, {"d": "2026-01-14", "v": 1.3384}, {"d": "2026-01-15", "v": 0.4461}, {"d": "2026-01-16", "v": 1.1472}, {"d": "2026-01-19", "v": 1.0835}, {"d": "2026-01-20", "v": 0.3824}, {"d": "2026-01-21", "v": 1.211}, {"d": "2026-01-22", "v": 1.1472}, {"d": "2026-01-23", "v": 1.211}, {"d": "2026-01-26", "v": 1.5934}, {"d": "2026-01-27", "v": 0.7011}, {"d": "2026-01-28", "v": 1.7834}, {"d": "2026-01-29", "v": 1.655}, {"d": "2026-01-30", "v": 0.5092}, {"d": "2026-02-02", "v": 0.4456}, {"d": "2026-02-03", "v": 1.0821}, {"d": "2026-02-04", "v": 0.9548}, {"d": "2026-02-05", "v": 0.3183}, {"d": "2026-02-06", "v": 1.0185}, {"d": "2026-02-09", "v": 1.4004}, {"d": "2026-02-10", "v": 0.6997}, {"d": "2026-02-11", "v": 1.0178}, {"d": "2026-02-12", "v": 1.3359}, {"d": "2026-02-13", "v": 0.2545}, {"d": "2026-02-24", "v": 1.8448}, {"d": "2026-02-25", "v": 1.3359}, {"d": "2026-02-26", "v": 1.4631}, {"d": "2026-02-27", "v": 1.2723}, {"d": "2026-03-02", "v": 1.3359}, {"d": "2026-03-03", "v": 1.145}, {"d": "2026-03-04", "v": 0.6361}, {"d": "2026-03-05", "v": 1.0178}, {"d": "2026-03-06", "v": 0.7634}, {"d": "2026-03-09", "v": 1.145}, {"d": "2026-03-10", "v": 1.0814}, {"d": "2026-03-11", "v": 1.2723}, {"d": "2026-03-12", "v": 0.6997}, {"d": "2026-03-13", "v": 0.8906}, {"d": "2026-03-16", "v": 0.8906}, {"d": "2026-03-17", "v": 0.4453}, {"d": "2026-03-18", "v": 0.8906}, {"d": "2026-03-19", "v": 0.3181}, {"d": "2026-03-20", "v": 0.4453}, {"d": "2026-03-23", "v": 0.3181}, {"d": "2026-03-24", "v": 0.827}, {"d": "2026-03-25", "v": 1.2723}, {"d": "2026-03-26", "v": 0.3181}, {"d": "2026-03-27", "v": 0.8264}, {"d": "2026-03-30", "v": 0.6993}, {"d": "2026-03-31", "v": 0.5079}, {"d": "2026-04-01", "v": 0.9524}, {"d": "2026-04-02", "v": 0.254}, {"d": "2026-04-03", "v": 0.6349}, {"d": "2026-04-07", "v": 1.0794}, {"d": "2026-04-08", "v": 1.8401}, {"d": "2026-04-09", "v": 1.0152}, {"d": "2026-04-10", "v": 0.8244}, {"d": "2026-04-13", "v": 1.0146}, {"d": "2026-04-14", "v": 0.6975}, {"d": "2026-04-15", "v": 0.8244}, {"d": "2026-04-16", "v": 1.0139}, {"d": "2026-04-17", "v": 1.5209}, {"d": "2026-04-20", "v": 0.7605}, {"d": "2026-04-21", "v": 0.0633}, {"d": "2026-04-22", "v": 1.14}, {"d": "2026-04-23", "v": 0.8233}, {"d": "2026-04-24", "v": 0.8861}, {"d": "2026-04-27", "v": 0.8228}, {"d": "2026-04-28", "v": 0.7595}, {"d": "2026-04-29", "v": 2.0253}, {"d": "2026-04-30", "v": 0.6329}, {"d": "2026-05-06", "v": 2.0886}, {"d": "2026-05-07", "v": 1.8354}, {"d": "2026-05-08", "v": 0.8861}, {"d": "2026-05-11", "v": 1.3906}, {"d": "2026-05-12", "v": 1.0746}, {"d": "2026-05-13", "v": 1.3274}, {"d": "2026-05-14", "v": 0.5689}, {"d": "2026-05-15", "v": 0.9482}, {"d": "2026-05-18", "v": 1.5171}, {"d": "2026-05-19", "v": 1.0746}, {"d": "2026-05-20", "v": 0.5689}, {"d": "2026-05-21", "v": 1.2642}, {"d": "2026-05-22", "v": 1.9583}, {"d": "2026-05-25", "v": 2.1478}, {"d": "2026-05-26", "v": 1.1371}, {"d": "2026-05-27", "v": 0.8838}, {"d": "2026-05-28", "v": 1.5783}, {"d": "2026-05-29", "v": 1.0101}, {"d": "2026-06-01", "v": 1.2626}, {"d": "2026-06-02", "v": 1.0101}, {"d": "2026-06-03", "v": 1.8308}, {"d": "2026-06-04", "v": 1.1995}, {"d": "2026-06-05", "v": 1.1364}, {"d": "2026-06-08", "v": 0.4419}, {"d": "2026-06-09", "v": 2.0833}, {"d": "2026-06-10", "v": 0.8207}, {"d": "2026-06-11", "v": 1.3258}, {"d": "2026-06-12", "v": 2.0833}, {"d": "2026-06-15", "v": 2.7778}, {"d": "2026-06-16", "v": 1.6414}, {"d": "2026-06-17", "v": 1.5783}, {"d": "2026-06-18", "v": 1.5783}, {"d": "2026-06-22", "v": 2.5884}, {"d": "2026-06-23", "v": 1.0732}, {"d": "2026-06-24", "v": 2.3344}, {"d": "2026-06-25", "v": 1.8297}, {"d": "2026-06-26", "v": 1.261}, {"d": "2026-06-29", "v": 2.2684}, {"d": "2026-06-30", "v": 2.0794}, {"d": "2026-07-01", "v": 2.459}, {"d": "2026-07-02", "v": 0.8192}, {"d": "2026-07-03", "v": 1.8273}, {"d": "2026-07-06", "v": 1.0082}, {"d": "2026-07-07", "v": 0.5678}]" data-color-pos="var(--up)"></canvas>
+  
+  
+  <div class="chart-label"><span class="l-en">Limit-down breadth (% universe, 120 sessions)</span><span class="l-zh">跌停板广度（占比，120个交易日）</span></div>
+  <canvas class="mini-chart mini-chart-sm" id="chart-ldn" data-series="[{"d": "2026-01-06", "v": 0.0}, {"d": "2026-01-07", "v": 0.0}, {"d": "2026-01-08", "v": 0.0}, {"d": "2026-01-09", "v": 0.0}, {"d": "2026-01-12", "v": 0.0}, {"d": "2026-01-13", "v": 0.4461}, {"d": "2026-01-14", "v": 0.1275}, {"d": "2026-01-15", "v": 0.6373}, {"d": "2026-01-16", "v": 0.3187}, {"d": "2026-01-19", "v": 0.1912}, {"d": "2026-01-20", "v": 0.1912}, {"d": "2026-01-21", "v": 0.0637}, {"d": "2026-01-22", "v": 0.0}, {"d": "2026-01-23", "v": 0.0}, {"d": "2026-01-26", "v": 0.3824}, {"d": "2026-01-27", "v": 0.0637}, {"d": "2026-01-28", "v": 0.0637}, {"d": "2026-01-29", "v": 0.0}, {"d": "2026-01-30", "v": 0.6365}, {"d": "2026-02-02", "v": 1.2094}, {"d": "2026-02-03", "v": 0.1273}, {"d": "2026-02-04", "v": 0.0}, {"d": "2026-02-05", "v": 0.1273}, {"d": "2026-02-06", "v": 0.0}, {"d": "2026-02-09", "v": 0.0}, {"d": "2026-02-10", "v": 0.0636}, {"d": "2026-02-11", "v": 0.0636}, {"d": "2026-02-12", "v": 0.1272}, {"d": "2026-02-13", "v": 0.0636}, {"d": "2026-02-24", "v": 0.0636}, {"d": "2026-02-25", "v": 0.0636}, {"d": "2026-02-26", "v": 0.0}, {"d": "2026-02-27", "v": 0.0}, {"d": "2026-03-02", "v": 0.0}, {"d": "2026-03-03", "v": 0.5725}, {"d": "2026-03-04", "v": 0.1272}, {"d": "2026-03-05", "v": 0.0}, {"d": "2026-03-06", "v": 0.0}, {"d": "2026-03-09", "v": 0.1272}, {"d": "2026-03-10", "v": 0.0}, {"d": "2026-03-11", "v": 0.0636}, {"d": "2026-03-12", "v": 0.0}, {"d": "2026-03-13", "v": 0.1908}, {"d": "2026-03-16", "v": 0.1272}, {"d": "2026-03-17", "v": 0.1272}, {"d": "2026-03-18", "v": 0.0}, {"d": "2026-03-19", "v": 0.0}, {"d": "2026-03-20", "v": 0.0636}, {"d": "2026-03-23", "v": 0.3181}, {"d": "2026-03-24", "v": 0.0}, {"d": "2026-03-25", "v": 0.0636}, {"d": "2026-03-26", "v": 0.0636}, {"d": "2026-03-27", "v": 0.0}, {"d": "2026-03-30", "v": 0.0636}, {"d": "2026-03-31", "v": 0.0}, {"d": "2026-04-01", "v": 0.0635}, {"d": "2026-04-02", "v": 0.0635}, {"d": "2026-04-03", "v": 0.127}, {"d": "2026-04-07", "v": 0.0}, {"d": "2026-04-08", "v": 0.0635}, {"d": "2026-04-09", "v": 0.0635}, {"d": "2026-04-10", "v": 0.0}, {"d": "2026-04-13", "v": 0.0}, {"d": "2026-04-14", "v": 0.0}, {"d": "2026-04-15", "v": 0.0}, {"d": "2026-04-16", "v": 0.0}, {"d": "2026-04-17", "v": 0.0}, {"d": "2026-04-20", "v": 0.0}, {"d": "2026-04-21", "v": 0.0}, {"d": "2026-04-22", "v": 0.0}, {"d": "2026-04-23", "v": 0.0633}, {"d": "2026-04-24", "v": 0.2532}, {"d": "2026-04-27", "v": 0.3165}, {"d": "2026-04-28", "v": 0.3797}, {"d": "2026-04-29", "v": 0.1266}, {"d": "2026-04-30", "v": 0.2532}, {"d": "2026-05-06", "v": 0.0}, {"d": "2026-05-07", "v": 0.0633}, {"d": "2026-05-08", "v": 0.0}, {"d": "2026-05-11", "v": 0.0}, {"d": "2026-05-12", "v": 0.1264}, {"d": "2026-05-13", "v": 0.0}, {"d": "2026-05-14", "v": 0.0632}, {"d": "2026-05-15", "v": 0.3161}, {"d": "2026-05-18", "v": 0.1264}, {"d": "2026-05-19", "v": 0.0632}, {"d": "2026-05-20", "v": 0.2528}, {"d": "2026-05-21", "v": 0.0632}, {"d": "2026-05-22", "v": 0.0}, {"d": "2026-05-25", "v": 0.1895}, {"d": "2026-05-26", "v": 0.0632}, {"d": "2026-05-27", "v": 0.1894}, {"d": "2026-05-28", "v": 0.0631}, {"d": "2026-05-29", "v": 0.3157}, {"d": "2026-06-01", "v": 0.3788}, {"d": "2026-06-02", "v": 0.1263}, {"d": "2026-06-03", "v": 0.0631}, {"d": "2026-06-04", "v": 0.0}, {"d": "2026-06-05", "v": 0.1894}, {"d": "2026-06-08", "v": 0.3788}, {"d": "2026-06-09", "v": 0.0631}, {"d": "2026-06-10", "v": 0.3788}, {"d": "2026-06-11", "v": 0.3157}, {"d": "2026-06-12", "v": 0.2525}, {"d": "2026-06-15", "v": 0.0}, {"d": "2026-06-16", "v": 0.0631}, {"d": "2026-06-17", "v": 0.0}, {"d": "2026-06-18", "v": 0.0}, {"d": "2026-06-22", "v": 0.0631}, {"d": "2026-06-23", "v": 0.8838}, {"d": "2026-06-24", "v": 0.0}, {"d": "2026-06-25", "v": 0.1893}, {"d": "2026-06-26", "v": 0.5044}, {"d": "2026-06-29", "v": 0.4411}, {"d": "2026-06-30", "v": 0.063}, {"d": "2026-07-01", "v": 0.0631}, {"d": "2026-07-02", "v": 0.8822}, {"d": "2026-07-03", "v": 0.4411}, {"d": "2026-07-06", "v": 0.6931}, {"d": "2026-07-07", "v": 0.3155}]" data-color-pos="var(--down)"></canvas>
+  
+  
+  <div class="chart-label"><span class="l-en">Failed-seal ratio (open ÷ limit-up, 120 sessions)</span><span class="l-zh">未封板比率（开板数÷涨停数，120个交易日）</span></div>
+  <canvas class="mini-chart mini-chart-sm" id="chart-fsr" data-series="[{"d": "2026-01-06", "v": 0.24}, {"d": "2026-01-07", "v": 0.4166666666666667}, {"d": "2026-01-08", "v": 0.29411764705882354}, {"d": "2026-01-09", "v": 0.2903225806451613}, {"d": "2026-01-12", "v": 0.23255813953488372}, {"d": "2026-01-13", "v": 0.7368421052631579}, {"d": "2026-01-14", "v": 0.42857142857142855}, {"d": "2026-01-15", "v": 0.2857142857142857}, {"d": "2026-01-16", "v": 0.6111111111111112}, {"d": "2026-01-19", "v": 0.23529411764705882}, {"d": "2026-01-20", "v": 0.5}, {"d": "2026-01-21", "v": 0.3157894736842105}, {"d": "2026-01-22", "v": 0.2777777777777778}, {"d": "2026-01-23", "v": 0.21052631578947367}, {"d": "2026-01-26", "v": 0.4}, {"d": "2026-01-27", "v": 0.18181818181818182}, {"d": "2026-01-28", "v": 0.21428571428571427}, {"d": "2026-01-29", "v": 0.23076923076923078}, {"d": "2026-01-30", "v": 0.125}, {"d": "2026-02-02", "v": 0.5714285714285714}, {"d": "2026-02-03", "v": 0.17647058823529413}, {"d": "2026-02-04", "v": 0.2}, {"d": "2026-02-05", "v": 0.4}, {"d": "2026-02-06", "v": 0.375}, {"d": "2026-02-09", "v": 0.13636363636363635}, {"d": "2026-02-10", "v": 0.36363636363636365}, {"d": "2026-02-11", "v": 0.25}, {"d": "2026-02-12", "v": 0.23809523809523808}, {"d": "2026-02-13", "v": 0.0}, {"d": "2026-02-24", "v": 0.41379310344827586}, {"d": "2026-02-25", "v": 0.2857142857142857}, {"d": "2026-02-26", "v": 0.2608695652173913}, {"d": "2026-02-27", "v": 0.1}, {"d": "2026-03-02", "v": 0.2857142857142857}, {"d": "2026-03-03", "v": 0.5555555555555556}, {"d": "2026-03-04", "v": 0.4}, {"d": "2026-03-05", "v": 0.5}, {"d": "2026-03-06", "v": 0.3333333333333333}, {"d": "2026-03-09", "v": 0.4444444444444444}, {"d": "2026-03-10", "v": 0.17647058823529413}, {"d": "2026-03-11", "v": 0.25}, {"d": "2026-03-12", "v": 0.2727272727272727}, {"d": "2026-03-13", "v": 0.35714285714285715}, {"d": "2026-03-16", "v": 0.2857142857142857}, {"d": "2026-03-17", "v": 0.42857142857142855}, {"d": "2026-03-18", "v": 0.5}, {"d": "2026-03-19", "v": 0.2}, {"d": "2026-03-20", "v": 0.7142857142857143}, {"d": "2026-03-23", "v": 0.6}, {"d": "2026-03-24", "v": 0.15384615384615385}, {"d": "2026-03-25", "v": 0.3}, {"d": "2026-03-26", "v": 0.2}, {"d": "2026-03-27", "v": 0.3076923076923077}, {"d": "2026-03-30", "v": 0.18181818181818182}, {"d": "2026-03-31", "v": 0.375}, {"d": "2026-04-01", "v": 0.6}, {"d": "2026-04-02", "v": 0.5}, {"d": "2026-04-03", "v": 0.3}, {"d": "2026-04-07", "v": 0.29411764705882354}, {"d": "2026-04-08", "v": 0.13793103448275862}, {"d": "2026-04-09", "v": 0.375}, {"d": "2026-04-10", "v": 0.46153846153846156}, {"d": "2026-04-13", "v": 0.25}, {"d": "2026-04-14", "v": 0.45454545454545453}, {"d": "2026-04-15", "v": 0.3076923076923077}, {"d": "2026-04-16", "v": 0.3125}, {"d": "2026-04-17", "v": 0.16666666666666666}, {"d": "2026-04-20", "v": 0.3333333333333333}, {"d": "2026-04-21", "v": 0.0}, {"d": "2026-04-22", "v": 0.3333333333333333}, {"d": "2026-04-23", "v": 0.3076923076923077}, {"d": "2026-04-24", "v": 0.21428571428571427}, {"d": "2026-04-27", "v": 0.3076923076923077}, {"d": "2026-04-28", "v": 0.25}, {"d": "2026-04-29", "v": 0.125}, {"d": "2026-04-30", "v": 0.2}, {"d": "2026-05-06", "v": 0.30303030303030304}, {"d": "2026-05-07", "v": 0.1724137931034483}, {"d": "2026-05-08", "v": 0.07142857142857142}, {"d": "2026-05-11", "v": 0.3181818181818182}, {"d": "2026-05-12", "v": 0.35294117647058826}, {"d": "2026-05-13", "v": 0.14285714285714285}, {"d": "2026-05-14", "v": 0.5555555555555556}, {"d": "2026-05-15", "v": 0.4666666666666667}, {"d": "2026-05-18", "v": 0.2916666666666667}, {"d": "2026-05-19", "v": 0.17647058823529413}, {"d": "2026-05-20", "v": 0.4444444444444444}, {"d": "2026-05-21", "v": 0.7}, {"d": "2026-05-22", "v": 0.06451612903225806}, {"d": "2026-05-25", "v": 0.2647058823529412}, {"d": "2026-05-26", "v": 0.2777777777777778}, {"d": "2026-05-27", "v": 0.35714285714285715}, {"d": "2026-05-28", "v": 0.28}, {"d": "2026-05-29", "v": 0.5625}, {"d": "2026-06-01", "v": 0.4}, {"d": "2026-06-02", "v": 0.375}, {"d": "2026-06-03", "v": 0.6206896551724138}, {"d": "2026-06-04", "v": 0.10526315789473684}, {"d": "2026-06-05", "v": 0.3888888888888889}, {"d": "2026-06-08", "v": 0.2857142857142857}, {"d": "2026-06-09", "v": 0.15151515151515152}, {"d": "2026-06-10", "v": 0.07692307692307693}, {"d": "2026-06-11", "v": 0.42857142857142855}, {"d": "2026-06-12", "v": 0.5151515151515151}, {"d": "2026-06-15", "v": 0.18181818181818182}, {"d": "2026-06-16", "v": 0.11538461538461539}, {"d": "2026-06-17", "v": 0.16}, {"d": "2026-06-18", "v": 0.36}, {"d": "2026-06-22", "v": 0.024390243902439025}, {"d": "2026-06-23", "v": 0.4117647058823529}, {"d": "2026-06-24", "v": 0.16216216216216217}, {"d": "2026-06-25", "v": 0.27586206896551724}, {"d": "2026-06-26", "v": 0.55}, {"d": "2026-06-29", "v": 0.25}, {"d": "2026-06-30", "v": 0.15151515151515152}, {"d": "2026-07-01", "v": 0.41025641025641024}, {"d": "2026-07-02", "v": 0.38461538461538464}, {"d": "2026-07-03", "v": 0.3103448275862069}, {"d": "2026-07-06", "v": 0.5}, {"d": "2026-07-07", "v": 0.4444444444444444}]" data-color-pos="var(--warn)"></canvas>
+  
+  
+  <div class="chart-label"><span class="l-en">Consecutive limit-up names (≥2 lianban, 120 sessions)</span><span class="l-zh">连板个数（≥2连板，120个交易日）</span></div>
+  <canvas class="mini-chart mini-chart-sm" id="chart-lianban" data-series="[{"d": "2026-01-06", "v": 1.0}, {"d": "2026-01-07", "v": 1.0}, {"d": "2026-01-08", "v": 3.0}, {"d": "2026-01-09", "v": 1.0}, {"d": "2026-01-12", "v": 6.0}, {"d": "2026-01-13", "v": 1.0}, {"d": "2026-01-14", "v": 1.0}, {"d": "2026-01-15", "v": 0.0}, {"d": "2026-01-16", "v": 0.0}, {"d": "2026-01-19", "v": 0.0}, {"d": "2026-01-20", "v": 0.0}, {"d": "2026-01-21", "v": 0.0}, {"d": "2026-01-22", "v": 0.0}, {"d": "2026-01-23", "v": 0.0}, {"d": "2026-01-26", "v": 3.0}, {"d": "2026-01-27", "v": 0.0}, {"d": "2026-01-28", "v": 1.0}, {"d": "2026-01-29", "v": 4.0}, {"d": "2026-01-30", "v": 1.0}, {"d": "2026-02-02", "v": 0.0}, {"d": "2026-02-03", "v": 0.0}, {"d": "2026-02-04", "v": 1.0}, {"d": "2026-02-05", "v": 0.0}, {"d": "2026-02-06", "v": 0.0}, {"d": "2026-02-09", "v": 2.0}, {"d": "2026-02-10", "v": 2.0}, {"d": "2026-02-11", "v": 1.0}, {"d": "2026-02-12", "v": 3.0}, {"d": "2026-02-13", "v": 0.0}, {"d": "2026-02-24", "v": 1.0}, {"d": "2026-02-25", "v": 0.0}, {"d": "2026-02-26", "v": 0.0}, {"d": "2026-02-27", "v": 1.0}, {"d": "2026-03-02", "v": 4.0}, {"d": "2026-03-03", "v": 2.0}, {"d": "2026-03-04", "v": 0.0}, {"d": "2026-03-05", "v": 0.0}, {"d": "2026-03-06", "v": 0.0}, {"d": "2026-03-09", "v": 2.0}, {"d": "2026-03-10", "v": 0.0}, {"d": "2026-03-11", "v": 0.0}, {"d": "2026-03-12", "v": 0.0}, {"d": "2026-03-13", "v": 0.0}, {"d": "2026-03-16", "v": 2.0}, {"d": "2026-03-17", "v": 0.0}, {"d": "2026-03-18", "v": 0.0}, {"d": "2026-03-19", "v": 1.0}, {"d": "2026-03-20", "v": 0.0}, {"d": "2026-03-23", "v": 0.0}, {"d": "2026-03-24", "v": 0.0}, {"d": "2026-03-25", "v": 2.0}, {"d": "2026-03-26", "v": 0.0}, {"d": "2026-03-27", "v": 1.0}, {"d": "2026-03-30", "v": 1.0}, {"d": "2026-03-31", "v": 0.0}, {"d": "2026-04-01", "v": 0.0}, {"d": "2026-04-02", "v": 0.0}, {"d": "2026-04-03", "v": 0.0}, {"d": "2026-04-07", "v": 1.0}, {"d": "2026-04-08", "v": 1.0}, {"d": "2026-04-09", "v": 1.0}, {"d": "2026-04-10", "v": 0.0}, {"d": "2026-04-13", "v": 0.0}, {"d": "2026-04-14", "v": 1.0}, {"d": "2026-04-15", "v": 0.0}, {"d": "2026-04-16", "v": 0.0}, {"d": "2026-04-17", "v": 0.0}, {"d": "2026-04-20", "v": 0.0}, {"d": "2026-04-21", "v": 0.0}, {"d": "2026-04-22", "v": 0.0}, {"d": "2026-04-23", "v": 0.0}, {"d": "2026-04-24", "v": 0.0}, {"d": "2026-04-27", "v": 2.0}, {"d": "2026-04-28", "v": 0.0}, {"d": "2026-04-29", "v": 1.0}, {"d": "2026-04-30", "v": 1.0}, {"d": "2026-05-06", "v": 1.0}, {"d": "2026-05-07", "v": 2.0}, {"d": "2026-05-08", "v": 2.0}, {"d": "2026-05-11", "v": 1.0}, {"d": "2026-05-12", "v": 0.0}, {"d": "2026-05-13", "v": 1.0}, {"d": "2026-05-14", "v": 0.0}, {"d": "2026-05-15", "v": 0.0}, {"d": "2026-05-18", "v": 1.0}, {"d": "2026-05-19", "v": 1.0}, {"d": "2026-05-20", "v": 1.0}, {"d": "2026-05-21", "v": 0.0}, {"d": "2026-05-22", "v": 0.0}, {"d": "2026-05-25", "v": 6.0}, {"d": "2026-05-26", "v": 2.0}, {"d": "2026-05-27", "v": 1.0}, {"d": "2026-05-28", "v": 0.0}, {"d": "2026-05-29", "v": 1.0}, {"d": "2026-06-01", "v": 1.0}, {"d": "2026-06-02", "v": 1.0}, {"d": "2026-06-03", "v": 1.0}, {"d": "2026-06-04", "v": 1.0}, {"d": "2026-06-05", "v": 1.0}, {"d": "2026-06-08", "v": 0.0}, {"d": "2026-06-09", "v": 0.0}, {"d": "2026-06-10", "v": 1.0}, {"d": "2026-06-11", "v": 1.0}, {"d": "2026-06-12", "v": 2.0}, {"d": "2026-06-15", "v": 0.0}, {"d": "2026-06-16", "v": 3.0}, {"d": "2026-06-17", "v": 4.0}, {"d": "2026-06-18", "v": 0.0}, {"d": "2026-06-22", "v": 2.0}, {"d": "2026-06-23", "v": 3.0}, {"d": "2026-06-24", "v": 1.0}, {"d": "2026-06-25", "v": 3.0}, {"d": "2026-06-26", "v": 0.0}, {"d": "2026-06-29", "v": 1.0}, {"d": "2026-06-30", "v": 2.0}, {"d": "2026-07-01", "v": 5.0}, {"d": "2026-07-02", "v": 0.0}, {"d": "2026-07-03", "v": 0.0}, {"d": "2026-07-06", "v": 0.0}, {"d": "2026-07-07", "v": 0.0}]" data-color-pos="var(--info)"></canvas>
+  
+
+  
+  
+  <div class="msec">
+    <h3><span class="l-en">Notable limit events — latest session</span><span class="l-zh">今日涨跌停事件</span>
+      <span style="font-size:10px;color:var(--muted);margin-left:8px">2026-07-07</span>
+    </h3>
+    <table class="mt">
+      <tr>
+        <th><span class="l-en">Ticker</span><span class="l-zh">代码</span></th>
+        <th><span class="l-en">Board</span><span class="l-zh">板块</span></th>
+        <th><span class="l-en">Event</span><span class="l-zh">事件</span></th>
+        <th class="r"><span class="l-en">Lianban</span><span class="l-zh">连板</span></th>
+        <th class="r"><span class="l-en">vs limit %</span><span class="l-zh">距涨停%</span></th>
+      </tr>
+      
+      <tr>
+        <td><a href="china_lookup.html#600246.SS">600246.SS</a></td>
+        <td>main</td>
+        <td><span style="font-size:10.5px;padding:1px 6px;border-radius:6px;
+          background:color-mix(in srgb,var(--up) 14%,var(--panel));
+          color:var(--up)">sealed_up</span></td>
+        <td class="r">1</td>
+        <td class="r ">
+          -0.00%</td>
+      </tr>
+      
+      <tr>
+        <td><a href="china_lookup.html#603629.SS">603629.SS</a></td>
+        <td>main</td>
+        <td><span style="font-size:10.5px;padding:1px 6px;border-radius:6px;
+          background:color-mix(in srgb,var(--down) 14%,var(--panel));
+          color:var(--down)">sealed_down</span></td>
+        <td class="r">—</td>
+        <td class="r ">
+          -0.07%</td>
+      </tr>
+      
+      <tr>
+        <td><a href="china_lookup.html#603618.SS">603618.SS</a></td>
+        <td>main</td>
+        <td><span style="font-size:10.5px;padding:1px 6px;border-radius:6px;
+          background:color-mix(in srgb,var(--down) 14%,var(--panel));
+          color:var(--down)">sealed_down</span></td>
+        <td class="r">—</td>
+        <td class="r ">
+          -0.00%</td>
+      </tr>
+      
+      <tr>
+        <td><a href="china_lookup.html#603308.SS">603308.SS</a></td>
+        <td>main</td>
+        <td><span style="font-size:10.5px;padding:1px 6px;border-radius:6px;
+          background:color-mix(in srgb,var(--down) 14%,var(--panel));
+          color:var(--down)">failed_down_seal</span></td>
+        <td class="r">—</td>
+        <td class="r ">
+          0.48%</td>
+      </tr>
+      
+      <tr>
+        <td><a href="china_lookup.html#603033.SS">603033.SS</a></td>
+        <td>main</td>
+        <td><span style="font-size:10.5px;padding:1px 6px;border-radius:6px;
+          background:color-mix(in srgb,var(--down) 14%,var(--panel));
+          color:var(--down)">sealed_down</span></td>
+        <td class="r">—</td>
+        <td class="r ">
+          -0.00%</td>
+      </tr>
+      
+      <tr>
+        <td><a href="china_lookup.html#600301.SS">600301.SS</a></td>
+        <td>main</td>
+        <td><span style="font-size:10.5px;padding:1px 6px;border-radius:6px;
+          background:color-mix(in srgb,var(--down) 14%,var(--panel));
+          color:var(--down)">sealed_down</span></td>
+        <td class="r">—</td>
+        <td class="r ">
+          -0.00%</td>
+      </tr>
+      
+      <tr>
+        <td><a href="china_lookup.html#600120.SS">600120.SS</a></td>
+        <td>main</td>
+        <td><span style="font-size:10.5px;padding:1px 6px;border-radius:6px;
+          background:color-mix(in srgb,var(--up) 14%,var(--panel));
+          color:var(--up)">sealed_up</span></td>
+        <td class="r">1</td>
+        <td class="r ">
+          -0.00%</td>
+      </tr>
+      
+      <tr>
+        <td><a href="china_lookup.html#603678.SS">603678.SS</a></td>
+        <td>main</td>
+        <td><span style="font-size:10.5px;padding:1px 6px;border-radius:6px;
+          background:color-mix(in srgb,var(--down) 14%,var(--panel));
+          color:var(--down)">sealed_down</span></td>
+        <td class="r">—</td>
+        <td class="r ">
+          -0.00%</td>
+      </tr>
+      
+      <tr>
+        <td><a href="china_lookup.html#002841.SZ">002841.SZ</a></td>
+        <td>main</td>
+        <td><span style="font-size:10.5px;padding:1px 6px;border-radius:6px;
+          background:color-mix(in srgb,var(--up) 14%,var(--panel));
+          color:var(--up)">sealed_up</span></td>
+        <td class="r">1</td>
+        <td class="r ">
+          -0.00%</td>
+      </tr>
+      
+      <tr>
+        <td><a href="china_lookup.html#002558.SZ">002558.SZ</a></td>
+        <td>main</td>
+        <td><span style="font-size:10.5px;padding:1px 6px;border-radius:6px;
+          background:color-mix(in srgb,var(--up) 14%,var(--panel));
+          color:var(--up)">failed_up_seal</span></td>
+        <td class="r">—</td>
+        <td class="r ">
+          3.61%</td>
+      </tr>
+      
+      <tr>
+        <td><a href="china_lookup.html#002266.SZ">002266.SZ</a></td>
+        <td>main</td>
+        <td><span style="font-size:10.5px;padding:1px 6px;border-radius:6px;
+          background:color-mix(in srgb,var(--up) 14%,var(--panel));
+          color:var(--up)">failed_up_seal</span></td>
+        <td class="r">—</td>
+        <td class="r ">
+          1.20%</td>
+      </tr>
+      
+      <tr>
+        <td><a href="china_lookup.html#002185.SZ">002185.SZ</a></td>
+        <td>main</td>
+        <td><span style="font-size:10.5px;padding:1px 6px;border-radius:6px;
+          background:color-mix(in srgb,var(--up) 14%,var(--panel));
+          color:var(--up)">sealed_up</span></td>
+        <td class="r">1</td>
+        <td class="r ">
+          -0.00%</td>
+      </tr>
+      
+      <tr>
+        <td><a href="china_lookup.html#002129.SZ">002129.SZ</a></td>
+        <td>main</td>
+        <td><span style="font-size:10.5px;padding:1px 6px;border-radius:6px;
+          background:color-mix(in srgb,var(--up) 14%,var(--panel));
+          color:var(--up)">sealed_up</span></td>
+        <td class="r">1</td>
+        <td class="r ">
+          -0.00%</td>
+      </tr>
+      
+      <tr>
+        <td><a href="china_lookup.html#002077.SZ">002077.SZ</a></td>
+        <td>main</td>
+        <td><span style="font-size:10.5px;padding:1px 6px;border-radius:6px;
+          background:color-mix(in srgb,var(--up) 14%,var(--panel));
+          color:var(--up)">failed_up_seal</span></td>
+        <td class="r">—</td>
+        <td class="r ">
+          2.36%</td>
+      </tr>
+      
+      <tr>
+        <td><a href="china_lookup.html#001896.SZ">001896.SZ</a></td>
+        <td>main</td>
+        <td><span style="font-size:10.5px;padding:1px 6px;border-radius:6px;
+          background:color-mix(in srgb,var(--down) 14%,var(--panel));
+          color:var(--down)">failed_down_seal</span></td>
+        <td class="r">—</td>
+        <td class="r ">
+          0.81%</td>
+      </tr>
+      
+    </table>
+    <p style="font-size:11px;color:var(--muted)">… 2 <span class="l-en">more</span><span class="l-zh">条更多</span></p>
+  </div>
+  
+
+  <p class="authority-note" style="margin-top:10px"><span class="l-en">CN-SYS-R3: this panel is market-structure context only. Limit-up as a BUY trigger is a standing kill.</span><span class="l-zh">CN-SYS-R3：本面板仅作市场结构背景。以涨停作为买入触发器已被永久禁止。</span></p>
+</div>
+
+
+<div class="panel span12" id="mech-phase">
+  <h2><span class="l-en">Cycle Phase Memory</span><span class="l-zh">周期阶段记忆</span>
+    <span class="help">?<span class="tip"><span class="l-en">Current phase classification with confidence, falsifiers, and a 90-session strip of historical phase assignments. ERA table covers known historical market cycles 2005→. Falsifier ledger: pre-committed conditions that, if they fire within their horizon, would contradict the current phase call. Accruing since phase-tape build start; not a calibration study (CN-SYS-R5).</span><span class="l-zh">当前阶段分类（含置信度）、证伪条件，以及90个交易日的历史阶段分配图条。ERA表格涵盖2005年至今已知历史市场周期。证伪台账：预先提交的条件，若在期限内触发，将与当前阶段判断相矛盾。自阶段磁带开始积累以来持续累积；非校准研究（CN-SYS-R5）。</span></span></span>
+  </h2>
+  
+  
+
+  
+  
+  
+  <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:flex-start;margin:8px 0 12px">
+    <div style="padding:10px 18px;border-radius:10px;background:color-mix(in srgb,var(--info) 14%,var(--panel));border:1px solid color-mix(in srgb,var(--info) 30%,var(--line))">
+      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px"><span class="l-en">Current Phase</span><span class="l-zh">当前阶段</span></div>
+      <div style="font-size:20px;font-weight:800;color:var(--text)">POLICY_PUT</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:2px"><span class="l-en">confidence</span><span class="l-zh">置信度</span> 75%</div>
+      <div style="font-size:10.5px;color:var(--muted)"><span class="l-en">as of</span><span class="l-zh">截至</span> 2026-07-07</div>
+    </div>
+    
+    <div style="flex:1;min-width:200px">
+      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px"><span class="l-en">Evidence</span><span class="l-zh">证据</span></div>
+      <div style="font-size:12px;margin-bottom:3px;color:var(--text)">· turnover_z20_null</div><div style="font-size:12px;margin-bottom:3px;color:var(--text)">· qvix_z_elevated (1.68)</div>
+    </div>
+    
+  </div>
+
+  
+  
+  
+  <div class="msec">
+    <h3><span class="l-en">Armed falsifiers</span><span class="l-zh">已激活证伪条件</span>
+      <span class="help">?<span class="tip"><span class="l-en">Falsifiers are pre-committed machine-checkable conditions. If one fires within its horizon, the current phase call was wrong. The ledger grades them nightly (CN-SYS-R5). They are not a signal — they are the evidence standard.</span><span class="l-zh">证伪条件是预先提交的机器可检查条件。若在期限内触发，则当前阶段判断有误。台账每夜进行评分（CN-SYS-R5）。它们不是信号，而是证据标准。</span></span></span>
+    </h3>
+    
+    <div style="font-size:12px;color:var(--muted);margin-bottom:8px">3 <span class="l-en">falsifiers armed — auto-graded nightly</span><span class="l-zh">个证伪条件已激活 — 每夜自动评分</span></div>
+    
+    <div style="display:flex;gap:8px;align-items:baseline;padding:5px 9px;border-radius:7px;background:var(--panel2);border:1px solid var(--line);margin-bottom:4px;font-size:12px">
+      <span style="font-family:monospace;color:var(--info);flex-shrink:0">POLI_PP_LUP_RECOVERING</span>
+      <code style="flex:1;font-size:11px;color:var(--text);background:none">lup5 > 1.0</code>
+      <span style="color:var(--muted);white-space:nowrap">10<span class="l-en">d</span><span class="l-zh">天</span></span>
+    </div>
+    
+    <div style="display:flex;gap:8px;align-items:baseline;padding:5px 9px;border-radius:7px;background:var(--panel2);border:1px solid var(--line);margin-bottom:4px;font-size:12px">
+      <span style="font-family:monospace;color:var(--info);flex-shrink:0">POLI_PP_TOZ_STABILISE</span>
+      <code style="flex:1;font-size:11px;color:var(--text);background:none">turnover_z20 > -1.0</code>
+      <span style="color:var(--muted);white-space:nowrap">10<span class="l-en">d</span><span class="l-zh">天</span></span>
+    </div>
+    
+    <div style="display:flex;gap:8px;align-items:baseline;padding:5px 9px;border-radius:7px;background:var(--panel2);border:1px solid var(--line);margin-bottom:4px;font-size:12px">
+      <span style="font-family:monospace;color:var(--info);flex-shrink:0">POLI_PP_LDN_FADING</span>
+      <code style="flex:1;font-size:11px;color:var(--text);background:none">ldn5 < 2.0</code>
+      <span style="color:var(--muted);white-space:nowrap">5<span class="l-en">d</span><span class="l-zh">天</span></span>
+    </div>
+    
+  </div>
+  
+
+  
+  
+  
+  <div class="msec">
+    <h3><span class="l-en">90-session phase strip</span><span class="l-zh">90个交易日阶段图条</span></h3>
+    <div class="phase-strip" id="phase-strip-cells" data-strip="[{"confidence": 1.0, "d": "2026-03-04", "phase": "REPAIR"}, {"confidence": 1.0, "d": "2026-03-05", "phase": "REPAIR"}, {"confidence": 1.0, "d": "2026-03-06", "phase": "REPAIR"}, {"confidence": 1.0, "d": "2026-03-09", "phase": "REPAIR"}, {"confidence": 1.0, "d": "2026-03-10", "phase": "REPAIR"}, {"confidence": 1.0, "d": "2026-03-11", "phase": "REPAIR"}, {"confidence": 1.0, "d": "2026-03-12", "phase": "REPAIR"}, {"confidence": 1.0, "d": "2026-03-13", "phase": "REPAIR"}, {"confidence": 1.0, "d": "2026-03-16", "phase": "REPAIR"}, {"confidence": 1.0, "d": "2026-03-17", "phase": "REPAIR"}, {"confidence": 0.667, "d": "2026-03-18", "phase": "REPAIR"}, {"confidence": 1.0, "d": "2026-03-19", "phase": "REPAIR"}, {"confidence": 1.0, "d": "2026-03-20", "phase": "REPAIR"}, {"confidence": 0.5, "d": "2026-03-23", "phase": "REPAIR"}, {"confidence": 0.5, "d": "2026-03-24", "phase": "REPAIR"}, {"confidence": 1.0, "d": "2026-03-25", "phase": "REPAIR"}, {"confidence": 0.667, "d": "2026-03-26", "phase": "REPAIR"}, {"confidence": 0.667, "d": "2026-03-27", "phase": "REPAIR"}, {"confidence": 0.667, "d": "2026-03-30", "phase": "REPAIR"}, {"confidence": 0.667, "d": "2026-03-31", "phase": "REPAIR"}, {"confidence": 1.0, "d": "2026-04-01", "phase": "REPAIR"}, {"confidence": 0.667, "d": "2026-04-02", "phase": "REPAIR"}, {"confidence": 0.667, "d": "2026-04-03", "phase": "REPAIR"}, {"confidence": 0.8, "d": "2026-04-06", "phase": "REPAIR"}, {"confidence": 0.667, "d": "2026-04-07", "phase": "REPAIR"}, {"confidence": 1.0, "d": "2026-04-08", "phase": "REPAIR"}, {"confidence": 1.0, "d": "2026-04-09", "phase": "REPAIR"}, {"confidence": 1.0, "d": "2026-04-10", "phase": "REPAIR"}, {"confidence": 1.0, "d": "2026-04-13", "phase": "REPAIR"}, {"confidence": 1.0, "d": "2026-04-14", "phase": "REPAIR"}, {"confidence": 1.0, "d": "2026-04-15", "phase": "REPAIR"}, {"confidence": 1.0, "d": "2026-04-16", "phase": "REPAIR"}, {"confidence": 1.0, "d": "2026-04-17", "phase": "REPAIR"}, {"confidence": 0.75, "d": "2026-04-20", "phase": "REPAIR"}, {"confidence": 1.0, "d": "2026-04-21", "phase": "REPAIR"}, {"confidence": 1.0, "d": "2026-04-22", "phase": "REPAIR"}, {"confidence": 1.0, "d": "2026-04-23", "phase": "REPAIR"}, {"confidence": 1.0, "d": "2026-04-24", "phase": "REPAIR"}, {"confidence": 0.75, "d": "2026-04-27", "phase": "REPAIR"}, {"confidence": 1.0, "d": "2026-04-28", "phase": "REPAIR"}, {"confidence": 0.75, "d": "2026-04-29", "phase": "REPAIR"}, {"confidence": 1.0, "d": "2026-04-30", "phase": "REPAIR"}, {"confidence": 0.8, "d": "2026-05-01", "phase": "REPAIR"}, {"confidence": 0.8, "d": "2026-05-04", "phase": "REPAIR"}, {"confidence": 0.8, "d": "2026-05-05", "phase": "GRINDING_BEAR"}, {"confidence": 0.75, "d": "2026-05-06", "phase": "GRINDING_BEAR"}, {"confidence": 0.75, "d": "2026-05-07", "phase": "GRINDING_BEAR"}, {"confidence": 1.0, "d": "2026-05-08", "phase": "GRINDING_BEAR"}, {"confidence": 1.0, "d": "2026-05-11", "phase": "GRINDING_BEAR"}, {"confidence": 1.0, "d": "2026-05-12", "phase": "REPAIR"}, {"confidence": 0.75, "d": "2026-05-13", "phase": "REPAIR"}, {"confidence": 0.75, "d": "2026-05-14", "phase": "REPAIR"}, {"confidence": 1.0, "d": "2026-05-15", "phase": "REPAIR"}, {"confidence": 1.0, "d": "2026-05-18", "phase": "REPAIR"}, {"confidence": 1.0, "d": "2026-05-19", "phase": "REPAIR"}, {"confidence": 1.0, "d": "2026-05-20", "phase": "REPAIR"}, {"confidence": 0.75, "d": "2026-05-21", "phase": "REPAIR"}, {"confidence": 1.0, "d": "2026-05-22", "phase": "REPAIR"}, {"confidence": 1.0, "d": "2026-05-25", "phase": "REPAIR"}, {"confidence": 1.0, "d": "2026-05-26", "phase": "REPAIR"}, {"confidence": 0.75, "d": "2026-05-27", "phase": "REPAIR"}, {"confidence": 1.0, "d": "2026-05-28", "phase": "REPAIR"}, {"confidence": 1.0, "d": "2026-05-29", "phase": "REPAIR"}, {"confidence": 0.667, "d": "2026-06-01", "phase": "REPAIR"}, {"confidence": 0.667, "d": "2026-06-02", "phase": "REPAIR"}, {"confidence": 1.0, "d": "2026-06-03", "phase": "REPAIR"}, {"confidence": 0.667, "d": "2026-06-04", "phase": "REPAIR"}, {"confidence": 1.0, "d": "2026-06-05", "phase": "REPAIR"}, {"confidence": 0.667, "d": "2026-06-08", "phase": "REPAIR"}, {"confidence": 0.667, "d": "2026-06-09", "phase": "REPAIR"}, {"confidence": 0.667, "d": "2026-06-10", "phase": "REPAIR"}, {"confidence": 0.667, "d": "2026-06-11", "phase": "REPAIR"}, {"confidence": 1.0, "d": "2026-06-12", "phase": "REPAIR"}, {"confidence": 1.0, "d": "2026-06-15", "phase": "REPAIR"}, {"confidence": 1.0, "d": "2026-06-16", "phase": "REPAIR"}, {"confidence": 0.8, "d": "2026-06-17", "phase": "REPAIR"}, {"confidence": 0.75, "d": "2026-06-18", "phase": "REPAIR"}, {"confidence": 0.8, "d": "2026-06-19", "phase": "REPAIR"}, {"confidence": 0.75, "d": "2026-06-22", "phase": "REPAIR"}, {"confidence": 0.5, "d": "2026-06-23", "phase": "REPAIR"}, {"confidence": 0.5, "d": "2026-06-24", "phase": "REPAIR"}, {"confidence": 0.5, "d": "2026-06-25", "phase": "POLICY_PUT"}, {"confidence": 0.5, "d": "2026-06-26", "phase": "POLICY_PUT"}, {"confidence": 0.5, "d": "2026-06-29", "phase": "POLICY_PUT"}, {"confidence": 0.75, "d": "2026-06-30", "phase": "POLICY_PUT"}, {"confidence": 0.5, "d": "2026-07-01", "phase": "POLICY_PUT"}, {"confidence": 0.5, "d": "2026-07-02", "phase": "POLICY_PUT"}, {"confidence": 0.5, "d": "2026-07-03", "phase": "POLICY_PUT"}, {"confidence": 0.5, "d": "2026-07-06", "phase": "POLICY_PUT"}, {"confidence": 0.75, "d": "2026-07-07", "phase": "POLICY_PUT"}]"></div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;font-size:10.5px">
+      
+      <span style="display:flex;align-items:center;gap:3px;color:var(--muted)">
+        <span style="width:10px;height:10px;border-radius:2px;background:#5b9bf0;display:inline-block"></span>
+        POLICY PUT
+      </span>
+      
+      <span style="display:flex;align-items:center;gap:3px;color:var(--muted)">
+        <span style="width:10px;height:10px;border-radius:2px;background:#45b873;display:inline-block"></span>
+        LIQUIDITY IGNITION
+      </span>
+      
+      <span style="display:flex;align-items:center;gap:3px;color:var(--muted)">
+        <span style="width:10px;height:10px;border-radius:2px;background:#3da564;display:inline-block"></span>
+        BROADENING
+      </span>
+      
+      <span style="display:flex;align-items:center;gap:3px;color:var(--muted)">
+        <span style="width:10px;height:10px;border-radius:2px;background:#e08b45;display:inline-block"></span>
+        THEME LEADERSHIP
+      </span>
+      
+      <span style="display:flex;align-items:center;gap:3px;color:var(--muted)">
+        <span style="width:10px;height:10px;border-radius:2px;background:#e06464;display:inline-block"></span>
+        EUPHORIA
+      </span>
+      
+      <span style="display:flex;align-items:center;gap:3px;color:var(--muted)">
+        <span style="width:10px;height:10px;border-radius:2px;background:#e07070;display:inline-block"></span>
+        DISTRIBUTION
+      </span>
+      
+      <span style="display:flex;align-items:center;gap:3px;color:var(--muted)">
+        <span style="width:10px;height:10px;border-radius:2px;background:#c04040;display:inline-block"></span>
+        DELEVERAGING
+      </span>
+      
+      <span style="display:flex;align-items:center;gap:3px;color:var(--muted)">
+        <span style="width:10px;height:10px;border-radius:2px;background:#8b93a1;display:inline-block"></span>
+        CAPITULATION
+      </span>
+      
+      <span style="display:flex;align-items:center;gap:3px;color:var(--muted)">
+        <span style="width:10px;height:10px;border-radius:2px;background:#a07070;display:inline-block"></span>
+        GRINDING BEAR
+      </span>
+      
+      <span style="display:flex;align-items:center;gap:3px;color:var(--muted)">
+        <span style="width:10px;height:10px;border-radius:2px;background:#7aa7e0;display:inline-block"></span>
+        REPAIR
+      </span>
+      
+    </div>
+  </div>
+  
+
+  
+  
+  
+  <div class="msec">
+    <h3><span class="l-en">Falsifier ledger</span><span class="l-zh">证伪台账</span></h3>
+    <div class="stat-row">
+      <div class="stat">
+        <span class="v pos">8026</span>
+        <span class="k"><span class="l-en">Held (phase correct)</span><span class="l-zh">持守（阶段正确）</span></span>
+      </div>
+      <div class="stat">
+        <span class="v neg">1951</span>
+        <span class="k"><span class="l-en">Fired (phase contradicted)</span><span class="l-zh">触发（阶段被证伪）</span></span>
+      </div>
+      <div class="stat">
+        <span class="v">22685</span>
+        <span class="k"><span class="l-en">Total graded</span><span class="l-zh">总评分</span></span>
+      </div>
+    </div>
+    <p style="font-size:11px;color:var(--muted);margin:6px 0 0"><span class="l-en">Accruing since tape launch. Not a calibrated study — come-back clock 2026-10-08 (90d minimum). CN-SYS-R5.</span><span class="l-zh">自磁带启动后持续积累。非校准研究 — 复查时钟 2026-10-08（最少90天）。CN-SYS-R5。</span></p>
+  </div>
+  
+
+  
+  
+  
+  <div class="msec">
+    <h3><span class="l-en">Historical ERA table</span><span class="l-zh">历史ERA对照表</span>
+      <span class="help">?<span class="tip"><span class="l-en">Known A-share market cycle eras since 2005. Each ERA is annotated with the phases it passed through and a brief historical note. Descriptive only — analog matching is a display-only read from the analogs engine (site/china_intel/analogs.json). No forward projection.</span><span class="l-zh">2005年以来已知的A股市场周期时代。每个ERA标注了其经历的阶段和简短历史注释。仅为描述性 — 历史类比为来自类比引擎的展示性读取（site/china_intel/analogs.json）。无前瞻预测。</span></span></span>
+    </h3>
+    <details>
+      <summary><span class="sh"><span class="l-en">Show ERA table (</span><span class="l-zh">展开ERA表（</span>21<span class="l-en"> eras)</span><span class="l-zh">个时代）</span></span><span class="hd"><span class="l-en">Collapse</span><span class="l-zh">收起</span></span></summary>
+      <table class="mt" style="margin-top:8px">
+        <tr>
+          <th><span class="l-en">ERA</span><span class="l-zh">时代</span></th>
+          <th><span class="l-en">Period</span><span class="l-zh">时期</span></th>
+          <th><span class="l-en">Phases</span><span class="l-zh">阶段</span></th>
+          <th><span class="l-en">Note</span><span class="l-zh">注释</span></th>
+        </tr>
+        
+        <tr>
+          <td style="font-size:11px;white-space:nowrap">2005 reform bottom</td>
+          <td style="font-size:11px;white-space:nowrap">2005-06 → 2005-12</td>
+          <td style="font-size:10.5px">CAPITULATION → REPAIR</td>
+          <td style="font-size:11px;color:var(--muted)">Split-share structure reform; market bottomed Jun-2005</td>
+        </tr>
+        
+        <tr>
+          <td style="font-size:11px;white-space:nowrap">2006 2007 bull</td>
+          <td style="font-size:11px;white-space:nowrap">2006-01 → 2007-10</td>
+          <td style="font-size:10.5px">LIQUIDITY_IGNITION → BROADENING → THEME_LEADERSHIP → EUPHORIA</td>
+          <td style="font-size:11px;color:var(--muted)">Structural bull; Shanghai Composite 1000→6124; retail FOMO 2007-H2</td>
+        </tr>
+        
+        <tr>
+          <td style="font-size:11px;white-space:nowrap">2007 2008 bust</td>
+          <td style="font-size:11px;white-space:nowrap">2007-11 → 2008-10</td>
+          <td style="font-size:10.5px">DISTRIBUTION → DELEVERAGING → CAPITULATION</td>
+          <td style="font-size:11px;color:var(--muted)">Global GFC + overvaluation unwind; market -70%</td>
+        </tr>
+        
+        <tr>
+          <td style="font-size:11px;white-space:nowrap">2008 policy rescue</td>
+          <td style="font-size:11px;white-space:nowrap">2008-11 → 2009-08</td>
+          <td style="font-size:10.5px">POLICY_PUT → LIQUIDITY_IGNITION → BROADENING</td>
+          <td style="font-size:11px;color:var(--muted)">4-trillion RMB stimulus; rapid V-shape recovery</td>
+        </tr>
+        
+        <tr>
+          <td style="font-size:11px;white-space:nowrap">2009 2012 grind</td>
+          <td style="font-size:11px;white-space:nowrap">2009-09 → 2012-12</td>
+          <td style="font-size:10.5px">DISTRIBUTION → GRINDING_BEAR → REPAIR</td>
+          <td style="font-size:11px;color:var(--muted)">Post-stimulus hangover; property tightening; 3-year bear</td>
+        </tr>
+        
+        <tr>
+          <td style="font-size:11px;white-space:nowrap">2013 thematic bull</td>
+          <td style="font-size:11px;white-space:nowrap">2013-01 → 2014-12</td>
+          <td style="font-size:10.5px">THEME_LEADERSHIP → REPAIR</td>
+          <td style="font-size:11px;color:var(--muted)">ChiNext / TMT thematics; SOE reform; big-caps flat</td>
+        </tr>
+        
+        <tr>
+          <td style="font-size:11px;white-space:nowrap">2014h2 2015h1 mania</td>
+          <td style="font-size:11px;white-space:nowrap">2014-11 → 2015-06</td>
+          <td style="font-size:10.5px">LIQUIDITY_IGNITION → BROADENING → EUPHORIA</td>
+          <td style="font-size:11px;color:var(--muted)">RRR cuts + margin surge; SHCOMP 2000→5178; peak retail mania</td>
+        </tr>
+        
+        <tr>
+          <td style="font-size:11px;white-space:nowrap">2015h2 crash</td>
+          <td style="font-size:11px;white-space:nowrap">2015-06 → 2015-09</td>
+          <td style="font-size:10.5px">DISTRIBUTION → DELEVERAGING → CAPITULATION</td>
+          <td style="font-size:11px;color:var(--muted)">Margin unwind cascade; circuit-breaker; -45% from peak</td>
+        </tr>
+        
+        <tr>
+          <td style="font-size:11px;white-space:nowrap">2015q4 2016 repair</td>
+          <td style="font-size:11px;white-space:nowrap">2015-10 → 2016-12</td>
+          <td style="font-size:10.5px">REPAIR → POLICY_PUT → GRINDING_BEAR</td>
+          <td style="font-size:11px;color:var(--muted)">Circuit-breaker incident (Jan-2016); slow repair</td>
+        </tr>
+        
+        <tr>
+          <td style="font-size:11px;white-space:nowrap">2017 blue chip</td>
+          <td style="font-size:11px;white-space:nowrap">2017-01 → 2017-12</td>
+          <td style="font-size:10.5px">THEME_LEADERSHIP → BROADENING</td>
+          <td style="font-size:11px;color:var(--muted)">White-horse / blue-chip rally; Mao index diverges from ChiNext</td>
+        </tr>
+        
+        <tr>
+          <td style="font-size:11px;white-space:nowrap">2018 deleveraging</td>
+          <td style="font-size:11px;white-space:nowrap">2018-01 → 2018-12</td>
+          <td style="font-size:10.5px">GRINDING_BEAR → DELEVERAGING</td>
+          <td style="font-size:11px;color:var(--muted)">Trade war + regulatory deleveraging; -30% A-shares</td>
+        </tr>
+        
+        <tr>
+          <td style="font-size:11px;white-space:nowrap">2019 policy recovery</td>
+          <td style="font-size:11px;white-space:nowrap">2019-01 → 2019-04</td>
+          <td style="font-size:10.5px">POLICY_PUT → LIQUIDITY_IGNITION</td>
+          <td style="font-size:11px;color:var(--muted)">PBOC easing; market rallied 30% Q1-2019</td>
+        </tr>
+        
+        <tr>
+          <td style="font-size:11px;white-space:nowrap">2019 2020 range</td>
+          <td style="font-size:11px;white-space:nowrap">2019-05 → 2020-01</td>
+          <td style="font-size:10.5px">THEME_LEADERSHIP → GRINDING_BEAR</td>
+          <td style="font-size:11px;color:var(--muted)">Trade-war uncertainty + selective themes</td>
+        </tr>
+        
+        <tr>
+          <td style="font-size:11px;white-space:nowrap">2020 covid crash</td>
+          <td style="font-size:11px;white-space:nowrap">2020-02 → 2020-03</td>
+          <td style="font-size:10.5px">CAPITULATION → POLICY_PUT</td>
+          <td style="font-size:11px;color:var(--muted)">COVID shock; PBOC rapid easing; A-shares recovered faster than global</td>
+        </tr>
+        
+        <tr>
+          <td style="font-size:11px;white-space:nowrap">2020 2021 bull</td>
+          <td style="font-size:11px;white-space:nowrap">2020-04 → 2021-02</td>
+          <td style="font-size:10.5px">LIQUIDITY_IGNITION → BROADENING → THEME_LEADERSHIP → EUPHORIA</td>
+          <td style="font-size:11px;color:var(--muted)">Post-COVID liquidity surge; semiconductor/EV themes; peak Feb-2021</td>
+        </tr>
+        
+        <tr>
+          <td style="font-size:11px;white-space:nowrap">2021 2022 grind</td>
+          <td style="font-size:11px;white-space:nowrap">2021-03 → 2022-10</td>
+          <td style="font-size:10.5px">DISTRIBUTION → DELEVERAGING → GRINDING_BEAR</td>
+          <td style="font-size:11px;color:var(--muted)">Regulatory crackdowns (edu/platform/property); Ukraine risk; -40% peak-trough</td>
+        </tr>
+        
+        <tr>
+          <td style="font-size:11px;white-space:nowrap">2022q4 2023 repair</td>
+          <td style="font-size:11px;white-space:nowrap">2022-11 → 2023-08</td>
+          <td style="font-size:10.5px">POLICY_PUT → REPAIR → THEME_LEADERSHIP</td>
+          <td style="font-size:11px;color:var(--muted)">COVID reopening bounce; AI-theme (ChatGPT wave)</td>
+        </tr>
+        
+        <tr>
+          <td style="font-size:11px;white-space:nowrap">2023 2024 grind</td>
+          <td style="font-size:11px;white-space:nowrap">2023-09 → 2024-09</td>
+          <td style="font-size:10.5px">GRINDING_BEAR → REPAIR</td>
+          <td style="font-size:11px;color:var(--muted)">Persistent deflationary pressure; property crisis; policy half-measures</td>
+        </tr>
+        
+        <tr>
+          <td style="font-size:11px;white-space:nowrap">2024q3 ignition</td>
+          <td style="font-size:11px;white-space:nowrap">2024-09 → 2024-11</td>
+          <td style="font-size:10.5px">POLICY_PUT → LIQUIDITY_IGNITION</td>
+          <td style="font-size:11px;color:var(--muted)">Politburo Sep-24 stimulus surprise; SHCOMP +30% in 2 weeks</td>
+        </tr>
+        
+        <tr>
+          <td style="font-size:11px;white-space:nowrap">2025 theme phase</td>
+          <td style="font-size:11px;white-space:nowrap">2024-12 → 2025-12</td>
+          <td style="font-size:10.5px">THEME_LEADERSHIP → BROADENING → REPAIR</td>
+          <td style="font-size:11px;color:var(--muted)">DeepSeek AI wave Q1-2025; selective technology themes</td>
+        </tr>
+        
+        <tr>
+          <td style="font-size:11px;white-space:nowrap">2026 current</td>
+          <td style="font-size:11px;white-space:nowrap">2026-01 → 2026-12</td>
+          <td style="font-size:10.5px">GRINDING_BEAR → REPAIR</td>
+          <td style="font-size:11px;color:var(--muted)">Ongoing assessment — accruing</td>
+        </tr>
+        
+      </table>
+    </details>
+    <p style="margin-top:8px;font-size:12px">
+      <a href="china_intel.html"><span class="l-en">→ Full analog readout in Intelligence Hub</span><span class="l-zh">→ 情报中心完整类比读取</span></a>
+    </p>
+  </div>
+  
+</div>
+
+
+<div class="panel span8" id="mech-policy">
+  <h2><span class="l-en">Policy Tape</span><span class="l-zh">政策磁带</span>
+    <span class="help">?<span class="tip"><span class="l-en">Policy impulse (政策冲量) is a deterministic read from the policy_transmission lobe. Channels are the transmission mechanisms active. Events are sourced from the append-only data/china_policy_transmission/events.jsonl ledger (PBoC, State Council, CSRC, NDRC, MoF, Politburo, CEWC). Staleness per source is disclosed (CN-SYS-R4).</span><span class="l-zh">政策冲量为来自政策传导脉络的确定性读取。渠道为当前激活的传导机制。事件来源于只追加的data/china_policy_transmission/events.jsonl台账（央行、国务院、证监会、发改委、财政部、政治局、中央经济工作会议）。每来源数据时效已披露（CN-SYS-R4）。</span></span></span>
+  </h2>
+  
+  
+  
+
+  <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-start;margin:8px 0 12px">
+    <div style="padding:8px 16px;border-radius:9px;background:color-mix(in srgb,var(--info) 14%,var(--panel));border:1px solid color-mix(in srgb,var(--info) 30%,var(--line))">
+      <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px"><span class="l-en">Policy Impulse</span><span class="l-zh">政策冲量</span></div>
+      <div style="font-size:17px;font-weight:800;color:var(--info)">Targeted Support</div>
+    </div>
+    
+    <span class="chip c-info" style="align-self:center">fiscal or structural</span>
+    
+    <span class="chip c-info" style="align-self:center">liquidity</span>
+    
+    <span style="font-size:11px;color:var(--muted);align-self:center"><span class="l-en">as of</span><span class="l-zh">截至</span> 2026-07-08</span>
+  </div>
+
+  
+  
+  
+  <div style="margin-bottom:10px">
+    <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px"><span class="l-en">Source freshness</span><span class="l-zh">来源数据时效</span></div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px">
+      
+      <span style="font-size:11px;padding:2px 8px;border-radius:6px;
+        background:color-mix(in srgb,var(--down) 12%,var(--panel));
+        color:var(--down)">
+        lpr: 16<span class="l-en">d</span><span class="l-zh">天</span></span>
+      
+      <span style="font-size:11px;padding:2px 8px;border-radius:6px;
+        background:color-mix(in srgb,var(--down) 12%,var(--panel));
+        color:var(--down)">
+        rrr: 427<span class="l-en">d</span><span class="l-zh">天</span></span>
+      
+      <span style="font-size:11px;padding:2px 8px;border-radius:6px;
+        background:color-mix(in srgb,var(--up) 12%,var(--panel));
+        color:var(--up)">
+        fr007: 1<span class="l-en">d</span><span class="l-zh">天</span></span>
+      
+      <span style="font-size:11px;padding:2px 8px;border-radius:6px;
+        background:color-mix(in srgb,var(--down) 12%,var(--panel));
+        color:var(--down)">
+        communiques: 71<span class="l-en">d</span><span class="l-zh">天</span></span>
+      
+    </div>
+  </div>
+  
+
+  
+  
+  
+  <h3><span class="l-en">Recent events</span><span class="l-zh">近期事件</span></h3>
+  <ul class="ev-list">
+    
+    <li class="ev-item pboc">
+      <div>FR007 z=-1.61 (injection)</div>
+      <div class="ev-meta">PBOC · omo_mlf · 2026-05-09
+        
+      </div>
+    </li>
+    
+    <li class="ev-item politburo">
+      <div>中共中央政治局召开会议 分析研究当前经济形势和经济工作 中共中央总书记习近平主持会议</div>
+      <div class="ev-meta">POLITBURO · rhetoric · 2026-04-28
+         · capital_market, property, industrial
+      </div>
+    </li>
+    
+    <li class="ev-item pboc">
+      <div><a href="https://www.pbc.gov.cn/zhengcehuobisi/125207/3870933/3870936/2026033117132065727/index.html" target="_blank" rel="noopener">中国人民银行货币政策委员会召开2026年第一季度例会</a></div>
+      <div class="ev-meta">PBOC · rhetoric · 2026-03-31
+        
+      </div>
+    </li>
+    
+    <li class="ev-item pboc">
+      <div>FR007 z=4.15 (drain)</div>
+      <div class="ev-meta">PBOC · omo_mlf · 2025-12-29
+        
+      </div>
+    </li>
+    
+    <li class="ev-item pboc">
+      <div><a href="https://www.pbc.gov.cn/zhengcehuobisi/125207/3870933/3870936/2026033117532242221/index.html" target="_blank" rel="noopener">中国人民银行货币政策委员会召开2025年第四季度例会</a></div>
+      <div class="ev-meta">PBOC · rhetoric · 2025-12-24
+         · capital_market
+      </div>
+    </li>
+    
+    <li class="ev-item cewc">
+      <div>中央经济工作会议在北京举行</div>
+      <div class="ev-meta">CEWC · rhetoric · 2025-12-11
+         · capital_market, property
+      </div>
+    </li>
+    
+    <li class="ev-item politburo">
+      <div>中共中央政治局召开会议 分析研究2026年经济工作 审议《中国共产党领导全面依法治国工作条例》 中共中央总书记习近平主持会议</div>
+      <div class="ev-meta">POLITBURO · rhetoric · 2025-12-08
+        
+      </div>
+    </li>
+    
+    <li class="ev-item pboc">
+      <div>FR007 z=-1.67 (injection)</div>
+      <div class="ev-meta">PBOC · omo_mlf · 2025-10-11
+        
+      </div>
+    </li>
+    
+  </ul>
+  
+</div>
+
+
+<div class="panel span4" id="mech-cross-market">
+  <h2><span class="l-en">Cross-Market</span><span class="l-zh">跨市场</span>
+    <span class="help">?<span class="tip"><span class="l-en">CGB (China Government Bond) curve from the yield store. cn_slope_10_2 is the 10y minus 2y term premium. CN-US spread would require a matching US 10y series — disclosed as data gap when absent. USDCNH is the offshore renminbi rate. All staleness-stamped (CN-SYS-R4).</span><span class="l-zh">CGB（中国国债）收益率曲线来自收益率存储。cn_slope_10_2为10年减2年期限溢价。中美利差需要匹配的美国10年期数据 — 缺失时作为数据缺口披露。USDCNH为离岸人民币汇率。所有数据均有时效标记（CN-SYS-R4）。</span></span></span>
+  </h2>
+  
+  
+  
+  
+
+  
+  
+  <h3><span class="l-en">CGB Yield Curve</span><span class="l-zh">中国国债收益率曲线</span></h3>
+  <div class="cgb-row">
+    
+    
+    <div class="cgb-pt">
+      <span class="ten">108.18%</span>
+      <span class="lbl">3M</span>
+    </div>
+    
+    
+    <div class="cgb-pt">
+      <span class="ten">111.72%</span>
+      <span class="lbl">1Y</span>
+    </div>
+    
+    
+    <div class="cgb-pt">
+      <span class="ten">144.42%</span>
+      <span class="lbl">5Y</span>
+    </div>
+    
+    
+    <div class="cgb-pt">
+      <span class="ten">174.06%</span>
+      <span class="lbl">10Y</span>
+    </div>
+    
+    
+    <div class="cgb-pt">
+      <span class="ten">226.05%</span>
+      <span class="lbl">30Y</span>
+    </div>
+    
+  </div>
+  
+  <div style="font-size:12px;color:var(--muted);margin:4px 0 8px">
+    <span class="l-en">10y–3m slope</span><span class="l-zh">10年-3月斜率</span>: <b style="color:var(--up)">+0.659</b>
+    
+    <span class="stale-ok"> · 1<span class="l-en">d stale</span><span class="l-zh">天前</span></span>
+    
+  </div>
+  
+  
+
+  
+  
+  <div class="stat-row" style="margin-top:8px">
+    
+    
+    
+    
+    <div class="stat">
+      <span class="v">1.741</span>
+      <span class="k"><span class="l-en">CN 10y</span><span class="l-zh">中国10年期</span></span>
+    </div>
+    <div class="stat">
+      <span class="v">1.249</span>
+      <span class="k"><span class="l-en">CN 2y</span><span class="l-zh">中国2年期</span></span>
+    </div>
+    <div class="stat">
+      <span class="v pos">0.492</span>
+      <span class="k"><span class="l-en">10y–2y spread</span><span class="l-zh">10年-2年利差</span></span>
+    </div>
+    
+  </div>
+  
+  <div style="font-size:11px;color:var(--muted);margin-top:2px">
+    <span class="l-en">Yield data</span><span class="l-zh">收益率数据</span>:
+    <span class="stale-ok">1<span class="l-en">d stale</span><span class="l-zh">天前</span></span>
+  </div>
+  
+  
+
+  
+  
+  <div class="msec">
+    <h3><span class="l-en">USDCNH — Offshore Yuan</span><span class="l-zh">USDCNH — 离岸人民币</span></h3>
+    <div class="stat-row">
+      
+      
+      <div class="stat">
+        <span class="v">6.7650</span>
+        <span class="k"><span class="l-en">Rate</span><span class="l-zh">汇率</span></span>
+      </div>
+      
+      <div class="stat">
+        <span class="v pos">-0.30%</span>
+        <span class="k"><span class="l-en">20d chg</span><span class="l-zh">20日变化</span></span>
+      </div>
+      
+    </div>
+    <div style="font-size:10.5px;color:var(--muted)"><span class="l-en">as of</span><span class="l-zh">截至</span> Jul 07, 2026</div>
+  </div>
+  
+
+  
+  
+  
+  <details style="margin-top:10px">
+    <summary><span class="sh"><span class="l-en">Show data gaps</span><span class="l-zh">显示数据缺口</span></span><span class="hd"><span class="l-en">Hide</span><span class="l-zh">收起</span></span></summary>
+    <ul style="font-size:11px;color:var(--muted);margin:6px 0 0;padding-left:16px;line-height:1.6">
+      <li>participation: zt_breadth:null on 2026-07-06</li><li>participation: etf_share_chg:null on 2026-07-06</li><li>participation: northbound:DEAD post-2024-08-16 SLF-050</li><li>participation: snapshot_staleness:published row 2026-07-06 is 1d behind tape tail 2026-07-07; tail row missing core legs (turnover_z20, margin_chg_5d) — union-index freshness lag</li><li>external: DXY not in current forex/latest.json (no dedicated store)</li>
+    </ul>
+  </details>
+  
+</div>
+
+
+<div class="span12" style="font-size:11.5px;color:var(--muted);text-align:center;padding:8px 0 4px">
+  <span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-07-08 11:11 UTC UTC · <span class="l-en">Context only — CN-SYS-R1</span><span class="l-zh">仅供背景参考 — CN-SYS-R1</span>
+</div>
+
+</div>
+
+<script>
+// ── Inline canvas chart renderer ──────────────────────────────────────────────
+// Reads data-series="[{d,v},...]" from each canvas, draws a minimal area chart.
+// Respects theme CSS variables. Zero-line if data-zero="1".
+(function(){
+  var CSS = getComputedStyle(document.documentElement);
+  function v(name){return CSS.getPropertyValue(name).trim();}
+
+  function drawMiniChart(canvas){
+    var raw;
+    try { raw = JSON.parse(canvas.getAttribute('data-series')||'[]'); } catch(e){return;}
+    if(!raw||!raw.length)return;
+    var vals = raw.map(function(p){return p.v;});
+    var dates = raw.map(function(p){return p.d;});
+    var hasZero = canvas.getAttribute('data-zero') === '1';
+    var colorPos = canvas.getAttribute('data-color-pos') || v('--info');
+    var colorNeg = canvas.getAttribute('data-color-neg') || '';
+
+    var W = canvas.offsetWidth || 400;
+    var H = canvas.offsetHeight || 70;
+    canvas.width = W * (window.devicePixelRatio||1);
+    canvas.height = H * (window.devicePixelRatio||1);
+    var ctx = canvas.getContext('2d');
+    ctx.scale(window.devicePixelRatio||1, window.devicePixelRatio||1);
+
+    var nonNull = vals.filter(function(x){return x!==null&&x!==undefined&&!isNaN(x);});
+    if(!nonNull.length) return;
+    var mn = Math.min.apply(null,nonNull), mx = Math.max.apply(null,nonNull);
+    if(mn===mx){mn-=0.1;mx+=0.1;}
+    if(hasZero){mn=Math.min(mn,-0.01);mx=Math.max(mx,0.01);}
+
+    var pad = {t:4,b:4,l:2,r:2};
+    var aw = W - pad.l - pad.r, ah = H - pad.t - pad.b;
+    var n = vals.length;
+    function px(i){return pad.l + (i/(n-1||1)) * aw;}
+    function py(val){return pad.t + ah - ((val-mn)/(mx-mn)) * ah;}
+
+    // zero line
+    if(hasZero){
+      var zy = py(0);
+      ctx.strokeStyle = v('--line');
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(pad.l, zy);
+      ctx.lineTo(pad.l + aw, zy);
+      ctx.stroke();
+    }
+
+    // segment drawing: positive above zero = colorPos, below = colorNeg or muted
+    var i = 0;
+    while(i < n){
+      if(vals[i]===null||vals[i]===undefined||isNaN(vals[i])){i++;continue;}
+      // collect contiguous segment
+      var seg = [];
+      while(i < n && vals[i]!==null && vals[i]!==undefined && !isNaN(vals[i])){
+        seg.push({x:px(i),y:py(vals[i]),v:vals[i]});
+        i++;
+      }
+      if(seg.length < 1) continue;
+
+      var positive = !hasZero || seg[0].v >= 0;
+      var fillColor = positive ? colorPos : (colorNeg || v('--muted'));
+
+      // gradient fill
+      var grad = ctx.createLinearGradient(0,0,0,H);
+      grad.addColorStop(0, fillColor.replace(')',',0.28)').replace('var(','rgba(').replace(')',')'));
+      grad.addColorStop(1, fillColor.replace(')',',0.02)').replace('var(','rgba(').replace(')',')'));
+
+      ctx.beginPath();
+      ctx.moveTo(seg[0].x, hasZero ? py(0) : H - pad.b);
+      for(var j=0;j<seg.length;j++) ctx.lineTo(seg[j].x, seg[j].y);
+      ctx.lineTo(seg[seg.length-1].x, hasZero ? py(0) : H - pad.b);
+      ctx.closePath();
+      ctx.fillStyle = grad;
+      ctx.fill();
+
+      // line
+      ctx.beginPath();
+      ctx.moveTo(seg[0].x, seg[0].y);
+      for(var j=1;j<seg.length;j++) ctx.lineTo(seg[j].x, seg[j].y);
+      ctx.strokeStyle = fillColor.replace(/var\(([^)]+)\)/, function(_,name){return v(name);});
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    }
+
+    // tooltip on hover
+    canvas._mechData = {raw:raw, vals:vals, dates:dates, mn:mn, mx:mx, pad:pad, aw:aw, ah:ah, n:n};
+  }
+
+  function drawAllCharts(){
+    document.querySelectorAll('canvas.mini-chart').forEach(function(c){ drawMiniChart(c); });
+  }
+
+  // ── Phase strip renderer ──────────────────────────────────────────────────
+  var PHASE_COLORS = {
+    'POLICY_PUT':'#5b9bf0','LIQUIDITY_IGNITION':'#45b873','BROADENING':'#3da564',
+    'THEME_LEADERSHIP':'#e08b45','EUPHORIA':'#e06464','DISTRIBUTION':'#e07070',
+    'DELEVERAGING':'#c04040','CAPITULATION':'#8b93a1','GRINDING_BEAR':'#a07070',
+    'REPAIR':'#7aa7e0'
+  };
+  function renderPhaseStrip(){
+    var el = document.getElementById('phase-strip-cells');
+    if(!el) return;
+    var strip;
+    try { strip = JSON.parse(el.getAttribute('data-strip')||'[]'); } catch(e){return;}
+    el.innerHTML = '';
+    strip.forEach(function(cell){
+      var div = document.createElement('div');
+      div.className = 'ps-cell';
+      var col = PHASE_COLORS[cell.phase] || '#8b93a1';
+      div.style.background = col;
+      var tip = document.createElement('div');
+      tip.className = 'ps-tip';
+      tip.textContent = cell.d + ' ' + cell.phase + (cell.confidence ? ' (' + Math.round(cell.confidence*100) + '%)' : '');
+      div.appendChild(tip);
+      el.appendChild(div);
+    });
+  }
+
+  // theme observer: redraw when theme changes (colors change)
+  if(window.MutationObserver){
+    new MutationObserver(drawAllCharts).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+  }
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',function(){drawAllCharts();renderPhaseStrip();});
+  } else {
+    drawAllCharts(); renderPhaseStrip();
+  }
+})();
+</script>
+<script src="theme.js"></script>
+<script src="chart_i18n.js"></script>
+<script src="charts.js"></script>
+<script src="tablesort.js"></script>
+<footer class="site-footer">
+  <span class="made">© 2026 MastermindX Inc</span>
+</footer>
+</body>
+</html>

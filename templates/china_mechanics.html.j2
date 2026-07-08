@@ -1,0 +1,799 @@
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
+{%- endmacro %}
+{% macro help(en, zh='', cls='') -%}
+<span class="help{% if cls %} {{ cls }}{% endif %}">?<span class="tip"><span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span></span></span>
+{%- endmacro %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ t('A-Share Market Mechanics', 'A股市场结构') }} — Mastermind</title>
+{% set seo_title = 'A-Share Market Mechanics — Participation · Limit · Phase · Policy | Mastermind' %}
+{% set seo_desc = 'China A-share market structure cockpit: turnover & margin participation trends, limit-up/down breadth, lianban mechanics, cycle phase memory, policy transmission tape, CGB curve & USDCNH. Context only — never a signal.' %}
+{% set seo_path = 'china_mechanics.html' %}
+{% include "_seo_head.html.j2" %}
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<link rel="stylesheet" href="theme.css">
+<style>
+  * { box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font: 14px/1.5 -apple-system,
+         "Segoe UI", Roboto, Helvetica, sans-serif; margin: 0; padding: 18px; }
+  @media (min-width: 1100px) { body { padding: 26px max(40px, calc((100vw - 1500px) / 2)); } }
+  html[data-lang="zh"] body { font-family: "PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",-apple-system,sans-serif; }
+  a { text-decoration: none; color: var(--link); }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  h2 { font-size: 14px; margin: 0 0 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+  h3 { font-size: 13px; margin: 0 0 8px; color: var(--muted); text-transform: uppercase; letter-spacing: .055em; }
+  .grid { display: grid; gap: 14px; grid-template-columns: repeat(12, 1fr); }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 15px 17px; }
+  .span12 { grid-column: span 12; } .span8 { grid-column: span 8; }
+  .span6 { grid-column: span 6; } .span4 { grid-column: span 4; }
+  .span3 { grid-column: span 3; }
+  @media (max-width: 900px) { .span8, .span6, .span4, .span3 { grid-column: span 12; } }
+
+  /* ---- help tooltip ---- */
+  .help { display: inline-flex; align-items: center; justify-content: center;
+          width: 15px; height: 15px; border-radius: 50%; border: 1px solid var(--muted);
+          color: var(--muted); font-size: 10px; font-weight: 600; cursor: help;
+          position: relative; vertical-align: middle; margin-left: 5px; flex: none; }
+  .help .tip { display: none; position: absolute; bottom: 150%; left: 50%;
+               transform: translateX(-50%); width: 300px;
+               background: var(--panel); border: 1px solid var(--line);
+               padding: 10px 12px; border-radius: 9px; z-index: 60; font-size: 12px;
+               line-height: 1.5; color: var(--text); text-align: left; font-weight: 400;
+               text-transform: none; letter-spacing: normal;
+               box-shadow: 0 8px 28px rgba(0,0,0,.28); pointer-events: none; white-space: normal; }
+  .help:hover .tip { display: block; }
+  .help.below .tip { bottom: auto; top: 150%; }
+
+  /* ---- chip row ---- */
+  .chip { display: inline-block; padding: 3px 10px; border-radius: 12px; font-weight: 600; font-size: 12px;
+          background: color-mix(in srgb, var(--c, var(--muted)) 16%, var(--panel));
+          color: color-mix(in srgb, var(--c, var(--muted)) 82%, var(--text)); }
+  .c-up { --c: var(--up); } .c-down { --c: var(--down); } .c-warn { --c: var(--warn); }
+  .c-info { --c: var(--info); } .c-muted { --c: var(--muted); }
+  .chip-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 4px; align-items: center; }
+
+  /* ---- section divider ---- */
+  .msec { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line); }
+  .msec.flush { margin-top: 0; padding-top: 0; border-top: none; }
+
+  /* ---- hero stat row ---- */
+  .stat-row { display: flex; flex-wrap: wrap; gap: 16px 24px; margin: 10px 0 4px; }
+  .stat { display: flex; flex-direction: column; gap: 1px; min-width: 80px; }
+  .stat .v { font-size: 18px; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }
+  .stat .k { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+  .stat .v.pos { color: var(--up); } .stat .v.neg { color: var(--down); }
+  .stat .v.warn { color: var(--warn); }
+
+  /* ---- mini inline chart (canvas) ---- */
+  .mini-chart { display: block; width: 100%; height: 70px; border-radius: 6px; margin: 8px 0 4px; }
+  .mini-chart-sm { height: 52px; }
+  .chart-label { font-size: 10.5px; color: var(--muted); margin-bottom: 2px; }
+
+  /* ---- table ---- */
+  table.mt { border-collapse: collapse; width: 100%; font-size: 12px; margin: 8px 0; }
+  table.mt th, table.mt td { text-align: left; padding: 4px 8px; border-bottom: 1px solid var(--line); }
+  table.mt th { color: var(--muted); font-weight: 600; }
+  table.mt tr:last-child td { border-bottom: none; }
+  table.mt .r { text-align: right; }
+  .pos { color: var(--up); } .neg { color: var(--down); }
+
+  /* ---- phase strip ---- */
+  .phase-strip { display: flex; gap: 2px; flex-wrap: wrap; margin: 8px 0 6px; align-items: flex-end; }
+  .ps-cell { height: 22px; min-width: 7px; border-radius: 3px; flex: 1; cursor: default;
+             position: relative; opacity: .82; }
+  .ps-cell:hover { opacity: 1; }
+  .ps-cell .ps-tip { display: none; position: absolute; bottom: 130%; left: 50%;
+                     transform: translateX(-50%); white-space: nowrap; font-size: 10px;
+                     background: var(--panel); border: 1px solid var(--line);
+                     padding: 3px 7px; border-radius: 6px; z-index: 50;
+                     pointer-events: none; color: var(--text); }
+  .ps-cell:hover .ps-tip { display: block; }
+
+  /* ── phase colour mapping (inline style on each cell) ── */
+
+  /* ---- policy event list ---- */
+  .ev-list { list-style: none; padding: 0; margin: 8px 0; display: flex; flex-direction: column; gap: 6px; }
+  .ev-item { border-left: 3px solid var(--line); padding: 6px 10px; border-radius: 0 8px 8px 0;
+             background: var(--panel2); font-size: 12px; line-height: 1.4; }
+  .ev-item.pboc { border-left-color: var(--info); }
+  .ev-item.politburo, .ev-item.cewc { border-left-color: var(--warn); }
+  .ev-item.csrc, .ev-item.ndrc, .ev-item.mof { border-left-color: var(--up); }
+  .ev-meta { font-size: 10.5px; color: var(--muted); margin-top: 2px; }
+
+  /* ---- CGB curve visual ---- */
+  .cgb-row { display: flex; flex-wrap: wrap; gap: 8px 16px; margin: 8px 0; font-size: 12.5px; }
+  .cgb-pt { display: flex; flex-direction: column; gap: 2px; }
+  .cgb-pt .ten { font-size: 16px; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }
+  .cgb-pt .lbl { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+
+  /* ---- authority disclaimer ---- */
+  .authority-note { font-size: 11px; color: var(--muted); padding: 6px 10px; border-radius: 7px;
+                    background: color-mix(in srgb, var(--muted) 8%, var(--panel));
+                    border: 1px solid var(--line); margin: 6px 0; line-height: 1.5; }
+
+  /* ---- staleness chip ---- */
+  .stale-ok { color: var(--up); }
+  .stale-warn { color: var(--warn); }
+  .stale-bad { color: var(--down); }
+
+  /* ---- expander (show more / less) ---- */
+  .expander { display: none; }
+  .expander-toggle { cursor: pointer; color: var(--link); font-size: 12px; font-weight: 600;
+                     background: none; border: none; padding: 4px 0; }
+  details summary { cursor: pointer; color: var(--link); font-size: 12px; font-weight: 600; list-style: none; }
+  details summary::-webkit-details-marker { display: none; }
+  details[open] summary span.sh { display: none; }
+  details:not([open]) summary span.hd { display: none; }
+
+  /* breadcrumb */
+  .breadcrumb { font-size: 12px; color: var(--muted); margin-bottom: 14px; }
+  .breadcrumb a { color: var(--link); }
+
+  body.page-china-mechanics { padding-top: 26px; }
+</style>
+</head>
+<body class="page-china-mechanics">
+
+<nav class="site-nav">
+  {% include "_navlinks.html.j2" %}
+  <div class="nav-search">
+    <span class="mag">🔎</span>
+    <input type="text" autocomplete="off" aria-label="Search A-shares"
+      placeholder="Search any stock — US, China, HK, Canada &amp; more…" data-ph-zh="搜索任意股票 — 美股、A 股、港股、加股等…">
+    <div class="nav-sugg"></div>
+  </div>
+  <div class="nav-ctrls">
+    <a class="ai-brief-link" href="mastermind.html">🤖 {{ t('Mastermind', '操盘大脑') }}</a>
+    <button class="theme-switch" aria-label="Toggle dark / light mode">
+      <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
+    </button>
+    <div class="lang-toggle" role="group" aria-label="Language">
+      <span class="pill"></span>
+      <span class="opt en-opt" data-l="en">EN</span>
+      <span class="opt zh-opt" data-l="zh">中文</span>
+    </div>
+  </div>
+</nav>
+
+<div class="grid">
+
+{# ── HEADER ── #}
+<div class="panel span12" id="mech-header">
+  <div class="breadcrumb"><a href="china.html">{{ t('China Macro', '中国宏观') }}</a> › {{ t('A-Share Market Mechanics', 'A股市场结构') }}</div>
+  <h1>🔬 {{ t('A-Share Market Mechanics', 'A股市场结构') }}</h1>
+  <p style="color:var(--muted);font-size:13px;margin:4px 0 0;line-height:1.55">
+    {{ t('Participation regime · limit-up/down breadth · cycle phase memory · policy tape · cross-market. Context only — no signal, no origination (CN-SYS-R1).', '参与度制度 · 涨/跌停板广度 · 周期阶段记忆 · 政策磁带 · 跨市场。仅供背景参考 — 无信号，不产生状态（CN-SYS-R1）。') }}
+    {{ t('As of', '截至') }} {{ as_of or '—' }}.
+    {{ help('Context-only cockpit. All panels are descriptive; none score, rank, size or originate state (CN-SYS-R1, R13, R14). Data gaps are disclosed where they exist (CN-SYS-R4).', '仅供参考的驾驶舱。所有面板均为描述性；不评分、排名、定仓或产生状态（CN-SYS-R1、R13、R14）。数据缺口在存在处予以披露（CN-SYS-R4）。') }}
+  </p>
+  <div class="authority-note">
+    {{ t('DISPLAY ONLY — authority: context_only. Cannot rank, size, gate or originate signals. LLM surfaces are never fed into this page (CN-SYS-R14).', '仅供展示 — 权限：context_only。不能排名、定仓、设门控或产生信号。LLM输出从不进入本页（CN-SYS-R14）。') }}
+  </div>
+</div>
+
+{# ══════════════════════════════════════════════════════════════════════════════
+   PANEL (a): PARTICIPATION
+══════════════════════════════════════════════════════════════════════════════ #}
+<div class="panel span12" id="mech-participation">
+  <h2>{{ t('Participation', '参与度') }}
+    {{ help('Turnover z-score (20d / 60d) measures whether trading volume is above or below its recent history. Margin balance (融资余额) tracks leveraged positioning. Southbound flow (南向资金) is the HK→A-share flow. These are context/confluence factors: SLF-051 ruled out margin impulse as a standalone signal; here they are legal at context tier (CN-SYS-R2).', '成交额Z分数（20日/60日）衡量成交量是否高于或低于近期历史。融资余额跟踪杠杆持仓。南向资金为港股→A股资金流向。这些为背景/合流因素：SLF-051 排除了融资冲量作为独立信号；在此它们在背景层合法（CN-SYS-R2）。') }}
+  </h2>
+  {% set lp = participation %}
+  {% set lpl = lp.get('latest') or {} %}
+
+  {# status chips #}
+  <div class="chip-row">
+    {% set regime = lpl.get('regime') or '—' %}
+    {% set who = lpl.get('who_controls') or '—' %}
+    {% set risk = lpl.get('risk') or '—' %}
+    <span class="chip {{ 'c-up' if regime in ('retail_ignition','margin_acceleration','broad_mania') else ('c-down' if regime in ('forced_deleveraging','distribution') else ('c-warn' if regime == 'unclear' else 'c-muted')) }}">{{ t(regime.replace('_',' ').title(), tr(regime.replace('_',' ').title())) }}</span>
+    <span class="chip c-info">{{ t('who controls: ' + who, '控盘方：' + tr(who.replace('_',' '))) }}</span>
+    <span class="chip {{ 'c-down' if risk in ('frothy','fire_sale') else ('c-warn' if risk == 'normal' else 'c-up') }}">{{ t('risk: ' + risk, '风险：' + tr(risk)) }}</span>
+    {% if lpl.get('as_of') or lp.get('as_of') %}<span style="font-size:11px;color:var(--muted)">{{ t('as of', '截至') }} {{ lpl.get('as_of') or lp.get('as_of') }}</span>{% endif %}
+  </div>
+
+  {# stat row #}
+  <div class="stat-row">
+    {% set tz20 = lpl.get('turnover_z20') %}
+    <div class="stat">
+      <span class="v {{ 'pos' if tz20 is not none and tz20 > 0.5 else ('neg' if tz20 is not none and tz20 < -0.5 else '') }}">{{ ('%.2f'|format(tz20)) if tz20 is not none else '—' }}</span>
+      <span class="k">{{ t('Turnover z20', '成交额z20') }}</span>
+    </div>
+    {% set tz60 = lpl.get('turnover_z60') %}
+    <div class="stat">
+      <span class="v {{ 'pos' if tz60 is not none and tz60 > 0.5 else ('neg' if tz60 is not none and tz60 < -0.5 else '') }}">{{ ('%.2f'|format(tz60)) if tz60 is not none else '—' }}</span>
+      <span class="k">{{ t('Turnover z60', '成交额z60') }}</span>
+    </div>
+    {% set mb = lpl.get('margin_balance') %}
+    <div class="stat">
+      <span class="v">{{ ('%.0f'|format(mb / 100)) if mb is not none else '—' }}</span>
+      <span class="k">{{ t('Margin (亿¥)', '融资余额（亿¥）') }}</span>
+    </div>
+    {% set mc = lpl.get('margin_chg_5d') %}
+    <div class="stat">
+      <span class="v {{ 'pos' if mc is not none and mc > 0 else ('neg' if mc is not none and mc < 0 else '') }}">{{ ('%+.2f%%'|format(mc)) if mc is not none else '—' }}</span>
+      <span class="k">{{ t('Margin 5d chg', '融资5日变化') }}</span>
+    </div>
+    {% set sz = lpl.get('southbound_z') %}
+    <div class="stat">
+      <span class="v {{ 'pos' if sz is not none and sz > 0.5 else ('neg' if sz is not none and sz < -0.5 else '') }}">{{ ('%.2f'|format(sz)) if sz is not none else '—' }}</span>
+      <span class="k">{{ t('Southbound z', '南向资金z') }}</span>
+    </div>
+    {% set qvix = lpl.get('qvix') %}
+    <div class="stat">
+      <span class="v {{ 'warn' if qvix is not none and qvix > 25 else '' }}">{{ ('%.1f'|format(qvix)) if qvix is not none else '—' }}</span>
+      <span class="k">{{ t('QVIX', 'QVIX 恐慌') }}</span>
+    </div>
+  </div>
+
+  {# charts — rendered via inline JS reading embedded JSON #}
+  {% if lp.get('turnover_z20') %}
+  <div class="chart-label">{{ t('Turnover z-score (20d) — last 120 sessions', '成交额Z分数（20日）— 近120个交易日') }}</div>
+  <canvas class="mini-chart" id="chart-tz20" data-series="{{ lp.turnover_z20 | tojson }}" data-zero="1" data-color-pos="{{ 'var(--up)' }}" data-color-neg="{{ 'var(--down)' }}"></canvas>
+  {% endif %}
+
+  {% if lp.get('southbound_z') %}
+  <div class="chart-label">{{ t('Southbound flow z-score — last 120 sessions', '南向资金Z分数 — 近120个交易日') }}</div>
+  <canvas class="mini-chart mini-chart-sm" id="chart-sbz" data-series="{{ lp.southbound_z | tojson }}" data-zero="1" data-color-pos="{{ 'var(--info)' }}" data-color-neg="{{ 'var(--muted)' }}"></canvas>
+  {% endif %}
+
+  {% if lp.get('margin_balance') %}
+  <div class="chart-label">{{ t('Margin balance (融资余额) — last 120 sessions', '融资余额 — 近120个交易日') }}</div>
+  <canvas class="mini-chart mini-chart-sm" id="chart-mb" data-series="{{ lp.margin_balance | tojson }}" data-color-pos="{{ 'var(--warn)' }}"></canvas>
+  {% endif %}
+
+  {# contradictions #}
+  {% set contradictions = lpl.get('contradictions') or [] %}
+  {% if contradictions %}
+  <div class="msec">
+    <h3>{{ t('Contradictions', '矛盾点') }}</h3>
+    {% for c in contradictions %}
+    <div style="font-size:12px;line-height:1.5;padding:6px 10px;border-radius:8px;border:1px solid var(--line);background:var(--panel2);margin-bottom:5px">
+      <b>{{ c.a }}</b> {{ t('vs', '对比') }} <b>{{ c.b }}</b>
+      {% if c.detail %}<div style="color:var(--muted);margin-top:2px">{{ c.detail }}</div>{% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {# data gaps #}
+  {% set pg_gaps = lpl.get('data_gaps') or [] %}
+  {% if pg_gaps %}
+  <details style="margin-top:10px">
+    <summary><span class="sh">{{ t('Show data gaps', '显示数据缺口') }}</span><span class="hd">{{ t('Hide data gaps', '收起数据缺口') }}</span></summary>
+    <ul style="font-size:11px;color:var(--muted);margin:6px 0 0;padding-left:16px;line-height:1.6">
+      {% for g in pg_gaps %}<li>{{ g }}</li>{% endfor %}
+    </ul>
+  </details>
+  {% endif %}
+</div>
+
+{# ══════════════════════════════════════════════════════════════════════════════
+   PANEL (b): LIMIT MECHANICS
+══════════════════════════════════════════════════════════════════════════════ #}
+<div class="panel span12" id="mech-limits">
+  <h2>{{ t('Limit Mechanics', '涨跌停板机制') }}
+    {{ help('CN-SYS-R3: Limit-up/down data is market-structure context only. BUY-direction use is forbidden (standing kill). Lianban (连板) = consecutive limit-up sessions. Failed-seal ratio = names that touched limit-up but closed below it. Board width rules: Main 10%; STAR/ChiNext 20% (from 2019/2020); BSE 30%; ST names 5% on Main boards.', 'CN-SYS-R3：涨/跌停板数据仅作市场结构背景，禁止用于买入方向（已裁定禁止）。连板 = 连续涨停。未封板比率 = 触及涨停但收盘低于涨停价的个股。板块宽度规则：主板10%；科创板/创业板20%（自2019/2020年起）；北交所30%；ST股主板5%。') }}
+  </h2>
+  {% set lm = limits %}
+  {% set la = lm.get('latest_agg') or {} %}
+
+  {# stat row #}
+  <div class="stat-row">
+    <div class="stat">
+      <span class="v pos">{{ la.get('limit_up_count', '—') }}</span>
+      <span class="k">{{ t('Limit-ups (涨停)', '涨停数') }}</span>
+    </div>
+    <div class="stat">
+      <span class="v neg">{{ la.get('limit_down_count', '—') }}</span>
+      <span class="k">{{ t('Limit-downs (跌停)', '跌停数') }}</span>
+    </div>
+    <div class="stat">
+      <span class="v">{{ la.get('sealed_up_close', '—') }}</span>
+      <span class="k">{{ t('Sealed at close', '收盘封板') }}</span>
+    </div>
+    <div class="stat">
+      <span class="v warn">{{ la.get('failed_up_seal_count', '—') }}</span>
+      <span class="k">{{ t('Failed seals', '开板数') }}</span>
+    </div>
+    <div class="stat">
+      <span class="v">{{ la.get('lianban_2plus', '—') }}</span>
+      <span class="k">{{ t('Lianban ≥2 (连板)', '连板≥2') }}</span>
+    </div>
+    <div class="stat">
+      <span class="v">{{ la.get('lianban_max', '—') }}</span>
+      <span class="k">{{ t('Max lianban (连板最高)', '最高连板数') }}</span>
+    </div>
+  </div>
+
+  {# breadth chart #}
+  {% if lm.get('lup_series') %}
+  <div class="chart-label">{{ t('Limit-up breadth (% universe, 120 sessions)', '涨停板广度（占比，120个交易日）') }}</div>
+  <canvas class="mini-chart" id="chart-lup" data-series="{{ lm.lup_series | tojson }}" data-color-pos="{{ 'var(--up)' }}"></canvas>
+  {% endif %}
+  {% if lm.get('ldn_series') %}
+  <div class="chart-label">{{ t('Limit-down breadth (% universe, 120 sessions)', '跌停板广度（占比，120个交易日）') }}</div>
+  <canvas class="mini-chart mini-chart-sm" id="chart-ldn" data-series="{{ lm.ldn_series | tojson }}" data-color-pos="{{ 'var(--down)' }}"></canvas>
+  {% endif %}
+  {% if lm.get('fsr_series') %}
+  <div class="chart-label">{{ t('Failed-seal ratio (open ÷ limit-up, 120 sessions)', '未封板比率（开板数÷涨停数，120个交易日）') }}</div>
+  <canvas class="mini-chart mini-chart-sm" id="chart-fsr" data-series="{{ lm.fsr_series | tojson }}" data-color-pos="{{ 'var(--warn)' }}"></canvas>
+  {% endif %}
+  {% if lm.get('lianban_series') %}
+  <div class="chart-label">{{ t('Consecutive limit-up names (≥2 lianban, 120 sessions)', '连板个数（≥2连板，120个交易日）') }}</div>
+  <canvas class="mini-chart mini-chart-sm" id="chart-lianban" data-series="{{ lm.lianban_series | tojson }}" data-color-pos="{{ 'var(--info)' }}"></canvas>
+  {% endif %}
+
+  {# today's notable events table #}
+  {% if lm.get('latest_events') %}
+  <div class="msec">
+    <h3>{{ t('Notable limit events — latest session', '今日涨跌停事件') }}
+      {% if lm.get('latest_date') %}<span style="font-size:10px;color:var(--muted);margin-left:8px">{{ lm.latest_date }}</span>{% endif %}
+    </h3>
+    <table class="mt">
+      <tr>
+        <th>{{ t('Ticker', '代码') }}</th>
+        <th>{{ t('Board', '板块') }}</th>
+        <th>{{ t('Event', '事件') }}</th>
+        <th class="r">{{ t('Lianban', '连板') }}</th>
+        <th class="r">{{ t('vs limit %', '距涨停%') }}</th>
+      </tr>
+      {% for ev in lm.latest_events[:15] %}
+      <tr>
+        <td><a href="china_lookup.html#{{ ev.ticker }}">{{ ev.ticker }}</a></td>
+        <td>{{ ev.board }}</td>
+        <td><span style="font-size:10.5px;padding:1px 6px;border-radius:6px;
+          background:color-mix(in srgb,{{ 'var(--up)' if 'up' in ev.event else 'var(--down)' }} 14%,var(--panel));
+          color:{{ 'var(--up)' if 'up' in ev.event else 'var(--down)' }}">{{ ev.event }}</span></td>
+        <td class="r">{{ ev.lianban_count if ev.lianban_count else '—' }}</td>
+        <td class="r {{ 'neg' if ev.close_off_limit_pct is not none and ev.close_off_limit_pct < -0.005 else '' }}">
+          {{ ('%.2f%%'|format(ev.close_off_limit_pct * 100)) if ev.close_off_limit_pct is not none else '—' }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+    {% if lm.latest_events | length > 15 %}<p style="font-size:11px;color:var(--muted)">… {{ lm.latest_events | length - 15 }} {{ t('more', '条更多') }}</p>{% endif %}
+  </div>
+  {% endif %}
+
+  <p class="authority-note" style="margin-top:10px">{{ t('CN-SYS-R3: this panel is market-structure context only. Limit-up as a BUY trigger is a standing kill.', 'CN-SYS-R3：本面板仅作市场结构背景。以涨停作为买入触发器已被永久禁止。') }}</p>
+</div>
+
+{# ══════════════════════════════════════════════════════════════════════════════
+   PANEL (c): PHASE MEMORY
+══════════════════════════════════════════════════════════════════════════════ #}
+<div class="panel span12" id="mech-phase">
+  <h2>{{ t('Cycle Phase Memory', '周期阶段记忆') }}
+    {{ help('Current phase classification with confidence, falsifiers, and a 90-session strip of historical phase assignments. ERA table covers known historical market cycles 2005→. Falsifier ledger: pre-committed conditions that, if they fire within their horizon, would contradict the current phase call. Accruing since phase-tape build start; not a calibration study (CN-SYS-R5).', '当前阶段分类（含置信度）、证伪条件，以及90个交易日的历史阶段分配图条。ERA表格涵盖2005年至今已知历史市场周期。证伪台账：预先提交的条件，若在期限内触发，将与当前阶段判断相矛盾。自阶段磁带开始积累以来持续累积；非校准研究（CN-SYS-R5）。') }}
+  </h2>
+  {% set ph = phase %}
+  {% set cp = ph.get('current') or {} %}
+
+  {# current phase card #}
+  {% set phase_name = cp.get('phase') or '—' %}
+  {% set conf = cp.get('confidence') %}
+  <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:flex-start;margin:8px 0 12px">
+    <div style="padding:10px 18px;border-radius:10px;background:color-mix(in srgb,var(--info) 14%,var(--panel));border:1px solid color-mix(in srgb,var(--info) 30%,var(--line))">
+      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px">{{ t('Current Phase', '当前阶段') }}</div>
+      <div style="font-size:20px;font-weight:800;color:var(--text)">{{ phase_name }}</div>
+      {% if conf is not none %}<div style="font-size:12px;color:var(--muted);margin-top:2px">{{ t('confidence', '置信度') }} {{ ('%.0f'|format(conf * 100)) }}%</div>{% endif %}
+      {% if cp.get('asof') %}<div style="font-size:10.5px;color:var(--muted)">{{ t('as of', '截至') }} {{ cp.asof }}</div>{% endif %}
+    </div>
+    {% if cp.get('evidence') %}
+    <div style="flex:1;min-width:200px">
+      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px">{{ t('Evidence', '证据') }}</div>
+      {% for e in cp.evidence %}<div style="font-size:12px;margin-bottom:3px;color:var(--text)">· {{ e }}</div>{% endfor %}
+    </div>
+    {% endif %}
+  </div>
+
+  {# falsifiers #}
+  {% set falsifiers = cp.get('falsifiers') or [] %}
+  {% if falsifiers %}
+  <div class="msec">
+    <h3>{{ t('Armed falsifiers', '已激活证伪条件') }}
+      {{ help('Falsifiers are pre-committed machine-checkable conditions. If one fires within its horizon, the current phase call was wrong. The ledger grades them nightly (CN-SYS-R5). They are not a signal — they are the evidence standard.', '证伪条件是预先提交的机器可检查条件。若在期限内触发，则当前阶段判断有误。台账每夜进行评分（CN-SYS-R5）。它们不是信号，而是证据标准。') }}
+    </h3>
+    {% set n_falsifiers = falsifiers | length %}
+    <div style="font-size:12px;color:var(--muted);margin-bottom:8px">{{ n_falsifiers }} {{ t('falsifiers armed — auto-graded nightly', '个证伪条件已激活 — 每夜自动评分') }}</div>
+    {% for f in falsifiers %}
+    <div style="display:flex;gap:8px;align-items:baseline;padding:5px 9px;border-radius:7px;background:var(--panel2);border:1px solid var(--line);margin-bottom:4px;font-size:12px">
+      <span style="font-family:monospace;color:var(--info);flex-shrink:0">{{ f.id }}</span>
+      <code style="flex:1;font-size:11px;color:var(--text);background:none">{{ f.expr }}</code>
+      <span style="color:var(--muted);white-space:nowrap">{{ f.horizon_d }}{{ t('d', '天') }}</span>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {# 90-session phase strip #}
+  {% set strip = ph.get('phase_strip') or [] %}
+  {% if strip %}
+  <div class="msec">
+    <h3>{{ t('90-session phase strip', '90个交易日阶段图条') }}</h3>
+    <div class="phase-strip" id="phase-strip-cells" data-strip="{{ strip | tojson }}"></div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;font-size:10.5px">
+      {% for ph_name, ph_color in [
+        ('POLICY_PUT','#5b9bf0'),('LIQUIDITY_IGNITION','#45b873'),('BROADENING','#3da564'),
+        ('THEME_LEADERSHIP','#e08b45'),('EUPHORIA','#e06464'),('DISTRIBUTION','#e07070'),
+        ('DELEVERAGING','#c04040'),('CAPITULATION','#8b93a1'),('GRINDING_BEAR','#a07070'),
+        ('REPAIR','#7aa7e0')
+      ] %}
+      <span style="display:flex;align-items:center;gap:3px;color:var(--muted)">
+        <span style="width:10px;height:10px;border-radius:2px;background:{{ ph_color }};display:inline-block"></span>
+        {{ ph_name.replace('_',' ') }}
+      </span>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  {# falsifier ledger stats #}
+  {% set ls = ph.get('ledger_summary') or {} %}
+  {% if ls %}
+  <div class="msec">
+    <h3>{{ t('Falsifier ledger', '证伪台账') }}</h3>
+    <div class="stat-row">
+      <div class="stat">
+        <span class="v pos">{{ ls.get('held', 0) }}</span>
+        <span class="k">{{ t('Held (phase correct)', '持守（阶段正确）') }}</span>
+      </div>
+      <div class="stat">
+        <span class="v neg">{{ ls.get('fired', 0) }}</span>
+        <span class="k">{{ t('Fired (phase contradicted)', '触发（阶段被证伪）') }}</span>
+      </div>
+      <div class="stat">
+        <span class="v">{{ ls.get('total_graded', 0) }}</span>
+        <span class="k">{{ t('Total graded', '总评分') }}</span>
+      </div>
+    </div>
+    <p style="font-size:11px;color:var(--muted);margin:6px 0 0">{{ t('Accruing since tape launch. Not a calibrated study — come-back clock 2026-10-08 (90d minimum). CN-SYS-R5.', '自磁带启动后持续积累。非校准研究 — 复查时钟 2026-10-08（最少90天）。CN-SYS-R5。') }}</p>
+  </div>
+  {% endif %}
+
+  {# ERA analog table #}
+  {% set eras = ph.get('era_table') or [] %}
+  {% if eras %}
+  <div class="msec">
+    <h3>{{ t('Historical ERA table', '历史ERA对照表') }}
+      {{ help('Known A-share market cycle eras since 2005. Each ERA is annotated with the phases it passed through and a brief historical note. Descriptive only — analog matching is a display-only read from the analogs engine (site/china_intel/analogs.json). No forward projection.', '2005年以来已知的A股市场周期时代。每个ERA标注了其经历的阶段和简短历史注释。仅为描述性 — 历史类比为来自类比引擎的展示性读取（site/china_intel/analogs.json）。无前瞻预测。') }}
+    </h3>
+    <details>
+      <summary><span class="sh">{{ t('Show ERA table (', '展开ERA表（') }}{{ eras | length }}{{ t(' eras)', '个时代）') }}</span><span class="hd">{{ t('Collapse', '收起') }}</span></summary>
+      <table class="mt" style="margin-top:8px">
+        <tr>
+          <th>{{ t('ERA', '时代') }}</th>
+          <th>{{ t('Period', '时期') }}</th>
+          <th>{{ t('Phases', '阶段') }}</th>
+          <th>{{ t('Note', '注释') }}</th>
+        </tr>
+        {% for era in eras %}
+        <tr>
+          <td style="font-size:11px;white-space:nowrap">{{ era.era.replace('_',' ') }}</td>
+          <td style="font-size:11px;white-space:nowrap">{{ era.start[:7] }} → {{ era.end[:7] }}</td>
+          <td style="font-size:10.5px">{{ era.phases | join(' → ') }}</td>
+          <td style="font-size:11px;color:var(--muted)">{{ era.note }}</td>
+        </tr>
+        {% endfor %}
+      </table>
+    </details>
+    <p style="margin-top:8px;font-size:12px">
+      <a href="china_intel.html">{{ t('→ Full analog readout in Intelligence Hub', '→ 情报中心完整类比读取') }}</a>
+    </p>
+  </div>
+  {% endif %}
+</div>
+
+{# ══════════════════════════════════════════════════════════════════════════════
+   PANEL (d): POLICY TAPE
+══════════════════════════════════════════════════════════════════════════════ #}
+<div class="panel span8" id="mech-policy">
+  <h2>{{ t('Policy Tape', '政策磁带') }}
+    {{ help('Policy impulse (政策冲量) is a deterministic read from the policy_transmission lobe. Channels are the transmission mechanisms active. Events are sourced from the append-only data/china_policy_transmission/events.jsonl ledger (PBoC, State Council, CSRC, NDRC, MoF, Politburo, CEWC). Staleness per source is disclosed (CN-SYS-R4).', '政策冲量为来自政策传导脉络的确定性读取。渠道为当前激活的传导机制。事件来源于只追加的data/china_policy_transmission/events.jsonl台账（央行、国务院、证监会、发改委、财政部、政治局、中央经济工作会议）。每来源数据时效已披露（CN-SYS-R4）。') }}
+  </h2>
+  {% set pp = policy %}
+  {% set impulse = pp.get('policy_impulse') or '—' %}
+  {% set impulse_color = {
+    'easing': 'var(--up)', 'targeted_support': 'var(--info)',
+    'market_rescue': 'var(--warn)', 'neutral': 'var(--muted)',
+    'tightening': 'var(--down)'
+  }.get(impulse, 'var(--muted)') %}
+
+  <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-start;margin:8px 0 12px">
+    <div style="padding:8px 16px;border-radius:9px;background:color-mix(in srgb,{{ impulse_color }} 14%,var(--panel));border:1px solid color-mix(in srgb,{{ impulse_color }} 30%,var(--line))">
+      <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px">{{ t('Policy Impulse', '政策冲量') }}</div>
+      <div style="font-size:17px;font-weight:800;color:{{ impulse_color }}">{{ impulse.replace('_',' ').title() }}</div>
+    </div>
+    {% for ch in pp.get('transmission_channel') or [] %}
+    <span class="chip c-info" style="align-self:center">{{ ch.replace('_',' ') }}</span>
+    {% endfor %}
+    {% if pp.get('asof') %}<span style="font-size:11px;color:var(--muted);align-self:center">{{ t('as of', '截至') }} {{ pp.asof }}</span>{% endif %}
+  </div>
+
+  {# staleness per source #}
+  {% set staleness = pp.get('staleness') or {} %}
+  {% if staleness %}
+  <div style="margin-bottom:10px">
+    <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">{{ t('Source freshness', '来源数据时效') }}</div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px">
+      {% for src, days in staleness.items() %}
+      <span style="font-size:11px;padding:2px 8px;border-radius:6px;
+        background:color-mix(in srgb,{{ 'var(--up)' if days <= 3 else ('var(--warn)' if days <= 14 else 'var(--down)') }} 12%,var(--panel));
+        color:{{ 'var(--up)' if days <= 3 else ('var(--warn)' if days <= 14 else 'var(--down)') }}">
+        {{ src }}: {{ days }}{{ t('d', '天') }}</span>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  {# recent events #}
+  {% set events = pp.get('recent_events') or [] %}
+  {% if events %}
+  <h3>{{ t('Recent events', '近期事件') }}</h3>
+  <ul class="ev-list">
+    {% for ev in events[:8] %}
+    <li class="ev-item {{ ev.source }}">
+      <div>{% if ev.url and ev.url.startswith('http') %}<a href="{{ ev.url }}" target="_blank" rel="noopener">{{ ev.title }}</a>{% else %}{{ ev.title }}{% endif %}</div>
+      <div class="ev-meta">{{ ev.source.upper() }} · {{ ev.kind }} · {{ ev.ts[:10] if ev.ts else '' }}
+        {% if ev.sectors %} · {{ ev.sectors | join(', ') }}{% endif %}
+      </div>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p style="color:var(--muted);font-size:12px">{{ t('No events in policy ledger yet.', '政策台账暂无事件。') }}</p>
+  {% endif %}
+</div>
+
+{# ══════════════════════════════════════════════════════════════════════════════
+   PANEL (e): CROSS-MARKET
+══════════════════════════════════════════════════════════════════════════════ #}
+<div class="panel span4" id="mech-cross-market">
+  <h2>{{ t('Cross-Market', '跨市场') }}
+    {{ help('CGB (China Government Bond) curve from the yield store. cn_slope_10_2 is the 10y minus 2y term premium. CN-US spread would require a matching US 10y series — disclosed as data gap when absent. USDCNH is the offshore renminbi rate. All staleness-stamped (CN-SYS-R4).', 'CGB（中国国债）收益率曲线来自收益率存储。cn_slope_10_2为10年减2年期限溢价。中美利差需要匹配的美国10年期数据 — 缺失时作为数据缺口披露。USDCNH为离岸人民币汇率。所有数据均有时效标记（CN-SYS-R4）。') }}
+  </h2>
+  {% set cm = cross_market %}
+  {% set yc = cm.get('yield_curve') or {} %}
+  {% set cgb = cm.get('cgb_curve') or {} %}
+  {% set cnh = cm.get('usdcnh') or {} %}
+
+  {# CGB curve visual #}
+  {% if cgb %}
+  <h3>{{ t('CGB Yield Curve', '中国国债收益率曲线') }}</h3>
+  <div class="cgb-row">
+    {% for tenor, key in [('3M','m3'),('1Y','y1'),('5Y','y5'),('10Y','y10'),('30Y','y30')] %}
+    {% set val = cgb.get(key) %}
+    <div class="cgb-pt">
+      <span class="ten">{{ ('%.2f'|format(val * 100)) if val is not none else '—' }}%</span>
+      <span class="lbl">{{ tenor }}</span>
+    </div>
+    {% endfor %}
+  </div>
+  {% if cgb.get('slope_10y_3m') is not none %}
+  <div style="font-size:12px;color:var(--muted);margin:4px 0 8px">
+    {{ t('10y–3m slope', '10年-3月斜率') }}: <b style="color:{{ 'var(--up)' if cgb.slope_10y_3m > 0 else 'var(--down)' }}">{{ '%+.3f'|format(cgb.slope_10y_3m) }}</b>
+    {% if cgb.get('staleness_days') is not none %}
+    <span class="{{ 'stale-ok' if cgb.staleness_days <= 2 else ('stale-warn' if cgb.staleness_days <= 7 else 'stale-bad') }}"> · {{ cgb.staleness_days }}{{ t('d stale', '天前') }}</span>
+    {% endif %}
+  </div>
+  {% endif %}
+  {% endif %}
+
+  {# 10y / 2y / slope #}
+  {% if yc %}
+  <div class="stat-row" style="margin-top:8px">
+    {% set cn10 = yc.get('cn_10y') %}
+    {% set cn2 = yc.get('cn_2y') %}
+    {% set slope = yc.get('cn_slope_10_2') %}
+    {% set spread = yc.get('cn_us_10y_spread') %}
+    <div class="stat">
+      <span class="v">{{ ('%.3f'|format(cn10)) if cn10 is not none else '—' }}</span>
+      <span class="k">{{ t('CN 10y', '中国10年期') }}</span>
+    </div>
+    <div class="stat">
+      <span class="v">{{ ('%.3f'|format(cn2)) if cn2 is not none else '—' }}</span>
+      <span class="k">{{ t('CN 2y', '中国2年期') }}</span>
+    </div>
+    <div class="stat">
+      <span class="v {{ 'pos' if slope is not none and slope > 0 else ('neg' if slope is not none and slope < 0 else '') }}">{{ ('%.3f'|format(slope)) if slope is not none else '—' }}</span>
+      <span class="k">{{ t('10y–2y spread', '10年-2年利差') }}</span>
+    </div>
+    {% if spread is not none %}
+    <div class="stat">
+      <span class="v {{ 'pos' if spread > 0 else 'neg' }}">{{ '%+.3f'|format(spread) }}</span>
+      <span class="k">{{ t('CN–US 10y spread', '中美10年期利差') }}</span>
+    </div>
+    {% endif %}
+  </div>
+  {% if yc.get('staleness_days') is not none %}
+  <div style="font-size:11px;color:var(--muted);margin-top:2px">
+    {{ t('Yield data', '收益率数据') }}:
+    <span class="{{ 'stale-ok' if yc.staleness_days <= 2 else ('stale-warn' if yc.staleness_days <= 7 else 'stale-bad') }}">{{ yc.staleness_days }}{{ t('d stale', '天前') }}</span>
+  </div>
+  {% endif %}
+  {% endif %}
+
+  {# USDCNH #}
+  {% if cnh %}
+  <div class="msec">
+    <h3>{{ t('USDCNH — Offshore Yuan', 'USDCNH — 离岸人民币') }}</h3>
+    <div class="stat-row">
+      {% set quote = cnh.get('quote') %}
+      {% set chg = cnh.get('chg_pct') %}
+      <div class="stat">
+        <span class="v">{{ ('%.4f'|format(quote)) if quote is not none else '—' }}</span>
+        <span class="k">{{ t('Rate', '汇率') }}</span>
+      </div>
+      {% if chg is not none %}
+      <div class="stat">
+        <span class="v {{ 'pos' if chg < 0 else ('neg' if chg > 0 else '') }}">{{ '%+.2f%%'|format(chg) }}</span>
+        <span class="k">{{ t('20d chg', '20日变化') }}</span>
+      </div>
+      {% endif %}
+    </div>
+    {% if cnh.get('as_of') %}<div style="font-size:10.5px;color:var(--muted)">{{ t('as of', '截至') }} {{ cnh.as_of }}</div>{% endif %}
+  </div>
+  {% endif %}
+
+  {# data gaps #}
+  {% set cm_gaps = cm.get('data_gaps') or [] %}
+  {% if cm_gaps %}
+  <details style="margin-top:10px">
+    <summary><span class="sh">{{ t('Show data gaps', '显示数据缺口') }}</span><span class="hd">{{ t('Hide', '收起') }}</span></summary>
+    <ul style="font-size:11px;color:var(--muted);margin:6px 0 0;padding-left:16px;line-height:1.6">
+      {% for g in cm_gaps %}<li>{{ g }}</li>{% endfor %}
+    </ul>
+  </details>
+  {% endif %}
+</div>
+
+{# ── FOOTER ── #}
+<div class="span12" style="font-size:11.5px;color:var(--muted);text-align:center;padding:8px 0 4px">
+  {{ t('Generated', '生成于') }} {{ built }} UTC · {{ t('Context only — CN-SYS-R1', '仅供背景参考 — CN-SYS-R1') }}
+</div>
+
+</div>{# /.grid #}
+
+<script>
+// ── Inline canvas chart renderer ──────────────────────────────────────────────
+// Reads data-series="[{d,v},...]" from each canvas, draws a minimal area chart.
+// Respects theme CSS variables. Zero-line if data-zero="1".
+(function(){
+  var CSS = getComputedStyle(document.documentElement);
+  function v(name){return CSS.getPropertyValue(name).trim();}
+
+  function drawMiniChart(canvas){
+    var raw;
+    try { raw = JSON.parse(canvas.getAttribute('data-series')||'[]'); } catch(e){return;}
+    if(!raw||!raw.length)return;
+    var vals = raw.map(function(p){return p.v;});
+    var dates = raw.map(function(p){return p.d;});
+    var hasZero = canvas.getAttribute('data-zero') === '1';
+    var colorPos = canvas.getAttribute('data-color-pos') || v('--info');
+    var colorNeg = canvas.getAttribute('data-color-neg') || '';
+
+    var W = canvas.offsetWidth || 400;
+    var H = canvas.offsetHeight || 70;
+    canvas.width = W * (window.devicePixelRatio||1);
+    canvas.height = H * (window.devicePixelRatio||1);
+    var ctx = canvas.getContext('2d');
+    ctx.scale(window.devicePixelRatio||1, window.devicePixelRatio||1);
+
+    var nonNull = vals.filter(function(x){return x!==null&&x!==undefined&&!isNaN(x);});
+    if(!nonNull.length) return;
+    var mn = Math.min.apply(null,nonNull), mx = Math.max.apply(null,nonNull);
+    if(mn===mx){mn-=0.1;mx+=0.1;}
+    if(hasZero){mn=Math.min(mn,-0.01);mx=Math.max(mx,0.01);}
+
+    var pad = {t:4,b:4,l:2,r:2};
+    var aw = W - pad.l - pad.r, ah = H - pad.t - pad.b;
+    var n = vals.length;
+    function px(i){return pad.l + (i/(n-1||1)) * aw;}
+    function py(val){return pad.t + ah - ((val-mn)/(mx-mn)) * ah;}
+
+    // zero line
+    if(hasZero){
+      var zy = py(0);
+      ctx.strokeStyle = v('--line');
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(pad.l, zy);
+      ctx.lineTo(pad.l + aw, zy);
+      ctx.stroke();
+    }
+
+    // segment drawing: positive above zero = colorPos, below = colorNeg or muted
+    var i = 0;
+    while(i < n){
+      if(vals[i]===null||vals[i]===undefined||isNaN(vals[i])){i++;continue;}
+      // collect contiguous segment
+      var seg = [];
+      while(i < n && vals[i]!==null && vals[i]!==undefined && !isNaN(vals[i])){
+        seg.push({x:px(i),y:py(vals[i]),v:vals[i]});
+        i++;
+      }
+      if(seg.length < 1) continue;
+
+      var positive = !hasZero || seg[0].v >= 0;
+      var fillColor = positive ? colorPos : (colorNeg || v('--muted'));
+
+      // gradient fill
+      var grad = ctx.createLinearGradient(0,0,0,H);
+      grad.addColorStop(0, fillColor.replace(')',',0.28)').replace('var(','rgba(').replace(')',')'));
+      grad.addColorStop(1, fillColor.replace(')',',0.02)').replace('var(','rgba(').replace(')',')'));
+
+      ctx.beginPath();
+      ctx.moveTo(seg[0].x, hasZero ? py(0) : H - pad.b);
+      for(var j=0;j<seg.length;j++) ctx.lineTo(seg[j].x, seg[j].y);
+      ctx.lineTo(seg[seg.length-1].x, hasZero ? py(0) : H - pad.b);
+      ctx.closePath();
+      ctx.fillStyle = grad;
+      ctx.fill();
+
+      // line
+      ctx.beginPath();
+      ctx.moveTo(seg[0].x, seg[0].y);
+      for(var j=1;j<seg.length;j++) ctx.lineTo(seg[j].x, seg[j].y);
+      ctx.strokeStyle = fillColor.replace(/var\(([^)]+)\)/, function(_,name){return v(name);});
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    }
+
+    // tooltip on hover
+    canvas._mechData = {raw:raw, vals:vals, dates:dates, mn:mn, mx:mx, pad:pad, aw:aw, ah:ah, n:n};
+  }
+
+  function drawAllCharts(){
+    document.querySelectorAll('canvas.mini-chart').forEach(function(c){ drawMiniChart(c); });
+  }
+
+  // ── Phase strip renderer ──────────────────────────────────────────────────
+  var PHASE_COLORS = {
+    'POLICY_PUT':'#5b9bf0','LIQUIDITY_IGNITION':'#45b873','BROADENING':'#3da564',
+    'THEME_LEADERSHIP':'#e08b45','EUPHORIA':'#e06464','DISTRIBUTION':'#e07070',
+    'DELEVERAGING':'#c04040','CAPITULATION':'#8b93a1','GRINDING_BEAR':'#a07070',
+    'REPAIR':'#7aa7e0'
+  };
+  function renderPhaseStrip(){
+    var el = document.getElementById('phase-strip-cells');
+    if(!el) return;
+    var strip;
+    try { strip = JSON.parse(el.getAttribute('data-strip')||'[]'); } catch(e){return;}
+    el.innerHTML = '';
+    strip.forEach(function(cell){
+      var div = document.createElement('div');
+      div.className = 'ps-cell';
+      var col = PHASE_COLORS[cell.phase] || '#8b93a1';
+      div.style.background = col;
+      var tip = document.createElement('div');
+      tip.className = 'ps-tip';
+      tip.textContent = cell.d + ' ' + cell.phase + (cell.confidence ? ' (' + Math.round(cell.confidence*100) + '%)' : '');
+      div.appendChild(tip);
+      el.appendChild(div);
+    });
+  }
+
+  // theme observer: redraw when theme changes (colors change)
+  if(window.MutationObserver){
+    new MutationObserver(drawAllCharts).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+  }
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',function(){drawAllCharts();renderPhaseStrip();});
+  } else {
+    drawAllCharts(); renderPhaseStrip();
+  }
+})();
+</script>
+<script src="theme.js"></script>
+<script src="chart_i18n.js"></script>
+<script src="charts.js"></script>
+<script src="tablesort.js"></script>
+<footer class="site-footer">
+  <span class="made">© 2026 MastermindX Inc</span>
+</footer>
+</body>
+</html>

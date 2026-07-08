@@ -722,6 +722,9 @@ lanes:
       - id: build_china_market_state
         module: scripts.build_china_market_state
         note: non-fatal; ~2 min; W6 sovereign spine — china_market_state.v1 (CN-SYS-R11 R13)
+      - id: build_china_mechanics
+        module: scripts.build_china_mechanics
+        note: non-fatal; W8 mechanics cockpit — reads spine artifacts (CN-SYS-R1 R13)
       - id: inject_data_base
         module: scripts.inject_data_base
       - id: publish_r2_asia

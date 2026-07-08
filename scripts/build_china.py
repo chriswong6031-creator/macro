@@ -385,6 +385,7 @@ def _build_sector_pages(env) -> int:
 
 
 def _build_history(env, latest: dict, generated: str) -> None:
+    import math
     from engine.playbook import QUAD_SHORT, next_quads_line, transition_stats
     hist = store.read("china_regime", "regime_history")
     if hist is None or "quad" not in hist.columns:
@@ -400,10 +401,56 @@ def _build_history(env, latest: dict, generated: str) -> None:
         rows.append({"name": QUAD_SHORT[q], "n": trans["n_by_quad"].get(q, "—"),
                      "median": trans["median_days"].get(q, "—"),
                      "next": next_quads_line(nxt), "next_zh": next_quads_line(nxt, zh=True)})
+
+    # CN-SYS W8 — phase history block (display-only; degrade silently if artifacts absent)
+    phase_strip: list[dict] = []
+    era_table: list[dict] = []
+    phase_current: dict = {}
+    analogs: list[dict] = []
+    try:
+        _root = Path(__file__).resolve().parent.parent
+        _chinastate = Path(config.load()["storage"]["site_dir"]) / "chinastatedata"
+        cp_path = _chinastate / "cycle_phase.json"
+        if cp_path.exists():
+            import json as _json
+            cp = _json.loads(cp_path.read_text())
+            phase_current = {
+                "phase": cp.get("phase", ""),
+                "confidence": cp.get("confidence"),
+                "asof": cp.get("asof", ""),
+                "falsifiers": cp.get("falsifiers", []),
+            }
+            era_table = cp.get("era_table", [])
+        phase_tape_path = _root / "data" / "china_cycle_phase" / "phase_tape.parquet"
+        if phase_tape_path.exists():
+            tape = pd.read_parquet(phase_tape_path)
+            tape.index = pd.to_datetime(tape.index)
+            for idx, row in tape.tail(90).iterrows():
+                v = row.get("confidence")
+                conf = None if (v is None or (isinstance(v, float) and (math.isnan(v) or math.isinf(v)))) else float(v)
+                phase_strip.append({
+                    "d": idx.strftime("%Y-%m-%d"),
+                    "phase": str(row.get("phase", "")),
+                    "confidence": conf,
+                })
+        analogs_path = Path(config.load()["storage"]["site_dir"]) / "china_intel" / "analogs.json"
+        if analogs_path.exists():
+            import json as _json
+            a_data = _json.loads(analogs_path.read_text())
+            analogs = a_data.get("analogs", [])[:5]  # top-5 closest analogs, display-only
+    except Exception as e:  # noqa: BLE001
+        log.warning("phase history block failed (%s); degrading to empty", e)
+
     html = env.get_template("china_history.html.j2").render(
         latest=latest, generated_utc=generated,
         chart_regime=_chart_regime(px, hist) if not px.empty else "", chart_axes=_chart_axes(hist),
-        lifespan_rows=rows)
+        lifespan_rows=rows,
+        # CN-SYS W8 phase history additions (degrade-safe: empty list / dict if absent)
+        phase_strip=phase_strip,
+        era_table=era_table,
+        phase_current=phase_current,
+        analogs=analogs,
+    )
     write_page(Path(config.load()["storage"]["site_dir"]) / "china_history.html", html)
     log.info("wrote china_history.html (%d regime periods)", trans.get("n_segments", 0))
 
@@ -625,6 +672,28 @@ def main() -> int:
 
     try:
         sectors = _sector_cards(latest)
+
+        # CN-SYS W8: load spine + lobe snapshot payloads for the market-state
+        # cockpit strip and the stocks-board microstructure chips.  None-safe:
+        # the strip degrades silently when these files haven't been built yet.
+        def _load_chinastatedata(name: str) -> dict | None:
+            path = Path(config.load()["storage"]["site_dir"]) / "chinastatedata" / name
+            return _load_json(path)
+
+        _cn_market_state_json = _load_chinastatedata("market_state.json")
+        _cn_participation_json = _load_chinastatedata("participation.json")
+        _cn_cycle_phase_json   = _load_chinastatedata("cycle_phase.json")
+        _cn_policy_json        = _load_chinastatedata("policy_transmission.json")
+        _cn_microstructure_json = _load_chinastatedata("microstructure.json")
+
+        # index name_packets by ticker for O(1) lookup on stocks cards
+        _micro_by_ticker: dict = {}
+        if _cn_microstructure_json:
+            for pkt in (_cn_microstructure_json.get("name_packets") or []):
+                ticker = pkt.get("ticker")
+                if ticker:
+                    _micro_by_ticker[ticker] = pkt
+
         vm = {
             "latest": latest,
             "built": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
@@ -639,6 +708,13 @@ def main() -> int:
             "alloc_card": _china_alloc_card(),       # China Income Vector button (blue card)
             "signal_stack": _china_signal_stack(latest),  # consolidated cross-subsystem read
             "market_tiles": _china_market_tiles(),   # cross-asset market-snapshot tiles
+            # CN-SYS W8 — spine + lobe snapshots (context_only; CN-SYS-R1)
+            "cn_market_state_json": _cn_market_state_json,
+            "cn_participation_json": _cn_participation_json,
+            "cn_cycle_phase_json": _cn_cycle_phase_json,
+            "cn_policy_json": _cn_policy_json,
+            "cn_microstructure_json": _cn_microstructure_json,
+            "cn_micro_by_ticker": _micro_by_ticker,
         }
         site = Path(config.load()["storage"]["site_dir"])
         site.mkdir(parents=True, exist_ok=True)
